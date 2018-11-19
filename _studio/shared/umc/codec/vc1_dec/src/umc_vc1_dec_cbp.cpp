@@ -28,15 +28,15 @@
 
 void AssignCodedBlockPattern(VC1MB * pMB,VC1SingletonMB* sMB)
 {
-    Ipp32s CBPCY = pMB->m_cbpBits;
-    Ipp32s Count;
+    int32_t CBPCY = pMB->m_cbpBits;
+    int32_t Count;
 
     for(Count = 0; Count < VC1_NUM_OF_BLOCKS; Count++)
     {
         VC1Block *pBlk = &pMB->m_pBlocks[Count];
-        Ipp32u Coded = (0 != (CBPCY & (1 << (5 - Count))));
+        uint32_t Coded = (0 != (CBPCY & (1 << (5 - Count))));
 
-        sMB->m_pSingleBlock[Count].Coded = (Ipp8u)Coded;
+        sMB->m_pSingleBlock[Count].Coded = (uint8_t)Coded;
 
         if (!Coded && (pBlk->blkType < VC1_BLK_INTRA_TOP))
             pBlk->blkType = VC1_BLK_INTER8X8;
@@ -73,22 +73,22 @@ void AssignCodedBlockPattern(VC1MB * pMB,VC1SingletonMB* sMB)
 //predictors will be replaced with calculated values
 //T4 moved to LT4 and top predictors will be replaced with calculated
 //values as well for calculation mbcbp in the same position mb in next row
-Ipp32s CalculateCBP(VC1MB* pCurrMB, Ipp32u decoded_cbpy, Ipp32s width)
+int32_t CalculateCBP(VC1MB* pCurrMB, uint32_t decoded_cbpy, int32_t width)
 {
-    Ipp32s predicted_Y0;
-    Ipp32s predicted_Y1;
-    Ipp32s predicted_Y2;
-    Ipp32s predicted_Y3;
+    int32_t predicted_Y0;
+    int32_t predicted_Y1;
+    int32_t predicted_Y2;
+    int32_t predicted_Y3;
 
-    Ipp32s calculated_cbpy;
+    int32_t calculated_cbpy;
 
-    Ipp32s LT3;
-    Ipp32s T2 ;
-    Ipp32s T3 ;
-    Ipp32s L1 ;
-    Ipp32s L3 ;
+    int32_t LT3;
+    int32_t T2 ;
+    int32_t T3 ;
+    int32_t L1 ;
+    int32_t L3 ;
 
-    Ipp32u LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
+    uint32_t LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
 
 
     if(VC1_IS_NO_TOP_MB(LeftTopRightPositionFlag) && VC1_IS_NO_LEFT_MB(LeftTopRightPositionFlag))

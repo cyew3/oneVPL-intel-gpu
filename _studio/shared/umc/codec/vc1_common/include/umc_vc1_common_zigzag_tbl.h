@@ -27,88 +27,88 @@
 
 //VC-1 Table 234: Intra Normal Scan
 //remapped as src index for continues dst index
-const extern  Ipp8u VC1_Intra_Normal_Scan_chroma[64];
-const extern  Ipp8u VC1_Intra_Normal_Scan_luma[64];
+const extern  uint8_t VC1_Intra_Normal_Scan_chroma[64];
+const extern  uint8_t VC1_Intra_Normal_Scan_luma[64];
 
 //VC-1 Table 235: Intra Horizontal Scan
 //remapped as src index for continues dst index
-const extern  Ipp8u VC1_Intra_Horizontal_Scan_chroma[64];
-const extern  Ipp8u VC1_Intra_Horizontal_Scan_luma[64];
+const extern  uint8_t VC1_Intra_Horizontal_Scan_chroma[64];
+const extern  uint8_t VC1_Intra_Horizontal_Scan_luma[64];
 
 //VC-1 Table 236: Intra Vertical Scan
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Intra_Vertical_Scan_chroma[64];
-const extern Ipp8u VC1_Intra_Vertical_Scan_luma[64];
+const extern uint8_t VC1_Intra_Vertical_Scan_chroma[64];
+const extern uint8_t VC1_Intra_Vertical_Scan_luma[64];
 
 //Table 237: Inter 8x8 Scan for Simple and Main Profiles
 //and Progressive Mode in Advanced Profile
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Inter_8x8_Scan_chroma[64];
-const extern Ipp8u VC1_Inter_8x8_Scan_luma[64];
+const extern uint8_t VC1_Inter_8x8_Scan_chroma[64];
+const extern uint8_t VC1_Inter_8x8_Scan_luma[64];
 
 //VC-1 Table 238: Inter 8x4 Scan for Simple and Main Profiles
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Inter_8x4_Scan_chroma[64];
-const extern Ipp8u VC1_Inter_8x4_Scan_luma[64];
+const extern uint8_t VC1_Inter_8x4_Scan_chroma[64];
+const extern uint8_t VC1_Inter_8x4_Scan_luma[64];
 
 //VC-1 Table 239: Inter 4x8 Scan for Simple and Main Profiles
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Inter_4x8_Scan_chroma[64];
-const extern Ipp8u VC1_Inter_4x8_Scan_luma[64];
+const extern uint8_t VC1_Inter_4x8_Scan_chroma[64];
+const extern uint8_t VC1_Inter_4x8_Scan_luma[64];
 
 //Table 240: Inter 4x4 Scan for Simple and Main Profiles and
 //Progressive Mode in Advanced Profile
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Inter_4x4_Scan_chroma[64];
-const extern Ipp8u VC1_Inter_4x4_Scan_luma[64];
+const extern uint8_t VC1_Inter_4x4_Scan_chroma[64];
+const extern uint8_t VC1_Inter_4x4_Scan_luma[64];
 
 //Table 240: Progressive Mode Inter 8x4 Scan for Advanced Profile
-const extern Ipp8u VC1_Inter_8x4_Scan_Adv_chroma[64];
-const extern Ipp8u VC1_Inter_8x4_Scan_Adv_luma[64];
+const extern uint8_t VC1_Inter_8x4_Scan_Adv_chroma[64];
+const extern uint8_t VC1_Inter_8x4_Scan_Adv_luma[64];
 
 //Table 241: Progressive Mode Inter 4x8 Scan for Advanced Profile
-const extern Ipp8u VC1_Inter_4x8_Scan_Adv_chroma[64];
-const extern Ipp8u VC1_Inter_4x8_Scan_Adv_luma[64];
+const extern uint8_t VC1_Inter_4x8_Scan_Adv_chroma[64];
+const extern uint8_t VC1_Inter_4x8_Scan_Adv_luma[64];
 
-const extern Ipp8u VC1_Inter_InterlaceIntra_8x8_Scan_Adv_chroma[64];
-const extern Ipp8u VC1_Inter_InterlaceIntra_8x8_Scan_Adv_luma[64];
+const extern uint8_t VC1_Inter_InterlaceIntra_8x8_Scan_Adv_chroma[64];
+const extern uint8_t VC1_Inter_InterlaceIntra_8x8_Scan_Adv_luma[64];
 
 /*Table 243 (SMPTE-421M-FDS1): Interlace Mode Inter 8x4 Scan for Advanced Profile*/
-const extern Ipp8u VC1_Inter_Interlace_8x4_Scan_Adv_chroma[64];
-const extern Ipp8u VC1_Inter_Interlace_8x4_Scan_Adv_luma[64];
+const extern uint8_t VC1_Inter_Interlace_8x4_Scan_Adv_chroma[64];
+const extern uint8_t VC1_Inter_Interlace_8x4_Scan_Adv_luma[64];
 
 /*Table 244 (SMPTE-421M-FDS1): Interlace Mode Inter 4x8 Scan for Advanced Profile*/
-const extern Ipp8u VC1_Inter_Interlace_4x8_Scan_Adv_chroma[64];
-const extern Ipp8u VC1_Inter_Interlace_4x8_Scan_Adv_luma[64];
+const extern uint8_t VC1_Inter_Interlace_4x8_Scan_Adv_chroma[64];
+const extern uint8_t VC1_Inter_Interlace_4x8_Scan_Adv_luma[64];
 
 /*Table 245 (SMPTE-421M-FDS1): Interlace Mode Inter 4x4 Scan for Advanced Profile*/
-const extern Ipp8u VC1_Inter_Interlace_4x4_Scan_Adv_chroma[64];
-const extern Ipp8u VC1_Inter_Interlace_4x4_Scan_Adv_luma[64];
+const extern uint8_t VC1_Inter_Interlace_4x4_Scan_Adv_chroma[64];
+const extern uint8_t VC1_Inter_Interlace_4x4_Scan_Adv_luma[64];
 
 //Advanced profile
-const extern Ipp8u* AdvZigZagTables_IProgressive_luma[2][7];
-const extern Ipp8u* AdvZigZagTables_IProgressive_chroma[2][7];
+const extern uint8_t* AdvZigZagTables_IProgressive_luma[2][7];
+const extern uint8_t* AdvZigZagTables_IProgressive_chroma[2][7];
 
-const extern Ipp8u* AdvZigZagTables_IInterlace_luma[2][7];
-const extern Ipp8u* AdvZigZagTables_IInterlace_chroma[2][7];
+const extern uint8_t* AdvZigZagTables_IInterlace_luma[2][7];
+const extern uint8_t* AdvZigZagTables_IInterlace_chroma[2][7];
 
-const extern Ipp8u* AdvZigZagTables_IField_luma[2][7];
-const extern Ipp8u* AdvZigZagTables_IField_chroma[2][7];
+const extern uint8_t* AdvZigZagTables_IField_luma[2][7];
+const extern uint8_t* AdvZigZagTables_IField_chroma[2][7];
 
-const extern Ipp8u* AdvZigZagTables_PBProgressive_luma[2][7];
-const extern Ipp8u* AdvZigZagTables_PBProgressive_chroma[2][7];
+const extern uint8_t* AdvZigZagTables_PBProgressive_luma[2][7];
+const extern uint8_t* AdvZigZagTables_PBProgressive_chroma[2][7];
 
-const extern Ipp8u* AdvZigZagTables_PBInterlace_luma[2][7];
-const extern Ipp8u* AdvZigZagTables_PBInterlace_chroma[2][7];
+const extern uint8_t* AdvZigZagTables_PBInterlace_luma[2][7];
+const extern uint8_t* AdvZigZagTables_PBInterlace_chroma[2][7];
 
-const extern Ipp8u* AdvZigZagTables_PBField_luma[2][7];
-const extern Ipp8u* AdvZigZagTables_PBField_chroma[2][7];
+const extern uint8_t* AdvZigZagTables_PBField_luma[2][7];
+const extern uint8_t* AdvZigZagTables_PBField_chroma[2][7];
 
 //Simple/main
-const extern Ipp8u* ZigZagTables_I_luma[2][7];
-const extern Ipp8u* ZigZagTables_I_chroma[2][7];
-const extern Ipp8u* ZigZagTables_PB_luma[2][7];
-const extern Ipp8u* ZigZagTables_PB_chroma[2][7];
+const extern uint8_t* ZigZagTables_I_luma[2][7];
+const extern uint8_t* ZigZagTables_I_chroma[2][7];
+const extern uint8_t* ZigZagTables_PB_luma[2][7];
+const extern uint8_t* ZigZagTables_PB_chroma[2][7];
 
 #endif //__umc_vc1_common_zigzag_tbl_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

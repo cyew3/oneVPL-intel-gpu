@@ -28,19 +28,19 @@
 #include "umc_vc1_common_defs.h"
 
 //VC-1 Table 169: I-Picture CBPCY VLC Table
-const extern Ipp32s VC1_CBPCY_Ipic[];
+const extern int32_t VC1_CBPCY_Ipic[];
 
 //VC-1 Table 170: P and B-Picture CBPCY VLC Table 0
-const extern Ipp32s VC1_CBPCY_PBpic_tbl0[];
+const extern int32_t VC1_CBPCY_PBpic_tbl0[];
 
 //VC-1 Table 171: P and B-Picture CBPCY VLC Table 1
-const extern Ipp32s VC1_CBPCY_PBpic_tbl1[];
+const extern int32_t VC1_CBPCY_PBpic_tbl1[];
 
 //VC-1 Table 172: P and B-Picture CBPCY VLC Table 2
-const extern Ipp32s VC1_CBPCY_PBpic_tbl2[];
+const extern int32_t VC1_CBPCY_PBpic_tbl2[];
 
 //VC-1 Table 173: P and B-Picture CBPCY VLC Table 3
-const extern Ipp32s VC1_CBPCY_PBpic_tbl3[];
+const extern int32_t VC1_CBPCY_PBpic_tbl3[];
 
 #endif //__umc_vc1_common_cbpcy_tbl_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

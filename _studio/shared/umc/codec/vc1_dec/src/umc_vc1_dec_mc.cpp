@@ -30,7 +30,7 @@
 #ifdef ALLOW_SW_VC1_FALLBACK
 void SZTables(VC1Context* pContext)
 {
-    Ipp32s CurrIndex = pContext->m_frmBuff.m_iCurrIndex;
+    int32_t CurrIndex = pContext->m_frmBuff.m_iCurrIndex;
 
     pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[0] = 0;
     pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[1] = 0;
@@ -44,9 +44,9 @@ void SZTables(VC1Context* pContext)
 }
 void CreateComplexICTablesForFields(VC1Context* pContext)
 {
-    Ipp32s PrevIndex = pContext->m_frmBuff.m_iPrevIndex;
-    Ipp32s CurrIndex = pContext->m_frmBuff.m_iCurrIndex;
-    Ipp32s i;
+    int32_t PrevIndex = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t CurrIndex = pContext->m_frmBuff.m_iCurrIndex;
+    int32_t i;
     {
         {
             if (pContext->m_frmBuff.m_pFrames[CurrIndex].ICFieldMask & 4) // top of first
@@ -71,7 +71,7 @@ void CreateComplexICTablesForFields(VC1Context* pContext)
 
     if (pContext->m_frmBuff.m_pFrames[PrevIndex].FCM == VC1_FieldInterlace)
     {
-        Ipp32s j;
+        int32_t j;
         for (j = 0; j < 2; j++)
         {
             if (pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j])
@@ -79,8 +79,8 @@ void CreateComplexICTablesForFields(VC1Context* pContext)
                 if(pContext->m_frmBuff.m_pFrames[PrevIndex].LumaTableCurr[j])
                 {
                     //need to twice IC
-                    Ipp8u temp_luma[256];
-                    Ipp8u temp_chroma[256];
+                    uint8_t temp_luma[256];
+                    uint8_t temp_chroma[256];
                     for (i = 0; i < 256; i++)
                     {
                         temp_luma[i] = pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j][pContext->m_frmBuff.m_pFrames[PrevIndex].LumaTableCurr[j][i]];
@@ -107,10 +107,10 @@ void CreateComplexICTablesForFields(VC1Context* pContext)
 }
 void CreateComplexICTablesForFrame(VC1Context* pContext)
 {
-    Ipp32s PrevIndex = pContext->m_frmBuff.m_iPrevIndex;
-    Ipp32s i;
+    int32_t PrevIndex = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t i;
     {
-        Ipp32s CurrIndex = pContext->m_frmBuff.m_iCurrIndex;
+        int32_t CurrIndex = pContext->m_frmBuff.m_iCurrIndex;
 
         if (pContext->m_bIntensityCompensation)
         {
@@ -129,8 +129,8 @@ void CreateComplexICTablesForFrame(VC1Context* pContext)
 
         if (pContext->m_frmBuff.m_pFrames[PrevIndex].FCM == VC1_FieldInterlace)
         {
-            Ipp32s j;
-            Ipp32s ICFieldNum = -1;
+            int32_t j;
+            int32_t ICFieldNum = -1;
             for (j = 0; j < 2; j++)
             {
                 if (pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j])
@@ -139,8 +139,8 @@ void CreateComplexICTablesForFrame(VC1Context* pContext)
                     if(pContext->m_frmBuff.m_pFrames[PrevIndex].LumaTableCurr[j])
                     {
                         ICFieldNum = j;
-                        Ipp8u temp_luma[256];
-                        Ipp8u temp_chroma[256];
+                        uint8_t temp_luma[256];
+                        uint8_t temp_chroma[256];
                         for (i = 0; i < 256; i++)
                         {
                             temp_luma[i] = pContext->m_frmBuff.m_pFrames[CurrIndex].LumaTablePrev[j][pContext->m_frmBuff.m_pFrames[PrevIndex].LumaTableCurr[j][i]];
@@ -169,14 +169,14 @@ void CreateComplexICTablesForFrame(VC1Context* pContext)
 }
 void UpdateICTablesForSecondField(VC1Context* pContext)
 {
-    Ipp32s CurrIndex = pContext->m_frmBuff.m_iCurrIndex;
-    Ipp32s i;
+    int32_t CurrIndex = pContext->m_frmBuff.m_iCurrIndex;
+    int32_t i;
 
     if ((pContext->m_frmBuff.m_pFrames[CurrIndex].ICFieldMask & 2)&&
         (pContext->m_frmBuff.m_pFrames[CurrIndex].ICFieldMask & 8))
     {
-        Ipp8u temp_luma[256];
-        Ipp8u temp_chroma[256];
+        uint8_t temp_luma[256];
+        uint8_t temp_chroma[256];
 
         for (i = 0; i < 256; i++)
         {

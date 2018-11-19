@@ -41,27 +41,27 @@
 #include "umc_vc1_dec_exception.h"
 using namespace UMC::VC1Exceptions;
 
-typedef Ipp8u (*DCPrediction)(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData,
-                              Ipp32s blk_num, Ipp16s* pBlock, Ipp32u FCM);
+typedef uint8_t (*DCPrediction)(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData,
+                              int32_t blk_num, int16_t* pBlock, uint32_t FCM);
 
-//static IppiSize QuantSize[4] = {VC1_PIXEL_IN_BLOCK, VC1_PIXEL_IN_BLOCK,
+//static mfxSize QuantSize[4] = {VC1_PIXEL_IN_BLOCK, VC1_PIXEL_IN_BLOCK,
 //                                VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK,
 //                                VC1_PIXEL_IN_BLOCK, VC1_PIXEL_IN_BLOCK/2,
 //                               VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK/2};
 
-typedef IppStatus (*Reconstruct)(Ipp16s* pSrcDst,
-                                 Ipp32s srcDstStep,
-                                 Ipp32s doubleQuant,
-                                 Ipp32u BlkType);
+typedef IppStatus (*Reconstruct)(int16_t* pSrcDst,
+                                 int32_t srcDstStep,
+                                 int32_t doubleQuant,
+                                 uint32_t BlkType);
 
 static Reconstruct Reconstruct_table[] = {
         _own_ippiReconstructInterUniform_VC1_16s_C1IR,
         _own_ippiReconstructInterNonuniform_VC1_16s_C1IR
 };
 
-IppStatus _own_ippiReconstructIntraUniform_VC1_16s_C1IR    (Ipp16s* pSrcDst, Ipp32s srcDstStep, Ipp32s doubleQuant)
+IppStatus _own_ippiReconstructIntraUniform_VC1_16s_C1IR    (int16_t* pSrcDst, int32_t srcDstStep, int32_t doubleQuant)
 {
-    IppiSize  DstSizeNZ;
+    mfxSize  DstSizeNZ;
     _own_ippiQuantInvIntraUniform_VC1_16s_C1IR(pSrcDst,
                                                srcDstStep,
                                                doubleQuant,
@@ -73,9 +73,9 @@ IppStatus _own_ippiReconstructIntraUniform_VC1_16s_C1IR    (Ipp16s* pSrcDst, Ipp
                                      DstSizeNZ);
     return ippStsNoErr;
 }
-IppStatus _own_ippiReconstructIntraNonuniform_VC1_16s_C1IR (Ipp16s* pSrcDst, Ipp32s srcDstStep, Ipp32s doubleQuant)
+IppStatus _own_ippiReconstructIntraNonuniform_VC1_16s_C1IR (int16_t* pSrcDst, int32_t srcDstStep, int32_t doubleQuant)
 {
-    IppiSize  DstSizeNZ;
+    mfxSize  DstSizeNZ;
     _own_ippiQuantInvIntraNonuniform_VC1_16s_C1IR(pSrcDst,
                                                   srcDstStep,
                                                   doubleQuant,
@@ -87,14 +87,14 @@ IppStatus _own_ippiReconstructIntraNonuniform_VC1_16s_C1IR (Ipp16s* pSrcDst, Ipp
                                      DstSizeNZ);
     return ippStsNoErr;
 }
-// Ipp32u BlkType -     VC1_BLK_INTER8X8   = 0x1,
+// uint32_t BlkType -     VC1_BLK_INTER8X8   = 0x1,
 //                      VC1_BLK_INTER8X4   = 0x2,
 //                      VC1_BLK_INTER4X8   = 0x4,
 //                      VC1_BLK_INTER4X4   = 0x8,
-IppStatus _own_ippiReconstructInterUniform_VC1_16s_C1IR    (Ipp16s* pSrcDst, Ipp32s srcDstStep, Ipp32s doubleQuant,Ipp32u BlkType)
+IppStatus _own_ippiReconstructInterUniform_VC1_16s_C1IR    (int16_t* pSrcDst, int32_t srcDstStep, int32_t doubleQuant,uint32_t BlkType)
 {
-    IppiSize  DstSizeNZ[4];
-    static IppiSize QuantSize[4] = {
+    mfxSize  DstSizeNZ[4];
+    static mfxSize QuantSize[4] = {
                                     { VC1_PIXEL_IN_BLOCK,   VC1_PIXEL_IN_BLOCK },
                                     { VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK },
                                     { VC1_PIXEL_IN_BLOCK,   VC1_PIXEL_IN_BLOCK/2 },
@@ -206,10 +206,10 @@ IppStatus _own_ippiReconstructInterUniform_VC1_16s_C1IR    (Ipp16s* pSrcDst, Ipp
     }
     return ippStsNoErr;
 }
-IppStatus _own_ippiReconstructInterNonuniform_VC1_16s_C1IR (Ipp16s* pSrcDst, Ipp32s srcDstStep, Ipp32s doubleQuant,Ipp32u BlkType)
+IppStatus _own_ippiReconstructInterNonuniform_VC1_16s_C1IR (int16_t* pSrcDst, int32_t srcDstStep, int32_t doubleQuant,uint32_t BlkType)
 {
-    IppiSize  DstSizeNZ[4];
-    static IppiSize QuantSize[4] = {
+    mfxSize  DstSizeNZ[4];
+    static mfxSize QuantSize[4] = {
                                     { VC1_PIXEL_IN_BLOCK,   VC1_PIXEL_IN_BLOCK },
                                     { VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK },
                                     { VC1_PIXEL_IN_BLOCK,   VC1_PIXEL_IN_BLOCK/2 },
@@ -321,40 +321,40 @@ IppStatus _own_ippiReconstructInterNonuniform_VC1_16s_C1IR (Ipp16s* pSrcDst, Ipp
     }
     return ippStsNoErr;
 }
-inline static void PredictACLeft(Ipp16s* pCurrAC, Ipp32u CurrQuant,
-                                 Ipp16s* pPredAC, Ipp32u PredQuant,
-                                 Ipp32s Step)
+inline static void PredictACLeft(int16_t* pCurrAC, uint32_t CurrQuant,
+                                 int16_t* pPredAC, uint32_t PredQuant,
+                                 int32_t Step)
 {
-    Ipp32s i;
-    Ipp32s Scale = VC1_DQScaleTbl[(CurrQuant-1)&63] * (PredQuant-1);
-    Ipp32u step = Step;
+    int32_t i;
+    int32_t Scale = VC1_DQScaleTbl[(CurrQuant-1)&63] * (PredQuant-1);
+    uint32_t step = Step;
 
     for (i = 1; i<VC1_PIXEL_IN_BLOCK; i++, step+=Step)
-        pCurrAC[step] = pCurrAC[step] + (Ipp16s)((pPredAC[i] * Scale + 0x20000)>>18);
+        pCurrAC[step] = pCurrAC[step] + (int16_t)((pPredAC[i] * Scale + 0x20000)>>18);
 }
 
-inline static void PredictACTop(Ipp16s* pCurrAC, Ipp32u CurrQuant,
-                                Ipp16s* pPredAC, Ipp32u PredQuant)
+inline static void PredictACTop(int16_t* pCurrAC, uint32_t CurrQuant,
+                                int16_t* pPredAC, uint32_t PredQuant)
 {
-    Ipp32s i;
-    Ipp32s Scale = VC1_DQScaleTbl[(CurrQuant-1)&63] * (PredQuant-1);
+    int32_t i;
+    int32_t Scale = VC1_DQScaleTbl[(CurrQuant-1)&63] * (PredQuant-1);
 
     for (i = 1; i<VC1_PIXEL_IN_BLOCK; i++)
-        pCurrAC[i] = pCurrAC[i] + (Ipp16s)((pPredAC[i] * Scale + 0x20000)>>18);
+        pCurrAC[i] = pCurrAC[i] + (int16_t)((pPredAC[i] * Scale + 0x20000)>>18);
 }
 
 
-static Ipp8u GetDCACPrediction(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData,
-                               Ipp32s blk_num, Ipp16s* pBlock, Ipp32u FCM)
+static uint8_t GetDCACPrediction(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData,
+                               int32_t blk_num, int16_t* pBlock, uint32_t FCM)
 {
-    Ipp8u blkType = VC1_BLK_INTRA;
+    uint8_t blkType = VC1_BLK_INTRA;
 
     VC1DCPredictors DCPred;
-    Ipp8u PredPattern;
-    Ipp32u CurrQuant = PredData->DoubleQuant[2];
+    uint8_t PredPattern;
+    uint32_t CurrQuant = PredData->DoubleQuant[2];
 
-    Ipp16s DCA, DCB, DCC, DC = 0;
-    Ipp32u step = VC1_pixel_table[blk_num];
+    int16_t DCA, DCB, DCC, DC = 0;
+    uint32_t step = VC1_pixel_table[blk_num];
 
     memcpy_s(&DCPred, sizeof(VC1DCPredictors), PredData, sizeof(VC1DCPredictors));
     PredPattern = DCPred.BlkPattern[blk_num];
@@ -483,15 +483,15 @@ static Ipp8u GetDCACPrediction(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData
     return blkType;
 }
 
-static Ipp8u GetDCPrediction(VC1DCBlkParam* CurrBlk,VC1DCPredictors* PredData,
-                             Ipp32s blk_num, Ipp16s* pBlock, Ipp32u FCM)
+static uint8_t GetDCPrediction(VC1DCBlkParam* CurrBlk,VC1DCPredictors* PredData,
+                             int32_t blk_num, int16_t* pBlock, uint32_t FCM)
 {
-    Ipp8u blkType = VC1_BLK_INTRA;
+    uint8_t blkType = VC1_BLK_INTRA;
 
     VC1DCPredictors DCPred;
-    Ipp8u PredPattern;
+    uint8_t PredPattern;
 
-    Ipp16s DCA, DCB, DCC = 0;
+    int16_t DCA, DCB, DCC = 0;
 
 
     memcpy_s(&DCPred, sizeof(VC1DCPredictors), PredData, sizeof(VC1DCPredictors));
@@ -611,18 +611,18 @@ static const DCPrediction DCPredictionTable[] =
         (DCPrediction)(GetDCACPrediction)
 };
 
-VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, Ipp32s blk_num, Ipp32u ACPRED)
+VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, int32_t blk_num, uint32_t ACPRED)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
+    int16_t*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
     VC1Block* pBlock    = &pContext->m_pCurrMB->m_pBlocks[blk_num];
     VC1DCMBParam*  CurrDC = pContext->CurrDC;
     VC1DCBlkParam* CurrBlk = &CurrDC->DCBlkPred[blk_num];
     VC1DCPredictors* DCPred = &pContext->DCPred;
 
     int ret;
-    Ipp32s DCCOEF;
-    Ipp32s DCSIGN;
-    Ipp32u i = 0;
+    int32_t DCCOEF;
+    int32_t DCSIGN;
+    uint32_t i = 0;
 
 // need to calculate bits for residual data
     ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
@@ -636,7 +636,7 @@ VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, Ipp32s blk_num, Ipp32u A
 
     if(DCCOEF != 0)
     {
-        Ipp32u quant =  (CurrDC->DoubleQuant >> 1);
+        uint32_t quant =  (CurrDC->DoubleQuant >> 1);
 
         if(DCCOEF == IPPVC_ESCAPE)
         {
@@ -655,7 +655,7 @@ VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, Ipp32s blk_num, Ipp32u A
         }
         else
         {  // DCCOEF is not IPPVC_ESCAPE
-           Ipp32s tmp;
+           int32_t tmp;
            if(quant == 1)
            {
               VC1_GET_BITS(2, tmp);
@@ -672,7 +672,7 @@ VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, Ipp32s blk_num, Ipp32u A
          DCCOEF = (1 - (DCSIGN<<1))* DCCOEF;
     }
 
-    CurrBlk->DC = (Ipp16s)DCCOEF;
+    CurrBlk->DC = (int16_t)DCCOEF;
 
     pBlock->blkType = DCPredictionTable[ACPRED](CurrBlk, DCPred, blk_num, m_pBlock, pContext->m_picLayerHeader->FCM);
 
@@ -683,7 +683,7 @@ VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, Ipp32s blk_num, Ipp32u A
 
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
-        const Ipp8u* curr_scan = pContext->m_pSingleMB->ZigzagTable[VC1_BlockTable[pBlock->blkType]];
+        const uint8_t* curr_scan = pContext->m_pSingleMB->ZigzagTable[VC1_BlockTable[pBlock->blkType]];
         if(curr_scan==NULL)
             return VC1_FAIL;
 
@@ -706,9 +706,9 @@ VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, Ipp32s blk_num, Ipp32u A
     //NEED!
                 VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                             "Block %d\n", blk_num);
-                for(Ipp32u k = 0; k<8; k++)
+                for(uint32_t k = 0; k<8; k++)
                 {
-                    for (Ipp32u t = 0; t<8; t++)
+                    for (uint32_t t = 0; t<8; t++)
                     {
                     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "%d  ", m_pBlock[k*16 + t]);
@@ -720,9 +720,9 @@ VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, Ipp32s blk_num, Ipp32u A
     return VC1_OK;
 }
 
-VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u ACPRED)
+VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, int32_t blk_num,uint32_t ACPRED)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
+    int16_t*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
     VC1Block* pBlock    = &pContext->m_pCurrMB->m_pBlocks[blk_num];
     VC1DCMBParam*  CurrDC = pContext->CurrDC;
     VC1DCBlkParam* CurrBlk = &CurrDC->DCBlkPred[blk_num];
@@ -730,9 +730,9 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
     VC1DCPredictors* DCPred = &pContext->DCPred;
 
     int ret;
-    Ipp32s DCCOEF;
-    Ipp32s DCSIGN;
-    Ipp32u i = 0;
+    int32_t DCCOEF;
+    int32_t DCSIGN;
+    uint32_t i = 0;
 
     // need to calculate bits for residual data
     ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
@@ -746,7 +746,7 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
 
     if(DCCOEF != 0)
     {
-        Ipp32u quant =  (CurrDC->DoubleQuant >> 1);
+        uint32_t quant =  (CurrDC->DoubleQuant >> 1);
 
         if(DCCOEF == IPPVC_ESCAPE)
         {
@@ -765,7 +765,7 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
         }
         else
         {  // DCCOEF is not IPPVC_ESCAPE
-           Ipp32s tmp;
+           int32_t tmp;
            if(quant == 1)
            {
               VC1_GET_BITS(2, tmp);
@@ -783,7 +783,7 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
         DCCOEF = (1 - (DCSIGN<<1))* DCCOEF;
     }
 
-    CurrBlk->DC = (Ipp16s)DCCOEF;
+    CurrBlk->DC = (int16_t)DCCOEF;
 
 
     pBlock->blkType = DCPredictionTable[ACPRED](CurrBlk, DCPred, blk_num, m_pBlock, pContext->m_picLayerHeader->FCM);
@@ -794,7 +794,7 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
 
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
-        const Ipp8u* curr_scan = pContext->m_pSingleMB->ZigzagTable[VC1_BlockTable[pBlock->blkType]];
+        const uint8_t* curr_scan = pContext->m_pSingleMB->ZigzagTable[VC1_BlockTable[pBlock->blkType]];
         if(curr_scan==NULL)
             return VC1_FAIL;
 
@@ -817,9 +817,9 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
 //NEED!
                 VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                             "Block %d\n", blk_num);
-                for(Ipp32u k = 0; k<8; k++)
+                for(uint32_t k = 0; k<8; k++)
                 {
-                    for (Ipp32u t = 0; t<8; t++)
+                    for (uint32_t t = 0; t<8; t++)
                     {
                     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "%d  ", m_pBlock[k*8 + t]);
@@ -831,13 +831,13 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
     return VC1_OK;
 }
 
-VC1Status VC1ProcessDiffIntra(VC1Context* pContext, Ipp32s blk_num)
+VC1Status VC1ProcessDiffIntra(VC1Context* pContext, int32_t blk_num)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock; //memory for 16s diffs
-    IppiSize  roiSize;
+    int16_t*   m_pBlock  = pContext->m_pBlock; //memory for 16s diffs
+    mfxSize  roiSize;
     roiSize.height = VC1_PIXEL_IN_BLOCK;
     roiSize.width = VC1_PIXEL_IN_BLOCK;
-    Ipp16s bias = 128;
+    int16_t bias = 128;
 
 
     if ((pContext->m_seqLayerHeader.PROFILE != VC1_PROFILE_ADVANCED)&&
@@ -846,7 +846,7 @@ VC1Status VC1ProcessDiffIntra(VC1Context* pContext, Ipp32s blk_num)
          bias = pContext->m_pCurrMB->bias;
 
      *(pContext->m_pBlock+VC1_BlkStart[blk_num]) = *(pContext->m_pBlock+VC1_BlkStart[blk_num])
-                                                   * (Ipp16s)pContext->CurrDC->DCStepSize;
+                                                   * (int16_t)pContext->CurrDC->DCStepSize;
 
      if(pContext->m_picLayerHeader->QuantizationType == VC1_QUANTIZER_UNIFORM)
          _own_ippiReconstructIntraUniform_VC1_16s_C1IR(pContext->m_pBlock+ VC1_BlkStart[blk_num],
@@ -865,12 +865,12 @@ VC1Status VC1ProcessDiffIntra(VC1Context* pContext, Ipp32s blk_num)
     return VC1_OK;
 }
 
-VC1Status BLKLayer_Inter_Luma_Adv(VC1Context* pContext, Ipp32s blk_num)
+VC1Status BLKLayer_Inter_Luma_Adv(VC1Context* pContext, int32_t blk_num)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
+    int16_t*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
     VC1Block* pBlock    = &pContext->m_pCurrMB->m_pBlocks[blk_num];
-    const Ipp8u* curr_scan = NULL;
-    Ipp32u numCoef = 0;
+    const uint8_t* curr_scan = NULL;
+    uint32_t numCoef = 0;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader * picHeader = pContext->m_picLayerHeader;
 
@@ -1034,9 +1034,9 @@ VC1Status BLKLayer_Inter_Luma_Adv(VC1Context* pContext, Ipp32s blk_num)
 //NEED!
                 VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "Block %d\n", blk_num);
-                for(Ipp32u k = 0; k<8; k++)
+                for(uint32_t k = 0; k<8; k++)
                 {
-                    for (Ipp32u t = 0; t<8; t++)
+                    for (uint32_t t = 0; t<8; t++)
                     {
                     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "%d  ", m_pBlock[k*16 + t]);
@@ -1048,12 +1048,12 @@ VC1Status BLKLayer_Inter_Luma_Adv(VC1Context* pContext, Ipp32s blk_num)
     return VC1_OK;
 }
 
-VC1Status BLKLayer_Inter_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num)
+VC1Status BLKLayer_Inter_Chroma_Adv(VC1Context* pContext, int32_t blk_num)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
+    int16_t*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
     VC1Block* pBlock    = &pContext->m_pCurrMB->m_pBlocks[blk_num];
-    const Ipp8u* curr_scan = NULL;
-    Ipp32u numCoef = 0;
+    const uint8_t* curr_scan = NULL;
+    uint32_t numCoef = 0;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader * picHeader = pContext->m_picLayerHeader;
 
@@ -1211,9 +1211,9 @@ VC1Status BLKLayer_Inter_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num)
     //NEED!
                 VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "Block %d\n", blk_num);
-                for(Ipp32u k = 0; k<8; k++)
+                for(uint32_t k = 0; k<8; k++)
                 {
-                    for (Ipp32u t = 0; t<8; t++)
+                    for (uint32_t t = 0; t<8; t++)
                     {
                     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "%d  ", m_pBlock[k*8 + t]);
@@ -1225,9 +1225,9 @@ VC1Status BLKLayer_Inter_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num)
     return VC1_OK;
 }
 
-VC1Status VC1ProcessDiffInter(VC1Context* pContext,Ipp32s blk_num)
+VC1Status VC1ProcessDiffInter(VC1Context* pContext,int32_t blk_num)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num]; //memory for 16s diffs
+    int16_t*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num]; //memory for 16s diffs
 
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
@@ -1239,19 +1239,19 @@ VC1Status VC1ProcessDiffInter(VC1Context* pContext,Ipp32s blk_num)
     }
     return VC1_OK;
 }
-VC1Status VC1ProcessDiffSpeedUpIntra(VC1Context* pContext,Ipp32s blk_num)
+VC1Status VC1ProcessDiffSpeedUpIntra(VC1Context* pContext,int32_t blk_num)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[0]; //memory for 16s diffs
-    IppiSize  roiSize;
+    int16_t*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[0]; //memory for 16s diffs
+    mfxSize  roiSize;
     roiSize.height = VC1_PIXEL_IN_BLOCK;
     roiSize.width = VC1_PIXEL_IN_BLOCK;
-    IppiSize  DstSizeNZ;
-    Ipp16s bias = 128;
+    mfxSize  DstSizeNZ;
+    int16_t bias = 128;
 
     m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
     //DC
     *(pContext->m_pBlock+VC1_BlkStart[blk_num]) = *(pContext->m_pBlock+VC1_BlkStart[blk_num])
-        * (Ipp16s)pContext->CurrDC->DCStepSize;
+        * (int16_t)pContext->CurrDC->DCStepSize;
 
     if ((pContext->m_seqLayerHeader.PROFILE != VC1_PROFILE_ADVANCED)&&
         ((pContext->m_picLayerHeader->PTYPE == VC1_I_FRAME)||
@@ -1281,14 +1281,14 @@ VC1Status VC1ProcessDiffSpeedUpIntra(VC1Context* pContext,Ipp32s blk_num)
     return VC1_OK;
 
 }
-VC1Status VC1ProcessDiffSpeedUpInter(VC1Context* pContext,Ipp32s blk_num)
+VC1Status VC1ProcessDiffSpeedUpInter(VC1Context* pContext,int32_t blk_num)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num]; //memory for 16s diffs
-    IppiSize  roiSize;
+    int16_t*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num]; //memory for 16s diffs
+    mfxSize  roiSize;
     roiSize.height = VC1_PIXEL_IN_BLOCK;
     roiSize.width = VC1_PIXEL_IN_BLOCK;
-    IppiSize  DstSizeNZ;
-    IppiSize QuantSize = {4,4};
+    mfxSize  DstSizeNZ;
+    mfxSize QuantSize = {4,4};
     m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
     VC1Block* pBlock    = &pContext->m_pCurrMB->m_pBlocks[blk_num];
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
@@ -1340,13 +1340,13 @@ VC1Status VC1ProcessDiffSpeedUpInter(VC1Context* pContext,Ipp32s blk_num)
         }
     return VC1_OK;
 }
-void write_Intraluma_to_interlace_frame_Adv(VC1MB * pCurrMB, Ipp16s* pBlock)
+void write_Intraluma_to_interlace_frame_Adv(VC1MB * pCurrMB, int16_t* pBlock)
 {
-    IppiSize roiSize;
-    Ipp32u planeStep[2] = {pCurrMB->currYPitch,
+    mfxSize roiSize;
+    uint32_t planeStep[2] = {pCurrMB->currYPitch,
                            pCurrMB->currYPitch << 1};
 
-    Ipp32u planeOffset[2] = {pCurrMB->currYPitch << 3,
+    uint32_t planeOffset[2] = {pCurrMB->currYPitch << 3,
                              pCurrMB->currYPitch};
 
     roiSize.height = VC1_PIXEL_IN_BLOCK;
@@ -1367,26 +1367,26 @@ void write_Intraluma_to_interlace_frame_Adv(VC1MB * pCurrMB, Ipp16s* pBlock)
 
 
 void write_Interluma_to_interlace_frame_MC_Adv(VC1MB * pCurrMB,
-                                               const Ipp8u* pDst,
-                                               Ipp32u dstStep,
-                                               Ipp16s* pBlock)
+                                               const uint8_t* pDst,
+                                               uint32_t dstStep,
+                                               int16_t* pBlock)
 {
-    Ipp8u fieldFlag = (Ipp8u)(pCurrMB->FIELDTX*2 + VC1_IS_MVFIELD(pCurrMB->mbType));
+    uint8_t fieldFlag = (uint8_t)(pCurrMB->FIELDTX*2 + VC1_IS_MVFIELD(pCurrMB->mbType));
 
-    Ipp32u predOffset[4] = {dstStep << 3, dstStep << 3, dstStep, dstStep << 3};
+    uint32_t predOffset[4] = {dstStep << 3, dstStep << 3, dstStep, dstStep << 3};
 
-    Ipp32s predStep[4] = {static_cast<Ipp32s>(dstStep),   static_cast<Ipp32s>(dstStep),
-                          static_cast<Ipp32s>(dstStep << 1), static_cast<Ipp32s>(dstStep)};
+    int32_t predStep[4] = {static_cast<int32_t>(dstStep),   static_cast<int32_t>(dstStep),
+                          static_cast<int32_t>(dstStep << 1), static_cast<int32_t>(dstStep)};
 
-    Ipp32u planeOffset[4] = {pCurrMB->currYPitch << 3 ,  pCurrMB->currYPitch,
+    uint32_t planeOffset[4] = {pCurrMB->currYPitch << 3 ,  pCurrMB->currYPitch,
                                pCurrMB->currYPitch,  pCurrMB->currYPitch};
 
-    Ipp32u planeStep[4] = {pCurrMB->currYPitch,      pCurrMB->currYPitch << 1,
+    uint32_t planeStep[4] = {pCurrMB->currYPitch,      pCurrMB->currYPitch << 1,
                            pCurrMB->currYPitch << 1,    pCurrMB->currYPitch << 1};
     // Skip MB
     if (pCurrMB->SkipAndDirectFlag & 2)
     {
-        IppiSize  roiSize;
+        mfxSize  roiSize;
         roiSize.width = 16;
         roiSize.height = 8;
         ippiCopy_8u_C1R(pDst,
@@ -1403,9 +1403,9 @@ void write_Interluma_to_interlace_frame_MC_Adv(VC1MB * pCurrMB,
     }
     else
     {
-        Ipp16u blockOffset[4] = {128, VC1_PIXEL_IN_LUMA, 128, 128};
+        uint16_t blockOffset[4] = {128, VC1_PIXEL_IN_LUMA, 128, 128};
 
-        Ipp16u blockStep[4] = {VC1_PIXEL_IN_LUMA << 1,   VC1_PIXEL_IN_LUMA << 2,
+        uint16_t blockStep[4] = {VC1_PIXEL_IN_LUMA << 1,   VC1_PIXEL_IN_LUMA << 2,
             VC1_PIXEL_IN_LUMA << 1,   VC1_PIXEL_IN_LUMA << 1};
 
         ippiMC16x8_8u_C1(pDst,  predStep[fieldFlag],
@@ -1424,29 +1424,29 @@ void write_Interluma_to_interlace_frame_MC_Adv(VC1MB * pCurrMB,
 
 
 void write_Interluma_to_interlace_frame_MC_Adv_Copy(VC1MB * pCurrMB,
-                                                   Ipp16s* pBlock)
+                                                   int16_t* pBlock)
 {
-    Ipp8u pPred[64*4];
-    Ipp8u fieldFlag = (Ipp8u)(pCurrMB->FIELDTX*2 + VC1_IS_MVFIELD(pCurrMB->mbType));
+    uint8_t pPred[64*4];
+    uint8_t fieldFlag = (uint8_t)(pCurrMB->FIELDTX*2 + VC1_IS_MVFIELD(pCurrMB->mbType));
 
-    Ipp16u predOffset[4] = {64*2, 64*2, VC1_PIXEL_IN_LUMA, 64*2};
-    Ipp16u predStep[4] = {VC1_PIXEL_IN_LUMA,
+    uint16_t predOffset[4] = {64*2, 64*2, VC1_PIXEL_IN_LUMA, 64*2};
+    uint16_t predStep[4] = {VC1_PIXEL_IN_LUMA,
         VC1_PIXEL_IN_LUMA,
         2*VC1_PIXEL_IN_LUMA,
         VC1_PIXEL_IN_LUMA
     };
-    Ipp16u blockOffset[4] = {64*2, VC1_PIXEL_IN_LUMA, 64*2, 64*2};
-    Ipp16u blockStep[4] = {2*VC1_PIXEL_IN_LUMA,
+    uint16_t blockOffset[4] = {64*2, VC1_PIXEL_IN_LUMA, 64*2, 64*2};
+    uint16_t blockStep[4] = {2*VC1_PIXEL_IN_LUMA,
         2*2*VC1_PIXEL_IN_LUMA,
         2*VC1_PIXEL_IN_LUMA,
         2*VC1_PIXEL_IN_LUMA
     };
 
-    Ipp32u planeOffset[4] = {8*pCurrMB->currYPitch,
+    uint32_t planeOffset[4] = {8*pCurrMB->currYPitch,
         pCurrMB->currYPitch,
         pCurrMB->currYPitch,
         pCurrMB->currYPitch};
-    Ipp32u planeStep[4] = {pCurrMB->currYPitch,
+    uint32_t planeStep[4] = {pCurrMB->currYPitch,
         pCurrMB->currYPitch*2,
         pCurrMB->currYPitch*2,
         pCurrMB->currYPitch*2
@@ -1472,21 +1472,21 @@ void write_Interluma_to_interlace_frame_MC_Adv_Copy(VC1MB * pCurrMB,
         planeStep[fieldFlag], 0, 0);
 }
 void write_Interluma_to_interlace_B_frame_MC_Adv(VC1MB * pCurrMB,
-                                               const Ipp8u* pDst1, Ipp32u dstStep1,
-                                               const Ipp8u* pDst2, Ipp32u dstStep2,
-                                               Ipp16s* pBlock)
+                                               const uint8_t* pDst1, uint32_t dstStep1,
+                                               const uint8_t* pDst2, uint32_t dstStep2,
+                                               int16_t* pBlock)
 {
-    Ipp8u pPred[256]={0};
+    uint8_t pPred[256]={0};
 
-    Ipp8u fieldFlag = (Ipp8u)(pCurrMB->FIELDTX*2 + VC1_IS_MVFIELD(pCurrMB->mbType));
+    uint8_t fieldFlag = (uint8_t)(pCurrMB->FIELDTX*2 + VC1_IS_MVFIELD(pCurrMB->mbType));
 
-    Ipp16u predOffset[4] = {8*VC1_PIXEL_IN_LUMA, 8*VC1_PIXEL_IN_LUMA, VC1_PIXEL_IN_LUMA, 8*VC1_PIXEL_IN_LUMA};
+    uint16_t predOffset[4] = {8*VC1_PIXEL_IN_LUMA, 8*VC1_PIXEL_IN_LUMA, VC1_PIXEL_IN_LUMA, 8*VC1_PIXEL_IN_LUMA};
 
-    Ipp16u predStep[4] = {VC1_PIXEL_IN_LUMA,   VC1_PIXEL_IN_LUMA,   2*VC1_PIXEL_IN_LUMA, VC1_PIXEL_IN_LUMA};
+    uint16_t predStep[4] = {VC1_PIXEL_IN_LUMA,   VC1_PIXEL_IN_LUMA,   2*VC1_PIXEL_IN_LUMA, VC1_PIXEL_IN_LUMA};
 
-    Ipp32u planeOffset[4] = {8*pCurrMB->currYPitch,  pCurrMB->currYPitch,
+    uint32_t planeOffset[4] = {8*pCurrMB->currYPitch,  pCurrMB->currYPitch,
                                pCurrMB->currYPitch,  pCurrMB->currYPitch};
-    Ipp32u planeStep[4] = {pCurrMB->currYPitch,      pCurrMB->currYPitch*2,
+    uint32_t planeStep[4] = {pCurrMB->currYPitch,      pCurrMB->currYPitch*2,
                            pCurrMB->currYPitch*2,    pCurrMB->currYPitch*2};
 
     ippiAverage16x16_8u_C1R(pDst1, dstStep1,  pDst2, dstStep2,
@@ -1495,7 +1495,7 @@ void write_Interluma_to_interlace_B_frame_MC_Adv(VC1MB * pCurrMB,
         // Skip MB
     if (pCurrMB->SkipAndDirectFlag & 2)
     {
-        IppiSize  roiSize;
+        mfxSize  roiSize;
         roiSize.width = 16;
         roiSize.height = 8;
         ippiCopy_8u_C1R(pPred,
@@ -1511,8 +1511,8 @@ void write_Interluma_to_interlace_B_frame_MC_Adv(VC1MB * pCurrMB,
     }
     else
     {
-        Ipp16u blockOffset[4] = {64*2, VC1_PIXEL_IN_LUMA, 64*2, 64*2};
-        Ipp16u blockStep[4] = {2*VC1_PIXEL_IN_LUMA,   2*2*VC1_PIXEL_IN_LUMA,
+        uint16_t blockOffset[4] = {64*2, VC1_PIXEL_IN_LUMA, 64*2, 64*2};
+        uint16_t blockStep[4] = {2*VC1_PIXEL_IN_LUMA,   2*2*VC1_PIXEL_IN_LUMA,
                            2*VC1_PIXEL_IN_LUMA,   2*VC1_PIXEL_IN_LUMA};
 
         ippiMC16x8_8u_C1(pPred,  predStep[fieldFlag],

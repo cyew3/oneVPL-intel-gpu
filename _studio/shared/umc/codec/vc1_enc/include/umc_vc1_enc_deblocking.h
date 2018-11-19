@@ -31,12 +31,12 @@ namespace UMC_VC1_ENCODER
 {
 
 void GetInternalBlockEdge(VC1EncoderMBInfo *pCur,
-                          Ipp8u& YFlagUp, Ipp8u& YFlagBot, Ipp8u& UFlagH, Ipp8u& VFlagH,
-                          Ipp8u& YFlagL,  Ipp8u& YFlagR,   Ipp8u& UFlagV, Ipp8u& VFlagV);
+                          uint8_t& YFlagUp, uint8_t& YFlagBot, uint8_t& UFlagH, uint8_t& VFlagH,
+                          uint8_t& YFlagL,  uint8_t& YFlagR,   uint8_t& UFlagV, uint8_t& VFlagV);
 
 typedef void (*fGetExternalEdge)(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer,
-                                Ipp8u& YFlag, Ipp8u& UFlag, Ipp8u& VFlag);
-typedef void (*fGetInternalEdge)(VC1EncoderMBInfo *pCur, Ipp8u& YFlagV, Ipp8u& YFlagH);
+                                uint8_t& YFlag, uint8_t& UFlag, uint8_t& VFlag);
+typedef void (*fGetInternalEdge)(VC1EncoderMBInfo *pCur, uint8_t& YFlagV, uint8_t& YFlagH);
 
 extern fGetExternalEdge GetExternalEdge[2][2]; //4 MV, VTS
 extern fGetInternalEdge GetInternalEdge[2][2]; //4 MV, VTS
@@ -48,9 +48,9 @@ extern fGetExternalEdge GetExternalEdge_SM[2][2]; //4 MV, VTS
 extern fGetInternalEdge GetInternalEdge_SM[2][2]; //4 MV, VTS
 
 //-----------------------Deblocking I frames-----------------------------------------
-inline void Deblock_I_LumaMB(Ipp8u* pY, Ipp32s YStep, Ipp32s quant)
+inline void Deblock_I_LumaMB(uint8_t* pY, int32_t YStep, int32_t quant)
 {
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -76,9 +76,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_LumaLeftMB(Ipp8u* pY, Ipp32s YStep, Ipp32s quant)
+inline void Deblock_I_LumaLeftMB(uint8_t* pY, int32_t YStep, int32_t quant)
 {
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -100,9 +100,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_LumaLeftBottomMB(Ipp8u* pY, Ipp32s YStep, Ipp32s quant)
+inline void Deblock_I_LumaLeftBottomMB(uint8_t* pY, int32_t YStep, int32_t quant)
 {
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -134,9 +134,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_LumaLeftTopBottomMB(Ipp8u* pY, Ipp32s YStep, Ipp32s quant)
+inline void Deblock_I_LumaLeftTopBottomMB(uint8_t* pY, int32_t YStep, int32_t quant)
 {
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -152,9 +152,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
-inline void Deblock_I_LumaBottomMB(Ipp8u* pY, Ipp32s YStep, Ipp32s quant)
+inline void Deblock_I_LumaBottomMB(uint8_t* pY, int32_t YStep, int32_t quant)
 {
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -196,9 +196,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_LumaTopBottomMB(Ipp8u* pY, Ipp32s YStep, Ipp32s quant)
+inline void Deblock_I_LumaTopBottomMB(uint8_t* pY, int32_t YStep, int32_t quant)
 {
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -220,9 +220,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_ChromaMB_YV12(Ipp8u* pU, Ipp32s UStep, Ipp32s quant)
+inline void Deblock_I_ChromaMB_YV12(uint8_t* pU, int32_t UStep, int32_t quant)
 {
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -237,9 +237,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_ChromaMB_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant)
+inline void Deblock_I_ChromaMB_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant)
 {
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -254,9 +254,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_ChromaLeftMB_YV12(Ipp8u* pU, Ipp32s UStep, Ipp32s quant)
+inline void Deblock_I_ChromaLeftMB_YV12(uint8_t* pU, int32_t UStep, int32_t quant)
 {
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -266,9 +266,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_ChromaLeftMB_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant)
+inline void Deblock_I_ChromaLeftMB_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant)
 {
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -280,9 +280,9 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
 
 
 
-inline void Deblock_I_ChromaBottomMB_YV12(Ipp8u* pU, Ipp32s UStep, Ipp32s quant)
+inline void Deblock_I_ChromaBottomMB_YV12(uint8_t* pU, int32_t UStep, int32_t quant)
 {
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -303,9 +303,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_ChromaBottomMB_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant)
+inline void Deblock_I_ChromaBottomMB_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant)
 {
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -326,9 +326,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_ChromaTopBottomMB_YV12(Ipp8u* pU, Ipp32s UStep, Ipp32s quant)
+inline void Deblock_I_ChromaTopBottomMB_YV12(uint8_t* pU, int32_t UStep, int32_t quant)
 {
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -340,9 +340,9 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_ChromaTopBottomMB_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant)
+inline void Deblock_I_ChromaTopBottomMB_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant)
 {
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -354,12 +354,12 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_I_FrameRow_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width, Ipp32u quant)
+inline void Deblock_I_FrameRow_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width, uint32_t quant)
 {
-    Ipp8u* pYMBDebl = pPlanes[0];
-    Ipp8u* pUMBDebl = pPlanes[1];
-    Ipp8u* pVMBDebl = pPlanes[2];
-    Ipp32u i = 1;
+    uint8_t* pYMBDebl = pPlanes[0];
+    uint8_t* pUMBDebl = pPlanes[1];
+    uint8_t* pVMBDebl = pPlanes[2];
+    uint32_t i = 1;
 
     Deblock_I_LumaLeftMB       (pYMBDebl, step[0], quant);
     Deblock_I_ChromaLeftMB_YV12(pUMBDebl, step[1], quant);
@@ -377,11 +377,11 @@ inline void Deblock_I_FrameRow_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u wi
     }
 }
 
-inline void Deblock_I_FrameRow_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width, Ipp32u quant)
+inline void Deblock_I_FrameRow_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width, uint32_t quant)
 {
-    Ipp8u* pYMBDebl  = pPlanes[0];
-    Ipp8u* pUVMBDebl = pPlanes[1];
-    Ipp32u i = 1;
+    uint8_t* pYMBDebl  = pPlanes[0];
+    uint8_t* pUVMBDebl = pPlanes[1];
+    uint32_t i = 1;
 
     Deblock_I_LumaLeftMB       (pYMBDebl, step[0], quant);
     Deblock_I_ChromaLeftMB_NV12(pUVMBDebl, step[1], quant);
@@ -396,12 +396,12 @@ inline void Deblock_I_FrameRow_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u wi
     }
 }
 
-inline void Deblock_I_FrameBottomRow_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width, Ipp32u quant)
+inline void Deblock_I_FrameBottomRow_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width, uint32_t quant)
 {
-    Ipp8u* pYMBDebl = pPlanes[0];
-    Ipp8u* pUMBDebl = pPlanes[1];
-    Ipp8u* pVMBDebl = pPlanes[2];
-    Ipp32u i = 1;
+    uint8_t* pYMBDebl = pPlanes[0];
+    uint8_t* pUMBDebl = pPlanes[1];
+    uint8_t* pVMBDebl = pPlanes[2];
+    uint32_t i = 1;
 
     Deblock_I_LumaLeftBottomMB     (pYMBDebl, step[0], quant);
     Deblock_I_ChromaLeftMB_YV12    (pUMBDebl, step[1], quant);
@@ -419,11 +419,11 @@ inline void Deblock_I_FrameBottomRow_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp
     }
 }
 
-inline void Deblock_I_FrameBottomRow_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width, Ipp32u quant)
+inline void Deblock_I_FrameBottomRow_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width, uint32_t quant)
 {
-    Ipp8u* pYMBDebl  = pPlanes[0];
-    Ipp8u* pUVMBDebl = pPlanes[1];
-    Ipp32u i = 1;
+    uint8_t* pYMBDebl  = pPlanes[0];
+    uint8_t* pUVMBDebl = pPlanes[1];
+    uint32_t i = 1;
 
     Deblock_I_LumaLeftBottomMB     (pYMBDebl, step[0], quant);
     Deblock_I_ChromaLeftMB_NV12    (pUVMBDebl, step[1], quant);
@@ -438,12 +438,12 @@ inline void Deblock_I_FrameBottomRow_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp
     }
 }
 
-inline void Deblock_I_FrameTopBottomRow_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width, Ipp32u quant)
+inline void Deblock_I_FrameTopBottomRow_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width, uint32_t quant)
 {
-    Ipp8u* pYMBDebl = pPlanes[0];
-    Ipp8u* pUMBDebl = pPlanes[1];
-    Ipp8u* pVMBDebl = pPlanes[2];
-    Ipp32u i = 1;
+    uint8_t* pYMBDebl = pPlanes[0];
+    uint8_t* pUMBDebl = pPlanes[1];
+    uint8_t* pVMBDebl = pPlanes[2];
+    uint32_t i = 1;
 
     Deblock_I_LumaLeftTopBottomMB(pYMBDebl, step[0], quant);
    
@@ -459,11 +459,11 @@ inline void Deblock_I_FrameTopBottomRow_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], 
     }
 }
 
-inline void Deblock_I_FrameTopBottomRow_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width, Ipp32u quant)
+inline void Deblock_I_FrameTopBottomRow_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width, uint32_t quant)
 {
-    Ipp8u* pYMBDebl  = pPlanes[0];
-    Ipp8u* pUVMBDebl = pPlanes[1];
-    Ipp32u i = 1;
+    uint8_t* pYMBDebl  = pPlanes[0];
+    uint8_t* pUVMBDebl = pPlanes[1];
+    uint32_t i = 1;
 
     Deblock_I_LumaLeftTopBottomMB(pYMBDebl, step[0], quant);
    
@@ -477,103 +477,103 @@ inline void Deblock_I_FrameTopBottomRow_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], 
     }
 }
 
-inline void Deblock_I_MB_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_MB_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaMB       (pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
     Deblock_I_ChromaMB_YV12(pPlanes[1] + j * VC1_ENC_CHROMA_SIZE, step[1], quant);
     Deblock_I_ChromaMB_YV12(pPlanes[2] + j * VC1_ENC_CHROMA_SIZE, step[2], quant);
 }
 
-inline void Deblock_I_MB_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_MB_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaMB       (pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
     Deblock_I_ChromaMB_NV12(pPlanes[1] + j * VC1_ENC_CHROMA_SIZE*2, step[1], quant);
 }
 
-inline void Deblock_I_LeftMB_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_LeftMB_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaLeftMB       (pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
     Deblock_I_ChromaLeftMB_YV12(pPlanes[1] + j * VC1_ENC_CHROMA_SIZE, step[1], quant);
     Deblock_I_ChromaLeftMB_YV12(pPlanes[2] + j * VC1_ENC_CHROMA_SIZE, step[2], quant);
 }
 
-inline void Deblock_I_LeftMB_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_LeftMB_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaLeftMB       (pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
     Deblock_I_ChromaLeftMB_NV12(pPlanes[1] + j * VC1_ENC_CHROMA_SIZE*2, step[1], quant);
 }
 
-inline void Deblock_I_LeftBottomMB_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_LeftBottomMB_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaLeftBottomMB (pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
     Deblock_I_ChromaLeftMB_YV12(pPlanes[1] + j * VC1_ENC_CHROMA_SIZE, step[1], quant);
     Deblock_I_ChromaLeftMB_YV12(pPlanes[2] + j * VC1_ENC_CHROMA_SIZE, step[2], quant);
 }
 
-inline void Deblock_I_LeftBottomMB_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_LeftBottomMB_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaLeftBottomMB (pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
     Deblock_I_ChromaLeftMB_NV12(pPlanes[1] + j * VC1_ENC_CHROMA_SIZE*2, step[1], quant);
 }
 
 
-inline void Deblock_I_LeftTopBottomMB_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_LeftTopBottomMB_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaLeftTopBottomMB(pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
 }
 
-inline void Deblock_I_LeftTopBottomMB_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_LeftTopBottomMB_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaLeftTopBottomMB(pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
 }
 
-inline void Deblock_I_TopBottomMB_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_TopBottomMB_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaTopBottomMB       (pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
     Deblock_I_ChromaTopBottomMB_YV12(pPlanes[1] + j * VC1_ENC_CHROMA_SIZE, step[1], quant);
     Deblock_I_ChromaTopBottomMB_YV12(pPlanes[2] + j * VC1_ENC_CHROMA_SIZE, step[2], quant);
 }
 
-inline void Deblock_I_TopBottomMB_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_TopBottomMB_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaTopBottomMB       (pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
     Deblock_I_ChromaTopBottomMB_NV12(pPlanes[1] + j * VC1_ENC_CHROMA_SIZE*2, step[1], quant);
 }
 
-inline void Deblock_I_BottomMB_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_BottomMB_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaBottomMB         (pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
     Deblock_I_ChromaBottomMB_YV12  (pPlanes[1] + j * VC1_ENC_CHROMA_SIZE, step[1], quant);
     Deblock_I_ChromaBottomMB_YV12  (pPlanes[2] + j * VC1_ENC_CHROMA_SIZE, step[2], quant);
 }
 
-inline void Deblock_I_BottomMB_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j)
+inline void Deblock_I_BottomMB_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j)
 {
     Deblock_I_LumaBottomMB         (pPlanes[0] + j * VC1_ENC_LUMA_SIZE, step[0], quant);
     Deblock_I_ChromaBottomMB_NV12  (pPlanes[1] + j * VC1_ENC_CHROMA_SIZE*2, step[1], quant);
 }
-inline void no_Deblocking_I_MB(Ipp8u* /*pPlanes*/[3], Ipp32u /*step*/[3], Ipp32u /*quant*/, Ipp32s /*j*/)
+inline void no_Deblocking_I_MB(uint8_t* /*pPlanes*/[3], uint32_t /*step*/[3], uint32_t /*quant*/, int32_t /*j*/)
 {
 };
 
 //-----------------------Deblocking P frames Variable Transform--------------------------------------
 
-inline void Deblock_P_LumaLeftMB_VT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaLeftMB_VT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* pTop,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopUpHorEdge    = pTop->GetLumaAdUppEdge();
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32u TopBotHorEdge   = pTop->GetLumaAdBotEdge();
+    int32_t TopUpHorEdge    = pTop->GetLumaAdUppEdge();
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    uint32_t TopBotHorEdge   = pTop->GetLumaAdBotEdge();
 
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
 
-    Ipp32s TopLeftVerEdge  = pTop->GetLumaAdLefEdge();
-    Ipp32s TopVerEdge      = pTop->GetLumaInVerEdge();
+    int32_t TopLeftVerEdge  = pTop->GetLumaAdLefEdge();
+    int32_t TopVerEdge      = pTop->GetLumaInVerEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -610,25 +610,25 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaMB_VT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaMB_VT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* pTop,
                                 VC1EncoderMBInfo* pLeftTop,
                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopUpHorEdge    = pTop->GetLumaAdUppEdge();
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32u TopBotHorEdge   = pTop->GetLumaAdBotEdge();
+    int32_t TopUpHorEdge    = pTop->GetLumaAdUppEdge();
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    uint32_t TopBotHorEdge   = pTop->GetLumaAdBotEdge();
 
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
 
-    Ipp32s LeftTopTopVerEdge = pTop->GetLumaExVerEdge();
-    Ipp32s TopVerEdge        = pTop->GetLumaInVerEdge();
-    Ipp32s TopLeftVerEdge    = pTop->GetLumaAdLefEdge();
+    int32_t LeftTopTopVerEdge = pTop->GetLumaExVerEdge();
+    int32_t TopVerEdge        = pTop->GetLumaInVerEdge();
+    int32_t TopLeftVerEdge    = pTop->GetLumaAdLefEdge();
 
-    Ipp32s LeftTopRightVerEdge  = pLeftTop->GetLumaAdRigEdge();
+    int32_t LeftTopRightVerEdge  = pLeftTop->GetLumaAdRigEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -676,26 +676,26 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaRightMB_VT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaRightMB_VT(uint8_t* pY, int32_t YStep, int32_t quant,
                                      VC1EncoderMBInfo* pCur,
                                      VC1EncoderMBInfo* pTop,
                                      VC1EncoderMBInfo* pLeftTop,
                                      VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopUpHorEdge    = pTop->GetLumaAdUppEdge();
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32u TopBotHorEdge   = pTop->GetLumaAdBotEdge();
+    int32_t TopUpHorEdge    = pTop->GetLumaAdUppEdge();
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    uint32_t TopBotHorEdge   = pTop->GetLumaAdBotEdge();
 
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
 
-    Ipp32s LeftTopRightVerEdge = pLeftTop->GetLumaAdRigEdge();
-    Ipp32s LeftTopTopVerEdge   = pTop->GetLumaExVerEdge();
+    int32_t LeftTopRightVerEdge = pLeftTop->GetLumaAdRigEdge();
+    int32_t LeftTopTopVerEdge   = pTop->GetLumaExVerEdge();
 
-    Ipp32s TopLeftVerEdge  = pTop->GetLumaAdLefEdge();
-    Ipp32s TopVerEdge      = pTop->GetLumaInVerEdge();
-    Ipp32s TopRightVerEdge = pTop->GetLumaAdRigEdge();
+    int32_t TopLeftVerEdge  = pTop->GetLumaAdLefEdge();
+    int32_t TopVerEdge      = pTop->GetLumaInVerEdge();
+    int32_t TopRightVerEdge = pTop->GetLumaAdRigEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -749,29 +749,29 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
 }
 
 
-inline void Deblock_P_LumaLeftBottomMB_VT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaLeftBottomMB_VT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* pTop,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopUpHorEdge    = pTop->GetLumaAdUppEdge();
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32u TopBotHorEdge   = pTop->GetLumaAdBotEdge();
+    int32_t TopUpHorEdge    = pTop->GetLumaAdUppEdge();
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    uint32_t TopBotHorEdge   = pTop->GetLumaAdBotEdge();
 
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
 
-    Ipp32s TopLeftVerEdge  = pTop->GetLumaAdLefEdge();
-    Ipp32s TopVerEdge      = pTop->GetLumaInVerEdge();
+    int32_t TopLeftVerEdge  = pTop->GetLumaAdLefEdge();
+    int32_t TopVerEdge      = pTop->GetLumaInVerEdge();
 
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurUpHorEdge    = pCur->GetLumaAdUppEdge();
-    Ipp32s CurBotHorEdge   = pCur->GetLumaAdBotEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurUpHorEdge    = pCur->GetLumaAdUppEdge();
+    int32_t CurBotHorEdge   = pCur->GetLumaAdBotEdge();
 
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
-    Ipp32s CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -833,20 +833,20 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaLeftTopBottomMB_VT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaLeftTopBottomMB_VT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* /*pTop*/,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurUpHorEdge    = pCur->GetLumaAdUppEdge();
-    Ipp32s CurBotHorEdge   = pCur->GetLumaAdBotEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurUpHorEdge    = pCur->GetLumaAdUppEdge();
+    int32_t CurBotHorEdge   = pCur->GetLumaAdBotEdge();
 
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
-    Ipp32s CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -878,36 +878,36 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaBottomMB_VT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaBottomMB_VT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* pTop,
                                 VC1EncoderMBInfo* pLeftTop,
                                 VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s TopUpHorEdge    = pTop->GetLumaAdUppEdge();
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32u TopBotHorEdge   = pTop->GetLumaAdBotEdge();
+    int32_t TopUpHorEdge    = pTop->GetLumaAdUppEdge();
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    uint32_t TopBotHorEdge   = pTop->GetLumaAdBotEdge();
 
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
 
-    Ipp32s TopLeftVerEdge  = pTop->GetLumaAdLefEdge();
-    Ipp32s TopVerEdge      = pTop->GetLumaInVerEdge();
+    int32_t TopLeftVerEdge  = pTop->GetLumaAdLefEdge();
+    int32_t TopVerEdge      = pTop->GetLumaInVerEdge();
 
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurUpHorEdge    = pCur->GetLumaAdUppEdge();
-    Ipp32s CurBotHorEdge   = pCur->GetLumaAdBotEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurUpHorEdge    = pCur->GetLumaAdUppEdge();
+    int32_t CurBotHorEdge   = pCur->GetLumaAdBotEdge();
 
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
-    Ipp32s CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
 
-    Ipp32s LeftTopRightVerEdge = pLeftTop->GetLumaAdRigEdge();
-    Ipp32s LefTopTopVerEdge    = pTop->GetLumaExVerEdge();
+    int32_t LeftTopRightVerEdge = pLeftTop->GetLumaAdRigEdge();
+    int32_t LefTopTopVerEdge    = pTop->GetLumaExVerEdge();
 
-    Ipp32s LeftCurVerEdge      = pCur->GetLumaExVerEdge();
-    Ipp32s LeftRightVerEdge    = pLeft->GetLumaAdRigEdge();
+    int32_t LeftCurVerEdge      = pCur->GetLumaExVerEdge();
+    int32_t LeftRightVerEdge    = pLeft->GetLumaAdRigEdge();
 
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -989,23 +989,23 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaTopBottomMB_VT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaTopBottomMB_VT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* /*pTop*/,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurUpHorEdge    = pCur->GetLumaAdUppEdge();
-    Ipp32s CurBotHorEdge   = pCur->GetLumaAdBotEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurUpHorEdge    = pCur->GetLumaAdUppEdge();
+    int32_t CurBotHorEdge   = pCur->GetLumaAdBotEdge();
 
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
-    Ipp32s CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
 
-    Ipp32s LeftCurVerEdge      = pCur->GetLumaExVerEdge();
-    Ipp32s LeftRightVerEdge    = pLeft->GetLumaAdRigEdge();
+    int32_t LeftCurVerEdge      = pCur->GetLumaExVerEdge();
+    int32_t LeftRightVerEdge    = pLeft->GetLumaAdRigEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1047,38 +1047,38 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaRightBottomMB_VT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaRightBottomMB_VT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* pTop,
                                 VC1EncoderMBInfo* pLeftTop,
                                 VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s TopUpHorEdge    = pTop->GetLumaAdUppEdge();
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32u TopBotHorEdge   = pTop->GetLumaAdBotEdge();
+    int32_t TopUpHorEdge    = pTop->GetLumaAdUppEdge();
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    uint32_t TopBotHorEdge   = pTop->GetLumaAdBotEdge();
 
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
 
-    Ipp32s TopLeftVerEdge  = pTop->GetLumaAdLefEdge();
-    Ipp32s TopVerEdge      = pTop->GetLumaInVerEdge();
+    int32_t TopLeftVerEdge  = pTop->GetLumaAdLefEdge();
+    int32_t TopVerEdge      = pTop->GetLumaInVerEdge();
 
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurUpHorEdge    = pCur->GetLumaAdUppEdge();
-    Ipp32s CurBotHorEdge   = pCur->GetLumaAdBotEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurUpHorEdge    = pCur->GetLumaAdUppEdge();
+    int32_t CurBotHorEdge   = pCur->GetLumaAdBotEdge();
 
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
-    Ipp32s CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
 
-    Ipp32s LeftTopRightVerEdge = pLeftTop->GetLumaAdRigEdge();
-    Ipp32s LefTopTopVerEdge    = pTop->GetLumaExVerEdge();
+    int32_t LeftTopRightVerEdge = pLeftTop->GetLumaAdRigEdge();
+    int32_t LefTopTopVerEdge    = pTop->GetLumaExVerEdge();
 
-    Ipp32s LeftCurVerEdge      = pCur->GetLumaExVerEdge();
-    Ipp32s LeftRightVerEdge    = pLeft->GetLumaAdRigEdge();
+    int32_t LeftCurVerEdge      = pCur->GetLumaExVerEdge();
+    int32_t LeftRightVerEdge    = pLeft->GetLumaAdRigEdge();
 
-    Ipp32s TopRightVerEdge = pTop->GetLumaAdRigEdge();
-    Ipp32s CurRightVerEdge = pCur->GetLumaAdRigEdge();
+    int32_t TopRightVerEdge = pTop->GetLumaAdRigEdge();
+    int32_t CurRightVerEdge = pCur->GetLumaAdRigEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1170,25 +1170,25 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaRightTopBottomMB_VT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaRightTopBottomMB_VT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* /*pTop*/,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurUpHorEdge    = pCur->GetLumaAdUppEdge();
-    Ipp32s CurBotHorEdge   = pCur->GetLumaAdBotEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurUpHorEdge    = pCur->GetLumaAdUppEdge();
+    int32_t CurBotHorEdge   = pCur->GetLumaAdBotEdge();
 
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
-    Ipp32s CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t CurLeftVerEdge  = pCur->GetLumaAdLefEdge();
 
-    Ipp32s LeftCurVerEdge      = pCur->GetLumaExVerEdge();
-    Ipp32s LeftRightVerEdge    = pLeft->GetLumaAdRigEdge();
+    int32_t LeftCurVerEdge      = pCur->GetLumaExVerEdge();
+    int32_t LeftRightVerEdge    = pLeft->GetLumaAdRigEdge();
 
-    Ipp32s CurRightVerEdge = pCur->GetLumaAdRigEdge();
+    int32_t CurRightVerEdge = pCur->GetLumaAdRigEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1235,18 +1235,18 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_LeftMB_VT_YV12(Ipp8u* pU, Ipp32s UStep, 
-                                              Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_LeftMB_VT_YV12(uint8_t* pU, int32_t UStep, 
+                                              uint8_t* pV, int32_t VStep, int32_t quant,
                                               VC1EncoderMBInfo* pCur,
                                               VC1EncoderMBInfo* pTop,
                                               VC1EncoderMBInfo* /*pTopLeft*/,
                                               VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
-    Ipp8u* pSrc = pU;
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1270,18 +1270,18 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_LeftMB_VT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_LeftMB_VT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                       VC1EncoderMBInfo* pCur,
                                      VC1EncoderMBInfo* pTop,
                                      VC1EncoderMBInfo* /*pTopLeft*/,
                                      VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1297,26 +1297,26 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_MB_VT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                        Ipp8u* pV, Ipp32s VStep,Ipp32s quant,
+inline void Deblock_P_Chroma_MB_VT_YV12(uint8_t* pU, int32_t UStep,
+                                        uint8_t* pV, int32_t VStep,int32_t quant,
                                         VC1EncoderMBInfo* pCur,
                                         VC1EncoderMBInfo* pTop,
                                         VC1EncoderMBInfo* pTopLeft,
                                         VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp32s LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1359,24 +1359,24 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_MB_VT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_MB_VT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                      VC1EncoderMBInfo* pCur,
                                      VC1EncoderMBInfo* pTop,
                                      VC1EncoderMBInfo* pTopLeft,
                                      VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp32s LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
-    Ipp8u* pSrc = pUV;
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1403,28 +1403,28 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_RightMB_VT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                             Ipp8u* pV, Ipp32s VStep,Ipp32s quant,
+inline void Deblock_P_Chroma_RightMB_VT_YV12(uint8_t* pU, int32_t UStep,
+                                             uint8_t* pV, int32_t VStep,int32_t quant,
                                              VC1EncoderMBInfo* pCur,
                                              VC1EncoderMBInfo* pTop,
                                              VC1EncoderMBInfo* pTopLeft,
                                              VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
 
-    Ipp32s TopVerEdgeU        = pTop->GetUAdVerEdge();
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
+    int32_t TopVerEdgeU        = pTop->GetUAdVerEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
 
-    Ipp32s TopVerEdgeV        = pTop->GetVAdVerEdge();
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp32s LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
+    int32_t TopVerEdgeV        = pTop->GetVAdVerEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1476,26 +1476,26 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_RightMB_VT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_RightMB_VT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                      VC1EncoderMBInfo* pCur,
                                      VC1EncoderMBInfo* pTop,
                                      VC1EncoderMBInfo* pTopLeft,
                                      VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
 
-    Ipp32s TopVerEdgeU        = pTop->GetUAdVerEdge();
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
+    int32_t TopVerEdgeU        = pTop->GetUAdVerEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
 
-    Ipp32s TopVerEdgeV        = pTop->GetVAdVerEdge();
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp32s LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
-    Ipp8u* pSrc = pUV;
+    int32_t TopVerEdgeV        = pTop->GetVAdVerEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1527,22 +1527,22 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_LeftBottomMB_VT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                                  Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_LeftBottomMB_VT_YV12(uint8_t* pU, int32_t UStep,
+                                                  uint8_t* pV, int32_t VStep, int32_t quant,
                                                   VC1EncoderMBInfo* pCur,
                                                   VC1EncoderMBInfo* pTop,
                                                   VC1EncoderMBInfo* /*pTopLeft*/,
                                                   VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
-    Ipp32s CurHorEdgeU         = pCur->GetUAdHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t CurHorEdgeU         = pCur->GetUAdHorEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
-    Ipp32s CurHorEdgeV         = pCur->GetVAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
+    int32_t CurHorEdgeV         = pCur->GetVAdHorEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1576,21 +1576,21 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_LeftBottomMB_VT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_LeftBottomMB_VT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                       VC1EncoderMBInfo* pCur,
                                      VC1EncoderMBInfo* pTop,
                                      VC1EncoderMBInfo* /*pTopLeft*/,
                                      VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
-    Ipp32s CurHorEdgeU         = pCur->GetUAdHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t CurHorEdgeU         = pCur->GetUAdHorEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
-    Ipp32s CurHorEdgeV         = pCur->GetVAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
+    int32_t CurHorEdgeV         = pCur->GetVAdHorEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1612,34 +1612,34 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_BottomMB_VT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                              Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_BottomMB_VT_YV12(uint8_t* pU, int32_t UStep,
+                                              uint8_t* pV, int32_t VStep, int32_t quant,
                                               VC1EncoderMBInfo* pCur,
                                               VC1EncoderMBInfo* pTop,
                                               VC1EncoderMBInfo* pTopLeft,
                                               VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
-    Ipp32s CurHorEdgeU         = pCur->GetUAdHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t CurHorEdgeU         = pCur->GetUAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
 
-    Ipp32s LeftCurVerEdgeU = pCur->GetUExVerEdge();
-    Ipp32s LeftVerEdgeU    = pLeft->GetUAdVerEdge();
+    int32_t LeftCurVerEdgeU = pCur->GetUExVerEdge();
+    int32_t LeftVerEdgeU    = pLeft->GetUAdVerEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
-    Ipp32s CurHorEdgeV         = pCur->GetVAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
+    int32_t CurHorEdgeV         = pCur->GetVAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp32s LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
 
-    Ipp32s LeftCurVerEdgeV = pCur->GetVExVerEdge();
-    Ipp32s LeftVerEdgeV    = pLeft->GetUAdVerEdge();
+    int32_t LeftCurVerEdgeV = pCur->GetVExVerEdge();
+    int32_t LeftVerEdgeV    = pLeft->GetUAdVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1709,33 +1709,33 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_BottomMB_VT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_BottomMB_VT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                            VC1EncoderMBInfo* pCur,
                                            VC1EncoderMBInfo* pTop,
                                            VC1EncoderMBInfo* pTopLeft,
                                            VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
-    Ipp32s CurHorEdgeU         = pCur->GetUAdHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t CurHorEdgeU         = pCur->GetUAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
 
-    Ipp32s LeftCurVerEdgeU = pCur->GetUExVerEdge();
-    Ipp32s LeftVerEdgeU    = pLeft->GetUAdVerEdge();
+    int32_t LeftCurVerEdgeU = pCur->GetUExVerEdge();
+    int32_t LeftVerEdgeU    = pLeft->GetUAdVerEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
-    Ipp32s CurHorEdgeV         = pCur->GetVAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
+    int32_t CurHorEdgeV         = pCur->GetVAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp32s LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
 
-    Ipp32s LeftCurVerEdgeV = pCur->GetVExVerEdge();
-    Ipp32s LeftVerEdgeV    = pLeft->GetUAdVerEdge();
+    int32_t LeftCurVerEdgeV = pCur->GetVExVerEdge();
+    int32_t LeftVerEdgeV    = pLeft->GetUAdVerEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1778,38 +1778,38 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
 }
 
 
-inline void Deblock_P_Chroma_RightBottomMB_VT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                                   Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_RightBottomMB_VT_YV12(uint8_t* pU, int32_t UStep,
+                                                   uint8_t* pV, int32_t VStep, int32_t quant,
                                                    VC1EncoderMBInfo* pCur,
                                                    VC1EncoderMBInfo* pTop,
                                                    VC1EncoderMBInfo* pTopLeft,
                                                    VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
-    Ipp32s CurHorEdgeU         = pCur->GetUAdHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t CurHorEdgeU         = pCur->GetUAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
-    Ipp32s TopVerEdgeU        = pTop->GetUAdVerEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
+    int32_t TopVerEdgeU        = pTop->GetUAdVerEdge();
 
-    Ipp32s CurVerEdgeU        = pCur->GetUAdVerEdge();
-    Ipp32s LeftCurVerEdgeU    = pCur->GetUExVerEdge();
-    Ipp32s LeftVerEdgeU       = pLeft->GetUAdVerEdge();
+    int32_t CurVerEdgeU        = pCur->GetUAdVerEdge();
+    int32_t LeftCurVerEdgeU    = pCur->GetUExVerEdge();
+    int32_t LeftVerEdgeU       = pLeft->GetUAdVerEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
-    Ipp32s CurHorEdgeV         = pCur->GetVAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
+    int32_t CurHorEdgeV         = pCur->GetVAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp32s LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
-    Ipp32s TopVerEdgeV        = pTop->GetVAdVerEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
+    int32_t TopVerEdgeV        = pTop->GetVAdVerEdge();
 
-    Ipp32s CurVerEdgeV        = pCur->GetVAdVerEdge();
-    Ipp32s LeftCurVerEdgeV    = pCur->GetVExVerEdge();
-    Ipp32s LeftVerEdgeV       = pLeft->GetVAdVerEdge();
+    int32_t CurVerEdgeV        = pCur->GetVAdVerEdge();
+    int32_t LeftCurVerEdgeV    = pCur->GetVExVerEdge();
+    int32_t LeftVerEdgeV       = pLeft->GetVAdVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1897,37 +1897,37 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_RightBottomMB_VT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_RightBottomMB_VT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                                    VC1EncoderMBInfo* pCur,
                                                    VC1EncoderMBInfo* pTop,
                                                    VC1EncoderMBInfo* pTopLeft,
                                                    VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopHorEdgeU         = pTop->GetUAdHorEdge();
-    Ipp32s CurHorEdgeU         = pCur->GetUAdHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopHorEdgeU         = pTop->GetUAdHorEdge();
+    int32_t CurHorEdgeU         = pCur->GetUAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
-    Ipp32s TopVerEdgeU        = pTop->GetUAdVerEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftTopVerEdgeU    = pTopLeft->GetUAdVerEdge();
+    int32_t TopVerEdgeU        = pTop->GetUAdVerEdge();
 
-    Ipp32s CurVerEdgeU        = pCur->GetUAdVerEdge();
-    Ipp32s LeftCurVerEdgeU    = pCur->GetUExVerEdge();
-    Ipp32s LeftVerEdgeU       = pLeft->GetUAdVerEdge();
+    int32_t CurVerEdgeU        = pCur->GetUAdVerEdge();
+    int32_t LeftCurVerEdgeU    = pCur->GetUExVerEdge();
+    int32_t LeftVerEdgeU       = pLeft->GetUAdVerEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopHorEdgeV         = pTop->GetVAdHorEdge();
-    Ipp32s CurHorEdgeV         = pCur->GetVAdHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopHorEdgeV         = pTop->GetVAdHorEdge();
+    int32_t CurHorEdgeV         = pCur->GetVAdHorEdge();
 
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp32s LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
-    Ipp32s TopVerEdgeV        = pTop->GetVAdVerEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t LeftTopVerEdgeV    = pTopLeft->GetVAdVerEdge();
+    int32_t TopVerEdgeV        = pTop->GetVAdVerEdge();
 
-    Ipp32s CurVerEdgeV        = pCur->GetVAdVerEdge();
-    Ipp32s LeftCurVerEdgeV    = pCur->GetVExVerEdge();
-    Ipp32s LeftVerEdgeV       = pLeft->GetVAdVerEdge();
+    int32_t CurVerEdgeV        = pCur->GetVAdVerEdge();
+    int32_t LeftCurVerEdgeV    = pCur->GetVExVerEdge();
+    int32_t LeftVerEdgeV       = pLeft->GetVAdVerEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -1979,16 +1979,16 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_LeftTopBottomMB_VT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                                       Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_LeftTopBottomMB_VT_YV12(uint8_t* pU, int32_t UStep,
+                                                       uint8_t* pV, int32_t VStep, int32_t quant,
                                                        VC1EncoderMBInfo* pCur,
                                                        VC1EncoderMBInfo* /*pTop*/,
                                                        VC1EncoderMBInfo* /*pTopLeft*/,
                                                        VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s CurHorEdgeU         = pCur->GetUAdHorEdge();
-    Ipp32s CurHorEdgeV         = pCur->GetVAdHorEdge();
-    Ipp8u* pSrc = pU;
+    int32_t CurHorEdgeU         = pCur->GetUAdHorEdge();
+    int32_t CurHorEdgeV         = pCur->GetVAdHorEdge();
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2004,16 +2004,16 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_LeftTopBottomMB_VT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_LeftTopBottomMB_VT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                      VC1EncoderMBInfo* pCur,
                                      VC1EncoderMBInfo* /*pTop*/,
                                      VC1EncoderMBInfo* /*pTopLeft*/,
                                      VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s CurHorEdgeU         = pCur->GetUAdHorEdge();
-    Ipp32s CurHorEdgeV         = pCur->GetVAdHorEdge();
+    int32_t CurHorEdgeU         = pCur->GetUAdHorEdge();
+    int32_t CurHorEdgeV         = pCur->GetVAdHorEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2025,24 +2025,24 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_TopBottomMB_VT_YV12(Ipp8u* pU, Ipp32s UStep, 
-                                                 Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_TopBottomMB_VT_YV12(uint8_t* pU, int32_t UStep, 
+                                                 uint8_t* pV, int32_t VStep, int32_t quant,
                                                  VC1EncoderMBInfo* pCur,
                                                  VC1EncoderMBInfo* /*pTop*/,
                                                  VC1EncoderMBInfo* /*pTopLeft*/,
                                                  VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s CurHorEdgeU     = pCur->GetUAdHorEdge();
+    int32_t CurHorEdgeU     = pCur->GetUAdHorEdge();
 
-    Ipp32s LeftCurVerEdgeU = pCur->GetUExVerEdge();
-    Ipp32s LeftVerEdgeU    = pLeft->GetUAdVerEdge();
+    int32_t LeftCurVerEdgeU = pCur->GetUExVerEdge();
+    int32_t LeftVerEdgeU    = pLeft->GetUAdVerEdge();
 
-    Ipp32s CurHorEdgeV     = pCur->GetVAdHorEdge();
+    int32_t CurHorEdgeV     = pCur->GetVAdHorEdge();
 
-    Ipp32s LeftCurVerEdgeV = pCur->GetVExVerEdge();
-    Ipp32s LeftVerEdgeV    = pLeft->GetVAdVerEdge();
+    int32_t LeftCurVerEdgeV = pCur->GetVExVerEdge();
+    int32_t LeftVerEdgeV    = pLeft->GetVAdVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2076,23 +2076,23 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_TopBottomMB_VT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_TopBottomMB_VT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                            VC1EncoderMBInfo* pCur,
                                            VC1EncoderMBInfo* /*pTop*/,
                                            VC1EncoderMBInfo* /*pTopLeft*/,
                                            VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s CurHorEdgeU    = pCur->GetUAdHorEdge();
+    int32_t CurHorEdgeU    = pCur->GetUAdHorEdge();
 
-    Ipp32s LeftCurVerEdgeU = pCur->GetUExVerEdge();
-    Ipp32s LeftVerEdgeU    = pLeft->GetUAdVerEdge();
+    int32_t LeftCurVerEdgeU = pCur->GetUExVerEdge();
+    int32_t LeftVerEdgeU    = pLeft->GetUAdVerEdge();
 
-    Ipp32s CurHorEdgeV     = pCur->GetVAdHorEdge();
+    int32_t CurHorEdgeV     = pCur->GetVAdHorEdge();
 
-    Ipp32s LeftCurVerEdgeV = pCur->GetVExVerEdge();
-    Ipp32s LeftVerEdgeV    = pLeft->GetVAdVerEdge();
+    int32_t LeftCurVerEdgeV = pCur->GetVExVerEdge();
+    int32_t LeftVerEdgeV    = pLeft->GetVAdVerEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2114,26 +2114,26 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_RightTopBottomMB_VT_YV12(Ipp8u* pU, Ipp32s UStep, 
-                                                      Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_RightTopBottomMB_VT_YV12(uint8_t* pU, int32_t UStep, 
+                                                      uint8_t* pV, int32_t VStep, int32_t quant,
                                                       VC1EncoderMBInfo* pCur,
                                                       VC1EncoderMBInfo* /*pTop*/,
                                                       VC1EncoderMBInfo* /*pTopLeft*/,
                                                       VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s CurHorEdgeU         = pCur->GetUAdHorEdge();
+    int32_t CurHorEdgeU         = pCur->GetUAdHorEdge();
 
-    Ipp32s CurVerEdgeU        = pCur->GetUAdVerEdge();
-    Ipp32s LeftCurVerEdgeU    = pCur->GetUExVerEdge();
-    Ipp32s LeftVerEdgeU       = pLeft->GetUAdVerEdge();
+    int32_t CurVerEdgeU        = pCur->GetUAdVerEdge();
+    int32_t LeftCurVerEdgeU    = pCur->GetUExVerEdge();
+    int32_t LeftVerEdgeU       = pLeft->GetUAdVerEdge();
 
-    Ipp32s CurHorEdgeV         = pCur->GetVAdHorEdge();
+    int32_t CurHorEdgeV         = pCur->GetVAdHorEdge();
 
-    Ipp32s CurVerEdgeV        = pCur->GetVAdVerEdge();
-    Ipp32s LeftCurVerEdgeV    = pCur->GetVExVerEdge();
-    Ipp32s LeftVerEdgeV       = pLeft->GetVAdVerEdge();
+    int32_t CurVerEdgeV        = pCur->GetVAdVerEdge();
+    int32_t LeftCurVerEdgeV    = pCur->GetVExVerEdge();
+    int32_t LeftVerEdgeV       = pLeft->GetVAdVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2176,25 +2176,25 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_RightTopBottomMB_VT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_RightTopBottomMB_VT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                       VC1EncoderMBInfo* pCur,
                                      VC1EncoderMBInfo* /*pTop*/,
                                      VC1EncoderMBInfo* /*pTopLeft*/,
                                      VC1EncoderMBInfo* pLeft)
 {
-    Ipp32s CurHorEdgeU         = pCur->GetUAdHorEdge();
+    int32_t CurHorEdgeU         = pCur->GetUAdHorEdge();
 
-    Ipp32s CurVerEdgeU        = pCur->GetUAdVerEdge();
-    Ipp32s LeftCurVerEdgeU    = pCur->GetUExVerEdge();
-    Ipp32s LeftVerEdgeU       = pLeft->GetUAdVerEdge();
+    int32_t CurVerEdgeU        = pCur->GetUAdVerEdge();
+    int32_t LeftCurVerEdgeU    = pCur->GetUExVerEdge();
+    int32_t LeftVerEdgeU       = pLeft->GetUAdVerEdge();
 
-    Ipp32s CurHorEdgeV         = pCur->GetVAdHorEdge();
+    int32_t CurHorEdgeV         = pCur->GetVAdHorEdge();
 
-    Ipp32s CurVerEdgeV        = pCur->GetVAdVerEdge();
-    Ipp32s LeftCurVerEdgeV    = pCur->GetVExVerEdge();
-    Ipp32s LeftVerEdgeV       = pLeft->GetVAdVerEdge();
+    int32_t CurVerEdgeV        = pCur->GetVAdVerEdge();
+    int32_t LeftCurVerEdgeV    = pCur->GetVExVerEdge();
+    int32_t LeftVerEdgeV       = pLeft->GetVAdVerEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2222,17 +2222,17 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
 }
 //-----------------------Deblocking P frames No Variable Transform--------------------------------------
 
-inline void Deblock_P_LumaLeftMB_NoVT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaLeftMB_NoVT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* pTop,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
-    Ipp32s TopVerEdge      = pTop->GetLumaInVerEdge();
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t TopVerEdge      = pTop->GetLumaInVerEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2254,19 +2254,19 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaMB_NoVT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaMB_NoVT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* pTop,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
 
-    Ipp32s LeftTopTopVerEdge = pTop->GetLumaExVerEdge();
-    Ipp32s TopVerEdge        = pTop->GetLumaInVerEdge();
+    int32_t LeftTopTopVerEdge = pTop->GetLumaExVerEdge();
+    int32_t TopVerEdge        = pTop->GetLumaInVerEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2294,18 +2294,18 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaRightMB_NoVT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaRightMB_NoVT(uint8_t* pY, int32_t YStep, int32_t quant,
                                      VC1EncoderMBInfo* pCur,
                                      VC1EncoderMBInfo* pTop,
                                      VC1EncoderMBInfo* /*pLeftTop*/,
                                      VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
-    Ipp32s LeftTopTopVerEdge   = pTop->GetLumaExVerEdge();
-    Ipp32s TopVerEdge      = pTop->GetLumaInVerEdge();
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t LeftTopTopVerEdge   = pTop->GetLumaExVerEdge();
+    int32_t TopVerEdge      = pTop->GetLumaInVerEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2333,19 +2333,19 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
 }
 
 
-inline void Deblock_P_LumaLeftBottomMB_NoVT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaLeftBottomMB_NoVT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* pTop,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
-    Ipp32s TopVerEdge      = pTop->GetLumaInVerEdge();
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t TopVerEdge      = pTop->GetLumaInVerEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2377,77 +2377,21 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaBottomMB_NoVT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaBottomMB_NoVT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* pTop,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
-    Ipp32s TopVerEdge      = pTop->GetLumaInVerEdge();
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
-    Ipp32s LefTopTopVerEdge    = pTop->GetLumaExVerEdge();
-    Ipp32s LeftCurVerEdge      = pCur->GetLumaExVerEdge();
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t TopVerEdge      = pTop->GetLumaInVerEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t LefTopTopVerEdge    = pTop->GetLumaExVerEdge();
+    int32_t LeftCurVerEdge      = pCur->GetLumaExVerEdge();
 
-    Ipp8u* pSrc = pY;
-    IppStatus Sts = ippStsNoErr;
-
-IPP_STAT_START_TIME(m_IppStat->IppStartTime);
-    //horizontal deblock Top MB internal hor edge
-    pSrc = pY - 8*YStep;
-    Sts = _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR  (pSrc,  quant, YStep, TopHorEdge);
-    assert(Sts == ippStsNoErr);
-
-    //horizontal TopMB/Cur MB hor edge
-    pSrc = pY;
-    Sts = _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR  (pSrc,  quant, YStep, TopCurHorEdge);
-    assert(Sts == ippStsNoErr);
-
-    //horizontal cur MB internal hor edge
-    pSrc = pY + 8*YStep;
-    Sts = _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR  (pSrc,  quant, YStep, CurHorEdge);
-    assert(Sts == ippStsNoErr);
-
-    //vertical Left top/Top MB intrnal ver edge
-    pSrc = pY - 16*YStep;
-    Sts = _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR (pSrc,  quant, YStep, LefTopTopVerEdge);
-    assert(Sts == ippStsNoErr);
-
-    //vertical Top MB internal ver edge
-    pSrc = pY - 16*YStep + 8;
-    Sts = _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR (pSrc,  quant, YStep, TopVerEdge);
-    assert(Sts == ippStsNoErr);
-
-    //vertical cur /left MB internal ver edge
-    pSrc = pY;
-    Sts = _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR (pSrc,  quant, YStep, LeftCurVerEdge);
-    assert(Sts == ippStsNoErr);
-
-    //vertical cur MB internal ver edge
-    pSrc = pY + 8;
-    Sts = _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR (pSrc,  quant, YStep, CurVerEdge);
-    assert(Sts == ippStsNoErr);
-
-IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
-}
-
-inline void Deblock_P_LumaRightBottomMB_NoVT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
-                                VC1EncoderMBInfo* pCur,
-                                VC1EncoderMBInfo* pTop,
-                                VC1EncoderMBInfo* /*pLeftTop*/,
-                                VC1EncoderMBInfo* /*pLeft*/)
-{
-    Ipp32s TopHorEdge      = pTop->GetLumaInHorEdge();
-    Ipp32s TopCurHorEdge   = pCur->GetLumaExHorEdge();
-    Ipp32s TopVerEdge      = pTop->GetLumaInVerEdge();
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
-    Ipp32s LefTopTopVerEdge    = pTop->GetLumaExVerEdge();
-    Ipp32s LeftCurVerEdge      = pCur->GetLumaExVerEdge();
-
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2489,16 +2433,72 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaLeftTopBottomMB_NoVT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaRightBottomMB_NoVT(uint8_t* pY, int32_t YStep, int32_t quant,
+                                VC1EncoderMBInfo* pCur,
+                                VC1EncoderMBInfo* pTop,
+                                VC1EncoderMBInfo* /*pLeftTop*/,
+                                VC1EncoderMBInfo* /*pLeft*/)
+{
+    int32_t TopHorEdge      = pTop->GetLumaInHorEdge();
+    int32_t TopCurHorEdge   = pCur->GetLumaExHorEdge();
+    int32_t TopVerEdge      = pTop->GetLumaInVerEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t LefTopTopVerEdge    = pTop->GetLumaExVerEdge();
+    int32_t LeftCurVerEdge      = pCur->GetLumaExVerEdge();
+
+    uint8_t* pSrc = pY;
+    IppStatus Sts = ippStsNoErr;
+
+IPP_STAT_START_TIME(m_IppStat->IppStartTime);
+    //horizontal deblock Top MB internal hor edge
+    pSrc = pY - 8*YStep;
+    Sts = _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR  (pSrc,  quant, YStep, TopHorEdge);
+    assert(Sts == ippStsNoErr);
+
+    //horizontal TopMB/Cur MB hor edge
+    pSrc = pY;
+    Sts = _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR  (pSrc,  quant, YStep, TopCurHorEdge);
+    assert(Sts == ippStsNoErr);
+
+    //horizontal cur MB internal hor edge
+    pSrc = pY + 8*YStep;
+    Sts = _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR  (pSrc,  quant, YStep, CurHorEdge);
+    assert(Sts == ippStsNoErr);
+
+    //vertical Left top/Top MB intrnal ver edge
+    pSrc = pY - 16*YStep;
+    Sts = _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR (pSrc,  quant, YStep, LefTopTopVerEdge);
+    assert(Sts == ippStsNoErr);
+
+    //vertical Top MB internal ver edge
+    pSrc = pY - 16*YStep + 8;
+    Sts = _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR (pSrc,  quant, YStep, TopVerEdge);
+    assert(Sts == ippStsNoErr);
+
+    //vertical cur /left MB internal ver edge
+    pSrc = pY;
+    Sts = _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR (pSrc,  quant, YStep, LeftCurVerEdge);
+    assert(Sts == ippStsNoErr);
+
+    //vertical cur MB internal ver edge
+    pSrc = pY + 8;
+    Sts = _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR (pSrc,  quant, YStep, CurVerEdge);
+    assert(Sts == ippStsNoErr);
+
+IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
+}
+
+inline void Deblock_P_LumaLeftTopBottomMB_NoVT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* /*pTop*/,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2515,17 +2515,17 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaTopBottomMB_NoVT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaTopBottomMB_NoVT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* /*pTop*/,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
-    Ipp32s LeftCurVerEdge  = pCur->GetLumaExVerEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t LeftCurVerEdge  = pCur->GetLumaExVerEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2547,17 +2547,17 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LumaRightTopBottomMB_NoVT(Ipp8u* pY, Ipp32s YStep, Ipp32s quant,
+inline void Deblock_P_LumaRightTopBottomMB_NoVT(uint8_t* pY, int32_t YStep, int32_t quant,
                                 VC1EncoderMBInfo* pCur,
                                 VC1EncoderMBInfo* /*pTop*/,
                                 VC1EncoderMBInfo* /*pLeftTop*/,
                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s CurHorEdge      = pCur->GetLumaInHorEdge();
-    Ipp32s CurVerEdge      = pCur->GetLumaInVerEdge();
-    Ipp32s LeftCurVerEdge  = pCur->GetLumaExVerEdge();
+    int32_t CurHorEdge      = pCur->GetLumaInHorEdge();
+    int32_t CurVerEdge      = pCur->GetLumaInVerEdge();
+    int32_t LeftCurVerEdge  = pCur->GetLumaExVerEdge();
 
-    Ipp8u* pSrc = pY;
+    uint8_t* pSrc = pY;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2579,16 +2579,16 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_LeftMB_NoVT_YV12(Ipp8u* pU, Ipp32s UStep, Ipp8u* pV,
-                                              Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_LeftMB_NoVT_YV12(uint8_t* pU, int32_t UStep, uint8_t* pV,
+                                              int32_t VStep, int32_t quant,
                                               VC1EncoderMBInfo* pCur,
                                               VC1EncoderMBInfo* /*pTop*/,
                                               VC1EncoderMBInfo* /*pTopLeft*/,
                                               VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp8u* pSrc = pU;
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2604,15 +2604,15 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_LeftMB_NoVT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_LeftMB_NoVT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                               VC1EncoderMBInfo* pCur,
                                               VC1EncoderMBInfo* /*pTop*/,
                                               VC1EncoderMBInfo* /*pTopLeft*/,
                                               VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp8u* pSrc = pUV;
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2623,20 +2623,20 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_MB_NoVT_YV12(Ipp8u* pU, Ipp32s UStep, 
-                                          Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_MB_NoVT_YV12(uint8_t* pU, int32_t UStep, 
+                                          uint8_t* pV, int32_t VStep, int32_t quant,
                                           VC1EncoderMBInfo* pCur,
                                           VC1EncoderMBInfo* pTop,
                                           VC1EncoderMBInfo* /*pTopLeft*/,
                                           VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
 
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2660,19 +2660,19 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_MB_NoVT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_MB_NoVT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                      VC1EncoderMBInfo* pCur,
                                      VC1EncoderMBInfo* pTop,
                                      VC1EncoderMBInfo* /*pTopLeft*/,
                                      VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
 
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2688,20 +2688,20 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_RightMB_NoVT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                               Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_RightMB_NoVT_YV12(uint8_t* pU, int32_t UStep,
+                                               uint8_t* pV, int32_t VStep, int32_t quant,
                                                VC1EncoderMBInfo* pCur,
                                                VC1EncoderMBInfo* pTop,
                                                VC1EncoderMBInfo* /*pTopLeft*/,
                                                VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU     = pCur->GetUExHorEdge();
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t TopCurHorEdgeU     = pCur->GetUExHorEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
 
-    Ipp32s TopCurHorEdgeV     = pCur->GetVExHorEdge();
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t TopCurHorEdgeV     = pCur->GetVExHorEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2726,18 +2726,18 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_RightMB_NoVT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_RightMB_NoVT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                      VC1EncoderMBInfo* pCur,
                                      VC1EncoderMBInfo* pTop,
                                      VC1EncoderMBInfo* /*pTopLeft*/,
                                      VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU     = pCur->GetUExHorEdge();
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t TopCurHorEdgeU     = pCur->GetUExHorEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
 
-    Ipp32s TopCurHorEdgeV     = pCur->GetVExHorEdge();
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp8u* pSrc = pUV;
+    int32_t TopCurHorEdgeV     = pCur->GetVExHorEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2753,16 +2753,16 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_LeftBottomMB_NoVT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                                    Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_LeftBottomMB_NoVT_YV12(uint8_t* pU, int32_t UStep,
+                                                    uint8_t* pV, int32_t VStep, int32_t quant,
                                                     VC1EncoderMBInfo* pCur,
                                                     VC1EncoderMBInfo* /*pTop*/,
                                                     VC1EncoderMBInfo* /*pTopLeft*/,
                                                     VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp8u* pSrc = pU;
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2778,16 +2778,16 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_LeftBottomMB_NoVT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_LeftBottomMB_NoVT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                                     VC1EncoderMBInfo* pCur,
                                                     VC1EncoderMBInfo* /*pTop*/,
                                                     VC1EncoderMBInfo* /*pTopLeft*/,
                                                     VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2798,22 +2798,22 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_BottomMB_NoVT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                                Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_BottomMB_NoVT_YV12(uint8_t* pU, int32_t UStep,
+                                                uint8_t* pV, int32_t VStep, int32_t quant,
                                                 VC1EncoderMBInfo* pCur,
                                                 VC1EncoderMBInfo* pTop,
                                                 VC1EncoderMBInfo* /*pTopLeft*/,
                                                 VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftCurVerEdgeU = pCur->GetUExVerEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftCurVerEdgeU = pCur->GetUExVerEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp32s LeftCurVerEdgeV = pCur->GetVExVerEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t LeftCurVerEdgeV = pCur->GetVExVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2846,21 +2846,21 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_BottomMB_NoVT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_BottomMB_NoVT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                            VC1EncoderMBInfo* pCur,
                                            VC1EncoderMBInfo* pTop,
                                            VC1EncoderMBInfo* /*pTopLeft*/,
                                            VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopLeftTopVerEdgeV  = pTop->GetVExVerEdge();
-    Ipp32s LeftCurVerEdgeV     = pCur->GetVExVerEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopLeftTopVerEdgeV  = pTop->GetVExVerEdge();
+    int32_t LeftCurVerEdgeV     = pCur->GetVExVerEdge();
 
-    Ipp32s TopCurHorEdgeU     = pCur->GetUExHorEdge();
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftCurVerEdgeU    = pCur->GetUExVerEdge();
+    int32_t TopCurHorEdgeU     = pCur->GetUExHorEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftCurVerEdgeU    = pCur->GetUExVerEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2881,22 +2881,22 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_RightBottomMB_NoVT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                                     Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_RightBottomMB_NoVT_YV12(uint8_t* pU, int32_t UStep,
+                                                     uint8_t* pV, int32_t VStep, int32_t quant,
                                                      VC1EncoderMBInfo* pCur,
                                                      VC1EncoderMBInfo* pTop,
                                                      VC1EncoderMBInfo* /*pTopLeft*/,
                                                      VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftCurVerEdgeU    = pCur->GetUExVerEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftCurVerEdgeU    = pCur->GetUExVerEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp32s LeftCurVerEdgeV    = pCur->GetVExVerEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t LeftCurVerEdgeV    = pCur->GetVExVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2930,21 +2930,21 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_RightBottomMB_NoVT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_RightBottomMB_NoVT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                                      VC1EncoderMBInfo* pCur,
                                                      VC1EncoderMBInfo* pTop,
                                                      VC1EncoderMBInfo* /*pTopLeft*/,
                                                      VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s TopCurHorEdgeU      = pCur->GetUExHorEdge();
-    Ipp32s TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
-    Ipp32s LeftCurVerEdgeU    = pCur->GetUExVerEdge();
+    int32_t TopCurHorEdgeU      = pCur->GetUExHorEdge();
+    int32_t TopLeftTopVerEdgeU = pTop->GetUExVerEdge();
+    int32_t LeftCurVerEdgeU    = pCur->GetUExVerEdge();
 
-    Ipp32s TopCurHorEdgeV      = pCur->GetVExHorEdge();
-    Ipp32s TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
-    Ipp32s LeftCurVerEdgeV    = pCur->GetVExVerEdge();
+    int32_t TopCurHorEdgeV      = pCur->GetVExHorEdge();
+    int32_t TopLeftTopVerEdgeV = pTop->GetVExVerEdge();
+    int32_t LeftCurVerEdgeV    = pCur->GetVExVerEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2965,17 +2965,17 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_TopBottomMB_NoVT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                                   Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_TopBottomMB_NoVT_YV12(uint8_t* pU, int32_t UStep,
+                                                   uint8_t* pV, int32_t VStep, int32_t quant,
                                                    VC1EncoderMBInfo* pCur,
                                                    VC1EncoderMBInfo* /*pTop*/,
                                                    VC1EncoderMBInfo* /*pTopLeft*/,
                                                    VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s LeftCurVerEdgeU = pCur->GetUExVerEdge();
-    Ipp32s LeftCurVerEdgeV = pCur->GetVExVerEdge();
+    int32_t LeftCurVerEdgeU = pCur->GetUExVerEdge();
+    int32_t LeftCurVerEdgeV = pCur->GetVExVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -2990,16 +2990,16 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_TopBottomMB_NoVT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_TopBottomMB_NoVT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                                    VC1EncoderMBInfo* pCur,
                                                    VC1EncoderMBInfo* /*pTop*/,
                                                    VC1EncoderMBInfo* /*pTopLeft*/,
                                                    VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s LeftCurVerEdgeU = pCur->GetUExVerEdge();
-    Ipp32s LeftCurVerEdgeV = pCur->GetVExVerEdge();
+    int32_t LeftCurVerEdgeU = pCur->GetUExVerEdge();
+    int32_t LeftCurVerEdgeV = pCur->GetVExVerEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -3010,17 +3010,17 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_RightTopBottomMB_NoVT_YV12(Ipp8u* pU, Ipp32s UStep,
-                                                        Ipp8u* pV, Ipp32s VStep, Ipp32s quant,
+inline void Deblock_P_Chroma_RightTopBottomMB_NoVT_YV12(uint8_t* pU, int32_t UStep,
+                                                        uint8_t* pV, int32_t VStep, int32_t quant,
                                                          VC1EncoderMBInfo* pCur,
                                                          VC1EncoderMBInfo* /*pTop*/,
                                                          VC1EncoderMBInfo* /*pTopLeft*/,
                                                          VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s LeftCurVerEdgeU    = pCur->GetUExVerEdge();
-    Ipp32s LeftCurVerEdgeV    = pCur->GetVExVerEdge();
+    int32_t LeftCurVerEdgeU    = pCur->GetUExVerEdge();
+    int32_t LeftCurVerEdgeV    = pCur->GetVExVerEdge();
 
-    Ipp8u* pSrc = pU;
+    uint8_t* pSrc = pU;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -3036,16 +3036,16 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_Chroma_RightTopBottomMB_NoVT_NV12(Ipp8u* pUV, Ipp32s UVStep, Ipp32s quant,
+inline void Deblock_P_Chroma_RightTopBottomMB_NoVT_NV12(uint8_t* pUV, int32_t UVStep, int32_t quant,
                                                          VC1EncoderMBInfo* pCur,
                                                          VC1EncoderMBInfo* /*pTop*/,
                                                          VC1EncoderMBInfo* /*pTopLeft*/,
                                                          VC1EncoderMBInfo* /*pLeft*/)
 {
-    Ipp32s LeftCurVerEdgeU    = pCur->GetUExVerEdge();
-    Ipp32s LeftCurVerEdgeV    = pCur->GetVExVerEdge();
+    int32_t LeftCurVerEdgeU    = pCur->GetUExVerEdge();
+    int32_t LeftCurVerEdgeV    = pCur->GetVExVerEdge();
 
-    Ipp8u* pSrc = pUV;
+    uint8_t* pSrc = pUV;
     IppStatus Sts = ippStsNoErr;
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
@@ -3056,282 +3056,282 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 }
 
-inline void Deblock_P_LeftMB_VT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftMB_VT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_LeftMB_VT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                     pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2],quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_LeftMB_VT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftMB_VT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_LeftMB_VT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_MB_VT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_MB_VT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_MB_VT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                 pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_MB_VT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_MB_VT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_MB_VT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightMB_VT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightMB_VT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightMB_VT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                      pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightMB_VT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightMB_VT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightMB_VT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_LeftBottomMB_VT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftBottomMB_VT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftBottomMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_LeftBottomMB_VT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                           pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_LeftBottomMB_VT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftBottomMB_VT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftBottomMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_LeftBottomMB_VT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_BottomMB_VT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_BottomMB_VT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaBottomMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_BottomMB_VT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                       pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_BottomMB_VT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_BottomMB_VT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaBottomMB_VT     (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_BottomMB_VT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightBottomMB_VT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightBottomMB_VT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightBottomMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightBottomMB_VT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                            pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightBottomMB_VT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightBottomMB_VT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightBottomMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightBottomMB_VT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_LeftTopBottomMB_VT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftTopBottomMB_VT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftTopBottomMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_LeftTopBottomMB_VT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                              pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_LeftTopBottomMB_VT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftTopBottomMB_VT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftTopBottomMB_VT     (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_LeftTopBottomMB_VT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_TopBottomMB_VT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_TopBottomMB_VT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaTopBottomMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_TopBottomMB_VT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                          pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_TopBottomMB_VT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_TopBottomMB_VT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaTopBottomMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_TopBottomMB_VT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightTopBottomMB_VT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightTopBottomMB_VT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightTopBottomMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightTopBottomMB_VT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                               pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightTopBottomMB_VT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightTopBottomMB_VT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightTopBottomMB_VT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightTopBottomMB_VT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_LeftMB_NoVT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftMB_NoVT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_LeftMB_NoVT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                       pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2],quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_LeftMB_NoVT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftMB_NoVT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_LeftMB_NoVT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_MB_NoVT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_MB_NoVT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_MB_NoVT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                   pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_MB_NoVT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_MB_NoVT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_MB_NoVT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightMB_NoVT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightMB_NoVT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightMB_NoVT     (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightMB_NoVT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                          pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightMB_NoVT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightMB_NoVT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightMB_NoVT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_LeftBottomMB_NoVT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftBottomMB_NoVT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftBottomMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_LeftBottomMB_NoVT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                             pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_LeftBottomMB_NoVT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftBottomMB_NoVT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftBottomMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_LeftBottomMB_NoVT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_BottomMB_NoVT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_BottomMB_NoVT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaBottomMB_NoVT     (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_BottomMB_NoVT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                         pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_BottomMB_NoVT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_BottomMB_NoVT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaBottomMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_BottomMB_NoVT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightBottomMB_NoVT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightBottomMB_NoVT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightBottomMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightBottomMB_NoVT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                              pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightBottomMB_NoVT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightBottomMB_NoVT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightBottomMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightBottomMB_NoVT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_LeftTopBottomMB_NoVT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftTopBottomMB_NoVT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftTopBottomMB_NoVT     (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_LeftTopBottomMB_NoVT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_LeftTopBottomMB_NoVT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                 VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaLeftTopBottomMB_NoVT     (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_TopBottomMB_NoVT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_TopBottomMB_NoVT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaTopBottomMB_NoVT     (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_TopBottomMB_NoVT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                            pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_TopBottomMB_NoVT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_TopBottomMB_NoVT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                             VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaTopBottomMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_TopBottomMB_NoVT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightTopBottomMB_NoVT_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightTopBottomMB_NoVT_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightTopBottomMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightTopBottomMB_NoVT_YV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE, step[1],
                                                 pPlanes[2] + j*VC1_ENC_CHROMA_SIZE, step[2], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RightTopBottomMB_NoVT_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, VC1EncoderMBInfo* pCur,
-                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s j)
+inline void Deblock_P_RightTopBottomMB_NoVT_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, VC1EncoderMBInfo* pCur,
+                                  VC1EncoderMBInfo* pTop, VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t j)
 {
     Deblock_P_LumaRightTopBottomMB_NoVT        (pPlanes[0] + j*VC1_ENC_LUMA_SIZE, step[0], quant, pCur, pTop, pLeftTop, pLeft);
     Deblock_P_Chroma_RightTopBottomMB_NoVT_NV12(pPlanes[1] + j*VC1_ENC_CHROMA_SIZE*2, step[1], quant, pCur, pTop, pLeftTop, pLeft);
 }
 
-inline void Deblock_P_RowVts_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width,  Ipp32u quant, VC1EncoderMBs* pMBs)
+inline void Deblock_P_RowVts_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width,  uint32_t quant, VC1EncoderMBs* pMBs)
 {
     VC1EncoderMBInfo  * pCur     = NULL;
     VC1EncoderMBInfo  * pTop     = NULL;
     VC1EncoderMBInfo  * pLeftTop = NULL;
     VC1EncoderMBInfo  * pLeft    = NULL;
-    Ipp32u j = 0;
+    uint32_t j = 0;
 
-    Ipp8u* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
+    uint8_t* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
 
     pCur     = pMBs->GetCurrMBInfo();
     pTop     = pMBs->GetPevMBInfo(0, 1);
@@ -3362,15 +3362,15 @@ inline void Deblock_P_RowVts_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u widt
     Deblock_P_RightMB_VT_YV12(DeblkPlanes, step, quant, pCur, pTop, pLeftTop, pLeft, j);
  }
 
-inline void Deblock_P_RowVts_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width,  Ipp32u quant, VC1EncoderMBs* pMBs)
+inline void Deblock_P_RowVts_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width,  uint32_t quant, VC1EncoderMBs* pMBs)
 {
     VC1EncoderMBInfo  * pCur     = NULL;
     VC1EncoderMBInfo  * pTop     = NULL;
     VC1EncoderMBInfo  * pLeftTop = NULL;
     VC1EncoderMBInfo  * pLeft    = NULL;
-    Ipp32u j = 0;
+    uint32_t j = 0;
 
-    Ipp8u* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
+    uint8_t* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
 
     pCur     = pMBs->GetCurrMBInfo();
     pTop     = pMBs->GetPevMBInfo(0, 1);
@@ -3401,15 +3401,15 @@ inline void Deblock_P_RowVts_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u widt
     Deblock_P_RightMB_VT_NV12(DeblkPlanes, step, quant, pCur, pTop, pLeftTop, pLeft, j);
  }
 
-inline void Deblock_P_BottomRowVts_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width,  Ipp32u quant, VC1EncoderMBs* pMBs)
+inline void Deblock_P_BottomRowVts_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width,  uint32_t quant, VC1EncoderMBs* pMBs)
 {
     VC1EncoderMBInfo  * pCur     = NULL;
     VC1EncoderMBInfo  * pTop     = NULL;
     VC1EncoderMBInfo  * pLeftTop = NULL;
     VC1EncoderMBInfo  * pLeft    = NULL;
-    Ipp32u j = 0;
+    uint32_t j = 0;
 
-    Ipp8u* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
+    uint8_t* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
 
     pCur     = pMBs->GetCurrMBInfo();
     pTop     = pMBs->GetPevMBInfo(0, 1);
@@ -3440,15 +3440,15 @@ inline void Deblock_P_BottomRowVts_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32
     Deblock_P_RightBottomMB_VT_YV12(DeblkPlanes, step, quant, pCur, pTop, pLeftTop, pLeft, j);
 }
 
-inline void Deblock_P_BottomRowVts_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width,  Ipp32u quant, VC1EncoderMBs* pMBs)
+inline void Deblock_P_BottomRowVts_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width,  uint32_t quant, VC1EncoderMBs* pMBs)
 {
     VC1EncoderMBInfo  * pCur     = NULL;
     VC1EncoderMBInfo  * pTop     = NULL;
     VC1EncoderMBInfo  * pLeftTop = NULL;
     VC1EncoderMBInfo  * pLeft    = NULL;
-    Ipp32u j = 0;
+    uint32_t j = 0;
 
-    Ipp8u* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
+    uint8_t* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
 
     pCur     = pMBs->GetCurrMBInfo();
     pTop     = pMBs->GetPevMBInfo(0, 1);
@@ -3479,15 +3479,15 @@ inline void Deblock_P_BottomRowVts_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32
     Deblock_P_RightBottomMB_VT_NV12(DeblkPlanes, step, quant, pCur, pTop, pLeftTop, pLeft, j);
 }
 
-inline void Deblock_P_RowNoVts_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width,  Ipp32u quant, VC1EncoderMBs* pMBs)
+inline void Deblock_P_RowNoVts_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width,  uint32_t quant, VC1EncoderMBs* pMBs)
 {
     VC1EncoderMBInfo  * pCur     = NULL;
     VC1EncoderMBInfo  * pTop     = NULL;
     VC1EncoderMBInfo  * pLeftTop = NULL;
     VC1EncoderMBInfo  * pLeft    = NULL;
-    Ipp32u j = 0;
+    uint32_t j = 0;
 
-    Ipp8u* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
+    uint8_t* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
 
     pCur     = pMBs->GetCurrMBInfo();
     pTop     = pMBs->GetPevMBInfo(0, 1);
@@ -3518,15 +3518,15 @@ inline void Deblock_P_RowNoVts_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u wi
     Deblock_P_RightMB_NoVT_YV12(DeblkPlanes, step, quant, pCur, pTop, pLeftTop, pLeft, j);
 }
 
-inline void Deblock_P_RowNoVts_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width,  Ipp32u quant, VC1EncoderMBs* pMBs)
+inline void Deblock_P_RowNoVts_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width,  uint32_t quant, VC1EncoderMBs* pMBs)
 {
     VC1EncoderMBInfo  * pCur     = NULL;
     VC1EncoderMBInfo  * pTop     = NULL;
     VC1EncoderMBInfo  * pLeftTop = NULL;
     VC1EncoderMBInfo  * pLeft    = NULL;
-    Ipp32u j = 0;
+    uint32_t j = 0;
 
-    Ipp8u* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
+    uint8_t* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
 
     pCur     = pMBs->GetCurrMBInfo();
     pTop     = pMBs->GetPevMBInfo(0, 1);
@@ -3557,15 +3557,15 @@ inline void Deblock_P_RowNoVts_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u wi
     Deblock_P_RightMB_NoVT_NV12(DeblkPlanes, step, quant, pCur, pTop, pLeftTop, pLeft, j);
 }
 
-inline void Deblock_P_BottomRowNoVts_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width,  Ipp32u quant, VC1EncoderMBs* pMBs)
+inline void Deblock_P_BottomRowNoVts_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width,  uint32_t quant, VC1EncoderMBs* pMBs)
 {
     VC1EncoderMBInfo  * pCur     = NULL;
     VC1EncoderMBInfo  * pTop     = NULL;
     VC1EncoderMBInfo  * pLeftTop = NULL;
     VC1EncoderMBInfo  * pLeft    = NULL;
-    Ipp32u j = 0;
+    uint32_t j = 0;
 
-    Ipp8u* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
+    uint8_t* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
 
     pCur     = pMBs->GetCurrMBInfo();
     pTop     = pMBs->GetPevMBInfo(0, 1);
@@ -3596,15 +3596,15 @@ inline void Deblock_P_BottomRowNoVts_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp
     Deblock_P_RightBottomMB_NoVT_YV12(DeblkPlanes, step,  quant, pCur, pTop, pLeftTop, pLeft, j);
 }
 
-inline void Deblock_P_BottomRowNoVts_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width,  Ipp32u quant, VC1EncoderMBs* pMBs)
+inline void Deblock_P_BottomRowNoVts_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width,  uint32_t quant, VC1EncoderMBs* pMBs)
 {
     VC1EncoderMBInfo  * pCur     = NULL;
     VC1EncoderMBInfo  * pTop     = NULL;
     VC1EncoderMBInfo  * pLeftTop = NULL;
     VC1EncoderMBInfo  * pLeft    = NULL;
-    Ipp32u j = 0;
+    uint32_t j = 0;
 
-    Ipp8u* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
+    uint8_t* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
 
     pCur     = pMBs->GetCurrMBInfo();
     pTop     = pMBs->GetPevMBInfo(0, 1);
@@ -3635,15 +3635,15 @@ inline void Deblock_P_BottomRowNoVts_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp
     Deblock_P_RightBottomMB_NoVT_NV12(DeblkPlanes, step,  quant, pCur, pTop, pLeftTop, pLeft, j);
 }
 
-inline void Deblock_P_TopBottomRowNoVts_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width,  Ipp32u quant, VC1EncoderMBs* pMBs)
+inline void Deblock_P_TopBottomRowNoVts_YV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width,  uint32_t quant, VC1EncoderMBs* pMBs)
 {
     VC1EncoderMBInfo  * pCur     = NULL;
     VC1EncoderMBInfo  * pTop     = NULL;
     VC1EncoderMBInfo  * pLeftTop = NULL;
     VC1EncoderMBInfo  * pLeft    = NULL;
-    Ipp32u j = 0;
+    uint32_t j = 0;
 
-    Ipp8u* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
+    uint8_t* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
 
     pCur     = pMBs->GetCurrMBInfo();
     pTop     = pMBs->GetPevMBInfo(0, 1);
@@ -3674,15 +3674,15 @@ inline void Deblock_P_TopBottomRowNoVts_YV12(Ipp8u* pPlanes[3], Ipp32u step[3], 
     Deblock_P_RightTopBottomMB_NoVT_YV12(DeblkPlanes, step,  quant, pCur, pTop, pLeftTop, pLeft, j);
 }
 
-inline void Deblock_P_TopBottomRowNoVts_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u width,  Ipp32u quant, VC1EncoderMBs* pMBs)
+inline void Deblock_P_TopBottomRowNoVts_NV12(uint8_t* pPlanes[3], uint32_t step[3], uint32_t width,  uint32_t quant, VC1EncoderMBs* pMBs)
 {
     VC1EncoderMBInfo  * pCur     = NULL;
     VC1EncoderMBInfo  * pTop     = NULL;
     VC1EncoderMBInfo  * pLeftTop = NULL;
     VC1EncoderMBInfo  * pLeft    = NULL;
-    Ipp32u j = 0;
+    uint32_t j = 0;
 
-    Ipp8u* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
+    uint8_t* DeblkPlanes[3] = {pPlanes[0], pPlanes[1], pPlanes[2]};
 
     pCur     = pMBs->GetCurrMBInfo();
     pTop     = pMBs->GetPevMBInfo(0, 1);
@@ -3713,19 +3713,19 @@ inline void Deblock_P_TopBottomRowNoVts_NV12(Ipp8u* pPlanes[3], Ipp32u step[3], 
     Deblock_P_RightTopBottomMB_NoVT_NV12(DeblkPlanes, step,  quant, pCur, pTop, pLeftTop, pLeft, j);
 }
 
-inline void no_Deblocking_P_MB(Ipp8u* /*pPlanes*/[3], Ipp32u /*step*/[3], Ipp32u /*quant*/, VC1EncoderMBInfo* /*pCur*/,
-                                  VC1EncoderMBInfo* /*pTop*/, VC1EncoderMBInfo* /*pLeftTop*/, VC1EncoderMBInfo* /*pLeft*/, Ipp32s/* j*/)
+inline void no_Deblocking_P_MB(uint8_t* /*pPlanes*/[3], uint32_t /*step*/[3], uint32_t /*quant*/, VC1EncoderMBInfo* /*pCur*/,
+                                  VC1EncoderMBInfo* /*pTop*/, VC1EncoderMBInfo* /*pLeftTop*/, VC1EncoderMBInfo* /*pLeft*/, int32_t/* j*/)
 {
 };
 
-typedef void(*fDeblock_I_MB)(Ipp8u* pPlanes[3], Ipp32u step[3], Ipp32u quant, Ipp32s j);
+typedef void(*fDeblock_I_MB)(uint8_t* pPlanes[3], uint32_t step[3], uint32_t quant, int32_t j);
 
 extern fDeblock_I_MB Deblk_I_MBFunction_YV12[8];
 extern fDeblock_I_MB Deblk_I_MBFunction_NV12[8];
 
-typedef void(*fDeblock_P_MB)(Ipp8u* pPlanes[3],      Ipp32u step[3],             Ipp32u quant,
+typedef void(*fDeblock_P_MB)(uint8_t* pPlanes[3],      uint32_t step[3],             uint32_t quant,
                              VC1EncoderMBInfo* pCur,     VC1EncoderMBInfo* pTop,
-                             VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, Ipp32s);
+                             VC1EncoderMBInfo* pLeftTop, VC1EncoderMBInfo* pLeft, int32_t);
 //extern fDeblock_P_MB Deblk_P_MBFunction_YV12[2][16];
 //extern fDeblock_P_MB Deblk_P_MBFunction_NV12[2][16];
 

@@ -37,16 +37,16 @@ namespace UMC_VC1_ENCODER
         VC1EncoderMBData* pLeftRData;
         VC1EncoderMBData* pLeftTopRData;
         VC1EncoderMBData* pTopRData;
-        Ipp8u* pRFrameY;
-        Ipp32s uiRDataStepY;
-        Ipp8u* pRFrameU;
-        Ipp32s uiRDataStepU;
-        Ipp8u* pRFrameV;
-        Ipp32s uiRDataStepV;
-        Ipp32u  curOverflag;  //0xFFFF - smoothing allowed on MB, 0 - not
-        Ipp32u  leftOverflag;
-        Ipp32u  leftTopOverflag;
-        Ipp32u  topOverflag;
+        uint8_t* pRFrameY;
+        int32_t uiRDataStepY;
+        uint8_t* pRFrameU;
+        int32_t uiRDataStepU;
+        uint8_t* pRFrameV;
+        int32_t uiRDataStepV;
+        uint32_t  curOverflag;  //0xFFFF - smoothing allowed on MB, 0 - not
+        uint32_t  leftOverflag;
+        uint32_t  leftTopOverflag;
+        uint32_t  topOverflag;
     }SmoothInfo_I_Adv;
 
     typedef struct
@@ -55,43 +55,43 @@ namespace UMC_VC1_ENCODER
         VC1EncoderMBData* pLeftRData;
         VC1EncoderMBData* pLeftTopRData;
         VC1EncoderMBData* pTopRData;
-        Ipp8u* pRFrameY;
-        Ipp32s uiRDataStepY;
-        Ipp8u* pRFrameU;
-        Ipp32s uiRDataStepU;
-        Ipp8u* pRFrameV;
-        Ipp32s uiRDataStepV;
-        Ipp8u  curIntra;
-        Ipp8u  leftIntra;
-        Ipp8u  leftTopIntra;
-        Ipp8u  topIntra;
+        uint8_t* pRFrameY;
+        int32_t uiRDataStepY;
+        uint8_t* pRFrameU;
+        int32_t uiRDataStepU;
+        uint8_t* pRFrameV;
+        int32_t uiRDataStepV;
+        uint8_t  curIntra;
+        uint8_t  leftIntra;
+        uint8_t  leftTopIntra;
+        uint8_t  topIntra;
     }SmoothInfo_P_Adv;
 
-#define VC1_ENC_IS_BLOCK_0_INTRA(value)    (Ipp32u)((value&0x20)!=0)
-#define VC1_ENC_IS_BLOCK_1_INTRA(value)    (Ipp32u)((value&0x10)!=0)
-#define VC1_ENC_IS_BLOCK_2_INTRA(value)    (Ipp32u)((value&0x08)!=0)
-#define VC1_ENC_IS_BLOCK_3_INTRA(value)    (Ipp32u)((value&0x04)!=0)
-#define VC1_ENC_IS_BLOCK_4_INTRA(value)    (Ipp32u)((value&0x02)!=0)
-#define VC1_ENC_IS_BLOCK_5_INTRA(value)    (Ipp32u)((value&0x01)!=0)
-#define VC1_ENC_IS_BLOCK_0_1_INTRA(value)  (Ipp32u)((value&0x30)!=0)
-#define VC1_ENC_IS_BLOCK_0_2_INTRA(value)  (Ipp32u)((value&0x28)!=0)
-#define VC1_ENC_IS_BLOCK_1_3_INTRA(value)  (Ipp32u)((value&0x18)!=0)
-#define VC1_ENC_IS_BLOCK_2_3_INTRA(value)  (Ipp32u)((value&0x0C)!=0)
+#define VC1_ENC_IS_BLOCK_0_INTRA(value)    (uint32_t)((value&0x20)!=0)
+#define VC1_ENC_IS_BLOCK_1_INTRA(value)    (uint32_t)((value&0x10)!=0)
+#define VC1_ENC_IS_BLOCK_2_INTRA(value)    (uint32_t)((value&0x08)!=0)
+#define VC1_ENC_IS_BLOCK_3_INTRA(value)    (uint32_t)((value&0x04)!=0)
+#define VC1_ENC_IS_BLOCK_4_INTRA(value)    (uint32_t)((value&0x02)!=0)
+#define VC1_ENC_IS_BLOCK_5_INTRA(value)    (uint32_t)((value&0x01)!=0)
+#define VC1_ENC_IS_BLOCK_0_1_INTRA(value)  (uint32_t)((value&0x30)!=0)
+#define VC1_ENC_IS_BLOCK_0_2_INTRA(value)  (uint32_t)((value&0x28)!=0)
+#define VC1_ENC_IS_BLOCK_1_3_INTRA(value)  (uint32_t)((value&0x18)!=0)
+#define VC1_ENC_IS_BLOCK_2_3_INTRA(value)  (uint32_t)((value&0x0C)!=0)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////I frames advance profile///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-    inline void NoSmoothMB_I_Adv(SmoothInfo_I_Adv* /*pSmothInfo*/, Ipp32s /*j*/)
+    inline void NoSmoothMB_I_Adv(SmoothInfo_I_Adv* /*pSmothInfo*/, int32_t /*j*/)
     {
     }
 
 //    ------------------------------------------------------
 //    ------------ smoothing Advance profile ---------------
 
-    inline void Smooth_LeftMB_I_Adv_YV12(SmoothInfo_I_Adv* pSmothInfo, Ipp32s j)
+    inline void Smooth_LeftMB_I_Adv_YV12(SmoothInfo_I_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //internal vertical edge
@@ -106,10 +106,10 @@ namespace UMC_VC1_ENCODER
 
     }
 
-    inline void Smooth_LeftMB_I_Adv_NV12(SmoothInfo_I_Adv* pSmothInfo, Ipp32s j)
+    inline void Smooth_LeftMB_I_Adv_NV12(SmoothInfo_I_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //internal vertical edge
@@ -124,10 +124,10 @@ namespace UMC_VC1_ENCODER
 
     }
 
-    inline void Smoth_TopMB_I_Adv_YV12(SmoothInfo_I_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_TopMB_I_Adv_YV12(SmoothInfo_I_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -178,10 +178,10 @@ namespace UMC_VC1_ENCODER
         }
     } 
 
-    inline void Smoth_TopMB_I_Adv_NV12(SmoothInfo_I_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_TopMB_I_Adv_NV12(SmoothInfo_I_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -232,10 +232,10 @@ namespace UMC_VC1_ENCODER
         }
     } 
     
-    inline void Smoth_TopRightMB_I_Adv_YV12(SmoothInfo_I_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_TopRightMB_I_Adv_YV12(SmoothInfo_I_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -293,10 +293,10 @@ namespace UMC_VC1_ENCODER
         }
     }
 
-    inline void Smoth_TopRightMB_I_Adv_NV12(SmoothInfo_I_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_TopRightMB_I_Adv_NV12(SmoothInfo_I_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -354,10 +354,10 @@ namespace UMC_VC1_ENCODER
         }
     }
 
-    inline void Smoth_MB_I_Adv_YV12(SmoothInfo_I_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_MB_I_Adv_YV12(SmoothInfo_I_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -434,10 +434,10 @@ namespace UMC_VC1_ENCODER
         }
     }
 
-    inline void Smoth_MB_I_Adv_NV12(SmoothInfo_I_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_MB_I_Adv_NV12(SmoothInfo_I_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -514,10 +514,10 @@ namespace UMC_VC1_ENCODER
         }
     }
 
-    inline void Smoth_RightMB_I_Adv_YV12(SmoothInfo_I_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_RightMB_I_Adv_YV12(SmoothInfo_I_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -634,10 +634,10 @@ namespace UMC_VC1_ENCODER
         }
     }
 
-    inline void Smoth_RightMB_I_Adv_NV12(SmoothInfo_I_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_RightMB_I_Adv_NV12(SmoothInfo_I_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -752,7 +752,7 @@ namespace UMC_VC1_ENCODER
         }
     }
         
-    typedef void(*fSmooth_I_MB_Adv)(SmoothInfo_I_Adv* pSmothInfo, Ipp32s j);
+    typedef void(*fSmooth_I_MB_Adv)(SmoothInfo_I_Adv* pSmothInfo, int32_t j);
 
     extern fSmooth_I_MB_Adv Smooth_I_MBFunction_Adv_YV12[8];
 
@@ -761,14 +761,14 @@ namespace UMC_VC1_ENCODER
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////P frames Advance profile///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-   inline void NoSmoothMB_P_Adv(SmoothInfo_P_Adv* /*pSmothInfo*/, Ipp32s/* j*/)
+   inline void NoSmoothMB_P_Adv(SmoothInfo_P_Adv* /*pSmothInfo*/, int32_t/* j*/)
     {
     }
 
-    inline void Smooth_LeftMB_P_Adv_YV12(SmoothInfo_P_Adv* pSmothInfo, Ipp32s j)
+    inline void Smooth_LeftMB_P_Adv_YV12(SmoothInfo_P_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //internal vertical edge
@@ -784,10 +784,10 @@ namespace UMC_VC1_ENCODER
 
     }
 
-    inline void Smooth_LeftMB_P_Adv_NV12(SmoothInfo_P_Adv* pSmothInfo, Ipp32s j)
+    inline void Smooth_LeftMB_P_Adv_NV12(SmoothInfo_P_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //internal vertical edge
@@ -803,11 +803,11 @@ namespace UMC_VC1_ENCODER
 
     }
 
-    inline void Smoth_TopMB_P_Adv_YV12(SmoothInfo_P_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_TopMB_P_Adv_YV12(SmoothInfo_P_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
 
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
         //LUMA
         //left/cur vertical edge
         EdgeDisabledFlag = (IPPVC_EDGE_HALF_1 * VC1_ENC_IS_BLOCK_1_INTRA(pSmothInfo->leftIntra) * VC1_ENC_IS_BLOCK_0_INTRA(pSmothInfo->curIntra))
@@ -862,11 +862,11 @@ namespace UMC_VC1_ENCODER
         }
     }
 
-    inline void Smoth_TopMB_P_Adv_NV12(SmoothInfo_P_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_TopMB_P_Adv_NV12(SmoothInfo_P_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
 
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
         //LUMA
         //left/cur vertical edge
         EdgeDisabledFlag = (IPPVC_EDGE_HALF_1 * VC1_ENC_IS_BLOCK_1_INTRA(pSmothInfo->leftIntra) * VC1_ENC_IS_BLOCK_0_INTRA(pSmothInfo->curIntra))
@@ -921,10 +921,10 @@ namespace UMC_VC1_ENCODER
         }
     }
 
-    inline void Smoth_TopRightMB_P_Adv_YV12(SmoothInfo_P_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_TopRightMB_P_Adv_YV12(SmoothInfo_P_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -990,10 +990,10 @@ namespace UMC_VC1_ENCODER
         }
     }
 
-    inline void Smoth_TopRightMB_P_Adv_NV12(SmoothInfo_P_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_TopRightMB_P_Adv_NV12(SmoothInfo_P_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -1060,10 +1060,10 @@ namespace UMC_VC1_ENCODER
 
     }
 
-    inline void Smoth_MB_P_Adv_YV12(SmoothInfo_P_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_MB_P_Adv_YV12(SmoothInfo_P_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = IPPVC_EDGE_HALF_1 | IPPVC_EDGE_HALF_2;
+        uint32_t EdgeDisabledFlag = IPPVC_EDGE_HALF_1 | IPPVC_EDGE_HALF_2;
 
         //LUMA
         //left/cur vertical edge
@@ -1150,10 +1150,10 @@ namespace UMC_VC1_ENCODER
 
     }
 
-    inline void Smoth_MB_P_Adv_NV12(SmoothInfo_P_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_MB_P_Adv_NV12(SmoothInfo_P_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = IPPVC_EDGE_HALF_1 | IPPVC_EDGE_HALF_2;
+        uint32_t EdgeDisabledFlag = IPPVC_EDGE_HALF_1 | IPPVC_EDGE_HALF_2;
 
         //LUMA
         //left/cur vertical edge
@@ -1240,10 +1240,10 @@ namespace UMC_VC1_ENCODER
 
     }
 
-    inline void Smoth_RightMB_P_Adv_YV12(SmoothInfo_P_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_RightMB_P_Adv_YV12(SmoothInfo_P_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -1371,10 +1371,10 @@ namespace UMC_VC1_ENCODER
 
     }
 
-    inline void Smoth_RightMB_P_Adv_NV12(SmoothInfo_P_Adv* pSmothInfo, Ipp32s j)
+    inline void Smoth_RightMB_P_Adv_NV12(SmoothInfo_P_Adv* pSmothInfo, int32_t j)
     {
         IppStatus Sts = ippStsNoErr;
-        Ipp32u EdgeDisabledFlag = 0;
+        uint32_t EdgeDisabledFlag = 0;
 
         //LUMA
         //left/cur vertical edge
@@ -1501,7 +1501,7 @@ namespace UMC_VC1_ENCODER
         }
 
     }
-    typedef void(*fSmooth_P_MB_Adv)(SmoothInfo_P_Adv* pSmothInfo, Ipp32s j);
+    typedef void(*fSmooth_P_MB_Adv)(SmoothInfo_P_Adv* pSmothInfo, int32_t j);
 
 
     extern fSmooth_P_MB_Adv Smooth_P_MBFunction_Adv_YV12[8];

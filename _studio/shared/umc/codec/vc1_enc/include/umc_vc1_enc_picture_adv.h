@@ -48,16 +48,16 @@ private:
     VC1EncoderSequenceADV*      m_pSequenceHeader;
     ePType                      m_uiPictureType;
     bool                        m_bFrameInterpolation;
-    Ipp8u                       m_uiQuantIndex;                 // [1, 31]
+    uint8_t                       m_uiQuantIndex;                 // [1, 31]
     bool                        m_bHalfQuant;                   // can be true if  m_uiQuantIndex<8
     bool                        m_bUniformQuant;
-    //Ipp8u                     m_uiResolution;                 //[0,3] - full, half (horizontal, vertical scale)
-    Ipp8u                       m_uiDecTypeAC1;                 //[0,2] - it's used to choose decoding table
-    Ipp8u                       m_uiDecTypeDCIntra;             //[0,1] - it's used to choose decoding table
+    //uint8_t                     m_uiResolution;                 //[0,3] - full, half (horizontal, vertical scale)
+    uint8_t                       m_uiDecTypeAC1;                 //[0,2] - it's used to choose decoding table
+    uint8_t                       m_uiDecTypeDCIntra;             //[0,1] - it's used to choose decoding table
 
     /* ------------------------------I picture ---------------- */
 
-    Ipp8u                       m_uiDecTypeAC2;                 //[0,2] - it's used to choose decoding table
+    uint8_t                       m_uiDecTypeAC2;                 //[0,2] - it's used to choose decoding table
 
     /* ------------------------------P picture----------------- */
 
@@ -67,16 +67,16 @@ private:
                                                                 //    VC1_ENC_MIXED_QUARTER_BICUBIC
 
     bool                        m_bIntensity;                   // only for progressive
-    Ipp8u                       m_uiIntensityLumaScale;         // prog: [0,63], if m_bIntensity
+    uint8_t                       m_uiIntensityLumaScale;         // prog: [0,63], if m_bIntensity
                                                                 // field: for TOP field[0,63] , if  m_uiFieldIntensityType != VC1_ENC_NONE
-    Ipp8u                       m_uiIntensityLumaShift;         // prog: [0,63], if m_bIntensity
+    uint8_t                       m_uiIntensityLumaShift;         // prog: [0,63], if m_bIntensity
                                                                 // field: for TOP field[0,63] , if  m_uiFieldIntensityType != VC1_ENC_NONE
-    Ipp8u                       m_uiMVTab;                      // prog: [0,4] - table for MV coding
+    uint8_t                       m_uiMVTab;                      // prog: [0,4] - table for MV coding
                                                                 // field:[0,3] - if m_uiReferenceFieldType != VC1_ENC_BOTH_FIELD
                                                                 // field:[0,7] - if m_uiReferenceFieldType == VC1_ENC_BOTH_FIELD
-    Ipp8u                       m_uiCBPTab;                     // prog:  [0,4] - table for CBP coding
+    uint8_t                       m_uiCBPTab;                     // prog:  [0,4] - table for CBP coding
                                                                 // field: [0,7]
-    Ipp8u                       m_uiAltPQuant;                  // if picture DQuant!=0
+    uint8_t                       m_uiAltPQuant;                  // if picture DQuant!=0
     eQuantMode                  m_QuantMode;                    // VC1_ENC_QUANT_SINGLE, if   picture DQuant==0
     bool                        m_bVSTransform;                 // if sequence(m_bVSTransform) variable-size transform
     eTransformType              m_uiTransformType;              // VC1_ENC_8x8_TRANSFORM, if  m_bVSTransform == false
@@ -84,18 +84,18 @@ private:
     /*----------------- All frames- adv--------------------------- */
     /*--------------------I frame - adv--------------------------- */
 
-    Ipp8u                       m_uiRoundControl;                // 0,1;
-    Ipp8u                       m_uiCondOverlap;                 //VC1_ENC_COND_OVERLAP_NO, VC1_ENC_COND_OVERLAP_SOME, VC1_ENC_COND_OVERLAP_ALL
+    uint8_t                       m_uiRoundControl;                // 0,1;
+    uint8_t                       m_uiCondOverlap;                 //VC1_ENC_COND_OVERLAP_NO, VC1_ENC_COND_OVERLAP_SOME, VC1_ENC_COND_OVERLAP_ALL
 
     /*--------------------P frame - adv--------------------------- */
-    Ipp8u                       m_uiMVRangeIndex;                //progr:  [0,3] - 64x32, 128x64, 512x128,  1024x256
+    uint8_t                       m_uiMVRangeIndex;                //progr:  [0,3] - 64x32, 128x64, 512x128,  1024x256
                                                                  //fields half: [0,3] - 128x64,256x128,1024x256, 248x512
     /*--------------------B frame - adv--------------------------- */
     sFraction                   m_uiBFraction;                  // 0xff/oxff - BI frame
 
     /*--------------------Interlace--------------------------------*/
     bool                        m_bUVSamplingInterlace;           // if false - progressive
-    Ipp8u                       m_nReferenceFrameDist;            // is used only in I/I, I/P, P/I, P/P
+    uint8_t                       m_nReferenceFrameDist;            // is used only in I/I, I/P, P/I, P/P
     eReferenceFieldType         m_uiReferenceFieldType;           // VC1_ENC_REF_FIELD_FIRST
                                                                   // VC1_ENC_REF_FIELD_SECOND
                                                                   // VC1_ENC_REF_FIELD_BOTH
@@ -107,33 +107,33 @@ private:
                                                                  // VC1_ENC_BOTTOM_FIELD
                                                                  // VC1_ENC_BOTH_FIELD
 
-    Ipp8u                       m_uiIntensityLumaScaleB;         // [0,63], for bottom field
-    Ipp8u                       m_uiIntensityLumaShiftB;         // [0,63], for bottom field
+    uint8_t                       m_uiIntensityLumaScaleB;         // [0,63], for bottom field
+    uint8_t                       m_uiIntensityLumaShiftB;         // [0,63], for bottom field
 
-    Ipp8u                       m_uiDMVRangeIndex;               // [0,3] - 64x32, 128x64, 512x128, 1024x256
-    Ipp8u                       m_uiMBModeTab;                   // [0,7]
-    Ipp8u                       m_ui4MVCBPTab;                   // [0,3]
+    uint8_t                       m_uiDMVRangeIndex;               // [0,3] - 64x32, 128x64, 512x128, 1024x256
+    uint8_t                       m_uiMBModeTab;                   // [0,7]
+    uint8_t                       m_ui4MVCBPTab;                   // [0,3]
 
     bool                        m_bTopFieldFirst;
     bool                        m_bRepeateFirstField;
 
 private:
-    Ipp8u*                      m_pPlane[3];
-    Ipp32u                      m_uiPlaneStep[3];
+    uint8_t*                      m_pPlane[3];
+    uint32_t                      m_uiPlaneStep[3];
 
 
-    Ipp8u*                      m_pRaisedPlane[3];
-    Ipp32u                      m_uiRaisedPlaneStep[3];
-    Ipp32u                      m_uiRaisedPlanePadding;
+    uint8_t*                      m_pRaisedPlane[3];
+    uint32_t                      m_uiRaisedPlaneStep[3];
+    uint32_t                      m_uiRaisedPlanePadding;
 
-    Ipp8u*                      m_pForwardPlane[3];
-    Ipp32u                      m_uiForwardPlaneStep[3];
-    Ipp32u                      m_uiForwardPlanePadding;
+    uint8_t*                      m_pForwardPlane[3];
+    uint32_t                      m_uiForwardPlaneStep[3];
+    uint32_t                      m_uiForwardPlanePadding;
     bool                        m_bForwardInterlace;
 
-    Ipp8u*                      m_pBackwardPlane[3];
-    Ipp32u                      m_uiBackwardPlaneStep[3];
-    Ipp32u                      m_uiBackwardPlanePadding;
+    uint8_t*                      m_pBackwardPlane[3];
+    uint32_t                      m_uiBackwardPlaneStep[3];
+    uint32_t                      m_uiBackwardPlanePadding;
     bool                        m_bBackwardInterlace;
 
 
@@ -141,12 +141,12 @@ private:
     // those parameters are used for direct MB reconstruction.
     // array of nMB
 
-    Ipp16s*                     m_pSavedMV;
-    Ipp8u*                      m_pRefType; //0 - intra, 1 - First field, 2 - Second field
+    int16_t*                     m_pSavedMV;
+    uint8_t*                      m_pRefType; //0 - intra, 1 - First field, 2 - Second field
 
     VC1EncoderMBs*              m_pMBs;
     VC1EncoderCodedMB*          m_pCodedMB;
-    Ipp8u                       m_uiQuant;
+    uint8_t                       m_uiQuant;
     bool                        m_bRawBitplanes;
 
     /*  functions for YV12 and NV12 color formats */
@@ -264,15 +264,15 @@ protected:
     UMC::Status     CheckParametersB(vm_char* pLastError);
     UMC::Status     CheckParametersBField(vm_char* pLastError);
 
-    UMC::Status     SetPictureParamsI(Ipp32u OverlapSmoothing);
+    UMC::Status     SetPictureParamsI(uint32_t OverlapSmoothing);
     UMC::Status     SetPictureParamsP();
     UMC::Status     SetPictureParamsB();
-    UMC::Status     SetPictureParamsIField(Ipp32u OverlapSmoothing);
+    UMC::Status     SetPictureParamsIField(uint32_t OverlapSmoothing);
     UMC::Status     SetPictureParamsPField();
     UMC::Status     SetPictureParamsBField();
 
     inline
-    UMC::Status     SetReferenceFrameDist(Ipp8u distance)
+    UMC::Status     SetReferenceFrameDist(uint8_t distance)
     {
         m_nReferenceFrameDist = distance;
         return UMC::UMC_OK;
@@ -294,36 +294,36 @@ protected:
     UMC::Status     WritePFieldHeader(VC1EncoderBitStreamAdv* pCodedPicture);
     UMC::Status     WriteBFieldHeader(VC1EncoderBitStreamAdv* pCodedPicture);
 
-    UMC::Status     WriteMBQuantParameter(VC1EncoderBitStreamAdv* pCodedPicture, Ipp8u Quant);
+    UMC::Status     WriteMBQuantParameter(VC1EncoderBitStreamAdv* pCodedPicture, uint8_t Quant);
 
     UMC::Status     SetInterpolationParams(IppVCInterpolate_8u* pY,
                                            IppVCInterpolate_8u* pU,
                                            IppVCInterpolate_8u* pv,
-                                           Ipp8u* buffer,
+                                           uint8_t* buffer,
                                            bool bForward,
                                            bool bField = false);
 
 
-    UMC::Status     CheckMEMV_P(UMC::MeParams* MEParams, bool bMVHalf,Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     CheckMEMV_P_MIXED(UMC::MeParams* MEParams, bool bMVHalf,Ipp32s firstRow=0, Ipp32s nRows=0, bool bField=false);
-    UMC::Status     CheckMEMV_B(UMC::MeParams* MEParams, bool bMVHalf,Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     CheckMEMV_PField(UMC::MeParams* MEParams, bool bMVHalf,Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     CheckMEMV_BField(UMC::MeParams* MEParams, bool bMVHalf,Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     CheckMEMV_BFieldMixed(UMC::MeParams* MEParams, bool bMVHalf,Ipp32s firstRow=0, Ipp32s nRows=0);
+    UMC::Status     CheckMEMV_P(UMC::MeParams* MEParams, bool bMVHalf,int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     CheckMEMV_P_MIXED(UMC::MeParams* MEParams, bool bMVHalf,int32_t firstRow=0, int32_t nRows=0, bool bField=false);
+    UMC::Status     CheckMEMV_B(UMC::MeParams* MEParams, bool bMVHalf,int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     CheckMEMV_PField(UMC::MeParams* MEParams, bool bMVHalf,int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     CheckMEMV_BField(UMC::MeParams* MEParams, bool bMVHalf,int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     CheckMEMV_BFieldMixed(UMC::MeParams* MEParams, bool bMVHalf,int32_t firstRow=0, int32_t nRows=0);
 
     UMC::Status     SetInterpolationParams4MV(  IppVCInterpolate_8u* pY,
                                                 IppVCInterpolate_8u* pU,
                                                 IppVCInterpolate_8u* pv,
-                                                Ipp8u* buffer,
+                                                uint8_t* buffer,
                                                 bool bForward,
                                                 bool bField = false);
 
     UMC::Status     SetInterpolationParams4MV (IppVCInterpolateBlock_8u* pY,
-                                               Ipp8u* buffer,
-                                               Ipp32u w,
-                                               Ipp32u h,
-                                               Ipp8u **pPlane,
-                                               Ipp32u *pStep,
+                                               uint8_t* buffer,
+                                               uint32_t w,
+                                               uint32_t h,
+                                               uint8_t **pPlane,
+                                               uint32_t *pStep,
                                                bool bField);
 public:
 
@@ -342,7 +342,7 @@ public:
     UMC::Status     SetInitPictureParams(InitPictureParams* InitPicParam);
     //UMC::Status     SetVLCTablesIndex(VLCTablesIndex*       VLCIndex);
 
-    UMC::Status     SetPictureParams( ePType pType, Ipp16s* pSavedMV, Ipp8u* pRefType, bool bSecondField, Ipp32u OverlapSmoothing);
+    UMC::Status     SetPictureParams( ePType pType, int16_t* pSavedMV, uint8_t* pRefType, bool bSecondField, uint32_t OverlapSmoothing);
     UMC::Status     SetPlaneParams  ( Frame* pFrame, ePlaneType type );
 
     UMC::Status     Init(VC1EncoderSequenceADV* SequenceHeader, VC1EncoderMBs* pMBs, VC1EncoderCodedMB* pCodedMB);
@@ -353,13 +353,13 @@ public:
     UMC::Status     CompletePicture(VC1EncoderBitStreamAdv* pCodedPicture, double dPTS, size_t len);
     UMC::Status     CheckParameters(vm_char* pLastError, bool bSecondField);
 
-    UMC::Status     PAC_IFrame(UMC::MeParams*, Ipp32s firstRow, Ipp32s nRows);
-    UMC::Status     PAC_PFrame(UMC::MeParams* MEParams, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     PAC_PFrameMixed(UMC::MeParams* MEParams, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     PAC_BFrame(UMC::MeParams* MEParams, Ipp32s firstRow=0, Ipp32s nRows=0);
+    UMC::Status     PAC_IFrame(UMC::MeParams*, int32_t firstRow, int32_t nRows);
+    UMC::Status     PAC_PFrame(UMC::MeParams* MEParams, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     PAC_PFrameMixed(UMC::MeParams* MEParams, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     PAC_BFrame(UMC::MeParams* MEParams, int32_t firstRow=0, int32_t nRows=0);
 
-    UMC::Status     PACIField(UMC::MeParams* MEParams, bool bSecondField, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     PACPField(UMC::MeParams* MEParams, bool bSecondField, Ipp32s firstRow=0, Ipp32s nRows=0)
+    UMC::Status     PACIField(UMC::MeParams* MEParams, bool bSecondField, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     PACPField(UMC::MeParams* MEParams, bool bSecondField, int32_t firstRow=0, int32_t nRows=0)
     {
         UMC::Status err = UMC::UMC_OK;
         if(m_uiReferenceFieldType != VC1_ENC_REF_FIELD_BOTH)
@@ -370,14 +370,14 @@ public:
         return err;
     }
 
-    UMC::Status     PACBField(UMC::MeParams* MEParams,bool bSecondField, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     PACBFieldMixed(UMC::MeParams* MEParams,bool bSecondField, Ipp32s firstRow=0, Ipp32s nRows=0);
+    UMC::Status     PACBField(UMC::MeParams* MEParams,bool bSecondField, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     PACBFieldMixed(UMC::MeParams* MEParams,bool bSecondField, int32_t firstRow=0, int32_t nRows=0);
    
-    UMC::Status     VLC_PField2RefMixed(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, Ipp32s firstRow, Ipp32s nRows);
-    UMC::Status     VLC_PField1RefMixed(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, Ipp32s firstRow, Ipp32s nRows);
+    UMC::Status     VLC_PField2RefMixed(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, int32_t firstRow, int32_t nRows);
+    UMC::Status     VLC_PField1RefMixed(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, int32_t firstRow, int32_t nRows);
     
     
-    UMC::Status     VLC_IFrame(VC1EncoderBitStreamAdv* pCodedPicture, Ipp32s firstRow=0, Ipp32s nRows=0)
+    UMC::Status     VLC_IFrame(VC1EncoderBitStreamAdv* pCodedPicture, int32_t firstRow=0, int32_t nRows=0)
     {
         UMC::Status err = UMC::UMC_OK;
         if (firstRow == 0)
@@ -397,7 +397,7 @@ public:
         }
         return VLC_I_Frame(pCodedPicture,firstRow, nRows);
     }
-    UMC::Status     VLC_PFrame(VC1EncoderBitStreamAdv* pCodedPicture, Ipp32s firstRow=0, Ipp32s nRows=0)
+    UMC::Status     VLC_PFrame(VC1EncoderBitStreamAdv* pCodedPicture, int32_t firstRow=0, int32_t nRows=0)
     {
         UMC::Status err = UMC::UMC_OK;
         if (firstRow == 0)
@@ -416,7 +416,7 @@ public:
         }
         return VLC_P_Frame(pCodedPicture,firstRow, nRows);
     }    
-    UMC::Status     VLC_PFrameMixed(VC1EncoderBitStreamAdv* pCodedPicture, Ipp32s firstRow=0, Ipp32s nRows=0)
+    UMC::Status     VLC_PFrameMixed(VC1EncoderBitStreamAdv* pCodedPicture, int32_t firstRow=0, int32_t nRows=0)
     {
         UMC::Status err = UMC::UMC_OK;
         if (firstRow == 0)
@@ -436,7 +436,7 @@ public:
         return VLC_P_FrameMixed(pCodedPicture,firstRow, nRows);
     }    
    
-    UMC::Status     VLC_BFrame(VC1EncoderBitStreamAdv* pCodedPicture, Ipp32s firstRow=0, Ipp32s nRows=0)
+    UMC::Status     VLC_BFrame(VC1EncoderBitStreamAdv* pCodedPicture, int32_t firstRow=0, int32_t nRows=0)
     {
         UMC::Status err = UMC::UMC_OK;
         if (firstRow == 0)
@@ -458,11 +458,11 @@ public:
 
 
 
-    UMC::Status     VLC_I_FieldPic(VC1EncoderBitStreamAdv* pCodedPicture, bool bSecondField,  Ipp32s firstRow=0, Ipp32s nRows=0)
+    UMC::Status     VLC_I_FieldPic(VC1EncoderBitStreamAdv* pCodedPicture, bool bSecondField,  int32_t firstRow=0, int32_t nRows=0)
     {
         UMC::Status err = UMC::UMC_OK;
-        Ipp32u      h   = ((m_pSequenceHeader->GetPictureHeight()/2)+15)/16;
-        Ipp32u      shift = (bSecondField)? h : 0;
+        uint32_t      h   = ((m_pSequenceHeader->GetPictureHeight()/2)+15)/16;
+        uint32_t      shift = (bSecondField)? h : 0;
 
         if (firstRow == 0)
         {
@@ -494,11 +494,11 @@ public:
        return err;
     }
 
-    UMC::Status     VLC_P_FieldPic(VC1EncoderBitStreamAdv* pCodedPicture, bool bSecondField,  Ipp32s firstRow=0, Ipp32s nRows=0)
+    UMC::Status     VLC_P_FieldPic(VC1EncoderBitStreamAdv* pCodedPicture, bool bSecondField,  int32_t firstRow=0, int32_t nRows=0)
     {
         UMC::Status err = UMC::UMC_OK;
-        Ipp32u      h   = ((m_pSequenceHeader->GetPictureHeight()/2)+15)/16;
-        Ipp32u      shift = (bSecondField)? h : 0;
+        uint32_t      h   = ((m_pSequenceHeader->GetPictureHeight()/2)+15)/16;
+        uint32_t      shift = (bSecondField)? h : 0;
 
         if (firstRow == 0)
         {
@@ -533,11 +533,11 @@ public:
         return err;
     }
 
-    UMC::Status     VLC_B_FieldPic(VC1EncoderBitStreamAdv* pCodedPicture, bool bSecondField,  Ipp32s firstRow=0, Ipp32s nRows=0)
+    UMC::Status     VLC_B_FieldPic(VC1EncoderBitStreamAdv* pCodedPicture, bool bSecondField,  int32_t firstRow=0, int32_t nRows=0)
     {
         UMC::Status err = UMC::UMC_OK;
-        Ipp32u      h   = ((m_pSequenceHeader->GetPictureHeight()/2)+15)/16;
-        Ipp32u      shift = (bSecondField)? h : 0;
+        uint32_t      h   = ((m_pSequenceHeader->GetPictureHeight()/2)+15)/16;
+        uint32_t      shift = (bSecondField)? h : 0;
         
         if (firstRow == 0)
         {
@@ -567,11 +567,11 @@ public:
        err = VLC_BField(pCodedPicture, bSecondField,firstRow,nRows);
        return err;
     }
-    UMC::Status     VLC_B_FieldPicMixed(VC1EncoderBitStreamAdv* pCodedPicture, bool bSecondField,  Ipp32s firstRow=0, Ipp32s nRows=0)
+    UMC::Status     VLC_B_FieldPicMixed(VC1EncoderBitStreamAdv* pCodedPicture, bool bSecondField,  int32_t firstRow=0, int32_t nRows=0)
     {
         UMC::Status err = UMC::UMC_OK;
-        Ipp32u      h   = ((m_pSequenceHeader->GetPictureHeight()/2)+15)/16;
-        Ipp32u      shift = (bSecondField)? h : 0;
+        uint32_t      h   = ((m_pSequenceHeader->GetPictureHeight()/2)+15)/16;
+        uint32_t      shift = (bSecondField)? h : 0;
         
         if (firstRow == 0)
         {
@@ -602,12 +602,12 @@ public:
        return err;
     }
     UMC::Status     VLC_P_FieldPicMixed(VC1EncoderBitStreamAdv* pCodedPicture,
-                                   bool bSecondField,  Ipp32s firstRow = 0, Ipp32s nRows = 0)
+                                   bool bSecondField,  int32_t firstRow = 0, int32_t nRows = 0)
     {
 
         UMC::Status err = UMC::UMC_OK;
-        Ipp32u      h   = ((m_pSequenceHeader->GetPictureHeight()/2)+15)/16;
-        Ipp32u      shift = (bSecondField)? h : 0;
+        uint32_t      h   = ((m_pSequenceHeader->GetPictureHeight()/2)+15)/16;
+        uint32_t      shift = (bSecondField)? h : 0;
 
         if (firstRow == 0)
         {
@@ -645,7 +645,7 @@ public:
         return err;
     }
 
-   UMC::Status     PACPFieldMixed(UMC::MeParams* MEParams, bool bSecondField, Ipp32s firstRow = 0, Ipp32s nRows = 0)
+   UMC::Status     PACPFieldMixed(UMC::MeParams* MEParams, bool bSecondField, int32_t firstRow = 0, int32_t nRows = 0)
     {
         UMC::Status err = UMC::UMC_OK;
         if(m_uiReferenceFieldType != VC1_ENC_REF_FIELD_BOTH)
@@ -656,40 +656,40 @@ public:
         return err;
     }
 
-    UMC::Status     VLC_SkipFrame(VC1EncoderBitStreamAdv*  pCodedPicture, Ipp32s /*firstRow*/=0, Ipp32s /*nRows*/=0)
+    UMC::Status     VLC_SkipFrame(VC1EncoderBitStreamAdv*  pCodedPicture, int32_t /*firstRow*/=0, int32_t /*nRows*/=0)
     {
         return WriteSkipPictureHeader(pCodedPicture);
     };
 
 
-    UMC::Status     PAC_PField1RefMixed(UMC::MeParams* MEParams,bool bSecondField, Ipp32s firstRow = 0, Ipp32s nRows = 0);
-    UMC::Status     PAC_PField2RefMixed(UMC::MeParams* MEParams,bool bSecondField, Ipp32s firstRow = 0, Ipp32s nRows = 0);
+    UMC::Status     PAC_PField1RefMixed(UMC::MeParams* MEParams,bool bSecondField, int32_t firstRow = 0, int32_t nRows = 0);
+    UMC::Status     PAC_PField2RefMixed(UMC::MeParams* MEParams,bool bSecondField, int32_t firstRow = 0, int32_t nRows = 0);
 
-    UMC::Status     SetPictureQuantParams(Ipp8u uiQuantIndex, bool bHalfQuant);
+    UMC::Status     SetPictureQuantParams(uint8_t uiQuantIndex, bool bHalfQuant);
     //UMC::Status     VLC_BField(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField);
     UMC::Status     SetInterpolationParams (IppVCInterpolateBlock_8u* pY,
                                             IppVCInterpolateBlock_8u* pU,
                                             IppVCInterpolateBlock_8u* pV,
-                                            Ipp8u* buffer,
-                                            Ipp32u w,
-                                            Ipp32u h,
-                                            Ipp8u **pPlane,
-                                            Ipp32u *pStep,
+                                            uint8_t* buffer,
+                                            uint32_t w,
+                                            uint32_t h,
+                                            uint8_t **pPlane,
+                                            uint32_t *pStep,
                                             bool bField);
-    inline void SetIntesityCompensationParameters (bool bIntensity, Ipp32u scale, Ipp32u shift, bool bBottom = false)
+    inline void SetIntesityCompensationParameters (bool bIntensity, uint32_t scale, uint32_t shift, bool bBottom = false)
     {
         m_bIntensity           = bIntensity;
         if (!bBottom)
         {
-            m_uiIntensityLumaScale = (Ipp8u)scale;                               
-            m_uiIntensityLumaShift = (Ipp8u)shift; 
+            m_uiIntensityLumaScale = (uint8_t)scale;                               
+            m_uiIntensityLumaShift = (uint8_t)shift; 
             m_uiFieldIntensityType = (bIntensity)? 
                 (eFieldType)(m_uiFieldIntensityType | VC1_ENC_TOP_FIELD) : (eFieldType)(m_uiFieldIntensityType & ~VC1_ENC_TOP_FIELD);
         }
         else
         {
-            m_uiIntensityLumaScaleB = (Ipp8u)scale;
-            m_uiIntensityLumaShiftB = (Ipp8u)shift;
+            m_uiIntensityLumaScaleB = (uint8_t)scale;
+            m_uiIntensityLumaShiftB = (uint8_t)shift;
             m_uiFieldIntensityType = (bIntensity)? 
                 (eFieldType)(m_uiFieldIntensityType | VC1_ENC_BOTTOM_FIELD) : (eFieldType)(m_uiFieldIntensityType & ~VC1_ENC_BOTTOM_FIELD);
         }
@@ -708,18 +708,18 @@ public:
 #endif
 
 protected:
-    UMC::Status     PAC_PField1Ref(UMC::MeParams* MEParams,bool bSecondField, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     PAC_PField2Ref(UMC::MeParams* MEParams,bool bSecondField, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     VLC_PField1Ref(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     VLC_PField2Ref(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     VLC_IField(VC1EncoderBitStreamAdv* pCodedPicture, bool bSecondField, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     VLC_BField(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     VLC_BFieldMixed(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, Ipp32s firstRow=0, Ipp32s nRows=0);
+    UMC::Status     PAC_PField1Ref(UMC::MeParams* MEParams,bool bSecondField, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     PAC_PField2Ref(UMC::MeParams* MEParams,bool bSecondField, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     VLC_PField1Ref(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     VLC_PField2Ref(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     VLC_IField(VC1EncoderBitStreamAdv* pCodedPicture, bool bSecondField, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     VLC_BField(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     VLC_BFieldMixed(VC1EncoderBitStreamAdv* pCodedPicture,bool bSecondField, int32_t firstRow=0, int32_t nRows=0);
     
-    UMC::Status     VLC_I_Frame(VC1EncoderBitStreamAdv* pCodedPicture, Ipp32s firstRow, Ipp32s nRows);
-    UMC::Status     VLC_P_Frame(VC1EncoderBitStreamAdv* pCodedPicture, Ipp32s firstRow, Ipp32s nRows);
-    UMC::Status     VLC_P_FrameMixed(VC1EncoderBitStreamAdv* pCodedPicture, Ipp32s firstRow, Ipp32s nRows);
-    UMC::Status     VLC_B_Frame(VC1EncoderBitStreamAdv* pCodedPicture, Ipp32s firstRow, Ipp32s nRows);
+    UMC::Status     VLC_I_Frame(VC1EncoderBitStreamAdv* pCodedPicture, int32_t firstRow, int32_t nRows);
+    UMC::Status     VLC_P_Frame(VC1EncoderBitStreamAdv* pCodedPicture, int32_t firstRow, int32_t nRows);
+    UMC::Status     VLC_P_FrameMixed(VC1EncoderBitStreamAdv* pCodedPicture, int32_t firstRow, int32_t nRows);
+    UMC::Status     VLC_B_Frame(VC1EncoderBitStreamAdv* pCodedPicture, int32_t firstRow, int32_t nRows);
 
 };
 }

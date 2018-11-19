@@ -25,10 +25,10 @@
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
 
-static const Ipp32u bc_lut_1[] = {2,0,1,3};
-static const Ipp32u bc_lut_2[] = {0,1,2,3};
-static const Ipp32u bc_lut_3[] = {2,0,1,3};
-static const Ipp32u bc_lut_4[] = {0,1,2,3};
+static const uint32_t bc_lut_1[] = {2,0,1,3};
+static const uint32_t bc_lut_2[] = {0,1,2,3};
+static const uint32_t bc_lut_3[] = {2,0,1,3};
+static const uint32_t bc_lut_4[] = {0,1,2,3};
 
 VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
 {
@@ -36,7 +36,7 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
 
-    Ipp32u tempValue;
+    uint32_t tempValue;
 
     seqLayerHeader->RNDCTRL = 1 - seqLayerHeader->RNDCTRL;
     picLayerHeader->RNDCTRL = seqLayerHeader->RNDCTRL;
@@ -139,7 +139,7 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
         //001            1 MV Half-pel
         //0000           Mixed MV
         //0001           Intensity Compensation
-        Ipp32s bit_count = 1;
+        int32_t bit_count = 1;
         VC1_GET_BITS(1, picLayerHeader->MVMODE);
         while((picLayerHeader->MVMODE == 0) && (bit_count < 4))
         {
@@ -216,7 +216,7 @@ VC1Status DecodePictureLayer_ProgressivePpicture(VC1Context* pContext)
         //001            1 MV Half-pel
         //0000            1 MV Half-pel bilinear
         //0001            Intensity Compensation
-        Ipp32s bit_count = 1;
+        int32_t bit_count = 1;
         VC1_GET_BITS(1, picLayerHeader->MVMODE);
         while((picLayerHeader->MVMODE == 0) && (bit_count < 4))
         {

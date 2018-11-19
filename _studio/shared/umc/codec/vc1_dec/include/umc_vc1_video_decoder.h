@@ -69,7 +69,7 @@ namespace UMC
         // speed_mode - return current mode
 
         // Change Decoding speed
-        Status ChangeVideoDecodingSpeed(Ipp32s& speed_shift);
+        Status ChangeVideoDecodingSpeed(int32_t& speed_shift);
 
         void SetExtFrameAllocator(FrameAllocator*  pFrameAllocator) {m_pExtFrameAllocator = pFrameAllocator;}
 
@@ -77,33 +77,33 @@ namespace UMC
 
     protected:
 
-        Status CreateFrameBuffer(Ipp32u bufferSize);
+        Status CreateFrameBuffer(uint32_t bufferSize);
 
         void      GetFrameSize                         (MediaData* in);
-        void      GetPTS                               (Ipp64f in_pts);
+        void      GetPTS                               (double in_pts);
         bool      GetFPS                               (VC1Context* pContext);
 
         virtual void FreeTables(VC1Context* pContext);
         virtual bool InitTables(VC1Context* pContext);
-        virtual bool InitAlloc(VC1Context* pContext, Ipp32u MaxFrameNum) = 0;
+        virtual bool InitAlloc(VC1Context* pContext, uint32_t MaxFrameNum) = 0;
         virtual bool InitVAEnvironment() = 0;
         void    FreeAlloc(VC1Context* pContext);
 
         virtual Status VC1DecodeFrame                 (MediaData* in, VideoData* out_data);
 
 
-        virtual Ipp32u CalculateHeapSize() = 0;
+        virtual uint32_t CalculateHeapSize() = 0;
 
-        Status GetStartCodes                  (Ipp8u* pDataPointer,
-                                               Ipp32u DataSize,
+        Status GetStartCodes                  (uint8_t* pDataPointer,
+                                               uint32_t DataSize,
                                                MediaDataEx* out,
-                                               Ipp32u* readSize);
-        Status SMProfilesProcessing(Ipp8u* pBitstream);
-        virtual Status ContextAllocation(Ipp32u mbWidth,Ipp32u mbHeight);
+                                               uint32_t* readSize);
+        Status SMProfilesProcessing(uint8_t* pBitstream);
+        virtual Status ContextAllocation(uint32_t mbWidth,uint32_t mbHeight);
 
-        Status StartCodesProcessing(Ipp8u*   pBStream,
-                                    Ipp32u*  pOffsets,
-                                    Ipp32u*  pValues,
+        Status StartCodesProcessing(uint8_t*   pBStream,
+                                    uint32_t*  pOffsets,
+                                    uint32_t*  pValues,
                                     bool     IsDataPrepare);
 
         Status ParseStreamFromMediaData     ();
@@ -111,12 +111,12 @@ namespace UMC
         Status ParseInputBitstream          ();
         Status InitSMProfile                ();
 
-        Ipp32u  GetCurrentFrameSize()
+        uint32_t  GetCurrentFrameSize()
         {
             if (m_dataBuffer)
-                return (Ipp32u)m_frameData->GetDataSize();
+                return (uint32_t)m_frameData->GetDataSize();
             else
-                return (Ipp32u)m_pCurrentIn->GetDataSize();
+                return (uint32_t)m_pCurrentIn->GetDataSize();
         }
 
         Status CheckLevelProfileOnly(VideoDecoderParams *pParam);
@@ -126,23 +126,23 @@ namespace UMC
         
         VC1Context*                m_pContext;
         VC1Context                 m_pInitContext;
-        Ipp32u                     m_iThreadDecoderNum;                     // (Ipp32u) number of slice decoders
-        Ipp8u*                     m_dataBuffer;                            //uses for swap data into decoder
+        uint32_t                     m_iThreadDecoderNum;                     // (uint32_t) number of slice decoders
+        uint8_t*                     m_dataBuffer;                            //uses for swap data into decoder
         MediaDataEx*               m_frameData;                             //uses for swap data into decoder
         MediaDataEx::_MediaDataEx* m_stCodes;
-        Ipp32u                     m_decoderInitFlag;
-        Ipp32u                     m_decoderFlags;
+        uint32_t                     m_decoderInitFlag;
+        uint32_t                     m_decoderFlags;
 
         UMC::MemID                 m_iMemContextID;
         UMC::MemID                 m_iHeapID;
         UMC::MemID                 m_iFrameBufferID;
 
-        Ipp64f                     m_pts;
-        Ipp64f                     m_pts_dif;
+        double                     m_pts;
+        double                     m_pts_dif;
 
-        Ipp32u                     m_iMaxFramesInProcessing;
+        uint32_t                     m_iMaxFramesInProcessing;
 
-        Ipp64u                     m_lFrameCount;
+        unsigned long long                     m_lFrameCount;
         bool                       m_bLastFrameNeedDisplay;
         VC1TaskStore*              m_pStore;
         VideoAccelerator*          m_va;
@@ -153,15 +153,15 @@ namespace UMC
         VideoData*                 m_pCurrentOut;
 
         bool                       m_bIsNeedToFlush;
-        Ipp32u                     m_AllocBuffer;
+        uint32_t                     m_AllocBuffer;
 
         FrameAllocator*            m_pExtFrameAllocator;
-        Ipp32u                     m_SurfaceNum;
+        uint32_t                     m_SurfaceNum;
 
         bool                       m_bIsExternalFR;
 
-        static const Ipp32u        NumBufferedFrames = 0;
-        static const Ipp32u        NumReferenceFrames = 3;
+        static const uint32_t        NumBufferedFrames = 0;
+        static const uint32_t        NumReferenceFrames = 3;
 
         virtual UMC::FrameMemID     ProcessQueuesForNextFrame(bool& isSkip, mfxU16& Corrupted) = 0;
 
@@ -172,7 +172,7 @@ namespace UMC
         virtual UMC::Status  SetRMSurface();
         void UnlockSurfaces();
         virtual UMC::FrameMemID GetSkippedIndex(bool isIn = true) = 0;
-        FrameMemID GetFrameOrder(bool isLast, bool isSamePolar, Ipp32u & frameOrder);
+        FrameMemID GetFrameOrder(bool isLast, bool isSamePolar, uint32_t & frameOrder);
         virtual Status RunThread(int /*threadNumber*/) { return UMC_OK; }
 
         UMC::VC1FrameDescriptor* m_pDescrToDisplay;

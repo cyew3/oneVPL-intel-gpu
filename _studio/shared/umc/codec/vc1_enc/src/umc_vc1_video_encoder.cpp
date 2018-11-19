@@ -367,7 +367,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if (vm_string_strstr(temp,VM_STRING("VSTtransform:")))
       {
-          Ipp32s t;
+          int32_t t;
           param = temp + vm_string_strlen(VM_STRING("VSTtransform:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bVSTransform = (t!=0);
@@ -375,7 +375,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if (vm_string_strstr(temp,VM_STRING("Deblocking:")))
       {
-          Ipp32s t;
+          int32_t t;
           param = temp + vm_string_strlen(VM_STRING("Deblocking:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bDeblocking = (t!=0);
@@ -383,15 +383,15 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if (vm_string_strstr(temp,VM_STRING("ConstQuantization:")))
       {
-          Ipp32s t;
+          int32_t t;
           param = temp + vm_string_strlen(VM_STRING("ConstQuantization:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
-          m_iConstQuant = (Ipp8u)t;
+          m_iConstQuant = (uint8_t)t;
           continue;
       }
       else if (vm_string_strstr(temp,VM_STRING("NumberOfFrames:")))
       {
-          Ipp32u t;
+          uint32_t t;
           param = temp + vm_string_strlen(VM_STRING("NumberOfFrames:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_uiNumFrames = t;
@@ -399,7 +399,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if (vm_string_strstr(temp,VM_STRING("MESearchSpeed:")))
       {
-          Ipp32u t;
+          uint32_t t;
           param = temp + vm_string_strlen(VM_STRING("MESearchSpeed:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_uiMESearchSpeed = t;
@@ -407,7 +407,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if (vm_string_strstr(temp,VM_STRING("HRDBufferSize:")))
       {
-          Ipp32u t;
+          uint32_t t;
           param = temp + vm_string_strlen(VM_STRING("HRDBufferSize:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_uiHRDBufferSize = t;
@@ -415,7 +415,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if (vm_string_strstr(temp,VM_STRING("HRDInitFullness:")))
       {
-          Ipp32u t;
+          uint32_t t;
           param = temp + vm_string_strlen(VM_STRING("HRDInitFullness:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_uiHRDBufferInitFullness = t;
@@ -423,7 +423,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if (vm_string_strstr(temp,VM_STRING("FrameRecoding:")))
       {
-          Ipp32u t;
+          uint32_t t;
           param = temp + vm_string_strlen(VM_STRING("FrameRecoding:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bFrameRecoding = (t!=0);
@@ -431,7 +431,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if (vm_string_strstr(temp,VM_STRING("MixedMV:")))
       {
-          Ipp32u t;
+          uint32_t t;
           param = temp + vm_string_strlen(VM_STRING("MixedMV:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bMixed = (t!=0);
@@ -439,7 +439,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if (vm_string_strstr(temp,VM_STRING("OriginalPredictedFrame:")))
       {
-          Ipp32u t;
+          uint32_t t;
           param = temp + vm_string_strlen(VM_STRING("OriginalPredictedFrame:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bOrigFramePred = (t!=0);
@@ -447,7 +447,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if (vm_string_strstr(temp,VM_STRING("InterlaceField:")))
       {
-          Ipp32u t;
+          uint32_t t;
           param = temp + vm_string_strlen(VM_STRING("InterlaceField:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bInterlace = (t!=0);
@@ -455,7 +455,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if (vm_string_strstr(temp,VM_STRING("RefField:")))
       {
-          Ipp32u t;
+          uint32_t t;
           param = temp + vm_string_strlen(VM_STRING("RefField:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_uiReferenceFieldType = t;
@@ -464,7 +464,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if  (vm_string_strstr(temp,VM_STRING("SceneAnalyzer:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("SceneAnalyzer:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bSceneAnalyzer = (t!=0);
@@ -473,7 +473,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if  (vm_string_strstr(temp,VM_STRING("UseFeedback:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("UseFeedback:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bUseMeFeedback = (t!=0);
@@ -482,7 +482,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if  (vm_string_strstr(temp,VM_STRING("UpdateFeedback:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("UpdateFeedback:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bUseUpdateMeFeedback = (t!=0);
@@ -491,7 +491,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if  (vm_string_strstr(temp,VM_STRING("UseFastFeedback:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("UseFastFeedback:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bUseFastMeFeedback = (t!=0);
@@ -500,7 +500,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if  (vm_string_strstr(temp,VM_STRING("QuantType:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("QuantType:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_uiQuantType = t;
@@ -509,7 +509,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if  (vm_string_strstr(temp,VM_STRING("NumberOfSlices:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("NumberOfSlices:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_uiNumSlices = t;
@@ -518,7 +518,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if  (vm_string_strstr(temp,VM_STRING("SelectVLCTables:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("SelectVLCTables:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bSelectVLCTables = (t!=0);
@@ -527,7 +527,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if  (vm_string_strstr(temp,VM_STRING("ChangeInterpPixelType:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("ChangeInterpPixelType:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bChangeInterpPixelType = (t!=0);
@@ -536,14 +536,14 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if  (vm_string_strstr(temp,VM_STRING("UseTreillisQuantization:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("UseTreillisQuantization:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bUseTreillisQuantization = (t!=0);
       }
       else if  (vm_string_strstr(temp,VM_STRING("OverlapSmoothing:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("OverlapSmoothing:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_uiOverlapSmoothing = t;
@@ -551,7 +551,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if  (vm_string_strstr(temp,VM_STRING("IntensityCompensation:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("IntensityCompensation:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bIntensityCompensation = (t!=0);
@@ -559,7 +559,7 @@ UMC::Status VC1EncoderParams::ReadParamFile(const vm_char *ParFileName)
       }
       else if  (vm_string_strstr(temp,VM_STRING("NV12:")))
       {
-          Ipp32u t = 0;
+          uint32_t t = 0;
           param = temp + vm_string_strlen(VM_STRING("NV12:"));
           vm_string_sscanf(param, VM_STRING("%d"),&t);
           m_bNV12 = (t!=0);

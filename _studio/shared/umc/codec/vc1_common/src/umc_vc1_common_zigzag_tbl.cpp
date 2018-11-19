@@ -27,7 +27,7 @@
 
 //VC-1 Table 234: Intra Normal Scan
 //remapped as src index for continues dst index
-const Ipp8u VC1_Intra_Normal_Scan_chroma[64] =
+const uint8_t VC1_Intra_Normal_Scan_chroma[64] =
 {
      0,     8,      1,      2,      9,      16,     24,     17,
     10,     3,      4,      11,     18,     25,     32,     40,
@@ -39,7 +39,7 @@ const Ipp8u VC1_Intra_Normal_Scan_chroma[64] =
     61,     46,     39,     47,     54,     62,     55,     63
 };
 
-const Ipp8u VC1_Intra_Normal_Scan_luma[64] =
+const uint8_t VC1_Intra_Normal_Scan_luma[64] =
 {
     0,    16,   1,    2,     17,    32,    48,   33,
     18,   3,    4,    19,    34,    49,    64,   80,
@@ -53,7 +53,7 @@ const Ipp8u VC1_Intra_Normal_Scan_luma[64] =
 
 //VC-1 Table 235: Intra Horizontal Scan
 //remapped as src index for continues dst index
-const Ipp8u VC1_Intra_Horizontal_Scan_chroma[64] =
+const uint8_t VC1_Intra_Horizontal_Scan_chroma[64] =
 {
       0,        1,      8,      2,      3,      9,      16,     24,
       17,       10,     4,      5,      11,     18,     25,     32,
@@ -65,7 +65,7 @@ const Ipp8u VC1_Intra_Horizontal_Scan_chroma[64] =
       46,       39,     47,     54,     61,     62,     55,     63
 };
 
-const Ipp8u VC1_Intra_Horizontal_Scan_luma[64] =
+const uint8_t VC1_Intra_Horizontal_Scan_luma[64] =
 {
     0,     1,     16,    2,     3,      17,     32,     48,
     33,    18,    4,     5,     19,     34,     49,     64,
@@ -79,7 +79,7 @@ const Ipp8u VC1_Intra_Horizontal_Scan_luma[64] =
 
 //VC-1 Table 236: Intra Vertical Scan
 //remapped as src index for continues dst index
-const Ipp8u VC1_Intra_Vertical_Scan_chroma[64] =
+const uint8_t VC1_Intra_Vertical_Scan_chroma[64] =
 {
        0,       8,      16,     1,      24,     32,     40,     9,
        2,       3,      10,     17,     25,     48,     56,     41,
@@ -91,7 +91,7 @@ const Ipp8u VC1_Intra_Vertical_Scan_chroma[64] =
       46,       39,     47,     54,     61,     62,     55,     63
 };
 
-const Ipp8u VC1_Intra_Vertical_Scan_luma[64] =
+const uint8_t VC1_Intra_Vertical_Scan_luma[64] =
 {
     0,     16,    32,    1,     48,    64,    80,    17,
     2,     3,     18,    33,    49,    96,    112,   81,
@@ -106,7 +106,7 @@ const Ipp8u VC1_Intra_Vertical_Scan_luma[64] =
 //Table 237: Inter 8x8 Scan for Simple and Main Profiles
 //and Progressive Mode in Advanced Profile
 //remapped as src index for continues dst index
-const Ipp8u VC1_Inter_8x8_Scan_chroma[64] =
+const uint8_t VC1_Inter_8x8_Scan_chroma[64] =
 {
        0,   8,     1,     2,     9,     16,    24,    17,
       10,   3,     4,     11,    18,    25,    32,    40,
@@ -118,7 +118,7 @@ const Ipp8u VC1_Inter_8x8_Scan_chroma[64] =
       61,   62,    54,    46,    39,    47,    55,    63
   };
 
-const Ipp8u VC1_Inter_8x8_Scan_luma[64] =
+const uint8_t VC1_Inter_8x8_Scan_luma[64] =
 {
     0,     16,    1,     2,     17,    32,    48,    33,
     18,    3,     4,     19,    34,    49,    64,    80,
@@ -132,7 +132,7 @@ const Ipp8u VC1_Inter_8x8_Scan_luma[64] =
 
 //VC-1 Table 238: Inter 8x4 Scan for Simple and Main Profiles
 //remapped as src index for continues dst index
-const Ipp8u VC1_Inter_8x4_Scan_chroma[64] =
+const uint8_t VC1_Inter_8x4_Scan_chroma[64] =
 {
       0,    1,    2,    8,    3,     9,   10,   16,
       4,    11,   17,   24,   18,    12,  5,    19,
@@ -146,7 +146,7 @@ const Ipp8u VC1_Inter_8x4_Scan_chroma[64] =
 
 };
 
-const Ipp8u VC1_Inter_8x4_Scan_luma[64] =
+const uint8_t VC1_Inter_8x4_Scan_luma[64] =
 {
     0,    1,    2,     16,    3,     17,     18,    32,
     4,    19,   33,    48,    34,    20,     5,     35,
@@ -161,7 +161,7 @@ const Ipp8u VC1_Inter_8x4_Scan_luma[64] =
 
 //VC-1 Table 239: Inter 4x8 Scan for Simple and Main Profiles
 //remapped as src index for continues dst index
-const Ipp8u VC1_Inter_4x8_Scan_chroma[64] =
+const uint8_t VC1_Inter_4x8_Scan_chroma[64] =
 {
      0,    8,    1,    16,
      9,    24,   17,   2,
@@ -184,7 +184,7 @@ const Ipp8u VC1_Inter_4x8_Scan_chroma[64] =
 };
 
 
-const Ipp8u VC1_Inter_4x8_Scan_luma[64] =
+const uint8_t VC1_Inter_4x8_Scan_luma[64] =
 {
     0,    16,    1,    32,
     17,   48,    33,   2,
@@ -208,7 +208,7 @@ const Ipp8u VC1_Inter_4x8_Scan_luma[64] =
 //Table 240: Inter 4x4 Scan for Simple and Main Profiles and
 //Progressive Mode in Advanced Profile
 //remapped as src index for continues dst index
-const Ipp8u VC1_Inter_4x4_Scan_chroma[64] =
+const uint8_t VC1_Inter_4x4_Scan_chroma[64] =
 {
      0,    8,    16,   1,
      9,    24,   17,   2,
@@ -233,7 +233,7 @@ const Ipp8u VC1_Inter_4x4_Scan_chroma[64] =
 };
 
 
-const Ipp8u VC1_Inter_4x4_Scan_luma[64] =
+const uint8_t VC1_Inter_4x4_Scan_luma[64] =
 {
      0,    16,   32,   1,
      17,   48,   33,   2,
@@ -258,7 +258,7 @@ const Ipp8u VC1_Inter_4x4_Scan_luma[64] =
 };
 
 //Table 240: Progressive Mode Inter 8x4 Scan for Advanced Profile
-const Ipp8u VC1_Inter_8x4_Scan_Adv_chroma[64] =
+const uint8_t VC1_Inter_8x4_Scan_Adv_chroma[64] =
 {
     0,    8,    1,   16,   2,   9,   10,   3,
     24,   17,   4,   11,   18,  12,  5,    19,
@@ -274,7 +274,7 @@ const Ipp8u VC1_Inter_8x4_Scan_Adv_chroma[64] =
 
 
 //Table 240: Progressive Mode Inter 8x4 Scan for Advanced Profile
-const Ipp8u VC1_Inter_8x4_Scan_Adv_luma[64] =
+const uint8_t VC1_Inter_8x4_Scan_Adv_luma[64] =
 {
     0,    16,    1,    32,    2,     17,   18,   3,
     48,   33,    4,    19,    34,    20,   5,    35,
@@ -289,7 +289,7 @@ const Ipp8u VC1_Inter_8x4_Scan_Adv_luma[64] =
 };
 
 //Table 241: Progressive Mode Inter 4x8 Scan for Advanced Profile
-const Ipp8u VC1_Inter_4x8_Scan_Adv_chroma[64] =
+const uint8_t VC1_Inter_4x8_Scan_Adv_chroma[64] =
 {
     0,    1,    8,    2,
     9,    16,   17,   24,
@@ -311,7 +311,7 @@ const Ipp8u VC1_Inter_4x8_Scan_Adv_chroma[64] =
 
 };
 
-const Ipp8u VC1_Inter_4x8_Scan_Adv_luma[64] =
+const uint8_t VC1_Inter_4x8_Scan_Adv_luma[64] =
 {
     0,    1,    16,   2,
     17,   32,   33,   48,
@@ -333,7 +333,7 @@ const Ipp8u VC1_Inter_4x8_Scan_Adv_luma[64] =
 
 };
 
-const Ipp8u VC1_Inter_InterlaceIntra_8x8_Scan_Adv_chroma[64] =
+const uint8_t VC1_Inter_InterlaceIntra_8x8_Scan_Adv_chroma[64] =
 {
    0,    8,    1,    16,   24,   9,    2,   32,
    40,   48,   56,   17,   10,   3,    25,  18,
@@ -346,7 +346,7 @@ const Ipp8u VC1_Inter_InterlaceIntra_8x8_Scan_Adv_chroma[64] =
 };
 
 
-const Ipp8u VC1_Inter_InterlaceIntra_8x8_Scan_Adv_luma[64] =
+const uint8_t VC1_Inter_InterlaceIntra_8x8_Scan_Adv_luma[64] =
 {
    0,     16,      1,       32,     48,     17,     2,     64,
    80,    96,      112,     33,     18,     3,      49,    34,
@@ -359,7 +359,7 @@ const Ipp8u VC1_Inter_InterlaceIntra_8x8_Scan_Adv_luma[64] =
 };
 
 /*Table 243 (SMPTE-421M-FDS1): Interlace Mode Inter 8x4 Scan for Advanced Profile*/
-const Ipp8u VC1_Inter_Interlace_8x4_Scan_Adv_chroma[64] =
+const uint8_t VC1_Inter_Interlace_8x4_Scan_Adv_chroma[64] =
 {
    0,   8,  16,  24,  1,   9,   2,   17,
    25,  10, 3,   18,  26,  4,   11,  19,
@@ -373,7 +373,7 @@ const Ipp8u VC1_Inter_Interlace_8x4_Scan_Adv_chroma[64] =
 };
 
 
-const Ipp8u VC1_Inter_Interlace_8x4_Scan_Adv_luma[64] =
+const uint8_t VC1_Inter_Interlace_8x4_Scan_Adv_luma[64] =
 {
    0,    16,    32,    48,    1,     17,   2,    33,
    49,   18,    3,     34,    50,    4,    19,   35,
@@ -388,7 +388,7 @@ const Ipp8u VC1_Inter_Interlace_8x4_Scan_Adv_luma[64] =
 };
 
 /*Table 244 (SMPTE-421M-FDS1): Interlace Mode Inter 4x8 Scan for Advanced Profile*/
-const Ipp8u VC1_Inter_Interlace_4x8_Scan_Adv_chroma[64] =
+const uint8_t VC1_Inter_Interlace_4x8_Scan_Adv_chroma[64] =
 {
        0,    1,    2,    8,
       16,    9,   24,   17,
@@ -411,7 +411,7 @@ const Ipp8u VC1_Inter_Interlace_4x8_Scan_Adv_chroma[64] =
 };
 
 
-const Ipp8u VC1_Inter_Interlace_4x8_Scan_Adv_luma[64] =
+const uint8_t VC1_Inter_Interlace_4x8_Scan_Adv_luma[64] =
 {
         0,    1,     2,     16,
         32,   17,    48,    33,
@@ -433,7 +433,7 @@ const Ipp8u VC1_Inter_Interlace_4x8_Scan_Adv_luma[64] =
 
 };
 /*Table 245 (SMPTE-421M-FDS1): Interlace Mode Inter 4x4 Scan for Advanced Profile*/
-const Ipp8u VC1_Inter_Interlace_4x4_Scan_Adv_chroma[64] =
+const uint8_t VC1_Inter_Interlace_4x4_Scan_Adv_chroma[64] =
 {
      0,   8,   16,  24,
      1,   9,   17,  2,
@@ -457,7 +457,7 @@ const Ipp8u VC1_Inter_Interlace_4x4_Scan_Adv_chroma[64] =
 };
 
 
-const Ipp8u VC1_Inter_Interlace_4x4_Scan_Adv_luma[64] =
+const uint8_t VC1_Inter_Interlace_4x4_Scan_Adv_luma[64] =
 {
      0,     16,    32,    48,
      1,     17,    33,    2,
@@ -480,7 +480,7 @@ const Ipp8u VC1_Inter_Interlace_4x4_Scan_Adv_luma[64] =
       118, 87,  103, 119
 };
 
-const Ipp8u* AdvZigZagTables_IProgressive_luma[2][7] =
+const uint8_t* AdvZigZagTables_IProgressive_luma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -506,7 +506,7 @@ const Ipp8u* AdvZigZagTables_IProgressive_luma[2][7] =
     }
 };
 
-const Ipp8u* AdvZigZagTables_IProgressive_chroma[2][7] =
+const uint8_t* AdvZigZagTables_IProgressive_chroma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -531,7 +531,7 @@ const Ipp8u* AdvZigZagTables_IProgressive_chroma[2][7] =
     }
 };
 
-const Ipp8u* AdvZigZagTables_IInterlace_luma[2][7] =
+const uint8_t* AdvZigZagTables_IInterlace_luma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -558,7 +558,7 @@ const Ipp8u* AdvZigZagTables_IInterlace_luma[2][7] =
 };
 
 
-const Ipp8u* AdvZigZagTables_IInterlace_chroma[2][7] =
+const uint8_t* AdvZigZagTables_IInterlace_chroma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -584,7 +584,7 @@ const Ipp8u* AdvZigZagTables_IInterlace_chroma[2][7] =
     }
 };
 
-const Ipp8u* AdvZigZagTables_IField_luma[2][7] =
+const uint8_t* AdvZigZagTables_IField_luma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -611,7 +611,7 @@ const Ipp8u* AdvZigZagTables_IField_luma[2][7] =
 };
 
 
-const Ipp8u* AdvZigZagTables_IField_chroma[2][7] =
+const uint8_t* AdvZigZagTables_IField_chroma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -637,7 +637,7 @@ const Ipp8u* AdvZigZagTables_IField_chroma[2][7] =
     }
 };
 
-const Ipp8u* AdvZigZagTables_PBProgressive_luma[2][7] =
+const uint8_t* AdvZigZagTables_PBProgressive_luma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -662,7 +662,7 @@ const Ipp8u* AdvZigZagTables_PBProgressive_luma[2][7] =
     }
 };
 
-const Ipp8u* AdvZigZagTables_PBProgressive_chroma[2][7] =
+const uint8_t* AdvZigZagTables_PBProgressive_chroma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -686,7 +686,7 @@ const Ipp8u* AdvZigZagTables_PBProgressive_chroma[2][7] =
         VC1_Inter_8x8_Scan_chroma           //INTRA
     }
 };
-const Ipp8u* AdvZigZagTables_PBInterlace_luma[2][7] =
+const uint8_t* AdvZigZagTables_PBInterlace_luma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -713,7 +713,7 @@ const Ipp8u* AdvZigZagTables_PBInterlace_luma[2][7] =
 };
 
 
-const Ipp8u* AdvZigZagTables_PBInterlace_chroma[2][7] =
+const uint8_t* AdvZigZagTables_PBInterlace_chroma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -739,7 +739,7 @@ const Ipp8u* AdvZigZagTables_PBInterlace_chroma[2][7] =
     }
 };
 
-const Ipp8u* AdvZigZagTables_PBField_luma[2][7] =
+const uint8_t* AdvZigZagTables_PBField_luma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -765,7 +765,7 @@ const Ipp8u* AdvZigZagTables_PBField_luma[2][7] =
     }
 };
 
-const Ipp8u* AdvZigZagTables_PBField_chroma[2][7] =
+const uint8_t* AdvZigZagTables_PBField_chroma[2][7] =
 {
     /*ACPRED=0*/
     {
@@ -792,7 +792,7 @@ const Ipp8u* AdvZigZagTables_PBField_chroma[2][7] =
 };
 
 
-const Ipp8u* ZigZagTables_I_luma[2][7] =
+const uint8_t* ZigZagTables_I_luma[2][7] =
 {
          /*ACPRED=0*/
           {
@@ -818,7 +818,7 @@ const Ipp8u* ZigZagTables_I_luma[2][7] =
           }
 };
 
-const Ipp8u* ZigZagTables_I_chroma[2][7] =
+const uint8_t* ZigZagTables_I_chroma[2][7] =
 {
          /*ACPRED=0*/
           {
@@ -844,7 +844,7 @@ const Ipp8u* ZigZagTables_I_chroma[2][7] =
           }
 };
 
-const Ipp8u* ZigZagTables_PB_luma[2][7] =
+const uint8_t* ZigZagTables_PB_luma[2][7] =
 {
           /*ACPRED=0*/
           {
@@ -870,7 +870,7 @@ const Ipp8u* ZigZagTables_PB_luma[2][7] =
           }
 };
 
-const Ipp8u* ZigZagTables_PB_chroma[2][7] =
+const uint8_t* ZigZagTables_PB_chroma[2][7] =
 {
           /*ACPRED=0*/
           {

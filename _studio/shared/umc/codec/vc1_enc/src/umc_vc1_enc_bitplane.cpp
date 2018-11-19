@@ -26,7 +26,7 @@
 
 namespace UMC_VC1_ENCODER
 {
-  UMC::Status VC1EncoderBitplane::Init(Ipp16u width, Ipp16u height)
+  UMC::Status VC1EncoderBitplane::Init(uint16_t width, uint16_t height)
   {
       Close();
       m_uiHeight    = height;
@@ -47,7 +47,7 @@ namespace UMC_VC1_ENCODER
       m_uiWidth     = 0;
   }
 
-  UMC::Status VC1EncoderBitplane::SetValue(bool value, Ipp16u x, Ipp16u y)
+  UMC::Status VC1EncoderBitplane::SetValue(bool value, uint16_t x, uint16_t y)
   {
     if (x >= m_uiWidth || y >= m_uiHeight)
         return UMC::UMC_ERR_FAILED;
@@ -55,13 +55,13 @@ namespace UMC_VC1_ENCODER
     return UMC::UMC_OK;
   }
 
-  Ipp8u VC1EncoderBitplane::Get2x3Normal(Ipp16u x,Ipp16u y)
+  uint8_t VC1EncoderBitplane::Get2x3Normal(uint16_t x,uint16_t y)
   {
       return (pBitplane[x + (y+0)*m_uiWidth]<<0)|(pBitplane[x+1+ (y+0)*m_uiWidth]<<1)|
              (pBitplane[x + (y+1)*m_uiWidth]<<2)|(pBitplane[x+1+ (y+1)*m_uiWidth]<<3)|
              (pBitplane[x + (y+2)*m_uiWidth]<<4)|(pBitplane[x+1+ (y+2)*m_uiWidth]<<5);
   }
-  Ipp8u VC1EncoderBitplane::Get3x2Normal(Ipp16u x,Ipp16u y)
+  uint8_t VC1EncoderBitplane::Get3x2Normal(uint16_t x,uint16_t y)
   {
       return (pBitplane[x + (y+0)*m_uiWidth]<<0) |(pBitplane[x+1+ (y+0)*m_uiWidth]<<1) |(pBitplane[x+2+ (y+0)*m_uiWidth]<<2)|
              (pBitplane[x + (y+1)*m_uiWidth]<<3) |(pBitplane[x+1+ (y+1)*m_uiWidth]<<4) |(pBitplane[x+2+ (y+1)*m_uiWidth]<<5);

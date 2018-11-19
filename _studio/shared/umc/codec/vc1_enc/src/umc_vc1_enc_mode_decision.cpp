@@ -29,49 +29,49 @@
 namespace UMC_VC1_ENCODER
 {
 
-    void SaveResidual8x8Inter (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]);
-    void SaveResidual8x4Inter (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]);
-    void SaveResidual4x8Inter (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]);
-    void SaveResidual4x4Inter (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]);
+    void SaveResidual8x8Inter (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]);
+    void SaveResidual8x4Inter (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]);
+    void SaveResidual4x8Inter (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]);
+    void SaveResidual4x4Inter (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]);
 
-    typedef void (*pSaveResidual) (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]);
+    typedef void (*pSaveResidual) (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]);
     
-    static Ipp32u     CalculateBlockAC(         eTransformType      tsType,
-                                                Ipp8u               *pRun,
-                                                Ipp16s              *pLevel,
-                                                Ipp8u               *pnPairs,
+    static uint32_t     CalculateBlockAC(         eTransformType      tsType,
+                                                uint8_t               *pRun,
+                                                int16_t              *pLevel,
+                                                uint8_t               *pnPairs,
                                                 const sACTablesSet  *pACTablesSet)
     {
-        Ipp32s                  i                      = 0;
-        static const Ipp32s     nSubblk [4]     = {1,2,2,4};
+        int32_t                  i                      = 0;
+        static const int32_t     nSubblk [4]     = {1,2,2,4};
 
-        const Ipp32u            *pEncTable   = pACTablesSet->pEncTable;
-        Ipp8u                   nPairsBlock  = 0;
-        Ipp32u                  BlockLen     = 0;     
+        const uint32_t            *pEncTable   = pACTablesSet->pEncTable;
+        uint8_t                   nPairsBlock  = 0;
+        uint32_t                  BlockLen     = 0;     
 
 
  
-        for (Ipp32s nSubblock=0; nSubblock<nSubblk[tsType]; nSubblock++)
+        for (int32_t nSubblock=0; nSubblock<nSubblk[tsType]; nSubblock++)
         {
-            const Ipp8u     *pTableDR    = pACTablesSet->pTableDR;
-            const Ipp8u     *pTableDL    = pACTablesSet->pTableDL;
-            const Ipp8u     *pTableInd   = pACTablesSet->pTableInd;
-            Ipp8u           nPairs       = pnPairs[nSubblock];
+            const uint8_t     *pTableDR    = pACTablesSet->pTableDR;
+            const uint8_t     *pTableDL    = pACTablesSet->pTableDL;
+            const uint8_t     *pTableInd   = pACTablesSet->pTableInd;
+            uint8_t           nPairs       = pnPairs[nSubblock];
 
             if (nPairs == 0)
                 continue;
 
             // put codes into bitstream
             i = 0;
-            for (Ipp32s not_last = 1; not_last>=0; not_last--)
+            for (int32_t not_last = 1; not_last>=0; not_last--)
             {
                 for (; i < nPairs - not_last; i++)
                 {
                     bool    sign = false;
-                    Ipp8u   run  = pRun [i+nPairsBlock];
-                    Ipp16s  lev  = pLevel[i+nPairsBlock];
+                    uint8_t   run  = pRun [i+nPairsBlock];
+                    int16_t  lev  = pLevel[i+nPairsBlock];
 
-                    Ipp8u mode = GetMode( run, lev, pTableDR, pTableDL, sign);
+                    uint8_t mode = GetMode( run, lev, pTableDR, pTableDL, sign);
 
                     switch (mode)
                     {
@@ -84,7 +84,7 @@ namespace UMC_VC1_ENCODER
                             BlockLen += pEncTable[1]; //ESCAPE
                             BlockLen += mode;         //mode
                          case 0:
-                            Ipp16s index = pTableInd[run] + lev;
+                            int16_t index = pTableInd[run] + lev;
                             BlockLen +=  pEncTable[2*index + 1];
                             BlockLen += 1;
                             break;
@@ -107,19 +107,19 @@ namespace UMC_VC1_ENCODER
 
     UMC::Status GetVSTTypeP_RD (VC1EncMD_P* pIn, eTransformType* pVSTTypeOut) 
     {
-        Ipp16s TempBlock16s [4][64];
-        Ipp8u  TempBlock8u  [64];
+        int16_t TempBlock16s [4][64];
+        uint8_t  TempBlock8u  [64];
 
-        Ipp64u BlockRate[6][4] = {0};
-        Ipp32s BlockCost[6][4] = {0};
+        unsigned long long BlockRate[6][4] = {0};
+        int32_t BlockCost[6][4] = {0};
 
-        Ipp8u  Run[6][65]={0};
-        Ipp16s Level[6][64]={0};
-        Ipp8u  nPairs[4][6][4]={0};
+        uint8_t  Run[6][65]={0};
+        int16_t Level[6][64]={0};
+        uint8_t  nPairs[4][6][4]={0};
 
-        Ipp32u RDLambda0 = (pIn->bUniform)? 10*(pIn->quant>>1)*(pIn->quant>>1):35*(pIn->quant>>1)*(pIn->quant>>1);
-        Ipp32u RDLambda1 = (pIn->bUniform)? 10*(pIn->quant)*(pIn->quant):35*(pIn->quant)*(pIn->quant);
-        Ipp32u RDLambda[6] = {RDLambda0,RDLambda0,RDLambda0,RDLambda0,RDLambda1,RDLambda1};
+        uint32_t RDLambda0 = (pIn->bUniform)? 10*(pIn->quant>>1)*(pIn->quant>>1):35*(pIn->quant>>1)*(pIn->quant>>1);
+        uint32_t RDLambda1 = (pIn->bUniform)? 10*(pIn->quant)*(pIn->quant):35*(pIn->quant)*(pIn->quant);
+        uint32_t RDLambda[6] = {RDLambda0,RDLambda0,RDLambda0,RDLambda0,RDLambda1,RDLambda1};
         
         if(RDLambda0<0 ||RDLambda1<0) 
             return UMC::UMC_OK;
@@ -128,25 +128,25 @@ namespace UMC_VC1_ENCODER
         pSaveResidual SaveResidual[4] = {SaveResidual8x8Inter, SaveResidual8x4Inter, SaveResidual4x8Inter, SaveResidual4x4Inter};
 
 
-        Ipp8u* srcBlockPtr [6] = {  pIn->pYSrc, 
+        uint8_t* srcBlockPtr [6] = {  pIn->pYSrc, 
                                     pIn->pYSrc + 8, 
                                     pIn->pYSrc + (pIn->srcYStep<<3), 
                                     pIn->pYSrc + (pIn->srcYStep<<3) + 8,
                                     pIn->pUSrc,
                                     pIn->pVSrc};
-        Ipp8u* refBlockPtr [6] = {  pIn->pYRef, 
+        uint8_t* refBlockPtr [6] = {  pIn->pYRef, 
                                     pIn->pYRef + 8, 
                                     pIn->pYRef + (pIn->refYStep<<3), 
                                     pIn->pYRef + (pIn->refYStep<<3) + 8,
                                     pIn->pURef,
                                     pIn->pVRef};
-        Ipp32u srcBlockStep [6] = { pIn->srcYStep,
+        uint32_t srcBlockStep [6] = { pIn->srcYStep,
                                     pIn->srcYStep,
                                     pIn->srcYStep,
                                     pIn->srcYStep,
                                     pIn->srcUStep,
                                     pIn->srcVStep};
-        Ipp32u refBlockStep [6] = { pIn->refYStep,
+        uint32_t refBlockStep [6] = { pIn->refYStep,
                                     pIn->refYStep,
                                     pIn->refYStep,
                                     pIn->refYStep,
@@ -156,10 +156,10 @@ namespace UMC_VC1_ENCODER
         InterTransformQuantFunction InterTransformQuantACFunction = (pIn->bUniform) ? InterTransformQuantUniform :InterTransformQuantNonUniform;
         InterInvTransformQuantFunction InterInvTransformQuantACFunction = (pIn->bUniform) ? InterInvTransformQuantUniform : InterInvTransformQuantNonUniform;
         
-        const Ipp16s (*pTTMBVLC)[4][6]   = 0;
-        const Ipp8u  (* pTTBlkVLC)[6]    = 0;
-        const Ipp8u   *pSubPattern4x4VLC = 0;
-        Ipp32u quant = pIn->quant>>1;
+        const int16_t (*pTTMBVLC)[4][6]   = 0;
+        const uint8_t  (* pTTBlkVLC)[6]    = 0;
+        const uint8_t   *pSubPattern4x4VLC = 0;
+        uint32_t quant = pIn->quant>>1;
 
         eCodingSet            CodingSetInter   = CodingSetsInter [quant>8][pIn->DecTypeAC1];
         const sACTablesSet*   pACTablesSetInter = &(ACTablesSet[CodingSetInter]);
@@ -183,45 +183,45 @@ namespace UMC_VC1_ENCODER
             pTTBlkVLC           =  TTBLKVLC_LowRate;
             pSubPattern4x4VLC   =  SubPattern4x4VLC_LowRate;
         }   
-        const Ipp16u*   pCBPCYTable  = VLCTableCBPCY_PB[pIn->CBPTab];
-        const Ipp32u*   pCBPCYTableF = CBPCYFieldTable_VLC[pIn->CBPTab];
+        const uint16_t*   pCBPCYTable  = VLCTableCBPCY_PB[pIn->CBPTab];
+        const uint32_t*   pCBPCYTableF = CBPCYFieldTable_VLC[pIn->CBPTab];
 
-        for (Ipp32u blk = 0; blk < 6; blk++)
+        for (uint32_t blk = 0; blk < 6; blk++)
         {
             if ((pIn->intraPattern & (1<<VC_ENC_PATTERN_POS(blk)))!=0)
                 continue;
             
-            ippiSub8x8_8u16s_C1R(srcBlockPtr[blk],srcBlockStep[blk],refBlockPtr[blk],refBlockStep[blk],TempBlock16s[0],8*sizeof(Ipp16s));
+            ippiSub8x8_8u16s_C1R(srcBlockPtr[blk],srcBlockStep[blk],refBlockPtr[blk],refBlockStep[blk],TempBlock16s[0],8*sizeof(int16_t));
 
-            memcpy (TempBlock16s[1],TempBlock16s[0],64*sizeof(Ipp16s));
-            memcpy (TempBlock16s[2],TempBlock16s[0],64*sizeof(Ipp16s));
-            memcpy (TempBlock16s[3],TempBlock16s[0],64*sizeof(Ipp16s));
+            memcpy (TempBlock16s[1],TempBlock16s[0],64*sizeof(int16_t));
+            memcpy (TempBlock16s[2],TempBlock16s[0],64*sizeof(int16_t));
+            memcpy (TempBlock16s[3],TempBlock16s[0],64*sizeof(int16_t));
             
-            for (Ipp32u trasf_mode = 0; trasf_mode < 4; trasf_mode ++)
+            for (uint32_t trasf_mode = 0; trasf_mode < 4; trasf_mode ++)
             {
-                InterTransformQuantACFunction (TempBlock16s[trasf_mode],8*sizeof(Ipp16s),pVST [trasf_mode], pIn->quant,0,0);
+                InterTransformQuantACFunction (TempBlock16s[trasf_mode],8*sizeof(int16_t),pVST [trasf_mode], pIn->quant,0,0);
 
-                SaveResidual[trasf_mode](TempBlock16s[trasf_mode],8*sizeof(Ipp16s), pIn->pScanMatrix[trasf_mode], blk, Run, Level, nPairs[trasf_mode]);
+                SaveResidual[trasf_mode](TempBlock16s[trasf_mode],8*sizeof(int16_t), pIn->pScanMatrix[trasf_mode], blk, Run, Level, nPairs[trasf_mode]);
                 BlockRate[blk][trasf_mode] = CalculateBlockAC( pVST [trasf_mode],Run[blk],Level[blk],nPairs[trasf_mode][blk],pACTablesSetInter);                
 
-                InterInvTransformQuantACFunction(TempBlock16s[trasf_mode],8*sizeof(Ipp16s),TempBlock16s[trasf_mode],8*sizeof(Ipp16s),pIn->quant ,pVST [trasf_mode]);
-                ippiMC8x8_8u_C1(refBlockPtr[blk],refBlockStep[blk],TempBlock16s[trasf_mode],8*sizeof(Ipp16s),TempBlock8u,8*sizeof(Ipp8u),0,0);                
+                InterInvTransformQuantACFunction(TempBlock16s[trasf_mode],8*sizeof(int16_t),TempBlock16s[trasf_mode],8*sizeof(int16_t),pIn->quant ,pVST [trasf_mode]);
+                ippiMC8x8_8u_C1(refBlockPtr[blk],refBlockStep[blk],TempBlock16s[trasf_mode],8*sizeof(int16_t),TempBlock8u,8*sizeof(uint8_t),0,0);                
 
-                ippiSSD8x8_8u32s_C1R(TempBlock8u,8*sizeof(Ipp8u),srcBlockPtr[blk],srcBlockStep[blk],&BlockCost[blk][trasf_mode],0);
+                ippiSSD8x8_8u32s_C1R(TempBlock8u,8*sizeof(uint8_t),srcBlockPtr[blk],srcBlockStep[blk],&BlockCost[blk][trasf_mode],0);
             }
         }
-        Ipp64u BestCost      = BIG_COST;
-        Ipp64u CurCost       = 0;
+        unsigned long long BestCost      = BIG_COST;
+        unsigned long long CurCost       = 0;
         bool   bOneMBTSType  = true;
-        Ipp32u Mode          = 0;
+        uint32_t Mode          = 0;
 
 
         //------------------- One transform type on  MB (modes: 8x8       ) -----------------------------------------------
         
         {
-            Ipp32u trasf_mode = 0;
-            Ipp32u CbpPattern = 0;
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            uint32_t trasf_mode = 0;
+            uint32_t CbpPattern = 0;
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
                 CurCost += (RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode]; 
                 CbpPattern |= ((BlockRate[blk][trasf_mode])?1:0) << (5-blk);
@@ -238,18 +238,18 @@ namespace UMC_VC1_ENCODER
         }      
          //------------------- One transform type on  MB (modes: 8x4, 4x8 ) -----------------------------------------------
 
-        for (Ipp32u trasf_mode = 1; trasf_mode < 3; trasf_mode ++)
+        for (uint32_t trasf_mode = 1; trasf_mode < 3; trasf_mode ++)
         {
             bool    bMBSubBlockPattern  = true;
-            Ipp32u  CbpPattern          = 0;
+            uint32_t  CbpPattern          = 0;
             
             CurCost             = 0;
 
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
                 
                 CurCost += (RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode];
-                Ipp8u  subPat  = (((nPairs[trasf_mode][blk][0]>0)?1:0)<<1) + ((nPairs[trasf_mode][blk][1]>0)?1:0);
+                uint8_t  subPat  = (((nPairs[trasf_mode][blk][0]>0)?1:0)<<1) + ((nPairs[trasf_mode][blk][1]>0)?1:0);
                 if (subPat ==0 ) continue;
 
                 CbpPattern |= (1) << (5-blk);
@@ -274,14 +274,14 @@ namespace UMC_VC1_ENCODER
         }
         //-------------------      One transform type on  MB (modes: 4x4 )      --------------------------
         {
-            Ipp32u  trasf_mode    = 3;   
-            Ipp32u  CbpPattern    = 0;
+            uint32_t  trasf_mode    = 3;   
+            uint32_t  CbpPattern    = 0;
            
             CurCost       = 0;
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
-                CurCost += (Ipp32u)(RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode];
-                Ipp8u subPat  = (((nPairs[trasf_mode][blk][0]>0)?1:0)<<3) + (((nPairs[trasf_mode][blk][1]>0)?1:0)<<2)
+                CurCost += (uint32_t)(RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode];
+                uint8_t subPat  = (((nPairs[trasf_mode][blk][0]>0)?1:0)<<3) + (((nPairs[trasf_mode][blk][1]>0)?1:0)<<2)
                               + (((nPairs[trasf_mode][blk][2]>0)?1:0)<<1) +  ((nPairs[trasf_mode][blk][3]>0)?1:0);
                 if (subPat ==0 ) continue;
                 CbpPattern |= (1) << (5-blk);
@@ -299,19 +299,19 @@ namespace UMC_VC1_ENCODER
         }
         //------------------- Different transform types on  MB ----------------------------------------
         
-        for (Ipp32u mode = 0; mode < 4096; mode ++)
+        for (uint32_t mode = 0; mode < 4096; mode ++)
         {
             
             bool bMBSubBlockPattern = true;
             CurCost = 0;
-            Ipp32u  CbpPattern    = 0;
+            uint32_t  CbpPattern    = 0;
 
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
-                Ipp32u trasf_mode = ((mode)>>(blk<<1)) & 0x03;
-                Ipp8u  subPat = 0;
+                uint32_t trasf_mode = ((mode)>>(blk<<1)) & 0x03;
+                uint8_t  subPat = 0;
                 
-                CurCost += (Ipp32u)(RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode];
+                CurCost += (uint32_t)(RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode];
                 
                 if (bMBSubBlockPattern)
                 {
@@ -391,7 +391,7 @@ namespace UMC_VC1_ENCODER
 
         if (bOneMBTSType)
         {
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
                 pVSTTypeOut[blk] = pVST[Mode];
                 
@@ -399,7 +399,7 @@ namespace UMC_VC1_ENCODER
         }
         else
         {
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
                 pVSTTypeOut[blk] = pVST[((Mode)>>(blk<<1)) & 0x03];
             }
@@ -412,19 +412,19 @@ namespace UMC_VC1_ENCODER
     }
     UMC::Status GetVSTTypeB_RD (VC1EncMD_B* pIn, eTransformType* pVSTTypeOut) 
     {
-        Ipp16s TempBlock16s [4][64];
-        Ipp8u  TempBlock8u  [64];
+        int16_t TempBlock16s [4][64];
+        uint8_t  TempBlock8u  [64];
 
-        Ipp64u BlockRate[6][4] = {0};
-        Ipp32s BlockCost[6][4] = {0};
+        unsigned long long BlockRate[6][4] = {0};
+        int32_t BlockCost[6][4] = {0};
 
-        Ipp8u  Run[6][65]={0};
-        Ipp16s Level[6][64]={0};
-        Ipp8u  nPairs[4][6][4]={0};
+        uint8_t  Run[6][65]={0};
+        int16_t Level[6][64]={0};
+        uint8_t  nPairs[4][6][4]={0};
 
-        Ipp32u RDLambda0 = (pIn->bUniform)? 10*(pIn->quant>>1)*(pIn->quant>>1):35*(pIn->quant>>1)*(pIn->quant>>1);
-        Ipp32u RDLambda1 = (pIn->bUniform)? 10*(pIn->quant)*(pIn->quant):35*(pIn->quant)*(pIn->quant);
-        Ipp32u RDLambda[6] = {RDLambda0,RDLambda0,RDLambda0,RDLambda0,RDLambda1,RDLambda1};
+        uint32_t RDLambda0 = (pIn->bUniform)? 10*(pIn->quant>>1)*(pIn->quant>>1):35*(pIn->quant>>1)*(pIn->quant>>1);
+        uint32_t RDLambda1 = (pIn->bUniform)? 10*(pIn->quant)*(pIn->quant):35*(pIn->quant)*(pIn->quant);
+        uint32_t RDLambda[6] = {RDLambda0,RDLambda0,RDLambda0,RDLambda0,RDLambda1,RDLambda1};
 
         if(RDLambda0<0 ||RDLambda1<0) 
             return UMC::UMC_OK;
@@ -433,33 +433,33 @@ namespace UMC_VC1_ENCODER
         pSaveResidual SaveResidual[4] = {SaveResidual8x8Inter, SaveResidual8x4Inter, SaveResidual4x8Inter, SaveResidual4x4Inter};
 
 
-        Ipp8u* srcBlockPtr [6] = {  pIn->pYSrc, 
+        uint8_t* srcBlockPtr [6] = {  pIn->pYSrc, 
             pIn->pYSrc + 8, 
             pIn->pYSrc + (pIn->srcYStep<<3), 
             pIn->pYSrc + (pIn->srcYStep<<3) + 8,
             pIn->pUSrc,
             pIn->pVSrc};
-        Ipp8u* refBlockPtr [2][6] = {  {pIn->pYRef[0], pIn->pYRef[0] + 8, pIn->pYRef[0] + (pIn->refYStep[0]<<3), pIn->pYRef[0] + (pIn->refYStep[0]<<3) + 8,
+        uint8_t* refBlockPtr [2][6] = {  {pIn->pYRef[0], pIn->pYRef[0] + 8, pIn->pYRef[0] + (pIn->refYStep[0]<<3), pIn->pYRef[0] + (pIn->refYStep[0]<<3) + 8,
                                         pIn->pURef[0], pIn->pVRef[0]},
                                        {pIn->pYRef[1], pIn->pYRef[1] + 8, pIn->pYRef[1] + (pIn->refYStep[1]<<3), pIn->pYRef[1] + (pIn->refYStep[1]<<3) + 8,
                                         pIn->pURef[1], pIn->pVRef[1]}};
-        Ipp32u srcBlockStep [6] = { pIn->srcYStep,
+        uint32_t srcBlockStep [6] = { pIn->srcYStep,
             pIn->srcYStep,
             pIn->srcYStep,
             pIn->srcYStep,
             pIn->srcUStep,
             pIn->srcVStep};
 
-        Ipp32u refBlockStep [2][6] = {  {pIn->refYStep[0], pIn->refYStep[0], pIn->refYStep[0], pIn->refYStep[0], pIn->refUStep[0], pIn->refVStep[0]},
+        uint32_t refBlockStep [2][6] = {  {pIn->refYStep[0], pIn->refYStep[0], pIn->refYStep[0], pIn->refYStep[0], pIn->refUStep[0], pIn->refVStep[0]},
                                         {pIn->refYStep[1], pIn->refYStep[1], pIn->refYStep[1], pIn->refYStep[1], pIn->refUStep[1], pIn->refVStep[1]}};
 
         InterTransformQuantFunction InterTransformQuantACFunction = (pIn->bUniform) ? InterTransformQuantUniform :InterTransformQuantNonUniform;
         InterInvTransformQuantFunction InterInvTransformQuantACFunction = (pIn->bUniform) ? InterInvTransformQuantUniform : InterInvTransformQuantNonUniform;
 
-        const Ipp16s (*pTTMBVLC)[4][6]   = 0;
-        const Ipp8u  (* pTTBlkVLC)[6]    = 0;
-        const Ipp8u   *pSubPattern4x4VLC = 0;
-        Ipp32u quant = pIn->quant>>1;
+        const int16_t (*pTTMBVLC)[4][6]   = 0;
+        const uint8_t  (* pTTBlkVLC)[6]    = 0;
+        const uint8_t   *pSubPattern4x4VLC = 0;
+        uint32_t quant = pIn->quant>>1;
 
         eCodingSet            CodingSetInter   = CodingSetsInter [quant>8][pIn->DecTypeAC1];
         const sACTablesSet*   pACTablesSetInter = &(ACTablesSet[CodingSetInter]);
@@ -483,10 +483,10 @@ namespace UMC_VC1_ENCODER
             pTTBlkVLC           =  TTBLKVLC_LowRate;
             pSubPattern4x4VLC   =  SubPattern4x4VLC_LowRate;
         }   
-        const Ipp16u*   pCBPCYTable  = VLCTableCBPCY_PB[pIn->CBPTab];
-        const Ipp32u*   pCBPCYTableF = CBPCYFieldTable_VLC[pIn->CBPTab];
+        const uint16_t*   pCBPCYTable  = VLCTableCBPCY_PB[pIn->CBPTab];
+        const uint32_t*   pCBPCYTableF = CBPCYFieldTable_VLC[pIn->CBPTab];
 
-        for (Ipp32u blk = 0; blk < 6; blk++)
+        for (uint32_t blk = 0; blk < 6; blk++)
         {
             if ((pIn->intraPattern & (1<<VC_ENC_PATTERN_POS(blk)))!=0)
                 continue;
@@ -494,41 +494,41 @@ namespace UMC_VC1_ENCODER
             ippiGetDiff8x8B_8u16s_C1(srcBlockPtr[blk],srcBlockStep[blk],
                                     refBlockPtr[0][blk],refBlockStep[0][blk],0,
                                     refBlockPtr[1][blk],refBlockStep[1][blk],0,
-                                    TempBlock16s[0],8*sizeof(Ipp16s),0);                 
+                                    TempBlock16s[0],8*sizeof(int16_t),0);                 
             
             
-            memcpy (TempBlock16s[1],TempBlock16s[0],64*sizeof(Ipp16s));
-            memcpy (TempBlock16s[2],TempBlock16s[0],64*sizeof(Ipp16s));
-            memcpy (TempBlock16s[3],TempBlock16s[0],64*sizeof(Ipp16s));
+            memcpy (TempBlock16s[1],TempBlock16s[0],64*sizeof(int16_t));
+            memcpy (TempBlock16s[2],TempBlock16s[0],64*sizeof(int16_t));
+            memcpy (TempBlock16s[3],TempBlock16s[0],64*sizeof(int16_t));
 
-            for (Ipp32u trasf_mode = 0; trasf_mode < 4; trasf_mode ++)
+            for (uint32_t trasf_mode = 0; trasf_mode < 4; trasf_mode ++)
             {
-                InterTransformQuantACFunction (TempBlock16s[trasf_mode],8*sizeof(Ipp16s),pVST [trasf_mode], pIn->quant,0,0);
+                InterTransformQuantACFunction (TempBlock16s[trasf_mode],8*sizeof(int16_t),pVST [trasf_mode], pIn->quant,0,0);
 
-                SaveResidual[trasf_mode](TempBlock16s[trasf_mode],8*sizeof(Ipp16s), pIn->pScanMatrix[trasf_mode], blk, Run, Level, nPairs[trasf_mode]);
+                SaveResidual[trasf_mode](TempBlock16s[trasf_mode],8*sizeof(int16_t), pIn->pScanMatrix[trasf_mode], blk, Run, Level, nPairs[trasf_mode]);
                 BlockRate[blk][trasf_mode] = CalculateBlockAC( pVST [trasf_mode],Run[blk],Level[blk],nPairs[trasf_mode][blk],pACTablesSetInter);                
 
-                InterInvTransformQuantACFunction(TempBlock16s[trasf_mode],8*sizeof(Ipp16s),TempBlock16s[trasf_mode],8*sizeof(Ipp16s),pIn->quant ,pVST [trasf_mode]);
+                InterInvTransformQuantACFunction(TempBlock16s[trasf_mode],8*sizeof(int16_t),TempBlock16s[trasf_mode],8*sizeof(int16_t),pIn->quant ,pVST [trasf_mode]);
                 ippiMC8x8B_8u_C1(refBlockPtr[0][blk],refBlockStep[0][blk],0,
                                  refBlockPtr[1][blk],refBlockStep[1][blk],0,
-                                 TempBlock16s[trasf_mode],8*sizeof(Ipp16s),
-                                 TempBlock8u,8*sizeof(Ipp8u),0);                
+                                 TempBlock16s[trasf_mode],8*sizeof(int16_t),
+                                 TempBlock8u,8*sizeof(uint8_t),0);                
 
-                ippiSSD8x8_8u32s_C1R(TempBlock8u,8*sizeof(Ipp8u),srcBlockPtr[blk],srcBlockStep[blk],&BlockCost[blk][trasf_mode],0);
+                ippiSSD8x8_8u32s_C1R(TempBlock8u,8*sizeof(uint8_t),srcBlockPtr[blk],srcBlockStep[blk],&BlockCost[blk][trasf_mode],0);
             }
         }
-        Ipp64u BestCost      = BIG_COST;
-        Ipp64u CurCost       = 0;
+        unsigned long long BestCost      = BIG_COST;
+        unsigned long long CurCost       = 0;
         bool   bOneMBTSType  = true;
-        Ipp32u Mode          = 0;
+        uint32_t Mode          = 0;
 
 
         //------------------- One transform type on  MB (modes: 8x8       ) -----------------------------------------------
 
         {
-            Ipp32u trasf_mode = 0;
-            Ipp32u CbpPattern = 0;
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            uint32_t trasf_mode = 0;
+            uint32_t CbpPattern = 0;
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
                 CurCost += (RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode]; 
                 CbpPattern |= ((BlockRate[blk][trasf_mode])?1:0) << (5-blk);
@@ -545,18 +545,18 @@ namespace UMC_VC1_ENCODER
         }      
         //------------------- One transform type on  MB (modes: 8x4, 4x8 ) -----------------------------------------------
 
-        for (Ipp32u trasf_mode = 1; trasf_mode < 3; trasf_mode ++)
+        for (uint32_t trasf_mode = 1; trasf_mode < 3; trasf_mode ++)
         {
             bool    bMBSubBlockPattern  = true;
-            Ipp32u  CbpPattern          = 0;
+            uint32_t  CbpPattern          = 0;
 
             CurCost             = 0;
 
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
 
                 CurCost += (RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode];
-                Ipp8u  subPat  = (((nPairs[trasf_mode][blk][0]>0)?1:0)<<1) + ((nPairs[trasf_mode][blk][1]>0)?1:0);
+                uint8_t  subPat  = (((nPairs[trasf_mode][blk][0]>0)?1:0)<<1) + ((nPairs[trasf_mode][blk][1]>0)?1:0);
                 if (subPat ==0 ) continue;
 
                 CbpPattern |= (1) << (5-blk);
@@ -581,14 +581,14 @@ namespace UMC_VC1_ENCODER
         }
         //-------------------      One transform type on  MB (modes: 4x4 )      --------------------------
         {
-            Ipp32u  trasf_mode    = 3;   
-            Ipp32u  CbpPattern    = 0;
+            uint32_t  trasf_mode    = 3;   
+            uint32_t  CbpPattern    = 0;
 
             CurCost       = 0;
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
-                CurCost += (Ipp32u)(RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode];
-                Ipp8u subPat  = (((nPairs[trasf_mode][blk][0]>0)?1:0)<<3) + (((nPairs[trasf_mode][blk][1]>0)?1:0)<<2)
+                CurCost += (uint32_t)(RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode];
+                uint8_t subPat  = (((nPairs[trasf_mode][blk][0]>0)?1:0)<<3) + (((nPairs[trasf_mode][blk][1]>0)?1:0)<<2)
                     + (((nPairs[trasf_mode][blk][2]>0)?1:0)<<1) +  ((nPairs[trasf_mode][blk][3]>0)?1:0);
                 if (subPat ==0 ) continue;
                 CbpPattern |= (1) << (5-blk);
@@ -606,19 +606,19 @@ namespace UMC_VC1_ENCODER
         }
         //------------------- Different transform types on  MB ----------------------------------------
 
-        for (Ipp32u mode = 0; mode < 4096; mode ++)
+        for (uint32_t mode = 0; mode < 4096; mode ++)
         {
 
             bool bMBSubBlockPattern = true;
             CurCost = 0;
-            Ipp32u  CbpPattern    = 0;
+            uint32_t  CbpPattern    = 0;
 
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
-                Ipp32u trasf_mode = ((mode)>>(blk<<1)) & 0x03;
-                Ipp8u  subPat = 0;
+                uint32_t trasf_mode = ((mode)>>(blk<<1)) & 0x03;
+                uint8_t  subPat = 0;
 
-                CurCost += (Ipp32u)(RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode];
+                CurCost += (uint32_t)(RDLambda[blk]*BlockRate[blk][trasf_mode]) + BlockCost[blk][trasf_mode];
 
                 if (bMBSubBlockPattern)
                 {
@@ -698,7 +698,7 @@ namespace UMC_VC1_ENCODER
 
         if (bOneMBTSType)
         {
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
                 pVSTTypeOut[blk] = pVST[Mode];
 
@@ -706,7 +706,7 @@ namespace UMC_VC1_ENCODER
         }
         else
         {
-            for (Ipp32u blk = 0; blk < 6; blk++)
+            for (uint32_t blk = 0; blk < 6; blk++)
             {
                 pVSTTypeOut[blk] = pVST[((Mode)>>(blk<<1)) & 0x03];
             }

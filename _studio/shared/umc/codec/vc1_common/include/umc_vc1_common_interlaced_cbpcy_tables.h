@@ -28,28 +28,28 @@
 #include "umc_vc1_common_defs.h"
 
 //VC-1 Table 125: interlaced CBPCY table 0
-const extern Ipp32s VC1_InterlacedCBPCYTable0[];
+const extern int32_t VC1_InterlacedCBPCYTable0[];
 
 //VC-1 Table 126: interlaced CBPCY table 1
-const extern Ipp32s VC1_InterlacedCBPCYTable1[];
+const extern int32_t VC1_InterlacedCBPCYTable1[];
 
 //VC-1 Table 127: interlaced CBPCY table 2
-const extern Ipp32s VC1_InterlacedCBPCYTable2[];
+const extern int32_t VC1_InterlacedCBPCYTable2[];
 
 //VC-1 Table 128: interlaced CBPCY table 3
-const extern Ipp32s VC1_InterlacedCBPCYTable3[];
+const extern int32_t VC1_InterlacedCBPCYTable3[];
 
 //VC-1 Table 129: interlaced CBPCY table 4
-const extern Ipp32s VC1_InterlacedCBPCYTable4[];
+const extern int32_t VC1_InterlacedCBPCYTable4[];
 
 //VC-1 Table 130: interlaced CBPCY table 5
-const extern Ipp32s VC1_InterlacedCBPCYTable5[];
+const extern int32_t VC1_InterlacedCBPCYTable5[];
 
 //VC-1 Table 131: interlaced CBPCY table 6
-const extern Ipp32s VC1_InterlacedCBPCYTable6[];
+const extern int32_t VC1_InterlacedCBPCYTable6[];
 
 //VC-1 Table 132: interlaced CBPCY table 7
-const extern Ipp32s VC1_InterlacedCBPCYTable7[];
+const extern int32_t VC1_InterlacedCBPCYTable7[];
 
 #endif //__VC1_DEC_INTERLACE_CBPCY_TABLES_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

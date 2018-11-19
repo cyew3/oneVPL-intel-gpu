@@ -30,7 +30,7 @@
 
 namespace UMC_VC1_ENCODER
 {
-UMC::Status VC1EncoderMBData::InitBlocks(Ipp16s* pBuffer)
+UMC::Status VC1EncoderMBData::InitBlocks(int16_t* pBuffer)
 {
     if (!pBuffer)
         return UMC::UMC_ERR_NULL_PTR;
@@ -42,29 +42,29 @@ UMC::Status VC1EncoderMBData::InitBlocks(Ipp16s* pBuffer)
     m_pBlock[4] = pBuffer + VC1_ENC_LUMA_SIZE*VC1_ENC_LUMA_SIZE;
     m_pBlock[5] = m_pBlock[4] + VC1_ENC_CHROMA_SIZE*VC1_ENC_CHROMA_SIZE;
 
-    m_uiBlockStep[0]= VC1_ENC_LUMA_SIZE  *sizeof(Ipp16s);
-    m_uiBlockStep[1]= VC1_ENC_LUMA_SIZE  *sizeof(Ipp16s);
-    m_uiBlockStep[2]= VC1_ENC_LUMA_SIZE  *sizeof(Ipp16s);
-    m_uiBlockStep[3]= VC1_ENC_LUMA_SIZE  *sizeof(Ipp16s);
-    m_uiBlockStep[4]= VC1_ENC_CHROMA_SIZE*sizeof(Ipp16s);
-    m_uiBlockStep[5]= VC1_ENC_CHROMA_SIZE*sizeof(Ipp16s);
+    m_uiBlockStep[0]= VC1_ENC_LUMA_SIZE  *sizeof(int16_t);
+    m_uiBlockStep[1]= VC1_ENC_LUMA_SIZE  *sizeof(int16_t);
+    m_uiBlockStep[2]= VC1_ENC_LUMA_SIZE  *sizeof(int16_t);
+    m_uiBlockStep[3]= VC1_ENC_LUMA_SIZE  *sizeof(int16_t);
+    m_uiBlockStep[4]= VC1_ENC_CHROMA_SIZE*sizeof(int16_t);
+    m_uiBlockStep[5]= VC1_ENC_CHROMA_SIZE*sizeof(int16_t);
 
     return UMC::UMC_OK;
 }
 
-UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
-                                Ipp32u MBsInRow,    Ipp32u MBsInCol,
+UMC::Status VC1EncoderMBs::Init(uint8_t* pPicBufer,   uint32_t AllocatedMemSize,
+                                uint32_t MBsInRow,    uint32_t MBsInCol,
                                 bool   bNV12)
 {
 
-    Ipp32u   i=0, j=0;
-    Ipp8u*   ptr = pPicBufer;
+    uint32_t   i=0, j=0;
+    uint8_t*   ptr = pPicBufer;
 
-    Ipp16s*  pBufferData    =0;
-    Ipp16s*  pBufferRecData =0;
+    int16_t*  pBufferData    =0;
+    int16_t*  pBufferRecData =0;
 
-    Ipp32s   memSize = AllocatedMemSize;
-    Ipp32u   tempSize = 0;
+    int32_t   memSize = AllocatedMemSize;
+    uint32_t   tempSize = 0;
 
     if ((!MBsInRow) || (!MBsInCol) || (!pPicBufer))
         return UMC::UMC_ERR_INIT;
@@ -73,9 +73,9 @@ UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
 
     /*-----------  buffer for MB Data      -----------------------*/
 
-    pBufferData = (Ipp16s*)ptr;
+    pBufferData = (int16_t*)ptr;
 
-    tempSize = UMC::align_value<Ipp32u>(sizeof(Ipp16s)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16));
+    tempSize = UMC::align_value<uint32_t>(sizeof(int16_t)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16));
     ptr = ptr + tempSize;
     memSize -= tempSize;
     if(memSize < 0)
@@ -83,9 +83,9 @@ UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
 
     /*-----------  buffer for Recon MB Data -----------------------*/
 
-    pBufferRecData = (Ipp16s*)ptr;
+    pBufferRecData = (int16_t*)ptr;
 
-    tempSize = UMC::align_value<Ipp32u>(sizeof(Ipp16s)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16));
+    tempSize = UMC::align_value<uint32_t>(sizeof(int16_t)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16));
     ptr = ptr + tempSize ;
     memSize  -= tempSize ;
     if(memSize < 0)
@@ -97,7 +97,7 @@ UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
     if (!m_MBInfo)
         return UMC::UMC_ERR_ALLOC;
 
-    tempSize = UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBInfo*) * MBsInCol); 
+    tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBInfo*) * MBsInCol); 
     ptr = ptr +  tempSize ;
     memSize   -= tempSize;
     if(memSize < 0)
@@ -109,7 +109,7 @@ UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
         if (!m_MBInfo[i])
             return UMC::UMC_ERR_ALLOC;
 
-        tempSize = UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBInfo)*MBsInRow);
+        tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBInfo)*MBsInRow);
         ptr = ptr + tempSize;
         memSize  -= tempSize;
         if(memSize < 0)
@@ -122,7 +122,7 @@ UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
     if (!m_MBData)
         return UMC::UMC_ERR_ALLOC;
 
-    tempSize =  UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBData*)*MBsInCol);
+    tempSize =  UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData*)*MBsInCol);
     ptr = ptr + tempSize;
     memSize -=  tempSize;
     if(memSize < 0)
@@ -133,7 +133,7 @@ UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
     if (!m_MBData)
         return UMC::UMC_ERR_ALLOC;
 
-    tempSize = UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBData*)*MBsInCol);
+    tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData*)*MBsInCol);
     ptr = ptr + tempSize;
     memSize  -= tempSize;
     if(memSize < 0)
@@ -149,7 +149,7 @@ UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
             if (!m_MBData[i])
                 return UMC::UMC_ERR_ALLOC;
 
-            tempSize = UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBDataNV12)*MBsInRow);
+            tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBDataNV12)*MBsInRow);
             ptr = ptr + tempSize;
             memSize -=  tempSize;
             if(memSize < 0)
@@ -160,7 +160,7 @@ UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
             if (!m_MBData[i])
                 return UMC::UMC_ERR_ALLOC;
 
-            tempSize = UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBDataNV12)*MBsInRow);
+            tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBDataNV12)*MBsInRow);
             ptr = ptr + tempSize;
             memSize -=  tempSize;
             if(memSize < 0)
@@ -177,7 +177,7 @@ UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
             if (!m_MBData[i])
                 return UMC::UMC_ERR_ALLOC;
 
-            tempSize = UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBData)*MBsInRow);
+            tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData)*MBsInRow);
             ptr = ptr + tempSize;
             memSize  -= tempSize;
             if(memSize < 0)
@@ -187,7 +187,7 @@ UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
             if (!m_MBData[i])
                 return UMC::UMC_ERR_ALLOC;
 
-            tempSize = UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBData)*MBsInRow);
+            tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData)*MBsInRow);
             ptr = ptr + tempSize;
             memSize -= tempSize;
             if(memSize < 0)
@@ -215,32 +215,32 @@ UMC::Status VC1EncoderMBs::Init(Ipp8u* pPicBufer,   Ipp32u AllocatedMemSize,
     return UMC::UMC_OK;
 }
 
-Ipp32u VC1EncoderMBs::CalcAllocMemorySize(Ipp32u MBsInRow, Ipp32u MBsInCol, bool bNV12)
+uint32_t VC1EncoderMBs::CalcAllocMemorySize(uint32_t MBsInRow, uint32_t MBsInCol, bool bNV12)
 {
-    Ipp32u mem_size = 0;
-    Ipp32u i = 0;
+    uint32_t mem_size = 0;
+    uint32_t i = 0;
 
     //buffers for MB Data and Rec MB Data
-    mem_size = 2 * (UMC::align_value<Ipp32u>(sizeof(Ipp16s)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16)));
+    mem_size = 2 * (UMC::align_value<uint32_t>(sizeof(int16_t)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16)));
 
     //m_MBInfo
     
-    mem_size += UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBInfo*)*MBsInCol);
+    mem_size += UMC::align_value<uint32_t>(sizeof(VC1EncoderMBInfo*)*MBsInCol);
     for (i = 0; i < MBsInCol; i++)
     {
         //m_MBInfo[i]
-        mem_size += UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBInfo)*MBsInRow);
+        mem_size += UMC::align_value<uint32_t>(sizeof(VC1EncoderMBInfo)*MBsInRow);
     }
     
     //m_MBData and m_MBRecData
     
-    mem_size += 2* (UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBData*)*MBsInCol));
+    mem_size += 2* (UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData*)*MBsInCol));
     if (bNV12)
     {
         for (i = 0; i < MBsInCol; i++)
         {
             //m_MBData[i] and m_MBRecData[i]
-            mem_size += 2*(UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBDataNV12)*MBsInRow));
+            mem_size += 2*(UMC::align_value<uint32_t>(sizeof(VC1EncoderMBDataNV12)*MBsInRow));
         }
     }
     else
@@ -249,7 +249,7 @@ Ipp32u VC1EncoderMBs::CalcAllocMemorySize(Ipp32u MBsInRow, Ipp32u MBsInCol, bool
         for (i = 0; i < MBsInCol; i++)
         {
             //m_MBData[i] and m_MBRecData[i]
-            mem_size += 2*(UMC::align_value<Ipp32u>(sizeof(VC1EncoderMBData)*MBsInRow));
+            mem_size += 2*(UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData)*MBsInRow));
         }
     }
     return mem_size;
@@ -293,9 +293,9 @@ VC1EncoderMBInfo*     VC1EncoderMBs::GetCurrMBInfo()
 {
     return (&m_MBInfo[m_iCurrRowIndex][m_iCurrMBIndex]);
 }
-VC1EncoderMBInfo*       VC1EncoderMBs::GetPevMBInfo(Ipp32s x, Ipp32s y)
+VC1EncoderMBInfo*       VC1EncoderMBs::GetPevMBInfo(int32_t x, int32_t y)
 {
-   Ipp32s row = (y>0)? m_iPrevRowIndex:m_iCurrRowIndex;
+   int32_t row = (y>0)? m_iPrevRowIndex:m_iCurrRowIndex;
    return ((m_iCurrMBIndex - x <0 || row <0)? 0 : &m_MBInfo[row][m_iCurrMBIndex - x]);
 }
 
@@ -379,7 +379,7 @@ UMC::Status VC1EncoderCodedMB::WriteMBHeaderI_ADV(VC1EncoderBitStreamAdv* pCoded
         return UMC::UMC_ERR_NULL_PTR;
 
 #ifdef VC1_ME_MB_STATICTICS
-      Ipp16u MBStart = (Ipp16u)pCodedMB->GetCurrBit();
+      uint16_t MBStart = (uint16_t)pCodedMB->GetCurrBit();
 #endif
 
     ret = pCodedMB->PutBits(VLCTableCBPCY_I[2*(m_uiMBCBPCY&0x3F)], VLCTableCBPCY_I[2*(m_uiMBCBPCY&0x3F)+1]);
@@ -397,19 +397,19 @@ UMC::Status VC1EncoderCodedMB::WriteMBHeaderI_ADV(VC1EncoderBitStreamAdv* pCoded
     }
 
 #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->whole += (Ipp16u)pCodedMB->GetCurrBit()- MBStart;
+        m_MECurMbStat->whole += (uint16_t)pCodedMB->GetCurrBit()- MBStart;
 #endif
     return ret;
 }
 
-typedef void (*SaveResidualXxY) (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]);
+typedef void (*SaveResidualXxY) (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]);
 
 #define SAVE_RESIDUAL(subblock,intra,num,shiftConst,andConst) \
 { \
     uRunArr[blk][nPairs] = 0;\
-        for (Ipp32s i = intra; i<num; i++) {\
-            Ipp32s  pos    = pScanMatrix[i];\
-            Ipp16s  value = *((Ipp16s*)((Ipp8u*)pSubBlk + step*(pos>>shiftConst)) + (pos&andConst));\
+        for (int32_t i = intra; i<num; i++) {\
+            int32_t  pos    = pScanMatrix[i];\
+            int16_t  value = *((int16_t*)((uint8_t*)pSubBlk + step*(pos>>shiftConst)) + (pos&andConst));\
             if (!value) {\
                 uRunArr[blk][nPairs]++;\
             } else {\
@@ -417,103 +417,103 @@ typedef void (*SaveResidualXxY) (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMa
                 uRunArr[blk][nPairs]   = 0;\
             }\
         }\
-    nPairsArr[blk][subblock] = (Ipp8u)(nPairs - nPairsPrev);\
+    nPairsArr[blk][subblock] = (uint8_t)(nPairs - nPairsPrev);\
 }
 
-void SaveResidual8x8Inter (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]){
-    Ipp32s  nPairs     = 0;
-    Ipp32s  nPairsPrev = 0;
-    Ipp16s* pSubBlk = (Ipp16s*)((Ipp8u*)pBlk);
+void SaveResidual8x8Inter (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]){
+    int32_t  nPairs     = 0;
+    int32_t  nPairsPrev = 0;
+    int16_t* pSubBlk = (int16_t*)((uint8_t*)pBlk);
     SAVE_RESIDUAL(0,0,64,3,7);
 }
 
-void SaveResidual8x4Inter (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]){
-    Ipp32s  nPairs     = 0;
-    Ipp32s  nPairsPrev = 0;
-    Ipp16s* pSubBlk = (Ipp16s*)((Ipp8u*)pBlk);
+void SaveResidual8x4Inter (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]){
+    int32_t  nPairs     = 0;
+    int32_t  nPairsPrev = 0;
+    int16_t* pSubBlk = (int16_t*)((uint8_t*)pBlk);
     SAVE_RESIDUAL(0,0,32,3,7);
     nPairsPrev =  nPairs;
 
-    pSubBlk = (Ipp16s*)((Ipp8u*)pBlk + 4*step);
+    pSubBlk = (int16_t*)((uint8_t*)pBlk + 4*step);
     SAVE_RESIDUAL(1,0,32,3,7);
 }
 
-void SaveResidual4x8Inter (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]){
-    Ipp32s  nPairs     = 0;
-    Ipp32s  nPairsPrev = 0;
-    Ipp16s* pSubBlk = (Ipp16s*)((Ipp8u*)pBlk);
+void SaveResidual4x8Inter (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]){
+    int32_t  nPairs     = 0;
+    int32_t  nPairsPrev = 0;
+    int16_t* pSubBlk = (int16_t*)((uint8_t*)pBlk);
 
     SAVE_RESIDUAL(0,0,32,2,3);
     nPairsPrev =  nPairs;
 
-    pSubBlk = (Ipp16s*)((Ipp8u*)pBlk)+4;
+    pSubBlk = (int16_t*)((uint8_t*)pBlk)+4;
     SAVE_RESIDUAL(1,0,32,2,3);
 }
 
-void SaveResidual4x4Inter (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]){
-    Ipp32s  nPairs     = 0;
-    Ipp32s  nPairsPrev = 0;
-    Ipp16s* pSubBlk = (Ipp16s*)((Ipp8u*)pBlk);
+void SaveResidual4x4Inter (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]){
+    int32_t  nPairs     = 0;
+    int32_t  nPairsPrev = 0;
+    int16_t* pSubBlk = (int16_t*)((uint8_t*)pBlk);
     SAVE_RESIDUAL(0,0,16,2,3);
     nPairsPrev =  nPairs;
 
-    pSubBlk = (Ipp16s*)((Ipp8u*)pBlk)+4;
+    pSubBlk = (int16_t*)((uint8_t*)pBlk)+4;
     SAVE_RESIDUAL(1,0,16,2,3);
     nPairsPrev =  nPairs;
 
-    pSubBlk = (Ipp16s*)((Ipp8u*)pBlk + 4*step);
+    pSubBlk = (int16_t*)((uint8_t*)pBlk + 4*step);
     SAVE_RESIDUAL(2,0,16,2,3);
     nPairsPrev =  nPairs;
 
-    pSubBlk = (Ipp16s*)((Ipp8u*)pBlk + 4*step)+4;
+    pSubBlk = (int16_t*)((uint8_t*)pBlk + 4*step)+4;
     SAVE_RESIDUAL(3,0,16,2,3);
 }
 
-static void SaveResidual8x8Intra (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]){
-    Ipp32s  nPairs     = 0;
-    Ipp32s  nPairsPrev = 0;
-    Ipp16s* pSubBlk = (Ipp16s*)((Ipp8u*)pBlk);
+static void SaveResidual8x8Intra (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]){
+    int32_t  nPairs     = 0;
+    int32_t  nPairsPrev = 0;
+    int16_t* pSubBlk = (int16_t*)((uint8_t*)pBlk);
     SAVE_RESIDUAL(0,1,64,3,7);
 }
 
-static void SaveResidual8x4Intra (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]){
-    Ipp32s  nPairs     = 0;
-    Ipp32s  nPairsPrev = 0;
-    Ipp16s* pSubBlk = (Ipp16s*)((Ipp8u*)pBlk);
+static void SaveResidual8x4Intra (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]){
+    int32_t  nPairs     = 0;
+    int32_t  nPairsPrev = 0;
+    int16_t* pSubBlk = (int16_t*)((uint8_t*)pBlk);
     SAVE_RESIDUAL(0,1,32,3,7);
     nPairsPrev =  nPairs;
 
-    pSubBlk = (Ipp16s*)((Ipp8u*)pBlk + 4*step);
+    pSubBlk = (int16_t*)((uint8_t*)pBlk + 4*step);
     SAVE_RESIDUAL(1,1,32,3,7);
 }
 
-static void SaveResidual4x8Intra (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]){
-    Ipp32s  nPairs     = 0;
-    Ipp32s  nPairsPrev = 0;
-    Ipp16s* pSubBlk = (Ipp16s*)((Ipp8u*)pBlk);
+static void SaveResidual4x8Intra (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]){
+    int32_t  nPairs     = 0;
+    int32_t  nPairsPrev = 0;
+    int16_t* pSubBlk = (int16_t*)((uint8_t*)pBlk);
     SAVE_RESIDUAL(0,1,32,2,3);
     nPairsPrev =  nPairs;
 
-    pSubBlk = (Ipp16s*)((Ipp8u*)pBlk)+4;
+    pSubBlk = (int16_t*)((uint8_t*)pBlk)+4;
     SAVE_RESIDUAL(1,1,32,2,3);
 }
 
-static void SaveResidual4x4Intra (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk, Ipp8u uRunArr[6][65], Ipp16s iLevelArr[6][64], Ipp8u nPairsArr[6][4]){
-    Ipp32s  nPairs     = 0;
-    Ipp32s  nPairsPrev = 0;
-    Ipp16s* pSubBlk = (Ipp16s*)((Ipp8u*)pBlk);
+static void SaveResidual4x4Intra (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk, uint8_t uRunArr[6][65], int16_t iLevelArr[6][64], uint8_t nPairsArr[6][4]){
+    int32_t  nPairs     = 0;
+    int32_t  nPairsPrev = 0;
+    int16_t* pSubBlk = (int16_t*)((uint8_t*)pBlk);
     SAVE_RESIDUAL(0,1,16,2,3);
     nPairsPrev =  nPairs;
 
-    pSubBlk = (Ipp16s*)((Ipp8u*)pBlk)+4;
+    pSubBlk = (int16_t*)((uint8_t*)pBlk)+4;
     SAVE_RESIDUAL(1,1,16,2,3);
     nPairsPrev =  nPairs;
 
-    pSubBlk = (Ipp16s*)((Ipp8u*)pBlk + 4*step);
+    pSubBlk = (int16_t*)((uint8_t*)pBlk + 4*step);
     SAVE_RESIDUAL(2,1,16,2,3);
     nPairsPrev =  nPairs;
 
-    pSubBlk = (Ipp16s*)((Ipp8u*)pBlk + 4*step)+4;
+    pSubBlk = (int16_t*)((uint8_t*)pBlk + 4*step)+4;
     SAVE_RESIDUAL(3,1,16,2,3);
 }
 
@@ -528,9 +528,9 @@ SaveResidualXxY SaveResidualFuncTab[2][4] = {
     &SaveResidual4x4Intra}
 };
 
-void VC1EncoderCodedMB::SaveResidual (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk)
+void VC1EncoderCodedMB::SaveResidual (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk)
 {
-    Ipp32s  blkIntra = ( m_MBtype == VC1_ENC_I_MB ||
+    int32_t  blkIntra = ( m_MBtype == VC1_ENC_I_MB ||
                         m_MBtype == VC1_ENC_P_MB_INTRA  ||
                         ((m_MBtype == VC1_ENC_P_MB_4MV)&&(m_uiIntraPattern & (1<<VC_ENC_PATTERN_POS(blk))))||
                         m_MBtype == VC1_ENC_B_MB_INTRA);
@@ -548,27 +548,27 @@ void VC1EncoderCodedMB::SaveResidual (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pS
     return;
 }
 
-void VC1EncoderCodedMB::GetResiduals (Ipp16s* pBlk, Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk)
+void VC1EncoderCodedMB::GetResiduals (int16_t* pBlk, uint32_t  step, const uint8_t* pScanMatrix, int32_t blk)
 {
-    static const Ipp32s   nSubblk [4]     = {1,2,2,4};
-    static const Ipp32s   xSizeSubblk [4] = {8,8,4,4};
-    static const Ipp32s   ySizeSubblk [4] = {8,4,8,4};
-    static const Ipp32s   xSubblock [4][4]= {{0,0,0,0}, //8x8
+    static const int32_t   nSubblk [4]     = {1,2,2,4};
+    static const int32_t   xSizeSubblk [4] = {8,8,4,4};
+    static const int32_t   ySizeSubblk [4] = {8,4,8,4};
+    static const int32_t   xSubblock [4][4]= {{0,0,0,0}, //8x8
                                             {0,0,0,0}, //8x4
                                             {0,4,0,0}, //4x8
                                             {0,4,0,4}};//4x4
-    static const Ipp32s  ySubblock [4][4]= {{0,0,0,0}, //8x8
+    static const int32_t  ySubblock [4][4]= {{0,0,0,0}, //8x8
                                             {0,4,0,0}, //8x4
                                             {0,0,0,0}, //4x8
                                             {0,0,4,4}};//4x4
 
-    Ipp32s nPairs = 0;
-    Ipp32s pos    = 0;
-    Ipp32s pos1   = 0;
-    Ipp32s Num    = 0; //num of run/level
+    int32_t nPairs = 0;
+    int32_t pos    = 0;
+    int32_t pos1   = 0;
+    int32_t Num    = 0; //num of run/level
 
-    Ipp16s* pSubBlk = NULL;
-    Ipp16s  value   = 0;
+    int16_t* pSubBlk = NULL;
+    int16_t  value   = 0;
 
     bool   blkIntra = ( m_MBtype == VC1_ENC_I_MB ||
                         m_MBtype == VC1_ENC_P_MB_INTRA  ||
@@ -581,14 +581,14 @@ void VC1EncoderCodedMB::GetResiduals (Ipp16s* pBlk, Ipp32u  step, const Ipp8u* p
        pBlk[0] = m_iDC[blk];
     }
 
-    for (Ipp32s subblk = 0; subblk < (nSubblk[type]); subblk++)
+    for (int32_t subblk = 0; subblk < (nSubblk[type]); subblk++)
     {
-        pSubBlk = (Ipp16s*)((Ipp8u*)pBlk + ySubblock[type][subblk]*step)+xSubblock[type][subblk];
+        pSubBlk = (int16_t*)((uint8_t*)pBlk + ySubblock[type][subblk]*step)+xSubblock[type][subblk];
 
         pos = blkIntra - 1;
         nPairs = m_nPairs[blk][subblk];
 
-        for(Ipp32s i = 0; i < nPairs; i++)
+        for(int32_t i = 0; i < nPairs; i++)
         {
             value = m_iLevel[blk][i + Num];
 

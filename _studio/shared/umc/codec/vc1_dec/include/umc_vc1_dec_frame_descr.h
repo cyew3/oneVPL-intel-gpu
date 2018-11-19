@@ -77,25 +77,25 @@ namespace UMC
             m_pMemoryAllocator = pMemoryAllocator;
         }
 
-        virtual bool Init                (Ipp32u         DescriporID,
+        virtual bool Init                (uint32_t         DescriporID,
                                           VC1Context*    pContext,
                                           VC1TaskStore*  pStore,
-                                          Ipp16s*        pResidBuf);
+                                          int16_t*        pResidBuf);
         virtual void Release();
         void         Reset();
 
 #ifdef ALLOW_SW_VC1_FALLBACK
-        void         processFrame        (Ipp32u*  pOffsets,
-                                          Ipp32u*  pValues);
+        void         processFrame        (uint32_t*  pOffsets,
+                                          uint32_t*  pValues);
 
         virtual Status       preProcData         (VC1Context*            pContext,
-                                                  Ipp32u                 bufferSize,
-                                                  Ipp64u                 frameCount,
+                                                  uint32_t                 bufferSize,
+                                                  unsigned long long                 frameCount,
                                                   bool& skip);
 #else
         virtual Status       preProcData(VC1Context*            pContext,
-            Ipp32u                 bufferSize,
-            Ipp64u                 frameCount,
+            uint32_t                 bufferSize,
+            unsigned long long                 frameCount,
             bool& skip) = 0;
 #endif
 
@@ -123,9 +123,9 @@ namespace UMC
         }
 
         // Just I/F needs
-        virtual void PrepareVLDVABuffers(Ipp32u*  ,
-                                         Ipp32u*  ,
-                                         Ipp8u*   ,
+        virtual void PrepareVLDVABuffers(uint32_t*  ,
+                                         uint32_t*  ,
+                                         uint8_t*   ,
                                          MediaDataEx::_MediaDataEx* ){};
 
 
@@ -134,24 +134,24 @@ namespace UMC
         UMC::MemID                 m_ipBufferStartID;
         UMC::MemID                 m_iPicHeaderID;
         UMC::MemID                 m_iBitplaneID;
-        Ipp64u                     m_iFrameCounter;
+        unsigned long long                     m_iFrameCounter;
         bool                       m_bIsFieldAbsent;
 
     protected:
 
-        virtual Status SetPictureIndices     (Ipp32u PTYPE, bool& skip);
+        virtual Status SetPictureIndices     (uint32_t PTYPE, bool& skip);
 
-        Ipp32u                     m_iSelfID;
+        uint32_t                     m_iSelfID;
         bool                       m_bIsReadyToLoad;
-        Ipp32s                     m_iRefFramesDst;
-        Ipp32s                     m_iBFramesDst;
+        int32_t                     m_iRefFramesDst;
+        int32_t                     m_iBFramesDst;
         bool                       m_bIsReferenceReady;
         bool                       m_bIsReadyToDisplay;
         bool                       m_bIsBusy;
         bool                       m_bIsReadyToProcess;
         bool                       m_bIsSkippedFrame;
-        Ipp16s*                    m_pDiffMem;
-        Ipp32s                     m_iActiveTasksInFirstField;
+        int16_t*                    m_pDiffMem;
+        int32_t                     m_iActiveTasksInFirstField;
 
         VC1TaskStore*              m_pStore;
 

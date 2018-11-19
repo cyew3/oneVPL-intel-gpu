@@ -28,12 +28,12 @@ namespace UMC
     namespace VC1Common
     {
 
-        void SwapData(Ipp8u *src, Ipp32u dataSize)
+        void SwapData(uint8_t *src, uint32_t dataSize)
         {
-            Ipp32u i;
-            Ipp32u counter = 0;
-            Ipp32u* pDst = (Ipp32u*)src;
-            Ipp32u  iCur = 0;
+            uint32_t i;
+            uint32_t counter = 0;
+            uint32_t* pDst = (uint32_t*)src;
+            uint32_t  iCur = 0;
 
             for(i = 0; i < dataSize+4; i++)
             {

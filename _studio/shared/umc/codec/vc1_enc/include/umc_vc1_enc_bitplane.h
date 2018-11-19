@@ -35,19 +35,19 @@ namespace UMC_VC1_ENCODER
     {
     private:
         bool        *pBitplane;
-        Ipp16u      m_uiWidth;
-        Ipp16u      m_uiHeight;
+        uint16_t      m_uiWidth;
+        uint16_t      m_uiHeight;
 
     protected:
 
-        inline Ipp8u  Get2x3Normal(Ipp16u x,Ipp16u y);
-        inline Ipp8u  Get3x2Normal(Ipp16u x,Ipp16u y);
+        inline uint8_t  Get2x3Normal(uint16_t x,uint16_t y);
+        inline uint8_t  Get3x2Normal(uint16_t x,uint16_t y);
 
     public:
 
-        UMC::Status Init(Ipp16u width, Ipp16u height);
+        UMC::Status Init(uint16_t width, uint16_t height);
         void Close();
-        UMC::Status SetValue(bool value, Ipp16u x, Ipp16u y);
+        UMC::Status SetValue(bool value, uint16_t x, uint16_t y);
 
         VC1EncoderBitplane():
           pBitplane(0),

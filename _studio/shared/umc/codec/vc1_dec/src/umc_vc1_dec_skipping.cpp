@@ -25,7 +25,7 @@
 #include "umc_vc1_common_defs.h"
 
 using namespace UMC::VC1Skipping;
-void VC1SkipMaster::SetSkipPeriod(bool ForRefFrames, Ipp32u period)
+void VC1SkipMaster::SetSkipPeriod(bool ForRefFrames, uint32_t period)
 {
     if (ForRefFrames)
     {
@@ -38,7 +38,7 @@ void VC1SkipMaster::SetSkipPeriod(bool ForRefFrames, Ipp32u period)
         m_iBSkipCounter = 0;
     }
 }
-void VC1SkipMaster::SetPerformMode(bool ForRefFrames, Ipp32u perfomMode)
+void VC1SkipMaster::SetPerformMode(bool ForRefFrames, uint32_t perfomMode)
 {
     if (perfomMode > VC1MaxSpeed)
         return;
@@ -108,7 +108,7 @@ bool VC1SkipMaster::IsDeblockingOn()
     return m_bOnDbl;
 }
 
-bool VC1SkipMaster::ChangeVideoDecodingSpeed(Ipp32s& speed_shift)
+bool VC1SkipMaster::ChangeVideoDecodingSpeed(int32_t& speed_shift)
 {
     if (speed_shift)
     {
@@ -135,7 +135,7 @@ bool VC1SkipMaster::ChangeVideoDecodingSpeed(Ipp32s& speed_shift)
     return true;
 }
 
-bool VC1SkipMaster::IsNeedSkipFrame(Ipp32u picType)
+bool VC1SkipMaster::IsNeedSkipFrame(uint32_t picType)
 {
     if (VC1_IS_REFERENCE(picType))
     {
@@ -157,7 +157,7 @@ bool VC1SkipMaster::IsNeedSkipFrame(Ipp32u picType)
     }
     return false;
 }
-bool VC1SkipMaster::IsNeedPostProcFrame(Ipp32u picType)
+bool VC1SkipMaster::IsNeedPostProcFrame(uint32_t picType)
 {
     if (!m_bOnDbl)
         return false;
@@ -171,7 +171,7 @@ bool VC1SkipMaster::IsNeedPostProcFrame(Ipp32u picType)
         return (m_BPerfMode == VC1Routine);
     }
 }
-bool VC1SkipMaster::IsNeedSimlifyReconstruct(Ipp32u picType)
+bool VC1SkipMaster::IsNeedSimlifyReconstruct(uint32_t picType)
 {
     if (VC1_IS_REFERENCE(picType))
     {

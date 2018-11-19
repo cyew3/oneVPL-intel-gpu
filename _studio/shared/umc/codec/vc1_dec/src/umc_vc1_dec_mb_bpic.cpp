@@ -38,7 +38,7 @@ static const DCPrediction PDCPredictionTable[] =
 };
 static VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_Decode(VC1Context* pContext)
 {
-    Ipp32s i;
+    int32_t i;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     pCurrMB->m_cbpBits = 0;
     Decode_BMVTYPE(pContext); // FORWARD, BACKWARD OR INTER
@@ -51,7 +51,7 @@ static VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_Decode(VC1Context* p
 
 VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_Prediction(VC1Context* pContext)
 {
-    Ipp16s X = 0, Y = 0;
+    int16_t X = 0, Y = 0;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
@@ -63,15 +63,15 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_Prediction(VC1Context* pCon
         ApplyMVPrediction(pContext, 0, &X, &Y, 0, 0, 0);
         // backward MV can be used for MV Prediction, so it should be calculated
         {
-            Ipp32s i;
-            Ipp16s Xf,Yf,Xb=0,Yb=0;
-            Ipp16s* savedMV = pContext->savedMV_Curr
+            int32_t i;
+            int16_t Xf,Yf,Xb=0,Yb=0;
+            int16_t* savedMV = pContext->savedMV_Curr
                               + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
             X = savedMV[0];
             Y = savedMV[1];
 
-            if ((Ipp16u)X!=VC1_MVINTRA)
+            if ((uint16_t)X!=VC1_MVINTRA)
             {
                 PullBack_BDirect(pContext,  &X, &Y);
                 Scale_Direct_MV(pContext->m_picLayerHeader,X,Y,&Xf,&Yf,&Xb,&Yb);
@@ -90,14 +90,14 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_Prediction(VC1Context* pCon
         ApplyMVPrediction(pContext, 0, &X, &Y, 0, 0, 1);
         // forward MV can be used for MV Prediction, so it should be calculated
         {
-            Ipp32s i;
-            Ipp16s Xf=0,Yf=0,Xb,Yb;
-            Ipp16s* savedMV = pContext->savedMV_Curr + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+            int32_t i;
+            int16_t Xf=0,Yf=0,Xb,Yb;
+            int16_t* savedMV = pContext->savedMV_Curr + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
             X = savedMV[0];
             Y = savedMV[1];
 
-            if ((Ipp16u)X!=VC1_MVINTRA)
+            if ((uint16_t)X!=VC1_MVINTRA)
             {
                 PullBack_BDirect(pContext,  &X, &Y);
                 Scale_Direct_MV(pContext->m_picLayerHeader,X,Y,&Xf,&Yf,&Xb,&Yb);
@@ -124,32 +124,32 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_NONDIRECT_Prediction(VC1Context* pCon
 }
 VC1Status MBLayer_ProgressiveBpicture_SKIP_DIRECT_Decode(VC1Context* pContext)
 {
-    Ipp32s i;
+    int32_t i;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     pCurrMB->m_cbpBits = 0;
     pCurrMB->mbType= VC1_MB_1MV_INTER|VC1_MB_DIRECT;
     for (i=0;i<VC1_NUM_OF_BLOCKS;i++)
-        pContext->m_pCurrMB->m_pBlocks[i].blkType = (Ipp8u)pContext->m_picLayerHeader->TTFRM;
+        pContext->m_pCurrMB->m_pBlocks[i].blkType = (uint8_t)pContext->m_picLayerHeader->TTFRM;
     return VC1_OK;
 }
 
 VC1Status MBLayer_ProgressiveBpicture_SKIP_DIRECT_Prediction(VC1Context* pContext)
 {
-    Ipp16s X = 0, Y = 0;
-    Ipp32s i;
-    Ipp16s Xf,Yf,Xb,Yb;
+    int16_t X = 0, Y = 0;
+    int32_t i;
+    int16_t Xf,Yf,Xb,Yb;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
-    Ipp16s* savedMV = pContext->savedMV_Curr + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
+    int16_t* savedMV = pContext->savedMV_Curr + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
     X = savedMV[0];
     Y = savedMV[1];
 
     pCurrMB->m_cbpBits = 0;
     pCurrMB->mbType= VC1_MB_1MV_INTER|VC1_MB_DIRECT;
     for (i=0;i<VC1_NUM_OF_BLOCKS;i++)
-        pCurrMB->m_pBlocks[i].blkType = (Ipp8u)pContext->m_picLayerHeader->TTFRM;
+        pCurrMB->m_pBlocks[i].blkType = (uint8_t)pContext->m_picLayerHeader->TTFRM;
 
-    if ((Ipp16u)X!=VC1_MVINTRA)
+    if ((uint16_t)X!=VC1_MVINTRA)
     {
         PullBack_BDirect(pContext,  &X, &Y);
         Scale_Direct_MV(pContext->m_picLayerHeader,X,Y,&Xf,&Yf,&Xb,&Yb);
@@ -177,11 +177,11 @@ VC1Status MBLayer_ProgressiveBpicture_SKIP_DIRECT_Prediction(VC1Context* pContex
 
 static VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Decode(VC1Context* pContext)
 {
-    Ipp16s tmp_dx = 0,tmp_dy = 0;
+    int16_t tmp_dx = 0,tmp_dy = 0;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
-    Ipp32s ret = 0;
+    int32_t ret = 0;
 
     pCurrMB->dmv_x[0][0]= 0;
     pCurrMB->dmv_x[1][0]= 0;
@@ -189,9 +189,9 @@ static VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Decode(VC1Context* pConte
     pCurrMB->dmv_y[1][0]= 0;
 
 
-    Ipp16u last_intra_flag = 0;
-    Ipp32s i;
-    Ipp16s hpelfl = (Ipp16s)((picLayerHeader->MVMODE==VC1_MVMODE_HPEL_1MV) ||
+    uint16_t last_intra_flag = 0;
+    int32_t i;
+    int16_t hpelfl = (int16_t)((picLayerHeader->MVMODE==VC1_MVMODE_HPEL_1MV) ||
         (picLayerHeader->MVMODE==VC1_MVMODE_HPELBI_1MV));
 
     // decodes BMV1 (variable size)
@@ -215,7 +215,7 @@ static VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Decode(VC1Context* pConte
     }
     else //non intra
     {
-        Ipp32s value;
+        int32_t value;
         // BMVTYPE (variable size)
         Decode_BMVTYPE(pContext);
         value = (pCurrMB->mbType==(VC1_MB_1MV_INTER|VC1_MB_FORWARD))? 0:1;
@@ -232,8 +232,8 @@ static VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Decode(VC1Context* pConte
         {
             // decodes BMV2 (variable size)
             last_intra_flag = DecodeMVDiff(pContext,hpelfl,&tmp_dx,&tmp_dy);
-            //not_last = (Ipp8u)(last_intra_flag>>4);
-            //intra_flag = (Ipp8u)(last_intra_flag & 0x1);
+            //not_last = (uint8_t)(last_intra_flag>>4);
+            //intra_flag = (uint8_t)(last_intra_flag & 0x1);
             VM_ASSERT(!(last_intra_flag&0x1));
 
 
@@ -265,7 +265,7 @@ static VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Decode(VC1Context* pConte
 
 VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Prediction(VC1Context* pContext)
 {
-    Ipp16s X = 0, Y = 0;
+    int16_t X = 0, Y = 0;
 
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
@@ -279,15 +279,15 @@ VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Prediction(VC1Context* pContext)
         ApplyMVPrediction(pContext, 0, &X, &Y, pCurrMB->dmv_x[0][0], pCurrMB->dmv_y[0][0], 0);
         // backward MV can be used for MV Prediction, so it should be calculated
         {
-            Ipp32s i;
-            Ipp16s Xf,Yf,Xb=0,Yb=0;
-            Ipp16s* savedMV = pContext->savedMV_Curr +
+            int32_t i;
+            int16_t Xf,Yf,Xb=0,Yb=0;
+            int16_t* savedMV = pContext->savedMV_Curr +
                 (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos + sMB->m_currMBXpos)*2*2;
 
             X = savedMV[0];
             Y = savedMV[1];
 
-            if ((Ipp16u)X!=VC1_MVINTRA)
+            if ((uint16_t)X!=VC1_MVINTRA)
             {
                 PullBack_BDirect(pContext,  &X, &Y);
                 Scale_Direct_MV(picLayerHeader,X,Y,&Xf,&Yf,&Xb,&Yb);
@@ -307,15 +307,15 @@ VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Prediction(VC1Context* pContext)
         ApplyMVPrediction(pContext, 0, &X, &Y, pCurrMB->dmv_x[1][0], pCurrMB->dmv_y[1][0],1);
         // forward MV can be used for MV Prediction, so it should be calculated
         {
-            Ipp32s i;
-            Ipp16s Xf=0,Yf=0,Xb=0,Yb=0;
-            Ipp16s* savedMV = pContext->savedMV_Curr
+            int32_t i;
+            int16_t Xf=0,Yf=0,Xb=0,Yb=0;
+            int16_t* savedMV = pContext->savedMV_Curr
                 + (pContext->m_seqLayerHeader.MaxWidthMB*sMB->m_currMBYpos+ sMB->m_currMBXpos)*2*2;
 
             X = savedMV[0];
             Y = savedMV[1];
 
-            if ((Ipp16u)X!=VC1_MVINTRA)
+            if ((uint16_t)X!=VC1_MVINTRA)
             {
                 PullBack_BDirect(pContext,  &X, &Y);
                 Scale_Direct_MV(picLayerHeader,X,Y,&Xf,&Yf,&Xb,&Yb);
@@ -343,21 +343,21 @@ VC1Status MBLayer_ProgressiveBpicture_NONDIRECT_Prediction(VC1Context* pContext)
 }
 VC1Status MBLayer_ProgressiveBpicture_DIRECT_Prediction(VC1Context* pContext)
 {
-    Ipp16s X = 0, Y = 0;
-    Ipp32u i;
-    Ipp16s* savedMV = pContext->savedMV_Curr +
+    int16_t X = 0, Y = 0;
+    uint32_t i;
+    int16_t* savedMV = pContext->savedMV_Curr +
         (pContext->m_seqLayerHeader.MaxWidthMB*pContext->m_pSingleMB->m_currMBYpos
                 + pContext->m_pSingleMB->m_currMBXpos)*2*2;
 
     X = savedMV[0];
     Y = savedMV[1];
 
-    Ipp16s Xf,Yf,Xb,Yb;
+    int16_t Xf,Yf,Xb,Yb;
 
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
-    if ((Ipp16u)X!=VC1_MVINTRA)
+    if ((uint16_t)X!=VC1_MVINTRA)
     {
         PullBack_BDirect(pContext,  &X, &Y);
         Scale_Direct_MV(picLayerHeader,X,Y,&Xf,&Yf,&Xb,&Yb);
@@ -383,13 +383,13 @@ VC1Status MBLayer_ProgressiveBpicture_DIRECT_Prediction(VC1Context* pContext)
 
 static VC1Status MBLayer_ProgressiveBpicture_DIRECT_Decode(VC1Context* pContext)
 {
-    Ipp32s i;
-    Ipp32s ret = 0;
+    int32_t i;
+    int32_t ret = 0;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
     for (i=0;i<VC1_NUM_OF_BLOCKS;i++)
-        pCurrMB->m_pBlocks[i].blkType = (Ipp8u)pContext->m_picLayerHeader->TTFRM;
+        pCurrMB->m_pBlocks[i].blkType = (uint8_t)pContext->m_picLayerHeader->TTFRM;
     pCurrMB->mbType=(VC1_MB_1MV_INTER|VC1_MB_DIRECT);
     //CBPCY
     ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
@@ -417,9 +417,9 @@ static const B_MB_DECODE B_MB_Dispatch_table[] = {
 //Progressive-coded B picture
 VC1Status MBLayer_ProgressiveBpicture(VC1Context* pContext)
 {
-    Ipp32s DIRECTBBIT=0;
-    Ipp32s SKIPMBBIT=0;
-    Ipp32s i;
+    int32_t DIRECTBBIT=0;
+    int32_t SKIPMBBIT=0;
+    int32_t i;
     VC1Status vc1Res = VC1_OK;
 
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
@@ -488,7 +488,7 @@ VC1Status MBLayer_ProgressiveBpicture(VC1Context* pContext)
 
     if(SKIPMBBIT == 0)
     {
-        memset(pContext->m_pBlock, 0, sizeof(Ipp16s)*8*8*VC1_NUM_OF_BLOCKS);
+        memset(pContext->m_pBlock, 0, sizeof(int16_t)*8*8*VC1_NUM_OF_BLOCKS);
 
         sMB->ZigzagTable = ZigZagTables_PB_luma[sMB->ACPRED];
 

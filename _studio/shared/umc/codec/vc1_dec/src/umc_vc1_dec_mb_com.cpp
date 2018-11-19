@@ -29,15 +29,15 @@
 
 
 inline
-static Ipp16s GetScaleDC(Ipp16s DC, Ipp32u QntCurr, Ipp32u QntPred,
-                         Ipp32s CurrDCStepSize, Ipp32s PredDCStepSize)
+static int16_t GetScaleDC(int16_t DC, uint32_t QntCurr, uint32_t QntPred,
+                         int32_t CurrDCStepSize, int32_t PredDCStepSize)
 {
     /* Remove HalfStep */
     QntCurr >>= 1;
     QntPred >>= 1;
 
     if (QntCurr != QntPred)
-        DC = (Ipp16s)((DC * VC1_DQScaleTbl[CurrDCStepSize] * PredDCStepSize + 0x20000)>>18);
+        DC = (int16_t)((DC * VC1_DQScaleTbl[CurrDCStepSize] * PredDCStepSize + 0x20000)>>18);
 
     return DC;
 }
@@ -45,11 +45,11 @@ void GetIntraScaleDCPredictors(VC1Context* pContext)
 {
     VC1DCMBParam* CurrDC = pContext->CurrDC;
     VC1DCPredictors DCPred;
-    Ipp32u QurrQuant = CurrDC->DoubleQuant;
-    Ipp32s QurrDCStep = CurrDC->DCStepSize;
+    uint32_t QurrQuant = CurrDC->DoubleQuant;
+    int32_t QurrDCStep = CurrDC->DCStepSize;
 
-    Ipp32u LeftTopFlag = pContext->m_pCurrMB->LeftTopRightPositionFlag & 0xFF0;
-    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
+    uint32_t LeftTopFlag = pContext->m_pCurrMB->LeftTopRightPositionFlag & 0xFF0;
+    int32_t width = pContext->m_seqLayerHeader.MaxWidthMB;
 
     VC1DCMBParam* pA = NULL, *pB = NULL, *pC = NULL;
 
@@ -260,9 +260,9 @@ void GetIntraDCPredictors(VC1Context* pContext)
     VC1DCMBParam* CurrDC = pContext->CurrDC;
     VC1DCPredictors DCPred;
 
-    Ipp32u LeftTopFlag = pContext->m_pCurrMB->LeftTopRightPositionFlag & 0xFF0;
-    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
-    Ipp32u QurrQuant = CurrDC->DoubleQuant;
+    uint32_t LeftTopFlag = pContext->m_pCurrMB->LeftTopRightPositionFlag & 0xFF0;
+    int32_t width = pContext->m_seqLayerHeader.MaxWidthMB;
+    uint32_t QurrQuant = CurrDC->DoubleQuant;
 
     VC1DCMBParam* pA = NULL, *pB = NULL, *pC = NULL;
 
@@ -433,19 +433,19 @@ void GetPScaleDCPredictors(VC1Context* pContext)
 {
     VC1DCMBParam* CurrDC = pContext->CurrDC;
     VC1DCPredictors DCPred;
-    Ipp32u QurrQuant = CurrDC->DoubleQuant;
-    Ipp32u QurrDCStep = CurrDC->DCStepSize;
+    uint32_t QurrQuant = CurrDC->DoubleQuant;
+    uint32_t QurrDCStep = CurrDC->DCStepSize;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
-    Ipp32u LeftTopFlag = pCurrMB->LeftTopRightPositionFlag & 0xFF0;
-    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
+    uint32_t LeftTopFlag = pCurrMB->LeftTopRightPositionFlag & 0xFF0;
+    int32_t width = pContext->m_seqLayerHeader.MaxWidthMB;
 
     VC1DCMBParam* pA = NULL, *pB = NULL, *pC = NULL;
 
     memset(&DCPred.BlkPattern, 0, 6);
 
-    Ipp8u AIntraFlag = 0, BIntraFlag = 0, CIntraFlag = 0;
-    Ipp8u CurrIntraFlag = pCurrMB->IntraFlag;
+    uint8_t AIntraFlag = 0, BIntraFlag = 0, CIntraFlag = 0;
+    uint8_t CurrIntraFlag = pCurrMB->IntraFlag;
 
     DCPred.DoubleQuant[2] = QurrQuant;
     DCPred.ACTOP[0]  = CurrDC->DCBlkPred[0].ACTOP;
@@ -781,16 +781,16 @@ void GetPDCPredictors(VC1Context* pContext)
     VC1DCPredictors DCPred;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
-    Ipp32u LeftTopFlag = pCurrMB->LeftTopRightPositionFlag & 0xFF0;
-    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
-    Ipp32u QurrQuant = CurrDC->DoubleQuant;
+    uint32_t LeftTopFlag = pCurrMB->LeftTopRightPositionFlag & 0xFF0;
+    int32_t width = pContext->m_seqLayerHeader.MaxWidthMB;
+    uint32_t QurrQuant = CurrDC->DoubleQuant;
 
     VC1DCMBParam* pA = NULL, *pB = NULL, *pC = NULL;
 
     memset(&DCPred.BlkPattern, 0, 6);
 
-    Ipp8u AIntraFlag = 0, BIntraFlag = 0, CIntraFlag = 0;
-    Ipp8u CurrIntraFlag = pCurrMB->IntraFlag;
+    uint8_t AIntraFlag = 0, BIntraFlag = 0, CIntraFlag = 0;
+    uint8_t CurrIntraFlag = pCurrMB->IntraFlag;
 
     DCPred.DoubleQuant[2] = QurrQuant;
 

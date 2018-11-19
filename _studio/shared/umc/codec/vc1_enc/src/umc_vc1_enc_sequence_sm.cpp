@@ -28,7 +28,7 @@ namespace UMC_VC1_ENCODER
 UMC::Status VC1EncoderSequenceSM::WriteSeqHeader(VC1EncoderBitStreamSM* pCodedSH)
 {
     UMC::Status     ret     =   UMC::UMC_OK;
-    //Ipp32u          temp    =   0;
+    //uint32_t          temp    =   0;
 
     if (!pCodedSH)
         return UMC::UMC_ERR_NULL_PTR;
@@ -246,8 +246,8 @@ UMC::Status  VC1EncoderSequenceSM::Init(UMC::VC1EncoderParams* pParams)
     m_nMBCol = (m_uiPictureHeight +15)/16;
 
 
-    m_uiProfile         =   (Ipp8u)pParams->profile;
-    m_bLoopFilter       =   (Ipp8u)pParams->m_bDeblocking;         // Should be equal to 0 in simple profile
+    m_uiProfile         =   (uint8_t)pParams->profile;
+    m_bLoopFilter       =   (uint8_t)pParams->m_bDeblocking;         // Should be equal to 0 in simple profile
 
 
     m_uiFrameRateQ      =   0;                  // [0, 7]
@@ -276,7 +276,7 @@ UMC::Status  VC1EncoderSequenceSM::Init(UMC::VC1EncoderParams* pParams)
     }
 
     m_bFrameInterpolation=  false;
-    m_uiLevel           =   (Ipp8u)pParams->level;    //VC1_ENC_LEVEL_S, VC1_ENC_LEVEL_M, VC1_ENC_LEVEL_H
+    m_uiLevel           =   (uint8_t)pParams->level;    //VC1_ENC_LEVEL_S, VC1_ENC_LEVEL_M, VC1_ENC_LEVEL_H
     m_bConstBitRate     =   false;
     m_uiHRDBufferSize   =   1;                  // buffersize in milliseconds [1,65536]
     m_uiHRDFrameRate    =   1;                  // rate: bits per seconds [1,65536]

@@ -71,7 +71,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 
-const extern Ipp32s VC1_LowMotionLumaDCDiff[] =
+const extern int32_t VC1_LowMotionLumaDCDiff[] =
 {
  24, /* max bits */
  4,  /* total subtables */
@@ -187,7 +187,7 @@ const extern Ipp32s VC1_LowMotionLumaDCDiff[] =
 //    39   1629     11       79     3163239   22       ESCAPE 6326415    23
 /////////////////////////////////////////////////////////////////////////////
 
-const extern Ipp32s VC1_LowMotionChromaDCDiff[] =
+const extern int32_t VC1_LowMotionChromaDCDiff[] =
 {
  23, /* max bits */
  4,  /* total subtables */
@@ -319,7 +319,7 @@ const extern Ipp32s VC1_LowMotionChromaDCDiff[] =
 //38      84        12        78    996542   25         118   1993062      26
 //39      825       12        79    996543   25         ESC   1993063      26
 
-const extern Ipp32s VC1_HighMotionLumaDCDiff[] =
+const extern int32_t VC1_HighMotionLumaDCDiff[] =
 {
  26, /* max bits */
  4,  /* total subtables */
@@ -456,7 +456,7 @@ const extern Ipp32s VC1_HighMotionLumaDCDiff[] =
 //39      51123      16     79        13087335    24    ESC   26174607    25
 
 
-const extern Ipp32s VC1_HighMotionChromaDCDiff[] =
+const extern int32_t VC1_HighMotionChromaDCDiff[] =
 {
  25, /* max bits */
  4,  /* total subtables */

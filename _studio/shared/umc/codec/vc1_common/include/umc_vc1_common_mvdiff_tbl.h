@@ -26,14 +26,14 @@
 #define _UMC_VC1_COMMON_MVDIFF_TBL_H__
 
 //VC-1 Table 247: Motion Vector Differential VLC Table 0
-const extern Ipp32s VC1_Progressive_MV_Diff_tbl0[];
+const extern int32_t VC1_Progressive_MV_Diff_tbl0[];
 
 //VC-1 Table 248: Motion Vector Differential VLC Table 1
-const extern Ipp32s VC1_Progressive_MV_Diff_tbl1[];
+const extern int32_t VC1_Progressive_MV_Diff_tbl1[];
 
 //VC-1 Table 249: Motion Vector Differential VLC Table 2
-const extern Ipp32s VC1_Progressive_MV_Diff_tbl2[];
-const extern Ipp32s VC1_Progressive_MV_Diff_tbl3[];
+const extern int32_t VC1_Progressive_MV_Diff_tbl2[];
+const extern int32_t VC1_Progressive_MV_Diff_tbl3[];
 
 //VC-1 Table 250: Motion Vector Differential VLC Table 3
 

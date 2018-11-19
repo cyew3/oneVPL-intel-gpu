@@ -28,7 +28,7 @@
 namespace UMC_VC1_ENCODER
 {
 // Tables for encoding intra DC
-extern const Ipp32u DCLumaLowMotionEncTableVLC [120*2] =
+extern const uint32_t DCLumaLowMotionEncTableVLC [120*2] =
 {
     /*code, len*/
         1, 1,              1, 2,            1,  4,            1, 5,            5, 5,              7, 5,            8,  6,           12, 6,
@@ -48,7 +48,7 @@ extern const Ipp32u DCLumaLowMotionEncTableVLC [120*2] =
    395144, 24,        395145, 24,       395146, 24,      395147, 24,      395148, 24,        395149, 24,       395150, 24,      395151, 24
 };
 
-extern const Ipp32u DCLumaHighMotionEncTableVLC [120*2] =
+extern const uint32_t DCLumaHighMotionEncTableVLC [120*2] =
 {
     /*code, len*/
 
@@ -71,7 +71,7 @@ extern const Ipp32u DCLumaHighMotionEncTableVLC [120*2] =
 };
 
 
-extern const Ipp32u DCChromaLowMotionEncTableVLC [120*2] =
+extern const uint32_t DCChromaLowMotionEncTableVLC [120*2] =
 {
     /*code, len*/
 
@@ -93,7 +93,7 @@ extern const Ipp32u DCChromaLowMotionEncTableVLC [120*2] =
 
 };
 
-extern const Ipp32u DCCromaHighMotionEncTableVLC [120*2] =
+extern const uint32_t DCCromaHighMotionEncTableVLC [120*2] =
 
 {
     /*code, len*/
@@ -117,7 +117,7 @@ extern const Ipp32u DCCromaHighMotionEncTableVLC [120*2] =
 
 
 
-extern const Ipp8u HighMotionIntraIndexLevelLast0[31] =
+extern const uint8_t HighMotionIntraIndexLevelLast0[31] =
 {
     /*  level        run        index*/
     /*1..    19    ,    0    */    0      ,
@@ -152,7 +152,7 @@ extern const Ipp8u HighMotionIntraIndexLevelLast0[31] =
     /*1..    1    ,    29    */    117    ,
     /*1..    1    ,    30    */    118
 };
-extern const Ipp8u HighMotionIntraIndexLevelLast1[38] =
+extern const uint8_t HighMotionIntraIndexLevelLast1[38] =
 {
     /*  level     run        index*/
     /*1..    6    ,    0     */    119    ,
@@ -195,7 +195,7 @@ extern const Ipp8u HighMotionIntraIndexLevelLast1[38] =
     /*1..    1    ,    37    */    184
 };
 
-extern const Ipp8u LowMotionIntraIndexLevelLast0[21] =
+extern const uint8_t LowMotionIntraIndexLevelLast0[21] =
 {
     /*  level       run        index*/
     /*1..    16    ,    0    */     0     ,
@@ -222,7 +222,7 @@ extern const Ipp8u LowMotionIntraIndexLevelLast0[21] =
 };
 
 
-extern const Ipp8u LowMotionIntraIndexLevelLast1[27] =
+extern const uint8_t LowMotionIntraIndexLevelLast1[27] =
 {
     /*  level        run        index*/
     /*1..    4    ,    0    */    85     ,
@@ -254,7 +254,7 @@ extern const Ipp8u LowMotionIntraIndexLevelLast1[27] =
     /*1..    1        26    */    131
 
 };
-extern const Ipp8u MidRateIntraIndexLevelLast0[15] =
+extern const uint8_t MidRateIntraIndexLevelLast0[15] =
 {
     /*  level        run        index*/
     /*1..    27    ,    0    */    0     ,
@@ -275,7 +275,7 @@ extern const Ipp8u MidRateIntraIndexLevelLast0[15] =
 
 };
 
-extern const Ipp8u MidRateIntraIndexLevelLast1[21] =
+extern const uint8_t MidRateIntraIndexLevelLast1[21] =
 {
     /*  level        run        index*/
     /*1..    8    ,    0     */    67    ,
@@ -301,7 +301,7 @@ extern const Ipp8u MidRateIntraIndexLevelLast1[21] =
     /*1..    1    ,    20    */    101
 
 };
-extern const Ipp8u HighRateIntraIndexLevelLast0[15] =
+extern const uint8_t HighRateIntraIndexLevelLast0[15] =
 {
     /*  level     run        index*/
     /*1..    56    ,    0    */    0      ,
@@ -323,7 +323,7 @@ extern const Ipp8u HighRateIntraIndexLevelLast0[15] =
 };
 
 
-extern const Ipp8u HighRateIntraIndexLevelLast1[17] =
+extern const uint8_t HighRateIntraIndexLevelLast1[17] =
 {
     /*  level        run        index*/
     /*1..    4    ,    0    */    126    ,
@@ -344,7 +344,7 @@ extern const Ipp8u HighRateIntraIndexLevelLast1[17] =
     /*1..    1        15    */    160    ,
     /*1..    1        16    */    161
 };
-extern const Ipp8u HighMotionInterIndexLevelLast0[27]=
+extern const uint8_t HighMotionInterIndexLevelLast0[27]=
 {
     /*1..   23  ,   0   */  0   ,
     /*1..   11  ,   1   */  23  ,
@@ -374,7 +374,7 @@ extern const Ipp8u HighMotionInterIndexLevelLast0[27]=
     /*1..   1   ,   25  */  97  ,
     /*1..   1   ,   26  */  98
 };
-extern const Ipp8u HighMotionInterIndexLevelLast1[37]=
+extern const uint8_t HighMotionInterIndexLevelLast1[37]=
 {
     /*1..   9   ,   0   */  99  ,
     /*1..   5   ,   1   */  108 ,
@@ -414,7 +414,7 @@ extern const Ipp8u HighMotionInterIndexLevelLast1[37]=
     /*1..   1   ,   35  */  166 ,
     /*1..   1   ,   36  */  167
 };
-extern const Ipp8u LowMotionInterIndexLevelLast0[30]=
+extern const uint8_t LowMotionInterIndexLevelLast0[30]=
 {
     /*1..   14  ,   0   */  0   ,
     /*1..   9   ,   1   */  14  ,
@@ -447,7 +447,7 @@ extern const Ipp8u LowMotionInterIndexLevelLast0[30]=
     /*1..   1   ,   28  */  79  ,
     /*1..   1   ,   29  */  80
 };
-extern const Ipp8u LowMotionInterIndexLevelLast1[44]=
+extern const uint8_t LowMotionInterIndexLevelLast1[44]=
 {
     /*1..   5   ,   0   */  81  ,
     /*1..   4   ,   1   */  86  ,
@@ -495,7 +495,7 @@ extern const Ipp8u LowMotionInterIndexLevelLast1[44]=
     /*1..   1   ,   43  */  147
 };
 
-extern const Ipp8u MidRateInterIndexLevelLast0[27]=
+extern const uint8_t MidRateInterIndexLevelLast0[27]=
 {
     /*1..   12  ,   0   */  0   ,
     /*1..   6   ,   1   */  12  ,
@@ -525,7 +525,7 @@ extern const Ipp8u MidRateInterIndexLevelLast0[27]=
     /*1..   1   ,   25  */  56  ,
     /*1..   1   ,   26  */  57
 };
-extern  const Ipp8u MidRateInterIndexLevelLast1[41]=
+extern  const uint8_t MidRateInterIndexLevelLast1[41]=
 {
     /*1..   3   ,   0   */  58  ,
     /*1..   2   ,   1   */  61  ,
@@ -570,7 +570,7 @@ extern  const Ipp8u MidRateInterIndexLevelLast1[41]=
     /*1..   1   ,   40  */  101
 };
 
-extern const Ipp8u HighRateInterIndexLevelLast0[25]=
+extern const uint8_t HighRateInterIndexLevelLast0[25]=
 {
     /*1..   32  ,   0   */  0   ,
     /*1..   13  ,   1   */  32  ,
@@ -598,7 +598,7 @@ extern const Ipp8u HighRateInterIndexLevelLast0[25]=
     /*1..   1   ,   23  */  107 ,
     /*1..   1   ,   24  */  108
 };
-extern const Ipp8u HighRateInterIndexLevelLast1[31]=
+extern const uint8_t HighRateInterIndexLevelLast1[31]=
 {
     /*1..   4   ,   0   */  109 ,
     /*1..   3   ,   1   */  113 ,
@@ -635,7 +635,7 @@ extern const Ipp8u HighRateInterIndexLevelLast1[31]=
 
 
 
-extern const Ipp32u LowMotionIntraTableVLC[133*2]=
+extern const uint32_t LowMotionIntraTableVLC[133*2]=
 {
 /*ESCAPE*/
             22    , 7    ,                  1     ,  2   ,
@@ -706,7 +706,7 @@ extern const Ipp32u LowMotionIntraTableVLC[133*2]=
             989   , 12   ,                  806   ,  12  ,
             94    , 13
 };
-extern const Ipp32u HighMotionIntraTableVLC[186*2]=
+extern const uint32_t HighMotionIntraTableVLC[186*2]=
 {
 /*ESCAPE*/  74      ,    9    ,            1       ,    2    ,
             5       ,    3    ,            13      ,    4    ,
@@ -802,7 +802,7 @@ extern const Ipp32u HighMotionIntraTableVLC[186*2]=
             1935    ,    13   ,            1197    ,    14   ,
             16047   ,    14   ,            9180    ,    14
 };
-extern const Ipp32u MidRateIntraTableVLC[103*2]=
+extern const uint32_t MidRateIntraTableVLC[103*2]=
 {
 /*ESCAPE*/  3   ,   7   ,            2   ,   2   ,
             6   ,   3   ,            15  ,   4   ,
@@ -857,7 +857,7 @@ extern const Ipp32u MidRateIntraTableVLC[103*2]=
             93  ,   12  ,            94  ,   12  ,
             95  ,   12
 };
-extern const Ipp32u HighRateIntraTableVLC[163*2]=
+extern const uint32_t HighRateIntraTableVLC[163*2]=
 {
 /*ESCAPE*/  122     ,   7   ,           0       ,   2   ,
             3       ,   3   ,           13      ,   4   ,
@@ -943,7 +943,7 @@ extern const Ipp32u HighRateIntraTableVLC[163*2]=
             7960    ,   13
 };
 
-extern const Ipp32u LowMotionInterTableVLC[149*2]=
+extern const uint32_t LowMotionInterTableVLC[149*2]=
 {
 /*ESCAPE*/  13   ,   9   ,            4    ,   3   ,
             20   ,   5   ,            23   ,   7   ,
@@ -1021,7 +1021,7 @@ extern const Ipp32u LowMotionInterTableVLC[149*2]=
             1596 ,   13  ,            207  ,   13  ,
             5524 ,   13
 };
-extern const Ipp32u HighMotionInterTableVLC[169*2]=
+extern const uint32_t HighMotionInterTableVLC[169*2]=
 {
 /*ESCAPE*/  361   ,   9   ,            0     ,   3   ,
             3     ,   4   ,            11    ,   5   ,
@@ -1109,7 +1109,7 @@ extern const Ipp32u HighMotionInterTableVLC[169*2]=
             5797  ,   13  ,            1304  ,   11  ,
             14846 ,   14
 };
-extern const Ipp32u MidRateInterTableVLC[103*2]=
+extern const uint32_t MidRateInterTableVLC[103*2]=
 {
 /*ESCAPE*/  3   ,   7   ,            2   ,   2   ,
             15  ,   4   ,            21  ,   6   ,
@@ -1164,7 +1164,7 @@ extern const Ipp32u MidRateInterTableVLC[103*2]=
             93  ,   12  ,            94  ,   12  ,
             95  ,   12
 };
-extern const Ipp32u HighRateInterTableVLC[175*2]=
+extern const uint32_t HighRateInterTableVLC[175*2]=
 {
 /*ESCAPE*/  115     ,   7   ,            2       ,   2   ,
             0       ,   3   ,            30      ,   5   ,
@@ -1256,7 +1256,7 @@ extern const Ipp32u HighRateInterTableVLC[175*2]=
             2241    ,   13
 };
 
-extern const Ipp8u Mode3SizeConservativeVLC[12*2] =
+extern const uint8_t Mode3SizeConservativeVLC[12*2] =
 {
      0, 0 ,         1, 3,
      2, 3,          3, 3,
@@ -1265,7 +1265,7 @@ extern const Ipp8u Mode3SizeConservativeVLC[12*2] =
      0, 5 ,         1, 5,
      2, 5,          3, 5
 };
-extern const Ipp8u Mode3SizeEfficientVLC[12*2] =
+extern const uint8_t Mode3SizeEfficientVLC[12*2] =
 {
      0, 0 ,     0, 0,
      1, 1,      1, 2,
@@ -1275,7 +1275,7 @@ extern const Ipp8u Mode3SizeEfficientVLC[12*2] =
      0, 0,      0, 0
 };
 
-extern const Ipp8u  frameTypeCodesVLC[2][2*4] = {
+extern const uint8_t  frameTypeCodesVLC[2][2*4] = {
 {
    /*code, size*/
    0,       1,  /*I  frame*/
@@ -1290,7 +1290,7 @@ extern const Ipp8u  frameTypeCodesVLC[2][2*4] = {
    0,       2   /*B   frame */
 }
 };
-extern const Ipp8u  MVRangeCodesVLC[4*2] =
+extern const uint8_t  MVRangeCodesVLC[4*2] =
 {
    /*code, size*/
     0,  0,
@@ -1299,20 +1299,20 @@ extern const Ipp8u  MVRangeCodesVLC[4*2] =
     7,  3
 };
 
-extern const Ipp8u ACTableCodesVLC[3*2]=
+extern const uint8_t ACTableCodesVLC[3*2]=
 {
     0,  1,
     2,  2,
     3,  2
 };
-extern const Ipp8u DCQuantValues[32] =
+extern const uint8_t DCQuantValues[32] =
 {
     0,  2,  4,  8,  8,  8,  9,  9,
     10, 10, 11, 11, 12, 12, 13, 13,
     14, 14, 15, 15, 16, 16, 17, 17,
     18, 18, 19, 19, 20, 20, 21, 21
 };
-extern const Ipp8u quantValue[32] =
+extern const uint8_t quantValue[32] =
 {
     0xFF,
     1,  2,  3,  4,  5,  6,  7,  8,
@@ -1321,14 +1321,14 @@ extern const Ipp8u quantValue[32] =
     22, 23, 24, 25, 27, 29, 31
 };
 
-extern const Ipp8u LowMotionIntraDeltaLevelLast0[21] =
+extern const uint8_t LowMotionIntraDeltaLevelLast0[21] =
 {
     16,     11,     8,      7,      5,      4,      4,
     3,      3,      3,      3,      3,      3,      3,
     2,      2,      1,      1,      1,      1,      1
 };
 
-extern const Ipp8u LowMotionIntraDeltaLevelLast1[27] =
+extern const uint8_t LowMotionIntraDeltaLevelLast1[27] =
 {
     4,      4,      3,      3,      2,      2,      2,
     2,      2,      2,      2,      2,      2,      2,
@@ -1336,18 +1336,18 @@ extern const Ipp8u LowMotionIntraDeltaLevelLast1[27] =
     1,      1,      1,      1,      1,      1
 };
 
-extern const Ipp8u LowMotionIntraDeltaRunLast0[16+1] =
+extern const uint8_t LowMotionIntraDeltaRunLast0[16+1] =
 {
     0,      20,     15,     13,     6,      4,      3,
     3,      2,      1,      1,      1,      0,      0,
     0,      0,      0
 };
-extern const Ipp8u LowMotionIntraDeltaRunLast1[4+1] =
+extern const uint8_t LowMotionIntraDeltaRunLast1[4+1] =
 {
     0,     26,     13,      3,      1
 };
 
-extern const Ipp8u HighMotionIntraDeltaLevelLast0[31] =
+extern const uint8_t HighMotionIntraDeltaLevelLast0[31] =
 {
     19,     15,     12,     11,     6,      5,      4,
     4,      4,      4,      3,      3,      3,      3,
@@ -1356,7 +1356,7 @@ extern const Ipp8u HighMotionIntraDeltaLevelLast0[31] =
     1,      1,      1
 };
 
-extern const Ipp8u HighMotionIntraDeltaLevelLast1[38] =
+extern const uint8_t HighMotionIntraDeltaLevelLast1[38] =
 {
     6,      5,      4,      4,      3,      2,      2,
     2,      2,      2,      2,      2,      2,      2,
@@ -1367,7 +1367,7 @@ extern const Ipp8u HighMotionIntraDeltaLevelLast1[38] =
 };
 
 
-extern const Ipp8u HighMotionIntraDeltaRunLast0[20] =
+extern const uint8_t HighMotionIntraDeltaRunLast0[20] =
 {
     0,      30,     17,     15,     9,      5,      4,
     3,      3,      3,      3,      3,      2,      1,
@@ -1375,25 +1375,25 @@ extern const Ipp8u HighMotionIntraDeltaRunLast0[20] =
 };
 
 
-extern const Ipp8u HighMotionIntraDeltaRunLast1[7] =
+extern const uint8_t HighMotionIntraDeltaRunLast1[7] =
 {
     0,      37,     15,     4,      3,      1,      0
 };
-extern const Ipp8u MidRateIntraDeltaLevelLast0[15] =
+extern const uint8_t MidRateIntraDeltaLevelLast0[15] =
 {
     27,     10,     5,      4,      3,      3,      3,
      3,     2,      2,      1,      1,      1,      1,
      1
 };
 
-extern const Ipp8u MidRateIntraDeltaLevelLast1[21] =
+extern const uint8_t MidRateIntraDeltaLevelLast1[21] =
 {
     8,      3,      2,      2,      2,      2,      2,
     1,      1,      1,      1,      1,      1,      1,
     1,      1,      1,      1,      1,      1,      1
 };
 
-extern const Ipp8u MidRateIntraDeltaRunLast0[28] =
+extern const uint8_t MidRateIntraDeltaRunLast0[28] =
 {
     0,      14,     9,      7,      3,      2,      1,
     1,      1,      1,      1,      0,      0,      0,
@@ -1401,19 +1401,19 @@ extern const Ipp8u MidRateIntraDeltaRunLast0[28] =
     0,      0,      0,      0,      0,      0,      0
 };
 
-extern const Ipp8u MidRateIntraDeltaRunLast1[9] =
+extern const uint8_t MidRateIntraDeltaRunLast1[9] =
 {
     0,      20,     6,      1,      0,      0,      0,
     0,      0
 };
-extern const Ipp8u HighRateIntraDeltaLevelLast0[15] =
+extern const uint8_t HighRateIntraDeltaLevelLast0[15] =
 {
     56,     20,     10,     7,      6,      5,      4,
     3,      3,      3,      2,      2,      2,      2,
     1
 };
 
-extern const Ipp8u HighRateIntraDeltaLevelLast1[17] =
+extern const uint8_t HighRateIntraDeltaLevelLast1[17] =
 {
     4,      3,      3,      2,      2,      2,      2,
     2,      2,      2,      2,      2,      2,      2,
@@ -1422,7 +1422,7 @@ extern const Ipp8u HighRateIntraDeltaLevelLast1[17] =
 };
 
 
-extern const Ipp8u HighRateIntraDeltaRunLast0[57] =
+extern const uint8_t HighRateIntraDeltaRunLast0[57] =
 {
     0,      14,     13,     9,      6,      5,      4,
     3,      2,      2,      2,      1,      1,      1,
@@ -1434,13 +1434,13 @@ extern const Ipp8u HighRateIntraDeltaRunLast0[57] =
     0,      0,      0,      0,      0,      0,      0,
     0
 };
-extern const Ipp8u HighRateIntraDeltaRunLast1[5] =
+extern const uint8_t HighRateIntraDeltaRunLast1[5] =
 {
     0,     16,      14,     2,      0
 };
 
 
-extern const Ipp8u  HighMotionInterDeltaLevelLast0[27] =
+extern const uint8_t  HighMotionInterDeltaLevelLast0[27] =
 {
     23,     11,     8,      7,      5,      5,      4,
      4,     3,      3,      3,      3,      2,      2,
@@ -1448,7 +1448,7 @@ extern const Ipp8u  HighMotionInterDeltaLevelLast0[27] =
      1,     1,      1,      1,      1,      1
 };
 
-extern const Ipp8u  HighMotionInterDeltaLevelLast1[37] =
+extern const uint8_t  HighMotionInterDeltaLevelLast1[37] =
 {
     9,      5,      4,      4,      3,      3,      3,
     2,      2,      2,      2,      2,      2,      2,
@@ -1459,7 +1459,7 @@ extern const Ipp8u  HighMotionInterDeltaLevelLast1[37] =
 };
 
 
-extern const Ipp8u HighMotionInterDeltaRunLast0[24] =
+extern const uint8_t HighMotionInterDeltaRunLast0[24] =
 {
     0,      26,     16,     11,     7,      5,      3,
     3,      2,      1,      1,      1,      0,      0,
@@ -1467,12 +1467,12 @@ extern const Ipp8u HighMotionInterDeltaRunLast0[24] =
     0,      0,      0
 };
 
-extern const Ipp8u HighMotionInterDeltaRunLast1[10] =
+extern const uint8_t HighMotionInterDeltaRunLast1[10] =
 {
     0,      36,     14,     6,      3,      1,      0,
     0,      0,      0
 };
-extern const Ipp8u LowMotionInterDeltaLevelLast0[30] =
+extern const uint8_t LowMotionInterDeltaLevelLast0[30] =
 {
     14,     9,      5,      4,      4,      4,      3,
     3,      3,      3,      3,      3,      3,      2,
@@ -1481,7 +1481,7 @@ extern const Ipp8u LowMotionInterDeltaLevelLast0[30] =
     1,      1
 };
 
-extern const Ipp8u LowMotionInterDeltaLevelLast1[44] =
+extern const uint8_t LowMotionInterDeltaLevelLast1[44] =
 {
     5,      4,      3,      3,      2,      2,      2,
     2,      2,      2,      2,      2,      2,      2,
@@ -1493,18 +1493,18 @@ extern const Ipp8u LowMotionInterDeltaLevelLast1[44] =
 
 };
 
-extern const Ipp8u LowMotionInterDeltaRunLast0[15] =
+extern const uint8_t LowMotionInterDeltaRunLast0[15] =
 {
     0,      29,     15,     12,     5,      2,      1,
     1,      1,      1,      0,      0,      0,      0,
     0
 };
 
-extern const Ipp8u LowMotionInterDeltaRunLast1[6] =
+extern const uint8_t LowMotionInterDeltaRunLast1[6] =
 {
     0,      43,     15,     3,      1,    0
 };
-extern const Ipp8u  MidRateInterDeltaLevelLast0[27] =
+extern const uint8_t  MidRateInterDeltaLevelLast0[27] =
 {
     12,     6,      4,      3,      3,      3,      3,
     2,      2,      2,      2,      1,      1,      1,
@@ -1512,7 +1512,7 @@ extern const Ipp8u  MidRateInterDeltaLevelLast0[27] =
     1,      1,      1,      1,      1,      1
 };
 
-extern const Ipp8u  MidRateInterDeltaLevelLast1[41] =
+extern const uint8_t  MidRateInterDeltaLevelLast1[41] =
 {
     3,      2,      1,      1,      1,      1,      1,
     1,      1,      1,      1,      1,      1,      1,
@@ -1523,18 +1523,18 @@ extern const Ipp8u  MidRateInterDeltaLevelLast1[41] =
 };
 
 
-extern const Ipp8u  MidRateInterDeltaRunLast0[13] =
+extern const uint8_t  MidRateInterDeltaRunLast0[13] =
 {
     0,      26,     10,     6,      2,     1,       1,
     0,      0,      0,      0,      0,     0
 };
 
 
-extern const Ipp8u   MidRateInterDeltaRunLast1[4] =
+extern const uint8_t   MidRateInterDeltaRunLast1[4] =
 {
     0,      40,     1,      0
 };
-extern const Ipp8u   HighRateInterDeltaLevelLast0[25] =
+extern const uint8_t   HighRateInterDeltaLevelLast0[25] =
 {
     32,     13,     8,      6,      5,      4,
     4,      3,      3,      3,      2,      2,
@@ -1543,7 +1543,7 @@ extern const Ipp8u   HighRateInterDeltaLevelLast0[25] =
     1
 
 };
-extern const Ipp8u   HighRateInterDeltaLevelLast1[31] =
+extern const uint8_t   HighRateInterDeltaLevelLast1[31] =
 {
     4,      3,      3,      3,      2,      2,      2,
     2,      2,      2,      2,      2,      2,      2,
@@ -1554,7 +1554,7 @@ extern const Ipp8u   HighRateInterDeltaLevelLast1[31] =
 
 
 
-extern const Ipp8u   HighRateInterDeltaRunLast0[33] =
+extern const uint8_t   HighRateInterDeltaRunLast0[33] =
 {
     0,      24,     22,     9,      6,      4,      3,
     2,      2,      1,      1,      1,      1,      1,
@@ -1563,7 +1563,7 @@ extern const Ipp8u   HighRateInterDeltaRunLast0[33] =
     0,      0,      0,      0,      0
 };
 
-extern const Ipp8u   HighRateInterDeltaRunLast1[5] =
+extern const uint8_t   HighRateInterDeltaRunLast1[5] =
 {
     0,     30,      28,     3,      0
 };
@@ -1611,7 +1611,7 @@ extern const sACTablesSet ACTablesSet[8] = {
         HighRateInterTableVLC
     }
 };
-extern const Ipp32u* DCTables[2][2] =
+extern const uint32_t* DCTables[2][2] =
 {
     { DCLumaLowMotionEncTableVLC,  DCChromaLowMotionEncTableVLC},
     { DCLumaHighMotionEncTableVLC, DCCromaHighMotionEncTableVLC}
@@ -1619,19 +1619,19 @@ extern const Ipp32u* DCTables[2][2] =
 
 
 
-extern const Ipp8u MVModeP [4][4*2] =
+extern const uint8_t MVModeP [4][4*2] =
 {
     {1,1,               1,2,            1,3,            0,4         }, //PQANT >12
     {0,4,               1,1,            1,3,            1,2         }, //PQANT <=12
     {(1<<1)+1,1+4,   (1<<2)+1,2+4,    (1<<3)+1,3+4,    (1<<3)+0,3+4 }, //PQANT >12  , INTENSITY
     {(1<<3)+0,3+4,   (1<<1)+1,1+4,    (1<<3)+1,3+4,    (1<<2)+1,2+4 } //PQANT <=12 , INTENSITY
 };
-extern const Ipp8u MVModeBField [2][4*2] =
+extern const uint8_t MVModeBField [2][4*2] =
 {
     {1,1,               1,2,            1,3,            0,3         }, //PQANT >12
     {0,3,               1,1,            1,3,            1,2         } //PQANT <=12
 };
-extern const Ipp16u Bitplane6TableVLC[64*2] =
+extern const uint16_t Bitplane6TableVLC[64*2] =
 {
        1,  1,       2,   4,       3,   4,       0,   8,       4,   4,       1,   8,       2,   8,       71, 10,
        5,  4,       3,   8,       4,   8,       75, 10,       5,   8,       77, 10,       78, 10,       782,13,
@@ -1643,7 +1643,7 @@ extern const Ipp16u Bitplane6TableVLC[64*2] =
        88,10,       770,13,       769,13,       52,  9,       768,13,       51,  9,       50,  9,       7,   6
 };
 
-extern const Ipp8u QuantProfileTableVLC[12*2] =
+extern const uint8_t QuantProfileTableVLC[12*2] =
 {
     0,                        1,         //        VC1_ENC_QUANT_SINGLE,
     (1<<(2+1))+(3<<1)+0,      2+1+1,       //        VC1_ENC_QUANT_MB_ANY,
@@ -1659,7 +1659,7 @@ extern const Ipp8u QuantProfileTableVLC[12*2] =
     (1<<(2+2))+(1<<2)+3,      2+2+1        //        VC1_ENC_QUANT_EDGSE_BOTTOM_LEFT,
 };
 
-extern Ipp16u MVDiffTableVLC0[73*2] =
+extern uint16_t MVDiffTableVLC0[73*2] =
 {
     0,   6,       2,   7,       3,   7,       8,   8,
     576, 14,      3,   6,       2,   5,       6,   6,
@@ -1682,7 +1682,7 @@ extern Ipp16u MVDiffTableVLC0[73*2] =
     7, 3
 };
 
-extern const Ipp16u MVDiffTableVLC1[73*2] =
+extern const uint16_t MVDiffTableVLC1[73*2] =
 {
     0,    5,       4,    7,       5,    7,       3,   6,
     4,    6,       3,    5,       4,    5,       5,    6,
@@ -1705,7 +1705,7 @@ extern const Ipp16u MVDiffTableVLC1[73*2] =
     31, 5
 };
 
-extern const Ipp16u MVDiffTableVLC2[73*2] =
+extern const uint16_t MVDiffTableVLC2[73*2] =
 {
     0,   3,       512, 12,        513, 12,        514, 12,
     515, 12,      2,   3,         3,   4,         258, 11,
@@ -1728,7 +1728,7 @@ extern const Ipp16u MVDiffTableVLC2[73*2] =
     319, 11
 };
 
-extern const Ipp16u MVDiffTableVLC3[73*2] =
+extern const uint16_t MVDiffTableVLC3[73*2] =
 {
     0,   15,      1,   11,      1,   15,      2,   15,
     3,   15,      4,   15,      1,   12,      5,   15,
@@ -1751,7 +1751,7 @@ extern const Ipp16u MVDiffTableVLC3[73*2] =
     15,  4
 };
 
-extern const Ipp8u MVSizeOffset[VC1_ENC_MV_LIMIT*3]=
+extern const uint8_t MVSizeOffset[VC1_ENC_MV_LIMIT*3]=
 {
 /*index   offset    size*/
     0   ,   0   ,   0   ,
@@ -1915,7 +1915,7 @@ extern const Ipp8u MVSizeOffset[VC1_ENC_MV_LIMIT*3]=
     5   ,   31  ,   8
 };
 
-extern const Ipp8u longMVLength[4*2]=
+extern const uint8_t longMVLength[4*2]=
 {
  /*dx,      dy*/
     9,      8,
@@ -1923,7 +1923,7 @@ extern const Ipp8u longMVLength[4*2]=
     12,     10,
     13,     11
 };
-extern const Ipp16s MVRange[4*2]=
+extern const int16_t MVRange[4*2]=
 {
  /* x,      y*/
     256 /4 ,    128 /4,
@@ -1931,7 +1931,7 @@ extern const Ipp16s MVRange[4*2]=
     2048/4,     512 /4 ,
     4096/4,     1024/4
 };
-extern const Ipp16s MVRangeFieldsHalf[4*2]=
+extern const int16_t MVRangeFieldsHalf[4*2]=
 {
  /* x,      y*/
     128 ,      64  ,
@@ -1939,7 +1939,7 @@ extern const Ipp16s MVRangeFieldsHalf[4*2]=
     1024,      256 ,
     2048,      512
 };
-extern const Ipp16u VLCTableCBPCY_I[64*2] =
+extern const uint16_t VLCTableCBPCY_I[64*2] =
 {
         1, 1 ,     23, 6 ,       9, 5 ,      5, 5 ,     6, 5 ,     71, 9 ,      32, 7 ,     16, 7 ,
         2, 5 ,    124, 9 ,      58, 7 ,     29, 7 ,     2, 6 ,    236, 9 ,     119, 8 ,      0, 8 ,
@@ -1950,7 +1950,7 @@ extern const Ipp16u VLCTableCBPCY_I[64*2] =
        20, 6 ,    575, 11 ,    125, 9 ,     24, 9 ,     7, 7 ,    455, 11 ,    134, 9 ,     25, 9 ,
        21, 6 ,    475, 10 ,      2, 9 ,     70, 9 ,     13, 8 ,   1811, 13 ,    474, 10 ,   361, 10
 };
-extern const Ipp16u VLCTableCBPCY_PB_0 [64*2] =
+extern const uint16_t VLCTableCBPCY_PB_0 [64*2] =
 {
 
        0,13,     6, 13,    15,  7,    13, 13,  13, 7,    11, 13,     3, 13,    13, 12,
@@ -1963,7 +1963,7 @@ extern const Ipp16u VLCTableCBPCY_PB_0 [64*2] =
        4, 5,   110,  8,   100,  8,    30,  6,   2, 3,     5,  3,     4,  3,     3,  2
 
 };
-extern const Ipp16u VLCTableCBPCY_PB_1 [64*2] =
+extern const uint16_t VLCTableCBPCY_PB_1 [64*2] =
 {
 
        0,14,     9, 13,     1,  8,    18, 13,    5, 3,    14, 13,   237,  8,    26, 13,
@@ -1979,7 +1979,7 @@ extern const Ipp16u VLCTableCBPCY_PB_1 [64*2] =
 
 
 
-extern const Ipp16u VLCTableCBPCY_PB_2 [64*2] =
+extern const uint16_t VLCTableCBPCY_PB_2 [64*2] =
 {
 
        0,13,   201,  8,    25,  6,   231,  8,   5, 4,   221,  8,     1, 13,     3, 12,
@@ -1995,7 +1995,7 @@ extern const Ipp16u VLCTableCBPCY_PB_2 [64*2] =
 
 
 
-extern const Ipp16u VLCTableCBPCY_PB_3[64*2] =
+extern const uint16_t VLCTableCBPCY_PB_3[64*2] =
 {
 
        0, 9,    28, 9,    12,9,    44, 9,    3, 2,    36, 9,    20,9,    52, 9,
@@ -2008,7 +2008,7 @@ extern const Ipp16u VLCTableCBPCY_PB_3[64*2] =
        4, 9,    35, 9,    19,9,    51, 9,   11, 9,    43, 9,    27,9,    31, 8
 
 };
-extern const Ipp16u* VLCTableCBPCY_PB[4]=
+extern const uint16_t* VLCTableCBPCY_PB[4]=
 {
     VLCTableCBPCY_PB_0,
     VLCTableCBPCY_PB_1,
@@ -2027,7 +2027,7 @@ extern const    eCodingSet          CodingSetsInter[2][3] = {
                                      {VC1_ENC_HIGH_RATE_INTER , VC1_ENC_HIGH_MOTION_INTER, VC1_ENC_MID_RATE_INTER},
                                      {VC1_ENC_LOW_MOTION_INTER, VC1_ENC_HIGH_MOTION_INTER, VC1_ENC_MID_RATE_INTER}};
 
-extern const      Ipp16u*           MVDiffTablesVLC[4]=
+extern const      uint16_t*           MVDiffTablesVLC[4]=
 {
     MVDiffTableVLC0,
     MVDiffTableVLC1,
@@ -2035,7 +2035,7 @@ extern const      Ipp16u*           MVDiffTablesVLC[4]=
     MVDiffTableVLC3
 };
 
-extern const Ipp8u    BMVTypeVLC[2][3*2]=
+extern const uint8_t    BMVTypeVLC[2][3*2]=
 {
   {
    // BFraction >=1/2
@@ -2050,7 +2050,7 @@ extern const Ipp8u    BMVTypeVLC[2][3*2]=
    3,2      //VC1_ENC_INTERPOLATED
   }
 };
-extern const Ipp8u BFractionVLC[9][8*2] =
+extern const uint8_t BFractionVLC[9][8*2] =
 {
     {0,0,   0,0,       0,0,    0,0,     0,0,     0,0,     0,0,     0,0}, // ../0
     {0,0,   0,0,       0,0,    0,0,     0,0,     0,0,     0,0,     0,0}, // ../1
@@ -2062,7 +2062,7 @@ extern const Ipp8u BFractionVLC[9][8*2] =
     {0,0,   116,7,     117,7,  118,7,   119,7,   120,7,   121,7,   0,0}, // ../7
     {0,0,   122,7,     3,3,    123,7,   0,3,     124,7,   4,3,     125,7}// ../8
 };
-extern const Ipp8u BFractionScaleFactor[9][8] =
+extern const uint8_t BFractionScaleFactor[9][8] =
 {
 
     {0,   0,       0,    0,     0,     0,     0,     0}, // ../0
@@ -2075,7 +2075,7 @@ extern const Ipp8u BFractionScaleFactor[9][8] =
     {0,   37,      74,   111,   148,   185,   222,   0}, // ../7
     {0,   32,      64,   96,    128,   160,   192,   224}// ../8
 };
-extern const  Ipp16s TTMBVLC_HighRate[2][4][3*2] =          /*PQUANT<5 */
+extern const  int16_t TTMBVLC_HighRate[2][4][3*2] =          /*PQUANT<5 */
 {
     { //Block
 
@@ -2092,7 +2092,7 @@ extern const  Ipp16s TTMBVLC_HighRate[2][4][3*2] =          /*PQUANT<5 */
             { 0x17a, 9,      0x17a, 9,       0x17a, 9}  //4x4
     }
 };
-extern const  Ipp16s TTMBVLC_MediumRate[2][4][3*2] =        /*5<=PQUANT<13 */
+extern const  int16_t TTMBVLC_MediumRate[2][4][3*2] =        /*5<=PQUANT<13 */
 {
     {
     //Block
@@ -2111,7 +2111,7 @@ extern const  Ipp16s TTMBVLC_MediumRate[2][4][3*2] =        /*5<=PQUANT<13 */
     }
 
 };
-extern const Ipp16s TTMBVLC_LowRate[2][4][3*2] =           /* PQUANT>=13 */
+extern const int16_t TTMBVLC_LowRate[2][4][3*2] =           /* PQUANT>=13 */
 {
     {
      //Block
@@ -2130,7 +2130,7 @@ extern const Ipp16s TTMBVLC_LowRate[2][4][3*2] =           /* PQUANT>=13 */
             { 0x100,11,      0x100,11,       0x100,11}  //4x4
     }
 };
-extern const Ipp8u  TTBLKVLC_HighRate[4][3*2] =                /*PQUANT<5 */
+extern const uint8_t  TTBLKVLC_HighRate[4][3*2] =                /*PQUANT<5 */
 {
             { 0x03, 2,      0x03, 2,        0x03, 2}, //8x8
             { 0x11, 5,      0x10, 5,        0x00, 2}, //8x4 : bottom, top,  both
@@ -2138,7 +2138,7 @@ extern const Ipp8u  TTBLKVLC_HighRate[4][3*2] =                /*PQUANT<5 */
             { 0x05, 3,      0x05, 3,        0x05, 3}  //4x4
 
 };
-extern const Ipp8u  TTBLKVLC_MediumRate[4][3*2] =              /*5<=PQUANT<13 */
+extern const uint8_t  TTBLKVLC_MediumRate[4][3*2] =              /*5<=PQUANT<13 */
 {
             { 0x03, 2,      0x03, 2,        0x03, 2}, //8x8
             { 0x08, 4,      0x09, 4,        0x03, 3}, //8x4 : bottom, top,  both
@@ -2146,7 +2146,7 @@ extern const Ipp8u  TTBLKVLC_MediumRate[4][3*2] =              /*5<=PQUANT<13 */
             { 0x02, 3,      0x02, 3,        0x02, 3}  //4x4
 
 };
-extern const Ipp8u  TTBLKVLC_LowRate[4][3*2] =      /* PQUANT>=13 */
+extern const uint8_t  TTBLKVLC_LowRate[4][3*2] =      /* PQUANT>=13 */
  {
      { 0x01, 2,     0x01, 2,            0x01, 2 }, //8x8
      { 0x04, 3,     0x0b, 4,            0x0a, 4 }, //8x4 : bottom, top,  both
@@ -2154,7 +2154,7 @@ extern const Ipp8u  TTBLKVLC_LowRate[4][3*2] =      /* PQUANT>=13 */
      { 0x01, 3,     0x01, 3,            0x01, 3 }  //4x4
 };
 
-extern const Ipp8u SubPatternMask[4][2]=
+extern const uint8_t SubPatternMask[4][2]=
 {
     {//8x8
         0x0C, 0x03
@@ -2169,21 +2169,21 @@ extern const Ipp8u SubPatternMask[4][2]=
         0x0C, 0x03
     },
 };
-extern const Ipp8u  SubPattern4x4VLC_HighRate[16*2] =           /*PQUANT<5 */
+extern const uint8_t  SubPattern4x4VLC_HighRate[16*2] =           /*PQUANT<5 */
 {
      0x00, 0 ,  0x0e, 5 ,  0x0c, 5 ,  0x07, 5 ,
      0x0b, 5 ,  0x09, 5 ,  0x1a, 6 ,  0x02, 4 ,
      0x0a, 5 ,  0x1b, 6 ,  0x08, 5 ,  0x00, 4 ,
      0x06, 5 ,  0x01, 4 ,  0x0f, 5 ,  0x01, 1
 };
-extern const Ipp8u  SubPattern4x4VLC_MediumRate[16*2] =        /*5<=PQUANT<13 */
+extern const uint8_t  SubPattern4x4VLC_MediumRate[16*2] =        /*5<=PQUANT<13 */
 {
     0x00, 0 ,  0x0e, 4 ,  0x00, 3 ,  0x08, 4 ,
     0x0f, 4 ,  0x0a, 4 ,  0x04, 5 ,  0x17, 5 ,
     0x0d, 4 ,  0x05, 5 ,  0x09, 4 ,  0x19, 5 ,
     0x03, 4 ,  0x18, 5 ,  0x16, 5 ,  0x01, 2
 };
-extern const Ipp8u  SubPattern4x4VLC_LowRate[16*2] =            /* PQUANT>=13 */
+extern const uint8_t  SubPattern4x4VLC_LowRate[16*2] =            /* PQUANT>=13 */
 {
 
     0x00, 0 ,  0x05, 3 ,  0x06, 3 ,  0x02, 4 ,
@@ -2191,7 +2191,7 @@ extern const Ipp8u  SubPattern4x4VLC_LowRate[16*2] =            /* PQUANT>=13 */
     0x03, 3 ,  0x01, 5 ,  0x03, 4 ,  0x1d, 5 ,
     0x01, 4 ,  0x13, 5 ,  0x12, 5 ,  0x0f, 4
 };
-extern const Ipp8u  SubPattern8x4_4x8VLC[3*2] =
+extern const uint8_t  SubPattern8x4_4x8VLC[3*2] =
 {
 //8x4 : bottom,         top,        both
 //4x8 : right,          left,       both
@@ -2201,7 +2201,7 @@ extern const Ipp8u  SubPattern8x4_4x8VLC[3*2] =
 //--------------------------------------------------------------------------------------------
 //VC-1 Table 234: Intra Normal Scan
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Intra_Normal_Scan[64] =
+const extern uint8_t VC1_Intra_Normal_Scan[64] =
 {
      0,     8,      1,      2,      9,      16,     24,     17,
     10,     3,      4,      11,     18,     25,     32,     40,
@@ -2215,7 +2215,7 @@ const extern Ipp8u VC1_Intra_Normal_Scan[64] =
 
 //VC-1 Table 235: Intra Horizontal Scan
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Intra_Horizontal_Scan[64] =
+const extern uint8_t VC1_Intra_Horizontal_Scan[64] =
 {
       0,        1,      8,      2,      3,      9,      16,     24,
       17,       10,     4,      5,      11,     18,     25,     32,
@@ -2229,7 +2229,7 @@ const extern Ipp8u VC1_Intra_Horizontal_Scan[64] =
 
 //VC-1 Table 236: Intra Vertical Scan
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Intra_Vertical_Scan[64] =
+const extern uint8_t VC1_Intra_Vertical_Scan[64] =
 {
        0,       8,      16,     1,      24,     32,     40,     9,
        2,       3,      10,     17,     25,     48,     56,     41,
@@ -2245,7 +2245,7 @@ const extern Ipp8u VC1_Intra_Vertical_Scan[64] =
 //Table 237: Inter 8x8 Scan for Simple and Main Profiles
 //and Progressive Mode in Advanced Profile
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Inter_8x8_Scan[64] =
+const extern uint8_t VC1_Inter_8x8_Scan[64] =
 {
        0,   8,     1,     2,     9,     16,    24,    17,
       10,   3,     4,     11,    18,    25,    32,    40,
@@ -2259,7 +2259,7 @@ const extern Ipp8u VC1_Inter_8x8_Scan[64] =
 
 //VC-1 Table 238: Inter 8x4 Scan for Simple and Main Profiles
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Inter_8x4_Scan[32] =
+const extern uint8_t VC1_Inter_8x4_Scan[32] =
 {
       0,    1,    2,    8,    3,     9,   10,   16,
       4,    11,   17,   24,   18,    12,  5,    19,
@@ -2270,7 +2270,7 @@ const extern Ipp8u VC1_Inter_8x4_Scan[32] =
 
 //VC-1 Table 239: Inter 4x8 Scan for Simple and Main Profiles
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Inter_4x8_Scan[32] =
+const extern uint8_t VC1_Inter_4x8_Scan[32] =
 {
     0,  4,  1,  8,
     5, 12,  9,  2,
@@ -2285,7 +2285,7 @@ const extern Ipp8u VC1_Inter_4x8_Scan[32] =
 //Table 240: Inter 4x4 Scan for Simple and Main Profiles and
 //Progressive Mode in Advanced Profile
 //remapped as src index for continues dst index
-const extern Ipp8u VC1_Inter_4x4_Scan[16] =
+const extern uint8_t VC1_Inter_4x4_Scan[16] =
 {
     0,  4,  8,  1,
     5, 12,  9,  2,
@@ -2294,7 +2294,7 @@ const extern Ipp8u VC1_Inter_4x4_Scan[16] =
 };
 
 //Table 240: Progressive Mode Inter 8x4 Scan for Advanced Profile
-const extern Ipp8u VC1_Inter_8x4_Scan_Adv[32] =
+const extern uint8_t VC1_Inter_8x4_Scan_Adv[32] =
 {
     0,    8,    1,   16,   2,   9,   10,   3,
     24,   17,   4,   11,   18,  12,  5,    19,
@@ -2304,7 +2304,7 @@ const extern Ipp8u VC1_Inter_8x4_Scan_Adv[32] =
 
 
 //Table 241: Progressive Mode Inter 4x8 Scan for Advanced Profile
-const extern Ipp8u VC1_Inter_4x8_Scan_Adv[32] =
+const extern uint8_t VC1_Inter_4x8_Scan_Adv[32] =
 {
      0,  1,  4,  2,
      5,  8,  9, 12,
@@ -2316,7 +2316,7 @@ const extern Ipp8u VC1_Inter_4x8_Scan_Adv[32] =
     19, 23, 27, 31
 };
 
-const extern Ipp8u VC1_Inter_InterlaceIntra_8x8_Scan_Adv[64] =
+const extern uint8_t VC1_Inter_InterlaceIntra_8x8_Scan_Adv[64] =
 {
    0,    8,    1,    16,   24,   9,    2,   32,
    40,   48,   56,   17,   10,   3,    25,  18,
@@ -2330,7 +2330,7 @@ const extern Ipp8u VC1_Inter_InterlaceIntra_8x8_Scan_Adv[64] =
 
 
 /*Table 243 (SMPTE-421M-FDS1): Interlace Mode Inter 8x4 Scan for Advanced Profile*/
-const extern Ipp8u VC1_Inter_Interlace_8x4_Scan_Adv[32] =
+const extern uint8_t VC1_Inter_Interlace_8x4_Scan_Adv[32] =
 {
    0,   8,  16,  24,  1,   9,   2,   17,
    25,  10, 3,   18,  26,  4,   11,  19,
@@ -2340,7 +2340,7 @@ const extern Ipp8u VC1_Inter_Interlace_8x4_Scan_Adv[32] =
 
 
 /*Table 244 (SMPTE-421M-FDS1): Interlace Mode Inter 4x8 Scan for Advanced Profile*/
-const extern Ipp8u VC1_Inter_Interlace_4x8_Scan_Adv[32] =
+const extern uint8_t VC1_Inter_Interlace_4x8_Scan_Adv[32] =
 {
     0,  1,  2,  4,
     8,  5, 12,  9,
@@ -2354,7 +2354,7 @@ const extern Ipp8u VC1_Inter_Interlace_4x8_Scan_Adv[32] =
 
 
 /*Table 245 (SMPTE-421M-FDS1): Interlace Mode Inter 4x4 Scan for Advanced Profile*/
-const extern Ipp8u VC1_Inter_Interlace_4x4_Scan_Adv[16] =
+const extern uint8_t VC1_Inter_Interlace_4x4_Scan_Adv[16] =
 {
     0,  4,  8, 12,
     1,  5,  9,  2,
@@ -2363,27 +2363,27 @@ const extern Ipp8u VC1_Inter_Interlace_4x4_Scan_Adv[16] =
 };
 
 
-const extern Ipp8u* ZagTables_I[3] =
+const extern uint8_t* ZagTables_I[3] =
 {
     VC1_Intra_Normal_Scan,
     VC1_Intra_Vertical_Scan,
     VC1_Intra_Horizontal_Scan
 };
-const extern Ipp8u* ZagTables[4] =
+const extern uint8_t* ZagTables[4] =
 {
    VC1_Inter_8x8_Scan,//INTER8x8
    VC1_Inter_8x4_Scan,//INTER8x4
    VC1_Inter_4x8_Scan,//INTER4x8
    VC1_Inter_4x4_Scan,//INTER4x4
 };
-const extern Ipp8u* ZagTables_Adv[4] =
+const extern uint8_t* ZagTables_Adv[4] =
 {
    VC1_Inter_8x8_Scan    ,//INTER8x8
    VC1_Inter_8x4_Scan_Adv,//INTER8x4
    VC1_Inter_4x8_Scan_Adv,//INTER4x8
    VC1_Inter_4x4_Scan    ,//INTER4x4
 };
-const extern Ipp8u* ZagTables_Fields[4] =
+const extern uint8_t* ZagTables_Fields[4] =
 {
    VC1_Inter_InterlaceIntra_8x8_Scan_Adv,   //INTER8x8
    VC1_Inter_Interlace_8x4_Scan_Adv,        //INTER8x4
@@ -2397,7 +2397,7 @@ const extern eTransformType BlkTransformTypeTabl[4] =
     VC1_ENC_4x8_TRANSFORM,
     VC1_ENC_4x4_TRANSFORM
 };
-const extern Ipp8u MBTypeFieldMixedTable0_VLC[8*2] =
+const extern uint8_t MBTypeFieldMixedTable0_VLC[8*2] =
 {
     16, 6,
     17, 6,
@@ -2408,7 +2408,7 @@ const extern Ipp8u MBTypeFieldMixedTable0_VLC[8*2] =
     9,  5,
     2,  2
 };
-const extern Ipp8u MBTypeFieldMixedTable1_VLC[8*2] =
+const extern uint8_t MBTypeFieldMixedTable1_VLC[8*2] =
 {
     8,  5,
     9,  5,
@@ -2419,7 +2419,7 @@ const extern Ipp8u MBTypeFieldMixedTable1_VLC[8*2] =
     5,  4,
     2,  2
 };
-const extern Ipp8u MBTypeFieldMixedTable2_VLC[8*2] =
+const extern uint8_t MBTypeFieldMixedTable2_VLC[8*2] =
 {
     16,  6,
     17,  6,
@@ -2430,7 +2430,7 @@ const extern Ipp8u MBTypeFieldMixedTable2_VLC[8*2] =
     9,   5,
     2,   2
 };
-const extern Ipp8u MBTypeFieldMixedTable3_VLC[8*2] =
+const extern uint8_t MBTypeFieldMixedTable3_VLC[8*2] =
 {
     56,  6,
     57,  6,
@@ -2441,7 +2441,7 @@ const extern Ipp8u MBTypeFieldMixedTable3_VLC[8*2] =
     29,  5,
     0,   1
 };
-const extern Ipp8u MBTypeFieldMixedTable4_VLC[8*2] =
+const extern uint8_t MBTypeFieldMixedTable4_VLC[8*2] =
 {
     56,  6,
     53,  6,
@@ -2452,7 +2452,7 @@ const extern Ipp8u MBTypeFieldMixedTable4_VLC[8*2] =
     12,  4,
     0,   1
 };
-const extern Ipp8u MBTypeFieldMixedTable5_VLC[8*2] =
+const extern uint8_t MBTypeFieldMixedTable5_VLC[8*2] =
 {
     56,  6,
     57,  6,
@@ -2463,7 +2463,7 @@ const extern Ipp8u MBTypeFieldMixedTable5_VLC[8*2] =
     15,  4,
     4,   3
 };
-const extern Ipp8u MBTypeFieldMixedTable6_VLC[8*2] =
+const extern uint8_t MBTypeFieldMixedTable6_VLC[8*2] =
 {
     16,  5,
     17,  5,
@@ -2475,7 +2475,7 @@ const extern Ipp8u MBTypeFieldMixedTable6_VLC[8*2] =
     5,   3
 };
 
-const extern Ipp8u MBTypeFieldMixedTable7_VLC[8*2] =
+const extern uint8_t MBTypeFieldMixedTable7_VLC[8*2] =
 {
     56,  6,
     57,  6,
@@ -2486,7 +2486,7 @@ const extern Ipp8u MBTypeFieldMixedTable7_VLC[8*2] =
     4,   3,
     15,  4
 };
-const extern Ipp8u MBTypeFieldTable0_VLC[6*2] =
+const extern uint8_t MBTypeFieldTable0_VLC[6*2] =
 {
     0,  5,
     1,  5,
@@ -2495,7 +2495,7 @@ const extern Ipp8u MBTypeFieldTable0_VLC[6*2] =
     1,  2,
     1,  4
 };
-const extern Ipp8u MBTypeFieldTable1_VLC[6*2] =
+const extern uint8_t MBTypeFieldTable1_VLC[6*2] =
 {
     0,  5,
     1,  5,
@@ -2504,7 +2504,7 @@ const extern Ipp8u MBTypeFieldTable1_VLC[6*2] =
     1,  3,
     1,  4
 };
-const extern Ipp8u MBTypeFieldTable2_VLC[6*2] =
+const extern uint8_t MBTypeFieldTable2_VLC[6*2] =
 {
     16,  5,
     17,  5,
@@ -2513,7 +2513,7 @@ const extern Ipp8u MBTypeFieldTable2_VLC[6*2] =
     9,   4,
     5,   3
 };
-const extern Ipp8u MBTypeFieldTable3_VLC[6*2] =
+const extern uint8_t MBTypeFieldTable3_VLC[6*2] =
 {
     20,  5,
     21,  5,
@@ -2522,7 +2522,7 @@ const extern Ipp8u MBTypeFieldTable3_VLC[6*2] =
     0,   1,
     4,   3
 };
-const extern Ipp8u MBTypeFieldTable4_VLC[6*2] =
+const extern uint8_t MBTypeFieldTable4_VLC[6*2] =
 {
     4,   4,
     5,   4,
@@ -2531,7 +2531,7 @@ const extern Ipp8u MBTypeFieldTable4_VLC[6*2] =
     3,   2,
     0,   2
 };
-const extern Ipp8u MBTypeFieldTable5_VLC[6*2] =
+const extern uint8_t MBTypeFieldTable5_VLC[6*2] =
 {
     4,   4,
     5,   4,
@@ -2540,7 +2540,7 @@ const extern Ipp8u MBTypeFieldTable5_VLC[6*2] =
     0,   2,
     3,   2
 };
-const extern Ipp8u MBTypeFieldTable6_VLC[6*2] =
+const extern uint8_t MBTypeFieldTable6_VLC[6*2] =
 {
     0,   5,
     1,   5,
@@ -2549,7 +2549,7 @@ const extern Ipp8u MBTypeFieldTable6_VLC[6*2] =
     1,   1,
     1,   2
 };
-const extern Ipp8u MBTypeFieldTable7_VLC[6*2] =
+const extern uint8_t MBTypeFieldTable7_VLC[6*2] =
 {
     16,   5,
     17,   5,
@@ -2559,7 +2559,7 @@ const extern Ipp8u MBTypeFieldTable7_VLC[6*2] =
     0,    1
 };
 
-const extern Ipp8u* MBTypeFieldMixedTable_VLC[8] =
+const extern uint8_t* MBTypeFieldMixedTable_VLC[8] =
 {
     MBTypeFieldMixedTable0_VLC,
     MBTypeFieldMixedTable1_VLC,
@@ -2570,7 +2570,7 @@ const extern Ipp8u* MBTypeFieldMixedTable_VLC[8] =
     MBTypeFieldMixedTable6_VLC,
     MBTypeFieldMixedTable7_VLC
 };
-const extern Ipp8u* MBTypeFieldTable_VLC[8] =
+const extern uint8_t* MBTypeFieldTable_VLC[8] =
 {
     MBTypeFieldTable0_VLC,
     MBTypeFieldTable1_VLC,
@@ -2581,7 +2581,7 @@ const extern Ipp8u* MBTypeFieldTable_VLC[8] =
     MBTypeFieldTable6_VLC,
     MBTypeFieldTable7_VLC
 };
-const extern Ipp32u MVModeField2RefTable0_VLC[126*2] =
+const extern uint32_t MVModeField2RefTable0_VLC[126*2] =
 {
       12,     4,    28,     5,    11,     5,     0,     5,      14,     6,    42,     7,    80,     8,   872,    10,
        2,     2,    26,     5,     4,     5,    58,     6,      29,     6,   108,     7,   239,     8,   444,     9,
@@ -2604,7 +2604,7 @@ const extern Ipp32u MVModeField2RefTable0_VLC[126*2] =
 
 
 
-const extern Ipp32u MVModeField2RefTable1_VLC[126*2] =
+const extern uint32_t MVModeField2RefTable1_VLC[126*2] =
 {
 
        3,     3,     9,     4,    22,     5,    16,     6,     215,     8,   821,    10,  1396,    11,  1365,    11,
@@ -2626,7 +2626,7 @@ const extern Ipp32u MVModeField2RefTable1_VLC[126*2] =
 };
 
 
-const extern Ipp32u MVModeField2RefTable2_VLC[126*2] =
+const extern uint32_t MVModeField2RefTable2_VLC[126*2] =
 {
 
        4,     4,     2,     4,    16,     5,     3,     5,      23,     6,    69,     7,    62,     8,   126,     9,
@@ -2649,7 +2649,7 @@ const extern Ipp32u MVModeField2RefTable2_VLC[126*2] =
 
 
 
-const extern Ipp32u MVModeField2RefTable3_VLC[126*2] =
+const extern uint32_t MVModeField2RefTable3_VLC[126*2] =
 {
 
        0,     3,     4,     4,    47,     6,    82,     7,      16,     7,   173,     9,  1291,    11,   400,    11,
@@ -2672,7 +2672,7 @@ const extern Ipp32u MVModeField2RefTable3_VLC[126*2] =
 
 
 
-const extern Ipp32u MVModeField2RefTable4_VLC[126*2] =
+const extern uint32_t MVModeField2RefTable4_VLC[126*2] =
 {
 
        5,     4,    25,     5,    22,     5,    17,     5,      62,     6,    94,     7,   239,     8,   226,     8,
@@ -2695,7 +2695,7 @@ const extern Ipp32u MVModeField2RefTable4_VLC[126*2] =
 
 
 
-const extern Ipp32u MVModeField2RefTable5_VLC[126*2] =
+const extern uint32_t MVModeField2RefTable5_VLC[126*2] =
 {
 
       13,     4,    16,     5,    46,     6,    57,     6,      13,     6,   116,     7,   237,     8,   182,     8,
@@ -2719,7 +2719,7 @@ const extern Ipp32u MVModeField2RefTable5_VLC[126*2] =
 
 
 
-const extern Ipp32u MVModeField2RefTable6_VLC[126*2]  =
+const extern uint32_t MVModeField2RefTable6_VLC[126*2]  =
 {
 
        1,     3,      11,     5,      25,     6,     111,     8,      42,     9,    117,    10,   2027,    12,   355,    12,
@@ -2743,7 +2743,7 @@ const extern Ipp32u MVModeField2RefTable6_VLC[126*2]  =
 
 
 
-const extern Ipp32u MVModeField2RefTable7_VLC[126*2]  =
+const extern uint32_t MVModeField2RefTable7_VLC[126*2]  =
 {
 
          3,     2  ,      14,     5  ,      15,     6  ,     126,     8  ,        98,     9  ,     198,    10  ,    3289,    13  ,    1598,    13  ,
@@ -2765,7 +2765,7 @@ const extern Ipp32u MVModeField2RefTable7_VLC[126*2]  =
 
 };
 
-const extern Ipp32u MVModeField1RefTable0_VLC[72*2]  =
+const extern uint32_t MVModeField1RefTable0_VLC[72*2]  =
 {
 
          5,     3  ,      12,     4  ,      30,     5  ,      18,     5  ,        12,     5  ,      52,     6  ,     117,     7  ,     112,     7  ,
@@ -2782,7 +2782,7 @@ const extern Ipp32u MVModeField1RefTable0_VLC[72*2]  =
 
 
 
-const extern Ipp32u MVModeField1RefTable1_VLC[72*2]  =
+const extern uint32_t MVModeField1RefTable1_VLC[72*2]  =
 {
 
          7,     3  ,       1,     3  ,       7,     4  ,      22,     5  ,         1,     5  ,      69,     7  ,      24,     8  ,     694,    10  ,
@@ -2797,7 +2797,7 @@ const extern Ipp32u MVModeField1RefTable1_VLC[72*2]  =
 
 };
 
-const extern Ipp32u MVModeField1RefTable2_VLC[72*2]  =
+const extern uint32_t MVModeField1RefTable2_VLC[72*2]  =
 
 {
 
@@ -2813,7 +2813,7 @@ const extern Ipp32u MVModeField1RefTable2_VLC[72*2]  =
 
 };
 
-const extern Ipp32u MVModeField1RefTable3_VLC[72*2]  =
+const extern uint32_t MVModeField1RefTable3_VLC[72*2]  =
 
 {
 
@@ -2828,7 +2828,7 @@ const extern Ipp32u MVModeField1RefTable3_VLC[72*2]  =
       5711,    14  ,    2848,    13  ,    2849,    13  ,    2850,    13  ,      2851,    13  ,    2852,    13  ,    2853,    13  ,    2854,    13
 
 };
-const extern Ipp32u* MVModeField2RefTable_VLC[8] =
+const extern uint32_t* MVModeField2RefTable_VLC[8] =
 {
     MVModeField2RefTable0_VLC,
     MVModeField2RefTable1_VLC,
@@ -2839,7 +2839,7 @@ const extern Ipp32u* MVModeField2RefTable_VLC[8] =
     MVModeField2RefTable6_VLC,
     MVModeField2RefTable7_VLC
 };
-const extern Ipp32u* MVModeField1RefTable_VLC[4] =
+const extern uint32_t* MVModeField1RefTable_VLC[4] =
 {
     MVModeField1RefTable0_VLC,
     MVModeField1RefTable1_VLC,
@@ -2847,7 +2847,7 @@ const extern Ipp32u* MVModeField1RefTable_VLC[4] =
     MVModeField1RefTable3_VLC,
 };
 
-const extern Ipp32u CBPCYFieldTable0_VLC[64*2] =
+const extern uint32_t CBPCYFieldTable0_VLC[64*2] =
 {
         0,      0  ,   12058,    15  ,   12059,    15  ,    6028,    14  ,       144,     9  ,     680,    11  ,     681,    11  ,    3015,    13  ,
        145,     9  ,     682,    11  ,     683,    11  ,    1504,    12  ,        74,     8  ,     150,     9  ,     151,     9  ,     189,     9  ,
@@ -2859,7 +2859,7 @@ const extern Ipp32u CBPCYFieldTable0_VLC[64*2] =
         84,     8  ,      70,     8  ,      71,     8  ,      46,     7  ,         3,     3  ,       0,     3  ,       1,     3  ,       1,     1
 };
 
-const extern Ipp32u CBPCYFieldTable1_VLC[64*2] =
+const extern uint32_t CBPCYFieldTable1_VLC[64*2] =
 {
 
         0xFFFFFFFF, 0xFFFFFFFF,      65,     7  ,      66,     7  ,     256,     9  ,        67,     7  ,     136,     8  ,     137,     8  ,     257,     9  ,
@@ -2872,7 +2872,7 @@ const extern Ipp32u CBPCYFieldTable1_VLC[64*2] =
         15,     6  ,      60,     7  ,      61,     7  ,      31,     6  ,         5,     3  ,       9,     4  ,       0,     3  ,       3,     2
 };
 
-const extern Ipp32u CBPCYFieldTable2_VLC[64*2] =
+const extern uint32_t CBPCYFieldTable2_VLC[64*2] =
 {
         0,      0  ,      50,     6  ,      51,     6  ,      26,     5  ,        38,     6  ,     228,     8  ,     229,     8  ,     486,     9  ,
         39,     6  ,     230,     8  ,     231,     8  ,     487,     9  ,        14,     5  ,      99,     7  ,     108,     7  ,     119,     7  ,
@@ -2886,7 +2886,7 @@ const extern Ipp32u CBPCYFieldTable2_VLC[64*2] =
 
 
 
-const extern Ipp32u CBPCYFieldTable3_VLC[64*2] =
+const extern uint32_t CBPCYFieldTable3_VLC[64*2] =
 {
          0,     0  ,      40,     6  ,      41,     6  ,     157,     8  ,         0,     4  ,     490,     9  ,     491,     9  ,     492,     9  ,
          1,     4  ,     493,     9  ,     494,     9  ,     495,     9  ,         5,     4  ,     240,     8  ,     241,     8  ,      59,     7  ,
@@ -2900,7 +2900,7 @@ const extern Ipp32u CBPCYFieldTable3_VLC[64*2] =
 
 
 
-const extern Ipp32u CBPCYFieldTable4_VLC[64*2] =
+const extern uint32_t CBPCYFieldTable4_VLC[64*2] =
 {
 
         0,      0  ,      60,     6  ,      61,     6  ,      31,     5  ,        10,     5  ,      97,     7  ,      98,     7  ,       2,     7  ,
@@ -2915,7 +2915,7 @@ const extern Ipp32u CBPCYFieldTable4_VLC[64*2] =
 
 
 
-const extern Ipp32u CBPCYFieldTable5_VLC[64*2] =
+const extern uint32_t CBPCYFieldTable5_VLC[64*2] =
 {
 
         0,       0 ,      56,     6  ,      57,     6  ,     157,     8  ,        10,     4  ,     145,     8  ,     146,     8  ,     147,     8  ,
@@ -2930,7 +2930,7 @@ const extern Ipp32u CBPCYFieldTable5_VLC[64*2] =
 
 
 
-const extern Ipp32u CBPCYFieldTable6_VLC[64*2] =
+const extern uint32_t CBPCYFieldTable6_VLC[64*2] =
 {
 
          0,     0  ,      60,     6  ,      61,     6  ,     463,     9  ,         0,     3  ,     191,     8  ,     224,     8  ,     508,     9  ,
@@ -2944,7 +2944,7 @@ const extern Ipp32u CBPCYFieldTable6_VLC[64*2] =
 };
 
 
-const extern Ipp32u CBPCYFieldTable7_VLC[64*2] =
+const extern uint32_t CBPCYFieldTable7_VLC[64*2] =
 {
 
          0,     0  ,       3,     6  ,       4,     6  ,     438,    10  ,         4,     3  ,      46,     7  ,      47,     7  ,      14,     7  ,
@@ -2956,7 +2956,7 @@ const extern Ipp32u CBPCYFieldTable7_VLC[64*2] =
          4,     4  ,      21,     8  ,      22,     8  ,      23,     8  ,        31,     6  ,     445,    10  ,     446,    10  ,     447,    10  ,
          0,     5  ,      16,     9  ,      17,     9  ,      18,     9  ,        28,     6  ,     217,     9  ,     218,     9  ,      19,     9
 };
-const extern Ipp32u* CBPCYFieldTable_VLC[8] =
+const extern uint32_t* CBPCYFieldTable_VLC[8] =
 {
     CBPCYFieldTable0_VLC,
     CBPCYFieldTable1_VLC,
@@ -2967,7 +2967,7 @@ const extern Ipp32u* CBPCYFieldTable_VLC[8] =
     CBPCYFieldTable6_VLC,
     CBPCYFieldTable7_VLC
 };
-const extern Ipp8u MV4BP_0 [16*2] = 
+const extern uint8_t MV4BP_0 [16*2] = 
 {
       14,     5,    58,     6,    59,     6,    25,     5,
       12,     5,    26,     5,    15,     5,    15,     4,
@@ -2975,7 +2975,7 @@ const extern Ipp8u MV4BP_0 [16*2] =
       28,     5,     1,     3,     2,     3,     2,     2
 };
 
-const extern Ipp8u MV4BP_1 [16*2] = 
+const extern uint8_t MV4BP_1 [16*2] = 
 {
         8,     4 ,     18,     5 ,     19,     5 ,      4,     4 ,
        20,     5 ,      5,     4 ,     30,     5 ,     11,     4 ,
@@ -2983,7 +2983,7 @@ const extern Ipp8u MV4BP_1 [16*2] =
         7,     4 ,     13,     4 ,     14,     4 ,      0,     2 
 };
 
-const extern Ipp8u MV4BP_2 [16*2] = 
+const extern uint8_t MV4BP_2 [16*2] = 
 {
        15,     4 ,      6,     4 ,      7,     4 ,      2,     4 ,
         8,     4 ,      3,     4 ,     28,     5 ,      9,     4 ,
@@ -2991,14 +2991,14 @@ const extern Ipp8u MV4BP_2 [16*2] =
         5,     4 ,     12,     4 ,     13,     4 ,      0,     3 
 };
 
-const extern Ipp8u MV4BP_3 [16*2] = 
+const extern uint8_t MV4BP_3 [16*2] = 
 {
         0,     2 ,     11,     4 ,     12,     4 ,      4,     4 ,
        13,     4 ,      5,     4 ,     30,     5 ,     16,     5 ,
        14,     4 ,     31,     5 ,      6,     4 ,     17,     5 ,
         7,     4 ,     18,     5 ,     19,     5 ,     10,     4 
 };
-const extern Ipp8u* MV4BP[4] =
+const extern uint8_t* MV4BP[4] =
 {
     MV4BP_0,
     MV4BP_1,
@@ -3006,7 +3006,7 @@ const extern Ipp8u* MV4BP[4] =
     MV4BP_3
 };
 
-const extern Ipp8u MVSizeOffsetFieldIndex [256]=
+const extern uint8_t MVSizeOffsetFieldIndex [256]=
 {
     0   ,
     1   ,
@@ -3265,7 +3265,7 @@ const extern Ipp8u MVSizeOffsetFieldIndex [256]=
     8   ,
     8
 };
-const extern Ipp8u MVSizeOffsetFieldExIndex [512]=
+const extern uint8_t MVSizeOffsetFieldExIndex [512]=
 {
     0   ,
     1   ,
@@ -3779,16 +3779,16 @@ const extern Ipp8u MVSizeOffsetFieldExIndex [512]=
     8   ,
     8
 };
-const extern Ipp16s MVSizeOffsetField [10] =
+const extern int16_t MVSizeOffsetField [10] =
 {
     0, 1, 2, 4, 8, 16, 32, 64, 128, 256
 };
-const extern Ipp16s MVSizeOffsetFieldEx [10] =
+const extern int16_t MVSizeOffsetFieldEx [10] =
 {
     0, 1, 3, 7, 15, 31, 63, 127, 255, 511
 };
 //////////////////////////////////////////////////////////////////////////////////////////////
-const extern  Ipp8u VC1_No_Scan_8x8[64] =
+const extern  uint8_t VC1_No_Scan_8x8[64] =
 {
     0,  1,  2,  3,  4,  5,  6,  7,
     8,  9, 10, 11, 12, 13, 14, 15,
@@ -3800,7 +3800,7 @@ const extern  Ipp8u VC1_No_Scan_8x8[64] =
    56, 57, 58, 59, 60, 61, 62, 63
 };
 
-const extern  Ipp8u VC1_No_Scan_8x4[32] =
+const extern  uint8_t VC1_No_Scan_8x4[32] =
 {
     0,  1,  2,  3,  4,  5,  6,  7,
     8,  9, 10, 11, 12, 13, 14, 15,
@@ -3808,7 +3808,7 @@ const extern  Ipp8u VC1_No_Scan_8x4[32] =
    24, 25, 26, 27, 28, 29, 30, 31
 };
 
-const extern  Ipp8u VC1_No_Scan_4x8[32] =
+const extern  uint8_t VC1_No_Scan_4x8[32] =
 {
     0,  1,  2,  3,
     4,  5,  6,  7,
@@ -3820,7 +3820,7 @@ const extern  Ipp8u VC1_No_Scan_4x8[32] =
    28, 29, 30, 31
 };
 
-const extern  Ipp8u VC1_No_Scan_4x4[16] =
+const extern  uint8_t VC1_No_Scan_4x4[16] =
 {
     0,  1,  2,  3,
     4,  5,  6,  7,
@@ -3828,14 +3828,14 @@ const extern  Ipp8u VC1_No_Scan_4x4[16] =
     12, 13, 14, 15
 };
 
-const extern Ipp8u* ZagTables_NoScan[4] =
+const extern uint8_t* ZagTables_NoScan[4] =
 {
     VC1_No_Scan_8x8,
     VC1_No_Scan_8x4,
     VC1_No_Scan_4x8,
     VC1_No_Scan_4x4
 };
-const extern Ipp32s intesityCompensationTbl[257] =
+const extern int32_t intesityCompensationTbl[257] =
 {
     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,
     10,  11,  12,  13,  14,  15,  16,  17,  18,  19,

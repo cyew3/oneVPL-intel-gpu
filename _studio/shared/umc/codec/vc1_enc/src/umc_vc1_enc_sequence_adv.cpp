@@ -28,8 +28,8 @@ namespace UMC_VC1_ENCODER
 UMC::Status VC1EncoderSequenceADV::WriteSeqHeader(VC1EncoderBitStreamAdv* pCodedSH)
 {
     UMC::Status     ret     =   UMC::UMC_OK;
-    Ipp32u          coded_w =   ((m_uiPictureWidth ) >>1) - 1;
-    Ipp32u          coded_h =   ((m_uiPictureHeight )>>1) - 1;
+    uint32_t          coded_w =   ((m_uiPictureWidth ) >>1) - 1;
+    uint32_t          coded_h =   ((m_uiPictureHeight )>>1) - 1;
 
 
     if (!pCodedSH)
@@ -94,8 +94,8 @@ UMC::Status VC1EncoderSequenceADV::WriteSeqHeader(VC1EncoderBitStreamAdv* pCoded
 UMC::Status VC1EncoderSequenceADV::WriteEntryPoint(VC1EncoderBitStreamAdv* pCodedSH)
 {
     UMC::Status     ret     =   UMC::UMC_OK;
-    Ipp32u          coded_w =   (m_uiPictureWidth - 2) >>2;
-    Ipp32u          coded_h =   (m_uiPictureHeight - 2)>>2;
+    uint32_t          coded_w =   (m_uiPictureWidth - 2) >>2;
+    uint32_t          coded_h =   (m_uiPictureHeight - 2)>>2;
 
     //m_uiNumberOfFrames
     //m_bRangeRedution

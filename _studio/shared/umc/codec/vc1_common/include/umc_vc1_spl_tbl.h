@@ -29,16 +29,16 @@
 
 typedef struct
 {
-    Ipp16u  width;
-    Ipp16u  height;
+    uint16_t  width;
+    uint16_t  height;
 
 }AspectRatio;
 
 extern  AspectRatio AspectRatioTable[16];
-extern Ipp64f FrameRateNumerator[256];
-extern Ipp64f FrameRateDenomerator[16];
+extern double FrameRateNumerator[256];
+extern double FrameRateDenomerator[16];
 
-extern Ipp32u bMax_LevelLimits[4][5];
+extern uint32_t bMax_LevelLimits[4][5];
 
 #endif  //__UMC_VC1_SPL_TBL_H__
 #endif //UMC_ENABLE_VC1_SPLITTER || UMC_ENABLE_VC1_VIDEO_DECODER

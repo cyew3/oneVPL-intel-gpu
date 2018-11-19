@@ -336,11 +336,11 @@ enum
 
 typedef struct
 {
-    Ipp32s*             pRLTable;
-    const Ipp8s*        pDeltaLevelLast0;
-    const Ipp8s*        pDeltaLevelLast1;
-    const Ipp8s*        pDeltaRunLast0;
-    const Ipp8s*        pDeltaRunLast1;
+    int32_t*             pRLTable;
+    const int8_t*        pDeltaLevelLast0;
+    const int8_t*        pDeltaLevelLast1;
+    const int8_t*        pDeltaRunLast0;
+    const int8_t*        pDeltaRunLast1;
 }IppiACDecodeSet_VC1;
 
 
@@ -354,97 +354,97 @@ typedef struct
 #ifdef ALLOW_SW_VC1_FALLBACK
 typedef struct
 {
-   Ipp32u HRD_NUM_LEAKY_BUCKETS; //5
-   Ipp32u BIT_RATE_EXPONENT;     //4
-   Ipp32u BUFFER_SIZE_EXPONENT;  //4
+   uint32_t HRD_NUM_LEAKY_BUCKETS; //5
+   uint32_t BIT_RATE_EXPONENT;     //4
+   uint32_t BUFFER_SIZE_EXPONENT;  //4
 
    // 32 - max size see Standard, p32
-   Ipp32u HRD_RATE[32];      //16
-   Ipp32u HRD_BUFFER[32];    //16
-   Ipp32u HRD_FULLNESS[32];  //16
+   uint32_t HRD_RATE[32];      //16
+   uint32_t HRD_BUFFER[32];    //16
+   uint32_t HRD_FULLNESS[32];  //16
 }VC1_HRD_PARAMS;
 #endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
 typedef struct
 {
-    Ipp8u              m_invert;
-    Ipp32s             m_imode;
-    Ipp8u*             m_databits;
+    uint8_t              m_invert;
+    int32_t             m_imode;
+    uint8_t*             m_databits;
 }VC1Bitplane;
 
 typedef struct
 {
     //common field
-    Ipp32u PROFILE;            //2
+    uint32_t PROFILE;            //2
 
     //Advanced profile fields
-    Ipp32u LEVEL;              //3
+    uint32_t LEVEL;              //3
 
     //common fields
-    Ipp32u FRMRTQ_POSTPROC;  //3
-    Ipp32u BITRTQ_POSTPROC;  //5
+    uint32_t FRMRTQ_POSTPROC;  //3
+    uint32_t BITRTQ_POSTPROC;  //5
 
-    Ipp32u FRAMERATENR;  //8
-    Ipp32u FRAMERATEDR;  //4
+    uint32_t FRAMERATENR;  //8
+    uint32_t FRAMERATEDR;  //4
 
     //Advanced profile fields
-    Ipp32u POSTPROCFLAG;      //1
-    Ipp32u MAX_CODED_WIDTH;   //12
-    Ipp32u MAX_CODED_HEIGHT;  //12
-    Ipp32s AspectRatioW;
-    Ipp32s AspectRatioH;
-    Ipp32u PULLDOWN;          //1
-    Ipp32u INTERLACE;         //1
-    Ipp32u TFCNTRFLAG;        //1
+    uint32_t POSTPROCFLAG;      //1
+    uint32_t MAX_CODED_WIDTH;   //12
+    uint32_t MAX_CODED_HEIGHT;  //12
+    int32_t AspectRatioW;
+    int32_t AspectRatioH;
+    uint32_t PULLDOWN;          //1
+    uint32_t INTERLACE;         //1
+    uint32_t TFCNTRFLAG;        //1
 
     //Simple/Main profile fields
-    Ipp32u LOOPFILTER;       //1 uimsbf
-    Ipp32u MULTIRES;         //1 uimsbf
-    Ipp32u FASTUVMC;         //1 uimsbf
-    Ipp32u EXTENDED_MV;      //1 uimsbf
-    Ipp32u DQUANT;           //2 uimsbf
-    Ipp32u VSTRANSFORM;      //1 uimsbf
-    Ipp32u OVERLAP;          //1 uimsbf
-    Ipp32u SYNCMARKER;       //1 uimsbf
-    Ipp32u RANGERED;         //1 uimsbf
-    Ipp32u MAXBFRAMES;       //3 uimsbf
-    Ipp32u QUANTIZER;        //2 uimsbf
+    uint32_t LOOPFILTER;       //1 uimsbf
+    uint32_t MULTIRES;         //1 uimsbf
+    uint32_t FASTUVMC;         //1 uimsbf
+    uint32_t EXTENDED_MV;      //1 uimsbf
+    uint32_t DQUANT;           //2 uimsbf
+    uint32_t VSTRANSFORM;      //1 uimsbf
+    uint32_t OVERLAP;          //1 uimsbf
+    uint32_t SYNCMARKER;       //1 uimsbf
+    uint32_t RANGERED;         //1 uimsbf
+    uint32_t MAXBFRAMES;       //3 uimsbf
+    uint32_t QUANTIZER;        //2 uimsbf
 
     //common fields
-    Ipp32u FINTERPFLAG;        //1
-    Ipp32u HRD_PARAM_FLAG;     //1
+    uint32_t FINTERPFLAG;        //1
+    uint32_t HRD_PARAM_FLAG;     //1
 
     //HRD PARAMS
-   Ipp32u HRD_NUM_LEAKY_BUCKETS; //5
+   uint32_t HRD_NUM_LEAKY_BUCKETS; //5
 
-    Ipp16u widthMB;
-    Ipp16u heightMB;
+    uint16_t widthMB;
+    uint16_t heightMB;
 
-    Ipp16u MaxWidthMB;    //maximum MB in row (calculated from MAX_CODED_WIDTH
-    Ipp16u MaxHeightMB;   //maximum MB in column (calculated from MAX_CODED_HEIGHT
+    uint16_t MaxWidthMB;    //maximum MB in row (calculated from MAX_CODED_WIDTH
+    uint16_t MaxHeightMB;   //maximum MB in column (calculated from MAX_CODED_HEIGHT
 
     //entry point
-    Ipp32u BROKEN_LINK;
-    Ipp32u CLOSED_ENTRY;
-    Ipp32u PANSCAN_FLAG;
-    Ipp32u REFDIST_FLAG;
+    uint32_t BROKEN_LINK;
+    uint32_t CLOSED_ENTRY;
+    uint32_t PANSCAN_FLAG;
+    uint32_t REFDIST_FLAG;
 
-    Ipp32u CODED_WIDTH;
-    Ipp32u CODED_HEIGHT;
-    Ipp32u EXTENDED_DMV;
-    Ipp32u RANGE_MAPY_FLAG;
-    Ipp32s RANGE_MAPY;
-    Ipp32u RANGE_MAPUV_FLAG;
-    Ipp32s RANGE_MAPUV;
-    Ipp32u RNDCTRL;     // 1 rounding control bit
+    uint32_t CODED_WIDTH;
+    uint32_t CODED_HEIGHT;
+    uint32_t EXTENDED_DMV;
+    uint32_t RANGE_MAPY_FLAG;
+    int32_t RANGE_MAPY;
+    uint32_t RANGE_MAPUV_FLAG;
+    int32_t RANGE_MAPUV;
+    uint32_t RNDCTRL;     // 1 rounding control bit
 
     // video info
-    Ipp16u          VideoFormat;
-    Ipp16u          VideoFullRange;
-    Ipp16u          ColourDescriptionPresent;
-    Ipp16u          ColourPrimaries;
-    Ipp16u          TransferCharacteristics;
-    Ipp16u          MatrixCoefficients;
+    uint16_t          VideoFormat;
+    uint16_t          VideoFullRange;
+    uint16_t          ColourDescriptionPresent;
+    uint16_t          ColourPrimaries;
+    uint16_t          TransferCharacteristics;
+    uint16_t          MatrixCoefficients;
 
 
 }VC1SequenceLayerHeader;
@@ -452,97 +452,97 @@ typedef struct
 #ifdef ALLOW_SW_VC1_FALLBACK
 typedef struct
 {
-    Ipp8u  k_x;
-    Ipp8u  k_y;
-    Ipp16u r_x;
-    Ipp16u r_y;
+    uint8_t  k_x;
+    uint8_t  k_y;
+    uint16_t r_x;
+    uint16_t r_y;
 }VC1MVRange;
 
 typedef struct
 {
-    Ipp16u   scaleopp;
-    Ipp16u  scalesame1;
-    Ipp16u   scalesame2;
-    Ipp16u   scalezone1_x;
-    Ipp16u   scalezone1_y;
-    Ipp16u   zone1offset_x;
-    Ipp16u   zone1offset_y;
+    uint16_t   scaleopp;
+    uint16_t  scalesame1;
+    uint16_t   scalesame2;
+    uint16_t   scalezone1_x;
+    uint16_t   scalezone1_y;
+    uint16_t   zone1offset_x;
+    uint16_t   zone1offset_y;
 }VC1PredictScaleValuesPPic;
 
 typedef struct
 {
-    Ipp16u   scalesame;
-    Ipp16u   scaleopp1;
-    Ipp16u   scaleopp2;
-    Ipp16u   scalezone1_x;
-    Ipp16u   scalezone1_y;
-    Ipp16u   zone1offset_x;
-    Ipp16u   zone1offset_y;
+    uint16_t   scalesame;
+    uint16_t   scaleopp1;
+    uint16_t   scaleopp2;
+    uint16_t   scalezone1_x;
+    uint16_t   scalezone1_y;
+    uint16_t   zone1offset_x;
+    uint16_t   zone1offset_y;
 }VC1PredictScaleValuesBPic;
 #endif
 
 typedef struct
 {
   //common fields
-    Ipp32u  PTYPE;
-    Ipp32u  PQINDEX;
-    Ipp32u  HALFQP;
+    uint32_t  PTYPE;
+    uint32_t  PQINDEX;
+    uint32_t  HALFQP;
 //common fields.Slice parameters
-    Ipp32u  is_slice;
+    uint32_t  is_slice;
 
 //interlace fields
-    Ipp8u  TFF;           // 1 top field first
-    Ipp8u  RFF;           // repeat field
-    Ipp8u  PTypeField1;
-    Ipp8u  PTypeField2;
-    Ipp8u  CurrField;
-    Ipp8u  BottomField;    //Is current field top or nor
-    Ipp32u  INTCOMFIELD;     //variable size intensity compensation field
+    uint8_t  TFF;           // 1 top field first
+    uint8_t  RFF;           // repeat field
+    uint8_t  PTypeField1;
+    uint8_t  PTypeField2;
+    uint8_t  CurrField;
+    uint8_t  BottomField;    //Is current field top or nor
+    uint32_t  INTCOMFIELD;     //variable size intensity compensation field
 
     //range reduce simple/main profile
-    Ipp32s RANGEREDFRM;      //1
+    int32_t RANGEREDFRM;      //1
 
 //I P B picture. VopDQuant
-    Ipp32u  m_DQProfile;
-    Ipp32u  m_DQuantFRM;
-    Ipp32u  m_DQBILevel;
-    Ipp32u  m_AltPQuant;
-    Ipp32u  PQUANT;
-    Ipp32u  m_PQuant_mode;
-    Ipp32u  QuantizationType;      //0 - uniform, 1 - nonuniform
+    uint32_t  m_DQProfile;
+    uint32_t  m_DQuantFRM;
+    uint32_t  m_DQBILevel;
+    uint32_t  m_AltPQuant;
+    uint32_t  PQUANT;
+    uint32_t  m_PQuant_mode;
+    uint32_t  QuantizationType;      //0 - uniform, 1 - nonuniform
 
 //only for advanced profile
-    Ipp32u  FCM;           // variable size frame coding mode
+    uint32_t  FCM;           // variable size frame coding mode
 
 //I BI picture
     VC1Bitplane    ACPRED;    // variable size  AC Prediction
-    Ipp32u   CONDOVER;  // variable size  conditional overlap flag
+    uint32_t   CONDOVER;  // variable size  conditional overlap flag
     VC1Bitplane    OVERFLAGS; // variable size  conditional overlap macroblock pattern flags
 //I BI picture. interlace frame
     VC1Bitplane    FIELDTX;     //variable size field transform flag
 
 // P B picture
-    Ipp32u   TTMBF;
-    Ipp32u   TTFRM;
-    Ipp32u    TTFRM_ORIG; //for future H/W support needs
+    uint32_t   TTMBF;
+    uint32_t   TTFRM;
+    uint32_t    TTFRM_ORIG; //for future H/W support needs
     VC1Bitplane    SKIPMB;
     VC1Bitplane    MVTYPEMB;
-    Ipp32u   MVMODE;
+    uint32_t   MVMODE;
 
 // P B picture. Interlace frame
-    Ipp32u   DMVRANGE;              //variable size extended differential MV Range Flag
+    uint32_t   DMVRANGE;              //variable size extended differential MV Range Flag
 // P B picture. Interlace field
-    Ipp32s   REFDIST;               //variable size  P Reference Distance
+    int32_t   REFDIST;               //variable size  P Reference Distance
 
 //P only. Interlace field
-    Ipp32u NUMREF;                //1     Number of reference picture
-    Ipp32u REFFIELD;              //1     Reference field picture indicator
+    uint32_t NUMREF;                //1     Number of reference picture
+    uint32_t REFFIELD;              //1     Reference field picture indicator
 
 //B only
-    Ipp32u     BFRACTION;
-    Ipp32u     BFRACTION_index;
+    uint32_t     BFRACTION;
+    uint32_t     BFRACTION_index;
     VC1Bitplane      m_DirectMB;
-    Ipp32s           ScaleFactor;
+    int32_t           ScaleFactor;
 // B only. Interlace field
     VC1Bitplane      FORWARDMB;         //variable size B Field forward mode
                                         //MB bit syntax element
@@ -550,76 +550,76 @@ typedef struct
 #ifdef ALLOW_SW_VC1_FALLBACK
     const IppiACDecodeSet_VC1* m_pCurrIntraACDecSet;
     const IppiACDecodeSet_VC1* m_pCurrInterACDecSet;
-    Ipp32s*             m_pCurrCBPCYtbl;
-    Ipp32s*             m_pCurrMVDifftbl;
+    int32_t*             m_pCurrCBPCYtbl;
+    int32_t*             m_pCurrMVDifftbl;
     const VC1MVRange*  m_pCurrMVRangetbl;
-    Ipp32s*             m_pCurrLumaDCDiff;
-    Ipp32s*             m_pCurrChromaDCDiff;
-    Ipp32s*             m_pCurrTTMBtbl;
-    Ipp32s*             m_pCurrTTBLKtbl;
-    Ipp32s*             m_pCurrSBPtbl;
-    Ipp32s*             m_pMBMode;
-    Ipp32s*             m_pMV2BP;
-    Ipp32s*             m_pMV4BP;
+    int32_t*             m_pCurrLumaDCDiff;
+    int32_t*             m_pCurrChromaDCDiff;
+    int32_t*             m_pCurrTTMBtbl;
+    int32_t*             m_pCurrTTBLKtbl;
+    int32_t*             m_pCurrSBPtbl;
+    int32_t*             m_pMBMode;
+    int32_t*             m_pMV2BP;
+    int32_t*             m_pMV4BP;
 
     const VC1PredictScaleValuesPPic*      m_pCurrPredScaleValuePPictbl;
     const VC1PredictScaleValuesBPic*      m_pCurrPredScaleValueB_BPictbl;
     const VC1PredictScaleValuesPPic*      m_pCurrPredScaleValueP_BPictbl[2];//0 - forward, 1 - back
 #endif // #ifdef ALLOW_SW_VC1_FALLBACK
-    Ipp32u RNDCTRL;     // 1 rounding control bit
+    uint32_t RNDCTRL;     // 1 rounding control bit
 
-    Ipp32u TRANSDCTAB;
-    Ipp32u MVMODE2;
-    Ipp32u MVTAB;
-    Ipp32u CBPTAB;
-    Ipp32u MBMODETAB;
-    Ipp32u MV2BPTAB;   //2             2 mv block pattern table
-    Ipp32u MV4BPTAB;   //2             4 mv block pattern table
-    Ipp32u PQUANTIZER;
-    Ipp32u MVRANGE;
-    Ipp32u DQSBEdge;
+    uint32_t TRANSDCTAB;
+    uint32_t MVMODE2;
+    uint32_t MVTAB;
+    uint32_t CBPTAB;
+    uint32_t MBMODETAB;
+    uint32_t MV2BPTAB;   //2             2 mv block pattern table
+    uint32_t MV4BPTAB;   //2             4 mv block pattern table
+    uint32_t PQUANTIZER;
+    uint32_t MVRANGE;
+    uint32_t DQSBEdge;
     // P picture
-    Ipp32u LUMSCALE;
-    Ipp32u LUMSHIFT;
-    Ipp32u LUMSCALE1;
-    Ipp32u LUMSHIFT1;
+    uint32_t LUMSCALE;
+    uint32_t LUMSHIFT;
+    uint32_t LUMSCALE1;
+    uint32_t LUMSHIFT1;
 
-    Ipp32u POSTPROC;
+    uint32_t POSTPROC;
 
-    Ipp32u TRANSACFRM;
-    Ipp32u TRANSACFRM2;
+    uint32_t TRANSACFRM;
+    uint32_t TRANSACFRM2;
 
-    Ipp32u  RPTFRM;        // 2 repeat frame count
-    Ipp32u  UVSAMP;
+    uint32_t  RPTFRM;        // 2 repeat frame count
+    uint32_t  UVSAMP;
 
-    Ipp32u MV4SWITCH;
+    uint32_t MV4SWITCH;
 }VC1PictureLayerHeader;
 
 typedef struct
 {
-    Ipp32s *m_Bitplane_IMODE;
-    Ipp32s *m_BitplaneTaledbits;
-    Ipp32s *BFRACTION;
-    Ipp32s *REFDIST_TABLE;
+    int32_t *m_Bitplane_IMODE;
+    int32_t *m_BitplaneTaledbits;
+    int32_t *BFRACTION;
+    int32_t *REFDIST_TABLE;
 
 #ifdef ALLOW_SW_VC1_FALLBACK
-    Ipp32s *m_pLowMotionLumaDCDiff;
-    Ipp32s *m_pHighMotionLumaDCDiff;
-    Ipp32s *m_pLowMotionChromaDCDiff;
-    Ipp32s *m_pHighMotionChromaDCDiff;
-    Ipp32s *m_pCBPCY_Ipic;
-    Ipp32s *MVDIFF_PB_TABLES[4];
-    Ipp32s *CBPCY_PB_TABLES[4];
-    Ipp32s *TTMB_PB_TABLES[3];
-    Ipp32s *TTBLK_PB_TABLES[3];
-    Ipp32s *SBP_PB_TABLES[3];
-    Ipp32s *MBMODE_INTERLACE_FRAME_TABLES[8];
-    Ipp32s *MV_INTERLACE_TABLES[12];
-    Ipp32s *CBPCY_PB_INTERLACE_TABLES[8];
-    Ipp32s *MV2BP_TABLES[4];
-    Ipp32s *MV4BP_TABLES[4];
-    Ipp32s *MBMODE_INTERLACE_FIELD_TABLES[8];
-    Ipp32s *MBMODE_INTERLACE_FIELD_MIXED_TABLES[8];
+    int32_t *m_pLowMotionLumaDCDiff;
+    int32_t *m_pHighMotionLumaDCDiff;
+    int32_t *m_pLowMotionChromaDCDiff;
+    int32_t *m_pHighMotionChromaDCDiff;
+    int32_t *m_pCBPCY_Ipic;
+    int32_t *MVDIFF_PB_TABLES[4];
+    int32_t *CBPCY_PB_TABLES[4];
+    int32_t *TTMB_PB_TABLES[3];
+    int32_t *TTBLK_PB_TABLES[3];
+    int32_t *SBP_PB_TABLES[3];
+    int32_t *MBMODE_INTERLACE_FRAME_TABLES[8];
+    int32_t *MV_INTERLACE_TABLES[12];
+    int32_t *CBPCY_PB_INTERLACE_TABLES[8];
+    int32_t *MV2BP_TABLES[4];
+    int32_t *MV4BP_TABLES[4];
+    int32_t *MBMODE_INTERLACE_FIELD_TABLES[8];
+    int32_t *MBMODE_INTERLACE_FIELD_MIXED_TABLES[8];
 
     //////////////////////////////////////////////////////////////////////////
     //////////////////////Intra Decoding Sets/////////////////////////////////
@@ -647,16 +647,16 @@ typedef struct
 #ifdef ALLOW_SW_VC1_FALLBACK
 typedef struct
 {
-    Ipp16s          DC;
-    Ipp16s          ACTOP[8];
-    Ipp16s          ACLEFT[8];
+    int16_t          DC;
+    int16_t          ACTOP[8];
+    int16_t          ACLEFT[8];
 }VC1DCBlkParam;
 
 typedef struct
 {
     VC1DCBlkParam   DCBlkPred[6];
-    Ipp32u          DCStepSize;
-    Ipp32u          DoubleQuant;
+    uint32_t          DCStepSize;
+    uint32_t          DoubleQuant;
 }VC1DCMBParam;
 
 //  luma
@@ -678,116 +678,116 @@ typedef struct
 
 typedef struct
 {
-    Ipp32u          DoubleQuant[3];
-    Ipp16s          DC[14];
-    Ipp16s*         ACTOP[14];
-    Ipp16s*         ACLEFT[14];
+    uint32_t          DoubleQuant[3];
+    int16_t          DC[14];
+    int16_t*         ACTOP[14];
+    int16_t*         ACLEFT[14];
 
-    Ipp8u           BlkPattern[6];
+    uint8_t           BlkPattern[6];
 }VC1DCPredictors;
 
 typedef struct
 {
-    IppiSize        DstSizeNZ;
-    Ipp32u          SBlkPattern;
-    Ipp16s          mv[2][2];                   // [forw/back][x/y] top field
-    Ipp16s          mv_bottom[2][2];            // [forw/back][x/y] bottom field
-    Ipp8u           mv_s_polarity[2];
-    Ipp8u           blkType;
-    Ipp8u           fieldFlag[2];   //0 - top field, 1 - bottom field
+    mfxSize        DstSizeNZ;
+    uint32_t          SBlkPattern;
+    int16_t          mv[2][2];                   // [forw/back][x/y] top field
+    int16_t          mv_bottom[2][2];            // [forw/back][x/y] bottom field
+    uint8_t           mv_s_polarity[2];
+    uint8_t           blkType;
+    uint8_t           fieldFlag[2];   //0 - top field, 1 - bottom field
 }VC1Block;
 
 typedef struct
 {
-    Ipp8u   Coded;
-    Ipp8u numCoef; //subblocks in inter;
+    uint8_t   Coded;
+    uint8_t numCoef; //subblocks in inter;
 }VC1SingletonBlock;
 
 typedef struct
 {
-    Ipp32u      bEscapeMode3Tbl;
-    Ipp32s      levelSize;
-    Ipp32s      runSize;
+    uint32_t      bEscapeMode3Tbl;
+    int32_t      levelSize;
+    int32_t      runSize;
 } IppiEscInfo_VC1;
 
 typedef struct
 {
-    Ipp32s      m_currMBYpos;
-    Ipp32s      m_currMBXpos;
-    Ipp8u*      currYPlane;
-    Ipp8u*      currUPlane;
-    Ipp8u*      currVPlane;
+    int32_t      m_currMBYpos;
+    int32_t      m_currMBXpos;
+    uint8_t*      currYPlane;
+    uint8_t*      currUPlane;
+    uint8_t*      currVPlane;
 
-    Ipp32u      currYPitch;
-    Ipp32u      currUPitch;
-    Ipp32u      currVPitch;
+    uint32_t      currYPitch;
+    uint32_t      currUPitch;
+    uint32_t      currVPitch;
 
-    Ipp32s      slice_currMBYpos;
+    int32_t      slice_currMBYpos;
 
-    Ipp32u      ACPRED;
-    Ipp32u      INTERPMVP;
-    Ipp32s      MBMODEIndex;
-    Ipp8u       m_ubNumFirstCodedBlk;
+    uint32_t      ACPRED;
+    uint32_t      INTERPMVP;
+    int32_t      MBMODEIndex;
+    uint8_t       m_ubNumFirstCodedBlk;
 
     VC1SingletonBlock   m_pSingleBlock[6];
     //for interpolation
-    Ipp16s      xLuMV[VC1_NUM_OF_LUMA];
-    Ipp16s      yLuMV[VC1_NUM_OF_LUMA];
-    Ipp32u      MVcount;
+    int16_t      xLuMV[VC1_NUM_OF_LUMA];
+    int16_t      yLuMV[VC1_NUM_OF_LUMA];
+    uint32_t      MVcount;
 
-    Ipp16s      xLuMVT[VC1_NUM_OF_LUMA];
-    Ipp16s      yLuMVT[VC1_NUM_OF_LUMA];
+    int16_t      xLuMVT[VC1_NUM_OF_LUMA];
+    int16_t      yLuMVT[VC1_NUM_OF_LUMA];
 
-    Ipp16s      xLuMVB[VC1_NUM_OF_LUMA];
-    Ipp16s      yLuMVB[VC1_NUM_OF_LUMA];
+    int16_t      xLuMVB[VC1_NUM_OF_LUMA];
+    int16_t      yLuMVB[VC1_NUM_OF_LUMA];
 
-    Ipp16s*     x_LuMV;
-    Ipp16s*     y_LuMV;
+    int16_t*     x_LuMV;
+    int16_t*     y_LuMV;
 
     IppiEscInfo_VC1  EscInfo;
-    const Ipp8u** ZigzagTable;
-    Ipp32s      widthMB;
-    Ipp32s      heightMB;
-    Ipp32s      MaxWidthMB;
-    Ipp32s      MaxHeightMB;
+    const uint8_t** ZigzagTable;
+    int32_t      widthMB;
+    int32_t      heightMB;
+    int32_t      MaxWidthMB;
+    int32_t      MaxHeightMB;
 }VC1SingletonMB;
 
 typedef struct
 {
-    Ipp32s      m_cbpBits;
+    int32_t      m_cbpBits;
 
     VC1Block    m_pBlocks[6];
-    Ipp8u       Overlap;
-    Ipp8u       mbType;
+    uint8_t       Overlap;
+    uint8_t       mbType;
 
     //interlace
-    Ipp32u      FIELDTX;
-    Ipp8u       IntraFlag;
+    uint32_t      FIELDTX;
+    uint8_t       IntraFlag;
 
-    Ipp8u*      currYPlane;
-    Ipp8u*      currUPlane;
-    Ipp8u*      currVPlane;
+    uint8_t*      currYPlane;
+    uint8_t*      currUPlane;
+    uint8_t*      currVPlane;
 
-    Ipp32u      currYPitch;
-    Ipp32u      currUPitch;
-    Ipp32u      currVPitch;
+    uint32_t      currYPitch;
+    uint32_t      currUPitch;
+    uint32_t      currVPitch;
 
-    Ipp32s      MVBP;
-    Ipp32s      LeftTopRightPositionFlag;
-    Ipp32s      MVSW;          // for interlace frame mode in B frames
+    int32_t      MVBP;
+    int32_t      LeftTopRightPositionFlag;
+    int32_t      MVSW;          // for interlace frame mode in B frames
 
-    Ipp16s      bias;
-    Ipp32u      SkipAndDirectFlag; //skip or not + direct or not
-    Ipp16s      dmv_x[2][4]; //for split decode and prediction calculation in B frames
-    Ipp16s      dmv_y[2][4]; //for split decode and prediction calculation in B frames
-    Ipp8u       predictor_flag[4]; // for B interlace fields
-    Ipp8u       fieldFlag[2];
-    const Ipp8u* pInterpolLumaSrc[2];    //forward/backward or top/bottom
-    Ipp32s       InterpolsrcLumaStep[2]; //forward/backward or top/bottom
-    const Ipp8u* pInterpolChromaUSrc[2];    //forward/backward or top/bottom
-    Ipp32s       InterpolsrcChromaUStep[2]; //forward/backward or top/bottom
-    const Ipp8u* pInterpolChromaVSrc[2];    //forward/backward or top/bottom
-    Ipp32s       InterpolsrcChromaVStep[2]; //forward/backward or top/bottom
+    int16_t      bias;
+    uint32_t      SkipAndDirectFlag; //skip or not + direct or not
+    int16_t      dmv_x[2][4]; //for split decode and prediction calculation in B frames
+    int16_t      dmv_y[2][4]; //for split decode and prediction calculation in B frames
+    uint8_t       predictor_flag[4]; // for B interlace fields
+    uint8_t       fieldFlag[2];
+    const uint8_t* pInterpolLumaSrc[2];    //forward/backward or top/bottom
+    int32_t       InterpolsrcLumaStep[2]; //forward/backward or top/bottom
+    const uint8_t* pInterpolChromaUSrc[2];    //forward/backward or top/bottom
+    int32_t       InterpolsrcChromaUStep[2]; //forward/backward or top/bottom
+    const uint8_t* pInterpolChromaVSrc[2];    //forward/backward or top/bottom
+    int32_t       InterpolsrcChromaVStep[2]; //forward/backward or top/bottom
 }VC1MB;
 
 typedef struct
@@ -795,14 +795,14 @@ typedef struct
     VC1Block* AMVPred[4];
     VC1Block* BMVPred[4];
     VC1Block* CMVPred[4];
-    Ipp8u     FieldMB[4][3]; //4 blocks, A, B, C
+    uint8_t     FieldMB[4][3]; //4 blocks, A, B, C
 }VC1MVPredictors;
 #endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
 typedef struct
 {
-    Ipp32u*     pBitstream;
-    Ipp32s      bitOffset;
+    uint32_t*     pBitstream;
+    int32_t      bitOffset;
 } IppiBitstream;
 
 //1.3.3    The decoder dynamically allocates memory for frame
@@ -835,43 +835,43 @@ struct Frame
     {
     }
 
-    Ipp8u       m_bIsExpanded;
-    Ipp32u      FCM;
+    uint8_t       m_bIsExpanded;
+    uint32_t      FCM;
 
     //1000  - IC for Top First Field
     //0100  - IC for Bottom First Field
     //0010  - IC for Top Second Field
     //0001  - IC for Bottom Second Field
-    Ipp32u      ICFieldMask;
+    uint32_t      ICFieldMask;
 
-    Ipp16u      corrupted;
+    uint16_t      corrupted;
 
 #ifdef ALLOW_SW_VC1_FALLBACK
-    Ipp8u*      m_pAllocatedMemory;
-    Ipp8u*      m_pY;
-    Ipp8u*      m_pU;
-    Ipp8u*      m_pV;
-    Ipp32s      RANGE_MAPY;
-    Ipp32s      RANGE_MAPUV;//[2]; //rangeMapCoef[0] = RANGE_MAPY;  - luma
+    uint8_t*      m_pAllocatedMemory;
+    uint8_t*      m_pY;
+    uint8_t*      m_pU;
+    uint8_t*      m_pV;
+    int32_t      RANGE_MAPY;
+    int32_t      RANGE_MAPUV;//[2]; //rangeMapCoef[0] = RANGE_MAPY;  - luma
                          //rangeMapCoef[1] = RANGE_MAPUV; - chroma
-    Ipp32s*     pRANGE_MAPY;
+    int32_t*     pRANGE_MAPY;
 
-    Ipp32u      m_iYPitch;
-    Ipp32u      m_iUPitch;
-    Ipp32u      m_iVPitch;
-    Ipp32s      m_AllocatedMemorySize;
+    uint32_t      m_iYPitch;
+    uint32_t      m_iUPitch;
+    uint32_t      m_iVPitch;
+    int32_t      m_AllocatedMemorySize;
 
-    Ipp8u      LumaTable[4][256]; //0,1 - top/bottom fields of first field. 2,3 of second field
-    Ipp8u      ChromaTable[4][256];
+    uint8_t      LumaTable[4][256]; //0,1 - top/bottom fields of first field. 2,3 of second field
+    uint8_t      ChromaTable[4][256];
 
-    Ipp8u*     LumaTablePrev[4];
-    Ipp8u*     ChromaTablePrev[4];
+    uint8_t*     LumaTablePrev[4];
+    uint8_t*     ChromaTablePrev[4];
 
-    Ipp8u*     LumaTableCurr[2];
-    Ipp8u*     ChromaTableCurr[2];
-    Ipp32u      TFF;
+    uint8_t*     LumaTableCurr[2];
+    uint8_t*     ChromaTableCurr[2];
+    uint32_t      TFF;
 
-    Ipp32u      isIC;
+    uint32_t      isIC;
 #endif // #ifdef ALLOW_SW_VC1_FALLBACK
 };
 
@@ -881,21 +881,21 @@ struct VC1FrameBuffer
 {
     Frame*        m_pFrames;
 
-    Ipp32s        m_iPrevIndex;
-    Ipp32s        m_iNextIndex;
-    Ipp32s        m_iCurrIndex;
-    Ipp32s        m_iRangeMapIndex;
-    Ipp32s        m_iRangeMapIndexPrev; // for correct va support
-    Ipp32s        m_iDisplayIndex;
-    Ipp32s        m_iToFreeIndex;
+    int32_t        m_iPrevIndex;
+    int32_t        m_iNextIndex;
+    int32_t        m_iCurrIndex;
+    int32_t        m_iRangeMapIndex;
+    int32_t        m_iRangeMapIndexPrev; // for correct va support
+    int32_t        m_iDisplayIndex;
+    int32_t        m_iToFreeIndex;
 
     // for skipping processing
-    Ipp32s        m_iToSkipCoping;
+    int32_t        m_iToSkipCoping;
 
     // for external index set up
-    Ipp32s        m_iBFrameIndex;
+    int32_t        m_iBFrameIndex;
 
-    Frame operator [] (Ipp32u number)
+    Frame operator [] (uint32_t number)
     {
         return m_pFrames[number];
     };
@@ -904,10 +904,10 @@ struct VC1FrameBuffer
 
 typedef struct
 {
-    Ipp32u start_pos;
-    Ipp32u HeightMB;
-    Ipp32u is_last_deblock;
-    Ipp32u isNeedDbl;
+    uint32_t start_pos;
+    uint32_t HeightMB;
+    uint32_t is_last_deblock;
+    uint32_t isNeedDbl;
 }VC1DeblockInfo;
 
 struct VC1Context
@@ -923,24 +923,24 @@ struct VC1Context
 
     IppiBitstream          m_bitstream;
 
-    Ipp8u*                 m_pBufferStart;
-    Ipp32u                 m_FrameSize;
+    uint8_t*                 m_pBufferStart;
+    uint32_t                 m_FrameSize;
     //start codes
-    Ipp32u*                m_Offsets;
-    Ipp32u*                m_values;
+    uint32_t*                m_Offsets;
+    uint32_t*                m_values;
 
 #ifdef ALLOW_SW_VC1_FALLBACK
     VC1MB*                 m_pCurrMB;
     VC1MB*                 m_MBs;         //MBwidth*MBheight
     VC1DCMBParam*          CurrDC;
 
-    Ipp16s*                savedMV;       //MBwidth*MBheight*4*2*2
+    int16_t*                savedMV;       //MBwidth*MBheight*4*2*2
                                           //(4 luma blocks, 2 coordinates,Top/Bottom),
                                           //MVs which are used for Direct mode
-    Ipp8u*                 savedMVSamePolarity;
+    uint8_t*                 savedMVSamePolarity;
                                           // in B frame
-    Ipp16s*                savedMV_Curr;     //pointer to current array of MVs. Need for inter-frame threading
-    Ipp8u*                 savedMVSamePolarity_Curr; //pointer to current array of MVPolars. Need for inter-frame threading
+    int16_t*                savedMV_Curr;     //pointer to current array of MVs. Need for inter-frame threading
+    uint8_t*                 savedMVSamePolarity_Curr; //pointer to current array of MVPolars. Need for inter-frame threading
 
     IppVCInterpolateBlockIC_8u interp_params_luma;
     IppVCInterpolateBlockIC_8u interp_params_chroma;
@@ -948,30 +948,30 @@ struct VC1Context
 
     VC1Bitplane            m_pBitplane;
     VC1DeblockInfo         DeblockInfo;
-    Ipp32u                 RefDist;
-    Ipp32u*                pRefDist;
+    uint32_t                 RefDist;
+    uint32_t*                pRefDist;
 
     // Intensity compensation: lookup tables only for P-frames
-    Ipp8u          m_bIntensityCompensation;
+    uint8_t          m_bIntensityCompensation;
 
 #ifdef ALLOW_SW_VC1_FALLBACK
     VC1SingletonMB*                m_pSingleMB;
 
-    Ipp32s                         iNumber; /*thread number*/
+    int32_t                         iNumber; /*thread number*/
 
-    Ipp16s*                        m_pBlock; //memory for diffrences
-    Ipp32s                         iPrevDblkStartPos;
+    int16_t*                        m_pBlock; //memory for diffrences
+    int32_t                         iPrevDblkStartPos;
     VC1DCMBParam*                  DCACParams;
     VC1DCPredictors                DCPred;
     VC1MVPredictors                MVPred;
-    Ipp8u*                        LumaTable[4]; //0,1 - top/bottom fields of first field. 2,3 of second field
-    Ipp8u*                        ChromaTable[4];
+    uint8_t*                        LumaTable[4]; //0,1 - top/bottom fields of first field. 2,3 of second field
+    uint8_t*                        ChromaTable[4];
 #endif
 
-    Ipp32u                        PrevFCM;
-    Ipp32u                        NextFCM;
+    uint32_t                        PrevFCM;
+    uint32_t                        NextFCM;
 
-    Ipp32s                        bp_round_count;
+    int32_t                        bp_round_count;
 };
 
 #endif //__umc_vc1_common_defs_H__

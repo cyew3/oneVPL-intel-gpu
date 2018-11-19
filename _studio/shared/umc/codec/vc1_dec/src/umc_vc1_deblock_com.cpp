@@ -27,15 +27,15 @@
 #include "umc_vc1_dec_debug.h"
 
 #ifdef _OWN_FUNCTION
-IppStatus _own_FilterDeblockingLuma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ipp32s srcdstStep,Ipp32s EdgeDisabledFlag)
+IppStatus _own_FilterDeblockingLuma_VerEdge_VC1(uint8_t* pSrcDst,int32_t pQuant, int32_t srcdstStep,int32_t EdgeDisabledFlag)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp8u* pRPixel;
-    Ipp16s p1, p2, p3, p4, p5, p6, p7, p8;
-    Ipp16s a0, a1, a2, a3;
-    Ipp16s clip, d;
-    Ipp32s i;
-    Ipp32s count;
+    uint8_t* pRPixel;
+    int16_t p1, p2, p3, p4, p5, p6, p7, p8;
+    int16_t a0, a1, a2, a3;
+    int16_t clip, d;
+    int32_t i;
+    int32_t count;
 
     for (count = 0; count < 4;count++)
     {
@@ -62,7 +62,7 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ip
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
+                a3 = MFX_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
                 if (a3 < vc1_abs_16s(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -74,8 +74,8 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ip
                     }
                     else
                         d=0;
-                    pRPixel[-1] = (Ipp8u)(p4 - d);
-                    pRPixel[0] = (Ipp8u)(p5 + d);
+                    pRPixel[-1] = (uint8_t)(p4 - d);
+                    pRPixel[0] = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -107,7 +107,7 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ip
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
+                    a3 = MFX_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
                     if (a3 < vc1_abs_16s(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -119,8 +119,8 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ip
                         }
                         else
                             d=0;
-                        pRPixel[-1] = (Ipp8u)(p4 - d);
-                        pRPixel[0] = (Ipp8u)(p5 + d);
+                        pRPixel[-1] = (uint8_t)(p4 - d);
+                        pRPixel[0] = (uint8_t)(p5 + d);
                     }
                 }
             }
@@ -129,16 +129,16 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ip
     return ret;
 }
 
-IppStatus _own_FilterDeblockingChroma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ipp32s srcdstStep,Ipp32s EdgeDisabledFlag)
+IppStatus _own_FilterDeblockingChroma_VerEdge_VC1(uint8_t* pSrcDst,int32_t pQuant, int32_t srcdstStep,int32_t EdgeDisabledFlag)
 {
-    static Ipp32s EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
+    static int32_t EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
     IppStatus ret = ippStsNoErr;
-    Ipp8u* pRPixel;
-    Ipp16s p1, p2, p3, p4, p5, p6, p7, p8;
-    Ipp16s a0, a1, a2, a3;
-    Ipp16s clip, d;
-    Ipp32s i;
-    Ipp32s count;
+    uint8_t* pRPixel;
+    int16_t p1, p2, p3, p4, p5, p6, p7, p8;
+    int16_t a0, a1, a2, a3;
+    int16_t clip, d;
+    int32_t i;
+    int32_t count;
 
     for (count = 0; count < 2;count++)
     {
@@ -166,7 +166,7 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, 
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
+                a3 = MFX_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
                 if (a3 < vc1_abs_16s(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -178,8 +178,8 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, 
                     }
                     else
                         d=0;
-                    pRPixel[-1] = (Ipp8u)(p4 - d);
-                    pRPixel[0] = (Ipp8u)(p5 + d);
+                    pRPixel[-1] = (uint8_t)(p4 - d);
+                    pRPixel[0] = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -211,7 +211,7 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, 
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
+                    a3 = MFX_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
                     if (a3 < vc1_abs_16s(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -223,8 +223,8 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, 
                         }
                         else
                             d=0;
-                        pRPixel[-1] = (Ipp8u)(p4 - d);
-                        pRPixel[0] = (Ipp8u)(p5 + d);
+                        pRPixel[-1] = (uint8_t)(p4 - d);
+                        pRPixel[0] = (uint8_t)(p5 + d);
                     }
                 }
             }
@@ -233,15 +233,15 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, 
     return ret;
 }
 
-IppStatus _own_FilterDeblockingLuma_HorEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ipp32s srcdstStep,Ipp32s EdgeDisabledFlag)
+IppStatus _own_FilterDeblockingLuma_HorEdge_VC1(uint8_t* pSrcDst,int32_t pQuant, int32_t srcdstStep,int32_t EdgeDisabledFlag)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp8u* pRPixel;
-    Ipp16s p1, p2, p3, p4, p5, p6, p7, p8;
-    Ipp16s a0, a1, a2, a3;
-    Ipp16s clip, d;
-    Ipp32s i;
-    Ipp32s count;
+    uint8_t* pRPixel;
+    int16_t p1, p2, p3, p4, p5, p6, p7, p8;
+    int16_t a0, a1, a2, a3;
+    int16_t clip, d;
+    int32_t i;
+    int32_t count;
 
     for (count = 0; count < 4;count++)
     {
@@ -269,7 +269,7 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ip
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
+                a3 = MFX_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
                 if (a3 < vc1_abs_16s(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -281,8 +281,8 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ip
                     }
                     else
                         d=0;
-                    pRPixel[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                    pRPixel[0] = (Ipp8u)(p5 + d);
+                    pRPixel[-1*srcdstStep] = (uint8_t)(p4 - d);
+                    pRPixel[0] = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -314,7 +314,7 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ip
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
+                    a3 = MFX_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
                     if (a3 < vc1_abs_16s(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -326,8 +326,8 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ip
                         }
                         else
                             d=0;
-                        pRPixel[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                        pRPixel[0] = (Ipp8u)(p5 + d);
+                        pRPixel[-1*srcdstStep] = (uint8_t)(p4 - d);
+                        pRPixel[0] = (uint8_t)(p5 + d);
                     }
                 }
             }
@@ -337,16 +337,16 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ip
 }
 
 
-IppStatus _own_FilterDeblockingChroma_HorEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, Ipp32s srcdstStep,Ipp32s EdgeDisabledFlag)
+IppStatus _own_FilterDeblockingChroma_HorEdge_VC1(uint8_t* pSrcDst,int32_t pQuant, int32_t srcdstStep,int32_t EdgeDisabledFlag)
 {
     IppStatus ret = ippStsNoErr;
-    static Ipp32s EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
-    Ipp8u* pRPixel;
-    Ipp16s p1, p2, p3, p4, p5, p6, p7, p8;
-    Ipp16s a0, a1, a2, a3;
-    Ipp16s clip, d;
-    Ipp32s i;
-    Ipp32s count;
+    static int32_t EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
+    uint8_t* pRPixel;
+    int16_t p1, p2, p3, p4, p5, p6, p7, p8;
+    int16_t a0, a1, a2, a3;
+    int16_t clip, d;
+    int32_t i;
+    int32_t count;
 
     for (count = 0; count < 2;count++)
     {
@@ -373,7 +373,7 @@ IppStatus _own_FilterDeblockingChroma_HorEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, 
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
+                a3 = MFX_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
                 if (a3 < vc1_abs_16s(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -385,8 +385,8 @@ IppStatus _own_FilterDeblockingChroma_HorEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, 
                     }
                     else
                         d=0;
-                    pRPixel[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                    pRPixel[0] = (Ipp8u)(p5 + d);
+                    pRPixel[-1*srcdstStep] = (uint8_t)(p4 - d);
+                    pRPixel[0] = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -418,7 +418,7 @@ IppStatus _own_FilterDeblockingChroma_HorEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, 
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
+                    a3 = MFX_MIN(vc1_abs_16s(a1), vc1_abs_16s(a2));
                     if (a3 < vc1_abs_16s(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -430,8 +430,8 @@ IppStatus _own_FilterDeblockingChroma_HorEdge_VC1(Ipp8u* pSrcDst,Ipp32s pQuant, 
                         }
                         else
                             d=0;
-                        pRPixel[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                        pRPixel[0] = (Ipp8u)(p5 + d);
+                        pRPixel[-1*srcdstStep] = (uint8_t)(p4 - d);
+                        pRPixel[0] = (uint8_t)(p5 + d);
                     }
                 }
             }

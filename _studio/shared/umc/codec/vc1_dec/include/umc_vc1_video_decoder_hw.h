@@ -77,25 +77,25 @@ namespace UMC
 
     protected:
 
-        virtual   bool    InitAlloc                   (VC1Context* pContext, Ipp32u MaxFrameNum);
+        virtual   bool    InitAlloc                   (VC1Context* pContext, uint32_t MaxFrameNum);
 
         virtual Status VC1DecodeFrame                 (MediaData* in, VideoData* out_data);
 
 
-        virtual Ipp32u CalculateHeapSize();
+        virtual uint32_t CalculateHeapSize();
 
         virtual bool   InitVAEnvironment            ();
 
         // HW i/f support
         virtual Status FillAndExecute(MediaData* in);
-        void GetStartCodes_HW(MediaData* in, Ipp32u &sShift);
+        void GetStartCodes_HW(MediaData* in, uint32_t &sShift);
 
         MediaDataEx::_MediaDataEx* m_stCodes_VA;
 
         template <class Descriptor>
         Status VC1DecodeFrame_VLD(MediaData* in, VideoData* out_data)
         {
-            Ipp32s SCoffset = 0;
+            int32_t SCoffset = 0;
             Descriptor* pPackDescriptorChild = NULL;
             bool skip = false;
 
@@ -113,11 +113,11 @@ namespace UMC
                     throw vc1_exception(internal_pipeline_error);
 
 
-                pPackDescriptorChild->m_pContext->m_FrameSize = (Ipp32u)in->GetDataSize() + SCoffset;
+                pPackDescriptorChild->m_pContext->m_FrameSize = (uint32_t)in->GetDataSize() + SCoffset;
 
 
                 umcRes = pPackDescriptorChild->preProcData(m_pContext,
-                    (Ipp32u)(m_frameData->GetDataSize() + SCoffset),
+                    (uint32_t)(m_frameData->GetDataSize() + SCoffset),
                     m_lFrameCount,
                     skip);
                 if (UMC_OK != umcRes)

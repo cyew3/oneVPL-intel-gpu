@@ -77,15 +77,15 @@ namespace UMC
             // skipping algorithms can be different for reference and predictive (B/BI) frames
             // For Ref frames minimum period is 2
             // For B minimum period is 1
-            void SetSkipPeriod(bool ForRefFrames, Ipp32u period);
-            void SetPerformMode(bool ForRefFrames, Ipp32u perfomMode);
+            void SetSkipPeriod(bool ForRefFrames, uint32_t period);
+            void SetPerformMode(bool ForRefFrames, uint32_t perfomMode);
 
             bool IsDeblockingOn();
-            bool ChangeVideoDecodingSpeed(Ipp32s& speed_shift);
+            bool ChangeVideoDecodingSpeed(int32_t& speed_shift);
 
-            bool IsNeedSkipFrame(Ipp32u picType);
-            bool IsNeedPostProcFrame(Ipp32u picType);
-            bool IsNeedSimlifyReconstruct(Ipp32u picType);
+            bool IsNeedSkipFrame(uint32_t picType);
+            bool IsNeedPostProcFrame(uint32_t picType);
+            bool IsNeedSimlifyReconstruct(uint32_t picType);
 
 
             void Reset();
@@ -97,16 +97,16 @@ namespace UMC
         private:
             void MoveToNextState();
             // Skip parameters for reference frames
-            Ipp32u m_iRefSkipPeriod;
-            Ipp32u m_iRefSkipCounter;
+            uint32_t m_iRefSkipPeriod;
+            uint32_t m_iRefSkipCounter;
             // Skip parameters for predicted frames
-            Ipp32u m_iBSkipPeriod;
-            Ipp32u m_iBSkipCounter;
+            uint32_t m_iBSkipPeriod;
+            uint32_t m_iBSkipCounter;
 
-            Ipp32u  m_RefPerfMode;
-            Ipp32u  m_BPerfMode;
+            uint32_t  m_RefPerfMode;
+            uint32_t  m_BPerfMode;
 
-            Ipp32s m_SpeedMode;
+            int32_t m_SpeedMode;
 
             bool   m_bOnDbl;
 

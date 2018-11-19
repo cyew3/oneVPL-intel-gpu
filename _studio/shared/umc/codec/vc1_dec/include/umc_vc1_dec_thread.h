@@ -49,14 +49,14 @@ public:
 
     // Initialize slice decoder
     virtual Status Init(VC1Context* pContext,
-                        Ipp32s iNumber,
+                        int32_t iNumber,
                         VC1TaskStore* pTaskStore,
                         MemoryAllocator* pMemoryAllocator,
                         VC1TaskProcessor* pExternalProcessor);
 
     // Decode picture segment
     virtual Status process(void);
-    Ipp32s  getThreadID()
+    int32_t  getThreadID()
     {
         return this->m_iNumber;
     }
@@ -72,7 +72,7 @@ protected:
 
     vm_thread m_hThread;                                        // (vm_thread) handle to asynchronously working thread
 
-    Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
+    int32_t m_iNumber;                                           // (int32_t) ordinal number of decoder
 
 
     volatile

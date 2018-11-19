@@ -33,7 +33,7 @@
 #ifdef ALLOW_SW_VC1_FALLBACK
 #include "umc_vc1_dec_job.h"
 
-static const Ipp32u FrameReadyTable[9] = {0, 0x5,     0x55,     0x555,     0x5555,
+static const uint32_t FrameReadyTable[9] = {0, 0x5,     0x55,     0x555,     0x5555,
                                           0x55555, 0x555555, 0x5555555, 0x55555555};
 #endif
 
@@ -66,7 +66,7 @@ namespace UMC
 
     VC1TaskStore::~VC1TaskStore()
     {
-        Ipp32u i;
+        uint32_t i;
 
         if (vm_mutex_is_valid(&m_mDSGuard))
             vm_mutex_destroy(&m_mDSGuard);
@@ -98,11 +98,11 @@ namespace UMC
         }
     }
 
-   bool VC1TaskStore::Init(Ipp32u iConsumerNumber,
-                           Ipp32u iMaxFramesInParallel,
+   bool VC1TaskStore::Init(uint32_t iConsumerNumber,
+                           uint32_t iMaxFramesInParallel,
                            VC1VideoDecoder* pVC1Decoder)
     {
-        Ipp32u i;
+        uint32_t i;
         m_iNumDSActiveinQueue = 0;
         m_iRangeMapIndex   =  iMaxFramesInParallel + VC1NUMREFFRAMES -1;
         pMainVC1Decoder = pVC1Decoder;
@@ -112,7 +112,7 @@ namespace UMC
         {
             // Heap Allocation
             {
-                Ipp32u heapSize = CalculateHeapSize();
+                uint32_t heapSize = CalculateHeapSize();
 
                 if (m_pMemoryAllocator->Alloc(&m_iTSHeapID,
                     heapSize,
@@ -121,7 +121,7 @@ namespace UMC
                     return false;
 
                 delete m_pSHeap;
-                m_pSHeap = new VC1TSHeap((Ipp8u*)m_pMemoryAllocator->Lock(m_iTSHeapID),heapSize);
+                m_pSHeap = new VC1TSHeap((uint8_t*)m_pMemoryAllocator->Lock(m_iTSHeapID),heapSize);
             }
 
             m_pSHeap->s_new(&m_pGuardGet,m_iNumFramesProcessing);
@@ -145,7 +145,7 @@ namespace UMC
 
     bool VC1TaskStore::Reset()
     {
-        Ipp32u i = 0;
+        uint32_t i = 0;
 
         //close
         m_bIsLastFramesMode = false;
@@ -181,7 +181,7 @@ namespace UMC
 
             // Heap Allocation
             {
-                Ipp32u heapSize = CalculateHeapSize();
+                uint32_t heapSize = CalculateHeapSize();
 
                 if (m_pMemoryAllocator->Alloc(&m_iTSHeapID,
                     heapSize,
@@ -189,7 +189,7 @@ namespace UMC
                     16) != UMC_OK)
                     return false;
 
-                m_pSHeap = new VC1TSHeap((Ipp8u*)m_pMemoryAllocator->Lock(m_iTSHeapID), heapSize);
+                m_pSHeap = new VC1TSHeap((uint8_t*)m_pMemoryAllocator->Lock(m_iTSHeapID), heapSize);
             }
 
             {
@@ -221,14 +221,14 @@ namespace UMC
         return true;
     }
 
-    Ipp32u VC1TaskStore::CalculateHeapSize()
+    uint32_t VC1TaskStore::CalculateHeapSize()
     {
-        Ipp32u Size = align_value<Ipp32u>(sizeof(vm_mutex**)*m_iNumFramesProcessing); //m_pGuardGet
-        Size += align_value<Ipp32u>(sizeof(VC1FrameDescriptor*)*(m_iNumFramesProcessing));
+        uint32_t Size = align_value<uint32_t>(sizeof(vm_mutex**)*m_iNumFramesProcessing); //m_pGuardGet
+        Size += align_value<uint32_t>(sizeof(VC1FrameDescriptor*)*(m_iNumFramesProcessing));
 
-        for (Ipp32u counter = 0; counter < m_iNumFramesProcessing; counter++)
+        for (uint32_t counter = 0; counter < m_iNumFramesProcessing; counter++)
         {
-            Size += align_value<Ipp32u>(sizeof(vm_mutex)); //m_pGuardGet
+            Size += align_value<uint32_t>(sizeof(vm_mutex)); //m_pGuardGet
 #ifdef UMC_VA_DXVA
             if (pMainVC1Decoder->m_va)
             {
@@ -236,24 +236,24 @@ namespace UMC
                 {
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
                     if (pMainVC1Decoder->m_va->GetProtectedVA())
-                        Size += align_value<Ipp32u>(sizeof(VC1FrameDescriptorVA_Protected<VC1PackerDXVA_Protected>));
+                        Size += align_value<uint32_t>(sizeof(VC1FrameDescriptorVA_Protected<VC1PackerDXVA_Protected>));
                     else
 #endif
-                        Size += align_value<Ipp32u>(sizeof(VC1FrameDescriptorVA_EagleLake<VC1PackerDXVA_EagleLake>));
+                        Size += align_value<uint32_t>(sizeof(VC1FrameDescriptorVA_EagleLake<VC1PackerDXVA_EagleLake>));
                 }
                 else
-                    Size += align_value<Ipp32u>(sizeof(VC1FrameDescriptorVA<VC1PackerDXVA>));
+                    Size += align_value<uint32_t>(sizeof(VC1FrameDescriptorVA<VC1PackerDXVA>));
             }
             else
 #endif
 #ifdef UMC_VA_LINUX
                 if (pMainVC1Decoder->m_va)
                 {
-                    Size += align_value<Ipp32u>(sizeof(VC1FrameDescriptorVA_Linux<VC1PackerLVA>));
+                    Size += align_value<uint32_t>(sizeof(VC1FrameDescriptorVA_Linux<VC1PackerLVA>));
                 }
                 else
 #endif
-                    Size += align_value<Ipp32u>(sizeof(VC1FrameDescriptor));
+                    Size += align_value<uint32_t>(sizeof(VC1FrameDescriptor));
         }
 
         return Size;
@@ -266,10 +266,10 @@ namespace UMC
             return false;
 
         m_pSHeap->s_new(&m_pDescriptorQueue,m_iNumFramesProcessing);
-        for (Ipp32u i = 0; i < m_iNumFramesProcessing; i++)
+        for (uint32_t i = 0; i < m_iNumFramesProcessing; i++)
         {
 #ifdef UMC_VA_DXVA
-            Ipp8u* pBuf;
+            uint8_t* pBuf;
             if (va->IsIntelCustomGUID())
             {
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
@@ -291,7 +291,7 @@ namespace UMC
                 m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA<VC1PackerDXVA>(m_pMemoryAllocator,va);
             }
 #elif defined(UMC_VA_LINUX)
-            Ipp8u* pBuf;
+            uint8_t* pBuf;
             pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA_Linux<VC1PackerLVA> >();
             m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA_Linux<VC1PackerLVA>(m_pMemoryAllocator,va);
 #else
@@ -313,7 +313,7 @@ namespace UMC
 
     bool VC1TaskStore::SetNewSHParams(VC1Context* pContext)
     {
-        for (Ipp32u i = 0; i < m_iNumFramesProcessing; i++)
+        for (uint32_t i = 0; i < m_iNumFramesProcessing; i++)
         {
             m_pDescriptorQueue[i]->SetNewSHParams(pContext);
         }
@@ -323,7 +323,7 @@ namespace UMC
 
     void VC1TaskStore::ResetDSQueue()
     {
-        Ipp32u i;
+        uint32_t i;
         for (i = 0; i < m_iNumFramesProcessing; i++)
             m_pDescriptorQueue[i]->Reset();
         m_lNextFrameCounter = 1;
@@ -331,7 +331,7 @@ namespace UMC
 
     VC1FrameDescriptor* VC1TaskStore::GetLastDS()
     {
-        Ipp32u i;
+        uint32_t i;
         VC1FrameDescriptor* pCurrDescriptor = m_pDescriptorQueue[0];
         for (i = 0; i < m_iNumFramesProcessing-1; i++)
         {
@@ -344,7 +344,7 @@ namespace UMC
 
     VC1FrameDescriptor* VC1TaskStore::GetFirstDS()
     {
-        Ipp32u i;
+        uint32_t i;
         for (i = 0; i < m_iNumFramesProcessing; i++)
         {
             if (m_pDescriptorQueue[i]->m_iFrameCounter == m_lNextFrameCounter)
@@ -357,10 +357,10 @@ namespace UMC
     {
         // B frames TBD
         Status sts;
-        Ipp32s Idx;
+        int32_t Idx;
         VideoDataInfo Info;
-        Ipp32u h = pMainVC1Decoder->m_pCurrentOut->GetHeight();
-        Ipp32u w = pMainVC1Decoder->m_pCurrentOut->GetWidth();
+        uint32_t h = pMainVC1Decoder->m_pCurrentOut->GetHeight();
+        uint32_t w = pMainVC1Decoder->m_pCurrentOut->GetWidth();
         Info.Init(w, h, YUV420);
         sts = pMainVC1Decoder->m_pExtFrameAllocator->Alloc(mid, &Info, 0);
         if (UMC_OK != sts)
@@ -392,23 +392,23 @@ namespace UMC
         return 0;
     }
 
-    void VC1TaskStore::UnLockSurface(Ipp32s memID)
+    void VC1TaskStore::UnLockSurface(int32_t memID)
     {
         if (pMainVC1Decoder->m_va &&  memID > -1)
             pMainVC1Decoder->m_pExtFrameAllocator->DecreaseReference(memID);
     }
 
-    Ipp32s VC1TaskStore::LockAndAssocFreeIdx(FrameMemID mid)
+    int32_t VC1TaskStore::LockAndAssocFreeIdx(FrameMemID mid)
     {
         return mid;
     }
 
-    FrameMemID   VC1TaskStore::UnLockIdx(Ipp32u Idx)
+    FrameMemID   VC1TaskStore::UnLockIdx(uint32_t Idx)
     {
         return Idx;
     }
 
-    FrameMemID  VC1TaskStore::GetIdx(Ipp32u Idx)
+    FrameMemID  VC1TaskStore::GetIdx(uint32_t Idx)
     {
         return Idx;
     }
@@ -481,8 +481,8 @@ namespace UMC
         }
     }
 
-    bool VC1TaskStoreSW::Init(Ipp32u iConsumerNumber,
-        Ipp32u iMaxFramesInParallel,
+    bool VC1TaskStoreSW::Init(uint32_t iConsumerNumber,
+        uint32_t iMaxFramesInParallel,
         VC1VideoDecoder* pVC1Decoder)
     {
 
@@ -490,17 +490,17 @@ namespace UMC
             iMaxFramesInParallel, pVC1Decoder))
             return false;
 
-        Ipp32u i;
+        uint32_t i;
 
         if (!m_pDSIndicate)
         {
-            Ipp8u* ptr = NULL;
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32u) * 64);
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32u) * 64);
+            uint8_t* ptr = NULL;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
 
             if (m_pMemoryAllocator->Alloc(&m_iIntStructID,
                 (size_t)ptr,
@@ -508,24 +508,24 @@ namespace UMC
                 16) != UMC_OK)
                 return false;
 
-            m_pDSIndicate = (Ipp32s*)(m_pMemoryAllocator->Lock(m_iIntStructID));
+            m_pDSIndicate = (int32_t*)(m_pMemoryAllocator->Lock(m_iIntStructID));
             memset(m_pDSIndicate, 0, size_t(ptr));
-            ptr = (Ipp8u*)m_pDSIndicate;
+            ptr = (uint8_t*)m_pDSIndicate;
 
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            m_pDSIndicateSwap = (Ipp32s*)ptr;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            m_pDSIndicateSwap = (int32_t*)ptr;
 
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            m_pTasksInQueue = (Ipp32u*)ptr;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            m_pTasksInQueue = (uint32_t*)ptr;
 
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            m_pSlicesInQueue = (Ipp32u*)ptr;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            m_pSlicesInQueue = (uint32_t*)ptr;
 
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            m_pMainQueueTasksState = (Ipp32u*)ptr;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            m_pMainQueueTasksState = (uint32_t*)ptr;
 
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32u) * 64);
-            m_pAdditionaQueueTasksState = (Ipp32u*)ptr;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
+            m_pAdditionaQueueTasksState = (uint32_t*)ptr;
         }
 
         m_pSHeap->s_new(&m_pCommonQueue, m_iNumFramesProcessing);
@@ -562,13 +562,13 @@ namespace UMC
             m_pDSIndicate = 0;
             m_pDSIndicateSwap = 0;
 
-            Ipp8u* ptr = NULL;
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32u) * 64);
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32u) * 64);
+            uint8_t* ptr = NULL;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
 
             if (m_pMemoryAllocator->Alloc(&m_iIntStructID,
                 (size_t)ptr,
@@ -576,31 +576,31 @@ namespace UMC
                 16) != UMC_OK)
                 return false;
 
-            m_pDSIndicate = (Ipp32s*)(m_pMemoryAllocator->Lock(m_iIntStructID));
+            m_pDSIndicate = (int32_t*)(m_pMemoryAllocator->Lock(m_iIntStructID));
             memset(m_pDSIndicate, 0, size_t(ptr));
-            ptr = (Ipp8u*)m_pDSIndicate;
+            ptr = (uint8_t*)m_pDSIndicate;
 
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            m_pDSIndicateSwap = (Ipp32s*)ptr;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            m_pDSIndicateSwap = (int32_t*)ptr;
 
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            m_pTasksInQueue = (Ipp32u*)ptr;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            m_pTasksInQueue = (uint32_t*)ptr;
 
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            m_pSlicesInQueue = (Ipp32u*)ptr;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            m_pSlicesInQueue = (uint32_t*)ptr;
 
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32s));
-            m_pMainQueueTasksState = (Ipp32u*)ptr;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            m_pMainQueueTasksState = (uint32_t*)ptr;
 
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32u) * 64);
-            m_pAdditionaQueueTasksState = (Ipp32u*)ptr;
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
+            m_pAdditionaQueueTasksState = (uint32_t*)ptr;
 
-            ptr += align_value<Ipp32u>(m_iNumFramesProcessing * sizeof(Ipp32u) * 64);
+            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
 
             m_pSHeap->s_new(&m_pCommonQueue, m_iNumFramesProcessing);
             m_pSHeap->s_new(&m_pAdditionalQueue, m_iNumFramesProcessing);
 
-            for (Ipp32u i = 0; i < m_iNumFramesProcessing; i++)
+            for (uint32_t i = 0; i < m_iNumFramesProcessing; i++)
             {
                 m_pDSIndicate[i] = i;
                 m_pSHeap->s_new(&m_pCommonQueue[i], VC1SLICEINPARAL);
@@ -627,49 +627,49 @@ namespace UMC
             m_eStreamDef = VC1_SD_STREAM;
     }
 
-    Ipp32u VC1TaskStoreSW::CalculateHeapSize()
+    uint32_t VC1TaskStoreSW::CalculateHeapSize()
     {
-        Ipp32u Size = 0;
-        Ipp32u counter = 0;
-        Ipp32u counter2 = 0;
+        uint32_t Size = 0;
+        uint32_t counter = 0;
+        uint32_t counter2 = 0;
 
-        Size += align_value<Ipp32u>(sizeof(VC1Task***)*m_iNumFramesProcessing); //m_pCommonQueue
-        Size += align_value<Ipp32u>(sizeof(VC1Task***)*m_iNumFramesProcessing); //m_pAdditionalQueue
+        Size += align_value<uint32_t>(sizeof(VC1Task***)*m_iNumFramesProcessing); //m_pCommonQueue
+        Size += align_value<uint32_t>(sizeof(VC1Task***)*m_iNumFramesProcessing); //m_pAdditionalQueue
 
         for (counter = 0; counter < m_iNumFramesProcessing; counter++)
         {
-            Size += align_value<Ipp32u>(sizeof(VC1Task**)*VC1SLICEINPARAL); //m_pCommonQueue
-            Size += align_value<Ipp32u>(sizeof(VC1Task**)*VC1SLICEINPARAL); //m_pAdditionalQueue
+            Size += align_value<uint32_t>(sizeof(VC1Task**)*VC1SLICEINPARAL); //m_pCommonQueue
+            Size += align_value<uint32_t>(sizeof(VC1Task**)*VC1SLICEINPARAL); //m_pAdditionalQueue
         }
 
         for (counter = 0; counter < m_iNumFramesProcessing; counter++)
         {
             for (counter2 = 0; counter2 < VC1SLICEINPARAL; counter2++)
             {
-                Size += align_value<Ipp32u>(sizeof(VC1Task)); //m_pCommonQueue
-                Size += align_value<Ipp32u>(sizeof(VC1Task)); //m_pAdditionalQueue
-                Size += align_value<Ipp32u>(sizeof(SliceParams));
-                Size += align_value<Ipp32u>(sizeof(SliceParams));
+                Size += align_value<uint32_t>(sizeof(VC1Task)); //m_pCommonQueue
+                Size += align_value<uint32_t>(sizeof(VC1Task)); //m_pAdditionalQueue
+                Size += align_value<uint32_t>(sizeof(SliceParams));
+                Size += align_value<uint32_t>(sizeof(SliceParams));
             }
         }
 
         return Size + VC1TaskStore::CalculateHeapSize();
     }
 
-    inline bool VC1TaskStoreSW::IsMainTaskPrepareForProcess(Ipp32u FrameID, Ipp32u TaskID)
+    inline bool VC1TaskStoreSW::IsMainTaskPrepareForProcess(uint32_t FrameID, uint32_t TaskID)
     {
         return (((m_pMainQueueTasksState[(FrameID << 6) + (TaskID / 8)] >> ((TaskID % 8) << 2)) & 0x7) == 0x4);
 
     }
-    inline bool VC1TaskStoreSW::IsAdditionalTaskPrepareForProcess(Ipp32u FrameID, Ipp32u TaskID)
+    inline bool VC1TaskStoreSW::IsAdditionalTaskPrepareForProcess(uint32_t FrameID, uint32_t TaskID)
     {
         return (((m_pAdditionaQueueTasksState[(FrameID << 6) + (TaskID / 8)] >> ((TaskID % 8) << 2)) & 0x7) == 0x4);
     }
-    inline bool VC1TaskStoreSW::IsFrameReadyToDisplay(Ipp32u FrameID)
+    inline bool VC1TaskStoreSW::IsFrameReadyToDisplay(uint32_t FrameID)
     {
-        Ipp32u NumDwordsForTasks = m_pTasksInQueue[FrameID] / 8 + 1;
-        Ipp32u RemainTasksMask = FrameReadyTable[m_pTasksInQueue[FrameID] % 8];
-        Ipp32u i;
+        uint32_t NumDwordsForTasks = m_pTasksInQueue[FrameID] / 8 + 1;
+        uint32_t RemainTasksMask = FrameReadyTable[m_pTasksInQueue[FrameID] % 8];
+        uint32_t i;
         for (i = (FrameID << 6); i < (FrameID << 6) + NumDwordsForTasks - 1; i++)
         {
             if ((FrameReadyTable[8] != m_pMainQueueTasksState[i]) ||
@@ -684,66 +684,66 @@ namespace UMC
 
     }
     // main queue processing
-    inline void VC1TaskStoreSW::SetTaskAsReady_MQ(Ipp32u FrameID, Ipp32u TaskID)
+    inline void VC1TaskStoreSW::SetTaskAsReady_MQ(uint32_t FrameID, uint32_t TaskID)
     {
-        Ipp32u *pCurrentDword = &m_pMainQueueTasksState[(FrameID << 6) + (TaskID / 8)];
+        uint32_t *pCurrentDword = &m_pMainQueueTasksState[(FrameID << 6) + (TaskID / 8)];
         *pCurrentDword |= 0x4 << ((TaskID % 8) << 2);
 
     }
-    inline void VC1TaskStoreSW::SetTaskAsNotReady_MQ(Ipp32u FrameID, Ipp32u TaskID)
+    inline void VC1TaskStoreSW::SetTaskAsNotReady_MQ(uint32_t FrameID, uint32_t TaskID)
     {
-        Ipp32u *pCurrentDword = &m_pMainQueueTasksState[(FrameID << 6) + (TaskID / 8)];
+        uint32_t *pCurrentDword = &m_pMainQueueTasksState[(FrameID << 6) + (TaskID / 8)];
         *pCurrentDword &= 0xFFFFFFFF - (0x4 << ((TaskID % 8) << 2));
 
     }
-    inline void VC1TaskStoreSW::SetTaskAsDone_MQ(Ipp32u FrameID, Ipp32u TaskID)
+    inline void VC1TaskStoreSW::SetTaskAsDone_MQ(uint32_t FrameID, uint32_t TaskID)
     {
-        Ipp32u *pCurrentDword = &m_pMainQueueTasksState[(FrameID << 6) + (TaskID / 8)];
+        uint32_t *pCurrentDword = &m_pMainQueueTasksState[(FrameID << 6) + (TaskID / 8)];
         *pCurrentDword |= 0x1 << ((TaskID % 8) << 2);
     }
-    inline void VC1TaskStoreSW::EnableProcessBit_MQ(Ipp32u FrameID, Ipp32u TaskID)
+    inline void VC1TaskStoreSW::EnableProcessBit_MQ(uint32_t FrameID, uint32_t TaskID)
     {
-        Ipp32u *pCurrentDword = &m_pMainQueueTasksState[(FrameID << 6) + (TaskID / 8)];
+        uint32_t *pCurrentDword = &m_pMainQueueTasksState[(FrameID << 6) + (TaskID / 8)];
         *pCurrentDword |= 0x2 << ((TaskID % 8) << 2);
     }
-    inline void VC1TaskStoreSW::DisableProcessBit_MQ(Ipp32u FrameID, Ipp32u TaskID)
+    inline void VC1TaskStoreSW::DisableProcessBit_MQ(uint32_t FrameID, uint32_t TaskID)
     {
-        Ipp32u *pCurrentDword = &m_pMainQueueTasksState[(FrameID << 6) + (TaskID / 8)];
+        uint32_t *pCurrentDword = &m_pMainQueueTasksState[(FrameID << 6) + (TaskID / 8)];
         *pCurrentDword &= 0xFFFFFFFF - (0x2 << ((TaskID % 8) << 2));
     }
 
     // additional queue processing
-    inline void VC1TaskStoreSW::SetTaskAsReady_AQ(Ipp32u FrameID, Ipp32u TaskID)
+    inline void VC1TaskStoreSW::SetTaskAsReady_AQ(uint32_t FrameID, uint32_t TaskID)
     {
-        Ipp32u *pCurrentDword = &m_pAdditionaQueueTasksState[(FrameID << 6) + (TaskID / 8)];
+        uint32_t *pCurrentDword = &m_pAdditionaQueueTasksState[(FrameID << 6) + (TaskID / 8)];
         *pCurrentDword |= 0x4 << ((TaskID % 8) << 2);
 
     }
-    inline void VC1TaskStoreSW::SetTaskAsNotReady_AQ(Ipp32u FrameID, Ipp32u TaskID)
+    inline void VC1TaskStoreSW::SetTaskAsNotReady_AQ(uint32_t FrameID, uint32_t TaskID)
     {
-        Ipp32u *pCurrentDword = &m_pAdditionaQueueTasksState[(FrameID << 6) + (TaskID / 8)];
+        uint32_t *pCurrentDword = &m_pAdditionaQueueTasksState[(FrameID << 6) + (TaskID / 8)];
         *pCurrentDword &= 0xFFFFFFFF - (0x4 << ((TaskID % 8) << 2));
 
     }
-    inline void VC1TaskStoreSW::SetTaskAsDone_AQ(Ipp32u FrameID, Ipp32u TaskID)
+    inline void VC1TaskStoreSW::SetTaskAsDone_AQ(uint32_t FrameID, uint32_t TaskID)
     {
-        Ipp32u *pCurrentDword = &m_pAdditionaQueueTasksState[(FrameID << 6) + (TaskID / 8)];
+        uint32_t *pCurrentDword = &m_pAdditionaQueueTasksState[(FrameID << 6) + (TaskID / 8)];
         *pCurrentDword |= 0x1 << ((TaskID % 8) << 2);
     }
-    inline void VC1TaskStoreSW::EnableProcessBit_AQ(Ipp32u FrameID, Ipp32u TaskID)
+    inline void VC1TaskStoreSW::EnableProcessBit_AQ(uint32_t FrameID, uint32_t TaskID)
     {
-        Ipp32u *pCurrentDword = &m_pAdditionaQueueTasksState[(FrameID << 6) + (TaskID / 8)];
+        uint32_t *pCurrentDword = &m_pAdditionaQueueTasksState[(FrameID << 6) + (TaskID / 8)];
         *pCurrentDword |= 0x2 << ((TaskID % 8) << 2);
     }
-    inline void VC1TaskStoreSW::DisableProcessBit_AQ(Ipp32u FrameID, Ipp32u TaskID)
+    inline void VC1TaskStoreSW::DisableProcessBit_AQ(uint32_t FrameID, uint32_t TaskID)
     {
-        Ipp32u *pCurrentDword = &m_pAdditionaQueueTasksState[(FrameID << 6) + (TaskID / 8)];
+        uint32_t *pCurrentDword = &m_pAdditionaQueueTasksState[(FrameID << 6) + (TaskID / 8)];
         *pCurrentDword &= 0xFFFFFFFF - (0x2 << ((TaskID % 8) << 2));
     }
 
     inline bool VC1TaskStoreSW::IsPerfomedDS()
     {
-        Ipp32u i;
+        uint32_t i;
         AutomaticMutex guard(m_mDSGuard);
         for (i = 0; i < m_iNumFramesProcessing; i++)
         {
@@ -760,7 +760,7 @@ namespace UMC
     void VC1TaskStoreSW::FreeBusyDescriptor()
     {
         AutomaticMutex guard(m_mDSGuard);
-        Ipp32u i;
+        uint32_t i;
         for (i = 0; i < m_iNumFramesProcessing; i++)
         {
             if (m_pDescriptorQueue[i]->m_bIsBusy)
@@ -772,7 +772,7 @@ namespace UMC
     bool VC1TaskStoreSW::IsProcessingDS()
     {
         AutomaticMutex guard(m_mDSGuard);
-        Ipp32u i;
+        uint32_t i;
         for (i = 0; i < m_iNumFramesProcessing; i++)
         {
             if (!m_pDescriptorQueue[i]->m_bIsReadyToLoad)
@@ -798,10 +798,10 @@ namespace UMC
 
     }
 
-    void VC1TaskStoreSW::OpenNextFrames(VC1FrameDescriptor* pDS, VC1FrameDescriptor** pPrevDS, Ipp32s* CurrRefDst, Ipp32s* CurBDst)
+    void VC1TaskStoreSW::OpenNextFrames(VC1FrameDescriptor* pDS, VC1FrameDescriptor** pPrevDS, int32_t* CurrRefDst, int32_t* CurBDst)
     {
         AutomaticMutex guard(m_mDSGuard);
-        Ipp32u i = 0;
+        uint32_t i = 0;
         bool isReadyReference = ((pDS->m_pContext->m_picLayerHeader->PTYPE != VC1_B_FRAME) &&
             (pDS->m_pContext->m_picLayerHeader->PTYPE != VC1_BI_FRAME)) ? (true) : (false);
 
@@ -813,8 +813,8 @@ namespace UMC
         *pPrevDS = NULL;
 
         // Swap frames to decode according to priorities
-        MFX_INTERNAL_CPY(m_pDSIndicateSwap, m_pDSIndicate, m_iNumFramesProcessing * sizeof(Ipp32s));
-        MFX_INTERNAL_CPY(m_pDSIndicate, m_pDSIndicateSwap + 1, (m_iNumFramesProcessing - 1) * sizeof(Ipp32s));
+        MFX_INTERNAL_CPY(m_pDSIndicateSwap, m_pDSIndicate, m_iNumFramesProcessing * sizeof(int32_t));
+        MFX_INTERNAL_CPY(m_pDSIndicate, m_pDSIndicateSwap + 1, (m_iNumFramesProcessing - 1) * sizeof(int32_t));
         m_pDSIndicate[m_iNumFramesProcessing - 1] = m_pDSIndicateSwap[0];
 
         m_pPrefDS = GetPreferedDS();
@@ -864,7 +864,7 @@ namespace UMC
         }
     }
 
-    void VC1TaskStoreSW::SetDstForFrameAdv(VC1FrameDescriptor* pDS, Ipp32s* CurrRefDst, Ipp32s* CurBDst)
+    void VC1TaskStoreSW::SetDstForFrameAdv(VC1FrameDescriptor* pDS, int32_t* CurrRefDst, int32_t* CurBDst)
     {
         AutomaticMutex guard(m_mDSGuard);
         bool isFrameReference = ((pDS->m_pContext->m_picLayerHeader->PTYPE != VC1_B_FRAME) &&
@@ -906,7 +906,7 @@ namespace UMC
 
     }
 
-    void VC1TaskStoreSW::SetDstForFrame(VC1FrameDescriptor* pDS, Ipp32s* CurrRefDst, Ipp32s* CurBDst)
+    void VC1TaskStoreSW::SetDstForFrame(VC1FrameDescriptor* pDS, int32_t* CurrRefDst, int32_t* CurBDst)
     {
         AutomaticMutex guard(m_mDSGuard);
 
@@ -976,7 +976,7 @@ namespace UMC
         }
         if (pDS->m_bIsReferenceReady)
         {
-            for (Ipp32u i = 0; i < m_pTasksInQueue[pDS->m_iSelfID]; i++)
+            for (uint32_t i = 0; i < m_pTasksInQueue[pDS->m_iSelfID]; i++)
             {
                 if (((m_pCommonQueue[pDS->m_iSelfID])[i]->m_eTasktype > VC1Decode) &&
                     ((m_pAdditionalQueue[pDS->m_iSelfID])[i]->m_isFieldReady))
@@ -1002,7 +1002,7 @@ namespace UMC
         // Reference
         pDS->m_bIsReferenceReady = true;
 
-        for (Ipp32u i = 0; i < m_pTasksInQueue[pDS->m_iSelfID]; i++)
+        for (uint32_t i = 0; i < m_pTasksInQueue[pDS->m_iSelfID]; i++)
         {
             if (((m_pCommonQueue[pDS->m_iSelfID])[i]->m_eTasktype > VC1Decode) &&
                 ((m_pAdditionalQueue[pDS->m_iSelfID])[i]->m_isFieldReady))
@@ -1034,9 +1034,9 @@ namespace UMC
         }
     }
 
-    VC1PictureLayerHeader* VC1TaskStoreSW::GetFirstInSecondField(Ipp32u qID)
+    VC1PictureLayerHeader* VC1TaskStoreSW::GetFirstInSecondField(uint32_t qID)
     {
-        for (Ipp32u i = 0; i < m_pTasksInQueue[qID]; i += 1)
+        for (uint32_t i = 0; i < m_pTasksInQueue[qID]; i += 1)
         {
             if ((m_pCommonQueue[qID])[i]->m_isFirstInSecondSlice)
                 return (m_pCommonQueue[qID])[i]->m_pSlice->m_picLayerHeader;
@@ -1046,8 +1046,8 @@ namespace UMC
 
     bool VC1TaskStoreSW::CreateTaskQueues()
     {
-        Ipp32u i, j;
-        Ipp8u* pBuf;
+        uint32_t i, j;
+        uint8_t* pBuf;
         for (j = 0; j < m_iNumFramesProcessing; j++)
         {
             for (i = 0; i < VC1SLICEINPARAL; i++)
@@ -1072,17 +1072,17 @@ namespace UMC
         return true;
     }
 
-    bool VC1TaskStoreSW::AddSampleTask(VC1Task* _pTask, Ipp32u qID)
+    bool VC1TaskStoreSW::AddSampleTask(VC1Task* _pTask, uint32_t qID)
     {
-        Ipp32u widthMB = m_pDescriptorQueue[qID]->m_pContext->m_seqLayerHeader.MaxWidthMB;
-        Ipp16u curMBrow = _pTask->m_pSlice->MBStartRow;
+        uint32_t widthMB = m_pDescriptorQueue[qID]->m_pContext->m_seqLayerHeader.MaxWidthMB;
+        uint16_t curMBrow = _pTask->m_pSlice->MBStartRow;
 
         if (0 == curMBrow)
         {
             m_pTasksInQueue[qID] = 0;
             m_pSlicesInQueue[qID] = 0;
-            memset(m_pMainQueueTasksState + (qID << 6), 0, 64 * sizeof(Ipp32u));
-            memset(m_pAdditionaQueueTasksState + (qID << 6), 0, 64 * sizeof(Ipp32u));
+            memset(m_pMainQueueTasksState + (qID << 6), 0, 64 * sizeof(uint32_t));
+            memset(m_pAdditionaQueueTasksState + (qID << 6), 0, 64 * sizeof(uint32_t));
         }
 
         bool isFirstSlieceDecodeTask = true;
@@ -1143,9 +1143,9 @@ namespace UMC
         return true;
     }
 
-    void VC1TaskStoreSW::DistributeTasks(Ipp32u qID)
+    void VC1TaskStoreSW::DistributeTasks(uint32_t qID)
     {
-        for (Ipp32u i = 0; i < m_pTasksInQueue[qID]; i++)
+        for (uint32_t i = 0; i < m_pTasksInQueue[qID]; i++)
         {
             VC1Task* pTask = (m_pAdditionalQueue[qID])[i];
             pTask->m_isFirstInSecondSlice = false;
@@ -1196,7 +1196,7 @@ namespace UMC
         }
     }
 
-    bool VC1TaskStoreSW::GetNextTask(VC1FrameDescriptor **pFrameDS, VC1Task** pTask, Ipp32u qID)
+    bool VC1TaskStoreSW::GetNextTask(VC1FrameDescriptor **pFrameDS, VC1Task** pTask, uint32_t qID)
     {
         if (m_iConsumerNumber <= 2)
         {
@@ -1221,12 +1221,12 @@ namespace UMC
             return GetNextTaskManyCPU_HD(pFrameDS, pTask, qID);
 
     }
-    bool VC1TaskStoreSW::GetNextTaskDualCPU(VC1FrameDescriptor **pFrameDS, VC1Task** pTask, Ipp32u qID)
+    bool VC1TaskStoreSW::GetNextTaskDualCPU(VC1FrameDescriptor **pFrameDS, VC1Task** pTask, uint32_t qID)
     {
-        Ipp32u curFrame = qID;
-        Ipp32u frameCount;
-        Ipp32u i;
-        for (Ipp32u count = 0; count < m_iNumFramesProcessing; count++) // for 2-core CPU
+        uint32_t curFrame = qID;
+        uint32_t frameCount;
+        uint32_t i;
+        for (uint32_t count = 0; count < m_iNumFramesProcessing; count++) // for 2-core CPU
         {
             frameCount = m_pDSIndicate[curFrame];
             {
@@ -1273,13 +1273,13 @@ namespace UMC
         return true;
     }
 
-    bool VC1TaskStoreSW::GetNextTaskManyCPU_HD(VC1FrameDescriptor **pFrameDS, VC1Task** pTask, Ipp32u qID)
+    bool VC1TaskStoreSW::GetNextTaskManyCPU_HD(VC1FrameDescriptor **pFrameDS, VC1Task** pTask, uint32_t qID)
     {
-        Ipp32u StartFrame = (m_iConsumerNumber <= 2) ? 0 : 1;
-        Ipp32s frameCount = m_pPrefDS->m_iSelfID;
+        uint32_t StartFrame = (m_iConsumerNumber <= 2) ? 0 : 1;
+        int32_t frameCount = m_pPrefDS->m_iSelfID;
 
 
-        Ipp32u i = 0;
+        uint32_t i = 0;
         // Get Task from First frame in Queue
         if (((qID<(m_iConsumerNumber >> 1))) || (m_iConsumerNumber <= 2))
         {
@@ -1317,8 +1317,8 @@ namespace UMC
             guard.Unlock();
         }
 
-        Ipp32u curFrame = qID;
-        for (Ipp32u count = StartFrame; count < m_iNumFramesProcessing; count++) // for 2-core CPU
+        uint32_t curFrame = qID;
+        for (uint32_t count = StartFrame; count < m_iNumFramesProcessing; count++) // for 2-core CPU
         {
             frameCount = m_pDSIndicate[count];
             {
@@ -1363,13 +1363,13 @@ namespace UMC
         *pTask = NULL;
         return true;
     }
-    bool VC1TaskStoreSW::GetNextTaskManyCPU_MD(VC1FrameDescriptor **pFrameDS, VC1Task** pTask, Ipp32u qID)
+    bool VC1TaskStoreSW::GetNextTaskManyCPU_MD(VC1FrameDescriptor **pFrameDS, VC1Task** pTask, uint32_t qID)
     {
         //same pipeline as for Dual case
         return GetNextTaskDualCPU(pFrameDS, pTask, qID);
 
     }
-    bool VC1TaskStoreSW::GetNextTaskMainThread(VC1FrameDescriptor **pFrameDS, VC1Task** pTask, Ipp32u qID, bool &isFrameComplete)
+    bool VC1TaskStoreSW::GetNextTaskMainThread(VC1FrameDescriptor **pFrameDS, VC1Task** pTask, uint32_t qID, bool &isFrameComplete)
     {
         if (IsPerfomedDS())
         {
@@ -1381,13 +1381,13 @@ namespace UMC
 
     bool VC1TaskStoreSW::AddPerfomedTask(VC1Task* pTask, VC1FrameDescriptor *pFrameDS)
     {
-        Ipp32u qID = pFrameDS->m_iSelfID;
+        uint32_t qID = pFrameDS->m_iSelfID;
 
         // check error(s)
         if ((NULL == pTask) || (0 >= m_pTasksInQueue[qID]))
             return false;
         VC1TaskTypes NextStateTypeofTask;
-        Ipp32u i = pTask->m_iTaskID;
+        uint32_t i = pTask->m_iTaskID;
 
         if (pTask->m_eTasktype <= VC1Reconstruct)
         {
@@ -1520,7 +1520,7 @@ namespace UMC
 
                 if (pTask->m_pSlice->m_picLayerHeader->FCM == VC1_FrameInterlace) // In case of Interlace Frames slices are depends
                 {
-                    Ipp8u DeblockMask = 0;  // 0 bit - Down edge, 1 bit - UP edge
+                    uint8_t DeblockMask = 0;  // 0 bit - Down edge, 1 bit - UP edge
                     if (i > 0)
                     {
                         if ((m_pAdditionalQueue[qID])[i]->m_pSlice->is_LastInSlice)
@@ -1651,7 +1651,7 @@ namespace UMC
                     if ((m_pDescriptorQueue[qID]->m_pContext->m_picLayerHeader->FCM == VC1_FieldInterlace) &&
                         (m_pDescriptorQueue[qID]->m_iActiveTasksInFirstField == 0))
                     {
-                        Ipp32u count;
+                        uint32_t count;
                         VC1Context* pContext = m_pDescriptorQueue[qID]->m_pContext;
                         VC1PictureLayerHeader * picLayerHeader = GetFirstInSecondField(qID);
                         if (picLayerHeader)
@@ -1718,9 +1718,9 @@ namespace UMC
         pContext->m_frmBuff.m_pFrames[index].m_pU = pFrameData->GetPlaneMemoryInfo(1)->m_planePtr;
         pContext->m_frmBuff.m_pFrames[index].m_pV = pFrameData->GetPlaneMemoryInfo(2)->m_planePtr;
 
-        pContext->m_frmBuff.m_pFrames[index].m_iYPitch = (Ipp32u)pFrameData->GetPlaneMemoryInfo(0)->m_pitch;
-        pContext->m_frmBuff.m_pFrames[index].m_iUPitch = (Ipp32u)pFrameData->GetPlaneMemoryInfo(1)->m_pitch;
-        pContext->m_frmBuff.m_pFrames[index].m_iVPitch = (Ipp32u)pFrameData->GetPlaneMemoryInfo(2)->m_pitch;
+        pContext->m_frmBuff.m_pFrames[index].m_iYPitch = (uint32_t)pFrameData->GetPlaneMemoryInfo(0)->m_pitch;
+        pContext->m_frmBuff.m_pFrames[index].m_iUPitch = (uint32_t)pFrameData->GetPlaneMemoryInfo(1)->m_pitch;
+        pContext->m_frmBuff.m_pFrames[index].m_iVPitch = (uint32_t)pFrameData->GetPlaneMemoryInfo(2)->m_pitch;
 
         pContext->m_frmBuff.m_pFrames[index].pRANGE_MAPY = &pContext->m_frmBuff.m_pFrames[index].RANGE_MAPY;
     }
@@ -1731,11 +1731,11 @@ namespace UMC
 
         // B frames TBD
         Status sts;
-        Ipp32s Idx;
+        int32_t Idx;
         const FrameData* pFrameData;
         VideoDataInfo Info;
-        Ipp32u h = pMainVC1Decoder->m_pCurrentOut->GetHeight();
-        Ipp32u w = pMainVC1Decoder->m_pCurrentOut->GetWidth();
+        uint32_t h = pMainVC1Decoder->m_pCurrentOut->GetHeight();
+        uint32_t w = pMainVC1Decoder->m_pCurrentOut->GetWidth();
         Info.Init(w, h, YUV420);
         sts = pMainVC1Decoder->m_pExtFrameAllocator->Alloc(mid, &Info, 0);
         if (UMC_OK != sts)
@@ -1759,7 +1759,7 @@ namespace UMC
         return 0;
     }
 
-    void VC1TaskStoreSW::UnLockSurface(Ipp32s memID)
+    void VC1TaskStoreSW::UnLockSurface(int32_t memID)
     {
         FrameMemID mid = UnLockIdx(memID);
         if (mid > -1)
@@ -1770,21 +1770,21 @@ namespace UMC
         }
     }
 
-    Ipp32s VC1TaskStoreSW::LockAndAssocFreeIdx(FrameMemID mid)
+    int32_t VC1TaskStoreSW::LockAndAssocFreeIdx(FrameMemID mid)
     {
-        for (Ipp32u i = 0; i < IntIndexes.size(); i++)
+        for (uint32_t i = 0; i < IntIndexes.size(); i++)
         {
             if (IntIndexes[i])
             {
                 IntIndexes[i] = false;
-                AssocIdx.insert(std::pair<Ipp32u, FrameMemID>(i, mid));
+                AssocIdx.insert(std::pair<uint32_t, FrameMemID>(i, mid));
                 return i;
             }
         }
         return -1;
     }
 
-    FrameMemID   VC1TaskStoreSW::UnLockIdx(Ipp32u Idx)
+    FrameMemID   VC1TaskStoreSW::UnLockIdx(uint32_t Idx)
     {
         if (Idx >= IntIndexes.size())
             return -1;
@@ -1792,7 +1792,7 @@ namespace UMC
             return -1;
         else
         {
-            std::map<Ipp32u, FrameMemID>::iterator it;
+            std::map<uint32_t, FrameMemID>::iterator it;
             IntIndexes[Idx] = true;
             it = AssocIdx.find(Idx);
             FrameMemID memID = it->second;
@@ -1801,7 +1801,7 @@ namespace UMC
         }
     }
 
-    FrameMemID  VC1TaskStoreSW::GetIdx(Ipp32u Idx)
+    FrameMemID  VC1TaskStoreSW::GetIdx(uint32_t Idx)
     {
         if (Idx >= IntIndexes.size())
             return -1;
@@ -1810,20 +1810,20 @@ namespace UMC
         return AssocIdx.find(Idx)->second;
     }
 
-    void VC1TaskStoreSW::FillIdxVector(Ipp32u size)
+    void VC1TaskStoreSW::FillIdxVector(uint32_t size)
     {
-        for (Ipp32u i = 0; i < size; i++)
+        for (uint32_t i = 0; i < size; i++)
             IntIndexes.push_back(true);
     }
 
     bool VC1TaskStoreSW::CreateDSQueue(VC1Context* pContext,
         bool IsReorder,
-        Ipp16s* pResidBuf)
+        int16_t* pResidBuf)
     {
         (void)IsReorder;
 
-        Ipp32u i;
-        Ipp8u* pBuf;
+        uint32_t i;
+        uint8_t* pBuf;
         m_pSHeap->s_new(&m_pDescriptorQueue, m_iNumFramesProcessing);
         for (i = 0; i < m_iNumFramesProcessing; i++)
         {

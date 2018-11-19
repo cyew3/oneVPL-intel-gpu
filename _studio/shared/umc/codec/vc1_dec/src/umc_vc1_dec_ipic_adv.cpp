@@ -184,7 +184,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
 
-    Ipp32u tempValue;
+    uint32_t tempValue;
 
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
@@ -292,7 +292,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldIpicture_Adv(VC1Context* pContex
 #ifdef ALLOW_SW_VC1_FALLBACK
 VC1Status Decode_InterlaceFieldIpicture_Adv(VC1Context* pContext)
 {
-    Ipp32s i, j;
+    int32_t i, j;
     VC1Status vc1Res = VC1_OK;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
 
@@ -327,7 +327,7 @@ VC1Status Decode_InterlaceFieldIpicture_Adv(VC1Context* pContext)
 
     if ((pContext->m_seqLayerHeader.LOOPFILTER))
     {
-        Ipp32u deblock_offset = 0;
+        uint32_t deblock_offset = 0;
         if (!pContext->DeblockInfo.is_last_deblock)
             deblock_offset = 1;
 

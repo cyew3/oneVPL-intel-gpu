@@ -43,17 +43,17 @@ namespace UMC_VC1_ENCODER
     //|  |-------|   |//
     //|--------------|//
 
-    inline void ReplicateBorderChroma_YV12 (Ipp8u* pU,Ipp8u* pV, Ipp32u stepUV,IppiSize srcRoiSizeUV, IppiSize dstRoiSizeUV, 
+    inline void ReplicateBorderChroma_YV12 (uint8_t* pU,uint8_t* pV, uint32_t stepUV,mfxSize srcRoiSizeUV, mfxSize dstRoiSizeUV, 
                                             int topBorderWidth,  int leftBorderWidth)
     {
         _own_ippiReplicateBorder_8u_C1R  (pU, stepUV, srcRoiSizeUV,dstRoiSizeUV,topBorderWidth,leftBorderWidth);
         _own_ippiReplicateBorder_8u_C1R  (pV, stepUV, srcRoiSizeUV,dstRoiSizeUV,topBorderWidth,leftBorderWidth);
     }
 
-    inline void ReplicateBorderChroma_NV12 (Ipp8u* pUV,Ipp8u* /*pV*/, Ipp32u stepUV,IppiSize srcRoiSizeUV, IppiSize dstRoiSizeUV, 
+    inline void ReplicateBorderChroma_NV12 (uint8_t* pUV,uint8_t* /*pV*/, uint32_t stepUV,mfxSize srcRoiSizeUV, mfxSize dstRoiSizeUV, 
                                      int topBorderWidth,  int leftBorderWidth)
     {
-        _own_ippiReplicateBorder_16u_C1R  ((Ipp16u*)pUV, stepUV, srcRoiSizeUV,dstRoiSizeUV,topBorderWidth,leftBorderWidth);
+        _own_ippiReplicateBorder_16u_C1R  ((uint16_t*)pUV, stepUV, srcRoiSizeUV,dstRoiSizeUV,topBorderWidth,leftBorderWidth);
     }
 
     class Frame
@@ -86,17 +86,17 @@ namespace UMC_VC1_ENCODER
            {
                 Close ();
            }
-           static Ipp32u CalcAllocatedMemSize(Ipp32u w, Ipp32u h, Ipp32u paddingSize, bool bUData = false);
-           virtual UMC::Status Init(Ipp8u* pBuffer, Ipp32s memSize, Ipp32s w, Ipp32s h, Ipp32u paddingSize, bool bUData = false);
+           static uint32_t CalcAllocatedMemSize(uint32_t w, uint32_t h, uint32_t paddingSize, bool bUData = false);
+           virtual UMC::Status Init(uint8_t* pBuffer, int32_t memSize, int32_t w, int32_t h, uint32_t paddingSize, bool bUData = false);
 
-           UMC::Status Init(    Ipp8u* pYPlane, Ipp32u stepY,
-                                Ipp8u* pUPlane, Ipp8u* pVPlane, Ipp32u stepUV,
-                                Ipp32s Width, Ipp32s WidthUV,
-                                Ipp32s Height,Ipp32s HeightUV,
-                                Ipp32u paddingSize,
+           UMC::Status Init(    uint8_t* pYPlane, uint32_t stepY,
+                                uint8_t* pUPlane, uint8_t* pVPlane, uint32_t stepUV,
+                                int32_t Width, int32_t WidthUV,
+                                int32_t Height,int32_t HeightUV,
+                                uint32_t paddingSize,
                                 ePType pictureType,
-                                Ipp8u* pUDataBuffer=0,
-                                Ipp32u UDataBufferSize = 0)
+                                uint8_t* pUDataBuffer=0,
+                                uint32_t UDataBufferSize = 0)
            {
                 m_pYFrame = 0;
                 m_pUFrame = 0;
@@ -126,10 +126,10 @@ namespace UMC_VC1_ENCODER
            virtual UMC::Status PadFrameProgressive()
            {
 
-               IppiSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane};
-               IppiSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
-               IppiSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize<<1) };
-               IppiSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
+               mfxSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane};
+               mfxSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
+               mfxSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize<<1) };
+               mfxSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
 
                _own_ippiReplicateBorder_8u_C1R  (m_pYPlane, m_stepY, srcRoiSizeY,dstRoiSizeY,m_paddingSize,m_paddingSize);
                ReplicateBorderChroma_YV12(m_pUPlane,m_pVPlane, m_stepUV, srcRoiSizeUV,dstRoiSizeUV,m_paddingSize>>1,m_paddingSize>>1);
@@ -140,10 +140,10 @@ namespace UMC_VC1_ENCODER
            virtual UMC::Status PadFrameField()
            {
 
-               IppiSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
-               IppiSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
-               IppiSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize) };
-               IppiSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
+               mfxSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
+               mfxSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
+               mfxSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize) };
+               mfxSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
 
                _own_ippiReplicateBorder_8u_C1R  (m_pYPlane,            m_stepY<<1, srcRoiSizeY,dstRoiSizeY,m_paddingSize>>1,m_paddingSize);
                _own_ippiReplicateBorder_8u_C1R  (m_pYPlane + m_stepY,  m_stepY<<1, srcRoiSizeY,dstRoiSizeY,m_paddingSize>>1,m_paddingSize);
@@ -158,10 +158,10 @@ namespace UMC_VC1_ENCODER
 
            virtual UMC::Status PadField(bool bBottomField)
            {
-               IppiSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
-               IppiSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
-               IppiSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize) };
-               IppiSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
+               mfxSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
+               mfxSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
+               mfxSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize) };
+               mfxSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
 
                if (!bBottomField)
                {
@@ -183,10 +183,10 @@ namespace UMC_VC1_ENCODER
            virtual UMC::Status PadPlaneProgressive()
            {
 
-               IppiSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane};
-               IppiSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
-               IppiSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4),(((srcRoiSizeY.height  + 15)>>4)<<4)};
-               IppiSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
+               mfxSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane};
+               mfxSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
+               mfxSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4),(((srcRoiSizeY.height  + 15)>>4)<<4)};
+               mfxSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
 
 
                _own_ippiReplicateBorder_8u_C1R  (m_pYPlane, m_stepY, srcRoiSizeY,dstRoiSizeY,0,0);
@@ -197,10 +197,10 @@ namespace UMC_VC1_ENCODER
 
            virtual UMC::Status PadPlaneField()
            {
-               IppiSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
-               IppiSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
-               IppiSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4),(((srcRoiSizeY.height  + 15)>>4)<<4) };
-               IppiSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
+               mfxSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
+               mfxSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
+               mfxSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4),(((srcRoiSizeY.height  + 15)>>4)<<4) };
+               mfxSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
 
 
                _own_ippiReplicateBorder_8u_C1R  (m_pYPlane,            m_stepY<<1, srcRoiSizeY,dstRoiSizeY,0,0);
@@ -212,9 +212,9 @@ namespace UMC_VC1_ENCODER
                return UMC::UMC_OK;
            }
 
-           virtual  UMC::Status CopyPlane ( Ipp8u* pYPlane, Ipp32u stepY,
-                                            Ipp8u* pUPlane, Ipp32u stepU,
-                                            Ipp8u* pVPlane, Ipp32u stepV,
+           virtual  UMC::Status CopyPlane ( uint8_t* pYPlane, uint32_t stepY,
+                                            uint8_t* pUPlane, uint32_t stepU,
+                                            uint8_t* pVPlane, uint32_t stepV,
                                             ePType pictureType=VC1_ENC_I_FRAME);
            virtual UMC::Status CopyPlane (Frame * fr);
 
@@ -228,15 +228,15 @@ namespace UMC_VC1_ENCODER
                 return m_pictureType;
            };
 
-           inline Ipp8u* GetYPlane() {return m_pYPlane;}
-           inline Ipp8u* GetUPlane() {return m_pUPlane;}
-           inline Ipp8u* GetVPlane() {return m_pVPlane;}
-           inline Ipp32u GetYStep()  {return m_stepY;}
-           inline Ipp32u GetUStep()  {return m_stepUV;}
-           inline Ipp32u GetVStep()  {return m_stepUV;}
-           inline void GetPlane_Prog ( Ipp8u *& pY, Ipp32u& YStep,
-                                       Ipp8u *& pU, Ipp8u*& pV, 
-                                       Ipp32u&  UVStep)
+           inline uint8_t* GetYPlane() {return m_pYPlane;}
+           inline uint8_t* GetUPlane() {return m_pUPlane;}
+           inline uint8_t* GetVPlane() {return m_pVPlane;}
+           inline uint32_t GetYStep()  {return m_stepY;}
+           inline uint32_t GetUStep()  {return m_stepUV;}
+           inline uint32_t GetVStep()  {return m_stepUV;}
+           inline void GetPlane_Prog ( uint8_t *& pY, uint32_t& YStep,
+                                       uint8_t *& pU, uint8_t*& pV, 
+                                       uint32_t&  UVStep)
            {
                 pY       = m_pYPlane;
                 pU       = m_pUPlane;
@@ -245,9 +245,9 @@ namespace UMC_VC1_ENCODER
                 UVStep   = m_stepUV;
            }
            inline void GetPlane_Field ( bool     bBottom,
-                                        Ipp8u *& pY, Ipp32u& YStep,
-                                        Ipp8u *& pU, Ipp8u*& pV, 
-                                        Ipp32u&  UVStep)
+                                        uint8_t *& pY, uint32_t& YStep,
+                                        uint8_t *& pU, uint8_t*& pV, 
+                                        uint32_t&  UVStep)
            {
                pY       = m_pYPlane + ((bBottom)? m_stepY:0);
                pU       = m_pUPlane + ((bBottom)? m_stepUV:0);
@@ -257,16 +257,16 @@ namespace UMC_VC1_ENCODER
            }
 
 
-           inline Ipp32u GetPaddingSize()
+           inline uint32_t GetPaddingSize()
            {
                 return m_paddingSize;           
            }
-           inline void GetPictureSizeLuma(IppiSize *pSize)
+           inline void GetPictureSizeLuma(mfxSize *pSize)
            {
                 pSize->height = m_heightYPlane;
                 pSize->width  = m_widthYPlane;
            }
-           inline void GetPictureSizeChroma(IppiSize *pSize)
+           inline void GetPictureSizeChroma(mfxSize *pSize)
            {
                 pSize->height = m_heightUVPlane;
                 pSize->width  = m_widthUVPlane;
@@ -316,7 +316,7 @@ namespace UMC_VC1_ENCODER
                        m_pictureType == VC1_ENC_B_BI_FIELD ||
                        m_pictureType == VC1_ENC_BI_BI_FIELD);
            }
-           inline bool SetUserData(Ipp8u* pBuf, Ipp32u size)
+           inline bool SetUserData(uint8_t* pBuf, uint32_t size)
            {
                if (m_UDataBuffer!=0 && size < m_UDataBufferSize && size !=0)
                {
@@ -331,11 +331,11 @@ namespace UMC_VC1_ENCODER
            {
                 m_UDataSize = 0;
            }
-           inline Ipp32u GetUserDataSize ()
+           inline uint32_t GetUserDataSize ()
            {
                return m_UDataSize;
            }
-           inline Ipp8u* GetUserData ()
+           inline uint8_t* GetUserData ()
            {
                return m_UDataBuffer;
            }
@@ -343,27 +343,27 @@ namespace UMC_VC1_ENCODER
 
     protected:
 
-        Ipp8u* m_pYFrame;
-        Ipp8u* m_pUFrame;
-        Ipp8u* m_pVFrame;
+        uint8_t* m_pYFrame;
+        uint8_t* m_pUFrame;
+        uint8_t* m_pVFrame;
 
-        Ipp32u m_stepY;
-        Ipp32u m_stepUV;
+        uint32_t m_stepY;
+        uint32_t m_stepUV;
 
-        Ipp8u* m_pYPlane;
-        Ipp8u* m_pUPlane;
-        Ipp8u* m_pVPlane;
-        Ipp8u* m_UDataBuffer;
-        Ipp32u m_UDataBufferSize;
-        Ipp32u m_UDataSize;
+        uint8_t* m_pYPlane;
+        uint8_t* m_pUPlane;
+        uint8_t* m_pVPlane;
+        uint8_t* m_UDataBuffer;
+        uint32_t m_UDataBufferSize;
+        uint32_t m_UDataSize;
 
-        Ipp32s m_widthYPlane;
-        Ipp32s m_widthUVPlane;
+        int32_t m_widthYPlane;
+        int32_t m_widthUVPlane;
 
-        Ipp32s m_heightYPlane;
-        Ipp32s m_heightUVPlane;
+        int32_t m_heightYPlane;
+        int32_t m_heightUVPlane;
 
-        Ipp32u m_paddingSize;
+        uint32_t m_paddingSize;
 
         ePType m_pictureType;
         bool   m_bTaken;
@@ -373,20 +373,20 @@ namespace UMC_VC1_ENCODER
     {
     public:
 
-          virtual UMC::Status Init(Ipp8u* pBuffer, Ipp32s memSize, Ipp32s w, Ipp32s h, Ipp32u paddingSize, bool bUData = false);
-          virtual  UMC::Status CopyPlane (  Ipp8u* pYPlane, Ipp32u stepY,
-                                            Ipp8u* pUPlane, Ipp32u stepU,
-                                            Ipp8u* pVPlane, Ipp32u stepV,
+          virtual UMC::Status Init(uint8_t* pBuffer, int32_t memSize, int32_t w, int32_t h, uint32_t paddingSize, bool bUData = false);
+          virtual  UMC::Status CopyPlane (  uint8_t* pYPlane, uint32_t stepY,
+                                            uint8_t* pUPlane, uint32_t stepU,
+                                            uint8_t* pVPlane, uint32_t stepV,
                                             ePType pictureType=VC1_ENC_I_FRAME);
           virtual UMC::Status CopyPlane (Frame * fr);
 
           virtual UMC::Status PadFrameProgressive()
           {
 
-              IppiSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane};
-              IppiSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
-              IppiSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize<<1) };
-              IppiSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
+              mfxSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane};
+              mfxSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
+              mfxSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize<<1) };
+              mfxSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
 
               _own_ippiReplicateBorder_8u_C1R  (m_pYPlane, m_stepY, srcRoiSizeY,dstRoiSizeY,m_paddingSize,m_paddingSize);
               ReplicateBorderChroma_NV12(m_pUPlane,m_pVPlane, m_stepUV, srcRoiSizeUV,dstRoiSizeUV,m_paddingSize>>1,m_paddingSize>>1);
@@ -397,10 +397,10 @@ namespace UMC_VC1_ENCODER
           virtual UMC::Status PadFrameField()
           {
 
-              IppiSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
-              IppiSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
-              IppiSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize) };
-              IppiSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
+              mfxSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
+              mfxSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
+              mfxSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize) };
+              mfxSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
 
               _own_ippiReplicateBorder_8u_C1R  (m_pYPlane,            m_stepY<<1, srcRoiSizeY,dstRoiSizeY,m_paddingSize>>1,m_paddingSize);
               _own_ippiReplicateBorder_8u_C1R  (m_pYPlane + m_stepY,  m_stepY<<1, srcRoiSizeY,dstRoiSizeY,m_paddingSize>>1,m_paddingSize);
@@ -415,10 +415,10 @@ namespace UMC_VC1_ENCODER
 
           virtual UMC::Status PadField(bool bBottomField)
           {
-              IppiSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
-              IppiSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
-              IppiSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize) };
-              IppiSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
+              mfxSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
+              mfxSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
+              mfxSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4) + (m_paddingSize<<1),(((srcRoiSizeY.height  + 15)>>4)<<4)+ (m_paddingSize) };
+              mfxSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
 
               if (!bBottomField)
               {
@@ -440,10 +440,10 @@ namespace UMC_VC1_ENCODER
           virtual UMC::Status PadPlaneProgressive()
           {
 
-              IppiSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane};
-              IppiSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
-              IppiSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4),(((srcRoiSizeY.height  + 15)>>4)<<4)};
-              IppiSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
+              mfxSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane};
+              mfxSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
+              mfxSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4),(((srcRoiSizeY.height  + 15)>>4)<<4)};
+              mfxSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
 
 
               _own_ippiReplicateBorder_8u_C1R  (m_pYPlane, m_stepY, srcRoiSizeY,dstRoiSizeY,0,0);
@@ -454,10 +454,10 @@ namespace UMC_VC1_ENCODER
 
           virtual UMC::Status PadPlaneField()
           {
-              IppiSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
-              IppiSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
-              IppiSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4),(((srcRoiSizeY.height  + 15)>>4)<<4) };
-              IppiSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
+              mfxSize srcRoiSizeY   = {m_widthYPlane ,m_heightYPlane>>1};
+              mfxSize srcRoiSizeUV  = {srcRoiSizeY.width>>1,srcRoiSizeY.height>>1};
+              mfxSize dstRoiSizeY   = {(((srcRoiSizeY.width  + 15)>>4)<<4),(((srcRoiSizeY.height  + 15)>>4)<<4) };
+              mfxSize dstRoiSizeUV  = {dstRoiSizeY.width>>1,dstRoiSizeY.height>>1};
 
 
               _own_ippiReplicateBorder_8u_C1R  (m_pYPlane,            m_stepY<<1, srcRoiSizeY,dstRoiSizeY,0,0);
@@ -477,28 +477,28 @@ namespace UMC_VC1_ENCODER
             m_pFrames(0)
             {};
 
-        static Ipp32u CalcAllocatedMemSize(Ipp32u nFrames, Ipp32u w, Ipp32u h, Ipp32u paddingSize,bool bNV12, bool bUserData = false)
+        static uint32_t CalcAllocatedMemSize(uint32_t nFrames, uint32_t w, uint32_t h, uint32_t paddingSize,bool bNV12, bool bUserData = false)
         {
-            Ipp32u memSize = 0;
+            uint32_t memSize = 0;
             if (bNV12)
             {
-                memSize += UMC::align_value<Ipp32u>(nFrames*sizeof(FrameNV12));
-                memSize += nFrames*UMC::align_value<Ipp32u>(FrameNV12::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
+                memSize += UMC::align_value<uint32_t>(nFrames*sizeof(FrameNV12));
+                memSize += nFrames*UMC::align_value<uint32_t>(FrameNV12::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
             }
             else
             {
-                memSize += UMC::align_value<Ipp32u>(nFrames*sizeof(Frame));
-                memSize += nFrames*UMC::align_value<Ipp32u>(Frame::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
+                memSize += UMC::align_value<uint32_t>(nFrames*sizeof(Frame));
+                memSize += nFrames*UMC::align_value<uint32_t>(Frame::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
             }
 
             return memSize;
         }
 
-        UMC::Status Init(Ipp8u* pBuffer, Ipp32u memSize, Ipp32u nFrames, Ipp32u w, Ipp32u h, Ipp32u paddingSize, bool bNV12,bool bUserData = false)
+        UMC::Status Init(uint8_t* pBuffer, uint32_t memSize, uint32_t nFrames, uint32_t w, uint32_t h, uint32_t paddingSize, bool bNV12,bool bUserData = false)
         {
-            Ipp32u      i           = 0;
+            uint32_t      i           = 0;
             UMC::Status ret         = UMC::UMC_OK;
-            Ipp32u      frameSize   = 0;
+            uint32_t      frameSize   = 0;
 
             Close();
 
@@ -515,12 +515,12 @@ namespace UMC_VC1_ENCODER
                 if (!m_pFrames)
                     return UMC::UMC_ERR_ALLOC;
 
-                pBuffer += UMC::align_value<Ipp32u>(m_nFrames*sizeof(FrameNV12));
-                memSize -= UMC::align_value<Ipp32u>(m_nFrames*sizeof(FrameNV12));
+                pBuffer += UMC::align_value<uint32_t>(m_nFrames*sizeof(FrameNV12));
+                memSize -= UMC::align_value<uint32_t>(m_nFrames*sizeof(FrameNV12));
                 if(memSize < 0)
                     return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                frameSize = UMC::align_value<Ipp32u>(FrameNV12::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
+                frameSize = UMC::align_value<uint32_t>(FrameNV12::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
             }
             else
             {
@@ -528,12 +528,12 @@ namespace UMC_VC1_ENCODER
                 if (!m_pFrames)
                     return UMC::UMC_ERR_ALLOC;
 
-                pBuffer += UMC::align_value<Ipp32u>(m_nFrames*sizeof(Frame));
-                memSize -= UMC::align_value<Ipp32u>(m_nFrames*sizeof(Frame));
+                pBuffer += UMC::align_value<uint32_t>(m_nFrames*sizeof(Frame));
+                memSize -= UMC::align_value<uint32_t>(m_nFrames*sizeof(Frame));
                 if(memSize < 0)
                     return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                frameSize = UMC::align_value<Ipp32u>(Frame::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
+                frameSize = UMC::align_value<uint32_t>(Frame::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
 
             }
             for (i=0;i<m_nFrames;i++)
@@ -560,7 +560,7 @@ namespace UMC_VC1_ENCODER
 
         void Reset()
         {
-            Ipp32u i;
+            uint32_t i;
             if (m_pFrames)
                 for (i = 0; i < m_nFrames; i++)
                 {
@@ -570,7 +570,7 @@ namespace UMC_VC1_ENCODER
 
         inline Frame* GetFreeFramePointer ()
         {
-            Ipp32u i;
+            uint32_t i;
             for (i = 0; i < m_nFrames; i++)
             {
                 if (!m_pFrames[i].isTaken())
@@ -580,14 +580,14 @@ namespace UMC_VC1_ENCODER
             }
             return 0;
         }
-        inline  Ipp32u      GetYStep()
+        inline  uint32_t      GetYStep()
         {
             return m_pFrames[0].GetYStep();
 
         }
 
     private:
-        Ipp32u  m_nFrames;
+        uint32_t  m_nFrames;
         Frame  *m_pFrames;
         bool   *m_pTaken;
     };
@@ -607,7 +607,7 @@ namespace UMC_VC1_ENCODER
         {
             Close();
         }
-        inline bool isSkipFrame(Frame* inFrame, bool bOriginal, Ipp32u th=0)
+        inline bool isSkipFrame(Frame* inFrame, bool bOriginal, uint32_t th=0)
         {
             bool bSkipSupported = 0; /* Skip Frames not supported now */
 
@@ -615,7 +615,7 @@ namespace UMC_VC1_ENCODER
               return false;            
 
             Frame* refFrame = (bOriginal)? m_pInFrames[0]: m_pOutFrames[0] ;
-            IppiSize Size = {0};
+            mfxSize Size = {0};
             if ((m_numBuffB !=  0) || (refFrame==0) || (th==0))
                return false;
 
@@ -640,18 +640,18 @@ namespace UMC_VC1_ENCODER
             return true;
         }
 
-        inline Ipp32u GetNumberOfB()
+        inline uint32_t GetNumberOfB()
         {
             return m_numBuffB;
         }
     protected:
-        Ipp32u  m_maxB;
+        uint32_t  m_maxB;
         Frame** m_pInFrames; /* 0     - forward  reference frame,
                                 1     - backward reference frame
                                 other - B frames*/
         Frame** m_pOutFrames;
-        Ipp32u  m_numBuffB;
-        Ipp32u  m_iCurr;
+        uint32_t  m_numBuffB;
+        uint32_t  m_iCurr;
 
     protected:
         void Close()
@@ -748,7 +748,7 @@ namespace UMC_VC1_ENCODER
 
             }
         }
-        inline virtual UMC::Status Init(Ipp32u maxB)
+        inline virtual UMC::Status Init(uint32_t maxB)
         {
             Close();
             m_maxB = maxB;
@@ -821,9 +821,9 @@ namespace UMC_VC1_ENCODER
         {
             return m_pOutFrames[bBackward];
         }
-        inline virtual ePType GetPictureType(Ipp32u frameCount,Ipp32u GOPLength, Ipp32u BFrmLength)
+        inline virtual ePType GetPictureType(uint32_t frameCount,uint32_t GOPLength, uint32_t BFrmLength)
         {
-            Ipp32s      nFrameInGOP        =  (frameCount++) % GOPLength;
+            int32_t      nFrameInGOP        =  (frameCount++) % GOPLength;
 
             if (nFrameInGOP)
             {
@@ -841,7 +841,7 @@ namespace UMC_VC1_ENCODER
     {
     public:
 
-        inline virtual UMC::Status Init(Ipp32u maxB)
+        inline virtual UMC::Status Init(uint32_t maxB)
         {
             return GOP::Init(maxB>0);
         }
@@ -869,9 +869,9 @@ namespace UMC_VC1_ENCODER
             return true;
         }
     public:
-        inline virtual ePType GetPictureType(Ipp32u frameCount,Ipp32u GOPLength, Ipp32u BFrmLength)
+        inline virtual ePType GetPictureType(uint32_t frameCount,uint32_t GOPLength, uint32_t BFrmLength)
         {
-            Ipp32s      nFrameInGOP        =  (frameCount) % GOPLength;
+            int32_t      nFrameInGOP        =  (frameCount) % GOPLength;
 
             if (nFrameInGOP)
             {
@@ -931,7 +931,7 @@ namespace UMC_VC1_ENCODER
             m_nFrames = 0;
         }
 
-        UMC::Status Init(Ipp32u maxB)
+        UMC::Status Init(uint32_t maxB)
         {
             Close();
             m_maxN = maxB+2;
@@ -944,7 +944,7 @@ namespace UMC_VC1_ENCODER
 
         void Reset()
         {
-            Ipp32u i = 0;
+            uint32_t i = 0;
             if(m_pFrame)
                 memset (m_pFrame,0, sizeof(Frame*)* m_maxN);
             m_curIndex = 0;
@@ -961,7 +961,7 @@ namespace UMC_VC1_ENCODER
         {
             if (m_nFrames < m_maxN)
             {
-                Ipp32u ind = (m_curIndex + m_nFrames)%m_maxN;
+                uint32_t ind = (m_curIndex + m_nFrames)%m_maxN;
                 m_pFrame[ind] = frame;
                 m_nFrames ++;
                 return true;
@@ -990,10 +990,10 @@ namespace UMC_VC1_ENCODER
         }
 
     private:
-        Ipp32u  m_maxN;
+        uint32_t  m_maxN;
         Frame** m_pFrame;
-        Ipp32u  m_curIndex;
-        Ipp32u  m_nFrames;
+        uint32_t  m_curIndex;
+        uint32_t  m_nFrames;
 
     };
 
@@ -1013,13 +1013,13 @@ namespace UMC_VC1_ENCODER
          {
             Close();
          }
-         static Ipp32u CalcAllocatedMemSize(Ipp32u w, Ipp32u h, Ipp32u paddingSize, Ipp32u n);
-         UMC::Status    Init  (Ipp8u* pBuffer, Ipp32u memSize,
-                               Ipp32u w, Ipp32u h, Ipp32u paddingSize, Ipp32u n);
+         static uint32_t CalcAllocatedMemSize(uint32_t w, uint32_t h, uint32_t paddingSize, uint32_t n);
+         UMC::Status    Init  (uint8_t* pBuffer, uint32_t memSize,
+                               uint32_t w, uint32_t h, uint32_t paddingSize, uint32_t n);
          void           Close();
-         UMC::Status    SaveFrame           (Ipp8u* pYPlane, Ipp32u stepY,
-                                            Ipp8u* pUPlane, Ipp32u stepU,
-                                            Ipp8u* pVPlane, Ipp32u stepV );
+         UMC::Status    SaveFrame           (uint8_t* pYPlane, uint32_t stepY,
+                                            uint8_t* pUPlane, uint32_t stepU,
+                                            uint8_t* pVPlane, uint32_t stepV );
 
          UMC::Status    GetFrame            (Frame** currFrame);
          UMC::Status    GetReferenceFrame   (Frame** currFrame);
@@ -1036,9 +1036,9 @@ namespace UMC_VC1_ENCODER
          }
     private:
         Frame* m_pFrames;
-        Ipp32u m_bufferSize;
-        Ipp32u m_nBuffered;
-        Ipp32u m_currFrameIndex;
+        uint32_t m_bufferSize;
+        uint32_t m_nBuffered;
+        uint32_t m_currFrameIndex;
         bool   m_bClosed; // closed sequence (if the backward reference frame is present)
     };
 }

@@ -28,40 +28,40 @@
 #include "umc_vc1_common_defs.h"
 
 //VC-1 Table 133: 2-Field reference interlace MV table 0
-const extern Ipp32s VC1_InterlacedMVDifTable0[];
+const extern int32_t VC1_InterlacedMVDifTable0[];
 
 //VC-1 Table 134: 2-Field reference interlace MV table 1
-const extern Ipp32s VC1_InterlacedMVDifTable1[];
+const extern int32_t VC1_InterlacedMVDifTable1[];
 
 //VC-1 Table 135: 2-Field reference interlace MV table 2
-const extern Ipp32s VC1_InterlacedMVDifTable2[];
+const extern int32_t VC1_InterlacedMVDifTable2[];
 
 //VC-1 Table 136: 2-Field reference interlace MV table 3
-const extern Ipp32s VC1_InterlacedMVDifTable3[];
+const extern int32_t VC1_InterlacedMVDifTable3[];
 
 //VC-1 Table 137: 2-Field reference interlace MV table 4
-const extern Ipp32s VC1_InterlacedMVDifTable4[];
+const extern int32_t VC1_InterlacedMVDifTable4[];
 
 //VC-1 Table 138: 2-Field reference interlace MV table 5
-const extern Ipp32s VC1_InterlacedMVDifTable5[];
+const extern int32_t VC1_InterlacedMVDifTable5[];
 
 //VC-1 Table 139: 2-Field reference interlace MV table 6
-const extern Ipp32s VC1_InterlacedMVDifTable6[];
+const extern int32_t VC1_InterlacedMVDifTable6[];
 
 //VC-1 Table 140: 2-Field reference interlace MV table 7
-const extern Ipp32s VC1_InterlacedMVDifTable7[];
+const extern int32_t VC1_InterlacedMVDifTable7[];
 
 //VC-1 Table 141: 1-Field reference interlace MV table 0
-const extern Ipp32s VC1_InterlacedMVDifTable8[];
+const extern int32_t VC1_InterlacedMVDifTable8[];
 
 //VC-1 Table 142: 1-Field reference interlace MV table 1
-const extern Ipp32s VC1_InterlacedMVDifTable9[];
+const extern int32_t VC1_InterlacedMVDifTable9[];
 
 //VC-1 Table 143: 1-Field reference interlace MV table 2
-const extern Ipp32s VC1_InterlacedMVDifTable10[];
+const extern int32_t VC1_InterlacedMVDifTable10[];
 
 //VC-1 Table 144: 1-Field reference interlace MV table 3
-const extern Ipp32s VC1_InterlacedMVDifTable11[];
+const extern int32_t VC1_InterlacedMVDifTable11[];
 
 #ifdef ALLOW_SW_VC1_FALLBACK
 //for scaling mv predictors P picture

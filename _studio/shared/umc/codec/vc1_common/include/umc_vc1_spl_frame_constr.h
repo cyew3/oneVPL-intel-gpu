@@ -35,7 +35,7 @@ namespace UMC
         MediaData* in;
         MediaData* out;
         MediaDataEx::_MediaDataEx *stCodes;
-        Ipp32u splMode;
+        uint32_t splMode;
     };
     class vc1_frame_constructor
     {
@@ -46,7 +46,7 @@ namespace UMC
             virtual Status GetNextFrame(VC1FrameConstrInfo& pInfo) = 0;  //return 1 frame, 1 header....
             virtual Status GetFirstSeqHeader(VC1FrameConstrInfo& pInfo) = 0;
             virtual Status GetData(VC1FrameConstrInfo& pInfo) = 0;
-            virtual Status ParseVC1SeqHeader (Ipp8u *data, Ipp32u* bufferSize, VideoStreamInfo* info) = 0;
+            virtual Status ParseVC1SeqHeader (uint8_t *data, uint32_t* bufferSize, VideoStreamInfo* info) = 0;
             virtual void Reset() = 0;
     };
 
@@ -60,7 +60,7 @@ namespace UMC
             Status GetData(VC1FrameConstrInfo& Info);
             Status GetFirstSeqHeader(VC1FrameConstrInfo& Info);
             void Reset();
-            Status ParseVC1SeqHeader (Ipp8u *data, Ipp32u* bufferSize, VideoStreamInfo* info);
+            Status ParseVC1SeqHeader (uint8_t *data, uint32_t* bufferSize, VideoStreamInfo* info);
     };
 
     class vc1_frame_constructor_vc1: public vc1_frame_constructor
@@ -73,7 +73,7 @@ namespace UMC
             Status GetData(VC1FrameConstrInfo& Info);
             Status GetFirstSeqHeader(VC1FrameConstrInfo& Info);
             void Reset();
-            Status ParseVC1SeqHeader (Ipp8u *data, Ipp32u* bufferSize, VideoStreamInfo* info);
+            Status ParseVC1SeqHeader (uint8_t *data, uint32_t* bufferSize, VideoStreamInfo* info);
     };
 }
 

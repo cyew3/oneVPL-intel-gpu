@@ -30,9 +30,9 @@
 //3.2.1.27    VOPDQUANT Syntax Elements
 VC1Status VOPDQuant(VC1Context* pContext)
 {
-    Ipp32u tempValue;
+    uint32_t tempValue;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
-    Ipp32u DQUANT  = pContext->m_seqLayerHeader.DQUANT;
+    uint32_t DQUANT  = pContext->m_seqLayerHeader.DQUANT;
     picLayerHeader->m_DQuantFRM = 0;
     picLayerHeader->DQSBEdge    = 0;
     picLayerHeader->m_DQBILevel = 0;
@@ -65,7 +65,7 @@ VC1Status VOPDQuant(VC1Context* pContext)
                     break;
                 case VC1_DQPROFILE_SNGLEDGES:
                 {
-                    //Ipp32u m_DQSBEdge;
+                    //uint32_t m_DQSBEdge;
                     //The DQSBEDGE field is a 2 bits value that is present
                     //when DQPROFILE = Single Edge.  It indicates which edge
                     //will be quantized with ALTPQUANT.
@@ -81,7 +81,7 @@ VC1Status VOPDQuant(VC1Context* pContext)
                 }
                 case VC1_DQPROFILE_DBLEDGES:
                 {
-                    //Ipp32u m_DQDBEdge;
+                    //uint32_t m_DQDBEdge;
                     //The DQSBEDGE field is a 2 bits value that is present
                     //when DQPROFILE = Double Edge.  It indicates which two
                     //edges will be quantized with ALTPQUANT.
@@ -154,7 +154,7 @@ VC1Status VOPDQuant(VC1Context* pContext)
     return VC1_OK;
 }
 
-static const Ipp8u MapPQIndToQuant_Impl[] =
+static const uint8_t MapPQIndToQuant_Impl[] =
 {
     VC1_UNDEF_PQUANT,
     1, 2, 3, 4, 5, 6, 7, 8,
@@ -206,12 +206,12 @@ VC1Status CalculatePQuant(VC1Context* pContext)
 #ifdef ALLOW_SW_VC1_FALLBACK
 VC1Status Set_MQuant(VC1Context* pContext)
 {
-    Ipp32s heightMB = pContext->m_pSingleMB->heightMB;
-    Ipp8u X;
-    Ipp32s MQUANT = pContext->m_picLayerHeader->PQUANT;
-    Ipp32s HALFQP = pContext->m_picLayerHeader->HALFQP;
+    int32_t heightMB = pContext->m_pSingleMB->heightMB;
+    uint8_t X;
+    int32_t MQUANT = pContext->m_picLayerHeader->PQUANT;
+    int32_t HALFQP = pContext->m_picLayerHeader->HALFQP;
 
-    X = (Ipp8u)((pContext->m_pSingleMB->m_currMBXpos==0)|
+    X = (uint8_t)((pContext->m_pSingleMB->m_currMBXpos==0)|
         ((pContext->m_pSingleMB->m_currMBYpos==0)<<1)|
         ((pContext->m_pSingleMB->m_currMBXpos ==
             pContext->m_seqLayerHeader.widthMB -1)<<2)|
@@ -240,9 +240,9 @@ VC1Status Set_MQuant(VC1Context* pContext)
 
 VC1Status Set_Alt_MQUANT(VC1Context* pContext)
 {
-    Ipp32u MQDIFF;
-    Ipp32s MQUANT = pContext->m_picLayerHeader->PQUANT;
-    Ipp32s HALFQP = pContext->m_picLayerHeader->HALFQP;
+    uint32_t MQDIFF;
+    int32_t MQUANT = pContext->m_picLayerHeader->PQUANT;
+    int32_t HALFQP = pContext->m_picLayerHeader->HALFQP;
 
     if (VC1_DQPROFILE_ALLMBLKS == pContext->m_picLayerHeader->m_DQProfile)
     {
@@ -279,13 +279,13 @@ VC1Status Set_Alt_MQUANT(VC1Context* pContext)
 
 VC1Status Set_MQuant_Field(VC1Context* pContext)
 {
-    Ipp32s heightMB = pContext->m_pSingleMB->heightMB;
-    Ipp8u X;
-    Ipp32s MQUANT = pContext->m_picLayerHeader->PQUANT;
-    Ipp32s HALFQP = pContext->m_picLayerHeader->HALFQP;
+    int32_t heightMB = pContext->m_pSingleMB->heightMB;
+    uint8_t X;
+    int32_t MQUANT = pContext->m_picLayerHeader->PQUANT;
+    int32_t HALFQP = pContext->m_picLayerHeader->HALFQP;
 
 
-    X = (Ipp8u)((pContext->m_pSingleMB->m_currMBXpos==0)|
+    X = (uint8_t)((pContext->m_pSingleMB->m_currMBXpos==0)|
         (((pContext->m_pSingleMB->m_currMBYpos==0)||
             (pContext->m_pSingleMB->m_currMBYpos == heightMB/2))<<1)|
         ((pContext->m_pSingleMB->m_currMBXpos ==
@@ -314,11 +314,11 @@ VC1Status Set_MQuant_Field(VC1Context* pContext)
 
 void GetMQUANT(VC1Context* pContext)
 {
-    Ipp32s z;
+    int32_t z;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
-    Ipp32u MQUANT = picLayerHeader->PQUANT;
-    Ipp32u HALFQP = picLayerHeader->HALFQP;
+    uint32_t MQUANT = picLayerHeader->PQUANT;
+    uint32_t HALFQP = picLayerHeader->HALFQP;
 
     if (picLayerHeader->m_PQuant_mode==VC1_ALTPQUANT_MB_LEVEL)
     {

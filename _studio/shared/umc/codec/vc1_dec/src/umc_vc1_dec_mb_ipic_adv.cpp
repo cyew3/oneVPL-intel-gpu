@@ -37,21 +37,21 @@ static const IntraPrediction IntraPredictionTable[] =
 
 VC1Status MBLayer_ProgressiveIpicture_Adv(VC1Context* pContext)
 {
-    Ipp32s i;
+    int32_t i;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
-    Ipp32s CBPCY;//decoded_cbpy
+    int32_t CBPCY;//decoded_cbpy
     int ret;
     VC1Status vc1Res = VC1_OK;
-    Ipp32u ACPRED;
+    uint32_t ACPRED;
 
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_POSITION,VM_STRING("\t\t\tX: %d, Y: %d\n"),
         sMB->m_currMBXpos, sMB->m_currMBYpos);
 #endif
-    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
+    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(int16_t)*4);
 
     pCurrMB->LeftTopRightPositionFlag = CalculateLeftTopRightPositionFlag(sMB);
 
@@ -84,7 +84,7 @@ VC1Status MBLayer_ProgressiveIpicture_Adv(VC1Context* pContext)
 
     // Overlap
     //for smoothing
-    pCurrMB->Overlap = (Ipp8u)pContext->m_seqLayerHeader.OVERLAP;
+    pCurrMB->Overlap = (uint8_t)pContext->m_seqLayerHeader.OVERLAP;
     
     if(pCurrMB->Overlap)
     {
@@ -98,7 +98,7 @@ VC1Status MBLayer_ProgressiveIpicture_Adv(VC1Context* pContext)
         }
         else if( VC1_COND_OVER_FLAG_SOME == picLayerHeader->CONDOVER )
         {
-            Ipp32s OverlapVal;
+            int32_t OverlapVal;
             if (VC1_IS_BITPLANE_RAW_MODE(&picLayerHeader->OVERFLAGS))
             {
                 VC1_GET_BITS(1, OverlapVal);
@@ -109,14 +109,14 @@ VC1Status MBLayer_ProgressiveIpicture_Adv(VC1Context* pContext)
                     [pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos +  sMB->m_currMBXpos];
 
             }
-            pCurrMB->Overlap = (Ipp8u)OverlapVal;
+            pCurrMB->Overlap = (uint8_t)OverlapVal;
         }
     }
 
     if (picLayerHeader->m_DQuantFRM)
         Set_Alt_MQUANT(pContext);
 
-    memset(pContext->m_pBlock, 0, sizeof(Ipp16s)*8*8*VC1_NUM_OF_BLOCKS);
+    memset(pContext->m_pBlock, 0, sizeof(int16_t)*8*8*VC1_NUM_OF_BLOCKS);
 
     //all bloks are INTRA
     pCurrMB->IntraFlag=0x3F;
@@ -169,19 +169,19 @@ VC1Status MBLayer_ProgressiveIpicture_Adv(VC1Context* pContext)
 
 VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
 {
-    Ipp32s i;
+    int32_t i;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
-    Ipp32s CBPCY;//decoded_cbpy
+    int32_t CBPCY;//decoded_cbpy
     int ret;
     VC1Status vc1Res = VC1_OK;
-    Ipp32u ACPRED;
+    uint32_t ACPRED;
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_POSITION,VM_STRING("\t\t\tX: %d, Y: %d\n"),
                         sMB->m_currMBXpos, sMB->m_currMBYpos);
 #endif
-    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
+    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(int16_t)*4);
     pCurrMB->LeftTopRightPositionFlag = CalculateLeftTopRightPositionFlag(sMB);
 
     Set_MQuant(pContext);
@@ -190,7 +190,7 @@ VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
 
     //check fieldtx coding mode
     {
-        Ipp32s FIELDTX;
+        int32_t FIELDTX;
         if(VC1_IS_BITPLANE_RAW_MODE(&picLayerHeader->FIELDTX))
         {
             VC1_GET_BITS(1, FIELDTX);
@@ -227,7 +227,7 @@ VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
 
      // Overlap
     //for smoothing
-    pCurrMB->Overlap = (Ipp8u)pContext->m_seqLayerHeader.OVERLAP;
+    pCurrMB->Overlap = (uint8_t)pContext->m_seqLayerHeader.OVERLAP;
     if(pCurrMB->Overlap)
     {
         if(picLayerHeader->PQUANT>=9)
@@ -240,7 +240,7 @@ VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
         }
         else if(VC1_COND_OVER_FLAG_SOME == picLayerHeader->CONDOVER )
         {
-            Ipp32s OverlapVal;
+            int32_t OverlapVal;
             if (VC1_IS_BITPLANE_RAW_MODE(&picLayerHeader->OVERFLAGS))
             {
                 VC1_GET_BITS(1, OverlapVal);
@@ -250,7 +250,7 @@ VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
                 OverlapVal = picLayerHeader->OVERFLAGS.m_databits
                     [pContext->m_seqLayerHeader.MaxWidthMB * sMB->m_currMBYpos + sMB->m_currMBXpos];
             }
-            pCurrMB->Overlap = (Ipp8u)OverlapVal;
+            pCurrMB->Overlap = (uint8_t)OverlapVal;
         }
     }
 
@@ -260,7 +260,7 @@ VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
     //all bloks are INTRA
     pCurrMB->IntraFlag=0x3F;
 
-    memset(pContext->m_pBlock, 0, sizeof(Ipp16s)*8*8*VC1_NUM_OF_BLOCKS);
+    memset(pContext->m_pBlock, 0, sizeof(int16_t)*8*8*VC1_NUM_OF_BLOCKS);
 
       //Y
     pCurrMB->currYPitch = sMB->currYPitch;
@@ -310,18 +310,18 @@ VC1Status MBLayer_Frame_InterlaceIpicture(VC1Context* pContext)
 
 VC1Status MBLayer_Field_InterlaceIpicture(VC1Context* pContext)
 {
-    Ipp32s i;
+    int32_t i;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
-    Ipp32s CBPCY;//decoded_cbpy
+    int32_t CBPCY;//decoded_cbpy
     int ret;
     VC1Status vc1Res = VC1_OK;
-    Ipp32u ACPRED;
+    uint32_t ACPRED;
 
-    Ipp32u currFieldMBYpos;
-    Ipp32u currFieldMBXpos;
+    uint32_t currFieldMBYpos;
+    uint32_t currFieldMBXpos;
 
    // pContext->m_pSingleMB->m_currMBXpos++;
     pCurrMB->FIELDTX = 0;
@@ -332,7 +332,7 @@ VC1Status MBLayer_Field_InterlaceIpicture(VC1Context* pContext)
                         sMB->m_currMBXpos,
                         sMB->m_currMBYpos - picLayerHeader->CurrField * sMB->heightMB/2);
 #endif
-    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
+    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(int16_t)*4);
 
     pCurrMB->LeftTopRightPositionFlag = CalculateLeftTopRightPositionFlag(sMB);
 
@@ -365,7 +365,7 @@ VC1Status MBLayer_Field_InterlaceIpicture(VC1Context* pContext)
 
     // Overlap
     //for smoothing
-    pCurrMB->Overlap = (Ipp8u)pContext->m_seqLayerHeader.OVERLAP;
+    pCurrMB->Overlap = (uint8_t)pContext->m_seqLayerHeader.OVERLAP;
     if(pCurrMB->Overlap)
     {
         if(picLayerHeader->PQUANT>=9)
@@ -378,7 +378,7 @@ VC1Status MBLayer_Field_InterlaceIpicture(VC1Context* pContext)
         }
         else if( VC1_COND_OVER_FLAG_SOME == picLayerHeader->CONDOVER )
         {
-            Ipp32s OverlapVal;
+            int32_t OverlapVal;
             if (VC1_IS_BITPLANE_RAW_MODE(&picLayerHeader->OVERFLAGS))
             {
                 VC1_GET_BITS(1, OverlapVal);
@@ -388,7 +388,7 @@ VC1Status MBLayer_Field_InterlaceIpicture(VC1Context* pContext)
                OverlapVal = picLayerHeader->OVERFLAGS.m_databits
                     [pContext->m_seqLayerHeader.MaxWidthMB * sMB->slice_currMBYpos + sMB->m_currMBXpos];
             }
-            pContext->m_pCurrMB->Overlap = (Ipp8u)OverlapVal;
+            pContext->m_pCurrMB->Overlap = (uint8_t)OverlapVal;
         }
     }
 
@@ -398,7 +398,7 @@ VC1Status MBLayer_Field_InterlaceIpicture(VC1Context* pContext)
     //all bloks are INTRA
     pCurrMB->IntraFlag=0x3F;
 
-    memset(pContext->m_pBlock, 0, sizeof(Ipp16s)*8*8*VC1_NUM_OF_BLOCKS);
+    memset(pContext->m_pBlock, 0, sizeof(int16_t)*8*8*VC1_NUM_OF_BLOCKS);
 
     currFieldMBYpos = sMB->m_currMBYpos;
     currFieldMBXpos = sMB->m_currMBXpos;

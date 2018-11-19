@@ -45,7 +45,7 @@
 //12           2        26        1
 //13           2
 
-const extern Ipp8s VC1_HighMotionInterDeltaLevelLast0[27] =
+const extern int8_t VC1_HighMotionInterDeltaLevelLast0[27] =
 {
     23, 11, 8,  7,
     5,  5,  4,  4,
@@ -80,7 +80,7 @@ const extern Ipp8s VC1_HighMotionInterDeltaLevelLast0[27] =
 //17        1        36        1
 //18        1
 
-const extern Ipp8s VC1_HighMotionInterDeltaLevelLast1[37] =
+const extern int8_t VC1_HighMotionInterDeltaLevelLast1[37] =
 {
     9, 5, 4, 4,
     3, 3, 3, 2,
@@ -112,7 +112,7 @@ const extern Ipp8s VC1_HighMotionInterDeltaLevelLast1[37] =
 //11        1          23            0
 //12        0
 
-const extern Ipp8s VC1_HighMotionInterDeltaRunLast0[24] =
+const extern int8_t VC1_HighMotionInterDeltaRunLast0[24] =
 {
     -1,
 
@@ -137,7 +137,7 @@ const extern Ipp8s VC1_HighMotionInterDeltaRunLast0[24] =
 //7            0
 //8            0
 //9            0
-const extern Ipp8s VC1_HighMotionInterDeltaRunLast1[10] =
+const extern int8_t VC1_HighMotionInterDeltaRunLast1[10] =
 {
     -1,
 
@@ -168,7 +168,7 @@ const extern Ipp8s VC1_HighMotionInterDeltaRunLast1[10] =
 //13       2            28        1
 //14       2            29        1
 
-const extern Ipp8s VC1_LowMotionInterDeltaLevelLast0[30] =
+const extern int8_t VC1_LowMotionInterDeltaLevelLast0[30] =
 {
     14,9, 5, 4,
     4, 4, 3, 3,
@@ -206,7 +206,7 @@ const extern Ipp8s VC1_LowMotionInterDeltaLevelLast0[30] =
 //19       1            41        1
 //20       1            42        1
 //21       1            43        1
-const extern Ipp8s VC1_LowMotionInterDeltaLevelLast1[44] =
+const extern int8_t VC1_LowMotionInterDeltaLevelLast1[44] =
 {
     5,4,3,3,
     2,2,2,2,
@@ -234,7 +234,7 @@ const extern Ipp8s VC1_LowMotionInterDeltaLevelLast1[44] =
 //5            2        12        0
 //6            1        13        0
 //7            1        14        0
-const extern Ipp8s VC1_LowMotionInterDeltaRunLast0[15] =
+const extern int8_t VC1_LowMotionInterDeltaRunLast0[15] =
 {
     -1,
 
@@ -253,7 +253,7 @@ const extern Ipp8s VC1_LowMotionInterDeltaRunLast0[15] =
 //3            3
 //4            1
 //5            0
-const extern Ipp8s VC1_LowMotionInterDeltaRunLast1[6] =
+const extern int8_t VC1_LowMotionInterDeltaRunLast1[6] =
 {
     -1,
     43, 15, 3, 1,
@@ -281,7 +281,7 @@ const extern Ipp8s VC1_LowMotionInterDeltaRunLast1[6] =
 //12           1        26        1
 //13           1
 
-const extern Ipp8s VC1_MidRateInterDeltaLevelLast0[27] =
+const extern int8_t VC1_MidRateInterDeltaLevelLast0[27] =
 {
     12, 6, 4, 3,
     3,  3, 3, 2,
@@ -318,7 +318,7 @@ const extern Ipp8s VC1_MidRateInterDeltaLevelLast0[27] =
 //19           1        40            1
 //20           1
 
-const extern Ipp8s VC1_MidRateInterDeltaLevelLast1[41] =
+const extern int8_t VC1_MidRateInterDeltaLevelLast1[41] =
 {
     3, 2, 1, 1,
     1, 1, 1, 1,
@@ -344,7 +344,7 @@ const extern Ipp8s VC1_MidRateInterDeltaLevelLast1[41] =
 //4            2        10            0
 //5            1        11            0
 //6            1        12            0
-const extern Ipp8s VC1_MidRateInterDeltaRunLast0[13] =
+const extern int8_t VC1_MidRateInterDeltaRunLast0[13] =
 {
     -1,
     26, 10, 6, 2,
@@ -359,7 +359,7 @@ const extern Ipp8s VC1_MidRateInterDeltaRunLast0[13] =
 //1            40
 //2            1
 //3            0
-const extern Ipp8s VC1_MidRateInterDeltaRunLast1[4] =
+const extern int8_t VC1_MidRateInterDeltaRunLast1[4] =
 {
     -1,
     40, 1, 0
@@ -386,7 +386,7 @@ const extern Ipp8s VC1_MidRateInterDeltaRunLast1[4] =
 //12           2
 
 
-const extern Ipp8s VC1_HighRateInterDeltaLevelLast0[25] =
+const extern int8_t VC1_HighRateInterDeltaLevelLast0[25] =
 {
     32, 13, 8, 6,
     5,  4,  4, 3,
@@ -419,7 +419,7 @@ const extern Ipp8s VC1_HighRateInterDeltaLevelLast0[25] =
 //14           2        30        1
 //15           2
 
-const extern Ipp8s VC1_HighRateInterDeltaLevelLast1[31] =
+const extern int8_t VC1_HighRateInterDeltaLevelLast1[31] =
 {
     4, 3, 3, 3,
     2, 2, 2, 2,
@@ -452,7 +452,7 @@ const extern Ipp8s VC1_HighRateInterDeltaLevelLast1[31] =
 //15           0        31        0
 //16           0        32        0
 
-const extern Ipp8s VC1_HighRateInterDeltaRunLast0[33] =
+const extern int8_t VC1_HighRateInterDeltaRunLast0[33] =
 {
     -1,
     24, 22, 9,  6,
@@ -476,7 +476,7 @@ const extern Ipp8s VC1_HighRateInterDeltaRunLast0[33] =
 //3        3
 //4        0
 
-const extern Ipp8s VC1_HighRateInterDeltaRunLast1[5] =
+const extern int8_t VC1_HighRateInterDeltaRunLast1[5] =
 {
     -1,
     30, 28, 3, 0

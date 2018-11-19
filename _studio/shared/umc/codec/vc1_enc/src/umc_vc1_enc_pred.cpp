@@ -31,13 +31,13 @@ namespace UMC_VC1_ENCODER
 bool DCACPredictionIntraFrameSM(   VC1EncoderMBData* pCurrMB,
                                    NeighbouringMBsData*  pMBs,
                                    VC1EncoderMBData* pPredBlock,
-                                   Ipp16s defPredictor,
+                                   int16_t defPredictor,
                                    eDirection* direction)
 {
-    Ipp32s              z = 0;
+    int32_t              z = 0;
     int                 i;
     VC1EncoderMBData    TempBlock;
-    Ipp16s              temp [VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS]={0};
+    int16_t              temp [VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS]={0};
 
     VC1EncoderMBData* pLeftMB    = (pMBs->LeftMB)   ? pMBs->LeftMB   :&TempBlock;
     VC1EncoderMBData* pTopMB     = (pMBs->TopMB)    ? pMBs->TopMB    :&TempBlock;
@@ -53,7 +53,7 @@ bool DCACPredictionIntraFrameSM(   VC1EncoderMBData* pCurrMB,
     pTopLeftMB  = (pTopLeftMB)  ? pTopLeftMB:&TempBlock;
     pTopMB      = (pTopMB)      ? pTopMB    :&TempBlock;
 
-    Ipp16s*             pBlocks[VC1_ENC_NUMBER_OF_BLOCKS*3]=
+    int16_t*             pBlocks[VC1_ENC_NUMBER_OF_BLOCKS*3]=
     {
         pTopMB->m_pBlock[2],    pTopLeftMB->m_pBlock[3], pLeftMB->m_pBlock[1],
         pTopMB->m_pBlock[3],    pTopMB->m_pBlock[2],     pCurrMB->m_pBlock[0],
@@ -65,8 +65,8 @@ bool DCACPredictionIntraFrameSM(   VC1EncoderMBData* pCurrMB,
     //  Estimation about AC prediction
     for (i = 0; i<VC1_ENC_NUMBER_OF_BLOCKS; i++)
     {
-        if (((Ipp32u)((pBlocks[3*i+0][0] - pBlocks[3*i+1][0])*(pBlocks[3*i+0][0] - pBlocks[3*i+1][0]))<=
-             (Ipp32u)((pBlocks[3*i+2][0] - pBlocks[3*i+1][0])*(pBlocks[3*i+2][0] - pBlocks[3*i+1][0]))))
+        if (((uint32_t)((pBlocks[3*i+0][0] - pBlocks[3*i+1][0])*(pBlocks[3*i+0][0] - pBlocks[3*i+1][0]))<=
+             (uint32_t)((pBlocks[3*i+2][0] - pBlocks[3*i+1][0])*(pBlocks[3*i+2][0] - pBlocks[3*i+1][0]))))
         {
             direction[i] = VC1_ENC_LEFT;
             z += SumSqDiff_1x7_16s(pCurrMB->m_pBlock[i], pCurrMB->m_uiBlockStep[i],pBlocks[3*i+2]);
@@ -81,8 +81,8 @@ bool DCACPredictionIntraFrameSM(   VC1EncoderMBData* pCurrMB,
         //AC, DC prediction
         for (i = 0; i<VC1_ENC_NUMBER_OF_BLOCKS; i++)
         {
-            Ipp32u numBlk    = (3*i + 2*(!(direction[i] & VC1_ENC_TOP)));
-            Ipp32u numTable  = (z<0)*direction[i];
+            uint32_t numBlk    = (3*i + 2*(!(direction[i] & VC1_ENC_TOP)));
+            uint32_t numTable  = (z<0)*direction[i];
             Diff8x8 (pCurrMB->m_pBlock[i],      pCurrMB->m_uiBlockStep[i],
                     pBlocks[numBlk],           pCurrMB->m_uiBlockStep[i],
                     pPredBlock->m_pBlock[i],   pPredBlock->m_uiBlockStep[i],numTable);
@@ -112,13 +112,13 @@ bool DCACPredictionIntraFrameSM(   VC1EncoderMBData* pCurrMB,
 bool DCACPredictionFrame   (VC1EncoderMBData*       pCurrMB,
                             NeighbouringMBsData*    pMBs,
                             VC1EncoderMBData*       pPredBlock,
-                            Ipp16s                  defPredictor,
+                            int16_t                  defPredictor,
                             eDirection*             direction)
 {
-    Ipp32s              z = 0;
+    int32_t              z = 0;
     int                 i;
     VC1EncoderMBData    TempBlock;
-    Ipp16s              temp [VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS]={0};
+    int16_t              temp [VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS]={0};
 
     VC1EncoderMBData* pLeftMB    = pMBs->LeftMB;
     VC1EncoderMBData* pTopMB     = pMBs->TopMB;
@@ -130,7 +130,7 @@ bool DCACPredictionFrame   (VC1EncoderMBData*       pCurrMB,
                                                                             defPredictor;
     pTopLeftMB  = (pTopLeftMB)  ? pTopLeftMB:&TempBlock;
 
-    Ipp16s*             pBlocks[VC1_ENC_NUMBER_OF_BLOCKS*3]=
+    int16_t*             pBlocks[VC1_ENC_NUMBER_OF_BLOCKS*3]=
     {
         0,                      pTopLeftMB->m_pBlock[3], 0,                   //0..2
         0,                      0,                       pCurrMB->m_pBlock[0],//3..5
@@ -191,8 +191,8 @@ bool DCACPredictionFrame   (VC1EncoderMBData*       pCurrMB,
     //AC, DC prediction
     for (i = 0; i<VC1_ENC_NUMBER_OF_BLOCKS; i++)
     {
-        Ipp32u numBlk    = 3*i + 2*(!(direction[i] & VC1_ENC_TOP));
-        Ipp32u numTable  = (z<0)*direction[i];
+        uint32_t numBlk    = 3*i + 2*(!(direction[i] & VC1_ENC_TOP));
+        uint32_t numTable  = (z<0)*direction[i];
         Diff8x8 (pCurrMB->m_pBlock[i],      pCurrMB->m_uiBlockStep[i],
                 pBlocks[numBlk],            pCurrMB->m_uiBlockStep[i],
                 pPredBlock->m_pBlock[i],    pPredBlock->m_uiBlockStep[i],numTable);
@@ -222,13 +222,13 @@ bool DCACPredictionFrame4MVIntraMB   (  VC1EncoderMBData*               pCurrMB,
                                         NeighbouringMBsData*            pMBs,
                                         NeighbouringMBsIntraPattern*    pMBsIntraPattern,
                                         VC1EncoderMBData*               pPredBlock,
-                                        Ipp16s                          defPredictor,
+                                        int16_t                          defPredictor,
                                         eDirection*                     direction)
 {
-    Ipp32s              z = 0;
+    int32_t              z = 0;
     int                 i;
     VC1EncoderMBData    TempBlock;
-    Ipp16s              temp [VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS]={0};
+    int16_t              temp [VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS]={0};
 
     VC1EncoderMBData* pLeftMB    = pMBs->LeftMB;
     VC1EncoderMBData* pTopMB     = pMBs->TopMB;
@@ -240,7 +240,7 @@ bool DCACPredictionFrame4MVIntraMB   (  VC1EncoderMBData*               pCurrMB,
                                                                             defPredictor;
     pTopLeftMB  = (pTopLeftMB)  ? pTopLeftMB:&TempBlock;
 
-    Ipp16s*             pBlocks[VC1_ENC_NUMBER_OF_BLOCKS*3]=
+    int16_t*             pBlocks[VC1_ENC_NUMBER_OF_BLOCKS*3]=
     {
         0,                      (pMBsIntraPattern->TopLeftMB & (1<<VC_ENC_PATTERN_POS(3)))? pTopLeftMB->m_pBlock[3]:TempBlock.m_pBlock[3],  0,                   //0..2
         0,                      0,                                                                                      pCurrMB->m_pBlock[0],//3..5
@@ -302,8 +302,8 @@ bool DCACPredictionFrame4MVIntraMB   (  VC1EncoderMBData*               pCurrMB,
     for (i = 0; i<VC1_ENC_NUMBER_OF_BLOCKS; i++)
     {
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        Ipp32u numBlk    = 3*i + 2*(!(direction[i] & VC1_ENC_TOP));
-        Ipp32u numTable  = (z<0)*direction[i];
+        uint32_t numBlk    = 3*i + 2*(!(direction[i] & VC1_ENC_TOP));
+        uint32_t numTable  = (z<0)*direction[i];
         Diff8x8 (pCurrMB->m_pBlock[i],      pCurrMB->m_uiBlockStep[i],
                 pBlocks[numBlk],            pCurrMB->m_uiBlockStep[i],
                 pPredBlock->m_pBlock[i],    pPredBlock->m_uiBlockStep[i],numTable);
@@ -328,19 +328,19 @@ bool DCACPredictionFrame4MVIntraMB   (  VC1EncoderMBData*               pCurrMB,
     return (z<0);
 }
 
-Ipp8s
+int8_t
 DCACPredictionFrame4MVBlockMixed(  VC1EncoderMBData*               pCurrMB,
-                                        Ipp32u                          currIntraPattern,
+                                        uint32_t                          currIntraPattern,
                                         NeighbouringMBsData*            pMBs,
                                         NeighbouringMBsIntraPattern*    pMBsIntraPattern,
                                         VC1EncoderMBData*               pPredBlock,
-                                        Ipp16s                          defPredictor,
+                                        int16_t                          defPredictor,
                                         eDirection*                     direction)
 {
-    Ipp32s              z = 0;
+    int32_t              z = 0;
     int                 i;
     VC1EncoderMBData    TempBlock;
-    Ipp16s              temp [VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS]={0};
+    int16_t              temp [VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS]={0};
     bool                bPredicted = false;
     bool                PredictedBlocks[VC1_ENC_NUMBER_OF_BLOCKS]={false};
 
@@ -355,7 +355,7 @@ DCACPredictionFrame4MVBlockMixed(  VC1EncoderMBData*               pCurrMB,
                                                                             defPredictor;
     pTopLeftMB  = (pTopLeftMB)  ? pTopLeftMB:&TempBlock;
 
-    Ipp16s*             pBlocks[VC1_ENC_NUMBER_OF_BLOCKS*3]=
+    int16_t*             pBlocks[VC1_ENC_NUMBER_OF_BLOCKS*3]=
     {
         0,                                                                          (pMBsIntraPattern->TopLeftMB & (1<<VC_ENC_PATTERN_POS(3)))? pTopLeftMB->m_pBlock[3]:TempBlock.m_pBlock[3],  0,                   //0..2
         0,                                                                          0,                                                                                      (currIntraPattern& (1<<VC_ENC_PATTERN_POS(0)))? pCurrMB->m_pBlock[0]:0,//3..5
@@ -427,8 +427,8 @@ DCACPredictionFrame4MVBlockMixed(  VC1EncoderMBData*               pCurrMB,
     {
         if (PredictedBlocks[i])
         {
-            Ipp32u numBlk    = 3*i + 2*(!(direction[i] & VC1_ENC_TOP));
-            Ipp32u numTable  = (z<0)*direction[i];
+            uint32_t numBlk    = 3*i + 2*(!(direction[i] & VC1_ENC_TOP));
+            uint32_t numTable  = (z<0)*direction[i];
             Diff8x8 (pCurrMB->m_pBlock[i],      pCurrMB->m_uiBlockStep[i],
                     pBlocks[numBlk],            pCurrMB->m_uiBlockStep[i],
                     pPredBlock->m_pBlock[i],    pPredBlock->m_uiBlockStep[i],numTable);
@@ -475,7 +475,7 @@ DCACPredictionFrame4MVBlockMixed(  VC1EncoderMBData*               pCurrMB,
     }
 #endif
 
-    return (Ipp8u)((bPredicted)?(z<0):-1);
+    return (uint8_t)((bPredicted)?(z<0):-1);
 }
 
 }

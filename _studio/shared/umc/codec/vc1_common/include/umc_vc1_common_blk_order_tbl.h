@@ -27,15 +27,15 @@
 
 #include "ippdefs.h"
 
-const extern Ipp32u VC1_pixel_table[6];
-//const extern Ipp16u VC1_BlkOrderTbl[6][64];
+const extern uint32_t VC1_pixel_table[6];
+//const extern uint16_t VC1_BlkOrderTbl[6][64];
 
-const extern Ipp32u VC1_PredDCIndex[3][6];
-const extern Ipp32u VC1_QuantIndex [2][6];
+const extern uint32_t VC1_PredDCIndex[3][6];
+const extern uint32_t VC1_QuantIndex [2][6];
 
-const extern Ipp32u VC1_BlockTable[50];
+const extern uint32_t VC1_BlockTable[50];
 
-const extern Ipp32u VC1_BlkStart[];
+const extern uint32_t VC1_BlkStart[];
 
 #endif //__umc_vc1_common_blk_order_tbl_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

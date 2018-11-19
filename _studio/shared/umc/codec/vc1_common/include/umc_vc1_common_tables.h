@@ -44,7 +44,7 @@
 //  00011               11
 
 //it is not used, because esier get FLC 3 or 5 bits length
-const extern Ipp32s VC1_EscapeMode3Conservative_tbl[];
+const extern int32_t VC1_EscapeMode3Conservative_tbl[];
 
 //VC-1 Table 59: Escape mode 3 level codeword size efficient code-table (used for 8 <= PQUANT <= 31 and if
 //VOPDQUANT is absent)
@@ -59,7 +59,7 @@ const extern Ipp32s VC1_EscapeMode3Conservative_tbl[];
 //  000000              8
 
 //it is not used for while,
-const extern Ipp32s VC1_EscapeMode3Efficient_tbl[];
+const extern int32_t VC1_EscapeMode3Efficient_tbl[];
 
 
 //VC-1 Table 68: IMODE Codetable
@@ -72,14 +72,14 @@ const extern Ipp32s VC1_EscapeMode3Efficient_tbl[];
 //Rowskip        010
 //Colskip        011
 
-const extern Ipp32s VC1_Bitplane_IMODE_tbl[];
+const extern int32_t VC1_Bitplane_IMODE_tbl[];
 
 //VC-1 Table 81: Code table for 3x2 and 2x3 tiles
-const extern Ipp32s VC1_BitplaneTaledbitsTbl[];
+const extern int32_t VC1_BitplaneTaledbitsTbl[];
 
 //VC-1 7.1.1.14 Table 40
-const extern Ipp32s VC1_BFraction_tbl[];
-const extern Ipp32s VC1_BFraction_indexes[8][9];
+const extern int32_t VC1_BFraction_tbl[];
+const extern int32_t VC1_BFraction_indexes[8][9];
 
 #endif //__umc_vc1_common_tables_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

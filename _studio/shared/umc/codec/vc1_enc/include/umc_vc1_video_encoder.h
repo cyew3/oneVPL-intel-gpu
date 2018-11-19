@@ -41,8 +41,8 @@ public:
         userDataSize = 0;
     }
     ~VideoDataUD () {};
-    Ipp8u* pUserData;
-    Ipp32u  userDataSize;
+    uint8_t* pUserData;
+    uint32_t  userDataSize;
 };
 
 class MediaDataUD : public MediaData
@@ -54,7 +54,7 @@ public:
         pictureCode = 0;
     }
     ~MediaDataUD () {};
-    Ipp8u pictureCode;
+    uint8_t pictureCode;
 };
 
 class VC1EncoderParams : public VideoEncoderParams
@@ -94,32 +94,32 @@ public:
     virtual ~VC1EncoderParams() {};
     virtual Status ReadParamFile(const vm_char * ParFileName);
 
-    Ipp32u              m_uiGOPLength;
-    Ipp32u              m_uiBFrmLength;
+    uint32_t              m_uiGOPLength;
+    uint32_t              m_uiBFrmLength;
     bool                m_bVSTransform;
     bool                m_bDeblocking;
-    Ipp8u               m_iConstQuant;
-    Ipp32u              m_uiNumFrames;
-    Ipp32u              m_uiMESearchSpeed;
-    Ipp32u              m_uiHRDBufferSize;
-    Ipp32s              m_uiHRDBufferInitFullness;
+    uint8_t               m_iConstQuant;
+    uint32_t              m_uiNumFrames;
+    uint32_t              m_uiMESearchSpeed;
+    uint32_t              m_uiHRDBufferSize;
+    int32_t              m_uiHRDBufferInitFullness;
     vm_char*            m_pStreamName;
     bool                m_bFrameRecoding;
     bool                m_bMixed;
     bool                m_bOrigFramePred;
     bool                m_bInterlace;
-    Ipp32u              m_uiReferenceFieldType;
+    uint32_t              m_uiReferenceFieldType;
     bool                m_bSceneAnalyzer;
     bool                m_bUseMeFeedback;
     bool                m_bUseUpdateMeFeedback;
     bool                m_bUseFastMeFeedback;
     bool                m_bFastUVMC;
-    Ipp32u              m_uiQuantType;
+    uint32_t              m_uiQuantType;
     bool                m_bSelectVLCTables;
     bool                m_bChangeInterpPixelType;
     bool                m_bUseTreillisQuantization;
-    Ipp32u              m_uiNumSlices;
-    Ipp32u              m_uiOverlapSmoothing;
+    uint32_t              m_uiNumSlices;
+    uint32_t              m_uiOverlapSmoothing;
     bool                m_bIntensityCompensation;
     bool                m_bNV12;
 };

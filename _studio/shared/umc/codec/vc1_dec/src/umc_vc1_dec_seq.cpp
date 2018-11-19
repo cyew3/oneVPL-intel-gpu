@@ -43,8 +43,8 @@
 using namespace UMC;
 using namespace UMC::VC1Common;
 
-static const Ipp32u FRateExtD_tbl[] = {2,2,6,7,18,22,26};
-static const Ipp32u FRateExtN_tbl[] = {24,8,12,12,24,24,24};
+static const uint32_t FRateExtD_tbl[] = {2,2,6,7,18,22,26};
+static const uint32_t FRateExtN_tbl[] = {24,8,12,12,24,24,24};
 
 static void reset_index(VC1Context* pContext)
 {
@@ -56,9 +56,9 @@ static void reset_index(VC1Context* pContext)
 //3.1    Sequence-level Syntax and Semantics, figure 7
 VC1Status SequenceLayer(VC1Context* pContext)
 {
-    Ipp32u reserved;
-    Ipp32u i=0;
-    Ipp32u tempValue;
+    uint32_t reserved;
+    uint32_t i=0;
+    uint32_t tempValue;
 
     pContext->m_seqLayerHeader.ColourDescriptionPresent = 0;
 
@@ -94,20 +94,20 @@ VC1Status SequenceLayer(VC1Context* pContext)
         pContext->m_seqLayerHeader.CODED_HEIGHT = pContext->m_seqLayerHeader.MAX_CODED_HEIGHT;
         pContext->m_seqLayerHeader.CODED_WIDTH  = pContext->m_seqLayerHeader.MAX_CODED_WIDTH;
 
-        Ipp32u width = 0;
-        Ipp32u height = 0;
+        uint32_t width = 0;
+        uint32_t height = 0;
 
         width = 2*(pContext->m_seqLayerHeader.CODED_WIDTH+1);
         height = 2*(pContext->m_seqLayerHeader.CODED_HEIGHT+1);
 
-        pContext->m_seqLayerHeader.widthMB  = (Ipp16u)((width+15)/VC1_PIXEL_IN_LUMA);
-        pContext->m_seqLayerHeader.heightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
+        pContext->m_seqLayerHeader.widthMB  = (uint16_t)((width+15)/VC1_PIXEL_IN_LUMA);
+        pContext->m_seqLayerHeader.heightMB = (uint16_t)((height+15)/VC1_PIXEL_IN_LUMA);
 
         width = 2*(pContext->m_seqLayerHeader.MAX_CODED_WIDTH+1);
         height = 2*(pContext->m_seqLayerHeader.MAX_CODED_HEIGHT+1);
 
-        pContext->m_seqLayerHeader.MaxWidthMB  = (Ipp16u)((width+15)/VC1_PIXEL_IN_LUMA);
-        pContext->m_seqLayerHeader.MaxHeightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
+        pContext->m_seqLayerHeader.MaxWidthMB  = (uint16_t)((width+15)/VC1_PIXEL_IN_LUMA);
+        pContext->m_seqLayerHeader.MaxHeightMB = (uint16_t)((height+15)/VC1_PIXEL_IN_LUMA);
 
         VC1_GET_BITS(1, pContext->m_seqLayerHeader.PULLDOWN);
 
@@ -204,11 +204,11 @@ VC1Status SequenceLayer(VC1Context* pContext)
             {
                 pContext->m_seqLayerHeader.ColourDescriptionPresent = 1;
                 VC1_GET_BITS(8, tempValue);         //COLOR_PRIM
-                pContext->m_seqLayerHeader.ColourPrimaries = (Ipp16u)tempValue;
+                pContext->m_seqLayerHeader.ColourPrimaries = (uint16_t)tempValue;
                 VC1_GET_BITS(8, tempValue); //TRANSFER_CHAR
-                pContext->m_seqLayerHeader.TransferCharacteristics = (Ipp16u)tempValue;
+                pContext->m_seqLayerHeader.TransferCharacteristics = (uint16_t)tempValue;
                 VC1_GET_BITS(8, tempValue);      //MATRIX_COEF
-                pContext->m_seqLayerHeader.MatrixCoefficients = (Ipp16u)tempValue;
+                pContext->m_seqLayerHeader.MatrixCoefficients = (uint16_t)tempValue;
             }
 
         }
@@ -250,9 +250,9 @@ VC1Status SequenceLayer(VC1Context* pContext)
 
 VC1Status EntryPointLayer(VC1Context* pContext)
 {
-    Ipp32u i=0;
-    Ipp32u tempValue;
-    Ipp32u width, height;
+    uint32_t i=0;
+    uint32_t tempValue;
+    uint32_t width, height;
 
     VC1_GET_BITS(1, pContext->m_seqLayerHeader.BROKEN_LINK);
     VC1_GET_BITS(1, pContext->m_seqLayerHeader.CLOSED_ENTRY);
@@ -316,8 +316,8 @@ VC1Status EntryPointLayer(VC1Context* pContext)
     width = 2*(pContext->m_seqLayerHeader.CODED_WIDTH+1);
     height = 2*(pContext->m_seqLayerHeader.CODED_HEIGHT+1);
 
-    pContext->m_seqLayerHeader.widthMB  = (Ipp16u)((width+15)/VC1_PIXEL_IN_LUMA);
-    pContext->m_seqLayerHeader.heightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
+    pContext->m_seqLayerHeader.widthMB  = (uint16_t)((width+15)/VC1_PIXEL_IN_LUMA);
+    pContext->m_seqLayerHeader.heightMB = (uint16_t)((height+15)/VC1_PIXEL_IN_LUMA);
 
     if (pContext->m_seqLayerHeader.EXTENDED_MV == 1)
     {
@@ -369,14 +369,14 @@ VC1Status GetNextPicHeader(VC1Context* pContext, bool isExtHeader)
 
 #ifdef _OWN_FUNCTION
 //range map
-void _own_ippiRangeMap_VC1_8u_C1R(Ipp8u* pSrc, Ipp32s srcStep,
-                                  Ipp8u* pDst, Ipp32s dstStep,
-                                  IppiSize roiSize,
-                                  Ipp32s rangeMapParam)
+void _own_ippiRangeMap_VC1_8u_C1R(uint8_t* pSrc, int32_t srcStep,
+                                  uint8_t* pDst, int32_t dstStep,
+                                  mfxSize roiSize,
+                                  int32_t rangeMapParam)
 {
-    Ipp32s i=0;
-    Ipp32s j=0;
-    Ipp32s temp;
+    int32_t i=0;
+    int32_t j=0;
+    int32_t temp;
 
     for (i = 0; i < roiSize.height; i++)
     {
@@ -387,17 +387,17 @@ void _own_ippiRangeMap_VC1_8u_C1R(Ipp8u* pSrc, Ipp32s srcStep,
             temp = (temp - 128)*(rangeMapParam+9)+4;
             temp = temp>>3;
             temp = temp+128;
-            pDst[i*dstStep+j] = (Ipp8u)VC1_CLIP(temp);
+            pDst[i*dstStep+j] = (uint8_t)VC1_CLIP(temp);
          }
     }
 }
 #endif
 
 //frame rate calculation
-void MapFrameRateIntoMfx(Ipp32u& ENR, Ipp32u& EDR, Ipp16u FCode)
+void MapFrameRateIntoMfx(uint32_t& ENR, uint32_t& EDR, uint16_t FCode)
 {
-    Ipp32u FRateExtN;
-    Ipp32u FRateExtD;
+    uint32_t FRateExtN;
+    uint32_t FRateExtD;
 
     if (ENR && EDR)
     {
@@ -460,16 +460,16 @@ void MapFrameRateIntoMfx(Ipp32u& ENR, Ipp32u& EDR, Ipp16u FCode)
     }
  
 }
-Ipp64f MapFrameRateIntoUMC(Ipp32u ENR,Ipp32u EDR, Ipp32u& FCode)
+double MapFrameRateIntoUMC(uint32_t ENR,uint32_t EDR, uint32_t& FCode)
 {
-    Ipp64f frate;
-    Ipp64f ENRf;
-    Ipp64f EDRf;
+    double frate;
+    double ENRf;
+    double EDRf;
     if (FCode > 6)
     {
         ENR = 0;
         EDR = 0;
-        frate = (Ipp64f)30;
+        frate = (double)30;
         return frate;
     }
     else
@@ -534,16 +534,16 @@ Ipp64f MapFrameRateIntoUMC(Ipp32u ENR,Ipp32u EDR, Ipp32u& FCode)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef ALLOW_SW_VC1_FALLBACK
 VC1Status FillTablesForIntensityCompensation(VC1Context* pContext,
-    Ipp32u scale,
-    Ipp32u shift)
+    uint32_t scale,
+    uint32_t shift)
 {
-    //Ipp32u index = pContext->m_frmBuff.m_iPrevIndex;
+    //uint32_t index = pContext->m_frmBuff.m_iPrevIndex;
     /*scale, shift parameters are in [0,63]*/
-    Ipp32s i;
-    Ipp32s iscale = (scale) ? scale + 32 : -64;
-    Ipp32s ishift = (scale) ? shift * 64 : (255 - 2 * shift) * 64;
-    Ipp32s z = (scale) ? -1 : 2;
-    Ipp32s j;
+    int32_t i;
+    int32_t iscale = (scale) ? scale + 32 : -64;
+    int32_t ishift = (scale) ? shift * 64 : (255 - 2 * shift) * 64;
+    int32_t z = (scale) ? -1 : 2;
+    int32_t j;
 
 
     ishift += (shift>31) ? z << 12 : 0;
@@ -556,11 +556,11 @@ VC1Status FillTablesForIntensityCompensation(VC1Context* pContext,
     for (i = 0; i<256; i++)
     {
         j = (i*iscale + ishift + 32) >> 6;
-        pContext->LumaTable[0][i] = (Ipp8u)VC1_CLIP(j);
-        pContext->LumaTable[1][i] = (Ipp8u)VC1_CLIP(j);
+        pContext->LumaTable[0][i] = (uint8_t)VC1_CLIP(j);
+        pContext->LumaTable[1][i] = (uint8_t)VC1_CLIP(j);
         j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
-        pContext->ChromaTable[0][i] = (Ipp8u)VC1_CLIP(j);
-        pContext->ChromaTable[1][i] = (Ipp8u)VC1_CLIP(j);
+        pContext->ChromaTable[0][i] = (uint8_t)VC1_CLIP(j);
+        pContext->ChromaTable[1][i] = (uint8_t)VC1_CLIP(j);
 
 #ifdef VC1_DEBUG_ON
         VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
@@ -573,26 +573,26 @@ VC1Status FillTablesForIntensityCompensation(VC1Context* pContext,
 }
 
 VC1Status FillTablesForIntensityCompensation_Adv(VC1Context* pContext,
-    Ipp32u scale,
-    Ipp32u shift,
-    Ipp32u bottom_field,
-    Ipp32s index)
+    uint32_t scale,
+    uint32_t shift,
+    uint32_t bottom_field,
+    int32_t index)
 {
     /*scale, shift parameters are in [0,63]*/
-    Ipp32s i;
-    Ipp32s iscale = (scale) ? scale + 32 : -64;
-    Ipp32s ishift = (scale) ? shift * 64 : (255 - 2 * shift) * 64;
-    Ipp32s z = (scale) ? -1 : 2;
-    Ipp32s j;
-    Ipp8u *pY, *pU, *pV;
-    IppiSize roiSize;
+    int32_t i;
+    int32_t iscale = (scale) ? scale + 32 : -64;
+    int32_t ishift = (scale) ? shift * 64 : (255 - 2 * shift) * 64;
+    int32_t z = (scale) ? -1 : 2;
+    int32_t j;
+    uint8_t *pY, *pU, *pV;
+    mfxSize roiSize;
 
     roiSize.width = (pContext->m_seqLayerHeader.CODED_WIDTH + 1) << 1;
     roiSize.height = (pContext->m_seqLayerHeader.CODED_HEIGHT + 1) << 1;
 
-    Ipp32s YPitch = pContext->m_frmBuff.m_pFrames[index].m_iYPitch;
-    Ipp32s UPitch = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
-    Ipp32s VPitch = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
+    int32_t YPitch = pContext->m_frmBuff.m_pFrames[index].m_iYPitch;
+    int32_t UPitch = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
+    int32_t VPitch = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
 
     pY = pContext->m_frmBuff.m_pFrames[index].m_pY;
     pU = pContext->m_frmBuff.m_pFrames[index].m_pU;
@@ -619,16 +619,16 @@ VC1Status FillTablesForIntensityCompensation_Adv(VC1Context* pContext,
         VM_STRING("shift=%d, scale=%d, iscale=%d, ishift=%d\n"),
         shift, scale, iscale, ishift);
 #endif
-    Ipp32u LUTindex = bottom_field + (pContext->m_picLayerHeader->CurrField << 1);
+    uint32_t LUTindex = bottom_field + (pContext->m_picLayerHeader->CurrField << 1);
 
     if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
     {
         for (i = 0; i<256; i++)
         {
             j = (i*iscale + ishift + 32) >> 6;
-            pContext->LumaTable[LUTindex][i] = (Ipp8u)VC1_CLIP(j);
+            pContext->LumaTable[LUTindex][i] = (uint8_t)VC1_CLIP(j);
             j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
-            pContext->ChromaTable[LUTindex][i] = (Ipp8u)VC1_CLIP(j);
+            pContext->ChromaTable[LUTindex][i] = (uint8_t)VC1_CLIP(j);
 #ifdef VC1_DEBUG_ON
             VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
                 VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),
@@ -641,11 +641,11 @@ VC1Status FillTablesForIntensityCompensation_Adv(VC1Context* pContext,
         for (i = 0; i<256; i++)
         {
             j = (i*iscale + ishift + 32) >> 6;
-            pContext->LumaTable[0][i] = (Ipp8u)VC1_CLIP(j);
-            pContext->LumaTable[1][i] = (Ipp8u)VC1_CLIP(j);
+            pContext->LumaTable[0][i] = (uint8_t)VC1_CLIP(j);
+            pContext->LumaTable[1][i] = (uint8_t)VC1_CLIP(j);
             j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
-            pContext->ChromaTable[0][i] = (Ipp8u)VC1_CLIP(j);
-            pContext->ChromaTable[1][i] = (Ipp8u)VC1_CLIP(j);
+            pContext->ChromaTable[0][i] = (uint8_t)VC1_CLIP(j);
+            pContext->ChromaTable[1][i] = (uint8_t)VC1_CLIP(j);
 #ifdef VC1_DEBUG_ON
             VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
                 VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),

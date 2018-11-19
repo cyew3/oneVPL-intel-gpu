@@ -26,7 +26,7 @@
 #include "umc_vc1_common_defs.h"
 #include "umc_vc1_dec_debug.h"
 
-static const Ipp8u deblock_table[16] = {IPPVC_EDGE_ALL ,
+static const uint8_t deblock_table[16] = {IPPVC_EDGE_ALL ,
                                       IPPVC_EDGE_QUARTER_1 +  IPPVC_EDGE_HALF_2,
                                       IPPVC_EDGE_QUARTER_2 +  IPPVC_EDGE_HALF_2,
                                       IPPVC_EDGE_HALF_2,
@@ -46,28 +46,28 @@ static const Ipp8u deblock_table[16] = {IPPVC_EDGE_ALL ,
                                       IPPVC_EDGE_QUARTER_2,
                                       0};
 
-static const Ipp8u deblock_table_2[4] = {IPPVC_EDGE_ALL,
+static const uint8_t deblock_table_2[4] = {IPPVC_EDGE_ALL,
                                          IPPVC_EDGE_HALF_1,
                                          IPPVC_EDGE_HALF_2,
                                          0};
 
 
-inline static void HorizontalDeblockingLumaP(Ipp8u* pUUpBlock,
-                                      Ipp32u Pquant,
-                                      Ipp32s Pitch,
+inline static void HorizontalDeblockingLumaP(uint8_t* pUUpBlock,
+                                      uint32_t Pquant,
+                                      int32_t Pitch,
                                       const VC1MB* _pMB,
                                       const VC1MB* _pnMB)
 {
-    Ipp32s SBP = 0;
-    Ipp32s count = 0;
-    Ipp32s flag_ext = 0;
-    Ipp32s flag_int = 0;
+    int32_t SBP = 0;
+    int32_t count = 0;
+    int32_t flag_ext = 0;
+    int32_t flag_int = 0;
 
-    Ipp32s Edge_ext = 3; /* Mark bottom left and right subblocks */
-    Ipp32s Edge_int = 0;
+    int32_t Edge_ext = 3; /* Mark bottom left and right subblocks */
+    int32_t Edge_int = 0;
 
-    Ipp32s SBP_cur_count  = 0;
-    Ipp32s SBP_next_count = 2;
+    int32_t SBP_cur_count  = 0;
+    int32_t SBP_next_count = 2;
 
 
 
@@ -90,8 +90,8 @@ inline static void HorizontalDeblockingLumaP(Ipp8u* pUUpBlock,
             &&(_pMB->m_pBlocks[SBP_cur_count].mv_s_polarity[0] == _pnMB->m_pBlocks[SBP_next_count].mv_s_polarity[0])
             )
         {
-            Ipp32s DSBP = _pnMB->m_pBlocks[SBP_next_count].SBlkPattern;
-            Ipp32s TSBP = SBP;
+            int32_t DSBP = _pnMB->m_pBlocks[SBP_next_count].SBlkPattern;
+            int32_t TSBP = SBP;
             Edge_ext = TSBP | (DSBP>>2);
         }
         flag_ext += ((Edge_ext&3) << (count*2));
@@ -112,15 +112,15 @@ inline static void HorizontalDeblockingLumaP(Ipp8u* pUUpBlock,
 
 
 
-inline static void HorizontalDeblockingLumaPNoBotBlock(Ipp8u* pUUpBlock,
-                                                Ipp32u Pquant,
-                                                Ipp32s Pitch,
+inline static void HorizontalDeblockingLumaPNoBotBlock(uint8_t* pUUpBlock,
+                                                uint32_t Pquant,
+                                                int32_t Pitch,
                                                 const VC1MB* _pMB)
 {
-    Ipp32s count = 0;
-    Ipp32s flag = 0;
-    Ipp32s Edge = 0;
-    Ipp32s SBP = 0;
+    int32_t count = 0;
+    int32_t flag = 0;
+    int32_t Edge = 0;
+    int32_t SBP = 0;
     for(count = 0; count<2;count++)
     {
         Edge = 0;
@@ -139,15 +139,15 @@ inline static void HorizontalDeblockingLumaPNoBotBlock(Ipp8u* pUUpBlock,
 
 
 
-inline static void HorizontalDeblockingChromaP(Ipp8u* pUUpBlock,
-                                        Ipp32u Pquant,
-                                        Ipp32s Pitch,
+inline static void HorizontalDeblockingChromaP(uint8_t* pUUpBlock,
+                                        uint32_t Pquant,
+                                        int32_t Pitch,
                                         VC1Block* _pBlk,
                                         VC1Block* _pnBlk)
 {
-    Ipp32s SBP = _pBlk->SBlkPattern;
-    Ipp32s Edge_int = 0;
-    Ipp32s Edge_ext = 3;
+    int32_t SBP = _pBlk->SBlkPattern;
+    int32_t Edge_int = 0;
+    int32_t Edge_ext = 3;
 
     if ((_pBlk->blkType < VC1_BLK_INTRA_TOP)
         &&(_pnBlk->blkType < VC1_BLK_INTRA_TOP)
@@ -156,8 +156,8 @@ inline static void HorizontalDeblockingChromaP(Ipp8u* pUUpBlock,
         &&(_pBlk->mv_s_polarity[0] == _pnBlk->mv_s_polarity[0])
         )
     {
-        Ipp32s DSBP = _pnBlk->SBlkPattern;
-        Ipp32s TSBP = SBP;
+        int32_t DSBP = _pnBlk->SBlkPattern;
+        int32_t TSBP = SBP;
         Edge_ext = TSBP | (DSBP>>2);
     }
 
@@ -177,13 +177,13 @@ inline static void HorizontalDeblockingChromaP(Ipp8u* pUUpBlock,
 
 }
 
-inline static void HorizontalDeblockingChromaPNoBotBlock(Ipp8u* pUUpBlock,
-                                                  Ipp32u Pquant,
-                                                  Ipp32s Pitch,
+inline static void HorizontalDeblockingChromaPNoBotBlock(uint8_t* pUUpBlock,
+                                                  uint32_t Pquant,
+                                                  int32_t Pitch,
                                                   const  VC1Block* _pBlk)
 {
-    Ipp32s SBP = _pBlk->SBlkPattern;
-    Ipp32s Edge_int = 0;
+    int32_t SBP = _pBlk->SBlkPattern;
+    int32_t Edge_int = 0;
 
 
     if ((_pBlk->blkType==VC1_BLK_INTER8X4) || (_pBlk->blkType==VC1_BLK_INTER4X4))
@@ -200,23 +200,23 @@ inline static void HorizontalDeblockingChromaPNoBotBlock(Ipp8u* pUUpBlock,
     _own_FilterDeblockingChroma_HorEdge_VC1(pUUpBlock + 4*Pitch, Pquant,Pitch, deblock_table_2[Edge_int]);
 }
 
-inline static void VerticalDeblockingLumaP(Ipp8u* pUUpLBlock,
-                                    Ipp32u Pquant,
-                                    Ipp32s Pitch,
+inline static void VerticalDeblockingLumaP(uint8_t* pUUpLBlock,
+                                    uint32_t Pquant,
+                                    int32_t Pitch,
                                     const VC1MB* _pMB,
                                     const VC1MB* _pnMB)
 {
-    Ipp32s SBP = 0;
+    int32_t SBP = 0;
 
-    Ipp32s count = 0;
-    Ipp32s flag_ext = 0;
-    Ipp32s flag_int = 0;
+    int32_t count = 0;
+    int32_t flag_ext = 0;
+    int32_t flag_int = 0;
 
-    Ipp32s Edge_ext = 3; /* Mark bottom left and right subblocks */
-    Ipp32s Edge_int = 0;
+    int32_t Edge_ext = 3; /* Mark bottom left and right subblocks */
+    int32_t Edge_int = 0;
 
-    Ipp32s SBP_cur_count  = 0;
-    Ipp32s SBP_next_count = 1;
+    int32_t SBP_cur_count  = 0;
+    int32_t SBP_next_count = 1;
 
 
     if (_pMB != _pnMB)
@@ -238,8 +238,8 @@ inline static void VerticalDeblockingLumaP(Ipp8u* pUUpLBlock,
             &&(_pMB->m_pBlocks[SBP_cur_count].mv_s_polarity[0] == _pnMB->m_pBlocks[SBP_next_count].mv_s_polarity[0])
             )
         {
-            Ipp32s DSBP = _pnMB->m_pBlocks[SBP_next_count].SBlkPattern;
-            Ipp32s TSBP = SBP;
+            int32_t DSBP = _pnMB->m_pBlocks[SBP_next_count].SBlkPattern;
+            int32_t TSBP = SBP;
             Edge_ext = TSBP | (DSBP>>1);
             Edge_ext = ( ((Edge_ext&4)>>1) + (Edge_ext&1));
         }
@@ -259,16 +259,16 @@ inline static void VerticalDeblockingLumaP(Ipp8u* pUUpLBlock,
     _own_FilterDeblockingLuma_VerEdge_VC1(pUUpLBlock + 4, Pquant,Pitch, deblock_table[flag_int]);
 
 }
-inline static void VerticalDeblockingLumaPNoLeftBlock(Ipp8u* pUUpLBlock,
-                                               Ipp32u Pquant,
-                                               Ipp32s Pitch,
+inline static void VerticalDeblockingLumaPNoLeftBlock(uint8_t* pUUpLBlock,
+                                               uint32_t Pquant,
+                                               int32_t Pitch,
                                                const VC1MB* _pMB)
 {
-    Ipp32s count = 0;
-    Ipp32s flag = 0;
-    Ipp32s Edge = 0;
-    Ipp32s SBP = 0;
-    Ipp32s SBP_counter = 1;
+    int32_t count = 0;
+    int32_t flag = 0;
+    int32_t Edge = 0;
+    int32_t SBP = 0;
+    int32_t SBP_counter = 1;
 
 
    for(count = 0; count<2;count++)
@@ -292,15 +292,15 @@ inline static void VerticalDeblockingLumaPNoLeftBlock(Ipp8u* pUUpLBlock,
 
 
 
-inline static void VerticalDeblockingChromaP(Ipp8u* pUUpLBlock,
-                                      Ipp32u Pquant,
-                                      Ipp32s Pitch,
+inline static void VerticalDeblockingChromaP(uint8_t* pUUpLBlock,
+                                      uint32_t Pquant,
+                                      int32_t Pitch,
                                       VC1Block* _pBlk,
                                       VC1Block* _pnBlk)
 {
-    Ipp32s SBP = _pBlk->SBlkPattern;
-    Ipp32s Edge_int = 0;
-    Ipp32s Edge_ext = 3;
+    int32_t SBP = _pBlk->SBlkPattern;
+    int32_t Edge_int = 0;
+    int32_t Edge_ext = 3;
 
         if ((_pBlk->blkType < VC1_BLK_INTRA_TOP)
         &&(_pnBlk->blkType < VC1_BLK_INTRA_TOP)
@@ -309,8 +309,8 @@ inline static void VerticalDeblockingChromaP(Ipp8u* pUUpLBlock,
         &&(_pBlk->mv_s_polarity[0] == _pnBlk->mv_s_polarity[0])
         )
     {
-            Ipp32s DSBP = _pnBlk->SBlkPattern;
-            Ipp32s TSBP = SBP;
+            int32_t DSBP = _pnBlk->SBlkPattern;
+            int32_t TSBP = SBP;
             Edge_ext = TSBP | (DSBP>>1);
             Edge_ext = ( ((Edge_ext&4)>>1) + (Edge_ext&1));
     }
@@ -329,13 +329,13 @@ inline static void VerticalDeblockingChromaP(Ipp8u* pUUpLBlock,
     _own_FilterDeblockingChroma_VerEdge_VC1(pUUpLBlock + 8, Pquant,Pitch, deblock_table_2[Edge_ext]);
     _own_FilterDeblockingChroma_VerEdge_VC1(pUUpLBlock + 4, Pquant,Pitch, deblock_table_2[Edge_int]);
 }
-inline static void VerticalDeblockingChromaPNoLeftBlock(Ipp8u* pUUpLBlock,
-                                                 Ipp32u Pquant,
-                                                 Ipp32s Pitch,
+inline static void VerticalDeblockingChromaPNoLeftBlock(uint8_t* pUUpLBlock,
+                                                 uint32_t Pquant,
+                                                 int32_t Pitch,
                                                  VC1Block* _pBlk)
 {
-    Ipp32s SBP = _pBlk->SBlkPattern;
-    Ipp32s Edge_int = 0;
+    int32_t SBP = _pBlk->SBlkPattern;
+    int32_t Edge_int = 0;
 
     if ((_pBlk->blkType==VC1_BLK_INTER4X8) || (_pBlk->blkType==VC1_BLK_INTER4X4))
     {
@@ -353,13 +353,13 @@ inline static void VerticalDeblockingChromaPNoLeftBlock(Ipp8u* pUUpLBlock,
 
 
 
-inline static void HorizontalDeblockingBlkB_No_DBlock(Ipp8u* pUUpBlock,
-                                               Ipp32u Pquant,
-                                               Ipp32s Pitch,
+inline static void HorizontalDeblockingBlkB_No_DBlock(uint8_t* pUUpBlock,
+                                               uint32_t Pquant,
+                                               int32_t Pitch,
                                                VC1Block* _pBlk)
 {
-    Ipp32s SBP = _pBlk->SBlkPattern;
-    Ipp32s flag_ver = IPPVC_EDGE_ALL;
+    int32_t SBP = _pBlk->SBlkPattern;
+    int32_t flag_ver = IPPVC_EDGE_ALL;
     if ((_pBlk->blkType==VC1_BLK_INTER8X4) || (_pBlk->blkType==VC1_BLK_INTER4X4))
     {
         if ((SBP & 8) || (SBP & 2))
@@ -374,13 +374,13 @@ inline static void HorizontalDeblockingBlkB_No_DBlock(Ipp8u* pUUpBlock,
     _own_FilterDeblockingChroma_HorEdge_VC1(pUUpBlock + 4*Pitch, Pquant,Pitch, flag_ver);
 }
 
-inline static void HorizontalDeblockingBlkB(Ipp8u* pUUpBlock,
-                                     Ipp32u Pquant,
-                                     Ipp32s Pitch,
+inline static void HorizontalDeblockingBlkB(uint8_t* pUUpBlock,
+                                     uint32_t Pquant,
+                                     int32_t Pitch,
                                      VC1Block* _pBlk)
 {
-    Ipp32s SBP = _pBlk->SBlkPattern;
-    Ipp32s flag_ver = IPPVC_EDGE_ALL;
+    int32_t SBP = _pBlk->SBlkPattern;
+    int32_t flag_ver = IPPVC_EDGE_ALL;
 
     _own_FilterDeblockingChroma_HorEdge_VC1(pUUpBlock + 8*Pitch, Pquant,Pitch, 0);
     if ((_pBlk->blkType==VC1_BLK_INTER8X4) || (_pBlk->blkType==VC1_BLK_INTER4X4))
@@ -397,13 +397,13 @@ inline static void HorizontalDeblockingBlkB(Ipp8u* pUUpBlock,
     _own_FilterDeblockingChroma_HorEdge_VC1(pUUpBlock + 4*Pitch, Pquant,Pitch, flag_ver);
 
 }
-inline static void VerticalDeblockingBlkB_No_DBlock(Ipp8u* pUUpLBlock,
-                                             Ipp32u Pquant,
-                                             Ipp32s Pitch,
+inline static void VerticalDeblockingBlkB_No_DBlock(uint8_t* pUUpLBlock,
+                                             uint32_t Pquant,
+                                             int32_t Pitch,
                                              VC1Block* _pBlk)
 {
-    Ipp32s SBP = _pBlk->SBlkPattern;
-    Ipp32s flag_ver = IPPVC_EDGE_ALL;
+    int32_t SBP = _pBlk->SBlkPattern;
+    int32_t flag_ver = IPPVC_EDGE_ALL;
     if ((_pBlk->blkType==VC1_BLK_INTER4X8) || (_pBlk->blkType==VC1_BLK_INTER4X4))
     {
         if ((SBP & 8) || (SBP & 4))
@@ -420,13 +420,13 @@ inline static void VerticalDeblockingBlkB_No_DBlock(Ipp8u* pUUpLBlock,
     _own_FilterDeblockingChroma_VerEdge_VC1(pUUpLBlock + 4, Pquant,Pitch,flag_ver);
 }
 
-inline static void VerticalDeblockingBlkB(Ipp8u* pUUpLBlock,
-                                   Ipp32u Pquant,
-                                   Ipp32s Pitch,
+inline static void VerticalDeblockingBlkB(uint8_t* pUUpLBlock,
+                                   uint32_t Pquant,
+                                   int32_t Pitch,
                                    VC1Block* _pBlk)
 {
-    Ipp32s SBP = _pBlk->SBlkPattern;
-    Ipp32s flag_ver = IPPVC_EDGE_ALL;
+    int32_t SBP = _pBlk->SBlkPattern;
+    int32_t flag_ver = IPPVC_EDGE_ALL;
 
     _own_FilterDeblockingChroma_VerEdge_VC1(pUUpLBlock + 8, Pquant,Pitch,0);
     if ((_pBlk->blkType==VC1_BLK_INTER4X8) || (_pBlk->blkType==VC1_BLK_INTER4X4))
@@ -447,13 +447,13 @@ inline static void VerticalDeblockingBlkB(Ipp8u* pUUpLBlock,
 
 
 
-inline static void HorizontalDeblockingBlkInterlaceP_No_DBlock(Ipp8u* pUUpBlock,
-                                                        Ipp32u Pquant,
-                                                        Ipp32s Pitch,
+inline static void HorizontalDeblockingBlkInterlaceP_No_DBlock(uint8_t* pUUpBlock,
+                                                        uint32_t Pquant,
+                                                        int32_t Pitch,
                                                         VC1Block* _pBlk,
-                                                        Ipp32u field)
+                                                        uint32_t field)
 {
-    Ipp32s flag_ver=0;
+    int32_t flag_ver=0;
     if (field)
     {
         if ((_pBlk->blkType == VC1_BLK_INTER8X4) || (_pBlk->blkType == VC1_BLK_INTER4X4))
@@ -463,12 +463,12 @@ inline static void HorizontalDeblockingBlkInterlaceP_No_DBlock(Ipp8u* pUUpBlock,
 
     }
 }
-inline static void HorizontalDeblockingBlkInterlaceP(Ipp8u* pUUpBlock,
-                                              Ipp32u Pquant,
-                                              Ipp32s Pitch,
+inline static void HorizontalDeblockingBlkInterlaceP(uint8_t* pUUpBlock,
+                                              uint32_t Pquant,
+                                              int32_t Pitch,
                                               VC1Block* _pBlk,
-                                              Ipp32u field,
-                                              Ipp32u is_intern_deblock)
+                                              uint32_t field,
+                                              uint32_t is_intern_deblock)
 {
     if (field)
     {
@@ -492,13 +492,13 @@ inline static void HorizontalDeblockingBlkInterlaceP(Ipp8u* pUUpBlock,
     }
 
 }
-inline static void VerticalDeblockingBlkInterlaceP_No_DBlock(Ipp8u* pUUpBlock,
-                                                      Ipp32u Pquant,
-                                                      Ipp32s Pitch,
+inline static void VerticalDeblockingBlkInterlaceP_No_DBlock(uint8_t* pUUpBlock,
+                                                      uint32_t Pquant,
+                                                      int32_t Pitch,
                                                       VC1Block* _pBlk,
-                                                      Ipp32u field)
+                                                      uint32_t field)
 {
-    Ipp32s flag_ver = IPPVC_EDGE_HALF_2;
+    int32_t flag_ver = IPPVC_EDGE_HALF_2;
     if (field)
     {
         if ((_pBlk->blkType == VC1_BLK_INTER4X8) || (_pBlk->blkType == VC1_BLK_INTER4X4))
@@ -517,13 +517,13 @@ inline static void VerticalDeblockingBlkInterlaceP_No_DBlock(Ipp8u* pUUpBlock,
         }
     }
 }
-inline static void VerticalDeblockingBlkInterlaceP(Ipp8u* pUUpBlock,
-                                            Ipp32u Pquant,
-                                            Ipp32s Pitch,
+inline static void VerticalDeblockingBlkInterlaceP(uint8_t* pUUpBlock,
+                                            uint32_t Pquant,
+                                            int32_t Pitch,
                                             VC1Block* _pBlk,
-                                            Ipp32u field)
+                                            uint32_t field)
 {
-    Ipp32s flag_ver = IPPVC_EDGE_HALF_2;
+    int32_t flag_ver = IPPVC_EDGE_HALF_2;
     if (field)
     {
         if ((_pBlk->blkType == VC1_BLK_INTER4X8) || (_pBlk->blkType == VC1_BLK_INTER4X4))
@@ -553,19 +553,19 @@ inline static void VerticalDeblockingBlkInterlaceP(Ipp8u* pUUpBlock,
 
 void Deblocking_ProgressiveIpicture_Adv(VC1Context* pContext)
 {
-    Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
-    Ipp32s MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
-    Ipp32s curX, curY;
-    Ipp32u PQuant = pContext->m_picLayerHeader->PQUANT;
+    int32_t WidthMB =  pContext->m_seqLayerHeader.widthMB;
+    int32_t MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
+    int32_t curX, curY;
+    uint32_t PQuant = pContext->m_picLayerHeader->PQUANT;
 
-    Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
+    int32_t HeightMB   = pContext->DeblockInfo.HeightMB;
     VC1MB* m_CurrMB = pContext->m_pCurrMB;
 
-    Ipp32s YPitch = m_CurrMB->currYPitch;
-    Ipp32s UPitch = m_CurrMB->currUPitch;
-    Ipp32s VPitch = m_CurrMB->currVPitch;
+    int32_t YPitch = m_CurrMB->currYPitch;
+    int32_t UPitch = m_CurrMB->currUPitch;
+    int32_t VPitch = m_CurrMB->currVPitch;
 
-    Ipp32s flag_ver = 0;
+    int32_t flag_ver = 0;
 
     /* Deblock horizontal edges */
     for (curY=0; curY<HeightMB-1; curY++)
@@ -628,16 +628,16 @@ void Deblocking_ProgressiveIpicture_Adv(VC1Context* pContext)
 }
 void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
 {
-    Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
-    Ipp32s curX, curY;
-    Ipp32s PQuant = pContext->m_picLayerHeader->PQUANT;
-    Ipp32s MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
+    int32_t WidthMB =  pContext->m_seqLayerHeader.widthMB;
+    int32_t curX, curY;
+    int32_t PQuant = pContext->m_picLayerHeader->PQUANT;
+    int32_t MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
 
-    Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
+    int32_t HeightMB   = pContext->DeblockInfo.HeightMB;
     VC1MB* m_CurrMB = pContext->m_pCurrMB;
-    Ipp32s YPitch = m_CurrMB->currYPitch;
-    Ipp32s UPitch = m_CurrMB->currUPitch;
-    Ipp32s VPitch = m_CurrMB->currVPitch;
+    int32_t YPitch = m_CurrMB->currYPitch;
+    int32_t UPitch = m_CurrMB->currUPitch;
+    int32_t VPitch = m_CurrMB->currVPitch;
 
     /* Deblock horizontal edges */
     for (curY=0; curY<HeightMB-1; curY++)
@@ -770,17 +770,17 @@ void Deblocking_ProgressivePpicture_Adv(VC1Context* pContext)
 
 void Deblocking_InterlaceFieldBpicture_Adv(VC1Context* pContext)
 {
-    Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
-    Ipp32s MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
-    Ipp32s curX, curY;
-    Ipp32s PQuant = pContext->m_picLayerHeader->PQUANT;
+    int32_t WidthMB =  pContext->m_seqLayerHeader.widthMB;
+    int32_t MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
+    int32_t curX, curY;
+    int32_t PQuant = pContext->m_picLayerHeader->PQUANT;
 
-    Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
+    int32_t HeightMB   = pContext->DeblockInfo.HeightMB;
     VC1MB* m_CurrMB = pContext->m_pCurrMB;
 
-    Ipp32s YPitch = m_CurrMB->currYPitch;
-    Ipp32s UPitch = m_CurrMB->currUPitch;
-    Ipp32s VPitch = m_CurrMB->currVPitch;
+    int32_t YPitch = m_CurrMB->currYPitch;
+    int32_t UPitch = m_CurrMB->currUPitch;
+    int32_t VPitch = m_CurrMB->currVPitch;
 
     /* Deblock horizontal edges */
     for (curY=0; curY<HeightMB-1; curY++)
@@ -931,18 +931,18 @@ void Deblocking_InterlaceFieldBpicture_Adv(VC1Context* pContext)
 
 void Deblocking_InterlaceFrameIpicture_Adv(VC1Context* pContext)
 {
-    Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
-    Ipp32s curX, curY;
-    Ipp32u PQuant = pContext->m_picLayerHeader->PQUANT;
-    Ipp32s MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
+    int32_t WidthMB =  pContext->m_seqLayerHeader.widthMB;
+    int32_t curX, curY;
+    uint32_t PQuant = pContext->m_picLayerHeader->PQUANT;
+    int32_t MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
 
-    Ipp32s fieldoffset;
+    int32_t fieldoffset;
 
-    Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
+    int32_t HeightMB   = pContext->DeblockInfo.HeightMB;
     VC1MB* m_CurrMB = pContext->m_pCurrMB;
-    Ipp32s YPitch = m_CurrMB->currYPitch;
-    Ipp32s UPitch = m_CurrMB->currUPitch;
-    Ipp32s VPitch = m_CurrMB->currVPitch;
+    int32_t YPitch = m_CurrMB->currYPitch;
+    int32_t UPitch = m_CurrMB->currUPitch;
+    int32_t VPitch = m_CurrMB->currVPitch;
 
     fieldoffset = m_CurrMB->FIELDTX;
 
@@ -1136,21 +1136,21 @@ void Deblocking_InterlaceFrameIpicture_Adv(VC1Context* pContext)
 
 void Deblocking_InterlaceFramePpicture_Adv(VC1Context* pContext)
 {
-    Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
-    Ipp32s curX, curY;
-    Ipp32u PQuant = pContext->m_picLayerHeader->PQUANT;
-    Ipp32s MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
+    int32_t WidthMB =  pContext->m_seqLayerHeader.widthMB;
+    int32_t curX, curY;
+    uint32_t PQuant = pContext->m_picLayerHeader->PQUANT;
+    int32_t MaxWidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
 
 
-    Ipp32s fieldoffset[] = {8,1};
+    int32_t fieldoffset[] = {8,1};
 
-    Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
+    int32_t HeightMB   = pContext->DeblockInfo.HeightMB;
     VC1MB* m_CurrMB = pContext->m_pCurrMB;
-    Ipp32s YPitch = m_CurrMB->currYPitch;
-    Ipp32s UPitch = m_CurrMB->currUPitch;
-    Ipp32s VPitch = m_CurrMB->currVPitch;
+    int32_t YPitch = m_CurrMB->currYPitch;
+    int32_t UPitch = m_CurrMB->currUPitch;
+    int32_t VPitch = m_CurrMB->currVPitch;
 
-    Ipp32u is_intern_deblock = 0;
+    uint32_t is_intern_deblock = 0;
 
     /* Deblock horizontal edges */
     for (curY=0; curY<HeightMB-1; curY++)

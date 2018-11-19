@@ -46,7 +46,7 @@
 //       15         2            2
 
 //VC-1 Table 117: 4MV block pattern table 0
-const extern Ipp32s VC1_MV4BlockPatternTable0[] =
+const extern int32_t VC1_MV4BlockPatternTable0[] =
 {
     6, /* max bits */
     1,  /* total subtables */
@@ -90,7 +90,7 @@ const extern Ipp32s VC1_MV4BlockPatternTable0[] =
 //           15            0           2
 
 //VC-1 Table 118: 4MV Block Pattern Table 1
-const extern Ipp32s VC1_MV4BlockPatternTable1[] =
+const extern int32_t VC1_MV4BlockPatternTable1[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -131,7 +131,7 @@ const extern Ipp32s VC1_MV4BlockPatternTable1[] =
 //        15           0                    3
 
 //VC-1 Table 119: 4MV Block Pattern Table 2
-const extern Ipp32s VC1_MV4BlockPatternTable2[] =
+const extern int32_t VC1_MV4BlockPatternTable2[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -173,7 +173,7 @@ const extern Ipp32s VC1_MV4BlockPatternTable2[] =
 //           15            10          4
 
 //VC-1 Table 120: 4MV Block Pattern Table 3
-const extern Ipp32s VC1_MV4BlockPatternTable3[] =
+const extern int32_t VC1_MV4BlockPatternTable3[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -202,7 +202,7 @@ const extern Ipp32s VC1_MV4BlockPatternTable3[] =
 //     1     1            3                2
 
 //VC-1 Table 121: Interlace Frame 2 MVP Block Pattern Table 0
-const extern Ipp32s VC1_MV2BlockPatternTable0[] =
+const extern int32_t VC1_MV2BlockPatternTable0[] =
 {
     2, /* max bits */
     1,  /* total subtables */
@@ -222,7 +222,7 @@ const extern Ipp32s VC1_MV2BlockPatternTable0[] =
 //     1     1            3                3
 
 //VC-1 Table 122: Interlace Frame 2 MVP Block Pattern Table 1
-const extern Ipp32s VC1_MV2BlockPatternTable1[] =
+const extern int32_t VC1_MV2BlockPatternTable1[] =
 {
     3, /* max bits */
     1,  /* total subtables */
@@ -245,7 +245,7 @@ const extern Ipp32s VC1_MV2BlockPatternTable1[] =
 //     1     1            1                1
 
 //VC-1 Table 123: Interlace Frame 2 MVP Block Pattern Table 2
-const extern Ipp32s VC1_MV2BlockPatternTable2[] =
+const extern int32_t VC1_MV2BlockPatternTable2[] =
 {
     3, /* max bits */
     1,  /* total subtables */
@@ -268,7 +268,7 @@ const extern Ipp32s VC1_MV2BlockPatternTable2[] =
 //     1     1            0                2
 
 //VC-1 Table 124: Interlace Frame 2 MVP Block Pattern Table 3
-const extern Ipp32s VC1_MV2BlockPatternTable3[] =
+const extern int32_t VC1_MV2BlockPatternTable3[] =
 {
     3, /* max bits */
     1,  /* total subtables */

@@ -31,10 +31,10 @@
 VC1Status DecodePictureHeader (VC1Context* pContext,  bool isExtHeader)
 {
     VC1Status vc1Sts = VC1_OK;
-    Ipp32u tempValue;
+    uint32_t tempValue;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
-    Ipp32u SkFrameSize = 10;
+    uint32_t SkFrameSize = 10;
 
     if (isExtHeader)
         SkFrameSize -= 8;
@@ -85,8 +85,8 @@ VC1Status DecodePictureHeader (VC1Context* pContext,  bool isExtHeader)
 
     if(picLayerHeader->PTYPE == VC1_B_FRAME)
     {
-        Ipp8s  z1;
-        Ipp16s z2;
+        int8_t  z1;
+        int16_t z2;
         DecodeHuffmanPair(&pContext->m_bitstream.pBitstream,
                                     &pContext->m_bitstream.bitOffset,
                                     pContext->m_vlcTbl->BFRACTION,

@@ -62,7 +62,7 @@
 //    32           147       9
 
 //VC-1 Table 125: interlaced CBPCY table 0
-const extern Ipp32s VC1_InterlacedCBPCYTable0[] =
+const extern int32_t VC1_InterlacedCBPCYTable0[] =
 {
     15, /* max bits */
     2,  /* total subtables */
@@ -144,7 +144,7 @@ const extern Ipp32s VC1_InterlacedCBPCYTable0[] =
 //      32      9            6
 
 //VC-1 Table 126: interlaced CBPCY table 1
-const extern Ipp32s VC1_InterlacedCBPCYTable1[] =
+const extern int32_t VC1_InterlacedCBPCYTable1[] =
 {
         9, /* max bits */
         1,  /* total subtables */
@@ -219,7 +219,7 @@ const extern Ipp32s VC1_InterlacedCBPCYTable1[] =
 //     32        41          6
 
 //VC-1 Table 127: interlaced CBPCY table 2
-const extern Ipp32s VC1_InterlacedCBPCYTable2[] =
+const extern int32_t VC1_InterlacedCBPCYTable2[] =
 {
         9, /* max bits */
         1,  /* total subtables */
@@ -293,7 +293,7 @@ const extern Ipp32s VC1_InterlacedCBPCYTable2[] =
 //   31             251         8            63           14            4
 //   32             3           4
 
-const extern Ipp32s VC1_InterlacedCBPCYTable3[] =
+const extern int32_t VC1_InterlacedCBPCYTable3[] =
 {
     10, /* max bits */
     1,  /* total subtables */
@@ -368,7 +368,7 @@ const extern Ipp32s VC1_InterlacedCBPCYTable3[] =
 //   31            53            6       63           4               3
 //   32            13            5
 
-const extern Ipp32s VC1_InterlacedCBPCYTable4[] =
+const extern int32_t VC1_InterlacedCBPCYTable4[] =
 {
     8, /* max bits */
     1,  /* total subtables */
@@ -441,7 +441,7 @@ const extern Ipp32s VC1_InterlacedCBPCYTable4[] =
 //   31         245          8            63              2           4
 //   32          13          4
 
-const extern Ipp32s VC1_InterlacedCBPCYTable5[] =
+const extern int32_t VC1_InterlacedCBPCYTable5[] =
 {
     10, /* max bits */
     1,  /* total subtables */
@@ -516,7 +516,7 @@ const extern Ipp32s VC1_InterlacedCBPCYTable5[] =
 //   31        1023           10            63         496             9
 //   32           3            3
 
-const extern Ipp32s VC1_InterlacedCBPCYTable6[] =
+const extern int32_t VC1_InterlacedCBPCYTable6[] =
 {
     11, /* max bits */
     1,  /* total subtables */
@@ -591,7 +591,7 @@ const extern Ipp32s VC1_InterlacedCBPCYTable6[] =
 //   31         441           10            63          19             9
 //   32           7            3
 
-const extern Ipp32s VC1_InterlacedCBPCYTable7[] =
+const extern int32_t VC1_InterlacedCBPCYTable7[] =
 {
     10, /* max bits */
     1,  /* total subtables */

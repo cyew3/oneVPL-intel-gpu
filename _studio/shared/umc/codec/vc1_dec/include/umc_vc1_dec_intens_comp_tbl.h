@@ -27,7 +27,7 @@
 
 #include "ippdefs.h"
 
-const extern Ipp32s vc1_dec_ic_level_tbl[257];
+const extern int32_t vc1_dec_ic_level_tbl[257];
 
 #endif //__umc_vc1_dec_intens_comp_tbl_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

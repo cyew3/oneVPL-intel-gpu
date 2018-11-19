@@ -43,7 +43,7 @@
 //  00011               11
 
 //it is not used, because esier get FLC 3 or 5 bits length
-const extern Ipp32s VC1_EscapeMode3Conservative_tbl[] =
+const extern int32_t VC1_EscapeMode3Conservative_tbl[] =
 {
  5, /* max bits */
  2,  /* total subtables */
@@ -75,7 +75,7 @@ const extern Ipp32s VC1_EscapeMode3Conservative_tbl[] =
 //  000000              8
 
 //it is not used for while,
-const extern Ipp32s VC1_EscapeMode3Efficient_tbl[] =
+const extern int32_t VC1_EscapeMode3Efficient_tbl[] =
 {
  6, /* max bits */
  2,  /* total subtables */
@@ -107,7 +107,7 @@ const extern Ipp32s VC1_EscapeMode3Efficient_tbl[] =
 //Rowskip        010
 //Colskip        011
 
-const extern Ipp32s VC1_Bitplane_IMODE_tbl[] =
+const extern int32_t VC1_Bitplane_IMODE_tbl[] =
 {
  4, /* max bits */
  1, /* total subtables */
@@ -202,7 +202,7 @@ const extern Ipp32s VC1_Bitplane_IMODE_tbl[] =
 //58      3           5         1       8 = (3 << 8)|  1    13
 //60      3           5         0       8 = (3 << 8)|  0    13
 
-const extern Ipp32s VC1_BitplaneTaledbitsTbl[] =
+const extern int32_t VC1_BitplaneTaledbitsTbl[] =
 {
  13, /* max bits */
  2,  /* total subtables */
@@ -280,7 +280,7 @@ const extern Ipp32s VC1_BitplaneTaledbitsTbl[] =
     (3 << 8)|  0,  60,
     -1
 };
-const extern Ipp32s VC1_BFraction_tbl[]=
+const extern int32_t VC1_BFraction_tbl[]=
 {
  7,        /* max bits */
  2,        /* total subtables */
@@ -303,7 +303,7 @@ const extern Ipp32s VC1_BFraction_tbl[]=
 
     -1
 };
-const extern Ipp32s VC1_BFraction_indexes[8][9] =
+const extern int32_t VC1_BFraction_indexes[8][9] =
 {
 /* 21 is an invalid index */
 /*          0   1   2   3   4   5   6   7   8*/

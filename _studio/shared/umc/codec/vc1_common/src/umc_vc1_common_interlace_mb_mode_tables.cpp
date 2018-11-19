@@ -37,7 +37,7 @@
 //    6            9            5
 //    7            2            2
 
-const extern Ipp32s VC1_Mixed_MV_MB_ModeTable0[] =
+const extern int32_t VC1_Mixed_MV_MB_ModeTable0[] =
 {
     6, /* max bits */
     1,  /* total subtables */
@@ -70,7 +70,7 @@ const extern Ipp32s VC1_Mixed_MV_MB_ModeTable0[] =
 //    6            5            4
 //    7            2            2
 
-const extern Ipp32s VC1_Mixed_MV_MB_ModeTable1[] =
+const extern int32_t VC1_Mixed_MV_MB_ModeTable1[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -104,7 +104,7 @@ const extern Ipp32s VC1_Mixed_MV_MB_ModeTable1[] =
 //    6            9            5
 //    7            2            2
 
-const extern Ipp32s VC1_Mixed_MV_MB_ModeTable2[] =
+const extern int32_t VC1_Mixed_MV_MB_ModeTable2[] =
 {
     6, /* max bits */
     1,  /* total subtables */
@@ -141,7 +141,7 @@ const extern Ipp32s VC1_Mixed_MV_MB_ModeTable2[] =
 //    6            29          5
 //    7            0           1
 
-const extern Ipp32s VC1_Mixed_MV_MB_ModeTable3[] =
+const extern int32_t VC1_Mixed_MV_MB_ModeTable3[] =
 {
     6, /* max bits */
     1,  /* total subtables */
@@ -177,7 +177,7 @@ const extern Ipp32s VC1_Mixed_MV_MB_ModeTable3[] =
 //    6            12           4
 //    7            0            1
 
-const extern Ipp32s VC1_Mixed_MV_MB_ModeTable4[] =
+const extern int32_t VC1_Mixed_MV_MB_ModeTable4[] =
 {
     6, /* max bits */
     1,  /* total subtables */
@@ -209,7 +209,7 @@ const extern Ipp32s VC1_Mixed_MV_MB_ModeTable4[] =
 //    6       15            4
 //    7        4            3
 
-const extern Ipp32s VC1_Mixed_MV_MB_ModeTable5[] =
+const extern int32_t VC1_Mixed_MV_MB_ModeTable5[] =
 {
     6, /* max bits */
     1,  /* total subtables */
@@ -241,7 +241,7 @@ const extern Ipp32s VC1_Mixed_MV_MB_ModeTable5[] =
 //    6            9            4
 //    7            5            3
 
-const extern Ipp32s VC1_Mixed_MV_MB_ModeTable6[] =
+const extern int32_t VC1_Mixed_MV_MB_ModeTable6[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -271,7 +271,7 @@ const extern Ipp32s VC1_Mixed_MV_MB_ModeTable6[] =
 //    6            4           3
 //    7            15          4
 
-const extern Ipp32s VC1_Mixed_MV_MB_ModeTable7[] =
+const extern int32_t VC1_Mixed_MV_MB_ModeTable7[] =
 {
     6, /* max bits */
     1,  /* total subtables */
@@ -300,7 +300,7 @@ const extern Ipp32s VC1_Mixed_MV_MB_ModeTable7[] =
 //    3        1            3
 //    4        1            2
 //    5        1            4
-const extern Ipp32s VC1_1MV_MB_ModeTable0[] =
+const extern int32_t VC1_1MV_MB_ModeTable0[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -330,7 +330,7 @@ const extern Ipp32s VC1_1MV_MB_ModeTable0[] =
 //    4        1            3
 //    5        1            4
 
-const extern Ipp32s VC1_1MV_MB_ModeTable1[] =
+const extern int32_t VC1_1MV_MB_ModeTable1[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -359,7 +359,7 @@ const extern Ipp32s VC1_1MV_MB_ModeTable1[] =
 //    4        9            4
 //    5        5            3
 
-const extern Ipp32s VC1_1MV_MB_ModeTable2[] =
+const extern int32_t VC1_1MV_MB_ModeTable2[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -389,7 +389,7 @@ const extern Ipp32s VC1_1MV_MB_ModeTable2[] =
 //    4        0            1
 //    5        4            3
 
-const extern Ipp32s VC1_1MV_MB_ModeTable3[] =
+const extern int32_t VC1_1MV_MB_ModeTable3[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -418,7 +418,7 @@ const extern Ipp32s VC1_1MV_MB_ModeTable3[] =
 //    4        3            2
 //    5        0            2
 
-const extern Ipp32s VC1_1MV_MB_ModeTable4[] =
+const extern int32_t VC1_1MV_MB_ModeTable4[] =
 {
     4, /* max bits */
     1,  /* total subtables */
@@ -445,7 +445,7 @@ const extern Ipp32s VC1_1MV_MB_ModeTable4[] =
 //    4        0            2
 //    5        3            2
 
-const extern Ipp32s VC1_1MV_MB_ModeTable5[] =
+const extern int32_t VC1_1MV_MB_ModeTable5[] =
 {
     4, /* max bits */
     1,  /* total subtables */
@@ -470,7 +470,7 @@ const extern Ipp32s VC1_1MV_MB_ModeTable5[] =
 //    3        1            4
 //    4        1            1
 //    5        1            2
-const extern Ipp32s VC1_1MV_MB_ModeTable6[] =
+const extern int32_t VC1_1MV_MB_ModeTable6[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -499,7 +499,7 @@ const extern Ipp32s VC1_1MV_MB_ModeTable6[] =
 //    3        5            3
 //    4        3            2
 //    5        0            1
-const extern Ipp32s VC1_1MV_MB_ModeTable7[] =
+const extern int32_t VC1_1MV_MB_ModeTable7[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -536,7 +536,7 @@ const extern Ipp32s VC1_1MV_MB_ModeTable7[] =
 //  4-MV(F)     N/A         Field                   19            5       12
 //  4-MV(F)     N/A         No CBP                  93            7       13
 //  INTRA       N/A         N/A                     18            5       14
-const extern Ipp32s VC1_4MV_MB_Mode_PBPic_Table0[] =
+const extern int32_t VC1_4MV_MB_Mode_PBPic_Table0[] =
 {
     8, /* max bits */
     1,  /* total subtables */
@@ -577,7 +577,7 @@ const extern Ipp32s VC1_4MV_MB_Mode_PBPic_Table0[] =
 //  4-MV(F)     N/A         No CBP                  77            7       28
 //  INTRA       N/A         N/A                     76            7       29
 
-const extern Ipp32s VC1_4MV_MB_Mode_PBPic_Table1[] =
+const extern int32_t VC1_4MV_MB_Mode_PBPic_Table1[] =
 {
     7, /* max bits */
     1,  /* total subtables */
@@ -618,7 +618,7 @@ const extern Ipp32s VC1_4MV_MB_Mode_PBPic_Table1[] =
 //  4-MV(F)     N/A         No CBP                 21             6   43
 //  INTRA       N/A         N/A                    11             5   44
 
-const extern Ipp32s VC1_4MV_MB_Mode_PBPic_Table2[] =
+const extern int32_t VC1_4MV_MB_Mode_PBPic_Table2[] =
 {
     7, /* max bits */
     1,  /* total subtables */
@@ -659,7 +659,7 @@ const extern Ipp32s VC1_4MV_MB_Mode_PBPic_Table2[] =
 //  4-MV(F)     N/A        No CBP                   192         9      58
 //  INTRA       N/A        N/A                      1598        12     59
 
-const extern Ipp32s VC1_4MV_MB_Mode_PBPic_Table3[] =
+const extern int32_t VC1_4MV_MB_Mode_PBPic_Table3[] =
 {
     12, /* max bits */
     2,  /* total subtables */
@@ -703,7 +703,7 @@ const extern Ipp32s VC1_4MV_MB_Mode_PBPic_Table3[] =
 // 2-MV(F)      N/A         Field                  1            2       66
 // 2-MV(F)      N/A         No CBP                 3            2       67
 // INTRA        N/A         N/A                    23           5       68
-const extern Ipp32s VC1_Non4MV_MB_Mode_PBPic_Table0[] =
+const extern int32_t VC1_Non4MV_MB_Mode_PBPic_Table0[] =
 {
     5, /* max bits */
     1,  /* total subtables */
@@ -733,7 +733,7 @@ const extern Ipp32s VC1_Non4MV_MB_Mode_PBPic_Table0[] =
 // 2-MV(F)      N/A         Field                   6           3       75
 // 2-MV(F)      N/A         No CBP                  3           5       76
 // INTRA        N/A         N/A                     4           6       77
-const extern Ipp32s VC1_Non4MV_MB_Mode_PBPic_Table1[] =
+const extern int32_t VC1_Non4MV_MB_Mode_PBPic_Table1[] =
 {
     6, /* max bits */
     1,  /* total subtables */
@@ -767,7 +767,7 @@ const extern Ipp32s VC1_Non4MV_MB_Mode_PBPic_Table1[] =
 // 2-MV(F)      N/A         Field                   3           2      84
 // 2-MV(F)      N/A         No CBP                  9           4      85
 // INTRA        N/A         N/A                     45          6      86
-const extern Ipp32s VC1_Non4MV_MB_Mode_PBPic_Table2[] =
+const extern int32_t VC1_Non4MV_MB_Mode_PBPic_Table2[] =
 {
     6, /* max bits */
     1,  /* total subtables */
@@ -799,7 +799,7 @@ const extern Ipp32s VC1_Non4MV_MB_Mode_PBPic_Table2[] =
 // 2-MV(F)      N/A             Field               25           6     93
 // 2-MV(F)      N/A             No CBP              0            2     94
 // INTRA        N/A             N/A                 96           8     95
-const extern Ipp32s VC1_Non4MV_MB_Mode_PBPic_Table3[] =
+const extern int32_t VC1_Non4MV_MB_Mode_PBPic_Table3[] =
 {
     8, /* max bits */
     1,  /* total subtables */
@@ -825,7 +825,7 @@ const extern Ipp32s VC1_Non4MV_MB_Mode_PBPic_Table3[] =
     -1 /* end of table */
 };
 
-const extern Ipp8u VC1_MB_Mode_PBPic_Transform_Table[] =
+const extern uint8_t VC1_MB_Mode_PBPic_Transform_Table[] =
 {
     // 0..9
     VC1_FRAME_TRANSFORM,    VC1_FIELD_TRANSFORM,
@@ -887,7 +887,7 @@ const extern Ipp8u VC1_MB_Mode_PBPic_Transform_Table[] =
     VC1_NO_CBP_TRANSFORM,   VC1_NA_TRANSFORM
 };
 
-const extern Ipp8u VC1_MB_Mode_PBPic_MBtype_Table[] =
+const extern uint8_t VC1_MB_Mode_PBPic_MBtype_Table[] =
 {
     // 0..9
     VC1_MB_1MV_INTER,                   VC1_MB_1MV_INTER,
@@ -949,7 +949,7 @@ const extern Ipp8u VC1_MB_Mode_PBPic_MBtype_Table[] =
     VC1_MB_2MV_INTER,                   VC1_MB_INTRA
 };
 
-const extern Ipp8s VC1_MB_Mode_PBPic_MVPresent_Table[] =
+const extern int8_t VC1_MB_Mode_PBPic_MVPresent_Table[] =
 {
     // 0..9
     1, 1, 1, 0, 0, -1, -1, -1, -1, -1,
@@ -975,7 +975,7 @@ const extern Ipp8s VC1_MB_Mode_PBPic_MVPresent_Table[] =
 };
 
 
-const extern Ipp8u VC1_MB_Mode_PBPic_FIELDTX_Table[] =
+const extern uint8_t VC1_MB_Mode_PBPic_FIELDTX_Table[] =
 {
     // 0..9
     0, 1, 0, 0, 1, 0, 1, 1, 0, 1,
@@ -1000,7 +1000,7 @@ const extern Ipp8u VC1_MB_Mode_PBPic_FIELDTX_Table[] =
 };
 
 //table 111, 112
-const extern Ipp8u VC1_MB_Mode_PBFieldPic_MBtype_Table[] =
+const extern uint8_t VC1_MB_Mode_PBFieldPic_MBtype_Table[] =
 {
     VC1_MB_INTRA,
     VC1_MB_INTRA,
@@ -1012,12 +1012,12 @@ const extern Ipp8u VC1_MB_Mode_PBFieldPic_MBtype_Table[] =
     VC1_MB_4MV_INTER
 };
 
-const extern Ipp8u VC1_MB_Mode_PBFieldPic_CBPPresent_Table[] =
+const extern uint8_t VC1_MB_Mode_PBFieldPic_CBPPresent_Table[] =
 {
     0, 1, 0, 0, 1, 1, 0, 1
 };
 
-const extern Ipp8s VC1_MB_Mode_PBFieldPic_MVData_Table[] =
+const extern int8_t VC1_MB_Mode_PBFieldPic_MVData_Table[] =
 {
     -1, -1, 0, 1, 0, 1, -1, -1
 };

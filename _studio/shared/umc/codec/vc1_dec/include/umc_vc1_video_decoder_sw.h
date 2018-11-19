@@ -62,19 +62,19 @@ namespace UMC
 
         virtual void FreeTables(VC1Context* pContext);
         virtual bool InitTables(VC1Context* pContext);
-        virtual   bool    InitAlloc                   (VC1Context* pContext, Ipp32u MaxFrameNum);
+        virtual   bool    InitAlloc                   (VC1Context* pContext, uint32_t MaxFrameNum);
 
         virtual Status VC1DecodeFrame                 (MediaData* in, VideoData* out_data);
 
 
-        virtual Ipp32u CalculateHeapSize();
+        virtual uint32_t CalculateHeapSize();
 
         virtual bool InitVAEnvironment();
 
         VC1ThreadDecoder**         m_pdecoder;                              // (VC1ThreadDecoder *) pointer to array of thread decoders
         bool                       m_bIsFrameToOut;
-        Ipp32s                     m_iRefFramesDst; // destination for reference frames
-        Ipp32s                     m_iBFramesDst; // destination for B/BI frames
+        int32_t                     m_iRefFramesDst; // destination for reference frames
+        int32_t                     m_iBFramesDst; // destination for B/BI frames
         VC1FrameDescriptor*        m_pPrevDescriptor;
 
         virtual UMC::Status GetAndProcessPerformedDS(UMC::MediaData* in, UMC::VideoData* out_data, UMC::VC1FrameDescriptor **pPerfDescriptor);

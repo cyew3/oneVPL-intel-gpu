@@ -44,7 +44,7 @@
 //10111100001     4x8                 Macroblock      Both
 //101111010       4x4                 Macroblock      NA
 
-const extern Ipp32s VC1_HighRateTTMB[] =
+const extern int32_t VC1_HighRateTTMB[] =
 {
  12, /* max bits */
  2,  /* total subtables */
@@ -110,7 +110,7 @@ const extern Ipp32s VC1_HighRateTTMB[] =
 //0010101           4x8             Macroblock          Both
 //00100000          4x4             Macroblock          NA
 
-const extern Ipp32s VC1_MediumRateTTMB[] =
+const extern int32_t VC1_MediumRateTTMB[] =
 {
  8, /* max bits */
  2,  /* total subtables */
@@ -166,7 +166,7 @@ const extern Ipp32s VC1_MediumRateTTMB[] =
 //0010001         4x8             Macroblock          Both
 //00100000000     4x4             Macroblock          NA
 
-const extern Ipp32s VC1_LowRateTTMB[] =
+const extern int32_t VC1_LowRateTTMB[] =
 {
  11, /* max bits */
  2,  /* total subtables */
@@ -213,7 +213,7 @@ const extern Ipp32s VC1_LowRateTTMB[] =
 //10010             4x8             Right
 //10011             4x8             Left
 
-const extern Ipp32s VC1_HighRateTTBLK[] =
+const extern int32_t VC1_HighRateTTBLK[] =
 {
  5, /* max bits */
  1,  /* total subtables */
@@ -247,7 +247,7 @@ const extern Ipp32s VC1_HighRateTTBLK[] =
 //1000              8x4             Bottom
 //1001              8x4             Top
 
-const extern Ipp32s VC1_MediumRateTTBLK[] =
+const extern int32_t VC1_MediumRateTTBLK[] =
 {
  4, /* max bits */
  1,  /* total subtables */
@@ -279,7 +279,7 @@ const extern Ipp32s VC1_MediumRateTTBLK[] =
 //1010              8x4             Both
 //1011              8x4             Top
 
-const extern Ipp32s VC1_LowRateTTBLK[] =
+const extern int32_t VC1_LowRateTTBLK[] =
 {
  4, /* max bits */
  1,  /* total subtables */
@@ -311,7 +311,7 @@ const extern Ipp32s VC1_LowRateTTBLK[] =
 //01000                 10                  011011         9
 //01001                 5
 
-const extern Ipp32s VC1_HighRateSBP[] =
+const extern int32_t VC1_HighRateSBP[] =
 {
  6, /* max bits */
  2,  /* total subtables */
@@ -343,7 +343,7 @@ const extern Ipp32s VC1_HighRateSBP[] =
 //1101                  8                   11001           11
 //1110                  1
 
-const extern Ipp32s VC1_MediumRateSBP[] =
+const extern int32_t VC1_MediumRateSBP[] =
 {
  5, /* max bits */
  1,  /* total subtables */
@@ -374,7 +374,7 @@ const extern Ipp32s VC1_MediumRateSBP[] =
 //0011                  10                  11101           11
 //1000                  5
 
-const extern Ipp32s VC1_LowRateSBP[] =
+const extern int32_t VC1_LowRateSBP[] =
 {
  5, /* max bits */
  2,  /* total subtables */

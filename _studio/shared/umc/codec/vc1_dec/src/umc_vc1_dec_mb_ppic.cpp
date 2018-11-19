@@ -40,8 +40,8 @@ static const DCPrediction PDCPredictionTable[] =
 
 static VC1Status MBLayer_ProgressivePskipped(VC1Context* pContext)
 {
-    Ipp32s blk_num;;
-    Ipp16s X = 0, Y = 0;
+    int32_t blk_num;;
+    int16_t X = 0, Y = 0;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
     pContext->m_pCurrMB->m_cbpBits = 0;
@@ -72,18 +72,18 @@ static VC1Status MBLayer_ProgressivePskipped(VC1Context* pContext)
 static VC1Status MBLayer_ProgressivePpicture1MV(VC1Context* pContext)
 {
     int ret;
-    Ipp16s dmv_x;
-    Ipp16s dmv_y;
-    Ipp16u last_intra_flag = 0;
-    Ipp8u blk_type;
+    int16_t dmv_x;
+    int16_t dmv_y;
+    uint16_t last_intra_flag = 0;
+    uint8_t blk_type;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
-    Ipp32s i;
+    int32_t i;
     //MVDATA is a variable sized field present in P picture macroblocks
     //This field encodes the motion vector(s) for the macroblock.
 
-    Ipp16s hpelfl = (Ipp16s)((picLayerHeader->MVMODE == VC1_MVMODE_HPEL_1MV) ||
+    int16_t hpelfl = (int16_t)((picLayerHeader->MVMODE == VC1_MVMODE_HPEL_1MV) ||
                              (picLayerHeader->MVMODE == VC1_MVMODE_HPELBI_1MV));
 
     last_intra_flag = DecodeMVDiff(pContext,hpelfl,&dmv_x,&dmv_y);
@@ -95,7 +95,7 @@ static VC1Status MBLayer_ProgressivePpicture1MV(VC1Context* pContext)
     dmv_y  = dmv_y * (1+hpelfl);
 
     //set BLK_TYPE
-    blk_type = (last_intra_flag&0x1) ?(Ipp8u)VC1_BLK_INTRA:(Ipp8u)VC1_BLK_INTER8X8;
+    blk_type = (last_intra_flag&0x1) ?(uint8_t)VC1_BLK_INTRA:(uint8_t)VC1_BLK_INTER8X8;
     for(i = 0; i < 4; i++)
        pCurrMB->m_pBlocks[i].blkType  = blk_type;
 
@@ -134,7 +134,7 @@ static VC1Status MBLayer_ProgressivePpicture1MV(VC1Context* pContext)
     else
     {
          //motion vector predictors are calculated only for non-intra blocks, otherwise they are equal to zero (8.3.5.3)
-        Ipp16s X = 0, Y = 0;
+        int16_t X = 0, Y = 0;
         Progressive1MVPrediction(pContext);
         // HYBRIDPRED is decoded in function PredictProgressive1MV
         CalculateProgressive1MV(pContext,&X, &Y);
@@ -174,14 +174,14 @@ static VC1Status MBLayer_ProgressivePpicture4MV(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
 
-    Ipp32s i;
+    int32_t i;
     int ret;
-    Ipp32s Count_inter=0;
-    Ipp32s n_block=0;
-    Ipp16s dmv_x = 0;
-    Ipp16s dmv_y = 0;
+    int32_t Count_inter=0;
+    int32_t n_block=0;
+    int16_t dmv_x = 0;
+    int16_t dmv_y = 0;
 
-    Ipp32u LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
+    uint32_t LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
 
     ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
@@ -198,30 +198,30 @@ static VC1Status MBLayer_ProgressivePpicture4MV(VC1Context* pContext)
     {
         if (pCurrMB->m_cbpBits&(1<<(5-i)))
         {
-            Ipp16u last_intra_flag = 0;
+            uint16_t last_intra_flag = 0;
 
             //BLKMVDATA
             // for 4MV blocks hpelfl = 0
             last_intra_flag = DecodeMVDiff(pContext,0,&dmv_x,&dmv_y);
-            //not_last = (Ipp8u)(last_intra_flag>>4);
-            //intra_flag = (Ipp8u)(last_intra_flag & 0x1);
+            //not_last = (uint8_t)(last_intra_flag>>4);
+            //intra_flag = (uint8_t)(last_intra_flag & 0x1);
 
             pCurrMB->m_pBlocks[i].blkType = (last_intra_flag&0x1) ?
-                                    (Ipp8u)VC1_BLK_INTRA:(Ipp8u)VC1_BLK_INTER8X8;
+                                    (uint8_t)VC1_BLK_INTRA:(uint8_t)VC1_BLK_INTER8X8;
 
             if(!(last_intra_flag&0x10))
-                pCurrMB->m_cbpBits = (Ipp8u)(pCurrMB->m_cbpBits & ~(1 << (5 - i)));
+                pCurrMB->m_cbpBits = (uint8_t)(pCurrMB->m_cbpBits & ~(1 << (5 - i)));
         }
         else
         {
             dmv_x = 0;
             dmv_y = 0;
-            pCurrMB->m_pBlocks[i].blkType = (Ipp8u)picLayerHeader->TTFRM;
+            pCurrMB->m_pBlocks[i].blkType = (uint8_t)picLayerHeader->TTFRM;
         }
 
         if (!(pCurrMB->m_pBlocks[i].blkType & VC1_BLK_INTRA))
         {
-            Ipp16s X,Y;
+            int16_t X,Y;
             // HYBRIDPRED is decoded in function PredictProgressive4MV
             CalculateProgressive4MV(pContext,&X, &Y, i);
             ApplyMVPrediction(pContext, i, &X, &Y, dmv_x, dmv_y,0);
@@ -253,31 +253,31 @@ static VC1Status MBLayer_ProgressivePpicture4MV(VC1Context* pContext)
 
     // if macroblock have predicted => ACPRED (7.1.3.2)
     {
-        Ipp8u c[6] = {0};
-        Ipp8u a[6] = {0};
-        Ipp32s count = 0;
-        Ipp32u MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
+        uint8_t c[6] = {0};
+        uint8_t a[6] = {0};
+        int32_t count = 0;
+        uint32_t MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
 
         pContext->m_pSingleMB->ACPRED =0;
 
         if (VC1_IS_NO_LEFT_MB(LeftTopRightPositionFlag))
         {
-            c[0] = (Ipp8u)((pCurrMB - 1)->m_pBlocks[1].blkType & VC1_BLK_INTRA);
-            c[2] = (Ipp8u)((pCurrMB - 1)->m_pBlocks[3].blkType & VC1_BLK_INTRA);
-            c[4] = (Ipp8u)((pCurrMB - 1)->m_pBlocks[4].blkType & VC1_BLK_INTRA);
-            c[5] = (Ipp8u)((pCurrMB - 1)->m_pBlocks[5].blkType & VC1_BLK_INTRA);
+            c[0] = (uint8_t)((pCurrMB - 1)->m_pBlocks[1].blkType & VC1_BLK_INTRA);
+            c[2] = (uint8_t)((pCurrMB - 1)->m_pBlocks[3].blkType & VC1_BLK_INTRA);
+            c[4] = (uint8_t)((pCurrMB - 1)->m_pBlocks[4].blkType & VC1_BLK_INTRA);
+            c[5] = (uint8_t)((pCurrMB - 1)->m_pBlocks[5].blkType & VC1_BLK_INTRA);
         }
         if (VC1_IS_NO_TOP_MB(LeftTopRightPositionFlag))
         {
-            a[0] = (Ipp8u)((pCurrMB - MaxWidth)->m_pBlocks[2].blkType & VC1_BLK_INTRA);
-            a[1] = (Ipp8u)((pCurrMB - MaxWidth)->m_pBlocks[3].blkType & VC1_BLK_INTRA);
-            a[4] = (Ipp8u)((pCurrMB - MaxWidth)->m_pBlocks[4].blkType & VC1_BLK_INTRA);
-            a[5] = (Ipp8u)((pCurrMB - MaxWidth)->m_pBlocks[5].blkType & VC1_BLK_INTRA);
+            a[0] = (uint8_t)((pCurrMB - MaxWidth)->m_pBlocks[2].blkType & VC1_BLK_INTRA);
+            a[1] = (uint8_t)((pCurrMB - MaxWidth)->m_pBlocks[3].blkType & VC1_BLK_INTRA);
+            a[4] = (uint8_t)((pCurrMB - MaxWidth)->m_pBlocks[4].blkType & VC1_BLK_INTRA);
+            a[5] = (uint8_t)((pCurrMB - MaxWidth)->m_pBlocks[5].blkType & VC1_BLK_INTRA);
         }
-        c[1] = (Ipp8u)(pCurrMB->m_pBlocks[0].blkType & VC1_BLK_INTRA);
-        c[3] = (Ipp8u)(pCurrMB->m_pBlocks[2].blkType & VC1_BLK_INTRA);
-        a[2] = (Ipp8u)(pCurrMB->m_pBlocks[0].blkType & VC1_BLK_INTRA);
-        a[3] = (Ipp8u)(pCurrMB->m_pBlocks[1].blkType & VC1_BLK_INTRA);
+        c[1] = (uint8_t)(pCurrMB->m_pBlocks[0].blkType & VC1_BLK_INTRA);
+        c[3] = (uint8_t)(pCurrMB->m_pBlocks[2].blkType & VC1_BLK_INTRA);
+        a[2] = (uint8_t)(pCurrMB->m_pBlocks[0].blkType & VC1_BLK_INTRA);
+        a[3] = (uint8_t)(pCurrMB->m_pBlocks[1].blkType & VC1_BLK_INTRA);
 
         for (i=0;i<VC1_NUM_OF_BLOCKS;i++)
         {
@@ -294,8 +294,8 @@ static VC1Status MBLayer_ProgressivePpicture4MV(VC1Context* pContext)
 //Progressive-coded P picture MB
 VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
 {
-    Ipp32s SKIPMBBIT;
-    Ipp32u blk_num;
+    int32_t SKIPMBBIT;
+    uint32_t blk_num;
     VC1Status vc1Res=VC1_OK;
 
     VC1MB* pCurrMB = pContext->m_pCurrMB;
@@ -303,7 +303,7 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
 
     if (picLayerHeader->PQUANT>=9)
-        pCurrMB->Overlap = (Ipp8u)pContext->m_seqLayerHeader.OVERLAP;
+        pCurrMB->Overlap = (uint8_t)pContext->m_seqLayerHeader.OVERLAP;
     else
         pCurrMB->Overlap =0;
 
@@ -334,7 +334,7 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
 
     if(picLayerHeader->MVMODE == VC1_MVMODE_MIXED_MV)
     {
-        Ipp32s MVMODEBIT;
+        int32_t MVMODEBIT;
         //is a 1-bit field present in P frame macroblocks
         //if the frame level field MVTYPEMB (see section 3.2.1.21)
         //indicates that the raw mode is used. If MVMODEBIT = 0
@@ -370,7 +370,7 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
     }
     else
     {
-        memset(pContext->m_pBlock, 0, sizeof(Ipp16s)*8*8*VC1_NUM_OF_BLOCKS);
+        memset(pContext->m_pBlock, 0, sizeof(int16_t)*8*8*VC1_NUM_OF_BLOCKS);
 
         if((VC1_GET_MBTYPE(pCurrMB->mbType))==VC1_MB_1MV_INTER)//1 MV mode
         {
@@ -400,14 +400,14 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
                 {
                     for(blk_num = 0; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
                         if(!(pCurrMB->m_pBlocks[blk_num].blkType & VC1_BLK_INTRA))
-                            pCurrMB->m_pBlocks[blk_num].blkType = (Ipp8u)picLayerHeader->TTFRM;
+                            pCurrMB->m_pBlocks[blk_num].blkType = (uint8_t)picLayerHeader->TTFRM;
                 }
             }
         }
 
             CalculateIntraFlag(pContext);
 
-            Ipp32u IntraFlag = pCurrMB->IntraFlag;
+            uint32_t IntraFlag = pCurrMB->IntraFlag;
 
             if(IntraFlag)
                 PDCPredictionTable[pContext->m_seqLayerHeader.DQUANT](pContext);

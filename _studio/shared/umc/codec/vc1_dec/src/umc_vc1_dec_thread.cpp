@@ -79,7 +79,7 @@ void VC1ThreadDecoder::Release(void)
 
 }
 Status VC1ThreadDecoder::Init(VC1Context* pContext,
-                              Ipp32s iNumber,
+                              int32_t iNumber,
                               VC1TaskStore* pTaskStore,
                               MemoryAllocator* pMemoryAllocator,
                               VC1TaskProcessor* pExternalProcessor)

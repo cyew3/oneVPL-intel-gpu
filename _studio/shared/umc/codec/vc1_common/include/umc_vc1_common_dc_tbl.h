@@ -28,16 +28,16 @@
 #include "umc_vc1_common_defs.h"
 
 //VC-1 Table 174: Low-motion Luma DC Differential VLC Table
-const extern Ipp32s VC1_LowMotionLumaDCDiff[];
+const extern int32_t VC1_LowMotionLumaDCDiff[];
 
 //VC-1 Table 175: Low-motion Chroma DC Differential VLC Table
-const extern Ipp32s VC1_LowMotionChromaDCDiff[];
+const extern int32_t VC1_LowMotionChromaDCDiff[];
 
 //VC-1 Table 176: High-motion Luma DC Differential VLC Table
-const extern Ipp32s VC1_HighMotionLumaDCDiff[];
+const extern int32_t VC1_HighMotionLumaDCDiff[];
 
 //VC-1 Table 177: High-motion Chroma DC Differential VLC Table
-const extern Ipp32s VC1_HighMotionChromaDCDiff[];
+const extern int32_t VC1_HighMotionChromaDCDiff[];
 
 #endif //__umc_vc1_common_dc_tbl_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

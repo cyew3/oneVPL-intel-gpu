@@ -58,7 +58,7 @@ namespace UMC
     {
     public:
         // Default constructor
-        VC1Task(Ipp32s iThreadNumber,Ipp32s TaskID):m_pSlice(NULL),
+        VC1Task(int32_t iThreadNumber,int32_t TaskID):m_pSlice(NULL),
                                                     m_iThreadNumber(iThreadNumber),
                                                     m_iTaskID(TaskID),
                                                     m_eTasktype(VC1Decode),
@@ -71,7 +71,7 @@ namespace UMC
                                                     pMulti(NULL)
           {
           };
-          VC1Task(Ipp32s iThreadNumber):m_pSlice(NULL),
+          VC1Task(int32_t iThreadNumber):m_pSlice(NULL),
                                         m_iThreadNumber(iThreadNumber),
                                         m_iTaskID(0),
                                         m_eTasktype(VC1Decode),
@@ -86,8 +86,8 @@ namespace UMC
           {
           };
 
-          Ipp32u IsDecoding (Ipp32u _task_settings) {return _task_settings&VC1Decode;}
-          Ipp32u IsDeblocking(Ipp32u _task_settings) {return _task_settings&VC1Deblock;}
+          uint32_t IsDecoding (uint32_t _task_settings) {return _task_settings&VC1Decode;}
+          uint32_t IsDeblocking(uint32_t _task_settings) {return _task_settings&VC1Deblock;}
           void setSliceParams(VC1Context* pContext);
 
 #ifdef ALLOW_SW_VC1_FALLBACK
@@ -96,13 +96,13 @@ namespace UMC
 
           SliceParams* m_pSlice;                                        //
 
-          Ipp32s m_iThreadNumber;                                     // (Ipp32s) owning thread number
-          Ipp32s m_iTaskID;                                           // (Ipp32s) task identificator
+          int32_t m_iThreadNumber;                                     // (int32_t) owning thread number
+          int32_t m_iTaskID;                                           // (int32_t) task identificator
           VC1TaskTypes m_eTasktype;
-          Ipp16s*      m_pBlock;
-          Ipp8u*       m_pPredBlock;
-          Ipp8u*       m_pSrcToSwap;
-          Ipp32u       m_uDataSizeToSwap;
+          int16_t*      m_pBlock;
+          uint8_t*       m_pPredBlock;
+          uint8_t*       m_pSrcToSwap;
+          uint32_t       m_uDataSizeToSwap;
           bool         m_isFirstInSecondSlice;
           bool         m_isFieldReady;
           VC1Status (VC1TaskProcessorUMC::*pMulti)(VC1Context* pContext, VC1Task* pTask);

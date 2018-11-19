@@ -31,34 +31,34 @@
 #endif
 
 
-const Ipp32u  VC1_POSITION  = 0x00000001; // MB, Block positions, skip info
-const Ipp32u  VC1_CBP       = 0x00000002; // coded block patern info
-const Ipp32u  VC1_BITBLANES = 0x00000004; // bitplane information
-const Ipp32u  VC1_QUANT     = 0x00000008; // transform types decoded info
-const Ipp32u  VC1_TT        = 0x00000010; // transform types decoded info
-const Ipp32u  VC1_MV        = 0x00000020; // motion vectors info
-const Ipp32u  VC1_PRED      = 0x00000040; // predicted blocks
-const Ipp32u  VC1_COEFFS    = 0x00000080; // DC, AC coefficiens
-const Ipp32u  VC1_RESPEL    = 0x00000100; // pixels befor filtering
-const Ipp32u  VC1_SMOOTHINT = 0x00000200; // smoothing
-const Ipp32u  VC1_BFRAMES   = 0x00000400; // B frames log
-const Ipp32u  VC1_INTENS    = 0x00000800; // intesity compensation tables
-const Ipp32u  VC1_MV_BBL    = 0x00001000; // deblocking
-const Ipp32u  VC1_MV_FIELD  = 0x00002000; // motion vectors info for field pic
-const Ipp32u  VC1_TABLES    = 0x00004000; //VLC tables
+const uint32_t  VC1_POSITION  = 0x00000001; // MB, Block positions, skip info
+const uint32_t  VC1_CBP       = 0x00000002; // coded block patern info
+const uint32_t  VC1_BITBLANES = 0x00000004; // bitplane information
+const uint32_t  VC1_QUANT     = 0x00000008; // transform types decoded info
+const uint32_t  VC1_TT        = 0x00000010; // transform types decoded info
+const uint32_t  VC1_MV        = 0x00000020; // motion vectors info
+const uint32_t  VC1_PRED      = 0x00000040; // predicted blocks
+const uint32_t  VC1_COEFFS    = 0x00000080; // DC, AC coefficiens
+const uint32_t  VC1_RESPEL    = 0x00000100; // pixels befor filtering
+const uint32_t  VC1_SMOOTHINT = 0x00000200; // smoothing
+const uint32_t  VC1_BFRAMES   = 0x00000400; // B frames log
+const uint32_t  VC1_INTENS    = 0x00000800; // intesity compensation tables
+const uint32_t  VC1_MV_BBL    = 0x00001000; // deblocking
+const uint32_t  VC1_MV_FIELD  = 0x00002000; // motion vectors info for field pic
+const uint32_t  VC1_TABLES    = 0x00004000; //VLC tables
 
-const Ipp32u  VC1_DEBUG       = 0x00000000;//0x1DBF;//0x00000208; current debug output
-const Ipp32u  VC1_FRAME_DEBUG = 0; //on/off frame debug
-const Ipp32u  VC1_FRAME_MIN   = 5; //first frame to debug
-const Ipp32u  VC1_FRAME_MAX   = 15; //last frame to debug
+const uint32_t  VC1_DEBUG       = 0x00000000;//0x1DBF;//0x00000208; current debug output
+const uint32_t  VC1_FRAME_DEBUG = 0; //on/off frame debug
+const uint32_t  VC1_FRAME_MIN   = 5; //first frame to debug
+const uint32_t  VC1_FRAME_MAX   = 15; //last frame to debug
 
 #ifdef VC1_DEBUG_ON
-void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *format,...)
+void VM_Debug::vm_debug_frame(int32_t _cur_frame, int32_t level, const vm_char *format,...)
 {
     vm_char line[1024];
     va_list args;
 #if defined (_WIN32) && (_DEBUG)
-    Ipp32u ID = GetCurrentThreadId();
+    uint32_t ID = GetCurrentThreadId();
     if ((DebugThreadID == ID)||(_cur_frame >=0)) // only for Win Debug, need to redesign VM::Debug
 #else
     if (_cur_frame >=0) // only for Win Debug, need to redesign VM::Debug
@@ -76,14 +76,14 @@ void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *fo
         }
         else
         {
-            static Ipp32s cur_frame =-1;
+            static int32_t cur_frame =-1;
             if (_cur_frame >=0)
             {
                 cur_frame=_cur_frame;
                 return;
             }
-            if ((cur_frame >= 0)&&((Ipp32u)(cur_frame) <= VC1_FRAME_MAX)&&
-                ((Ipp32u)(cur_frame) >= VC1_FRAME_MIN ))
+            if ((cur_frame >= 0)&&((uint32_t)(cur_frame) <= VC1_FRAME_MAX)&&
+                ((uint32_t)(cur_frame) >= VC1_FRAME_MIN ))
             {
                 if (!(level & VC1_DEBUG))
                     return;
@@ -106,14 +106,14 @@ void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *fo
         }
         else
         {
-            static Ipp32s cur_frame =-1;
+            static int32_t cur_frame =-1;
             if (_cur_frame >=0)
             {
                 cur_frame=_cur_frame;
                 return;
             }
-            if ((cur_frame >= 0)&&((Ipp32u)(cur_frame) <= VC1_FRAME_MAX)&&
-                ((Ipp32u)(cur_frame) >= VC1_FRAME_MIN ))
+            if ((cur_frame >= 0)&&((uint32_t)(cur_frame) <= VC1_FRAME_MAX)&&
+                ((uint32_t)(cur_frame) >= VC1_FRAME_MIN ))
             {
                 if (!(level & VC1_DEBUG))
                     return;
@@ -129,7 +129,7 @@ void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *fo
 #ifdef _MSVC_LANG
 #pragma warning( disable : 4100 ) // disable debug, empty function
 #endif
-void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *format,...)
+void VM_Debug::vm_debug_frame(int32_t _cur_frame, int32_t level, const vm_char *format,...)
 {
     (void)_cur_frame;
     (void)level;
@@ -140,27 +140,27 @@ void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *fo
 #ifdef ALLOW_SW_VC1_FALLBACK
 void VM_Debug::_print_macroblocks(VC1Context* pContext)
 {
-    Ipp32s i,j;
-    Ipp8u* pYPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pY;
-    Ipp8u* pUPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pU;
-    Ipp8u* pVPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pV;
+    int32_t i,j;
+    uint8_t* pYPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pY;
+    uint8_t* pUPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pU;
+    uint8_t* pVPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pV;
 
-    Ipp32s YPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iYPitch;
-    Ipp32s UPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iUPitch;
-    Ipp32s VPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iVPitch;
-    Ipp32u LeftTopRightPositionFlag = pContext->m_pCurrMB->LeftTopRightPositionFlag;
+    int32_t YPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iYPitch;
+    int32_t UPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iUPitch;
+    int32_t VPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iVPitch;
+    uint32_t LeftTopRightPositionFlag = pContext->m_pCurrMB->LeftTopRightPositionFlag;
 
-    Ipp32s currYoffset;
-    Ipp32s currUoffset;
-    Ipp32s currVoffset;
+    int32_t currYoffset;
+    int32_t currUoffset;
+    int32_t currVoffset;
 
-    Ipp32u currMBYpos = pContext->m_pSingleMB->m_currMBYpos;
-    Ipp32u currMBXpos =pContext->m_pSingleMB->m_currMBXpos;
+    uint32_t currMBYpos = pContext->m_pSingleMB->m_currMBYpos;
+    uint32_t currMBXpos =pContext->m_pSingleMB->m_currMBXpos;
 
 
-    Ipp32s fieldYPitch;
-    Ipp32s fieldUPitch;
-    Ipp32s fieldVPitch;
+    int32_t fieldYPitch;
+    int32_t fieldUPitch;
+    int32_t fieldVPitch;
 
     if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
     {
@@ -305,26 +305,26 @@ void VM_Debug::_print_macroblocks(VC1Context* pContext)
 
 void VM_Debug::_print_blocks(VC1Context* pContext)
 {
-    Ipp32s blk_num;
+    int32_t blk_num;
 
-    Ipp8u* pYPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pY;
-    Ipp8u* pUPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pU;
-    Ipp8u* pVPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pV;
+    uint8_t* pYPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pY;
+    uint8_t* pUPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pU;
+    uint8_t* pVPlane = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_pV;
 
-    Ipp32s YPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iYPitch;
-    Ipp32s UPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iUPitch;
-    Ipp32s VPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iVPitch;
+    int32_t YPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iYPitch;
+    int32_t UPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iUPitch;
+    int32_t VPitch = pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].m_iVPitch;
 
-    Ipp32s currYoffset;
-    Ipp32s currUoffset;
-    Ipp32s currVoffset;
+    int32_t currYoffset;
+    int32_t currUoffset;
+    int32_t currVoffset;
 
-    Ipp32u currMBYpos = pContext->m_pSingleMB->m_currMBYpos;
-    Ipp32u currMBXpos = pContext->m_pSingleMB->m_currMBXpos;
+    uint32_t currMBYpos = pContext->m_pSingleMB->m_currMBYpos;
+    uint32_t currMBXpos = pContext->m_pSingleMB->m_currMBXpos;
 
-    Ipp32s fieldYPitch;
-    Ipp32s fieldUPitch;
-    Ipp32s fieldVPitch;
+    int32_t fieldYPitch;
+    int32_t fieldUPitch;
+    int32_t fieldVPitch;
 
     if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
     {
@@ -344,7 +344,7 @@ void VM_Debug::_print_blocks(VC1Context* pContext)
 
     for(blk_num = 0; blk_num < 6; blk_num++)
     {
-        Ipp32s i,j;
+        int32_t i,j;
 
         currYoffset = fieldYPitch*currMBYpos*VC1_PIXEL_IN_LUMA + currMBXpos*VC1_PIXEL_IN_LUMA;
         currUoffset = fieldUPitch*currMBYpos*VC1_PIXEL_IN_CHROMA + currMBXpos*VC1_PIXEL_IN_CHROMA;
@@ -406,9 +406,9 @@ void VM_Debug::_print_blocks(VC1Context* pContext)
 }
 #endif // #ifdef ALLOW_SW_VC1_FALLBACK
 
-void VM_Debug::print_bitplane(VC1Bitplane* pBitplane, Ipp32s width, Ipp32s height)
+void VM_Debug::print_bitplane(VC1Bitplane* pBitplane, int32_t width, int32_t height)
 {
-    Ipp32s i,j;
+    int32_t i,j;
     if(pBitplane->m_imode != VC1_BITPLANE_RAW_MODE)
     {
         for(i = 0; i < height; i++)

@@ -49,18 +49,18 @@ private:
     ePType                      m_uiPictureType;
     bool                        m_bFrameInterpolation;
     bool                        m_bRangeRedution;
-    Ipp8u                       m_uiFrameCount;                 // [0-3] in the coded mode
-    Ipp8u                       m_uiQuantIndex;                 // [1, 31]
+    uint8_t                       m_uiFrameCount;                 // [0-3] in the coded mode
+    uint8_t                       m_uiQuantIndex;                 // [1, 31]
     bool                        m_bHalfQuant;                   // can be true if  m_uiQuantIndex<8
     bool                        m_bUniformQuant;
-    Ipp8u                       m_uiMVRangeIndex;               //[0,3] - 64x32, 128x64, 512x128, 1024x256
-    Ipp8u                       m_uiResolution;                 //[0,3] - full, half (horizontal, vertical scale)
-    Ipp8u                       m_uiDecTypeAC1;                 //[0,2] - it's used to choose decoding table
-    Ipp8u                       m_uiDecTypeDCIntra;             //[0,1] - it's used to choose decoding table
+    uint8_t                       m_uiMVRangeIndex;               //[0,3] - 64x32, 128x64, 512x128, 1024x256
+    uint8_t                       m_uiResolution;                 //[0,3] - full, half (horizontal, vertical scale)
+    uint8_t                       m_uiDecTypeAC1;                 //[0,2] - it's used to choose decoding table
+    uint8_t                       m_uiDecTypeDCIntra;             //[0,1] - it's used to choose decoding table
 
     /* ------------------------------I picture ---------------- */
 
-    Ipp8u                       m_uiDecTypeAC2;                 //[0,2] - it's used to choose decoding table
+    uint8_t                       m_uiDecTypeAC2;                 //[0,2] - it's used to choose decoding table
     sFraction                   m_uiBFraction;                  // 0xff/oxff - BI frame
 
     /* ------------------------------P picture----------------- */
@@ -71,39 +71,39 @@ private:
                                                                 //    VC1_ENC_MIXED_QUARTER_BICUBIC
 
     bool                        m_bIntensity;                   // only for main profile
-    Ipp8u                       m_uiIntensityLumaScale;         // [0,63], if m_bIntensity
-    Ipp8u                       m_uiIntensityLumaShift;         // [0,63], if m_bIntensity
-    Ipp8u                       m_uiMVTab;                      // [0,4] - table for MV coding
-    Ipp8u                       m_uiCBPTab;                     // [0,4] - table for CBP coding
-    Ipp8u                       m_uiAltPQuant;                  // if picture DQuant!=0
+    uint8_t                       m_uiIntensityLumaScale;         // [0,63], if m_bIntensity
+    uint8_t                       m_uiIntensityLumaShift;         // [0,63], if m_bIntensity
+    uint8_t                       m_uiMVTab;                      // [0,4] - table for MV coding
+    uint8_t                       m_uiCBPTab;                     // [0,4] - table for CBP coding
+    uint8_t                       m_uiAltPQuant;                  // if picture DQuant!=0
     eQuantMode                  m_QuantMode;                    // VC1_ENC_QUANT_SINGLE, if   picture DQuant==0
     bool                        m_bVSTransform;                 // if sequence(m_bVSTransform) variable-size transform
     eTransformType              m_uiTransformType;              // VC1_ENC_8x8_TRANSFORM, if  m_bVSTransform == false
 
 private:
-    Ipp8u*                      m_pPlane[3];
-    Ipp32u                      m_uiPlaneStep[3];
+    uint8_t*                      m_pPlane[3];
+    uint32_t                      m_uiPlaneStep[3];
 
-    Ipp8u*                      m_pRaisedPlane[3];
-    Ipp32u                      m_uiRaisedPlaneStep[3];
-    Ipp32u                      m_uiRaisedPlanePadding;
+    uint8_t*                      m_pRaisedPlane[3];
+    uint32_t                      m_uiRaisedPlaneStep[3];
+    uint32_t                      m_uiRaisedPlanePadding;
 
-    Ipp8u*                      m_pForwardPlane[3];
-    Ipp32u                      m_uiForwardPlaneStep[3];
-    Ipp32u                      m_uiForwardPlanePadding;
+    uint8_t*                      m_pForwardPlane[3];
+    uint32_t                      m_uiForwardPlaneStep[3];
+    uint32_t                      m_uiForwardPlanePadding;
 
-    Ipp8u*                      m_pBackwardPlane[3];
-    Ipp32u                      m_uiBackwardPlaneStep[3];
-    Ipp32u                      m_uiBackwardPlanePadding;
+    uint8_t*                      m_pBackwardPlane[3];
+    uint32_t                      m_uiBackwardPlaneStep[3];
+    uint32_t                      m_uiBackwardPlanePadding;
 
-    Ipp16s*                     m_pSavedMV;
+    int16_t*                     m_pSavedMV;
 
     VC1EncoderMBs*              m_pMBs;
     VC1EncoderCodedMB*          m_pCodedMB;
 
-    Ipp8u                       m_uiQuant;
+    uint8_t                       m_uiQuant;
     bool                        m_bRawBitplanes;
-    Ipp8u                       m_uiRoundControl;                // 0,1;
+    uint8_t                       m_uiRoundControl;                // 0,1;
 
     /*  functions for YV12 and NV12 color formats */
 
@@ -208,12 +208,12 @@ protected:
     UMC::Status     WriteBPictureHeader(VC1EncoderBitStreamSM* pCodedPicture);
     UMC::Status     WriteSkipPictureHeader(VC1EncoderBitStreamSM* pCodedPicture);
 
-    UMC::Status     WriteMBQuantParameter(VC1EncoderBitStreamSM* pCodedPicture, Ipp8u Quant);
+    UMC::Status     WriteMBQuantParameter(VC1EncoderBitStreamSM* pCodedPicture, uint8_t Quant);
 
     UMC::Status     SetInterpolationParams(IppVCInterpolate_8u* pY,
                                            IppVCInterpolate_8u* pU,
                                            IppVCInterpolate_8u* pv,
-                                           Ipp8u* buffer,
+                                           uint8_t* buffer,
                                            bool bForward);
 
     UMC::Status     CheckMEMV_P(UMC::MeParams* MEParams, bool bMVHalf);
@@ -224,15 +224,15 @@ protected:
     UMC::Status     SetInterpolationParams4MV(  IppVCInterpolate_8u* pY,
                                                 IppVCInterpolate_8u* pU,
                                                 IppVCInterpolate_8u* pv,
-                                                Ipp8u* buffer,
+                                                uint8_t* buffer,
                                                 bool bForward);
 
     UMC::Status     SetInterpolationParams4MV (IppVCInterpolateBlock_8u* pY,
-                                               Ipp8u* buffer,
-                                               Ipp32u w,
-                                               Ipp32u h,
-                                               Ipp8u **pPlane,
-                                               Ipp32u *pStep,
+                                               uint8_t* buffer,
+                                               uint32_t w,
+                                               uint32_t h,
+                                               uint8_t **pPlane,
+                                               uint32_t *pStep,
                                                bool bField);
 public:
 
@@ -252,7 +252,7 @@ public:
     UMC::Status     SetInitPictureParams(InitPictureParams* InitPicParam);
     //UMC::Status     SetVLCTablesIndex(VLCTablesIndex*       VLCIndex);
 
-    UMC::Status     SetPictureParams( ePType pType, Ipp16s* pSavedMV);
+    UMC::Status     SetPictureParams( ePType pType, int16_t* pSavedMV);
     UMC::Status     SetPlaneParams  ( Frame* pFrame, ePlaneType type);
 
     UMC::Status     Init(VC1EncoderSequenceSM * SequenceHeader, VC1EncoderMBs* pMBs, VC1EncoderCodedMB* pCodedMB);
@@ -263,7 +263,7 @@ public:
     UMC::Status     CompletePicture(VC1EncoderBitStreamSM* pCodedPicture, double dPTS, size_t len);
     UMC::Status     CheckParameters(vm_char* pLastError);
 
-    void SetRoundControl(Ipp8u roundControl)
+    void SetRoundControl(uint8_t roundControl)
     {
         m_uiRoundControl = roundControl;
     }
@@ -286,22 +286,22 @@ public:
         return WriteSkipPictureHeader(pCodedPicture);
     };
 
-    UMC::Status SetPictureQuantParams(Ipp8u uiQuantIndex, bool bHalfQuant);
+    UMC::Status SetPictureQuantParams(uint8_t uiQuantIndex, bool bHalfQuant);
     UMC::Status     SetInterpolationParams (IppVCInterpolateBlock_8u* pY,
                                             IppVCInterpolateBlock_8u* pU,
                                             IppVCInterpolateBlock_8u* pV,
-                                            Ipp8u* buffer,
-                                            Ipp32u w,
-                                            Ipp32u h,
-                                            Ipp8u **pPlane,
-                                            Ipp32u *pStep,
+                                            uint8_t* buffer,
+                                            uint32_t w,
+                                            uint32_t h,
+                                            uint8_t **pPlane,
+                                            uint32_t *pStep,
                                             bool bField);
 
-    inline void SetIntesityCompensationParameters (bool bIntensity, Ipp32u scale, Ipp32u shift)
+    inline void SetIntesityCompensationParameters (bool bIntensity, uint32_t scale, uint32_t shift)
     {
         m_bIntensity           = bIntensity;
-        m_uiIntensityLumaScale = (Ipp8u)scale;                               
-        m_uiIntensityLumaShift = (Ipp8u)shift; 
+        m_uiIntensityLumaScale = (uint8_t)scale;                               
+        m_uiIntensityLumaShift = (uint8_t)shift; 
     }
     inline void SetPictureTransformType (eTransformType  transformType)
     {

@@ -47,15 +47,15 @@ namespace UMC_VC1_ENCODER
 class VC1EncoderBitStreamSM
 {
 private:
-    Ipp32u*      m_pBitStream; /*  pointer to bitstream        */
-    Ipp32s       m_iOffset;    /*  bit offset [0,32]           */
+    uint32_t*      m_pBitStream; /*  pointer to bitstream        */
+    int32_t       m_iOffset;    /*  bit offset [0,32]           */
 
-    Ipp32u*      m_pBufferStart;
+    uint32_t*      m_pBufferStart;
     size_t       m_iBufferLen;
 
     double       m_dPTS;
 
-    Ipp32u*      m_pBlankSegment;
+    uint32_t*      m_pBlankSegment;
     size_t       m_iBlankSegmentLen;
 
 public:
@@ -77,23 +77,23 @@ public:
     UMC::Status     DataComplete(UMC::MediaData* data);
 
     UMC::Status     AddLastBits();
-    UMC::Status     PutBits         (Ipp32u val,Ipp32s len);
-    UMC::Status     PutBitsHeader   (Ipp32u val,Ipp32s len);
+    UMC::Status     PutBits         (uint32_t val,int32_t len);
+    UMC::Status     PutBitsHeader   (uint32_t val,int32_t len);
 
 
-    UMC::Status     MakeBlankSegment(Ipp32s len);
-    UMC::Status     FillBlankSegment(Ipp32u value);
+    UMC::Status     MakeBlankSegment(int32_t len);
+    UMC::Status     FillBlankSegment(uint32_t value);
     void            DeleteBlankSegment();
-    Ipp32u          GetDataLen()
+    uint32_t          GetDataLen()
     {
-        return ((Ipp32u)((Ipp8u*)m_pBitStream - (Ipp8u*)m_pBufferStart)) + (32-m_iOffset+7)/8;
+        return ((uint32_t)((uint8_t*)m_pBitStream - (uint8_t*)m_pBufferStart)) + (32-m_iOffset+7)/8;
     }
 #ifdef VC1_ME_MB_STATICTICS
 public:
 #endif
-    Ipp32u          GetCurrBit ()
+    uint32_t          GetCurrBit ()
     {
-        return (((Ipp32u)((Ipp8u*)m_pBitStream - (Ipp8u*)m_pBufferStart))<<3)+ (32 - m_iOffset);
+        return (((uint32_t)((uint8_t*)m_pBitStream - (uint8_t*)m_pBufferStart))<<3)+ (32 - m_iOffset);
     }
 protected:
     void            Reset();
@@ -102,14 +102,14 @@ protected:
 class VC1EncoderBitStreamAdv
 {
 private:
-    Ipp32u*      m_pBitStream; /*  pointer to bitstream        */
-    Ipp32s       m_iOffset;    /*  bit offset [0,32]           */
+    uint32_t*      m_pBitStream; /*  pointer to bitstream        */
+    int32_t       m_iOffset;    /*  bit offset [0,32]           */
 
-    Ipp32u*      m_pBufferStart;
+    uint32_t*      m_pBufferStart;
     size_t       m_iBufferLen;
 
     double       m_dPTS;
-    Ipp8u        m_uiCodeStatus;
+    uint8_t        m_uiCodeStatus;
     bool         m_bLast;
 
 public:
@@ -130,28 +130,28 @@ public:
     UMC::Status     DataComplete(UMC::MediaData* data);
 
     UMC::Status     AddLastBits();
-    UMC::Status     PutBits      (Ipp32u val,Ipp32s len);
-    UMC::Status     PutStartCode (Ipp32u val,Ipp32s len=32);
+    UMC::Status     PutBits      (uint32_t val,int32_t len);
+    UMC::Status     PutStartCode (uint32_t val,int32_t len=32);
 
-    Ipp32u          GetDataLen()
+    uint32_t          GetDataLen()
     {
         assert (m_iOffset==32);
-        return ((Ipp32u)((Ipp8u*)m_pBitStream - (Ipp8u*)m_pBufferStart));
+        return ((uint32_t)((uint8_t*)m_pBitStream - (uint8_t*)m_pBufferStart));
     }
-    UMC::Status     AddUserData(Ipp8u* pUD, Ipp32u size, Ipp32u startCode);
+    UMC::Status     AddUserData(uint8_t* pUD, uint32_t size, uint32_t startCode);
 
 protected:
     void           Reset();
-    Ipp32s         CheckCode(Ipp32u code);
+    int32_t         CheckCode(uint32_t code);
     void           ResetCodeStatus() {m_uiCodeStatus = 0;}
     UMC::Status    PutLastBits();
 
 #ifdef VC1_ME_MB_STATICTICS
 public:
 #endif
-    Ipp32u         GetCurrBit ()
+    uint32_t         GetCurrBit ()
     {
-        return (((Ipp32u)((Ipp8u*)m_pBitStream - (Ipp8u*)m_pBufferStart))<<3)+ (32 - m_iOffset);
+        return (((uint32_t)((uint8_t*)m_pBitStream - (uint8_t*)m_pBufferStart))<<3)+ (32 - m_iOffset);
     }
 };
 }

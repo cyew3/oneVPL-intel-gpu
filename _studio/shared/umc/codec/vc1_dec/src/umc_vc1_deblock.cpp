@@ -34,7 +34,7 @@ typedef enum
     LFilterMainPInterFrame = 4
 } LFilterType;
 
-static const Ipp32s deblock_table[16] = {IPPVC_EDGE_ALL ,
+static const int32_t deblock_table[16] = {IPPVC_EDGE_ALL ,
                                       IPPVC_EDGE_QUARTER_1 +  IPPVC_EDGE_HALF_2,
                                       IPPVC_EDGE_QUARTER_2 +  IPPVC_EDGE_HALF_2,
                                       IPPVC_EDGE_HALF_2,
@@ -55,34 +55,34 @@ static const Ipp32s deblock_table[16] = {IPPVC_EDGE_ALL ,
                                       0};
 
 
-//static const Ipp32s deblock_table_2[4] = {IPPVC_EDGE_HALF_1,
+//static const int32_t deblock_table_2[4] = {IPPVC_EDGE_HALF_1,
 //                                       IPPVC_EDGE_QUARTER_1,
 //                                       IPPVC_EDGE_QUARTER_2,
 //                                       0};
 
-static const Ipp32s deblock_table_2[4] = {IPPVC_EDGE_ALL,
+static const int32_t deblock_table_2[4] = {IPPVC_EDGE_ALL,
                                           IPPVC_EDGE_HALF_1,
                                           IPPVC_EDGE_HALF_2,
                                           0};
 
-static void HorizontalDeblockingLumaP(Ipp8u* pUUpBlock,
-                                      Ipp32u Pquant,
-                                      Ipp32s Pitch,
+static void HorizontalDeblockingLumaP(uint8_t* pUUpBlock,
+                                      uint32_t Pquant,
+                                      int32_t Pitch,
                                       const VC1MB* _pMB,
                                       const VC1MB* _pnMB,
                                       LFilterType _type)
 {
-    Ipp32s SBP = 0;
+    int32_t SBP = 0;
 
-    Ipp32s count = 0;
-    Ipp32s flag_ext = 0;
-    Ipp32s flag_int = 0;
+    int32_t count = 0;
+    int32_t flag_ext = 0;
+    int32_t flag_int = 0;
 
-    Ipp32s Edge_ext = 3; /* Mark bottom left and right subblocks */
-    Ipp32s Edge_int = 0;
+    int32_t Edge_ext = 3; /* Mark bottom left and right subblocks */
+    int32_t Edge_int = 0;
 
-    Ipp32s SBP_cur_count  = 0;
-    Ipp32s SBP_next_count = 2;
+    int32_t SBP_cur_count  = 0;
+    int32_t SBP_next_count = 2;
     if (_pMB != _pnMB)
     {
         SBP_next_count = 0;
@@ -102,8 +102,8 @@ static void HorizontalDeblockingLumaP(Ipp8u* pUUpBlock,
                 &&(_pMB->m_pBlocks[SBP_cur_count].mv[0][1] == _pnMB->m_pBlocks[SBP_next_count].mv[0][1])
                 )
             {
-                Ipp32s DSBP = _pnMB->m_pBlocks[SBP_next_count].SBlkPattern;
-                Ipp32s TSBP = SBP;
+                int32_t DSBP = _pnMB->m_pBlocks[SBP_next_count].SBlkPattern;
+                int32_t TSBP = SBP;
                 Edge_ext = TSBP | (DSBP>>2);
                 if (LFilterMainPFrame == _type)
                 {
@@ -134,17 +134,17 @@ static void HorizontalDeblockingLumaP(Ipp8u* pUUpBlock,
     _own_FilterDeblockingLuma_HorEdge_VC1(pUUpBlock + 4*Pitch, Pquant,Pitch, deblock_table[flag_int]);
 }
 
-static void HorizontalDeblockingChromaP(Ipp8u* pUUpBlock,
-                                      Ipp32u Pquant,
-                                      Ipp32s Pitch,
+static void HorizontalDeblockingChromaP(uint8_t* pUUpBlock,
+                                      uint32_t Pquant,
+                                      int32_t Pitch,
                                       VC1Block* _pBlk,
                                       VC1Block* _pnBlk,
                                       LFilterType _type)
 {
 
-    Ipp32s SBP = _pBlk->SBlkPattern;
-    Ipp32s Edge_int = 0;
-    Ipp32s Edge_ext = 3;
+    int32_t SBP = _pBlk->SBlkPattern;
+    int32_t Edge_int = 0;
+    int32_t Edge_ext = 3;
     if (_pnBlk)
     {
         if ((LFilterMainPInterFrame != _type)
@@ -154,8 +154,8 @@ static void HorizontalDeblockingChromaP(Ipp8u* pUUpBlock,
             &&(_pBlk->mv[0][1] == _pnBlk->mv[0][1])
             )
         {
-            Ipp32s DSBP = _pnBlk->SBlkPattern;
-            Ipp32s TSBP = SBP;
+            int32_t DSBP = _pnBlk->SBlkPattern;
+            int32_t TSBP = SBP;
             if (LFilterMainPFrame == _type)
             {
                 /* Historical fix for 4x4 blocks */
@@ -181,27 +181,27 @@ static void HorizontalDeblockingChromaP(Ipp8u* pUUpBlock,
     _own_FilterDeblockingChroma_HorEdge_VC1(pUUpBlock + 4*Pitch, Pquant,Pitch, deblock_table_2[Edge_int]);
 }
 
-static void VerticalDeblockingLumaP(Ipp8u* pUUpLBlock,
-                                    Ipp32u Pquant,
-                                    Ipp32s Pitch,
+static void VerticalDeblockingLumaP(uint8_t* pUUpLBlock,
+                                    uint32_t Pquant,
+                                    int32_t Pitch,
                                     VC1MB* _pMB,
                                     const VC1MB* _pnMB,
                                     LFilterType _type)
 {
-    Ipp32s SBP = 0;
-    Ipp32s LSBP = 0;
+    int32_t SBP = 0;
+    int32_t LSBP = 0;
     VC1Block* pL   = 0;
 
 
-    Ipp32s count = 0;
-    Ipp32s flag_ext = 0;
-    Ipp32s flag_int = 0;
+    int32_t count = 0;
+    int32_t flag_ext = 0;
+    int32_t flag_int = 0;
 
-    Ipp32s Edge_ext = 3; /* Mark bottom left and right subblocks */
-    Ipp32s Edge_int = 0;
+    int32_t Edge_ext = 3; /* Mark bottom left and right subblocks */
+    int32_t Edge_int = 0;
 
-    Ipp32s SBP_cur_count  = 0;
-    Ipp32s SBP_next_count = 1;
+    int32_t SBP_cur_count  = 0;
+    int32_t SBP_next_count = 1;
     if (_pMB != _pnMB)
     {
         SBP_next_count = 0;
@@ -229,7 +229,7 @@ static void VerticalDeblockingLumaP(Ipp8u* pUUpLBlock,
                 &&(_pMB->m_pBlocks[SBP_cur_count].mv[0][1] == _pnMB->m_pBlocks[SBP_next_count].mv[0][1])
                 )
             {
-                Ipp32s RSBP = _pnMB->m_pBlocks[SBP_next_count].SBlkPattern;
+                int32_t RSBP = _pnMB->m_pBlocks[SBP_next_count].SBlkPattern;
                 if (LFilterMainPFrame == _type)
                 {
                     /* Historical reasons of VC-1 implementation */
@@ -261,19 +261,19 @@ static void VerticalDeblockingLumaP(Ipp8u* pUUpLBlock,
     _own_FilterDeblockingLuma_VerEdge_VC1(pUUpLBlock + 4, Pquant,Pitch, deblock_table[flag_int]);
 }
 
-static void VerticalDeblockingChromaP(Ipp8u* pUUpLBlock,
-                                      Ipp32u Pquant,
-                                      Ipp32s Pitch,
+static void VerticalDeblockingChromaP(uint8_t* pUUpLBlock,
+                                      uint32_t Pquant,
+                                      int32_t Pitch,
                                       VC1Block* _pBlk,
                                       VC1Block* _pnBlk,
                                       LFilterType _type)
 {
-    Ipp32s SBP =  _pBlk->SBlkPattern;
-    Ipp32s LSBP = SBP;
+    int32_t SBP =  _pBlk->SBlkPattern;
+    int32_t LSBP = SBP;
     VC1Block* pL   = _pBlk;
 
-    Ipp32s Edge_ext = 3; /* Mark bottom left and right subblocks */
-    Ipp32s Edge_int = 0;
+    int32_t Edge_ext = 3; /* Mark bottom left and right subblocks */
+    int32_t Edge_int = 0;
 
 
         if (_pnBlk)
@@ -285,7 +285,7 @@ static void VerticalDeblockingChromaP(Ipp8u* pUUpLBlock,
                 &&(_pBlk->mv[0][1] == _pnBlk->mv[0][1])
             )
             {
-                Ipp32s RSBP = _pnBlk->SBlkPattern;
+                int32_t RSBP = _pnBlk->SBlkPattern;
                 if (LFilterMainPFrame == _type)
                 {
                     /* Historical reasons of VC-1 implementation */
@@ -315,21 +315,21 @@ static void VerticalDeblockingChromaP(Ipp8u* pUUpLBlock,
 
 void Deblocking_ProgressiveIpicture(VC1Context* pContext)
 {
-    Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
-    Ipp32s MaxWidthMB =  pContext->m_seqLayerHeader.MaxWidthMB;
-    Ipp32s curX, curY;
-    Ipp32u PQuant = pContext->m_picLayerHeader->PQUANT;
+    int32_t WidthMB =  pContext->m_seqLayerHeader.widthMB;
+    int32_t MaxWidthMB =  pContext->m_seqLayerHeader.MaxWidthMB;
+    int32_t curX, curY;
+    uint32_t PQuant = pContext->m_picLayerHeader->PQUANT;
 
-    Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
+    int32_t HeightMB   = pContext->DeblockInfo.HeightMB;
     VC1MB* m_CurrMB = pContext->m_pCurrMB;
 
-    Ipp32s YPitch = m_CurrMB->currYPitch;
-    Ipp32s UPitch = m_CurrMB->currUPitch;
-    Ipp32s VPitch = m_CurrMB->currVPitch;
+    int32_t YPitch = m_CurrMB->currYPitch;
+    int32_t UPitch = m_CurrMB->currUPitch;
+    int32_t VPitch = m_CurrMB->currVPitch;
 
 
 
-    Ipp32s flag_ver = 0;
+    int32_t flag_ver = 0;
 
     /* Deblock horizontal edges */
     for (curY=0; curY<HeightMB-1; curY++)
@@ -400,16 +400,16 @@ void Deblocking_ProgressiveIpicture(VC1Context* pContext)
 
 void Deblocking_ProgressivePpicture(VC1Context* pContext)
 {
-    Ipp32s WidthMB =  pContext->m_seqLayerHeader.widthMB;
-    Ipp32s MaxWidthMB =  pContext->m_seqLayerHeader.MaxWidthMB;
-    Ipp32s HeightMB   = pContext->DeblockInfo.HeightMB;
-    Ipp32s curX, curY;
-    Ipp32s PQuant = pContext->m_picLayerHeader->PQUANT;
+    int32_t WidthMB =  pContext->m_seqLayerHeader.widthMB;
+    int32_t MaxWidthMB =  pContext->m_seqLayerHeader.MaxWidthMB;
+    int32_t HeightMB   = pContext->DeblockInfo.HeightMB;
+    int32_t curX, curY;
+    int32_t PQuant = pContext->m_picLayerHeader->PQUANT;
     VC1MB* m_CurrMB = pContext->m_pCurrMB;
 
-    Ipp32s YPitch = m_CurrMB->currYPitch;
-    Ipp32s UPitch = m_CurrMB->currUPitch;
-    Ipp32s VPitch = m_CurrMB->currVPitch;
+    int32_t YPitch = m_CurrMB->currYPitch;
+    int32_t UPitch = m_CurrMB->currUPitch;
+    int32_t VPitch = m_CurrMB->currVPitch;
 
     LFilterType type = static_cast<LFilterType>(pContext->m_seqLayerHeader.PROFILE);
     LFilterType type_current = type;

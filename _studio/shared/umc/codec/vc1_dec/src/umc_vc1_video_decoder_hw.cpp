@@ -124,17 +124,17 @@ bool VC1VideoDecoderHW::InitVAEnvironment()
     return true;
 }
 
-Ipp32u VC1VideoDecoderHW::CalculateHeapSize()
+uint32_t VC1VideoDecoderHW::CalculateHeapSize()
 {
-    Ipp32u Size = 0;
+    uint32_t Size = 0;
 
-    Size += align_value<Ipp32u>(sizeof(VC1TaskStore));
+    Size += align_value<uint32_t>(sizeof(VC1TaskStore));
     if (!m_va)
-        Size += align_value<Ipp32u>(sizeof(Frame)*(2*m_iMaxFramesInProcessing + 2*VC1NUMREFFRAMES));
+        Size += align_value<uint32_t>(sizeof(Frame)*(2*m_iMaxFramesInProcessing + 2*VC1NUMREFFRAMES));
     else
-        Size += align_value<Ipp32u>(sizeof(Frame)*(m_SurfaceNum));
+        Size += align_value<uint32_t>(sizeof(Frame)*(m_SurfaceNum));
 
-    Size += align_value<Ipp32u>(sizeof(MediaDataEx));
+    Size += align_value<uint32_t>(sizeof(MediaDataEx));
     return Size;
 }
 
@@ -215,7 +215,7 @@ void   VC1VideoDecoderHW::SetVideoHardwareAccelerator            (VideoAccelerat
         m_va = (VideoAccelerator*)va;
 }
 
-bool VC1VideoDecoderHW::InitAlloc(VC1Context* pContext, Ipp32u )
+bool VC1VideoDecoderHW::InitAlloc(VC1Context* pContext, uint32_t )
 {
     if (!InitTables(pContext))
         return false;
@@ -233,17 +233,17 @@ bool VC1VideoDecoderHW::InitAlloc(VC1Context* pContext, Ipp32u )
     //for slice, field start code
     if (m_stCodes_VA == NULL)
     {
-        m_stCodes_VA = (MediaDataEx::_MediaDataEx *)malloc(START_CODE_NUMBER * 2 * sizeof(Ipp32s) + sizeof(MediaDataEx::_MediaDataEx));
+        m_stCodes_VA = (MediaDataEx::_MediaDataEx *)malloc(START_CODE_NUMBER * 2 * sizeof(int32_t) + sizeof(MediaDataEx::_MediaDataEx));
         if (m_stCodes_VA == NULL)
             return false;
-        memset(reinterpret_cast<void*>(m_stCodes_VA), 0, (START_CODE_NUMBER * 2 * sizeof(Ipp32s) + sizeof(MediaDataEx::_MediaDataEx)));
+        memset(reinterpret_cast<void*>(m_stCodes_VA), 0, (START_CODE_NUMBER * 2 * sizeof(int32_t) + sizeof(MediaDataEx::_MediaDataEx)));
         m_stCodes_VA->count = 0;
         m_stCodes_VA->index = 0;
         m_stCodes_VA->bstrm_pos = 0;
-        m_stCodes_VA->offsets = (Ipp32u*)((Ipp8u*)m_stCodes_VA +
+        m_stCodes_VA->offsets = (uint32_t*)((uint8_t*)m_stCodes_VA +
             sizeof(MediaDataEx::_MediaDataEx));
-        m_stCodes_VA->values = (Ipp32u*)((Ipp8u*)m_stCodes_VA->offsets +
-            START_CODE_NUMBER * sizeof(Ipp32u));
+        m_stCodes_VA->values = (uint32_t*)((uint8_t*)m_stCodes_VA->offsets +
+            START_CODE_NUMBER * sizeof(uint32_t));
     }
 
     return true;
@@ -258,7 +258,7 @@ Status VC1VideoDecoderHW::GetStatusReport(DXVA_Status_VC1 *pStatusReport)
         if (sts != UMC_OK)
             return UMC_ERR_FAILED;
 
-        for (Ipp32u i = 0; i < VC1_MAX_REPORTS; i++)
+        for (uint32_t i = 0; i < VC1_MAX_REPORTS; i++)
         {
             // status report presents
             if (pStatusReport[i].StatusReportFeedbackNumber)
@@ -271,13 +271,13 @@ Status VC1VideoDecoderHW::GetStatusReport(DXVA_Status_VC1 *pStatusReport)
 }
 #endif
 
-void VC1VideoDecoderHW::GetStartCodes_HW(MediaData* in, Ipp32u &sShift)
+void VC1VideoDecoderHW::GetStartCodes_HW(MediaData* in, uint32_t &sShift)
 {
-    Ipp8u* readPos = (Ipp8u*)in->GetBufferPointer();
-    Ipp32u readBufSize = (Ipp32u)in->GetDataSize();
-    Ipp8u* readBuf = (Ipp8u*)in->GetBufferPointer();
+    uint8_t* readPos = (uint8_t*)in->GetBufferPointer();
+    uint32_t readBufSize = (uint32_t)in->GetDataSize();
+    uint8_t* readBuf = (uint8_t*)in->GetBufferPointer();
 
-    Ipp32u frameSize = 0;
+    uint32_t frameSize = 0;
     MediaDataEx::_MediaDataEx *stCodes = m_stCodes_VA;
 
     stCodes->count = 0;
@@ -285,15 +285,15 @@ void VC1VideoDecoderHW::GetStartCodes_HW(MediaData* in, Ipp32u &sShift)
     sShift = 0;
 
 
-    Ipp32u size = 0;
-    Ipp8u* ptr = NULL;
-    Ipp32u readDataSize = 0;
-    Ipp32u a = 0x0000FF00 | (*readPos);
-    Ipp32u b = 0xFFFFFFFF;
-    Ipp32u FrameNum = 0;
+    uint32_t size = 0;
+    uint8_t* ptr = NULL;
+    uint32_t readDataSize = 0;
+    uint32_t a = 0x0000FF00 | (*readPos);
+    uint32_t b = 0xFFFFFFFF;
+    uint32_t FrameNum = 0;
 
-    memset(stCodes->offsets, 0, START_CODE_NUMBER * sizeof(Ipp32s));
-    memset(stCodes->values, 0, START_CODE_NUMBER * sizeof(Ipp32s));
+    memset(stCodes->offsets, 0, START_CODE_NUMBER * sizeof(int32_t));
+    memset(stCodes->values, 0, START_CODE_NUMBER * sizeof(int32_t));
 
 
     while (readPos < (readBuf + readBufSize))
@@ -304,7 +304,7 @@ void VC1VideoDecoderHW::GetStartCodes_HW(MediaData* in, Ipp32u &sShift)
         while (!(b == 0x00000001 || b == 0x00000003)
             && (++readPos < (readBuf + readBufSize)))
         {
-            a = (a << 8) | (Ipp32s)(*readPos);
+            a = (a << 8) | (int32_t)(*readPos);
             b = a & 0x00FFFFFF;
         }
 
@@ -323,7 +323,7 @@ void VC1VideoDecoderHW::GetStartCodes_HW(MediaData* in, Ipp32u &sShift)
                 {
                     readPos += 2;
                     ptr = readPos - 5;
-                    size = (Ipp32u)(ptr - readBuf - readDataSize + 1);
+                    size = (uint32_t)(ptr - readBuf - readDataSize + 1);
 
                     frameSize = frameSize + size;
 
@@ -333,8 +333,8 @@ void VC1VideoDecoderHW::GetStartCodes_HW(MediaData* in, Ipp32u &sShift)
 
                     stCodes->values[stCodes->count] = ((*(readPos - 1)) << 24) + ((*(readPos - 2)) << 16) + ((*(readPos - 3)) << 8) + (*(readPos - 4));
 
-                    readDataSize = (Ipp32u)(readPos - readBuf - 4);
-                    a = 0x00010b00 | (Ipp32s)(*readPos);
+                    readDataSize = (uint32_t)(readPos - readBuf - 4);
+                    a = 0x00010b00 | (int32_t)(*readPos);
                     b = a & 0x00FFFFFF;
                     stCodes->count++;
                 }
@@ -352,7 +352,7 @@ void VC1VideoDecoderHW::GetStartCodes_HW(MediaData* in, Ipp32u &sShift)
                         }
 
                         //slice or field size
-                        size = (Ipp32u)(readPos - readBuf - readDataSize - 4);
+                        size = (uint32_t)(readPos - readBuf - readDataSize - 4);
 
                         frameSize = frameSize + size;
 
@@ -364,14 +364,14 @@ void VC1VideoDecoderHW::GetStartCodes_HW(MediaData* in, Ipp32u &sShift)
             else //if(*readPos == 0x03)
             {
                 readPos++;
-                a = (a << 8) | (Ipp32s)(*readPos);
+                a = (a << 8) | (int32_t)(*readPos);
                 b = a & 0x00FFFFFF;
             }
         }
         else
         {
             //end of stream
-            size = (Ipp32u)(readPos - readBuf - readDataSize);
+            size = (uint32_t)(readPos - readBuf - readDataSize);
             readDataSize = readDataSize + size;
             return;
         }
@@ -380,8 +380,8 @@ void VC1VideoDecoderHW::GetStartCodes_HW(MediaData* in, Ipp32u &sShift)
 
 Status VC1VideoDecoderHW::FillAndExecute(MediaData* in)
 {
-    Ipp32u stShift = 0;
-    Ipp32s SCoffset = 0;
+    uint32_t stShift = 0;
+    int32_t SCoffset = 0;
 
     if ((VC1_PROFILE_ADVANCED != m_pContext->m_seqLayerHeader.PROFILE))
         // special header (with frame size) in case of .rcv format
@@ -406,7 +406,7 @@ Status VC1VideoDecoderHW::FillAndExecute(MediaData* in)
     {
         pPackDescriptorChild->PrepareVLDVABuffers(m_pContext->m_Offsets,
             m_pContext->m_values,
-            (Ipp8u*)in->GetDataPointer() - SCoffset,
+            (uint8_t*)in->GetDataPointer() - SCoffset,
             m_stCodes_VA + stShift);
 
     }

@@ -40,62 +40,62 @@
 
         typedef struct
         {
-            Ipp64u frameCount;
+            unsigned long long frameCount;
             vm_char streamName[256];
-            Ipp32s bitrate;
-            Ipp32s GOPLen;
-            Ipp32s BLen;
+            int32_t bitrate;
+            int32_t GOPLen;
+            int32_t BLen;
 
-            Ipp64u startTime;                 //application start time
-            Ipp64u endTime;                   // aplication end time
-            Ipp64u totalTime;                 // total time
+            unsigned long long startTime;                 //application start time
+            unsigned long long endTime;                   // aplication end time
+            unsigned long long totalTime;                 // total time
 
             //Motion estimation
-            Ipp64u me_StartTime;
-            Ipp64u me_EndTime;
-            Ipp64u me_TotalTime;
+            unsigned long long me_StartTime;
+            unsigned long long me_EndTime;
+            unsigned long long me_TotalTime;
 
-            Ipp32s meSpeedSearch;
+            int32_t meSpeedSearch;
 
             //Interpolation
-            Ipp64u Interpolate_StartTime;
-            Ipp64u Interpolate_EndTime;
-            Ipp64u Interpolate_TotalTime;
+            unsigned long long Interpolate_StartTime;
+            unsigned long long Interpolate_EndTime;
+            unsigned long long Interpolate_TotalTime;
 
             //Intra prediction
-            Ipp64u Intra_StartTime;
-            Ipp64u Intra_EndTime;
-            Ipp64u Intra_TotalTime;
+            unsigned long long Intra_StartTime;
+            unsigned long long Intra_EndTime;
+            unsigned long long Intra_TotalTime;
 
             //Inter prediction
-            Ipp64u Inter_StartTime;
-            Ipp64u Inter_EndTime;
-            Ipp64u Inter_TotalTime;
+            unsigned long long Inter_StartTime;
+            unsigned long long Inter_EndTime;
+            unsigned long long Inter_TotalTime;
 
             //Forward quantization and transforming
-            Ipp64u FwdQT_StartTime;
-            Ipp64u FwdQT_EndTime;
-            Ipp64u FwdQT_TotalTime;
+            unsigned long long FwdQT_StartTime;
+            unsigned long long FwdQT_EndTime;
+            unsigned long long FwdQT_TotalTime;
 
             //Inverse quantization and transforming
-            Ipp64u InvQT_StartTime;
-            Ipp64u InvQT_EndTime;
-            Ipp64u InvQT_TotalTime;
+            unsigned long long InvQT_StartTime;
+            unsigned long long InvQT_EndTime;
+            unsigned long long InvQT_TotalTime;
 
             //Inverse quantization and transforming
-            Ipp64u Reconst_StartTime;
-            Ipp64u Reconst_EndTime;
-            Ipp64u Reconst_TotalTime;
+            unsigned long long Reconst_StartTime;
+            unsigned long long Reconst_EndTime;
+            unsigned long long Reconst_TotalTime;
 
             //Deblocking
-            Ipp64u Deblk_StartTime;
-            Ipp64u Deblk_EndTime;
-            Ipp64u Deblk_TotalTime;
+            unsigned long long Deblk_StartTime;
+            unsigned long long Deblk_EndTime;
+            unsigned long long Deblk_TotalTime;
 
             //Coding AC coeffs
-            Ipp64u AC_Coefs_StartTime;
-            Ipp64u AC_Coefs_EndTime;
-            Ipp64u AC_Coefs_TotalTime;
+            unsigned long long AC_Coefs_StartTime;
+            unsigned long long AC_Coefs_EndTime;
+            unsigned long long AC_Coefs_TotalTime;
 
         }VC1EncTimeStatistics;
 
@@ -128,21 +128,21 @@
 
         typedef struct
         {
-            Ipp64u frameCount;
+            unsigned long long frameCount;
             vm_char streamName[256];
-            Ipp32s bitrate;
-            Ipp32s GOPLen;
-            Ipp32s BLen;
+            int32_t bitrate;
+            int32_t GOPLen;
+            int32_t BLen;
 
-            Ipp64u startTime;                 //application start time
-            Ipp64u endTime;                   // aplication end time
-            Ipp64u totalTime;                 // total time
+            unsigned long long startTime;                 //application start time
+            unsigned long long endTime;                   // aplication end time
+            unsigned long long totalTime;                 // total time
 
-            Ipp64u IppStartTime;                 //application start time
-            Ipp64u IppEndTime;                   // aplication end time
-            Ipp64u IppTotalTime;                 // total time
+            unsigned long long IppStartTime;                 //application start time
+            unsigned long long IppEndTime;                   // aplication end time
+            unsigned long long IppTotalTime;                 // total time
 
-            Ipp32s meSpeedSearch;            //ME speed
+            int32_t meSpeedSearch;            //ME speed
         }VC1EncIppStatistics;
 
         extern VC1EncIppStatistics* m_IppStat;

@@ -46,7 +46,7 @@
 //    15           15          32766
 //    16           16          65534
 
-const extern Ipp32s VC1_FieldRefdistTable[] =
+const extern int32_t VC1_FieldRefdistTable[] =
 {
 
     16, /* max bits */

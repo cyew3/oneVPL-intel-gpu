@@ -29,12 +29,12 @@
 
 void RangeMapping(VC1Context* pContext, UMC::FrameMemID input, UMC::FrameMemID output)
 {
-    IppiSize roiSize;
+    mfxSize roiSize;
 
     if (pContext->m_seqLayerHeader.PROFILE != VC1_PROFILE_ADVANCED)
     {
-        Ipp32s YCoeff = -1;
-        Ipp32s UVCoeff = -1;
+        int32_t YCoeff = -1;
+        int32_t UVCoeff = -1;
         if (( (pContext->m_picLayerHeader->RANGEREDFRM-1) == *pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].pRANGE_MAPY)||
             (pContext->m_picLayerHeader->PTYPE != VC1_B_FRAME))
             // last frame!!!!!!!!!!!!!!
@@ -134,9 +134,9 @@ void RangeMapping(VC1Context* pContext, UMC::FrameMemID input, UMC::FrameMemID o
 
 void RangeRefFrame(VC1Context* pContext)
 {
-    Ipp32u index= pContext->m_frmBuff.m_iPrevIndex;
-    IppiSize roiSize;
-    Ipp32u width = (pContext->m_seqLayerHeader.widthMB * VC1_PIXEL_IN_LUMA);
+    uint32_t index= pContext->m_frmBuff.m_iPrevIndex;
+    mfxSize roiSize;
+    uint32_t width = (pContext->m_seqLayerHeader.widthMB * VC1_PIXEL_IN_LUMA);
 
     if(*pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iCurrIndex].pRANGE_MAPY == -1
         && *pContext->m_frmBuff.m_pFrames[index].pRANGE_MAPY == 7)
@@ -197,16 +197,16 @@ void RangeRefFrame(VC1Context* pContext)
     }
 }
 
-void RangeDown(Ipp8u* pSrc, Ipp32s srcStep,
-               Ipp8u* pDst, Ipp32s dstStep,
-               Ipp32s width, Ipp32s height)
+void RangeDown(uint8_t* pSrc, int32_t srcStep,
+               uint8_t* pDst, int32_t dstStep,
+               int32_t width, int32_t height)
 {
     //pData - frame poiinter
     //width - number pixels in raw
     //height - number pixels in column
-    Ipp32s i=0;
-    Ipp32s j=0;
-    Ipp32s temp;
+    int32_t i=0;
+    int32_t j=0;
+    int32_t temp;
 
     for (i = 0; i < height; i++)
     {
@@ -215,7 +215,7 @@ void RangeDown(Ipp8u* pSrc, Ipp32s srcStep,
             temp = pSrc[i*srcStep+j];
 
             temp = ((temp - 128)>>1 ) + 128;
-            pDst[i*dstStep+j] = (Ipp8u)temp;
+            pDst[i*dstStep+j] = (uint8_t)temp;
         }
     }
 }

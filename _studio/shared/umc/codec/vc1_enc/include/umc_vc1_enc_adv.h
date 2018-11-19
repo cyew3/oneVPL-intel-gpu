@@ -49,13 +49,13 @@ private:
 
     VC1EncoderMBs               *m_pMBs;
     UMC::MemID                  m_MBsID;
-    Ipp8u*                      m_MBsBuffer;
+    uint8_t*                      m_MBsBuffer;
 
     VC1EncoderCodedMB           *m_pCodedMB;
 
     ///////////////////
     VC1BitRateControl          *m_pBitRateControl;
-    Ipp8u                      *m_pBRCBuffer;
+    uint8_t                      *m_pBRCBuffer;
     UMC::MemID                  m_BRCID;;
 
 #ifdef UMC_ENABLE_UMC_SCENE_ANALYZER
@@ -63,33 +63,33 @@ private:
 #endif
     //////////////////
 
-    Ipp32u                   m_iFrameNumber;
+    uint32_t                   m_iFrameNumber;
 
-    Ipp32u                   m_uiGOPLength;
-    Ipp32u                   m_uiBFrmLength;
+    uint32_t                   m_uiGOPLength;
+    uint32_t                   m_uiBFrmLength;
 
-    Ipp16s*                  m_pSavedMV;
-    Ipp8u*                   m_pRefType;
+    int16_t*                  m_pSavedMV;
+    uint8_t*                   m_pRefType;
 
     vm_char                  m_cLastError[VC1_ENC_STR_LEN];
 
-    Ipp32s                   m_iFrameCount;
+    int32_t                   m_iFrameCount;
 
 
     bool                     m_bSequenceHeader;
-    Ipp8u                    m_uiPictuteQuantIndex;
+    uint8_t                    m_uiPictuteQuantIndex;
     bool                     m_bHalfQuant;
 
     StoredFrames*            m_pStoredFrames;
     UMC::MemID               m_StoredFramesID;
-    Ipp8u*                   m_pStoredFramesBuffer;
+    uint8_t*                   m_pStoredFramesBuffer;
     GOP*                     m_pGOP;
     WaitingList*             m_pWaitingList;
 
     //motion estimation
     UMC::MeBase*             m_pME;
-    Ipp32s                   m_MESearchSpeed;
-    Ipp8u*                   m_pMEBuffer;
+    int32_t                   m_MESearchSpeed;
+    uint8_t*                   m_pMEBuffer;
     UMC::MemID               m_MEID;
 
     //MEMORY ALLOCATOR
@@ -101,7 +101,7 @@ private:
     bool                  m_bFrameRecoding;
 
     bool                   m_bMixedMV;
-    Ipp32u                 m_uiOrigFramesUsingFlag;
+    uint32_t                 m_uiOrigFramesUsingFlag;
 
     Frame*                 m_pPlane;
     Frame*                 m_pForwardMEPlane;
@@ -111,7 +111,7 @@ private:
     Frame*                 m_pBackwardPlane;
 
     eReferenceFieldType    m_uiReferenceFieldType;
-    Ipp8u                  m_nReferenceFrameDist;
+    uint8_t                  m_nReferenceFrameDist;
 
     UMC::MeFrame*          m_MeFrame[32];
     MeIndex                m_MeIndex;
@@ -119,17 +119,17 @@ private:
     //InitPictureParams      m_InitPicParam;
     //VLCTablesIndex         m_VLCIndex;
 
-    Ipp32u                 m_LastQuant;
+    uint32_t                 m_LastQuant;
 
     bool                   m_bUseMeFeedback;
     bool                   m_bUseUpdateMeFeedback;
     bool                   m_bUseFastMeFeedback;
     bool                   m_bFastUVMC;
-    Ipp32u                 m_uiNumSlices;
+    uint32_t                 m_uiNumSlices;
     bool                   m_bSelectVLCTables;
     bool                   m_bChangeInterpPixelType;
     bool                   m_bUseTreillisQuantization;
-    Ipp32u                 m_uiOverlapSmoothing; 
+    uint32_t                 m_uiOverlapSmoothing; 
     bool                   m_bIntensityCompensation;
 
     pIntensityCompChroma   IntensityCompChroma;
@@ -191,7 +191,7 @@ public:
     {
         IntensityCompChroma = IntensityCompChromaYV12;
 
-        for(Ipp32u i = 0; i < 32; i++)
+        for(uint32_t i = 0; i < 32; i++)
             m_MeFrame[i] = NULL;
 
         m_MeIndex.MeCurrIndex = 0;
@@ -211,20 +211,20 @@ public:
     UMC::Status     GetInfo(UMC::VC1EncoderParams* pInfo);
     UMC::Status     GetFrame(UMC::MediaData *in, UMC::MediaData *out);
 
-    UMC::Status     WriteFrame(ePType InputPictureType, bool bSecondField, Ipp32u CodedSize);
+    UMC::Status     WriteFrame(ePType InputPictureType, bool bSecondField, uint32_t CodedSize);
 
 private:
     //needed for gathering ME statistics
-    UMC::Status     SetMEParams(UMC::MeParams* MEParams, InitPictureParams *pPicParams, Ipp8u doubleQuant, bool Uniform, bool FieldPicture, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     SetMEParams_I(UMC::MeParams* MEParams,  Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     SetMEParams_P(UMC::MeParams* MEParams,  Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     SetMEParams_B(UMC::MeParams* MEParams, sFraction* pBFraction, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     SetMEParams_PMixed(UMC::MeParams* MEParams,  Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     SetMEParams_I_Field(UMC::MeParams* MEParams, Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     SetMEParams_P_Field(UMC::MeParams* MEParams, bool bTopFieldFirst, bool bSecondField, bool bMixed=false,  Ipp32s firstRow=0, Ipp32s nRows=0);
-    UMC::Status     SetMEParams_B_Field(UMC::MeParams* MEParams, bool bTopFieldFirst, bool bSecond, bool bMixed ,sFraction* pBFraction, Ipp32s firstRow=0, Ipp32s nRows=0);
+    UMC::Status     SetMEParams(UMC::MeParams* MEParams, InitPictureParams *pPicParams, uint8_t doubleQuant, bool Uniform, bool FieldPicture, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     SetMEParams_I(UMC::MeParams* MEParams,  int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     SetMEParams_P(UMC::MeParams* MEParams,  int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     SetMEParams_B(UMC::MeParams* MEParams, sFraction* pBFraction, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     SetMEParams_PMixed(UMC::MeParams* MEParams,  int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     SetMEParams_I_Field(UMC::MeParams* MEParams, int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     SetMEParams_P_Field(UMC::MeParams* MEParams, bool bTopFieldFirst, bool bSecondField, bool bMixed=false,  int32_t firstRow=0, int32_t nRows=0);
+    UMC::Status     SetMEParams_B_Field(UMC::MeParams* MEParams, bool bTopFieldFirst, bool bSecond, bool bMixed ,sFraction* pBFraction, int32_t firstRow=0, int32_t nRows=0);
 
-    UMC::Status     SetGOPParams(Ipp32u GOPLen, Ipp32u BFrames)
+    UMC::Status     SetGOPParams(uint32_t GOPLen, uint32_t BFrames)
     {
         m_uiBFrmLength = BFrames;
         m_uiGOPLength = GOPLen;
@@ -233,7 +233,7 @@ private:
     }
     ePType          GetPictureType()
     {
-        Ipp32s      nFrameInGOP        =  (m_iFrameCount++) % m_uiGOPLength;
+        int32_t      nFrameInGOP        =  (m_iFrameCount++) % m_uiGOPLength;
 
          if (nFrameInGOP)
         {

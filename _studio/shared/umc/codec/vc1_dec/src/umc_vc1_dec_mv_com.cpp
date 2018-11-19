@@ -26,7 +26,7 @@
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_mvdiff_tbl.h"
 
-void PackDirectMVProgressive(VC1MB* pCurrMB, Ipp16s* pSavedMV)
+void PackDirectMVProgressive(VC1MB* pCurrMB, int16_t* pSavedMV)
 {
     if (VC1_GET_MBTYPE(pCurrMB->mbType) == VC1_MB_1MV_INTER)
     {
@@ -35,9 +35,9 @@ void PackDirectMVProgressive(VC1MB* pCurrMB, Ipp16s* pSavedMV)
     }
     else
     {
-        Ipp32u blk_num;
-        Ipp16s x[4];
-        Ipp16s y[4];
+        uint32_t blk_num;
+        int16_t x[4];
+        int16_t y[4];
         for (blk_num = 0; blk_num < 4; blk_num++)
         {
             if(pCurrMB->m_pBlocks[blk_num].blkType & VC1_BLK_INTRA)
@@ -52,7 +52,7 @@ void PackDirectMVProgressive(VC1MB* pCurrMB, Ipp16s* pSavedMV)
     }
 
 }
-void PackDirectMVIField(VC1MB* pCurrMB, Ipp16s* pSavedMV, Ipp8u isBottom, Ipp8u* bRefField)
+void PackDirectMVIField(VC1MB* pCurrMB, int16_t* pSavedMV, uint8_t isBottom, uint8_t* bRefField)
 {
 
     if (VC1_MB_INTRA == pCurrMB->mbType)
@@ -63,21 +63,21 @@ void PackDirectMVIField(VC1MB* pCurrMB, Ipp16s* pSavedMV, Ipp8u isBottom, Ipp8u*
     }
     else
     {
-        Ipp32s count=0;
-        Ipp16s* xLuMV;
-        Ipp16s* yLuMV;
+        int32_t count=0;
+        int16_t* xLuMV;
+        int16_t* yLuMV;
 
-        Ipp16s xLuMVT[VC1_NUM_OF_LUMA];
-        Ipp16s yLuMVT[VC1_NUM_OF_LUMA];
+        int16_t xLuMVT[VC1_NUM_OF_LUMA];
+        int16_t yLuMVT[VC1_NUM_OF_LUMA];
 
-        Ipp16s xLuMVB[VC1_NUM_OF_LUMA];
-        Ipp16s yLuMVB[VC1_NUM_OF_LUMA];
+        int16_t xLuMVB[VC1_NUM_OF_LUMA];
+        int16_t yLuMVB[VC1_NUM_OF_LUMA];
 
 
 
-        Ipp32u MVcount = 0;
-        Ipp32u MVBcount = 0;
-        Ipp32u MVTcount = 0;
+        uint32_t MVcount = 0;
+        uint32_t MVBcount = 0;
+        uint32_t MVTcount = 0;
 
         for (count=0;count<4;count++)
         {
@@ -137,7 +137,7 @@ void PackDirectMVIField(VC1MB* pCurrMB, Ipp16s* pSavedMV, Ipp8u isBottom, Ipp8u*
         Derive4MV_Field(MVcount,pSavedMV,&pSavedMV[1],xLuMV,yLuMV);
     }
 }
-void PackDirectMVIFrame(VC1MB* pCurrMB, Ipp16s* pSavedMV)
+void PackDirectMVIFrame(VC1MB* pCurrMB, int16_t* pSavedMV)
 {
     if (VC1_MB_INTRA == pCurrMB->mbType)
     {
@@ -159,10 +159,10 @@ void PackDirectMVIFrame(VC1MB* pCurrMB, Ipp16s* pSavedMV)
 
 
 void PackDirectMVs(VC1MB*  pCurrMB,
-                   Ipp16s* pSavedMV,
-                   Ipp8u   isBottom,
-                   Ipp8u*  bRefField,
-                   Ipp32u  FCM)
+                   int16_t* pSavedMV,
+                   uint8_t   isBottom,
+                   uint8_t*  bRefField,
+                   uint32_t  FCM)
 {
     switch (FCM)
     {
@@ -180,9 +180,9 @@ void PackDirectMVs(VC1MB*  pCurrMB,
     }
 }
 
-void Derive4MV_Field(Ipp32u _MVcount,
-                     Ipp16s* xMV, Ipp16s* yMV,
-                     Ipp16s* xLuMV, Ipp16s* yLuMV)
+void Derive4MV_Field(uint32_t _MVcount,
+                     int16_t* xMV, int16_t* yMV,
+                     int16_t* xLuMV, int16_t* yLuMV)
 {
     switch(_MVcount)
     {
@@ -214,11 +214,11 @@ void Derive4MV_Field(Ipp32u _MVcount,
 }
 
 void GetPredictProgressiveMV(VC1Block *pA,VC1Block *pB,VC1Block *pC,
-                             Ipp16s *pX, Ipp16s *pY,Ipp32s Back)
+                             int16_t *pX, int16_t *pY,int32_t Back)
 {
-    Ipp16s X=0,  Y=0;
-    Ipp16s MV_px[] = {0,0,0};
-    Ipp16s MV_py[] = {0,0,0};
+    int16_t X=0,  Y=0;
+    int16_t MV_px[] = {0,0,0};
+    int16_t MV_py[] = {0,0,0};
 
     if (pA && (pA->blkType & VC1_BLK_INTER))
     {
@@ -262,13 +262,13 @@ void GetPredictProgressiveMV(VC1Block *pA,VC1Block *pB,VC1Block *pC,
 }
 
 
-void HybridMV(VC1Context* pContext,VC1Block *pA,VC1Block *pC, Ipp16s *pPredMVx,Ipp16s *pPredMVy, Ipp32s Back)
+void HybridMV(VC1Context* pContext,VC1Block *pA,VC1Block *pC, int16_t *pPredMVx,int16_t *pPredMVy, int32_t Back)
 {
-    Ipp16s MV_px[] = {0,0};
-    Ipp16s MV_py[] = {0,0};
-    Ipp16s x,  y;
-    Ipp16u sum;
-    Ipp32s eHybridPred;
+    int16_t MV_px[] = {0,0};
+    int16_t MV_py[] = {0,0};
+    int16_t x,  y;
+    uint16_t sum;
+    int32_t eHybridPred;
 
     if ((pA == NULL) || (pC == NULL) || (pContext->m_picLayerHeader->PTYPE == VC1_B_FRAME))
     {
@@ -316,15 +316,15 @@ void HybridMV(VC1Context* pContext,VC1Block *pA,VC1Block *pC, Ipp16s *pPredMVx,I
     (*pPredMVy)= y;
 }
 
-void CalculateMV(Ipp16s x[],Ipp16s y[], Ipp16s *X, Ipp16s* Y)
+void CalculateMV(int16_t x[],int16_t y[], int16_t *X, int16_t* Y)
 {
-    Ipp16s temp_x[] = {0,0,0};
-    Ipp16s temp_y[] = {0,0,0};
+    int16_t temp_x[] = {0,0,0};
+    int16_t temp_y[] = {0,0,0};
 
-    Ipp16u n_intra = ((Ipp16u)(x[0])==VC1_MVINTRA) +
-        (((Ipp16u)(x[1])== VC1_MVINTRA)<<1) +
-        (((Ipp16u)(x[2])== VC1_MVINTRA)<<2) +
-        (((Ipp16u)(x[3])== VC1_MVINTRA)<<3);
+    uint16_t n_intra = ((uint16_t)(x[0])==VC1_MVINTRA) +
+        (((uint16_t)(x[1])== VC1_MVINTRA)<<1) +
+        (((uint16_t)(x[2])== VC1_MVINTRA)<<2) +
+        (((uint16_t)(x[3])== VC1_MVINTRA)<<3);
 
     switch(n_intra)
     {
@@ -391,9 +391,9 @@ void CalculateMV(Ipp16s x[],Ipp16s y[], Ipp16s *X, Ipp16s* Y)
         break;
     }
 }
-void CalculateMV_Interlace(Ipp16s x[],Ipp16s y[], Ipp16s x_bottom[],Ipp16s y_bottom[],Ipp16s *Xt, Ipp16s* Yt,Ipp16s *Xb, Ipp16s* Yb )
+void CalculateMV_Interlace(int16_t x[],int16_t y[], int16_t x_bottom[],int16_t y_bottom[],int16_t *Xt, int16_t* Yt,int16_t *Xb, int16_t* Yb )
 {
-    Ipp8s n_intra = ((Ipp16u)(x[0])==VC1_MVINTRA);
+    int8_t n_intra = ((uint16_t)(x[0])==VC1_MVINTRA);
     if (n_intra) // intra co-located MB
     {
         *Xt = 0;
@@ -411,9 +411,9 @@ void CalculateMV_Interlace(Ipp16s x[],Ipp16s y[], Ipp16s x_bottom[],Ipp16s y_bot
 
 }
 
-void CalculateMV_InterlaceField(VC1Context* pContext, Ipp16s *X, Ipp16s* Y)
+void CalculateMV_InterlaceField(VC1Context* pContext, int16_t *X, int16_t* Y)
 {
-    Ipp8u* samePolarity = pContext->savedMVSamePolarity_Curr +
+    uint8_t* samePolarity = pContext->savedMVSamePolarity_Curr +
                           (pContext->m_seqLayerHeader.MaxWidthMB*pContext->m_pSingleMB->m_currMBYpos
                            + pContext->m_pSingleMB->m_currMBXpos);
 
@@ -483,7 +483,7 @@ void CalculateMV_InterlaceField(VC1Context* pContext, Ipp16s *X, Ipp16s* Y)
 
 void Decode_BMVTYPE(VC1Context* pContext)
 {
-    Ipp32s value=0;
+    int32_t value=0;
     VC1_GET_BITS(1, value);
     if (value)
     {
@@ -505,22 +505,22 @@ void Decode_BMVTYPE(VC1Context* pContext)
     }
 }
 
-void PullBack_PPred4MV(VC1SingletonMB* sMB, Ipp16s *pMVx, Ipp16s* pMVy, Ipp32s blk_num)
+void PullBack_PPred4MV(VC1SingletonMB* sMB, int16_t *pMVx, int16_t* pMVy, int32_t blk_num)
 {
-    Ipp32s Min=-28;
-    Ipp32s X = *pMVx;
-    Ipp32s Y = *pMVy;
-    Ipp32s currMBXpos = sMB->m_currMBXpos<<6;
-    Ipp32s currMBYpos = sMB->m_currMBYpos<<6;
+    int32_t Min=-28;
+    int32_t X = *pMVx;
+    int32_t Y = *pMVy;
+    int32_t currMBXpos = sMB->m_currMBXpos<<6;
+    int32_t currMBYpos = sMB->m_currMBYpos<<6;
 
-    Ipp32u Xblk = ((blk_num&1) << 5);
-    Ipp32u Yblk = ((blk_num&2) << 4);
+    uint32_t Xblk = ((blk_num&1) << 5);
+    uint32_t Yblk = ((blk_num&2) << 4);
 
-    Ipp32s IX = currMBXpos + X + Xblk;
-    Ipp32s IY = currMBYpos + Y + Yblk;
+    int32_t IX = currMBXpos + X + Xblk;
+    int32_t IY = currMBYpos + Y + Yblk;
 
-    Ipp32s Width  =(sMB->widthMB<<6) - 4;
-    Ipp32s Height =(sMB->heightMB<<6) - 4;
+    int32_t Width  =(sMB->widthMB<<6) - 4;
+    int32_t Height =(sMB->heightMB<<6) - 4;
 
 
     if (IX < Min)
@@ -541,8 +541,8 @@ void PullBack_PPred4MV(VC1SingletonMB* sMB, Ipp16s *pMVx, Ipp16s* pMVy, Ipp32s b
         Y = Height - currMBYpos - Yblk;
     }
 
-    (*pMVx) = (Ipp16s)X;
-    (*pMVy) = (Ipp16s)Y;
+    (*pMVx) = (int16_t)X;
+    (*pMVy) = (int16_t)Y;
 }
 
 void Progressive1MVPrediction(VC1Context* pContext)
@@ -551,8 +551,8 @@ void Progressive1MVPrediction(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 
-    Ipp32u LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
+    uint32_t LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
+    int32_t width = pContext->m_seqLayerHeader.MaxWidthMB;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
 
@@ -615,8 +615,8 @@ void Progressive4MVPrediction(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1MB *pA = NULL, *pB0 = NULL,*pB1 = NULL, *pC = NULL;
 
-    Ipp32u LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_seqLayerHeader.MaxWidthMB;
+    uint32_t LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
+    int32_t width = pContext->m_seqLayerHeader.MaxWidthMB;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
 

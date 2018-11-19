@@ -55,7 +55,7 @@
 //23       166   10    48     38        6
 //24       96    9     49     20        5
 
-const extern Ipp32s VC1_Progressive_MV_Diff_tbl0[] =
+const extern int32_t VC1_Progressive_MV_Diff_tbl0[] =
 {
  14, /* max bits */
  2,  /* total subtables */
@@ -190,7 +190,7 @@ const extern Ipp32s VC1_Progressive_MV_Diff_tbl0[] =
 //23         3011   14    48      56          6
 //24         118    9     49      57          6
 
-const extern Ipp32s VC1_Progressive_MV_Diff_tbl1[] =
+const extern int32_t VC1_Progressive_MV_Diff_tbl1[] =
 {
  14, /* max bits */
  2,  /* total subtables */
@@ -326,7 +326,7 @@ const extern Ipp32s VC1_Progressive_MV_Diff_tbl1[] =
 //23      274     11   48     295     11
 //24      275     11   49     296     11
 
-const extern Ipp32s VC1_Progressive_MV_Diff_tbl2[] =
+const extern int32_t VC1_Progressive_MV_Diff_tbl2[] =
 {
  12, /* max bits */
  2,  /* total subtables */
@@ -453,7 +453,7 @@ const extern Ipp32s VC1_Progressive_MV_Diff_tbl2[] =
 //23        15    12       48        15         5
 //24        11    11       49        8          4
 
-const extern Ipp32s VC1_Progressive_MV_Diff_tbl3[] =
+const extern int32_t VC1_Progressive_MV_Diff_tbl3[] =
 {
  15, /* max bits */
  2,  /* total subtables */

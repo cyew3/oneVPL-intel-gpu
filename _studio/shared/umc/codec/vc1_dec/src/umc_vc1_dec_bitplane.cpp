@@ -59,9 +59,9 @@
 
 
 
-static void InverseDiff(VC1Bitplane* pBitplane, Ipp32s widthMB, Ipp32s heightMB,Ipp32s MaxWidthMB)
+static void InverseDiff(VC1Bitplane* pBitplane, int32_t widthMB, int32_t heightMB,int32_t MaxWidthMB)
 {
-    Ipp32s i, j;
+    int32_t i, j;
 
     for(i = 0; i < heightMB; i++)
     {
@@ -89,9 +89,9 @@ static void InverseDiff(VC1Bitplane* pBitplane, Ipp32s widthMB, Ipp32s heightMB,
 }
 
 
-static void InverseBitplane(VC1Bitplane* pBitplane, Ipp32s size)
+static void InverseBitplane(VC1Bitplane* pBitplane, int32_t size)
 {
-    Ipp32s i;
+    int32_t i;
 
     for(i = 0; i < size; i++)
     {
@@ -100,29 +100,29 @@ static void InverseBitplane(VC1Bitplane* pBitplane, Ipp32s size)
 }
 
 
-static void Norm2ModeDecode(VC1Context* pContext,VC1Bitplane* pBitplane, Ipp32s width, Ipp32s height,Ipp32s MaxWidthMB)
+static void Norm2ModeDecode(VC1Context* pContext,VC1Bitplane* pBitplane, int32_t width, int32_t height,int32_t MaxWidthMB)
 {
-    Ipp32s i;
-    Ipp32s j,k;
-    Ipp32s tmp_databits = 0;
+    int32_t i;
+    int32_t j,k;
+    int32_t tmp_databits = 0;
 
     if((width*height) & 1)
     {
         VC1_GET_BITS(1, tmp_databits);
-        pBitplane->m_databits[0] = (Ipp8u)tmp_databits;
+        pBitplane->m_databits[0] = (uint8_t)tmp_databits;
     }
 
     j = (width*height) & 1;
     k = 0;
     for(i = (width*height) & 1; i < (width*height/2)*2; i+=2)
     {
-        Ipp32s tmp;
-        Ipp32s index = k*MaxWidthMB + j;
+        int32_t tmp;
+        int32_t index = k*MaxWidthMB + j;
         
         j++;
         if(j == width) {j = 0; k++;}
 
-        Ipp32s indexNext = k*MaxWidthMB + j;
+        int32_t indexNext = k*MaxWidthMB + j;
 
         j++;
         if(j == width) {j = 0; k++;}
@@ -161,21 +161,21 @@ static void Norm2ModeDecode(VC1Context* pContext,VC1Bitplane* pBitplane, Ipp32s 
 }
 
 
-static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, Ipp32s height,Ipp32s MaxWidthMB)
+static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, int32_t width, int32_t height,int32_t MaxWidthMB)
 {
     int ret;
-    Ipp32s i, j;
-    Ipp32s k;
-    Ipp32s ResidualX = 0;
-    Ipp32s ResidualY = 0;
-    Ipp8u _2x3tiled = (((width%3)!=0)&&((height%3)==0));
+    int32_t i, j;
+    int32_t k;
+    int32_t ResidualX = 0;
+    int32_t ResidualY = 0;
+    uint8_t _2x3tiled = (((width%3)!=0)&&((height%3)==0));
 
 
     if(_2x3tiled)
     {
-        Ipp32s sizeW = width/2;
-        Ipp32s sizeH = height/3;
-        Ipp8u *currRowTails =  pBitplane->m_databits;
+        int32_t sizeW = width/2;
+        int32_t sizeH = height/3;
+        uint8_t *currRowTails =  pBitplane->m_databits;
 
         for(i = 0; i < sizeH; i++)
         {
@@ -196,14 +196,14 @@ static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s
                             );
                 VM_ASSERT(ret == 0);
 
-                currRowTails[0] = (Ipp8u)(k&1);
-                currRowTails[1] = (Ipp8u)((k&2)>>1);
+                currRowTails[0] = (uint8_t)(k&1);
+                currRowTails[1] = (uint8_t)((k&2)>>1);
 
-                currRowTails[MaxWidthMB + 0] = (Ipp8u)((k&4)>>2);
-                currRowTails[MaxWidthMB + 1] = (Ipp8u)((k&8)>>3);
+                currRowTails[MaxWidthMB + 0] = (uint8_t)((k&4)>>2);
+                currRowTails[MaxWidthMB + 1] = (uint8_t)((k&8)>>3);
 
-                currRowTails[2*MaxWidthMB + 0] = (Ipp8u)((k&16)>>4);
-                currRowTails[2*MaxWidthMB + 1] = (Ipp8u)((k&32)>>5);
+                currRowTails[2*MaxWidthMB + 0] = (uint8_t)((k&16)>>4);
+                currRowTails[2*MaxWidthMB + 1] = (uint8_t)((k&32)>>5);
 
                 currRowTails+=2;
 
@@ -214,9 +214,9 @@ static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s
     }
     else //3x2 tiled
     {
-        Ipp32s sizeW = width/3;
-        Ipp32s sizeH = height/2;
-        Ipp8u *currRowTails =  pBitplane->m_databits;
+        int32_t sizeW = width/3;
+        int32_t sizeH = height/2;
+        uint8_t *currRowTails =  pBitplane->m_databits;
 
         for(i = 0; i < sizeH; i++)
         {
@@ -238,13 +238,13 @@ static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s
                             );
                 VM_ASSERT(ret == ippStsNoErr);
 
-                currRowTails[0] = (Ipp8u)(k&1);
-                currRowTails[1] = (Ipp8u)((k&2)>>1);
-                currRowTails[2] = ((Ipp8u)(k&4)>>2);
+                currRowTails[0] = (uint8_t)(k&1);
+                currRowTails[1] = (uint8_t)((k&2)>>1);
+                currRowTails[2] = ((uint8_t)(k&4)>>2);
 
-                currRowTails[MaxWidthMB + 0] = (Ipp8u)((k&8)>>3);
-                currRowTails[MaxWidthMB + 1] = (Ipp8u)((k&16)>>4);
-                currRowTails[MaxWidthMB + 2] = (Ipp8u)((k&32)>>5);
+                currRowTails[MaxWidthMB + 0] = (uint8_t)((k&8)>>3);
+                currRowTails[MaxWidthMB + 1] = (uint8_t)((k&16)>>4);
+                currRowTails[MaxWidthMB + 2] = (uint8_t)((k&32)>>5);
 
                 currRowTails+=3;
 
@@ -257,16 +257,16 @@ static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s
     //ResidualY 0 or 1 or 2
     for(i = 0; i < ResidualX; i++)
     {
-        Ipp32s ColSkip;
+        int32_t ColSkip;
         VC1_GET_BITS(1, ColSkip);
 
         if(1 == ColSkip)
         {
             for(j = 0; j < height; j++)
             {
-                Ipp32s Value = 0;
+                int32_t Value = 0;
                 VC1_GET_BITS(1, Value);
-                pBitplane->m_databits[i + MaxWidthMB * j] = (Ipp8u)Value;
+                pBitplane->m_databits[i + MaxWidthMB * j] = (uint8_t)Value;
             }
         }
         else
@@ -281,7 +281,7 @@ static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s
     //ResidualY 0 or 1
     for(j = 0; j < ResidualY; j++)
     {
-        Ipp32s RowSkip;
+        int32_t RowSkip;
 
         VC1_GET_BITS(1, RowSkip);
 
@@ -289,9 +289,9 @@ static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s
         {
             for(i = ResidualX; i < width; i++)
             {
-                Ipp32s Value = 0;
+                int32_t Value = 0;
                 VC1_GET_BITS(1, Value);
-                pBitplane->m_databits[i] = (Ipp8u)Value;
+                pBitplane->m_databits[i] = (uint8_t)Value;
             }
         }
         else
@@ -305,13 +305,13 @@ static void Norm6ModeDecode(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s
 
 }
 
-void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, Ipp32s height,Ipp32s offset)
+void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, int32_t width, int32_t height,int32_t offset)
 {
-    Ipp32s tmp;
-    Ipp32s i, j;
+    int32_t tmp;
+    int32_t i, j;
     int ret;
-    Ipp32s tmp_invert = 0;
-    Ipp32s tmp_databits = 0;
+    int32_t tmp_invert = 0;
+    int32_t tmp_databits = 0;
 
     memset(pBitplane, 0, sizeof(VC1Bitplane));
 
@@ -319,7 +319,7 @@ void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, 
     if (VC1_MAX_BITPANE_CHUNCKS == pContext->bp_round_count)
         pContext->bp_round_count = 0;
 
-    Ipp32u HeightMB = pContext->m_seqLayerHeader.heightMB;
+    uint32_t HeightMB = pContext->m_seqLayerHeader.heightMB;
     if(pContext->m_seqLayerHeader.INTERLACE)
         HeightMB = HeightMB + (HeightMB & 1);
     
@@ -337,7 +337,7 @@ void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, 
     //zero bits. Depending on INVERT and the mode, the decoder must invert
     //the interpreted bitplane to recreate the original.
     VC1_GET_BITS(1, tmp_invert);
-    pBitplane->m_invert = (Ipp8u)tmp_invert;
+    pBitplane->m_invert = (uint8_t)tmp_invert;
 
     //VC-1 Table 68: IMODE Codetable
     //CODING MODE    CODEWORD
@@ -462,7 +462,7 @@ void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, 
                 for(j = 0; j < width; j++)
                 {
                     VC1_GET_BITS(1, tmp_databits);
-                    pBitplane->m_databits[pContext->m_seqLayerHeader.MaxWidthMB*i + j] = (Ipp8u)tmp_databits;
+                    pBitplane->m_databits[pContext->m_seqLayerHeader.MaxWidthMB*i + j] = (uint8_t)tmp_databits;
                 }
             }
         }
@@ -492,7 +492,7 @@ void DecodeBitplane(VC1Context* pContext, VC1Bitplane* pBitplane, Ipp32s width, 
                 for(j = 0; j < height; j++)
                 {
                     VC1_GET_BITS(1, tmp_databits);
-                    pBitplane->m_databits[i + j*pContext->m_seqLayerHeader.MaxWidthMB] = (Ipp8u)tmp_databits;
+                    pBitplane->m_databits[i + j*pContext->m_seqLayerHeader.MaxWidthMB] = (uint8_t)tmp_databits;
                 }
             }
         }

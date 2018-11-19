@@ -28,28 +28,28 @@
 #include "umc_vc1_common_defs.h"
 
 //VC-1 Table 117: 4MV block pattern table 0
-const extern Ipp32s VC1_MV4BlockPatternTable0[];
+const extern int32_t VC1_MV4BlockPatternTable0[];
 
 //VC-1 Table 118: 4MV block pattern table 1
-const extern Ipp32s VC1_MV4BlockPatternTable1[];
+const extern int32_t VC1_MV4BlockPatternTable1[];
 
 //VC-1 Table 119: 4MV block pattern table 2
-const extern Ipp32s VC1_MV4BlockPatternTable2[];
+const extern int32_t VC1_MV4BlockPatternTable2[];
 
 //VC-1 Table 120: 4MV block pattern table 3
-const extern Ipp32s VC1_MV4BlockPatternTable3[];
+const extern int32_t VC1_MV4BlockPatternTable3[];
 
 //VC-1 Table 121: 2MV block pattern table 0
-const extern Ipp32s VC1_MV2BlockPatternTable0[];
+const extern int32_t VC1_MV2BlockPatternTable0[];
 
 //VC-1 Table 122: 2MV block pattern table 1
-const extern Ipp32s VC1_MV2BlockPatternTable1[];
+const extern int32_t VC1_MV2BlockPatternTable1[];
 
 //VC-1 Table 123: 2MV block pattern table 2
-const extern Ipp32s VC1_MV2BlockPatternTable2[];
+const extern int32_t VC1_MV2BlockPatternTable2[];
 
 //VC-1 Table 124: 2MV block pattern table 3
-const extern Ipp32s VC1_MV2BlockPatternTable3[];
+const extern int32_t VC1_MV2BlockPatternTable3[];
 
 #endif //__umc_vc1_common_mv_block_pattern_tables_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

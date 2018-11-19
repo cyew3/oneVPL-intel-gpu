@@ -72,7 +72,7 @@
 //    41     120    9        83    984     11   125    2616    13
 
 //VC1_Field2ReferenceInterlaceMVTable0[]
-const extern Ipp32s VC1_InterlacedMVDifTable0[] =
+const extern int32_t VC1_InterlacedMVDifTable0[] =
 {
     14, /* max bits */
     2,  /* total subtables */
@@ -188,7 +188,7 @@ const extern Ipp32s VC1_InterlacedMVDifTable0[] =
 //    41  1855    11        83     754       10        125     1363      11
 
 //VC1_Field2ReferenceInterlaceMVTable1[]
-const extern Ipp32s VC1_InterlacedMVDifTable1[] =
+const extern int32_t VC1_InterlacedMVDifTable1[] =
 {
     14, /* max bits */
     2,  /* total subtables */
@@ -304,8 +304,8 @@ const extern Ipp32s VC1_InterlacedMVDifTable1[] =
 //    40  330        9        82        1328     11  124        499     10
 //    41  197        9        83        663      10  125        425     10
 
-//const extern Ipp32s VC1_Field2ReferenceInterlaceMVTable2[]
-const extern Ipp32s VC1_InterlacedMVDifTable2[] =
+//const extern int32_t VC1_Field2ReferenceInterlaceMVTable2[]
+const extern int32_t VC1_InterlacedMVDifTable2[] =
 {
     13, /* max bits */
     2,  /* total subtables */
@@ -419,8 +419,8 @@ const extern Ipp32s VC1_InterlacedMVDifTable2[] =
 //    40    256      9        82        583      12   124     8230        14
 //    41   5338     13        83        298      11   125     8503        14
 
-//const extern Ipp32s VC1_Field2ReferenceInterlaceMVTable3[] =
-const extern Ipp32s VC1_InterlacedMVDifTable3[] =
+//const extern int32_t VC1_Field2ReferenceInterlaceMVTable3[] =
+const extern int32_t VC1_InterlacedMVDifTable3[] =
 {
     15, /* max bits */
     3,  /* total subtables */
@@ -537,8 +537,8 @@ const extern Ipp32s VC1_InterlacedMVDifTable3[] =
 //    40       39       7    82        449       10    124        1176     11
 //    41       475      9    83        935       10    125        902      11
 
-//const extern Ipp32s VC1_Field2ReferenceInterlaceMVTable4[] =
-const extern Ipp32s VC1_InterlacedMVDifTable4[] =
+//const extern int32_t VC1_Field2ReferenceInterlaceMVTable4[] =
+const extern int32_t VC1_InterlacedMVDifTable4[] =
 {
     15, /* max bits */
     3,  /* total subtables */
@@ -655,8 +655,8 @@ const extern Ipp32s VC1_InterlacedMVDifTable4[] =
 //   41      942       10        83       53         9   125        439      12
 
 
-//const extern Ipp32s VC1_Field2ReferenceInterlaceMVTable5[] =
-const extern Ipp32s VC1_InterlacedMVDifTable5[] =
+//const extern int32_t VC1_Field2ReferenceInterlaceMVTable5[] =
+const extern int32_t VC1_InterlacedMVDifTable5[] =
 {
     13, /* max bits */
     2,  /* total subtables */
@@ -770,8 +770,8 @@ const extern Ipp32s VC1_InterlacedMVDifTable5[] =
 //    40    1015       13     82      484       10     124        1419     14
 //    41    1391       14     83      175       11     125        32425    16
 
-//const extern Ipp32s VC1_Field2ReferenceInterlaceMVTable6[] =
-const extern Ipp32s VC1_InterlacedMVDifTable6[] =
+//const extern int32_t VC1_Field2ReferenceInterlaceMVTable6[] =
+const extern int32_t VC1_InterlacedMVDifTable6[] =
 {
     21, /* max bits */
     3,  /* total subtables */
@@ -895,8 +895,8 @@ const extern Ipp32s VC1_InterlacedMVDifTable6[] =
 //    40     800      11    82      811      11        124     26330     16
 //    41     142      12    83      119      11        125     26331     16
 
-//const extern Ipp32s VC1_Field2ReferenceInterlaceMVTable7[] =
-const extern Ipp32s VC1_InterlacedMVDifTable7[] =
+//const extern int32_t VC1_Field2ReferenceInterlaceMVTable7[] =
+const extern int32_t VC1_InterlacedMVDifTable7[] =
 {
     20, /* max bits */
     3,  /* total subtables */
@@ -1000,8 +1000,8 @@ const extern Ipp32s VC1_InterlacedMVDifTable7[] =
 //    22  118          7      46        1017    10        70     29285      16
 //    23   77          8      47        76       8        71     29286      16
 
-//const extern Ipp32s VC1_Field1ReferenceInterlaceMVTable0[] =
-const extern Ipp32s VC1_InterlacedMVDifTable8[] =
+//const extern int32_t VC1_Field1ReferenceInterlaceMVTable0[] =
+const extern int32_t VC1_InterlacedMVDifTable8[] =
 {
     17, /* max bits */
     3,  /* total subtables */
@@ -1085,8 +1085,8 @@ const extern Ipp32s VC1_InterlacedMVDifTable8[] =
 //    22    4       6        46       54        9        70       356229   19
 //    23   91       8        47       46        9        71       356230   19
 
-//const extern Ipp32s VC1_Field1ReferenceInterlaceMVTable1[] =
-const extern Ipp32s VC1_InterlacedMVDifTable9[] =
+//const extern int32_t VC1_Field1ReferenceInterlaceMVTable1[] =
+const extern int32_t VC1_InterlacedMVDifTable9[] =
 {
     20, /* max bits */
     3,  /* total subtables */
@@ -1173,8 +1173,8 @@ const extern Ipp32s VC1_InterlacedMVDifTable9[] =
 //    22   24        7       46      1570     11        70     33381       18
 //    23  197        8       47      400      11        71     33382       18
 
-//const extern Ipp32s VC1_Field1ReferenceInterlaceMVTable2[] =
-const extern Ipp32s VC1_InterlacedMVDifTable10[] =
+//const extern int32_t VC1_Field1ReferenceInterlaceMVTable2[] =
+const extern int32_t VC1_InterlacedMVDifTable10[] =
 {
     19, /* max bits */
     3,  /* total subtables */
@@ -1262,8 +1262,8 @@ const extern Ipp32s VC1_InterlacedMVDifTable10[] =
 //    22    40      7      46      88        8      70      2853      13
 //    23   147      8      47      146       8      71      2854      13
 
-//const extern Ipp32s VC1_Field1ReferenceInterlaceMVTable3[] =
-const extern Ipp32s VC1_InterlacedMVDifTable11[] =
+//const extern int32_t VC1_Field1ReferenceInterlaceMVTable3[] =
+const extern int32_t VC1_InterlacedMVDifTable11[] =
 {
     14, /* max bits */
     2,  /* total subtables */

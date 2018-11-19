@@ -28,31 +28,31 @@
 #include "umc_vc1_common_defs.h"
 
 //VC-1 Table 53: High Rate (PQUANT < 5) TTMB VLC Table
-const extern Ipp32s VC1_HighRateTTMB[];
+const extern int32_t VC1_HighRateTTMB[];
 
 //VC-1 Table 54: Medium Rate (5 <= PQUANT < 13) TTMB VLC Table
-const extern Ipp32s VC1_MediumRateTTMB[];
+const extern int32_t VC1_MediumRateTTMB[];
 
 //VC-1 Table 55: Low Rate (PQUANT >= 13) TTMB VLC Table
-const extern Ipp32s VC1_LowRateTTMB[];
+const extern int32_t VC1_LowRateTTMB[];
 
 //VC-1 Table 61: High Rate (PQUANT < 5) TTBLK VLC Table
-const extern Ipp32s VC1_HighRateTTBLK[];
+const extern int32_t VC1_HighRateTTBLK[];
 
 //VC-1 Table 62: Medium Rate (5 =< PQUANT < 13) TTBLK VLC Table
-const extern Ipp32s VC1_MediumRateTTBLK[];
+const extern int32_t VC1_MediumRateTTBLK[];
 
 //VC-1 Table 63: Low Rate (PQUANT >= 13) TTBLK VLC Table
-const extern Ipp32s VC1_LowRateTTBLK[];
+const extern int32_t VC1_LowRateTTBLK[];
 
 //VC-1 Table 64: High Rate (PQUANT < 5) SUBBLKPAT VLC Table
-const extern Ipp32s VC1_HighRateSBP[];
+const extern int32_t VC1_HighRateSBP[];
 
 //VC-1 Table 65: Medium Rate (5 =< PQUANT < 13) SUBBLKPAT VLC Table
-const extern Ipp32s VC1_MediumRateSBP[];
+const extern int32_t VC1_MediumRateSBP[];
 
 //VC-1 Table 66: Low Rate (PQUANT >= 13) SUBBLKPAT VLC Table
-const extern Ipp32s VC1_LowRateSBP[];
+const extern int32_t VC1_LowRateSBP[];
 
 #endif //__umc_vc1_common_ttmb_tbl_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

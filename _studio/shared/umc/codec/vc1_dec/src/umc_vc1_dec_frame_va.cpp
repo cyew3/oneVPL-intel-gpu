@@ -52,12 +52,12 @@ namespace UMC
             throw vc1_exception(mem_allocation_er);
     }
     //to support multislice mode. Save number of slices value in reserved bits of first slice
-    void VC1PackerDXVA::VC1SetBuffersSize(Ipp32u SliceBufIndex)
+    void VC1PackerDXVA::VC1SetBuffersSize(uint32_t SliceBufIndex)
     {
         //_MAY_BE_
         UMCVACompBuffer* CompBuf;
         m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER,&CompBuf);
-        CompBuf->SetDataSize((Ipp32s)(sizeof(DXVA_SliceInfo)*SliceBufIndex));
+        CompBuf->SetDataSize((int32_t)(sizeof(DXVA_SliceInfo)*SliceBufIndex));
         CompBuf->SetNumOfItem(SliceBufIndex);
         m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER,&CompBuf);
         CompBuf->SetDataSize(sizeof(DXVA_PictureParameters));
@@ -65,14 +65,14 @@ namespace UMC
 
     void VC1PackerDXVA::VC1PackOneSlice  (VC1Context* pContext,
         SliceParams* slparams,
-        Ipp32u BufIndex, // only in future realisations
-        Ipp32u MBOffset,
-        Ipp32u SliceDataSize,
-        Ipp32u StartCodeOffset,
-        Ipp32u ChoppingType)
+        uint32_t BufIndex, // only in future realisations
+        uint32_t MBOffset,
+        uint32_t SliceDataSize,
+        uint32_t StartCodeOffset,
+        uint32_t ChoppingType)
     {
         // we should use next buffer for next slice in case of "Whole" mode
-        Ipp32u mbShift = 0;
+        uint32_t mbShift = 0;
         if (BufIndex)
             ++m_pSliceInfo;
         if (pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED)
@@ -87,11 +87,11 @@ namespace UMC
         m_pSliceInfo->wQuantizerScaleCode = 0;
         m_pSliceInfo->wNumberMBsInSlice = slparams->MBStartRow;
 
-        m_pSliceInfo->wBadSliceChopping = (Ipp8u)ChoppingType;
+        m_pSliceInfo->wBadSliceChopping = (uint8_t)ChoppingType;
     }
     void VC1PackerDXVA::VC1PackWholeSliceSM (VC1Context* pContext,
-        Ipp32u MBOffset,
-        Ipp32u SliceDataSize)
+        uint32_t MBOffset,
+        uint32_t SliceDataSize)
     {
         m_pSliceInfo->wHorizontalPosition = 0;
         m_pSliceInfo->wVerticalPosition = 0;
@@ -439,14 +439,14 @@ namespace UMC
         ptr->bBitstreamConcealmentMethod = 0;
     }
 
-    Ipp32u VC1PackerDXVA::VC1PackBitStreamSM (Ipp32u Size,
-        Ipp8u* pOriginalData,
-        Ipp32u ByteOffset) // offset of the first byte of pbs in buffer
+    uint32_t VC1PackerDXVA::VC1PackBitStreamSM (uint32_t Size,
+        uint8_t* pOriginalData,
+        uint32_t ByteOffset) // offset of the first byte of pbs in buffer
     {
         UMCVACompBuffer* CompBuf;
-        Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
-        Ipp32u DrvBufferSize = CompBuf->GetBufferSize();
-        Ipp32u RemainBytes = 0;
+        uint8_t* pBitstream = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
+        uint32_t DrvBufferSize = CompBuf->GetBufferSize();
+        uint32_t RemainBytes = 0;
 
         if (DrvBufferSize < (Size + ByteOffset)) // we don't have enough buffer
         {
@@ -456,16 +456,16 @@ namespace UMC
         CompBuf->SetDataSize(ByteOffset + Size - RemainBytes);
         return RemainBytes;
     }
-    Ipp32u VC1PackerDXVA::VC1PackBitStreamAdv (VC1Context* ,
-        Ipp32u Size,
-        Ipp8u* pOriginalData,
-        Ipp32u ByteOffset)
+    uint32_t VC1PackerDXVA::VC1PackBitStreamAdv (VC1Context* ,
+        uint32_t Size,
+        uint8_t* pOriginalData,
+        uint32_t ByteOffset)
     {
         UMCVACompBuffer* CompBuf;
 
-        Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
-        Ipp32u DrvBufferSize = CompBuf->GetBufferSize();
-        Ipp32u RemainBytes = 0;
+        uint8_t* pBitstream = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
+        uint32_t DrvBufferSize = CompBuf->GetBufferSize();
+        uint32_t RemainBytes = 0;
 
         if (DrvBufferSize < (Size + ByteOffset)) // we don't have enough buffer
         {
@@ -482,13 +482,13 @@ namespace UMC
     {
     }
 
-    void VC1PackerDXVA::VC1PackBitStreamForOneSlice (VC1Context* pContext, Ipp32u Size)
+    void VC1PackerDXVA::VC1PackBitStreamForOneSlice (VC1Context* pContext, uint32_t Size)
     {
         UMCVACompBuffer* CompBuf;
-        Ipp8u* pSliceData = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER,&CompBuf);
-        MFX_INTERNAL_CPY(pSliceData, (Ipp8u*)(pContext->m_bitstream.pBitstream - 1), Size + 4);
+        uint8_t* pSliceData = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER,&CompBuf);
+        MFX_INTERNAL_CPY(pSliceData, (uint8_t*)(pContext->m_bitstream.pBitstream - 1), Size + 4);
         CompBuf->SetDataSize(Size + 4);
-        SwapData((Ipp8u*)pSliceData, Size + 4);
+        SwapData((uint8_t*)pSliceData, Size + 4);
     }
 
 #endif
@@ -507,28 +507,28 @@ namespace UMC
         VC1_BI_BI_FRAME = 7
     };
 
-    void VC1PackerLVA::VC1SetSliceDataBuffer(Ipp32s size)
+    void VC1PackerLVA::VC1SetSliceDataBuffer(int32_t size)
     {
         UMCVACompBuffer* pCompBuf;
-        Ipp8u* ptr = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &pCompBuf, size);
+        uint8_t* ptr = (uint8_t*)m_va->GetCompBuffer(VASliceDataBufferType, &pCompBuf, size);
         if (!pCompBuf || (pCompBuf->GetBufferSize() < size))
             throw vc1_exception(mem_allocation_er);
         memset(ptr, 0, size);
     }
-    void VC1PackerLVA::VC1SetBitplaneBuffer(Ipp32s size)
+    void VC1PackerLVA::VC1SetBitplaneBuffer(int32_t size)
     {
         UMCVACompBuffer* CompBuf;
-        Ipp8u* ptr = (Ipp8u*)m_va->GetCompBuffer(VABitPlaneBufferType, &CompBuf, size);
+        uint8_t* ptr = (uint8_t*)m_va->GetCompBuffer(VABitPlaneBufferType, &CompBuf, size);
         if (CompBuf->GetBufferSize() < size)
             throw vc1_exception(mem_allocation_er);
         memset(ptr, 0, size);
     }
 
-    void VC1PackerLVA::VC1SetSliceParamBuffer(Ipp32u* pOffsets, Ipp32u* pValues)
+    void VC1PackerLVA::VC1SetSliceParamBuffer(uint32_t* pOffsets, uint32_t* pValues)
     {
-        const Ipp32u Slice = 0x0B010000;
-        const Ipp32u Field = 0x0C010000;
-        Ipp32s slice_counter = 1;
+        const uint32_t Slice = 0x0B010000;
+        const uint32_t Field = 0x0C010000;
+        int32_t slice_counter = 1;
 
         pOffsets++;
         pValues++;
@@ -559,7 +559,7 @@ namespace UMC
     }
 
     //to support multislice mode. Save number of slices value in reserved bits of first slice
-    void VC1PackerLVA::VC1SetBuffersSize(Ipp32u SliceBufIndex)
+    void VC1PackerLVA::VC1SetBuffersSize(uint32_t SliceBufIndex)
     {
         UMCVACompBuffer* CompBuf;
         m_va->GetCompBuffer(VASliceParameterBufferType,&CompBuf);
@@ -572,9 +572,9 @@ namespace UMC
     void VC1PackerLVA::VC1PackBitplaneBuffers(VC1Context* pContext)
     {
         UMCVACompBuffer* CompBuf;
-        Ipp32s i;
-        Ipp32s bitplane_size = 0;
-        Ipp32s real_bitplane_size = 0;
+        int32_t i;
+        int32_t bitplane_size = 0;
+        int32_t real_bitplane_size = 0;
         VC1Bitplane* lut_bitplane[3];
         VC1Bitplane* check_bitplane = NULL;
 
@@ -615,7 +615,7 @@ namespace UMC
             if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
                 bitplane_size /= 2;
 
-            Ipp8u* ptr = (Ipp8u*)m_va->GetCompBuffer(VABitPlaneBufferType, &CompBuf, bitplane_size);
+            uint8_t* ptr = (uint8_t*)m_va->GetCompBuffer(VABitPlaneBufferType, &CompBuf, bitplane_size);
             if (!ptr)
                 throw vc1_exception(mem_allocation_er);
             memset(ptr, 0, bitplane_size);
@@ -643,18 +643,18 @@ namespace UMC
         }
     }
 
-    Ipp32u VC1PackerLVA::VC1PackBitStreamAdv (VC1Context* pContext,
-        Ipp32u& Size,
-        Ipp8u* pOriginalData,
-        Ipp32u OriginalSize,
-        Ipp32u ByteOffset,
-        Ipp8u& Flag_03)
+    uint32_t VC1PackerLVA::VC1PackBitStreamAdv (VC1Context* pContext,
+        uint32_t& Size,
+        uint8_t* pOriginalData,
+        uint32_t OriginalSize,
+        uint32_t ByteOffset,
+        uint8_t& Flag_03)
     {
         UMCVACompBuffer* CompBuf;
-        Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, OriginalSize);
+        uint8_t* pBitstream = (uint8_t*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, OriginalSize);
 
-        Ipp32u DrvBufferSize = CompBuf->GetBufferSize();
-        Ipp8u* pEnd = pBitstream + ByteOffset + OriginalSize;
+        uint32_t DrvBufferSize = CompBuf->GetBufferSize();
+        uint8_t* pEnd = pBitstream + ByteOffset + OriginalSize;
         Size = OriginalSize;
 
         if (DrvBufferSize < (OriginalSize + ByteOffset)) // we don't have enough buffer
@@ -932,7 +932,7 @@ namespace UMC
             return;
         }
 
-        for (Ipp32u i = 0; i < 3; i++)
+        for (uint32_t i = 0; i < 3; i++)
         {
             if ((!VC1_IS_BITPLANE_RAW_MODE(lut_bitplane[i])) && lut_bitplane[i]->m_databits)
                 check_bitplane = lut_bitplane[i];
@@ -1003,11 +1003,11 @@ namespace UMC
     }
     void  VC1PackerLVA::VC1PackOneSlice (VC1Context* pContext,
         SliceParams* slparams,
-        Ipp32u SliceBufIndex,
-        Ipp32u MBOffset,
-        Ipp32u SliceDataSize,
-        Ipp32u StartCodeOffset,
-        Ipp32u ChoppingType) //compatibility with Windows code
+        uint32_t SliceBufIndex,
+        uint32_t MBOffset,
+        uint32_t SliceDataSize,
+        uint32_t StartCodeOffset,
+        uint32_t ChoppingType) //compatibility with Windows code
     {
         (void)pContext;
         (void)ChoppingType;
@@ -1022,8 +1022,8 @@ namespace UMC
         m_pSliceInfo->slice_data_size = SliceDataSize;
     }
     void VC1PackerLVA::VC1PackWholeSliceSM (VC1Context* pContext,
-        Ipp32u MBOffset,
-        Ipp32u SliceDataSize)
+        uint32_t MBOffset,
+        uint32_t SliceDataSize)
     {
         m_pSliceInfo->slice_vertical_position = 0;
         m_pSliceInfo->slice_data_size = SliceDataSize;
@@ -1033,13 +1033,13 @@ namespace UMC
     }
 
 
-    void VC1PackerLVA::VC1PackBitStreamForOneSlice (VC1Context* pContext, Ipp32u Size)
+    void VC1PackerLVA::VC1PackBitStreamForOneSlice (VC1Context* pContext, uint32_t Size)
     {
         UMCVACompBuffer* CompBuf;
-        Ipp8u* pSliceData = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType,&CompBuf);
-        MFX_INTERNAL_CPY(pSliceData, (Ipp8u*)(pContext->m_bitstream.pBitstream - 1), Size+4);
+        uint8_t* pSliceData = (uint8_t*)m_va->GetCompBuffer(VASliceDataBufferType,&CompBuf);
+        MFX_INTERNAL_CPY(pSliceData, (uint8_t*)(pContext->m_bitstream.pBitstream - 1), Size+4);
         CompBuf->SetDataSize(Size+4);
-        SwapData((Ipp8u*)pSliceData, Size + 4);
+        SwapData((uint8_t*)pSliceData, Size + 4);
     }
 #endif
 
@@ -1052,12 +1052,12 @@ namespace UMC
             throw vc1_exception(mem_allocation_er);
     }
 
-    void VC1PackerDXVA_EagleLake::VC1SetBuffersSize(Ipp32u SliceBufIndex)
+    void VC1PackerDXVA_EagleLake::VC1SetBuffersSize(uint32_t SliceBufIndex)
     {
         //_MAY_BE_
         UMCVACompBuffer* CompBuf;
         m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER,&CompBuf);
-        CompBuf->SetDataSize((Ipp32s)(sizeof(DXVA_SliceInfo)*SliceBufIndex));
+        CompBuf->SetDataSize((int32_t)(sizeof(DXVA_SliceInfo)*SliceBufIndex));
         CompBuf->SetNumOfItem(SliceBufIndex);
 
         m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER,&CompBuf);
@@ -1074,23 +1074,23 @@ namespace UMC
         memset(ptr, 0, sizeof(DXVA_ExtPicInfo));
 
         //BFraction // ADVANCE
-        ptr->bBScaleFactor = (Ipp8u)pContext->m_picLayerHeader->ScaleFactor;
+        ptr->bBScaleFactor = (uint8_t)pContext->m_picLayerHeader->ScaleFactor;
 
         //PQUANT
         if(pContext->m_seqLayerHeader.QUANTIZER == 0 
             && pContext->m_picLayerHeader->PQINDEX > 8)
         {
             ptr->bPQuant = (pContext->m_picLayerHeader->PQINDEX < 29)
-                ? (Ipp8u)(pContext->m_picLayerHeader->PQINDEX - 3) 
-                : (Ipp8u)(pContext->m_picLayerHeader->PQINDEX*2 - 31);
+                ? (uint8_t)(pContext->m_picLayerHeader->PQINDEX - 3) 
+                : (uint8_t)(pContext->m_picLayerHeader->PQINDEX*2 - 31);
         }
         else
         {
-            ptr->bPQuant = (Ipp8u)pContext->m_picLayerHeader->PQINDEX;
+            ptr->bPQuant = (uint8_t)pContext->m_picLayerHeader->PQINDEX;
         }
 
         //ALTPQUANT
-        ptr->bAltPQuant = (Ipp8u)pContext->m_picLayerHeader->m_AltPQuant;
+        ptr->bAltPQuant = (uint8_t)pContext->m_picLayerHeader->m_AltPQuant;
 
         //PictureFlags
         if(pContext->m_picLayerHeader->FCM == VC1_Progressive)
@@ -1329,8 +1329,8 @@ namespace UMC
 
         //wMvReference
 
-        Ipp32u FREFDIST = ((pContext->m_picLayerHeader->ScaleFactor * pContext->m_picLayerHeader->REFDIST) >> 8);
-        Ipp32s BREFDIST = pContext->m_picLayerHeader->REFDIST - FREFDIST - 1;
+        uint32_t FREFDIST = ((pContext->m_picLayerHeader->ScaleFactor * pContext->m_picLayerHeader->REFDIST) >> 8);
+        int32_t BREFDIST = pContext->m_picLayerHeader->REFDIST - FREFDIST - 1;
 
         if (BREFDIST < 0)
             BREFDIST = 0;
@@ -1435,7 +1435,7 @@ namespace UMC
             return;
         }
 
-        for (Ipp32u i = 0; i < 3; i++)
+        for (uint32_t i = 0; i < 3; i++)
         {
             if ((!VC1_IS_BITPLANE_RAW_MODE(lut_bitplane[i])) && lut_bitplane[i]->m_databits)
                 check_bitplane = lut_bitplane[i];
@@ -1821,19 +1821,19 @@ namespace UMC
         ptr->bBitstreamConcealmentMethod = 0;
     }
 
-    Ipp32u VC1PackerDXVA_EagleLake::VC1PackBitStreamAdv (VC1Context* pContext,
-        Ipp32u& Size,
-        Ipp8u* pOriginalData,
-        Ipp32u OriginalSize,
-        Ipp32u ByteOffset,
-        Ipp8u& Flag_03)
+    uint32_t VC1PackerDXVA_EagleLake::VC1PackBitStreamAdv (VC1Context* pContext,
+        uint32_t& Size,
+        uint8_t* pOriginalData,
+        uint32_t OriginalSize,
+        uint32_t ByteOffset,
+        uint8_t& Flag_03)
     {
         UMCVACompBuffer* CompBuf;
 
-        Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
+        uint8_t* pBitstream = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
 
-        Ipp32u DrvBufferSize = CompBuf->GetBufferSize();
-        Ipp32u RemainBytes = 0;
+        uint32_t DrvBufferSize = CompBuf->GetBufferSize();
+        uint32_t RemainBytes = 0;
 
         Size = OriginalSize;
 
@@ -1911,18 +1911,18 @@ namespace UMC
     {
         UMCVACompBuffer* CompBuf;
 
-        Ipp8u* ptr = 0;
+        uint8_t* ptr = 0;
 
-        Ipp32s i = 0;
-        Ipp32s j = 0;
-        Ipp32s k = 0;
+        int32_t i = 0;
+        int32_t j = 0;
+        int32_t k = 0;
 
-        Ipp32s h = pContext->m_seqLayerHeader.heightMB;
+        int32_t h = pContext->m_seqLayerHeader.heightMB;
 
         VC1Bitplane* lut_bitplane[3];
         VC1Bitplane* check_bitplane = 0;
 
-        Ipp32s bitplane_size = 0;
+        int32_t bitplane_size = 0;
 
         switch (pContext->m_picLayerHeader->PTYPE)
         {
@@ -1955,7 +1955,7 @@ namespace UMC
 
         if (check_bitplane)
         {
-            ptr = (Ipp8u*)m_va->GetCompBuffer(DXVA2_VC1BITPLANE_EXT_BUFFER, &CompBuf);
+            ptr = (uint8_t*)m_va->GetCompBuffer(DXVA2_VC1BITPLANE_EXT_BUFFER, &CompBuf);
 
             bitplane_size = ((pContext->m_seqLayerHeader.heightMB +1)/2)*(pContext->m_seqLayerHeader.MaxWidthMB); //need to update for fields
             if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
@@ -2000,11 +2000,11 @@ namespace UMC
 
     void VC1PackerDXVA_EagleLake::VC1PackOneSlice  (VC1Context* ,
         SliceParams* slparams,
-        Ipp32u BufIndex, // only in future realisations
-        Ipp32u MBOffset,
-        Ipp32u SliceDataSize,
-        Ipp32u StartCodeOffset,
-        Ipp32u ChoppingType)
+        uint32_t BufIndex, // only in future realisations
+        uint32_t MBOffset,
+        uint32_t SliceDataSize,
+        uint32_t StartCodeOffset,
+        uint32_t ChoppingType)
     {
         if (BufIndex)
             ++m_pSliceInfo;
@@ -2019,7 +2019,7 @@ namespace UMC
         m_pSliceInfo->wQuantizerScaleCode = 0;
         m_pSliceInfo->wNumberMBsInSlice = slparams->MBStartRow;
 
-        m_pSliceInfo->wBadSliceChopping = (Ipp16u)ChoppingType;
+        m_pSliceInfo->wBadSliceChopping = (uint16_t)ChoppingType;
     }
 
 
@@ -2033,12 +2033,12 @@ namespace UMC
             throw vc1_exception(mem_allocation_er);
     }
 
-    void VC1PackerDXVA_Protected::VC1SetBuffersSize(Ipp32u SliceBufIndex)
+    void VC1PackerDXVA_Protected::VC1SetBuffersSize(uint32_t SliceBufIndex)
     {
         //_MAY_BE_
         UMCVACompBuffer* CompBuf;
         m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER,&CompBuf);
-        CompBuf->SetDataSize((Ipp32s)(sizeof(DXVA_SliceInfo)*SliceBufIndex));
+        CompBuf->SetDataSize((int32_t)(sizeof(DXVA_SliceInfo)*SliceBufIndex));
         CompBuf->SetNumOfItem(SliceBufIndex);
 
         m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER,&CompBuf);
@@ -2055,23 +2055,23 @@ namespace UMC
         memset(ptr, 0, sizeof(DXVA_ExtPicInfo));
 
         //BFraction // ADVANCE
-        ptr->bBScaleFactor = (Ipp8u)pContext->m_picLayerHeader->ScaleFactor;
+        ptr->bBScaleFactor = (uint8_t)pContext->m_picLayerHeader->ScaleFactor;
 
         //PQUANT
         if(pContext->m_seqLayerHeader.QUANTIZER == 0 
             && pContext->m_picLayerHeader->PQINDEX > 8)
         {
             ptr->bPQuant = (pContext->m_picLayerHeader->PQINDEX < 29)
-                ? (Ipp8u)(pContext->m_picLayerHeader->PQINDEX - 3) 
-                : (Ipp8u)(pContext->m_picLayerHeader->PQINDEX*2 - 31);
+                ? (uint8_t)(pContext->m_picLayerHeader->PQINDEX - 3) 
+                : (uint8_t)(pContext->m_picLayerHeader->PQINDEX*2 - 31);
         }
         else
         {
-            ptr->bPQuant = (Ipp8u)pContext->m_picLayerHeader->PQINDEX;
+            ptr->bPQuant = (uint8_t)pContext->m_picLayerHeader->PQINDEX;
         }
 
         //ALTPQUANT
-        ptr->bAltPQuant = (Ipp8u)pContext->m_picLayerHeader->m_AltPQuant;
+        ptr->bAltPQuant = (uint8_t)pContext->m_picLayerHeader->m_AltPQuant;
 
         //PictureFlags
         if(pContext->m_picLayerHeader->FCM == VC1_Progressive)
@@ -2310,8 +2310,8 @@ namespace UMC
 
         //wMvReference
 
-        Ipp32u FREFDIST = ((pContext->m_picLayerHeader->ScaleFactor * pContext->m_picLayerHeader->REFDIST) >> 8);
-        Ipp32s BREFDIST = pContext->m_picLayerHeader->REFDIST - FREFDIST - 1;
+        uint32_t FREFDIST = ((pContext->m_picLayerHeader->ScaleFactor * pContext->m_picLayerHeader->REFDIST) >> 8);
+        int32_t BREFDIST = pContext->m_picLayerHeader->REFDIST - FREFDIST - 1;
 
         if (BREFDIST < 0)
             BREFDIST = 0;
@@ -2416,7 +2416,7 @@ namespace UMC
             return;
         }
 
-        for (Ipp32u i = 0; i < 3; i++)
+        for (uint32_t i = 0; i < 3; i++)
         {
             if ((!VC1_IS_BITPLANE_RAW_MODE(lut_bitplane[i])) && lut_bitplane[i]->m_databits)
                 check_bitplane = lut_bitplane[i];
@@ -2805,18 +2805,18 @@ namespace UMC
     {
         UMCVACompBuffer* CompBuf;
 
-        Ipp8u* ptr = (Ipp8u*)m_va->GetCompBuffer(DXVA2_VC1BITPLANE_EXT_BUFFER, &CompBuf);
+        uint8_t* ptr = (uint8_t*)m_va->GetCompBuffer(DXVA2_VC1BITPLANE_EXT_BUFFER, &CompBuf);
 
-        Ipp32s i = 0;
-        Ipp32s j = 0;
-        Ipp32s k = 0;
+        int32_t i = 0;
+        int32_t j = 0;
+        int32_t k = 0;
 
-        Ipp32s h = pContext->m_seqLayerHeader.heightMB;
+        int32_t h = pContext->m_seqLayerHeader.heightMB;
 
         VC1Bitplane* lut_bitplane[3] = {0, 0, 0};
         VC1Bitplane* check_bitplane = 0;
 
-        Ipp32s bitplane_size = 0;
+        int32_t bitplane_size = 0;
 
         switch (pContext->m_picLayerHeader->PTYPE)
         {
@@ -2849,7 +2849,7 @@ namespace UMC
 
         if (check_bitplane)
         {
-            ptr = (Ipp8u*)m_va->GetCompBuffer(DXVA2_VC1BITPLANE_EXT_BUFFER, &CompBuf);
+            ptr = (uint8_t*)m_va->GetCompBuffer(DXVA2_VC1BITPLANE_EXT_BUFFER, &CompBuf);
             bitplane_size = (pContext->m_seqLayerHeader.heightMB+1)*(pContext->m_seqLayerHeader.widthMB)/2; //need to update for fields
             if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
             {
@@ -2891,11 +2891,11 @@ namespace UMC
 
     void VC1PackerDXVA_Protected::VC1PackOneSlice  (VC1Context* ,
         SliceParams* slparams,
-        Ipp32u BufIndex, // only in future realisations
-        Ipp32u MBOffset,
-        Ipp32u SliceDataSize,
-        Ipp32u StartCodeOffset,
-        Ipp32u ChoppingType)
+        uint32_t BufIndex, // only in future realisations
+        uint32_t MBOffset,
+        uint32_t SliceDataSize,
+        uint32_t StartCodeOffset,
+        uint32_t ChoppingType)
     {
         if (BufIndex)
             ++m_pSliceInfo;
@@ -2910,28 +2910,28 @@ namespace UMC
         m_pSliceInfo->wQuantizerScaleCode = 0;
         m_pSliceInfo->wNumberMBsInSlice = slparams->MBStartRow;
 
-        m_pSliceInfo->wBadSliceChopping = (Ipp16u)ChoppingType;
+        m_pSliceInfo->wBadSliceChopping = (uint16_t)ChoppingType;
     }
 
 
-    Ipp32u VC1PackerDXVA_Protected::VC1PackBitStreamAdv (VC1Context* pContext,
-        Ipp32u& Size,
-        Ipp8u* pOriginalData,
-        Ipp32u OriginalSize,
-        Ipp32u ByteOffset,
-        Ipp8u& Flag_03)
+    uint32_t VC1PackerDXVA_Protected::VC1PackBitStreamAdv (VC1Context* pContext,
+        uint32_t& Size,
+        uint8_t* pOriginalData,
+        uint32_t OriginalSize,
+        uint32_t ByteOffset,
+        uint8_t& Flag_03)
     {
         UMCVACompBuffer* CompBuf;
 
-        Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
+        uint8_t* pBitstream = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
         if(NULL != m_va->GetProtectedVA() && IS_PROTECTION_GPUCP_ANY(m_va->GetProtectedVA()->GetProtected()))
             CompBuf->SetPVPState(NULL, 0);
 #endif
 
-        Ipp32u DrvBufferSize = CompBuf->GetBufferSize();
-        Ipp32u RemainBytes = 0;
+        uint32_t DrvBufferSize = CompBuf->GetBufferSize();
+        uint32_t RemainBytes = 0;
 
         Size = OriginalSize;
 

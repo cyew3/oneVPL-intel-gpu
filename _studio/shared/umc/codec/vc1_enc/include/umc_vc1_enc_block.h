@@ -34,26 +34,26 @@ namespace UMC_VC1_ENCODER
 {
 
     typedef UMC::Status        (*fWriteBlockInterSM) (VC1EncoderBitStreamSM* pCodedBlock,
-                                                     Ipp16s*                pBlock,
-                                                     Ipp32u                 blockStep,
-                                                     const Ipp8u*           pScanMatrix,
+                                                     int16_t*                pBlock,
+                                                     uint32_t                 blockStep,
+                                                     const uint8_t*           pScanMatrix,
                                                      const sACTablesSet*    pACTablesSet,
                                                      sACEscInfo*            pACEscInfo,
-                                                     Ipp32u                 pattern);
+                                                     uint32_t                 pattern);
     typedef UMC::Status        (*fWriteBlockInterAdv)(VC1EncoderBitStreamAdv*pCodedBlock,
-                                                     Ipp16s*                pBlock,
-                                                     Ipp32u                 blockStep,
-                                                     const Ipp8u*           pScanMatrix,
+                                                     int16_t*                pBlock,
+                                                     uint32_t                 blockStep,
+                                                     const uint8_t*           pScanMatrix,
                                                      const sACTablesSet*    pACTablesSet,
                                                      sACEscInfo*            pACEscInfo,
-                                                     Ipp32u                 pattern);
+                                                     uint32_t                 pattern);
 
-     //typedef UMC::Status        (*fWriteDCSM)         (Ipp16s                  DC,
-     //                                                const Ipp32u*           pEncTable,
+     //typedef UMC::Status        (*fWriteDCSM)         (int16_t                  DC,
+     //                                                const uint32_t*           pEncTable,
      //                                                VC1EncoderBitStreamSM*  pCodedBlock);
 
-     //typedef UMC::Status       (*fWriteDCAdv)        (Ipp16s                  DC,
-     //                                                const Ipp32u*           pEncTable,
+     //typedef UMC::Status       (*fWriteDCAdv)        (int16_t                  DC,
+     //                                                const uint32_t*           pEncTable,
      //                                                VC1EncoderBitStreamAdv* pCodedBlock);
 
      //extern fWriteBlockInterSM  pWriteBlockInterSM[4];

@@ -25,30 +25,30 @@
 #include "umc_vc1_enc_deblocking.h"
 namespace UMC_VC1_ENCODER
 {
-static Ipp8u   curIndexesEx[2][2] = {
+static uint8_t   curIndexesEx[2][2] = {
     {0,1}, //hor
     {0,2}  //ver
 };
 
-static Ipp8u   prevIndexesEx[2][2] = {
+static uint8_t   prevIndexesEx[2][2] = {
     {2,3}, //hor
     {1,3}  //ver
 };
 
-static Ipp8u   curIndexesIn[2][2] = {
+static uint8_t   curIndexesIn[2][2] = {
     {2,3}, //hor
     {1,3}  //ver
 };
-static Ipp8u   prevIndexesIn[2][2] = {
+static uint8_t   prevIndexesIn[2][2] = {
     {0,1}, //hor
     {0,2}  //ver
 };
-void GetExternalEdge4MV_VST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, Ipp8u& YFlag, Ipp8u& UFlag, Ipp8u& VFlag)
+void GetExternalEdge4MV_VST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, uint8_t& YFlag, uint8_t& UFlag, uint8_t& VFlag)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
 
-     Ipp8u nCurr;
-     Ipp8u nPrev;
+     uint8_t nCurr;
+     uint8_t nPrev;
      if (!pPred )
      {
         YFlag  = UFlag  = VFlag  = IPPVC_EDGE_ALL;
@@ -108,13 +108,13 @@ void GetExternalEdge4MV_VST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool
     return;
 }
 
-void GetExternalEdge4MV_VST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, Ipp8u& YFlag, Ipp8u& UFlag, Ipp8u& VFlag)
+void GetExternalEdge4MV_VST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, uint8_t& YFlag, uint8_t& UFlag, uint8_t& VFlag)
 {
      sCoordinate    mvCurr    = {0,0,0}, mvPrev = {0,0,0};
      bool bSecond = true;
 
-     Ipp8u nCurr;
-     Ipp8u nPrev;
+     uint8_t nCurr;
+     uint8_t nPrev;
      if (!pPred )
      {
         YFlag  = UFlag  = VFlag  = IPPVC_EDGE_ALL;
@@ -181,12 +181,12 @@ void GetExternalEdge4MV_VST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCu
     return;
 }
 
-void GetExternalEdge4MV_NOVST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, Ipp8u& YFlag, Ipp8u& UFlag, Ipp8u& VFlag)
+void GetExternalEdge4MV_NOVST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, uint8_t& YFlag, uint8_t& UFlag, uint8_t& VFlag)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
 
-     Ipp8u nCurr;
-     Ipp8u nPrev;
+     uint8_t nCurr;
+     uint8_t nPrev;
      if (!pPred )
      {
         YFlag  = UFlag  = VFlag  = IPPVC_EDGE_ALL;
@@ -237,13 +237,13 @@ void GetExternalEdge4MV_NOVST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bo
     }
     return;
 }
-void GetExternalEdge4MV_NOVST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, Ipp8u& YFlag, Ipp8u& UFlag, Ipp8u& VFlag)
+void GetExternalEdge4MV_NOVST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, uint8_t& YFlag, uint8_t& UFlag, uint8_t& VFlag)
 {
      sCoordinate    mvCurr    = {0,0,0}, mvPrev = {0,0,0};
      bool bSecond = true;
 
-     Ipp8u nCurr;
-     Ipp8u nPrev;
+     uint8_t nCurr;
+     uint8_t nPrev;
      if (!pPred )
      {
         YFlag  = UFlag  = VFlag  = IPPVC_EDGE_ALL;
@@ -303,7 +303,7 @@ void GetExternalEdge4MV_NOVST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *p
     }
     return;
 }
-void GetExternalEdge1MV_VST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, Ipp8u& YFlag, Ipp8u& UFlag, Ipp8u& VFlag)
+void GetExternalEdge1MV_VST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, uint8_t& YFlag, uint8_t& UFlag, uint8_t& VFlag)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
      if (!pPred )
@@ -346,7 +346,7 @@ void GetExternalEdge1MV_VST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool
     return;
 }
 
-void GetExternalEdge1MV_VST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, Ipp8u& YFlag, Ipp8u& UFlag, Ipp8u& VFlag)
+void GetExternalEdge1MV_VST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, uint8_t& YFlag, uint8_t& UFlag, uint8_t& VFlag)
 {
      sCoordinate    mvCurr    = {0,0,0}, mvPrev = {0,0,0};
      bool bSecond = false;
@@ -394,13 +394,13 @@ void GetExternalEdge1MV_VST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCu
     return;
 }
 
-void GetExternalEdge1MV_VST_SM(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, Ipp8u& YFlag, Ipp8u& UFlag, Ipp8u& VFlag)
+void GetExternalEdge1MV_VST_SM(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, uint8_t& YFlag, uint8_t& UFlag, uint8_t& VFlag)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
      bool coded  = true;
      bool VST4x4 = true;
-     Ipp8u nCurr;
-     Ipp8u nPrev;
+     uint8_t nCurr;
+     uint8_t nPrev;
 
      if (!pPred )
      {
@@ -491,7 +491,7 @@ void GetExternalEdge1MV_VST_SM(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,b
     return;
 }
 
-void GetExternalEdge1MV_NOVST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, Ipp8u& YFlag, Ipp8u& UFlag, Ipp8u& VFlag)
+void GetExternalEdge1MV_NOVST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, uint8_t& YFlag, uint8_t& UFlag, uint8_t& VFlag)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
      if (!pPred )
@@ -526,7 +526,7 @@ void GetExternalEdge1MV_NOVST(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bo
     return;
 }
 
-void GetExternalEdge1MV_NOVST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, Ipp8u& YFlag, Ipp8u& UFlag, Ipp8u& VFlag)
+void GetExternalEdge1MV_NOVST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, uint8_t& YFlag, uint8_t& UFlag, uint8_t& VFlag)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
      bool bSecond = false;
@@ -565,12 +565,12 @@ void GetExternalEdge1MV_NOVST_Field(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *p
     return;
 }
 
-void GetExternalEdge4MV_VST_SM(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, Ipp8u& YFlag, Ipp8u& UFlag, Ipp8u& VFlag)
+void GetExternalEdge4MV_VST_SM(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,bool bVer, uint8_t& YFlag, uint8_t& UFlag, uint8_t& VFlag)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
 
-     Ipp8u nCurr;
-     Ipp8u nPrev;
+     uint8_t nCurr;
+     uint8_t nPrev;
      bool coded  = true;
      bool VST4x4 = true;
 
@@ -683,7 +683,7 @@ void GetExternalEdge4MV_VST_SM(VC1EncoderMBInfo *pPred, VC1EncoderMBInfo *pCur,b
 //======================================Internal=================================//
 //====================================only for luma==============================//
 
-void GetInternalEdge4MV_VST(VC1EncoderMBInfo *pCur, Ipp8u& YFlagV, Ipp8u& YFlagH)
+void GetInternalEdge4MV_VST(VC1EncoderMBInfo *pCur, uint8_t& YFlagV, uint8_t& YFlagH)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
 
@@ -741,7 +741,7 @@ void GetInternalEdge4MV_VST(VC1EncoderMBInfo *pCur, Ipp8u& YFlagV, Ipp8u& YFlagH
     return;
 }
 
-void GetInternalEdge4MV_VST_Field(VC1EncoderMBInfo *pCur, Ipp8u& YFlagV, Ipp8u& YFlagH)
+void GetInternalEdge4MV_VST_Field(VC1EncoderMBInfo *pCur, uint8_t& YFlagV, uint8_t& YFlagH)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
 
@@ -808,7 +808,7 @@ void GetInternalEdge4MV_VST_Field(VC1EncoderMBInfo *pCur, Ipp8u& YFlagV, Ipp8u& 
     return;
 }
 
-void GetInternalEdge4MV_NOVST( VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YFlagH)
+void GetInternalEdge4MV_NOVST( VC1EncoderMBInfo *pCur,uint8_t& YFlagV, uint8_t& YFlagH)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
 
@@ -860,7 +860,7 @@ void GetInternalEdge4MV_NOVST( VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YFla
     return;
 }
 
-void GetInternalEdge4MV_NOVST_Field( VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YFlagH)
+void GetInternalEdge4MV_NOVST_Field( VC1EncoderMBInfo *pCur,uint8_t& YFlagV, uint8_t& YFlagH)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
 
@@ -920,7 +920,7 @@ void GetInternalEdge4MV_NOVST_Field( VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u
 
     return;
 }
-void GetInternalEdge1MV_VST(VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YFlagH)
+void GetInternalEdge1MV_VST(VC1EncoderMBInfo *pCur,uint8_t& YFlagV, uint8_t& YFlagH)
 {
 
      YFlagV= 0;
@@ -947,7 +947,7 @@ void GetInternalEdge1MV_VST(VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YFlagH)
     }
     return;
 }
-void GetInternalEdge1MV_NOVST(VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YFlagH)
+void GetInternalEdge1MV_NOVST(VC1EncoderMBInfo *pCur,uint8_t& YFlagV, uint8_t& YFlagH)
 {
      YFlagV= 0;
      YFlagH= 0;
@@ -966,7 +966,7 @@ void GetInternalEdge1MV_NOVST(VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YFlag
 }
 
 
-void GetInternalEdge4MV_VST_SM(VC1EncoderMBInfo *pCur, Ipp8u& YFlagV, Ipp8u& YFlagH)
+void GetInternalEdge4MV_VST_SM(VC1EncoderMBInfo *pCur, uint8_t& YFlagV, uint8_t& YFlagH)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
 
@@ -1065,7 +1065,7 @@ void GetInternalEdge4MV_VST_SM(VC1EncoderMBInfo *pCur, Ipp8u& YFlagV, Ipp8u& YFl
 
     return;
 }
-void GetInternalEdge4MV_NOVST_SM( VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YFlagH)
+void GetInternalEdge4MV_NOVST_SM( VC1EncoderMBInfo *pCur,uint8_t& YFlagV, uint8_t& YFlagH)
 {
      sCoordinate    mvCurr    = {0,0}, mvPrev = {0,0};
 
@@ -1120,7 +1120,7 @@ void GetInternalEdge4MV_NOVST_SM( VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& Y
     return;
 }
 
-void GetInternalEdge1MV_VST_SM(VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YFlagH)
+void GetInternalEdge1MV_VST_SM(VC1EncoderMBInfo *pCur,uint8_t& YFlagV, uint8_t& YFlagH)
 {
      YFlagV = 0;
      YFlagH = 0;
@@ -1185,7 +1185,7 @@ void GetInternalEdge1MV_VST_SM(VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YFla
 
     return;
 }
-void GetInternalEdge1MV_NOVST_SM(VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YFlagH)
+void GetInternalEdge1MV_NOVST_SM(VC1EncoderMBInfo *pCur,uint8_t& YFlagV, uint8_t& YFlagH)
 {
      YFlagV= 0;
      YFlagH= 0;
@@ -1210,8 +1210,8 @@ void GetInternalEdge1MV_NOVST_SM(VC1EncoderMBInfo *pCur,Ipp8u& YFlagV, Ipp8u& YF
 
 
 void GetInternalBlockEdge(VC1EncoderMBInfo *pCur,
-                          Ipp8u& YFlagUp, Ipp8u& YFlagBot, Ipp8u& UFlagH, Ipp8u& VFlagH,
-                          Ipp8u& YFlagL,  Ipp8u& YFlagR,   Ipp8u& UFlagV, Ipp8u& VFlagV)
+                          uint8_t& YFlagUp, uint8_t& YFlagBot, uint8_t& UFlagH, uint8_t& VFlagH,
+                          uint8_t& YFlagL,  uint8_t& YFlagR,   uint8_t& UFlagV, uint8_t& VFlagV)
 {
 
     YFlagUp = YFlagBot = UFlagH = VFlagH = 0;

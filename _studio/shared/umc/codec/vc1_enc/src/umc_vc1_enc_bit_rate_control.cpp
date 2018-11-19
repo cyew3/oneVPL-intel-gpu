@@ -43,33 +43,33 @@ VC1BitRateControl::VC1BitRateControl(): m_BRC(NULL), m_HRD(NULL),m_LBucketNum(0)
 #endif
 }
 
-Ipp32s VC1BitRateControl::CalcAllocMemorySize(Ipp32u GOPLength, Ipp32u BFrLength)
+int32_t VC1BitRateControl::CalcAllocMemorySize(uint32_t GOPLength, uint32_t BFrLength)
 {
-    Ipp32u mem_size = 0;
+    uint32_t mem_size = 0;
 
     if(GOPLength == 1)
-        mem_size +=  UMC::align_value<Ipp32u>(sizeof(VC1BRC_I));
+        mem_size +=  UMC::align_value<uint32_t>(sizeof(VC1BRC_I));
     else if (BFrLength == 0)
-         mem_size +=   UMC::align_value<Ipp32u>(sizeof(VC1BRC_IP));
+         mem_size +=   UMC::align_value<uint32_t>(sizeof(VC1BRC_IP));
     else
-         mem_size +=   UMC::align_value<Ipp32u>(sizeof(VC1BRC_IPB));
+         mem_size +=   UMC::align_value<uint32_t>(sizeof(VC1BRC_IPB));
 
-    mem_size +=  UMC::align_value<Ipp32u>(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
+    mem_size +=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
 
 
-    mem_size +=  UMC::align_value<Ipp32u>(sizeof(VC1HRDecoder))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
+    mem_size +=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
 
    return mem_size;
 }
 
-UMC::Status VC1BitRateControl::Init(Ipp8u* pBuffer, Ipp32s AllocatedMemSize,
-                                    Ipp32u yuvFSize,  Ipp32u bitrate, Ipp64f framerate, Ipp32u mode,
-                                    Ipp32u GOPLength, Ipp32u BFrLength, Ipp8u doubleQuant, Ipp8u QuantMode)
+UMC::Status VC1BitRateControl::Init(uint8_t* pBuffer, int32_t AllocatedMemSize,
+                                    uint32_t yuvFSize,  uint32_t bitrate, double framerate, uint32_t mode,
+                                    uint32_t GOPLength, uint32_t BFrLength, uint8_t doubleQuant, uint8_t QuantMode)
 {
     UMC::Status VC1Sts = UMC::UMC_OK;
-    Ipp8u* ptr = pBuffer;
-    Ipp32s i = 0;
-    Ipp32s memSize = AllocatedMemSize;
+    uint8_t* ptr = pBuffer;
+    int32_t i = 0;
+    int32_t memSize = AllocatedMemSize;
 
     if(GOPLength == 0)
         return UMC::UMC_ERR_ALLOC;
@@ -90,8 +90,8 @@ UMC::Status VC1BitRateControl::Init(Ipp8u* pBuffer, Ipp32s AllocatedMemSize,
     if(bitrate == 0)  bitrate = 2*1024000;
     if(framerate == 0)framerate = 30;
     if(framerate > 100)framerate = 100;
-    if(bitrate > (Ipp32u)(yuvFSize*8*framerate))
-        bitrate = (Ipp32u)(yuvFSize*8*framerate);
+    if(bitrate > (uint32_t)(yuvFSize*8*framerate))
+        bitrate = (uint32_t)(yuvFSize*8*framerate);
 
     m_bitrate   = bitrate;
     m_framerate = framerate;
@@ -100,8 +100,8 @@ UMC::Status VC1BitRateControl::Init(Ipp8u* pBuffer, Ipp32s AllocatedMemSize,
 
     //hypothetical reference decoder
     m_HRD =  new (ptr) (VC1HRDecoder*);
-    ptr +=  UMC::align_value<Ipp32u>(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
-    memSize -=  UMC::align_value<Ipp32u>(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
+    ptr +=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
+    memSize -=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
     if(!m_HRD || memSize < 0)
     {
        Close();
@@ -116,8 +116,8 @@ UMC::Status VC1BitRateControl::Init(Ipp8u* pBuffer, Ipp32s AllocatedMemSize,
             Close();
             return UMC::UMC_ERR_ALLOC;
         }
-        ptr +=  UMC::align_value<Ipp32u>(sizeof(VC1HRDecoder));
-        memSize -=  UMC::align_value<Ipp32u>(sizeof(VC1HRDecoder));
+        ptr +=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder));
+        memSize -=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder));
         if(!m_HRD[i] || memSize < 0)
         {
            Close();
@@ -128,20 +128,20 @@ UMC::Status VC1BitRateControl::Init(Ipp8u* pBuffer, Ipp32s AllocatedMemSize,
     if(GOPLength == 1)
     {
         m_BRC = new (ptr) VC1BRC_I();
-        ptr +=  UMC::align_value<Ipp32u>(sizeof(VC1BRC_I));
-        memSize -=  UMC::align_value<Ipp32u>(sizeof(VC1BRC_I));
+        ptr +=  UMC::align_value<uint32_t>(sizeof(VC1BRC_I));
+        memSize -=  UMC::align_value<uint32_t>(sizeof(VC1BRC_I));
     }
     else if (BFrLength == 0)
     {
         m_BRC = new (ptr) VC1BRC_IP();
-        ptr +=  UMC::align_value<Ipp32u>(sizeof(VC1BRC_IP));
-        memSize -=  UMC::align_value<Ipp32u>(sizeof(VC1BRC_IP));
+        ptr +=  UMC::align_value<uint32_t>(sizeof(VC1BRC_IP));
+        memSize -=  UMC::align_value<uint32_t>(sizeof(VC1BRC_IP));
     }
     else
     {
         m_BRC = new (ptr) VC1BRC_IPB();
-        ptr +=  UMC::align_value<Ipp32u>(sizeof(VC1BRC_IPB));
-        memSize -=  UMC::align_value<Ipp32u>(sizeof(VC1BRC_IPB));
+        ptr +=  UMC::align_value<uint32_t>(sizeof(VC1BRC_IPB));
+        memSize -=  UMC::align_value<uint32_t>(sizeof(VC1BRC_IPB));
     }
 
     if(!m_BRC || memSize < 0)
@@ -165,7 +165,7 @@ VC1BitRateControl::~VC1BitRateControl()
     Close();
 }
 
-UMC::Status VC1BitRateControl::InitBuffer(Ipp32s profile, Ipp32s level,Ipp32s BufferSize, Ipp32s initFull)
+UMC::Status VC1BitRateControl::InitBuffer(int32_t profile, int32_t level,int32_t BufferSize, int32_t initFull)
 {
     UMC::Status UMCSts = UMC::UMC_OK;
 
@@ -202,7 +202,7 @@ void VC1BitRateControl::Close()
 
 void VC1BitRateControl::Reset()
 {
-    Ipp32s i = 0;
+    int32_t i = 0;
 
     //hypothetical ref decoder
     for(i = 0; i < m_LBucketNum; i++)
@@ -215,28 +215,28 @@ void VC1BitRateControl::Reset()
         m_BRC->Reset();
 }
 
-void VC1BitRateControl::GetQuant(ePType picType, Ipp8u* PQuant, bool* Half)
+void VC1BitRateControl::GetQuant(ePType picType, uint8_t* PQuant, bool* Half)
 {
     m_BRC->GetQuant(picType, PQuant, Half);
     m_lastQuant = 2*(*PQuant) + (*Half);
 }
 
-void VC1BitRateControl::GetQuant(ePType picType, Ipp8u* PQuant, bool* Half, bool* Uniform)
+void VC1BitRateControl::GetQuant(ePType picType, uint8_t* PQuant, bool* Half, bool* Uniform)
 {
     m_BRC->GetQuant(picType, PQuant, Half, Uniform);
     m_lastQuant = 2*(*PQuant) + (*Half);
 }
 
-Ipp8u VC1BitRateControl::GetLastQuant()
+uint8_t VC1BitRateControl::GetLastQuant()
 {
     return m_lastQuant;
 }
 
-UMC::Status VC1BitRateControl::CheckFrameCompression(ePType picType, Ipp32u currSize)
+UMC::Status VC1BitRateControl::CheckFrameCompression(ePType picType, uint32_t currSize)
 {
     UMC::Status UMCSts = UMC::UMC_OK;
-    Ipp32s Sts = 0;
-    Ipp32s i = 0;
+    int32_t Sts = 0;
+    int32_t i = 0;
 
     VM_ASSERT(currSize > 0);
 
@@ -271,9 +271,9 @@ UMC::Status VC1BitRateControl::CheckFrameCompression(ePType picType, Ipp32u curr
 
 UMC::Status VC1BitRateControl::CompleteFrame(ePType picType)
 {
-    Ipp32s Sts = 0;
+    int32_t Sts = 0;
     UMC::Status umcSts = UMC::UMC_OK;
-    Ipp32s i = 0;
+    int32_t i = 0;
 
     for(i = 0; i < m_LBucketNum; i++)
     {
@@ -297,14 +297,14 @@ UMC::Status VC1BitRateControl::CompleteFrame(ePType picType)
 void VC1BitRateControl::GetAllHRDParams(VC1_HRD_PARAMS* param)
 {
     VC1_hrd_OutData hrdParams;
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s BufferSize[32];
-    Ipp32s Fullness[32];
-    Ipp32s Rate[32];
-    Ipp32s rate_exponent = 0;;
-    Ipp32s buffer_size_exponent = 0;
-    Ipp32s temp = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t BufferSize[32];
+    int32_t Fullness[32];
+    int32_t Rate[32];
+    int32_t rate_exponent = 0;;
+    int32_t buffer_size_exponent = 0;
+    int32_t temp = 0;
 
 
     param->HRD_NUM_LEAKY_BUCKETS = m_LBucketNum;
@@ -366,7 +366,7 @@ void VC1BitRateControl::GetAllHRDParams(VC1_HRD_PARAMS* param)
 
 }
 
-UMC::Status VC1BitRateControl::GetCurrentHRDParams(Ipp32s HRDNum, VC1_hrd_OutData* hrdParams)
+UMC::Status VC1BitRateControl::GetCurrentHRDParams(int32_t HRDNum, VC1_hrd_OutData* hrdParams)
 {
     UMC::Status err = UMC::UMC_OK;
 
@@ -378,13 +378,13 @@ UMC::Status VC1BitRateControl::GetCurrentHRDParams(Ipp32s HRDNum, VC1_hrd_OutDat
     return err;
 }
 
-Ipp32s VC1BitRateControl::GetHRD_Rate(Ipp32s* rate)
+int32_t VC1BitRateControl::GetHRD_Rate(int32_t* rate)
 {
-    Ipp32s exponent = 32;
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s zero_num = 0;
-    Ipp32s temp = 0;
+    int32_t exponent = 32;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t zero_num = 0;
+    int32_t temp = 0;
 
     for(i = 0; i < m_LBucketNum; i++)
     {
@@ -410,13 +410,13 @@ Ipp32s VC1BitRateControl::GetHRD_Rate(Ipp32s* rate)
     return exponent;
 }
 
-Ipp32s VC1BitRateControl::GetHRD_Buffer(Ipp32s* size)
+int32_t VC1BitRateControl::GetHRD_Buffer(int32_t* size)
 {
-    Ipp32s exponent = 32;
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s zero_num = 0;
-    Ipp32s temp = 0;
+    int32_t exponent = 32;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t zero_num = 0;
+    int32_t temp = 0;
 
     for(i = 0; i < m_LBucketNum; i++)
     {
@@ -441,12 +441,12 @@ Ipp32s VC1BitRateControl::GetHRD_Buffer(Ipp32s* size)
 
     return exponent;
 }
-Ipp8u VC1BitRateControl::GetLevel(Ipp32u profile, Ipp32u bitrate, Ipp32u widthMB, Ipp32u heightMB)
+uint8_t VC1BitRateControl::GetLevel(uint32_t profile, uint32_t bitrate, uint32_t widthMB, uint32_t heightMB)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp8u level = 0;
-    Ipp32u mbNum = widthMB * heightMB;
+    int32_t i = 0;
+    int32_t j = 0;
+    uint8_t level = 0;
+    uint32_t mbNum = widthMB * heightMB;
 
     if(profile == VC1_ENC_PROFILE_A)        j = 2;
     else
@@ -501,7 +501,7 @@ Ipp8u VC1BitRateControl::GetLevel(Ipp32u profile, Ipp32u bitrate, Ipp32u widthMB
 }
 
 
-UMC::Status VC1BitRateControl::HandleHRDResult(Ipp32s hrdStatus)
+UMC::Status VC1BitRateControl::HandleHRDResult(int32_t hrdStatus)
 {
     UMC::Status umcSts = UMC::UMC_OK;
 
@@ -520,14 +520,14 @@ UMC::Status VC1BitRateControl::HandleHRDResult(Ipp32s hrdStatus)
     return umcSts;
 }
 
-//Ipp32s VC1BitRateControl::CheckBlockQuality(Ipp16s* pSrc, Ipp32u srcStep,
-//                                             Ipp32u quant, Ipp32u intra)
+//int32_t VC1BitRateControl::CheckBlockQuality(int16_t* pSrc, uint32_t srcStep,
+//                                             uint32_t quant, uint32_t intra)
 //{
-//    Ipp32u i = 0;
-//    Ipp32u j = 0;
-//    Ipp32s temp = 0;
-//    Ipp16s* ptr = pSrc;
-//    Ipp32u zeroCoef = 0;
+//    uint32_t i = 0;
+//    uint32_t j = 0;
+//    int32_t temp = 0;
+//    int16_t* ptr = pSrc;
+//    uint32_t zeroCoef = 0;
 //
 //    for(i = intra; i < VC1_PIXEL_IN_BLOCK; i++)
 //    {
@@ -546,7 +546,7 @@ UMC::Status VC1BitRateControl::HandleHRDResult(Ipp32s hrdStatus)
 UMC::Status VC1BitRateControl::GetBRInfo(VC1BRInfo* pInfo)
 {
     UMC::Status err = UMC::UMC_OK;
-    Ipp8u pQuant;
+    uint8_t pQuant;
     bool   HalfQP;
     pInfo->bitrate    =  m_bitrate;
     pInfo->framerate  =  m_framerate;
@@ -567,7 +567,7 @@ UMC::Status VC1BitRateControl::GetBRInfo(VC1BRInfo* pInfo)
     return err;
 }
 
-UMC::Status VC1BitRateControl::ChangeGOPParams(Ipp32u GOPLength, Ipp32u BFrLength)
+UMC::Status VC1BitRateControl::ChangeGOPParams(uint32_t GOPLength, uint32_t BFrLength)
 {
     //TODO possible need to change type of BRC
     return m_BRC->SetGOPParams(GOPLength, BFrLength);

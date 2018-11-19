@@ -27,8 +27,8 @@
 #include "umc_vc1_huffman.h"
 #include "umc_vc1_common_tables.h"
 
-static const Ipp32u bc_lut_2[] = {0,1,2,3};
-static const Ipp32u bc_lut_1[] = {4,0,1,3};
+static const uint32_t bc_lut_2[] = {0,1,2,3};
+static const uint32_t bc_lut_1[] = {4,0,1,3};
 
 VC1Status DecodePictHeaderParams_ProgressiveBpicture_Adv (VC1Context* pContext)
 {
@@ -113,7 +113,7 @@ VC1Status DecodePictHeaderParams_InterlaceBpicture_Adv(VC1Context* pContext)
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
 
-    Ipp32u tempValue;
+    uint32_t tempValue;
 
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
@@ -122,8 +122,8 @@ VC1Status DecodePictHeaderParams_InterlaceBpicture_Adv(VC1Context* pContext)
 
     {
         //B picture fraction
-        Ipp8s  z1;
-        Ipp16s z2;
+        int8_t  z1;
+        int16_t z2;
         DecodeHuffmanPair(&pContext->m_bitstream.pBitstream,
                                     &pContext->m_bitstream.bitOffset,
                                     pContext->m_vlcTbl->BFRACTION,
@@ -261,7 +261,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
     VC1Status vc1Res = VC1_OK;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
-    Ipp32u tempValue;
+    uint32_t tempValue;
 
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_BFRAMES,
@@ -308,7 +308,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
         //01            1 MV
         //001           1 MV Half-pel
         //000           Mixed MV
-        Ipp32s bit_count = 1;
+        int32_t bit_count = 1;
         VC1_GET_BITS(1, picLayerHeader->MVMODE);
         while((picLayerHeader->MVMODE == 0) && (bit_count < 3))
         {
@@ -330,7 +330,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
         //01            Mixed MV
         //001           1 MV Half-pel
         //000           1 MV Half-pel bilinear
-        Ipp32s bit_count = 1;
+        int32_t bit_count = 1;
         VC1_GET_BITS(1, picLayerHeader->MVMODE);
         while((picLayerHeader->MVMODE == 0) && (bit_count < 3))
         {
@@ -423,7 +423,7 @@ VC1Status DecodeFieldHeaderParams_InterlaceFieldBpicture_Adv (VC1Context* pConte
 #ifdef ALLOW_SW_VC1_FALLBACK
 VC1Status Decode_InterlaceFieldBpicture_Adv (VC1Context* pContext)
 {
-    Ipp32s i,j;
+    int32_t i,j;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1Status vc1Res = VC1_OK;
 
@@ -455,7 +455,7 @@ VC1Status Decode_InterlaceFieldBpicture_Adv (VC1Context* pContext)
 
     if ((pContext->m_seqLayerHeader.LOOPFILTER))
     {
-        Ipp32u deblock_offset = 0;
+        uint32_t deblock_offset = 0;
         if (!pContext->DeblockInfo.is_last_deblock)
             deblock_offset = 1;
 

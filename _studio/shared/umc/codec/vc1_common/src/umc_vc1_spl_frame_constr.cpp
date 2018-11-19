@@ -46,36 +46,36 @@ namespace UMC
     Status vc1_frame_constructor_rcv::GetNextFrame(VC1FrameConstrInfo& Info)
     {
         UMC::Status umcSts = UMC_ERR_NOT_ENOUGH_DATA;
-        Ipp32u frameSize = 0;
+        uint32_t frameSize = 0;
 
-        if((Ipp32u)Info.in->GetBufferSize() == 0)
+        if((uint32_t)Info.in->GetBufferSize() == 0)
         {
-            if((Ipp32u)Info.out->GetDataSize() == 0)
+            if((uint32_t)Info.out->GetDataSize() == 0)
                 return UMC_ERR_END_OF_STREAM;
             else
                 return UMC_OK;
         }
 
-        if((Ipp32u)Info.out->GetDataSize() == 0)
+        if((uint32_t)Info.out->GetDataSize() == 0)
         {
-            if((Ipp32u)Info.in->GetDataSize() < (Ipp32u)Info.in->GetBufferSize() - 4)
+            if((uint32_t)Info.in->GetDataSize() < (uint32_t)Info.in->GetBufferSize() - 4)
             {
-                Ipp8u* curr_pos = ((Ipp8u*)Info.in->GetBufferPointer()+(Ipp32u)Info.in->GetDataSize());
+                uint8_t* curr_pos = ((uint8_t*)Info.in->GetBufferPointer()+(uint32_t)Info.in->GetDataSize());
                 frameSize  = ((*(curr_pos+3))<<24) + ((*(curr_pos+2))<<16) + ((*(curr_pos+1))<<8) + *(curr_pos);
                 frameSize &= 0x0fffffff;
                 frameSize += 8;
 
-                if ((Ipp32u)Info.out->GetBufferSize() < frameSize)
+                if ((uint32_t)Info.out->GetBufferSize() < frameSize)
                    return UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                Info.out->SetBufferPointer((Ipp8u*)Info.out->GetBufferPointer(),frameSize);
+                Info.out->SetBufferPointer((uint8_t*)Info.out->GetBufferPointer(),frameSize);
             }
             else
             {
-                Ipp8u* buf = (Ipp8u*)Info.in->GetBufferPointer();
-                Ipp8u* data = (Ipp8u*)Info.in->GetBufferPointer() + (Ipp32u)Info.in->GetDataSize();
-                MFX_INTERNAL_CPY(buf, data, (Ipp32u)Info.in->GetBufferSize() - (Ipp32u)Info.in->GetDataSize());
-                Info.in->SetDataSize((Ipp32u)Info.in->GetBufferSize() - (Ipp32u)Info.in->GetDataSize());
+                uint8_t* buf = (uint8_t*)Info.in->GetBufferPointer();
+                uint8_t* data = (uint8_t*)Info.in->GetBufferPointer() + (uint32_t)Info.in->GetDataSize();
+                MFX_INTERNAL_CPY(buf, data, (uint32_t)Info.in->GetBufferSize() - (uint32_t)Info.in->GetDataSize());
+                Info.in->SetDataSize((uint32_t)Info.in->GetBufferSize() - (uint32_t)Info.in->GetDataSize());
 
                 return UMC_ERR_NOT_ENOUGH_DATA;
             }
@@ -96,16 +96,16 @@ namespace UMC
 
     Status vc1_frame_constructor_rcv::GetData(VC1FrameConstrInfo& Info)
     {
-        if ((Ipp32u)Info.out->GetBufferSize() < (Ipp32u)Info.out->GetDataSize())
+        if ((uint32_t)Info.out->GetBufferSize() < (uint32_t)Info.out->GetDataSize())
            return UMC_ERR_NOT_ENOUGH_BUFFER;
 
-        Ipp32u readDataSize = (Ipp32u)Info.in->GetDataSize();
-        Ipp32u readBufSize = (Ipp32u)Info.in->GetBufferSize();
-        Ipp8u* readBuf = (Ipp8u*)Info.in->GetBufferPointer();
+        uint32_t readDataSize = (uint32_t)Info.in->GetDataSize();
+        uint32_t readBufSize = (uint32_t)Info.in->GetBufferSize();
+        uint8_t* readBuf = (uint8_t*)Info.in->GetBufferPointer();
 
-        Ipp32u currFrameSize = (Ipp32u)Info.out->GetDataSize();
-        Ipp8u* currFramePos = (Ipp8u*)Info.out->GetBufferPointer() + currFrameSize;
-        Ipp32u frameSize = (Ipp32u)Info.out->GetBufferSize();
+        uint32_t currFrameSize = (uint32_t)Info.out->GetDataSize();
+        uint8_t* currFramePos = (uint8_t*)Info.out->GetBufferPointer() + currFrameSize;
+        uint32_t frameSize = (uint32_t)Info.out->GetBufferSize();
 
         if(currFrameSize + readBufSize - readDataSize <= frameSize )
         {
@@ -125,16 +125,16 @@ namespace UMC
         }
     }
 
-    Status vc1_frame_constructor_rcv::ParseVC1SeqHeader (Ipp8u *data,
-                                        Ipp32u* bufferSize, VideoStreamInfo* video_info)
+    Status vc1_frame_constructor_rcv::ParseVC1SeqHeader (uint8_t *data,
+                                        uint32_t* bufferSize, VideoStreamInfo* video_info)
     {
         UMC::Status umcSts = UMC_OK;
 
-        Ipp32u tempData;
-        Ipp32u *  pbs;
-        Ipp32s  bitOffset = 31;
+        uint32_t tempData;
+        uint32_t *  pbs;
+        int32_t  bitOffset = 31;
 
-        pbs = (Ipp32u *)data;
+        pbs = (uint32_t *)data;
         *bufferSize = 0;
 
         video_info->streamPID = 0;
@@ -226,19 +226,19 @@ namespace UMC
     Status vc1_frame_constructor_rcv::GetFirstSeqHeader(VC1FrameConstrInfo& Info)
     {
         UMC::Status umcSts = UMC_ERR_NOT_ENOUGH_DATA;
-        Ipp32u frameSize = 4;
-        Ipp8u* ptemp = (Ipp8u*)Info.in->GetBufferPointer() + 4;
-        Ipp32u temp_size = ((*(ptemp+3))<<24) + ((*(ptemp+2))<<16) + ((*(ptemp+1))<<8) + *(ptemp);
+        uint32_t frameSize = 4;
+        uint8_t* ptemp = (uint8_t*)Info.in->GetBufferPointer() + 4;
+        uint32_t temp_size = ((*(ptemp+3))<<24) + ((*(ptemp+2))<<16) + ((*(ptemp+1))<<8) + *(ptemp);
 
 
         frameSize+= temp_size;
         frameSize+=12;
-        ptemp = (Ipp8u*)Info.in->GetBufferPointer() + frameSize;
+        ptemp = (uint8_t*)Info.in->GetBufferPointer() + frameSize;
         temp_size = ((*(ptemp+3))<<24) + ((*(ptemp+2))<<16) + ((*(ptemp+1))<<8) + *(ptemp);
         frameSize+= temp_size;
         frameSize+=4;
 
-        Info.out->SetBufferPointer((Ipp8u*)Info.out->GetBufferPointer(),frameSize);
+        Info.out->SetBufferPointer((uint8_t*)Info.out->GetBufferPointer(),frameSize);
 
         umcSts = GetData(Info);
 
@@ -264,21 +264,21 @@ namespace UMC
 
     Status vc1_frame_constructor_vc1::GetData(VC1FrameConstrInfo& Info)
     {
-        Ipp32u readDataSize = (Ipp32u)Info.in->GetDataSize();
-        Ipp32u readBufSize = (Ipp32u)Info.in->GetBufferSize();
-        Ipp8u* readBuf = (Ipp8u*)Info.in->GetBufferPointer();
+        uint32_t readDataSize = (uint32_t)Info.in->GetDataSize();
+        uint32_t readBufSize = (uint32_t)Info.in->GetBufferSize();
+        uint8_t* readBuf = (uint8_t*)Info.in->GetBufferPointer();
 
-        Ipp8u* readPos = readBuf + (Ipp32u)Info.in->GetDataSize();
+        uint8_t* readPos = readBuf + (uint32_t)Info.in->GetDataSize();
 
-        Ipp32u frameSize = (Ipp32u)Info.out->GetDataSize();
-        Ipp8u* currFramePos = (Ipp8u*)Info.out->GetBufferPointer() + frameSize;
-        Ipp32u frameBufSize = (Ipp32u)Info.out->GetBufferSize();
+        uint32_t frameSize = (uint32_t)Info.out->GetDataSize();
+        uint8_t* currFramePos = (uint8_t*)Info.out->GetBufferPointer() + frameSize;
+        uint32_t frameBufSize = (uint32_t)Info.out->GetBufferSize();
 
-        Ipp8u* ptr = currFramePos;
-        Ipp32u zeroNum = 0;
-        Ipp32s size = 0;
-        Ipp32u a = 0x0000FF00 | (*readPos);
-        Ipp32u b = 0xFFFFFFFF;
+        uint8_t* ptr = currFramePos;
+        uint32_t zeroNum = 0;
+        int32_t size = 0;
+        uint32_t a = 0x0000FF00 | (*readPos);
+        uint32_t b = 0xFFFFFFFF;
 
         while(readPos < (readBuf + readBufSize))
         {
@@ -288,7 +288,7 @@ namespace UMC
             while(!( b == 0x00000001 || b == 0x00000003 )
                     &&(++readPos < (readBuf + readBufSize)))
             {
-                a = (a<<8)| (Ipp32s)(*readPos);
+                a = (a<<8)| (int32_t)(*readPos);
                 b = a & 0x00FFFFFF;
             }
 
@@ -310,7 +310,7 @@ namespace UMC
                         }
 
                         //slice or field size
-                        size = (Ipp32u)(ptr - readBuf - readDataSize+1);
+                        size = (uint32_t)(ptr - readBuf - readDataSize+1);
 
                         if(frameSize + size > frameBufSize)
                             return UMC_ERR_NOT_ENOUGH_BUFFER;
@@ -333,12 +333,12 @@ namespace UMC
                         frameSize = frameSize + zeroNum;
 
                         Info.stCodes->offsets[Info.stCodes->count] = frameSize;
-                        //stCodes->values[stCodes->count] =*(Ipp32u*)(readPos - 4);
+                        //stCodes->values[stCodes->count] =*(uint32_t*)(readPos - 4);
                         Info.stCodes->values[Info.stCodes->count]  = ((*(readPos-1))<<24) + ((*(readPos-2))<<16) + ((*(readPos-3))<<8) + (*(readPos-4));
 
-                        readDataSize = (Ipp32u)(readPos - readBuf - 4);
+                        readDataSize = (uint32_t)(readPos - readBuf - 4);
 
-                        a = 0x00010b00 |(Ipp32s)(*readPos);
+                        a = 0x00010b00 |(int32_t)(*readPos);
                         b = a & 0x00FFFFFF;
 
                         zeroNum = 0;
@@ -358,7 +358,7 @@ namespace UMC
                         }
 
                         //slice or field size
-                        size = (Ipp32u)(ptr - readBuf - readDataSize +1);
+                        size = (uint32_t)(ptr - readBuf - readDataSize +1);
 
                         if(frameSize + size > frameBufSize)
                             return UMC_ERR_NOT_ENOUGH_BUFFER;
@@ -372,7 +372,7 @@ namespace UMC
                         Info.out->SetDataSize(frameSize);
 
                         //prepare read buffer
-                        size = (Ipp32u)(readPos - readBuf - readDataSize);
+                        size = (uint32_t)(readPos - readBuf - readDataSize);
                         readDataSize = readDataSize + size;
                         Info.in->SetDataSize(readDataSize);
 
@@ -382,38 +382,38 @@ namespace UMC
                     {
                         //beginning of frame
                         readPos++;
-                        a = 0x00000100 |(Ipp32s)(*readPos);
+                        a = 0x00000100 |(int32_t)(*readPos);
                         b = a & 0x00FFFFFF;
 
                         //end of sequence
                         if((((*(readPos))<<24) + ((*(readPos-1))<<16) + ((*(readPos-2))<<8) + (*(readPos-3))) == 0x0A010000)
                         {
-                            size = (Ipp32u)(readPos- readBuf - readDataSize + 1);
+                            size = (uint32_t)(readPos- readBuf - readDataSize + 1);
 
                             MFX_INTERNAL_CPY(currFramePos, readBuf + readDataSize, size);
                             Info.out->SetDataSize(frameSize + size);
 
                             Info.in->SetDataSize(Info.in->GetDataSize() + size);
 
-                            Info.stCodes->offsets[Info.stCodes->count] = (Ipp32u)(0);
+                            Info.stCodes->offsets[Info.stCodes->count] = (uint32_t)(0);
                             Info.stCodes->values[Info.stCodes->count]  = ((*(readPos))<<24) + ((*(readPos-1))<<16) + ((*(readPos-2))<<8) + (*(readPos-3));
 
                             Info.stCodes->count++;
                             zeroNum = 0;
 
-                            size = (Ipp32u)(readPos - readBuf - readDataSize - 3);
+                            size = (uint32_t)(readPos - readBuf - readDataSize - 3);
                             readDataSize = readDataSize + size;
                             return UMC_OK;
                         }
 
 
-                        Info.stCodes->offsets[Info.stCodes->count] = (Ipp32u)(0);
+                        Info.stCodes->offsets[Info.stCodes->count] = (uint32_t)(0);
                         Info.stCodes->values[Info.stCodes->count]  = ((*(readPos))<<24) + ((*(readPos-1))<<16) + ((*(readPos-2))<<8) + (*(readPos-3));
 
                         Info.stCodes->count++;
                         zeroNum = 0;
 
-                        size = (Ipp32u)(readPos - readBuf - readDataSize - 3);
+                        size = (uint32_t)(readPos - readBuf - readDataSize - 3);
                         readDataSize = readDataSize + size;
                     }
                 }
@@ -422,7 +422,7 @@ namespace UMC
                     //000003
                     if((*(readPos + 1) <  0x04) && (Info.splMode == 1))
                     {
-                        size = (Ipp32u)(readPos - readBuf - readDataSize);
+                        size = (uint32_t)(readPos - readBuf - readDataSize);
 
                         if(frameSize + size > frameBufSize)
                             return UMC_ERR_NOT_ENOUGH_BUFFER;
@@ -433,7 +433,7 @@ namespace UMC
                         zeroNum = 0;
 
                         readPos++;
-                        a = (a<<8)| (Ipp32s)(*readPos);
+                        a = (a<<8)| (int32_t)(*readPos);
                         b = a & 0x00FFFFFF;
 
                         readDataSize = readDataSize + size + 1;
@@ -441,7 +441,7 @@ namespace UMC
                     else
                     {
                         readPos++;
-                        a = (a<<8)| (Ipp32s)(*readPos);
+                        a = (a<<8)| (int32_t)(*readPos);
                         b = a & 0x00FFFFFF;
                     }
                 }
@@ -451,7 +451,7 @@ namespace UMC
                 if(readBufSize > 4)
                 {
                     readPos = readBuf + readBufSize;
-                    size = (Ipp32u)(readBufSize - readDataSize - 4);
+                    size = (uint32_t)(readBufSize - readDataSize - 4);
 
                     if(size >= 0)
                     {
@@ -491,7 +491,7 @@ namespace UMC
                 else
                 {
                     //end of stream
-                    size = (Ipp32u)(readPos- readBuf - readDataSize);
+                    size = (uint32_t)(readPos- readBuf - readDataSize);
 
                     if(frameSize + size > frameBufSize)
                             return UMC_ERR_NOT_ENOUGH_BUFFER;
@@ -525,19 +525,19 @@ namespace UMC
     {
     }
 
-    Status vc1_frame_constructor_vc1::ParseVC1SeqHeader (Ipp8u *data,
-                                  Ipp32u* bufferSize, VideoStreamInfo* video_info)
+    Status vc1_frame_constructor_vc1::ParseVC1SeqHeader (uint8_t *data,
+                                  uint32_t* bufferSize, VideoStreamInfo* video_info)
     {
         UMC::Status umcSts = UMC_OK;
 
-        Ipp32u tempData;
-        Ipp32u tempData1;
-        Ipp32u i=0;
+        uint32_t tempData;
+        uint32_t tempData1;
+        uint32_t i=0;
 
-        Ipp32u *pbs;
-        Ipp32s  bitOffset = 31;
+        uint32_t *pbs;
+        int32_t  bitOffset = 31;
 
-        pbs = (Ipp32u *)data;
+        pbs = (uint32_t *)data;
         *bufferSize = 0;
         video_info->streamPID = 0;
         video_info->stream_type = VC1_VIDEO;
@@ -562,7 +562,7 @@ namespace UMC
 
         if(tempData == VC1_PROFILE_ADVANCED)            //PROFILE
         {
-            Ipp32u framerate;
+            uint32_t framerate;
             //LEVEL
             VC1GetNBits(pbs, bitOffset, 3, tempData);
 
@@ -601,7 +601,7 @@ namespace UMC
                 if (framerate == 7)
                     video_info->framerate = 30.0;
                 else
-                    video_info->framerate = (2.0 + (Ipp64f)framerate*4);
+                    video_info->framerate = (2.0 + (double)framerate*4);
 
                 if (video_info->bitrate == 31)
                     video_info->bitrate = 2016;

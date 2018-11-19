@@ -35,36 +35,36 @@ namespace UMC_VC1_ENCODER
 class VC1EncoderSequenceSM
 {
 private:
-    Ipp32u                 m_uiPictureWidth;
-    Ipp32u                 m_uiPictureHeight;
+    uint32_t                 m_uiPictureWidth;
+    uint32_t                 m_uiPictureHeight;
 
-    Ipp32u                 m_nMBRow;
-    Ipp32u                 m_nMBCol;
+    uint32_t                 m_nMBRow;
+    uint32_t                 m_nMBCol;
 
-    Ipp8u                  m_uiProfile;         //VC1_ENC_PROFILE_S , VC1_ENC_PROFILE_M
-    Ipp32u                 m_uiNumberOfFrames;  //Number of frames (0xffffff - if unknown)
-    Ipp8u                  m_uiFrameRateQ;      // [0, 7]
-    Ipp8u                  m_uiBitRateQ;        // [0,31]
+    uint8_t                  m_uiProfile;         //VC1_ENC_PROFILE_S , VC1_ENC_PROFILE_M
+    uint32_t                 m_uiNumberOfFrames;  //Number of frames (0xffffff - if unknown)
+    uint8_t                  m_uiFrameRateQ;      // [0, 7]
+    uint8_t                  m_uiBitRateQ;        // [0,31]
     bool                   m_bLoopFilter;       // Should be equal to 0 in simple profile
     bool                   m_bMultiRes;         // Multi resolution coding
     bool                   m_bFastUVMC;         // Should be equal to 1 in simple profile
     bool                   m_bExtendedMV;       // Should be equal to 0 in simple profile
-    Ipp8u                  m_uiDQuant;          // [0] - simple profile,
+    uint8_t                  m_uiDQuant;          // [0] - simple profile,
                                                 // [0,1,2] - main profile (if m_bMultiRes then only 0)
     bool                   m_bVSTransform;      // variable-size transform
     bool                   m_bOverlap;
     bool                   m_bSyncMarkers;      // Should be equal to 0 in simple profile
     bool                   m_bRangeRedution;    // Should be equal to 0 in simple profile
-    Ipp32u                 m_uiMaxBFrames;      // Number of B frames between I,P frames[0,7]
+    uint32_t                 m_uiMaxBFrames;      // Number of B frames between I,P frames[0,7]
     eQuantType             m_uiQuantazer;       // [0,3] - quantizer specification
     bool                   m_bFrameInterpolation;
 
-    Ipp8u                  m_uiLevel;           //VC1_ENC_LEVEL_S, VC1_ENC_LEVEL_M, VC1_ENC_LEVEL_H
+    uint8_t                  m_uiLevel;           //VC1_ENC_LEVEL_S, VC1_ENC_LEVEL_M, VC1_ENC_LEVEL_H
     bool                   m_bConstBitRate;
-    Ipp32u                 m_uiHRDBufferSize;   // buffersize in milliseconds [1,65536]
-    Ipp32u                 m_uiHRDFrameRate;    // rate: bits per seconds [1,65536]
-    Ipp32u                 m_uiFrameRate;       // 0xffffffff - if unknown
-    Ipp8u                  m_uiRoundControl;    // 0,1;
+    uint32_t                 m_uiHRDBufferSize;   // buffersize in milliseconds [1,65536]
+    uint32_t                 m_uiHRDFrameRate;    // rate: bits per seconds [1,65536]
+    uint32_t                 m_uiFrameRate;       // 0xffffffff - if unknown
+    uint8_t                  m_uiRoundControl;    // 0,1;
 
 
 public:
@@ -107,23 +107,23 @@ public:
     bool                IsLoopFilter()          {return m_bLoopFilter;}
     bool                IsVSTransform()         {return m_bVSTransform;}
     bool                IsOverlap()             {return m_bOverlap;}
-    Ipp8u               GetDQuant()             {return m_uiDQuant;}
+    uint8_t               GetDQuant()             {return m_uiDQuant;}
 
-    Ipp32u              GetPictureWidth()        {return m_uiPictureWidth;}
-    Ipp32u              GetPictureHeight()       {return m_uiPictureHeight;}
-    Ipp32u              GetNumMBInRow()          {return m_nMBRow;}
-    Ipp32u              GetNumMBInCol()          {return m_nMBCol;}
+    uint32_t              GetPictureWidth()        {return m_uiPictureWidth;}
+    uint32_t              GetPictureHeight()       {return m_uiPictureHeight;}
+    uint32_t              GetNumMBInRow()          {return m_nMBRow;}
+    uint32_t              GetNumMBInCol()          {return m_nMBCol;}
 
     eQuantType          GetQuantType()          {return m_uiQuantazer;}
 
     UMC::Status         WriteSeqHeader(VC1EncoderBitStreamSM* pCodedSH);
     UMC::Status         CheckParameters(vm_char* pLastError);
     UMC::Status         Init(UMC::VC1EncoderParams* pParams);
-    Ipp8u               GetProfile()             {return m_uiProfile;}
-    Ipp8u               GetLevel()               {return m_uiLevel;}
-    void                SetLevel(Ipp8u level)    {m_uiLevel = level;}
+    uint8_t               GetProfile()             {return m_uiProfile;}
+    uint8_t               GetLevel()               {return m_uiLevel;}
+    void                SetLevel(uint8_t level)    {m_uiLevel = level;}
 
-    void        SetMaxBFrames(Ipp32u n)
+    void        SetMaxBFrames(uint32_t n)
     {
         assert(n<=7);
         m_uiMaxBFrames = n;

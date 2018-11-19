@@ -36,8 +36,8 @@ namespace UMC_VC1_ENCODER
     UMC::Status  VC1EncoderSM::Init(UMC::VC1EncoderParams* pParams)
     {
         UMC::Status     err = UMC::UMC_OK;
-        Ipp32u          w=0, h=0;
-        Ipp32s          memSize = 0;
+        uint32_t          w=0, h=0;
+        int32_t          memSize = 0;
 
         bool            bNV12 = false;
 
@@ -108,7 +108,7 @@ namespace UMC_VC1_ENCODER
                                      UMC::UMC_ALLOC_PERSISTENT, 16) != UMC::UMC_OK )
                                      return UMC::UMC_ERR_ALLOC;
 
-        m_pStoredFramesBuffer = (Ipp8u*)m_pMemoryAllocator->Lock(m_StoredFramesID);
+        m_pStoredFramesBuffer = (uint8_t*)m_pMemoryAllocator->Lock(m_StoredFramesID);
 
         err = m_pStoredFrames->Init(m_pStoredFramesBuffer, memSize,
                                     m_uiBFrmLength +((m_uiOrigFramesUsingFlag)?4:2),
@@ -127,10 +127,10 @@ namespace UMC_VC1_ENCODER
         if (m_uiBFrmLength)
         {
             /* we should save MV for direct prediction in B frames*/
-            if(m_pMemoryAllocator->Alloc(&m_SavedMVID, w*h*2*sizeof(Ipp16s),
+            if(m_pMemoryAllocator->Alloc(&m_SavedMVID, w*h*2*sizeof(int16_t),
                 UMC::UMC_ALLOC_PERSISTENT, 16) != UMC::UMC_OK )
                 return UMC::UMC_ERR_ALLOC;
-            m_pSavedMV = (Ipp16s*)m_pMemoryAllocator->Lock(m_SavedMVID);
+            m_pSavedMV = (int16_t*)m_pMemoryAllocator->Lock(m_SavedMVID);
 
         }
 
@@ -143,7 +143,7 @@ namespace UMC_VC1_ENCODER
         memSize = VC1EncoderMBs::CalcAllocMemorySize(w,2,bNV12);
         if(m_pMemoryAllocator->Alloc(&m_MBsID, memSize,UMC::UMC_ALLOC_PERSISTENT, 16) != UMC::UMC_OK )
             return UMC::UMC_ERR_ALLOC;
-        m_MBsBuffer = (Ipp8u*)m_pMemoryAllocator->Lock(m_MBsID);
+        m_MBsBuffer = (uint8_t*)m_pMemoryAllocator->Lock(m_MBsID);
 
         err = m_pMBs->Init(m_MBsBuffer, memSize, w, 2, bNV12);
         if (err != UMC::UMC_OK)
@@ -203,15 +203,15 @@ namespace UMC_VC1_ENCODER
                 return UMC::UMC_ERR_INIT;
             if(m_pMemoryAllocator->Alloc(&m_MEID, memSize,UMC::UMC_ALLOC_PERSISTENT, 16) != UMC::UMC_OK )
                 return UMC::UMC_ERR_ALLOC;
-            m_pMEBuffer = (Ipp8u*)m_pMemoryAllocator->Lock(m_MEID);
+            m_pMEBuffer = (uint8_t*)m_pMemoryAllocator->Lock(m_MEID);
             if(!m_pME->Init(&MEParamsInit, m_pMEBuffer, memSize))
                 return UMC::UMC_ERR_INIT;
 
 
             m_MESearchSpeed = pParams->m_uiMESearchSpeed;
 
-            Ipp32s numRefFrame = MEParamsInit.MaxNumOfFrame;
-            for(Ipp32s i = 0; i < numRefFrame; i++)
+            int32_t numRefFrame = MEParamsInit.MaxNumOfFrame;
+            for(int32_t i = 0; i < numRefFrame; i++)
             {
                 m_MeFrame[i] = &MEParamsInit.pFrames[i];
             }
@@ -229,9 +229,9 @@ namespace UMC_VC1_ENCODER
             UMC::UMC_ALLOC_PERSISTENT, 16) != UMC::UMC_OK )
             return UMC::UMC_ERR_ALLOC;
 
-        m_pBRCBuffer = (Ipp8u*)m_pMemoryAllocator->Lock(m_BRCID);
+        m_pBRCBuffer = (uint8_t*)m_pMemoryAllocator->Lock(m_BRCID);
 
-        Ipp8u QuantMode = 3;
+        uint8_t QuantMode = 3;
 
         switch (m_SH->GetQuantType())
         {
@@ -257,9 +257,9 @@ namespace UMC_VC1_ENCODER
         if it is number of existing buffer, it will change buffer params
         if buffer size <=0 or > maxsize, buffer size will be equal to buffer size*/
 
-        Ipp8u BRCLevel = m_pBitRateControl->GetLevel(m_SH->GetProfile(),pParams->info.bitrate, w, h);
+        uint8_t BRCLevel = m_pBitRateControl->GetLevel(m_SH->GetProfile(),pParams->info.bitrate, w, h);
         if(BRCLevel < pParams->level)
-            BRCLevel = (Ipp8u)pParams->level;
+            BRCLevel = (uint8_t)pParams->level;
 
         m_SH->SetLevel(BRCLevel);
 
@@ -308,7 +308,7 @@ namespace UMC_VC1_ENCODER
     }
     UMC::Status VC1EncoderSM::Close()
     {
-        for(Ipp32u i = 0; i < 32; i++)
+        for(uint32_t i = 0; i < 32; i++)
             m_MeFrame[i] = NULL;
 
         m_MeIndex.MeCurrIndex = 0;
@@ -440,7 +440,7 @@ namespace UMC_VC1_ENCODER
         return UMC::UMC_OK;
     }
 
-    Ipp8u     VC1EncoderSM::GetRoundControl(ePType pictureType, Ipp8u roundControl)
+    uint8_t     VC1EncoderSM::GetRoundControl(ePType pictureType, uint8_t roundControl)
     {
         switch (pictureType)
         {
@@ -527,9 +527,9 @@ namespace UMC_VC1_ENCODER
             inFrame = m_pStoredFrames->GetFreeFramePointer();
             if (inFrame)
             {
-                inFrame->CopyPlane( (Ipp8u*)pVideoData->GetPlanePointer(0), (Ipp32u)pVideoData->GetPlanePitch(0),
-                    (Ipp8u*)pVideoData->GetPlanePointer(1), (Ipp32u)pVideoData->GetPlanePitch(1),
-                    (Ipp8u*)pVideoData->GetPlanePointer(2), (Ipp32u)pVideoData->GetPlanePitch(2),
+                inFrame->CopyPlane( (uint8_t*)pVideoData->GetPlanePointer(0), (uint32_t)pVideoData->GetPlanePitch(0),
+                    (uint8_t*)pVideoData->GetPlanePointer(1), (uint32_t)pVideoData->GetPlanePitch(1),
+                    (uint8_t*)pVideoData->GetPlanePointer(2), (uint32_t)pVideoData->GetPlanePitch(2),
                     inputPictureType);
 
                 if (!m_pWaitingList->AddFrame(inFrame))
@@ -570,7 +570,7 @@ namespace UMC_VC1_ENCODER
             UMC::MediaDataUD * pOutUD    = DynamicCast<UMC::MediaDataUD> (out);
             if (pOutUD)
             {
-                pOutUD->pictureCode = (Ipp8u)inFrame->GetPictureType();
+                pOutUD->pictureCode = (uint8_t)inFrame->GetPictureType();
             }       
             m_pCodedFrame->Init(out);
             if (!m_bSequenceHeader)
@@ -642,7 +642,7 @@ namespace UMC_VC1_ENCODER
 
             }
 
-            Ipp32u CodedSize = m_pCodedFrame->GetDataLen();
+            uint32_t CodedSize = m_pCodedFrame->GetDataLen();
 
             err = WriteFrame(inFrame->GetPictureType(), CodedSize);
             if (err != UMC::UMC_OK)
@@ -689,9 +689,9 @@ namespace UMC_VC1_ENCODER
             if (!inFrame)
                 return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
-            inFrame->CopyPlane( (Ipp8u*)pVideoData->GetPlanePointer(0), (Ipp32u)pVideoData->GetPlanePitch(0),
-                (Ipp8u*)pVideoData->GetPlanePointer(1), (Ipp32u)pVideoData->GetPlanePitch(1),
-                (Ipp8u*)pVideoData->GetPlanePointer(2), (Ipp32u)pVideoData->GetPlanePitch(2),
+            inFrame->CopyPlane( (uint8_t*)pVideoData->GetPlanePointer(0), (uint32_t)pVideoData->GetPlanePitch(0),
+                (uint8_t*)pVideoData->GetPlanePointer(1), (uint32_t)pVideoData->GetPlanePitch(1),
+                (uint8_t*)pVideoData->GetPlanePointer(2), (uint32_t)pVideoData->GetPlanePitch(2),
                 inputPictureType);
 
             if (!m_pWaitingList->AddFrame(inFrame))
@@ -718,14 +718,14 @@ namespace UMC_VC1_ENCODER
         return err;
     }
 
-    UMC::Status VC1EncoderSM::WriteFrame(ePType InputPictureType, Ipp32u CodedSize)
+    UMC::Status VC1EncoderSM::WriteFrame(ePType InputPictureType, uint32_t CodedSize)
     {
         UMC::Status   err = UMC::UMC_OK;
         UMC::MeParams MEParams;
-        Ipp8u uiQuantIndex = 31;
+        uint8_t uiQuantIndex = 31;
         bool  bHalfQuant = 0;
         bool  bUniform   = true;
-        Ipp32s RecodedFrameNum = 0;
+        int32_t RecodedFrameNum = 0;
         bool   frame_recoding  = true;
         InitPictureParams  param;
 
@@ -739,32 +739,32 @@ namespace UMC_VC1_ENCODER
 
         if (m_bIntensityCompensation && InputPictureType == VC1_ENC_P_FRAME )
         {
-            IppiSize            YSize      =  {m_SH->GetPictureWidth(), m_SH->GetPictureHeight()};
-            IppiSize            UVSize      = {YSize.width>>1, YSize.height>>1};
+            mfxSize            YSize      =  {m_SH->GetPictureWidth(), m_SH->GetPictureHeight()};
+            mfxSize            UVSize      = {YSize.width>>1, YSize.height>>1};
 
-            Ipp8u*              pSrcY = 0;        
-            Ipp8u*              pSrcU = 0;
-            Ipp8u*              pSrcV = {0};
+            uint8_t*              pSrcY = 0;        
+            uint8_t*              pSrcU = 0;
+            uint8_t*              pSrcV = {0};
 
-            Ipp8u*              pRefY = 0;
-            Ipp8u*              pRefU = 0;
-            Ipp8u*              pRefV = 0;
+            uint8_t*              pRefY = 0;
+            uint8_t*              pRefU = 0;
+            uint8_t*              pRefV = 0;
 
-            Ipp32u              srcYStep   = 0;
-            Ipp32u              srcUVStep  = 0;
+            uint32_t              srcYStep   = 0;
+            uint32_t              srcUVStep  = 0;
 
-            Ipp32u              refYStep  = {0};
-            Ipp32u              refUVStep = {0};
+            uint32_t              refYStep  = {0};
+            uint32_t              refUVStep = {0};
 
 
-            IppiSize            blockSize       = {3*16,3*16};
+            mfxSize            blockSize       = {3*16,3*16};
             CorrelationParams   sCorrParams     = {0};
-            Ipp32u              LUMSCALE        = 0;
-            Ipp32u              LUMSHIFT        = 0;
-            Ipp32s              iScale = 0;
-            Ipp32s              iShift = 0;
-            Ipp32s              LUTY[257] ;
-            Ipp32s              LUTUV[257];
+            uint32_t              LUMSCALE        = 0;
+            uint32_t              LUMSHIFT        = 0;
+            int32_t              iScale = 0;
+            int32_t              iShift = 0;
+            int32_t              LUTY[257] ;
+            int32_t              LUTUV[257];
 
             m_pPlane->GetPlane_Prog(pSrcY, srcYStep, pSrcU, pSrcV, srcUVStep);
             m_pForwardPlane->GetPlane_Prog(pRefY, refYStep, pRefU, pRefV, refUVStep);
@@ -1122,7 +1122,7 @@ namespace UMC_VC1_ENCODER
 
 
 
-    UMC::Status     VC1EncoderSM::SetMEParams(UMC::MeParams* MEParams, InitPictureParams *pParams,Ipp8u doubleQuant, bool Uniform)
+    UMC::Status     VC1EncoderSM::SetMEParams(UMC::MeParams* MEParams, InitPictureParams *pParams,uint8_t doubleQuant, bool Uniform)
     {
         UMC::Status umcSts          =  UMC::UMC_OK;
 
@@ -1351,11 +1351,11 @@ namespace UMC_VC1_ENCODER
         if(m_pME == NULL)
             return UMC::UMC_ERR_NULL_PTR;
 
-        Ipp32u h = m_SH->GetNumMBInCol();
-        Ipp32u w = m_SH->GetNumMBInRow();
+        uint32_t h = m_SH->GetNumMBInCol();
+        uint32_t w = m_SH->GetNumMBInRow();
 
-        Ipp32s      scaleFactor  = BFractionScaleFactor[pBFraction->denom][pBFraction->num];
-        void        (* GetMVDirect) (Ipp16s x, Ipp16s y, Ipp32s scaleFactor,
+        int32_t      scaleFactor  = BFractionScaleFactor[pBFraction->denom][pBFraction->num];
+        void        (* GetMVDirect) (int16_t x, int16_t y, int32_t scaleFactor,
             sCoordinate * mvF, sCoordinate *mvB);
 
 
@@ -1382,12 +1382,12 @@ namespace UMC_VC1_ENCODER
         sCoordinate MVBDirect    = {0,0};
 
         sCoordinate                 MVPredMin1 = {-60,-60};
-        sCoordinate                 MVPredMax1= {((Ipp16s)w*16-1)*4, ((Ipp16s)h*16-1)*4};
+        sCoordinate                 MVPredMax1= {((int16_t)w*16-1)*4, ((int16_t)h*16-1)*4};
 
-        Ipp16s*                     pSavedMV = m_pSavedMV;
+        int16_t*                     pSavedMV = m_pSavedMV;
 
-        Ipp32u i = 0;
-        Ipp32u j = 0;
+        uint32_t i = 0;
+        uint32_t j = 0;
 
         GetMVDirect = (MEParams->Interpolation == UMC::ME_VC1_Bilinear)? 
 GetMVDirectHalf : GetMVDirectQuarter;

@@ -33,30 +33,30 @@
 namespace UMC_VC1_ENCODER
 {
 //template <class T>  UMC::Status   WriteBlockACIntra         (T*                     pCodedBlock,
-//                                                            Ipp16s*                 pBlock,
-//                                                            Ipp32u                  blockStep,
-//                                                            const Ipp8u*            pScanMatrix,
+//                                                            int16_t*                 pBlock,
+//                                                            uint32_t                  blockStep,
+//                                                            const uint8_t*            pScanMatrix,
 //                                                            const sACTablesSet*     pACTablesSet,
 //                                                            sACEscInfo*             pACEscInfo)
 //   {    UMC::Status     err          = UMC::UMC_OK;
-//        Ipp32s          i            = 0;
+//        int32_t          i            = 0;
 //
-//        Ipp8u           nPairs       = 0;
-//        Ipp16s          levels[65];
-//        Ipp8u           runs[65];
+//        uint8_t           nPairs       = 0;
+//        int16_t          levels[65];
+//        uint8_t           runs[65];
 //
-//        const Ipp8u     *pTableDR    = pACTablesSet->pTableDR;
-//        const Ipp8u     *pTableDL    = pACTablesSet->pTableDL;
-//        const Ipp8u     *pTableInd   = pACTablesSet->pTableInd;
-//        const Ipp32u    *pEncTable   = pACTablesSet->pEncTable;
+//        const uint8_t     *pTableDR    = pACTablesSet->pTableDR;
+//        const uint8_t     *pTableDL    = pACTablesSet->pTableDL;
+//        const uint8_t     *pTableInd   = pACTablesSet->pTableInd;
+//        const uint32_t    *pEncTable   = pACTablesSet->pEncTable;
 //
 //
 //        runs[0] = 0;
 //        //prepare runs, levels arrays
 //        for (i = 1; i<64; i++)
 //        {
-//            Ipp32s  pos    = pScanMatrix[i];
-//            Ipp16s  value = *((Ipp16s*)((Ipp8u*)pBlock + blockStep*(pos>>3)) + (pos&0x07));
+//            int32_t  pos    = pScanMatrix[i];
+//            int16_t  value = *((int16_t*)((uint8_t*)pBlock + blockStep*(pos>>3)) + (pos&0x07));
 //            if (!value)
 //            {
 //                runs[nPairs]++;
@@ -69,15 +69,15 @@ namespace UMC_VC1_ENCODER
 //        }
 //        // put codes into bitstream
 //        i = 0;
-//        for (Ipp32s not_last = 1; not_last>=0; not_last--)
+//        for (int32_t not_last = 1; not_last>=0; not_last--)
 //        {
 //            for (; i < nPairs - not_last; i++)
 //            {
 //                bool    sign = false;
-//                Ipp8u   run  = runs  [i];
-//                Ipp16s  lev  = levels[i];
+//                uint8_t   run  = runs  [i];
+//                int16_t  lev  = levels[i];
 //
-//                Ipp8u mode = GetMode( run, lev, pTableDR, pTableDL, sign);
+//                uint8_t mode = GetMode( run, lev, pTableDR, pTableDL, sign);
 //
 //                switch (mode)
 //                {
@@ -119,7 +119,7 @@ namespace UMC_VC1_ENCODER
 //                        err = pCodedBlock->PutBits(1,mode);                     //mode
 //                        VC1_ENC_CHECK (err)
 //                    case 0:
-//                        Ipp16s index = pTableInd[run] + lev;
+//                        int16_t index = pTableInd[run] + lev;
 //                        err = pCodedBlock->PutBits(pEncTable[2*index], pEncTable[2*index + 1]);
 //                        VC1_ENC_CHECK (err)
 //                        err = pCodedBlock->PutBits(sign, 1);
@@ -139,31 +139,31 @@ namespace UMC_VC1_ENCODER
 //   }
 
 //   template <class T>  UMC::Status   WriteBlockInter8x8type(T*                      pCodedBlock,
-//                                                            Ipp16s*                 pBlock,
-//                                                            Ipp32u                  blockStep,
-//                                                            const Ipp8u*            pScanMatrix,
+//                                                            int16_t*                 pBlock,
+//                                                            uint32_t                  blockStep,
+//                                                            const uint8_t*            pScanMatrix,
 //                                                            const sACTablesSet*     pACTablesSet,
 //                                                            sACEscInfo*             pACEscInfo,
-//                                                            Ipp32u                  pattern)
+//                                                            uint32_t                  pattern)
 //   {    UMC::Status     err          = UMC::UMC_OK;
-//        Ipp32s          i            = 0;
+//        int32_t          i            = 0;
 //
-//        Ipp8u           nPairs       = 0;
-//        Ipp16s          levels[65];
-//        Ipp8u           runs[65];
+//        uint8_t           nPairs       = 0;
+//        int16_t          levels[65];
+//        uint8_t           runs[65];
 //
-//        const Ipp8u     *pTableDR    = pACTablesSet->pTableDR;
-//        const Ipp8u     *pTableDL    = pACTablesSet->pTableDL;
-//        const Ipp8u     *pTableInd   = pACTablesSet->pTableInd;
-//        const Ipp32u    *pEncTable   = pACTablesSet->pEncTable;
+//        const uint8_t     *pTableDR    = pACTablesSet->pTableDR;
+//        const uint8_t     *pTableDL    = pACTablesSet->pTableDL;
+//        const uint8_t     *pTableInd   = pACTablesSet->pTableInd;
+//        const uint32_t    *pEncTable   = pACTablesSet->pEncTable;
 //
 //
 //        runs[0] = 0;
 //        //prepare runs, levels arrays
 //        for (i = 0; i<64; i++)
 //        {
-//            Ipp32s  pos    = pScanMatrix[i];
-//            Ipp16s  value = *((Ipp16s*)((Ipp8u*)pBlock + blockStep*(pos>>3)) + (pos&0x07));
+//            int32_t  pos    = pScanMatrix[i];
+//            int16_t  value = *((int16_t*)((uint8_t*)pBlock + blockStep*(pos>>3)) + (pos&0x07));
 //            if (!value)
 //            {
 //                runs[nPairs]++;
@@ -176,15 +176,15 @@ namespace UMC_VC1_ENCODER
 //        }
 //        // put codes into bitstream
 //        i = 0;
-//        for (Ipp32s not_last = 1; not_last>=0; not_last--)
+//        for (int32_t not_last = 1; not_last>=0; not_last--)
 //        {
 //            for (; i < nPairs - not_last; i++)
 //            {
 //                bool    sign = false;
-//                Ipp8u   run  = runs  [i];
-//                Ipp16s  lev  = levels[i];
+//                uint8_t   run  = runs  [i];
+//                int16_t  lev  = levels[i];
 //
-//                Ipp8u mode = GetMode( run, lev, pTableDR, pTableDL, sign);
+//                uint8_t mode = GetMode( run, lev, pTableDR, pTableDL, sign);
 //
 //                switch (mode)
 //                {
@@ -226,7 +226,7 @@ namespace UMC_VC1_ENCODER
 //                        err = pCodedBlock->PutBits(1,mode);                     //mode
 //                        VC1_ENC_CHECK (err)
 //                    case 0:
-//                        Ipp16s index = pTableInd[run] + lev;
+//                        int16_t index = pTableInd[run] + lev;
 //                        err = pCodedBlock->PutBits(pEncTable[2*index], pEncTable[2*index + 1]);
 //                        VC1_ENC_CHECK (err)
 //                        err = pCodedBlock->PutBits(sign, 1);
@@ -245,27 +245,27 @@ namespace UMC_VC1_ENCODER
 //   }
 //
 //   template <class T>  UMC::Status   WriteBlockInter8x4type(T*                      pCodedBlock,
-//                                                            Ipp16s*                 pBlock,
-//                                                            Ipp32u                  blockStep,
-//                                                            const Ipp8u*            pScanMatrix,
+//                                                            int16_t*                 pBlock,
+//                                                            uint32_t                  blockStep,
+//                                                            const uint8_t*            pScanMatrix,
 //                                                            const sACTablesSet*     pACTablesSet,
 //                                                            sACEscInfo*             pACEscInfo,
-//                                                            Ipp32u                  pattern)
+//                                                            uint32_t                  pattern)
 //   {    UMC::Status     err          = UMC::UMC_OK;
-//        Ipp32s          i            = 0;
+//        int32_t          i            = 0;
 //
-//        Ipp8u           nPairs       = 0;
-//        Ipp16s          levels[33];
-//        Ipp8u           runs[33];
-//        const Ipp32u    *pEncTable   = pACTablesSet->pEncTable;
-//        Ipp8u           patMask[2] = {0x0C, 0x03};
+//        uint8_t           nPairs       = 0;
+//        int16_t          levels[33];
+//        uint8_t           runs[33];
+//        const uint32_t    *pEncTable   = pACTablesSet->pEncTable;
+//        uint8_t           patMask[2] = {0x0C, 0x03};
 //
-//        for (Ipp32u nSubblock=0; nSubblock<2; nSubblock++)
+//        for (uint32_t nSubblock=0; nSubblock<2; nSubblock++)
 //        {
-//            const Ipp8u     *pTableDR    = pACTablesSet->pTableDR;
-//            const Ipp8u     *pTableDL    = pACTablesSet->pTableDL;
-//            const Ipp8u     *pTableInd   = pACTablesSet->pTableInd;
-//            Ipp16s*          pSubBlock   = (Ipp16s*)((Ipp8u*)pBlock + blockStep*nSubblock*4);
+//            const uint8_t     *pTableDR    = pACTablesSet->pTableDR;
+//            const uint8_t     *pTableDL    = pACTablesSet->pTableDL;
+//            const uint8_t     *pTableInd   = pACTablesSet->pTableInd;
+//            int16_t*          pSubBlock   = (int16_t*)((uint8_t*)pBlock + blockStep*nSubblock*4);
 //
 //            if ((pattern & patMask[nSubblock])==0)
 //                continue;
@@ -275,8 +275,8 @@ namespace UMC_VC1_ENCODER
 //            //prepare runs, levels arrays
 //            for (i = 0; i<32; i++)
 //            {
-//                Ipp32s  pos    = pScanMatrix[i];
-//                Ipp16s  value = *((Ipp16s*)((Ipp8u*)pSubBlock + blockStep*(pos>>3)) + (pos&0x07));
+//                int32_t  pos    = pScanMatrix[i];
+//                int16_t  value = *((int16_t*)((uint8_t*)pSubBlock + blockStep*(pos>>3)) + (pos&0x07));
 //                if (!value)
 //                {
 //                    runs[nPairs]++;
@@ -289,15 +289,15 @@ namespace UMC_VC1_ENCODER
 //            }
 //            // put codes into bitstream
 //            i = 0;
-//            for (Ipp32s not_last = 1; not_last>=0; not_last--)
+//            for (int32_t not_last = 1; not_last>=0; not_last--)
 //            {
 //                for (; i < nPairs - not_last; i++)
 //                {
 //                    bool    sign = false;
-//                    Ipp8u   run  = runs  [i];
-//                    Ipp16s  lev  = levels[i];
+//                    uint8_t   run  = runs  [i];
+//                    int16_t  lev  = levels[i];
 //
-//                    Ipp8u mode = GetMode( run, lev, pTableDR, pTableDL, sign);
+//                    uint8_t mode = GetMode( run, lev, pTableDR, pTableDL, sign);
 //
 //                    switch (mode)
 //                    {
@@ -339,7 +339,7 @@ namespace UMC_VC1_ENCODER
 //                            err = pCodedBlock->PutBits(1,mode);                     //mode
 //                            VC1_ENC_CHECK (err)
 //                        case 0:
-//                            Ipp16s index = pTableInd[run] + lev;
+//                            int16_t index = pTableInd[run] + lev;
 //                            err = pCodedBlock->PutBits(pEncTable[2*index], pEncTable[2*index + 1]);
 //                            VC1_ENC_CHECK (err)
 //                            err = pCodedBlock->PutBits(sign, 1);
@@ -358,27 +358,27 @@ namespace UMC_VC1_ENCODER
 //        return UMC::UMC_OK;
 //   }
 //  template <class T>  UMC::Status   WriteBlockInter4x8type (T*                      pCodedBlock,
-//                                                            Ipp16s*                 pBlock,
-//                                                            Ipp32u                  blockStep,
-//                                                            const Ipp8u*            pScanMatrix,
+//                                                            int16_t*                 pBlock,
+//                                                            uint32_t                  blockStep,
+//                                                            const uint8_t*            pScanMatrix,
 //                                                            const sACTablesSet*     pACTablesSet,
 //                                                            sACEscInfo*             pACEscInfo,
-//                                                            Ipp32u                  pattern)
+//                                                            uint32_t                  pattern)
 //   {    UMC::Status     err          = UMC::UMC_OK;
-//        Ipp32s          i            = 0;
+//        int32_t          i            = 0;
 //
-//        Ipp8u           nPairs       = 0;
-//        Ipp16s          levels[33];
-//        Ipp8u           runs[33];
-//        Ipp8u           patMask[2]   = {0x0A, 0x05};
-//        const Ipp32u    *pEncTable   = pACTablesSet->pEncTable;
+//        uint8_t           nPairs       = 0;
+//        int16_t          levels[33];
+//        uint8_t           runs[33];
+//        uint8_t           patMask[2]   = {0x0A, 0x05};
+//        const uint32_t    *pEncTable   = pACTablesSet->pEncTable;
 //
-//        for (Ipp32u nSubblock=0; nSubblock<2; nSubblock++)
+//        for (uint32_t nSubblock=0; nSubblock<2; nSubblock++)
 //        {
-//            const Ipp8u     *pTableDR    = pACTablesSet->pTableDR;
-//            const Ipp8u     *pTableDL    = pACTablesSet->pTableDL;
-//            const Ipp8u     *pTableInd   = pACTablesSet->pTableInd;
-//            Ipp16s*          pSubBlock   = pBlock + 4*nSubblock;
+//            const uint8_t     *pTableDR    = pACTablesSet->pTableDR;
+//            const uint8_t     *pTableDL    = pACTablesSet->pTableDL;
+//            const uint8_t     *pTableInd   = pACTablesSet->pTableInd;
+//            int16_t*          pSubBlock   = pBlock + 4*nSubblock;
 //
 //            if ((pattern & patMask[nSubblock])==0)
 //                continue;
@@ -389,8 +389,8 @@ namespace UMC_VC1_ENCODER
 //            //prepare runs, levels arrays
 //            for (i = 0; i<32; i++)
 //            {
-//                Ipp32s  pos    = pScanMatrix[i];
-//                Ipp16s  value = *((Ipp16s*)((Ipp8u*)pSubBlock + blockStep*(pos>>2)) + (pos&0x03));
+//                int32_t  pos    = pScanMatrix[i];
+//                int16_t  value = *((int16_t*)((uint8_t*)pSubBlock + blockStep*(pos>>2)) + (pos&0x03));
 //                if (!value)
 //                {
 //                    runs[nPairs]++;
@@ -403,15 +403,15 @@ namespace UMC_VC1_ENCODER
 //            }
 //            // put codes into bitstream
 //            i = 0;
-//            for (Ipp32s not_last = 1; not_last>=0; not_last--)
+//            for (int32_t not_last = 1; not_last>=0; not_last--)
 //            {
 //                for (; i < nPairs - not_last; i++)
 //                {
 //                    bool    sign = false;
-//                    Ipp8u   run  = runs  [i];
-//                    Ipp16s  lev  = levels[i];
+//                    uint8_t   run  = runs  [i];
+//                    int16_t  lev  = levels[i];
 //
-//                    Ipp8u mode = GetMode( run, lev, pTableDR, pTableDL, sign);
+//                    uint8_t mode = GetMode( run, lev, pTableDR, pTableDL, sign);
 //
 //                    switch (mode)
 //                    {
@@ -453,7 +453,7 @@ namespace UMC_VC1_ENCODER
 //                            err = pCodedBlock->PutBits(1,mode);                     //mode
 //                            VC1_ENC_CHECK (err)
 //                        case 0:
-//                            Ipp16s index = pTableInd[run] + lev;
+//                            int16_t index = pTableInd[run] + lev;
 //                            err = pCodedBlock->PutBits(pEncTable[2*index], pEncTable[2*index + 1]);
 //                            VC1_ENC_CHECK (err)
 //                            err = pCodedBlock->PutBits(sign, 1);
@@ -473,27 +473,27 @@ namespace UMC_VC1_ENCODER
 //   }
 //
 // template <class T>  UMC::Status   WriteBlockInter4x4type  (T*                      pCodedBlock,
-//                                                            Ipp16s*                 pBlock,
-//                                                            Ipp32u                  blockStep,
-//                                                            const Ipp8u*            pScanMatrix,
+//                                                            int16_t*                 pBlock,
+//                                                            uint32_t                  blockStep,
+//                                                            const uint8_t*            pScanMatrix,
 //                                                            const sACTablesSet*     pACTablesSet,
 //                                                            sACEscInfo*             pACEscInfo,
-//                                                            Ipp32u                  pattern)
+//                                                            uint32_t                  pattern)
 //   {    UMC::Status     err          = UMC::UMC_OK;
-//        Ipp32s          i            = 0;
+//        int32_t          i            = 0;
 //
-//        Ipp8u           nPairs       = 0;
-//        Ipp16s          levels[17];
-//        Ipp8u           runs[17];
-//        const Ipp32u    *pEncTable   = pACTablesSet->pEncTable;
+//        uint8_t           nPairs       = 0;
+//        int16_t          levels[17];
+//        uint8_t           runs[17];
+//        const uint32_t    *pEncTable   = pACTablesSet->pEncTable;
 //
 //
-//        for (Ipp32u nSubblock=0; nSubblock<4; nSubblock++)
+//        for (uint32_t nSubblock=0; nSubblock<4; nSubblock++)
 //        {
-//            const Ipp8u     *pTableDR    = pACTablesSet->pTableDR;
-//            const Ipp8u     *pTableDL    = pACTablesSet->pTableDL;
-//            const Ipp8u     *pTableInd   = pACTablesSet->pTableInd;
-//            Ipp16s*          pSubBlock   = (Ipp16s*)((Ipp8u*)pBlock + blockStep*4*(nSubblock>>1))+ 4*(nSubblock&1);
+//            const uint8_t     *pTableDR    = pACTablesSet->pTableDR;
+//            const uint8_t     *pTableDL    = pACTablesSet->pTableDL;
+//            const uint8_t     *pTableInd   = pACTablesSet->pTableInd;
+//            int16_t*          pSubBlock   = (int16_t*)((uint8_t*)pBlock + blockStep*4*(nSubblock>>1))+ 4*(nSubblock&1);
 //
 //            if ((pattern & (1<<(3-nSubblock)))==0)
 //                continue;
@@ -503,8 +503,8 @@ namespace UMC_VC1_ENCODER
 //            //prepare runs, levels arrays
 //            for (i = 0; i<16; i++)
 //            {
-//                Ipp32s  pos    = pScanMatrix[i];
-//                Ipp16s  value = *((Ipp16s*)((Ipp8u*)pSubBlock + blockStep*(pos>>2)) + (pos&0x03));
+//                int32_t  pos    = pScanMatrix[i];
+//                int16_t  value = *((int16_t*)((uint8_t*)pSubBlock + blockStep*(pos>>2)) + (pos&0x03));
 //                if (!value)
 //                {
 //                    runs[nPairs]++;
@@ -517,15 +517,15 @@ namespace UMC_VC1_ENCODER
 //            }
 //            // put codes into bitstream
 //            i = 0;
-//            for (Ipp32s not_last = 1; not_last>=0; not_last--)
+//            for (int32_t not_last = 1; not_last>=0; not_last--)
 //            {
 //                for (; i < nPairs - not_last; i++)
 //                {
 //                    bool    sign = false;
-//                    Ipp8u   run  = runs  [i];
-//                    Ipp16s  lev  = levels[i];
+//                    uint8_t   run  = runs  [i];
+//                    int16_t  lev  = levels[i];
 //
-//                    Ipp8u mode = GetMode( run, lev, pTableDR, pTableDL, sign);
+//                    uint8_t mode = GetMode( run, lev, pTableDR, pTableDL, sign);
 //
 //                    switch (mode)
 //                    {
@@ -567,7 +567,7 @@ namespace UMC_VC1_ENCODER
 //                            err = pCodedBlock->PutBits(1,mode);                     //mode
 //                            VC1_ENC_CHECK (err)
 //                        case 0:
-//                            Ipp16s index = pTableInd[run] + lev;
+//                            int16_t index = pTableInd[run] + lev;
 //                            err = pCodedBlock->PutBits(pEncTable[2*index], pEncTable[2*index + 1]);
 //                            VC1_ENC_CHECK (err)
 //                            err = pCodedBlock->PutBits(sign, 1);
@@ -588,8 +588,8 @@ namespace UMC_VC1_ENCODER
 //
 //
    template <class T>
-   UMC::Status   WriteDCQuantOther (Ipp16s                  DC,
-                                    const Ipp32u*           pEncTable,
+   UMC::Status   WriteDCQuantOther (int16_t                  DC,
+                                    const uint32_t*           pEncTable,
                                     T*                      pCodedBlock)
    {
         bool            sign        = (DC<0)? 1:0;
@@ -621,14 +621,14 @@ namespace UMC_VC1_ENCODER
    }
 
    template <class T>
-   UMC::Status       WriteDCQuant1     (Ipp16s                  DC,
-                                        const Ipp32u*           pEncTable,
+   UMC::Status       WriteDCQuant1     (int16_t                  DC,
+                                        const uint32_t*           pEncTable,
                                         T*                      pCodedBlock)
    {
         bool    sign       = (DC<0)? 1:0;
 
-        Ipp16s      DC1        = 0;
-        Ipp16s      DC2        = 0;
+        int16_t      DC1        = 0;
+        int16_t      DC2        = 0;
         UMC::Status err        = UMC::UMC_OK;
 
         DC = (sign)? -DC : DC;
@@ -662,13 +662,13 @@ namespace UMC_VC1_ENCODER
         return err;
    }
    template <class T>  inline
-   UMC::Status        WriteDCQuant2     (Ipp16s                  DC,
-                                         const Ipp32u*           pEncTable,
+   UMC::Status        WriteDCQuant2     (int16_t                  DC,
+                                         const uint32_t*           pEncTable,
                                          T*                      pCodedBlock)
    {
         bool        sign       = (DC<0)? 1:0;
-        Ipp16s      DC1        = 0;
-        Ipp16s      DC2        = 0;
+        int16_t      DC1        = 0;
+        int16_t      DC2        = 0;
         UMC::Status err        = UMC::UMC_OK;
 
         DC         = (sign)? -DC : DC;
@@ -709,8 +709,8 @@ namespace UMC_VC1_ENCODER
 
      /*
    template <class T>  inline
-   UMC::Status         VC1EncoderBlock::WriteBlockDC      (  Ipp8u                   Quant,
-                                                                                const Ipp32u*           pEncTable,
+   UMC::Status         VC1EncoderBlock::WriteBlockDC      (  uint8_t                   Quant,
+                                                                                const uint32_t*           pEncTable,
                                                                                 T*                      pCodedBlock)
    {
        switch (Quant)

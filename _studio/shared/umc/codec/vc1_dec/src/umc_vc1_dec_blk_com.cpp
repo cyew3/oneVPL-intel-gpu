@@ -33,21 +33,21 @@ using namespace UMC;
 using namespace UMC::VC1Exceptions;
 
 
-inline Ipp32s DecodeSymbol(IppiBitstream* pBitstream,
-                           Ipp16s* run,
-                           Ipp16s* level,
+inline int32_t DecodeSymbol(IppiBitstream* pBitstream,
+                           int16_t* run,
+                           int16_t* level,
                            const IppiACDecodeSet_VC1 * decodeSet,
                            IppiEscInfo_VC1* EscInfo)
 {
     int ret;
-    Ipp32s sign = 0;
-    Ipp32s code = 0;
-    Ipp32s escape_mode = 0;
-    Ipp32s ESCLR = 0;
+    int32_t sign = 0;
+    int32_t code = 0;
+    int32_t escape_mode = 0;
+    int32_t ESCLR = 0;
 
-    Ipp32s tmp_run = 0;
-    Ipp32s tmp_level = 0;
-    Ipp32s last = 0;
+    int32_t tmp_run = 0;
+    int32_t tmp_level = 0;
+    int32_t last = 0;
 
     ret = DecodeHuffmanOne(&pBitstream->pBitstream,
                                       &pBitstream->bitOffset,
@@ -159,7 +159,7 @@ inline Ipp32s DecodeSymbol(IppiBitstream* pBitstream,
                     }
                     else
                     {
-                        Ipp32s bit_count = 1;
+                        int32_t bit_count = 1;
                         VC1BitstreamParser::GetNBits((pBitstream->pBitstream), (pBitstream->bitOffset), 1, EscInfo->levelSize);
                         while((EscInfo->levelSize == 0) && (bit_count < 6))
                         {
@@ -186,19 +186,19 @@ inline Ipp32s DecodeSymbol(IppiBitstream* pBitstream,
             }
         }
     }
-    (*run) = (Ipp16s)tmp_run;
-    (*level) = (Ipp16s)tmp_level;
+    (*run) = (int16_t)tmp_run;
+    (*level) = (int16_t)tmp_level;
     return last;
 }
 
 
-IppStatus DecodeBlockACIntra_VC1(IppiBitstream* pBitstream, Ipp16s* pDst,
-                 const  Ipp8u* pZigzagTbl,  const IppiACDecodeSet_VC1 * pDecodeSet,
+IppStatus DecodeBlockACIntra_VC1(IppiBitstream* pBitstream, int16_t* pDst,
+                 const  uint8_t* pZigzagTbl,  const IppiACDecodeSet_VC1 * pDecodeSet,
                  IppiEscInfo_VC1* pEscInfo)
 {
-    Ipp32s last_flag = 0;
-    Ipp16s run = 0, level = 0;
-    Ipp32s curr_position = 1;
+    int32_t last_flag = 0;
+    int16_t run = 0, level = 0;
+    int32_t curr_position = 1;
     IppStatus sts = ippStsNoErr;
 
 #ifdef VC1_VLD_CHECK
@@ -241,15 +241,15 @@ IppStatus DecodeBlockACIntra_VC1(IppiBitstream* pBitstream, Ipp16s* pDst,
 }
 
 
-IppStatus DecodeBlockInter8x8_VC1(IppiBitstream* pBitstream, Ipp16s* pDst,
-                      const  Ipp8u* pZigzagTbl,  const IppiACDecodeSet_VC1 * pDecodeSet,
-                      IppiEscInfo_VC1* pEscInfo, Ipp32s subBlockPattern)
+IppStatus DecodeBlockInter8x8_VC1(IppiBitstream* pBitstream, int16_t* pDst,
+                      const  uint8_t* pZigzagTbl,  const IppiACDecodeSet_VC1 * pDecodeSet,
+                      IppiEscInfo_VC1* pEscInfo, int32_t subBlockPattern)
 {
     (void)subBlockPattern;
 
-    Ipp32s last_flag = 0;
-    Ipp16s run = 0, level = 0;
-    Ipp32s curr_position = 0;
+    int32_t last_flag = 0;
+    int16_t run = 0, level = 0;
+    int32_t curr_position = 0;
     IppStatus sts = ippStsNoErr;
 
 #ifdef VC1_VLD_CHECK
@@ -290,13 +290,13 @@ IppStatus DecodeBlockInter8x8_VC1(IppiBitstream* pBitstream, Ipp16s* pDst,
     return sts;
 }
 
-IppStatus DecodeBlockInter4x8_VC1(IppiBitstream* pBitstream, Ipp16s* pDst,
-                      const  Ipp8u* pZigzagTbl,  const IppiACDecodeSet_VC1 * pDecodeSet,
-                      IppiEscInfo_VC1* pEscInfo, Ipp32s subBlockPattern)
+IppStatus DecodeBlockInter4x8_VC1(IppiBitstream* pBitstream, int16_t* pDst,
+                      const  uint8_t* pZigzagTbl,  const IppiACDecodeSet_VC1 * pDecodeSet,
+                      IppiEscInfo_VC1* pEscInfo, int32_t subBlockPattern)
 {
-    Ipp32s last_flag = 0;
-    Ipp16s run = 0, level = 0;
-    Ipp32s curr_position = 0;
+    int32_t last_flag = 0;
+    int16_t run = 0, level = 0;
+    int32_t curr_position = 0;
     IppStatus sts = ippStsNoErr;
 
 #ifdef VC1_VLD_CHECK
@@ -366,13 +366,13 @@ IppStatus DecodeBlockInter4x8_VC1(IppiBitstream* pBitstream, Ipp16s* pDst,
         return sts;
 }
 
-IppStatus DecodeBlockInter8x4_VC1(IppiBitstream* pBitstream, Ipp16s* pDst,
-                      const  Ipp8u* pZigzagTbl,  const IppiACDecodeSet_VC1 * pDecodeSet,
-                      IppiEscInfo_VC1* pEscInfo, Ipp32s subBlockPattern)
+IppStatus DecodeBlockInter8x4_VC1(IppiBitstream* pBitstream, int16_t* pDst,
+                      const  uint8_t* pZigzagTbl,  const IppiACDecodeSet_VC1 * pDecodeSet,
+                      IppiEscInfo_VC1* pEscInfo, int32_t subBlockPattern)
 {
-    Ipp32s last_flag = 0;
-    Ipp16s run = 0, level = 0;
-    Ipp32s curr_position = 0;
+    int32_t last_flag = 0;
+    int16_t run = 0, level = 0;
+    int32_t curr_position = 0;
     IppStatus sts = ippStsNoErr;
 
 #ifdef VC1_VLD_CHECK
@@ -444,13 +444,13 @@ IppStatus DecodeBlockInter8x4_VC1(IppiBitstream* pBitstream, Ipp16s* pDst,
         return sts;
 }
 
-IppStatus DecodeBlockInter4x4_VC1(IppiBitstream* pBitstream, Ipp16s* pDst,
-                      const  Ipp8u* pZigzagTbl,  const IppiACDecodeSet_VC1 * pDecodeSet,
-                      IppiEscInfo_VC1* pEscInfo, Ipp32s subBlockPattern)
+IppStatus DecodeBlockInter4x4_VC1(IppiBitstream* pBitstream, int16_t* pDst,
+                      const  uint8_t* pZigzagTbl,  const IppiACDecodeSet_VC1 * pDecodeSet,
+                      IppiEscInfo_VC1* pEscInfo, int32_t subBlockPattern)
 {
-    Ipp32s last_flag = 0;
-    Ipp16s run = 0, level = 0;
-    Ipp32s curr_position = 0;
+    int32_t last_flag = 0;
+    int16_t run = 0, level = 0;
+    int32_t curr_position = 0;
     IppStatus sts = ippStsNoErr;
 
 #ifdef VC1_VLD_CHECK
@@ -576,9 +576,9 @@ IppStatus DecodeBlockInter4x4_VC1(IppiBitstream* pBitstream, Ipp16s* pDst,
     return sts;
 }
 
-Ipp8u GetSubBlockPattern_8x4_4x8(VC1Context* pContext,Ipp32s blk_num)
+uint8_t GetSubBlockPattern_8x4_4x8(VC1Context* pContext,int32_t blk_num)
 {
-    Ipp32s   Value;
+    int32_t   Value;
 
     //Table 67: 8x4 and 4x8 Transform sub-block pattern code-table for Progressive pictures
     //              8x4 Sub-block pattern       4x8 Sub-block pattern
@@ -609,14 +609,14 @@ Ipp8u GetSubBlockPattern_8x4_4x8(VC1Context* pContext,Ipp32s blk_num)
                 VM_STRING("Sub-block pattern 4x8|8x4: %d\n"), Value);
 #endif
 
-    pContext->m_pSingleMB->m_pSingleBlock[blk_num].numCoef = (Ipp8u)Value;
-    return ((Ipp8u)Value);
+    pContext->m_pSingleMB->m_pSingleBlock[blk_num].numCoef = (uint8_t)Value;
+    return ((uint8_t)Value);
 }
 
-Ipp8u GetSubBlockPattern_4x4(VC1Context* pContext,Ipp32s blk_num)
+uint8_t GetSubBlockPattern_4x4(VC1Context* pContext,int32_t blk_num)
 {
     int ret;
-    Ipp32s   Value;
+    int32_t   Value;
 
     ret = DecodeHuffmanOne(   &pContext->m_bitstream.pBitstream,
         &pContext->m_bitstream.bitOffset,
@@ -628,7 +628,7 @@ Ipp8u GetSubBlockPattern_4x4(VC1Context* pContext,Ipp32s blk_num)
         throw vc1_exception(vld);
 #endif
 
-    pContext->m_pSingleMB->m_pSingleBlock[blk_num].numCoef = (Ipp8u)Value;
+    pContext->m_pSingleMB->m_pSingleBlock[blk_num].numCoef = (uint8_t)Value;
 
 #ifdef VC1_DEBUG_ON
     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_TT,
@@ -636,16 +636,16 @@ Ipp8u GetSubBlockPattern_4x4(VC1Context* pContext,Ipp32s blk_num)
         pContext->m_pSingleMB->m_pSingleBlock[blk_num].numCoef);
 #endif
 
-    return ((Ipp8u)Value);
+    return ((uint8_t)Value);
 }
 
-Ipp8u GetTTBLK(VC1Context* pContext, Ipp32s blk_num)
+uint8_t GetTTBLK(VC1Context* pContext, int32_t blk_num)
 {
     int ret;
-    Ipp32s Value;
+    int32_t Value;
     VC1MB *pMB = pContext->m_pCurrMB;
     VC1Block *pBlock = &pMB->m_pBlocks[blk_num];
-    Ipp8u numCoef = 0;
+    uint8_t numCoef = 0;
 
     ret = DecodeHuffmanOne(   &pContext->m_bitstream.pBitstream,
                                         &pContext->m_bitstream.bitOffset,
@@ -706,9 +706,9 @@ Ipp8u GetTTBLK(VC1Context* pContext, Ipp32s blk_num)
     return numCoef;
 }
 
-Ipp32u GetDCStepSize(Ipp32s MQUANT)
+uint32_t GetDCStepSize(int32_t MQUANT)
 {
-    Ipp32u DCStepSize;
+    uint32_t DCStepSize;
 
     if(MQUANT < 4)
         DCStepSize = 1 << MQUANT;
@@ -719,28 +719,28 @@ Ipp32u GetDCStepSize(Ipp32s MQUANT)
 }
 
 #ifdef _OWN_FUNCTION
-IppStatus _own_ippiQuantInvIntraUniform_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32s srcDstStep,
-                                                  Ipp32s doubleQuant, IppiSize* pDstSizeNZ)
+IppStatus _own_ippiQuantInvIntraUniform_VC1_16s_C1IR(int16_t* pSrcDst, int32_t srcDstStep,
+                                                  int32_t doubleQuant, mfxSize* pDstSizeNZ)
 {
-    Ipp32s i = 1;
-    Ipp32s j = 0;
-    Ipp32s X[8] = {0};
-    Ipp32s Y[8] = {0};
-    Ipp16s S;
+    int32_t i = 1;
+    int32_t j = 0;
+    int32_t X[8] = {0};
+    int32_t Y[8] = {0};
+    int16_t S;
 
-    Ipp16s* pSrc = pSrcDst;
+    int16_t* pSrc = pSrcDst;
 
     for(j = 0; j < 8; j++)
     {
        for(i; i < 8; i++)
        {
-           pSrc[i] = (Ipp16s)(pSrc[i]*doubleQuant);
+           pSrc[i] = (int16_t)(pSrc[i]*doubleQuant);
            S = !pSrc[i] ;
            X[i] = X[i] + S;
            Y[j] = Y[j] + S;
        }
        i = 0;
-       pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcDstStep);
+       pSrc = (int16_t*)((uint8_t*)pSrc + srcDstStep);
     }
 
     for(i=7; i>=0 && X[i]==8; i--);
@@ -754,15 +754,15 @@ IppStatus _own_ippiQuantInvIntraUniform_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32s src
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiQuantInvIntraNonuniform_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32s srcDstStep,
-                                                          Ipp32s doubleQuant, IppiSize* pDstSizeNZ)
+IppStatus _own_ippiQuantInvIntraNonuniform_VC1_16s_C1IR(int16_t* pSrcDst, int32_t srcDstStep,
+                                                          int32_t doubleQuant, mfxSize* pDstSizeNZ)
 {
-    Ipp32s i = 1;
-    Ipp32s j = 0;
-    Ipp16s* pSrc = pSrcDst;
-    Ipp32s X[8] = {0};
-    Ipp32s Y[8] = {0};
-    Ipp16s S;
+    int32_t i = 1;
+    int32_t j = 0;
+    int16_t* pSrc = pSrcDst;
+    int32_t X[8] = {0};
+    int32_t Y[8] = {0};
+    int16_t S;
 
 
 
@@ -770,13 +770,13 @@ IppStatus _own_ippiQuantInvIntraNonuniform_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32s 
     {
         for(i; i < 8; i++)
         {
-            pSrc[i] = (Ipp16s)(pSrc[i]*doubleQuant) + (Ipp16s)(VC1_SIGN(pSrc[i])*(doubleQuant>>1));
+            pSrc[i] = (int16_t)(pSrc[i]*doubleQuant) + (int16_t)(VC1_SIGN(pSrc[i])*(doubleQuant>>1));
             S = !pSrc[i] ;
             X[i] = X[i] + S;
             Y[j] = Y[j] + S;
         }
         i = 0;
-        pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcDstStep);
+        pSrc = (int16_t*)((uint8_t*)pSrc + srcDstStep);
     }
 
     for(i=7; i>=0 && X[i]==8; i--);
@@ -789,28 +789,28 @@ IppStatus _own_ippiQuantInvIntraNonuniform_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32s 
 
     return ippStsNoErr;
 }
-IppStatus _own_ippiQuantInvInterUniform_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32s srcDstStep,
-                                                       Ipp32s doubleQuant, IppiSize roiSize,
-                                                       IppiSize* pDstSizeNZ)
+IppStatus _own_ippiQuantInvInterUniform_VC1_16s_C1IR(int16_t* pSrcDst, int32_t srcDstStep,
+                                                       int32_t doubleQuant, mfxSize roiSize,
+                                                       mfxSize* pDstSizeNZ)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s X[8] = {0};
-    Ipp32s Y[8] = {0};
-    Ipp16s S;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t X[8] = {0};
+    int32_t Y[8] = {0};
+    int16_t S;
 
-    Ipp16s* pSrc = pSrcDst;
+    int16_t* pSrc = pSrcDst;
 
     for(j = 0; j < roiSize.height; j++)
     {
        for(i = 0; i < roiSize.width; i++)
        {
-           pSrc[i] = (Ipp16s)(pSrc[i]*doubleQuant);
+           pSrc[i] = (int16_t)(pSrc[i]*doubleQuant);
            S = !pSrc[i] ;
            X[i] = X[i] + S;
            Y[j] = Y[j] + S;
        }
-       pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcDstStep);
+       pSrc = (int16_t*)((uint8_t*)pSrc + srcDstStep);
     }
 
     for(i=7; i>=0 && X[i]==8; i--);
@@ -823,29 +823,29 @@ IppStatus _own_ippiQuantInvInterUniform_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32s src
 
     return ippStsNoErr;
 }
-IppStatus _own_ippiQuantInvInterNonuniform_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32s srcDstStep,
-                                                          Ipp32s doubleQuant, IppiSize roiSize,
-                                                          IppiSize* pDstSizeNZ)
+IppStatus _own_ippiQuantInvInterNonuniform_VC1_16s_C1IR(int16_t* pSrcDst, int32_t srcDstStep,
+                                                          int32_t doubleQuant, mfxSize roiSize,
+                                                          mfxSize* pDstSizeNZ)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp16s* pSrc = pSrcDst;
-    Ipp32s X[8] = {0};
-    Ipp32s Y[8] = {0};
-    Ipp16s S;
+    int32_t i = 0;
+    int32_t j = 0;
+    int16_t* pSrc = pSrcDst;
+    int32_t X[8] = {0};
+    int32_t Y[8] = {0};
+    int16_t S;
 
 
     for(j = 0; j < roiSize.height; j++)
     {
         for(i; i < roiSize.width; i++)
         {
-            pSrc[i] = (Ipp16s)(pSrc[i]*doubleQuant) + (Ipp16s)(VC1_SIGN(pSrc[i])*(doubleQuant>>1));
+            pSrc[i] = (int16_t)(pSrc[i]*doubleQuant) + (int16_t)(VC1_SIGN(pSrc[i])*(doubleQuant>>1));
             S = !pSrc[i] ;
             X[i] = X[i] + S;
             Y[j] = Y[j] + S;
         }
         i = 0;
-        pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcDstStep);
+        pSrc = (int16_t*)((uint8_t*)pSrc + srcDstStep);
     }
 
     for(i=7; i>=0 && X[i]==8; i--);

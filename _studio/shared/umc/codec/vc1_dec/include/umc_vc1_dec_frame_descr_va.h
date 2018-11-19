@@ -63,39 +63,39 @@ namespace UMC
 
         void VC1PackOneSlice                      (VC1Context* pContext,
                                                    SliceParams* slparams,
-                                                   Ipp32u SliceBufIndex,
-                                                   Ipp32u MBOffset,
-                                                   Ipp32u SliceDataSize,
-                                                   Ipp32u StartCodeOffset,
-                                                   Ipp32u ChoppingType);//compatibility with Windows code
+                                                   uint32_t SliceBufIndex,
+                                                   uint32_t MBOffset,
+                                                   uint32_t SliceDataSize,
+                                                   uint32_t StartCodeOffset,
+                                                   uint32_t ChoppingType);//compatibility with Windows code
 
         void  VC1PackWholeSliceSM                   (VC1Context* pContext,
-                                                     Ipp32u MBOffset,
-                                                     Ipp32u SliceDataSize);
-        void   VC1PackBitStreamForOneSlice          (VC1Context* pContext, Ipp32u Size);
+                                                     uint32_t MBOffset,
+                                                     uint32_t SliceDataSize);
+        void   VC1PackBitStreamForOneSlice          (VC1Context* pContext, uint32_t Size);
 
-        Ipp32u   VC1PackBitStream             (VC1Context* pContext,
-                                                Ipp32u& Size,
-                                                Ipp8u* pOriginalData,
-                                                Ipp32u OriginalSize,
-                                                Ipp32u ByteOffset,
-                                                Ipp8u& Flag_03)
+        uint32_t   VC1PackBitStream             (VC1Context* pContext,
+                                                uint32_t& Size,
+                                                uint8_t* pOriginalData,
+                                                uint32_t OriginalSize,
+                                                uint32_t ByteOffset,
+                                                uint8_t& Flag_03)
         {
             return VC1PackBitStreamAdv(pContext, Size, pOriginalData, OriginalSize, ByteOffset, Flag_03);
         }
 
-         Ipp32u VC1PackBitStreamAdv (VC1Context* pContext, Ipp32u& Size,Ipp8u* pOriginalData,
-                                   Ipp32u OriginalDataSize, Ipp32u ByteOffset, Ipp8u& Flag_03);
+         uint32_t VC1PackBitStreamAdv (VC1Context* pContext, uint32_t& Size,uint8_t* pOriginalData,
+                                   uint32_t OriginalDataSize, uint32_t ByteOffset, uint8_t& Flag_03);
 
         void   VC1PackBitplaneBuffers               (VC1Context* pContext);
 
         void   VC1SetSliceBuffer(){};
-        void   VC1SetSliceParamBuffer(Ipp32u* pOffsets, Ipp32u* pValues);
-        void   VC1SetSliceDataBuffer(Ipp32s size);
-        void   VC1SetBitplaneBuffer(Ipp32s size);
+        void   VC1SetSliceParamBuffer(uint32_t* pOffsets, uint32_t* pValues);
+        void   VC1SetSliceDataBuffer(int32_t size);
+        void   VC1SetBitplaneBuffer(int32_t size);
         void   VC1SetPictureBuffer();
 
-        void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex);
+        void   VC1SetBuffersSize                    (uint32_t SliceBufIndex);
         void   VC1SetBuffersSize() {};
 
         void   SetVideoAccelerator                  (VideoAccelerator*  va)
@@ -106,11 +106,11 @@ namespace UMC
         void MarkFrameAsSkip() {m_bIsPreviousSkip = true;}
         bool IsPrevFrameIsSkipped() {return m_bIsPreviousSkip;}
 
-        Ipp32u VC1GetPicHeaderSize(Ipp8u* pOriginalData, size_t Offset, Ipp8u& Flag_03)
+        uint32_t VC1GetPicHeaderSize(uint8_t* pOriginalData, size_t Offset, uint8_t& Flag_03)
         {
-            Ipp32u i = 0;
-            Ipp32u numZero = 0;
-            Ipp8u* ptr = pOriginalData;
+            uint32_t i = 0;
+            uint32_t numZero = 0;
+            uint8_t* ptr = pOriginalData;
             for(i = 0; i < Offset; i++)
             {
                 if(*ptr == 0)
@@ -137,27 +137,27 @@ namespace UMC
                 if((*(ptr+2) == 0) && (*(ptr+3) == 0) && (*(ptr+4) == 0x03) && (*(ptr+5) < 4))
                     Flag_03 = 5;
 
-                return ((Ipp32u)(ptr - pOriginalData) + 1);
+                return ((uint32_t)(ptr - pOriginalData) + 1);
             }
             else if((*ptr == 0) && (*(ptr+1) == 0) && (*(ptr+2) == 0x03)&& (*(ptr+3) < 4))
             {
                 Flag_03 = 2;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
             else if((*(ptr + 1) == 0) && (*(ptr+2) == 0) && (*(ptr+3) == 0x03)&& (*(ptr+4) < 4)&& (*(ptr+5) > 3))
             {
                 Flag_03 = 3;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
             else if((*(ptr + 2) == 0) && (*(ptr+3) == 0) && (*(ptr+4) == 0x03)&& (*(ptr+5) < 4))
             {
                 Flag_03 = 4;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
             else
             {
                 Flag_03 = 0;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
 
         }
@@ -166,7 +166,7 @@ namespace UMC
 
         // we sure about our types
         template <class T, class T1>
-        static T bit_set(T value, Ipp32u offset, Ipp32u count, T1 in)
+        static T bit_set(T value, uint32_t offset, uint32_t count, T1 in)
         {
             return (T)(value | (((1<<count) - 1)&in) << offset);
         };
@@ -206,24 +206,24 @@ namespace UMC
 
         void VC1PackOneSlice                      (VC1Context* pContext,
                                                    SliceParams* slparams,
-                                                   Ipp32u SliceBufIndex,
-                                                   Ipp32u Offset,
-                                                   Ipp32u SliceDataSize,
-                                                   Ipp32u StartCodeOffset,
-                                                   Ipp32u ChoppingType);
+                                                   uint32_t SliceBufIndex,
+                                                   uint32_t Offset,
+                                                   uint32_t SliceDataSize,
+                                                   uint32_t StartCodeOffset,
+                                                   uint32_t ChoppingType);
 
         void  VC1PackWholeSliceSM                   (VC1Context* pContext,
-                                                     Ipp32u MBOffset,
-                                                     Ipp32u SliceDataSize);
+                                                     uint32_t MBOffset,
+                                                     uint32_t SliceDataSize);
 
-        void   VC1PackBitStreamForOneSlice          (VC1Context* pContext, Ipp32u Size);
+        void   VC1PackBitStreamForOneSlice          (VC1Context* pContext, uint32_t Size);
         //return remain unpacked bitstream data
-        Ipp32u   VC1PackBitStream                     (VC1Context* pContext,
-                                                       Ipp32u Size,
-                                                       Ipp8u* pOriginalData,
-                                                       Ipp32u ByteOffset,
-                                                       Ipp32u ,
-                                                       Ipp8u& )
+        uint32_t   VC1PackBitStream                     (VC1Context* pContext,
+                                                       uint32_t Size,
+                                                       uint8_t* pOriginalData,
+                                                       uint32_t ByteOffset,
+                                                       uint32_t ,
+                                                       uint8_t& )
         {
             if (VC1_PROFILE_ADVANCED != pContext->m_seqLayerHeader.PROFILE)
                 return VC1PackBitStreamSM(Size, pOriginalData, ByteOffset);
@@ -237,7 +237,7 @@ namespace UMC
         void   VC1SetPictureBuffer();
 
         void   VC1SetExtPictureBuffer() {};
-        void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex);
+        void   VC1SetBuffersSize                    (uint32_t SliceBufIndex);
 
         void   SetVideoAccelerator                  (VideoAccelerator*  va)
         {
@@ -246,14 +246,14 @@ namespace UMC
         };
         // we sure about our types
         template <class T, class T1>
-        static T bit_set(T value, Ipp32u offset, Ipp32u count, T1 in)
+        static T bit_set(T value, uint32_t offset, uint32_t count, T1 in)
         {
             return (T)(value | (((1<<count) - 1)&in) << offset);
         };
         void MarkFrameAsSkip() {m_bIsPreviousSkip = true;}
         bool IsPrevFrameIsSkipped() {return m_bIsPreviousSkip;}
 
-        Ipp32u VC1GetPicHeaderSize(Ipp8u* , Ipp32u , Ipp8u& )
+        uint32_t VC1GetPicHeaderSize(uint8_t* , uint32_t , uint8_t& )
         {
             // compatibility only
             return 0;
@@ -261,14 +261,14 @@ namespace UMC
 
     protected:
 
-       Ipp32u VC1PackBitStreamSM (Ipp32u Size,
-                                              Ipp8u* pOriginalData,
-                                              Ipp32u ByteOffset);
+       uint32_t VC1PackBitStreamSM (uint32_t Size,
+                                              uint8_t* pOriginalData,
+                                              uint32_t ByteOffset);
 
-       Ipp32u VC1PackBitStreamAdv (VC1Context* pContext,
-                                   Ipp32u Size,
-                                   Ipp8u* pOriginalData,
-                                   Ipp32u ByteOffset);
+       uint32_t VC1PackBitStreamAdv (VC1Context* pContext,
+                                   uint32_t Size,
+                                   uint8_t* pOriginalData,
+                                   uint32_t ByteOffset);
         void VC1PackPicParams (VC1Context* pContext)
         {
             VC1PackPicParams(pContext,m_pPicPtr,m_va);
@@ -307,19 +307,19 @@ namespace UMC
 
         virtual void VC1PackerDXVA_EagleLake::VC1PackOneSlice  (VC1Context* pContext,
                                           SliceParams* slparams,
-                                          Ipp32u BufIndex, // only in future realisations
-                                          Ipp32u MBOffset,
-                                          Ipp32u SliceDataSize,
-                                          Ipp32u StartCodeOffset,
-                                          Ipp32u ChoppingType);
+                                          uint32_t BufIndex, // only in future realisations
+                                          uint32_t MBOffset,
+                                          uint32_t SliceDataSize,
+                                          uint32_t StartCodeOffset,
+                                          uint32_t ChoppingType);
 
         virtual void   VC1SetExtPictureBuffer();
-        virtual void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex);
-        Ipp32u VC1GetPicHeaderSize(Ipp8u* pOriginalData, size_t Offset, Ipp8u& Flag_03)
+        virtual void   VC1SetBuffersSize                    (uint32_t SliceBufIndex);
+        uint32_t VC1GetPicHeaderSize(uint8_t* pOriginalData, size_t Offset, uint8_t& Flag_03)
         {
-            Ipp32u i = 0;
-            Ipp32u numZero = 0;
-            Ipp8u* ptr = pOriginalData;
+            uint32_t i = 0;
+            uint32_t numZero = 0;
+            uint8_t* ptr = pOriginalData;
             for(i = 0; i < Offset; i++)
             {
                 if(*ptr == 0)
@@ -346,43 +346,43 @@ namespace UMC
                 if((*(ptr+2) == 0) && (*(ptr+3) == 0) && (*(ptr+4) == 0x03) && (*(ptr+5) < 4))
                     Flag_03 = 5;
 
-                return ((Ipp32u)(ptr - pOriginalData) + 1);
+                return ((uint32_t)(ptr - pOriginalData) + 1);
             }
             else if((*ptr == 0) && (*(ptr+1) == 0) && (*(ptr+2) == 0x03)&& (*(ptr+3) < 4))
             {
                 Flag_03 = 2;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
             else if((*(ptr + 1) == 0) && (*(ptr+2) == 0) && (*(ptr+3) == 0x03)&& (*(ptr+4) < 4)&& (*(ptr+5) > 3))
             {
                 Flag_03 = 3;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
             else if((*(ptr + 2) == 0) && (*(ptr+3) == 0) && (*(ptr+4) == 0x03)&& (*(ptr+5) < 4))
             {
                 Flag_03 = 4;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
             else
             {
                 Flag_03 = 0;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
 
         }
 
-        virtual Ipp32u   VC1PackBitStream             (VC1Context* pContext,
-                                                       Ipp32u& Size,
-                                                       Ipp8u* pOriginalData,
-                                                       Ipp32u OriginalSize,
-                                                       Ipp32u ByteOffset,
-                                                       Ipp8u& Flag_03)
+        virtual uint32_t   VC1PackBitStream             (VC1Context* pContext,
+                                                       uint32_t& Size,
+                                                       uint8_t* pOriginalData,
+                                                       uint32_t OriginalSize,
+                                                       uint32_t ByteOffset,
+                                                       uint8_t& Flag_03)
         {
             return VC1PackBitStreamAdv(pContext, Size, pOriginalData, OriginalSize, ByteOffset, Flag_03);
         }
 
-       virtual Ipp32u VC1PackBitStreamAdv (VC1Context* pContext, Ipp32u& Size,Ipp8u* pOriginalData,
-                                   Ipp32u OriginalDataSize, Ipp32u ByteOffset, Ipp8u& Flag_03);
+       virtual uint32_t VC1PackBitStreamAdv (VC1Context* pContext, uint32_t& Size,uint8_t* pOriginalData,
+                                   uint32_t OriginalDataSize, uint32_t ByteOffset, uint8_t& Flag_03);
 
         virtual void VC1PackBitplaneBuffers(VC1Context* pContext);
 
@@ -423,41 +423,41 @@ namespace UMC
 
         virtual void VC1PackerDXVA_Protected::VC1PackOneSlice  (VC1Context* pContext,
             SliceParams* slparams,
-            Ipp32u BufIndex, // only in future realisations
-            Ipp32u MBOffset,
-            Ipp32u SliceDataSize,
-            Ipp32u StartCodeOffset,
-            Ipp32u ChoppingType);
+            uint32_t BufIndex, // only in future realisations
+            uint32_t MBOffset,
+            uint32_t SliceDataSize,
+            uint32_t StartCodeOffset,
+            uint32_t ChoppingType);
 
         virtual void   VC1SetExtPictureBuffer();
-        virtual void   VC1SetBuffersSize                    (Ipp32u SliceBufIndex);
+        virtual void   VC1SetBuffersSize                    (uint32_t SliceBufIndex);
 
-         virtual Ipp32u   VC1PackBitStream(VC1Context* pContext,
-                                                       Ipp32u& Size,
-                                                       Ipp8u* pOriginalData,
-                                                       Ipp32u OriginalSize,
-                                                       Ipp32u ByteOffset,
-                                                       Ipp8u& Flag_03)
+         virtual uint32_t   VC1PackBitStream(VC1Context* pContext,
+                                                       uint32_t& Size,
+                                                       uint8_t* pOriginalData,
+                                                       uint32_t OriginalSize,
+                                                       uint32_t ByteOffset,
+                                                       uint8_t& Flag_03)
         {
             if (VC1_PROFILE_ADVANCED == pContext->m_seqLayerHeader.PROFILE)
                 return VC1PackBitStreamAdv(pContext, Size, pOriginalData, OriginalSize, ByteOffset, Flag_03);
             else
                 return 0;
                 }
-        Ipp32u VC1PackerDXVA_Protected::VC1PackBitStreamAdv (VC1Context* pContext,
-                                                       Ipp32u& Size,
-                                                       Ipp8u* pOriginalData,
-                                                       Ipp32u OriginalSize,
-                                                       Ipp32u ByteOffset,
-                                                       Ipp8u& Flag_03);
+        uint32_t VC1PackerDXVA_Protected::VC1PackBitStreamAdv (VC1Context* pContext,
+                                                       uint32_t& Size,
+                                                       uint8_t* pOriginalData,
+                                                       uint32_t OriginalSize,
+                                                       uint32_t ByteOffset,
+                                                       uint8_t& Flag_03);
 
         virtual void VC1PackBitplaneBuffers(VC1Context* pContext);
 
-        Ipp32u VC1GetPicHeaderSize(Ipp8u* pOriginalData, size_t Offset, Ipp8u& Flag_03)
+        uint32_t VC1GetPicHeaderSize(uint8_t* pOriginalData, size_t Offset, uint8_t& Flag_03)
         {
-            Ipp32u i = 0;
-            Ipp32u numZero = 0;
-            Ipp8u* ptr = pOriginalData;
+            uint32_t i = 0;
+            uint32_t numZero = 0;
+            uint8_t* ptr = pOriginalData;
             for(i = 0; i < Offset; i++)
             {
                 if(*ptr == 0)
@@ -484,27 +484,27 @@ namespace UMC
                 if((*(ptr+2) == 0) && (*(ptr+3) == 0) && (*(ptr+4) == 0x03) && (*(ptr+5) < 4))
                     Flag_03 = 5;
 
-                return ((Ipp32u)(ptr - pOriginalData) + 1);
+                return ((uint32_t)(ptr - pOriginalData) + 1);
             }
             else if((*ptr == 0) && (*(ptr+1) == 0) && (*(ptr+2) == 0x03)&& (*(ptr+3) < 4))
             {
                 Flag_03 = 2;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
             else if((*(ptr + 1) == 0) && (*(ptr+2) == 0) && (*(ptr+3) == 0x03)&& (*(ptr+4) < 4)&& (*(ptr+5) > 3))
             {
                 Flag_03 = 3;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
             else if((*(ptr + 2) == 0) && (*(ptr+3) == 0) && (*(ptr+4) == 0x03)&& (*(ptr+5) < 4))
             {
                 Flag_03 = 4;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
             else
             {
                 Flag_03 = 0;
-                return (Ipp32u)(ptr - pOriginalData);
+                return (uint32_t)(ptr - pOriginalData);
             }
         }
 
@@ -538,10 +538,10 @@ namespace UMC
         {
         }
 
-        virtual bool Init                        (Ipp32u         DescriporID,
+        virtual bool Init                        (uint32_t         DescriporID,
                                                   VC1Context*    pContext,
                                                   VC1TaskStore*  pStore,
-                                                  Ipp16s*)
+                                                  int16_t*)
         {
             VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
             m_pStore = pStore;
@@ -549,7 +549,7 @@ namespace UMC
 
             if (m_va->m_Profile == VC1_VLD)
             {
-                Ipp32u buffSize =  (seqLayerHeader->heightMB*VC1_PIXEL_IN_LUMA + 128)*
+                uint32_t buffSize =  (seqLayerHeader->heightMB*VC1_PIXEL_IN_LUMA + 128)*
                     (seqLayerHeader->widthMB*VC1_PIXEL_IN_LUMA + 128)+
                     ((seqLayerHeader->heightMB*VC1_PIXEL_IN_CHROMA + 64)*
                     (seqLayerHeader->widthMB*VC1_PIXEL_IN_CHROMA + 64))*2;
@@ -580,11 +580,11 @@ namespace UMC
                 if(m_pContext->m_pBufferStart == NULL)
                 {
                     if (m_pMemoryAllocator->Alloc(&m_ipBufferStartID,
-                                                    buffSize*sizeof(Ipp8u),
+                                                    buffSize*sizeof(uint8_t),
                                                     UMC_ALLOC_PERSISTENT,
                                                     16) != UMC_OK)
                                                     return false;
-                    m_pContext->m_pBufferStart = (Ipp8u*)(m_pMemoryAllocator->Lock(m_ipBufferStartID));
+                    m_pContext->m_pBufferStart = (uint8_t*)(m_pMemoryAllocator->Lock(m_ipBufferStartID));
                     if(m_pContext->m_pBufferStart==NULL)
                     {
                         Release();
@@ -632,13 +632,13 @@ namespace UMC
                 if(m_pContext->m_pBitplane.m_databits == NULL)
                 {
                     if (m_pMemoryAllocator->Alloc(&m_iBitplaneID,
-                                                    sizeof(Ipp8u)*seqLayerHeader->heightMB*
+                                                    sizeof(uint8_t)*seqLayerHeader->heightMB*
                                                     seqLayerHeader->widthMB*
                                                     VC1_MAX_BITPANE_CHUNCKS,
                                                     UMC_ALLOC_PERSISTENT,
                                                     16) != UMC_OK)
                                                     return false;
-                    m_pContext->m_pBitplane.m_databits = (Ipp8u*)(m_pMemoryAllocator->Lock(m_iBitplaneID));
+                    m_pContext->m_pBitplane.m_databits = (uint8_t*)(m_pMemoryAllocator->Lock(m_iBitplaneID));
                     if(m_pContext->m_pBitplane.m_databits==NULL)
                     {
                         Release();
@@ -646,7 +646,7 @@ namespace UMC
                     }
                 }
 
-                memset(m_pContext->m_pBitplane.m_databits, 0,sizeof(Ipp8u)*seqLayerHeader->heightMB*
+                memset(m_pContext->m_pBitplane.m_databits, 0,sizeof(uint8_t)*seqLayerHeader->heightMB*
                     seqLayerHeader->widthMB*
                     VC1_MAX_BITPANE_CHUNCKS);
 
@@ -696,37 +696,37 @@ namespace UMC
                 }
             }
         }
-        void VC1PackSlices    (Ipp32u*  pOffsets,
-                               Ipp32u*  pValues,
-                               Ipp8u*   pOriginalData,
+        void VC1PackSlices    (uint32_t*  pOffsets,
+                               uint32_t*  pValues,
+                               uint8_t*   pOriginalData,
                                MediaDataEx::_MediaDataEx* pOrigStCodes)
 
         {
-            Ipp32u PicHeaderFlag;
-            Ipp32u* pPictHeader = m_pContext->m_bitstream.pBitstream;
-            Ipp32u temp_value = 0;
-            Ipp32u* bitstream;
-            Ipp32s bitoffset = 31;
-            Ipp32u SliceSize = 0;
+            uint32_t PicHeaderFlag;
+            uint32_t* pPictHeader = m_pContext->m_bitstream.pBitstream;
+            uint32_t temp_value = 0;
+            uint32_t* bitstream;
+            int32_t bitoffset = 31;
+            uint32_t SliceSize = 0;
 
-            Ipp32u* pOriginalOffsets = pOrigStCodes->offsets;
+            uint32_t* pOriginalOffsets = pOrigStCodes->offsets;
 
-            Ipp32u StartCodeOffset = 0;
+            uint32_t StartCodeOffset = 0;
 
             // need in case of fields
-            Ipp32u* pFirstFieldStartCode = m_pContext->m_bitstream.pBitstream;
-            Ipp32u Offset;
+            uint32_t* pFirstFieldStartCode = m_pContext->m_bitstream.pBitstream;
+            uint32_t Offset;
 
-            Ipp32u RemBytesInSlice = 0;
+            uint32_t RemBytesInSlice = 0;
 
             bool isSecondField = false;
             m_iSliceBufIndex = 0;
             m_iPicBufIndex = 0;
 
-            Ipp32u MBEndRowOfAlreadyExec = 0;
+            uint32_t MBEndRowOfAlreadyExec = 0;
 
             SliceParams slparams;
-            Ipp8u  Flag_03 = 0;
+            uint8_t  Flag_03 = 0;
 
             memset(&slparams,0,sizeof(SliceParams));
             slparams.MBStartRow = 0;
@@ -764,12 +764,12 @@ namespace UMC
 
             if (m_pContext->m_seqLayerHeader.PROFILE != VC1_PROFILE_ADVANCED)
             {
-                Offset = (Ipp32u) (sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - m_pBufferStart)); // offset in words
+                Offset = (uint32_t) (sizeof(uint32_t)*(m_pContext->m_bitstream.pBitstream - m_pBufferStart)); // offset in words
                 SliceSize = m_pContext->m_FrameSize - VC1FHSIZE;
 
                 {
-                    Ipp32u chopType = 1;
-                    Ipp32u BytesAlreadyExecuted = 0;
+                    uint32_t chopType = 1;
+                    uint32_t BytesAlreadyExecuted = 0;
                     RemBytesInSlice  = m_pPacker.VC1PackBitStream(m_pContext,
                         SliceSize,
                         pOriginalData,
@@ -778,7 +778,7 @@ namespace UMC
                     slparams.m_bitOffset = m_pContext->m_bitstream.bitOffset;
                     if (RemBytesInSlice)
                     {
-                        Ipp32u ByteFilledInSlice = SliceSize - RemBytesInSlice;
+                        uint32_t ByteFilledInSlice = SliceSize - RemBytesInSlice;
                         MBEndRowOfAlreadyExec = slparams.MBEndRow;
 
                         // fill slices
@@ -851,7 +851,7 @@ namespace UMC
             }
             if (*(pValues+1) == 0x0B010000)
             {
-                bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets+1));
+                bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets+1));
                 VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                 bitoffset = 31;
                 VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);     //SLICE_ADDR
@@ -866,7 +866,7 @@ namespace UMC
             slparams.MBRowsToDecode = slparams.MBEndRow-slparams.MBStartRow;
             slparams.MBRowsToDecode = slparams.MBEndRow-slparams.MBStartRow;
             slparams.m_bitOffset = m_pContext->m_bitstream.bitOffset;
-            Offset = (Ipp32u) (sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)); // offset in bytes
+            Offset = (uint32_t) (sizeof(uint32_t)*(m_pContext->m_bitstream.pBitstream - pPictHeader)); // offset in bytes
 
             if (*(pOffsets+1))
                 SliceSize = *(pOriginalOffsets+1) - *pOriginalOffsets;
@@ -874,8 +874,8 @@ namespace UMC
                 SliceSize = m_pContext->m_FrameSize;
 
             {
-                Ipp32u chopType = 1;
-                Ipp32u BytesAlreadyExecuted = 0;
+                uint32_t chopType = 1;
+                uint32_t BytesAlreadyExecuted = 0;
                 RemBytesInSlice  = m_pPacker.VC1PackBitStream(m_pContext,
                                                               SliceSize,
                                                               pOriginalData,
@@ -883,7 +883,7 @@ namespace UMC
                                                               true, Flag_03);
                 if (RemBytesInSlice)
                 {
-                    Ipp32u ByteFilledInSlice = SliceSize - RemBytesInSlice;
+                    uint32_t ByteFilledInSlice = SliceSize - RemBytesInSlice;
                     MBEndRowOfAlreadyExec = slparams.MBEndRow;
 
                     // fill slices
@@ -1009,14 +1009,14 @@ namespace UMC
                     //m_iPicBufIndex = 0;
                     isSecondField = true;
                     // set swap bitstream for parsing
-                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *pOffsets);
+                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *pOffsets);
                     m_pContext->m_bitstream.pBitstream += 1; // skip start code
                     m_pContext->m_bitstream.bitOffset = 31;
                     pPictHeader = m_pContext->m_bitstream.pBitstream;
 
                     ++m_pContext->m_picLayerHeader;
                     *m_pContext->m_picLayerHeader = *m_pContext->m_InitPicLayer;
-                    m_pContext->m_picLayerHeader->BottomField = (Ipp8u)m_pContext->m_InitPicLayer->TFF;
+                    m_pContext->m_picLayerHeader->BottomField = (uint8_t)m_pContext->m_InitPicLayer->TFF;
                     m_pContext->m_picLayerHeader->PTYPE = m_pContext->m_InitPicLayer->PTypeField2;
                     m_pContext->m_picLayerHeader->CurrField = 1;
 
@@ -1026,7 +1026,7 @@ namespace UMC
 
                     if (*(pOffsets+1) && *(pValues+1) == 0x0B010000)
                     {
-                        bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets+1));
+                        bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets+1));
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                         bitoffset = 31;
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
@@ -1037,12 +1037,12 @@ namespace UMC
                     ++m_iPicBufIndex;
                     slparams.MBRowsToDecode = slparams.MBEndRow-slparams.MBStartRow;
                     slparams.m_bitOffset = m_pContext->m_bitstream.bitOffset;
-                    Offset = (Ipp32u) (sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)); // offset in bytes
+                    Offset = (uint32_t) (sizeof(uint32_t)*(m_pContext->m_bitstream.pBitstream - pPictHeader)); // offset in bytes
                     slparams.MBStartRow = 0; //we should decode fields steb by steb
 
                     {
-                        Ipp32u chopType = 1;
-                        Ipp32u BytesAlreadyExecuted = 0;
+                        uint32_t chopType = 1;
+                        uint32_t BytesAlreadyExecuted = 0;
                         RemBytesInSlice  = m_pPacker.VC1PackBitStream(m_pContext,
                             SliceSize,
                             pOriginalData + *pOriginalOffsets,
@@ -1050,7 +1050,7 @@ namespace UMC
                             false, Flag_03);
                         if (RemBytesInSlice)
                         {
-                            Ipp32u ByteFilledInSlice = SliceSize - RemBytesInSlice;
+                            uint32_t ByteFilledInSlice = SliceSize - RemBytesInSlice;
                             MBEndRowOfAlreadyExec = slparams.MBEndRow;
 
                             // fill slices
@@ -1131,7 +1131,7 @@ namespace UMC
                 //Slices
                 else if (*(pValues) == 0x0B010000)
                 {
-                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *pOffsets);
+                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *pOffsets);
                     VC1BitstreamParser::GetNBits(m_pContext->m_bitstream.pBitstream,m_pContext->m_bitstream.bitOffset,32, temp_value);
                     m_pContext->m_bitstream.bitOffset = 31;
                     pPictHeader = m_pContext->m_bitstream.pBitstream;
@@ -1155,7 +1155,7 @@ namespace UMC
 
                     if (*(pOffsets+1) && *(pValues+1) == 0x0B010000)
                     {
-                        bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets+1));
+                        bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets+1));
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                         bitoffset = 31;
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
@@ -1168,7 +1168,7 @@ namespace UMC
                     slparams.MBRowsToDecode = slparams.MBEndRow-slparams.MBStartRow;
                     slparams.MBRowsToDecode = slparams.MBEndRow-slparams.MBStartRow;
                     slparams.m_bitOffset = m_pContext->m_bitstream.bitOffset;
-                    Offset = (Ipp32u) (sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)); // offset in words
+                    Offset = (uint32_t) (sizeof(uint32_t)*(m_pContext->m_bitstream.pBitstream - pPictHeader)); // offset in words
 
                     if (isSecondField)
                         slparams.MBStartRow -= (m_pContext->m_seqLayerHeader.heightMB+1)/2;
@@ -1180,7 +1180,7 @@ namespace UMC
                         SliceSize = m_pContext->m_FrameSize - *pOriginalOffsets;
 
                     {
-                        Ipp32u chopType = 1;
+                        uint32_t chopType = 1;
                         RemBytesInSlice  = m_pPacker.VC1PackBitStream(m_pContext,
                                                                       SliceSize,
                                                                       pOriginalData + *pOriginalOffsets,
@@ -1188,9 +1188,9 @@ namespace UMC
                                                                       false, Flag_03);
                         if (RemBytesInSlice)
                         {
-                            Ipp32u ByteFilledInSlice = SliceSize - RemBytesInSlice;
+                            uint32_t ByteFilledInSlice = SliceSize - RemBytesInSlice;
                             MBEndRowOfAlreadyExec = slparams.MBEndRow;
-                            Ipp32u BytesAlreadyExecuted = 0;
+                            uint32_t BytesAlreadyExecuted = 0;
 
                             // fill slices
                             while (RemBytesInSlice) // we don't have enough buffer - execute it
@@ -1307,9 +1307,9 @@ namespace UMC
 
 
 
-        virtual void PrepareVLDVABuffers(Ipp32u*  pOffsets,
-                                         Ipp32u*  pValues,
-                                         Ipp8u*   pOriginalData,
+        virtual void PrepareVLDVABuffers(uint32_t*  pOffsets,
+                                         uint32_t*  pValues,
+                                         uint8_t*   pOriginalData,
                                          MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
             if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
@@ -1350,14 +1350,14 @@ namespace UMC
 
         }
         virtual Status preProcData(VC1Context*            pContext,
-                                   Ipp32u                 bufferSize,
-                                   Ipp64u                 frameCount,
+                                   uint32_t                 bufferSize,
+                                   unsigned long long                 frameCount,
                                    bool& skip)
         {
             Status vc1Sts = UMC_OK;
 
-            Ipp32u Ptype;
-            Ipp8u* pbufferStart = pContext->m_pBufferStart;
+            uint32_t Ptype;
+            uint8_t* pbufferStart = pContext->m_pBufferStart;
 
             m_iFrameCounter = frameCount;
 
@@ -1379,7 +1379,7 @@ namespace UMC
 
             MFX_INTERNAL_CPY(m_pContext->m_pBufferStart, pbufferStart, (bufferSize & 0xFFFFFFF8) + 8); // (bufferSize & 0xFFFFFFF8) + 8 - skip frames
 
-            m_pContext->m_bitstream.pBitstream = (Ipp32u*)m_pContext->m_pBufferStart;
+            m_pContext->m_bitstream.pBitstream = (uint32_t*)m_pContext->m_pBufferStart;
 
             m_pContext->m_bitstream.pBitstream += 1;
 
@@ -1402,7 +1402,7 @@ namespace UMC
             }
             else
             {
-                m_pContext->m_bitstream.pBitstream = (Ipp32u*)m_pContext->m_pBufferStart + 2;
+                m_pContext->m_bitstream.pBitstream = (uint32_t*)m_pContext->m_pBufferStart + 2;
 
                 m_pBufferStart = m_pContext->m_bitstream.pBitstream;
                 vc1Sts = GetNextPicHeader(m_pContext, false);
@@ -1422,11 +1422,11 @@ namespace UMC
 
     protected:
         VideoAccelerator*     m_va;
-        Ipp8u*                m_pBitstream;
-        Ipp32u m_iSliceBufIndex;
-        Ipp32u m_iPicBufIndex;
+        uint8_t*                m_pBitstream;
+        uint32_t m_iSliceBufIndex;
+        uint32_t m_iPicBufIndex;
         bool  m_bIsItarativeMode;
-        Ipp32u* m_pBufferStart;
+        uint32_t* m_pBufferStart;
         T m_pPacker;
     };
 
@@ -1443,9 +1443,9 @@ namespace UMC
 
         virtual ~VC1FrameDescriptorVA_Linux(){};
 
-        void PrepareVLDVABuffers(Ipp32u*  pOffsets,
-                                 Ipp32u*  pValues,
-                                 Ipp8u*   pOriginalData,
+        void PrepareVLDVABuffers(uint32_t*  pOffsets,
+                                 uint32_t*  pValues,
+                                 uint8_t*   pOriginalData,
                                  MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
             if (this->m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
@@ -1468,44 +1468,44 @@ namespace UMC
                 this->m_pStore->SetFirstBusyDescriptorAsReady();
             }
         }
-        virtual void VC1PackSlices    (Ipp32u*  pOffsets,
-                                       Ipp32u*  pValues,
-                                       Ipp8u*   pOriginalData,
+        virtual void VC1PackSlices    (uint32_t*  pOffsets,
+                                       uint32_t*  pValues,
+                                       uint8_t*   pOriginalData,
                                        MediaDataEx::_MediaDataEx* pOrigStCodes)
        {
-            Ipp32u PicHeaderFlag;
-            Ipp32u* pPictHeader = this->m_pContext->m_bitstream.pBitstream;
-            Ipp32u temp_value = 0;
-            Ipp32u* bitstream;
-            Ipp32s bitoffset = 31;
-            Ipp32u SliceSize = 0;
-            Ipp32u DataSize = 0;
-            Ipp32u BitstreamDataSize = 0;
-            Ipp32u IntCompField = 0;
+            uint32_t PicHeaderFlag;
+            uint32_t* pPictHeader = this->m_pContext->m_bitstream.pBitstream;
+            uint32_t temp_value = 0;
+            uint32_t* bitstream;
+            int32_t bitoffset = 31;
+            uint32_t SliceSize = 0;
+            uint32_t DataSize = 0;
+            uint32_t BitstreamDataSize = 0;
+            uint32_t IntCompField = 0;
 
             // need in case of fields
-            Ipp32u* pFirstFieldStartCode = this->m_pContext->m_bitstream.pBitstream;
-            Ipp32u Offset = 0;
+            uint32_t* pFirstFieldStartCode = this->m_pContext->m_bitstream.pBitstream;
+            uint32_t Offset = 0;
 
-            Ipp32u PicHeaderSize = 0;
-            Ipp8u  Flag_03 = 0; //for search 00 00 03 on the end of pic header
+            uint32_t PicHeaderSize = 0;
+            uint8_t  Flag_03 = 0; //for search 00 00 03 on the end of pic header
 
-            Ipp32u* p_CurOriginalOffsets = pOrigStCodes->offsets;
-            Ipp32u* p_NextOriginalOffsets = pOrigStCodes->offsets;
+            uint32_t* p_CurOriginalOffsets = pOrigStCodes->offsets;
+            uint32_t* p_NextOriginalOffsets = pOrigStCodes->offsets;
 
-            Ipp32u*  p_CurOffsets = pOffsets;
-            Ipp32u*  p_CurValues = pValues;
-            Ipp8u*   p_CurOriginalData = pOriginalData;
+            uint32_t*  p_CurOffsets = pOffsets;
+            uint32_t*  p_CurValues = pValues;
+            uint8_t*   p_CurOriginalData = pOriginalData;
             
-            Ipp32u*  p_NextOffsets = pOffsets;
-            Ipp32u*  p_NextValues = pValues;
+            uint32_t*  p_NextOffsets = pOffsets;
+            uint32_t*  p_NextValues = pValues;
             
 
             bool isSecondField = false;
             this->m_iSliceBufIndex = 0;
             this->m_iPicBufIndex = 0;
 
-            Ipp32u MBEndRowOfAlreadyExec = 0;
+            uint32_t MBEndRowOfAlreadyExec = 0;
 
             SliceParams slparams;
             memset(&slparams,0,sizeof(SliceParams));
@@ -1545,11 +1545,11 @@ namespace UMC
             if (this->m_pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED)
             {
                 PicHeaderSize = (this->m_pPacker.VC1GetPicHeaderSize(p_CurOriginalData + 4,
-                    (Ipp32u)((size_t)sizeof(Ipp32u)*(this->m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03));
+                    (uint32_t)((size_t)sizeof(uint32_t)*(this->m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03));
             }
             else
             {
-                PicHeaderSize = (Ipp32u)((size_t)sizeof(Ipp32u)*(this->m_pContext->m_bitstream.pBitstream - pPictHeader));
+                PicHeaderSize = (uint32_t)((size_t)sizeof(uint32_t)*(this->m_pContext->m_bitstream.pBitstream - pPictHeader));
             }
 
             this->m_pPacker.VC1PackPicParamsForOneSlice(this->m_pContext);
@@ -1577,7 +1577,7 @@ namespace UMC
             if (*p_NextValues == 0x0B010000)
             {
                 //slice
-                bitstream = reinterpret_cast<Ipp32u*>(this->m_pContext->m_pBufferStart + *p_NextOffsets);
+                bitstream = reinterpret_cast<uint32_t*>(this->m_pContext->m_pBufferStart + *p_NextOffsets);
                 VC1BitstreamParser::GetNBits(bitstream, bitoffset,32, temp_value);
                 bitoffset = 31;
                 VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);     //SLICE_ADDR
@@ -1643,7 +1643,7 @@ namespace UMC
                     this->m_pPacker.VC1SetSliceDataBuffer(this->m_pContext->m_FrameSize); //TODO: what is a valid size of a buffer here?
                     isSecondField = true;
                     // set swap bitstream for parsing
-                    this->m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(this->m_pContext->m_pBufferStart + *p_CurOffsets);
+                    this->m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(this->m_pContext->m_pBufferStart + *p_CurOffsets);
                     this->m_pContext->m_bitstream.pBitstream += 1; // skip start code
                     this->m_pContext->m_bitstream.bitOffset = 31;
                     pPictHeader = this->m_pContext->m_bitstream.pBitstream;
@@ -1652,7 +1652,7 @@ namespace UMC
 
                     ++this->m_pContext->m_picLayerHeader;
                     *this->m_pContext->m_picLayerHeader = *this->m_pContext->m_InitPicLayer;
-                    this->m_pContext->m_picLayerHeader->BottomField = (Ipp8u)this->m_pContext->m_InitPicLayer->TFF;
+                    this->m_pContext->m_picLayerHeader->BottomField = (uint8_t)this->m_pContext->m_InitPicLayer->TFF;
                     this->m_pContext->m_picLayerHeader->PTYPE = this->m_pContext->m_InitPicLayer->PTypeField2;
                     this->m_pContext->m_picLayerHeader->CurrField = 1;
 
@@ -1660,8 +1660,8 @@ namespace UMC
                     DecodePicHeader(this->m_pContext);
 
                     //this->m_pContext->this->m_picLayerHeader->INTCOMFIELD = IntCompField;
-                    PicHeaderSize = (Ipp32u)this->m_pPacker.VC1GetPicHeaderSize(p_CurOriginalData + 4 + *p_CurOriginalOffsets,
-                        (Ipp32u)((size_t)sizeof(Ipp32u)*(this->m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
+                    PicHeaderSize = (uint32_t)this->m_pPacker.VC1GetPicHeaderSize(p_CurOriginalData + 4 + *p_CurOriginalOffsets,
+                        (uint32_t)((size_t)sizeof(uint32_t)*(this->m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
 
                     slparams.MBStartRow = (this->m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
@@ -1680,7 +1680,7 @@ namespace UMC
 
                     if (*p_NextOffsets && *p_NextValues == 0x0B010000)
                     {
-                        bitstream = reinterpret_cast<Ipp32u*>(this->m_pContext->m_pBufferStart + *p_NextOffsets);
+                        bitstream = reinterpret_cast<uint32_t*>(this->m_pContext->m_pBufferStart + *p_NextOffsets);
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                         bitoffset = 31;
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
@@ -1722,7 +1722,7 @@ namespace UMC
                 //Slices
                 else if (*p_CurValues == 0x0B010000)
                 {
-                    this->m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(this->m_pContext->m_pBufferStart + *p_CurOffsets);
+                    this->m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(this->m_pContext->m_pBufferStart + *p_CurOffsets);
                     VC1BitstreamParser::GetNBits(this->m_pContext->m_bitstream.pBitstream,this->m_pContext->m_bitstream.bitOffset,32, temp_value);
                     this->m_pContext->m_bitstream.bitOffset = 31;
                     pPictHeader = this->m_pContext->m_bitstream.pBitstream;
@@ -1742,7 +1742,7 @@ namespace UMC
                         DecodePictureHeader_Adv(this->m_pContext);
                         DecodePicHeader(this->m_pContext);
                         PicHeaderSize = this->m_pPacker.VC1GetPicHeaderSize(p_CurOriginalData + 4 + *p_CurOriginalOffsets,
-                            (Ipp32u)((size_t)sizeof(Ipp32u)*(this->m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
+                            (uint32_t)((size_t)sizeof(uint32_t)*(this->m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
 
                         ++this->m_iPicBufIndex;
                     }
@@ -1757,7 +1757,7 @@ namespace UMC
 
                     if (*p_NextOffsets && *p_NextValues == 0x0B010000)
                     {
-                        bitstream = reinterpret_cast<Ipp32u*>(this->m_pContext->m_pBufferStart + *(pOffsets+1));
+                        bitstream = reinterpret_cast<uint32_t*>(this->m_pContext->m_pBufferStart + *(pOffsets+1));
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                         bitoffset = 31;
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
@@ -1867,9 +1867,9 @@ namespace UMC
 
         virtual ~VC1FrameDescriptorVA_EagleLake(){};
 
-        void PrepareVLDVABuffers(Ipp32u*  pOffsets,
-                                 Ipp32u*  pValues,
-                                 Ipp8u*   pOriginalData,
+        void PrepareVLDVABuffers(uint32_t*  pOffsets,
+                                 uint32_t*  pValues,
+                                 uint8_t*   pOriginalData,
                                  MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
             if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
@@ -1892,45 +1892,45 @@ namespace UMC
                 m_pStore->SetFirstBusyDescriptorAsReady();
             }
         }
-        virtual void VC1PackSlices    (Ipp32u*  pOffsets,
-                                       Ipp32u*  pValues,
-                                       Ipp8u*   pOriginalData,
+        virtual void VC1PackSlices    (uint32_t*  pOffsets,
+                                       uint32_t*  pValues,
+                                       uint8_t*   pOriginalData,
                                        MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
-            Ipp32u PicHeaderFlag;
-            Ipp32u* pPictHeader = m_pContext->m_bitstream.pBitstream;
-            Ipp32u temp_value = 0;
-            Ipp32u* bitstream;
-            Ipp32s bitoffset = 31;
-            Ipp32u SliceSize = 0;
-            Ipp32u DataSize = 0;
-            Ipp32u BitstreamDataSize = 0;
-            Ipp32u IntCompField = 0;
+            uint32_t PicHeaderFlag;
+            uint32_t* pPictHeader = m_pContext->m_bitstream.pBitstream;
+            uint32_t temp_value = 0;
+            uint32_t* bitstream;
+            int32_t bitoffset = 31;
+            uint32_t SliceSize = 0;
+            uint32_t DataSize = 0;
+            uint32_t BitstreamDataSize = 0;
+            uint32_t IntCompField = 0;
 
                         // need in case of fields
-            Ipp32u* pFirstFieldStartCode = m_pContext->m_bitstream.pBitstream;
-            Ipp32u Offset = 0;
+            uint32_t* pFirstFieldStartCode = m_pContext->m_bitstream.pBitstream;
+            uint32_t Offset = 0;
 
-            Ipp32u RemBytesInSlice = 4;
-            Ipp32u PicHeaderSize = 0;
-            Ipp8u  Flag_03 = 0; //for search 00 00 03 on the end of pic header
+            uint32_t RemBytesInSlice = 4;
+            uint32_t PicHeaderSize = 0;
+            uint8_t  Flag_03 = 0; //for search 00 00 03 on the end of pic header
 
-            Ipp32u* p_CurOriginalOffsets = pOrigStCodes->offsets;
-            Ipp32u* p_NextOriginalOffsets = pOrigStCodes->offsets;
+            uint32_t* p_CurOriginalOffsets = pOrigStCodes->offsets;
+            uint32_t* p_NextOriginalOffsets = pOrigStCodes->offsets;
 
-            Ipp32u*  p_CurOffsets = pOffsets;
-            Ipp32u*  p_CurValues = pValues;
-            Ipp8u*   p_CurOriginalData = pOriginalData;
+            uint32_t*  p_CurOffsets = pOffsets;
+            uint32_t*  p_CurValues = pValues;
+            uint8_t*   p_CurOriginalData = pOriginalData;
             
-            Ipp32u*  p_NextOffsets = pOffsets;
-            Ipp32u*  p_NextValues = pValues;
+            uint32_t*  p_NextOffsets = pOffsets;
+            uint32_t*  p_NextValues = pValues;
             
 
             bool isSecondField = false;
             m_iSliceBufIndex = 0;
             m_iPicBufIndex = 0;
 
-            Ipp32u MBEndRowOfAlreadyExec = 0;
+            uint32_t MBEndRowOfAlreadyExec = 0;
 
             SliceParams slparams;
             memset(&slparams,0,sizeof(SliceParams));
@@ -1939,7 +1939,7 @@ namespace UMC
             m_pContext->m_picLayerHeader->CurrField = 0;
 
 #ifdef VC1_DEBUG_ON_LOG
-            static Ipp32u Num = 0;
+            static uint32_t Num = 0;
             Num++;
 
             printf("\n\n\nPicture type %d  %d\n\n\n", m_pContext->m_picLayerHeader->PTYPE, Num);
@@ -1977,11 +1977,11 @@ namespace UMC
             if (m_pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED)
             {
                 PicHeaderSize = (m_pPacker.VC1GetPicHeaderSize(p_CurOriginalData + 4,
-                    (Ipp32u)((size_t)sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03));
+                    (uint32_t)((size_t)sizeof(uint32_t)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03));
             }
             else
             {
-                PicHeaderSize = (Ipp32u)((size_t)sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader));
+                PicHeaderSize = (uint32_t)((size_t)sizeof(uint32_t)*(m_pContext->m_bitstream.pBitstream - pPictHeader));
             }
 
             m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
@@ -2010,7 +2010,7 @@ namespace UMC
             if (*p_NextValues == 0x0B010000)
             {
                 //slice
-                bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *p_NextOffsets);
+                bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *p_NextOffsets);
                 VC1BitstreamParser::GetNBits(bitstream, bitoffset,32, temp_value);
                 bitoffset = 31;
                 VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);     //SLICE_ADDR
@@ -2025,8 +2025,8 @@ namespace UMC
             VM_ASSERT(SliceSize<0x0FFFFFFF);
 
             {
-                Ipp32u chopType = 1;
-                Ipp32u BytesAlreadyExecuted = 0;
+                uint32_t chopType = 1;
+                uint32_t BytesAlreadyExecuted = 0;
                 RemBytesInSlice  = m_pPacker.VC1PackBitStream(m_pContext,
                                                               DataSize,
                                                               p_CurOriginalData + Offset,
@@ -2148,7 +2148,7 @@ namespace UMC
                     m_pPacker.VC1SetExtPictureBuffer();
                     isSecondField = true;
                     // set swap bitstream for parsing
-                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *p_CurOffsets);
+                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *p_CurOffsets);
                     m_pContext->m_bitstream.pBitstream += 1; // skip start code
                     m_pContext->m_bitstream.bitOffset = 31;
                     pPictHeader = m_pContext->m_bitstream.pBitstream;
@@ -2157,7 +2157,7 @@ namespace UMC
 
                     ++m_pContext->m_picLayerHeader;
                     *m_pContext->m_picLayerHeader = *m_pContext->m_InitPicLayer;
-                    m_pContext->m_picLayerHeader->BottomField = (Ipp8u)m_pContext->m_InitPicLayer->TFF;
+                    m_pContext->m_picLayerHeader->BottomField = (uint8_t)m_pContext->m_InitPicLayer->TFF;
                     m_pContext->m_picLayerHeader->PTYPE = m_pContext->m_InitPicLayer->PTypeField2;
                     m_pContext->m_picLayerHeader->CurrField = 1;
 
@@ -2165,8 +2165,8 @@ namespace UMC
                     DecodePicHeader(m_pContext);
 
                     //m_pContext->m_picLayerHeader->INTCOMFIELD = IntCompField;
-                    PicHeaderSize = (Ipp32u)m_pPacker.VC1GetPicHeaderSize(p_CurOriginalData + 4 + *p_CurOriginalOffsets,
-                        (Ipp32u)((size_t)sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
+                    PicHeaderSize = (uint32_t)m_pPacker.VC1GetPicHeaderSize(p_CurOriginalData + 4 + *p_CurOriginalOffsets,
+                        (uint32_t)((size_t)sizeof(uint32_t)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
 
                     slparams.MBStartRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
@@ -2185,7 +2185,7 @@ namespace UMC
 
                     if (*p_NextOffsets && *p_NextValues == 0x0B010000)
                     {
-                        bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *p_NextOffsets);
+                        bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *p_NextOffsets);
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                         bitoffset = 31;
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
@@ -2200,8 +2200,8 @@ namespace UMC
                     slparams.MBStartRow = 0; //we should decode fields steb by steb
 
                     {
-                        Ipp32u chopType = 1;
-                        Ipp32u BytesAlreadyExecuted = 0;
+                        uint32_t chopType = 1;
+                        uint32_t BytesAlreadyExecuted = 0;
                         RemBytesInSlice  = m_pPacker.VC1PackBitStream(m_pContext, DataSize,
                                                                       p_CurOriginalData + *p_CurOriginalOffsets + Offset,SliceSize,
                                                                       0, Flag_03);
@@ -2279,7 +2279,7 @@ namespace UMC
                 //Slices
                 else if (*p_CurValues == 0x0B010000)
                 {
-                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *p_CurOffsets);
+                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *p_CurOffsets);
                     VC1BitstreamParser::GetNBits(m_pContext->m_bitstream.pBitstream,m_pContext->m_bitstream.bitOffset,32, temp_value);
                     m_pContext->m_bitstream.bitOffset = 31;
                     pPictHeader = m_pContext->m_bitstream.pBitstream;
@@ -2299,7 +2299,7 @@ namespace UMC
                         DecodePictureHeader_Adv(m_pContext);
                         DecodePicHeader(m_pContext);
                         PicHeaderSize = m_pPacker.VC1GetPicHeaderSize(p_CurOriginalData + 4 + *p_CurOriginalOffsets,
-                            (Ipp32u)((size_t)sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
+                            (uint32_t)((size_t)sizeof(uint32_t)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
 
                         ++m_iPicBufIndex;
                     }
@@ -2314,7 +2314,7 @@ namespace UMC
 
                     if (*p_NextOffsets && *p_NextValues == 0x0B010000)
                     {
-                        bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *p_NextOffsets);
+                        bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *p_NextOffsets);
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                         bitoffset = 31;
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
@@ -2337,7 +2337,7 @@ namespace UMC
                         SliceSize = m_pContext->m_FrameSize - *p_CurOriginalOffsets - Offset;
 
                     {
-                        Ipp32u chopType = 1;
+                        uint32_t chopType = 1;
                         RemBytesInSlice  = m_pPacker.VC1PackBitStream(m_pContext,
                                                                       DataSize,
                                                                       p_CurOriginalData + *p_CurOriginalOffsets + Offset,
@@ -2346,7 +2346,7 @@ namespace UMC
                         if (RemBytesInSlice)
                         {
                             MBEndRowOfAlreadyExec = slparams.MBEndRow;
-                            Ipp32u BytesAlreadyExecuted = 0;
+                            uint32_t BytesAlreadyExecuted = 0;
 
                             // fill slices
                             while (RemBytesInSlice) // we don't have enough buffer - execute it
@@ -2484,9 +2484,9 @@ namespace UMC
 
         virtual ~VC1FrameDescriptorVA_Protected(){};
 
-        void PrepareVLDVABuffers(Ipp32u*  pOffsets,
-            Ipp32u*  pValues,
-            Ipp8u*   pOriginalData,
+        void PrepareVLDVABuffers(uint32_t*  pOffsets,
+            uint32_t*  pValues,
+            uint8_t*   pOriginalData,
             MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
             if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
@@ -2510,7 +2510,7 @@ namespace UMC
             }
         }
 
-        virtual void VC1PackSlices    (Ipp32u*  pOffsets,Ipp32u*  pValues, Ipp8u* pOriginalData,MediaDataEx::_MediaDataEx* pOrigStCodes)
+        virtual void VC1PackSlices    (uint32_t*  pOffsets,uint32_t*  pValues, uint8_t* pOriginalData,MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
             if(m_va->GetProtectedVA()->GetBitstream()->EncryptedData)
             {
@@ -2523,26 +2523,26 @@ namespace UMC
 
         }
 
-        virtual void VC1PackSlices_No_Encrypt    (Ipp32u*  pOffsets,Ipp32u*  pValues, Ipp8u* pOriginalData,MediaDataEx::_MediaDataEx* pOrigStCodes)
+        virtual void VC1PackSlices_No_Encrypt    (uint32_t*  pOffsets,uint32_t*  pValues, uint8_t* pOriginalData,MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
-            Ipp32u PicHeaderFlag;
-            Ipp32u* pPictHeader = m_pContext->m_bitstream.pBitstream;
-            Ipp32u temp_value = 0;
-            Ipp32u* bitstream;
-            Ipp32s bitoffset = 31;
-            Ipp32u SliceSize = 0;
-            Ipp32u DataSize = 0;
-            Ipp32u BitstreamDataSize = 0;
-            Ipp32u IntCompField = 0;
+            uint32_t PicHeaderFlag;
+            uint32_t* pPictHeader = m_pContext->m_bitstream.pBitstream;
+            uint32_t temp_value = 0;
+            uint32_t* bitstream;
+            int32_t bitoffset = 31;
+            uint32_t SliceSize = 0;
+            uint32_t DataSize = 0;
+            uint32_t BitstreamDataSize = 0;
+            uint32_t IntCompField = 0;
 
-            Ipp32u* pOriginalOffsets = pOrigStCodes->offsets;
+            uint32_t* pOriginalOffsets = pOrigStCodes->offsets;
             // need in case of fields
-            Ipp32u* pFirstFieldStartCode = m_pContext->m_bitstream.pBitstream;
-            Ipp32u Offset = 0;
+            uint32_t* pFirstFieldStartCode = m_pContext->m_bitstream.pBitstream;
+            uint32_t Offset = 0;
 
-            Ipp32u RemBytesInSlice = 4;
-            Ipp32u PicHeaderSize = 0;
-            Ipp8u  Flag_03 = 0; //for search 00 00 03 on the end of pic header
+            uint32_t RemBytesInSlice = 4;
+            uint32_t PicHeaderSize = 0;
+            uint8_t  Flag_03 = 0; //for search 00 00 03 on the end of pic header
 
             if(NULL != m_va->GetProtectedVA() && MFX_PROTECTION_PAVP == m_va->GetProtectedVA()->GetProtected())
             {
@@ -2575,7 +2575,7 @@ namespace UMC
             m_iSliceBufIndex = 0;
             m_iPicBufIndex = 0;
 
-            Ipp32u MBEndRowOfAlreadyExec = 0;
+            uint32_t MBEndRowOfAlreadyExec = 0;
 
             SliceParams slparams;
             memset(&slparams,0,sizeof(SliceParams));
@@ -2589,7 +2589,7 @@ namespace UMC
                 return;
 
 #ifdef VC1_DEBUG_ON_LOG
-            static Ipp32u Num = 0;
+            static uint32_t Num = 0;
 
             printf("\n\n\nPicture type %d  %d\n\n\n", m_pContext->m_picLayerHeader->PTYPE, Num);
             Num++;
@@ -2616,14 +2616,14 @@ namespace UMC
             DecodePicHeader(m_pContext);
             IntCompField = m_pContext->m_picLayerHeader->INTCOMFIELD;
             PicHeaderSize = (m_pPacker.VC1GetPicHeaderSize(pOriginalData + 4,
-                (Ipp32u)((size_t)sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03));
+                (uint32_t)((size_t)sizeof(uint32_t)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03));
 
             m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
 
             if (*(pValues+1) == 0x0B010000)
             {
                 //slice
-                bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets+1));
+                bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets+1));
                 VC1BitstreamParser::GetNBits(bitstream, bitoffset,32, temp_value);
                 bitoffset = 31;
                 VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);     //SLICE_ADDR
@@ -2647,8 +2647,8 @@ namespace UMC
             VM_ASSERT(SliceSize<0x0FFFFFFF);
 
             {
-                Ipp32u chopType = 1;
-                Ipp32u BytesAlreadyExecuted = 0;
+                uint32_t chopType = 1;
+                uint32_t BytesAlreadyExecuted = 0;
                 RemBytesInSlice  = m_pPacker.VC1PackBitStream(m_pContext,
                                                               DataSize,
                                                               pOriginalData + Offset,
@@ -2784,7 +2784,7 @@ namespace UMC
                     m_pPacker.VC1SetExtPictureBuffer();
                     isSecondField = true;
                     // set swap bitstream for parsing
-                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *pOffsets);
+                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *pOffsets);
                     m_pContext->m_bitstream.pBitstream += 1; // skip start code
                     m_pContext->m_bitstream.bitOffset = 31;
                     pPictHeader = m_pContext->m_bitstream.pBitstream;
@@ -2793,7 +2793,7 @@ namespace UMC
 
                     ++m_pContext->m_picLayerHeader;
                     *m_pContext->m_picLayerHeader = *m_pContext->m_InitPicLayer;
-                    m_pContext->m_picLayerHeader->BottomField = (Ipp8u)m_pContext->m_InitPicLayer->TFF;
+                    m_pContext->m_picLayerHeader->BottomField = (uint8_t)m_pContext->m_InitPicLayer->TFF;
                     m_pContext->m_picLayerHeader->PTYPE = m_pContext->m_InitPicLayer->PTypeField2;
                     m_pContext->m_picLayerHeader->CurrField = 1;
 
@@ -2801,8 +2801,8 @@ namespace UMC
                     DecodePicHeader(m_pContext);
 
                     m_pContext->m_picLayerHeader->INTCOMFIELD = IntCompField;
-                    PicHeaderSize = (Ipp32u)m_pPacker.VC1GetPicHeaderSize(pOriginalData + 4 + *pOriginalOffsets,
-                        (Ipp32u)((size_t)sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
+                    PicHeaderSize = (uint32_t)m_pPacker.VC1GetPicHeaderSize(pOriginalData + 4 + *pOriginalOffsets,
+                        (uint32_t)((size_t)sizeof(uint32_t)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
 
                     slparams.MBStartRow = (m_pContext->m_seqLayerHeader.heightMB+1)/2;
 
@@ -2813,7 +2813,7 @@ namespace UMC
 
                     if (*(pOffsets+1) && *(pValues+1) == 0x0B010000)
                     {
-                        bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets+1));
+                        bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets+1));
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                         bitoffset = 31;
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
@@ -2828,8 +2828,8 @@ namespace UMC
                     slparams.MBStartRow = 0; //we should decode fields steb by steb
 
                     {
-                        Ipp32u chopType = 1;
-                        Ipp32u BytesAlreadyExecuted = 0;
+                        uint32_t chopType = 1;
+                        uint32_t BytesAlreadyExecuted = 0;
                         RemBytesInSlice  = m_pPacker.VC1PackBitStream(m_pContext, DataSize,
                                                                       pOriginalData + *pOriginalOffsets + Offset,SliceSize,
                                                                       0, Flag_03);
@@ -2901,7 +2901,7 @@ namespace UMC
                 //Slices
                 else if (*(pValues) == 0x0B010000)
                 {
-                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *pOffsets);
+                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *pOffsets);
                     VC1BitstreamParser::GetNBits(m_pContext->m_bitstream.pBitstream,m_pContext->m_bitstream.bitOffset,32, temp_value);
                     m_pContext->m_bitstream.bitOffset = 31;
                     pPictHeader = m_pContext->m_bitstream.pBitstream;
@@ -2921,7 +2921,7 @@ namespace UMC
                         DecodePictureHeader_Adv(m_pContext);
                         DecodePicHeader(m_pContext);
                         PicHeaderSize = m_pPacker.VC1GetPicHeaderSize(pOriginalData + 4 + *pOriginalOffsets,
-                            (Ipp32u)((size_t)sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
+                            (uint32_t)((size_t)sizeof(uint32_t)*(m_pContext->m_bitstream.pBitstream - pPictHeader)), Flag_03);
 
                         ++m_iPicBufIndex;
                     }
@@ -2929,7 +2929,7 @@ namespace UMC
 
                     if (*(pOffsets+1) && *(pValues+1) == 0x0B010000)
                     {
-                        bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets+1));
+                        bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets+1));
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                         bitoffset = 31;
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
@@ -2952,7 +2952,7 @@ namespace UMC
                         SliceSize = m_pContext->m_FrameSize - *pOriginalOffsets - Offset;
 
                     {
-                        Ipp32u chopType = 1;
+                        uint32_t chopType = 1;
                         RemBytesInSlice  = m_pPacker.VC1PackBitStream(m_pContext,
                                                                       DataSize,
                                                                       pOriginalData + *pOriginalOffsets + Offset,
@@ -2961,7 +2961,7 @@ namespace UMC
                         if (RemBytesInSlice)
                         {
                             MBEndRowOfAlreadyExec = slparams.MBEndRow;
-                            Ipp32u BytesAlreadyExecuted = 0;
+                            uint32_t BytesAlreadyExecuted = 0;
 
                             // fill slices
                             while (RemBytesInSlice) // we don't have enough buffer - execute it
@@ -3078,9 +3078,9 @@ namespace UMC
             {
                 if(temp->Next)
                 {
-                    Ipp64u counter1 = temp->CipherCounter.Count;
-                    Ipp64u counter2 = temp->Next->CipherCounter.Count;
-                    Ipp64u zero = 0xffffffffffffffff;
+                    unsigned long long counter1 = temp->CipherCounter.Count;
+                    unsigned long long counter2 = temp->Next->CipherCounter.Count;
+                    unsigned long long zero = 0xffffffffffffffff;
                     if((m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
                     {
                         counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -3095,10 +3095,10 @@ namespace UMC
                     //second slice offset starts after the first, there is no counter overall
                     if(counter1 <= counter2)
                     {
-                        Ipp32u size = temp->DataLength + temp->DataOffset;
+                        uint32_t size = temp->DataLength + temp->DataOffset;
                         if(size & 0xf)
                             size= size+(0x10 - (size & 0xf));
-                        Ipp32u sizeCount = (Ipp32u)(counter2 - counter1) *16;
+                        uint32_t sizeCount = (uint32_t)(counter2 - counter1) *16;
                         //if we have hole between slices
                         if(sizeCount > size)
                             throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -3109,22 +3109,22 @@ namespace UMC
                     else //there is counter overall or second slice offset starts earlier then the first one
                     {
                         //length of the second slice offset in 16-bytes blocks
-                        Ipp64u offsetCounter = (temp->Next->DataOffset + 15)/16;
+                        unsigned long long offsetCounter = (temp->Next->DataOffset + 15)/16;
                         // no counter2 overall
                         if(zero - counter2 > offsetCounter)
                         {
-                            Ipp32u size = temp->DataLength + temp->DataOffset;
+                            uint32_t size = temp->DataLength + temp->DataOffset;
                             if(size & 0xf)
                                 size= size+(0x10 - (size & 0xf));
-                            Ipp64u counter3 = size / 16;
+                            unsigned long long counter3 = size / 16;
                             // no zero during the first slice
                             if(zero - counter1 >= counter3)
                             {
                                 //second slice offset contains the first slice with offset
                                 if(counter2 + offsetCounter >= counter3)
                                 {
-                                    temp->Next->Data += (Ipp32u)(counter1 - counter2) * 16;
-                                    temp->Next->DataOffset -= (Ipp32u)(counter1 - counter2) * 16;
+                                    temp->Next->Data += (uint32_t)(counter1 - counter2) * 16;
+                                    temp->Next->DataOffset -= (uint32_t)(counter1 - counter2) * 16;
                                     temp->Next->CipherCounter = temp->CipherCounter;
                                     //overlap between slices is different in different buffers
                                     if (memcmp(temp->Data, temp->Next->Data, temp->DataOffset + temp->DataLength))
@@ -3138,7 +3138,7 @@ namespace UMC
                             else
                             {
                                 //size of data between counters
-                                Ipp32u sizeCount = (Ipp32u)(counter2 + (zero - counter1)) *16;
+                                uint32_t sizeCount = (uint32_t)(counter2 + (zero - counter1)) *16;
                                 //hole between slices
                                 if(sizeCount > size)
                                     throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
@@ -3149,8 +3149,8 @@ namespace UMC
                         }
                         else
                         {
-                            temp->Next->Data += (Ipp32u)(counter1 - counter2) * 16;
-                            temp->Next->DataOffset -= (Ipp32u)(counter1 - counter2) * 16;
+                            temp->Next->Data += (uint32_t)(counter1 - counter2) * 16;
+                            temp->Next->DataOffset -= (uint32_t)(counter1 - counter2) * 16;
                             temp->Next->CipherCounter = temp->CipherCounter;
                             //overlap between slices is different in different buffers
                             if (memcmp(temp->Data, temp->Next->Data, temp->DataOffset + temp->DataLength))
@@ -3163,7 +3163,7 @@ namespace UMC
         }
 
 
-       virtual void VC1PackSlices_Encrypt   (Ipp32u*  pOffsets,Ipp32u*  pValues, Ipp8u* ,MediaDataEx::_MediaDataEx* pOrigStCodes)
+       virtual void VC1PackSlices_Encrypt   (uint32_t*  pOffsets,uint32_t*  pValues, uint8_t* ,MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
             VM_ASSERT(VC1_PROFILE_ADVANCED == m_pContext->m_seqLayerHeader.PROFILE);
 
@@ -3192,32 +3192,32 @@ namespace UMC
             bool isSecondField = false;
             m_iSliceBufIndex = 0;
             m_iPicBufIndex = 0;
-            Ipp32u IntCompField = 0;
-            Ipp32u temp_value = 0;
-            Ipp32u* bitstream = 0;
-            Ipp32u PicHeaderFlag = 0;
-            Ipp32u MBEndRowOfAlreadyExec = 0;
-            Ipp32u BytesAlreadyExecuted = 0;
-            Ipp8u *pBuf = 0;
+            uint32_t IntCompField = 0;
+            uint32_t temp_value = 0;
+            uint32_t* bitstream = 0;
+            uint32_t PicHeaderFlag = 0;
+            uint32_t MBEndRowOfAlreadyExec = 0;
+            uint32_t BytesAlreadyExecuted = 0;
+            uint8_t *pBuf = 0;
 
-            Ipp32s bitoffset = 31;
+            int32_t bitoffset = 31;
 
             SliceParams slparams;
             memset(&slparams,0,sizeof(SliceParams));
             slparams.MBStartRow = 0;
             slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB;
             m_pContext->m_picLayerHeader->CurrField = 0;
-            Ipp32u encryptedBufferSize = 0;
-            Ipp32u* pOriginalOffsets = pOrigStCodes->offsets;
+            uint32_t encryptedBufferSize = 0;
+            uint32_t* pOriginalOffsets = pOrigStCodes->offsets;
 
              mfxEncryptedData * temp = bs->EncryptedData;
              for (; temp; )
              {
                  if(temp->Next)
                 {
-                    Ipp64u counter1 = temp->CipherCounter.Count;
-                    Ipp64u counter2 = temp->Next->CipherCounter.Count;
-                    Ipp64u zero = 0xffffffffffffffff;
+                    unsigned long long counter1 = temp->CipherCounter.Count;
+                    unsigned long long counter2 = temp->Next->CipherCounter.Count;
+                    unsigned long long zero = 0xffffffffffffffff;
                     if((m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
                     {
                         counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -3230,9 +3230,9 @@ namespace UMC
                         counter2 = LITTLE_ENDIAN_SWAP64(counter2);
                     }
                     if(counter1 <= counter2)
-                        encryptedBufferSize += (Ipp32u)(counter2 - counter1) *16;
+                        encryptedBufferSize += (uint32_t)(counter2 - counter1) *16;
                     else
-                        encryptedBufferSize += (Ipp32u)(counter2 + (zero - counter1)) *16;
+                        encryptedBufferSize += (uint32_t)(counter2 + (zero - counter1)) *16;
                 }
                 else
                 {
@@ -3295,7 +3295,7 @@ namespace UMC
             if (*(pValues+1) == 0x0B010000)
             {
                 //slice
-                bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets+1));
+                bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets+1));
                 VC1BitstreamParser::GetNBits(bitstream, bitoffset,32, temp_value);
                 bitoffset = 31;
                 VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);     //SLICE_ADDR
@@ -3315,7 +3315,7 @@ namespace UMC
                 {
                     UMCVACompBuffer* CompBuf;
 
-                    Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
+                    uint8_t* pBitstream = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
                     pBuf=pBitstream;
 
                     if(NULL != m_va->GetProtectedVA() && IS_PROTECTION_GPUCP_ANY(m_va->GetProtectedVA()->GetProtected()))
@@ -3323,7 +3323,7 @@ namespace UMC
                     else
                         CompBuf->SetPVPState(NULL, 0);
 
-                    Ipp32u alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
+                    uint32_t alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
                     if(alignedSize & 0xf)
                         alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
 
@@ -3349,16 +3349,16 @@ namespace UMC
                         }
                     }
 #endif
-                    Ipp32u diff = (Ipp32u)(pBitstream - pBuf) + BytesAlreadyExecuted;
+                    uint32_t diff = (uint32_t)(pBitstream - pBuf) + BytesAlreadyExecuted;
                     m_pPacker.VC1PackOneSlice(m_pContext, &slparams, m_iSliceBufIndex, 0, 
                         encryptedData->DataLength, BytesAlreadyExecuted -diff +encryptedData->DataOffset, 0);
                     BytesAlreadyExecuted += (UINT)(alignedSize - diff);
                     CompBuf->SetDataSize(BytesAlreadyExecuted);
                     if(encryptedData->Next)
                     {
-                        Ipp64u counter1 = encryptedData->CipherCounter.Count;
-                        Ipp64u counter2 = encryptedData->Next->CipherCounter.Count;
-                        Ipp64u zero = 0xffffffffffffffff;
+                        unsigned long long counter1 = encryptedData->CipherCounter.Count;
+                        unsigned long long counter2 = encryptedData->Next->CipherCounter.Count;
+                        unsigned long long zero = 0xffffffffffffffff;
                         if((m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
                         {
                             counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -3372,11 +3372,11 @@ namespace UMC
                         }
                         if(counter2 < counter1)
                         {
-                            (unsigned char*)pBuf += (Ipp32u)(counter2 +(zero - counter1))*16;
+                            (unsigned char*)pBuf += (uint32_t)(counter2 +(zero - counter1))*16;
                         }
                         else
                         {
-                            (unsigned char*)pBuf += (Ipp32u)(counter2 - counter1)*16;
+                            (unsigned char*)pBuf += (uint32_t)(counter2 - counter1)*16;
                         }
                     }
                 }
@@ -3446,13 +3446,13 @@ namespace UMC
                     m_pPacker.VC1SetExtPictureBuffer();
                     isSecondField = true;
                     // set swap bitstream for parsing
-                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *pOffsets);
+                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *pOffsets);
                     m_pContext->m_bitstream.pBitstream += 1; // skip start code
                     m_pContext->m_bitstream.bitOffset = 31;
 
                     ++m_pContext->m_picLayerHeader;
                     *m_pContext->m_picLayerHeader = *m_pContext->m_InitPicLayer;
-                    m_pContext->m_picLayerHeader->BottomField = (Ipp8u)m_pContext->m_InitPicLayer->TFF;
+                    m_pContext->m_picLayerHeader->BottomField = (uint8_t)m_pContext->m_InitPicLayer->TFF;
                     m_pContext->m_picLayerHeader->PTYPE = m_pContext->m_InitPicLayer->PTypeField2;
                     m_pContext->m_picLayerHeader->CurrField = 1;
 
@@ -3466,7 +3466,7 @@ namespace UMC
 
                     if (*(pOffsets+1) && *(pValues+1) == 0x0B010000)
                     {
-                        bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets+1));
+                        bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets+1));
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                         bitoffset = 31;
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
@@ -3485,7 +3485,7 @@ namespace UMC
                         {
                             UMCVACompBuffer* CompBuf;
 
-                            Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
+                            uint8_t* pBitstream = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
                             pBuf=pBitstream;
 
                             if(NULL != m_va->GetProtectedVA() && IS_PROTECTION_GPUCP_ANY(m_va->GetProtectedVA()->GetProtected()))
@@ -3493,7 +3493,7 @@ namespace UMC
                             else
                                 CompBuf->SetPVPState(NULL, 0);
 
-                            Ipp32u alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
+                            uint32_t alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
                             if(alignedSize & 0xf)
                                 alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
 
@@ -3519,16 +3519,16 @@ namespace UMC
                                 }
                             }
 #endif
-                            Ipp32u diff = (Ipp32u)(pBitstream - pBuf) + BytesAlreadyExecuted;
+                            uint32_t diff = (uint32_t)(pBitstream - pBuf) + BytesAlreadyExecuted;
                             CompBuf->SetDataSize(BytesAlreadyExecuted + (UINT)(alignedSize - diff));
                             m_pPacker.VC1PackOneSlice(m_pContext, &slparams, m_iSliceBufIndex, 0,
                                 encryptedData->DataLength, BytesAlreadyExecuted -diff +encryptedData->DataOffset, 0);
                             BytesAlreadyExecuted += (UINT)(alignedSize - diff);
                             if(encryptedData->Next)
                             {
-                                Ipp64u counter1 = encryptedData->CipherCounter.Count;
-                                Ipp64u counter2 = encryptedData->Next->CipherCounter.Count;
-                                Ipp64u zero = 0xffffffffffffffff;
+                                unsigned long long counter1 = encryptedData->CipherCounter.Count;
+                                unsigned long long counter2 = encryptedData->Next->CipherCounter.Count;
+                                unsigned long long zero = 0xffffffffffffffff;
                                 if((m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
                                 {
                                     counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -3542,11 +3542,11 @@ namespace UMC
                                 }
                                 if(counter2 < counter1)
                                 {
-                                    (unsigned char*)pBuf += (Ipp32u)(counter2 +(zero - counter1))*16;
+                                    (unsigned char*)pBuf += (uint32_t)(counter2 +(zero - counter1))*16;
                                 }
                                 else
                                 {
-                                    (unsigned char*)pBuf += (Ipp32u)(counter2 - counter1)*16;
+                                    (unsigned char*)pBuf += (uint32_t)(counter2 - counter1)*16;
                                 }
                             }
                         }
@@ -3563,7 +3563,7 @@ namespace UMC
                 //Slices
                 else if (*(pValues) == 0x0B010000)
                 {
-                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *pOffsets);
+                    m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *pOffsets);
                     VC1BitstreamParser::GetNBits(m_pContext->m_bitstream.pBitstream,m_pContext->m_bitstream.bitOffset,32, temp_value);
                     m_pContext->m_bitstream.bitOffset = 31;
 
@@ -3587,7 +3587,7 @@ namespace UMC
 
                     if (*(pOffsets+1) && *(pValues+1) == 0x0B010000)
                     {
-                        bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets+1));
+                        bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets+1));
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,32, temp_value);
                         bitoffset = 31;
                         VC1BitstreamParser::GetNBits(bitstream,bitoffset,9, slparams.MBEndRow);
@@ -3610,14 +3610,14 @@ namespace UMC
                         {
                             UMCVACompBuffer* CompBuf;
 
-                            Ipp8u* pBitstream = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
+                            uint8_t* pBitstream = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
 
                             if(NULL != m_va->GetProtectedVA() && IS_PROTECTION_GPUCP_ANY(m_va->GetProtectedVA()->GetProtected()))
                                 CompBuf->SetPVPState(&encryptedData->CipherCounter, sizeof (encryptedData->CipherCounter));
                             else
                                 CompBuf->SetPVPState(NULL, 0);
 
-                            Ipp32u alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
+                            uint32_t alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
                             if(alignedSize & 0xf)
                                 alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
 
@@ -3643,15 +3643,15 @@ namespace UMC
                                 }
                             }
 #endif
-                            Ipp32u diff = (Ipp32u)(pBitstream - pBuf) + BytesAlreadyExecuted;
+                            uint32_t diff = (uint32_t)(pBitstream - pBuf) + BytesAlreadyExecuted;
                             CompBuf->SetDataSize(BytesAlreadyExecuted + (UINT)(alignedSize - diff));
                             m_pPacker.VC1PackOneSlice(m_pContext, &slparams, m_iSliceBufIndex, 0, encryptedData->DataLength, BytesAlreadyExecuted -diff +encryptedData->DataOffset, 0);
                             BytesAlreadyExecuted += alignedSize - diff;
                             if(encryptedData->Next)
                             {
-                                Ipp64u counter1 = encryptedData->CipherCounter.Count;
-                                Ipp64u counter2 = encryptedData->Next->CipherCounter.Count;
-                                Ipp64u zero = 0xffffffffffffffff;
+                                unsigned long long counter1 = encryptedData->CipherCounter.Count;
+                                unsigned long long counter2 = encryptedData->Next->CipherCounter.Count;
+                                unsigned long long zero = 0xffffffffffffffff;
                                 if((m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
                                 {
                                     counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -3665,11 +3665,11 @@ namespace UMC
                                 }
                                 if(counter2 < counter1)
                                 {
-                                    (unsigned char*)pBuf += (Ipp32u)(counter2 + (zero - counter1))*16;
+                                    (unsigned char*)pBuf += (uint32_t)(counter2 + (zero - counter1))*16;
                                 }
                                 else
                                 {
-                                    (unsigned char*)pBuf += (Ipp32u)(counter2 - counter1)*16;
+                                    (unsigned char*)pBuf += (uint32_t)(counter2 - counter1)*16;
                                 }
                            }
                         }

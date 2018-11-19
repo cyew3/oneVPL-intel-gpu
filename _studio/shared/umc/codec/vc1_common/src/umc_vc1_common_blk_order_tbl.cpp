@@ -25,7 +25,7 @@
 #include "umc_vc1_common_blk_order_tbl.h"
 #include "umc_vc1_common_defs.h"
 
-const extern Ipp32u VC1_pixel_table[6] =
+const extern uint32_t VC1_pixel_table[6] =
 {
     VC1_PIXEL_IN_LUMA,
     VC1_PIXEL_IN_LUMA,
@@ -35,7 +35,7 @@ const extern Ipp32u VC1_pixel_table[6] =
     VC1_PIXEL_IN_CHROMA
 };
 
-//const extern Ipp16u VC1_BlkOrderTbl[6][64] =
+//const extern uint16_t VC1_BlkOrderTbl[6][64] =
 //{
 //    /*Block 0*/
 //    {
@@ -105,20 +105,20 @@ const extern Ipp32u VC1_pixel_table[6] =
 //    }
 //};
 
-const extern Ipp32u VC1_PredDCIndex[3][6] =
+const extern uint32_t VC1_PredDCIndex[3][6] =
 {
     {6, 7, 0, 1, 10, 12},
     {3, 6, 8, 0, 4, 5},
     {8, 0, 9, 2, 11, 13}
 };
 
-const extern Ipp32u VC1_QuantIndex [2][6] =
+const extern uint32_t VC1_QuantIndex [2][6] =
 {
     {0, 0, 2, 2, 0, 0}, //A
     {1, 2, 1, 2, 1, 1}  //C
 };
 
-const extern Ipp32u VC1_BlockTable[50] =
+const extern uint32_t VC1_BlockTable[50] =
 {
   0, 0, 1, 0, 2, 0, 0, 0, 3, 0,
   0, 0, 0, 0, 0, 0, 4, 0, 0, 0,
@@ -127,7 +127,7 @@ const extern Ipp32u VC1_BlockTable[50] =
   0, 0, 0, 0, 0, 0, 0, 0, 6, 0
 };
 
-const extern Ipp32u VC1_BlkStart[] =
+const extern uint32_t VC1_BlkStart[] =
 {
     0, 8, 128, 136, 256, 320
 };

@@ -66,22 +66,22 @@ enum
 
 typedef struct
 {
-    Ipp8u IQuant;
-    Ipp8u PQuant;
-    Ipp8u BQuant;
+    uint8_t IQuant;
+    uint8_t PQuant;
+    uint8_t BQuant;
 
     bool   IHalf;
     bool   PHalf;
     bool   BHalf;
 
-    Ipp8u LimIQuant;
-    Ipp8u LimPQuant;
-    Ipp8u LimBQuant;
+    uint8_t LimIQuant;
+    uint8_t LimPQuant;
+    uint8_t LimBQuant;
 }VC1PicQuant;
 
 typedef struct
 {
-    Ipp8u PQIndex;
+    uint8_t PQIndex;
     bool   HalfPQ;
 }VC1Quant;
 
@@ -121,50 +121,50 @@ public:
     VC1BRC();
     virtual ~VC1BRC();
 
-    virtual UMC::Status Init(Ipp32u /*yuvFSize*/,  Ipp32u /*bitrate*/, Ipp64f /*framerate*/, Ipp32u /*mode*/,
-        Ipp32u /*GOPLength*/, Ipp32u /*BFrLength*/, Ipp8u /*doubleQuant*/, Ipp8u /*QuantMode*/){return UMC::UMC_ERR_NOT_IMPLEMENTED;};
+    virtual UMC::Status Init(uint32_t /*yuvFSize*/,  uint32_t /*bitrate*/, double /*framerate*/, uint32_t /*mode*/,
+        uint32_t /*GOPLength*/, uint32_t /*BFrLength*/, uint8_t /*doubleQuant*/, uint8_t /*QuantMode*/){return UMC::UMC_ERR_NOT_IMPLEMENTED;};
 
     virtual void Reset(){};
     virtual void Close(){};
 
     //return frame compression staus
-    virtual UMC::Status CheckFrameCompression(ePType /*picType*/, Ipp32u /*currSize*/, UMC::Status /*HRDSts*/){return UMC::UMC_ERR_NOT_IMPLEMENTED;};
-    virtual void GetQuant(ePType /*picType*/, Ipp8u* /*PQuant*/, bool* /*Half*/){};
-    virtual void GetQuant(ePType /*picType*/, Ipp8u* /*PQuant*/, bool* /*Half*/, bool* /*Uniform*/){};
+    virtual UMC::Status CheckFrameCompression(ePType /*picType*/, uint32_t /*currSize*/, UMC::Status /*HRDSts*/){return UMC::UMC_ERR_NOT_IMPLEMENTED;};
+    virtual void GetQuant(ePType /*picType*/, uint8_t* /*PQuant*/, bool* /*Half*/){};
+    virtual void GetQuant(ePType /*picType*/, uint8_t* /*PQuant*/, bool* /*Half*/, bool* /*Uniform*/){};
 
     virtual void CompleteFrame(ePType /*picType*/){};
-    virtual UMC::Status SetGOPParams(Ipp32u /*GOPLength*/, Ipp32u /*BFrLength*/){return UMC::UMC_ERR_NOT_IMPLEMENTED;};
+    virtual UMC::Status SetGOPParams(uint32_t /*GOPLength*/, uint32_t /*BFrLength*/){return UMC::UMC_ERR_NOT_IMPLEMENTED;};
 
 protected:
-    Ipp32u m_bitrate;           //current bitrate
-    Ipp64f m_framerate;         //current frame rate
+    uint32_t m_bitrate;           //current bitrate
+    double m_framerate;         //current frame rate
 
     //GOP parameters
-    Ipp32u m_GOPLength;         //number of frame in GOP
-    Ipp32u m_CurrGOPLength;      //current distance between I frames
+    uint32_t m_GOPLength;         //number of frame in GOP
+    uint32_t m_CurrGOPLength;      //current distance between I frames
 
-    Ipp32u m_BFrLength;         //number of successive B frames
-    Ipp32s m_SizeAbberation;    //coded size abberation
+    uint32_t m_BFrLength;         //number of successive B frames
+    int32_t m_SizeAbberation;    //coded size abberation
 
     //Flags
-    Ipp32s m_recoding;         //frame was recoded
+    int32_t m_recoding;         //frame was recoded
 
     //Quant params
     VC1Quant m_CurQuant;        //current quntization MQUANT and HALFQP
     VC1PicQuant m_Quant;        //current quant set for all picture
 
     //Frames parameters
-    Ipp32s m_currSize;         //last coded frame size
-    Ipp32s m_IdealFrameSize;    //"ideal" frame size
+    int32_t m_currSize;         //last coded frame size
+    int32_t m_IdealFrameSize;    //"ideal" frame size
 
     //Picture params
     ePType m_picType;         //current picture type
 
     //coding params
-    Ipp64f m_ratio_min;      //bottom coded frame size ratio
-    Ipp64f m_buffer_overflow;//top coded frame size ratio
-    Ipp32u m_encMode;        //coding mode
-    Ipp8u  m_QuantMode;      //two bits: 1 bit - allow uniform mode coding, 2 bit - allow nonuniform mode
+    double m_ratio_min;      //bottom coded frame size ratio
+    double m_buffer_overflow;//top coded frame size ratio
+    uint32_t m_encMode;        //coding mode
+    uint8_t  m_QuantMode;      //two bits: 1 bit - allow uniform mode coding, 2 bit - allow nonuniform mode
 };
 
 ////////////////////////////////////////////
@@ -177,25 +177,25 @@ public:
     VC1BRC_I();
     ~VC1BRC_I();
 protected:
-    Ipp32s m_needISize;        //wishful coded I frame size
+    int32_t m_needISize;        //wishful coded I frame size
 public:
-    UMC::Status Init(Ipp32u yuvFSize,  Ipp32u bitrate,
-                         Ipp64f framerate, Ipp32u mode,
-                         Ipp32u GOPLength, Ipp32u BFrLength, Ipp8u doubleQuant, Ipp8u QuantMode);
+    UMC::Status Init(uint32_t yuvFSize,  uint32_t bitrate,
+                         double framerate, uint32_t mode,
+                         uint32_t GOPLength, uint32_t BFrLength, uint8_t doubleQuant, uint8_t QuantMode);
 
     void Reset();
     void Close();
     //return frame compression staus
-    UMC::Status CheckFrameCompression(ePType picType, Ipp32u currSize, UMC::Status HRDSts);
+    UMC::Status CheckFrameCompression(ePType picType, uint32_t currSize, UMC::Status HRDSts);
     void CompleteFrame(ePType picType);
-    void GetQuant(ePType picType, Ipp8u* PQuant, bool* Half);
-    void GetQuant(ePType picType, Ipp8u* PQuant, bool* Half, bool* Uniform);
-    UMC::Status SetGOPParams(Ipp32u /*GOPLength*/, Ipp32u /*BFrLength*/);
+    void GetQuant(ePType picType, uint8_t* PQuant, bool* Half);
+    void GetQuant(ePType picType, uint8_t* PQuant, bool* Half, bool* Uniform);
+    UMC::Status SetGOPParams(uint32_t /*GOPLength*/, uint32_t /*BFrLength*/);
 
 protected:
-    void CheckFrame_QualityMode    (Ipp32f ratio, UMC::Status HRDSts);
-    void CorrectGOPQuant(Ipp32f ratio);
-    Ipp32s m_prefINeedSize;
+    void CheckFrame_QualityMode    (float ratio, UMC::Status HRDSts);
+    void CorrectGOPQuant(float ratio);
+    int32_t m_prefINeedSize;
 
 };
 
@@ -208,51 +208,51 @@ public:
     VC1BRC_IP();
     ~VC1BRC_IP();
 protected:
-    Ipp32s m_I_GOPSize;         //I frame size in current GOP
-    Ipp32s m_P_GOPSize;         //P frames size in current GOP
+    int32_t m_I_GOPSize;         //I frame size in current GOP
+    int32_t m_P_GOPSize;         //P frames size in current GOP
 
-    Ipp8u  m_failPQuant;        //need when P ratio >> 1.5
-    Ipp32s m_failGOP;        //need when P rati0 >> 1.5
+    uint8_t  m_failPQuant;        //need when P ratio >> 1.5
+    int32_t m_failGOP;        //need when P rati0 >> 1.5
 
-    Ipp32s m_needISize;        //wishful coded I frame size
-    Ipp32s m_needPSize;        //wishful coded P frame size
+    int32_t m_needISize;        //wishful coded I frame size
+    int32_t m_needPSize;        //wishful coded P frame size
 
-    Ipp32s m_INum;              //number I frame in GOP
-    Ipp32s m_PNum;              //number P frame in GOP
+    int32_t m_INum;              //number I frame in GOP
+    int32_t m_PNum;              //number P frame in GOP
 
-    Ipp32s m_CurrINum;          //number coded I frame in current GOP
-    Ipp32s m_CurrPNum;          //number coded P frame in current GOP
-    Ipp32u m_currFrameInGOP;    //numder of coded frames in current GOP
-    Ipp32s m_poorRefFrame;     //last ref frame had poor quality
-    Ipp32s m_GOPHalfFlag;      //less than half of GOP were coded
+    int32_t m_CurrINum;          //number coded I frame in current GOP
+    int32_t m_CurrPNum;          //number coded P frame in current GOP
+    uint32_t m_currFrameInGOP;    //numder of coded frames in current GOP
+    int32_t m_poorRefFrame;     //last ref frame had poor quality
+    int32_t m_GOPHalfFlag;      //less than half of GOP were coded
 
     //Frames parameters
-    Ipp32s m_currISize;         //last coded I frame size
-    Ipp32s m_currPSize;         //last coded P frame size
-    Ipp32s m_GOPSize;           //"ideal" GOP size
-    Ipp32s m_currGOPSize;       //current GOP size
-    Ipp32s m_nextGOPSize;       //plan GOP size
+    int32_t m_currISize;         //last coded I frame size
+    int32_t m_currPSize;         //last coded P frame size
+    int32_t m_GOPSize;           //"ideal" GOP size
+    int32_t m_currGOPSize;       //current GOP size
+    int32_t m_nextGOPSize;       //plan GOP size
 
-    Ipp32f m_IP_size;   //I/P frame size ratio
-    Ipp32s m_AveragePQuant;
-    Ipp32s m_AverageIQuant;
+    float m_IP_size;   //I/P frame size ratio
+    int32_t m_AveragePQuant;
+    int32_t m_AverageIQuant;
 public:
-    UMC::Status Init(Ipp32u yuvFSize,  Ipp32u bitrate,
-                         Ipp64f framerate, Ipp32u mode,
-                         Ipp32u GOPLength, Ipp32u BFrLength, Ipp8u doubleQuant, Ipp8u QuantMode);
+    UMC::Status Init(uint32_t yuvFSize,  uint32_t bitrate,
+                         double framerate, uint32_t mode,
+                         uint32_t GOPLength, uint32_t BFrLength, uint8_t doubleQuant, uint8_t QuantMode);
     void Reset();
     void Close();
 
     //return frame compression staus
-    UMC::Status CheckFrameCompression(ePType picType, Ipp32u currSize, UMC::Status HRDSts);
+    UMC::Status CheckFrameCompression(ePType picType, uint32_t currSize, UMC::Status HRDSts);
     void CompleteFrame(ePType picType);
-    void GetQuant(ePType picType, Ipp8u* PQuant, bool* Half);
-    void GetQuant(ePType picType, Ipp8u* PQuant, bool* Half, bool* Uniform);
-    UMC::Status SetGOPParams(Ipp32u GOPLength, Ipp32u /*BFrLength*/);
+    void GetQuant(ePType picType, uint8_t* PQuant, bool* Half);
+    void GetQuant(ePType picType, uint8_t* PQuant, bool* Half, bool* Uniform);
+    UMC::Status SetGOPParams(uint32_t GOPLength, uint32_t /*BFrLength*/);
 
 protected:
-    void CheckFrame_QualityMode    (ePType picType, Ipp32f ratio, UMC::Status HRDSts);
-    void CorrectGOPQuant(ePType picType, Ipp32f ratio);
+    void CheckFrame_QualityMode    (ePType picType, float ratio, UMC::Status HRDSts);
+    void CorrectGOPQuant(ePType picType, float ratio);
 
 };
 
@@ -265,64 +265,64 @@ public:
     VC1BRC_IPB();
     ~VC1BRC_IPB();
 protected:
-    Ipp32s m_I_GOPSize;         //I frame size in current GOP
-    Ipp32s m_P_GOPSize;         //P frames size in current GOP
-    Ipp32s m_B_GOPSize;         //B frames size in current GOP
+    int32_t m_I_GOPSize;         //I frame size in current GOP
+    int32_t m_P_GOPSize;         //P frames size in current GOP
+    int32_t m_B_GOPSize;         //B frames size in current GOP
 
 
-    Ipp8u  m_failPQuant;        //need when P ratio >> 1.5
-    Ipp8u  m_failBQuant;        //need when B ratio >> 1.5
+    uint8_t  m_failPQuant;        //need when P ratio >> 1.5
+    uint8_t  m_failBQuant;        //need when B ratio >> 1.5
 
-    Ipp32s m_failGOP;        //need when P rati0 >> 1.5
-    Ipp32s m_needISize;        //wishful coded I frame size
-    Ipp32s m_needPSize;        //wishful coded I frame size
-    Ipp32s m_needBSize;        //wishful coded I frame size
+    int32_t m_failGOP;        //need when P rati0 >> 1.5
+    int32_t m_needISize;        //wishful coded I frame size
+    int32_t m_needPSize;        //wishful coded I frame size
+    int32_t m_needBSize;        //wishful coded I frame size
 
-    Ipp32s m_INum;              //number I frame in GOP
-    Ipp32s m_PNum;              //number P frame in GOP
-    Ipp32s m_BNum;              //number B frame in GOP
+    int32_t m_INum;              //number I frame in GOP
+    int32_t m_PNum;              //number P frame in GOP
+    int32_t m_BNum;              //number B frame in GOP
 
-    Ipp32s m_CurrINum;          //number coded I frame in current GOP
-    Ipp32s m_CurrPNum;          //number coded P frame in current GOP
-    Ipp32s m_CurrBNum;          //number coded B frame in current GOP
+    int32_t m_CurrINum;          //number coded I frame in current GOP
+    int32_t m_CurrPNum;          //number coded P frame in current GOP
+    int32_t m_CurrBNum;          //number coded B frame in current GOP
 
-    Ipp32u m_currFrameInGOP;    //numder of coded frames in current GOP
-    Ipp32s m_frameCount;        //numder of coded frames with current GOP params
+    uint32_t m_currFrameInGOP;    //numder of coded frames in current GOP
+    int32_t m_frameCount;        //numder of coded frames with current GOP params
 
-    Ipp32s m_poorRefFrame;      //last ref frame had poor quality
-    Ipp32s m_GOPHalfFlag;       //less than half of GOP were coded
+    int32_t m_poorRefFrame;      //last ref frame had poor quality
+    int32_t m_GOPHalfFlag;       //less than half of GOP were coded
 
     //Frames parameters
-    Ipp32s m_currISize;         //last coded I frame size
-    Ipp32s m_currPSize;         //last coded P frame size
-    Ipp32s m_currBSize;         //last coded B frame size
-    Ipp32s m_GOPSize;           //"ideal" GOP size
-    Ipp32s m_currGOPSize;       //current GOP size
-    Ipp32s m_nextGOPSize;       //plan GOP size
-    Ipp32f m_IP_size;           //I/P frame size ratio
-    Ipp32f m_IB_size;           //I/b frame size ratio
+    int32_t m_currISize;         //last coded I frame size
+    int32_t m_currPSize;         //last coded P frame size
+    int32_t m_currBSize;         //last coded B frame size
+    int32_t m_GOPSize;           //"ideal" GOP size
+    int32_t m_currGOPSize;       //current GOP size
+    int32_t m_nextGOPSize;       //plan GOP size
+    float m_IP_size;           //I/P frame size ratio
+    float m_IB_size;           //I/b frame size ratio
 
-    Ipp32s m_AveragePQuant;
-    Ipp32s m_AverageIQuant;
-    Ipp32s m_AverageBQuant;
+    int32_t m_AveragePQuant;
+    int32_t m_AverageIQuant;
+    int32_t m_AverageBQuant;
 
 public:
-    UMC::Status Init(Ipp32u yuvFSize,  Ipp32u bitrate,
-                         Ipp64f framerate, Ipp32u mode,
-                         Ipp32u GOPLength, Ipp32u BFrLength, Ipp8u doubleQuant, Ipp8u QuantMode);
+    UMC::Status Init(uint32_t yuvFSize,  uint32_t bitrate,
+                         double framerate, uint32_t mode,
+                         uint32_t GOPLength, uint32_t BFrLength, uint8_t doubleQuant, uint8_t QuantMode);
     void Reset();
     void Close();
 
     //return frame compression staus
-    UMC::Status CheckFrameCompression(ePType picType, Ipp32u currSize, UMC::Status HRDSts);
+    UMC::Status CheckFrameCompression(ePType picType, uint32_t currSize, UMC::Status HRDSts);
     void CompleteFrame(ePType picType);
-    void GetQuant(ePType picType, Ipp8u* PQuant, bool* Half);
-    void GetQuant(ePType picType, Ipp8u* PQuant, bool* Half, bool* Uniform);
-    UMC::Status SetGOPParams(Ipp32u GOPLength, Ipp32u BFrLength);
+    void GetQuant(ePType picType, uint8_t* PQuant, bool* Half);
+    void GetQuant(ePType picType, uint8_t* PQuant, bool* Half, bool* Uniform);
+    UMC::Status SetGOPParams(uint32_t GOPLength, uint32_t BFrLength);
 
 protected:
-    void CheckFrame_QualityMode    (ePType picType, Ipp32f ratio, UMC::Status HRDSts);
-    void CorrectGOPQuant(ePType picType, Ipp32f ratio);
+    void CheckFrame_QualityMode    (ePType picType, float ratio, UMC::Status HRDSts);
+    void CorrectGOPQuant(ePType picType, float ratio);
 };
 }
 #endif //_ENCODER_VC1_BITRATE_GOP_H_

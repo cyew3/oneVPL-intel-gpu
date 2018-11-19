@@ -29,20 +29,20 @@
 #include "assert.h"
 
 #ifdef _OWN_FUNCTION
-IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s srcLeftStep,
-                                                        Ipp16s* pSrcRight, Ipp32s srcRightStep,
-                                                        Ipp8u* pDst, Ipp32s dstStep,
-                                                        Ipp32u fieldNeighbourFlag,
-                                                        Ipp32u edgeDisableFlag)
+IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32_t srcLeftStep,
+                                                        int16_t* pSrcRight, int32_t srcRightStep,
+                                                        uint8_t* pDst, int32_t dstStep,
+                                                        uint32_t fieldNeighbourFlag,
+                                                        uint32_t edgeDisableFlag)
 {
-    Ipp32s i;
-    Ipp8s r0, r1;
-    Ipp16s *pSrcL = pSrcLeft;
-    Ipp16s *pSrcR = pSrcRight;
-    Ipp8u  *dst = pDst;
+    int32_t i;
+    int8_t r0, r1;
+    int16_t *pSrcL = pSrcLeft;
+    int16_t *pSrcR = pSrcRight;
+    uint8_t  *dst = pDst;
 
-    Ipp16s x0,x1,x2,x3;
-    Ipp16s f0, f1;
+    int16_t x0,x1,x2,x3;
+    int16_t f0, f1;
 
     if(!edgeDisableFlag) return ippStsNoErr;
 
@@ -71,10 +71,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                     *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                     *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                    *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                    *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                    *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                    *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                    *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                    *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                    *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                    *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                     r0 = 7 - r0;
                     r1 = 7 - r1;
@@ -101,10 +101,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                         *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                         *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                        *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                        *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                        *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                        *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                        *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                        *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                        *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                        *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                         r0 = 7 - r0;
                         r1 = 7 - r1;
@@ -135,10 +135,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcR += srcRightStep;
                 pSrcL += 2*srcLeftStep;
@@ -166,10 +166,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcL += 2*srcLeftStep;
                 pSrcR += srcRightStep;
@@ -198,10 +198,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcR += srcRightStep;
                 pSrcL = pSrcL + VC1_PIXEL_IN_BLOCK*srcLeftStep;
@@ -224,10 +224,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcL -= 7*srcLeftStep;
                 pSrcR += srcRightStep;
@@ -253,10 +253,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcR += srcRightStep;
                 pSrcL = pSrcL + VC1_PIXEL_IN_BLOCK*srcLeftStep;
@@ -279,10 +279,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcL -= 7*srcLeftStep;
                 pSrcR += srcRightStep;
@@ -312,10 +312,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcL += srcLeftStep;
                 pSrcR += srcRightStep;
@@ -341,10 +341,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcL += srcLeftStep;
                 pSrcR += srcRightStep;
@@ -357,19 +357,19 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp32s srcUpperStep,
-                                                        Ipp16s* pSrcBottom, Ipp32s srcBottomStep,
-                                                        Ipp8u* pDst, Ipp32s dstStep,
-                                                        Ipp32u edgeDisableFlag)
+IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (int16_t* pSrcUpper, int32_t srcUpperStep,
+                                                        int16_t* pSrcBottom, int32_t srcBottomStep,
+                                                        uint8_t* pDst, int32_t dstStep,
+                                                        uint32_t edgeDisableFlag)
 {
-    Ipp32s i;
-    Ipp8s r0=4, r1=3;
-    Ipp16s *pSrcU = pSrcUpper;
-    Ipp16s *pSrcB = pSrcBottom;
-    Ipp8u  *dst = pDst;
+    int32_t i;
+    int8_t r0=4, r1=3;
+    int16_t *pSrcU = pSrcUpper;
+    int16_t *pSrcB = pSrcBottom;
+    uint8_t  *dst = pDst;
 
-    Ipp16s x0,x1,x2,x3;
-    Ipp16s f0, f1;
+    int16_t x0,x1,x2,x3;
+    int16_t f0, f1;
     srcUpperStep/=2;
     srcBottomStep/=2;
 
@@ -389,10 +389,10 @@ IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp32
             //*(pSrcB    ) = ((1 * x0 + 1 * x1 + 7 * x2 + -1* x3) + r0)>>3;
             //*(pSrcB + srcBottomStep) = ((1 * x0 + 0 * x1 + 0 * x2 + 7 * x3) + r1)>>3;
 
-            *(dst-2*dstStep)= (Ipp8u)VC1_CLIP(x0 + ((f0 + r0)>>3));
-            *(dst-1*dstStep)= (Ipp8u)VC1_CLIP(x1 + ((f1 + r1)>>3));
-            *(dst+0*dstStep)= (Ipp8u)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-            *(dst+1*dstStep)= (Ipp8u)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+            *(dst-2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
+            *(dst-1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
+            *(dst+0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
+            *(dst+1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
 
             dst++;
             pSrcU++;
@@ -422,10 +422,10 @@ IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp32
                 //*(pSrcB    ) = ((1 * x0 + 1 * x1 + 7 * x2 + -1* x3) + r0)>>3;
                 //*(pSrcB + srcBottomStep) = ((1 * x0 + 0 * x1 + 0 * x2 + 7 * x3) + r1)>>3;
 
-                *(dst-2*dstStep)= (Ipp8u)VC1_CLIP(x0 + ((f0 + r0)>>3));
-                *(dst-1*dstStep)= (Ipp8u)VC1_CLIP(x1 + ((f1 + r1)>>3));
-                *(dst+0*dstStep)= (Ipp8u)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-                *(dst+1*dstStep)= (Ipp8u)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+                *(dst-2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
+                *(dst-1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
+                *(dst+0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
+                *(dst+1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
 
                 dst++;
                 pSrcU++;
@@ -439,18 +439,18 @@ IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp32
 }
 
 
-IppStatus _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp32s srcUpperStep,
-                                                          Ipp16s* pSrcBottom, Ipp32s srcBottomStep,
-                                                          Ipp8u* pDst, Ipp32s dstStep)
+IppStatus _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R (int16_t* pSrcUpper, int32_t srcUpperStep,
+                                                          int16_t* pSrcBottom, int32_t srcBottomStep,
+                                                          uint8_t* pDst, int32_t dstStep)
 {
-    Ipp32s i;
-    Ipp8s r0=4, r1=3;
-    Ipp16s *pSrcU = pSrcUpper;
-    Ipp16s *pSrcB = pSrcBottom;
-    Ipp8u  *dst = pDst;
+    int32_t i;
+    int8_t r0=4, r1=3;
+    int16_t *pSrcU = pSrcUpper;
+    int16_t *pSrcB = pSrcBottom;
+    uint8_t  *dst = pDst;
 
-    Ipp16s x0,x1,x2,x3;
-    Ipp16s f0, f1;
+    int16_t x0,x1,x2,x3;
+    int16_t f0, f1;
 
     srcUpperStep/=2;
     srcBottomStep/=2;
@@ -470,10 +470,10 @@ IppStatus _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp
         //*(pSrcB    )            = x2 + (-f1 + r0)>>3;
         //*(pSrcB + srcBottomStep)= x3 + (-f0 + r1)>>3;
 
-        *(dst-2*dstStep)= (Ipp8u)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(dst-1*dstStep)= (Ipp8u)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(dst+0*dstStep)= (Ipp8u)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(dst+1*dstStep)= (Ipp8u)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(dst-2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
+        *(dst-1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
+        *(dst+0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
+        *(dst+1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
 
         dst++;
         pSrcU++;
@@ -485,15 +485,15 @@ IppStatus _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s srcLeftStep,
-                                                          Ipp16s* pSrcRight, Ipp32s srcRightStep,
-                                                          Ipp8u* pDst, Ipp32s dstStep)
+IppStatus _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32_t srcLeftStep,
+                                                          int16_t* pSrcRight, int32_t srcRightStep,
+                                                          uint8_t* pDst, int32_t dstStep)
 {
-    Ipp32s i;
-    Ipp8s r0, r1;
+    int32_t i;
+    int8_t r0, r1;
 
-    Ipp16s x0,x1,x2,x3;
-    Ipp16s f0, f1;
+    int16_t x0,x1,x2,x3;
+    int16_t f0, f1;
 
     r0 = 4; r1 = 3;
     srcLeftStep/=2;
@@ -515,10 +515,10 @@ IppStatus _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp3
         *(pSrcRight )   = x2 + ((-f1 + r0)>>3);
         *(pSrcRight+1)  = x3 + ((-f0 + r1)>>3);
 
-        *(pDst-2)=(Ipp8u)VC1_CLIP(*(pSrcLeft));
-        *(pDst-1)=(Ipp8u)VC1_CLIP(*(pSrcLeft+1));
-        *(pDst+0)=(Ipp8u)VC1_CLIP(*(pSrcRight));
-        *(pDst+1)=(Ipp8u)VC1_CLIP(*(pSrcRight+1));
+        *(pDst-2)=(uint8_t)VC1_CLIP(*(pSrcLeft));
+        *(pDst-1)=(uint8_t)VC1_CLIP(*(pSrcLeft+1));
+        *(pDst+0)=(uint8_t)VC1_CLIP(*(pSrcRight));
+        *(pDst+1)=(uint8_t)VC1_CLIP(*(pSrcRight+1));
 
         r0 = 7 - r0;
         r1 = 7 - r1;
@@ -531,30 +531,30 @@ IppStatus _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp3
 
 #endif
 
-void Smoothing_I(VC1Context* pContext, Ipp32s Height)
+void Smoothing_I(VC1Context* pContext, int32_t Height)
 {
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
     if(pCurrMB->Overlap == 0)
         return;
 
-    Ipp32s notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
-    Ipp32s Width = pContext->m_seqLayerHeader.widthMB;
-    Ipp32s MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
-    Ipp32u EdgeDisabledFlag = IPPVC_EDGE_HALF_1 | IPPVC_EDGE_HALF_2;
+    int32_t notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
+    int32_t Width = pContext->m_seqLayerHeader.widthMB;
+    int32_t MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
+    uint32_t EdgeDisabledFlag = IPPVC_EDGE_HALF_1 | IPPVC_EDGE_HALF_2;
 
-    Ipp16s* CurrBlock = pContext->m_pBlock;
-    Ipp8u* YPlane = pCurrMB->currYPlane;
-    Ipp8u* UPlane = pCurrMB->currUPlane;
-    Ipp8u* VPlane = pCurrMB->currVPlane;
-    Ipp32s YPitch = pCurrMB->currYPitch;
-    Ipp32s UPitch = pCurrMB->currUPitch;
-    Ipp32s VPitch = pCurrMB->currVPitch;
+    int16_t* CurrBlock = pContext->m_pBlock;
+    uint8_t* YPlane = pCurrMB->currYPlane;
+    uint8_t* UPlane = pCurrMB->currUPlane;
+    uint8_t* VPlane = pCurrMB->currVPlane;
+    int32_t YPitch = pCurrMB->currYPitch;
+    int32_t UPitch = pCurrMB->currUPitch;
+    int32_t VPitch = pCurrMB->currVPitch;
 
-    Ipp32s i, j;
-    //Ipp16s* UpYrow;
-    //Ipp16s* UpUrow;
-    //Ipp16s* UpVrow;
+    int32_t i, j;
+    //int16_t* UpYrow;
+    //int16_t* UpUrow;
+    //int16_t* UpVrow;
 
     for (j = 0; j< Height; j++)
     {
@@ -722,31 +722,31 @@ void Smoothing_I(VC1Context* pContext, Ipp32s Height)
     }
 }
 
-void Smoothing_P(VC1Context* pContext, Ipp32s Height)
+void Smoothing_P(VC1Context* pContext, int32_t Height)
 {
     if(pContext->m_seqLayerHeader.OVERLAP == 0)
         return;
 
     {
         VC1MB* pCurrMB = pContext->m_pCurrMB;
-        Ipp32s notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
-        Ipp32s Width = pContext->m_seqLayerHeader.widthMB;
-        Ipp32s MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
-        Ipp32u EdgeDisabledFlag;
-        Ipp16s* CurrBlock = pContext->m_pBlock;
-        Ipp8u* YPlane = pCurrMB->currYPlane;
-        Ipp8u* UPlane = pCurrMB->currUPlane;
-        Ipp8u* VPlane = pCurrMB->currVPlane;
+        int32_t notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
+        int32_t Width = pContext->m_seqLayerHeader.widthMB;
+        int32_t MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
+        uint32_t EdgeDisabledFlag;
+        int16_t* CurrBlock = pContext->m_pBlock;
+        uint8_t* YPlane = pCurrMB->currYPlane;
+        uint8_t* UPlane = pCurrMB->currUPlane;
+        uint8_t* VPlane = pCurrMB->currVPlane;
 
-        Ipp32s YPitch = pCurrMB->currYPitch;
-        Ipp32s UPitch = pCurrMB->currUPitch;
-        Ipp32s VPitch = pCurrMB->currVPitch;
-        Ipp32s LeftIntra;
-        Ipp32s TopLeftIntra;
-        Ipp32s TopIntra;
-        Ipp32s CurrIntra = pCurrMB->IntraFlag*pCurrMB->Overlap;
+        int32_t YPitch = pCurrMB->currYPitch;
+        int32_t UPitch = pCurrMB->currUPitch;
+        int32_t VPitch = pCurrMB->currVPitch;
+        int32_t LeftIntra;
+        int32_t TopLeftIntra;
+        int32_t TopIntra;
+        int32_t CurrIntra = pCurrMB->IntraFlag*pCurrMB->Overlap;
 
-        Ipp32s i, j;
+        int32_t i, j;
  
         for (j = 0; j< Height; j++)
         {

@@ -245,10 +245,10 @@ UMC::Status VC1EncoderPictureSM::Close()
 
 UMC::Status     VC1EncoderPictureSM::SetPlaneParams  (Frame* pFrame, ePlaneType type)
 {
-    Ipp8u** pPlane;
-    Ipp32u* pPlaneStep;
-    Ipp32u *padding;
-    Ipp32u temp;
+    uint8_t** pPlane;
+    uint32_t* pPlaneStep;
+    uint32_t *padding;
+    uint32_t temp;
     switch(type)
     {
     case  VC1_ENC_CURR_PLANE:
@@ -301,7 +301,7 @@ UMC::Status VC1EncoderPictureSM::SetInitPictureParams(InitPictureParams* InitPic
     return UMC::UMC_OK;
 }
 
-UMC::Status VC1EncoderPictureSM::SetPictureParams(ePType Type, Ipp16s* pSavedMV)
+UMC::Status VC1EncoderPictureSM::SetPictureParams(ePType Type, int16_t* pSavedMV)
 {
     m_uiPictureType     =  Type;
 
@@ -337,7 +337,7 @@ UMC::Status VC1EncoderPictureSM::SetPictureParams(ePType Type, Ipp16s* pSavedMV)
 
 }
 
-UMC::Status VC1EncoderPictureSM::SetPictureQuantParams(Ipp8u uiQuantIndex, bool bHalfQuant)
+UMC::Status VC1EncoderPictureSM::SetPictureQuantParams(uint8_t uiQuantIndex, bool bHalfQuant)
 {
     m_uiQuantIndex = uiQuantIndex;
     m_bHalfQuant = bHalfQuant;
@@ -609,9 +609,9 @@ UMC::Status VC1EncoderPictureSM::WriteIPictureHeader(VC1EncoderBitStreamSM* pCod
 UMC::Status VC1EncoderPictureSM::CompletePicture(VC1EncoderBitStreamSM* pCodedPicture, double dPTS, size_t  len)
 {
     UMC::Status   err       = UMC::UMC_OK;
-    Ipp32u   temp           = 0;
-    Ipp32u   dataLen        = 0;
-    Ipp32u   uTime          = (Ipp32u)(dPTS*1000000.0);
+    uint32_t   temp           = 0;
+    uint32_t   dataLen        = 0;
+    uint32_t   uTime          = (uint32_t)(dPTS*1000000.0);
 
 
 
@@ -636,12 +636,12 @@ UMC::Status VC1EncoderPictureSM::CompletePicture(VC1EncoderBitStreamSM* pCodedPi
 UMC::Status  VC1EncoderPictureSM::PAC_IFrame(UMC::MeParams* pME)
 {
     UMC::Status                 err = UMC::UMC_OK;
-    Ipp32s                      i=0, j=0, blk = 0;
+    int32_t                      i=0, j=0, blk = 0;
     bool                        bRaiseFrame = (m_pRaisedPlane[0])&&(m_pRaisedPlane[1])&&(m_pRaisedPlane[2]);
 
-    Ipp8u*                      pCurMBRow[3] =  {m_pPlane[0],m_pPlane[1],m_pPlane[2]};
-    Ipp32s                      h = m_pSequenceHeader->GetNumMBInCol();
-    Ipp32s                      w = m_pSequenceHeader->GetNumMBInRow();
+    uint8_t*                      pCurMBRow[3] =  {m_pPlane[0],m_pPlane[1],m_pPlane[2]};
+    int32_t                      h = m_pSequenceHeader->GetNumMBInCol();
+    int32_t                      w = m_pSequenceHeader->GetNumMBInRow();
 
 
     //forward transform quantization
@@ -667,30 +667,30 @@ UMC::Status  VC1EncoderPictureSM::PAC_IFrame(UMC::MeParams* pME)
     IntraInvTransformQuantFunction InvTransformQuantACFunction = (m_bUniformQuant) ? IntraInvTransformQuantUniform :
                                                                         IntraInvTransformQuantNonUniform;
 
-    Ipp8u                       defDCPredCoeff  = (m_pSequenceHeader->IsOverlap()&& m_uiQuant>=9)? 0:1;
+    uint8_t                       defDCPredCoeff  = (m_pSequenceHeader->IsOverlap()&& m_uiQuant>=9)? 0:1;
     eDirection                  direction[VC1_ENC_NUMBER_OF_BLOCKS];
     bool                        dACPrediction   = true;
-    IppiSize                    blkSize     = {8,8};
-    IppiSize                    blkSizeLuma = {16,16};
+    mfxSize                    blkSize     = {8,8};
+    mfxSize                    blkSizeLuma = {16,16};
 
-    Ipp8u deblkPattern = 0;//3 bits: right 1 bit - left/not left
+    uint8_t deblkPattern = 0;//3 bits: right 1 bit - left/not left
                            //left 2 bits: 00 - top row, 01-middle row, 11 - bottom row
-    Ipp8u deblkMask = (m_pSequenceHeader->IsLoopFilter()) ? 0xFE : 0;
+    uint8_t deblkMask = (m_pSequenceHeader->IsLoopFilter()) ? 0xFE : 0;
 
-    Ipp8u smoothMask = (m_pSequenceHeader->IsOverlap() && (m_uiQuant >= 9)) ? 0xFF : 0;
+    uint8_t smoothMask = (m_pSequenceHeader->IsOverlap() && (m_uiQuant >= 9)) ? 0xFF : 0;
 
-    Ipp8u smoothPattern = 0x4 & smoothMask; //3 bits: 0/1 - right/not right,
+    uint8_t smoothPattern = 0x4 & smoothMask; //3 bits: 0/1 - right/not right,
                                             //0/1 - top/not top, 0/1 - left/not left
     SmoothInfo_I_SM smoothInfo = {0};
 
-    Ipp8u                       doubleQuant     =  2*m_uiQuant + m_bHalfQuant;
-    Ipp8u                       DCQuant         =  DCQuantValues[m_uiQuant];
-    Ipp16s                      defPredictor    =  defDCPredCoeff*(1024 + (DCQuant>>1))/DCQuant;
+    uint8_t                       doubleQuant     =  2*m_uiQuant + m_bHalfQuant;
+    uint8_t                       DCQuant         =  DCQuantValues[m_uiQuant];
+    int16_t                      defPredictor    =  defDCPredCoeff*(1024 + (DCQuant>>1))/DCQuant;
 
 
     if (m_pSavedMV)
     {
-        memset(m_pSavedMV,0,w*h*2*sizeof(Ipp16s));
+        memset(m_pSavedMV,0,w*h*2*sizeof(int16_t));
     }
     err = m_pMBs->Reset();
     if (err != UMC::UMC_OK)
@@ -703,9 +703,9 @@ UMC::Status  VC1EncoderPictureSM::PAC_IFrame(UMC::MeParams* pME)
 
     for (i=0; i < h; i++)
     {
-        Ipp8u *pRFrameY = 0;
-        Ipp8u *pRFrameU = 0;
-        Ipp8u *pRFrameV = 0;
+        uint8_t *pRFrameY = 0;
+        uint8_t *pRFrameU = 0;
+        uint8_t *pRFrameV = 0;
 
         if (bRaiseFrame)
         {
@@ -715,15 +715,15 @@ UMC::Status  VC1EncoderPictureSM::PAC_IFrame(UMC::MeParams* pME)
         }
         for (j=0; j < w; j++)
         {
-            Ipp8u               MBPattern  = 0;
-            Ipp8u               CBPCY      = 0;
+            uint8_t               MBPattern  = 0;
+            uint8_t               CBPCY      = 0;
 
             VC1EncoderMBInfo*   pCurMBInfo = 0;
             VC1EncoderMBData*   pCurMBData = 0;
             VC1EncoderMBData*   pRecMBData = 0;
 
-            Ipp32s              xLuma      = VC1_ENC_LUMA_SIZE*j;
-            Ipp32s              xChroma    = VC1_ENC_CHROMA_SIZE*j;
+            int32_t              xLuma      = VC1_ENC_LUMA_SIZE*j;
+            int32_t              xChroma    = VC1_ENC_CHROMA_SIZE*j;
             NeighbouringMBsData MBs;
 
             VC1EncoderCodedMB*  pCompressedMB = &(m_pCodedMB[w*i+j]);
@@ -754,7 +754,7 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
                 }
 STATISTICS_START_TIME(m_TStat->FwdQT_StartTime);
                 TransformQuantACFunction[blk](pCurMBData->m_pBlock[blk], pCurMBData->m_uiBlockStep[blk],
-                                         DCQuant, doubleQuant,pME->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(Ipp8u));
+                                         DCQuant, doubleQuant,pME->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(uint8_t));
 STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->FwdQT_TotalTime);
             }
 
@@ -847,7 +847,7 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
 //deblocking
 STATISTICS_START_TIME(m_TStat->Deblk_StartTime);
 {
-                    Ipp8u *DeblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
+                    uint8_t *DeblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
 
                     m_pDeblk_I_MB[deblkPattern](DeblkPlanes, m_uiRaisedPlaneStep, m_uiQuant, j);
 
@@ -875,7 +875,7 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
 #endif
         }
 
-        deblkPattern = (deblkPattern  | 0x2 | ( (! (Ipp8u)((i + 1 - (h -1)) >> 31)<<2 )))& deblkMask;
+        deblkPattern = (deblkPattern  | 0x2 | ( (! (uint8_t)((i + 1 - (h -1)) >> 31)<<2 )))& deblkMask;
         smoothPattern = 0x6 & smoothMask;
 
 //Row deblocking
@@ -883,7 +883,7 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
 //        if (m_pSequenceHeader->IsLoopFilter()&& bRaiseFrame && i!=0 )
 //        {
 //STATISTICS_START_TIME(m_TStat->Deblk_StartTime);
-//            Ipp8u *planes[3] = {m_pRaisedPlane[0] + i*m_uiRaisedPlaneStep[0]*VC1_ENC_LUMA_SIZE,
+//            uint8_t *planes[3] = {m_pRaisedPlane[0] + i*m_uiRaisedPlaneStep[0]*VC1_ENC_LUMA_SIZE,
 //                                m_pRaisedPlane[1] + i*m_uiRaisedPlaneStep[1]*VC1_ENC_CHROMA_SIZE,
 //                                m_pRaisedPlane[2] + i*m_uiRaisedPlaneStep[2]*VC1_ENC_CHROMA_SIZE};
 //
@@ -938,10 +938,10 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
 UMC::Status  VC1EncoderPictureSM::VLC_IFrame(VC1EncoderBitStreamSM* pCodedPicture)
 {
     UMC::Status  err = UMC::UMC_OK;
-    Ipp32u       i=0, j=0, blk = 0;
+    uint32_t       i=0, j=0, blk = 0;
 
-    Ipp32u                      h = m_pSequenceHeader->GetNumMBInCol();
-    Ipp32u                      w = m_pSequenceHeader->GetNumMBInRow();
+    uint32_t                      h = m_pSequenceHeader->GetNumMBInCol();
+    uint32_t                      w = m_pSequenceHeader->GetNumMBInRow();
 
     eCodingSet   LumaCodingSet   = LumaCodingSetsIntra[m_uiQuantIndex>8][m_uiDecTypeAC2];
     eCodingSet   ChromaCodingSet = ChromaCodingSetsIntra[m_uiQuantIndex>8][m_uiDecTypeAC1];
@@ -954,7 +954,7 @@ UMC::Status  VC1EncoderPictureSM::VLC_IFrame(VC1EncoderBitStreamSM* pCodedPictur
                                            &ACTablesSet[ChromaCodingSet],
                                            &ACTablesSet[ChromaCodingSet]};
 
-    const Ipp32u*        pDCTableVLC[6] = {DCTables[m_uiDecTypeDCIntra][0],
+    const uint32_t*        pDCTableVLC[6] = {DCTables[m_uiDecTypeDCIntra][0],
                                            DCTables[m_uiDecTypeDCIntra][0],
                                            DCTables[m_uiDecTypeDCIntra][0],
                                            DCTables[m_uiDecTypeDCIntra][0],
@@ -982,9 +982,9 @@ UMC::Status  VC1EncoderPictureSM::VLC_IFrame(VC1EncoderBitStreamSM* pCodedPictur
 #ifdef VC1_ME_MB_STATICTICS
             m_MECurMbStat->MbType = UMC::ME_MbIntra;  //could be not correct
             m_MECurMbStat->whole = 0;
-            memset(m_MECurMbStat->MVF, 0,   4*sizeof(Ipp16u));
-            memset(m_MECurMbStat->MVB, 0,   4*sizeof(Ipp16u));
-            memset(m_MECurMbStat->coeff, 0, 6*sizeof(Ipp16u));
+            memset(m_MECurMbStat->MVF, 0,   4*sizeof(uint16_t));
+            memset(m_MECurMbStat->MVB, 0,   4*sizeof(uint16_t));
+            memset(m_MECurMbStat->coeff, 0, 6*sizeof(uint16_t));
             m_MECurMbStat->qp    = 2*m_uiQuant + m_bHalfQuant;
 
             pCompressedMB->SetMEFrStatPointer(m_MECurMbStat);
@@ -1019,16 +1019,16 @@ UMC::Status  VC1EncoderPictureSM::VLC_IFrame(VC1EncoderBitStreamSM* pCodedPictur
 UMC::Status VC1EncoderPictureSM::SetInterpolationParams (IppVCInterpolateBlock_8u* pY,
                                                           IppVCInterpolateBlock_8u* pU,
                                                           IppVCInterpolateBlock_8u* pV,
-                                                          Ipp8u* buffer,
-                                                          Ipp32u w,
-                                                          Ipp32u h,
-                                                          Ipp8u **pPlane,
-                                                          Ipp32u *pStep,
+                                                          uint8_t* buffer,
+                                                          uint32_t w,
+                                                          uint32_t h,
+                                                          uint8_t **pPlane,
+                                                          uint32_t *pStep,
                                                           bool bField)
 {
     UMC::Status ret = UMC::UMC_OK;
-    Ipp32u lumaShift   = (bField)? 1:0;
-    Ipp32u chromaShift = (bField)? 2:1;
+    uint32_t lumaShift   = (bField)? 1:0;
+    uint32_t chromaShift = (bField)? 2:1;
 
   
     pY->pSrc [0]           = pPlane[0];
@@ -1069,12 +1069,12 @@ UMC::Status VC1EncoderPictureSM::SetInterpolationParams (IppVCInterpolateBlock_8
 UMC::Status  VC1EncoderPictureSM::SetInterpolationParams(IppVCInterpolate_8u* pY,
                                                          IppVCInterpolate_8u* pU,
                                                          IppVCInterpolate_8u* pV,
-                                                         Ipp8u* buffer,
+                                                         uint8_t* buffer,
                                                          bool bForward)
 {
     UMC::Status ret = UMC::UMC_OK;
-    Ipp8u **pPlane;
-    Ipp32u *pStep;
+    uint8_t **pPlane;
+    uint32_t *pStep;
 
 
     if (bForward)
@@ -1125,12 +1125,12 @@ UMC::Status  VC1EncoderPictureSM::SetInterpolationParams(IppVCInterpolate_8u* pY
 UMC::Status  VC1EncoderPictureSM::SetInterpolationParams4MV( IppVCInterpolate_8u* pY,
                                                               IppVCInterpolate_8u* pU,
                                                               IppVCInterpolate_8u* pV,
-                                                              Ipp8u* buffer,
+                                                              uint8_t* buffer,
                                                               bool bForward)
 {
     UMC::Status ret = UMC::UMC_OK;
-    Ipp8u **pPlane;
-    Ipp32u *pStep;
+    uint8_t **pPlane;
+    uint32_t *pStep;
 
 
     if (bForward)
@@ -1210,14 +1210,14 @@ UMC::Status  VC1EncoderPictureSM::SetInterpolationParams4MV( IppVCInterpolate_8u
 UMC::Status VC1EncoderPictureSM::PAC_PFrame(UMC::MeParams* MEParams)
 {
     UMC::Status  err = UMC::UMC_OK;
-    Ipp32s                      i=0, j=0, blk = 0;
+    int32_t                      i=0, j=0, blk = 0;
     bool                        bRaiseFrame = (m_pRaisedPlane[0])&&(m_pRaisedPlane[1])&&(m_pRaisedPlane[2]);
 
-    Ipp8u*                      pCurMBRow[3] = {m_pPlane[0],        m_pPlane[1],        m_pPlane[2]};
-    Ipp8u*                      pFMBRow  [3] = {m_pForwardPlane[0], m_pForwardPlane[1], m_pForwardPlane[2]};
+    uint8_t*                      pCurMBRow[3] = {m_pPlane[0],        m_pPlane[1],        m_pPlane[2]};
+    uint8_t*                      pFMBRow  [3] = {m_pForwardPlane[0], m_pForwardPlane[1], m_pForwardPlane[2]};
 
-    Ipp32s                      h = m_pSequenceHeader->GetNumMBInCol();
-    Ipp32s                      w = m_pSequenceHeader->GetNumMBInRow();
+    int32_t                      h = m_pSequenceHeader->GetNumMBInCol();
+    int32_t                      w = m_pSequenceHeader->GetNumMBInRow();
 
     //forward transform quantization
 
@@ -1243,7 +1243,7 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrame(UMC::MeParams* MEParams)
                                                                     own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R:
                                                                     own_ippiICInterpolateQPBicubicBlock_VC1_8u_P1R;
 
-    Ipp8u                       tempInterpolationBuffer[VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS];
+    uint8_t                       tempInterpolationBuffer[VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS];
 
     IppVCInterpolate_8u         sYInterpolation;
     IppVCInterpolate_8u         sUInterpolation;
@@ -1254,20 +1254,20 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrame(UMC::MeParams* MEParams)
 
     eDirection                  direction[VC1_ENC_NUMBER_OF_BLOCKS];
     bool                        dACPrediction   = true;
-    IppiSize                    blkSize     = {8,8};
-    IppiSize                    blkSizeLuma = {16,16};
+    mfxSize                    blkSize     = {8,8};
+    mfxSize                    blkSizeLuma = {16,16};
 
 
-    Ipp8u                       doubleQuant     =  2*m_uiQuant + m_bHalfQuant;
-    Ipp8u                       DCQuant         =  DCQuantValues[m_uiQuant];
-    Ipp16s                      defPredictor    =  0;//defDCPredCoeff*(1024 + (DCQuant>>1))/DCQuant;
-    Ipp16s*                     pSavedMV = m_pSavedMV;
+    uint8_t                       doubleQuant     =  2*m_uiQuant + m_bHalfQuant;
+    uint8_t                       DCQuant         =  DCQuantValues[m_uiQuant];
+    int16_t                      defPredictor    =  0;//defDCPredCoeff*(1024 + (DCQuant>>1))/DCQuant;
+    int16_t*                     pSavedMV = m_pSavedMV;
 
     sCoordinate                 MVPredMBMin = {-60,-60};
-    sCoordinate                 MVPredMBMax = {(Ipp16s)w*16*4-4, (Ipp16s)h*16*4-4};
+    sCoordinate                 MVPredMBMax = {(int16_t)w*16*4-4, (int16_t)h*16*4-4};
 
     sCoordinate                 MVSavedMBMin = {-8,-8};
-    sCoordinate                 MVSavedMBMax = {(Ipp16s)w*8, (Ipp16s)h*8};
+    sCoordinate                 MVSavedMBMax = {(int16_t)w*8, (int16_t)h*8};
     bool                        bMVHalf = (m_uiMVMode == VC1_ENC_1MV_HALF_BILINEAR ||
                                            m_uiMVMode == VC1_ENC_1MV_HALF_BICUBIC) ? true: false;
 
@@ -1277,15 +1277,15 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrame(UMC::MeParams* MEParams)
     fGetExternalEdge            pGetExternalEdge    = GetExternalEdge_SM[m_uiMVMode==VC1_ENC_MIXED_QUARTER_BICUBIC][bSubBlkTS]; //4 MV, VTS
     fGetInternalEdge            pGetInternalEdge    = GetInternalEdge_SM[m_uiMVMode==VC1_ENC_MIXED_QUARTER_BICUBIC][bSubBlkTS]; //4 MV, VTS
 
-    Ipp8u deblkPattern = 0;//4 bits: right 1 bit - 0 - left/1 - not left,
+    uint8_t deblkPattern = 0;//4 bits: right 1 bit - 0 - left/1 - not left,
                            //left 2 bits: 00 - top row, 01-middle row, 11 - bottom row
                            //middle 1 bit - 1 - right/0 - not right
-    Ipp8u deblkExceptoin = 0xFF; //if fist block intra equal to 0
+    uint8_t deblkExceptoin = 0xFF; //if fist block intra equal to 0
 
-    Ipp8u deblkMask = (m_pSequenceHeader->IsLoopFilter()) ? 0xFC : 0;
+    uint8_t deblkMask = (m_pSequenceHeader->IsLoopFilter()) ? 0xFC : 0;
 
-    Ipp8u smoothMask = (m_pSequenceHeader->IsOverlap() && (m_uiQuant >= 9)) ? 0xFF : 0;
-    Ipp8u smoothPattern = 0x4 & smoothMask; //3 bits: 0/1 - right/not right,
+    uint8_t smoothMask = (m_pSequenceHeader->IsOverlap() && (m_uiQuant >= 9)) ? 0xFF : 0;
+    uint8_t smoothPattern = 0x4 & smoothMask; //3 bits: 0/1 - right/not right,
                                             //0/1 - top/not top, 0/1 - left/not left
 
     SmoothInfo_P_SM smoothInfo = {0};
@@ -1301,7 +1301,7 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrame(UMC::MeParams* MEParams)
 
     if (m_pSavedMV)
     {
-        memset(m_pSavedMV,0,w*h*2*sizeof(Ipp16s));
+        memset(m_pSavedMV,0,w*h*2*sizeof(int16_t));
     }
 
 
@@ -1327,9 +1327,9 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrame(UMC::MeParams* MEParams)
 
     for (i=0; i < h; i++)
     {
-        Ipp8u *pRFrameY = 0;
-        Ipp8u *pRFrameU = 0;
-        Ipp8u *pRFrameV = 0;
+        uint8_t *pRFrameY = 0;
+        uint8_t *pRFrameU = 0;
+        uint8_t *pRFrameV = 0;
 
         if (bRaiseFrame)
         {
@@ -1339,14 +1339,14 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrame(UMC::MeParams* MEParams)
         }
         for (j=0; j < w; j++)
         {
-            Ipp32s              xLuma       =  VC1_ENC_LUMA_SIZE*j;
-            Ipp32s              xChroma     =  VC1_ENC_CHROMA_SIZE*j;
+            int32_t              xLuma       =  VC1_ENC_LUMA_SIZE*j;
+            int32_t              xChroma     =  VC1_ENC_CHROMA_SIZE*j;
 
             sCoordinate         MVInt       = {0,0};
             sCoordinate         MVQuarter   = {0,0};
             sCoordinate         MV          = {0,0};
-            Ipp8u               MBPattern   = 0;
-            Ipp8u               CBPCY       = 0;
+            uint8_t               MBPattern   = 0;
+            uint8_t               CBPCY       = 0;
 
             VC1EncoderMBInfo  * pCurMBInfo  = m_pMBs->GetCurrMBInfo();
             VC1EncoderMBData  * pCurMBData  = m_pMBs->GetCurrMBData();
@@ -1391,7 +1391,7 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
 
 STATISTICS_START_TIME(m_TStat->FwdQT_StartTime);
                     IntraTransformQuantACFunction[blk](pCurMBData->m_pBlock[blk], pCurMBData->m_uiBlockStep[blk],
-                                            DCQuant, doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(Ipp8u));
+                                            DCQuant, doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(uint8_t));
 STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->FwdQT_TotalTime);
                 }
 
@@ -1475,10 +1475,10 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
             //deblocking
             {
                 STATISTICS_START_TIME(m_TStat->Deblk_StartTime);
-                Ipp8u *pDblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
+                uint8_t *pDblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
 
                 m_pDeblk_P_MB[bSubBlkTS][deblkPattern](pDblkPlanes, m_uiRaisedPlaneStep, m_uiQuant, pCurMBInfo, top, topLeft, left, j);
-                deblkPattern = deblkPattern | 0x1 | ((!(Ipp8u)((j + 1 - (w -1)) >> 31)<<1));
+                deblkPattern = deblkPattern | 0x1 | ((!(uint8_t)((j + 1 - (w -1)) >> 31)<<1));
                 STATISTICS_END_TIME(m_TStat->Deblk_StartTime, m_TStat->Deblk_EndTime, m_TStat->Deblk_TotalTime);
             }
         }
@@ -1501,7 +1501,7 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
                                                                 m_uiTransformType, m_uiTransformType,
                                                                 m_uiTransformType, m_uiTransformType};
 
-                Ipp8u                       hybrid = 0;
+                uint8_t                       hybrid = 0;
 
                 MBType = (UMC::ME_MbFrw == MEParams->pSrc->MBs[j + i*w].MbType)?
                                                             VC1_ENC_P_MB_1MV:VC1_ENC_P_MB_SKIP_1MV;
@@ -1626,7 +1626,7 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
                     {
 STATISTICS_START_TIME(m_TStat->FwdQT_StartTime);
                         InterTransformQuantACFunction[blk](pCurMBData->m_pBlock[blk],pCurMBData->m_uiBlockStep[blk],
-                                                    BlockTSTypes[blk], doubleQuant, MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(Ipp8u));
+                                                    BlockTSTypes[blk], doubleQuant, MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(uint8_t));
 STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->FwdQT_TotalTime);
                         pCompressedMB->SaveResidual(pCurMBData->m_pBlock[blk],
                                                     pCurMBData->m_uiBlockStep[blk],
@@ -1666,9 +1666,9 @@ STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->F
 STATISTICS_START_TIME(m_TStat->Reconst_StartTime);
                 if (bRaiseFrame)
                 {
-                    Ipp8u *pRFrameY = 0;
-                    Ipp8u *pRFrameU = 0;
-                    Ipp8u *pRFrameV = 0;
+                    uint8_t *pRFrameY = 0;
+                    uint8_t *pRFrameU = 0;
+                    uint8_t *pRFrameV = 0;
 
                     if (bRaiseFrame)
                     {
@@ -1740,9 +1740,9 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
                     //deblocking
                     if (m_pSequenceHeader->IsLoopFilter())
                     {
-                        Ipp8u YFlag0 = 0,YFlag1 = 0, YFlag2 = 0, YFlag3 = 0;
-                        Ipp8u UFlag0 = 0,UFlag1 = 0;
-                        Ipp8u VFlag0 = 0,VFlag1 = 0;
+                        uint8_t YFlag0 = 0,YFlag1 = 0, YFlag2 = 0, YFlag3 = 0;
+                        uint8_t UFlag0 = 0,UFlag1 = 0;
+                        uint8_t VFlag0 = 0,VFlag1 = 0;
 
                         pCurMBInfo->SetBlocksPattern (pCompressedMB->GetBlocksPattern());
                         pCurMBInfo->SetVSTPattern(BlockTSTypes);
@@ -1774,9 +1774,9 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
                         //deblocking
                         {
                             STATISTICS_START_TIME(m_TStat->Deblk_StartTime);
-                            Ipp8u *pDblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
+                            uint8_t *pDblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
                             m_pDeblk_P_MB[bSubBlkTS][deblkPattern](pDblkPlanes, m_uiRaisedPlaneStep, m_uiQuant, pCurMBInfo, top, topLeft, left, j);
-                            deblkPattern = deblkPattern | 0x1 | ((!(Ipp8u)((j + 1 - (w -1)) >> 31)<<1));
+                            deblkPattern = deblkPattern | 0x1 | ((!(uint8_t)((j + 1 - (w -1)) >> 31)<<1));
                             STATISTICS_END_TIME(m_TStat->Deblk_StartTime, m_TStat->Deblk_EndTime, m_TStat->Deblk_TotalTime);
                         }
                     }
@@ -1833,7 +1833,7 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
 #endif
         }
 
-        deblkPattern = (deblkPattern | 0x4 | ( (! (Ipp8u)((i + 1 - (h -1)) >> 31)<<3))) & deblkMask;
+        deblkPattern = (deblkPattern | 0x4 | ( (! (uint8_t)((i + 1 - (h -1)) >> 31)<<3))) & deblkMask;
         smoothPattern = 0x6 & smoothMask;
 
 ////Row deblocking
@@ -1841,7 +1841,7 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
 //        if (m_pSequenceHeader->IsLoopFilter() && bRaiseFrame && i!=0)
 //        {
 //STATISTICS_START_TIME(m_TStat->Deblk_StartTime);
-//          Ipp8u *DeblkPlanes[3] = {m_pRaisedPlane[0] + i*m_uiRaisedPlaneStep[0]*VC1_ENC_LUMA_SIZE,
+//          uint8_t *DeblkPlanes[3] = {m_pRaisedPlane[0] + i*m_uiRaisedPlaneStep[0]*VC1_ENC_LUMA_SIZE,
 //                                   m_pRaisedPlane[1] + i*m_uiRaisedPlaneStep[1]*VC1_ENC_CHROMA_SIZE,
 //                                   m_pRaisedPlane[2] + i*m_uiRaisedPlaneStep[2]*VC1_ENC_CHROMA_SIZE};
 //            m_pMBs->StartRow();
@@ -1890,12 +1890,12 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
 UMC::Status VC1EncoderPictureSM::VLC_PFrame(VC1EncoderBitStreamSM* pCodedPicture)
 {
     UMC::Status  err = UMC::UMC_OK;
-    Ipp32u       i=0, j=0, blk = 0;
+    uint32_t       i=0, j=0, blk = 0;
 
-    Ipp32u                      h = m_pSequenceHeader->GetNumMBInCol();
-    Ipp32u                      w = m_pSequenceHeader->GetNumMBInRow();
+    uint32_t                      h = m_pSequenceHeader->GetNumMBInCol();
+    uint32_t                      w = m_pSequenceHeader->GetNumMBInRow();
 
-    const Ipp16u* pCBPCYTable = VLCTableCBPCY_PB[m_uiCBPTab];
+    const uint16_t* pCBPCYTable = VLCTableCBPCY_PB[m_uiCBPTab];
 
     eCodingSet    LumaCodingSetIntra   = LumaCodingSetsIntra  [m_uiQuantIndex>8][m_uiDecTypeAC1];
     eCodingSet    ChromaCodingSetIntra = ChromaCodingSetsIntra[m_uiQuantIndex>8][m_uiDecTypeAC1];
@@ -1910,7 +1910,7 @@ UMC::Status VC1EncoderPictureSM::VLC_PFrame(VC1EncoderBitStreamSM* pCodedPicture
 
     const sACTablesSet*  pACTablesSetInter = &(ACTablesSet[CodingSetInter]);
 
-    const Ipp32u*  pDCTableVLCIntra[6]  ={DCTables[m_uiDecTypeDCIntra][0],
+    const uint32_t*  pDCTableVLCIntra[6]  ={DCTables[m_uiDecTypeDCIntra][0],
                                           DCTables[m_uiDecTypeDCIntra][0],
                                           DCTables[m_uiDecTypeDCIntra][0],
                                           DCTables[m_uiDecTypeDCIntra][0],
@@ -1921,9 +1921,9 @@ UMC::Status VC1EncoderPictureSM::VLC_PFrame(VC1EncoderBitStreamSM* pCodedPicture
                               Mode3SizeConservativeVLC : Mode3SizeEfficientVLC,
                               0, 0};
 
-    const Ipp16s    (*pTTMBVLC)[4][6] =  0;
-    const Ipp8u     (* pTTBlkVLC)[6] = 0;
-    const Ipp8u     *pSubPattern4x4VLC=0;
+    const int16_t    (*pTTMBVLC)[4][6] =  0;
+    const uint8_t     (* pTTBlkVLC)[6] = 0;
+    const uint8_t     *pSubPattern4x4VLC=0;
 
     bool  bCalculateVSTransform = (m_pSequenceHeader->IsVSTransform())&&(!m_bVSTransform);
     bool  bMVHalf = (m_uiMVMode == VC1_ENC_1MV_HALF_BILINEAR || m_uiMVMode == VC1_ENC_1MV_HALF_BICUBIC) ? true: false;
@@ -1965,9 +1965,9 @@ UMC::Status VC1EncoderPictureSM::VLC_PFrame(VC1EncoderBitStreamSM* pCodedPicture
 #ifdef VC1_ME_MB_STATICTICS
             {
                 m_MECurMbStat->whole = 0;
-                memset(m_MECurMbStat->MVF, 0,   4*sizeof(Ipp16u));
-                memset(m_MECurMbStat->MVB, 0,   4*sizeof(Ipp16u));
-                memset(m_MECurMbStat->coeff, 0, 6*sizeof(Ipp16u));
+                memset(m_MECurMbStat->MVF, 0,   4*sizeof(uint16_t));
+                memset(m_MECurMbStat->MVB, 0,   4*sizeof(uint16_t));
+                memset(m_MECurMbStat->coeff, 0, 6*sizeof(uint16_t));
                 m_MECurMbStat->qp    = 2*m_uiQuant + m_bHalfQuant;
 
                 pCompressedMB->SetMEFrStatPointer(m_MECurMbStat);
@@ -1979,7 +1979,7 @@ UMC::Status VC1EncoderPictureSM::VLC_PFrame(VC1EncoderBitStreamSM* pCodedPicture
                 {
 #ifdef VC1_ME_MB_STATICTICS
                 m_MECurMbStat->MbType = UMC::ME_MbIntra;
-                    Ipp32u MBStart = pCodedPicture->GetCurrBit();
+                    uint32_t MBStart = pCodedPicture->GetCurrBit();
 #endif
                err = pCompressedMB->WriteMBHeaderP_INTRA    ( pCodedPicture,
                                                               m_bRawBitplanes,
@@ -1998,7 +1998,7 @@ STATISTICS_START_TIME(m_TStat->AC_Coefs_StartTime);
                 }//for
 STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TStat->AC_Coefs_TotalTime);
 #ifdef VC1_ME_MB_STATICTICS
-                m_MECurMbStat->whole = (Ipp16u)(pCodedPicture->GetCurrBit()- MBStart);
+                m_MECurMbStat->whole = (uint16_t)(pCodedPicture->GetCurrBit()- MBStart);
 #endif
                 break;
                 }
@@ -2050,14 +2050,14 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrameMixed(UMC::MeParams* MEParams)
 {
     UMC::Status                 err = UMC::UMC_OK;
 
-    Ipp32s                      i=0, j=0, blk = 0;
+    int32_t                      i=0, j=0, blk = 0;
     bool                        bRaiseFrame = (m_pRaisedPlane[0])&&(m_pRaisedPlane[1])&&(m_pRaisedPlane[2]);
 
-    Ipp8u*                      pCurMBRow[3] = {m_pPlane[0],        m_pPlane[1],        m_pPlane[2]};
-    Ipp8u*                      pFMBRow  [3] = {m_pForwardPlane[0], m_pForwardPlane[1], m_pForwardPlane[2]};
+    uint8_t*                      pCurMBRow[3] = {m_pPlane[0],        m_pPlane[1],        m_pPlane[2]};
+    uint8_t*                      pFMBRow  [3] = {m_pForwardPlane[0], m_pForwardPlane[1], m_pForwardPlane[2]};
 
-    Ipp32s                      h = m_pSequenceHeader->GetNumMBInCol();
-    Ipp32s                      w = m_pSequenceHeader->GetNumMBInRow();
+    int32_t                      h = m_pSequenceHeader->GetNumMBInCol();
+    int32_t                      w = m_pSequenceHeader->GetNumMBInRow();
 
     //forward transform quantization
 
@@ -2075,7 +2075,7 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrameMixed(UMC::MeParams* MEParams)
 
     InterpolateFunction         InterpolateLumaFunction  = _own_ippiInterpolateQPBicubic_VC1_8u_C1R;
 
-    Ipp8u                       tempInterpolationBuffer[VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS];
+    uint8_t                       tempInterpolationBuffer[VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS];
 
     InterpolateFunctionPadding  InterpolateLumaFunctionPadding = own_ippiICInterpolateQPBicubicBlock_VC1_8u_P1R;
 
@@ -2089,24 +2089,24 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrameMixed(UMC::MeParams* MEParams)
     IppVCInterpolateBlock_8u    InterpolateBlockBlk[4];
 
     eDirection                  direction[VC1_ENC_NUMBER_OF_BLOCKS];
-    Ipp8s                       dACPrediction   = 1;
+    int8_t                       dACPrediction   = 1;
 
-    IppiSize                    blkSize     = {8,8};
-    IppiSize                    blkSizeLuma = {16,16};
+    mfxSize                    blkSize     = {8,8};
+    mfxSize                    blkSizeLuma = {16,16};
 
-    Ipp8u                       doubleQuant     =  2*m_uiQuant + m_bHalfQuant;
-    Ipp8u                       DCQuant         =  DCQuantValues[m_uiQuant];
-    Ipp16s                      defPredictor    =  0;
-    Ipp16s*                     pSavedMV = m_pSavedMV;
+    uint8_t                       doubleQuant     =  2*m_uiQuant + m_bHalfQuant;
+    uint8_t                       DCQuant         =  DCQuantValues[m_uiQuant];
+    int16_t                      defPredictor    =  0;
+    int16_t*                     pSavedMV = m_pSavedMV;
 
     sCoordinate                 MVPredMBMin = {-60,-60};
-    sCoordinate                 MVPredMBMax = {(Ipp16s)w*16*4-4, (Ipp16s)h*16*4-4};
+    sCoordinate                 MVPredMBMax = {(int16_t)w*16*4-4, (int16_t)h*16*4-4};
 
     sCoordinate                 MVPredMBMinB = {-28,-28};
-    sCoordinate                 MVPredMBMaxB = {(Ipp16s)w*16*4-4, (Ipp16s)h*16*4-4};
+    sCoordinate                 MVPredMBMaxB = {(int16_t)w*16*4-4, (int16_t)h*16*4-4};
 
     sCoordinate                 MVSavedMBMin = {-8,-8};
-    sCoordinate                 MVSavedMBMax = {(Ipp16s)w*8, (Ipp16s)h*8};
+    sCoordinate                 MVSavedMBMax = {(int16_t)w*8, (int16_t)h*8};
 
     bool                        bMVHalf = (m_uiMVMode == VC1_ENC_1MV_HALF_BILINEAR ||
                                            m_uiMVMode == VC1_ENC_1MV_HALF_BICUBIC) ? true: false;
@@ -2117,15 +2117,15 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrameMixed(UMC::MeParams* MEParams)
     fGetExternalEdge            pGetExternalEdge    = GetExternalEdge_SM[m_uiMVMode==VC1_ENC_MIXED_QUARTER_BICUBIC][bSubBlkTS]; //4 MV, VTS
     fGetInternalEdge            pGetInternalEdge    = GetInternalEdge_SM[m_uiMVMode==VC1_ENC_MIXED_QUARTER_BICUBIC][bSubBlkTS]; //4 MV, VTS
 
-    Ipp8u deblkPattern = 0;//4 bits: right 1 bit - 0 - left/1 - not left,
+    uint8_t deblkPattern = 0;//4 bits: right 1 bit - 0 - left/1 - not left,
                            //left 2 bits: 00 - top row, 01-middle row, 11 - bottom row
                            //middle 1 bit - 1 - right/0 - not right
-    Ipp8u deblkExceptoin = 0xFF; //if fist block intra equal to 0
+    uint8_t deblkExceptoin = 0xFF; //if fist block intra equal to 0
 
-    Ipp8u deblkMask = (m_pSequenceHeader->IsLoopFilter()) ? 0xFC : 0;
+    uint8_t deblkMask = (m_pSequenceHeader->IsLoopFilter()) ? 0xFC : 0;
 
-    Ipp8u smoothMask = (m_pSequenceHeader->IsOverlap() && (m_uiQuant >= 9)) ? 0xFF : 0;
-    Ipp8u smoothPattern = 0x4 & smoothMask; //3 bits: 0/1 - right/not right,
+    uint8_t smoothMask = (m_pSequenceHeader->IsOverlap() && (m_uiQuant >= 9)) ? 0xFF : 0;
+    uint8_t smoothPattern = 0x4 & smoothMask; //3 bits: 0/1 - right/not right,
                                             //0/1 - top/not top, 0/1 - left/not left
 
     SmoothInfo_P_SM smoothInfo = {0};
@@ -2142,7 +2142,7 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrameMixed(UMC::MeParams* MEParams)
 
     if (m_pSavedMV)
     {
-        memset(m_pSavedMV,0,w*h*2*sizeof(Ipp16s));
+        memset(m_pSavedMV,0,w*h*2*sizeof(int16_t));
     }
 
 
@@ -2178,9 +2178,9 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrameMixed(UMC::MeParams* MEParams)
 
     for (i=0; i < h; i++)
     {
-        Ipp8u *pRFrameY = 0;
-        Ipp8u *pRFrameU = 0;
-        Ipp8u *pRFrameV = 0;
+        uint8_t *pRFrameY = 0;
+        uint8_t *pRFrameU = 0;
+        uint8_t *pRFrameV = 0;
 
         if (bRaiseFrame)
         {
@@ -2191,12 +2191,12 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrameMixed(UMC::MeParams* MEParams)
         for (j=0; j < w; j++)
         {
             //bool                bIntra      = false;
-            Ipp32s              xLuma        =  VC1_ENC_LUMA_SIZE*j;
-            Ipp32s              xChroma      =  VC1_ENC_CHROMA_SIZE*j;
+            int32_t              xLuma        =  VC1_ENC_LUMA_SIZE*j;
+            int32_t              xChroma      =  VC1_ENC_CHROMA_SIZE*j;
 
-            //Ipp32s              posY        =  VC1_ENC_LUMA_SIZE*i;
-            Ipp8u               MBPattern   = 0;
-            Ipp8u               CBPCY       = 0;
+            //int32_t              posY        =  VC1_ENC_LUMA_SIZE*i;
+            uint8_t               MBPattern   = 0;
+            uint8_t               CBPCY       = 0;
 
             VC1EncoderMBInfo  * pCurMBInfo  = m_pMBs->GetCurrMBInfo();
             VC1EncoderMBData  * pCurMBData  = m_pMBs->GetCurrMBData();
@@ -2208,7 +2208,7 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrameMixed(UMC::MeParams* MEParams)
             VC1EncoderMBInfo* topRight      = m_pMBs->GetTopRightMBInfo();
 
             VC1EncoderCodedMB*  pCompressedMB = &(m_pCodedMB[w*i+j]);
-            Ipp8u          intraPattern       = 0; //from UMC_ME: position 1<<VC_ENC_PATTERN_POS(blk) (if not skiped)
+            uint8_t          intraPattern       = 0; //from UMC_ME: position 1<<VC_ENC_PATTERN_POS(blk) (if not skiped)
 
             eTransformType  BlockTSTypes[6] = { m_uiTransformType, m_uiTransformType,
                                                 m_uiTransformType, m_uiTransformType,
@@ -2228,7 +2228,7 @@ UMC::Status VC1EncoderPictureSM::PAC_PFrameMixed(UMC::MeParams* MEParams)
                     break;
                 case UMC::ME_MbMixed:
                     MBType = VC1_ENC_P_MB_4MV;
-                    intraPattern = (Ipp8u)(((UMC::ME_MbIntra==MEParams->pSrc->MBs[j + i*w].BlockType[0])<<VC_ENC_PATTERN_POS(0)|
+                    intraPattern = (uint8_t)(((UMC::ME_MbIntra==MEParams->pSrc->MBs[j + i*w].BlockType[0])<<VC_ENC_PATTERN_POS(0)|
                                     (UMC::ME_MbIntra==MEParams->pSrc->MBs[j + i*w].BlockType[1])<<VC_ENC_PATTERN_POS(1)|
                                     (UMC::ME_MbIntra==MEParams->pSrc->MBs[j + i*w].BlockType[2])<<VC_ENC_PATTERN_POS(2)|
                                     (UMC::ME_MbIntra==MEParams->pSrc->MBs[j + i*w].BlockType[3])<<VC_ENC_PATTERN_POS(3)));
@@ -2275,7 +2275,7 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
 
 STATISTICS_START_TIME(m_TStat->FwdQT_StartTime);
                         IntraTransformQuantACFunction[blk](pCurMBData->m_pBlock[blk], pCurMBData->m_uiBlockStep[blk],
-                                            DCQuant, doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(Ipp8u));
+                                            DCQuant, doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(uint8_t));
 STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->FwdQT_TotalTime);
                 }
 
@@ -2345,10 +2345,10 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
                     //deblocking
                     {
                         STATISTICS_START_TIME(m_TStat->Deblk_StartTime);
-                        Ipp8u *pDblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
+                        uint8_t *pDblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
 
                         m_pDeblk_P_MB[bSubBlkTS][deblkPattern](pDblkPlanes, m_uiRaisedPlaneStep, m_uiQuant, pCurMBInfo, top, topLeft, left, j);
-                        deblkPattern = deblkPattern | 0x1 | ((!(Ipp8u)((j + 1 - (w -1)) >> 31)<<1));
+                        deblkPattern = deblkPattern | 0x1 | ((!(uint8_t)((j + 1 - (w -1)) >> 31)<<1));
                         STATISTICS_END_TIME(m_TStat->Deblk_StartTime, m_TStat->Deblk_EndTime, m_TStat->Deblk_TotalTime);
                     }
 
@@ -2383,7 +2383,7 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
                 sCoordinate     mv1,    mv2,    mv3;
                 sCoordinate     mvPred;
                 sCoordinate     mvDiff;
-                Ipp8u           hybrid = 0;
+                uint8_t           hybrid = 0;
 
                 pCurMBInfo->Init(false);
 
@@ -2502,7 +2502,7 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
                     {
 STATISTICS_START_TIME(m_TStat->FwdQT_StartTime);
                         InterTransformQuantACFunction[blk](pCurMBData->m_pBlock[blk],pCurMBData->m_uiBlockStep[blk],
-                                                    BlockTSTypes[blk], doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(Ipp8u));
+                                                    BlockTSTypes[blk], doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(uint8_t));
 STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->FwdQT_TotalTime);
                         pCompressedMB->SaveResidual(pCurMBData->m_pBlock[blk],
                                                     pCurMBData->m_uiBlockStep[blk],
@@ -2579,9 +2579,9 @@ STATISTICS_END_TIME(m_TStat->InvQT_StartTime, m_TStat->InvQT_EndTime, m_TStat->I
 
                     if (m_pSequenceHeader->IsLoopFilter())
                     {
-                        Ipp8u YFlag0 = 0,YFlag1 = 0, YFlag2 = 0, YFlag3 = 0;
-                        Ipp8u UFlag0 = 0,UFlag1 = 0;
-                        Ipp8u VFlag0 = 0,VFlag1 = 0;
+                        uint8_t YFlag0 = 0,YFlag1 = 0, YFlag2 = 0, YFlag3 = 0;
+                        uint8_t UFlag0 = 0,UFlag1 = 0;
+                        uint8_t VFlag0 = 0,VFlag1 = 0;
 
                         pCurMBInfo->SetBlocksPattern (pCompressedMB->GetBlocksPattern());
                         pCurMBInfo->SetVSTPattern(BlockTSTypes);
@@ -2621,10 +2621,10 @@ STATISTICS_END_TIME(m_TStat->InvQT_StartTime, m_TStat->InvQT_EndTime, m_TStat->I
                         //deblocking
                         {
                             STATISTICS_START_TIME(m_TStat->Deblk_StartTime);
-                            Ipp8u *pDblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
+                            uint8_t *pDblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
 
                             m_pDeblk_P_MB[bSubBlkTS][deblkPattern](pDblkPlanes, m_uiRaisedPlaneStep, m_uiQuant, pCurMBInfo, top, topLeft, left, j);
-                            deblkPattern = deblkPattern | 0x1 | ((!(Ipp8u)((j + 1 - (w -1)) >> 31)<<1));
+                            deblkPattern = deblkPattern | 0x1 | ((!(uint8_t)((j + 1 - (w -1)) >> 31)<<1));
                             STATISTICS_END_TIME(m_TStat->Deblk_StartTime, m_TStat->Deblk_EndTime, m_TStat->Deblk_TotalTime);
                         }
 
@@ -2681,7 +2681,7 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
                 sCoordinate     mv1,    mv2,    mv3;
                 sCoordinate     mvPred[4]={0};
                 sCoordinate     mvDiff;
-                Ipp8u           hybrid = 0;
+                uint8_t           hybrid = 0;
                 //bool            bInterpolation  = false;
                 bool            bNullMV         = true;
                 NeighbouringMBsData             MBs;
@@ -2746,14 +2746,14 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
                     }
 
                     if (0 != intraPattern )
-                        memset (tempInterpolationBuffer,128,VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS*sizeof(Ipp8u));
+                        memset (tempInterpolationBuffer,128,VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS*sizeof(uint8_t));
 
                     for (blk = 0; blk<4; blk++)
                     {
                         if ((intraPattern&(1<<VC_ENC_PATTERN_POS(blk))) == 0)
                         {
-                            Ipp32u blkPosX = (blk&0x1)<<3;
-                            Ipp32u blkPosY = (blk/2)<<3;
+                            uint32_t blkPosX = (blk&0x1)<<3;
+                            uint32_t blkPosY = (blk/2)<<3;
 
                             pCurMBInfo->SetMV(MV[blk],blk, true);
 
@@ -2809,8 +2809,8 @@ STATISTICS_END_TIME(m_TStat->Inter_StartTime, m_TStat->Inter_EndTime, m_TStat->I
                 {
                     for (blk = 0; blk<4; blk++)
                     {
-                         Ipp32u blkPosX = (blk&0x1)<<3;
-                         Ipp32u blkPosY = (blk/2)<<3;
+                         uint32_t blkPosX = (blk&0x1)<<3;
+                         uint32_t blkPosY = (blk/2)<<3;
 
 STATISTICS_START_TIME(m_TStat->Inter_StartTime);
                          GetMVPredictionPBlk(blk);
@@ -2840,8 +2840,8 @@ STATISTICS_END_TIME(m_TStat->Inter_StartTime, m_TStat->Inter_EndTime, m_TStat->I
                 {
                    for (blk = 0; blk<4; blk++)
                    {
-                        Ipp32u blkPosX = (blk&0x1)<<3;
-                        Ipp32u blkPosY = (blk/2)<<3;
+                        uint32_t blkPosX = (blk&0x1)<<3;
+                        uint32_t blkPosY = (blk/2)<<3;
 
 
                        // Luma blocks
@@ -2932,12 +2932,12 @@ STATISTICS_START_TIME(m_TStat->FwdQT_StartTime);
                         if (!pCurMBInfo->isIntra(blk))
                         {
                             InterTransformQuantACFunction[blk](pCurMBData->m_pBlock[blk],pCurMBData->m_uiBlockStep[blk],
-                                                            BlockTSTypes[blk], doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(Ipp8u));
+                                                            BlockTSTypes[blk], doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(uint8_t));
                         }
                         else
                         {
                             IntraTransformQuantACFunction[blk](pCurMBData->m_pBlock[blk],pCurMBData->m_uiBlockStep[blk],
-                                                            DCQuant, doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(Ipp8u));
+                                                            DCQuant, doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(uint8_t));
                         }
                     }
 STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->FwdQT_TotalTime);
@@ -3054,9 +3054,9 @@ STATISTICS_END_TIME(m_TStat->InvQT_StartTime, m_TStat->InvQT_EndTime, m_TStat->I
 
                     if (m_pSequenceHeader->IsLoopFilter())
                     {
-                        Ipp8u YFlag0 = 0,YFlag1 = 0, YFlag2 = 0, YFlag3 = 0;
-                        Ipp8u UFlag0 = 0,UFlag1 = 0;
-                        Ipp8u VFlag0 = 0,VFlag1 = 0;
+                        uint8_t YFlag0 = 0,YFlag1 = 0, YFlag2 = 0, YFlag3 = 0;
+                        uint8_t UFlag0 = 0,UFlag1 = 0;
+                        uint8_t VFlag0 = 0,VFlag1 = 0;
 
                         pCurMBInfo->SetBlocksPattern (pCompressedMB->GetBlocksPattern());
                         pCurMBInfo->SetVSTPattern(BlockTSTypes);
@@ -3079,10 +3079,10 @@ STATISTICS_END_TIME(m_TStat->InvQT_StartTime, m_TStat->InvQT_EndTime, m_TStat->I
                         //deblocking
                         {
                             STATISTICS_START_TIME(m_TStat->Deblk_StartTime);
-                            Ipp8u *pDblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
+                            uint8_t *pDblkPlanes[3] = {pRFrameY, pRFrameU, pRFrameV};
 
                             m_pDeblk_P_MB[bSubBlkTS][deblkPattern](pDblkPlanes, m_uiRaisedPlaneStep, m_uiQuant, pCurMBInfo, top, topLeft, left, j);
-                            deblkPattern = deblkPattern | 0x1 | ((!(Ipp8u)((j + 1 - (w -1)) >> 31)<<1));
+                            deblkPattern = deblkPattern | 0x1 | ((!(uint8_t)((j + 1 - (w -1)) >> 31)<<1));
                             STATISTICS_END_TIME(m_TStat->Deblk_StartTime, m_TStat->Deblk_EndTime, m_TStat->Deblk_TotalTime);
                         }
 
@@ -3136,7 +3136,7 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
 #endif
         }
 
-        deblkPattern = (deblkPattern | 0x4 | ( (! (Ipp8u)((i + 1 - (h -1)) >> 31)<<3))) & deblkMask;
+        deblkPattern = (deblkPattern | 0x4 | ( (! (uint8_t)((i + 1 - (h -1)) >> 31)<<3))) & deblkMask;
         smoothPattern = 0x6 & smoothMask;
 
 
@@ -3145,7 +3145,7 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
 //        if (m_pSequenceHeader->IsLoopFilter() && bRaiseFrame && i!=0)
 //        {
 //STATISTICS_START_TIME(m_TStat->Deblk_StartTime);
-//          Ipp8u *DeblkPlanes[3] = {m_pRaisedPlane[0] + i*m_uiRaisedPlaneStep[0]*VC1_ENC_LUMA_SIZE,
+//          uint8_t *DeblkPlanes[3] = {m_pRaisedPlane[0] + i*m_uiRaisedPlaneStep[0]*VC1_ENC_LUMA_SIZE,
 //                            m_pRaisedPlane[1] + i*m_uiRaisedPlaneStep[1]*VC1_ENC_CHROMA_SIZE,
 //                            m_pRaisedPlane[2] + i*m_uiRaisedPlaneStep[2]*VC1_ENC_CHROMA_SIZE};
 //            m_pMBs->StartRow();
@@ -3196,12 +3196,12 @@ STATISTICS_END_TIME(m_TStat->Reconst_StartTime, m_TStat->Reconst_EndTime, m_TSta
 UMC::Status VC1EncoderPictureSM::VLC_PFrameMixed(VC1EncoderBitStreamSM* pCodedPicture)
 {
     UMC::Status     err = UMC::UMC_OK;
-    Ipp32u          i=0, j=0;
+    uint32_t          i=0, j=0;
 
-    Ipp32u                      h = m_pSequenceHeader->GetNumMBInCol();
-    Ipp32u                      w = m_pSequenceHeader->GetNumMBInRow();
+    uint32_t                      h = m_pSequenceHeader->GetNumMBInCol();
+    uint32_t                      w = m_pSequenceHeader->GetNumMBInRow();
 
-    const Ipp16u*   pCBPCYTable = VLCTableCBPCY_PB[m_uiCBPTab];
+    const uint16_t*   pCBPCYTable = VLCTableCBPCY_PB[m_uiCBPTab];
 
     eCodingSet      LumaCodingSetIntra   = LumaCodingSetsIntra  [m_uiQuantIndex>8][m_uiDecTypeAC1];
     eCodingSet      ChromaCodingSetIntra = ChromaCodingSetsIntra[m_uiQuantIndex>8][m_uiDecTypeAC1];
@@ -3216,7 +3216,7 @@ UMC::Status VC1EncoderPictureSM::VLC_PFrameMixed(VC1EncoderBitStreamSM* pCodedPi
 
     const sACTablesSet* pACTablesSetInter = &(ACTablesSet[CodingSetInter]);
 
-    const Ipp32u*  pDCTableVLCIntra[6]  ={DCTables[m_uiDecTypeDCIntra][0],
+    const uint32_t*  pDCTableVLCIntra[6]  ={DCTables[m_uiDecTypeDCIntra][0],
                                           DCTables[m_uiDecTypeDCIntra][0],
                                           DCTables[m_uiDecTypeDCIntra][0],
                                           DCTables[m_uiDecTypeDCIntra][0],
@@ -3230,9 +3230,9 @@ UMC::Status VC1EncoderPictureSM::VLC_PFrameMixed(VC1EncoderBitStreamSM* pCodedPi
     bool bCalculateVSTransform = (m_pSequenceHeader->IsVSTransform())&&(!m_bVSTransform);
     bool bMVHalf = false;
 
-    const Ipp16s   (*pTTMBVLC)[4][6]   = 0;
-    const Ipp8u    (* pTTBlkVLC)[6]    = 0;
-    const Ipp8u     *pSubPattern4x4VLC = 0;
+    const int16_t   (*pTTMBVLC)[4][6]   = 0;
+    const uint8_t    (* pTTBlkVLC)[6]    = 0;
+    const uint8_t     *pSubPattern4x4VLC = 0;
 
 #ifdef VC1_ENC_DEBUG_ON
     pDebug->SetCurrMBFirst();
@@ -3268,9 +3268,9 @@ UMC::Status VC1EncoderPictureSM::VLC_PFrameMixed(VC1EncoderBitStreamSM* pCodedPi
             VC1EncoderCodedMB*  pCompressedMB = &(m_pCodedMB[w*i+j]);
 #ifdef VC1_ME_MB_STATICTICS
             m_MECurMbStat->whole = 0;
-            memset(m_MECurMbStat->MVF, 0,   4*sizeof(Ipp16u));
-            memset(m_MECurMbStat->MVB, 0,   4*sizeof(Ipp16u));
-            memset(m_MECurMbStat->coeff, 0, 6*sizeof(Ipp16u));
+            memset(m_MECurMbStat->MVF, 0,   4*sizeof(uint16_t));
+            memset(m_MECurMbStat->MVB, 0,   4*sizeof(uint16_t));
+            memset(m_MECurMbStat->coeff, 0, 6*sizeof(uint16_t));
             m_MECurMbStat->qp    = 2*m_uiQuant + m_bHalfQuant;
 
             pCompressedMB->SetMEFrStatPointer(m_MECurMbStat);
@@ -3354,10 +3354,10 @@ UMC::Status VC1EncoderPictureSM::VLC_PFrameMixed(VC1EncoderBitStreamSM* pCodedPi
 UMC::Status VC1EncoderPictureSM::PAC_BFrame(UMC::MeParams* MEParams)
 {
     UMC::Status err           =   UMC::UMC_OK;
-    Ipp32u   i = 0, j = 0, blk = 0;
-    Ipp8u*   pCurMBRow[3],* pFMB[3], *pBMB[3];
-    Ipp32u   h = m_pSequenceHeader->GetNumMBInCol();
-    Ipp32u   w = m_pSequenceHeader->GetNumMBInRow();
+    uint32_t   i = 0, j = 0, blk = 0;
+    uint8_t*   pCurMBRow[3],* pFMB[3], *pBMB[3];
+    uint32_t   h = m_pSequenceHeader->GetNumMBInCol();
+    uint32_t   w = m_pSequenceHeader->GetNumMBInRow();
 
     _SetIntraInterLumaFunctions;
     CalculateChromaFunction     CalculateChroma      = (m_pSequenceHeader->IsFastUVMC())?
@@ -3388,20 +3388,20 @@ UMC::Status VC1EncoderPictureSM::PAC_BFrame(UMC::MeParams* MEParams)
     IppVCInterpolateBlock_8u    InterpolateBlockUB;
     IppVCInterpolateBlock_8u    InterpolateBlockVB;
 
-    Ipp8u                       tempInterpolationBufferF[VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS];
-    Ipp8u                       tempInterpolationBufferB[VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS];
+    uint8_t                       tempInterpolationBufferF[VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS];
+    uint8_t                       tempInterpolationBufferB[VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS];
     IppStatus                   ippSts = ippStsNoErr;
 
     eDirection                  direction[VC1_ENC_NUMBER_OF_BLOCKS];
 
-    IppiSize                    blkSize     = {8,8};
+    mfxSize                    blkSize     = {8,8};
 
     sCoordinate                 MVPredMin = {-28,-28};
-    sCoordinate                 MVPredMax = {((Ipp16s)w*8-1)*4, ((Ipp16s)h*8-1)*4};
+    sCoordinate                 MVPredMax = {((int16_t)w*8-1)*4, ((int16_t)h*8-1)*4};
 
-    Ipp8u                       doubleQuant     =  2*m_uiQuant + m_bHalfQuant;
-    Ipp8u                       DCQuant         =  DCQuantValues[m_uiQuant];
-    Ipp16s                      defPredictor    =  0;
+    uint8_t                       doubleQuant     =  2*m_uiQuant + m_bHalfQuant;
+    uint8_t                       DCQuant         =  DCQuantValues[m_uiQuant];
+    int16_t                      defPredictor    =  0;
 
     bool  bMVHalf = (m_uiMVMode == VC1_ENC_1MV_HALF_BILINEAR ||
                      m_uiMVMode == VC1_ENC_1MV_HALF_BICUBIC) ? true: false;
@@ -3456,13 +3456,13 @@ UMC::Status VC1EncoderPictureSM::PAC_BFrame(UMC::MeParams* MEParams)
             VC1EncoderMBData  *         pRecMBData     = 0;
 
             VC1EncoderCodedMB*          pCompressedMB  = &(m_pCodedMB[w*i+j]);
-            Ipp32s                      posX           =  VC1_ENC_LUMA_SIZE*j;
-            Ipp32s                      posXChroma     =  VC1_ENC_CHROMA_SIZE*j;
-            Ipp8u                       MBPattern       = 0;
-            Ipp8u                       CBPCY           = 0;
+            int32_t                      posX           =  VC1_ENC_LUMA_SIZE*j;
+            int32_t                      posXChroma     =  VC1_ENC_CHROMA_SIZE*j;
+            uint8_t                       MBPattern       = 0;
+            uint8_t                       CBPCY           = 0;
             eMBType                     mbType         =  VC1_ENC_B_MB_F; //From ME
 
-            //Ipp16s          posY        =  VC1_ENC_LUMA_SIZE*i;
+            //int16_t          posY        =  VC1_ENC_LUMA_SIZE*i;
 
             sCoordinate MVF         ={0,0};
             sCoordinate MVB         ={0,0};
@@ -3558,7 +3558,7 @@ IPP_STAT_START_TIME(m_IppStat->IppStartTime);
 IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->IppTotalTime);
 STATISTICS_START_TIME(m_TStat->FwdQT_StartTime);
                     IntraTransformQuantACFunction[blk](pCurMBData->m_pBlock[blk], pCurMBData->m_uiBlockStep[blk],
-                                         DCQuant, doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(Ipp8u));
+                                         DCQuant, doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(uint8_t));
 STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->FwdQT_TotalTime);
                 }
 STATISTICS_START_TIME(m_TStat->Intra_StartTime);
@@ -3671,10 +3671,10 @@ STATISTICS_END_TIME(m_TStat->Inter_StartTime, m_TStat->Inter_EndTime, m_TStat->I
                 IppVCInterpolateBlock_8u*    pInterpolateBlockV = &InterpolateBlockVF;
 
                 bool                         padded = (m_uiForwardPlanePadding!=0);
-                Ipp8u                        opposite = 0;
+                uint8_t                        opposite = 0;
 
-                Ipp8u**                      pPredMB   = pFMB;
-                Ipp32u*                      pPredStep = m_uiForwardPlaneStep;
+                uint8_t**                      pPredMB   = pFMB;
+                uint32_t*                      pPredStep = m_uiForwardPlaneStep;
 
                 sCoordinate*                 pMV                = &MVF;
 
@@ -3805,7 +3805,7 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
                 {
 STATISTICS_START_TIME(m_TStat->FwdQT_StartTime);
                     InterTransformQuantACFunction[blk](pCurMBData->m_pBlock[blk],pCurMBData->m_uiBlockStep[blk],
-                                                  BlockTSTypes[blk], doubleQuant, MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(Ipp8u));
+                                                  BlockTSTypes[blk], doubleQuant, MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(uint8_t));
 STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->FwdQT_TotalTime);
                     pCompressedMB->SaveResidual(pCurMBData->m_pBlock[blk],
                                                  pCurMBData->m_uiBlockStep[blk],
@@ -4025,7 +4025,7 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
                 {
 STATISTICS_START_TIME(m_TStat->FwdQT_StartTime);
                     InterTransformQuantACFunction[blk](pCurMBData->m_pBlock[blk],pCurMBData->m_uiBlockStep[blk],
-                                                  BlockTSTypes[blk], doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(Ipp8u));
+                                                  BlockTSTypes[blk], doubleQuant,MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(uint8_t));
 STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->FwdQT_TotalTime);
                     pCompressedMB->SaveResidual(pCurMBData->m_pBlock[blk],
                                                  pCurMBData->m_uiBlockStep[blk],
@@ -4259,7 +4259,7 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
                 {
 STATISTICS_START_TIME(m_TStat->FwdQT_StartTime);
                     InterTransformQuantACFunction[blk](pCurMBData->m_pBlock[blk],pCurMBData->m_uiBlockStep[blk],
-                                                  BlockTSTypes[blk], doubleQuant, MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(Ipp8u));
+                                                  BlockTSTypes[blk], doubleQuant, MEParams->pSrc->MBs[j + i*w].RoundControl[blk],8*sizeof(uint8_t));
 STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->FwdQT_TotalTime);
                     pCompressedMB->SaveResidual(pCurMBData->m_pBlock[blk],
                                                  pCurMBData->m_uiBlockStep[blk],
@@ -4349,12 +4349,12 @@ STATISTICS_END_TIME(m_TStat->FwdQT_StartTime, m_TStat->FwdQT_EndTime, m_TStat->F
 UMC::Status VC1EncoderPictureSM::VLC_BFrame(VC1EncoderBitStreamSM* pCodedPicture)
 {
     UMC::Status    err  = UMC::UMC_OK;
-    Ipp32u         i = 0, j = 0, blk = 0;
+    uint32_t         i = 0, j = 0, blk = 0;
 
-    Ipp32u         h = m_pSequenceHeader->GetNumMBInCol();
-    Ipp32u         w = m_pSequenceHeader->GetNumMBInRow();
+    uint32_t         h = m_pSequenceHeader->GetNumMBInCol();
+    uint32_t         w = m_pSequenceHeader->GetNumMBInRow();
 
-    const Ipp16u*  pCBPCYTable = VLCTableCBPCY_PB[m_uiCBPTab];
+    const uint16_t*  pCBPCYTable = VLCTableCBPCY_PB[m_uiCBPTab];
 
     eCodingSet     LumaCodingSetIntra   = LumaCodingSetsIntra  [m_uiQuantIndex>8][m_uiDecTypeAC1];
     eCodingSet     ChromaCodingSetIntra = ChromaCodingSetsIntra[m_uiQuantIndex>8][m_uiDecTypeAC1];
@@ -4370,7 +4370,7 @@ UMC::Status VC1EncoderPictureSM::VLC_BFrame(VC1EncoderBitStreamSM* pCodedPicture
     const sACTablesSet* pACTablesSetInter = &(ACTablesSet[CodingSetInter]);
 
 
-    const Ipp32u*       pDCTableVLCIntra[6] = {DCTables[m_uiDecTypeDCIntra][0],
+    const uint32_t*       pDCTableVLCIntra[6] = {DCTables[m_uiDecTypeDCIntra][0],
                                                DCTables[m_uiDecTypeDCIntra][0],
                                                DCTables[m_uiDecTypeDCIntra][0],
                                                DCTables[m_uiDecTypeDCIntra][0],
@@ -4384,9 +4384,9 @@ UMC::Status VC1EncoderPictureSM::VLC_BFrame(VC1EncoderBitStreamSM* pCodedPicture
     bool bCalculateVSTransform = (m_pSequenceHeader->IsVSTransform())&&(!m_bVSTransform);
     bool bMVHalf = (m_uiMVMode == VC1_ENC_1MV_HALF_BILINEAR || m_uiMVMode == VC1_ENC_1MV_HALF_BICUBIC) ? true: false;
 
-    const Ipp16s  (*pTTMBVLC)[4][6]   = 0;
-    const Ipp8u   (* pTTBlkVLC)[6]    = 0;
-    const Ipp8u    *pSubPattern4x4VLC = 0;
+    const int16_t  (*pTTMBVLC)[4][6]   = 0;
+    const uint8_t   (* pTTBlkVLC)[6]    = 0;
+    const uint8_t    *pSubPattern4x4VLC = 0;
 
 #ifdef VC1_ENC_DEBUG_ON
     pDebug->SetCurrMBFirst();
@@ -4424,9 +4424,9 @@ UMC::Status VC1EncoderPictureSM::VLC_BFrame(VC1EncoderBitStreamSM* pCodedPicture
 
 #ifdef VC1_ME_MB_STATICTICS
             m_MECurMbStat->whole = 0;
-            memset(m_MECurMbStat->MVF, 0,   4*sizeof(Ipp16u));
-            memset(m_MECurMbStat->MVB, 0,   4*sizeof(Ipp16u));
-            memset(m_MECurMbStat->coeff, 0, 6*sizeof(Ipp16u));
+            memset(m_MECurMbStat->MVF, 0,   4*sizeof(uint16_t));
+            memset(m_MECurMbStat->MVB, 0,   4*sizeof(uint16_t));
+            memset(m_MECurMbStat->coeff, 0, 6*sizeof(uint16_t));
             m_MECurMbStat->qp    = 2*m_uiQuant + m_bHalfQuant;
             pCompressedMB->SetMEFrStatPointer(m_MECurMbStat);
 #endif
@@ -4540,7 +4540,7 @@ UMC::Status   VC1EncoderPictureSM::WritePPictureHeader(VC1EncoderBitStreamSM* pC
 {
     UMC::Status     err           =   UMC::UMC_OK;
     bool            bBframes      =   m_pSequenceHeader->IsBFrames();
-    Ipp8s           diff          =   m_uiAltPQuant -  m_uiQuant - 1;
+    int8_t           diff          =   m_uiAltPQuant -  m_uiQuant - 1;
 
     err = pCodedPicture->MakeBlankSegment(2);
     if (err!= UMC::UMC_OK)
@@ -4691,7 +4691,7 @@ UMC::Status   VC1EncoderPictureSM::WritePPictureHeader(VC1EncoderBitStreamSM* pC
 UMC::Status   VC1EncoderPictureSM::WriteBPictureHeader(VC1EncoderBitStreamSM* pCodedPicture)
 {
     UMC::Status     err           =   UMC::UMC_OK;
-    Ipp8s           diff          =   m_uiAltPQuant -  m_uiQuant - 1;
+    int8_t           diff          =   m_uiAltPQuant -  m_uiQuant - 1;
 
     err = pCodedPicture->MakeBlankSegment(2);
     if (err!= UMC::UMC_OK)
@@ -4830,13 +4830,13 @@ UMC::Status   VC1EncoderPictureSM::WriteBPictureHeader(VC1EncoderBitStreamSM* pC
 }
 
 
-UMC::Status   VC1EncoderPictureSM::WriteMBQuantParameter(VC1EncoderBitStreamSM* pCodedPicture, Ipp8u Quant)
+UMC::Status   VC1EncoderPictureSM::WriteMBQuantParameter(VC1EncoderBitStreamSM* pCodedPicture, uint8_t Quant)
 {
    UMC::Status err = UMC::UMC_OK;
 
    if (m_QuantMode == VC1_ENC_QUANT_MB_ANY)
    {
-       Ipp16s diff = Quant - m_uiQuant;
+       int16_t diff = Quant - m_uiQuant;
        if (diff < 7 && diff>=0)
        {
             err = pCodedPicture->PutBits(diff,3);
@@ -4858,10 +4858,10 @@ UMC::Status   VC1EncoderPictureSM::WriteMBQuantParameter(VC1EncoderBitStreamSM* 
 UMC::Status VC1EncoderPictureSM::CheckMEMV_P(UMC::MeParams* MEParams, bool bMVHalf)
 {
     UMC::Status UmcSts = UMC::UMC_OK;
-    Ipp32u i = 0;
-    Ipp32u j = 0;
-    Ipp32u h = m_pSequenceHeader->GetNumMBInCol();
-    Ipp32u w = m_pSequenceHeader->GetNumMBInRow();
+    uint32_t i = 0;
+    uint32_t j = 0;
+    uint32_t h = m_pSequenceHeader->GetNumMBInCol();
+    uint32_t w = m_pSequenceHeader->GetNumMBInRow();
 
     sCoordinate         MV          = {0,0};
 
@@ -4883,25 +4883,25 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_P(UMC::MeParams* MEParams, bool bMVHa
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                 }
 
-                if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
+                if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
                 {
                     assert(0);
                     UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                 }
 
-                if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
+                if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
                 {
                     assert(0);
                     UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                 }
 
-                if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.x)
+                if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.x)
                 {
                     assert(0);
                     UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                 }
 
-                if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.y)
+                if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.y)
                 {
                     assert(0);
                     UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
@@ -4911,21 +4911,21 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_P(UMC::MeParams* MEParams, bool bMVHa
                 //MV.x  = (bMVHalf)? (MEParams.pSrc->MBs[j + i*w].MVF->x>>1)<<1:MEFrame->MBs[j + i*w].MVF->x;
                 //MV.y  = (bMVHalf)? (MEParams.pSrc->MBs[j + i*w].MVF->y>>1)<<1:MEFrame->MBs[j + i*w].MVF->y;
 
-                //if ((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) > (Ipp32s)(w*VC1_ENC_LUMA_SIZE))
+                //if ((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) > (int32_t)(w*VC1_ENC_LUMA_SIZE))
                 //{
                 //    MV.x = (w - j)*VC1_ENC_LUMA_SIZE + (MV.x & 0x03);
                 //}
-                //if ((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) > (Ipp32s)(h*VC1_ENC_LUMA_SIZE))
+                //if ((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) > (int32_t)(h*VC1_ENC_LUMA_SIZE))
                 //{
                 //    MV.y = (h - i)*VC1_ENC_LUMA_SIZE + (MV.y & 0x03);
                 //}
-                //if ((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) < -16)
+                //if ((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) < -16)
                 //{
-                //    MV.x = (1 - (Ipp32s)j)*VC1_ENC_LUMA_SIZE ;
+                //    MV.x = (1 - (int32_t)j)*VC1_ENC_LUMA_SIZE ;
                 //}
-                //if ((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) < -16)
+                //if ((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) < -16)
                 //{
-                //    MV.y = (1 - (Ipp32s)i)*VC1_ENC_LUMA_SIZE ;
+                //    MV.y = (1 - (int32_t)i)*VC1_ENC_LUMA_SIZE ;
                 //}
                 if (MV.x >(MEParams->SearchRange.x<<2) || MV.x <(-(MEParams->SearchRange.x<<2)))
                 {
@@ -4948,11 +4948,11 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_P(UMC::MeParams* MEParams, bool bMVHa
 UMC::Status VC1EncoderPictureSM::CheckMEMV_P_MIXED(UMC::MeParams* MEParams, bool bMVHalf)
 {
     UMC::Status UmcSts = UMC::UMC_OK;
-    Ipp32u i = 0;
-    Ipp32u j = 0;
-    Ipp32u h = m_pSequenceHeader->GetNumMBInCol();
-    Ipp32u w = m_pSequenceHeader->GetNumMBInRow();
-    Ipp32u blk = 0;
+    uint32_t i = 0;
+    uint32_t j = 0;
+    uint32_t h = m_pSequenceHeader->GetNumMBInCol();
+    uint32_t w = m_pSequenceHeader->GetNumMBInRow();
+    uint32_t blk = 0;
 
     sCoordinate         MV          = {0,0};
 
@@ -4978,25 +4978,25 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_P_MIXED(UMC::MeParams* MEParams, bool
                     if((MV.y >>1)<<1!= MV.y)
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                 }
-                if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
+                if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
                 {
                     assert(0);
                     UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                 }
 
-                if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
+                if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
                 {
                     assert(0);
                     UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                 }
 
-                if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_CHROMA_SIZE > MEParams->PicRange.bottom_right.x)
+                if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_CHROMA_SIZE > MEParams->PicRange.bottom_right.x)
                 {
                     assert(0);
                     UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                 }
 
-                if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_CHROMA_SIZE > MEParams->PicRange.bottom_right.y)
+                if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_CHROMA_SIZE > MEParams->PicRange.bottom_right.y)
                 {
                     assert(0);
                     UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
@@ -5006,21 +5006,21 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_P_MIXED(UMC::MeParams* MEParams, bool
                 //MV.x  = (bMVHalf)? (MV.x>>1)<<1:MV.x;
                 //MV.y  = (bMVHalf)? (MV.y>>1)<<1:MV.y;
 
-                //if ((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) > (Ipp32s)(w*VC1_ENC_LUMA_SIZE))
+                //if ((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) > (int32_t)(w*VC1_ENC_LUMA_SIZE))
                 //{
                 //    MV.x = (w - j)*VC1_ENC_LUMA_SIZE + (MV.x & 0x03);
                 //}
-                //if ((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) > (Ipp32s)(h*VC1_ENC_LUMA_SIZE))
+                //if ((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) > (int32_t)(h*VC1_ENC_LUMA_SIZE))
                 //{
                 //    MV.y = (h - i)*VC1_ENC_LUMA_SIZE + (MV.y & 0x03);
                 //}
-                //if ((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) < -8)
+                //if ((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) < -8)
                 //{
-                //    MV.x = (1 - (Ipp32s)j)*VC1_ENC_LUMA_SIZE ;
+                //    MV.x = (1 - (int32_t)j)*VC1_ENC_LUMA_SIZE ;
                 //}
-                //if ((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) < -8)
+                //if ((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) < -8)
                 //{
-                //    MV.y = (1 - (Ipp32s)i)*VC1_ENC_LUMA_SIZE ;
+                //    MV.y = (1 - (int32_t)i)*VC1_ENC_LUMA_SIZE ;
                 //}
                 if (MV.x >(MEParams->SearchRange.x<<2) || MV.x <(-(MEParams->SearchRange.x<<2)))
                 {
@@ -5044,25 +5044,25 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_P_MIXED(UMC::MeParams* MEParams, bool
                     MV.y  = MEParams->pSrc->MBs[j + i*w].MV[0][blk].y;
 
                    
-                    if((MV.x>>2)+(Ipp32s)(j<<4) + xShift< MEParams->PicRange.top_left.x)
+                    if((MV.x>>2)+(int32_t)(j<<4) + xShift< MEParams->PicRange.top_left.x)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.y>>2)+(Ipp32s)(i<<4) + yShift< MEParams->PicRange.top_left.y )
+                    if((MV.y>>2)+(int32_t)(i<<4) + yShift< MEParams->PicRange.top_left.y )
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.x>>2)+(Ipp32s)(j<<4) + xShift + 8> MEParams->PicRange.bottom_right.x)
+                    if((MV.x>>2)+(int32_t)(j<<4) + xShift + 8> MEParams->PicRange.bottom_right.x)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.y>>2)+(Ipp32s)(i<<4) + yShift + 8 > MEParams->PicRange.bottom_right.y)
+                    if((MV.y>>2)+(int32_t)(i<<4) + yShift + 8 > MEParams->PicRange.bottom_right.y)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
@@ -5072,21 +5072,21 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_P_MIXED(UMC::MeParams* MEParams, bool
                     //MV.x  = (bMVHalf)? (MV.x>>1)<<1:MV.x;
                     //MV.y  = (bMVHalf)? (MV.y>>1)<<1:MV.y;
 
-                    //if ((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) > (Ipp32s)(w*VC1_ENC_LUMA_SIZE))
+                    //if ((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) > (int32_t)(w*VC1_ENC_LUMA_SIZE))
                     //{
                     //    MV.x = (w - j)*VC1_ENC_LUMA_SIZE + (MV.x & 0x03);
                     //}
-                    //if ((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) > (Ipp32s)(h*VC1_ENC_LUMA_SIZE))
+                    //if ((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) > (int32_t)(h*VC1_ENC_LUMA_SIZE))
                     //{
                     //    MV.y = (h - i)*VC1_ENC_LUMA_SIZE + (MV.y & 0x03);
                     //}
-                    //if ((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) < -8)
+                    //if ((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) < -8)
                     //{
-                    //    MV.x = (1 - (Ipp32s)j)*VC1_ENC_LUMA_SIZE ;
+                    //    MV.x = (1 - (int32_t)j)*VC1_ENC_LUMA_SIZE ;
                     //}
-                    //if ((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) < -8)
+                    //if ((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) < -8)
                     //{
-                    //    MV.y = (1 - (Ipp32s)i)*VC1_ENC_LUMA_SIZE ;
+                    //    MV.y = (1 - (int32_t)i)*VC1_ENC_LUMA_SIZE ;
                     //}
                     if (MV.x >(MEParams->SearchRange.x<<2) || MV.x <(-(MEParams->SearchRange.x<<2)))
                     {
@@ -5113,10 +5113,10 @@ return UmcSts;
 UMC::Status VC1EncoderPictureSM::CheckMEMV_B(UMC::MeParams* MEParams, bool bMVHalf)
 {
     UMC::Status UmcSts = UMC::UMC_OK;
-    Ipp32u i = 0;
-    Ipp32u j = 0;
-    Ipp32u h = m_pSequenceHeader->GetNumMBInCol();
-    Ipp32u w = m_pSequenceHeader->GetNumMBInRow();
+    uint32_t i = 0;
+    uint32_t j = 0;
+    uint32_t h = m_pSequenceHeader->GetNumMBInCol();
+    uint32_t w = m_pSequenceHeader->GetNumMBInRow();
 
     sCoordinate         MV          = {0,0};
 
@@ -5145,25 +5145,25 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_B(UMC::MeParams* MEParams, bool bMVHa
                             UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
+                    if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
+                    if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.x)
+                    if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.x)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.y)
+                    if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.y)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
@@ -5196,25 +5196,25 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_B(UMC::MeParams* MEParams, bool bMVHa
                             UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
+                    if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
+                    if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.x)
+                    if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.x)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.y)
+                    if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.y)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
@@ -5251,25 +5251,25 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_B(UMC::MeParams* MEParams, bool bMVHa
                             UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
+                    if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
+                    if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.x)
+                    if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.x)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.y)
+                    if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.y)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
@@ -5302,25 +5302,25 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_B(UMC::MeParams* MEParams, bool bMVHa
                             UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
+                    if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.x)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
+                    if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) < MEParams->PicRange.top_left.y )
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.x>>2)+(Ipp32s)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.x)
+                    if((MV.x>>2)+(int32_t)(j*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.x)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
                     }
 
-                    if((MV.y>>2)+(Ipp32s)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.y)
+                    if((MV.y>>2)+(int32_t)(i*VC1_ENC_LUMA_SIZE) + VC1_ENC_LUMA_SIZE > MEParams->PicRange.bottom_right.y)
                     {
                         assert(0);
                         UmcSts = UMC::UMC_ERR_INVALID_PARAMS;
@@ -5351,15 +5351,15 @@ UMC::Status VC1EncoderPictureSM::CheckMEMV_B(UMC::MeParams* MEParams, bool bMVHa
     return UmcSts;
 }
 UMC::Status VC1EncoderPictureSM::SetInterpolationParams4MV (   IppVCInterpolateBlock_8u* pY,
-                                                                Ipp8u* buffer,
-                                                                Ipp32u w,
-                                                                Ipp32u h,
-                                                                Ipp8u **pPlane,
-                                                                Ipp32u *pStep,
+                                                                uint8_t* buffer,
+                                                                uint32_t w,
+                                                                uint32_t h,
+                                                                uint8_t **pPlane,
+                                                                uint32_t *pStep,
                                                                 bool bField)
 {
     UMC::Status ret = UMC::UMC_OK;
-    Ipp32u lumaShift   = (bField)? 1:0;
+    uint32_t lumaShift   = (bField)? 1:0;
     
   
     pY[0].pSrc [0]           = pPlane[0];

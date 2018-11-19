@@ -36,28 +36,28 @@ namespace UMC_VC1_ENCODER
 bool DCACPredictionIntraFrameSM(VC1EncoderMBData*        pCurrMB,
                                 NeighbouringMBsData*  pMBs,
                                 VC1EncoderMBData*     pPredBlock,
-                                Ipp16s                defPredictor,
+                                int16_t                defPredictor,
                                 eDirection*           direction);
 
 bool DCACPredictionFrame(VC1EncoderMBData* pCurrMB,
                          NeighbouringMBsData*  pMBs,
                          VC1EncoderMBData* pPredBlock,
-                         Ipp16s defPredictor,
+                         int16_t defPredictor,
                          eDirection* direction);
 
 bool DCACPredictionFrame4MVIntraMB   (  VC1EncoderMBData*               pCurrMB,
                                         NeighbouringMBsData*            pMBs,
                                         NeighbouringMBsIntraPattern*    pMBsIntraPattern,
                                         VC1EncoderMBData*               pPredBlock,
-                                        Ipp16s                          defPredictor,
+                                        int16_t                          defPredictor,
                                         eDirection*                     direction);
 
-Ipp8s DCACPredictionFrame4MVBlockMixed(  VC1EncoderMBData*               pCurrMB,
-                                        Ipp32u                          currIntraPattern,
+int8_t DCACPredictionFrame4MVBlockMixed(  VC1EncoderMBData*               pCurrMB,
+                                        uint32_t                          currIntraPattern,
                                         NeighbouringMBsData*            pMBs,
                                         NeighbouringMBsIntraPattern*    pMBsIntraPattern,
                                         VC1EncoderMBData*               pPredBlock,
-                                        Ipp16s                          defPredictor,
+                                        int16_t                          defPredictor,
                                         eDirection*                     direction);
 }
 #endif

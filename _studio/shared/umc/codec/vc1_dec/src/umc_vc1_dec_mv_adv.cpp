@@ -28,16 +28,16 @@
 #include "umc_vc1_huffman.h"
 
 void ApplyMVPredictionCalculate( VC1Context* pContext,
-                                Ipp16s* pMVx,
-                                Ipp16s* pMVy,
-                                Ipp32s dmv_x,
-                                Ipp32s dmv_y)
+                                int16_t* pMVx,
+                                int16_t* pMVy,
+                                int32_t dmv_x,
+                                int32_t dmv_y)
 {
     const VC1MVRange *pMVRange = pContext->m_picLayerHeader->m_pCurrMVRangetbl;
-    Ipp32s RangeX, RangeY;
-    Ipp32s DMV_X, DMV_Y;
-    Ipp32s PredictorX, PredictorY;
-    Ipp16s MVx, MVy;
+    int32_t RangeX, RangeY;
+    int32_t DMV_X, DMV_Y;
+    int32_t PredictorX, PredictorY;
+    int16_t MVx, MVy;
 
     RangeX = pMVRange->r_x;
     RangeY = pMVRange->r_y;
@@ -59,8 +59,8 @@ void ApplyMVPredictionCalculate( VC1Context* pContext,
         VM_STRING("DMV_X  = %d, DMV_Y  = %d, RangeX = %d, RangeY = %d\n"),
         DMV_X, DMV_Y, RangeX,RangeY);
 #endif
-    MVx = (Ipp16s)( ((DMV_X + RangeX) & ( (RangeX << 1) - 1)) - RangeX );
-    MVy = (Ipp16s)( ((DMV_Y + RangeY) & ( (RangeY << 1) - 1)) - RangeY);
+    MVx = (int16_t)( ((DMV_X + RangeX) & ( (RangeX << 1) - 1)) - RangeX );
+    MVy = (int16_t)( ((DMV_Y + RangeY) & ( (RangeY << 1) - 1)) - RangeY);
 
     *pMVx = MVx;
     *pMVy = MVy;
@@ -72,14 +72,14 @@ void ApplyMVPredictionCalculate( VC1Context* pContext,
 
 
 void ApplyMVPredictionCalculateOneReference( VC1PictureLayerHeader* picLayerHeader,
-                                             Ipp16s* pMVx, Ipp16s* pMVy,
-                                             Ipp32s dmv_x,  Ipp32s dmv_y, Ipp8u same_polatity)
+                                             int16_t* pMVx, int16_t* pMVy,
+                                             int32_t dmv_x,  int32_t dmv_y, uint8_t same_polatity)
 {
     const VC1MVRange *pMVRange = picLayerHeader->m_pCurrMVRangetbl;
-    Ipp32s RangeX, RangeY;
-    Ipp32s DMV_X, DMV_Y;
-    Ipp32s PredictorX, PredictorY;
-    Ipp16s MVx, MVy;
+    int32_t RangeX, RangeY;
+    int32_t DMV_X, DMV_Y;
+    int32_t PredictorX, PredictorY;
+    int16_t MVx, MVy;
 
     RangeX = pMVRange->r_x;
     RangeY = pMVRange->r_y;
@@ -115,14 +115,14 @@ void ApplyMVPredictionCalculateOneReference( VC1PictureLayerHeader* picLayerHead
         DMV_X, DMV_Y, RangeX,RangeY);
     #endif
 
-    //MVx = (Ipp16s)( ((DMV_X + RangeX) & (2 * RangeX - 1)) - RangeX );
-    //MVy = (Ipp16s)( ((DMV_Y + RangeY) & (2 * RangeY - 1)) - RangeY);
-    MVx = (Ipp16s)( ((DMV_X + RangeX) & ( (RangeX << 1) - 1)) - RangeX );
-    MVy = (Ipp16s)( ((DMV_Y + RangeY) & ( (RangeY << 1) - 1)) - RangeY);
+    //MVx = (int16_t)( ((DMV_X + RangeX) & (2 * RangeX - 1)) - RangeX );
+    //MVy = (int16_t)( ((DMV_Y + RangeY) & (2 * RangeY - 1)) - RangeY);
+    MVx = (int16_t)( ((DMV_X + RangeX) & ( (RangeX << 1) - 1)) - RangeX );
+    MVy = (int16_t)( ((DMV_Y + RangeY) & ( (RangeY << 1) - 1)) - RangeY);
 
     if ( same_polatity && (picLayerHeader->BottomField))
-        //MVy = (Ipp16s)( ( ((DMV_Y + RangeY - 1) & (2 * RangeY - 1)) - RangeY )+1);
-        MVy = (Ipp16s)( ( ((DMV_Y + RangeY - 1) & ( (RangeY << 1) - 1)) - RangeY )+1);
+        //MVy = (int16_t)( ( ((DMV_Y + RangeY - 1) & (2 * RangeY - 1)) - RangeY )+1);
+        MVy = (int16_t)( ( ((DMV_Y + RangeY - 1) & ( (RangeY << 1) - 1)) - RangeY )+1);
 
     *pMVx = MVx;
     *pMVy = MVy;
@@ -133,17 +133,17 @@ void ApplyMVPredictionCalculateOneReference( VC1PictureLayerHeader* picLayerHead
 }
 
 void ApplyMVPredictionCalculateTwoReference( VC1PictureLayerHeader* picLayerHeader,
-                                             Ipp16s* pMVx,
-                                             Ipp16s* pMVy,
-                                             Ipp32s dmv_x,
-                                             Ipp32s dmv_y,
-                                             Ipp8u same_polatity)
+                                             int16_t* pMVx,
+                                             int16_t* pMVy,
+                                             int32_t dmv_x,
+                                             int32_t dmv_y,
+                                             uint8_t same_polatity)
 {
     const VC1MVRange *pMVRange = picLayerHeader->m_pCurrMVRangetbl;
-    Ipp32s RangeX, RangeY;
-    Ipp32s DMV_X, DMV_Y;
-    Ipp32s PredictorX, PredictorY;
-    Ipp16s MVx, MVy;
+    int32_t RangeX, RangeY;
+    int32_t DMV_X, DMV_Y;
+    int32_t PredictorX, PredictorY;
+    int16_t MVx, MVy;
 
     RangeX = pMVRange->r_x;
     RangeY = pMVRange->r_y;
@@ -180,11 +180,11 @@ void ApplyMVPredictionCalculateTwoReference( VC1PictureLayerHeader* picLayerHead
         DMV_X, DMV_Y, RangeX,RangeY);
 #endif
 
-    MVx = (Ipp16s)( ((DMV_X + RangeX) & ((RangeX << 1) - 1)) - RangeX );
-    MVy = (Ipp16s)( ((DMV_Y + RangeY) & ((RangeY << 1) - 1)) - RangeY);
+    MVx = (int16_t)( ((DMV_X + RangeX) & ((RangeX << 1) - 1)) - RangeX );
+    MVy = (int16_t)( ((DMV_Y + RangeY) & ((RangeY << 1) - 1)) - RangeY);
 
     if ( same_polatity && (picLayerHeader->BottomField))
-        MVy = (Ipp16s)( ( ((DMV_Y - 1 + RangeY ) & ((RangeY << 1) - 1)) - RangeY )+1);
+        MVy = (int16_t)( ( ((DMV_Y - 1 + RangeY ) & ((RangeY << 1) - 1)) - RangeY )+1);
 
     *pMVx = MVx;
     *pMVy = MVy;
@@ -194,17 +194,17 @@ void ApplyMVPredictionCalculateTwoReference( VC1PictureLayerHeader* picLayerHead
 #endif
 }
 
-void CropLumaPullBack_Adv(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+void CropLumaPullBack_Adv(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
-    Ipp32s X = *xMV;
-    Ipp32s Y = *yMV;
-    Ipp32s xNum;
-    Ipp32s yNum;
-    Ipp32s IX = pContext->m_pSingleMB->m_currMBXpos;
-    Ipp32s IY = pContext->m_pSingleMB->m_currMBYpos;
+    int32_t X = *xMV;
+    int32_t Y = *yMV;
+    int32_t xNum;
+    int32_t yNum;
+    int32_t IX = pContext->m_pSingleMB->m_currMBXpos;
+    int32_t IY = pContext->m_pSingleMB->m_currMBYpos;
 
-    Ipp32s Width  = (2*(pContext->m_seqLayerHeader.CODED_WIDTH+1));
-    Ipp32s Height = (2*(pContext->m_seqLayerHeader.CODED_HEIGHT+1) >> 1);
+    int32_t Width  = (2*(pContext->m_seqLayerHeader.CODED_WIDTH+1));
+    int32_t Height = (2*(pContext->m_seqLayerHeader.CODED_HEIGHT+1) >> 1);
 
     xNum = (IX<<4) + (X >> 2);
     yNum = (IY<<3) + (Y >> 3);
@@ -228,21 +228,21 @@ void CropLumaPullBack_Adv(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
         Y -= ((yNum-Height-1) << 3);
     }
 
-    (*xMV) = (Ipp16s)X;
-    (*yMV) = (Ipp16s)Y;
+    (*xMV) = (int16_t)X;
+    (*yMV) = (int16_t)Y;
 
 }
-void CropLumaPullBackField_Adv(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+void CropLumaPullBackField_Adv(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
-    Ipp32s X = *xMV;
-    Ipp32s Y = *yMV;
-    Ipp32s xNum;
-    Ipp32s yNum;
-    Ipp32s IX = pContext->m_pSingleMB->m_currMBXpos;
-    Ipp32s IY = pContext->m_pSingleMB->m_currMBYpos;
+    int32_t X = *xMV;
+    int32_t Y = *yMV;
+    int32_t xNum;
+    int32_t yNum;
+    int32_t IX = pContext->m_pSingleMB->m_currMBXpos;
+    int32_t IY = pContext->m_pSingleMB->m_currMBYpos;
 
-    Ipp32s Width  = ((pContext->m_seqLayerHeader.CODED_WIDTH+1) << 1);
-    Ipp32s Height = (pContext->m_seqLayerHeader.CODED_HEIGHT+1);
+    int32_t Width  = ((pContext->m_seqLayerHeader.CODED_WIDTH+1) << 1);
+    int32_t Height = (pContext->m_seqLayerHeader.CODED_HEIGHT+1);
 
 
     if (pContext->m_picLayerHeader->CurrField)
@@ -273,25 +273,25 @@ void CropLumaPullBackField_Adv(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
     }
     Y = Y >> 1;
 
-    (*xMV) = (Ipp16s)X;
-    (*yMV) = (Ipp16s)Y;
+    (*xMV) = (int16_t)X;
+    (*yMV) = (int16_t)Y;
 
 }
-void CropChromaPullBack_Adv(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+void CropChromaPullBack_Adv(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
-    Ipp32s X = *xMV;
-    Ipp32s Y = *yMV;
-    Ipp32s XPos;
-    Ipp32s YPos;
-    Ipp32s IX = pContext->m_pSingleMB->m_currMBXpos;
-    Ipp32s IY = pContext->m_pSingleMB->m_currMBYpos;
+    int32_t X = *xMV;
+    int32_t Y = *yMV;
+    int32_t XPos;
+    int32_t YPos;
+    int32_t IX = pContext->m_pSingleMB->m_currMBXpos;
+    int32_t IY = pContext->m_pSingleMB->m_currMBYpos;
 
-    Ipp32s Width  = (pContext->m_seqLayerHeader.CODED_WIDTH+1);
-    Ipp32s Height = ((pContext->m_seqLayerHeader.CODED_HEIGHT+1) >> 1);
+    int32_t Width  = (pContext->m_seqLayerHeader.CODED_WIDTH+1);
+    int32_t Height = ((pContext->m_seqLayerHeader.CODED_HEIGHT+1) >> 1);
 
 
-    Ipp32s MinY = -8;
-    Ipp32s MaxY = Height;
+    int32_t MinY = -8;
+    int32_t MaxY = Height;
 
     if (pContext->m_picLayerHeader->CurrField)
         IY  -= (pContext->m_pSingleMB->heightMB >> 1);
@@ -329,8 +329,8 @@ void CropChromaPullBack_Adv(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
     {
        Y = Y >> 1;
     }
-    *xMV = (Ipp16s)X;
-    *yMV = (Ipp16s)Y;
+    *xMV = (int16_t)X;
+    *yMV = (int16_t)Y;
 
     //pContext->m_pCurrMB->m_pBlocks[4].mv[0][0] = *xMV;
     //pContext->m_pCurrMB->m_pBlocks[4].mv[0][1] = *yMV;
@@ -339,10 +339,10 @@ void CropChromaPullBack_Adv(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
 }
 
 void CalculateProgressive1MV_B_Adv  (VC1Context* pContext,
-                                Ipp16s *pPredMVx,Ipp16s *pPredMVy,
-                                Ipp32s Back)
+                                int16_t *pPredMVx,int16_t *pPredMVy,
+                                int32_t Back)
 {
-    Ipp16s x=0,y=0;
+    int16_t x=0,y=0;
 
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1MVPredictors* MVPred = &pContext->MVPred;
@@ -364,10 +364,10 @@ void CalculateProgressive1MV_B_Adv  (VC1Context* pContext,
 }
 
 void CalculateProgressive4MV_Adv(VC1Context* pContext,
-                                Ipp16s *pPredMVx,Ipp16s *pPredMVy,
-                                Ipp32s blk_num)
+                                int16_t *pPredMVx,int16_t *pPredMVy,
+                                int32_t blk_num)
 {
-    Ipp16s x,y;
+    int16_t x,y;
     VC1MVPredictors* MVPred = &pContext->MVPred;
 
     GetPredictProgressiveMV(MVPred->AMVPred[blk_num],
@@ -381,13 +381,13 @@ void CalculateProgressive4MV_Adv(VC1Context* pContext,
 }
 
 void CalculateInterlaceFrame1MV_P(VC1MVPredictors* MVPredictors,
-                              Ipp16s *pPredMVx,Ipp16s *pPredMVy)
+                              int16_t *pPredMVx,int16_t *pPredMVy)
 {
     VC1MVPredictors MVPred;
 
-    Ipp32u validPredictors = 0;
-    Ipp16s MV_px[] = {0,0,0};
-    Ipp16s MV_py[] = {0,0,0};
+    uint32_t validPredictors = 0;
+    int16_t MV_px[] = {0,0,0};
+    int16_t MV_py[] = {0,0,0};
 
     memcpy_s(&MVPred,sizeof(VC1MVPredictors),MVPredictors,sizeof(VC1MVPredictors));
 
@@ -440,8 +440,8 @@ void CalculateInterlaceFrame1MV_P(VC1MVPredictors* MVPredictors,
     if (validPredictors > 1)
     {
         // 2 or 3 predictors are available
-        *pPredMVx = (Ipp16s)median3(MV_px);
-        *pPredMVy = (Ipp16s)median3(MV_py);
+        *pPredMVx = (int16_t)median3(MV_px);
+        *pPredMVy = (int16_t)median3(MV_py);
     }
     else
     {
@@ -452,28 +452,28 @@ void CalculateInterlaceFrame1MV_P(VC1MVPredictors* MVPredictors,
 }
 
 void CalculateInterlaceFrame1MV_B(VC1MVPredictors* MVPredictors,
-                                    Ipp16s *f_x,Ipp16s *f_y,
-                                    Ipp16s *b_x,Ipp16s *b_y,
-                                    Ipp32u back)
+                                    int16_t *f_x,int16_t *f_y,
+                                    int16_t *b_x,int16_t *b_y,
+                                    uint32_t back)
 {
     VC1MVPredictors MVPred;
-    Ipp32u f_back = back;
-    Ipp32u b_back = 1 - back;
-    Ipp32u same = 0;
-    Ipp32u opposite = 0;
+    uint32_t f_back = back;
+    uint32_t b_back = 1 - back;
+    uint32_t same = 0;
+    uint32_t opposite = 0;
 
-    //Ipp32u validPredictors = 0;
-    Ipp16s f_MV_px[] = {0,0,0};
-    Ipp16s f_MV_py[] = {0,0,0};
+    //uint32_t validPredictors = 0;
+    int16_t f_MV_px[] = {0,0,0};
+    int16_t f_MV_py[] = {0,0,0};
 
-    Ipp16s b_MV_px[] = {0,0,0};
-    Ipp16s b_MV_py[] = {0,0,0};
+    int16_t b_MV_px[] = {0,0,0};
+    int16_t b_MV_py[] = {0,0,0};
 
-    Ipp16s MV_px_sameField[] = {0,0,0};
-    Ipp16s MV_py_sameField[] = {0,0,0};
+    int16_t MV_px_sameField[] = {0,0,0};
+    int16_t MV_py_sameField[] = {0,0,0};
 
-    Ipp16s MV_px_oppField[] = {0,0,0};
-    Ipp16s MV_py_oppField[] = {0,0,0};
+    int16_t MV_px_oppField[] = {0,0,0};
+    int16_t MV_py_oppField[] = {0,0,0};
 
     memcpy_s(&MVPred,sizeof(VC1MVPredictors),MVPredictors,sizeof(VC1MVPredictors));
 
@@ -584,8 +584,8 @@ void CalculateInterlaceFrame1MV_B(VC1MVPredictors* MVPredictors,
     if (same + opposite > 1)
     {
         // 2 or 3 predictors are available
-        *f_x = (Ipp16s)median3(f_MV_px);
-        *f_y = (Ipp16s)median3(f_MV_py);
+        *f_x = (int16_t)median3(f_MV_px);
+        *f_y = (int16_t)median3(f_MV_py);
     }
     else
     {
@@ -598,8 +598,8 @@ void CalculateInterlaceFrame1MV_B(VC1MVPredictors* MVPredictors,
     //3 predictors are available
     if((same == 3) || (opposite == 3))
     {
-        *b_x = (Ipp16s)median3(b_MV_px);
-        *b_y = (Ipp16s)median3(b_MV_py);
+        *b_x = (int16_t)median3(b_MV_px);
+        *b_y = (int16_t)median3(b_MV_py);
     }
     else if(same >= opposite)
     {
@@ -614,17 +614,17 @@ void CalculateInterlaceFrame1MV_B(VC1MVPredictors* MVPredictors,
 }
 
 void CalculateInterlaceFrame1MV_B_Interpolate(VC1MVPredictors* MVPredictors,
-                                              Ipp16s *f_x,Ipp16s *f_y,
-                                              Ipp16s *b_x,Ipp16s *b_y)
+                                              int16_t *f_x,int16_t *f_y,
+                                              int16_t *b_x,int16_t *b_y)
 {
     VC1MVPredictors MVPred;
 
-    Ipp32u validPredictors = 0;
-    Ipp16s f_MV_px[] = {0,0,0};
-    Ipp16s f_MV_py[] = {0,0,0};
+    uint32_t validPredictors = 0;
+    int16_t f_MV_px[] = {0,0,0};
+    int16_t f_MV_py[] = {0,0,0};
 
-    Ipp16s b_MV_px[] = {0,0,0};
-    Ipp16s b_MV_py[] = {0,0,0};
+    int16_t b_MV_px[] = {0,0,0};
+    int16_t b_MV_py[] = {0,0,0};
 
     memcpy_s(&MVPred,sizeof(VC1MVPredictors),MVPredictors,sizeof(VC1MVPredictors));
 
@@ -704,11 +704,11 @@ void CalculateInterlaceFrame1MV_B_Interpolate(VC1MVPredictors* MVPredictors,
     if (validPredictors > 1)
     {
         // 2 or 3 predictors are available
-        *f_x = (Ipp16s)median3(f_MV_px);
-        *f_y = (Ipp16s)median3(f_MV_py);
+        *f_x = (int16_t)median3(f_MV_px);
+        *f_y = (int16_t)median3(f_MV_py);
 
-        *b_x = (Ipp16s)median3(b_MV_px);
-        *b_y = (Ipp16s)median3(b_MV_py);
+        *b_x = (int16_t)median3(b_MV_px);
+        *b_y = (int16_t)median3(b_MV_py);
     }
     else
     {
@@ -722,14 +722,14 @@ void CalculateInterlaceFrame1MV_B_Interpolate(VC1MVPredictors* MVPredictors,
 }
 
 void Calculate4MVFrame_Adv(VC1MVPredictors* MVPredictors,
-                              Ipp16s *pPredMVx,Ipp16s *pPredMVy,
-                              Ipp32u blk_num)
+                              int16_t *pPredMVx,int16_t *pPredMVy,
+                              uint32_t blk_num)
 {
    VC1MVPredictors MVPred;
 
-    Ipp32u validPredictors = 0;
-    Ipp16s MV_px[] = {0,0,0};
-    Ipp16s MV_py[] = {0,0,0};
+    uint32_t validPredictors = 0;
+    int16_t MV_px[] = {0,0,0};
+    int16_t MV_py[] = {0,0,0};
 
     memcpy_s(&MVPred,sizeof(VC1MVPredictors),MVPredictors,sizeof(VC1MVPredictors));
 
@@ -782,8 +782,8 @@ void Calculate4MVFrame_Adv(VC1MVPredictors* MVPredictors,
     if (validPredictors > 1)
     {
         // 2 or 3 predictors are available
-        *pPredMVx = (Ipp16s)median3(MV_px);
-        *pPredMVy = (Ipp16s)median3(MV_py);
+        *pPredMVx = (int16_t)median3(MV_px);
+        *pPredMVy = (int16_t)median3(MV_py);
     }
     else
     {
@@ -804,8 +804,8 @@ void PredictInterlaceFrame1MV(VC1Context* pContext)
     VC1MVPredictors MVPred;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
-    Ipp32u LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->MaxWidthMB;
+    uint32_t LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
+    int32_t width = pContext->m_pSingleMB->MaxWidthMB;
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
@@ -882,8 +882,8 @@ void PredictInterlace4MVFrame_Adv(VC1Context* pContext)
     VC1MVPredictors MVPred;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
-    Ipp32u LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->MaxWidthMB;
+    uint32_t LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
+    int32_t width = pContext->m_pSingleMB->MaxWidthMB;
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
@@ -1026,8 +1026,8 @@ void PredictInterlace4MVField_Adv(VC1Context* pContext)
     VC1MVPredictors MVPred;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
 
-    Ipp32u LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->MaxWidthMB;
+    uint32_t LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
+    int32_t width = pContext->m_pSingleMB->MaxWidthMB;
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
@@ -1237,24 +1237,24 @@ void PredictInterlace4MVField_Adv(VC1Context* pContext)
 }
 //2 Field MV candidate MV derivation
 void PredictInterlace2MV_Field_Adv(VC1MB* pCurrMB,
-                                   Ipp16s pPredMVx[2],Ipp16s pPredMVy[2],
-                                   Ipp16s backTop, Ipp16s backBottom,
-                                   Ipp32u widthMB)
+                                   int16_t pPredMVx[2],int16_t pPredMVy[2],
+                                   int16_t backTop, int16_t backBottom,
+                                   uint32_t widthMB)
 {
-    Ipp32u LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32u OppositeTopField = 0;
-    Ipp32u OppositeBottomField = 0;
-    Ipp32u SameTopField = 0;
-    Ipp32u SameBottomField = 0;
+    uint32_t LeftTopRightPositionFlag = pCurrMB->LeftTopRightPositionFlag;
+    uint32_t OppositeTopField = 0;
+    uint32_t OppositeBottomField = 0;
+    uint32_t SameTopField = 0;
+    uint32_t SameBottomField = 0;
 
-    Ipp16s MV_px[2][3] = { {0,0,0}, {0,0,0} };
-    Ipp16s MV_py[2][3] = { {0,0,0}, {0,0,0} };
+    int16_t MV_px[2][3] = { {0,0,0}, {0,0,0} };
+    int16_t MV_py[2][3] = { {0,0,0}, {0,0,0} };
 
-    Ipp16s MV_px_sameField[2][3] = { {0,0,0}, {0,0,0} };
-    Ipp16s MV_py_sameField[2][3] = { {0,0,0}, {0,0,0} };
+    int16_t MV_px_sameField[2][3] = { {0,0,0}, {0,0,0} };
+    int16_t MV_py_sameField[2][3] = { {0,0,0}, {0,0,0} };
 
-    Ipp16s MV_px_oppField[2][3] = { {0,0,0}, {0,0,0} };
-    Ipp16s MV_py_oppField[2][3] = { {0,0,0}, {0,0,0} };
+    int16_t MV_px_oppField[2][3] = { {0,0,0}, {0,0,0} };
+    int16_t MV_py_oppField[2][3] = { {0,0,0}, {0,0,0} };
 
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 
@@ -1630,8 +1630,8 @@ void PredictInterlace2MV_Field_Adv(VC1MB* pCurrMB,
     //3 or 2 predictors are available
     if((SameTopField == 3) || (OppositeTopField == 3))
     {
-        pPredMVx[0] = (Ipp16s)median3(MV_px[0]);
-        pPredMVy[0] = (Ipp16s)median3(MV_py[0]);
+        pPredMVx[0] = (int16_t)median3(MV_px[0]);
+        pPredMVy[0] = (int16_t)median3(MV_py[0]);
     }
     else if(SameTopField >= OppositeTopField)
     {
@@ -1648,8 +1648,8 @@ void PredictInterlace2MV_Field_Adv(VC1MB* pCurrMB,
     //3 or 2 predictors are available
     if((SameBottomField == 3) || (OppositeBottomField == 3))
     {
-        pPredMVx[1] = (Ipp16s)median3(MV_px[1]);
-        pPredMVy[1] = (Ipp16s)median3(MV_py[1]);
+        pPredMVx[1] = (int16_t)median3(MV_px[1]);
+        pPredMVy[1] = (int16_t)median3(MV_py[1]);
     }
     else if(SameBottomField >= OppositeBottomField)
     {
@@ -1664,20 +1664,20 @@ void PredictInterlace2MV_Field_Adv(VC1MB* pCurrMB,
 }
 
 void CalculateInterlace4MV_TopField_Adv(VC1MVPredictors* MVPredictors,
-                                      Ipp16s *pPredMVx,Ipp16s *pPredMVy,
-                                      Ipp32u blk_num)
+                                      int16_t *pPredMVx,int16_t *pPredMVy,
+                                      uint32_t blk_num)
 {
-    Ipp32u validPredictorsOppositeField = 0;
-    Ipp32u validPredictorsSameField = 0;
+    uint32_t validPredictorsOppositeField = 0;
+    uint32_t validPredictorsSameField = 0;
 
-    Ipp16s MV_px[3] = {0,0,0}; //first index - top/bottom
-    Ipp16s MV_py[3] = {0,0,0}; //second - A,B,C predictors
+    int16_t MV_px[3] = {0,0,0}; //first index - top/bottom
+    int16_t MV_py[3] = {0,0,0}; //second - A,B,C predictors
 
-    Ipp16s MV_px_sameField[3] = {0,0,0};
-    Ipp16s MV_py_sameField[3] = {0,0,0};
+    int16_t MV_px_sameField[3] = {0,0,0};
+    int16_t MV_py_sameField[3] = {0,0,0};
 
-    Ipp16s MV_px_oppField[3] = {0,0,0};
-    Ipp16s MV_py_oppField[3] = {0,0,0};
+    int16_t MV_px_oppField[3] = {0,0,0};
+    int16_t MV_py_oppField[3] = {0,0,0};
 
     VC1MVPredictors MVPred;
 
@@ -1745,8 +1745,8 @@ void CalculateInterlace4MV_TopField_Adv(VC1MVPredictors* MVPredictors,
     //3 or 2 predictors are available
     if((validPredictorsSameField == 3) || (validPredictorsOppositeField == 3))
     {
-        *pPredMVx = (Ipp16s)median3(MV_px);
-        *pPredMVy = (Ipp16s)median3(MV_py);
+        *pPredMVx = (int16_t)median3(MV_px);
+        *pPredMVy = (int16_t)median3(MV_py);
     }
     else if(validPredictorsSameField >= validPredictorsOppositeField)
     {
@@ -1761,20 +1761,20 @@ void CalculateInterlace4MV_TopField_Adv(VC1MVPredictors* MVPredictors,
  }
 
 void CalculateInterlace4MV_BottomField_Adv(VC1MVPredictors* MVPredictors,
-                                      Ipp16s *pPredMVx,Ipp16s *pPredMVy,
-                                      Ipp32u blk_num)
+                                      int16_t *pPredMVx,int16_t *pPredMVy,
+                                      uint32_t blk_num)
 {
-    Ipp32u validPredictorsOppositeField = 0;
-    Ipp32u validPredictorsSameField = 0;
+    uint32_t validPredictorsOppositeField = 0;
+    uint32_t validPredictorsSameField = 0;
 
-    Ipp16s MV_px[3] = {0,0,0}; //first index - top/bottom
-    Ipp16s MV_py[3] = {0,0,0}; //second - A,B,C predictors
+    int16_t MV_px[3] = {0,0,0}; //first index - top/bottom
+    int16_t MV_py[3] = {0,0,0}; //second - A,B,C predictors
 
-    Ipp16s MV_px_sameField[3] = {0,0,0};
-    Ipp16s MV_py_sameField[3] = {0,0,0};
+    int16_t MV_px_sameField[3] = {0,0,0};
+    int16_t MV_py_sameField[3] = {0,0,0};
 
-    Ipp16s MV_px_oppField[3] = {0,0,0};
-    Ipp16s MV_py_oppField[3] = {0,0,0};
+    int16_t MV_px_oppField[3] = {0,0,0};
+    int16_t MV_py_oppField[3] = {0,0,0};
 
     VC1MVPredictors MVPred;
 
@@ -1870,8 +1870,8 @@ void CalculateInterlace4MV_BottomField_Adv(VC1MVPredictors* MVPredictors,
     //3 or 2 predictors are available
     if((validPredictorsSameField == 3) || (validPredictorsOppositeField == 3))
     {
-        *pPredMVx = (Ipp16s)median3(MV_px);
-        *pPredMVy = (Ipp16s)median3(MV_py);
+        *pPredMVx = (int16_t)median3(MV_px);
+        *pPredMVy = (int16_t)median3(MV_py);
     }
     else if(validPredictorsSameField >= validPredictorsOppositeField)
     {
@@ -1885,19 +1885,19 @@ void CalculateInterlace4MV_BottomField_Adv(VC1MVPredictors* MVPredictors,
     }
  }
 
-void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
+void DecodeMVDiff_Adv(VC1Context* pContext,int16_t* pdmv_x, int16_t* pdmv_y)
 {
     int ret;
-    Ipp32s index;
-    Ipp16s dmv_x = 0;
-    Ipp16s dmv_y = 0;
-    Ipp32s sign;
-    Ipp32s val;
+    int32_t index;
+    int16_t dmv_x = 0;
+    int16_t dmv_y = 0;
+    int32_t sign;
+    int32_t val;
     VC1PictureLayerHeader* picHeader = pContext->m_picLayerHeader;
 
-    static const Ipp8u offset_table[2][9] = { {0, 1, 2, 4, 8, 16, 32, 64, 128},
+    static const uint8_t offset_table[2][9] = { {0, 1, 2, 4, 8, 16, 32, 64, 128},
                                        {0, 1, 3, 7, 15, 31, 63, 127, 255}};
-    static const Ipp8u* curr_offset;
+    static const uint8_t* curr_offset;
 
     ret = DecodeHuffmanOne(
         &pContext->m_bitstream.pBitstream,
@@ -1913,12 +1913,12 @@ void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
     if (index != 72)
     {
         val = val>>8;
-        Ipp32s index1 = val & 0x000000FF; //index%9
+        int32_t index1 = val & 0x000000FF; //index%9
         val = val>>8;
-        Ipp32s index2 = val & 0x000000FF; //index/9
+        int32_t index2 = val & 0x000000FF; //index/9
 
-        Ipp32s extend_x = (picHeader->DMVRANGE & VC1_DMVRANGE_HORIZONTAL_RANGE)?1:0;
-        Ipp32s extend_y = (picHeader->DMVRANGE & VC1_DMVRANGE_VERTICAL_RANGE)?1:0;
+        int32_t extend_x = (picHeader->DMVRANGE & VC1_DMVRANGE_HORIZONTAL_RANGE)?1:0;
+        int32_t extend_y = (picHeader->DMVRANGE & VC1_DMVRANGE_VERTICAL_RANGE)?1:0;
 
         curr_offset = offset_table[extend_x];
 
@@ -1926,7 +1926,7 @@ void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
         {
             VC1_GET_BITS((index1 + extend_x),val);
             sign = -(val & 1);
-            dmv_x = (Ipp16s)((sign ^ ( (val >> 1) + curr_offset[index1])) - sign);
+            dmv_x = (int16_t)((sign ^ ( (val >> 1) + curr_offset[index1])) - sign);
         }
         else
             dmv_x = 0;
@@ -1937,24 +1937,24 @@ void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
         {
             VC1_GET_BITS((index2 + extend_y),val);
             sign = -(val & 1);
-            dmv_y = (Ipp16s)((sign ^ ( (val >> 1) + curr_offset[index2])) - sign);
+            dmv_y = (int16_t)((sign ^ ( (val >> 1) + curr_offset[index2])) - sign);
         }
         else
             dmv_y =0;
     }
     else
     {
-        Ipp8u k_x = picHeader->m_pCurrMVRangetbl->k_x;
-        Ipp8u k_y = picHeader->m_pCurrMVRangetbl->k_y;
+        uint8_t k_x = picHeader->m_pCurrMVRangetbl->k_x;
+        uint8_t k_y = picHeader->m_pCurrMVRangetbl->k_y;
 
-        Ipp32s tmp_dmv_x = 0;
-        Ipp32s tmp_dmv_y = 0;
+        int32_t tmp_dmv_x = 0;
+        int32_t tmp_dmv_y = 0;
 
         VC1_GET_BITS(k_x, tmp_dmv_x);
         VC1_GET_BITS(k_y, tmp_dmv_y);
 
-        dmv_x = (Ipp16s)tmp_dmv_x;
-        dmv_y = (Ipp16s)tmp_dmv_y;
+        dmv_x = (int16_t)tmp_dmv_x;
+        dmv_y = (int16_t)tmp_dmv_y;
     }
 
     //dMV scaling in case of fields and Half pel resolution
@@ -1972,24 +1972,24 @@ void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
     *pdmv_y=dmv_y;
 }
 
-Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
-                                         Ipp16s* pdmv_x, Ipp16s* pdmv_y)
+uint8_t DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
+                                         int16_t* pdmv_x, int16_t* pdmv_y)
 {
     int ret;
-    Ipp32s index;
-    Ipp16s dmv_x = 0;
-    Ipp16s dmv_y = 0;
-    Ipp32s sign;
-    Ipp32s val;
-    Ipp8u predictor_flag;
+    int32_t index;
+    int16_t dmv_x = 0;
+    int16_t dmv_y = 0;
+    int32_t sign;
+    int32_t val;
+    uint8_t predictor_flag;
 
     VC1PictureLayerHeader* picHeader = pContext->m_picLayerHeader;
 
 
-    static Ipp8u offset_table[2][9] = {{0, 1, 2, 4, 8, 16, 32, 64, 128},
+    static uint8_t offset_table[2][9] = {{0, 1, 2, 4, 8, 16, 32, 64, 128},
                                              {0, 1, 3, 7, 15, 31, 63, 127, 255}};
-    static Ipp8u size_table[16]   = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
-    Ipp8u* curr_offset;
+    static uint8_t size_table[16]   = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
+    uint8_t* curr_offset;
 
     ret = DecodeHuffmanOne(
         &pContext->m_bitstream.pBitstream,
@@ -2004,13 +2004,13 @@ Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
 
     if (index != 126)
     {
-        Ipp32s extend_x = (picHeader->DMVRANGE & VC1_DMVRANGE_HORIZONTAL_RANGE)? 1:0;
-        Ipp32s extend_y = (picHeader->DMVRANGE & VC1_DMVRANGE_VERTICAL_RANGE)  ? 1:0;
+        int32_t extend_x = (picHeader->DMVRANGE & VC1_DMVRANGE_HORIZONTAL_RANGE)? 1:0;
+        int32_t extend_y = (picHeader->DMVRANGE & VC1_DMVRANGE_VERTICAL_RANGE)  ? 1:0;
 
         val = val>>8;
-        Ipp32s index1 = val & 0x000000FF; //index%9
+        int32_t index1 = val & 0x000000FF; //index%9
         val = val>>8;
-        Ipp32s index2 = val & 0x000000FF; //index/9
+        int32_t index2 = val & 0x000000FF; //index/9
 
         curr_offset = offset_table[extend_x];
 
@@ -2018,7 +2018,7 @@ Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
         {
             VC1_GET_BITS((index1 + extend_x),val);
             sign = -(val & 1);
-            dmv_x = (Ipp16s)((sign ^ ( (val >> 1) + curr_offset[index1])) - sign);
+            dmv_x = (int16_t)((sign ^ ( (val >> 1) + curr_offset[index1])) - sign);
         }
         else
             dmv_x = 0;
@@ -2029,28 +2029,28 @@ Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
         {
             VC1_GET_BITS(size_table[(index2 + 2*extend_y)&0xF],val);
             sign = -(val & 1);
-            dmv_y = (Ipp16s)((sign ^ ( (val >> 1) + curr_offset[index2>>1])) - sign);
+            dmv_y = (int16_t)((sign ^ ( (val >> 1) + curr_offset[index2>>1])) - sign);
         }
         else
             dmv_y =0;
 
-        predictor_flag = (Ipp8u)(index2 & 1);
+        predictor_flag = (uint8_t)(index2 & 1);
     }
     else
     {
-        Ipp32s k_x = picHeader->m_pCurrMVRangetbl->k_x;
-        Ipp32s k_y = picHeader->m_pCurrMVRangetbl->k_y;
+        int32_t k_x = picHeader->m_pCurrMVRangetbl->k_x;
+        int32_t k_y = picHeader->m_pCurrMVRangetbl->k_y;
 
-        Ipp32s tmp_dmv_x = 0;
-        Ipp32s tmp_dmv_y = 0;
+        int32_t tmp_dmv_x = 0;
+        int32_t tmp_dmv_y = 0;
 
         VC1_GET_BITS(k_x, tmp_dmv_x);
         VC1_GET_BITS(k_y, tmp_dmv_y);
 
-        dmv_x = (Ipp16s)tmp_dmv_x;
-        dmv_y = (Ipp16s)tmp_dmv_y;
+        dmv_x = (int16_t)tmp_dmv_x;
+        dmv_y = (int16_t)tmp_dmv_y;
 
-        predictor_flag = (Ipp8u)(dmv_y & 1);
+        predictor_flag = (uint8_t)(dmv_y & 1);
         dmv_y = (dmv_y + 1) >> 1; // differ from standard dmv_y = (dmv_y + predictor_flag) >> 1;
     }
 
@@ -2065,12 +2065,12 @@ Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
 
     return predictor_flag;
 }
-void DeriveSecondStageChromaMV_Interlace(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+void DeriveSecondStageChromaMV_Interlace(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s IX, IY;
-    static const Ipp8u RndTbl[4] = {0, 0, 0, 1};
-    static const Ipp8u RndTblField[16]   = {0, 0, 1, 2, 4, 4, 5, 6, 2, 2, 3, 8, 6, 6, 7, 12};
+    int32_t IX, IY;
+    static const uint8_t RndTbl[4] = {0, 0, 0, 1};
+    static const uint8_t RndTblField[16]   = {0, 0, 1, 2, 4, 4, 5, 6, 2, 2, 3, 8, 6, 6, 7, 12};
 
     if(((*xMV) == VC1_MVINTRA) || ((*yMV) == VC1_MVINTRA))
     {
@@ -2078,7 +2078,7 @@ void DeriveSecondStageChromaMV_Interlace(VC1Context* pContext, Ipp16s* xMV, Ipp1
     }
     else
     {
-        Ipp32s CMV_X, CMV_Y;
+        int32_t CMV_X, CMV_Y;
 
         IX = *xMV;
         IY = *yMV;
@@ -2091,8 +2091,8 @@ void DeriveSecondStageChromaMV_Interlace(VC1Context* pContext, Ipp16s* xMV, Ipp1
         else
             CMV_Y = (IY + RndTbl[IY & 3]) >> 1;
 
-        *xMV              = (Ipp16s)CMV_X;
-        *yMV              = (Ipp16s)CMV_Y;
+        *xMV              = (int16_t)CMV_X;
+        *yMV              = (int16_t)CMV_Y;
 
         pMB->m_pBlocks[4].mv[0][0] = *xMV;
         pMB->m_pBlocks[4].mv[0][1] = *yMV;
@@ -2103,33 +2103,33 @@ void DeriveSecondStageChromaMV_Interlace(VC1Context* pContext, Ipp16s* xMV, Ipp1
 
 void Decode_InterlaceFrame_BMVTYPE(VC1Context* pContext)
 {
-    Ipp32s value=0;
+    int32_t value=0;
     VC1_GET_BITS(1, value);
     if (value)
     {
         VC1_GET_BITS(1, value);
         if (value)
         {
-            pContext->m_pCurrMB->mbType=(Ipp8u)(pContext->m_pCurrMB->mbType|VC1_MB_INTERP);
+            pContext->m_pCurrMB->mbType=(uint8_t)(pContext->m_pCurrMB->mbType|VC1_MB_INTERP);
         }
         else
         {
             pContext->m_pCurrMB->mbType=(pContext->m_picLayerHeader->BFRACTION)?
-                (Ipp8u)(pContext->m_pCurrMB->mbType|VC1_MB_FORWARD)
-                :(Ipp8u)(pContext->m_pCurrMB->mbType|VC1_MB_BACKWARD);
+                (uint8_t)(pContext->m_pCurrMB->mbType|VC1_MB_FORWARD)
+                :(uint8_t)(pContext->m_pCurrMB->mbType|VC1_MB_BACKWARD);
         }
     }
     else
     {
         pContext->m_pCurrMB->mbType=(pContext->m_picLayerHeader->BFRACTION)?
-            (Ipp8u)(pContext->m_pCurrMB->mbType|VC1_MB_BACKWARD)
-            :(Ipp8u)(pContext->m_pCurrMB->mbType|VC1_MB_FORWARD);
+            (uint8_t)(pContext->m_pCurrMB->mbType|VC1_MB_BACKWARD)
+            :(uint8_t)(pContext->m_pCurrMB->mbType|VC1_MB_FORWARD);
     }
 }
 
 void Decode_InterlaceField_BMVTYPE(VC1Context* pContext)
 {
-    Ipp32s value=0;
+    int32_t value=0;
 
     VC1_GET_BITS(1, value);
     if (value)
@@ -2138,28 +2138,28 @@ void Decode_InterlaceField_BMVTYPE(VC1Context* pContext)
         if (value)
         {
             //11
-            pContext->m_pCurrMB->mbType = (Ipp8u)(pContext->m_pCurrMB->mbType|VC1_MB_INTERP);
+            pContext->m_pCurrMB->mbType = (uint8_t)(pContext->m_pCurrMB->mbType|VC1_MB_INTERP);
         }
         else
         {
             //10
-            pContext->m_pCurrMB->mbType = (Ipp8u)(pContext->m_pCurrMB->mbType|VC1_MB_DIRECT);
+            pContext->m_pCurrMB->mbType = (uint8_t)(pContext->m_pCurrMB->mbType|VC1_MB_DIRECT);
         }
     }
     else
     {
         //0
-        pContext->m_pCurrMB->mbType = (Ipp8u)(pContext->m_pCurrMB->mbType|VC1_MB_BACKWARD);
+        pContext->m_pCurrMB->mbType = (uint8_t)(pContext->m_pCurrMB->mbType|VC1_MB_BACKWARD);
     }
 }
 
-void ScaleOppositePredPPic(VC1PictureLayerHeader* picLayerHeader,Ipp16s *x, Ipp16s *y)
+void ScaleOppositePredPPic(VC1PictureLayerHeader* picLayerHeader,int16_t *x, int16_t *y)
 {
-    Ipp16s scaleX = *x;
-    Ipp16s scaleY = *y;
+    int16_t scaleX = *x;
+    int16_t scaleY = *y;
 
     const VC1PredictScaleValuesPPic* ScaleValuesTable = picLayerHeader->m_pCurrPredScaleValuePPictbl;
-    Ipp16u scaleopp = ScaleValuesTable->scaleopp;
+    uint16_t scaleopp = ScaleValuesTable->scaleopp;
 
     if (picLayerHeader->MVMODE==VC1_MVMODE_HPELBI_1MV || picLayerHeader->MVMODE == VC1_MVMODE_HPEL_1MV)
     {
@@ -2182,15 +2182,15 @@ void ScaleOppositePredPPic(VC1PictureLayerHeader* picLayerHeader,Ipp16s *x, Ipp1
     (*y) = scaleY;
 }
 
-void ScaleSamePredPPic(VC1PictureLayerHeader* picLayerHeader, Ipp16s *x, Ipp16s *y, Ipp32s dominant, Ipp32s fieldFlag)
+void ScaleSamePredPPic(VC1PictureLayerHeader* picLayerHeader, int16_t *x, int16_t *y, int32_t dominant, int32_t fieldFlag)
 {
-    Ipp16s scaleX = *x;
-    Ipp16s scaleY = *y;
+    int16_t scaleX = *x;
+    int16_t scaleY = *y;
 
     const VC1PredictScaleValuesPPic* ScaleValuesTable = picLayerHeader->m_pCurrPredScaleValuePPictbl;
 
-    Ipp16u range_x = picLayerHeader->m_pCurrMVRangetbl->r_x;
-    Ipp16u range_y = picLayerHeader->m_pCurrMVRangetbl->r_y;
+    uint16_t range_x = picLayerHeader->m_pCurrMVRangetbl->r_x;
+    uint16_t range_y = picLayerHeader->m_pCurrMVRangetbl->r_y;
 
     range_y  = range_y >> 1;
 
@@ -2267,18 +2267,18 @@ void ScaleSamePredPPic(VC1PictureLayerHeader* picLayerHeader, Ipp16s *x, Ipp16s 
 }
 
 
-void ScaleOppositePredBPic(VC1PictureLayerHeader* picLayerHeader, Ipp16s *x, Ipp16s *y,
-                           Ipp32s dominant, Ipp32s fieldFlag, Ipp32s back)
+void ScaleOppositePredBPic(VC1PictureLayerHeader* picLayerHeader, int16_t *x, int16_t *y,
+                           int32_t dominant, int32_t fieldFlag, int32_t back)
 {
-    Ipp16s scaleX = *x;
-    Ipp16s scaleY = *y;
+    int16_t scaleX = *x;
+    int16_t scaleY = *y;
 
     if(back && (picLayerHeader->CurrField == 0))
     {
         const VC1PredictScaleValuesBPic* ScaleValuesTable = picLayerHeader->m_pCurrPredScaleValueB_BPictbl;
 
-        Ipp16s range_x = picLayerHeader->m_pCurrMVRangetbl->r_x;
-        Ipp16s range_y = picLayerHeader->m_pCurrMVRangetbl->r_y;
+        int16_t range_x = picLayerHeader->m_pCurrMVRangetbl->r_x;
+        int16_t range_y = picLayerHeader->m_pCurrMVRangetbl->r_y;
 
         range_y  = range_y >> 1;
 
@@ -2355,7 +2355,7 @@ void ScaleOppositePredBPic(VC1PictureLayerHeader* picLayerHeader, Ipp16s *x, Ipp
     {
         //forward
         const VC1PredictScaleValuesPPic* ScaleValuesTable = picLayerHeader->m_pCurrPredScaleValueP_BPictbl[back];
-        Ipp16s scaleopp = ScaleValuesTable->scaleopp;
+        int16_t scaleopp = ScaleValuesTable->scaleopp;
 
         if (picLayerHeader->MVMODE==VC1_MVMODE_HPELBI_1MV || picLayerHeader->MVMODE == VC1_MVMODE_HPEL_1MV)
         {
@@ -2378,32 +2378,32 @@ void ScaleOppositePredBPic(VC1PictureLayerHeader* picLayerHeader, Ipp16s *x, Ipp
     (*y) = scaleY;
 }
 
-void ScaleSamePredBPic(VC1PictureLayerHeader* picLayerHeader,Ipp16s *x, Ipp16s *y,
-                       Ipp32s dominant, Ipp32s fieldFlag, Ipp32s back)
+void ScaleSamePredBPic(VC1PictureLayerHeader* picLayerHeader,int16_t *x, int16_t *y,
+                       int32_t dominant, int32_t fieldFlag, int32_t back)
 {
-    Ipp16s scaleX = *x;
-    Ipp16s scaleY = *y;
+    int16_t scaleX = *x;
+    int16_t scaleY = *y;
 
     if(back && (picLayerHeader->CurrField == 0))
     {
         const VC1PredictScaleValuesBPic* ScaleValuesTable = picLayerHeader->m_pCurrPredScaleValueB_BPictbl;
-        Ipp16s scalesame = ScaleValuesTable->scalesame;
+        int16_t scalesame = ScaleValuesTable->scalesame;
 
         if (picLayerHeader->MVMODE==VC1_MVMODE_HPELBI_1MV || picLayerHeader->MVMODE == VC1_MVMODE_HPEL_1MV)
         {
             scaleX  = scaleX >> 1;
             scaleY  = scaleY >> 1;
 
-            scaleX = (Ipp16s)((scaleX*scalesame)>>8);
-            scaleY = (Ipp16s)((scaleY*scalesame)>>8);
+            scaleX = (int16_t)((scaleX*scalesame)>>8);
+            scaleY = (int16_t)((scaleY*scalesame)>>8);
 
             scaleX  = scaleX << 1;
             scaleY  = scaleY << 1;
         }
         else
         {
-            scaleX = (Ipp16s)((scaleX*scalesame)>>8);
-            scaleY = (Ipp16s)((scaleY*scalesame)>>8);
+            scaleX = (int16_t)((scaleX*scalesame)>>8);
+            scaleY = (int16_t)((scaleY*scalesame)>>8);
         }
 
     }
@@ -2411,8 +2411,8 @@ void ScaleSamePredBPic(VC1PictureLayerHeader* picLayerHeader,Ipp16s *x, Ipp16s *
     {
         const VC1PredictScaleValuesPPic* ScaleValuesTable = picLayerHeader->m_pCurrPredScaleValueP_BPictbl[back];
 
-        Ipp16s range_x = picLayerHeader->m_pCurrMVRangetbl->r_x;
-        Ipp16s range_y = picLayerHeader->m_pCurrMVRangetbl->r_y;
+        int16_t range_x = picLayerHeader->m_pCurrMVRangetbl->r_x;
+        int16_t range_y = picLayerHeader->m_pCurrMVRangetbl->r_y;
 
 
         range_y  = range_y >> 1;
@@ -2490,13 +2490,13 @@ void ScaleSamePredBPic(VC1PictureLayerHeader* picLayerHeader,Ipp16s *x, Ipp16s *
     (*y) = scaleY;
 }
 
-void HybridFieldMV(VC1Context* pContext,Ipp16s *pPredMVx,Ipp16s *pPredMVy,
-                   Ipp16s MV_px[3],Ipp16s MV_py[3])
+void HybridFieldMV(VC1Context* pContext,int16_t *pPredMVx,int16_t *pPredMVy,
+                   int16_t MV_px[3],int16_t MV_py[3])
 {
-    Ipp32u hybridmv_thresh;
-    Ipp16u sumA;
-    Ipp16u sumC;
-    Ipp32u HybridPred;
+    uint32_t hybridmv_thresh;
+    uint16_t sumA;
+    uint16_t sumC;
+    uint32_t HybridPred;
 
     hybridmv_thresh = 32;
 
@@ -2542,8 +2542,8 @@ void Field1MVPrediction(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 
-    Ipp32u LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->MaxWidthMB;
+    uint32_t LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
+    int32_t width = pContext->m_pSingleMB->MaxWidthMB;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
 
@@ -2615,8 +2615,8 @@ void Field4MVPrediction(VC1Context* pContext)
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1MB *pA = NULL, *pB0 = NULL,*pB1 = NULL, *pC = NULL;
 
-    Ipp32u LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
-    Ipp32s width = pContext->m_pSingleMB->MaxWidthMB;
+    uint32_t LeftTopRight = pCurrMB->LeftTopRightPositionFlag;
+    int32_t width = pContext->m_pSingleMB->MaxWidthMB;
 
     memset(&MVPred,0,sizeof(VC1MVPredictors));
 
@@ -2732,14 +2732,14 @@ void Field4MVPrediction(VC1Context* pContext)
 }
 
 void CalculateField1MVOneReferencePPic(VC1Context* pContext,
-                                       Ipp16s *pPredMVx,Ipp16s *pPredMVy)
+                                       int16_t *pPredMVx,int16_t *pPredMVy)
 {
     VC1MVPredictors* MVPred = &pContext->MVPred;
-    Ipp32u validPredictors = 0;
-    Ipp32u hybryd = 0;
+    uint32_t validPredictors = 0;
+    uint32_t hybryd = 0;
 
-    Ipp16s MV_px[] = {0,0,0};
-    Ipp16s MV_py[] = {0,0,0};
+    int16_t MV_px[] = {0,0,0};
+    int16_t MV_py[] = {0,0,0};
 
     if(MVPred->AMVPred[0])
     {
@@ -2768,8 +2768,8 @@ void CalculateField1MVOneReferencePPic(VC1Context* pContext,
     //Calaculte predictors
     if(validPredictors > 1)
     {
-        *pPredMVx = (Ipp16s)median3(MV_px);
-        *pPredMVy = (Ipp16s)median3(MV_py);
+        *pPredMVx = (int16_t)median3(MV_px);
+        *pPredMVy = (int16_t)median3(MV_py);
     }
     else
     {
@@ -2813,20 +2813,20 @@ void CalculateField1MVOneReferencePPic(VC1Context* pContext,
 }
 
 void CalculateField1MVTwoReferencePPic(VC1Context* pContext,
-                                       Ipp16s *pPredMVx,
-                                       Ipp16s *pPredMVy,
-                                       Ipp8u* PredFlag)
+                                       int16_t *pPredMVx,
+                                       int16_t *pPredMVy,
+                                       uint8_t* PredFlag)
 {
-    Ipp16s MV_px[] = {0,0,0};
-    Ipp16s MV_py[] = {0,0,0};
+    int16_t MV_px[] = {0,0,0};
+    int16_t MV_py[] = {0,0,0};
 
     VC1MVPredictors* MVPred = &pContext->MVPred;
 
-    Ipp32u validPredictorsOppositeField = 0;
-    Ipp32u validPredictorsSameField = 0;
+    uint32_t validPredictorsOppositeField = 0;
+    uint32_t validPredictorsSameField = 0;
 
-    Ipp32u flag_A, flag_B, flag_C, curr_flag;
-    Ipp32u hybryd = 0;
+    uint32_t flag_A, flag_B, flag_C, curr_flag;
+    uint32_t hybryd = 0;
 
     flag_A = flag_B = flag_C = curr_flag = pContext->m_pCurrMB->fieldFlag[0];
 
@@ -2918,8 +2918,8 @@ void CalculateField1MVTwoReferencePPic(VC1Context* pContext,
 
     if(validPredictorsSameField + validPredictorsOppositeField > 1)
     {
-        *pPredMVx = (Ipp16s)median3(MV_px);
-        *pPredMVy = (Ipp16s)median3(MV_py);
+        *pPredMVx = (int16_t)median3(MV_px);
+        *pPredMVy = (int16_t)median3(MV_py);
     }
     else
     {
@@ -2971,14 +2971,14 @@ void CalculateField1MVTwoReferencePPic(VC1Context* pContext,
 
 }
 
-void CalculateField4MVOneReferencePPic(VC1Context* pContext, Ipp16s *pPredMVx,Ipp16s *pPredMVy, Ipp32s blk_num)
+void CalculateField4MVOneReferencePPic(VC1Context* pContext, int16_t *pPredMVx,int16_t *pPredMVy, int32_t blk_num)
 {
-    Ipp32u validPredictors = 0;
+    uint32_t validPredictors = 0;
     VC1MVPredictors* MVPred = &pContext->MVPred;
-    Ipp32u hybryd = 0;
+    uint32_t hybryd = 0;
 
-    Ipp16s MV_px[] = {0,0,0};
-    Ipp16s MV_py[] = {0,0,0};
+    int16_t MV_px[] = {0,0,0};
+    int16_t MV_py[] = {0,0,0};
 
     if(MVPred->AMVPred[blk_num])
     {
@@ -3006,8 +3006,8 @@ void CalculateField4MVOneReferencePPic(VC1Context* pContext, Ipp16s *pPredMVx,Ip
     //Calaculte predictors
     if(validPredictors>=2)
     {
-       *pPredMVx = (Ipp16s)median3(MV_px);
-       *pPredMVy = (Ipp16s)median3(MV_py);
+       *pPredMVx = (int16_t)median3(MV_px);
+       *pPredMVy = (int16_t)median3(MV_py);
     }
     else
     {
@@ -3050,20 +3050,20 @@ void CalculateField4MVOneReferencePPic(VC1Context* pContext, Ipp16s *pPredMVx,Ip
 }
 
 void CalculateField4MVTwoReferencePPic(VC1Context* pContext,
-                                              Ipp16s *pPredMVx,Ipp16s *pPredMVy,
-                                              Ipp32s blk_num,  Ipp8u* PredFlag)
+                                              int16_t *pPredMVx,int16_t *pPredMVy,
+                                              int32_t blk_num,  uint8_t* PredFlag)
 {
     VC1MVPredictors* MVPred = &pContext->MVPred;
-    Ipp32u hybryd = 0;
+    uint32_t hybryd = 0;
 
-    Ipp16s MV_px[] = {0,0,0};
-    Ipp16s MV_py[] = {0,0,0};
+    int16_t MV_px[] = {0,0,0};
+    int16_t MV_py[] = {0,0,0};
 
-    Ipp32u validPredictorsOppositeField = 0;
-    Ipp32u validPredictorsSameField = 0;
+    uint32_t validPredictorsOppositeField = 0;
+    uint32_t validPredictorsSameField = 0;
 
 
-    Ipp32u flag_A, flag_B, flag_C, curr_flag;
+    uint32_t flag_A, flag_B, flag_C, curr_flag;
     flag_A = flag_B = flag_C = curr_flag = pContext->m_pCurrMB->fieldFlag[0];
 
     if(MVPred->AMVPred[blk_num])
@@ -3160,8 +3160,8 @@ void CalculateField4MVTwoReferencePPic(VC1Context* pContext,
 
     if(validPredictorsSameField + validPredictorsOppositeField >1)
     {
-        *pPredMVx = (Ipp16s)median3(MV_px);
-        *pPredMVy = (Ipp16s)median3(MV_py);
+        *pPredMVx = (int16_t)median3(MV_px);
+        *pPredMVy = (int16_t)median3(MV_py);
     }
     else
     {
@@ -3215,21 +3215,21 @@ void CalculateField4MVTwoReferencePPic(VC1Context* pContext,
 }
 
 void CalculateField1MVTwoReferenceBPic(VC1Context* pContext,
-                                       Ipp16s *pPredMVx,
-                                       Ipp16s *pPredMVy,
-                                       Ipp32s Back,
-                                       Ipp8u* PredFlag)
+                                       int16_t *pPredMVx,
+                                       int16_t *pPredMVy,
+                                       int32_t Back,
+                                       uint8_t* PredFlag)
 {
-    Ipp16s MV_px[] = {0,0,0};
-    Ipp16s MV_py[] = {0,0,0};
+    int16_t MV_px[] = {0,0,0};
+    int16_t MV_py[] = {0,0,0};
 
     VC1MVPredictors* MVPred = &pContext->MVPred;
 
-    Ipp32u validPredictorsOppositeField = 0;
-    Ipp32u validPredictorsSameField = 0;
+    uint32_t validPredictorsOppositeField = 0;
+    uint32_t validPredictorsSameField = 0;
 
-    Ipp32u flag_A, flag_B, flag_C, curr_flag;
-    Ipp32u hybryd = 0;
+    uint32_t flag_A, flag_B, flag_C, curr_flag;
+    uint32_t hybryd = 0;
 
     flag_A = flag_B = flag_C = curr_flag = pContext->m_pCurrMB->fieldFlag[Back];
 
@@ -3331,8 +3331,8 @@ void CalculateField1MVTwoReferenceBPic(VC1Context* pContext,
 
     if(validPredictorsSameField + validPredictorsOppositeField > 1)
     {
-        *pPredMVx = (Ipp16s)median3(MV_px);
-        *pPredMVy = (Ipp16s)median3(MV_py);
+        *pPredMVx = (int16_t)median3(MV_px);
+        *pPredMVy = (int16_t)median3(MV_py);
     }
     else
     {
@@ -3378,20 +3378,20 @@ void CalculateField1MVTwoReferenceBPic(VC1Context* pContext,
 }
 
 void CalculateField4MVTwoReferenceBPic(VC1Context* pContext,
-                                       Ipp16s *pPredMVx,Ipp16s *pPredMVy,
-                                       Ipp32s blk_num,Ipp32s Back,
-                                       Ipp8u* PredFlag)
+                                       int16_t *pPredMVx,int16_t *pPredMVy,
+                                       int32_t blk_num,int32_t Back,
+                                       uint8_t* PredFlag)
 {
     VC1MVPredictors* MVPred = &pContext->MVPred;
 
-    Ipp16s MV_px[] = {0,0,0};
-    Ipp16s MV_py[] = {0,0,0};
+    int16_t MV_px[] = {0,0,0};
+    int16_t MV_py[] = {0,0,0};
 
-    Ipp32u validPredictorsOppositeField = 0;
-    Ipp32u validPredictorsSameField = 0;
+    uint32_t validPredictorsOppositeField = 0;
+    uint32_t validPredictorsSameField = 0;
 
 
-    Ipp32u flag_A, flag_B, flag_C, curr_flag;
+    uint32_t flag_A, flag_B, flag_C, curr_flag;
     flag_A = flag_B = flag_C = curr_flag = pContext->m_pCurrMB->fieldFlag[Back];
 
     if(MVPred->AMVPred[blk_num])
@@ -3485,8 +3485,8 @@ void CalculateField4MVTwoReferenceBPic(VC1Context* pContext,
 
     if(validPredictorsSameField + validPredictorsOppositeField >1)
     {
-        *pPredMVx = (Ipp16s)median3(MV_px);
-        *pPredMVy = (Ipp16s)median3(MV_py);
+        *pPredMVx = (int16_t)median3(MV_px);
+        *pPredMVy = (int16_t)median3(MV_py);
     }
     else
     {

@@ -43,13 +43,13 @@ typedef void (*Deblock)(VC1Context* pContext);
 extern Deblock Deblock_tbl_Adv[];
 extern Deblock Deblock_tbl[];
 
-typedef VC1Status (*ProcessDiff)(VC1Context* pContext, Ipp32s blk_num);
+typedef VC1Status (*ProcessDiff)(VC1Context* pContext, int32_t blk_num);
 extern ProcessDiff ProcessDiff_Adv[];
 
 typedef VC1Status (*MotionComp)(VC1Context* pContex);
 extern MotionComp MotionComp_Adv[];
 
-typedef void (*MBSmooth)(VC1Context* pContext, Ipp32s Height);
+typedef void (*MBSmooth)(VC1Context* pContext, int32_t Height);
 extern MBSmooth MBSmooth_tbl[];
 
 namespace UMC
@@ -81,7 +81,7 @@ namespace UMC
         };
         virtual ~VC1TaskProcessorUMC() { Release ();}
         virtual Status Init(VC1Context* pContext,
-                            Ipp32s iNumber,
+                            int32_t iNumber,
                             VC1TaskStoreSW* pStore,
                             MemoryAllocator* pMemoryAllocator);
         virtual Status process();
@@ -108,12 +108,12 @@ namespace UMC
         void   WriteDiffs(VC1Context* pContext);
         void   ProcessSmartException                                       (VC1Exceptions::SmartLevel exLevel, VC1Context* pContext, VC1Task* pTask, VC1MB* pCurrMB);
 
-        VC1Status (*pReconstructTbl[2])(VC1Context* pContext, Ipp32s blk_num);
+        VC1Status (*pReconstructTbl[2])(VC1Context* pContext, int32_t blk_num);
 
         void CompensateInterlacePFrame(VC1Context* pContext, VC1Task *pTask);
         void CompensateInterlaceBFrame(VC1Context* pContext, VC1Task *pTask);
 
-        Ipp32s                  m_iNumber;
+        int32_t                  m_iNumber;
         UMC::MemID              m_iMemContextID;
         VC1Context*             m_pContext;
         VC1SingletonMB*         m_pSingleMB;

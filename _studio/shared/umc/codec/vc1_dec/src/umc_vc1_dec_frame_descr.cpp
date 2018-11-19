@@ -39,29 +39,29 @@ using namespace UMC;
 using namespace UMC::VC1Exceptions;
 
 
-bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
+bool VC1FrameDescriptor::Init(uint32_t         DescriporID,
                               VC1Context*    pContext,
                               VC1TaskStore*  pStore,
-                              Ipp16s*        pResidBuf)
+                              int16_t*        pResidBuf)
 {
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
-    Ipp32u HeightMB = pContext->m_seqLayerHeader.MaxHeightMB;
-    Ipp32u WidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
+    uint32_t HeightMB = pContext->m_seqLayerHeader.MaxHeightMB;
+    uint32_t WidthMB = pContext->m_seqLayerHeader.MaxWidthMB;
 
     if(seqLayerHeader->INTERLACE)
         HeightMB = HeightMB + (HeightMB & 1); //in case of field with odd height
 
     if (!m_pContext)
     {
-        Ipp8u* ptr = NULL;
-        ptr += align_value<Ipp32u>(sizeof(VC1Context));
-        ptr += align_value<Ipp32u>(sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM);
-        ptr += align_value<Ipp32u>((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
+        uint8_t* ptr = NULL;
+        ptr += align_value<uint32_t>(sizeof(VC1Context));
+        ptr += align_value<uint32_t>(sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM);
+        ptr += align_value<uint32_t>((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
 #ifdef ALLOW_SW_VC1_FALLBACK
-        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*HeightMB*WidthMB * 2 * 2);
-        ptr += align_value<Ipp32u>(sizeof(Ipp8u)*HeightMB*WidthMB);
-        ptr += align_value<Ipp32u>(sizeof(VC1MB)*(HeightMB*WidthMB));
-        ptr += align_value<Ipp32u>(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
+        ptr += align_value<uint32_t>(sizeof(int16_t)*HeightMB*WidthMB * 2 * 2);
+        ptr += align_value<uint32_t>(sizeof(uint8_t)*HeightMB*WidthMB);
+        ptr += align_value<uint32_t>(sizeof(VC1MB)*(HeightMB*WidthMB));
+        ptr += align_value<uint32_t>(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
 #endif
 
         // Need to replace with MFX allocator
@@ -74,27 +74,27 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
         m_pContext = (VC1Context*)(m_pMemoryAllocator->Lock(m_iMemContextID));
         memset(m_pContext,0,size_t(ptr));
         m_pContext->bp_round_count = -1;
-        ptr = (Ipp8u*)m_pContext;
+        ptr = (uint8_t*)m_pContext;
 
-        ptr += align_value<Ipp32u>(sizeof(VC1Context));
+        ptr += align_value<uint32_t>(sizeof(VC1Context));
         m_pContext->m_picLayerHeader = (VC1PictureLayerHeader*)ptr;
         m_pContext->m_InitPicLayer = m_pContext->m_picLayerHeader;
 
-        ptr += align_value<Ipp32u>((sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM));
+        ptr += align_value<uint32_t>((sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM));
         m_pContext->m_pBitplane.m_databits = ptr;
 
 #ifdef ALLOW_SW_VC1_FALLBACK
-        ptr += align_value<Ipp32u>((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
+        ptr += align_value<uint32_t>((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
         m_pContext->m_MBs = (VC1MB*)ptr;
-        ptr += align_value<Ipp32u>(sizeof(VC1MB)*(HeightMB*WidthMB));
+        ptr += align_value<uint32_t>(sizeof(VC1MB)*(HeightMB*WidthMB));
         m_pContext->DCACParams = (VC1DCMBParam*)ptr;
-        ptr += align_value<Ipp32u>(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
-        m_pContext->savedMV = (Ipp16s*)(ptr);
-        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*HeightMB*WidthMB * 2 * 2);
+        ptr += align_value<uint32_t>(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
+        m_pContext->savedMV = (int16_t*)(ptr);
+        ptr += align_value<uint32_t>(sizeof(int16_t)*HeightMB*WidthMB * 2 * 2);
         m_pContext->savedMVSamePolarity  = ptr;
 #endif
     }
-    Ipp32u buffSize =  2*(HeightMB*VC1_PIXEL_IN_LUMA)*(WidthMB*VC1_PIXEL_IN_LUMA);
+    uint32_t buffSize =  2*(HeightMB*VC1_PIXEL_IN_LUMA)*(WidthMB*VC1_PIXEL_IN_LUMA);
 
     //buf size should be divisible by 4
     if(buffSize & 0x00000003)
@@ -107,7 +107,7 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
                                   16) != UMC_OK)
                                   return false;
 
-    m_pContext->m_pBufferStart = (Ipp8u*)m_pMemoryAllocator->Lock(m_iInernBufferID);
+    m_pContext->m_pBufferStart = (uint8_t*)m_pMemoryAllocator->Lock(m_iInernBufferID);
     memset(m_pContext->m_pBufferStart, 0, buffSize);
 
     // memory for diffs for each FrameDescriptor
@@ -116,12 +116,12 @@ bool VC1FrameDescriptor::Init(Ipp32u         DescriporID,
         if (!pResidBuf)
         {
             if(m_pMemoryAllocator->Alloc(&m_iDiffMemID,
-                                         sizeof(Ipp16s)*WidthMB*HeightMB*8*8*6,
+                                         sizeof(int16_t)*WidthMB*HeightMB*8*8*6,
                                          UMC_ALLOC_PERSISTENT, 16) != UMC_OK )
             {
                 return false;
             }
-            m_pDiffMem = (Ipp16s*)m_pMemoryAllocator->Lock(m_iDiffMemID);
+            m_pDiffMem = (int16_t*)m_pMemoryAllocator->Lock(m_iDiffMemID);
         }
         else
             m_pDiffMem = pResidBuf;
@@ -194,7 +194,7 @@ void VC1FrameDescriptor::Release()
 
 }
 
-Status VC1FrameDescriptor::SetPictureIndices(Ipp32u PTYPE, bool& skip)
+Status VC1FrameDescriptor::SetPictureIndices(uint32_t PTYPE, bool& skip)
 {
     Status vc1Sts = VC1_OK;
     FrameMemID CheckIdx = 0;
@@ -356,8 +356,8 @@ Status VC1FrameDescriptor::SetPictureIndices(Ipp32u PTYPE, bool& skip)
 }
 
 #ifdef ALLOW_SW_VC1_FALLBACK
-void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
-    Ipp32u*  pValues)
+void VC1FrameDescriptor::processFrame(uint32_t*  pOffsets,
+    uint32_t*  pValues)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VC1FrameDescriptor::processFrame");
     SliceParams slparams;
@@ -366,12 +366,12 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
 
     VC1TaskStoreSW *pStore = (VC1TaskStoreSW *)m_pStore;
 
-    Ipp32u temp_value = 0;
-    Ipp32u* bitstream;
-    Ipp32s bitoffset = 31;
+    uint32_t temp_value = 0;
+    uint32_t* bitstream;
+    int32_t bitoffset = 31;
 
-    Ipp16u heightMB = m_pContext->m_seqLayerHeader.heightMB;
-    Ipp32u IsField = 0;
+    uint16_t heightMB = m_pContext->m_seqLayerHeader.heightMB;
+    uint32_t IsField = 0;
 
     bool isSecondField = false;
     slparams.MBStartRow = 0;
@@ -429,7 +429,7 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
 
     if (*(pValues + 1) == 0x0B010000)
     {
-        bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets + 1));
+        bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets + 1));
         VC1BitstreamParser::GetNBits(bitstream, bitoffset, 32, temp_value);
         bitoffset = 31;
         VC1BitstreamParser::GetNBits(bitstream, bitoffset, 9, slparams.MBEndRow);     //SLICE_ADDR
@@ -440,7 +440,7 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
     {
         slparams.m_picLayerHeader->CurrField = 0;
         slparams.m_picLayerHeader->PTYPE = m_pContext->m_picLayerHeader->PTypeField1;
-        slparams.m_picLayerHeader->BottomField = (Ipp8u)(1 - m_pContext->m_picLayerHeader->TFF);
+        slparams.m_picLayerHeader->BottomField = (uint8_t)(1 - m_pContext->m_picLayerHeader->TFF);
         slparams.MBEndRow = (heightMB + 1) / 2;
         IsField = 1;
     }
@@ -449,7 +449,7 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
     slparams.MBRowsToDecode = slparams.MBEndRow - slparams.MBStartRow;
     task.m_pSlice = &slparams;
 #ifdef SLICE_INFO
-    Ipp32s slice_counter = 0;
+    int32_t slice_counter = 0;
     printf("Slice number %d\n", slice_counter);
     printf("Number MB rows to decode  =%d\n", slparams.MBRowsToDecode);
     ++slice_counter;
@@ -470,13 +470,13 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
             isSecondField = true;
             IsField = 1;
             task.m_isFirstInSecondSlice = true;
-            m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *pOffsets);
+            m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *pOffsets);
             m_pContext->m_bitstream.pBitstream += 1; // skip start code
             m_pContext->m_bitstream.bitOffset = 31;
             ++m_pContext->m_picLayerHeader;
             *m_pContext->m_picLayerHeader = *m_pContext->m_InitPicLayer;
 
-            m_pContext->m_picLayerHeader->BottomField = (Ipp8u)m_pContext->m_InitPicLayer->TFF;
+            m_pContext->m_picLayerHeader->BottomField = (uint8_t)m_pContext->m_InitPicLayer->TFF;
             m_pContext->m_picLayerHeader->PTYPE = m_pContext->m_InitPicLayer->PTypeField2;
             m_pContext->m_picLayerHeader->CurrField = 1;
             m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].RANGE_MAPY = m_pContext->m_seqLayerHeader.RANGE_MAPY;
@@ -496,7 +496,7 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
 
             if (*(pOffsets + 1) && *(pValues + 1) == 0x0B010000)
             {
-                bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets + 1));
+                bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets + 1));
                 VC1BitstreamParser::GetNBits(bitstream, bitoffset, 32, temp_value);
                 bitoffset = 31;
                 VC1BitstreamParser::GetNBits(bitstream, bitoffset, 9, slparams.MBEndRow);
@@ -529,7 +529,7 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
         }
         else if (*(pValues) == 0x0B010000)
         {
-            m_pContext->m_bitstream.pBitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *pOffsets);
+            m_pContext->m_bitstream.pBitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *pOffsets);
             VC1BitstreamParser::GetNBits(m_pContext->m_bitstream.pBitstream, m_pContext->m_bitstream.bitOffset, 32, temp_value);
             m_pContext->m_bitstream.bitOffset = 31;
 
@@ -558,7 +558,7 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
 
             if (*(pOffsets + 1) && (*(pValues + 1) == 0x0B010000 || *(pValues + 1) == 0x1B010000))
             {
-                bitstream = reinterpret_cast<Ipp32u*>(m_pContext->m_pBufferStart + *(pOffsets + 1));
+                bitstream = reinterpret_cast<uint32_t*>(m_pContext->m_pBufferStart + *(pOffsets + 1));
                 VC1BitstreamParser::GetNBits(bitstream, bitoffset, 32, temp_value);
                 bitoffset = 31;
                 VC1BitstreamParser::GetNBits(bitstream, bitoffset, 9, slparams.MBEndRow);
@@ -633,19 +633,19 @@ void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
 }
 
 Status VC1FrameDescriptor::preProcData(VC1Context*            pContext,
-    Ipp32u                 bufferSize,
-    Ipp64u                 frameCount,
+    uint32_t                 bufferSize,
+    unsigned long long                 frameCount,
     bool& skip)
 {
     Status vc1Sts = UMC_OK;
 
-    Ipp32u Ptype;
-    Ipp8u* pbufferStart = pContext->m_pBufferStart;
+    uint32_t Ptype;
+    uint8_t* pbufferStart = pContext->m_pBufferStart;
     m_iFrameCounter = frameCount;
     m_pContext->m_FrameSize = bufferSize;
 
     MFX_INTERNAL_CPY(m_pContext->m_pBufferStart, pbufferStart, (bufferSize & 0xFFFFFFF8) + 8); // (bufferSize & 0xFFFFFFF8) + 8 - skip frames
-    m_pContext->m_bitstream.pBitstream = (Ipp32u*)m_pContext->m_pBufferStart;
+    m_pContext->m_bitstream.pBitstream = (uint32_t*)m_pContext->m_pBufferStart;
 
     m_pContext->m_bitstream.pBitstream += 1;
 
@@ -665,7 +665,7 @@ Status VC1FrameDescriptor::preProcData(VC1Context*            pContext,
     }
     else
     {
-        m_pContext->m_bitstream.pBitstream = (Ipp32u*)m_pContext->m_pBufferStart + 2;
+        m_pContext->m_bitstream.pBitstream = (uint32_t*)m_pContext->m_pBufferStart + 2;
         GetNextPicHeader(m_pContext, false);
         vc1Sts = SetPictureIndices(m_pContext->m_picLayerHeader->PTYPE, skip);
         if (vc1Sts != UMC_OK)

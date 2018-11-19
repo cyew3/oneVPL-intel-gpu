@@ -42,7 +42,7 @@ bool    IsBottomField(bool bTopFieldFirst, bool bSecondField)
     return ((bTopFieldFirst && bSecondField) || ((!bTopFieldFirst)&&(!bSecondField)));
 }
 
-UMC::Status SetFieldPlane(Ipp8u* pFieldPlane[3],  Ipp8u*  pPlane[3], Ipp32u planeStep[3], bool bBottom, Ipp32s nRow)
+UMC::Status SetFieldPlane(uint8_t* pFieldPlane[3],  uint8_t*  pPlane[3], uint32_t planeStep[3], bool bBottom, int32_t nRow)
 {
      if(pPlane[0])
         pFieldPlane[0] = pPlane[0]+ planeStep[0]*(bBottom + (nRow<<5)) ;
@@ -62,7 +62,7 @@ UMC::Status SetFieldPlane(Ipp8u* pFieldPlane[3],  Ipp8u*  pPlane[3], Ipp32u plan
      return UMC::UMC_OK;
 }
 
-UMC::Status SetFieldPlane(Ipp8u** pFieldPlane,  Ipp8u*  pPlane, Ipp32u planeStep, bool bBottom, Ipp32s nRow)
+UMC::Status SetFieldPlane(uint8_t** pFieldPlane,  uint8_t*  pPlane, uint32_t planeStep, bool bBottom, int32_t nRow)
 {
      if(pPlane)
       *pFieldPlane = pPlane + planeStep *(bBottom + (nRow<<4));
@@ -71,7 +71,7 @@ UMC::Status SetFieldPlane(Ipp8u** pFieldPlane,  Ipp8u*  pPlane, Ipp32u planeStep
      return UMC::UMC_OK;
 }
 
-UMC::Status   SetFieldStep(Ipp32u fieldStep[3], Ipp32u planeStep[3])
+UMC::Status   SetFieldStep(uint32_t fieldStep[3], uint32_t planeStep[3])
 {
     fieldStep[0] = planeStep[0] <<1;
     fieldStep[1] = planeStep[1] <<1;
@@ -80,17 +80,17 @@ UMC::Status   SetFieldStep(Ipp32u fieldStep[3], Ipp32u planeStep[3])
     return UMC::UMC_OK;
 }
 
-UMC::Status   SetFieldStep(Ipp32s* fieldStep, Ipp32u planeStep)
+UMC::Status   SetFieldStep(int32_t* fieldStep, uint32_t planeStep)
 {
     fieldStep[0] = planeStep <<1;
     return UMC::UMC_OK;
 }
 
-UMC::Status   Set1RefFrwFieldPlane(Ipp8u* pPlane[3],       Ipp32u planeStep[3],
-                                   Ipp8u* pFrwPlane[3],    Ipp32u frwStep[3],
-                                   Ipp8u* pRaisedPlane[3], Ipp32u raisedStep[3],
+UMC::Status   Set1RefFrwFieldPlane(uint8_t* pPlane[3],       uint32_t planeStep[3],
+                                   uint8_t* pFrwPlane[3],    uint32_t frwStep[3],
+                                   uint8_t* pRaisedPlane[3], uint32_t raisedStep[3],
                                    eReferenceFieldType     uiReferenceFieldType,
-                                   bool bSecondField,      bool bBottom, Ipp32s nRow)
+                                   bool bSecondField,      bool bBottom, int32_t nRow)
 {
     UMC::Status err = UMC::UMC_OK;
 
@@ -129,11 +129,11 @@ UMC::Status   Set1RefFrwFieldPlane(Ipp8u* pPlane[3],       Ipp32u planeStep[3],
 }
 
 
-UMC::Status   Set1RefFrwFieldPlane(Ipp8u** pPlane,       Ipp32s* planeStep,
-                                   Ipp8u* pFrwPlane,    Ipp32u frwStep,
-                                   Ipp8u* pRaisedPlane, Ipp32u raisedStep,
+UMC::Status   Set1RefFrwFieldPlane(uint8_t** pPlane,       int32_t* planeStep,
+                                   uint8_t* pFrwPlane,    uint32_t frwStep,
+                                   uint8_t* pRaisedPlane, uint32_t raisedStep,
                                    eReferenceFieldType     uiReferenceFieldType,
-                                   bool bSecondField,      bool bBottom, Ipp32s nRow)
+                                   bool bSecondField,      bool bBottom, int32_t nRow)
 {
     UMC::Status err = UMC::UMC_OK;
 
@@ -171,10 +171,10 @@ UMC::Status   Set1RefFrwFieldPlane(Ipp8u** pPlane,       Ipp32s* planeStep,
     return err;
 }
 
-UMC::Status   Set2RefFrwFieldPlane(Ipp8u* pPlane[2][3], Ipp32u planeStep[2][3],
-                                   Ipp8u* pFrwPlane[3], Ipp32u frwStep[3],
-                                   Ipp8u* pRaisedPlane[3], Ipp32u raisedStep[3],
-                                   bool bSecondField, bool bBottom, Ipp32s nRow)
+UMC::Status   Set2RefFrwFieldPlane(uint8_t* pPlane[2][3], uint32_t planeStep[2][3],
+                                   uint8_t* pFrwPlane[3], uint32_t frwStep[3],
+                                   uint8_t* pRaisedPlane[3], uint32_t raisedStep[3],
+                                   bool bSecondField, bool bBottom, int32_t nRow)
 {
     UMC::Status err = UMC::UMC_OK;
 
@@ -201,11 +201,11 @@ UMC::Status   Set2RefFrwFieldPlane(Ipp8u* pPlane[2][3], Ipp32u planeStep[2][3],
     return err;
 }
 
-UMC::Status   Set2RefFrwFieldPlane(Ipp8u** pPlane1, Ipp32s* planeStep1,
-                                   Ipp8u** pPlane2, Ipp32s* planeStep2,
-                                   Ipp8u* pFrwPlane, Ipp32u frwStep,
-                                   Ipp8u* pRaisedPlane, Ipp32u raisedStep,
-                                   bool bSecondField, bool bBottom, Ipp32s nRow)
+UMC::Status   Set2RefFrwFieldPlane(uint8_t** pPlane1, int32_t* planeStep1,
+                                   uint8_t** pPlane2, int32_t* planeStep2,
+                                   uint8_t* pFrwPlane, uint32_t frwStep,
+                                   uint8_t* pRaisedPlane, uint32_t raisedStep,
+                                   bool bSecondField, bool bBottom, int32_t nRow)
 {
     UMC::Status err = UMC::UMC_OK;
 
@@ -232,9 +232,9 @@ UMC::Status   Set2RefFrwFieldPlane(Ipp8u** pPlane1, Ipp32s* planeStep1,
     return err;
 }
 
-UMC::Status   SetBkwFieldPlane(Ipp8u* pPlane[2][3], Ipp32u planeStep[2][3],
-                               Ipp8u* pBkwPlane[3], Ipp32u bkwStep[3],
-                               bool bBottom, Ipp32s nRow)
+UMC::Status   SetBkwFieldPlane(uint8_t* pPlane[2][3], uint32_t planeStep[2][3],
+                               uint8_t* pBkwPlane[3], uint32_t bkwStep[3],
+                               bool bBottom, int32_t nRow)
 {
     UMC::Status err = UMC::UMC_OK;
 
@@ -249,10 +249,10 @@ UMC::Status   SetBkwFieldPlane(Ipp8u* pPlane[2][3], Ipp32u planeStep[2][3],
     return err;
 }
 
-UMC::Status   SetBkwFieldPlane(Ipp8u** pPlane1, Ipp32s* planeStep1,
-                               Ipp8u** pPlane2, Ipp32s* planeStep2,
-                               Ipp8u* pBkwPlane, Ipp32u bkwStep,
-                               bool bBottom, Ipp32s nRow)
+UMC::Status   SetBkwFieldPlane(uint8_t** pPlane1, int32_t* planeStep1,
+                               uint8_t** pPlane2, int32_t* planeStep2,
+                               uint8_t* pBkwPlane, uint32_t bkwStep,
+                               bool bBottom, int32_t nRow)
 {
     UMC::Status err = UMC::UMC_OK;
 
@@ -389,7 +389,7 @@ bool IsFieldPicture(ePType PicType)
         || (PicType == VC1_ENC_BI_B_FIELD) || (PicType == VC1_ENC_BI_BI_FIELD));
 }
 
-static const Ipp16s TableFwdTransform8x8[64] =
+static const int16_t TableFwdTransform8x8[64] =
 {
     21845,   21845,  21845,  21845,  21845,  21845,  21845,  21845,
     29026,   27212,  16327,  7257,  -7257,  -16327, -27212, -29026,
@@ -401,7 +401,7 @@ static const Ipp16s TableFwdTransform8x8[64] =
     7257,   -16327,  27212, -29026,  29026, -27212,  16327, -7257
 };
 
-static const Ipp16s TableFwdTransform4x4[16] =
+static const int16_t TableFwdTransform4x4[16] =
 {
     15420,  15420,      15420,      15420,
     19751,  8978,       -8978,      -19751,
@@ -413,15 +413,15 @@ static const Ipp16s TableFwdTransform4x4[16] =
 #ifndef UMC_RESTRICTED_CODE
 #ifdef _VC1_ENC_OWN_FUNCTIONS_
 #define _A(x) (((x)<0)?-(x):(x))
-IppStatus _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQuant, Ipp32s srcdstStep,Ipp32s EdgeDisabledFlag)
+IppStatus _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32_t pQuant, int32_t srcdstStep,int32_t EdgeDisabledFlag)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp8u* pRPixel;
-    Ipp16s p1, p2, p3, p4, p5, p6, p7, p8;
-    Ipp16s a0, a1, a2, a3;
-    Ipp16s clip, d;
-    Ipp32s i;
-    Ipp32s count;
+    uint8_t* pRPixel;
+    int16_t p1, p2, p3, p4, p5, p6, p7, p8;
+    int16_t a0, a1, a2, a3;
+    int16_t clip, d;
+    int32_t i;
+    int32_t count;
 
     for (count = 0; count < 4;count++)
     {
@@ -448,7 +448,7 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQ
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(_A(a1), _A(a2));
+                a3 = MFX_MIN(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -460,8 +460,8 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQ
                     }
                     else
                         d=0;
-                    pRPixel[-1] = (Ipp8u)(p4 - d);
-                    pRPixel[0] = (Ipp8u)(p5 + d);
+                    pRPixel[-1] = (uint8_t)(p4 - d);
+                    pRPixel[0] = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -493,7 +493,7 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQ
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(_A(a1), _A(a2));
+                    a3 = MFX_MIN(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -505,8 +505,8 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQ
                         }
                         else
                             d=0;
-                        pRPixel[-1] = (Ipp8u)(p4 - d);
-                        pRPixel[0] = (Ipp8u)(p5 + d);
+                        pRPixel[-1] = (uint8_t)(p4 - d);
+                        pRPixel[0] = (uint8_t)(p5 + d);
                     }
                 }
             }
@@ -515,16 +515,16 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQ
     return ret;
 }
 
-IppStatus _own_FilterDeblockingChroma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQuant, Ipp32s srcdstStep,Ipp32s EdgeDisabledFlag)
+IppStatus _own_FilterDeblockingChroma_VerEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32_t pQuant, int32_t srcdstStep,int32_t EdgeDisabledFlag)
 {
-    static Ipp32s EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
+    static int32_t EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
     IppStatus ret = ippStsNoErr;
-    Ipp8u* pRPixel;
-    Ipp16s p1, p2, p3, p4, p5, p6, p7, p8;
-    Ipp16s a0, a1, a2, a3;
-    Ipp16s clip, d;
-    Ipp32s i;
-    Ipp32s count;
+    uint8_t* pRPixel;
+    int16_t p1, p2, p3, p4, p5, p6, p7, p8;
+    int16_t a0, a1, a2, a3;
+    int16_t clip, d;
+    int32_t i;
+    int32_t count;
 
     for (count = 0; count < 2;count++)
     {
@@ -552,7 +552,7 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s 
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(_A(a1), _A(a2));
+                a3 = MFX_MIN(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -564,8 +564,8 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s 
                     }
                     else
                         d=0;
-                    pRPixel[-1] = (Ipp8u)(p4 - d);
-                    pRPixel[0] = (Ipp8u)(p5 + d);
+                    pRPixel[-1] = (uint8_t)(p4 - d);
+                    pRPixel[0] = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -597,7 +597,7 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s 
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(_A(a1), _A(a2));
+                    a3 = MFX_MIN(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -609,8 +609,8 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s 
                         }
                         else
                             d=0;
-                        pRPixel[-1] = (Ipp8u)(p4 - d);
-                        pRPixel[0] = (Ipp8u)(p5 + d);
+                        pRPixel[-1] = (uint8_t)(p4 - d);
+                        pRPixel[0] = (uint8_t)(p5 + d);
                     }
                 }
             }
@@ -619,15 +619,15 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s 
     return ret;
 }
 
-IppStatus _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQuant, Ipp32s srcdstStep,Ipp32s EdgeDisabledFlag)
+IppStatus _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32_t pQuant, int32_t srcdstStep,int32_t EdgeDisabledFlag)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp8u* pRPixel;
-    Ipp16s p1, p2, p3, p4, p5, p6, p7, p8;
-    Ipp16s a0, a1, a2, a3;
-    Ipp16s clip, d;
-    Ipp32s i;
-    Ipp32s count;
+    uint8_t* pRPixel;
+    int16_t p1, p2, p3, p4, p5, p6, p7, p8;
+    int16_t a0, a1, a2, a3;
+    int16_t clip, d;
+    int32_t i;
+    int32_t count;
 
     for (count = 0; count < 4;count++)
     {
@@ -655,7 +655,7 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQ
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(_A(a1), _A(a2));
+                a3 = MFX_MIN(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -667,8 +667,8 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQ
                     }
                     else
                         d=0;
-                    pRPixel[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                    pRPixel[0] = (Ipp8u)(p5 + d);
+                    pRPixel[-1*srcdstStep] = (uint8_t)(p4 - d);
+                    pRPixel[0] = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -700,7 +700,7 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQ
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(_A(a1), _A(a2));
+                    a3 = MFX_MIN(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -712,8 +712,8 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQ
                         }
                         else
                             d=0;
-                        pRPixel[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                        pRPixel[0] = (Ipp8u)(p5 + d);
+                        pRPixel[-1*srcdstStep] = (uint8_t)(p4 - d);
+                        pRPixel[0] = (uint8_t)(p5 + d);
                     }
                 }
             }
@@ -723,16 +723,16 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQ
 }
 
 
-IppStatus _own_FilterDeblockingChroma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s pQuant, Ipp32s srcdstStep,Ipp32s EdgeDisabledFlag)
+IppStatus _own_FilterDeblockingChroma_HorEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32_t pQuant, int32_t srcdstStep,int32_t EdgeDisabledFlag)
 {
     IppStatus ret = ippStsNoErr;
-    static Ipp32s EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
-    Ipp8u* pRPixel;
-    Ipp16s p1, p2, p3, p4, p5, p6, p7, p8;
-    Ipp16s a0, a1, a2, a3;
-    Ipp16s clip, d;
-    Ipp32s i;
-    Ipp32s count;
+    static int32_t EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
+    uint8_t* pRPixel;
+    int16_t p1, p2, p3, p4, p5, p6, p7, p8;
+    int16_t a0, a1, a2, a3;
+    int16_t clip, d;
+    int32_t i;
+    int32_t count;
 
     for (count = 0; count < 2;count++)
     {
@@ -759,7 +759,7 @@ IppStatus _own_FilterDeblockingChroma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s 
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(_A(a1), _A(a2));
+                a3 = MFX_MIN(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -771,8 +771,8 @@ IppStatus _own_FilterDeblockingChroma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s 
                     }
                     else
                         d=0;
-                    pRPixel[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                    pRPixel[0] = (Ipp8u)(p5 + d);
+                    pRPixel[-1*srcdstStep] = (uint8_t)(p4 - d);
+                    pRPixel[0] = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -804,7 +804,7 @@ IppStatus _own_FilterDeblockingChroma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s 
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(_A(a1), _A(a2));
+                    a3 = MFX_MIN(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -816,8 +816,8 @@ IppStatus _own_FilterDeblockingChroma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s 
                         }
                         else
                             d=0;
-                        pRPixel[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                        pRPixel[0] = (Ipp8u)(p5 + d);
+                        pRPixel[-1*srcdstStep] = (uint8_t)(p4 - d);
+                        pRPixel[0] = (uint8_t)(p5 + d);
                     }
                 }
             }
@@ -828,9 +828,9 @@ IppStatus _own_FilterDeblockingChroma_HorEdge_VC1_8u_C1IR(Ipp8u* pSrcDst,Ipp32s 
 
 #undef _A
 
-Ipp32s SubBlockPattern(VC1Block* _pBlk, VC1SingletonBlock* _sBlk)
+int32_t SubBlockPattern(VC1Block* _pBlk, VC1SingletonBlock* _sBlk)
 {
-    Ipp32s subbpattern = 0;
+    int32_t subbpattern = 0;
     if ((_sBlk->Coded ==0)&&(_pBlk->blkType < VC1_BLK_INTRA_TOP))
     {
         _pBlk->blkType = VC1_BLK_INTER8X8;
@@ -875,13 +875,13 @@ Ipp32s SubBlockPattern(VC1Block* _pBlk, VC1SingletonBlock* _sBlk)
     }
     return subbpattern;
 }
-IppStatus _own_ippiTransformBlock8x8Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcDstStep)
+IppStatus _own_ippiTransformBlock8x8Fwd_VC1_16s_C1R(int16_t* pSrcDst, uint32_t srcDstStep)
 {
     int                 i,j,l;
-    Ipp32s              TempBlock[8][8];
-    Ipp16s*             pBlock              = pSrcDst;
-    const Ipp16s*       pCoef               = TableFwdTransform8x8;
-    Ipp32s              temp                = 0;
+    int32_t              TempBlock[8][8];
+    int16_t*             pBlock              = pSrcDst;
+    const int16_t*       pCoef               = TableFwdTransform8x8;
+    int32_t              temp                = 0;
 
     for (i=0; i<8 ;i++)
     {
@@ -893,11 +893,11 @@ IppStatus _own_ippiTransformBlock8x8Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
                 temp += pBlock[l]*pCoef[l];
             }
 
-            TempBlock[i][j] = (Ipp16s)(temp>>12);
+            TempBlock[i][j] = (int16_t)(temp>>12);
             pCoef +=8;
         }
         pCoef       = TableFwdTransform8x8;
-        pBlock = (Ipp16s*)((Ipp8u*)pBlock + srcDstStep);
+        pBlock = (int16_t*)((uint8_t*)pBlock + srcDstStep);
     }
     pCoef       = TableFwdTransform8x8;
     pBlock      = pSrcDst;
@@ -911,7 +911,7 @@ IppStatus _own_ippiTransformBlock8x8Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
                 temp += TempBlock[l][j]*pCoef[l];
             }
 
-            *(Ipp16s*)((Ipp8u*)pBlock + i*srcDstStep) = (Ipp16s)(temp>>20);
+            *(int16_t*)((uint8_t*)pBlock + i*srcDstStep) = (int16_t)(temp>>20);
             pCoef +=8;
         }
         pCoef       = TableFwdTransform8x8;
@@ -921,13 +921,13 @@ IppStatus _own_ippiTransformBlock8x8Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
 }
 
 // 4 colums x 8 rows
-IppStatus _own_ippiTransformBlock4x8Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcDstStep)
+IppStatus _own_ippiTransformBlock4x8Fwd_VC1_16s_C1R(int16_t* pSrcDst, uint32_t srcDstStep)
 {
     int                 i,j,l;
-    Ipp32s              TempBlock[8][4];
-    Ipp16s*             pBlock              = pSrcDst;
-    const Ipp16s*       pCoef               = TableFwdTransform4x4;
-    Ipp32s              temp                = 0;
+    int32_t              TempBlock[8][4];
+    int16_t*             pBlock              = pSrcDst;
+    const int16_t*       pCoef               = TableFwdTransform4x4;
+    int32_t              temp                = 0;
 
     for (i=0; i<8 ;i++)
     {
@@ -939,11 +939,11 @@ IppStatus _own_ippiTransformBlock4x8Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
                 temp += pBlock[l]*pCoef[l];
             }
 
-            TempBlock[i][j] = (Ipp16s)(temp>>11);
+            TempBlock[i][j] = (int16_t)(temp>>11);
             pCoef +=4;
         }
         pCoef       = TableFwdTransform4x4;
-        pBlock = (Ipp16s*)((Ipp8u*)pBlock + srcDstStep);
+        pBlock = (int16_t*)((uint8_t*)pBlock + srcDstStep);
     }
     pCoef       = TableFwdTransform8x8;
     pBlock      = pSrcDst;
@@ -957,7 +957,7 @@ IppStatus _own_ippiTransformBlock4x8Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
                 temp += TempBlock[l][j]*pCoef[l];
             }
 
-            *(Ipp16s*)((Ipp8u*)pBlock + i*srcDstStep) = (Ipp16s)(temp>>20);
+            *(int16_t*)((uint8_t*)pBlock + i*srcDstStep) = (int16_t)(temp>>20);
             pCoef +=8;
         }
         pCoef       = TableFwdTransform8x8;
@@ -967,13 +967,13 @@ IppStatus _own_ippiTransformBlock4x8Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
 }
 
 // 8 colums x 4 rows
-IppStatus _own_ippiTransformBlock8x4Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcDstStep)
+IppStatus _own_ippiTransformBlock8x4Fwd_VC1_16s_C1R(int16_t* pSrcDst, uint32_t srcDstStep)
 {
     int                 i,j,l;
-    Ipp32s              TempBlock[4][8];
-    Ipp16s*             pBlock              = pSrcDst;
-    const Ipp16s*       pCoef               = TableFwdTransform8x8;
-    Ipp32s              temp                = 0;
+    int32_t              TempBlock[4][8];
+    int16_t*             pBlock              = pSrcDst;
+    const int16_t*       pCoef               = TableFwdTransform8x8;
+    int32_t              temp                = 0;
 
     for (i=0; i<4 ;i++)
     {
@@ -985,11 +985,11 @@ IppStatus _own_ippiTransformBlock8x4Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
                 temp += pBlock[l]*pCoef[l];
             }
 
-            TempBlock[i][j] = (Ipp16s)(temp>>12);
+            TempBlock[i][j] = (int16_t)(temp>>12);
             pCoef +=8;
         }
         pCoef       = TableFwdTransform8x8;
-        pBlock = (Ipp16s*)((Ipp8u*)pBlock + srcDstStep);
+        pBlock = (int16_t*)((uint8_t*)pBlock + srcDstStep);
     }
     pCoef       = TableFwdTransform4x4;
     pBlock      = pSrcDst;
@@ -1003,7 +1003,7 @@ IppStatus _own_ippiTransformBlock8x4Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
                 temp += TempBlock[l][j]*pCoef[l];
             }
 
-            *(Ipp16s*)((Ipp8u*)pBlock + i*srcDstStep) = (Ipp16s)(temp>>19);
+            *(int16_t*)((uint8_t*)pBlock + i*srcDstStep) = (int16_t)(temp>>19);
             pCoef +=4;
         }
         pCoef       = TableFwdTransform4x4;
@@ -1013,13 +1013,13 @@ IppStatus _own_ippiTransformBlock8x4Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
 }
 
 // 4 colums x 4 rows
-IppStatus _own_ippiTransformBlock4x4Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcDstStep)
+IppStatus _own_ippiTransformBlock4x4Fwd_VC1_16s_C1R(int16_t* pSrcDst, uint32_t srcDstStep)
 {
     int                 i,j,l;
-    Ipp32s              TempBlock[4][4];
-    Ipp16s*             pBlock              = pSrcDst;
-    const Ipp16s*       pCoef               = TableFwdTransform4x4;
-    Ipp32s              temp                = 0;
+    int32_t              TempBlock[4][4];
+    int16_t*             pBlock              = pSrcDst;
+    const int16_t*       pCoef               = TableFwdTransform4x4;
+    int32_t              temp                = 0;
 
     for (i=0; i<4 ;i++)
     {
@@ -1031,11 +1031,11 @@ IppStatus _own_ippiTransformBlock4x4Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
                 temp += pBlock[l]*pCoef[l];
             }
 
-            TempBlock[i][j] = (Ipp16s)(temp>>11);
+            TempBlock[i][j] = (int16_t)(temp>>11);
             pCoef +=4;
         }
         pCoef       = TableFwdTransform4x4;
-        pBlock = (Ipp16s*)((Ipp8u*)pBlock + srcDstStep);
+        pBlock = (int16_t*)((uint8_t*)pBlock + srcDstStep);
     }
     pCoef       = TableFwdTransform4x4;
     pBlock      = pSrcDst;
@@ -1049,7 +1049,7 @@ IppStatus _own_ippiTransformBlock4x4Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
                 temp += TempBlock[l][j]*pCoef[l];
             }
 
-            *(Ipp16s*)((Ipp8u*)pBlock + i*srcDstStep) = (Ipp16s)(temp>>19);
+            *(int16_t*)((uint8_t*)pBlock + i*srcDstStep) = (int16_t)(temp>>19);
             pCoef +=4;
         }
         pCoef       = TableFwdTransform4x4;
@@ -1061,17 +1061,17 @@ IppStatus _own_ippiTransformBlock4x4Fwd_VC1_16s_C1R(Ipp16s* pSrcDst, Ipp32u srcD
 #endif // UMC_RESTRICTED_CODE
 
 #define _A(x) (((x)<0)?-(x):(x))
-IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ipp32s pQuant, Ipp32s srcdstStep,
-                                                               Ipp32s EdgeDisabledFlagU, Ipp32s EdgeDisabledFlagV)
+IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(uint8_t* pSrcDst,int32_t pQuant, int32_t srcdstStep,
+                                                               int32_t EdgeDisabledFlagU, int32_t EdgeDisabledFlagV)
 {
-    static Ipp32s EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
+    static int32_t EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
     IppStatus ret = ippStsNoErr;
-    Ipp8u *pRPixelU = NULL, *pRPixelV = NULL;
-    Ipp16s p1 = 0, p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0, p7 = 0, p8 = 0;
-    Ipp16s a0 = 0, a1 = 0, a2 = 0, a3 = 0;
-    Ipp16s clip = 0, d = 0;
-    Ipp32s i = 0;
-    Ipp32s count = 0;
+    uint8_t *pRPixelU = NULL, *pRPixelV = NULL;
+    int16_t p1 = 0, p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0, p7 = 0, p8 = 0;
+    int16_t a0 = 0, a1 = 0, a2 = 0, a3 = 0;
+    int16_t clip = 0, d = 0;
+    int32_t i = 0;
+    int32_t count = 0;
 
     //U component
     for (count = 0; count < 2;count++)
@@ -1099,7 +1099,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(_A(a1), _A(a2));
+                a3 = MFX_MIN(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -1111,8 +1111,8 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                     }
                     else
                         d=0;
-                    pRPixelU[-2] = (Ipp8u)(p4 - d);
-                    pRPixelU[0]       = (Ipp8u)(p5 + d);
+                    pRPixelU[-2] = (uint8_t)(p4 - d);
+                    pRPixelU[0]       = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -1144,7 +1144,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(_A(a1), _A(a2));
+                    a3 = MFX_MIN(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -1156,8 +1156,8 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                         }
                         else
                             d=0;
-                        pRPixelU[-2] = (Ipp8u)(p4 - d);
-                        pRPixelU[0]       = (Ipp8u)(p5 + d);
+                        pRPixelU[-2] = (uint8_t)(p4 - d);
+                        pRPixelU[0]       = (uint8_t)(p5 + d);
                     }
                 }
             }
@@ -1190,7 +1190,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(_A(a1), _A(a2));
+                a3 = MFX_MIN(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -1202,8 +1202,8 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                     }
                     else
                         d=0;
-                    pRPixelV[-2] = (Ipp8u)(p4 - d);
-                    pRPixelV[0] = (Ipp8u)(p5 + d);
+                    pRPixelV[-2] = (uint8_t)(p4 - d);
+                    pRPixelV[0] = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -1235,7 +1235,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(_A(a1), _A(a2));
+                    a3 = MFX_MIN(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -1247,8 +1247,8 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                         }
                         else
                             d=0;
-                        pRPixelV[-2] = (Ipp8u)(p4 - d);
-                        pRPixelV[0]  = (Ipp8u)(p5 + d);
+                        pRPixelV[-2] = (uint8_t)(p4 - d);
+                        pRPixelV[0]  = (uint8_t)(p5 + d);
                     }
                 }
             }
@@ -1256,17 +1256,17 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
     }
     return ret;
 }
-IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ipp32s pQuant, Ipp32s srcdstStep,
-                                                               Ipp32s EdgeDisabledFlagU, Ipp32s EdgeDisabledFlagV)
+IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(uint8_t* pSrcDst,int32_t pQuant, int32_t srcdstStep,
+                                                               int32_t EdgeDisabledFlagU, int32_t EdgeDisabledFlagV)
 {
     IppStatus ret = ippStsNoErr;
-    static Ipp32s EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
-    Ipp8u *pRPixelU = NULL, *pRPixelV = NULL;
-    Ipp16s p1 = 0, p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0, p7 = 0, p8 = 0;
-    Ipp16s a0 = 0, a1 = 0, a2 = 0, a3 = 0;
-    Ipp16s clip = 0, d = 0;
-    Ipp32s i = 0;
-    Ipp32s count = 0;
+    static int32_t EdgeTable[2] = {IPPVC_EDGE_HALF_1,IPPVC_EDGE_HALF_2};
+    uint8_t *pRPixelU = NULL, *pRPixelV = NULL;
+    int16_t p1 = 0, p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0, p7 = 0, p8 = 0;
+    int16_t a0 = 0, a1 = 0, a2 = 0, a3 = 0;
+    int16_t clip = 0, d = 0;
+    int32_t i = 0;
+    int32_t count = 0;
     
     for (count = 0; count < 2; count++)
     {
@@ -1294,7 +1294,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(_A(a1), _A(a2));
+                a3 = MFX_MIN(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -1306,8 +1306,8 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                     }
                     else
                         d=0;
-                    pRPixelU[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                    pRPixelU[0] = (Ipp8u)(p5 + d);
+                    pRPixelU[-1*srcdstStep] = (uint8_t)(p4 - d);
+                    pRPixelU[0] = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -1341,7 +1341,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(_A(a1), _A(a2));
+                    a3 = MFX_MIN(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -1353,8 +1353,8 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                         }
                         else
                             d=0;
-                        pRPixelU[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                        pRPixelU[0] = (Ipp8u)(p5 + d);
+                        pRPixelU[-1*srcdstStep] = (uint8_t)(p4 - d);
+                        pRPixelU[0] = (uint8_t)(p5 + d);
                     }
                 }
             }
@@ -1387,7 +1387,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = IPP_MIN(_A(a1), _A(a2));
+                a3 = MFX_MIN(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -1399,8 +1399,8 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                     }
                     else
                         d=0;
-                    pRPixelV[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                    pRPixelV[0] = (Ipp8u)(p5 + d);
+                    pRPixelV[-1*srcdstStep] = (uint8_t)(p4 - d);
+                    pRPixelV[0] = (uint8_t)(p5 + d);
                 }
                 else
                     continue;
@@ -1434,7 +1434,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = IPP_MIN(_A(a1), _A(a2));
+                    a3 = MFX_MIN(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -1446,8 +1446,8 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
                         }
                         else
                             d=0;
-                        pRPixelV[-1*srcdstStep] = (Ipp8u)(p4 - d);
-                        pRPixelV[0] = (Ipp8u)(p5 + d);
+                        pRPixelV[-1*srcdstStep] = (uint8_t)(p4 - d);
+                        pRPixelV[0] = (uint8_t)(p5 + d);
                     }
                 }
             }
@@ -1461,11 +1461,11 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(Ipp8u* pSrcDst,Ip
 #ifdef _VC1_ENC_OWN_FUNCTIONS_
 
 #define _sign(x) (((x)<0)?-1:!!(x))
-IppStatus _own_ippiQuantIntraUniform(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32s doubleQuant)
+IppStatus _own_ippiQuantIntraUniform(int16_t* pSrcDst, int32_t srcDstStep,int32_t doubleQuant)
 {
     int i,j;
-    Ipp16s* pBlock = pSrcDst;
-    Ipp32s intra = 1;
+    int16_t* pBlock = pSrcDst;
+    int32_t intra = 1;
     for(i = 0; i < 8; i++)
     {
         for (j = intra; j < 8; j++)
@@ -1475,18 +1475,18 @@ IppStatus _own_ippiQuantIntraUniform(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32s d
 
         }
         intra  = 0;
-        pBlock = (Ipp16s*)((Ipp8u*) pBlock + srcDstStep);
+        pBlock = (int16_t*)((uint8_t*) pBlock + srcDstStep);
     }
 
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiQuantIntraNonUniform(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32s doubleQuant)
+IppStatus _own_ippiQuantIntraNonUniform(int16_t* pSrcDst, int32_t srcDstStep,int32_t doubleQuant)
 {
     int i,j;
-    Ipp16s* pBlock = pSrcDst;
-    Ipp8u   Quant  = doubleQuant>>1;
-    Ipp32s intra = 1;
+    int16_t* pBlock = pSrcDst;
+    uint8_t   Quant  = doubleQuant>>1;
+    int32_t intra = 1;
 
     for(i = 0; i < 8; i++)
     {
@@ -1495,15 +1495,15 @@ IppStatus _own_ippiQuantIntraNonUniform(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32
             pBlock[j] = (pBlock[j]-_sign(pBlock[j])*Quant)/doubleQuant;
         }
         intra  = 0;
-        pBlock = (Ipp16s*)((Ipp8u*) pBlock + srcDstStep);
+        pBlock = (int16_t*)((uint8_t*) pBlock + srcDstStep);
     }
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiQuantInterUniform(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32s doubleQuant, IppiSize roiSize)
+IppStatus _own_ippiQuantInterUniform(int16_t* pSrcDst, int32_t srcDstStep,int32_t doubleQuant, mfxSize roiSize)
 {
     int i,j;
-    Ipp16s* pBlock = pSrcDst;
+    int16_t* pBlock = pSrcDst;
 
     for(i = 0; i < roiSize.height; i++)
     {
@@ -1513,17 +1513,17 @@ IppStatus _own_ippiQuantInterUniform(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32s d
             pBlock[j] = pBlock[j]/doubleQuant;
 
         }
-        pBlock = (Ipp16s*)((Ipp8u*) pBlock + srcDstStep);
+        pBlock = (int16_t*)((uint8_t*) pBlock + srcDstStep);
     }
 
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiQuantInterNonUniform(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32s doubleQuant, IppiSize roiSize)
+IppStatus _own_ippiQuantInterNonUniform(int16_t* pSrcDst, int32_t srcDstStep,int32_t doubleQuant, mfxSize roiSize)
 {
     int i,j;
-    Ipp16s* pBlock = pSrcDst;
-    Ipp8u   Quant  = doubleQuant>>1;
+    int16_t* pBlock = pSrcDst;
+    uint8_t   Quant  = doubleQuant>>1;
 
     for(i = 0; i < roiSize.height; i++)
     {
@@ -1532,7 +1532,7 @@ IppStatus _own_ippiQuantInterNonUniform(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32
             pBlock[j] = (pBlock[j]-_sign(pBlock[j])*Quant)/doubleQuant;
         }
 
-        pBlock = (Ipp16s*)((Ipp8u*) pBlock + srcDstStep);
+        pBlock = (int16_t*)((uint8_t*) pBlock + srcDstStep);
     }
     return ippStsNoErr;
 }
@@ -1543,48 +1543,48 @@ IppStatus _own_ippiQuantInterNonUniform(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32
 #define _sign(x) (((x)<0)?-1:!!(x))
 #define _abs(x)   ((x<0)? -(x):(x))
 #define _mask  0x03
-IppStatus _own_ippiQuantIntraTrellis(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32s doubleQuant, Ipp8s *pRoundControl,Ipp32s roundControlStep)
+IppStatus _own_ippiQuantIntraTrellis(int16_t* pSrcDst, int32_t srcDstStep,int32_t doubleQuant, int8_t *pRoundControl,int32_t roundControlStep)
 {
     int i,j;
-    Ipp16s* pBlock = pSrcDst;
-    Ipp32s intra = 1;
+    int16_t* pBlock = pSrcDst;
+    int32_t intra = 1;
 
     for(i = 0; i < 8; i++)
     {
         for (j = intra; j < 8; j++)
         {
-            Ipp16s abs_pixel    = _abs(pBlock[j]);
-            Ipp16s round        = (pRoundControl[j])*doubleQuant;
-            Ipp16s quant_pixel  = 0;
+            int16_t abs_pixel    = _abs(pBlock[j]);
+            int16_t round        = (pRoundControl[j])*doubleQuant;
+            int16_t quant_pixel  = 0;
 
             quant_pixel = (round < abs_pixel)?(abs_pixel - round)/doubleQuant:0;
 
-            pBlock[j] = (pBlock[j]<0)? -quant_pixel:(Ipp16s)quant_pixel;
+            pBlock[j] = (pBlock[j]<0)? -quant_pixel:(int16_t)quant_pixel;
         }
         intra  = 0;
-        pBlock = (Ipp16s*)((Ipp8u*) pBlock + srcDstStep);
+        pBlock = (int16_t*)((uint8_t*) pBlock + srcDstStep);
         pRoundControl = pRoundControl + roundControlStep;
     }
     return ippStsNoErr;
 }
-IppStatus _own_ippiQuantInterTrellis(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32s doubleQuant, IppiSize roiSize,Ipp8s *pRoundControl, Ipp32s roundControlStep)
+IppStatus _own_ippiQuantInterTrellis(int16_t* pSrcDst, int32_t srcDstStep,int32_t doubleQuant, mfxSize roiSize,int8_t *pRoundControl, int32_t roundControlStep)
 {
     int i,j;
-    Ipp16s* pBlock = pSrcDst;
+    int16_t* pBlock = pSrcDst;
 
     for(i = 0; i < roiSize.height; i++)
     {
         for (j = 0; j < roiSize.width; j++)
         {
-            Ipp16s abs_pixel    = _abs(pBlock[j]);
-            Ipp16s round        = (pRoundControl[j])*doubleQuant;
-            Ipp16s quant_pixel  = 0;
+            int16_t abs_pixel    = _abs(pBlock[j]);
+            int16_t round        = (pRoundControl[j])*doubleQuant;
+            int16_t quant_pixel  = 0;
 
             quant_pixel = (round < abs_pixel)?(abs_pixel - round)/doubleQuant:0;
 
-            pBlock[j] = (pBlock[j]<0)? -quant_pixel:(Ipp16s)quant_pixel;
+            pBlock[j] = (pBlock[j]<0)? -quant_pixel:(int16_t)quant_pixel;
         }
-        pBlock = (Ipp16s*)((Ipp8u*) pBlock + srcDstStep);
+        pBlock = (int16_t*)((uint8_t*) pBlock + srcDstStep);
         pRoundControl = pRoundControl + roundControlStep;
     }
     return ippStsNoErr;
@@ -1598,31 +1598,31 @@ IppStatus _own_ippiQuantInterTrellis(Ipp16s* pSrcDst, Ipp32s srcDstStep,Ipp32s d
 #ifndef UMC_RESTRICTED_CODE
 #ifdef _VC1_ENC_OWN_FUNCTIONS_
 #define _sign(x) (((x)<0)?-1:!!(x))
-IppStatus _own_ippiQuantInvIntraUniform_VC1_16s_C1R(const Ipp16s* pSrc, Ipp32s srcStep,
-                                                     Ipp16s* pDst, Ipp32s dstStep,
-                                                  Ipp32s doubleQuant, IppiSize* pDstSizeNZ)
+IppStatus _own_ippiQuantInvIntraUniform_VC1_16s_C1R(const int16_t* pSrc, int32_t srcStep,
+                                                     int16_t* pDst, int32_t dstStep,
+                                                  int32_t doubleQuant, mfxSize* pDstSizeNZ)
 {
-    Ipp32s i = 1;
-    Ipp32s j = 0;
-    Ipp32s X[8] = {0};
-    Ipp32s Y[8] = {0};
-    Ipp16s S;
+    int32_t i = 1;
+    int32_t j = 0;
+    int32_t X[8] = {0};
+    int32_t Y[8] = {0};
+    int16_t S;
 
-    const Ipp16s* pSrc1 = pSrc;
-    Ipp16s* pDst1 = pDst;
+    const int16_t* pSrc1 = pSrc;
+    int16_t* pDst1 = pDst;
 
     for(j = 0; j < 8; j++)
     {
        for(i; i < 8; i++)
        {
-           pDst1[i] = (Ipp16s)(pSrc1[i]*doubleQuant);
+           pDst1[i] = (int16_t)(pSrc1[i]*doubleQuant);
            S = !pDst1[i] ;
            X[i] = X[i] + S;
            Y[j] = Y[j] + S;
        }
        i = 0;
-       pSrc1 = (Ipp16s*)((Ipp8u*)pSrc1 + srcStep);
-       pDst1 = (Ipp16s*)((Ipp8u*)pDst1 + dstStep);
+       pSrc1 = (int16_t*)((uint8_t*)pSrc1 + srcStep);
+       pDst1 = (int16_t*)((uint8_t*)pDst1 + dstStep);
     }
 
     for(i=7; i>=0 && X[i]==8; i--);
@@ -1636,31 +1636,31 @@ IppStatus _own_ippiQuantInvIntraUniform_VC1_16s_C1R(const Ipp16s* pSrc, Ipp32s s
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiQuantInvIntraNonUniform_VC1_16s_C1R(const Ipp16s* pSrc, Ipp32s srcStep,
-                                                        Ipp16s* pDst, Ipp32s dstStep,
-                                                          Ipp32s doubleQuant, IppiSize* pDstSizeNZ)
+IppStatus _own_ippiQuantInvIntraNonUniform_VC1_16s_C1R(const int16_t* pSrc, int32_t srcStep,
+                                                        int16_t* pDst, int32_t dstStep,
+                                                          int32_t doubleQuant, mfxSize* pDstSizeNZ)
 {
-    Ipp32s i = 1;
-    Ipp32s j = 0;
-    const Ipp16s* pSrc1 = pSrc;
-    Ipp16s* pDst1 = pDst;
+    int32_t i = 1;
+    int32_t j = 0;
+    const int16_t* pSrc1 = pSrc;
+    int16_t* pDst1 = pDst;
 
-    Ipp32s X[8] = {0};
-    Ipp32s Y[8] = {0};
-    Ipp16s S;
+    int32_t X[8] = {0};
+    int32_t Y[8] = {0};
+    int16_t S;
 
     for(j = 0; j < 8; j++)
     {
         for(i; i < 8; i++)
         {
-            pDst1[i] = (Ipp16s)(pSrc1[i]*doubleQuant) + (Ipp16s)(_sign(pSrc1[i])*(doubleQuant>>1));
+            pDst1[i] = (int16_t)(pSrc1[i]*doubleQuant) + (int16_t)(_sign(pSrc1[i])*(doubleQuant>>1));
             S = !pDst1[i] ;
             X[i] = X[i] + S;
             Y[j] = Y[j] + S;
         }
         i = 0;
-        pSrc1 = (Ipp16s*)((Ipp8u*)pSrc1 + srcStep);
-        pDst1 = (Ipp16s*)((Ipp8u*)pDst1 + dstStep);
+        pSrc1 = (int16_t*)((uint8_t*)pSrc1 + srcStep);
+        pDst1 = (int16_t*)((uint8_t*)pDst1 + dstStep);
     }
 
     for(i=7; i>=0 && X[i]==8; i--);
@@ -1673,31 +1673,31 @@ IppStatus _own_ippiQuantInvIntraNonUniform_VC1_16s_C1R(const Ipp16s* pSrc, Ipp32
 
     return ippStsNoErr;
 }
-IppStatus _own_ippiQuantInvInterUniform_VC1_16s_C1R(const Ipp16s* pSrc, Ipp32s srcStep,
-                                                     Ipp16s* pDst, Ipp32s dstStep,
-                                                       Ipp32s doubleQuant, IppiSize roiSize,
-                                                       IppiSize* pDstSizeNZ)
+IppStatus _own_ippiQuantInvInterUniform_VC1_16s_C1R(const int16_t* pSrc, int32_t srcStep,
+                                                     int16_t* pDst, int32_t dstStep,
+                                                       int32_t doubleQuant, mfxSize roiSize,
+                                                       mfxSize* pDstSizeNZ)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s X[8] = {0};
-    Ipp32s Y[8] = {0};
-    Ipp16s S;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t X[8] = {0};
+    int32_t Y[8] = {0};
+    int16_t S;
 
-    const Ipp16s* pSrc1 = pSrc;
-    Ipp16s* pDst1 = pDst;
+    const int16_t* pSrc1 = pSrc;
+    int16_t* pDst1 = pDst;
 
     for(j = 0; j < roiSize.height; j++)
     {
        for(i = 0; i < roiSize.width; i++)
        {
-           pDst1[i] = (Ipp16s)(pSrc1[i]*doubleQuant);
+           pDst1[i] = (int16_t)(pSrc1[i]*doubleQuant);
            S = !pDst1[i] ;
            X[i] = X[i] + S;
            Y[j] = Y[j] + S;
        }
-       pSrc1 = (Ipp16s*)((Ipp8u*)pSrc1 + srcStep);
-       pDst1 = (Ipp16s*)((Ipp8u*)pDst1 + dstStep);
+       pSrc1 = (int16_t*)((uint8_t*)pSrc1 + srcStep);
+       pDst1 = (int16_t*)((uint8_t*)pDst1 + dstStep);
     }
 
     for(i=7; i>=0 && X[i]==8; i--);
@@ -1710,32 +1710,32 @@ IppStatus _own_ippiQuantInvInterUniform_VC1_16s_C1R(const Ipp16s* pSrc, Ipp32s s
 
     return ippStsNoErr;
 }
-IppStatus _own_ippiQuantInvInterNonUniform_VC1_16s_C1R(const Ipp16s* pSrc, Ipp32s srcStep,
-                                                        Ipp16s* pDst, Ipp32s dstStep,
-                                                          Ipp32s doubleQuant, IppiSize roiSize,
-                                                          IppiSize* pDstSizeNZ)
+IppStatus _own_ippiQuantInvInterNonUniform_VC1_16s_C1R(const int16_t* pSrc, int32_t srcStep,
+                                                        int16_t* pDst, int32_t dstStep,
+                                                          int32_t doubleQuant, mfxSize roiSize,
+                                                          mfxSize* pDstSizeNZ)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    const Ipp16s* pSrc1 = pSrc;
-    Ipp16s* pDst1 = pDst;
-    Ipp32s X[8] = {0};
-    Ipp32s Y[8] = {0};
-    Ipp16s S;
+    int32_t i = 0;
+    int32_t j = 0;
+    const int16_t* pSrc1 = pSrc;
+    int16_t* pDst1 = pDst;
+    int32_t X[8] = {0};
+    int32_t Y[8] = {0};
+    int16_t S;
 
 
     for(j = 0; j < roiSize.height; j++)
     {
         for(i = 0; i < roiSize.width; i++)
         {
-            pDst1[i] = (Ipp16s)(pSrc1[i]*doubleQuant) + (Ipp16s)(_sign(pSrc1[i])*(doubleQuant>>1));
+            pDst1[i] = (int16_t)(pSrc1[i]*doubleQuant) + (int16_t)(_sign(pSrc1[i])*(doubleQuant>>1));
             S = !pDst1[i] ;
             X[i] = X[i] + S;
             Y[j] = Y[j] + S;
         }
 
-        pSrc1 = (Ipp16s*)((Ipp8u*)pSrc1 + srcStep);
-        pDst1 = (Ipp16s*)((Ipp8u*)pDst1 + dstStep);
+        pSrc1 = (int16_t*)((uint8_t*)pSrc1 + srcStep);
+        pDst1 = (int16_t*)((uint8_t*)pDst1 + dstStep);
     }
 
     for(i=7; i>=0 && X[i]==8; i--);
@@ -1752,43 +1752,43 @@ IppStatus _own_ippiQuantInvInterNonUniform_VC1_16s_C1R(const Ipp16s* pSrc, Ipp32
 #endif //_VC1_ENC_OWN_FUNCTIONS_
 #endif // UMC_RESTRICTED_CODE
 
-Ipp8u Get_CBPCY(Ipp32u MBPatternCur, Ipp32u CBPCYTop, Ipp32u CBPCYLeft, Ipp32u CBPCYULeft)
+uint8_t Get_CBPCY(uint32_t MBPatternCur, uint32_t CBPCYTop, uint32_t CBPCYLeft, uint32_t CBPCYULeft)
 {
 
-    Ipp32u LT3   = (CBPCYULeft >> VC1_ENC_PAT_POS_Y3) & 0x01;
-    Ipp32u T2    = (CBPCYTop   >> VC1_ENC_PAT_POS_Y2) & 0x01;
-    Ipp32u T3    = (CBPCYTop   >> VC1_ENC_PAT_POS_Y3) & 0x01;
-    Ipp32u L1    = (CBPCYLeft  >> VC1_ENC_PAT_POS_Y1) & 0x01;
-    Ipp32u L3    = (CBPCYLeft  >> VC1_ENC_PAT_POS_Y3) & 0x01;
-    Ipp32u CBPCY = MBPatternCur;
-    Ipp32u Y0    = (CBPCY>>VC1_ENC_PAT_POS_Y0)&0x01;
+    uint32_t LT3   = (CBPCYULeft >> VC1_ENC_PAT_POS_Y3) & 0x01;
+    uint32_t T2    = (CBPCYTop   >> VC1_ENC_PAT_POS_Y2) & 0x01;
+    uint32_t T3    = (CBPCYTop   >> VC1_ENC_PAT_POS_Y3) & 0x01;
+    uint32_t L1    = (CBPCYLeft  >> VC1_ENC_PAT_POS_Y1) & 0x01;
+    uint32_t L3    = (CBPCYLeft  >> VC1_ENC_PAT_POS_Y3) & 0x01;
+    uint32_t CBPCY = MBPatternCur;
+    uint32_t Y0    = (CBPCY>>VC1_ENC_PAT_POS_Y0)&0x01;
 
 
-    CBPCY ^=  (Ipp8u)(((LT3==T2)? L1:T2) << VC1_ENC_PAT_POS_Y0);
-    CBPCY ^=  (Ipp8u)(((T2 ==T3)? Y0:T3) << VC1_ENC_PAT_POS_Y1);
-    CBPCY ^=  (Ipp8u)(((L1 ==Y0)? L3:Y0) << VC1_ENC_PAT_POS_Y2);
-    CBPCY ^=  (Ipp8u)(((Y0 ==((MBPatternCur>>VC1_ENC_PAT_POS_Y1)&0x01))?
+    CBPCY ^=  (uint8_t)(((LT3==T2)? L1:T2) << VC1_ENC_PAT_POS_Y0);
+    CBPCY ^=  (uint8_t)(((T2 ==T3)? Y0:T3) << VC1_ENC_PAT_POS_Y1);
+    CBPCY ^=  (uint8_t)(((L1 ==Y0)? L3:Y0) << VC1_ENC_PAT_POS_Y2);
+    CBPCY ^=  (uint8_t)(((Y0 ==((MBPatternCur>>VC1_ENC_PAT_POS_Y1)&0x01))?
                 (MBPatternCur>>VC1_ENC_PAT_POS_Y2)&0x01:(MBPatternCur>>VC1_ENC_PAT_POS_Y1)&0x01) << VC1_ENC_PAT_POS_Y3);
-    return (Ipp8u)CBPCY;
+    return (uint8_t)CBPCY;
 }
 
 
 
-Ipp32s SumSqDiff_1x7_16s(Ipp16s* pSrc, Ipp32u step, Ipp16s* pPred)
+int32_t SumSqDiff_1x7_16s(int16_t* pSrc, uint32_t step, int16_t* pPred)
 {
-    Ipp32s sum=0;
+    int32_t sum=0;
 
     for(int i=0; i<7 ;i++)
     {
-        pPred  = (Ipp16s*)((Ipp8u*)pPred+step);
-        pSrc  = (Ipp16s*)((Ipp8u*)pSrc+step);
+        pPred  = (int16_t*)((uint8_t*)pPred+step);
+        pSrc  = (int16_t*)((uint8_t*)pSrc+step);
         sum  += (pSrc[0]-pPred[0])*(pSrc[0]- pPred[0]) - pSrc[0]*pSrc[0];
     }
     return sum;
 }
-Ipp32s SumSqDiff_7x1_16s(Ipp16s* pSrc, Ipp16s* pPred)
+int32_t SumSqDiff_7x1_16s(int16_t* pSrc, int16_t* pPred)
 {
-    Ipp32s sum=0;
+    int32_t sum=0;
 
     for(int i=1; i<8 ;i++)
     {
@@ -1797,19 +1797,19 @@ Ipp32s SumSqDiff_7x1_16s(Ipp16s* pSrc, Ipp16s* pPred)
     return sum;
 }
 
-typedef void (*Diff8x8VC1) (const Ipp16s* pSrc1, Ipp32s src1Step,
-              const Ipp16s* pSrc2, Ipp32s src2Step,
-              Ipp16s* pDst,  Ipp32s dstStep, Ipp32u pred);
+typedef void (*Diff8x8VC1) (const int16_t* pSrc1, int32_t src1Step,
+              const int16_t* pSrc2, int32_t src2Step,
+              int16_t* pDst,  int32_t dstStep, uint32_t pred);
 
-static void Diff8x8_NonPred(const Ipp16s* pSrc1, Ipp32s /*src1Step*/,
-                            const Ipp16s* pSrc2, Ipp32s /*src2Step*/,
-                            Ipp16s* pDst,  Ipp32s /*dstStep*/, Ipp32u /*pred*/)
+static void Diff8x8_NonPred(const int16_t* pSrc1, int32_t /*src1Step*/,
+                            const int16_t* pSrc2, int32_t /*src2Step*/,
+                            int16_t* pDst,  int32_t /*dstStep*/, uint32_t /*pred*/)
 {
     pDst[0] = pSrc1[0] - pSrc2[0];
 }
-static void Diff8x8_HorPred(const Ipp16s* pSrc1, Ipp32s /*src1Step*/,
-              const Ipp16s* pSrc2, Ipp32s /*src2Step*/,
-              Ipp16s* pDst,  Ipp32s /*dstStep*/, Ipp32u /*pred*/)
+static void Diff8x8_HorPred(const int16_t* pSrc1, int32_t /*src1Step*/,
+              const int16_t* pSrc2, int32_t /*src2Step*/,
+              int16_t* pDst,  int32_t /*dstStep*/, uint32_t /*pred*/)
 {
     pDst[0] = pSrc1[0] - pSrc2[0];
     pDst[1] = pSrc1[1] - pSrc2[1];
@@ -1821,22 +1821,22 @@ static void Diff8x8_HorPred(const Ipp16s* pSrc1, Ipp32s /*src1Step*/,
     pDst[7] = pSrc1[7] - pSrc2[7];
 }
 
-static void Diff8x8_VerPred(const Ipp16s* pSrc1, Ipp32s src1Step,
-              const Ipp16s* pSrc2, Ipp32s src2Step,
-              Ipp16s* pDst,  Ipp32s dstStep, Ipp32u /*pred*/)
+static void Diff8x8_VerPred(const int16_t* pSrc1, int32_t src1Step,
+              const int16_t* pSrc2, int32_t src2Step,
+              int16_t* pDst,  int32_t dstStep, uint32_t /*pred*/)
 {
-    Ipp32s j;
+    int32_t j;
     for(j=0;j<8;j++){
         (*pDst) = (*pSrc1) - (*pSrc2);
-        pDst = (Ipp16s*)((Ipp8u*)pDst + dstStep);
-        pSrc1 = (Ipp16s*)((Ipp8u*)pSrc1 + src1Step);
-        pSrc2 = (Ipp16s*)((Ipp8u*)pSrc2 + src2Step);
+        pDst = (int16_t*)((uint8_t*)pDst + dstStep);
+        pSrc1 = (int16_t*)((uint8_t*)pSrc1 + src1Step);
+        pSrc2 = (int16_t*)((uint8_t*)pSrc2 + src2Step);
     }
 }
 
-static void Diff8x8_Nothing(const Ipp16s* /*pSrc1*/, Ipp32s /*src1Step*/,
-              const Ipp16s* /*pSrc2*/, Ipp32s /*src2Step*/,
-              Ipp16s* /*pDst*/,  Ipp32s /*dstStep*/, Ipp32u /*pred*/)
+static void Diff8x8_Nothing(const int16_t* /*pSrc1*/, int32_t /*src1Step*/,
+              const int16_t* /*pSrc2*/, int32_t /*src2Step*/,
+              int16_t* /*pDst*/,  int32_t /*dstStep*/, uint32_t /*pred*/)
 {
 }
 
@@ -1847,12 +1847,12 @@ Diff8x8VC1 Diff8x8FuncTab[] ={
     &Diff8x8_Nothing
 };
 
-void Diff8x8 (const Ipp16s* pSrc1, Ipp32s src1Step,
-              const Ipp16s* pSrc2, Ipp32s src2Step,
-              Ipp16s* pDst,  Ipp32s dstStep, Ipp32u pred)
+void Diff8x8 (const int16_t* pSrc1, int32_t src1Step,
+              const int16_t* pSrc2, int32_t src2Step,
+              int16_t* pDst,  int32_t dstStep, uint32_t pred)
 {
-    Ipp32u index = pred & 0x03;
-    IppiSize blkSize     = {8,8};
+    uint32_t index = pred & 0x03;
+    mfxSize blkSize     = {8,8};
 
     ippiCopy_16s_C1R(pSrc1,src1Step,pDst,dstStep,blkSize);
     Diff8x8FuncTab[index](pSrc1,src1Step,pSrc2,src2Step,pDst,dstStep,pred);
@@ -1861,7 +1861,7 @@ void Diff8x8 (const Ipp16s* pSrc1, Ipp32s src1Step,
  //---BEGIN------------------------Copy block, MB functions-----------------------------------------------
 #ifndef UMC_RESTRICTED_CODE
 #ifdef _VC1_ENC_OWN_FUNCTIONS_
-IppStatus _own_Copy8x8_16x16_8u16s (const Ipp8u* pSrc, Ipp32u srcStep, Ipp16s* pDst, Ipp32u dstStep, IppiSize roiSize)
+IppStatus _own_Copy8x8_16x16_8u16s (const uint8_t* pSrc, uint32_t srcStep, int16_t* pDst, uint32_t dstStep, mfxSize roiSize)
 {
     for (int i = 0; i < roiSize.height; i++)
     {
@@ -1870,7 +1870,7 @@ IppStatus _own_Copy8x8_16x16_8u16s (const Ipp8u* pSrc, Ipp32u srcStep, Ipp16s* p
             pDst[j] = pSrc[j];
         }
         pSrc += srcStep;
-        pDst = (Ipp16s*)((Ipp8u*)pDst + dstStep);
+        pDst = (int16_t*)((uint8_t*)pDst + dstStep);
     }
     return ippStsNoErr;
 }
@@ -1878,11 +1878,11 @@ IppStatus _own_Copy8x8_16x16_8u16s (const Ipp8u* pSrc, Ipp32u srcStep, Ipp16s* p
 #endif
 //---END------------------------Copy block, MB functions-----------------------------------------------
 
-//Ipp32u GetNumZeros(Ipp16s* pSrc, Ipp32u srcStep, bool bIntra)
+//uint32_t GetNumZeros(int16_t* pSrc, uint32_t srcStep, bool bIntra)
 //{
 //    int         i,j;
-//    Ipp32u      s=0;
-//    Ipp16s*     pBlock = pSrc;
+//    uint32_t      s=0;
+//    int16_t*     pBlock = pSrc;
 //
 //    for(i = 0; i<8; i++)
 //    {
@@ -1891,16 +1891,16 @@ IppStatus _own_Copy8x8_16x16_8u16s (const Ipp8u* pSrc, Ipp32u srcStep, Ipp16s* p
 //            s+= !pBlock[j];
 //        }
 //        bIntra  = false;
-//        pBlock = (Ipp16s*)((Ipp8u*) pBlock + srcStep);
+//        pBlock = (int16_t*)((uint8_t*) pBlock + srcStep);
 //    }
 //    //printf ("intra MB: num of coeff %d\n",64 - s - bIntra);
 //    return s;
 //}
-//Ipp32u GetNumZeros(Ipp16s* pSrc, Ipp32u srcStep)
+//uint32_t GetNumZeros(int16_t* pSrc, uint32_t srcStep)
 //{
 //    int         i,j;
-//    Ipp32u      s=0;
-//    Ipp16s*     pBlock = pSrc;
+//    uint32_t      s=0;
+//    int16_t*     pBlock = pSrc;
 //
 //    for(i = 0; i<8; i++)
 //    {
@@ -1908,35 +1908,35 @@ IppStatus _own_Copy8x8_16x16_8u16s (const Ipp8u* pSrc, Ipp32u srcStep, Ipp16s* p
 //        {
 //            s+= !pBlock[j];
 //        }
-//        pBlock = (Ipp16s*)((Ipp8u*) pBlock + srcStep);
+//        pBlock = (int16_t*)((uint8_t*) pBlock + srcStep);
 //    }
 //    //printf ("intra MB: num of coeff %d\n",64 - s);
 //    return s;
 //}
-//Ipp8u GetBlockPattern(Ipp16s* pBlock, Ipp32u step)
+//uint8_t GetBlockPattern(int16_t* pBlock, uint32_t step)
 //{
 //    int i,j;
-//    Ipp8u s[4]={0};
+//    uint8_t s[4]={0};
 //    for (i=0;i<8;i++)
 //    {
 //        for(j=0;j<8;j++)
 //        {
 //            s[((i>>2)<<1)+(j>>2)] += !(pBlock[j]);
 //        }
-//        pBlock = (Ipp16s*)((Ipp8u*)pBlock + step);
+//        pBlock = (int16_t*)((uint8_t*)pBlock + step);
 //    }
 //    //printf ("inter MB: num of coeff %d\n",64 - (s[0]+s[1]+s[2]+s[3]));
 //    return (((s[0]<16)<<3)|((s[1]<16)<<2)|((s[2]<16)<<1)| (s[3]<16));
 //
 //}
 
-Ipp8u GetMode( Ipp8u &run, Ipp16s &level, const Ipp8u *pTableDR, const Ipp8u *pTableDL, bool& sign)
+uint8_t GetMode( uint8_t &run, int16_t &level, const uint8_t *pTableDR, const uint8_t *pTableDL, bool& sign)
 {
     sign  = level < 0;
     level = (sign)? -level : level;
     if (run <= pTableDR[1])
     {
-        Ipp8u maxLevel = pTableDL[run];
+        uint8_t maxLevel = pTableDL[run];
         if (level <= maxLevel)
         {
             return 0;
@@ -1949,27 +1949,27 @@ Ipp8u GetMode( Ipp8u &run, Ipp16s &level, const Ipp8u *pTableDR, const Ipp8u *pT
     }
     if (level <= pTableDL[0])
     {
-        Ipp8u maxRun = pTableDR[level];
-        if (run <= (Ipp8u)(2*maxRun + 1)) // level starts from 0
+        uint8_t maxRun = pTableDR[level];
+        if (run <= (uint8_t)(2*maxRun + 1)) // level starts from 0
         {
-            run = run - (Ipp8u)maxRun - 1;
+            run = run - (uint8_t)maxRun - 1;
             return 2;
         }
     }
     return 3;
 }
-//bool GetRLCode(Ipp32s run, Ipp32s level, IppVCHuffmanSpec_32s *pTable, Ipp32s &code, Ipp32s &len)
+//bool GetRLCode(int32_t run, int32_t level, IppVCHuffmanSpec_32s *pTable, int32_t &code, int32_t &len)
 //{
-//    Ipp32s  maxRun = pTable[0] >> 20;
-//    Ipp32s  addr;
-//    Ipp32s  *table;
+//    int32_t  maxRun = pTable[0] >> 20;
+//    int32_t  addr;
+//    int32_t  *table;
 //
 //    if(run > maxRun)
 //    {
 //       return false;
 //    }
 //    addr  = pTable[run + 1];
-//    table = (Ipp32s*)((Ipp8s*)pTable + addr);
+//    table = (int32_t*)((int8_t*)pTable + addr);
 //    if(level <= table[0])
 //    {
 //        len  = *(table  + level) & 0x1f;
@@ -1978,22 +1978,22 @@ Ipp8u GetMode( Ipp8u &run, Ipp16s &level, const Ipp8u *pTableDR, const Ipp8u *pT
 //    }
 //    return false;
 //}
-//Ipp8u        Zigzag       ( Ipp16s*                pBlock,
-//                            Ipp32u                 blockStep,
+//uint8_t        Zigzag       ( int16_t*                pBlock,
+//                            uint32_t                 blockStep,
 //                            bool                   bIntra,
-//                            const Ipp8u*           pScanMatrix,
-//                            Ipp8u*                 pRuns,
-//                            Ipp16s*                pLevels)
+//                            const uint8_t*           pScanMatrix,
+//                            uint8_t*                 pRuns,
+//                            int16_t*                pLevels)
 //{
-//    Ipp32s      i = 0, pos = 0;
-//    Ipp16s      value = 0;
-//    Ipp8u       n_pairs = 0;
+//    int32_t      i = 0, pos = 0;
+//    int16_t      value = 0;
+//    uint8_t       n_pairs = 0;
 //
 //    pRuns[n_pairs]  = 0;
 //    for (i = bIntra; i<64; i++)
 //    {
 //        pos    = pScanMatrix[i];
-//        value = *((Ipp16s*)((Ipp8u*)pBlock + blockStep*(pos/8)) + pos%8);
+//        value = *((int16_t*)((uint8_t*)pBlock + blockStep*(pos/8)) + pos%8);
 //        if (!value)
 //        {
 //            pRuns[n_pairs]++;
@@ -2007,10 +2007,10 @@ Ipp8u GetMode( Ipp8u &run, Ipp16s &level, const Ipp8u *pTableDR, const Ipp8u *pT
 //    }
 //    return n_pairs;
 //}
-//Ipp8u GetLength_16s(Ipp16s value)
+//uint8_t GetLength_16s(int16_t value)
 //{
 //    int    i=0;
-//    Ipp16u n = (Ipp16u)value;
+//    uint16_t n = (uint16_t)value;
 //    while (n>>i)
 //    {
 //        i++;
@@ -2024,7 +2024,7 @@ Ipp8u GetMode( Ipp8u &run, Ipp16s &level, const Ipp8u *pTableDR, const Ipp8u *pT
 #ifndef UMC_RESTRICTED_CODE
 #ifdef _VC1_ENC_OWN_FUNCTIONS_
 
-IppStatus _own_Diff8x8C_16s(Ipp16s c, Ipp16s*  pBlock, Ipp32u   blockStep, IppiSize roiSize, int scaleFactor)
+IppStatus _own_Diff8x8C_16s(int16_t c, int16_t*  pBlock, uint32_t   blockStep, mfxSize roiSize, int scaleFactor)
 {
     int i,j;
     for (i=0;i<8;i++)
@@ -2033,11 +2033,11 @@ IppStatus _own_Diff8x8C_16s(Ipp16s c, Ipp16s*  pBlock, Ipp32u   blockStep, IppiS
         {
             pBlock[j] -= c;
         }
-        pBlock = (Ipp16s*)((Ipp8u*)pBlock + blockStep);
+        pBlock = (int16_t*)((uint8_t*)pBlock + blockStep);
     }
     return ippStsNoErr;
 }
-IppStatus _own_Add8x8C_16s(Ipp16s c, Ipp16s*  pBlock, Ipp32u   blockStep, IppiSize roiSize, int scaleFactor)
+IppStatus _own_Add8x8C_16s(int16_t c, int16_t*  pBlock, uint32_t   blockStep, mfxSize roiSize, int scaleFactor)
 {
     int i,j;
     for (i=0;i<8;i++)
@@ -2046,7 +2046,7 @@ IppStatus _own_Add8x8C_16s(Ipp16s c, Ipp16s*  pBlock, Ipp32u   blockStep, IppiSi
         {
             pBlock[j] += c;
         }
-        pBlock = (Ipp16s*)((Ipp8u*)pBlock + blockStep);
+        pBlock = (int16_t*)((uint8_t*)pBlock + blockStep);
     }
     return ippStsNoErr;
 }
@@ -2057,11 +2057,11 @@ IppStatus _own_Add8x8C_16s(Ipp16s c, Ipp16s*  pBlock, Ipp32u   blockStep, IppiSi
 //---Begin------------------------Get difference-----------------------------------------------
 #ifndef UMC_RESTRICTED_CODE
 #ifdef _VC1_ENC_OWN_FUNCTIONS_
-IppStatus _own_ippiGetDiff8x8_8u16s_C1(Ipp8u*  pBlock,       Ipp32u   blockStep,
-                        Ipp8u*  pPredBlock,   Ipp32u   predBlockStep,
-                        Ipp16s* pDst,         Ipp32u   dstStep,
-                        Ipp16s* pDstPredictor,Ipp32s  dstPredictorStep,
-                        Ipp32s  mcType,       Ipp32s  roundControl)
+IppStatus _own_ippiGetDiff8x8_8u16s_C1(uint8_t*  pBlock,       uint32_t   blockStep,
+                        uint8_t*  pPredBlock,   uint32_t   predBlockStep,
+                        int16_t* pDst,         uint32_t   dstStep,
+                        int16_t* pDstPredictor,int32_t  dstPredictorStep,
+                        int32_t  mcType,       int32_t  roundControl)
 {
     int i,j;
 
@@ -2071,17 +2071,17 @@ IppStatus _own_ippiGetDiff8x8_8u16s_C1(Ipp8u*  pBlock,       Ipp32u   blockStep,
         {
             pDst[j] = (pBlock[j] - pPredBlock[j]);
         }
-        pDst = (Ipp16s*)((Ipp8u*)pDst + dstStep);
+        pDst = (int16_t*)((uint8_t*)pDst + dstStep);
         pBlock     += blockStep;
         pPredBlock += predBlockStep;
     }
     return ippStsNoErr;
 }
-IppStatus _own_ippiGetDiff16x16_8u16s_C1(Ipp8u*  pBlock,       Ipp32u   blockStep,
-                          Ipp8u*  pPredBlock,   Ipp32u   predBlockStep,
-                          Ipp16s* pDst,         Ipp32u   dstStep,
-                          Ipp16s* pDstPredictor,Ipp32s  dstPredictorStep,
-                          Ipp32s  mcType,       Ipp32s  roundControl)
+IppStatus _own_ippiGetDiff16x16_8u16s_C1(uint8_t*  pBlock,       uint32_t   blockStep,
+                          uint8_t*  pPredBlock,   uint32_t   predBlockStep,
+                          int16_t* pDst,         uint32_t   dstStep,
+                          int16_t* pDstPredictor,int32_t  dstPredictorStep,
+                          int32_t  mcType,       int32_t  roundControl)
 {
     int i,j;
 
@@ -2091,7 +2091,7 @@ IppStatus _own_ippiGetDiff16x16_8u16s_C1(Ipp8u*  pBlock,       Ipp32u   blockSte
         {
             pDst[j] = (pBlock[j] - pPredBlock[j]);
         }
-        pDst = (Ipp16s*)((Ipp8u*)pDst + dstStep);
+        pDst = (int16_t*)((uint8_t*)pDst + dstStep);
         pBlock     += blockStep;
         pPredBlock += predBlockStep;
     }
@@ -2105,10 +2105,10 @@ IppStatus _own_ippiGetDiff16x16_8u16s_C1(Ipp8u*  pBlock,       Ipp32u   blockSte
 #ifndef UMC_RESTRICTED_CODE
 #ifdef _VC1_ENC_OWN_FUNCTIONS_
 
-IppStatus _own_Add16x16_8u16s(const Ipp8u*  pSrcRef,  Ipp32u   srcRefStep,
-                         const Ipp16s* pSrcYData,Ipp32u   srcYDataStep,
-                         Ipp8u* pDst, Ipp32u   dstStep,
-                         Ipp32s mctype, Ipp32s roundControl)
+IppStatus _own_Add16x16_8u16s(const uint8_t*  pSrcRef,  uint32_t   srcRefStep,
+                         const int16_t* pSrcYData,uint32_t   srcYDataStep,
+                         uint8_t* pDst, uint32_t   dstStep,
+                         int32_t mctype, int32_t roundControl)
 {
     int i,j;
     //printf("\nLUMA\n");
@@ -2118,10 +2118,10 @@ IppStatus _own_Add16x16_8u16s(const Ipp8u*  pSrcRef,  Ipp32u   srcRefStep,
         //printf("\n");
         for (j = 0; j < 16; j++)
         {
-            pDst[j] = (Ipp8u)(VC1_CLIP(pSrcYData[j] + (Ipp16s)pSrcRef[j]));
+            pDst[j] = (uint8_t)(VC1_CLIP(pSrcYData[j] + (int16_t)pSrcRef[j]));
             //printf(" %d", pDst[j]);
         }
-        pSrcYData = (Ipp16s*)((Ipp8u*)pSrcYData + srcYDataStep);
+        pSrcYData = (int16_t*)((uint8_t*)pSrcYData + srcYDataStep);
         pSrcRef  += srcRefStep;
         pDst     = pDst + dstStep;
     }
@@ -2129,10 +2129,10 @@ IppStatus _own_Add16x16_8u16s(const Ipp8u*  pSrcRef,  Ipp32u   srcRefStep,
     return ippStsNoErr;
 }
 
-IppStatus _own_Add8x8_8u16s ( const Ipp8u*  pSrcRef,  Ipp32u   srcRefStep,
-                         const Ipp16s* pSrcYData,Ipp32u   srcYDataStep,
-                         Ipp8u* pDst, Ipp32u   dstStep,
-                         Ipp32s mctype, Ipp32s roundControl)
+IppStatus _own_Add8x8_8u16s ( const uint8_t*  pSrcRef,  uint32_t   srcRefStep,
+                         const int16_t* pSrcYData,uint32_t   srcYDataStep,
+                         uint8_t* pDst, uint32_t   dstStep,
+                         int32_t mctype, int32_t roundControl)
 {
     int i,j;
 
@@ -2142,10 +2142,10 @@ IppStatus _own_Add8x8_8u16s ( const Ipp8u*  pSrcRef,  Ipp32u   srcRefStep,
         //printf("\n");
         for (j = 0; j < 8; j++)
         {
-            pDst[j] = (Ipp8u)(VC1_CLIP(pSrcYData[j] + (Ipp16s)pSrcRef[j]));
+            pDst[j] = (uint8_t)(VC1_CLIP(pSrcYData[j] + (int16_t)pSrcRef[j]));
             //printf(" %d", pDst[j]);
         }
-        pSrcYData = (Ipp16s*)((Ipp8u*)pSrcYData + srcYDataStep);
+        pSrcYData = (int16_t*)((uint8_t*)pSrcYData + srcYDataStep);
         pSrcRef  += srcRefStep;
         pDst     = pDst + dstStep;
     }
@@ -2155,11 +2155,11 @@ IppStatus _own_Add8x8_8u16s ( const Ipp8u*  pSrcRef,  Ipp32u   srcRefStep,
 #endif
 //---End---------------------Motion compensation-----------------------------------------------
 
-Ipp16s median3(Ipp16s a, Ipp16s b, Ipp16s c)
+int16_t median3(int16_t a, int16_t b, int16_t c)
 {
-  Ipp32u d  = ((((Ipp32u)(a-b))&0x80000000) |
-              ((((Ipp32u)(b-c))&0x80000000)>>1)|
-              ((((Ipp32u)(a-c))&0x80000000)>>2));
+  uint32_t d  = ((((uint32_t)(a-b))&0x80000000) |
+              ((((uint32_t)(b-c))&0x80000000)>>1)|
+              ((((uint32_t)(a-c))&0x80000000)>>2));
 
   switch(d)
   {
@@ -2178,14 +2178,14 @@ Ipp16s median3(Ipp16s a, Ipp16s b, Ipp16s c)
   return 0;
 
 }
-Ipp16s median4(Ipp16s a, Ipp16s b, Ipp16s c, Ipp16s d)
+int16_t median4(int16_t a, int16_t b, int16_t c, int16_t d)
 {
-  Ipp32u e  = ((((Ipp32u)(a-b))&0x80000000) |
-              ((((Ipp32u)(b-c))&0x80000000)>>1)|
-              ((((Ipp32u)(c-d))&0x80000000)>>2)|
-              ((((Ipp32u)(a-c))&0x80000000)>>3)|
-              ((((Ipp32u)(a-d))&0x80000000)>>4)|
-              ((((Ipp32u)(b-d))&0x80000000)>>5));
+  uint32_t e  = ((((uint32_t)(a-b))&0x80000000) |
+              ((((uint32_t)(b-c))&0x80000000)>>1)|
+              ((((uint32_t)(c-d))&0x80000000)>>2)|
+              ((((uint32_t)(a-c))&0x80000000)>>3)|
+              ((((uint32_t)(a-d))&0x80000000)>>4)|
+              ((((uint32_t)(b-d))&0x80000000)>>5));
 
   switch(e)
   {
@@ -2243,29 +2243,29 @@ void PredictMV(sCoordinate* predA,sCoordinate* predB,sCoordinate* predC, sCoordi
         res->y = predC->y;
     }
 }
-Ipp16s VC1abs(Ipp16s value)
+int16_t VC1abs(int16_t value)
 {
-  Ipp16u s = value>>15;
+  uint16_t s = value>>15;
   s = (value + s)^s;
   return s;
 }
 
 void InitScaleInfo(sScaleInfo* pInfo, bool bCurSecondField ,bool bBottom,
-                   Ipp8u ReferenceFrameDist, Ipp8u MVRangeIndex)
+                   uint8_t ReferenceFrameDist, uint8_t MVRangeIndex)
 {
-    static Ipp16s SCALEOPP[2][4]   = {{128,     192,    213,    224},
+    static int16_t SCALEOPP[2][4]   = {{128,     192,    213,    224},
                                       {128,     64,     43,     32}};
-    static Ipp16s SCALESAME1[2][4] = {{512,     341,    307,    293},
+    static int16_t SCALESAME1[2][4] = {{512,     341,    307,    293},
                                       {512,     1024,   1563,   2048}};
-    static Ipp16s SCALESAME2[2][4] = {{219,     236,    242,    245},
+    static int16_t SCALESAME2[2][4] = {{219,     236,    242,    245},
                                       {219,     204,    200,    198}};
-    static Ipp16s SCALEZONEX1[2][4] = {{32,     48,     53,     56},
+    static int16_t SCALEZONEX1[2][4] = {{32,     48,     53,     56},
                                        {32,     16,     11,     8}};
-    static Ipp16s SCALEZONEY1[2][4] = {{ 8,     12,     13,     14},
+    static int16_t SCALEZONEY1[2][4] = {{ 8,     12,     13,     14},
                                        { 8,     4,      3,      2}};
-    static Ipp16s ZONEOFFSETX1[2][4] = {{37,    20,     14,     11},
+    static int16_t ZONEOFFSETX1[2][4] = {{37,    20,     14,     11},
                                         {37,    52,     56,     58}};
-    static Ipp16s ZONEYOFFSET1[2][4] = {{10,    5,      4,      3},
+    static int16_t ZONEYOFFSET1[2][4] = {{10,    5,      4,      3},
                                         {10,    13,     14,     15}};
 
     ReferenceFrameDist  = (ReferenceFrameDist>3)? 3:ReferenceFrameDist;
@@ -2283,21 +2283,21 @@ void InitScaleInfo(sScaleInfo* pInfo, bool bCurSecondField ,bool bBottom,
     pInfo->rangeY       =  MVRange[2*MVRangeIndex + 1]*4;
 }
 void InitScaleInfoBackward (sScaleInfo* pInfo, bool bCurSecondField ,bool bBottom,
-                   Ipp8u ReferenceFrameDist, Ipp8u MVRangeIndex)
+                   uint8_t ReferenceFrameDist, uint8_t MVRangeIndex)
 {
-    static Ipp16s SCALEOPP[2][4]   = {{171,     205,    219,    288},
+    static int16_t SCALEOPP[2][4]   = {{171,     205,    219,    288},
                                       {128,     64,     43,     32}};
-    static Ipp16s SCALESAME1[2][4] = {{384,     320,    299,    288},
+    static int16_t SCALESAME1[2][4] = {{384,     320,    299,    288},
                                       {512,     1024,   1563,   2048}};
-    static Ipp16s SCALESAME2[2][4] = {{230,     239,    244,    246},
+    static int16_t SCALESAME2[2][4] = {{230,     239,    244,    246},
                                       {219,     204,    200,    198}};
-    static Ipp16s SCALEZONEX1[2][4] = {{43,     51,     55,     57},
+    static int16_t SCALEZONEX1[2][4] = {{43,     51,     55,     57},
                                        {32,     16,     11,     8}};
-    static Ipp16s SCALEZONEY1[2][4] = {{11,     13,     14,     14},
+    static int16_t SCALEZONEY1[2][4] = {{11,     13,     14,     14},
                                        { 8,     4,      3,      2}};
-    static Ipp16s ZONEOFFSETX1[2][4] = {{26,    17,     12,     10},
+    static int16_t ZONEOFFSETX1[2][4] = {{26,    17,     12,     10},
                                         {37,    52,     56,     58}};
-    static Ipp16s ZONEYOFFSET1[2][4] = {{7,     4,      3,      3},
+    static int16_t ZONEYOFFSET1[2][4] = {{7,     4,      3,      3},
                                         {10,    13,     14,     15}};
 
     ReferenceFrameDist  = (ReferenceFrameDist>3)? 3:ReferenceFrameDist;
@@ -2314,70 +2314,70 @@ void InitScaleInfoBackward (sScaleInfo* pInfo, bool bCurSecondField ,bool bBotto
     pInfo->rangeX       =  MVRange[2*MVRangeIndex]*4;
     pInfo->rangeY       =  MVRange[2*MVRangeIndex + 1]*4;
 }
-static Ipp16s scale_sameX(Ipp16s n,sScaleInfo* pInfo, bool bHalf)
+static int16_t scale_sameX(int16_t n,sScaleInfo* pInfo, bool bHalf)
 {
-    Ipp16s abs_n = VC1abs(n = (n>>((Ipp16u)bHalf)));
-    Ipp32s s;
+    int16_t abs_n = VC1abs(n = (n>>((uint16_t)bHalf)));
+    int32_t s;
     if (abs_n>255)
     {
-        return n<<((Ipp16u)bHalf);
+        return n<<((uint16_t)bHalf);
     }
     else if (abs_n<pInfo->scale_zoneX)
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->scale_same1))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->scale_same1))>>8);
     }
     else
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->scale_same2))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->scale_same2))>>8);
         s = (n<0)? s - pInfo->zone_offsetX:s + pInfo->zone_offsetX;
     }
     s = (s>pInfo->rangeX-1)? pInfo->rangeX-1:s;
     s = (s<-pInfo->rangeX) ? -pInfo->rangeX :s;
 
-    return (Ipp16s) (s<<((Ipp16u)bHalf));
+    return (int16_t) (s<<((uint16_t)bHalf));
 }
-static Ipp16s scale_oppX(Ipp16s n,sScaleInfo* pInfo, bool bHalf)
+static int16_t scale_oppX(int16_t n,sScaleInfo* pInfo, bool bHalf)
 {
-    Ipp32s s = (((Ipp32s)((n>>((Ipp32u)bHalf))*pInfo->scale_opp))>>8);
-    return (Ipp16s) (s<<((Ipp16u)bHalf));
+    int32_t s = (((int32_t)((n>>((uint32_t)bHalf))*pInfo->scale_opp))>>8);
+    return (int16_t) (s<<((uint16_t)bHalf));
 }
-static Ipp16s scale_sameY(Ipp16s n,sScaleInfo* pInfo, bool bHalf)
+static int16_t scale_sameY(int16_t n,sScaleInfo* pInfo, bool bHalf)
 {
-    Ipp16s abs_n = VC1abs(n = (n>>((Ipp16u)bHalf)));
-    Ipp32s s     = 0;
+    int16_t abs_n = VC1abs(n = (n>>((uint16_t)bHalf)));
+    int32_t s     = 0;
     if (abs_n>63)
     {
-        return n<<((Ipp16u)bHalf);
+        return n<<((uint16_t)bHalf);
     }
     else if (abs_n<pInfo->scale_zoneY)
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->scale_same1))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->scale_same1))>>8);
     }
     else
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->scale_same2))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->scale_same2))>>8);
         s = (n<0)? s - pInfo->zone_offsetY:s + pInfo->zone_offsetY;
     }
     s = (s>pInfo->rangeY/2-1)? pInfo->rangeY/2-1:s;
     s = (s<-pInfo->rangeY/2) ? -pInfo->rangeY/2 :s;
 
-    return (Ipp16s) (s<<((Ipp16u)bHalf));
+    return (int16_t) (s<<((uint16_t)bHalf));
 }
-static Ipp16s scale_sameY_B(Ipp16s n,sScaleInfo* pInfo, bool bHalf)
+static int16_t scale_sameY_B(int16_t n,sScaleInfo* pInfo, bool bHalf)
 {
-    Ipp16s abs_n = VC1abs(n = (n>>((Ipp16u)bHalf)));
-    Ipp32s s     = 0;
+    int16_t abs_n = VC1abs(n = (n>>((uint16_t)bHalf)));
+    int32_t s     = 0;
     if (abs_n>63)
     {
-        return n<<((Ipp16u)bHalf);
+        return n<<((uint16_t)bHalf);
     }
     else if (abs_n<pInfo->scale_zoneY)
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->scale_same1))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->scale_same1))>>8);
     }
     else
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->scale_same2))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->scale_same2))>>8);
         s = (n<0)? s - pInfo->zone_offsetY:s + pInfo->zone_offsetY;
     }
     if (pInfo->bBottom)
@@ -2390,17 +2390,17 @@ static Ipp16s scale_sameY_B(Ipp16s n,sScaleInfo* pInfo, bool bHalf)
         s = (s>pInfo->rangeY/2-1)? pInfo->rangeY/2-1:s;
         s = (s<-pInfo->rangeY/2) ? -pInfo->rangeY/2 :s;
     }
-    return (Ipp16s) (s<<((Ipp16u)bHalf));
+    return (int16_t) (s<<((uint16_t)bHalf));
 }
-static Ipp16s scale_oppY(Ipp16s n,sScaleInfo* pInfo,  bool bHalf)
+static int16_t scale_oppY(int16_t n,sScaleInfo* pInfo,  bool bHalf)
 {
-    Ipp32s s = (((Ipp32s)((n>>((Ipp16u)bHalf))*pInfo->scale_opp))>>8);
+    int32_t s = (((int32_t)((n>>((uint16_t)bHalf))*pInfo->scale_opp))>>8);
 
-    return (Ipp16s) (s<<((Ipp16u)bHalf));
+    return (int16_t) (s<<((uint16_t)bHalf));
 
 }
-typedef Ipp16s (*fScaleX)(Ipp16s n, sScaleInfo* pInfo, bool bHalf);
-typedef Ipp16s (*fScaleY)(Ipp16s n, sScaleInfo* pInfo, bool bHalf);
+typedef int16_t (*fScaleX)(int16_t n, sScaleInfo* pInfo, bool bHalf);
+typedef int16_t (*fScaleY)(int16_t n, sScaleInfo* pInfo, bool bHalf);
 
 static fScaleX pScaleX[2][2] = {{scale_oppX, scale_sameX},
                                 {scale_sameX,scale_oppX}};
@@ -2411,7 +2411,7 @@ bool PredictMVField2(sCoordinate* predA,sCoordinate* predB,sCoordinate* predC,
                      sCoordinate* res, sScaleInfo* pInfo, bool bSecondField,
                      sCoordinate* predAEx,sCoordinate* predCEx, bool bBackward, bool bHalf)
 {
-    Ipp8u n = (Ipp8u)(((!predA)<<2) + ((!predB)<<1) + (!predC));
+    uint8_t n = (uint8_t)(((!predA)<<2) + ((!predB)<<1) + (!predC));
     res[0].bSecond = false;
     res[1].bSecond = true;
     bool  bBackwardFirst = (bBackward && !bSecondField);
@@ -2569,7 +2569,7 @@ bool PredictMVField2(sCoordinate* predA,sCoordinate* predB,sCoordinate* predC,
 }
 void PredictMVField1(sCoordinate* predA,sCoordinate* predB,sCoordinate* predC, sCoordinate* res)
 {
-    Ipp8u n = (Ipp8u)(((!predA)<<2) + ((!predB)<<1) + (!predC));
+    uint8_t n = (uint8_t)(((!predA)<<2) + ((!predB)<<1) + (!predC));
 #ifdef VC1_ENC_DEBUG_ON
         pDebug->SetScaleType(2, 0);
         pDebug->SetScaleType(2, 1);
@@ -2629,7 +2629,7 @@ void PredictMVField1(sCoordinate* predA,sCoordinate* predB,sCoordinate* predC, s
     return;
 }
 
-void Copy8x8_16s(Ipp16s*  pSrc, Ipp32u   srcStep, Ipp16s*  pDst, Ipp32u   dstStep)
+void Copy8x8_16s(int16_t*  pSrc, uint32_t   srcStep, int16_t*  pDst, uint32_t   dstStep)
 {
    int i,j;
     for (i=0;i<8;i++)
@@ -2638,11 +2638,11 @@ void Copy8x8_16s(Ipp16s*  pSrc, Ipp32u   srcStep, Ipp16s*  pDst, Ipp32u   dstSte
         {
             pDst[j] = pSrc[j];
         }
-        pDst = (Ipp16s*)((Ipp8u*)pDst + dstStep);
-        pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcStep);
+        pDst = (int16_t*)((uint8_t*)pDst + dstStep);
+        pSrc = (int16_t*)((uint8_t*)pSrc + srcStep);
     }
 }
-//void Copy16x16_16s(Ipp16s*  pSrc, Ipp32u   srcStep, Ipp16s*  pDst, Ipp32u   dstStep)
+//void Copy16x16_16s(int16_t*  pSrc, uint32_t   srcStep, int16_t*  pDst, uint32_t   dstStep)
 //{
 //   int i,j;
 //    for (i=0;i<16;i++)
@@ -2651,46 +2651,46 @@ void Copy8x8_16s(Ipp16s*  pSrc, Ipp32u   srcStep, Ipp16s*  pDst, Ipp32u   dstSte
 //        {
 //            pDst[j] = pSrc[j];
 //        }
-//        pDst = (Ipp16s*)((Ipp8u*)pDst + dstStep);
-//        pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcStep);
+//        pDst = (int16_t*)((uint8_t*)pDst + dstStep);
+//        pSrc = (int16_t*)((uint8_t*)pSrc + srcStep);
 //    }
 //}
 
-void ScalePredict(sCoordinate * MV, Ipp32s x,Ipp32s y,sCoordinate MVPredMin, sCoordinate MVPredMax)
+void ScalePredict(sCoordinate * MV, int32_t x,int32_t y,sCoordinate MVPredMin, sCoordinate MVPredMax)
 {
     x += MV->x;
     y += MV->y;
 
     if (x < MVPredMin.x)
     {
-        MV->x = MV->x - (Ipp16s)(x- MVPredMin.x);
+        MV->x = MV->x - (int16_t)(x- MVPredMin.x);
     }
     else if (x > MVPredMax.x)
     {
-        MV-> x = MV-> x - (Ipp16s)(x-MVPredMax.x);
+        MV-> x = MV-> x - (int16_t)(x-MVPredMax.x);
     }
 
     if (y < MVPredMin.y)
     {
-        MV->y = MV->y - (Ipp16s)(y - MVPredMin.y);
+        MV->y = MV->y - (int16_t)(y - MVPredMin.y);
     }
     else if (y > MVPredMax.y)
     {
-        MV->y = MV->y - (Ipp16s)(y - MVPredMax.y);
+        MV->y = MV->y - (int16_t)(y - MVPredMax.y);
     }
 }
-Ipp8u HybridPrediction(     sCoordinate * mvPred,
+uint8_t HybridPrediction(     sCoordinate * mvPred,
                             const sCoordinate * MV,
                             const sCoordinate * mvA,
                             const sCoordinate * mvC,
-                            Ipp32u        th)
+                            uint32_t        th)
 {
-    Ipp8u hybrid = 0;
+    uint8_t hybrid = 0;
 
     if (mvA && mvC)
     {
-        Ipp32u sumA = VC1abs(mvA->x - mvPred->x) + VC1abs(mvA->y - mvPred->y);
-        Ipp32u sumC = VC1abs(mvC->x - mvPred->x) + VC1abs(mvC->y - mvPred->y);
+        uint32_t sumA = VC1abs(mvA->x - mvPred->x) + VC1abs(mvA->y - mvPred->y);
+        uint32_t sumC = VC1abs(mvC->x - mvPred->x) + VC1abs(mvC->y - mvPred->y);
 
         if (sumA > th || sumC>th)
         {
@@ -2717,20 +2717,20 @@ Ipp8u HybridPrediction(     sCoordinate * mvPred,
 
 
 //#define _A(x) (((x)<0)?-(x):(x))
-//Ipp32s FullSearch(const Ipp8u* pSrc, Ipp32u srcStep, const Ipp8u* pPred, Ipp32u predStep, sCoordinate Min, sCoordinate Max,sCoordinate * MV)
+//int32_t FullSearch(const uint8_t* pSrc, uint32_t srcStep, const uint8_t* pPred, uint32_t predStep, sCoordinate Min, sCoordinate Max,sCoordinate * MV)
 //{
-//    Ipp32s x, y;
-//    Ipp32s MVx=0, MVy=0;
-//    Ipp32s sum  = 0x7FFFFFFF;
-//    Ipp32s temp = 0;
-//    Ipp32s yStep=1, xStep=1;
-//    const Ipp8u* prediction = pPred;
+//    int32_t x, y;
+//    int32_t MVx=0, MVy=0;
+//    int32_t sum  = 0x7FFFFFFF;
+//    int32_t temp = 0;
+//    int32_t yStep=1, xStep=1;
+//    const uint8_t* prediction = pPred;
 //
 //
 //
 //    for (y = Min.y; y <Max.y ; y+=yStep )
 //    {
-//        pPred = prediction + y*(Ipp32s)predStep;
+//        pPred = prediction + y*(int32_t)predStep;
 //        for (x = Min.x; x < Max.x; x+=xStep )
 //        {
 //            ippiSAD16x16_8u32s (pSrc, srcStep, pPred+x, predStep, &temp, 0);
@@ -2749,11 +2749,11 @@ Ipp8u HybridPrediction(     sCoordinate * mvPred,
 //    MV->y = MVy;
 //    return sum;
 //}
-//Ipp32s SumBlockDiffBPred16x16(const Ipp8u* pSrc, Ipp32u srcStep,const Ipp8u* pPred1, Ipp32u predStep1,
-//                                                                const Ipp8u* pPred2, Ipp32u predStep2)
+//int32_t SumBlockDiffBPred16x16(const uint8_t* pSrc, uint32_t srcStep,const uint8_t* pPred1, uint32_t predStep1,
+//                                                                const uint8_t* pPred2, uint32_t predStep2)
 //{
-//    Ipp32s x, y;
-//    Ipp32s sum = 0;
+//    int32_t x, y;
+//    int32_t sum = 0;
 //    for(y = 0; y <16; y++)
 //    {
 //        for (x=0; x<16; x++)
@@ -2769,10 +2769,10 @@ Ipp8u HybridPrediction(     sCoordinate * mvPred,
 //    return sum;
 //
 //}
-//Ipp32s SumBlockDiff16x16(const Ipp8u* pSrc1, Ipp32u srcStep1,const Ipp8u* pSrc2, Ipp32u srcStep2)
+//int32_t SumBlockDiff16x16(const uint8_t* pSrc1, uint32_t srcStep1,const uint8_t* pSrc2, uint32_t srcStep2)
 //{
-//    Ipp32s x, y;
-//    Ipp32s sum = 0;
+//    int32_t x, y;
+//    int32_t sum = 0;
 //    for(y = 0; y <16; y++)
 //    {
 //        for (x=0; x<16; x++)
@@ -2785,10 +2785,10 @@ Ipp8u HybridPrediction(     sCoordinate * mvPred,
 //    return sum;
 //
 //}
-//void GetBlockType(Ipp16s* pBlock, Ipp32s step, Ipp8u Quant, eTransformType& type)
+//void GetBlockType(int16_t* pBlock, int32_t step, uint8_t Quant, eTransformType& type)
 //{
 //    int i,j;
-//    Ipp32s s[4]={0};
+//    int32_t s[4]={0};
 //    bool vEdge[2]={0};
 //    bool hEdge[3]={0};
 //
@@ -2798,7 +2798,7 @@ Ipp8u HybridPrediction(     sCoordinate * mvPred,
 //        {
 //            s[((i>>2)<<1)+(j>>2)] += pBlock[j];
 //        }
-//        pBlock = (Ipp16s*)((Ipp8u*)pBlock + step);
+//        pBlock = (int16_t*)((uint8_t*)pBlock + step);
 //    }
 //    s[0] = s[0]>>3;
 //    s[1] = s[1]>>3;
@@ -2821,12 +2821,12 @@ Ipp8u HybridPrediction(     sCoordinate * mvPred,
 //
 //    return;
 //}
-//bool GetMBTSType(Ipp16s** ppBlock, Ipp32u* pStep, Ipp8u Quant /*doubleQuant*/, eTransformType* pTypes /*BlockTSTypes*/)
+//bool GetMBTSType(int16_t** ppBlock, uint32_t* pStep, uint8_t Quant /*doubleQuant*/, eTransformType* pTypes /*BlockTSTypes*/)
 //{
-//    Ipp8u num [4]           = {0};
-//    Ipp8u max_num           = 0;
+//    uint8_t num [4]           = {0};
+//    uint8_t max_num           = 0;
 //    eTransformType max_type = VC1_ENC_8x8_TRANSFORM;
-//    Ipp32s blk;
+//    int32_t blk;
 //
 //    for (blk = 0; blk<6; blk++)
 //    {
@@ -2853,10 +2853,10 @@ Ipp8u HybridPrediction(     sCoordinate * mvPred,
 //    return false;
 //}
 //#undef _A
-//Ipp32s SumBlock16x16(const Ipp8u* pSrc, Ipp32u srcStep)
+//int32_t SumBlock16x16(const uint8_t* pSrc, uint32_t srcStep)
 //{
-//    Ipp32s x, y;
-//    Ipp32s sum = 0;
+//    int32_t x, y;
+//    int32_t sum = 0;
 //    for(y = 0; y <16; y++)
 //    {
 //        for (x=0; x<16; x++)
@@ -2869,54 +2869,54 @@ Ipp8u HybridPrediction(     sCoordinate * mvPred,
 //}
 
 
-void  GetMVDirectHalf  (Ipp16s x, Ipp16s y, Ipp32s scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
+void  GetMVDirectHalf  (int16_t x, int16_t y, int32_t scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
 {
-     mvB->x = (Ipp16s)(((x*(scaleFactor-256)+255)>>9)<<1);
-     mvB->y = (Ipp16s)(((y*(scaleFactor-256)+255)>>9)<<1);
-     mvF->x = (Ipp16s)(((x*scaleFactor+255)>>9)<<1);
-     mvF->y = (Ipp16s)(((y*scaleFactor+255)>>9)<<1);
+     mvB->x = (int16_t)(((x*(scaleFactor-256)+255)>>9)<<1);
+     mvB->y = (int16_t)(((y*(scaleFactor-256)+255)>>9)<<1);
+     mvF->x = (int16_t)(((x*scaleFactor+255)>>9)<<1);
+     mvF->y = (int16_t)(((y*scaleFactor+255)>>9)<<1);
 
 }
-void  GetMVDirectQuarter(Ipp16s x, Ipp16s y, Ipp32s scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
+void  GetMVDirectQuarter(int16_t x, int16_t y, int32_t scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
 {
-     mvB->x = (Ipp16s)((x*(scaleFactor-256)+128)>>8);
-     mvB->y = (Ipp16s)((y*(scaleFactor-256)+128)>>8);
-     mvF->x = (Ipp16s)((x*scaleFactor+128)>>8);
-     mvF->y = (Ipp16s)((y*scaleFactor+128)>>8);
+     mvB->x = (int16_t)((x*(scaleFactor-256)+128)>>8);
+     mvB->y = (int16_t)((y*(scaleFactor-256)+128)>>8);
+     mvF->x = (int16_t)((x*scaleFactor+128)>>8);
+     mvF->y = (int16_t)((y*scaleFactor+128)>>8);
 }
-void  GetMVDirectCurrHalfBackHalf (Ipp16s x, Ipp16s y, Ipp32s scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
+void  GetMVDirectCurrHalfBackHalf (int16_t x, int16_t y, int32_t scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
 {
-     mvB->x = (Ipp16s)(((x<<1)*(scaleFactor-256)+255)>>9);
-     mvB->y = (Ipp16s)(((y<<1)*(scaleFactor-256)+255)>>9);
-     mvF->x = (Ipp16s)(((x<<1)*scaleFactor+255)>>9);
-     mvF->y = (Ipp16s)(((y<<1)*scaleFactor+255)>>9);
+     mvB->x = (int16_t)(((x<<1)*(scaleFactor-256)+255)>>9);
+     mvB->y = (int16_t)(((y<<1)*(scaleFactor-256)+255)>>9);
+     mvF->x = (int16_t)(((x<<1)*scaleFactor+255)>>9);
+     mvF->y = (int16_t)(((y<<1)*scaleFactor+255)>>9);
 
 }
-void  GetMVDirectCurrQuarterBackHalf(Ipp16s x, Ipp16s y, Ipp32s scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
+void  GetMVDirectCurrQuarterBackHalf(int16_t x, int16_t y, int32_t scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
 {
-     mvB->x = (Ipp16s)(((x<<1)*(scaleFactor-256)+128)>>8);
-     mvB->y = (Ipp16s)(((y<<1)*(scaleFactor-256)+128)>>8);
-     mvF->x = (Ipp16s)(((x<<1)*scaleFactor+128)>>8);
-     mvF->y = (Ipp16s)(((y<<1)*scaleFactor+128)>>8);
+     mvB->x = (int16_t)(((x<<1)*(scaleFactor-256)+128)>>8);
+     mvB->y = (int16_t)(((y<<1)*(scaleFactor-256)+128)>>8);
+     mvF->x = (int16_t)(((x<<1)*scaleFactor+128)>>8);
+     mvF->y = (int16_t)(((y<<1)*scaleFactor+128)>>8);
 }
-void  GetMVDirectCurrHalfBackQuarter (Ipp16s x, Ipp16s y, Ipp32s scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
+void  GetMVDirectCurrHalfBackQuarter (int16_t x, int16_t y, int32_t scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
 {
-     mvB->x = (Ipp16s)(((x*(scaleFactor-256)+255)>>9)<<1);
-     mvB->y = (Ipp16s)(((y*(scaleFactor-256)+255)>>9)<<1);
-     mvF->x = (Ipp16s)(((x*scaleFactor+255)>>9)<<1);
-     mvF->y = (Ipp16s)(((y*scaleFactor+255)>>9)<<1);
+     mvB->x = (int16_t)(((x*(scaleFactor-256)+255)>>9)<<1);
+     mvB->y = (int16_t)(((y*(scaleFactor-256)+255)>>9)<<1);
+     mvF->x = (int16_t)(((x*scaleFactor+255)>>9)<<1);
+     mvF->y = (int16_t)(((y*scaleFactor+255)>>9)<<1);
 
 }
-void  GetMVDirectCurrQuarterBackQuarter(Ipp16s x, Ipp16s y, Ipp32s scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
+void  GetMVDirectCurrQuarterBackQuarter(int16_t x, int16_t y, int32_t scaleFactor, sCoordinate * mvF, sCoordinate *mvB)
 {
-     mvB->x = (Ipp16s)((x*(scaleFactor-256)+128)>>8);
-     mvB->y = (Ipp16s)((y*(scaleFactor-256)+128)>>8);
-     mvF->x = (Ipp16s)((x*scaleFactor+128)>>8);
-     mvF->y = (Ipp16s)((y*scaleFactor+128)>>8);
+     mvB->x = (int16_t)((x*(scaleFactor-256)+128)>>8);
+     mvB->y = (int16_t)((y*(scaleFactor-256)+128)>>8);
+     mvF->x = (int16_t)((x*scaleFactor+128)>>8);
+     mvF->y = (int16_t)((y*scaleFactor+128)>>8);
 }
 void GetChromaMV (sCoordinate LumaMV, sCoordinate * pChroma)
 {
-    static Ipp16s round[4]= {0,0,0,1};
+    static int16_t round[4]= {0,0,0,1};
 
     pChroma->x = (LumaMV.x + round[LumaMV.x&0x03])>>1;
     pChroma->y = (LumaMV.y + round[LumaMV.y&0x03])>>1;
@@ -2926,8 +2926,8 @@ void GetChromaMV (sCoordinate LumaMV, sCoordinate * pChroma)
 
 void GetChromaMVFast(sCoordinate LumaMV, sCoordinate * pChroma)
 {
-    static Ipp16s round [4]= {0,0,0,1};
-    static Ipp16s round1[2][2] = {
+    static int16_t round [4]= {0,0,0,1};
+    static int16_t round1[2][2] = {
         {0, -1}, //sign = 0;
         {0,  1}  //sign = 1
     };
@@ -2983,19 +2983,19 @@ static const char BicubicHorizFilterShift[3][4] =
 
 
 
-typedef IppStatus (*_own_ippiBicubicInterpolate)     (const Ipp8u* pSrc, Ipp32s srcStep,
-                   Ipp8u *pDst, Ipp32s dstStep, Ipp32s dx, Ipp32s dy, Ipp32s roundControl);
+typedef IppStatus (*_own_ippiBicubicInterpolate)     (const uint8_t* pSrc, int32_t srcStep,
+                   uint8_t *pDst, int32_t dstStep, int32_t dx, int32_t dy, int32_t roundControl);
 
-typedef IppStatus (*_own_ippiBilinearInterpolate)     (const Ipp8u* pSrc, Ipp32s srcStep,
-                   Ipp8u *pDst, Ipp32s dstStep, Ipp32s dx, Ipp32s dy, Ipp32s roundControl);
+typedef IppStatus (*_own_ippiBilinearInterpolate)     (const uint8_t* pSrc, int32_t srcStep,
+                   uint8_t *pDst, int32_t dstStep, int32_t dx, int32_t dy, int32_t roundControl);
 
-static IppStatus _own_ippiInterpolate16x16QPBicubic_VC1_8u_C1R (const Ipp8u* pSrc,
-                                                      Ipp32s srcStep,
-                                                      Ipp8u *pDst,
-                                                      Ipp32s dstStep,
-                                                      Ipp32s dx,
-                                                      Ipp32s dy,
-                                                      Ipp32s roundControl)
+static IppStatus _own_ippiInterpolate16x16QPBicubic_VC1_8u_C1R (const uint8_t* pSrc,
+                                                      int32_t srcStep,
+                                                      uint8_t *pDst,
+                                                      int32_t dstStep,
+                                                      int32_t dx,
+                                                      int32_t dy,
+                                                      int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
     unsigned choose_int = ( (1==(0==(dx))) |(((1==(0 == (dy))) << 1)));
@@ -3172,13 +3172,13 @@ static IppStatus _own_ippiInterpolate16x16QPBicubic_VC1_8u_C1R (const Ipp8u* pSr
     return ret;
 }
 
-static IppStatus _own_ippiInterpolate16x8QPBicubic_VC1_8u_C1R (const Ipp8u* pSrc,
-                                                      Ipp32s srcStep,
-                                                      Ipp8u *pDst,
-                                                      Ipp32s dstStep,
-                                                      Ipp32s dx,
-                                                      Ipp32s dy,
-                                                      Ipp32s roundControl)
+static IppStatus _own_ippiInterpolate16x8QPBicubic_VC1_8u_C1R (const uint8_t* pSrc,
+                                                      int32_t srcStep,
+                                                      uint8_t *pDst,
+                                                      int32_t dstStep,
+                                                      int32_t dx,
+                                                      int32_t dy,
+                                                      int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
     unsigned choose_int = ( (1==(0==(dx))) |(((1==(0 == (dy))) << 1)));
@@ -3362,13 +3362,13 @@ static IppStatus _own_ippiInterpolate16x8QPBicubic_VC1_8u_C1R (const Ipp8u* pSrc
     return ret;
 }
 
-static IppStatus _own_ippiInterpolate8x8QPBicubic_VC1_8u_C1R (const Ipp8u* pSrc,
-                                                      Ipp32s srcStep,
-                                                      Ipp8u *pDst,
-                                                      Ipp32s dstStep,
-                                                      Ipp32s dx,
-                                                      Ipp32s dy,
-                                                      Ipp32s roundControl)
+static IppStatus _own_ippiInterpolate8x8QPBicubic_VC1_8u_C1R (const uint8_t* pSrc,
+                                                      int32_t srcStep,
+                                                      uint8_t *pDst,
+                                                      int32_t dstStep,
+                                                      int32_t dx,
+                                                      int32_t dy,
+                                                      int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
 
@@ -3578,23 +3578,23 @@ IppStatus _own_ippiInterpolateQPBicubic_VC1_8u_C1R   (const IppVCInterpolate_8u*
     return ret;
 }
 
-static IppStatus _own_ippiInterpolate16x16QPBilinear_VC1_8u_C1R (const Ipp8u* pSrc,
-                                                       Ipp32s srcStep,
-                                                       Ipp8u *pDst,
-                                                       Ipp32s dstStep,
-                                                       Ipp32s dx,
-                                                       Ipp32s dy,
-                                                       Ipp32s roundControl)
+static IppStatus _own_ippiInterpolate16x16QPBilinear_VC1_8u_C1R (const uint8_t* pSrc,
+                                                       int32_t srcStep,
+                                                       uint8_t *pDst,
+                                                       int32_t dstStep,
+                                                       int32_t dx,
+                                                       int32_t dy,
+                                                       int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp32s i, j;
-    const Ipp32s F[4] = {4, 3, 2, 1};
-    const Ipp32s G[4] = {0, 1, 2, 3};
+    int32_t i, j;
+    const int32_t F[4] = {4, 3, 2, 1};
+    const int32_t G[4] = {0, 1, 2, 3};
 
-    Ipp32s Mult1 = F[dx]*F[dy];
-    Ipp32s Mult2 = F[dx]*G[dy];
-    Ipp32s Mult3 = F[dy]*G[dx];
-    Ipp32s Mult4 = G[dx]*G[dy];
+    int32_t Mult1 = F[dx]*F[dy];
+    int32_t Mult2 = F[dx]*G[dy];
+    int32_t Mult3 = F[dy]*G[dx];
+    int32_t Mult4 = G[dx]*G[dy];
 
 
     //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d\t %d\t %d\n"),*pSource,X>>2,Y>>2);
@@ -3604,7 +3604,7 @@ static IppStatus _own_ippiInterpolate16x16QPBilinear_VC1_8u_C1R (const Ipp8u* pS
         {
             for(i = 0; i < 16; i++)
             {
-                pDst[i] = (Ipp8u)((pSrc[i]           * Mult1 +
+                pDst[i] = (uint8_t)((pSrc[i]           * Mult1 +
                                            pSrc[i+srcStep]   * Mult2 +
                                            pSrc[i+1]         * Mult3 +
                                            pSrc[i+srcStep+1] * Mult4 +
@@ -3618,23 +3618,23 @@ static IppStatus _own_ippiInterpolate16x16QPBilinear_VC1_8u_C1R (const Ipp8u* pS
     return ret;
 }
 
-static IppStatus _own_ippiInterpolate8x8QPBilinear_VC1_8u_C1R   (const Ipp8u* pSrc,
-                                                       Ipp32s srcStep,
-                                                       Ipp8u *pDst,
-                                                       Ipp32s dstStep,
-                                                       Ipp32s dx,
-                                                       Ipp32s dy,
-                                                       Ipp32s roundControl)
+static IppStatus _own_ippiInterpolate8x8QPBilinear_VC1_8u_C1R   (const uint8_t* pSrc,
+                                                       int32_t srcStep,
+                                                       uint8_t *pDst,
+                                                       int32_t dstStep,
+                                                       int32_t dx,
+                                                       int32_t dy,
+                                                       int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp32s i, j;
-    const Ipp32s F[4] = {4, 3, 2, 1};
-    const Ipp32s G[4] = {0, 1, 2, 3};
+    int32_t i, j;
+    const int32_t F[4] = {4, 3, 2, 1};
+    const int32_t G[4] = {0, 1, 2, 3};
 
-    Ipp32s Mult1 = F[dx]*F[dy];
-    Ipp32s Mult2 = F[dx]*G[dy];
-    Ipp32s Mult3 = F[dy]*G[dx];
-    Ipp32s Mult4 = G[dx]*G[dy];
+    int32_t Mult1 = F[dx]*F[dy];
+    int32_t Mult2 = F[dx]*G[dy];
+    int32_t Mult3 = F[dy]*G[dx];
+    int32_t Mult4 = G[dx]*G[dy];
 
     //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d\t %d\t %d\n"),*pSource,X>>2,Y>>2);
    // VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Predicted pels\n"));
@@ -3643,7 +3643,7 @@ static IppStatus _own_ippiInterpolate8x8QPBilinear_VC1_8u_C1R   (const Ipp8u* pS
         {
             for(i = 0; i < 8; i++)
             {
-                pDst[i] = (Ipp8u)((pSrc[i]           * Mult1 +
+                pDst[i] = (uint8_t)((pSrc[i]           * Mult1 +
                                            pSrc[i+srcStep]   * Mult2 +
                                            pSrc[i+1]         * Mult3 +
                                            pSrc[i+srcStep+1] * Mult4 +
@@ -3659,23 +3659,23 @@ static IppStatus _own_ippiInterpolate8x8QPBilinear_VC1_8u_C1R   (const Ipp8u* pS
 
 
 
-static IppStatus _own_ippiInterpolate8x4QPBilinear_VC1_8u_C1R   (const Ipp8u* pSrc,
-                                                       Ipp32s srcStep,
-                                                       Ipp8u *pDst,
-                                                       Ipp32s dstStep,
-                                                       Ipp32s dx,
-                                                       Ipp32s dy,
-                                                       Ipp32s roundControl)
+static IppStatus _own_ippiInterpolate8x4QPBilinear_VC1_8u_C1R   (const uint8_t* pSrc,
+                                                       int32_t srcStep,
+                                                       uint8_t *pDst,
+                                                       int32_t dstStep,
+                                                       int32_t dx,
+                                                       int32_t dy,
+                                                       int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp32s i, j;
-    const Ipp32s F[4] = {4, 3, 2, 1};
-    const Ipp32s G[4] = {0, 1, 2, 3};
+    int32_t i, j;
+    const int32_t F[4] = {4, 3, 2, 1};
+    const int32_t G[4] = {0, 1, 2, 3};
 
-    Ipp32s Mult1 = F[dx]*F[dy];
-    Ipp32s Mult2 = F[dx]*G[dy];
-    Ipp32s Mult3 = F[dy]*G[dx];
-    Ipp32s Mult4 = G[dx]*G[dy];
+    int32_t Mult1 = F[dx]*F[dy];
+    int32_t Mult2 = F[dx]*G[dy];
+    int32_t Mult3 = F[dy]*G[dx];
+    int32_t Mult4 = G[dx]*G[dy];
 
     //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d\t %d\t %d\n"),*pSource,X>>2,Y>>2);
    // VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Predicted pels\n"));
@@ -3685,7 +3685,7 @@ static IppStatus _own_ippiInterpolate8x4QPBilinear_VC1_8u_C1R   (const Ipp8u* pS
             for(i = 0; i < 8; i++)
             {
 
-                pDst[i] = (Ipp8u)((pSrc[i]           * Mult1 +
+                pDst[i] = (uint8_t)((pSrc[i]           * Mult1 +
                                            pSrc[i+srcStep]   * Mult2 +
                                            pSrc[i+1]         * Mult3 +
                                            pSrc[i+srcStep+1] * Mult4 +
@@ -3700,22 +3700,22 @@ static IppStatus _own_ippiInterpolate8x4QPBilinear_VC1_8u_C1R   (const Ipp8u* pS
 }
 
 
-static IppStatus _own_ippiInterpolate4x4QPBilinear_VC1_8u_C1R   (const Ipp8u* pSrc,
-                                                       Ipp32s srcStep,
-                                                       Ipp8u *pDst,
-                                                       Ipp32s dstStep,
-                                                       Ipp32s dx,
-                                                       Ipp32s dy,
-                                                       Ipp32s roundControl)
+static IppStatus _own_ippiInterpolate4x4QPBilinear_VC1_8u_C1R   (const uint8_t* pSrc,
+                                                       int32_t srcStep,
+                                                       uint8_t *pDst,
+                                                       int32_t dstStep,
+                                                       int32_t dx,
+                                                       int32_t dy,
+                                                       int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp32s i, j;
-    const Ipp32s F[4] = {4, 3, 2, 1};
-    const Ipp32s G[4] = {0, 1, 2, 3};
-    Ipp32s Mult1 = F[dx]*F[dy];
-    Ipp32s Mult2 = F[dx]*G[dy];
-    Ipp32s Mult3 = F[dy]*G[dx];
-    Ipp32s Mult4 = G[dx]*G[dy];
+    int32_t i, j;
+    const int32_t F[4] = {4, 3, 2, 1};
+    const int32_t G[4] = {0, 1, 2, 3};
+    int32_t Mult1 = F[dx]*F[dy];
+    int32_t Mult2 = F[dx]*G[dy];
+    int32_t Mult3 = F[dy]*G[dx];
+    int32_t Mult4 = G[dx]*G[dy];
 
     //VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("%d\t %d\t %d\n"),*pSource,X>>2,Y>>2);
    // VM_Debug::GetInstance().vm_debug_frame(-1,VC1_PRED,VM_STRING("Predicted pels\n"));
@@ -3724,7 +3724,7 @@ static IppStatus _own_ippiInterpolate4x4QPBilinear_VC1_8u_C1R   (const Ipp8u* pS
         {
             for(i = 0; i < 4; i++)
             {
-                 pDst[i] = (Ipp8u)((pSrc[i]           * Mult1 +
+                 pDst[i] = (uint8_t)((pSrc[i]           * Mult1 +
                                            pSrc[i+srcStep]   * Mult2 +
                                            pSrc[i+1]         * Mult3 +
                                            pSrc[i+srcStep+1] * Mult4 +
@@ -3750,7 +3750,7 @@ static const _own_ippiBilinearInterpolate _own_ippiBilinearInterpolate_table[] =
 IppStatus _own_ippiInterpolateQPBilinear_VC1_8u_C1R  (const IppVCInterpolate_8u* inter_struct)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp32s pinterp = (inter_struct->roiSize.width >> 3) + (inter_struct->roiSize.height >> 3);
+    int32_t pinterp = (inter_struct->roiSize.width >> 3) + (inter_struct->roiSize.height >> 3);
 
     ret= _own_ippiBilinearInterpolate_table[pinterp](inter_struct->pSrc,
                                                inter_struct->srcStep,
@@ -3767,32 +3767,32 @@ IppStatus _own_ippiInterpolateQPBilinear_VC1_8u_C1R  (const IppVCInterpolate_8u*
 #endif
 
 
-static IppStatus _own_ippiInterpolate8x8QPBilinear_VC1_8u_C1R_NV12   (const Ipp8u* pSrc, Ipp32s srcStep,
-                                                                      Ipp8u *pDst,       Ipp32s dstStep,
-                                                                      Ipp32s dx,         Ipp32s dy,
-                                                                      Ipp32s roundControl)
+static IppStatus _own_ippiInterpolate8x8QPBilinear_VC1_8u_C1R_NV12   (const uint8_t* pSrc, int32_t srcStep,
+                                                                      uint8_t *pDst,       int32_t dstStep,
+                                                                      int32_t dx,         int32_t dy,
+                                                                      int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp32s i, j;
-    const Ipp32s F[4] = {4, 3, 2, 1};
-    const Ipp32s G[4] = {0, 1, 2, 3};
+    int32_t i, j;
+    const int32_t F[4] = {4, 3, 2, 1};
+    const int32_t G[4] = {0, 1, 2, 3};
 
-    Ipp32s Mult1 = F[dx]*F[dy];
-    Ipp32s Mult2 = F[dx]*G[dy];
-    Ipp32s Mult3 = F[dy]*G[dx];
-    Ipp32s Mult4 = G[dx]*G[dy];
+    int32_t Mult1 = F[dx]*F[dy];
+    int32_t Mult2 = F[dx]*G[dy];
+    int32_t Mult3 = F[dy]*G[dx];
+    int32_t Mult4 = G[dx]*G[dy];
 
     for(j = 0; j < 8; j++)
     {
         for(i = 0; i < 16; i += 2)
         {
-            pDst[i] = (Ipp8u)((pSrc[i]               * Mult1 +
+            pDst[i] = (uint8_t)((pSrc[i]               * Mult1 +
                                pSrc[i + srcStep]     * Mult2 +
                                pSrc[i + 2]           * Mult3 +
                                pSrc[i + srcStep + 2] * Mult4 +
                                8 - roundControl) >> 4);
 
-            pDst[i + 1] = (Ipp8u)((pSrc[i + 1]               * Mult1 +
+            pDst[i + 1] = (uint8_t)((pSrc[i + 1]               * Mult1 +
                                    pSrc[i + 1 + srcStep]     * Mult2 +
                                    pSrc[i + 1 + 2]           * Mult3 +
                                    pSrc[i + 1 +srcStep + 2] * Mult4 +
@@ -3806,33 +3806,33 @@ static IppStatus _own_ippiInterpolate8x8QPBilinear_VC1_8u_C1R_NV12   (const Ipp8
 }
 
 
-static IppStatus _own_ippiInterpolate8x4QPBilinear_VC1_8u_C1R_NV12   (const Ipp8u* pSrc, Ipp32s srcStep,
-                                                                      Ipp8u *pDst,       Ipp32s dstStep,
-                                                                      Ipp32s dx,         Ipp32s dy,
-                                                                      Ipp32s roundControl)
+static IppStatus _own_ippiInterpolate8x4QPBilinear_VC1_8u_C1R_NV12   (const uint8_t* pSrc, int32_t srcStep,
+                                                                      uint8_t *pDst,       int32_t dstStep,
+                                                                      int32_t dx,         int32_t dy,
+                                                                      int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp32s i, j;
-    const Ipp32s F[4] = {4, 3, 2, 1};
-    const Ipp32s G[4] = {0, 1, 2, 3};
+    int32_t i, j;
+    const int32_t F[4] = {4, 3, 2, 1};
+    const int32_t G[4] = {0, 1, 2, 3};
 
-    Ipp32s Mult1 = F[dx]*F[dy];
-    Ipp32s Mult2 = F[dx]*G[dy];
-    Ipp32s Mult3 = F[dy]*G[dx];
-    Ipp32s Mult4 = G[dx]*G[dy];
+    int32_t Mult1 = F[dx]*F[dy];
+    int32_t Mult2 = F[dx]*G[dy];
+    int32_t Mult3 = F[dy]*G[dx];
+    int32_t Mult4 = G[dx]*G[dy];
 
     for(j = 0; j < 4; j++)
     {
         for(i = 0; i < 16; i += 2)
         {
 
-            pDst[i] = (Ipp8u)((pSrc[i]               * Mult1 +
+            pDst[i] = (uint8_t)((pSrc[i]               * Mult1 +
                                pSrc[i + srcStep]     * Mult2 +
                                pSrc[i + 2]           * Mult3 +
                                pSrc[i + srcStep + 2] * Mult4 +
                                8 - roundControl) >> 4);
 
-            pDst[i + 1] = (Ipp8u)((pSrc[i + 1]               * Mult1 +
+            pDst[i + 1] = (uint8_t)((pSrc[i + 1]               * Mult1 +
                                    pSrc[i + 1 + srcStep]     * Mult2 +
                                    pSrc[i + 1 + 2]           * Mult3 +
                                    pSrc[i + 1 + srcStep + 2] * Mult4 +
@@ -3846,31 +3846,31 @@ static IppStatus _own_ippiInterpolate8x4QPBilinear_VC1_8u_C1R_NV12   (const Ipp8
 }
 
 
-static IppStatus _own_ippiInterpolate4x4QPBilinear_VC1_8u_C1R_NV12   (const Ipp8u* pSrc, Ipp32s srcStep,
-                                                                      Ipp8u *pDst,       Ipp32s dstStep,
-                                                                      Ipp32s dx,         Ipp32s dy,
-                                                                      Ipp32s roundControl)
+static IppStatus _own_ippiInterpolate4x4QPBilinear_VC1_8u_C1R_NV12   (const uint8_t* pSrc, int32_t srcStep,
+                                                                      uint8_t *pDst,       int32_t dstStep,
+                                                                      int32_t dx,         int32_t dy,
+                                                                      int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp32s i, j;
-    const Ipp32s F[4] = {4, 3, 2, 1};
-    const Ipp32s G[4] = {0, 1, 2, 3};
-    Ipp32s Mult1 = F[dx]*F[dy];
-    Ipp32s Mult2 = F[dx]*G[dy];
-    Ipp32s Mult3 = F[dy]*G[dx];
-    Ipp32s Mult4 = G[dx]*G[dy];
+    int32_t i, j;
+    const int32_t F[4] = {4, 3, 2, 1};
+    const int32_t G[4] = {0, 1, 2, 3};
+    int32_t Mult1 = F[dx]*F[dy];
+    int32_t Mult2 = F[dx]*G[dy];
+    int32_t Mult3 = F[dy]*G[dx];
+    int32_t Mult4 = G[dx]*G[dy];
 
     for(j = 0; j < 4; j++)
     {
         for(i = 0; i < 8; i += 2)
         {
-            pDst[i] = (Ipp8u)((pSrc[i]           * Mult1 +
+            pDst[i] = (uint8_t)((pSrc[i]           * Mult1 +
                 pSrc[i+srcStep]   * Mult2 +
                 pSrc[i+2]         * Mult3 +
                 pSrc[i+srcStep+2] * Mult4 +
                 8 - roundControl) >> 4);
 
-            pDst[i] = (Ipp8u)((pSrc[i + 1]           * Mult1 +
+            pDst[i] = (uint8_t)((pSrc[i + 1]           * Mult1 +
                 pSrc[i+1+srcStep]   * Mult2 +
                 pSrc[i+1+2]         * Mult3 +
                 pSrc[i+1+srcStep+2] * Mult4 +
@@ -3883,8 +3883,8 @@ static IppStatus _own_ippiInterpolate4x4QPBilinear_VC1_8u_C1R_NV12   (const Ipp8
     return ret;
 }
 
-typedef IppStatus (*_own_ippiBilinearInterpolate)     (const Ipp8u* pSrc, Ipp32s srcStep,
-                   Ipp8u *pDst, Ipp32s dstStep, Ipp32s dx, Ipp32s dy, Ipp32s roundControl);
+typedef IppStatus (*_own_ippiBilinearInterpolate)     (const uint8_t* pSrc, int32_t srcStep,
+                   uint8_t *pDst, int32_t dstStep, int32_t dx, int32_t dy, int32_t roundControl);
 
 static const _own_ippiBilinearInterpolate _own_ippiBilinearInterpolate_table_NV12[] = {
         (_own_ippiBilinearInterpolate)(_own_ippiInterpolate4x4QPBilinear_VC1_8u_C1R_NV12 ),
@@ -3897,7 +3897,7 @@ static const _own_ippiBilinearInterpolate _own_ippiBilinearInterpolate_table_NV1
 IppStatus _own_ippiInterpolateQPBilinear_VC1_8u_C1R_NV12  (const IppVCInterpolate_8u* inter_struct)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp32s pinterp = (inter_struct->roiSize.width >> 3) + (inter_struct->roiSize.height >> 3);
+    int32_t pinterp = (inter_struct->roiSize.width >> 3) + (inter_struct->roiSize.height >> 3);
 
     if(pinterp >2)
         return ippStsBadArgErr;
@@ -3919,16 +3919,16 @@ IppStatus _own_ippiInterpolateQPBilinear_VC1_8u_C1R_NV12  (const IppVCInterpolat
 #ifndef UMC_RESTRICTED_CODE
 #ifdef _VC1_ENC_OWN_FUNCTIONS_
 
-static IppStatus own_ippiTransform8x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int srcStep,
-                                                      Ipp16s  *pDst, int dstStep, IppiSize srcSizeNZ)
+static IppStatus own_ippiTransform8x8Inv_VC1_16s_C1R(const int16_t  *pSrc, int srcStep,
+                                                      int16_t  *pDst, int dstStep, mfxSize srcSizeNZ)
 {
     if (srcSizeNZ.width <= 1 && srcSizeNZ.height <= 1) {
         int     i;
-        Ipp16s  c = (Ipp16s)((((pSrc[0] * 12 + 4) >> 3) * 12 + 64) >> 7);
+        int16_t  c = (int16_t)((((pSrc[0] * 12 + 4) >> 3) * 12 + 64) >> 7);
 
         for (i = 0; i < 8; i ++) {
             pDst[0] = pDst[1] = pDst[2] = pDst[3] = pDst[4] = pDst[5] = pDst[6] = pDst[7] = c;
-            pDst = (Ipp16s*)((Ipp8u*)pDst+dstStep);
+            pDst = (int16_t*)((uint8_t*)pDst+dstStep);
         }
     } else if (srcSizeNZ.width <= 2 && srcSizeNZ.height <= 2) {
         int     i, buff[16], *pBuff = buff;
@@ -3949,7 +3949,7 @@ static IppStatus own_ippiTransform8x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int sr
             pBuff[6] = (a0 - v1) >> 3;
             pBuff[2] = (a0 + v3) >> 3;
             pBuff[5] = (a0 - v3) >> 3;
-            pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcStep);
+            pSrc = (int16_t*)((uint8_t*)pSrc + srcStep);
             pBuff += 8;
         }
         pBuff -= 16;
@@ -3961,14 +3961,14 @@ static IppStatus own_ippiTransform8x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int sr
             u3 = pBuff[1*8] * 4;
             v1 = pBuff[1*8] * 15;
             v3 = pBuff[1*8] * 9;
-            *(Ipp16s*)((Ipp8u*)pDst+0*dstStep) = (Ipp16s)((a0 + u1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+7*dstStep) = (Ipp16s)((a0 - u1 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+3*dstStep) = (Ipp16s)((a0 + u3) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+4*dstStep) = (Ipp16s)((a0 - u3 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+1*dstStep) = (Ipp16s)((a0 + v1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+6*dstStep) = (Ipp16s)((a0 - v1 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+2*dstStep) = (Ipp16s)((a0 + v3) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+5*dstStep) = (Ipp16s)((a0 - v3 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+0*dstStep) = (int16_t)((a0 + u1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+7*dstStep) = (int16_t)((a0 - u1 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+3*dstStep) = (int16_t)((a0 + u3) >> 7);
+            *(int16_t*)((uint8_t*)pDst+4*dstStep) = (int16_t)((a0 - u3 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+1*dstStep) = (int16_t)((a0 + v1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+6*dstStep) = (int16_t)((a0 - v1 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+2*dstStep) = (int16_t)((a0 + v3) >> 7);
+            *(int16_t*)((uint8_t*)pDst+5*dstStep) = (int16_t)((a0 - v3 + 1) >> 7);
             pDst ++;
             pBuff ++;
         }
@@ -3997,7 +3997,7 @@ static IppStatus own_ippiTransform8x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int sr
             pBuff[6] = (v0 - v1) >> 3;
             pBuff[2] = (v2 + v3) >> 3;
             pBuff[5] = (v2 - v3) >> 3;
-            pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcStep);
+            pSrc = (int16_t*)((uint8_t*)pSrc + srcStep);
             pBuff += 8;
         }
         pBuff -= 32;
@@ -4015,14 +4015,14 @@ static IppStatus own_ippiTransform8x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int sr
             v1 = pBuff[1*8] * 15 - pBuff[3*8] * 4;
             v2 = a0 - s2;
             v3 = pBuff[1*8] * 9 - pBuff[3*8] * 16;
-            *(Ipp16s*)((Ipp8u*)pDst+0*dstStep) = (Ipp16s)((u0 + u1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+7*dstStep) = (Ipp16s)((u0 - u1 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+3*dstStep) = (Ipp16s)((u2 + u3) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+4*dstStep) = (Ipp16s)((u2 - u3 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+1*dstStep) = (Ipp16s)((v0 + v1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+6*dstStep) = (Ipp16s)((v0 - v1 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+2*dstStep) = (Ipp16s)((v2 + v3) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+5*dstStep) = (Ipp16s)((v2 - v3 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+0*dstStep) = (int16_t)((u0 + u1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+7*dstStep) = (int16_t)((u0 - u1 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+3*dstStep) = (int16_t)((u2 + u3) >> 7);
+            *(int16_t*)((uint8_t*)pDst+4*dstStep) = (int16_t)((u2 - u3 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+1*dstStep) = (int16_t)((v0 + v1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+6*dstStep) = (int16_t)((v0 - v1 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+2*dstStep) = (int16_t)((v2 + v3) >> 7);
+            *(int16_t*)((uint8_t*)pDst+5*dstStep) = (int16_t)((v2 - v3 + 1) >> 7);
             pDst ++;
             pBuff ++;
         }
@@ -4051,7 +4051,7 @@ static IppStatus own_ippiTransform8x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int sr
             pBuff[6] = (u0 - u1) >> 3;
             pBuff[2] = (u2 + u3) >> 3;
             pBuff[5] = (u2 - u3) >> 3;
-            pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcStep);
+            pSrc = (int16_t*)((uint8_t*)pSrc + srcStep);
             pBuff += 8;
         }
         pBuff -= 64;
@@ -4069,14 +4069,14 @@ static IppStatus own_ippiTransform8x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int sr
             int v2 = s0 - s2;
             int v3 = pBuff[1*8] * 9 - pBuff[3*8] * 16 + pBuff[5*8] * 4 + pBuff[7*8] * 15;
 
-            *(Ipp16s*)((Ipp8u*)pDst+0*dstStep) = (Ipp16s)((u0 + u1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+7*dstStep) = (Ipp16s)((u0 - u1 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+3*dstStep) = (Ipp16s)((u2 + u3) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+4*dstStep) = (Ipp16s)((u2 - u3 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+1*dstStep) = (Ipp16s)((v0 + v1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+6*dstStep) = (Ipp16s)((v0 - v1 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+2*dstStep) = (Ipp16s)((v2 + v3) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+5*dstStep) = (Ipp16s)((v2 - v3 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+0*dstStep) = (int16_t)((u0 + u1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+7*dstStep) = (int16_t)((u0 - u1 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+3*dstStep) = (int16_t)((u2 + u3) >> 7);
+            *(int16_t*)((uint8_t*)pDst+4*dstStep) = (int16_t)((u2 - u3 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+1*dstStep) = (int16_t)((v0 + v1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+6*dstStep) = (int16_t)((v0 - v1 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+2*dstStep) = (int16_t)((v2 + v3) >> 7);
+            *(int16_t*)((uint8_t*)pDst+5*dstStep) = (int16_t)((v2 - v3 + 1) >> 7);
             pDst ++;
             pBuff ++;
         }
@@ -4084,16 +4084,16 @@ static IppStatus own_ippiTransform8x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int sr
     return ippStsNoErr;
 }
 
-static IppStatus own_ippiTransform8x4Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int      srcStep,
-                                                      Ipp16s  *pDst, int      dstStep,      IppiSize srcSizeNZ)
+static IppStatus own_ippiTransform8x4Inv_VC1_16s_C1R(const int16_t  *pSrc, int      srcStep,
+                                                      int16_t  *pDst, int      dstStep,      mfxSize srcSizeNZ)
 {
     if (srcSizeNZ.width <= 1 && srcSizeNZ.height <= 1) {
         int     i;
-        Ipp16s  c = (Ipp16s)((((pSrc[0] * 12 + 4) >> 3) * 17 + 64) >> 7);
+        int16_t  c = (int16_t)((((pSrc[0] * 12 + 4) >> 3) * 17 + 64) >> 7);
 
         for (i = 0; i < 4; i ++) {
             pDst[0] = pDst[1] = pDst[2] = pDst[3] = pDst[4] = pDst[5] = pDst[6] = pDst[7] = c;
-            pDst = (Ipp16s*)((Ipp8u*)pDst+dstStep);
+            pDst = (int16_t*)((uint8_t*)pDst+dstStep);
         }
     } else {
         int     i, buff[32], *pBuff = buff;
@@ -4120,7 +4120,7 @@ static IppStatus own_ippiTransform8x4Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int   
             pBuff[6] = (u0 - u1) >> 3;
             pBuff[2] = (u2 + u3) >> 3;
             pBuff[5] = (u2 - u3) >> 3;
-            pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcStep);
+            pSrc = (int16_t*)((uint8_t*)pSrc + srcStep);
             pBuff += 8;
         }
         pBuff -= 32;
@@ -4130,10 +4130,10 @@ static IppStatus own_ippiTransform8x4Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int   
             int a1 = pBuff[1*8] * 22 + pBuff[3*8] * 10;
             int s1 = pBuff[1*8] * 10 - pBuff[3*8] * 22;
 
-            *(Ipp16s*)((Ipp8u*)pDst+0*dstStep) = (Ipp16s)((a0 + a1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+1*dstStep) = (Ipp16s)((s0 + s1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+2*dstStep) = (Ipp16s)((s0 - s1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+3*dstStep) = (Ipp16s)((a0 - a1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+0*dstStep) = (int16_t)((a0 + a1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+1*dstStep) = (int16_t)((s0 + s1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+2*dstStep) = (int16_t)((s0 - s1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+3*dstStep) = (int16_t)((a0 - a1) >> 7);
             pDst ++;
             pBuff ++;
         }
@@ -4141,17 +4141,17 @@ static IppStatus own_ippiTransform8x4Inv_VC1_16s_C1R(const Ipp16s  *pSrc, int   
     return ippStsNoErr;
 }
 
-static IppStatus own_ippiTransform4x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc,  int      srcStep,
-                                                      Ipp16s  *pDst,  int      dstStep,    IppiSize srcSizeNZ)
+static IppStatus own_ippiTransform4x8Inv_VC1_16s_C1R(const int16_t  *pSrc,  int      srcStep,
+                                                      int16_t  *pDst,  int      dstStep,    mfxSize srcSizeNZ)
 {
 
     if (srcSizeNZ.width <= 1 && srcSizeNZ.height <= 1) {
         int     i;
-        Ipp16s  c = (Ipp16s)((((pSrc[0] * 17 + 4) >> 3) * 12 + 64) >> 7);
+        int16_t  c = (int16_t)((((pSrc[0] * 17 + 4) >> 3) * 12 + 64) >> 7);
 
         for (i = 0; i < 8; i ++) {
             pDst[0] = pDst[1] = pDst[2] = pDst[3] = c;
-            pDst = (Ipp16s*)((Ipp8u*)pDst+dstStep);
+            pDst = (int16_t*)((uint8_t*)pDst+dstStep);
         }
     } else {
         int     i, buff[32], *pBuff = buff;
@@ -4166,7 +4166,7 @@ static IppStatus own_ippiTransform4x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc,  int  
             pBuff[1] = (s0 + s1) >> 3;
             pBuff[2] = (s0 - s1) >> 3;
             pBuff[3] = (a0 - a1) >> 3;
-            pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcStep);
+            pSrc = (int16_t*)((uint8_t*)pSrc + srcStep);
             pBuff += 4;
         }
         pBuff -= 32;
@@ -4184,14 +4184,14 @@ static IppStatus own_ippiTransform4x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc,  int  
             int v2 = s0 - s2;
             int v3 = pBuff[1*4] * 9 - pBuff[3*4] * 16 + pBuff[5*4] * 4 + pBuff[7*4] * 15;
 
-            *(Ipp16s*)((Ipp8u*)pDst+0*dstStep) = (Ipp16s)((u0 + u1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+7*dstStep) = (Ipp16s)((u0 - u1 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+3*dstStep) = (Ipp16s)((u2 + u3) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+4*dstStep) = (Ipp16s)((u2 - u3 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+1*dstStep) = (Ipp16s)((v0 + v1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+6*dstStep) = (Ipp16s)((v0 - v1 + 1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+2*dstStep) = (Ipp16s)((v2 + v3) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+5*dstStep) = (Ipp16s)((v2 - v3 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+0*dstStep) = (int16_t)((u0 + u1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+7*dstStep) = (int16_t)((u0 - u1 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+3*dstStep) = (int16_t)((u2 + u3) >> 7);
+            *(int16_t*)((uint8_t*)pDst+4*dstStep) = (int16_t)((u2 - u3 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+1*dstStep) = (int16_t)((v0 + v1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+6*dstStep) = (int16_t)((v0 - v1 + 1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+2*dstStep) = (int16_t)((v2 + v3) >> 7);
+            *(int16_t*)((uint8_t*)pDst+5*dstStep) = (int16_t)((v2 - v3 + 1) >> 7);
             pDst ++;
             pBuff ++;
         }
@@ -4200,18 +4200,18 @@ static IppStatus own_ippiTransform4x8Inv_VC1_16s_C1R(const Ipp16s  *pSrc,  int  
 }
 
 
-static IppStatus own_ippiTransform4x4Inv_VC1_16s_C1R (const Ipp16s  *pSrc, int      srcStep,
-                                                 Ipp16s  *pDst,       int      dstStep,      IppiSize srcSizeNZ)
+static IppStatus own_ippiTransform4x4Inv_VC1_16s_C1R (const int16_t  *pSrc, int      srcStep,
+                                                 int16_t  *pDst,       int      dstStep,      mfxSize srcSizeNZ)
 {
 
     if (srcSizeNZ.width <= 1 && srcSizeNZ.height <= 1) {
-        Ipp16s  c = (Ipp16s)((((pSrc[0] * 17 + 4) >> 3) * 17 + 64) >> 7);
+        int16_t  c = (int16_t)((((pSrc[0] * 17 + 4) >> 3) * 17 + 64) >> 7);
         pDst[0] = pDst[1] = pDst[2] = pDst[3] = c;
-        pDst = (Ipp16s*)((Ipp8u*)pDst+dstStep);
+        pDst = (int16_t*)((uint8_t*)pDst+dstStep);
         pDst[0] = pDst[1] = pDst[2] = pDst[3] = c;
-        pDst = (Ipp16s*)((Ipp8u*)pDst+dstStep);
+        pDst = (int16_t*)((uint8_t*)pDst+dstStep);
         pDst[0] = pDst[1] = pDst[2] = pDst[3] = c;
-        pDst = (Ipp16s*)((Ipp8u*)pDst+dstStep);
+        pDst = (int16_t*)((uint8_t*)pDst+dstStep);
         pDst[0] = pDst[1] = pDst[2] = pDst[3] = c;
     } else if (srcSizeNZ.width <= 2 && srcSizeNZ.height <= 2) {
         int     i, buff[8], *pBuff = buff, a0, a1, s1;
@@ -4223,7 +4223,7 @@ static IppStatus own_ippiTransform4x4Inv_VC1_16s_C1R (const Ipp16s  *pSrc, int  
         pBuff[1] = (a0 + s1) >> 3;
         pBuff[2] = (a0 - s1) >> 3;
         pBuff[3] = (a0 - a1) >> 3;
-        pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcStep);
+        pSrc = (int16_t*)((uint8_t*)pSrc + srcStep);
         a0 = pSrc[0] * 17 + 4;
         a1 = pSrc[1] * 22;
         s1 = pSrc[1] * 10;
@@ -4235,10 +4235,10 @@ static IppStatus own_ippiTransform4x4Inv_VC1_16s_C1R (const Ipp16s  *pSrc, int  
             a0 = pBuff[0*4] * 17 + 64;
             a1 = pBuff[1*4] * 22;
             s1 = pBuff[1*4] * 10;
-            *(Ipp16s*)((Ipp8u*)pDst+0*dstStep) = (Ipp16s)((a0 + a1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+1*dstStep) = (Ipp16s)((a0 + s1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+2*dstStep) = (Ipp16s)((a0 - s1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+3*dstStep) = (Ipp16s)((a0 - a1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+0*dstStep) = (int16_t)((a0 + a1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+1*dstStep) = (int16_t)((a0 + s1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+2*dstStep) = (int16_t)((a0 - s1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+3*dstStep) = (int16_t)((a0 - a1) >> 7);
             pDst ++;
             pBuff ++;
         }
@@ -4254,7 +4254,7 @@ static IppStatus own_ippiTransform4x4Inv_VC1_16s_C1R (const Ipp16s  *pSrc, int  
             pBuff[1] = (s0 + s1) >> 3;
             pBuff[2] = (s0 - s1) >> 3;
             pBuff[3] = (a0 - a1) >> 3;
-            pSrc = (Ipp16s*)((Ipp8u*)pSrc + srcStep);
+            pSrc = (int16_t*)((uint8_t*)pSrc + srcStep);
             pBuff += 4;
         }
         pBuff -= 16;
@@ -4263,10 +4263,10 @@ static IppStatus own_ippiTransform4x4Inv_VC1_16s_C1R (const Ipp16s  *pSrc, int  
             int s0 = (pBuff[0*4] - pBuff[2*4]) * 17 + 64;
             int a1 = pBuff[1*4] * 22 + pBuff[3*4] * 10;
             int s1 = pBuff[1*4] * 10 - pBuff[3*4] * 22;
-            *(Ipp16s*)((Ipp8u*)pDst+0*dstStep) = (Ipp16s)((a0 + a1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+1*dstStep) = (Ipp16s)((s0 + s1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+2*dstStep) = (Ipp16s)((s0 - s1) >> 7);
-            *(Ipp16s*)((Ipp8u*)pDst+3*dstStep) = (Ipp16s)((a0 - a1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+0*dstStep) = (int16_t)((a0 + a1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+1*dstStep) = (int16_t)((s0 + s1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+2*dstStep) = (int16_t)((s0 - s1) >> 7);
+            *(int16_t*)((uint8_t*)pDst+3*dstStep) = (int16_t)((a0 - a1) >> 7);
             pDst ++;
             pBuff ++;
         }
@@ -4274,25 +4274,25 @@ static IppStatus own_ippiTransform4x4Inv_VC1_16s_C1R (const Ipp16s  *pSrc, int  
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiTransformBlock8x8Inv_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32u srcDstStep, IppiSize DstSize)
+IppStatus _own_ippiTransformBlock8x8Inv_VC1_16s_C1IR(int16_t* pSrcDst, uint32_t srcDstStep, mfxSize DstSize)
 {
     own_ippiTransform8x8Inv_VC1_16s_C1R(pSrcDst, srcDstStep, pSrcDst, srcDstStep, DstSize);
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiTransformBlock4x8Inv_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32u srcDstStep, IppiSize DstSize)
+IppStatus _own_ippiTransformBlock4x8Inv_VC1_16s_C1IR(int16_t* pSrcDst, uint32_t srcDstStep, mfxSize DstSize)
 {
     own_ippiTransform4x8Inv_VC1_16s_C1R(pSrcDst, srcDstStep, pSrcDst, srcDstStep, DstSize);
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiTransformBlock8x4Inv_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32u srcDstStep, IppiSize DstSize)
+IppStatus _own_ippiTransformBlock8x4Inv_VC1_16s_C1IR(int16_t* pSrcDst, uint32_t srcDstStep, mfxSize DstSize)
 {
     own_ippiTransform8x4Inv_VC1_16s_C1R(pSrcDst, srcDstStep, pSrcDst, srcDstStep, DstSize);
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiTransformBlock4x4Inv_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32u srcDstStep, IppiSize DstSize)
+IppStatus _own_ippiTransformBlock4x4Inv_VC1_16s_C1IR(int16_t* pSrcDst, uint32_t srcDstStep, mfxSize DstSize)
 {
     own_ippiTransform4x4Inv_VC1_16s_C1R(pSrcDst, srcDstStep, pSrcDst, srcDstStep, DstSize);
     return ippStsNoErr;
@@ -4307,20 +4307,20 @@ IppStatus _own_ippiTransformBlock4x4Inv_VC1_16s_C1IR(Ipp16s* pSrcDst, Ipp32u src
 
 #ifndef UMC_RESTRICTED_CODE
 #ifdef _VC1_ENC_OWN_FUNCTIONS_
-IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s srcLeftStep,
-                                                        Ipp16s* pSrcRight, Ipp32s srcRightStep,
-                                                        Ipp8u* pDst, Ipp32s dstStep,
-                                                        Ipp32u fieldNeighbourFlag,
-                                                        Ipp32u edgeDisableFlag)
+IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32_t srcLeftStep,
+                                                        int16_t* pSrcRight, int32_t srcRightStep,
+                                                        uint8_t* pDst, int32_t dstStep,
+                                                        uint32_t fieldNeighbourFlag,
+                                                        uint32_t edgeDisableFlag)
 {
-    Ipp32s i;
-    Ipp8s r0, r1;
-    Ipp16s *pSrcL = pSrcLeft;
-    Ipp16s *pSrcR = pSrcRight;
-    Ipp8u  *dst = pDst;
+    int32_t i;
+    int8_t r0, r1;
+    int16_t *pSrcL = pSrcLeft;
+    int16_t *pSrcR = pSrcRight;
+    uint8_t  *dst = pDst;
 
-    Ipp16s x0,x1,x2,x3;
-    Ipp16s f0, f1;
+    int16_t x0,x1,x2,x3;
+    int16_t f0, f1;
 
     if(!edgeDisableFlag) return ippStsNoErr;
 
@@ -4349,10 +4349,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                     *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                     *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                    *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                    *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                    *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                    *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                    *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                    *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                    *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                    *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                     r0 = 7 - r0;
                     r1 = 7 - r1;
@@ -4379,10 +4379,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                         *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                         *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                        *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                        *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                        *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                        *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                        *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                        *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                        *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                        *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                         r0 = 7 - r0;
                         r1 = 7 - r1;
@@ -4413,10 +4413,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcR += srcRightStep;
                 pSrcL += 2*srcLeftStep;
@@ -4444,10 +4444,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcL += 2*srcLeftStep;
                 pSrcR += srcRightStep;
@@ -4476,10 +4476,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcR += srcRightStep;
                 pSrcL = pSrcL + VC1_PIXEL_IN_BLOCK*srcLeftStep;
@@ -4502,10 +4502,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcL -= 7*srcLeftStep;
                 pSrcR += srcRightStep;
@@ -4531,10 +4531,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcR += srcRightStep;
                 pSrcL = pSrcL + VC1_PIXEL_IN_BLOCK*srcLeftStep;
@@ -4557,10 +4557,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcL -= 7*srcLeftStep;
                 pSrcR += srcRightStep;
@@ -4590,10 +4590,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcL += srcLeftStep;
                 pSrcR += srcRightStep;
@@ -4619,10 +4619,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(Ipp8u)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(Ipp8u)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(Ipp8u)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(Ipp8u)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
+                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
+                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
+                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
 
                 pSrcL += srcLeftStep;
                 pSrcR += srcRightStep;
@@ -4635,19 +4635,19 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp32s srcUpperStep,
-                                                        Ipp16s* pSrcBottom, Ipp32s srcBottomStep,
-                                                        Ipp8u* pDst, Ipp32s dstStep,
-                                                        Ipp32u edgeDisableFlag)
+IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (int16_t* pSrcUpper, int32_t srcUpperStep,
+                                                        int16_t* pSrcBottom, int32_t srcBottomStep,
+                                                        uint8_t* pDst, int32_t dstStep,
+                                                        uint32_t edgeDisableFlag)
 {
-    Ipp32s i;
-    Ipp8s r0=4, r1=3;
-    Ipp16s *pSrcU = pSrcUpper;
-    Ipp16s *pSrcB = pSrcBottom;
-    Ipp8u  *dst = pDst;
+    int32_t i;
+    int8_t r0=4, r1=3;
+    int16_t *pSrcU = pSrcUpper;
+    int16_t *pSrcB = pSrcBottom;
+    uint8_t  *dst = pDst;
 
-    Ipp16s x0,x1,x2,x3;
-    Ipp16s f0, f1;
+    int16_t x0,x1,x2,x3;
+    int16_t f0, f1;
     srcUpperStep/=2;
     srcBottomStep/=2;
 
@@ -4667,10 +4667,10 @@ IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp32
             *(pSrcB    ) = ((1 * x0 + 1 * x1 + 7 * x2 + -1* x3) + r0)>>3;
             *(pSrcB + srcBottomStep) = ((1 * x0 + 0 * x1 + 0 * x2 + 7 * x3) + r1)>>3;
 
-            *(dst-2*dstStep)= (Ipp8u)VC1_CLIP(x0 + ((f0 + r0)>>3));
-            *(dst-1*dstStep)= (Ipp8u)VC1_CLIP(x1 + ((f1 + r1)>>3));
-            *(dst+0*dstStep)= (Ipp8u)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-            *(dst+1*dstStep)= (Ipp8u)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+            *(dst-2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
+            *(dst-1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
+            *(dst+0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
+            *(dst+1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
 
             dst++;
             pSrcU++;
@@ -4700,10 +4700,10 @@ IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp32
                 *(pSrcB    ) = ((1 * x0 + 1 * x1 + 7 * x2 + -1* x3) + r0)>>3;
                 *(pSrcB + srcBottomStep) = ((1 * x0 + 0 * x1 + 0 * x2 + 7 * x3) + r1)>>3;
 
-                *(dst-2*dstStep)= (Ipp8u)VC1_CLIP(x0 + ((f0 + r0)>>3));
-                *(dst-1*dstStep)= (Ipp8u)VC1_CLIP(x1 + ((f1 + r1)>>3));
-                *(dst+0*dstStep)= (Ipp8u)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-                *(dst+1*dstStep)= (Ipp8u)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+                *(dst-2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
+                *(dst-1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
+                *(dst+0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
+                *(dst+1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
 
                 dst++;
                 pSrcU++;
@@ -4717,18 +4717,18 @@ IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp32
 }
 
 
-IppStatus _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp32s srcUpperStep,
-                                                          Ipp16s* pSrcBottom, Ipp32s srcBottomStep,
-                                                          Ipp8u* pDst, Ipp32s dstStep)
+IppStatus _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R (int16_t* pSrcUpper, int32_t srcUpperStep,
+                                                          int16_t* pSrcBottom, int32_t srcBottomStep,
+                                                          uint8_t* pDst, int32_t dstStep)
 {
-    Ipp32s i;
-    Ipp8s r0=4, r1=3;
-    Ipp16s *pSrcU = pSrcUpper;
-    Ipp16s *pSrcB = pSrcBottom;
-    Ipp8u  *dst = pDst;
+    int32_t i;
+    int8_t r0=4, r1=3;
+    int16_t *pSrcU = pSrcUpper;
+    int16_t *pSrcB = pSrcBottom;
+    uint8_t  *dst = pDst;
 
-    Ipp16s x0,x1,x2,x3;
-    Ipp16s f0, f1;
+    int16_t x0,x1,x2,x3;
+    int16_t f0, f1;
 
     srcUpperStep/=2;
     srcBottomStep/=2;
@@ -4743,15 +4743,15 @@ IppStatus _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp
         f0 = x3 - x0;
         f1 = x2 + x3 - x0 - x1;
 
-        *(pSrcU    )            = (Ipp8u)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(pSrcU + srcUpperStep) = (Ipp8u)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(pSrcB    )            = (Ipp8u)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(pSrcB + srcBottomStep)= (Ipp8u)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(pSrcU    )            = (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
+        *(pSrcU + srcUpperStep) = (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
+        *(pSrcB    )            = (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
+        *(pSrcB + srcBottomStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
 
-        *(dst-2*dstStep)= (Ipp8u)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(dst-1*dstStep)= (Ipp8u)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(dst+0*dstStep)= (Ipp8u)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(dst+1*dstStep)= (Ipp8u)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(dst-2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
+        *(dst-1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
+        *(dst+0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
+        *(dst+1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
 
         dst++;
         pSrcU++;
@@ -4763,15 +4763,15 @@ IppStatus _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R (Ipp16s* pSrcUpper, Ipp
     return ippStsNoErr;
 }
 
-IppStatus _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp32s srcLeftStep,
-                                                          Ipp16s* pSrcRight, Ipp32s srcRightStep,
-                                                          Ipp8u* pDst, Ipp32s dstStep)
+IppStatus _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32_t srcLeftStep,
+                                                          int16_t* pSrcRight, int32_t srcRightStep,
+                                                          uint8_t* pDst, int32_t dstStep)
 {
-    Ipp32s i;
-    Ipp8s r0, r1;
+    int32_t i;
+    int8_t r0, r1;
 
-    Ipp16s x0,x1,x2,x3;
-    Ipp16s f0, f1;
+    int16_t x0,x1,x2,x3;
+    int16_t f0, f1;
 
     r0 = 4; r1 = 3;
     srcLeftStep/=2;
@@ -4793,10 +4793,10 @@ IppStatus _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp3
         *(pSrcRight )   = x2 + ((-f1 + r0)>>3);
         *(pSrcRight+1)  = x3 + ((-f0 + r1)>>3);
 
-        *(pDst-2)=(Ipp8u)VC1_CLIP(*(pSrcLeft));
-        *(pDst-1)=(Ipp8u)VC1_CLIP(*(pSrcLeft+1));
-        *(pDst+0)=(Ipp8u)VC1_CLIP(*(pSrcRight));
-        *(pDst+1)=(Ipp8u)VC1_CLIP(*(pSrcRight+1));
+        *(pDst-2)=(uint8_t)VC1_CLIP(*(pSrcLeft));
+        *(pDst-1)=(uint8_t)VC1_CLIP(*(pSrcLeft+1));
+        *(pDst+0)=(uint8_t)VC1_CLIP(*(pSrcRight));
+        *(pDst+1)=(uint8_t)VC1_CLIP(*(pSrcRight+1));
 
         r0 = 7 - r0;
         r1 = 7 - r1;
@@ -4809,22 +4809,22 @@ IppStatus _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R (Ipp16s* pSrcLeft, Ipp3
 #endif
 #endif
 
-IppStatus _own_ippiSmoothingChroma_NV12_HorEdge_VC1_16s8u_C2R (Ipp16s* pSrcUpperU, Ipp32s srcUpperStepU,
-                                                               Ipp16s* pSrcBottomU, Ipp32s srcBottomStepU,
-                                                               Ipp16s* pSrcUpperV, Ipp32s srcUpperStepV,
-                                                               Ipp16s* pSrcBottomV, Ipp32s srcBottomStepV,
-                                                               Ipp8u* pDst, Ipp32s dstStep)
+IppStatus _own_ippiSmoothingChroma_NV12_HorEdge_VC1_16s8u_C2R (int16_t* pSrcUpperU, int32_t srcUpperStepU,
+                                                               int16_t* pSrcBottomU, int32_t srcBottomStepU,
+                                                               int16_t* pSrcUpperV, int32_t srcUpperStepV,
+                                                               int16_t* pSrcBottomV, int32_t srcBottomStepV,
+                                                               uint8_t* pDst, int32_t dstStep)
 {
-    Ipp32s i;
-    Ipp8s  r0 = 4, r1 = 3;
-    Ipp16s *pSrcU_U = pSrcUpperU;
-    Ipp16s *pSrcB_U = pSrcBottomU;
-    Ipp16s *pSrcU_V = pSrcUpperV;
-    Ipp16s *pSrcB_V = pSrcBottomV;
-    Ipp8u  *dst = pDst;
+    int32_t i;
+    int8_t  r0 = 4, r1 = 3;
+    int16_t *pSrcU_U = pSrcUpperU;
+    int16_t *pSrcB_U = pSrcBottomU;
+    int16_t *pSrcU_V = pSrcUpperV;
+    int16_t *pSrcB_V = pSrcBottomV;
+    uint8_t  *dst = pDst;
 
-    Ipp16s x0,x1,x2,x3;
-    Ipp16s f0, f1;
+    int16_t x0,x1,x2,x3;
+    int16_t f0, f1;
 
     srcUpperStepU  /= 2;
     srcBottomStepU /= 2;
@@ -4843,15 +4843,15 @@ IppStatus _own_ippiSmoothingChroma_NV12_HorEdge_VC1_16s8u_C2R (Ipp16s* pSrcUpper
         f0 = x3 - x0;
         f1 = x2 + x3 - x0 - x1;
 
-        *(pSrcU_U    )              = (Ipp8u)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(pSrcU_U + srcUpperStepU)  = (Ipp8u)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(pSrcB_U    )              = (Ipp8u)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(pSrcB_U + srcBottomStepU) = (Ipp8u)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(pSrcU_U    )              = (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
+        *(pSrcU_U + srcUpperStepU)  = (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
+        *(pSrcB_U    )              = (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
+        *(pSrcB_U + srcBottomStepU) = (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
 
-        *(dst - 2*dstStep)= (Ipp8u)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(dst - 1*dstStep)= (Ipp8u)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(dst + 0*dstStep)= (Ipp8u)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(dst + 1*dstStep)= (Ipp8u)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(dst - 2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
+        *(dst - 1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
+        *(dst + 0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
+        *(dst + 1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
 
         pSrcU_U++;
         pSrcB_U++;
@@ -4866,15 +4866,15 @@ IppStatus _own_ippiSmoothingChroma_NV12_HorEdge_VC1_16s8u_C2R (Ipp16s* pSrcUpper
         f0 = x3 - x0;
         f1 = x2 + x3 - x0 - x1;
 
-        *(pSrcU_V    )              = (Ipp8u)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(pSrcU_V + srcUpperStepV)  = (Ipp8u)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(pSrcB_V    )              = (Ipp8u)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(pSrcB_V + srcBottomStepV) = (Ipp8u)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(pSrcU_V    )              = (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
+        *(pSrcU_V + srcUpperStepV)  = (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
+        *(pSrcB_V    )              = (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
+        *(pSrcB_V + srcBottomStepV) = (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
 
-        *(dst - 2*dstStep)= (Ipp8u)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(dst - 1*dstStep)= (Ipp8u)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(dst + 0*dstStep)= (Ipp8u)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(dst + 1*dstStep)= (Ipp8u)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(dst - 2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
+        *(dst - 1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
+        *(dst + 0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
+        *(dst + 1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
 
         pSrcU_V++;
         pSrcB_V++;
@@ -4887,17 +4887,17 @@ IppStatus _own_ippiSmoothingChroma_NV12_HorEdge_VC1_16s8u_C2R (Ipp16s* pSrcUpper
 }
 
 
-IppStatus _own_ippiSmoothingChroma_NV12_VerEdge_VC1_16s8u_C2R (Ipp16s* pSrcLeftU,  Ipp32s srcLeftStepU,
-                                                               Ipp16s* pSrcRightU, Ipp32s srcRightStepU,
-                                                               Ipp16s* pSrcLeftV,  Ipp32s srcLeftStepV,
-                                                               Ipp16s* pSrcRightV, Ipp32s srcRightStepV,
-                                                               Ipp8u* pDst, Ipp32s dstStep)
+IppStatus _own_ippiSmoothingChroma_NV12_VerEdge_VC1_16s8u_C2R (int16_t* pSrcLeftU,  int32_t srcLeftStepU,
+                                                               int16_t* pSrcRightU, int32_t srcRightStepU,
+                                                               int16_t* pSrcLeftV,  int32_t srcLeftStepV,
+                                                               int16_t* pSrcRightV, int32_t srcRightStepV,
+                                                               uint8_t* pDst, int32_t dstStep)
 {
-    Ipp32s i;
-    Ipp8s r0, r1;
+    int32_t i;
+    int8_t r0, r1;
 
-    Ipp16s x0,x1,x2,x3;
-    Ipp16s f0, f1;
+    int16_t x0,x1,x2,x3;
+    int16_t f0, f1;
 
     r0 = 4; r1 = 3;
     srcLeftStepU  /= 2;
@@ -4922,10 +4922,10 @@ IppStatus _own_ippiSmoothingChroma_NV12_VerEdge_VC1_16s8u_C2R (Ipp16s* pSrcLeftU
         *(pSrcRightU )     = x2 + ((-f1 + r0)>>3);
         *(pSrcRightU + 1)  = x3 + ((-f0 + r1)>>3);
 
-        *(pDst - 4)=(Ipp8u)VC1_CLIP(*(pSrcLeftU));
-        *(pDst - 2)=(Ipp8u)VC1_CLIP(*(pSrcLeftU + 1));
-        *(pDst + 0)=(Ipp8u)VC1_CLIP(*(pSrcRightU));
-        *(pDst + 2)=(Ipp8u)VC1_CLIP(*(pSrcRightU + 1));
+        *(pDst - 4)=(uint8_t)VC1_CLIP(*(pSrcLeftU));
+        *(pDst - 2)=(uint8_t)VC1_CLIP(*(pSrcLeftU + 1));
+        *(pDst + 0)=(uint8_t)VC1_CLIP(*(pSrcRightU));
+        *(pDst + 2)=(uint8_t)VC1_CLIP(*(pSrcRightU + 1));
 
         pSrcLeftU  += srcLeftStepU;
         pSrcRightU += srcRightStepU;
@@ -4946,10 +4946,10 @@ IppStatus _own_ippiSmoothingChroma_NV12_VerEdge_VC1_16s8u_C2R (Ipp16s* pSrcLeftU
         *(pSrcRightV )     = x2 + ((-f1 + r0)>>3);
         *(pSrcRightV + 1)  = x3 + ((-f0 + r1)>>3);
 
-        *(pDst - 4)=(Ipp8u)VC1_CLIP(*(pSrcLeftV));
-        *(pDst - 2)=(Ipp8u)VC1_CLIP(*(pSrcLeftV + 1));
-        *(pDst + 0)=(Ipp8u)VC1_CLIP(*(pSrcRightV));
-        *(pDst + 2)=(Ipp8u)VC1_CLIP(*(pSrcRightV + 1));
+        *(pDst - 4)=(uint8_t)VC1_CLIP(*(pSrcLeftV));
+        *(pDst - 2)=(uint8_t)VC1_CLIP(*(pSrcLeftV + 1));
+        *(pDst + 0)=(uint8_t)VC1_CLIP(*(pSrcRightV));
+        *(pDst + 2)=(uint8_t)VC1_CLIP(*(pSrcRightV + 1));
 
         pSrcLeftV += srcLeftStepV;
         pSrcRightV += srcRightStepV;
@@ -4968,13 +4968,13 @@ IppStatus _own_ippiSmoothingChroma_NV12_VerEdge_VC1_16s8u_C2R (Ipp16s* pSrcLeftU
 #ifndef UMC_RESTRICTED_CODE
 #ifdef _VC1_ENC_OWN_FUNCTIONS_
 
-#define IPP_MAX_8U     ( 0xFF )
+#define MFX_MAX_8U     ( 0xFF )
 #define OWN_MIN_8U      0
 
-IppStatus _own_ippiConvert_16s8u_C1R( const Ipp16s* pSrc, Ipp32u srcStep, Ipp8u* pDst, Ipp32u dstStep, IppiSize roiSize )
+IppStatus _own_ippiConvert_16s8u_C1R( const int16_t* pSrc, uint32_t srcStep, uint8_t* pDst, uint32_t dstStep, mfxSize roiSize )
 {
-    const Ipp16s *src = pSrc;
-    Ipp8u *dst = pDst;
+    const int16_t *src = pSrc;
+    uint8_t *dst = pDst;
     int width = roiSize.width, height = roiSize.height;
     int h;
     int n;
@@ -4987,15 +4987,15 @@ IppStatus _own_ippiConvert_16s8u_C1R( const Ipp16s* pSrc, Ipp32u srcStep, Ipp8u*
     for( h = 0; h < height; h++ ) {
 
         for( n = 0; n < width; n++ ) {
-            if( src[n] >= IPP_MAX_8U ) {
-                dst[n] = IPP_MAX_8U;
+            if( src[n] >= MFX_MAX_8U ) {
+                dst[n] = MFX_MAX_8U;
             } else if( src[n] <= OWN_MIN_8U ) {
                 dst[n] = OWN_MIN_8U;
             } else {
-                dst[n] = (Ipp8u)src[n];
+                dst[n] = (uint8_t)src[n];
             }
         }
-        src = (Ipp16s*)((Ipp8u*)src + srcStep);
+        src = (int16_t*)((uint8_t*)src + srcStep);
         dst += dstStep;
     }
     return ippStsNoErr;
@@ -5003,17 +5003,17 @@ IppStatus _own_ippiConvert_16s8u_C1R( const Ipp16s* pSrc, Ipp32u srcStep, Ipp8u*
 
 #endif //_VC1_ENC_OWN_FUNCTIONS_
 #endif //_VC1_ENC_OWN_FUNCTIONS_
-bool MaxAbsDiff(Ipp8u* pSrc1, Ipp32u step1,Ipp8u* pSrc2, Ipp32u step2,IppiSize roiSize,Ipp32u max)
+bool MaxAbsDiff(uint8_t* pSrc1, uint32_t step1,uint8_t* pSrc2, uint32_t step2,mfxSize roiSize,uint32_t max)
 {
-    Ipp32u  sum = max;
+    uint32_t  sum = max;
     for (int i = 0; i<roiSize.height; i++)
     {
-       Ipp16u t1 = (VC1abs(*(pSrc1++) - *(pSrc2++)));
-       Ipp16u t2 = (VC1abs(*(pSrc1++) - *(pSrc2++)));
+       uint16_t t1 = (VC1abs(*(pSrc1++) - *(pSrc2++)));
+       uint16_t t2 = (VC1abs(*(pSrc1++) - *(pSrc2++)));
 
        for (int j = 0; j<roiSize.width-2; j++)
        {
-           Ipp16u t3 = (VC1abs(*(pSrc1++) - *(pSrc2++)));
+           uint16_t t3 = (VC1abs(*(pSrc1++) - *(pSrc2++)));
            if (t2>sum &&(t1>sum || t3>sum))
            {
             return false;
@@ -5026,7 +5026,7 @@ bool MaxAbsDiff(Ipp8u* pSrc1, Ipp32u step1,Ipp8u* pSrc2, Ipp32u step2,IppiSize r
     }
     return true;
 }
-void initMVFieldInfo(bool extendedX,        bool extendedY,const Ipp32u* pVLCTable ,sMVFieldInfo* MVFieldInfo)
+void initMVFieldInfo(bool extendedX,        bool extendedY,const uint32_t* pVLCTable ,sMVFieldInfo* MVFieldInfo)
 {
      MVFieldInfo->bExtendedX = extendedX;
      MVFieldInfo->bExtendedY = extendedY;
@@ -5058,7 +5058,7 @@ void initMVFieldInfo(bool extendedX,        bool extendedY,const Ipp32u* pVLCTab
     MVFieldInfo->pMVModeField1RefTable_VLC = pVLCTable;
 
 }
-inline static Ipp32s GetEdgeValue(Ipp32s Edge, Ipp32s Current)
+inline static int32_t GetEdgeValue(int32_t Edge, int32_t Current)
 {
     if (Current <= 0)
         return 0;
@@ -5072,49 +5072,49 @@ inline static Ipp32s GetEdgeValue(Ipp32s Edge, Ipp32s Current)
 }
 
 IppStatus own_ippiICInterpolateQPBicubicBlock_VC1_8u_P1R(const IppVCInterpolateBlock_8u* interpolateInfo,
-                                                     const Ipp8u*                   pLUTTop,
-                                                     const Ipp8u*                   pLUTBottom,
-                                                     Ipp32u                          OppositePadding,
-                                                     Ipp32u                          fieldPrediction,
-                                                     Ipp32u                          RoundControl,
-                                                     Ipp32u                          isPredBottom)
+                                                     const uint8_t*                   pLUTTop,
+                                                     const uint8_t*                   pLUTBottom,
+                                                     uint32_t                          OppositePadding,
+                                                     uint32_t                          fieldPrediction,
+                                                     uint32_t                          RoundControl,
+                                                     uint32_t                          isPredBottom)
 
 {
-    Ipp8u    temp_block [19*19]          = {0};
-    IppiSize temp_block_size             = {interpolateInfo->sizeBlock.width + 3, interpolateInfo->sizeBlock.height + 3};
-    Ipp32s   temp_block_step             = 19;
-    Ipp8u*   p_temp_block_data_pointer   = temp_block;
-    Ipp8u    shift = (fieldPrediction)? 1:0;
+    uint8_t    temp_block [19*19]          = {0};
+    mfxSize temp_block_size             = {interpolateInfo->sizeBlock.width + 3, interpolateInfo->sizeBlock.height + 3};
+    int32_t   temp_block_step             = 19;
+    uint8_t*   p_temp_block_data_pointer   = temp_block;
+    uint8_t    shift = (fieldPrediction)? 1:0;
 
     IppiPoint position = {interpolateInfo->pointBlockPos.x,
         interpolateInfo->pointBlockPos.y};
 
-    Ipp32u step = 0;
+    uint32_t step = 0;
 
-    Ipp32s TopFieldPOffsetTP = 0;
-    Ipp32s BottomFieldPOffsetTP = 1;
+    int32_t TopFieldPOffsetTP = 0;
+    int32_t BottomFieldPOffsetTP = 1;
 
-    Ipp32s TopFieldPOffsetBP = 2;
-    Ipp32s BottomFieldPOffsetBP = 1;
+    int32_t TopFieldPOffsetBP = 2;
+    int32_t BottomFieldPOffsetBP = 1;
 
 
-    Ipp32u SCoef = (fieldPrediction)?1:0; // in case of interlace fields we should use half of frame height
+    uint32_t SCoef = (fieldPrediction)?1:0; // in case of interlace fields we should use half of frame height
 
 
     // minimal distance from current point for interpolation.
-    Ipp32s left = 1;
-    Ipp32s right = interpolateInfo->sizeFrame.width - (interpolateInfo->sizeBlock.width + 2);
-    Ipp32s top = 1; //<< shift;
+    int32_t left = 1;
+    int32_t right = interpolateInfo->sizeFrame.width - (interpolateInfo->sizeBlock.width + 2);
+    int32_t top = 1; //<< shift;
 
-    Ipp32s bottom = (interpolateInfo->sizeFrame.height >> SCoef)  - (interpolateInfo->sizeBlock.height + 2);
-    Ipp32s   paddingLeft    = (position.x < left) ?  left  - position.x: 0;
-    Ipp32s   paddingRight   = (position.x > right)?  position.x - right: 0;
-    Ipp32s   paddingTop     = (position.y < top)?    (top - position.y): 0;
-    Ipp32s   paddingBottom  = (position.y > bottom)? (position.y - bottom): 0;
-    Ipp32s   RefBlockStep = interpolateInfo->srcStep << shift;
-    const Ipp8u*   pRefBlock =    interpolateInfo->pSrc[0] + (position.x + paddingLeft - 1) +
+    int32_t bottom = (interpolateInfo->sizeFrame.height >> SCoef)  - (interpolateInfo->sizeBlock.height + 2);
+    int32_t   paddingLeft    = (position.x < left) ?  left  - position.x: 0;
+    int32_t   paddingRight   = (position.x > right)?  position.x - right: 0;
+    int32_t   paddingTop     = (position.y < top)?    (top - position.y): 0;
+    int32_t   paddingBottom  = (position.y > bottom)? (position.y - bottom): 0;
+    int32_t   RefBlockStep = interpolateInfo->srcStep << shift;
+    const uint8_t*   pRefBlock =    interpolateInfo->pSrc[0] + (position.x + paddingLeft - 1) +
                             (position.y + paddingTop  - 1)* RefBlockStep;
-    const Ipp8u* pLUT[2];
+    const uint8_t* pLUT[2];
 
     if (isPredBottom)
     {
@@ -5129,7 +5129,7 @@ IppStatus own_ippiICInterpolateQPBicubicBlock_VC1_8u_P1R(const IppVCInterpolateB
 
     if ((position.y + paddingTop  - 1) % 2)
     {
-        const Ipp8u* pTemp;
+        const uint8_t* pTemp;
         pTemp = pLUT[0];
         pLUT[0] = pLUT[1];
         pLUT[1] = pTemp;
@@ -5148,7 +5148,7 @@ IppStatus own_ippiICInterpolateQPBicubicBlock_VC1_8u_P1R(const IppVCInterpolateB
     // all block out of plane
     if (temp_block_size.height <= 0)
     {
-        const Ipp8u* pTemp;
+        const uint8_t* pTemp;
         temp_block_size.height = 0;
         if (paddingTop != 0)
         {
@@ -5179,8 +5179,8 @@ IppStatus own_ippiICInterpolateQPBicubicBlock_VC1_8u_P1R(const IppVCInterpolateB
     }
     if (temp_block_size.width <= 0)
     {
-        Ipp32s FieldPOffset[2] = {0,0};
-        Ipp32s posy;
+        int32_t FieldPOffset[2] = {0,0};
+        int32_t posy;
 
 
 
@@ -5353,7 +5353,7 @@ IppStatus own_ippiICInterpolateQPBicubicBlock_VC1_8u_P1R(const IppVCInterpolateB
         {
             if (paddingBottom % 2)
             {
-                const Ipp8u* pTemp;
+                const uint8_t* pTemp;
                 pTemp = pLUT[0];
                 pLUT[0] = pLUT[1];
                 pLUT[1] = pTemp;
@@ -5412,49 +5412,49 @@ IppStatus own_ippiICInterpolateQPBicubicBlock_VC1_8u_P1R(const IppVCInterpolateB
 
 
 IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R(const IppVCInterpolateBlock_8u* interpolateInfo,
-                                                      const   Ipp8u*                 pLUTTop,
-                                                      const   Ipp8u*                 pLUTBottom,
-                                                      Ipp32u                          OppositePadding,
-                                                      Ipp32u                          fieldPrediction,
-                                                      Ipp32u                          RoundControl,
-                                                      Ipp32u                          isPredBottom)
+                                                      const   uint8_t*                 pLUTTop,
+                                                      const   uint8_t*                 pLUTBottom,
+                                                      uint32_t                          OppositePadding,
+                                                      uint32_t                          fieldPrediction,
+                                                      uint32_t                          RoundControl,
+                                                      uint32_t                          isPredBottom)
 
 {
-    Ipp8u    temp_block [19*19]          = {0};
-    IppiSize temp_block_size             = {interpolateInfo->sizeBlock.width + 3, interpolateInfo->sizeBlock.height + 3};
-    Ipp32s   temp_block_step             = 19;
-    Ipp8u*   p_temp_block_data_pointer   = temp_block;
-    Ipp8u    shift = (fieldPrediction)? 1:0;
+    uint8_t    temp_block [19*19]          = {0};
+    mfxSize temp_block_size             = {interpolateInfo->sizeBlock.width + 3, interpolateInfo->sizeBlock.height + 3};
+    int32_t   temp_block_step             = 19;
+    uint8_t*   p_temp_block_data_pointer   = temp_block;
+    uint8_t    shift = (fieldPrediction)? 1:0;
 
     IppiPoint position = {interpolateInfo->pointBlockPos.x,
         interpolateInfo->pointBlockPos.y};
 
-    Ipp32u step = 0;
+    uint32_t step = 0;
 
-    Ipp32s TopFieldPOffsetTP = 0;
-    Ipp32s BottomFieldPOffsetTP = 1;
+    int32_t TopFieldPOffsetTP = 0;
+    int32_t BottomFieldPOffsetTP = 1;
 
-    Ipp32s TopFieldPOffsetBP = 2;
-    Ipp32s BottomFieldPOffsetBP = 1;
+    int32_t TopFieldPOffsetBP = 2;
+    int32_t BottomFieldPOffsetBP = 1;
 
 
-    Ipp32u SCoef = (fieldPrediction)?1:0; // in case of interlace fields we should use half of frame height
+    uint32_t SCoef = (fieldPrediction)?1:0; // in case of interlace fields we should use half of frame height
 
 
     // minimal distance from current point for interpolation.
-    Ipp32s left = 1;
-    Ipp32s right = interpolateInfo->sizeFrame.width - (interpolateInfo->sizeBlock.width + 2);
-    Ipp32s top = 1; //<< shift;
+    int32_t left = 1;
+    int32_t right = interpolateInfo->sizeFrame.width - (interpolateInfo->sizeBlock.width + 2);
+    int32_t top = 1; //<< shift;
 
-    Ipp32s bottom = (interpolateInfo->sizeFrame.height >> SCoef)  - (interpolateInfo->sizeBlock.height + 2);
-    Ipp32s   paddingLeft    = (position.x < left) ?  left  - position.x: 0;
-    Ipp32s   paddingRight   = (position.x > right)?  position.x - right: 0;
-    Ipp32s   paddingTop     = (position.y < top)?    (top - position.y): 0;
-    Ipp32s   paddingBottom  = (position.y > bottom)? (position.y - bottom): 0;
-    Ipp32s   RefBlockStep = interpolateInfo->srcStep << shift;
-    const Ipp8u*   pRefBlock =    interpolateInfo->pSrc[0] + (position.x + paddingLeft - 1) +
+    int32_t bottom = (interpolateInfo->sizeFrame.height >> SCoef)  - (interpolateInfo->sizeBlock.height + 2);
+    int32_t   paddingLeft    = (position.x < left) ?  left  - position.x: 0;
+    int32_t   paddingRight   = (position.x > right)?  position.x - right: 0;
+    int32_t   paddingTop     = (position.y < top)?    (top - position.y): 0;
+    int32_t   paddingBottom  = (position.y > bottom)? (position.y - bottom): 0;
+    int32_t   RefBlockStep = interpolateInfo->srcStep << shift;
+    const uint8_t*   pRefBlock =    interpolateInfo->pSrc[0] + (position.x + paddingLeft - 1) +
                             (position.y + paddingTop  - 1)* RefBlockStep;
-    const Ipp8u* pLUT[2];
+    const uint8_t* pLUT[2];
     if (isPredBottom)
     {
         pLUT[0] = (fieldPrediction)?pLUTBottom:pLUTTop;
@@ -5468,7 +5468,7 @@ IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R(const IppVCInterpolate
 
     if ((position.y + paddingTop - 1) % 2)
     {
-        const Ipp8u* pTemp;
+        const uint8_t* pTemp;
         pTemp = pLUT[0];
         pLUT[0] = pLUT[1];
         pLUT[1] = pTemp;
@@ -5486,7 +5486,7 @@ IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R(const IppVCInterpolate
     // all block out of plane
     if (temp_block_size.height <= 0)
     {
-        const Ipp8u* pTemp;
+        const uint8_t* pTemp;
         temp_block_size.height = 0;
         if (paddingTop != 0)
         {
@@ -5518,8 +5518,8 @@ IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R(const IppVCInterpolate
 
     if (temp_block_size.width <= 0)
     {
-        Ipp32s FieldPOffset[2] = {0,0};
-        Ipp32s posy;
+        int32_t FieldPOffset[2] = {0,0};
+        int32_t posy;
 
 
 
@@ -5699,7 +5699,7 @@ IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R(const IppVCInterpolate
         {
             if (paddingBottom % 2)
             {
-                const Ipp8u* pTemp;
+                const uint8_t* pTemp;
                 pTemp = pLUT[0];
                 pLUT[0] = pLUT[1];
                 pLUT[1] = pTemp;
@@ -5756,52 +5756,52 @@ IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R(const IppVCInterpolate
 }
 
 IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R_NV12(const IppVCInterpolateBlock_8u* interpolateInfo,
-                                                      const   Ipp8u*                 pLUTTop,
-                                                      const   Ipp8u*                 pLUTBottom,
-                                                      Ipp32u                          OppositePadding,
-                                                      Ipp32u                          fieldPrediction,
-                                                      Ipp32u                          RoundControl,
-                                                      Ipp32u                          isPredBottom)
+                                                      const   uint8_t*                 pLUTTop,
+                                                      const   uint8_t*                 pLUTBottom,
+                                                      uint32_t                          OppositePadding,
+                                                      uint32_t                          fieldPrediction,
+                                                      uint32_t                          RoundControl,
+                                                      uint32_t                          isPredBottom)
 
 {
-    Ipp8u    temp_block [38*19]          = {0};
-    IppiSize temp_block_size             = {(interpolateInfo->sizeBlock.width + 3)*2, interpolateInfo->sizeBlock.height + 3};
-    Ipp32s   temp_block_step             = 38;
-    Ipp8u*   p_temp_block_data_pointer   = temp_block;
-    Ipp8u    shift = (fieldPrediction)? 1:0;
+    uint8_t    temp_block [38*19]          = {0};
+    mfxSize temp_block_size             = {(interpolateInfo->sizeBlock.width + 3)*2, interpolateInfo->sizeBlock.height + 3};
+    int32_t   temp_block_step             = 38;
+    uint8_t*   p_temp_block_data_pointer   = temp_block;
+    uint8_t    shift = (fieldPrediction)? 1:0;
 
     IppiPoint position = {interpolateInfo->pointBlockPos.x, interpolateInfo->pointBlockPos.y};
 
-    Ipp32s TopFieldPOffsetTP = 0;
-    Ipp32s BottomFieldPOffsetTP = 1;
+    int32_t TopFieldPOffsetTP = 0;
+    int32_t BottomFieldPOffsetTP = 1;
 
-    Ipp32s TopFieldPOffsetBP = 2;
-    Ipp32s BottomFieldPOffsetBP = 1;
+    int32_t TopFieldPOffsetBP = 2;
+    int32_t BottomFieldPOffsetBP = 1;
 
 
-    Ipp32u SCoef = (fieldPrediction)?1:0; // in case of interlace fields we should use half of frame height
+    uint32_t SCoef = (fieldPrediction)?1:0; // in case of interlace fields we should use half of frame height
 
 
     // minimal distance from current point for interpolation.
-    Ipp32s left = 2;
-    Ipp32s right = interpolateInfo->sizeFrame.width*2 - (interpolateInfo->sizeBlock.width + 2)*2;
-    Ipp32s top = 1;
+    int32_t left = 2;
+    int32_t right = interpolateInfo->sizeFrame.width*2 - (interpolateInfo->sizeBlock.width + 2)*2;
+    int32_t top = 1;
 
-    Ipp32s bottom = (interpolateInfo->sizeFrame.height >> SCoef)  - (interpolateInfo->sizeBlock.height + 2);
+    int32_t bottom = (interpolateInfo->sizeFrame.height >> SCoef)  - (interpolateInfo->sizeBlock.height + 2);
 
-    Ipp32s   paddingLeft    = (position.x < left) ?  left  - position.x : 0;
-    Ipp32s   paddingRight   = (position.x > right)?  position.x - right : 0;
-    Ipp32s   paddingTop     = (position.y < top)?    (top - position.y): 0;
-    Ipp32s   paddingBottom  = (position.y > bottom)? (position.y - bottom): 0;
+    int32_t   paddingLeft    = (position.x < left) ?  left  - position.x : 0;
+    int32_t   paddingRight   = (position.x > right)?  position.x - right : 0;
+    int32_t   paddingTop     = (position.y < top)?    (top - position.y): 0;
+    int32_t   paddingBottom  = (position.y > bottom)? (position.y - bottom): 0;
 
-    Ipp32s   RefBlockStep = interpolateInfo->srcStep << shift; //step for UV plane
+    int32_t   RefBlockStep = interpolateInfo->srcStep << shift; //step for UV plane
 
-    const Ipp8u*   pRefBlockU =    interpolateInfo->pSrc[0] + (position.x + paddingLeft - 2) +
+    const uint8_t*   pRefBlockU =    interpolateInfo->pSrc[0] + (position.x + paddingLeft - 2) +
                                   (position.y + paddingTop  - 1)* RefBlockStep;
 
-    const Ipp8u*   pRefBlockV =    interpolateInfo->pSrc[0] + 1 + (position.x + paddingLeft - 2) +
+    const uint8_t*   pRefBlockV =    interpolateInfo->pSrc[0] + 1 + (position.x + paddingLeft - 2) +
                                   (position.y + paddingTop  - 1)* RefBlockStep;
-    const Ipp8u* pLUT[2];
+    const uint8_t* pLUT[2];
     if (isPredBottom)
     {
         pLUT[0] = (fieldPrediction)?pLUTBottom:pLUTTop;
@@ -5815,7 +5815,7 @@ IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R_NV12(const IppVCInterp
 
     if ((position.y + paddingTop - 1) % 2)
     {
-        const Ipp8u* pTemp;
+        const uint8_t* pTemp;
         pTemp = pLUT[0];
         pLUT[0] = pLUT[1];
         pLUT[1] = pTemp;
@@ -5832,7 +5832,7 @@ IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R_NV12(const IppVCInterp
     // all block out of plane
     if (temp_block_size.height <= 0)
     {
-        const Ipp8u* pTemp;
+        const uint8_t* pTemp;
         temp_block_size.height = 0;
         if (paddingTop != 0)
         {
@@ -5863,8 +5863,8 @@ IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R_NV12(const IppVCInterp
 
     if (temp_block_size.width <= 0)
     {
-        Ipp32s FieldPOffset[2] = {0,0};
-        Ipp32s posy;
+        int32_t FieldPOffset[2] = {0,0};
+        int32_t posy;
 
         if ((OppositePadding)&&(!fieldPrediction))
         {
@@ -6052,7 +6052,7 @@ IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R_NV12(const IppVCInterp
         {
             if (paddingBottom % 2)
             {
-                const Ipp8u* pTemp;
+                const uint8_t* pTemp;
                 pTemp = pLUT[0];
                 pLUT[0] = pLUT[1];
                 pLUT[1] = pTemp;
@@ -6114,9 +6114,9 @@ IppStatus own_ippiICInterpolateQPBilinearBlock_VC1_8u_P1R_NV12(const IppVCInterp
 }
 
 
-IppStatus CalculateCorrelationBlock_8u_P1R (  Ipp8u *pSrc, Ipp32u srcStep,
-                                              Ipp8u *pRef, Ipp32u refStep,
-                                              IppiSize roiSize, IppiSize blockSize,
+IppStatus CalculateCorrelationBlock_8u_P1R (  uint8_t *pSrc, uint32_t srcStep,
+                                              uint8_t *pRef, uint32_t refStep,
+                                              mfxSize roiSize, mfxSize blockSize,
                                               CorrelationParams * pOutPut)
 {
 
@@ -6124,23 +6124,23 @@ IppStatus CalculateCorrelationBlock_8u_P1R (  Ipp8u *pSrc, Ipp32u srcStep,
     pOutPut->k = 0;
     pOutPut->b = 0;
 
-    Ipp64f X = 0;
-    Ipp64f Y = 0;
-    Ipp64f XX = 0;
-    Ipp64f YY = 0;
-    Ipp64f XY = 0;
+    double X = 0;
+    double Y = 0;
+    double XX = 0;
+    double YY = 0;
+    double XY = 0;
 
-    Ipp32u nBlocks = 0;
+    uint32_t nBlocks = 0;
 
     for (int i = 0; i < roiSize.height - blockSize.height + 1; i+= blockSize.height)
     {
-        Ipp8u *pSrcRow = pSrc + (srcStep*i);
-        Ipp8u *pRefRow = pRef + (refStep*i);
+        uint8_t *pSrcRow = pSrc + (srcStep*i);
+        uint8_t *pRefRow = pRef + (refStep*i);
 
         for (int j = 0; j < roiSize.width - blockSize.width + 1; j+= blockSize.width)
         {
-            Ipp64f Xi = 0;
-            Ipp64f Yi = 0;
+            double Xi = 0;
+            double Yi = 0;
             ippiMean_8u_C1R(pSrcRow + j, srcStep, blockSize, &Xi);
             ippiMean_8u_C1R(pRefRow + j, refStep, blockSize, &Yi);
             if (Xi == 0 || Xi == 255 || Yi == 0 || Yi == 255)
@@ -6184,7 +6184,7 @@ IppStatus CalculateCorrelationBlock_8u_P1R (  Ipp8u *pSrc, Ipp32u srcStep,
 
     return ippStsNoErr;
 }
-bool CalculateIntesityCompensationParams (CorrelationParams sCorrParams, Ipp32u &LUMSCALE, Ipp32u &LUMSHIFT)
+bool CalculateIntesityCompensationParams (CorrelationParams sCorrParams, uint32_t &LUMSCALE, uint32_t &LUMSHIFT)
 {
  
 
@@ -6195,8 +6195,8 @@ bool CalculateIntesityCompensationParams (CorrelationParams sCorrParams, Ipp32u 
         (sCorrParams.b <  -2.0)))
     {
         
-        LUMSCALE =  (Ipp32u) (sCorrParams.k*64.0 - 31.0);
-        LUMSHIFT =  ((Ipp32u)(sCorrParams.b + ((sCorrParams.b<0)? -0.5:0.5))) & 0x3F;
+        LUMSCALE =  (uint32_t) (sCorrParams.k*64.0 - 31.0);
+        LUMSHIFT =  ((uint32_t)(sCorrParams.b + ((sCorrParams.b<0)? -0.5:0.5))) & 0x3F;
 
 
         if (LUMSCALE < 64 && LUMSHIFT < 64) 
@@ -6211,7 +6211,7 @@ bool CalculateIntesityCompensationParams (CorrelationParams sCorrParams, Ipp32u 
     }
     return false;
 }
-void get_iScale_iShift (Ipp32u LUMSCALE, Ipp32u LUMSHIFT, Ipp32s &iScale, Ipp32s &iShift) 
+void get_iScale_iShift (uint32_t LUMSCALE, uint32_t LUMSHIFT, int32_t &iScale, int32_t &iShift) 
 {
     if (LUMSCALE == 0)
     {
@@ -6229,7 +6229,7 @@ void get_iScale_iShift (Ipp32u LUMSCALE, Ipp32u LUMSHIFT, Ipp32s &iScale, Ipp32s
             iShift = LUMSHIFT * 64;
     }   
 }
-void CreateICTable (Ipp32s iScale, Ipp32s iShift, Ipp32s* LUTY, Ipp32s* LUTUV)
+void CreateICTable (int32_t iScale, int32_t iShift, int32_t* LUTY, int32_t* LUTUV)
 {
     int i,j;
     // build LUTs
@@ -6261,12 +6261,12 @@ void CreateICTable (Ipp32s iScale, Ipp32s iShift, Ipp32s* LUTY, Ipp32s* LUTUV)
         LUTUV[i] = j;
     }
 }
-IppStatus   _own_ippiReplicateBorder_8u_C1R  (  Ipp8u * pSrc,  int srcStep, 
-                                              IppiSize srcRoiSize, IppiSize dstRoiSize, 
+IppStatus   _own_ippiReplicateBorder_8u_C1R  (  uint8_t * pSrc,  int srcStep, 
+                                              mfxSize srcRoiSize, mfxSize dstRoiSize, 
                                               int topBorderWidth,  int leftBorderWidth)
 {
     // upper
-    Ipp8u* pBlock = pSrc;
+    uint8_t* pBlock = pSrc;
     for (int i = 0; i < topBorderWidth; i++)
     {
         MFX_INTERNAL_CPY(pBlock - srcStep, pBlock, srcRoiSize.width);
@@ -6294,7 +6294,7 @@ IppStatus   _own_ippiReplicateBorder_8u_C1R  (  Ipp8u * pSrc,  int srcStep,
     //right
 
     pBlock = pSrc - srcStep * topBorderWidth + srcRoiSize.width - 1;
-    Ipp32s rightY = dstRoiSize.width - srcRoiSize.width - leftBorderWidth;
+    int32_t rightY = dstRoiSize.width - srcRoiSize.width - leftBorderWidth;
     rightY = (rightY>0)? rightY : 0;
 
     for (int i = 0; i < dstRoiSize.height; i++)
@@ -6304,45 +6304,45 @@ IppStatus   _own_ippiReplicateBorder_8u_C1R  (  Ipp8u * pSrc,  int srcStep,
     }
     return ippStsNoErr;
 }
-IppStatus   _own_ippiReplicateBorder_16u_C1R  ( Ipp16u * pSrc,  int srcStep, 
-                                               IppiSize srcRoiSize, IppiSize dstRoiSize, 
+IppStatus   _own_ippiReplicateBorder_16u_C1R  ( uint16_t * pSrc,  int srcStep, 
+                                               mfxSize srcRoiSize, mfxSize dstRoiSize, 
                                                int topBorderWidth,  int leftBorderWidth)
 {
     // upper
-    Ipp8u* pBlock = (Ipp8u*) pSrc;
+    uint8_t* pBlock = (uint8_t*) pSrc;
     for (int i = 0; i < topBorderWidth; i++)
     {
-        MFX_INTERNAL_CPY(pBlock - srcStep, pBlock, srcRoiSize.width*sizeof(Ipp16u));
+        MFX_INTERNAL_CPY(pBlock - srcStep, pBlock, srcRoiSize.width*sizeof(uint16_t));
         pBlock -= srcStep;
     }
 
     // bottom
-    pBlock = (Ipp8u*)pSrc + (srcRoiSize.height  - 1)*srcStep;
+    pBlock = (uint8_t*)pSrc + (srcRoiSize.height  - 1)*srcStep;
 
     for (int i = 0; i < dstRoiSize.height - srcRoiSize.height - topBorderWidth; i++ )
     {
-        MFX_INTERNAL_CPY(pBlock + srcStep, pBlock, srcRoiSize.width*sizeof(Ipp16u));
+        MFX_INTERNAL_CPY(pBlock + srcStep, pBlock, srcRoiSize.width*sizeof(uint16_t));
         pBlock += srcStep;
     }
 
     // left
-    pBlock = (Ipp8u*)(pSrc) - srcStep * topBorderWidth;
+    pBlock = (uint8_t*)(pSrc) - srcStep * topBorderWidth;
 
     for (int i = 0; i < dstRoiSize.height; i++)
     {
-        ippsSet_16s (*(Ipp16s*)pBlock, (Ipp16s*)pBlock-leftBorderWidth,leftBorderWidth);
+        ippsSet_16s (*(int16_t*)pBlock, (int16_t*)pBlock-leftBorderWidth,leftBorderWidth);
         pBlock += srcStep;
     }
 
     //right
 
-    pBlock = (Ipp8u*)(pSrc + srcRoiSize.width - 1) - srcStep * topBorderWidth ;
-    Ipp32s rightY = dstRoiSize.width - srcRoiSize.width - leftBorderWidth;
+    pBlock = (uint8_t*)(pSrc + srcRoiSize.width - 1) - srcStep * topBorderWidth ;
+    int32_t rightY = dstRoiSize.width - srcRoiSize.width - leftBorderWidth;
     rightY = (rightY>0)? rightY : 0;
 
     for (int i = 0; i < dstRoiSize.height; i++)
     {
-        ippsSet_16s (*(Ipp16s*)pBlock, ((Ipp16s*)pBlock)+ 1,rightY);
+        ippsSet_16s (*(int16_t*)pBlock, ((int16_t*)pBlock)+ 1,rightY);
         pBlock += srcStep;
     }
     return ippStsNoErr;

@@ -31,7 +31,7 @@ namespace UMC
 {
     namespace VC1Common
     {
-        void SwapData                                        (Ipp8u *src, Ipp32u dataSize);
+        void SwapData                                        (uint8_t *src, uint32_t dataSize);
     }
 }
 

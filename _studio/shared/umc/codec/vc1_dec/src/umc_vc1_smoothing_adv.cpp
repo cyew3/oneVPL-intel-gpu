@@ -27,35 +27,35 @@
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_common_defs.h"
 
-void Smoothing_I_Adv(VC1Context* pContext, Ipp32s Height)
+void Smoothing_I_Adv(VC1Context* pContext, int32_t Height)
 {
     if(pContext->m_seqLayerHeader.OVERLAP == 0)
         return;
 
     {
         VC1MB* pCurrMB = pContext->m_pCurrMB;
-        Ipp32s notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
-        Ipp32s Width = pContext->m_seqLayerHeader.widthMB;
-        Ipp32s MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
-        Ipp32u EdgeDisabledFlag = IPPVC_EDGE_HALF_1 | IPPVC_EDGE_HALF_2;
-        Ipp32u CurrFieldFlag = (pCurrMB->FIELDTX)<<1 | pCurrMB->FIELDTX;
-        Ipp32u LeftCurrFieldFlag = 0;
+        int32_t notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
+        int32_t Width = pContext->m_seqLayerHeader.widthMB;
+        int32_t MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
+        uint32_t EdgeDisabledFlag = IPPVC_EDGE_HALF_1 | IPPVC_EDGE_HALF_2;
+        uint32_t CurrFieldFlag = (pCurrMB->FIELDTX)<<1 | pCurrMB->FIELDTX;
+        uint32_t LeftCurrFieldFlag = 0;
 
-        Ipp16s* CurrBlock = pContext->m_pBlock;
-        Ipp8u* YPlane = pCurrMB->currYPlane;
-        Ipp8u* UPlane = pCurrMB->currUPlane;
-        Ipp8u* VPlane = pCurrMB->currVPlane;
-        Ipp32s YPitch = pCurrMB->currYPitch;
-        Ipp32s UPitch = pCurrMB->currUPitch;
-        Ipp32s VPitch = pCurrMB->currVPitch;
+        int16_t* CurrBlock = pContext->m_pBlock;
+        uint8_t* YPlane = pCurrMB->currYPlane;
+        uint8_t* UPlane = pCurrMB->currUPlane;
+        uint8_t* VPlane = pCurrMB->currVPlane;
+        int32_t YPitch = pCurrMB->currYPitch;
+        int32_t UPitch = pCurrMB->currUPitch;
+        int32_t VPitch = pCurrMB->currVPitch;
 
-        Ipp32s CurrOverlap = pCurrMB->Overlap;
-        Ipp32s LeftOverlap;
-        Ipp32s TopLeftOverlap;
-        Ipp32s TopOverlap;
+        int32_t CurrOverlap = pCurrMB->Overlap;
+        int32_t LeftOverlap;
+        int32_t TopLeftOverlap;
+        int32_t TopOverlap;
 
 
-        Ipp32s i, j;
+        int32_t i, j;
 
        for (j = 0; j< Height; j++)
        {
@@ -309,35 +309,35 @@ void Smoothing_I_Adv(VC1Context* pContext, Ipp32s Height)
     }
 }
 
-void Smoothing_P_Adv(VC1Context* pContext, Ipp32s Height)
+void Smoothing_P_Adv(VC1Context* pContext, int32_t Height)
 {
     if(pContext->m_seqLayerHeader.OVERLAP == 0)
         return;
 
     {
         VC1MB* pCurrMB = pContext->m_pCurrMB;
-        Ipp32s notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
-        Ipp32s Width = pContext->m_seqLayerHeader.widthMB;
-        Ipp32s MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
-        Ipp32u EdgeDisabledFlag = 0;
+        int32_t notTop = VC1_IS_NO_TOP_MB(pCurrMB->LeftTopRightPositionFlag);
+        int32_t Width = pContext->m_seqLayerHeader.widthMB;
+        int32_t MaxWidth = pContext->m_seqLayerHeader.MaxWidthMB;
+        uint32_t EdgeDisabledFlag = 0;
 
-        Ipp32u CurrFieldFlag = (pCurrMB->FIELDTX)<<1 | pCurrMB->FIELDTX;
-        Ipp32u LeftCurrFieldFlag = 0;
+        uint32_t CurrFieldFlag = (pCurrMB->FIELDTX)<<1 | pCurrMB->FIELDTX;
+        uint32_t LeftCurrFieldFlag = 0;
 
-        Ipp16s* CurrBlock = pContext->m_pBlock;
-        Ipp8u* YPlane = pCurrMB->currYPlane;
-        Ipp8u* UPlane = pCurrMB->currUPlane;
-        Ipp8u* VPlane = pCurrMB->currVPlane;
+        int16_t* CurrBlock = pContext->m_pBlock;
+        uint8_t* YPlane = pCurrMB->currYPlane;
+        uint8_t* UPlane = pCurrMB->currUPlane;
+        uint8_t* VPlane = pCurrMB->currVPlane;
 
-        Ipp32s YPitch = pCurrMB->currYPitch;
-        Ipp32s UPitch = pCurrMB->currUPitch;
-        Ipp32s VPitch = pCurrMB->currVPitch;
-        Ipp32s LeftIntra;
-        Ipp32s TopLeftIntra;
-        Ipp32s TopIntra;
-        Ipp32s CurrIntra = pCurrMB->IntraFlag*pCurrMB->Overlap;
+        int32_t YPitch = pCurrMB->currYPitch;
+        int32_t UPitch = pCurrMB->currUPitch;
+        int32_t VPitch = pCurrMB->currVPitch;
+        int32_t LeftIntra;
+        int32_t TopLeftIntra;
+        int32_t TopIntra;
+        int32_t CurrIntra = pCurrMB->IntraFlag*pCurrMB->Overlap;
 
-        Ipp32s i, j;
+        int32_t i, j;
 
         for (j = 0; j< Height; j++)
         {

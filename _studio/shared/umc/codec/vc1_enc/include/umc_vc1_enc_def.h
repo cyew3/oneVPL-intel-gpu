@@ -56,7 +56,7 @@ namespace UMC_VC1_ENCODER
 #define VC1_NULL_PTR(arg)       if (arg == NULL)        {return UMC::UMC_ERR_NULL_PTR;}
 
 #define VC_ENC_PATTERN_POS1(blk, subblk) (((5-(blk))<<2)+ (subblk))
-#define VC_ENC_PATTERN_POS(blk)  ((Ipp8u)(5-(blk)))
+#define VC_ENC_PATTERN_POS(blk)  ((uint8_t)(5-(blk)))
 typedef enum
 {
     VC1_ENC_PROFILE_S = 0x00,
@@ -141,35 +141,35 @@ typedef enum
 typedef
 struct
 {
-    Ipp8u num;
-    Ipp8u denom;
+    uint8_t num;
+    uint8_t denom;
 } sFraction;
 
 typedef struct
 {
-   const Ipp8u * pTableDL;
-   const Ipp8u * pTableDR;
-   const Ipp8u * pTableInd;
-   const Ipp8u * pTableDLLast;
-   const Ipp8u * pTableDRLast;
-   const Ipp8u * pTableIndLast;
-   const Ipp32u* pEncTable;
+   const uint8_t * pTableDL;
+   const uint8_t * pTableDR;
+   const uint8_t * pTableInd;
+   const uint8_t * pTableDLLast;
+   const uint8_t * pTableDRLast;
+   const uint8_t * pTableIndLast;
+   const uint32_t* pEncTable;
 } sACTablesSet;
 
 typedef struct
 {
-    const Ipp8u * pLSizeTable;
-    Ipp8u         levelSize;
-    Ipp8u         runSize;
+    const uint8_t * pLSizeTable;
+    uint8_t         levelSize;
+    uint8_t         runSize;
 } sACEscInfo;
 
 
 
 typedef struct
 {
-    Ipp8u LeftMB;
-    Ipp8u TopMB;
-    Ipp8u TopLeftMB;
+    uint8_t LeftMB;
+    uint8_t TopMB;
+    uint8_t TopLeftMB;
 }NeighbouringMBsIntraPattern;
 
 
@@ -292,58 +292,58 @@ typedef enum
 
 struct sPlanes
 {
-    Ipp8u* pY;
-    Ipp8u* pU;
-    Ipp8u* pV;
-    Ipp32u YStep;
-    Ipp32u UStep;
-    Ipp32u VStep;
+    uint8_t* pY;
+    uint8_t* pU;
+    uint8_t* pV;
+    uint32_t YStep;
+    uint32_t UStep;
+    uint32_t VStep;
 };
 struct sCoordinate
 {
-    Ipp16s x;
-    Ipp16s y;
+    int16_t x;
+    int16_t y;
     bool   bSecond;
 };
 struct sScaleInfo
 {
-    Ipp16s scale_opp;
-    Ipp16s scale_same1;
-    Ipp16s scale_same2;
-    Ipp16s scale_zoneX;
-    Ipp16s scale_zoneY;
-    Ipp16s zone_offsetX;
-    Ipp16s zone_offsetY;
-    Ipp16s rangeX;
-    Ipp16s rangeY;
+    int16_t scale_opp;
+    int16_t scale_same1;
+    int16_t scale_same2;
+    int16_t scale_zoneX;
+    int16_t scale_zoneY;
+    int16_t zone_offsetX;
+    int16_t zone_offsetY;
+    int16_t rangeX;
+    int16_t rangeY;
     bool   bBottom;
 
 };
 struct sMVFieldInfo
 {
-    const Ipp8u * pMVSizeOffsetFieldIndexX;
-    const Ipp8u * pMVSizeOffsetFieldIndexY;
-    const Ipp16s* pMVSizeOffsetFieldX;
-    const Ipp16s* pMVSizeOffsetFieldY;
-    const Ipp32u* pMVModeField1RefTable_VLC;
-    Ipp16s        limitX;
-    Ipp16s        limitY;
+    const uint8_t * pMVSizeOffsetFieldIndexX;
+    const uint8_t * pMVSizeOffsetFieldIndexY;
+    const int16_t* pMVSizeOffsetFieldX;
+    const int16_t* pMVSizeOffsetFieldY;
+    const uint32_t* pMVModeField1RefTable_VLC;
+    int16_t        limitX;
+    int16_t        limitY;
     bool          bExtendedX;
     bool          bExtendedY;
 };
 
 typedef struct
 {
-    Ipp32u MeCurrIndex;
-    Ipp32u MeRefFIndex;
-    Ipp32u MeRefBIndex;
+    uint32_t MeCurrIndex;
+    uint32_t MeRefFIndex;
+    uint32_t MeRefBIndex;
 }MeIndex;
 
 typedef struct 
 {
-    Ipp64f correlation;
-    Ipp64f k;
-    Ipp64f b;    /* y = k*x+b */
+    double correlation;
+    double k;
+    double b;    /* y = k*x+b */
 }CorrelationParams;
 
 }

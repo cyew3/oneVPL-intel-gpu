@@ -27,15 +27,15 @@
 
 // return value 0 means ok, != 0 - failed.
 
-int DecodeHuffmanOne(Ipp32u**  pBitStream, int* pOffset,
-    Ipp32s*  pDst, const Ipp32s* pDecodeTable);
+int DecodeHuffmanOne(uint32_t**  pBitStream, int* pOffset,
+    int32_t*  pDst, const int32_t* pDecodeTable);
 
-int DecodeHuffmanPair(Ipp32u **pBitStream, Ipp32s *pBitOffset,
-    const Ipp32s *pTable, Ipp8s *pFirst, Ipp16s *pSecond);
+int DecodeHuffmanPair(uint32_t **pBitStream, int32_t *pBitOffset,
+    const int32_t *pTable, int8_t *pFirst, int16_t *pSecond);
 
-int HuffmanTableInitAlloc(const Ipp32s* pSrcTable, Ipp32s** ppDstSpec);
-int HuffmanRunLevelTableInitAlloc(const Ipp32s* pSrcTable, Ipp32s** ppDstSpec);
-void HuffmanTableFree(Ipp32s *pDecodeTable);
+int HuffmanTableInitAlloc(const int32_t* pSrcTable, int32_t** ppDstSpec);
+int HuffmanRunLevelTableInitAlloc(const int32_t* pSrcTable, int32_t** ppDstSpec);
+void HuffmanTableFree(int32_t *pDecodeTable);
 
 #endif // __UMC_VC1_HUFFMAN_H__
 #endif // #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)

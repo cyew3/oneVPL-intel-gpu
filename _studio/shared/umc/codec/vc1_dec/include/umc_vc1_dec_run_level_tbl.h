@@ -28,16 +28,16 @@
 
 #include "umc_vc1_common_defs.h"
 
-extern const Ipp32s VC1_DQScaleTbl[64];
+extern const int32_t VC1_DQScaleTbl[64];
 
-const extern Ipp32s VC1_HighMotionIntraAC[];
-const extern Ipp32s VC1_HighMotionInterAC[];
-const extern Ipp32s VC1_LowMotionIntraAC[];
-const extern Ipp32s VC1_LowMotionInterAC[];
-const extern Ipp32s VC1_MidRateIntraAC[];
-const extern Ipp32s VC1_MidRateInterAC[];
-const extern Ipp32s VC1_HighRateIntraAC[];
-const extern Ipp32s VC1_HighRateInterAC[];
+const extern int32_t VC1_HighMotionIntraAC[];
+const extern int32_t VC1_HighMotionInterAC[];
+const extern int32_t VC1_LowMotionIntraAC[];
+const extern int32_t VC1_LowMotionInterAC[];
+const extern int32_t VC1_MidRateIntraAC[];
+const extern int32_t VC1_MidRateInterAC[];
+const extern int32_t VC1_HighRateIntraAC[];
+const extern int32_t VC1_HighRateInterAC[];
 
 #endif //__umc_vc1_dec_run_level_tbl_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

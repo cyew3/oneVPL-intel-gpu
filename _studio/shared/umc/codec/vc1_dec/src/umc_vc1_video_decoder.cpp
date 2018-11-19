@@ -91,7 +91,7 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
 {
     MediaData *data;
     Status umcRes = UMC_OK;
-    Ipp32u readSize = 0;
+    uint32_t readSize = 0;
 
     Close();
 
@@ -113,8 +113,8 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
         m_bIsReorder = false;
 
    
-    Ipp32u mbWidth = init->info.clip_info.width/VC1_PIXEL_IN_LUMA;
-    Ipp32u mbHeight= init->info.clip_info.height/VC1_PIXEL_IN_LUMA;
+    uint32_t mbWidth = init->info.clip_info.width/VC1_PIXEL_IN_LUMA;
+    uint32_t mbHeight= init->info.clip_info.height/VC1_PIXEL_IN_LUMA;
 
     m_AllocBuffer = 2*(mbHeight*VC1_PIXEL_IN_LUMA)*(mbWidth*VC1_PIXEL_IN_LUMA);
 
@@ -123,7 +123,7 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
     m_pMemoryAllocator = init->lpMemoryAllocator;
 
     // get allowed thread numbers
-    Ipp32s nAllowedThreadNumber = init->numThreads;
+    int32_t nAllowedThreadNumber = init->numThreads;
 
 #if defined (_WIN32) && (_DEBUG)
 #ifdef VC1_DEBUG_ON
@@ -141,7 +141,7 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
 
     //Heap allocation
     {
-        Ipp32u heapSize = CalculateHeapSize();
+        uint32_t heapSize = CalculateHeapSize();
         // Need to replace with MFX allocator
         if (m_pMemoryAllocator->Alloc(&m_iHeapID,
                                       heapSize,//100000,
@@ -149,7 +149,7 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
                                       16) != UMC_OK)
                                       return UMC_ERR_ALLOC;
 
-        new(m_pHeap) VC1TSHeap((Ipp8u*)(m_pMemoryAllocator->Lock(m_iHeapID)),heapSize);
+        new(m_pHeap) VC1TSHeap((uint8_t*)(m_pMemoryAllocator->Lock(m_iHeapID)),heapSize);
     }
     if (UMC_OK != CreateFrameBuffer(m_AllocBuffer))
         return UMC_ERR_ALLOC;
@@ -172,14 +172,14 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
     m_pContext->m_Offsets = m_frameData->GetExData()->offsets;
     m_pContext->m_values = m_frameData->GetExData()->values;
 
-    if(data!=NULL && (Ipp32s*)data->GetDataPointer() != NULL) // seq header is presents
+    if(data!=NULL && (int32_t*)data->GetDataPointer() != NULL) // seq header is presents
     {
         m_pCurrentIn = data;
         
         if(m_pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_UNKNOWN)
         {
             //assert(0);
-            if((Ipp32u)((m_pCurrentIn)&&0xFF) == 0xC5)
+            if((uint32_t)((m_pCurrentIn)&&0xFF) == 0xC5)
                 m_pContext->m_seqLayerHeader.PROFILE = VC1_PROFILE_MAIN;
             else
                 m_pContext->m_seqLayerHeader.PROFILE = VC1_PROFILE_ADVANCED;
@@ -188,13 +188,13 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
         //need to create buffer for swap data
         if (VC1_PROFILE_ADVANCED == m_pContext->m_seqLayerHeader.PROFILE)
         {
-            umcRes = GetStartCodes((Ipp8u*)data->GetDataPointer(),
-                                    (Ipp32u)data->GetDataSize(),
+            umcRes = GetStartCodes((uint8_t*)data->GetDataPointer(),
+                                    (uint32_t)data->GetDataSize(),
                                     m_frameData,
                                     &readSize); // parse and copy to self buffer
 
-            SwapData((Ipp8u*)m_frameData->GetDataPointer(), (Ipp32u)m_frameData->GetDataSize());
-            m_pContext->m_pBufferStart = (Ipp8u*)m_frameData->GetDataPointer();
+            SwapData((uint8_t*)m_frameData->GetDataPointer(), (uint32_t)m_frameData->GetDataSize());
+            m_pContext->m_pBufferStart = (uint8_t*)m_frameData->GetDataPointer();
             umcRes = StartCodesProcessing(m_pContext->m_pBufferStart,
                                             m_pContext->m_Offsets,
                                             m_pContext->m_values,
@@ -206,9 +206,9 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
         else
         {
             // simple copy data
-            MFX_INTERNAL_CPY(m_dataBuffer, (Ipp8u*)data->GetDataPointer(), (Ipp32u)data->GetDataSize());
-            SwapData((Ipp8u*)m_frameData->GetDataPointer(), (Ipp32u)(Ipp32u)data->GetDataSize());
-            m_pContext->m_FrameSize  = (Ipp32u)data->GetDataSize();
+            MFX_INTERNAL_CPY(m_dataBuffer, (uint8_t*)data->GetDataPointer(), (uint32_t)data->GetDataSize());
+            SwapData((uint8_t*)m_frameData->GetDataPointer(), (uint32_t)(uint32_t)data->GetDataSize());
+            m_pContext->m_FrameSize  = (uint32_t)data->GetDataSize();
         }
 
         m_pContext->m_bitstream.bitOffset    = 31;
@@ -216,7 +216,7 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
         {
             umcRes = InitSMProfile();
             UMC_CHECK_STATUS(umcRes);
-            readSize = (Ipp32u)m_pCurrentIn->GetDataSize();
+            readSize = (uint32_t)m_pCurrentIn->GetDataSize();
             data->MoveDataPointer(readSize);
         }
 
@@ -238,8 +238,8 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
         m_pContext->m_seqLayerHeader.MAX_CODED_HEIGHT = init->info.clip_info.height/2 - 1;
         m_pContext->m_seqLayerHeader.MAX_CODED_WIDTH = init->info.clip_info.width/2 - 1;
 
-        m_pContext->m_seqLayerHeader.widthMB = (Ipp16u)(init->info.clip_info.width/VC1_PIXEL_IN_LUMA);
-        m_pContext->m_seqLayerHeader.heightMB  = (Ipp16u)(init->info.clip_info.height/VC1_PIXEL_IN_LUMA);
+        m_pContext->m_seqLayerHeader.widthMB = (uint16_t)(init->info.clip_info.width/VC1_PIXEL_IN_LUMA);
+        m_pContext->m_seqLayerHeader.heightMB  = (uint16_t)(init->info.clip_info.height/VC1_PIXEL_IN_LUMA);
 
         m_pContext->m_seqLayerHeader.MaxWidthMB = m_pContext->m_seqLayerHeader.widthMB;
         m_pContext->m_seqLayerHeader.MaxHeightMB = m_pContext->m_seqLayerHeader.heightMB;
@@ -272,10 +272,10 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
 
 Status VC1VideoDecoder::InitSMProfile()
 {
-    Ipp32s seq_size = 0;
-    Ipp8u* seqStart = NULL;
-    Ipp32u height;
-    Ipp32u width;
+    int32_t seq_size = 0;
+    uint8_t* seqStart = NULL;
+    uint32_t height;
+    uint32_t width;
     VC1Status sts = VC1_OK;
 
     SwapData(m_pContext->m_pBufferStart, m_pContext->m_FrameSize);
@@ -291,17 +291,17 @@ Status VC1VideoDecoder::InitSMProfile()
     seqStart+=4;
     width  = ((*(seqStart+3))<<24) + ((*(seqStart+2))<<16) + ((*(seqStart+1))<<8) + *(seqStart);
 
-    m_pContext->m_seqLayerHeader.widthMB  = (Ipp16u)((width+15)/VC1_PIXEL_IN_LUMA);
-    m_pContext->m_seqLayerHeader.heightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
+    m_pContext->m_seqLayerHeader.widthMB  = (uint16_t)((width+15)/VC1_PIXEL_IN_LUMA);
+    m_pContext->m_seqLayerHeader.heightMB = (uint16_t)((height+15)/VC1_PIXEL_IN_LUMA);
     m_pContext->m_seqLayerHeader.CODED_HEIGHT  = m_pContext->m_seqLayerHeader.MAX_CODED_HEIGHT = height/2 - 1;
     m_pContext->m_seqLayerHeader.CODED_WIDTH = m_pContext->m_seqLayerHeader.MAX_CODED_WIDTH = width/2 - 1;
 
-    m_pContext->m_seqLayerHeader.MaxWidthMB  = (Ipp16u)((width+15)/VC1_PIXEL_IN_LUMA);
-    m_pContext->m_seqLayerHeader.MaxHeightMB = (Ipp16u)((height+15)/VC1_PIXEL_IN_LUMA);
+    m_pContext->m_seqLayerHeader.MaxWidthMB  = (uint16_t)((width+15)/VC1_PIXEL_IN_LUMA);
+    m_pContext->m_seqLayerHeader.MaxHeightMB = (uint16_t)((height+15)/VC1_PIXEL_IN_LUMA);
 
     SwapData(m_pContext->m_pBufferStart, m_pContext->m_FrameSize);
 
-    m_pContext->m_bitstream.pBitstream = (Ipp32u*)m_pContext->m_pBufferStart + 2; // skip header
+    m_pContext->m_bitstream.pBitstream = (uint32_t*)m_pContext->m_pBufferStart + 2; // skip header
     m_pContext->m_bitstream.bitOffset = 31;
 
     sts = SequenceLayer(m_pContext);
@@ -309,21 +309,21 @@ Status VC1VideoDecoder::InitSMProfile()
     return UMC_OK;
 }
 
-Status VC1VideoDecoder::ContextAllocation(Ipp32u mbWidth,Ipp32u mbHeight)
+Status VC1VideoDecoder::ContextAllocation(uint32_t mbWidth,uint32_t mbHeight)
 {
     // need to extend for threading case
     if (!m_pContext)
     {
 
-        Ipp8u* ptr = NULL;
-        ptr += align_value<Ipp32u>(sizeof(VC1Context));
-        ptr += align_value<Ipp32u>(sizeof(VC1VLCTables));
-        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*mbHeight*mbWidth*2*2);
-        ptr += align_value<Ipp32u>(mbHeight*mbWidth);
-        ptr += align_value<Ipp32u>(sizeof(VC1TSHeap));
+        uint8_t* ptr = NULL;
+        ptr += align_value<uint32_t>(sizeof(VC1Context));
+        ptr += align_value<uint32_t>(sizeof(VC1VLCTables));
+        ptr += align_value<uint32_t>(sizeof(int16_t)*mbHeight*mbWidth*2*2);
+        ptr += align_value<uint32_t>(mbHeight*mbWidth);
+        ptr += align_value<uint32_t>(sizeof(VC1TSHeap));
         if(m_stCodes == NULL)
         {
-            ptr += align_value<Ipp32u>(START_CODE_NUMBER*2*sizeof(Ipp32u)+sizeof(MediaDataEx::_MediaDataEx));
+            ptr += align_value<uint32_t>(START_CODE_NUMBER*2*sizeof(uint32_t)+sizeof(MediaDataEx::_MediaDataEx));
         }
 
         // Need to replace with MFX allocator
@@ -335,67 +335,67 @@ Status VC1VideoDecoder::ContextAllocation(Ipp32u mbWidth,Ipp32u mbHeight)
 
         m_pContext = (VC1Context*)(m_pMemoryAllocator->Lock(m_iMemContextID));
         memset(m_pContext,0,(size_t)ptr);
-        ptr = (Ipp8u*)m_pContext;
+        ptr = (uint8_t*)m_pContext;
 
-        ptr += align_value<Ipp32u>(sizeof(VC1Context));
+        ptr += align_value<uint32_t>(sizeof(VC1Context));
         m_pContext->m_vlcTbl = (VC1VLCTables*)ptr;
 
-        ptr += align_value<Ipp32u>(sizeof(VC1VLCTables));
+        ptr += align_value<uint32_t>(sizeof(VC1VLCTables));
 #ifdef ALLOW_SW_VC1_FALLBACK
-        m_pContext->savedMV_Curr = (Ipp16s*)ptr;
+        m_pContext->savedMV_Curr = (int16_t*)ptr;
 #endif
-        ptr += align_value<Ipp32u>(sizeof(Ipp16s)*mbHeight*mbWidth*2*2);
+        ptr += align_value<uint32_t>(sizeof(int16_t)*mbHeight*mbWidth*2*2);
 #ifdef ALLOW_SW_VC1_FALLBACK
         m_pContext->savedMVSamePolarity_Curr = ptr;
 #endif
 
-        ptr +=  align_value<Ipp32u>(mbHeight*mbWidth);
+        ptr +=  align_value<uint32_t>(mbHeight*mbWidth);
         m_pHeap = (VC1TSHeap*)ptr;
 
         if(m_stCodes == NULL)
         {
-            ptr += align_value<Ipp32u>(sizeof(VC1TSHeap));
+            ptr += align_value<uint32_t>(sizeof(VC1TSHeap));
             m_stCodes = (MediaDataEx::_MediaDataEx *)(ptr);
 
 
-            memset(reinterpret_cast<void*>(m_stCodes), 0, (START_CODE_NUMBER*2*sizeof(Ipp32s)+sizeof(MediaDataEx::_MediaDataEx)));
+            memset(reinterpret_cast<void*>(m_stCodes), 0, (START_CODE_NUMBER*2*sizeof(int32_t)+sizeof(MediaDataEx::_MediaDataEx)));
             m_stCodes->count      = 0;
             m_stCodes->index      = 0;
             m_stCodes->bstrm_pos  = 0;
-            m_stCodes->offsets    = (Ipp32u*)((Ipp8u*)m_stCodes +
+            m_stCodes->offsets    = (uint32_t*)((uint8_t*)m_stCodes +
             sizeof(MediaDataEx::_MediaDataEx));
-            m_stCodes->values     = (Ipp32u*)((Ipp8u*)m_stCodes->offsets +
-            START_CODE_NUMBER*sizeof( Ipp32u));
+            m_stCodes->values     = (uint32_t*)((uint8_t*)m_stCodes->offsets +
+            START_CODE_NUMBER*sizeof( uint32_t));
         }
 
     }
     return UMC_OK;
 }
-Status VC1VideoDecoder::StartCodesProcessing(Ipp8u*   pBStream,
-                                             Ipp32u*  pOffsets,
-                                             Ipp32u*  pValues,
+Status VC1VideoDecoder::StartCodesProcessing(uint8_t*   pBStream,
+                                             uint32_t*  pOffsets,
+                                             uint32_t*  pValues,
                                              bool     IsDataPrepare)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VC1VideoDecoder::StartCodesProcessing");
     Status umcRes = UMC_OK;
-    Ipp32u readSize = 0;
-    Ipp32u UnitSize;
+    uint32_t readSize = 0;
+    uint32_t UnitSize;
     VC1Status sts = VC1_OK;
     while ((*pValues != 0x0D010000)&&
            (*pValues))
     {
-        m_pContext->m_bitstream.pBitstream = (Ipp32u*)((Ipp8u*)m_frameData->GetDataPointer() + *pOffsets) + 1;//skip start code
+        m_pContext->m_bitstream.pBitstream = (uint32_t*)((uint8_t*)m_frameData->GetDataPointer() + *pOffsets) + 1;//skip start code
         if(*(pOffsets + 1))
             UnitSize = *(pOffsets + 1) - *pOffsets;
         else
-            UnitSize = (Ipp32u)(m_pCurrentIn->GetBufferSize() - *pOffsets);
+            UnitSize = (uint32_t)(m_pCurrentIn->GetBufferSize() - *pOffsets);
 
         if (!IsDataPrepare)
         {
             // copy data to self buffer
             MFX_INTERNAL_CPY(m_dataBuffer, pBStream + *pOffsets, UnitSize);
-            SwapData(m_dataBuffer, align_value<Ipp32u>(UnitSize));
-            m_pContext->m_bitstream.pBitstream = (Ipp32u*)m_dataBuffer + 1; //skip start code
+            SwapData(m_dataBuffer, align_value<uint32_t>(UnitSize));
+            m_pContext->m_bitstream.pBitstream = (uint32_t*)m_dataBuffer + 1; //skip start code
         }
         readSize += UnitSize;
         m_pContext->m_bitstream.bitOffset  = 31;
@@ -413,11 +413,11 @@ Status VC1VideoDecoder::StartCodesProcessing(Ipp8u*   pBStream,
             alignment = (context.m_seqLayerHeader.INTERLACE)?32:16;
 
 
-            if (align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) > align_value<Ipp32u>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_WIDTH+1)))
+            if (align_value<uint32_t>(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) > align_value<uint32_t>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_WIDTH+1)))
                 return UMC_ERR_INVALID_PARAMS;
             if (context.m_seqLayerHeader.INTERLACE != m_pInitContext.m_seqLayerHeader.INTERLACE )
                 return UMC_ERR_INVALID_PARAMS;
-            if (align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) > align_value<Ipp32u>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
+            if (align_value<uint32_t>(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) > align_value<uint32_t>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
                 return UMC_ERR_INVALID_PARAMS;
             // start codes are applicable for advanced profile only
             if (context.m_seqLayerHeader.PROFILE != VC1_PROFILE_ADVANCED)
@@ -432,8 +432,8 @@ Status VC1VideoDecoder::StartCodesProcessing(Ipp8u*   pBStream,
             {
                 *m_pContext = context;
 
-                if (align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) != align_value<Ipp32u>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_WIDTH+1))
-                   || align_value<Ipp32u>(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) != align_value<Ipp32u>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
+                if (align_value<uint32_t>(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) != align_value<uint32_t>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_WIDTH+1))
+                   || align_value<uint32_t>(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) != align_value<uint32_t>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
                 {
                     m_pStore->SetNewSHParams(m_pContext);
                     umcRes = UMC_NTF_NEW_RESOLUTION;
@@ -469,17 +469,17 @@ Status VC1VideoDecoder::StartCodesProcessing(Ipp8u*   pBStream,
 
     if (((0x0D010000) == *pValues) && m_decoderInitFlag)// we have frame to decode
     {
-        UnitSize = (Ipp32u)(m_pCurrentIn->GetBufferSize() - *pOffsets);
+        UnitSize = (uint32_t)(m_pCurrentIn->GetBufferSize() - *pOffsets);
         readSize += UnitSize;
-        m_pContext->m_pBufferStart = ((Ipp8u*)m_frameData->GetDataPointer() + *pOffsets); //skip start code
+        m_pContext->m_pBufferStart = ((uint8_t*)m_frameData->GetDataPointer() + *pOffsets); //skip start code
         if (!IsDataPrepare)
         {
             // copy frame data to self buffer
             MFX_INTERNAL_CPY(m_dataBuffer, 
-                (Ipp8u*)m_frameData->GetDataPointer() + *pOffsets,
+                (uint8_t*)m_frameData->GetDataPointer() + *pOffsets,
                 UnitSize);
             //use own buffer
-            SwapData(m_dataBuffer, align_value<Ipp32u>(UnitSize));
+            SwapData(m_dataBuffer, align_value<uint32_t>(UnitSize));
             m_pContext->m_pBufferStart = m_dataBuffer; //skip start code
         }
         else
@@ -507,10 +507,10 @@ Status VC1VideoDecoder::StartCodesProcessing(Ipp8u*   pBStream,
     return umcRes;
 }
 
-Status VC1VideoDecoder::SMProfilesProcessing(Ipp8u* pBitstream)
+Status VC1VideoDecoder::SMProfilesProcessing(uint8_t* pBitstream)
 {
     Status umcRes = UMC_OK;
-    m_pContext->m_bitstream.pBitstream = (Ipp32u*)pBitstream;
+    m_pContext->m_bitstream.pBitstream = (uint32_t*)pBitstream;
     m_pContext->m_bitstream.bitOffset  = 31;
     if ((*m_pContext->m_bitstream.pBitstream&0xFF) == 0xC5)// sequence header, exit after process.
     {
@@ -525,7 +525,7 @@ Status VC1VideoDecoder::SMProfilesProcessing(Ipp8u* pBitstream)
         params.m_SuggestedOutputSize = m_SurfaceNum;
         params.lpMemoryAllocator = m_pMemoryAllocator;
 
-        bool deblocking = (Ipp32s)m_pStore->IsDeblockingOn();
+        bool deblocking = (int32_t)m_pStore->IsDeblockingOn();
 
         Close();
         umcRes = Init(&params);
@@ -534,14 +534,14 @@ Status VC1VideoDecoder::SMProfilesProcessing(Ipp8u* pBitstream)
         //need to add code for restoring skip mode!
         if(!deblocking)
         {
-            Ipp32s speed_shift = 0x22;
+            int32_t speed_shift = 0x22;
             m_pStore->ChangeVideoDecodingSpeed(speed_shift);
         }
 
         return UMC_ERR_NOT_ENOUGH_DATA;
     }
 
-    m_pContext->m_pBufferStart  = (Ipp8u*)pBitstream;
+    m_pContext->m_pBufferStart  = (uint8_t*)pBitstream;
     ++m_lFrameCount;
     try //work with queue of frame descriptors and process every frame
     {
@@ -563,18 +563,18 @@ Status VC1VideoDecoder::ParseStreamFromMediaData()
     // we have no start codes. Let find them
     if (VC1_PROFILE_ADVANCED == m_pContext->m_seqLayerHeader.PROFILE)
     {
-        Ipp32u readSize;
+        uint32_t readSize;
         m_frameData->GetExData()->count = 0;
-        memset(m_frameData->GetExData()->offsets, 0,START_CODE_NUMBER*sizeof(Ipp32s));
-        memset(m_frameData->GetExData()->values, 0,START_CODE_NUMBER*sizeof(Ipp32s));
-        umcRes = GetStartCodes((Ipp8u*)m_pCurrentIn->GetDataPointer(),
-                               (Ipp32u)m_pCurrentIn->GetDataSize(),
+        memset(m_frameData->GetExData()->offsets, 0,START_CODE_NUMBER*sizeof(int32_t));
+        memset(m_frameData->GetExData()->values, 0,START_CODE_NUMBER*sizeof(int32_t));
+        umcRes = GetStartCodes((uint8_t*)m_pCurrentIn->GetDataPointer(),
+                               (uint32_t)m_pCurrentIn->GetDataSize(),
                                m_frameData,
                                &readSize); // parse and copy to self buffer
 
-        SwapData((Ipp8u*)m_frameData->GetDataPointer(), (Ipp32u)m_frameData->GetDataSize());
+        SwapData((uint8_t*)m_frameData->GetDataPointer(), (uint32_t)m_frameData->GetDataSize());
         m_pContext->m_FrameSize = readSize;
-        umcRes = StartCodesProcessing((Ipp8u*)m_frameData->GetDataPointer(),
+        umcRes = StartCodesProcessing((uint8_t*)m_frameData->GetDataPointer(),
                                        m_frameData->GetExData()->offsets,
                                        m_frameData->GetExData()->values,
                                        true);
@@ -584,12 +584,12 @@ Status VC1VideoDecoder::ParseStreamFromMediaData()
     {
         // copy data to self buffer
         MFX_INTERNAL_CPY(m_dataBuffer, 
-                    (Ipp8u*)m_pCurrentIn->GetDataPointer(),
-                    (Ipp32u)m_pCurrentIn->GetDataSize());
+                    (uint8_t*)m_pCurrentIn->GetDataPointer(),
+                    (uint32_t)m_pCurrentIn->GetDataSize());
 
-        m_pContext->m_FrameSize = (Ipp32u)m_pCurrentIn->GetDataSize();
+        m_pContext->m_FrameSize = (uint32_t)m_pCurrentIn->GetDataSize();
         m_frameData->SetDataSize(m_pContext->m_FrameSize);
-        SwapData((Ipp8u*)m_frameData->GetDataPointer(), (Ipp32u)m_frameData->GetDataSize());
+        SwapData((uint8_t*)m_frameData->GetDataPointer(), (uint32_t)m_frameData->GetDataSize());
         umcRes = SMProfilesProcessing(m_dataBuffer);
     }
     return umcRes;
@@ -605,13 +605,13 @@ Status VC1VideoDecoder::ParseStreamFromMediaDataEx(MediaDataEx *in_ex)
         m_pContext->m_Offsets = in_ex->GetExData()->offsets;
         m_pContext->m_values = in_ex->GetExData()->values;
         MFX_INTERNAL_CPY(m_dataBuffer, 
-                    (Ipp8u*)m_pCurrentIn->GetDataPointer(),
-                    (Ipp32u)m_pCurrentIn->GetDataSize());
+                    (uint8_t*)m_pCurrentIn->GetDataPointer(),
+                    (uint32_t)m_pCurrentIn->GetDataSize());
 
-        m_pContext->m_FrameSize = (Ipp32u)m_pCurrentIn->GetDataSize();
+        m_pContext->m_FrameSize = (uint32_t)m_pCurrentIn->GetDataSize();
         m_frameData->SetDataSize(m_pContext->m_FrameSize);
-        SwapData((Ipp8u*)m_frameData->GetDataPointer(), m_pContext->m_FrameSize);
-        umcRes = StartCodesProcessing((Ipp8u*)m_frameData->GetDataPointer(),
+        SwapData((uint8_t*)m_frameData->GetDataPointer(), m_pContext->m_FrameSize);
+        umcRes = StartCodesProcessing((uint8_t*)m_frameData->GetDataPointer(),
                                         m_pContext->m_Offsets,
                                         m_pContext->m_values,
                                         true);
@@ -621,18 +621,18 @@ Status VC1VideoDecoder::ParseStreamFromMediaDataEx(MediaDataEx *in_ex)
         // we have no start codes. Let find them
         if (VC1_PROFILE_ADVANCED == m_pContext->m_seqLayerHeader.PROFILE)
         {
-            Ipp32u readSize;
+            uint32_t readSize;
             m_frameData->GetExData()->count = 0;
-            memset(m_frameData->GetExData()->offsets, 0,START_CODE_NUMBER*sizeof(Ipp32s));
-            memset(m_frameData->GetExData()->values, 0,START_CODE_NUMBER*sizeof(Ipp32s));
-            umcRes = GetStartCodes((Ipp8u*)m_pCurrentIn->GetDataPointer(),
-                                    (Ipp32u)m_pCurrentIn->GetDataSize(),
+            memset(m_frameData->GetExData()->offsets, 0,START_CODE_NUMBER*sizeof(int32_t));
+            memset(m_frameData->GetExData()->values, 0,START_CODE_NUMBER*sizeof(int32_t));
+            umcRes = GetStartCodes((uint8_t*)m_pCurrentIn->GetDataPointer(),
+                                    (uint32_t)m_pCurrentIn->GetDataSize(),
                                     m_frameData,
                                     &readSize); // parse and copy to self buffer
 
             m_pContext->m_FrameSize = readSize;
-            SwapData((Ipp8u*)m_frameData->GetDataPointer(), (Ipp32u)m_frameData->GetDataSize());
-            umcRes = StartCodesProcessing((Ipp8u*)m_frameData->GetDataPointer(),
+            SwapData((uint8_t*)m_frameData->GetDataPointer(), (uint32_t)m_frameData->GetDataSize());
+            umcRes = StartCodesProcessing((uint8_t*)m_frameData->GetDataPointer(),
                                             m_pContext->m_Offsets,
                                             m_pContext->m_values,
                                             true);
@@ -641,11 +641,11 @@ Status VC1VideoDecoder::ParseStreamFromMediaDataEx(MediaDataEx *in_ex)
         {
             // copy data to self buffer
             MFX_INTERNAL_CPY(m_dataBuffer,
-                        (Ipp8u*)m_pCurrentIn->GetDataPointer(),
-                        (Ipp32u)m_pCurrentIn->GetDataSize());
-            m_pContext->m_FrameSize = (Ipp32u)m_pCurrentIn->GetDataSize();
+                        (uint8_t*)m_pCurrentIn->GetDataPointer(),
+                        (uint32_t)m_pCurrentIn->GetDataSize());
+            m_pContext->m_FrameSize = (uint32_t)m_pCurrentIn->GetDataSize();
             m_frameData->SetDataSize(m_pContext->m_FrameSize);
-            SwapData((Ipp8u*)m_frameData->GetDataPointer(), m_pContext->m_FrameSize);
+            SwapData((uint8_t*)m_frameData->GetDataPointer(), m_pContext->m_FrameSize);
             umcRes = SMProfilesProcessing(m_dataBuffer);
         }
     }
@@ -678,7 +678,7 @@ Status VC1VideoDecoder::GetFrame(MediaData* in, MediaData* out)
         return UMC_ERR_NULL_PTR;
     }
 
-    if(in!=NULL && (Ipp32u)in->GetDataSize() == 0)
+    if(in!=NULL && (uint32_t)in->GetDataSize() == 0)
         return UMC_ERR_NOT_ENOUGH_DATA;
 
     if(!m_pContext)
@@ -813,7 +813,7 @@ Status VC1VideoDecoder::Reset(void)
     return umcRes;
 }
 
-void VC1VideoDecoder::GetPTS(Ipp64f in_pts)
+void VC1VideoDecoder::GetPTS(double in_pts)
 {
    if(in_pts == -1.0 && m_pts == -1.0)
        m_pts = 0;
@@ -855,7 +855,7 @@ bool VC1VideoDecoder::GetFPS(VC1Context* pContext)
     if (m_bIsExternalFR)
         return false;
 
-    Ipp64f prevFPS = m_ClipInfo.framerate;
+    double prevFPS = m_ClipInfo.framerate;
     if((m_ClipInfo.stream_subtype == VC1_VIDEO_VC1)||(m_ClipInfo.stream_type == static_cast<int>(WVC1_VIDEO)))
     {
         m_ClipInfo.bitrate = pContext->m_seqLayerHeader.BITRTQ_POSTPROC;
@@ -914,7 +914,7 @@ bool VC1VideoDecoder::GetFPS(VC1Context* pContext)
     return (prevFPS != m_ClipInfo.framerate);
 }
 
-Status VC1VideoDecoder::CreateFrameBuffer(Ipp32u bufferSize)
+Status VC1VideoDecoder::CreateFrameBuffer(uint32_t bufferSize)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VC1VideoDecoder::CreateFrameBuffer");
     if(m_dataBuffer == NULL)
@@ -924,7 +924,7 @@ Status VC1VideoDecoder::CreateFrameBuffer(Ipp32u bufferSize)
                                      UMC_ALLOC_PERSISTENT,
                                      16) != UMC_OK)
                                      return UMC_ERR_ALLOC;
-        m_dataBuffer = (Ipp8u*)(m_pMemoryAllocator->Lock(m_iFrameBufferID));
+        m_dataBuffer = (uint8_t*)(m_pMemoryAllocator->Lock(m_iFrameBufferID));
         if(m_dataBuffer==NULL)
         {
             Close();
@@ -933,8 +933,8 @@ Status VC1VideoDecoder::CreateFrameBuffer(Ipp32u bufferSize)
     }
 
     memset(m_dataBuffer,0,bufferSize);
-    m_pContext->m_pBufferStart  = (Ipp8u*)m_dataBuffer;
-    m_pContext->m_bitstream.pBitstream       = (Ipp32u*)(m_pContext->m_pBufferStart);
+    m_pContext->m_pBufferStart  = (uint8_t*)m_dataBuffer;
+    m_pContext->m_bitstream.pBitstream       = (uint32_t*)(m_pContext->m_pBufferStart);
 
     if(m_frameData == NULL)
     {
@@ -948,35 +948,35 @@ Status VC1VideoDecoder::CreateFrameBuffer(Ipp32u bufferSize)
     return UMC_OK;
 }
 
-Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
-                                       Ipp32u DataSize,
+Status VC1VideoDecoder::GetStartCodes (uint8_t* pDataPointer,
+                                       uint32_t DataSize,
                                        MediaDataEx* out,
-                                       Ipp32u* readSize)
+                                       uint32_t* readSize)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VC1VideoDecoder::GetStartCodes");
-    Ipp8u* readPos = pDataPointer;
-    Ipp32u readBufSize =  DataSize;
-    Ipp8u* readBuf = pDataPointer;
+    uint8_t* readPos = pDataPointer;
+    uint32_t readBufSize =  DataSize;
+    uint8_t* readBuf = pDataPointer;
 
-    Ipp8u* currFramePos = (Ipp8u*)out->GetBufferPointer();
-    Ipp32u frameSize = 0;
-    Ipp32u frameBufSize = (Ipp32u)out->GetBufferSize();
+    uint8_t* currFramePos = (uint8_t*)out->GetBufferPointer();
+    uint32_t frameSize = 0;
+    uint32_t frameBufSize = (uint32_t)out->GetBufferSize();
     MediaDataEx::_MediaDataEx *stCodes = out->GetExData();
 
-    Ipp32u size = 0;
-    Ipp8u* ptr = NULL;
-    Ipp32u readDataSize = 0;
-    Ipp32u zeroNum = 0;
-    Ipp32u a = 0x0000FF00 | (*readPos);
-    Ipp32u b = 0xFFFFFFFF;
-    Ipp32u FrameNum = 0;
+    uint32_t size = 0;
+    uint8_t* ptr = NULL;
+    uint32_t readDataSize = 0;
+    uint32_t zeroNum = 0;
+    uint32_t a = 0x0000FF00 | (*readPos);
+    uint32_t b = 0xFFFFFFFF;
+    uint32_t FrameNum = 0;
     
-    Ipp32u shift = 0;
+    uint32_t shift = 0;
 
     bool isWriteSlice = false;
 
-    memset(stCodes->offsets, 0,START_CODE_NUMBER*sizeof(Ipp32s));
-    memset(stCodes->values, 0,START_CODE_NUMBER*sizeof(Ipp32s));
+    memset(stCodes->offsets, 0,START_CODE_NUMBER*sizeof(int32_t));
+    memset(stCodes->values, 0,START_CODE_NUMBER*sizeof(int32_t));
 
     while(readPos < (readBuf + readBufSize))
     {
@@ -986,7 +986,7 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
         while(!( b == 0x00000001 || b == 0x00000003 )
             &&(++readPos < (readBuf + readBufSize)))
         {
-            a = (a<<8)| (Ipp32s)(*readPos);
+            a = (a<<8)| (int32_t)(*readPos);
             b = a & 0x00FFFFFF;
         }
 
@@ -1011,7 +1011,7 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
                     }
 
                     //slice or field size
-                    size = (Ipp32u)(ptr - readBuf - readDataSize+1);
+                    size = (uint32_t)(ptr - readBuf - readDataSize+1);
 
                     if(frameSize + size > frameBufSize)
                         return UMC_ERR_NOT_ENOUGH_BUFFER;
@@ -1034,9 +1034,9 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
                     stCodes->offsets[stCodes->count] = frameSize;
                     stCodes->values[stCodes->count]  = ((*(readPos-1))<<24) + ((*(readPos-2))<<16) + ((*(readPos-3))<<8) + (*(readPos-4));
 
-                    readDataSize = (Ipp32u)(readPos - readBuf - 4);
+                    readDataSize = (uint32_t)(readPos - readBuf - 4);
 
-                    a = 0x00010b00 |(Ipp32s)(*readPos);
+                    a = 0x00010b00 |(int32_t)(*readPos);
                     b = a & 0x00FFFFFF;
 
                     zeroNum = 0;
@@ -1052,9 +1052,9 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
                             isWriteSlice = false;
 
                         readPos+=2;
-                        a = (a<<8)| (Ipp32s)(*readPos);
+                        a = (a<<8)| (int32_t)(*readPos);
                         b = a & 0x00FFFFFF;
-                        readDataSize = (Ipp32u)(readPos - readBuf - 4);
+                        readDataSize = (uint32_t)(readPos - readBuf - 4);
                         continue;
                     }
                     else if(FrameNum)
@@ -1069,7 +1069,7 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
                         }
 
                         //slice or field size
-                        size = (Ipp32u)(readPos - readBuf - readDataSize - 4);
+                        size = (uint32_t)(readPos - readBuf - readDataSize - 4);
 
                         if(frameSize + size > frameBufSize)
                             return UMC_ERR_NOT_ENOUGH_BUFFER;
@@ -1093,14 +1093,14 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
                     {
                         //beginning of frame
                         readPos++;
-                        a = 0x00000100 |(Ipp32s)(*readPos);
+                        a = 0x00000100 |(int32_t)(*readPos);
                         b = a & 0x00FFFFFF;
 
                         //end of seguence
                         if((((*(readPos))<<24) + ((*(readPos-1))<<16) + ((*(readPos-2))<<8) + (*(readPos-3))) == 0x0A010000)
                         {
                             *readSize = 4;
-                            stCodes->offsets[stCodes->count] = (Ipp32u)(0);
+                            stCodes->offsets[stCodes->count] = (uint32_t)(0);
                             stCodes->values[stCodes->count]  = ((*(readPos))<<24) + ((*(readPos-1))<<16) + ((*(readPos-2))<<8) + (*(readPos-3));
                             stCodes->count++;
                             out->SetDataSize(4);      
@@ -1108,7 +1108,7 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
                             return UMC_OK;
                         }
 
-                        stCodes->offsets[stCodes->count] = (Ipp32u)(0);
+                        stCodes->offsets[stCodes->count] = (uint32_t)(0);
                         stCodes->values[stCodes->count]  = ((*(readPos))<<24) + ((*(readPos-1))<<16) + ((*(readPos-2))<<8) + (*(readPos-3));
 
                         stCodes->count++;
@@ -1122,7 +1122,7 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
                 //000003
                 if((*(readPos + 1) <  0x04))
                 {
-                    size = (Ipp32u)(readPos - readBuf - readDataSize);
+                    size = (uint32_t)(readPos - readBuf - readDataSize);
                     if(frameSize + size > frameBufSize)
                         return UMC_ERR_NOT_ENOUGH_BUFFER;
 
@@ -1132,7 +1132,7 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
                     zeroNum = 0;
 
                     readPos++;
-                    a = (a<<8)| (Ipp32s)(*readPos);
+                    a = (a<<8)| (int32_t)(*readPos);
                     b = a & 0x00FFFFFF;
 
                     readDataSize = readDataSize + size + 1;
@@ -1140,7 +1140,7 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
                 else
                 {
                     readPos++;
-                    a = (a<<8)| (Ipp32s)(*readPos);
+                    a = (a<<8)| (int32_t)(*readPos);
                     b = a & 0x00FFFFFF;
                 }
             }
@@ -1151,7 +1151,7 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
             if (!IS_VC1_USER_DATA(stCodes->values[stCodes->count - 1] >> 24) || isWriteSlice)
             {
                 //end of stream
-                size = (Ipp32u)(readPos- readBuf - readDataSize);
+                size = (uint32_t)(readPos- readBuf - readDataSize);
 
                 if(frameSize + size > frameBufSize)
                 {
@@ -1178,13 +1178,13 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
 
 void VC1VideoDecoder::GetFrameSize(MediaData* in)
 {
-    Ipp32s frameSize = 0;
-    Ipp8u* ptr = m_pContext->m_pBufferStart;
-    Ipp32u i = 0;
-    Ipp32u* offset = m_pContext->m_Offsets;
-    Ipp32u* value = m_pContext->m_values;
+    int32_t frameSize = 0;
+    uint8_t* ptr = m_pContext->m_pBufferStart;
+    uint32_t i = 0;
+    uint32_t* offset = m_pContext->m_Offsets;
+    uint32_t* value = m_pContext->m_values;
 
-    m_pContext->m_FrameSize = (Ipp32u)in->GetDataSize();
+    m_pContext->m_FrameSize = (uint32_t)in->GetDataSize();
 
     if(m_pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED)
     {
@@ -1281,7 +1281,7 @@ void   VC1VideoDecoder::FreeAlloc(VC1Context* pContext)
     }
 }
 
-Status VC1VideoDecoder::ChangeVideoDecodingSpeed(Ipp32s& speed_shift)
+Status VC1VideoDecoder::ChangeVideoDecodingSpeed(int32_t& speed_shift)
 {
     if (m_pStore->ChangeVideoDecodingSpeed(speed_shift))
         return UMC_OK;
@@ -1291,10 +1291,10 @@ Status VC1VideoDecoder::ChangeVideoDecodingSpeed(Ipp32s& speed_shift)
 
 Status VC1VideoDecoder::CheckLevelProfileOnly(VideoDecoderParams *pParam)
 {
-    Ipp32u Profile;
+    uint32_t Profile;
     // we can init without data. Hence we cannot check profile
     UMC_CHECK_PTR(pParam->m_pData);
-    Ipp32u* pData = (Ipp32u*)pParam->m_pData->GetDataPointer();
+    uint32_t* pData = (uint32_t*)pParam->m_pData->GetDataPointer();
     // we can init without data. Hence we cannot check profile
     UMC_CHECK_PTR(pData);
     if ((WVC1_VIDEO == pParam->info.stream_subtype)||
@@ -1467,7 +1467,7 @@ UMC::FrameMemID VC1VideoDecoder::GetSkippedIndex(UMC::VC1FrameDescriptor *desc, 
         return m_pStore->GetIdx(pCurrDescriptor->m_pContext->m_frmBuff.m_iToSkipCoping);
 }
 
-FrameMemID VC1VideoDecoder::GetFrameOrder(bool isLast, bool isSamePolar, Ipp32u & frameOrder)
+FrameMemID VC1VideoDecoder::GetFrameOrder(bool isLast, bool isSamePolar, uint32_t & frameOrder)
 {
     UMC::VC1FrameDescriptor *pCurrDescriptor = 0;
     mfxI32 idx;

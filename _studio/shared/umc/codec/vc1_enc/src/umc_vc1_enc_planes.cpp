@@ -32,24 +32,24 @@
 
 namespace UMC_VC1_ENCODER
 {
-Ipp32u Frame::CalcAllocatedMemSize(Ipp32u w, Ipp32u h, Ipp32u paddingSize, bool bUdata)
+uint32_t Frame::CalcAllocatedMemSize(uint32_t w, uint32_t h, uint32_t paddingSize, bool bUdata)
 {
-    Ipp32u size = 0;
-    Ipp32u wMB = (w+15)>>4;
-    Ipp32u hMB = (h+15)>>4;
+    uint32_t size = 0;
+    uint32_t wMB = (w+15)>>4;
+    uint32_t hMB = (h+15)>>4;
 
-    Ipp32u stepY =  UMC::align_value<Ipp32u>(wMB*VC1_ENC_LUMA_SIZE   + 2*paddingSize);
-    Ipp32u stepUV=  UMC::align_value<Ipp32u>(wMB*VC1_ENC_CHROMA_SIZE + paddingSize);
+    uint32_t stepY =  UMC::align_value<uint32_t>(wMB*VC1_ENC_LUMA_SIZE   + 2*paddingSize);
+    uint32_t stepUV=  UMC::align_value<uint32_t>(wMB*VC1_ENC_CHROMA_SIZE + paddingSize);
 
 
     //Y
-    size += UMC::align_value<Ipp32u>(stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*paddingSize)
+    size += UMC::align_value<uint32_t>(stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*paddingSize)
                     + 32 + stepY * 4);
     //U
-    size += UMC::align_value<Ipp32u>(stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ paddingSize)
+    size += UMC::align_value<uint32_t>(stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ paddingSize)
                     + 32 + stepUV * 4);
     //V
-    size += UMC::align_value<Ipp32u>(stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ paddingSize)
+    size += UMC::align_value<uint32_t>(stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ paddingSize)
                     + 32 + stepUV * 4);
     if (bUdata)
     {
@@ -59,10 +59,10 @@ Ipp32u Frame::CalcAllocatedMemSize(Ipp32u w, Ipp32u h, Ipp32u paddingSize, bool 
     return size;
 }
 
-UMC::Status Frame::Init(Ipp8u* pBuffer, Ipp32s memSize, Ipp32s w, Ipp32s h, Ipp32u paddingSize, bool bUdata )
+UMC::Status Frame::Init(uint8_t* pBuffer, int32_t memSize, int32_t w, int32_t h, uint32_t paddingSize, bool bUdata )
 {
-    Ipp32s wMB = (w+15)>>4;
-    Ipp32s hMB = (h+15)>>4;
+    int32_t wMB = (w+15)>>4;
+    int32_t hMB = (h+15)>>4;
 
     Close();
 
@@ -80,14 +80,14 @@ UMC::Status Frame::Init(Ipp8u* pBuffer, Ipp32s memSize, Ipp32s w, Ipp32s h, Ipp3
 
     m_paddingSize = paddingSize;
 
-    m_stepY =  UMC::align_value<Ipp32u>(wMB*VC1_ENC_LUMA_SIZE   + 2*m_paddingSize);
-    m_stepUV=  UMC::align_value<Ipp32u>(wMB*VC1_ENC_CHROMA_SIZE + m_paddingSize);
+    m_stepY =  UMC::align_value<uint32_t>(wMB*VC1_ENC_LUMA_SIZE   + 2*m_paddingSize);
+    m_stepUV=  UMC::align_value<uint32_t>(wMB*VC1_ENC_CHROMA_SIZE + m_paddingSize);
 
     //Y
     m_pYFrame = pBuffer;
-    pBuffer += UMC::align_value<Ipp32u>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
+    pBuffer += UMC::align_value<uint32_t>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
                     + 32 + m_stepY * 4);
-    memSize -= UMC::align_value<Ipp32u>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
+    memSize -= UMC::align_value<uint32_t>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
                     + 32 + m_stepY * 4);
 
     if(memSize <= 0)
@@ -95,9 +95,9 @@ UMC::Status Frame::Init(Ipp8u* pBuffer, Ipp32s memSize, Ipp32s w, Ipp32s h, Ipp3
 
     //U
     m_pUFrame = pBuffer;
-    pBuffer += UMC::align_value<Ipp32u>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    pBuffer += UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
                     + 32 + m_stepUV * 4);
-    memSize -= UMC::align_value<Ipp32u>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    memSize -= UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
                     + 32 + m_stepUV * 4);
 
     if(memSize <= 0)
@@ -106,17 +106,17 @@ UMC::Status Frame::Init(Ipp8u* pBuffer, Ipp32s memSize, Ipp32s w, Ipp32s h, Ipp3
 
      //V
     m_pVFrame = pBuffer;
-    pBuffer += UMC::align_value<Ipp32u>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    pBuffer += UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
                     + 32 + m_stepUV * 4);
-    memSize -= UMC::align_value<Ipp32u>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    memSize -= UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
                     + 32 + m_stepUV * 4);
 
     if(memSize < 0)
         return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
-    m_pYPlane = UMC::align_pointer<Ipp8u*>( m_pYFrame + m_stepY*(m_paddingSize + 2) + m_paddingSize);
-    m_pUPlane = UMC::align_pointer<Ipp8u*>( m_pUFrame + m_stepUV*((m_paddingSize>>1) + 2) + (m_paddingSize>>1));
-    m_pVPlane = UMC::align_pointer<Ipp8u*>( m_pVFrame + m_stepUV*((m_paddingSize>>1) + 2) + (m_paddingSize>>1));
+    m_pYPlane = UMC::align_pointer<uint8_t*>( m_pYFrame + m_stepY*(m_paddingSize + 2) + m_paddingSize);
+    m_pUPlane = UMC::align_pointer<uint8_t*>( m_pUFrame + m_stepUV*((m_paddingSize>>1) + 2) + (m_paddingSize>>1));
+    m_pVPlane = UMC::align_pointer<uint8_t*>( m_pVFrame + m_stepUV*((m_paddingSize>>1) + 2) + (m_paddingSize>>1));
 
     if (bUdata)
     {
@@ -132,10 +132,10 @@ UMC::Status Frame::Init(Ipp8u* pBuffer, Ipp32s memSize, Ipp32s w, Ipp32s h, Ipp3
     
     return UMC::UMC_OK;
 }
-UMC::Status FrameNV12::Init(Ipp8u* pBuffer, Ipp32s memSize, Ipp32s w, Ipp32s h, Ipp32u paddingSize, bool bUdata )
+UMC::Status FrameNV12::Init(uint8_t* pBuffer, int32_t memSize, int32_t w, int32_t h, uint32_t paddingSize, bool bUdata )
 {
-    Ipp32s wMB = (w+15)>>4;
-    Ipp32s hMB = (h+15)>>4;
+    int32_t wMB = (w+15)>>4;
+    int32_t hMB = (h+15)>>4;
 
     Close();
 
@@ -153,14 +153,14 @@ UMC::Status FrameNV12::Init(Ipp8u* pBuffer, Ipp32s memSize, Ipp32s w, Ipp32s h, 
 
     m_paddingSize = paddingSize;
 
-    m_stepY  =  UMC::align_value<Ipp32u>(wMB*VC1_ENC_LUMA_SIZE   + 2*m_paddingSize);
+    m_stepY  =  UMC::align_value<uint32_t>(wMB*VC1_ENC_LUMA_SIZE   + 2*m_paddingSize);
     m_stepUV =  m_stepY;
 
     //Y
     m_pYFrame = pBuffer;
-    pBuffer += UMC::align_value<Ipp32u>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
+    pBuffer += UMC::align_value<uint32_t>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
         + 32 + m_stepY * 4);
-    memSize -= UMC::align_value<Ipp32u>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
+    memSize -= UMC::align_value<uint32_t>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
         + 32 + m_stepY * 4);
 
     if(memSize <= 0)
@@ -168,9 +168,9 @@ UMC::Status FrameNV12::Init(Ipp8u* pBuffer, Ipp32s memSize, Ipp32s w, Ipp32s h, 
 
     //U
     m_pUFrame = pBuffer;
-    pBuffer += UMC::align_value<Ipp32u>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    pBuffer += UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
         + 32 + m_stepUV * 4);
-    memSize -= UMC::align_value<Ipp32u>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    memSize -= UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
         + 32 + m_stepUV * 4);
 
     if(memSize <= 0)
@@ -180,8 +180,8 @@ UMC::Status FrameNV12::Init(Ipp8u* pBuffer, Ipp32s memSize, Ipp32s w, Ipp32s h, 
     //V
     m_pVFrame = m_pUFrame + 1;
 
-    m_pYPlane = UMC::align_pointer<Ipp8u*>( m_pYFrame + m_stepY*(m_paddingSize + 2) + m_paddingSize);
-    m_pUPlane = UMC::align_pointer<Ipp8u*>( m_pUFrame + m_stepUV*((m_paddingSize>>1) + 2) + (m_paddingSize));
+    m_pYPlane = UMC::align_pointer<uint8_t*>( m_pYFrame + m_stepY*(m_paddingSize + 2) + m_paddingSize);
+    m_pUPlane = UMC::align_pointer<uint8_t*>( m_pUFrame + m_stepUV*((m_paddingSize>>1) + 2) + (m_paddingSize));
     m_pVPlane = m_pUPlane + 1;
 
     if (bUdata)
@@ -222,13 +222,13 @@ void Frame::Close()
 
 
 
-UMC::Status Frame::CopyPlane ( Ipp8u* pYPlane, Ipp32u stepY,
-                               Ipp8u* pUPlane, Ipp32u stepU,
-                               Ipp8u* pVPlane, Ipp32u stepV,
+UMC::Status Frame::CopyPlane ( uint8_t* pYPlane, uint32_t stepY,
+                               uint8_t* pUPlane, uint32_t stepU,
+                               uint8_t* pVPlane, uint32_t stepV,
                                ePType pictureType)
 {
-    IppiSize            sizeLuma        = {m_widthYPlane, m_heightYPlane};
-    IppiSize            sizeChroma      = {m_widthUVPlane,m_heightUVPlane};
+    mfxSize            sizeLuma        = {m_widthYPlane, m_heightYPlane};
+    mfxSize            sizeChroma      = {m_widthUVPlane,m_heightUVPlane};
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
     ippiCopy_8u_C1R(pYPlane,stepY, m_pYPlane,m_stepY, sizeLuma);
@@ -241,13 +241,13 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
     return UMC::UMC_OK;
 
 }
-UMC::Status FrameNV12::CopyPlane (  Ipp8u* pYPlane, Ipp32u stepY,
-                                    Ipp8u* pUPlane, Ipp32u stepU,
-                                    Ipp8u* pVPlane, Ipp32u stepV,
+UMC::Status FrameNV12::CopyPlane (  uint8_t* pYPlane, uint32_t stepY,
+                                    uint8_t* pUPlane, uint32_t stepU,
+                                    uint8_t* pVPlane, uint32_t stepV,
                                     ePType pictureType)
 {
-    IppiSize            sizeLuma        = {m_widthYPlane, m_heightYPlane};
-    IppiSize            sizeChroma      = {m_widthUVPlane,m_heightUVPlane};
+    mfxSize            sizeLuma        = {m_widthYPlane, m_heightYPlane};
+    mfxSize            sizeChroma      = {m_widthUVPlane,m_heightUVPlane};
 
     IPP_STAT_START_TIME(m_IppStat->IppStartTime);
     ippiCopy_8u_C1R(pYPlane,stepY, m_pYPlane,m_stepY, sizeLuma);
@@ -261,8 +261,8 @@ UMC::Status FrameNV12::CopyPlane (  Ipp8u* pYPlane, Ipp32u stepY,
 }
 UMC::Status Frame::CopyPlane ( Frame * fr)
 {
-    IppiSize            sizeLuma        = {m_widthYPlane, m_heightYPlane};
-    IppiSize            sizeChroma      = {m_widthUVPlane,m_heightUVPlane};
+    mfxSize            sizeLuma        = {m_widthYPlane, m_heightYPlane};
+    mfxSize            sizeChroma      = {m_widthUVPlane,m_heightUVPlane};
 
 IPP_STAT_START_TIME(m_IppStat->IppStartTime);
     ippiCopy_8u_C1R(fr->m_pYPlane,fr->m_stepY, m_pYPlane,m_stepY, sizeLuma);
@@ -276,8 +276,8 @@ IPP_STAT_END_TIME(m_IppStat->IppStartTime, m_IppStat->IppEndTime, m_IppStat->Ipp
 }
 UMC::Status FrameNV12::CopyPlane ( Frame * fr)
 {
-    IppiSize            sizeLuma        = {m_widthYPlane, m_heightYPlane};
-    IppiSize            sizeChroma      = {m_widthUVPlane,m_heightUVPlane};
+    mfxSize            sizeLuma        = {m_widthYPlane, m_heightYPlane};
+    mfxSize            sizeChroma      = {m_widthUVPlane,m_heightUVPlane};
 
     IPP_STAT_START_TIME(m_IppStat->IppStartTime);
     ippiCopy_8u_C1R(fr->GetYPlane(),fr->GetYStep(), m_pYPlane,m_stepY, sizeLuma);
@@ -290,18 +290,18 @@ UMC::Status FrameNV12::CopyPlane ( Frame * fr)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-Ipp32u BufferedFrames::CalcAllocatedMemSize(Ipp32u w, Ipp32u h, Ipp32u paddingSize, Ipp32u n)
+uint32_t BufferedFrames::CalcAllocatedMemSize(uint32_t w, uint32_t h, uint32_t paddingSize, uint32_t n)
 {
-    Ipp32u memSize = 0;
-    memSize += UMC::align_value<Ipp32u>(n*sizeof(Frame));
-    memSize += n*UMC::align_value<Ipp32u>(Frame::CalcAllocatedMemSize(w, h, paddingSize));
+    uint32_t memSize = 0;
+    memSize += UMC::align_value<uint32_t>(n*sizeof(Frame));
+    memSize += n*UMC::align_value<uint32_t>(Frame::CalcAllocatedMemSize(w, h, paddingSize));
 
     return memSize;
 }
 
-UMC::Status BufferedFrames::Init (Ipp8u* pBuffer, Ipp32u memSize, Ipp32u w, Ipp32u h, Ipp32u paddingSize, Ipp32u n)
+UMC::Status BufferedFrames::Init (uint8_t* pBuffer, uint32_t memSize, uint32_t w, uint32_t h, uint32_t paddingSize, uint32_t n)
 {
-    Ipp32u i;
+    uint32_t i;
     UMC::Status err = UMC::UMC_OK;
 
     Close();
@@ -316,15 +316,15 @@ UMC::Status BufferedFrames::Init (Ipp8u* pBuffer, Ipp32u memSize, Ipp32u w, Ipp3
     if (!m_pFrames)
         return UMC::UMC_ERR_ALLOC;
 
-    pBuffer += UMC::align_value<Ipp32u>(n * sizeof(Frame));
-    memSize -= UMC::align_value<Ipp32u>(n * sizeof(Frame));
+    pBuffer += UMC::align_value<uint32_t>(n * sizeof(Frame));
+    memSize -= UMC::align_value<uint32_t>(n * sizeof(Frame));
 
     if(memSize < 0)
         return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
     m_bufferSize    = n;
 
-    Ipp32u frameSize = UMC::align_value<Ipp32u>(Frame::CalcAllocatedMemSize(w,h,paddingSize));
+    uint32_t frameSize = UMC::align_value<uint32_t>(Frame::CalcAllocatedMemSize(w,h,paddingSize));
     for (i = 0; i < n ; i++)
     {
         err = m_pFrames[i].Init (pBuffer, memSize, w,h,paddingSize);
@@ -349,9 +349,9 @@ void BufferedFrames::Close ()
     m_currFrameIndex    = 0;
     m_bClosed           = false;
 }
-UMC::Status   BufferedFrames::SaveFrame (   Ipp8u* pYPlane, Ipp32u stepY,
-                                            Ipp8u* pUPlane, Ipp32u stepU,
-                                            Ipp8u* pVPlane, Ipp32u stepV )
+UMC::Status   BufferedFrames::SaveFrame (   uint8_t* pYPlane, uint32_t stepY,
+                                            uint8_t* pUPlane, uint32_t stepU,
+                                            uint8_t* pVPlane, uint32_t stepV )
 {
     if (m_currFrameIndex)
     {
@@ -393,7 +393,7 @@ UMC::Status   BufferedFrames::GetFrame (Frame** currFrame)
 }
 UMC::Status BufferedFrames::GetReferenceFrame (Frame** currFrame)
 {
-    Ipp32u index = 0;
+    uint32_t index = 0;
     *currFrame = 0;
 
     if (m_bClosed)

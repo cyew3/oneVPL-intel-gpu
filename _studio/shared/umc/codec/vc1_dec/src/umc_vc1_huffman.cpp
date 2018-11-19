@@ -30,7 +30,7 @@ using namespace UMC;
 #ifdef OPEN_SOURCE
 #define VLC_FORBIDDEN 0xf0f1
 
-static Ipp32u bit_mask[33] =
+static uint32_t bit_mask[33] =
 {
     0x0,
     0x01,       0x03,       0x07,       0x0f,
@@ -45,7 +45,7 @@ static Ipp32u bit_mask[33] =
 
 #define GetNBits(current_data, bit_ptr, nbits, pData,type)              \
 {                                                                       \
-    Ipp32u x;                                                  \
+    uint32_t x;                                                  \
                                                                         \
     bit_ptr -= nbits;                                                   \
                                                                         \
@@ -76,17 +76,17 @@ static Ipp32u bit_mask[33] =
     }                                                                   \
 }
 
-static Ipp32s HuffmanTableSize(Ipp32s rl, const Ipp32s *pSrcTable)
+static int32_t HuffmanTableSize(int32_t rl, const int32_t *pSrcTable)
 {
     typedef struct
     {
-        Ipp32s code;
-        Ipp32s Nc;
+        int32_t code;
+        int32_t Nc;
     } CodeWord;
 
     CodeWord *Code;
-    Ipp32s nWord, SubTblLength, CodeLength, n, i, j, s, index, dstTableSize;
-    const Ipp32s *src;
+    int32_t nWord, SubTblLength, CodeLength, n, i, j, s, index, dstTableSize;
+    const int32_t *src;
 
     /* find number of code words */
     src = pSrcTable + pSrcTable[1] + 2;
@@ -137,13 +137,13 @@ static Ipp32s HuffmanTableSize(Ipp32s rl, const Ipp32s *pSrcTable)
     return dstTableSize;
 }
 
-static int HuffmanInitAlloc(Ipp32s rl, const Ipp32s* pSrcTable, Ipp32s** ppDstSpec)
+static int HuffmanInitAlloc(int32_t rl, const int32_t* pSrcTable, int32_t** ppDstSpec)
 {
-    Ipp32s          i, k, l, j, commLen = 0;
-    Ipp32s          nCodes, code, szblen, offset, shift, mask, value1, value2 = 0, size;
+    int32_t          i, k, l, j, commLen = 0;
+    int32_t          nCodes, code, szblen, offset, shift, mask, value1, value2 = 0, size;
 
-    Ipp32s          *szBuff;
-    Ipp32s          *table;
+    int32_t          *szBuff;
+    int32_t          *table;
 
     if (!pSrcTable || !ppDstSpec)
         return -1;
@@ -154,9 +154,9 @@ static int HuffmanInitAlloc(Ipp32s rl, const Ipp32s* pSrcTable, Ipp32s** ppDstSp
 
     szblen = pSrcTable[1];
     offset = (1 << pSrcTable[2]) + 1;
-    szBuff = (Ipp32s*)&pSrcTable[2];
+    szBuff = (int32_t*)&pSrcTable[2];
 
-    table = (Ipp32s*)malloc(size * sizeof(Ipp32s));
+    table = (int32_t*)malloc(size * sizeof(int32_t));
     if (0 == table)
         return -1;
     *ppDstSpec = table;
@@ -188,7 +188,7 @@ static int HuffmanInitAlloc(Ipp32s rl, const Ipp32s* pSrcTable, Ipp32s** ppDstSp
 
                     for (j = 0; j < (1 << (commLen - i)); j++)
                         if (rl == 0) table[code + j + 1] = (value1 << 8) | (commLen - i);
-                        else      table[code + j + 1] = ((Ipp16s)value2 << 16) | ((Ipp8u)value1 << 8) | (commLen - i);
+                        else      table[code + j + 1] = ((int16_t)value2 << 16) | ((uint8_t)value1 << 8) | (commLen - i);
 
                     break;
                 }
@@ -202,7 +202,7 @@ static int HuffmanInitAlloc(Ipp32s rl, const Ipp32s* pSrcTable, Ipp32s** ppDstSp
                     {
                         if (((table[code + 1] & 0xff) == 0x80) && (rl == 1 || (table[code + 1] & 0xff00)))
                         {
-                            table = (Ipp32s*)*ppDstSpec + (table[code + 1] >> 8);
+                            table = (int32_t*)*ppDstSpec + (table[code + 1] >> 8);
                         }
                     }
                     else
@@ -221,18 +221,18 @@ static int HuffmanInitAlloc(Ipp32s rl, const Ipp32s* pSrcTable, Ipp32s** ppDstSp
     return 0;
 }
 
-int DecodeHuffmanOne(Ipp32u**  pBitStream, int* pOffset,
-    Ipp32s*  pDst, const Ipp32s* pDecodeTable)
+int DecodeHuffmanOne(uint32_t**  pBitStream, int* pOffset,
+    int32_t*  pDst, const int32_t* pDecodeTable)
 {
-    Ipp32u table_bits, code_len;
-    Ipp32u  pos;
-    Ipp32s  val;
+    uint32_t table_bits, code_len;
+    uint32_t  pos;
+    int32_t  val;
 
     if (!pBitStream || !pOffset || !pDecodeTable || !*pBitStream || !pDst)
         return -1;
 
     table_bits = *pDecodeTable;
-    GetNBits((*pBitStream), (*pOffset), table_bits, pos, Ipp32u)
+    GetNBits((*pBitStream), (*pOffset), table_bits, pos, uint32_t)
 
     val = pDecodeTable[pos + 1];
     code_len = val & 0xff;
@@ -241,7 +241,7 @@ int DecodeHuffmanOne(Ipp32u**  pBitStream, int* pOffset,
     while (code_len & 0x80)
     {
         table_bits = pDecodeTable[val];
-        GetNBits((*pBitStream), (*pOffset), table_bits, pos, Ipp32u)
+        GetNBits((*pBitStream), (*pOffset), table_bits, pos, uint32_t)
 
         val = pDecodeTable[pos + val + 1];
         code_len = val & 0xff;
@@ -261,14 +261,14 @@ int DecodeHuffmanOne(Ipp32u**  pBitStream, int* pOffset,
     return 0;
 }
 
-int DecodeHuffmanPair(Ipp32u **pBitStream, Ipp32s *pBitOffset, const Ipp32s *pTable,
-    Ipp8s *pFirst, Ipp16s *pSecond)
+int DecodeHuffmanPair(uint32_t **pBitStream, int32_t *pBitOffset, const int32_t *pTable,
+    int8_t *pFirst, int16_t *pSecond)
 {
-    Ipp32s val;
-    Ipp32u table_bits, pos;
-    Ipp8u code_len;
-    Ipp32u *tmp_pbs = 0;
-    Ipp32s tmp_offs = 0;
+    int32_t val;
+    uint32_t table_bits, pos;
+    uint8_t code_len;
+    uint32_t *tmp_pbs = 0;
+    int32_t tmp_offs = 0;
 
     /* check error(s) */
     if (!pBitStream || !pBitOffset || !pTable || !pFirst || !pSecond || !*pBitStream)
@@ -277,17 +277,17 @@ int DecodeHuffmanPair(Ipp32u **pBitStream, Ipp32s *pBitOffset, const Ipp32s *pTa
     tmp_pbs = *pBitStream;
     tmp_offs = *pBitOffset;
     table_bits = *pTable;
-    GetNBits((*pBitStream), (*pBitOffset), table_bits, pos, Ipp32u);
+    GetNBits((*pBitStream), (*pBitOffset), table_bits, pos, uint32_t);
     val = pTable[pos + 1];
-    code_len = (Ipp8u)(val);
+    code_len = (uint8_t)(val);
 
     while (code_len & 0x80)
     {
         val = val >> 8;
         table_bits = pTable[val];
-        GetNBits((*pBitStream), (*pBitOffset), table_bits, pos, Ipp32u);
+        GetNBits((*pBitStream), (*pBitOffset), table_bits, pos, uint32_t);
         val = pTable[pos + val + 1];
-        code_len = (Ipp8u)(val);
+        code_len = (uint8_t)(val);
     }
 
     UngetNBits((*pBitStream), (*pBitOffset), code_len);
@@ -299,23 +299,23 @@ int DecodeHuffmanPair(Ipp32u **pBitStream, Ipp32s *pBitOffset, const Ipp32s *pTa
         return -1;
     }
 
-    *pFirst = (Ipp8s)((val >> 8) & 0xff);
-    *pSecond = (Ipp16s)((val >> 16) & 0xffff);
+    *pFirst = (int8_t)((val >> 8) & 0xff);
+    *pSecond = (int16_t)((val >> 16) & 0xffff);
 
     return 0;
 }
 
-int HuffmanTableInitAlloc(const Ipp32s* pSrcTable, Ipp32s** ppDstSpec)
+int HuffmanTableInitAlloc(const int32_t* pSrcTable, int32_t** ppDstSpec)
 {
     return HuffmanInitAlloc(0, pSrcTable, ppDstSpec);
 }
 
-int HuffmanRunLevelTableInitAlloc(const Ipp32s* pSrcTable, Ipp32s** ppDstSpec)
+int HuffmanRunLevelTableInitAlloc(const int32_t* pSrcTable, int32_t** ppDstSpec)
 {
     return HuffmanInitAlloc(1, pSrcTable, ppDstSpec);
 }
 
-void HuffmanTableFree(Ipp32s *pDecodeTable)
+void HuffmanTableFree(int32_t *pDecodeTable)
 {
     free((void*)pDecodeTable);
 }
@@ -332,29 +332,29 @@ void HuffmanTableFree(Ipp32s *pDecodeTable)
 #pragma warning(disable:4996)
 #endif
 
-int DecodeHuffmanOne(Ipp32u**  pBitStream, int* pOffset,
-    Ipp32s*  pDst, const Ipp32s* pDecodeTable)
+int DecodeHuffmanOne(uint32_t**  pBitStream, int* pOffset,
+    int32_t*  pDst, const int32_t* pDecodeTable)
 {
     return (ippStsNoErr != ippiDecodeHuffmanOne_1u32s(pBitStream, pOffset, pDst, pDecodeTable)) ? -1 : 0;
 }
 
-int DecodeHuffmanPair(Ipp32u **pBitStream, Ipp32s *pBitOffset,
-    const Ipp32s *pTable, Ipp8s *pFirst, Ipp16s *pSecond)
+int DecodeHuffmanPair(uint32_t **pBitStream, int32_t *pBitOffset,
+    const int32_t *pTable, int8_t *pFirst, int16_t *pSecond)
 {
     return (ippStsNoErr != ippiDecodeHuffmanPair_1u16s(pBitStream, pBitOffset, pTable, pFirst, pSecond)) ? -1 : 0;
 }
 
-int HuffmanTableInitAlloc(const Ipp32s* pSrcTable, Ipp32s** ppDstSpec)
+int HuffmanTableInitAlloc(const int32_t* pSrcTable, int32_t** ppDstSpec)
 {
     return (ippStsNoErr != ippiHuffmanTableInitAlloc_32s(pSrcTable, ppDstSpec)) ? -1 : 0;
 }
 
-int HuffmanRunLevelTableInitAlloc(const Ipp32s* pSrcTable, Ipp32s** ppDstSpec)
+int HuffmanRunLevelTableInitAlloc(const int32_t* pSrcTable, int32_t** ppDstSpec)
 {
     return (ippStsNoErr != ippiHuffmanRunLevelTableInitAlloc_32s(pSrcTable, ppDstSpec)) ? -1 : 0;
 }
 
-void HuffmanTableFree(Ipp32s *pDecodeTable)
+void HuffmanTableFree(int32_t *pDecodeTable)
 {
     ippiHuffmanTableFree_32s(pDecodeTable);
 }

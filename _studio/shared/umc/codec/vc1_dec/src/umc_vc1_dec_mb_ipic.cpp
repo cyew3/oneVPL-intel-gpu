@@ -39,11 +39,11 @@ static const IntraPrediction IntraPredictionTable[] =
 //Progressive-coded I picture
 VC1Status MBLayer_ProgressiveIpicture(VC1Context* pContext)
 {
-    Ipp32s i;
-    Ipp32s CBPCY;//decoded_cbpy
+    int32_t i;
+    int32_t CBPCY;//decoded_cbpy
     int ret;
     VC1Status vc1Res = VC1_OK;
-    Ipp32u ACPRED = 0;
+    uint32_t ACPRED = 0;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
 
@@ -56,13 +56,13 @@ VC1Status MBLayer_ProgressiveIpicture(VC1Context* pContext)
                                             sMB->m_currMBXpos, sMB->m_currMBYpos);
 #endif
 
-    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(Ipp16s)*4);
+    memset((pContext->savedMV + (sMB->m_currMBXpos + sMB->m_currMBYpos * pContext->m_seqLayerHeader.MaxWidthMB)*4),VC1_MVINTRA,sizeof(int16_t)*4);
 
     pCurrMB->mbType = VC1_MB_INTRA;
 
     if (pContext->m_picLayerHeader->PQUANT >= 9)
     {
-        pCurrMB->Overlap = (Ipp8u)pContext->m_seqLayerHeader.OVERLAP;
+        pCurrMB->Overlap = (uint8_t)pContext->m_seqLayerHeader.OVERLAP;
         pCurrMB->bias = 128 * pCurrMB->Overlap;
     }
     else
@@ -93,9 +93,9 @@ VC1Status MBLayer_ProgressiveIpicture(VC1Context* pContext)
     //P pictures.
     VC1_GET_BITS(1, ACPRED);
 
-    memset(pContext->m_pBlock, 0, sizeof(Ipp16s)*8*8*6);
+    memset(pContext->m_pBlock, 0, sizeof(int16_t)*8*8*6);
 
-    pContext->CurrDC->DoubleQuant = (Ipp8u)(2*pContext->m_picLayerHeader->PQUANT +
+    pContext->CurrDC->DoubleQuant = (uint8_t)(2*pContext->m_picLayerHeader->PQUANT +
                                                 pContext->m_picLayerHeader->HALFQP);
 
     pContext->CurrDC->DCStepSize = GetDCStepSize(pContext->m_picLayerHeader->PQUANT);

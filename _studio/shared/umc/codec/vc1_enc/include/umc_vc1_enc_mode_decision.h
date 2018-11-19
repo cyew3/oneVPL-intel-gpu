@@ -34,52 +34,52 @@ namespace UMC_VC1_ENCODER
 {
     struct VC1EncMD_P
     {
-        Ipp8u*               pYSrc; 
-        Ipp32u               srcYStep;
-        Ipp8u*               pUSrc; 
-        Ipp32u               srcUStep;
-        Ipp8u*               pVSrc; 
-        Ipp32u               srcVStep;
+        uint8_t*               pYSrc; 
+        uint32_t               srcYStep;
+        uint8_t*               pUSrc; 
+        uint32_t               srcUStep;
+        uint8_t*               pVSrc; 
+        uint32_t               srcVStep;
 
-        Ipp8u*               pYRef; 
-        Ipp32u               refYStep;      
-        Ipp8u*               pURef; 
-        Ipp32u               refUStep;
-        Ipp8u*               pVRef; 
-        Ipp32u               refVStep;
+        uint8_t*               pYRef; 
+        uint32_t               refYStep;      
+        uint8_t*               pURef; 
+        uint32_t               refUStep;
+        uint8_t*               pVRef; 
+        uint32_t               refVStep;
 
-        Ipp32u               quant;
-        Ipp32u               bUniform; 
-        Ipp32u               intraPattern;
-        Ipp32u               DecTypeAC1;
-        const Ipp8u**        pScanMatrix;
+        uint32_t               quant;
+        uint32_t               bUniform; 
+        uint32_t               intraPattern;
+        uint32_t               DecTypeAC1;
+        const uint8_t**        pScanMatrix;
 
-        Ipp32u               CBPTab;
+        uint32_t               CBPTab;
         bool                 bField;
     }; 
     struct VC1EncMD_B
     {
-        Ipp8u*               pYSrc; 
-        Ipp32u               srcYStep;
-        Ipp8u*               pUSrc; 
-        Ipp32u               srcUStep;
-        Ipp8u*               pVSrc; 
-        Ipp32u               srcVStep;
+        uint8_t*               pYSrc; 
+        uint32_t               srcYStep;
+        uint8_t*               pUSrc; 
+        uint32_t               srcUStep;
+        uint8_t*               pVSrc; 
+        uint32_t               srcVStep;
 
-        Ipp8u*               pYRef[2]; 
-        Ipp32u               refYStep[2];      
-        Ipp8u*               pURef[2]; 
-        Ipp32u               refUStep[2];
-        Ipp8u*               pVRef[2]; 
-        Ipp32u               refVStep[2];
+        uint8_t*               pYRef[2]; 
+        uint32_t               refYStep[2];      
+        uint8_t*               pURef[2]; 
+        uint32_t               refUStep[2];
+        uint8_t*               pVRef[2]; 
+        uint32_t               refVStep[2];
 
-        Ipp32u               quant;
-        Ipp32u               bUniform; 
-        Ipp32u               intraPattern;
-        Ipp32u               DecTypeAC1;
-        const Ipp8u**        pScanMatrix;
+        uint32_t               quant;
+        uint32_t               bUniform; 
+        uint32_t               intraPattern;
+        uint32_t               DecTypeAC1;
+        const uint8_t**        pScanMatrix;
 
-        Ipp32u               CBPTab;
+        uint32_t               CBPTab;
         bool                 bField;
     }; 
     UMC::Status GetVSTTypeP_RD (VC1EncMD_P* pIn, eTransformType* pVSTTypeOut) ;

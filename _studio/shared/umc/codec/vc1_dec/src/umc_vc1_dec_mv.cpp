@@ -27,18 +27,18 @@
 #include "umc_vc1_common_mvdiff_tbl.h"
 #include "umc_vc1_huffman.h"
 
-static Ipp8u size_table[6] = {0, 2, 3, 4, 5, 8};
-static Ipp8u offset_table[6] = {0, 1, 3, 7, 15, 31};
+static uint8_t size_table[6] = {0, 2, 3, 4, 5, 8};
+static uint8_t offset_table[6] = {0, 1, 3, 7, 15, 31};
 
-Ipp16u DecodeMVDiff(VC1Context* pContext,Ipp32s hpelfl,
-                  Ipp16s* pdmv_x, Ipp16s* pdmv_y)
+uint16_t DecodeMVDiff(VC1Context* pContext,int32_t hpelfl,
+                  int16_t* pdmv_x, int16_t* pdmv_y)
 {
     int ret;
-    Ipp32s data;
-    Ipp16s index;
-    Ipp16s dmv_x = 0;
-    Ipp16s dmv_y = 0;
-    Ipp16u last_intra = 0;
+    int32_t data;
+    int16_t index;
+    int16_t dmv_x = 0;
+    int16_t dmv_y = 0;
+    uint16_t last_intra = 0;
     VC1PictureLayerHeader* picHeader = pContext->m_picLayerHeader;
 
     ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
@@ -47,9 +47,9 @@ Ipp16u DecodeMVDiff(VC1Context* pContext,Ipp32s hpelfl,
                                      picHeader->m_pCurrMVDifftbl);
     VM_ASSERT(ret == 0);
 
-    index = (Ipp16s)(data & 0x000000FF);
+    index = (int16_t)(data & 0x000000FF);
     data = data>>8;
-    last_intra = (Ipp16u)(data >> 8);
+    last_intra = (uint16_t)(data >> 8);
 
 #ifdef VC1_DEBUG_ON
     if(index!=37)
@@ -62,18 +62,18 @@ Ipp16u DecodeMVDiff(VC1Context* pContext,Ipp32s hpelfl,
 
     if(index < 35)
     {
-        Ipp32s hpel = 0, sign, val;
+        int32_t hpel = 0, sign, val;
 
         if(data&0x0f)
         {
-            Ipp32u index1 = (data & 0x0000000f) % 6;   // = index%6
+            uint32_t index1 = (data & 0x0000000f) % 6;   // = index%6
             if (hpelfl + index1 == 6)
                 hpel = 1;
 
             VC1_GET_BITS((size_table[index1] - hpel), val);
             sign = 0 - (val & 1);
-            dmv_x = (Ipp16s)(sign ^ ((val >> 1) + offset_table[index1]));
-            dmv_x = dmv_x - (Ipp16s)sign;
+            dmv_x = (int16_t)(sign ^ ((val >> 1) + offset_table[index1]));
+            dmv_x = dmv_x - (int16_t)sign;
         }
 
 
@@ -81,30 +81,30 @@ Ipp16u DecodeMVDiff(VC1Context* pContext,Ipp32s hpelfl,
         {
             data = data >> 4;
             hpel = 0;
-            Ipp32u index2 = (data & 0x0000000f) % 6;   // = index/6
+            uint32_t index2 = (data & 0x0000000f) % 6;   // = index/6
 
             if (hpelfl + index2 == 6)
                 hpel = 1;
 
             VC1_GET_BITS((size_table[index2] - hpel), val);
             sign = 0 - (val & 1);
-            dmv_y = (Ipp16s)(sign ^ ((val >> 1) + offset_table[index2]));
-            dmv_y = dmv_y - (Ipp16s)sign;
+            dmv_y = (int16_t)(sign ^ ((val >> 1) + offset_table[index2]));
+            dmv_y = dmv_y - (int16_t)sign;
         }
     }
     else  if (index == 35)
     {
-        Ipp32s k_x = picHeader->m_pCurrMVRangetbl->k_x - hpelfl;
-        Ipp32s k_y = picHeader->m_pCurrMVRangetbl->k_y - hpelfl;
+        int32_t k_x = picHeader->m_pCurrMVRangetbl->k_x - hpelfl;
+        int32_t k_y = picHeader->m_pCurrMVRangetbl->k_y - hpelfl;
 
-        Ipp32s tmp_dmv_x = 0;
-        Ipp32s tmp_dmv_y = 0;
+        int32_t tmp_dmv_x = 0;
+        int32_t tmp_dmv_y = 0;
 
         VC1_GET_BITS(k_x, tmp_dmv_x);
         VC1_GET_BITS(k_y, tmp_dmv_y);
 
-        dmv_x = (Ipp16s)tmp_dmv_x;
-        dmv_y = (Ipp16s)tmp_dmv_y;
+        dmv_x = (int16_t)tmp_dmv_x;
+        dmv_y = (int16_t)tmp_dmv_y;
     }
 
 #ifdef VC1_DEBUG_ON
@@ -121,17 +121,17 @@ Ipp16u DecodeMVDiff(VC1Context* pContext,Ipp32s hpelfl,
     return last_intra;
 }
 
-void PullBack_PPred(VC1Context* pContext, Ipp16s *pMVx, Ipp16s* pMVy, Ipp32s blk_num)
+void PullBack_PPred(VC1Context* pContext, int16_t *pMVx, int16_t* pMVy, int32_t blk_num)
 {
-    Ipp32s Min;
-    Ipp32s X = *pMVx;
-    Ipp32s Y = *pMVy;
+    int32_t Min;
+    int32_t X = *pMVx;
+    int32_t Y = *pMVy;
 
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
-    Ipp32s IX = (sMB->m_currMBXpos<<6 ) + X;
-    Ipp32s IY = (sMB->m_currMBYpos<<6 ) + Y;
-    Ipp32s Width  = (sMB->widthMB<<6 )  - 4;
-    Ipp32s Height = (sMB->heightMB<<6 ) - 4;
+    int32_t IX = (sMB->m_currMBXpos<<6 ) + X;
+    int32_t IY = (sMB->m_currMBYpos<<6 ) + Y;
+    int32_t Width  = (sMB->widthMB<<6 )  - 4;
+    int32_t Height = (sMB->heightMB<<6 ) - 4;
 
     Min = -60;
 
@@ -167,22 +167,22 @@ void PullBack_PPred(VC1Context* pContext, Ipp16s *pMVx, Ipp16s* pMVy, Ipp32s blk
         Y = Height - (pContext->m_pSingleMB->m_currMBYpos<<6);
     }
 
-    (*pMVx) = (Ipp16s)X;
-    (*pMVy) = (Ipp16s)Y;
+    (*pMVx) = (int16_t)X;
+    (*pMVy) = (int16_t)Y;
 }
 
-void CropLumaPullBack(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+void CropLumaPullBack(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
-    Ipp32s X = *xMV;
-    Ipp32s Y = *yMV;
+    int32_t X = *xMV;
+    int32_t Y = *yMV;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
-    Ipp32s IX = sMB->m_currMBXpos<<4;
-    Ipp32s IY = sMB->m_currMBYpos<<4;
-    Ipp32s Width  = (sMB->widthMB<<4);
-    Ipp32s Height = (sMB->heightMB<<4);
+    int32_t IX = sMB->m_currMBXpos<<4;
+    int32_t IY = sMB->m_currMBYpos<<4;
+    int32_t Width  = (sMB->widthMB<<4);
+    int32_t Height = (sMB->heightMB<<4);
 
-    Ipp32s XPos = IX + (X>>2);
-    Ipp32s YPos = IY + (Y>>2);
+    int32_t XPos = IX + (X>>2);
+    int32_t YPos = IY + (Y>>2);
 
     if (XPos < -16)
     {
@@ -203,26 +203,26 @@ void CropLumaPullBack(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
 
     }
 
-    (*xMV) = (Ipp16s)X;
-    (*yMV) = (Ipp16s)Y;
+    (*xMV) = (int16_t)X;
+    (*yMV) = (int16_t)Y;
 
 }
 
 
-void CropChromaPullBack(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+void CropChromaPullBack(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
-    Ipp32s X = *xMV;
-    Ipp32s Y = *yMV;
+    int32_t X = *xMV;
+    int32_t Y = *yMV;
     VC1MB* pCurrMB = pContext->m_pCurrMB;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
 
-    Ipp32s IX = sMB->m_currMBXpos<<3;
-    Ipp32s IY = sMB->m_currMBYpos<<3;
-    Ipp32s Width  = (sMB->widthMB<<3);
-    Ipp32s Height = (sMB->heightMB<<3);
+    int32_t IX = sMB->m_currMBXpos<<3;
+    int32_t IY = sMB->m_currMBYpos<<3;
+    int32_t Width  = (sMB->widthMB<<3);
+    int32_t Height = (sMB->heightMB<<3);
 
-    Ipp32s XPos = IX + (X >> 2);
-    Ipp32s YPos = IY + (Y >> 2);
+    int32_t XPos = IX + (X >> 2);
+    int32_t YPos = IY + (Y >> 2);
 
     if (XPos < -8)
     {
@@ -243,8 +243,8 @@ void CropChromaPullBack(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
 
     }
 
-    *xMV = (Ipp16s)X;
-    *yMV = (Ipp16s)Y;
+    *xMV = (int16_t)X;
+    *yMV = (int16_t)Y;
 
     pCurrMB->m_pBlocks[4].mv[0][0] = *xMV;
     pCurrMB->m_pBlocks[4].mv[0][1] = *yMV;
@@ -252,9 +252,9 @@ void CropChromaPullBack(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
     pCurrMB->m_pBlocks[5].mv[0][1] = *yMV;
 }
 
-void CalculateProgressive1MV(VC1Context* pContext, Ipp16s *pPredMVx,Ipp16s *pPredMVy)
+void CalculateProgressive1MV(VC1Context* pContext, int16_t *pPredMVx,int16_t *pPredMVy)
 {
-    Ipp16s x=0,y=0;
+    int16_t x=0,y=0;
 
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1MVPredictors* MVPred = &pContext->MVPred;
@@ -272,10 +272,10 @@ void CalculateProgressive1MV(VC1Context* pContext, Ipp16s *pPredMVx,Ipp16s *pPre
 
 }
 
-void CalculateProgressive1MV_B(VC1Context* pContext, Ipp16s *pPredMVx,Ipp16s *pPredMVy,
-                            Ipp32s Back)
+void CalculateProgressive1MV_B(VC1Context* pContext, int16_t *pPredMVx,int16_t *pPredMVy,
+                            int32_t Back)
 {
-    Ipp16s x=0,y=0;
+    int16_t x=0,y=0;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1MVPredictors* MVPred = &pContext->MVPred;
 
@@ -293,10 +293,10 @@ void CalculateProgressive1MV_B(VC1Context* pContext, Ipp16s *pPredMVx,Ipp16s *pP
 }
 
 void CalculateProgressive4MV(VC1Context* pContext,
-                                Ipp16s *pPredMVx,Ipp16s *pPredMVy,
-                                Ipp32s blk_num)
+                                int16_t *pPredMVx,int16_t *pPredMVy,
+                                int32_t blk_num)
 {
-    Ipp16s x,y;
+    int16_t x,y;
     VC1MVPredictors* MVPred = &pContext->MVPred;
 
     GetPredictProgressiveMV(MVPred->AMVPred[blk_num],
@@ -310,52 +310,52 @@ void CalculateProgressive4MV(VC1Context* pContext,
 }
 
 
-void Scale_Direct_MV(VC1PictureLayerHeader* picHeader, Ipp16s X, Ipp16s Y,
-                     Ipp16s* Xf, Ipp16s* Yf,
-                     Ipp16s* Xb, Ipp16s* Yb)
+void Scale_Direct_MV(VC1PictureLayerHeader* picHeader, int16_t X, int16_t Y,
+                     int16_t* Xf, int16_t* Yf,
+                     int16_t* Xb, int16_t* Yb)
 {
-    Ipp32s hpelfl = (Ipp32s)((picHeader->MVMODE==VC1_MVMODE_HPEL_1MV) ||
+    int32_t hpelfl = (int32_t)((picHeader->MVMODE==VC1_MVMODE_HPEL_1MV) ||
                             (picHeader->MVMODE==VC1_MVMODE_HPELBI_1MV));
-    Ipp32s ScaleFactor = picHeader->ScaleFactor;
+    int32_t ScaleFactor = picHeader->ScaleFactor;
 
     if (hpelfl)
     {
-        * Xf = (Ipp16s)(2*((X*ScaleFactor + 255)>>9));
-        * Yf = (Ipp16s)(2*((Y*ScaleFactor + 255)>>9));
+        * Xf = (int16_t)(2*((X*ScaleFactor + 255)>>9));
+        * Yf = (int16_t)(2*((Y*ScaleFactor + 255)>>9));
 
         ScaleFactor -=256;
-        * Xb = (Ipp16s)(2*((X*ScaleFactor + 255)>>9));
-        * Yb = (Ipp16s)(2*((Y*ScaleFactor + 255)>>9));
+        * Xb = (int16_t)(2*((X*ScaleFactor + 255)>>9));
+        * Yb = (int16_t)(2*((Y*ScaleFactor + 255)>>9));
     }
     else
     {
-        * Xf =(Ipp16s)((X*ScaleFactor + 128)>>8);
-        * Yf =(Ipp16s)((Y*ScaleFactor + 128)>>8);
+        * Xf =(int16_t)((X*ScaleFactor + 128)>>8);
+        * Yf =(int16_t)((Y*ScaleFactor + 128)>>8);
 
         ScaleFactor -=256;
-        * Xb =(Ipp16s)((X*ScaleFactor + 128)>>8);
-        * Yb =(Ipp16s)((Y*ScaleFactor + 128)>>8);
+        * Xb =(int16_t)((X*ScaleFactor + 128)>>8);
+        * Yb =(int16_t)((Y*ScaleFactor + 128)>>8);
     }
 }
 void Scale_Direct_MV_Interlace(VC1PictureLayerHeader* picHeader,
-                               Ipp16s X, Ipp16s Y,
-                               Ipp16s* Xf, Ipp16s* Yf,
-                               Ipp16s* Xb, Ipp16s* Yb)
+                               int16_t X, int16_t Y,
+                               int16_t* Xf, int16_t* Yf,
+                               int16_t* Xb, int16_t* Yb)
 {
-    Ipp32s ScaleFactor = picHeader->ScaleFactor;
-    * Xf =(Ipp16s)((X*ScaleFactor+128)>>8);
-    * Yf =(Ipp16s)((Y*ScaleFactor+128)>>8);
+    int32_t ScaleFactor = picHeader->ScaleFactor;
+    * Xf =(int16_t)((X*ScaleFactor+128)>>8);
+    * Yf =(int16_t)((Y*ScaleFactor+128)>>8);
 
     ScaleFactor -=256;
 
-    * Xb =(Ipp16s)((X*ScaleFactor+128)>>8);
-    * Yb =(Ipp16s)((Y*ScaleFactor+128)>>8);
+    * Xb =(int16_t)((X*ScaleFactor+128)>>8);
+    * Yb =(int16_t)((Y*ScaleFactor+128)>>8);
 }
 
-void DeriveSecondStageChromaMV(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+void DeriveSecondStageChromaMV(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp16s IX, IY;
+    int16_t IX, IY;
 
     if(((*xMV) == VC1_MVINTRA) || ((*yMV) == VC1_MVINTRA))
     {
@@ -363,8 +363,8 @@ void DeriveSecondStageChromaMV(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
     }
     else
     {
-        const Ipp16s Round[4] = {0, 0, 0, 1};
-        Ipp16s CMV_X, CMV_Y;
+        const int16_t Round[4] = {0, 0, 0, 1};
+        int16_t CMV_X, CMV_Y;
 
         IX = *xMV;
         IY = *yMV;
@@ -374,7 +374,7 @@ void DeriveSecondStageChromaMV(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
 
         if (pContext->m_seqLayerHeader.FASTUVMC)
         {
-            const Ipp16s RndTbl[3] = {1, 0, -1};
+            const int16_t RndTbl[3] = {1, 0, -1};
             CMV_X = CMV_X + RndTbl[1 + (VC1_SIGN(CMV_X) * (vc1_abs_16s(CMV_X) % 2))];
             CMV_Y = CMV_Y + RndTbl[1 + (VC1_SIGN(CMV_Y) * (vc1_abs_16s(CMV_Y) % 2))];
         }

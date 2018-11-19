@@ -30,7 +30,7 @@
 VC1Status DecodePictureLayer_ProgressiveIpicture(VC1Context* pContext)
 {
     VC1Status vc1Res = VC1_OK;
-    Ipp32u tempValue;
+    uint32_t tempValue;
 
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;

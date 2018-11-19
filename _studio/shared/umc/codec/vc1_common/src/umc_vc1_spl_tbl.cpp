@@ -32,7 +32,7 @@ AspectRatio AspectRatioTable[16] =
     {64, 33},   {169, 99}, {0, 0}
 };
 
-Ipp64f FrameRateNumerator[256] =
+double FrameRateNumerator[256] =
 {
     0,       24000.0,    25000.0,    30000.0,
     50000.0, 60000.0,    48000.0,    72000.0,
@@ -51,14 +51,14 @@ Ipp64f FrameRateNumerator[256] =
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-Ipp64f FrameRateDenomerator[16] =
+double FrameRateDenomerator[16] =
 {
     0, 1000.0, 1001.0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0
 };
 
 
-Ipp32u bMax_LevelLimits[4][5] =
+uint32_t bMax_LevelLimits[4][5] =
 {
      {   /* Simple Profile */
         20,     /* Low    Level */

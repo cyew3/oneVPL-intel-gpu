@@ -29,7 +29,7 @@
 
 #define NEW_INTERPOLATION
 
-typedef void (*CropMV) (VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV);
+typedef void (*CropMV) (VC1Context* pContext, int16_t* xMV, int16_t* yMV);
 
 static const CropMV CropLuma_tbl[] = {
     (CropMV)(CropLumaPullBack),
@@ -46,29 +46,29 @@ static const CropMV CropChroma_tbl[] = {
 };
 
 
-static const Ipp16s offset_table_x[] = {0,32,0, 32};
-static const Ipp16s offset_table_y[] = {0,0, 32,32};
+static const int16_t offset_table_x[] = {0,32,0, 32};
+static const int16_t offset_table_y[] = {0,0, 32,32};
 
 
 // Progressive Simple/Main/Advanced
-static void CalcMVInterpolateProgLuma(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+static void CalcMVInterpolateProgLuma(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
-    Ipp32s X, Y;
+    int32_t X, Y;
 
     X = sMB->m_currMBXpos;
     Y = sMB->m_currMBYpos;
 
     CropLuma_tbl[pContext->m_seqLayerHeader.PROFILE](pContext, xMV, yMV);
 
-    *xMV = (Ipp16s)((X << 6) + *xMV);
-    *yMV = (Ipp16s)((Y << 6) + *yMV);
+    *xMV = (int16_t)((X << 6) + *xMV);
+    *yMV = (int16_t)((Y << 6) + *yMV);
 
 }
-static void CalcMVInterpolateProgChroma1MV(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+static void CalcMVInterpolateProgChroma1MV(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
-    Ipp32s X, Y;
+    int32_t X, Y;
 
     X = sMB->m_currMBXpos;
     Y = sMB->m_currMBYpos;
@@ -80,14 +80,14 @@ static void CalcMVInterpolateProgChroma1MV(VC1Context* pContext, Ipp16s* xMV, Ip
 
     CropChroma_tbl[pContext->m_seqLayerHeader.PROFILE](pContext, xMV, yMV);
 
-    *xMV = (Ipp16s)((X << 5) + *xMV);
-    *yMV = (Ipp16s)((Y << 5) + *yMV);
+    *xMV = (int16_t)((X << 5) + *xMV);
+    *yMV = (int16_t)((Y << 5) + *yMV);
 }
 
-static void CalcMVInterpolateProgChroma4MV(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+static void CalcMVInterpolateProgChroma4MV(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
-    Ipp32s X, Y;
+    int32_t X, Y;
 
     X = sMB->m_currMBXpos;
     Y = sMB->m_currMBYpos;
@@ -101,17 +101,17 @@ static void CalcMVInterpolateProgChroma4MV(VC1Context* pContext, Ipp16s* xMV, Ip
 
     CropChroma_tbl[pContext->m_seqLayerHeader.PROFILE](pContext, xMV, yMV);
 
-    *xMV = (Ipp16s)((X << 5) + *xMV);
-    *yMV = (Ipp16s)((Y << 5) + *yMV);
+    *xMV = (int16_t)((X << 5) + *xMV);
+    *yMV = (int16_t)((Y << 5) + *yMV);
 
 }
 // Interlaced Frame
-static Ipp32s CalcMVInterpolateInterlacedLuma(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+static int32_t CalcMVInterpolateInterlacedLuma(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
-    Ipp32s f = 0;
+    int32_t f = 0;
 
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
-    Ipp32s X, Y;
+    int32_t X, Y;
 
     X = sMB->m_currMBXpos;
     Y = sMB->m_currMBYpos;
@@ -125,17 +125,17 @@ static Ipp32s CalcMVInterpolateInterlacedLuma(VC1Context* pContext, Ipp16s* xMV,
 
     Y>>=1;
 
-    *xMV = (Ipp16s)X;
-    *yMV = (Ipp16s)((Y & 0xFFFFFC) + (*yMV&3));
+    *xMV = (int16_t)X;
+    *yMV = (int16_t)((Y & 0xFFFFFC) + (*yMV&3));
 
     return f;
 }
-static Ipp32s CalcMVInterpolateInterlacedChroma2MV(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV)
+static int32_t CalcMVInterpolateInterlacedChroma2MV(VC1Context* pContext, int16_t* xMV, int16_t* yMV)
 {
-    Ipp32s f = 0;
+    int32_t f = 0;
 
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
-    Ipp32s X, Y;
+    int32_t X, Y;
 
     X = sMB->m_currMBXpos;
     Y = sMB->m_currMBYpos;
@@ -150,19 +150,19 @@ static Ipp32s CalcMVInterpolateInterlacedChroma2MV(VC1Context* pContext, Ipp16s*
 
     Y>>=1;
 
-    *xMV = (Ipp16s)X;
-    *yMV = (Ipp16s)((Y & 0xFFFFFC) + (*yMV&3));
+    *xMV = (int16_t)X;
+    *yMV = (int16_t)((Y & 0xFFFFFC) + (*yMV&3));
 
     return f;
 }
 // Interlace Field
-static Ipp32s CalcMVInterpolateFieldLuma(VC1Context* pContext, Ipp32s polarity,
-                                         Ipp16s* xMV, Ipp16s* yMV)
+static int32_t CalcMVInterpolateFieldLuma(VC1Context* pContext, int32_t polarity,
+                                         int16_t* xMV, int16_t* yMV)
 {
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
-    Ipp32s X, Y;
-    Ipp32s f = 0;
+    int32_t X, Y;
+    int32_t f = 0;
 
     X = sMB->m_currMBXpos;
     Y = sMB->m_currMBYpos;
@@ -181,20 +181,20 @@ static Ipp32s CalcMVInterpolateFieldLuma(VC1Context* pContext, Ipp32s polarity,
 
     CropLumaPullBackField_Adv(pContext, xMV, yMV);
 
-    *xMV = (Ipp16s)((X << 6) + *xMV);
-    *yMV = (Ipp16s)((Y << 6) + *yMV);
+    *xMV = (int16_t)((X << 6) + *xMV);
+    *yMV = (int16_t)((Y << 6) + *yMV);
 
     return f;
 }
 
 
-static Ipp32s CalcMVInterpolateFieldChroma(VC1Context* pContext, Ipp32s polarity,
-                                           Ipp16s* xMV, Ipp16s* yMV)
+static int32_t CalcMVInterpolateFieldChroma(VC1Context* pContext, int32_t polarity,
+                                           int16_t* xMV, int16_t* yMV)
 {
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
-    Ipp32s X, Y;
-    Ipp32s f = 0;
+    int32_t X, Y;
+    int32_t f = 0;
 
     X = pContext->m_pSingleMB->m_currMBXpos;
     Y = pContext->m_pSingleMB->m_currMBYpos;
@@ -222,18 +222,18 @@ static Ipp32s CalcMVInterpolateFieldChroma(VC1Context* pContext, Ipp32s polarity
 
    CropChromaPullBack_Adv(pContext, xMV, yMV);
 
-   *xMV = (Ipp16s)((X << 5) + *xMV);
-   *yMV = (Ipp16s)((Y << 5) + *yMV);
+   *xMV = (int16_t)((X << 5) + *xMV);
+   *yMV = (int16_t)((Y << 5) + *yMV);
 
     return f;
 }
 
-static Ipp32s CalcMVInterpolateInterlacedChroma4MV(VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV,
-                                                   Ipp32s field, Ipp32s sblk_num)
+static int32_t CalcMVInterpolateInterlacedChroma4MV(VC1Context* pContext, int16_t* xMV, int16_t* yMV,
+                                                   int32_t field, int32_t sblk_num)
 {
-    Ipp32s f = 0;
+    int32_t f = 0;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
-    Ipp32s X, Y;
+    int32_t X, Y;
 
     X = sMB->m_currMBXpos;
     Y = sMB->m_currMBYpos;
@@ -265,26 +265,26 @@ static Ipp32s CalcMVInterpolateInterlacedChroma4MV(VC1Context* pContext, Ipp16s*
             Y +=16;
     }
 
-    *xMV = (Ipp16s) X;
-    *yMV = (Ipp16s)((Y & 0xFFFFFC) + (*yMV & 3));
+    *xMV = (int16_t) X;
+    *yMV = (int16_t)((Y & 0xFFFFFC) + (*yMV & 3));
     return f;
 }
-static void SetChromaTblPrev(VC1Context* pContext, Ipp8u** pTopTbl, Ipp8u** pBottomTbl, Ipp32s index)
+static void SetChromaTblPrev(VC1Context* pContext, uint8_t** pTopTbl, uint8_t** pBottomTbl, int32_t index)
 {
     *pTopTbl = pContext->m_frmBuff.m_pFrames[index].ChromaTablePrev[0];
     *pBottomTbl = pContext->m_frmBuff.m_pFrames[index].ChromaTablePrev[1];
 }
-static void SetChromaTblCurr(VC1Context* pContext, Ipp8u** pTopTbl, Ipp8u** pBottomTbl, Ipp32s index)
+static void SetChromaTblCurr(VC1Context* pContext, uint8_t** pTopTbl, uint8_t** pBottomTbl, int32_t index)
 {
     *pTopTbl = pContext->m_frmBuff.m_pFrames[index].ChromaTableCurr[0];
     *pBottomTbl = pContext->m_frmBuff.m_pFrames[index].ChromaTableCurr[1];
 }
-static void SetLumaTblPrev(VC1Context* pContext, Ipp8u** pTopTbl, Ipp8u** pBottomTbl, Ipp32s index)
+static void SetLumaTblPrev(VC1Context* pContext, uint8_t** pTopTbl, uint8_t** pBottomTbl, int32_t index)
 {
     *pTopTbl = pContext->m_frmBuff.m_pFrames[index].LumaTablePrev[0];
     *pBottomTbl = pContext->m_frmBuff.m_pFrames[index].LumaTablePrev[1];
 }
-static void SetLumaTblCurr(VC1Context* pContext, Ipp8u** pTopTbl, Ipp8u** pBottomTbl, Ipp32s index)
+static void SetLumaTblCurr(VC1Context* pContext, uint8_t** pTopTbl, uint8_t** pBottomTbl, int32_t index)
 {
     *pTopTbl = pContext->m_frmBuff.m_pFrames[index].LumaTableCurr[0];
     *pBottomTbl = pContext->m_frmBuff.m_pFrames[index].LumaTableCurr[1];
@@ -292,15 +292,15 @@ static void SetLumaTblCurr(VC1Context* pContext, Ipp8u** pTopTbl, Ipp8u** pBotto
 #ifdef NEW_INTERPOLATION
 // new interpolation without pre padding and IC on fly //
 static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_P_NewInterpolation(VC1Context* pContext,
-                                                                               Ipp8u *pDst,
-                                                                               Ipp32u dstStep)
+                                                                               uint8_t *pDst,
+                                                                               uint32_t dstStep)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
     VM_ASSERT (index>-1);
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[0][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[0][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[0][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[0][1];
 
     CalcMVInterpolateProgLuma(pContext, &xMV, &yMV);
 
@@ -346,13 +346,13 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_P_NewInterpolation(V
 
 
 static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_B_NewInterpolation(VC1Context* pContext,
-                                                                               Ipp8u *pDst,
-                                                                               Ipp32u dstStep,
-                                                                               Ipp32s back)
+                                                                               uint8_t *pDst,
+                                                                               uint32_t dstStep,
+                                                                               int32_t back)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index; 
-    Ipp32u FCM;
+    int32_t index; 
+    uint32_t FCM;
     if (back)
     {
         index = pContext->m_frmBuff.m_iNextIndex;
@@ -365,8 +365,8 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_B_NewInterpolation(V
     }
     VM_ASSERT (index>-1);
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[back][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[back][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[back][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[back][1];
 
 
 
@@ -417,15 +417,15 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_B_NewInterpolation(V
 
 
 static VC1Status InterpolateBlock_ProgressivePictureLuma4MV_NewInterpolation(VC1Context* pContext,
-                                                                             Ipp8u *pDst,
-                                                                             Ipp32u dstStep,
-                                                                             Ipp32s blk_num)
+                                                                             uint8_t *pDst,
+                                                                             uint32_t dstStep,
+                                                                             int32_t blk_num)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
 
-    Ipp16s xMV = pMB->m_pBlocks[blk_num].mv[0][0];
-    Ipp16s yMV = pMB->m_pBlocks[blk_num].mv[0][1];
+    int16_t xMV = pMB->m_pBlocks[blk_num].mv[0][0];
+    int16_t yMV = pMB->m_pBlocks[blk_num].mv[0][1];
 
     VM_ASSERT (index>-1);
 
@@ -473,16 +473,16 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma4MV_NewInterpolation(VC1
 
 
 static VC1Status InterpolateBlock_ProgressivePictureChroma1MV_NewInterpolation(VC1Context* pContext,
-                                                                               Ipp8u *pDst1,
-                                                                               Ipp32s dstStep1,
-                                                                               Ipp8u *pDst2,
-                                                                               Ipp32s dstStep2,
-                                                                               Ipp32s back)
+                                                                               uint8_t *pDst1,
+                                                                               int32_t dstStep1,
+                                                                               uint8_t *pDst2,
+                                                                               int32_t dstStep2,
+                                                                               int32_t back)
 {
     VC1MB *pCurrMB = pContext->m_pCurrMB;
 
-    Ipp32s index;
-    Ipp32u FCM;
+    int32_t index;
+    uint32_t FCM;
     if (back)
     {
         index = pContext->m_frmBuff.m_iNextIndex;
@@ -493,11 +493,11 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma1MV_NewInterpolation(V
         index = pContext->m_frmBuff.m_iPrevIndex;
         FCM = pContext->PrevFCM;
     }
-    Ipp8u* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
-    Ipp8u* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
+    uint8_t* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
+    uint8_t* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
 
-    Ipp16s xMV = pCurrMB->m_pBlocks[0].mv[back][0];
-    Ipp16s yMV = pCurrMB->m_pBlocks[0].mv[back][1];
+    int16_t xMV = pCurrMB->m_pBlocks[0].mv[back][0];
+    int16_t yMV = pCurrMB->m_pBlocks[0].mv[back][1];
 
     VM_ASSERT (index>-1);
 
@@ -566,17 +566,17 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma1MV_NewInterpolation(V
 
 
 static VC1Status InterpolateBlock_ProgressivePictureChroma4MV_NewInterpolation(VC1Context* pContext,
-                                                                               Ipp8u *pDst1,
-                                                                               Ipp32s dstStep1,
-                                                                               Ipp8u *pDst2,
-                                                                               Ipp32s dstStep2,
-                                                                               Ipp32s back)
+                                                                               uint8_t *pDst1,
+                                                                               int32_t dstStep1,
+                                                                               uint8_t *pDst2,
+                                                                               int32_t dstStep2,
+                                                                               int32_t back)
 {
     VC1MB *pCurrMB = pContext->m_pCurrMB;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
 
-    Ipp32s index; 
-    Ipp32u FCM;
+    int32_t index; 
+    uint32_t FCM;
     if (back)
     {
         index = pContext->m_frmBuff.m_iNextIndex;
@@ -588,17 +588,17 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma4MV_NewInterpolation(V
         FCM = pContext->PrevFCM;
     }
 
-    Ipp8u* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
-    Ipp8u* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
+    uint8_t* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
+    uint8_t* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
 
-    Ipp16s xMV, yMV;
+    int16_t xMV, yMV;
     VM_ASSERT (index>-1);
 
     //U channel
     xMV = pCurrMB->m_pBlocks[4].mv[back][0];
     yMV = pCurrMB->m_pBlocks[4].mv[back][1];
 
-    Ipp32s count=0;
+    int32_t count=0;
     sMB->MVcount =0;
     for (count = 0; count < 4; count++)
     {
@@ -663,14 +663,14 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma4MV_NewInterpolation(V
 
 
 static VC1Status InterpolateBlock_InterlacePictureLuma2MV_NewInterpolation(VC1Context* pContext,
-                                                                           Ipp8u *pDst,
-                                                                           Ipp32s dstStep,
-                                                                           Ipp32s back1,
-                                                                           Ipp32s back2)
+                                                                           uint8_t *pDst,
+                                                                           int32_t dstStep,
+                                                                           int32_t back1,
+                                                                           int32_t back2)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index;
-    Ipp32u FCM;
+    int32_t index;
+    uint32_t FCM;
     if (back1)
     {
         index = pContext->m_frmBuff.m_iNextIndex;
@@ -681,8 +681,8 @@ static VC1Status InterpolateBlock_InterlacePictureLuma2MV_NewInterpolation(VC1Co
         index = pContext->m_frmBuff.m_iPrevIndex;
         FCM = pContext->PrevFCM;
     }
-    Ipp16s xMV, yMV;
-    Ipp32s f = 0;
+    int16_t xMV, yMV;
+    int32_t f = 0;
 
 
 
@@ -783,17 +783,17 @@ static VC1Status InterpolateBlock_InterlacePictureLuma2MV_NewInterpolation(VC1Co
 
 
 static VC1Status InterpolateBlock_InterlacePictureLuma_NewInterpolation(VC1Context* pContext,
-                                                                        Ipp8u *pDst,
-                                                                        Ipp32s dstStep,
-                                                                        Ipp32s blk_num)
+                                                                        uint8_t *pDst,
+                                                                        int32_t dstStep,
+                                                                        int32_t blk_num)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
 
-    Ipp16s xMV;
-    Ipp16s yMV;
+    int16_t xMV;
+    int16_t yMV;
 
-    Ipp32s f = 0;
+    int32_t f = 0;
 
 
     xMV = pMB->m_pBlocks[blk_num].mv[0][0];
@@ -867,28 +867,28 @@ static VC1Status InterpolateBlock_InterlacePictureLuma_NewInterpolation(VC1Conte
 
 
 static VC1Status InterpolateBlock_InterlacePictureChroma2MV_P_NewInterpolation(VC1Context* pContext,
-                                                                               Ipp8u *pDst1,
-                                                                               Ipp32s dstStep1,
-                                                                               Ipp8u *pDst2,
-                                                                               Ipp32s dstStep2)
+                                                                               uint8_t *pDst1,
+                                                                               int32_t dstStep1,
+                                                                               uint8_t *pDst2,
+                                                                               int32_t dstStep2)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
 
-    Ipp8u* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
-    Ipp8u* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
+    uint8_t* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
+    uint8_t* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
 
-    Ipp8u* pRefData = NULL;
-    Ipp8u* pCurrData = NULL;
+    uint8_t* pRefData = NULL;
+    uint8_t* pCurrData = NULL;
 
-    Ipp32s UPitch = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
-    Ipp32s VPitch = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
+    int32_t UPitch = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
+    int32_t VPitch = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
 
-    Ipp16s xMV=0;
-    Ipp16s yMV=0;
-    Ipp32s f;
+    int16_t xMV=0;
+    int16_t yMV=0;
+    int32_t f;
 
-    Ipp32s refPitch;
+    int32_t refPitch;
 
 
     //TOP FIELD
@@ -999,16 +999,16 @@ static VC1Status InterpolateBlock_InterlacePictureChroma2MV_P_NewInterpolation(V
 }
 
 static VC1Status InterpolateBlock_InterlacePictureChroma2MV_B_NewInterpolation(VC1Context* pContext,
-                                                                               Ipp8u *pDst1,
-                                                                               Ipp32s dstStep1,
-                                                                               Ipp8u *pDst2,
-                                                                               Ipp32s dstStep2,
-                                                                               Ipp32s back1,
-                                                                               Ipp32s back2)
+                                                                               uint8_t *pDst1,
+                                                                               int32_t dstStep1,
+                                                                               uint8_t *pDst2,
+                                                                               int32_t dstStep2,
+                                                                               int32_t back1,
+                                                                               int32_t back2)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index; 
-    Ipp32u FCM;
+    int32_t index; 
+    uint32_t FCM;
     if (back1)
     {
         index = pContext->m_frmBuff.m_iNextIndex;
@@ -1019,20 +1019,20 @@ static VC1Status InterpolateBlock_InterlacePictureChroma2MV_B_NewInterpolation(V
         index = pContext->m_frmBuff.m_iPrevIndex;
         FCM = pContext->PrevFCM;
     }
-    Ipp8u* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
-    Ipp8u* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
+    uint8_t* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
+    uint8_t* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
 
-    Ipp8u* pRefData = NULL;
-    Ipp8u* pCurrData = NULL;
+    uint8_t* pRefData = NULL;
+    uint8_t* pCurrData = NULL;
 
-    Ipp32s UPitch = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
-    Ipp32s VPitch = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
+    int32_t UPitch = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
+    int32_t VPitch = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
 
-    Ipp16s xMV=0;
-    Ipp16s yMV=0;
-    Ipp32s f;
+    int16_t xMV=0;
+    int16_t yMV=0;
+    int32_t f;
 
-    Ipp32s refPitch;
+    int32_t refPitch;
 
 
     //TOP FIELD
@@ -1165,18 +1165,18 @@ static VC1Status InterpolateBlock_InterlacePictureChroma2MV_B_NewInterpolation(V
 }
 
 static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P_NewInterpolation(VC1Context* pContext,
-                                                                                  Ipp8u *pDst,
-                                                                                  Ipp32s dstStep)
+                                                                                  uint8_t *pDst,
+                                                                                  int32_t dstStep)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
-    Ipp32u FCM = pContext->PrevFCM;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
+    uint32_t FCM = pContext->PrevFCM;
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
 
-    Ipp32s f = 0;
+    int32_t f = 0;
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[0][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[0][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[0][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[0][1];
 
     pContext->interp_params_luma.pLUTTop = 0;
     pContext->interp_params_luma.pLUTBottom = 0;
@@ -1240,13 +1240,13 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P_NewInterpolatio
     return VC1_OK;
 }
 static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B_NewInterpolation(VC1Context* pContext,
-                                                                                  Ipp8u *pDst,
-                                                                                  Ipp32s dstStep,
-                                                                                  Ipp32s back)
+                                                                                  uint8_t *pDst,
+                                                                                  int32_t dstStep,
+                                                                                  int32_t back)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index; //= (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
-    Ipp32u FCM;
+    int32_t index; //= (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    uint32_t FCM;
     if (back)
     {
         index = pContext->m_frmBuff.m_iNextIndex;
@@ -1259,12 +1259,12 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B_NewInterpolatio
     }
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
 
-    Ipp8u* pRefData = NULL;
-    Ipp32s refPitch;
-    Ipp32s f = 0;
+    uint8_t* pRefData = NULL;
+    int32_t refPitch;
+    int32_t f = 0;
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[back][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[back][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[back][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[back][1];
 
     pContext->interp_params_luma.pLUTTop = 0;
     pContext->interp_params_luma.pLUTBottom = 0;
@@ -1329,13 +1329,13 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B_NewInterpolatio
 
 
 static VC1Status InterpolateBlock_InterlaceFieldPictureLuma4MV_NewInterpolation(VC1Context* pContext,
-                                                                                Ipp8u *pDst,
-                                                                                Ipp32s dstStep,
-                                                                                Ipp32s blk_num,
-                                                                                Ipp32s back)
+                                                                                uint8_t *pDst,
+                                                                                int32_t dstStep,
+                                                                                int32_t blk_num,
+                                                                                int32_t back)
 {
-    Ipp32s index; //= (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
-    Ipp32u FCM;
+    int32_t index; //= (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    uint32_t FCM;
     if (back)
     {
         index = pContext->m_frmBuff.m_iNextIndex;
@@ -1349,12 +1349,12 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma4MV_NewInterpolation(
     VC1MB *pMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
 
-    Ipp8u* pRefData = NULL;
-    Ipp32s refPitch;
-    Ipp32s f = 0;
+    uint8_t* pRefData = NULL;
+    int32_t refPitch;
+    int32_t f = 0;
 
-    Ipp16s xMV = pMB->m_pBlocks[blk_num].mv[back][0];
-    Ipp16s yMV = pMB->m_pBlocks[blk_num].mv[back][1];
+    int16_t xMV = pMB->m_pBlocks[blk_num].mv[back][0];
+    int16_t yMV = pMB->m_pBlocks[blk_num].mv[back][1];
 
     pContext->interp_params_luma.pLUTTop = 0;
     pContext->interp_params_luma.pLUTBottom = 0;
@@ -1432,17 +1432,17 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma4MV_NewInterpolation(
 }
 
 static VC1Status InterpolateBlock_InterlaceFieldPictureChroma1MV_NewInterpolation(VC1Context* pContext,
-                                                                                  Ipp8u* pDst1,
-                                                                                  Ipp32s dstStep1,
-                                                                                  Ipp8u* pDst2,
-                                                                                  Ipp32s dstStep2,
-                                                                                  Ipp32s back)
+                                                                                  uint8_t* pDst1,
+                                                                                  int32_t dstStep1,
+                                                                                  uint8_t* pDst2,
+                                                                                  int32_t dstStep2,
+                                                                                  int32_t back)
 {
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
 
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index; //= (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
-    Ipp32u FCM;
+    int32_t index; //= (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    uint32_t FCM;
     if (back)
     {
         index = pContext->m_frmBuff.m_iNextIndex;
@@ -1454,13 +1454,13 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma1MV_NewInterpolatio
         FCM = pContext->PrevFCM;
     }
 
-    Ipp8u* pRefData = NULL;
+    uint8_t* pRefData = NULL;
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[back][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[back][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[back][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[back][1];
 
-    Ipp32s f = 0;
-    Ipp32s refPitch;
+    int32_t f = 0;
+    int32_t refPitch;
 
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
@@ -1554,14 +1554,14 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma1MV_NewInterpolatio
     return VC1_OK;
 }
 static VC1Status InterpolateBlock_InterlaceFieldPictureChroma4MV_NewInterpolation(VC1Context* pContext,
-                                                                                  Ipp8u* pDst1,
-                                                                                  Ipp32s dstStep1,
-                                                                                  Ipp8u* pDst2,
-                                                                                  Ipp32s dstStep2,
-                                                                                  Ipp32s back)
+                                                                                  uint8_t* pDst1,
+                                                                                  int32_t dstStep1,
+                                                                                  uint8_t* pDst2,
+                                                                                  int32_t dstStep2,
+                                                                                  int32_t back)
 {
-    Ipp32s index; //= (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
-    Ipp32u FCM;
+    int32_t index; //= (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    uint32_t FCM;
     if (back)
     {
         index = pContext->m_frmBuff.m_iNextIndex;
@@ -1576,21 +1576,21 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma4MV_NewInterpolatio
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
 
-    Ipp8u* pRefData = NULL;
+    uint8_t* pRefData = NULL;
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[back][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[back][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[back][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[back][1];
 
-    Ipp32u MVBcount = 0;
-    Ipp32u MVTcount = 0;
+    uint32_t MVBcount = 0;
+    uint32_t MVTcount = 0;
 
-    Ipp32s f = 0;
-    Ipp32s refPitch;
+    int32_t f = 0;
+    int32_t refPitch;
 
     if (pPicHeader->NUMREF)
     {
         //4MV NUMREF == 1
-        Ipp32s count=0;
+        int32_t count=0;
         sMB->MVcount =0;
         for (count = 0; count < 4; count++)
         {
@@ -1648,7 +1648,7 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma4MV_NewInterpolatio
     else
     {
         //4MV NUMREF == 0
-        Ipp32s count;
+        int32_t count;
         for (count=0;count<4;count++)
         {
             sMB->xLuMV[count] = pMB->m_pBlocks[count].mv[back][0];
@@ -1751,33 +1751,33 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma4MV_NewInterpolatio
 
 
 static VC1Status InterpolateBlock_InterlaceChroma4MV_NewInterpolation(VC1Context* pContext,
-                                                                      Ipp8u* pDst1,
-                                                                      Ipp32u dstStep1,
-                                                                      Ipp8u* pDst2,
-                                                                      Ipp32u dstStep2,
-                                                                      Ipp32s field)
+                                                                      uint8_t* pDst1,
+                                                                      uint32_t dstStep1,
+                                                                      uint8_t* pDst2,
+                                                                      uint32_t dstStep2,
+                                                                      int32_t field)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
 
-    Ipp8u* pRefUData = NULL;
-    Ipp32s refUPitch;
+    uint8_t* pRefUData = NULL;
+    int32_t refUPitch;
 
-    Ipp8u* pRefVData = NULL;
-    Ipp32s refVPitch;
+    uint8_t* pRefVData = NULL;
+    int32_t refVPitch;
 
-    Ipp16s xMV[4] = {0};
-    Ipp16s yMV[4] = {0};
+    int16_t xMV[4] = {0};
+    int16_t yMV[4] = {0};
 
-    Ipp32s refCurUPitch = 0;
-    Ipp32s refCurVPitch = 0;
-    Ipp8u* pRefCurUData = NULL;
-    Ipp8u* pRefCurVData = NULL;
+    int32_t refCurUPitch = 0;
+    int32_t refCurVPitch = 0;
+    uint8_t* pRefCurUData = NULL;
+    uint8_t* pRefCurVData = NULL;
 
-    Ipp32s f = 0;
-    Ipp32s sblk_num = 0;
-    Ipp32u offset_tableU[4] ={0};
-    Ipp32u offset_tableV[4] ={0};
+    int32_t f = 0;
+    int32_t sblk_num = 0;
+    uint32_t offset_tableU[4] ={0};
+    uint32_t offset_tableV[4] ={0};
 
     pContext->interp_params_chroma.pLUTTop = 0;
     pContext->interp_params_chroma.pLUTBottom = 0;
@@ -1926,17 +1926,17 @@ static VC1Status InterpolateBlock_InterlaceChroma4MV_NewInterpolation(VC1Context
 ///////////////////////////////////////////////////////
 #else
 // old interpolation
-static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_P(VC1Context* pContext, Ipp8u *pDst,
-                                                           Ipp32u dstStep)
+static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_P(VC1Context* pContext, uint8_t *pDst,
+                                                           uint32_t dstStep)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_luma;
 
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
     VM_ASSERT (index>-1);
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[0][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[0][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[0][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[0][1];
 
     CalcMVInterpolateProgLuma(pContext, &xMV, &yMV);
 
@@ -1969,18 +1969,18 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_P(VC1Context* pConte
     return VC1_OK;
 }
 static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_B(VC1Context* pContext,
-                                                              Ipp8u *pDst,
-                                                              Ipp32u dstStep,
-                                                              Ipp32s back)
+                                                              uint8_t *pDst,
+                                                              uint32_t dstStep,
+                                                              int32_t back)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_luma;
 
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
     VM_ASSERT (index>-1);
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[back][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[back][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[back][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[back][1];
 
     CalcMVInterpolateProgLuma(pContext, &xMV, &yMV);
 
@@ -2017,15 +2017,15 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma1MV_B(VC1Context* pConte
 }
 
 
-static VC1Status InterpolateBlock_ProgressivePictureLuma4MV(VC1Context* pContext, Ipp8u *pDst,
-                                                            Ipp32u dstStep, Ipp32s blk_num)
+static VC1Status InterpolateBlock_ProgressivePictureLuma4MV(VC1Context* pContext, uint8_t *pDst,
+                                                            uint32_t dstStep, int32_t blk_num)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_luma;
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
 
-    Ipp16s xMV = pMB->m_pBlocks[blk_num].mv[0][0];
-    Ipp16s yMV = pMB->m_pBlocks[blk_num].mv[0][1];
+    int16_t xMV = pMB->m_pBlocks[blk_num].mv[0][0];
+    int16_t yMV = pMB->m_pBlocks[blk_num].mv[0][1];
 
     VM_ASSERT (index>-1);
 
@@ -2051,20 +2051,20 @@ static VC1Status InterpolateBlock_ProgressivePictureLuma4MV(VC1Context* pContext
 }
 
 static VC1Status InterpolateBlock_ProgressivePictureChroma1MV(VC1Context* pContext,
-                                                              Ipp8u *pDst1, Ipp32s dstStep1,
-                                                              Ipp8u *pDst2, Ipp32s dstStep2,
-                                                              Ipp32s back)
+                                                              uint8_t *pDst1, int32_t dstStep1,
+                                                              uint8_t *pDst2, int32_t dstStep2,
+                                                              int32_t back)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_chroma;
     VC1MB *pCurrMB = pContext->m_pCurrMB;
 
-    Ipp32s index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
-    Ipp8u* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
-    Ipp8u* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
+    int32_t index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    uint8_t* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
+    uint8_t* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
 
-    Ipp16s xMV = pCurrMB->m_pBlocks[0].mv[back][0];
-    Ipp16s yMV = pCurrMB->m_pBlocks[0].mv[back][1];
-    Ipp32s PlaneOffset = 0;
+    int16_t xMV = pCurrMB->m_pBlocks[0].mv[back][0];
+    int16_t yMV = pCurrMB->m_pBlocks[0].mv[back][1];
+    int32_t PlaneOffset = 0;
 
     VM_ASSERT (index>-1);
 
@@ -2095,20 +2095,20 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma1MV(VC1Context* pConte
 }
 
 static VC1Status InterpolateBlock_ProgressivePictureChroma4MV(VC1Context* pContext,
-                                                           Ipp8u *pDst1, Ipp32s dstStep1,
-                                                           Ipp8u *pDst2, Ipp32s dstStep2,
-                                                           Ipp32s back)
+                                                           uint8_t *pDst1, int32_t dstStep1,
+                                                           uint8_t *pDst2, int32_t dstStep2,
+                                                           int32_t back)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_chroma;
     VC1MB *pCurrMB = pContext->m_pCurrMB;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
 
-    Ipp32s index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
 
-    Ipp8u* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
-    Ipp8u* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
+    uint8_t* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
+    uint8_t* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
 
-    Ipp16s xMV, yMV;
+    int16_t xMV, yMV;
     VM_ASSERT (index>-1);
 
     interp_params->roiSize.width = 8;
@@ -2118,7 +2118,7 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma4MV(VC1Context* pConte
     xMV = pCurrMB->m_pBlocks[4].mv[back][0];
     yMV = pCurrMB->m_pBlocks[4].mv[back][1];
 
-    Ipp32s count=0;
+    int32_t count=0;
     sMB->MVcount =0;
     for (count = 0; count < 4; count++)
     {
@@ -2159,14 +2159,14 @@ static VC1Status InterpolateBlock_ProgressivePictureChroma4MV(VC1Context* pConte
 
 
 
-static VC1Status InterpolateBlock_InterlacePictureLuma2MV(VC1Context* pContext, Ipp8u *pDst,
-                                                       Ipp32s dstStep, Ipp32s back1,Ipp32s back2)
+static VC1Status InterpolateBlock_InterlacePictureLuma2MV(VC1Context* pContext, uint8_t *pDst,
+                                                       int32_t dstStep, int32_t back1,int32_t back2)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_luma;
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = (back1)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
-    Ipp16s xMV, yMV;
-    Ipp32s f = 0;
+    int32_t index = (back1)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    int16_t xMV, yMV;
+    int32_t f = 0;
 
     interp_params->pSrc = pContext->m_frmBuff.m_pFrames[index].m_pY;
     interp_params->roiSize.width = 16;
@@ -2217,19 +2217,19 @@ static VC1Status InterpolateBlock_InterlacePictureLuma2MV(VC1Context* pContext, 
 }
 
 
-static VC1Status InterpolateBlock_InterlacePictureLuma(VC1Context* pContext, Ipp8u *pDst,
-                                                       Ipp32s dstStep, Ipp32s blk_num)
+static VC1Status InterpolateBlock_InterlacePictureLuma(VC1Context* pContext, uint8_t *pDst,
+                                                       int32_t dstStep, int32_t blk_num)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_luma;
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
 
     interp_params->pSrc = pContext->m_frmBuff.m_pFrames[index].m_pY;
 
-    Ipp16s xMV;
-    Ipp16s yMV;
+    int16_t xMV;
+    int16_t yMV;
 
-    Ipp32s f = 0;
+    int32_t f = 0;
 
     xMV = pMB->m_pBlocks[blk_num].mv[0][0];
     yMV = pMB->m_pBlocks[blk_num].mv[0][1];
@@ -2283,27 +2283,27 @@ static VC1Status InterpolateBlock_InterlacePictureLuma(VC1Context* pContext, Ipp
 
 
 static VC1Status InterpolateBlock_InterlacePictureChroma2MV_P(VC1Context* pContext,
-                                                              Ipp8u *pDst1, Ipp32s dstStep1,
-                                                              Ipp8u *pDst2, Ipp32s dstStep2)
+                                                              uint8_t *pDst1, int32_t dstStep1,
+                                                              uint8_t *pDst2, int32_t dstStep2)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_chroma;
 
-    Ipp8u* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
-    Ipp8u* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
+    uint8_t* pUPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pU;
+    uint8_t* pVPlaneRef = pContext->m_frmBuff.m_pFrames[index].m_pV;
 
-    Ipp8u* pRefData = NULL;
-    Ipp8u* pCurrData = NULL;
+    uint8_t* pRefData = NULL;
+    uint8_t* pCurrData = NULL;
 
-    Ipp32s UPitch = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
-    Ipp32s VPitch = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
+    int32_t UPitch = pContext->m_frmBuff.m_pFrames[index].m_iUPitch;
+    int32_t VPitch = pContext->m_frmBuff.m_pFrames[index].m_iVPitch;
 
-    Ipp16s xMV=0;
-    Ipp16s yMV=0;
-    Ipp32s f;
+    int16_t xMV=0;
+    int16_t yMV=0;
+    int32_t f;
 
-    Ipp32s refPitch;
+    int32_t refPitch;
 
     interp_params->roiSize.width = 8;
     interp_params->roiSize.height = 4;
@@ -2395,21 +2395,21 @@ static VC1Status InterpolateBlock_InterlacePictureChroma2MV_P(VC1Context* pConte
 }
 
 static VC1Status InterpolateBlock_InterlacePictureChroma2MV_B(VC1Context* pContext,
-                                                              Ipp8u *pDst1, Ipp32s dstStep1,
-                                                              Ipp8u *pDst2, Ipp32s dstStep2,
-                                                              Ipp32s back1, Ipp32s back2)
+                                                              uint8_t *pDst1, int32_t dstStep1,
+                                                              uint8_t *pDst2, int32_t dstStep2,
+                                                              int32_t back1, int32_t back2)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = (back1)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = (back1)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
 
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_chroma;
 
-    Ipp8u* pRefData = NULL;
-    Ipp8u* pCurrData = NULL;
-    Ipp32s refPitch = 0;
+    uint8_t* pRefData = NULL;
+    uint8_t* pCurrData = NULL;
+    int32_t refPitch = 0;
 
-    Ipp16s xMV=0,yMV=0;
-    Ipp32s f = 0;
+    int16_t xMV=0,yMV=0;
+    int32_t f = 0;
 
     interp_params->roiSize.width = 8;
     interp_params->roiSize.height = 4;
@@ -2508,20 +2508,20 @@ static VC1Status InterpolateBlock_InterlacePictureChroma2MV_B(VC1Context* pConte
     return VC1_OK;
 }
 
-static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P(VC1Context* pContext, Ipp8u *pDst,
-                                                               Ipp32s dstStep)
+static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P(VC1Context* pContext, uint8_t *pDst,
+                                                               int32_t dstStep)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_luma;
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
 
-    Ipp8u* pRefData = NULL;
-    Ipp32s refPitch;
-    Ipp32s f = 0;
+    uint8_t* pRefData = NULL;
+    int32_t refPitch;
+    int32_t f = 0;
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[0][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[0][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[0][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[0][1];
 
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
@@ -2582,20 +2582,20 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P(VC1Context* pCo
         }
     return VC1_OK;
 }
-static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B(VC1Context* pContext, Ipp8u *pDst,
-                                                               Ipp32s dstStep,       Ipp32s back)
+static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B(VC1Context* pContext, uint8_t *pDst,
+                                                               int32_t dstStep,       int32_t back)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_luma;
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
 
-    Ipp8u* pRefData = NULL;
-    Ipp32s refPitch;
-    Ipp32s f = 0;
+    uint8_t* pRefData = NULL;
+    int32_t refPitch;
+    int32_t f = 0;
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[back][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[back][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[back][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[back][1];
 
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
@@ -2657,20 +2657,20 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B(VC1Context* pCo
 
 
 static VC1Status InterpolateBlock_InterlaceFieldPictureLuma4MV(VC1Context* pContext,
-                                                               Ipp8u *pDst,    Ipp32s dstStep,
-                                                               Ipp32s blk_num, Ipp32s back)
+                                                               uint8_t *pDst,    int32_t dstStep,
+                                                               int32_t blk_num, int32_t back)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_luma;
-    Ipp32s index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
     VC1MB *pMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
 
-    Ipp8u* pRefData = NULL;
-    Ipp32s refPitch;
-    Ipp32s f = 0;
+    uint8_t* pRefData = NULL;
+    int32_t refPitch;
+    int32_t f = 0;
 
-    Ipp16s xMV = pMB->m_pBlocks[blk_num].mv[back][0];
-    Ipp16s yMV = pMB->m_pBlocks[blk_num].mv[back][1];
+    int16_t xMV = pMB->m_pBlocks[blk_num].mv[back][0];
+    int16_t yMV = pMB->m_pBlocks[blk_num].mv[back][1];
 
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
@@ -2708,23 +2708,23 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma4MV(VC1Context* pCont
 }
 
 static VC1Status InterpolateBlock_InterlaceFieldPictureChroma1MV(VC1Context* pContext,
-                                                                 Ipp8u* pDst1, Ipp32s dstStep1,
-                                                                 Ipp8u* pDst2, Ipp32s dstStep2,
-                                                                 Ipp32s back)
+                                                                 uint8_t* pDst1, int32_t dstStep1,
+                                                                 uint8_t* pDst2, int32_t dstStep2,
+                                                                 int32_t back)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_chroma;
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
 
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
 
-    Ipp8u* pRefData = NULL;
+    uint8_t* pRefData = NULL;
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[back][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[back][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[back][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[back][1];
 
-    Ipp32s f = 0;
-    Ipp32s refPitch;
+    int32_t f = 0;
+    int32_t refPitch;
 
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
@@ -2806,31 +2806,31 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma1MV(VC1Context* pCo
 
 
 static VC1Status InterpolateBlock_InterlaceFieldPictureChroma4MV(VC1Context* pContext,
-                                                                 Ipp8u* pDst1, Ipp32s dstStep1,
-                                                                 Ipp8u* pDst2, Ipp32s dstStep2,
-                                                                 Ipp32s back)
+                                                                 uint8_t* pDst1, int32_t dstStep1,
+                                                                 uint8_t* pDst2, int32_t dstStep2,
+                                                                 int32_t back)
 {
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_chroma;
-    Ipp32s index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = (back)? pContext->m_frmBuff.m_iNextIndex:pContext->m_frmBuff.m_iPrevIndex;
     VC1MB *pMB = pContext->m_pCurrMB;
     VC1PictureLayerHeader* pPicHeader = pContext->m_picLayerHeader;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
 
-    Ipp8u* pRefData = NULL;
+    uint8_t* pRefData = NULL;
 
-    Ipp16s xMV = pMB->m_pBlocks[0].mv[back][0];
-    Ipp16s yMV = pMB->m_pBlocks[0].mv[back][1];
+    int16_t xMV = pMB->m_pBlocks[0].mv[back][0];
+    int16_t yMV = pMB->m_pBlocks[0].mv[back][1];
 
-    Ipp32u MVBcount = 0;
-    Ipp32u MVTcount = 0;
+    uint32_t MVBcount = 0;
+    uint32_t MVTcount = 0;
 
-    Ipp32s f = 0;
-    Ipp32s refPitch;
+    int32_t f = 0;
+    int32_t refPitch;
 
     if (pPicHeader->NUMREF)
     {
         //4MV NUMREF == 1
-        Ipp32s count=0;
+        int32_t count=0;
         sMB->MVcount =0;
         for (count = 0; count < 4; count++)
         {
@@ -2888,7 +2888,7 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma4MV(VC1Context* pCo
     else
     {
         //4MV NUMREF == 0
-        Ipp32s count;
+        int32_t count;
         for (count=0;count<4;count++)
         {
             sMB->xLuMV[count] = pMB->m_pBlocks[count].mv[back][0];
@@ -2952,32 +2952,32 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma4MV(VC1Context* pCo
 
 
 static VC1Status InterpolateBlock_InterlaceChroma4MV (VC1Context* pContext,
-                                                      Ipp8u* pDst1, Ipp32u dstStep1,
-                                                      Ipp8u* pDst2, Ipp32u dstStep2,
-                                                      Ipp32s field)
+                                                      uint8_t* pDst1, uint32_t dstStep1,
+                                                      uint8_t* pDst2, uint32_t dstStep2,
+                                                      int32_t field)
 {
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s index = pContext->m_frmBuff.m_iPrevIndex;
+    int32_t index = pContext->m_frmBuff.m_iPrevIndex;
     _IppVCInterpolate_8u*  interp_params = &pContext->interp_params_chroma;
 
-    Ipp8u* pRefUData = NULL;
-    Ipp32s refUPitch;
+    uint8_t* pRefUData = NULL;
+    int32_t refUPitch;
 
-    Ipp8u* pRefVData = NULL;
-    Ipp32s refVPitch;
+    uint8_t* pRefVData = NULL;
+    int32_t refVPitch;
 
-    Ipp16s xMV[4] = {0};
-    Ipp16s yMV[4] = {0};
+    int16_t xMV[4] = {0};
+    int16_t yMV[4] = {0};
 
-    Ipp32s refCurUPitch = 0;
-    Ipp32s refCurVPitch = 0;
-    Ipp8u* pRefCurUData = NULL;
-    Ipp8u* pRefCurVData = NULL;
+    int32_t refCurUPitch = 0;
+    int32_t refCurVPitch = 0;
+    uint8_t* pRefCurUData = NULL;
+    uint8_t* pRefCurVData = NULL;
 
-    Ipp32s f = 0;
-    Ipp32s sblk_num = 0;
-    Ipp32u offset_tableU[4] ={0};
-    Ipp32u offset_tableV[4] ={0};
+    int32_t f = 0;
+    int32_t sblk_num = 0;
+    uint32_t offset_tableU[4] ={0};
+    uint32_t offset_tableV[4] ={0};
 
 
     //BLOCK 4
@@ -3089,9 +3089,9 @@ static VC1Status InterpolateBlock_InterlaceChroma4MV (VC1Context* pContext,
 VC1Status PredictBlock_P(VC1Context* pContext)
 {
     VC1MB* pCurrMB = pContext->m_pCurrMB;
-    Ipp32u count = 0;
-    Ipp8u IntraFlag = pCurrMB->IntraFlag;
-    Ipp32s plane_offset;
+    uint32_t count = 0;
+    uint8_t IntraFlag = pCurrMB->IntraFlag;
+    int32_t plane_offset;
 
     pCurrMB->pInterpolLumaSrc[0] = pCurrMB->currYPlane;
     pCurrMB->InterpolsrcLumaStep[0] = pCurrMB->currYPitch;
@@ -3146,8 +3146,8 @@ VC1Status PredictBlock_P(VC1Context* pContext)
 VC1Status PredictBlock_B(VC1Context* pContext)
 {
     VC1MB* pCurrMB = pContext->m_pCurrMB;
-    Ipp32u _predict_type = pCurrMB->mbType;
-    Ipp32u predict_type = _predict_type >> 4;
+    uint32_t _predict_type = pCurrMB->mbType;
+    uint32_t predict_type = _predict_type >> 4;
 
 
     //1 MV
@@ -3182,7 +3182,7 @@ VC1Status PredictBlock_B(VC1Context* pContext)
     }
     else
     {
-        Ipp8u pPredBlock[384];
+        uint8_t pPredBlock[384];
 
 
         pCurrMB->pInterpolLumaSrc[0] = pCurrMB->currYPlane;
@@ -3301,8 +3301,8 @@ VC1Status PredictBlock_B(VC1Context* pContext)
 VC1Status PredictBlock_InterlacePPicture(VC1Context* pContext)
 {
     VC1MB* pCurrMB = pContext->m_pCurrMB;
-    Ipp32s plane_offset;
-    Ipp32u count= 0;
+    int32_t plane_offset;
+    uint32_t count= 0;
     pCurrMB->pInterpolLumaSrc[0] = NULL;
     pCurrMB->pInterpolChromaUSrc[0] = pCurrMB->currUPlane;
     pCurrMB->InterpolsrcChromaUStep[0] = pCurrMB->currUPitch;
@@ -3383,8 +3383,8 @@ VC1Status PredictBlock_InterlacePPicture(VC1Context* pContext)
 VC1Status PredictBlock_InterlaceFieldPPicture(VC1Context* pContext)
 {
     VC1MB* pCurrMB = pContext->m_pCurrMB;
-    Ipp32u count = 0;
-    Ipp32s plane_offset;
+    uint32_t count = 0;
+    int32_t plane_offset;
     pCurrMB->pInterpolLumaSrc[0] = pCurrMB->currYPlane;
     pCurrMB->InterpolsrcLumaStep[0] = pCurrMB->currYPitch;
     pCurrMB->pInterpolChromaUSrc[0] = pCurrMB->currUPlane;
@@ -3491,7 +3491,7 @@ VC1Status PredictBlock_InterlaceBPicture(VC1Context* pContext)
     case  VC1_MB_DIRECT|VC1_MB_1MV_INTER:
     case  VC1_MB_INTERP|VC1_MB_1MV_INTER:
         {
-            Ipp8u pPredBlock[384];
+            uint8_t pPredBlock[384];
 
             pCurrMB->pInterpolLumaSrc[0] = pCurrMB->currYPlane;
             pCurrMB->InterpolsrcLumaStep[0] = pCurrMB->currYPitch;
@@ -3646,7 +3646,7 @@ VC1Status PredictBlock_InterlaceBPicture(VC1Context* pContext)
     case  VC1_MB_INTERP|VC1_MB_2MV_INTER:
     case  VC1_MB_DIRECT|VC1_MB_2MV_INTER:
         {
-            Ipp8u pPredBlock[384];
+            uint8_t pPredBlock[384];
 
             pCurrMB->pInterpolLumaSrc[0] = pCurrMB->currYPlane;
             pCurrMB->InterpolsrcLumaStep[0] = pCurrMB->currYPitch;
@@ -3715,11 +3715,11 @@ VC1Status PredictBlock_InterlaceBPicture(VC1Context* pContext)
 VC1Status PredictBlock_InterlaceFieldBPicture(VC1Context* pContext)
 {
     VC1MB* pCurrMB = pContext->m_pCurrMB;
-    Ipp32u _predict_type = pCurrMB->mbType;
+    uint32_t _predict_type = pCurrMB->mbType;
 
-    Ipp32u predict_type = _predict_type >> 4;
-    Ipp32u count = 0;
-    Ipp32s plane_offset;
+    uint32_t predict_type = _predict_type >> 4;
+    uint32_t count = 0;
+    int32_t plane_offset;
 
     if((pCurrMB->mbType&0x03) == VC1_MB_1MV_INTER)
     {
@@ -3753,7 +3753,7 @@ VC1Status PredictBlock_InterlaceFieldBPicture(VC1Context* pContext)
         }
         else
         {
-            Ipp8u pPredBlock[384];
+            uint8_t pPredBlock[384];
 
             pCurrMB->pInterpolLumaSrc[0] = pCurrMB->currYPlane;
             pCurrMB->InterpolsrcLumaStep[0] = pCurrMB->currYPitch;

@@ -28,7 +28,7 @@
 #include "umc_vc1_common_blk_order_tbl.h"
 #include "umc_vc1_huffman.h"
 
-static const Ipp8u esbp_lut[] = {1,2,2,2,4,4,4,8};
+static const uint8_t esbp_lut[] = {1,2,2,2,4,4,4,8};
 
 #ifdef _OWN_FUNCTION
 
@@ -56,22 +56,22 @@ static const char BicubicHorizFilterShift[3][4] =
     {6, 7, 7, 7}
 };
 
-typedef IppStatus (*ippiBicubicInterpolate)     (const Ipp8u* pSrc,
-                                                 Ipp32s srcStep,
-                                                 Ipp8u *pDst,
-                                                 Ipp32s dstStep,
-                                                 Ipp32s dx,
-                                                 Ipp32s dy,
-                                                 Ipp32s roundControl);
+typedef IppStatus (*ippiBicubicInterpolate)     (const uint8_t* pSrc,
+                                                 int32_t srcStep,
+                                                 uint8_t *pDst,
+                                                 int32_t dstStep,
+                                                 int32_t dx,
+                                                 int32_t dy,
+                                                 int32_t roundControl);
 
 
-static IppStatus ippiInterpolate16x16QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
-                                                             Ipp32s srcStep,
-                                                             Ipp8u *pDst,
-                                                             Ipp32s dstStep,
-                                                             Ipp32s dx,
-                                                             Ipp32s dy,
-                                                             Ipp32s roundControl)
+static IppStatus ippiInterpolate16x16QPBicubicIC_VC1_8u_C1R (const uint8_t* pSrc,
+                                                             int32_t srcStep,
+                                                             uint8_t *pDst,
+                                                             int32_t dstStep,
+                                                             int32_t dx,
+                                                             int32_t dy,
+                                                             int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
     unsigned choose_int = ( (1==(0==(dx))) |(((1==(0 == (dy))) << 1)));
@@ -201,13 +201,13 @@ static IppStatus ippiInterpolate16x16QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
     return ret;
 }
 
-static IppStatus ippiInterpolate16x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
-                                                            Ipp32s srcStep,
-                                                            Ipp8u *pDst,
-                                                            Ipp32s dstStep,
-                                                            Ipp32s dx,
-                                                            Ipp32s dy,
-                                                            Ipp32s roundControl)
+static IppStatus ippiInterpolate16x8QPBicubicIC_VC1_8u_C1R (const uint8_t* pSrc,
+                                                            int32_t srcStep,
+                                                            uint8_t *pDst,
+                                                            int32_t dstStep,
+                                                            int32_t dx,
+                                                            int32_t dy,
+                                                            int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
     unsigned choose_int = ( (1==(0==(dx))) |(((1==(0 == (dy))) << 1)));
@@ -339,13 +339,13 @@ static IppStatus ippiInterpolate16x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
     return ret;
 }
 
-static IppStatus ippiInterpolate8x8QPBicubicIC_VC1_8u_C1R (const Ipp8u* pSrc,
-                                                           Ipp32s srcStep,
-                                                           Ipp8u *pDst,
-                                                           Ipp32s dstStep,
-                                                           Ipp32s dx,
-                                                           Ipp32s dy,
-                                                           Ipp32s roundControl)
+static IppStatus ippiInterpolate8x8QPBicubicIC_VC1_8u_C1R (const uint8_t* pSrc,
+                                                           int32_t srcStep,
+                                                           uint8_t *pDst,
+                                                           int32_t dstStep,
+                                                           int32_t dx,
+                                                           int32_t dy,
+                                                           int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
 
@@ -502,7 +502,7 @@ IppStatus _own_ippiInterpolateQPBicubicIC_VC1_8u_C1R   (_IppVCInterpolate_8u* in
 #endif
 void DecodeTransformInfo(VC1Context* pContext)
 {
-    Ipp32u i;
+    uint32_t i;
     if(pContext->m_seqLayerHeader.VSTRANSFORM)
     {
         if (pContext->m_picLayerHeader->TTMBF == 0 &&
@@ -517,7 +517,7 @@ void DecodeTransformInfo(VC1Context* pContext)
                 for (i=0;i<VC1_NUM_OF_BLOCKS;i++)
                 {
                     if (!VC1_IS_BLKINTRA(pContext->m_pCurrMB->m_pBlocks[i].blkType))
-                        pContext->m_pCurrMB->m_pBlocks[i].blkType = (Ipp8u)pContext->m_picLayerHeader->TTFRM;
+                        pContext->m_pCurrMB->m_pBlocks[i].blkType = (uint8_t)pContext->m_picLayerHeader->TTFRM;
                 }
             }
             else
@@ -532,8 +532,8 @@ VC1Status GetTTMB(VC1Context* pContext)
 {
     int ret;
     VC1MB *pMB = pContext->m_pCurrMB;
-    Ipp32s eSBP;
-    Ipp8u Count, Limit, FirstBlock = 0;
+    int32_t eSBP;
+    uint8_t Count, Limit, FirstBlock = 0;
 
     while ( (FirstBlock <  VC1_NUM_OF_BLOCKS)             &&
         ((0 == ((1 << (5-FirstBlock)) & pMB->m_cbpBits)) ||
@@ -626,7 +626,7 @@ VC1Status GetTTMB(VC1Context* pContext)
 
     return VC1_OK;
 }
-static void GetEdgeValue(Ipp32s Edge, Ipp32s offset, Ipp32s* Current)
+static void GetEdgeValue(int32_t Edge, int32_t offset, int32_t* Current)
 {
     if((*Current) >= Edge) {
         (*Current) = Edge - 1 + offset;
@@ -640,46 +640,46 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
 {
 
 #if 0// ((_IPP_ARCH  == _IPP_ARCH_IA64) || (_IPP_ARCH  == _IPP_ARCH_EM64T) || (_IPP_ARCH == _IPP_ARCH_LP64))
-    Ipp64s i,j;
+    long long i,j;
 #else /* !((_IPP_ARCH  == _IPP_ARCH_IA64) || (_IPP_ARCH  == _IPP_ARCH_EM64T))) */
-    Ipp32s i,j;
+    int32_t i,j;
 #endif /* ((_IPP_ARCH  == _IPP_ARCH_IA64) || (_IPP_ARCH  == _IPP_ARCH_EM64T)) */
 
-    Ipp32s   nfield;
-    Ipp8u tmpBlk [19*19] = {0};
-    IppiSize tmpBlkSize;
-    Ipp32s   tmpBlkStep = 19;
-    Ipp8u*   pTmpBlkData = tmpBlk;
-    Ipp8u    shift;
+    int32_t   nfield;
+    uint8_t tmpBlk [19*19] = {0};
+    mfxSize tmpBlkSize;
+    int32_t   tmpBlkStep = 19;
+    uint8_t*   pTmpBlkData = tmpBlk;
+    uint8_t    shift;
     IppiPoint position;
 
-    Ipp32u step = 0;
+    uint32_t step = 0;
 
-    Ipp32s TopFieldPOffsetTP = 0;
-    Ipp32s BottomFieldPOffsetTP = 1;
+    int32_t TopFieldPOffsetTP = 0;
+    int32_t BottomFieldPOffsetTP = 1;
 
-    Ipp32s TopFieldPOffsetBP = 2;
-    Ipp32s BottomFieldPOffsetBP = 1;
+    int32_t TopFieldPOffsetBP = 2;
+    int32_t BottomFieldPOffsetBP = 1;
 
-    Ipp32u SCoef;
-    Ipp32s serv;
+    uint32_t SCoef;
+    int32_t serv;
 
     // minimal distance from current point for interpolation.
-    Ipp32s left = 1;
-    Ipp32s right;
-    Ipp32s top = 1; //<< shift;
+    int32_t left = 1;
+    int32_t right;
+    int32_t top = 1; //<< shift;
 
-    Ipp32s bottom;
-    Ipp32s paddingLeft,paddingRight,paddingTop,paddingBottom;
+    int32_t bottom;
+    int32_t paddingLeft,paddingRight,paddingTop,paddingBottom;
 
-    Ipp32s RefBlockStep;
-    const Ipp8u* pRefBlock;
-    const Ipp8u* pLUT[2];
-    const Ipp8u* pTemp;
+    int32_t RefBlockStep;
+    const uint8_t* pRefBlock;
+    const uint8_t* pLUT[2];
+    const uint8_t* pTemp;
     IppVCInterpolate_8u inter_struct;
-    Ipp32u isPredBottom;
-    Ipp32s frameHeightShifted;
-    Ipp32s OutOfBoundaryFlag = 0; //all block out of boundary flag
+    uint32_t isPredBottom;
+    int32_t frameHeightShifted;
+    int32_t OutOfBoundaryFlag = 0; //all block out of boundary flag
 
     shift = (interpolateInfo->fieldPrediction)? 1:0;
     SCoef = (interpolateInfo->fieldPrediction)? 1:0; // in case of interlace fields we should use half of frame height
@@ -764,8 +764,8 @@ IppStatus ippiPXInterpolatePXICBicubicBlock_VC1_8u_C1R(const IppVCInterpolateBlo
         if (tmpBlkSize.width <= 0)
         {
                 tmpBlkSize.width = 0;
-            Ipp32s FieldPOffset[2] = {0,0};
-            Ipp32s posy;
+            int32_t FieldPOffset[2] = {0,0};
+            int32_t posy;
 
             if ((interpolateInfo->oppositePadding)&&(!interpolateInfo->fieldPrediction))
             {
@@ -1077,46 +1077,46 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
 {
 
 #if 0// ((_IPP_ARCH  == _IPP_ARCH_IA64) || (_IPP_ARCH  == _IPP_ARCH_EM64T) || (_IPP_ARCH == _IPP_ARCH_LP64))
-    Ipp64s i,j;
+    long long i,j;
 #else /* !((_IPP_ARCH  == _IPP_ARCH_IA64) || (_IPP_ARCH  == _IPP_ARCH_EM64T))) */
-    Ipp32s i,j;
+    int32_t i,j;
 #endif /* ((_IPP_ARCH  == _IPP_ARCH_IA64) || (_IPP_ARCH  == _IPP_ARCH_EM64T)) */
 
-    Ipp32s   nfield;
-    Ipp8u tmpBlk [19*19] = {0};
-    IppiSize tmpBlkSize;
-    Ipp32s   tmpBlkStep = 19;
-    Ipp8u*   pTmpBlkData = tmpBlk;
-    Ipp8u    shift;
+    int32_t   nfield;
+    uint8_t tmpBlk [19*19] = {0};
+    mfxSize tmpBlkSize;
+    int32_t   tmpBlkStep = 19;
+    uint8_t*   pTmpBlkData = tmpBlk;
+    uint8_t    shift;
     IppiPoint position;
 
-    Ipp32u step = 0;
+    uint32_t step = 0;
 
-    Ipp32s TopFieldPOffsetTP = 0;
-    Ipp32s BottomFieldPOffsetTP = 1;
+    int32_t TopFieldPOffsetTP = 0;
+    int32_t BottomFieldPOffsetTP = 1;
 
-    Ipp32s TopFieldPOffsetBP = 2;
-    Ipp32s BottomFieldPOffsetBP = 1;
+    int32_t TopFieldPOffsetBP = 2;
+    int32_t BottomFieldPOffsetBP = 1;
 
-    Ipp32u SCoef;
-    Ipp32s serv;
+    uint32_t SCoef;
+    int32_t serv;
 
     // minimal distance from current point for interpolation.
-    Ipp32s left = 1;
-    Ipp32s right;
-    Ipp32s top = 1; //<< shift;
+    int32_t left = 1;
+    int32_t right;
+    int32_t top = 1; //<< shift;
 
-    Ipp32s bottom;
-    Ipp32s paddingLeft,paddingRight,paddingTop,paddingBottom;
+    int32_t bottom;
+    int32_t paddingLeft,paddingRight,paddingTop,paddingBottom;
 
-    Ipp32s RefBlockStep;
-    const Ipp8u* pRefBlock;
-    const Ipp8u* pLUT[2];
-    const Ipp8u* pTemp;
+    int32_t RefBlockStep;
+    const uint8_t* pRefBlock;
+    const uint8_t* pLUT[2];
+    const uint8_t* pTemp;
     IppVCInterpolate_8u inter_struct;
-    Ipp32u isPredBottom;
-    Ipp32s frameHeightShifted;
-    Ipp32s OutOfBoundaryFlag = 0; //all block out of boundary flag
+    uint32_t isPredBottom;
+    int32_t frameHeightShifted;
+    int32_t OutOfBoundaryFlag = 0; //all block out of boundary flag
 
     shift = (interpolateInfo->fieldPrediction)? 1:0;
     SCoef = (interpolateInfo->fieldPrediction)? 1:0; // in case of interlace fields we should use half of frame height
@@ -1200,8 +1200,8 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
         }
         if (tmpBlkSize.width <= 0)
         {
-            Ipp32s FieldPOffset[2] = {0,0};
-            Ipp32s posy;
+            int32_t FieldPOffset[2] = {0,0};
+            int32_t posy;
             tmpBlkSize.width = 0;
 
             if ((interpolateInfo->oppositePadding)&&(!interpolateInfo->fieldPrediction))
@@ -1512,7 +1512,7 @@ IppStatus ippiPXInterpolatePXICBilinearBlock_VC1_8u_C1R(const IppVCInterpolateBl
 }
 void CalculateIntraFlag(VC1Context* pContext)
 {
-    Ipp8u i;
+    uint8_t i;
     pContext->m_pCurrMB->IntraFlag=0;
 
     for (i = 0; i < VC1_NUM_OF_BLOCKS; i++)

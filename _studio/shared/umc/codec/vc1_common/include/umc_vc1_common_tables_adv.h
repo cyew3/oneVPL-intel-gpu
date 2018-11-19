@@ -28,7 +28,7 @@
 #include "umc_vc1_common_defs.h"
 
 //VC-1 Table 107: Refdist table
-const extern Ipp32s VC1_FieldRefdistTable[];
+const extern int32_t VC1_FieldRefdistTable[];
 
 #endif //__umc_vc1_common_tables_ADV_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

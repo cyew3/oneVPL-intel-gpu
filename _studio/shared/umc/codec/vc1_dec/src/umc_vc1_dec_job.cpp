@@ -171,8 +171,8 @@ static B_MB_DECODE B_MB_Dispatch_table_InterlaceFields[] = {
         (MBLayer_InterlaceFieldBpicture_DIRECT_Prediction)
 };
 
-typedef IppStatus (*VC1DeqIntra)(Ipp16s* pSrcDst, Ipp32s srcDstStep,
-                                 Ipp32s doubleQuant, IppiSize* pDstSizeNZ);
+typedef IppStatus (*VC1DeqIntra)(int16_t* pSrcDst, int32_t srcDstStep,
+                                 int32_t doubleQuant, mfxSize* pDstSizeNZ);
 
 VC1DeqIntra VC1DeqIntra_tbl[2] = {
     (VC1DeqIntra) (_own_ippiQuantInvIntraUniform_VC1_16s_C1IR),
@@ -180,9 +180,9 @@ VC1DeqIntra VC1DeqIntra_tbl[2] = {
  };
 
 
-typedef IppStatus (*VC1DeqInter)(Ipp16s* pSrcDst, Ipp32s srcDstStep,
-                                 Ipp32s doubleQuant, IppiSize roiSize,
-                                 IppiSize* pDstSizeNZ);
+typedef IppStatus (*VC1DeqInter)(int16_t* pSrcDst, int32_t srcDstStep,
+                                 int32_t doubleQuant, mfxSize roiSize,
+                                 mfxSize* pDstSizeNZ);
 
 VC1DeqInter VC1DeqInter_tbl[2] = {
     (VC1DeqInter) (_own_ippiQuantInvInterUniform_VC1_16s_C1IR),
@@ -190,7 +190,7 @@ VC1DeqInter VC1DeqInter_tbl[2] = {
 };
 
 
-//typedef void (*MBSmooth)(VC1Context* pContext, Ipp32s Height);
+//typedef void (*MBSmooth)(VC1Context* pContext, int32_t Height);
 
 MBSmooth MBSmooth_tbl[16] = {
     //simple
@@ -243,9 +243,9 @@ VC1Status VC1TaskProcessorUMC::VC1MVCalculation(VC1Context* pContext, VC1Task* p
     }
 
 
-    for (Ipp32s i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+    for (int32_t i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
     {
-        for (Ipp32s j = 0; j <pContext->m_seqLayerHeader.widthMB; j++)
+        for (int32_t j = 0; j <pContext->m_seqLayerHeader.widthMB; j++)
         {
             if (pContext->m_pCurrMB->mbType != VC1_MB_INTRA)
                 currMVtable[pContext->m_pCurrMB->SkipAndDirectFlag](pContext);
@@ -287,9 +287,9 @@ VC1Status VC1TaskProcessorUMC::VC1Decoding (VC1Context* pContext, VC1Task* pTask
         }
     }
 
-    for (Ipp32s i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+    for (int32_t i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
     {
-        for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
+        for (int32_t j = 0; j < pContext->m_pSingleMB->widthMB; j++)
         {
             try // check decoding on MB level
             {
@@ -354,25 +354,25 @@ VC1Status VC1TaskProcessorUMC::VC1Decoding (VC1Context* pContext, VC1Task* pTask
 
 VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pTask)
 {
-    IppiSize  roiSize;
-    Ipp32u offset_table[] = {0,8,128,136};
-    Ipp32u plane_offset = 0;
-    Ipp32u IntraFlag;
+    mfxSize  roiSize;
+    uint32_t offset_table[] = {0,8,128,136};
+    uint32_t plane_offset = 0;
+    uint32_t IntraFlag;
 
     if (m_pStore->IsNeedSimlifyReconstruct(pTask->m_pSlice->m_picLayerHeader->PTYPE))
         AccelerReconstruct();
 
     if(pContext->m_picLayerHeader->PTYPE == VC1_P_FRAME)
     {
-        for (Ipp32s i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+        for (int32_t i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
         {
-            for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
+            for (int32_t j = 0; j < pContext->m_pSingleMB->widthMB; j++)
             {
                 // We dont need to process Skip MB
                 if (!(pContext->m_pCurrMB->SkipAndDirectFlag & 2))
                 {
                     IntraFlag = pContext->m_pCurrMB->IntraFlag;
-                    for (Ipp32s blk_num = 0; blk_num<6 ;blk_num++)
+                    for (int32_t blk_num = 0; blk_num<6 ;blk_num++)
                     {
                         pReconstructTbl[IntraFlag & 1](pContext,blk_num);
                         IntraFlag >>= 1;
@@ -418,7 +418,7 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
 
                     //write to plane
                     IntraFlag = pContext->m_pCurrMB->IntraFlag;
-                    for (Ipp32s blk_num = 0; blk_num<4 ;blk_num++)
+                    for (int32_t blk_num = 0; blk_num<4 ;blk_num++)
                     {
                         if (IntraFlag & 1) // from assignpattern
                         {
@@ -464,16 +464,16 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
     }
     else if (pContext->m_picLayerHeader->PTYPE == VC1_B_FRAME)
     {
-        for (Ipp32s i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+        for (int32_t i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
         {
-            for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
+            for (int32_t j = 0; j < pContext->m_pSingleMB->widthMB; j++)
             {
                 // We dont need to process Skip MB
                 if (!(pContext->m_pCurrMB->SkipAndDirectFlag & 2))
                 {
                     if (pContext->m_pCurrMB->mbType == VC1_MB_INTRA)
                     {
-                        for (Ipp32s blk_num = 0; blk_num<6 ;blk_num++)
+                        for (int32_t blk_num = 0; blk_num<6 ;blk_num++)
                             pReconstructTbl[1](pContext,blk_num);
 
                     //write to plane
@@ -509,7 +509,7 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
                     }
                     else
                     {
-                        for (Ipp32s blk_num = 0; blk_num<6 ;blk_num++)
+                        for (int32_t blk_num = 0; blk_num<6 ;blk_num++)
                             pReconstructTbl[0](pContext,blk_num);
                     }
 
@@ -532,12 +532,12 @@ VC1Status VC1TaskProcessorUMC::VC1ProcessDiff (VC1Context* pContext, VC1Task* pT
     }
     else // I, BI frames
     {
-        for (Ipp32s i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+        for (int32_t i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
         {
-            for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
+            for (int32_t j = 0; j < pContext->m_pSingleMB->widthMB; j++)
             {
 
-                for (Ipp32s blk_num = 0; blk_num<6 ;blk_num++)
+                for (int32_t blk_num = 0; blk_num<6 ;blk_num++)
                     pReconstructTbl[1](pContext,blk_num);
 
                 //write to plane
@@ -603,9 +603,9 @@ VC1Status VC1TaskProcessorUMC::VC1MotionCompensation(VC1Context* pContext,VC1Tas
     pContext->interp_params_luma.roundControl   = pContext->m_picLayerHeader->RNDCTRL;
     pContext->interp_params_chroma.roundControl = pContext->m_picLayerHeader->RNDCTRL;
 
-    for (Ipp32s i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+    for (int32_t i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
     {
-        for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
+        for (int32_t j = 0; j < pContext->m_pSingleMB->widthMB; j++)
         {
             if(pContext->m_pCurrMB->mbType != VC1_MB_INTRA)
             {
@@ -614,10 +614,10 @@ VC1Status VC1TaskProcessorUMC::VC1MotionCompensation(VC1Context* pContext,VC1Tas
 
             if (pContext->m_picLayerHeader->PTYPE != VC1_B_FRAME)
             {
-                Ipp16s* pSavedMV = &pContext->savedMV[(pContext->m_pSingleMB->m_currMBXpos +
+                int16_t* pSavedMV = &pContext->savedMV[(pContext->m_pSingleMB->m_currMBXpos +
                     pContext->m_pSingleMB->m_currMBYpos*pContext->m_seqLayerHeader.MaxWidthMB)*2*2];
 
-                Ipp8u* pRefField = &pContext->savedMVSamePolarity[(pContext->m_pSingleMB->m_currMBXpos +
+                uint8_t* pRefField = &pContext->savedMVSamePolarity[(pContext->m_pSingleMB->m_currMBXpos +
                     pContext->m_pSingleMB->m_currMBYpos*pContext->m_seqLayerHeader.MaxWidthMB)];
 
                 PackDirectMVs(pContext->m_pCurrMB,
@@ -642,8 +642,8 @@ VC1Status VC1TaskProcessorUMC::VC1MotionCompensation(VC1Context* pContext,VC1Tas
 
 VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
 {
-    static IppiSize  roiSize_8;
-    static IppiSize  roiSize_16;
+    static mfxSize  roiSize_8;
+    static mfxSize  roiSize_16;
 
     roiSize_8.height = 8;
     roiSize_8.width = 8;
@@ -662,9 +662,9 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
     {
     if(pContext->m_picLayerHeader->PTYPE == VC1_P_FRAME)
     {
-        for (Ipp32s i = 0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+        for (int32_t i = 0; i < pTask->m_pSlice->MBRowsToDecode;i++)
         {
-            for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
+            for (int32_t j = 0; j < pContext->m_pSingleMB->widthMB; j++)
             {
                 if(!pContext->m_pCurrMB->IntraFlag)
                 {
@@ -716,10 +716,10 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
                 }
                 else if(pContext->m_pCurrMB->mbType != VC1_MB_INTRA)
                 {
-                    static const Ipp32u offset_table[] = {0,8,128,136};
-                    Ipp32u plane_offset = 0;
+                    static const uint32_t offset_table[] = {0,8,128,136};
+                    uint32_t plane_offset = 0;
 
-                        for (Ipp32s blk_num = 0; blk_num<4 ;blk_num++)
+                        for (int32_t blk_num = 0; blk_num<4 ;blk_num++)
                         {
                             if (!(pContext->m_pCurrMB->IntraFlag & (1<<blk_num))) // from assignpattern
                             {
@@ -771,9 +771,9 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
     else //B Frames
         if(pContext->m_picLayerHeader->PTYPE == VC1_B_FRAME)
         {
-        for (Ipp32s i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+        for (int32_t i=0; i < pTask->m_pSlice->MBRowsToDecode;i++)
         {
-            for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
+            for (int32_t j = 0; j < pContext->m_pSingleMB->widthMB; j++)
             {
                 if(!pContext->m_pCurrMB->IntraFlag)
                 {
@@ -801,7 +801,7 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
                     }
                     else
                     {
-                        Ipp32u back = (pContext->m_pCurrMB->pInterpolLumaSrc[0])?0:1;
+                        uint32_t back = (pContext->m_pCurrMB->pInterpolLumaSrc[0])?0:1;
                         //SkipMB
                         if (pContext->m_pCurrMB->SkipAndDirectFlag & 2)
                             ippiCopy_8u_C1R(pContext->m_pCurrMB->pInterpolLumaSrc[back],
@@ -858,7 +858,7 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
                     }
                     else
                     {
-                        Ipp32u back = (pContext->m_pCurrMB->pInterpolChromaUSrc[0])?0:1;
+                        uint32_t back = (pContext->m_pCurrMB->pInterpolChromaUSrc[0])?0:1;
 
                         // chroma
                         if (pContext->m_pCurrMB->SkipAndDirectFlag & 2)
@@ -925,9 +925,9 @@ VC1Status VC1TaskProcessorUMC::VC1PrepPlane(VC1Context* pContext,VC1Task* pTask)
     //pContext->m_pPredBlock = pTask->m_pPredBlock;
     pContext->m_pCurrMB = &pContext->m_MBs[pTask->m_pSlice->MBStartRow*m_pContext->m_seqLayerHeader.MaxWidthMB];
 
-    for (Ipp32s i=0;   i < pTask->m_pSlice->MBRowsToDecode;i++)
+    for (int32_t i=0;   i < pTask->m_pSlice->MBRowsToDecode;i++)
     {
-        for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
+        for (int32_t j = 0; j < pContext->m_pSingleMB->widthMB; j++)
         {
             if (VC1_DEBUG&VC1_SMOOTHINT)
                 VM_Debug::GetInstance(VC1DebugRoutine)._print_macroblocks(pContext);
@@ -958,7 +958,7 @@ VC1Status VC1TaskProcessorUMC::VC1Deblocking (VC1Context* pContext, VC1Task* pTa
         pContext->DeblockInfo.HeightMB = pTask->m_pSlice->MBRowsToDecode;
         pContext->DeblockInfo.start_pos = pTask->m_pSlice->MBStartRow;
         Deblock* pDeblock = Deblock_tbl_Adv;
-        Ipp32s MBHeight = 0;
+        int32_t MBHeight = 0;
 
         if (pContext->m_seqLayerHeader.PROFILE != VC1_PROFILE_ADVANCED)
             pDeblock = Deblock_tbl;
@@ -985,7 +985,7 @@ VC1Status VC1TaskProcessorUMC::VC1Deblocking (VC1Context* pContext, VC1Task* pTa
 }
 
 Status VC1TaskProcessorUMC::Init(VC1Context* pContext,
-                              Ipp32s iNumber,
+                              int32_t iNumber,
                               VC1TaskStoreSW*      pStore,
                               MemoryAllocator* pMemoryAllocator)
 {
@@ -995,16 +995,16 @@ Status VC1TaskProcessorUMC::Init(VC1Context* pContext,
     m_pStore = pStore;
 
 
-   Ipp8u* pBuf;
+   uint8_t* pBuf;
    if (m_pMemoryAllocator->Alloc(&m_iMemContextID,
-                                  align_value<Ipp32u>(sizeof(VC1Context))+ align_value<Ipp32u>(sizeof(VC1SingletonMB)),
+                                  align_value<uint32_t>(sizeof(VC1Context))+ align_value<uint32_t>(sizeof(VC1SingletonMB)),
                                   UMC_ALLOC_PERSISTENT,
                                   16) != UMC_OK)
                                   return false;
 
-    pBuf = (Ipp8u*)m_pMemoryAllocator->Lock(m_iMemContextID);
+    pBuf = (uint8_t*)m_pMemoryAllocator->Lock(m_iMemContextID);
     m_pContext = (VC1Context*)pBuf;
-    m_pSingleMB = (VC1SingletonMB*)(pBuf +  align_value<Ipp32u>(sizeof(VC1Context)));
+    m_pSingleMB = (VC1SingletonMB*)(pBuf +  align_value<uint32_t>(sizeof(VC1Context)));
     memset(m_pContext, 0, sizeof(VC1Context));
     memset(m_pSingleMB, 0, sizeof(VC1SingletonMB));
 
@@ -1055,7 +1055,7 @@ Status VC1TaskProcessorUMC::process()
     {
         if (task)
         {
-            MFX_INTERNAL_CPY((Ipp8u*)m_pContext, (Ipp8u*)pFrameDS->m_pContext, sizeof(VC1Context));
+            MFX_INTERNAL_CPY((uint8_t*)m_pContext, (uint8_t*)pFrameDS->m_pContext, sizeof(VC1Context));
             // we don't copy this field from pFrameDS
             m_pContext->m_pSingleMB =  m_pSingleMB;
 
@@ -1160,10 +1160,10 @@ void VC1TaskProcessorUMC::Release() // free mem
 
 void   VC1TaskProcessorUMC::WriteDiffs(VC1Context* pContext)
 {
-    IppiSize  roiSize;
-    Ipp32u IntraFlag;
-    Ipp32u offset_table[] = {0,8,128,136};
-    Ipp32u plane_offset = 0;
+    mfxSize  roiSize;
+    uint32_t IntraFlag;
+    uint32_t offset_table[] = {0,8,128,136};
+    uint32_t plane_offset = 0;
 
     if (pContext->m_pCurrMB->mbType == VC1_MB_INTRA)
     {
@@ -1205,7 +1205,7 @@ void   VC1TaskProcessorUMC::WriteDiffs(VC1Context* pContext)
 
         //write to plane
         IntraFlag = pContext->m_pCurrMB->IntraFlag;
-        for (Ipp32s blk_num = 0; blk_num<4 ;blk_num++)
+        for (int32_t blk_num = 0; blk_num<4 ;blk_num++)
         {
             if (IntraFlag & 1) // from assignpattern
             {
@@ -1253,8 +1253,8 @@ void VC1TaskProcessorUMC::ProcessSmartException (SmartLevel exLevel, VC1Context*
         else if (exLevel == mbGroupLevel)
         {
             VC1MB* pStartMB = &m_pContext->m_MBs[pTask->m_pSlice->MBStartRow*m_pContext->m_seqLayerHeader.MaxWidthMB];
-            Ipp32u numOfMarkMB = pTask->m_pSlice->MBRowsToDecode*m_pContext->m_seqLayerHeader.MaxWidthMB;
-            for (Ipp32u i = 0; i < numOfMarkMB; i++)
+            uint32_t numOfMarkMB = pTask->m_pSlice->MBRowsToDecode*m_pContext->m_seqLayerHeader.MaxWidthMB;
+            for (uint32_t i = 0; i < numOfMarkMB; i++)
             {
                 pStartMB->mbType = VC1_MB_1MV_INTER;
                 pStartMB->m_pBlocks[0].mv[0][0] = 0;
@@ -1271,14 +1271,14 @@ void VC1TaskProcessorUMC::ProcessSmartException (SmartLevel exLevel, VC1Context*
 
 void VC1TaskProcessorUMC::CompensateInterlacePFrame(VC1Context* pContext, VC1Task *pTask)
 {
-    static IppiSize  roiSize_8;
+    static mfxSize  roiSize_8;
 
     roiSize_8.height = 8;
     roiSize_8.width = 8;
 
-    for (Ipp32s i = 0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+    for (int32_t i = 0; i < pTask->m_pSlice->MBRowsToDecode;i++)
     {
-        for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
+        for (int32_t j = 0; j < pContext->m_pSingleMB->widthMB; j++)
         {
             if(!pContext->m_pCurrMB->IntraFlag)
             {
@@ -1340,14 +1340,14 @@ void VC1TaskProcessorUMC::CompensateInterlacePFrame(VC1Context* pContext, VC1Tas
 
 void VC1TaskProcessorUMC::CompensateInterlaceBFrame(VC1Context* pContext, VC1Task *pTask)
 {
-    static IppiSize  roiSize_8;
+    static mfxSize  roiSize_8;
 
     roiSize_8.height = 8;
     roiSize_8.width = 8;
 
-    for (Ipp32s i = 0; i < pTask->m_pSlice->MBRowsToDecode;i++)
+    for (int32_t i = 0; i < pTask->m_pSlice->MBRowsToDecode;i++)
     {
-        for (Ipp32s j = 0; j < pContext->m_pSingleMB->widthMB; j++)
+        for (int32_t j = 0; j < pContext->m_pSingleMB->widthMB; j++)
         {
 
             if(!pContext->m_pCurrMB->IntraFlag)
@@ -1361,7 +1361,7 @@ void VC1TaskProcessorUMC::CompensateInterlaceBFrame(VC1Context* pContext, VC1Tas
                 }
                 else
                 {
-                    Ipp32u back = (pContext->m_pCurrMB->pInterpolLumaSrc[0])?0:1;
+                    uint32_t back = (pContext->m_pCurrMB->pInterpolLumaSrc[0])?0:1;
                     if (pContext->m_pCurrMB->pInterpolLumaSrc[back] == pContext->m_pCurrMB->currYPlane)
                     {
                         if (!(pContext->m_pCurrMB->SkipAndDirectFlag & 2))
@@ -1415,7 +1415,7 @@ void VC1TaskProcessorUMC::CompensateInterlaceBFrame(VC1Context* pContext, VC1Tas
                 }
                 else
                 {
-                    Ipp32u back = (pContext->m_pCurrMB->pInterpolLumaSrc[0])?0:1;
+                    uint32_t back = (pContext->m_pCurrMB->pInterpolLumaSrc[0])?0:1;
 
                     // chroma
                     if (pContext->m_pCurrMB->SkipAndDirectFlag & 2)

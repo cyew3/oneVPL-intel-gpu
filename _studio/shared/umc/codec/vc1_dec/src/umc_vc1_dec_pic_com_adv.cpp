@@ -69,11 +69,11 @@ void PrepareForNextFrame(VC1Context*pContext)
 VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
 {
     VC1Status vc1Sts = VC1_OK;
-    Ipp32u i = 0;
-    Ipp32u tempValue;
-    Ipp32u RFF = 0;
-    Ipp32u number_of_pan_scan_window;
-    Ipp32u RPTFRM = 0;
+    uint32_t i = 0;
+    uint32_t tempValue;
+    uint32_t RFF = 0;
+    uint32_t number_of_pan_scan_window;
+    uint32_t RPTFRM = 0;
 
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
@@ -159,13 +159,13 @@ VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
             }
             else
             {
-                Ipp32u tff;
+                uint32_t tff;
                 //top field first
                 VC1_GET_BITS(1, tff);
-                picLayerHeader->TFF = (Ipp8u)tff;
+                picLayerHeader->TFF = (uint8_t)tff;
                 //repeat first field
                 VC1_GET_BITS(1, RFF);
-                picLayerHeader->RFF = (Ipp8u)RFF;
+                picLayerHeader->RFF = (uint8_t)RFF;
             }
         }
 
@@ -235,8 +235,8 @@ VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
             if(picLayerHeader->PTYPE == VC1_B_FRAME && (picLayerHeader->FCM == VC1_Progressive) )
             {
                 //B picture fraction
-                Ipp8s  z1;
-                Ipp16s z2;
+                int8_t  z1;
+                int16_t z2;
                 DecodeHuffmanPair(&pContext->m_bitstream.pBitstream,
                                             &pContext->m_bitstream.bitOffset,
                                             pContext->m_vlcTbl->BFRACTION,
@@ -345,10 +345,10 @@ VC1Status DecodeSkippicture(VC1Context* pContext)
 VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext)
 {
     VC1Status vc1Sts = VC1_OK;
-    Ipp32u i = 0;
-    Ipp32u tempValue;
-    Ipp32u RFF = 0;
-    Ipp32u number_of_pan_scan_window;
+    uint32_t i = 0;
+    uint32_t tempValue;
+    uint32_t RFF = 0;
+    uint32_t number_of_pan_scan_window;
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     VC1SequenceLayerHeader* seqLayerHeader = &pContext->m_seqLayerHeader;
     picLayerHeader->RFF = 0;
@@ -417,13 +417,13 @@ VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext
        }
        else
        {
-           Ipp32u tff;
+           uint32_t tff;
           //top field first
           VC1_GET_BITS(1, tff);
-          picLayerHeader->TFF = (Ipp8u)tff;
+          picLayerHeader->TFF = (uint8_t)tff;
           //repeat first field
           VC1_GET_BITS(1, RFF);
-          picLayerHeader->RFF = (Ipp8u)RFF;
+          picLayerHeader->RFF = (uint8_t)RFF;
        }
     } else
         picLayerHeader->TFF = 1;
@@ -470,7 +470,7 @@ VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext
             (picLayerHeader->PTypeField1 < VC1_B_FRAME &&
              picLayerHeader->PTypeField2 < VC1_B_FRAME))
         {
-                Ipp32s ret;
+                int32_t ret;
                 ret = DecodeHuffmanOne(
                                     &pContext->m_bitstream.pBitstream,
                                     &pContext->m_bitstream.bitOffset,
@@ -494,8 +494,8 @@ VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext
              picLayerHeader->PTypeField2 >= VC1_B_FRAME) )
         {
            //B picture fraction
-           Ipp8s  z1;
-           Ipp16s z2;
+           int8_t  z1;
+           int16_t z2;
            DecodeHuffmanPair(&pContext->m_bitstream.pBitstream,
                                         &pContext->m_bitstream.bitOffset,
                                          pContext->m_vlcTbl->BFRACTION,
@@ -514,11 +514,11 @@ VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext
     if(picLayerHeader->CurrField == 0)
     {
         picLayerHeader->PTYPE = picLayerHeader->PTypeField1;
-        picLayerHeader->BottomField = (Ipp8u)(1 - picLayerHeader->TFF);
+        picLayerHeader->BottomField = (uint8_t)(1 - picLayerHeader->TFF);
     }
     else
     {
-        picLayerHeader->BottomField = (Ipp8u)(picLayerHeader->TFF);
+        picLayerHeader->BottomField = (uint8_t)(picLayerHeader->TFF);
         picLayerHeader->PTYPE = picLayerHeader->PTypeField2;
     }
     return vc1Sts;

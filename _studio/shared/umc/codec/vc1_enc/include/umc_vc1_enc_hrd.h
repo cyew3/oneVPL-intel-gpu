@@ -34,9 +34,9 @@ namespace UMC_VC1_ENCODER
 {
 //#define VC1_HRD_DEBUG
 
-extern Ipp32u bMax_LevelLimits[3][5];
-extern Ipp32u rMax_LevelLimits[3][5];
-extern Ipp32u MBfLimits[3][5];
+extern uint32_t bMax_LevelLimits[3][5];
+extern uint32_t rMax_LevelLimits[3][5];
+extern uint32_t MBfLimits[3][5];
 
 
 enum
@@ -56,22 +56,22 @@ enum
 
 typedef struct
 {
-    Ipp32s vc1_decFullness;
-    Ipp32s vc1_decPrevFullness;
-    Ipp32s vc1_decBufferSize;
-    Ipp32s vc1_BitRate;
-    Ipp64f vc1_FrameRate;
-    Ipp32s vc1_decInitFull;
-    Ipp32s vc1_dec_delay;
-    Ipp32s vc1_enc_delay;
-    Ipp32s vc1_Prev_enc_delay;
+    int32_t vc1_decFullness;
+    int32_t vc1_decPrevFullness;
+    int32_t vc1_decBufferSize;
+    int32_t vc1_BitRate;
+    double vc1_FrameRate;
+    int32_t vc1_decInitFull;
+    int32_t vc1_dec_delay;
+    int32_t vc1_enc_delay;
+    int32_t vc1_Prev_enc_delay;
 }VC1_enc_LeakyBucketInfo;
 
 typedef struct
 {
-    Ipp32s hrd_max_rate;                //maximum rate
-    Ipp32s hrd_buffer;                  //buffer size
-    Ipp32s hrd_fullness;                //hrd fullness
+    int32_t hrd_max_rate;                //maximum rate
+    int32_t hrd_buffer;                  //buffer size
+    int32_t hrd_fullness;                //hrd fullness
 }VC1_hrd_OutData;
 
 class VC1HRDecoder
@@ -79,31 +79,31 @@ class VC1HRDecoder
     public:
         VC1HRDecoder();
         ~VC1HRDecoder();
-        UMC::Status InitBuffer(Ipp32s profile,   Ipp32s level,
-                               Ipp32s bufferSize,Ipp32s initFull,
-                               Ipp32s bitRate,   Ipp64f frameRate);
+        UMC::Status InitBuffer(int32_t profile,   int32_t level,
+                               int32_t bufferSize,int32_t initFull,
+                               int32_t bitRate,   double frameRate);
 
         void Reset();
 
-        Ipp32s CheckBuffer(Ipp32s frameSize);
-        Ipp32s ReleaseData(Ipp32s frameSize);
+        int32_t CheckBuffer(int32_t frameSize);
+        int32_t ReleaseData(int32_t frameSize);
 
 
-        void SetBitRate(Ipp32s bitRate);
-        void SetFrameRate(Ipp32s frameRate);
+        void SetBitRate(int32_t bitRate);
+        void SetFrameRate(int32_t frameRate);
         void GetHRDParams(VC1_hrd_OutData* hrdParams);
 protected:
-        Ipp32s AddNewData();
-        Ipp32s RemoveFrame(Ipp32s frameSize);
-        void   SetHRDRate(Ipp32s frameSize);
+        int32_t AddNewData();
+        int32_t RemoveFrame(int32_t frameSize);
+        void   SetHRDRate(int32_t frameSize);
         void   SetHRDFullness();
 
     protected:
         VC1_enc_LeakyBucketInfo m_LBuckets;
-        Ipp32s m_IdealFrameSize;            //in bits
+        int32_t m_IdealFrameSize;            //in bits
         VC1_hrd_OutData hrd_data;
         //Flags
-        Ipp32s m_recoding;         //frame was recoded
+        int32_t m_recoding;         //frame was recoded
 
 
 };

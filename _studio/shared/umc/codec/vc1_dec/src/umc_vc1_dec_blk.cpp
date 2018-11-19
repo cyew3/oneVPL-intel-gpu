@@ -31,43 +31,43 @@
 #include "umc_vc1_huffman.h"
 #include "umc_vc1_dec_debug.h"
 
-typedef Ipp8u (*DCPrediction)(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData,
-                               Ipp32s blk_num, Ipp16s* pBlock,Ipp16s defaultDC, Ipp32u PTYPE);
+typedef uint8_t (*DCPrediction)(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData,
+                               int32_t blk_num, int16_t* pBlock,int16_t defaultDC, uint32_t PTYPE);
 
-inline static void PredictACLeft(Ipp16s* pCurrAC, Ipp32u CurrQuant,
-                                 Ipp16s* pPredAC, Ipp32u PredQuant,
-                                 Ipp32s Step)
+inline static void PredictACLeft(int16_t* pCurrAC, uint32_t CurrQuant,
+                                 int16_t* pPredAC, uint32_t PredQuant,
+                                 int32_t Step)
 {
-    Ipp32s i;
-    Ipp32s Scale = VC1_DQScaleTbl[(CurrQuant-1)&63] * (PredQuant-1);
-    Ipp32u step = Step;
+    int32_t i;
+    int32_t Scale = VC1_DQScaleTbl[(CurrQuant-1)&63] * (PredQuant-1);
+    uint32_t step = Step;
 
     for (i = 1; i<VC1_PIXEL_IN_BLOCK; i++, step+=Step)
-        pCurrAC[step] = pCurrAC[step] + (Ipp16s)((pPredAC[i] * Scale + 0x20000)>>18);
+        pCurrAC[step] = pCurrAC[step] + (int16_t)((pPredAC[i] * Scale + 0x20000)>>18);
 }
 
-inline static void PredictACTop(Ipp16s* pCurrAC, Ipp32u CurrQuant,
-                                Ipp16s* pPredAC, Ipp32u PredQuant)
+inline static void PredictACTop(int16_t* pCurrAC, uint32_t CurrQuant,
+                                int16_t* pPredAC, uint32_t PredQuant)
 {
-    Ipp32s i;
-    Ipp32s Scale = VC1_DQScaleTbl[(CurrQuant-1)&63] * (PredQuant-1);
+    int32_t i;
+    int32_t Scale = VC1_DQScaleTbl[(CurrQuant-1)&63] * (PredQuant-1);
 
     for (i = 1; i<VC1_PIXEL_IN_BLOCK; i++)
-        pCurrAC[i] = pCurrAC[i] + (Ipp16s)((pPredAC[i] * Scale + 0x20000)>>18);
+        pCurrAC[i] = pCurrAC[i] + (int16_t)((pPredAC[i] * Scale + 0x20000)>>18);
 }
 
 
-static Ipp8u GetDCACPrediction(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData,
-                               Ipp32s blk_num, Ipp16s* pBlock,Ipp16s defaultDC, Ipp32u PTYPE)
+static uint8_t GetDCACPrediction(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData,
+                               int32_t blk_num, int16_t* pBlock,int16_t defaultDC, uint32_t PTYPE)
 {
-    Ipp8u blkType = VC1_BLK_INTRA;
+    uint8_t blkType = VC1_BLK_INTRA;
 
     VC1DCPredictors DCPred;
-    Ipp8u PredPattern;
-    Ipp32u CurrQuant = PredData->DoubleQuant[2];
+    uint8_t PredPattern;
+    uint32_t CurrQuant = PredData->DoubleQuant[2];
 
-    Ipp16s DCA, DCB, DCC, DC = 0;
-    Ipp32u step = VC1_pixel_table[blk_num];
+    int16_t DCA, DCB, DCC, DC = 0;
+    uint32_t step = VC1_pixel_table[blk_num];
 
     memcpy_s(&DCPred, sizeof(VC1DCPredictors), PredData, sizeof(VC1DCPredictors));
     PredPattern = DCPred.BlkPattern[blk_num];
@@ -197,15 +197,15 @@ static Ipp8u GetDCACPrediction(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredData
     return blkType;
 }
 
-static Ipp8u GetDCPrediction(VC1DCBlkParam* CurrBlk,VC1DCPredictors* PredData,
-                             Ipp32s blk_num, Ipp16s* pBlock,Ipp16s defaultDC, Ipp32u PTYPE)
+static uint8_t GetDCPrediction(VC1DCBlkParam* CurrBlk,VC1DCPredictors* PredData,
+                             int32_t blk_num, int16_t* pBlock,int16_t defaultDC, uint32_t PTYPE)
 {
-    Ipp8u blkType = VC1_BLK_INTRA;
+    uint8_t blkType = VC1_BLK_INTRA;
 
     VC1DCPredictors DCPred;
-    Ipp8u PredPattern;
+    uint8_t PredPattern;
 
-    Ipp16s DCA, DCB, DCC = 0;
+    int16_t DCA, DCB, DCC = 0;
 
     memcpy_s(&DCPred, sizeof(VC1DCPredictors), PredData, sizeof(VC1DCPredictors));
 
@@ -323,20 +323,20 @@ static const DCPrediction DCPredictionTable[] =
         (DCPrediction)(GetDCACPrediction)
 };
 
-VC1Status BLKLayer_Intra_Luma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bias, Ipp32u ACPRED)
+VC1Status BLKLayer_Intra_Luma(VC1Context* pContext, int32_t blk_num, uint32_t bias, uint32_t ACPRED)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
+    int16_t*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
     VC1Block* pBlock    = &pContext->m_pCurrMB->m_pBlocks[blk_num];
     VC1DCMBParam*  CurrDC = pContext->CurrDC;
     VC1DCBlkParam* CurrBlk = &CurrDC->DCBlkPred[blk_num];
     VC1DCPredictors* DCPred = &pContext->DCPred;
 
     int ret;
-    Ipp32s DCCOEF;
-    Ipp32s DCSIGN;
-    Ipp32u i = 0;
+    int32_t DCCOEF;
+    int32_t DCSIGN;
+    uint32_t i = 0;
 
-    Ipp32u quant = CurrDC->DoubleQuant>>1;
+    uint32_t quant = CurrDC->DoubleQuant>>1;
 
     ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
@@ -363,7 +363,7 @@ VC1Status BLKLayer_Intra_Luma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bias,
         }
         else
         {  // DCCOEF is not IPPVC_ESCAPE
-           Ipp32s tmp;
+           int32_t tmp;
            if(quant  == 1)
            {
               VC1_GET_BITS(2, tmp);
@@ -380,12 +380,12 @@ VC1Status BLKLayer_Intra_Luma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bias,
         DCCOEF = (1 - (DCSIGN<<1))* DCCOEF;
     }
 
-    CurrBlk->DC = (Ipp16s)DCCOEF;
+    CurrBlk->DC = (int16_t)DCCOEF;
     if(!bias)
     {
-        Ipp32s DCStepSize = pContext->CurrDC->DCStepSize;
+        int32_t DCStepSize = pContext->CurrDC->DCStepSize;
         pBlock->blkType =  DCPredictionTable[ACPRED](CurrBlk, DCPred, blk_num, m_pBlock,
-                                            (Ipp16s)((1024 +(DCStepSize>>1))/DCStepSize),
+                                            (int16_t)((1024 +(DCStepSize>>1))/DCStepSize),
                                             pContext->m_picLayerHeader->PTYPE);
     }
     else
@@ -397,7 +397,7 @@ VC1Status BLKLayer_Intra_Luma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bias,
 #endif
    if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
-        const Ipp8u* curr_scan = pContext->m_pSingleMB->ZigzagTable[VC1_BlockTable[pBlock->blkType]];
+        const uint8_t* curr_scan = pContext->m_pSingleMB->ZigzagTable[VC1_BlockTable[pBlock->blkType]];
         if(curr_scan==NULL)
             return VC1_FAIL;
 
@@ -420,9 +420,9 @@ VC1Status BLKLayer_Intra_Luma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bias,
     //NEED!
                 VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "Block %d\n", blk_num);
-                for(Ipp32u k = 0; k<8; k++)
+                for(uint32_t k = 0; k<8; k++)
                 {
-                    for (Ipp32u t = 0; t<8; t++)
+                    for (uint32_t t = 0; t<8; t++)
                     {
                     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                             "%d  ", m_pBlock[k*16 + t]);
@@ -433,9 +433,9 @@ VC1Status BLKLayer_Intra_Luma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bias,
     return VC1_OK;
 }
 
-VC1Status BLKLayer_Intra_Chroma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bias, Ipp32u ACPRED)
+VC1Status BLKLayer_Intra_Chroma(VC1Context* pContext, int32_t blk_num, uint32_t bias, uint32_t ACPRED)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
+    int16_t*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
     VC1Block* pBlock    = &pContext->m_pCurrMB->m_pBlocks[blk_num];
     VC1DCMBParam*  CurrDC = pContext->CurrDC;
     VC1DCBlkParam* CurrBlk = &CurrDC->DCBlkPred[blk_num];
@@ -443,11 +443,11 @@ VC1Status BLKLayer_Intra_Chroma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bia
     VC1DCPredictors* DCPred = &pContext->DCPred;
 
     int ret;
-    Ipp32s DCCOEF;
-    Ipp32s DCSIGN;
-    Ipp32u i = 0;
+    int32_t DCCOEF;
+    int32_t DCSIGN;
+    uint32_t i = 0;
 
-    Ipp32u quant =  CurrDC->DoubleQuant>>1;
+    uint32_t quant =  CurrDC->DoubleQuant>>1;
 
     ret = DecodeHuffmanOne(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
@@ -474,7 +474,7 @@ VC1Status BLKLayer_Intra_Chroma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bia
         }
         else
         {  // DCCOEF is not IPPVC_ESCAPE
-           Ipp32s tmp;
+           int32_t tmp;
            if(quant == 1)
            {
               VC1_GET_BITS(2, tmp);
@@ -490,12 +490,12 @@ VC1Status BLKLayer_Intra_Chroma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bia
         DCCOEF = (1 - (DCSIGN<<1))* DCCOEF;
     }
 
-    CurrBlk->DC = (Ipp16s)DCCOEF;
+    CurrBlk->DC = (int16_t)DCCOEF;
     if(!bias)
     {
-        Ipp32s DCStepSize = pContext->CurrDC->DCStepSize;
+        int32_t DCStepSize = pContext->CurrDC->DCStepSize;
         pBlock->blkType = DCPredictionTable[ACPRED](CurrBlk, DCPred, blk_num,
-                        m_pBlock,(Ipp16s)((1024 +(DCStepSize>>1))/DCStepSize),
+                        m_pBlock,(int16_t)((1024 +(DCStepSize>>1))/DCStepSize),
                         pContext->m_picLayerHeader->PTYPE);
     }
     else
@@ -508,7 +508,7 @@ VC1Status BLKLayer_Intra_Chroma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bia
 
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
-        const Ipp8u* curr_scan = pContext->m_pSingleMB->ZigzagTable[VC1_BlockTable[pBlock->blkType]];
+        const uint8_t* curr_scan = pContext->m_pSingleMB->ZigzagTable[VC1_BlockTable[pBlock->blkType]];
         if(curr_scan==NULL)
             return VC1_FAIL;
 
@@ -531,9 +531,9 @@ VC1Status BLKLayer_Intra_Chroma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bia
 //NEED!
                 VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "Block %d\n", blk_num);
-                for(Ipp32u k = 0; k<8; k++)
+                for(uint32_t k = 0; k<8; k++)
                 {
-                    for (Ipp32u t = 0; t<8; t++)
+                    for (uint32_t t = 0; t<8; t++)
                     {
                     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "%d  ", m_pBlock[k*8 + t]);
@@ -544,12 +544,12 @@ VC1Status BLKLayer_Intra_Chroma(VC1Context* pContext, Ipp32s blk_num, Ipp32u bia
     return VC1_OK;
 }
 
-VC1Status BLKLayer_Inter_Luma(VC1Context* pContext, Ipp32s blk_num)
+VC1Status BLKLayer_Inter_Luma(VC1Context* pContext, int32_t blk_num)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
+    int16_t*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
     VC1Block* pBlock    = &pContext->m_pCurrMB->m_pBlocks[blk_num];
-    const Ipp8u* curr_scan = NULL;
-    Ipp8u numCoef = 0;
+    const uint8_t* curr_scan = NULL;
+    uint8_t numCoef = 0;
 
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader * picHeader = pContext->m_picLayerHeader;
@@ -705,9 +705,9 @@ VC1Status BLKLayer_Inter_Luma(VC1Context* pContext, Ipp32s blk_num)
 //NEED!
                 VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "Block %d\n", blk_num);
-                for(Ipp32u k = 0; k<8; k++)
+                for(uint32_t k = 0; k<8; k++)
                 {
-                    for (Ipp32u t = 0; t<8; t++)
+                    for (uint32_t t = 0; t<8; t++)
                     {
                     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "%d  ",m_pBlock[k*16 + t]);
@@ -717,12 +717,12 @@ VC1Status BLKLayer_Inter_Luma(VC1Context* pContext, Ipp32s blk_num)
 #endif
     return VC1_OK;
 }
-VC1Status BLKLayer_Inter_Chroma(VC1Context* pContext, Ipp32s blk_num)
+VC1Status BLKLayer_Inter_Chroma(VC1Context* pContext, int32_t blk_num)
 {
-    Ipp16s*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
+    int16_t*   m_pBlock  = pContext->m_pBlock + VC1_BlkStart[blk_num];
     VC1Block* pBlock    = &pContext->m_pCurrMB->m_pBlocks[blk_num];
-    const Ipp8u* curr_scan = NULL;
-    Ipp8u numCoef = 0;
+    const uint8_t* curr_scan = NULL;
+    uint8_t numCoef = 0;
     VC1SingletonMB* sMB = pContext->m_pSingleMB;
     VC1PictureLayerHeader * picHeader = pContext->m_picLayerHeader;
 
@@ -833,9 +833,9 @@ VC1Status BLKLayer_Inter_Chroma(VC1Context* pContext, Ipp32s blk_num)
     //NEED!
                 VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "Block %d\n", blk_num);
-                for(Ipp32u k = 0; k<8; k++)
+                for(uint32_t k = 0; k<8; k++)
                 {
-                    for (Ipp32u t = 0; t<8; t++)
+                    for (uint32_t t = 0; t<8; t++)
                     {
                     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS,
                                                                 "%d  ", m_pBlock[k*8 + t]);

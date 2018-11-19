@@ -141,7 +141,7 @@ void SetDecodingTables(VC1Context* pContext)
 
 };
 
-Ipp32s InitCommonTables(VC1Context* pContext)
+int32_t InitCommonTables(VC1Context* pContext)
 {
     //MOTION DC DIFF
     if (0 != HuffmanTableInitAlloc(
@@ -315,7 +315,7 @@ Ipp32s InitCommonTables(VC1Context* pContext)
     return 1;
 }
 
-Ipp32s InitInterlacedTables(VC1Context* pContext)
+int32_t InitInterlacedTables(VC1Context* pContext)
 {
     //MB MODE
     if (0 != HuffmanTableInitAlloc(
@@ -642,12 +642,12 @@ Status VC1VideoDecoderSW::Init(BaseCodecParams *pInit)
             m_pHeap->s_new(&m_pdecoder,m_iThreadDecoderNum);
             memset(m_pdecoder, 0, sizeof(VC1ThreadDecoder*) * m_iThreadDecoderNum);
 
-            for (Ipp32u i = 0; i < m_iThreadDecoderNum; i += 1)
+            for (uint32_t i = 0; i < m_iThreadDecoderNum; i += 1)
             {
                 m_pHeap->s_new(&m_pdecoder[i]);
             }
 
-            for (Ipp32u i = 0;i < m_iThreadDecoderNum;i += 1)
+            for (uint32_t i = 0;i < m_iThreadDecoderNum;i += 1)
             {
                 if (UMC_OK != m_pdecoder[i]->Init(m_pContext,i,m_pStore,m_pMemoryAllocator,NULL))
                     return UMC_ERR_INIT;
@@ -701,21 +701,21 @@ Status  VC1VideoDecoderSW::Reset()
     return sts;
 }
 
-Ipp32u VC1VideoDecoderSW::CalculateHeapSize()
+uint32_t VC1VideoDecoderSW::CalculateHeapSize()
 {
-    Ipp32u Size = 0;
-    Ipp32u counter = 0;
+    uint32_t Size = 0;
+    uint32_t counter = 0;
 
-    Size += align_value<Ipp32u>(sizeof(VC1TaskStoreSW));
-    Size += align_value<Ipp32u>(sizeof(VC1ThreadDecoder**)*m_iThreadDecoderNum);
-    Size += align_value<Ipp32u>(sizeof(Frame)*(2*m_iMaxFramesInProcessing + 2*VC1NUMREFFRAMES));
+    Size += align_value<uint32_t>(sizeof(VC1TaskStoreSW));
+    Size += align_value<uint32_t>(sizeof(VC1ThreadDecoder**)*m_iThreadDecoderNum);
+    Size += align_value<uint32_t>(sizeof(Frame)*(2*m_iMaxFramesInProcessing + 2*VC1NUMREFFRAMES));
 
     for (counter = 0; counter < m_iThreadDecoderNum; counter += 1)
     {
-        Size += align_value<Ipp32u>(sizeof(VC1ThreadDecoder));
+        Size += align_value<uint32_t>(sizeof(VC1ThreadDecoder));
     }
 
-    Size += align_value<Ipp32u>(sizeof(MediaDataEx));
+    Size += align_value<uint32_t>(sizeof(MediaDataEx));
 
     return Size;
 }
@@ -731,7 +731,7 @@ Status VC1VideoDecoderSW::Close(void)
 
     if(m_pdecoder)
     {
-        for(Ipp32u i = 0; i < m_iThreadDecoderNum; i += 1)
+        for(uint32_t i = 0; i < m_iThreadDecoderNum; i += 1)
         {
             if(m_pdecoder[i])
             {
@@ -910,7 +910,7 @@ bool VC1VideoDecoderSW::InitTables(VC1Context* pContext)
 
 void VC1VideoDecoderSW::FreeTables(VC1Context* pContext)
 {
-    Ipp32s i;
+    int32_t i;
 
     if (pContext->m_vlcTbl->m_pLowMotionLumaDCDiff)
     {
@@ -1149,14 +1149,14 @@ void VC1VideoDecoderSW::FreeTables(VC1Context* pContext)
     }
 }
 
-bool VC1VideoDecoderSW::InitAlloc(VC1Context* pContext, Ipp32u MaxFrameNum)
+bool VC1VideoDecoderSW::InitAlloc(VC1Context* pContext, uint32_t MaxFrameNum)
 {
     if(!InitTables(pContext))
         return false;
 
     //frames allocation
-    Ipp32s i;
-    Ipp32s n_references = MaxFrameNum + VC1NUMREFFRAMES;
+    int32_t i;
+    int32_t n_references = MaxFrameNum + VC1NUMREFFRAMES;
 
     for(i = 0; i < n_references; i++)
     {
@@ -1216,7 +1216,7 @@ Status VC1VideoDecoderSW::GetAndProcessPerformedDS(MediaData* in, VideoData* out
 
                 if (VC1_IS_REFERENCE(pCurrDescriptor->m_pContext->m_InitPicLayer->PTYPE))
                 {
-                    Ipp16u heightMB = m_pContext->m_seqLayerHeader.MaxHeightMB;
+                    uint16_t heightMB = m_pContext->m_seqLayerHeader.MaxHeightMB;
                     if (pCurrDescriptor->m_pContext->m_InitPicLayer->FCM == VC1_FieldInterlace)
                     {
                         heightMB = m_pContext->m_seqLayerHeader.MaxHeightMB + (m_pContext->m_seqLayerHeader.MaxHeightMB & 1);
@@ -1227,7 +1227,7 @@ Status VC1VideoDecoderSW::GetAndProcessPerformedDS(MediaData* in, VideoData* out
 
                     MFX_INTERNAL_CPY(m_pContext->savedMV_Curr, 
                         pCurrDescriptor->m_pContext->savedMV,
-                        heightMB*m_pContext->m_seqLayerHeader.MaxWidthMB * 2 * 2*sizeof(Ipp16s));
+                        heightMB*m_pContext->m_seqLayerHeader.MaxWidthMB * 2 * 2*sizeof(int16_t));
                 }
 
                 if (m_pContext->m_seqLayerHeader.PROFILE == VC1_PROFILE_ADVANCED)

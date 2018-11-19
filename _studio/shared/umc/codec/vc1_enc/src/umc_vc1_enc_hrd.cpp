@@ -31,7 +31,7 @@
 
 namespace UMC_VC1_ENCODER
 {
-extern Ipp32u bMax_LevelLimits[3][5] =
+extern uint32_t bMax_LevelLimits[3][5] =
 {
      {   /* Simple Profile */
         20,     /* Low    Level */
@@ -57,7 +57,7 @@ extern Ipp32u bMax_LevelLimits[3][5] =
 };
 
 
-Ipp32u rMax_LevelLimits[3][5] =
+uint32_t rMax_LevelLimits[3][5] =
 {
      {   /* Simple Profile */
         96000,      /* Low    Level */
@@ -82,7 +82,7 @@ Ipp32u rMax_LevelLimits[3][5] =
     }
 };
 
-Ipp32u MBfLimits[3][5] =
+uint32_t MBfLimits[3][5] =
 {
      {   /* Simple Profile */
         99,      /* Low    Level */
@@ -141,14 +141,14 @@ void VC1HRDecoder::Reset()
     m_recoding = 0;
 };
 
-UMC::Status VC1HRDecoder::InitBuffer(Ipp32s profile,   Ipp32s level,
-                                     Ipp32s bufferSize,Ipp32s initFull,
-                                     Ipp32s bitRate,   Ipp64f frameRate)
+UMC::Status VC1HRDecoder::InitBuffer(int32_t profile,   int32_t level,
+                                     int32_t bufferSize,int32_t initFull,
+                                     int32_t bitRate,   double frameRate)
 {
-    Ipp32s maxBufSize = 0;
-    Ipp32s i = 0; //level
-    Ipp32s j = 0; //profile
-    m_IdealFrameSize = (Ipp32u)(bitRate/frameRate);  //in bits
+    int32_t maxBufSize = 0;
+    int32_t i = 0; //level
+    int32_t j = 0; //profile
+    m_IdealFrameSize = (uint32_t)(bitRate/frameRate);  //in bits
 
     if(profile == VC1_ENC_PROFILE_A)
     {
@@ -224,12 +224,12 @@ UMC::Status VC1HRDecoder::InitBuffer(Ipp32s profile,   Ipp32s level,
     return UMC::UMC_OK;
 };
 
-Ipp32s VC1HRDecoder::CheckBuffer(Ipp32s frameSize)
+int32_t VC1HRDecoder::CheckBuffer(int32_t frameSize)
 {
-    Ipp32s Sts = VC1_HRD_OK;
-    Ipp32s bufFullness = 0;
-    Ipp32s decFullness = 0;
-    Ipp32s encDelay    = m_LBuckets.vc1_enc_delay;
+    int32_t Sts = VC1_HRD_OK;
+    int32_t bufFullness = 0;
+    int32_t decFullness = 0;
+    int32_t encDelay    = m_LBuckets.vc1_enc_delay;
     frameSize = frameSize * 8;
     m_recoding++;
 
@@ -297,13 +297,13 @@ Ipp32s VC1HRDecoder::CheckBuffer(Ipp32s frameSize)
     return Sts;
 }
 
-Ipp32s VC1HRDecoder::ReleaseData (Ipp32s frameSize)
+int32_t VC1HRDecoder::ReleaseData (int32_t frameSize)
 {
 #ifdef VC1_HRD_DEBUG
     printf("SetNewData,");
 #endif
 
-    Ipp32s Sts = VC1_HRD_OK;
+    int32_t Sts = VC1_HRD_OK;
 
     m_LBuckets.vc1_decPrevFullness = m_LBuckets.vc1_decFullness;
     m_LBuckets.vc1_Prev_enc_delay  = m_LBuckets.vc1_enc_delay;
@@ -326,10 +326,10 @@ Ipp32s VC1HRDecoder::ReleaseData (Ipp32s frameSize)
     return Sts;
 }
 
-Ipp32s VC1HRDecoder::RemoveFrame(Ipp32s frameSize)
+int32_t VC1HRDecoder::RemoveFrame(int32_t frameSize)
 {
-    Ipp32s Sts = VC1_HRD_OK;
-    Ipp32s bufFullness = 0;
+    int32_t Sts = VC1_HRD_OK;
+    int32_t bufFullness = 0;
     frameSize = frameSize * 8;
 
     //real fullness
@@ -371,10 +371,10 @@ Ipp32s VC1HRDecoder::RemoveFrame(Ipp32s frameSize)
     return Sts;
 }
 
-Ipp32s VC1HRDecoder::AddNewData()
+int32_t VC1HRDecoder::AddNewData()
 {
-    Ipp32s Sts = VC1_HRD_OK;
-    Ipp32s bufFullness = 0;
+    int32_t Sts = VC1_HRD_OK;
+    int32_t bufFullness = 0;
 
     bufFullness = m_LBuckets.vc1_decFullness + m_IdealFrameSize +  m_LBuckets.vc1_enc_delay;
 
@@ -417,20 +417,20 @@ void VC1HRDecoder::GetHRDParams(VC1_hrd_OutData* hrdParams)
     hrdParams->hrd_max_rate = hrd_data.hrd_max_rate;
 }
 
-void VC1HRDecoder::SetHRDRate(Ipp32s frameSize)
+void VC1HRDecoder::SetHRDRate(int32_t frameSize)
 {
-    Ipp32s enc_delay =  m_LBuckets.vc1_decFullness - m_LBuckets.vc1_decInitFull
+    int32_t enc_delay =  m_LBuckets.vc1_decFullness - m_LBuckets.vc1_decInitFull
         + m_LBuckets.vc1_enc_delay;
 
-    Ipp32s prev_enc_delay  = m_LBuckets.vc1_decPrevFullness - m_LBuckets.vc1_decInitFull
+    int32_t prev_enc_delay  = m_LBuckets.vc1_decPrevFullness - m_LBuckets.vc1_decInitFull
         + m_LBuckets.vc1_Prev_enc_delay;
 
     enc_delay = enc_delay - prev_enc_delay;
 
-    Ipp64f enc_delayTime = enc_delay/m_LBuckets.vc1_BitRate;
+    double enc_delayTime = enc_delay/m_LBuckets.vc1_BitRate;
 
     //should be change for interlaced and field frames
-   Ipp64f T = 1/m_LBuckets.vc1_FrameRate*m_recoding;
+   double T = 1/m_LBuckets.vc1_FrameRate*m_recoding;
 
    if((T + enc_delayTime == 0) || (m_recoding == 0))
    {
@@ -438,10 +438,10 @@ void VC1HRDecoder::SetHRDRate(Ipp32s frameSize)
        return;
    }
 
-   Ipp64f rate = (frameSize*8)/(T + enc_delayTime);
+   double rate = (frameSize*8)/(T + enc_delayTime);
 
    if(rate > hrd_data.hrd_max_rate)
-       hrd_data.hrd_max_rate = (Ipp32s)rate;
+       hrd_data.hrd_max_rate = (int32_t)rate;
 
 #ifdef VC1_HRD_DEBUG
     printf("max_rate = ,%d\n", hrd_data.hrd_max_rate);
@@ -450,9 +450,9 @@ void VC1HRDecoder::SetHRDRate(Ipp32s frameSize)
 
 void VC1HRDecoder::SetHRDFullness()
 {
-    Ipp32s fullness = 0;
-    Ipp32s temp = 0;
-    Ipp32u r    = 0;
+    int32_t fullness = 0;
+    int32_t temp = 0;
+    uint32_t r    = 0;
 
     if( m_LBuckets.vc1_decFullness < m_LBuckets.vc1_decBufferSize)
         fullness = m_LBuckets.vc1_decFullness;
@@ -464,7 +464,7 @@ void VC1HRDecoder::SetHRDFullness()
 
     //ROUNDUP fullness/m_LBuckets.vc1_decBufferSize
     temp = fullness/m_LBuckets.vc1_decBufferSize;
-    r = ((Ipp32u)(temp * m_LBuckets.vc1_decBufferSize - fullness))>>31;
+    r = ((uint32_t)(temp * m_LBuckets.vc1_decBufferSize - fullness))>>31;
     temp += r;
 
     hrd_data.hrd_fullness =256*temp - 1;
@@ -474,20 +474,20 @@ void VC1HRDecoder::SetHRDFullness()
 #endif
 }
 
-void VC1HRDecoder::SetBitRate(Ipp32s bitRate)
+void VC1HRDecoder::SetBitRate(int32_t bitRate)
 {
     m_LBuckets.vc1_BitRate = bitRate;
 
     //in bits
-    m_IdealFrameSize = (Ipp32u)(m_LBuckets.vc1_BitRate/m_LBuckets.vc1_FrameRate);
+    m_IdealFrameSize = (uint32_t)(m_LBuckets.vc1_BitRate/m_LBuckets.vc1_FrameRate);
 }
 
-void VC1HRDecoder::SetFrameRate(Ipp32s frameRate)
+void VC1HRDecoder::SetFrameRate(int32_t frameRate)
 {
      m_LBuckets.vc1_FrameRate = frameRate;
 
      //in bits
-     m_IdealFrameSize = (Ipp32u)(m_LBuckets.vc1_BitRate/m_LBuckets.vc1_FrameRate);
+     m_IdealFrameSize = (uint32_t)(m_LBuckets.vc1_BitRate/m_LBuckets.vc1_FrameRate);
 }
 }
 #endif // defined (UMC_ENABLE_VC1_VIDEO_ENCODER)

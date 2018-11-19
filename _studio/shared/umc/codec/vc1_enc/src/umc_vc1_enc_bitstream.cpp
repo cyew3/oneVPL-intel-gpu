@@ -27,7 +27,7 @@ namespace UMC_VC1_ENCODER
 {
 void VC1EncoderBitStreamSM::Init(UMC::MediaData* data)
 {
-    m_pBitStream    = (Ipp32u*) ((Ipp8u*)data->GetBufferPointer() + data->GetDataSize());
+    m_pBitStream    = (uint32_t*) ((uint8_t*)data->GetBufferPointer() + data->GetDataSize());
     m_iOffset       = 32;
     m_pBitStream[0] = 0;
 
@@ -41,7 +41,7 @@ void VC1EncoderBitStreamSM::Init(UMC::MediaData* data)
 }
 void VC1EncoderBitStreamAdv::Init(UMC::MediaData* data)
 {
-    m_pBitStream    = (Ipp32u*) ((Ipp8u*)data->GetBufferPointer() + data->GetDataSize());
+    m_pBitStream    = (uint32_t*) ((uint8_t*)data->GetBufferPointer() + data->GetDataSize());
     m_iOffset       = 32;
     m_pBitStream[0] = 0;
 
@@ -101,7 +101,7 @@ UMC::Status VC1EncoderBitStreamAdv::DataComplete(UMC::MediaData* data)
     UMC::Status ret = AddLastBits();
     if (ret != UMC::UMC_OK) return ret;
 
-    dataLen = (m_pBitStream - m_pBufferStart)*sizeof(Ipp32u);
+    dataLen = (m_pBitStream - m_pBufferStart)*sizeof(uint32_t);
     VM_ASSERT (dataLen < m_iBufferLen);
 
     ret = data->SetDataSize(data->GetDataSize() + dataLen);
@@ -118,7 +118,7 @@ UMC::Status VC1EncoderBitStreamAdv::DataComplete(UMC::MediaData* data)
 //UMC::Status VC1EncoderBitStreamSM::AddLastBits8u()
 //{
 //    UMC::Status ret = UMC::UMC_OK;
-//    Ipp8u bits = m_iOffset%8;
+//    uint8_t bits = m_iOffset%8;
 //    if (bits!=0 )
 //    {
 //        ret =PutBits((1<<(bits-1)),bits);
@@ -140,7 +140,7 @@ UMC::Status VC1EncoderBitStreamAdv::AddLastBits()
     assert (m_iOffset!=0);
     if (!m_bLast)
     {
-        Ipp8u z = (Ipp8u)(m_iOffset%8);
+        uint8_t z = (uint8_t)(m_iOffset%8);
         z = (z)? z : 8;
         ret = PutBits((1<<(z-1)),z);
         if (ret != UMC::UMC_OK) return ret;
@@ -149,7 +149,7 @@ UMC::Status VC1EncoderBitStreamAdv::AddLastBits()
     m_bLast = true;
     return ret;
 }
-static Ipp32u mask[] = {
+static uint32_t mask[] = {
                    0x00000000,
                    0x00000001,0x00000003,0x00000007,0x0000000F,
                    0x0000001F,0x0000003F,0x0000007F,0x000000FF,
@@ -161,15 +161,15 @@ static Ipp32u mask[] = {
                    0x1FFFFFFF,0x3FFFFFFF,0x7FFFFFFF,0xFFFFFFFF
 };
 
-UMC::Status VC1EncoderBitStreamSM::PutBits(Ipp32u val,Ipp32s len)
+UMC::Status VC1EncoderBitStreamSM::PutBits(uint32_t val,int32_t len)
  {
-    Ipp32s tmpcnt;
-    Ipp32u r_tmp;
+    int32_t tmpcnt;
+    uint32_t r_tmp;
 
     assert(m_pBitStream!=NULL);
     assert(len<=32);
 
-    if ((Ipp8u*)m_pBitStream + (len + m_iOffset)/8 >= (Ipp8u*)m_pBufferStart + m_iBufferLen - 1)
+    if ((uint8_t*)m_pBitStream + (len + m_iOffset)/8 >= (uint8_t*)m_pBufferStart + m_iBufferLen - 1)
         return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
     val = val & mask[len];
@@ -178,7 +178,7 @@ UMC::Status VC1EncoderBitStreamSM::PutBits(Ipp32u val,Ipp32s len)
 
     if(tmpcnt <= 0)
     {
-      Ipp32u z=0;
+      uint32_t z=0;
       r_tmp = (m_pBitStream)[0] | ((val) >> (-tmpcnt));
       (m_pBitStream)[0] = BSWAP(r_tmp);
       (m_pBitStream)++;
@@ -193,15 +193,15 @@ UMC::Status VC1EncoderBitStreamSM::PutBits(Ipp32u val,Ipp32s len)
     }
     return UMC::UMC_OK;
 }
- UMC::Status VC1EncoderBitStreamSM::PutBitsHeader(Ipp32u val,Ipp32s len)
+ UMC::Status VC1EncoderBitStreamSM::PutBitsHeader(uint32_t val,int32_t len)
  {
-    Ipp32s tmpcnt;
-    Ipp32u r_tmp;
+    int32_t tmpcnt;
+    uint32_t r_tmp;
 
     assert(m_pBitStream!=NULL);
     assert(len<=32);
 
-    if ((Ipp8u*)m_pBitStream + (len + m_iOffset)/8 >= (Ipp8u*)m_pBufferStart + m_iBufferLen - 1)
+    if ((uint8_t*)m_pBitStream + (len + m_iOffset)/8 >= (uint8_t*)m_pBufferStart + m_iBufferLen - 1)
         return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
     val = val & mask[len];
@@ -210,7 +210,7 @@ UMC::Status VC1EncoderBitStreamSM::PutBits(Ipp32u val,Ipp32s len)
 
     if(tmpcnt <= 0)
     {
-      Ipp32u z=0;
+      uint32_t z=0;
       r_tmp = (m_pBitStream)[0] | ((val) >> (-tmpcnt));
       (m_pBitStream)[0] = BNOSWAP(r_tmp);
       (m_pBitStream)++;
@@ -225,19 +225,19 @@ UMC::Status VC1EncoderBitStreamSM::PutBits(Ipp32u val,Ipp32s len)
     }
     return UMC::UMC_OK;
 }
-static Ipp32u maskUpper[] = {0x00000000, 0xFF000000, 0xFFFF0000,0xFFFFFF00};
-static Ipp32u maskLower[] = {0xFFFFFFFF, 0x00FFFFFF, 0x0000FFFF,0x000000FF};
-static Ipp32u maskL[] = {0x00000000, 0x000000FF, 0x0000FFFF,0x00000000};
-static Ipp32u iArr[] = {0x03000000,0x030000,0x0300,0x03};
+static uint32_t maskUpper[] = {0x00000000, 0xFF000000, 0xFFFF0000,0xFFFFFF00};
+static uint32_t maskLower[] = {0xFFFFFFFF, 0x00FFFFFF, 0x0000FFFF,0x000000FF};
+static uint32_t maskL[] = {0x00000000, 0x000000FF, 0x0000FFFF,0x00000000};
+static uint32_t iArr[] = {0x03000000,0x030000,0x0300,0x03};
 
-UMC::Status VC1EncoderBitStreamAdv::PutBits(Ipp32u val,Ipp32s len)
+UMC::Status VC1EncoderBitStreamAdv::PutBits(uint32_t val,int32_t len)
  {
-    Ipp32s tmpcnt;
+    int32_t tmpcnt;
 
     assert(m_pBitStream!=NULL);
     assert(len<=32);
 
-    if ((Ipp8u*)m_pBitStream + (len + m_iOffset)/8 >= (Ipp8u*)m_pBufferStart + m_iBufferLen - 1)
+    if ((uint8_t*)m_pBitStream + (len + m_iOffset)/8 >= (uint8_t*)m_pBufferStart + m_iBufferLen - 1)
         return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
     val = val & mask[len];
@@ -245,10 +245,10 @@ UMC::Status VC1EncoderBitStreamAdv::PutBits(Ipp32u val,Ipp32s len)
 
     while (tmpcnt <= 0)
     {
-      Ipp32s i=-1;
-      Ipp8u  n_bytes  = 0;
-      Ipp32u r_tmp = 0;
-      Ipp32u tmp = 0;
+      int32_t i=-1;
+      uint8_t  n_bytes  = 0;
+      uint32_t r_tmp = 0;
+      uint32_t tmp = 0;
 
       r_tmp = (m_pBitStream)[0] | ((val) >> (-tmpcnt));
       tmp = r_tmp;
@@ -279,9 +279,9 @@ UMC::Status VC1EncoderBitStreamAdv::PutBits(Ipp32u val,Ipp32s len)
 }
  UMC::Status VC1EncoderBitStreamAdv::PutLastBits()
  {
-    Ipp32s pos = (32 - m_iOffset)>>3;
-    Ipp32s i=-1;
-    Ipp32u tmp = (m_pBitStream)[0];
+    int32_t pos = (32 - m_iOffset)>>3;
+    int32_t i=-1;
+    uint32_t tmp = (m_pBitStream)[0];
 
     assert(m_pBitStream!=NULL);
     assert(m_iOffset%8 == 0);
@@ -301,16 +301,16 @@ UMC::Status VC1EncoderBitStreamAdv::PutBits(Ipp32u val,Ipp32s len)
 
     return UMC::UMC_OK;
 }
- UMC::Status VC1EncoderBitStreamAdv::PutStartCode(Ipp32u val, Ipp32s len)
+ UMC::Status VC1EncoderBitStreamAdv::PutStartCode(uint32_t val, int32_t len)
  {
-   Ipp32s tmpcnt;
-   Ipp32u r_tmp;
+   int32_t tmpcnt;
+   uint32_t r_tmp;
 
    assert(m_pBitStream!=NULL);
    assert(len<=32);
    assert(m_iOffset % 8 == 0);
 
-    if ((Ipp8u*)m_pBitStream + (len + m_iOffset)/8 >= (Ipp8u*)m_pBufferStart + m_iBufferLen - 1)
+    if ((uint8_t*)m_pBitStream + (len + m_iOffset)/8 >= (uint8_t*)m_pBufferStart + m_iBufferLen - 1)
         return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
     val = val & mask[len];
@@ -318,7 +318,7 @@ UMC::Status VC1EncoderBitStreamAdv::PutBits(Ipp32u val,Ipp32s len)
 
     if(tmpcnt <= 0)
     {
-      Ipp32u z=0;
+      uint32_t z=0;
       r_tmp = (m_pBitStream)[0] | ((val) >> (-tmpcnt));
       (m_pBitStream)[0] = BSWAP(r_tmp);
       (m_pBitStream)++;
@@ -335,16 +335,16 @@ UMC::Status VC1EncoderBitStreamAdv::PutBits(Ipp32u val,Ipp32s len)
     ResetCodeStatus();
     return UMC::UMC_OK;
 }
- UMC::Status     VC1EncoderBitStreamAdv::AddUserData(Ipp8u* pUD, Ipp32u len, Ipp32u startCode)
+ UMC::Status     VC1EncoderBitStreamAdv::AddUserData(uint8_t* pUD, uint32_t len, uint32_t startCode)
  {
      assert(m_pBitStream!=NULL);
-     Ipp32u bytepos = (32 - m_iOffset)>>3;
+     uint32_t bytepos = (32 - m_iOffset)>>3;
 
-     if ((Ipp8u*)m_pBitStream + len + bytepos >= (Ipp8u*)m_pBufferStart + m_iBufferLen - 1)
+     if ((uint8_t*)m_pBitStream + len + bytepos >= (uint8_t*)m_pBufferStart + m_iBufferLen - 1)
          return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
      
      PutStartCode(startCode);     
-     memcpy ((Ipp8u*)m_pBitStream + bytepos, pUD,len);
+     memcpy ((uint8_t*)m_pBitStream + bytepos, pUD,len);
 
      m_pBitStream += (bytepos + len)/4;
      bytepos = (bytepos + len)%4;
@@ -354,14 +354,14 @@ UMC::Status VC1EncoderBitStreamAdv::PutBits(Ipp32u val,Ipp32s len)
      return UMC::UMC_OK;
 
  }
-static Ipp32u iShift[] = {24,16,8,0};
-Ipp32s       VC1EncoderBitStreamAdv::CheckCode(Ipp32u code)
+static uint32_t iShift[] = {24,16,8,0};
+int32_t       VC1EncoderBitStreamAdv::CheckCode(uint32_t code)
 {
-    Ipp32s i;
+    int32_t i;
 
     for (i=0;i<4;i++)
     {
-        Ipp8u nextByte = (Ipp8u)((code >>(iShift[i]))&0xFF);
+        uint8_t nextByte = (uint8_t)((code >>(iShift[i]))&0xFF);
         if (nextByte>3)
         {
             m_uiCodeStatus = 0;
@@ -382,12 +382,12 @@ Ipp32s       VC1EncoderBitStreamAdv::CheckCode(Ipp32u code)
     return -1;
 }
 
- UMC::Status  VC1EncoderBitStreamSM::MakeBlankSegment(Ipp32s len)
+ UMC::Status  VC1EncoderBitStreamSM::MakeBlankSegment(int32_t len)
  {
     if (m_iOffset != 32 || m_pBlankSegment)
          return UMC::UMC_ERR_NOT_IMPLEMENTED;
 
-    if ((Ipp8u*)(m_pBitStream + len) >= (Ipp8u*)m_pBufferStart + m_iBufferLen - 1)
+    if ((uint8_t*)(m_pBitStream + len) >= (uint8_t*)m_pBufferStart + m_iBufferLen - 1)
         return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
     m_pBlankSegment    = m_pBitStream;
@@ -398,7 +398,7 @@ Ipp32s       VC1EncoderBitStreamAdv::CheckCode(Ipp32u code)
     return UMC::UMC_OK;
 
  }
- UMC::Status  VC1EncoderBitStreamSM::FillBlankSegment(Ipp32u value)
+ UMC::Status  VC1EncoderBitStreamSM::FillBlankSegment(uint32_t value)
  {
      if (!m_pBlankSegment || !m_iBlankSegmentLen)
          return UMC::UMC_ERR_NOT_IMPLEMENTED;

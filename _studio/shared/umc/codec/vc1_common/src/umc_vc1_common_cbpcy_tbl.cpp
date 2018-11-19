@@ -62,7 +62,7 @@
 //31        135          9        63            361          10
 ///////////////////////////////////////////////////////////////
 
-const extern Ipp32s VC1_CBPCY_Ipic[] =
+const extern int32_t VC1_CBPCY_Ipic[] =
 {
  13, /* max bits */
  2,  /* total subtables */
@@ -151,7 +151,7 @@ const extern Ipp32s VC1_CBPCY_Ipic[] =
 //62         4          3           63           3           2
 ///////////////////////////////////////////////////////////////
 
-const extern Ipp32s VC1_CBPCY_PBpic_tbl0[] =
+const extern int32_t VC1_CBPCY_PBpic_tbl0[] =
 {
  13, /* max bits */
  2,  /* total subtables */
@@ -239,7 +239,7 @@ const extern Ipp32s VC1_CBPCY_PBpic_tbl0[] =
 //62        8           13          63          125          7
 ///////////////////////////////////////////////////////////////
 
-const extern Ipp32s VC1_CBPCY_PBpic_tbl1[] =
+const extern int32_t VC1_CBPCY_PBpic_tbl1[] =
 {
  14, /* max bits */
  2,  /* total subtables */
@@ -331,7 +331,7 @@ const extern Ipp32s VC1_CBPCY_PBpic_tbl1[] =
 //62        26              5           63          31          5
 ///////////////////////////////////////////////////////////////
 
-const extern Ipp32s VC1_CBPCY_PBpic_tbl2[] =
+const extern int32_t VC1_CBPCY_PBpic_tbl2[] =
 {
  13, /* max bits */
  2,  /* total subtables */
@@ -420,7 +420,7 @@ const extern Ipp32s VC1_CBPCY_PBpic_tbl2[] =
 //62        27              9           63          31          8
 ///////////////////////////////////////////////////////////////
 
-const extern Ipp32s VC1_CBPCY_PBpic_tbl3[] =
+const extern int32_t VC1_CBPCY_PBpic_tbl3[] =
 {
  9, /* max bits */
  2,  /* total subtables */

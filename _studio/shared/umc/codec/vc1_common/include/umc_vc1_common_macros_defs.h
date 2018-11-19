@@ -31,7 +31,7 @@
 #define VC1_CLIP(x) (!(x&~255)?x:(x<0?0:255))
 #define VC1_SIGN(x) ((x<0)?-1:(x>0?1:0))
 #define VC1_LUT_SET(value,lut) (lut[value])
-//#define align_value<Ipp32u>(x) ((x&3)?((x&0xFFFFFFFC) + 4):x)
+//#define align_value<uint32_t>(x) ((x&3)?((x&0xFFFFFFFC) + 4):x)
 
 namespace UMC
 {
@@ -39,9 +39,9 @@ namespace UMC
     {
     public:
         template <class T>
-        inline static void GetNBits(Ipp32u* &pCurrentData, Ipp32s& offset, Ipp32u nbits, T &data)
+        inline static void GetNBits(uint32_t* &pCurrentData, int32_t& offset, uint32_t nbits, T &data)
         {
-            Ipp32u x;
+            uint32_t x;
             offset -= (nbits);
 
             if(offset >= 0)
@@ -60,10 +60,10 @@ namespace UMC
             data = T(x & ((0x00000001 << (nbits&0x1F)) - 1));
         }
         template <class T>
-        inline static void CheckNBits(Ipp32u* pCurrentData, Ipp32u offset, Ipp32u nbits, T &data)
+        inline static void CheckNBits(uint32_t* pCurrentData, uint32_t offset, uint32_t nbits, T &data)
         {
-            Ipp32s bp;
-            Ipp32u x;
+            int32_t bp;
+            uint32_t x;
 
 
             bp = offset - (nbits);
@@ -91,7 +91,7 @@ namespace UMC
 #define VC1NextNBits( current_data, offset, nbits, data) __VC1NextBits(current_data, offset, nbits, data)
 #define __VC1GetBits(current_data, offset, nbits, data)                 \
 {                                                                       \
-    Ipp32u _x;                                                           \
+    uint32_t _x;                                                           \
                                                                         \
     VM_ASSERT((nbits) >= 0 && (nbits) <= 32);                           \
     VM_ASSERT(offset >= 0 && offset <= 31);                             \
@@ -126,8 +126,8 @@ namespace UMC
 #define VC1GetNBits( current_data, offset, nbits, data) __VC1GetBits(current_data, offset, nbits, data)
 #define __VC1NextBits(current_data, offset, nbits, data)                  \
 {                                                                       \
-    Ipp32s bp;                                                          \
-    Ipp32u x;                                                           \
+    int32_t bp;                                                          \
+    uint32_t x;                                                           \
                                                                         \
     VM_ASSERT((nbits) >= 0 && (nbits) <= 32);                           \
     VM_ASSERT(offset >= 0 && offset <= 31);                             \

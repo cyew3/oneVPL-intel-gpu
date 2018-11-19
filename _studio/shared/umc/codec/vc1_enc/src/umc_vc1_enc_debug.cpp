@@ -34,24 +34,24 @@ namespace UMC_VC1_ENCODER
 
 VC1EncDebug *pDebug;
 
-const Ipp32u  VC1_ENC_POSITION     = 0x00000001;  //Frame num, frame type, frame size,
+const uint32_t  VC1_ENC_POSITION     = 0x00000001;  //Frame num, frame type, frame size,
                                                   //MB, Block positions, skip info
-const Ipp32u  VC1_ENC_COEFFS       = 0x00000080;  // DC, AC coefficiens
-const Ipp32u  VC1_ENC_AC_PRED      = 0x00004000;  // AC prediction
-const Ipp32u  VC1_ENC_QUANT        = 0x00000008;  // quant info
-const Ipp32u  VC1_ENC_CBP          = 0x00000002;  // coded block patern info
-const Ipp32u  VC1_ENC_MV           = 0x00000020;  // motion vectors info
-const Ipp32u  VC1_ENC_PRED         = 0x00000040;  //interpolation info
-const Ipp32u  VC1_ENC_DEBLK_EDGE   = 0x00008000;  //deblocking edge
-const Ipp32u VC1_ENC_FIELD_MV      = 0x00002000;  //field motion vectors info
-const Ipp32u VC1_ENC_SMOOTHING     = 0x00000200;  //print restored frame
-const Ipp32u  VC1_ENC_DEBLOCKING   = 0x1;         //deblocking info
+const uint32_t  VC1_ENC_COEFFS       = 0x00000080;  // DC, AC coefficiens
+const uint32_t  VC1_ENC_AC_PRED      = 0x00004000;  // AC prediction
+const uint32_t  VC1_ENC_QUANT        = 0x00000008;  // quant info
+const uint32_t  VC1_ENC_CBP          = 0x00000002;  // coded block patern info
+const uint32_t  VC1_ENC_MV           = 0x00000020;  // motion vectors info
+const uint32_t  VC1_ENC_PRED         = 0x00000040;  //interpolation info
+const uint32_t  VC1_ENC_DEBLK_EDGE   = 0x00008000;  //deblocking edge
+const uint32_t VC1_ENC_FIELD_MV      = 0x00002000;  //field motion vectors info
+const uint32_t VC1_ENC_SMOOTHING     = 0x00000200;  //print restored frame
+const uint32_t  VC1_ENC_DEBLOCKING   = 0x1;         //deblocking info
 
-const Ipp32u  VC1_ENC_FRAME_DEBUG  = 1;           //on/off frame debug
-const Ipp32u  VC1_ENC_FRAME_MIN    = 0;           //first frame to debug
-const Ipp32u  VC1_ENC_FRAME_MAX    = 3;           //last frame to debug
+const uint32_t  VC1_ENC_FRAME_DEBUG  = 1;           //on/off frame debug
+const uint32_t  VC1_ENC_FRAME_MIN    = 0;           //first frame to debug
+const uint32_t  VC1_ENC_FRAME_MAX    = 3;           //last frame to debug
 
-const Ipp32u  VC1_ENC_DEBUG     = 0x000060e3;  //current debug output
+const uint32_t  VC1_ENC_DEBUG     = 0x000060e3;  //current debug output
 
 VC1EncDebug::VC1EncDebug()
 {
@@ -80,7 +80,7 @@ VC1EncDebug::~VC1EncDebug()
     Close();
 };
 
-void VC1EncDebug::Init(Ipp32s Width, Ipp32s Height, Ipp32u NV12flag)
+void VC1EncDebug::Init(int32_t Width, int32_t Height, uint32_t NV12flag)
 {
     VM_ASSERT(Width > 0);
     VM_ASSERT(Height > 0);
@@ -133,14 +133,14 @@ void VC1EncDebug::Close()
     pCurrMB      = NULL;
 };
 
-void VC1EncDebug::SetSliceInfo(Ipp32u startRow, Ipp32u endRow)
+void VC1EncDebug::SetSliceInfo(uint32_t startRow, uint32_t endRow)
 {
     Slices[NumSlices][0] = startRow;
     Slices[NumSlices][1] = endRow;
     NumSlices++;
 }
 
-void VC1EncDebug::SetPicType(Ipp32s picType)
+void VC1EncDebug::SetPicType(int32_t picType)
 {
     FrameType = picType;
     FieldPic  = 0;
@@ -152,17 +152,17 @@ void VC1EncDebug::SetPicType(Ipp32s picType)
         FieldPic = 1;
 };
 
-void VC1EncDebug::SetRefNum(Ipp32u num)
+void VC1EncDebug::SetRefNum(uint32_t num)
 {
     RefNum = num;
 }
 
-void VC1EncDebug::SetFrameSize(Ipp32s frameSize)
+void VC1EncDebug::SetFrameSize(int32_t frameSize)
 {
     FrameSize = frameSize;
 };
 
-void VC1EncDebug::WriteParams(Ipp32s /*_cur_frame*/, Ipp32s level, vm_char *format,...)
+void VC1EncDebug::WriteParams(int32_t /*_cur_frame*/, int32_t level, vm_char *format,...)
 {
     vm_char line[1024];
     va_list args;
@@ -176,12 +176,12 @@ void VC1EncDebug::WriteParams(Ipp32s /*_cur_frame*/, Ipp32s level, vm_char *form
    //vm_string_printf(line);
 };
 
-void VC1EncDebug::SetRunLevelCoefs(Ipp8u* run, Ipp16s* level, Ipp8u* pairs, Ipp32s blk_num)
+void VC1EncDebug::SetRunLevelCoefs(uint8_t* run, int16_t* level, uint8_t* pairs, int32_t blk_num)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s pairNum = 0;
-    Ipp32s coefNum = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t pairNum = 0;
+    int32_t coefNum = 0;
 
     pCurrMB->Block[blk_num].Pairs[0] = pairs[0];
     pCurrMB->Block[blk_num].Pairs[1] = pairs[1];
@@ -239,7 +239,7 @@ void VC1EncDebug::SetCurrMBFirst(bool bSecondField)
     }
 }
 
-void VC1EncDebug::SetCurrMB(bool bSecondField, Ipp32u NumMBX, Ipp32u NumMBY)
+void VC1EncDebug::SetCurrMB(bool bSecondField, uint32_t NumMBX, uint32_t NumMBY)
 {
     if(!bSecondField)
     {
@@ -259,23 +259,23 @@ void VC1EncDebug::SetCurrMB(bool bSecondField, Ipp32u NumMBX, Ipp32u NumMBY)
     }
 }
 
-void VC1EncDebug::SetRLMode(Ipp8u mode, Ipp32s blk_num, Ipp32s coef_num)
+void VC1EncDebug::SetRLMode(uint8_t mode, int32_t blk_num, int32_t coef_num)
 {
     assert(mode < 65);
     pCurrMB->Block[blk_num].Mode[coef_num] = mode;
 };
 
 
-void VC1EncDebug::SetBlockAsIntra(Ipp32s blk_num)
+void VC1EncDebug::SetBlockAsIntra(int32_t blk_num)
 {
     pCurrMB->Block[blk_num].intra = 1;
 };
 
-void VC1EncDebug::SetBlockDifference(Ipp16s** pBlock, Ipp32u* step)
+void VC1EncDebug::SetBlockDifference(int16_t** pBlock, uint32_t* step)
 {
-    Ipp32s blk_num = 0;
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
     for(blk_num = 0; blk_num < 6; blk_num++)
     {
@@ -295,11 +295,11 @@ void VC1EncDebug::SetMBAsSkip()
     pCurrMB->skip = 1;
 };
 
-void VC1EncDebug::SetDCACInfo(Ipp32s ACPred, Ipp16s* pBlock, Ipp32s BlockStep,
-                              Ipp16s* pPredBlock, Ipp32s PredBlockStep,
-                              Ipp32s direction, Ipp32s blk_num)
+void VC1EncDebug::SetDCACInfo(int32_t ACPred, int16_t* pBlock, int32_t BlockStep,
+                              int16_t* pPredBlock, int32_t PredBlockStep,
+                              int32_t direction, int32_t blk_num)
 {
-    Ipp32s i = 0;
+    int32_t i = 0;
 
     pCurrMB->Block[blk_num].DC = pBlock[0];
     pCurrMB->Block[blk_num].DCDiff = pPredBlock[0];
@@ -328,22 +328,22 @@ void VC1EncDebug::SetDCACInfo(Ipp32s ACPred, Ipp16s* pBlock, Ipp32s BlockStep,
     }
 };
 
-void VC1EncDebug::SetCPB(Ipp32s predcbp, Ipp32s cbp)
+void VC1EncDebug::SetCPB(int32_t predcbp, int32_t cbp)
 {
     pCurrMB->PredCBP = predcbp;
     pCurrMB->CBP = cbp;
 };
 
-void VC1EncDebug::SetQuant(Ipp32s MQuant, Ipp8u  HalfQP)
+void VC1EncDebug::SetQuant(int32_t MQuant, uint8_t  HalfQP)
 {
     pCurrMB->MQuant = MQuant;
     pCurrMB->HalfQP = HalfQP;
 
 };
 
-void VC1EncDebug::SetMVInfo(sCoordinate* MV, Ipp16s predX, Ipp16s predY, Ipp32s forward)
+void VC1EncDebug::SetMVInfo(sCoordinate* MV, int16_t predX, int16_t predY, int32_t forward)
 {
-    Ipp32u i = 0;
+    uint32_t i = 0;
 
     for(i = 0; i < 4; i++)
     {
@@ -354,7 +354,7 @@ void VC1EncDebug::SetMVInfo(sCoordinate* MV, Ipp16s predX, Ipp16s predY, Ipp32s 
     }
 };
 
-void VC1EncDebug::SetMVInfo(sCoordinate* MV, Ipp16s predX, Ipp16s predY, Ipp32s forward, Ipp32s blk_num)
+void VC1EncDebug::SetMVInfo(sCoordinate* MV, int16_t predX, int16_t predY, int32_t forward, int32_t blk_num)
 {
     pCurrMB->Block[blk_num].MV[0][forward]    = MV->x;
     pCurrMB->Block[blk_num].MV[1][forward]    = MV->y;
@@ -362,9 +362,9 @@ void VC1EncDebug::SetMVInfo(sCoordinate* MV, Ipp16s predX, Ipp16s predY, Ipp32s 
     pCurrMB->Block[blk_num].PredMV[1][forward] = predY;
 };
 
-void VC1EncDebug::SetMVInfoField(sCoordinate* MV, Ipp16s predX, Ipp16s predY, Ipp32s forward)
+void VC1EncDebug::SetMVInfoField(sCoordinate* MV, int16_t predX, int16_t predY, int32_t forward)
 {
-    Ipp32u i = 0;
+    uint32_t i = 0;
 
     for(i = 0; i < 4; i++)
     {
@@ -376,7 +376,7 @@ void VC1EncDebug::SetMVInfoField(sCoordinate* MV, Ipp16s predX, Ipp16s predY, Ip
     }
 };
 
-void VC1EncDebug::SetMVInfoField(sCoordinate* MV, Ipp16s predX, Ipp16s predY, Ipp32s forward, Ipp32s blk_num)
+void VC1EncDebug::SetMVInfoField(sCoordinate* MV, int16_t predX, int16_t predY, int32_t forward, int32_t blk_num)
 {
     pCurrMB->Block[blk_num].MV[0][forward]    = MV->x;
     pCurrMB->Block[blk_num].MV[1][forward]    = MV->y;
@@ -385,9 +385,9 @@ void VC1EncDebug::SetMVInfoField(sCoordinate* MV, Ipp16s predX, Ipp16s predY, Ip
     pCurrMB->Block[blk_num].PredMV[1][forward] = predY;
 };
 
-void VC1EncDebug::SetIntrpMV(Ipp16s X, Ipp16s Y, Ipp32s forward)
+void VC1EncDebug::SetIntrpMV(int16_t X, int16_t Y, int32_t forward)
 {
-    Ipp32u i = 0;
+    uint32_t i = 0;
 
     for(i = 0; i < 4; i++)
     {
@@ -396,15 +396,15 @@ void VC1EncDebug::SetIntrpMV(Ipp16s X, Ipp16s Y, Ipp32s forward)
     }
 }
 
-void VC1EncDebug::SetIntrpMV(Ipp16s X, Ipp16s Y, Ipp32s forward, Ipp32s blk_num)
+void VC1EncDebug::SetIntrpMV(int16_t X, int16_t Y, int32_t forward, int32_t blk_num)
 {
     pCurrMB->Block[blk_num].IntrpMV[0][forward] = X;
     pCurrMB->Block[blk_num].IntrpMV[1][forward] = Y;
 }
 
-void VC1EncDebug::SetMVDiff(Ipp16s DiffX, Ipp16s DiffY, Ipp32s forward)
+void VC1EncDebug::SetMVDiff(int16_t DiffX, int16_t DiffY, int32_t forward)
 {
-    Ipp32u i = 0;
+    uint32_t i = 0;
 
     for(i = 0; i < 6; i++)
     {
@@ -413,15 +413,15 @@ void VC1EncDebug::SetMVDiff(Ipp16s DiffX, Ipp16s DiffY, Ipp32s forward)
     }
 };
 
-void VC1EncDebug::SetMVDiff(Ipp16s DiffX, Ipp16s DiffY, Ipp32s forward, Ipp32s blk_num)
+void VC1EncDebug::SetMVDiff(int16_t DiffX, int16_t DiffY, int32_t forward, int32_t blk_num)
 {
     pCurrMB->Block[blk_num].difMV[0][forward]    = DiffX;
     pCurrMB->Block[blk_num].difMV[1][forward]    = DiffY;
 };
 
-void VC1EncDebug::SetFieldMVPred2Ref(sCoordinate *A, sCoordinate *C, Ipp32s forward)
+void VC1EncDebug::SetFieldMVPred2Ref(sCoordinate *A, sCoordinate *C, int32_t forward)
 {
-    Ipp32u i = 0;
+    uint32_t i = 0;
 
     if(A)
     {
@@ -442,7 +442,7 @@ void VC1EncDebug::SetFieldMVPred2Ref(sCoordinate *A, sCoordinate *C, Ipp32s forw
     }
 }
 
-void VC1EncDebug::SetFieldMVPred2Ref(sCoordinate *A, sCoordinate *C,     Ipp32s forward, Ipp32s blk)
+void VC1EncDebug::SetFieldMVPred2Ref(sCoordinate *A, sCoordinate *C,     int32_t forward, int32_t blk)
 {
     if(A)
     {
@@ -457,9 +457,9 @@ void VC1EncDebug::SetFieldMVPred2Ref(sCoordinate *A, sCoordinate *C,     Ipp32s 
     }
 }
 
-void VC1EncDebug::SetFieldMVPred1Ref(sCoordinate *A, sCoordinate *C, Ipp32s forward)
+void VC1EncDebug::SetFieldMVPred1Ref(sCoordinate *A, sCoordinate *C, int32_t forward)
 {
-    Ipp32u i = 0;
+    uint32_t i = 0;
 
     if(A)
     {
@@ -480,7 +480,7 @@ void VC1EncDebug::SetFieldMVPred1Ref(sCoordinate *A, sCoordinate *C, Ipp32s forw
     }
 }
 
-void VC1EncDebug::SetFieldMVPred1Ref(sCoordinate *A, sCoordinate *C,  Ipp32s forward, Ipp32s blk)
+void VC1EncDebug::SetFieldMVPred1Ref(sCoordinate *A, sCoordinate *C,  int32_t forward, int32_t blk)
 {
     if(A)
     {
@@ -495,55 +495,55 @@ void VC1EncDebug::SetFieldMVPred1Ref(sCoordinate *A, sCoordinate *C,  Ipp32s for
     }
 }
 
-void VC1EncDebug::SetHybrid(Ipp8u hybrid, Ipp32s forward)
+void VC1EncDebug::SetHybrid(uint8_t hybrid, int32_t forward)
 {
-    Ipp32u i = 0;
+    uint32_t i = 0;
 
     for(i = 0; i < 6; i++)
        pCurrMB->Block[i].FieldMV.hybrid[forward] = hybrid;
 }
 
-void VC1EncDebug::SetHybrid(Ipp8u hybrid, Ipp32s forward, Ipp32s blk)
+void VC1EncDebug::SetHybrid(uint8_t hybrid, int32_t forward, int32_t blk)
 {
    pCurrMB->Block[blk].FieldMV.hybrid[forward] = hybrid;
 }
 
-void VC1EncDebug::SetScaleType(Ipp8u type, Ipp32s forward)
+void VC1EncDebug::SetScaleType(uint8_t type, int32_t forward)
 {
-    Ipp32u i = 0;
+    uint32_t i = 0;
 
     for(i = 0; i < 6; i++)
         pCurrMB->Block[i].FieldMV.scaleType[forward] = type;
 }
 
-void VC1EncDebug::SetScaleType(Ipp8u type, Ipp32s forward, Ipp32s blk)
+void VC1EncDebug::SetScaleType(uint8_t type, int32_t forward, int32_t blk)
 {
     pCurrMB->Block[blk].FieldMV.scaleType[forward] = type;
 }
 
-void VC1EncDebug::SetPredFlag(Ipp8u pred, Ipp32s forward)
+void VC1EncDebug::SetPredFlag(uint8_t pred, int32_t forward)
 {
-    Ipp32u i = 0;
+    uint32_t i = 0;
 
     for(i = 0; i < 6; i++)
         pCurrMB->Block[i].FieldMV.predFlag[forward] = pred;
 }
 
-void VC1EncDebug::SetPredFlag(Ipp8u pred, Ipp32s forward, Ipp32s blk)
+void VC1EncDebug::SetPredFlag(uint8_t pred, int32_t forward, int32_t blk)
 {
     pCurrMB->Block[blk].FieldMV.predFlag[forward] = pred;
 }
 
-void VC1EncDebug::SetMBType(Ipp32s type)
+void VC1EncDebug::SetMBType(int32_t type)
 {
     pCurrMB->MBType = type;
 };
-void VC1EncDebug::SetInterpInfoChroma(Ipp8u* pBlockU, Ipp32s stepU,
-                                      Ipp8u* pBlockV, Ipp32s stepV,
-                                      Ipp32s forward)
+void VC1EncDebug::SetInterpInfoChroma(uint8_t* pBlockU, int32_t stepU,
+                                      uint8_t* pBlockV, int32_t stepV,
+                                      int32_t forward)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
 
     if(!forward)
@@ -628,10 +628,10 @@ void VC1EncDebug::SetInterpInfoChroma(Ipp8u* pBlockU, Ipp32s stepU,
 };
 
 
-void VC1EncDebug::SetInterpInfoLuma(Ipp8u* pBlock, Ipp32s step, Ipp32s blk_num, Ipp32s forward)
+void VC1EncDebug::SetInterpInfoLuma(uint8_t* pBlock, int32_t step, int32_t blk_num, int32_t forward)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
 
     if(!forward)
@@ -657,16 +657,16 @@ void VC1EncDebug::SetInterpInfoLuma(Ipp8u* pBlock, Ipp32s step, Ipp32s blk_num, 
  };
 
 void VC1EncDebug::SetInterpInfo(IppVCInterpolate_8u* YInfo, IppVCInterpolate_8u* UInfo, IppVCInterpolate_8u* VInfo,
-                                Ipp32s forward, bool padded)
+                                int32_t forward, bool padded)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
-    Ipp8u* pBlock;
-    Ipp32s step;
-    Ipp32s blk_num;
-    const Ipp8u* pSrc;
-    Ipp32s srcStep;
+    uint8_t* pBlock;
+    int32_t step;
+    int32_t blk_num;
+    const uint8_t* pSrc;
+    int32_t srcStep;
 
     if(!forward)
     {
@@ -959,24 +959,24 @@ void VC1EncDebug::SetInterpInfo(IppVCInterpolate_8u* YInfo, IppVCInterpolate_8u*
     }
 }
 
-void VC1EncDebug::SetInterpolType(Ipp32s type)
+void VC1EncDebug::SetInterpolType(int32_t type)
 {
     InterpType = type;
 }
 
-void VC1EncDebug::SetRounControl(Ipp32s rc)
+void VC1EncDebug::SetRounControl(int32_t rc)
 {
     RoundControl = rc;
 }
 
-void VC1EncDebug::SetACDirection(Ipp32s direction, Ipp32s blk_num)
+void VC1EncDebug::SetACDirection(int32_t direction, int32_t blk_num)
 {
     pCurrMB->Block[blk_num].ACPred = direction;
 };
 
 void VC1EncDebug::SetHalfCoef(bool half)
 {
-    HalfCoef = 1 + (Ipp32u)(half);
+    HalfCoef = 1 + (uint32_t)(half);
 };
 
 void VC1EncDebug::SetDeblkFlag(bool flag)
@@ -989,8 +989,8 @@ void VC1EncDebug::SetVTSFlag(bool flag)
     VTSFlag = flag;
 };
 
-void VC1EncDebug::SetDblkHorEdgeLuma(Ipp32u ExHorEdge,     Ipp32u InHorEdge,
-                                     Ipp32u InUpHorEdge,   Ipp32u InBotHorEdge)
+void VC1EncDebug::SetDblkHorEdgeLuma(uint32_t ExHorEdge,     uint32_t InHorEdge,
+                                     uint32_t InUpHorEdge,   uint32_t InBotHorEdge)
 {
     pCurrMB->ExHorEdgeLuma = ExHorEdge;
     pCurrMB->InHorEdgeLuma = InHorEdge;
@@ -1007,8 +1007,8 @@ void VC1EncDebug::SetDblkHorEdgeLuma(Ipp32u ExHorEdge,     Ipp32u InHorEdge,
     //fprintf(f, "pCurrMB->InBotHorEdgeLuma = %d\n\n",pCurrMB->InBotHorEdgeLuma);
 
 };
-void VC1EncDebug::SetDblkVerEdgeLuma(Ipp32u ExVerEdge,     Ipp32u InVerEdge,
-                        Ipp32u InLeftVerEdge, Ipp32u InRightVerEdge)
+void VC1EncDebug::SetDblkVerEdgeLuma(uint32_t ExVerEdge,     uint32_t InVerEdge,
+                        uint32_t InLeftVerEdge, uint32_t InRightVerEdge)
 {
     pCurrMB->ExVerEdgeLuma = ExVerEdge;
     pCurrMB->InVerEdgeLuma = InVerEdge;
@@ -1026,25 +1026,25 @@ void VC1EncDebug::SetDblkVerEdgeLuma(Ipp32u ExVerEdge,     Ipp32u InVerEdge,
     //fprintf(f, "pCurrMB->InRightVerEdgeLuma = %d\n\n",pCurrMB->InRightVerEdgeLuma);
 };
 
-void VC1EncDebug::SetDblkHorEdgeU(Ipp32u ExHorEdge, Ipp32u InHorEdge)
+void VC1EncDebug::SetDblkHorEdgeU(uint32_t ExHorEdge, uint32_t InHorEdge)
 {
     pCurrMB->ExHorEdgeU = ExHorEdge;
     pCurrMB->InHorEdgeU = InHorEdge;
 };
 
-void VC1EncDebug::SetDblkVerEdgeU(Ipp32u ExVerEdge, Ipp32u InVerEdge)
+void VC1EncDebug::SetDblkVerEdgeU(uint32_t ExVerEdge, uint32_t InVerEdge)
 {
     pCurrMB->ExVerEdgeU = ExVerEdge;
     pCurrMB->InVerEdgeU = InVerEdge;
 };
 
-void VC1EncDebug::SetDblkHorEdgeV(Ipp32u ExHorEdge, Ipp32u InHorEdge)
+void VC1EncDebug::SetDblkHorEdgeV(uint32_t ExHorEdge, uint32_t InHorEdge)
 {
     pCurrMB->ExHorEdgeV = ExHorEdge;
     pCurrMB->InHorEdgeV = InHorEdge;
 };
 
-void VC1EncDebug::SetDblkVerEdgeV(Ipp32u ExVerEdge, Ipp32u InVerEdge)
+void VC1EncDebug::SetDblkVerEdgeV(uint32_t ExVerEdge, uint32_t InVerEdge)
 {
     pCurrMB->ExVerEdgeV = ExVerEdge;
     pCurrMB->InVerEdgeV = InVerEdge;
@@ -1052,17 +1052,17 @@ void VC1EncDebug::SetDblkVerEdgeV(Ipp32u ExVerEdge, Ipp32u InVerEdge)
 
 void VC1EncDebug::SetVTSType(eTransformType type[6])
 {
-    Ipp32s blk_num = 0;
+    int32_t blk_num = 0;
     for(blk_num = 0; blk_num < 6; blk_num ++)
     {
         pCurrMB->Block[blk_num].VTSType = type[blk_num];
     }
 }
 
-void VC1EncDebug::PrintBlockDifference(Ipp32s blk_num)
+void VC1EncDebug::PrintBlockDifference(int32_t blk_num)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
     WriteParams(-1,VC1_ENC_COEFFS|VC1_ENC_AC_PRED, VM_STRING("Block %d\n"), blk_num);
     for(i = 0; i < 8; i++)
@@ -1077,7 +1077,7 @@ void VC1EncDebug::PrintBlockDifference(Ipp32s blk_num)
 
 void VC1EncDebug::PrintInterpolationInfo()
 {
-    Ipp32s blk_num = 0;
+    int32_t blk_num = 0;
 
     switch(pCurrMB->MBType)
     {
@@ -1308,7 +1308,7 @@ void VC1EncDebug::PrintInterpolationInfo()
 
 void VC1EncDebug::PrintInterpolationInfoField()
 {
-    Ipp32s blk_num = 0;
+    int32_t blk_num = 0;
 
     switch(pCurrMB->MBType)
     {
@@ -1555,14 +1555,14 @@ void VC1EncDebug::PrintInterpolationInfoField()
             break;
     };
 };
-void VC1EncDebug::PrintInterpQuarterPelBicubicVert(Ipp32s blk_num, Ipp8u back)
+void VC1EncDebug::PrintInterpQuarterPelBicubicVert(int32_t blk_num, uint8_t back)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     WriteParams(-1,VC1_ENC_PRED,VM_STRING("Block %d\n"), blk_num);
 
@@ -1586,14 +1586,14 @@ void VC1EncDebug::PrintInterpQuarterPelBicubicVert(Ipp32s blk_num, Ipp8u back)
     }
 }
 
-void VC1EncDebug::PrintInterpQuarterPelBicubicHoriz(Ipp32s blk_num, Ipp8u back)
+void VC1EncDebug::PrintInterpQuarterPelBicubicHoriz(int32_t blk_num, uint8_t back)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     WriteParams(-1,VC1_ENC_PRED,VM_STRING("Block %d\n"), blk_num);
 
@@ -1616,14 +1616,14 @@ void VC1EncDebug::PrintInterpQuarterPelBicubicHoriz(Ipp32s blk_num, Ipp8u back)
        WriteParams(-1,VC1_ENC_PRED,VM_STRING("\n"));
     }
 }
-void VC1EncDebug::PrintInterpQuarterPelBicubic(Ipp32s blk_num, Ipp8u back)
+void VC1EncDebug::PrintInterpQuarterPelBicubic(int32_t blk_num, uint8_t back)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     WriteParams(-1,VC1_ENC_PRED,VM_STRING("Block %d\n"), blk_num);
 
@@ -1678,13 +1678,13 @@ void VC1EncDebug::PrintInterpQuarterPelBicubic(Ipp32s blk_num, Ipp8u back)
 
 void VC1EncDebug::Print1MVHalfPelBilinear_B_B()
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t blk_num = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 0; blk_num < 6; blk_num++)
     {
@@ -1721,13 +1721,13 @@ void VC1EncDebug::Print1MVHalfPelBilinear_B_B()
 
 void VC1EncDebug::Print1MVHalfPelBilinear_B_F()
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t blk_num = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 0; blk_num < 6; blk_num++)
     {
@@ -1759,13 +1759,13 @@ void VC1EncDebug::Print1MVHalfPelBilinear_B_F()
 }
 void VC1EncDebug::Print1MVHalfPelBilinear_B_FB()
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t blk_num = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 0; blk_num < 6; blk_num++)
     {
@@ -1827,13 +1827,13 @@ void VC1EncDebug::Print1MVHalfPelBilinear_B_FB()
 }
 void VC1EncDebug::Print1MVHalfPelBilinear_B_B_Field()
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t blk_num = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 0; blk_num < 6; blk_num++)
     {
@@ -1869,13 +1869,13 @@ void VC1EncDebug::Print1MVHalfPelBilinear_B_B_Field()
 
 void VC1EncDebug::Print1MVHalfPelBilinear_B_F_Field()
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t blk_num = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 0; blk_num < 6; blk_num++)
     {
@@ -1906,13 +1906,13 @@ void VC1EncDebug::Print1MVHalfPelBilinear_B_F_Field()
 }
 void VC1EncDebug::Print1MVHalfPelBilinear_B_FB_Field()
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t blk_num = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 0; blk_num < 6; blk_num++)
     {
@@ -1971,13 +1971,13 @@ void VC1EncDebug::Print1MVHalfPelBilinear_B_FB_Field()
 }
 void VC1EncDebug::Print1MVHalfPelBilinear_P()
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t blk_num = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 0; blk_num < 4; blk_num++)
     {
@@ -2009,13 +2009,13 @@ void VC1EncDebug::Print1MVHalfPelBilinear_P()
 
 void VC1EncDebug::Print1MVHalfPelBilinear_PField()
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t blk_num = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 0; blk_num < 4; blk_num++)
     {
@@ -2041,14 +2041,14 @@ void VC1EncDebug::Print1MVHalfPelBilinear_PField()
     }
 }
 
-void VC1EncDebug::PrintCopyPatchInterpolation(Ipp32s blk_num, Ipp8u back)
+void VC1EncDebug::PrintCopyPatchInterpolation(int32_t blk_num, uint8_t back)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
         WriteParams(-1,VC1_ENC_PRED,VM_STRING("Block %d\n"), blk_num);
 
@@ -2073,15 +2073,15 @@ void VC1EncDebug::PrintCopyPatchInterpolation(Ipp32s blk_num, Ipp8u back)
         }
 }
 
-void VC1EncDebug::PrintChroma_B_4MV(Ipp8u back)
+void VC1EncDebug::PrintChroma_B_4MV(uint8_t back)
 {
-    Ipp32s blk_num = 0;
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 4; blk_num < 6; blk_num++)
     {
@@ -2118,13 +2118,13 @@ void VC1EncDebug::PrintChroma_B_4MV(Ipp8u back)
 
 void VC1EncDebug::PrintChroma()
 {
-    Ipp32s blk_num = 0;
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 4; blk_num < 6; blk_num++)
     {
@@ -2165,13 +2165,13 @@ void VC1EncDebug::PrintChroma()
 
 void VC1EncDebug::PrintChroma_P_4MVField()
 {
-    Ipp32s blk_num = 0;
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 4; blk_num < 6; blk_num++)
     {
@@ -2199,13 +2199,13 @@ void VC1EncDebug::PrintChroma_P_4MVField()
 
 void VC1EncDebug::PrintChroma_B_4MVField()
 {
-    Ipp32s blk_num = 0;
-    Ipp32s i = 0;
-    Ipp32s j = 0;
+    int32_t blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
 
-    Ipp8u Xshift[6] = {0, 8, 0, 8, 0, 0};
-    Ipp8u Yshift[6] = {0, 0, 8, 8, 0, 0};
-    Ipp8u pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
+    uint8_t Xshift[6] = {0, 8, 0, 8, 0, 0};
+    uint8_t Yshift[6] = {0, 0, 8, 8, 0, 0};
+    uint8_t pixelInBlk[6] = {16, 16, 16, 16, 8, 8};
 
     for(blk_num = 4; blk_num < 6; blk_num++)
     {
@@ -2244,7 +2244,7 @@ void VC1EncDebug::PrintChroma_B_4MVField()
     }
 }
 
-void VC1EncDebug::PrintFieldMV(Ipp32s forward)
+void VC1EncDebug::PrintFieldMV(int32_t forward)
 {
     WriteParams(-1,VC1_ENC_FIELD_MV,VM_STRING("predictor_flag = %d\n"), pCurrMB->Block[0].FieldMV.predFlag[forward]);
     if(pCurrMB->Block[0].FieldMV.scaleType[forward] == 0)
@@ -2266,7 +2266,7 @@ void VC1EncDebug::PrintFieldMV(Ipp32s forward)
         WriteParams(-1,VC1_ENC_FIELD_MV,VM_STRING("no hybrid\n"));
 }
 
-void VC1EncDebug::PrintFieldMV(Ipp32s forward, Ipp32s blk)
+void VC1EncDebug::PrintFieldMV(int32_t forward, int32_t blk)
 {
     WriteParams(-1,VC1_ENC_FIELD_MV,VM_STRING("predictor_flag = %d\n"), pCurrMB->Block[blk].FieldMV.predFlag[forward]);
     if(pCurrMB->Block[blk].FieldMV.scaleType[forward] == 0)
@@ -2853,14 +2853,14 @@ void VC1EncDebug::PrintMVFieldInfo()
     };
 };
 
-void VC1EncDebug::PrintRunLevel(Ipp32s blk_num)
+void VC1EncDebug::PrintRunLevel(int32_t blk_num)
 {
-    Ipp32s i = 0;
-    Ipp32s SBNum = 0;
-    Ipp32s pairsNum = 0;
-    Ipp32s last = 0;
-    Ipp32s mode = 0;
-    Ipp32s coefNum = 0;
+    int32_t i = 0;
+    int32_t SBNum = 0;
+    int32_t pairsNum = 0;
+    int32_t last = 0;
+    int32_t mode = 0;
+    int32_t coefNum = 0;
 
     for(SBNum = 0; SBNum < 4; SBNum++)
     {
@@ -2897,25 +2897,25 @@ void VC1EncDebug::PrintRunLevel(Ipp32s blk_num)
     }
 };
 
-void VC1EncDebug::PrintDblkInfo(Ipp32u start, Ipp32u end)
+void VC1EncDebug::PrintDblkInfo(uint32_t start, uint32_t end)
 {
     if(!VTSFlag || FrameType == 0)
         PrintDblkInfoNoVTS(start, end);
     else
         PrintDblkInfoVTS(start, end);
 };
-void VC1EncDebug::PrintFieldDblkInfo(bool bSecondField, Ipp32u start, Ipp32u end)
+void VC1EncDebug::PrintFieldDblkInfo(bool bSecondField, uint32_t start, uint32_t end)
 {
     if(!VTSFlag || FrameType == 0)
         PrintFieldDblkInfoNoVTS(bSecondField, start, end);
     else
         PrintFieldDblkInfoVTS(bSecondField, start, end);
 };
-void VC1EncDebug::PrintDblkInfoVTS(Ipp32u start, Ipp32u end)
+void VC1EncDebug::PrintDblkInfoVTS(uint32_t start, uint32_t end)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s k = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t k = 0;
 
     //horizontal info
     pCurrMB = MBs + start * MBWidth;
@@ -3162,11 +3162,11 @@ void VC1EncDebug::PrintDblkInfoVTS(Ipp32u start, Ipp32u end)
     }
 };
 
-void VC1EncDebug::PrintFieldDblkInfoVTS(bool bSecondField, Ipp32u start, Ipp32u end)
+void VC1EncDebug::PrintFieldDblkInfoVTS(bool bSecondField, uint32_t start, uint32_t end)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s k = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t k = 0;
 
     //horizontal info
     pCurrMB = MBs + start*MBWidth;
@@ -3415,11 +3415,11 @@ void VC1EncDebug::PrintFieldDblkInfoVTS(bool bSecondField, Ipp32u start, Ipp32u 
     }
 };
 
-void VC1EncDebug::PrintDblkInfoNoVTS(Ipp32u start, Ipp32u end)
+void VC1EncDebug::PrintDblkInfoNoVTS(uint32_t start, uint32_t end)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s k = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t k = 0;
 
     //horizontal info
     pCurrMB = MBs + start * MBWidth;
@@ -3550,11 +3550,11 @@ void VC1EncDebug::PrintDblkInfoNoVTS(Ipp32u start, Ipp32u end)
     }
 
 };
-void VC1EncDebug::PrintFieldDblkInfoNoVTS(bool bSecondField, Ipp32u start, Ipp32u end)
+void VC1EncDebug::PrintFieldDblkInfoNoVTS(bool bSecondField, uint32_t start, uint32_t end)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s k = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t k = 0;
     //horizontal info
     pCurrMB = MBs + start * MBWidth;
 
@@ -3667,13 +3667,13 @@ void VC1EncDebug::PrintFieldDblkInfoNoVTS(bool bSecondField, Ipp32u start, Ipp32
     }
 
 };
-void VC1EncDebug::PrintRestoredFrame(Ipp8u* pY, Ipp32s Ystep, Ipp8u* pU, Ipp32s Ustep, Ipp8u* pV, Ipp32s Vstep, bool BFrame)
+void VC1EncDebug::PrintRestoredFrame(uint8_t* pY, int32_t Ystep, uint8_t* pU, int32_t Ustep, uint8_t* pV, int32_t Vstep, bool BFrame)
 {
     if(VC1_ENC_DEBLOCKING || VC1_ENC_SMOOTHING)
     {
         static FILE* f=0;
         static FILE* f1=0;
-        static Ipp32u framenum = 0;
+        static uint32_t framenum = 0;
 
         FILE* out = 0;
         if (!f)
@@ -3687,8 +3687,8 @@ void VC1EncDebug::PrintRestoredFrame(Ipp8u* pY, Ipp32s Ystep, Ipp8u* pU, Ipp32s 
             out = f1;
         assert(out!=NULL);
 
-        Ipp32s i, j, k, t;
-        Ipp8u* ptr = NULL;
+        int32_t i, j, k, t;
+        uint8_t* ptr = NULL;
 
         fprintf(out, "Frame %d\n",framenum);
 
@@ -3719,7 +3719,7 @@ void VC1EncDebug::PrintRestoredFrame(Ipp8u* pY, Ipp32s Ystep, Ipp8u* pU, Ipp32s 
                     ptr = pU + i*Ustep*8 + 8*j;
                     for(k = 0; k < 8; k++)
                     {
-                        for(Ipp32s t = 0; t < 8; t++)
+                        for(int32_t t = 0; t < 8; t++)
                         {
                             fprintf(out, "%d ", *(ptr + k*Ustep + t));
                         }
@@ -3731,7 +3731,7 @@ void VC1EncDebug::PrintRestoredFrame(Ipp8u* pY, Ipp32s Ystep, Ipp8u* pU, Ipp32s 
                     ptr = pU + i*Ustep*8 + 16*j;
                    for(k = 0; k < 8; k++)
                     {
-                        for(Ipp32s t = 0; t < 8; t++)
+                        for(int32_t t = 0; t < 8; t++)
                         {
                             fprintf(out, "%d ", *(ptr + k*Ustep + t*2));
                         }
@@ -3747,7 +3747,7 @@ void VC1EncDebug::PrintRestoredFrame(Ipp8u* pY, Ipp32s Ystep, Ipp8u* pU, Ipp32s 
                     ptr = pV + i*Vstep*8 + 8*j;
                     for(k = 0; k < 8; k++)
                     {
-                        for(Ipp32s t = 0; t < 8; t++)
+                        for(int32_t t = 0; t < 8; t++)
                         {
                             fprintf(out, "%d ", *(ptr + k*Vstep + t));
                         }
@@ -3759,7 +3759,7 @@ void VC1EncDebug::PrintRestoredFrame(Ipp8u* pY, Ipp32s Ystep, Ipp8u* pU, Ipp32s 
                     ptr = pV + i*Vstep*8 + 16*j;
                     for(k = 0; k < 8; k++)
                     {
-                        for(Ipp32s t = 0; t < 8; t++)
+                        for(int32_t t = 0; t < 8; t++)
                         {
                             fprintf(out, "%d ", *(ptr + k*Vstep + t*2));
                         }
@@ -3793,19 +3793,19 @@ void VC1EncDebug::PrintRestoredFrame(Ipp8u* pY, Ipp32s Ystep, Ipp8u* pU, Ipp32s 
     }
 }
 
-void VC1EncDebug::PrintSmoothingDataFrame(Ipp8u MBXpos, Ipp8u MBYpos, VC1EncoderMBData* pCurRData,
+void VC1EncDebug::PrintSmoothingDataFrame(uint8_t MBXpos, uint8_t MBYpos, VC1EncoderMBData* pCurRData,
                                          VC1EncoderMBData* pLeftRData,
                                          VC1EncoderMBData* pLeftTopRData,
                                          VC1EncoderMBData* pTopRData)
 {
     return;
 
-    Ipp32u i = 0, j = 0;
+    uint32_t i = 0, j = 0;
 
     if(VC1_ENC_DEBUG & VC1_ENC_SMOOTHING)
     {
         static FILE* f=0;
-        static Ipp32u framenum = 0;
+        static uint32_t framenum = 0;
 
         if (!f)
             f =fopen("enc_smoothInfo.txt","wb");
@@ -3916,7 +3916,7 @@ void VC1EncDebug::PrintSmoothingDataFrame(Ipp8u MBXpos, Ipp8u MBYpos, VC1Encoder
 
 void VC1EncDebug::PrintBlkVTSInfo()
 {
-    Ipp32s blk_num = 0;
+    int32_t blk_num = 0;
 
     if (pCurrMB->MBType == UMC_VC1_ENCODER::VC1_ENC_I_MB)
         return;
@@ -3958,12 +3958,12 @@ void VC1EncDebug::PrintPictureType()
     //WriteParams(-1,VC1_ENC_POSITION, "Frame %d = %d\n\n", FrameCount, FrameSize);
 }
 
-void VC1EncDebug::PrintFieldInfo(bool bSecondField, Ipp32u start, Ipp32u end)
+void VC1EncDebug::PrintFieldInfo(bool bSecondField, uint32_t start, uint32_t end)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s t = 0;
-    Ipp32s blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t t = 0;
+    int32_t blk_num = 0;
 
     if(bSecondField && start == MBHeight/2)
     {
@@ -4056,12 +4056,12 @@ void VC1EncDebug::PrintFieldInfo(bool bSecondField, Ipp32u start, Ipp32u end)
         PrintFieldDblkInfo(bSecondField, start, end);
 }
 
-void VC1EncDebug::PrintFrameInfo(Ipp32u start, Ipp32u end)
+void VC1EncDebug::PrintFrameInfo(uint32_t start, uint32_t end)
 {
-    Ipp32s i = 0;
-    Ipp32s j = 0;
-    Ipp32s t = 0;
-    Ipp32s blk_num = 0;
+    int32_t i = 0;
+    int32_t j = 0;
+    int32_t t = 0;
+    int32_t blk_num = 0;
 
     for(i = start; i < end; i++)
     {
@@ -4142,7 +4142,7 @@ void VC1EncDebug::PrintFrameInfo(Ipp32u start, Ipp32u end)
 
 void VC1EncDebug::PrintFrameInfoSlices()
 {
-    Ipp32u i = 0;
+    uint32_t i = 0;
 
     for(i = 0; i < NumSlices; i++)
     {
@@ -4152,7 +4152,7 @@ void VC1EncDebug::PrintFrameInfoSlices()
 
 void VC1EncDebug::PrintFieldInfoSlices(bool bSecondField)
 {
-    Ipp32u i = 0;
+    uint32_t i = 0;
 
     i = NumSlices/2 * bSecondField;
 
@@ -4165,7 +4165,7 @@ void VC1EncDebug::PrintFieldInfoSlices(bool bSecondField)
 
 void VC1EncDebug::WriteFrameInfo()
 {
-    Ipp32s frameDebug = VC1_ENC_FRAME_DEBUG;
+    int32_t frameDebug = VC1_ENC_FRAME_DEBUG;
 
     if((!frameDebug) || (FrameCount >= VC1_ENC_FRAME_MIN) && (FrameCount <= VC1_ENC_FRAME_MAX))
     {
@@ -4207,12 +4207,12 @@ void VC1EncDebug::WriteFrameInfo()
 };
 
 
-//static void PrintField(Ipp8u* pY, Ipp32s Ystep, Ipp8u* pU, Ipp32s Ustep, Ipp8u* pV, Ipp32s Vstep, FILE* out, Ipp32u Width, Ipp32u Height)
+//static void PrintField(uint8_t* pY, int32_t Ystep, uint8_t* pU, int32_t Ustep, uint8_t* pV, int32_t Vstep, FILE* out, uint32_t Width, uint32_t Height)
 //{
-//    static Ipp32u framenum = 0;
+//    static uint32_t framenum = 0;
 //
-//   Ipp32s i = 0;
-//   Ipp8u* ptr = NULL;
+//   int32_t i = 0;
+//   uint8_t* ptr = NULL;
 //
 //   for (i=0; i < Height; i++)
 //    {

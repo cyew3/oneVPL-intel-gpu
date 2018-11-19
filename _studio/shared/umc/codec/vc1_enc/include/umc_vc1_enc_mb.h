@@ -51,26 +51,26 @@ private:
     // inter MB
     sCoordinate     m_dMV[2][4];      //  backward,forward. up to 4 coded MV for 1 MB.
                                       //  field bSecond contains flag Opposite.
-    Ipp8u           m_pHybrid[4];
+    uint8_t           m_pHybrid[4];
 
     eTransformType  m_tsType[6];
     bool            m_bMBTSType;      //transform type on MB level
-    Ipp8u           m_uiFirstCodedBlock;
+    uint8_t           m_uiFirstCodedBlock;
 
     // intra
-    Ipp16s          m_iDC[6];
+    int16_t          m_iDC[6];
 
     //all
-    Ipp8u           m_uRun   [6][65];
-    Ipp16s          m_iLevel [6][64];
-    Ipp8u           m_nPairs [6][4]; // 6 blocks, 4 subblocks
-    Ipp8u           m_uiMBCBPCY;
+    uint8_t           m_uRun   [6][65];
+    int16_t          m_iLevel [6][64];
+    uint8_t           m_nPairs [6][4]; // 6 blocks, 4 subblocks
+    uint8_t           m_uiMBCBPCY;
 
     //for I MB
-    Ipp8s           m_iACPrediction;
+    int8_t           m_iACPrediction;
 
     // 4MV
-    Ipp8u           m_uiIntraPattern;
+    uint8_t           m_uiIntraPattern;
     bool            m_bOverFlag;
 
     #ifdef VC1_ME_MB_STATICTICS
@@ -97,14 +97,14 @@ public:
         m_uiIntraPattern        = 0;
         m_bOverFlag             = false;
 
-        memset(m_iDC,0,6*sizeof(Ipp16s));
+        memset(m_iDC,0,6*sizeof(int16_t));
 
-        memset(m_nPairs[0],0,4*sizeof(Ipp8u));
-        memset(m_nPairs[1],0,4*sizeof(Ipp8u));
-        memset(m_nPairs[2],0,4*sizeof(Ipp8u));
-        memset(m_nPairs[3],0,4*sizeof(Ipp8u));
-        memset(m_nPairs[4],0,4*sizeof(Ipp8u));
-        memset(m_nPairs[5],0,4*sizeof(Ipp8u));
+        memset(m_nPairs[0],0,4*sizeof(uint8_t));
+        memset(m_nPairs[1],0,4*sizeof(uint8_t));
+        memset(m_nPairs[2],0,4*sizeof(uint8_t));
+        memset(m_nPairs[3],0,4*sizeof(uint8_t));
+        memset(m_nPairs[4],0,4*sizeof(uint8_t));
+        memset(m_nPairs[5],0,4*sizeof(uint8_t));
 
         m_tsType[0] = VC1_ENC_8x8_TRANSFORM;
         m_tsType[1] = VC1_ENC_8x8_TRANSFORM;
@@ -115,20 +115,20 @@ public:
 
         return UMC::UMC_OK;
     }
-    inline bool isIntra(Ipp32s blockNum)
+    inline bool isIntra(int32_t blockNum)
     {
         return  ((m_uiIntraPattern & (1<<VC_ENC_PATTERN_POS(blockNum)))!=0);
     }
-    inline Ipp8u GetIntraPattern()
+    inline uint8_t GetIntraPattern()
     {
         return m_uiIntraPattern;
     }
 
-    inline void SetMBIntraPattern(Ipp8u uiIntraPattern)
+    inline void SetMBIntraPattern(uint8_t uiIntraPattern)
     {
         m_uiIntraPattern = uiIntraPattern;
     }
-    inline void SetIntraBlock(Ipp32u blockNum)
+    inline void SetIntraBlock(uint32_t blockNum)
     {
         m_uiIntraPattern = m_uiIntraPattern | (1<<VC_ENC_PATTERN_POS(blockNum));
     }
@@ -141,7 +141,7 @@ public:
         return m_MBtype;
     }
 
-    inline Ipp8u GetMBPattern()
+    inline uint8_t GetMBPattern()
     {
         return
            ((((m_nPairs[0][0] + m_nPairs[0][1] + m_nPairs[0][2] + m_nPairs[0][3])>0)<< (5 - 0))|
@@ -152,10 +152,10 @@ public:
             (((m_nPairs[5][0] + m_nPairs[5][1] + m_nPairs[5][2] + m_nPairs[5][3])>0)<< (5 - 5)));
 
     }
-     inline Ipp32u GetBlocksPattern()
+     inline uint32_t GetBlocksPattern()
     {
-        Ipp32u  blocksPattern=0;
-        Ipp32s  i;
+        uint32_t  blocksPattern=0;
+        int32_t  i;
         bool SubBlk[4];
 
         for(i=0;i<6;i++)
@@ -226,22 +226,22 @@ public:
 
 
     }
-    inline void SetHybrid (Ipp8u Hybrid, Ipp32u nBlock=0)
+    inline void SetHybrid (uint8_t Hybrid, uint32_t nBlock=0)
     {
         m_pHybrid[nBlock] = Hybrid;
     }
 
-    inline Ipp8u GetHybrid (Ipp32u nBlock=0)
+    inline uint8_t GetHybrid (uint32_t nBlock=0)
     {
        return m_pHybrid[nBlock];
     }
 
-    inline void SetMBCBPCY (Ipp8u  MBCBPCY)
+    inline void SetMBCBPCY (uint8_t  MBCBPCY)
     {
         m_uiMBCBPCY     =  MBCBPCY; //???
     }
 
-    inline Ipp8u GetMBCBPCY()
+    inline uint8_t GetMBCBPCY()
     {
         return m_uiMBCBPCY;
     }
@@ -257,12 +257,12 @@ public:
         m_dMV[bForward][0].bSecond = m_dMV[bForward][1].bSecond =
         m_dMV[bForward][2].bSecond = m_dMV[bForward][3].bSecond = dmv.bSecond;
     }
-    inline void SetBlockdMV(sCoordinate dmv,Ipp32s block ,bool bForward=true)
+    inline void SetBlockdMV(sCoordinate dmv,int32_t block ,bool bForward=true)
     {
         m_dMV[bForward][block].x = dmv.x;
         m_dMV[bForward][block].y = dmv.y;
     }
-    inline void SetBlockdMV_F(sCoordinate dmv,Ipp32s block ,bool bForward=true)
+    inline void SetBlockdMV_F(sCoordinate dmv,int32_t block ,bool bForward=true)
     {
         m_dMV[bForward][block].x = dmv.x;
         m_dMV[bForward][block].y = dmv.y;
@@ -270,16 +270,16 @@ public:
 
     }
 
-    inline void SetACPrediction (Ipp8s ACPred)
+    inline void SetACPrediction (int8_t ACPred)
     {
         m_iACPrediction   = ACPred;
     }
-    inline Ipp8u GetACPrediction()
+    inline uint8_t GetACPrediction()
     {
         return m_iACPrediction;
     }
 
-    inline void GetdMV(sCoordinate* dMV, bool forward = 1, Ipp8u blk = 0)
+    inline void GetdMV(sCoordinate* dMV, bool forward = 1, uint8_t blk = 0)
     {
         dMV->x = m_dMV[forward][blk].x;
         dMV->y = m_dMV[forward][blk].y;
@@ -304,7 +304,7 @@ public:
         return m_tsType;
     }
 
-    inline eTransformType GetTSTypeBlk(Ipp8u blk)
+    inline eTransformType GetTSTypeBlk(uint8_t blk)
     {
         return m_tsType[blk];
     }
@@ -319,11 +319,11 @@ public:
         return m_bOverFlag;
     }
 
-    void SaveResidual (Ipp16s* pBlk,Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk);
+    void SaveResidual (int16_t* pBlk,uint32_t  step, const uint8_t* pScanMatrix, int32_t blk);
 
-    void GetResiduals (Ipp16s* pBlk, Ipp32u  step, const Ipp8u* pScanMatrix, Ipp32s blk);
+    void GetResiduals (int16_t* pBlk, uint32_t  step, const uint8_t* pScanMatrix, int32_t blk);
 
-    inline bool isNulldMV(Ipp32s blk, bool bForward=true)
+    inline bool isNulldMV(int32_t blk, bool bForward=true)
     {
         return (!((m_dMV[bForward][blk].x!=0)|| (m_dMV[bForward][blk].y!=0)));
     }
@@ -351,8 +351,8 @@ public:
 template <class T>
 UMC::Status WriteMBHeaderP_INTRA    ( T*              pCodedMB,
                                       bool            bBitplanesRaw,
-                                      const Ipp16u*   pMVDiffTable,
-                                      const Ipp16u*   pCBPCYTable)
+                                      const uint16_t*   pMVDiffTable,
+                                      const uint16_t*   pCBPCYTable)
 {
     UMC::Status     err     =   UMC::UMC_OK;
     bool coded = (m_uiMBCBPCY!=0); //only 8x8 transform
@@ -360,7 +360,7 @@ UMC::Status WriteMBHeaderP_INTRA    ( T*              pCodedMB,
     VC1_NULL_PTR(pCodedMB)
 
 #ifdef VC1_ME_MB_STATICTICS
-      Ipp16u MBStart = (Ipp16u)pCodedMB->GetCurrBit();
+      uint16_t MBStart = (uint16_t)pCodedMB->GetCurrBit();
 #endif
     if (bBitplanesRaw)
     {
@@ -391,21 +391,21 @@ UMC::Status WriteMBHeaderP_INTRA    ( T*              pCodedMB,
         //VC1_ENC_CHECK (err)
     }
 #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->whole = (Ipp16u)pCodedMB->GetCurrBit()- MBStart;
+        m_MECurMbStat->whole = (uint16_t)pCodedMB->GetCurrBit()- MBStart;
 #endif
     return err;
 }
 template <class T>
 UMC::Status WriteMBHeaderPField_INTRA          (  T*              pCodedMB,
-                                                const  Ipp8u*     pMBTypeFieldTable,
-                                                const Ipp32u*     pCBPCYTable)
+                                                const  uint8_t*     pMBTypeFieldTable,
+                                                const uint32_t*     pCBPCYTable)
 {
     UMC::Status     err     =   UMC::UMC_OK;
     bool coded = (m_uiMBCBPCY!=0);
     VC1_NULL_PTR(pCodedMB)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedMB->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedMB->GetCurrBit();
 #endif
 
    err = pCodedMB->PutBits(pMBTypeFieldTable[coded<<1],pMBTypeFieldTable[(coded<<1)+1]); //if intra, then non-skip
@@ -423,7 +423,7 @@ UMC::Status WriteMBHeaderPField_INTRA          (  T*              pCodedMB,
        VC1_ENC_CHECK (err)
    }
 #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->whole = (Ipp16u)pCodedMB->GetCurrBit()- MBStart;
+        m_MECurMbStat->whole = (uint16_t)pCodedMB->GetCurrBit()- MBStart;
 #endif
     return err;
 }
@@ -431,15 +431,15 @@ UMC::Status WriteMBHeaderPField_INTRA          (  T*              pCodedMB,
 template <class T>
 UMC::Status WriteMBHeaderB_INTRA    ( T*              pCodedMB,
                                       bool            bBitplanesRaw,
-                                      const Ipp16u*   pMVDiffTable,
-                                      const Ipp16u*   pCBPCYTable)
+                                      const uint16_t*   pMVDiffTable,
+                                      const uint16_t*   pCBPCYTable)
 {
     UMC::Status     err     =   UMC::UMC_OK;
 
     VC1_NULL_PTR(pCodedMB)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedMB->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedMB->GetCurrBit();
 #endif
     if (bBitplanesRaw)
     {
@@ -450,7 +450,7 @@ UMC::Status WriteMBHeaderB_INTRA    ( T*              pCodedMB,
     err =  WriteMBHeaderP_INTRA (pCodedMB,bBitplanesRaw,pMVDiffTable,pCBPCYTable);
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedMB->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedMB->GetCurrBit()- MBStart;
 #endif
     return err;
 }
@@ -458,26 +458,26 @@ UMC::Status WriteMBHeaderB_INTRA    ( T*              pCodedMB,
 
 template <class T>  UMC::Status   WritePMB1MV (T*    pCodedBlock,
                                                      bool                   bRawBitplanes,
-                                                     Ipp8u                  MVTab,
-                                                     Ipp8u                  MVRangeIndex,
-                                                     const Ipp16u*          pCBPCYTable,
+                                                     uint8_t                  MVTab,
+                                                     uint8_t                  MVRangeIndex,
+                                                     const uint16_t*          pCBPCYTable,
                                                      bool                   bVTS,
                                                      bool                   bMVHalf,
-                                                     const Ipp16s           (*pTTMBVLC)[4][6],
-                                                     const Ipp8u            (*pTTBLKVLC)[6],
-                                                     const Ipp8u*           pSBP4x4Table,
+                                                     const int16_t           (*pTTMBVLC)[4][6],
+                                                     const uint8_t            (*pTTBLKVLC)[6],
+                                                     const uint8_t*           pSBP4x4Table,
                                                      const sACTablesSet*    pACTablesSet,
                                                      sACEscInfo*            pACEscInfo
                                                      )
 
 {
 UMC::Status  err=UMC::UMC_OK;
-Ipp32s       blk;
+int32_t       blk;
 
 VC1_NULL_PTR(pCodedBlock)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp32u MBStart = pCodedBlock->GetCurrBit();
+    uint32_t MBStart = pCodedBlock->GetCurrBit();
 #endif
 if (bRawBitplanes)
 {
@@ -485,12 +485,12 @@ if (bRawBitplanes)
     VC1_ENC_CHECK (err)
 }
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MVStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
     err = WriteMVDataInter(pCodedBlock, MVDiffTablesVLC[MVTab],MVRangeIndex, m_uiMBCBPCY!=0, bMVHalf);
     VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->MVF[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+    m_MECurMbStat->MVF[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
 #endif
 
     if (m_pHybrid[0])
@@ -518,7 +518,7 @@ if (m_uiMBCBPCY!=0)
         if (m_uiMBCBPCY & ((1<<VC_ENC_PATTERN_POS(blk))))
         {
 #ifdef VC1_ME_MB_STATICTICS
-            //Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+            //uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
             err = WriteVSTSBlk ( pCodedBlock,
                 pTTBLKVLC,
@@ -537,50 +537,50 @@ STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TS
 
             VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-            //m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+            //m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
 #endif
         }//if
     }//for
 
 }//MBPattern!=0
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)(pCodedBlock->GetCurrBit()- MBStart);
+    m_MECurMbStat->whole = (uint16_t)(pCodedBlock->GetCurrBit()- MBStart);
 #endif
 return err;
 }
 template <class T>  UMC::Status   WritePMB1MVField (T*                     pCodedBlock,
-                                                    const Ipp8u*            pMBTypeFieldTable,
+                                                    const uint8_t*            pMBTypeFieldTable,
                                                     sMVFieldInfo*          pMVFieldInfo,
-                                                    Ipp8u                  MVRangeIndex,
-                                                    const Ipp32u*          pCBPCYTable,
+                                                    uint8_t                  MVRangeIndex,
+                                                    const uint32_t*          pCBPCYTable,
                                                     bool                   bVTS,
                                                     bool                   bMVHalf,
-                                                    const Ipp16s           (*pTTMBVLC)[4][6],
-                                                    const Ipp8u            (*pTTBLKVLC)[6],
-                                                    const Ipp8u*           pSBP4x4Table,
+                                                    const int16_t           (*pTTMBVLC)[4][6],
+                                                    const uint8_t            (*pTTBLKVLC)[6],
+                                                    const uint8_t*           pSBP4x4Table,
                                                     const sACTablesSet*    pACTablesSet,
                                                     sACEscInfo*            pACEscInfo
                                                     )
 
 {
     UMC::Status     err=UMC::UMC_OK;
-    Ipp32s          blk;
+    int32_t          blk;
     bool            bMVCoded =  (m_dMV[1][0].x || m_dMV[1][0].y);
     bool            bCoded   =  (m_uiMBCBPCY!=0);
-    Ipp8u           nMBType =   (((Ipp8u)bCoded)<<1) + bMVCoded + 2;
+    uint8_t           nMBType =   (((uint8_t)bCoded)<<1) + bMVCoded + 2;
 
     VC1_NULL_PTR(pCodedBlock)
 
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
    err = pCodedBlock->PutBits(pMBTypeFieldTable[nMBType<<1],pMBTypeFieldTable[(nMBType<<1)+1]);
    VC1_ENC_CHECK (err)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MVStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
    if (bMVCoded)
    {
@@ -593,7 +593,7 @@ template <class T>  UMC::Status   WritePMB1MVField (T*                     pCode
         VC1_ENC_CHECK (err)
    }
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->MVF[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+    m_MECurMbStat->MVF[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
 #endif
     if (bCoded)
     {
@@ -613,7 +613,7 @@ template <class T>  UMC::Status   WritePMB1MVField (T*                     pCode
             if (m_uiMBCBPCY & ((1<<VC_ENC_PATTERN_POS(blk))))
             {
 #ifdef VC1_ME_MB_STATICTICS
-                Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+                uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
                 err = WriteVSTSBlk ( pCodedBlock,
                     pTTBLKVLC,
@@ -632,44 +632,44 @@ STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TS
 
                 VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-                m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+                m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
 #endif
         }//if
     }//for
 }//MBPattern!=0
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
 return err;
 }
 template <class T>  UMC::Status   WritePMB1MVFieldMixed (   T*                     pCodedBlock,
-                                                            const Ipp8u*            pMBTypeFieldTable,
+                                                            const uint8_t*            pMBTypeFieldTable,
                                                             sMVFieldInfo*          pMVFieldInfo,
-                                                            Ipp8u                  MVRangeIndex,
-                                                            const Ipp32u*          pCBPCYTable,
+                                                            uint8_t                  MVRangeIndex,
+                                                            const uint32_t*          pCBPCYTable,
                                                             bool                   bVTS,
                                                             bool                   bMVHalf,
-                                                            const Ipp16s           (*pTTMBVLC)[4][6],
-                                                            const Ipp8u            (*pTTBLKVLC)[6],
-                                                            const Ipp8u*           pSBP4x4Table,
+                                                            const int16_t           (*pTTMBVLC)[4][6],
+                                                            const uint8_t            (*pTTBLKVLC)[6],
+                                                            const uint8_t*           pSBP4x4Table,
                                                             const sACTablesSet*    pACTablesSet,
-                                                            const Ipp8u*           pMV4BP,
+                                                            const uint8_t*           pMV4BP,
                                                             sACEscInfo*            pACEscInfo)
 
 {
     UMC::Status     err=UMC::UMC_OK;
-    Ipp32s          blk;
-    Ipp8u           MVPattern = 0;
+    int32_t          blk;
+    uint8_t           MVPattern = 0;
 
     bool            bCoded   =  (m_uiMBCBPCY!=0);
-    Ipp8u           nMBType = (bCoded)? 7:6;
+    uint8_t           nMBType = (bCoded)? 7:6;
 
 
     VC1_NULL_PTR(pCodedBlock)
 
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
    err = pCodedBlock->PutBits(pMBTypeFieldTable[nMBType<<1],pMBTypeFieldTable[(nMBType<<1)+1]);
@@ -679,11 +679,11 @@ template <class T>  UMC::Status   WritePMB1MVFieldMixed (   T*                  
     {
         if (m_dMV[1][i].x || m_dMV[1][i].y)
         {
-            MVPattern = (Ipp8u)(MVPattern | (1<<(3-i)));
+            MVPattern = (uint8_t)(MVPattern | (1<<(3-i)));
         }    
     }
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MVStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
    err = pCodedBlock->PutBits(pMV4BP[MVPattern<<1],pMV4BP[(MVPattern<<1)+1]);
    VC1_ENC_CHECK (err)
@@ -704,7 +704,7 @@ template <class T>  UMC::Status   WritePMB1MVFieldMixed (   T*                  
 
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->MVF[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+    m_MECurMbStat->MVF[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
 #endif
     if (bCoded)
     {
@@ -724,7 +724,7 @@ template <class T>  UMC::Status   WritePMB1MVFieldMixed (   T*                  
             if (m_uiMBCBPCY & ((1<<VC_ENC_PATTERN_POS(blk))))
             {
 #ifdef VC1_ME_MB_STATICTICS
-                Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+                uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
                 err = WriteVSTSBlk ( pCodedBlock,
                     pTTBLKVLC,
@@ -743,48 +743,48 @@ STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TS
 
                 VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-                m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+                m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
 #endif
         }//if
     }//for
 }//MBPattern!=0
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
 return err;
 }
 template <class T>  UMC::Status   WritePMB2MVField (T*                     pCodedBlock,
-                                                    const Ipp8u*           pMBTypeFieldTable,
+                                                    const uint8_t*           pMBTypeFieldTable,
                                                     sMVFieldInfo*          pMVFieldInfo,
-                                                    Ipp8u                  MVRangeIndex,
-                                                    const Ipp32u*          pCBPCYTable,
+                                                    uint8_t                  MVRangeIndex,
+                                                    const uint32_t*          pCBPCYTable,
                                                     bool                   bVTS,
                                                     bool                   bMVHalf,
-                                                    const Ipp16s           (*pTTMBVLC)[4][6],
-                                                    const Ipp8u            (*pTTBLKVLC)[6],
-                                                    const Ipp8u*           pSBP4x4Table,
+                                                    const int16_t           (*pTTMBVLC)[4][6],
+                                                    const uint8_t            (*pTTBLKVLC)[6],
+                                                    const uint8_t*           pSBP4x4Table,
                                                     const sACTablesSet*    pACTablesSet,
                                                     sACEscInfo*            pACEscInfo,
                                                     bool                   bForward=true)
 
 {
     UMC::Status     err=UMC::UMC_OK;
-    Ipp32s          blk;
+    int32_t          blk;
     bool            bMVCoded =  (m_dMV[bForward][0].x || m_dMV[bForward][0].y || m_dMV[bForward][0].bSecond);
     bool            bCoded   =  (m_uiMBCBPCY!=0);
-    Ipp8u           nMBType =   (((Ipp8u)bCoded)<<1) + bMVCoded + 2;
+    uint8_t           nMBType =   (((uint8_t)bCoded)<<1) + bMVCoded + 2;
 
     VC1_NULL_PTR(pCodedBlock)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
    err = pCodedBlock->PutBits(pMBTypeFieldTable[nMBType<<1],pMBTypeFieldTable[(nMBType<<1)+1]);
    VC1_ENC_CHECK (err)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MVStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
    if (bMVCoded)
    {
@@ -798,7 +798,7 @@ template <class T>  UMC::Status   WritePMB2MVField (T*                     pCode
    }
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->MVF[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+    m_MECurMbStat->MVF[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
 #endif
     if (bCoded)
     {
@@ -818,7 +818,7 @@ template <class T>  UMC::Status   WritePMB2MVField (T*                     pCode
             if (m_uiMBCBPCY & ((1<<VC_ENC_PATTERN_POS(blk))))
             {
 #ifdef VC1_ME_MB_STATICTICS
-                Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+                uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
                 err = WriteVSTSBlk ( pCodedBlock,
                     pTTBLKVLC,
@@ -837,39 +837,39 @@ STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TS
 
                 VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-                m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+                m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
 #endif
         }//if
     }//for
 }//MBPattern!=0
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
 return err;
 }
 
 template <class T>  UMC::Status   WritePMB2MVFieldMixed (T*                     pCodedBlock,
-                                                         const Ipp8u*           pMBTypeFieldTable,
+                                                         const uint8_t*           pMBTypeFieldTable,
                                                          sMVFieldInfo*          pMVFieldInfo,
-                                                         Ipp8u                  MVRangeIndex,
-                                                         const Ipp32u*          pCBPCYTable,
+                                                         uint8_t                  MVRangeIndex,
+                                                         const uint32_t*          pCBPCYTable,
                                                          bool                   bVTS,
                                                          bool                   bMVHalf,
-                                                         const Ipp16s           (*pTTMBVLC)[4][6],
-                                                         const Ipp8u            (*pTTBLKVLC)[6],
-                                                         const Ipp8u*           pSBP4x4Table,
+                                                         const int16_t           (*pTTMBVLC)[4][6],
+                                                         const uint8_t            (*pTTBLKVLC)[6],
+                                                         const uint8_t*           pSBP4x4Table,
                                                          const sACTablesSet*    pACTablesSet,
                                                          sACEscInfo*            pACEscInfo,
-                                                         const Ipp8u*           pMV4BP,
+                                                         const uint8_t*           pMV4BP,
                                                          bool                   bForward=true)
 
 {
     UMC::Status     err=UMC::UMC_OK;
-    Ipp32s          blk;
-    Ipp8u           MVPattern = 0;
+    int32_t          blk;
+    uint8_t           MVPattern = 0;
 
     bool            bCoded   =  (m_uiMBCBPCY!=0);
-    Ipp8u           nMBType = (bCoded)? 7:6;
+    uint8_t           nMBType = (bCoded)? 7:6;
 
 
     VC1_NULL_PTR(pCodedBlock)
@@ -878,12 +878,12 @@ template <class T>  UMC::Status   WritePMB2MVFieldMixed (T*                     
     {
         if (m_dMV[bForward][i].x || m_dMV[bForward][i].y || m_dMV[bForward][i].bSecond)
         {
-            MVPattern = (Ipp8u)(MVPattern | (1<<(3-i)));
+            MVPattern = (uint8_t)(MVPattern | (1<<(3-i)));
         }    
     }
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
    err = pCodedBlock->PutBits(pMBTypeFieldTable[nMBType<<1],pMBTypeFieldTable[(nMBType<<1)+1]);
@@ -894,7 +894,7 @@ template <class T>  UMC::Status   WritePMB2MVFieldMixed (T*                     
 
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MVStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif 
 
    for (int i = 0; i<4; i++)
@@ -912,7 +912,7 @@ template <class T>  UMC::Status   WritePMB2MVFieldMixed (T*                     
    }  
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->MVF[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+    m_MECurMbStat->MVF[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
 #endif
     if (bCoded)
     {
@@ -932,7 +932,7 @@ template <class T>  UMC::Status   WritePMB2MVFieldMixed (T*                     
             if (m_uiMBCBPCY & ((1<<VC_ENC_PATTERN_POS(blk))))
             {
 #ifdef VC1_ME_MB_STATICTICS
-                Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+                uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
                 err = WriteVSTSBlk ( pCodedBlock,
                     pTTBLKVLC,
@@ -951,41 +951,41 @@ STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TS
 
                 VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-                m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+                m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
 #endif
         }//if
     }//for
 }//MBPattern!=0
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
 return err;
 }
 template <class T>  UMC::Status   WriteBMBFieldForward     (T*                     pCodedBlock,
-                                                            const Ipp8u*           pMBTypeFieldTable,
+                                                            const uint8_t*           pMBTypeFieldTable,
                                                             sMVFieldInfo*          pMVFieldInfo,
-                                                            Ipp8u                  MVRangeIndex,
-                                                            const Ipp32u*          pCBPCYTable,
+                                                            uint8_t                  MVRangeIndex,
+                                                            const uint32_t*          pCBPCYTable,
                                                             bool                   bVTS,
                                                             bool                   bMVHalf,
-                                                            const Ipp16s           (*pTTMBVLC)[4][6],
-                                                            const Ipp8u            (*pTTBLKVLC)[6],
-                                                            const Ipp8u*           pSBP4x4Table,
+                                                            const int16_t           (*pTTMBVLC)[4][6],
+                                                            const uint8_t            (*pTTBLKVLC)[6],
+                                                            const uint8_t*           pSBP4x4Table,
                                                             const sACTablesSet*    pACTablesSet,
                                                             sACEscInfo*            pACEscInfo,
                                                             bool                   bBitPlaneRaw)
 
 {
     UMC::Status     err=UMC::UMC_OK;
-    Ipp32s          blk;
+    int32_t          blk;
     bool            bMVCoded =  (m_dMV[1][0].x || m_dMV[1][0].y || m_dMV[1][0].bSecond);
     bool            bCoded   =  (m_uiMBCBPCY!=0);
-    Ipp8u           nMBType =   (((Ipp8u)bCoded)<<1) + bMVCoded + 2;
+    uint8_t           nMBType =   (((uint8_t)bCoded)<<1) + bMVCoded + 2;
 
     VC1_NULL_PTR(pCodedBlock)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
    err = pCodedBlock->PutBits(pMBTypeFieldTable[nMBType<<1],pMBTypeFieldTable[(nMBType<<1)+1]);
@@ -997,7 +997,7 @@ template <class T>  UMC::Status   WriteBMBFieldForward     (T*                  
    }
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MVStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
    if (bMVCoded)
    {
@@ -1006,7 +1006,7 @@ template <class T>  UMC::Status   WriteBMBFieldForward     (T*                  
    }
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->MVF[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+    m_MECurMbStat->MVF[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
 #endif
     if (bCoded)
     {
@@ -1026,7 +1026,7 @@ template <class T>  UMC::Status   WriteBMBFieldForward     (T*                  
             if (m_uiMBCBPCY & ((1<<VC_ENC_PATTERN_POS(blk))))
             {
 #ifdef VC1_ME_MB_STATICTICS
-                Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+                uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
                 err = WriteVSTSBlk ( pCodedBlock,
                     pTTBLKVLC,
@@ -1045,48 +1045,48 @@ STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TS
 
                 VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-                m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+                m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
 #endif
         }//if
     }//for
 }//MBPattern!=0
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
 return err;
 }
 template <class T>  UMC::Status   WriteBMBFieldForwardMixed     (T*                     pCodedBlock,
-                                                            const Ipp8u*           pMBTypeFieldTable,
+                                                            const uint8_t*           pMBTypeFieldTable,
                                                             sMVFieldInfo*          pMVFieldInfo,
-                                                            Ipp8u                  MVRangeIndex,
-                                                            const Ipp32u*          pCBPCYTable,
+                                                            uint8_t                  MVRangeIndex,
+                                                            const uint32_t*          pCBPCYTable,
                                                             bool                   bVTS,
                                                             bool                   bMVHalf,
-                                                            const Ipp16s           (*pTTMBVLC)[4][6],
-                                                            const Ipp8u            (*pTTBLKVLC)[6],
-                                                            const Ipp8u*           pSBP4x4Table,
+                                                            const int16_t           (*pTTMBVLC)[4][6],
+                                                            const uint8_t            (*pTTBLKVLC)[6],
+                                                            const uint8_t*           pSBP4x4Table,
                                                             const sACTablesSet*    pACTablesSet,
                                                             sACEscInfo*            pACEscInfo,
-                                                            const Ipp8u*           pMV4BP,
+                                                            const uint8_t*           pMV4BP,
                                                             bool                   bBitPlaneRaw)
 
 {
     UMC::Status     err=UMC::UMC_OK;
-    Ipp32s          blk;
-    Ipp8u           MVPattern = 0;
+    int32_t          blk;
+    uint8_t           MVPattern = 0;
     bool            bCoded   =  (m_uiMBCBPCY!=0);
-    Ipp8u           nMBType = (bCoded)? 7:6;
+    uint8_t           nMBType = (bCoded)? 7:6;
 
     VC1_NULL_PTR(pCodedBlock)
     for (int i = 0; i<4; i++)
     {
         if (m_dMV[1][i].x || m_dMV[1][i].y || m_dMV[1][i].bSecond)
         {
-            MVPattern = (Ipp8u)(MVPattern | (1<<(3-i)));
+            MVPattern = (uint8_t)(MVPattern | (1<<(3-i)));
         }    
     }
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
     err = pCodedBlock->PutBits(pMBTypeFieldTable[nMBType<<1],pMBTypeFieldTable[(nMBType<<1)+1]);
@@ -1098,7 +1098,7 @@ template <class T>  UMC::Status   WriteBMBFieldForwardMixed     (T*             
     }
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MVStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
     err = pCodedBlock->PutBits(pMV4BP[MVPattern<<1],pMV4BP[(MVPattern<<1)+1]);
     VC1_ENC_CHECK (err)
@@ -1112,7 +1112,7 @@ template <class T>  UMC::Status   WriteBMBFieldForwardMixed     (T*             
     }  
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->MVF[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+    m_MECurMbStat->MVF[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
 #endif
     if (bCoded)
     {
@@ -1132,7 +1132,7 @@ template <class T>  UMC::Status   WriteBMBFieldForwardMixed     (T*             
                 if (m_uiMBCBPCY & ((1<<VC_ENC_PATTERN_POS(blk))))
                 {
 #ifdef VC1_ME_MB_STATICTICS
-                    Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+                    uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
                     err = WriteVSTSBlk ( pCodedBlock,
                         pTTBLKVLC,
@@ -1151,41 +1151,41 @@ template <class T>  UMC::Status   WriteBMBFieldForwardMixed     (T*             
 
                     VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-                    m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+                    m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
 #endif
                 }//if
             }//for
     }//MBPattern!=0
 #ifdef VC1_ME_MB_STATICTICS
-   m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+   m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
    return err;
 }
 template <class T>  UMC::Status   WriteBMBFieldBackward    (T*                     pCodedBlock,
-                                                            const Ipp8u*           pMBTypeFieldTable,
+                                                            const uint8_t*           pMBTypeFieldTable,
                                                             sMVFieldInfo*          pMVFieldInfo,
-                                                            Ipp8u                  MVRangeIndex,
-                                                            const Ipp32u*          pCBPCYTable,
+                                                            uint8_t                  MVRangeIndex,
+                                                            const uint32_t*          pCBPCYTable,
                                                             bool                   bVTS,
                                                             bool                   bMVHalf,
-                                                            const Ipp16s           (*pTTMBVLC)[4][6],
-                                                            const Ipp8u            (*pTTBLKVLC)[6],
-                                                            const Ipp8u*           pSBP4x4Table,
+                                                            const int16_t           (*pTTMBVLC)[4][6],
+                                                            const uint8_t            (*pTTBLKVLC)[6],
+                                                            const uint8_t*           pSBP4x4Table,
                                                             const sACTablesSet*    pACTablesSet,
                                                             sACEscInfo*            pACEscInfo,
                                                             bool                   bBitPlaneRaw)
 
 {
     UMC::Status     err=UMC::UMC_OK;
-    Ipp32s          blk;
+    int32_t          blk;
     bool            bMVCoded =  (m_dMV[0][0].x || m_dMV[0][0].y || m_dMV[0][0].bSecond);
     bool            bCoded   =  (m_uiMBCBPCY!=0);
-    Ipp8u           nMBType =   (((Ipp8u)bCoded)<<1) + bMVCoded + 2;
+    uint8_t           nMBType =   (((uint8_t)bCoded)<<1) + bMVCoded + 2;
 
     VC1_NULL_PTR(pCodedBlock)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
    err = pCodedBlock->PutBits(pMBTypeFieldTable[nMBType<<1],pMBTypeFieldTable[(nMBType<<1)+1]);
@@ -1199,7 +1199,7 @@ template <class T>  UMC::Status   WriteBMBFieldBackward    (T*                  
    VC1_ENC_CHECK (err)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MVStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
    if (bMVCoded)
@@ -1209,7 +1209,7 @@ template <class T>  UMC::Status   WriteBMBFieldBackward    (T*                  
    }
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->MVF[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+    m_MECurMbStat->MVF[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
 #endif
     if (bCoded)
     {
@@ -1229,7 +1229,7 @@ template <class T>  UMC::Status   WriteBMBFieldBackward    (T*                  
             if (m_uiMBCBPCY & ((1<<VC_ENC_PATTERN_POS(blk))))
             {
 #ifdef VC1_ME_MB_STATICTICS
-                Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+                uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
                 err = WriteVSTSBlk ( pCodedBlock,
                     pTTBLKVLC,
@@ -1248,49 +1248,49 @@ STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TS
 
                 VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-                m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+                m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
 #endif
         }//if
     }//for
 }//MBPattern!=0
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit() - MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit() - MBStart;
 #endif
 return err;
 }
 template <class T>  UMC::Status   WriteBMBFieldBackwardMixed    (T*                     pCodedBlock,
-                                                            const Ipp8u*           pMBTypeFieldTable,
+                                                            const uint8_t*           pMBTypeFieldTable,
                                                             sMVFieldInfo*          pMVFieldInfo,
-                                                            Ipp8u                  MVRangeIndex,
-                                                            const Ipp32u*          pCBPCYTable,
+                                                            uint8_t                  MVRangeIndex,
+                                                            const uint32_t*          pCBPCYTable,
                                                             bool                   bVTS,
                                                             bool                   bMVHalf,
-                                                            const Ipp16s           (*pTTMBVLC)[4][6],
-                                                            const Ipp8u            (*pTTBLKVLC)[6],
-                                                            const Ipp8u*           pSBP4x4Table,
+                                                            const int16_t           (*pTTMBVLC)[4][6],
+                                                            const uint8_t            (*pTTBLKVLC)[6],
+                                                            const uint8_t*           pSBP4x4Table,
                                                             const sACTablesSet*    pACTablesSet,
                                                             sACEscInfo*            pACEscInfo,
-                                                            const Ipp8u*           pMV4BP,
+                                                            const uint8_t*           pMV4BP,
                                                             bool                   bBitPlaneRaw)
 
 {
     UMC::Status     err=UMC::UMC_OK;
-    Ipp32s          blk;
-    Ipp8u           MVPattern = 0;
+    int32_t          blk;
+    uint8_t           MVPattern = 0;
     bool            bCoded   =  (m_uiMBCBPCY!=0);
-    Ipp8u           nMBType = (bCoded)? 7:6;
+    uint8_t           nMBType = (bCoded)? 7:6;
 
     VC1_NULL_PTR(pCodedBlock)
 
 #ifdef VC1_ME_MB_STATICTICS
-        Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+        uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
     for (int i = 0; i<4; i++)
     {
         if (m_dMV[0][i].x || m_dMV[0][i].y || m_dMV[0][i].bSecond)
         {
-            MVPattern = (Ipp8u)(MVPattern | (1<<(3-i)));
+            MVPattern = (uint8_t)(MVPattern | (1<<(3-i)));
         }    
     }
     err = pCodedBlock->PutBits(pMBTypeFieldTable[nMBType<<1],pMBTypeFieldTable[(nMBType<<1)+1]);
@@ -1305,7 +1305,7 @@ template <class T>  UMC::Status   WriteBMBFieldBackwardMixed    (T*             
     //VC1_ENC_CHECK (err)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MVStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
     err = pCodedBlock->PutBits(pMV4BP[MVPattern<<1],pMV4BP[(MVPattern<<1)+1]);
     VC1_ENC_CHECK (err)
@@ -1319,7 +1319,7 @@ template <class T>  UMC::Status   WriteBMBFieldBackwardMixed    (T*             
         }  
     }  
 #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->MVF[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+        m_MECurMbStat->MVF[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
 #endif
         if (bCoded)
         {
@@ -1339,7 +1339,7 @@ template <class T>  UMC::Status   WriteBMBFieldBackwardMixed    (T*             
                     if (m_uiMBCBPCY & ((1<<VC_ENC_PATTERN_POS(blk))))
                     {
 #ifdef VC1_ME_MB_STATICTICS
-                        Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+                        uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
                         err = WriteVSTSBlk ( pCodedBlock,
                             pTTBLKVLC,
@@ -1358,44 +1358,44 @@ template <class T>  UMC::Status   WriteBMBFieldBackwardMixed    (T*             
 
                         VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-                            m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+                            m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
 #endif
                     }//if
                 }//for
         }//MBPattern!=0
 
 #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit() - MBStart;
+        m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit() - MBStart;
 #endif
         return err;
 }
 template <class T>  UMC::Status   WriteBMBFieldInterpolated    (T*                     pCodedBlock,
-                                                                const Ipp8u*           pMBTypeFieldTable,
+                                                                const uint8_t*           pMBTypeFieldTable,
                                                                 sMVFieldInfo*          pMVFieldInfo,
-                                                                Ipp8u                  MVRangeIndex,
-                                                                const Ipp32u*          pCBPCYTable,
+                                                                uint8_t                  MVRangeIndex,
+                                                                const uint32_t*          pCBPCYTable,
                                                                 bool                   bVTS,
                                                                 bool                   bMVHalf,
-                                                                const Ipp16s           (*pTTMBVLC)[4][6],
-                                                                const Ipp8u            (*pTTBLKVLC)[6],
-                                                                const Ipp8u*           pSBP4x4Table,
+                                                                const int16_t           (*pTTMBVLC)[4][6],
+                                                                const uint8_t            (*pTTBLKVLC)[6],
+                                                                const uint8_t*           pSBP4x4Table,
                                                                 const sACTablesSet*    pACTablesSet,
                                                                 sACEscInfo*            pACEscInfo,
                                                                 bool                   bBitPlaneRaw)
 
 {
     UMC::Status     err=UMC::UMC_OK;
-    Ipp32s          blk;
+    int32_t          blk;
     bool            bMVCodedF =  (m_dMV[1][0].x || m_dMV[1][0].y || m_dMV[1][0].bSecond);
     bool            bMVCodedB =  (m_dMV[0][0].x || m_dMV[0][0].y || m_dMV[0][0].bSecond);
 
     bool            bCoded   =  (m_uiMBCBPCY!=0);
-    Ipp8u           nMBType =   (((Ipp8u)bCoded)<<1) + (bMVCodedF) + 2;
+    uint8_t           nMBType =   (((uint8_t)bCoded)<<1) + (bMVCodedF) + 2;
 
     VC1_NULL_PTR(pCodedBlock)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
    err = pCodedBlock->PutBits(pMBTypeFieldTable[nMBType<<1],pMBTypeFieldTable[(nMBType<<1)+1]);
@@ -1412,7 +1412,7 @@ template <class T>  UMC::Status   WriteBMBFieldInterpolated    (T*              
    VC1_ENC_CHECK (err)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MVStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
    if (bMVCodedF)
    {
@@ -1425,7 +1425,7 @@ template <class T>  UMC::Status   WriteBMBFieldInterpolated    (T*              
         VC1_ENC_CHECK (err)
    }
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->MVF[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+    m_MECurMbStat->MVF[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
 #endif
     if (bCoded)
     {
@@ -1445,7 +1445,7 @@ template <class T>  UMC::Status   WriteBMBFieldInterpolated    (T*              
             if (m_uiMBCBPCY & ((1<<VC_ENC_PATTERN_POS(blk))))
             {
 #ifdef VC1_ME_MB_STATICTICS
-                Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+                uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
                 err = WriteVSTSBlk ( pCodedBlock,
                     pTTBLKVLC,
@@ -1464,40 +1464,40 @@ STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TS
 
                 VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-                m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+                m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
 #endif
         }//if
     }//for
 }//MBPattern!=0
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
 return err;
 }
 template <class T>  UMC::Status   WriteBMBFieldDirect           (T*                     pCodedBlock,
-                                                                const Ipp8u*           pMBTypeFieldTable,
+                                                                const uint8_t*           pMBTypeFieldTable,
                                                                 sMVFieldInfo*          /*pMVFieldInfo*/,
-                                                                Ipp8u                  /*MVRangeIndex*/,
-                                                                const Ipp32u*          pCBPCYTable,
+                                                                uint8_t                  /*MVRangeIndex*/,
+                                                                const uint32_t*          pCBPCYTable,
                                                                 bool                   bVTS,
-                                                                const Ipp16s           (*pTTMBVLC)[4][6],
-                                                                const Ipp8u            (*pTTBLKVLC)[6],
-                                                                const Ipp8u*           pSBP4x4Table,
+                                                                const int16_t           (*pTTMBVLC)[4][6],
+                                                                const uint8_t            (*pTTBLKVLC)[6],
+                                                                const uint8_t*           pSBP4x4Table,
                                                                 const sACTablesSet*    pACTablesSet,
                                                                 sACEscInfo*            pACEscInfo,
                                                                 bool                   bBitPlaneRaw)
 
 {
     UMC::Status     err=UMC::UMC_OK;
-    Ipp32s          blk;
+    int32_t          blk;
 
     bool            bCoded   =  (m_uiMBCBPCY!=0);
-    Ipp8u           nMBType =   (((Ipp8u)bCoded)<<1) + 0 + 2;
+    uint8_t           nMBType =   (((uint8_t)bCoded)<<1) + 0 + 2;
 
     VC1_NULL_PTR(pCodedBlock)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
    err = pCodedBlock->PutBits(pMBTypeFieldTable[nMBType<<1],pMBTypeFieldTable[(nMBType<<1)+1]);
@@ -1528,7 +1528,7 @@ template <class T>  UMC::Status   WriteBMBFieldDirect           (T*             
             if (m_uiMBCBPCY & ((1<<VC_ENC_PATTERN_POS(blk))))
             {
 #ifdef VC1_ME_MB_STATICTICS
-                Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+                uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
                 err = WriteVSTSBlk ( pCodedBlock,
                     pTTBLKVLC,
@@ -1547,26 +1547,26 @@ STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TS
 
                 VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-                m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+                m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
 #endif
         }//if
     }//for
 }//MBPattern!=0
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
 return err;
 }
 template <class T>  UMC::Status   WritePMB1MVMixed  (T*                     pCodedBlock,
                                                      bool                   bRawBitplanes,
-                                                     Ipp8u                  MVTab,
-                                                     Ipp8u                  MVRangeIndex,
-                                                     const Ipp16u*          pCBPCYTable,
+                                                     uint8_t                  MVTab,
+                                                     uint8_t                  MVRangeIndex,
+                                                     const uint16_t*          pCBPCYTable,
                                                      bool                   bVTS,
                                                      bool                   bMVHalf,
-                                                     const Ipp16s           (*pTTMBVLC)[4][6],
-                                                     const Ipp8u            (*pTTBLKVLC)[6],
-                                                     const Ipp8u*           pSBP4x4Table,
+                                                     const int16_t           (*pTTMBVLC)[4][6],
+                                                     const uint8_t            (*pTTBLKVLC)[6],
+                                                     const uint8_t*           pSBP4x4Table,
                                                      const sACTablesSet*    pACTablesSet,
                                                      sACEscInfo*            pACEscInfo)
 
@@ -1575,7 +1575,7 @@ UMC::Status  err        =   UMC::UMC_OK;
 VC1_NULL_PTR(pCodedBlock)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 if (bRawBitplanes)
 {
@@ -1590,7 +1590,7 @@ err =  WritePMB1MV  (pCodedBlock,  bRawBitplanes, MVTab,
                      pACTablesSet, pACEscInfo);
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
 
 return err;
@@ -1598,17 +1598,17 @@ return err;
 }
 template <class T>  UMC::Status   WritePMB4MVMixed (T*                     pCodedBlock,
                                                     bool                   bRawBitplanes,
-                                                    Ipp32u                 quant,
-                                                    Ipp8u                  MVTab,
-                                                    Ipp8u                  MVRangeIndex,
-                                                    const Ipp16u*          pCBPCYTable,
-                                                    const Ipp16u*          pMVDiffTable,
+                                                    uint32_t                 quant,
+                                                    uint8_t                  MVTab,
+                                                    uint8_t                  MVRangeIndex,
+                                                    const uint16_t*          pCBPCYTable,
+                                                    const uint16_t*          pMVDiffTable,
                                                     bool                   bVTS,
                                                     bool                   bMVHalf,
-                                                    const Ipp16s           (*pTTMBVLC)[4][6],
-                                                    const Ipp8u            (*pTTBLKVLC)[6],
-                                                    const Ipp8u*           pSBP4x4Table,
-                                                    const Ipp32u**         pDCEncTable,
+                                                    const int16_t           (*pTTMBVLC)[4][6],
+                                                    const uint8_t            (*pTTBLKVLC)[6],
+                                                    const uint8_t*           pSBP4x4Table,
+                                                    const uint32_t**         pDCEncTable,
                                                     const sACTablesSet**   pACTablesSetIntra,
                                                     const sACTablesSet*    pACTablesSetInter,
                                                     sACEscInfo*            pACEscInfo
@@ -1616,12 +1616,12 @@ template <class T>  UMC::Status   WritePMB4MVMixed (T*                     pCode
 
 {
     UMC::Status  err        =   UMC::UMC_OK;
-    Ipp32s       blk        =   0;
-    Ipp32u       pattern    =   m_uiMBCBPCY;
+    int32_t       blk        =   0;
+    uint32_t       pattern    =   m_uiMBCBPCY;
     bool         bInterCoded=   (m_uiMBCBPCY & (~m_uiIntraPattern))? true:false;
 
     #ifdef VC1_ME_MB_STATICTICS
-        Ipp32u MBStart = pCodedBlock->GetCurrBit();
+        uint32_t MBStart = pCodedBlock->GetCurrBit();
     #endif
     if (bRawBitplanes)
     {
@@ -1643,8 +1643,8 @@ template <class T>  UMC::Status   WritePMB4MVMixed (T*                     pCode
     for (blk=0; blk<4;blk++)
     {
     #ifdef VC1_ME_MB_STATICTICS
-        Ipp32u BlkStart = pCodedBlock->GetCurrBit();
-        Ipp32u MVStart = pCodedBlock->GetCurrBit();
+        uint32_t BlkStart = pCodedBlock->GetCurrBit();
+        uint32_t MVStart = pCodedBlock->GetCurrBit();
     #endif
         if(pattern & (1<<VC_ENC_PATTERN_POS(blk)))
         {
@@ -1665,8 +1665,8 @@ template <class T>  UMC::Status   WritePMB4MVMixed (T*                     pCode
             VC1_ENC_CHECK (err)
         }
     #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->MVF[blk]   =  m_MECurMbStat->MVF[blk]  + (Ipp16u)(pCodedBlock->GetCurrBit()- MVStart);
-        m_MECurMbStat->coeff[blk] =  m_MECurMbStat->coeff[blk]+ (Ipp16u)(pCodedBlock->GetCurrBit()- BlkStart);
+        m_MECurMbStat->MVF[blk]   =  m_MECurMbStat->MVF[blk]  + (uint16_t)(pCodedBlock->GetCurrBit()- MVStart);
+        m_MECurMbStat->coeff[blk] =  m_MECurMbStat->coeff[blk]+ (uint16_t)(pCodedBlock->GetCurrBit()- BlkStart);
     #endif
     }
 //err = WriteMBQuantParameter(pCodedPicture, doubleQuant>>1);
@@ -1688,7 +1688,7 @@ for (blk = 0; blk<6; blk++)
     const sACTablesSet*   pACTablesSet = 0;
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp32u BlkStart = pCodedBlock->GetCurrBit();
+    uint32_t BlkStart = pCodedBlock->GetCurrBit();
 #endif
 
     if (m_uiIntraPattern & (1<<VC_ENC_PATTERN_POS(blk)))
@@ -1725,12 +1725,12 @@ STATISTICS_START_TIME(m_TStat->AC_Coefs_StartTime);
 STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TStat->AC_Coefs_TotalTime);
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->coeff[blk] = m_MECurMbStat->coeff[blk]+(Ipp16u)(pCodedBlock->GetCurrBit()- BlkStart);
+    m_MECurMbStat->coeff[blk] = m_MECurMbStat->coeff[blk]+(uint16_t)(pCodedBlock->GetCurrBit()- BlkStart);
 #endif
 }//for
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)(pCodedBlock->GetCurrBit()- MBStart);
+    m_MECurMbStat->whole = (uint16_t)(pCodedBlock->GetCurrBit()- MBStart);
 #endif
 return err;
 }
@@ -1740,12 +1740,12 @@ template <class T>  UMC::Status   WritePMB4MVSkipMixed    (T*                   
 
 {
     UMC::Status  err        =   UMC::UMC_OK;
-    Ipp32s       blk        =   0;
+    int32_t       blk        =   0;
 
     VC1_NULL_PTR(pCodedBlock)
 
     #ifdef VC1_ME_MB_STATICTICS
-        Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+        uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
     #endif
     if (bRawBitplanes)
     {
@@ -1757,7 +1757,7 @@ template <class T>  UMC::Status   WritePMB4MVSkipMixed    (T*                   
     for (blk=0; blk<4;blk++)
     {
     #ifdef VC1_ME_MB_STATICTICS
-        Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+        uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
     #endif
         if (m_pHybrid[blk])
         {
@@ -1765,11 +1765,11 @@ template <class T>  UMC::Status   WritePMB4MVSkipMixed    (T*                   
             VC1_ENC_CHECK (err)
         }
     #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+        m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
     #endif
     }
     #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+        m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
     #endif
     return err;
 }
@@ -1778,11 +1778,11 @@ template <class T>  UMC::Status   WritePMB1MVSkipMixed    (T*                   
 
 {
     UMC::Status  err        =   UMC::UMC_OK;
-    //Ipp32s       blk        =   0;
+    //int32_t       blk        =   0;
 
     VC1_NULL_PTR(pCodedBlock)
     #ifdef VC1_ME_MB_STATICTICS
-        Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+        uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
     #endif
 
     if (bRawBitplanes)
@@ -1799,27 +1799,27 @@ template <class T>  UMC::Status   WritePMB1MVSkipMixed    (T*                   
     }
 
     #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+        m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
     #endif
     return err;
 }
 
 template <class T>  UMC::Status   WriteBMB_DIRECT      (T*                     pCodedBlock,
                                                         bool                   bRawBitplanes,
-                                                        const Ipp16u*          pCBPCYTable,
+                                                        const uint16_t*          pCBPCYTable,
                                                         bool                   bVTS,
-                                                        const Ipp16s           (*pTTMBVLC)[4][6],
-                                                        const Ipp8u            (*pTTBLKVLC)[6],
-                                                        const Ipp8u*           pSBP4x4Table,
+                                                        const int16_t           (*pTTMBVLC)[4][6],
+                                                        const uint8_t            (*pTTBLKVLC)[6],
+                                                        const uint8_t*           pSBP4x4Table,
                                                         const sACTablesSet*    pACTablesSet,
                                                         sACEscInfo*            pACEscInfo)
 {
     UMC::Status  err=UMC::UMC_OK;
-    Ipp32s       blk;
+    int32_t       blk;
 
     VC1_NULL_PTR(pCodedBlock)
     #ifdef VC1_ME_MB_STATICTICS
-        Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+        uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
     #endif
 
     if (bRawBitplanes)
@@ -1847,7 +1847,7 @@ template <class T>  UMC::Status   WriteBMB_DIRECT      (T*                     p
            if ((m_uiMBCBPCY & (1<<VC_ENC_PATTERN_POS(blk))))
            {
     #ifdef VC1_ME_MB_STATICTICS
-        Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+        uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
     #endif
             err = WriteVSTSBlk ( pCodedBlock,
                 pTTBLKVLC,
@@ -1866,40 +1866,40 @@ template <class T>  UMC::Status   WriteBMB_DIRECT      (T*                     p
 
             VC1_ENC_CHECK (err)
     #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+        m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
     #endif
            }
         }//for
     }//MBPattern!=0
 
     #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+        m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
     #endif
     return err;
 }
 template <class T>  UMC::Status  WriteBMB      (T*                     pCodedBlock,
                                                 bool                   bRawBitplanes,
-                                                Ipp8u                  MVTab,
-                                                Ipp8u                  MVRangeIndex,
-                                                const Ipp16u*          pCBPCYTable,
+                                                uint8_t                  MVTab,
+                                                uint8_t                  MVRangeIndex,
+                                                const uint16_t*          pCBPCYTable,
                                                 bool                   bVTS,
                                                 bool                   bMVHalf,
-                                                const Ipp16s           (*pTTMBVLC)[4][6],
-                                                const Ipp8u            (*pTTBLKVLC)[6],
-                                                const Ipp8u*           pSBP4x4Table,
+                                                const int16_t           (*pTTMBVLC)[4][6],
+                                                const uint8_t            (*pTTBLKVLC)[6],
+                                                const uint8_t*           pSBP4x4Table,
                                                 const sACTablesSet*    pACTablesSet,
                                                 sACEscInfo*            pACEscInfo,
                                                 bool                   bBFraction)
 {
     UMC::Status  err=UMC::UMC_OK;
-    Ipp32s       blk;
-    Ipp8u        mvType = (m_MBtype == VC1_ENC_B_MB_F)? 0:((m_MBtype == VC1_ENC_B_MB_B)?1:2);
+    int32_t       blk;
+    uint8_t        mvType = (m_MBtype == VC1_ENC_B_MB_F)? 0:((m_MBtype == VC1_ENC_B_MB_B)?1:2);
     bool         NotLastInter = false;
 
 
     VC1_NULL_PTR(pCodedBlock)
     #ifdef VC1_ME_MB_STATICTICS
-        Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+        uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
     #endif
 
     if (m_MBtype == VC1_ENC_B_MB_FB)
@@ -1915,16 +1915,16 @@ template <class T>  UMC::Status  WriteBMB      (T*                     pCodedBlo
         VC1_ENC_CHECK (err)
     }
     #ifdef VC1_ME_MB_STATICTICS
-        Ipp16u MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+        uint16_t MVStart = (uint16_t)pCodedBlock->GetCurrBit();
     #endif
     err = WriteMVDataInter(pCodedBlock, MVDiffTablesVLC[MVTab],MVRangeIndex, m_uiMBCBPCY!=0 || NotLastInter,  bMVHalf, 0, m_MBtype == VC1_ENC_B_MB_F);
     VC1_ENC_CHECK (err)
 
     #ifdef VC1_ME_MB_STATICTICS
         if(m_MBtype == VC1_ENC_B_MB_F)
-            m_MECurMbStat->MVF[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+            m_MECurMbStat->MVF[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
         else
-            m_MECurMbStat->MVB[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+            m_MECurMbStat->MVB[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
     #endif
 
     err = pCodedBlock->PutBits(BMVTypeVLC[bBFraction][mvType*2],BMVTypeVLC[bBFraction][mvType*2+1]);
@@ -1933,12 +1933,12 @@ template <class T>  UMC::Status  WriteBMB      (T*                     pCodedBlo
     if (NotLastInter)
     {
     #ifdef VC1_ME_MB_STATICTICS
-        MVStart = (Ipp16u)pCodedBlock->GetCurrBit();
+        MVStart = (uint16_t)pCodedBlock->GetCurrBit();
     #endif
             err = WriteMVDataInter(pCodedBlock, MVDiffTablesVLC[MVTab],MVRangeIndex,   m_uiMBCBPCY!=0, bMVHalf, 0, true);
             VC1_ENC_CHECK (err)
     #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->MVB[0] += (Ipp16u)pCodedBlock->GetCurrBit()- MVStart;
+        m_MECurMbStat->MVB[0] += (uint16_t)pCodedBlock->GetCurrBit()- MVStart;
     #endif
     }
 
@@ -1960,7 +1960,7 @@ template <class T>  UMC::Status  WriteBMB      (T*                     pCodedBlo
             if ((m_uiMBCBPCY & (1<<VC_ENC_PATTERN_POS(blk))))
             {
     #ifdef VC1_ME_MB_STATICTICS
-        Ipp16u BlkStart = (Ipp16u)pCodedBlock->GetCurrBit();
+        uint16_t BlkStart = (uint16_t)pCodedBlock->GetCurrBit();
     #endif
 
             err = WriteVSTSBlk ( pCodedBlock,
@@ -1980,13 +1980,13 @@ template <class T>  UMC::Status  WriteBMB      (T*                     pCodedBlo
 
             VC1_ENC_CHECK (err)
     #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedBlock->GetCurrBit()- BlkStart;
+        m_MECurMbStat->coeff[blk] += (uint16_t)pCodedBlock->GetCurrBit()- BlkStart;
     #endif
             }
         }//for
     }//MBPattern!=0
     #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+        m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
     #endif
     return err;
 }
@@ -2000,7 +2000,7 @@ UMC::Status   WritePMB_SKIP(T*        pCodedBlock,
 
     VC1_NULL_PTR(pCodedBlock)
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
     if (bRawBitplanes)
@@ -2016,7 +2016,7 @@ UMC::Status   WritePMB_SKIP(T*        pCodedBlock,
 
     }
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
     return err;
 }
@@ -2027,11 +2027,11 @@ UMC::Status   WriteBMB_SKIP_NONDIRECT(T*      pCodedBlock,
                                       bool                   bBFraction)
 {
     UMC::Status     err     = UMC::UMC_OK;
-    Ipp8u           mvType  = 0;
+    uint8_t           mvType  = 0;
 
     VC1_NULL_PTR(pCodedBlock)
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
 
     switch(m_MBtype)
@@ -2058,7 +2058,7 @@ UMC::Status   WriteBMB_SKIP_NONDIRECT(T*      pCodedBlock,
     err = pCodedBlock->PutBits(BMVTypeVLC[bBFraction][mvType*2],BMVTypeVLC[bBFraction][mvType*2+1]);
     VC1_ENC_CHECK (err);
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
     return err;
 }
@@ -2072,7 +2072,7 @@ UMC::Status  WriteBMB_SKIP_DIRECT(T*                     pCodedBlock,
     VC1_NULL_PTR(pCodedBlock)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedBlock->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedBlock->GetCurrBit();
 #endif
     if (bRawBitplanes)
     {
@@ -2083,7 +2083,7 @@ UMC::Status  WriteBMB_SKIP_DIRECT(T*                     pCodedBlock,
     }
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedBlock->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedBlock->GetCurrBit()- MBStart;
 #endif
     return err;
 }
@@ -2091,20 +2091,20 @@ UMC::Status  WriteBMB_SKIP_DIRECT(T*                     pCodedBlock,
 template <class T>
 UMC::Status WritePMB_INTRA (T*                     pCodedMB,
                             bool                   bBitplanesRaw,
-                            Ipp32u                 quant,
-                            const Ipp16u*          pMVDiffTable,
-                            const Ipp16u*          pCBPCYTable,
-                            const Ipp32u**         pDCEncTable,
+                            uint32_t                 quant,
+                            const uint16_t*          pMVDiffTable,
+                            const uint16_t*          pCBPCYTable,
+                            const uint32_t**         pDCEncTable,
                             const sACTablesSet**   pACTablesSet,
                             sACEscInfo*            pACEscInfo)
 {
     UMC::Status     err     =   UMC::UMC_OK;
-    Ipp32u          blk;
+    uint32_t          blk;
 
         VC1_NULL_PTR(pCodedMB)
 
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedMB->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedMB->GetCurrBit();
 #endif
     err     = WriteMBHeaderP_INTRA    ( pCodedMB,bBitplanesRaw, pMVDiffTable,pCBPCYTable);
     VC1_ENC_CHECK (err)
@@ -2112,7 +2112,7 @@ UMC::Status WritePMB_INTRA (T*                     pCodedMB,
     for (blk=0; blk<6; blk++)
     {
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u BlkStart = (Ipp16u)pCodedMB->GetCurrBit();
+    uint16_t BlkStart = (uint16_t)pCodedMB->GetCurrBit();
 #endif
         err = WriteBlockDC(pCodedMB,pDCEncTable[blk],quant,blk);
         VC1_ENC_CHECK (err)
@@ -2122,12 +2122,12 @@ STATISTICS_START_TIME(m_TStat->AC_Coefs_StartTime);
 STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TStat->AC_Coefs_TotalTime);
         VC1_ENC_CHECK (err)
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->coeff[blk] += (Ipp16u)pCodedMB->GetCurrBit()- BlkStart;
+    m_MECurMbStat->coeff[blk] += (uint16_t)pCodedMB->GetCurrBit()- BlkStart;
 #endif
     }
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedMB->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedMB->GetCurrBit()- MBStart;
 #endif
     return err;
 }
@@ -2135,16 +2135,16 @@ STATISTICS_END_TIME(m_TStat->AC_Coefs_StartTime, m_TStat->AC_Coefs_EndTime, m_TS
 template <class T>
 UMC::Status WritePMBMixed_INTRA (T*                     pCodedMB,
                                  bool                   bBitplanesRaw,
-                                 Ipp32u                 quant,
-                                 const Ipp16u*          pMVDiffTable,
-                                 const Ipp16u*          pCBPCYTable,
-                                 const Ipp32u**         pDCEncTable,
+                                 uint32_t                 quant,
+                                 const uint16_t*          pMVDiffTable,
+                                 const uint16_t*          pCBPCYTable,
+                                 const uint32_t**         pDCEncTable,
                                  const sACTablesSet**   pACTablesSet,
                                  sACEscInfo*            pACEscInfo)
 {
      UMC::Status     err     =   UMC::UMC_OK;
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp16u MBStart = (Ipp16u)pCodedMB->GetCurrBit();
+    uint16_t MBStart = (uint16_t)pCodedMB->GetCurrBit();
 #endif
     if (bBitplanesRaw)
     {
@@ -2156,7 +2156,7 @@ UMC::Status WritePMBMixed_INTRA (T*                     pCodedMB,
     err = WritePMB_INTRA(pCodedMB, bBitplanesRaw,quant,pMVDiffTable,pCBPCYTable,pDCEncTable, pACTablesSet, pACEscInfo);
 
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->whole = (Ipp16u)pCodedMB->GetCurrBit()- MBStart;
+    m_MECurMbStat->whole = (uint16_t)pCodedMB->GetCurrBit()- MBStart;
 #endif
     return err;
 }
@@ -2165,13 +2165,13 @@ UMC::Status WritePMBMixed_INTRA (T*                     pCodedMB,
 
 template <class T>
 UMC::Status   WriteBlockDC  (    T*                pCodedBlock,
-                                    const Ipp32u*     pEncTable,
-                                    Ipp32u            quant,
-                                    Ipp32s             blk)
+                                    const uint32_t*     pEncTable,
+                                    uint32_t            quant,
+                                    int32_t             blk)
 {
     UMC::Status UMCSts = UMC::UMC_OK;
 #ifdef VC1_ME_MB_STATICTICS
-    Ipp32u BlkStart = pCodedBlock->GetCurrBit();;
+    uint32_t BlkStart = pCodedBlock->GetCurrBit();;
 #endif
     switch (quant)
     {
@@ -2185,7 +2185,7 @@ UMC::Status   WriteBlockDC  (    T*                pCodedBlock,
             UMCSts = WriteDCQuantOther (m_iDC[blk],pEncTable, pCodedBlock);
     }
 #ifdef VC1_ME_MB_STATICTICS
-    m_MECurMbStat->coeff[blk] = m_MECurMbStat->coeff[blk] +(Ipp16u)(pCodedBlock->GetCurrBit() - BlkStart);
+    m_MECurMbStat->coeff[blk] = m_MECurMbStat->coeff[blk] +(uint16_t)(pCodedBlock->GetCurrBit() - BlkStart);
 #endif
 
     return UMCSts;
@@ -2193,41 +2193,41 @@ UMC::Status   WriteBlockDC  (    T*                pCodedBlock,
 template <class T>  UMC::Status   WriteBlockAC( T*                      pCodedBlock,
                                                 const sACTablesSet*     pACTablesSet,
                                                 sACEscInfo*             pACEscInfo,
-                                                Ipp32u                  blk)
+                                                uint32_t                  blk)
 {
     UMC::Status     err                    = UMC::UMC_OK;
-    Ipp32s          i                      = 0;
-    static const Ipp32s    nSubblk [4]     = {1,2,2,4};
+    int32_t          i                      = 0;
+    static const int32_t    nSubblk [4]     = {1,2,2,4};
 
-    const Ipp32u    *pEncTable   = pACTablesSet->pEncTable;
-    Ipp8u           nPairsBlock  = 0;
+    const uint32_t    *pEncTable   = pACTablesSet->pEncTable;
+    uint8_t           nPairsBlock  = 0;
 
     VC1_NULL_PTR(pCodedBlock)
 
 #ifdef VC1_ME_MB_STATICTICS
-      Ipp32u BlkStart = pCodedBlock->GetCurrBit();
+      uint32_t BlkStart = pCodedBlock->GetCurrBit();
 #endif
-    for (Ipp32s nSubblock=0; nSubblock<nSubblk[m_tsType[blk]]; nSubblock++)
+    for (int32_t nSubblock=0; nSubblock<nSubblk[m_tsType[blk]]; nSubblock++)
     {
-        const Ipp8u     *pTableDR    = pACTablesSet->pTableDR;
-        const Ipp8u     *pTableDL    = pACTablesSet->pTableDL;
-        const Ipp8u     *pTableInd   = pACTablesSet->pTableInd;
-        Ipp8u           nPairs       = m_nPairs[blk][nSubblock];
+        const uint8_t     *pTableDR    = pACTablesSet->pTableDR;
+        const uint8_t     *pTableDL    = pACTablesSet->pTableDL;
+        const uint8_t     *pTableInd   = pACTablesSet->pTableInd;
+        uint8_t           nPairs       = m_nPairs[blk][nSubblock];
 
         if (nPairs == 0)
             continue;
 
         // put codes into bitstream
         i = 0;
-        for (Ipp32s not_last = 1; not_last>=0; not_last--)
+        for (int32_t not_last = 1; not_last>=0; not_last--)
         {
             for (; i < nPairs - not_last; i++)
             {
                 bool    sign = false;
-                Ipp8u   run  = m_uRun [blk] [i+nPairsBlock];
-                Ipp16s  lev  = m_iLevel[blk][i+nPairsBlock];
+                uint8_t   run  = m_uRun [blk] [i+nPairsBlock];
+                int16_t  lev  = m_iLevel[blk][i+nPairsBlock];
 
-                Ipp8u mode = GetMode( run, lev, pTableDR, pTableDL, sign);
+                uint8_t mode = GetMode( run, lev, pTableDR, pTableDL, sign);
 
 #ifdef VC1_ENC_DEBUG_ON
                 pDebug->SetRLMode(mode, blk, i+nPairsBlock);
@@ -2273,7 +2273,7 @@ template <class T>  UMC::Status   WriteBlockAC( T*                      pCodedBl
                         err = pCodedBlock->PutBits(1,mode);                     //mode
                         VC1_ENC_CHECK (err)
                      case 0:
-                        Ipp16s index = pTableInd[run] + lev;
+                        int16_t index = pTableInd[run] + lev;
                         err = pCodedBlock->PutBits(pEncTable[2*index], pEncTable[2*index + 1]);
                         VC1_ENC_CHECK (err)
                         err = pCodedBlock->PutBits(sign, 1);
@@ -2291,7 +2291,7 @@ template <class T>  UMC::Status   WriteBlockAC( T*                      pCodedBl
         nPairsBlock = nPairsBlock + m_nPairs[blk][nSubblock];
     }
 #ifdef VC1_ME_MB_STATICTICS
-        m_MECurMbStat->coeff[blk] = m_MECurMbStat->coeff[blk] + (Ipp16u)(pCodedBlock->GetCurrBit() - BlkStart);
+        m_MECurMbStat->coeff[blk] = m_MECurMbStat->coeff[blk] + (uint16_t)(pCodedBlock->GetCurrBit() - BlkStart);
 #endif
     return UMC::UMC_OK;
 }
@@ -2300,10 +2300,10 @@ template <class T>  UMC::Status   WriteBlockAC( T*                      pCodedBl
 protected:
    template <class T>
    UMC::Status   WriteVSTSBlk (    T*                      pCodedBlock,
-                                   const Ipp8u            (*pTTBLKVLC)[6],
-                                   const Ipp8u*            pSBP4x4Table,
+                                   const uint8_t            (*pTTBLKVLC)[6],
+                                   const uint8_t*            pSBP4x4Table,
                                    bool                    bVTS,
-                                   Ipp32u                   blk)
+                                   uint32_t                   blk)
    {
        UMC::Status     err                    = UMC::UMC_OK;
        eTransformType  type                   = m_tsType[blk];
@@ -2315,7 +2315,7 @@ protected:
 
         if (bVTS && !m_bMBTSType && blk!= m_uiFirstCodedBlock)
         {
-            Ipp8u          subPat  = ((m_nPairs[blk][0]>0)<<1) + (m_nPairs[blk][1]>0);
+            uint8_t          subPat  = ((m_nPairs[blk][0]>0)<<1) + (m_nPairs[blk][1]>0);
 
             subPat = (subPat>0)?subPat-1:subPat;
 
@@ -2327,7 +2327,7 @@ protected:
         }
         if (type == VC1_ENC_4x4_TRANSFORM)
         {
-            Ipp8u          subPat  = ((m_nPairs[blk][0]>0)<<3) + ((m_nPairs[blk][1]>0)<<2)+
+            uint8_t          subPat  = ((m_nPairs[blk][0]>0)<<3) + ((m_nPairs[blk][1]>0)<<2)+
                                      ((m_nPairs[blk][2]>0)<<1) +  (m_nPairs[blk][3]>0);
              //VC1_ENC_4x4_TRANSFORM
             err = pCodedBlock->PutBits(pSBP4x4Table[2*subPat],pSBP4x4Table[2*subPat+1] );
@@ -2336,7 +2336,7 @@ protected:
         else if (type != VC1_ENC_8x8_TRANSFORM &&
                 (m_bMBTSType && blk!= m_uiFirstCodedBlock || !bVTS))
         {
-            Ipp8u          subPat  = ((m_nPairs[blk][0]>0)<<1) + (m_nPairs[blk][1]>0) - 1;
+            uint8_t          subPat  = ((m_nPairs[blk][0]>0)<<1) + (m_nPairs[blk][1]>0) - 1;
             //if MB level or frame level
             err = pCodedBlock->PutBits(SubPattern8x4_4x8VLC[2*subPat],SubPattern8x4_4x8VLC[2*subPat+1] );
             VC1_ENC_CHECK (err)
@@ -2346,11 +2346,11 @@ protected:
    }
 
 template <class T>  inline
-UMC::Status WriteMVDataPIntra(T* pCodedMB, const Ipp16u* table)
+UMC::Status WriteMVDataPIntra(T* pCodedMB, const uint16_t* table)
 {
     UMC::Status     ret     =   UMC::UMC_OK;
     bool            NotSkip =   (m_uiMBCBPCY != 0);
-    Ipp8u           index   =   37*NotSkip + 36 - 1;
+    uint8_t           index   =   37*NotSkip + 36 - 1;
 
     VC1_NULL_PTR  (pCodedMB)
 
@@ -2363,11 +2363,11 @@ UMC::Status WriteMVDataPIntra(T* pCodedMB, const Ipp16u* table)
     return ret;
 }
 template <class T>  inline
-UMC::Status WriteMVDataPIntra(T* pCodedMB, const Ipp16u* table, Ipp32u blockNum)
+UMC::Status WriteMVDataPIntra(T* pCodedMB, const uint16_t* table, uint32_t blockNum)
 {
     UMC::Status     ret     =   UMC::UMC_OK;
     bool            NotSkip =   ((m_uiMBCBPCY &(1<<VC_ENC_PATTERN_POS(blockNum))) != 0);
-    Ipp8u           index   =   37*NotSkip + 36 - 1;
+    uint8_t           index   =   37*NotSkip + 36 - 1;
 
     VC1_NULL_PTR  (pCodedMB)
 
@@ -2380,15 +2380,15 @@ UMC::Status WriteMVDataPIntra(T* pCodedMB, const Ipp16u* table, Ipp32u blockNum)
     return ret;
 }
 template <class T>  inline
-UMC::Status WriteMVDataInter(T* pCodedMB, const Ipp16u* table, Ipp8u rangeIndex, bool   NotSkip, bool bMVHalf, Ipp32u blockNum = 0, bool bForward = true)
+UMC::Status WriteMVDataInter(T* pCodedMB, const uint16_t* table, uint8_t rangeIndex, bool   NotSkip, bool bMVHalf, uint32_t blockNum = 0, bool bForward = true)
 {
     UMC::Status     ret     =   UMC::UMC_OK;
-    Ipp16s          index   =   0;
-    Ipp16s          dx      =   m_dMV[bForward][blockNum].x;
-    Ipp16s          dy      =   m_dMV[bForward][blockNum].y;
+    int16_t          index   =   0;
+    int16_t          dx      =   m_dMV[bForward][blockNum].x;
+    int16_t          dy      =   m_dMV[bForward][blockNum].y;
     bool            signX   =   (dx<0);
     bool            signY   =   (dy<0);
-    Ipp8u           limit   =   (bMVHalf)? VC1_ENC_HALF_MV_LIMIT : VC1_ENC_MV_LIMIT;
+    uint8_t           limit   =   (bMVHalf)? VC1_ENC_HALF_MV_LIMIT : VC1_ENC_MV_LIMIT;
 
 
     VC1_NULL_PTR  (pCodedMB)
@@ -2406,10 +2406,10 @@ UMC::Status WriteMVDataInter(T* pCodedMB, const Ipp16u* table, Ipp8u rangeIndex,
 
     if (index < 34)
     {
-        Ipp32s diffX = dx - MVSizeOffset[3*dx+1];
-        Ipp32s diffY = dy - MVSizeOffset[3*dy+1];
-        Ipp8u sizeX = MVSizeOffset[3*dx+2];
-        Ipp8u sizeY = MVSizeOffset[3*dy+2];
+        int32_t diffX = dx - MVSizeOffset[3*dx+1];
+        int32_t diffY = dy - MVSizeOffset[3*dy+1];
+        uint8_t sizeX = MVSizeOffset[3*dx+2];
+        uint8_t sizeY = MVSizeOffset[3*dy+2];
 
         diffX =  (diffX<<1)+signX;
         diffY =  (diffY<<1)+signY;
@@ -2440,8 +2440,8 @@ UMC::Status WriteMVDataInter(T* pCodedMB, const Ipp16u* table, Ipp8u rangeIndex,
     else
     {
          // escape mode
-        Ipp8u sizeX = longMVLength[2*rangeIndex];
-        Ipp8u sizeY = longMVLength[2*rangeIndex+1];
+        uint8_t sizeX = longMVLength[2*rangeIndex];
+        uint8_t sizeY = longMVLength[2*rangeIndex+1];
 
 
         dx = ((1<<sizeX)-1)& (m_dMV[bForward][blockNum].x);
@@ -2476,19 +2476,19 @@ UMC::Status WriteMVDataInter(T* pCodedMB, const Ipp16u* table, Ipp8u rangeIndex,
     return ret;
 }
 template <class T>  inline
-UMC::Status WriteMVDataInterField1Ref(T* pCodedMB, Ipp8u rangeIndex,
+UMC::Status WriteMVDataInterField1Ref(T* pCodedMB, uint8_t rangeIndex,
                                       sMVFieldInfo* pMVFieldInfo,
                                       bool bMVHalf,
-                                      Ipp32u blockNum=0,
+                                      uint32_t blockNum=0,
                                       bool bForward=true )
 {
     UMC::Status     ret     =   UMC::UMC_OK;
-    Ipp16s          indexX  =   0;
-    Ipp16s          indexY  =   0;
-    Ipp16s          index   =   0;
+    int16_t          indexX  =   0;
+    int16_t          indexY  =   0;
+    int16_t          index   =   0;
 
-    Ipp16s          dx      =   m_dMV[bForward][blockNum].x;
-    Ipp16s          dy      =   m_dMV[bForward][blockNum].y;
+    int16_t          dx      =   m_dMV[bForward][blockNum].x;
+    int16_t          dy      =   m_dMV[bForward][blockNum].y;
     bool            signX   =   (dx<0);
     bool            signY   =   (dy<0);
 
@@ -2560,19 +2560,19 @@ UMC::Status WriteMVDataInterField1Ref(T* pCodedMB, Ipp8u rangeIndex,
     return ret;
 }
 template <class T>  inline
-UMC::Status WriteMVDataInterField2Ref(T* pCodedMB, Ipp8u rangeIndex,
+UMC::Status WriteMVDataInterField2Ref(T* pCodedMB, uint8_t rangeIndex,
                                       sMVFieldInfo* pMVFieldInfo,
                                       bool bMVHalf,
-                                      Ipp32u blockNum=0,
+                                      uint32_t blockNum=0,
                                       bool bForward=true )
 {
     UMC::Status     ret     =   UMC::UMC_OK;
-    Ipp16s          indexX  =   0;
-    Ipp16s          indexY  =   0;
-    Ipp16s          index   =   0;
+    int16_t          indexX  =   0;
+    int16_t          indexY  =   0;
+    int16_t          index   =   0;
 
-    Ipp16s          dx      =   m_dMV[bForward][blockNum].x;
-    Ipp16s          dy      =   m_dMV[bForward][blockNum].y;
+    int16_t          dx      =   m_dMV[bForward][blockNum].x;
+    int16_t          dy      =   m_dMV[bForward][blockNum].y;
     bool            bNonDominant =   m_dMV[bForward][blockNum].bSecond;
     bool            signX   =   (dx<0);
     bool            signY   =   (dy<0);
@@ -2620,7 +2620,7 @@ UMC::Status WriteMVDataInterField2Ref(T* pCodedMB, Ipp8u rangeIndex,
     {
         // escape mode
 
-        Ipp32s     y = ((((signY)? -dy:dy) - bNonDominant)<<1) + bNonDominant;
+        int32_t     y = ((((signY)? -dy:dy) - bNonDominant)<<1) + bNonDominant;
 
         index       = 125;
 
@@ -2628,8 +2628,8 @@ UMC::Status WriteMVDataInterField2Ref(T* pCodedMB, Ipp8u rangeIndex,
         indexX = longMVLength[2*rangeIndex];
         indexY = longMVLength[2*rangeIndex+1];
 
-        dx = (Ipp16s)(((1<<indexX)-1)&  ((signX)? -dx: dx));
-        dy = (Ipp16s)(((1<<indexY)-1)&  (y));
+        dx = (int16_t)(((1<<indexX)-1)&  ((signX)? -dx: dx));
+        dy = (int16_t)(((1<<indexY)-1)&  (y));
 
 #ifdef VC1_ENC_DEBUG_ON
     if(bMVHalf)
@@ -2653,11 +2653,11 @@ UMC::Status WriteMVDataInterField2Ref(T* pCodedMB, Ipp8u rangeIndex,
 }
 template <class T>
 UMC::Status   WriteVSTSMB (   T*           pCodedBlock,
-                             const Ipp16s  (*pTTMBVLC)[4][6])
+                             const int16_t  (*pTTMBVLC)[4][6])
 {
     UMC::Status err           = UMC::UMC_OK;
-    Ipp32u interPattern  = m_uiMBCBPCY & (~m_uiIntraPattern);
-    Ipp32s blk;
+    uint32_t interPattern  = m_uiMBCBPCY & (~m_uiIntraPattern);
+    int32_t blk;
 
     VC1_NULL_PTR(pCodedBlock)
 
@@ -2666,14 +2666,14 @@ UMC::Status   WriteVSTSMB (   T*           pCodedBlock,
         if (interPattern & (1<<VC_ENC_PATTERN_POS(blk))) break;
     }
 
-    m_uiFirstCodedBlock    = (Ipp8u)blk;
+    m_uiFirstCodedBlock    = (uint8_t)blk;
     eTransformType MBtype  = m_tsType[blk];
 
 #ifdef VC1_ENC_DEBUG_ON
     pDebug->SetVTSType(m_tsType);
 #endif
 
-    Ipp8u          subPat  = ((m_nPairs[blk][0]>0)<<1) + (m_nPairs[blk][1]>0);
+    uint8_t          subPat  = ((m_nPairs[blk][0]>0)<<1) + (m_nPairs[blk][1]>0);
     subPat = (subPat>0)?subPat-1:subPat;
 
     err = pCodedBlock->PutBits(pTTMBVLC[m_bMBTSType][MBtype][2*subPat],pTTMBVLC[m_bMBTSType][MBtype][2*subPat+1] );
@@ -2682,44 +2682,44 @@ UMC::Status   WriteVSTSMB (   T*           pCodedBlock,
 };
  
 /*------------------------------------------------------------------------------------------*/
-inline UMC::Status  copyChromaBlockYV12 (Ipp8u*  pURow,  Ipp8u* pVRow,   Ipp32u UVRowStep, 
-                                         Ipp16s* pUBlock,Ipp16s* pVBlock,Ipp32u UVBlockStep,
-                                         Ipp32u  nPos)
+inline UMC::Status  copyChromaBlockYV12 (uint8_t*  pURow,  uint8_t* pVRow,   uint32_t UVRowStep, 
+                                         int16_t* pUBlock,int16_t* pVBlock,uint32_t UVBlockStep,
+                                         uint32_t  nPos)
 {
-    IppiSize roiSize = {8, 8};
+    mfxSize roiSize = {8, 8};
     _own_Copy8x8_16x16_8u16s(pURow + (nPos <<3), UVRowStep, pUBlock, UVBlockStep, roiSize);
     _own_Copy8x8_16x16_8u16s(pVRow + (nPos <<3), UVRowStep, pVBlock, UVBlockStep, roiSize);
 
     return UMC::UMC_OK;
 }
 
-inline UMC::Status  copyChromaBlockNV12 (Ipp8u*  pUVRow,  Ipp8u* /*pVRow*/,  Ipp32u UVRowStep, 
-                                        Ipp16s* pUBlock, Ipp16s* pVBlock,    Ipp32u UVBlockStep,
-                                        Ipp32u  nPos)
+inline UMC::Status  copyChromaBlockNV12 (uint8_t*  pUVRow,  uint8_t* /*pVRow*/,  uint32_t UVRowStep, 
+                                        int16_t* pUBlock, int16_t* pVBlock,    uint32_t UVBlockStep,
+                                        uint32_t  nPos)
 {
     pUVRow += (nPos << 4);
     for (int i=0; i<8; i++)
     {
-        Ipp16s* pU = pUBlock;
-        Ipp16s* pV = pVBlock;
-        Ipp8u* pPlane = pUVRow;
+        int16_t* pU = pUBlock;
+        int16_t* pV = pVBlock;
+        uint8_t* pPlane = pUVRow;
 
         for (int j = 0; j <8; j++)
         {
             *(pU ++) = *(pPlane ++);
             *(pV ++) = *(pPlane ++);
         }
-        pUBlock = (Ipp16s*)((Ipp8u*)pUBlock + UVBlockStep);
-        pVBlock = (Ipp16s*)((Ipp8u*)pVBlock + UVBlockStep);
+        pUBlock = (int16_t*)((uint8_t*)pUBlock + UVBlockStep);
+        pVBlock = (int16_t*)((uint8_t*)pVBlock + UVBlockStep);
         pUVRow +=  UVRowStep;
 
     }
     return UMC::UMC_OK;
 }
-inline UMC::Status  copyDiffChromaBlockYV12 (Ipp8u*  pURowS,  Ipp8u* pVRowS,   Ipp32u UVRowStepS, 
-                                            Ipp8u*   pURowR,  Ipp8u* pVRowR,   Ipp32u UVRowStepR, 
-                                            Ipp16s*  pUBlock,Ipp16s* pVBlock,  Ipp32u UVBlockStep,
-                                            Ipp32u  nPosS, Ipp32u nPosR)
+inline UMC::Status  copyDiffChromaBlockYV12 (uint8_t*  pURowS,  uint8_t* pVRowS,   uint32_t UVRowStepS, 
+                                            uint8_t*   pURowR,  uint8_t* pVRowR,   uint32_t UVRowStepR, 
+                                            int16_t*  pUBlock,int16_t* pVBlock,  uint32_t UVBlockStep,
+                                            uint32_t  nPosS, uint32_t nPosR)
 {
     
     _own_ippiGetDiff8x8_8u16s_C1  ( pURowS + (nPosS <<3), UVRowStepS, pURowR + (nPosR<<3), UVRowStepR,
@@ -2729,39 +2729,39 @@ inline UMC::Status  copyDiffChromaBlockYV12 (Ipp8u*  pURowS,  Ipp8u* pVRowS,   I
 
     return UMC::UMC_OK;
 }
-inline UMC::Status  copyDiffChromaBlockNV12 (Ipp8u*   pUVRowS,   Ipp8u* /*pVRowS*/,    Ipp32u UVRowStepS, 
-                                             Ipp8u*   pUVRowR,   Ipp8u* /*pVRowR*/,    Ipp32u UVRowStepR, 
-                                             Ipp16s*  pUBlock,   Ipp16s* pVBlock,      Ipp32u UVBlockStep,
-                                             Ipp32u  nPosS, Ipp32u nPosR)
+inline UMC::Status  copyDiffChromaBlockNV12 (uint8_t*   pUVRowS,   uint8_t* /*pVRowS*/,    uint32_t UVRowStepS, 
+                                             uint8_t*   pUVRowR,   uint8_t* /*pVRowR*/,    uint32_t UVRowStepR, 
+                                             int16_t*  pUBlock,   int16_t* pVBlock,      uint32_t UVBlockStep,
+                                             uint32_t  nPosS, uint32_t nPosR)
 {
     pUVRowS += (nPosS << 4);
     pUVRowR += (nPosR << 4);
 
     for (int i=0; i<8; i++)
     {
-        Ipp16s* pU     = pUBlock;
-        Ipp16s* pV     = pVBlock;
-        Ipp8u* pPlaneS = pUVRowS;
-        Ipp8u* pPlaneR = pUVRowR;
+        int16_t* pU     = pUBlock;
+        int16_t* pV     = pVBlock;
+        uint8_t* pPlaneS = pUVRowS;
+        uint8_t* pPlaneR = pUVRowR;
 
         for (int j = 0; j <8; j++)
         {
             *(pU ++) = *(pPlaneS ++) - *(pPlaneR ++);
             *(pV ++) = *(pPlaneS ++) - *(pPlaneR ++);
         }
-        pUBlock = (Ipp16s*)((Ipp8u*)pUBlock + UVBlockStep);
-        pVBlock = (Ipp16s*)((Ipp8u*)pVBlock + UVBlockStep);
+        pUBlock = (int16_t*)((uint8_t*)pUBlock + UVBlockStep);
+        pVBlock = (int16_t*)((uint8_t*)pVBlock + UVBlockStep);
         pUVRowS +=  UVRowStepS;
         pUVRowR +=  UVRowStepR;
 
     }
     return UMC::UMC_OK;
 }
-inline UMC::Status  copyBDiffChromaBlockYV12 (Ipp8u*   pURowS,  Ipp8u* pVRowS,   Ipp32u UVRowStepS, 
-                                              Ipp8u*   pURowF,  Ipp8u* pVRowF,   Ipp32u UVRowStepF, 
-                                              Ipp8u*   pURowB,  Ipp8u* pVRowB,   Ipp32u UVRowStepB,  
-                                              Ipp16s*  pUBlock,Ipp16s* pVBlock,  Ipp32u UVBlockStep,
-                                              Ipp32u  nPosS, Ipp32u nPosFB)
+inline UMC::Status  copyBDiffChromaBlockYV12 (uint8_t*   pURowS,  uint8_t* pVRowS,   uint32_t UVRowStepS, 
+                                              uint8_t*   pURowF,  uint8_t* pVRowF,   uint32_t UVRowStepF, 
+                                              uint8_t*   pURowB,  uint8_t* pVRowB,   uint32_t UVRowStepB,  
+                                              int16_t*  pUBlock,int16_t* pVBlock,  uint32_t UVBlockStep,
+                                              uint32_t  nPosS, uint32_t nPosFB)
 {
 
     ippiGetDiff8x8B_8u16s_C1  (pURowS  + (nPosS <<3), UVRowStepS,   pURowF  + (nPosFB <<3),   UVRowStepF, 0,
@@ -2774,11 +2774,11 @@ inline UMC::Status  copyBDiffChromaBlockYV12 (Ipp8u*   pURowS,  Ipp8u* pVRowS,  
 
     return UMC::UMC_OK;
 }
-inline UMC::Status  copyBDiffChromaBlockNV12 (Ipp8u*   pUVRowS,   Ipp8u* /*pVRowS*/,    Ipp32u UVRowStepS, 
-                                              Ipp8u*   pUVRowF,   Ipp8u* /*pVRowF*/,    Ipp32u UVRowStepF,
-                                              Ipp8u*   pUVRowB,   Ipp8u* /*pVRowB*/,    Ipp32u UVRowStepB ,
-                                              Ipp16s*  pUBlock,   Ipp16s* pVBlock,      Ipp32u UVBlockStep,
-                                              Ipp32u  nPosS, Ipp32u nPosFB)
+inline UMC::Status  copyBDiffChromaBlockNV12 (uint8_t*   pUVRowS,   uint8_t* /*pVRowS*/,    uint32_t UVRowStepS, 
+                                              uint8_t*   pUVRowF,   uint8_t* /*pVRowF*/,    uint32_t UVRowStepF,
+                                              uint8_t*   pUVRowB,   uint8_t* /*pVRowB*/,    uint32_t UVRowStepB ,
+                                              int16_t*  pUBlock,   int16_t* pVBlock,      uint32_t UVBlockStep,
+                                              uint32_t  nPosS, uint32_t nPosFB)
 {
     pUVRowS += (nPosS  << 4);
     pUVRowF += (nPosFB << 4);
@@ -2786,19 +2786,19 @@ inline UMC::Status  copyBDiffChromaBlockNV12 (Ipp8u*   pUVRowS,   Ipp8u* /*pVRow
 
     for (int i=0; i<8; i++)
     {
-        Ipp16s* pU     = pUBlock;
-        Ipp16s* pV     = pVBlock;
-        Ipp8u* pPlaneS = pUVRowS;
-        Ipp8u* pPlaneF = pUVRowF;
-        Ipp8u* pPlaneB = pUVRowB;
+        int16_t* pU     = pUBlock;
+        int16_t* pV     = pVBlock;
+        uint8_t* pPlaneS = pUVRowS;
+        uint8_t* pPlaneF = pUVRowF;
+        uint8_t* pPlaneB = pUVRowB;
 
         for (int j = 0; j <8; j++)
         {
             *(pU ++) = *(pPlaneS ++) - ((*(pPlaneF ++) + *(pPlaneB ++) + 1)>>1);
             *(pV ++) = *(pPlaneS ++) - ((*(pPlaneF ++) + *(pPlaneB ++) + 1)>>1);
         }
-        pUBlock = (Ipp16s*)((Ipp8u*)pUBlock + UVBlockStep);
-        pVBlock = (Ipp16s*)((Ipp8u*)pVBlock + UVBlockStep);
+        pUBlock = (int16_t*)((uint8_t*)pUBlock + UVBlockStep);
+        pVBlock = (int16_t*)((uint8_t*)pVBlock + UVBlockStep);
         pUVRowS +=  UVRowStepS;
         pUVRowF +=  UVRowStepF;
         pUVRowB +=  UVRowStepB;
@@ -2806,97 +2806,97 @@ inline UMC::Status  copyBDiffChromaBlockNV12 (Ipp8u*   pUVRowS,   Ipp8u* /*pVRow
     }
     return UMC::UMC_OK;
 }
-inline UMC::Status  pasteChromaBlockYV12 (Ipp8u*  pURow,  Ipp8u* pVRow,   Ipp32u UVRowStep, 
-                                         Ipp16s* pUBlock,Ipp16s* pVBlock,Ipp32u UVBlockStep,
-                                         Ipp32u  nPos)
+inline UMC::Status  pasteChromaBlockYV12 (uint8_t*  pURow,  uint8_t* pVRow,   uint32_t UVRowStep, 
+                                         int16_t* pUBlock,int16_t* pVBlock,uint32_t UVBlockStep,
+                                         uint32_t  nPos)
 {
-    IppiSize roiSize = {8, 8};
+    mfxSize roiSize = {8, 8};
     _own_ippiConvert_16s8u_C1R(pUBlock, UVBlockStep,pURow + (nPos <<3), UVRowStep,roiSize);
     _own_ippiConvert_16s8u_C1R(pVBlock, UVBlockStep,pVRow + (nPos <<3), UVRowStep,roiSize);
     return UMC::UMC_OK;
 }
-inline UMC::Status  pasteChromaBlockNV12 (Ipp8u*  pUVRow,  Ipp8u* /*pVRow*/,   Ipp32u UVRowStep, 
-                                          Ipp16s* pUBlock, Ipp16s* pVBlock,    Ipp32u UVBlockStep,
-                                          Ipp32u  nPos)
+inline UMC::Status  pasteChromaBlockNV12 (uint8_t*  pUVRow,  uint8_t* /*pVRow*/,   uint32_t UVRowStep, 
+                                          int16_t* pUBlock, int16_t* pVBlock,    uint32_t UVBlockStep,
+                                          uint32_t  nPos)
 {
     pUVRow += (nPos << 4);
     for (int i=0; i<8; i++)
     {
-        Ipp16s* pU = pUBlock;
-        Ipp16s* pV = pVBlock;
-        Ipp8u* pPlane = pUVRow;
+        int16_t* pU = pUBlock;
+        int16_t* pV = pVBlock;
+        uint8_t* pPlane = pUVRow;
 
         for (int j = 0; j <8; j++)
         {
-            Ipp16s U = *(pU ++);
-            Ipp16s V = *(pV ++);
+            int16_t U = *(pU ++);
+            int16_t V = *(pV ++);
 
             U = (U < 0)  ? 0   : U;
             U = (U > 255)? 255 : U;
             V = (V < 0)  ? 0   : V;
             V = (V >255) ? 255 : V;
 
-            *(pPlane ++) = (Ipp8u)U;
-            *(pPlane ++) = (Ipp8u)V;
+            *(pPlane ++) = (uint8_t)U;
+            *(pPlane ++) = (uint8_t)V;
         }
-        pUBlock = (Ipp16s*)((Ipp8u*)pUBlock + UVBlockStep);
-        pVBlock = (Ipp16s*)((Ipp8u*)pVBlock + UVBlockStep);
+        pUBlock = (int16_t*)((uint8_t*)pUBlock + UVBlockStep);
+        pVBlock = (int16_t*)((uint8_t*)pVBlock + UVBlockStep);
         pUVRow +=  UVRowStep;
 
     }
     return UMC::UMC_OK;
 }
-inline UMC::Status  pasteSumChromaBlockYV12 (Ipp8u*  pURowRef,  Ipp8u* pVRowRef,   Ipp32u UVRowStepRef, 
-                                             Ipp8u*  pURowDst,  Ipp8u* pVRowDst,   Ipp32u UVRowStepDst,
-                                             Ipp16s* pUBlock,   Ipp16s* pVBlock,   Ipp32u UVBlockStep,
-                                             Ipp32u  nPosRef,   Ipp32u  nPosDst)
+inline UMC::Status  pasteSumChromaBlockYV12 (uint8_t*  pURowRef,  uint8_t* pVRowRef,   uint32_t UVRowStepRef, 
+                                             uint8_t*  pURowDst,  uint8_t* pVRowDst,   uint32_t UVRowStepDst,
+                                             int16_t* pUBlock,   int16_t* pVBlock,   uint32_t UVBlockStep,
+                                             uint32_t  nPosRef,   uint32_t  nPosDst)
 {
     _own_Add8x8_8u16s(pURowRef + (nPosRef <<3), UVRowStepRef,pUBlock,UVBlockStep, pURowDst + (nPosDst <<3), UVRowStepDst, 0, 0);
     _own_Add8x8_8u16s(pVRowRef + (nPosRef <<3), UVRowStepRef,pVBlock,UVBlockStep, pVRowDst + (nPosDst <<3), UVRowStepDst, 0, 0);
 
    return UMC::UMC_OK;
 }
-inline UMC::Status  pasteSumChromaBlockNV12 (Ipp8u*  pUVRowRef,  Ipp8u* /*pVRowRef*/,   Ipp32u UVRowStepRef, 
-                                             Ipp8u*  pUVRowDst,  Ipp8u* /*pVRowDst*/,   Ipp32u UVRowStepDst,
-                                             Ipp16s* pUBlock,   Ipp16s* pVBlock,   Ipp32u UVBlockStep,
-                                             Ipp32u  nPosRef,   Ipp32u  nPosDst)
+inline UMC::Status  pasteSumChromaBlockNV12 (uint8_t*  pUVRowRef,  uint8_t* /*pVRowRef*/,   uint32_t UVRowStepRef, 
+                                             uint8_t*  pUVRowDst,  uint8_t* /*pVRowDst*/,   uint32_t UVRowStepDst,
+                                             int16_t* pUBlock,   int16_t* pVBlock,   uint32_t UVBlockStep,
+                                             uint32_t  nPosRef,   uint32_t  nPosDst)
 {
     pUVRowDst += (nPosDst << 4);
     pUVRowRef += (nPosRef << 4);
 
     for (int i=0; i<8; i++)
     {
-        Ipp16s* pU = pUBlock;
-        Ipp16s* pV = pVBlock;
-        Ipp8u* pPlane    = pUVRowDst;
-        Ipp8u* pPlaneRef = pUVRowRef;
+        int16_t* pU = pUBlock;
+        int16_t* pV = pVBlock;
+        uint8_t* pPlane    = pUVRowDst;
+        uint8_t* pPlaneRef = pUVRowRef;
 
 
         for (int j = 0; j <8; j++)
         {
-            Ipp16s U = *(pU ++) + *(pPlaneRef++);
-            Ipp16s V = *(pV ++) + *(pPlaneRef++);
+            int16_t U = *(pU ++) + *(pPlaneRef++);
+            int16_t V = *(pV ++) + *(pPlaneRef++);
 
             U = (U < 0)  ? 0   : U;
             U = (U > 255)? 255 : U;
             V = (V < 0)  ? 0   : V;
             V = (V >255) ? 255 : V;
 
-            *(pPlane ++) = (Ipp8u)U;
-            *(pPlane ++) = (Ipp8u)V;
+            *(pPlane ++) = (uint8_t)U;
+            *(pPlane ++) = (uint8_t)V;
         }
-        pUBlock = (Ipp16s*)((Ipp8u*)pUBlock + UVBlockStep);
-        pVBlock = (Ipp16s*)((Ipp8u*)pVBlock + UVBlockStep);
+        pUBlock = (int16_t*)((uint8_t*)pUBlock + UVBlockStep);
+        pVBlock = (int16_t*)((uint8_t*)pVBlock + UVBlockStep);
         pUVRowDst +=  UVRowStepDst;
         pUVRowRef +=  UVRowStepRef;
     }
     return UMC::UMC_OK;
 }
-inline UMC::Status  pasteBSumChromaBlockYV12 (Ipp8u*  pURowRefF,  Ipp8u* pVRowRefF, Ipp32u UVRowStepRefF,
-                                               Ipp8u*  pURowRefB,  Ipp8u* pVRowRefB, Ipp32u UVRowStepRefB, 
-                                               Ipp8u*  pURowDst,   Ipp8u* pVRowDst,   Ipp32u UVRowStepDst,
-                                               Ipp16s* pUBlock,    Ipp16s* pVBlock,   Ipp32u UVBlockStep,
-                                               Ipp32u  nPosRef,    Ipp32u  nPosDst)
+inline UMC::Status  pasteBSumChromaBlockYV12 (uint8_t*  pURowRefF,  uint8_t* pVRowRefF, uint32_t UVRowStepRefF,
+                                               uint8_t*  pURowRefB,  uint8_t* pVRowRefB, uint32_t UVRowStepRefB, 
+                                               uint8_t*  pURowDst,   uint8_t* pVRowDst,   uint32_t UVRowStepDst,
+                                               int16_t* pUBlock,    int16_t* pVBlock,   uint32_t UVBlockStep,
+                                               uint32_t  nPosRef,    uint32_t  nPosDst)
 {
     ippiMC8x8B_8u_C1     (  pURowRefF + (nPosRef <<3),UVRowStepRefF, 0,
                             pURowRefB + (nPosRef <<3),UVRowStepRefB, 0,
@@ -2910,11 +2910,11 @@ inline UMC::Status  pasteBSumChromaBlockYV12 (Ipp8u*  pURowRefF,  Ipp8u* pVRowRe
 
     return UMC::UMC_OK;
 }
-inline UMC::Status  pasteBSumChromaBlockNV12 (Ipp8u*  pUVRowRefF, Ipp8u* /*pVRowRefF*/,   Ipp32u UVRowStepRefF, 
-                                              Ipp8u*  pUVRowRefB, Ipp8u* /*pVRowRefF*/,   Ipp32u UVRowStepRefB, 
-                                              Ipp8u*  pUVRowDst,  Ipp8u* /*pVRowDst*/,   Ipp32u UVRowStepDst,
-                                              Ipp16s* pUBlock,    Ipp16s* pVBlock,   Ipp32u UVBlockStep,
-                                              Ipp32u  nPosRef,    Ipp32u  nPosDst)
+inline UMC::Status  pasteBSumChromaBlockNV12 (uint8_t*  pUVRowRefF, uint8_t* /*pVRowRefF*/,   uint32_t UVRowStepRefF, 
+                                              uint8_t*  pUVRowRefB, uint8_t* /*pVRowRefF*/,   uint32_t UVRowStepRefB, 
+                                              uint8_t*  pUVRowDst,  uint8_t* /*pVRowDst*/,   uint32_t UVRowStepDst,
+                                              int16_t* pUBlock,    int16_t* pVBlock,   uint32_t UVBlockStep,
+                                              uint32_t  nPosRef,    uint32_t  nPosDst)
 {
     pUVRowDst += (nPosDst << 4);
     pUVRowRefF += (nPosRef << 4);
@@ -2922,28 +2922,28 @@ inline UMC::Status  pasteBSumChromaBlockNV12 (Ipp8u*  pUVRowRefF, Ipp8u* /*pVRow
 
     for (int i=0; i<8; i++)
     {
-        Ipp16s* pU = pUBlock;
-        Ipp16s* pV = pVBlock;
-        Ipp8u* pPlane    = pUVRowDst;
-        Ipp8u* pPlaneRefF = pUVRowRefF;
-        Ipp8u* pPlaneRefB = pUVRowRefB;
+        int16_t* pU = pUBlock;
+        int16_t* pV = pVBlock;
+        uint8_t* pPlane    = pUVRowDst;
+        uint8_t* pPlaneRefF = pUVRowRefF;
+        uint8_t* pPlaneRefB = pUVRowRefB;
 
 
         for (int j = 0; j <8; j++)
         {
-            Ipp16s U = *(pU ++) + ((*(pPlaneRefF++) + *(pPlaneRefB++) + 1)>>1);
-            Ipp16s V = *(pV ++) + ((*(pPlaneRefF++) + *(pPlaneRefB++) + 1)>>1);
+            int16_t U = *(pU ++) + ((*(pPlaneRefF++) + *(pPlaneRefB++) + 1)>>1);
+            int16_t V = *(pV ++) + ((*(pPlaneRefF++) + *(pPlaneRefB++) + 1)>>1);
 
             U = (U < 0)  ? 0   : U;
             U = (U > 255)? 255 : U;
             V = (V < 0)  ? 0   : V;
             V = (V >255) ? 255 : V;
 
-            *(pPlane ++) = (Ipp8u)U;
-            *(pPlane ++) = (Ipp8u)V;
+            *(pPlane ++) = (uint8_t)U;
+            *(pPlane ++) = (uint8_t)V;
         }
-        pUBlock = (Ipp16s*)((Ipp8u*)pUBlock + UVBlockStep);
-        pVBlock = (Ipp16s*)((Ipp8u*)pVBlock + UVBlockStep);
+        pUBlock = (int16_t*)((uint8_t*)pUBlock + UVBlockStep);
+        pVBlock = (int16_t*)((uint8_t*)pVBlock + UVBlockStep);
         pUVRowDst +=  UVRowStepDst;
         pUVRowRefF +=  UVRowStepRefF;
         pUVRowRefB +=  UVRowStepRefB;
@@ -2951,21 +2951,21 @@ inline UMC::Status  pasteBSumChromaBlockNV12 (Ipp8u*  pUVRowRefF, Ipp8u* /*pVRow
     }
     return UMC::UMC_OK;
 }
-inline UMC::Status  pasteSumSkipChromaBlockYV12 (   Ipp8u*  pURowRef,  Ipp8u* pVRowRef,   Ipp32u UVRowStepRef, 
-                                                    Ipp8u*  pURowDst,  Ipp8u* pVRowDst,   Ipp32u UVRowStepDst,                                             
-                                                    Ipp32u  nPosRef,   Ipp32u  nPosDst)
+inline UMC::Status  pasteSumSkipChromaBlockYV12 (   uint8_t*  pURowRef,  uint8_t* pVRowRef,   uint32_t UVRowStepRef, 
+                                                    uint8_t*  pURowDst,  uint8_t* pVRowDst,   uint32_t UVRowStepDst,                                             
+                                                    uint32_t  nPosRef,   uint32_t  nPosDst)
 {
-    IppiSize roiSize = {8, 8};
+    mfxSize roiSize = {8, 8};
     ippiCopy_8u_C1R(pURowRef + (nPosRef <<3), UVRowStepRef, pURowDst + (nPosDst <<3), UVRowStepDst,roiSize);
     ippiCopy_8u_C1R(pVRowRef + (nPosRef <<3), UVRowStepRef, pVRowDst + (nPosDst <<3), UVRowStepDst,roiSize);
 
     return UMC::UMC_OK;
 }
-inline UMC::Status  pasteSumSkipChromaBlockNV12 (   Ipp8u*  pUVRowRef,  Ipp8u* /*pVRowRef*/,   Ipp32u UVRowStepRef, 
-                                                    Ipp8u*  pUVRowDst,  Ipp8u* /*pVRowDst*/,   Ipp32u UVRowStepDst,
-                                                    Ipp32u  nPosRef,   Ipp32u  nPosDst)
+inline UMC::Status  pasteSumSkipChromaBlockNV12 (   uint8_t*  pUVRowRef,  uint8_t* /*pVRowRef*/,   uint32_t UVRowStepRef, 
+                                                    uint8_t*  pUVRowDst,  uint8_t* /*pVRowDst*/,   uint32_t UVRowStepDst,
+                                                    uint32_t  nPosRef,   uint32_t  nPosDst)
 {
-    IppiSize roiSize = {16, 8};
+    mfxSize roiSize = {16, 8};
 
     pUVRowDst += (nPosDst << 4);
     pUVRowRef += (nPosRef << 4);
@@ -2974,12 +2974,12 @@ inline UMC::Status  pasteSumSkipChromaBlockNV12 (   Ipp8u*  pUVRowRef,  Ipp8u* /
 
     return UMC::UMC_OK;
 }
-inline UMC::Status  pasteBSumSkipChromaBlockYV12 (  Ipp8u*  pURowRefF,  Ipp8u* pVRowRefF,   Ipp32u UVRowStepRefF, 
-                                                    Ipp8u*  pURowRefB,  Ipp8u* pVRowRefB,   Ipp32u UVRowStepRefB,
-                                                    Ipp8u*  pURowDst,   Ipp8u* pVRowDst,    Ipp32u UVRowStepDst,                                             
-                                                    Ipp32u  nPosRef,   Ipp32u  nPosDst)
+inline UMC::Status  pasteBSumSkipChromaBlockYV12 (  uint8_t*  pURowRefF,  uint8_t* pVRowRefF,   uint32_t UVRowStepRefF, 
+                                                    uint8_t*  pURowRefB,  uint8_t* pVRowRefB,   uint32_t UVRowStepRefB,
+                                                    uint8_t*  pURowDst,   uint8_t* pVRowDst,    uint32_t UVRowStepDst,                                             
+                                                    uint32_t  nPosRef,   uint32_t  nPosDst)
 {
-    IppiSize roiSize = {8, 8};
+    mfxSize roiSize = {8, 8};
     ippiAverage8x8_8u_C1R(  pURowRefF + (nPosRef <<3), UVRowStepRefF,
                             pURowRefB + (nPosRef <<3), UVRowStepRefB,
                             pURowDst  + (nPosDst <<3), UVRowStepDst);
@@ -2989,10 +2989,10 @@ inline UMC::Status  pasteBSumSkipChromaBlockYV12 (  Ipp8u*  pURowRefF,  Ipp8u* p
  
     return UMC::UMC_OK;
 }
-inline UMC::Status  pasteBSumSkipChromaBlockNV12 (   Ipp8u*  pUVRowRefF,  Ipp8u* /*pVRowRefF*/,   Ipp32u UVRowStepRefF, 
-                                                     Ipp8u*  pUVRowRefB,  Ipp8u* /*pVRowRefB*/,   Ipp32u UVRowStepRefB, 
-                                                     Ipp8u*  pUVRowDst,   Ipp8u* /*pVRowDst*/,   Ipp32u UVRowStepDst,
-                                                     Ipp32u  nPosRef,     Ipp32u  nPosDst)
+inline UMC::Status  pasteBSumSkipChromaBlockNV12 (   uint8_t*  pUVRowRefF,  uint8_t* /*pVRowRefF*/,   uint32_t UVRowStepRefF, 
+                                                     uint8_t*  pUVRowRefB,  uint8_t* /*pVRowRefB*/,   uint32_t UVRowStepRefB, 
+                                                     uint8_t*  pUVRowDst,   uint8_t* /*pVRowDst*/,   uint32_t UVRowStepDst,
+                                                     uint32_t  nPosRef,     uint32_t  nPosDst)
 {
      //ippiAverage16x8_8u_C1R
 
@@ -3002,9 +3002,9 @@ inline UMC::Status  pasteBSumSkipChromaBlockNV12 (   Ipp8u*  pUVRowRefF,  Ipp8u*
 
     for (int i=0; i<8; i++)
     {
-        Ipp8u* pPlane    = pUVRowDst;
-        Ipp8u* pPlaneRefF = pUVRowRefF;
-        Ipp8u* pPlaneRefB = pUVRowRefB;
+        uint8_t* pPlane    = pUVRowDst;
+        uint8_t* pPlaneRefF = pUVRowRefF;
+        uint8_t* pPlaneRefB = pUVRowRefB;
 
         for (int j = 0; j < 16; j++)
         {
@@ -3023,45 +3023,45 @@ class VC1EncoderMBData
 {
 public:
 
-    Ipp16s*                     m_pBlock[VC1_ENC_NUMBER_OF_BLOCKS];
-    Ipp32u                      m_uiBlockStep[VC1_ENC_NUMBER_OF_BLOCKS];
+    int16_t*                     m_pBlock[VC1_ENC_NUMBER_OF_BLOCKS];
+    uint32_t                      m_uiBlockStep[VC1_ENC_NUMBER_OF_BLOCKS];
 
 public:
 
-   UMC::Status InitBlocks(Ipp16s* pBuffer);
+   UMC::Status InitBlocks(int16_t* pBuffer);
    void Reset()
    {
        assert(m_pBlock[0]!=0);
-       memset(m_pBlock[0],0,VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS*sizeof(Ipp16s));
+       memset(m_pBlock[0],0,VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS*sizeof(int16_t));
    }
 
 
    VC1EncoderMBData()
    {
-        memset(m_pBlock,        0,sizeof(Ipp16s*)*VC1_ENC_NUMBER_OF_BLOCKS);
-        memset(m_uiBlockStep,   0,sizeof(Ipp32u) *VC1_ENC_NUMBER_OF_BLOCKS);
+        memset(m_pBlock,        0,sizeof(int16_t*)*VC1_ENC_NUMBER_OF_BLOCKS);
+        memset(m_uiBlockStep,   0,sizeof(uint32_t) *VC1_ENC_NUMBER_OF_BLOCKS);
 
    }
    
-   virtual UMC::Status CopyMBProg(Ipp8u* pY, Ipp32u stepY, Ipp8u* pU, Ipp8u* pV, Ipp32u stepUV, Ipp32u nPos)
+   virtual UMC::Status CopyMBProg(uint8_t* pY, uint32_t stepY, uint8_t* pU, uint8_t* pV, uint32_t stepUV, uint32_t nPos)
    {
        if (!m_pBlock[0])
            return UMC::UMC_ERR_NOT_INITIALIZED;
 
 
         /* luma block */
-        IppiSize roiSize = {16, 16};
+        mfxSize roiSize = {16, 16};
        _own_Copy8x8_16x16_8u16s(pY + (nPos <<4), stepY, m_pBlock[0], m_uiBlockStep[0], roiSize); 
         /* chroma block*/
        copyChromaBlockYV12(pU,pV,stepUV,m_pBlock[4],m_pBlock[5],m_uiBlockStep[4],nPos);       
 
        return UMC::UMC_OK;
    }
-   virtual UMC::Status CopyDiffMBProg(  Ipp8u*   pYS,  Ipp32u stepYS, 
-                                        Ipp8u*   pUS,  Ipp8u* pVS,   Ipp32u stepUVS, 
-                                        Ipp8u*   pYR,  Ipp32u stepYR,
-                                        Ipp8u*   pUR,  Ipp8u* pVR,   Ipp32u stepUVR,                                 
-                                        Ipp32u  nPosS, Ipp32u nPosR)
+   virtual UMC::Status CopyDiffMBProg(  uint8_t*   pYS,  uint32_t stepYS, 
+                                        uint8_t*   pUS,  uint8_t* pVS,   uint32_t stepUVS, 
+                                        uint8_t*   pYR,  uint32_t stepYR,
+                                        uint8_t*   pUR,  uint8_t* pVR,   uint32_t stepUVR,                                 
+                                        uint32_t  nPosS, uint32_t nPosR)
    {
        if (!m_pBlock[0])
            return UMC::UMC_ERR_NOT_INITIALIZED;
@@ -3076,13 +3076,13 @@ public:
 
        return UMC::UMC_OK;
    }
-   virtual UMC::Status CopyBDiffMBProg( Ipp8u*   pYS,  Ipp32u stepYS, 
-                                        Ipp8u*   pUS,  Ipp8u* pVS,   Ipp32u stepUVS, 
-                                        Ipp8u*   pYF,  Ipp32u stepYF,
-                                        Ipp8u*   pUF,  Ipp8u* pVF,   Ipp32u stepUVF,
-                                        Ipp8u*   pYB,  Ipp32u stepYB,
-                                        Ipp8u*   pUB,  Ipp8u* pVB,   Ipp32u stepUVB,
-                                        Ipp32u  nPosS, Ipp32u nPosFB)
+   virtual UMC::Status CopyBDiffMBProg( uint8_t*   pYS,  uint32_t stepYS, 
+                                        uint8_t*   pUS,  uint8_t* pVS,   uint32_t stepUVS, 
+                                        uint8_t*   pYF,  uint32_t stepYF,
+                                        uint8_t*   pUF,  uint8_t* pVF,   uint32_t stepUVF,
+                                        uint8_t*   pYB,  uint32_t stepYB,
+                                        uint8_t*   pUB,  uint8_t* pVB,   uint32_t stepUVB,
+                                        uint32_t  nPosS, uint32_t nPosFB)
 
    {
        if (!m_pBlock[0])
@@ -3094,13 +3094,13 @@ public:
 
        return UMC::UMC_OK;
    }
-   virtual UMC::Status PasteMBProg(Ipp8u* pY, Ipp32u stepY, Ipp8u* pU, Ipp8u* pV, Ipp32u stepUV, Ipp32u nPos)
+   virtual UMC::Status PasteMBProg(uint8_t* pY, uint32_t stepY, uint8_t* pU, uint8_t* pV, uint32_t stepUV, uint32_t nPos)
    {
        if (!m_pBlock[0])
            return UMC::UMC_ERR_NOT_INITIALIZED;
  
        /* luma block */
-       IppiSize roiSize = {16, 16};
+       mfxSize roiSize = {16, 16};
        _own_ippiConvert_16s8u_C1R(m_pBlock[0], m_uiBlockStep[0],pY + (nPos <<4), stepY,roiSize);
        /* chroma block */
        pasteChromaBlockYV12(pU,pV,stepUV,m_pBlock[4],m_pBlock[5],m_uiBlockStep[4],nPos);       
@@ -3108,11 +3108,11 @@ public:
        return UMC::UMC_OK;
    }
 
-   virtual UMC::Status PasteSumMBProg(  Ipp8u* pYRef, Ipp32u stepYRef, 
-                                        Ipp8u* pURef, Ipp8u* pVRef, Ipp32u stepUVRef, 
-                                        Ipp8u* pYDst, Ipp32u stepYDst, 
-                                        Ipp8u* pUDst, Ipp8u* pVDst, Ipp32u stepUVDst,                             
-                                        Ipp32u nPosRef, Ipp32u  nPosDst)
+   virtual UMC::Status PasteSumMBProg(  uint8_t* pYRef, uint32_t stepYRef, 
+                                        uint8_t* pURef, uint8_t* pVRef, uint32_t stepUVRef, 
+                                        uint8_t* pYDst, uint32_t stepYDst, 
+                                        uint8_t* pUDst, uint8_t* pVDst, uint32_t stepUVDst,                             
+                                        uint32_t nPosRef, uint32_t  nPosDst)
    {
        if (!m_pBlock[0])
            return UMC::UMC_ERR_NOT_INITIALIZED;
@@ -3126,13 +3126,13 @@ public:
 
        return UMC::UMC_OK;
    }
-   virtual UMC::Status PasteBSumMBProg( Ipp8u* pYRefF, Ipp32u stepYRefF, 
-                                        Ipp8u* pURefF, Ipp8u* pVRefF, Ipp32u stepUVRefF, 
-                                        Ipp8u* pYRefB, Ipp32u stepYRefB, 
-                                        Ipp8u* pURefB, Ipp8u* pVRefB, Ipp32u stepUVRefB, 
-                                        Ipp8u* pYDst, Ipp32u stepYDst, 
-                                        Ipp8u* pUDst, Ipp8u* pVDst, Ipp32u stepUVDst,                             
-                                        Ipp32u nPosRef, Ipp32u  nPosDst)
+   virtual UMC::Status PasteBSumMBProg( uint8_t* pYRefF, uint32_t stepYRefF, 
+                                        uint8_t* pURefF, uint8_t* pVRefF, uint32_t stepUVRefF, 
+                                        uint8_t* pYRefB, uint32_t stepYRefB, 
+                                        uint8_t* pURefB, uint8_t* pVRefB, uint32_t stepUVRefB, 
+                                        uint8_t* pYDst, uint32_t stepYDst, 
+                                        uint8_t* pUDst, uint8_t* pVDst, uint32_t stepUVDst,                             
+                                        uint32_t nPosRef, uint32_t  nPosDst)
    {
        if (!m_pBlock[0])
            return UMC::UMC_ERR_NOT_INITIALIZED;
@@ -3149,17 +3149,17 @@ public:
        return UMC::UMC_OK;
    }
 
-   virtual UMC::Status PasteSumSkipMBProg(  Ipp8u* pYRef, Ipp32u stepYRef, 
-                                            Ipp8u* pURef, Ipp8u* pVRef, Ipp32u stepUVRef, 
-                                            Ipp8u* pYDst, Ipp32u stepYDst, 
-                                            Ipp8u* pUDst, Ipp8u* pVDst, Ipp32u stepUVDst,                             
-                                            Ipp32u nPosRef, Ipp32u  nPosDst)
+   virtual UMC::Status PasteSumSkipMBProg(  uint8_t* pYRef, uint32_t stepYRef, 
+                                            uint8_t* pURef, uint8_t* pVRef, uint32_t stepUVRef, 
+                                            uint8_t* pYDst, uint32_t stepYDst, 
+                                            uint8_t* pUDst, uint8_t* pVDst, uint32_t stepUVDst,                             
+                                            uint32_t nPosRef, uint32_t  nPosDst)
    {
        if (!m_pBlock[0])
            return UMC::UMC_ERR_NOT_INITIALIZED;
 
        /* luma block */
-       IppiSize roiSize = {16, 16};
+       mfxSize roiSize = {16, 16};
        ippiCopy_8u_C1R(pYRef + (nPosRef <<4), stepYRef, pYDst + (nPosDst <<4) ,stepYDst,roiSize);
        
        /* chroma block */
@@ -3167,13 +3167,13 @@ public:
 
        return UMC::UMC_OK;
    }
-   virtual UMC::Status PasteBSumSkipMBProg( Ipp8u* pYRefF, Ipp32u stepYRefF, 
-                                            Ipp8u* pURefF, Ipp8u* pVRefF, Ipp32u stepUVRefF,
-                                            Ipp8u* pYRefB, Ipp32u stepYRefB, 
-                                            Ipp8u* pURefB, Ipp8u* pVRefB, Ipp32u stepUVRefB,
-                                            Ipp8u* pYDst, Ipp32u stepYDst, 
-                                            Ipp8u* pUDst, Ipp8u* pVDst, Ipp32u stepUVDst,                             
-                                            Ipp32u nPosRef, Ipp32u  nPosDst)
+   virtual UMC::Status PasteBSumSkipMBProg( uint8_t* pYRefF, uint32_t stepYRefF, 
+                                            uint8_t* pURefF, uint8_t* pVRefF, uint32_t stepUVRefF,
+                                            uint8_t* pYRefB, uint32_t stepYRefB, 
+                                            uint8_t* pURefB, uint8_t* pVRefB, uint32_t stepUVRefB,
+                                            uint8_t* pYDst, uint32_t stepYDst, 
+                                            uint8_t* pUDst, uint8_t* pVDst, uint32_t stepUVDst,                             
+                                            uint32_t nPosRef, uint32_t  nPosDst)
    {
        if (!m_pBlock[0])
            return UMC::UMC_ERR_NOT_INITIALIZED;
@@ -3188,7 +3188,7 @@ public:
        return UMC::UMC_OK;
    }
 
-   inline static bool IsCodedBlock(Ipp8u MBPattern, Ipp32s blk)
+   inline static bool IsCodedBlock(uint8_t MBPattern, int32_t blk)
    {
         return ((MBPattern &(1 << (5 - blk)))!=0);
    }
@@ -3198,25 +3198,25 @@ class VC1EncoderMBDataNV12: public VC1EncoderMBData
 {
 public:
 
-    virtual UMC::Status CopyMBProg(Ipp8u* pY, Ipp32u stepY, Ipp8u* pU, Ipp8u* pV, Ipp32u stepUV, Ipp32u nPos)
+    virtual UMC::Status CopyMBProg(uint8_t* pY, uint32_t stepY, uint8_t* pU, uint8_t* pV, uint32_t stepUV, uint32_t nPos)
     {
         if (!m_pBlock[0])
             return UMC::UMC_ERR_NOT_INITIALIZED;
 
 
         /* luma block */
-        IppiSize roiSize = {16, 16};
+        mfxSize roiSize = {16, 16};
         _own_Copy8x8_16x16_8u16s(pY + (nPos <<4), stepY, m_pBlock[0], m_uiBlockStep[0], roiSize); 
         /* chroma block*/
         copyChromaBlockNV12(pU,pV,stepUV,m_pBlock[4],m_pBlock[5],m_uiBlockStep[4],nPos);       
 
         return UMC::UMC_OK;
     }
-    virtual UMC::Status CopyDiffMBProg( Ipp8u*   pYS,  Ipp32u stepYS, 
-                                        Ipp8u*   pUS,  Ipp8u* pVS,   Ipp32u stepUVS, 
-                                        Ipp8u*   pYR,  Ipp32u stepYR,
-                                        Ipp8u*   pUR,  Ipp8u* pVR,   Ipp32u stepUVR,                                 
-                                        Ipp32u  nPosS, Ipp32u nPosR)
+    virtual UMC::Status CopyDiffMBProg( uint8_t*   pYS,  uint32_t stepYS, 
+                                        uint8_t*   pUS,  uint8_t* pVS,   uint32_t stepUVS, 
+                                        uint8_t*   pYR,  uint32_t stepYR,
+                                        uint8_t*   pUR,  uint8_t* pVR,   uint32_t stepUVR,                                 
+                                        uint32_t  nPosS, uint32_t nPosR)
     {
         if (!m_pBlock[0])
             return UMC::UMC_ERR_NOT_INITIALIZED;
@@ -3231,13 +3231,13 @@ public:
 
         return UMC::UMC_OK;
     }
-    virtual UMC::Status CopyBDiffMBProg(Ipp8u*   pYS,  Ipp32u stepYS, 
-                                        Ipp8u*   pUS,  Ipp8u* pVS,   Ipp32u stepUVS, 
-                                        Ipp8u*   pYF,  Ipp32u stepYF,
-                                        Ipp8u*   pUF,  Ipp8u* pVF,   Ipp32u stepUVF,
-                                        Ipp8u*   pYB,  Ipp32u stepYB,
-                                        Ipp8u*   pUB,  Ipp8u* pVB,   Ipp32u stepUVB,
-                                        Ipp32u  nPosS, Ipp32u nPosFB)
+    virtual UMC::Status CopyBDiffMBProg(uint8_t*   pYS,  uint32_t stepYS, 
+                                        uint8_t*   pUS,  uint8_t* pVS,   uint32_t stepUVS, 
+                                        uint8_t*   pYF,  uint32_t stepYF,
+                                        uint8_t*   pUF,  uint8_t* pVF,   uint32_t stepUVF,
+                                        uint8_t*   pYB,  uint32_t stepYB,
+                                        uint8_t*   pUB,  uint8_t* pVB,   uint32_t stepUVB,
+                                        uint32_t  nPosS, uint32_t nPosFB)
 
     {
         if (!m_pBlock[0])
@@ -3249,13 +3249,13 @@ public:
 
         return UMC::UMC_OK;
     }
-    virtual UMC::Status PasteMBProg(Ipp8u* pY, Ipp32u stepY, Ipp8u* pU, Ipp8u* pV, Ipp32u stepUV, Ipp32u nPos)
+    virtual UMC::Status PasteMBProg(uint8_t* pY, uint32_t stepY, uint8_t* pU, uint8_t* pV, uint32_t stepUV, uint32_t nPos)
     {
         if (!m_pBlock[0])
             return UMC::UMC_ERR_NOT_INITIALIZED;
 
         /* luma block */
-        IppiSize roiSize = {16, 16};
+        mfxSize roiSize = {16, 16};
         _own_ippiConvert_16s8u_C1R(m_pBlock[0], m_uiBlockStep[0],pY + (nPos <<4), stepY,roiSize);
         /* chroma block */
         pasteChromaBlockNV12(pU,pV,stepUV,m_pBlock[4],m_pBlock[5],m_uiBlockStep[4],nPos);       
@@ -3263,11 +3263,11 @@ public:
         return UMC::UMC_OK;
     }
 
-    virtual UMC::Status PasteSumMBProg( Ipp8u* pYRef, Ipp32u stepYRef, 
-                                        Ipp8u* pURef, Ipp8u* pVRef, Ipp32u stepUVRef, 
-                                        Ipp8u* pYDst, Ipp32u stepYDst, 
-                                        Ipp8u* pUDst, Ipp8u* pVDst, Ipp32u stepUVDst,                             
-                                        Ipp32u nPosRef, Ipp32u  nPosDst)
+    virtual UMC::Status PasteSumMBProg( uint8_t* pYRef, uint32_t stepYRef, 
+                                        uint8_t* pURef, uint8_t* pVRef, uint32_t stepUVRef, 
+                                        uint8_t* pYDst, uint32_t stepYDst, 
+                                        uint8_t* pUDst, uint8_t* pVDst, uint32_t stepUVDst,                             
+                                        uint32_t nPosRef, uint32_t  nPosDst)
     {
         if (!m_pBlock[0])
             return UMC::UMC_ERR_NOT_INITIALIZED;
@@ -3280,13 +3280,13 @@ public:
 
         return UMC::UMC_OK;
     }
-    virtual UMC::Status PasteBSumMBProg(Ipp8u* pYRefF, Ipp32u stepYRefF, 
-                                        Ipp8u* pURefF, Ipp8u* pVRefF, Ipp32u stepUVRefF, 
-                                        Ipp8u* pYRefB, Ipp32u stepYRefB, 
-                                        Ipp8u* pURefB, Ipp8u* pVRefB, Ipp32u stepUVRefB, 
-                                        Ipp8u* pYDst, Ipp32u stepYDst, 
-                                        Ipp8u* pUDst, Ipp8u* pVDst, Ipp32u stepUVDst,                             
-                                        Ipp32u nPosRef, Ipp32u  nPosDst)
+    virtual UMC::Status PasteBSumMBProg(uint8_t* pYRefF, uint32_t stepYRefF, 
+                                        uint8_t* pURefF, uint8_t* pVRefF, uint32_t stepUVRefF, 
+                                        uint8_t* pYRefB, uint32_t stepYRefB, 
+                                        uint8_t* pURefB, uint8_t* pVRefB, uint32_t stepUVRefB, 
+                                        uint8_t* pYDst, uint32_t stepYDst, 
+                                        uint8_t* pUDst, uint8_t* pVDst, uint32_t stepUVDst,                             
+                                        uint32_t nPosRef, uint32_t  nPosDst)
     {
         if (!m_pBlock[0])
             return UMC::UMC_ERR_NOT_INITIALIZED;
@@ -3303,17 +3303,17 @@ public:
         return UMC::UMC_OK;
     }
 
-    virtual UMC::Status PasteSumSkipMBProg( Ipp8u* pYRef, Ipp32u stepYRef, 
-                                            Ipp8u* pURef, Ipp8u* pVRef, Ipp32u stepUVRef, 
-                                            Ipp8u* pYDst, Ipp32u stepYDst, 
-                                            Ipp8u* pUDst, Ipp8u* pVDst, Ipp32u stepUVDst,                             
-                                            Ipp32u nPosRef, Ipp32u  nPosDst)
+    virtual UMC::Status PasteSumSkipMBProg( uint8_t* pYRef, uint32_t stepYRef, 
+                                            uint8_t* pURef, uint8_t* pVRef, uint32_t stepUVRef, 
+                                            uint8_t* pYDst, uint32_t stepYDst, 
+                                            uint8_t* pUDst, uint8_t* pVDst, uint32_t stepUVDst,                             
+                                            uint32_t nPosRef, uint32_t  nPosDst)
     {
         if (!m_pBlock[0])
             return UMC::UMC_ERR_NOT_INITIALIZED;
 
         /* luma block */
-        IppiSize roiSize = {16, 16};
+        mfxSize roiSize = {16, 16};
         ippiCopy_8u_C1R(pYRef + (nPosRef <<4), stepYRef, pYDst + (nPosDst <<4) ,stepYDst,roiSize);
 
         /* chroma block */
@@ -3321,13 +3321,13 @@ public:
 
         return UMC::UMC_OK;
     }
-    virtual UMC::Status PasteBSumSkipMBProg(    Ipp8u* pYRefF, Ipp32u stepYRefF, 
-                                                Ipp8u* pURefF, Ipp8u* pVRefF, Ipp32u stepUVRefF,
-                                                Ipp8u* pYRefB, Ipp32u stepYRefB, 
-                                                Ipp8u* pURefB, Ipp8u* pVRefB, Ipp32u stepUVRefB,
-                                                Ipp8u* pYDst, Ipp32u stepYDst, 
-                                                Ipp8u* pUDst, Ipp8u* pVDst, Ipp32u stepUVDst,                             
-                                                Ipp32u nPosRef, Ipp32u  nPosDst)
+    virtual UMC::Status PasteBSumSkipMBProg(    uint8_t* pYRefF, uint32_t stepYRefF, 
+                                                uint8_t* pURefF, uint8_t* pVRefF, uint32_t stepUVRefF,
+                                                uint8_t* pYRefB, uint32_t stepYRefB, 
+                                                uint8_t* pURefB, uint8_t* pVRefB, uint32_t stepUVRefB,
+                                                uint8_t* pYDst, uint32_t stepYDst, 
+                                                uint8_t* pUDst, uint8_t* pVDst, uint32_t stepUVDst,                             
+                                                uint32_t nPosRef, uint32_t  nPosDst)
     {
         if (!m_pBlock[0])
             return UMC::UMC_ERR_NOT_INITIALIZED;
@@ -3370,14 +3370,14 @@ class VC1EncoderMBInfo
 private:
 
     bool            m_bIntra;
-    Ipp8u           m_uiMBPattern;
+    uint8_t           m_uiMBPattern;
 
     //for P frames
     sCoordinate     m_MV [2][6];
-    Ipp8u           m_uiIntraPattern;
-    Ipp32u          m_uiBlocksPattern;
+    uint8_t           m_uiIntraPattern;
+    uint32_t          m_uiBlocksPattern;
     MBEdges         m_sMBEdges;
-    Ipp32u          m_uiVSTPattern;
+    uint32_t          m_uiVSTPattern;
 
     //for I frames, smoothing
     bool            m_uiOverlap;
@@ -3415,8 +3415,8 @@ public:
             m_sMBEdges.YExVer = m_sMBEdges.UExVer = m_sMBEdges.VExVer =  0xff;
         }
     }
-    inline void SetInternalBlockEdge(Ipp8u YFlagUp, Ipp8u YFlagBot, Ipp8u UFlagH, Ipp8u VFlagH,
-                                     Ipp8u YFlagL,  Ipp8u YFlagR,   Ipp8u UFlagV, Ipp8u VFlagV)
+    inline void SetInternalBlockEdge(uint8_t YFlagUp, uint8_t YFlagBot, uint8_t UFlagH, uint8_t VFlagH,
+                                     uint8_t YFlagL,  uint8_t YFlagR,   uint8_t UFlagV, uint8_t VFlagV)
     {
         m_sMBEdges.YAdUpp = YFlagUp  & 0x0F;
         m_sMBEdges.YAdBot = YFlagBot & 0x0F;
@@ -3429,93 +3429,93 @@ public:
         m_sMBEdges.VAdVer = VFlagV   & 0x0F;
 
     }
-    inline void SetExternalEdgeVer(Ipp8u YFlag, Ipp8u UFlag, Ipp8u VFlag)
+    inline void SetExternalEdgeVer(uint8_t YFlag, uint8_t UFlag, uint8_t VFlag)
     {
         m_sMBEdges.YExVer = YFlag & 0x0F;
         m_sMBEdges.UExVer = UFlag & 0x0F;
         m_sMBEdges.VExVer = VFlag & 0x0F;
     }
-    inline void SetExternalEdgeHor(Ipp8u YFlag, Ipp8u UFlag, Ipp8u VFlag)
+    inline void SetExternalEdgeHor(uint8_t YFlag, uint8_t UFlag, uint8_t VFlag)
     {
         m_sMBEdges.YExHor = YFlag & 0x0F;
         m_sMBEdges.UExHor = UFlag & 0x0F;
         m_sMBEdges.VExHor = VFlag & 0x0F;
     }
-    inline void SetInternalEdge(Ipp8u YFlagV, Ipp8u YFlagH)
+    inline void SetInternalEdge(uint8_t YFlagV, uint8_t YFlagH)
     {
         m_sMBEdges.YInVer = YFlagV & 0x0F;
         m_sMBEdges.YInHor = YFlagH & 0x0F;
     }
-    inline Ipp32u GetLumaExHorEdge()
+    inline uint32_t GetLumaExHorEdge()
     {
         return m_sMBEdges.YExHor;
     }
-    inline Ipp32u GetLumaExVerEdge()
+    inline uint32_t GetLumaExVerEdge()
     {
         return m_sMBEdges.YExVer;
     }
-    inline Ipp32u GetLumaInHorEdge()
+    inline uint32_t GetLumaInHorEdge()
     {
         return m_sMBEdges.YInHor;
     }
-    inline Ipp32u GetLumaInVerEdge()
+    inline uint32_t GetLumaInVerEdge()
     {
         return m_sMBEdges.YInVer;
     }
-    inline Ipp32u GetLumaAdUppEdge()
+    inline uint32_t GetLumaAdUppEdge()
     {
         return m_sMBEdges.YAdUpp;
     }
-    inline Ipp32u GetLumaAdBotEdge()
+    inline uint32_t GetLumaAdBotEdge()
     {
         return m_sMBEdges.YAdBot;
     }
-    inline Ipp32u GetLumaAdLefEdge()
+    inline uint32_t GetLumaAdLefEdge()
     {
         return m_sMBEdges.YAdLef;
     }
-    inline Ipp32u GetLumaAdRigEdge()
+    inline uint32_t GetLumaAdRigEdge()
     {
         return m_sMBEdges.YAdRig;
     }
-    inline Ipp32u GetUExHorEdge()
+    inline uint32_t GetUExHorEdge()
     {
         return m_sMBEdges.UExHor;
     }
-    inline Ipp32u GetVExHorEdge()
+    inline uint32_t GetVExHorEdge()
     {
         return m_sMBEdges.VExHor;
     }
-    inline Ipp32u GetUExVerEdge()
+    inline uint32_t GetUExVerEdge()
     {
         return m_sMBEdges.UExVer;
     }
-    inline Ipp32u GetVExVerEdge()
+    inline uint32_t GetVExVerEdge()
     {
         return m_sMBEdges.VExVer;
     }
-    inline Ipp32u GetVAdVerEdge()
+    inline uint32_t GetVAdVerEdge()
     {
         return m_sMBEdges.VAdVer;
     }
-   inline Ipp32u GetUAdHorEdge()
+   inline uint32_t GetUAdHorEdge()
     {
         return m_sMBEdges.UAdHor;
     }
-    inline Ipp32u GetVAdHorEdge()
+    inline uint32_t GetVAdHorEdge()
     {
         return m_sMBEdges.VAdHor;
     }
-    inline Ipp32u GetUAdVerEdge()
+    inline uint32_t GetUAdVerEdge()
     {
         return m_sMBEdges.UAdVer;
     }
 
-    inline  void SetBlocksPattern(Ipp32u blocksPattern)
+    inline  void SetBlocksPattern(uint32_t blocksPattern)
     {
         m_uiBlocksPattern = blocksPattern;
     }
-    inline bool isCoded(Ipp32s blk, Ipp32s subblk)
+    inline bool isCoded(int32_t blk, int32_t subblk)
     {
         return ((m_uiBlocksPattern & (1<<VC_ENC_PATTERN_POS1(blk, subblk)))!=0);
     }
@@ -3539,7 +3539,7 @@ public:
     {
         return  (m_bIntra);
     }
-    inline bool isIntra(Ipp32s i)
+    inline bool isIntra(int32_t i)
     {
         return  ((m_uiIntraPattern & (1<<VC_ENC_PATTERN_POS(i)))!=0);
     }
@@ -3586,7 +3586,7 @@ public:
     }
     inline bool  GetLumaVectorFields (sCoordinate *mv, bool bSecond,bool bForward=true)
     {        
-        Ipp32u n =  m_MV[bForward][0].bSecond + m_MV[bForward][1].bSecond + m_MV[bForward][2].bSecond + m_MV[bForward][3].bSecond;
+        uint32_t n =  m_MV[bForward][0].bSecond + m_MV[bForward][1].bSecond + m_MV[bForward][2].bSecond + m_MV[bForward][3].bSecond;
         
         switch (n)
         {
@@ -3619,13 +3619,13 @@ public:
             }
             return true;
         case 2:
-            Ipp32u mask[4];
+            uint32_t mask[4];
             mask[0] = (m_MV[bForward][0].bSecond == bSecond)? 0xffffffff:0;
             mask[1] = (m_MV[bForward][1].bSecond == bSecond)? 0xffffffff:0;
             mask[2] = (m_MV[bForward][2].bSecond == bSecond)? 0xffffffff:0;
             mask[3] = (m_MV[bForward][3].bSecond == bSecond)? 0xffffffff:0;
-            mv->x = ((Ipp16s)(mask[0]&m_MV[bForward][0].x)+ (Ipp16s)(mask[1]&m_MV[bForward][1].x) + (Ipp16s)(mask[2]&m_MV[bForward][2].x) + (Ipp16s)(mask[3]&m_MV[bForward][3].x))/2;
-            mv->y = ((Ipp16s)(mask[0]&m_MV[bForward][0].y)+ (Ipp16s)(mask[1]&m_MV[bForward][1].y) + (Ipp16s)(mask[2]&m_MV[bForward][2].y) + (Ipp16s)(mask[3]&m_MV[bForward][3].y))/2;
+            mv->x = ((int16_t)(mask[0]&m_MV[bForward][0].x)+ (int16_t)(mask[1]&m_MV[bForward][1].x) + (int16_t)(mask[2]&m_MV[bForward][2].x) + (int16_t)(mask[3]&m_MV[bForward][3].x))/2;
+            mv->y = ((int16_t)(mask[0]&m_MV[bForward][0].y)+ (int16_t)(mask[1]&m_MV[bForward][1].y) + (int16_t)(mask[2]&m_MV[bForward][2].y) + (int16_t)(mask[3]&m_MV[bForward][3].y))/2;
             mv->bSecond = bSecond;
             
             return true;   
@@ -3695,7 +3695,7 @@ public:
         m_MV[bForward][4].bSecond = m_MV[bForward][5].bSecond = mv.bSecond;
     }
 
-    inline UMC::Status SetMV(sCoordinate mv, Ipp32s blockNum, bool bForward=true)
+    inline UMC::Status SetMV(sCoordinate mv, int32_t blockNum, bool bForward=true)
     {
         if (blockNum>=6)
             return UMC::UMC_ERR_FAILED;
@@ -3703,7 +3703,7 @@ public:
         m_MV[bForward][blockNum].y =  mv.y;
         return UMC::UMC_OK;
     }
-    inline UMC::Status SetMV_F(sCoordinate mv, Ipp32s blockNum, bool bForward=true)
+    inline UMC::Status SetMV_F(sCoordinate mv, int32_t blockNum, bool bForward=true)
     {
         if (blockNum>=6)
             return UMC::UMC_ERR_FAILED;
@@ -3712,7 +3712,7 @@ public:
         m_MV[bForward][blockNum].bSecond = mv.bSecond;
         return UMC::UMC_OK;
     }
-    inline UMC::Status GetMV(sCoordinate* mv, Ipp32s blockNum, bool bForward=true)
+    inline UMC::Status GetMV(sCoordinate* mv, int32_t blockNum, bool bForward=true)
     {
         if (blockNum>=6)
             return 0;
@@ -3721,7 +3721,7 @@ public:
         return UMC::UMC_OK;
     }
 
-    inline UMC::Status GetMV_F(sCoordinate* mv, Ipp32s blockNum, bool bForward=true)
+    inline UMC::Status GetMV_F(sCoordinate* mv, int32_t blockNum, bool bForward=true)
     {
         if (blockNum>=6)
             return 0;
@@ -3731,41 +3731,41 @@ public:
         return UMC::UMC_OK;
     }
 
-    inline void        SetMBPattern(Ipp8u pattern)
+    inline void        SetMBPattern(uint8_t pattern)
     {
         m_uiMBPattern = pattern;
     }
-    inline Ipp8u       GetPattern()
+    inline uint8_t       GetPattern()
     {
         return m_uiMBPattern;
     }
-    inline Ipp8u       GetIntraPattern()
+    inline uint8_t       GetIntraPattern()
     {
         return m_uiIntraPattern;
     }
-    inline void SetIntraBlock(Ipp32s blockNum)
+    inline void SetIntraBlock(int32_t blockNum)
     {
         m_MV[0][blockNum].x = m_MV[0][blockNum].y =
         m_MV[1][blockNum].x = m_MV[1][blockNum].y = 0;
         m_uiIntraPattern = m_uiIntraPattern | (1<<VC_ENC_PATTERN_POS(blockNum));
     }
 
-    inline Ipp32u GetBlkPattern(Ipp32s blk)
+    inline uint32_t GetBlkPattern(int32_t blk)
     {
         return (m_uiBlocksPattern >> (5 - blk)*4) & 0xf;
     }
-    inline eTransformType GetBlkVSTType(Ipp32s blk)
+    inline eTransformType GetBlkVSTType(int32_t blk)
     {
-        Ipp32u num = blk;
+        uint32_t num = blk;
 
-        Ipp32u pattern = (m_uiVSTPattern >> (num*2));
+        uint32_t pattern = (m_uiVSTPattern >> (num*2));
 
         return BlkTransformTypeTabl[pattern & 0x03];
     }
 
     inline void SetVSTPattern(eTransformType* pBlkVTSType)
     {
-        Ipp32u blk = 0;
+        uint32_t blk = 0;
         eTransformType VTSType = VC1_ENC_8x8_TRANSFORM;
         m_uiVSTPattern = 0;
 
@@ -3795,7 +3795,7 @@ public:
         }
     }
 
-    inline Ipp32u GetVSTPattern()
+    inline uint32_t GetVSTPattern()
     {
         return m_uiVSTPattern;
     }
@@ -3824,11 +3824,11 @@ private:
     VC1EncoderMBData ** m_MBData;       // rows of macroblocks data
     VC1EncoderMBData ** m_MBRecData;    // rows of macroblocks data
 
-    Ipp32s              m_iCurrRowIndex;
-    Ipp32s              m_iPrevRowIndex;
-    Ipp32u              m_iCurrMBIndex;
-    Ipp32u              m_uiMBsInRow;
-    Ipp32u              m_uiMBsInCol;
+    int32_t              m_iCurrRowIndex;
+    int32_t              m_iPrevRowIndex;
+    uint32_t              m_iCurrMBIndex;
+    uint32_t              m_uiMBsInRow;
+    uint32_t              m_uiMBsInCol;
 
 public:
     VC1EncoderMBs():
@@ -3851,7 +3851,7 @@ public:
     VC1EncoderMBInfo*       GetLeftMBInfo();
     VC1EncoderMBInfo*       GetTopLeftMBInfo();
     VC1EncoderMBInfo*       GetTopRightMBInfo();
-    VC1EncoderMBInfo*       GetPevMBInfo(Ipp32s x, Ipp32s y);
+    VC1EncoderMBInfo*       GetPevMBInfo(int32_t x, int32_t y);
 
     VC1EncoderMBData*       GetCurrMBData();
     VC1EncoderMBData*       GetTopMBData();
@@ -3869,8 +3869,8 @@ public:
     VC1EncoderMB*           GetLeftMB();
     VC1EncoderMB*           GetTopLeft();
 
-    static Ipp32u           CalcAllocMemorySize(Ipp32u MBsInRow, Ipp32u MBsInCol, bool bNV12);
-    UMC::Status             Init(Ipp8u* pPicBufer, Ipp32u AllocatedMemSize, Ipp32u MBsInRow, Ipp32u MBsInCol, bool bNV12);
+    static uint32_t           CalcAllocMemorySize(uint32_t MBsInRow, uint32_t MBsInCol, bool bNV12);
+    UMC::Status             Init(uint8_t* pPicBufer, uint32_t AllocatedMemSize, uint32_t MBsInRow, uint32_t MBsInCol, bool bNV12);
     UMC::Status             Close();
     UMC::Status             NextMB();
     UMC::Status             NextRow();
@@ -3885,14 +3885,14 @@ typedef struct
     VC1EncoderMBData* TopLeftMB;
 } NeighbouringMBsData;
 
-inline void GetTSType (Ipp32u pattern, eTransformType* pBlockTT)
+inline void GetTSType (uint32_t pattern, eTransformType* pBlockTT)
 {
-    Ipp8u BlockTrans = (Ipp8u)(pattern & 0x03);
-    for(Ipp32u blk_num = 0; blk_num < 6; blk_num++)
+    uint8_t BlockTrans = (uint8_t)(pattern & 0x03);
+    for(uint32_t blk_num = 0; blk_num < 6; blk_num++)
     {
         pBlockTT[blk_num] = BlkTransformTypeTabl[BlockTrans];
         pattern>>=2;
-        BlockTrans = (Ipp8u)(pattern & 0x03);
+        BlockTrans = (uint8_t)(pattern & 0x03);
     }
 }
 }

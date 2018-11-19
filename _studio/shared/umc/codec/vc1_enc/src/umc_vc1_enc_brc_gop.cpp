@@ -63,9 +63,9 @@ VC1BRC_I::~VC1BRC_I()
     Close();
 };
 
-UMC::Status VC1BRC_I::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate,
-                           Ipp32u mode,      Ipp32u GOPLength, Ipp32u BFrLength,
-                           Ipp8u doubleQuant,Ipp8u QuantMode)
+UMC::Status VC1BRC_I::Init(uint32_t yuvFSize,  uint32_t bitrate,  double framerate,
+                           uint32_t mode,      uint32_t GOPLength, uint32_t BFrLength,
+                           uint8_t doubleQuant,uint8_t QuantMode)
  {
     UMC::Status VC1Sts = UMC::UMC_OK;
 
@@ -77,7 +77,7 @@ UMC::Status VC1BRC_I::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate,
     m_QuantMode = QuantMode;
 
 
-    m_IdealFrameSize = (Ipp32u)(bitrate/framerate/8);
+    m_IdealFrameSize = (uint32_t)(bitrate/framerate/8);
 
     m_needISize = m_IdealFrameSize;
     m_prefINeedSize = m_needISize;
@@ -88,10 +88,10 @@ UMC::Status VC1BRC_I::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate,
 
     if(!doubleQuant)
     {
-        Ipp32u AverageCompression = ((yuvFSize)/m_needISize)/3;
+        uint32_t AverageCompression = ((yuvFSize)/m_needISize)/3;
 
         VC1_CHECK_QUANT(AverageCompression);
-        m_CurQuant.PQIndex = m_Quant.IQuant = (Ipp8u)AverageCompression;
+        m_CurQuant.PQIndex = m_Quant.IQuant = (uint8_t)AverageCompression;
     }
     else
     {
@@ -110,12 +110,12 @@ UMC::Status VC1BRC_I::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate,
     {
     case VC1_BRC_HIGHT_QUALITY_MODE:
     case VC1_BRC_CONST_QUANT_MODE:
-        m_ratio_min       = (Ipp32f)(0.6);
-        m_buffer_overflow = (Ipp32f)(1.1);
+        m_ratio_min       = (float)(0.6);
+        m_buffer_overflow = (float)(1.1);
         break;
     default:
-        m_ratio_min       = (Ipp32f)(0.6);
-        m_buffer_overflow = (Ipp32f)(1.1);
+        m_ratio_min       = (float)(0.6);
+        m_buffer_overflow = (float)(1.1);
         break;
     }
 
@@ -139,10 +139,10 @@ void VC1BRC_I::Reset()
     m_recoding = 0;
 };
 
-UMC::Status VC1BRC_I::CheckFrameCompression(ePType picType, Ipp32u currSize, UMC::Status HRDSts)
+UMC::Status VC1BRC_I::CheckFrameCompression(ePType picType, uint32_t currSize, UMC::Status HRDSts)
 {
     UMC::Status UMCSts = UMC::UMC_OK;
-    Ipp32f ratio = 0;
+    float ratio = 0;
 
     if(currSize == 0)
         return UMC::UMC_ERR_INVALID_PARAMS;
@@ -152,7 +152,7 @@ UMC::Status VC1BRC_I::CheckFrameCompression(ePType picType, Ipp32u currSize, UMC
     if(picType == VC1_ENC_SKIP_FRAME)
     {
 #ifdef VC1_GOP_DEBUG
-     ratio = ((Ipp32f)currSize/(Ipp32f)m_needISize);
+     ratio = ((float)currSize/(float)m_needISize);
 
      printf("Skip");
      printf("%d  %d % d\n", m_CurQuant.PQIndex, m_CurQuant.HalfPQ, currSize);
@@ -160,7 +160,7 @@ UMC::Status VC1BRC_I::CheckFrameCompression(ePType picType, Ipp32u currSize, UMC
         return UMCSts;
     }
 
-    ratio = ((Ipp32f)currSize/(Ipp32f)m_needISize);
+    ratio = ((float)currSize/(float)m_needISize);
 
 #ifdef VC1_BRC_DEBUG
     printf("current ratio = %f\n", ratio);
@@ -193,8 +193,8 @@ UMC::Status VC1BRC_I::CheckFrameCompression(ePType picType, Ipp32u currSize, UMC
 void VC1BRC_I::CompleteFrame(ePType picType)
 {
     //UMC::Status UMCSts = UMC::UMC_OK;
-    Ipp32f ratioI = 0;
-    Ipp32f ratioICorr = 1.0;
+    float ratioI = 0;
+    float ratioICorr = 1.0;
 
 #ifdef BRC_TEST
      if(BRCFileSizeTest.RES_File)
@@ -234,7 +234,7 @@ void VC1BRC_I::CompleteFrame(ePType picType)
 
     if(picType != VC1_ENC_SKIP_FRAME)
     {
-        ratioI = ((Ipp32f)m_prefINeedSize/(Ipp32f)m_needISize)*ratioICorr;
+        ratioI = ((float)m_prefINeedSize/(float)m_needISize)*ratioICorr;
 
         CorrectGOPQuant(ratioI);
     }
@@ -243,7 +243,7 @@ void VC1BRC_I::CompleteFrame(ePType picType)
         #ifdef VC1_GOP_DEBUG
             printf("SKIP FRAME\n");
         #endif
-        ratioICorr = (Ipp32f)(0.9);
+        ratioICorr = (float)(0.9);
 
         m_Quant.LimIQuant = m_Quant.LimIQuant--;
         VC1_CHECK_QUANT(m_Quant.LimIQuant);
@@ -270,14 +270,14 @@ void VC1BRC_I::CompleteFrame(ePType picType)
 #endif
 };
 
-void VC1BRC_I::CheckFrame_QualityMode(Ipp32f ratio, UMC::Status UMCSts)
+void VC1BRC_I::CheckFrame_QualityMode(float ratio, UMC::Status UMCSts)
 {
-    Ipp8u curQuant = 0;
-    Ipp32s Sts = VC1_BRC_OK;
+    uint8_t curQuant = 0;
+    int32_t Sts = VC1_BRC_OK;
     bool HalfQP = 0;
 
     //new quant calculation
-    curQuant = (Ipp8u)(ratio * m_CurQuant.PQIndex + 0.5);
+    curQuant = (uint8_t)(ratio * m_CurQuant.PQIndex + 0.5);
     VC1_CHECK_QUANT(curQuant);
 
     //check compression
@@ -358,11 +358,11 @@ void VC1BRC_I::CheckFrame_QualityMode(Ipp32f ratio, UMC::Status UMCSts)
     }
  };
 
- void VC1BRC_I::CorrectGOPQuant(Ipp32f ratio)
+ void VC1BRC_I::CorrectGOPQuant(float ratio)
  {
-     Ipp8u curQuant = 0;
+     uint8_t curQuant = 0;
     //new quant calculation
-    curQuant = (Ipp8u)(ratio * m_Quant.IQuant + 0.5);
+    curQuant = (uint8_t)(ratio * m_Quant.IQuant + 0.5);
     VC1_CHECK_QUANT(curQuant);
 
     if(curQuant != m_Quant.IQuant)
@@ -372,7 +372,7 @@ void VC1BRC_I::CheckFrame_QualityMode(Ipp32f ratio, UMC::Status UMCSts)
     VC1_QUANT_CLIP(m_Quant.IQuant, m_Quant.LimIQuant);
  };
 
-void VC1BRC_I::GetQuant(ePType /*picType*/, Ipp8u* PQuant, bool* Half)
+void VC1BRC_I::GetQuant(ePType /*picType*/, uint8_t* PQuant, bool* Half)
 {
     m_CurQuant.PQIndex = m_Quant.IQuant;
     m_CurQuant.HalfPQ  = m_Quant.IHalf;
@@ -389,7 +389,7 @@ void VC1BRC_I::GetQuant(ePType /*picType*/, Ipp8u* PQuant, bool* Half)
     *Half   = m_CurQuant.HalfPQ;
 }
 
-void VC1BRC_I::GetQuant(ePType /*picType*/, Ipp8u* PQuant, bool* Half, bool* Uniform)
+void VC1BRC_I::GetQuant(ePType /*picType*/, uint8_t* PQuant, bool* Half, bool* Uniform)
 {
     m_CurQuant.PQIndex = m_Quant.IQuant;
     m_CurQuant.HalfPQ  = m_Quant.IHalf;
@@ -430,7 +430,7 @@ void VC1BRC_I::GetQuant(ePType /*picType*/, Ipp8u* PQuant, bool* Half, bool* Uni
     }
 }
 
-UMC::Status VC1BRC_I::SetGOPParams(Ipp32u /*GOPLength*/, Ipp32u /*BFrLength*/)
+UMC::Status VC1BRC_I::SetGOPParams(uint32_t /*GOPLength*/, uint32_t /*BFrLength*/)
 {
     return UMC::UMC_OK;
 }
@@ -446,7 +446,7 @@ VC1BRC_IP::VC1BRC_IP() : m_I_GOPSize(0),      m_P_GOPSize(0),
                         m_GOPHalfFlag(0),    m_GOPSize(0),
                         m_currGOPSize(0),    m_nextGOPSize(0),
                         m_currISize(0),      m_currPSize(0),
-                        m_IP_size((Ipp32f)(VC1_P_SIZE)),
+                        m_IP_size((float)(VC1_P_SIZE)),
                         m_failPQuant(0),     m_failGOP(0),
                         m_AverageIQuant(0),  m_AveragePQuant(0)
 {
@@ -457,9 +457,9 @@ VC1BRC_IP::~VC1BRC_IP()
     Close();
 };
 
-UMC::Status VC1BRC_IP::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate,
-                           Ipp32u mode,      Ipp32u GOPLength, Ipp32u BFrLength,
-                           Ipp8u doubleQuant, Ipp8u QuantMode)
+UMC::Status VC1BRC_IP::Init(uint32_t yuvFSize,  uint32_t bitrate,  double framerate,
+                           uint32_t mode,      uint32_t GOPLength, uint32_t BFrLength,
+                           uint8_t doubleQuant, uint8_t QuantMode)
  {
     UMC::Status VC1Sts = UMC::UMC_OK;
 
@@ -477,7 +477,7 @@ UMC::Status VC1BRC_IP::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate,
     m_bitrate   = bitrate;
     m_framerate = framerate;
 
-    m_IdealFrameSize = (Ipp32u)(bitrate/framerate/8);
+    m_IdealFrameSize = (uint32_t)(bitrate/framerate/8);
 
     VC1Sts = SetGOPParams(GOPLength, BFrLength);
 
@@ -492,15 +492,15 @@ UMC::Status VC1BRC_IP::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate,
 
     if(m_encMode == VC1_BRC_HIGHT_QUALITY_MODE)
     {
-        Ipp32u AverageCompression = ((yuvFSize)/m_needISize)/3;
+        uint32_t AverageCompression = ((yuvFSize)/m_needISize)/3;
 
         VC1_CHECK_QUANT(AverageCompression);
-        m_CurQuant.PQIndex = m_Quant.IQuant = (Ipp8u)AverageCompression;
+        m_CurQuant.PQIndex = m_Quant.IQuant = (uint8_t)AverageCompression;
 
         AverageCompression = ((yuvFSize)/m_needPSize)/5;
         VC1_CHECK_QUANT(AverageCompression);
 
-        m_Quant.PQuant =  (Ipp8u)AverageCompression;
+        m_Quant.PQuant =  (uint8_t)AverageCompression;
 
         if(m_Quant.PQuant > 2)
             m_Quant.PQuant -= 2;
@@ -515,12 +515,12 @@ UMC::Status VC1BRC_IP::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate,
     {
     case VC1_BRC_HIGHT_QUALITY_MODE:
     case VC1_BRC_CONST_QUANT_MODE:
-        m_ratio_min       = (Ipp32f)(0.6);
-        m_buffer_overflow = (Ipp32f)(1.1);
+        m_ratio_min       = (float)(0.6);
+        m_buffer_overflow = (float)(1.1);
         break;
     default:
-        m_ratio_min       = (Ipp32f)(0.6);
-        m_buffer_overflow = (Ipp32f)(1.1);
+        m_ratio_min       = (float)(0.6);
+        m_buffer_overflow = (float)(1.1);
         break;
     }
 
@@ -548,8 +548,8 @@ void VC1BRC_IP::Reset()
     //Frames parameters
     m_currSize = 0;
 
-    m_needISize = (Ipp32s)(m_GOPSize/(1 + m_IP_size*m_PNum));
-    m_needPSize = (Ipp32s)(m_IP_size*m_needISize);
+    m_needISize = (int32_t)(m_GOPSize/(1 + m_IP_size*m_PNum));
+    m_needPSize = (int32_t)(m_IP_size*m_needISize);
 
     m_currISize = m_needISize;
     m_currPSize = m_needPSize;
@@ -565,10 +565,10 @@ void VC1BRC_IP::Reset()
     m_picType = VC1_ENC_I_FRAME;
 };
 
-UMC::Status VC1BRC_IP::CheckFrameCompression(ePType picType, Ipp32u currSize, UMC::Status HRDSts)
+UMC::Status VC1BRC_IP::CheckFrameCompression(ePType picType, uint32_t currSize, UMC::Status HRDSts)
 {
     UMC::Status UMCSts = UMC::UMC_OK;
-    Ipp32f ratio = 0;
+    float ratio = 0;
 
     if(currSize == 0)
         return UMC::UMC_ERR_INVALID_PARAMS;
@@ -578,7 +578,7 @@ UMC::Status VC1BRC_IP::CheckFrameCompression(ePType picType, Ipp32u currSize, UM
     if(picType == VC1_ENC_SKIP_FRAME)
     {
 #ifdef VC1_GOP_DEBUG
-     ratio = ((Ipp32f)currSize/(Ipp32f)m_needISize);
+     ratio = ((float)currSize/(float)m_needISize);
 
      printf("Skip ");
      printf("%d  %d % d\n", m_CurQuant.PQIndex, m_CurQuant.HalfPQ, currSize);
@@ -598,7 +598,7 @@ UMC::Status VC1BRC_IP::CheckFrameCompression(ePType picType, Ipp32u currSize, UM
      printf("I ");
 #endif
             m_currISize = currSize;
-            ratio = ((Ipp32f)m_currISize/(Ipp32f)m_needISize);
+            ratio = ((float)m_currISize/(float)m_needISize);
             if(ratio < VC1_POOR_REF_FRAME)
                 m_poorRefFrame = 1;
             else
@@ -612,7 +612,7 @@ UMC::Status VC1BRC_IP::CheckFrameCompression(ePType picType, Ipp32u currSize, UM
      printf("P ");
 #endif
             m_currPSize = currSize;
-            ratio = ((Ipp32f)m_currPSize/(Ipp32f)m_needPSize);
+            ratio = ((float)m_currPSize/(float)m_needPSize);
             if(ratio < VC1_POOR_REF_FRAME)
                 m_poorRefFrame = 1;
             else
@@ -655,10 +655,10 @@ UMC::Status VC1BRC_IP::CheckFrameCompression(ePType picType, Ipp32u currSize, UM
 void VC1BRC_IP::CompleteFrame(ePType picType)
 {
     //UMC::Status UMCSts = UMC::UMC_OK;
-    Ipp32f ratioI = 0;
-    Ipp32f ratioP = 0;
-    Ipp32s prefINeedSize = m_needISize;
-    Ipp32s prefPNeedSize = m_needPSize;
+    float ratioI = 0;
+    float ratioP = 0;
+    int32_t prefINeedSize = m_needISize;
+    int32_t prefPNeedSize = m_needPSize;
 
 #ifdef BRC_TEST
      if(BRCFileSizeTest.RES_File)
@@ -701,23 +701,23 @@ void VC1BRC_IP::CompleteFrame(ePType picType)
         || (m_currFrameInGOP == 1) || m_failPQuant || picType == VC1_ENC_SKIP_FRAME)
     {
 
-        Ipp32s PBSize = m_nextGOPSize - m_currGOPSize;
+        int32_t PBSize = m_nextGOPSize - m_currGOPSize;
 
         if(m_currFrameInGOP != 1)
             m_GOPHalfFlag = 0;
 
         if(((PBSize) > m_IdealFrameSize) && ( m_currFrameInGOP != m_GOPLength))
         {
-            m_needPSize = (Ipp32s)(PBSize/((m_PNum - m_CurrPNum)));
+            m_needPSize = (int32_t)(PBSize/((m_PNum - m_CurrPNum)));
         }
         else
         {
             m_failGOP = 1;
             if(m_needPSize > m_IdealFrameSize/2)
-                m_needPSize = (Ipp32s)(m_needPSize*0.75);
+                m_needPSize = (int32_t)(m_needPSize*0.75);
         }
 
-        ratioP = ((Ipp32f)prefPNeedSize/(Ipp32f)m_needPSize);
+        ratioP = ((float)prefPNeedSize/(float)m_needPSize);
         if(m_needPSize < (m_IdealFrameSize>>2))
             ratioP = 1;
 
@@ -735,8 +735,8 @@ void VC1BRC_IP::CompleteFrame(ePType picType)
         {
             m_AveragePQuant /= (m_PNum*2);
             m_AveragePQuant++;
-            Ipp32f P_average_size =  (Ipp32f)(m_P_GOPSize/m_CurrPNum);
-            Ipp32f PRatio = (P_average_size*m_AveragePQuant)/(m_I_GOPSize*m_AverageIQuant);
+            float P_average_size =  (float)(m_P_GOPSize/m_CurrPNum);
+            float PRatio = (P_average_size*m_AveragePQuant)/(m_I_GOPSize*m_AverageIQuant);
             m_IP_size = (m_IP_size + PRatio)/2;
 
             if(m_IP_size > 1)
@@ -749,8 +749,8 @@ void VC1BRC_IP::CompleteFrame(ePType picType)
 
     #ifdef VC1_GOP_DEBUG
         printf("\n\n IQuant = %d    PQuant = %d\n\n", m_AverageIQuant, m_AveragePQuant);
-        printf("\nGOP ratio = %f\n", ((Ipp32f)m_currGOPSize/(Ipp32f)m_nextGOPSize));
-        printf("\nIdeal     = %f\n", ((Ipp32f)m_currGOPSize/(Ipp32f)m_GOPSize));
+        printf("\nGOP ratio = %f\n", ((float)m_currGOPSize/(float)m_nextGOPSize));
+        printf("\nIdeal     = %f\n", ((float)m_currGOPSize/(float)m_GOPSize));
 
         printf("\n\n-----------------------------------NEW GOP");
         printf("------------------------------------------\n\n\n");
@@ -779,9 +779,9 @@ void VC1BRC_IP::CompleteFrame(ePType picType)
     printf("m_SizeAbberation = %d\n", m_SizeAbberation);
 #endif
 
-        m_needISize = (Ipp32s)(m_nextGOPSize/(1 + m_IP_size*m_PNum));
+        m_needISize = (int32_t)(m_nextGOPSize/(1 + m_IP_size*m_PNum));
 
-        ratioI = ((Ipp32f)prefINeedSize/(Ipp32f)m_needISize);
+        ratioI = ((float)prefINeedSize/(float)m_needISize);
 
         CorrectGOPQuant(VC1_ENC_I_FRAME, ratioI);
     }
@@ -795,14 +795,14 @@ void VC1BRC_IP::CompleteFrame(ePType picType)
 };
 
 
-void VC1BRC_IP::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Status UMCSts)
+void VC1BRC_IP::CheckFrame_QualityMode(ePType picType, float ratio, UMC::Status UMCSts)
 {
-    Ipp8u curQuant = 0;
-    Ipp32s Sts = VC1_BRC_OK;
+    uint8_t curQuant = 0;
+    int32_t Sts = VC1_BRC_OK;
     bool HalfQP = 0;
 
     //new quant calculation
-    curQuant = (Ipp8u)(ratio * m_CurQuant.PQIndex + 0.5);
+    curQuant = (uint8_t)(ratio * m_CurQuant.PQIndex + 0.5);
     VC1_CHECK_QUANT(curQuant);
 
     //check compression
@@ -820,7 +820,7 @@ void VC1BRC_IP::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Status
     }
     else if(ratio >= VC1_MIN_RATIO_HALF)
     {
-        if((m_CurQuant.PQIndex > 1) && ((Ipp32u)curQuant > m_CurQuant.PQIndex))
+        if((m_CurQuant.PQIndex > 1) && ((uint32_t)curQuant > m_CurQuant.PQIndex))
             HalfQP = 1;
         Sts |= VC1_BRC_SMALL_FRAME;
     }
@@ -977,9 +977,9 @@ void VC1BRC_IP::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Status
     }
  };
 
- void VC1BRC_IP::CorrectGOPQuant(ePType picType, Ipp32f ratio)
+ void VC1BRC_IP::CorrectGOPQuant(ePType picType, float ratio)
  {
-     Ipp8u curQuant = 0;
+     uint8_t curQuant = 0;
 
      if(ratio == 1)
         return;
@@ -990,7 +990,7 @@ void VC1BRC_IP::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Status
          case (VC1_ENC_I_I_FIELD):
              {
                  //new quant calculation
-                 curQuant = (Ipp8u)(ratio * m_Quant.IQuant + 0.5);
+                 curQuant = (uint8_t)(ratio * m_Quant.IQuant + 0.5);
                  VC1_CHECK_QUANT(curQuant);
 
                  if(curQuant != m_Quant.IQuant)
@@ -1009,7 +1009,7 @@ void VC1BRC_IP::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Status
          case(VC1_ENC_P_P_FIELD):
             {
                  //new quant calculation
-                 curQuant = (Ipp8u)(ratio * m_Quant.PQuant - 0.5);
+                 curQuant = (uint8_t)(ratio * m_Quant.PQuant - 0.5);
                  VC1_CHECK_QUANT(curQuant);
 
                  if(curQuant != m_Quant.PQuant)
@@ -1026,7 +1026,7 @@ void VC1BRC_IP::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Status
      }
  };
 
-void VC1BRC_IP::GetQuant(ePType picType, Ipp8u* PQuant, bool* Half)
+void VC1BRC_IP::GetQuant(ePType picType, uint8_t* PQuant, bool* Half)
 {
     m_picType = picType;
 
@@ -1081,7 +1081,7 @@ void VC1BRC_IP::GetQuant(ePType picType, Ipp8u* PQuant, bool* Half)
     *Half   = m_CurQuant.HalfPQ;
 }
 
-void VC1BRC_IP::GetQuant(ePType picType, Ipp8u* PQuant, bool* Half, bool *Uniform)
+void VC1BRC_IP::GetQuant(ePType picType, uint8_t* PQuant, bool* Half, bool *Uniform)
 {
     m_picType = picType;
 
@@ -1160,7 +1160,7 @@ void VC1BRC_IP::GetQuant(ePType picType, Ipp8u* PQuant, bool* Half, bool *Unifor
     }
 }
 
-UMC::Status VC1BRC_IP::SetGOPParams(Ipp32u GOPLength, Ipp32u /*BFrLength*/)
+UMC::Status VC1BRC_IP::SetGOPParams(uint32_t GOPLength, uint32_t /*BFrLength*/)
 {
     if(GOPLength == 0)
         return UMC::UMC_ERR_INVALID_PARAMS;
@@ -1172,8 +1172,8 @@ UMC::Status VC1BRC_IP::SetGOPParams(Ipp32u GOPLength, Ipp32u /*BFrLength*/)
     m_GOPSize        = m_IdealFrameSize * m_GOPLength;
     m_nextGOPSize    = m_GOPSize;
 
-    m_needISize = (Ipp32s)(m_GOPSize/(1 + m_IP_size*m_PNum));
-    m_needPSize = (Ipp32s)(m_IP_size*m_needISize);
+    m_needISize = (int32_t)(m_GOPSize/(1 + m_IP_size*m_PNum));
+    m_needPSize = (int32_t)(m_IP_size*m_needISize);
 
     m_currISize = m_needISize;
     m_currPSize = m_needPSize;
@@ -1203,7 +1203,7 @@ VC1BRC_IPB::VC1BRC_IPB() : m_I_GOPSize(0),    m_P_GOPSize(0),      m_B_GOPSize(0
                            m_poorRefFrame(0), m_GOPHalfFlag(0),
                            m_currISize(0),    m_currPSize(0),      m_currBSize(0),
                            m_GOPSize(0),      m_currGOPSize(0),    m_nextGOPSize(0),
-                           m_IP_size((Ipp32f)(VC1_P_SIZE)), m_IB_size((Ipp32f)(VC1_B_SIZE)),
+                           m_IP_size((float)(VC1_P_SIZE)), m_IB_size((float)(VC1_B_SIZE)),
                            m_failPQuant(0), m_failBQuant(0), m_failGOP(0),
                            m_AveragePQuant(0),m_AverageIQuant(0),  m_AverageBQuant(0)
 
@@ -1214,16 +1214,16 @@ VC1BRC_IPB::~VC1BRC_IPB()
 {
 };
 
-UMC::Status VC1BRC_IPB::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate,
-                           Ipp32u mode,        Ipp32u GOPLength,Ipp32u BFrLength,
-                           Ipp8u doubleQuant, Ipp8u QuantMode)
+UMC::Status VC1BRC_IPB::Init(uint32_t yuvFSize,  uint32_t bitrate,  double framerate,
+                           uint32_t mode,        uint32_t GOPLength,uint32_t BFrLength,
+                           uint8_t doubleQuant, uint8_t QuantMode)
  {
     UMC::Status VC1Sts = UMC::UMC_OK;
 
     m_bitrate   = bitrate;
     m_framerate = framerate;
 
-    m_IdealFrameSize = (Ipp32u)(bitrate/framerate/8);
+    m_IdealFrameSize = (uint32_t)(bitrate/framerate/8);
     if(m_IdealFrameSize == 0)
         return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
@@ -1245,15 +1245,15 @@ UMC::Status VC1BRC_IPB::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate
 
     if(m_encMode == VC1_BRC_HIGHT_QUALITY_MODE)
     {
-        Ipp32u AverageCompression = ((yuvFSize)/m_needISize)/3;
+        uint32_t AverageCompression = ((yuvFSize)/m_needISize)/3;
 
         VC1_CHECK_QUANT(AverageCompression);
-        m_CurQuant.PQIndex = m_Quant.IQuant = (Ipp8u)AverageCompression;
+        m_CurQuant.PQIndex = m_Quant.IQuant = (uint8_t)AverageCompression;
 
         AverageCompression = ((yuvFSize)/m_needPSize)/5;
         VC1_CHECK_QUANT(AverageCompression);
 
-        m_Quant.PQuant =  (Ipp8u)AverageCompression;
+        m_Quant.PQuant =  (uint8_t)AverageCompression;
 
         if(m_Quant.PQuant > 2)
             m_Quant.PQuant -= 2;
@@ -1261,7 +1261,7 @@ UMC::Status VC1BRC_IPB::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate
         AverageCompression = ((yuvFSize)/m_needBSize)/6;
         VC1_CHECK_QUANT(AverageCompression);
 
-        m_Quant.BQuant = (Ipp8u)AverageCompression;
+        m_Quant.BQuant = (uint8_t)AverageCompression;
 
         if(m_Quant.BQuant > 2)
             m_Quant.BQuant -= 2;
@@ -1276,12 +1276,12 @@ UMC::Status VC1BRC_IPB::Init(Ipp32u yuvFSize,  Ipp32u bitrate,  Ipp64f framerate
     {
     case VC1_BRC_HIGHT_QUALITY_MODE:
     case VC1_BRC_CONST_QUANT_MODE:
-        m_ratio_min       = (Ipp32f)(0.6);
-        m_buffer_overflow = (Ipp32f)(1.1);
+        m_ratio_min       = (float)(0.6);
+        m_buffer_overflow = (float)(1.1);
         break;
     default:
-        m_ratio_min       = (Ipp32f)(0.6);
-        m_buffer_overflow = (Ipp32f)(1.1);
+        m_ratio_min       = (float)(0.6);
+        m_buffer_overflow = (float)(1.1);
         break;
     }
 
@@ -1316,9 +1316,9 @@ void VC1BRC_IPB::Reset()
     m_GOPSize      = m_IdealFrameSize * m_GOPLength;
     m_nextGOPSize    = m_GOPSize;
 
-    m_needISize = (Ipp32s)(m_GOPSize/(1 + m_IP_size*m_PNum + m_IB_size*m_BNum));
-    m_needPSize = (Ipp32s)(m_IP_size*m_needISize);
-    m_needBSize = (Ipp32s)(m_IB_size*m_needISize);
+    m_needISize = (int32_t)(m_GOPSize/(1 + m_IP_size*m_PNum + m_IB_size*m_BNum));
+    m_needPSize = (int32_t)(m_IP_size*m_needISize);
+    m_needBSize = (int32_t)(m_IB_size*m_needISize);
 
     m_currISize = m_needISize;
     m_currPSize = m_needPSize;
@@ -1326,10 +1326,10 @@ void VC1BRC_IPB::Reset()
     m_frameCount = 0;
 };
 
-UMC::Status VC1BRC_IPB::CheckFrameCompression(ePType picType, Ipp32u currSize, UMC::Status HRDSts)
+UMC::Status VC1BRC_IPB::CheckFrameCompression(ePType picType, uint32_t currSize, UMC::Status HRDSts)
 {
     UMC::Status UMCSts = UMC::UMC_OK;
-    Ipp32f ratio = 0;
+    float ratio = 0;
 
     if(m_recoding)
         m_poorRefFrame &= 0x2;
@@ -1342,7 +1342,7 @@ UMC::Status VC1BRC_IPB::CheckFrameCompression(ePType picType, Ipp32u currSize, U
     if(picType == VC1_ENC_SKIP_FRAME)
     {
 #ifdef VC1_GOP_DEBUG
-     ratio = ((Ipp32f)currSize/(Ipp32f)m_needISize);
+     ratio = ((float)currSize/(float)m_needISize);
 
      printf("Skip ");
      printf("%d  %d % d\n", m_CurQuant.PQIndex, m_CurQuant.HalfPQ, currSize);
@@ -1358,7 +1358,7 @@ UMC::Status VC1BRC_IPB::CheckFrameCompression(ePType picType, Ipp32u currSize, U
      printf("I ");
 #endif
             m_currISize = currSize;
-            ratio = ((Ipp32f)m_currISize/(Ipp32f)m_needISize);
+            ratio = ((float)m_currISize/(float)m_needISize);
             if(ratio < VC1_POOR_REF_FRAME)
                 m_poorRefFrame = ((m_poorRefFrame<<1) + 1)&0x3;
             else
@@ -1372,7 +1372,7 @@ UMC::Status VC1BRC_IPB::CheckFrameCompression(ePType picType, Ipp32u currSize, U
      printf("P ");
 #endif
             m_currPSize = currSize;
-            ratio = ((Ipp32f)m_currPSize/(Ipp32f)m_needPSize);
+            ratio = ((float)m_currPSize/(float)m_needPSize);
             if(ratio < VC1_POOR_REF_FRAME)
                 m_poorRefFrame = ((m_poorRefFrame<<1) + 1)&0x3;
             else
@@ -1388,7 +1388,7 @@ UMC::Status VC1BRC_IPB::CheckFrameCompression(ePType picType, Ipp32u currSize, U
      printf("B ");
 #endif
             m_currBSize = currSize;
-            ratio = ((Ipp32f)m_currBSize/(Ipp32f)m_needBSize);
+            ratio = ((float)m_currBSize/(float)m_needBSize);
             break;
     }
 
@@ -1423,12 +1423,12 @@ UMC::Status VC1BRC_IPB::CheckFrameCompression(ePType picType, Ipp32u currSize, U
 
 void VC1BRC_IPB::CompleteFrame(ePType picType)
 {
-    Ipp32f ratioI = 0;
-    Ipp32f ratioP = 0;
-    Ipp32f ratioB = 0;
-    Ipp32s prefINeedSize = m_needISize;
-    Ipp32s prefPNeedSize = m_needPSize;
-    Ipp32s prefBNeedSize = m_needBSize;
+    float ratioI = 0;
+    float ratioP = 0;
+    float ratioB = 0;
+    int32_t prefINeedSize = m_needISize;
+    int32_t prefPNeedSize = m_needPSize;
+    int32_t prefBNeedSize = m_needBSize;
 
 #ifdef BRC_TEST
      if(BRCFileSizeTest.RES_File)
@@ -1485,7 +1485,7 @@ void VC1BRC_IPB::CompleteFrame(ePType picType)
         || (m_currFrameInGOP == 1) || m_failPQuant || m_failBQuant || picType == VC1_ENC_SKIP_FRAME)
     {
 
-        Ipp32s PBSize = m_nextGOPSize - m_currGOPSize;
+        int32_t PBSize = m_nextGOPSize - m_currGOPSize;
 
         if(m_currFrameInGOP != 1)
         {
@@ -1495,23 +1495,23 @@ void VC1BRC_IPB::CompleteFrame(ePType picType)
         if((PBSize > m_IdealFrameSize)  && (m_currFrameInGOP != m_CurrGOPLength))
         {
 
-            m_needPSize = (Ipp32s)(PBSize/((m_PNum - m_CurrPNum)
+            m_needPSize = (int32_t)(PBSize/((m_PNum - m_CurrPNum)
                 + (m_IB_size/m_IP_size)*(m_BNum - m_CurrBNum)));
 
-            m_needBSize = (Ipp32s)(m_needPSize*(m_IB_size/m_IP_size));
+            m_needBSize = (int32_t)(m_needPSize*(m_IB_size/m_IP_size));
         }
         else
         {
             m_failGOP = 1;
             if(m_needPSize > m_IdealFrameSize/2)
-                m_needPSize = (Ipp32s)(m_needPSize*0.75);
+                m_needPSize = (int32_t)(m_needPSize*0.75);
             if(m_needBSize > m_IdealFrameSize/2)
-                m_needBSize = (Ipp32s)(m_needBSize*0.75);
+                m_needBSize = (int32_t)(m_needBSize*0.75);
         }
 
 
-        ratioP = ((Ipp32f)prefPNeedSize/(Ipp32f)m_needPSize);
-        ratioB = ((Ipp32f)prefBNeedSize/(Ipp32f)m_needBSize);
+        ratioP = ((float)prefPNeedSize/(float)m_needPSize);
+        ratioB = ((float)prefBNeedSize/(float)m_needBSize);
 
         if(m_needPSize < (m_IdealFrameSize>>2))
             ratioP = 1;
@@ -1543,8 +1543,8 @@ void VC1BRC_IPB::CompleteFrame(ePType picType)
         m_AverageBQuant++;
 ///---------------------------
 #ifdef VC1_GOP_DEBUG
-    printf("\nGOP ratio = %f\n\n", ((Ipp32f)m_currGOPSize/(Ipp32f)m_nextGOPSize));
-    printf("\nIdeal     = %f\n", ((Ipp32f)m_currGOPSize/(Ipp32f)m_GOPSize));
+    printf("\nGOP ratio = %f\n\n", ((float)m_currGOPSize/(float)m_nextGOPSize));
+    printf("\nIdeal     = %f\n", ((float)m_currGOPSize/(float)m_GOPSize));
 
     printf("\n\n IQuant = %d    PQuant = %d    BQuant = %d\n\n",
         m_AverageIQuant, m_AveragePQuant, m_AverageBQuant);
@@ -1555,17 +1555,17 @@ void VC1BRC_IPB::CompleteFrame(ePType picType)
         //correction of I/P/B ratio
         if(m_I_GOPSize && m_P_GOPSize && m_B_GOPSize)
         {
-            Ipp32f P_average_size =  (Ipp32f)(m_P_GOPSize/m_PNum);
-            Ipp32f PRatio = (P_average_size*m_AveragePQuant)/(m_I_GOPSize*m_AverageIQuant);
+            float P_average_size =  (float)(m_P_GOPSize/m_PNum);
+            float PRatio = (P_average_size*m_AveragePQuant)/(m_I_GOPSize*m_AverageIQuant);
             m_IP_size = (m_IP_size + PRatio)/2;
 
             if(m_IP_size > 1)
                 m_IP_size = 1;
 
 
-            Ipp32f B_average_size =  (Ipp32f)(m_B_GOPSize/m_BNum);
-            Ipp32f BIRatio = (B_average_size*m_AverageBQuant)/(m_I_GOPSize*m_AverageIQuant);
-            Ipp32f BPRatio = (B_average_size*m_AverageBQuant)/(m_P_GOPSize*m_AveragePQuant);
+            float B_average_size =  (float)(m_B_GOPSize/m_BNum);
+            float BIRatio = (B_average_size*m_AverageBQuant)/(m_I_GOPSize*m_AverageIQuant);
+            float BPRatio = (B_average_size*m_AverageBQuant)/(m_P_GOPSize*m_AveragePQuant);
             m_IB_size = (m_IB_size + BIRatio + BPRatio)/3;
 
             if(m_IB_size > 1)
@@ -1593,9 +1593,9 @@ void VC1BRC_IPB::CompleteFrame(ePType picType)
             printf("m_SizeAbberation = %d\n", m_SizeAbberation);
 #endif
 
-        m_needISize = (Ipp32s)(m_nextGOPSize/(1 + m_IP_size*m_PNum + m_IB_size*m_BNum));
+        m_needISize = (int32_t)(m_nextGOPSize/(1 + m_IP_size*m_PNum + m_IB_size*m_BNum));
 
-        ratioI = ((Ipp32f)prefINeedSize/(Ipp32f)m_needISize);
+        ratioI = ((float)prefINeedSize/(float)m_needISize);
 
         CorrectGOPQuant(VC1_ENC_I_FRAME, ratioI);
     }
@@ -1610,14 +1610,14 @@ void VC1BRC_IPB::CompleteFrame(ePType picType)
 };
 
 
-void VC1BRC_IPB::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Status UMCSts)
+void VC1BRC_IPB::CheckFrame_QualityMode(ePType picType, float ratio, UMC::Status UMCSts)
 {
-    Ipp8u curQuant = 0;
-    Ipp32s Sts = VC1_BRC_OK;
+    uint8_t curQuant = 0;
+    int32_t Sts = VC1_BRC_OK;
     bool HalfQP = 0;
 
     //new quant calculation
-    curQuant = (Ipp8u)(ratio * m_CurQuant.PQIndex + 0.5);
+    curQuant = (uint8_t)(ratio * m_CurQuant.PQIndex + 0.5);
     VC1_CHECK_QUANT(curQuant);
 
     //check compression
@@ -1879,9 +1879,9 @@ void VC1BRC_IPB::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Statu
     }
  };
 
- void VC1BRC_IPB::CorrectGOPQuant(ePType picType, Ipp32f ratio)
+ void VC1BRC_IPB::CorrectGOPQuant(ePType picType, float ratio)
  {
-     Ipp8u curQuant = 0;
+     uint8_t curQuant = 0;
 
      if(ratio == 1)
         return;
@@ -1892,7 +1892,7 @@ void VC1BRC_IPB::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Statu
          case(VC1_ENC_I_I_FIELD):
              {
                  //new quant calculation
-                 curQuant = (Ipp8u)(ratio * m_Quant.IQuant + 0.5);
+                 curQuant = (uint8_t)(ratio * m_Quant.IQuant + 0.5);
                  VC1_CHECK_QUANT(curQuant);
 
                  if(curQuant != m_Quant.IQuant)
@@ -1912,7 +1912,7 @@ void VC1BRC_IPB::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Statu
         case(VC1_ENC_P_P_FIELD):
              {
                  //new quant calculation
-                 curQuant = (Ipp8u)(ratio * m_Quant.PQuant - 0.5);
+                 curQuant = (uint8_t)(ratio * m_Quant.PQuant - 0.5);
                  VC1_CHECK_QUANT(curQuant);
 
                  if(curQuant != m_Quant.PQuant)
@@ -1931,7 +1931,7 @@ void VC1BRC_IPB::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Statu
         case(VC1_ENC_B_B_FIELD):
              {
                  //new quant calculation
-                 curQuant = (Ipp8u)(ratio * m_Quant.BQuant - 0.5);
+                 curQuant = (uint8_t)(ratio * m_Quant.BQuant - 0.5);
                  VC1_CHECK_QUANT(curQuant);
 
                  if(curQuant != m_Quant.BQuant)
@@ -1947,7 +1947,7 @@ void VC1BRC_IPB::CheckFrame_QualityMode(ePType picType, Ipp32f ratio, UMC::Statu
      }
  };
 
-void VC1BRC_IPB::GetQuant(ePType picType, Ipp8u* PQuant, bool* Half)
+void VC1BRC_IPB::GetQuant(ePType picType, uint8_t* PQuant, bool* Half)
 {
     m_picType = picType;
 
@@ -2031,7 +2031,7 @@ void VC1BRC_IPB::GetQuant(ePType picType, Ipp8u* PQuant, bool* Half)
     *Half   = m_CurQuant.HalfPQ;
 }
 
-void VC1BRC_IPB::GetQuant(ePType picType, Ipp8u* PQuant, bool* Half, bool* Uniform)
+void VC1BRC_IPB::GetQuant(ePType picType, uint8_t* PQuant, bool* Half, bool* Uniform)
 {
     m_picType = picType;
 
@@ -2139,7 +2139,7 @@ void VC1BRC_IPB::GetQuant(ePType picType, Ipp8u* PQuant, bool* Half, bool* Unifo
     }
 }
 
-UMC::Status VC1BRC_IPB::SetGOPParams(Ipp32u GOPLength, Ipp32u BFrLength)
+UMC::Status VC1BRC_IPB::SetGOPParams(uint32_t GOPLength, uint32_t BFrLength)
 {
     if(GOPLength == 0)
         return UMC::UMC_ERR_INVALID_PARAMS;
@@ -2167,9 +2167,9 @@ UMC::Status VC1BRC_IPB::SetGOPParams(Ipp32u GOPLength, Ipp32u BFrLength)
     m_GOPSize     = m_IdealFrameSize * m_CurrGOPLength;
     m_nextGOPSize = m_GOPSize;
 
-    m_needISize = (Ipp32s)(m_GOPSize/(1 + m_IP_size*m_PNum + m_IB_size*m_BNum));
-    m_needPSize = (Ipp32s)(m_IP_size*m_needISize);
-    m_needBSize = (Ipp32s)(m_IB_size*m_needISize);
+    m_needISize = (int32_t)(m_GOPSize/(1 + m_IP_size*m_PNum + m_IB_size*m_BNum));
+    m_needPSize = (int32_t)(m_IP_size*m_needISize);
+    m_needBSize = (int32_t)(m_IB_size*m_needISize);
 
     m_currISize = m_needISize;
     m_currPSize = m_needPSize;

@@ -35,61 +35,61 @@
 //////////////////////High Motion Intra///////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //VC-1 Table 181: High Motion Intra Delta Level Indexed by Run Table (Last = 0)
-const extern Ipp8s VC1_HighMotionIntraDeltaLevelLast0[31];
+const extern int8_t VC1_HighMotionIntraDeltaLevelLast0[31];
 
 //VC-1 Table 182: High Motion Intra Delta Level Indexed by Run Table (Last = 1)
-const extern Ipp8s VC1_HighMotionIntraDeltaLevelLast1[38];
+const extern int8_t VC1_HighMotionIntraDeltaLevelLast1[38];
 
 //VC-1 Table 183: High Motion Intra Delta Run Indexed by Level Table (Last = 0)
-const extern Ipp8s VC1_HighMotionIntraDeltaRunLast0[20];
+const extern int8_t VC1_HighMotionIntraDeltaRunLast0[20];
 
 //VC-1 Table 184: High Motion Intra Delta Run Indexed by Level Table (Last = 1)
-const extern Ipp8s VC1_HighMotionIntraDeltaRunLast1[7];
+const extern int8_t VC1_HighMotionIntraDeltaRunLast1[7];
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////Low Motion Intra///////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //VC-1 Table 195: Low Motion Intra Delta Level Indexed by Run Table (Last = 0)
-const extern Ipp8s VC1_LowMotionIntraDeltaLevelLast0[21];
+const extern int8_t VC1_LowMotionIntraDeltaLevelLast0[21];
 
 //VC-1 Table 196: Low Motion Intra Delta Level Indexed by Run Table (Last = 1)
-const extern Ipp8s VC1_LowMotionIntraDeltaLevelLast1[27];
+const extern int8_t VC1_LowMotionIntraDeltaLevelLast1[27];
 
 //VC-1 Table 197: Low Motion Intra Delta Run Indexed by Level Table (Last = 0)
-const extern Ipp8s VC1_LowMotionIntraDeltaRunLast0[16+1];
+const extern int8_t VC1_LowMotionIntraDeltaRunLast0[16+1];
 
 //VC-1 Table 198: Low Motion Intra Delta Run Indexed by Level Table (Last = 1)
-const extern Ipp8s VC1_LowMotionIntraDeltaRunLast1[4+1];
+const extern int8_t VC1_LowMotionIntraDeltaRunLast1[4+1];
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////Mid Rate Intra//////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //VC-1 Table 209: Mid Rate Intra Delta Level Indexed by Run Table (Last = 0)
-const extern Ipp8s VC1_MidRateIntraDeltaLevelLast0[15];
+const extern int8_t VC1_MidRateIntraDeltaLevelLast0[15];
 
 //VC-1 Table 210: Mid Rate Intra Delta Level Indexed by Run Table (Last = 1)
-const extern Ipp8s VC1_MidRateIntraDeltaLevelLast1[21];
+const extern int8_t VC1_MidRateIntraDeltaLevelLast1[21];
 
 //VC-1 Table 211: Mid Rate Intra Delta Run Indexed by Level Table (Last = 0)
-const extern Ipp8s VC1_MidRateIntraDeltaRunLast0[28];
+const extern int8_t VC1_MidRateIntraDeltaRunLast0[28];
 
 //VC-1 Table 212: Mid Rate Intra Delta Run Indexed by Level Table (Last = 1)
-const extern Ipp8s VC1_MidRateIntraDeltaRunLast1[9];
+const extern int8_t VC1_MidRateIntraDeltaRunLast1[9];
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////High Rate Intra//////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //VC-1 Table 223: High Rate Intra Delta Level Indexed by Run Table (Last = 0)
-const extern Ipp8s VC1_HighRateIntraDeltaLevelLast0[15];
+const extern int8_t VC1_HighRateIntraDeltaLevelLast0[15];
 
 //VC-1 Table 224: High Rate Intra Delta Level Indexed by Run Table (Last = 1)
-const extern Ipp8s VC1_HighRateIntraDeltaLevelLast1[17];
+const extern int8_t VC1_HighRateIntraDeltaLevelLast1[17];
 
 //VC-1 Table 225: High Rate Intra Delta Run Indexed by Level Table (Last = 0)
-const extern Ipp8s VC1_HighRateIntraDeltaRunLast0[57];
+const extern int8_t VC1_HighRateIntraDeltaRunLast0[57];
 
 //VC-1 Table 226: High Rate Intra Delta Run Indexed by Level Table (Last = 1)
-const extern Ipp8s VC1_HighRateIntraDeltaRunLast1[5];
+const extern int8_t VC1_HighRateIntraDeltaRunLast1[5];
 
 #endif //__umc_vc1_common_acintra_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

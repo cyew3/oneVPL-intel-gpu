@@ -53,7 +53,7 @@ namespace UMC
     class VC1TSHeap
     {
     public:
-        VC1TSHeap(Ipp8u* pBuf, Ipp32s BufSize):m_pBuf(pBuf),
+        VC1TSHeap(uint8_t* pBuf, int32_t BufSize):m_pBuf(pBuf),
                   m_iRemSize(BufSize)
         {
         };
@@ -62,44 +62,44 @@ namespace UMC
         };
 
         template <class T>
-            void s_new(T*** pObj, Ipp32u size)
+            void s_new(T*** pObj, uint32_t size)
         {
-            Ipp32s size_T = (Ipp32s)(sizeof(pObj)*size);
-            if (m_iRemSize - align_value<Ipp32s>(size_T) < 0)
+            int32_t size_T = (int32_t)(sizeof(pObj)*size);
+            if (m_iRemSize - align_value<int32_t>(size_T) < 0)
                 throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
             else
             {
                 *pObj = new(m_pBuf)T*[size];
-                m_pBuf += align_value<Ipp32s>(size_T);
-                m_iRemSize -= align_value<Ipp32s>(size_T);
+                m_pBuf += align_value<int32_t>(size_T);
+                m_iRemSize -= align_value<int32_t>(size_T);
             }
         };
         template <class T>
-        void s_new_one(T** pObj, Ipp32u size)
+        void s_new_one(T** pObj, uint32_t size)
         {
-            Ipp32s size_T = (Ipp32s)(sizeof(T)*size);
-            if (m_iRemSize - align_value<Ipp32s>(size_T) < 0)
+            int32_t size_T = (int32_t)(sizeof(T)*size);
+            if (m_iRemSize - align_value<int32_t>(size_T) < 0)
                 throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
             else
             {
                 *pObj = new(m_pBuf)T[size];
-                m_pBuf += align_value<Ipp32s>(size_T);
-                m_iRemSize -= align_value<Ipp32s>(size_T);
+                m_pBuf += align_value<int32_t>(size_T);
+                m_iRemSize -= align_value<int32_t>(size_T);
             }
         };
         template <class T>
-            void s_new(T** pObj, Ipp32u size)
+            void s_new(T** pObj, uint32_t size)
         {
-            Ipp32s size_T = sizeof(T);
-            if ((m_iRemSize - align_value<Ipp32s>(size_T)*((Ipp32s)size)) < 0)
+            int32_t size_T = sizeof(T);
+            if ((m_iRemSize - align_value<int32_t>(size_T)*((int32_t)size)) < 0)
                 throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
             else
             {
-                for(Ipp32u i = 0; i < size; i++)
+                for(uint32_t i = 0; i < size; i++)
                 {
                     pObj[i] = new(m_pBuf)(T);
-                    m_pBuf += align_value<Ipp32s>(size_T);
-                    m_iRemSize -= align_value<Ipp32s>(size_T);
+                    m_pBuf += align_value<int32_t>(size_T);
+                    m_iRemSize -= align_value<int32_t>(size_T);
                 }
             }
 
@@ -108,19 +108,19 @@ namespace UMC
                   class T,
                   class Arg>
             void s_new(Tbase** pObj,
-                       Ipp32u size,
+                       uint32_t size,
                        Arg*   pArg)
         {
-            Ipp32s size_T = sizeof(T);
-            if ((m_iRemSize - align_value<Ipp32s>(size_T)*((Ipp32s)size)) < 0)
+            int32_t size_T = sizeof(T);
+            if ((m_iRemSize - align_value<int32_t>(size_T)*((int32_t)size)) < 0)
                 throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
             else
             {
-                for(Ipp32u i = 0; i < size; i++)
+                for(uint32_t i = 0; i < size; i++)
                 {
                     pObj[i] = new(m_pBuf)(T)(pArg);
-                    m_pBuf += align_value<Ipp32s>(size_T);
-                    m_iRemSize -= align_value<Ipp32s>(size_T);
+                    m_pBuf += align_value<int32_t>(size_T);
+                    m_iRemSize -= align_value<int32_t>(size_T);
                 }
             }
 
@@ -129,34 +129,34 @@ namespace UMC
         template <class T>
             void s_new(T** pObj)
         {
-            Ipp32s size_T = sizeof(T);
-            if ((m_iRemSize - align_value<Ipp32s>(size_T)) < 0)
+            int32_t size_T = sizeof(T);
+            if ((m_iRemSize - align_value<int32_t>(size_T)) < 0)
                 throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
             else
             {
                 *pObj = new(m_pBuf)(T);
-                m_pBuf += align_value<Ipp32s>(size_T);
-                m_iRemSize -= align_value<Ipp32s>(size_T);
+                m_pBuf += align_value<int32_t>(size_T);
+                m_iRemSize -= align_value<int32_t>(size_T);
             }
         }
         template <class T>
-            Ipp8u* s_alloc()
+            uint8_t* s_alloc()
         {
-            Ipp8u* pRet;
-            Ipp32s size_T = sizeof(T);
-            if ((m_iRemSize - align_value<Ipp32s>(size_T)) < 0)
+            uint8_t* pRet;
+            int32_t size_T = sizeof(T);
+            if ((m_iRemSize - align_value<int32_t>(size_T)) < 0)
                 throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
             else
             {
                 pRet = m_pBuf;
-                m_pBuf += align_value<Ipp32s>(size_T);
-                m_iRemSize -= align_value<Ipp32s>(size_T);
+                m_pBuf += align_value<int32_t>(size_T);
+                m_iRemSize -= align_value<int32_t>(size_T);
                 return pRet;
             }
         }
     private:
-        Ipp8u*  m_pBuf;
-        Ipp32s  m_iRemSize;
+        uint8_t*  m_pBuf;
+        int32_t  m_iRemSize;
 
     };
 
@@ -177,8 +177,8 @@ namespace UMC
 
     public:
 
-        virtual bool     Init(Ipp32u iConsumerNumber,
-                      Ipp32u iMaxFramesInParallel,
+        virtual bool     Init(uint32_t iConsumerNumber,
+                      uint32_t iMaxFramesInParallel,
                       VC1VideoDecoder* pVC1Decoder);
 
         virtual bool Reset();
@@ -189,7 +189,7 @@ namespace UMC
         void ResetDSQueue();
         bool IsReadyDS()
         {
-            Ipp32u i;
+            uint32_t i;
             AutomaticMutex guard(m_mDSGuard);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
@@ -203,7 +203,7 @@ namespace UMC
         void GetReadyDS(Descriptor** pDS)
         {
             AutomaticMutex guardDS(m_mDSGuard);
-            Ipp32u i;
+            uint32_t i;
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
                 AutomaticMutex guard(*m_pGuardGet[i]);
@@ -223,7 +223,7 @@ namespace UMC
         template <class Descriptor>
         bool GetPerformedDS(Descriptor** pDS)
         {
-            Ipp32u i;
+            uint32_t i;
             AutomaticMutex guardDS(m_mDSGuard);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
@@ -250,7 +250,7 @@ namespace UMC
         // need for correct work VideoAcceleration
         void SetFirstBusyDescriptorAsReady()
         {
-            Ipp32u i;
+            uint32_t i;
             AutomaticMutex guardDS(m_mDSGuard);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
@@ -272,7 +272,7 @@ namespace UMC
             pDS->m_bIsReadyToLoad = true;
             pDS->m_bIsBusy = false;
             --m_iNumDSActiveinQueue;
-            Ipp32u i;
+            uint32_t i;
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
                 if (!m_pDescriptorQueue[i]->m_bIsReadyToLoad)
@@ -294,7 +294,7 @@ namespace UMC
         template <class Descriptor>
         bool GetReadySkippedDS(Descriptor** pDS)
         {
-            Ipp32u i;
+            uint32_t i;
             AutomaticMutex guardDS(m_mDSGuard);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
@@ -333,43 +333,43 @@ namespace UMC
         void SetBFrameIndex(FrameMemID Index);
         void SetRangeMapIndex(FrameMemID Index);
 
-        virtual FrameMemID  GetIdx(Ipp32u Idx);
+        virtual FrameMemID  GetIdx(uint32_t Idx);
 
         void SeLastFramesMode() {m_bIsLastFramesMode = true;}
 
     protected:
 
-        virtual Ipp32s      LockAndAssocFreeIdx(FrameMemID mid);
-        virtual FrameMemID  UnLockIdx(Ipp32u Idx);
+        virtual int32_t      LockAndAssocFreeIdx(FrameMemID mid);
+        virtual FrameMemID  UnLockIdx(uint32_t Idx);
 
-        virtual Ipp32u CalculateHeapSize();
+        virtual uint32_t CalculateHeapSize();
 
-        Ipp32u  m_iConsumerNumber;
+        uint32_t  m_iConsumerNumber;
 
         VC1FrameDescriptor** m_pDescriptorQueue;
 
-        Ipp32u m_iNumFramesProcessing;
-        Ipp32u m_iNumDSActiveinQueue;
+        uint32_t m_iNumFramesProcessing;
+        uint32_t m_iNumDSActiveinQueue;
 
         vm_mutex m_mDSGuard;
 
         vm_mutex** m_pGuardGet;
 
         VC1VideoDecoder* pMainVC1Decoder;
-        Ipp64u m_lNextFrameCounter;
+        unsigned long long m_lNextFrameCounter;
         VC1FrameDescriptor* m_pPrefDS;
-        Ipp32s m_iRangeMapIndex;
+        int32_t m_iRangeMapIndex;
 
         MemoryAllocator*           m_pMemoryAllocator; // (MemoryAllocator*) pointer to memory allocator
 
         // for correct VA support
         // H/W manage index by itself
-        Ipp32s m_CurrIndex;
-        Ipp32s m_PrevIndex;
-        Ipp32s m_NextIndex;
-        Ipp32s m_BFrameIndex;
-        Ipp32s m_iICIndex;
-        Ipp32s m_iICIndexB;
+        int32_t m_CurrIndex;
+        int32_t m_PrevIndex;
+        int32_t m_NextIndex;
+        int32_t m_BFrameIndex;
+        int32_t m_iICIndex;
+        int32_t m_iICIndexB;
 
         UMC::MemID     m_iTSHeapID;
 
@@ -386,8 +386,8 @@ namespace UMC
 
         virtual  ~VC1TaskStoreSW();
 
-        virtual bool     Init(Ipp32u iConsumerNumber,
-            Ipp32u iMaxFramesInParallel,
+        virtual bool     Init(uint32_t iConsumerNumber,
+            uint32_t iMaxFramesInParallel,
             VC1VideoDecoder* pVC1Decoder);
 
         virtual bool Reset();
@@ -402,14 +402,14 @@ namespace UMC
         VC1Task*** m_pCommonQueue;
         VC1Task*** m_pAdditionalQueue;
 
-        Ipp32u* m_pTasksInQueue;
-        Ipp32u* m_pSlicesInQueue;
+        uint32_t* m_pTasksInQueue;
+        uint32_t* m_pSlicesInQueue;
 
         VC1_STREAM_DEFINITION m_eStreamDef;
-        Ipp32s* m_pDSIndicate;
-        Ipp32s* m_pDSIndicateSwap;
+        int32_t* m_pDSIndicate;
+        int32_t* m_pDSIndicateSwap;
 
-        Ipp32u  m_iCurrentTaskID;
+        uint32_t  m_iCurrentTaskID;
 
         // each DWORD of m_pMainQueueTasksState and m_pAdditionaQueueTasksState contains state of 8 Tasks. Maximum number of tasks is 512 (row number)
         // Task state occupiers for 4 bits. xxxx
@@ -417,24 +417,24 @@ namespace UMC
         // 1-th bit isProcess
         // 2-th bit isReady
         // 3-th bit Reserved
-        Ipp32u* m_pMainQueueTasksState;
-        Ipp32u* m_pAdditionaQueueTasksState;
+        uint32_t* m_pMainQueueTasksState;
+        uint32_t* m_pAdditionaQueueTasksState;
 
         UMC::MemID     m_iIntStructID;
 
         std::vector<bool>             IntIndexes;
-        std::map<Ipp32u, FrameMemID>  AssocIdx;
+        std::map<uint32_t, FrameMemID>  AssocIdx;
 
-        virtual Ipp32u CalculateHeapSize();
+        virtual uint32_t CalculateHeapSize();
         void SetExternalSurface(VC1Context* pContext, const FrameData* pFrameData, FrameMemID index);
-        virtual Ipp32s      LockAndAssocFreeIdx(FrameMemID mid);
-        virtual FrameMemID  UnLockIdx(Ipp32u Idx);
-        virtual FrameMemID  GetIdx(Ipp32u Idx);
+        virtual int32_t      LockAndAssocFreeIdx(FrameMemID mid);
+        virtual FrameMemID  UnLockIdx(uint32_t Idx);
+        virtual FrameMemID  GetIdx(uint32_t Idx);
 
         inline VC1FrameDescriptor* GetPreferedDS()
         {
             VC1FrameDescriptor* pCurrDescriptor = m_pDescriptorQueue[0];
-            Ipp32u i;
+            uint32_t i;
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
                 if (m_pDescriptorQueue[i]->m_bIsReadyToProcess)
@@ -452,35 +452,35 @@ namespace UMC
             return pCurrDescriptor;
         };
 
-        inline bool IsMainTaskPrepareForProcess(Ipp32u FrameID, Ipp32u);
-        inline bool IsAdditionalTaskPrepareForProcess(Ipp32u FrameID, Ipp32u TaskID);
-        inline bool IsFrameReadyToDisplay(Ipp32u FrameID);
+        inline bool IsMainTaskPrepareForProcess(uint32_t FrameID, uint32_t);
+        inline bool IsAdditionalTaskPrepareForProcess(uint32_t FrameID, uint32_t TaskID);
+        inline bool IsFrameReadyToDisplay(uint32_t FrameID);
 
         // main queue processing
-        inline void SetTaskAsReady_MQ(Ipp32u FrameID, Ipp32u TaskID);
-        inline void SetTaskAsNotReady_MQ(Ipp32u FrameID, Ipp32u TaskID);
+        inline void SetTaskAsReady_MQ(uint32_t FrameID, uint32_t TaskID);
+        inline void SetTaskAsNotReady_MQ(uint32_t FrameID, uint32_t TaskID);
 
-        inline void SetTaskAsDone_MQ(Ipp32u FrameID, Ipp32u TaskID);
-        inline void EnableProcessBit_MQ(Ipp32u FrameID, Ipp32u TaskID);
-        inline void DisableProcessBit_MQ(Ipp32u FrameID, Ipp32u TaskID);
+        inline void SetTaskAsDone_MQ(uint32_t FrameID, uint32_t TaskID);
+        inline void EnableProcessBit_MQ(uint32_t FrameID, uint32_t TaskID);
+        inline void DisableProcessBit_MQ(uint32_t FrameID, uint32_t TaskID);
         // additional queue processing
-        inline void SetTaskAsReady_AQ(Ipp32u FrameID, Ipp32u TaskID);
-        inline void SetTaskAsNotReady_AQ(Ipp32u FrameID, Ipp32u TaskID);
-        inline void SetTaskAsDone_AQ(Ipp32u FrameID, Ipp32u TaskID);
-        inline void EnableProcessBit_AQ(Ipp32u FrameID, Ipp32u TaskID);
-        inline void DisableProcessBit_AQ(Ipp32u FrameID, Ipp32u TaskID);
+        inline void SetTaskAsReady_AQ(uint32_t FrameID, uint32_t TaskID);
+        inline void SetTaskAsNotReady_AQ(uint32_t FrameID, uint32_t TaskID);
+        inline void SetTaskAsDone_AQ(uint32_t FrameID, uint32_t TaskID);
+        inline void EnableProcessBit_AQ(uint32_t FrameID, uint32_t TaskID);
+        inline void DisableProcessBit_AQ(uint32_t FrameID, uint32_t TaskID);
 
     public:
         virtual FrameMemID LockSurface(FrameMemID* mid, bool isSkip = false);
         virtual void UnLockSurface(FrameMemID memID);
 
-        void OpenNextFrames(VC1FrameDescriptor* pDS, VC1FrameDescriptor** pPrevDS, Ipp32s* CurrRefDst, Ipp32s* CurBDst);
-        void SetDstForFrameAdv(VC1FrameDescriptor* pDS, Ipp32s* CurrRefDst, Ipp32s* CurBDst);
-        void SetDstForFrame(VC1FrameDescriptor* pDS, Ipp32s* CurrRefDst, Ipp32s* CurBDst);
+        void OpenNextFrames(VC1FrameDescriptor* pDS, VC1FrameDescriptor** pPrevDS, int32_t* CurrRefDst, int32_t* CurBDst);
+        void SetDstForFrameAdv(VC1FrameDescriptor* pDS, int32_t* CurrRefDst, int32_t* CurBDst);
+        void SetDstForFrame(VC1FrameDescriptor* pDS, int32_t* CurrRefDst, int32_t* CurBDst);
 
-        void FillIdxVector(Ipp32u size);
+        void FillIdxVector(uint32_t size);
 
-        bool CreateDSQueue(VC1Context* pContext, bool IsReorder, Ipp16s* pResidBuf); //pResidBuf - memory for residual coeffs
+        bool CreateDSQueue(VC1Context* pContext, bool IsReorder, int16_t* pResidBuf); //pResidBuf - memory for residual coeffs
 
         void SetDefinition(VC1SequenceLayerHeader* seqLayerHeader);
 
@@ -502,34 +502,34 @@ namespace UMC
         bool HaveTasksToBeDone();
         void FreeBusyDescriptor();
 
-        bool AddSampleTask(VC1Task* _pTask, Ipp32u qID);
-        void DistributeTasks(Ipp32u qID);
+        bool AddSampleTask(VC1Task* _pTask, uint32_t qID);
+        void DistributeTasks(uint32_t qID);
         bool GetNextTask(VC1FrameDescriptor **pFrameDS,
             VC1Task **pTask,
-            Ipp32u qID);
+            uint32_t qID);
         bool GetNextTaskMainThread(VC1FrameDescriptor **pFrameDS,
             VC1Task** pTask,
-            Ipp32u    qID,
+            uint32_t    qID,
             bool      &isFrameComplete);
 
         // pipeline for Dual CPU cases.
         bool GetNextTaskDualCPU(VC1FrameDescriptor **pFrameDS,
             VC1Task **pTask,
-            Ipp32u qID);
+            uint32_t qID);
 
         // pipeline for 4-CPU cases, high-defenition streams.
         bool GetNextTaskManyCPU_HD(VC1FrameDescriptor **pFrameDS,
             VC1Task **pTask,
-            Ipp32u qID);
+            uint32_t qID);
 
         // pipeline for 4-CPU cases, medium/small-defenition streams.
         bool GetNextTaskManyCPU_MD(VC1FrameDescriptor **pFrameDS,
             VC1Task **pTask,
-            Ipp32u qID);
+            uint32_t qID);
 
         bool AddPerfomedTask(VC1Task* pTask, VC1FrameDescriptor *pFrameDS);
 
-        VC1PictureLayerHeader* GetFirstInSecondField(Ipp32u qID);
+        VC1PictureLayerHeader* GetFirstInSecondField(uint32_t qID);
     };
 #endif // #ifdef ALLOW_SW_VC1_FALLBACK
 }

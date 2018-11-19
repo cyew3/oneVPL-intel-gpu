@@ -29,7 +29,7 @@
 
 
 //Table 73: DQScale
-extern const Ipp32s VC1_DQScaleTbl[64] =
+extern const int32_t VC1_DQScaleTbl[64] =
 {
      -1, //NA
      262144, 131072,  87381,  65536,
@@ -50,7 +50,7 @@ extern const Ipp32s VC1_DQScaleTbl[64] =
      4297,   4228,    4161
 };
 
-const extern  Ipp32s VC1_HighMotionIntraAC[] =
+const extern  int32_t VC1_HighMotionIntraAC[] =
 {
  15, /* max bits */
  2,  /* total subtables */
@@ -273,7 +273,7 @@ const extern  Ipp32s VC1_HighMotionIntraAC[] =
 -1 /* end of table */
 };
 
-const extern Ipp32s VC1_HighMotionInterAC[] =
+const extern int32_t VC1_HighMotionInterAC[] =
 {
  15, /* max bits */
  2,  /* total subtables */
@@ -478,7 +478,7 @@ const extern Ipp32s VC1_HighMotionInterAC[] =
 -1 /* end of table */
 };
 
-const extern Ipp32s VC1_LowMotionIntraAC[] =
+const extern int32_t VC1_LowMotionIntraAC[] =
 {
  13, /* max bits */
  2,  /* total subtables */
@@ -645,7 +645,7 @@ const extern Ipp32s VC1_LowMotionIntraAC[] =
 -1 /* end of table */
 };
 
-const extern Ipp32s VC1_LowMotionInterAC[] =
+const extern int32_t VC1_LowMotionInterAC[] =
 {
  15, /* max bits */
  2,  /* total subtables */
@@ -831,7 +831,7 @@ const extern Ipp32s VC1_LowMotionInterAC[] =
 };
 
 
-const extern Ipp32s VC1_MidRateIntraAC[] =
+const extern int32_t VC1_MidRateIntraAC[] =
 {
  12, /* max bits */
  2,  /* total subtables */
@@ -966,7 +966,7 @@ const extern Ipp32s VC1_MidRateIntraAC[] =
 -1 /* end of table */
 };
 
-const extern Ipp32s VC1_MidRateInterAC[] =
+const extern int32_t VC1_MidRateInterAC[] =
 {
  12, /* max bits */
  2,  /* total subtables */
@@ -1101,7 +1101,7 @@ const extern Ipp32s VC1_MidRateInterAC[] =
 };
 
 
-const extern Ipp32s VC1_HighRateIntraAC[] =
+const extern int32_t VC1_HighRateIntraAC[] =
 {
  16, /* max bits */
  2,  /* total subtables */
@@ -1304,7 +1304,7 @@ const extern Ipp32s VC1_HighRateIntraAC[] =
 -1 /* end of table */
 };
 
-const extern Ipp32s VC1_HighRateInterAC[] =
+const extern int32_t VC1_HighRateInterAC[] =
 {
  23, /* max bits */
  3,  /* total subtables */

@@ -31,11 +31,11 @@
 
 #include "umc_vc1_dec_debug.h"
 
-void ChooseDCTable(VC1Context* pContext, Ipp32s transDCtableIndex)
+void ChooseDCTable(VC1Context* pContext, int32_t transDCtableIndex)
 {
-    Ipp32s *lumaTable_lut[]  ={pContext->m_vlcTbl->m_pLowMotionLumaDCDiff,
+    int32_t *lumaTable_lut[]  ={pContext->m_vlcTbl->m_pLowMotionLumaDCDiff,
                                pContext->m_vlcTbl->m_pHighMotionLumaDCDiff};
-    Ipp32s *chromaTable_lut[]={pContext->m_vlcTbl->m_pLowMotionChromaDCDiff,
+    int32_t *chromaTable_lut[]={pContext->m_vlcTbl->m_pLowMotionChromaDCDiff,
                                pContext->m_vlcTbl->m_pHighMotionChromaDCDiff};
 
     pContext->m_picLayerHeader->m_pCurrLumaDCDiff   = lumaTable_lut[transDCtableIndex];
@@ -43,8 +43,8 @@ void ChooseDCTable(VC1Context* pContext, Ipp32s transDCtableIndex)
 }
 
 void ChooseACTable(VC1Context* pContext,
-                   Ipp32s transACtableIndex1,
-                   Ipp32s transACtableIndex2)
+                   int32_t transACtableIndex1,
+                   int32_t transACtableIndex2)
 {
     VC1PictureLayerHeader* picLayerHeader = pContext->m_picLayerHeader;
     IppiACDecodeSet_VC1* IntraACDecodeSet_lut[] =
@@ -211,8 +211,8 @@ void ChooseTTMB_TTBLK_SBP(VC1Context* pContext)
 }
 
 void ChooseMBModeInterlaceFrame(VC1Context* pContext,
-                                Ipp32u MV4SWITCH,
-                                Ipp32u MBMODETAB)
+                                uint32_t MV4SWITCH,
+                                uint32_t MBMODETAB)
 {
   if(MV4SWITCH == 1)
   {
@@ -227,7 +227,7 @@ void ChooseMBModeInterlaceFrame(VC1Context* pContext,
 }
 
 
-void ChooseMBModeInterlaceField(VC1Context* pContext, Ipp32s MBMODETAB)
+void ChooseMBModeInterlaceField(VC1Context* pContext, int32_t MBMODETAB)
 {
   if(pContext->m_picLayerHeader->MVMODE == VC1_MVMODE_MIXED_MV)
   {
@@ -256,8 +256,8 @@ void ChooseMBModeInterlaceField(VC1Context* pContext, Ipp32s MBMODETAB)
  void ChoosePredScaleValueBPictbl(VC1PictureLayerHeader* picLayerHeader)
  {
 
-     Ipp32u FREFDIST = ((picLayerHeader->ScaleFactor * picLayerHeader->REFDIST) >> 8);
-     Ipp32s BREFDIST = picLayerHeader->REFDIST - FREFDIST - 1;
+     uint32_t FREFDIST = ((picLayerHeader->ScaleFactor * picLayerHeader->REFDIST) >> 8);
+     int32_t BREFDIST = picLayerHeader->REFDIST - FREFDIST - 1;
 
      if (BREFDIST < 0)
          BREFDIST = 0;

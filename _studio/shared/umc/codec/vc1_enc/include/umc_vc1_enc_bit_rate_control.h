@@ -50,9 +50,9 @@ typedef struct
 
 typedef struct
 {
-    Ipp32s bitrate;
-    Ipp64f framerate;
-    Ipp8u  constQuant;
+    int32_t bitrate;
+    double framerate;
+    uint8_t  constQuant;
 }VC1BRInfo;
 
 class VC1BitRateControl
@@ -63,68 +63,68 @@ class VC1BitRateControl
 
     protected:
 
-        Ipp32u m_bitrate;           //current bitrate
-        Ipp64f m_framerate;         //current frame rate
+        uint32_t m_bitrate;           //current bitrate
+        double m_framerate;         //current frame rate
 
         //GOP BRC
         VC1BRC*                     m_BRC;
 
         //hypothetical ref decoder
         VC1HRDecoder** m_HRD;
-        Ipp32s m_LBucketNum;
+        int32_t m_LBucketNum;
 
         //Frames parameters
-        Ipp32s m_currSize;         //last coded frame size
+        int32_t m_currSize;         //last coded frame size
 
         //GOP parameters
-        Ipp32u m_GOPLength;         //number of frame in GOP
-        Ipp32u m_BFrLength;         //number of successive B frames
+        uint32_t m_GOPLength;         //number of frame in GOP
+        uint32_t m_BFrLength;         //number of successive B frames
 
          //coding params
-         Ipp32u m_encMode;        //coding mode
-         Ipp8u  m_lastQuant;      //last quant for skip frames
+         uint32_t m_encMode;        //coding mode
+         uint8_t  m_lastQuant;      //last quant for skip frames
 
     public:
-        static Ipp32s CalcAllocMemorySize(Ipp32u GOPLength, Ipp32u BFrLength);
-        UMC::Status Init(Ipp8u* pBuffer,   Ipp32s AllocatedMemSize,
-                         Ipp32u yuvFSize,  Ipp32u bitrate,
-                         Ipp64f framerate, Ipp32u mode,
-                         Ipp32u GOPLength, Ipp32u BFrLength, Ipp8u doubleQuant, Ipp8u QuantMode);
+        static int32_t CalcAllocMemorySize(uint32_t GOPLength, uint32_t BFrLength);
+        UMC::Status Init(uint8_t* pBuffer,   int32_t AllocatedMemSize,
+                         uint32_t yuvFSize,  uint32_t bitrate,
+                         double framerate, uint32_t mode,
+                         uint32_t GOPLength, uint32_t BFrLength, uint8_t doubleQuant, uint8_t QuantMode);
 
-        UMC::Status InitBuffer(Ipp32s profile, Ipp32s level, Ipp32s BufferSize, Ipp32s initFull);
+        UMC::Status InitBuffer(int32_t profile, int32_t level, int32_t BufferSize, int32_t initFull);
 
         void Reset();
         void Close();
 
-        static Ipp8u GetLevel(Ipp32u profile, Ipp32u bitrate, Ipp32u widthMB, Ipp32u heightMB);
+        static uint8_t GetLevel(uint32_t profile, uint32_t bitrate, uint32_t widthMB, uint32_t heightMB);
 
         //get and prepare data for coding (all data compressed as needed (see standard))
         void GetAllHRDParams(VC1_HRD_PARAMS* param);
-        UMC::Status GetCurrentHRDParams(Ipp32s HRDNum, VC1_hrd_OutData* hrdParams);
+        UMC::Status GetCurrentHRDParams(int32_t HRDNum, VC1_hrd_OutData* hrdParams);
 
         //return number of coeffs witch will be reduce by zero
         //1 - intra block, 0 - inter block
-        //Ipp32s CheckBlockQuality(Ipp16s* pSrc, Ipp32u srcStep,
-        //                         Ipp32u quant, Ipp32u intra);
-        UMC::Status CheckFrameCompression(ePType picType, Ipp32u currSize);
+        //int32_t CheckBlockQuality(int16_t* pSrc, uint32_t srcStep,
+        //                         uint32_t quant, uint32_t intra);
+        UMC::Status CheckFrameCompression(ePType picType, uint32_t currSize);
         UMC::Status CompleteFrame(ePType picType);
-        UMC::Status HandleHRDResult(Ipp32s hrdStatus);
+        UMC::Status HandleHRDResult(int32_t hrdStatus);
 
         //return recomended quant
-        void GetQuant(ePType picType, Ipp8u* PQuant, bool* Half);
-        void GetQuant(ePType picType, Ipp8u* PQuant, bool* Half, bool* Uniform);
+        void GetQuant(ePType picType, uint8_t* PQuant, bool* Half);
+        void GetQuant(ePType picType, uint8_t* PQuant, bool* Half, bool* Uniform);
 
         UMC::Status GetBRInfo(VC1BRInfo* pInfo);
 
-        UMC::Status ChangeGOPParams(Ipp32u GOPLength, Ipp32u BFrLength);
+        UMC::Status ChangeGOPParams(uint32_t GOPLength, uint32_t BFrLength);
 
-        Ipp8u GetLastQuant();
+        uint8_t GetLastQuant();
 
-        Ipp32s GetLBucketNum();
+        int32_t GetLBucketNum();
 protected:
 
-        Ipp32s GetHRD_Rate  (Ipp32s* rate);
-        Ipp32s GetHRD_Buffer(Ipp32s* size);
+        int32_t GetHRD_Rate  (int32_t* rate);
+        int32_t GetHRD_Buffer(int32_t* size);
 
 #ifdef BRC_TEST
         BRCTest  BRCFileSizeTest;
