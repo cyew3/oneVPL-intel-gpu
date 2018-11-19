@@ -1050,8 +1050,11 @@ void FillPpsBuffer(
     for (mfxU16 i = 0; i < 15; i ++)
     {
         pps.RefFrameList[i].bPicEntry      = task.m_dpb[0][i].m_idxRec;
-        pps.RefFrameList[i].AssociatedFlag = !!task.m_dpb[0][i].m_ltr;
-        pps.RefFramePOCList[i] = task.m_dpb[0][i].m_poc;
+
+        // Value 1 mitigates some Windows driver bug
+        pps.RefFrameList[i].AssociatedFlag = task.m_dpb[0][i].m_idxRec == IDX_INVALID ? 1 : !!task.m_dpb[0][i].m_ltr;
+
+        pps.RefFramePOCList[i]             = task.m_dpb[0][i].m_poc;
     }
 
 #ifdef MFX_ENABLE_HEVCE_ROI

@@ -32,31 +32,54 @@
 #include <assert.h>
 #include "mfx_common_int.h"
 #include <ippi.h>
+#include <type_traits>
+#include <utility>
+
 namespace MfxHwH265Encode
 {
 
-template<class T, class A> mfxStatus Insert(A& _to, mfxU32 _where, T const & _what)
+template<class T, class Enable = void>
+struct DefaultFiller
 {
-    MFX_CHECK(_where + 1 < (sizeof(_to)/sizeof(_to[0])), MFX_ERR_UNDEFINED_BEHAVIOR);
-    memmove(&_to[_where + 1], &_to[_where], sizeof(_to)-(_where + 1) * sizeof(_to[0]));
-    _to[_where] = _what;
-    return MFX_ERR_NONE;
+    static constexpr typename std::remove_reference<T>::type Get()
+    {
+        return typename std::remove_reference<T>::type();
+    }
+};
+
+template<class T>
+struct DefaultFiller<T, typename std::enable_if<
+    std::is_arithmetic<
+    typename std::remove_reference<T>::type
+    >::value
+>::type>
+{
+    static constexpr typename std::remove_reference<T>::type Get()
+    {
+        return typename std::remove_reference<T>::type(-1);
+    }
+};
+
+template<class A>
+void Remove(A &_from, size_t _where, size_t _num = 1)
+{
+    if (std::end(_from) < std::begin(_from) + _where + _num)
+        throw std::out_of_range("Remove() target is out of container range");
+
+    auto it = std::copy(std::begin(_from) + _where + _num, std::end(_from), std::begin(_from) + _where);
+    std::fill(it, std::end(_from), DefaultFiller<decltype(*it)>::Get());
 }
 
-template<class A> mfxStatus Remove(A& _from, mfxU32 _where, mfxU32 _num = 1)
+template<class T, class A>
+void Insert(A& _to, mfxU32 _where, T const & _what)
 {
-    const mfxU32 S0 = sizeof(_from[0]);
-    const mfxU32 S = sizeof(_from);
-    const mfxU32 N = S / S0;
+    if (std::begin(_to) + _where < std::end(_to))
+        throw std::out_of_range("Insert() target is out of container range");
 
-    MFX_CHECK(_where < N && _num <= (N - _where), MFX_ERR_UNDEFINED_BEHAVIOR);
+    if (std::begin(_to) + _where + 1 != std::end(_to))
+        std::copy_backward(std::begin(_to) + _where, std::end(_to) - 1, std::end(_to));
 
-    if (_where + _num < N)
-        memmove(&_from[_where], &_from[_where + _num], S - ((_where + _num) * S0));
-
-    memset(&_from[N - _num], IDX_INVALID, S0 * _num);
-
-    return MFX_ERR_NONE;
+    _to[_where] = _what;
 }
 
 mfxU32 CountL1(DpbArray const & dpb, mfxI32 poc)
@@ -1617,8 +1640,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         std::list<FakeTask>::iterator cur;
         std::vector<STRPSFreq> sets;
         std::vector<STRPSFreq>::iterator it;
-        DpbArray dpb = {};
-        DpbFrame tmp = {};
+        DpbArray dpb;
+        DpbFrame tmp;
         mfxU8 rpl[2][MAX_DPB_SIZE] = {};
         mfxU8 nRef[2] = {};
         STRPS rps;
@@ -1632,8 +1655,6 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         if(isSCC)
             STDist += STDist;
 #endif
-
-        Fill(dpb, IDX_INVALID);
 
         for (mfxU32 i = 0; (moreLTR || sets.size() != 64); i++)
         {
@@ -2672,13 +2693,13 @@ void TaskManager::Reset(bool bFieldMode, mfxU32 numTask, mfxU16 resetHeaders)
 Task* TaskManager::New()
 {
     UMC::AutomaticUMCMutex guard(m_listMutex);
-    Task* pTask = 0;
+    Task* pTask = nullptr;
 
     if (!m_free.empty())
     {
         pTask = &m_free.front();
         m_reordering.splice(m_reordering.end(), m_free, m_free.begin());
-        Zero(*pTask);
+        *pTask = Task();
         pTask->m_stage = FRAME_NEW;
     }
 
@@ -2899,7 +2920,7 @@ void InitDPB(
     if (   task.m_poc > task.m_lastRAP
         && prevTask.m_poc <= prevTask.m_lastRAP) // 1st TRAIL
     {
-        Fill(task.m_dpb[TASK_DPB_ACTIVE], IDX_INVALID);
+         std::fill(std::begin(task.m_dpb[TASK_DPB_ACTIVE]), std::end(task.m_dpb[TASK_DPB_ACTIVE]), DpbFrame());
 
         // TODO: add mode to disable this check
         for (mfxU8 i = 0, j = 0; !isDpbEnd(prevTask.m_dpb[TASK_DPB_AFTER], i); i++)
@@ -3764,7 +3785,8 @@ void ConfigureTask(
 
     //construct ref lists
     Zero(task.m_numRefActive);
-    Fill(task.m_refPicList, IDX_INVALID);
+    std::fill(std::begin(task.m_refPicList[0]), std::end(task.m_refPicList[0]), IDX_INVALID);
+    std::fill(std::begin(task.m_refPicList[1]), std::end(task.m_refPicList[1]), IDX_INVALID);
 
     if (isB)
     {
@@ -3807,7 +3829,7 @@ void ConfigureTask(
 
     // update dpb
     if (isIDR) {
-        Fill(task.m_dpb[TASK_DPB_AFTER], IDX_INVALID);
+        std::fill(std::begin(task.m_dpb[TASK_DPB_AFTER]), std::end(task.m_dpb[TASK_DPB_AFTER]), DpbFrame());
     }
     else
         std::copy(std::begin(task.m_dpb[TASK_DPB_ACTIVE]), std::end(task.m_dpb[TASK_DPB_ACTIVE]), std::begin(task.m_dpb[TASK_DPB_AFTER]));

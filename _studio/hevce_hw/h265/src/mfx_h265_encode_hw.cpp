@@ -499,7 +499,7 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
 #endif
     m_task.Reset(m_vpar.isField(), MaxTask(m_vpar));
 
-    Fill(m_lastTask, IDX_INVALID);
+    m_lastTask = Task();
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     m_aesCounter = m_lastTask.m_aes_counter = m_vpar.m_ext.PAVP.CipherCounter;
@@ -788,7 +788,8 @@ mfxStatus   MFXVideoENCODEH265_HW::WaitingForAsyncTasks(bool bResetTasks)
     m_bs.Unlock();
     m_CuQp.Unlock();
 
-    Fill(m_lastTask, 0xFF);
+    m_lastTask = Task();
+
     ZeroParams();
 
     return sts;
@@ -1656,7 +1657,8 @@ void MFXVideoENCODEH265_HW::FreeResources()
     m_ddi.reset();
 
     m_frameOrder = 0;
-    Zero(m_lastTask);
+    m_lastTask   = Task();
+
     Zero(m_caps);
 
     if (m_vpar.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && opaq.In.Surfaces)

@@ -174,21 +174,18 @@ enum
     MFX_MEMTYPE_SYS_INT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_SYSTEM_MEMORY        | MFX_MEMTYPE_INTERNAL_FRAME,
 };
 
-enum
-{
-    MAX_DPB_SIZE            = 15,
-    IDX_INVALID             = 0xFF,
+constexpr mfxU8    MAX_DPB_SIZE          = 15;
+constexpr mfxU8    IDX_INVALID           = 0xff;
 
-    HW_SURF_ALIGN_W         = 16,
-    HW_SURF_ALIGN_H         = 16,
+constexpr mfxU8    HW_SURF_ALIGN_W       = 16;
+constexpr mfxU8    HW_SURF_ALIGN_H       = 16;
 
-    MAX_SLICES              = 200,// WA for driver issue regerding CNL and older platforms
-    DEFAULT_LTR_INTERVAL    = 16,
-    DEFAULT_PPYR_INTERVAL   = 3,
+constexpr mfxU8    MAX_SLICES            = 200; // WA for driver issue regarding CNL and older platforms
+constexpr mfxU8    DEFAULT_LTR_INTERVAL  = 16;
+constexpr mfxU8    DEFAULT_PPYR_INTERVAL = 3;
 
-    MAX_NUM_ROI             = 16,
-    MAX_NUM_DIRTY_RECT      = 64
-};
+constexpr mfxU8    MAX_NUM_ROI           = 16;
+constexpr mfxU8    MAX_NUM_DIRTY_RECT    = 64;
 
 #if DEBUG_REC_FRAMES_INFO
 enum
@@ -307,25 +304,27 @@ private:
     bool m_isExternal;
 };
 
-typedef struct _DpbFrame
+struct DpbFrame
 {
-    mfxI32   m_poc;
-    mfxU32   m_fo;  // FrameOrder
-    mfxU32   m_eo;  // Encoded order
-    mfxU32   m_bpo; // Bpyramid order
-    mfxU32   m_level; //pyramid level
-    mfxU8    m_tid;
-    bool     m_ltr; // is "long-term"
-    bool     m_ldb; // is "low-delay B"
-    bool     m_secondField;
-    bool     m_bottomField;
-    mfxU8    m_codingType;
-    mfxU8    m_idxRaw;
-    mfxU8    m_idxRec;
-    mfxMemId m_midRec;
-    mfxMemId m_midRaw;
-    mfxFrameSurface1*   m_surf; //input surface, may be opaque
-}DpbFrame, DpbArray[MAX_DPB_SIZE];
+    mfxI32              m_poc         = -1;
+    mfxU32              m_fo          = 0xffffffff; // FrameOrder
+    mfxU32              m_eo          = 0xffffffff; // Encoded order
+    mfxU32              m_bpo         = 0;          // B-pyramid order
+    mfxU32              m_level       = 0;          // pyramid level
+    mfxU8               m_tid         = 0;
+    bool                m_ltr         = false; // is "long-term"
+    bool                m_ldb         = false; // is "low-delay B"
+    bool                m_secondField = false;
+    bool                m_bottomField = false;
+    mfxU8               m_codingType  = 0;
+    mfxU8               m_idxRaw      = IDX_INVALID;
+    mfxU8               m_idxRec      = IDX_INVALID;
+    mfxMemId            m_midRec      = nullptr;
+    mfxMemId            m_midRaw      = nullptr;
+    mfxFrameSurface1*   m_surf        = nullptr; //input surface, may be opaque
+};
+
+typedef DpbFrame DpbArray[MAX_DPB_SIZE];
 
 enum
 {
@@ -360,78 +359,78 @@ struct RoiData{
     mfxI16  Priority;
 };
 
-typedef struct _Task : DpbFrame
+struct Task : DpbFrame
 {
-    mfxBitstream*       m_bs;
-    mfxFrameSurface1*   m_surf_real;
-    mfxEncodeCtrl       m_ctrl;
-    Slice               m_sh;
+    mfxBitstream*     m_bs                            = nullptr;
+    mfxFrameSurface1* m_surf_real                     = nullptr;
+    mfxEncodeCtrl     m_ctrl                          = {};
+    Slice             m_sh                            = {};
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    mfxAES128CipherCounter m_aes_counter;
+    mfxAES128CipherCounter m_aes_counter              = {};
 #endif
-    mfxU32 m_idxBs;
-    mfxU8  m_idxCUQp;
-    bool   m_bCUQPMap;
 
-    mfxU8 m_refPicList[2][MAX_DPB_SIZE];
-    mfxU8 m_numRefActive[2];
+    mfxU32            m_idxBs                         = IDX_INVALID;
+    mfxU8             m_idxCUQp                       = IDX_INVALID;
+    bool              m_bCUQPMap                      = false;
 
-    mfxU16 m_frameType;
-    mfxU16 m_insertHeaders;
-    mfxU8  m_shNUT;
-    mfxI8  m_qpY;
-    mfxU8  m_avgQP;
-    mfxU32 m_MAD;
-    mfxI32 m_lastIPoc;
-    mfxI32 m_lastRAP;
+    mfxU8             m_refPicList[2][MAX_DPB_SIZE]   = {};
+    mfxU8             m_numRefActive[2]               = {};
+    mfxU16            m_frameType                     = 0;
+    mfxU16            m_insertHeaders                 = 0;
+    mfxU8             m_shNUT                         = 0;
+    mfxI8             m_qpY                           = 0;
+    mfxU8             m_avgQP                         = 0;
+    mfxU32            m_MAD                           = 0;
+    mfxI32            m_lastIPoc                      = 0;
+    mfxI32            m_lastRAP                       = 0;
 
-    mfxU32 m_statusReportNumber;
-    mfxU32 m_bsDataLength;
-    mfxU32 m_minFrameSize;
+    mfxU32            m_statusReportNumber            = 0;
+    mfxU32            m_bsDataLength                  = 0;
+    mfxU32            m_minFrameSize                  = 0;
 
-    DpbArray m_dpb[TASK_DPB_NUM];
+    DpbArray          m_dpb[TASK_DPB_NUM];
 
-    mfxMemId m_midBs;
-    mfxMemId m_midCUQp;
+    mfxMemId          m_midBs                         = nullptr;
+    mfxMemId          m_midCUQp                       = nullptr;
 
-    bool m_resetBRC;
+    bool              m_resetBRC                      = false;
 
-    mfxU32 m_initial_cpb_removal_delay;
-    mfxU32 m_initial_cpb_removal_offset;
-    mfxU32 m_cpb_removal_delay;
-    mfxU32 m_dpb_output_delay;
+    mfxU32            m_initial_cpb_removal_delay     = 0;
+    mfxU32            m_initial_cpb_removal_offset    = 0;
+    mfxU32            m_cpb_removal_delay             = 0;
+    mfxU32            m_dpb_output_delay              = 0;
 
-    mfxU32 m_stage;
-    mfxU32 m_recode;
-    IntraRefreshState m_IRState;
-    bool m_bSkipped;
+    mfxU32            m_stage                         = 0;
+    mfxU32            m_recode                        = 0;
+    IntraRefreshState m_IRState                       = {};
+    bool              m_bSkipped                      = false;
 
-    RoiData       m_roi[MAX_NUM_ROI];
-    mfxU16        m_roiMode;    // BRC only
-    mfxU16        m_numRoi;
-    bool          m_bPriorityToDQPpar;
+    RoiData           m_roi[MAX_NUM_ROI]              = {};
+    mfxU16            m_roiMode                       = 0; // BRC only
+    mfxU16            m_numRoi                        = 0;
+    bool              m_bPriorityToDQPpar             = false;
 
 #ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
-    RectData      m_dirtyRect[MAX_NUM_DIRTY_RECT];
-    mfxU16        m_numDirtyRect;
+    RectData          m_dirtyRect[MAX_NUM_DIRTY_RECT] = {};
+    mfxU16            m_numDirtyRect                  = 0;
 #endif  // MFX_ENABLE_HEVCE_DIRTY_RECT
 
-    mfxU16        m_SkipMode;
+    mfxU16            m_SkipMode                      = 0;
+
 #if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    mfxU32        m_mfeTimeToWait;
-    bool          m_flushMfe;
+    mfxU32            m_mfeTimeToWait                 = 0;
+    bool              m_flushMfe                      = false;
 #endif // MFX_ENABLE_MFE
 
 #if defined(MFX_ENABLE_HEVCE_SCC)
-    bool          m_isSCC;
+    bool              m_isSCC                         = false;
 #endif
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    GPU_SYNC_EVENT_HANDLE m_GpuEvent;
+    GPU_SYNC_EVENT_HANDLE m_GpuEvent                  = {};
 #endif
-
-}Task;
+};
 
 enum
 {
