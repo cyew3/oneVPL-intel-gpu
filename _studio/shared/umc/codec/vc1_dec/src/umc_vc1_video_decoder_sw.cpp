@@ -735,8 +735,8 @@ Status VC1VideoDecoderSW::Close(void)
         {
             if(m_pdecoder[i])
             {
-                delete m_pdecoder[i];
-                m_pdecoder[i] = 0;
+                m_pdecoder[i]->~VC1ThreadDecoder();
+                m_pdecoder[i] = nullptr;
             }
         }
         m_pdecoder = NULL;

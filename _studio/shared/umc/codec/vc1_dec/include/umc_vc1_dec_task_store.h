@@ -177,27 +177,6 @@ namespace UMC
 
     public:
 
-        void* operator new(size_t size, void* p)
-        {
-            if (!p)
-                throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
-            return new(p) Ipp8u[size];
-        };
-
-        // external memory management. No need to delete memory
-        void operator delete(void *p) THROWSEXCEPTION
-        {
-            //Anyway its incorrect when we trying free null pointer
-            if (!p)
-                throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
-        };
-
-        void operator delete(void *, void *) THROWSEXCEPTION
-        {
-            // delete for system exceptions case
-            throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
-        };
-
         virtual bool     Init(Ipp32u iConsumerNumber,
                       Ipp32u iMaxFramesInParallel,
                       VC1VideoDecoder* pVC1Decoder);
