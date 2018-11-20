@@ -106,6 +106,8 @@ namespace UMC_HEVC_DECODER
             cntRefPicSetStCurrAfter  = 0,
             cntRefPicSetLtCurr = 0;
         H265DBPList *dpb = supplier->GetDPBList();
+        if (!dpb)
+            throw h265_exception(UMC_ERR_FAILED);
         ReferencePictureSet *rps = pSlice->getRPS();
         for(H265DecoderFrame* frame = dpb->head() ; frame && count < sizeof(pPicParam->RefFrameList)/sizeof(pPicParam->RefFrameList[0]) ; frame = frame->future())
         {
