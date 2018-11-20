@@ -42,8 +42,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #if defined(MFX_VERSION_NEXT) && (MFX_VERSION >= MFX_VERSION_NEXT)
 //---MCTF, extended interface
 #undef ENABLE_MCTF_EXT
-enum {MCTF_BITRATE_MULTIPLIER = 100000};
 #endif
+enum {MCTF_BITRATE_MULTIPLIER = 100000};
 #endif
 
 
@@ -187,4 +187,3 @@ enum LibVABackend
 #define MSDK_CHECK_RESULT_SAFE(P, X, ERR, ADD)   {if ((X) > (P)) {ADD; MSDK_PRINT_RET_MSG_(ERR); return ERR;}}
 
 #endif //__SAMPLE_DEFS_H__
-

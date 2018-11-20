@@ -22,8 +22,6 @@
 #include "asc.h"
 #include "asc_defs.h"
 
-#include "genx_global.h"
-
 #include "genx_me_bdw_isa.h"
 #include "genx_mc_bdw_isa.h"
 #include "genx_sd_bdw_isa.h"
@@ -49,29 +47,34 @@ using std::min;
 using  std::max;
 using namespace ns_asc;
 
-const mfxU16 CMC::AUTO_FILTER_STRENGTH = 0;
+const mfxU16 CMC::AUTO_FILTER_STRENGTH    = 0;
 const mfxU16 CMC::DEFAULT_FILTER_STRENGTH = 8;
 const mfxU32 CMC::DEFAULT_BPP             = 0; //Automode
 const mfxU16 CMC::DEFAULT_DEBLOCKING = MFX_CODINGOPTION_OFF;
 const mfxU16 CMC::DEFAULT_OVERLAP = MFX_CODINGOPTION_OFF;
-const mfxU16 CMC::DEFAULT_ME = MFX_MVPRECISION_INTEGER >> 1;
+const mfxU16 CMC::DEFAULT_ME              = MFX_MVPRECISION_INTEGER >> 1;
 const mfxU16 CMC::DEFAULT_REFS = MCTF_TEMPORAL_MODE_2REF;
 
-void CMC::QueryDefaultParams(IntMctfParams* pBuffer)
+void CMC::QueryDefaultParams(
+    IntMctfParams * pBuffer
+)
 {
     if (!pBuffer) return;
     pBuffer->Deblocking = DEFAULT_DEBLOCKING;
     pBuffer->Overlap = DEFAULT_OVERLAP;
     pBuffer->subPelPrecision = DEFAULT_ME;
     pBuffer->TemporalMode = DEFAULT_REFS;
-    pBuffer->FilterStrength = AUTO_FILTER_STRENGTH; // [0...20]
+    pBuffer->FilterStrength    = AUTO_FILTER_STRENGTH; // [0...20]
     pBuffer->BitsPerPixelx100k= DEFAULT_BPP;
 };
 
-void CMC::QueryDefaultParams(mfxExtVppMctf* pBuffer)
+void CMC::QueryDefaultParams(
+    mfxExtVppMctf * pBuffer
+)
 {
     if (!pBuffer) return;
-    IntMctfParams Mctfparam;
+    IntMctfParams
+        Mctfparam;
     QueryDefaultParams(&Mctfparam);
     pBuffer->FilterStrength = Mctfparam.FilterStrength;
 #ifdef MFX_ENABLE_MCTF_EXT
@@ -83,11 +86,15 @@ void CMC::QueryDefaultParams(mfxExtVppMctf* pBuffer)
 #endif
 };
 
-mfxStatus CMC::CheckAndFixParams(mfxExtVppMctf* pBuffer)
+mfxStatus CMC::CheckAndFixParams(
+    mfxExtVppMctf * pBuffer
+)
 {
-    mfxStatus sts = MFX_ERR_NONE;
+    mfxStatus
+        sts = MFX_ERR_NONE;
     if (!pBuffer) return MFX_ERR_NULL_PTR;
-    if (pBuffer->FilterStrength > 20) {
+    if (pBuffer->FilterStrength > 20)
+    {
         pBuffer->FilterStrength = AUTO_FILTER_STRENGTH;
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -148,7 +155,10 @@ mfxStatus CMC::CheckAndFixParams(mfxExtVppMctf* pBuffer)
 }
 
 // this function fills MCTF params based on extended buffer
-void CMC::FillParamControl(IntMctfParams* pBuffer, const mfxExtVppMctf* pSrc)
+void CMC::FillParamControl(
+    IntMctfParams       * pBuffer,
+    const mfxExtVppMctf * pSrc
+)
 {
     pBuffer->FilterStrength = pSrc->FilterStrength;
 #ifdef MFX_ENABLE_MCTF_EXT
@@ -160,25 +170,27 @@ void CMC::FillParamControl(IntMctfParams* pBuffer, const mfxExtVppMctf* pSrc)
 #endif
 }
 
-inline mfxStatus CMC::SetFilterStrenght(unsigned short fs) {
-    if (fs > 20) {
-#ifdef MFX_MCTF_DEBUG_PRINT
-        ASC_PRINTF("Invalid filter strength\nEnd\n");
-#endif
+inline mfxStatus CMC::SetFilterStrenght(
+    unsigned short fs
+)
+{
+    if (fs > 20)
         return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
 
     p_ctrl->th = fs * 50;
-    p_ctrl->sTh = min(fs + CHROMABASE, MAXCHROMA);//fs * 5;
+    p_ctrl->sTh = (mfxU16) min(fs + CHROMABASE, MAXCHROMA);
     res = ctrlBuf->WriteSurface((const Ipp8u *)p_ctrl.get(), NULL, sizeof(MeControlSmall));
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     return MFX_ERR_NONE;
 }
 
-inline mfxStatus CMC::SetupMeControl(const mfxFrameInfo& FrameInfo, mfxU16 th, mfxU16 subPelPre)
+inline mfxStatus CMC::SetupMeControl(
+    const mfxFrameInfo & FrameInfo,
+    mfxU16               th,
+    mfxU16               subPelPre
+)
 {
     p_ctrl.reset(new MeControlSmall);
-
     const mfxU8 Diamond[SEARCHPATHSIZE] = {
         0x0F,0xF1,0x0F,0x12,//5
         0x0D,0xE2,0x22,0x1E,//9
@@ -215,12 +227,8 @@ inline mfxStatus CMC::SetupMeControl(const mfxFrameInfo& FrameInfo, mfxU16 th, m
     CropW = (DIVUP(CropW, CROP_BLOCK_ALIGNMENT)) * CROP_BLOCK_ALIGNMENT;
     CropH = (DIVUP(CropH, CROP_BLOCK_ALIGNMENT)) * CROP_BLOCK_ALIGNMENT;
 
-    if ((CropX + CropW > FrameInfo.Width) || (CropY + CropH > FrameInfo.Height)) {
-#ifdef MFX_MCTF_DEBUG_PRINT
-        ASC_PRINTF("Crop alignement led to out-of-surface coordinates.\n");
-#endif
+    if ((CropX + CropW > FrameInfo.Width) || (CropY + CropH > FrameInfo.Height))
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }
 
     p_ctrl->CropX = CropX;
     p_ctrl->CropY = CropY;
@@ -228,14 +236,9 @@ inline mfxStatus CMC::SetupMeControl(const mfxFrameInfo& FrameInfo, mfxU16 th, m
     p_ctrl->CropH = CropH;
 
     if (th > 20)
-    {
-#ifdef MFX_MCTF_DEBUG_PRINT
-        ASC_PRINTF("MCTF Error: Filter strength too large; check your parameters\n");
-#endif
         return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
     p_ctrl->th  = th * 50;
-    p_ctrl->sTh = min(th + CHROMABASE, MAXCHROMA);
+    p_ctrl->sTh = (mfxU16)min(th + CHROMABASE, MAXCHROMA);
     p_ctrl->mre_width  = 0;
     p_ctrl->mre_height = 0;
     if (MFX_MVPRECISION_INTEGER >> 1 == subPelPre)
@@ -248,80 +251,13 @@ inline mfxStatus CMC::SetupMeControl(const mfxFrameInfo& FrameInfo, mfxU16 th, m
     return MFX_ERR_NONE;
 }
 
-void CMC::TimeStart() {
-#if defined (_WIN32) || defined(_WIN64)
-//    QueryPerformanceFrequency(&pTimer->tFrequency);
-//    QueryPerformanceCounter(&pTimer->tStart);
-//    ;
-#endif
-}
-
-void CMC::TimeStart(int index) {
-#if defined (_WIN32) || defined(_WIN64)
-//    QueryPerformanceCounter(&pTimer->tPause[index]);
-    index = index;
-#else
-    (void)index;
-#endif
-}
-
-void CMC::TimeStop() {
-#if defined (_WIN32) || defined(_WIN64)
-//    QueryPerformanceCounter(&pTimer->tStop);
-    ;
-#endif
-}
-
-mfxF64 CMC::CatchTime(const char* message, int print)
+mfxStatus CMC::MCTF_GET_FRAME(
+    CmSurface2D * outFrame
+)
 {
-    (void)message;
-
-    mfxF64
-        timeval = 0.0;
-//    timeval = TimeMeasurement(pTimer->tStart, pTimer->tStop, pTimer->tFrequency);
-    if (print)
-    {
-        ASC_PRINTF("%s %0.3f ms.\n", message, timeval);
-    }
-    return timeval;
-}
-
-mfxF64 CMC::CatchTime(int indexInit, int indexEnd, const char* message, int print) {
-    (void)message;
-#if defined (_WIN32) || defined(_WIN64)
-    mfxF64
-        timeval = 0.0;
-//    QueryPerformanceCounter(&pTimer->tPause[indexEnd]);
-//    timeval = TimeMeasurement(pTimer->tPause[indexInit], pTimer->tPause[indexEnd], pTimer->tFrequency);
-    indexEnd = indexEnd;
-    indexInit = indexInit;
-    if (print)
-    {
-        ASC_PRINTF("%s %0.3f ms.\r", message, timeval);
-    }
-    return timeval;
-#else
-    (void)indexInit;
-    (void)indexEnd;
-    (void)print;
-
-    return 0.0;
-#endif
-}
-
-void CMC::CatchEndTime(mfxI32 processed_frames) {
-    TimeStop();
-//    CatchTime("Total process time:", 1);
-    (void)processed_frames;
-}
-
-mfxStatus CMC::MCTF_GET_FRAME(CmSurface2D* outFrame) {
-
-
     mfxStatus sts = MFX_ERR_NONE;
     if (!outFrame)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-
     if (!mco)
     {
         // we are in the end of a stream, and it must be the configuration with
@@ -345,19 +281,11 @@ mfxStatus CMC::MCTF_GET_FRAME(CmSurface2D* outFrame) {
     {
         if (lastFrame == 1) 
         {
-#if !HALFWORK
-            pMCTF_MERGE_func = &CMC::MCTF_RUN_BLEND2R;
-            RotateBufferB();
-#endif
             res = MCTF_RUN_MCTF_DEN();
             lastFrame++;
         }
         else if (lastFrame == 2)
-#if HALFWORK
             MCTF_RUN_AMCTF(lastFrame);
-#else
-            res = MCTF_RUN_MCTF_DEN();
-#endif
     }
     else if (QfIn.size() == 3) 
     {
@@ -370,24 +298,25 @@ mfxStatus CMC::MCTF_GET_FRAME(CmSurface2D* outFrame) {
     mco = nullptr;
     if (!lastFrame)
         lastFrame = 1;
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF("QfIn[CurrentIdx2Out]::FrameOrder: %u, OutFrame::FramOrder: %u \n", QfIn[CurrentIdx2Out].mfxFrame->Data.FrameOrder, outFrame->Data.FrameOrder);
-    ASC_FFLUSH(stdout);
-#endif
     return sts;
 }
 
-mfxStatus CMC::MCTF_TrackTimeStamp(mfxFrameSurface1 *outFrame)
+mfxStatus CMC::MCTF_TrackTimeStamp(
+    mfxFrameSurface1 * outFrame
+)
 {
     outFrame->Data.FrameOrder = QfIn[CurrentIdx2Out].mfxFrame->Data.FrameOrder;
     outFrame->Data.TimeStamp = QfIn[CurrentIdx2Out].mfxFrame->Data.TimeStamp;
     return MFX_ERR_NONE;
 }
 
-mfxStatus CMC::MCTF_InitQueue(mfxU16 refNum)
+mfxStatus CMC::MCTF_InitQueue(
+    mfxU16 refNum
+)
 {
     mfxU32  buffer_size(0);
-    switch (refNum) {
+    switch (refNum)
+    {
     case MCTF_TEMPORAL_MODE_4REF:
     {
         number_of_References = FOUR_REFERENCES;
@@ -428,7 +357,8 @@ mfxStatus CMC::MCTF_InitQueue(mfxU16 refNum)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     };
 
-    for (mfxU32 i = 0; i < buffer_size; i++) {
+    for (mfxU32 i = 0; i < buffer_size; i++)
+    {
         scene_numbers[i] = 0;
         QfIn.push_back(gpuFrameData());
         QfIn[i].fIdx = NULL;
@@ -438,7 +368,9 @@ mfxStatus CMC::MCTF_InitQueue(mfxU16 refNum)
     return MFX_ERR_NONE;
 }
 
-mfxStatus CMC::DIM_SET(mfxU16 overlap)
+mfxStatus CMC::DIM_SET(
+    mfxU16 overlap
+)
 {
 //    if (p_ctrl->height <= MINHEIGHT)
     if (p_ctrl->CropH <= MINHEIGHT)
@@ -474,7 +406,11 @@ mfxStatus CMC::DIM_SET(mfxU16 overlap)
 }
 
 
-mfxStatus CMC::IM_SURF_SET(CmSurface2D **p_surface, SurfaceIndex **p_idxSurf) {
+mfxStatus CMC::IM_SURF_SET(
+    CmSurface2D  ** p_surface,
+    SurfaceIndex ** p_idxSurf
+)
+{
     res = device->CreateSurface2D(p_ctrl->width, p_ctrl->height, CM_SURFACE_FORMAT_NV12, *p_surface);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     res = (*p_surface)->GetIndex(*p_idxSurf);
@@ -482,7 +418,12 @@ mfxStatus CMC::IM_SURF_SET(CmSurface2D **p_surface, SurfaceIndex **p_idxSurf) {
     return MFX_ERR_NONE;
 }
 
-mfxStatus CMC::IM_SURF_SET(AbstractSurfaceHandle pD3DSurf, CmSurface2D **p_surface, SurfaceIndex **p_idxSurf) {
+mfxStatus CMC::IM_SURF_SET(
+    AbstractSurfaceHandle   pD3DSurf,
+    CmSurface2D          ** p_surface,
+    SurfaceIndex         ** p_idxSurf
+)
+{
     res = device->CreateSurface2D(pD3DSurf, *p_surface);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     res = (*p_surface)->GetIndex(*p_idxSurf);
@@ -490,8 +431,13 @@ mfxStatus CMC::IM_SURF_SET(AbstractSurfaceHandle pD3DSurf, CmSurface2D **p_surfa
     return MFX_ERR_NONE;
 }
 
-mfxStatus CMC::IM_MRE_SURF_SET(CmSurface2D **p_Surface, SurfaceIndex **p_idxSurf) {
-    mfxU32 width = SUBMREDIM, height = SUBMREDIM;// , pitch = 0;
+mfxStatus CMC::IM_MRE_SURF_SET(
+    CmSurface2D  ** p_Surface,
+    SurfaceIndex ** p_idxSurf
+)
+{
+    mfxU32 
+        width = SUBMREDIM, height = SUBMREDIM;
     res = device->CreateSurface2D(width * sizeof(mfxI16Pair), height, CM_SURFACE_FORMAT_A8, *p_Surface);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     res = (*p_Surface)->GetIndex(*p_idxSurf);
@@ -499,8 +445,10 @@ mfxStatus CMC::IM_MRE_SURF_SET(CmSurface2D **p_Surface, SurfaceIndex **p_idxSurf
     return MFX_ERR_NONE;
 }
 
-mfxStatus CMC::IM_SURF_SET() {
-    for (mfxU32 i = 0; i < QfIn.size(); i++) {
+mfxStatus CMC::IM_SURF_SET()
+{
+    for (mfxU32 i = 0; i < QfIn.size(); i++)
+    {
         MFX_SAFE_CALL(IM_MRE_SURF_SET(&QfIn[i].magData, &QfIn[i].idxMag));
         mfxHDLPair handle;
         // if a surface is opaque, need to extract normal surface
@@ -514,7 +462,8 @@ mfxStatus CMC::IM_SURF_SET() {
     return MFX_ERR_NONE;
 }
 
-mfxU16  CMC::MCTF_QUERY_NUMBER_OF_REFERENCES() {
+mfxU16  CMC::MCTF_QUERY_NUMBER_OF_REFERENCES()
+{
     return number_of_References;
 }
 
@@ -523,7 +472,9 @@ mfxU32 CMC::MCTF_GetQueueDepth()
     return (mfxU32)QfIn.size();
 }
 
-mfxStatus CMC::MCTF_SetMemory(const std::vector<mfxFrameSurface1*> & mfxSurfPool)
+mfxStatus CMC::MCTF_SetMemory(
+    const std::vector<mfxFrameSurface1*> & mfxSurfPool
+)
 {
     if (mfxSurfPool.size() != QfIn.size())
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -544,7 +495,7 @@ mfxStatus CMC::MCTF_SetMemory(const std::vector<mfxFrameSurface1*> & mfxSurfPool
         MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
         res = GEN_SURF_SET(&mv_2, &mvSys2, &idxMv_2);
         MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-        if (number_of_References)
+        if (number_of_References > 2)
         {
         //Setup for 4 references
         res = GEN_SURF_SET(&mv_3, &mvSys3, &idxMv_3);
@@ -561,7 +512,12 @@ mfxStatus CMC::MCTF_SetMemory(const std::vector<mfxFrameSurface1*> & mfxSurfPool
     }
 }
 
-mfxStatus CMC::MCTF_INIT( VideoCORE * core, CmDevice *pCmDevice, const mfxFrameInfo& FrameInfo, const IntMctfParams* pMctfParam)
+mfxStatus CMC::MCTF_INIT(
+    VideoCORE           * core,
+    CmDevice            * pCmDevice,
+    const mfxFrameInfo  & FrameInfo,
+    const IntMctfParams * pMctfParam
+)
 {
     version = 400;
     argIdx = 0;
@@ -642,11 +598,6 @@ mfxStatus CMC::MCTF_INIT( VideoCORE * core, CmDevice *pCmDevice, const mfxFrameI
     else
         return MFX_ERR_NOT_INITIALIZED;
 
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF(L"\nMCTF params: is configured with the following parameters(refs:bitrate:strenth:me:overlap:deblock): %d:%f:%d:%d:%d:%d:%d\n",
-        pMctfParam->TemporalMode, pMctfParam->BitsPerPixelx100k / 100000.0, pMctfParam->FilterStrength, pMctfParam->subPelPrecision, pMctfParam->Overlap, pMctfParam->Deblocking);
-#endif
-
     mfxStatus sts = MFX_ERR_NONE;
     pSCD.reset(new(ASC));
 
@@ -662,7 +613,10 @@ mfxStatus CMC::MCTF_INIT( VideoCORE * core, CmDevice *pCmDevice, const mfxFrameI
     return sts;
 }
 
-mfxStatus CMC::MCTF_SET_ENV(const mfxFrameInfo& FrameInfo, const IntMctfParams* pMctfParam)
+mfxStatus CMC::MCTF_SET_ENV(
+    const mfxFrameInfo  & FrameInfo,
+    const IntMctfParams * pMctfParam
+)
 {
     IntMctfParams localMctfParam = *pMctfParam;
     mfxStatus sts = MFX_ERR_NONE;
@@ -688,12 +642,8 @@ mfxStatus CMC::MCTF_SET_ENV(const mfxFrameInfo& FrameInfo, const IntMctfParams* 
     // --- deblock
     if (MFX_CODINGOPTION_ON != localMctfParam.Deblocking &&
         MFX_CODINGOPTION_OFF != localMctfParam.Deblocking &&
-        MFX_CODINGOPTION_UNKNOWN != localMctfParam.Deblocking) {
-#ifdef MFX_MCTF_DEBUG_PRINT
-        ASC_PRINTF("Deblocking option not valid\n");
-#endif
+        MFX_CODINGOPTION_UNKNOWN != localMctfParam.Deblocking)
         return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
 
     //Dimensions, control and io
     if (MCTF_TEMPORAL_MODE_SPATIAL == localMctfParam.TemporalMode)
@@ -737,32 +687,28 @@ mfxStatus CMC::MCTF_SET_ENV(const mfxFrameInfo& FrameInfo, const IntMctfParams* 
     if (m_AutoMode == MCTF_MODE::MCTF_AUTO_MODE)
         pMCTF_NOA_func = &CMC::noise_estimator;
 
-    if (number_of_References == FOUR_REFERENCES) {
+    if (number_of_References == FOUR_REFERENCES)
+    {
         pMCTF_LOAD_func = &CMC::MCTF_LOAD_4REF;
         pMCTF_ME_func = &CMC::MCTF_RUN_ME_4REF;
-#if HALFWORK
         pMCTF_MERGE_func = &CMC::MCTF_RUN_MERGE;
-#else
-        pMCTF_MERGE_func = &CMC::MCTF_BLEND4R;
-#endif
     }
-    else if (number_of_References == TWO_REFERENCES) {
+    else if (number_of_References == TWO_REFERENCES)
+    {
         pMCTF_LOAD_func = &CMC::MCTF_LOAD_2REF;
         pMCTF_ME_func = &CMC::MCTF_RUN_ME_2REF;
-#if HALFWORK
         pMCTF_MERGE_func = NULL;
-#else
-        pMCTF_MERGE_func = &CMC::MCTF_RUN_BLEND2R;
-#endif
     }
-    else if (number_of_References == ONE_REFERENCE) {
-        pMCTF_func = &CMC::MCTF_RUN_MCTF_DEN_1Ref;
+    else if (number_of_References == ONE_REFERENCE)
+    {
+        pMCTF_func = &CMC::MCTF_RUN_MCTF_DEN_1REF;
         pMCTF_LOAD_func = &CMC::MCTF_LOAD_1REF;
         pMCTF_ME_func = &CMC::MCTF_RUN_ME_1REF;
         pMCTF_MERGE_func = &CMC::MCTF_RUN_BLEND;
     }
-    else if (number_of_References == NO_REFERENCES) {
-        pMCTF_func = &CMC::MCTF_RUN_MCTF_DEN_1Ref;
+    else if (number_of_References == NO_REFERENCES)
+    {
+        pMCTF_func = &CMC::MCTF_RUN_MCTF_DEN_1REF;
         pMCTF_LOAD_func = &CMC::MCTF_LOAD_1REF;
         pMCTF_ME_func = NULL;
         pMCTF_MERGE_func = &CMC::MCTF_RUN_AMCTF;
@@ -854,7 +800,6 @@ mfxStatus CMC::MCTF_SET_ENV(const mfxFrameInfo& FrameInfo, const IntMctfParams* 
     }
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
-    //Spatial denoising
     switch (hwType)
     {
     case PLATFORM_INTEL_BDW:
@@ -917,13 +862,15 @@ mfxStatus CMC::MCTF_SET_ENV(const mfxFrameInfo& FrameInfo, const IntMctfParams* 
     m_RTParams = localMctfParam;
     m_InitRTParams = m_RTParams;
 
-    TimeStart();
     return sts;
 }
-mfxStatus CMC::MCTF_CheckRTParams(const IntMctfParams* pMctfControl)
+mfxStatus CMC::MCTF_CheckRTParams(
+    const IntMctfParams * pMctfControl
+)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    if (pMctfControl) {
+    if (pMctfControl)
+    {
 #ifdef MFX_ENABLE_MCTF_EXT
     // check BPP for max value. the threshold must be adjusted for higher bit-depths
         if (pMctfControl->BitsPerPixelx100k > (DEFAULT_BPP))
@@ -934,7 +881,9 @@ mfxStatus CMC::MCTF_CheckRTParams(const IntMctfParams* pMctfControl)
     }
     return sts;
 }
-mfxStatus CMC::MCTF_UpdateRTParams(IntMctfParams* pMctfControl)
+mfxStatus CMC::MCTF_UpdateRTParams(
+    IntMctfParams * pMctfControl
+)
 {
     mfxStatus  sts = MCTF_CheckRTParams(pMctfControl);
 
@@ -944,7 +893,9 @@ mfxStatus CMC::MCTF_UpdateRTParams(IntMctfParams* pMctfControl)
         m_RTParams = m_InitRTParams;
     return MFX_ERR_NONE;
 }
-mfxStatus CMC::MCTF_UpdateANDApplyRTParams(mfxU8 srcNum)
+mfxStatus CMC::MCTF_UpdateANDApplyRTParams(
+    mfxU8 srcNum
+)
 {
     // deblock can be controled for every mode
     if (MCTF_CONFIGURATION::MCTF_MAN_NCA_NBA == ConfigMode ||
@@ -981,7 +932,9 @@ mfxStatus CMC::MCTF_UpdateANDApplyRTParams(mfxU8 srcNum)
 }
 
 // todo: what if bitrate is close to 0?
-mfxStatus CMC::MCTF_UpdateBitrateInfo(mfxU32 BitsPerPexelx100k)
+mfxStatus CMC::MCTF_UpdateBitrateInfo(
+    mfxU32 BitsPerPexelx100k
+)
 {
     if (MCTF_CONFIGURATION::MCTF_NOT_CONFIGURED == ConfigMode ||
         MCTF_CONFIGURATION::MCTF_AUT_CA_BA == ConfigMode )
@@ -1001,24 +954,32 @@ mfxStatus CMC::MCTF_UpdateBitrateInfo(mfxU32 BitsPerPexelx100k)
     }
 }
 
-mfxStatus CMC::GEN_NoiseSURF_SET(CmSurface2DUP **p_Surface, void **p_Sys, SurfaceIndex **p_idxSurf) {
+mfxStatus CMC::GEN_NoiseSURF_SET(
+    CmSurface2DUP ** p_Surface,
+    void          ** p_Sys,
+    SurfaceIndex  ** p_idxSurf
+)
+{
     surfNoisePitch = 0;
     surfNoiseSize = 0;
-//    res = device->GetSurface2DInfo(DIVUP(p_ctrl->width, 16) * sizeof(spatialNoiseAnalysis), DIVUP(p_ctrl->height, 16), CM_SURFACE_FORMAT_A8, surfNoisePitch, surfNoiseSize);
     res = device->GetSurface2DInfo(DIVUP(p_ctrl->CropW, 16) * sizeof(spatialNoiseAnalysis), DIVUP(p_ctrl->CropH, 16), CM_SURFACE_FORMAT_A8, surfNoisePitch, surfNoiseSize);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
     *p_Sys = CM_ALIGNED_MALLOC(surfNoiseSize, 0x1000);
     MFX_CHECK(*p_Sys, MFX_ERR_NULL_PTR);
     memset(*p_Sys, 0, surfNoiseSize);
-//    res = device->CreateSurface2DUP(DIVUP(p_ctrl->width, 16) * sizeof(spatialNoiseAnalysis), DIVUP(p_ctrl->height, 16), CM_SURFACE_FORMAT_A8, *p_Sys, *p_Surface);
     res = device->CreateSurface2DUP(DIVUP(p_ctrl->CropW, 16) * sizeof(spatialNoiseAnalysis), DIVUP(p_ctrl->CropH, 16), CM_SURFACE_FORMAT_A8, *p_Sys, *p_Surface);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     res = (*p_Surface)->GetIndex(*p_idxSurf);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     return MFX_ERR_NONE;
 }
-mfxStatus CMC::GEN_SURF_SET(CmSurface2DUP **p_Surface, void **p_Sys, SurfaceIndex **p_idxSurf) {
+mfxStatus CMC::GEN_SURF_SET(
+    CmSurface2DUP ** p_Surface,
+    void          ** p_Sys,
+    SurfaceIndex  **p_idxSurf
+)
+{
     surfPitch = 0;
     surfSize = 0;
     res = device->GetSurface2DInfo(ov_width_bl * sizeof(mfxI16Pair), ov_height_bl, CM_SURFACE_FORMAT_A8, surfPitch, surfSize);
@@ -1033,16 +994,15 @@ mfxStatus CMC::GEN_SURF_SET(CmSurface2DUP **p_Surface, void **p_Sys, SurfaceInde
     return MFX_ERR_NONE;
 }
 
-mfxStatus CMC::MCTF_GetEmptySurface(mfxFrameSurface1** ppSurface )
+mfxStatus CMC::MCTF_GetEmptySurface(
+    mfxFrameSurface1 ** ppSurface
+)
 {
     size_t buffer_size = QfIn.size() - 1;
-    if (bufferCount > buffer_size) {
-#ifdef MFX_MCTF_DEBUG_PRINT
-        ASC_PRINTF("Error: Invalid frame buffer position\n");
-#endif
+    if (bufferCount > buffer_size)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-    if (QfIn[bufferCount].mfxFrame->Data.Locked) {
+    if (QfIn[bufferCount].mfxFrame->Data.Locked)
+    {
         *ppSurface = nullptr;
         return MFX_ERR_NONE;
     }
@@ -1054,7 +1014,10 @@ mfxStatus CMC::MCTF_GetEmptySurface(mfxFrameSurface1** ppSurface )
     }
 }
 
-mfxStatus CMC::MCTF_PUT_FRAME(mfxU32 sceneNumber, CmSurface2D* OutSurf)
+mfxStatus CMC::MCTF_PUT_FRAME(
+    mfxU32 sceneNumber,
+    CmSurface2D* OutSurf
+)
 {
     size_t buffer_size = QfIn.size() - 1;
     if (bufferCount > buffer_size) 
@@ -1081,26 +1044,24 @@ mfxStatus CMC::MCTF_PUT_FRAME(mfxU32 sceneNumber, CmSurface2D* OutSurf)
     return MFX_ERR_NONE;
 }
 
-mfxStatus CMC::MCTF_UpdateBufferCount() {
+mfxStatus CMC::MCTF_UpdateBufferCount()
+{
     size_t buffer_size = QfIn.size() - 1;
     if (bufferCount > buffer_size)
-    {
-#ifdef MFX_MCTF_DEBUG_PRINT
-        ASC_PRINTF("Error: Invalid frame buffer position\n");
-#endif
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
     bufferCount = (bufferCount < buffer_size) ? bufferCount + 1 : buffer_size;
     return MFX_ERR_NONE;
 }
 
-mfxI32 CMC::MCTF_LOAD_1REF() {
+mfxI32 CMC::MCTF_LOAD_1REF()
+{
     res = device->CreateVmeSurfaceG7_5(QfIn[1].frameData, &QfIn[0].frameData, NULL, 1, 0, genxRefs1);
     MCTF_CHECK_CM_ERR(res, res);
     return res;
 }
 
-mfxI32 CMC::MCTF_LOAD_2REF() {
+mfxI32 CMC::MCTF_LOAD_2REF()
+{
     res = device->CreateVmeSurfaceG7_5(QfIn[1].frameData, &QfIn[0].frameData, &QfIn[2].frameData, 1, 1, genxRefs1);
     MCTF_CHECK_CM_ERR(res, res);
     res = device->CreateVmeSurfaceG7_5(QfIn[1].frameData, &QfIn[2].frameData, NULL, 1, 0, genxRefs2);
@@ -1108,7 +1069,8 @@ mfxI32 CMC::MCTF_LOAD_2REF() {
     return res;
 }
 
-mfxI32 CMC::MCTF_LOAD_4REF() {
+mfxI32 CMC::MCTF_LOAD_4REF()
+{
     res = device->CreateVmeSurfaceG7_5(QfIn[2].frameData, &QfIn[1].frameData, &QfIn[3].frameData, 1, 1, genxRefs1);
     MCTF_CHECK_CM_ERR(res, res);
     res = device->CreateVmeSurfaceG7_5(QfIn[2].frameData, &QfIn[3].frameData, NULL, 1, 0, genxRefs2);
@@ -1183,7 +1145,13 @@ mfxI32 CMC::MCTF_SET_KERNELMeBi(
     return res;
 }
 
-mfxI32 CMC::MCTF_SET_KERNELMc(mfxU16 start_x, mfxU16 start_y, mfxU8 srcNum, mfxU8 refNum) {
+mfxI32 CMC::MCTF_SET_KERNELMc(
+    mfxU16 start_x,
+    mfxU16 start_y,
+    mfxU8 srcNum,
+    mfxU8 refNum
+)
+{
     argIdx = 0;
     res = kernelMc1r->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1207,7 +1175,11 @@ mfxI32 CMC::MCTF_SET_KERNELMc(mfxU16 start_x, mfxU16 start_y, mfxU8 srcNum, mfxU
 
 }
 
-mfxI32 CMC::MCTF_SET_KERNELMc2r(mfxU16 start_x, mfxU16 start_y) {
+mfxI32 CMC::MCTF_SET_KERNELMc2r(
+    mfxU16 start_x,
+    mfxU16 start_y
+)
+{
     argIdx = 0;
     res = kernelMc2r->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1234,7 +1206,11 @@ mfxI32 CMC::MCTF_SET_KERNELMc2r(mfxU16 start_x, mfxU16 start_y) {
     return res;
 }
 
-mfxI32 CMC::MCTF_SET_KERNELMc2rDen(mfxU16 start_x, mfxU16 start_y) {
+mfxI32 CMC::MCTF_SET_KERNELMc2rDen(
+    mfxU16 start_x,
+    mfxU16 start_y
+)
+{
     argIdx = 0;
     res = kernelMc2r->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1261,7 +1237,11 @@ mfxI32 CMC::MCTF_SET_KERNELMc2rDen(mfxU16 start_x, mfxU16 start_y) {
     return res;
 }
 
-mfxI32 CMC::MCTF_SET_KERNELMc4r(mfxU16 start_x, mfxU16 start_y) {
+mfxI32 CMC::MCTF_SET_KERNELMc4r(
+    mfxU16 start_x,
+    mfxU16 start_y
+)
+{
     argIdx = 0;
     res = kernelMc4r->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1292,7 +1272,12 @@ mfxI32 CMC::MCTF_SET_KERNELMc4r(mfxU16 start_x, mfxU16 start_y) {
     return res;
 }
 
-mfxI32 CMC::MCTF_SET_KERNELMc4r(mfxU16 start_x, mfxU16 start_y, SurfaceIndex *multiIndex) {
+mfxI32 CMC::MCTF_SET_KERNELMc4r(
+    mfxU16         start_x,
+    mfxU16         start_y,
+    SurfaceIndex * multiIndex
+)
+{
     argIdx = 0;
     res = kernelMc4r->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1309,7 +1294,11 @@ mfxI32 CMC::MCTF_SET_KERNELMc4r(mfxU16 start_x, mfxU16 start_y, SurfaceIndex *mu
     return res;
 }
 
-mfxI32 CMC::MCTF_SET_KERNELMcMerge(mfxU16 start_x, mfxU16 start_y) {
+mfxI32 CMC::MCTF_SET_KERNELMcMerge(
+    mfxU16 start_x,
+    mfxU16 start_y
+)
+{
     argIdx = 0;
     res = kernelMc4r->SetKernelArg(argIdx++, sizeof(*idxMco), idxMco);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1322,9 +1311,13 @@ mfxI32 CMC::MCTF_SET_KERNELMcMerge(mfxU16 start_x, mfxU16 start_y) {
     return res;
 }
 
-mfxI32 CMC::MCTF_SET_KERNELMc4r(mfxU16 start_x, mfxU16 start_y, mfxU8 runType) {
+mfxI32 CMC::MCTF_SET_KERNELMc4r(
+    mfxU16 start_x,
+    mfxU16 start_y,
+    mfxU8  runType
+)
+{
     argIdx = 0;
-
     mfxU8
         currentFrame = 2,
         pastRef = 1,
@@ -1334,7 +1327,8 @@ mfxI32 CMC::MCTF_SET_KERNELMc4r(mfxU16 start_x, mfxU16 start_y, mfxU8 runType) {
         **pastMv = &idxMv_1,
         **futureMv = &idxMv_2;
 
-    if (runType == DEN_FAR_RUN) {
+    if (runType == DEN_FAR_RUN)
+    {
         pastRef = 0;
         futureRef = 4;
         mcOut = &idxMco2;
@@ -1367,7 +1361,12 @@ mfxI32 CMC::MCTF_SET_KERNELMc4r(mfxU16 start_x, mfxU16 start_y, mfxU8 runType) {
     return res;
 }
 
-mfxI32 CMC::MCTF_SET_KERNEL_Noise(mfxU16 srcNum, mfxU16 start_x, mfxU16 start_y) {
+mfxI32 CMC::MCTF_SET_KERNEL_Noise(
+    mfxU16 srcNum,
+    mfxU16 start_x,
+    mfxU16 start_y
+)
+{
     argIdx = 0;
     res = kernelNoise->SetKernelArg(argIdx++, sizeof(*QfIn[srcNum].fIdx), QfIn[srcNum].fIdx);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1380,7 +1379,12 @@ mfxI32 CMC::MCTF_SET_KERNEL_Noise(mfxU16 srcNum, mfxU16 start_x, mfxU16 start_y)
     return res;
 }
 
-mfxI32 CMC::MCTF_SET_KERNELDe(mfxU16 srcNum, mfxU16 start_x, mfxU16 start_y) {
+mfxI32 CMC::MCTF_SET_KERNELDe(
+    mfxU16 srcNum,
+    mfxU16 start_x,
+    mfxU16 start_y
+)
+{
     argIdx = 0;
     res = kernelMcDen->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1395,7 +1399,11 @@ mfxI32 CMC::MCTF_SET_KERNELDe(mfxU16 srcNum, mfxU16 start_x, mfxU16 start_y) {
     return res;
 }
 
-mfxI32 CMC::MCTF_SET_KERNELDe(mfxU16 start_x, mfxU16 start_y) {
+mfxI32 CMC::MCTF_SET_KERNELDe(
+    mfxU16 start_x,
+    mfxU16 start_y
+)
+{
     argIdx = 0;
     res = kernelMcDen->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1410,8 +1418,13 @@ mfxI32 CMC::MCTF_SET_KERNELDe(mfxU16 start_x, mfxU16 start_y) {
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_TASK_NA(CmKernel *kernel, bool reset,
-    mfxU16 widthTs, mfxU16 heightTs) {
+mfxI32 CMC::MCTF_RUN_TASK_NA(
+    CmKernel * kernel,
+    bool       reset,
+    mfxU16     widthTs,
+    mfxU16     heightTs
+)
+{
     res = kernel->SetThreadCount(widthTs * heightTs);
     MCTF_CHECK_CM_ERR(res, res);
     res = device->CreateThreadSpace(widthTs, heightTs, threadSpace);
@@ -1420,11 +1433,13 @@ mfxI32 CMC::MCTF_RUN_TASK_NA(CmKernel *kernel, bool reset,
     MCTF_CHECK_CM_ERR(res, res);
     res = kernel->AssociateThreadSpace(threadSpace);
 
-    if (reset) {
+    if (reset)
+    {
         res = task->Reset();
         MCTF_CHECK_CM_ERR(res, res);
     }
-    else {
+    else
+    {
         res = device->CreateTask(task);
         MCTF_CHECK_CM_ERR(res, res);
     }
@@ -1437,7 +1452,11 @@ mfxI32 CMC::MCTF_RUN_TASK_NA(CmKernel *kernel, bool reset,
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_TASK(CmKernel *kernel, bool reset) {
+mfxI32 CMC::MCTF_RUN_TASK(
+    CmKernel * kernel,
+    bool       reset
+)
+{
     res = kernel->SetThreadCount(tsWidth * tsHeight);
     MCTF_CHECK_CM_ERR(res, res);
     res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
@@ -1446,11 +1465,13 @@ mfxI32 CMC::MCTF_RUN_TASK(CmKernel *kernel, bool reset) {
     MCTF_CHECK_CM_ERR(res, res);
     res = kernel->AssociateThreadSpace(threadSpace);
 
-    if (reset) {
+    if (reset)
+    {
         res = task->Reset();
         MCTF_CHECK_CM_ERR(res, res);
     }
-    else {
+    else
+    {
         res = device->CreateTask(task);
         MCTF_CHECK_CM_ERR(res, res);
     }
@@ -1458,12 +1479,17 @@ mfxI32 CMC::MCTF_RUN_TASK(CmKernel *kernel, bool reset) {
     MCTF_CHECK_CM_ERR(res, res);
     res = device->CreateQueue(queue);
     MCTF_CHECK_CM_ERR(res, res);
-    res = queue->Enqueue(task, e);
-    MCTF_CHECK_CM_ERR(res, res);
+    /*res = queue->Enqueue(task, e);
+    MCTF_CHECK_CM_ERR(res, res);*/
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_DOUBLE_TASK(CmKernel *meKernel, CmKernel *mcKernel, bool reset) {
+mfxI32 CMC::MCTF_RUN_DOUBLE_TASK(
+    CmKernel * meKernel,
+    CmKernel * mcKernel,
+    bool       reset
+)
+{
     res = meKernel->SetThreadCount(tsWidth * tsHeight);
     MCTF_CHECK_CM_ERR(res, res);
     res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace2);
@@ -1480,11 +1506,13 @@ mfxI32 CMC::MCTF_RUN_DOUBLE_TASK(CmKernel *meKernel, CmKernel *mcKernel, bool re
     MCTF_CHECK_CM_ERR(res, res);
     res = mcKernel->AssociateThreadSpace(threadSpaceMC);
 
-    if (reset) {
+    if (reset)
+    {
         res = task->Reset();
         MCTF_CHECK_CM_ERR(res, res);
     }
-    else {
+    else
+    {
         res = device->CreateTask(task);
         MCTF_CHECK_CM_ERR(res, res);
     }
@@ -1492,27 +1520,32 @@ mfxI32 CMC::MCTF_RUN_DOUBLE_TASK(CmKernel *meKernel, CmKernel *mcKernel, bool re
     MCTF_CHECK_CM_ERR(res, res);
     res = task->AddKernel(mcKernel);
     MCTF_CHECK_CM_ERR(res, res);
-    res = device->CreateQueue(queue);
-    MCTF_CHECK_CM_ERR(res, res);
+    /*res = device->CreateQueue(queue);
+    MCTF_CHECK_CM_ERR(res, res);*/
     res = queue->Enqueue(task, e);
     MCTF_CHECK_CM_ERR(res, res);
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_MCTASK(CmKernel *kernel, bool reset) {
+mfxI32 CMC::MCTF_RUN_MCTASK(
+    CmKernel * kernel,
+    bool       reset
+)
+{
     res = kernel->SetThreadCount(tsWidthMC * tsHeightMC);
     MCTF_CHECK_CM_ERR(res, res);
     res = device->CreateThreadSpace(tsWidthMC, tsHeightMC, threadSpaceMC2);
     MCTF_CHECK_CM_ERR(res, res);
     res = threadSpaceMC2->SelectThreadDependencyPattern(CM_HORIZONTAL_DEPENDENCY);
     MCTF_CHECK_CM_ERR(res, res);
-    //res = kernel->AssociateThreadSpace(threadSpaceMC2);
 
-    if (reset) {
+    if (reset)
+    {
         res = task->Reset();
         MCTF_CHECK_CM_ERR(res, res);
     }
-    else {
+    else
+    {
         res = device->CreateTask(task);
         MCTF_CHECK_CM_ERR(res, res);
     }
@@ -1525,18 +1558,25 @@ mfxI32 CMC::MCTF_RUN_MCTASK(CmKernel *kernel, bool reset) {
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_TASK(CmKernel *kernel, bool reset, CmThreadSpace *tS) {
+mfxI32 CMC::MCTF_RUN_TASK(
+    CmKernel      * kernel,
+    bool            reset,
+    CmThreadSpace * tS
+)
+{
     res = kernel->SetThreadCount(tsWidth * tsHeight);
     MCTF_CHECK_CM_ERR(res, res);
     res = device->CreateThreadSpace(tsWidth, tsHeight, tS);
     MCTF_CHECK_CM_ERR(res, res);
     res = tS->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
     MCTF_CHECK_CM_ERR(res, res);
-    if (reset) {
+    if (reset)
+    {
         res = task->Reset();
         MCTF_CHECK_CM_ERR(res, res);
     }
-    else {
+    else
+    {
         res = device->CreateTask(task);
         MCTF_CHECK_CM_ERR(res, res);
     }
@@ -1577,7 +1617,8 @@ mfxU8 CMC::SetOverlapOp()
     return blSize;
 }
 
-mfxU8 CMC::SetOverlapOp_half() {
+mfxU8 CMC::SetOverlapOp_half()
+{
     mfxU8 blSize = 0;
     switch (overlap_Motion)
     {
@@ -1786,7 +1827,8 @@ void CMC::GET_NOISEDATA()
     }
 }
 
-mfxF64 CMC::GET_TOTAL_SAD() {
+mfxF64 CMC::GET_TOTAL_SAD()
+{
     mfxF64 total_sad = 0.0;
     // to not lose due-to normalization of floats
     mfxU64 uTotalSad = 0;
@@ -1796,7 +1838,8 @@ mfxF64 CMC::GET_TOTAL_SAD() {
     {//overlapped modes, need to remove extra SAD blocks and lines
         mfxI32
             pos_offset = 0;
-        for (mfxI32 i = 0; i < ov_height_bl; i += OVERLAP_OFFSET) {
+        for (mfxI32 i = 0; i < ov_height_bl; i += OVERLAP_OFFSET)
+        {
             pos_offset = i * ov_width_bl;
             for (mfxI32 j = 0; j < ov_width_bl; j += OVERLAP_OFFSET)
                 uTotalSad += distRef[pos_offset + j];
@@ -1813,13 +1856,14 @@ mfxF64 CMC::GET_TOTAL_SAD() {
     default:
         throw CMCRuntimeError();
     }
-//    return total_sad / (p_ctrl->width * p_ctrl->height);
     total_sad = mfxF64(uTotalSad);
     return total_sad / (p_ctrl->CropW * p_ctrl->CropH);
-
 }
 
-mfxU16 CalcNoiseStrength(double NSC, double NSAD)
+mfxU16 CalcNoiseStrength(
+    double NSC,
+    double NSAD
+)
 {
     // 10 epsilons
     if (std::fabs(NSC) <= 10 * std::numeric_limits<double>::epsilon()) return 0;
@@ -1846,8 +1890,9 @@ mfxU16 CalcNoiseStrength(double NSC, double NSAD)
 }
 
 
-mfxU32 CalcSTC(mfxF64 SCpp2, mfxF64 sadpp) {
-    mfxU32
+mfxU8 CalcSTC(mfxF64 SCpp2, mfxF64 sadpp)
+{
+    mfxU8
         stcVal = 0;
     sadpp *= sadpp;
     // Ref was Recon (quantization err in ref biases sad)
@@ -1864,38 +1909,41 @@ mfxU32 CalcSTC(mfxF64 SCpp2, mfxF64 sadpp) {
 
 void CMC::GetSpatioTemporalComplexityFrame(mfxU8 currentFrame)
 {
-    mfxU32
+    mfxU8
         i;
     mfxF64
         SCpp2 = QfIn[currentFrame].frame_sc;
     static mfxF32
         lmt_sc2[10] = { 16.0, 81.0, 225.0, 529.0, 1024.0, 1764.0, 2809.0, 4225.0, 6084.0, (mfxF32)INT_MAX }; // lower limit of SFM(Rs,Cs) range for spatial classification
 
-    for (i = 0; i < 10; i++) {
-        if (SCpp2 < lmt_sc2[i]) {
+    for (i = 0; i < 10; i++)
+    {
+        if (SCpp2 < lmt_sc2[i])
+        {
             QfIn[currentFrame].sc = i;
             break;
         }
     }
     QfIn[currentFrame].tc = 0;
     QfIn[currentFrame].stc = 0;
-
     mfxF64
         sadpp = QfIn[currentFrame].frame_sad;
-
     static mfxF64
         lmt_tc[10] = { 0.75, 1.5, 2.25, 3.00, 4.00, 5.00, 6.00, 7.50, 9.25, mfxF64(INT_MAX) };               // lower limit of AFD
-    for (i = 0; i < 10; i++) {
-        if (sadpp < lmt_tc[i]) {
+    for (i = 0; i < 10; i++)
+    {
+        if (sadpp < lmt_tc[i])
+        {
             QfIn[currentFrame].tc = i;
             break;
         }
     }
-
     QfIn[currentFrame].stc = CalcSTC(SCpp2, sadpp);
 }
 
-mfxU32 CMC::computeQpClassFromBitRate(mfxU8 currentFrame)
+mfxU32 CMC::computeQpClassFromBitRate(
+    mfxU8 currentFrame
+)
 {
     mfxF64
         scL = log10(QfIn[currentFrame].sc),
@@ -1927,8 +1975,6 @@ void CMC::noise_estimator()
     mfxU8
         currentFrame = (number_of_References <= 2) ? 1 : 2;
     mfxU32
-//        width = DIVUP(p_ctrl->width, 16),
-//        height = DIVUP(p_ctrl->height, 16),
         width = DIVUP(p_ctrl->CropW, 16),
         height = DIVUP(p_ctrl->CropH, 16),
         count = 0,
@@ -1957,14 +2003,17 @@ void CMC::noise_estimator()
     {
     case MFX_CODINGOPTION_ON:
     {
-        for (row = 1; row < height / 2 - 1; row++) {
-            for (col = 1; col < width - 1; col++) {
+        for (row = 1; row < height / 2 - 1; row++)
+        {
+            for (col = 1; col < width - 1; col++)
+            {
                 var = var_sc[row * width + col].var;
                 SCpp = var_sc[row * width + col].SCpp;
                 QfIn[currentFrame].frame_sc += SCpp;
-                SADpp = distRef[row * 2 * width * 2 + col * 2] / 256;
+                SADpp = (mfxF32)(distRef[row * 2 * width * 2 + col * 2] / 256);
                 QfIn[currentFrame].frame_sad += SADpp;
-                if (var < tvar && SCpp <tvar && SCpp>1.0 && (SADpp*SADpp) <= SCpp) {
+                if (var < tvar && SCpp <tvar && SCpp>1.0 && (SADpp*SADpp) <= SCpp)
+                {
                     count++;
                     QfIn[currentFrame].noise_var += var;
                     QfIn[currentFrame].noise_sc += SCpp;
@@ -1977,8 +2026,10 @@ void CMC::noise_estimator()
     case MFX_CODINGOPTION_UNKNOWN:
     case MFX_CODINGOPTION_OFF:
     {
-        for (row = 1; row < height / 2 - 1; row++) {
-            for (col = 1; col < width - 1; col++) {
+        for (row = 1; row < height / 2 - 1; row++)
+        {
+            for (col = 1; col < width - 1; col++)
+            {
                 var = var_sc[row * width + col].var;
                 SCpp = var_sc[row * width + col].SCpp;
                 QfIn[currentFrame].frame_sc += SCpp;
@@ -1987,10 +2038,10 @@ void CMC::noise_estimator()
                 // works good; but additional efforts can be taken,
                 // to consider higher precision (thru calculations in integers)
                 // followed by wise truncating.
-                SADpp = (distRef[row * 2 * distRefStride + col * 2] +
+                SADpp = (mfxF32)((distRef[row * 2 * distRefStride + col * 2] +
                     distRef[row * 2 * distRefStride + col * 2 + 1] +
                     distRef[(row * 2 + 1) * distRefStride + col * 2] +
-                    distRef[(row * 2 + 1) * distRefStride + col * 2 + 1]) / 256;
+                    distRef[(row * 2 + 1) * distRefStride + col * 2 + 1]) / 256);
                 QfIn[currentFrame].frame_sad += SADpp;
                 if (var < tvar && SCpp <tvar && SCpp>1.0 && (SADpp*SADpp) <= SCpp) 
                 {
@@ -2009,7 +2060,6 @@ void CMC::noise_estimator()
     }
     QfIn[currentFrame].frame_sc /= ((height / 2 - 2) * (width - 2));
     QfIn[currentFrame].frame_sad /= ((height / 2 - 2) * (width - 2));
-
     if (count)
     {
         // noise_count is reserved for future use.
@@ -2040,8 +2090,8 @@ void CMC::noise_estimator()
     res = SetFilterStrenght(filterStrenght);
 }
 
-mfxI32 CMC::MCTF_RUN_Noise_Analysis(mfxU8 srcNum) {
-//    res = MCTF_SET_KERNEL_Noise(srcNum, 0, 0);
+mfxI32 CMC::MCTF_RUN_Noise_Analysis(mfxU8 srcNum)
+{
     res = MCTF_SET_KERNEL_Noise(srcNum, DIVUP(p_ctrl->CropX, 16), DIVUP(p_ctrl->CropY, 16));
     MCTF_CHECK_CM_ERR(res, res);
     mfxU16
@@ -2049,21 +2099,22 @@ mfxI32 CMC::MCTF_RUN_Noise_Analysis(mfxU8 srcNum) {
         tsWidthFullNA = DIVUP(p_ctrl->CropW, 16),
         tsWidthNA = tsWidthFullNA;
 
-    if (tsWidthFullNA > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFullNA > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
         tsWidthNA = (tsWidthFullNA >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
 
     threadSpace = 0;
     res = MCTF_RUN_TASK_NA(kernelNoise, task != 0, tsWidthNA, tsHeightNA);
     MCTF_CHECK_CM_ERR(res, res);
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
         mfxU16
             start_mbX = tsWidth;
         tsWidth = tsWidthFull - tsWidth;
         res = MCTF_SET_KERNEL_Noise(srcNum, start_mbX, DIVUP(p_ctrl->CropY, 16));
         MCTF_CHECK_CM_ERR(res, res);
-        if (threadSpace != NULL) {
+        if (threadSpace != NULL)
+        {
             res = device->DestroyThreadSpace(threadSpace);
             MCTF_CHECK_CM_ERR(res, res);
         }
@@ -2073,36 +2124,30 @@ mfxI32 CMC::MCTF_RUN_Noise_Analysis(mfxU8 srcNum) {
     }
     res = e->WaitForTaskFinished();
     MCTF_CHECK_CM_ERR(res, res);
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF("TIME=%.3fms ", time / 1000000.0);
-#endif
-#endif
     device->DestroyThreadSpace(threadSpace);
     queue->DestroyEvent(e);
     e = 0;
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_BLEND() {
+mfxI32 CMC::MCTF_RUN_BLEND()
+{
     mfxU16 multiplier = 2;
-    //    res = MCTF_SET_KERNELMc(0, 0, 1, 0);
     res = MCTF_SET_KERNELMc(DIVUP(p_ctrl->CropX, blsize) * multiplier, DIVUP(p_ctrl->CropY, blsize) * multiplier, 1, 0);
     MCTF_CHECK_CM_ERR(res, res);
     tsHeight = (DIVUP(p_ctrl->CropH, blsize) * multiplier);
     tsWidthFull = (DIVUP(p_ctrl->CropW, blsize) * multiplier);
     tsWidth = tsWidthFull;
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
         tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
 
     threadSpace = 0;
     res = MCTF_RUN_TASK(kernelMc1r, task != 0);
     MCTF_CHECK_CM_ERR(res, res);
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
         mfxU16
             start_mbX = tsWidth;
         tsWidth = tsWidthFull - tsWidth;
@@ -2117,36 +2162,33 @@ mfxI32 CMC::MCTF_RUN_BLEND() {
     UINT64 executionTime;
     e->GetExecutionTime(executionTime);
     exeTime += executionTime / 1000;
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF("TIME=%.3fms ", time / 1000000.0);
-#endif
-#endif
     device->DestroyThreadSpace(threadSpace);
     queue->DestroyEvent(e);
     e = 0;
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_BLEND(mfxU8 srcNum, mfxU8 refNum) {
+mfxI32 CMC::MCTF_RUN_BLEND(
+    mfxU8 srcNum,
+    mfxU8 refNum
+)
+{
     mfxU16 multiplier = 2;
-    //    res = MCTF_SET_KERNELMc(0, 0, srcNum, refNum);
     res = MCTF_SET_KERNELMc(DIVUP(p_ctrl->CropX, blsize) * multiplier , DIVUP(p_ctrl->CropY, blsize) * multiplier, srcNum, refNum);
     MCTF_CHECK_CM_ERR(res, res);
     tsHeight = (DIVUP(p_ctrl->CropH, blsize) * multiplier);
     tsWidthFull = (DIVUP(p_ctrl->CropW, blsize) * multiplier);
     tsWidth = tsWidthFull;
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
         tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
 
     threadSpace = 0;
     res = MCTF_RUN_TASK(kernelMc1r, task != 0);
     MCTF_CHECK_CM_ERR(res, res);
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
         mfxU16
             start_mbX = tsWidth;
         tsWidth = tsWidthFull - tsWidth;
@@ -2158,19 +2200,14 @@ mfxI32 CMC::MCTF_RUN_BLEND(mfxU8 srcNum, mfxU8 refNum) {
     }
     res = e->WaitForTaskFinished();
     MCTF_CHECK_CM_ERR(res, res);
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF("TIME=%.3fms ", time / 1000000.0);
-#endif
-#endif
     device->DestroyThreadSpace(threadSpace);
     queue->DestroyEvent(e);
     e = 0;
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_BLEND2R() {
+mfxI32 CMC::MCTF_RUN_BLEND2R()
+{
     mfxU16 multiplier = 2;
     res = MCTF_SET_KERNELMc2r(DIVUP(p_ctrl->CropX, blsize) * multiplier, DIVUP(p_ctrl->CropY, blsize) * multiplier);
     MCTF_CHECK_CM_ERR(res, res);
@@ -2179,15 +2216,15 @@ mfxI32 CMC::MCTF_RUN_BLEND2R() {
     tsWidthFullMC = (DIVUP(p_ctrl->CropW, blsize) * multiplier);
     tsWidthMC = tsWidthFullMC;
 
-    if (tsWidthFullMC > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFullMC > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
         tsWidthMC = (tsWidthFullMC >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
 
     threadSpaceMC = 0;
     res = MCTF_RUN_MCTASK(kernelMc2r, task != 0);
     MCTF_CHECK_CM_ERR(res, res);
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
         mfxU16 start_mbX = tsWidthMC;
         tsWidthMC = tsWidthFullMC - tsWidthMC;
         res = MCTF_SET_KERNELMc2r(start_mbX, DIVUP(p_ctrl->CropY, blsize) * multiplier);
@@ -2198,12 +2235,6 @@ mfxI32 CMC::MCTF_RUN_BLEND2R() {
     }
     res = e->WaitForTaskFinished();
     MCTF_CHECK_CM_ERR(res, res);
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF("TIME=%.3fms ", time / 1000000.0);
-#endif
-#endif
     UINT64 executionTime;
     e->GetExecutionTime(executionTime);
     exeTime += executionTime / 1000;
@@ -2213,24 +2244,24 @@ mfxI32 CMC::MCTF_RUN_BLEND2R() {
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_BLEND2R_DEN() {
+mfxI32 CMC::MCTF_RUN_BLEND2R_DEN()
+{
     mfxU16 multiplier = 2;
-    //res = MCTF_SET_KERNELMc2rDen(0, 0);
     res = MCTF_SET_KERNELMc2rDen(DIVUP(p_ctrl->CropX, blsize) * multiplier, DIVUP(p_ctrl->CropY, blsize) * multiplier);
     MCTF_CHECK_CM_ERR(res, res);
     tsHeight = (DIVUP(p_ctrl->CropH, blsize) * multiplier);
     tsWidthFull = (DIVUP(p_ctrl->CropW, blsize) * multiplier);
     tsWidth = tsWidthFull;
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
         tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
 
     threadSpace = 0;
     res = MCTF_RUN_TASK(kernelMc2r, task != 0);
     MCTF_CHECK_CM_ERR(res, res);
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
         mfxU16
             start_mbX = tsWidth;
         tsWidth = tsWidthFull - tsWidth;
@@ -2243,46 +2274,38 @@ mfxI32 CMC::MCTF_RUN_BLEND2R_DEN() {
     }
     res = e->WaitForTaskFinished();
     MCTF_CHECK_CM_ERR(res, res);
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF("TIME=%.3fms ", time / 1000000.0);
-#endif
-#endif
     device->DestroyThreadSpace(threadSpace);
     queue->DestroyEvent(e);
     e = 0;
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_BLEND4R(DRT typeRun) {
-    if (typeRun > 1) {
-#ifdef MFX_MCTF_DEBUG_PRINT
-        ASC_PRINTF("MCTF_RUN_BLEND4R: typRun > 1!\n");
-#endif
-        return -2666;
-    }
+mfxI32 CMC::MCTF_RUN_BLEND4R(
+    DRT typeRun
+)
+{
+    if (typeRun > 1)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
     mfxU16 multiplier = 2;
-    res = MCTF_SET_KERNELMc4r(DIVUP(p_ctrl->CropX, blsize) * multiplier, DIVUP(p_ctrl->CropY, blsize) * multiplier, typeRun);
+    res = MCTF_SET_KERNELMc4r(DIVUP(p_ctrl->CropX, blsize) * multiplier, DIVUP(p_ctrl->CropY, blsize) * multiplier, (mfxU8)typeRun);
     MCTF_CHECK_CM_ERR(res, res);
     tsHeight = (DIVUP(p_ctrl->CropH, blsize) * multiplier);
     tsWidthFull = (DIVUP(p_ctrl->CropW, blsize) * multiplier);
     tsWidth = tsWidthFull;
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
         tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
 
     threadSpace = 0;
     res = MCTF_RUN_TASK(kernelMc2r, task != 0);
     MCTF_CHECK_CM_ERR(res, res);
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
         mfxU16
             start_mbX = tsWidth;
         tsWidth = tsWidthFull - tsWidth;
-//        res = MCTF_SET_KERNELMc4r(start_mbX, 0, typeRun);
-        res = MCTF_SET_KERNELMc4r(start_mbX, DIVUP(p_ctrl->CropY, blsize) * multiplier, typeRun);
+        res = MCTF_SET_KERNELMc4r(start_mbX, DIVUP(p_ctrl->CropY, blsize) * multiplier, (mfxU8)typeRun);
         MCTF_CHECK_CM_ERR(res, res);
         // the rest of frame TS
         res = MCTF_RUN_TASK(kernelMc2r, task != 0);
@@ -2290,41 +2313,32 @@ mfxI32 CMC::MCTF_RUN_BLEND4R(DRT typeRun) {
     }
     res = e->WaitForTaskFinished();
     MCTF_CHECK_CM_ERR(res, res);
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF("TIME=%.3fms ", time / 1000000.0);
-#endif
-#endif
     device->DestroyThreadSpace(threadSpace);
     queue->DestroyEvent(e);
     e = 0;
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_MERGE() {
-    //res = MCTF_SET_KERNELMcMerge(0, 0);
+mfxI32 CMC::MCTF_RUN_MERGE()
+{
     res = MCTF_SET_KERNELMcMerge(DIVUP(p_ctrl->CropX, 16), DIVUP(p_ctrl->CropY, 16));
     MCTF_CHECK_CM_ERR(res, res);
-    //tsHeight = DIVUP(p_ctrl->height, 16);
-    //tsWidthFull = DIVUP(p_ctrl->width, 16);
     tsHeight = DIVUP(p_ctrl->CropH, 16);
     tsWidthFull = DIVUP(p_ctrl->CropW, 16);
     tsWidth = tsWidthFull;
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
         tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
 
     threadSpace = 0;
     res = MCTF_RUN_TASK(kernelMc4r, task != 0);
     MCTF_CHECK_CM_ERR(res, res);
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
         mfxU16
             start_mbX = tsWidth;
         tsWidth = tsWidthFull - tsWidth;
-        //        res = MCTF_SET_KERNELMc4r(start_mbX, 0);
         res = MCTF_SET_KERNELMc4r(start_mbX, DIVUP(p_ctrl->CropY, 16));
         MCTF_CHECK_CM_ERR(res, res);
         // the rest of frame TS
@@ -2333,42 +2347,35 @@ mfxI32 CMC::MCTF_RUN_MERGE() {
     }
     res = e->WaitForTaskFinished();
     MCTF_CHECK_CM_ERR(res, res);
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF("TIME=%.3fms ", time / 1000000.0);
-#endif
-#endif
     device->DestroyThreadSpace(threadSpace);
     queue->DestroyEvent(e);
     e = 0;
     return res;
     }
 
-mfxI32 CMC::MCTF_RUN_BLEND4R(SurfaceIndex *multiIndex) {
+mfxI32 CMC::MCTF_RUN_BLEND4R(
+    SurfaceIndex * multiIndex
+)
+{
     mfxU16 multiplier = 2;
-    //    res = MCTF_SET_KERNELMc4r(0, 0, multiIndex);
     res = MCTF_SET_KERNELMc4r(DIVUP(p_ctrl->CropX, blsize) * multiplier, DIVUP(p_ctrl->CropY, blsize) * multiplier, multiIndex);
     MCTF_CHECK_CM_ERR(res, res);
-    //    tsHeight = (DIVUP(p_ctrl->height, blsize) * multiplier);
-    //    tsWidthFull = (DIVUP(p_ctrl->width, blsize) * multiplier);
     tsHeight = (DIVUP(p_ctrl->CropH, blsize) * multiplier);
     tsWidthFull = (DIVUP(p_ctrl->CropW, blsize) * multiplier);
     tsWidth = tsWidthFull;
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
         tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
 
     threadSpace = 0;
     res = MCTF_RUN_TASK(kernelMc2r, task != 0);
     MCTF_CHECK_CM_ERR(res, res);
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
         mfxU16
             start_mbX = tsWidth;
         tsWidth = tsWidthFull - tsWidth;
-        //        res = MCTF_SET_KERNELMc4r(start_mbX, 0, multiIndex);
         res = MCTF_SET_KERNELMc4r(start_mbX, DIVUP(p_ctrl->CropY, blsize) * multiplier, multiIndex);
         MCTF_CHECK_CM_ERR(res, res);
         res = MCTF_RUN_TASK(kernelMc2r, task != 0);
@@ -2376,37 +2383,34 @@ mfxI32 CMC::MCTF_RUN_BLEND4R(SurfaceIndex *multiIndex) {
     }
     res = e->WaitForTaskFinished();
     MCTF_CHECK_CM_ERR(res, res);
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF("TIME=%.3fms ", time / 1000000.0);
-#endif
-#endif
     device->DestroyThreadSpace(threadSpace);
     queue->DestroyEvent(e);
     e = 0;
     return res;
     }
 
-void CMC::RotateBufferA() {
+void CMC::RotateBufferA()
+{
     std::swap(QfIn[0], QfIn[1]);
     std::swap(QfIn[0], QfIn[2]);
 }
 
-void CMC::RotateBufferB() {
+void CMC::RotateBufferB()
+{
     std::swap(QfIn[0], QfIn[1]);
     std::swap(QfIn[1], QfIn[2]);
     std::swap(QfIn[2], QfIn[3]);
 }
 
-void CMC::RotateBuffer() {
+void CMC::RotateBuffer()
+{
     mfxU8 correction = ((QfIn.size() > 3) && (firstFrame < 3)) << 1;
-    for (mfxU8 i = 0; i < QfIn.size() - 1 - correction; i++) {
+    for (mfxU8 i = 0; i < QfIn.size() - 1 - correction; i++)
         std::swap(QfIn[i], QfIn[i + 1]);
     }
-}
 
-void CMC::AssignSceneNumber() {
+void CMC::AssignSceneNumber()
+{
     for (mfxU8 i = 0; i < QfIn.size(); i++)
         scene_numbers[i] = QfIn[i].scene_idx;
 }
@@ -2448,7 +2452,8 @@ mfxI32 CMC::MCTF_RUN_ME_4REF()
 }
 
 
-mfxI32 CMC::MCTF_BLEND4R() {
+mfxI32 CMC::MCTF_BLEND4R()
+{
     res = MCTF_RUN_BLEND4R(DEN_CLOSE_RUN);
     MCTF_CHECK_CM_ERR(res, res);
     res = MCTF_RUN_BLEND4R(DEN_FAR_RUN);
@@ -2458,52 +2463,56 @@ mfxI32 CMC::MCTF_BLEND4R() {
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_MCTF_DEN_1Ref() {
-    CMC::TimeStart(2);
-    if (pMCTF_LOAD_func) {
+mfxI32 CMC::MCTF_RUN_MCTF_DEN_1REF()
+{
+    if (pMCTF_LOAD_func)
+    {
         res = (this->*(pMCTF_LOAD_func))();
         MCTF_CHECK_CM_ERR(res, res);
     }
     AssignSceneNumber();
-    if (pMCTF_ME_func) {
+    if (pMCTF_ME_func)
+    {
         res = (this->*(pMCTF_ME_func))();
         MCTF_CHECK_CM_ERR(res, res);
     }
-    if (pMCTF_MERGE_func) {
+    if (pMCTF_MERGE_func)
+    {
         res = (this->*(pMCTF_MERGE_func))();
         MCTF_CHECK_CM_ERR(res, res);
     }
     if (pMCTF_SpDen_func)
         res = (this->*(pMCTF_SpDen_func))();
     RotateBuffer();
-    //    pTimer->calctime += CatchTime(2, 3, "MCTF calc:", PRINTTIMING);
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_MCTF_DEN() {
-    CMC::TimeStart(2);
-    if (pMCTF_LOAD_func) {
+mfxI32 CMC::MCTF_RUN_MCTF_DEN()
+{
+    if (pMCTF_LOAD_func)
+    {
         res = (this->*(pMCTF_LOAD_func))();
         MCTF_CHECK_CM_ERR(res, res);
     }
     AssignSceneNumber();
-    if (pMCTF_ME_func) {
+    if (pMCTF_ME_func)
+    {
         res = (this->*(pMCTF_ME_func))();
         MCTF_CHECK_CM_ERR(res, res);
     }
-    if (pMCTF_MERGE_func) {
+    if (pMCTF_MERGE_func)
+    {
         res = (this->*(pMCTF_MERGE_func))();
         MCTF_CHECK_CM_ERR(res, res);
     }
     if (pMCTF_SpDen_func)
         res = (this->*(pMCTF_SpDen_func))();
     RotateBuffer();
-    //    pTimer->calctime += CatchTime(2, 3, "MCTF calc:", PRINTTIMING);
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_MCTF_DEN_4REF() {
-    CMC::TimeStart(2);
+mfxI32 CMC::MCTF_RUN_MCTF_DEN_4REF()
+{
     res = (this->*(pMCTF_LOAD_func))();
     MCTF_CHECK_CM_ERR(res, res);
     AssignSceneNumber();
@@ -2514,12 +2523,11 @@ mfxI32 CMC::MCTF_RUN_MCTF_DEN_4REF() {
     if (pMCTF_SpDen_func)
         res = (this->*(pMCTF_SpDen_func))();
     RotateBuffer();
-    //    pTimer->calctime += CatchTime(2, 3, "MCTF calc:", PRINTTIMING);
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_AMCTF_DEN() {
-    CMC::TimeStart(2);
+mfxI32 CMC::MCTF_RUN_AMCTF_DEN()
+{
     res = (this->*(pMCTF_LOAD_func))();
     MCTF_CHECK_CM_ERR(res, res);
     AssignSceneNumber();
@@ -2530,59 +2538,56 @@ mfxI32 CMC::MCTF_RUN_AMCTF_DEN() {
     res = MCTF_RUN_Denoise();
     MCTF_CHECK_CM_ERR(res, res);
     RotateBuffer();
-    //    pTimer->calctime += CatchTime(2, 3, "MCTF calc:", PRINTTIMING);
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_AMCTF() {
-    CMC::TimeStart(2);
-
+mfxI32 CMC::MCTF_RUN_AMCTF()
+{
     res = MCTF_RUN_Denoise(1);
     MCTF_CHECK_CM_ERR(res, res);
-    //    pTimer->calctime += CatchTime(2, 3, "MCTF calc:", PRINTTIMING);
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_AMCTF(mfxU16 srcNum) {
-    CMC::TimeStart(2);
-
+mfxI32 CMC::MCTF_RUN_AMCTF(mfxU16 srcNum)
+{
     res = MCTF_RUN_Denoise(srcNum);
     MCTF_CHECK_CM_ERR(res, res);
-    //    pTimer->calctime += CatchTime(2, 3, "MCTF calc:", PRINTTIMING);
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_Denoise(mfxU16 srcNum) {
-    //    res = MCTF_SET_KERNELDe(srcNum, 0, 0);
+mfxI32 CMC::MCTF_RUN_Denoise(mfxU16 srcNum)
+{
     res = MCTF_SET_KERNELDe(srcNum, DIVUP(p_ctrl->CropX, 8), DIVUP(p_ctrl->CropY, 8));
     MCTF_CHECK_CM_ERR(res, res);
-    //    tsHeight = DIVUP(p_ctrl->height, 8);
-    //    tsWidthFull = DIVUP(p_ctrl->width, 8);
     tsHeight = DIVUP(p_ctrl->CropH, 8);
     tsWidthFull = DIVUP(p_ctrl->CropW, 8);
     tsWidth = tsWidthFull;
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
         tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
 
     threadSpace = 0;
     res = MCTF_RUN_TASK(kernelMcDen, task != 0);
     MCTF_CHECK_CM_ERR(res, res);
+    res = queue->Enqueue(task, e);
+    MCTF_CHECK_CM_ERR(res, res);
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
         mfxU16
             start_mbX = tsWidth;
         tsWidth = tsWidthFull - tsWidth;
-        //        res = MCTF_SET_KERNELDe(srcNum, start_mbX, 0);
         res = MCTF_SET_KERNELDe(srcNum, start_mbX, DIVUP(p_ctrl->CropY, 8));
         MCTF_CHECK_CM_ERR(res, res);
-        if (threadSpace != NULL) {
+        if (threadSpace != NULL)
+        {
             res = device->DestroyThreadSpace(threadSpace);
             MCTF_CHECK_CM_ERR(res, res);
         }
         // the rest of frame TS
         res = MCTF_RUN_TASK(kernelMcDen, task != 0);
+        MCTF_CHECK_CM_ERR(res, res);
+        res = queue->Enqueue(task, e);
         MCTF_CHECK_CM_ERR(res, res);
     }
     res = e->WaitForTaskFinished();
@@ -2590,12 +2595,6 @@ mfxI32 CMC::MCTF_RUN_Denoise(mfxU16 srcNum) {
     UINT64 executionTime;
     e->GetExecutionTime(executionTime);
     exeTime += executionTime / 1000;
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF("TIME=%.3fms ", time / 1000000.0);
-#endif
-#endif
     res = device->DestroyThreadSpace(threadSpace);
     MCTF_CHECK_CM_ERR(res, res);
     res = queue->DestroyEvent(e);
@@ -2604,25 +2603,23 @@ mfxI32 CMC::MCTF_RUN_Denoise(mfxU16 srcNum) {
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_Denoise() {
-    //    res = MCTF_SET_KERNELDe(0, 0);
+mfxI32 CMC::MCTF_RUN_Denoise()
+{
     res = MCTF_SET_KERNELDe(DIVUP(p_ctrl->CropX, 8), DIVUP(p_ctrl->CropY, 8));
     MCTF_CHECK_CM_ERR(res, res);
-    //    tsHeight = DIVUP(p_ctrl->height, 8);
-    //    tsWidthFull = DIVUP(p_ctrl->width, 8);
     tsHeight = DIVUP(p_ctrl->CropH, 8);
     tsWidthFull = DIVUP(p_ctrl->CropW, 8);
     tsWidth = tsWidthFull;
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
         tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
 
     threadSpace = 0;
     res = MCTF_RUN_TASK(kernelMcDen, task != 0);
     MCTF_CHECK_CM_ERR(res, res);
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
         mfxU16
             start_mbX = tsWidth;
         tsWidth = tsWidthFull - tsWidth;
@@ -2637,22 +2634,19 @@ mfxI32 CMC::MCTF_RUN_Denoise() {
     UINT64 executionTime;
     e->GetExecutionTime(executionTime);
     exeTime += executionTime / 1000;
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#ifdef MFX_MCTF_DEBUG_PRINT
-    ASC_PRINTF("TIME=%.3fms ", time / 1000000.0);
-#endif
-#endif
     device->DestroyThreadSpace(threadSpace);
     queue->DestroyEvent(e);
     e = 0;
     return res;
 }
 
-mfxStatus CMC::MCTF_PUT_FRAME(IntMctfParams* pMctfControl, CmSurface2D* InSurf, CmSurface2D* OutSurf)
+mfxStatus CMC::MCTF_PUT_FRAME(
+    IntMctfParams * pMctfControl,
+    CmSurface2D   * InSurf,
+    CmSurface2D   * OutSurf
+)
 {
     lastFrame = 0;
-    TimeStart(2);
     if (!InSurf)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     INT cmSts = 0;
@@ -2666,8 +2660,6 @@ mfxStatus CMC::MCTF_PUT_FRAME(IntMctfParams* pMctfControl, CmSurface2D* InSurf, 
 
     MFX_SAFE_CALL(MCTF_UpdateRTParams(pMctfControl));
     MFX_SAFE_CALL(MCTF_PUT_FRAME(sceneNum, OutSurf));
-    
-    //    pTimer->calctime += CatchTime(2, 3, "SCD+MRE calc:", PRINTTIMING);
     forward_distance = -1;
     backward_distance = 1;
     countFrames++;
@@ -2693,11 +2685,7 @@ mfxStatus CMC::MCTF_DO_FILTERING()
         {
         case 1:
         {
-#if HALFWORK
             pMCTF_MERGE_func = NULL;
-#else
-            pMCTF_MERGE_func = &CMC::MCTF_RUN_BLEND2R;
-#endif
             //todo: check is it correct that the current frame is 0?
             MCTF_UpdateANDApplyRTParams(0);
             pMCTF_ME_func = &CMC::MCTF_RUN_ME_2REF;
@@ -2718,11 +2706,8 @@ mfxStatus CMC::MCTF_DO_FILTERING()
             CurrentIdx2Out = 1;
             MctfState = AMCTF_READY;
             firstFrame = 3;
-#if HALFWORK
+
             pMCTF_MERGE_func = &CMC::MCTF_RUN_MERGE;
-#else
-            pMCTF_MERGE_func = &CMC::MCTF_BLEND4R;
-#endif
             pMCTF_ME_func = &CMC::MCTF_RUN_ME_4REF;
             pMCTF_LOAD_func = &CMC::MCTF_LOAD_4REF;
             break;
@@ -2810,7 +2795,8 @@ mfxStatus CMC::MCTF_DO_FILTERING()
     return MFX_ERR_NONE;
 }
 
-void CMC::MCTF_CLOSE() {
+void CMC::MCTF_CLOSE()
+{
     if (kernelMe)
         device->DestroyKernel(kernelMe);
     if (kernelMeB)
@@ -2842,32 +2828,39 @@ void CMC::MCTF_CLOSE() {
 
     if (mco2)
         device->DestroySurface(mco2);
-    if (idxMv_1) {
+    if (idxMv_1)
+    {
         device->DestroySurface2DUP(mv_1);
         CM_ALIGNED_FREE(mvSys1);
     }
-    if (idxMv_2) {
+    if (idxMv_2)
+    {
         device->DestroySurface2DUP(mv_2);
         CM_ALIGNED_FREE(mvSys2);
     }
-    if (idxMv_3) {
+    if (idxMv_3)
+    {
         device->DestroySurface2DUP(mv_3);
         CM_ALIGNED_FREE(mvSys3);
     }
-    if (idxMv_4) {
+    if (idxMv_4)
+    {
         device->DestroySurface2DUP(mv_4);
         CM_ALIGNED_FREE(mvSys4);
     }
-    if (distSurf) {
+    if (distSurf)
+    {
         device->DestroySurface2DUP(distSurf);
         CM_ALIGNED_FREE(distSys);
     }
-    if (noiseAnalysisSurf) {
+    if (noiseAnalysisSurf)
+    {
         device->DestroySurface2DUP(noiseAnalysisSurf);
         CM_ALIGNED_FREE(noiseAnalysisSys);
     }
   
-    if (pSCD) {
+    if (pSCD)
+    {
         pSCD->Close();
         pSCD = nullptr;
     }

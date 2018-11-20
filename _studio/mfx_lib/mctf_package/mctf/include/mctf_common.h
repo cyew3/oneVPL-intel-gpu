@@ -75,7 +75,6 @@ enum { MCTF_BITRATE_MULTIPLIER = 100000 };
 #include "asc.h"
 
 #include <cassert>
-#define HALFWORK    1
 #define CHROMABASE  80
 #define MAXCHROMA   100
 
@@ -132,17 +131,20 @@ typedef enum AMCTF_OP_MODE
     OVERLAP_ADA_OP
 }AMCTF_OMODE;
 
-typedef enum _OFFSET_OV_MODE {
+typedef enum _OFFSET_OV_MODE
+{
     NO_OVERLAP_OFFSET = 0,
     OVERLAP_OFFSET = 2
 }OFFSET_OV_MODE;
 
-typedef enum _DENOISER_RUN_TYPE {
+typedef enum _DENOISER_RUN_TYPE
+{
     DEN_CLOSE_RUN,
     DEN_FAR_RUN
 }DRT;
 
-typedef enum _NUMBER_OF_REFERENCES {
+typedef enum _NUMBER_OF_REFERENCES
+{
     NO_REFERENCES,
     ONE_REFERENCE,
     TWO_REFERENCES,
@@ -150,13 +152,15 @@ typedef enum _NUMBER_OF_REFERENCES {
     FOUR_REFERENCES
 }NUOR;
 
-enum class  MCTF_MODE {
+enum class  MCTF_MODE
+{
     MCTF_MANUAL_MODE, // MCTF operates based on filter-strength passed by application
     MCTF_AUTO_MODE,   // MCTF automatically ajusts filter-strength and uses noise-estimations
     MCTF_NOT_INITIALIZED_MODE
 };
 
-enum class MCTF_CONFIGURATION {
+enum class MCTF_CONFIGURATION
+{
     MCTF_MAN_NCA_NBA,         // Manual, not Content-adaptive, not bitrate-adaptive
     MCTF_AUT_CA_NBA,          // Auto (noise-estimator is used), content-adaptive, not bitrate-adaptive
     MCTF_AUT_NCA_NBA,          // Auto (noise-estimator is used), not Content - adaptive, not bitrate - adaptive
@@ -164,74 +168,11 @@ enum class MCTF_CONFIGURATION {
     MCTF_NOT_CONFIGURED       // not configured yet
 };
 
-typedef enum _SUBPELPRECISION {
+typedef enum _SUBPELPRECISION
+{
     INTEGER_PEL,
     QUARTER_PEL
 }SPP;
-
-struct ParamCopyCPUToGPUStride {
-    ParamCopyCPUToGPUStride(CmSurface2D *gpumem_, const Ipp8u *cpumem_, Ipp32s pitch_) : gpumem(gpumem_), cpumem(cpumem_), pitch(pitch_) {}
-    CmSurface2D *gpumem;
-    const Ipp8u *cpumem;
-    Ipp32s       pitch;
-};
-
-inline mfxU64 GetAccurateGpuTime(CmQueue *queue, CmTask *task, CmThreadSpace *ts)
-{
-    CmEvent *e = NULL;
-    mfxU64 mintime = mfxU64(-1);
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++)
-            queue->Enqueue(task, e, ts);
-        e->WaitForTaskFinished();
-        mfxU64 time;
-        e->GetExecutionTime(time);
-        mintime = MIN(mintime, time);
-    }
-    return mintime;
-}
-
-inline std::tuple<mfxU64, mfxU64, mfxU64> GetAccurateGpuTime(CmQueue *queue, const ParamCopyCPUToGPUStride &copyParam, CmTask *task, CmThreadSpace *ts)
-{
-    CmEvent *e1 = NULL, *e2 = NULL;
-    mfxU64 mintimeTot = mfxU64(-1);
-    mfxU64 mintime1 = mfxU64(-1);
-    mfxU64 mintime2 = mfxU64(-1);
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++) {
-//            queue->EnqueueCopyCPUToGPUStride(copyParam.gpumem, copyParam.cpumem, copyParam.pitch, e1);
-            queue->EnqueueCopyCPUToGPUFullStride(copyParam.gpumem, copyParam.cpumem, copyParam.pitch, 0, CM_FASTCOPY_OPTION_NONBLOCKING, e1);
-            queue->Enqueue(task, e2, ts);
-
-
-        }
-        e2->WaitForTaskFinished();
-        mfxU64 time1, time2;
-        e1->GetExecutionTime(time1);
-        e2->GetExecutionTime(time2);
-        if (mintimeTot > time1 + time2) {
-            mintimeTot = time1 + time2;
-            mintime1 = time1;
-            mintime2 = time2;
-        }
-    }
-    return std::make_tuple(mintime1, mintime2, mintimeTot);
-}
-
-inline mfxU64 GetAccurateGpuTime_ThreadGroup(CmQueue *queue, CmTask *task, CmThreadGroupSpace* tgs)
-{
-    CmEvent *e = NULL;
-    mfxU64 mintime = mfxU64(-1);
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++)
-            queue->EnqueueWithGroup(task, e, tgs);
-        e->WaitForTaskFinished();
-        mfxU64 time;
-        e->GetExecutionTime(time);
-        mintime = MIN(mintime, time);
-    }
-    return mintime;
-}
 
 struct VmeSearchPath // sizeof=58
 {
@@ -240,7 +181,8 @@ struct VmeSearchPath // sizeof=58
     mfxU8 lenSp;
 };
 
-struct spatialNoiseAnalysis {
+struct spatialNoiseAnalysis
+{
     mfxF32
         var;
     mfxF32
@@ -265,22 +207,28 @@ struct MeControlSmall // sizeof=96
     mfxU8  reserved2[14];
 };
 static_assert(sizeof(MeControlSmall) == 96,"size of MeControlSmall != 96");
-struct frameData {
+struct frameData
+{
     std::vector<mfxU8>
         *frame;
     mfxU8
         scene_number;
 };
 
-struct gpuFrameData {
+struct gpuFrameData
+{
     CmSurface2D
         *frameData;
     SurfaceIndex
         *fIdx;
-    mfxFrameSurface1* mfxFrame;
-    IntMctfParams mfxMctfControl;
-    CmSurface2D  *magData;
-    SurfaceIndex *idxMag;
+    mfxFrameSurface1
+        * mfxFrame;
+    IntMctfParams
+        mfxMctfControl;
+    CmSurface2D
+        * magData;
+    SurfaceIndex
+        * idxMag;
     mfxU8
         sc,
         tc,
@@ -297,7 +245,8 @@ struct gpuFrameData {
         frame_sc,
         frame_Rs,
         frame_Cs;
-    gpuFrameData() {
+    gpuFrameData()
+    {
         frameData = nullptr;
         fIdx  = nullptr;
         mfxFrame = nullptr;
@@ -320,7 +269,8 @@ struct gpuFrameData {
 #define D1  0x10    //[0, 1]
 #define SEARCHPATHSIZE 56
 
-typedef struct _MulSurfIdx {
+typedef struct _MulSurfIdx
+{
     SurfaceIndex
         *p_ppIndex,
         *p_pIndex,
@@ -379,9 +329,12 @@ private:
     t_MCTF_LOAD pMCTF_LOAD_func;
     t_MCTF_SPDEN pMCTF_SpDen_func;
 
-    CmDevice *device;
-    CmQueue*queue;
-    CmTask *task;
+    CmDevice
+        * device;
+    CmQueue
+        * queue;
+    CmTask
+        * task;
     CmEvent
         *e,
         *copyEv;
@@ -390,9 +343,12 @@ private:
         *threadSpace2,
         *threadSpaceMC,
         *threadSpaceMC2;
-    size_t hwSize;
-    mfxU32 hwType;
-    mfxU64 exeTime;
+    size_t 
+        hwSize;
+    mfxU32
+        hwType;
+    mfxU64
+        exeTime;
     //Common elements
     mfxU32
         version,
@@ -402,7 +358,8 @@ private:
         surfNoiseSize,
         sceneNum,
         countFrames;
-    size_t bufferCount;
+    size_t
+        bufferCount;
     mfxU16
         firstFrame,
         lastFrame,
@@ -417,19 +374,32 @@ private:
         CurrentIdx2Out,
         deblocking_Control,
         overlap_Motion;
-    bool bitrate_Adaptation;
-    MCTF_MODE m_AutoMode;
-    MCTF_CONFIGURATION ConfigMode;
+    bool
+        bitrate_Adaptation;
+    MCTF_MODE
+        m_AutoMode;
+    MCTF_CONFIGURATION
+        ConfigMode;
 
     // current state of MCTF: is it ready to output data or not
-    mfxU16 MctfState;
+    mfxU16
+        MctfState;
 
-    IntMctfParams m_RTParams, m_InitRTParams;
-    mfxI8 backward_distance,forward_distance;
-    mfxU16 bth;
-    std::unique_ptr<MeControlSmall> p_ctrl;
-    CmBuffer *ctrlBuf;
-    CmSurface2D *qpel1, *qpel2;
+    IntMctfParams
+        m_RTParams,
+        m_InitRTParams;
+    mfxI8 
+        backward_distance,
+        forward_distance;
+    mfxU16
+        bth;
+    std::unique_ptr<MeControlSmall>
+        p_ctrl;
+    CmBuffer
+        * ctrlBuf;
+    CmSurface2D
+        * qpel1,
+        * qpel2;
     CmSurface2DUP
         *mv_1,
         *mv_2,
@@ -444,7 +414,6 @@ private:
         *idxRef2,
         *idxRef3,
         *idxRef4,
-        //*idxAllRef[4],
         *idxMv_1,
         *idxMv_2,
         *idxMv_3,
@@ -470,15 +439,22 @@ private:
         *mvSys4,
         *noiseAnalysisSys,
         *distSys;
-    mfxF64 bpp;
-    mfxU32 m_FrameRateExtN, m_FrameRateExtD;
-    mfxU32 scene_numbers[5];
-    mfxU64 time;
+    mfxF64
+        bpp;
+    mfxU32
+        m_FrameRateExtN,
+        m_FrameRateExtD;
+    mfxU32
+        scene_numbers[5];
+    mfxU64
+        time;
 
     mfxI32 res;
 
-    std::vector<mfxU32> distRef;
-    std::vector<spatialNoiseAnalysis> var_sc;
+    std::vector<mfxU32>
+        distRef;
+    std::vector<spatialNoiseAnalysis>
+        var_sc;
 
 
     SurfaceIndex
@@ -498,25 +474,43 @@ private:
         *kernelMc2r,
         *kernelMc4r;
 
-    CmSurface2D *mco, *mco2;
-    SurfaceIndex *idxMco, *idxMco2;
+    CmSurface2D
+        * mco,
+        * mco2;
+    SurfaceIndex
+        * idxMco,
+        * idxMco2;
 
-    std::unique_ptr<ASC> pSCD;
+    std::unique_ptr<ASC>
+        pSCD;
     // a queue MCTF of frames MCTF operates on
-    std::vector<gpuFrameData> QfIn;
+    std::vector<gpuFrameData>
+        QfIn;
 
     // ----------- MSDK binds------------------
-    VideoCORE* m_pCore;
+    VideoCORE
+        * m_pCore;
 
 protected:
     //ME elements
-    CmProgram *programMe;
-    CmKernel *kernelMe, *kernelMeB;
+    CmProgram
+        * programMe;
+    CmKernel
+        * kernelMe,
+        * kernelMeB;
 
 private:
-    inline mfxStatus SetupMeControl( const mfxFrameInfo& FrameInfo, mfxU16 th,  mfxU16 subPelPre);
-    mfxStatus DIM_SET(mfxU16 overlap);
-    mfxStatus MCTF_InitQueue(mfxU16 refNum);
+    inline mfxStatus SetupMeControl(
+        const mfxFrameInfo & FrameInfo,
+        mfxU16               th,
+        mfxU16               subPelPre
+    );
+    mfxStatus DIM_SET(
+        mfxU16 overlap
+    );
+    mfxStatus MCTF_InitQueue(
+        mfxU16 refNum
+    );
 
     void   RotateBuffer();
     void   RotateBufferA();
@@ -566,15 +560,37 @@ private:
         mfxI8          backwardRefDist
     );
     mfxI32 MCTF_SET_KERNELMc(
-        mfxU16 start_x, mfxU16 start_y,
-        mfxU8 srcNum, mfxU8 refNum);
-    mfxI32 MCTF_SET_KERNELMc2r(mfxU16 start_x, mfxU16 start_y);
-    mfxI32 MCTF_SET_KERNELMc2rDen(mfxU16 start_x, mfxU16 start_y);
-    mfxI32 MCTF_SET_KERNELMc4r(mfxU16 start_x, mfxU16 start_y);
-    mfxI32 MCTF_SET_KERNELMc4r(mfxU16 start_x, mfxU16 start_y, SurfaceIndex *multiIndex);
-    mfxI32 MCTF_SET_KERNELMc4r(mfxU16 start_x, mfxU16 start_y, mfxU8 runType);
-    mfxI32 MCTF_SET_KERNELMcMerge(mfxU16 start_x, mfxU16 start_y);
-
+        mfxU16 start_x,
+        mfxU16 start_y,
+        mfxU8  srcNum,
+        mfxU8  refNum
+    );
+    mfxI32 MCTF_SET_KERNELMc2r(
+        mfxU16 start_x,
+        mfxU16 start_y
+    );
+    mfxI32 MCTF_SET_KERNELMc2rDen(
+        mfxU16 start_x,
+        mfxU16 start_y
+    );
+    mfxI32 MCTF_SET_KERNELMc4r(
+        mfxU16 start_x,
+        mfxU16 start_y
+    );
+    mfxI32 MCTF_SET_KERNELMc4r(
+        mfxU16          start_x,
+        mfxU16          start_y,
+        SurfaceIndex  * multiIndex
+    );
+    mfxI32 MCTF_SET_KERNELMc4r(
+        mfxU16 start_x,
+        mfxU16 start_y,
+        mfxU8  runType
+    );
+    mfxI32 MCTF_SET_KERNELMcMerge(
+        mfxU16 start_x,
+        mfxU16 start_y
+    );
     mfxU8  SetOverlapOp();
     mfxU8  SetOverlapOp_half();
     mfxI32 MCTF_RUN_TASK_NA(
@@ -630,100 +646,128 @@ private:
     void   GET_DISTDATA_H();
     void   GET_NOISEDATA();
     mfxF64 GET_TOTAL_SAD();
-    mfxI32 MCTF_RUN_Noise_Analysis(mfxU8 srcNum);
-    void   GetSpatioTemporalComplexityFrame(mfxU8 currentFrame);
-    mfxU32 computeQpClassFromBitRate(mfxU8 currentFrame);
-
+    mfxI32 MCTF_RUN_Noise_Analysis(
+        mfxU8 srcNum
+    );
+    void   GetSpatioTemporalComplexityFrame(
+        mfxU8 currentFrame
+    );
+    mfxU32 computeQpClassFromBitRate(
+        mfxU8 currentFrame
+    );
     void noise_estimator();
-
     mfxI32 MCTF_RUN_BLEND();
-    mfxI32 MCTF_RUN_BLEND(mfxU8 srcNum, mfxU8 refNum);
+    mfxI32 MCTF_RUN_BLEND(
+        mfxU8 srcNum, 
+        mfxU8 refNum
+
+    );
     mfxI32 MCTF_RUN_BLEND2R();
     mfxI32 MCTF_RUN_BLEND2R_DEN();
-    mfxI32 MCTF_RUN_BLEND4R(DRT typeRun);
-    mfxI32 MCTF_RUN_BLEND4R(SurfaceIndex *multiIndex);
+    mfxI32 MCTF_RUN_BLEND4R(
+        DRT typeRun
+    );
+    mfxI32 MCTF_RUN_BLEND4R(
+        SurfaceIndex * multiIndex
+    );
     mfxI32 MCTF_BLEND4R();
-
     mfxI32 MCTF_RUN_MERGE();
-    void   TimeStart();
-    void   TimeStart(int index);
-    void   TimeStop();
-    mfxF64 CatchTime(const char* message, int print);
-    mfxF64 CatchTime(int indexInit, int indexEnd,
-        const char* message, int print);
-
     mfxI32 MCTF_LOAD_1REF();
     mfxI32 MCTF_LOAD_2REF();
     mfxI32 MCTF_LOAD_4REF();
     void   AssignSceneNumber();
-    mfxI32 MCTF_RUN_MCTF_DEN_1Ref();
+    mfxI32 MCTF_RUN_MCTF_DEN_1REF();
     mfxI32 MCTF_RUN_MCTF_DEN();
     mfxI32 MCTF_RUN_MCTF_DEN_4REF();
     mfxI32 MCTF_RUN_AMCTF_DEN();
-
-    mfxStatus MCTF_SET_ENV(const mfxFrameInfo& FrameInfo, const IntMctfParams* pMctfParam);
-
-    mfxI32 MCTF_SET_KERNEL_Noise(mfxU16 srcNum, mfxU16 start_x, mfxU16 start_y);
-
-    mfxI32 MCTF_SET_KERNELDe(mfxU16 srcNum, mfxU16 start_x, mfxU16 start_y);
-    mfxI32 MCTF_SET_KERNELDe(mfxU16 start_x, mfxU16 start_y);
+    mfxStatus MCTF_SET_ENV(
+        const mfxFrameInfo  & FrameInfo,
+        const IntMctfParams * pMctfParam
+    );
+    mfxI32 MCTF_SET_KERNEL_Noise(
+        mfxU16 srcNum,
+        mfxU16 start_x,
+        mfxU16 start_y
+    );
+    mfxI32 MCTF_SET_KERNELDe(
+        mfxU16 srcNum,
+        mfxU16 start_x,
+        mfxU16 start_y
+    );
+    mfxI32 MCTF_SET_KERNELDe(
+        mfxU16 start_x,
+        mfxU16 start_y
+    );
     mfxI32 MCTF_RUN_AMCTF();
-    mfxI32 MCTF_RUN_AMCTF(mfxU16 srcNum);
-    mfxI32 MCTF_RUN_Denoise(mfxU16 srcNum);
+    mfxI32 MCTF_RUN_AMCTF(
+        mfxU16 srcNum
+    );
+    mfxI32 MCTF_RUN_Denoise(
+        mfxU16 srcNum
+    );
     mfxI32 MCTF_RUN_Denoise();
 
     // it will update strength/deblock/bitrate depending on the current mode MCTF operates & parameters
     // stored in QfIn, in a position srcNum; it will also update the current parameters (if for next frame
     // no information was passed)
-    mfxStatus MCTF_UpdateRTParams(IntMctfParams* pMctfParam);
-    mfxStatus MCTF_CheckRTParams(const IntMctfParams* pMctfParam);
-    mfxStatus MCTF_UpdateANDApplyRTParams(mfxU8 srcNum);
+    mfxStatus MCTF_UpdateRTParams(
+        IntMctfParams * pMctfParam
+    );
+    mfxStatus MCTF_CheckRTParams(
+        const IntMctfParams * pMctfParam
+    );
+    mfxStatus MCTF_UpdateANDApplyRTParams(
+        mfxU8 srcNum
+    );
 public:
-    void CatchEndTime(mfxI32 processed_frames);
-
     mfxU16  MCTF_QUERY_NUMBER_OF_REFERENCES();
-
     // sets filter-strength
-    inline mfxStatus SetFilterStrenght(unsigned short fs);
-
+    inline mfxStatus SetFilterStrenght(
+        unsigned short fs
+    );
     // returns number of referencies MCTF operates on
     mfxU16 MCTF_GetReferenceNumber() { return MCTF_QUERY_NUMBER_OF_REFERENCES(); };
-
     // Initialize MCTF
-    mfxStatus MCTF_INIT(VideoCORE * core, CmDevice *pCmDevice, const mfxFrameInfo& FrameInfo, const IntMctfParams* pMctfParam);
+    mfxStatus MCTF_INIT(
+        VideoCORE           * core,
+        CmDevice            * pCmDevice,
+        const mfxFrameInfo  & FrameInfo,
+        const IntMctfParams * pMctfParam
+    );
     // returns how many frames are needed to work;
     mfxU32 MCTF_GetQueueDepth();
-
-    //
-    mfxStatus MCTF_SetMemory(const std::vector<mfxFrameSurface1*> &);
-
-    //
+    mfxStatus MCTF_SetMemory(
+        const std::vector<mfxFrameSurface1*> &);
     void MCTF_CLOSE();
-
     MCTF_CONFIGURATION MCTF_QueryMode() { return ConfigMode; };
-
-    mfxStatus MCTF_UpdateBitrateInfo(mfxU32);
-
+    mfxStatus MCTF_UpdateBitrateInfo(
+        mfxU32
+    );
     //returns a pointer to internally allocated surface, and locks it using core method
-    mfxStatus MCTF_GetEmptySurface(mfxFrameSurface1** ppSurface);
-
+    mfxStatus MCTF_GetEmptySurface(
+        mfxFrameSurface1 ** ppSurface
+    );
     // submits a surface to MCTF & set appropriate filter-strength;
-    mfxStatus MCTF_PUT_FRAME(IntMctfParams* pMctfControl, CmSurface2D* InSurf, CmSurface2D* OutSurf);
-
-    mfxStatus MCTF_PUT_FRAME(mfxU32 sceneNumber, CmSurface2D* OutSurf);
-
+    mfxStatus MCTF_PUT_FRAME(
+        IntMctfParams   * pMctfControl,
+        CmSurface2D     * InSurf,
+        CmSurface2D     * OutSurf
+    );
+    mfxStatus MCTF_PUT_FRAME(
+        mfxU32        sceneNumber,
+        CmSurface2D * OutSurf
+    );
     mfxStatus MCTF_UpdateBufferCount();
-
-    //
     mfxStatus MCTF_DO_FILTERING();
-
     // returns (query) result of filtering to outFrame
-    mfxStatus MCTF_GET_FRAME(CmSurface2D* outFrame);
-
+    mfxStatus MCTF_GET_FRAME(
+        CmSurface2D* outFrame
+    );
     // after MCTF_GET_FRAME is invoked, we need to update TimeStamp & FrameOrder
     // To cal this function with a surface that needs to be updated
-    mfxStatus MCTF_TrackTimeStamp(mfxFrameSurface1 *outFrame);
-
+    mfxStatus MCTF_TrackTimeStamp(
+        mfxFrameSurface1 * outFrame
+    );
     bool MCTF_ReadyToOutut() { return (AMCTF_READY == MctfState); };
 };
 

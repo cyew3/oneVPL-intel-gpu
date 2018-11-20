@@ -554,7 +554,6 @@ _studio/mfx_lib/genx/h264_encode/src/genx_icl_simple_me_isa.cpp
 _studio/mfx_lib/genx/h264_encode/src/genx_icllp_histogram_isa.cpp
 _studio/mfx_lib/genx/h264_encode/src/genx_icllp_simple_me_isa.cpp
 _studio/mfx_lib/genx/mctf/include/genx_blend_mc.h
-_studio/mfx_lib/genx/mctf/include/genx_global.h
 _studio/mfx_lib/genx/mctf/include/genx_mc_bdw_isa.h
 _studio/mfx_lib/genx/mctf/include/genx_mc_icl_isa.h
 _studio/mfx_lib/genx/mctf/include/genx_mc_icllp_isa.h
@@ -569,8 +568,6 @@ _studio/mfx_lib/genx/mctf/include/genx_sd_common.h
 _studio/mfx_lib/genx/mctf/include/genx_sd_icl_isa.h
 _studio/mfx_lib/genx/mctf/include/genx_sd_icllp_isa.h
 _studio/mfx_lib/genx/mctf/include/genx_sd_skl_isa.h
-_studio/mfx_lib/genx/mctf/include/table_mc.h
-_studio/mfx_lib/genx/mctf/include/utility_genx.h
 _studio/mfx_lib/genx/mctf/src/genx_mc_bdw_isa.cpp
 _studio/mfx_lib/genx/mctf/src/genx_mc_icl_isa.cpp
 _studio/mfx_lib/genx/mctf/src/genx_mc_icllp_isa.cpp
