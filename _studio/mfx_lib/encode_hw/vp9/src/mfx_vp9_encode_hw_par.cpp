@@ -1550,13 +1550,37 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     {
         changed = true;
     }
-    if (!caps.DynamicScaling && extPar.DynamicScaling == MFX_CODINGOPTION_ON)
+    if (!caps.DynamicScaling && IsOn(extPar.DynamicScaling))
     {
         extPar.DynamicScaling = MFX_CODINGOPTION_OFF;
         unsupported = true;
     }
-    //known limitation: these 2 features don't work together
-    if (extPar.DynamicScaling == MFX_CODINGOPTION_ON && par.m_numLayers > 0)
+
+    // KNOWN FEATURES LIMITATIONS:
+
+    // dynamic scaling and temporal scalability don't work together
+    if (IsOn(extPar.DynamicScaling) && par.m_numLayers > 1)
+    {
+        extPar.DynamicScaling = MFX_CODINGOPTION_OFF;
+        unsupported = true;
+    }
+
+    // dynamic scaling and segmentation don't work together
+    if (IsOn(extPar.DynamicScaling) && seg.NumSegments > 1)
+    {
+        extPar.DynamicScaling = MFX_CODINGOPTION_OFF;
+        unsupported = true;
+    }
+
+    // temporal scalability and tiles don't work together
+    if (par.m_numLayers > 1 && (rows > 1 || cols > 1))
+    {
+        rows = cols = 1;
+        unsupported = true;
+    }
+
+    // dynamic scaling and tiles don't work together
+    if (IsOn(extPar.DynamicScaling) && (rows > 1 || cols > 1))
     {
         extPar.DynamicScaling = MFX_CODINGOPTION_OFF;
         unsupported = true;
