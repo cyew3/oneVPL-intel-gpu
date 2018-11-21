@@ -89,7 +89,7 @@ mfxStatus MFXAudioENCODE_Query(mfxSession session, mfxAudioParam *in, mfxAudioPa
         }
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         mfxRes = MFX_ERR_NULL_PTR;
     }
@@ -126,7 +126,7 @@ mfxStatus MFXAudioENCODE_QueryIOSize(mfxSession session, mfxAudioParam *par, mfx
         }
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         mfxRes = MFX_ERR_NULL_PTR;
     }
@@ -143,6 +143,7 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
     mfxStatus mfxRes;
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK(session->m_pAudioENCODE.get(), MFX_ERR_INVALID_AUDIO_PARAM);
 
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
@@ -169,22 +170,10 @@ mfxStatus MFXAudioENCODE_Init(mfxSession session, mfxAudioParam *par)
 
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        } else if (0 == session->m_pAudioENCODE.get())
-        {
-            mfxRes = MFX_ERR_INVALID_AUDIO_PARAM;
-        }
-
-        if (0 == par)
-        {
-            mfxRes = MFX_ERR_NULL_PTR;
-        }
     }
 
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
@@ -216,7 +205,7 @@ mfxStatus MFXAudioENCODE_Close(mfxSession session)
         }
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
@@ -292,22 +281,10 @@ mfxStatus MFXAudioENCODE_EncodeFrameAsync(mfxSession session, mfxAudioFrame *bs,
         }
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            return MFX_ERR_INVALID_HANDLE;
-        }
-        else if (0 == session->m_pAudioENCODE.get())
-        {
-            return MFX_ERR_NOT_INITIALIZED;
-        }
-        else if (0 == syncp)
-        {
-            return MFX_ERR_NULL_PTR;
-        }
     }
 
     if (mfxRes == MFX_ERR_NONE)

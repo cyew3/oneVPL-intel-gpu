@@ -144,7 +144,7 @@ mfxStatus MFXAudioDECODE_Query(mfxSession session, mfxAudioParam *in, mfxAudioPa
         }
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         mfxRes = MFX_ERR_UNKNOWN;
     }
@@ -187,7 +187,7 @@ mfxStatus MFXAudioDECODE_QueryIOSize(mfxSession session, mfxAudioParam *par, mfx
         }
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         mfxRes = MFX_ERR_UNKNOWN;
     }
@@ -228,13 +228,9 @@ mfxStatus MFXAudioDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxA
         }
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            return MFX_ERR_INVALID_HANDLE;
-        }
     }
 
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
@@ -272,7 +268,7 @@ mfxStatus MFXAudioDECODE_Init(mfxSession session, mfxAudioParam *par)
 
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
@@ -289,12 +285,11 @@ mfxStatus MFXAudioDECODE_Close(mfxSession session)
 
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
 
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+
     try
     {
-        if (!session)
-        {
-            throw;
-        } else if (!session->m_pAudioDECODE.get())
+        if (!session->m_pAudioDECODE.get())
         {
             return MFX_ERR_NOT_INITIALIZED;
         }
@@ -309,14 +304,10 @@ mfxStatus MFXAudioDECODE_Close(mfxSession session)
         }
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
     }
 
     MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
@@ -390,22 +381,10 @@ mfxStatus MFXAudioDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs ,
         }
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            return MFX_ERR_INVALID_HANDLE;
-        }
-        else if (0 == session->m_pDECODE.get())
-        {
-            return MFX_ERR_NOT_INITIALIZED;
-        }
-        else if (0 == syncp)
-        {
-            return MFX_ERR_NULL_PTR;
-        }
     }
 
     if (mfxRes == MFX_ERR_NONE)

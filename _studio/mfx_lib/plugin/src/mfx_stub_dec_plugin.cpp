@@ -144,7 +144,7 @@ mfxStatus MFXStubDecoderPlugin::CreateInstance(T** obj)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
-    catch (MFX_CORE_CATCH_TYPE)
+    catch (...)
     {
         return MFX_ERR_UNKNOWN;
     }
@@ -157,7 +157,7 @@ mfxStatus MFXStubDecoderPlugin::CreateInstance(T** obj)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
-    catch (MFX_CORE_CATCH_TYPE)
+    catch (...)
     {
         return MFX_ERR_UNKNOWN;
     }
