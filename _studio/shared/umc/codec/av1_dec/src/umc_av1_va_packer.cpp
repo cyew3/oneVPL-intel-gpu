@@ -497,7 +497,7 @@ namespace UMC_AV1_DECODER
                 for (auto& loc : layout)
                 {
                     tileControlParams.emplace_back();
-                    PackTileControlParams(&tileControlParams.back(), loc);
+                    PackTileControlParams(tileControlParams.back(), loc);
                 }
             }
         }
