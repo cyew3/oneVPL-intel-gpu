@@ -136,7 +136,7 @@ namespace UMC_AV1_DECODER
         if (!tileControlParam || !compBufTile || (compBufTile->GetBufferSize() < tileControlInfoSize))
             throw av1_exception(MFX_ERR_MEMORY_ALLOC);
 
-        memcpy_s(tileControlParam, compBufTile->GetBufferSize(), tileControlParams.data(), tileControlInfoSize);
+        MFX_INTERNAL_CPY(tileControlParam, tileControlParams.data(), tileControlInfoSize);
         compBufTile->SetDataSize(tileControlInfoSize);
     }
 
@@ -508,7 +508,7 @@ namespace UMC_AV1_DECODER
         if (!tileControlParam || !compBufTile || (compBufTile->GetBufferSize() < tileControlInfoSize))
             throw av1_exception(MFX_ERR_MEMORY_ALLOC);
 
-        memcpy_s(tileControlParam, compBufTile->GetBufferSize(), tileControlParams.data(), tileControlInfoSize);
+        MFX_INTERNAL_CPY(tileControlParam, tileControlParams.data(), tileControlInfoSize);
         compBufTile->SetDataSize(tileControlInfoSize);
     }
 
