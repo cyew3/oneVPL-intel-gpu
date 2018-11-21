@@ -196,10 +196,12 @@ mfxU32 Str2FourCC( vm_char* strInput )
     {
         fourcc = MFX_FOURCC_RGB4;
     }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("rgbp")) )
     {
         fourcc = MFX_FOURCC_RGBP;
     }
+#endif
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuy2")) )
     {
         fourcc = MFX_FOURCC_YUY2;

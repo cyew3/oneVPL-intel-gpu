@@ -57,8 +57,10 @@ const vm_char* FourCC2Str( mfxU32 FourCC )
         return VM_STRING("RGB3");
     case MFX_FOURCC_RGB4:
         return VM_STRING("RGB4");
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_RGBP:
         return MSDK_STRING("RGBP");
+#endif
     case MFX_FOURCC_YUV400:
         return VM_STRING("YUV400");
     case MFX_FOURCC_YUV411:
@@ -1977,6 +1979,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, 4*w);
         }
     }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     else if (pInfo->FourCC == MFX_FOURCC_RGBP)
     {
         CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);
@@ -1999,6 +2002,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, w);
         }
     }
+#endif
     else if (pInfo->FourCC == MFX_FOURCC_AYUV)
     {
         ptr = IPP_MIN( IPP_MIN(pData->Y, pData->U), IPP_MIN(pData->V, pData->A) );
