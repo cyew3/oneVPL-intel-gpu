@@ -21,7 +21,9 @@
 #include "umc_defs.h"
 #include "umc_video_processing.h"
 
+#ifndef OPEN_SOURCE
 #include "umc_video_resizing.h"
+#endif
 #include "umc_deinterlacing.h"
 #include "umc_color_space_conversion.h"
 #include "umc_deinterlacing.h"

@@ -281,9 +281,11 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
   }
   const uint8_t *(pYVU[3]) = {pSrc[0], pSrc[2], pSrc[1]};
   int32_t pYVUStep[3] = {pSrcStep[0], pSrcStep[2], pSrcStep[1]};
+  IppStatus status;
+#ifndef OPEN_SOURCE
   uint8_t *(pDstYVU[3]) = {pDst[0], pDst[2], pDst[1]};
   int32_t pDstStepYVU[3] = {pDstStep[0], pDstStep[2], pDstStep[1]};
-  IppStatus status;
+#endif
 
   switch (srcFormat) {
   case IMC3:
@@ -309,20 +311,21 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case YUV420:
     switch (dstFormat) {
-    case YUV411:
-      status = ippiYCbCr420To411_8u_P3R(pSrc, pSrcStep, pDst, pDstStep, srcSize);
-      break;
     case YUV422:
       status = ippiYCbCr420ToYCbCr422_8u_P3R(pSrc, pSrcStep, pDst, pDstStep, srcSize);
       break;
     case Y41P:
       status = cc_I420_to_Y41P(pYVU, pYVUStep, pDst[0], pDstStep[0], srcSize);
       break;
-    case NV12:
-      status = ippiYCrCb420ToYCbCr420_8u_P3P2R(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize);
-      break;
     case YUY2:
       status = ippiYCrCb420ToYCbCr422_8u_P3C2R(pYVU, pYVUStep, pDst[0], pDstStep[0], srcSize);
+      break;
+#ifndef OPEN_SOURCE
+    case YUV411:
+      status = ippiYCbCr420To411_8u_P3R(pSrc, pSrcStep, pDst, pDstStep, srcSize);
+      break;
+    case NV12:
+      status = ippiYCrCb420ToYCbCr420_8u_P3P2R(pYVU, pYVUStep, pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize);
       break;
     case UYVY:
       status = ippiYCrCb420ToCbYCr422_8u_P3C2R(pYVU, pYVUStep, pDst[0], pDstStep[0], srcSize);
@@ -342,6 +345,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     case RGB444:
       status = ippiYCbCr420ToBGR444_8u16u_P3C3R(pSrc, pSrcStep, (uint16_t*)pDst[0], pDstStep[0], srcSize);
       break;
+#endif // !OPEN_SOURCE
     default:
       return UMC_ERR_NOT_IMPLEMENTED;
     }
@@ -361,9 +365,11 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case YUV444:
     switch (dstFormat) {
+#ifndef OPEN_SOURCE
     case RGB32:
       status = ippiYCbCrToBGR_8u_P3C4R(pSrc, pSrcStep[0], pDst[0], pDstStep[0], srcSize, 0xFF);
       break;
+#endif
     default:
       return UMC_ERR_NOT_IMPLEMENTED;
     }
@@ -373,14 +379,15 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     case YUV420:
       status = ippiYCbCr422ToYCbCr420_8u_C2P3R(pSrc[0], pSrcStep[0], pDst, pDstStep, srcSize);
       break;
+    case YUV422:
+      status = ippiYCbCr422_8u_C2P3R( pSrc[0], pSrcStep[0], pDst, pDstStep, srcSize);
+      break;
+#ifndef OPEN_SOURCE
     case NV12:
       status = ippiYCbCr422ToYCbCr420_8u_C2P2R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], pDst[1], pDstStep[1], srcSize);
       break;
     case UYVY:
       status = ippiYCbCr422ToCbYCr422_8u_C2R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], srcSize);
-      break;
-    case YUV422:
-      status = ippiYCbCr422_8u_C2P3R( pSrc[0], pSrcStep[0], pDst, pDstStep, srcSize);
       break;
     case RGB24:
       status = ippiYCbCr422ToBGR_8u_C2C3R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], srcSize);
@@ -397,12 +404,14 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     case RGB444:
       status = ippiYCbCr422ToBGR444_8u16u_C2C3R(pSrc[0], pSrcStep[0], (uint16_t*)pDst[0], pDstStep[0], srcSize);
       break;
+#endif // !OPEN_SOURCE
     default:
       return UMC_ERR_NOT_IMPLEMENTED;
     }
     break;
   case UYVY:
     switch (dstFormat) {
+#ifndef OPEN_SOURCE
     case YUV420:
       status = ippiCbYCr422ToYCrCb420_8u_C2P3R(pSrc[0], pSrcStep[0], pDstYVU, pDstStepYVU, srcSize);
       break;
@@ -415,6 +424,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     case RGB32:
       status = ippiCbYCr422ToBGR_8u_C2C4R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], srcSize, 0xFF);
       break;
+#endif // !OPEN_SOURCE
     case YUV422:
       status = ippiCbYCr422ToYCbCr422_8u_C2P3R( pSrc[0], pSrcStep[0], pDst, pDstStep, srcSize);
       break;
@@ -427,9 +437,11 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     case YUV420:
       status = ippiYCbCr420_8u_P2P3R(pSrc[0], pSrcStep[0], pSrc[1], pSrcStep[1], pDst, pDstStep, srcSize);
       break;
+#ifndef OPEN_SOURCE
     case UYVY:
       status = ippiYCbCr420ToCbYCr422_8u_P2C2R(pSrc[0], pSrcStep[0], pSrc[1], pSrcStep[1], pDst[0], pDstStep[0], srcSize);
       break;
+#endif
     case YUY2:
       status = ippiYCbCr420ToYCbCr422_8u_P2C2R(pSrc[0], pSrcStep[0], pSrc[1], pSrcStep[1], pDst[0], pDstStep[0], srcSize);
       break;
@@ -439,12 +451,14 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case RGB24:
     switch (dstFormat) {
+#ifndef OPEN_SOURCE
     case YUV420:
       status = ippiBGRToYCrCb420_8u_C3P3R(pSrc[0], pSrcStep[0], pDstYVU, pDstStepYVU, srcSize);
       break;
     case YUY2:
       status = ippiBGRToYCbCr422_8u_C3C2R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], srcSize);
       break;
+#endif
     case RGB32:
       status = cc_BGRToBGRA(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], srcSize);
       break;
@@ -457,6 +471,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case RGB32:
     switch (dstFormat) {
+#ifndef OPEN_SOURCE
     case YUV420:
       status = ippiBGRToYCrCb420_8u_AC4P3R(pSrc[0], pSrcStep[0], pDstYVU, pDstStepYVU, srcSize);
       break;
@@ -466,6 +481,7 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     case UYVY:
       status = ippiBGRToCbYCr422_8u_AC4C2R(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], srcSize);
       break;
+#endif
     case RGB24:
       status = cc_BGRAToBGR(pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], srcSize);
       break;
@@ -478,12 +494,14 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case RGB555:
     switch (dstFormat) {
+#ifndef OPEN_SOURCE
     case YUV420:
       status = ippiBGR555ToYCrCb420_16u8u_C3P3R((const uint16_t*)pSrc[0], pSrcStep[0], pDstYVU, pDstStepYVU, srcSize);
       break;
     case YUY2:
       status = ippiBGR555ToYCbCr422_16u8u_C3C2R((const uint16_t*)pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], srcSize);
       break;
+#endif
     case RGB24:
       status = cc_BGR555ToBGR((const uint16_t*)pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], srcSize);
       break;
@@ -493,12 +511,14 @@ Status ColorSpaceConversion::GetFrameInternal(MediaData *input, MediaData *outpu
     break;
   case RGB565:
     switch (dstFormat) {
+#ifndef OPEN_SOURCE
     case YUV420:
       status = ippiBGR565ToYCrCb420_16u8u_C3P3R((const uint16_t*)pSrc[0], pSrcStep[0], pDstYVU, pDstStepYVU, srcSize);
       break;
     case YUY2:
       status = ippiBGR565ToYCbCr422_16u8u_C3C2R((const uint16_t*)pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], srcSize);
       break;
+#endif
     case RGB24:
       status = cc_BGR565ToBGR((const uint16_t*)pSrc[0], pSrcStep[0], pDst[0], pDstStep[0], srcSize);
       break;

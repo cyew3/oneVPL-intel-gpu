@@ -317,6 +317,12 @@ _studio/shared/umc/codec/brc/src/umc_brc.cpp
 _studio/shared/umc/codec/brc/src/umc_h264_brc.cpp
 _studio/shared/umc/codec/brc/src/umc_mpeg2_brc.cpp
 _studio/shared/umc/codec/brc/src/umc_video_brc.cpp
+_studio/shared/umc/codec/color_space_converter/include/umc_color_space_conversion.h
+_studio/shared/umc/codec/color_space_converter/include/umc_deinterlacing.h
+_studio/shared/umc/codec/color_space_converter/include/umc_video_processing.h
+_studio/shared/umc/codec/color_space_converter/src/umc_color_space_conversion.cpp
+_studio/shared/umc/codec/color_space_converter/src/umc_deinterlacing.cpp
+_studio/shared/umc/codec/color_space_converter/src/umc_video_processing.cpp
 _studio/shared/umc/codec/h264_dec/CMakeLists.txt
 _studio/shared/umc/codec/h264_dec/include/umc_h264_au_splitter.h
 _studio/shared/umc/codec/h264_dec/include/umc_h264_bitstream_headers.h
