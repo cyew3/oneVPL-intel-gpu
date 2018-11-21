@@ -36,7 +36,7 @@ namespace MfxHwVP9Encode
 
         static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
         {
-            if (mfxPlg)
+            if (!mfxPlg)
             {
                 return MFX_ERR_NULL_PTR;
             }
