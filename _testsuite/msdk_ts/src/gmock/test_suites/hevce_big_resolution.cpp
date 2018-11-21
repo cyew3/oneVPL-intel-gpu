@@ -201,6 +201,26 @@ namespace hevce_big_resolution
         m_par.AsyncDepth = 1;
         m_par.mfx.GopRefDist = 1;
         m_par.mfx.FrameInfo.FourCC = fourcc_id;
+        if (fourcc_id == MFX_FOURCC_NV12 || fourcc_id == MFX_FOURCC_P010 ||
+            fourcc_id == GMOCK_FOURCC_P012)
+        {
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        }
+        else if (fourcc_id == MFX_FOURCC_YUY2 || fourcc_id == MFX_FOURCC_Y210 ||
+                 fourcc_id == GMOCK_FOURCC_Y212)
+        {
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410 ||
+                 fourcc_id == GMOCK_FOURCC_Y412)
+        {
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+        else
+        {
+            g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
 
         MFXInit();
         Load();
