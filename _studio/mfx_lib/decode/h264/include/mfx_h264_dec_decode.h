@@ -55,6 +55,7 @@ typedef UMC::VATaskSupplier  MFX_AVC_Decoder;
 typedef UMC::MFX_SW_TaskSupplier MFX_AVC_Decoder;
 #endif
 
+struct ThreadTaskInfo;
 class VideoDECODE;
 class VideoDECODEH264 : public VideoDECODE
 {
@@ -80,7 +81,7 @@ public:
     virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload);
     virtual mfxStatus SetSkipMode(mfxSkipMode mode);
 
-    mfxStatus RunThread(void * params, mfxU32 threadNumber);
+    mfxStatus RunThread(ThreadTaskInfo*, mfxU32 /*threadNumber*/);
 
 protected:
     static mfxStatus QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request);

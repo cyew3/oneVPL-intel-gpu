@@ -2446,7 +2446,6 @@ Status TaskSupplier::DecodeSEI(NalUnit *nalUnit)
     return UMC_OK;
 }
 
-#if 1
 Status TaskSupplier::DecodeHeaders(NalUnit *nalUnit)
 {
     ViewItem *view = GetViewCount() ? &GetViewByNumber(BASE_VIEW) : 0;
@@ -2740,7 +2739,6 @@ Status TaskSupplier::DecodeHeaders(NalUnit *nalUnit)
     return UMC_OK;
 
 } // Status TaskSupplier::DecodeHeaders(MediaDataEx::_MediaDataEx *pSource, H264MemoryPiece * pMem)
-#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // ProcessFrameNumGap
@@ -3204,13 +3202,11 @@ Status TaskSupplier::AddSource(MediaData * pSource)
                 return UMC_WRN_INFO_NOT_READY;
 
             if (GetFrameToDisplayInternal(true))
-                return UMC_ERR_NOT_ENOUGH_BUFFER;
+                return UMC_ERR_NEED_FORCE_OUTPUT;
 
             PreventDPBFullness();
             return UMC_WRN_INFO_NOT_READY;
         }
-
-        return UMC_WRN_INFO_NOT_READY;
     }
 
     return umcRes;
