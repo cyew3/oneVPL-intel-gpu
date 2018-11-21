@@ -98,14 +98,9 @@ namespace UMC_AV1_DECODER
         data[SURFACE_RECON].reset();
         tile_sets.resize(0);
 
-        memset(seq_header.get(), 0, sizeof(SequenceHeader));
-        memset(header.get(), 0, sizeof(FrameHeader));
+        *seq_header.get() = SequenceHeader{};
+        *header.get() = FrameHeader{};
         header->display_frame_id = (std::numeric_limits<uint32_t>::max)();
-        // TODO: [Global] Restore work with below fields if required
-        //header->currFrame = -1;
-        //header->frameCountInBS = 0;
-        //header->currFrameInBS = 0;
-        //memset(&header->ref_frame_map, -1, sizeof(header->ref_frame_map));
 
         ResetRefCounter();
         FreeReferenceFrames();

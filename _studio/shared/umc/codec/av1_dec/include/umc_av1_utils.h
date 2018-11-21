@@ -62,8 +62,9 @@ namespace UMC_AV1_DECODER
 
     inline void ClearAllSegFeatures(SegmentationParams & seg)
     {
-        memset(&seg.FeatureData, 0, sizeof(seg.FeatureData));
-        memset(&seg.FeatureMask, 0, sizeof(seg.FeatureMask));
+        std::fill_n(reinterpret_cast<int32_t*>(seg.FeatureData),
+            std::extent<decltype(seg.FeatureData), 0>::value * std::extent<decltype(seg.FeatureData), 1>::value, 0);
+        std::fill_n(seg.FeatureMask, std::extent<decltype(seg.FeatureMask)>::value, 0);
     }
 
     void SetupPastIndependence(FrameHeader & info);

@@ -165,7 +165,7 @@ namespace UMC_AV1_DECODER
             {
                 DXVA_Intel_Status_AV1 pStatusReport[NUMBER_OF_STATUS];
 
-                memset(&pStatusReport, 0, sizeof(pStatusReport));
+                std::fill_n(pStatusReport, NUMBER_OF_STATUS, DXVA_Intel_Status_AV1{});
                 // get new frame status reports from the driver
                 packer->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Intel_Status_AV1)*NUMBER_OF_STATUS);
 

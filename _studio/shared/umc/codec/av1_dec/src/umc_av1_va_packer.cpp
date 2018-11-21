@@ -98,7 +98,7 @@ namespace UMC_AV1_DECODER
                 throw UMC_VP9_DECODER::vp9_exception(MFX_ERR_MEMORY_ALLOC);
 
             compBufPic->SetDataSize(sizeof(DXVA_Intel_PicParams_AV1));
-            memset(picParam, 0, sizeof(DXVA_Intel_PicParams_AV1));
+            *picParam = DXVA_Intel_PicParams_AV1{};
 
             PackPicParams(*picParam, info);
         }
@@ -472,7 +472,7 @@ namespace UMC_AV1_DECODER
                 throw av1_exception(MFX_ERR_MEMORY_ALLOC);
 
             compBufPic->SetDataSize(sizeof(VADecPictureParameterBufferAV1));
-            memset(picParam, 0, sizeof(VADecPictureParameterBufferAV1));
+            *picParam = VADecPictureParameterBufferAV1{};
             PackPicParams(*picParam, info);
         }
 

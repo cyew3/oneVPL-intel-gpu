@@ -374,8 +374,8 @@ namespace UMC_AV1_DECODER
 #endif
         {
             params.cdef_damping = 3;
-            MFX_INTERNAL_ZERO(params.cdef_y_strength, sizeof(params.cdef_y_strength));
-            MFX_INTERNAL_ZERO(params.cdef_uv_strength, sizeof(params.cdef_uv_strength));
+            std::fill_n(params.cdef_y_strength, std::extent<decltype(params.cdef_y_strength)>::value, 0);
+            std::fill_n(params.cdef_uv_strength, std::extent<decltype(params.cdef_uv_strength)>::value, 0);
 
             AV1D_LOG("[-]: %d", (uint32_t)bs.BitsDecoded());
 
@@ -1273,7 +1273,7 @@ namespace UMC_AV1_DECODER
             if (sh.film_grain_param_present)
                 av1_read_film_grain_params(bs, fh.film_grain_params, sh, fh);
             else
-                memset(&fh.film_grain_params, 0, sizeof(fh.film_grain_params));
+                fh.film_grain_params = FilmGrainParams{};
 
             fh.film_grain_params.BitDepth = sh.color_config.BitDepth;
         }
