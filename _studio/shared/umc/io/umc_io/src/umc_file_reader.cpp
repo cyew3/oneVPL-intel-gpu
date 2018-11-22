@@ -141,7 +141,7 @@ Status FileReader::CacheData(void *data, uint32_t *nsize, int32_t how_far)
 {
     if (((size_t)(m_pEODPointer - m_pDataPointer)) >= (*nsize + how_far))
     {
-        memcpy_s(data, *nsize, m_pDataPointer + how_far, *nsize);
+        std::copy(m_pDataPointer + how_far, m_pDataPointer + how_far + *nsize, (Ipp8u*)data);
         return UMC_OK;
     }
     long long iSize = *nsize, iMax;
@@ -157,7 +157,7 @@ Status FileReader::CacheData(void *data, uint32_t *nsize, int32_t how_far)
         iSize -= how_far;
         *nsize = (uint32_t)MFX_MAX(iSize, 0);
         if (iSize)
-            memcpy_s(data, *nsize, m_pDataPointer + how_far, *nsize);
+            std::copy(m_pDataPointer + how_far, m_pDataPointer + how_far + *nsize, (Ipp8u*)data);
     }
 
     return umcRes;
