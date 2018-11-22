@@ -107,7 +107,8 @@ void ProtectedVA::SetBitstream(mfxBitstream *bs)
     if (m_encryptBegin && !memcmp(&m_bs, bs, sizeof(mfxBitstream)))
         return;
 
-    memcpy_s(&m_bs, sizeof(mfxBitstream), bs, sizeof(mfxBitstream));
+    m_bs = *bs;
+
     m_encryptCount = 0;
     m_encryptBegin = 0;
 
