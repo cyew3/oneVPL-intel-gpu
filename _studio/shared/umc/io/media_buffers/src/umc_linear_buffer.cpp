@@ -433,7 +433,7 @@ Status LinearBuffer::LockOutputBuffer(MediaData* out)
 
         lBytesAtEnd = m_pbBuffer + m_lBufferSize - m_pbUsed - m_lDummySize;
         // copy remain byte(s) before the buffer
-        memcpy_s(m_pbBuffer - lBytesAtEnd, lBytesAtEnd, m_pbUsed, lBytesAtEnd);
+        std::copy(m_pbUsed, m_pbUsed + lBytesAtEnd, m_pbBuffer - lBytesAtEnd);
         // update variable(s)
         m_pbUsed = m_pbBuffer - lBytesAtEnd;
         m_lFreeSize += lBytesAtEnd + m_lDummySize;
