@@ -605,7 +605,7 @@ void Progressive1MVPrediction(VC1Context* pContext)
         pA = pCurrMB - width;
         MVPred.AMVPred[0] = &pA->m_pBlocks[2];
     }
-    memcpy_s(&pContext->MVPred,sizeof(VC1MVPredictors),&MVPred,sizeof(VC1MVPredictors));
+    pContext->MVPred = MVPred;
 }
 
 
@@ -694,7 +694,7 @@ void Progressive4MVPrediction(VC1Context* pContext)
 
     MVPred.CMVPred[3] = &pCurrMB->m_pBlocks[2];
 
-    memcpy_s(&pContext->MVPred,sizeof(VC1MVPredictors),&MVPred,sizeof(VC1MVPredictors));
+    pContext->MVPred = MVPred;
 }
 
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER

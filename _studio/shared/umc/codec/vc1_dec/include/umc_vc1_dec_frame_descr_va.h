@@ -3258,7 +3258,11 @@ namespace UMC
                 extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
                 extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
                 extensionInput.dwBufferSize = encryptedBufferSize;
-                memcpy_s(extensionInput.dwAesCounter, sizeof(encryptedData->CipherCounter), &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
+
+                static_assert(sizeof(encryptedData->CipherCounter) <= sizeof(extensionInput.dwAesCounter), "");
+                const uint8_t* src = reinterpret_cast <const uint8_t*> (&encryptedData->CipherCounter);
+                uint8_t* dst = reinterpret_cast <uint8_t*> (extensionInput.dwAesCounter);
+                std::copy(src, src + sizeof(encryptedData->CipherCounter), dst);
 
                 extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
                 extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();
@@ -3429,7 +3433,11 @@ namespace UMC
                         extensionInput.EncryptProtocolHeader.dwFunction = 0xffff0001;
                         extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
                         extensionInput.dwBufferSize = encryptedBufferSize;
-                        memcpy_s(extensionInput.dwAesCounter, sizeof(encryptedData->CipherCounter), &encryptedData->CipherCounter, sizeof(encryptedData->CipherCounter));
+
+                        static_assert(sizeof(encryptedData->CipherCounter) <= sizeof(extensionInput.dwAesCounter), "");
+                        const uint8_t* src = reinterpret_cast <const uint8_t*> (&encryptedData->CipherCounter);
+                        uint8_t* dst = reinterpret_cast <uint8_t*> (extensionInput.dwAesCounter);
+                        std::copy(src, src + sizeof(encryptedData->CipherCounter), dst);
 
                         extensionInput.PavpEncryptionMode.eEncryptionType = (PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
                         extensionInput.PavpEncryptionMode.eCounterMode = (PAVP_COUNTER_TYPE) m_va->GetProtectedVA()->GetCounterMode();

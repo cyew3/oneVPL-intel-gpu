@@ -252,7 +252,7 @@ void GetIntraScaleDCPredictors(VC1Context* pContext)
         break;
     }
 
-    memcpy_s(&pContext->DCPred,sizeof(VC1DCPredictors), &DCPred,sizeof(VC1DCPredictors));
+    pContext->DCPred = DCPred;
 }
 
 void GetIntraDCPredictors(VC1Context* pContext)
@@ -425,7 +425,7 @@ void GetIntraDCPredictors(VC1Context* pContext)
     }
 
     }
-    memcpy_s(&pContext->DCPred,sizeof(VC1DCPredictors), &DCPred,sizeof(VC1DCPredictors));
+    pContext->DCPred = DCPred;
 }
 
 
@@ -771,7 +771,7 @@ void GetPScaleDCPredictors(VC1Context* pContext)
         break;
     }
 
-    memcpy_s(&pContext->DCPred,sizeof(VC1DCPredictors), &DCPred,sizeof(VC1DCPredictors));
+    pContext->DCPred = DCPred;
 
 }
 
@@ -1080,7 +1080,7 @@ void GetPDCPredictors(VC1Context* pContext)
         break;
     }
 
-    memcpy_s(&pContext->DCPred,sizeof(VC1DCPredictors), &DCPred,sizeof(VC1DCPredictors));
+    pContext->DCPred = DCPred;
 }
 
 

@@ -356,7 +356,7 @@ static uint8_t GetDCACPrediction(VC1DCBlkParam* CurrBlk, VC1DCPredictors* PredDa
     int16_t DCA, DCB, DCC, DC = 0;
     uint32_t step = VC1_pixel_table[blk_num];
 
-    memcpy_s(&DCPred, sizeof(VC1DCPredictors), PredData, sizeof(VC1DCPredictors));
+    DCPred = *PredData;
     PredPattern = DCPred.BlkPattern[blk_num];
 
     switch(PredPattern)
@@ -490,11 +490,9 @@ static uint8_t GetDCPrediction(VC1DCBlkParam* CurrBlk,VC1DCPredictors* PredData,
 
     VC1DCPredictors DCPred;
     uint8_t PredPattern;
-
     int16_t DCA, DCB, DCC = 0;
 
-
-    memcpy_s(&DCPred, sizeof(VC1DCPredictors), PredData, sizeof(VC1DCPredictors));
+    DCPred = *PredData;
 
     PredPattern = DCPred.BlkPattern[blk_num];
 
