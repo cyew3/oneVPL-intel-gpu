@@ -54,5 +54,7 @@
     <UseDebugLibraries>$(MfxUseDebugLibraries)</UseDebugLibraries>
     <ConfigurationType>$(MfxConfigurationType)</ConfigurationType>
     <CharacterSet>$(MfxCharacterSet)</CharacterSet>
+    <!-- Enabling SpectreMitigation -->
+    <SpectreMitigation>Spectre</SpectreMitigation>
   </PropertyGroup>
 </Project>
