@@ -51,12 +51,12 @@ namespace UMC_HEVC_DECODER
         return m_va->SyncTask(index, error);
     }
 
-    bool PackerDXVA2::IsGPUSyncEventDisable()
+    bool PackerDXVA2::IsGPUSyncEventEnable()
     {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D
-        return m_va->IsGPUSyncEventDisable();
+        return m_va->IsGPUSyncEventEnable();
 #else
-        return true;
+        return false;
 #endif
     }
 

@@ -73,7 +73,7 @@ Status DXAccelerator::BeginFrame(int32_t  index, uint32_t fieldId)
 
     Status sts = BeginFrame(index);
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-    if (sts != UMC_OK || IsGPUSyncEventDisable())
+    if (sts != UMC_OK || !IsGPUSyncEventEnable())
         return sts;
     GPU_SYNC_EVENT_HANDLE ev{ GPU_COMPONENT_DECODE };
     ev.gpuSyncEvent = m_EventsMap.GetFreeEventAndMap( index, fieldId);
@@ -94,7 +94,7 @@ Status DXAccelerator::SyncTask(int32_t index, void * error)
     (void)index;
     (void)error;
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-    if (IsGPUSyncEventDisable())
+    if (!IsGPUSyncEventEnable())
     {
         return UMC_ERR_UNSUPPORTED;
     }

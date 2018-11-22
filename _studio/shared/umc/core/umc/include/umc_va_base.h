@@ -340,7 +340,7 @@ public:
     virtual VideoProcessingVA * GetVideoProcessingVA() {return m_videoProcessingVA;}
 #endif
 
-    bool IsGPUSyncEventDisable() const
+    bool IsGPUSyncEventEnable() const
     {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
         VideoAccelerationProfile codec = (VideoAccelerationProfile)(m_Profile & VA_CODEC);
@@ -395,9 +395,9 @@ public:
             break;
         }
 
-        return isHybrid || !isEnabled;
+        return !isHybrid && isEnabled;
 #else
-        return true;
+        return false;
 #endif
     }
 

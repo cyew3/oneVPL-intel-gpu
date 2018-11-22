@@ -217,7 +217,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
     for (H265DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
         UMC::Status sts = UMC::UMC_OK;
-        if (!dxva_sd->GetPacker()->IsGPUSyncEventDisable())
+        if (dxva_sd->GetPacker()->IsGPUSyncEventEnable())
         {
             int32_t index = au->m_pFrame->GetFrameMID();
             m_mGuard.Unlock();
@@ -305,7 +305,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
             }
         }
         //check exit from waiting status.
-        if (sts != UMC::UMC_OK && !dxva_sd->GetPacker()->IsGPUSyncEventDisable())
+        if (sts != UMC::UMC_OK && dxva_sd->GetPacker()->IsGPUSyncEventEnable())
         {
             // SyncTask failed for some reason
             au->m_pFrame->SetError(UMC::UMC_ERR_DEVICE_FAILED);
