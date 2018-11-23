@@ -697,7 +697,7 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
             }
         }
 
-        memcpy_s(&pps->scaling[1], sizeof(H264ScalingPicParams), &pps->scaling[0], sizeof(H264ScalingPicParams));
+        pps->scaling[1] = pps->scaling[0];
     }
 
     pps->chroma_qp_index_offset[1] = (int8_t)PicParams.second_chroma_qp_index_offset;
@@ -1154,8 +1154,8 @@ Status WidevineDecrypter::DecryptFrame(MediaData *pSource, DecryptParametersWrap
         BufferDesc.ReservedBits = 0;
         BufferDesc.pvPVPState = NULL;
 
-        void *pDXVA_BitStreamBuffer = NULL;
-        hr = pDXVAVideoDecoder->GetBuffer(DXVA2_BitStreamDateBufferType, &pDXVA_BitStreamBuffer, &DXVABitStreamBufferSize);
+        uint8_t *pDXVA_BitStreamBuffer = nullptr;
+        hr = pDXVAVideoDecoder->GetBuffer(DXVA2_BitStreamDateBufferType, (void**)&pDXVA_BitStreamBuffer, &DXVABitStreamBufferSize);
         if (FAILED(hr))
         {
             return UMC_ERR_DEVICE_FAILED;
@@ -1166,7 +1166,8 @@ Status WidevineDecrypter::DecryptFrame(MediaData *pSource, DecryptParametersWrap
             return UMC_ERR_DEVICE_FAILED;
         }
 
-        memcpy_s(pDXVA_BitStreamBuffer, DXVABitStreamBufferSize, pSource->GetDataPointer(), pSource->GetDataSize());
+        const uint8_t *src = reinterpret_cast <const uint8_t*> (pSource->GetDataPointer());
+        std::copy(src, src + pSource->GetDataSize(), pDXVA_BitStreamBuffer);
 
         hr = pDXVAVideoDecoder->ReleaseBuffer(DXVA2_BitStreamDateBufferType);
         if (FAILED(hr))

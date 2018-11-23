@@ -36,12 +36,17 @@ namespace UMC
 #endif // defined(_MSC_VER)
 
 #define IClip(Min, Max, Val) (((Val) < (Min)) ? (Min) : (((Val) > (Max)) ? (Max) : (Val)))
-#define SetEdgeStrength(edge, strength) {                                               \
-    uint32_t val = (((((strength) * 256) + strength) * 256 + strength) * 256 + strength); \
-    memcpy_s(edge, sizeof(uint32_t), &val, sizeof(uint32_t));                               \
+
+inline void SetEdgeStrength(uint8_t *edge, uint8_t strength)
+{
+    std::fill(edge, edge + 4, strength);
 }
-#define CopyEdgeStrength(dst_edge, src_edge)  \
-    memcpy_s(dst_edge, sizeof(uint32_t), src_edge, sizeof(uint32_t))
+
+inline void CopyEdgeStrength(uint8_t *dst_edge, uint8_t *src_edge)
+{
+    std::copy(src_edge, src_edge + 4, dst_edge);
+}
+
 #define CompareEdgeStrength(strength, edge) \
     ((((((strength) * 256) + strength) * 256 + strength) * 256 + strength) == *((uint32_t *) (edge)))
 
