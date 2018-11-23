@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 
 #include <stdexcept>
 #include <string>

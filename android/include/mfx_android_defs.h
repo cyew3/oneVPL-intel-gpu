@@ -59,7 +59,6 @@ Copyright(c) 2013-2018 Intel Corporation. All Rights Reserved.
         #define MFX_ENABLE_VP8_VIDEO_DECODE
         #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
 
-        #define MFX_ENABLE_VP9_VIDEO_DECODE
         #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
 
         #define MFX_ENABLE_VPP

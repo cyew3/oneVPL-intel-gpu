@@ -158,4 +158,4 @@ private:
 };
 
 #endif // _MFX_VP9_DECODE_HW_H_
-#endif // MFX_ENABLE_VP9_VIDEO_DECODE && MFX_VA
+#endif // MFX_VA
