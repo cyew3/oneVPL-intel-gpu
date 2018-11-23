@@ -623,8 +623,8 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y210, MFX_PROFILE_HEVC_REXT>:
     {/*33*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_HEVC_REXT} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {12}, MFX_HW_TGL },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {12}, MFX_HW_TGL },
+          { MFX_IN|VARIED, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {12}, MFX_HW_TGL },
+          { MFX_IN|VARIED, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {12}, MFX_HW_TGL },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_Y210} } }
     },
 
@@ -723,8 +723,8 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_REXT>:
     {/*30*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_HEVC_REXT} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {12}, MFX_HW_TGL },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {12}, MFX_HW_TGL },
+          { MFX_IN|VARIED, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {12}, MFX_HW_TGL },
+          { MFX_IN|VARIED, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {12}, MFX_HW_TGL },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_Y410} } }
     },
 
