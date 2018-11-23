@@ -1190,6 +1190,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     caps.CQPSupport = 1;
     caps.CBRSupport = 1;
     caps.VBRSupport = 1;
+    caps.AVBRSupport = 1;
 
     m_guid = guid;
     m_width = width;
@@ -2050,6 +2051,7 @@ mfxStatus D3D9SvcEncoder::CreateAuxilliaryDevice(
     caps.CQPSupport = 1;
     caps.CBRSupport = 1;
     caps.VBRSupport = 1;
+    caps.AVBRSupport = 1;
     caps.ddi_caps.HeaderInsertion = 0;
     caps.ddi_caps.MaxNum_QualityLayer = 16;
     caps.ddi_caps.MaxNum_DependencyLayer = 8;

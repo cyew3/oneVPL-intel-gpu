@@ -342,6 +342,7 @@ struct MFX_ENCODE_CAPS
     bool CQPSupport;
     bool CBRSupport;
     bool VBRSupport;
+    bool AVBRSupport;
 };
 
 // this enumeration is used to define the block size for intra prediction. they

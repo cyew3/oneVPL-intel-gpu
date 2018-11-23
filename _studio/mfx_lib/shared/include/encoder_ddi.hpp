@@ -649,6 +649,7 @@ struct MFX_ENCODE_CAPS
     bool CQPSupport;
     bool CBRSupport;
     bool VBRSupport;
+    bool AVBRSupport;
 };
 
 // DDI v0.947

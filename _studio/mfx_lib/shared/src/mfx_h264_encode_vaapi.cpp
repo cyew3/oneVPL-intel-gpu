@@ -60,7 +60,7 @@ uint32_t ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
     {
     case MFX_RATECONTROL_CBR:  return VA_RC_CBR;
     case MFX_RATECONTROL_VBR:  return VA_RC_VBR;
-    case MFX_RATECONTROL_AVBR: return VA_RC_VBR;
+    case MFX_RATECONTROL_AVBR: return VA_RC_AVBR;
 #ifdef MFX_ENABLE_QVBR
     case MFX_RATECONTROL_QVBR: return VA_RC_QVBR;
 #endif
@@ -203,6 +203,12 @@ mfxStatus SetRateControl(
     rate_param->bits_per_second = GetMaxBitrateValue(par.calcParam.maxKbps) << (6 + SCALE_FROM_DRIVER);
     rate_param->window_size     = par.mfx.Convergence * 100;
 
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        rate_param->window_size = par.mfx.Convergence;
+        rate_param->bits_per_second = ((1000 * par.calcParam.targetKbps) >> (6 + SCALE_FROM_DRIVER)) << (6 + SCALE_FROM_DRIVER);
+    }
+
     rate_param->min_qp = minQP;
     rate_param->max_qp = maxQP;
 
@@ -215,6 +221,11 @@ mfxStatus SetRateControl(
 
     if(par.calcParam.maxKbps)
         rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.calcParam.targetKbps / (mfxF64)par.calcParam.maxKbps);
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        rate_param->target_percentage = par.mfx.Accuracy;
+    }
 
 #if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_CFL)
     // Activate frame tolerance sliding window mode
@@ -1514,6 +1525,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_CBR) ? 1 : 0;
     m_caps.VBRSupport =
         (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_VBR) ? 1 : 0;
+    m_caps.AVBRSupport =
+        (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_AVBR) ? 1 : 0;
     m_caps.ddi_caps.VCMBitrateControl =
         (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_VCM) ? 1 : 0; //Video conference mode
     m_caps.ddi_caps.ICQBRCSupport =

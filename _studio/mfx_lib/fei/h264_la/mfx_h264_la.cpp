@@ -410,6 +410,7 @@ static void InitHWCaps(MFX_ENCODE_CAPS &hwCaps)
     hwCaps.CQPSupport=1;
     hwCaps.VBRSupport=1;
     hwCaps.CBRSupport=1;
+    hwCaps.AVBRSupport=1;
 
 }
 
