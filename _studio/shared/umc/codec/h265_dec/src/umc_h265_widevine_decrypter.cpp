@@ -1219,7 +1219,8 @@ UMC::Status WidevineDecrypter::DecryptFrame(UMC::MediaData *pSource, DecryptPara
             return UMC::UMC_ERR_DEVICE_FAILED;
         }
 
-        memcpy_s(pDXVA_BitStreamBuffer, DXVABitStreamBufferSize, pSource->GetDataPointer(), pSource->GetDataSize());
+        mfxU8 *src = reinterpret_cast<mfxU8 *>(pSource->GetDataPointer());
+        std::copy(src, src + pSource->GetDataSize(), reinterpret_cast<mfxU8 *>(pDXVA_BitStreamBuffer));
 
         hr = pDXVAVideoDecoder->ReleaseBuffer(DXVA2_BitStreamDateBufferType);
         if (FAILED(hr))
