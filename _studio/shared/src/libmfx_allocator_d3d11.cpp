@@ -303,7 +303,8 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
                 Desc.MiscFlags = 0;
                 RESOURCE_EXTENSION extnDesc;
                 ZeroMemory( &extnDesc, sizeof(RESOURCE_EXTENSION) );
-                memcpy_s( extnDesc.Key, sizeof(extnDesc.Key), RESOURCE_EXTENSION_KEY,16 );
+                static_assert (sizeof(RESOURCE_EXTENSION_KEY) <= sizeof(extnDesc.Key), "");
+                std::copy(std::begin(RESOURCE_EXTENSION_KEY), std::end(RESOURCE_EXTENSION_KEY), extnDesc.Key);
                 extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
                 extnDesc.Type    = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
                 extnDesc.Data[0] = BayerFourCC2FormatFlag(request->Info.FourCC);

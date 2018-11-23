@@ -205,7 +205,7 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
             return MFX_WRN_PARTIAL_ACCELERATION;
     }
 
-    memcpy_s(&config, sizeof(config), video_config, sizeof(D3D11_VIDEO_DECODER_CONFIG));
+    config = *video_config;
 
     if (guid == DXVA2_Intel_Encode_AVC && video_config->ConfigSpatialResid8 != INTEL_AVC_ENCODE_DDI_VERSION)
     {
@@ -942,21 +942,20 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             desc.Usage = D3D11_USAGE_STAGING;
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
             desc.BindFlags = 0;
-
             ID3D11Texture2D *pStaging;
-            
             if ( DXGI_FORMAT_R16_TYPELESS == sSurfDesc.Format )
             {
                 RESOURCE_EXTENSION extnDesc;
                 ZeroMemory( &extnDesc, sizeof(RESOURCE_EXTENSION) );
-                memcpy_s( extnDesc.Key, sizeof(extnDesc.Key), RESOURCE_EXTENSION_KEY, 16 );
+                static_assert (sizeof RESOURCE_EXTENSION_KEY <= sizeof extnDesc.Key,
+                        "sizeof RESOURCE_EXTENSION_KEY > sizeof extnDesc.Key");
+                std::copy(std::begin(RESOURCE_EXTENSION_KEY), std::end(RESOURCE_EXTENSION_KEY), extnDesc.Key);
                 extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
                 extnDesc.Type    = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
                 extnDesc.Data[0] = BayerFourCC2FormatFlag(pDst->Info.FourCC);
 
                 hRes = SetResourceExtension(m_pD11Device, &extnDesc);
             }
-            
             hRes = m_pD11Device->CreateTexture2D(&desc, NULL, &pStaging);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_MEMORY_ALLOC);
 
@@ -1045,7 +1044,9 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             {
                 RESOURCE_EXTENSION extnDesc;
                 ZeroMemory( &extnDesc, sizeof(RESOURCE_EXTENSION) );
-                memcpy_s( extnDesc.Key, sizeof(extnDesc.Key), RESOURCE_EXTENSION_KEY, 16 );
+                static_assert (sizeof RESOURCE_EXTENSION_KEY <= sizeof extnDesc.Key,
+                        "sizeof RESOURCE_EXTENSION_KEY > sizeof extnDesc.Key");
+                std::copy(std::begin(RESOURCE_EXTENSION_KEY), std::end(RESOURCE_EXTENSION_KEY), extnDesc.Key);
                 extnDesc.ApplicationVersion = EXTENSION_INTERFACE_VERSION;
                 extnDesc.Type    = RESOURCE_EXTENSION_TYPE_4_0::RESOURCE_EXTENSION_CAMERA_PIPE;
                 extnDesc.Data[0] = BayerFourCC2FormatFlag(pDst->Info.FourCC);

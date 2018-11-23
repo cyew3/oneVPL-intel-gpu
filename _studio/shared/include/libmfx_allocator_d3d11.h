@@ -187,11 +187,11 @@ inline HRESULT GetExtensionCaps(
     initData.SysMemPitch = sizeof(Type);
     initData.SysMemSlicePitch = 0;
     ZeroMemory( pCaps, sizeof(Type) );
-    memcpy_s( pCaps->Key,sizeof(pCaps->Key), CAPS_EXTENSION_KEY,16
-         );
+    static_assert(sizeof(RESOURCE_EXTENSION_KEY) <= sizeof(pCaps->Key), "");
+    std::copy(std::begin(RESOURCE_EXTENSION_KEY), std::end(RESOURCE_EXTENSION_KEY), pCaps->Key);
     pCaps->ApplicationVersion = EXTENSION_INTERFACE_VERSION;
     ID3D11Buffer* pBuffer = NULL;
-    HRESULT result = pd3dDevice->CreateBuffer( 
+    HRESULT result = pd3dDevice->CreateBuffer(
         &desc,
         &initData,
         &pBuffer );

@@ -11929,7 +11929,7 @@ void SceneChangeDetector::ReadOutputImage()
         pitch = m_dataIn->layer[0].pitch;
     h;
     for( mfxI32 i = 0; i < m_dataIn->layer[0].Original_Height; i++) {
-        memcpy_s(pDst, w, pSrc, w);
+        std::copy(pSrc, pSrc + w, pDst);
         pDst += pitch;
         pSrc += w;
     }

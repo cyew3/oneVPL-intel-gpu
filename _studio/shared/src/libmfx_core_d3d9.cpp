@@ -198,7 +198,7 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
     {
         if (pConfig[k].guidConfigBitstreamEncryption == guid)
         {
-            memcpy_s(&config, sizeof(config), &pConfig[k], sizeof(DXVA2_ConfigPictureDecode));
+            config = pConfig[k];
             if (pConfig)
             {
                 CoTaskMemFree(pConfig);
