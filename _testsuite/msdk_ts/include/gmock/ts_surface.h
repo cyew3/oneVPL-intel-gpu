@@ -181,6 +181,33 @@ public:
     bool Copy(tsFrameAbstract const & src, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo);
 };
 
+class tsFrameUYVY : public tsFrameAbstract
+{
+    mfxU32 m_pitch;
+    mfxU8* m_y;
+    mfxU8* m_u;
+    mfxU8* m_v;
+    tsSampleImpl<mfxU8, mfxU8> m_sample_impl;
+    tsSample<mfxU8> m_sample;
+public:
+    tsFrameUYVY(mfxFrameData d)
+        : m_pitch( mfxU32(d.PitchHigh << 16) + d.PitchLow)
+        , m_y(d.Y)
+        , m_u(d.U)
+        , m_v(d.V)
+        , m_sample(&m_sample_impl)
+    {}
+
+    virtual ~tsFrameUYVY() { }
+
+    inline bool isYUV() {return true;};
+    inline tsSample<mfxU8>& U(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_y[h * m_pitch + w * 2]); return m_sample; }
+    inline tsSample<mfxU8>& Y(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_u[h * m_pitch + (w / 2) * 4]); return m_sample; }
+    inline tsSample<mfxU8>& V(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_v[h * m_pitch + (w / 2) * 4]); return m_sample; }
+
+    bool Copy(tsFrameAbstract const & src, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo);
+};
+
 class tsFrameAYUV : public tsFrameAbstract
 {
 private:

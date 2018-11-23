@@ -22,6 +22,7 @@ tsFrame::tsFrame(mfxFrameSurface1 s)
     case MFX_FOURCC_YV12: m_pFrame = new tsFrameYV12(s.Data); break;
     case MFX_FOURCC_YUY2: m_pFrame = new tsFrameYUY2(s.Data); break;
     case MFX_FOURCC_AYUV: m_pFrame = new tsFrameAYUV(s.Data); break;
+    case MFX_FOURCC_UYVY: m_pFrame = new tsFrameUYVY(s.Data); break;
     case MFX_FOURCC_P010:
         if (s.Info.Shift == 0)
             m_pFrame = new tsFrameP010s0(s.Data);
@@ -167,6 +168,41 @@ bool tsFrameYUY2::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const &
 
         mfxU8* pDst = m_y + (m_pitch * dstInfo.CropY) + dstInfo.CropX * 2;
         mfxU8* pSrc = src.m_y + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX * 2;
+        maxw *= 2;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool tsFrameUYVY::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
+{
+    if (srcInfo.FourCC == MFX_FOURCC_UYVY)
+    {
+        auto& src = (const tsFrameUYVY &)srcAbstract;
+        mfxU32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
+        mfxU32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
+
+        if (   dstInfo.CropW
+            && dstInfo.CropH
+            && srcInfo.CropW
+            && srcInfo.CropH)
+        {
+            maxw = TS_MIN(dstInfo.CropW, srcInfo.CropW);
+            maxh = TS_MIN(dstInfo.CropH, srcInfo.CropH);
+        }
+
+        mfxU8* pDst = m_u + (m_pitch * dstInfo.CropY) + dstInfo.CropX * 2;
+        mfxU8* pSrc = src.m_u + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX * 2;
         maxw *= 2;
 
         for (mfxU32 h = 0; h < maxh; h++)
@@ -778,6 +814,12 @@ void tsRawReader::Init(mfxFrameInfo fi)
         m_data.V     = m_buf + 3;
         pitch        = fi.Width * 2;
         break;
+    case MFX_FOURCC_UYVY:
+        m_data.U     = m_buf;
+        m_data.Y     = m_buf + 1;
+        m_data.V     = m_buf + 2;
+        pitch        = fi.Width * 2;
+        break;
     case MFX_FOURCC_AYUV:
         m_data.V = m_buf;
         m_data.U = m_buf + 1;
@@ -934,6 +976,17 @@ static mfxStatus ProcessSurfaceRowByRow(mfxFrameSurface1& s, std::function<size_
         for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
         {
             if (processRow(s.Data.Y + pitch * i + cropX, 1, count) != count)
+                return MFX_ERR_UNKNOWN;
+        }
+    }
+    else if (s.Info.FourCC == MFX_FOURCC_UYVY)
+    {
+        mfxU16 cropX = ((s.Info.CropX >> 1) << 2);
+        count *= 2;
+
+        for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
+        {
+            if (processRow(s.Data.U + pitch * i + cropX, 1, count) != count)
                 return MFX_ERR_UNKNOWN;
         }
     }
