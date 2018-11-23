@@ -104,8 +104,11 @@ Status ASFSplitter::FillAudioInfo(Ipp32u nTrack)
     {
       MediaData *pDecSpecInfo = new MediaData(pAudioSpecData->codecSpecDataSize);
       UMC_CHECK_PTR(pDecSpecInfo)
-      memcpy_s(pDecSpecInfo->GetDataPointer(), pAudioSpecData->codecSpecDataSize,
-               pAudioSpecData->pCodecSpecData, pAudioSpecData->codecSpecDataSize);
+      uint8_t* dst = reinterpret_cast <uint8_t*> (pDecSpecInfo->GetDataPointer());
+      std::copy(pAudioSpecData->pCodecSpecData,
+              pAudioSpecData->pCodecSpecData + pAudioSpecData->codecSpecDataSize,
+              dst);
+
       pDecSpecInfo->SetDataSize(pAudioSpecData->codecSpecDataSize);
       pDecSpecInfo->SetTime(0, 0);
       m_pInfo->m_ppTrackInfo[nTrack]->m_pDecSpecInfo = pDecSpecInfo;
@@ -156,7 +159,10 @@ Status ASFSplitter::FillVideoInfo(Ipp32u nTrack)
             shift = 1;
             len -= shift;
         }
-        memcpy_s(pDecSpecInfo->GetDataPointer(), len, pVideoSpecData->FormatData.pCodecSpecData + shift, len);
+        uint8_t* dst = reinterpret_cast <uint8_t*> (pDecSpecInfo->GetDataPointer());
+        std::copy(pVideoSpecData->FormatData.pCodecSpecData + shift,
+                pVideoSpecData->FormatData.pCodecSpecData + shift + len,
+                dst);
         pDecSpecInfo->SetDataSize(len);
         pDecSpecInfo->SetTime(0, 0);
         m_pInfo->m_ppTrackInfo[nTrack]->m_pDecSpecInfo = pDecSpecInfo;

@@ -799,7 +799,9 @@ Status MP4Splitter::FillAudioInfo(T_trak_data *pTrak, Ipp32u nTrack)
   if (len) {
     MediaData *pDecSpecInfo = new MediaData(len);
     UMC_CHECK_PTR(pDecSpecInfo)
-    memcpy_s(pDecSpecInfo->GetDataPointer(), len, ptr, len);
+    uint8_t *dst = reinterpret_cast <uint8_t*> (pDecSpecInfo->GetDataPointer());
+    std::copy(ptr, ptr + len, dst);
+
     pDecSpecInfo->SetDataSize(len);
     pDecSpecInfo->SetTime(0, 0);
     m_pInfo->m_ppTrackInfo[nTrack]->m_pDecSpecInfo = pDecSpecInfo;
@@ -905,7 +907,8 @@ Status MP4Splitter::FillVideoInfo(T_trak_data *pTrak, Ipp32u nTrack)
   if (len) {
     MediaData *pDecSpecInfo = new MediaData(len);
     UMC_CHECK_PTR(pDecSpecInfo)
-    memcpy_s(pDecSpecInfo->GetDataPointer(), len, ptr, len);
+    uint8_t *dst = reinterpret_cast <uint8_t*> (pDecSpecInfo->GetDataPointer());
+    std::copy(ptr, ptr + len, dst);
     pDecSpecInfo->SetDataSize(len);
     pDecSpecInfo->SetTime(0, 0);
     m_pInfo->m_ppTrackInfo[nTrack]->m_pDecSpecInfo = pDecSpecInfo;
