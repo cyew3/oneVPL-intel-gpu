@@ -1533,11 +1533,11 @@ void MFXVideoVPPImgStab::VME_IS(
             m_vme.LoadOneSearchPathFourLutSets(k, &FullSP[0],&DummyLutMode[0][0], &DummyLutXY[0][0]);
     }*/
 
-    memcpy_s(VmeIn.MvCost, sizeof(VmeIn.MvCost), DummyLutXY[0], 8);                    
-    memcpy_s(VmeIn.ModeCost, sizeof(VmeIn.ModeCost), DummyLutMode[0], 10);
+    std::copy(std::begin(DummyLutXY[0]), std::end(DummyLutXY[0]), std::begin(VmeIn.MvCost));
+    std::copy(std::begin(DummyLutMode[0]), std::end(DummyLutMode[0]), std::begin(VmeIn.ModeCost));
 
-    memcpy_s(VmeInIME.IMESearchPath0to31, sizeof(VmeInIME.IMESearchPath0to31), FullSP, 32);
-    memcpy_s(VmeInIME.IMESearchPath32to55, sizeof(VmeInIME.IMESearchPath32to55), &FullSP[32], 24);
+    std::copy(std::begin(FullSP), std::begin(FullSP) + 32, std::begin(VmeInIME.IMESearchPath0to31));
+    std::copy(std::begin(FullSP) + 32, std::end(FullSP), std::begin(VmeInIME.IMESearchPath32to55));
     
     /*VmeI7.Intra4x4ModeMask = 0xFFFF;
     VmeI7.Intra8x8ModeMask = 0xFFFF;
