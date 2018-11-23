@@ -1112,6 +1112,9 @@ D3D9Encoder::D3D9Encoder()
 , m_sps()
 , m_vui()
 , m_pps()
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+, m_qMatrix()
+#endif
 , m_headerPacker()
 , m_guid()
 , m_width()
@@ -1579,6 +1582,28 @@ mfxStatus D3D9Encoder::ExecuteImpl(
     m_compBufDesc[bufCnt].pCompBuffer = &m_pps;
     bufCnt++;
 
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+    if (m_pps.pic_scaling_matrix_present_flag)
+    {
+        m_qMatrix = task.m_qMatrix;
+        m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_QUANTDATA;
+        m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_qMatrix));
+        m_compBufDesc[bufCnt].pCompBuffer = &m_qMatrix;
+        m_pps.pic_scaling_list_present_flag = true;
+        m_pps.pic_scaling_matrix_present_flag = true;
+        bufCnt++;
+    }
+    else if (m_sps.seq_scaling_matrix_present_flag)
+    {
+        m_qMatrix = task.m_qMatrix;
+        m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_QUANTDATA;
+        m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_qMatrix));
+        m_compBufDesc[bufCnt].pCompBuffer = &m_qMatrix;
+        m_sps.seq_scaling_list_present_flag = true;
+        m_sps.seq_scaling_matrix_present_flag = true;
+        bufCnt++;
+    }
+#endif
 
     m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_SLICEDATA;
     m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_slice[0]) * m_slice.size());

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -121,6 +121,7 @@ public:
     tsTrace& operator << (const mfxInfoMFX& p);
     tsTrace& operator << (const mfxPluginUID& p);
     tsTrace& operator << (const mfxFrameData& p);
+    tsTrace& operator << (const mfxExtAVCScalingMatrix& p);
     tsTrace& operator << (mfxStatus& p);
     tsTrace& operator << (BSErr& p);
     tsTrace& operator << (const mfxStatus& p){

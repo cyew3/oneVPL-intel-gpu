@@ -171,6 +171,9 @@ namespace MfxHwH264Encode
         ENCODE_SET_SEQUENCE_PARAMETERS_H264         m_sps;
         ENCODE_SET_VUI_PARAMETER                    m_vui;
         ENCODE_SET_PICTURE_PARAMETERS_H264          m_pps;
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+        ENCODE_SET_PICTURE_QUANT                    m_qMatrix; //buffer for quantization matrix
+#endif
         std::vector<ENCODE_SET_SLICE_HEADER_H264>   m_slice;
         std::vector<ENCODE_COMPBUFFERDESC>          m_compBufDesc;
 #if defined(MFX_ENABLE_MFE)

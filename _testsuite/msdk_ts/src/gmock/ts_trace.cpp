@@ -516,3 +516,45 @@ tsTrace& tsTrace::operator<<(const mfxExtFeiEncMV& p)
     return *this;
 }
 
+tsTrace& tsTrace::operator << (const mfxExtAVCScalingMatrix& p)
+{
+    const char matrices[][10] = {
+        "Intra Y", "Intra Cb", "Intra Cr",
+        "Inter Y", "Inter Cb", "Inter Cr",
+        "Intra Y", "Inter Y",
+        "Intra Cb", "Inter Cb",
+        "Intra Cr", "Inter Cr",
+    };
+    STRUCT_BODY(mfxExtAVCScalingMatrix,
+        for (mfxU32 i = 0; i < sizeof(p.ScalingListPresent)/ sizeof(p.ScalingListPresent[0]); ++i)
+        {
+            FIELD_T(mfxU8, ScalingListPresent[i])
+        }
+        for (mfxU32 i = 0; i < sizeof(p.ScalingList4x4) / sizeof(p.ScalingList4x4[0]); ++i)
+        {
+            *this << "Scaling matrix "<< matrices[i] << " " << (p.ScalingListPresent[i] ? "is":"isn't") << " present, plane view\n";
+            for (mfxU8 y = 0; y < 4; ++y)
+            {
+                for (mfxU8 x = 0; x < 4; ++x)
+                {
+                    *this << static_cast<unsigned int>(p.ScalingList4x4[i][y * 4 + x]) << "\t";
+                }
+                *this << "\n";
+            }
+        }
+        for (mfxU32 i = 0; i < sizeof(p.ScalingList8x8) / sizeof(p.ScalingList8x8[0]); ++i)
+        {
+            *this << "Scaling matrix " << matrices[i+6] << " " << (p.ScalingListPresent[i] ? "is" : "isn't") << " present, plane view\n";
+            for (mfxU8 y = 0; y < 8; ++y)
+            {
+                for (mfxU8 x = 0; x < 8; ++x)
+                {
+                    *this << static_cast<unsigned int>(p.ScalingList8x8[i][y * 4 + x]) << "\t";
+                }
+                *this << "\n";
+            }
+        }
+    )
+
+        return *this;
+}

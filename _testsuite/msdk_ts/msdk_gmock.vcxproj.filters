@@ -1107,6 +1107,9 @@
     <ClCompile Include="src\gmock\test_suites\hevce_big_resolution.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_custom_qmatrix.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\av1d_film_grain.cpp">
       <Filter>Source Files\test_suites\av1</Filter>
     </ClCompile>

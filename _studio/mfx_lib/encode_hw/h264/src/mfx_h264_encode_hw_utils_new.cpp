@@ -2086,6 +2086,9 @@ void MfxHwH264Encode::ConfigureTask(
     mfxExtCodingOption2 const *     extOpt2Runtime = GetExtBuffer(task.m_ctrl);
     mfxExtCodingOptionDDI const &   extDdi         = GetExtBufferRef(video);
     mfxExtSpsHeader const &         extSps         = GetExtBufferRef(video);
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+    mfxExtPpsHeader const &         extPps         = GetExtBufferRef(video);
+#endif
     mfxExtAvcTemporalLayers const & extTemp        = GetExtBufferRef(video);
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxExtPAVPOption const &        extPavp        = GetExtBufferRef(video);
@@ -2465,6 +2468,14 @@ void MfxHwH264Encode::ConfigureTask(
     task.m_collectUnitsInfo = IsOn(extOpt3.EncodedUnitsInfo);
 #endif
 
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+    // Have to fill default or provided scaling list matrices if SPS or PPS is defined
+    if (extSps.seqScalingMatrixPresentFlag || extPps.picScalingMatrixPresentFlag)
+    {
+        FillTaskScalingList(extSps, extPps, task);
+    }
+#endif
+
 #if defined(MFX_ENABLE_H264_REPARTITION_CHECK) && defined(MFX_VA_WIN)
     {
         switch (extOpt3.RepartitionCheckEnable)
@@ -2487,7 +2498,6 @@ void MfxHwH264Encode::ConfigureTask(
     }
 #endif
 }
-
 
 mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
     VideoCORE &           core,
@@ -3352,5 +3362,208 @@ mfxU32 AsyncRoutineEmulator::Go(bool hasInput)
     return stages;
 }
 
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+mfxStatus MfxHwH264Encode::GetDefaultScalingList(mfxU8 *outList, mfxU8 outListSize, mfxU8 index, bool zigzag=false)
+{
+    //Rec. ITU-T H.264, Table 7-3
+    uint8_t intra_4x4[16] = { 6,13,13,20,20,20,28,28,28,28,32,32,32,37,37,42, };
+    uint8_t inter_4x4[16] = { 10,14,14,20,20,20,24,24,24,24,27,27,27,30,30,34 };
+    //Rec. ITU-T H.264, Table 7-4
+    uint8_t intra_8x8[64] = {
+         6, 10, 10, 13, 11, 13, 16, 16, 16, 16, 18, 18, 18, 18, 18, 23,
+        23, 23, 23, 23, 23, 25, 25, 25, 25, 25, 25, 25, 27, 27, 27, 27,
+        27, 27, 27, 27, 29, 29, 29, 29, 29, 29, 29, 31, 31, 31, 31, 31,
+        31, 33, 33, 33, 33, 33, 36, 36, 36, 36, 38, 38, 38, 40, 40, 42
+    };
+    uint8_t inter_8x8[64] = {
+         9, 13, 13, 15, 13, 15, 17, 17, 17, 17, 19, 19, 19, 19, 19, 21,
+        21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 24, 24, 24, 24,
+        24, 24, 24, 24, 25, 25, 25, 25, 25, 25, 25, 27, 27, 27, 27, 27,
+        27, 28, 28, 28, 28, 28, 30, 30, 30, 30, 32, 32, 32, 33, 33, 35
+    };
+    (void)outListSize;
+
+    //Index according Rec. ITU-T H.264, Table 7-2
+    switch (index)
+    {
+    case 0: //Intra Y
+    case 1: //Intra Cb
+    case 2: //Intra Cr
+    {
+        assert(outListSize >= 16);
+        if (!zigzag)
+            std::copy(std::begin(intra_4x4), std::end(intra_4x4), outList);
+        else
+            MakeZigZag<uint8_t>(intra_4x4, 4, outList, 16);
+        break;
+    }
+    case 3: //Inter Y
+    case 4: //Inter Cb
+    case 5: //Inter Cr
+        assert(outListSize >= 16);
+        if (!zigzag)
+            std::copy(std::begin(inter_4x4), std::end(inter_4x4), outList);
+        else
+            MakeZigZag<uint8_t>(inter_4x4, 4, outList, 16);
+        break;
+    case 6: //Intra Y
+    case 8: //Intra Cb
+    case 10: //Intra Cr
+        assert(outListSize >= 64);
+        if (!zigzag)
+            std::copy(std::begin(intra_8x8), std::end(intra_8x8), outList);
+        else
+            MakeZigZag<uint8_t>(intra_8x8, 8, outList, 64);
+        break;
+    case 7: //Inter Y
+    case 9: //Inter Cb
+    case 11: //Inter Cr
+        assert(outListSize >= 64);
+        if (!zigzag)
+            std::copy(std::begin(inter_8x8), std::end(inter_8x8), outList);
+        else
+            MakeZigZag<uint8_t>(inter_8x8, 8, outList, 64);
+        break;
+    default:
+        return MFX_ERR_NOT_FOUND;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MfxHwH264Encode::FillCustomScalingLists(void *inMatrix, mfxU16 ScenarioInfo)
+{
+    DXVA_Qmatrix_H264 &matrix = *static_cast<DXVA_Qmatrix_H264*>(inMatrix);
+
+    if (ScenarioInfo != MFX_SCENARIO_GAME_STREAMING)
+        return MFX_ERR_NOT_FOUND;
+
+    uint8_t intra_4x4[16] = {
+        16, 34, 53, 74,
+        34, 53, 74, 85,
+        53, 74, 85, 98,
+        74, 85, 98, 112
+
+    };
+    uint8_t inter_4x4[16] = {
+        16, 22, 32, 38,
+        22, 32, 38, 43,
+        32, 38, 43, 48,
+        38, 43, 48, 54
+    };
+    uint8_t intra_8x8[64] = {
+        16,26,34,42,48,61,66,72,
+        26,29,42,48,61,66,72,77,
+        34,42,48,61,66,72,77,82,
+        42,48,61,66,72,77,82,88,
+        48,61,66,72,77,82,88,96,
+        61,66,72,77,82,88,96,101,
+        66,72,77,82,88,96,101,106,
+        72,77,82,88,96,101,106,112
+    };
+    uint8_t inter_8x8[64] = {
+        16,23,26,30,33,37,39,42,
+        23,23,30,33,37,39,42,44,
+        26,30,33,37,39,42,44,48,
+        30,33,37,39,42,44,48,49,
+        33,37,39,42,44,48,49,53,
+        37,39,42,44,48,49,53,56,
+        39,42,44,48,49,53,56,58,
+        42,44,48,49,53,56,58,62
+    };
+
+    std::copy(std::begin(intra_4x4), std::end(intra_4x4), std::begin(matrix.bScalingLists4x4[0]));
+    std::copy(std::begin(intra_4x4), std::end(intra_4x4), std::begin(matrix.bScalingLists4x4[1]));
+    std::copy(std::begin(intra_4x4), std::end(intra_4x4), std::begin(matrix.bScalingLists4x4[2]));
+    std::copy(std::begin(inter_4x4), std::end(inter_4x4), std::begin(matrix.bScalingLists4x4[3]));
+    std::copy(std::begin(inter_4x4), std::end(inter_4x4), std::begin(matrix.bScalingLists4x4[4]));
+    std::copy(std::begin(inter_4x4), std::end(inter_4x4), std::begin(matrix.bScalingLists4x4[5]));
+    std::copy(std::begin(intra_8x8), std::end(intra_8x8), std::begin(matrix.bScalingLists8x8[0]));
+    std::copy(std::begin(inter_8x8), std::end(inter_8x8), std::begin(matrix.bScalingLists8x8[1]));
+
+    return MFX_ERR_NONE;
+}
+
+void MfxHwH264Encode::FillTaskScalingList(mfxExtSpsHeader const &extSps, mfxExtPpsHeader const &extPps, DdiTask &task)
+{
+    for (mfxU8 i = 0; i < ((extSps.levelIdc != 3) ? 8 : 12); ++i) //levelIdc==3 isn't supported, hsa to be checked on input
+    {
+        if (i < 6)
+        {
+            if (extSps.seqScalingListPresentFlag[i])
+            {
+                ZigZagToPlane<mfxU8>(extSps.scalingList4x4[i], 4, &task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i], sizeof(task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i]));
+            }
+            else
+            {
+                //Scaling list fall-back rule A, Rec. ITU-T H.264, Table 7-2
+                if (i == 0 || i == 3) //Intra Y or Inter Y
+                {
+                    GetDefaultScalingList(task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i], sizeof(task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i]), i);
+                }
+                else
+                {
+                    std::copy(std::begin(task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i - 1]), std::end(task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i - 1]), std::begin(task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i]));
+                }
+            }
+        }
+        else
+        {
+            if (extSps.seqScalingListPresentFlag[i])
+            {
+                ZigZagToPlane<mfxU8>(extSps.scalingList8x8[i - 6], 8, &task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6], sizeof(task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6]));
+            }
+            else
+            {
+                //Scaling list fall-back rule A, Rec. ITU-T H.264, Table 7-2
+                if (i == 6 || i == 7) //Intra Y or Inter Y
+                {
+                    GetDefaultScalingList(task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6], sizeof(task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6]), i);
+                }
+                else
+                {
+                    assert("levelIdc == 3 isn't supported");
+                }
+            }
+        }
+    }
+    if (extPps.picScalingMatrixPresentFlag)
+    {
+        for (mfxU8 i = 0; i < 6 + 2 * (!!extPps.transform8x8ModeFlag); ++i)
+        {
+            if (i < 6)
+            {
+                if (extPps.picScalingListPresentFlag[i])
+                {
+                    ZigZagToPlane<mfxU8>(extPps.scalingList4x4[i], 4, task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i], sizeof(task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i]));
+                }
+                else
+                {
+                    //According Scaling list fall-back rule B, Rec. ITU-T H.264, Table 7-2, leave Intra Y and Inter Y as they defined for SPS
+                    if (i != 0 && i != 3) //Intra Cb,Cr or Inter Cb,Cr
+                    {
+                        std::copy(std::begin(task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i - 1]), std::end(task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i - 1]), std::begin(task.m_qMatrix.QmatrixAVC.bScalingLists4x4[i]));
+                    }
+                }
+            }
+            else
+            {
+                if (extPps.picScalingListPresentFlag[i])
+                {
+                    ZigZagToPlane<mfxU8>(extPps.scalingList8x8[i - 6], 8, task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6], sizeof(task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6]));
+                }
+                else
+                {
+                    //According Scaling list fall-back rule B, Rec. ITU-T H.264, Table 7-2, leave Intra Y and Inter Y as they defined for SPS
+                    if (i > 7) //Intra Cb,Cr and Inter Cb,Cr is unsupported
+                    {
+                        assert("Indexes greater than 7 are not supported");
+                    }
+                }
+            }
+        }
+    }
+}
+#endif //MFX_ENABLE_AVC_CUSTOM_QMATRIX
 
 #endif // MFX_ENABLE_H264_VIDEO_ENCODE_HW

@@ -1568,3 +1568,36 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAV1FilmG
 }
 #endif
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+std::string DumpContext::dump(const std::string structName, const mfxExtAVCScalingMatrix &_struct)
+{
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    DUMP_FIELD(Type);
+
+    for (mfxU8 i = 0; i < 12; ++i)
+    {
+        str += dump(structName + ".ScalingListPresent[" + ToString(i) + "]", _struct.ScalingListPresent[i]) + "\n";
+    }
+
+    for (mfxU8 i = 0; i < 6; ++i)
+    {
+        for(mfxU8 y = 0; y < 4; ++y)
+            for (mfxU8 x = 0; x < 4; ++x)
+            {
+                str += dump(structName + ".ScalingList4x4[" + ToString(i) + "][" + ToString(y) + "][" + ToString(x) + "]", _struct.ScalingList4x4[i][y * 4+x]) + "\n";
+            }
+    }
+
+    for (mfxU8 i = 0; i < 6; ++i)
+    {
+        for (mfxU8 y = 0; y < 8; ++y)
+            for (mfxU8 x = 0; x < 8; ++x)
+            {
+                str += dump(structName + ".ScalingList8x8[" + ToString(i) + "][" + ToString(y) + "][" + ToString(x) + "]", _struct.ScalingList8x8[i][y * 4 + x]) + "\n";
+            }
+    }
+
+    return str;
+}
+#endif

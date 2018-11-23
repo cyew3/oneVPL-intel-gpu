@@ -708,6 +708,10 @@ public:
     DEFINE_DUMP_FUNCTION(mfxBRCFrameCtrl);
     DEFINE_DUMP_FUNCTION(mfxBRCFrameStatus);
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    //custom scaling matrices
+    DEFINE_DUMP_FUNCTION(mfxExtAVCScalingMatrix);
+#endif
 };
 #endif //DUMP_H_
 

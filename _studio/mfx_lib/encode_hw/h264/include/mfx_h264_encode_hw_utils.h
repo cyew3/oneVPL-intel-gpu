@@ -1042,6 +1042,9 @@ namespace MfxHwH264Encode
 #if defined(MFX_ENABLE_H264_REPARTITION_CHECK) && defined(MFX_VA_WIN)
             , m_RepartitionCheck(0)
 #endif
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+            , m_qMatrix()
+#endif
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1289,6 +1292,9 @@ namespace MfxHwH264Encode
         mfxU8         *m_Yscd;
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
         GPU_SYNC_EVENT_HANDLE m_GpuEvent[2]; // events for every field.
+#endif
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+        ENCODE_SET_PICTURE_QUANT m_qMatrix; //buffer for quantization matrix
 #endif
     };
 
@@ -3682,6 +3688,120 @@ namespace MfxHwH264Encode
 
         return p;
     }
+
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+    /// <summary>Function reads array[inSize] to array[outSize][outSize] in ZigZag order.</summary>
+    /// <description>Function reads array[inSize] to array[outSize][outSize] in ZigZag order.
+    /// 1 2 3    1 2 6
+    /// 4 5 6 -> 3 5 7
+    /// 7 8 9    4 8 9
+    /// </description>
+    /// <param name="inPtr">Pointer for the input array, has to be non-NULL</param>
+    /// <param name="inSize">Size of input array, works only with quad arrays. For example, inSize for matrix 4x4 is 16</param>
+    /// <param name="outPtr">Pointer for the output array, has to be non-NULL</param>
+    /// <param name="outSize">Size of output buffer, has to be not less than multiplied dimensions of input matrix. For example, outSize for matrix 4x4 has to be greater than or equal to 4x4</param>
+    template<class T> void MakeZigZag(void const * const inPtr, const size_t inSize, void * const outPtr, const size_t outSize)
+    {
+        T const * const in = static_cast<T const * const>(inPtr);
+        T * const out = static_cast<T * const>(outPtr);
+
+        assert(inPtr != NULL);
+        assert(outPtr != NULL);
+        assert((inSize * inSize) <= outSize);
+        (void)outSize;
+
+        uint64_t y = 0, x = 0;
+        for (uint64_t i = 0, pos = 0, size = inSize * inSize; i < inSize; ++i)
+        {
+            if (y <= x)
+            {
+                y = i;
+                x = 0;
+                for (; x <= i; --y, ++x, ++pos)
+                {
+                    out[y*inSize + x] = in[(pos / inSize)*inSize + pos % inSize];
+                    out[(inSize - y - 1)*inSize + inSize - x - 1] = in[((size - pos - 1) / inSize)*inSize + (size - pos - 1) % inSize];
+                }
+            }
+            else
+            {
+                x = i;
+                y = 0;
+                for (; y <= i; --x, ++y, ++pos)
+                {
+                    out[y*inSize + x] = in[(pos / inSize)*inSize + pos % inSize];
+                    out[(inSize - y - 1)*inSize + inSize - x - 1] = in[((size - pos - 1) / inSize)*inSize + (size - pos - 1) % inSize];
+                }
+            }
+        }
+    }
+
+    /// <summary>Function reads array[inSize][inSize] in ZigZag order to array[outSize].</summary>
+    /// <description>Function reads T array[inSize][inSize] in ZigZag order into T array[outSize].
+    /// 1 2 6    1 2 3
+    /// 3 5 7 -> 4 5 6
+    /// 4 8 9    7 8 9
+    /// </description>
+    /// <param name="inPtr">Pointer for the input array, has to be non-NULL</param>
+    /// <param name="inSize">Size of input array, works only with quad arrays. For example, inSize for matrix 4x4 is 4</param>
+    /// <param name="outPtr">Pointer for the output array, has to be non-NULL</param>
+    /// <param name="outSize">Size of output buffer, has to be not less than inSize*inSize. For example, outSize for matrix 4x4 has to be greater than or equal to 16</param>
+    template<class T> void ZigZagToPlane(void const * const inPtr, const size_t inSize, void * const outPtr, const size_t outSize)
+    {
+        T const * const in = static_cast<T const * const>(inPtr);
+        T * const out = static_cast<T * const>(outPtr);
+
+        assert(inPtr != NULL);
+        assert(outPtr != NULL);
+        assert((inSize * inSize) <= outSize);
+        (void)outSize;
+
+        uint64_t y = 0, x = 0;
+        for (uint64_t i = 0, pos = 0, size = inSize * inSize; i < inSize; ++i)
+        {
+            if (y <= x)
+            {
+                y = i;
+                x = 0;
+                for (; x <= i; --y, ++x, ++pos)
+                {
+                    out[(pos / inSize)*inSize + pos % inSize] = in[y*inSize + x];
+                    out[((size - pos - 1) / inSize)*inSize + (size - pos - 1) % inSize] = in[(inSize - y - 1)*inSize + inSize - x - 1];
+                }
+            }
+            else
+            {
+                x = i;
+                y = 0;
+                for (; y <= i; --x, ++y, ++pos)
+                {
+                    out[(pos / inSize)*inSize + pos % inSize] = in[y*inSize + x];
+                    out[((size - pos - 1) / inSize)*inSize + (size - pos - 1) % inSize] = in[(inSize - y - 1)*inSize + inSize - x - 1];
+                }
+            }
+        }
+    }
+    ///<summary>Function fills custom quantization matrices into inMatrix, writes in ZigZag orde</summary>
+    ///<param name="ScenarioInfo">Fills matrices depends on selected ScenarioInfo (CodingOption3)</param>
+    ///<return>MFX_ERR_NONE if matrices were copied, MFX_ERR_NOT_FOUND if requested ScenarioInfo isn't supported</return>
+    mfxStatus FillCustomScalingLists(void *inMatrix, mfxU16 ScenarioInfo);
+
+    ///<summary>Function fills default values of scaling list</summary>
+    ///<param name="outList">Pointer to the output list</param>
+    ///<param name="outListSize">Size of output list, has to be not less than 16 for indexes 0..5, and not less than 64 for 6..11</param>
+    ///<param name="index">Index of scaling list according Table 7-2 Rec. ITU-T H.264, has to be in range 0..11</param>
+    ///<param name="zigzag">Flag, if set to true, output values will be ordered in zigzag order, default - false</param>
+    ///<return>MFX_ERR_NONE if default values were copied, MFX_ERR_NOT_FOUND if index not in range 0..11</return>
+    mfxStatus GetDefaultScalingList(mfxU8 *outList, mfxU8 outListSize, mfxU8 index, bool zigzag);
+
+    ///<summary>Function fills qMatrix for task based on values provided in extSps and extPps</summary>
+    ///<description>Function expects value of extSps.seqScalingMatrixPresentFlag and value of extPps.picScalingMatrixPresentFlag
+    ///were verified before call. Otherwise default scaling lists will be used, but it won't be expected behavior</description>
+    ///<param name="extSps">SPS header with defined (or not defined) scaling lists</param>
+    ///<param name="extPps">PPS header with defined (or not defined) scaling lists</param>
+    ///<param name="task">DDI task for the filling scaling lists for current frame</param>
+    void FillTaskScalingList(mfxExtSpsHeader const &extSps, mfxExtPpsHeader const &extPps, DdiTask &task);
+#endif
 }; // namespace MfxHwH264Encode
 
 #endif // _MFX_H264_ENCODE_HW_UTILS_H_

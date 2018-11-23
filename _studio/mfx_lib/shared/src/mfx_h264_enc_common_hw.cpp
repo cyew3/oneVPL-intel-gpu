@@ -1872,7 +1872,10 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_MULTI_FRAME_PARAM
         || id == MFX_EXTBUFF_MULTI_FRAME_CONTROL
 #endif
-        );
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+        || id == MFX_EXTBUFF_AVC_SCALING_MATRIX
+#endif
+       );
 }
 
 mfxStatus MfxHwH264Encode::CheckExtBufferId(mfxVideoParam const & par)
@@ -2428,9 +2431,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtMoveRect *           extMoveRect  = GetExtBuffer(par);
     mfxExtPredWeightTable *    extPwt       = GetExtBuffer(par);
     mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
-
 #if !defined(MFX_EXT_BRC_DISABLE)
     mfxExtBRC*                 extBRC       = GetExtBuffer(par);
+#endif
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+    mfxExtAVCScalingMatrix*    extQM        = GetExtBuffer(par);
 #endif
 
     bool isENCPAK = (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
@@ -4141,7 +4146,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             extSps->bitDepthLumaMinus8 != 0                                 ||
             extSps->bitDepthChromaMinus8 != 0                               ||
             extSps->qpprimeYZeroTransformBypassFlag != 0                    ||
-            extSps->seqScalingMatrixPresentFlag != 0                        ||
             extSps->picOrderCntType == 1                                    ||
             /*extSps->gapsInFrameNumValueAllowedFlag != 0                     ||*/
             extSps->mbAdaptiveFrameFieldFlag != 0                           ||
@@ -4180,7 +4184,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 extPps->chromaQpIndexOffset > 12                       ||
                 extPps->deblockingFilterControlPresentFlag == 0        ||
                 extPps->redundantPicCntPresentFlag != 0                ||
-                extPps->picScalingMatrixPresentFlag != 0               ||
                 extPps->secondChromaQpIndexOffset < -12                ||
                 extPps->secondChromaQpIndexOffset > 12)
                 return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
@@ -4191,7 +4194,97 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 if (extSps->nalRefIdc != 1)
                     return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         }
+
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+        if (extSps->seqScalingMatrixPresentFlag)
+        {
+            // Rec. ITU-T H.264 (04/2017), chapter A.2 Profiles, customized Scaling Matrices is supported
+            // only for High profiles and protected content isn't supported
+            if (!IsAvcHighProfile(par.mfx.CodecProfile) || par.Protected != 0)
+            {
+                extSps->seqScalingMatrixPresentFlag = 0;
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            }
+            //levelIdx == 3 isn't supported
+            if (extSps->levelIdc == 3)
+            {
+                extSps->seqScalingMatrixPresentFlag = 0;
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            }
+            //if seqScalingMatrixPresent flag isn't 0 at least one matrix has to be provided
+            //More information Rec. ITU-T H.264, 7.4.2.1.1 Sequence parameter set data semantics
+            mfxU8 sum = 0;
+            for (mfxU8 i = 0; i < 8 /*((extSps->levelIdc != 3) ? 8 : 12)*/; ++i)
+            {
+                sum |= extSps->seqScalingListPresentFlag[i];
+                if (extSps->seqScalingListPresentFlag[i] > 1) //bitfield
+                {
+                    extSps->seqScalingListPresentFlag[i] = 1;
+                    changed = true;
+                }
+            }
+            if (!sum)
+            {
+                extSps->seqScalingMatrixPresentFlag = 0;
+                changed = true;
+            }
+        }
+
+        if (extBits->PPSBuffer && extPps->picScalingMatrixPresentFlag)
+        {
+            // Rec. ITU-T H.264 (04/2017), chapter A.2 Profiles, customized Scaling Matrices is supported
+            // only for High profiles and protected content isn't supported
+            if (!IsAvcHighProfile(par.mfx.CodecProfile) || par.Protected != 0)
+            {
+                extPps->picScalingMatrixPresentFlag = 0;
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            }
+            //transform8x8ModeFlag has to be 1, other values is unsupported
+            if (extPps->transform8x8ModeFlag != 1)
+            {
+                extPps->picScalingMatrixPresentFlag = 0;
+                return Error(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            }
+            else
+            {
+                //if picScalingMatrixPresent flag isn't 0 at least one matrix has to be provided
+                //More information Rec. ITU-T H.264, 7.4.2.2 Picture parameter set RBSP semantics
+                bool sum = 0;
+                for (mfxU8 i = 0; i < 8 /*6 + 2*(!!extPps->transform8x8ModeFlag)*/; ++i)
+                {
+                    sum |= extPps->picScalingListPresentFlag[i];
+                }
+                if (!sum)
+                {
+                    extPps->picScalingMatrixPresentFlag = 0;
+                    changed = true;
+                }
+            }
+        }
+#endif
     }
+
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+    if (extQM)
+    {
+        if (extQM->Type > MFX_SCALING_MATRIX_PPS) //invalid value
+        {
+            extQM->Type = 0;
+            return Error(MFX_ERR_INVALID_VIDEO_PARAM);
+        }
+        else if (extQM->Type >= MFX_SCALING_MATRIX_SPS)
+        {
+            for (mfxU8 i = 0; i < sizeof(extQM->ScalingListPresent) / sizeof(extQM->ScalingListPresent[0]); ++i)
+            {
+                if (extQM->ScalingListPresent[i] > 1) //bitfield
+                {
+                    extQM->ScalingListPresent[i] = i < 8 ? 1 : 0;
+                    changed = true;
+                }
+            }
+        }
+    }
+#endif
 
 #if (MFX_VERSION >= 1026)
     if (!CheckTriStateOption(extOpt3->ExtBrcAdaptiveLTR)) changed = true;
@@ -5563,6 +5656,10 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtMultiFrameParam* mfeParam = GetExtBuffer(par);
     mfxExtMultiFrameControl* mfeControl = GetExtBuffer(par);
 #endif
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+    mfxExtAVCScalingMatrix*    extQM   = GetExtBuffer(par);
+#endif
+
     bool isENCPAK = (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
                     (feiParam->Func == MFX_FEI_FUNCTION_ENC) ||
                     (feiParam->Func == MFX_FEI_FUNCTION_PAK);
@@ -6598,33 +6695,95 @@ void MfxHwH264Encode::SetDefaults(
                 extSps->vui.flags.picStructPresent        ||
                 extSps->vui.flags.bitstreamRestriction;
         }
-    }
 
-    if (extBits->PPSBufSize == 0)
-    {
-        extPps->nalRefIdc                             = par.calcParam.tempScalabilityMode ? 3 : 1;
-        extPps->picParameterSetId                     = mfxU8(extBits->PPSId);
-        extPps->seqParameterSetId                     = mfxU8(extBits->SPSId);
-        extPps->entropyCodingModeFlag                 = IsOff(extOpt->CAVLC);
-        extPps->bottomFieldPicOrderInframePresentFlag = 0;
-        extPps->numSliceGroupsMinus1                  = 0;
-        extPps->sliceGroupMapType                     = 0;
-        extPps->numRefIdxL0DefaultActiveMinus1        = 0;
-        extPps->numRefIdxL1DefaultActiveMinus1        = 0;
-        extPps->weightedPredFlag                      = mfxU8(extOpt3->WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT);
-        extPps->weightedBipredIdc                     = extOpt3->WeightedBiPred ? mfxU8(extOpt3->WeightedBiPred - 1) : mfxU8(extDdi->WeightedBiPredIdc);
-        extPps->picInitQpMinus26                      = 0;
-        extPps->picInitQsMinus26                      = 0;
-        extPps->chromaQpIndexOffset                   = 0;
-        extPps->deblockingFilterControlPresentFlag    = 1;
-        extPps->constrainedIntraPredFlag              = 0;
-        extPps->redundantPicCntPresentFlag            = 0;
-        extPps->moreRbspData                          =
-            !IsAvcBaseProfile(par.mfx.CodecProfile) &&
-            par.mfx.CodecProfile != MFX_PROFILE_AVC_MAIN;
-        extPps->transform8x8ModeFlag                  = extOpt->IntraPredBlockSize > MFX_BLOCKSIZE_MIN_16X16;
-        extPps->picScalingMatrixPresentFlag           = 0;
-        extPps->secondChromaQpIndexOffset             = 0;
+        if (extBits->PPSBufSize == 0)
+        {
+            extPps->nalRefIdc = par.calcParam.tempScalabilityMode ? 3 : 1;
+            extPps->picParameterSetId = mfxU8(extBits->PPSId);
+            extPps->seqParameterSetId = mfxU8(extBits->SPSId);
+            extPps->entropyCodingModeFlag = IsOff(extOpt->CAVLC);
+            extPps->bottomFieldPicOrderInframePresentFlag = 0;
+            extPps->numSliceGroupsMinus1 = 0;
+            extPps->sliceGroupMapType = 0;
+            extPps->numRefIdxL0DefaultActiveMinus1 = 0;
+            extPps->numRefIdxL1DefaultActiveMinus1 = 0;
+            extPps->weightedPredFlag = mfxU8(extOpt3->WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT);
+            extPps->weightedBipredIdc = extOpt3->WeightedBiPred ? mfxU8(extOpt3->WeightedBiPred - 1) : mfxU8(extDdi->WeightedBiPredIdc);
+            extPps->picInitQpMinus26 = 0;
+            extPps->picInitQsMinus26 = 0;
+            extPps->chromaQpIndexOffset = 0;
+            extPps->deblockingFilterControlPresentFlag = 1;
+            extPps->constrainedIntraPredFlag = 0;
+            extPps->redundantPicCntPresentFlag = 0;
+            extPps->moreRbspData =
+                !IsAvcBaseProfile(par.mfx.CodecProfile) &&
+                par.mfx.CodecProfile != MFX_PROFILE_AVC_MAIN;
+            extPps->transform8x8ModeFlag = extOpt->IntraPredBlockSize > MFX_BLOCKSIZE_MIN_16X16;
+            extPps->picScalingMatrixPresentFlag = 0;
+            extPps->secondChromaQpIndexOffset = 0;
+        }
+
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+        if (extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING)
+        {
+            FillCustomScalingLists(&(extSps->scalingList4x4[0][0]), extOpt3->ScenarioInfo);
+            extSps->seqScalingMatrixPresentFlag = 1;
+            for (mfxU8 i = 0; i < sizeof(extSps->seqScalingListPresentFlag) / sizeof(extSps->seqScalingListPresentFlag[0]); ++i)
+            {
+                extSps->seqScalingListPresentFlag[i] = (i < ((extSps->levelIdc != 3) ? 8 : 12)) ? 1 : 0;
+            }
+        }
+
+        // Quantization buffer has higher priority than ScenarioInfo
+        if (extQM)
+        {
+            mfxU8 fillValue = 0;
+            if (extQM->Type == MFX_SCALING_MATRIX_SPS)
+            {
+                extSps->seqScalingMatrixPresentFlag = 1;
+                for (mfxU8 i = 0; i < 8; ++i)
+                {
+                    extSps->seqScalingListPresentFlag[i] = extQM->ScalingListPresent[i] != 0;
+                    if (extSps->seqScalingListPresentFlag[i])
+                    {
+                        if (i < 6)
+                            MakeZigZag<mfxU8>(extQM->ScalingList4x4[i], 4, extSps->scalingList4x4[i], sizeof(extSps->scalingList4x4[i]));
+                        else
+                            MakeZigZag<mfxU8>(extQM->ScalingList8x8[i-6], 8, extSps->scalingList8x8[i-6], sizeof(extSps->scalingList8x8[i-6]));
+                    }
+                    else
+                    {
+                        if (i < 6)
+                            std::fill(std::begin(extQM->ScalingList4x4[i]), std::end(extQM->ScalingList4x4[i]), fillValue);
+                        else
+                            std::fill(std::begin(extQM->ScalingList8x8[i - 6]), std::end(extQM->ScalingList8x8[i - 6]), fillValue);
+                    }
+                }
+            }
+            else if (extQM->Type == MFX_SCALING_MATRIX_PPS && extPps->transform8x8ModeFlag == 1) //supported only if transform8x8ModeFlag is set to 1
+            {
+                extPps->picScalingMatrixPresentFlag = 1;
+                for (mfxU8 i = 0; i < 8; ++i)
+                {
+                    extPps->picScalingListPresentFlag[i] = extQM->ScalingListPresent[i] != 0;
+                    if (extPps->picScalingListPresentFlag[i])
+                    {
+                        if (i < 6)
+                            MakeZigZag<mfxU8>(extQM->ScalingList4x4[i], 4, extPps->scalingList4x4[i], sizeof(extPps->scalingList4x4[i]));
+                        else
+                            MakeZigZag<mfxU8>(extQM->ScalingList8x8[i - 6], 8, extPps->scalingList8x8[i - 6], sizeof(extPps->scalingList8x8[i - 6]));
+                    }
+                    else
+                    {
+                        if (i < 6)
+                            std::fill(std::begin(extQM->ScalingList4x4[i]), std::end(extQM->ScalingList4x4[i]), fillValue);
+                        else
+                            std::fill(std::begin(extQM->ScalingList8x8[i - 6]), std::end(extQM->ScalingList8x8[i - 6]), fillValue);
+                    }
+                }
+            }
+        }
+#endif
     }
 
 #ifndef MFX_AVC_ENCODING_UNIT_DISABLE
@@ -8002,6 +8161,9 @@ MfxVideoParam::MfxVideoParam()
 #if defined(__MFXBRC_H__)
     , m_extBRC()
 #endif
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+    , m_extQM()
+#endif
 #if defined(MFX_ENABLE_MFE)
     , m_MfeParam()
     , m_MfeControl()
@@ -8299,6 +8461,10 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtBRC,                  m_extBRC);
 #endif
 
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+    CONSTRUCT_EXT_BUFFER(mfxExtAVCScalingMatrix,     m_extQM);
+#endif
+
 #if defined(MFX_ENABLE_MFE)
     CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameParam, m_MfeParam);
     CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameControl, m_MfeControl);
@@ -8504,6 +8670,12 @@ namespace
     {
         mfxU8 lastScale = 8;
         mfxU8 nextScale = 8;
+        const mfxI32* scan;
+
+        if (size == 16)
+            scan = UMC_H264_ENCODER::dec_single_scan[0];
+        else
+            scan = UMC_H264_ENCODER::dec_single_scan_8x8[0];
 
         for (mfxU32 i = 0; i < size; i++)
         {
@@ -8516,8 +8688,8 @@ namespace
                 nextScale = mfxU8((lastScale + deltaScale + 256) & 0xff);
             }
 
-            scalingList[i] = (nextScale == 0) ? lastScale : nextScale;
-            lastScale = scalingList[i];
+            scalingList[scan[i]] = (nextScale == 0) ? lastScale : nextScale;
+            lastScale = scalingList[scan[i]];
         }
     }
 
@@ -8907,7 +9079,22 @@ namespace
             writer.PutBit(sps.seqScalingMatrixPresentFlag);
             if (sps.seqScalingMatrixPresentFlag)
             {
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+                for (mfxU8 i = 0; i < ((sps.levelIdc != 3) ? 8 : 12); ++i)
+                {
+                     //Put scaling list present flag
+                     writer.PutBit(sps.seqScalingListPresentFlag[i]);
+                     if (sps.seqScalingListPresentFlag[i])
+                     {
+                         if (i < 6)
+                             WriteScalingList(writer, &sps.scalingList4x4[i][0], 16);
+                        else
+                             WriteScalingList(writer, &sps.scalingList8x8[i - 6][0], 64);
+                     }
+                }
+#else
                 assert("seq_scaling_matrix is unsupported");
+#endif
             }
         }
         writer.PutUe(sps.log2MaxFrameNumMinus4);

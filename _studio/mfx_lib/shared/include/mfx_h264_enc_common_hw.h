@@ -261,6 +261,9 @@ namespace MfxHwH264Encode
 #if defined (__MFXBRC_H__)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtBRC,        MFX_EXTBUFF_BRC          );
 #endif
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+    BIND_EXTBUF_TYPE_TO_ID(mfxExtAVCScalingMatrix,      MFX_EXTBUFF_AVC_SCALING_MATRIX       );
+#endif
 
 #ifdef MFX_ENABLE_MFE
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMultiFrameControl,     MFX_EXTBUFF_MULTI_FRAME_CONTROL     );
@@ -660,6 +663,10 @@ namespace MfxHwH264Encode
 
 #if defined(__MFXBRC_H__)
         mfxExtBRC                   m_extBRC;
+#endif
+
+#if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
+        mfxExtAVCScalingMatrix      m_extQM;
 #endif
 
 #if defined (MFX_ENABLE_MFE)

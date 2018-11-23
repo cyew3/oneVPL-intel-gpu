@@ -1473,3 +1473,10 @@ STRUCT(mfxExtAV1FilmGrainParam,
 #endif
 
 #endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+STRUCT(mfxExtAVCScalingMatrix,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, Type)
+)
+#endif

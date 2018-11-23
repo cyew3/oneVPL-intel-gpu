@@ -680,7 +680,10 @@ enum {
     MFX_SCENARIO_VIDEO_CONFERENCE    = 2,
     MFX_SCENARIO_ARCHIVE             = 3,
     MFX_SCENARIO_LIVE_STREAMING      = 4,
-    MFX_SCENARIO_CAMERA_CAPTURE      = 5
+    MFX_SCENARIO_CAMERA_CAPTURE      = 5,
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    MFX_SCENARIO_GAME_STREAMING      = 6,
+#endif
 };
 
 /* ContentInfo */
@@ -1813,8 +1816,8 @@ typedef struct {
 
 /* ScalingMatrixType */
 enum {
-    MFX_SCALING_MATRIX_SPS = 0,
-    MFX_SCALING_MATRIX_PPS = 1
+    MFX_SCALING_MATRIX_SPS = 1,
+    MFX_SCALING_MATRIX_PPS = 2
 };
 
 typedef struct {

@@ -132,6 +132,8 @@ EXTBUF(mfxExtBRC, MFX_EXTBUFF_BRC)
 
 EXTBUF(mfxExtEncodedUnitsInfo       , MFX_EXTBUFF_ENCODED_UNITS_INFO        )
 
+EXTBUF(mfxExtAVCScalingMatrix       , MFX_EXTBUFF_AVC_SCALING_MATRIX        )
+
 #if defined(__MFXSCD_H__)
 EXTBUF(mfxExtSCD, MFX_EXTBUFF_SCD)
 #endif // defined(__MFXSCD_H__)

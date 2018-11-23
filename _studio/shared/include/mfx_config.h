@@ -445,6 +445,12 @@
     #define MFX_ENABLE_FOURCC_RGB565
 #endif
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#ifdef _WIN32
+#define MFX_ENABLE_AVC_CUSTOM_QMATRIX
+#endif
+#endif
+
 // The line below HAS to be changed to MFX_VERSION >= 1027
 // after THE API is switched to 1.27
 #if MFX_VERSION >= MFX_VERSION_NEXT
