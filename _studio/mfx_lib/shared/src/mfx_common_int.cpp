@@ -216,9 +216,9 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
         break;
     case MFX_CODEC_VP9:
         if (info->FourCC != MFX_FOURCC_NV12
+            && info->FourCC != MFX_FOURCC_AYUV
             && info->FourCC != MFX_FOURCC_P010
 #if (MFX_VERSION >= 1027)
-            && info->FourCC != MFX_FOURCC_AYUV
             && info->FourCC != MFX_FOURCC_Y410
 #endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
@@ -240,9 +240,9 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
             info->FourCC != MFX_FOURCC_YUY2 &&
             info->FourCC != MFX_FOURCC_P010 &&
             info->FourCC != MFX_FOURCC_NV16 &&
-            info->FourCC != MFX_FOURCC_P210
+            info->FourCC != MFX_FOURCC_P210 &&
+            info->FourCC != MFX_FOURCC_AYUV
 #if (MFX_VERSION >= 1027)
-            && info->FourCC != MFX_FOURCC_AYUV
             && info->FourCC != MFX_FOURCC_Y210
             && info->FourCC != MFX_FOURCC_Y410
 #endif
