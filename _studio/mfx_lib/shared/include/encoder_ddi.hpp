@@ -27,7 +27,8 @@
 #include "mfx_trace.h"
 #define DDI_086
 #define AVC_DDI_VERSION_0952
-#define REPARTITION_CHECK
+
+#define AVC_DDI_VERSION_0960
 
 #include "mfx_ext_ddi.h"
 
@@ -592,25 +593,27 @@ typedef struct tagENCODE_CAPS
 
     union {
         struct {
-            UINT    SkipFrame               : 1;
-            UINT    MbQpDataSupport         : 1;
-            UINT    SliceLevelWeightedPred  : 1;
-            UINT    LumaWeightedPred        : 1;
-            UINT    ChromaWeightedPred      : 1;
-            UINT    QVBRBRCSupport          : 1;
-            UINT    SliceLevelReportSupport : 1;
-            UINT    HMEOffsetSupport        : 1;
-            UINT    DirtyRectSupport        : 1;
-            UINT    MoveRectSupport         : 1;
-            UINT    FrameSizeTolerance      : 1;
-            UINT    HWCounterAutoIncrement  : 2;
-            UINT    MBControlSupport        : 1;
-#ifdef REPARTITION_CHECK
+            UINT    SkipFrame                    : 1;
+            UINT    MbQpDataSupport              : 1;
+            UINT    SliceLevelWeightedPred       : 1;
+            UINT    LumaWeightedPred             : 1;
+            UINT    ChromaWeightedPred           : 1;
+            UINT    QVBRBRCSupport               : 1;
+            UINT    SliceLevelReportSupport      : 1;
+            UINT    HMEOffsetSupport             : 1;
+            UINT    DirtyRectSupport             : 1;
+            UINT    MoveRectSupport              : 1;
+            UINT    FrameSizeTolerance           : 1;
+            UINT    HWCounterAutoIncrement       : 2;
+            UINT    MBControlSupport             : 1;
             UINT    ForceRepartitionCheckSupport : 1;
-            UINT                            : 17;
-#else
-            UINT                            : 18;
-#endif
+            UINT    CustomRoundingControl        : 1;
+            UINT    LLCStreamingBufferSupport    : 1;
+            UINT    DDRStreamingBufferSupport    : 1;
+            UINT    LowDelayBRCSupport           : 1;
+            UINT    MaxNumDeltaQPMinus1          : 4;
+            UINT    TCBRCSupport                 : 1;
+            UINT                                 : 8;
         };
         UINT      CodingLimits2;
     };
@@ -620,7 +623,8 @@ typedef struct tagENCODE_CAPS
     USHORT   reserved16bits0;
     USHORT   reserved16bits1;
     USHORT   MaxNumOfConcurrentFramesMinus1;
-    UINT     reserved32bits0;
+    USHORT   LLCSizeInMBytes;
+    USHORT   reserved16bits2;
     UINT     reserved32bits1;
     UINT     reserved32bits2;
     UINT     reserved32bits3;
@@ -997,7 +1001,10 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
             UINT    bTemporalScalability            : 1;
             UINT    ROIValueInDeltaQP               : 1;
             UINT    bAutoMaxPBFrameSizeForSceneChange : 1;
-            UINT    Reserved1                       :9;
+            UINT    EnableStreamingBufferLLC        : 1;
+            UINT    EnableStreamingBufferDDR        : 1;
+            UINT    BlockQPforNonRectROI            : 1;
+            UINT    Reserved1                       : 6;
         };
 
         UINT sFlags;
@@ -1146,13 +1153,9 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
             UINT        bSliceLevelReport                        : 1;
             UINT        bDisableSubpixel                         : 1;
             UINT        bDisableRollingIntraRefreshOverlap       : 1;
-#ifdef REPARTITION_CHECK
             UINT        ForceRepartitionCheck                    : 2;
-            UINT        bReserved                                : 16;
-#else
-            UINT                                                 : 18;
-#endif
-
+            UINT        bDisableFrameSkip                        : 1;
+            UINT        bReserved                                : 15;
 
         };
         BOOL    UserFlags;
@@ -1186,6 +1189,20 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     CHAR            MaxDeltaQp; // [-51..51]
     CHAR            MinDeltaQp; // [-51..51]
 
+#ifdef AVC_DDI_VERSION_0960
+    union
+    {
+        struct
+        {
+            UINT EnableCustomRoudingIntra : 1;
+            UINT RoundingOffsetIntra      : 7;
+            UINT EnableCustomRoudingInter : 1;
+            UINT RoundingOffsetInter      : 7;
+            UINT reservedbits             : 16;
+        } fields;
+        UINT value;
+    } CustomRoundingOffsetsParams;
+#endif
     // Skip Frames
     UCHAR           SkipFrameFlag;
     UCHAR           NumSkipFrames;
@@ -1210,6 +1227,13 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     // Additiona bytes added in bit stream
     UCHAR                               AdditionalZeroByte;
     UCHAR                               AdditionalNALHeaderSize;
+
+#ifdef AVC_DDI_VERSION_0960
+    UCHAR       NumDeltaQpForNonRectROI;   // [0..15]
+    CHAR        NonRectROIDeltaQpList[16];
+
+    UINT        TargetFrameSize;
+#endif
 } ENCODE_SET_PICTURE_PARAMETERS_H264;
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_MPEG2
