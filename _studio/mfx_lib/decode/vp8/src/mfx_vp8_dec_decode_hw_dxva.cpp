@@ -210,7 +210,8 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     uint8_t*coeffProbs = (uint8_t*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_VP8_COEFFICIENT_PROBABILITIES, &compBufCp);
 
     // [4][8][3][11]
-    memcpy_s(coeffProbs, sizeof(m_frameProbs.coeff_probs), m_frameProbs.coeff_probs, sizeof(m_frameProbs.coeff_probs));
+    const uint8_t *src = reinterpret_cast <const uint8_t*> (m_frameProbs.coeff_probs);
+    std::copy(src, src + sizeof(m_frameProbs.coeff_probs), coeffProbs);
     compBufCp->SetDataSize(sizeof(m_frameProbs.coeff_probs));
 
     ////////////////////////////////////////////////////////////////
@@ -260,7 +261,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         offset = 3;
     }
 
-    memcpy_s(bistreamData, size - offset, pBuffer + offset, size - offset);
+    std::copy(pBuffer + offset, pBuffer + size, bistreamData);
     compBufBs->SetDataSize((int32_t)size - offset);
 
     return MFX_ERR_NONE;
