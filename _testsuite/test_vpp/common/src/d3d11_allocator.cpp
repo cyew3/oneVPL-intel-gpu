@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 - 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011 - 2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #if (defined(_WIN32) || defined(_WIN64))
@@ -543,6 +543,13 @@ DXGI_FORMAT D3D11FrameAllocator::ConverColortFormat(mfxU32 fourcc)
 
         case MFX_FOURCC_Y410:
             return DXGI_FORMAT_Y410;
+
+        case MFX_FOURCC_P016:
+            return DXGI_FORMAT_P016;
+        case MFX_FOURCC_Y216:
+            return DXGI_FORMAT_Y216;
+        case MFX_FOURCC_Y416:
+            return DXGI_FORMAT_Y416;
 
         default:
             return DXGI_FORMAT_UNKNOWN;
