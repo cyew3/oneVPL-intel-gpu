@@ -441,6 +441,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mfx_driver_store_loader.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\src\mfx_dxva2_device.cpp"
 				>
 			</File>
@@ -486,6 +490,10 @@
 			</File>
 			<File
 				RelativePath=".\include\mfx_dispatcher_log.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\mfx_driver_store_loader.h"
 				>
 			</File>
 			<File

@@ -23,6 +23,9 @@
     <ClCompile Include="src\mfx_dispatcher_log.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\mfx_driver_store_loader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\mfx_dxva2_device.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -53,6 +56,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\mfx_dispatcher_log.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_driver_store_loader.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\mfx_exposed_functions_list.h">

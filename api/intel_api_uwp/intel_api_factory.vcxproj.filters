@@ -53,6 +53,9 @@
     <ClCompile Include="..\mfx_dispatch\windows\src\mfx_win_reg_key.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
+    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_driver_store_loader.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
     <ClCompile Include="src\mfx_dxloader.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
@@ -92,6 +95,9 @@
       <Filter>dispatcher\include</Filter>
     </ClInclude>
     <ClInclude Include="..\mfx_dispatch\windows\include\mfx_win_reg_key.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_driver_store_loader.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
     <ClInclude Include="..\mfx_dispatch\windows\include\mfxaudio_exposed_functions_list.h">

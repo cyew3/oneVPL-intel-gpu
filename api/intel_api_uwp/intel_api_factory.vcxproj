@@ -108,7 +108,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_DESKTOP_APP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -130,7 +130,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
       <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_DESKTOP_APP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <ExceptionHandling>Async</ExceptionHandling>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -149,7 +149,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_DESKTOP_APP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -167,7 +167,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
       <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_DESKTOP_APP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -202,6 +202,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <ClCompile Include="..\mfx_dispatch\windows\src\mfx_load_plugin.cpp" />
     <ClCompile Include="..\mfx_dispatch\windows\src\mfx_plugin_hive.cpp" />
     <ClCompile Include="..\mfx_dispatch\windows\src\mfx_win_reg_key.cpp" />
+    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_driver_store_loader.cpp" />
     <ResourceCompile Include="src\intel_gfx_api.rc" />
   </ItemGroup>
   <ItemGroup>
@@ -218,6 +219,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <ClInclude Include="..\mfx_dispatch\windows\include\mfx_plugin_hive.h" />
     <ClInclude Include="..\mfx_dispatch\windows\include\mfx_vector.h" />
     <ClInclude Include="..\mfx_dispatch\windows\include\mfx_win_reg_key.h" />
+    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_driver_store_loader.h" />
     <ClInclude Include="include\intel_api_factory.h" />
     <ClInclude Include="include\mfx_dxloader.h" />
     <ClInclude Include="src\resource.h" />
