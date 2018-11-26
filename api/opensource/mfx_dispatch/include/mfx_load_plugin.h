@@ -41,11 +41,11 @@ namespace MFX
     {
         mfxModuleHandle mHmodule;
         CreatePluginPtr_t mCreatePluginPtr;
-        msdk_disp_char mPath[MAX_PLUGIN_PATH];
+        wchar_t mPath[MAX_PLUGIN_PATH];
         
     public:
         PluginModule();
-        PluginModule(const msdk_disp_char * path);
+        PluginModule(const wchar_t * path);
         PluginModule(const PluginModule & that) ;
         PluginModule & operator = (const PluginModule & that);
         bool Create(mfxPluginUID guid, mfxPlugin&);

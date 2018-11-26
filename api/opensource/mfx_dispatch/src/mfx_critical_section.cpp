@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -30,8 +30,6 @@ File Name: mfx_critical_section.cpp
 
 #include "mfx_critical_section.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-
 #include <windows.h>
 // SDK re-declares the following functions with different call declarator.
 // We don't need them. Just redefine them to nothing.
@@ -60,12 +58,12 @@ namespace MFX
 
 mfxU32 mfxInterlockedCas32(mfxCriticalSection *pCSection, mfxU32 value_to_exchange, mfxU32 value_to_compare)
 {
-    return _InterlockedCompareExchange(pCSection, value_to_exchange, value_to_compare);
+    return _InterlockedCompareExchange((volatile LONG*)pCSection, value_to_exchange, value_to_compare);
 }
 
 mfxU32 mfxInterlockedXchg32(mfxCriticalSection *pCSection, mfxU32 value)  
 { 
-    return _InterlockedExchange(pCSection, value);
+    return _InterlockedExchange((volatile LONG*)pCSection, (LONG)value);
 }
 
 void mfxEnterCriticalSection(mfxCriticalSection *pCSection)
@@ -85,4 +83,3 @@ void mfxLeaveCriticalSection(mfxCriticalSection *pCSection)
 
 } // namespace MFX
 
-#endif // #if defined(_WIN32) || defined(_WIN64)

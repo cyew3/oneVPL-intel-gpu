@@ -146,11 +146,8 @@ struct MFX_DISP_HANDLE : public _mfxSession
     ~MFX_DISP_HANDLE(void);
 
     // Load the library's module
-    mfxStatus LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImplType implType, mfxIMPL impl, mfxIMPL implInterface, mfxInitParam &par);
-#if !defined(OPEN_SOURCE) && defined(MEDIASDK_DX_LOADER)
-    mfxStatus LoadViaDXInterface(eMfxImplType reqImplType, mfxIMPL reqImpl, mfxIMPL reqImplInterface, mfxInitParam &par);
-#endif
-        // Unload the library's module
+    mfxStatus LoadSelectedDLL(const wchar_t *pPath, eMfxImplType implType, mfxIMPL impl, mfxIMPL implInterface, mfxInitParam &par);
+    // Unload the library's module
     mfxStatus UnLoadSelectedDLL(void);
 
     // Close the handle
@@ -174,7 +171,7 @@ struct MFX_DISP_HANDLE : public _mfxSession
     // Status of loaded dll
     mfxStatus loadStatus;
     // Resgistry subkey name for windows version
-    msdk_disp_char subkeyName[MFX_MAX_REGISTRY_KEY_NAME];
+    wchar_t subkeyName[MFX_MAX_REGISTRY_KEY_NAME];
     // Storage ID for windows version
     int storageID;
 

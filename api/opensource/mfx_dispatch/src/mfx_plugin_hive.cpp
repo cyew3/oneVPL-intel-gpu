@@ -28,8 +28,6 @@ File Name: mfx_plugin_hive.cpp
 
 \* ****************************************************************************** */
 
-#if defined(_WIN32) || defined(_WIN64)
-
 #include "mfx_plugin_hive.h"
 #include "mfx_library_iterator.h"
 #include "mfx_dispatcher.h"
@@ -79,10 +77,10 @@ namespace
     #define alignStr() "%-14S"
 }
 
-MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion currentAPIVersion)
+MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const wchar_t *msdkLibSubKey, mfxVersion currentAPIVersion)
     : MFXPluginStorageBase(currentAPIVersion)
 {
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
     HKEY rootHKey;
     bool bRes;
     WinRegKey regKey;
@@ -229,17 +227,17 @@ MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *
     (void)msdkLibSubKey;
     (void)currentAPIVersion;
 
-#endif //#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+#endif //#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
 }
 
-#if defined(MEDIASDK_USE_CFGFILES) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+#if defined(MEDIASDK_USE_CFGFILES) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
 MFX::MFXPluginsInFS::MFXPluginsInFS( mfxVersion currentAPIVersion )
     : MFXPluginStorageBase(currentAPIVersion)
     , mIsVersionParsed()
     , mIsAPIVersionParsed()
 {
     WIN32_FIND_DATAW find_data;
-    msdk_disp_char currentModuleName[MAX_PLUGIN_PATH];
+    wchar_t currentModuleName[MAX_PLUGIN_PATH];
 
     GetModuleFileNameW(NULL, currentModuleName, MAX_PLUGIN_PATH);
     if (GetLastError() != 0)
@@ -247,7 +245,7 @@ MFX::MFXPluginsInFS::MFXPluginsInFS( mfxVersion currentAPIVersion )
         TRACE_HIVE_ERROR("GetModuleFileName() reported an error: %d\n", GetLastError());
         return;
     }
-    msdk_disp_char *lastSlashPos = wcsrchr(currentModuleName, L'\\');
+    wchar_t *lastSlashPos = wcsrchr(currentModuleName, L'\\');
     if (!lastSlashPos) {
         lastSlashPos = currentModuleName;
     }
@@ -257,7 +255,7 @@ MFX::MFXPluginsInFS::MFXPluginsInFS( mfxVersion currentAPIVersion )
         TRACE_HIVE_ERROR("MAX_PLUGIN_PATH which is %d, not enough to locate plugin path\n", MAX_PLUGIN_PATH);
         return;
     }
-    msdk_disp_char_cpy_s(lastSlashPos + slashLen
+    wcscpy_s(lastSlashPos + slashLen
         , MAX_PLUGIN_PATH - executableDirLen, pluginSearchPattern);
 
     HANDLE fileFirst = FindFirstFileW(currentModuleName, &find_data);
@@ -303,17 +301,17 @@ MFX::MFXPluginsInFS::MFXPluginsInFS( mfxVersion currentAPIVersion )
             continue;
         }
 
-        msdk_disp_char_cpy_s(currentModuleName + executableDirLen
+        wcscpy_s(currentModuleName + executableDirLen
             , MAX_PLUGIN_PATH - executableDirLen, find_data.cFileName);
 
-        msdk_disp_char_cpy_s(currentModuleName + executableDirLen + pluginDirNameLen
+        wcscpy_s(currentModuleName + executableDirLen + pluginDirNameLen
             , MAX_PLUGIN_PATH - executableDirLen - pluginDirNameLen, L"\\");
 
         //this is path to plugin directory
-        msdk_disp_char_cpy_s(descriptionRecord.sPath
+        wcscpy_s(descriptionRecord.sPath
             , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath), currentModuleName);
 
-        msdk_disp_char_cpy_s(currentModuleName + executableDirLen + pluginDirNameLen + slashLen
+        wcscpy_s(currentModuleName + executableDirLen + pluginDirNameLen + slashLen
             , MAX_PLUGIN_PATH - executableDirLen - pluginDirNameLen - slashLen, pluginCfgFileName);
 
         FILE *pluginCfgFile = 0;
@@ -343,11 +341,11 @@ MFX::MFXPluginsInFS::MFXPluginsInFS( mfxVersion currentAPIVersion )
 
 bool MFX::MFXPluginsInFS::ParseFile(FILE * f, PluginDescriptionRecord & descriptionRecord)
 {
-    msdk_disp_char line[MAX_PLUGIN_FILE_LINE];
+    wchar_t line[MAX_PLUGIN_FILE_LINE];
 
     while(NULL != fgetws(line, sizeof(line) / sizeof(*line), f))
     {
-        msdk_disp_char *delimiter = wcschr(line, L'=');
+        wchar_t *delimiter = wcschr(line, L'=');
         if (0 == delimiter)
         {
             TRACE_HIVE_INFO("plugin.cfg contains line \"%S\" which is not in K=V format, skipping \n", line);
@@ -381,7 +379,7 @@ bool MFX::MFXPluginsInFS::ParseFile(FILE * f, PluginDescriptionRecord & descript
     return true;
 }
 
-bool MFX::MFXPluginsInFS::ParseKVPair( msdk_disp_char * key, msdk_disp_char* value, PluginDescriptionRecord & descriptionRecord)
+bool MFX::MFXPluginsInFS::ParseKVPair( wchar_t * key, wchar_t* value, PluginDescriptionRecord & descriptionRecord)
 {
     if (0 != wcsstr(key, PlgVerKeyName))
     {
@@ -421,13 +419,13 @@ bool MFX::MFXPluginsInFS::ParseKVPair( msdk_disp_char * key, msdk_disp_char* val
 
     if (0!=wcsstr(key, pluginFileName))
     {
-        msdk_disp_char *startQuoteMark = wcschr(value, L'\"');
+        wchar_t *startQuoteMark = wcschr(value, L'\"');
         if (!startQuoteMark)
         {
             TRACE_HIVE_ERROR("plugin filename not in quotes : %S\n", value);
             return false;
         }
-        msdk_disp_char *endQuoteMark = wcschr(startQuoteMark + 1, L'\"');
+        wchar_t *endQuoteMark = wcschr(startQuoteMark + 1, L'\"');
 
         if (!endQuoteMark)
         {
@@ -451,7 +449,7 @@ bool MFX::MFXPluginsInFS::ParseKVPair( msdk_disp_char * key, msdk_disp_char* val
             return false;
         }
 
-        msdk_disp_char_cpy_s(descriptionRecord.sPath + currentPathLen
+        wcscpy_s(descriptionRecord.sPath + currentPathLen
             , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath) - currentPathLen, startQuoteMark + 1);
 
         TRACE_HIVE_INFO("%S: %S = \"%S\" \n", pluginCfgFileName, pluginFileName, startQuoteMark + 1);
@@ -462,38 +460,12 @@ bool MFX::MFXPluginsInFS::ParseKVPair( msdk_disp_char * key, msdk_disp_char* val
 
     return true;
 }
-#endif //#if defined(MEDIASDK_USE_CFGFILES) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+#endif //#if defined(MEDIASDK_USE_CFGFILES) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
 
-#if !defined(OPEN_SOURCE)
-#define MFX_NO_DEFAULT_PLUGINS
-#if !defined(MEDIASDK_DFP_LOADER)
-#undef MFX_NO_DEFAULT_PLUGINS
-#else
-MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, int implType)
-    : MFXPluginStorageBase(currentAPIVersion)
-{
-    msdk_disp_char libModuleName[MAX_PLUGIN_PATH];
-    mfx_get_default_plugin_name(libModuleName, MAX_PLUGIN_PATH, (eMfxImplType)implType);
-
-    // add single default plugin description
-    PluginDescriptionRecord descriptionRecord;
-    descriptionRecord.APIVersion = currentAPIVersion;
-    descriptionRecord.Default = true;
-
-    msdk_disp_char_cpy_s(descriptionRecord.sPath
-        , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath), libModuleName);
-
-    push_back(descriptionRecord);
-
-}
-#endif
-#endif
-
-#ifndef MFX_NO_DEFAULT_PLUGINS
 MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP_HANDLE * hdl, int implType)
     : MFXPluginStorageBase(currentAPIVersion)
 {
-    msdk_disp_char libModuleName[MAX_PLUGIN_PATH];
+    wchar_t libModuleName[MAX_PLUGIN_PATH];
 
     GetModuleFileNameW((HMODULE)hdl->hModule, libModuleName, MAX_PLUGIN_PATH);
     if (GetLastError() != 0)
@@ -501,7 +473,7 @@ MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP
         TRACE_HIVE_ERROR("GetModuleFileName() reported an error: %d\n", GetLastError());
         return;
     }
-    msdk_disp_char *lastSlashPos = wcsrchr(libModuleName, L'\\');
+    wchar_t *lastSlashPos = wcsrchr(libModuleName, L'\\');
     if (!lastSlashPos) {
         lastSlashPos = libModuleName;
     }
@@ -521,7 +493,7 @@ MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP
         descriptionRecord.APIVersion = currentAPIVersion;
         descriptionRecord.Default = true;
 
-        msdk_disp_char_cpy_s(descriptionRecord.sPath
+        wcscpy_s(descriptionRecord.sPath
             , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath), libModuleName);
 
         push_back(descriptionRecord);
@@ -531,7 +503,5 @@ MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP
         TRACE_HIVE_INFO("GetFileAttributesW() unable to locate default plugin dll named %S\n", libModuleName);
     }
 }
-#endif
 
 
-#endif
