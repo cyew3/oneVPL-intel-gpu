@@ -221,16 +221,18 @@ Status DXAccelerator::ExecuteStatusReportBuffer(void * buffer, int32_t size)
     return ExecuteExtension(DXVA2_GET_STATUS_REPORT, ext);
 }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
 Status DXAccelerator::RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXAccelerator::RegisterGpuEvent");
-
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     ExtensionData ext{};
     ext.input = std::make_pair(&ev, sizeof(ev));
     return ExecuteExtension(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, ext);
-}
+#else
+    (void)ev;
+    return MFX_ERR_NONE;
 #endif
+}
 
 inline
 int32_t GetBufferIndex(int32_t buffer_type)

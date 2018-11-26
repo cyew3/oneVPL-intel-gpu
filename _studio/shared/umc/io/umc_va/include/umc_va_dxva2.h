@@ -199,9 +199,8 @@ public:
     Status SyncTask(int32_t index, void * error = nullptr) override;
     Status ExecuteStatusReportBuffer(void * buffer, int32_t size) override;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     virtual Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE&);
-#endif
+
 
 private:
 

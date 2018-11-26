@@ -160,9 +160,7 @@ public:
 
     virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size) = 0;
     virtual UMC::Status SyncTask(int32_t index, void * error) = 0;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D
     virtual bool IsGPUSyncEventDisable() = 0;
-#endif
 
     virtual void BeginFrame(H265DecoderFrame*) = 0;
     virtual void EndFrame() = 0;
@@ -192,6 +190,7 @@ public:
 
     virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size);
     virtual UMC::Status SyncTask(int32_t index, void * error) { return m_va->SyncTask(index, error); }
+    virtual bool IsGPUSyncEventDisable() { return true; }
 
     virtual void PackQmatrix(const H265Slice *pSlice);
 

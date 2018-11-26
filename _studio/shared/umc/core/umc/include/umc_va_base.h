@@ -340,9 +340,9 @@ public:
     virtual VideoProcessingVA * GetVideoProcessingVA() {return m_videoProcessingVA;}
 #endif
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     bool IsGPUSyncEventDisable() const
     {
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
         VideoAccelerationProfile codec = (VideoAccelerationProfile)(m_Profile & VA_CODEC);
         VideoAccelerationProfile profile = (VideoAccelerationProfile)(m_Profile & VA_PROFILE);
         bool isHybrid = ((codec == VA_H265 && profile == VA_PROFILE_10) || codec == VA_VP9) && (m_HWPlatform < MFX_HW_APL);
@@ -396,8 +396,10 @@ public:
         }
 
         return isHybrid || !isEnabled;
-    }
+#else
+        return true;
 #endif
+    }
 
     bool IsLongSliceControl() const { return (!m_bH264ShortSlice); };
     bool IsMVCSupport() const {return m_bH264MVCSupport; };

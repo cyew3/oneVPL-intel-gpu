@@ -50,9 +50,7 @@ namespace UMC_HEVC_DECODER
 
         virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size);
         virtual UMC::Status SyncTask(int32_t index, void * error);
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D
         virtual bool IsGPUSyncEventDisable();
-#endif
 
         virtual void BeginFrame(H265DecoderFrame*);
         virtual void EndFrame();
