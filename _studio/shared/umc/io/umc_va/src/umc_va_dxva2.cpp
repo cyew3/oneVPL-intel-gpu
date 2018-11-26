@@ -70,13 +70,11 @@ UMC::Status DXAccelerator::Close()
 Status DXAccelerator::BeginFrame(int32_t  index, uint32_t fieldId)
 {
     (void)fieldId;
+
     Status sts = BeginFrame(index);
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-    if (sts != UMC_OK)
+    if (sts != UMC_OK || IsGPUSyncEventDisable())
         return sts;
-    if (IsGPUSyncEventDisable())
-        return sts;
-
     GPU_SYNC_EVENT_HANDLE ev{ GPU_COMPONENT_DECODE };
     ev.gpuSyncEvent = m_EventsMap.GetFreeEventAndMap( index, fieldId);
 
@@ -87,7 +85,6 @@ Status DXAccelerator::BeginFrame(int32_t  index, uint32_t fieldId)
 #ifdef  _DEBUG
     MFX_TRACE_3("RegisterGpuEvent", "index=%d, fieldId=%d event %p", index, fieldId, ev.gpuSyncEvent);
 #endif
-
 #endif
     return sts;
 }
@@ -98,12 +95,14 @@ Status DXAccelerator::SyncTask(int32_t index, void * error)
     (void)error;
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     if (IsGPUSyncEventDisable())
+    {
         return UMC_ERR_UNSUPPORTED;
+    }
     const uint32_t timeoutms = 5000; // TIMEOUT FOR DECODE OPERATION
     const size_t MAX_FIELD_SUPPORTED = 2;
 
     Status sts = UMC_OK;
-    
+
     HANDLE handle[MAX_FIELD_SUPPORTED] = { INVALID_HANDLE_VALUE,INVALID_HANDLE_VALUE };
     size_t count = 0;
 

@@ -345,7 +345,57 @@ public:
     {
         VideoAccelerationProfile codec = (VideoAccelerationProfile)(m_Profile & VA_CODEC);
         VideoAccelerationProfile profile = (VideoAccelerationProfile)(m_Profile & VA_PROFILE);
-        return ((codec == VA_H265 && profile == VA_PROFILE_10) || codec == VA_VP9) && (m_HWPlatform < MFX_HW_APL);
+        bool isHybrid = ((codec == VA_H265 && profile == VA_PROFILE_10) || codec == VA_VP9) && (m_HWPlatform < MFX_HW_APL);
+        bool isEnabled = false;
+        switch (codec)
+        {
+        case VA_MPEG2:
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_MPEG2D)
+            isEnabled = true;
+#endif
+            break;
+        case VA_H264:
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D)
+            isEnabled = true;
+#endif
+            break;
+        case VA_VC1:
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VC1D)
+            isEnabled = true;
+#endif
+            break;
+        case VA_JPEG:
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD)
+            isEnabled = true;
+#endif
+            break;
+        case VA_VP8:
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D)
+            isEnabled = true;
+#endif
+            break;
+        case VA_H265:
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D)
+            isEnabled = true;
+#endif
+            break;
+        case VA_VP9:
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP9D)
+            isEnabled = true;
+#endif
+            break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        case VA_AV1:
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_AV1D)
+            isEnabled = true;
+#endif
+            break;
+#endif // PRE_SI_TARGET_PLATFORM_GEN12
+        default:
+            break;
+        }
+
+        return isHybrid || !isEnabled;
     }
 #endif
 

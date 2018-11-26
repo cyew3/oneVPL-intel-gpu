@@ -216,14 +216,14 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 
     for (H265DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D
         UMC::Status sts = UMC::UMC_OK;
         if (!dxva_sd->GetPacker()->IsGPUSyncEventDisable())
         {
             int32_t index = au->m_pFrame->GetFrameMID();
             m_mGuard.Unlock();
             {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec  DXVA SyncSurface");
                 sts = dxva_sd->GetPacker()->SyncTask(index, NULL);
             }
             m_mGuard.Lock();
@@ -306,7 +306,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
                 }
             }
         }
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D
         //check exit from waiting status.
         if (sts != UMC::UMC_OK)
         {

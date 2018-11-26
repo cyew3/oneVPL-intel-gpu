@@ -160,7 +160,7 @@ public:
 
     virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size) = 0;
     virtual UMC::Status SyncTask(int32_t index, void * error) = 0;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D
     virtual bool IsGPUSyncEventDisable() = 0;
 #endif
 

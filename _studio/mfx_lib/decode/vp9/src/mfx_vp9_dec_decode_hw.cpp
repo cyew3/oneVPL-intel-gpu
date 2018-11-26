@@ -841,7 +841,7 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         return MFX_ERR_NONE;
     }
 
-#if defined (MFX_VA_LINUX) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
+#if defined (MFX_VA_LINUX) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP9D)
 
 #ifndef MFX_VA_LINUX
     if (!decoder.m_va->IsGPUSyncEventDisable())
