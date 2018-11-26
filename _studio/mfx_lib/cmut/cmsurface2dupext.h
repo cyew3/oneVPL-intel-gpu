@@ -110,7 +110,7 @@ namespace mdfut {
       }
 
       for (int i = 0; i < Height (); ++i) {
-        memcpy_s (DataPtr (i), Width () * sizeof(T), (T *)pSysMem + i * Width (), Width () * sizeof(T));
+        std::copy((T *)pSysMem + i * Width (), (T *)pSysMem + (i + 1) * Width (), DataPtr (i));
       }
     }
 

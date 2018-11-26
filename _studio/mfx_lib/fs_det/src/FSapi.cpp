@@ -234,14 +234,14 @@ void FS_ProcessMode1_Slice_start(FS *fs, FrameBuffElement *in, BYTE *pOutY)
 
 void FS_ProcessMode1_Slice_main(FS *fs, int sliceId)
 {
-    // core slice-based processes 
+    // core slice-based processes
     SkinDetectionMode1_NV12_slice_main(&fs->sd_struct, &fs->fd, fs->fbpT, fs->sd_buf.pInYUV, fs->sd_buf.pYCbCr, &fs->sliceData, sliceId);
 }
 
 void FS_ProcessMode1_Slice_end(FS *fs, BYTE *pOutY, BYTE *pOutLum, int outLumSize)
 {
-    memcpy_byte_s(pOutLum, outLumSize, fs->sd_buf.pInYUV, fs->wb*fs->hb);
-    // core slice-based processes 
+    std::copy(fs->sd_buf.pInYUV, fs->sd_buf.pInYUV + fs->wb * fs->hb, pOutLum);
+    // core slice-based processes
     SkinDetectionMode1_NV12_slice_end(&fs->sd_struct, &fs->fd, fs->fbpT, fs->sd_buf.pInYUV, fs->sd_buf.pYCbCr, pOutY);
     SwapFrameBuffPtrStackPointers(fs->fbpT, fs->sd_struct.dim.numFr); //swapping frame pointers
 //#define DUMP_SEG
@@ -269,12 +269,14 @@ void FS_Luma_Slice_start(FS *fs, FrameBuffElement *in)
 
 void FS_Luma_Slice_main(FS *fs, int sliceId, BYTE bitDepthLuma)
 {
-    // core slice-based processes 
+    // core slice-based processes
     if(bitDepthLuma == 8) AvgLuma_slice(fs->fbpT[0]->frameY, fs->sd_buf.pInYUV, fs->fbpT[0]->w, fs->fbpT[0]->h, fs->fbpT[0]->p, &fs->sliceData, sliceId);
 }
 
 void FS_Luma_Slice_end(FS *fs, BYTE *pOutLum, int outSize, BYTE bitDepthLuma)
 {
-    if (bitDepthLuma == 8) memcpy_byte_s(pOutLum, outSize, fs->sd_buf.pInYUV, fs->wb*fs->hb);
-    else                   memset(pOutLum, 128, outSize);
+    if (bitDepthLuma == 8)
+        std::copy(fs->sd_buf.pInYUV, fs->sd_buf.pInYUV + fs->wb*fs->hb, pOutLum);
+    else
+        memset(pOutLum, 128, outSize);
 }

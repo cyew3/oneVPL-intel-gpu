@@ -81,11 +81,11 @@ void InitCentersProb(BYTE* buf, Dim* dim, int mode) {
     }
     //upper border
     for (y = 0; y < pyh; y++) {
-        memcpy_byte_p(buf + (h - 1 - y)*w, buf + (y + (pyl - pyh))*w, w);
+        std::copy(buf + (y + (pyl - pyh)) * w, buf + (y + (pyl - pyh) + 1) * w, buf + (h - 1 - y) * w);
     }
     //left/right border
     for (y = pyl; y < h - pyh; y++) {
-        memcpy_byte_p(buf + y*w, buf + (pyl-1)*w, w);
+        std::copy(buf + (pyl-1) * w, buf + pyl * w, buf + y * w);
     }
 }
 
@@ -2165,7 +2165,7 @@ static void MixMotionSkinMask(BYTE* dst, BYTE* motion, BYTE* skin, BYTE* tmp1, B
         }
     }
 
-    memcpy_byte_s(prvProb, sizeof(BYTE) * dim->blTotal, dst, sizeof(BYTE) * dim->blTotal);
+    std::copy(dst, dst + dim->blTotal, prvProb);
 }
 
 //performs face detection
@@ -2182,7 +2182,7 @@ static void DetectFaces(FrameBuffElementPtr* frm, int w, int h, FDet *fd)
     }
     else { 
         for(int i=0; i<h; i++) {
-            memcpy_byte_p(fd->mat+i*w, frm->frameY+i*frm->p, sizeof(BYTE)*w);
+            std::copy(frm->frameY+i*frm->p, frm->frameY+i*frm->p + w, fd->mat+i * w);
         }
     }
 
@@ -2750,7 +2750,7 @@ static void fill_holes(BYTE *mask, BYTE *tmp, int w, int h, FrmSegmFeat *fseg, i
         frm = mask + (sf->min_y * w) + sf->min_x;
         buf = tmp;
         for (i=0; i<bh; i++) {
-            memcpy_byte_p(buf, frm, sizeof(BYTE)*bw);
+            std::copy(frm, frm + bw, buf);
             frm+= w;
             buf+= bw;
         }
@@ -3121,7 +3121,7 @@ void SkinDetectionMode1_NV12_slice_end(SDet *sd, FDet* fd, FrameBuffElementPtr *
     }
 
     //smooth block skin regions
-    memcpy_byte_s(tmp1, wb*hb, sd->skinProbB, dim->blTotal * sizeof(BYTE));
+    std::copy(sd->skinProbB, sd->skinProbB + dim->blTotal, tmp1);
     Median_5x5(tmp1, sd->skinProbB, dim->blHNum, dim->blVNum);
 
     //smooth motion cues
@@ -3170,7 +3170,7 @@ void SkinDetectionMode1_NV12_slice_end(SDet *sd, FDet* fd, FrameBuffElementPtr *
     do_face_tracking(w, h, bs, &sd->fsg[MIN(sd->frameNum-1, NUM_SEG_TRACK_FRMS-1)], fd->faces, fd->prevfc);
 
     //finalizing
-    memcpy_byte_s(sd->prvMask, dim->blTotal, tmp1, dim->blTotal);
+    std::copy(tmp1, tmp1 + dim->blTotal, sd->prvMask);
 
     SwapFrameSegFeatures(sd->fsg, sd->frameNum); //swapping segment features
     sd->frameNum++;

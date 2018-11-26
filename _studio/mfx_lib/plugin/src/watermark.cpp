@@ -292,7 +292,7 @@ Watermark *Watermark::CreateFromResource(void)
         return NULL;
     }
 
-    memcpy_s(buffer, imageSize, rawImage + header.OffBits, imageSize);
+    std::copy(rawImage + header.OffBits, rawImage + header.OffBits + imageSize, buffer);
 
     VM_ASSERT(MFX_ERR_NONE == status);
     if (MFX_ERR_NONE != status)
