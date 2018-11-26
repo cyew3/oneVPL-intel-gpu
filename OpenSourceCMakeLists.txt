@@ -132,6 +132,7 @@ endif()
 message("  BUILD_RUNTIME                           : ${BUILD_RUNTIME}")
 message("  BUILD_DISPATCHER                        : ${BUILD_DISPATCHER}")
 message("  BUILD_TESTS                             : ${BUILD_TESTS}")
+message("  BUILD_KERNELS                           : ${BUILD_KERNELS}")
 message("*****************************************************************************")
 
 create_plugins_cfg(${CMAKE_BINARY_DIR})
