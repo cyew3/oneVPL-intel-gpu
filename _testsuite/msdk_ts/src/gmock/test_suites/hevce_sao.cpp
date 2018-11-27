@@ -137,7 +137,6 @@ namespace hevce_sao
     {
         mfxU16 TUInit;
         mfxU16 SaoInit;
-        mfxU16 TUReset;
         mfxU16 SaoReset;
         mfxU16 SaoRT[5];
     };
@@ -179,37 +178,34 @@ namespace hevce_sao
 
     const TestCase TCList[] =
     {
-/* 0 */ { 1, sD,       4, sD,{} },
-/* 1 */ { 1, sD,       7, sD,{} },
-/* 2 */ { 4, sD,       1, sD,{} },
-/* 3 */ { 4, sD,       7, sD,{} },
-/* 4 */ { 7, sD,       1, sD,{} },
-/* 5 */ { 7, sD,       4, sD,{} },
-/* 6 */ { 7, sY,       4, sD,{} },
-/* 7 */ { 4, sD,       4, s0,         {0, sY, 0, sC, sY | sC} },
-/* 8 */ { 4, s0,       4, sY,         {s0, 0, 0, sC, 0} },
-/* 9 */ { 4, sY,       4, sC | sY,    {} },
-/* 10 */{ 4, sC,       4, sY,         {} },
-/* 11 */{ 4, sY | sC,  4, s0,         {} },
-/* 12 */{ 7, sY | sC,  7, s0,{} },
-/* 13 */{ 7, s0,  7, sY | sC,{} },
-/* 14 */{ 7, sD,  7, s0,              {sY | sC, sY | sC, sY, sC, sY | sC} }
+/* 0 */ { 1, sD,         sD,         {} },
+/* 1 */ { 4, sD,         sD,         {} },
+/* 2 */ { 7, sD,         sD,         {} },
+/* 3 */ { 7, sY,         sD,         {} },
+/* 4 */ { 4, sD,         s0,         {0, sY, 0, sC, sY | sC} },
+/* 5 */ { 4, s0,         sY,         {s0, 0, 0, sC, 0} },
+/* 6 */ { 4, sY,         sC | sY,    {} },
+/* 7 */ { 4, sC,         sY,         {} },
+/* 8 */ { 4, sY | sC,    s0,         {} },
+/* 9 */ { 7, sY | sC,    s0,         {} },
+/* 10 */{ 7, s0,         sY | sC,    {} },
+/* 11 */{ 7, sD,         s0,         {sY | sC, sY | sC, sY, sC, sY | sC} }
     };
 
-    bool isUnsupported(tsExtBufType<mfxVideoParam>& par)
+    //On Gen10 and Gen11 VDEnc SAO for only Luma/Chroma in CQP mode is unsupported by driver
+    bool isUnsupported(tsExtBufType<mfxVideoParam>& par, mfxExtHEVCParam& hp)
     {
-        mfxExtCodingOption2* CO2 = par;
-        mfxExtCodingOption3* CO3 = par;
+        return ((hp.SampleAdaptiveOffset == MFX_SAO_ENABLE_LUMA
+                || hp.SampleAdaptiveOffset == MFX_SAO_ENABLE_CHROMA)
+                && g_tsHWtype >= MFX_HW_CNL && g_tsHWtype < MFX_HW_TGL
+                && par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
+                && g_tsConfig.lowpower == MFX_CODINGOPTION_ON);
+    }
 
-        return (g_tsHWtype < MFX_HW_CNL)
-            //|| LCUSize == 16
-            || ((g_tsHWtype < MFX_HW_ICL) && (par.mfx.TargetUsage == 7))
-            || (CO3 && CO3->WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT)
-            || (CO3 && CO3->WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT)
-            || (   (g_tsHWtype == MFX_HW_CNL)
-                && (   (CO3 && CO3->TargetBitDepthLuma == 10)
-                    || (par.mfx.LowPower == 16 && CO2 && CO2->MaxSliceSize)))
-            ;
+    //TU7 SAO is ON by default for Gen11+
+    bool isIncompatibleParams(tsExtBufType<mfxVideoParam>& par)
+    {
+        return ((g_tsHWtype < MFX_HW_ICL) && (par.mfx.TargetUsage == 7));
     }
 
     const mfxU32 nFrames = sizeof(TCList[0].SaoRT) / sizeof(TCList[0].SaoRT[0]);
@@ -225,59 +221,47 @@ namespace hevce_sao
         reader.m_disable_shift_hack = true; // w/a stupid hack in tsRawReader for P010
         enc.m_filler = &sproc;
         enc.m_bs_processor = &checker;
-
         enc.m_par.mfx.TargetUsage = tc.TUInit;
         hp.SampleAdaptiveOffset = tc.SaoInit;
-
-        bool unsupported = isUnsupported(enc.m_par);
 
         enc.MFXInit();
         enc.Load();
 
-        if (unsupported && (hp.SampleAdaptiveOffset & (MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA)))
+        bool incompatibleParams = isIncompatibleParams(enc.m_par);
+        if (incompatibleParams)
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
-        bool sao_disable_cqp = false;
-        if ((hp.SampleAdaptiveOffset == MFX_SAO_ENABLE_LUMA || hp.SampleAdaptiveOffset == MFX_SAO_ENABLE_CHROMA) && g_tsHWtype >= MFX_HW_CNL &&
-            enc.m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && g_tsConfig.lowpower == MFX_CODINGOPTION_ON) {
-            g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-            sao_disable_cqp = true;
-        }
-
-        enc.Query();
-        // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL, just check that Query returns UNSUPPORTED
-        if (0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))
-            && g_tsHWtype < MFX_HW_SKL)
-        {
+        if (isUnsupported(enc.m_par, hp)) {
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            g_tsLog << "WARNING: SAO is unsupported!\n";
+            enc.Query();
             throw tsSKIP;
         }
 
-        if (unsupported && tc.SaoInit != MFX_SAO_DISABLE)
+        enc.Query();
+
+        if (0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) && (g_tsHWtype < MFX_HW_CNL))
+        {
+            g_tsLog << "WARNING: Unsupported HW Platform!\n";
+            throw tsSKIP;
+        }
+
+        if (incompatibleParams && tc.SaoInit != MFX_SAO_DISABLE)
         {
             EXPECT_EQ(MFX_SAO_UNKNOWN, hp.SampleAdaptiveOffset);
-        }
-        else if (sao_disable_cqp)
-        {
-            EXPECT_EQ(MFX_SAO_DISABLE, hp.SampleAdaptiveOffset);
         }
         else
         {
             EXPECT_EQ(tc.SaoInit, hp.SampleAdaptiveOffset);
         }
 
-        if (unsupported && (hp.SampleAdaptiveOffset & (MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA)))
+        if (incompatibleParams && (hp.SampleAdaptiveOffset & (MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA)))
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-
-        if ((hp.SampleAdaptiveOffset == MFX_SAO_ENABLE_LUMA || hp.SampleAdaptiveOffset == MFX_SAO_ENABLE_CHROMA) && g_tsHWtype >= MFX_HW_CNL &&
-            enc.m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && g_tsConfig.lowpower == MFX_CODINGOPTION_ON) {
-            g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-            sao_disable_cqp = true;
-        }
 
         enc.Init();
         enc.GetVideoParam();
 
-        if (unsupported || sao_disable_cqp)
+        if (incompatibleParams)
         {
             EXPECT_EQ(MFX_SAO_DISABLE, hp.SampleAdaptiveOffset);
         }
@@ -303,38 +287,28 @@ namespace hevce_sao
         mfxExtEncoderResetOption& ro = enc.m_par;
         mfxU16 saoInit = hp.SampleAdaptiveOffset;
         mfxU16 saoReset = tc.SaoReset ? tc.SaoReset : saoInit;
-        enc.m_par.mfx.TargetUsage = tc.TUReset;
+        enc.m_par.mfx.TargetUsage = tc.TUInit;
         hp.SampleAdaptiveOffset = tc.SaoReset;
-        unsupported = isUnsupported(enc.m_par);
         ro.StartNewSequence = MFX_CODINGOPTION_OFF;
+        incompatibleParams = isIncompatibleParams(enc.m_par);
         bool idrRequired = ((saoInit == MFX_SAO_DISABLE) != (saoReset == MFX_SAO_DISABLE))
-            || ((saoInit != MFX_SAO_DISABLE) && unsupported);
+            || ((saoInit != MFX_SAO_DISABLE) && incompatibleParams);
 
-        if (tc.TUReset != tc.TUInit)
-        {
-            ro.StartNewSequence = MFX_CODINGOPTION_ON;
-            idrRequired = true;
-        }
-
-        if (unsupported && (hp.SampleAdaptiveOffset & (MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA)))
+        if (incompatibleParams && (hp.SampleAdaptiveOffset & (MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA)))
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
-        sao_disable_cqp = false;
-        if ((hp.SampleAdaptiveOffset == MFX_SAO_ENABLE_LUMA || hp.SampleAdaptiveOffset == MFX_SAO_ENABLE_CHROMA) && g_tsHWtype >= MFX_HW_CNL &&
-            enc.m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && g_tsConfig.lowpower == MFX_CODINGOPTION_ON) {
-            g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-            sao_disable_cqp = true;
+        if (isUnsupported(enc.m_par, hp)) {
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            g_tsLog << "WARNING: SAO is unsupported!\n";
+            enc.Query();
+            throw tsSKIP;
         }
 
         enc.Query();
 
-        if (unsupported && tc.SaoReset != MFX_SAO_DISABLE)
+        if (incompatibleParams && tc.SaoReset != MFX_SAO_DISABLE)
         {
             EXPECT_EQ(MFX_SAO_UNKNOWN, hp.SampleAdaptiveOffset);
-        }
-        else if (sao_disable_cqp)
-        {
-            EXPECT_EQ(MFX_SAO_DISABLE, hp.SampleAdaptiveOffset);
         }
         else
         {
@@ -342,9 +316,9 @@ namespace hevce_sao
         }
 
     l_reset:
-        if (idrRequired && ro.StartNewSequence == MFX_CODINGOPTION_OFF && !unsupported)
+        if (idrRequired && ro.StartNewSequence == MFX_CODINGOPTION_OFF && !incompatibleParams)
             g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
-        else if (unsupported && (hp.SampleAdaptiveOffset & (MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA)))
+        else if (incompatibleParams && (hp.SampleAdaptiveOffset & (MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA)))
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
         enc.Reset();
@@ -357,7 +331,7 @@ namespace hevce_sao
 
         enc.GetVideoParam();
 
-        if (unsupported || sao_disable_cqp)
+        if (incompatibleParams)
         {
             EXPECT_EQ(MFX_SAO_DISABLE, hp.SampleAdaptiveOffset);
         }
