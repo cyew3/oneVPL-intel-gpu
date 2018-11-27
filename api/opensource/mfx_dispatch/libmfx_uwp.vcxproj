@@ -25,6 +25,18 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_DFP|ARM">
+      <Configuration>Release_DFP</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_DFP|Win32">
+      <Configuration>Release_DFP</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_DFP|x64">
+      <Configuration>Release_DFP</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|ARM">
       <Configuration>Release</Configuration>
       <Platform>ARM</Platform>
@@ -42,15 +54,16 @@
     <ProjectGuid>{313EE96A-7923-4A18-AFFA-9247181364D3}</ProjectGuid>
     <RootNamespace>libmfx_uwp</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <ProjectName>libmfx_uwp_dfp</ProjectName>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformVersion Condition="'$(MINIDDK_VERSION)'!=''">10.0.17134.0</WindowsTargetPlatformVersion>
+    <ProjectName>libmfx_uwp</ProjectName>
+    <WindowsTargetPlatformMinVersion>10.0.17134.0</WindowsTargetPlatformMinVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(MINIDDK_VERSION)'!=''">10.0.17704.0</WindowsTargetPlatformVersion>
     <ApplicationType>Windows Store</ApplicationType>
     <AppContainerApplication>true</AppContainerApplication>
     <DefaultLanguage>en-US</DefaultLanguage>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
   </PropertyGroup>
+  <Import Project="$(MSBuildThisFileDirectory)WinSDKTargetPlatfrom.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="$(Configuration.Contains('Release'))" Label="Configuration">
     <WholeProgramOptimization>false</WholeProgramOptimization>
@@ -73,7 +86,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(ProjectDir)props\Intel.Dispatcher.Common.props" />
+    <Import Project="..\..\Intel.Dispatcher.StaticLib.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -145,7 +158,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="$(Configuration.Contains('DFP'))">
     <ClCompile>
-      <PreprocessorDefinitions Condition="!$(Platform.Contains('ARM'))">MEDIASDK_DFP_LOADER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MEDIASDK_DFP_LOADER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- End of Configuration dependent settings -->
@@ -169,6 +182,17 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- End of Platform dependent settings -->
+  <ItemGroup>
+    <None Include="..\..\documentation\header-template.md" />
+    <None Include="..\..\documentation\media-raw-accelerator-man.md" />
+    <None Include="..\..\documentation\mediasdk-man.md" />
+    <None Include="..\..\documentation\mediasdkfei-man.md" />
+    <None Include="..\..\documentation\mediasdkjpeg-man.md" />
+    <None Include="..\..\documentation\mediasdkmvc-man.md" />
+    <None Include="..\..\documentation\mediasdkscreencap-man.md" />
+    <None Include="..\..\documentation\mediasdkusr-man.md" />
+    <None Include="..\..\documentation\mediasdkvp8-man.md" />
+  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\mfx_dispatcher.cpp" />

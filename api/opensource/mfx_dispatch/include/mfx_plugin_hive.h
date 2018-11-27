@@ -58,7 +58,7 @@ namespace MFX {
     class PluginDescriptionRecord :  public mfxPluginParam 
     {
     public:
-        wchar_t sPath[MAX_PLUGIN_PATH];
+        msdk_disp_char sPath[MAX_PLUGIN_PATH];
         char sName[MAX_PLUGIN_NAME];
         //used for FS plugins that has poor description
         bool onlyVersionRegistered;
@@ -95,10 +95,10 @@ namespace MFX {
     class MFXPluginsInHive : public MFXPluginStorageBase
     {
     public:
-        MFXPluginsInHive(int mfxStorageID, const wchar_t *msdkLibSubKey, mfxVersion currentAPIVersion);
+        MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *msdkLibSubKey, mfxVersion currentAPIVersion);
     };
 
-#if defined(MEDIASDK_USE_CFGFILES) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+#if defined(MEDIASDK_USE_CFGFILES) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
     //plugins are loaded from FS close to executable
     class MFXPluginsInFS : public MFXPluginStorageBase
     {
@@ -108,15 +108,23 @@ namespace MFX {
         MFXPluginsInFS(mfxVersion currentAPIVersion);
     private:
         bool ParseFile(FILE * f, PluginDescriptionRecord & des);
-        bool ParseKVPair( wchar_t *key, wchar_t * value, PluginDescriptionRecord & des);
+        bool ParseKVPair( msdk_disp_char *key, msdk_disp_char * value, PluginDescriptionRecord & des);
     };
-#endif //#if defined(MEDIASDK_USE_CFGFILES) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+#endif //#if defined(MEDIASDK_USE_CFGFILES) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
 
     //plugins are loaded from FS close to Runtime library
     class MFXDefaultPlugins : public MFXPluginStorageBase
     {
     public:
+#if !defined(OPEN_SOURCE)
+#if !defined(MEDIASDK_DFP_LOADER)
         MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP_HANDLE * hdl, int implType);
+#else
+        MFXDefaultPlugins(mfxVersion currentAPIVersion, int implType);
+#endif
+#else
+        MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP_HANDLE * hdl, int implType);
+#endif
     private:
     };
 

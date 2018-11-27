@@ -24,24 +24,16 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-File Name: mfx_critical_section.cpp
+File Name: mfx_critical_section_linux.cpp
 
 \* ****************************************************************************** */
 
+#if !defined(_WIN32) && !defined(_WIN64)
+
 #include "mfx_critical_section.h"
+#include <sched.h>
 
-#if defined(_WIN32) || defined(_WIN64)
-
-#include <windows.h>
-// SDK re-declares the following functions with different call declarator.
-// We don't need them. Just redefine them to nothing.
-#define _interlockedbittestandset fake_set
-#define _interlockedbittestandreset fake_reset
-#define _interlockedbittestandset64 fake_set64
-#define _interlockedbittestandreset64 fake_reset64
-#include <intrin.h>
-
-#define MFX_WAIT() SwitchToThread()
+#define MFX_WAIT() sched_yield()
 
 // static section of the file
 namespace
@@ -60,12 +52,23 @@ namespace MFX
 
 mfxU32 mfxInterlockedCas32(mfxCriticalSection *pCSection, mfxU32 value_to_exchange, mfxU32 value_to_compare)
 {
-    return _InterlockedCompareExchange(pCSection, value_to_exchange, value_to_compare);
+    mfxU32 previous_value;
+
+    asm volatile ("lock; cmpxchgl %1,%2"
+                  : "=a" (previous_value)
+                  : "r" (value_to_exchange), "m" (*pCSection), "0" (value_to_compare)
+                  : "memory", "cc");
+    return previous_value;
 }
 
-mfxU32 mfxInterlockedXchg32(mfxCriticalSection *pCSection, mfxU32 value)  
-{ 
-    return _InterlockedExchange(pCSection, value);
+mfxU32 mfxInterlockedXchg32(mfxCriticalSection *pCSection, mfxU32 value)
+{
+    mfxU32 previous_value = value;
+
+    asm volatile ("lock; xchgl %0,%1"
+                  : "=r" (previous_value), "+m" (*pCSection)
+                  : "0" (previous_value));
+    return previous_value;
 }
 
 void mfxEnterCriticalSection(mfxCriticalSection *pCSection)
@@ -85,4 +88,4 @@ void mfxLeaveCriticalSection(mfxCriticalSection *pCSection)
 
 } // namespace MFX
 
-#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif // #if !defined(_WIN32) && !defined(_WIN64)

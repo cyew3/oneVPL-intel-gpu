@@ -31,15 +31,19 @@ File Name: mfx_win_reg_key.h
 #if !defined(__MFX_WIN_REG_KEY_H)
 #define __MFX_WIN_REG_KEY_H
 
+#if !defined(OPEN_SOURCE)
 #ifdef MEDIASDK_DFP_LOADER
 #undef MEDIASDK_USE_REGISTRY
 #endif
+#endif
+
+#if (defined(_WIN32) || defined(_WIN64))
 
 #include <windows.h>
 #include "mfxplugin.h"
 #include "mfx_dispatcher_log.h"
 
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
 namespace MFX {
 
 template<class T> struct RegKey{};
@@ -115,5 +119,6 @@ inline bool QueryKey<bool>(WinRegKey & key, const wchar_t *pValueName, bool &dat
 } // namespace MFX
 #endif // #if !defined(MEDIASDK_DFP_LOADER)
 
+#endif // #if (defined(_WIN32) || defined(_WIN64))
 
 #endif // __MFX_WIN_REG_KEY_H

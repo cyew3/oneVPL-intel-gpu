@@ -34,25 +34,83 @@ File Name: mfx_library_iterator.h
 
 #include <mfxvideo.h>
 
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
 #include "mfx_win_reg_key.h"
 #endif
 
 #include "mfx_dispatcher.h"
 
+#if !defined(_WIN32) && !defined(_WIN64)
+struct mfx_disp_adapters
+{
+    mfxU32 vendor_id;
+    mfxU32 device_id;
+};
+
+#ifndef __APPLE__
+#define MFX_SO_BASE_NAME_LEN 15 // sizeof("libmfxhw32-p.so") = 15
+#else
+
+#define MFX_SO_BASE_NAME_LEN 16 // sizeof("libmfxhw64.dylib") = 16
+#endif
+
+#define MFX_MIN_REAL_LIBNAME MFX_SO_BASE_NAME_LEN + 4 // sizeof("libmfxhw32-p.so.0.0") >= 19
+#define MFX_MAX_REAL_LIBNAME MFX_MIN_REAL_LIBNAME + 8 // sizeof("libmfxhw32-p.so.<mj>.<mn>") <= 27, max(sizeof(<mj>))=sizeof(0xFFFF) = sizeof(65535) = 5
+
+struct mfx_libs
+{
+    char name[MFX_MAX_REAL_LIBNAME+1];
+    mfxVersion version;
+};
+#endif
+
 namespace MFX
 {
 
 // declare desired storage ID
+#if defined(_WIN32) || defined(_WIN64)
 enum
 {
     MFX_UNKNOWN_KEY             = -1,
     MFX_CURRENT_USER_KEY        = 0,
     MFX_LOCAL_MACHINE_KEY       = 1,
     MFX_APP_FOLDER              = 2,
+#if !defined(OPEN_SOURCE) && (defined(MEDIASDK_DX_LOADER) || defined(MEDIASDK_DFP_LOADER))
+    MFX_DX_LOADER                  ,
+#endif
+
+#if !defined(OPEN_SOURCE)
+
+#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+    MFX_PATH_MSDK_FOLDER           ,
     MFX_STORAGE_ID_FIRST    = MFX_CURRENT_USER_KEY,
-    MFX_STORAGE_ID_LAST     = MFX_LOCAL_MACHINE_KEY
+    MFX_STORAGE_ID_LAST     = MFX_PATH_MSDK_FOLDER
+#elif defined(MEDIASDK_DFP_LOADER) || defined(MEDIASDK_DX_LOADER)
+    MFX_STORAGE_ID_FIRST = MFX_DX_LOADER,
+    MFX_STORAGE_ID_LAST = MFX_DX_LOADER
+#else
+    MFX_PATH_MSDK_FOLDER,
+    MFX_STORAGE_ID_FIRST = MFX_PATH_MSDK_FOLDER,
+    MFX_STORAGE_ID_LAST = MFX_PATH_MSDK_FOLDER
+#endif // !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
+
+#else // !defined(OPEN_SOURCE)
+    MFX_STORAGE_ID_FIRST = MFX_CURRENT_USER_KEY,
+    MFX_STORAGE_ID_LAST = MFX_APP_FOLDER
+#endif // !defined(OPEN_SOURCE)
+
 };
+#else
+enum
+{
+    MFX_UNKNOWN_KEY     = -1,
+    MFX_STORAGE_ID_OPT  = 0, // storage is: MFX_MODULES_DIR
+    MFX_APP_FOLDER      = 1,
+
+    MFX_STORAGE_ID_FIRST   =  MFX_STORAGE_ID_OPT,
+    MFX_STORAGE_ID_LAST    = MFX_STORAGE_ID_OPT
+};
+#endif
 
 // Try to initialize using given implementation type. Select appropriate type automatically in case of MFX_IMPL_VIA_ANY.
 // Params: adapterNum - in, pImplInterface - in/out, pVendorID - out, pDeviceID - out
@@ -72,14 +130,14 @@ public:
     mfxStatus Init(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID);
 
     // Get the next library path
-    mfxStatus SelectDLLVersion(wchar_t *pPath, size_t pathSize,
+    mfxStatus SelectDLLVersion(msdk_disp_char *pPath, size_t pathSize,
                                eMfxImplType *pImplType, mfxVersion minVersion);
 
     // Return interface type on which Intel adapter was found (if any): D3D9 or D3D11
     mfxIMPL GetImplementationType();
 
     // Retrun registry subkey name on which dll was selected after sucesfull call to selectDllVesion
-    bool GetSubKeyName(wchar_t *subKeyName, size_t length) const;
+    bool GetSubKeyName(msdk_disp_char *subKeyName, size_t length) const;
 
     int  GetStorageID() const { return m_StorageID; }
 protected:
@@ -89,8 +147,12 @@ protected:
 
     // Initialize the registry iterator
     mfxStatus InitRegistry(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID);
+#if !defined(OPEN_SOURCE) && defined(MEDIASDK_DX_LOADER)
+    // Initialize the dx interface iterator
+    mfxStatus InitDXInterface(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum);
+#endif
     // Initialize the app/module folder iterator
-    mfxStatus InitFolder(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, const wchar_t * path, const int storageID);
+    mfxStatus InitFolder(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, const msdk_disp_char * path, const int storageID);
 
 
     eMfxImplType m_implType;                                    // Required library implementation
@@ -102,14 +164,25 @@ protected:
     wchar_t m_SubKeyName[MFX_MAX_REGISTRY_KEY_NAME];            // registry subkey for selected module loaded
     int    m_StorageID;
 
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+#if defined(_WIN32) || defined(_WIN64)
+
+#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
     WinRegKey m_baseRegKey;                                     // (WinRegKey) main registry key
 #endif
 
     mfxU32 m_lastLibIndex;                                      // (mfxU32) index of previously returned library
     mfxU32 m_lastLibMerit;                                      // (mfxU32) merit of previously returned library
+#else
+    int                       m_lastLibIndex;                   // (mfxU32) index of previously returned library
 
-    wchar_t  m_path[msdk_disp_path_len];
+    mfxU32                    m_adapters_num;
+    struct mfx_disp_adapters* m_adapters;
+    int                       m_selected_adapter;
+    mfxU32                    m_libs_num;
+    struct mfx_libs*          m_libs;
+#endif // #if defined(_WIN32) || defined(_WIN64)
+
+    msdk_disp_char  m_path[msdk_disp_path_len];
 
 private:
     // unimplemented by intent to make this class non-copyable
