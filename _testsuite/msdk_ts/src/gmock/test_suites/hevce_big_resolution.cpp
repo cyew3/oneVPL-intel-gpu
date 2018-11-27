@@ -201,20 +201,55 @@ namespace hevce_big_resolution
         m_par.AsyncDepth = 1;
         m_par.mfx.GopRefDist = 1;
         m_par.mfx.FrameInfo.FourCC = fourcc_id;
-        if (fourcc_id == MFX_FOURCC_NV12 || fourcc_id == MFX_FOURCC_P010 ||
-            fourcc_id == GMOCK_FOURCC_P012)
+
+        if (fourcc_id == MFX_FOURCC_NV12)
         {
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
         }
-        else if (fourcc_id == MFX_FOURCC_YUY2 || fourcc_id == MFX_FOURCC_Y210 ||
-                 fourcc_id == GMOCK_FOURCC_Y212)
+        else if (fourcc_id == MFX_FOURCC_P010)
         {
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
         }
-        else if (fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410 ||
-                 fourcc_id == GMOCK_FOURCC_Y412)
+        else if (fourcc_id == GMOCK_FOURCC_P012)
+        {
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
         {
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y410)
+        {
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else if (fourcc_id == GMOCK_FOURCC_Y412)
+        {
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
+        }
+        else if (fourcc_id == MFX_FOURCC_YUY2)
+        {
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y210)
+        {
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else if (fourcc_id == GMOCK_FOURCC_Y212)
+        {
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
         }
         else
         {
