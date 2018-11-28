@@ -490,6 +490,7 @@ _studio/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
 _studio/mfx_lib/cmrt_cross_platform/include/cmrt_cross_platform.h
 _studio/mfx_lib/cmrt_cross_platform/include/cmvm.h
 _studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+_studio/mfx_lib/genx/README.md
 _studio/mfx_lib/genx/asc/src/genx_asc.cpp
 _studio/mfx_lib/genx/asc/isa/asc_gen8_isa.h
 _studio/mfx_lib/genx/asc/isa/asc_gen9_isa.h
@@ -572,6 +573,8 @@ _studio/mfx_lib/genx/mctf/isa/mctf_sd_gen11_isa.cpp
 _studio/mfx_lib/genx/mctf/isa/mctf_sd_gen11_isa.h
 _studio/mfx_lib/genx/mctf/isa/mctf_sd_gen11lp_isa.cpp
 _studio/mfx_lib/genx/mctf/isa/mctf_sd_gen11lp_isa.h
+_studio/mfx_lib/genx/tools/README.md
+_studio/mfx_lib/genx/tools/src/embed_isa.c
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_common.h
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_hw.h
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_vp8_defs.h
