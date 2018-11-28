@@ -30,8 +30,6 @@
 #include "mfx_vpp_defs.h"
 #include "mfx_vpp_base.h"
 
-using namespace UMC;
-
 #define VPP_VA_IN_NUM_FRAMES_REQUIRED  (1)
 #define VPP_VA_OUT_NUM_FRAMES_REQUIRED (1)
 
@@ -42,7 +40,7 @@ using namespace UMC;
 #include "umc_scene_analyzer_mb_func.h"
 
 // extension of UMC SceneAnalyser[Params]
-class VPPSceneAnalyzerParams: public SceneAnalyzerParams
+class VPPSceneAnalyzerParams: public UMC::SceneAnalyzerParams
 {
 public:
   // Default constructor
@@ -52,42 +50,42 @@ public:
     ~VPPSceneAnalyzerParams(void);
 };
 
-class VPPSceneAnalyzer : SceneAnalyzer{
+class VPPSceneAnalyzer : UMC::SceneAnalyzer{
 
 public:
-  // Default constructor
-  VPPSceneAnalyzer(void);
-  // Destructor
-  virtual
+    // Default constructor
+     VPPSceneAnalyzer(void);
+    // Destructor
+    virtual
     ~VPPSceneAnalyzer(void);
 
-  // Initialize the analyzer
-  // parameter should has type SceneAnalyzerParams
-  virtual
-    Status Init(BaseCodecParams *pParams);
+    // Initialize the analyzer
+    // parameter should has type SceneAnalyzerParams
+    virtual
+      UMC::Status Init(UMC::BaseCodecParams *pParams);
 
-  // Decompress the next frame
-  virtual
-    Status GetFrame(MediaData *pSource, MediaData *pDestination);
+    // Decompress the next frame
+    virtual
+      UMC::Status GetFrame(UMC::MediaData *pSource, UMC::MediaData *pDestination);
 
     // Get statistics/metrics
-    Status GetMetrics(mfxExtVppAuxData *aux);
+    UMC::Status GetMetrics(mfxExtVppAuxData *aux);
 
-  // Release all resources
-  virtual
-    Status Close(void);
+    // Release all resources
+    virtual
+      UMC::Status Close(void);
 
     virtual
-    void AnalyzeIntraMB(const uint8_t *pSrc, int32_t srcStep,UMC_SCENE_INFO *pMbInfo);
+    void AnalyzeIntraMB(const uint8_t *pSrc, int32_t srcStep, UMC::UMC_SCENE_INFO *pMbInfo);
 
-    virtual // optimized motion estimation alhorithm (logarithmic search)
-    void AnalyzeInterMBMotionOpt(const uint8_t *pRef, int32_t refStep,mfxSize refMbDim,const uint8_t *pSrc, int32_t srcStep,uint32_t mbX, uint32_t mbY,IppiPoint *prevMV,UMC_SCENE_INFO *pMbInfo);
+    virtual // optimized motion estimation algorithm (logarithmic search)
+    void AnalyzeInterMBMotionOpt(const uint8_t *pRef, int32_t refStep,mfxSize refMbDim,const uint8_t *pSrc, int32_t srcStep,uint32_t mbX, uint32_t mbY,IppiPoint *prevMV, UMC::UMC_SCENE_INFO *pMbInfo);
 
     virtual // optimized function, special threshold built in to make calls ME rare
-    Status AnalyzePicture(SceneAnalyzerPicture *pRef, SceneAnalyzerPicture *pSrc);
+        UMC::Status AnalyzePicture(UMC::SceneAnalyzerPicture *pRef, UMC::SceneAnalyzerPicture *pSrc);
 
     virtual
-    Status GetFrameP(MediaData *pSource);
+        UMC::Status GetFrameP(UMC::MediaData *pSource);
 
     mfxU32  m_spatialComplexity; //intra metrics = avg( sum4x4( abs(Luma[i] - MeanLuma) ))
     mfxU32  m_temporalComplexity; //inter(with ME) metrics = avg( sum4x4( abs( (Luma[i] - LumaRef[i]) - MeanDiff ) ) )
