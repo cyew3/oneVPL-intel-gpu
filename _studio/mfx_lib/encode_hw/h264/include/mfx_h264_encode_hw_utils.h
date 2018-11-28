@@ -1491,6 +1491,7 @@ namespace MfxHwH264Encode
         par.SceneChange  = (mfxU16) task->m_SceneChange;
         if (!par.PyramidLayer && (task->m_type[task->m_fid[0]] & MFX_FRAMETYPE_P) && task->m_LowDelayPyramidLayer)
             par.PyramidLayer = (mfxU16) task->m_LowDelayPyramidLayer;
+        par.CodedFrameSize = task->m_bsDataLength[0] + task->m_bsDataLength[1];
 #endif
     }
 
@@ -1663,8 +1664,8 @@ namespace MfxHwH264Encode
         mfxU16  m_skipped;
         mfxU8  m_QPMin[3]; // for I, P and B
         mfxU8  m_QPMax[3]; // for I, P and B
+        mfxU32 m_maxFrameSize;
 
-        bool        m_bControlMaxFrame;
         AVGBitrate* m_AvgBitrate;
 
         std::vector<LaFrameData>    m_laData;
@@ -1729,6 +1730,7 @@ namespace MfxHwH264Encode
         mfxU16  m_skipped;
         mfxU8   m_QPMin[3]; // for I, P and B
         mfxU8   m_QPMax[3]; // for I, P and B
+        mfxU32  m_maxFrameSize;
 
 
         AVGBitrate* m_AvgBitrate;
