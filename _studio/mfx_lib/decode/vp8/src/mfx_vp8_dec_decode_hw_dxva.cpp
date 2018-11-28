@@ -52,9 +52,9 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     using namespace VP8Defs;
 
-    UMCVACompBuffer* compBufPic;
-    VP8_DECODE_PICTURE_PARAMETERS *picParams = (VP8_DECODE_PICTURE_PARAMETERS*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS, &compBufPic);
-    memset(picParams, 0, sizeof(VP8_DECODE_PICTURE_PARAMETERS));
+    UMC::UMCVACompBuffer* compBufPic;
+    UMC::VP8_DECODE_PICTURE_PARAMETERS *picParams = (UMC::VP8_DECODE_PICTURE_PARAMETERS*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_PICTURE_PARAMETERS, &compBufPic);
+    memset(picParams, 0, sizeof(UMC::VP8_DECODE_PICTURE_PARAMETERS));
 
     picParams->wFrameWidthInMbsMinus1 = (USHORT)(((m_frame_info.frameSize.width + 15) / 16) - 1);
     picParams->wFrameHeightInMbsMinus1 = (USHORT)(((m_frame_info.frameSize.height + 15) / 16) - 1);
@@ -63,7 +63,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     picParams->CurrPicIndex = (UCHAR)info.currIndex;
 
-    if(m_frame_info.frameType == I_PICTURE)
+    if(m_frame_info.frameType == UMC::I_PICTURE)
     {
         picParams->key_frame = 1;
 
@@ -91,7 +91,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     picParams->loop_filter_adj_enable = m_frame_info.mbLoopFilterAdjust;
     picParams->mode_ref_lf_delta_update = m_frame_info.modeRefLoopFilterDeltaUpdate;
 
-    if (m_frame_info.frameType != I_PICTURE)
+    if (m_frame_info.frameType != UMC::I_PICTURE)
     {
         picParams->sign_bias_golden = m_refresh_info.refFrameBiasTable[3];
         picParams->sign_bias_alternate = m_refresh_info.refFrameBiasTable[2];
@@ -164,7 +164,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     const mfxU8 *prob_y_table;
     const mfxU8 *prob_uv_table;
 
-    if (I_PICTURE == m_frame_info.frameType)
+    if (UMC::I_PICTURE == m_frame_info.frameType)
     {
         prob_y_table = vp8_kf_mb_mode_y_probs;
         prob_uv_table = vp8_kf_mb_mode_uv_probs;
@@ -203,10 +203,10 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         picParams->PartitionSize[i] = m_frame_info.partitionSize[i - 1];
     }
 
-    compBufPic->SetDataSize(sizeof(VP8_DECODE_PICTURE_PARAMETERS));
+    compBufPic->SetDataSize(sizeof(UMC::VP8_DECODE_PICTURE_PARAMETERS));
 
     ////////////////////////////////////////////////////////////////
-    UMCVACompBuffer* compBufCp;
+    UMC::UMCVACompBuffer* compBufCp;
     uint8_t*coeffProbs = (uint8_t*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_VP8_COEFFICIENT_PROBABILITIES, &compBufCp);
 
     // [4][8][3][11]
@@ -216,8 +216,8 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     ////////////////////////////////////////////////////////////////
 
-    UMCVACompBuffer* compBufQm;
-    VP8_DECODE_QM_TABLE *qmTable = (VP8_DECODE_QM_TABLE*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX, &compBufQm);
+    UMC::UMCVACompBuffer* compBufQm;
+    UMC::VP8_DECODE_QM_TABLE *qmTable = (UMC::VP8_DECODE_QM_TABLE*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_INVERSE_QUANTIZATION_MATRIX, &compBufQm);
 
     if (m_frame_info.segmentationEnabled == 0)
     {
@@ -242,17 +242,17 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         }
     }
 
-    compBufQm->SetDataSize(sizeof(VP8_DECODE_QM_TABLE));
+    compBufQm->SetDataSize(sizeof(UMC::VP8_DECODE_QM_TABLE));
 
     //////////////////////////////////////////////////////////////////
 
-    UMCVACompBuffer* compBufBs;
+    UMC::UMCVACompBuffer* compBufBs;
     uint8_t *bistreamData = (uint8_t *)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA, &compBufBs);
     uint8_t *pBuffer = (uint8_t*)p_bistream->Data;
     int32_t size = p_bistream->DataLength;
     uint32_t offset = 0;
 
-    if (m_frame_info.frameType == I_PICTURE)
+    if (m_frame_info.frameType == UMC::I_PICTURE)
     {
         offset = 10;
     }
