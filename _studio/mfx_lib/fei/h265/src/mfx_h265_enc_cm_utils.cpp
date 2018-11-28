@@ -32,11 +32,7 @@
 #include "mfx_h265_enc_cm_utils.h"
 
 namespace H265Enc {
-    
-inline void small_memcpy( void* dst, const void* src, int len )
-{
-    memcpy_s(dst, len, src, len);
-}
+
 
 template<class T> inline void Zero(T &obj) { memset(&obj, 0, sizeof(obj)); }
 
@@ -447,26 +443,26 @@ mfxU32 SetSearchPath(
         switch (meMethod)
         {
         case 2:
-            small_memcpy(&spath.IMESearchPath0to31[0], &SingleSU[0], 32*sizeof(mfxU8));
+            std::copy(SingleSU, SingleSU + 32, spath.IMESearchPath0to31);
             maxNumSU = 1;
             break;
         case 3:
-            small_memcpy(&spath.IMESearchPath0to31[0], &RasterScan_48x40[0], 32*sizeof(mfxU8));
-            small_memcpy(&spath.IMESearchPath32to55[0], &RasterScan_48x40[32], 24*sizeof(mfxU8));
+            std::copy(RasterScan_48x40, RasterScan_48x40 + 32, spath.IMESearchPath0to31);
+            std::copy(RasterScan_48x40 + 32, std::end(RasterScan_48x40), spath.IMESearchPath32to55);
             break;
         case 4:
-            small_memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-            small_memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
+            std::copy(FullSpiral_48x40, FullSpiral_48x40 + 32, spath.IMESearchPath0to31);
+            std::copy(FullSpiral_48x40 + 32, std::end(FullSpiral_48x40), spath.IMESearchPath32to55);
             break;
         case 5:
-            small_memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-            small_memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
+            std::copy(FullSpiral_48x40, FullSpiral_48x40 + 32, spath.IMESearchPath0to31);
+            std::copy(FullSpiral_48x40 + 32, std::end(FullSpiral_48x40), spath.IMESearchPath32to55);
             maxNumSU = 16;
             break;
         case 6:
         default:
-            small_memcpy(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
-            small_memcpy(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
+            std::copy(Diamond, Diamond + 32, spath.IMESearchPath0to31);
+            std::copy(Diamond + 32, std::end(Diamond), spath.IMESearchPath32to55);
             break;
         }
     }
@@ -474,13 +470,13 @@ mfxU32 SetSearchPath(
     {
         if (meMethod == 6)
         {
-            small_memcpy(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
-            small_memcpy(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
+            std::copy(Diamond, Diamond + 32, spath.IMESearchPath0to31);
+            std::copy(Diamond + 32, std::end(Diamond), spath.IMESearchPath32to55);
         }
         else
         {
-            small_memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-            small_memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
+            std::copy(FullSpiral_48x40, FullSpiral_48x40 + 32, spath.IMESearchPath0to31);
+            std::copy(FullSpiral_48x40 + 32, std::end(FullSpiral_48x40), spath.IMESearchPath32to55);
         }
     }
 
@@ -504,7 +500,8 @@ mfxU8 ToU4U4(mfxU16 val) {
 
 void SetupMeControl(MeControl &ctrl, int width, int height, double lambda)
 {
-    small_memcpy(ctrl.longSp, Diamond, IPP_MIN(sizeof(Diamond), sizeof(ctrl.longSp)));
+    const std::size_t minLongSize = std::min(sizeof(Diamond) / sizeof(Diamond[0]), sizeof(ctrl.longSp) / sizeof(ctrl.longSp[0]));
+    std::copy(Diamond, Diamond + minLongSize, ctrl.longSp);
     ctrl.longSpLenSp = 16;
     ctrl.longSpMaxNumSu = 57;
 
@@ -512,7 +509,8 @@ void SetupMeControl(MeControl &ctrl, int width, int height, double lambda)
         0x0F, 0xF0, 0x01, 0x00
     };
 
-    small_memcpy(ctrl.shortSp, ShortPath, IPP_MIN(sizeof(ShortPath), sizeof(ctrl.shortSp)));
+    const std::size_t minShortSize = std::min(sizeof(ShortPath) / sizeof(ShortPath[0]), sizeof(ctrl.shortSp) / sizeof(ctrl.shortSp[0]));
+    std::copy(ShortPath, ShortPath + minShortSize, ctrl.shortSp);
     ctrl.shortSpLenSp = 4;
     ctrl.shortSpMaxNumSu = 9;
 
