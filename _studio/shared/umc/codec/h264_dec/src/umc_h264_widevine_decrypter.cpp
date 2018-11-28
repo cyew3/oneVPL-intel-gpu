@@ -38,6 +38,7 @@
 
 namespace UMC
 {
+    using namespace UMC_H264_DECODER;
 #ifdef UMC_VA_DXVA
 #define D3DFMT_NV12 (D3DFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
 #endif

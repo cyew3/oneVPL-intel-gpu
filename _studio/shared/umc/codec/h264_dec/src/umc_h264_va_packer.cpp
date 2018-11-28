@@ -154,7 +154,7 @@ void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, int32_t first_slice, 
     first_slice = 0;
     H264Slice* slice = sliceInfo->GetSlice(first_slice);
 
-    const H264ScalingPicParams * scaling = &slice->GetPicParam()->scaling[NAL_UT_CODED_SLICE_EXTENSION == slice->GetSliceHeader()->nal_unit_type ? 1 : 0];
+    const UMC_H264_DECODER::H264ScalingPicParams * scaling = &slice->GetPicParam()->scaling[NAL_UT_CODED_SLICE_EXTENSION == slice->GetSliceHeader()->nal_unit_type ? 1 : 0];
     PackQmatrix(scaling);
 
     int32_t chopping = CHOPPING_NONE;
@@ -295,8 +295,8 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
     UCHAR *groupMap = pPicParams_H264->SliceGroupMap;
 
     H264Slice * slice = frame->GetAU(0)->GetSlice(0);
-    H264PicParamSet *pps = const_cast<H264PicParamSet *>(slice->GetPicParam());
-    H264SliceHeader * sliceHeader = slice->GetSliceHeader();
+    UMC_H264_DECODER::H264PicParamSet *pps = const_cast<UMC_H264_DECODER::H264PicParamSet *>(slice->GetPicParam());
+    UMC_H264_DECODER::H264SliceHeader * sliceHeader = slice->GetSliceHeader();
 
     uint32_t uNumSliceGroups = pps->num_slice_groups;
     uint32_t uNumMBCols = slice->GetSeqParam()->frame_width_in_mbs;
@@ -475,7 +475,7 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
         VM_ASSERT(0);
     }    // switch map type
 
-    // Filling array groupMap as in H264 standart
+    // Filling array groupMap as in H264 standard
     //if(pPicParams_H264->frame_mbs_only_flag == 1 || pPicParams_H264->field_pic_flag == 1)
     //{
     //  for(uint32_t i = 0; i < uNumMapUnits; i++ )
@@ -506,7 +506,7 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
 void PackerDXVA2::PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA_Intel_PicParams_MVC* pMVCPicParams_H264)
 {
     const H264Slice  * pSlice = pSliceInfo->GetSlice(0);
-    const H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
+    const UMC_H264_DECODER::H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
 
     memset(pMVCPicParams_H264, 0, sizeof(DXVA_Intel_PicParams_MVC));
 
@@ -519,7 +519,7 @@ void PackerDXVA2::PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA
     if (pSliceHeader->nal_ext.mvc.view_id)
     {
         uint32_t VOIdx = GetVOIdx(pSlice->GetSeqMVCParam(), pSliceHeader->nal_ext.mvc.view_id);
-        const H264ViewRefInfo &refInfo = pSlice->GetSeqMVCParam()->viewInfo[VOIdx];
+        const UMC_H264_DECODER::H264ViewRefInfo &refInfo = pSlice->GetSeqMVCParam()->viewInfo[VOIdx];
 
         pMVCPicParams_H264->NumInterViewRefsL0 = pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.num_anchor_refs_lx[0] : refInfo.num_non_anchor_refs_lx[0];
         pMVCPicParams_H264->NumInterViewRefsL1 = pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.num_anchor_refs_lx[1] : refInfo.num_non_anchor_refs_lx[1];
@@ -553,7 +553,7 @@ void PackerDXVA2::PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA
 void PackerDXVA2::PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA_PicParams_H264_MVC* pMVCPicParams_H264)
 {
     const H264Slice  * pSlice = pSliceInfo->GetSlice(0);
-    const H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
+    const UMC_H264_DECODER::H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
 
     memset(pMVCPicParams_H264, 0, sizeof(DXVA_PicParams_H264_MVC));
 
@@ -570,7 +570,7 @@ void PackerDXVA2::PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA
 
     for (int32_t view_id = 0; view_id <= pMVCPicParams_H264->num_views_minus1; view_id++)
     {
-        const H264ViewRefInfo & refInfo = pSlice->GetSeqMVCParam()->viewInfo[view_id];
+        const UMC_H264_DECODER::H264ViewRefInfo & refInfo = pSlice->GetSeqMVCParam()->viewInfo[view_id];
         pMVCPicParams_H264->view_id[view_id] = (USHORT)refInfo.view_id;
 
         pMVCPicParams_H264->num_anchor_refs_l0[view_id] = refInfo.num_anchor_refs_lx[0];
@@ -615,9 +615,9 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
 
 void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264)
 {
-    const H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
-    const H264SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
-    const H264PicParamSet *pPicParamSet = pSlice->GetPicParam();
+    const UMC_H264_DECODER::H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
+    const UMC_H264_DECODER::H264SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+    const UMC_H264_DECODER::H264PicParamSet *pPicParamSet = pSlice->GetPicParam();
 
     const H264DecoderFrame *pCurrentFrame = pSliceInfo->m_pFrame;
 
@@ -856,7 +856,7 @@ void PackerDXVA2::SendPAVPStructure(int32_t numSlicesOfPrevField, H264Slice *pSl
     mfxBitstream * bs = m_va->GetProtectedVA()->GetBitstream();
     mfxEncryptedData * encryptedData = bs->EncryptedData;
 
-    // asomsiko: Assuming NalUnitSize calulated correctly if input
+    // asomsiko: Assuming NalUnitSize calculated correctly if input
     // bitstream contain slice header in clean and slice data placeholder
     // filled with 0xFF.
     // If assumption is not true introduce new field in mfxEncrypedSliceData
@@ -1086,7 +1086,7 @@ DXVA_PicEntry_H264 PackerDXVA2::GetFrameIndex(const H264DecoderFrame * frame)
     return idx;
 }
 
-static void CopyWithRedundantElimination(const H264SliceHeader *sliceHdr, uint8_t * dst, uint8_t* src, uint32_t srcSize)
+static void CopyWithRedundantElimination(const UMC_H264_DECODER::H264SliceHeader *sliceHdr, uint8_t * dst, uint8_t* src, uint32_t srcSize)
 {
     uint32_t first_bit = sliceHdr->hw_wa_redundant_elimination_bits[0];
     uint32_t end_bit = sliceHdr->hw_wa_redundant_elimination_bits[1];
@@ -1138,7 +1138,7 @@ int32_t PackerDXVA2::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_
 
     int32_t partial_data = CHOPPING_NONE;
 
-    const H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
+    const UMC_H264_DECODER::H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
     H264DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
     uint8_t *pNalUnit; //ptr to first byte of start code
@@ -1450,7 +1450,7 @@ int32_t PackerDXVA2::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_
          ((m_picParams->weighted_bipred_idc == 1) && (BPREDSLICE == pSliceHeader->slice_type)))
     {
         //Weights
-        const PredWeightTable *pPredWeight[2];
+        const UMC_H264_DECODER::PredWeightTable *pPredWeight[2];
         pPredWeight[0] = pSlice->GetPredWeigthTable(0);
         pPredWeight[1] = pSlice->GetPredWeigthTable(1);
 
@@ -1517,7 +1517,7 @@ void PackerDXVA2::EndFrame()
     m_picParams = 0;
 }
 
-void PackerDXVA2::PackQmatrix(const H264ScalingPicParams * scaling)
+void PackerDXVA2::PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * scaling)
 {
     UMCVACompBuffer *quantBuf;
     DXVA_Qmatrix_H264* pQmatrix_H264 = (DXVA_Qmatrix_H264*)m_va->GetCompBuffer(DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER, &quantBuf);
@@ -1627,7 +1627,7 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
 
 void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264)
 {
-    const H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
+    const UMC_H264_DECODER::H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
 
     const H264DecoderFrame *pCurrentFrame = pSliceInfo->m_pFrame;
 
@@ -1876,9 +1876,9 @@ void PackerVA::FillFrameAsInvalid(VAPictureH264 * pic)
 
 void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice)
 {
-    const H264SliceHeader* pSliceHeader = pSlice->GetSliceHeader();
-    const H264SeqParamSet* pSeqParamSet = pSlice->GetSeqParam();
-    const H264PicParamSet* pPicParamSet = pSlice->GetPicParam();
+    const UMC_H264_DECODER::H264SliceHeader* pSliceHeader = pSlice->GetSliceHeader();
+    const UMC_H264_DECODER::H264SeqParamSet* pSeqParamSet = pSlice->GetSeqParam();
+    const UMC_H264_DECODER::H264PicParamSet* pPicParamSet = pSlice->GetPicParam();
 
     const H264DecoderFrame *pCurrentFrame = pSliceInfo->m_pFrame;
 
@@ -2112,7 +2112,7 @@ int32_t PackerVA::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_t c
     H264DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
     if (pCurrentFrame == nullptr)
         throw h264_exception(UMC_ERR_FAILED);
-    const H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
+    const UMC_H264_DECODER::H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
 
     VAPictureParameterBufferH264* pPicParams_H264 = (VAPictureParameterBufferH264*)m_va->GetCompBuffer(VAPictureParameterBufferType);
     if (!pPicParams_H264)
@@ -2234,7 +2234,7 @@ int32_t PackerVA::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_t c
          ((pPicParams_H264->pic_fields.bits.weighted_bipred_idc == 1) && (BPREDSLICE == pSliceHeader->slice_type)))
     {
         //Weights
-        const PredWeightTable *pPredWeight[2];
+        const UMC_H264_DECODER::PredWeightTable *pPredWeight[2];
         pPredWeight[0] = pSlice->GetPredWeigthTable(0);
         pPredWeight[1] = pSlice->GetPredWeigthTable(1);
 
@@ -2367,7 +2367,7 @@ void PackerVA::PackProcessingInfo(H264DecoderFrameInfo * sliceInfo)
 }
 #endif // #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
 
-void PackerVA::PackQmatrix(const H264ScalingPicParams * scaling)
+void PackerVA::PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * scaling)
 {
     UMCVACompBuffer *quantBuf;
     auto* pQmatrix_H264 = reinterpret_cast<VAIQMatrixBufferH264 *>(m_va->GetCompBuffer(VAIQMatrixBufferType, &quantBuf, sizeof(VAIQMatrixBufferH264)));
@@ -2466,7 +2466,7 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, int32_t isTop)
     H264Slice* slice = sliceInfo->GetSlice(first_slice);
 
     NAL_Unit_Type const type = slice->GetSliceHeader()->nal_unit_type;
-    H264ScalingPicParams const* scaling =
+    UMC_H264_DECODER::H264ScalingPicParams const* scaling =
         &slice->GetPicParam()->scaling[type == NAL_UT_CODED_SLICE_EXTENSION ? 1 : 0];
     PackQmatrix(scaling);
 
@@ -2598,7 +2598,7 @@ PackerVA_Widevine::PackerVA_Widevine(VideoAccelerator * va, TaskSupplier * suppl
 
 void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice)
 {
-    const H264SliceHeader* pSliceHeader = pSlice->GetSliceHeader();
+    const UMC_H264_DECODER::H264SliceHeader* pSliceHeader = pSlice->GetSliceHeader();
     const H264DecoderFrame* pCurrentFrame = pSliceInfo->m_pFrame;
 
     UMCVACompBuffer *picParamBuf;

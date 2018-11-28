@@ -49,27 +49,27 @@ void H264Slice::Reset()
     if (m_bInited && m_pSeqParamSet)
     {
         if (m_pSeqParamSet)
-            ((H264SeqParamSet*)m_pSeqParamSet)->DecrementReference();
+            ((UMC_H264_DECODER::H264SeqParamSet*)m_pSeqParamSet)->DecrementReference();
         if (m_pPicParamSet)
-            ((H264PicParamSet*)m_pPicParamSet)->DecrementReference();
+            ((UMC_H264_DECODER::H264PicParamSet*)m_pPicParamSet)->DecrementReference();
         m_pSeqParamSet = 0;
         m_pPicParamSet = 0;
 
         if (m_pSeqParamSetEx)
         {
-            ((H264SeqParamSetExtension*)m_pSeqParamSetEx)->DecrementReference();
+            ((UMC_H264_DECODER::H264SeqParamSetExtension*)m_pSeqParamSetEx)->DecrementReference();
             m_pSeqParamSetEx = 0;
         }
 
         if (m_pSeqParamSetMvcEx)
         {
-            ((H264SeqParamSetMVCExtension*)m_pSeqParamSetMvcEx)->DecrementReference();
+            ((UMC_H264_DECODER::H264SeqParamSetMVCExtension*)m_pSeqParamSetMvcEx)->DecrementReference();
             m_pSeqParamSetMvcEx = 0;
         }
 
         if (m_pSeqParamSetSvcEx)
         {
-            ((H264SeqParamSetSVCExtension*)m_pSeqParamSetSvcEx)->DecrementReference();
+            ((UMC_H264_DECODER::H264SeqParamSetSVCExtension*)m_pSeqParamSetSvcEx)->DecrementReference();
             m_pSeqParamSetSvcEx = 0;
         }
     }
@@ -135,7 +135,7 @@ void H264Slice::FreeResources()
 {
 }
 
-bool H264Slice::Reset(H264NalExtension *pNalExt)
+bool H264Slice::Reset(UMC_H264_DECODER::H264NalExtension *pNalExt)
 {
     int32_t iMBInFrame;
     int32_t iFieldIndex;
@@ -192,26 +192,26 @@ bool H264Slice::Reset(H264NalExtension *pNalExt)
 
 } // bool H264Slice::Reset(void *pSource, size_t nSourceSize, int32_t iNumber)
 
-void H264Slice::SetSeqMVCParam(const H264SeqParamSetMVCExtension * sps)
+void H264Slice::SetSeqMVCParam(const UMC_H264_DECODER::H264SeqParamSetMVCExtension * sps)
 {
-    const H264SeqParamSetMVCExtension * temp = m_pSeqParamSetMvcEx;
+    const UMC_H264_DECODER::H264SeqParamSetMVCExtension * temp = m_pSeqParamSetMvcEx;
     m_pSeqParamSetMvcEx = sps;
     if (m_pSeqParamSetMvcEx)
         m_pSeqParamSetMvcEx->IncrementReference();
 
     if (temp)
-        ((H264SeqParamSetMVCExtension*)temp)->DecrementReference();
+        ((UMC_H264_DECODER::H264SeqParamSetMVCExtension*)temp)->DecrementReference();
 }
 
-void H264Slice::SetSeqSVCParam(const H264SeqParamSetSVCExtension * sps)
+void H264Slice::SetSeqSVCParam(const UMC_H264_DECODER::H264SeqParamSetSVCExtension * sps)
 {
-    const H264SeqParamSetSVCExtension * temp = m_pSeqParamSetSvcEx;
+    const UMC_H264_DECODER::H264SeqParamSetSVCExtension * temp = m_pSeqParamSetSvcEx;
     m_pSeqParamSetSvcEx = sps;
     if (m_pSeqParamSetSvcEx)
         m_pSeqParamSetSvcEx->IncrementReference();
 
     if (temp)
-        ((H264SeqParamSetSVCExtension*)temp)->DecrementReference();
+        ((UMC_H264_DECODER::H264SeqParamSetSVCExtension*)temp)->DecrementReference();
 }
 
 void H264Slice::SetSliceNumber(int32_t iSliceNumber)
@@ -219,12 +219,12 @@ void H264Slice::SetSliceNumber(int32_t iSliceNumber)
     m_iNumber = iSliceNumber;
 }
 
-AdaptiveMarkingInfo * H264Slice::GetAdaptiveMarkingInfo()
+UMC_H264_DECODER::AdaptiveMarkingInfo * H264Slice::GetAdaptiveMarkingInfo()
 {
     return &m_AdaptiveMarkingInfo;
 }
 
-bool H264Slice::DecodeSliceHeader(H264NalExtension *pNalExt)
+bool H264Slice::DecodeSliceHeader(UMC_H264_DECODER::H264NalExtension *pNalExt)
 {
     Status umcRes = UMC_OK;
     // Locals for additional slice data to be read into, the data

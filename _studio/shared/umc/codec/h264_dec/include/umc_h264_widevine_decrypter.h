@@ -42,37 +42,37 @@ public:
     DecryptParametersWrapper & operator = (const DECRYPT_QUERY_STATUS_PARAMS_AVC & pDecryptParameters);
     DecryptParametersWrapper & operator = (const DecryptParametersWrapper & pDecryptParametersWrapper);
 
-    Status GetSequenceParamSet(H264SeqParamSet *sps);
-    Status GetPictureParamSetPart1(H264PicParamSet *pps);
-    Status GetPictureParamSetPart2(H264PicParamSet *pps);
+    Status GetSequenceParamSet(UMC_H264_DECODER::H264SeqParamSet *sps);
+    Status GetPictureParamSetPart1(UMC_H264_DECODER::H264PicParamSet *pps);
+    Status GetPictureParamSetPart2(UMC_H264_DECODER::H264PicParamSet *pps);
 
-    Status GetSliceHeaderPart1(H264SliceHeader *pSliceHeader);
-    Status GetSliceHeaderPart2(H264SliceHeader *pSliceHeader,
-                               const H264PicParamSet *pps,
-                               const H264SeqParamSet *sps);
-    Status GetSliceHeaderPart3(H264SliceHeader *pSliceHeader,
-                               PredWeightTable *pPredWeight_L0,
-                               PredWeightTable *pPredWeight_L1,
-                               RefPicListReorderInfo *pReorderInfo_L0,
-                               RefPicListReorderInfo *pReorderInfo_L1,
-                               AdaptiveMarkingInfo *pAdaptiveMarkingInfo,
-                               AdaptiveMarkingInfo *pBaseAdaptiveMarkingInfo,
-                               const H264PicParamSet *pps,
-                               const H264SeqParamSet *sps,
-                               const H264SeqParamSetSVCExtension *spsSvcExt);
-    Status GetSliceHeaderPart4(H264SliceHeader *hdr,
-                                const H264SeqParamSetSVCExtension *spsSvcExt);
+    Status GetSliceHeaderPart1(UMC_H264_DECODER::H264SliceHeader *pSliceHeader);
+    Status GetSliceHeaderPart2(UMC_H264_DECODER::H264SliceHeader *pSliceHeader,
+                               const UMC_H264_DECODER::H264PicParamSet *pps,
+                               const UMC_H264_DECODER::H264SeqParamSet *sps);
+    Status GetSliceHeaderPart3(UMC_H264_DECODER::H264SliceHeader *pSliceHeader,
+                               UMC_H264_DECODER::PredWeightTable *pPredWeight_L0,
+                               UMC_H264_DECODER::PredWeightTable *pPredWeight_L1,
+                               UMC_H264_DECODER::RefPicListReorderInfo *pReorderInfo_L0,
+                               UMC_H264_DECODER::RefPicListReorderInfo *pReorderInfo_L1,
+                               UMC_H264_DECODER::AdaptiveMarkingInfo *pAdaptiveMarkingInfo,
+                               UMC_H264_DECODER::AdaptiveMarkingInfo *pBaseAdaptiveMarkingInfo,
+                               const UMC_H264_DECODER::H264PicParamSet *pps,
+                               const UMC_H264_DECODER::H264SeqParamSet *sps,
+                               const UMC_H264_DECODER::H264SeqParamSetSVCExtension *spsSvcExt);
+    Status GetSliceHeaderPart4(UMC_H264_DECODER::H264SliceHeader *hdr,
+                                const UMC_H264_DECODER::H264SeqParamSetSVCExtension *spsSvcExt);
 
-    void ParseSEIBufferingPeriod(const Headers & headers, H264SEIPayLoad *spl);
-    void ParseSEIPicTiming(const Headers & headers, H264SEIPayLoad *spl);
-    void ParseSEIRecoveryPoint(H264SEIPayLoad *spl);
+    void ParseSEIBufferingPeriod(const Headers & headers, UMC_H264_DECODER::H264SEIPayLoad *spl);
+    void ParseSEIPicTiming(const Headers & headers, UMC_H264_DECODER::H264SEIPayLoad *spl);
+    void ParseSEIRecoveryPoint(UMC_H264_DECODER::H264SEIPayLoad *spl);
 
     double GetTime() const {return m_pts;}
     void SetTime(double pts) {m_pts = pts;}
 
 private:
-    Status GetVUIParam(H264SeqParamSet *sps, H264VUI *vui);
-    Status GetHRDParam(H264SeqParamSet *sps, h264_hrd_param_set_t *hrd, H264VUI *vui);
+    Status GetVUIParam(UMC_H264_DECODER::H264SeqParamSet *sps, UMC_H264_DECODER::H264VUI *vui);
+    Status GetHRDParam(UMC_H264_DECODER::H264SeqParamSet *sps, h264_hrd_param_set_t *hrd, UMC_H264_DECODER::H264VUI *vui);
 
     void CopyDecryptParams(const DECRYPT_QUERY_STATUS_PARAMS_AVC & pDecryptParameters);
 

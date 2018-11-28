@@ -320,7 +320,6 @@ public:
 
 namespace UMC_H264_DECODER
 {
-using namespace UMC;
 
 struct H264VUI
 {
@@ -400,8 +399,8 @@ struct H264SeqParamSetBase
     uint8_t        qpprime_y_zero_transform_bypass_flag;
     uint8_t        type_of_scaling_list_used[8];
     uint8_t        seq_scaling_matrix_present_flag;
-    H264ScalingList4x4 ScalingLists4x4[6];
-    H264ScalingList8x8 ScalingLists8x8[2];
+    UMC::H264ScalingList4x4 ScalingLists4x4[6];
+    UMC::H264ScalingList8x8 ScalingLists8x8[2];
     uint8_t        gaps_in_frame_num_value_allowed_flag;
     uint8_t        frame_cropping_flag;
     uint32_t       frame_cropping_rect_left_offset;
@@ -439,7 +438,7 @@ struct H264SeqParamSetBase
     // vui part
     H264VUI      vui;
 
-    int32_t       poffset_for_ref_frame[MAX_REF_FRAMES_IN_POC_CYCLE];  // for pic order cnt type 1
+    int32_t       poffset_for_ref_frame[UMC::MAX_REF_FRAMES_IN_POC_CYCLE];  // for pic order cnt type 1
 
     uint8_t        errorFlags;
 
@@ -452,7 +451,7 @@ struct H264SeqParamSetBase
 };    // H264SeqParamSet
 
 // Sequence parameter set structure, corresponding to the H.264 bitstream definition.
-struct H264SeqParamSet : public HeapObject, public H264SeqParamSetBase
+struct H264SeqParamSet : public UMC::HeapObject, public H264SeqParamSetBase
 {
     H264SeqParamSet()
         : HeapObject()
@@ -474,13 +473,13 @@ struct H264SeqParamSet : public HeapObject, public H264SeqParamSetBase
     {
         H264SeqParamSetBase::Reset();
 
-        seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS;
+        seq_parameter_set_id = UMC::MAX_NUM_SEQ_PARAM_SETS;
         vui.Reset();
     }
 };    // H264SeqParamSet
 
 // Sequence parameter set extension structure, corresponding to the H.264 bitstream definition.
-struct H264SeqParamSetExtension : public HeapObject
+struct H264SeqParamSetExtension : public UMC::HeapObject
 {
     uint8_t       seq_parameter_set_id;
     uint8_t       aux_format_idc;
@@ -498,7 +497,7 @@ struct H264SeqParamSetExtension : public HeapObject
     virtual void Reset()
     {
         aux_format_idc = 0;
-        seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS;    // illegal id
+        seq_parameter_set_id = UMC::MAX_NUM_SEQ_PARAM_SETS;    // illegal id
         bit_depth_aux = 0;
         alpha_incr_flag = 0;
         alpha_opaque_value = 0;
@@ -526,7 +525,7 @@ struct H264ViewRefInfo
     // ue(v) specifies the view_id of the j-th view component for inter-view
     // prediction in the initialised RefPicListX in decoding anchor view
     // components with VOIdx equal to i.
-    uint16_t anchor_refs_lx[2][H264_MAX_NUM_VIEW_REF];
+    uint16_t anchor_refs_lx[2][UMC::H264_MAX_NUM_VIEW_REF];
 
     // ue(v) specifies the number of view components for inter-view prediction
     // in the initialised RefPicListX in decoding non-anchor view components
@@ -536,7 +535,7 @@ struct H264ViewRefInfo
     // ue(v) specifies the view_id of the j-th view component for inter-view
     // prediction in the initialised RefPicListX in decoding non-anchor view
     // components with VOIdx equal to i.
-    uint16_t non_anchor_refs_lx[2][H264_MAX_NUM_VIEW_REF];
+    uint16_t non_anchor_refs_lx[2][UMC::H264_MAX_NUM_VIEW_REF];
 
 };
 
@@ -554,7 +553,7 @@ struct H264ApplicableOp
     // to which the the level indicated by level_idc[ i ] applies. The value of
     // applicable_op_num_target_views_minus1[ i ][ j ] shall be in the
     // range of 0 to 1023, inclusive.
-    Array<uint16_t> applicable_op_target_view_id;
+    UMC::Array<uint16_t> applicable_op_target_view_id;
     // ue(v) plus 1 specifies the number of views required for decoding the
     // target output views corresponding to the j-th operation point to which
     // the level indicated by level_idc[ i ] applies.
@@ -572,7 +571,7 @@ struct H264LevelValueSignaled
     uint16_t num_applicable_ops_minus1;
 
     // Array of applicable operation points for the current level value signalled
-    Array<H264ApplicableOp> opsInfo;
+    UMC::Array<H264ApplicableOp> opsInfo;
 
 };
 
@@ -585,7 +584,7 @@ struct H264SeqParamSetMVCExtension : public H264SeqParamSet
     uint32_t num_views_minus1;
 
     // Array of views reference info structures.
-    Array<H264ViewRefInfo> viewInfo;
+    UMC::Array<H264ViewRefInfo> viewInfo;
 
     // ue(v) plus 1 specifies the number of level values signalled for
     // the coded video sequence. The value of num_level_values_signalled_minus1
@@ -593,7 +592,7 @@ struct H264SeqParamSetMVCExtension : public H264SeqParamSet
     uint32_t num_level_values_signalled_minus1;
 
     // Array of level value signaled structures
-    Array<H264LevelValueSignaled> levelInfo;
+    UMC::Array<H264LevelValueSignaled> levelInfo;
 
     virtual void Reset()
     {
@@ -650,12 +649,12 @@ struct H264SeqParamSetSVCExtension : public H264SeqParamSet
 
 struct H264ScalingPicParams
 {
-    H264ScalingList4x4 ScalingLists4x4[6];
-    H264ScalingList8x8 ScalingLists8x8[2];
+    UMC::H264ScalingList4x4 ScalingLists4x4[6];
+    UMC::H264ScalingList8x8 ScalingLists8x8[2];
 
     // Level Scale addition
-    H264WholeQPLevelScale4x4        m_LevelScale4x4[6];
-    H264WholeQPLevelScale8x8        m_LevelScale8x8[2];
+    UMC::H264WholeQPLevelScale4x4        m_LevelScale4x4[6];
+    UMC::H264WholeQPLevelScale8x8        m_LevelScale8x8[2];
 };
 
 // Picture parameter set structure, corresponding to the H.264 bitstream definition.
@@ -672,13 +671,13 @@ struct H264PicParamSetBase
         union
         {
             // type 0
-            uint32_t    run_length[MAX_NUM_SLICE_GROUPS];
+            uint32_t    run_length[UMC::MAX_NUM_SLICE_GROUPS];
 
             // type 2
             struct
             {
-                uint32_t top_left[MAX_NUM_SLICE_GROUPS-1];
-                uint32_t bottom_right[MAX_NUM_SLICE_GROUPS-1];
+                uint32_t top_left[UMC::MAX_NUM_SLICE_GROUPS-1];
+                uint32_t bottom_right[UMC::MAX_NUM_SLICE_GROUPS-1];
             }t1;
 
             // types 3-5
@@ -748,7 +747,7 @@ struct H264PicParamSetBase
 };
 
 // Picture parameter set structure, corresponding to the H.264 bitstream definition.
-struct H264PicParamSet : public HeapObject, public H264PicParamSetBase
+struct H264PicParamSet : public UMC::HeapObject, public H264PicParamSetBase
 {
     H264PicParamSet()
         : H264PicParamSetBase()
@@ -760,8 +759,8 @@ struct H264PicParamSet : public HeapObject, public H264PicParamSetBase
     {
         H264PicParamSetBase::Reset();
 
-        pic_parameter_set_id = MAX_NUM_PIC_PARAM_SETS;
-        seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS;
+        pic_parameter_set_id = UMC::MAX_NUM_PIC_PARAM_SETS;
+        seq_parameter_set_id = UMC::MAX_NUM_SEQ_PARAM_SETS;
         num_slice_groups = 0;
         SliceGroupInfo.pSliceGroupIDMap.clear();
     }
@@ -780,15 +779,15 @@ struct H264PicParamSet : public HeapObject, public H264PicParamSetBase
 struct RefPicListReorderInfo
 {
     uint32_t       num_entries;                 // number of currently valid idc,value pairs
-    uint8_t        reordering_of_pic_nums_idc[MAX_NUM_REF_FRAMES];
-    uint32_t       reorder_value[MAX_NUM_REF_FRAMES];    // abs_diff_pic_num or long_term_pic_num
+    uint8_t        reordering_of_pic_nums_idc[UMC::MAX_NUM_REF_FRAMES];
+    uint32_t       reorder_value[UMC::MAX_NUM_REF_FRAMES];    // abs_diff_pic_num or long_term_pic_num
 };
 
 struct AdaptiveMarkingInfo
 {
     uint32_t       num_entries;                 // number of currently valid mmco,value pairs
-    uint8_t        mmco[MAX_NUM_REF_FRAMES];    // memory management control operation id
-    uint32_t       value[MAX_NUM_REF_FRAMES*2]; // operation-dependent data, max 2 per operation
+    uint8_t        mmco[UMC::MAX_NUM_REF_FRAMES];    // memory management control operation id
+    uint32_t       value[UMC::MAX_NUM_REF_FRAMES*2]; // operation-dependent data, max 2 per operation
 };
 
 struct PredWeightTable
@@ -886,7 +885,7 @@ struct H264SliceHeader
     uint32_t nal_ref_idc;
     // specifies the type of RBSP data structure contained in the NAL unit as
     // specified in Table 7-1 of h264 standard
-    NAL_Unit_Type nal_unit_type;
+    UMC::NAL_Unit_Type nal_unit_type;
 
     // NAL unit extension parameters
     H264NalExtension nal_ext;
@@ -911,7 +910,7 @@ struct H264SliceHeader
     int32_t        slice_beta_offset;                   // deblock filter beta table offset
     H264DecoderMBAddr first_mb_in_slice;
     int32_t        frame_num;
-    EnumSliceCodType slice_type;
+    UMC::EnumSliceCodType slice_type;
     uint32_t        idr_pic_id;                           // ID of an IDR picture
     int32_t        pic_order_cnt_lsb;                    // picture order count (mod MaxPicOrderCntLsb)
     int32_t        delta_pic_order_cnt_bottom;           // Pic order count difference, top & bottom fields
@@ -963,7 +962,7 @@ typedef struct
 
 struct H264SEIPayLoadBase
 {
-    SEI_TYPE payLoadType;
+    UMC::SEI_TYPE payLoadType;
     uint32_t   payLoadSize;
     uint8_t    isValid;
 
@@ -979,7 +978,7 @@ struct H264SEIPayLoadBase
         {
             int32_t cbp_removal_delay;
             int32_t dpb_output_delay;
-            DisplayPictureStruct pic_struct;
+            UMC::DisplayPictureStruct pic_struct;
             uint8_t  clock_timestamp_flag[16];
             struct ClockTimestamps
             {
@@ -1169,12 +1168,12 @@ struct H264SEIPayLoadBase
     {
         memset(this, 0, sizeof(H264SEIPayLoadBase));
 
-        payLoadType = SEI_RESERVED;
+        payLoadType = UMC::SEI_RESERVED;
         payLoadSize = 0;
     }
 };
 
-struct H264SEIPayLoad : public HeapObject, public H264SEIPayLoadBase
+struct H264SEIPayLoad : public UMC::HeapObject, public H264SEIPayLoadBase
 {
     std::vector<uint8_t> user_data; // for UserDataRegistered or UserDataUnRegistered
 
@@ -1195,8 +1194,6 @@ struct H264SEIPayLoad : public HeapObject, public H264SEIPayLoadBase
     }
 };
 } // end of namespace UMC_H264_DECODER
-
-using namespace UMC_H264_DECODER;
 
 namespace UMC
 {
@@ -1310,7 +1307,7 @@ inline int32_t GetH264ColorFormat(ColorFormat color_format)
     return format;
 }
 
-inline size_t CalculateSuggestedSize(const H264SeqParamSet * sps)
+inline size_t CalculateSuggestedSize(const UMC_H264_DECODER::H264SeqParamSet * sps)
 {
     size_t base_size = sps->frame_width_in_mbs * sps->frame_height_in_mbs * 256;
     size_t size = 0;

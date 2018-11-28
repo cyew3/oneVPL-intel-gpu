@@ -200,13 +200,13 @@ public:
         m_SEIParams.Reset(isPartialReset);
     }
 
-    HeaderSet<H264SeqParamSet>             m_SeqParams;
-    HeaderSet<H264SeqParamSetExtension>    m_SeqExParams;
-    HeaderSet<H264SeqParamSetMVCExtension> m_SeqParamsMvcExt;
-    HeaderSet<H264SeqParamSetSVCExtension> m_SeqParamsSvcExt;
-    HeaderSet<H264PicParamSet>             m_PicParams;
-    HeaderSet<H264SEIPayLoad>              m_SEIParams;
-    H264NalExtension                       m_nalExtension;
+    HeaderSet<UMC_H264_DECODER::H264SeqParamSet>             m_SeqParams;
+    HeaderSet<UMC_H264_DECODER::H264SeqParamSetExtension>    m_SeqExParams;
+    HeaderSet<UMC_H264_DECODER::H264SeqParamSetMVCExtension> m_SeqParamsMvcExt;
+    HeaderSet<UMC_H264_DECODER::H264SeqParamSetSVCExtension> m_SeqParamsSvcExt;
+    HeaderSet<UMC_H264_DECODER::H264PicParamSet>             m_PicParams;
+    HeaderSet<UMC_H264_DECODER::H264SEIPayLoad>              m_SEIParams;
+    UMC_H264_DECODER::H264NalExtension                       m_nalExtension;
 };
 
 } // namespace UMC

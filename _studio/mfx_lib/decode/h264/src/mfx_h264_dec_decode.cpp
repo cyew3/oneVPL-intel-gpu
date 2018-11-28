@@ -1142,7 +1142,7 @@ mfxStatus VideoDECODEH264::GetDecodeStat(mfxDecodeStat *stat)
     m_stat.NumSkippedFrame = m_pH264VideoDecoder->GetSkipInfo().numberOfSkippedFrames;
     m_stat.NumCachedFrame = 0;
 
-    H264DBPList * lst = m_pH264VideoDecoder->GetDPBList(UMC::BASE_VIEW, 0);
+    UMC::H264DBPList * lst = m_pH264VideoDecoder->GetDPBList(UMC::BASE_VIEW, 0);
     if (lst)
     {
         UMC::H264DecoderFrame *pFrame = lst->head();
@@ -1406,7 +1406,7 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
             src.Save(bs);
 
-            if (umcRes == UMC_ERR_ALLOC)
+            if (umcRes == UMC::UMC_ERR_ALLOC)
             {
                 sts = MFX_ERR_MORE_SURFACE;
                 break;
@@ -1615,7 +1615,7 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
         if (pFrame->GetAU(0)->IsReference())
             frameType->FrameType |= MFX_FRAMETYPE_REF;
 
-        if (pFrame->GetAU(1)->GetStatus() > H264DecoderFrameInfo::STATUS_NOT_FILLED)
+        if (pFrame->GetAU(1)->GetStatus() > UMC::H264DecoderFrameInfo::STATUS_NOT_FILLED)
         {
             if (pFrame->GetAU(1)->IsIntraAU())
             {

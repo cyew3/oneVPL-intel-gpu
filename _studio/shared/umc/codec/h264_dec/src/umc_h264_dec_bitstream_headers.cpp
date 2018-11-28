@@ -54,8 +54,10 @@
  \
     VM_ASSERT(offset >= 0 && offset <= 31); \
  \
-    (data) = x & bits_data[nbits]; \
+    (data) = x & UMC::bits_data[nbits]; \
 }
+
+using namespace UMC_H264_DECODER;
 
 namespace UMC
 {

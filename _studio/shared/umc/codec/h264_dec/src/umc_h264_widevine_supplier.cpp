@@ -43,8 +43,8 @@ namespace UMC
 
 void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, int32_t frame_num)
 {
-    const H264SliceHeader* sliceHeader = slice->GetSliceHeader();
-    const H264SeqParamSet* sps = slice->GetSeqParam();
+    const UMC_H264_DECODER::H264SliceHeader* sliceHeader = slice->GetSliceHeader();
+    const UMC_H264_DECODER::H264SeqParamSet* sps = slice->GetSeqParam();
 
     int32_t uMaxFrameNum = (1<<sps->log2_max_frame_num);
 
@@ -195,7 +195,7 @@ void WidevineTaskSupplier::Reset()
 }
 
 static
-bool IsNeedSPSInvalidate(const H264SeqParamSet *old_sps, const H264SeqParamSet *new_sps)
+bool IsNeedSPSInvalidate(const UMC_H264_DECODER::H264SeqParamSet *old_sps, const UMC_H264_DECODER::H264SeqParamSet *new_sps)
 {
     if (!old_sps || !new_sps)
         return false;
@@ -238,12 +238,12 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
     {
         // SPS
         {
-            H264SeqParamSet sps;
+            UMC_H264_DECODER::H264SeqParamSet sps;
             sps.seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS;
             umcRes = pDecryptParams->GetSequenceParamSet(&sps);
             if (umcRes != UMC_OK)
             {
-                H264SeqParamSet * old_sps = m_Headers.m_SeqParams.GetHeader(sps.seq_parameter_set_id);
+                UMC_H264_DECODER::H264SeqParamSet * old_sps = m_Headers.m_SeqParams.GetHeader(sps.seq_parameter_set_id);
                 if (old_sps)
                     old_sps->errorFlags = 1;
                 return UMC_ERR_INVALID_STREAM;
@@ -262,7 +262,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
             if (sps.num_ref_frames > newDPBsize)
                 sps.num_ref_frames = newDPBsize;
 
-            const H264SeqParamSet * old_sps = m_Headers.m_SeqParams.GetCurrentHeader();
+            const UMC_H264_DECODER::H264SeqParamSet * old_sps = m_Headers.m_SeqParams.GetCurrentHeader();
             bool newResolution = false;
             if (IsNeedSPSInvalidate(old_sps, &sps))
             {
@@ -272,7 +272,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
             if (isNeedClean)
                 sps.vui.max_dec_frame_buffering = 0;
 
-            H264SeqParamSet * temp = m_Headers.m_SeqParams.GetHeader(sps.seq_parameter_set_id);
+            UMC_H264_DECODER::H264SeqParamSet * temp = m_Headers.m_SeqParams.GetHeader(sps.seq_parameter_set_id);
             m_Headers.m_SeqParams.AddHeader(&sps);
 
             // Validate the incoming bitstream's image dimensions.
@@ -309,7 +309,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
 
         // PPS
         {
-            H264PicParamSet pps;
+            UMC_H264_DECODER::H264PicParamSet pps;
             // set illegal id
             pps.pic_parameter_set_id = MAX_NUM_PIC_PARAM_SETS;
 
@@ -317,13 +317,13 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
             umcRes = pDecryptParams->GetPictureParamSetPart1(&pps);
             if (UMC_OK != umcRes)
             {
-                H264PicParamSet * old_pps = m_Headers.m_PicParams.GetHeader(pps.pic_parameter_set_id);
+                UMC_H264_DECODER::H264PicParamSet * old_pps = m_Headers.m_PicParams.GetHeader(pps.pic_parameter_set_id);
                 if (old_pps)
                     old_pps->errorFlags = 1;
                 return UMC_ERR_INVALID_STREAM;
             }
 
-            H264SeqParamSet *refSps = m_Headers.m_SeqParams.GetHeader(pps.seq_parameter_set_id);
+            UMC_H264_DECODER::H264SeqParamSet *refSps = m_Headers.m_SeqParams.GetHeader(pps.seq_parameter_set_id);
             uint32_t prevActivePPS = m_Headers.m_PicParams.GetCurrentID();
 
             if (!refSps || refSps->seq_parameter_set_id >= MAX_NUM_SEQ_PARAM_SETS)
@@ -341,7 +341,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
             umcRes = pDecryptParams->GetPictureParamSetPart2(&pps);
             if (UMC_OK != umcRes)
             {
-                H264PicParamSet * old_pps = m_Headers.m_PicParams.GetHeader(pps.pic_parameter_set_id);
+                UMC_H264_DECODER::H264PicParamSet * old_pps = m_Headers.m_PicParams.GetHeader(pps.pic_parameter_set_id);
                 if (old_pps)
                     old_pps->errorFlags = 1;
                 return UMC_ERR_INVALID_STREAM;
@@ -369,7 +369,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
     }
 
     {
-        H264SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
+        UMC_H264_DECODER::H264SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
 
         if (currSPS)
         {
@@ -402,7 +402,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
 
     if (m_firstVideoParams.mfx.FrameInfo.Width)
     {
-        H264SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
+        UMC_H264_DECODER::H264SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
 
         if (currSPS)
         {
@@ -452,7 +452,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
         return 0;
     }
 
-    H264SEIPayLoad * spl = m_Headers.m_SEIParams.GetHeader(SEI_RECOVERY_POINT_TYPE);
+    UMC_H264_DECODER::H264SEIPayLoad * spl = m_Headers.m_SEIParams.GetHeader(SEI_RECOVERY_POINT_TYPE);
 
     pSlice->m_pPicParamSet = m_Headers.m_PicParams.GetHeader(pps_pid);
     if (!pSlice->m_pPicParamSet)
@@ -624,7 +624,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
 
     if (!IsExtension())
     {
-        memset(&pSlice->GetSliceHeader()->nal_ext, 0, sizeof(H264NalExtension));
+        memset(&pSlice->GetSliceHeader()->nal_ext, 0, sizeof(UMC_H264_DECODER::H264NalExtension));
     }
 
     if (spl)
@@ -639,7 +639,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
 
         if ((pSlice->GetSliceHeader()->slice_type != INTRASLICE))
         {
-            H264SEIPayLoad * splToRemove = m_Headers.m_SEIParams.GetHeader(SEI_RECOVERY_POINT_TYPE);
+            UMC_H264_DECODER::H264SEIPayLoad * splToRemove = m_Headers.m_SEIParams.GetHeader(SEI_RECOVERY_POINT_TYPE);
             m_Headers.m_SEIParams.RemoveHeader(splToRemove);
         }
     }
@@ -655,34 +655,34 @@ Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDecrypt
     try
     {
         {
-            H264SEIPayLoad    m_SEIPayLoads;
+            UMC_H264_DECODER::H264SEIPayLoad    m_SEIPayLoads;
 
             pDecryptParams->ParseSEIBufferingPeriod(m_Headers, &m_SEIPayLoads);
             if (m_SEIPayLoads.isValid)
             {
-                H264SEIPayLoad* payload = m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
+                UMC_H264_DECODER::H264SEIPayLoad* payload = m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
                 m_accessUnit.m_payloads.AddPayload(payload);
             }
         }
 
         {
-            H264SEIPayLoad    m_SEIPayLoads;
+            UMC_H264_DECODER::H264SEIPayLoad    m_SEIPayLoads;
 
             pDecryptParams->ParseSEIPicTiming(m_Headers, &m_SEIPayLoads);
             if (m_SEIPayLoads.isValid)
             {
-                H264SEIPayLoad* payload = m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
+                UMC_H264_DECODER::H264SEIPayLoad* payload = m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
                 m_accessUnit.m_payloads.AddPayload(payload);
             }
         }
 
         {
-            H264SEIPayLoad    m_SEIPayLoads;
+            UMC_H264_DECODER::H264SEIPayLoad    m_SEIPayLoads;
 
             pDecryptParams->ParseSEIRecoveryPoint(&m_SEIPayLoads);
             if (m_SEIPayLoads.isValid)
             {
-                H264SEIPayLoad* payload = m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
+                UMC_H264_DECODER::H264SEIPayLoad* payload = m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
                 m_accessUnit.m_payloads.AddPayload(payload);
             }
         }

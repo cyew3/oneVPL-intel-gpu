@@ -51,17 +51,17 @@ public:
 
     void Release();
 
-    void AddPayload(H264SEIPayLoad*);
+    void AddPayload(UMC_H264_DECODER::H264SEIPayLoad*);
 
     void MovePayloadsFrom(SeiPayloadArray &messages);
 
-    H264SEIPayLoad* GetPayload(size_t pos) const;
+    UMC_H264_DECODER::H264SEIPayLoad* GetPayload(size_t pos) const;
     size_t GetPayloadCount() const;
 
-    H264SEIPayLoad* FindPayload(SEI_TYPE type) const;
+    UMC_H264_DECODER::H264SEIPayLoad* FindPayload(SEI_TYPE type) const;
 
 protected:
-    typedef std::vector<H264SEIPayLoad*> PayloadArray;
+    typedef std::vector<UMC_H264_DECODER::H264SEIPayLoad*> PayloadArray;
     PayloadArray m_payloads;
 
     int32_t FindPayloadPos(SEI_TYPE type) const;
