@@ -453,21 +453,22 @@ namespace UMC_AV1_DECODER
         );
     }
 
+    inline bool CanBeOutput(AV1DecoderFrame const& frame)
+    {
+        FrameHeader const& fh = frame.GetFrameHeader();
+        return fh.show_frame && !frame.Outputted();
+    }
+
     AV1DecoderFrame* AV1Decoder::GetFrameToDisplay()
     {
         std::unique_lock<std::mutex> l(guard);
-
-        // When all frames in DPB are displayed, and app keeps sending mfxBitstream with zero DataLength
-        // This function will be called and will always return dpb.front(), so app will get MFX_ERR_NONE in infinite loop
-        // And will never get MFX_ERR_MORE_DATA (as it should be per design/API)
-        // TODO: [Rev0.85] Fix this when will modify this function to add proper support of reordering.
 
         auto i = std::min_element(std::begin(dpb), std::end(dpb),
             [](AV1DecoderFrame const* f1, AV1DecoderFrame const* f2)
             {
                 FrameHeader const& h1 = f1->GetFrameHeader(); FrameHeader const& h2 = f2->GetFrameHeader();
-                uint32_t const id1 = h1.show_frame && !f1->Displayed() ? h1.display_frame_id : (std::numeric_limits<uint32_t>::max)();
-                uint32_t const id2 = h2.show_frame && !f2->Displayed() ? h2.display_frame_id : (std::numeric_limits<uint32_t>::max)();
+                uint32_t const id1 = CanBeOutput(*f1) ? h1.display_frame_id : (std::numeric_limits<uint32_t>::max)();
+                uint32_t const id2 = CanBeOutput(*f2) ? h2.display_frame_id : (std::numeric_limits<uint32_t>::max)();
 
                 return  id1 < id2;
             }
@@ -478,7 +479,7 @@ namespace UMC_AV1_DECODER
 
         AV1DecoderFrame* frame = *i;
         return
-            frame->GetFrameHeader().show_frame && AllocComplete(*frame) ? frame : nullptr;
+            CanBeOutput(*frame) && AllocComplete(*frame) ? frame : nullptr;
     }
 
     UMC::Status AV1Decoder::FillVideoParam(SequenceHeader const& sh, UMC_AV1_DECODER::AV1DecoderParams& par)
