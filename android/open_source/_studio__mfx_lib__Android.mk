@@ -116,17 +116,17 @@ MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/field_copy/src/, \
 
 MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/mctf/src/, \
     genx_me_skl_isa.cpp \
-    genx_me_bdw_isa.cpp \
     genx_me_icl_isa.cpp \
     genx_me_icllp_isa.cpp \
+    genx_me_bdw_isa.cpp \
     genx_mc_skl_isa.cpp \
-    genx_mc_bdw_isa.cpp \
     genx_mc_icl_isa.cpp \
     genx_mc_icllp_isa.cpp \
+    genx_mc_bdw_isa.cpp \
     genx_sd_skl_isa.cpp \
-    genx_sd_bdw_isa.cpp \
     genx_sd_icl_isa.cpp \
-    genx_sd_icllp_isa.cpp)
+    genx_sd_icllp_isa.cpp \
+    genx_sd_bdw_isa.cpp)
 
 MFX_LIB_SHARED_FILES_1 := $(addprefix mfx_lib/shared/src/, \
     libmfxsw.cpp \
@@ -174,6 +174,8 @@ LOCAL_CFLAGS := \
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
+LOCAL_HEADER_LIBRARIES := libmfx_headers
+
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_lib_merged_hw
 
@@ -198,7 +200,8 @@ LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 
 LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_HW)
 
-LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_HW)
+LOCAL_HEADER_LIBRARIES := libmfx_headers
+LOCAL_WHOLE_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_HW)
 LOCAL_SHARED_LIBRARIES := libva
 
 LOCAL_MODULE_TAGS := optional
@@ -227,7 +230,8 @@ LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
 LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_HW)
 
-LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_HW)
+LOCAL_HEADER_LIBRARIES := libmfx_headers
+LOCAL_WHOLE_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_HW)
 LOCAL_SHARED_LIBRARIES := libva
 
 LOCAL_MODULE_TAGS := optional

@@ -56,11 +56,12 @@ MFX_CFLAGS += \
 # LibVA support.
 MFX_CFLAGS_LIBVA := -DLIBVA_SUPPORT -DLIBVA_ANDROID_SUPPORT
 
+ifneq ($(filter $(MFX_ANDROID_VERSION), MFX_O),)
+  MFX_CFLAGS_LIBVA += -DANDROID_O
+endif
+
 # Setting usual paths to include files
-MFX_INCLUDES := \
-  $(LOCAL_PATH)/include \
-  $(MFX_HOME)/api/include \
-  $(MFX_HOME)/android/include
+MFX_INCLUDES := $(LOCAL_PATH)/include
 
 MFX_INCLUDES_LIBVA := $(TARGET_OUT_HEADERS)/libva
 
@@ -77,5 +78,5 @@ LOCAL_PROPRIETARY_MODULE := true
 
 # =============================================================================
 
-# Definitions specific to Media SDK internal things
+# Definitions specific to Media SDK internal things (do not apply for samples)
 include $(MFX_HOME)/android/mfx_defs_internal.mk

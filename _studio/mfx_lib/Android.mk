@@ -162,10 +162,10 @@ GENX_FILES := $(addprefix mfx_lib/genx/asc/src/, \
 GENX_FILES += $(addprefix mfx_lib/genx/copy_kernels/src/, \
     embed_isa.c \
     genx_cht_copy_isa.cpp \
+    genx_skl_copy_isa.cpp \
     genx_cnl_copy_isa.cpp \
     genx_icl_copy_isa.cpp \
     genx_icllp_copy_isa.cpp \
-    genx_skl_copy_isa.cpp \
     genx_tgl_copy_isa.cpp \
     genx_tgllp_copy_isa.cpp)
 

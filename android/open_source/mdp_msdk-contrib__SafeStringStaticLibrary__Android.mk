@@ -9,6 +9,8 @@ LOCAL_C_INCLUDES := $(MFX_INCLUDES)
 
 LOCAL_CFLAGS := $(MFX_CFLAGS)
 
+LOCAL_HEADER_LIBRARIES := libmfx_headers
+
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libsafec
 
