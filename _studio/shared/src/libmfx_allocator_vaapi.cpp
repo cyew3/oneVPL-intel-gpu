@@ -50,7 +50,6 @@
 #define VA_FOURCC_R5G6B5 MFX_MAKEFOURCC('R','G','1','6')
 #endif // VA_FOURCC_R5G6B5
 
-#ifndef OPEN_SOURCE
 enum {
     MFX_FOURCC_VP8_NV12    = MFX_MAKEFOURCC('V','P','8','N'),
     MFX_FOURCC_VP8_MBDATA  = MFX_MAKEFOURCC('V','P','8','M'),
@@ -71,7 +70,6 @@ unsigned int ConvertVP8FourccToMfxFourcc(mfxU32 fourcc)
         return fourcc;
     }
 }
-#endif // #ifndef OPEN_SOURCE
 
 unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
 {
@@ -134,13 +132,9 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
 
     memset(response, 0, sizeof(mfxFrameAllocResponse));
 
-#ifndef OPEN_SOURCE
-    // VP8 hybrid driver has weird requirements for allocation of surfaces/buffers for VP8 encoding
-    // to comply with them additional logic is required to support regular and VP8 hybrid allocation pathes
+    // VP8/VP9 driver has weird requirements for allocation of surfaces/buffers for VP8/VP9 encoding
+    // to comply with them additional logic is required to support regular and VP8/VP9 allocation pathes
     mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(fourcc);
-#else
-    mfxU32 mfx_fourcc = fourcc;
-#endif
     va_fourcc = ConvertMfxFourccToVAFormat(mfx_fourcc);
     if (!va_fourcc || ((VA_FOURCC_NV12   != va_fourcc) &&
                        (VA_FOURCC_YV12   != va_fourcc) &&
@@ -152,7 +146,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                        (VA_FOURCC_P010   != va_fourcc) &&
                        (VA_FOURCC_R5G6B5 != va_fourcc) &&
                        (VA_FOURCC_AYUV   != va_fourcc)
-#if (MFX_VERSION >= 1027)
+#if VA_CHECK_VERSION(1,2,0)
                        && (VA_FOURCC_Y210   != va_fourcc)
                        && (VA_FOURCC_Y410   != va_fourcc)
 #endif
@@ -203,10 +197,9 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
             attrib.value.value.i = va_fourcc;
             format               = va_fourcc;
 
-#ifndef OPEN_SOURCE
             if (fourcc == MFX_FOURCC_VP8_NV12)
             {
-                // special configuration for NV12 surf allocation for VP8 hybrid encoder is required
+                // special configuration for NV12 surf allocation for VP8/VP9 encoder is required
                 attrib.type          = (VASurfaceAttribType)VASurfaceAttribUsageHint;
                 attrib.value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
             }
@@ -216,9 +209,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                 attrib.value.value.i = VA_FOURCC_P208;
                 format               = VA_FOURCC_P208;
             }
-            else
-#endif
-            if (va_fourcc == VA_FOURCC_NV12)
+            else if (va_fourcc == VA_FOURCC_NV12)
             {
                 format = VA_RT_FORMAT_YUV420;
             }
@@ -280,14 +271,12 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
             mfxU32 codedbuf_size;
             VABufferType codedbuf_type;
 
-#ifndef OPEN_SOURCE
             if (fourcc == MFX_FOURCC_VP8_SEGMAP)
             {
                 codedbuf_size = request->Info.Width * request->Info.Height;
                 codedbuf_type = (VABufferType)VAEncMacroblockMapBufferType;
             }
             else
-#endif
             {
                 int width32 = 32 * ((request->Info.Width + 31) >> 5);
                 int height32 = 32 * ((request->Info.Height + 31) >> 5);
@@ -332,10 +321,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
         response->mids = NULL;
         response->NumFrameActual = 0;
         if (VA_FOURCC_P208 != va_fourcc
-#ifndef OPEN_SOURCE
-            || fourcc == MFX_FOURCC_VP8_MBDATA
-#endif
-            )
+            || fourcc == MFX_FOURCC_VP8_MBDATA)
         {
             if (bCreateSrfSucceeded) vaDestroySurfaces(pSelf->pVADisplay, surfaces, surfaces_num);
         }
@@ -369,11 +355,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::FreeFramesHW(
     if (response->mids)
     {
         vaapi_mids = (vaapiMemIdInt*)(response->mids[0]);
-#ifndef OPEN_SOURCE
         mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mids->m_fourcc);
-#else
-        mfxU32 mfx_fourcc = vaapi_mids->m_fourcc;
-#endif
         isBufferMemory = (MFX_FOURCC_P8 == mfx_fourcc)?true:false;
         surfaces = vaapi_mids->m_surface;
         for (i = 0; i < response->NumFrameActual; ++i)
@@ -545,7 +527,6 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
         else mfx_res = MFX_ERR_LOCK_MEMORY;
         break;
 #endif
-#ifndef OPEN_SOURCE
     case MFX_FOURCC_VP8_SEGMAP:
         if (mfx_fourcc == MFX_FOURCC_P8)
         {
@@ -554,7 +535,6 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
             ptr->Y = pBuffer;
         }
         else mfx_res = MFX_ERR_LOCK_MEMORY;
-#endif
     default:
         mfx_res = MFX_ERR_LOCK_MEMORY;
         break;
@@ -579,29 +559,21 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
 
     if (!vaapi_mids || !(vaapi_mids->m_surface)) return MFX_ERR_INVALID_HANDLE;
 
-#ifndef OPEN_SOURCE
     mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mids->m_fourcc);
-#else
-    mfxU32 mfx_fourcc = vaapi_mids->m_fourcc;
-#endif
     if (MFX_FOURCC_P8 == mfx_fourcc)   // bitstream processing
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
         VACodedBufferSegment *coded_buffer_segment;
-#ifndef OPEN_SOURCE
         if (vaapi_mids->m_fourcc == MFX_FOURCC_VP8_SEGMAP)
             va_res =  vaMapBuffer(pSelf->pVADisplay, *(vaapi_mids->m_surface), (void **)(&pBuffer));
         else
-#endif
             va_res =  vaMapBuffer(pSelf->pVADisplay, *(vaapi_mids->m_surface), (void **)(&coded_buffer_segment));
         mfx_res = VA_TO_MFX_STATUS(va_res);
         if (MFX_ERR_NONE == mfx_res)
         {
-#ifndef OPEN_SOURCE
             if (vaapi_mids->m_fourcc == MFX_FOURCC_VP8_SEGMAP)
                 ptr->Y = pBuffer;
             else
-#endif
                 ptr->Y = (mfxU8*)coded_buffer_segment->buf;
         }
     }
@@ -640,11 +612,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::UnlockFrameHW(
 
     if (!vaapi_mids || !(vaapi_mids->m_surface)) return MFX_ERR_INVALID_HANDLE;
 
-#ifndef OPEN_SOURCE
     mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mids->m_fourcc);
-#else
-    mfxU32 mfx_fourcc = vaapi_mids->m_fourcc;
-#endif
 
     if (MFX_FOURCC_P8 == mfx_fourcc)   // bitstream processing
     {
