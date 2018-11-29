@@ -182,7 +182,7 @@ namespace hevce_encode_frame_async
                 g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
 
-        if (tc.type == MFX_SURF && fourcc_id == MFX_FOURCC_Y410)
+        if (tc.set_par->ext_type == MFX_SURF && fourcc_id == MFX_FOURCC_Y410)
         {
             if (tc.set_par->f == &tsStruct::mfxFrameSurface1.Data.Y)
             {
