@@ -419,10 +419,8 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(VideoContext *video, int task_num)
                 (int32_t)((uint8_t*)pack_w.pSliceInfo - (uint8_t*)pack_w.pSliceInfoBuffer) >= (int32_t)(pack_w.slice_size_getting-sizeof(DXVA_SliceInfo)))
             {
                 bool slice_split = false;
-                DXVA_SliceInfo s_info;
+                DXVA_SliceInfo s_info = pack_w.pSliceInfo[-1];
                 int32_t sz = 0, sz_align = 0;
-
-                memcpy_s(&s_info,sizeof(DXVA_SliceInfo),&pack_w.pSliceInfo[-1],sizeof(DXVA_SliceInfo));
 
                 pack_w.bs_size -= dsize;
                 pack_w.overlap -= overlap;
@@ -547,7 +545,7 @@ mm:                 int32_t numMB = (PictureHeader[task_num].picture_structure =
 
                 pack_w.InitBuffers(0, 0);
 
-                memcpy_s(&pack_w.pSliceInfo[0],sizeof(DXVA_SliceInfo),&s_info,sizeof(DXVA_SliceInfo));
+                pack_w.pSliceInfo[0] = s_info;
                 pack_w.pSliceStart += pack_w.pSliceInfo[0].dwSliceDataLocation;
                 pack_w.pSliceInfo[0].dwSliceDataLocation = 0;
 
@@ -862,11 +860,9 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
                 ((int32_t)((uint8_t*)pack_w.pSliceInfo - (uint8_t*)pack_w.pSliceInfoBuffer) >=
                     (pack_w.slice_size_getting-(int32_t)sizeof(DXVA_SliceInfo))))
               {
-                DXVA_SliceInfo s_info;
+                DXVA_SliceInfo s_info = pack_w.pSliceInfo[-1];
                 bool slice_split = false;
                 int32_t sz = 0, sz_align = 0;
-
-                memcpy_s(&s_info,sizeof(DXVA_SliceInfo),&pack_w.pSliceInfo[-1],sizeof(DXVA_SliceInfo));
 
                 pack_w.pSliceInfo--;
 
@@ -998,7 +994,7 @@ mm:
 #    if defined(UMC_VA_DXVA)   // part 2
                 pack_w.InitBuffers(0, 0);
 
-                memcpy_s(&pack_w.pSliceInfo[0], sizeof(s_info), &s_info, sizeof(s_info));
+                pack_w.pSliceInfo[0] = s_info;
 
                 pack_w.pSliceStart += pack_w.pSliceInfo[0].dwSliceDataLocation;
                 pack_w.pSliceInfo[0].dwSliceDataLocation = 0;

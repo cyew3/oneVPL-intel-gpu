@@ -219,7 +219,7 @@ mfxStatus ThreadedMPEG2PAK::CopyTaskBuffers ()
                     }
                     else
                     {
-                        memcpy_s (m_pCUC->Bitstream->Data + m_pCUC->Bitstream->DataLength, m_pCUC->Bitstream->MaxLength, pTask->sBitstream.Data,pTask->sBitstream.DataLength);
+                        std::copy(pTask->sBitstream.Data, pTask->sBitstream.Data + pTask->sBitstream.DataLength, m_pCUC->Bitstream->Data + m_pCUC->Bitstream->DataLength);
                     }
                 } 
                 m_pCUC->Bitstream->DataLength += pTask->sBitstream.DataLength;
@@ -1157,10 +1157,6 @@ mfxStatus MFXVideoPAKMPEG2::InsertUserData(mfxBitstream *bs)
       MFX_CHECK_NULL_PTR1(bs->Data);
 
       mfxI32 offset = bs->DataOffset + bs->DataLength;
-      mfxI32 avail  = bs->MaxLength - offset;
-
-      MFX_CHECK(avail>len+4, MFX_ERR_NOT_ENOUGH_BUFFER);
-
 
       for(i=0; i<len-2; i++) { // stop len if start code happens
         if(!ptr[i] && !ptr[i+1] && ptr[i+2]==1) {
@@ -1195,7 +1191,9 @@ mfxStatus MFXVideoPAKMPEG2::InsertUserData(mfxBitstream *bs)
           ptr +=4;
           len = len - 4;
       }
-      memcpy_s(bs->Data + offset, avail, ptr, len);
+      mfxI32 avail = bs->MaxLength - offset;
+      MFX_CHECK(avail>len, MFX_ERR_NOT_ENOUGH_BUFFER);
+      std::copy(ptr, ptr + len, bs->Data + offset);
       bs->DataLength += len;
   }
   return MFX_ERR_NONE;
@@ -1210,7 +1208,7 @@ mfxStatus MFXVideoPAKMPEG2::InsertBytes(mfxU8 *data, mfxU32 len, mfxBitstream *b
   mfxU32 avail  = bs->MaxLength - offset;
   if(avail < len)
     return MFX_ERR_NOT_ENOUGH_BUFFER;
-  memcpy_s(bs->Data + offset, avail, data, len);
+  std::copy(data, data + len, bs->Data + offset);
   bs->DataLength += len;
   return MFX_ERR_NONE;
 }

@@ -2764,7 +2764,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::Init(mfxVideoParam *par, VideoCORE * core
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         if (pavpOpt)
-            memcpy_s(&m_pavpOpt, sizeof(mfxExtPAVPOption), pavpOpt, sizeof(mfxExtPAVPOption));
+            m_pavpOpt = *pavpOpt;
     }
 #endif
 
@@ -2791,7 +2791,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::Reset(mfxVideoParam *par)
         if (!pavpOpt)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
-        memcpy_s(&m_pavpOpt, sizeof(mfxExtPAVPOption), pavpOpt, sizeof(mfxExtPAVPOption));
+        m_pavpOpt = *pavpOpt;
 
 #if defined (MFX_VA_WIN)
         if (IS_PROTECTION_PAVP_ANY(par->Protected))
@@ -2841,7 +2841,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetVideoParam(mfxVideoParam *par)
         if (!IS_PROTECTION_PAVP_ANY(m_vPar.Protected))
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
-        memcpy_s(buffer, sizeof(mfxExtPAVPOption), &m_pavpOpt, sizeof(mfxExtPAVPOption));
+        *buffer = m_pavpOpt;
     }
 #endif
 
@@ -4071,7 +4071,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
         m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
         m_task_param[m_task_num].task_num = m_task_num;
 
-        memcpy_s(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo),sizeof(mfxFrameInfo),&m_vPar.mfx.FrameInfo,sizeof(mfxFrameInfo));
+        m_task_param[m_task_num].m_vPar.mfx.FrameInfo = m_vPar.mfx.FrameInfo;
 
         THREAD_DEBUG_PRINTF__HOLDING_MUTEX(m_guard, "task_num %d was added\n", m_task_param[m_task_num].task_num)
 
@@ -4163,7 +4163,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
                 m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
                 m_task_param[m_task_num].task_num = m_task_num;
 
-                memcpy_s(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo), sizeof(mfxFrameInfo), &m_vPar.mfx.FrameInfo, sizeof(mfxFrameInfo));
+                m_task_param[m_task_num].m_vPar.mfx.FrameInfo = m_vPar.mfx.FrameInfo;
 
                 pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
 

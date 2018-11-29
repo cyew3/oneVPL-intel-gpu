@@ -266,8 +266,12 @@ PackVA::SaveVLDParameters(
                 {
                     extensionInput.EncryptProtocolHeader.guidEncryptProtocol = m_va->GetProtectedVA()->GetEncryptionGUID();
                     extensionInput.dwBufferSize = bs_size;
-                    memcpy_s(extensionInput.dwAesCounter, sizeof(curr_bs_encryptedData->CipherCounter),
-                        &curr_bs_encryptedData->CipherCounter, sizeof(curr_bs_encryptedData->CipherCounter));
+
+                    VM_ASSERT(sizeof(encryptedData->CipherCounter) == sizeof(extensionInput.dwAesCounter));
+
+                    const mfxU8* src = reinterpret_cast <mfxU8*> (&encryptedData->CipherCounter);
+                    mfxU8* dst = reinterpret_cast <mfxU8*> (extensionInput.dwAesCounter);
+                    std::copy(src, src + sizeof(encryptedData->CipherCounter), dst);
                 }
                 else
                 {
