@@ -545,10 +545,8 @@ mfxStatus SetQualityLevel(
     VADisplay    vaDisplay,
     VAContextID  vaContextEncode,
     VABufferID & qualityParams_id,
-    mfxEncodeCtrl const * pCtrl)
+    mfxEncodeCtrl const * /* pCtrl */)
 {
-    (void)pCtrl;
-
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterBufferQualityLevel *quality_param;

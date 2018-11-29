@@ -273,6 +273,8 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
                           VP9FrameLevelParam &frameParam,
                           eMFXHWType platform)
 {
+    (void)platform;
+
     Zero(frameParam);
     frameParam.frameType = frameType;
 
@@ -351,10 +353,7 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
             frameParam.modeRefDeltaEnabled = 0;
             frameParam.modeRefDeltaUpdate = 0;
         }
-#else //MFX_VERSION >= 1027
-(void)platform;
 #endif //MFX_VERSION >= 1027
-
     }
 
     mfxExtCodingOptionDDI const & extDdi = GetExtBufferRef(par);

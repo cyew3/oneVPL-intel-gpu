@@ -178,7 +178,7 @@ inline void SetOrCopy(mfxExtVP9Param *pDst, mfxExtVP9Param const *pSrc = 0, bool
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     SET_OR_COPY_PAR(NumTileRows);
     SET_OR_COPY_PAR(NumTileColumns);
-    SET_OR_COPY_PAR(DynamicScaling)
+    SET_OR_COPY_PAR(DynamicScaling);
 #endif
 }
 
@@ -189,13 +189,13 @@ inline void SetOrCopy(mfxExtCodingOption2 *pDst, mfxExtCodingOption2 const *pSrc
 
 inline void SetOrCopy(mfxExtCodingOption3 *pDst, mfxExtCodingOption3 const *pSrc = 0, bool /*zeroDst*/ = true)
 {
+    (void)pSrc;
+    (void)pDst;
+
 #if (MFX_VERSION >= 1027)
     SET_OR_COPY_PAR(TargetChromaFormatPlus1);
     SET_OR_COPY_PAR(TargetBitDepthLuma);
     SET_OR_COPY_PAR(TargetBitDepthChroma);
-#else
-    (void)pSrc;
-    (void)pDst;
 #endif
 }
 
