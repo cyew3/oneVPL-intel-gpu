@@ -1965,13 +1965,16 @@ namespace UMC_AV1_DECODER
             {
                 for (uint32_t opNum = 0; opNum <= sh.operating_points_cnt_minus_1; opNum++)
                 {
-                    const int opPtIdc = sh.operating_point_idc[opNum];
-                    const int inTemporalLayer = (opPtIdc >> obuHeader.temporal_id) & 1;
-                    const int inSpatialLayer = (opPtIdc >> (obuHeader.spatial_id + 8)) & 1;
-                    if (opPtIdc == 0 || (inTemporalLayer && inSpatialLayer))
+                    if (sh.decoder_model_present_for_this_op[opNum])
                     {
-                        const int n = sh.decoder_model_info.buffer_removal_time_length_minus_1 + 1;
-                        GetBits(n); // buffer_removal_time
+                        const int opPtIdc = sh.operating_point_idc[opNum];
+                        const int inTemporalLayer = (opPtIdc >> obuHeader.temporal_id) & 1;
+                        const int inSpatialLayer = (opPtIdc >> (obuHeader.spatial_id + 8)) & 1;
+                        if (opPtIdc == 0 || (inTemporalLayer && inSpatialLayer))
+                        {
+                            const int n = sh.decoder_model_info.buffer_removal_time_length_minus_1 + 1;
+                            GetBits(n); // buffer_removal_time
+                        }
                     }
                 }
 
