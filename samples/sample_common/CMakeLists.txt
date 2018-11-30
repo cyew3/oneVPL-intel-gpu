@@ -6,3 +6,5 @@ include_directories (
 set( defs "${WARNING_FLAGS}" )
 make_library( shortname universal static "nosafestring" )
 set( defs "" )
+
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
