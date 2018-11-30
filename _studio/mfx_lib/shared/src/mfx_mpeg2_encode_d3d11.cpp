@@ -1321,7 +1321,7 @@ mfxStatus D3D11Encoder::FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBit
         MFX_CHECK_NULL_PTR1(pBitstream->EncryptedData);
         MFX_CHECK_NULL_PTR1(pBitstream->EncryptedData->Data);
         MFX_CHECK(pBitstream->EncryptedData->DataLength + pBitstream->EncryptedData->DataOffset + bitstreamSize < pBitstream->EncryptedData->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
-        memcpy_s(pBitstream->EncryptedData->Data + pBitstream->EncryptedData->DataLength + pBitstream->EncryptedData->DataOffset, pBitstream->EncryptedData->MaxLength, Frame.Y, bitstreamSize);
+        std::copy(Frame.Y, Frame.Y + bitstreamSize, pBitstream->EncryptedData->Data + pBitstream->EncryptedData->DataLength + pBitstream->EncryptedData->DataOffset);
         pBitstream->EncryptedData->DataLength += bitstreamSize;
         pBitstream->EncryptedData->CipherCounter.IV = pEncrypt->m_aesCounter.IV;
         pBitstream->EncryptedData->CipherCounter.Count = pEncrypt->m_aesCounter.Count;
@@ -1335,7 +1335,7 @@ mfxStatus D3D11Encoder::FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBit
 #endif
     {
         MFX_CHECK(pBitstream->DataLength + pBitstream->DataOffset + bitstreamSize < pBitstream->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
-        memcpy_s(pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, pBitstream->MaxLength, Frame.Y, bitstreamSize);
+        std::copy(Frame.Y, Frame.Y + bitstreamSize, pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset);
         pBitstream->DataLength += bitstreamSize;
     }
 

@@ -685,14 +685,14 @@ namespace MPEG2EncoderHW
         inline mfxU64 GetTimeStamp()
         {
             return m_pFrameCUC->FrameSurface->Data[0]->TimeStamp;
-        }  
+        }
         inline void SetFrames(FramesSet *pEncFrames,
-            FramesSet *pPakFrames, 
+            FramesSet *pPakFrames,
             mfxEncodeInternalParams* pEncodeInternalParams)
         {
             m_FrameEnc = *pEncFrames;
-            m_FramePak = *pPakFrames;   
-            memcpy_s(&m_sEncodeInternalParams, sizeof(mfxEncodeInternalParams), pEncodeInternalParams, sizeof(mfxEncodeInternalParams));
+            m_FramePak = *pPakFrames;
+            m_sEncodeInternalParams = *pEncodeInternalParams;
         }
         inline mfxEncodeInternalParams* GetInternalParams ()
         {
@@ -702,7 +702,7 @@ namespace MPEG2EncoderHW
 
         inline void FillBSParameters(mfxBitstream *bs)
         {
-            m_pFrameCUC->Bitstream = bs;    
+            m_pFrameCUC->Bitstream = bs;
         }
         mfxStatus FillFrameParams (mfxU8 frameType, mfxVideoParamEx_MPEG2 *pExParams, mfxU16 surface_pict_struct, bool bBackwOnly);
         mfxStatus FillSliceMBParams();

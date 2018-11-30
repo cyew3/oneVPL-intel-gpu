@@ -1287,7 +1287,7 @@ namespace MPEG2EncoderHW
         mfxExtCodingOptionQuantMatrix* pMatrix = GetExtCodingOptionsQuantMaxtrix(par->ExtParam, par->NumExtParam);
         if (pMatrix)
         {
-            memcpy_s(&m_VideoParamsEx.sQuantMatrix, sizeof(mfxExtCodingOptionQuantMatrix), pMatrix, sizeof(mfxExtCodingOptionQuantMatrix));
+            m_VideoParamsEx.sQuantMatrix = *pMatrix;
         }
 #endif
 
@@ -2857,7 +2857,7 @@ namespace MPEG2EncoderHW
             m_pFrameCUC->FrameSurface = (mfxFrameSurface*) p;
             p+= sizeof(mfxFrameSurface);
 
-            memcpy_s(&m_pFrameCUC->FrameSurface->Info, sizeof(mfxFrameInfo), &pVideoParams->mfx.FrameInfo, sizeof(mfxFrameInfo));
+            m_pFrameCUC->FrameSurface->Info = pVideoParams->mfx.FrameInfo;
             m_pFrameCUC->FrameSurface->NumFrameData = 6;
             m_pFrameCUC->FrameSurface->Data = (mfxFrameData **)p;
             p += sizeof(mfxFrameData *)*6;

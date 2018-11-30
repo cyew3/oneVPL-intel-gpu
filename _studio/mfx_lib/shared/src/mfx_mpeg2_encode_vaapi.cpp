@@ -1611,10 +1611,9 @@ mfxStatus VAAPIEncoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
 
         for (mfxI32 i = 0; i < numMB; i++)
         {
-            memcpy(
-                pExecuteBuffers->m_pMBs + i,
-                Frame.Y + m_layout.MB_CODE_offset + m_layout.MB_CODE_stride * i,
-                sizeof(ENCODE_ENC_MB_DATA_MPEG2));
+            std::copy(Frame.Y + m_layout.MB_CODE_offset + m_layout.MB_CODE_stride * i,
+                      Frame.Y + m_layout.MB_CODE_offset + m_layout.MB_CODE_stride * i + sizeof(ENCODE_ENC_MB_DATA_MPEG2),
+                      pExecuteBuffers->m_pMBs + i);
         }
 
 
@@ -1767,7 +1766,7 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
         MFX_CHECK_NULL_PTR1(pBitstream->EncryptedData);
         MFX_CHECK_NULL_PTR1(pBitstream->EncryptedData->Data);
         MFX_CHECK(pBitstream->EncryptedData->DataLength + pBitstream->EncryptedData->DataOffset + queryStatus.bitstreamSize < pBitstream->EncryptedData->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
-        memcpy_s(pBitstream->EncryptedData->Data + pBitstream->EncryptedData->DataLength + pBitstream->EncryptedData->DataOffset, pBitstream->EncryptedData->MaxLength, Frame.Y, queryStatus.bitstreamSize);
+        std::copy(Frame.Y, Frame.Y + queryStatus.bitstreamSize, pBitstream->EncryptedData->Data + pBitstream->EncryptedData->DataLength + pBitstream->EncryptedData->DataOffset);
         pBitstream->EncryptedData->DataLength += queryStatus.bitstreamSize;
         pBitstream->EncryptedData->CipherCounter.IV = pEncrypt->m_aesCounter.IV;
         pBitstream->EncryptedData->CipherCounter.Count = pEncrypt->m_aesCounter.Count;

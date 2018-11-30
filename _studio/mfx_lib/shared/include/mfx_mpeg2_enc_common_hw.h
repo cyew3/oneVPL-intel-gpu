@@ -152,9 +152,9 @@ namespace MfxHwMpeg2Encode
            for (int i=0; i < _NUM_STORED_FEEDBACKS; i++)
            {
                if (queryStatus[i].StatusReportFeedbackNumber && queryStatus[i].bStatus != 1)
-                   return false;           
+                   return false;
            }
-           return true;      
+           return true;
        }
 
        inline bool GetFeedback(UINT StatusReportFeedbackNumber, ENCODE_QUERY_STATUS_PARAMS& feedback)
@@ -163,12 +163,12 @@ namespace MfxHwMpeg2Encode
            {
                if (queryStatus[i].StatusReportFeedbackNumber == StatusReportFeedbackNumber)
                {
-                   memcpy_s (&feedback, sizeof(ENCODE_QUERY_STATUS_PARAMS), &queryStatus[i], sizeof(ENCODE_QUERY_STATUS_PARAMS));
+                   feedback = queryStatus[i];
                    queryStatus[i].StatusReportFeedbackNumber = 0;
                    return true;
                }
            }
-           return false;      
+           return false;
        }
 
        inline void* GetPointer()

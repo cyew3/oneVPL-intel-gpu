@@ -339,7 +339,7 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
                 {
                     if (real_size <= pSPSPPS_out->SPSBufSize)
                     {
-                        memcpy_s(pSPSPPS_out->SPSBuffer, real_size * sizeof(mfxU8), pSPSPPS_in->SPSBuffer, real_size * sizeof(mfxU8));
+                        std::copy(pSPSPPS_in->SPSBuffer, pSPSPPS_in->SPSBuffer + real_size, pSPSPPS_out->SPSBuffer);
                         memset(pSPSPPS_out->SPSBuffer + real_size, 0, pSPSPPS_out->SPSBufSize - real_size);
                     }
                     else
@@ -431,12 +431,10 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if (ext_in && ext_out)
         {
-                mfxExtCodingOption temp = {0};
+                mfxExtCodingOption temp = *ext_in;
 
                 mfxU32 bufOffset = sizeof(mfxExtBuffer);
                 mfxU32 bufSize   = sizeof(mfxExtCodingOption) - bufOffset;
-
-                memcpy_s(&temp, sizeof(mfxExtCodingOption), ext_in, sizeof(mfxExtCodingOption));
 
                 memset ((mfxU8*)(ext_out) + bufOffset,0, bufSize);
 
@@ -584,14 +582,11 @@ mfxStatus MFXVideoENCODEMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
 
 mfxStatus MFXVideoENCODEMPEG2::QueryIOSurf(mfxVideoParam *par_input, mfxFrameAllocRequest *request)
 {
+    MFX_CHECK_NULL_PTR2(par_input, request);
     UMC::MPEG2EncoderParams umcpar;
-    mfxVideoParam parameters;
+    mfxVideoParam parameters = *par_input;
     mfxVideoParam *par = & parameters;
 
-    MFX_CHECK_NULL_PTR1(par_input);
-    memcpy_s (par, sizeof(mfxVideoParam), par_input, sizeof(mfxVideoParam));
-
-    MFX_CHECK_NULL_PTR1(request);
     CHECK_VERSION(par->Version);
     CHECK_CODEC_ID(par->mfx.CodecId, MFX_CODEC_MPEG2);
     MFX_CHECK (CheckExtendedBuffers(par) == MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -723,19 +718,15 @@ mfxStatus MFXVideoENCODEMPEG2::Reset(mfxVideoParam *par_input)
 
 mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
 {
+    MFX_CHECK_NULL_PTR1(par_input);
     UMC::MPEG2EncoderParams params;
     mfxStatus sts = MFX_ERR_NONE;
     UMC::Status ret;
     bool bProgressiveSequence = false;
-    mfxVideoParam local_params;
+    mfxVideoParam local_params = *par_input;
     mfxVideoParam *par = &local_params;
     bool warning = false;
     bool invalid = false;
-
-
-    MFX_CHECK_NULL_PTR1(par_input);
-    memcpy_s(par, sizeof(mfxVideoParam), par_input, sizeof(mfxVideoParam));
-
 
     CHECK_VERSION(par->Version);
     CHECK_CODEC_ID(par->mfx.CodecId, MFX_CODEC_MPEG2);
@@ -1407,9 +1398,9 @@ mfxStatus MFXVideoENCODEMPEG2::GetVideoParam(mfxVideoParam *par)
         if (off1 + off2 + off3 > ext->SPSBufSize)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
-        memcpy_s(ext->SPSBuffer, off1,               buf1, off1);
-        memcpy_s(ext->SPSBuffer + off1, off2,        buf2, off2);
-        memcpy_s(ext->SPSBuffer + off1 + off2, off3, buf3, off3);
+        std::copy(reinterpret_cast<mfxU8*>(buf1), reinterpret_cast<mfxU8*>(buf1) + off1, ext->SPSBuffer);
+        std::copy(reinterpret_cast<mfxU8*>(buf2), reinterpret_cast<mfxU8*>(buf2) + off2, ext->SPSBuffer + off1);
+        std::copy(reinterpret_cast<mfxU8*>(buf3), reinterpret_cast<mfxU8*>(buf3) + off3, ext->SPSBuffer + off1 + off2);
         ext->SPSBufSize = mfxU16(off1 + off2 + off3);
         ext->SPSId      = 0;
     }
@@ -2737,7 +2728,7 @@ mfxStatus MFXVideoENCODEMPEG2::PutPicture(mfxPayload **pPayloads, mfxU32 numPayl
                    t = BITPOS(m_codec.threadSpec[i]) >> 3;
                    size += t;
                    if (size < m_codec.output_buffer_size) {
-                       memcpy_s(p, m_codec.output_buffer_size - size + t, m_codec.threadSpec[i].bBuf.start_pointer, t);
+                       std::copy(m_codec.threadSpec[i].bBuf.start_pointer, m_codec.threadSpec[i].bBuf.start_pointer + t, p);
                        p += t;
                    }
                    timer1.Stop(0);
