@@ -461,7 +461,8 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
 
         mfxStatus Alloc(
             VideoCORE* pCore,
-            mfxFrameAllocRequest & req);
+            mfxFrameAllocRequest & req,
+            bool isCopyRequired);
 
         mfxStatus Release();
 
@@ -621,7 +622,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         std::vector<mfxFrameSurface1>   m_surfaces;
     public:
         InternalFrames() {}
-        mfxStatus Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq);
+        mfxStatus Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq, bool isCopyRequired);
         sFrameEx * GetFreeFrame();
         mfxStatus  GetFrame(mfxU32 numFrame, sFrameEx * &Frame);
         mfxStatus Release();

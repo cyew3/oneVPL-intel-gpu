@@ -248,7 +248,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
     if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRaw(m_video);
-        sts = m_rawLocalFrames.Init(m_pCore, &request);
+        sts = m_rawLocalFrames.Init(m_pCore, &request, true);
         MFX_CHECK_STS(sts);
     }
     else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
@@ -257,14 +257,14 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
         request.Type = opaq.In.Type;
         request.NumFrameMin = opaq.In.NumSurface;
 
-        sts = m_opaqFrames.Init(m_pCore, &request);
+        sts = m_opaqFrames.Init(m_pCore, &request, false);
         MFX_CHECK_STS(sts);
 
         if (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
             request.Type = MFX_MEMTYPE_D3D_INT;
             request.NumFrameMin = opaq.In.NumSurface;
-            sts = m_rawLocalFrames.Init(m_pCore, &request);
+            sts = m_rawLocalFrames.Init(m_pCore, &request, true);
             MFX_CHECK_STS(sts);
         }
     }
@@ -278,7 +278,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
     request.Info.FourCC = MFX_FOURCC_NV12;
 #endif
 
-    sts = m_reconFrames.Init(m_pCore, &request);
+    sts = m_reconFrames.Init(m_pCore, &request, false);
     MFX_CHECK_STS(sts);
     sts = m_ddi->Register(m_reconFrames.GetFrameAllocReponse(), D3DDDIFMT_NV12);
     MFX_CHECK_STS(sts);
@@ -333,7 +333,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
         request.Info.Height = static_cast<mfxU16>(tmp_height);
     }
 
-    sts = m_outBitstreams.Init(m_pCore, &request);
+    sts = m_outBitstreams.Init(m_pCore, &request, false);
     MFX_CHECK_STS(sts);
     sts = m_ddi->Register(m_outBitstreams.GetFrameAllocReponse(), D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
@@ -344,7 +344,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
     request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumTasks(m_video);
 
-    sts = m_segmentMaps.Init(m_pCore, &request);
+    sts = m_segmentMaps.Init(m_pCore, &request, false);
     MFX_CHECK_STS(sts);
     sts = m_ddi->Register(m_segmentMaps.GetFrameAllocReponse(), D3DDDIFMT_INTELENCODE_MBSEGMENTMAP);
     MFX_CHECK_STS(sts);

@@ -572,7 +572,8 @@ MfxFrameAllocResponse::~MfxFrameAllocResponse()
 
 mfxStatus MfxFrameAllocResponse::Alloc(
     VideoCORE*     pCore,
-    mfxFrameAllocRequest & req)
+    mfxFrameAllocRequest & req,
+    bool isCopyRequired)
 {
     req.NumFrameSuggested = req.NumFrameMin; // no need in 2 different NumFrames
 
@@ -586,7 +587,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 
         for (int i = 0; i < req.NumFrameMin; i++)
         {
-            mfxStatus sts = pCore->AllocFrames(&tmp, &m_responseQueue[i]);
+            mfxStatus sts = pCore->AllocFrames(&tmp, &m_responseQueue[i], isCopyRequired);
             MFX_CHECK_STS(sts);
 
             m_mids[i] = m_responseQueue[i].mids[0];
@@ -701,7 +702,7 @@ mfxStatus ExternalFrames::GetFrame(mfxFrameSurface1 *pInFrame, sFrameEx *&pOutFr
 //---------------------------------------------------------
 // service class: InternalFrames
 //---------------------------------------------------------
-mfxStatus InternalFrames::Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq)
+mfxStatus InternalFrames::Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq, bool isCopyRequired)
 {
     MFX_CHECK_NULL_PTR2 (pCore, pAllocReq);
     mfxU32 nFrames = pAllocReq->NumFrameMin;
@@ -714,7 +715,7 @@ mfxStatus InternalFrames::Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq
     //printf("internal frames init %d (request)\n", req.NumFrameSuggested);
 
     mfxStatus sts = MFX_ERR_NONE;
-    sts = m_response.Alloc(pCore, *pAllocReq);
+    sts = m_response.Alloc(pCore, *pAllocReq, isCopyRequired);
     MFX_CHECK_STS(sts);
 
     //printf("internal frames init %d (%d) [%d](response)\n", m_response.NumFrameActual,Num(),nFrames);
