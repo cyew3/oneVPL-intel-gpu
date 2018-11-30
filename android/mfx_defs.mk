@@ -26,15 +26,6 @@ ifneq ($(filter 8.% O ,$(PLATFORM_VERSION)),)
     MFX_ANDROID_VERSION:= MFX_O_MR1
   endif
 endif
-ifneq ($(filter 7.% N ,$(PLATFORM_VERSION)),)
-  MFX_ANDROID_VERSION:= MFX_N
-endif
-ifneq ($(filter 6.% M ,$(PLATFORM_VERSION)),)
-  MFX_ANDROID_VERSION:= MFX_MM
-endif
-ifneq ($(filter 5.% L ,$(PLATFORM_VERSION)),)
-  MFX_ANDROID_VERSION:= MFX_LD
-endif
 
 ifeq ($(MFX_ANDROID_PLATFORM),)
   MFX_ANDROID_PLATFORM:=$(TARGET_BOARD_PLATFORM)

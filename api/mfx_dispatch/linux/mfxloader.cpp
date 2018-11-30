@@ -443,11 +443,7 @@ mfxStatus MFXVideoUSER_Load(mfxSession session, const mfxPluginUID *uid, mfxU32 
         // Parsing plugin configuration file and loading information of
         // _all_ plugins registered on the system.
 #ifdef ANDROID
-#if (MFX_ANDROID_VERSION >= MFX_O)
         parse("/vendor/etc/mediasdk_plugins.cfg", MFX::g_GlobalCtx.m_plugins);
-#else
-        parse("/etc/mediasdk_plugins.cfg", MFX::g_GlobalCtx.m_plugins);
-#endif
 #else
         parse(MFX_PLUGINS_CONF_DIR "/plugins.cfg", MFX::g_GlobalCtx.m_plugins);
 #endif

@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2013-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -51,13 +51,7 @@ File Name: mfx_plugin_hive_linux.cpp
 namespace
 {
 #ifdef ANDROID
-
-#if (MFX_ANDROID_VERSION >= MFX_O)
     const char rootPluginPath[] = "/vendor/etc/mediasdk_plugins.cfg";
-#else
-    const char rootPluginPath[] = "/etc/mediasdk_plugins.cfg";
-#endif
-
 #else
     const char rootPluginPath[] = MFX_PLUGINS_DIR"/plugins.cfg";
 #endif

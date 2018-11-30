@@ -12,9 +12,6 @@ Copyright(c) 2011-2018 Intel Corporation. All Rights Reserved.
 #define __MFX_CONFIG_H__
 
 /* Google versions of Android */
-#define MFX_LD    0x03
-#define MFX_MM    0x04
-#define MFX_N     0x05
 #define MFX_O     0x06
 #define MFX_O_MR1 0x07
 #define MFX_P     0x08
