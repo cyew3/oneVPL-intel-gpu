@@ -536,6 +536,8 @@ mfxStatus VideoDECODEAV1::QueryFrame(mfxThreadTask task)
 
 mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out)
 {
+    MFX_CHECK_NULL_PTR2(surface_work, surface_out);
+
     mfxStatus sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_AV1, m_platform != MFX_PLATFORM_SOFTWARE);
     MFX_CHECK_STS(sts);
 
