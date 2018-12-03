@@ -11,3 +11,9 @@ endif
 ifeq ($(MFX_IMPL_SW),)
   MFX_IMPL_SW:=true
 endif
+
+# Enable build with CPLib by special key.
+# In the future it will be always enabled
+ifeq ($(MFX_ENABLE_CPLIB),)
+  MFX_ENABLE_CPLIB:=true
+endif
