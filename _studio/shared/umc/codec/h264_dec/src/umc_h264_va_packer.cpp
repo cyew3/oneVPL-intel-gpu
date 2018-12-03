@@ -24,7 +24,9 @@
 #include "umc_h264_va_packer.h"
 #include "umc_h264_task_supplier.h"
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#ifdef MFX_ENABLE_CPLIB
+#include "va_cp_private.h"
+#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "huc_based_drm_common.h"
 #endif
 
@@ -93,17 +95,28 @@ Packer * Packer::CreatePacker(VideoAccelerator * va, TaskSupplier* supplier)
 
     Packer * packer = 0;
 #if defined(UMC_VA_DXVA)
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
+#ifdef MFX_ENABLE_CPLIB
+    if (va->GetProtectedVA() && IS_PROTECTION_CENC(va->GetProtectedVA()->GetProtected()))
+        throw h264_exception(UMC_ERR_UNSUPPORTED);
+    else
+#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (va->GetProtectedVA() && IS_PROTECTION_WIDEVINE(va->GetProtectedVA()->GetProtected()))
         packer = new PackerDXVA2_Widevine(va, supplier);
     else
-#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
+#endif
         packer = new PackerDXVA2(va, supplier);
 #elif defined (UMC_VA_LINUX)
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
+#ifdef MFX_ENABLE_CPLIB
+    if (va->GetProtectedVA() && IS_PROTECTION_CENC(va->GetProtectedVA()->GetProtected()))
+        packer = new PackerVA_CENC(va, supplier);
+    else
+#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (va->GetProtectedVA() && IS_PROTECTION_WIDEVINE(va->GetProtectedVA()->GetProtected()))
         packer = new PackerVA_Widevine(va, supplier);
-    else if (va->GetProtectedVA())
+    else
+#endif
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+    if (va->GetProtectedVA())
         packer = new PackerVA_PAVP(va, supplier);
     else
 #endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
@@ -1561,7 +1574,7 @@ void PackerDXVA2::PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * sca
     }
 }
 
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
+#if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
 PackerDXVA2_Widevine::PackerDXVA2_Widevine(VideoAccelerator * va, TaskSupplier * supplier)
     : PackerDXVA2(va, supplier)
 {
@@ -1638,8 +1651,6 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
     pPicParams_H264->CurrPic.AssociatedFlag = pSliceHeader->bottom_field_flag;
 
     pPicParams_H264->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
-
-
     pPicParams_H264->Reserved16Bits = pSlice->m_WidevineStatusReportNumber;
 
     //create reference picture list
@@ -1740,7 +1751,7 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
         }
     }
 }
-#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
+#endif // #if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 #endif // UMC_VA_DXVA
 
@@ -2589,7 +2600,129 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
     return UMC_OK;
 }
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#ifdef MFX_ENABLE_CPLIB
+
+PackerVA_CENC::PackerVA_CENC(VideoAccelerator * va, TaskSupplier * supplier)
+    : PackerVA(va, supplier)
+{
+}
+
+void PackerVA_CENC::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice)
+{
+    const UMC_H264_DECODER::H264SliceHeader* pSliceHeader = pSlice->GetSliceHeader();
+    const H264DecoderFrame* pCurrentFrame = pSliceInfo->m_pFrame;
+
+    UMCVACompBuffer *picParamBuf;
+    VAPictureParameterBufferH264* pPicParams_H264 = (VAPictureParameterBufferH264*)m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VAPictureParameterBufferH264));
+    if (!pPicParams_H264)
+        throw h264_exception(UMC_ERR_FAILED);
+
+    memset(pPicParams_H264, 0, sizeof(VAPictureParameterBufferH264));
+
+    int32_t reference = pCurrentFrame->isShortTermRef() ? 1 : (pCurrentFrame->isLongTermRef() ? 2 : 0);
+
+    FillFrame(&(pPicParams_H264->CurrPic), pCurrentFrame, pSliceHeader->bottom_field_flag, reference, 0);
+
+    for (int32_t i = 0; i < 16; i++)
+    {
+        FillFrameAsInvalid(&(pPicParams_H264->ReferenceFrames[i]));
+    }
+
+    int32_t referenceCount = 0;
+    int32_t j = 0;
+
+    int32_t viewCount = m_supplier->GetViewCount();
+
+    for (int32_t i = 0; i < viewCount; i++)
+    {
+        ViewItem & view = m_supplier->GetViewByNumber(i);
+        H264DBPList * pDPBList = view.GetDPBList(0);
+        int32_t dpbSize = pDPBList->GetDPBSize();
+
+        int32_t start = j;
+
+        for (H264DecoderFrame * pFrm = pDPBList->head(); pFrm && (j < dpbSize + start); pFrm = pFrm->future())
+        {
+            if (j >= 16)
+            {
+                VM_ASSERT(false);
+                throw h264_exception(UMC_ERR_FAILED);
+            }
+            VM_ASSERT(j < dpbSize + start);
+
+            int32_t defaultIndex = 0;
+
+            if ((0 == pCurrentFrame->m_index) && !pFrm->IsFrameExist())
+            {
+                defaultIndex = 1;
+            }
+
+            int32_t reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
+            if (!reference && pCurrentFrame != pFrm && (pFrm->isInterViewRef(0) || pFrm->isInterViewRef(1)) &&
+                (pFrm->PicOrderCnt(0, 3) == pCurrentFrame->PicOrderCnt(0, 3)) && pFrm->m_viewId < pCurrentFrame->m_viewId)
+            { // interview reference
+                reference = 1;
+            }
+
+            if (!reference)
+                continue;
+
+            reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
+            ++referenceCount;
+            int32_t field = pFrm->m_bottom_field_flag[0];
+            FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm, field, reference, defaultIndex);
+
+            reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
+
+            if ((pFrm == pCurrentFrame) && ((&pCurrentFrame->m_pSlicesInfo) != pSliceInfo))
+            {
+                FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm, 0, reference, defaultIndex);
+            }
+
+            ++j;
+        }
+    }
+
+    picParamBuf->SetDataSize(sizeof(VAPictureParameterBufferH264));
+
+    UMCVACompBuffer *pParamBuf;
+    VACencStatusParameters* pCENCStatusParams = (VACencStatusParameters*)m_va->GetCompBuffer(VACencStatusParameterBufferType, &pParamBuf, sizeof(VACencStatusParameters));
+    if (!pCENCStatusParams)
+        throw h264_exception(UMC_ERR_FAILED);
+
+    pCENCStatusParams->status_report_index_feedback = pSlice->m_CENCStatusReportNumber;
+
+    pParamBuf->SetDataSize(sizeof(VACencStatusParameters));
+}
+
+void PackerVA_CENC::PackAU(const H264DecoderFrame *pFrame, int32_t isTop)
+{
+    H264DecoderFrameInfo * sliceInfo = const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(isTop));
+    int32_t count_all = sliceInfo->GetSliceCount();
+
+    if (!m_va || !count_all)
+        return;
+
+    int32_t first_slice = 0;
+    H264Slice* slice = sliceInfo->GetSlice(first_slice);
+
+    for ( ; count_all; )
+    {
+        PackPicParams(sliceInfo, slice);
+
+        uint32_t partial_count = count_all;
+        Status sts = m_va->Execute();
+        if (sts != UMC_OK)
+        {
+            throw h264_exception(sts);
+        }
+
+        first_slice += partial_count;
+        count_all -= partial_count;
+    }
+}
+
+#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 PackerVA_Widevine::PackerVA_Widevine(VideoAccelerator * va, TaskSupplier * supplier)
     : PackerVA(va, supplier)
@@ -2710,6 +2843,9 @@ void PackerVA_Widevine::PackAU(const H264DecoderFrame *pFrame, int32_t isTop)
         count_all -= partial_count;
     }
 }
+#endif
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 PackerVA_PAVP::PackerVA_PAVP(VideoAccelerator * va, TaskSupplier * supplier)
     : PackerVA(va, supplier)

@@ -227,7 +227,9 @@ public:  // DEBUG !!!! should remove dependence
     bool m_bError;                                              // (bool) there is an error in decoding
     bool m_isInitialized;
 
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
+#ifdef MFX_ENABLE_CPLIB
+    uint16_t m_CENCStatusReportNumber;
+#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
     uint16_t m_WidevineStatusReportNumber;
 #endif
 

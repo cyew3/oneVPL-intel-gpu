@@ -35,10 +35,14 @@
 
 #if defined(MFX_VA)
 #include "umc_h264_va_supplier.h"
+    #ifdef MFX_ENABLE_CPLIB
+        #include "umc_h264_cenc_supplier.h"
+    #elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
+        #include "umc_h264_widevine_supplier.h"
+    #endif
     #ifndef MFX_PROTECTED_FEATURE_DISABLE
-    #include "umc_h264_widevine_supplier.h"
-    #include "umc_va_dxva2_protected.h"
-    #include "umc_va_linux_protected.h"
+        #include "umc_va_dxva2_protected.h"
+        #include "umc_va_linux_protected.h"
     #endif
 #include "umc_va_video_processing.h"
 #else
@@ -322,7 +326,15 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
         bool bUseBigSurfaceWA = IsBigSurfacePoolApplicable(type);
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#ifdef MFX_ENABLE_CPLIB
+#ifdef MFX_VA_WIN
+        return MFX_ERR_UNSUPPORTED;
+#elif defined(MFX_VA_LINUX)
+        if (IS_PROTECTION_CENC(m_vPar.Protected))
+            m_pH264VideoDecoder.reset(new UMC::CENCTaskSupplier()); // HW, CENC version
+        else
+#endif
+#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
             m_pH264VideoDecoder.reset(new UMC::WidevineTaskSupplier()); // HW, Widevine version
         else
@@ -486,7 +498,13 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         static_cast<UMC::VATaskSupplier*>(m_pH264VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
 
 #if !defined (MFX_PROTECTED_FEATURE_DISABLE)
-        if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_WIDEVINE(m_vFirstPar.Protected))
+        if (IS_PROTECTION_ANY(m_vFirstPar.Protected)
+#ifdef MFX_ENABLE_CPLIB
+            && !IS_PROTECTION_CENC(m_vFirstPar.Protected)
+#else
+            && !IS_PROTECTION_WIDEVINE(m_vFirstPar.Protected)
+#endif
+        )
         {
             if (m_va->GetProtectedVA())
             {
@@ -680,7 +698,13 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
     m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(m_platform, par);
 
 #if (defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-    if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_WIDEVINE(m_vFirstPar.Protected))
+    if (IS_PROTECTION_ANY(m_vFirstPar.Protected)
+#ifdef MFX_ENABLE_CPLIB
+        && !IS_PROTECTION_CENC(m_vFirstPar.Protected)
+#else
+        && !IS_PROTECTION_WIDEVINE(m_vFirstPar.Protected)
+#endif
+    )
     {
         if (m_va->GetProtectedVA())
         {
@@ -1307,7 +1331,9 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     mfxStatus sts = MFX_ERR_NONE;
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#ifdef MFX_ENABLE_CPLIB
+    if (!IS_PROTECTION_CENC(m_vPar.Protected))
+#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected))
 #endif
         sts = bs ? CheckBitstream(bs) : MFX_ERR_NONE;
@@ -1349,7 +1375,13 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
 #if defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)
 #if !defined (MFX_PROTECTED_FEATURE_DISABLE)
-    if (IS_PROTECTION_ANY(m_vPar.Protected) && !IS_PROTECTION_WIDEVINE(m_vPar.Protected) && bs)
+    if (IS_PROTECTION_ANY(m_vPar.Protected) && bs
+#ifdef MFX_ENABLE_CPLIB
+        && !IS_PROTECTION_CENC(m_vPar.Protected)
+#else
+        && !IS_PROTECTION_WIDEVINE(m_vPar.Protected)
+#endif
+    )
     {
         if (!m_va->GetProtectedVA() || !(bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1390,7 +1422,7 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
         }
 #endif
 
-#if (defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if (defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)) && (defined (MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE))
         mfxExtBuffer* widevineExtbuf = (bs) ? GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : nullptr;
         if (widevineExtbuf)
         {
@@ -1435,7 +1467,10 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             if (umcRes == UMC::UMC_ERR_INVALID_STREAM)
             {
                 umcAddSourceRes = umcFrameRes = umcRes = UMC::UMC_OK;
-#if !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#ifdef MFX_ENABLE_CPLIB
+                if (IS_PROTECTION_CENC(m_vPar.Protected))
+                    sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+#elif !defined (MFX_PROTECTED_FEATURE_DISABLE)
                 if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
                     sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 #endif

@@ -608,7 +608,10 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
         break;
     }
 
-#if !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#ifdef MFX_ENABLE_CPLIB
+    if (IS_PROTECTION_CENC(par->Protected))
+        name = DXVA_Intel_Decode_Elementary_Stream_AVC;
+#elif !defined (MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_WIDEVINE(par->Protected))
         name = DXVA_Intel_Decode_Elementary_Stream_AVC;
 #endif
@@ -1507,7 +1510,20 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
             if (pavpOptIn)
                 sts = MFX_ERR_UNSUPPORTED;
         }
-#endif // #if !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#elif defined (MFX_ENABLE_CPLIB)
+        if (in->Protected)
+        {
+            out->Protected = in->Protected;
+
+            if (type == MFX_HW_UNKNOWN ||
+                !IS_PROTECTION_CENC(in->Protected) ||
+                !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+            {
+                sts = MFX_ERR_UNSUPPORTED;
+                out->Protected = 0;
+            }
+        }
+#endif
 
         mfxExtMVCSeqDesc * mvcPointsIn = (mfxExtMVCSeqDesc *)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
         mfxExtMVCSeqDesc * mvcPointsOut = (mfxExtMVCSeqDesc *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
@@ -1904,6 +1920,12 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
     if (in->Protected)
     {
         if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_ANY(in->Protected))
+            return false;
+    }
+#elif defined (MFX_ENABLE_CPLIB)
+    if (in->Protected)
+    {
+        if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_CENC(in->Protected))
             return false;
     }
 #else

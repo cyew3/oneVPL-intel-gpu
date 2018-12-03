@@ -139,7 +139,7 @@ protected:
     DXVA_PicParams_H264* m_picParams;
 };
 
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
+#if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
 class PackerDXVA2_Widevine
     : public PackerDXVA2
 {
@@ -147,14 +147,14 @@ class PackerDXVA2_Widevine
 public:
 
     PackerDXVA2_Widevine(VideoAccelerator * va, TaskSupplier * supplier);
-    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
+    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice) override;
 
 private:
 
     void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264);
-    void PackAU(H264DecoderFrameInfo * sliceInfo, int32_t firstSlice, int32_t count);
+    void PackAU(H264DecoderFrameInfo * sliceInfo, int32_t firstSlice, int32_t count) override;
 };
-#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
+#endif
 
 #endif // UMC_VA_DXVA
 
@@ -210,6 +210,36 @@ private:
     bool                       m_enableStreamOut;
 };
 
+#ifdef MFX_ENABLE_CPLIB
+class PackerVA_CENC
+    : public PackerVA
+{
+
+public:
+
+    PackerVA_CENC(VideoAccelerator * va, TaskSupplier * supplier);
+
+private:
+
+    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice) override;
+    void PackAU(const H264DecoderFrame*, int32_t isTop) override;
+};
+#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
+class PackerVA_Widevine
+    : public PackerVA
+{
+
+public:
+
+    PackerVA_Widevine(VideoAccelerator * va, TaskSupplier * supplier);
+
+private:
+
+    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice) override;
+    void PackAU(const H264DecoderFrame*, int32_t isTop) override;
+};
+#endif
+
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 class PackerVA_PAVP : public PackerVA
 {
@@ -229,20 +259,6 @@ private:
 protected:
 
     void PackPavpParams();
-};
-
-class PackerVA_Widevine
-    : public PackerVA
-{
-
-public:
-
-    PackerVA_Widevine(VideoAccelerator * va, TaskSupplier * supplier);
-
-private:
-
-    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
-    virtual void PackAU(const H264DecoderFrame *pCurrentFrame, int32_t isTop);
 };
 #endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 

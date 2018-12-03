@@ -23,6 +23,7 @@
 
 #include "umc_va_base.h"
 #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#ifndef MFX_ENABLE_CPLIB
 
 #ifdef UMC_VA_DXVA
 #include "umc_va_dxva2.h"
@@ -1353,5 +1354,6 @@ Status WidevineDecrypter::DecryptFrame(MediaData *pSource, DecryptParametersWrap
 
 } // namespace UMC
 
+#endif // #ifndef MFX_ENABLE_CPLIB
 #endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

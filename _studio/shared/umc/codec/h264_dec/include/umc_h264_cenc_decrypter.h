@@ -21,31 +21,29 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
-#ifndef __UMC_H264_WIDEVINE_DECRYPTER_H
-#define __UMC_H264_WIDEVINE_DECRYPTER_H
+#ifndef __UMC_H264_CENC_DECRYPTER_H
+#define __UMC_H264_CENC_DECRYPTER_H
 
 #include "umc_va_base.h"
-#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-#ifndef MFX_ENABLE_CPLIB
+#if defined (UMC_VA_LINUX)
+#if defined (MFX_ENABLE_CPLIB)
 
 #include "umc_h264_headers.h"
-#include "huc_based_drm_common.h"
+#include "va_cp_private.h"
+
+#if !defined(OPEN_SOURCE)
+#include "va/va_backend.h"
+#endif
 
 namespace UMC
 {
-class DecryptParametersWrapper : public DECRYPT_QUERY_STATUS_PARAMS_AVC
+class CENCParametersWrapper : public VACencSliceParameterBufferH264
 {
 public:
-    DecryptParametersWrapper(void);
-    DecryptParametersWrapper(const DECRYPT_QUERY_STATUS_PARAMS_AVC & pDecryptParameters);
-    virtual ~DecryptParametersWrapper(void);
+    CENCParametersWrapper(void);
+    virtual ~CENCParametersWrapper(void);
 
-    DecryptParametersWrapper & operator = (const DECRYPT_QUERY_STATUS_PARAMS_AVC & pDecryptParameters);
-    DecryptParametersWrapper & operator = (const DecryptParametersWrapper & pDecryptParametersWrapper);
-
-    Status GetSequenceParamSet(UMC_H264_DECODER::H264SeqParamSet *sps);
-    Status GetPictureParamSetPart1(UMC_H264_DECODER::H264PicParamSet *pps);
-    Status GetPictureParamSetPart2(UMC_H264_DECODER::H264PicParamSet *pps);
+    CENCParametersWrapper & operator = (const VACencSliceParameterBufferH264 & pDecryptParameters);
 
     Status GetSliceHeaderPart1(UMC_H264_DECODER::H264SliceHeader *pSliceHeader);
     Status GetSliceHeaderPart2(UMC_H264_DECODER::H264SliceHeader *pSliceHeader,
@@ -64,40 +62,48 @@ public:
     Status GetSliceHeaderPart4(UMC_H264_DECODER::H264SliceHeader *hdr,
                                 const UMC_H264_DECODER::H264SeqParamSetSVCExtension *spsSvcExt);
 
-    void ParseSEIBufferingPeriod(const Headers & headers, UMC_H264_DECODER::H264SEIPayLoad *spl);
-    void ParseSEIPicTiming(const Headers & headers, UMC_H264_DECODER::H264SEIPayLoad *spl);
-    void ParseSEIRecoveryPoint(UMC_H264_DECODER::H264SEIPayLoad *spl);
+    uint16_t GetStatusReportNumber() const {return m_CENCStatusReportNumber;}
+    void SetStatusReportNumber(uint16_t statusReportNumber) {m_CENCStatusReportNumber = statusReportNumber;}
 
     double GetTime() const {return m_pts;}
     void SetTime(double pts) {m_pts = pts;}
 
 private:
-    Status GetVUIParam(UMC_H264_DECODER::H264SeqParamSet *sps, UMC_H264_DECODER::H264VUI *vui);
-    Status GetHRDParam(UMC_H264_DECODER::H264SeqParamSet *sps, h264_hrd_param_set_t *hrd, UMC_H264_DECODER::H264VUI *vui);
-
-    void CopyDecryptParams(const DECRYPT_QUERY_STATUS_PARAMS_AVC & pDecryptParameters);
+    void CopyDecryptParams(const VACencSliceParameterBufferH264 & pDecryptParameters);
 
 private:
     double m_pts;
+    uint16_t m_CENCStatusReportNumber;
 };
 
-
-class WidevineDecrypter
+#if !defined(OPEN_SOURCE)
+class CENCDecrypter
 {
 public:
 
-    WidevineDecrypter()
+    CENCDecrypter()
         : m_va(0)
         , m_bitstreamSubmitted(false)
         , m_PESPacketCounter(0)
+        , m_dpy(nullptr)
+        , m_vaEndCenc(nullptr)
+        , m_vaQueryCenc(nullptr)
     {
-#ifdef UMC_VA_DXVA
-        m_pDummySurface = NULL;
-#endif
+        memset(&m_paramsSet, 0, sizeof(VACencStatusBuf));
     }
 
-    ~WidevineDecrypter()
+    ~CENCDecrypter()
     {
+        if (m_paramsSet.buf)
+        {
+            free(m_paramsSet.buf);
+            m_paramsSet.buf = nullptr;
+        }
+        if (m_paramsSet.slice_buf)
+        {
+            free(m_paramsSet.slice_buf);
+            m_paramsSet.slice_buf = nullptr;
+        }
     }
 
     void Init()
@@ -120,7 +126,7 @@ public:
             m_va = (VideoAccelerator*)va;
     }
 
-    Status DecryptFrame(MediaData *pSource, DecryptParametersWrapper* pDecryptParams);
+    Status DecryptFrame(MediaData *pSource, VACencStatusBuf* pCencStatus);
 
     void ReleaseForNewBitstream()
     {
@@ -132,14 +138,17 @@ protected:
     bool m_bitstreamSubmitted;
     uint16_t m_PESPacketCounter;
 
-#ifdef UMC_VA_DXVA
-    IDirect3DSurface9* m_pDummySurface;
-#endif
+    VADisplay m_dpy;
+    VACencStatusBuf m_paramsSet;
+
+    VAStatus (*m_vaEndCenc) (VADriverContextP ctx, VAContextID context);
+    VAStatus (*m_vaQueryCenc) (VADriverContextP ctx, VABufferID buf_id, uint32_t size, VACencStatusBuf *info);
 };
+#endif // #if !defined(OPEN_SOURCE)
 
 } // namespace UMC
 
-#endif // #ifndef MFX_ENABLE_CPLIB
-#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-#endif // __UMC_H264_WIDEVINE_DECRYPTER_H
+#endif // #if defined (MFX_ENABLE_CPLIB)
+#endif // #if defined (UMC_VA_LINUX)
+#endif // __UMC_H264_CENC_DECRYPTER_H
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

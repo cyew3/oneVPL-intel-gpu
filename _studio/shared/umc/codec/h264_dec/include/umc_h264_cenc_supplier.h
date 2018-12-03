@@ -21,63 +21,61 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
-#ifndef __UMC_H264_WIDEVINE_SUPPLIER_H
-#define __UMC_H264_WIDEVINE_SUPPLIER_H
+#ifndef __UMC_H264_CENC_SUPPLIER_H
+#define __UMC_H264_CENC_SUPPLIER_H
 
 #include "umc_va_base.h"
-#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-#ifndef MFX_ENABLE_CPLIB
+#if defined (UMC_VA_LINUX)
+#if defined (MFX_ENABLE_CPLIB)
 
 #include "umc_h264_va_supplier.h"
 
 namespace UMC
 {
-    class POCDecoderWidevine
-        : public POCDecoder
-    {
+    class CENCDecrypter;
+    class CENCParametersWrapper;
 
-    public:
-
-        void DecodePictureOrderCount(const H264Slice*, int32_t) override;
-    };
-
-    class WidevineDecrypter;
-    class DecryptParametersWrapper;
-
-    class WidevineTaskSupplier
+    class CENCTaskSupplier
         : public VATaskSupplier
     {
 
     public:
 
-        WidevineTaskSupplier();
-        ~WidevineTaskSupplier();
+        CENCTaskSupplier();
+        ~CENCTaskSupplier();
 
         Status Init(VideoDecoderParams*) override;
+    #if !defined(OPEN_SOURCE)
         void Reset() override;
+    #endif
 
     protected:
 
-        Status ParseWidevineSPSPPS(DecryptParametersWrapper*);
-        Status ParseWidevineSEI(DecryptParametersWrapper*);
-        H264Slice* ParseWidevineSliceHeader(DecryptParametersWrapper*);
+        H264Slice * ParseCENCSliceHeader(CENCParametersWrapper*);
 
         Status AddOneFrame(MediaData*) override;
 
+    #if !defined(OPEN_SOURCE)
         Status CompleteFrame(H264DecoderFrame*, int32_t) override;
+    #endif
 
     private:
 
-        WidevineTaskSupplier& operator=(WidevineTaskSupplier const&) = delete;
+        CENCTaskSupplier & operator = (CENCTaskSupplier &) = delete;
 
     private:
 
-        std::unique_ptr<WidevineDecrypter> m_pWidevineDecrypter;
+        mfxU32 m_status_report_index_feedback;
+        MediaData m_cencData;
+
+    #if !defined(OPEN_SOURCE)
+        std::unique_ptr<CENCDecrypter> m_pCENCDecrypter;
+    #endif
     };
 
 } // namespace UMC
 
-#endif // #ifndef MFX_ENABLE_CPLIB
-#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-#endif // __UMC_H264_WIDEVINE_SUPPLIER_H
+#endif // #if defined (MFX_ENABLE_CPLIB)
+#endif // #if defined (UMC_VA_LINUX)
+#endif // __UMC_H264_CENC_SUPPLIER_H
 #endif // UMC_ENABLE_H264_VIDEO_DECODER
