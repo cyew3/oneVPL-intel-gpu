@@ -418,7 +418,8 @@ Status VC1VideoDecoderHW::FillAndExecute(MediaData* in)
     }
     if (pPackDescriptorChild->m_pContext->m_picLayerHeader->PTYPE != VC1_SKIPPED_FRAME)
     {
-        m_va->EndFrame();
+        if (UMC_OK != m_va->EndFrame())
+            throw VC1Exceptions::vc1_exception(VC1Exceptions::internal_pipeline_error);
     }
     in->MoveDataPointer(pPackDescriptorChild->m_pContext->m_FrameSize);
 
