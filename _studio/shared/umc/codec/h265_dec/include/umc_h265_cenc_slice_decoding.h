@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2003-2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,41 +21,38 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H265_VIDEO_DECODER)
 
-#ifndef __UMC_H265_WIDEVINE_SLICE_DECODING_H
-#define __UMC_H265_WIDEVINE_SLICE_DECODING_H
+#ifndef __UMC_H265_CENC_SLICE_DECODING_H
+#define __UMC_H265_CENC_SLICE_DECODING_H
 
 #include "umc_va_base.h"
-#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-#ifndef MFX_ENABLE_CPLIB
+#if defined (UMC_VA_LINUX)
+#if defined (MFX_ENABLE_CPLIB)
 
 #include "umc_h265_slice_decoding.h"
-#include "umc_h265_widevine_decrypter.h"
+#include "umc_h265_cenc_decrypter.h"
 
 namespace UMC_HEVC_DECODER
 {
 
-class H265WidevineSlice : public H265Slice
+class H265CENCSlice : public H265Slice
 {
 public:
     // Default constructor
-    H265WidevineSlice();
+    H265CENCSlice();
     // Destructor
-    virtual ~H265WidevineSlice(void);
+    virtual ~H265CENCSlice(void);
 
-    virtual void SetDecryptParameters(DecryptParametersWrapper* pDecryptParameters);
+    virtual void SetDecryptParameters(CENCParametersWrapper* pDecryptParameters);
 
     // Decode slice header and initializ slice structure with parsed values
     virtual bool Reset(PocDecoding * pocDecoding);
-
-    // Parse beginning of slice header to get PPS ID
-    virtual int32_t RetrievePicParamSetNumber();
 
     using H265Slice::UpdateReferenceList;
     // Build reference lists from slice reference pic set. HEVC spec 8.3.2
     UMC::Status UpdateReferenceList(H265DBPList *dpb);
 
-    void SetWidevineStatusReportNumber(uint16_t number) {m_WidevineStatusReportNumber = number;}
-    uint16_t GetWidevineStatusReportNumber() {return m_WidevineStatusReportNumber;}
+    void SetCENCStatusReportNumber(uint16_t number) {m_CENCStatusReportNumber = number;}
+    uint16_t GetCENCStatusReportNumber() {return m_CENCStatusReportNumber;}
 
 public:  // DEBUG !!!! should remove dependence
 
@@ -69,15 +66,15 @@ public:  // DEBUG !!!! should remove dependence
     virtual bool DecodeSliceHeader(PocDecoding * pocDecoding);
 
 private:
-    DecryptParametersWrapper m_DecryptParams;
+    CENCParametersWrapper m_DecryptParams;
 
-    uint16_t m_WidevineStatusReportNumber;
+    uint16_t m_CENCStatusReportNumber;
 
 };
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // #ifndef MFX_ENABLE_CPLIB
-#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-#endif // __UMC_H265_WIDEVINE_SLICE_DECODING_H
+#endif // #if defined (MFX_ENABLE_CPLIB)
+#endif // #if defined (UMC_VA_LINUX)
+#endif // __UMC_H265_CENC_SLICE_DECODING_H
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

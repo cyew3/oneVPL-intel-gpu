@@ -130,7 +130,10 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
 
 #if defined (MFX_VA_WIN)
 
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
+#ifdef MFX_ENABLE_CPLIB
+    if (IS_PROTECTION_CENC(vp.Protected))
+        return false;
+#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_WIDEVINE(vp.Protected))
         return core->IsGuidSupported(DXVA_Intel_Decode_Elementary_Stream_HEVC, &vp) == MFX_ERR_NONE;
 #endif
@@ -1105,7 +1108,20 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
             if (pavpOptIn)
                 sts = MFX_ERR_UNSUPPORTED;
         }
-#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
+#elif defined (MFX_ENABLE_CPLIB)
+        if (in->Protected)
+        {
+            out->Protected = in->Protected;
+
+            if (type == MFX_HW_UNKNOWN ||
+                !IS_PROTECTION_CENC(in->Protected) ||
+                !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+            {
+                sts = MFX_ERR_UNSUPPORTED;
+                out->Protected = 0;
+            }
+        }
+#endif
 
         if (GetPlatform_H265(core, out) != core->GetPlatformType() && sts == MFX_ERR_NONE)
         {
@@ -1193,6 +1209,12 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
     if (in->Protected)
     {
         if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_ANY(in->Protected))
+            return false;
+    }
+#elif defined (MFX_ENABLE_CPLIB)
+    if (in->Protected)
+    {
+        if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_CENC(in->Protected))
             return false;
     }
 #else

@@ -89,7 +89,9 @@ namespace UMC_HEVC_DECODER
     extern Packer * CreatePackerIntel(UMC::VideoAccelerator*);
 #endif
 
-#if (defined (UMC_VA_DXVA) || defined (UMC_VA_LINUX)) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#if defined (UMC_VA_LINUX) && defined(MFX_ENABLE_CPLIB)
+    extern Packer * CreatePackerCENC(UMC::VideoAccelerator*);
+#elif defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
     extern Packer * CreatePackerWidevine(UMC::VideoAccelerator*);
 #endif
 
@@ -98,10 +100,22 @@ Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
     (void)va;
     Packer * packer = 0;
 
-#if (defined (UMC_VA_DXVA) || defined (UMC_VA_LINUX)) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#ifdef MFX_ENABLE_CPLIB
+#ifdef UMC_VA_DXVA
+    if (va->GetProtectedVA() && IS_PROTECTION_CENC(va->GetProtectedVA()->GetProtected()))
+        throw h265_exception(UMC::UMC_ERR_UNSUPPORTED);
+    else
+#elif defined (UMC_VA_LINUX)
+    if (va->GetProtectedVA() && IS_PROTECTION_CENC(va->GetProtectedVA()->GetProtected()))
+        packer = CreatePackerCENC(va);
+    else
+#endif
+#elif !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#if defined (UMC_VA_DXVA) || defined (UMC_VA_LINUX)
     if (va->GetProtectedVA() && IS_PROTECTION_WIDEVINE(va->GetProtectedVA()->GetProtected()))
         packer = CreatePackerWidevine(va);
     else
+#endif
 #endif
 #ifdef UMC_VA_DXVA
     if (va->IsIntelCustomGUID())

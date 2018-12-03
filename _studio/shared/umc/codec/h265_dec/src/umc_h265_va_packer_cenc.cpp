@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 Intel Corporation
+// Copyright (c) 2003-2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,25 @@
 #if defined (UMC_ENABLE_H265_VIDEO_DECODER)
 
 #include "umc_va_base.h"
-#if defined (UMC_VA_LINUX) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-#ifndef MFX_ENABLE_CPLIB
+#if defined (UMC_VA_LINUX)
+#if defined (MFX_ENABLE_CPLIB)
 
 #include "umc_h265_va_packer.h"
 #include "umc_h265_task_supplier.h"
-#include "umc_h265_widevine_slice_decoding.h"
+#include "umc_h265_cenc_slice_decoding.h"
 
 using namespace UMC;
 
 namespace UMC_HEVC_DECODER
 {
 
-    class PackerVA_Widevine
+    class PackerVA_CENC
         : public PackerVA
     {
 
     public:
 
-        PackerVA_Widevine(VideoAccelerator * va)
+        PackerVA_CENC(VideoAccelerator * va)
             : PackerVA(va)
         {}
 
@@ -50,10 +50,10 @@ namespace UMC_HEVC_DECODER
         void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier) override;
     };
 
-    Packer* CreatePackerWidevine(UMC::VideoAccelerator* va)
-    { return new PackerVA_Widevine(va); }
+    Packer* CreatePackerCENC(UMC::VideoAccelerator* va)
+    { return new PackerVA_CENC(va); }
 
-    void PackerVA_Widevine::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier)
+    void PackerVA_CENC::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier)
     {
         if (!frame)
             throw h265_exception(UMC_ERR_NULL_PTR);
@@ -79,12 +79,12 @@ namespace UMC_HEVC_DECODER
             throw h265_exception(s);
     }
 
-    void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
+    void PackerVA_CENC::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
     {
         if (!pCurrentFrame || !pSliceInfo || !supplier)
             throw h265_exception(UMC_ERR_NULL_PTR);
 
-        auto pSlice = static_cast<H265WidevineSlice*>(pSliceInfo->GetSlice(0));
+        auto pSlice = static_cast<H265CENCSlice*>(pSliceInfo->GetSlice(0));
         const H265SeqParamSet* pSeqParamSet = pSlice->GetSeqParam();
 
         UMCVACompBuffer *picParamBuf;
@@ -193,16 +193,16 @@ namespace UMC_HEVC_DECODER
         MFX_INTERNAL_CPY(picParam->ReferenceFrames, sortedReferenceFrames, sizeof(sortedReferenceFrames));
 
         UMCVACompBuffer *pParamBuf;
-        unsigned int* pSliceID = (unsigned int*)m_va->GetCompBuffer(VAStatusParameterBufferType, &pParamBuf, sizeof(unsigned int));
-        if (!pSliceID)
+        VACencStatusParameters* pCENCStatusParams = (VACencStatusParameters*)m_va->GetCompBuffer(VACencStatusParameterBufferType, &pParamBuf, sizeof(VACencStatusParameters));
+        if (!pCENCStatusParams)
             throw h265_exception(UMC_ERR_FAILED);
 
-        *pSliceID = pSlice->GetWidevineStatusReportNumber();
+        pCENCStatusParams->status_report_index_feedback = pSlice->GetCENCStatusReportNumber();
 
-        pParamBuf->SetDataSize(sizeof(unsigned int));
+        pParamBuf->SetDataSize(sizeof(VACencStatusParameters));
     }
 } // namespace UMC_HEVC_DECODER
 
-#endif // #ifndef MFX_ENABLE_CPLIB
-#endif // #if defined (UMC_VA_LINUX) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#endif // #if defined (MFX_ENABLE_CPLIB)
+#endif // #if defined (UMC_VA_LINUX)
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

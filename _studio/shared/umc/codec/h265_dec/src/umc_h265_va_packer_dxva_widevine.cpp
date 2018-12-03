@@ -13,6 +13,7 @@
 
 #include "umc_va_base.h"
 #if defined (UMC_VA_DXVA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#ifndef MFX_ENABLE_CPLIB
 
 #include "umc_hevc_ddi.h"
 #include "umc_h265_va_packer_dxva.h"
@@ -192,5 +193,6 @@ namespace UMC_HEVC_DECODER
     }
 } // namespace UMC_HEVC_DECODER
 
+#endif // #ifndef MFX_ENABLE_CPLIB
 #endif // #if defined (UMC_VA_DXVA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

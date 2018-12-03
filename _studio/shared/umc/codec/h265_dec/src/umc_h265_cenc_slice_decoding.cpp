@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2003-2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,76 +22,51 @@
 #if defined (UMC_ENABLE_H265_VIDEO_DECODER)
 
 #include "umc_va_base.h"
-#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-#ifndef MFX_ENABLE_CPLIB
+#if defined (UMC_VA_LINUX)
+#if defined (MFX_ENABLE_CPLIB)
 
-#include "umc_h265_widevine_slice_decoding.h"
+#include "umc_h265_cenc_slice_decoding.h"
 #include "umc_h265_frame_list.h"
 
 namespace UMC_HEVC_DECODER
 {
 
-H265WidevineSlice::H265WidevineSlice():
+H265CENCSlice::H265CENCSlice():
     H265Slice()
 {
     Reset();
 }
 
-H265WidevineSlice::~H265WidevineSlice()
+H265CENCSlice::~H265CENCSlice()
 {
     Release();
 }
 
 // Initialize slice structure to default values
-void H265WidevineSlice::Reset()
+void H265CENCSlice::Reset()
 {
     H265Slice::Reset();
 
-    DECRYPT_QUERY_STATUS_PARAMS_HEVC decryptParams;
-    memset(&decryptParams, 0, sizeof(DECRYPT_QUERY_STATUS_PARAMS_HEVC));
+    VACencSliceParameterBufferHEVC decryptParams;
+    memset(&decryptParams, 0, sizeof(VACencSliceParameterBufferHEVC));
     m_DecryptParams = decryptParams;
 
-    m_WidevineStatusReportNumber = 0;
+    m_CENCStatusReportNumber = 0;
 }
 
 // Release resources
-void H265WidevineSlice::Release()
+void H265CENCSlice::Release()
 {
     Reset();
 }
 
-void H265WidevineSlice::SetDecryptParameters(DecryptParametersWrapper* pDecryptParameters)
+void H265CENCSlice::SetDecryptParameters(CENCParametersWrapper* pDecryptParameters)
 {
     m_DecryptParams = *pDecryptParameters;
 }
 
-// Parse beginning of slice header to get PPS ID
-int32_t H265WidevineSlice::RetrievePicParamSetNumber()
-{
-    m_SliceHeader = H265SliceHeader{};
-
-    UMC::Status umcRes = UMC::UMC_OK;
-
-    try
-    {
-        m_SliceHeader.nal_unit_type = (NalUnitType)m_DecryptParams.ui8NalUnitType;
-        m_SliceHeader.nuh_temporal_id = m_DecryptParams.ui8NuhTemporalId;
-
-        // decode first part of slice header
-        umcRes = m_DecryptParams.GetSliceHeaderPart1(&m_SliceHeader);
-        if (UMC::UMC_OK != umcRes)
-            return -1;
-    } catch (...)
-    {
-        return -1;
-    }
-
-    return m_SliceHeader.slice_pic_parameter_set_id;
-
-} // int32_t H265WidevineSlice::RetrievePicParamSetNumber()
-
 // Decode slice header and initializ slice structure with parsed values
-bool H265WidevineSlice::Reset(PocDecoding * pocDecoding)
+bool H265CENCSlice::Reset(PocDecoding * pocDecoding)
 {
     // decode slice header
     if (false == DecodeSliceHeader(pocDecoding))
@@ -106,9 +81,9 @@ bool H265WidevineSlice::Reset(PocDecoding * pocDecoding)
     m_pCurrentFrame = NULL;
     return true;
 
-} // H265WidevineSlice::Reset(PocDecoding * pocDecoding)
+} // H265CENCSlice::Reset(PocDecoding * pocDecoding)
 
-bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
+bool H265CENCSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
 {
     UMC::Status umcRes = UMC::UMC_OK;
     // Locals for additional slice data to be read into, the data
@@ -119,8 +94,8 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
     {
         m_SliceHeader = H265SliceHeader{};
 
-        m_SliceHeader.nal_unit_type = (NalUnitType)m_DecryptParams.ui8NalUnitType;
-        m_SliceHeader.nuh_temporal_id = m_DecryptParams.ui8NuhTemporalId;
+        m_SliceHeader.nal_unit_type = (NalUnitType)m_DecryptParams.nal_unit_type;
+        m_SliceHeader.nuh_temporal_id = m_DecryptParams.nuh_temporal_id;
 
         umcRes = m_DecryptParams.GetSliceHeaderFull(this, m_pSeqParamSet, m_pPicParamSet);
 
@@ -202,10 +177,10 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
 
     return (UMC::UMC_OK == umcRes);
 
-} // bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
+} // bool H265CENCSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
 
 // Build reference lists from slice reference pic set. HEVC spec 8.3.2
-UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
+UMC::Status H265CENCSlice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 {
     UMC::Status ps = UMC::UMC_OK;
     H265DecoderRefPicList::ReferenceInformation* pRefPicList0 = NULL;
@@ -373,8 +348,8 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
 
     for (cIdx = 0; cIdx < MAX_NUM_REF_PICS; cIdx ++)
     {
-        pRefPicList0[cIdx].refFrame = refPicListTemp0[m_DecryptParams.RefFrames.ref_list_idx[0][cIdx]];
-        pRefPicList0[cIdx].isLongReference = m_DecryptParams.RefFrames.ref_list_idx[0][cIdx] >= (NumPicStCurr0 + NumPicStCurr1);
+        pRefPicList0[cIdx].refFrame = refPicListTemp0[m_DecryptParams.ref_list_idx[0][cIdx]];
+        pRefPicList0[cIdx].isLongReference = m_DecryptParams.ref_list_idx[0][cIdx] >= (NumPicStCurr0 + NumPicStCurr1);
     }
 
     if (header->slice_type == P_SLICE)
@@ -385,19 +360,19 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
     {
         for (cIdx = 0; cIdx < MAX_NUM_REF_PICS; cIdx ++)
         {
-            if (refPicListTemp1[m_DecryptParams.RefFrames.ref_list_idx[1][cIdx]] != NULL)
+            if (refPicListTemp1[m_DecryptParams.ref_list_idx[1][cIdx]] != NULL)
             {
-                pRefPicList1[cIdx].refFrame = refPicListTemp1[m_DecryptParams.RefFrames.ref_list_idx[1][cIdx]];
-                pRefPicList1[cIdx].isLongReference = m_DecryptParams.RefFrames.ref_list_idx[1][cIdx] >= (NumPicStCurr0 + NumPicStCurr1);
+                pRefPicList1[cIdx].refFrame = refPicListTemp1[m_DecryptParams.ref_list_idx[1][cIdx]];
+                pRefPicList1[cIdx].isLongReference = m_DecryptParams.ref_list_idx[1][cIdx] >= (NumPicStCurr0 + NumPicStCurr1);
             }
         }
     }
 
     return ps;
-} // Status H265WidevineSlice::UpdateRefPicList(H265DBPList *pDecoderFrameList)
+} // Status H265CENCSlice::UpdateRefPicList(H265DBPList *pDecoderFrameList)
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // #ifndef MFX_ENABLE_CPLIB
-#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#endif // #if defined (MFX_ENABLE_CPLIB)
+#endif // #if defined (UMC_VA_LINUX)
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

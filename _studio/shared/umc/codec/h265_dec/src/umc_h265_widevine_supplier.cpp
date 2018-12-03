@@ -23,6 +23,7 @@
 
 #include "umc_va_base.h"
 #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#ifndef MFX_ENABLE_CPLIB
 
 #include "umc_h265_widevine_supplier.h"
 #include "umc_h265_widevine_slice_decoding.h"
@@ -647,5 +648,6 @@ void WidevineTaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
 
 } // namespace UMC_HEVC_DECODER
 
+#endif // #ifndef MFX_ENABLE_CPLIB
 #endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

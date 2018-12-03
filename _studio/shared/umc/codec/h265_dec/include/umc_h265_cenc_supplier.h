@@ -21,54 +21,61 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H265_VIDEO_DECODER)
 
-#ifndef __UMC_H265_WIDEVINE_SUPPLIER_H
-#define __UMC_H265_WIDEVINE_SUPPLIER_H
+#ifndef __UMC_H265_CENC_SUPPLIER_H
+#define __UMC_H265_CENC_SUPPLIER_H
 
 #include "umc_va_base.h"
-#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-#ifndef MFX_ENABLE_CPLIB
+#if defined (UMC_VA_LINUX)
+#if defined (MFX_ENABLE_CPLIB)
 
 #include "umc_h265_va_supplier.h"
 
 namespace UMC_HEVC_DECODER
 {
-    class WidevineDecrypter;
-    class DecryptParametersWrapper;
+    class CENCDecrypter;
+    class CENCParametersWrapper;
 
-    class WidevineTaskSupplier
+    class CENCTaskSupplier
         : public VATaskSupplier
     {
 
     public:
 
-        WidevineTaskSupplier();
-        ~WidevineTaskSupplier();
+        CENCTaskSupplier();
+        ~CENCTaskSupplier();
 
+    #if !defined(OPEN_SOURCE)
         UMC::Status Init(UMC::VideoDecoderParams*) override;
         void Reset() override;
+    #endif
 
     protected:
 
-        UMC::Status ParseWidevineVPSSPSPPS(DecryptParametersWrapper*);
-        H265Slice*  ParseWidevineSliceHeader(DecryptParametersWrapper*);
-        UMC::Status ParseWidevineSEI(DecryptParametersWrapper*);
+        H265Slice * ParseCENCSliceHeader(CENCParametersWrapper*);
 
         UMC::Status AddOneFrame(UMC::MediaData*) override;
 
+    #if !defined(OPEN_SOURCE)
         void CompleteFrame(H265DecoderFrame*) override;
+    #endif
 
     private:
 
-        WidevineTaskSupplier& operator=(WidevineTaskSupplier const&) = delete;
+        CENCTaskSupplier & operator = (CENCTaskSupplier &) = delete;
 
     private:
 
-        std::unique_ptr<WidevineDecrypter> m_pWidevineDecrypter;
+        mfxU32 m_status_report_index_feedback;
+        UMC::MediaData m_cencData;
+
+    #if !defined(OPEN_SOURCE)
+        std::unique_ptr<CENCDecrypter> m_pCENCDecrypter;
+    #endif
     };
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // #ifndef MFX_ENABLE_CPLIB
-#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-#endif // __UMC_H265_WIDEVINE_SUPPLIER_H
+#endif // #if defined (MFX_ENABLE_CPLIB)
+#endif // #if defined (UMC_VA_LINUX)
+#endif // __UMC_H265_CENC_SUPPLIER_H
 #endif // UMC_ENABLE_H265_VIDEO_DECODER
