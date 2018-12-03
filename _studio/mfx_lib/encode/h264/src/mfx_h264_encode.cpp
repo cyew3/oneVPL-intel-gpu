@@ -1438,7 +1438,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_Compress_Slice_MBT(void* state, H264S
 
     for (i = 0; i < nThreads; i ++) {
         if (core_enc->m_info.entropy_coding_mode)
-            memcpy_s(core_enc->m_Slices_MBT[i].m_pbitstream->context_array, CABAC_CONTEXT_ARRAY_LEN * sizeof(CABAC_CONTEXT), curr_slice->m_pbitstream->context_array, CABAC_CONTEXT_ARRAY_LEN * sizeof(CABAC_CONTEXT));
+            std::copy(std::begin(curr_slice->m_pbitstream->context_array), std::end(curr_slice->m_pbitstream->context_array), std::begin(core_enc->m_Slices_MBT[i].m_pbitstream->context_array));
 #ifdef H264_NEW_THREADING
         m_taskParams.threads_data[i].mbt_data.core_enc = core_enc;
         m_taskParams.threads_data[i].mbt_data.curr_slice = curr_slice;

@@ -37,14 +37,21 @@ namespace UMC_H264_ENCODER
 #endif // defined(_MSC_VER)
 
 #define IClip(Min, Max, Val) (((Val) < (Min)) ? (Min) : (((Val) > (Max)) ? (Max) : (Val)))
-#define SetEdgeStrength(edge, strength) {                                               \
-    Ipp32u val = (((((strength) * 256) + strength) * 256 + strength) * 256 + strength); \
-    memcpy_s(edge, sizeof(Ipp32u), &val, sizeof(Ipp32u));                               \
+
+inline void SetEdgeStrength(uint8_t *edge, uint8_t strength)
+{
+    std::fill(edge, edge + 4, strength);
 }
-#define CopyEdgeStrength(dst_edge, src_edge)  \
-    memcpy_s(dst_edge, sizeof(Ipp32u), src_edge, sizeof(Ipp32u))
-#define CompareEdgeStrength(strength, edge) \
-    ((((((strength) * 256) + strength) * 256 + strength) * 256 + strength) == *((Ipp32u *) (edge)))
+
+inline void CopyEdgeStrength(uint8_t *dst_edge, uint8_t *src_edge)
+{
+    std::copy(src_edge, src_edge + 4, dst_edge);
+}
+
+inline bool CompareEdgeStrength(uint8_t strength, uint8_t* edge)
+{
+    return std::find_if_not(edge, edge + 4, [strength](uint8_t val){ return val == strength; }) == edge + 4;
+}
 
 // declare used types and constants
 enum
