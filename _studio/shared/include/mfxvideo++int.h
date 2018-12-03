@@ -89,7 +89,7 @@ DEFINE_GUID_VA(sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT,  VAProfileH264Stereo
 
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 #if defined (MFX_VA)
-#if !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined (MFX_PROTECTED_FEATURE_DISABLE) || defined(MFX_ENABLE_CPLIB)
 DEFINE_GUID_VA(DXVA_Intel_Decode_Elementary_Stream_AVC,      VAProfileH264High,                VAEntrypointVLD);
 #endif
 #endif

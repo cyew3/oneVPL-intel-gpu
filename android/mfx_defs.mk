@@ -60,6 +60,11 @@ MFX_CFLAGS += \
   -Wformat -Wformat-security \
   -fexceptions -frtti
 
+ifeq ($(MFX_ENABLE_CPLIB),true)
+  MFX_CFLAGS += \
+    -DMFX_ENABLE_CPLIB
+endif
+
 # LibVA support.
 MFX_CFLAGS_LIBVA := -DLIBVA_SUPPORT -DLIBVA_ANDROID_SUPPORT
 

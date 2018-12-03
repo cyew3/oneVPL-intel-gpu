@@ -21,6 +21,8 @@
 #ifndef __HUC_BASED_DRM_COMMON_H__
 #define __HUC_BASED_DRM_COMMON_H__
 
+#ifndef MFX_ENABLE_CPLIB
+
 #include "huc_based_drm_avc_structs.h"
 #include "huc_based_drm_hevc_structs.h"
 #include "huc_based_drm_vp9_structs.h"
@@ -167,5 +169,5 @@ typedef struct _DECRYPT_QUERY_STATUS_PARAMS_VP9
     uint8_t  frame_parallel_decoding_mode;
 } DECRYPT_QUERY_STATUS_PARAMS_VP9, *PDECRYPT_QUERY_STATUS_PARAMS_VP9;
 
-
+#endif  // #ifndef MFX_ENABLE_CPLIB
 #endif  // __HUC_BASED_DRM_COMMON_H__

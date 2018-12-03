@@ -403,7 +403,7 @@ VAAPIVideoCORE::GetHandle(
     MFX_CHECK_NULL_PTR1(handle);
     UMC::AutomaticUMCMutex guard(m_guard);
 
-#if !defined (MFX_PROTECTED_FEATURE_DISABLE) && !defined (MFX_ADAPTIVE_PLAYBACK_DISABLE)
+#if (!defined (MFX_PROTECTED_FEATURE_DISABLE) || defined (MFX_ENABLE_CPLIB)) && !defined (MFX_ADAPTIVE_PLAYBACK_DISABLE)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (MFX_HANDLE_VA_CONTEXT_ID == (mfxU32)type )
     {
@@ -434,7 +434,7 @@ VAAPIVideoCORE::SetHandle(
     {
         switch ((mfxU32)type)
         {
-#if !defined (MFX_PROTECTED_FEATURE_DISABLE) && !defined (MFX_ADAPTIVE_PLAYBACK_DISABLE)
+#if (!defined (MFX_PROTECTED_FEATURE_DISABLE) || defined (MFX_ENABLE_CPLIB)) && !defined (MFX_ADAPTIVE_PLAYBACK_DISABLE)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_HANDLE_VA_CONFIG_ID:
             // if device manager already set

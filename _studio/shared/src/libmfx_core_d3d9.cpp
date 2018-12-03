@@ -766,16 +766,17 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
     }
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
-    if (IS_PROTECTION_ANY(param->Protected) && !IS_PROTECTION_WIDEVINE(param->Protected))
+    if (IS_PROTECTION_ANY(param->Protected)
+#ifdef MFX_ENABLE_CPLIB
+        && !IS_PROTECTION_CENC(param->Protected)
+#else
+        && !IS_PROTECTION_WIDEVINE(param->Protected)
+#endif
+    )
     {
-        DXVA2_DecodeExtensionData DecodeExtension;
-        DecodeExtension.Function = DXVA2_DECODE_GET_DRIVER_HANDLE;
-        DecodeExtension.pPrivateInputData = NULL;
-        DecodeExtension.PrivateInputDataSize = 0;
-        DecodeExtension.pPrivateOutputData = &m_DXVA2DecodeHandle;
-        DecodeExtension.PrivateOutputDataSize = sizeof(m_DXVA2DecodeHandle);
-
-        if (UMC_OK != m_pVA->ExecuteExtensionBuffer(&DecodeExtension))
+        VideoAccelerator::ExtensionData ext{};
+        ext.output = std::make_pair(&m_DXVA2DecodeHandle, sizeof(m_DXVA2DecodeHandle));
+        if (UMC_OK != m_pVA->ExecuteExtension(DXVA2_DECODE_GET_DRIVER_HANDLE, ext))
         {
             m_pVA.reset();
             return MFX_ERR_UNSUPPORTED;

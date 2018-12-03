@@ -374,6 +374,9 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         if (!IS_PROTECTION_PAVP_ANY(in->Protected) && pavpOpt)
             return MFX_ERR_INVALID_VIDEO_PARAM;
+#elif defined (MFX_ENABLE_CPLIB)
+        if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_CENC(in->Protected))
+            return MFX_ERR_INVALID_VIDEO_PARAM;
 #else
         return MFX_ERR_INVALID_VIDEO_PARAM;
 #endif
@@ -470,7 +473,7 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         return MFX_ERR_NONE;
-#else
+#elif !defined (MFX_ENABLE_CPLIB)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 #endif
     }

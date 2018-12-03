@@ -21,6 +21,8 @@
 #ifndef __HUC_BASED_DRM_AVC_STRUCTS_H__
 #define __HUC_BASED_DRM_AVC_STRUCTS_H__
 
+#ifndef MFX_ENABLE_CPLIB
+
 #define CACHELINE_SIZE 64
 
 #define MAX_NUM_SCHED_SEL_ITEMS 32
@@ -315,4 +317,5 @@ typedef h264_SEI_buffering_period_t __attribute__ ((aligned (CACHELINE_SIZE))) a
 typedef h264_SEI_pic_timing_t       __attribute__ ((aligned (CACHELINE_SIZE))) aligned_h264_SEI_pic_timing_t;
 typedef h264_SEI_recovery_point_t   __attribute__ ((aligned (CACHELINE_SIZE))) aligned_h264_SEI_recovery_point_t;
 */
+#endif  // #ifndef MFX_ENABLE_CPLIB
 #endif  // __HUC_BASED_DRM_AVC_STRUCTS_H__

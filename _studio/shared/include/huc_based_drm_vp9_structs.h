@@ -21,6 +21,8 @@
 #ifndef __HUC_BASED_DRM_VP9_STRUCTS_H__
 #define __HUC_BASED_DRM_VP9_STRUCTS_H__
 
+#ifndef MFX_ENABLE_CPLIB
+
 #define CACHELINE_SIZE              64
 
 #define VP9_MAX_REF_LF_DELTAS       4
@@ -82,4 +84,5 @@ typedef struct
 typedef FRAME_CONTEXT_MANAGE_INFO __attribute__ ((aligned (CACHELINE_SIZE))) ALIGNED_FRAME_CONTEXT_MANAGE_INFO;
 typedef FRAME_IMMLAST_FRAME_INFO __attribute__ ((aligned (CACHELINE_SIZE))) ALIGNED_FRAME_IMMLAST_FRAME_INFO;
 */
+#endif  // #ifndef MFX_ENABLE_CPLIB
 #endif  // __HUC_BASED_DRM_VP9_STRUCTS_H__

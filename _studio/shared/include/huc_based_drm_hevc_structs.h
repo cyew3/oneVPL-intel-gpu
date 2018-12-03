@@ -21,6 +21,8 @@
 #ifndef __HUC_BASED_DRM_HEVC_STRUCTS_H__
 #define __HUC_BASED_DRM_HEVC_STRUCTS_H__
 
+#ifndef MFX_ENABLE_CPLIB
+
 #define     CACHELINE_SIZE                  64
 
 #define     H265_MAX_NUM_SPS                16
@@ -415,4 +417,5 @@ typedef h265_sei_pic_timing_t __attribute__ ((aligned (CACHELINE_SIZE))) aligned
 typedef h265_seq_param_set_t __attribute__ ((aligned (CACHELINE_SIZE))) aligned_h265_seq_param_set_t;
 typedef h265_pic_param_set_t __attribute__ ((aligned (CACHELINE_SIZE))) aligned_h265_pic_param_set_t;
 */
+#endif  // #ifndef MFX_ENABLE_CPLIB
 #endif  // __HUC_BASED_DRM_HEVC_STRUCTS_H__
