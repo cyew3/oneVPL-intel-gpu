@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="asf_spl"
-	ProjectGUID="{7662C9C6-5CE0-42E6-ACA7-92FE6B7797A6}"
+	ProjectGUID="{7132F913-4DB1-4BD1-9F66-222831347F66}"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

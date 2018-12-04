@@ -3,7 +3,7 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{0108C6ED-B93F-4314-B9CD-4592B70C3C05}</ProjectGuid>
+    <ProjectGuid>{28070952-7E32-4E91-BD27-65F638388720}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
   </PropertyGroup>

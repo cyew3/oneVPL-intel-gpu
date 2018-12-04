@@ -28,7 +28,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>custom_evr_presenter</ProjectName>
-    <ProjectGuid>{F6E926BC-F96E-4A2B-8F5E-618771A18B15}</ProjectGuid>
+    <ProjectGuid>{19C7A84E-B09D-423B-83E9-4A7384DC8F15}</ProjectGuid>
     <RootNamespace>EVRPresenter</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

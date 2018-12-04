@@ -70,7 +70,7 @@
     <ClInclude Include="include\sbr_struct.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3C2F1CD4-04C0-49D0-A857-FFEA8E390D95}</ProjectGuid>
+    <ProjectGuid>{52B3AADE-29AF-468F-9162-0D7DF63A4C2C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>

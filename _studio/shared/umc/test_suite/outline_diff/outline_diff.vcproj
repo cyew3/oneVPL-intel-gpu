@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="outline_diff"
-	ProjectGUID="{E6848E48-FECA-1BAD-AD2E-726CD090F5D3}"
+	ProjectGUID="{71B6757A-AC1E-463D-B836-C1628716A52B}"
 	RootNamespace="outline_diff"
 	Keyword="Win32Proj"
 	>

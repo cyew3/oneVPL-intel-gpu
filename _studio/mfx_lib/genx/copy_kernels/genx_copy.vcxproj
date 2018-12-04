@@ -28,7 +28,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>genx_copy</ProjectName>
-    <ProjectGuid>{395F37F9-1F3C-40B6-83FA-43AB91B4F026}</ProjectGuid>
+    <ProjectGuid>{75017A77-F4E6-449C-98F9-14460BE8FE26}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>

@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="umc_pipeline"
-	ProjectGUID="{0352CB47-C15B-4216-80DF-CF365D2CEE08}"
+	ProjectGUID="{EECA5C87-99C6-47D8-B7C4-F1D4D361045F}"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

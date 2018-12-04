@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7708D451-3FFF-4CFD-89C4-28DC1F4CEDD9}</ProjectGuid>
+    <ProjectGuid>{87C1A0A4-D12B-4AEE-82F5-E43F5F64C193}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

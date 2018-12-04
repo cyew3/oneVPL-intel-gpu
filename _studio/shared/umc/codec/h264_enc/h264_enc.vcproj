@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="h264_enc"
-	ProjectGUID="{35EBE815-8982-4D93-A7D2-FB9F3CFE2E86}"
+	ProjectGUID="{BBBCC17A-82F8-4A7D-88EF-31C21F623B81}"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

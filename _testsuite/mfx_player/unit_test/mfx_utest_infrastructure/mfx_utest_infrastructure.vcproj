@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="mfx_utest_infrastructure"
-	ProjectGUID="{AFDE06F8-2F72-43D7-8669-387A3F164C0A}"
+	ProjectGUID="{064357C6-F78E-4547-829C-9361D390A5EE}"
 	RootNamespace="mfx_utest_infrastructure"
 	Keyword="Win32Proj"
 	>

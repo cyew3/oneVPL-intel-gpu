@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="scene_analyzer"
-	ProjectGUID="{0108C6ED-B93F-4314-B9CD-4592B70C3C05}"
+	ProjectGUID="{453420C6-FA7F-4B86-88AF-B3F6FF20E565}"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

@@ -3,7 +3,7 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A6112FED-B0F8-4396-BAD8-FFB466DF85CE}</ProjectGuid>
+    <ProjectGuid>{9B448407-57E7-4FE7-8CA2-2C67122A13C6}</ProjectGuid>
     <RootNamespace>h265_dec_hw</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>vp9_dec_hw</ProjectName>

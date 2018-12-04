@@ -36,7 +36,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D719372D-BA13-4730-AFF6-1994B26EFF6C}</ProjectGuid>
+    <ProjectGuid>{1B8ED876-E2BF-412C-93CB-28364DC57118}</ProjectGuid>
     <RootNamespace>libmfxsw</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>libmfxsw_plugin_vpp</ProjectName>

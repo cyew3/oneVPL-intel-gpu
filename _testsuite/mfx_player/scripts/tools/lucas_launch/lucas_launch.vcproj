@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="lucas_launch"
-	ProjectGUID="{01B0C3A6-547C-4DBF-841C-017AD84A1222}"
+	ProjectGUID="{63A8AFF8-6D55-4A99-B041-FBAEAC3B4454}"
 	RootNamespace="lucas_launch"
 	Keyword="Win32Proj"
 	>

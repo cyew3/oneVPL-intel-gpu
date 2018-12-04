@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="genx_h264_encode"
-	ProjectGUID="{8554E7C5-92FF-45F6-B9B4-A447EFAED15C}"
+	ProjectGUID="{0435337F-3BBA-4362-9F45-BF42B1EFD21D}"
 	RootNamespace="encode"
 	Keyword="Win32Proj"
 	>

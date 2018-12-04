@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7D461E6A-B47C-4843-A06A-ECCBB0DEA729}</ProjectGuid>
+    <ProjectGuid>{0E9BE7E1-700E-46FD-935A-3903AFD585B0}</ProjectGuid>
     <RootNamespace>mfxplugin_vpp</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
@@ -208,37 +208,37 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\shared\mfx_trace\mfx_trace.vcxproj">
-      <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
+      <Project>{68AD0BD0-170B-4CEA-8A55-D6B841D66203}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\codec\color_space_converter\color_space_converter.vcxproj">
-      <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
+      <Project>{51904F5C-544A-47FD-8220-B6B3B3B06FFE}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\codec\scene_analyzer\scene_analyzer.vcxproj">
-      <Project>{0108c6ed-b93f-4314-b9cd-4592b70c3c05}</Project>
+      <Project>{28070952-7E32-4E91-BD27-65F638388720}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
-      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+      <Project>{C22074B5-4F12-464E-B7BE-6C169718E0E8}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\vm_plus\vm_plus.vcxproj">
-      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <Project>{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\io\media_buffers\media_buffers.vcxproj">
-      <Project>{9befd888-5d4d-49fb-bda0-e5987f4f6fc7}</Project>
+      <Project>{314D0047-F36D-4922-95B0-9757FA9D667F}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\io\umc_io\umc_io.vcxproj">
-      <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
+      <Project>{8DC35B89-B4B7-4B48-B462-E589D4FDFEDE}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\mfx_common.vcxproj">
-      <Project>{7929e69f-b47f-4a1e-a038-6be3343ce855}</Project>
+      <Project>{5B832EA0-E58C-46B9-AFF6-2416CF805C09}</Project>
     </ProjectReference>
     <ProjectReference Include="..\vpp\vpp.vcxproj">
-      <Project>{f642e5e0-3322-4bc7-9e25-76ca28dd97f7}</Project>
+      <Project>{0A6BFB80-D79F-4BFF-B3FC-6AAFF8F13146}</Project>
     </ProjectReference>
     <ProjectReference Include="libmfxsw_plugin_vpp.vcxproj">
-      <Project>{d719372d-ba13-4730-aff6-1994b26eff6c}</Project>
+      <Project>{1B8ED876-E2BF-412C-93CB-28364DC57118}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

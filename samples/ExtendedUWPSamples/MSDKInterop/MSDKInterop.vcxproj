@@ -51,7 +51,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{ecad1486-48ea-4e5e-97c8-d37c1c36cff7}</ProjectGuid>
+    <ProjectGuid>{66921F7C-E01F-43BA-B71C-6CD494D30DF2}</ProjectGuid>
     <Keyword>DynamicLibrary</Keyword>
     <RootNamespace>MSDKInterop</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>

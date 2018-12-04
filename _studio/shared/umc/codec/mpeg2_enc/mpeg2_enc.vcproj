@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="mpeg2_enc"
-	ProjectGUID="{3C2E1E62-5CDE-4D3C-9705-900B5A187198}"
+	ProjectGUID="{D38CB267-1BD6-4FFA-8E8D-22D86AAAFBD8}"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

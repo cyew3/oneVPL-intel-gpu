@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{43B1EFA0-DF99-4C0A-8BA9-C1A42AEE7F6F}</ProjectGuid>
+    <ProjectGuid>{A5429BD9-EB26-473F-8164-71FE00573E87}</ProjectGuid>
     <RootNamespace>sample_fei_h265</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -235,8 +235,8 @@
     <ClInclude Include="include\sample_fei_h265.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+    <ProjectReference Include="..\..\sample_common\sample_common.vcxproj">
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

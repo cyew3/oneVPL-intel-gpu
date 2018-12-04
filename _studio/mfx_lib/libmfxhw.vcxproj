@@ -4,7 +4,7 @@
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
     <ProjectName>libmfxhw</ProjectName>
-    <ProjectGuid>{D719372D-BA13-4730-AFF6-1994B26EFF6C}</ProjectGuid>
+    <ProjectGuid>{38E352C7-C5F5-459E-9338-A7DD164E6CA4}</ProjectGuid>
     <RootNamespace>libmfxhw</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
@@ -128,10 +128,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\shared\asc\ascLib.vcxproj">
-      <Project>{b21c4030-4a46-499d-b58a-54085ceba92b}</Project>
+      <Project>{0F61230F-80E3-48ED-9FA7-96D13B4E5BB7}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\mfx_trace\mfx_trace_hw.vcxproj">
-      <Project>{ee93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
+      <Project>{252BA91C-A180-41D8-8B2F-84904DD53000}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -139,10 +139,10 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\av1_dec\av1_dec_hw.vcxproj">
-      <Project>{4c70c57b-f4a6-4923-ab43-e44a85b91510}</Project>
+      <Project>{2A279BD1-A4A8-41AE-B108-F8ADA2759188}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\brc\brc.vcxproj">
-      <Project>{06768873-9792-4471-9a7f-0d0e37e9dc2d}</Project>
+      <Project>{E8E76842-6CF5-450F-A29E-CD15D7955AA4}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -150,7 +150,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\color_space_converter\color_space_converter_hw.vcxproj">
-      <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
+      <Project>{833A311A-B831-4C1E-B1ED-82FB2001E0F0}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -158,7 +158,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\h264_dec\h264_dec_hw.vcxproj">
-      <Project>{c7621c21-a2d0-4604-896d-29f1470d9281}</Project>
+      <Project>{D50C863D-FD29-4237-B729-8848A49A6098}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -166,7 +166,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\h264_enc\h264_enc.vcxproj">
-      <Project>{35ebe815-8982-4d93-a7d2-fb9f3cfe2e86}</Project>
+      <Project>{2C461A99-0D9A-404B-8EC9-27DCDF75A242}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -174,10 +174,10 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\h265_dec\h265_dec_hw.vcxproj">
-      <Project>{c712ba45-ac67-4a16-bd5d-2619eb325182}</Project>
+      <Project>{A3662EA1-CADD-4C33-92C3-7606E5601CCA}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\jpeg_common\jpeg_common.vcxproj">
-      <Project>{80b89175-8e4e-457a-9aa6-f5b2badfbe85}</Project>
+      <Project>{E11AF8AB-D422-4649-B478-ED418F97448D}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -185,7 +185,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\jpeg_dec\jpeg_dec_hw.vcxproj">
-      <Project>{9e0b537b-c1ee-47dd-9e46-c18658c3f543}</Project>
+      <Project>{CACE5386-CE5D-41FE-A233-376AA1C58073}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -193,7 +193,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\jpeg_enc\jpeg_enc.vcxproj">
-      <Project>{fe112b8f-036e-4679-b07e-4f6f73c6c3b9}</Project>
+      <Project>{250AAF7A-F0F5-40A0-9BCD-A7773336860A}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -201,7 +201,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\me\me.vcxproj">
-      <Project>{c7854f8d-2bac-4509-939b-4f5f100f1e29}</Project>
+      <Project>{D56EB68D-0598-4F9E-A24C-18C55FCEEE6A}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -209,10 +209,10 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\mpeg2_dec\mpeg2_dec_hw.vcxproj">
-      <Project>{bce6a27b-e76f-49f0-ab57-3ef578d948c7}</Project>
+      <Project>{0248F8E3-6B66-4D94-B82A-EFB9CE2FD2C9}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\mpeg2_enc\mpeg2_enc.vcxproj">
-      <Project>{3c2e1e62-5cde-4d3c-9705-900b5a187198}</Project>
+      <Project>{C67FA933-DC25-447D-BF6E-F3B3A1410D8A}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -220,7 +220,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\scene_analyzer\scene_analyzer.vcxproj">
-      <Project>{0108c6ed-b93f-4314-b9cd-4592b70c3c05}</Project>
+      <Project>{28070952-7E32-4E91-BD27-65F638388720}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -228,7 +228,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\vc1_common\vc1_common.vcxproj">
-      <Project>{326e90fb-f844-4af1-8cdf-fdccecedeb22}</Project>
+      <Project>{E1467602-BCFE-4244-940C-9359E82E3DE1}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -236,7 +236,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\vc1_dec\vc1_dec_elk.vcxproj">
-      <Project>{5537816b-58d7-4523-8d2c-b0fac011a1c3}</Project>
+      <Project>{3A78FECC-D56B-428B-8D2A-638D4962887E}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -244,7 +244,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\vc1_enc\vc1_enc.vcxproj">
-      <Project>{4fabfd29-1a02-427c-9839-37409616fa12}</Project>
+      <Project>{858BD7EB-9015-4B52-925D-12D56ADB3547}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -252,13 +252,13 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\vp8_dec\vp8_dec_hw.vcxproj">
-      <Project>{ebaf2767-b73d-43fb-aaae-1698484b7c27}</Project>
+      <Project>{2C305D1C-25BA-4773-A046-7310EF487620}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\vp9_dec\vp9_dec_hw.vcxproj">
-      <Project>{a6112fed-b0f8-4396-bad8-ffb466df85ce}</Project>
+      <Project>{9B448407-57E7-4FE7-8CA2-2C67122A13C6}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\umc\base_classes.vcxproj">
-      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+      <Project>{C22074B5-4F12-464E-B7BE-6C169718E0E8}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -266,7 +266,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -274,7 +274,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\vm_plus\vm_plus.vcxproj">
-      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <Project>{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -282,7 +282,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\io\media_buffers\media_buffers.vcxproj">
-      <Project>{9befd888-5d4d-49fb-bda0-e5987f4f6fc7}</Project>
+      <Project>{314D0047-F36D-4922-95B0-9757FA9D667F}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -290,7 +290,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\io\umc_io\umc_io.vcxproj">
-      <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
+      <Project>{8DC35B89-B4B7-4B48-B462-E589D4FDFEDE}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -298,7 +298,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\io\umc_va\umc_va_elk.vcxproj">
-      <Project>{0e971ee7-4430-47d9-92cd-9822bc664642}</Project>
+      <Project>{8B6C2462-3A4D-4070-A44F-9A75E813EF27}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -306,7 +306,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="cmrt_cross_platform\cmrt_cross_platform.vcxproj">
-      <Project>{811626eb-8608-4cac-abee-cd99daec38c4}</Project>
+      <Project>{A3D890F5-7362-404D-95BF-B6C8AABA786B}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -314,7 +314,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="decode\decode_hw.vcxproj">
-      <Project>{bd4d6c31-4c13-44d9-8c6f-9d5aeaf830f4}</Project>
+      <Project>{305E9606-3B20-4235-ABFF-9229FBCF5964}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -322,7 +322,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="encode\encode.vcxproj">
-      <Project>{694cccd8-004b-4425-a9f6-9b60b6a85eba}</Project>
+      <Project>{F1B387E6-2AE9-42A9-92C9-7E6D75B1728C}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -330,16 +330,16 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="encode_hw\encode_hw.vcxproj">
-      <Project>{2db853a8-e4bf-455a-9ed4-abacac60ca04}</Project>
+      <Project>{6E291A7C-090C-4922-BF63-CC83F06FB8B0}</Project>
     </ProjectReference>
     <ProjectReference Include="enc_hw\enc_hw.vcxproj">
-      <Project>{7a7d88d9-660e-4fdd-a43b-50ae2a27b1b1}</Project>
+      <Project>{F565739A-38C4-40C1-BCEA-80675725C494}</Project>
     </ProjectReference>
     <ProjectReference Include="fei\h264_la.vcxproj">
-      <Project>{e510cc6b-5bbe-4048-869f-e0f1fd07defe}</Project>
+      <Project>{F1BDC47D-0532-4BCC-8217-44C46A8FD5CF}</Project>
     </ProjectReference>
     <ProjectReference Include="genx\h264_encode\genx_h264_encode_embeded.vcxproj">
-      <Project>{8554e7c5-92ff-45f6-b9b4-a447efaed15c}</Project>
+      <Project>{ACB447A9-B52F-462A-92F3-4431384E7C01}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -347,10 +347,10 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="mctf_package\mctf\genx_mctf.vcxproj">
-      <Project>{c5a4cc6e-99ab-4c24-9ede-7a283f02bd5b}</Project>
+      <Project>{10E3378B-9166-4FA2-968E-11F6C85239B5}</Project>
     </ProjectReference>
     <ProjectReference Include="pak\pak.vcxproj">
-      <Project>{5ea7d17f-aae3-49c8-b1c6-de3c36d26559}</Project>
+      <Project>{FB47FA32-3B38-4CFF-857D-82A1491EAFEB}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -358,7 +358,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="shared\mfx_common.vcxproj">
-      <Project>{7929e69f-b47f-4a1e-a038-6be3343ce855}</Project>
+      <Project>{5B832EA0-E58C-46B9-AFF6-2416CF805C09}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -366,10 +366,10 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="shared\mfx_common_hw.vcxproj">
-      <Project>{e275231a-d535-49f3-b140-f3bb6b1ae56f}</Project>
+      <Project>{DD53AC38-3804-4438-A3CA-A9E390CDF9F9}</Project>
     </ProjectReference>
     <ProjectReference Include="vpp\vpp_hw.vcxproj">
-      <Project>{8d456a00-501a-47a9-b3c7-42723a7a82f2}</Project>
+      <Project>{55E35FCA-3EFB-4E12-899C-AF56AA2A009D}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

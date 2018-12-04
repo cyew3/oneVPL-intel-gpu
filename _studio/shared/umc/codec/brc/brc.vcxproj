@@ -4,7 +4,7 @@
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
     <ProjectName>bitrate_control</ProjectName>
-    <ProjectGuid>{06768873-9792-4471-9A7F-0D0E37E9DC2D}</ProjectGuid>
+    <ProjectGuid>{E8E76842-6CF5-450F-A29E-CD15D7955AA4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
   </PropertyGroup>

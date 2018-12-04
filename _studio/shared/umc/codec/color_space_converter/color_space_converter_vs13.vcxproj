@@ -36,7 +36,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{57FE8DAC-C7C4-4DF4-9A36-2FEE040DFF38}</ProjectGuid>
+    <ProjectGuid>{06BC515F-C7C7-4AE6-AF4A-83D427E4C9CD}</ProjectGuid>
     <RootNamespace>color_space_converter</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

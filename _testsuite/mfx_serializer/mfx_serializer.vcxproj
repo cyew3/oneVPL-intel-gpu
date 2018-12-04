@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{E2A5ABAE-F0A8-485C-BA1D-4F3D6567073A}</ProjectGuid>
+    <ProjectGuid>{667D0DEC-A5E6-4D12-82FC-C3823EF96FD3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>serializer</RootNamespace>
     <ProjectName>mfx_serializer</ProjectName>

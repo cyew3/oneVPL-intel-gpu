@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="audio_renders"
-	ProjectGUID="{F6B18975-7669-4C31-A18C-D075E51052C4}"
+	ProjectGUID="{A3148E95-A3CD-425A-A548-25548A735FC8}"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

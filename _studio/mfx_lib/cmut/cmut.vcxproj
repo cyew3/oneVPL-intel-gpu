@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{9B5F6A86-9909-497D-AC75-6349C9B18C74}</ProjectGuid>
+    <ProjectGuid>{48DEEA6F-D808-4063-9283-CCC9EA1C713C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>cmut</RootNamespace>
   </PropertyGroup>

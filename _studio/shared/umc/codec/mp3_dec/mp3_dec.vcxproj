@@ -32,7 +32,7 @@
     <ClInclude Include="include\umc_mp3_decoder.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{7AEAED29-CC0F-42AA-9C01-E981FFAB61C3}</ProjectGuid>
+    <ProjectGuid>{668FC0FB-3B00-4281-A45C-D929A03FB301}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>

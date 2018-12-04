@@ -3,7 +3,7 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D719372D-BA13-4730-AFF6-1994B26EFF6C}</ProjectGuid>
+    <ProjectGuid>{DF6F608E-648D-4763-804C-C0F567B38203}</ProjectGuid>
     <RootNamespace>libmfxsw</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>libmfxsw_plugin_hevcd</ProjectName>

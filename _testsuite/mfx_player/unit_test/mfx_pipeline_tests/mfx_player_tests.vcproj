@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="mfx_pipeline_tests"
-	ProjectGUID="{974F33D8-D454-40BC-8D7B-83206FC1033E}"
+	ProjectGUID="{27C8072F-2B8F-4BF4-9E3C-1CF716AB49C8}"
 	RootNamespace="mfx_player_tests"
 	Keyword="Win32Proj"
 	>

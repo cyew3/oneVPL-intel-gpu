@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="cryptodatagen"
-	ProjectGUID="{CD3C253F-81A6-45C5-AC59-D5BF1E7F51FA}"
+	ProjectGUID="{DAECD4C5-4A97-460C-8EC1-3BC3DA9E25EF}"
 	RootNamespace="cryptodatagen"
 	Keyword="Win32Proj"
 	>

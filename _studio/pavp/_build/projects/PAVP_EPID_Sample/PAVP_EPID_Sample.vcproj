@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="PAVP_EPID_Sample"
-	ProjectGUID="{18638522-3210-49F5-840E-ACF6AD09E37E}"
+	ProjectGUID="{914932A8-1A0D-4451-B4A1-D3A2B52AFEFC}"
 	RootNamespace="PAVP_EPID_Sample"
 	Keyword="Win32Proj"
 	>

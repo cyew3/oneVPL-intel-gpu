@@ -37,7 +37,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>libmfxrt</ProjectName>
-    <ProjectGuid>{D719372D-BA13-4730-AFF6-1994B26EFF6C}</ProjectGuid>
+    <ProjectGuid>{663A0E7E-4BA4-449E-A551-A40494F46F33}</ProjectGuid>
     <RootNamespace>libmfxhw</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
@@ -474,7 +474,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\shared\mfx_trace\mfx_trace_hw.vcxproj">
-      <Project>{ee93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
+      <Project>{252BA91C-A180-41D8-8B2F-84904DD53000}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -482,10 +482,10 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\umc\base_classes.vcxproj">
-      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+      <Project>{C22074B5-4F12-464E-B7BE-6C169718E0E8}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -493,7 +493,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\vm_plus\vm_plus.vcxproj">
-      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <Project>{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -501,10 +501,10 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\io\umc_va\umc_va_elk.vcxproj">
-      <Project>{0e971ee7-4430-47d9-92cd-9822bc664642}</Project>
+      <Project>{8B6C2462-3A4D-4070-A44F-9A75E813EF27}</Project>
     </ProjectReference>
     <ProjectReference Include="cmrt_cross_platform\cmrt_cross_platform.vcxproj">
-      <Project>{811626eb-8608-4cac-abee-cd99daec38c4}</Project>
+      <Project>{A3D890F5-7362-404D-95BF-B6C8AABA786B}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -512,7 +512,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="shared\mfx_common.vcxproj">
-      <Project>{7929e69f-b47f-4a1e-a038-6be3343ce855}</Project>
+      <Project>{5B832EA0-E58C-46B9-AFF6-2416CF805C09}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -520,7 +520,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="shared\mfx_common_hw.vcxproj">
-      <Project>{e275231a-d535-49f3-b140-f3bb6b1ae56f}</Project>
+      <Project>{DD53AC38-3804-4438-A3CA-A9E390CDF9F9}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

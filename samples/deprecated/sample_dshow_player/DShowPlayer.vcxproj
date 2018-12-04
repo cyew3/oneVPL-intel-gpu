@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>sample_dshow</ProjectName>
-    <ProjectGuid>{9D7A67A0-5BC7-4CE8-A338-0A10268C00CF}</ProjectGuid>
+    <ProjectGuid>{95723574-6037-4BCA-915D-42EF7C34F8AD}</ProjectGuid>
     <RootNamespace>DShowPlayer</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

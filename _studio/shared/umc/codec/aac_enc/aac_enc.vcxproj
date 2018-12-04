@@ -57,7 +57,7 @@
     <ClInclude Include="include\umc_aac_encoder.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B2159AA7-822B-4135-9DAA-61344C74CDF0}</ProjectGuid>
+    <ProjectGuid>{C0D8521B-ABD2-479E-A1AF-C92A3D06B8C7}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>

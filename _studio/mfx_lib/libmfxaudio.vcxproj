@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{CA019E25-E67C-4521-9BD5-CBA4F71E5476}</ProjectGuid>
+    <ProjectGuid>{483E23F4-F0F5-4076-B13B-2E657437AB0D}</ProjectGuid>
     <RootNamespace>libmfxsw</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
@@ -282,7 +282,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\shared\mfx_trace\mfx_trace.vcxproj">
-      <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
+      <Project>{68AD0BD0-170B-4CEA-8A55-D6B841D66203}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -290,7 +290,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\aac_common\aac_common.vcxproj">
-      <Project>{3c2f1cd4-04c0-49d0-a857-ffea8e390d95}</Project>
+      <Project>{52B3AADE-29AF-468F-9162-0D7DF63A4C2C}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -298,7 +298,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\aac_dec\aac_dec.vcxproj">
-      <Project>{6355097a-5b24-4be5-8f65-0b0c8dba57f0}</Project>
+      <Project>{0FC1910E-D09B-45FE-82B1-5A9B429CD311}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -306,7 +306,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\aac_enc\aac_enc.vcxproj">
-      <Project>{b2159aa7-822b-4135-9daa-61344c74cdf0}</Project>
+      <Project>{C0D8521B-ABD2-479E-A1AF-C92A3D06B8C7}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -314,7 +314,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\common\codec_common.vcxproj">
-      <Project>{92016d58-ae79-42bd-9e6b-171d67e572db}</Project>
+      <Project>{1BDB07C9-DB91-4B51-BFAF-59F0BD668A9C}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -322,7 +322,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\mp3_common\mp3_common.vcxproj">
-      <Project>{189f41ed-ce1e-4ae9-aa8e-6a4c5e8f6206}</Project>
+      <Project>{49678095-A730-426D-B5B9-589B6851823F}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -330,7 +330,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\mp3_dec\mp3_dec.vcxproj">
-      <Project>{7aeaed29-cc0f-42aa-9c01-e981ffab61c3}</Project>
+      <Project>{668FC0FB-3B00-4281-A45C-D929A03FB301}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -338,7 +338,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\umc\base_classes.vcxproj">
-      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+      <Project>{C22074B5-4F12-464E-B7BE-6C169718E0E8}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -346,7 +346,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -354,7 +354,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\vm_plus\vm_plus.vcxproj">
-      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <Project>{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -362,7 +362,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\io\umc_io\umc_io.vcxproj">
-      <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
+      <Project>{8DC35B89-B4B7-4B48-B462-E589D4FDFEDE}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -370,7 +370,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="audio_decode\audio_decode.vcxproj">
-      <Project>{87431a2a-2c0b-4264-b882-234687e4aa9b}</Project>
+      <Project>{ECDFFCDF-E780-4298-A9C0-5BCAF6F987A0}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -378,7 +378,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="audio_encode\audio_encode.vcxproj">
-      <Project>{ba780fcb-2578-47ff-b259-2c10ea834bc8}</Project>
+      <Project>{18EC6CD9-4CB1-4B43-A0E1-5E7EC7263DDB}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -386,7 +386,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="shared\mfx_common.vcxproj">
-      <Project>{7929e69f-b47f-4a1e-a038-6be3343ce855}</Project>
+      <Project>{5B832EA0-E58C-46B9-AFF6-2416CF805C09}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

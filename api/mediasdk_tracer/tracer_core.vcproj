@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="tracer_core"
-	ProjectGUID="{E21389BF-98B7-4932-A6CF-C026F4FBA328}"
+	ProjectGUID="{61444E9B-0907-4B87-BE7D-817A1EA00C4A}"
 	RootNamespace="sdk-analyzer"
 	Keyword="Win32Proj"
 	>

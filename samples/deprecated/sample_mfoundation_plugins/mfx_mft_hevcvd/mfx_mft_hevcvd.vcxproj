@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{9EEAB07A-2A40-454C-9898-2FA63AEBF63E}</ProjectGuid>
+    <ProjectGuid>{8108B825-D21D-4EA7-B7BE-714A3AEF7126}</ProjectGuid>
     <RootNamespace>mfx_mft_hevcvd</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -360,25 +360,25 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
     </ProjectReference>
     <ProjectReference Include="..\mf_buffers\mf_buffers.vcxproj">
-      <Project>{b84b893f-5e3f-470b-b0ab-8a331a2ad408}</Project>
+      <Project>{D921A3D6-690B-41A1-84DA-B4BDCAF35CF1}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\mf_plugins\mf_plugins.vcxproj">
-      <Project>{e7a3544c-cb5d-4dba-9bc0-2c97f63978bd}</Project>
+      <Project>{EEAD82D6-2265-4F54-B4CA-61A94E97084E}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\mf_utils\mf_utils.vcxproj">
-      <Project>{0e1cceca-b7ee-400e-a557-e3e89cb234c2}</Project>
+      <Project>{2AFF5438-C074-4892-A47D-38C7E360A201}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\mfx_trace\mfx_trace.vcxproj">
-      <Project>{4e7534cf-f5f8-471d-ac46-5de151d95ac1}</Project>
+      <Project>{96C81614-534E-47D9-BBE0-E3C009B341CA}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>

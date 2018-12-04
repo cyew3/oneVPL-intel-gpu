@@ -35,7 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D41D3178-5C65-4868-BDB1-42C44643274E}</ProjectGuid>
+    <ProjectGuid>{AA9C14B4-406E-4BAF-8F06-866397334E90}</ProjectGuid>
     <RootNamespace>vm</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

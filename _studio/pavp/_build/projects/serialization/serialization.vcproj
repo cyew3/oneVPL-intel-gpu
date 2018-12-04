@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="serialization"
-	ProjectGUID="{8714D1EB-5D7E-47BD-9846-8E9FC2056290}"
+	ProjectGUID="{377B2284-690D-4DF6-98AF-51F54AA89370}"
 	RootNamespace="serialization"
 	Keyword="Win32Proj"
 	>

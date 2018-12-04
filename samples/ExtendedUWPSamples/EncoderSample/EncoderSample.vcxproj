@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{f8c0fbbb-1778-40ab-afe9-b2703e0d48e9}</ProjectGuid>
+    <ProjectGuid>{451AD0A3-FD08-402F-BF4A-3C51AD34EF96}</ProjectGuid>
     <RootNamespace>EncoderSample</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
@@ -378,7 +378,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MSDKInterop\MSDKInterop.vcxproj">
-      <Project>{ecad1486-48ea-4e5e-97c8-d37c1c36cff7}</Project>
+      <Project>{66921F7C-E01F-43BA-B71C-6CD494D30DF2}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -35,7 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B21CB2C4-A53A-4E69-9F54-9D5E71206B3C}</ProjectGuid>
+    <ProjectGuid>{E138C734-5EEB-4861-918A-26843995487A}</ProjectGuid>
     <Keyword>DynamicLibrary</Keyword>
     <RootNamespace>intel_api_uwp</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>

@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{FCCBCE44-B01E-4A3E-BF3E-2D5144AE39FA}</ProjectGuid>
+    <ProjectGuid>{279BEA10-9342-44B0-AE19-5B1C4A6A661F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>genx_ptir</RootNamespace>
   </PropertyGroup>

@@ -4,7 +4,7 @@
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
     <ProjectName>vpp_hw</ProjectName>
-    <ProjectGuid>{8D456A00-501A-47A9-B3C7-42723A7A82F2}</ProjectGuid>
+    <ProjectGuid>{55E35FCA-3EFB-4E12-899C-AF56AA2A009D}</ProjectGuid>
     <RootNamespace>vpp</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>

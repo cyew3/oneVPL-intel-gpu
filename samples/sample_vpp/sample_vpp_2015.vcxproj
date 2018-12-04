@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{CA385677-1C44-4817-ABAB-7AE3CBBFDC63}</ProjectGuid>
+    <ProjectGuid>{B3424540-0E5D-4D40-9B13-3BD420BE070E}</ProjectGuid>
     <RootNamespace>sample_vpp</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
@@ -302,7 +302,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

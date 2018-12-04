@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D5CCF0C0-32F6-4777-AA6C-6A249016DB26}</ProjectGuid>
+    <ProjectGuid>{E90AE63E-F219-4389-A955-26E78BD1BD9A}</ProjectGuid>
     <RootNamespace>sample_plugin_opencl</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -316,7 +316,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

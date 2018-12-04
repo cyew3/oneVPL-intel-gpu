@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{0EFA4E54-E930-49D1-B321-BFF835D7539F}</ProjectGuid>
+    <ProjectGuid>{47B6E1E5-8D43-4814-A486-999EFD7B1DE7}</ProjectGuid>
     <RootNamespace>s3d_control</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

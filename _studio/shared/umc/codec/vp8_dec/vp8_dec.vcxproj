@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{27C98BCB-BCB6-4D57-9A47-D154BCE0D8C9}</ProjectGuid>
+    <ProjectGuid>{DBF436DC-46BA-4E1B-879A-E4DEB6B63605}</ProjectGuid>
     <RootNamespace>vp8_dec</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

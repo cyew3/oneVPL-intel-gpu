@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="pavp_dx11"
-	ProjectGUID="{8924C96D-830F-4070-B510-B166E7CBD817}"
+	ProjectGUID="{48E5DB4B-D812-4E75-A504-7859604C220F}"
 	RootNamespace="pavp_dx11"
 	Keyword="Win32Proj"
 	>

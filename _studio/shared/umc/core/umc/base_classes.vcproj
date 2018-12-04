@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="umc"
-	ProjectGUID="{31991D83-F6A2-49D9-BDC5-64E85D055A1C}"
+	ProjectGUID="{453D9728-1B90-4A1E-BF16-872375501E66}"
 	RootNamespace="umc"
 	Keyword="Win32Proj"
 	>

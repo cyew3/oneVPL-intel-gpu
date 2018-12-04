@@ -52,7 +52,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D719372D-BA13-4730-AFF6-1994B26EFF6C}</ProjectGuid>
+    <ProjectGuid>{E0068896-42C5-4697-8A9F-C9C064842F8E}</ProjectGuid>
     <RootNamespace>libmfxsw</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>libmfxsw_plugin_vp8d</ProjectName>
@@ -751,25 +751,25 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\shared\mfx_trace\mfx_trace.vcxproj">
-      <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
+      <Project>{68AD0BD0-170B-4CEA-8A55-D6B841D66203}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\codec\color_space_converter\color_space_converter_hw.vcxproj">
-      <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
+      <Project>{833A311A-B831-4C1E-B1ED-82FB2001E0F0}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
-      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+      <Project>{C22074B5-4F12-464E-B7BE-6C169718E0E8}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\vm_plus\vm_plus.vcxproj">
-      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <Project>{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\io\media_buffers\media_buffers.vcxproj">
-      <Project>{9befd888-5d4d-49fb-bda0-e5987f4f6fc7}</Project>
+      <Project>{314D0047-F36D-4922-95B0-9757FA9D667F}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\io\umc_io\umc_io.vcxproj">
-      <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
+      <Project>{8DC35B89-B4B7-4B48-B462-E589D4FDFEDE}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

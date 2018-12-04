@@ -3,7 +3,7 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{C4CD82AC-5EAE-4D81-BD36-4C36766B0C98}</ProjectGuid>
+    <ProjectGuid>{7480D62A-0794-4C1A-8DC5-CFFC0485A81B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ptir_plugin</RootNamespace>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
@@ -42,22 +42,22 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\mfx_lib\cmrt_cross_platform\cmrt_cross_platform.vcxproj">
-      <Project>{811626eb-8608-4cac-abee-cd99daec38c4}</Project>
+      <Project>{A3D890F5-7362-404D-95BF-B6C8AABA786B}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
-      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+      <Project>{C22074B5-4F12-464E-B7BE-6C169718E0E8}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\vm_plus\vm_plus.vcxproj">
-      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <Project>{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}</Project>
     </ProjectReference>
     <ProjectReference Include="..\pacm\pacm_cmd.vcxproj">
-      <Project>{fbd6023a-f470-462c-8c93-a8892d3ae6fd}</Project>
+      <Project>{147DFAA4-8733-4754-873E-F55C4C068F29}</Project>
     </ProjectReference>
     <ProjectReference Include="..\pa\pa.vcxproj">
-      <Project>{7be3ee72-070f-4bf8-a6cc-1a8bf6cd4481}</Project>
+      <Project>{7297B00A-D377-4FCB-B3F1-E4161D49A81C}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

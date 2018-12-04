@@ -24,29 +24,29 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\h264\h264_avx2.vcxproj">
-      <Project>{cbf99702-1060-46e1-95c5-3864856df06c}</Project>
+      <Project>{989D071F-0686-4499-8DCE-DA4D1406736E}</Project>
     </ProjectReference>
     <ProjectReference Include="..\h264\h264_px.vcxproj">
-      <Project>{3b7a183a-c728-494f-a56e-6a993150d277}</Project>
+      <Project>{C16EC22B-C9E5-4110-AF8D-AB9D52DA7889}</Project>
     </ProjectReference>
     <ProjectReference Include="..\h264\h264_sse.vcxproj">
-      <Project>{e12ab7fb-4bb5-49ae-89be-e41f3bf8a000}</Project>
+      <Project>{7E3174B4-BFB9-470B-9789-5CB199AA9296}</Project>
     </ProjectReference>
     <ProjectReference Include="..\vpp\vpp_avx2.vcxproj">
-      <Project>{f15606ae-33f6-4c45-8199-eb9e5cf71a93}</Project>
+      <Project>{5FBA5299-DA1D-4B77-9131-E2D4FCF98E48}</Project>
     </ProjectReference>
     <ProjectReference Include="..\vpp\vpp_px.vcxproj">
-      <Project>{74d09ac0-4dd7-441d-a135-758d472cede9}</Project>
+      <Project>{AB46CA2E-3DE5-4B6F-AD8E-3BBB277F4606}</Project>
     </ProjectReference>
     <ProjectReference Include="..\vpp\vpp_sse.vcxproj">
-      <Project>{2bffcdca-fcf8-47a1-a22e-93c24c4c20b3}</Project>
+      <Project>{42A09D12-840E-424C-8BB8-01814131DA53}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_dispatcher.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{C37D7375-76CD-400B-A030-4624B1012E08}</ProjectGuid>
+    <ProjectGuid>{73AD5655-EE1D-44AE-B83B-F43C6E83BAC3}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

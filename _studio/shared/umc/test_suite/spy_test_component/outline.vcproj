@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="outline"
-	ProjectGUID="{7F865E62-FECA-1BAD-AF87-E241AD635A1E}"
+	ProjectGUID="{9E563429-230A-4116-93D2-4A97D58E0A3E}"
 	RootNamespace="outline"
 	Keyword="Win32Proj"
 	>

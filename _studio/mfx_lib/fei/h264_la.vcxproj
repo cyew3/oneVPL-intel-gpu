@@ -4,7 +4,7 @@
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
     <ProjectName>h264_la</ProjectName>
-    <ProjectGuid>{E510CC6B-5BBE-4048-869F-E0F1FD07DEFE}</ProjectGuid>
+    <ProjectGuid>{F1BDC47D-0532-4BCC-8217-44C46A8FD5CF}</ProjectGuid>
     <RootNamespace>h264_la</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>

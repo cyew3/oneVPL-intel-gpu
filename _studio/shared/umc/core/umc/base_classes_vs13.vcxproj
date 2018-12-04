@@ -37,7 +37,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>umc</ProjectName>
-    <ProjectGuid>{31991D83-F6A2-49D9-BDC5-64E85D055A1C}</ProjectGuid>
+    <ProjectGuid>{0E565BB0-A832-4EB6-A213-74A6061A622F}</ProjectGuid>
     <RootNamespace>umc</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

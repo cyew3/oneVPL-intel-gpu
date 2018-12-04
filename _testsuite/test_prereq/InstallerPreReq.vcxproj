@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{A75B0A3F-EB6F-4A4E-810A-42F8C37F4ED1}</ProjectGuid>
+    <ProjectGuid>{550C737C-99A5-4A60-9099-1674ACE44E49}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>InstallerPreReq</RootNamespace>
     <WindowsTargetPlatformVersion>$(MINIDDK_VERSION)</WindowsTargetPlatformVersion>

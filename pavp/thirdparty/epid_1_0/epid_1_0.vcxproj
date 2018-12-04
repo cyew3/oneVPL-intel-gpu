@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{52DDEB98-B9EC-4F6B-8625-2FB783BF818E}</ProjectGuid>
+    <ProjectGuid>{AFAAC20A-525C-4126-915F-A70E53DB3565}</ProjectGuid>
     <RootNamespace>epid</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

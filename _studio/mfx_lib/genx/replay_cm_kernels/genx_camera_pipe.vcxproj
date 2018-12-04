@@ -24,7 +24,7 @@
     <ClInclude Include="include\test_common.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{5D1052A4-EA4F-4D50-B013-FB21525056DD}</ProjectGuid>
+    <ProjectGuid>{6ACC3969-6591-4151-BFD9-C70C1C0C6A30}</ProjectGuid>
     <Keyword>x64Proj</Keyword>
     <RootNamespace>genx_camera_pipe</RootNamespace>
     <ProjectName>genx_camera_pipe</ProjectName>

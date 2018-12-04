@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="sigma"
-	ProjectGUID="{6B4A61E5-55BA-4659-AD8B-27FB539DE541}"
+	ProjectGUID="{77EC23C4-B2A5-4397-BA7C-BB9854C02A4C}"
 	RootNamespace="sigma"
 	Keyword="Win32Proj"
 	>

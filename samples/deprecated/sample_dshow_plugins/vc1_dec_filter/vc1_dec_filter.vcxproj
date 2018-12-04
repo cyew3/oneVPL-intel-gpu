@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{CDAA4A73-7F84-43F2-9BCA-817EA20EDE58}</ProjectGuid>
+    <ProjectGuid>{B9A0D03B-FEB8-4DA9-84E2-53BE1763E3B7}</ProjectGuid>
     <RootNamespace>imc_mp2_dec_ds</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -381,22 +381,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\common\common.vcxproj">
-      <Project>{6fe0711f-bf6d-4cd3-b4bc-415bb6fbe197}</Project>
+      <Project>{42E1E7B9-27F9-4232-B05B-40CCD4ECE112}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\utils\utils.vcxproj">
-      <Project>{6a5df344-099a-4cee-80ac-852d61a2fae1}</Project>
+      <Project>{D8CFF7DE-8BBF-4B4C-90C5-364B273D4A70}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\video_dec_filter\video_dec_filter.vcxproj">
-      <Project>{a689df23-bf16-4c61-9df9-abcd936ac302}</Project>
+      <Project>{44F2174F-268D-434A-9B76-949E18145F0B}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>

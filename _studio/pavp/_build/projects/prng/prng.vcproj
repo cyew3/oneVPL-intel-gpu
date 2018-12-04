@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="prng"
-	ProjectGUID="{B360B808-D45B-40C0-BFA6-09A5314855B8}"
+	ProjectGUID="{8BD5F383-0A9A-4C98-B41A-CFC29DE698CC}"
 	RootNamespace="prng"
 	Keyword="Win32Proj"
 	>

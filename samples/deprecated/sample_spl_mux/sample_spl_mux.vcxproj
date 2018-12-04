@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{C7E5C9B3-E00F-4FAB-ACAC-450A660C9C9C}</ProjectGuid>
+    <ProjectGuid>{2829DEB1-8D4D-435B-8D8E-4ECE5F0F4624}</ProjectGuid>
     <RootNamespace>sample_spl_mux</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

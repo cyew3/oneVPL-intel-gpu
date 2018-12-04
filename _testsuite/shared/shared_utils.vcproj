@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="shared_utils"
-	ProjectGUID="{0D02568B-3117-47C3-AC2E-D83781259C1D}"
+	ProjectGUID="{D386A53B-8915-490E-89AC-9930CF8DEC0B}"
 	RootNamespace="shared"
 	Keyword="Win32Proj"
 	>

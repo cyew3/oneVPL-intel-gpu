@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{48CEB4EE-EDFA-4628-84F6-868A62E668A5}</ProjectGuid>
+    <ProjectGuid>{5A58F71D-43C8-449C-90DF-51762F0AFC4E}</ProjectGuid>
     <RootNamespace>video_enc_filter</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -186,7 +186,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\utils\utils.vcxproj">
-      <Project>{6a5df344-099a-4cee-80ac-852d61a2fae1}</Project>
+      <Project>{D8CFF7DE-8BBF-4B4C-90C5-364B273D4A70}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

@@ -16,7 +16,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{8433E616-6C77-41E3-B7C5-BC848C65CD8A}</ProjectGuid>
+    <ProjectGuid>{5E5C8F30-E197-4D4D-B20E-BFF69F9B29C5}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

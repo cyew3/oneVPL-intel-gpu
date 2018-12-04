@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="epid_1_0"
-	ProjectGUID="{52DDEB98-B9EC-4F6B-8625-2FB783BF818E}"
+	ProjectGUID="{96D5FD64-9A1B-4C34-BE6D-00FE9A701277}"
 	RootNamespace="epid"
 	Keyword="Win32Proj"
 	>

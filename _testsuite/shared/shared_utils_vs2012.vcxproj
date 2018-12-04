@@ -36,7 +36,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{0D02568B-3117-47C3-AC2E-D83781259C1D}</ProjectGuid>
+    <ProjectGuid>{7ABF7957-6A07-4983-8F6E-4C97FFFE81D0}</ProjectGuid>
     <RootNamespace>shared</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>

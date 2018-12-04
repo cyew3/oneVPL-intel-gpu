@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{17D8208D-C257-45F4-B6C4-97FE04A52EBB}</ProjectGuid>
+    <ProjectGuid>{A967FD36-189E-4E23-AF70-161F0227AEA1}</ProjectGuid>
     <RootNamespace>msdk_ts</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
@@ -248,15 +248,15 @@
     <None Include="debug.par" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(MSDK_API_ROOT)\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
-      <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
+    <ProjectReference Include="..\..\api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
+      <Project>{AB838320-0D1D-4766-89CA-A1590FCA8E53}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj">
-      <Project>{d08d664e-7245-40f7-9b55-3440ef95f2f7}</Project>
+      <Project>{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

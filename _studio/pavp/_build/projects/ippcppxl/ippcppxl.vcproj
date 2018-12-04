@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="ippcppxl"
-	ProjectGUID="{73B5D1C2-0B40-4D2A-B8B9-5DD505567C27}"
+	ProjectGUID="{6B8BFE5E-E335-4F1B-BE6C-BFE4922C28DD}"
 	RootNamespace="ippcppxl"
 	Keyword="Win32Proj"
 	>

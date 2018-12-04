@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="demuxer"
-	ProjectGUID="{792D7964-DE0E-421B-99EB-F98FAF53D235}"
+	ProjectGUID="{143DA79D-812A-4A0B-A21F-D907615E7611}"
 	RootNamespace="demuxer"
 	Keyword="Win32Proj"
 	>

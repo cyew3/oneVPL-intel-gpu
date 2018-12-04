@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B5CEF93B-C13B-48CB-AAFD-848B6740A749}</ProjectGuid>
+    <ProjectGuid>{5938CB22-756A-44CE-9439-3905C43A1BBE}</ProjectGuid>
     <RootNamespace>SampleEncodeUWP</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>

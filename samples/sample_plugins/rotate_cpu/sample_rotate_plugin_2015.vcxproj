@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1119372D-BA13-4730-AFF6-1994B26EFF6C}</ProjectGuid>
+    <ProjectGuid>{F6B0837A-AB94-4B43-BC68-1EA844E5D18D}</ProjectGuid>
     <RootNamespace>sample_rotate_plugin</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -295,7 +295,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

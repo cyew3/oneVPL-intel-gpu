@@ -47,7 +47,7 @@
     <ClInclude Include="include\mp3_status.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{189F41ED-CE1E-4AE9-AA8E-6A4C5E8F6206}</ProjectGuid>
+    <ProjectGuid>{49678095-A730-426D-B5B9-589B6851823F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>

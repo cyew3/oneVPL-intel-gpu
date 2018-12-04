@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="dxva2_dump"
-	ProjectGUID="{5AD3D93A-18BF-4F7F-AEE7-52448C5B4AB3}"
+	ProjectGUID="{386AA058-F61D-43C5-A6FA-4DB6D55C0BC7}"
 	RootNamespace="dxva2_dump"
 	Keyword="Win32Proj"
 	>

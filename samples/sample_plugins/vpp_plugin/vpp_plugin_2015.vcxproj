@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D6D9A3B9-5DC0-4025-B27A-751F91AA462D}</ProjectGuid>
+    <ProjectGuid>{7B440C2A-4F63-4749-9BE6-7E74B79FE1AB}</ProjectGuid>
     <RootNamespace>vpp_plugin</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

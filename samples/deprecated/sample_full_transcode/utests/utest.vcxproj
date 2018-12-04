@@ -49,23 +49,23 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\opensource\mfx_dispatch\libmfx.vcxproj">
-      <Project>{9e7b3527-11aa-46ba-a82f-c58761f9b56f}</Project>
+    <ProjectReference Include="..\..\..\..\api\opensource\mfx_dispatch\libmfx.vcxproj">
+      <Project>{659C63A7-0F19-45F6-89D3-04C9A03FCB14}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\thirdparty\gmock\msvc\2010\gmock.vcxproj">
-      <Project>{34681f0d-ce45-415d-b5f2-5c662dfe3bd5}</Project>
+    <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2010\gmock.vcxproj">
+      <Project>{9DB87ABA-8FA5-4328-B8A5-2E4A411E1F91}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\thirdparty\gmock\msvc\2010\gmock_main.vcxproj">
-      <Project>{e4ef614b-30df-4954-8c53-580a0bf6b589}</Project>
+    <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2010\gmock_main.vcxproj">
+      <Project>{F8F72652-518E-44F9-AD18-1F3E5E342057}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+    <ProjectReference Include="..\..\..\sample_common\sample_common.vcxproj">
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj">
-      <Project>{919d48bc-615b-4c72-b5a9-edb34f1aef7d}</Project>
+      <Project>{041491A7-8E93-448F-A3F2-8C1932BE669F}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\sample_full_transcode_vs11.vcxproj">
-      <Project>{a6e3d645-0f58-45f4-bdc3-ca457c87d7bc}</Project>
+    <ProjectReference Include="..\sample_full_transcode.vcxproj">
+      <Project>{E28D47B9-37EA-43FE-BD7C-71B96AD7D35E}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -92,7 +92,7 @@
     <ClInclude Include="utest_pch.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{8C843083-3D0B-44A0-92B6-1448F30398EA}</ProjectGuid>
+    <ProjectGuid>{F930BD59-4051-461D-A116-5C2700FD132A}</ProjectGuid>
     <RootNamespace>sample_common</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

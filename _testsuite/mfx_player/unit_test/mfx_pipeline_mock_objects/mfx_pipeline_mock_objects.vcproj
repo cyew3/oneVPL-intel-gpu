@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="mfx_pipeline_mock"
-	ProjectGUID="{F0C05086-E63A-4498-B6D5-50C9C75FE303}"
+	ProjectGUID="{41C79540-FACC-4DA2-BD49-359238BF90D4}"
 	RootNamespace="mfx_utest_infrastructure"
 	Keyword="Win32Proj"
 	>

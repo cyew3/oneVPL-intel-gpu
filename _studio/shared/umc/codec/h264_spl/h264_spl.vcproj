@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="h264_spl"
-	ProjectGUID="{3585753D-AB13-49D9-BA6A-D1C2963F4670}"
+	ProjectGUID="{6F0CC737-F50E-42C2-9C24-6026FFFB10B0}"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

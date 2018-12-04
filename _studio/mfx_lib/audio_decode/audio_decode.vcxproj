@@ -28,7 +28,7 @@
     <ClInclude Include="mp3\include\mfx_mp3_dec_decode.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{87431A2A-2C0B-4264-B882-234687E4AA9B}</ProjectGuid>
+    <ProjectGuid>{ECDFFCDF-E780-4298-A9C0-5BCAF6F987A0}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

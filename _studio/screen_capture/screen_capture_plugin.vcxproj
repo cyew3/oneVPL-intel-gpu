@@ -3,7 +3,7 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{4041A665-2623-43CA-88D4-7D516875F864}</ProjectGuid>
+    <ProjectGuid>{CFF3CE00-2B0C-41B0-87CA-DB6D9DF99B9E}</ProjectGuid>
     <RootNamespace>camera_pipe_plugin</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
@@ -64,13 +64,13 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\mfx_lib\cmrt_cross_platform\cmrt_cross_platform.vcxproj">
-      <Project>{811626eb-8608-4cac-abee-cd99daec38c4}</Project>
+      <Project>{A3D890F5-7362-404D-95BF-B6C8AABA786B}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\vm_plus\vm_plus.vcxproj">
-      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <Project>{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

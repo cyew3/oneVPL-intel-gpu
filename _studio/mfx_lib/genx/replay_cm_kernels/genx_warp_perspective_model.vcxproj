@@ -12,7 +12,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1048AC59-1C10-4670-B7C3-5070829CBD44}</ProjectGuid>
+    <ProjectGuid>{FCA3E758-88F7-436A-B505-C20A4A1DEB52}</ProjectGuid>
     <Keyword>x64Proj</Keyword>
     <RootNamespace>genx_warp</RootNamespace>
   </PropertyGroup>

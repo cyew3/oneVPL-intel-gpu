@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="vp8_dec_hw"
-	ProjectGUID="{EBAF2767-B73D-43FB-AAAE-1698484B7C27}"
+	ProjectGUID="{87634EF5-7B1C-4E30-B8FF-9E0BF572F380}"
 	RootNamespace="vp8_dec_hw"
 	Keyword="ManagedCProj"
 	>

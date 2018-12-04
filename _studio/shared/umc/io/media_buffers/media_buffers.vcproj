@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="media_buffers"
-	ProjectGUID="{9BEFD888-5D4D-49FB-BDA0-E5987F4F6FC7}"
+	ProjectGUID="{21AD1EB7-30F5-4AE0-9403-EE5B0FA92056}"
 	RootNamespace="media_buffers"
 	Keyword="Win32Proj"
 	>

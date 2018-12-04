@@ -66,7 +66,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{9E7B3527-11AA-46BA-A82F-C58761F9B56F}</ProjectGuid>
+    <ProjectGuid>{659C63A7-0F19-45F6-89D3-04C9A03FCB14}</ProjectGuid>
     <RootNamespace>libmfx</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

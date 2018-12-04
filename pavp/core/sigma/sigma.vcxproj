@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{6B4A61E5-55BA-4659-AD8B-27FB539DE541}</ProjectGuid>
+    <ProjectGuid>{15F9CD82-1D82-48FE-BF3C-DCEE40680B5A}</ProjectGuid>
     <RootNamespace>sigma</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

@@ -82,7 +82,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>mfx_dispatch_trace_vs2012</ProjectName>
-    <ProjectGuid>{430E22BA-BDF6-497C-BFC5-EC6907F90018}</ProjectGuid>
+    <ProjectGuid>{8DE19878-DD69-4EDB-9115-91607EB69937}</ProjectGuid>
     <RootNamespace>mfx_dispatch_trace</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>

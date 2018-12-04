@@ -23,7 +23,7 @@
     <ClCompile Include="src\px\mfx_color_space_conversion_vpp_px.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{74D09AC0-4DD7-441D-A135-758D472CEDE9}</ProjectGuid>
+    <ProjectGuid>{AB46CA2E-3DE5-4B6F-AD8E-3BBB277F4606}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "genx_hevce_deblock", "genx_hevce_deblock.vcxproj", "{8A0C0241-F222-41C0-B927-E28238BEACCB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "genx_hevce_deblock", "genx_hevce_deblock.vcxproj", "{58DFA554-3320-4E57-B20F-0CCF54384512}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -10,12 +10,12 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8A0C0241-F222-41C0-B927-E28238BEACCB}.Debug_HSW_Emu|x64.ActiveCfg = Debug_HSW_Emu|x64
-		{8A0C0241-F222-41C0-B927-E28238BEACCB}.Debug_HSW_Emu|x64.Build.0 = Debug_HSW_Emu|x64
-		{8A0C0241-F222-41C0-B927-E28238BEACCB}.Debug|x64.ActiveCfg = Debug|x64
-		{8A0C0241-F222-41C0-B927-E28238BEACCB}.Debug|x64.Build.0 = Debug|x64
-		{8A0C0241-F222-41C0-B927-E28238BEACCB}.Release|x64.ActiveCfg = Release|x64
-		{8A0C0241-F222-41C0-B927-E28238BEACCB}.Release|x64.Build.0 = Release|x64
+		{58DFA554-3320-4E57-B20F-0CCF54384512}.Debug_HSW_Emu|x64.ActiveCfg = Debug_HSW_Emu|x64
+		{58DFA554-3320-4E57-B20F-0CCF54384512}.Debug_HSW_Emu|x64.Build.0 = Debug_HSW_Emu|x64
+		{58DFA554-3320-4E57-B20F-0CCF54384512}.Debug|x64.ActiveCfg = Debug|x64
+		{58DFA554-3320-4E57-B20F-0CCF54384512}.Debug|x64.Build.0 = Debug|x64
+		{58DFA554-3320-4E57-B20F-0CCF54384512}.Release|x64.ActiveCfg = Release|x64
+		{58DFA554-3320-4E57-B20F-0CCF54384512}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

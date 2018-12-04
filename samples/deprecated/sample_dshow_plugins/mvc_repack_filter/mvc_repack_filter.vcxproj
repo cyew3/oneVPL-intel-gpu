@@ -35,7 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{26DF106A-CBBB-405A-B223-38A7E962E2D6}</ProjectGuid>
+    <ProjectGuid>{386301E6-5B83-4971-81B9-6958C6DC7676}</ProjectGuid>
     <RootNamespace>mvc_repack_filter</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

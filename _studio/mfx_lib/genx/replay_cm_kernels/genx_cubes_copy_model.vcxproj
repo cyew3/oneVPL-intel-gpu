@@ -12,7 +12,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1048AC59-1C10-4670-B7C3-5070829CBD44}</ProjectGuid>
+    <ProjectGuid>{A13CB454-66C2-4582-9FBF-4A5E5B5BA8D8}</ProjectGuid>
     <Keyword>x64Proj</Keyword>
     <RootNamespace>genx_cubes_copy_model</RootNamespace>
   </PropertyGroup>

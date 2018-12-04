@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="avi_spl"
-	ProjectGUID="{10A6C28A-72A4-4A75-9EA4-16F22E4791FB}"
+	ProjectGUID="{222F5A80-878B-4306-8EFE-C9B67ADA4F39}"
 	RootNamespace="avi_spl"
 	Keyword="Win32Proj"
 	>

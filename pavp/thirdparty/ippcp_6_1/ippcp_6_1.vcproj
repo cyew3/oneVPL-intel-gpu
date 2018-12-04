@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="ippcp_6_1"
-	ProjectGUID="{C6110C74-DCCA-453A-A62B-E37EC90ACC10}"
+	ProjectGUID="{90E86102-8DAF-4AA6-9C84-B90928AB80BB}"
 	RootNamespace="ippcp_6_1"
 	Keyword="Win32Proj"
 	>

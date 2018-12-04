@@ -37,7 +37,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>dxva2_dump</ProjectName>
-    <ProjectGuid>{5AD3D93A-18BF-4F7F-AEE7-52448C5B4AB3}</ProjectGuid>
+    <ProjectGuid>{DBE604EB-1CB9-413D-8FEC-D903E3D406F6}</ProjectGuid>
     <RootNamespace>dxva2_dump</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
@@ -344,7 +344,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\_studio\mfx_lib\shared\mfx_common_hw.vcxproj">
-      <Project>{e275231a-d535-49f3-b140-f3bb6b1ae56f}</Project>
+      <Project>{DD53AC38-3804-4438-A3CA-A9E390CDF9F9}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

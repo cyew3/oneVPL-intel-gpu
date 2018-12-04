@@ -51,7 +51,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{313EE96A-7923-4A18-AFFA-9247181364D3}</ProjectGuid>
+    <ProjectGuid>{336AEFC3-987C-40AA-9678-E8BF1EC9C26F}</ProjectGuid>
     <RootNamespace>libmfx_uwp</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>libmfx_uwp</ProjectName>

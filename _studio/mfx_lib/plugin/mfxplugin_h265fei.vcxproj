@@ -3,7 +3,7 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{DD6CFA65-4B1A-4AF0-900A-C746B6C13889}</ProjectGuid>
+    <ProjectGuid>{F908F7A4-D6B8-4774-8B85-BA5FA8231E95}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>mfxplugin_h265fei</RootNamespace>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
@@ -22,34 +22,34 @@
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Building.props" />
   <ItemGroup>
     <ProjectReference Include="..\..\shared\mfx_trace\mfx_trace.vcxproj">
-      <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
+      <Project>{68AD0BD0-170B-4CEA-8A55-D6B841D66203}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
-      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+      <Project>{C22074B5-4F12-464E-B7BE-6C169718E0E8}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\vm_plus\vm_plus.vcxproj">
-      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <Project>{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\io\umc_io\umc_io.vcxproj">
-      <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
+      <Project>{8DC35B89-B4B7-4B48-B462-E589D4FDFEDE}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\io\umc_va\umc_va_elk.vcxproj">
-      <Project>{0e971ee7-4430-47d9-92cd-9822bc664642}</Project>
+      <Project>{8B6C2462-3A4D-4070-A44F-9A75E813EF27}</Project>
     </ProjectReference>
     <ProjectReference Include="..\cmrt_cross_platform\cmrt_cross_platform.vcxproj">
-      <Project>{811626eb-8608-4cac-abee-cd99daec38c4}</Project>
+      <Project>{A3D890F5-7362-404D-95BF-B6C8AABA786B}</Project>
     </ProjectReference>
     <ProjectReference Include="..\fei\h265\h265_fei.vcxproj">
-      <Project>{34adec07-ff4a-4cd0-b526-12be7e40d321}</Project>
+      <Project>{20C31877-D44B-4736-98DF-B3E72ADA05F5}</Project>
     </ProjectReference>
     <ProjectReference Include="..\genx\h265_encode\genx_h265_encode_embeded.vcxproj">
-      <Project>{821c734c-1927-4c6f-80f7-37088a80d9e4}</Project>
+      <Project>{01C6AE83-CFFA-479D-AB39-6571E9C8D924}</Project>
     </ProjectReference>
     <ProjectReference Include="libmfxhw_plugin_h265fei.vcxproj">
-      <Project>{348eb879-a3ff-44a1-8d14-e5957a4d5e18}</Project>
+      <Project>{230EA2B4-2E2A-48B3-942D-56B1B895744B}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A6E3D645-0F58-45F4-BDC3-CA457C87D7BC}</ProjectGuid>
+    <ProjectGuid>{89A5CFD9-C992-4328-AFBF-2A2596019429}</ProjectGuid>
     <RootNamespace>video_enc_con</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -200,7 +200,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

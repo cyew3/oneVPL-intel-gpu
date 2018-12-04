@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D93E83D0-A1F5-4C9B-9557-C2A968E2BF59}</ProjectGuid>
+    <ProjectGuid>{E28D47B9-37EA-43FE-BD7C-71B96AD7D35E}</ProjectGuid>
     <RootNamespace>sample_multi_transcode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -221,10 +221,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
     </ProjectReference>
     <ProjectReference Include="..\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj">
-      <Project>{919d48bc-615b-4c72-b5a9-edb34f1aef7d}</Project>
+      <Project>{041491A7-8E93-448F-A3F2-8C1932BE669F}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

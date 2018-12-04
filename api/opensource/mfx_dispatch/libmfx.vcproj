@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="libmfx"
-	ProjectGUID="{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
+	ProjectGUID="{5E9F0765-C66C-4035-9577-96A662E7F3BC}"
 	RootNamespace="libmfx"
 	Keyword="Win32Proj"
 	>

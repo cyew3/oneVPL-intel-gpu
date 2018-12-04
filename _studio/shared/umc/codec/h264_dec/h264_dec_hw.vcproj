@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="h264_dec_hw"
-	ProjectGUID="{C7621C21-A2D0-4604-896D-29F1470D9281}"
+	ProjectGUID="{4156039E-4864-4781-B5C6-A4F75B1D84F7}"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

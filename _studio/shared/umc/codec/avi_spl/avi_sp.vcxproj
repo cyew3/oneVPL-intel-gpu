@@ -4,7 +4,7 @@
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
     <ProjectName>avi_spl</ProjectName>
-    <ProjectGuid>{10A6C28A-72A4-4A75-9EA4-16F22E4791FB}</ProjectGuid>
+    <ProjectGuid>{4B5C0941-77E8-4004-B77F-C5470C76F628}</ProjectGuid>
     <RootNamespace>avi_spl</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>

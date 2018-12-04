@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="ecdsa"
-	ProjectGUID="{367BCB1B-3EAB-4AF9-A2D9-FBF22F8EAE93}"
+	ProjectGUID="{C353CC73-2AE5-48B3-AF5E-DA026C10F90C}"
 	RootNamespace="ecdsa"
 	Keyword="Win32Proj"
 	>

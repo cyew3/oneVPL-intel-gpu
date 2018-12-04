@@ -4,7 +4,7 @@
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
     <ProjectName>enc_hw</ProjectName>
-    <ProjectGuid>{7A7D88D9-660E-4FDD-A43B-50AE2A27B1B1}</ProjectGuid>
+    <ProjectGuid>{F565739A-38C4-40C1-BCEA-80675725C494}</ProjectGuid>
     <RootNamespace>enc_hw</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>

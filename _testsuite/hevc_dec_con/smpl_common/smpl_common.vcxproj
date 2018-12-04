@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{DB71B91D-16D8-4339-9621-D81798E46E8F}</ProjectGuid>
+    <ProjectGuid>{56B219A8-DB29-4474-B5A7-49C7707BC097}</ProjectGuid>
     <RootNamespace>smpl_common</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

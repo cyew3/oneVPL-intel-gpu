@@ -36,7 +36,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{FE2D18DF-3DB8-4455-AB66-A99C2A6894C3}</ProjectGuid>
+    <ProjectGuid>{9579F04E-6993-4BF0-AB0E-E70108A9C73E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>mfx_h263d_plugin</RootNamespace>
   </PropertyGroup>
@@ -535,16 +535,16 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\shared\umc\codec\color_space_converter\color_space_converter.vcxproj">
-      <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
+      <Project>{51904F5C-544A-47FD-8220-B6B3B3B06FFE}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\umc\base_classes.vcxproj">
-      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+      <Project>{C22074B5-4F12-464E-B7BE-6C169718E0E8}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\core\vm_plus\vm_plus.vcxproj">
-      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <Project>{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

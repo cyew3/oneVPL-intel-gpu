@@ -4,7 +4,7 @@
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
     <ProjectName>dxva2_dump</ProjectName>
-    <ProjectGuid>{5AD3D93A-18BF-4F7F-AEE7-52448C5B4AB3}</ProjectGuid>
+    <ProjectGuid>{045F1A5C-8E17-4AD3-A558-85BAF24F28ED}</ProjectGuid>
     <RootNamespace>dxva2_dump</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>

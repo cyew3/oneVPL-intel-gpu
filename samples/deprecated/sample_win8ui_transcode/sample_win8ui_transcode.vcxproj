@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{51134d2c-2615-42ac-ba16-e23cb5529f22}</ProjectGuid>
+    <ProjectGuid>{BCED4022-AD28-40CB-89E4-E6F3502D0CD5}</ProjectGuid>
     <RootNamespace>sample_win8ui_transcode</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>

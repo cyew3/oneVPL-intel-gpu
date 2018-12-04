@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{C6110C74-DCCA-453A-A62B-E37EC90ACC10}</ProjectGuid>
+    <ProjectGuid>{B93B376C-DE5E-4CED-90CB-23B4B88B25EB}</ProjectGuid>
     <RootNamespace>ippcp_6_1</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

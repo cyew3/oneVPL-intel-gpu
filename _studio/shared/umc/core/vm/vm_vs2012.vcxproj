@@ -35,7 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D41D3178-5C65-4868-BDB1-42C44643274E}</ProjectGuid>
+    <ProjectGuid>{B64340DF-1C41-4DB4-9C85-F9670F57B771}</ProjectGuid>
     <RootNamespace>vm</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>

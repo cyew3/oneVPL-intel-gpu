@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B81FF6EE-DFF6-496C-B5F2-31BBD0AF454D}</ProjectGuid>
+    <ProjectGuid>{63979302-1F0A-41B0-A9C2-2D4F368F7EFF}</ProjectGuid>
     <RootNamespace>sample_camera</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -296,7 +296,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

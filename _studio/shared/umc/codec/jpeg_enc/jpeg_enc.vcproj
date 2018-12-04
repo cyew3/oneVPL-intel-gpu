@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="jpeg_enc"
-	ProjectGUID="{9D410127-F1A1-4915-8933-52019E26205A}"
+	ProjectGUID="{733246E2-AD19-4674-A72E-5291F656F475}"
 	RootNamespace="jpeg_dec"
 	Keyword="Win32Proj"
 	>

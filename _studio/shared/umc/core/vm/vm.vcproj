@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="vm"
-	ProjectGUID="{D41D3178-5C65-4868-BDB1-42C44643274E}"
+	ProjectGUID="{E95223D6-FA77-4B56-B9F2-BB0B07E67F1E}"
 	RootNamespace="vm"
 	Keyword="Win32Proj"
 	>

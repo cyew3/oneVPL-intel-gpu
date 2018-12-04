@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="pavp_sample_common"
-	ProjectGUID="{3C135E9A-436A-480D-845B-864D390A0089}"
+	ProjectGUID="{20A9C15A-23CA-4854-990F-091715865DDC}"
 	RootNamespace="pavp_sample_common"
 	Keyword="Win32Proj"
 	>

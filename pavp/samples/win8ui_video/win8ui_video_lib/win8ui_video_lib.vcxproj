@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{EDE394F7-8487-4F16-B533-84140C45EA40}</ProjectGuid>
+    <ProjectGuid>{53FE5AB9-A0B5-41E3-BF2B-527ED6F72DF9}</ProjectGuid>
     <RootNamespace>win8ui_video_lib</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

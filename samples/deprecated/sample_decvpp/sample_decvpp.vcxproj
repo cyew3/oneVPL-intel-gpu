@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}</ProjectGuid>
+    <ProjectGuid>{5839A3DC-58E7-4B30-93B3-1BFEB18C25E0}</ProjectGuid>
     <RootNamespace>video_enc_con</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -292,8 +292,8 @@
     <ClInclude Include="include\mfx_render_decvpp.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+    <ProjectReference Include="..\..\sample_common\sample_common.vcxproj">
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

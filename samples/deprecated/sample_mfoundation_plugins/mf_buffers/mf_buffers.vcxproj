@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B84B893F-5E3F-470B-B0AB-8A331A2AD408}</ProjectGuid>
+    <ProjectGuid>{D921A3D6-690B-41A1-84DA-B4BDCAF35CF1}</ProjectGuid>
     <RootNamespace>mf_buffers</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -157,7 +157,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\mf_utils\mf_utils.vcxproj">
-      <Project>{0e1cceca-b7ee-400e-a557-e3e89cb234c2}</Project>
+      <Project>{2AFF5438-C074-4892-A47D-38C7E360A201}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>

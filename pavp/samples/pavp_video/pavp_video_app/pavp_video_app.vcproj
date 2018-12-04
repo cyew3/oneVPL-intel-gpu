@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="pavp_video_app"
-	ProjectGUID="{80383B5C-C4D8-4921-A7C5-B73DB1E44649}"
+	ProjectGUID="{D8BDCDB1-BE0F-4B64-BE09-DFE3A2E917CF}"
 	RootNamespace="pavp_video_app"
 	Keyword="Win32Proj"
 	>

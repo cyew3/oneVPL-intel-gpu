@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="mpeg2_dec_hw"
-	ProjectGUID="{BCE6A27B-E76F-49F0-AB57-3EF578D948C7}"
+	ProjectGUID="{E981B20B-7F9C-4345-8A1B-E4656F42B369}"
 	RootNamespace="mpeg2_dec_hw"
 	Keyword="Win32Proj"
 	>

@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="video_renders"
-	ProjectGUID="{618D588E-BAA4-4C86-851A-6937DE2ED121}"
+	ProjectGUID="{F332F6B9-992C-4BB1-8E9D-1D992ECC67FB}"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="spy_test_component"
-	ProjectGUID="{C8F7817E-EE00-4916-83A6-F7363A5F8BD9}"
+	ProjectGUID="{2DD35569-AECF-411A-A964-B1ED882BC456}"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

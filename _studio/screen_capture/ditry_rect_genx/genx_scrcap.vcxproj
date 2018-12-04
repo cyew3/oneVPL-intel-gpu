@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F9563E91-C8D6-4919-A1EE-A07B82AEAA3B}</ProjectGuid>
+    <ProjectGuid>{A1949EAC-5769-4B9E-9375-137DFCE34F94}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>genx_scrcap</RootNamespace>
   </PropertyGroup>

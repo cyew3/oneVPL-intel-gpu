@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{30485D94-D43D-4FCF-A07C-387DFEC26474}</ProjectGuid>
+    <ProjectGuid>{B9AF0157-F655-45A6-ABE3-33B5750A42E9}</ProjectGuid>
     <RootNamespace>pavp_video_lib</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

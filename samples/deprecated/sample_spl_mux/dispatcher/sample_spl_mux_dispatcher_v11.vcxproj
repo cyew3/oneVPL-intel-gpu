@@ -35,7 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}</ProjectGuid>
+    <ProjectGuid>{B021C170-680D-4FDF-9E53-8C927BA7AA26}</ProjectGuid>
     <RootNamespace>sample_spl_mux_dispatcher</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

@@ -51,30 +51,30 @@
     <ClCompile Include="mf_utest_static_section.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\thirdparty\gmock\msvc\2010\gmock.vcxproj">
-      <Project>{34681f0d-ce45-415d-b5f2-5c662dfe3bd5}</Project>
+    <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2010\gmock.vcxproj">
+      <Project>{9DB87ABA-8FA5-4328-B8A5-2E4A411E1F91}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\thirdparty\gmock\msvc\2010\gmock_main.vcxproj">
-      <Project>{e4ef614b-30df-4954-8c53-580a0bf6b589}</Project>
+    <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2010\gmock_main.vcxproj">
+      <Project>{F8F72652-518E-44F9-AD18-1F3E5E342057}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(ProjectDir)..\..\..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+    <ProjectReference Include="..\..\..\sample_common\sample_common.vcxproj">
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
     </ProjectReference>
     <ProjectReference Include="..\mfx_trace\mfx_trace.vcxproj">
-      <Project>{4e7534cf-f5f8-471d-ac46-5de151d95ac1}</Project>
+      <Project>{96C81614-534E-47D9-BBE0-E3C009B341CA}</Project>
     </ProjectReference>
     <ProjectReference Include="..\mf_buffers\mf_buffers.vcxproj">
-      <Project>{b84b893f-5e3f-470b-b0ab-8a331a2ad408}</Project>
+      <Project>{D921A3D6-690B-41A1-84DA-B4BDCAF35CF1}</Project>
     </ProjectReference>
     <ProjectReference Include="..\mf_utils\mf_utils.vcxproj">
-      <Project>{0e1cceca-b7ee-400e-a557-e3e89cb234c2}</Project>
+      <Project>{2AFF5438-C074-4892-A47D-38C7E360A201}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mf_utest_iunknown_helper.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B812780E-1C7E-4C44-AB76-C8C1575EA8A9}</ProjectGuid>
+    <ProjectGuid>{D2563363-8ED0-44C3-9808-FD6708F43E2F}</ProjectGuid>
     <RootNamespace>mf_utils</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

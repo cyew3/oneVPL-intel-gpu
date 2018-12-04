@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 <!-- decode_hw.vcxproj specific settings -->
-  <PropertyGroup Label="decode_hw settings" Condition="'$(ProjectGuid)'=='{BD4D6C31-4C13-44D9-8C6F-9D5AEAF830F4}'">
+  <PropertyGroup Label="decode_hw settings" Condition="'$(ProjectGuid)'=='{305E9606-3B20-4235-ABFF-9229FBCF5964}'">
     <MfxUsingSettings>decode_hw;$(MfxUsedSettings)</MfxUsingSettings>
     <MfxIncludes>
     $(MfxIppIncludeDir);

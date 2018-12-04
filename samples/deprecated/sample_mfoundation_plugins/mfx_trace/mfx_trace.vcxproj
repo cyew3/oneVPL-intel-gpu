@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{4E7534CF-F5F8-471D-AC46-5DE151D95AC1}</ProjectGuid>
+    <ProjectGuid>{96C81614-534E-47D9-BBE0-E3C009B341CA}</ProjectGuid>
     <RootNamespace>mfx_trace</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>

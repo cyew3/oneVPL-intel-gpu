@@ -12,7 +12,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1048AC59-1C10-4670-B7C3-5070829CBD44}</ProjectGuid>
+    <ProjectGuid>{F26EDFC6-D54D-4776-9CFA-C6ED0C7301F8}</ProjectGuid>
     <Keyword>x64Proj</Keyword>
     <RootNamespace>genx_resize_model</RootNamespace>
   </PropertyGroup>

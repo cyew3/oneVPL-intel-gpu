@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="mpeg4_spl"
-	ProjectGUID="{568E3C4E-29BF-4637-8E64-0ACE1BCD529F}"
+	ProjectGUID="{53C404C6-015E-4DA0-A03F-3E901614EF1F}"
 	RootNamespace="mpeg4_spl"
 	Keyword="Win32Proj"
 	>

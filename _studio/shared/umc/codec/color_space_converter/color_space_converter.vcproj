@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="color_space_converter"
-	ProjectGUID="{57FE8DAC-C7C4-4DF4-9A36-2FEE040DFF38}"
+	ProjectGUID="{244D48CE-0783-43A4-B149-6CD515B1BA24}"
 	RootNamespace="color_space_converter"
 	Keyword="Win32Proj"
 	>

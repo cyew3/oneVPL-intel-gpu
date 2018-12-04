@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="bitrate_control"
-	ProjectGUID="{06768873-9792-4471-9A7F-0D0E37E9DC2D}"
+	ProjectGUID="{43745E64-E10A-46A7-A4AC-9C925DC7F126}"
 	Keyword="Win32Proj"
 	>
 	<Platforms>

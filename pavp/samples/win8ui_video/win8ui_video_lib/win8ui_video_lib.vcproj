@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="win8ui_video_lib"
-	ProjectGUID="{EDE394F7-8487-4F16-B533-84140C45EA40}"
+	ProjectGUID="{861EB9AB-5DE9-43C2-8C67-776FF2427360}"
 	RootNamespace="win8ui_video_lib"
 	Keyword="Win32Proj"
 	>

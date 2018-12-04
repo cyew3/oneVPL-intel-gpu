@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>mfx_pipeline_tests</ProjectName>
-    <ProjectGuid>{974F33D8-D454-40BC-8D7B-83206FC1033E}</ProjectGuid>
+    <ProjectGuid>{EAA7884E-DC96-4C0E-9DB6-920F6170EA0B}</ProjectGuid>
     <RootNamespace>mfx_player_tests</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
@@ -224,86 +224,86 @@
     <ClInclude Include="option_parser_tests.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
-      <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
+    <ProjectReference Include="..\..\..\..\api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
+      <Project>{AB838320-0D1D-4766-89CA-A1590FCA8E53}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher.vcxproj">
-      <Project>{919d48bc-615b-4c72-b5a9-edb34f1aef7d}</Project>
+    <ProjectReference Include="..\..\..\..\api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
+      <Project>{AB838320-0D1D-4766-89CA-A1590FCA8E53}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\thirdparty\unittest++\unittest++.vsnet2005.vcxproj">
-      <Project>{64a4fefe-0461-4e95-8cc1-91ef5f57dbc6}</Project>
+    <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\unittest++\unittest++.vsnet2005.vcxproj">
+      <Project>{64A4FEFE-0461-4E95-8CC1-91EF5F57DBC6}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\codec\asf_spl\asf_spl.vcxproj">
-      <Project>{7662c9c6-5ce0-42e6-aca7-92fe6b7797a6}</Project>
+      <Project>{9F09C948-BF18-4646-881E-61DECF4D9C96}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\codec\avi_spl\avi_sp.vcxproj">
-      <Project>{10a6c28a-72a4-4a75-9ea4-16f22e4791fb}</Project>
+      <Project>{4B5C0941-77E8-4004-B77F-C5470C76F628}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\codec\common\common.vcxproj">
-      <Project>{df581e3f-1816-4384-9fac-cdf8c651f13d}</Project>
+      <Project>{39BDEF92-C4FD-4049-957A-EA0C3E4BAEDC}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\codec\demuxer\demuxer.vcxproj">
-      <Project>{792d7964-de0e-421b-99eb-f98faf53d235}</Project>
+      <Project>{569B4B5E-EB4E-4A47-AFFB-C3E2CE695E04}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\codec\mpeg4_spl\mpeg4_spl.vcxproj">
-      <Project>{568e3c4e-29bf-4637-8e64-0ace1bcd529f}</Project>
+      <Project>{EC17952E-F9C6-42FA-866B-61012CF381BC}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\codec\spl_common\spl_common.vcxproj">
-      <Project>{18d5ad19-b7ce-4158-8500-842216503d6d}</Project>
+      <Project>{A8F4BA79-864C-4CDF-AFF1-CC96CE1F4838}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\codec\vc1_common\vc1_common.vcxproj">
-      <Project>{326e90fb-f844-4af1-8cdf-fdccecedeb22}</Project>
+      <Project>{E1467602-BCFE-4244-940C-9359E82E3DE1}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\codec\vc1_spl\vc1_spl.vcxproj">
-      <Project>{73d21914-35f0-4f04-acf0-2a7c1c13bde5}</Project>
+      <Project>{0742D5BE-5488-4FDF-9848-949A5074E653}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\umc\base_classes.vcxproj">
-      <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
+      <Project>{C22074B5-4F12-464E-B7BE-6C169718E0E8}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm\vm.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm_plus\vm_plus.vcxproj">
-      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+      <Project>{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\io\media_buffers\media_buffers.vcxproj">
-      <Project>{9befd888-5d4d-49fb-bda0-e5987f4f6fc7}</Project>
+      <Project>{314D0047-F36D-4922-95B0-9757FA9D667F}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\io\umc_io\umc_io.vcxproj">
-      <Project>{8ba23c0c-d2d7-4a5a-b8f9-ba5ca19cbab7}</Project>
+      <Project>{8DC35B89-B4B7-4B48-B462-E589D4FDFEDE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\dxva2_dump\dxva2_dump_lib.vcxproj">
-      <Project>{5ad3d93a-18bf-4f7f-aee7-52448c5b4ab3}</Project>
+      <Project>{045F1A5C-8E17-4AD3-A558-85BAF24F28ED}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\..\shared\shared_utils.vcxproj">
-      <Project>{0d02568b-3117-47c3-ac2e-d83781259c1d}</Project>
+      <Project>{F5C4912C-0F81-49A7-BA3D-3E397B267ED9}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\mfx_pipeline.vcxproj">
-      <Project>{bf72a446-8425-40a2-856b-33b5742c60ce}</Project>
+      <Project>{FE079DA8-1059-4C65-986B-62D968ED663E}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\mfx_pipeline_mock_objects\mfx_pipeline_mock_objects.vcxproj">
-      <Project>{f0c05086-e63a-4498-b6d5-50c9c75fe303}</Project>
+      <Project>{6B94D0BC-F17E-4CAB-A192-B817BC45C97C}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\mfx_utest_infrastructure\mfx_utest_infrastructure.vcxproj">
-      <Project>{afde06f8-2f72-43d7-8669-387a3f164c0a}</Project>
+      <Project>{60E6190A-E6EE-49C6-9248-C88617D11D4C}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

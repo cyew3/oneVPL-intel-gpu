@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{680AAC8E-DB3B-431F-B72A-7AB8E4A29040}</ProjectGuid>
+    <ProjectGuid>{8B277CA5-4EE2-4FB3-B6F9-801CA41E5602}</ProjectGuid>
     <RootNamespace>video_enc_con</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -289,7 +289,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\sample_common\sample_common.vcxproj">
-      <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
+      <Project>{5FADB243-53C3-4776-A20F-8BD65C10CF41}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

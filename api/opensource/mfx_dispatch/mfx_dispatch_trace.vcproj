@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="mfx_dispatch_trace"
-	ProjectGUID="{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
+	ProjectGUID="{E5AB736C-E799-476D-B9C1-525D330D229D}"
 	RootNamespace="mfx_dispatch_trace"
 	Keyword="Win32Proj"
 	>

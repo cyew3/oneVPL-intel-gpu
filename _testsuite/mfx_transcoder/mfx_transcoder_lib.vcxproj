@@ -4,7 +4,7 @@
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
     <ProjectName>mfx_trans_pipeline</ProjectName>
-    <ProjectGuid>{B9C19E53-8A34-418F-B96E-E551225E93C9}</ProjectGuid>
+    <ProjectGuid>{0C8F0A20-3B49-405A-ACD9-C2427345BF50}</ProjectGuid>
     <RootNamespace>mfx_trans_pipeline</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>

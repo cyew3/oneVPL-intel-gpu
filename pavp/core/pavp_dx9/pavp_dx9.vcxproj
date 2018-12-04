@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{787664F3-E866-45EB-80C7-A1CAE034524E}</ProjectGuid>
+    <ProjectGuid>{FDEBE46F-863A-4A0B-9E45-0A14FED1A69F}</ProjectGuid>
     <RootNamespace>pavp_dx9</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>

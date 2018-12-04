@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8,00"
 	Name="pavp_dx9auxiliary"
-	ProjectGUID="{89417EA7-02A7-4D78-A9F8-9693B6B98ECA}"
+	ProjectGUID="{679B4983-21BF-4B43-B3C2-C2C40B0239AC}"
 	RootNamespace="pavp_dx9auxiliary"
 	Keyword="Win32Proj"
 	>
