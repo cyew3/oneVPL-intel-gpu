@@ -86,7 +86,7 @@ namespace UMC_AV1_DECODER
 
     AV1DecoderFrame::~AV1DecoderFrame()
     {
-        VM_ASSERT(Empty());
+        //VM_ASSERT(Empty());
     }
 
     void AV1DecoderFrame::Reset()
@@ -121,7 +121,7 @@ namespace UMC_AV1_DECODER
         if (!fh)
             throw av1_exception(UMC::UMC_ERR_NULL_PTR);
 
-        int32_t id = UID;
+        int64_t id = UID;
         Reset();
         UID = id;
 

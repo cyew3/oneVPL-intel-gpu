@@ -77,6 +77,8 @@ namespace UMC_AV1_DECODER
 
             VM_ASSERT(packer);
             packer->BeginFrame();
+
+            frame.StartDecoding();
         }
 
         auto &tileSets = frame.GetTileSets();

@@ -153,11 +153,16 @@ namespace UMC_AV1_DECODER
         return sh.color_config.mono_chrome ? 1 : MAX_MB_PLANE;
     }
 
+    inline unsigned GetNumArrivedTiles(AV1DecoderFrame const& frame)
+    {
+        auto &tileSets = frame.GetTileSets();
+        return CalcTilesInTileSets(tileSets);
+    }
+
     inline unsigned GetNumMissingTiles(AV1DecoderFrame const& frame)
     {
         FrameHeader const& fh = frame.GetFrameHeader();
-        auto &tileSets = frame.GetTileSets();
-        return NumTiles(fh.tile_info) - CalcTilesInTileSets(tileSets);
+        return NumTiles(fh.tile_info) - GetNumArrivedTiles(frame);
     }
 }
 

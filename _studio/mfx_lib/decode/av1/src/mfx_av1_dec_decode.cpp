@@ -792,6 +792,8 @@ UMC_AV1_DECODER::AV1DecoderFrame* VideoDECODEAV1::GetFrameToDisplay()
         return nullptr;
 
     frame->Outputted(true);
+    frame->ShowAsExisting(false);
+
     return frame;
 }
 

@@ -119,8 +119,9 @@ namespace UMC_AV1_DECODER
     public:
 
         AV1DecoderFrame* FindFrameByMemID(UMC::FrameMemID);
-        AV1DecoderFrame* FindFrameByDispID(uint32_t);
         AV1DecoderFrame* GetFrameToDisplay();
+        AV1DecoderFrame* FindFrameByUID(int64_t uid);
+        AV1DecoderFrame* FindFrameInProgress();
 
         virtual bool QueryFrames() = 0;
 
@@ -141,7 +142,7 @@ namespace UMC_AV1_DECODER
 
         template <typename F>
         AV1DecoderFrame* FindFrame(F pred);
-        UMC::Status StartFrame(FrameHeader const&, DPBType const&);
+        AV1DecoderFrame* StartFrame(FrameHeader const&, DPBType const&);
 
     protected:
 
@@ -154,9 +155,6 @@ namespace UMC_AV1_DECODER
 
         uint32_t                        counter;
         AV1DecoderParams                params;
-
-        AV1DecoderFrame*                prev_frame;
-        AV1DecoderFrame*                curr_frame;
     };
 }
 

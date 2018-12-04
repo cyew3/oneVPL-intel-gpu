@@ -37,8 +37,6 @@ namespace UMC_AV1_DECODER
         : allocator(nullptr)
         , sequence_header(nullptr)
         , counter(0)
-        , prev_frame(nullptr)
-        , curr_frame(nullptr)
     {
     }
 
@@ -217,27 +215,39 @@ namespace UMC_AV1_DECODER
         return true;
     }
 
-    UMC::Status AV1Decoder::StartFrame(FrameHeader const& fh, DPBType const& frameDPB)
+    AV1DecoderFrame* AV1Decoder::StartFrame(FrameHeader const& fh, DPBType const& frameDPB)
     {
-        curr_frame = GetFrameBuffer(fh);
+        AV1DecoderFrame* pFrame = nullptr;
 
-        if (!curr_frame)
-            return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
+        if (fh.show_existing_frame)
+        {
+            pFrame = frameDPB[fh.frame_to_show_map_idx];
+            VM_ASSERT(pFrame);
+            FrameHeader const& refFH = pFrame->GetFrameHeader();
 
-        curr_frame->SetSeqHeader(*sequence_header.get());
+            if (!refFH.showable_frame)
+                throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+            return pFrame;
+        }
+        else
+            pFrame = GetFrameBuffer(fh);
+
+        if (!pFrame)
+            return nullptr;
+
+        pFrame->SetSeqHeader(*sequence_header.get());
 
         if (fh.refresh_frame_flags)
-            curr_frame->SetRefValid(true);
+            pFrame->SetRefValid(true);
 
-        curr_frame->frame_dpb = frameDPB;
-        curr_frame->UpdateReferenceList();
+        pFrame->frame_dpb = frameDPB;
+        pFrame->UpdateReferenceList();
 
         if (!params.film_grain)
-            curr_frame->DisableFilmGrain();
+            pFrame->DisableFilmGrain();
 
-        curr_frame->StartDecoding();
-
-        return UMC::UMC_OK;
+        return pFrame;
     }
 
     static void ReadTileGroup(TileLayout& layout, AV1Bitstream& bs, FrameHeader const& fh, size_t obuOffset, size_t obuSize)
@@ -296,6 +306,17 @@ namespace UMC_AV1_DECODER
             frame.GetFrameData(SURFACE_RECON);
     }
 
+    inline bool FrameInProgress(AV1DecoderFrame const& frame)
+    {
+        // frame preparation to decoding is in progress
+        // i.e. SDK decoder still getting tiles of the frame from application (has both arrived and missing tiles)
+        //      or it got all tiles and waits for output surface to start decoding
+        if (GetNumArrivedTiles(frame) == 0)
+            return false;
+
+        return GetNumMissingTiles(frame) || !AllocComplete(frame);
+    }
+
     UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
     {
         if (!in)
@@ -303,23 +324,29 @@ namespace UMC_AV1_DECODER
 
         FrameHeader fh = {};
 
+        AV1DecoderFrame const* pPrevFrame = FindFrameByUID(counter - 1);
+        AV1DecoderFrame* pFrameInProgress = FindFrameInProgress();
         DPBType updated_refs;
         FrameHeader const* prev_fh = 0;
-        if (prev_frame && !curr_frame)
+        if (pPrevFrame && !pFrameInProgress)
         {
-            updated_refs = DPBUpdate(prev_frame);
-            prev_fh = &(prev_frame->GetFrameHeader());
+            updated_refs = DPBUpdate(pPrevFrame);
+            prev_fh = &(pPrevFrame->GetFrameHeader());
         }
 
         bool gotFullFrame = false;
+        bool repeatedFrame = false;
 
-        if (curr_frame && GetNumMissingTiles(*curr_frame) == 0)
+        AV1DecoderFrame* pCurrFrame = nullptr;
+
+        if (pFrameInProgress && GetNumMissingTiles(*pFrameInProgress) == 0)
         {
             /* this code is executed if and only if whole frame (all tiles) was already got from applicaiton during previous calls of DecodeFrameAsync
                but there were no sufficient surfaces to start decoding (e.g. to apply film_grain)
                in this case reading from bitstream must be skipped, and code should proceed to frame submission to the driver */
 
-            VM_ASSERT(!AllocComplete(*curr_frame));
+            VM_ASSERT(!AllocComplete(*pFrameInProgress));
+            pCurrFrame = pFrameInProgress;
             gotFullFrame = true;
         }
         else
@@ -332,7 +359,7 @@ namespace UMC_AV1_DECODER
 
             UMC::MediaData tmp = *in; // use local copy of [in] for OBU header parsing to not move data pointer in original [in] prematurely
 
-            while (tmp.GetDataSize() >= MINIMAL_DATA_SIZE && gotFullFrame == false)
+            while (tmp.GetDataSize() >= MINIMAL_DATA_SIZE && gotFullFrame == false && repeatedFrame == false)
             {
                 const auto src = reinterpret_cast<uint8_t*>(tmp.GetDataPointer());
                 AV1Bitstream bs(src, uint32_t(tmp.GetDataSize()));
@@ -345,7 +372,7 @@ namespace UMC_AV1_DECODER
                 if (tmp.GetDataSize() < obuInfo.size) // not enough data left in the buffer to hold full OBU unit
                     break;
 
-                if (curr_frame && NextFrameDetected(obuType))
+                if (pFrameInProgress && NextFrameDetected(obuType))
                 {
                     VM_ASSERT(!"Current frame was interrupted unexpectedly!");
                     throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
@@ -368,19 +395,23 @@ namespace UMC_AV1_DECODER
                     bs.ReadUncompressedHeader(fh, *sequence_header, prev_fh, updated_refs, obuInfo.header);
                     gotFrameHeader = true;
                     if (obuType != OBU_FRAME)
+                    {
+                        if (fh.show_existing_frame)
+                            repeatedFrame = true;
                         break;
+                    }
                     bs.ReadByteAlignment();
                 case OBU_TILE_GROUP:
                     FrameHeader const* pFH = nullptr;
-                    if (curr_frame)
-                        pFH = &(curr_frame->GetFrameHeader());
+                    if (pFrameInProgress)
+                        pFH = &(pFrameInProgress->GetFrameHeader());
                     else if (gotFrameHeader)
                         pFH = &fh;
 
                     if (pFH) // bypass tile group if there is no respective frame header
                     {
                         ReadTileGroup(layout, bs, *pFH, OBUOffset, obuInfo.size);
-                        gotFullFrame = GotFullFrame(curr_frame, *pFH, layout);
+                        gotFullFrame = GotFullFrame(pFrameInProgress, *pFH, layout);
                         break;
                     }
                 }
@@ -389,52 +420,49 @@ namespace UMC_AV1_DECODER
                 tmp.MoveDataPointer(static_cast<int32_t>(obuInfo.size));
             }
 
-            if (!HaveTilesToSubmit(curr_frame, layout))
+            if (!HaveTilesToSubmit(pFrameInProgress, layout) && !repeatedFrame)
                 return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 
-            if (curr_frame == 0)
-            {
-                UMC::Status umcRes = StartFrame(fh, updated_refs);
-                if (umcRes != UMC::UMC_OK)
-                    return umcRes;
-            }
+            pCurrFrame = pFrameInProgress ?
+                pFrameInProgress : StartFrame(fh, updated_refs);
+
+            if (!pCurrFrame)
+                return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
             if (!layout.empty())
-            {
-                curr_frame->AddTileSet(in, layout);
+                pCurrFrame->AddTileSet(in, layout);
+
+            if (!layout.empty() || repeatedFrame)
                 in->MoveDataPointer(OBUOffset);
+
+            if (repeatedFrame)
+            {
+                pCurrFrame->ShowAsExisting(true);
+                return UMC::UMC_OK;
             }
+
         }
-
-        VM_ASSERT(curr_frame);
-
-        UMC::Status umcRes = UMC::UMC_OK;
 
         bool firstSubmission = false;
 
-        if (!AllocComplete(*curr_frame))
+        if (!AllocComplete(*pCurrFrame))
         {
-            AddFrameData(*curr_frame);
+            AddFrameData(*pCurrFrame);
 
-            if (!AllocComplete(*curr_frame))
+            if (!AllocComplete(*pCurrFrame))
                 return UMC::UMC_OK;
 
             firstSubmission = true;
         }
 
-        umcRes = SubmitTiles(*curr_frame, firstSubmission);
+        UMC::Status umcRes = SubmitTiles(*pCurrFrame, firstSubmission);
         if (umcRes != UMC::UMC_OK)
             return umcRes;
 
-        if (gotFullFrame)
-        {
-            prev_frame = curr_frame;
-            curr_frame = nullptr;
-        }
-        else
+        if (!gotFullFrame)
             return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 
-        return umcRes;
+        return UMC::UMC_OK;
     }
 
     AV1DecoderFrame* AV1Decoder::FindFrameByMemID(UMC::FrameMemID id)
@@ -445,41 +473,32 @@ namespace UMC_AV1_DECODER
         );
     }
 
-    AV1DecoderFrame* AV1Decoder::FindFrameByDispID(uint32_t id)
-    {
-        return FindFrame(
-            [id](AV1DecoderFrame const* f)
-            { return f->GetFrameHeader().display_frame_id == id; }
-        );
-    }
-
-    inline bool CanBeOutput(AV1DecoderFrame const& frame)
-    {
-        FrameHeader const& fh = frame.GetFrameHeader();
-        return fh.show_frame && !frame.Outputted();
-    }
-
     AV1DecoderFrame* AV1Decoder::GetFrameToDisplay()
     {
-        std::unique_lock<std::mutex> l(guard);
-
-        auto i = std::min_element(std::begin(dpb), std::end(dpb),
-            [](AV1DecoderFrame const* f1, AV1DecoderFrame const* f2)
+        return FindFrame(
+            [](AV1DecoderFrame const* f)
             {
-                FrameHeader const& h1 = f1->GetFrameHeader(); FrameHeader const& h2 = f2->GetFrameHeader();
-                uint32_t const id1 = CanBeOutput(*f1) ? h1.display_frame_id : (std::numeric_limits<uint32_t>::max)();
-                uint32_t const id2 = CanBeOutput(*f2) ? h2.display_frame_id : (std::numeric_limits<uint32_t>::max)();
-
-                return  id1 < id2;
+                FrameHeader const& h = f->GetFrameHeader();
+                bool regularShowFrame = h.show_frame && !FrameInProgress(*f) && !f->Outputted();
+                return regularShowFrame || f->ShowAsExisting();
             }
         );
+    }
 
-        if (i == std::end(dpb))
-            return nullptr;
+    AV1DecoderFrame* AV1Decoder::FindFrameByUID(int64_t uid)
+    {
+        return FindFrame(
+            [uid](AV1DecoderFrame const* f)
+        { return f->UID == uid; }
+        );
+    }
 
-        AV1DecoderFrame* frame = *i;
-        return
-            CanBeOutput(*frame) && AllocComplete(*frame) ? frame : nullptr;
+    AV1DecoderFrame* AV1Decoder::FindFrameInProgress()
+    {
+        return FindFrame(
+            [](AV1DecoderFrame const* f)
+        { return FrameInProgress(*f); }
+        );
     }
 
     UMC::Status AV1Decoder::FillVideoParam(SequenceHeader const& sh, UMC_AV1_DECODER::AV1DecoderParams& par)
@@ -580,12 +599,6 @@ namespace UMC_AV1_DECODER
 
     AV1DecoderFrame* AV1Decoder::GetFrameBuffer(FrameHeader const& fh)
     {
-        if (fh.show_existing_frame)
-        {
-            // TODO: [Rev0.85] Implement proper processing of reordering
-            throw av1_exception(UMC::UMC_ERR_NOT_IMPLEMENTED);
-        }
-
         CompleteDecodedFrames();
         AV1DecoderFrame* frame = GetFreeFrame();
         if (!frame)

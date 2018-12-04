@@ -169,6 +169,11 @@ namespace UMC_AV1_DECODER
         void CompleteDecoding()
         { decoding_completed = true; }
 
+        bool ShowAsExisting() const
+        { return show_as_existing; }
+        void ShowAsExisting(bool show)
+        { show_as_existing = show; }
+
         bool FilmGrainDisabled() const
         { return film_grain_disabled; }
         void DisableFilmGrain()
@@ -196,7 +201,7 @@ namespace UMC_AV1_DECODER
 
     public:
 
-        int32_t           UID;
+        int64_t          UID;
         DPBType          frame_dpb;
 
     protected:
@@ -214,8 +219,10 @@ namespace UMC_AV1_DECODER
         bool                              decoded;   // set in [application thread] to signal that frame is completed and respective reference counter decremented
                                                      // after it frame still may remain in [AV1Decoder::dpb], but only as reference
 
-        bool                              decoding_started;   // set in [application thread] right after frame submission to the driver
-        bool                              decoding_completed; // set in [scheduler thread] after getting driver status report for the frame
+        bool                              decoding_started;     // set in [application thread] right after frame submission to the driver started
+        bool                              decoding_completed;   // set in [scheduler thread] after getting driver status report for the frame
+
+        bool                              show_as_existing;
 
 
         std::shared_ptr<UMC::FrameData>   data[2]; // if FilmGrain is applied:     data[SURFACE_DISPLAY] points to data of frame with film grain, and data[SURFACE_RECON] points to data of reconstructed frame
