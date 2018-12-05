@@ -66,7 +66,7 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *pCore)
         m_bIsBlockingTaskSyncEnabled = *eventsEnabled;
 
     eMFXHWType platform = pCore->GetHWType();
-    if (platform >= MFX_HW_TGL_LP)
+    if (platform >= MFX_HW_JSL)
         m_TaskSyncTimeOutMs = DEFAULT_H265_TIMEOUT_MS_SIM;
 
 #else
