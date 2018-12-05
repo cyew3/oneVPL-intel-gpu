@@ -2053,7 +2053,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     // RA B is not supported in TGL VDENC TU7
     if ((par.m_platform == MFX_HW_TGL_LP || par.m_platform == MFX_HW_TGL_HP)
-        && IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7))
+        && IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7) && (par.mfx.GopRefDist > 1))
     {
         par.mfx.GopRefDist = 1;
         changed++;
@@ -3066,7 +3066,11 @@ void SetDefaults(
 
     if (!par.mfx.GopRefDist)
     {
-        if (par.isTL() || hwCaps.SliceIPOnly || par.mfx.GopPicSize < 3 || par.mfx.NumRefFrame == 1)
+        if (par.isTL() || hwCaps.SliceIPOnly || par.mfx.GopPicSize < 3 || par.mfx.NumRefFrame == 1
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+            || ((par.m_platform == MFX_HW_TGL_LP || par.m_platform == MFX_HW_TGL_HP) && IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7))
+#endif
+           )
             par.mfx.GopRefDist = 1; // in case of correct SliceIPOnly using of IsOn(par.mfx.LowPower) is not necessary
         else
             par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.isSWBRC()) ? 8 : 4);
