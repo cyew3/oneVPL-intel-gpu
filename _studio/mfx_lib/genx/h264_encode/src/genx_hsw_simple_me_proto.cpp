@@ -22,9 +22,9 @@
 
 extern "C"
 {
-    void SVCEncMB_I() {}
-    void SVCEncMB_P() {}
-    void SVCEncMB_B() {}
+    void EncMB_I() {}
+    void EncMB_P() {}
+    void EncMB_B() {}
     void DownSampleMB2X() {}
     void DownSampleMB4X() {}
     void HistogramFrame() {}

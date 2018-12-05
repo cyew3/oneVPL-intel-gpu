@@ -52,8 +52,8 @@ namespace MfxHwH264Encode
 {
 class DdiTask;
 class MfxVideoParam;
-struct SVCEncCURBEData;
-struct SVCPAKObject;
+struct CURBEData;
+struct LAOutObject;
 
 struct mfxVMEUNIIn
 {
@@ -384,12 +384,12 @@ protected:
     mfxVMEUNIIn & SelectCosts(mfxU32 frameType);
 
     void SetCurbeData(
-        SVCEncCURBEData & curbeData,
+        CURBEData & curbeData,
         DdiTask const &   task,
         mfxU32            qp);
 
     void SetCurbeData(
-        SVCEncCURBEData & curbeData,
+        CURBEData & curbeData,
         mfxU16            frameType,
         mfxU32            qp,
         mfxI32 width,

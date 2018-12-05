@@ -610,7 +610,7 @@ namespace MfxHwH264EncodeHW
 
     mfxU16 GetVmeMvCostP(
         mfxU32 const         lutMv[65],
-        SVCPAKObject const & mb)
+        LAOutObject const & mb)
     {
         mfxU32 diffx = abs(mb.costCenter0X - mb.mv[0].x) >> 2;
         mfxU32 diffy = abs(mb.costCenter0Y - mb.mv[0].y) >> 2;
@@ -621,7 +621,7 @@ namespace MfxHwH264EncodeHW
 
     mfxU16 GetVmeMvCostB(
         mfxU32 const         lutMv[65],
-        SVCPAKObject const & mb)
+        LAOutObject const & mb)
     {
         mfxU32 diffx0 = abs(mb.costCenter0X - mb.mv[0].x) >> 2;
         mfxU32 diffy0 = abs(mb.costCenter0Y - mb.mv[0].y) >> 2;
@@ -921,9 +921,9 @@ void CmContext::Setup(
 
     if (m_program)
     {
-        m_kernelI = CreateKernel(m_device, m_program, "SVCEncMB_I", (void *)SVCEncMB_I);
-        m_kernelP = CreateKernel(m_device, m_program, "SVCEncMB_P", (void *)SVCEncMB_P);
-        m_kernelB = CreateKernel(m_device, m_program, "SVCEncMB_B", (void *)SVCEncMB_B);
+        m_kernelI = CreateKernel(m_device, m_program, "EncMB_I", (void *)EncMB_I);
+        m_kernelP = CreateKernel(m_device, m_program, "EncMB_P", (void *)EncMB_P);
+        m_kernelB = CreateKernel(m_device, m_program, "EncMB_B", (void *)EncMB_B);
     }
 
     if (m_programHist)
@@ -933,9 +933,9 @@ void CmContext::Setup(
     }
 
 #if USE_AGOP
-    m_kernelIAGOP = CreateKernel(m_device, m_program, "SVCEncMB_I", (void *)SVCEncMB_I);
-    m_kernelPAGOP = CreateKernel(m_device, m_program, "SVCEncMB_P", (void *)SVCEncMB_P);
-    m_kernelBAGOP = CreateKernel(m_device, m_program, "SVCEncMB_B", (void *)SVCEncMB_B);
+    m_kernelIAGOP = CreateKernel(m_device, m_program, "EncMB_I", (void *)EncMB_I);
+    m_kernelPAGOP = CreateKernel(m_device, m_program, "EncMB_P", (void *)EncMB_P);
+    m_kernelBAGOP = CreateKernel(m_device, m_program, "EncMB_B", (void *)EncMB_B);
 #endif
 
 #ifdef USE_DOWN_SAMPLE_KERNELS
@@ -1065,7 +1065,7 @@ CmEvent * CmContext::RunVme(
 
     CmKernel * kernelPreMe = SelectKernelPreMe(task.m_type[task.m_fid[0]]);
 
-    SVCEncCURBEData curbeData;
+    CURBEData curbeData;
     SetCurbeData(curbeData, task, qp);
     Write(task.m_cmCurbe, &curbeData);
 
@@ -1118,14 +1118,14 @@ mfxStatus CmContext::QueryVme(
     else if(status != CM_SUCCESS)
         throw CmRuntimeError();
 
-    SVCPAKObject * cmMb = (SVCPAKObject *)task.m_cmMbSys;
+    LAOutObject * cmMb = (LAOutObject *)task.m_cmMbSys;
     VmeData *      cur  = task.m_vmeData;
 
     { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Compensate costs");
         mfxVMEUNIIn const & costs = SelectCosts(task.m_type[0]);
         for (size_t i = 0; i < cur->mb.size(); i++)
         {
-            SVCPAKObject & mb = cmMb[i];
+            LAOutObject & mb = cmMb[i];
 
             if (mb.IntraMbFlag)
             {
@@ -1241,7 +1241,7 @@ mfxU32 CmContext::CalcCostAGOP(
     mfxI32 nextP)
 {
     mfxHDLPair mbData = task.m_cmMbAGOP[prevP][nextP];
-    SVCPAKObject * mb = (SVCPAKObject *)mbData.second;
+    LAOutObject * mb = (LAOutObject *)mbData.second;
 
     if(!mb) return MAX_SEQUENCE_COST;
 
@@ -1309,7 +1309,7 @@ CmEvent* CmContext::RunVmeAGOP(
             frameType = MFX_FRAMETYPE_I;
     }
 
-    SVCEncCURBEData curbeData;
+    CURBEData curbeData;
     SetCurbeData(curbeData, frameType, qp, numMbCols<<4, numMbRows<<4, biWeight);
     Write(curbe, &curbeData);
 
@@ -1357,7 +1357,7 @@ bool CmContext::QueryVmeAGOP(
 
     cost=0;
 #if 0
-    SVCPAKObject * mb = (SVCPAKObject *)task.m_cmMbSysAGOP;
+    LAOutObject * mb = (LAOutObject *)task.m_cmMbSysAGOP;
     mfxVMEUNIIn const & costs = SelectCosts(task.m_type[0]);
 
     for (size_t i = 0; i < numMb; i++)
@@ -1456,7 +1456,7 @@ mfxVMEUNIIn & CmContext::SelectCosts(mfxU32 frameType)
 
 
 void CmContext::SetCurbeData(
-    SVCEncCURBEData & curbeData,
+    CURBEData & curbeData,
     DdiTask const &   task,
     mfxU32            qp)
 {
@@ -1708,7 +1708,7 @@ void CmContext::SetCurbeData(
 }
 
 void CmContext::SetCurbeData(
-    SVCEncCURBEData & curbeData,
+    CURBEData & curbeData,
     mfxU16            frameType,
     mfxU32            qp,
     mfxI32 width,

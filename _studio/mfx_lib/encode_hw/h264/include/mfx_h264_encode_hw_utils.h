@@ -2047,7 +2047,7 @@ namespace MfxHwH264Encode
         mfxU32 m_queueFlush[STG_COUNT + 1];
     };
 
-    struct SVCPAKObject;
+    struct LAOutObject;
 
 #if defined(_WIN32) || defined(_WIN64)
     #define CM_SURFACE_FORMAT_NV12                  (D3DFORMAT)MAKEFOURCC('N','V','1','2')
@@ -2093,7 +2093,7 @@ namespace MfxHwH264Encode
             mfxU32              totalDist;
             mfxU32              numIntraMb;
             std::vector<MbData> mb;
-            //std::vector<SVCPAKObject> m_mb;
+            //std::vector<LAOutObject> m_mb;
         };
 
     public:
@@ -2387,7 +2387,7 @@ namespace MfxHwH264Encode
         std::list<DdiTask>  m_adaptiveGOPReady;
         mfxU8 m_bestGOPSequence[MAX_B_FRAMES][MAX_GOP_SEQUENCE+1];
         mfxU32 m_bestGOPCost[MAX_B_FRAMES];
-        std::vector<SVCPAKObject>       m_mbData;
+        std::vector<LAOutObject>       m_mbData;
 #endif
         mfxU32      m_LowDelayPyramidLayer;
         mfxI32      m_LtrQp;

@@ -473,7 +473,7 @@ mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
     mfxFrameAllocRequest request = { };
     request.Info = m_video.mfx.FrameInfo;
 
-    request.Info.Width  = m_video.calcParam.widthLa / 16 * sizeof(MfxHwH264Encode::SVCPAKObject);
+    request.Info.Width  = m_video.calcParam.widthLa / 16 * sizeof(MfxHwH264Encode::LAOutObject);
     request.Info.Height = m_video.calcParam.widthLa/ 16;
     request.Info.FourCC = MFX_FOURCC_P8;
     request.Type        = MfxHwH264Encode::MFX_MEMTYPE_D3D_INT;
@@ -482,7 +482,7 @@ mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
     sts = m_mb.AllocCmBuffersUp(m_cmDevice, request);
     MFX_CHECK_STS(sts);
 
-    request.Info.Width  = sizeof(MfxHwH264Encode::SVCEncCURBEData);
+    request.Info.Width  = sizeof(MfxHwH264Encode::CURBEData);
     request.Info.Height = 1;
     request.Info.FourCC = MFX_FOURCC_P8;
     request.Type        = MfxHwH264Encode::MFX_MEMTYPE_D3D_INT;
@@ -1631,10 +1631,10 @@ namespace MfxHwH264EncodeHW
     mfxU32 Map44LutValueBack(mfxU32 val);
     mfxU16 GetVmeMvCostP(
         mfxU32 const         lutMv[65],
-        MfxHwH264Encode::SVCPAKObject const & mb);
+        MfxHwH264Encode::LAOutObject const & mb);
     mfxU16 GetVmeMvCostB(
         mfxU32 const         lutMv[65],
-        MfxHwH264Encode::SVCPAKObject const & mb);
+        MfxHwH264Encode::LAOutObject const & mb);
 
 };
     mfxI32 CalcDistScaleFactor(
@@ -1653,7 +1653,7 @@ namespace MfxHwH264EncodeHW
 
 
 void CmContextLA::SetCurbeData(
-    MfxHwH264Encode::SVCEncCURBEData & curbeData,
+    MfxHwH264Encode::CURBEData & curbeData,
     sLADdiTask const &   task,
     mfxU32            qp)
 {
@@ -1912,7 +1912,7 @@ CmEvent * CmContextLA::RunVme(sLADdiTask const & task,
 
     CmKernel * kernelPreMe = SelectKernelPreMe(task.m_TaskInfo.InputFrame.frameType);
 
-    MfxHwH264Encode::SVCEncCURBEData curbeData;
+    MfxHwH264Encode::CURBEData curbeData;
     SetCurbeData(curbeData, task, qp);
     Write(task.m_cmCurbe, &curbeData);
 
@@ -1960,14 +1960,14 @@ mfxStatus CmContextLA::QueryVme(sLADdiTask const & task,
     else if(status != CM_SUCCESS)
         throw MfxHwH264Encode::CmRuntimeError();
 
-    MfxHwH264Encode::SVCPAKObject * cmMb = (MfxHwH264Encode::SVCPAKObject *)task.m_cmMbSys;
+    MfxHwH264Encode::LAOutObject * cmMb = (MfxHwH264Encode::LAOutObject *)task.m_cmMbSys;
     MfxHwH264Encode::VmeData *      cur  = task.m_Curr.VmeData;
 
     { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Compensate costs");
     MfxHwH264Encode::mfxVMEUNIIn const & costs = SelectCosts(task.m_TaskInfo.InputFrame.frameType);
     for (size_t i = 0; i < cur->mb.size(); i++)
     {
-        MfxHwH264Encode::SVCPAKObject & mb = cmMb[i];
+        MfxHwH264Encode::LAOutObject & mb = cmMb[i];
 
         if (mb.IntraMbFlag)
         {

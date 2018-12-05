@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2048
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{37A0E834-968E-4483-B3A9-0CE258EEF0B0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "genx_h264_encode", "genx_h264_encode.vcxproj", "{8554E7C5-92FF-45F6-B9B4-A447EFAED15C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "embed_isa", "..\embed_isa\embed_isa.vcxproj", "{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,11 +31,26 @@ Global
 		{8554E7C5-92FF-45F6-B9B4-A447EFAED15C}.Release|Win32.Build.0 = Release|Win32
 		{8554E7C5-92FF-45F6-B9B4-A447EFAED15C}.Release|x64.ActiveCfg = Release|x64
 		{8554E7C5-92FF-45F6-B9B4-A447EFAED15C}.Release|x64.Build.0 = Release|x64
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Debug_HSW_Emu|Win32.ActiveCfg = Debug|Win32
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Debug_HSW_Emu|Win32.Build.0 = Debug|Win32
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Debug_HSW_Emu|x64.ActiveCfg = Debug|x64
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Debug_HSW_Emu|x64.Build.0 = Debug|x64
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Debug|Win32.Build.0 = Debug|Win32
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Debug|x64.ActiveCfg = Debug|x64
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Debug|x64.Build.0 = Debug|x64
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Release|Win32.ActiveCfg = Release|Win32
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Release|Win32.Build.0 = Release|Win32
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Release|x64.ActiveCfg = Release|x64
+		{EF647EB9-8BFF-4A56-9D63-B8E83D133D3E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{8554E7C5-92FF-45F6-B9B4-A447EFAED15C} = {37A0E834-968E-4483-B3A9-0CE258EEF0B0}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {971082FE-41F1-4EF1-9AAE-30F02C40DF77}
 	EndGlobalSection
 EndGlobal

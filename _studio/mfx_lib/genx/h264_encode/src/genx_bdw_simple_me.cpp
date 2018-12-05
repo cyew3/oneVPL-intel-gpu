@@ -18,17 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if defined(_WIN32) || defined(_WIN64)
+#if !defined(ANDROID)
 
 #include <cm.h>
 #include <genx_vme.h>
 
-#if defined(CMRT_EMU)
-//#include <cm_trace_log.h>
-#endif // defined(CMRT_EMU)
-
-#define MBDATA_SIZE     64      //sizeof(SVCPAKObject_t)
-#define CURBEDATA_SIZE  160     //sizeof(SVCEncCURBEData_t)
+#define MBDATA_SIZE     64      //sizeof(OutObject_t)
+#define CURBEDATA_SIZE  160     //sizeof(EncCURBEData_t)
 
 //#define USE_DOWN_SAMPLE_KERNELS
 
@@ -124,7 +120,7 @@ enum
     sic.row(2).format<uint1>().select<2, 1>(18) = upperMbIntraModes.select<2, 2>(5);\
 }
 
-#define VME_INIT_SVC_PACK(mbData) \
+#define VME_INIT_PACK(mbData) \
     {mbData = 0;}
 
 #define VME_COPY_MB_INTRA_MODE_TYPE(vector, startIdx, srcMatrix)                                            \
@@ -434,7 +430,7 @@ void SetUpVmeIntra(matrix_ref<uchar, 4, 32> uniIn,
 } // void SetUpVmeIntra(matrix_ref<uchar, 3, 32> uniIn,
 
 _GENX_ inline
-void SetUpPakDataISlice(vector_ref<uchar, MBDATA_SIZE> MBData,
+void SetUpOutDataISlice(vector_ref<uchar, MBDATA_SIZE> MBData,
 /*
                         vector_ref<uchar, CURBEDATA_SIZE> CURBEData,
 */
@@ -467,7 +463,7 @@ void SetUpPakDataISlice(vector_ref<uchar, MBDATA_SIZE> MBData,
     MBData.format<uint2>()[8] = distIntra;
     MBData.format<uint2>()[9] = distIntra;
 
-} // void SetUpPakDataISlice(vector_ref<uchar, MBDATA_SIZE> MBData,
+} // void SetUpOutDataISlice(vector_ref<uchar, MBDATA_SIZE> MBData,
 
 extern "C" _GENX_MAIN_  void
 DownSampleMB2X(SurfaceIndex SurfIndex,
@@ -667,7 +663,7 @@ void DownSampleMB4Xf(SurfaceIndex SurfIndex,
 }
 
 extern "C" _GENX_MAIN_  void
-SVCEncMB_I(SurfaceIndex CurbeDataSurfIndex,
+EncMB_I(SurfaceIndex CurbeDataSurfIndex,
            SurfaceIndex SrcSurfIndexRaw,
            SurfaceIndex SrcSurfIndex,
            SurfaceIndex VMEInterPredictionSurfIndex,
@@ -716,13 +712,14 @@ SVCEncMB_I(SurfaceIndex CurbeDataSurfIndex,
     vector<uchar, MBDATA_SIZE> MBData;
 
     // pack the VME result
-    SetUpPakDataISlice(MBData/*, CURBEData*/, best_uniOut, mbX, mbY);
+    SetUpOutDataISlice(MBData/*, CURBEData*/, best_uniOut, mbX, mbY);
 
     // write back updated MB data
     offset = MbIndex * MBDATA_SIZE;
     write(MBDataSurfIndex, offset, MBData.select<MBDATA_SIZE, 1>(0));
 
     cm_fence();
+    cm_signal();
 }
 
 _GENX_ inline
@@ -1748,7 +1745,7 @@ void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
 } // void DoInterFramePrediction(SurfaceIndex VMEInterPredictionSurfIndex,
 
 _GENX_ inline
-void SetUpPakDataPSlice(matrix_ref<uchar, 4, 32> uniIn,
+void SetUpDataPSlice(matrix_ref<uchar, 4, 32> uniIn,
                         matrix_ref<uchar, 7, 32> uniOut,
                         vector_ref<uchar, MBDATA_SIZE> MBData,
                         U8 /*direct8x8pattern*/,
@@ -1764,7 +1761,7 @@ void SetUpPakDataPSlice(matrix_ref<uchar, 4, 32> uniIn,
     vector<uint1, 4> intraMbType;
     uint1 intraMbFlag;
 
-    VME_INIT_SVC_PACK(MBData);
+    VME_INIT_PACK(MBData);
 
     // set the mask to select INTRA data
     VME_GET_UNIOutput_BestInterDistortion(uniOut, distInter);
@@ -1811,10 +1808,10 @@ void SetUpPakDataPSlice(matrix_ref<uchar, 4, 32> uniIn,
     // copy motion vectors
     SET_MBDATA_MV(MBData, LIST_0, uniOut.row(1).format<uint4>()[0]);
 
-} // void SetUpPakDataPSlice(matrix_ref<uchar, 4, 32> uniIn,
+} // void SetUpDataPSlice(matrix_ref<uchar, 4, 32> uniIn,
 
 extern "C" _GENX_MAIN_ void
-SVCEncMB_P(SurfaceIndex CurbeDataSurfIndex,
+EncMB_P(SurfaceIndex CurbeDataSurfIndex,
            SurfaceIndex SrcSurfIndexRaw,
            SurfaceIndex SrcSurfIndex,
            SurfaceIndex VMEInterPredictionSurfIndex,
@@ -1960,7 +1957,7 @@ SVCEncMB_P(SurfaceIndex CurbeDataSurfIndex,
     vector<uchar, MBDATA_SIZE> MBData;
 
     // pack the VME result
-    SetUpPakDataPSlice(uniIn, best_uniOut, MBData, direct8x8pattern[0],
+    SetUpDataPSlice(uniIn, best_uniOut, MBData, direct8x8pattern[0],
                        CURBEData, x, y, MbIndex);
 
     // write back updated MB data
@@ -1968,6 +1965,7 @@ SVCEncMB_P(SurfaceIndex CurbeDataSurfIndex,
     write(MBDataSurfIndex, offset, MBData);
 
     cm_fence();
+    cm_signal();
 }
 
 _GENX_ inline
@@ -2576,7 +2574,7 @@ void SetUpVmeBSlice(matrix_ref<uchar, 4, 32> uniIn,
 } // void SetUpVmeBSlice(matrix_ref<uchar, 4, 32> uniIn,
 
 _GENX_ inline
-void SetUpPakDataBSlice(matrix_ref<uchar, 4, 32> uniIn,
+void SetUpOutDataBSlice(matrix_ref<uchar, 4, 32> uniIn,
                         matrix_ref<uchar, 7, 32> uniOut,
                         vector_ref<uchar, MBDATA_SIZE> MBData,
                         U8 direct8x8pattern,
@@ -2595,7 +2593,7 @@ void SetUpPakDataBSlice(matrix_ref<uchar, 4, 32> uniIn,
     uint1 MbMode;
     uint1 intraMbFlag;
 
-    VME_INIT_SVC_PACK(MBData);
+    VME_INIT_PACK(MBData);
 
     // set the mask to select INTRA data
     VME_GET_UNIOutput_BestInterDistortion(uniOut, distInter);
@@ -2662,10 +2660,10 @@ void SetUpPakDataBSlice(matrix_ref<uchar, 4, 32> uniIn,
     SET_MBDATA_MV(MBData, LIST_0, uniOut.row(1).format<uint4>()[0]);
     SET_MBDATA_MV(MBData, LIST_1, uniOut.row(1).format<uint4>()[1]);
 
-} // void SetUpPakDataBSlice(matrix_ref<uchar, 4, 32> uniIn,
+} // void SetUpOutDataBSlice(matrix_ref<uchar, 4, 32> uniIn,
 
 extern "C" _GENX_MAIN_  void
-SVCEncMB_B(SurfaceIndex CurbeDataSurfIndex,
+EncMB_B(SurfaceIndex CurbeDataSurfIndex,
            SurfaceIndex SrcSurfIndexRaw,
            SurfaceIndex SrcSurfIndex,
            SurfaceIndex VMEInterPredictionSurfIndex,
@@ -2790,14 +2788,11 @@ SVCEncMB_B(SurfaceIndex CurbeDataSurfIndex,
                     VME_SET_UNIOutput_SkipRawDistortion(sic_uniOut, 0);
                 }
                 direct8x8pattern = 0xf;
-//  sergo: test!!!
-#if 0
-                best_uniOut = sic_uniOut;
-#else
+
                 best_uniOut.row(0) = sic_uniOut.row(0);
                 best_uniOut.row(5) = sic_uniOut.row(5);
                 best_uniOut.row(6) = sic_uniOut.row(6);
-#endif
+
             }
             else
             {
@@ -2819,7 +2814,7 @@ SVCEncMB_B(SurfaceIndex CurbeDataSurfIndex,
     vector<uchar, MBDATA_SIZE> MBData;
 
     // pack the VME result
-    SetUpPakDataBSlice(uniIn, best_uniOut, MBData, direct8x8pattern[0],
+    SetUpOutDataBSlice(uniIn, best_uniOut, MBData, direct8x8pattern[0],
                        CURBEData, x, y, MbIndex);
 
     // write back updated MB data
@@ -2827,8 +2822,6 @@ SVCEncMB_B(SurfaceIndex CurbeDataSurfIndex,
     write(MBDataSurfIndex, offset, MBData);
 
     cm_fence();
+    cm_signal();
 }
-
-/****************************************************************************************/
-
-#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif//#if !defined(ANDROID)

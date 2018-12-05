@@ -20,6 +20,11 @@
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <SDLCheck>false</SDLCheck>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\genx_bdw_simple_me.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -71,6 +76,8 @@
   <ItemGroup>
     <ClInclude Include="include\genx_cnl_histogram_isa.h" />
     <ClInclude Include="include\genx_cnl_simple_me_isa.h" />
+    <ClInclude Include="include\genx_icllp_histogram_isa.h" />
+    <ClInclude Include="include\genx_icllp_simple_me_isa.h" />
     <ClInclude Include="include\genx_skl_histogram_isa.h" />
     <ClInclude Include="include\genx_skl_simple_me_isa.h" />
   </ItemGroup>

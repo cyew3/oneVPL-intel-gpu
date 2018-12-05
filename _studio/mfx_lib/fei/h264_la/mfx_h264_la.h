@@ -201,7 +201,7 @@ public:
         CmEvent *       e);
 
     void SetCurbeData(
-        MfxHwH264Encode::SVCEncCURBEData & curbeData,
+        MfxHwH264Encode::CURBEData & curbeData,
         sLADdiTask const &task,
         mfxU32           qp);
 };
