@@ -2701,14 +2701,12 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
         cmSts = m_pCmDevice->LoadProgram((void*)cnl_copy_kernel_genx,sizeof(cnl_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
     case MFX_HW_ICL:
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
-    case MFX_HW_JSL:
-#endif
         cmSts = m_pCmDevice->LoadProgram((void*)icl_copy_kernel_genx,sizeof(icl_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
     case MFX_HW_ICL_LP:
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
     case MFX_HW_LKF:
+    case MFX_HW_JSL:
 #endif
         cmSts = m_pCmDevice->LoadProgram((void*)icllp_copy_kernel_genx,sizeof(icllp_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
