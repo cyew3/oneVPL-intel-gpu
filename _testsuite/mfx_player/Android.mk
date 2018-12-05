@@ -60,9 +60,14 @@ LOCAL_HEADER_LIBRARIES := \
 LOCAL_STATIC_LIBRARIES := \
     android.hidl.token@1.0-utils \
     android.hardware.graphics.bufferqueue@1.0 \
-    android.hardware.graphics.common@1.1 \
     libmath \
     libarect
+
+ifneq ($(filter MFX_O MFX_O_MR1, $(MFX_ANDROID_VERSION)),)
+  LOCAL_STATIC_LIBRARIES += android.hardware.graphics.common@1.0
+else
+  LOCAL_STATIC_LIBRARIES += android.hardware.graphics.common@1.1
+endif
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_pipeline
@@ -99,9 +104,14 @@ LOCAL_HEADER_LIBRARIES := \
 LOCAL_STATIC_LIBRARIES := \
     android.hidl.token@1.0-utils \
     android.hardware.graphics.bufferqueue@1.0 \
-    android.hardware.graphics.common@1.1 \
     libmath \
     libarect
+
+ifneq ($(filter MFX_O MFX_O_MR1, $(MFX_ANDROID_VERSION)),)
+  LOCAL_STATIC_LIBRARIES += android.hardware.graphics.common@1.0
+else
+  LOCAL_STATIC_LIBRARIES += android.hardware.graphics.common@1.1
+endif
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_pipeline_lucas
