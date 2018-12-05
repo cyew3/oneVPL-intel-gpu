@@ -49,10 +49,8 @@
     const vm_char * DLL_NAME_DX11 = VM_STRING("igfx11cmrt32.dll");
 #   endif //CMRT_EMU
 
-#elif defined(LINUX64)
-const vm_char * DLL_NAME_LINUX = VM_STRING("igfxcmrt64.so");
-#elif defined(LINUX32)
-const vm_char * DLL_NAME_LINUX = VM_STRING("igfxcmrt32.so");
+#elif defined(LINUX64) || defined(LINUX32)
+const vm_char * DLL_NAME_LINUX = VM_STRING("libigfxcmrt.so.7");
 #else
 #error "undefined configuration"
 #endif
