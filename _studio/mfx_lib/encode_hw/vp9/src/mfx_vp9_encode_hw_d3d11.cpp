@@ -85,7 +85,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     mfxU32 width,
     mfxU32 height)
 {
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAuxilliaryDevice +");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAuxilliaryDevice");
 
     MFX_CHECK_NULL_PTR1(pCore);
 
@@ -193,7 +193,6 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         HardcodeCaps(m_caps, pCore);
     }
 
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAuxilliaryDevice -");
     return MFX_ERR_NONE;
 } // mfxStatus D3D11Encoder::CreateAuxilliaryDevice(VideoCORE* pCore, GUID guid, mfxU32 width, mfxU32 height)
 
@@ -201,14 +200,13 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
 mfxStatus D3D11Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 {
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAccelerationService +");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAccelerationService");
 
     m_infoQueried = false;
 
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
     InitVp9SeqLevelParam(par, m_seqParam);
 
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAccelerationService -");
     return MFX_ERR_NONE;
 } // mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
@@ -287,7 +285,7 @@ mfxU32 ConvertDXGIFormatToMFXFourCC(DXGI_FORMAT format)
 mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request, mfxU32 frameWidth, mfxU32 frameHeight)
 {
     frameWidth; frameHeight;
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::QueryCompBufferInfo +");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryCompBufferInfo");
 
     HRESULT hr;
 
@@ -344,8 +342,6 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     request.Info.Height = m_compBufInfo[i].CreationHeight;
     request.Info.FourCC = ConvertDXGIFormatToMFXFourCC((DXGI_FORMAT)m_compBufInfo[i].CompressedFormats);
 
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::QueryCompBufferInfo -");
-
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request, mfxU32 frameWidth, mfxU32 frameHeight)
@@ -368,7 +364,7 @@ mfxStatus D3D11Encoder::QueryPlatform(mfxPlatform& platform)
 
 mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::Register +");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Register");
 
     std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA) ? m_bsQueue :
         (type == D3DDDIFMT_INTELENCODE_MBSEGMENTMAP) ? m_segmapQueue : m_reconQueue;
@@ -391,8 +387,6 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
         m_feedbackCached.Reset(response.NumFrameActual);
     }
 
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::Register -");
-
     return MFX_ERR_NONE;
 } // mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 
@@ -402,7 +396,7 @@ mfxStatus D3D11Encoder::Execute(
     Task const & task,
     mfxHDLPair   pair)
 {
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::Execute +");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
 
     std::vector<ENCODE_COMPBUFFERDESC> compBufferDesc;
     compBufferDesc.resize(MAX_NUM_COMP_BUFFERS_VP9);
@@ -528,7 +522,7 @@ mfxStatus D3D11Encoder::Execute(
         }
         if (FAILED(hr))
         {
-            VP9_LOG("\n FATAL: error status from the driver on DecoderExtension(): [%x]!\n", hr);
+            MFX_LTRACE_1(MFX_TRACE_LEVEL_INTERNAL,"FATAL: error status from the driver on DecoderExtension(): ", "%x", hr);
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         {
@@ -537,17 +531,15 @@ mfxStatus D3D11Encoder::Execute(
         }
         if (FAILED(hr))
         {
-            VP9_LOG("\n FATAL: error status from the driver on DecoderEndFrame(): [%x]!\n", hr);
+            MFX_LTRACE_1(MFX_TRACE_LEVEL_INTERNAL, "FATAL: error status from the driver on DecoderEndFrame(): ", "%x", hr);
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
     catch (...)
     {
-        VP9_LOG("\n FATAL: exception from the driver on executing task!\n");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FATAL: exception from the driver on executing task!\n");
         return MFX_ERR_DEVICE_FAILED;
     }
-
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::Execute -");
 
     return MFX_ERR_NONE;
 
@@ -557,7 +549,7 @@ mfxStatus D3D11Encoder::Execute(
 mfxStatus D3D11Encoder::QueryStatus(
     Task & task)
 {
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::QueryStatus +");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatus");
 
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_taskIdForDriver); // TODO: fix to unique status report number
@@ -584,13 +576,13 @@ mfxStatus D3D11Encoder::QueryStatus(
             MFX_CHECK(hr != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
             if (FAILED(hr))
             {
-                VP9_LOG("\n FATAL: error status from the driver received on quering task status: [%x]!\n", hr);
+                MFX_LTRACE_1(MFX_TRACE_LEVEL_INTERNAL, "FATAL: error status from the driver received on quering task status: ", "%x", hr);
             }
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
         catch (...)
         {
-            VP9_LOG("\n FATAL: exception from the driver on quering task status!\n");
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FATAL: exception from the driver on quering task status!\n");
             return MFX_ERR_DEVICE_FAILED;
         }
 
@@ -622,15 +614,13 @@ mfxStatus D3D11Encoder::QueryStatus(
         sts = MFX_ERR_DEVICE_FAILED;
     }
 
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::QueryStatus -");
     return sts;
 } // mfxStatus D3D11Encoder::QueryStatus(mfxU32 feedbackNumber, mfxU32& bytesWritten)
 
 
 mfxStatus D3D11Encoder::Destroy()
 {
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::Destroy +");
-    VP9_LOG("\n (VP9_LOG) D3D11Encoder::Destroy -");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Destroy");
 
     return MFX_ERR_NONE;
 } // mfxStatus D3D11Encoder::Destroy()

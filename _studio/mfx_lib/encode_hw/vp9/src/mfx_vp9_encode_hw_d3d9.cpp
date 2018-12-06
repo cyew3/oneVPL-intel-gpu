@@ -551,7 +551,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     mfxU32 width,
     mfxU32 height)
 {
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::CreateAuxilliaryDevice +");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAuxilliaryDevice");
 
     if (pCore == 0)
     {
@@ -591,14 +591,13 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
     MFX_CHECK_STS(sts);
 
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::CreateAuxilliaryDevice -");
     return MFX_ERR_NONE;
 } // mfxStatus D3D9Encoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, mfxU32 width, mfxU32 height)
 
 
 mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 {
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::CreateAccelerationService +");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAccelerationService");
 
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
@@ -618,7 +617,6 @@ mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
     InitVp9SeqLevelParam(par, m_seqParam);
 
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::CreateAccelerationService -");
     return MFX_ERR_NONE;
 } // mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
@@ -638,7 +636,7 @@ mfxU32 D3D9Encoder::GetReconSurfFourCC()
 mfxStatus D3D9Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request, mfxU32 frameWidth, mfxU32 frameHeight)
 {
     frameWidth; frameHeight;
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::QueryCompBufferInfo +");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::QueryCompBufferInfo");
 
     ENCODE_FORMAT_COUNT encodeFormatCount;
     encodeFormatCount.CompressedBufferInfoCount = 0;
@@ -675,8 +673,6 @@ mfxStatus D3D9Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocReque
     request.Info.Height = compBufferInfo[i].CreationHeight;
     request.Info.FourCC = compBufferInfo[i].CompressedFormats;
 
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::QueryCompBufferInfo -");
-
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D9Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request, mfxU32 frameWidth, mfxU32 frameHeight)
@@ -692,7 +688,7 @@ mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS_VP9& caps)
 
 mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::Register +");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::Register");
 
     //mfxFrameAllocator & fa = m_pmfxCore->FrameAllocator;
     EmulSurfaceRegister surfaceReg = {};
@@ -719,8 +715,6 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
         m_feedbackCached.Reset(response.NumFrameActual);
     }
 
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::Register -");
-
     return MFX_ERR_NONE;
 } // mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 
@@ -730,7 +724,7 @@ mfxStatus D3D9Encoder::Execute(
     Task const & task,
     mfxHDLPair   pair)
 {
-    VP9_LOG("\n (VP9_LOG) Frame %d D3D9Encoder::Execute +", task.m_frameOrder);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::Execute, Frame:", "%d", task.m_frameOrder);
 
     std::vector<ENCODE_COMPBUFFERDESC> compBufferDesc;
     compBufferDesc.resize(MAX_NUM_COMP_BUFFERS_VP9);
@@ -805,14 +799,14 @@ mfxStatus D3D9Encoder::Execute(
         HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)pair.first, 0);
         if (FAILED(hr))
         {
-            VP9_LOG("\n FATAL: error status from the driver on BeginFrame(): [%x]!\n", hr);
+            MFX_LTRACE_1(MFX_TRACE_LEVEL_INTERNAL, "FATAL: error status from the driver on BeginFrame(): ", "%x", hr);
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
         hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, encodeExecuteParams, (void *)0);
         if (FAILED(hr))
         {
-            VP9_LOG("\n FATAL: error status from the driver on Execute(): [%x]!\n", hr);
+            MFX_LTRACE_1(MFX_TRACE_LEVEL_INTERNAL, "FATAL: error status from the driver on Execute(): ", "%x", hr);
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
@@ -821,11 +815,9 @@ mfxStatus D3D9Encoder::Execute(
     }
     catch (...)
     {
-        VP9_LOG("\n FATAL: exception from the driver on executing task!\n");
+        MFX_LTRACE_X(MFX_TRACE_LEVEL_INTERNAL, "FATAL: exception from the driver on executing task!");
         return MFX_ERR_DEVICE_FAILED;
     }
-
-    VP9_LOG("\n (VP9_LOG) Frame %d D3D9Encoder::Execute -", task.m_frameOrder);
 
     return MFX_ERR_NONE;
 
@@ -835,7 +827,7 @@ mfxStatus D3D9Encoder::Execute(
 mfxStatus D3D9Encoder::QueryStatus(
     Task & task)
 {
-    VP9_LOG("\n (VP9_LOG) Frame %d D3D9Encoder::QueryStatus +", task.m_frameOrder);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::QueryStatus, Frame: ", "%d", task.m_frameOrder);
 
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_taskIdForDriver); // TODO: fix to unique status report number
@@ -859,13 +851,13 @@ mfxStatus D3D9Encoder::QueryStatus(
             MFX_CHECK(hr != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
             if (FAILED(hr))
             {
-                VP9_LOG("\n FATAL: error status from the driver received on quering task status: [%x]!\n", hr);
+                MFX_LTRACE_1(MFX_TRACE_LEVEL_INTERNAL, "FATAL: error status from the driver received on quering task status: ", "%x", hr);
             }
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
         catch (...)
         {
-            VP9_LOG("\n FATAL: exception from the driver on quering task status!\n");
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FATAL: exception from the driver on quering task status!");
             return MFX_ERR_DEVICE_FAILED;
         }
 
@@ -897,16 +889,14 @@ mfxStatus D3D9Encoder::QueryStatus(
         sts = MFX_ERR_DEVICE_FAILED;
     }
 
-    VP9_LOG("\n (VP9_LOG) Frame %d D3D9Encoder::QueryStatus -", task.m_frameOrder);
     return sts;
 } // mfxStatus D3D9Encoder::QueryStatus(mfxU32 feedbackNumber, mfxU32& bytesWritten)
 
 
 mfxStatus D3D9Encoder::Destroy()
 {
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::Destroy +");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::Destroy");
     m_auxDevice.reset(0);
-    VP9_LOG("\n (VP9_LOG) D3D9Encoder::Destroy -");
 
     return MFX_ERR_NONE;
 } // mfxStatus D3D9Encoder::Destroy()
@@ -914,34 +904,31 @@ mfxStatus D3D9Encoder::Destroy()
 void PrintDdiToLog(ENCODE_CAPS_VP9 const &caps)
 {
     caps;
-    VP9_LOG("\n\n*** DDI CAPS DUMP ***\n");
-    VP9_LOG("*** CodingLimitSet=%d\n", caps.CodingLimitSet);
-    VP9_LOG("*** Color420Only=%d\n", caps.Color420Only);
-    VP9_LOG("*** ForcedSegmentationSupport=%d\n", caps.ForcedSegmentationSupport);
-    VP9_LOG("*** FrameLevelRateCtrl=%d\n", caps.FrameLevelRateCtrl);
-    VP9_LOG("*** BRCReset=%d\n", caps.BRCReset);
-    VP9_LOG("*** AutoSegmentationSupport=%d\n", caps.AutoSegmentationSupport);
-    VP9_LOG("*** TemporalLayerRateCtrl=%d\n", caps.TemporalLayerRateCtrl);
-    VP9_LOG("*** DynamicScaling=%d\n", caps.DynamicScaling);
-    VP9_LOG("*** TileSupport=%d\n", caps.TileSupport);
-    VP9_LOG("*** NumScalablePipesMinus1=%d\n", caps.NumScalablePipesMinus1);
-    VP9_LOG("*** YUV422ReconSupport=%d\n", caps.YUV422ReconSupport);
-    VP9_LOG("*** YUV444ReconSupport=%d\n", caps.YUV444ReconSupport);
-    VP9_LOG("*** MaxEncodedBitDepth=%d\n", caps.MaxEncodedBitDepth);
-    VP9_LOG("*** UserMaxFrameSizeSupport=%d\n", caps.UserMaxFrameSizeSupport);
-    VP9_LOG("*** SegmentFeatureSupport=%d\n", caps.SegmentFeatureSupport);
-    VP9_LOG("*** DirtyRectSupport=%d\n", caps.DirtyRectSupport);
-    VP9_LOG("*** MoveRectSupport=%d\n", caps.MoveRectSupport);
-    VP9_LOG("***\n");
-    VP9_LOG("*** EncodeFunc=%d\n", caps.EncodeFunc);
-    VP9_LOG("*** HybridPakFunc=%d\n", caps.HybridPakFunc);
-    VP9_LOG("*** EncFunc=%d\n", caps.EncFunc);
-    VP9_LOG("***\n");
-    VP9_LOG("*** MaxPicWidth=%d\n", caps.MaxPicWidth);
-    VP9_LOG("*** MaxPicHeight=%d\n", caps.MaxPicHeight);
-    VP9_LOG("*** MaxNumOfDirtyRect=%d\n", caps.MaxNumOfDirtyRect);
-    VP9_LOG("*** MaxNumOfMoveRect=%d\n", caps.MaxNumOfMoveRect);
-    VP9_LOG("*** END OF DUMP ***\n");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_DEFAULT, "*** DDI CAPS DUMP ***");
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** CodingLimitSet=", "%d" ,caps.CodingLimitSet);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** Color420Only=", "%d", caps.Color420Only);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** ForcedSegmentationSupport=", "%d", caps.ForcedSegmentationSupport);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** FrameLevelRateCtrl=", "%d", caps.FrameLevelRateCtrl);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** BRCReset=", "%d", caps.BRCReset);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** AutoSegmentationSupport=", "%d", caps.AutoSegmentationSupport);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** TemporalLayerRateCtrl=", "%d", caps.TemporalLayerRateCtrl);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** DynamicScaling=", "%d", caps.DynamicScaling);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** TileSupport=", "%d", caps.TileSupport);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** NumScalablePipesMinus1=", "%d", caps.NumScalablePipesMinus1);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** YUV422ReconSupport=", "%d", caps.YUV422ReconSupport);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** YUV444ReconSupport=", "%d", caps.YUV444ReconSupport);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxEncodedBitDepth=", "%d", caps.MaxEncodedBitDepth);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** UserMaxFrameSizeSupport=", "%d", caps.UserMaxFrameSizeSupport);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** SegmentFeatureSupport=", "%d", caps.SegmentFeatureSupport);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** DirtyRectSupport=", "%d", caps.DirtyRectSupport);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MoveRectSupport=", "%d", caps.MoveRectSupport);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** EncodeFunc=", "%d", caps.EncodeFunc);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** HybridPakFunc=", "%d", caps.HybridPakFunc);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** EncFunc=", "%d", caps.EncFunc);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxPicWidth=", "%d", caps.MaxPicWidth);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxPicHeight=", "%d", caps.MaxPicHeight);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxNumOfDirtyRect=", "%d", caps.MaxNumOfDirtyRect);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxNumOfMoveRect=", "%d", caps.MaxNumOfMoveRect);
 }
 
 std::once_flag PrintDdiToLog_flag;
@@ -949,7 +936,6 @@ std::once_flag PrintDdiToLog_flag;
 void PrintDdiToLogOnce(ENCODE_CAPS_VP9 const &caps)
 {
     caps;
-#ifdef VP9_LOGGING
     try
     {
         std::call_once(PrintDdiToLog_flag, PrintDdiToLog, caps);
@@ -957,7 +943,6 @@ void PrintDdiToLogOnce(ENCODE_CAPS_VP9 const &caps)
     catch (...)
     {
     }
-#endif
 }
 
 #endif // (MFX_VA_WIN)
