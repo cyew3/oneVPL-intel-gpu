@@ -20,5 +20,5 @@
 
 #ifndef __genx_icllp_histogram__
 #define __genx_icllp_histogram__
-extern const unsigned char genx_icllp_histogram[76146];
+extern const unsigned char genx_icllp_histogram[50050];
 #endif
