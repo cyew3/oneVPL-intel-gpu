@@ -104,11 +104,7 @@ vm_char *vm_file_tempnam(vm_char *DIR, vm_char *PREFIX);
 
 /*
  * file name manipulations */
-void vm_file_getpath(vm_char *filename, vm_char *path, int nchars);
-void vm_file_getbasename(vm_char *filename, vm_char *base, int nchars);
 void vm_file_getsuffix(vm_char *filename, vm_char *suffix, int nchars);
-void vm_file_makefilename(vm_char *path, vm_char *base, vm_char *suffix, vm_char *filename, int nchars);
-
 
 /*
  *   Directory manipulations
