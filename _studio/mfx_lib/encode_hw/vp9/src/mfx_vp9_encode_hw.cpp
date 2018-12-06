@@ -141,9 +141,6 @@ mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(VideoCORE *core, mfxVideoParam *par,
     return MFX_ERR_NONE;
 }
 
-#define ALIGN64(X) (((mfxU32)((X)+63)) & (~ (mfxU32)63))
-#define ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
-
 #if (MFX_VERSION >= 1027)
 void SetReconInfo(VP9MfxVideoParam const &par, mfxFrameInfo &fi, eMFXHWType const &platform)
 {
@@ -151,20 +148,20 @@ void SetReconInfo(VP9MfxVideoParam const &par, mfxFrameInfo &fi, eMFXHWType cons
     mfxU16 format = opt3.TargetChromaFormatPlus1 - 1;
     mfxU16 depth = opt3.TargetBitDepthLuma;
 
-    fi.Width = ALIGN64(fi.Width);
-    fi.Height = ALIGN64(fi.Height);
+    fi.Width = ALIGN8(fi.Width);
+    fi.Height = ALIGN8(fi.Height);
 
     if (format == MFX_CHROMAFORMAT_YUV444 && depth == BITDEPTH_10)
     {
         fi.FourCC = MFX_FOURCC_Y410;
         fi.Width = fi.Width / 2;
-        fi.Height = fi.Height * 3;
+        fi.Height = GetReconSurfaceHeight(fi.Height, format);
     }
     else if (format == MFX_CHROMAFORMAT_YUV444 && depth == BITDEPTH_8)
     {
         fi.FourCC = MFX_FOURCC_AYUV;
         fi.Width = fi.Width / 4;
-        fi.Height = fi.Height * 3;
+        fi.Height = GetReconSurfaceHeight(fi.Height, format);
     }
     else if (format == MFX_CHROMAFORMAT_YUV420 && depth == BITDEPTH_10)
     {
@@ -315,16 +312,13 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
         mfxU32 tmp_width = static_cast<mfxU32>(request.Info.Width);
         mfxU32 tmp_height = CeilDiv(max_buffer_size, static_cast<mfxU32>(request.Info.Width));
 
-        // TODO: maximum supported width and height need to be checked on dependence on a platform and other possible factors
-        const mfxU32 max_dx_dimension_size = 16384;
-
-        if (tmp_height > max_dx_dimension_size)
+        if (tmp_height > MAX_DXVA_VIDEO_SURFACE_DIMENSION_SIZE)
         {
-            tmp_height = max_dx_dimension_size;
-            tmp_width = CeilDiv(max_buffer_size, max_dx_dimension_size);
-            if (tmp_width > max_dx_dimension_size)
+            tmp_height = MAX_DXVA_VIDEO_SURFACE_DIMENSION_SIZE;
+            tmp_width = CeilDiv(max_buffer_size, MAX_DXVA_VIDEO_SURFACE_DIMENSION_SIZE);
+            if (tmp_width > MAX_DXVA_VIDEO_SURFACE_DIMENSION_SIZE)
             {
-                tmp_width = max_dx_dimension_size;
+                tmp_width = MAX_DXVA_VIDEO_SURFACE_DIMENSION_SIZE;
             }
         }
 
