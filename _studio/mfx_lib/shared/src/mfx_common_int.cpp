@@ -215,10 +215,10 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         break;
     case MFX_CODEC_VP9:
-        if (info->FourCC != MFX_FOURCC_NV12 &&
-            info->FourCC != MFX_FOURCC_AYUV &&
-            info->FourCC != MFX_FOURCC_P010
+        if (info->FourCC != MFX_FOURCC_NV12
+            && info->FourCC != MFX_FOURCC_P010
 #if (MFX_VERSION >= 1027)
+            && info->FourCC != MFX_FOURCC_AYUV
             && info->FourCC != MFX_FOURCC_Y410
 #endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
@@ -283,17 +283,12 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
             info->ChromaFormat != MFX_CHROMAFORMAT_YUV400)
             return MFX_ERR_INVALID_VIDEO_PARAM;
     case MFX_CODEC_HEVC:
+    case MFX_CODEC_VP9:
         if (info->ChromaFormat != MFX_CHROMAFORMAT_YUV420
             && info->ChromaFormat != MFX_CHROMAFORMAT_YUV400
             && info->ChromaFormat != MFX_CHROMAFORMAT_YUV422
             && info->ChromaFormat != MFX_CHROMAFORMAT_YUV444
             )
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        break;
-    case MFX_CODEC_VP9:
-        if (info->ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
-            info->ChromaFormat != MFX_CHROMAFORMAT_YUV400 &&
-            info->ChromaFormat != MFX_CHROMAFORMAT_YUV444)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         break;
     default:
