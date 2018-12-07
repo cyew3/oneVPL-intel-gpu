@@ -20,6 +20,8 @@ namespace vp9e_big_resolution
 #define VP9E_8K_SIZE (7680)
 #define VP9E_16K_SIZE (16384)
 
+#define MAX_VIDEO_SURFACE_DIMENSION_SIZE (16384)
+
 #define PSNR_THRESHOLD (35)
 
 #define IVF_SEQ_HEADER_SIZE_BYTES 32
@@ -475,6 +477,14 @@ namespace vp9e_big_resolution
         case_description += "[" + std::to_string(m_par.mfx.FrameInfo.CropW) + "x" + std::to_string(m_par.mfx.FrameInfo.CropH) + "]";
         std::string pipeline_type = tc.type & DISABLE_DECODER ? "ONLY_ENCODE" : "ENCODE+DECODE+PSNR";
         case_description += "[" + pipeline_type + "]";
+
+#if defined WIN32 || WIN64
+        if (m_par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444 && (m_par.mfx.FrameInfo.Height * 3) > MAX_VIDEO_SURFACE_DIMENSION_SIZE)
+        {
+            g_tsLog << ">>SKIP<<: HEIGHT > 5K not supported for 444 formats due to DXVA \n  surface dimension limitation (16384) and recon allocation demand (3 x height)\n";
+            throw tsSKIP;
+        }
+#endif
 
         // IN_VIDEO_MEMORY can reduce memory consumption a little
         m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
