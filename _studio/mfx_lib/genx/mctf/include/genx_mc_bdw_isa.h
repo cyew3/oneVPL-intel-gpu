@@ -9,5 +9,5 @@
 //
 #ifndef __genx_mc_bdw__
 #define __genx_mc_bdw__
-extern const unsigned char genx_mc_bdw[77421];
+extern const unsigned char genx_mc_bdw[116990];
 #endif

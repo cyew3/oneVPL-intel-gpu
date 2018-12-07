@@ -9,5 +9,5 @@
 //
 #ifndef __genx_mc_tgl__
 #define __genx_mc_tgl__
-extern const unsigned char genx_mc_tgl[77421];
+extern const unsigned char genx_mc_tgl[134142];
 #endif

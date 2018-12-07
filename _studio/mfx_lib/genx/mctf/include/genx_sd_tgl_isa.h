@@ -9,5 +9,5 @@
 //
 #ifndef __genx_sd_tgl__
 #define __genx_sd_tgl__
-extern const unsigned char genx_sd_tgl[68752];
+extern const unsigned char genx_sd_tgl[106473];
 #endif

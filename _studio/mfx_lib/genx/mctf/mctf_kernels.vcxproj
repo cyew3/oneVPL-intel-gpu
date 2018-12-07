@@ -250,8 +250,7 @@ IF "%%g" EQU "icl" ( set GEN=gen11 )
 IF "%%g" EQU "icllp" ( set GEN=gen11lp )
 IF "%%g" EQU "tgl" ( set GEN=gen12 )
 IF "%%g" EQU "tgllp" ( set GEN=gen12lp )
-cmc.exe -mCM_init_global -c -Qxcm -march=%%g ..\src\genx_%%m.cpp -Dtarget_!GEN! -Qxcm_release 
-rem cmc.exe -mCM_init_global -c -Qxcm -Qxcm_jit_target=!GEN! ..\src\genx_%%m.cpp -Qxcm_print_asm_count -mCM_printregusage -menableiga -Dtarget_!GEN! -Qxcm_release
+cmc.exe -mCM_init_global -c -Qxcm -Qxcm_jit_target=!GEN! ..\src\genx_%%m.cpp -Qxcm_print_asm_count -mCM_printregusage -menableiga -Dtarget_!GEN! -Qxcm_release
 ren genx_%%m.isa genx_%%m_%%g.isa
 embed_isa genx_%%m_%%g.isa
 move genx_%%m_%%g.cpp ..\src\genx_%%m_%%g_isa.cpp

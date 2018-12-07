@@ -9,5 +9,5 @@
 //
 #ifndef __genx_mc_skl__
 #define __genx_mc_skl__
-extern const unsigned char genx_mc_skl[77421];
+extern const unsigned char genx_mc_skl[116574];
 #endif
