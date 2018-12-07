@@ -226,6 +226,10 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
             {
                 format = VA_RT_FORMAT_YUV422;
             }
+            else if (va_fourcc == VA_FOURCC_AYUV)
+            {
+                format = VA_FOURCC_AYUV;
+            }
 
             if ( request->Type & MFX_MEMTYPE_FROM_ENCODE)
             {
