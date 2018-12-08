@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 File Name: avce_max_frame_size.cpp
 \* ****************************************************************************** */
@@ -42,6 +42,8 @@ namespace avce_max_frame_size{
         MFX_PAR = 1,
         CDO2_PAR = 2
     };
+
+    static const double SET_DEFAULT = -1.0;
 
     /*!\brief Structure of test suite parameters
     */
@@ -86,6 +88,14 @@ namespace avce_max_frame_size{
         static const unsigned int n_cases;
         //! \brief Initialize params common mfor whole test suite
         tsExtBufType<mfxVideoParam> initParams();
+        //! \brief calculate max MB per second for level
+        mfxU32 GetMaxMbps();
+        //! \brief calculate min Cr for level
+        mfxU32 GetMinCr();
+        //! \brief calculate first max frame size
+        mfxU32 GetFirstMaxFrameSize();
+        //! \brief calculate max frame size
+        mfxU32 GetMaxFrameSize();
         //! \brief Set of test cases
         static const tc_struct test_case[];
         //! Average frame size
@@ -96,6 +106,7 @@ namespace avce_max_frame_size{
 
         tsExtBufType<mfxVideoParam> par;
         par.mfx.CodecId                 = MFX_CODEC_AVC;
+        par.mfx.CodecLevel              = MFX_LEVEL_AVC_22;
         par.mfx.RateControlMethod       = MFX_RATECONTROL_VBR;
         par.mfx.TargetKbps              = 3000;
         par.mfx.MaxKbps                 = 5000;
@@ -118,6 +129,44 @@ namespace avce_max_frame_size{
         return par;
     }
 
+    mfxU32 TestSuite::GetMaxMbps() {
+        switch (m_par.mfx.CodecLevel)
+        {
+        case MFX_LEVEL_AVC_1:
+        case MFX_LEVEL_AVC_1b: return   1485;
+        case MFX_LEVEL_AVC_11: return   3000;
+        case MFX_LEVEL_AVC_12: return   6000;
+        case MFX_LEVEL_AVC_13:
+        case MFX_LEVEL_AVC_2: return  11800;
+        case MFX_LEVEL_AVC_21: return  19800;
+        case MFX_LEVEL_AVC_22: return  20250;
+        case MFX_LEVEL_AVC_3: return  40500;
+        case MFX_LEVEL_AVC_31: return 108000;
+        case MFX_LEVEL_AVC_32: return 216000;
+        case MFX_LEVEL_AVC_4:
+        case MFX_LEVEL_AVC_41: return 245760;
+        case MFX_LEVEL_AVC_42: return 522240;
+        case MFX_LEVEL_AVC_5: return 589824;
+        case MFX_LEVEL_AVC_51: return 983040;
+        case MFX_LEVEL_AVC_52: return 2073600;
+        default: assert(!"bad CodecLevel"); return 0;
+        }
+    }
+
+    mfxU32 TestSuite::GetMinCr() {
+        return m_par.mfx.CodecLevel >= MFX_LEVEL_AVC_31 && m_par.mfx.CodecLevel <= MFX_LEVEL_AVC_42 ? 4 : 2; // AVCHD spec requires MinCR = 4 for levels  4.1, 4.2
+    }
+
+    mfxU32 TestSuite::GetFirstMaxFrameSize() {
+        mfxU32 picSizeInMbs = m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height / 256;
+        return 384 * std::max(picSizeInMbs, GetMaxMbps() / 172) / GetMinCr();
+    }
+
+    mfxU32 TestSuite::GetMaxFrameSize() {
+        mfxF64 frameRate = mfxF64(m_par.mfx.FrameInfo.FrameRateExtN) / m_par.mfx.FrameInfo.FrameRateExtD;
+        return mfxU32(384 * GetMaxMbps() / frameRate / GetMinCr());
+    }
+
     const tc_struct TestSuite::test_case[] =
     {
         /*      Init exp sts                        Encode exp sts                              Reset exp sts */
@@ -126,7 +175,7 @@ namespace avce_max_frame_size{
         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.MaxFrameSize, 0}}},
         /*      Init exp sts                        Encode exp sts                                Reset exp sts */
         {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,   MFX_ERR_NONE,                                 MFX_ERR_NONE,
-        {0.9, 1, 0, 1, 1.3, 1.3},
+        {0.9, SET_DEFAULT, 0, SET_DEFAULT, 1.3, 1.3},
         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.MaxFrameSize, 0}}},
 
         /*      Init exp sts                        Encode exp sts                                Reset exp sts */
@@ -136,7 +185,7 @@ namespace avce_max_frame_size{
 
         /*      Init exp sts                        Encode exp sts                                Reset exp sts */
         {/*03*/ MFX_ERR_NONE,                       MFX_ERR_NONE,                                 MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-        {1.4, 1.4, 1.2, 1.4, 0.9, 1},
+        {1.4, 1.4, 1.2, 1.4, 0.9, SET_DEFAULT},
         {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.MaxFrameSize, 0}}},
 
     };
@@ -151,13 +200,16 @@ namespace avce_max_frame_size{
         avg_fs = m_par.mfx.TargetKbps * 1000 * m_par.mfx.FrameInfo.FrameRateExtD / m_par.mfx.FrameInfo.FrameRateExtN / 8;
 
         mfxU64 init_mfs = avg_fs * tc.multiplies[0];
-        mfxU64 expected_init_mfs = avg_fs * tc.multiplies[1];
+        mfxU64 expected_init_mfs = (0 > tc.multiplies[1]) ? std::min(GetMaxFrameSize(), GetFirstMaxFrameSize()) :// set defautl value
+                                                            avg_fs * tc.multiplies[1];
 
         mfxU64 runtime_mfs = avg_fs * tc.multiplies[2];
-        mfxU64 expected_runtime_mfs = avg_fs * tc.multiplies[3];
+        mfxU64 expected_runtime_mfs = (0 > tc.multiplies[3]) ? std::min(GetMaxFrameSize(), GetFirstMaxFrameSize()) :// set defautl value
+                                                               avg_fs * tc.multiplies[3];
 
         mfxU64 reset_mfs = avg_fs * tc.multiplies[4];
-        mfxU64 expected_reset_mfs = avg_fs * tc.multiplies[5];
+        mfxU64 expected_reset_mfs = (0 > tc.multiplies[5]) ? std::min(GetMaxFrameSize(), GetFirstMaxFrameSize()) :// set defautl value
+                                                             avg_fs * tc.multiplies[5];
 
         mfxExtCodingOption2* co2 = (mfxExtCodingOption2*) m_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2);
         co2->MaxFrameSize = init_mfs;
