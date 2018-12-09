@@ -22,7 +22,7 @@
 #define __UMC_WIN_EVENT_CACHE_H__
 
 #include "umc_va_base.h"
-#include "vm_mutex.h"
+#include <mutex>
 #include <vector>
 #include <map>
 #include <array>
@@ -78,7 +78,7 @@ namespace UMC
     private:
         std::vector<EVENT_TYPE> m_Free;
         std::map<MapKey, MapValue> eventCache;
-        vm_mutex m_eventCacheGuard;
+        std::mutex m_eventCacheGuard;
 
     };
 

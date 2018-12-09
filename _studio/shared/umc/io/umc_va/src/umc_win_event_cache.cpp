@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 #include "umc_win_event_cache.h"
-#include "umc_automatic_mutex.h"
 
 #if defined (UMC_VA_DXVA)
 
@@ -28,48 +27,41 @@ namespace UMC
 
     Status EventCache::Init()
     {
-        vm_mutex_set_invalid(&m_eventCacheGuard);
-        vm_mutex_init(&m_eventCacheGuard);
         return UMC_OK;
     }
 
 
     Status EventCache::Close()
     {
-        if ( vm_mutex_is_valid(&m_eventCacheGuard))
         {
-            {
-                UMC::AutomaticMutex guard(m_eventCacheGuard);
+            std::lock_guard<std::mutex> guard(m_eventCacheGuard);
 
-                while (m_Free.empty() == false)
-                {
-                    CloseHandle(m_Free.back());
-                    m_Free.pop_back();
-                }
+            while (m_Free.empty() == false)
+            {
+                CloseHandle(m_Free.back());
+                m_Free.pop_back();
+            }
 
 #if defined(_DEBUG)
-                // at this time eventCache must be empty.  i.e. all task synchronized
-                MFX_TRACE_1("\n!!! EventCache::Close( ", "eventCache.size() = %d \n", (int)eventCache.size());
+            // at this time eventCache must be empty.  i.e. all task synchronized
+            MFX_TRACE_1("\n!!! EventCache::Close( ", "eventCache.size() = %d \n", (int)eventCache.size());
 #endif
 
-                for (auto ie = eventCache.begin(); ie != eventCache.end(); ++ie)
-                {
-                    if (ie->second[0] != INVALID_HANDLE_VALUE)
-                        CloseHandle(ie->second[0]);
-                    if (ie->second[1] != INVALID_HANDLE_VALUE)
-                        CloseHandle(ie->second[1]);
-                }
-                eventCache.clear();
-            } // unlock mutex before destroy
-            vm_mutex_destroy(&m_eventCacheGuard);
-        }
-
+            for (auto ie = eventCache.begin(); ie != eventCache.end(); ++ie)
+            {
+                if (ie->second[0] != INVALID_HANDLE_VALUE)
+                    CloseHandle(ie->second[0]);
+                if (ie->second[1] != INVALID_HANDLE_VALUE)
+                    CloseHandle(ie->second[1]);
+            }
+            eventCache.clear();
+        } // unlock mutex before destroy
         return UMC_OK;
     }
 
     EventCache::EVENT_TYPE EventCache::GetFreeEventAndMap(int32_t index, uint32_t fieldId)
     {
-        UMC::AutomaticMutex guard(m_eventCacheGuard);
+        std::lock_guard<std::mutex> guard(m_eventCacheGuard);
         EVENT_TYPE event = INVALID_HANDLE_VALUE;
 
         if ( fieldId >= MaxEventsPerIndex)
@@ -112,7 +104,7 @@ namespace UMC
 
     EventCache::MapValue EventCache::GetEvents(int32_t index)
     {
-        UMC::AutomaticMutex guard(m_eventCacheGuard);
+        std::lock_guard<std::mutex> guard(m_eventCacheGuard);
         auto iFoundE = eventCache.find(index);
 
         if (iFoundE == eventCache.end()) //  new index
@@ -130,7 +122,7 @@ namespace UMC
     */
     Status EventCache::FreeEvents(int32_t index)
     {
-        UMC::AutomaticMutex guard(m_eventCacheGuard);
+        std::lock_guard<std::mutex> guard(m_eventCacheGuard);
         auto iFoundE = eventCache.find(index);
 
         if (iFoundE == eventCache.end()) //  new index
