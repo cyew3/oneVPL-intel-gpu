@@ -22,7 +22,7 @@
 #define __UMC_INDEX_H__
 
 #include "umc_linked_list.h"
-#include "umc_mutex.h"
+#include <mutex>
 
 namespace UMC
 {
@@ -185,7 +185,7 @@ protected:
     int32_t m_iLastReturned;
 
     // synchro object
-    vm_mutex m_Mutex;
+    std::mutex m_Mutex;
 
 }; // class TrackIndex
 

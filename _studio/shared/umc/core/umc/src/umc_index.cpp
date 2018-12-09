@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 #include "umc_index.h"
-#include "umc_automatic_mutex.h"
 
 using namespace UMC;
 
@@ -31,8 +30,6 @@ TrackIndex::TrackIndex()
     m_iFirstEntryPos = 0;
     m_iLastEntryPos = 0;
     m_iLastReturned = -1;
-    vm_mutex_set_invalid(&m_Mutex);
-    vm_mutex_init(&m_Mutex);
 } // TrackIndex::TrackIndex()
 
 TrackIndex::~TrackIndex()
@@ -51,21 +48,17 @@ TrackIndex::~TrackIndex()
         delete[] frag.pEntryArray;
         umcRes = m_FragmentList.Next(frag);
     }
-
-    // destroy mutex
-    if (1 == vm_mutex_is_valid(&m_Mutex))
-        vm_mutex_destroy(&m_Mutex);
 } // TrackIndex::~TrackIndex()
 
 uint32_t TrackIndex::NOfEntries(void)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
     return m_uiTotalEntries;
 } // uint32_t TrackIndex::NOfEntries(void)
 
 Status TrackIndex::First(IndexEntry &entry)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     Status umcRes = m_FragmentList.First(m_ActiveFrag);
     if (UMC_OK != umcRes)
@@ -80,7 +73,7 @@ Status TrackIndex::First(IndexEntry &entry)
 
 Status TrackIndex::Last(IndexEntry &entry)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     Status umcRes = m_FragmentList.Last(m_ActiveFrag);
     if (UMC_OK != umcRes)
@@ -95,7 +88,7 @@ Status TrackIndex::Last(IndexEntry &entry)
 
 Status TrackIndex::Next(IndexEntry &entry)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_iLastReturned < 0)
         return UMC_ERR_FAILED;
@@ -110,7 +103,7 @@ Status TrackIndex::Next(IndexEntry &entry)
 
 Status TrackIndex::Prev(IndexEntry &entry)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_iLastReturned < 0)
         return UMC_ERR_FAILED;
@@ -125,7 +118,7 @@ Status TrackIndex::Prev(IndexEntry &entry)
 
 Status TrackIndex::NextKey(IndexEntry &entry)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_iLastReturned < 0)
         return UMC_ERR_FAILED;
@@ -145,7 +138,7 @@ Status TrackIndex::NextKey(IndexEntry &entry)
 
 Status TrackIndex::PrevKey(IndexEntry &entry)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_iLastReturned < 0)
         return UMC_ERR_FAILED;
@@ -165,7 +158,7 @@ Status TrackIndex::PrevKey(IndexEntry &entry)
 
 Status TrackIndex::Get(IndexEntry &entry)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_iLastReturned < 0)
         return UMC_ERR_FAILED;
@@ -176,7 +169,7 @@ Status TrackIndex::Get(IndexEntry &entry)
 
 Status TrackIndex::Get(IndexEntry &entry, int32_t pos)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (pos < 0 || pos >= (int32_t)m_uiTotalEntries)
         return UMC_ERR_FAILED;
@@ -204,7 +197,7 @@ Status TrackIndex::Get(IndexEntry &entry, int32_t pos)
 
 Status TrackIndex::Get(IndexEntry &entry, double time)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (time < 0)
         return UMC_ERR_FAILED;
@@ -232,7 +225,7 @@ Status TrackIndex::Get(IndexEntry &entry, double time)
 
 Status TrackIndex::Add(IndexFragment &newFrag)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (0 == newFrag.iNOfEntries || NULL == newFrag.pEntryArray)
         return UMC_ERR_FAILED;
@@ -248,7 +241,7 @@ Status TrackIndex::Add(IndexFragment &newFrag)
 
 Status TrackIndex::Remove(void)
 {
-    AutomaticMutex guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     IndexFragment frag;
     Status umcRes = m_FragmentList.Last(frag);
