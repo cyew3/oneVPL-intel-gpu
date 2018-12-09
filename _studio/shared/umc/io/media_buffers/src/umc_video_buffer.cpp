@@ -23,7 +23,6 @@
 #include <umc_linear_buffer.h>
 #include <umc_video_buffer.h>
 #include <umc_video_data.h>
-#include <umc_automatic_mutex.h>
 
 namespace UMC
 {
@@ -192,7 +191,7 @@ Status VideoBuffer::UnLockInputBuffer(MediaData *in, Status StreamStatus)
 Status VideoBuffer::LockOutputBuffer(MediaData *out)
 {
     VideoData *pData = DynamicCast<VideoData> (out);
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     SampleInfo *pTemp = NULL;
     uint32_t lOffset;
 
@@ -262,7 +261,7 @@ Status VideoBuffer::LockOutputBuffer(MediaData *out)
 
 Status VideoBuffer::UnLockOutputBuffer(MediaData* out)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     SampleInfo *pTemp = NULL;
     uint32_t lOffset;
 

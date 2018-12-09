@@ -21,7 +21,6 @@
 #include "umc_asf_fb.h"
 #include "umc_linear_buffer.h"
 #include "umc_sample_buffer.h"
-#include "umc_automatic_mutex.h"
 
 namespace UMC
 {
@@ -44,7 +43,7 @@ ASFFrameBuffer::~ASFFrameBuffer()
 
 Status ASFFrameBuffer::LockInputBuffer(MediaData* in)
 {
-    AutomaticMutex guard(m_synchro);
+    std::unique_lock<std::mutex> guard(m_synchro);
     size_t lFreeSize;
     bool bAtEnd = false;
 
@@ -89,7 +88,7 @@ Status ASFFrameBuffer::LockInputBuffer(MediaData* in)
 
                 // need to call Unlock to avoid double locking of
                 // the mutex
-                guard.Unlock();
+                guard.unlock();
                 // and call again to lock space at the
                 // beginning of the buffer
                 return LockInputBuffer(in);
@@ -114,7 +113,7 @@ Status ASFFrameBuffer::LockInputBuffer(MediaData* in)
 
 Status ASFFrameBuffer::UnLockInputBuffer(MediaData *in, Status frameStat)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     size_t lFreeSize = 0;
     SampleInfo *pTemp = NULL;
     Ipp8u *pb = NULL;

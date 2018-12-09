@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#include "umc_automatic_mutex.h"
 #include "umc_default_memory_allocator.h"
 #include "umc_frame_constructor.h"
 
@@ -632,20 +631,11 @@ FrameConstructor::FrameConstructor()
     m_LastFrame.SetBufferPointer(NULL, 0);
     m_LastFrame.SetAbsPos(0);
     m_LastFrame.SetTime(-1.0, -1.0);
-
-    // reset mutex
-    vm_mutex_set_invalid(&m_synchro);
-
 }
 
 FrameConstructor::~FrameConstructor()
 {
     Close();
-
-    // destroy mutex
-    if (1 == vm_mutex_is_valid(&m_synchro))
-        vm_mutex_destroy(&m_synchro);
-
 }
 
 Status FrameConstructor::Stop()
@@ -666,10 +656,6 @@ Status FrameConstructor::Init(MediaReceiverParams *pInit)
 
     m_bStopAtFrame = pParams->m_bStopAtFrame;
     m_bPureStream = pParams->m_bPureStream;
-    // init mutex
-    if (0 == vm_mutex_is_valid(&m_synchro))
-        if (VM_OK != vm_mutex_init(&m_synchro))
-            return UMC_ERR_INIT;
 
     // allocate buffer (one more)
     m_lBufferSize = (int32_t)pParams->m_lBufferSize;
@@ -760,7 +746,7 @@ Status FrameConstructor::Close()
 
 Status FrameConstructor::Reset()
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
 
     while (UMC_OK == m_OutputQueue.Remove());
 
@@ -788,7 +774,7 @@ Status FrameConstructor::Reset()
 
 Status FrameConstructor::SoftReset()
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
 
     m_bEndOfStream = false;
 
@@ -821,7 +807,7 @@ void FrameConstructor::SetRate(double dRate)
 
 Status FrameConstructor::LockInputBuffer(MediaData *in)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     int32_t lChunkSize;
 
     // check error(s)
@@ -859,7 +845,7 @@ Status FrameConstructor::LockInputBuffer(MediaData *in)
 Status FrameConstructor::UnLockInputBuffer(MediaData *in, Status streamStatus)
 {
     Status umcRes = PreUnLockInputBuffer(in, streamStatus);
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
 
     // automatically commit all uncommited samples
     if (UMC_OK == umcRes)
@@ -869,7 +855,7 @@ Status FrameConstructor::UnLockInputBuffer(MediaData *in, Status streamStatus)
 
 Status FrameConstructor::PreUnLockInputBuffer(MediaData *in, Status streamStatus)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     SplMediaData frame;
 
     if (NULL != in && UMC_OK == streamStatus)
@@ -935,7 +921,7 @@ Status FrameConstructor::GetSampleFromQueue(FCSample *pSample)
 
 Status FrameConstructor::LockOutputBuffer(MediaData *out)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
 
     // check error(s)
     if (NULL == out)
@@ -958,7 +944,7 @@ Status FrameConstructor::LockOutputBuffer(MediaData *out)
 
 Status FrameConstructor::UnLockOutputBuffer(MediaData *out)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
 
     // check error(s)
     if (NULL == out)
@@ -994,7 +980,7 @@ Status FrameConstructor::GetLastFrame(MediaData *data)
     if (NULL == data)
         return UMC_ERR_NULL_PTR;
 
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
 
     if (NULL == m_LastFrame.GetBufferPointer())
         return UMC_ERR_NOT_ENOUGH_DATA;
@@ -1022,7 +1008,7 @@ Status FrameConstructor::GetFrame(SplMediaData *frame)
 
 Mpeg2TrackInfo *FrameConstructor::GetInfo(void)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     m_pInfo->m_uiFramesReady = m_uiCommitedFrames - (m_bIsOutputBufferLocked ? 1 : 0);
     return m_pInfo;
 }
@@ -1115,7 +1101,7 @@ Status VideoFrameConstructor::GetSampleFromQueue(FCSample *pSample)
 
 Status VideoFrameConstructor::Reset()
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     Status umcRes = FrameConstructor::Reset();
     m_bSeqSCFound = false;
     m_bPicSCFound = false;
@@ -1127,8 +1113,8 @@ Status VideoFrameConstructor::Reset()
 
 Status VideoFrameConstructor::SoftReset()
 {
-    AutomaticMutex guard(m_synchro);
     FrameConstructor::SoftReset();
+    std::lock_guard<std::mutex> guard(m_synchro);
     m_bPicSCFound = false;
     m_bFrameBegFound = false;
     return UMC_OK;

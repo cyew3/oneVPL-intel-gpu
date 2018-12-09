@@ -75,7 +75,7 @@ public:
     Status DumpState();
 
 protected:
-    vm_mutex m_synchro;                                         // (vm_mutex) synchro object
+    std::mutex m_synchro;                                         // (vm_mutex) synchro object
 
     uint8_t *m_pbAllocatedBuffer;                                 // (uint8_t *) pointer to allocated buffer
     MemID m_midAllocatedBuffer;                                 // (MemID) memory ID of allocated buffer

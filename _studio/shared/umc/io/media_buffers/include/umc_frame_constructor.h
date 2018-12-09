@@ -397,7 +397,7 @@ namespace UMC
         void AssignTimeStamps(int32_t iPos);
 
         // synchro object
-        vm_mutex m_synchro;
+        std::mutex m_synchro;
 
         // pointer to allocated buffer
         uint8_t *m_pBuf;

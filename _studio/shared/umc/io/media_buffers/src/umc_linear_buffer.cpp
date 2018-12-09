@@ -21,7 +21,6 @@
 #include <umc_defs.h>
 
 #include <umc_linear_buffer.h>
-#include <umc_automatic_mutex.h>
 
 namespace UMC
 {
@@ -58,9 +57,6 @@ LinearBuffer::LinearBuffer(void)
     m_bEndOfStream = false;
     m_bQuit = false;
 
-    // reset mutex
-    vm_mutex_set_invalid(&m_synchro);
-
     // reset time of dummy sample
     memset(&m_Dummy, 0, sizeof(m_Dummy));
     m_Dummy.m_dTime = -1.0;
@@ -70,11 +66,6 @@ LinearBuffer::LinearBuffer(void)
 LinearBuffer::~LinearBuffer(void)
 {
     Close();
-
-    // destroy mutex
-    if (1 == vm_mutex_is_valid(&m_synchro))
-        vm_mutex_destroy(&m_synchro);
-
 } // LinearBuffer::~LinearBuffer(void)
 
 Status LinearBuffer::Close(void)
@@ -160,13 +151,6 @@ Status LinearBuffer::Init(MediaReceiverParams *init)
 
     m_Params = *pParams;
 
-    // init mutex
-    if (0 == vm_mutex_is_valid(&m_synchro))
-    {
-        if (VM_OK != vm_mutex_init(&m_synchro))
-            return UMC_ERR_INIT;
-    }
-
     // allocate buffer (one more)
     lMaxSampleSize = MFX_MAX(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize);
     lAllocate = lMaxSampleSize * (MFX_MAX(pParams->m_numberOfFrames, 3) + 1);
@@ -212,7 +196,7 @@ Status LinearBuffer::Init(MediaReceiverParams *init)
 
 Status LinearBuffer::LockInputBuffer(MediaData* in)
 {
-    AutomaticMutex guard(m_synchro);
+    std::unique_lock<std::mutex> guard(m_synchro);
     size_t lFreeSize;
     bool bAtEnd = false;
 
@@ -259,7 +243,7 @@ Status LinearBuffer::LockInputBuffer(MediaData* in)
 
                 // need to Unlock to avoid double locking of
                 // the mutex
-                guard.Unlock();
+                guard.unlock();
                 // and call again to lock space at the
                 // beginning of the buffer
                 return LockInputBuffer(in);
@@ -300,7 +284,7 @@ Status LinearBuffer::LockInputBuffer(MediaData* in)
 
 Status LinearBuffer::UnLockInputBuffer(MediaData* in, Status StreamStatus)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     size_t lFreeSize;
     SampleInfo *pTemp;
 
@@ -375,7 +359,7 @@ Status LinearBuffer::UnLockInputBuffer(MediaData* in, Status StreamStatus)
 
 Status LinearBuffer::LockOutputBuffer(MediaData* out)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     size_t lUsedSize;
 
     // check error(s)
@@ -475,7 +459,7 @@ Status LinearBuffer::LockOutputBuffer(MediaData* out)
 
 Status LinearBuffer::UnLockOutputBuffer(MediaData* out)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     size_t lUsedSize, lToSkip;
     SampleInfo *pTemp;
     bool bSingleMemoryPiece = true;
@@ -586,7 +570,7 @@ Status LinearBuffer::Stop(void)
 
 Status LinearBuffer::Reset(void)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
 
     // reset variables
     m_pbFree = m_pbBuffer;

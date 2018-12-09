@@ -22,7 +22,6 @@
 
 #include <umc_linear_buffer.h>
 #include <umc_sample_buffer.h>
-#include <umc_automatic_mutex.h>
 
 namespace UMC
 {
@@ -56,19 +55,11 @@ SampleBuffer::SampleBuffer(void)
     m_bEndOfStream = false;
     m_bQuit = false;
 
-    // reset the mutex
-    vm_mutex_set_invalid(&m_synchro);
-
 } // SampleBuffer::SampleBuffer(void)
 
 SampleBuffer::~SampleBuffer(void)
 {
     Close();
-
-    // destroy mutex
-    if (1 == vm_mutex_is_valid(&m_synchro))
-        vm_mutex_destroy(&m_synchro);
-
 } // SampleBuffer::~SampleBuffer(void)
 
 Status SampleBuffer::Close(void)
@@ -128,12 +119,6 @@ Status SampleBuffer::Init(MediaReceiverParams *init)
         return umcRes;
 
     m_Params = *pParams;
-    // init the mutex
-    if (0 == vm_mutex_is_valid(&m_synchro))
-    {
-        if (VM_OK != vm_mutex_init(&m_synchro))
-            return UMC_ERR_INIT;
-    }
 
     // allocate buffer
     lMaxSampleSize = MFX_MAX(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize) +
@@ -163,7 +148,7 @@ Status SampleBuffer::Init(MediaReceiverParams *init)
 
 Status SampleBuffer::LockInputBuffer(MediaData* in)
 {
-    AutomaticMutex guard(m_synchro);
+    std::unique_lock<std::mutex> guard(m_synchro);
     size_t lFreeSize;
     bool bAtEnd = false;
 
@@ -208,7 +193,7 @@ Status SampleBuffer::LockInputBuffer(MediaData* in)
 
                 // need to call Unlock to avoid double locking of
                 // the mutex
-                guard.Unlock();
+                guard.unlock();
                 // and call again to lock space at the
                 // beginning of the buffer
                 return LockInputBuffer(in);
@@ -233,7 +218,7 @@ Status SampleBuffer::LockInputBuffer(MediaData* in)
 
 Status SampleBuffer::UnLockInputBuffer(MediaData* in, Status StreamStatus)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     size_t lFreeSize;
     SampleInfo *pTemp;
     uint8_t *pb;
@@ -305,7 +290,7 @@ Status SampleBuffer::UnLockInputBuffer(MediaData* in, Status StreamStatus)
 
 Status SampleBuffer::LockOutputBuffer(MediaData* out)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
 
     // check error(s)
     if (NULL == out)
@@ -347,7 +332,7 @@ Status SampleBuffer::LockOutputBuffer(MediaData* out)
 
 Status SampleBuffer::UnLockOutputBuffer(MediaData* out)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
     size_t lToSkip;
 
     // check error(s)
@@ -411,7 +396,7 @@ Status SampleBuffer::Stop(void)
 
 Status SampleBuffer::Reset(void)
 {
-    AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
 
     // reset variables
     m_pbFree = m_pbBuffer;
@@ -430,7 +415,7 @@ Status SampleBuffer::Reset(void)
 
 Status SampleBuffer::DumpState()
 {
-  AutomaticMutex guard(m_synchro);
+    std::lock_guard<std::mutex> guard(m_synchro);
   SampleInfo *pTemp;
 #if defined(VM_DEBUG)
   double timeFirst = -1, timeLast = -1;

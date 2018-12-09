@@ -26,6 +26,8 @@
 #include "umc_media_receiver.h"
 #include "umc_memory_allocator.h"
 
+#include <mutex>
+
 namespace UMC
 {
 
