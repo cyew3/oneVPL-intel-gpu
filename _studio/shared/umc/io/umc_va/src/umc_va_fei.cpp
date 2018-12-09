@@ -360,7 +360,7 @@ namespace UMC
 
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "fei: Execute");
 
-        AutomaticMutex l(m_SyncMutex);
+        std::lock_guard<std::mutex> l(m_SyncMutex);
 
         // StreamOut buffer is not handled by the base class, we should execute it here
         {
@@ -381,7 +381,7 @@ namespace UMC
 
     void FEIVideoAccelerator::ReleaseBuffer(VAStreamOutBuffer* buffer)
     {
-        AutomaticMutex l(m_SyncMutex);
+        std::lock_guard<std::mutex> l(m_SyncMutex);
 
         VABufferID const id = buffer->GetID();
         vaUnmapBuffer(m_dpy, id);
@@ -405,7 +405,7 @@ namespace UMC
             unsigned int va_size         = size;
             unsigned int va_num_elements = 1;
 
-            AutomaticMutex l(m_SyncMutex);
+            std::lock_guard<std::mutex> l(m_SyncMutex);
 
             VABufferID id;
             VAStatus va_res =
@@ -433,7 +433,7 @@ namespace UMC
         if (umcRes != UMC_OK)
             return umcRes;
 
-        AutomaticMutex l(m_SyncMutex);
+        std::lock_guard<std::mutex> l(m_SyncMutex);
 
         for (int i = 0; i < 2; ++i)
         {
