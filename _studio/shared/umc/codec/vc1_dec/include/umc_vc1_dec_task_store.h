@@ -27,12 +27,11 @@
 #include <new>
 #include <vector>
 #include <map>
+#include <mutex>
+#include <memory>
 
 #include "umc_vc1_common_defs.h"
 #include "umc_vc1_dec_frame_descr.h"
-#include "vm_types.h"
-#include "umc_event.h"
-#include "umc_automatic_mutex.h"
 #include "umc_vc1_dec_skipping.h"
 #include "umc_vc1_dec_exception.h"
 #include "umc_frame_allocator.h"
@@ -190,7 +189,7 @@ namespace UMC
         bool IsReadyDS()
         {
             uint32_t i;
-            AutomaticMutex guard(m_mDSGuard);
+            std::lock_guard<std::mutex> guard(m_mDSGuard);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
                 if (m_pDescriptorQueue[i]->m_bIsReadyToLoad)
@@ -202,11 +201,11 @@ namespace UMC
         template <class Descriptor>
         void GetReadyDS(Descriptor** pDS)
         {
-            AutomaticMutex guardDS(m_mDSGuard);
+            std::lock_guard<std::mutex> guardDS(m_mDSGuard);
             uint32_t i;
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
-                AutomaticMutex guard(*m_pGuardGet[i]);
+                std::lock_guard<std::mutex> guard(*m_pGuardGet[i]);
                 if (m_pDescriptorQueue[i]->m_bIsReadyToLoad)
                 {
                     m_pDescriptorQueue[i]->m_bIsReadyToLoad  = false;
@@ -215,7 +214,6 @@ namespace UMC
                     ++m_iNumDSActiveinQueue;
                     return;
                 }
-                guard.Unlock();
             }
             *pDS = NULL;
         }
@@ -224,10 +222,10 @@ namespace UMC
         bool GetPerformedDS(Descriptor** pDS)
         {
             uint32_t i;
-            AutomaticMutex guardDS(m_mDSGuard);
+            std::lock_guard<std::mutex> guardDS(m_mDSGuard);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
-                AutomaticMutex guard(*m_pGuardGet[i]);
+                std::lock_guard<std::mutex> guard(*m_pGuardGet[i]);
                 if (m_pDescriptorQueue[i]->m_bIsReadyToDisplay)
                 {
                     if ((m_lNextFrameCounter == m_pDescriptorQueue[i]->m_iFrameCounter)&&
@@ -242,7 +240,6 @@ namespace UMC
                         return true;
                     }
                 }
-                guard.Unlock();
             }
             *pDS = NULL;
             return false;
@@ -251,10 +248,10 @@ namespace UMC
         void SetFirstBusyDescriptorAsReady()
         {
             uint32_t i;
-            AutomaticMutex guardDS(m_mDSGuard);
+            std::lock_guard<std::mutex> guardDS(m_mDSGuard);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
-                AutomaticMutex guard(*m_pGuardGet[i]);
+                std::lock_guard<std::mutex> guard(*m_pGuardGet[i]);
                 if ((!m_pDescriptorQueue[i]->m_bIsReadyToDisplay)&&
                      (m_pDescriptorQueue[i]->m_iFrameCounter == m_lNextFrameCounter))
                 {
@@ -263,7 +260,6 @@ namespace UMC
                     m_pDescriptorQueue[i]->m_bIsBusy = true;
                     return;
                 }
-                guard.Unlock();
             }
         }
         void ResetPerformedDS(VC1FrameDescriptor* pDS)
@@ -295,10 +291,10 @@ namespace UMC
         bool GetReadySkippedDS(Descriptor** pDS)
         {
             uint32_t i;
-            AutomaticMutex guardDS(m_mDSGuard);
+            std::lock_guard<std::mutex> guardDS(m_mDSGuard);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
-                AutomaticMutex guard(*m_pGuardGet[i]);
+                std::lock_guard<std::mutex> guard(*m_pGuardGet[i]);
                 if ((m_pDescriptorQueue[i]->m_bIsReferenceReady)&&
                     (m_pDescriptorQueue[i]->m_bIsSkippedFrame)&&
                     (m_lNextFrameCounter == m_pDescriptorQueue[i]->m_iFrameCounter))
@@ -312,7 +308,6 @@ namespace UMC
                     ++m_lNextFrameCounter;
                     return true;
                 }
-                guard.Unlock();
             }
             *pDS = NULL;
             return false;
@@ -351,9 +346,9 @@ namespace UMC
         uint32_t m_iNumFramesProcessing;
         uint32_t m_iNumDSActiveinQueue;
 
-        vm_mutex m_mDSGuard;
+        std::mutex m_mDSGuard;
 
-        vm_mutex** m_pGuardGet;
+        std::vector<std::unique_ptr<std::mutex>> m_pGuardGet;
 
         VC1VideoDecoder* pMainVC1Decoder;
         unsigned long long m_lNextFrameCounter;

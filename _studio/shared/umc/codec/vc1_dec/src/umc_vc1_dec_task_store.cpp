@@ -41,15 +41,15 @@ namespace UMC
 {
     VC1TaskStore::VC1TaskStore(MemoryAllocator *pMemoryAllocator):
                                                                 m_iConsumerNumber(0),
-                                                                m_pDescriptorQueue(NULL),
+                                                                m_pDescriptorQueue(nullptr),
                                                                 m_iNumFramesProcessing(0),
                                                                 m_iNumDSActiveinQueue(0),
-                                                                m_pGuardGet(NULL),
-                                                                pMainVC1Decoder(NULL),
+                                                                m_pGuardGet(),
+                                                                pMainVC1Decoder(nullptr),
                                                                 m_lNextFrameCounter(1),
-                                                                m_pPrefDS(NULL),
+                                                                m_pPrefDS(nullptr),
                                                                 m_iRangeMapIndex(0),
-                                                                m_pMemoryAllocator(NULL),
+                                                                m_pMemoryAllocator(nullptr),
                                                                 m_CurrIndex(-1),
                                                                 m_PrevIndex(-1),
                                                                 m_NextIndex(-1),
@@ -60,22 +60,12 @@ namespace UMC
                                                                 m_pSHeap(0),
                                                                 m_bIsLastFramesMode(false)
     {
-        vm_mutex_set_invalid(&m_mDSGuard);
         m_pMemoryAllocator = pMemoryAllocator;
     }
 
     VC1TaskStore::~VC1TaskStore()
     {
         uint32_t i;
-
-        if (vm_mutex_is_valid(&m_mDSGuard))
-            vm_mutex_destroy(&m_mDSGuard);
-
-        for (i = 0; i < m_iNumFramesProcessing; i++)
-        {
-            vm_mutex_destroy(m_pGuardGet[i]);
-            m_pGuardGet[i] = 0;
-        }
 
         if(m_pMemoryAllocator)
         {
@@ -124,22 +114,13 @@ namespace UMC
                 m_pSHeap = new VC1TSHeap((uint8_t*)m_pMemoryAllocator->Lock(m_iTSHeapID),heapSize);
             }
 
-            m_pSHeap->s_new(&m_pGuardGet,m_iNumFramesProcessing);
+            m_pGuardGet.resize(m_iNumFramesProcessing);
             for (i = 0; i < m_iNumFramesProcessing; i++)
             {
-                m_pSHeap->s_new(&m_pGuardGet[i]);
-
-                vm_mutex_set_invalid(m_pGuardGet[i]);
-                if (VM_OK != vm_mutex_init(m_pGuardGet[i]))
-                    return false;
+                m_pGuardGet[i].reset(new std::mutex);
             }
         }
 
-        if (0 == vm_mutex_is_valid(&m_mDSGuard))
-        {
-            if (VM_OK != vm_mutex_init(&m_mDSGuard))
-                return false;
-        }
         return true;
     }
 
@@ -150,15 +131,6 @@ namespace UMC
         //close
         m_bIsLastFramesMode = false;
         ResetDSQueue();
-
-        if (vm_mutex_is_valid(&m_mDSGuard))
-            vm_mutex_destroy(&m_mDSGuard);
-
-        for (i = 0; i < m_iNumFramesProcessing; i++)
-        {
-            vm_mutex_destroy(m_pGuardGet[i]);
-            m_pGuardGet[i] = 0;
-        }
 
         if(m_pMemoryAllocator)
         {
@@ -193,25 +165,13 @@ namespace UMC
             }
 
             {
-                m_pSHeap->s_new(&m_pGuardGet,m_iNumFramesProcessing);
-
                 for (i = 0; i < m_iNumFramesProcessing; i++)
                 {
-                    m_pSHeap->s_new(&m_pGuardGet[i]);
-
-                    vm_mutex_set_invalid(m_pGuardGet[i]);
-                    if (VM_OK != vm_mutex_init(m_pGuardGet[i]))
-                        return false;
+                    m_pGuardGet[i].reset(new std::mutex);
                 }
             }
         }
 
-        if (0 == vm_mutex_is_valid(&m_mDSGuard))
-        {
-            if (VM_OK != vm_mutex_init(&m_mDSGuard))
-                return false;
-        }
-        
         SetBFrameIndex(-1);
         SetCurrIndex(-1);
         SetRangeMapIndex(-1);
@@ -223,12 +183,10 @@ namespace UMC
 
     uint32_t VC1TaskStore::CalculateHeapSize()
     {
-        uint32_t Size = align_value<uint32_t>(sizeof(vm_mutex**)*m_iNumFramesProcessing); //m_pGuardGet
-        Size += align_value<uint32_t>(sizeof(VC1FrameDescriptor*)*(m_iNumFramesProcessing));
+        uint32_t Size = align_value<uint32_t>(sizeof(VC1FrameDescriptor*)*(m_iNumFramesProcessing));
 
         for (uint32_t counter = 0; counter < m_iNumFramesProcessing; counter++)
         {
-            Size += align_value<uint32_t>(sizeof(vm_mutex)); //m_pGuardGet
 #ifdef UMC_VA_DXVA
             if (pMainVC1Decoder->m_va)
             {
@@ -744,7 +702,7 @@ namespace UMC
     inline bool VC1TaskStoreSW::IsPerfomedDS()
     {
         uint32_t i;
-        AutomaticMutex guard(m_mDSGuard);
+        std::lock_guard<std::mutex> guard(m_mDSGuard);
         for (i = 0; i < m_iNumFramesProcessing; i++)
         {
             if ((m_pDescriptorQueue[i]->m_bIsReadyToDisplay) &&
@@ -759,7 +717,7 @@ namespace UMC
     }
     void VC1TaskStoreSW::FreeBusyDescriptor()
     {
-        AutomaticMutex guard(m_mDSGuard);
+        std::lock_guard<std::mutex> guard(m_mDSGuard);
         uint32_t i;
         for (i = 0; i < m_iNumFramesProcessing; i++)
         {
@@ -771,7 +729,7 @@ namespace UMC
     }
     bool VC1TaskStoreSW::IsProcessingDS()
     {
-        AutomaticMutex guard(m_mDSGuard);
+        std::lock_guard<std::mutex> guard(m_mDSGuard);
         uint32_t i;
         for (i = 0; i < m_iNumFramesProcessing; i++)
         {
@@ -782,7 +740,7 @@ namespace UMC
     }
     bool VC1TaskStoreSW::HaveTasksToBeDone()
     {
-        AutomaticMutex guard(m_mDSGuard);
+        std::lock_guard<std::mutex> guard(m_mDSGuard);
         if (m_bIsLastFramesMode)
         {
             bool sts = IsProcessingDS();
@@ -800,7 +758,7 @@ namespace UMC
 
     void VC1TaskStoreSW::OpenNextFrames(VC1FrameDescriptor* pDS, VC1FrameDescriptor** pPrevDS, int32_t* CurrRefDst, int32_t* CurBDst)
     {
-        AutomaticMutex guard(m_mDSGuard);
+        std::lock_guard<std::mutex> guard(m_mDSGuard);
         uint32_t i = 0;
         bool isReadyReference = ((pDS->m_pContext->m_picLayerHeader->PTYPE != VC1_B_FRAME) &&
             (pDS->m_pContext->m_picLayerHeader->PTYPE != VC1_BI_FRAME)) ? (true) : (false);
@@ -866,7 +824,7 @@ namespace UMC
 
     void VC1TaskStoreSW::SetDstForFrameAdv(VC1FrameDescriptor* pDS, int32_t* CurrRefDst, int32_t* CurBDst)
     {
-        AutomaticMutex guard(m_mDSGuard);
+        std::lock_guard<std::mutex> guard(m_mDSGuard);
         bool isFrameReference = ((pDS->m_pContext->m_picLayerHeader->PTYPE != VC1_B_FRAME) &&
             (pDS->m_pContext->m_picLayerHeader->PTYPE != VC1_BI_FRAME) &&
             (!pDS->isSpecialBSkipFrame())) ? (true) : (false);
@@ -908,7 +866,7 @@ namespace UMC
 
     void VC1TaskStoreSW::SetDstForFrame(VC1FrameDescriptor* pDS, int32_t* CurrRefDst, int32_t* CurBDst)
     {
-        AutomaticMutex guard(m_mDSGuard);
+        std::lock_guard<std::mutex> guard(m_mDSGuard);
 
         bool isFrameReference = ((pDS->m_pContext->m_picLayerHeader->PTYPE != VC1_B_FRAME) &&
             (pDS->m_pContext->m_picLayerHeader->PTYPE != VC1_BI_FRAME) &&
@@ -954,7 +912,7 @@ namespace UMC
 
     void VC1TaskStoreSW::WakeTasksInAlienQueue(VC1FrameDescriptor* pDS, VC1FrameDescriptor** pPrevDS)
     {
-        AutomaticMutex guard(*m_pGuardGet[pDS->m_iSelfID]);
+        std::lock_guard<std::mutex> guard(*m_pGuardGet[pDS->m_iSelfID]);
         pDS->m_bIsReferenceReady = true;
         if (pDS->m_pContext->m_bIntensityCompensation)
         {
@@ -998,7 +956,7 @@ namespace UMC
     }
     void VC1TaskStoreSW::WakeTasksInAlienQueue(VC1FrameDescriptor* pDS)
     {
-        AutomaticMutex guard(*m_pGuardGet[pDS->m_iSelfID]);
+        std::lock_guard<std::mutex> guard(*m_pGuardGet[pDS->m_iSelfID]);
         // Reference
         pDS->m_bIsReferenceReady = true;
 
@@ -1023,7 +981,7 @@ namespace UMC
 
     void VC1TaskStoreSW::CompensateDSInQueue(VC1FrameDescriptor* pDS)
     {
-        AutomaticMutex guard(*m_pGuardGet[pDS->m_iSelfID]);
+        std::lock_guard<std::mutex> guard(*m_pGuardGet[pDS->m_iSelfID]);
         if (pDS->m_pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
         {
             if (pDS->m_iActiveTasksInFirstField == -1)
@@ -1230,7 +1188,7 @@ namespace UMC
         {
             frameCount = m_pDSIndicate[curFrame];
             {
-                AutomaticMutex guard(*m_pGuardGet[frameCount]);
+                std::lock_guard<std::mutex> guard(*m_pGuardGet[frameCount]);
 
                 //find in own queue
                 if (m_pDescriptorQueue[frameCount]->m_bIsReadyToProcess)
@@ -1261,7 +1219,6 @@ namespace UMC
                         return false;
                     }
                 }
-                guard.Unlock();
             }
 
             ++curFrame;
@@ -1283,7 +1240,7 @@ namespace UMC
         // Get Task from First frame in Queue
         if (((qID<(m_iConsumerNumber >> 1))) || (m_iConsumerNumber <= 2))
         {
-            AutomaticMutex guard(*m_pGuardGet[frameCount]);
+            std::lock_guard<std::mutex> guard(*m_pGuardGet[frameCount]);
             if (m_pDescriptorQueue[frameCount]->m_bIsReadyToProcess)
             {
                 *pFrameDS = m_pDescriptorQueue[frameCount];
@@ -1314,7 +1271,6 @@ namespace UMC
                 *pTask = NULL;
                 return false;
             }
-            guard.Unlock();
         }
 
         uint32_t curFrame = qID;
@@ -1322,7 +1278,7 @@ namespace UMC
         {
             frameCount = m_pDSIndicate[count];
             {
-                AutomaticMutex guard(*m_pGuardGet[frameCount]);
+                std::lock_guard<std::mutex> guard(*m_pGuardGet[frameCount]);
 
                 //find in own queue
                 if (m_pDescriptorQueue[frameCount]->m_bIsReadyToProcess)
@@ -1352,7 +1308,6 @@ namespace UMC
                         return false;
                     }
                 }
-                guard.Unlock();
             }
             ++curFrame;
             if (curFrame > m_iNumFramesProcessing)
@@ -1391,7 +1346,7 @@ namespace UMC
 
         if (pTask->m_eTasktype <= VC1Reconstruct)
         {
-            AutomaticMutex guard(*m_pGuardGet[qID]);
+            std::lock_guard<std::mutex> guard(*m_pGuardGet[qID]);
             NextStateTypeofTask = (m_pCommonQueue[qID])[i]->switch_task();
             switch (NextStateTypeofTask)
             {
@@ -1459,12 +1414,11 @@ namespace UMC
             }
             DisableProcessBit_MQ(qID, i);
 
-            guard.Unlock();
             return true;
         }
         else
         {
-            AutomaticMutex guard(*m_pGuardGet[qID]);
+            std::lock_guard<std::mutex> guard(*m_pGuardGet[qID]);
             NextStateTypeofTask = (m_pAdditionalQueue[qID])[i]->switch_task();
             switch (NextStateTypeofTask)
             {
@@ -1707,7 +1661,6 @@ namespace UMC
             }
 
             DisableProcessBit_AQ(qID, i);
-            guard.Unlock();
             return true;
         }
     }
