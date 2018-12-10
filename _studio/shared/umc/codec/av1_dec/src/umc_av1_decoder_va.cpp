@@ -178,7 +178,11 @@ namespace UMC_AV1_DECODER
                         continue;
 
                     bool wasFound = false;
-                    const uint16_t index = pStatusReport[i].current_picture.Index15Bits;
+#if AV1D_DDI_VERSION >= 31
+                    const uint16_t index = pStatusReport[i].current_picture.bPicEntry;
+#else
+                    const uint16_t index = pStatusReport[i].current_picture.wPicEntry;
+#endif
                     if (index == frame.GetMemID()) // report for the frame was found in new reports
                     {
                         SetError(frame, pStatusReport[i].bStatus);

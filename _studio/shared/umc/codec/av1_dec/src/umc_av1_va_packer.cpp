@@ -244,12 +244,20 @@ namespace UMC_AV1_DECODER
         if (KEY_FRAME == info.frame_type)
         {
             for (int i = 0; i < NUM_REF_FRAMES; i++)
+#if AV1D_DDI_VERSION >= 31
+                picParam.ref_frame_map[i].bPicEntry = UCHAR_MAX;
+#else
                 picParam.ref_frame_map[i].wPicEntry = USHRT_MAX;
+#endif
         }
         else
         {
             for (uint8_t ref = 0; ref < NUM_REF_FRAMES; ++ref)
+#if AV1D_DDI_VERSION >= 31
+                picParam.ref_frame_map[ref].bPicEntry = (UCHAR)frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
+#else
                 picParam.ref_frame_map[ref].wPicEntry = (USHORT)frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
+#endif
 
             for (uint8_t ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
@@ -262,9 +270,17 @@ namespace UMC_AV1_DECODER
             }
         }
 
+#if AV1D_DDI_VERSION >= 31
+        picParam.CurrPic.bPicEntry = (UCHAR)frame.GetMemID(SURFACE_RECON);
+#else
         picParam.CurrPic.wPicEntry = (USHORT)frame.GetMemID(SURFACE_RECON);
+#endif
         if (!frame.FilmGrainDisabled())
+#if AV1D_DDI_VERSION >= 31
+            picParam.CurrDisplayPic.bPicEntry = (UCHAR)frame.GetMemID();
+#else
             picParam.CurrDisplayPic.wPicEntry = (USHORT)frame.GetMemID();
+#endif
         picParam.primary_ref_frame = (UCHAR)info.primary_ref_frame;
 
         picParam.filter_level[0] = (UCHAR)info.loop_filter_params.loop_filter_level[0];
@@ -436,7 +452,11 @@ namespace UMC_AV1_DECODER
 #endif
         tileControlParam.StartTileIdx = (USHORT)loc.startIdx;
         tileControlParam.EndTileIdx = (USHORT)loc.endIdx;
-        tileControlParam.anchor_frame_idx.Index15Bits = 0;
+#if AV1D_DDI_VERSION >= 31
+        tileControlParam.anchor_frame_idx.bPicEntry = 0;
+#else
+        tileControlParam.anchor_frame_idx.wPicEntry = 0;
+#endif
         tileControlParam.BSTilePayloadSizeInBytes = (UINT)loc.size;
     }
 

@@ -33,8 +33,8 @@
 namespace UMC_AV1_DECODER
 {
 #if UMC_AV1_DECODER_REV >= 8500
-    #define AV1D_DDI_VERSION 26
-    #define DDI_HACKS_FOR_REV_85 // Rev 0.85 uses some DDI changes in comparison with 0.26
+    #define AV1D_DDI_VERSION 31
+    #define DDI_HACKS_FOR_REV_85 // Rev 0.85 uses some DDI changes in comparison with 0.31
                                 // such changes are handled by macro DDI_HACKS_FOR_REV_85
 #else
     #define AV1D_DDI_VERSION 21
@@ -44,15 +44,11 @@ namespace UMC_AV1_DECODER
 
     typedef struct _DXVA_PicEntry_AV1
     {
-        union
-        {
-            struct
-            {
-                USHORT Index15Bits : 15;
-                USHORT AssociatedFlag : 1;
-            };
-            USHORT wPicEntry;
-        };
+#if AV1D_DDI_VERSION >= 31
+        UCHAR bPicEntry;
+#else
+        USHORT wPicEntry;
+#endif
     } DXVA_PicEntry_AV1, *LPDXVA_PicEntry_AV1;
 
     typedef struct _segmentation_AV1 {
@@ -132,14 +128,19 @@ namespace UMC_AV1_DECODER
         DXVA_PicEntry_AV1 CurrPic;
         DXVA_PicEntry_AV1 CurrDisplayPic;
         UCHAR             profile;        // [0..2]
-#if !defined(DDI_HACKS_FOR_REV_85)
-        USHORT            Reserved16b;    // [0]
+#if AV1D_DDI_VERSION >= 29
+        UCHAR           AnchorFrameInsertion;
 #endif
 
 #if AV1D_DDI_VERSION >= 26
         UCHAR        order_hint_bits_minus_1;
         UCHAR        BitDepthIdx;
+#ifdef DDI_HACKS_FOR_REV_85
         UCHAR        reserved8b;
+#else
+        USHORT       reserved16b;
+#endif
+
 #else
         USHORT max_frame_width_minus_1;   // [0..65535]
         USHORT max_frame_height_minus_1;  // [0..65535]
@@ -305,10 +306,19 @@ namespace UMC_AV1_DECODER
 #endif
 
         USHORT tile_cols;
+#if AV1D_DDI_VERSION >= 28 && !defined(DDI_HACKS_FOR_REV_85)
+        USHORT width_in_sbs_minus_1[63];
+#else
         USHORT width_in_sbs_minus_1[64];
+#endif
         USHORT tile_rows;
 #if AV1D_DDI_VERSION >= 26
+
+#if AV1D_DDI_VERSION >= 28 && !defined(DDI_HACKS_FOR_REV_85)
+        USHORT height_in_sbs_minus_1[63];
+#else
         USHORT height_in_sbs_minus_1[64];
+#endif
 
         USHORT tile_count_minus_1;
 #else
