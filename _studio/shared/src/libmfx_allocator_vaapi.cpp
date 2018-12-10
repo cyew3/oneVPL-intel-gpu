@@ -228,7 +228,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
             }
             else if (va_fourcc == VA_FOURCC_AYUV)
             {
-                format = VA_FOURCC_AYUV;
+                format = VA_RT_FORMAT_YUV444;
             }
 
             if ( request->Type & MFX_MEMTYPE_FROM_ENCODE)
