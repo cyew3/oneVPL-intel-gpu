@@ -20,7 +20,6 @@
 
 #include "mfx_timing.h"
 #include "umc_mutex.h"
-#include "umc_automatic_mutex.h"
 
 #ifdef MFX_TIMING
 

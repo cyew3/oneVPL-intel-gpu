@@ -23,7 +23,6 @@
 #ifdef UMC_VA_LINUX
 
 #include "umc_va_fei.h"
-#include "umc_automatic_mutex.h"
 #include "umc_frame_allocator.h"
 
 #include "mfxfei.h"

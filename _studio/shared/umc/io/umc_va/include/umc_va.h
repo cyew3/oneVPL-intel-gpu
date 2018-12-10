@@ -24,7 +24,6 @@
 #include "umc_va_base.h"
 
 #ifndef UMC_VA_LINUX  // get data from umc_va_linux.h now
-#include "umc_automatic_mutex.h"
 #include "umc_mutex.h"
 
 #include <list>

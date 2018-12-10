@@ -479,7 +479,6 @@ _studio/shared/umc/core/vm/src/vm_time_linux32.c
 _studio/shared/umc/core/vm/src/vm_time_win32.c
 _studio/shared/umc/core/vm_plus/CMakeLists.txt
 _studio/shared/umc/core/vm_plus/include/mfx_vm++_pthread.h
-_studio/shared/umc/core/vm_plus/include/umc_automatic_mutex.h
 _studio/shared/umc/core/vm_plus/include/umc_event.h
 _studio/shared/umc/core/vm_plus/include/umc_mutex.h
 _studio/shared/umc/core/vm_plus/include/umc_semaphore.h

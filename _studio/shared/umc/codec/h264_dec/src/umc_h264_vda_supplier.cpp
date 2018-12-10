@@ -38,7 +38,6 @@
 
 #include "umc_h264_vda_supplier.h"
 #include "umc_h264_frame_list.h"
-#include "umc_automatic_mutex.h"
 #include "umc_h264_nal_spl.h"
 #include "umc_h264_bitstream.h"
 

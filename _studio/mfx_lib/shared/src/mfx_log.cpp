@@ -23,7 +23,6 @@
 #include <mfx_log.h>
 
 #include <umc_mutex.h>
-#include <umc_automatic_mutex.h>
 
 #if defined(WIN32) || defined(WIN64)
 #include <windows.h>

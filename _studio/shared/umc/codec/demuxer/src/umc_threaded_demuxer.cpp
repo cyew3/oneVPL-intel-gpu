@@ -20,7 +20,6 @@
 
 #include "vm_time.h"
 #include "vm_thread.h"
-#include "umc_automatic_mutex.h"
 #include "umc_threaded_demuxer.h"
 #include "umc_demuxer.h"
 

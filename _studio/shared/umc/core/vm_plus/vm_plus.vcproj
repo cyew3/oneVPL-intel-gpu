@@ -340,10 +340,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			>
 			<File
-				RelativePath=".\include\umc_automatic_mutex.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\umc_event.h"
 				>
 			</File>

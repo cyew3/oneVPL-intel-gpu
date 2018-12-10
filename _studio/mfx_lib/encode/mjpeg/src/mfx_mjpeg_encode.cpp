@@ -30,7 +30,6 @@
 #include "mfx_tools.h"
 #include "mfx_task.h"
 #include "mfx_enc_common.h"
-#include <umc_automatic_mutex.h>
 #include "umc_video_processing.h"
 
 #define CHECK_VERSION(ver)

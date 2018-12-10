@@ -20,7 +20,6 @@
 
 #include "umc_mp4_video_parser.h"
 #include "umc_mp4_spl.h"
-#include "umc_automatic_mutex.h"
 
 #include <ipps.h>
 

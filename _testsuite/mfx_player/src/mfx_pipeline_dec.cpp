@@ -13,7 +13,6 @@ Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 #include "mfx_spl_wrapper.h"
 #include "mfx_mediasdk_spl_wrapper.h"
 #include "mfx_sysmem_allocator.h"
-#include "umc_automatic_mutex.h"
 #include "vm_sys_info.h"
 #include "mfx_buffered_bs_reader.h"
 #include "mfx_directory_reader.h"

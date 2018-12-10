@@ -31,7 +31,6 @@
 #else
 #include "umc_h265_bitstream.h"
 #endif
-#include "umc_automatic_mutex.h"
 #include "umc_h265_heap.h"
 
 namespace UMC_HEVC_DECODER

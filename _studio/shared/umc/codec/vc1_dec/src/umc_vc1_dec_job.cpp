@@ -31,7 +31,6 @@
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_common_blk_order_tbl.h"
 #include "umc_vc1_common.h"
-#include "umc_automatic_mutex.h"
 #include "mfx_trace.h"
 
 #if defined (UMC_VA_DXVA)

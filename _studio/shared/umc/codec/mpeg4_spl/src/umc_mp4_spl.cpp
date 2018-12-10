@@ -28,7 +28,6 @@
 #include "mp4cmn_config.h"
 #include "bstream.h"
 #include "umc_mp4_spl.h"
-#include "umc_automatic_mutex.h"
 #include "umc_structures.h"
 
 namespace UMC
