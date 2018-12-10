@@ -274,7 +274,7 @@ namespace hevce_reset
         {/* 34*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, FRAMERATE, CHANGE, 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 29 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1 }
             }
         },
@@ -659,7 +659,6 @@ namespace hevce_reset
                 Reset(m_session, NULL);
             else
                 Reset(m_session, m_pPar);
-
         }
 
         if (sts >= 0)
