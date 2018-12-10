@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2018 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -12,7 +12,6 @@ File Name: .h
 
 #include "mfx_pipeline_defs.h"
 #include "mfx_burst_render.h"
-#include "umc_automatic_mutex.h"
 
 BurstRender::BurstRender( bool bVerbose, mfxU16 nBurstLen, ITime *pTime, MFXThread::ThreadPool& pool, IMFXVideoRender * pDecorated ) : InterfaceProxy<IMFXVideoRender>(pDecorated)
     , m_state()
@@ -21,14 +20,12 @@ BurstRender::BurstRender( bool bVerbose, mfxU16 nBurstLen, ITime *pTime, MFXThre
     , m_bStop()
     , m_bVerbose(bVerbose)
     , m_AsyncStatus(MFX_ERR_NONE)
+    , m_FramesAcess()
     , m_pTime(pTime)
     , mThreadPool(pool)
 {
     //vm_thread_set_invalid(&m_Thread);
     //vm_thread_create(&m_Thread, &BurstRender::ThreadRoutine, this);
-
-    vm_mutex_set_invalid(&m_FramesAcess);
-    vm_mutex_init(&m_FramesAcess);
 
     vm_event_set_invalid(&m_shouldStartDecode);
     vm_event_init(&m_shouldStartDecode, 1, 0);
@@ -51,7 +48,6 @@ mfxStatus BurstRender::CloseLocal()
     //vm_thread_wait(&m_Thread);
     m_ThreadTask->Synhronize(MFX_INFINITE);
 
-    vm_mutex_destroy(&m_FramesAcess);
     vm_event_destroy(&m_shouldStartDecode);
 
     return MFX_ERR_NONE;
@@ -70,7 +66,7 @@ mfxStatus BurstRender::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pC
     {
         IncreaseReference(&surface->Data);
         {
-            UMC::AutomaticMutex guard(m_FramesAcess);
+            std::lock_guard<std::mutex> guard(m_FramesAcess);
             m_bufferedFrames.push_back(std::make_pair(surface, pCtrl));
         }
 
@@ -81,7 +77,7 @@ mfxStatus BurstRender::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pC
 
             vm_event_reset(&m_shouldStartDecode);
             {
-                UMC::AutomaticMutex guard(m_FramesAcess);
+                std::lock_guard<std::mutex> guard(m_FramesAcess);
                 m_state = STATE_RENDERING_ONLY;
             }
             vm_event_wait(&m_shouldStartDecode);
@@ -90,7 +86,7 @@ mfxStatus BurstRender::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pC
     else
     {
         {
-            UMC::AutomaticMutex guard(m_FramesAcess);
+            std::lock_guard<std::mutex> guard(m_FramesAcess);
             m_bufferedFrames.push_back(std::make_pair<mfxFrameSurface1*, mfxEncodeCtrl *>(NULL, NULL));
         }
 
@@ -171,7 +167,7 @@ mfxStatus BurstRender::RenderThread()
                 
                 {
                     //other thread cannot dirty front pointer
-                    UMC::AutomaticMutex guard(m_FramesAcess);
+                    std::lock_guard<std::mutex> guard(m_FramesAcess);
                     m_bufferedFrames.pop_front();
                 }
                 
