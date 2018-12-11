@@ -116,7 +116,6 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameSurface1 * surf)
     mfxStatus mfx_res = MFX_ERR_NONE;
     VAStatus  va_res  = VA_STATUS_SUCCESS;
     unsigned int va_fourcc = 0;
-    VASurfaceID* surfaces = NULL;
     mfxU32 fourcc = surf->Info.FourCC;
 
     // VP8 hybrid driver has weird requirements for allocation of surfaces/buffers for VP8 encoding
@@ -139,6 +138,9 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameSurface1 * surf)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
+
+    m_Width  = surf->Info.Width;
+    m_Height =  surf->Info.Height;
 
     if( VA_FOURCC_P208 != va_fourcc)
     {
@@ -183,12 +185,14 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameSurface1 * surf)
 
         va_res = m_libva->vaCreateSurfaces(m_dpy,
                                 format,
-                                surf->Info.Width, surf->Info.Height,
+                                m_Width, m_Height,
                                 surfaces,
                                 1,
                                 &attrib[0], attrCnt);
 
         *vaapiMid->m_surface = surfaces[0];
+        vaapiMid->m_fourcc = fourcc;
+
         mfx_res = va_to_mfx_status(va_res);
     }
 
@@ -242,6 +246,9 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         if ((NULL == surfaces) || (NULL == vaapi_mids) || (NULL == mids)) mfx_res = MFX_ERR_MEMORY_ALLOC;
     }
 
+    m_Width  = request->Info.Width;
+    m_Height = request->Info.Height;
+
     if ( m_bAdaptivePlayback )
     {
         for (i = 0; i < surfaces_num; ++i)
@@ -252,8 +259,6 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             vaapi_mid->m_surface = &surfaces[i];
             mids[i] = vaapi_mid;
         }
-        m_Width  = request->Info.Width;
-        m_Height = request->Info.Height;
         response->mids = mids;
         response->NumFrameActual = surfaces_num;
         return MFX_ERR_NONE;
@@ -265,6 +270,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         {
             unsigned int format;
             VASurfaceAttrib attrib[2];
+            VASurfaceAttrib *pAttrib = &attrib[0];
             int attrCnt = 0;
 
             attrib[attrCnt].type          = VASurfaceAttribPixelFormat;
@@ -297,12 +303,19 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 format = VA_RT_FORMAT_YUV420;
             }
 
+#if defined(ANDROID)
+            // It seems that VA implementation on android(W49) doesn't accept "attrib" parameter (ERR_UNKNOWN on
+            // anything exept NULL). According to QuerySurfaceAttributes only NV12 is supported.
+            if (vaapi_mid->m_fourcc != VA_FOURCC_NV12) return MFX_ERR_UNSUPPORTED;
+            pAttrib = 0;
+#endif
+
             va_res = m_libva->vaCreateSurfaces(m_dpy,
                                     format,
                                     request->Info.Width, request->Info.Height,
                                     surfaces,
                                     surfaces_num,
-                                    &attrib[0], attrCnt);
+                                    pAttrib, pAttrib ? attrCnt : 0);
             mfx_res = va_to_mfx_status(va_res);
             bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
         }
@@ -421,7 +434,6 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     VAStatus  va_res  = VA_STATUS_SUCCESS;
     vaapiMemId* vaapi_mid = (vaapiMemId*)mid;
     mfxU8* pBuffer = 0;
-    VASurfaceAttrib attrib;
     mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mid->m_fourcc);
 
     if ( (VASurfaceID)VA_INVALID_ID == *(vaapi_mid->m_surface))
@@ -429,25 +441,29 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         if( VA_FOURCC_P208 != vaapi_mid->m_fourcc)
         {
             unsigned int format;
-            VASurfaceAttrib *pAttrib = &attrib;
+            VASurfaceAttrib attrib[2];
+            VASurfaceAttrib *pAttrib = &attrib[0];
+            int attrCnt = 0;
 
-            attrib.type          = VASurfaceAttribPixelFormat;
-            attrib.flags         = VA_SURFACE_ATTRIB_SETTABLE;
-            attrib.value.type    = VAGenericValueTypeInteger;
-            attrib.value.value.i = vaapi_mid->m_fourcc;
+            attrib[attrCnt].type          = VASurfaceAttribPixelFormat;
+            attrib[attrCnt].flags         = VA_SURFACE_ATTRIB_SETTABLE;
+            attrib[attrCnt].value.type    = VAGenericValueTypeInteger;
+            attrib[attrCnt++].value.value.i = vaapi_mid->m_fourcc;
             format               = vaapi_mid->m_fourcc;
 
             if (mfx_fourcc == MFX_FOURCC_VP8_NV12)
             {
                 // special configuration for NV12 surf allocation for VP8 hybrid encoder is required
-                attrib.type          = (VASurfaceAttribType)VASurfaceAttribUsageHint;
-                attrib.value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
+                attrib[attrCnt].type          = (VASurfaceAttribType)VASurfaceAttribUsageHint;
+                attrib[attrCnt].flags           = VA_SURFACE_ATTRIB_SETTABLE;
+                attrib[attrCnt].value.type      = VAGenericValueTypeInteger;
+                attrib[attrCnt++].value.value.i = VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER;
             }
             else if (mfx_fourcc == MFX_FOURCC_VP8_MBDATA)
             {
                 // special configuration for MB data surf allocation for VP8 hybrid encoder is required
-                attrib.value.value.i = VA_FOURCC_P208;
-                format               = VA_FOURCC_P208;
+                attrib[0].value.value.i = VA_FOURCC_P208;
+                format                  = VA_FOURCC_P208;
             }
             else if (vaapi_mid->m_fourcc == VA_FOURCC_NV12)
             {
@@ -466,7 +482,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                                     m_Width, m_Height,
                                     vaapi_mid->m_surface,
                                     1,
-                                    pAttrib, pAttrib ? 1 : 0);
+                                    pAttrib, pAttrib ? attrCnt : 0);
             mfx_res = va_to_mfx_status(va_res);
         }
         else

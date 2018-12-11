@@ -596,6 +596,9 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     MFX_CHECK_STS_SET_ERR(CreateCore(), PE_INIT_CORE);
     TIME_PRINT(VM_STRING("CreateCore"));
 
+    m_YUV_Width = mfx_align<mfxU16>(m_inParams.FrameInfo.Width, 0x10);;
+    m_YUV_Height = mfx_align<mfxU16>(m_inParams.FrameInfo.Height, 0x10);
+
     MFX_CHECK_STS(BuildMFXPart());
 
     MFX_CHECK_STS_SET_ERR(WriteParFile(), PE_PAR_FILE);
@@ -3183,8 +3186,13 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
         {
             mfxVideoParam param;
             m_pYUVSource->GetVideoParam(&param);
-            inSurface.pSurface->Info.Width = param.mfx.FrameInfo.Width;
-            inSurface.pSurface->Info.Height = param.mfx.FrameInfo.Height;
+
+            inSurface.pSurface->Info.CropW = param.mfx.FrameInfo.CropW;
+            inSurface.pSurface->Info.CropH = param.mfx.FrameInfo.CropH;
+            m_YUV_Width = mfx_align<mfxU16>(std::max(param.mfx.FrameInfo.Width, (mfxU16)m_YUV_Width), 0x10);
+            m_YUV_Height = mfx_align<mfxU16>(std::max(param.mfx.FrameInfo.Height, (mfxU16)m_YUV_Height), 0x10);
+            inSurface.pSurface->Info.Width = m_YUV_Width;
+            inSurface.pSurface->Info.Height = m_YUV_Height;
 
             m_components[eDEC].ReallocSurface(inSurface.pSurface);
         }
@@ -3194,7 +3202,7 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
         if (m_pSpl == NULL)
             bs.isNull = true;
 #ifdef LIBVA_SUPPORT
-        if ( m_inParams.bAdaptivePlayback )
+        if ( m_components[eDEC].m_bufType == MFX_BUF_HW )
         {
             vaapiMemId *vapi_id = (vaapiMemId *)(inSurface.pSurface->Data.MemId);
             if ( (VASurfaceID)VA_INVALID_ID == *(vapi_id->m_surface))
