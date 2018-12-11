@@ -6126,7 +6126,7 @@ When [mfxExtCodingOption3](#mfxExtCodingOption3)`::WeightedPred` was set to [exp
 `LumaLog2WeightDenom` | Base 2 logarithm of the denominator for all luma weighting factors. Value shall be in the range of 0 to 7, inclusive.
 `ChromaLog2WeightDenom` | Base 2 logarithm of the denominator for all chroma weighting factors. Value shall be in the range of 0 to 7, inclusive.
 `LumaWeightFlag` | `LumaWeightFlag[L][R]` equal to 1 specifies that the weighting factors for the luma component are specified for R’s entry of RefPicList L.
-`ChromaWeightFlag` | `LumaWeightFlag[L][R]` equal to 1 specifies that the weighting factors for the chroma component are specified for R’s entry of RefPicList L.
+`ChromaWeightFlag` | `ChromaWeightFlag[L][R]` equal to 1 specifies that the weighting factors for the chroma component are specified for R’s entry of RefPicList L.
 `Weights` | The values of the weights and offsets used in the encoding processing. The value of `Weights[i][j][k][m]` is interpreted as: i refers to reference picture list 0 or 1; j refers to reference list entry 0-31; k refers to data for the luma component when it is 0, the Cb chroma component when it is 1 and the Cr chroma component when it is 2; m refers to weight when it is 0 and offset when it is 1
 
 **Change History**
