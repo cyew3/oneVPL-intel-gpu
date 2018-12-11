@@ -154,4 +154,7 @@ bool LumaIsNull(const mfxFrameSurface1 * surf)
 //#undef  FAILED
 //#define FAILED(hr)      (MFX_STS_TRACE(hr) < 0)
 
+#define MFX_COPY_FIELD(Field)       buf_dst.Field = buf_src.Field
+#define MFX_COPY_ARRAY_FIELD(Array) std::copy(std::begin(buf_src.Array), std::end(buf_src.Array), std::begin(buf_dst.Array))
+
 #endif // __MFXUTILS_H__
