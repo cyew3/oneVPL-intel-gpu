@@ -33,9 +33,8 @@
     #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
     #define MFX_ENABLE_H265_VIDEO_ENCODE
     #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-#if MFX_VERSION >= 1027
+
     #define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
-#endif
 #endif
 
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)

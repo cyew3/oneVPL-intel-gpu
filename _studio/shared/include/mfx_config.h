@@ -154,10 +154,7 @@
             #define MFX_ENABLE_H264_VIDEO_FEI_ENC
             #define MFX_ENABLE_H264_VIDEO_FEI_PAK
 
-            //hevc FEI ENCODE
-            #if defined(AS_HEVC_FEI_ENCODE_PLUGIN) && MFX_VERSION >= 1024
-                #define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
-            #endif
+            #define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
         #endif
         // mpeg2
         #define MFX_ENABLE_MPEG2_VIDEO_DECODE
@@ -231,7 +228,7 @@
         #undef MFX_ENABLE_H264_VIDEO_FEI_PAK
     #endif
 
-    #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(AS_VP8D_PLUGIN) || defined(AS_VP8E_PLUGIN) || defined(AS_VP9D_PLUGIN) || defined(AS_CAMERA_PLUGIN) || defined (MFX_RT) || (defined(AS_HEVC_FEI_ENCODE_PLUGIN) && MFX_VERSION >= 1024)
+    #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(AS_VP8D_PLUGIN) || defined(AS_VP8E_PLUGIN) || defined(AS_VP9D_PLUGIN) || defined(AS_CAMERA_PLUGIN) || defined (MFX_RT)
         #undef MFX_ENABLE_H265_VIDEO_DECODE
         #undef MFX_ENABLE_H265_VIDEO_ENCODE
         #undef MFX_ENABLE_H264_VIDEO_DECODE
@@ -273,9 +270,6 @@
         #if !defined(__APPLE__)
             #define MFX_ENABLE_CM
         #endif
-    #endif
-    #if defined(AS_HEVC_FEI_ENCODE_PLUGIN) && MFX_VERSION >= 1024
-        #define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
     #endif
     #if defined(AS_VP8DHW_PLUGIN)
         #define MFX_ENABLE_VP8_VIDEO_DECODE
