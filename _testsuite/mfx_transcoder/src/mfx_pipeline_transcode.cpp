@@ -393,6 +393,10 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(WeightedBiPred,             OPT_UINT_16,   "0=unknown, 1=default, 2=explicit, 3=implicit"),
         HANDLE_EXT_OPTION3(PRefType,                   OPT_UINT_16,   "control usage of P frames as reference in AVC encoder in low delay mode: 0 - undef, 1 - simple, 2 - P ref pyramid"),
         HANDLE_EXT_OPTION3(FadeDetection,              OPT_TRI_STATE, "on|off"),
+#if MFX_VERSION >= MFX_VERSION_NEXT
+        HANDLE_EXT_OPTION3(DeblockingAlphaTcOffset,    OPT_INT_16,    "alpha deblocking parameter. In range[-12,12]. 0 by default"),
+        HANDLE_EXT_OPTION3(DeblockingBetaOffset,       OPT_INT_16,    "beta deblocking parameter. In range[-12,12]. 0 by default"),
+#endif
         HANDLE_EXT_OPTION3(GPB,                        OPT_TRI_STATE, "Generalized P/B"),
         HANDLE_EXT_OPTION3(EnableQPOffset,             OPT_TRI_STATE, ""),
         HANDLE_EXT_OPTION3(MaxFrameSizeI,              OPT_UINT_32,   ""),

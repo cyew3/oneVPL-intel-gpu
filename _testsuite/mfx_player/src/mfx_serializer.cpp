@@ -199,6 +199,10 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_INT(WeightedBiPred);
     SERIALIZE_INT(PRefType);
     SERIALIZE_INT(FadeDetection);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    SERIALIZE_INT(DeblockingAlphaTcOffset);
+    SERIALIZE_INT(DeblockingBetaOffset);
+#endif
     SERIALIZE_INT(GPB);
     SERIALIZE_INT(EnableQPOffset);
     SERIALIZE_INT(MaxFrameSizeI);
