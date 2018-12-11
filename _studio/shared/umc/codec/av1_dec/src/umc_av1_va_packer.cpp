@@ -144,11 +144,11 @@ namespace UMC_AV1_DECODER
     {
         SequenceHeader const& sh = frame.GetSeqHeader();
 
+        picParam.frame_width_minus1 = (USHORT)frame.GetUpscaledWidth() - 1;
+        picParam.frame_height_minus1 = (USHORT)frame.GetHeight() - 1;
+
         FrameHeader const& info =
             frame.GetFrameHeader();
-
-        picParam.frame_width_minus1 = (USHORT)info.FrameWidth - 1;
-        picParam.frame_height_minus1 = (USHORT)info.FrameHeight - 1;
 
         // fill seq parameters
         picParam.profile = (UCHAR)sh.seq_profile;
@@ -536,11 +536,11 @@ namespace UMC_AV1_DECODER
     {
         SequenceHeader const& sh = frame.GetSeqHeader();
 
+        picParam.frame_width_minus1 = (uint16_t)frame.GetUpscaledWidth() - 1;
+        picParam.frame_height_minus1 = (uint16_t)frame.GetHeight() - 1;
+
         FrameHeader const& info =
             frame.GetFrameHeader();
-
-        picParam.frame_width_minus1 = (uint16_t)info.FrameWidth - 1;
-        picParam.frame_height_minus1 = (uint16_t)info.FrameHeight - 1;
 
         // fill seq parameters
         picParam.profile = (uint8_t)sh.seq_profile;
