@@ -174,6 +174,13 @@ constexpr const T& clamp( const T& v, const T& lo, const T& hi, Compare comp )
 {
     return comp(v, lo) ? lo : comp(hi, v) ? hi : v;
 }
+
+// Clip value to range [0, 255]
+template<class T>
+constexpr uint8_t byte_clamp(T v)
+{
+    return uint8_t(clamp<T>(v, 0, 255));
+}
 }
 
 #endif // __MFXUTILS_H__

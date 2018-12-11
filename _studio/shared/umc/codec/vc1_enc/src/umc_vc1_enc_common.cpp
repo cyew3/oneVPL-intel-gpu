@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2118,7 +2118,7 @@ IppStatus _own_Add16x16_8u16s(const uint8_t*  pSrcRef,  uint32_t   srcRefStep,
         //printf("\n");
         for (j = 0; j < 16; j++)
         {
-            pDst[j] = (uint8_t)(VC1_CLIP(pSrcYData[j] + (int16_t)pSrcRef[j]));
+            pDst[j] = mfx::byte_clamp(pSrcYData[j] + (int16_t)pSrcRef[j]);
             //printf(" %d", pDst[j]);
         }
         pSrcYData = (int16_t*)((uint8_t*)pSrcYData + srcYDataStep);
@@ -2142,7 +2142,7 @@ IppStatus _own_Add8x8_8u16s ( const uint8_t*  pSrcRef,  uint32_t   srcRefStep,
         //printf("\n");
         for (j = 0; j < 8; j++)
         {
-            pDst[j] = (uint8_t)(VC1_CLIP(pSrcYData[j] + (int16_t)pSrcRef[j]));
+            pDst[j] = mfx::byte_clamp(pSrcYData[j] + (int16_t)pSrcRef[j]);
             //printf(" %d", pDst[j]);
         }
         pSrcYData = (int16_t*)((uint8_t*)pSrcYData + srcYDataStep);
@@ -4349,10 +4349,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32
                     *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                     *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                    *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
-                    *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
-                    *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
-                    *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
+                    *(dst-2)=mfx::byte_clamp(*(pSrcL));
+                    *(dst-1)=mfx::byte_clamp(*(pSrcL+1));
+                    *(dst+0)=mfx::byte_clamp(*(pSrcR));
+                    *(dst+1)=mfx::byte_clamp(*(pSrcR+1));
 
                     r0 = 7 - r0;
                     r1 = 7 - r1;
@@ -4379,10 +4379,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32
                         *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                         *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                        *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
-                        *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
-                        *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
-                        *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
+                        *(dst-2)=mfx::byte_clamp(*(pSrcL));
+                        *(dst-1)=mfx::byte_clamp(*(pSrcL+1));
+                        *(dst+0)=mfx::byte_clamp(*(pSrcR));
+                        *(dst+1)=mfx::byte_clamp(*(pSrcR+1));
 
                         r0 = 7 - r0;
                         r1 = 7 - r1;
@@ -4413,10 +4413,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=mfx::byte_clamp(*(pSrcL));
+                *(dst-1)=mfx::byte_clamp(*(pSrcL+1));
+                *(dst+0)=mfx::byte_clamp(*(pSrcR));
+                *(dst+1)=mfx::byte_clamp(*(pSrcR+1));
 
                 pSrcR += srcRightStep;
                 pSrcL += 2*srcLeftStep;
@@ -4444,10 +4444,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=mfx::byte_clamp(*(pSrcL));
+                *(dst-1)=mfx::byte_clamp(*(pSrcL+1));
+                *(dst+0)=mfx::byte_clamp(*(pSrcR));
+                *(dst+1)=mfx::byte_clamp(*(pSrcR+1));
 
                 pSrcL += 2*srcLeftStep;
                 pSrcR += srcRightStep;
@@ -4476,10 +4476,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=mfx::byte_clamp(*(pSrcL));
+                *(dst-1)=mfx::byte_clamp(*(pSrcL+1));
+                *(dst+0)=mfx::byte_clamp(*(pSrcR));
+                *(dst+1)=mfx::byte_clamp(*(pSrcR+1));
 
                 pSrcR += srcRightStep;
                 pSrcL = pSrcL + VC1_PIXEL_IN_BLOCK*srcLeftStep;
@@ -4502,10 +4502,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=mfx::byte_clamp(*(pSrcL));
+                *(dst-1)=mfx::byte_clamp(*(pSrcL+1));
+                *(dst+0)=mfx::byte_clamp(*(pSrcR));
+                *(dst+1)=mfx::byte_clamp(*(pSrcR+1));
 
                 pSrcL -= 7*srcLeftStep;
                 pSrcR += srcRightStep;
@@ -4531,10 +4531,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=mfx::byte_clamp(*(pSrcL));
+                *(dst-1)=mfx::byte_clamp(*(pSrcL+1));
+                *(dst+0)=mfx::byte_clamp(*(pSrcR));
+                *(dst+1)=mfx::byte_clamp(*(pSrcR+1));
 
                 pSrcR += srcRightStep;
                 pSrcL = pSrcL + VC1_PIXEL_IN_BLOCK*srcLeftStep;
@@ -4557,10 +4557,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=mfx::byte_clamp(*(pSrcL));
+                *(dst-1)=mfx::byte_clamp(*(pSrcL+1));
+                *(dst+0)=mfx::byte_clamp(*(pSrcR));
+                *(dst+1)=mfx::byte_clamp(*(pSrcR+1));
 
                 pSrcL -= 7*srcLeftStep;
                 pSrcR += srcRightStep;
@@ -4590,10 +4590,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=mfx::byte_clamp(*(pSrcL));
+                *(dst-1)=mfx::byte_clamp(*(pSrcL+1));
+                *(dst+0)=mfx::byte_clamp(*(pSrcR));
+                *(dst+1)=mfx::byte_clamp(*(pSrcR+1));
 
                 pSrcL += srcLeftStep;
                 pSrcR += srcRightStep;
@@ -4619,10 +4619,10 @@ IppStatus _own_ippiSmoothingLuma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int32
                 *(pSrcR )    = x2 + ((-f1 + r0)>>3);
                 *(pSrcR+1)   = x3 + ((-f0 + r1)>>3);
 
-                *(dst-2)=(uint8_t)VC1_CLIP(*(pSrcL));
-                *(dst-1)=(uint8_t)VC1_CLIP(*(pSrcL+1));
-                *(dst+0)=(uint8_t)VC1_CLIP(*(pSrcR));
-                *(dst+1)=(uint8_t)VC1_CLIP(*(pSrcR+1));
+                *(dst-2)=mfx::byte_clamp(*(pSrcL));
+                *(dst-1)=mfx::byte_clamp(*(pSrcL+1));
+                *(dst+0)=mfx::byte_clamp(*(pSrcR));
+                *(dst+1)=mfx::byte_clamp(*(pSrcR+1));
 
                 pSrcL += srcLeftStep;
                 pSrcR += srcRightStep;
@@ -4667,10 +4667,10 @@ IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (int16_t* pSrcUpper, int3
             *(pSrcB    ) = ((1 * x0 + 1 * x1 + 7 * x2 + -1* x3) + r0)>>3;
             *(pSrcB + srcBottomStep) = ((1 * x0 + 0 * x1 + 0 * x2 + 7 * x3) + r1)>>3;
 
-            *(dst-2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
-            *(dst-1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
-            *(dst+0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-            *(dst+1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+            *(dst-2*dstStep)= mfx::byte_clamp(x0 + ((f0 + r0)>>3));
+            *(dst-1*dstStep)= mfx::byte_clamp(x1 + ((f1 + r1)>>3));
+            *(dst+0*dstStep)= mfx::byte_clamp(x2 + ((-f1 + r0)>>3));
+            *(dst+1*dstStep)= mfx::byte_clamp(x3 + ((-f0 + r1)>>3));
 
             dst++;
             pSrcU++;
@@ -4700,10 +4700,10 @@ IppStatus _own_ippiSmoothingLuma_HorEdge_VC1_16s8u_C1R (int16_t* pSrcUpper, int3
                 *(pSrcB    ) = ((1 * x0 + 1 * x1 + 7 * x2 + -1* x3) + r0)>>3;
                 *(pSrcB + srcBottomStep) = ((1 * x0 + 0 * x1 + 0 * x2 + 7 * x3) + r1)>>3;
 
-                *(dst-2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
-                *(dst-1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
-                *(dst+0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-                *(dst+1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+                *(dst-2*dstStep)= mfx::byte_clamp(x0 + ((f0 + r0)>>3));
+                *(dst-1*dstStep)= mfx::byte_clamp(x1 + ((f1 + r1)>>3));
+                *(dst+0*dstStep)= mfx::byte_clamp(x2 + ((-f1 + r0)>>3));
+                *(dst+1*dstStep)= mfx::byte_clamp(x3 + ((-f0 + r1)>>3));
 
                 dst++;
                 pSrcU++;
@@ -4743,15 +4743,15 @@ IppStatus _own_ippiSmoothingChroma_HorEdge_VC1_16s8u_C1R (int16_t* pSrcUpper, in
         f0 = x3 - x0;
         f1 = x2 + x3 - x0 - x1;
 
-        *(pSrcU    )            = (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(pSrcU + srcUpperStep) = (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(pSrcB    )            = (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(pSrcB + srcBottomStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(pSrcU    )            = mfx::byte_clamp(x0 + ((f0 + r0)>>3));
+        *(pSrcU + srcUpperStep) = mfx::byte_clamp(x1 + ((f1 + r1)>>3));
+        *(pSrcB    )            = mfx::byte_clamp(x2 + ((-f1 + r0)>>3));
+        *(pSrcB + srcBottomStep)= mfx::byte_clamp(x3 + ((-f0 + r1)>>3));
 
-        *(dst-2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(dst-1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(dst+0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(dst+1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(dst-2*dstStep)= mfx::byte_clamp(x0 + ((f0 + r0)>>3));
+        *(dst-1*dstStep)= mfx::byte_clamp(x1 + ((f1 + r1)>>3));
+        *(dst+0*dstStep)= mfx::byte_clamp(x2 + ((-f1 + r0)>>3));
+        *(dst+1*dstStep)= mfx::byte_clamp(x3 + ((-f0 + r1)>>3));
 
         dst++;
         pSrcU++;
@@ -4793,10 +4793,10 @@ IppStatus _own_ippiSmoothingChroma_VerEdge_VC1_16s8u_C1R (int16_t* pSrcLeft, int
         *(pSrcRight )   = x2 + ((-f1 + r0)>>3);
         *(pSrcRight+1)  = x3 + ((-f0 + r1)>>3);
 
-        *(pDst-2)=(uint8_t)VC1_CLIP(*(pSrcLeft));
-        *(pDst-1)=(uint8_t)VC1_CLIP(*(pSrcLeft+1));
-        *(pDst+0)=(uint8_t)VC1_CLIP(*(pSrcRight));
-        *(pDst+1)=(uint8_t)VC1_CLIP(*(pSrcRight+1));
+        *(pDst-2)=mfx::byte_clamp(*(pSrcLeft));
+        *(pDst-1)=mfx::byte_clamp(*(pSrcLeft+1));
+        *(pDst+0)=mfx::byte_clamp(*(pSrcRight));
+        *(pDst+1)=mfx::byte_clamp(*(pSrcRight+1));
 
         r0 = 7 - r0;
         r1 = 7 - r1;
@@ -4843,15 +4843,15 @@ IppStatus _own_ippiSmoothingChroma_NV12_HorEdge_VC1_16s8u_C2R (int16_t* pSrcUppe
         f0 = x3 - x0;
         f1 = x2 + x3 - x0 - x1;
 
-        *(pSrcU_U    )              = (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(pSrcU_U + srcUpperStepU)  = (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(pSrcB_U    )              = (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(pSrcB_U + srcBottomStepU) = (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(pSrcU_U    )              = mfx::byte_clamp(x0 + ((f0 + r0)>>3));
+        *(pSrcU_U + srcUpperStepU)  = mfx::byte_clamp(x1 + ((f1 + r1)>>3));
+        *(pSrcB_U    )              = mfx::byte_clamp(x2 + ((-f1 + r0)>>3));
+        *(pSrcB_U + srcBottomStepU) = mfx::byte_clamp(x3 + ((-f0 + r1)>>3));
 
-        *(dst - 2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(dst - 1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(dst + 0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(dst + 1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(dst - 2*dstStep)= mfx::byte_clamp(x0 + ((f0 + r0)>>3));
+        *(dst - 1*dstStep)= mfx::byte_clamp(x1 + ((f1 + r1)>>3));
+        *(dst + 0*dstStep)= mfx::byte_clamp(x2 + ((-f1 + r0)>>3));
+        *(dst + 1*dstStep)= mfx::byte_clamp(x3 + ((-f0 + r1)>>3));
 
         pSrcU_U++;
         pSrcB_U++;
@@ -4866,15 +4866,15 @@ IppStatus _own_ippiSmoothingChroma_NV12_HorEdge_VC1_16s8u_C2R (int16_t* pSrcUppe
         f0 = x3 - x0;
         f1 = x2 + x3 - x0 - x1;
 
-        *(pSrcU_V    )              = (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(pSrcU_V + srcUpperStepV)  = (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(pSrcB_V    )              = (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(pSrcB_V + srcBottomStepV) = (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(pSrcU_V    )              = mfx::byte_clamp(x0 + ((f0 + r0)>>3));
+        *(pSrcU_V + srcUpperStepV)  = mfx::byte_clamp(x1 + ((f1 + r1)>>3));
+        *(pSrcB_V    )              = mfx::byte_clamp(x2 + ((-f1 + r0)>>3));
+        *(pSrcB_V + srcBottomStepV) = mfx::byte_clamp(x3 + ((-f0 + r1)>>3));
 
-        *(dst - 2*dstStep)= (uint8_t)VC1_CLIP(x0 + ((f0 + r0)>>3));
-        *(dst - 1*dstStep)= (uint8_t)VC1_CLIP(x1 + ((f1 + r1)>>3));
-        *(dst + 0*dstStep)= (uint8_t)VC1_CLIP(x2 + ((-f1 + r0)>>3));
-        *(dst + 1*dstStep)= (uint8_t)VC1_CLIP(x3 + ((-f0 + r1)>>3));
+        *(dst - 2*dstStep)= mfx::byte_clamp(x0 + ((f0 + r0)>>3));
+        *(dst - 1*dstStep)= mfx::byte_clamp(x1 + ((f1 + r1)>>3));
+        *(dst + 0*dstStep)= mfx::byte_clamp(x2 + ((-f1 + r0)>>3));
+        *(dst + 1*dstStep)= mfx::byte_clamp(x3 + ((-f0 + r1)>>3));
 
         pSrcU_V++;
         pSrcB_V++;
@@ -4922,10 +4922,10 @@ IppStatus _own_ippiSmoothingChroma_NV12_VerEdge_VC1_16s8u_C2R (int16_t* pSrcLeft
         *(pSrcRightU )     = x2 + ((-f1 + r0)>>3);
         *(pSrcRightU + 1)  = x3 + ((-f0 + r1)>>3);
 
-        *(pDst - 4)=(uint8_t)VC1_CLIP(*(pSrcLeftU));
-        *(pDst - 2)=(uint8_t)VC1_CLIP(*(pSrcLeftU + 1));
-        *(pDst + 0)=(uint8_t)VC1_CLIP(*(pSrcRightU));
-        *(pDst + 2)=(uint8_t)VC1_CLIP(*(pSrcRightU + 1));
+        *(pDst - 4)=mfx::byte_clamp(*(pSrcLeftU));
+        *(pDst - 2)=mfx::byte_clamp(*(pSrcLeftU + 1));
+        *(pDst + 0)=mfx::byte_clamp(*(pSrcRightU));
+        *(pDst + 2)=mfx::byte_clamp(*(pSrcRightU + 1));
 
         pSrcLeftU  += srcLeftStepU;
         pSrcRightU += srcRightStepU;
@@ -4946,10 +4946,10 @@ IppStatus _own_ippiSmoothingChroma_NV12_VerEdge_VC1_16s8u_C2R (int16_t* pSrcLeft
         *(pSrcRightV )     = x2 + ((-f1 + r0)>>3);
         *(pSrcRightV + 1)  = x3 + ((-f0 + r1)>>3);
 
-        *(pDst - 4)=(uint8_t)VC1_CLIP(*(pSrcLeftV));
-        *(pDst - 2)=(uint8_t)VC1_CLIP(*(pSrcLeftV + 1));
-        *(pDst + 0)=(uint8_t)VC1_CLIP(*(pSrcRightV));
-        *(pDst + 2)=(uint8_t)VC1_CLIP(*(pSrcRightV + 1));
+        *(pDst - 4)=mfx::byte_clamp(*(pSrcLeftV));
+        *(pDst - 2)=mfx::byte_clamp(*(pSrcLeftV + 1));
+        *(pDst + 0)=mfx::byte_clamp(*(pSrcRightV));
+        *(pDst + 2)=mfx::byte_clamp(*(pSrcRightV + 1));
 
         pSrcLeftV += srcLeftStepV;
         pSrcRightV += srcRightStepV;

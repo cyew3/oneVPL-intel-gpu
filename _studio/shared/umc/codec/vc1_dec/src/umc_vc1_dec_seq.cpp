@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -387,7 +387,7 @@ void _own_ippiRangeMap_VC1_8u_C1R(uint8_t* pSrc, int32_t srcStep,
             temp = (temp - 128)*(rangeMapParam+9)+4;
             temp = temp>>3;
             temp = temp+128;
-            pDst[i*dstStep+j] = (uint8_t)VC1_CLIP(temp);
+            pDst[i*dstStep+j] = mfx::byte_clamp(temp);
          }
     }
 }
@@ -556,11 +556,11 @@ VC1Status FillTablesForIntensityCompensation(VC1Context* pContext,
     for (i = 0; i<256; i++)
     {
         j = (i*iscale + ishift + 32) >> 6;
-        pContext->LumaTable[0][i] = (uint8_t)VC1_CLIP(j);
-        pContext->LumaTable[1][i] = (uint8_t)VC1_CLIP(j);
+        pContext->LumaTable[0][i] = mfx::byte_clamp(j);
+        pContext->LumaTable[1][i] = mfx::byte_clamp(j);
         j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
-        pContext->ChromaTable[0][i] = (uint8_t)VC1_CLIP(j);
-        pContext->ChromaTable[1][i] = (uint8_t)VC1_CLIP(j);
+        pContext->ChromaTable[0][i] = mfx::byte_clamp(j);
+        pContext->ChromaTable[1][i] = mfx::byte_clamp(j);
 
 #ifdef VC1_DEBUG_ON
         VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
@@ -626,9 +626,9 @@ VC1Status FillTablesForIntensityCompensation_Adv(VC1Context* pContext,
         for (i = 0; i<256; i++)
         {
             j = (i*iscale + ishift + 32) >> 6;
-            pContext->LumaTable[LUTindex][i] = (uint8_t)VC1_CLIP(j);
+            pContext->LumaTable[LUTindex][i] = mfx::byte_clamp(j);
             j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
-            pContext->ChromaTable[LUTindex][i] = (uint8_t)VC1_CLIP(j);
+            pContext->ChromaTable[LUTindex][i] = mfx::byte_clamp(j);
 #ifdef VC1_DEBUG_ON
             VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
                 VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),
@@ -641,11 +641,11 @@ VC1Status FillTablesForIntensityCompensation_Adv(VC1Context* pContext,
         for (i = 0; i<256; i++)
         {
             j = (i*iscale + ishift + 32) >> 6;
-            pContext->LumaTable[0][i] = (uint8_t)VC1_CLIP(j);
-            pContext->LumaTable[1][i] = (uint8_t)VC1_CLIP(j);
+            pContext->LumaTable[0][i] = mfx::byte_clamp(j);
+            pContext->LumaTable[1][i] = mfx::byte_clamp(j);
             j = ((i - 128)*iscale + 128 * 64 + 32) >> 6;
-            pContext->ChromaTable[0][i] = (uint8_t)VC1_CLIP(j);
-            pContext->ChromaTable[1][i] = (uint8_t)VC1_CLIP(j);
+            pContext->ChromaTable[0][i] = mfx::byte_clamp(j);
+            pContext->ChromaTable[1][i] = mfx::byte_clamp(j);
 #ifdef VC1_DEBUG_ON
             VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1, VC1_INTENS,
                 VM_STRING("LumaTable[i]=%d, ChromaTable[i]=%d\n"),

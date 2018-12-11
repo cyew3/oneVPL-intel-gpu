@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,8 @@
 
 #include <stdio.h>
 #include "ippi.h"
+#include "mfx_utils.h"
 
-#define VC1_CLIP(x) (!(x&~255)?x:(x<0?0:255))
 #define VC1_SIGN(x) ((x<0)?-1:(x>0?1:0))
 #define VC1_LUT_SET(value,lut) (lut[value])
 //#define align_value<uint32_t>(x) ((x&3)?((x&0xFFFFFFFC) + 4):x)
