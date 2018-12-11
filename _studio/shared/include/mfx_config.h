@@ -93,8 +93,6 @@
 
         #define MFX_D3D9_ENABLED
 
-//        #define MFX_ENABLE_MFE
-
     #elif defined(__APPLE__)
         #undef  MFX_VA_OSX
         #define MFX_VA_OSX
@@ -119,42 +117,39 @@
         #define MFX_ENABLE_H264_VIDEO_DECODE
 
         // h265d
-#if defined(MFX_VA)
-        #define MFX_ENABLE_H265_VIDEO_DECODE
-#endif
-#if defined(MFX_VA)
-        #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
-#endif
-#if defined(MFX_VA)
-        #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
-#endif
+        #if defined(MFX_VA)
+            #define MFX_ENABLE_H265_VIDEO_DECODE
+            #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
+            #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
+            #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
+            #define MFX_ENABLE_AV1_VIDEO_DECODE
+
+            #if defined(MFX_VA_LINUX)
+                #define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
+            #endif
+        #endif
 
         //h264e
         #define MFX_ENABLE_H264_VIDEO_ENCODE
-        #if defined(MFX_VA_WIN) && MFX_VERSION >= 1023
-            #define ENABLE_H264_MBFORCE_INTRA
-        #endif
 
         //h265e
         #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(MFX_VA)
             #define MFX_ENABLE_H265_VIDEO_ENCODE
         #endif
 
-        //vp9e
-#if defined (MFX_VA)
-        #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-#endif
-
         #define MFX_ENABLE_MVC_VIDEO_ENCODE
-        //#define MFX_ENABLE_H264_VIDEO_PAK
-        //#define MFX_ENABLE_H264_VIDEO_ENC
+
+       #if defined(MFX_VA_LINUX) && (MFX_VERSION >= 1025)
+           #if !defined(AS_H264LA_PLUGIN)
+               #define MFX_ENABLE_MFE
+           #endif
+       #endif
+
         #if defined(LINUX64)
             #define MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
             #define MFX_ENABLE_H264_VIDEO_FEI_PREENC
             #define MFX_ENABLE_H264_VIDEO_FEI_ENC
             #define MFX_ENABLE_H264_VIDEO_FEI_PAK
-
-            #define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
         #endif
         // mpeg2
         #define MFX_ENABLE_MPEG2_VIDEO_DECODE
@@ -203,21 +198,35 @@
         //mp3
         #define MFX_ENABLE_MP3_AUDIO_DECODE
 
-        // av1
-        #if defined (MFX_VA)
-            #define MFX_ENABLE_AV1_VIDEO_DECODE
-        #endif
+        #if defined(__linux__)
+            // Unsupported on Linux:
+            #define MFX_PROTECTED_FEATURE_DISABLE
+            #define MFX_CAMERA_FEATURE_DISABLE
 
+            #if (MFX_VERSION < MFX_VERSION_NEXT)
+                #define MFX_CLOSED_PLATFORMS_DISABLE
+                #define MFX_EXT_DPB_HEVC_DISABLE
+                #define MFX_ADAPTIVE_PLAYBACK_DISABLE
+                #define MFX_FUTURE_FEATURE_DISABLE
+            #endif
+            #define MFX_ENABLE_MJPEG_ROTATE_VPP
+            #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
+            #undef MFX_ENABLE_AVCE_DIRTY_RECTANGLE
+            #undef MFX_ENABLE_AVCE_MOVE_RECTANGLE
+            #undef MFX_ENABLE_HEVCE_HDR_SEI
+        #endif
+        #if defined (MFX_VA_LINUX)
+            #undef MFX_ENABLE_MVC_VIDEO_ENCODE // HW limitation
+
+            #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
+            #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
+        #endif
     #else // #if !defined(ANDROID)
         #include "mfx_android_defs.h"
 
         #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
 
     #endif // #if !defined(ANDROID)
-
-    #if defined (MFX_VA_LINUX)
-        #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-    #endif
 
     #if defined(AS_H264LA_PLUGIN)
         #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
@@ -391,8 +400,11 @@
     #endif //defined (AS_VPP_SCD_PLUGIN)
 #endif //defined (AS_VPP_SCD_PLUGIN) || defined (AS_ENC_SCD_PLUGIN)
 
-#if MFX_VERSION >= 1023 && defined(MFX_VA_WIN)
+#if MFX_VERSION >= 1023
 #define MFX_ENABLE_H264_REPARTITION_CHECK
+#if defined(MFX_VA_WIN)
+    #define ENABLE_H264_MBFORCE_INTRA
+#endif
 #endif
 #if MFX_VERSION >= 1027
 #define MFX_ENABLE_H264_ROUNDING_OFFSET
