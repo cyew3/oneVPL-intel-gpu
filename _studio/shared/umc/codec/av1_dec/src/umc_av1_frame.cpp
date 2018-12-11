@@ -44,7 +44,10 @@ namespace UMC_AV1_DECODER
         if (source.GetBufferSize() < size)
             throw av1_exception(UMC::UMC_ERR_ALLOC);
 
-        MFX_INTERNAL_CPY(source.GetDataPointer(), in->GetDataPointer(), size);
+        const uint8_t *src = reinterpret_cast <const uint8_t*> (in->GetDataPointer());
+        uint8_t *dst = reinterpret_cast <uint8_t*> (source.GetDataPointer());
+        std::copy(src, src + size, dst);
+
         source.SetDataSize(size);
     }
 
@@ -169,7 +172,9 @@ namespace UMC_AV1_DECODER
         if (source->GetBufferSize() < size)
             throw av1_exception(UMC::UMC_ERR_ALLOC);
 
-        MFX_INTERNAL_CPY(source->GetDataPointer(), in->GetDataPointer(), size);
+        const uint8_t *src = reinterpret_cast <const uint8_t*> (in->GetDataPointer());
+        uint8_t *dst = reinterpret_cast <uint8_t*> (source->GetDataPointer());
+        std::copy(src, src + size, dst);
         source->SetDataSize(size);
     }
 
