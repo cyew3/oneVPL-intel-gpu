@@ -310,18 +310,17 @@
     #endif
 
 #else // LINUX_TARGET_PLATFORM
-    #if defined(LINUX_TARGET_PLATFORM_CFL)      // PRE_SI_GEN == 11
-        #include "mfx_common_linux_cfl.h"
+    #if defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)
+        #define PRE_SI_GEN 11
+        #include "mfx_common_linux_bdw.h"
     #elif defined(LINUX_TARGET_PLATFORM_BXTMIN) // PRE_SI_GEN == 11
         #include "mfx_common_linux_bxtmin.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BXT)    // PRE_SI_GEN == 11
-        #include "mfx_common_linux_bxt.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BSW)
-        #include "mfx_common_linux_bsw.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BDW)    // PRE_SI_GEN == 11
+    #elif defined(LINUX_TARGET_PLATFORM_ATS)
+        #define PRE_SI_GEN 12
+        #if defined (MFX_VA)
+            #define MFX_ENABLE_AV1_VIDEO_DECODE
+        #endif
         #include "mfx_common_linux_bdw.h"
-    #elif defined(LINUX_TARGET_PLATFORM_ATS)    // PRE_SI_GEN == 12
-        #include "mfx_common_linux_ats.h"
     #elif defined(LINUX_TARGET_PLATFORM_TBD)
         #include "mfx_common_lnx_tbd.h"
     #else
