@@ -129,6 +129,12 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_CODEC_AV1:
         profile |= VA_AV1;
+        switch (param->mfx.FrameInfo.FourCC)
+        {
+        case MFX_FOURCC_P010:
+            profile |= VA_PROFILE_10;
+            break;
+        }
         break;
 #endif // PRE_SI_TARGET_PLATFORM_GEN12
 

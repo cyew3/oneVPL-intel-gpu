@@ -179,6 +179,7 @@ enum VideoAccelerationProfile
     VP9_VLD         = VA_VP9 | VA_VLD,
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     AV1_VLD         = VA_AV1 | VA_VLD,
+    AV1_10_VLD      = VA_AV1 | VA_VLD | VA_PROFILE_10,
 #endif // PRE_SI_TARGET_PLATFORM_GEN12
 
     H265_VLD_REXT               = VA_H265 | VA_VLD | VA_PROFILE_REXT,

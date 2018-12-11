@@ -509,6 +509,7 @@ static const GuidProfile guidProfiles[] =
     { VP9_12_VLD_420,                                                           DXVA_Intel_ModeVP9_Profile2_YUV420_12bit_VLD },
     { VP9_12_VLD_444,                                                           DXVA_Intel_ModeVP9_Profile3_YUV444_12bit_VLD },
     { AV1_VLD,                                                                  DXVA_Intel_ModeAV1_VLD },
+    { AV1_10_VLD,                                                               DXVA_Intel_ModeAV1_VLD_420_10b },
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
 
     { H264_VLD        | VA_PROFILE_SVC_HIGH,                                    sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High },
