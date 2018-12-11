@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,8 @@
 #define __MFXUTILS_H__
 
 #include "mfx_config.h"
+
+#include "mfxstructures.h"
 
 #include "umc_structures.h"
 #include "mfx_trace.h"
@@ -148,7 +150,6 @@ bool LumaIsNull(const mfxFrameSurface1 * surf)
 #elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
     #define IS_PROTECTION_ANY(val) (IS_PROTECTION_PAVP_ANY(val) || MFX_PROTECTION_GPUCP_AES128_CTR == (val) || IS_PROTECTION_WIDEVINE(val))
 #endif
-
 //#undef  SUCCEEDED
 //#define SUCCEEDED(hr)   (MFX_STS_TRACE(hr) >= 0)
 //#undef  FAILED
@@ -156,5 +157,23 @@ bool LumaIsNull(const mfxFrameSurface1 * surf)
 
 #define MFX_COPY_FIELD(Field)       buf_dst.Field = buf_src.Field
 #define MFX_COPY_ARRAY_FIELD(Array) std::copy(std::begin(buf_src.Array), std::end(buf_src.Array), std::begin(buf_dst.Array))
+
+namespace mfx
+{
+// TODO: switch to std::clamp when C++17 support will be enabled
+// Clip value v to range [lo, hi]
+template<class T>
+constexpr const T& clamp( const T& v, const T& lo, const T& hi )
+{
+    return std::min(hi, std::max(v, lo));
+}
+
+// Comp is comparison function object with meaning of 'less' operator (i.e. std::less<> or operator<)
+template<class T, class Compare>
+constexpr const T& clamp( const T& v, const T& lo, const T& hi, Compare comp )
+{
+    return comp(v, lo) ? lo : comp(hi, v) ? hi : v;
+}
+}
 
 #endif // __MFXUTILS_H__
