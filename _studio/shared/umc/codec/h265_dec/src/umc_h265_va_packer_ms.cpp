@@ -46,23 +46,12 @@ namespace UMC_HEVC_DECODER
 
     private:
 
-        void PackQmatrix(const H265Slice *pSlice);
         void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 * supplier);
         bool PackSliceParams(H265Slice *pSlice, uint32_t &sliceNum, bool isLastSlice);
     };
 
     Packer* CreatePackerMS(UMC::VideoAccelerator* va)
     { return new MSPackerDXVA2(va); }
-
-    void MSPackerDXVA2::PackQmatrix(const H265Slice *pSlice)
-    {
-        UMCVACompBuffer *compBuf;
-        DXVA_Qmatrix_HEVC* pQmatrix = (DXVA_Qmatrix_HEVC*)m_va->GetCompBuffer(DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER, &compBuf);;
-        compBuf->SetDataSize(sizeof(DXVA_Qmatrix_HEVC));
-        memset(pQmatrix, 0, sizeof(DXVA_Qmatrix_HEVC));
-
-        PackerDXVA2::PackQmatrix(pSlice, pQmatrix);
-    }
 
     void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
         H265DecoderFrameInfo * sliceInfo,

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#include <algorithm>
+
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #ifndef UMC_RESTRICTED_CODE_VA
@@ -34,6 +34,16 @@ using namespace UMC;
 
 namespace UMC_HEVC_DECODER
 {
+    inline
+    H265ScalingList* GetDefaultScalingList()
+    {
+        static H265ScalingList list{};
+        if (!list.is_initialized())
+            list.initFromDefaultScalingList();
+
+        return &list;
+    }
+
     PackerDXVA2::PackerDXVA2(VideoAccelerator * va)
         : Packer(va)
         , m_statusReportFeedbackCounter(1)
@@ -59,7 +69,6 @@ namespace UMC_HEVC_DECODER
         return false;
 #endif
     }
-
 
     void PackerDXVA2::BeginFrame(H265DecoderFrame*)
     {
@@ -158,9 +167,16 @@ namespace UMC_HEVC_DECODER
     void PackerDXVA2::PackSubsets(const H265DecoderFrame *)
     { /* Nothing to do here, derived classes could extend behavior */ }
 
-    template <typename T>
-    void PackerDXVA2::PackQmatrix(H265Slice const* pSlice, T* pQmatrix)
+    void PackerDXVA2::PackQmatrix(H265Slice const* pSlice)
     {
+        UMCVACompBuffer* buffer = nullptr;
+        auto qmatrix = reinterpret_cast<DXVA_Qmatrix_HEVC*>(m_va->GetCompBuffer(DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER, &buffer));
+        if (!qmatrix)
+            throw h265_exception(UMC::UMC_ERR_FAILED);
+
+        buffer->SetDataSize(sizeof(DXVA_Qmatrix_HEVC));
+        *qmatrix = {};
+
         const H265ScalingList *scalingList = 0;
         if (pSlice->GetPicParam()->pps_scaling_list_data_present_flag)
         {
@@ -172,28 +188,7 @@ namespace UMC_HEVC_DECODER
         }
         else
         {
-            // TODO: build default scaling list in target buffer location
-            static bool doInit = true;
-            static H265ScalingList sl;
-
-            if (doInit)
-            {
-                for (uint32_t sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
-                {
-                    for (uint32_t listId = 0; listId < g_scalingListNum[sizeId]; listId++)
-                    {
-                        const int *src = getDefaultScalingList(sizeId, listId);
-                        int *dst = sl.getScalingListAddress(sizeId, listId);
-                        int count = std::min<int32_t>(MAX_MATRIX_COEF_NUM, g_scalingListSize[sizeId]);
-                        MFX_INTERNAL_CPY(dst, src, sizeof(int32_t) * count);
-                        sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
-                    }
-                }
-
-                doInit = false;
-            }
-
-            scalingList = &sl;
+            scalingList = GetDefaultScalingList();
         }
 
         //new driver want list to be in raster scan, but we made it flatten during [H265HeadersBitstream::xDecodeScalingList]
@@ -201,26 +196,22 @@ namespace UMC_HEVC_DECODER
         bool force_upright_scan =
             m_va->ScalingListScanOrder() == 0;
 
-        initQMatrix<16>(scalingList, SCALING_LIST_4x4, pQmatrix->ucScalingLists0, force_upright_scan);    // 4x4
-        initQMatrix<64>(scalingList, SCALING_LIST_8x8, pQmatrix->ucScalingLists1, force_upright_scan);    // 8x8
-        initQMatrix<64>(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2, force_upright_scan);    // 16x16
-        initQMatrix(scalingList, SCALING_LIST_32x32, pQmatrix->ucScalingLists3, force_upright_scan);    // 32x32
+        initQMatrix<16>(scalingList, SCALING_LIST_4x4, qmatrix->ucScalingLists0, force_upright_scan);    // 4x4
+        initQMatrix<64>(scalingList, SCALING_LIST_8x8, qmatrix->ucScalingLists1, force_upright_scan);    // 8x8
+        initQMatrix<64>(scalingList, SCALING_LIST_16x16, qmatrix->ucScalingLists2, force_upright_scan);    // 16x16
+        initQMatrix(scalingList, SCALING_LIST_32x32, qmatrix->ucScalingLists3, force_upright_scan);    // 32x32
 
         for (uint32_t sizeId = SCALING_LIST_16x16; sizeId <= SCALING_LIST_32x32; sizeId++)
         {
             for (uint32_t listId = 0; listId < g_scalingListNum[sizeId]; listId++)
             {
                 if (sizeId == SCALING_LIST_16x16)
-                    pQmatrix->ucScalingListDCCoefSizeID2[listId] = (UCHAR)scalingList->getScalingListDC(sizeId, listId);
+                    qmatrix->ucScalingListDCCoefSizeID2[listId] = (UCHAR)scalingList->getScalingListDC(sizeId, listId);
                 else if (sizeId == SCALING_LIST_32x32)
-                    pQmatrix->ucScalingListDCCoefSizeID3[listId] = (UCHAR)scalingList->getScalingListDC(sizeId, listId);
+                    qmatrix->ucScalingListDCCoefSizeID3[listId] = (UCHAR)scalingList->getScalingListDC(sizeId, listId);
             }
         }
     }
-
-    //explicit instantiate PackQmatrix for MS's & Intel's Qmatrix type
-    template void PackerDXVA2::PackQmatrix<DXVA_Qmatrix_HEVC>(H265Slice const*, DXVA_Qmatrix_HEVC*);
-    template void PackerDXVA2::PackQmatrix<DXVA_Intel_Qmatrix_HEVC>(H265Slice const*, DXVA_Intel_Qmatrix_HEVC*);
 }
 
 #endif //UMC_VA_DXVA

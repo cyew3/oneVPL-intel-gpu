@@ -44,6 +44,16 @@ using namespace UMC;
 
 namespace UMC_HEVC_DECODER
 {
+    inline
+    constexpr
+    bool check_ddi()
+    {
+        return
+            sizeof(DXVA_Qmatrix_HEVC) == sizeof(DXVA_Intel_Qmatrix_HEVC) &&
+            sizeof(DXVA_Status_HEVC)  == sizeof(DXVA_Intel_Status_HEVC)
+            ;
+    }
+
     class PackerDXVA2intel
         : public PackerDXVA2
     {
@@ -52,11 +62,14 @@ namespace UMC_HEVC_DECODER
 
         PackerDXVA2intel(UMC::VideoAccelerator * va)
             : PackerDXVA2(va)
-        {}
+        {
+            static_assert(check_ddi(),
+                "Private DDI is not compatible w/ public one"
+            );
+        }
 
     private:
 
-        void PackQmatrix(const H265Slice *pSlice);
         void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier);
         bool PackSliceParams(H265Slice *pSlice, uint32_t &, bool isLastSlice);
         void PackSubsets(const H265DecoderFrame *pCurrentFrame);
@@ -802,16 +815,6 @@ namespace UMC_HEVC_DECODER
         MFX_INTERNAL_CPY((uint8_t*)pSliceData + prefix_size, rawDataPtr, rawDataSize);
 
         return true;
-    }
-
-    void PackerDXVA2intel::PackQmatrix(const H265Slice *pSlice)
-    {
-        UMCVACompBuffer *compBuf;
-        DXVA_Intel_Qmatrix_HEVC *pQmatrix = (DXVA_Intel_Qmatrix_HEVC *)m_va->GetCompBuffer(DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER, &compBuf);
-        compBuf->SetDataSize(sizeof(DXVA_Intel_Qmatrix_HEVC));
-        memset(pQmatrix, 0, sizeof(DXVA_Intel_Qmatrix_HEVC));
-
-        PackerDXVA2::PackQmatrix(pSlice, pQmatrix);
     }
 
     void PackerDXVA2intel::PackSubsets(H265DecoderFrame const* frame)

@@ -259,10 +259,8 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 
         if (!wasCompleted)
         {
-            DXVA_Intel_Status_HEVC pStatusReport[NUMBER_OF_STATUS];
-
-            memset(&pStatusReport, 0, sizeof(pStatusReport));
-            dxva_sd->GetPacker()->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Intel_Status_HEVC)* NUMBER_OF_STATUS);
+            DXVA_Status_HEVC pStatusReport[NUMBER_OF_STATUS] = {};
+            dxva_sd->GetPacker()->GetStatusReport(&pStatusReport[0], sizeof(pStatusReport));
 
             for (uint32_t i = 0; i < NUMBER_OF_STATUS; i++)
             {
@@ -270,7 +268,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
                     continue;
 
                 bool wasFound = false;
-                if (au && pStatusReport[i].current_picture.Index7Bits == au->m_pFrame->m_index)
+                if (au && pStatusReport[i].CurrPic.Index7Bits == au->m_pFrame->m_index)
                 {
                     switch (pStatusReport[i].bStatus)
                     {
@@ -296,9 +294,9 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 
                 if (!wasFound)
                 {
-                    if (std::find(m_reports.begin(), m_reports.end(), ReportItem(pStatusReport[i].current_picture.Index7Bits, 0/*field*/, 0)) == m_reports.end())
+                    if (std::find(m_reports.begin(), m_reports.end(), ReportItem(pStatusReport[i].CurrPic.Index7Bits, 0/*field*/, 0)) == m_reports.end())
                     {
-                        m_reports.push_back(ReportItem(pStatusReport[i].current_picture.Index7Bits, 0/*field*/, pStatusReport[i].bStatus));
+                        m_reports.push_back(ReportItem(pStatusReport[i].CurrPic.Index7Bits, 0/*field*/, pStatusReport[i].bStatus));
                         wasCompleted = true;
                     }
                 }

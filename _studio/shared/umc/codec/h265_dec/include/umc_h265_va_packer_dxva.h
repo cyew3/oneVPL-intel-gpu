@@ -55,16 +55,15 @@ namespace UMC_HEVC_DECODER
         virtual void BeginFrame(H265DecoderFrame*);
         virtual void EndFrame();
 
-        void PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier);
+        void PackAU(H265DecoderFrame const*, TaskSupplier_H265*);
 
         using Packer::PackQmatrix;
 
-        virtual void PackSubsets(const H265DecoderFrame *pCurrentFrame);
+        virtual void PackSubsets(H265DecoderFrame const*);
 
     protected:
 
-        template <typename T>
-        void PackQmatrix(H265Slice const*, T* pQmatrix);
+        void PackQmatrix(H265Slice const*);
 
     protected:
 
