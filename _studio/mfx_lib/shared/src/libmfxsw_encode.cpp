@@ -641,7 +641,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     {
         mfxRes = MFX_ERR_NULL_PTR;
     }
-    // SW fallback if EncodeGUID is absence
+
     if (MFX_PLATFORM_HARDWARE == session->m_currentPlatform &&
         !bIsHWENCSupport &&
         MFX_ERR_NONE <= mfxRes)
@@ -740,7 +740,6 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         mfxRes = MFX_ERR_NULL_PTR;
     }
 
-    // SW fallback if EncodeGUID is absence
     if (MFX_PLATFORM_HARDWARE == session->m_currentPlatform &&
         !bIsHWENCSupport &&
         MFX_ERR_NONE <= mfxRes)
@@ -798,7 +797,6 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
         else if (mfxRes >= MFX_ERR_NONE)
             session->m_bIsHWENCSupport = true;
 
-        // SW fallback if EncodeGUID is absence
         if (MFX_PLATFORM_HARDWARE == session->m_currentPlatform &&
             !session->m_bIsHWENCSupport &&
             MFX_ERR_NONE <= mfxRes)
