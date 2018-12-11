@@ -249,7 +249,6 @@ _studio/shared/include/mfxstructurespro.h
 _studio/shared/include/mfxvideo++int.h
 _studio/shared/include/mfx_common.h
 _studio/shared/include/mfx_config.h
-_studio/shared/include/mfx_common_linux_bdw.h
 _studio/shared/include/mfx_common_linux_bxtmin.h
 _studio/shared/include/mfx_ext_buffers.h
 _studio/shared/include/mfx_mfe_adapter.h

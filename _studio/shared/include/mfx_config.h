@@ -111,7 +111,11 @@
     #endif
 #endif
 
-#if !defined(LINUX_TARGET_PLATFORM)
+#if !defined(LINUX_TARGET_PLATFORM) || defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)  || defined(LINUX_TARGET_PLATFORM_ATS)
+    #if defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)
+        #define PRE_SI_GEN 11
+    #endif
+
     #if !defined(ANDROID)
         // h264d
         #define MFX_ENABLE_H264_VIDEO_DECODE
@@ -122,7 +126,9 @@
             #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
             #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
             #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-            #define MFX_ENABLE_AV1_VIDEO_DECODE
+            #if (MFX_VERSION >= MFX_VERSION_NEXT) && (!defined(LINUX_TARGET_PLATFORM) || defined(LINUX_TARGET_PLATFORM_ATS)) // TODO: change to VAAPI version check
+                #define MFX_ENABLE_AV1_VIDEO_DECODE
+            #endif
 
             #if defined(MFX_VA_LINUX)
                 #define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
@@ -137,13 +143,11 @@
             #define MFX_ENABLE_H265_VIDEO_ENCODE
         #endif
 
-        #define MFX_ENABLE_MVC_VIDEO_ENCODE
-
-       #if defined(MFX_VA_LINUX) && (MFX_VERSION >= 1025)
-           #if !defined(AS_H264LA_PLUGIN)
-               #define MFX_ENABLE_MFE
-           #endif
-       #endif
+        #if defined(MFX_VA_LINUX) && (MFX_VERSION >= 1025)
+            #if !defined(AS_H264LA_PLUGIN)
+                #define MFX_ENABLE_MFE
+            #endif
+        #endif
 
         #if defined(LINUX64)
             #define MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
@@ -175,7 +179,6 @@
         #define MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW
         //#define MFX_ENABLE_H264_VIDEO_ENC_HW
         #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
-        #define MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         #if defined(AS_H264LA_PLUGIN)
             #define MFX_ENABLE_LA_H264_VIDEO_HW
         #endif
@@ -198,7 +201,10 @@
         //mp3
         #define MFX_ENABLE_MP3_AUDIO_DECODE
 
-        #if defined(__linux__)
+        #if defined(_WIN32) || defined(_WIN64)
+            #define MFX_ENABLE_MVC_VIDEO_ENCODE
+            #define MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+        #elif defined(__linux__)
             // Unsupported on Linux:
             #define MFX_PROTECTED_FEATURE_DISABLE
             #define MFX_CAMERA_FEATURE_DISABLE
@@ -216,8 +222,6 @@
             #undef MFX_ENABLE_HEVCE_HDR_SEI
         #endif
         #if defined (MFX_VA_LINUX)
-            #undef MFX_ENABLE_MVC_VIDEO_ENCODE // HW limitation
-
             #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
             #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
         #endif
@@ -235,6 +239,9 @@
         #undef MFX_ENABLE_H264_VIDEO_FEI_PREENC
         #undef MFX_ENABLE_H264_VIDEO_FEI_ENC
         #undef MFX_ENABLE_H264_VIDEO_FEI_PAK
+        #if defined(__linux__)
+            #undef MFX_ENABLE_VPP
+        #endif
     #endif
 
     #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(AS_VP8D_PLUGIN) || defined(AS_VP8E_PLUGIN) || defined(AS_VP9D_PLUGIN) || defined(AS_CAMERA_PLUGIN) || defined (MFX_RT)
@@ -266,6 +273,12 @@
         #undef MFX_ENABLE_H264_VIDEO_FEI_PREENC
         #undef MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
         #undef MFX_ENABLE_AV1_VIDEO_DECODE
+        #if defined(__linux__) // for MFX_RT
+            #undef MFX_ENABLE_VP8_VIDEO_DECODE
+            #undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
+            #undef MFX_ENABLE_VP9_VIDEO_DECODE_HW
+            #undef MFX_ENABLE_VP9_VIDEO_ENCODE_HW
+        #endif
     #endif // #if defined(AS_HEVCD_PLUGIN)
     #if defined(AS_CAMERA_PLUGIN)
         #define MFX_ENABLE_VPP
@@ -312,22 +325,8 @@
     #endif
 
 #else // LINUX_TARGET_PLATFORM
-    #if defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)
-        #define PRE_SI_GEN 11
-        #include "mfx_common_linux_bdw.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BXTMIN) // PRE_SI_GEN == 11
+    #if defined(LINUX_TARGET_PLATFORM_BXTMIN) // PRE_SI_GEN == 11
         #include "mfx_common_linux_bxtmin.h"
-    #elif defined(LINUX_TARGET_PLATFORM_ATS)
-        #define ENABLE_PRE_SI_FEATURES
-        #if defined (MFX_VA) && !defined(AS_HEVCD_PLUGIN) && !defined(AS_VP8D_PLUGIN) && !defined(AS_VP9D_PLUGIN) && !defined (MFX_RT)
-            #define MFX_ENABLE_AV1_VIDEO_DECODE
-        #endif
-        #include "mfx_common_linux_bdw.h"
-        #ifdef PRE_SI_GEN
-            #undef PRE_SI_GEN
-        #endif
-    #elif defined(LINUX_TARGET_PLATFORM_TBD)
-        #include "mfx_common_lnx_tbd.h"
     #else
         #error "Target platform should be specified!"
     #endif
