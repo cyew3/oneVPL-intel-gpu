@@ -44,8 +44,8 @@ namespace UMC
         CENCTaskSupplier();
         ~CENCTaskSupplier();
 
-        Status Init(VideoDecoderParams*) override;
     #if !defined(OPEN_SOURCE)
+        Status Init(VideoDecoderParams*) override;
         void Reset() override;
     #endif
 
