@@ -333,7 +333,8 @@ namespace vp9e_encode_frame_async
             }
 
             SETPARS(m_pSurf, MFX_SURF);
-            if (m_par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410 &&
+            if (tc.set_par->ext_type == MFX_SURF &&
+                m_par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410 &&
                 m_par.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY &&
                 m_pSurf->Data.Y == 0)
             {
