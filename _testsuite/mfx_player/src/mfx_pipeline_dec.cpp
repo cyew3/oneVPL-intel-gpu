@@ -1598,6 +1598,12 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     //acpect ratio related bug 9897
     m_inParams.FrameInfo.AspectRatioW  = info.AspectRatioW;
     m_inParams.FrameInfo.AspectRatioH  = info.AspectRatioH;
+    // VPP requires BitDepthLuma and BitDepthChroma fields to be set.
+    // Check that they aren't set with command line.
+    if (m_inParams.FrameInfo.BitDepthLuma == 0)
+        m_inParams.FrameInfo.BitDepthLuma = info.BitDepthLuma;
+    if (m_inParams.FrameInfo.BitDepthChroma == 0)
+        m_inParams.FrameInfo.BitDepthChroma = info.BitDepthChroma;
 
     if (m_inParams.nPicStruct == PIPELINE_PICSTRUCT_NOT_SPECIFIED )//not initialized from cmd line
     {
