@@ -35,16 +35,16 @@
 // utility for correct processing of frame rates
 // check if frame rates correspond inverse telecine algorithm (29.97(+-EPS) -> 23.976(+-EPS), EPS=0.1)
 bool IsFrameRatesCorrespondITC(
-    mfxU32  inFrameRateExtN,  
+    mfxU32  inFrameRateExtN,
     mfxU32  inFrameRateExtD,
-    mfxU32  outFrameRateExtN, 
+    mfxU32  outFrameRateExtN,
     mfxU32  outFrameRateExtD);
 
 // check if frame rates correspond advanced DI algorithm (example: 60i->60p. EPS = 0)
 bool IsFrameRatesCorrespondMode30i60p(
-    mfxU32  inFrameRateExtN,  
+    mfxU32  inFrameRateExtN,
     mfxU32  inFrameRateExtD,
-    mfxU32  outFrameRateExtN, 
+    mfxU32  outFrameRateExtN,
     mfxU32  outFrameRateExtD);
 
 // check if frame rates correspond Weave DI algorithm, e.g. input framerate is twice bigger than output's.
@@ -69,8 +69,8 @@ mfxStatus GetExternalFramesCount(VideoCORE* core,
                                  mfxU16 framesCountMin[2],
                                  mfxU16 framesCountSuggested[2]);
 
-// utility to Check is composition enabled in current pipeline or not
-mfxStatus GetCompositionEnabledStatus(mfxVideoParam* pParam );
+// utility to check is composition enabled in current pipeline or not
+bool IsCompositionMode(mfxVideoParam* pParam);
 
 // select configuration parameters for required filter
 mfxStatus GetFilterParam(mfxVideoParam* par, mfxU32 filterName, mfxExtBuffer** ppHint);
@@ -86,8 +86,8 @@ bool GetExtParamList( mfxVideoParam* par, mfxU32* pList, mfxU32* pLen );
 bool CheckFilterList(mfxU32* pList, mfxU32 count, bool bDoUseTable);
 
 mfxStatus GetPipelineList(
-    mfxVideoParam* videoParam, 
-    std::vector<mfxU32> & pipelineList, 
+    mfxVideoParam* videoParam,
+    std::vector<mfxU32> & pipelineList,
     //mfxU32* pLen,
     bool    bExtended = false);
 
@@ -115,11 +115,11 @@ public:
         }
     }
 
-    bool IsFilterFound(mfxU32 filterName) 
+    bool IsFilterFound(mfxU32 filterName)
     {
         if(m_list.size() > 0 )
         {
-            return ::IsFilterFound( &m_list[0], mfxU32(m_list.size()), filterName ); 
+            return ::IsFilterFound( &m_list[0], mfxU32(m_list.size()), filterName );
         }
 
         return false;
@@ -154,7 +154,7 @@ mfxStatus GetOpaqRequest( mfxVideoParam* par, bool bOpaqMode[2], mfxFrameAllocRe
 mfxStatus CheckIOPattern_AndSetIOMemTypes(mfxU16 IOPattern, mfxU16* pInMemType, mfxU16* pOutMemType, bool bSWLib = true );
 
 // Video Analytics
-mfxU16 EstimatePicStruct( 
+mfxU16 EstimatePicStruct(
     mfxU32* pVariance,
     mfxU16 width,
     mfxU16 height);
@@ -171,15 +171,15 @@ mfxStatus SetDeinterlacingMode(const mfxVideoParam & videoParam, mfxU32 mode);
 mfxStatus SetSignalInfo(const mfxVideoParam & videoParam, mfxU32 trMatrix, mfxU32 Range);
 
 void ExtractDoUseList(
-    mfxU32* pSrcList, 
-    mfxU32 len, 
+    mfxU32* pSrcList,
+    mfxU32 len,
     std::vector<mfxU32> & dstList);
 
 bool CheckDoUseCompatibility( mfxU32 filterName );
 
 mfxStatus GetCrossList(
-    const std::vector<mfxU32> & pipelineList, 
-    const std::vector<mfxU32> & capsList, 
+    const std::vector<mfxU32> & pipelineList,
+    const std::vector<mfxU32> & capsList,
     std::vector<mfxU32> & douseList,
     std::vector<mfxU32> & dontUseList);
 
@@ -195,7 +195,7 @@ mfxStatus CheckLimitationsSW(
 #endif
 
 bool IsFrcInterpolationEnable(
-    const mfxVideoParam & param, 
+    const mfxVideoParam & param,
     const MfxHwVideoProcessing::mfxVppCaps & caps);
 
 bool IsConfigurable( mfxU32 filterId );
