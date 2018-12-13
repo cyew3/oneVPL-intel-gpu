@@ -31,42 +31,68 @@
 #include "genx_hevce_prepare_src_hsw_isa.h"
 #include "genx_hevce_prepare_src_bdw_isa.h"
 #include "genx_hevce_prepare_src_skl_isa.h"
+#include "genx_hevce_prepare_src_icl_isa.h"
+#include "genx_hevce_prepare_src_icllp_isa.h"
 #include "genx_hevce_hme_and_me_p32_4mv_hsw_isa.h"
 #include "genx_hevce_hme_and_me_p32_4mv_bdw_isa.h"
 #include "genx_hevce_hme_and_me_p32_4mv_skl_isa.h"
+#include "genx_hevce_hme_and_me_p32_4mv_icl_isa.h"
+#include "genx_hevce_hme_and_me_p32_4mv_icllp_isa.h"
 #include "genx_hevce_intra_avc_hsw_isa.h"
 #include "genx_hevce_intra_avc_bdw_isa.h"
 #include "genx_hevce_intra_avc_skl_isa.h"
+#include "genx_hevce_intra_avc_icl_isa.h"
+#include "genx_hevce_intra_avc_icllp_isa.h"
 #include "genx_hevce_interpolate_frame_hsw_isa.h"
 #include "genx_hevce_interpolate_frame_bdw_isa.h"
 #include "genx_hevce_interpolate_frame_skl_isa.h"
+#include "genx_hevce_interpolate_frame_icl_isa.h"
+#include "genx_hevce_interpolate_frame_icllp_isa.h"
 #include "genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.h"
 #include "genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.h"
 #include "genx_hevce_me_p16_4mv_and_refine_32x32_skl_isa.h"
+#include "genx_hevce_me_p16_4mv_and_refine_32x32_icl_isa.h"
+#include "genx_hevce_me_p16_4mv_and_refine_32x32_icllp_isa.h"
 #include "genx_hevce_birefine_bdw_isa.h"
 #include "genx_hevce_birefine_hsw_isa.h"
 #include "genx_hevce_birefine_skl_isa.h"
+#include "genx_hevce_birefine_icl_isa.h"
+#include "genx_hevce_birefine_icllp_isa.h"
 #include "genx_hevce_refine_me_p_64x64_hsw_isa.h"
 #include "genx_hevce_refine_me_p_64x64_bdw_isa.h"
 #include "genx_hevce_refine_me_p_64x64_skl_isa.h"
+#include "genx_hevce_refine_me_p_64x64_icl_isa.h"
+#include "genx_hevce_refine_me_p_64x64_icllp_isa.h"
 #include "genx_hevce_refine_me_p_16x32_hsw_isa.h"
 #include "genx_hevce_refine_me_p_16x32_bdw_isa.h"
 #include "genx_hevce_refine_me_p_16x32_skl_isa.h"
+#include "genx_hevce_refine_me_p_16x32_icl_isa.h"
+#include "genx_hevce_refine_me_p_16x32_icllp_isa.h"
 #include "genx_hevce_refine_me_p_32x16_hsw_isa.h"
 #include "genx_hevce_refine_me_p_32x16_bdw_isa.h"
 #include "genx_hevce_refine_me_p_32x16_skl_isa.h"
+#include "genx_hevce_refine_me_p_32x16_icl_isa.h"
+#include "genx_hevce_refine_me_p_32x16_icllp_isa.h"
 #include "genx_hevce_refine_me_p_32x32_sad_hsw_isa.h"
 #include "genx_hevce_refine_me_p_32x32_sad_bdw_isa.h"
 #include "genx_hevce_refine_me_p_32x32_sad_skl_isa.h"
+#include "genx_hevce_refine_me_p_32x32_sad_icl_isa.h"
+#include "genx_hevce_refine_me_p_32x32_sad_icllp_isa.h"
 #include "genx_hevce_analyze_gradient_32x32_best_hsw_isa.h"
 #include "genx_hevce_analyze_gradient_32x32_best_bdw_isa.h"
 #include "genx_hevce_analyze_gradient_32x32_best_skl_isa.h"
+#include "genx_hevce_analyze_gradient_32x32_best_icl_isa.h"
+#include "genx_hevce_analyze_gradient_32x32_best_icllp_isa.h"
 #include "genx_hevce_deblock_hsw_isa.h"
 #include "genx_hevce_deblock_bdw_isa.h"
 #include "genx_hevce_deblock_skl_isa.h"
+#include "genx_hevce_deblock_icl_isa.h"
+#include "genx_hevce_deblock_icllp_isa.h"
 #include "genx_hevce_sao_hsw_isa.h"
 #include "genx_hevce_sao_bdw_isa.h"
 #include "genx_hevce_sao_skl_isa.h"
+#include "genx_hevce_sao_icl_isa.h"
+#include "genx_hevce_sao_icllp_isa.h"
 
 #include "mfx_h265_enc_cm_fei.h"
 #include "mfx_h265_enc_cm_utils.h"
@@ -507,6 +533,36 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         programRefine32x32sad   = ReadProgram(device, genx_hevce_refine_me_p_32x32_sad_skl, sizeof(genx_hevce_refine_me_p_32x32_sad_skl));
         programDeblock          = ReadProgram(device, genx_hevce_deblock_skl, sizeof(genx_hevce_deblock_skl));
         programSao              = ReadProgram(device, genx_hevce_sao_skl, sizeof(genx_hevce_sao_skl));
+        break;
+    case PLATFORM_INTEL_ICL:
+        programGradient         = ReadProgram(device, genx_hevce_analyze_gradient_32x32_best_icl, sizeof(genx_hevce_analyze_gradient_32x32_best_icl));
+        programPrepareSrc       = ReadProgram(device, genx_hevce_prepare_src_icl, sizeof(genx_hevce_prepare_src_icl));
+        programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_icl, sizeof(genx_hevce_hme_and_me_p32_4mv_icl));
+        programInterpolateFrame = ReadProgram(device, genx_hevce_interpolate_frame_icl, sizeof(genx_hevce_interpolate_frame_icl));
+        programMeIntra          = ReadProgram(device, genx_hevce_intra_avc_icl, sizeof(genx_hevce_intra_avc_icl));
+        programMe16Refine32x32  = ReadProgram(device, genx_hevce_me_p16_4mv_and_refine_32x32_icl, sizeof(genx_hevce_me_p16_4mv_and_refine_32x32_icl));
+        programBiRefine         = ReadProgram(device, genx_hevce_birefine_icl, sizeof(genx_hevce_birefine_icl));
+        programRefine64x64      = ReadProgram(device, genx_hevce_refine_me_p_64x64_icl, sizeof(genx_hevce_refine_me_p_64x64_icl));
+        programRefine16x32      = ReadProgram(device, genx_hevce_refine_me_p_16x32_icl, sizeof(genx_hevce_refine_me_p_16x32_icl));
+        programRefine32x16      = ReadProgram(device, genx_hevce_refine_me_p_32x16_icl, sizeof(genx_hevce_refine_me_p_32x16_icl));
+        programRefine32x32sad   = ReadProgram(device, genx_hevce_refine_me_p_32x32_sad_icl, sizeof(genx_hevce_refine_me_p_32x32_sad_icl));
+        programDeblock          = ReadProgram(device, genx_hevce_deblock_icl, sizeof(genx_hevce_deblock_icl));
+        programSao              = ReadProgram(device, genx_hevce_sao_icl, sizeof(genx_hevce_sao_icl));
+        break;
+    case PLATFORM_INTEL_ICLLP:
+        programGradient         = ReadProgram(device, genx_hevce_analyze_gradient_32x32_best_icllp, sizeof(genx_hevce_analyze_gradient_32x32_best_icllp));
+        programPrepareSrc       = ReadProgram(device, genx_hevce_prepare_src_icllp, sizeof(genx_hevce_prepare_src_icllp));
+        programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_icllp, sizeof(genx_hevce_hme_and_me_p32_4mv_icllp));
+        programInterpolateFrame = ReadProgram(device, genx_hevce_interpolate_frame_icllp, sizeof(genx_hevce_interpolate_frame_icllp));
+        programMeIntra          = ReadProgram(device, genx_hevce_intra_avc_icllp, sizeof(genx_hevce_intra_avc_icllp));
+        programMe16Refine32x32  = ReadProgram(device, genx_hevce_me_p16_4mv_and_refine_32x32_icllp, sizeof(genx_hevce_me_p16_4mv_and_refine_32x32_icllp));
+        programBiRefine         = ReadProgram(device, genx_hevce_birefine_icllp, sizeof(genx_hevce_birefine_icllp));
+        programRefine64x64      = ReadProgram(device, genx_hevce_refine_me_p_64x64_icllp, sizeof(genx_hevce_refine_me_p_64x64_icllp));
+        programRefine16x32      = ReadProgram(device, genx_hevce_refine_me_p_16x32_icllp, sizeof(genx_hevce_refine_me_p_16x32_icllp));
+        programRefine32x16      = ReadProgram(device, genx_hevce_refine_me_p_32x16_icllp, sizeof(genx_hevce_refine_me_p_32x16_icllp));
+        programRefine32x32sad   = ReadProgram(device, genx_hevce_refine_me_p_32x32_sad_icllp, sizeof(genx_hevce_refine_me_p_32x32_sad_icllp));
+        programDeblock          = ReadProgram(device, genx_hevce_deblock_icllp, sizeof(genx_hevce_deblock_icllp));
+        programSao              = ReadProgram(device, genx_hevce_sao_icllp, sizeof(genx_hevce_sao_icllp));
         break;
     default:
         assert(!"unsupported GPU_PLATFORM");
