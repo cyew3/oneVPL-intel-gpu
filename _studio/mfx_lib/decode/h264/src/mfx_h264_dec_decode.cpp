@@ -1130,6 +1130,12 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
         dpbSize = par->mfx.MaxDecFrameBuffering;
 
     mfxU32 numMin = dpbSize + 1 + asyncDepth;
+
+#ifdef MFX_ENABLE_CPLIB
+    if (IS_PROTECTION_CENC(par->Protected))
+        numMin += 2;
+#endif
+
     if (platform != MFX_PLATFORM_SOFTWARE && useDelayedDisplay) // equals if (m_useDelayedDisplay) - workaround
         numMin += NUMBER_OF_ADDITIONAL_FRAMES;
     numMin *= CalculateRequiredView(par);
