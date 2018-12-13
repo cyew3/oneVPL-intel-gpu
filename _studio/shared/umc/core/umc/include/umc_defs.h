@@ -151,7 +151,6 @@ namespace UMC
 #include <algorithm>
 #endif //__cplusplus
 
-#define MFX_INTERNAL_CPY_S(dst, dstsize, src, src_size) memcpy_s((uint8_t *)(dst), (size_t)(dstsize), (const uint8_t *)(src), (size_t)(src_size))
 #define MFX_INTERNAL_CPY(dst, src, size) memcpy((uint8_t *)(dst), (const uint8_t *)(src), (int)(size))
 #define MFX_INTERNAL_ZERO(dst, size) memset((uint8_t *)(dst), 0, (int)(size))
 
