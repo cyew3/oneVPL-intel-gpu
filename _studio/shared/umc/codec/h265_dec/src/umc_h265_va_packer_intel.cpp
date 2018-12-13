@@ -70,9 +70,10 @@ namespace UMC_HEVC_DECODER
 
     private:
 
-        void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier);
-        bool PackSliceParams(H265Slice *pSlice, uint32_t &, bool isLastSlice);
-        void PackSubsets(const H265DecoderFrame *pCurrentFrame);
+        void PackPicParams(H265DecoderFrame const*, TaskSupplier_H265 *supplier) override;
+        bool PackSliceParams(H265Slice const*, size_t, bool isLastSlice) override;
+
+        void PackSubsets(H265DecoderFrame const*);
     };
 
     Packer * CreatePackerIntel(UMC::VideoAccelerator* va)
@@ -494,11 +495,15 @@ namespace UMC_HEVC_DECODER
     }
 #endif
 
-    void PackerDXVA2intel::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
+    void PackerDXVA2intel::PackPicParams(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 *supplier)
     {
         H265DBPList const* dpb = supplier->GetDPBList();
         if (!dpb)
             throw h265_exception(UMC_ERR_FAILED);
+
+        H265DecoderFrameInfo const* pSliceInfo = pCurrentFrame->GetAU();
+        if (!pSliceInfo)
+            throw h265_exception(UMC::UMC_ERR_FAILED);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         if (m_va->m_Profile & VA_PROFILE_SCC)
@@ -766,12 +771,12 @@ namespace UMC_HEVC_DECODER
     }
 #endif
 
-    bool PackerDXVA2intel::PackSliceParams(H265Slice *pSlice, uint32_t &, bool isLastSlice)
+    bool PackerDXVA2intel::PackSliceParams(H265Slice const* pSlice, size_t, bool isLastSlice)
     {
         uint8_t const start_code_prefix[] = { 0, 0, 1 };
         size_t const prefix_size = 0;//sizeof(start_code_prefix);
 
-        H265HeadersBitstream* pBitstream = pSlice->GetBitStream();
+        H265HeadersBitstream const* pBitstream = pSlice->GetBitStream();
         VM_ASSERT(pBitstream);
 
         uint32_t      rawDataSize = 0;

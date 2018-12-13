@@ -38,11 +38,11 @@ namespace UMC_HEVC_DECODER
 
     private:
 
-        void PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier) override;
-        void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier) override;
-        bool PackSliceParams(H265Slice*, uint32_t& /*sliceNum*/, bool /*isLastSlice*/)
+        void PackAU(H265DecoderFrame const*, TaskSupplier_H265*) override;
+        void PackPicParams(H265DecoderFrame const*, TaskSupplier_H265*) override;
+        bool PackSliceParams(H265Slice const*, size_t /*sliceNum*/, bool /*isLastSlice*/) override 
         { return true; }
-        void PackQmatrix(const H265Slice* /*pSlice*/) {}
+        void PackQmatrix(const H265Slice* /*pSlice*/) override {}
     };
 
     Packer* CreatePackerWidevine(UMC::VideoAccelerator* va)
@@ -64,7 +64,7 @@ namespace UMC_HEVC_DECODER
 
         H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
-        PackPicParams(pCurrentFrame, sliceInfo, supplier);
+        PackPicParams(pCurrentFrame, supplier);
 
             Status s = m_va->Execute();
             if(s != UMC_OK)
@@ -82,15 +82,18 @@ namespace UMC_HEVC_DECODER
         }
     }
 
-    void PackerDXVA2_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
+    void PackerDXVA2_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 *supplier)
     {
         UMCVACompBuffer *compBuf;
-        DXVA_Intel_PicParams_HEVC *pPicParam = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
+        auto pPicParam = reinterpret_cast<DXVA_Intel_PicParams_HEVC*>(m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf));
         compBuf->SetDataSize(sizeof(DXVA_Intel_PicParams_HEVC));
+        *pPicParam = {};
 
-        memset(pPicParam, 0, sizeof(DXVA_Intel_PicParams_HEVC));
+        H265DecoderFrameInfo const* sliceInfo = pCurrentFrame->GetAU();
+        if (!sliceInfo)
+            throw h265_exception(UMC::UMC_ERR_FAILED);
 
-        H265WidevineSlice* pSlice = pSliceInfo ? (H265WidevineSlice*)pSliceInfo->GetSlice(0) : nullptr;
+        auto pSlice = sliceInfo ? reinterpret_cast<H265WidevineSlice*>(sliceInfo->GetSlice(0)) : nullptr;
         if (!pSlice)
             return;
 

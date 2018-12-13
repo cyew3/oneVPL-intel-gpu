@@ -46,22 +46,24 @@ namespace UMC_HEVC_DECODER
 
     private:
 
-        void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 * supplier);
-        bool PackSliceParams(H265Slice *pSlice, uint32_t &sliceNum, bool isLastSlice);
+        void PackPicParams(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier);
+        bool PackSliceParams(H265Slice const* pSlice, size_t, bool isLastSlice);
     };
 
     Packer* CreatePackerMS(UMC::VideoAccelerator* va)
     { return new MSPackerDXVA2(va); }
 
-    void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
-        H265DecoderFrameInfo * sliceInfo,
-        TaskSupplier_H265 * supplier)
+    void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier)
     {
         UMCVACompBuffer *compBuf;
         DXVA_PicParams_HEVC* pPicParam = (DXVA_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
         memset(pPicParam, 0, sizeof(DXVA_PicParams_HEVC));
 
         compBuf->SetDataSize(sizeof(DXVA_PicParams_HEVC));
+
+        H265DecoderFrameInfo const* sliceInfo = pCurrentFrame->GetAU();
+        if (!sliceInfo)
+            throw h265_exception(UMC::UMC_ERR_FAILED);
 
         H265Slice *pSlice = sliceInfo->GetSlice(0);
         if (!pSlice)
@@ -263,14 +265,14 @@ namespace UMC_HEVC_DECODER
         pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
     }
 
-    bool MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, uint32_t &sliceNum, bool isLastSlice)
+    bool MSPackerDXVA2::PackSliceParams(H265Slice const* pSlice, size_t sliceNum, bool isLastSlice)
     {
         static uint8_t start_code_prefix[] = { 0, 0, 1 };
 
         uint32_t  rawDataSize = 0;
         const void*  rawDataPtr = 0;
 
-        H265HeadersBitstream *pBitstream = pSlice->GetBitStream();
+        H265HeadersBitstream const* pBitstream = pSlice->GetBitStream();
         pBitstream->GetOrg((uint32_t**)&rawDataPtr, &rawDataSize);
 
         UMCVACompBuffer *headVABffr = 0;

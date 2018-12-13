@@ -156,7 +156,10 @@ public:  // DEBUG !!!! should remove dependence
     H265HeadersBitstream m_BitStream;                                  // (H265Bitstream) slice bit stream
 
     // Obtain bit stream object
-    H265HeadersBitstream *GetBitStream(){return &m_BitStream;}
+    H265HeadersBitstream* GetBitStream()
+    { return &m_BitStream; }
+    H265HeadersBitstream const* GetBitStream() const
+    { return &m_BitStream; }
 #else
     H265Bitstream m_BitStream;                                  // (H265Bitstream) slice bit stream
 

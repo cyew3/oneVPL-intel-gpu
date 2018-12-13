@@ -46,8 +46,8 @@ namespace UMC_HEVC_DECODER
 
     private:
 
-        void PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier) override;
-        void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier) override;
+        void PackAU(H265DecoderFrame const*, TaskSupplier_H265*) override;
+        void PackPicParams(H265DecoderFrame const*, TaskSupplier_H265*) override;
     };
 
     Packer* CreatePackerCENC(UMC::VideoAccelerator* va)
@@ -55,34 +55,35 @@ namespace UMC_HEVC_DECODER
 
     void PackerVA_CENC::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier)
     {
-        if (!frame)
+        if (!frame || !supplier)
             throw h265_exception(UMC_ERR_NULL_PTR);
 
-        H265DecoderFrameInfo * sliceInfo = frame->m_pSlicesInfo;
-        if (!sliceInfo)
-            throw h265_exception(UMC_ERR_NULL_PTR);
+        H265DecoderFrameInfo const* pSliceInfo = frame->GetAU();
+        if (!pSliceInfo)
+            throw h265_exception(UMC::UMC_ERR_FAILED);
 
-        int sliceCount = sliceInfo->GetSliceCount();
+        int sliceCount = pSliceInfo->GetSliceCount();
         if (!sliceCount)
             return;
 
-        H265Slice *pSlice = sliceInfo->GetSlice(0);
+        H265Slice *pSlice = pSliceInfo->GetSlice(0);
         if (!pSlice)
             throw h265_exception(UMC_ERR_NULL_PTR);
 
         H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
-        PackPicParams(pCurrentFrame, sliceInfo, supplier);
+        PackPicParams(pCurrentFrame, supplier);
 
         Status s = m_va->Execute();
         if (s != UMC_OK)
             throw h265_exception(s);
     }
 
-    void PackerVA_CENC::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
+    void PackerVA_CENC::PackPicParams(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 *supplier)
     {
-        if (!pCurrentFrame || !pSliceInfo || !supplier)
-            throw h265_exception(UMC_ERR_NULL_PTR);
+        H265DecoderFrameInfo const* pSliceInfo = pCurrentFrame->GetAU();
+        if (!pSliceInfo)
+            throw h265_exception(UMC::UMC_ERR_FAILED);
 
         auto pSlice = static_cast<H265CENCSlice*>(pSliceInfo->GetSlice(0));
         const H265SeqParamSet* pSeqParamSet = pSlice->GetSeqParam();

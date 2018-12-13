@@ -68,7 +68,7 @@ namespace UMC_HEVC_DECODER
     protected:
 
         uint32_t              m_statusReportFeedbackCounter;
-        int                 m_refFrameListCacheSize;
+        int                   m_refFrameListCacheSize;
     };
 }
 

@@ -108,7 +108,7 @@ namespace UMC_HEVC_DECODER
         for (;;)
         {
             bool notchopping = true;
-            PackPicParams(pCurrentFrame, sliceInfo, supplier);
+            PackPicParams(pCurrentFrame, supplier);
             if (pSeqParamSet->scaling_list_enabled_flag)
             {
                 PackQmatrix(pSlice);
