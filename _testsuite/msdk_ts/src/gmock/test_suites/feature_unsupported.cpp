@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -197,9 +197,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*27 / 40*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtMoveRect.NumRect,  1} },
 
     {/*28 / 41*/ ENCODE, MFX_CODEC_AVC,     NONE, NONE, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
-    {/*29 / 42*/ ENCODE, MFX_CODEC_AVC,     NONE, NONE, {&tsStruct::mfxExtEncoderCapability.InputMemoryTiling, 1},},
     {/*30 / 43*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
-    {/*31 / 44*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.InputMemoryTiling, 1},},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -326,7 +324,7 @@ int TestSuite::RunTestQueryInitComponent(const tc_struct& tc)
     //Query(session, in, out) test:
     if ((MFX_CODEC_AVC == tc.codec) && !(g_tsImpl & MFX_IMPL_VIA_D3D11) && (g_tsOSFamily != MFX_OS_FAMILY_LINUX) && (queryParIn.GetExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY)))
     {
-        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);//MBPerSec, InputMemoryTiling supported only by D3D11 or VAAPI
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);//MBPerSec supported only by D3D11 or VAAPI
     }
     else
     {
@@ -344,7 +342,7 @@ int TestSuite::RunTestQueryInitComponent(const tc_struct& tc)
     //Query(session, in, in) test:
     if ((MFX_CODEC_AVC == tc.codec) && !(g_tsImpl & MFX_IMPL_VIA_D3D11) && (g_tsOSFamily != MFX_OS_FAMILY_LINUX) && (queryParIn.GetExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY)))
     {
-        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);//MBPerSec, InputMemoryTiling supported only by D3D11 or VAAPI
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);//MBPerSec supported only by D3D11 or VAAPI
     }
     else
     {
