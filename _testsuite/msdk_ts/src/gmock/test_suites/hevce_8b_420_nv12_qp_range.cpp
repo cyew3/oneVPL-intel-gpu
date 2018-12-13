@@ -17,7 +17,7 @@
 #include "ts_struct.h"
 #include <random>
 
-namespace hevce_qp_range
+namespace hevce_8b_420_nv12_qp_range
 {
 
     struct tc_struct
@@ -262,5 +262,5 @@ namespace hevce_qp_range
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(hevce_qp_range);
+    TS_REG_TEST_SUITE_CLASS(hevce_8b_420_nv12_qp_range);
 };
