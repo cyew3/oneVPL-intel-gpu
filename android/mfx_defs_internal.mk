@@ -9,13 +9,9 @@
 #   MFX_INCLUDES_INTERNAL - all include paths needed to build MFX targets
 #   MFX_INCLUDES_INTERNAL_HW - all include paths needed to build MFX HW targets
 
-MFX_CFLAGS_INTERNAL := $(MFX_CFLAGS)
-
-ifeq ($(TARGET_BOARD_PLATFORM), clovertrail)
-    MFX_CFLAGS_INTERNAL += -mssse3
-else
-    MFX_CFLAGS_INTERNAL += -msse4.2
-endif
+MFX_CFLAGS_INTERNAL := \
+    $(MFX_CFLAGS) \
+    -msse4.2
 
 MDF_ROOT := $(MFX_HOME)/mdp_msdk-contrib/mdf
 
