@@ -48,23 +48,29 @@ CENCTaskSupplier::CENCTaskSupplier()
 CENCTaskSupplier::~CENCTaskSupplier()
 {}
 
-#if !defined(OPEN_SOURCE)
 Status CENCTaskSupplier::Init(VideoDecoderParams *pInit)
 {
     Status umsRes = VATaskSupplier::Init(pInit);
     if (umsRes != UMC_OK)
         return umsRes;
 
+#if !defined(OPEN_SOURCE)
     if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
         (IS_PROTECTION_CENC(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
     {
         m_pCENCDecrypter->Init();
         m_pCENCDecrypter->SetVideoHardwareAccelerator(((UMC::VideoDecoderParams*)pInit)->pVideoAccelerator);
     }
+#endif
+
+#if defined(ANDROID)
+    m_DPBSizeEx += 2; // Fix for freeze issue
+#endif
 
     return UMC_OK;
 }
 
+#if !defined(OPEN_SOURCE)
 void CENCTaskSupplier::Reset()
 {
     VATaskSupplier::Reset();
