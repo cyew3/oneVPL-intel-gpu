@@ -225,13 +225,13 @@ Status Muxer::PutData(MediaData *lpData, int32_t iTrack)
 {
   MediaData data;
   size_t dataSize = lpData->GetDataSize();
-  void *pData = lpData->GetDataPointer();
+  uint8_t *pData = reinterpret_cast<uint8_t *>(lpData->GetDataPointer());
 
   UMC_CALL(LockBuffer(&data, iTrack));
 
   // copy data
   UMC_CHECK(dataSize <= data.GetBufferSize(), UMC_ERR_NOT_ENOUGH_BUFFER);
-  MFX_INTERNAL_CPY_S((uint8_t*)data.GetDataPointer(), (int32_t)data.GetDataSize(), (uint8_t*)pData, (int32_t)dataSize);
+  std::copy(pData, pData + dataSize, (uint8_t*)data.GetDataPointer());
 
   // copy time & frame type
   double dPTS, dDTS;
