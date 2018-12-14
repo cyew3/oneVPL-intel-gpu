@@ -235,6 +235,7 @@ VAProfile get_next_va_profile(uint32_t umc_codec, uint32_t profile)
         break;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     case UMC::VA_AV1:
+    case UMC::VA_AV1 | UMC::VA_PROFILE_10:
         if (profile < UMC_ARRAY_SIZE(g_AV1Profiles)) va_profile = g_AV1Profiles[profile];
         break;
 #endif
