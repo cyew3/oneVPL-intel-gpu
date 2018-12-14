@@ -1,4 +1,4 @@
-LIBMFX_1.0 {
+LIBMFXSW_1.0 {
   global:
     MFXInit;
     MFXClose;
@@ -52,14 +52,14 @@ LIBMFX_1.0 {
     *;
 };
 
-LIBMFX_1.1 {
+LIBMFXSW_1.1 {
   global:
     MFXVideoUSER_Register;
     MFXVideoUSER_Unregister;
     MFXVideoUSER_ProcessFrameAsync;
-} LIBMFX_1.0;
+} LIBMFXSW_1.0;
 
-LIBMFX_1.10 {
+LIBMFXSW_1.10 {
   global:
     MFXVideoENC_Query;
     MFXVideoENC_QueryIOSurf;
@@ -69,9 +69,9 @@ LIBMFX_1.10 {
     MFXVideoENC_ProcessFrameAsync;
     MFXVideoVPP_RunFrameVPPAsyncEx;
 
-} LIBMFX_1.1;
+} LIBMFXSW_1.1;
 
-LIBMFX_1.13 {
+LIBMFXSW_1.13 {
   global:
     MFXVideoPAK_Query;
     MFXVideoPAK_QueryIOSurf;
@@ -79,18 +79,18 @@ LIBMFX_1.13 {
     MFXVideoPAK_Reset;
     MFXVideoPAK_Close;
     MFXVideoPAK_ProcessFrameAsync;
-} LIBMFX_1.10;
+} LIBMFXSW_1.10;
 
-LIBMFX_1.14 {
+LIBMFXSW_1.14 {
   global:
     MFXInitEx;
     MFXDoWork;
-} LIBMFX_1.13;
+} LIBMFXSW_1.13;
 
-LIBMFX_1.19 {
+LIBMFXSW_1.19 {
   global:
     MFXVideoENC_GetVideoParam;
     MFXVideoPAK_GetVideoParam;
     MFXVideoCORE_QueryPlatform;
     MFXVideoUSER_GetPlugin;
-} LIBMFX_1.14;
+} LIBMFXSW_1.14;

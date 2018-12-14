@@ -32,7 +32,7 @@ _studio/vp9e_hw/CMakeLists.txt
 _studio/vp9e_hw/include/mfx_vp9_encode_plugin_hw.h
 _studio/vp9e_hw/include/plugin_version_linux.h
 _studio/vp9e_hw/src/mfx_vp9_encode_plugin.cpp
-_studio/mfx_lib/libmfx.map
+_studio/mfx_lib/libmfxhw.map
 _studio/mfx_lib/pkg-config.pc.cmake
 _studio/mfx_lib/cmut/cmassert.h
 _studio/mfx_lib/cmut/cmbenchmark.h
