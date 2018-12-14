@@ -1101,8 +1101,8 @@ Status VideoFrameConstructor::GetSampleFromQueue(FCSample *pSample)
 
 Status VideoFrameConstructor::Reset()
 {
-    std::lock_guard<std::mutex> guard(m_synchro);
     Status umcRes = FrameConstructor::Reset();
+    std::lock_guard<std::mutex> guard(m_synchro);
     m_bSeqSCFound = false;
     m_bPicSCFound = false;
     m_bFrameBegFound = false;
