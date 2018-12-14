@@ -88,7 +88,7 @@ mfxStatus myMFXInit(const vm_char *pMFXLibraryPath, mfxIMPL impl, mfxVersion *pV
     MFX_DISP_HANDLE *pHandle = new MFX_DISP_HANDLE(NULL == pVer ? ver: *pVer);
     if (!pHandle) return MFX_ERR_MEMORY_ALLOC;
 
-    msdk_disp_char path[MAX_PATH];
+    wchar_t path[MAX_PATH];
 #if defined(_WIN32) || defined(_WIN64)
     #ifdef UNICODE
         swprintf(path, L"%s", pMFXLibraryPath);
@@ -149,7 +149,7 @@ mfxStatus myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSessi
     MFX_DISP_HANDLE *pHandle = new MFX_DISP_HANDLE(par.Version);
     if (!pHandle) return MFX_ERR_MEMORY_ALLOC;
 
-    msdk_disp_char path[MAX_PATH];
+    wchar_t path[MAX_PATH];
 #if defined(_WIN32) || defined(_WIN64)
     #ifdef UNICODE
         swprintf(path, L"%s", pMFXLibraryPath);
