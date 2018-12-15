@@ -321,7 +321,6 @@ _studio/shared/umc/codec/color_space_converter/include/umc_video_processing.h
 _studio/shared/umc/codec/color_space_converter/src/umc_color_space_conversion.cpp
 _studio/shared/umc/codec/color_space_converter/src/umc_deinterlacing.cpp
 _studio/shared/umc/codec/color_space_converter/src/umc_video_processing.cpp
-_studio/shared/umc/codec/h264_dec/CMakeLists.txt
 _studio/shared/umc/codec/h264_dec/include/umc_h264_au_splitter.h
 _studio/shared/umc/codec/h264_dec/include/umc_h264_bitstream_headers.h
 _studio/shared/umc/codec/h264_dec/include/umc_h264_dec.h
@@ -362,7 +361,6 @@ _studio/shared/umc/codec/h264_dec/src/umc_h264_task_supplier.cpp
 _studio/shared/umc/codec/h264_dec/src/umc_h264_va_packer.cpp
 _studio/shared/umc/codec/h264_dec/src/umc_h264_va_supplier.cpp
 _studio/shared/umc/codec/h264_enc/include/umc_h264_common.h
-_studio/shared/umc/codec/h265_dec/CMakeLists.txt
 _studio/shared/umc/codec/h265_dec/include/umc_h265_au_splitter.h
 _studio/shared/umc/codec/h265_dec/include/umc_h265_bitstream_headers.h
 _studio/shared/umc/codec/h265_dec/include/umc_h265_debug.h
@@ -405,7 +403,6 @@ _studio/shared/umc/codec/h265_dec/src/umc_h265_va_packer.cpp
 _studio/shared/umc/codec/h265_dec/src/umc_h265_va_supplier.cpp
 _studio/shared/umc/codec/h265_dec/src/umc_h265_yuv.cpp
 _studio/shared/umc/codec/h265_dec/src/umc_h265_mfx_utils.cpp
-_studio/shared/umc/codec/mpeg2_dec/CMakeLists.txt
 _studio/shared/umc/codec/mpeg2_dec/include/umc_mpeg2_dec.h
 _studio/shared/umc/codec/mpeg2_dec/include/umc_mpeg2_dec_base.h
 _studio/shared/umc/codec/mpeg2_dec/include/umc_mpeg2_dec_bstream.h
@@ -615,7 +612,6 @@ _studio/mfx_lib/encode_hw/mjpeg/src/mfx_mjpeg_encode_factory.cpp
 _studio/mfx_lib/encode_hw/mjpeg/src/mfx_mjpeg_encode_hw.cpp
 _studio/mfx_lib/encode_hw/mjpeg/src/mfx_mjpeg_encode_hw_utils.cpp
 _studio/mfx_lib/encode_hw/mjpeg/src/mfx_mjpeg_encode_vaapi.cpp
-_studio/shared/umc/codec/jpeg_common/CMakeLists.txt
 _studio/shared/umc/codec/jpeg_common/include/basestream.h
 _studio/shared/umc/codec/jpeg_common/include/basestreamin.h
 _studio/shared/umc/codec/jpeg_common/include/basestreamout.h
@@ -631,7 +627,6 @@ _studio/shared/umc/codec/jpeg_common/src/colorcomp.cpp
 _studio/shared/umc/codec/jpeg_common/src/jpegbase.cpp
 _studio/shared/umc/codec/jpeg_common/src/membuffin.cpp
 _studio/shared/umc/codec/jpeg_common/src/membuffout.cpp
-_studio/shared/umc/codec/jpeg_dec/CMakeLists.txt
 _studio/shared/umc/codec/jpeg_dec/include/dechtbl.h
 _studio/shared/umc/codec/jpeg_dec/include/decqtbl.h
 _studio/shared/umc/codec/jpeg_dec/include/jpegdec_base.h

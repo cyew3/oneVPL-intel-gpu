@@ -27,7 +27,7 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 ### CM
 include_directories( ${MSDK_LIB_ROOT}/cmrt_cross_platform/include )
 set( SRC_DIR "${MSDK_LIB_ROOT}/cmrt_cross_platform/src" )
-set( defs "${WARNING_FLAGS}" )
+set( defs "" )
 set( sources "" )
 set( sources.plus "" )
 file( GLOB_RECURSE srcs "${SRC_DIR}/*.c" "${SRC_DIR}/*.cpp" )
@@ -50,10 +50,9 @@ foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
   )
 endforeach()
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "" )
 make_library( mfx_common none static )
 append_property( mfx_common COMPILE_FLAGS " -DMFX_RT" )
-set( defs "" )
 
 foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
   list( APPEND sources
@@ -67,15 +66,16 @@ foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
   )
 endforeach()
 
-set( defs "${WARNING_FLAGS}" )
+set( defs "" )
 make_library( mfx_common hw static )
 append_property( mfx_common_hw COMPILE_FLAGS " -DMFX_RT" )
-set( defs "" )
 
 ### libmfxhw
 list( APPEND mdirs
   scheduler vpp decode/vc1
-  decode/mjpeg decode/h264 decode/mpeg2 cmrt_cross_platform encode_hw/h264 encode_hw/h265 encode_hw/mpeg2 encode_hw/mjpeg encode_hw/vp9
+  decode/mjpeg decode/h264 decode/mpeg2 cmrt_cross_platform
+  encode_hw/vp9 encode_hw/h265 encode_hw/h264 encode_hw/mpeg2 encode_hw/mjpeg
+  encode/mjpeg
   decode/h265 decode/vp8 decode/vp9 mctf_package/mctf
   )
 include_directories( ${MSDK_LIB_ROOT}/fei/h264_common )
@@ -89,10 +89,9 @@ endforeach()
 include_directories( ${MSDK_LIB_ROOT}/genx/field_copy/include )
 include_directories( ${MSDK_LIB_ROOT}/genx/copy_kernels/include )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/asc/include )
-include_directories( ${MSDK_STUDIO_ROOT}/hevc_fei/h265_fei/include )
 
 list( APPEND cdirs
-  brc h264_enc mpeg2_dec vp9_dec vc1_dec vc1_common
+  brc h264_enc mpeg2_dec vc1_dec vp9_dec vc1_common jpeg_enc
   )
 foreach( dir ${cdirs} )
   include_directories( ${MSDK_UMC_ROOT}/codec/${dir}/include )
@@ -124,6 +123,7 @@ foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
     ${prefix}/mfx_brc_common.cpp
     ${prefix}/mfx_mpeg2_dec_common.cpp
     ${prefix}/mfx_vc1_dec_common.cpp
+    ${prefix}/mfx_vpx_dec_common.cpp
     #=================
   )
 endforeach()
@@ -167,21 +167,30 @@ else()
   set(GENX_LIB "")
 endif()
 
+if( MFX_ENABLE_SW_FALLBACK )
+  set(SW_FALLBACK_LIBS "jpeg_enc;color_space_converter_hw;ipp;encode")
+else()
+  set(SW_FALLBACK_LIBS "")
+endif()
 set( LIBS "" )
 list( APPEND LIBS
   mfx_trace_hw
   bitrate_control
   h264_dec_hw
+  h265_dec_hw
   jpeg_common
   jpeg_dec_hw
+  ${SW_FALLBACK_LIBS}
   mpeg2_dec_hw
+  vc1_common
+  vc1_dec_hw
+  vp8_dec_hw
   vp9_dec_hw
   umc
   vm
   vm_plus
   umc_va_hw
   cmrt_cross_platform_hw
-  decode_hw
   encode_hw
   h264_la
   ${GENX_LIB}
@@ -194,15 +203,11 @@ list( APPEND LIBS
   h264_preenc
   h264_enc
   h264_pak
-  vc1_common
-  vc1_dec_hw
-  umc_h265_hw
   ${ITT_LIBS}
   pthread
   dl
 )
 
-set( defs "${defs} ${WARNING_FLAGS}" )
 make_library( ${mfxlibname} hw shared )
 make_library( mfxhw_static hw static )
 
@@ -216,15 +221,3 @@ install(TARGETS ${mfxlibname} LIBRARY DESTINATION ${MFX_MODULES_DIR})
 set( PKG_CONFIG_FNAME "${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE}/lib${mfxlibname}.pc")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pkg-config.pc.cmake" ${PKG_CONFIG_FNAME} @ONLY)
 install( FILES ${PKG_CONFIG_FNAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
-
-if (NOT DEFINED MFX_LIBNAME)
-  # compatibility staff which we definitely don't need if user manually
-  # specified library name
-  install( CODE "execute_process(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-    ${MFX_MODULES_DIR}/lib${mfxlibname}.so.${mfx_version_major}.${mfx_version_minor}
-    ${MFX_MODULES_DIR}/lib${mfxlibname}-p.so.${mfx_version_major}.${mfx_version_minor} )"
-  )
-endif()
-
-set( defs "" )
