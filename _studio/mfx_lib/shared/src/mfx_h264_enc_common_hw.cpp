@@ -4956,6 +4956,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         mfeParam.MaxNumFrames = 1;
         changed = true;
     }
+    if (mfeParam.MaxNumFrames > 1 && par.mfx.LowPower == MFX_CODINGOPTION_ON)
+    {
+        mfeParam.MaxNumFrames = 1;
+        mfeParam.MFMode = MFX_MF_DEFAULT;
+        changed = true;
+    }
     if (mfeParam.MaxNumFrames > 1 && mfeParam.MFMode == MFX_MF_DEFAULT)
     {
         mfeParam.MFMode = MFX_MF_AUTO;
