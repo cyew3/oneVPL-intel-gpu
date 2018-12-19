@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,6 +18,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
 #include "mfx_samples_config.h"
+#include <algorithm>
 
 #if defined(WIN32) || defined(WIN64)
 
@@ -157,8 +158,8 @@ mfxStatus CD3D9Device::FillD3DPP(mfxHDL hWindow, mfxU16 nViews, D3DPRESENT_PARAM
         GetClientRect((HWND)hWindow, &r);
         int x = GetSystemMetrics(SM_CXSCREEN);
         int y = GetSystemMetrics(SM_CYSCREEN);
-        D3DPP.BackBufferWidth  = min(r.right - r.left, x);
-        D3DPP.BackBufferHeight = min(r.bottom - r.top, y);
+        D3DPP.BackBufferWidth  = std::min<LONG>(r.right - r.left, x);
+        D3DPP.BackBufferHeight = std::min<LONG>(r.bottom - r.top, y);
     }
     else
     {
@@ -251,8 +252,8 @@ mfxStatus CD3D9Device::Reset()
         GetClientRect((HWND)m_D3DPP.hDeviceWindow, &r);
         int x = GetSystemMetrics(SM_CXSCREEN);
         int y = GetSystemMetrics(SM_CYSCREEN);
-        m_D3DPP.BackBufferWidth  = min(r.right - r.left, x);
-        m_D3DPP.BackBufferHeight = min(r.bottom - r.top, y);
+        m_D3DPP.BackBufferWidth  = std::min<LONG>(r.right - r.left, x);
+        m_D3DPP.BackBufferHeight = std::min<LONG>(r.bottom - r.top, y);
     }
     else
     {
