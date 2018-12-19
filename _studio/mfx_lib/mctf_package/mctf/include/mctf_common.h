@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -96,7 +96,6 @@ typedef struct {
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define ABS(a)    (((a) < 0) ? (-(a)) : (a))
 
-#define CLIPVAL(VAL, MINVAL, MAXVAL) MAX(MINVAL, MIN(MAXVAL, VAL))
 #define MCTF_CHECK_CM_ERR(STS, ERR) if ((STS) != CM_SUCCESS) { ASC_PRINTF("FAILED at file: %s, line: %d, cmerr: %d\n", __FILE__, __LINE__, STS); return ERR; }
 
 #define CHECK_ERR(ERR) if ((ERR) != PASSED) { ASC_PRINTF("FAILED at file: %s, line: %d\n", __FILE__, __LINE__); return (ERR); }
