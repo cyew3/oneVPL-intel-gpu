@@ -1054,7 +1054,7 @@ namespace MPEG2EncoderHW
         MFX_CHECK(par->Protected == 0 || type >= MFX_HW_HSW, MFX_ERR_INVALID_VIDEO_PARAM);
 #endif
 
-        mfxStatus sts = core->IsGuidSupported(DXVA2_Intel_Encode_MPEG2, par);
+        mfxStatus sts = core->IsGuidSupported(DXVA2_Intel_Encode_MPEG2, par, true);
         MFX_CHECK_STS(sts);
 
         mfxExtCodingOption* ext = GetExtCodingOptions(par->ExtParam, par->NumExtParam);
