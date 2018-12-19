@@ -596,8 +596,8 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     MFX_CHECK_STS_SET_ERR(CreateCore(), PE_INIT_CORE);
     TIME_PRINT(VM_STRING("CreateCore"));
 
-    m_YUV_Width = mfx_align<mfxU16>(m_inParams.FrameInfo.Width, 0x10);;
-    m_YUV_Height = mfx_align<mfxU16>(m_inParams.FrameInfo.Height, 0x10);
+    m_YUV_Width = m_inParams.FrameInfo.Width;
+    m_YUV_Height = m_inParams.FrameInfo.Height;
 
     MFX_CHECK_STS(BuildMFXPart());
 
@@ -3202,7 +3202,7 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
         if (m_pSpl == NULL)
             bs.isNull = true;
 #ifdef LIBVA_SUPPORT
-        if ( m_components[eDEC].m_bufType == MFX_BUF_HW )
+        if ( m_inParams.bAdaptivePlayback && m_components[eDEC].m_bufType == MFX_BUF_HW )
         {
             vaapiMemId *vapi_id = (vaapiMemId *)(inSurface.pSurface->Data.MemId);
             if ( (VASurfaceID)VA_INVALID_ID == *(vapi_id->m_surface))
