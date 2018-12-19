@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -510,13 +510,13 @@ Status MPEG2BRC::PreEncFrameMidRange(FrameType frameType, int32_t recode)
         + ip_tagsize / 2                      // top to center length of I (or IP) frame
         - mHRD.bufFullness;
       if (dev * rc_dev < 0) {
-        BRC_CLIP(dev, -mHRD.maxInputBitsPerFrame, ip_tagsize);
+        dev = mfx::clamp(dev, -mHRD.maxInputBitsPerFrame, ip_tagsize);
         rc_dev = dev;
       } else {
         adev = BRC_ABS(dev);
         arc_dev = BRC_ABS(rc_dev);
         if (adev > arc_dev) {
-          BRC_CLIP(dev, -arc_dev - mHRD.maxInputBitsPerFrame, arc_dev + ip_tagsize);
+          dev = mfx::clamp(dev, -arc_dev - mHRD.maxInputBitsPerFrame, arc_dev + ip_tagsize);
           rc_dev = dev;
         }
       }
@@ -625,7 +625,7 @@ Status MPEG2BRC::PreEncFrameMidRange(FrameType frameType, int32_t recode)
   }
 
   //clip qp to a valid value
-  BRC_CLIP(q0,mQuantMin,mQuantMax);
+  q0 = mfx::clamp(q0, mQuantMin, mQuantMax);
 
   // this call is used to accept small changes in value, which are mapped to the same code
   // changeQuant bothers about changing scale code if value changes
@@ -673,13 +673,13 @@ Status MPEG2BRC::PreEncFrameFallBack(FrameType frameType, int32_t recode)
         + ip_tagsize / 2                      // top to center length of I (or IP) frame
         - mHRD.bufFullness;
       if (dev * rc_dev < 0) {
-        BRC_CLIP(dev, -mHRD.maxInputBitsPerFrame, ip_tagsize);
+        dev = mfx::clamp(dev, -mHRD.maxInputBitsPerFrame, ip_tagsize);
         rc_dev = dev;
       } else {
         adev = BRC_ABS(dev);
         arc_dev = BRC_ABS(rc_dev);
         if (adev > arc_dev) {
-          BRC_CLIP(dev, -arc_dev - mHRD.maxInputBitsPerFrame, arc_dev + ip_tagsize);
+          dev = mfx::clamp(dev, -arc_dev - mHRD.maxInputBitsPerFrame, arc_dev + ip_tagsize);
           rc_dev = dev;
         }
       }

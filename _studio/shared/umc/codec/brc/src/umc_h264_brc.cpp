@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -315,8 +315,8 @@ int32_t H264BRC::GetInitQP()
     fs += fsLuma * 2;
   fs = fs * mBitDepth / 8;
   int32_t q = (int32_t)(1. / 1.2 * pow(10.0, (log10(fs * 2. / 3. * mParams.info.framerate / mBitrate) - x0) * (y1 - y0) / (x1 - x0) + y0) + 0.5);
-  BRC_CLIP(q, 1, mQuantMax);
-  return q;
+
+  return mfx::clamp(q, 1, mQuantMax);
 }
 
 
@@ -587,7 +587,7 @@ Status H264BRC::Reset(BaseCodecParams *params, int32_t enableRecode)
 
   if (sizeNotChanged) {
     mRCq = (int32_t)(1./mRCqa * pow(mRCfa/mBitsDesiredFrame, 0.32) + 0.5);
-    BRC_CLIP(mRCq, 1, mQuantMax);
+    mRCq = mfx::clamp(mRCq, 1, mQuantMax);
   } else {
     mRCq = GetInitQP();
     if (!mRecode) {
@@ -655,10 +655,10 @@ Status H264BRC::SetQP(int32_t qp, FrameType frameType, int32_t)
 {
   if (B_PICTURE == frameType) {
     mQuantB = qp + mQuantOffset;
-    BRC_CLIP(mQuantB, 1, mQuantMax);
+    mQuantB = mfx::clamp(mQuantB, 1, mQuantMax);
   } else {
     mRCq = qp + mQuantOffset;
-    BRC_CLIP(mRCq, 1, mQuantMax);
+    mRCq = mfx::clamp(mRCq, 1, mQuantMax);
     mQuantI = mQuantP = mRCq;
   }
   return UMC_OK;
@@ -729,7 +729,7 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, int32_t totalFrameBits, int3
     double maxFrameSize;
 
     maxFrameSize = 2.5/9. * buffullness + 5./9. * targetFrameSize;
-    BRC_CLIP(maxFrameSize, targetFrameSize, BRC_SCENE_CHANGE_RATIO2 * targetFrameSize);
+    maxFrameSize = mfx::clamp(maxFrameSize, targetFrameSize, BRC_SCENE_CHANGE_RATIO2 * targetFrameSize);
 
     double famax = 1./9. * buffullness + 8./9. * mRCfa  ;
 
@@ -740,12 +740,12 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, int32_t totalFrameBits, int3
         int32_t qpnew = Qstep2QP(qstepnew);
         if (qpnew == qp)
           qpnew++;
-        BRC_CLIP(qpnew, 1, mQuantMax);
+        qpnew = mfx::clamp(qpnew, 1, mQuantMax);
         mRCq = mQuantI = mQuantP = qpnew; 
         if (picType == B_PICTURE)
             mQuantB = qpnew;
         else
-            SetQuantB();
+            mQuantB = mfx::clamp(((mQuantP + mQuantPrev) * 563 >> 10) + 1, 1, mQuantMax);
 
         mRCfa_short = fa_short0;
 
@@ -773,7 +773,7 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, int32_t totalFrameBits, int3
         int32_t qpnew = Qstep2QP(qstepnew);
         if (qpnew == qp)
             qpnew++;
-        BRC_CLIP(qpnew, 1, mQuantMax);
+        qpnew = mfx::clamp(qpnew, 1, mQuantMax);
 
         mRCfa = mBitsDesiredFrame;
         mRCqa = 1./qpnew;
@@ -820,7 +820,7 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, int32_t totalFrameBits, int3
                     if (mFrameType == B_PICTURE)
                         mQuantB = qp;
                     else
-                        SetQuantB();
+                        mQuantB = mfx::clamp(((mQuantP + mQuantPrev) * 563 >> 10) + 1, 1, mQuantMax);
 
                     Sts = BRC_ERR_BIG_FRAME;
                     mFrameType = prevFrameType;
@@ -839,9 +839,9 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, int32_t totalFrameBits, int3
             mRCqa += (1. / qp - mRCqa) / mRCqap;
 
         if (mRecode) {
-            BRC_CLIP(mRCqa, 1./mQuantMax , 1./1.);
+            mRCqa = mfx::clamp(mRCqa, 1./mQuantMax , 1./1.);
         } else {
-            BRC_CLIP(mRCqa, 1./mQuantMax , 1./mQuantMin);
+            mRCqa = mfx::clamp(mRCqa, 1./mQuantMax , 1./mQuantMin);
         }
 
         if (repack != BRC_RECODE_PANIC && repack != BRC_RECODE_EXT_PANIC && !oldScene) {
@@ -907,7 +907,7 @@ BRCStatus H264BRC::UpdateQuant(int32_t bEncoded, int32_t totalPicBits)
 
   if (mFrameType != I_PICTURE || mRCMode == BRC_CBR || mQuantUpdated == 0)
     mRCfa += (bEncoded - mRCfa) / mRCfap;
-  SetQuantB();
+  mQuantB = mfx::clamp(((mQuantP + mQuantPrev) * 563 >> 10) + 1, 1, mQuantMax);
   if (mQuantUpdated == 0)
     if (mQuantB < quant)
       mQuantB = quant;
@@ -920,14 +920,14 @@ BRCStatus H264BRC::UpdateQuant(int32_t bEncoded, int32_t totalPicBits)
   if (totalBitsDeviation > 0) {
       bap = (int32_t)bfRatio*3;
       bap = MFX_MAX(bap, 10);
-      BRC_CLIP(bap, mRCbap/10, mRCbap);
+      bap = mfx::clamp(bap, mRCbap/10, mRCbap);
   }
   bo = (double)totalBitsDeviation / bap / mBitsDesiredFrame; // ??? bitsPerPic ?
 
-  BRC_CLIP(bo, -1.0, 1.0);
+  bo = mfx::clamp(bo, -1.0, 1.0);
 
   dq = dq + (1./mQuantMax - dq) * bo;
-  BRC_CLIP(dq, 1./mQuantMax, 1./1.);
+  dq = mfx::clamp(dq, 1./mQuantMax, 1./1.);
   quant = (int) (1. / dq + 0.5);
 
   if (quant >= mRCq + 5)
@@ -961,10 +961,10 @@ BRCStatus H264BRC::UpdateQuant(int32_t bEncoded, int32_t totalPicBits)
     if (mRCq == quant)
       quant++;
 
-    BRC_CLIP(quant, 1, mQuantMax);
+    quant = mfx::clamp(quant, 1, mQuantMax);
 
     mQuantB = ((quant + quant) * 563 >> 10) + 1;
-    BRC_CLIP(mQuantB, 1, mQuantMax);
+    mQuantB = mfx::clamp(mQuantB, 1, mQuantMax);
     mRCq = quant;
   }
 
@@ -995,7 +995,7 @@ BRCStatus H264BRC::UpdateQuantHRD(int32_t totalFrameBits, BRCStatus sts, int32_t
   if (quant == quant_prev)
     quant += (sts == BRC_ERR_BIG_FRAME ? 1 : -1);
 
-  BRC_CLIP(quant, 1, mQuantMax);
+  quant = mfx::clamp(quant, 1, mQuantMax);
 
   if (quant < quant_prev) {
     while (quant <= mHRD.underflowQuant)

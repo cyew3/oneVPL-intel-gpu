@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,6 @@
 #include "umc_video_encoder.h"
 #include "umc_brc.h"
 
-#define SetQuantB() \
-  mQuantB = ((mQuantP + mQuantPrev) * 563 >> 10) + 1; \
-  BRC_CLIP(mQuantB, 1, mQuantMax)
 
 namespace UMC
 {
