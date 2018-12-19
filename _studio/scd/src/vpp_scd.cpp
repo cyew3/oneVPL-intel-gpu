@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -630,23 +630,33 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 /*uid_a*/)
         sts = GetFrameHandle(&Native.Data, &Native.Data.MemId);
         MFX_CHECK_STS(sts);
 
-        sts = SCD::MapFrame(&Native);
-        MFX_CHECK_STS(sts);
-
         if (PicStruct & MFX_PICSTRUCT_FIELD_TFF)
+        {
             SCD::SetParityTFF();
+            sts = SCD::PutFrameInterlaced((mfxHDL)Native.Data.MemId);
+            MFX_CHECK_STS(sts);
+        }
         else if (PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+        {
             SCD::SetParityBFF();
-        else //if (PicStruct & (MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_SINGLE))
+            sts = SCD::PutFrameInterlaced((mfxHDL)Native.Data.MemId);
+            MFX_CHECK_STS(sts);
+        }
+        else
+        {
             SCD::SetProgressiveOp();
+            sts = SCD::PutFrameProgressive((mfxHDL)Native.Data.MemId);
+            MFX_CHECK_STS(sts);
+        }
 
-        SCD::ProcessField();
         shot[0] = SCD::Get_frame_shot_Decision();
         last[0] = SCD::Get_frame_last_in_scene();
 
         if (PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))
         {
-            SCD::ProcessField();
+            sts = SCD::PutFrameInterlaced((mfxHDL)Native.Data.MemId);
+            MFX_CHECK_STS(sts);
+
             shot[1] = SCD::Get_frame_shot_Decision();
             last[1] = SCD::Get_frame_last_in_scene();
         }

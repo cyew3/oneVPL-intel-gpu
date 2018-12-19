@@ -5,22 +5,13 @@
     <ClInclude Include="include\scd_tools.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="..\shared\include\mfx_scd.h">
-      <Filter>common</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\vpp_scd.cpp" />
-    <ClCompile Include="..\mfx_lib\genx\scd\asc_genx.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
     <ClCompile Include="src\export.cpp">
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="src\scd_tools.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
-    <ClCompile Include="..\shared\src\mfx_scd.cpp">
       <Filter>common</Filter>
     </ClCompile>
   </ItemGroup>

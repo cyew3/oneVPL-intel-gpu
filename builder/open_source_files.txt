@@ -254,7 +254,6 @@ _studio/shared/include/mfx_common_linux_bxtmin.h
 _studio/shared/include/mfx_ext_buffers.h
 _studio/shared/include/mfx_mfe_adapter.h
 _studio/shared/include/mfx_reflect.h
-_studio/shared/include/mfx_scd.h
 _studio/shared/include/mfx_timing.h
 _studio/shared/include/mfx_trace.h
 _studio/shared/include/mfx_umc_alloc_wrapper.h
@@ -297,7 +296,6 @@ _studio/shared/src/libmfx_core.cpp
 _studio/shared/src/libmfx_core_factory.cpp
 _studio/shared/src/libmfx_core_vaapi.cpp
 _studio/shared/src/mfx_mfe_adapter.cpp
-_studio/shared/src/mfx_scd.cpp
 _studio/shared/src/mfx_static_assert_structs.cpp
 _studio/shared/src/mfx_umc_alloc_wrapper.cpp
 _studio/shared/src/mfx_vpp_vaapi.cpp
@@ -584,10 +582,6 @@ _studio/mfx_lib/genx/mctf/src/genx_sd_bdw_isa.cpp
 _studio/mfx_lib/genx/mctf/src/genx_sd_icl_isa.cpp
 _studio/mfx_lib/genx/mctf/src/genx_sd_icllp_isa.cpp
 _studio/mfx_lib/genx/mctf/src/genx_sd_skl_isa.cpp
-_studio/mfx_lib/genx/scd/asc_genx.cpp
-_studio/mfx_lib/genx/scd/asc_genx_bdw_isa.cpp
-_studio/mfx_lib/genx/scd/asc_genx_hsw_isa.cpp
-_studio/mfx_lib/genx/scd/asc_genx_skl_isa.cpp
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_common.h
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_hw.h
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_vp8_defs.h

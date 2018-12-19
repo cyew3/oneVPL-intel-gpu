@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2020
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1A8C6A5C-1DC0-4288-8033-8FE2A873DFDE}"
 	ProjectSection(SolutionItems) = preProject
@@ -22,6 +22,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmrt_cross_platform", "..\m
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vpp_scd", "vpp_scd.vcxproj", "{14CD068C-07F2-4154-8106-9C20431EE273}"
 	ProjectSection(ProjectDependencies) = postProject
+		{0F61230F-80E3-48ED-9FA7-96D13B4E5BB7} = {0F61230F-80E3-48ED-9FA7-96D13B4E5BB7}
 		{A3D890F5-7362-404D-95BF-B6C8AABA786B} = {A3D890F5-7362-404D-95BF-B6C8AABA786B}
 	EndProjectSection
 EndProject
@@ -31,7 +32,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "enc_scd", "enc_scd.vcxproj"
 		{A3D890F5-7362-404D-95BF-B6C8AABA786B} = {A3D890F5-7362-404D-95BF-B6C8AABA786B}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ascLib", "..\shared\ASC\ascLib.vcxproj", "{0F61230F-80E3-48ED-9FA7-96D13B4E5BB7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ascLib", "..\shared\asc\ascLib.vcxproj", "{0F61230F-80E3-48ED-9FA7-96D13B4E5BB7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -190,5 +191,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {12556E23-72AF-4A4E-96DB-29B8F1A40851}
 	EndGlobalSection
 EndGlobal

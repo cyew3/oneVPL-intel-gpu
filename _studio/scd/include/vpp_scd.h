@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 #include "mfx_config.h"
 #include "scd_tools.h"
 #include "mfxplugin++.h"
-#include "mfx_scd.h"
+#include "asc.h"
 
 namespace MfxVppSCD
 {
@@ -59,14 +59,15 @@ struct Task
     mfxFrameSurface1 m_surfNative;
 };
 
-typedef SceneChangeDetector SCD;
+typedef ns_asc::ASC SCD;
+using namespace ns_asc;
 
 class Plugin
     : public MFXVPPPlugin
     , protected MFXCoreInterface
     , protected SCD
-    , protected InternalSurfaces
     , protected TaskManager<Task>
+    , protected InternalSurfaces
 {
 public:
     static MFXVPPPlugin* Create();
@@ -76,11 +77,11 @@ public:
     virtual mfxStatus PluginClose();
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
     virtual mfxStatus VPPFrameSubmit(mfxFrameSurface1 *surface_in,
-                                     mfxFrameSurface1 *surface_out,
-                                     mfxExtVppAuxData *aux, mfxThreadTask *task);
+        mfxFrameSurface1 *surface_out,
+        mfxExtVppAuxData *aux, mfxThreadTask *task);
     virtual mfxStatus VPPFrameSubmitEx(mfxFrameSurface1 *surface_in,
-                                       mfxFrameSurface1 *surface_work,
-                                       mfxFrameSurface1 **surface_out, mfxThreadTask *task);
+        mfxFrameSurface1 *surface_work,
+        mfxFrameSurface1 **surface_out, mfxThreadTask *task);
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32, mfxU32);
     virtual mfxStatus FreeResources(mfxThreadTask, mfxStatus);
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);

@@ -22,7 +22,6 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Building.props" />
   <ItemGroup>
-    <ClCompile Include="..\..\shared\src\mfx_scd.cpp" />
     <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen10_isa.cpp" />
     <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen11_isa.cpp" />
     <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen11lp_isa.cpp" />

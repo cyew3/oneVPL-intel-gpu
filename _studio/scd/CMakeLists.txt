@@ -45,7 +45,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 include_directories( ${MFX_ROOTDIR}/shared/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/cmrt_cross_platform/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/cmut )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/genx/scd )
+include_directories( ${MFX_ROOTDIR}/mfx_lib/genx/asc/include )
 include_directories( ${MFX_ROOTDIR}/shared/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/plugin/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/scheduler/include )
@@ -66,7 +66,6 @@ list( APPEND sources
     ${CMAKE_CURRENT_SOURCE_DIR}/src/export.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/scd_tools.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vpp_scd.cpp
-    ${MFX_ROOTDIR}/shared/src/mfx_scd.cpp
 )
 
 set( LIBS "" )

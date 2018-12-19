@@ -19,15 +19,12 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
 set( sources "" )
 set( sources.plus "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
-list( APPEND sources
-    ${srcs}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/src/mfx_scd.cpp
-)
+
 
 make_library( vpp sw static )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/field_copy/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/scd )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/asc/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/copy_kernels/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmut )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/include )
