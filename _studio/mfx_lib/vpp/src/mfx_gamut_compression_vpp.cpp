@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -556,7 +556,7 @@ mfxStatus EncodeXVYCC_NV12_32f8u( Surface1_32f* pSrc, mfxFrameSurface1* pDst )
         for( x = 0; x < width; x++ )
         {
             int dstY = (((int)(pSrcY[x] * (219)))>>INTERNAL_PRECISION) + (16); // resulting in 12-bits representation
-            pDstY[x] = (uint8_t)VPP_RANGE_CLIP(dstY, 0, maxPixVal);
+            pDstY[x] = (uint8_t)mfx::clamp(dstY, 0, maxPixVal);
         }
     }
 
@@ -577,10 +577,10 @@ mfxStatus EncodeXVYCC_NV12_32f8u( Surface1_32f* pSrc, mfxFrameSurface1* pDst )
         for( x = 0; x < width; x++ )
         {
             int dstU = (((int)(pSrcUV[2*x] * (224)))>>INTERNAL_PRECISION) + 128;
-            pDstUV[2*x] = (uint8_t)VPP_RANGE_CLIP( dstU, 0,  maxPixVal);
+            pDstUV[2*x] = (uint8_t)mfx::clamp( dstU, 0,  maxPixVal);
 
             int dstV = (((int)(pSrcUV[2*x+1] * (224)))>>INTERNAL_PRECISION) + 128;    // resulting in 12-bits representation
-            pDstUV[2*x+1] = (uint8_t)VPP_RANGE_CLIP( dstV, 0,  maxPixVal);
+            pDstUV[2*x+1] = (uint8_t)mfx::clamp( dstV, 0,  maxPixVal);
         }
     }
 

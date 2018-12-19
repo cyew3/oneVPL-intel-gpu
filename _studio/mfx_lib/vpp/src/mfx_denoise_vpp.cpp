@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,7 @@ mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
 
     if( pParam->DenoiseFactor > PAR_NRF_STRENGTH_MAX )
     {
-        VPP_RANGE_CLIP(pParam->DenoiseFactor, PAR_NRF_STRENGTH_MIN, PAR_NRF_STRENGTH_MAX);
+        pParam->DenoiseFactor = PAR_NRF_STRENGTH_MAX;
 
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -224,7 +224,7 @@ mfxStatus MFXVideoVPPDenoise::SetParam( mfxExtBuffer* pHint )
   {
       mfxExtVPPDenoise* pDenoiseParams = (mfxExtVPPDenoise*)pHint;
 
-      m_denoiseFactor = VPP_RANGE_CLIP(pDenoiseParams->DenoiseFactor,
+      m_denoiseFactor = mfx::clamp<mfxU16>(pDenoiseParams->DenoiseFactor,
                                        PAR_NRF_STRENGTH_MIN,
                                        PAR_NRF_STRENGTH_MAX);
 
@@ -1631,7 +1631,7 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCAST_8u_C1R(const mfxU8* pRef,
                                     //note denom is 4 bit -> used a table instead of division
                                     //mfxI32 denoise_blend = (val * q_table[m_temporal_diff_th-m_temp_diff_low - 1]) >> 10;
                                     int indx_q_table = (int)(m_temporal_diff_th-m_temp_diff_low - 1);
-                                    indx_q_table = VPP_RANGE_CLIP(indx_q_table, 0, 15); // size(elemen count) of q_table
+                                    indx_q_table = mfx::clamp(indx_q_table, 0, 15); // size(elemen count) of q_table
                                     pOutBlock[h] = (mfxU8)((val * q_table[indx_q_table]) >> 10);
                                 }
                             }

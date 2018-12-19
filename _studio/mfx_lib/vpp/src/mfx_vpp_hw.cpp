@@ -5271,11 +5271,10 @@ mfxU64 make_back_color_yuv(mfxU16 bit_depth, mfxU16 Y, mfxU16 U, mfxU16 V)
 
     return
         ((mfxU64)                                 (max_val - 1) << 48) |
-        ((mfxU64)VPP_RANGE_CLIP(Y, (16 << shift), (235 << shift))     << 32) |
-        ((mfxU64)VPP_RANGE_CLIP(U, (16 << shift), (240 << shift))     << 16) |
-        ((mfxU64)VPP_RANGE_CLIP(V, (16 << shift), (240 << shift))     <<  0)
-        ;
-};
+        ((mfxU64) mfx::clamp<mfxI32>(Y, (16 << shift), (235 << shift)) << 32) |
+        ((mfxU64) mfx::clamp<mfxI32>(U, (16 << shift), (240 << shift)) << 16) |
+        ((mfxU64) mfx::clamp<mfxI32>(V, (16 << shift), (240 << shift)) <<  0);
+}
 
 inline
 mfxU64 make_def_back_color_yuv(mfxU16 bit_depth)
@@ -5949,9 +5948,9 @@ mfxStatus ConfigureExecuteParams(
                             targetFourCC == MFX_FOURCC_BGR4)
                         {
                             executeParams.iBackgroundColor = ((mfxU64)0xff << 48)|
-                               ((mfxU64)VPP_RANGE_CLIP(extComp->R, 0, 255) << 32)|
-                               ((mfxU64)VPP_RANGE_CLIP(extComp->G, 0, 255) << 16)|
-                               ((mfxU64)VPP_RANGE_CLIP(extComp->B, 0, 255) <<  0);
+                               ((mfxU64)mfx::clamp<mfxU16>(extComp->R, 0, 255) << 32)|
+                               ((mfxU64)mfx::clamp<mfxU16>(extComp->G, 0, 255) << 16)|
+                               ((mfxU64)mfx::clamp<mfxU16>(extComp->B, 0, 255) <<  0);
                         }
                     }
                 }

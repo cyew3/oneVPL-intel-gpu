@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -71,21 +71,21 @@ mfxStatus MFXVideoVPPProcAmp::Query( mfxExtBuffer* pHint )
     if( pParam->Brightness < VPP_PROCAMP_BRIGHTNESS_MIN ||
         pParam->Brightness > VPP_PROCAMP_BRIGHTNESS_MAX )
     {
-        VPP_RANGE_CLIP(pParam->Brightness, VPP_PROCAMP_BRIGHTNESS_MIN, VPP_PROCAMP_BRIGHTNESS_MAX);
+        pParam->Brightness = mfx::clamp(pParam->Brightness, VPP_PROCAMP_BRIGHTNESS_MIN, VPP_PROCAMP_BRIGHTNESS_MAX);
 
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
     /* Contrast */
     if( pParam->Contrast < VPP_PROCAMP_CONTRAST_MIN || pParam->Contrast > VPP_PROCAMP_CONTRAST_MAX )
     {
-        VPP_RANGE_CLIP(pParam->Contrast, VPP_PROCAMP_CONTRAST_MIN, VPP_PROCAMP_CONTRAST_MAX);
+        pParam->Contrast = mfx::clamp(pParam->Contrast, VPP_PROCAMP_CONTRAST_MIN, VPP_PROCAMP_CONTRAST_MAX);
 
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
     /* Hue */
     if( pParam->Hue < VPP_PROCAMP_HUE_MIN || pParam->Hue > VPP_PROCAMP_HUE_MAX )
     {
-        VPP_RANGE_CLIP(pParam->Hue, VPP_PROCAMP_HUE_MIN, VPP_PROCAMP_HUE_MAX);
+        pParam->Hue = mfx::clamp(pParam->Hue, VPP_PROCAMP_HUE_MIN, VPP_PROCAMP_HUE_MAX);
 
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -93,7 +93,7 @@ mfxStatus MFXVideoVPPProcAmp::Query( mfxExtBuffer* pHint )
     if( pParam->Saturation < VPP_PROCAMP_SATURATION_MIN ||
         pParam->Saturation > VPP_PROCAMP_SATURATION_MAX)
     {
-        VPP_RANGE_CLIP(pParam->Saturation, VPP_PROCAMP_SATURATION_MIN, VPP_PROCAMP_SATURATION_MAX);
+        pParam->Saturation = mfx::clamp(pParam->Saturation, VPP_PROCAMP_SATURATION_MIN, VPP_PROCAMP_SATURATION_MAX);
 
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -213,15 +213,10 @@ mfxStatus MFXVideoVPPProcAmp::SetParam( mfxExtBuffer* pHint )
     {
         mfxExtVPPProcAmp* pProcAmpParams = (mfxExtVPPProcAmp*)pHint;
 
-        m_brightness = pProcAmpParams->Brightness;
-        m_contrast   = pProcAmpParams->Contrast;
-        m_hue        = pProcAmpParams->Hue;
-        m_saturation = pProcAmpParams->Saturation;
-
-        VPP_RANGE_CLIP(m_brightness, VPP_PROCAMP_BRIGHTNESS_MIN, VPP_PROCAMP_BRIGHTNESS_MAX);
-        VPP_RANGE_CLIP(m_contrast, VPP_PROCAMP_CONTRAST_MIN, VPP_PROCAMP_CONTRAST_MAX);
-        VPP_RANGE_CLIP(m_hue, VPP_PROCAMP_HUE_MIN, VPP_PROCAMP_HUE_MAX);
-        VPP_RANGE_CLIP(m_saturation, VPP_PROCAMP_SATURATION_MIN, VPP_PROCAMP_SATURATION_MAX);
+        m_brightness = mfx::clamp(pProcAmpParams->Brightness, VPP_PROCAMP_BRIGHTNESS_MIN, VPP_PROCAMP_BRIGHTNESS_MAX);
+        m_contrast   = mfx::clamp(pProcAmpParams->Contrast,   VPP_PROCAMP_CONTRAST_MIN,   VPP_PROCAMP_CONTRAST_MAX);
+        m_hue        = mfx::clamp(pProcAmpParams->Hue,        VPP_PROCAMP_HUE_MIN,        VPP_PROCAMP_HUE_MAX);
+        m_saturation = mfx::clamp(pProcAmpParams->Saturation, VPP_PROCAMP_SATURATION_MIN, VPP_PROCAMP_SATURATION_MAX);
     }
     else
     {
@@ -568,7 +563,7 @@ mfxStatus ProcampFiltering_NV12_8u(
 
             outY >>= 8;
 
-            outY = VPP_RANGE_CLIP(outY, 0, 255);
+            outY = mfx::clamp(outY, 0, 255);
 
             pDstY[column] = (uint8_t) outY;
         }
@@ -606,8 +601,8 @@ mfxStatus ProcampFiltering_NV12_8u(
             outU >>= 8;
             outV >>= 8;
 
-            outU = VPP_RANGE_CLIP(outU, 0, 255);
-            outV = VPP_RANGE_CLIP(outV, 0, 255);
+            outU = mfx::clamp(outU, 0, 255);
+            outV = mfx::clamp(outV, 0, 255);
 
             pDstUV[column  ] = (uint8_t) outU;
             pDstUV[column+1] = (uint8_t) outV;
@@ -672,7 +667,7 @@ mfxStatus ProcampFiltering_YV12_8u(
 
             outY >>= 8;
 
-            outY = VPP_RANGE_CLIP(outY, 0, 255);
+            outY = mfx::clamp(outY, 0, 255);
 
             pDstY[column] = (uint8_t) outY;
         }
@@ -711,8 +706,8 @@ mfxStatus ProcampFiltering_YV12_8u(
             outU >>= 8;
             outV >>= 8;
 
-            outU = VPP_RANGE_CLIP(outU, 0, 255);
-            outV = VPP_RANGE_CLIP(outV, 0, 255);
+            outU = mfx::clamp(outU, 0, 255);
+            outV = mfx::clamp(outV, 0, 255);
 
             pDstU[column] = (uint8_t) outU;
             pDstV[column] = (uint8_t) outV;

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,8 +32,6 @@
 #define ALIGN16(SZ) (((SZ + 15) >> 4) << 4) // round up to a multiple of 16
 #endif
 
-#define VPP_RANGE_CLIP(val, min_val, max_val)  MFX_MAX( MFX_MIN(max_val, val), min_val )
-
 #define VPP_DETAIL_GAIN_MIN      (0)
 #define VPP_DETAIL_GAIN_MAX      (63)
 #define VPP_DETAIL_GAIN_MAX_REAL (63)
@@ -60,7 +58,7 @@ mfxStatus MFXVideoVPPDetailEnhancement::Query( mfxExtBuffer* pHint )
 
     if( pParam->DetailFactor > VPP_DETAIL_GAIN_MAX_USER_LEVEL )
     {
-        VPP_RANGE_CLIP(pParam->DetailFactor, VPP_DETAIL_GAIN_MIN, VPP_DETAIL_GAIN_MAX_USER_LEVEL);
+        pParam->DetailFactor = VPP_DETAIL_GAIN_MAX_USER_LEVEL;
 
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -167,13 +165,13 @@ mfxStatus MFXVideoVPPDetailEnhancement::SetParam( mfxExtBuffer* pHint )
     {
         mfxExtVPPDetail* pDetailParams = (mfxExtVPPDetail*)pHint;
 
-        m_gainFactor = VPP_RANGE_CLIP(pDetailParams->DetailFactor,
+        m_gainFactor = mfx::clamp<mfxI32>(pDetailParams->DetailFactor,
                                       VPP_DETAIL_GAIN_MIN,
                                       VPP_DETAIL_GAIN_MAX);
     }
     else
     {
-        m_gainFactor     = VPP_DETAIL_GAIN_DEFAULT;
+        m_gainFactor = VPP_DETAIL_GAIN_DEFAULT;
     }
 
     m_isFilterActive = true;
@@ -500,7 +498,7 @@ mfxStatus MFXVideoVPPDetailEnhancement::DetailFilterCore( uint8_t* pSrc, int src
             }
 
             sharp =  -filter;//14s
-            sharp = VPP_RANGE_CLIP(sharp, minSharp, maxSharp);
+            sharp = mfx::clamp(sharp, minSharp, maxSharp);
 
             localAdjust = m_weakWeight;
             if(pSobelRow[col] > m_weakSobel)
@@ -516,9 +514,9 @@ mfxStatus MFXVideoVPPDetailEnhancement::DetailFilterCore( uint8_t* pSrc, int src
 
             sharp   = (localAdjust * sharp * m_internalGainFactor + 64) >> 7;
             sharp   = (sharp * (int)m_divTable[diff] + (1 << 7)) >> 8;
-            sharp   = VPP_RANGE_CLIP(sharp, minClip, maxClip);
+            sharp   = mfx::clamp(sharp, minClip, maxClip);
 
-            dstVal = VPP_RANGE_CLIP(sharp + pCurRow[col], 0, maxVal);
+            dstVal = mfx::clamp(sharp + pCurRow[col], 0, maxVal);
             pDstRow[col] = (uint8_t)dstVal;
         }
     }
@@ -581,7 +579,7 @@ mfxStatus CalcSobel_8u_C1R (uint8_t* curRowStart, int srcPitch,
             dx = abs(dx);   //15 bits
             dy = abs(dy);   //15 bits
 
-            sobel = VPP_RANGE_CLIP(((dx+dy+2048)>>(4+8)), 0, 15);
+            sobel = mfx::clamp(((dx+dy+2048)>>(4+8)), 0, 15);
             // +8 in >> to reduce precision by 8 bits
             SobelRow[col] = (uint8_t)sobel;
         }
