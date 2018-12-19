@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2307,17 +2307,13 @@ void HeaderPacker::PackSSH(
                         {
                             bs.PutSE(slice.pwt[l][i][Cb][W] - wC);
                             bs.PutSE(
-                                Clip3(
-                                    -4 * WpOffsetHalfRangeC,
-                                    4 * WpOffsetHalfRangeC - 1,
-                                    ((WpOffsetHalfRangeC * slice.pwt[l][i][Cb][W]) >> l2WDc) + slice.pwt[l][i][Cb][O] - WpOffsetHalfRangeC));
+                                mfx::clamp(((WpOffsetHalfRangeC * slice.pwt[l][i][Cb][W]) >> l2WDc) + slice.pwt[l][i][Cb][O] - WpOffsetHalfRangeC,
+                                    -4 * WpOffsetHalfRangeC, 4 * WpOffsetHalfRangeC - 1));
 
                             bs.PutSE(slice.pwt[l][i][Cr][W] - wC);
                             bs.PutSE(
-                                Clip3(
-                                    -4 * WpOffsetHalfRangeC,
-                                    4 * WpOffsetHalfRangeC - 1,
-                                    ((WpOffsetHalfRangeC * slice.pwt[l][i][Cr][W]) >> l2WDc) + slice.pwt[l][i][Cr][O] - WpOffsetHalfRangeC));
+                                mfx::clamp(((WpOffsetHalfRangeC * slice.pwt[l][i][Cr][W]) >> l2WDc) + slice.pwt[l][i][Cr][O] - WpOffsetHalfRangeC,
+                                    -4 * WpOffsetHalfRangeC, 4 * WpOffsetHalfRangeC - 1));
                         }
                     }
                 }

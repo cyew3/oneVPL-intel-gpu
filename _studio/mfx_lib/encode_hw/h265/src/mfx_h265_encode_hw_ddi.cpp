@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ GUID GetGUID(MfxVideoParam const & par)
         bdId = 2;
 #endif
 
-    cfId = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.m_ext.CO3.TargetChromaFormatPlus1 - 1) - MFX_CHROMAFORMAT_YUV420;
+    cfId = mfx::clamp<mfxU16>(par.m_ext.CO3.TargetChromaFormatPlus1 - 1, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444) - MFX_CHROMAFORMAT_YUV420;
 
     if (par.m_platform && par.m_platform < MFX_HW_ICL)
         cfId = 0; // platforms below ICL do not support Main422/Main444 profile, using Main instead.
