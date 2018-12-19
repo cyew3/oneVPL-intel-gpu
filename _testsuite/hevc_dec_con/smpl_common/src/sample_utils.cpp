@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2005-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2005-2019 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
 
@@ -1745,15 +1745,14 @@ std::basic_string<msdk_char> FormMVCFileName(const msdk_char *strFileNamePattern
     if (NULL == strFileNamePattern)
         return MSDK_STRING("");
 
-    std::basic_string<msdk_char> fileName, mvcFileName, fileExt;
-    fileName = strFileNamePattern;
-
-    msdk_char postfixBuffer[4];
-    msdk_itoa_decimal(numView, postfixBuffer);
+    std::basic_string<msdk_char> mvcFileName, fileExt;
+    msdk_char fileName[MSDK_MAX_FILENAME_LEN];
+#if defined(_WIN32) || defined(_WIN64)
+    msdk_sprintf(fileName, MSDK_MAX_FILENAME_LEN, MSDK_STRING("%s_%d.yuv"), strFileNamePattern, numView);
+#else
+    msdk_sprintf(fileName, MSDK_STRING("%s_%d.yuv"), strFileNamePattern, numView);
+#endif
     mvcFileName = fileName;
-    mvcFileName.append(MSDK_STRING("_"));
-    mvcFileName.append(postfixBuffer);
-    mvcFileName.append(MSDK_STRING(".yuv"));
 
     return mvcFileName;
 }

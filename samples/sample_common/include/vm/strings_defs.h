@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -53,7 +53,6 @@ typedef TCHAR msdk_char;
 #define msdk_strtol   _tcstol
 #define msdk_strtod   _tcstod
 #define msdk_strchr   _tcschr
-#define msdk_itoa_decimal(value, str)   _itow_s(value, str, 4, 10)
 #define msdk_strnlen(str,lenmax) strnlen_s(str,lenmax)
 #define msdk_sscanf _stscanf_s
 
@@ -95,8 +94,6 @@ typedef char msdk_char;
 #define msdk_atoll    atoll
 #define msdk_strtol   strtol
 #define msdk_strtod   strtod
-#define msdk_itoa_decimal(value, str) \
-  snprintf(str, sizeof(str)/sizeof(str[0])-1, "%d", value)
 #define msdk_strnlen(str,maxlen) strlen(str)
 #define msdk_sscanf sscanf
 
