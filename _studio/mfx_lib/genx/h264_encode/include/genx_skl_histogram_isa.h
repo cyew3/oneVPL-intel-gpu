@@ -20,5 +20,5 @@
 
 #ifndef __genx_skl_histogram__
 #define __genx_skl_histogram__
-extern const unsigned char genx_skl_histogram[76034];
+extern const unsigned char genx_skl_histogram[62966];
 #endif

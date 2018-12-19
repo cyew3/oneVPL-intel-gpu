@@ -168,7 +168,7 @@ move genx_icl_histogram.cpp .\src\genx_icl_histogram_isa.cpp
 move genx_icl_histogram.h .\include\genx_icl_histogram_isa.h
 
 
-cmc -c -Qxcm_release -Qxcm_jit_target=gen11 .\src\genx_skl_simple_me.cpp -Qxcm_print_asm_count
+cmc -c -Qxcm_release -Qxcm_jit_target=gen11lp .\src\genx_skl_simple_me.cpp -Qxcm_print_asm_count
 move genx_skl_simple_me.isa genx_icllp_simple_me.isa
 embed_isa genx_icllp_simple_me.isa
 move genx_icllp_simple_me.cpp .\src\genx_icllp_simple_me_isa.cpp

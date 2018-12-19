@@ -20,5 +20,5 @@
 
 #ifndef __genx_cnl_simple_me__
 #define __genx_cnl_simple_me__
-extern const unsigned char genx_cnl_simple_me[209191];
+extern const unsigned char genx_cnl_simple_me[259388];
 #endif
