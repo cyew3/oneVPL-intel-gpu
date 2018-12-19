@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 Intel Corporation
+// Copyright (c) 2013-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -82,8 +82,8 @@ public:
 
     const H265MotionVector scaleMV(int32_t scale) const
     {
-        int32_t mvx = Clip3(-32768, 32767, (scale * Horizontal + 127 + (scale * Horizontal < 0)) >> 8);
-        int32_t mvy = Clip3(-32768, 32767, (scale * Vertical + 127 + (scale * Vertical < 0)) >> 8);
+        int32_t mvx = mfx::clamp((scale * Horizontal + 127 + (scale * Horizontal < 0)) >> 8, -32768, 32767);
+        int32_t mvy = mfx::clamp((scale * Vertical   + 127 + (scale * Vertical   < 0)) >> 8, -32768, 32767);
         return H265MotionVector((int16_t)mvx, (int16_t)mvy);
     }
 };

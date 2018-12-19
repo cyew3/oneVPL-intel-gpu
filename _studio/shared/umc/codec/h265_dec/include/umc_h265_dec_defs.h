@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,7 @@
 
 #include <vector>
 #include "umc_structures.h"
+#include "mfx_utils.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -1478,14 +1479,6 @@ inline size_t CalculateSuggestedSize(const H265SeqParamSet * sps)
 
     return 2*size;
 }
-
-// ML: OPT: significant overhead if not inlined (ICC does not honor implied 'inline' with -Qipo)
-// ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization when used
-#define Clip3( m_Min, m_Max, m_Value) ( (m_Value) < (m_Min) ? \
-                                                  (m_Min) : \
-                                                ( (m_Value) > (m_Max) ? \
-                                                              (m_Max) : \
-                                                              (m_Value) ) )
 
 } // end namespace UMC_HEVC_DECODER
 

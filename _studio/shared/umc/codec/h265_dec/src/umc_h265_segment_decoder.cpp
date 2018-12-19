@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -336,8 +336,8 @@ void DecodingContext::SetNewQP(int32_t newQP, int32_t chroma_offset_idx)
     }
 
     int32_t qpBdOffsetC = m_sps->m_QPBDOffsetC;
-    int32_t qpScaledCb = Clip3(-qpBdOffsetC, 57, m_LastValidQP + qpOffsetCb);
-    int32_t qpScaledCr = Clip3(-qpBdOffsetC, 57, m_LastValidQP + qpOffsetCr);
+    int32_t qpScaledCb = mfx::clamp(m_LastValidQP + qpOffsetCb, -qpBdOffsetC, 57);
+    int32_t qpScaledCr = mfx::clamp(m_LastValidQP + qpOffsetCr, -qpBdOffsetC, 57);
 
     int32_t chromaScaleIndex = m_sps->ChromaArrayType != CHROMA_FORMAT_420 ? 1 : 0;
 
@@ -3257,10 +3257,10 @@ static int32_t GetDistScaleFactor(int32_t DiffPocB, int32_t DiffPocD)
     }
     else
     {
-        int32_t TDB = Clip3(-128, 127, DiffPocB);
-        int32_t TDD = Clip3(-128, 127, DiffPocD);
+        int32_t TDB = mfx::clamp(DiffPocB, -128, 127);
+        int32_t TDD = mfx::clamp(DiffPocD, -128, 127);
         int32_t X = (0x4000 + abs(TDD / 2)) / TDD;
-        int32_t Scale = Clip3(-4096, 4095, (TDB * X + 32) >> 6);
+        int32_t Scale = mfx::clamp((TDB * X + 32) >> 6, -4096, 4095);
         return Scale;
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -361,11 +361,11 @@ void clipMV(H265MotionVector* MV, mfxSize const& size, H265CodingUnit const* CU)
     uint32_t const  low_bits_mask = 3;
     uint32_t const x_frac =
         MV->Horizontal & low_bits_mask;
-    MV->Horizontal = Clip3(x_min, x_max, MV->Horizontal) | x_frac;
+    MV->Horizontal = int16_t(mfx::clamp<int32_t>(MV->Horizontal, x_min, x_max) | x_frac);
 
     uint32_t const y_frac =
         MV->Vertical & low_bits_mask;
-    MV->Vertical    = Clip3(y_min, y_max, MV->Vertical)  | y_frac;
+    MV->Vertical   = int16_t(mfx::clamp<int32_t>(MV->Vertical,   y_min, y_max) | y_frac);
 
     if (c_plane_type == TEXT_CHROMA)
     {

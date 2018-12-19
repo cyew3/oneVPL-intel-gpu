@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -126,7 +126,7 @@ void H265TrQuant::InvTransformByPass(CoeffsPtr pCoeff, DstCoeffsType* pResidual,
         {
             if (inplace)
             {
-                pResidual[k * Stride + j] = (DstCoeffsType)Clip3(0, max_value, pResidual[k * Stride + j] + pCoeff[k * Size + j]);
+                pResidual[k * Stride + j] = (DstCoeffsType)mfx::clamp<int32_t>(pResidual[k * Stride + j] + pCoeff[k * Size + j], 0, max_value);
             }
             else
             {
