@@ -2715,6 +2715,7 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
         cmSts = m_pCmDevice->LoadProgram((void*)tgl_copy_kernel_genx,sizeof(tgl_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
     case MFX_HW_TGL_LP:
+    case MFX_HW_DG1:
         cmSts = m_pCmDevice->LoadProgram((void*)tgllp_copy_kernel_genx,sizeof(tgllp_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
 #endif  // PRE_SI_TARGET_PLATFORM_GEN12

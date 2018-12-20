@@ -94,7 +94,10 @@ enum PRODUCT_FAMILY
     IGFX_LAKEFIELD,
     IGFX_JASPERLAKE,
     IGFX_TIGERLAKE_LP,
-    IGFX_TIGERLAKE_HP,
+    IGFX_RYEFIELD,
+    IGFX_ROCKETLAKE,
+    IGFX_DG1 = 1210,
+    IGFX_TIGERLAKE_HP = 1250,
 
     IGFX_SOFIA_LTE1 = 1001,
     IGFX_SOFIA_LTE2 = 1002,
@@ -150,6 +153,12 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_JSL;
     case IGFX_TIGERLAKE_LP:
         return MFX_HW_TGL_LP;
+    case IGFX_RYEFIELD:
+        return MFX_HW_RYF;
+    case IGFX_ROCKETLAKE:
+        return MFX_HW_RKL;
+    case IGFX_DG1:
+        return MFX_HW_DG1;
     case IGFX_TIGERLAKE_HP:
         return MFX_HW_TGL_HP;
     default:
