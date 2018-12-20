@@ -3366,8 +3366,7 @@ mfxU8 LookAheadBrc2::GetQpForRecode(const BRCFrameParams& par, mfxU8 curQP)
         qp = GetNewQP(par.CodedFrameSize, m_maxFrameSize, curQP);
     }
     if (qp <= curQP)
-        qp = curQP + (mfxU8)((par.NumRecode == 0) ? 1 : par.NumRecode);
-
+        qp = curQP + std::max<mfxU8>(1, mfxU8(par.NumRecode));
     mfxU32 ind = GetFrameTypeIndex(par.FrameType);
     qp = CLIPVAL(m_QPMin[ind], m_QPMax[ind], qp);
 
@@ -3713,8 +3712,7 @@ mfxU8 VMEBrc::GetQpForRecode(const BRCFrameParams& par, mfxU8 curQP)
         qp = GetNewQP(par.CodedFrameSize, m_maxFrameSize, curQP);
     }
     if (qp <= curQP)
-        qp = curQP + (mfxU8)((par.NumRecode == 0) ? 1 : par.NumRecode);
-
+        qp = curQP + std::max<mfxU8>(1, mfxU8(par.NumRecode));
     mfxU32 ind = GetFrameTypeIndex(par.FrameType);
     qp = CLIPVAL(m_QPMin[ind], m_QPMax[ind], qp);
 
