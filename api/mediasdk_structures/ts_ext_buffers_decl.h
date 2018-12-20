@@ -132,7 +132,9 @@ EXTBUF(mfxExtBRC, MFX_EXTBUFF_BRC)
 
 EXTBUF(mfxExtEncodedUnitsInfo       , MFX_EXTBUFF_ENCODED_UNITS_INFO        )
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 EXTBUF(mfxExtAVCScalingMatrix       , MFX_EXTBUFF_AVC_SCALING_MATRIX        )
+#endif
 
 #if defined(__MFXSCD_H__)
 EXTBUF(mfxExtSCD, MFX_EXTBUFF_SCD)
