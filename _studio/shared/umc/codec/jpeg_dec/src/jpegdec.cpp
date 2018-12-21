@@ -3357,6 +3357,12 @@ JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8_NxN(int16_t* pMCUBuf,
       curr_lnz  = mcu_col * curr_comp->m_lnz_ds;
 
       qtbl = m_qntbl[curr_comp->m_q_selector];
+      if(!qtbl)
+      {
+        LOG1("Error: in CJPEGDecoder::ReconstructMCURowBL8x8_NxN() m_qntbl[] is empty for ",
+             curr_comp->m_q_selector);
+        return JPEG_ERR_INTERNAL;
+      }
 
       for(k = 0; k < curr_comp->m_vsampling; k++)
       {
@@ -3457,6 +3463,12 @@ JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8(int16_t* pMCUBuf,
       curr_comp = &m_ccomp[c];
 
       qtbl = m_qntbl[curr_comp->m_q_selector];
+      if(!qtbl)
+      {
+        LOG1("Error: in CJPEGDecoder::ReconstructMCURowBL8x8_NxN() m_qntbl[] is empty for ",
+             curr_comp->m_q_selector);
+        return JPEG_ERR_INTERNAL;
+      }
 
       for(k = 0; k < curr_comp->m_scan_vsampling; k++)
       {
@@ -3601,6 +3613,12 @@ JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To4x4(int16_t* pMCUBuf,
     {
       curr_comp = &m_ccomp[c];
       qtbl = m_qntbl[curr_comp->m_q_selector];
+      if(!qtbl)
+      {
+        LOG1("Error: in CJPEGDecoder::ReconstructMCURowBL8x8To4x4() m_qntbl[] is empty for ",
+             curr_comp->m_q_selector);
+        return JPEG_ERR_INTERNAL;
+      }
 
       for(k = 0; k < curr_comp->m_vsampling; k++)
       {
@@ -3725,6 +3743,12 @@ JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To2x2(int16_t* pMCUBuf,
     {
       curr_comp = &m_ccomp[c];
       qtbl = m_qntbl[curr_comp->m_q_selector];
+      if(!qtbl)
+      {
+        LOG1("Error: in CJPEGDecoder::ReconstructMCURowBL8x8To4x4() m_qntbl[] is empty for ",
+             curr_comp->m_q_selector);
+        return JPEG_ERR_INTERNAL;
+      }
 
       for(k = 0; k < curr_comp->m_vsampling; k++)
       {
@@ -3971,6 +3995,12 @@ JERRCODE CJPEGDecoder::ReconstructMCURowEX(int16_t* pMCUBuf,
       curr_comp = &m_ccomp[c];
 
       qtbl = m_qntbl[curr_comp->m_q_selector];
+      if(!qtbl)
+      {
+        LOG1("Error: in CJPEGDecoder::ReconstructMCURowBL8x8To1x1() m_qntbl[] is empty for ",
+             curr_comp->m_q_selector);
+        return JPEG_ERR_INTERNAL;
+      }
 
       for(k = 0; k < curr_comp->m_vsampling; k++)
       {
