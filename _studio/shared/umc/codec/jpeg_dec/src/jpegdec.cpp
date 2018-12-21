@@ -1,4 +1,4 @@
-// Copyright (c) 2001-2018 Intel Corporation
+// Copyright (c) 2001-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -3850,6 +3850,12 @@ JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To1x1(int16_t* pMCUBuf,
     {
       curr_comp = &m_ccomp[c];
       qtbl = m_qntbl[curr_comp->m_q_selector];
+      if(!qtbl)
+      {
+          LOG1("Error: in CJPEGDecoder::ReconstructMCURowBL8x8To1x1() m_qntbl[] is empty for ",
+               curr_comp->m_q_selector);
+          return JPEG_ERR_INTERNAL;
+      }
 
       for(k = 0; k < curr_comp->m_vsampling; k++)
       {

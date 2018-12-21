@@ -1,4 +1,4 @@
-// Copyright (c) 2001-2018 Intel Corporation
+// Copyright (c) 2001-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,12 @@ public:
   CJPEGEncoder(void);
   virtual ~CJPEGEncoder(void);
 
-  JERRCODE SetSource(
+  CJPEGEncoder(const CJPEGEncoder&) = delete;
+  CJPEGEncoder(CJPEGEncoder&&) = delete;
+  CJPEGEncoder& operator=(const CJPEGEncoder&) = delete;
+  CJPEGEncoder& operator=(CJPEGEncoder&&) = delete;
+
+    JERRCODE SetSource(
     uint8_t*   pSrc,
     int      srcStep,
     mfxSize srcSize,
@@ -271,7 +276,6 @@ protected:
   JERRCODE EncodeScanProgressive(void);
 
   JERRCODE EncodeScan(int ncomp,int id[MAX_COMPS_PER_SCAN],int Ss,int Se,int Ah,int Al);
-  JERRCODE SelectScanScripts(void);
   JERRCODE GenerateHuffmanTables(int ncomp,int id[MAX_COMPS_PER_SCAN],int Ss,int Se,int Ah,int Al);
   JERRCODE GenerateHuffmanTables(void);
   JERRCODE GenerateHuffmanTablesEX(void);
