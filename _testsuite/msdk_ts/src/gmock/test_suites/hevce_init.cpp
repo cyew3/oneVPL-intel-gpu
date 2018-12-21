@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2019 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_init.cpp
 
@@ -56,7 +56,11 @@ namespace hevce_init
             FOURCC,
             CHROMA_FORMAT,
             INVALID,
-            NONE
+            NONE,
+            BUFFER_SIZE,
+            BUFFER_SIZE_DEFAULT,
+            INITIAL_DELAY_DEFAULT,
+            DEFAULTS
         };
 
         struct tc_struct
@@ -452,6 +456,26 @@ namespace hevce_init
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_OFF}
             }
         },
+         // BRC modes with different BufferSizeInKB and InitialDelayInKB values
+        {/*74*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*75*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*76*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
+        {/*77*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+
+        {/*78*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*79*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*80*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
+        {/*81*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+
+        {/*82*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*83*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*84*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
+        {/*85*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+
+        {/*86*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*87*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*88*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
+        {/*89*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
 
     };
 
@@ -744,7 +768,51 @@ namespace hevce_init
             if (tc.type == PIC_STRUCT && tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
                 sts = MFX_ERR_INVALID_VIDEO_PARAM;
         }
-
+        if (tc.type == BUFFER_SIZE)
+        {
+            switch (tc.sub_type)
+            {
+            case BUFFER_SIZE_DEFAULT:
+            {
+                // If BufferSizeInKB == 0 initially it is calculated as Min(maxBuf, MaxKbps / 4)
+                // further BufferSizeInKB is calculated as Max(BufferSizeInKB, InitialDelayInKB)
+                // After MFXVideoENCODE_Init it should be >= InitialDelayInKB for correct work,
+                // so InitialDelayInKB is increased by 1
+                m_par.mfx.BufferSizeInKB = 0;
+                m_par.mfx.InitialDelayInKB = m_par.mfx.MaxKbps / 4 + 1;
+                break;
+            }
+            case INITIAL_DELAY_DEFAULT:
+            {
+                // If InitialDelayInKB == 0 it is calculated as BufferSizeInKB / 2
+                // For MFX_RATECONTROL_CQP mode BufferSizeInKB should be >= rawBytes / 1000
+                // Maximum of rawBytes = w * h * 3 + 1;
+                // For others BufferSizeInKB = <valid_non_zero_value>
+                m_par.mfx.BufferSizeInKB = (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 3 + 1) / 1000;
+                m_par.mfx.InitialDelayInKB = 0;
+                break;
+            }
+            case DEFAULTS:
+            {
+                m_par.mfx.BufferSizeInKB = 0;
+                m_par.mfx.InitialDelayInKB = 0;
+                break;
+            }
+            case NONE:
+            {
+                m_par.mfx.BufferSizeInKB = (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 3 + 1) / 1000;
+                m_par.mfx.InitialDelayInKB = m_par.mfx.MaxKbps / 4 + 1;
+                break;
+            }
+            default: break;
+            }
+            if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+            {
+                m_par.mfx.QPI = 26;
+                m_par.mfx.QPI = 26;
+                m_par.mfx.QPI = 26;
+            }
+        }
 
         mfxVideoParam *orig_par = NULL;
 
@@ -792,6 +860,24 @@ namespace hevce_init
             EXPECT_EQ(0, memcmp(orig_par, m_pPar, sizeof(mfxVideoParam)))
                 << "ERROR: Input parameters must not be changed in Init()";
             delete orig_par;
+        }
+
+        if (tc.type == BUFFER_SIZE)
+        {
+            mfxVideoParam get_par = {};
+            GetVideoParam(m_session, &get_par);
+            if (tc.sub_type == NONE)
+            {
+                EXPECT_EQ(get_par.mfx.BufferSizeInKB, m_par.mfx.BufferSizeInKB)
+                    << "ERROR: BufferSizeInKB must not be changed";
+                EXPECT_EQ(get_par.mfx.InitialDelayInKB, m_par.mfx.InitialDelayInKB)
+                    << "ERROR: InitialDelayInKB must not be changed";
+            }
+            else
+            {
+                EXPECT_GE(get_par.mfx.BufferSizeInKB, get_par.mfx.InitialDelayInKB)
+                    << "ERROR: BufferSizeInKB must not be less than InitialDelayInKB";
+            }
         }
 
         if ((sts < MFX_ERR_NONE) && (tc.type != _2_CALL) && (tc.type != _2_CALL_CLOSE))
