@@ -87,6 +87,11 @@ mfxStatus D3D11VideoCORE::InternalInit()
     //need to replace with specific D3D11 approach
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
 
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+    if (m_HWType > MFX_HW_TGL_LP)
+        m_bCmCopyAllowed = false;
+#endif
+
     return MFX_ERR_NONE;
 }
 

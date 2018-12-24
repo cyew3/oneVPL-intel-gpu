@@ -336,6 +336,11 @@ mfxStatus D3D9VideoCORE::InternalInit()
 
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
 
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+    if (m_HWType > MFX_HW_TGL_LP)
+        m_bCmCopyAllowed = false;
+#endif
+
     if (platformFromDriver == 12) // 12 - IGFX_GT, sandybridge
         m_bCmCopyAllowed = false;
 
