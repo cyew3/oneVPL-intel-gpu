@@ -82,7 +82,9 @@ mfxStatus CheckPlatform(mfxPlatform platform)
         }
         case MFX_PLATFORM_TIGERLAKE:
             {
-                return ((g_tsHWtype == MFX_HW_TGL) || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
+                return ((g_tsHWtype == MFX_HW_TGL)
+                    || (g_tsHWtype == MFX_HW_DG1)
+                    || (g_tsHWtype == MFX_HW_UNKNOWN)) ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
             }
 #endif
         default:

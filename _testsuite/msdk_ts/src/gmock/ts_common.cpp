@@ -320,6 +320,8 @@ void MFXVideoTest::SetUp()
                 g_tsHWtype = MFX_HW_JSL;
             else if(platform.find("tgl") != std::string::npos)
                 g_tsHWtype = MFX_HW_TGL;
+            else if (platform.find("dg1") != std::string::npos)
+                g_tsHWtype = MFX_HW_DG1;
             else
                 g_tsHWtype = MFX_HW_UNKNOWN;
 
@@ -370,6 +372,9 @@ void MFXVideoTest::SetUp()
         case 0xFF20: //iTGLSIM
         //LKF Simulation
         case 0x8A40: //iLKFSIM
+        case 0x9940: //RYF
+        case 0x4905: //DG1
+        case 0x0201: //ATS
             g_tsConfig.sim = true;
             g_tsLog << "SIMULATION DETECTED\n";
         default:

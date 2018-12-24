@@ -44,6 +44,7 @@ enum HWType
     MFX_HW_JSL       = MFX_HW_LKF + 1,
 
     MFX_HW_TGL       = 0xe00000,
+    MFX_HW_DG1       = MFX_HW_TGL + 1,
 };
 
 enum OSFamily
