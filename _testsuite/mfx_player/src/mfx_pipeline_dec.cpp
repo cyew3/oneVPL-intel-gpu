@@ -839,6 +839,70 @@ mfxStatus MFXDecPipeline::HandleIncompatParamsCode( mfxStatus error_code, Incomp
     return error_code;
 }
 
+/*
+    InitBitDepthByFourCC initializes BitDepthLuma and BitDepthChroma fields
+    according to FourCC. If current value of these fields is NOT equal to 0
+    then these fields will NOT be changed.
+    Return:
+    MFX_ERR_UNSUPPORTED if an unknown FourCC value is found
+    MFX_ERR_NONE if BitDepthLuma and BitDepthChroma are not applicable for this FourCC
+    or they are successfully set up.
+*/
+mfxStatus MFXDecPipeline::InitBitDepthByFourCC(mfxFrameInfo &info)
+{
+    if (info.BitDepthLuma == 0)
+    {
+        switch (info.FourCC)
+        {
+            // 8 bit
+        case MFX_FOURCC_NV12:
+        case MFX_FOURCC_NV16:
+        case MFX_FOURCC_YUY2:
+        case MFX_FOURCC_AYUV:
+        case MFX_FOURCC_YV12:
+        case MFX_FOURCC_UYVY:
+            info.BitDepthLuma = 8;
+            break;
+            // 10 bit
+        case MFX_FOURCC_P010:
+        case MFX_FOURCC_P210:
+        case MFX_FOURCC_Y210:
+        case MFX_FOURCC_Y410:
+            info.BitDepthLuma = 10;
+            break;
+            // 12 bit
+        case MFX_FOURCC_P016:
+        case MFX_FOURCC_Y216:
+        case MFX_FOURCC_Y416:
+            info.BitDepthLuma = 12;
+            break;
+
+            // not applicable
+        case MFX_FOURCC_P8:
+        case MFX_FOURCC_P8_TEXTURE:
+        case MFX_FOURCC_RGB565:
+        case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_RGBP:
+        case MFX_FOURCC_RGB3:
+        case MFX_FOURCC_BGR4:
+        case MFX_FOURCC_AYUV_RGB4:
+        case MFX_FOURCC_A2RGB10:
+        case MFX_FOURCC_ABGR16:
+        case MFX_FOURCC_ARGB16:
+        case MFX_FOURCC_R16:
+            return MFX_ERR_NONE;
+
+        default:
+            return MFX_ERR_UNSUPPORTED; // unknown fourcc
+        }
+    }
+
+    if (info.BitDepthChroma == 0)
+        info.BitDepthChroma = info.BitDepthLuma;
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus MFXDecPipeline::LightReset()
 {
     //double reset will goes to long almost infinite run
@@ -2311,8 +2375,6 @@ mfxStatus MFXDecPipeline::InitRenderParams()
     refInfoOut.CropH          = refInfoIn.CropH;
     refInfoOut.AspectRatioW   = (0 == refInfoOut.AspectRatioW) ? refInfoIn.AspectRatioW : refInfoOut.AspectRatioW;
     refInfoOut.AspectRatioH   = (0 == refInfoOut.AspectRatioH) ? refInfoIn.AspectRatioH : refInfoOut.AspectRatioH;
-    refInfoOut.BitDepthChroma = refInfoIn.BitDepthChroma;
-    refInfoOut.BitDepthLuma   = refInfoIn.BitDepthLuma;
 
     //in case of vpp: it's output set by encoder input, so cannot copy
     if (!m_inParams.bUseVPP)
@@ -2321,6 +2383,18 @@ mfxStatus MFXDecPipeline::InitRenderParams()
         //refInfoIn.FourCC       = m_components[eVPP].m_params.mfx.FrameInfo.FourCC;
         refInfoOut.FourCC       = refInfoIn.FourCC;
         refInfoOut.ChromaFormat = refInfoIn.ChromaFormat;
+    }
+
+    if (refInfoIn.BitDepthChroma != 0 || refInfoIn.BitDepthLuma != 0)
+    {
+        // bitDepth is set explicitly, e.g. by command line arguments
+        refInfoOut.BitDepthChroma = refInfoIn.BitDepthChroma;
+        refInfoOut.BitDepthLuma = refInfoIn.BitDepthLuma;
+    }
+    else
+    {
+        // try to set up the bitDepth by FourCC
+        MFX_CHECK_STS(InitBitDepthByFourCC(refInfoOut));
     }
 
     if (!m_extDecVideoProcessing.IsZero())

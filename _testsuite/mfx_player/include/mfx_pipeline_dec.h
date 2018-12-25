@@ -514,7 +514,7 @@ protected:
     mfxStatus HandleIncompatParamsCode( mfxStatus error_code
                                       , IncompatComponent ID
                                       , bool isNull);
-
+    mfxStatus InitBitDepthByFourCC(mfxFrameInfo &info);
     //multivieencoding support
     MFXExtBufferVector m_InputExtBuffers;
     MFXExtBufferPtr<mfxExtDecVideoProcessing>  m_extDecVideoProcessing;
