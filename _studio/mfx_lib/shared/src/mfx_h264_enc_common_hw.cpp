@@ -5615,6 +5615,10 @@ namespace
                     return false;
         return true;
     }
+    bool IsPowerOf2(mfxU32 n)
+    {
+        return (n & (n - 1)) == 0;
+    }
 
 
 };
@@ -5928,10 +5932,11 @@ void MfxHwH264Encode::SetDefaults(
         if (platform >= MFX_HW_HSW && platform != MFX_HW_VLV &&
             IsDyadic(par.calcParam.scale, par.calcParam.numTemporalLayer) &&
             par.mfx.GopRefDist >= 4 &&
-            par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT &&
-            (!par.mfx.NumRefFrame || par.mfx.NumRefFrame >= GetMinNumRefFrameForPyramid(par)))
+            (!par.mfx.NumRefFrame || par.mfx.NumRefFrame >= GetMinNumRefFrameForPyramid(par)) &&
+            (!IsMvcProfile(par.mfx.CodecProfile) || (IsPowerOf2(par.mfx.GopRefDist) && (par.mfx.GopPicSize % par.mfx.GopRefDist) == 0)) &&
+            par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
         {
-            extOpt2->BRefType = mfxU16(par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MFX_B_REF_PYRAMID : MFX_B_REF_OFF);
+            extOpt2->BRefType = MFX_B_REF_PYRAMID;
         }
         else
         {
