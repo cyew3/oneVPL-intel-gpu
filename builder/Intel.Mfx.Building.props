@@ -39,6 +39,15 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' OR '$(Configuration)'=='Release_THM' OR '$(Configuration)'=='Release_Intel'">
+    <ClCompile>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <SpectreMitigation>Spectre</SpectreMitigation>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/guard:cf %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+   </ItemDefinitionGroup>
 <!-- End of Globals -->
 
   <ItemDefinitionGroup>
@@ -65,6 +74,7 @@
     <Link Condition="'$(IsTHM)'=='true'">
       <AdditionalDependencies>$(MfxLibraries);onecore.lib;</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxLibraryDir);%(AdditionalLibraryDirectories);</AdditionalLibraryDirectories>
+      <!--AdditionalOptions>/guard:cf %(AdditionalOptions)</AdditionalOptions-->
       <ModuleDefinitionFile Condition="'$(MfxModuleDefinitionFile)'!=''">$(MfxModuleDefinitionFile)</ModuleDefinitionFile>
     </Link>
     <Link Condition="'$(IsUWP)'=='true'">
