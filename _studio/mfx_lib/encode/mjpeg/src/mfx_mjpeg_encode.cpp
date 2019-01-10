@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2094,11 +2094,11 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
     if (MFX_ERR_NONE == sts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_ERR_MORE_BITSTREAM == sts)
     {
+        // EncodeFrameCheck(ctrl, surface, bs, reordered_surface, pInternalParams) processes
+        // !surface case, so here we must have valid pOriginalSurface.
+
         // lock surface. If input surface is opaque core will lock both opaque and associated realSurface
-        if (pOriginalSurface) 
-        {
-            m_core->IncreaseReference(&(pOriginalSurface->Data));
-        }
+        m_core->IncreaseReference(&(pOriginalSurface->Data));
 
         MJPEGEncodeTask *pTask = NULL;
         {

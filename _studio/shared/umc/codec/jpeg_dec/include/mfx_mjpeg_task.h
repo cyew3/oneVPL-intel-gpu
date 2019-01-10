@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,11 @@ public:
     CJpegTaskBuffer(void);
     // Destructor
     ~CJpegTaskBuffer(void);
+
+    CJpegTaskBuffer(const CJpegTaskBuffer&) = delete;
+    CJpegTaskBuffer(CJpegTaskBuffer&&) = delete;
+    CJpegTaskBuffer& operator=(const CJpegTaskBuffer&) = delete;
+    CJpegTaskBuffer& operator=(CJpegTaskBuffer&&) = delete;
 
     // Allocate the buffer
     mfxStatus Allocate(const size_t size);
