@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,10 +27,6 @@
 #include "../include/genx_me_common.h"
 #define COMPLEX_BIDIR 1
 #define INVERTMOTION  1
-
-#if !defined(target_gen8) && !defined(target_gen9) && !defined(target_gen9_5) && !defined(target_gen10) && !defined(target_gen11) && !defined(target_gen11lp) && !defined(target_gen12) && !defined(target_gen12lp) && !defined(CMRT_EMU)
-#error One of macro should be defined: target_gen7_5, target_gen8, target_gen9, target_gen9_5, target_gen10, target_gen11, target_gen11lp, target_gen12, target_gen12lp
-#endif
 
 typedef matrix<uchar, 4, 32> UniIn;
 

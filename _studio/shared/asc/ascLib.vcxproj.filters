@@ -42,15 +42,6 @@
     <ClInclude Include="include\cpu_detect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\mfx_lib\genx\asc\include\genx_scd_bdw_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mfx_lib\genx\asc\include\genx_scd_cnl_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mfx_lib\genx\asc\include\genx_scd_skl_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\iofunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -64,18 +55,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\asc_defs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mfx_lib\genx\asc\include\genx_scd_icl_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mfx_lib\genx\asc\include\genx_scd_icllp_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mfx_lib\genx\asc\include\genx_scd_tgl_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\mfx_lib\genx\asc\include\genx_scd_tgllp_isa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -92,15 +71,6 @@
     <ClCompile Include="src\asc_sse4_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\mfx_lib\genx\asc\src\genx_scd_bdw_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\mfx_lib\genx\asc\src\genx_scd_cnl_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\mfx_lib\genx\asc\src\genx_scd_skl_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\iofunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -108,18 +78,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\tree.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\mfx_lib\genx\asc\src\genx_scd_icl_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\mfx_lib\genx\asc\src\genx_scd_icllp_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\mfx_lib\genx\asc\src\genx_scd_tgl_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\mfx_lib\genx\asc\src\genx_scd_tgllp_isa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

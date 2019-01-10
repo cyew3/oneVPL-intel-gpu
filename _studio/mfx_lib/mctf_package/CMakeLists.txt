@@ -3,7 +3,7 @@ if( API_VERSION VERSION_GREATER 1.25 )
 
     mfx_include_dirs( )
     include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/mctf/include )
-    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/mctf/include )
+    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/mctf/isa )
     include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
 
     include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/include )

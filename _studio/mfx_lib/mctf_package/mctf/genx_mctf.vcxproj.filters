@@ -1,90 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\genx\mctf\src\genx_me.cpp">
-      <Filter>Lib\ME</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_sd.cpp">
-      <Filter>Lib\SD</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_mc.cpp">
-      <Filter>Lib\MC</Filter>
-    </ClCompile>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{07c3a232-af81-4231-99da-c20710cfd307}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{7a9a24bf-96de-4b12-b110-21fde490929b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="src\mctf_common.cpp">
-      <Filter>Lib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_mc_bdw_isa.cpp">
-      <Filter>Lib\MC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_mc_skl_isa.cpp">
-      <Filter>Lib\MC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_me_bdw_isa.cpp">
-      <Filter>Lib\ME</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_me_skl_isa.cpp">
-      <Filter>Lib\ME</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_sd_bdw_isa.cpp">
-      <Filter>Lib\SD</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_sd_skl_isa.cpp">
-      <Filter>Lib\SD</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_mc_icl_isa.cpp">
-      <Filter>Lib\MC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_me_icl_isa.cpp">
-      <Filter>Lib\ME</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_sd_icl_isa.cpp">
-      <Filter>Lib\SD</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_me_icllp_isa.cpp">
-      <Filter>Lib\ME</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_mc_icllp_isa.cpp">
-      <Filter>Lib\MC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_sd_icllp_isa.cpp">
-      <Filter>Lib\SD</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_mc_tgl_isa.cpp">
-      <Filter>Lib\MC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_mc_tgllp_isa.cpp">
-      <Filter>Lib\MC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_me_tgl_isa.cpp">
-      <Filter>Lib\ME</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_me_tgllp_isa.cpp">
-      <Filter>Lib\ME</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_sd_tgl_isa.cpp">
-      <Filter>Lib\SD</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\genx\mctf\src\genx_sd_tgllp_isa.cpp">
-      <Filter>Lib\SD</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mctf_common.h">
-      <Filter>Lib</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="Lib">
-      <UniqueIdentifier>{68428479-a9a9-4f6e-85a5-c7be810e9fb2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Lib\MC">
-      <UniqueIdentifier>{916ef7e5-93af-4eeb-b13c-614799c604a3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Lib\ME">
-      <UniqueIdentifier>{46bab218-84d7-4a35-acfd-431c12010a36}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Lib\SD">
-      <UniqueIdentifier>{d4936dca-1b1f-49ed-9d2a-b41ce09f88ab}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
 </Project>

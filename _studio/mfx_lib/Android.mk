@@ -57,9 +57,10 @@ MFX_LOCAL_INCLUDES_IMPL := \
 MFX_LOCAL_INCLUDES_HW := \
     $(MFX_LOCAL_INCLUDES_IMPL) \
     $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include)) \
-    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/asc/include \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/asc/isa \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/field_copy/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/copy_kernels/include \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/mctf/isa \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/mctf/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/asc/include
 
@@ -150,12 +151,13 @@ MFX_SHARED_FILES_HW += $(addprefix mfx_lib/shared/src/, \
     mfx_h264_encode_vaapi.cpp \
     mfx_h264_encode_factory.cpp)
 
-GENX_FILES := $(addprefix mfx_lib/genx/asc/src/, \
-    genx_scd_bdw_isa.cpp \
-    genx_scd_cnl_isa.cpp \
-    genx_scd_skl_isa.cpp \
-    genx_scd_icl_isa.cpp \
-    genx_scd_icllp_isa.cpp)
+GENX_FILES := $(addprefix mfx_lib/genx/asc/isa/, \
+    asc_gen8_isa.cpp \
+    asc_gen9_isa.cpp \
+    asc_gen11_isa.cpp \
+    asc_gen11lp_isa.cpp \
+    asc_gen12_isa.cpp \
+    asc_gen12lp_isa.cpp)
 
 GENX_FILES += $(addprefix mfx_lib/genx/copy_kernels/src/, \
     embed_isa.c \
@@ -176,25 +178,25 @@ GENX_FILES += $(addprefix mfx_lib/genx/field_copy/src/, \
     genx_fcopy_gen11lp_isa.cpp \
     genx_fcopy_gen12_isa.cpp)
 
-GENX_FILES += $(addprefix mfx_lib/genx/mctf/src/, \
-    genx_me_skl_isa.cpp \
-    genx_me_icl_isa.cpp \
-    genx_me_icllp_isa.cpp \
-    genx_me_bdw_isa.cpp \
-    genx_me_tgl_isa.cpp \
-    genx_me_tgllp_isa.cpp \
-    genx_mc_skl_isa.cpp \
-    genx_mc_icl_isa.cpp \
-    genx_mc_icllp_isa.cpp \
-    genx_mc_bdw_isa.cpp \
-    genx_mc_tgl_isa.cpp \
-    genx_mc_tgllp_isa.cpp \
-    genx_sd_skl_isa.cpp \
-    genx_sd_icl_isa.cpp \
-    genx_sd_icllp_isa.cpp \
-    genx_sd_bdw_isa.cpp \
-    genx_sd_tgl_isa.cpp \
-    genx_sd_tgllp_isa.cpp)
+GENX_FILES += $(addprefix mfx_lib/genx/mctf/isa/, \
+    mctf_mc_gen8_isa.cpp \
+    mctf_mc_gen9_isa.cpp \
+    mctf_mc_gen11_isa.cpp \
+    mctf_mc_gen11lp_isa.cpp \
+    mctf_mc_gen12_isa.cpp \
+    mctf_mc_gen12lp_isa.cpp \
+    mctf_me_gen8_isa.cpp \
+    mctf_me_gen9_isa.cpp \
+    mctf_me_gen11_isa.cpp \
+    mctf_me_gen11lp_isa.cpp \
+    mctf_me_gen12_isa.cpp \
+    mctf_me_gen12lp_isa.cpp \
+    mctf_sd_gen8_isa.cpp \
+    mctf_sd_gen9_isa.cpp \
+    mctf_sd_gen11_isa.cpp \
+    mctf_sd_gen11lp_isa.cpp \
+    mctf_sd_gen12_isa.cpp \
+    mctf_sd_gen12lp_isa.cpp)
 
 MFX_LIB_SHARED_FILES_1 := $(addprefix mfx_lib/shared/src/, \
     libmfxsw.cpp \

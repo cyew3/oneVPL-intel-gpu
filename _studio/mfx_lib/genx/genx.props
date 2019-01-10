@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- genx_mctf.vcxproj specific settings -->
+  <PropertyGroup Label="genx settings">
+    <MfxIncludes>
+    <!-- MCTF -->$(MSDK_STUDIO_ROOT)\mfx_lib\genx\mctf\isa;
+    <!-- ASC  -->$(MSDK_STUDIO_ROOT)\mfx_lib\genx\asc\isa;
+    </MfxIncludes>
+    <MfxDefinitions Condition="'$(Configuration)'=='Debug_HSW_Emu'">CM_VME_GEN7_5;CMRT_EMU;$(MfxDefinitions)</MfxDefinitions>
+    <MfxPreBuildEvent>CALL "$(ProjectDir)tools\build_kernels.cmd"</MfxPreBuildEvent>
+    <MfxPreBuildEventUseInBuild>false</MfxPreBuildEventUseInBuild>
+  </PropertyGroup>
+
+<!-- End of genx.vcxproj specific settings -->
+</Project>

@@ -44,6 +44,10 @@
     <MfxLibraries Condition="'$(Platform)'=='x64'">ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;$(MfxLibraries)</MfxLibraries>
     <!-- Other libraries -->
     <MfxLibraries>version.lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraries Condition="'$(Configuration)'=='Debug' or '$(Configuration)'=='Debug_Intel'">$(MSDK_MFX_BUILD_DIR)\win_$(Platform)\lib\genx$(MfxPlatformArchitecture)_d.lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraries Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='Release_Intel'">$(MSDK_MFX_BUILD_DIR)\win_$(Platform)\lib\genx$(MfxPlatformArchitecture).lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraries Condition="'$(Configuration)'=='Debug_THM'">$(MSDK_MFX_BUILD_DIR)\win_thm$(MfxPlatformArchitecture)\lib\genx$(MfxPlatformArchitecture)_thm_d.lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraries Condition="'$(Configuration)'=='Release_THM'">$(MSDK_MFX_BUILD_DIR)\win_thm$(MfxPlatformArchitecture)\lib\genx$(MfxPlatformArchitecture)_thm.lib;$(MfxLibraries)</MfxLibraries>
     <MfxLibraryDir>$(MfxIppLibraryDir)</MfxLibraryDir>
     <MfxModuleDefinitionFile>libmfx.def</MfxModuleDefinitionFile>
   </PropertyGroup>

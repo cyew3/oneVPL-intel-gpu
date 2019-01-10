@@ -6,6 +6,9 @@
     <MfxIncludes>
     $(MfxIppIncludeDir);
     $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\genx\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\genx\asc\isa;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\genx\mctf\isa;
     $(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
@@ -15,12 +18,7 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
     $(MSDK_STUDIO_ROOT)\shared\asc\include;
     </MfxIncludes>
-    <MfxDefinitions>_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
-    <MfxDefinitions Condition="'$(Configuration)'=='Debug_HSW_Emu'">CM_VME_GEN7_5;CMRT_EMU;$(MfxDefinitions)</MfxDefinitions>
-    <MfxLibraries></MfxLibraries>
-    <MfxLibraryDir></MfxLibraryDir>
-    <!--MfxPreBuildEvent Condition="'$(Platform)'=='x64'">rem $(MSDK_STUDIO_ROOT)\mfx_lib\genx\mctf\build_mctf_kernels.cmd</MfxPreBuildEvent>
-    <MfxPreBuildEvent Condition="'$(Platform)'=='Win32'">rem $(MSDK_STUDIO_ROOT)\mfx_lib\genx\mctf\build_mctf_kernels_32.cmd</MfxPreBuildEvent-->
+    <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxInlineFunctionExpansion>AnySuitable</MfxInlineFunctionExpansion>
     <MfxIntrinsicFunctions>true</MfxIntrinsicFunctions>
     <MfxFavorSizeOrSpeed>Speed</MfxFavorSizeOrSpeed>

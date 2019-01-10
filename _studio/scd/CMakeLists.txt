@@ -45,11 +45,11 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 include_directories( ${MFX_ROOTDIR}/shared/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/cmrt_cross_platform/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/cmut )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/genx/asc/include )
+include_directories( ${MFX_ROOTDIR}/shared/asc/include )
+include_directories( ${MFX_ROOTDIR}/mfx_lib/genx/asc/isa )
 include_directories( ${MFX_ROOTDIR}/shared/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/plugin/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/scheduler/include )
-include_directories( ${MFX_ROOTDIR}/shared/asc/include )
 
 # =============================================================================
 
@@ -78,6 +78,7 @@ list( APPEND LIBS
     pthread
     dl
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    genx
     asc
 )
 

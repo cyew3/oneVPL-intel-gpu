@@ -1,0 +1,63 @@
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Header.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Header.props" />
+  <PropertyGroup Label="Globals">
+    <ProjectName>genx</ProjectName>
+    <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
+    <ProjectGuid>{990E2264-0865-44B2-A1F2-D721720F1857}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(MSBuildThisFileDirectory)genx.props" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Default.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="asc\isa\asc_gen11lp_isa.cpp" />
+    <ClCompile Include="asc\isa\asc_gen11_isa.cpp" />
+    <ClCompile Include="asc\isa\asc_gen12lp_isa.cpp" />
+    <ClCompile Include="asc\isa\asc_gen12_isa.cpp" />
+    <ClCompile Include="asc\isa\asc_gen8_isa.cpp" />
+    <ClCompile Include="asc\isa\asc_gen9_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_mc_gen11lp_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_mc_gen11_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_mc_gen12lp_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_mc_gen12_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_mc_gen8_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_mc_gen9_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_me_gen11lp_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_me_gen11_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_me_gen12lp_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_me_gen12_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_me_gen8_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_me_gen9_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_sd_gen11lp_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_sd_gen11_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_sd_gen12lp_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_sd_gen12_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_sd_gen8_isa.cpp" />
+    <ClCompile Include="mctf\isa\mctf_sd_gen9_isa.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Building.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Building.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'!=''">
+    <PreBuildEventUseInBuild>$(MfxPreBuildEventUseInBuild)</PreBuildEventUseInBuild>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'!=''">
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <PreBuildEvent>
+      <Command>$(MfxPreBuildEvent)</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Footer.props" />
+</Project>

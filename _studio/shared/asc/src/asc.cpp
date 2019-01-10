@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,13 @@
 #include "asc_defs.h"
 #include "asc_cpu_dispatcher.h"
 #include "libmfx_core_interface.h"
-#include "genx_scd_bdw_isa.h"
-#include "genx_scd_skl_isa.h"
-#include "genx_scd_cnl_isa.h"
-#include "genx_scd_icl_isa.h"
-#include "genx_scd_icllp_isa.h"
+#include "asc_gen8_isa.h"
+#include "asc_gen9_isa.h"
+#include "asc_gen11_isa.h"
+#include "asc_gen11lp_isa.h"
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-#include "genx_scd_tgl_isa.h"
-#include "genx_scd_tgllp_isa.h"
+#include "asc_gen12_isa.h"
+#include "asc_gen12lp_isa.h"
 #endif
 #include "tree.h"
 #include "iofunctions.h"
@@ -327,30 +326,28 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
     switch (hwType)
     {
     case PLATFORM_INTEL_BDW:
-        res = m_device->LoadProgram((void *)genx_scd_bdw, sizeof(genx_scd_bdw), m_program, "nojitter");
+        res = m_device->LoadProgram((void *)asc_gen8_isa, sizeof(asc_gen8_isa), m_program, "nojitter");
         break;
     case PLATFORM_INTEL_SKL:
     case PLATFORM_INTEL_KBL:
     case PLATFORM_INTEL_GLK:
     case PLATFORM_INTEL_CFL:
-    case PLATFORM_INTEL_BXT:
-        res = m_device->LoadProgram((void *)genx_scd_skl, sizeof(genx_scd_skl), m_program, "nojitter");
-        break;
     case PLATFORM_INTEL_CNL:
-        res = m_device->LoadProgram((void *)genx_scd_cnl, sizeof(genx_scd_cnl), m_program, "nojitter");
+    case PLATFORM_INTEL_BXT:
+        res = m_device->LoadProgram((void *)asc_gen9_isa, sizeof(asc_gen9_isa), m_program, "nojitter");
         break;
     case PLATFORM_INTEL_ICL:
-        res = m_device->LoadProgram((void *)genx_scd_icl, sizeof(genx_scd_icl), m_program, "nojitter");
+        res = m_device->LoadProgram((void *)asc_gen11_isa, sizeof(asc_gen11_isa), m_program, "nojitter");
         break;
     case PLATFORM_INTEL_ICLLP:
-        res = m_device->LoadProgram((void *)genx_scd_icllp, sizeof(genx_scd_icllp), m_program, "nojitter");
+        res = m_device->LoadProgram((void *)asc_gen11lp_isa, sizeof(asc_gen11lp_isa), m_program, "nojitter");
         break;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     case PLATFORM_INTEL_TGL:
-        res = m_device->LoadProgram((void *)genx_scd_tgl, sizeof(genx_scd_tgl), m_program, "nojitter");
+        res = m_device->LoadProgram((void *)asc_gen12_isa, sizeof(asc_gen12_isa), m_program, "nojitter");
         break;
     case PLATFORM_INTEL_TGLLP:
-        res = m_device->LoadProgram((void *)genx_scd_tgllp, sizeof(genx_scd_tgllp), m_program, "nojitter");
+        res = m_device->LoadProgram((void *)asc_gen12lp_isa, sizeof(asc_gen12lp_isa), m_program, "nojitter");
         break;
 #endif
     default:

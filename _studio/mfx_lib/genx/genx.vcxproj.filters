@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="MCTF">
+      <UniqueIdentifier>{c90ed8cb-a781-425c-84c1-27ef4900719e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ASC">
+      <UniqueIdentifier>{3b5a7f84-defe-41be-8340-5e3f445d0a6b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="asc\isa\asc_gen8_isa.cpp">
+      <Filter>ASC</Filter>
+    </ClCompile>
+    <ClCompile Include="asc\isa\asc_gen9_isa.cpp">
+      <Filter>ASC</Filter>
+    </ClCompile>
+    <ClCompile Include="asc\isa\asc_gen11_isa.cpp">
+      <Filter>ASC</Filter>
+    </ClCompile>
+    <ClCompile Include="asc\isa\asc_gen11lp_isa.cpp">
+      <Filter>ASC</Filter>
+    </ClCompile>
+    <ClCompile Include="asc\isa\asc_gen12_isa.cpp">
+      <Filter>ASC</Filter>
+    </ClCompile>
+    <ClCompile Include="asc\isa\asc_gen12lp_isa.cpp">
+      <Filter>ASC</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_mc_gen8_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_mc_gen9_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_mc_gen11_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_mc_gen11lp_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_mc_gen12_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_mc_gen12lp_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_me_gen8_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_me_gen9_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_me_gen11_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_me_gen11lp_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_me_gen12_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_me_gen12lp_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_sd_gen8_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_sd_gen9_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_sd_gen11_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_sd_gen11lp_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_sd_gen12_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+    <ClCompile Include="mctf\isa\mctf_sd_gen12lp_isa.cpp">
+      <Filter>MCTF</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
