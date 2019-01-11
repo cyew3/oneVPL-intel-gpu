@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -103,7 +103,12 @@ namespace UMC_AV1_DECODER
         for (uint32_t i = 0; i < MAX_MODE_LF_DELTAS; i++)
             fh.loop_filter_params.loop_filter_mode_deltas[i] = prevFH.loop_filter_params.loop_filter_mode_deltas[i];
 
-        fh.segmentation_params = prevFH.segmentation_params;
+        for (uint32_t i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
+        {
+            fh.segmentation_params.FeatureMask[i] = prevFH.segmentation_params.FeatureMask[i];
+            for (uint32_t j = 0; j < SEG_LVL_MAX; j++)
+                fh.segmentation_params.FeatureData[i][j] = prevFH.segmentation_params.FeatureData[i][j];
+        }
     }
 #else
     void InheritFromPrevFrame(FrameHeader&, FrameHeader const&);

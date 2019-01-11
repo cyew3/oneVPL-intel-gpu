@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -234,11 +234,14 @@ namespace UMC_AV1_DECODER
         picParam.stAV1Segments.update_data = info.segmentation_params.segmentation_update_data;
         picParam.stAV1Segments.Reserved4Bits = 0;
 
-        for (uint8_t i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
+        if (picParam.stAV1Segments.enabled)
         {
-            picParam.stAV1Segments.feature_mask[i] = (UCHAR)info.segmentation_params.FeatureMask[i];
-            for (uint8_t j = 0; j < SEG_LVL_MAX; j++)
-                picParam.stAV1Segments.feature_data[i][j] = (SHORT)info.segmentation_params.FeatureData[i][j];
+            for (uint8_t i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
+            {
+                picParam.stAV1Segments.feature_mask[i] = (UCHAR)info.segmentation_params.FeatureMask[i];
+                for (uint8_t j = 0; j < SEG_LVL_MAX; j++)
+                    picParam.stAV1Segments.feature_data[i][j] = (SHORT)info.segmentation_params.FeatureData[i][j];
+            }
         }
 
         if (KEY_FRAME == info.frame_type)
@@ -606,11 +609,14 @@ namespace UMC_AV1_DECODER
         picParam.current_frame = (VASurfaceID)m_va->GetSurfaceID(frame.GetMemID());
         picParam.current_display_picture = (VASurfaceID)m_va->GetSurfaceID(frame.GetMemID());
 
-        for (uint8_t i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
+        if (seg.segment_info_fields.bits.enabled)
         {
-            seg.feature_mask[i] = (uint8_t)info.segmentation_params.FeatureMask[i];
-            for (uint8_t j = 0; j < SEG_LVL_MAX; j++)
-                seg.feature_data[i][j] = (int16_t)info.segmentation_params.FeatureData[i][j];
+            for (uint8_t i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
+            {
+                seg.feature_mask[i] = (uint8_t)info.segmentation_params.FeatureMask[i];
+                for (uint8_t j = 0; j < SEG_LVL_MAX; j++)
+                    seg.feature_data[i][j] = (int16_t)info.segmentation_params.FeatureData[i][j];
+            }
         }
 
         if (KEY_FRAME == info.frame_type)

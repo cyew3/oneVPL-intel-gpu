@@ -791,6 +791,8 @@ namespace UMC_AV1_DECODER
                 }
             }
         }
+        else
+            ClearAllSegFeatures(params);
 
         AV1D_LOG("[-]: %d", (uint32_t)bs.BitsDecoded());
         return segmentQuantizerActive;
