@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -671,7 +671,7 @@ void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
     {
         for(i= 0; i < 64; i++) {
             GET_TO9BITS(video->bs, 8, code);
-            q_matrix[2][i] = (uint8_t)code;
+            q_matrix[3][i] = (uint8_t)code;
         }
         for (i = 0; i < m_nNumberOfThreads; i++) {
             ippiDecodeInterInit_MPEG2(q_matrix[3], IPPVC_LEAVE_SCAN_UNCHANGED, &m_Spec->decodeInterSpecChroma);
