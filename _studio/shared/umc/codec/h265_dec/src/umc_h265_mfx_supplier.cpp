@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -249,13 +249,13 @@ void MFXTaskSupplier_H265::SetVideoParams(mfxVideoParam * par)
     m_decodedOrder     = m_firstVideoParams.mfx.DecodedOrder != 0;
 }
 
-UMC::Status MFXTaskSupplier_H265::FillVideoParam(mfxVideoParam *par, bool full)
+UMC::Status MFXTaskSupplier_H265::FillVideoParam(eMFXHWType type, mfxVideoParam *par, bool full)
 {
     const H265SeqParamSet * seq = GetHeaders()->m_SeqParams.GetCurrentHeader();
     if (!seq)
         return UMC::UMC_ERR_FAILED;
 
-    if (MFX_Utility::FillVideoParam(seq, par, full) != UMC::UMC_OK)
+    if (MFX_Utility::FillVideoParam(type, seq, par, full) != UMC::UMC_OK)
         return UMC::UMC_ERR_FAILED;
 
     return UMC::UMC_OK;

@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -104,7 +104,7 @@ public:
     void SetVideoParams(mfxVideoParam * par);
 
     // Initialize mfxVideoParam structure based on decoded bitstream header values
-    UMC::Status FillVideoParam(mfxVideoParam *par, bool full);
+    UMC::Status FillVideoParam(eMFXHWType, mfxVideoParam*, bool full);
 
 protected:
 

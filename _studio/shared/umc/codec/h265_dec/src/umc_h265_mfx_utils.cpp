@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -293,7 +293,7 @@ bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
 }
 
 inline
-bool CheckBitDepth(mfxU16 profile, mfxU16 bit_depth)
+bool CheckBitDepth(eMFXHWType type, mfxU16 profile, mfxU16 bit_depth)
 {
     VM_ASSERT(profile != MFX_PROFILE_UNKNOWN);
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
@@ -307,37 +307,47 @@ bool CheckBitDepth(mfxU16 profile, mfxU16 bit_depth)
 
     struct minmax_t
     {
-        mfxU16 profile;
-        mfxU8  lo, hi;
+        eMFXHWType type;
+        mfxU16     profile;
+        mfxU8      lo, hi;
     } static const minmax[] =
     {
-        { MFX_PROFILE_HEVC_MAIN,   8,  8 },
-        { MFX_PROFILE_HEVC_MAIN10, 8, 10 },
-        { MFX_PROFILE_HEVC_MAINSP, 8,  8 },
+        { MFX_HW_SCL,     MFX_PROFILE_HEVC_MAIN,   8,  8 },
+        { MFX_HW_SCL,     MFX_PROFILE_HEVC_MAIN10, 8, 10 },
+        { MFX_HW_SCL,     MFX_PROFILE_HEVC_MAINSP, 8,  8 },
+        { MFX_HW_ICL,     MFX_PROFILE_HEVC_REXT,   8, 10 }, //(10b max for Gen11)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        { MFX_PROFILE_HEVC_REXT,   8, 12 }, //(12b max for Gen12)
-        { MFX_PROFILE_HEVC_SCC,    8, 10 }, //(10b max for Gen12)
-#else
-        { MFX_PROFILE_HEVC_REXT,   8, 10 }, //(10b max for Gen11 & SW mode)
+        { MFX_HW_TGL_LP,  MFX_PROFILE_HEVC_REXT,   8, 12 }, //(12b max for Gen12)
+        { MFX_HW_TGL_LP,  MFX_PROFILE_HEVC_SCC,    8, 10 }, //(10b max for Gen12)
 #endif
     };
+
+#if !defined(MFX_VA)
+    if (type == MFX_HW_UNKNOWN)
+        //SW impl. has the same limitations as Gen11
+        type = MFX_HW_ICL;
+#endif
 
     minmax_t const
         *f = minmax,
         *l = f + sizeof(minmax) / sizeof(minmax[0]);
-    for (; f != l; ++f)
-        if (f->profile == profile)
-            break;
+    f = std::find_if(f, l,
+        [&](minmax_t const& m)
+        {
+            return
+                 (m.profile == profile) &&
+                !(m.type    > type)     &&
+                !(bit_depth < m.lo)     &&
+                !(bit_depth > m.hi)
+                ;
+        }
+    );
 
-    return
-        f != l &&
-        !(bit_depth < f->lo) &&
-        !(bit_depth > f->hi)
-        ;
+    return f != l;
 }
 
 inline
-mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
+mfxU32 CalculateFourcc(eMFXHWType type, mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
 {
     //map profile + chroma fmt + bit depth => fcc
     //Main   - [4:2:0], [8] bit
@@ -351,9 +361,9 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
     if (!CheckChromaFormat(codecProfile, frameInfo->ChromaFormat))
         return 0;
 
-    if (!CheckBitDepth(codecProfile, frameInfo->BitDepthLuma))
+    if (!CheckBitDepth(type, codecProfile, frameInfo->BitDepthLuma))
         return 0;
-    if (!CheckBitDepth(codecProfile, frameInfo->BitDepthChroma))
+    if (!CheckBitDepth(type, codecProfile, frameInfo->BitDepthChroma))
         return 0;
 
     mfxU16 bit_depth =
@@ -421,26 +431,24 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
 }
 
 inline
-bool CheckFourcc(mfxU32 fourcc, mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
+bool CheckFourcc(eMFXHWType type, mfxU32 fourcc, mfxU16 profile, mfxFrameInfo const* frameInfo)
 {
     VM_ASSERT(frameInfo);
     mfxFrameInfo fi = *frameInfo;
 
-    if (codecProfile == MFX_PROFILE_UNKNOWN)
+    if (profile == MFX_PROFILE_UNKNOWN)
         //no profile defined, try to derive it from FOURCC
-        codecProfile = MatchProfile(fourcc);
+        profile = MatchProfile(fourcc);
 
     if (!InitBitDepthFields(&fi))
-    {
         return false;
-    }
 
     return
-        CalculateFourcc(codecProfile, &fi) == fourcc;
+        CalculateFourcc(type, profile, &fi) == fourcc;
 }
 
 // Initialize mfxVideoParam structure based on decoded bitstream header values
-UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool full)
+UMC::Status FillVideoParam(eMFXHWType type, H265SeqParamSet const* seq, mfxVideoParam* par, bool full)
 {
     par->mfx.CodecId = MFX_CODEC_HEVC;
 
@@ -498,7 +506,7 @@ UMC::Status FillVideoParam(const H265SeqParamSet * seq, mfxVideoParam *par, bool
     par->mfx.MaxDecFrameBuffering = (mfxU16)seq->sps_max_dec_pic_buffering[0];
 
     // CodecProfile can't be UNKNOWN here (it comes from SPS), that's asserted at CalculateFourcc
-    par->mfx.FrameInfo.FourCC = CalculateFourcc(par->mfx.CodecProfile, &par->mfx.FrameInfo);
+    par->mfx.FrameInfo.FourCC = CalculateFourcc(type, par->mfx.CodecProfile, &par->mfx.FrameInfo);
 
     par->mfx.DecodedOrder = 0;
 
@@ -948,21 +956,21 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
         }
 
         out->mfx.FrameInfo.BitDepthLuma = in->mfx.FrameInfo.BitDepthLuma;
-        if (in->mfx.FrameInfo.BitDepthLuma && !CheckBitDepth(profile, in->mfx.FrameInfo.BitDepthLuma))
+        if (in->mfx.FrameInfo.BitDepthLuma && !CheckBitDepth(core->GetHWType(), profile, in->mfx.FrameInfo.BitDepthLuma))
         {
             out->mfx.FrameInfo.BitDepthLuma = 0;
             sts = MFX_ERR_UNSUPPORTED;
         }
 
         out->mfx.FrameInfo.BitDepthChroma = in->mfx.FrameInfo.BitDepthChroma;
-        if (in->mfx.FrameInfo.BitDepthChroma && !CheckBitDepth(profile, in->mfx.FrameInfo.BitDepthChroma))
+        if (in->mfx.FrameInfo.BitDepthChroma && !CheckBitDepth(core->GetHWType(), profile, in->mfx.FrameInfo.BitDepthChroma))
         {
             out->mfx.FrameInfo.BitDepthChroma = 0;
             sts = MFX_ERR_UNSUPPORTED;
         }
 
         if (in->mfx.FrameInfo.FourCC &&
-            !CheckFourcc(in->mfx.FrameInfo.FourCC, profile, &in->mfx.FrameInfo))
+            !CheckFourcc(core->GetHWType(), in->mfx.FrameInfo.FourCC, profile, &in->mfx.FrameInfo))
         {
             out->mfx.FrameInfo.FourCC = 0;
             sts = MFX_ERR_UNSUPPORTED;
@@ -1280,7 +1288,7 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
         return false;
 
     //BitDepthLuma & BitDepthChroma is also checked here
-    if (!CheckFourcc(in->mfx.FrameInfo.FourCC, in->mfx.CodecProfile, &in->mfx.FrameInfo))
+    if (!CheckFourcc(type, in->mfx.FrameInfo.FourCC, in->mfx.CodecProfile, &in->mfx.FrameInfo))
         return false;
 
     if (   in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210
