@@ -783,7 +783,7 @@ namespace UMC_AV1_DECODER
                             else
                                 data = bs.GetBits(nBits);
 
-                            data = UMC_VP9_DECODER::clamp(data, dataMin, dataMax);
+                            data = mfx::clamp(data, dataMin, dataMax);
                         }
 
                         SetSegData(params, i, (SEG_LVL_FEATURES)j, data);
@@ -994,16 +994,15 @@ namespace UMC_AV1_DECODER
         AV1D_LOG("[-]: %d", (uint32_t)bs.BitsDecoded());
     }
 
-
     const GlobalMotionParams default_warp_params = {
         IDENTITY,
         { 0, 0, (1 << WARPEDMODEL_PREC_BITS), 0, 0, (1 << WARPEDMODEL_PREC_BITS), 0,
         0 },
-        0, 0, 0, 0
+        0, 0, 0, 0, 0
     };
 
     inline
-    void av1_read_global_motion_params(AV1Bitstream& bs, GlobalMotionParams& params,
+    bool av1_read_global_motion_params(AV1Bitstream& bs, GlobalMotionParams& params,
                                        GlobalMotionParams const& ref_params, FrameHeader const& fh)
     {
         AV1D_LOG("[+]: %d", (uint32_t)bs.BitsDecoded());
@@ -1103,9 +1102,16 @@ namespace UMC_AV1_DECODER
                 trans_dec_factor;
         }
 
-        // no need to calculate shear parameters here because driver does it internally
+        if (params.wmtype <= AFFINE)
+        {
+            const bool goodParams = av1_get_shear_params(params);
+            if (!goodParams)
+                return false;
+        }
 
         AV1D_LOG("[-]: %d", (uint32_t)bs.BitsDecoded());
+
+        return true;
     }
 
     inline void av1_read_global_motion(AV1Bitstream& bs, FrameHeader& fh, DPBType const& frameDpb)
@@ -1136,8 +1142,11 @@ namespace UMC_AV1_DECODER
 
             GlobalMotionParams const& ref_params = fh.error_resilient_mode || !refFH ?
                 default_warp_params : refFH->global_motion_params[frame];
+
             GlobalMotionParams& params = fh.global_motion_params[frame];
-            av1_read_global_motion_params(bs, params, ref_params, fh);
+            const bool goodParams = av1_read_global_motion_params(bs, params, ref_params, fh);
+            if (!goodParams)
+                params.invalid = 1;
         }
 
         AV1D_LOG("[-]: %d", (uint32_t)bs.BitsDecoded());

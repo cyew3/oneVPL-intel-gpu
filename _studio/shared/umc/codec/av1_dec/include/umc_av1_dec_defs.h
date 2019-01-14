@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -81,6 +81,7 @@ namespace UMC_AV1_DECODER
     const uint8_t MAX_MODE_LF_DELTAS            = 2;
 
     const uint8_t WARPEDMODEL_PREC_BITS         = 16;
+    const uint8_t WARP_PARAM_REDUCE_BITS        = 6;
 
     const uint8_t MAX_NUM_TEMPORAL_LAYERS       = 8;
     const uint8_t MAX_NUM_SPATIAL_LAYERS        = 4;
@@ -465,10 +466,11 @@ namespace UMC_AV1_DECODER
     {
         TRANSFORMATION_TYPE wmtype;
         int32_t wmmat[8];
-        uint16_t alpha;
-        uint16_t beta;
-        uint16_t gamma;
-        uint16_t delta;
+        int16_t alpha;
+        int16_t beta;
+        int16_t gamma;
+        int16_t delta;
+        int8_t invalid;
     };
 
     struct FilmGrainParams{

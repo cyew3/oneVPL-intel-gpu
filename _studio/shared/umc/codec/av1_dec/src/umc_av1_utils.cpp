@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,8 +50,9 @@ namespace UMC_AV1_DECODER
     {
         if (IsSegFeatureActive(fh.segmentation_params, segmentId, SEG_LVL_ALT_Q))
         {
-            const int data = GetSegData(fh.segmentation_params, segmentId, SEG_LVL_ALT_Q);
-            return UMC_VP9_DECODER::clamp(fh.quantization_params.base_q_idx + data, 0, UMC_VP9_DECODER::MAXQ);
+            const int32_t segQIndex = fh.quantization_params.base_q_idx +
+                GetSegData(fh.segmentation_params, segmentId, SEG_LVL_ALT_Q);;
+            return mfx::clamp(segQIndex, 0, static_cast<int32_t>(UMC_VP9_DECODER::MAXQ));
         }
         else
             return fh.quantization_params.base_q_idx;

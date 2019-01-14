@@ -364,9 +364,14 @@ namespace UMC_AV1_DECODER
 
         for (uint8_t i = 0; i < INTER_REFS; i++)
         {
-            picParam.wm[i].wmtype = info.global_motion_params[i + 1].wmtype;
-            for (uint8_t j = 0; j < 8; j++)
-                picParam.wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
+            picParam.wm[i].invalid = info.global_motion_params[i + 1].invalid;
+
+            if (!picParam.wm[i].invalid)
+            {
+                picParam.wm[i].wmtype = info.global_motion_params[i + 1].wmtype;
+                for (uint8_t j = 0; j < 8; j++)
+                    picParam.wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
+            }
         }
 
         auto& ddiFilmGrain = picParam.stAV1FilmGrainParams;
