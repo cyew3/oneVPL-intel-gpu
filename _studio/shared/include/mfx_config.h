@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 Intel Corporation
+// Copyright (c) 2016-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -318,11 +318,14 @@
     #elif defined(LINUX_TARGET_PLATFORM_BXTMIN) // PRE_SI_GEN == 11
         #include "mfx_common_linux_bxtmin.h"
     #elif defined(LINUX_TARGET_PLATFORM_ATS)
-        #define PRE_SI_GEN 12
+        #define ENABLE_PRE_SI_FEATURES
         #if defined (MFX_VA)
             #define MFX_ENABLE_AV1_VIDEO_DECODE
         #endif
         #include "mfx_common_linux_bdw.h"
+        #ifdef PRE_SI_GEN
+            #undef PRE_SI_GEN
+        #endif
     #elif defined(LINUX_TARGET_PLATFORM_TBD)
         #include "mfx_common_lnx_tbd.h"
     #else
