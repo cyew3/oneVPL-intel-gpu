@@ -95,6 +95,12 @@ if(MFX_ENABLE_KERNELS)
       ${prefix}/genx_sd_skl_isa.cpp
       ${prefix}/genx_sd_icl_isa.cpp
       ${prefix}/genx_sd_icllp_isa.cpp
+      ${prefix}/genx_me_tgl_isa.cpp
+      ${prefix}/genx_me_tgllp_isa.cpp
+      ${prefix}/genx_mc_tgl_isa.cpp
+      ${prefix}/genx_mc_tgllp_isa.cpp
+      ${prefix}/genx_sd_tgl_isa.cpp
+      ${prefix}/genx_sd_tgllp_isa.cpp
     )
   endif()
 
