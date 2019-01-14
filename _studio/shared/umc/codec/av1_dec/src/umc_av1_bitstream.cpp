@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 #ifdef UMC_ENABLE_AV1_VIDEO_DECODER
 
 #include <algorithm>
+#include <cmath>
 #include "vm_debug.h"
 
 #include "umc_av1_bitstream_utils.h"
@@ -1553,7 +1554,7 @@ namespace UMC_AV1_DECODER
         if (a->shiftedOrderHint < b->shiftedOrderHint)
             return -1;
 
-        if (a->shiftedOrderHint > a->shiftedOrderHint)
+        if (a->shiftedOrderHint > b->shiftedOrderHint)
             return 1;
 
         return (a->mapIdx < b->mapIdx)

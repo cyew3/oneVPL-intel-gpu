@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -294,7 +294,7 @@ namespace UMC_AV1_DECODER
     inline bool HaveTilesToSubmit(AV1DecoderFrame const* curr_frame, TileLayout const& layout)
     {
         if (!layout.empty() ||
-            curr_frame && BytesReadyForSubmission(curr_frame->GetTileSets()))
+            (curr_frame && BytesReadyForSubmission(curr_frame->GetTileSets())))
             return true;
 
         return false;
@@ -402,6 +402,7 @@ namespace UMC_AV1_DECODER
                     }
                     bs.ReadByteAlignment();
                 case OBU_TILE_GROUP:
+                {
                     FrameHeader const* pFH = nullptr;
                     if (pFrameInProgress)
                         pFH = &(pFrameInProgress->GetFrameHeader());
@@ -414,6 +415,9 @@ namespace UMC_AV1_DECODER
                         gotFullFrame = GotFullFrame(pFrameInProgress, *pFH, layout);
                         break;
                     }
+                }
+                default:
+                    break;
                 }
 
                 OBUOffset += static_cast<uint32_t>(obuInfo.size);

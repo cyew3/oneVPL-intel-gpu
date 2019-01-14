@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -150,6 +150,7 @@ namespace UMC_AV1_DECODER
         for (DPBType::iterator frm = decode_queue.begin(); frm != decode_queue.end(); frm++)
         {
             AV1DecoderFrame& frame = **frm;
+#ifndef UMC_VA_LINUX
             // check previously cached reports
             for (uint32_t i = 0; i < reports.size(); i++)
             {
@@ -203,6 +204,8 @@ namespace UMC_AV1_DECODER
                     }
                 }
             }
+
+#endif
 
 #if UMC_AV1_DECODER_REV <= 8500
             // so far driver doesn't support status reporting for AV1 decoder
