@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,9 +33,7 @@
 namespace UMC_AV1_DECODER
 {
 #if UMC_AV1_DECODER_REV >= 8500
-    #define AV1D_DDI_VERSION 31
-    #define DDI_HACKS_FOR_REV_85 // Rev 0.85 uses some DDI changes in comparison with 0.31
-                                // such changes are handled by macro DDI_HACKS_FOR_REV_85
+    #define AV1D_DDI_VERSION 34
 #else
     #define AV1D_DDI_VERSION 21
     #define DDI_HACKS_FOR_REV_5 // Rev 0.5 uses some essential DDI changes in comparison with 0.21
@@ -76,8 +74,10 @@ namespace UMC_AV1_DECODER
             struct
             {
                 UINT apply_grain : 1;
+#if AV1D_DDI_VERSION < 30
                 UINT update_grain : 1;
                 UINT film_grain_params_ref_idx : 3;
+#endif
                 UINT chroma_scaling_from_luma : 1;
                 UINT grain_scaling_minus_8 : 2;
                 UINT ar_coeff_lag : 2;
@@ -85,7 +85,11 @@ namespace UMC_AV1_DECODER
                 UINT grain_scale_shift : 2;
                 UINT overlap_flag : 1;
                 UINT clip_to_restricted_range : 1;
+#if AV1D_DDI_VERSION >= 30
+                UINT reservedbits : 20;
+#else
                 UINT reservedbits : 16;
+#endif
             } fields;
             UINT value;
         } dwFilmGrainInfoFlags;
@@ -117,6 +121,10 @@ namespace UMC_AV1_DECODER
     {
         TRANSFORMATION_TYPE wmtype;
         int32_t wmmat[8];
+#if AV1D_DDI_VERSION >= 34
+        int8_t invalid;
+#endif
+
 #if AV1D_DDI_VERSION < 26
         int16_t alpha, beta, gamma, delta;
         int8_t invalid;
@@ -135,12 +143,7 @@ namespace UMC_AV1_DECODER
 #if AV1D_DDI_VERSION >= 26
         UCHAR        order_hint_bits_minus_1;
         UCHAR        BitDepthIdx;
-#ifdef DDI_HACKS_FOR_REV_85
-        UCHAR        reserved8b;
-#else
         USHORT       reserved16b;
-#endif
-
 #else
         USHORT max_frame_width_minus_1;   // [0..65535]
         USHORT max_frame_height_minus_1;  // [0..65535]
@@ -166,11 +169,15 @@ namespace UMC_AV1_DECODER
                 UINT enable_order_hint : 1;
                 UINT enable_jnt_comp : 1;
                 UINT enable_cdef : 1;
+#if AV1D_DDI_VERSION >= 33
+                UINT reserved3b : 3;
+#else
                 UINT enable_restoration : 1;
 #if AV1D_DDI_VERSION >= 26
                 UINT reserved2b : 2;
 #else
                 UINT BitDepthIdx : 2;
+#endif
 #endif
                 UINT mono_chrome : 1;
                 UINT color_range : 1;
@@ -178,7 +185,9 @@ namespace UMC_AV1_DECODER
                 UINT subsampling_y : 1;
                 UINT chroma_sample_position : 1;
                 UINT film_grain_params_present : 1;
-#if AV1D_DDI_VERSION >= 26
+#if AV1D_DDI_VERSION >= 30
+                UINT ReservedSeqInfoBits : 13;
+#elif AV1D_DDI_VERSION >= 26
                 UINT large_scale_tile : 1;
                 UINT ReservedSeqInfoBits : 12;
 #elif defined(DDI_HACKS_FOR_REV_5)
@@ -209,7 +218,10 @@ namespace UMC_AV1_DECODER
                 UINT disable_frame_end_update_cdf : 1;
                 UINT uniform_tile_spacing_flag : 1;
                 UINT allow_warped_motion : 1;
-#if AV1D_DDI_VERSION >= 26
+#if AV1D_DDI_VERSION >= 30
+                UINT large_scale_tile : 1;
+                UINT ReservedPicInfoBits : 15;
+#elif AV1D_DDI_VERSION >= 26
                 UINT ReservedPicInfoBits : 16;
 #else
                 UINT refresh_frame_context : 1;
@@ -227,7 +239,10 @@ namespace UMC_AV1_DECODER
         UCHAR ref_frame_idx[7];   // [0..7]
         UCHAR primary_ref_frame;  // [0..7]
 
+#if AV1D_DDI_VERSION < 30
         UCHAR order_hint;
+#endif
+
 #if AV1D_DDI_VERSION >= 26
         USHORT output_frame_width_in_tiles_minus_1;// [0..65535]
         USHORT output_frame_height_in_tiles_minus_1;// [0..65535]
@@ -237,8 +252,10 @@ namespace UMC_AV1_DECODER
         UCHAR ref_order_hint[8];  // may be removed.
 #endif
 
+#if AV1D_DDI_VERSION < 30
         UCHAR superres_scale_denominator;  // [9..16]
         UCHAR frame_interp_filter;               // [0..9]
+#endif
 
         UCHAR filter_level[2];  // [0..63]
         UCHAR filter_level_u;   // [0..63]
@@ -255,6 +272,12 @@ namespace UMC_AV1_DECODER
             UCHAR value;
         } cLoopFilterInfoFlags;
 
+#if AV1D_DDI_VERSION >= 30
+        UCHAR order_hint;
+        UCHAR superres_scale_denominator;  // [9..16]
+        UCHAR frame_interp_filter;               // [0..9]
+#endif
+
         CHAR ref_deltas[8];   // [-63..63]
         CHAR mode_deltas[2];  // [-63..63]
 
@@ -265,7 +288,12 @@ namespace UMC_AV1_DECODER
         CHAR u_ac_delta_q;   // [-63..63]
         CHAR v_dc_delta_q;   // [-63..63]
         CHAR v_ac_delta_q;   // [-63..63]
-                             // quantization_matrix
+
+#if AV1D_DDI_VERSION >= 28
+        UCHAR reserved8b2;
+#endif
+
+        // quantization_matrix
         union
         {
             struct
@@ -306,7 +334,7 @@ namespace UMC_AV1_DECODER
 #endif
 
         USHORT tile_cols;
-#if AV1D_DDI_VERSION >= 28 && !defined(DDI_HACKS_FOR_REV_85)
+#if AV1D_DDI_VERSION >= 28
         USHORT width_in_sbs_minus_1[63];
 #else
         USHORT width_in_sbs_minus_1[64];
@@ -314,7 +342,7 @@ namespace UMC_AV1_DECODER
         USHORT tile_rows;
 #if AV1D_DDI_VERSION >= 26
 
-#if AV1D_DDI_VERSION >= 28 && !defined(DDI_HACKS_FOR_REV_85)
+#if AV1D_DDI_VERSION >= 28
         USHORT height_in_sbs_minus_1[63];
 #else
         USHORT height_in_sbs_minus_1[64];

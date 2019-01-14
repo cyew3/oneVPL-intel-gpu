@@ -169,8 +169,14 @@ namespace UMC_AV1_DECODER
         ddiSeqParam.enable_masked_compound = sh.enable_masked_compound;
 
         ddiSeqParam.enable_cdef = sh.enable_cdef;
+#if AV1D_DDI_VERSION < 33
         ddiSeqParam.enable_restoration = sh.enable_restoration;
+#endif
+
+#if AV1D_DDI_VERSION < 30
         ddiSeqParam.large_scale_tile = info.large_scale_tile;
+#endif
+
 #else // AV1D_DDI_VERSION >= 26
         ddiSeqParam.sb_size_128x128 = (sh.sbSize == BLOCK_128X128) ? 1 : 0;
         ddiSeqParam.enable_filter_intra = info.enable_filter_intra;
@@ -218,6 +224,11 @@ namespace UMC_AV1_DECODER
         ddiPicParam.disable_frame_end_update_cdf = info.disable_frame_end_update_cdf;
         ddiPicParam.uniform_tile_spacing_flag = info.tile_info.uniform_tile_spacing_flag;
         ddiPicParam.allow_warped_motion = info.allow_warped_motion;
+
+#if AV1D_DDI_VERSION >= 30
+        ddiPicParam.large_scale_tile = info.large_scale_tile;
+#endif
+
 #if AV1D_DDI_VERSION < 26
         ddiPicParam.refresh_frame_context = info.disable_frame_end_update_cdf ? REFRESH_FRAME_CONTEXT_DISABLED : REFRESH_FRAME_CONTEXT_BACKWARD;
         ddiPicParam.large_scale_tile = info.large_scale_tile;
@@ -364,8 +375,12 @@ namespace UMC_AV1_DECODER
         if (!frame.FilmGrainDisabled())
         {
             ddiFGInfoFlags.apply_grain = info.film_grain_params.apply_grain;
+
+#if AV1D_DDI_VERSION < 30
             ddiFGInfoFlags.update_grain = info.film_grain_params.update_grain;
             ddiFGInfoFlags.film_grain_params_ref_idx = info.film_grain_params.film_grain_params_ref_idx;
+#endif
+
             ddiFGInfoFlags.chroma_scaling_from_luma = info.film_grain_params.chroma_scaling_from_luma;
             ddiFGInfoFlags.grain_scaling_minus_8 = info.film_grain_params.grain_scaling - 8;
             ddiFGInfoFlags.ar_coeff_lag = info.film_grain_params.ar_coeff_lag;
