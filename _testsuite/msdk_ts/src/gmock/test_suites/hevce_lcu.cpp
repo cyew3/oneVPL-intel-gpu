@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -648,12 +648,12 @@ namespace hevce_lcu
     }
 
     TS_REG_TEST_SUITE(hevce_8b_420_nv12_lcu, testNV12, sizeof(test_case) / sizeof(test_case[0]));
-    //TS_REG_TEST_SUITE(hevce_8b_422_yuy2_lcu, testYUY2, sizeof(test_case) / sizeof(test_case[0]));
-    //TS_REG_TEST_SUITE(hevce_8b_444_ayuv_lcu, testAYUV, sizeof(test_case) / sizeof(test_case[0]));
-    //TS_REG_TEST_SUITE(hevce_10b_420_p010_lcu, testP010, sizeof(test_case) / sizeof(test_case[0]));
-    //TS_REG_TEST_SUITE(hevce_10b_422_y210_lcu, testY210, sizeof(test_case) / sizeof(test_case[0]));
-    //TS_REG_TEST_SUITE(hevce_10b_444_y410_lcu, testY410, sizeof(test_case) / sizeof(test_case[0]));
-    //TS_REG_TEST_SUITE(hevce_12b_420_p016_lcu, testP012, sizeof(test_case) / sizeof(test_case[0]));
-    //TS_REG_TEST_SUITE(hevce_12b_422_y216_lcu, testY212, sizeof(test_case) / sizeof(test_case[0]));
-    //TS_REG_TEST_SUITE(hevce_12b_444_y416_lcu, testY412, sizeof(test_case) / sizeof(test_case[0]));
+    TS_REG_TEST_SUITE(hevce_8b_422_yuy2_lcu, testYUY2, sizeof(test_case) / sizeof(test_case[0]));
+    TS_REG_TEST_SUITE(hevce_8b_444_ayuv_lcu, testAYUV, sizeof(test_case) / sizeof(test_case[0]));
+    TS_REG_TEST_SUITE(hevce_10b_420_p010_lcu, testP010, sizeof(test_case) / sizeof(test_case[0]));
+    TS_REG_TEST_SUITE(hevce_10b_422_y210_lcu, testY210, sizeof(test_case) / sizeof(test_case[0]));
+    TS_REG_TEST_SUITE(hevce_10b_444_y410_lcu, testY410, sizeof(test_case) / sizeof(test_case[0]));
+    TS_REG_TEST_SUITE(hevce_12b_420_p016_lcu, testP012, sizeof(test_case) / sizeof(test_case[0]));
+    TS_REG_TEST_SUITE(hevce_12b_422_y216_lcu, testY212, sizeof(test_case) / sizeof(test_case[0]));
+    TS_REG_TEST_SUITE(hevce_12b_444_y416_lcu, testY412, sizeof(test_case) / sizeof(test_case[0]));
 };
