@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2019 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_init.cpp
 
@@ -594,7 +594,7 @@ namespace vpp_rext_init
     using namespace tsVPPInfo;
     typedef vpp_init::TestSuite Base;
 
-    const Base::tc_struct test_case[3] =
+    const Base::tc_struct test_case[2] =
     {
         {/*00*/ MFX_ERR_NONE, Base::STANDARD,
             {
@@ -603,12 +603,6 @@ namespace vpp_rext_init
         {/*01*/ MFX_ERR_NONE, Base::STANDARD,
             {
                 { Base::MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},
-            },
-        },
-        {/*02*/ MFX_ERR_NONE, Base::STANDARD,
-            {
-                {Base::MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP},
-                {Base::MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},
             },
         }
     };
