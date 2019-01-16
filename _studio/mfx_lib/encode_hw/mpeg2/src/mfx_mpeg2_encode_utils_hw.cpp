@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1054,9 +1054,11 @@ namespace MPEG2EncoderHW
         MFX_CHECK(par->Protected == 0 || type >= MFX_HW_HSW, MFX_ERR_INVALID_VIDEO_PARAM);
 #endif
 
-        mfxStatus sts = core->IsGuidSupported(DXVA2_Intel_Encode_MPEG2, par, true);
+        mfxStatus sts = MFX_ERR_NONE;
+#if defined(LINUX32) || defined(LINUX64)
+        sts = core->IsGuidSupported(DXVA2_Intel_Encode_MPEG2, par, true);
         MFX_CHECK_STS(sts);
-
+#endif
         mfxExtCodingOption* ext = GetExtCodingOptions(par->ExtParam, par->NumExtParam);
         mfxExtCodingOptionSPSPPS* pSPSPPS = GetExtCodingOptionsSPSPPS (par->ExtParam, par->NumExtParam);
 
@@ -1087,8 +1089,19 @@ namespace MPEG2EncoderHW
         sts = CheckHwCaps(core, par, ext, &EncCaps);
         MFX_CHECK_STS(sts);
 
+#if defined(_WIN32) || defined(_WIN64)
+        if (par->mfx.FrameInfo.Width > 0x1fff || (par->mfx.FrameInfo.Width & 0x0f) != 0)
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+#endif
         mfxU32 mask = (par->mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE)? 0x0f:0x1f;
-        if ((par->mfx.FrameInfo.Width & 0x0f) != 0 || (par->mfx.FrameInfo.Height & mask) != 0 )
+#if defined(_WIN32) || defined(_WIN64)
+        if (par->mfx.FrameInfo.Height > 0x1fff
+#else
+        if ((par->mfx.FrameInfo.Width & 0x0f) != 0
+#endif
+            || (par->mfx.FrameInfo.Height & mask) != 0 )
         {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
