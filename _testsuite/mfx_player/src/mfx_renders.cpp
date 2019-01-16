@@ -2063,16 +2063,38 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
     }
     else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YUV444_8)
     {
-        VM_ASSERT(pSurfaceIn->Info.FourCC == MFX_FOURCC_AYUV);
+        VM_ASSERT(pSurfaceIn->Info.FourCC == MFX_FOURCC_AYUV || pSurfaceIn->Info.FourCC == MFX_FOURCC_Y410);
 
-        for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
+        switch (pSurfaceIn->Info.FourCC)
         {
-            for (size_t j = 0; j < pSurfaceIn->Info.Width; j++)
-            {
-                pDst[0][i*pitchOut + j] = pSurfaceIn->Data.Y[i*pitchIn + 4*j];
-                pDst[1][i*pitchOut + j] = pSurfaceIn->Data.U[i*pitchIn + 4*j];
-                pDst[2][i*pitchOut + j] = pSurfaceIn->Data.V[i*pitchIn + 4*j];
-            }
+            case MFX_FOURCC_Y410:
+                {
+                    mfxY410 const* pSrc = pSurfaceIn->Data.Y410;
+                    pitchIn  /= sizeof(mfxY410);
+                    for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
+                    {
+                        for (size_t j = 0; j < pSurfaceIn->Info.Width; j++)
+                        {
+                            pDst[0][i*pitchOut + j] = pSrc[i*pitchIn + j].Y;
+                            pDst[1][i*pitchOut + j] = pSrc[i*pitchIn + j].U;
+                            pDst[2][i*pitchOut + j] = pSrc[i*pitchIn + j].V;
+                        }
+                    }
+                }
+                break;
+            case MFX_FOURCC_AYUV:
+                for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
+                {
+                    for (size_t j = 0; j < pSurfaceIn->Info.Width; j++)
+                    {
+                        pDst[0][i*pitchOut + j] = pSurfaceIn->Data.Y[i*pitchIn + 4*j];
+                        pDst[1][i*pitchOut + j] = pSurfaceIn->Data.U[i*pitchIn + 4*j];
+                        pDst[2][i*pitchOut + j] = pSurfaceIn->Data.V[i*pitchIn + 4*j];
+                    }
+                }
+                break;
+        default:
+            return 0;
         }
     }
     else // IMC3
