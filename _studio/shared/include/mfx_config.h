@@ -319,7 +319,7 @@
         #include "mfx_common_linux_bxtmin.h"
     #elif defined(LINUX_TARGET_PLATFORM_ATS)
         #define ENABLE_PRE_SI_FEATURES
-        #if defined (MFX_VA)
+        #if defined (MFX_VA) && !defined(AS_HEVCD_PLUGIN) && !defined(AS_VP8D_PLUGIN) && !defined(AS_VP9D_PLUGIN) && !defined (MFX_RT)
             #define MFX_ENABLE_AV1_VIDEO_DECODE
         #endif
         #include "mfx_common_linux_bdw.h"
