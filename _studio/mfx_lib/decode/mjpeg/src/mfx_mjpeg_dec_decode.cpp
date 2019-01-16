@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1022,7 +1022,8 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
 
 #if defined (MFX_VA_LINUX)
     if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
-        par->mfx.FrameInfo.FourCC != MFX_FOURCC_RGB4)
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_RGB4 &&
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_YUY2)
         return true;
 
     /* on Linux in case of multiscan turn off HW support until because some functionality is missed so far */
