@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\genx_hevce_hme_and_me_p32_4mv_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_hme_and_me_p32_4mv_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_hme_and_me_p32_4mv_skl_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mepu_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mepu_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mepu_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_skl_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_single_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_single_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_single_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_vartx_decision_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_vartx_decision_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_vartx_decision_skl_isa.cpp" />
+  </ItemGroup>
+</Project>

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -235,6 +235,7 @@ static CodeStringTable StringsOfFourcc[] =
     { MFX_FOURCC_A2RGB10,            VM_STRING("A2RGB10") },
     { MFX_CODEC_VP8,                 VM_STRING("VP8")  },
     { MFX_CODEC_VP9,                 VM_STRING("VP9")  },
+    { MFX_CODEC_AV1,                 VM_STRING("AV1")  },
     { MFX_FOURCC_R16,                VM_STRING("R16")  },
     { MFX_FOURCC_ARGB16,             VM_STRING("ARGB16")  },
     { MFX_FOURCC_NV16,               VM_STRING("NV16")  },

@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\genx_av1_intra_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_bdw_isa.cpp" />
+    <ClCompile Include="src\test_av1_intra.cpp" />
+    <ClCompile Include="src\genx_av1_intra_emu.cpp" />
+    <ClCompile Include="src\av1_intra\mfx_av1_get_intra_pred_pels.cpp">
+      <Filter>av1_intra_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\av1_intra\mfx_av1_intrapred.cpp">
+      <Filter>av1_intra_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\av1_intra\mfx_av1_dispatcher.cpp">
+      <Filter>av1_intra_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\av1_intra\mfx_av1_dispatcher_fptr.cpp">
+      <Filter>av1_intra_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\av1_intra\mfx_av1_intrapred_px.cpp">
+      <Filter>av1_intra_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\av1_intra\mfx_av1_sad_px.cpp">
+      <Filter>av1_intra_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\av1_intra\mfx_av1_satd_px.cpp">
+      <Filter>av1_intra_files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\test_common.h" />
+    <ClInclude Include="src\av1_intra\mfx_av1_get_intra_pred_pels.h">
+      <Filter>av1_intra_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\av1_intra\mfx_av1_dispatcher_fptr.h">
+      <Filter>av1_intra_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\av1_intra\mfx_av1_dispatcher_proto.h">
+      <Filter>av1_intra_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\av1_intra\mfx_av1_dispatcher_wrappers.h">
+      <Filter>av1_intra_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\av1_intra\mfx_av1_opts_common.h">
+      <Filter>av1_intra_files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="av1_intra_files">
+      <UniqueIdentifier>{91ff7c23-4e0d-4e27-9b59-c5d27ed9ce2b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\genx_av1_intra.cpp" />
+  </ItemGroup>
+</Project>

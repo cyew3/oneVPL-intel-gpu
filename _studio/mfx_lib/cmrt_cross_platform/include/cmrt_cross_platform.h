@@ -1,4 +1,4 @@
-// Copyright (c) 1985-2018 Intel Corporation
+// Copyright (c) 1985-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1445,6 +1445,7 @@ public:
     CM_RT_API virtual INT SetStaticBuffer(UINT index, const void * pValue) = 0;
     CM_RT_API virtual INT SetSurfaceBTI(SurfaceIndex* pSurface, UINT BTIndex) = 0;
     CM_RT_API virtual INT AssociateThreadSpace(CmThreadSpace* & pTS) = 0;
+    CM_RT_API virtual INT AssociateThreadGroupSpace(CmThreadGroupSpace* & pTGS) = 0;
 };
 
 class CmTask
@@ -1972,7 +1973,7 @@ int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName
 #define CM_MAX_THREADSPACE_WIDTH_FOR_MW        511
 #define CM_MAX_THREADSPACE_HEIGHT_FOR_MW       511
 
-
+#ifndef CMAPIUPDATE
 #ifndef CM2R
 typedef enum _GPU_PLATFORM {
     PLATFORM_INTEL_UNKNOWN = 0,
@@ -1990,7 +1991,7 @@ typedef enum _GPU_PLATFORM {
     PLATFORM_INTEL_GLV = 12,  //Glenview
 } GPU_PLATFORM;
 #endif
-
+#endif
 
 #endif
 
@@ -2345,6 +2346,7 @@ public:
 };
 
 class CmThreadSpace;
+class CmThreadGroupSpace;
 
 class CmKernel
 {
@@ -2360,6 +2362,7 @@ public:
     CM_RT_API virtual INT SetSurfaceBTI(SurfaceIndex* pSurface, UINT BTIndex) = 0;
 
     CM_RT_API virtual INT AssociateThreadSpace(CmThreadSpace* & pTS) = 0;
+    CM_RT_API virtual INT AssociateThreadGroupSpace(CmThreadGroupSpace* & pTGS) = 0;
 };
 
 class CmTask
@@ -2443,7 +2446,6 @@ public:
     CM_RT_API virtual INT SelectThreadDependencyPattern(CM_DEPENDENCY_PATTERN pattern) = 0;
 };
 
-class CmThreadGroupSpace;
 class CmVebox_G75;
 
 class CmQueue
@@ -2722,6 +2724,9 @@ public:
     CM_RT_API virtual INT FlushPrintBuffer() = 0;
     CM_RT_API virtual INT CreateSurface2DSubresource(AbstractSurfaceHandle pD3D11Texture2D, UINT subresourceCount, CmSurface2D** ppSurfaces, UINT& createdSurfaceCount, UINT option = 0) = 0;
     CM_RT_API virtual INT CreateSurface2DbySubresourceIndex(AbstractSurfaceHandle pD3D11Texture2D, UINT FirstArraySlice, UINT FirstMipSlice, CmSurface2D* &pSurface) = 0;
+#ifndef CMAPIUPDATE
+    int32_t CreateQueueEx(CmQueue *&pQueue, CM_QUEUE_CREATE_OPTION QueueCreateOption = CM_DEFAULT_QUEUE_CREATE_OPTION) { pQueue = 0;  return 0; }
+#endif
 };
 
 

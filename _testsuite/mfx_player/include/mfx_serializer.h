@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2019 Intel Corporation. All Rights Reserved.
 
 File Name: mfxstructures.h
 
@@ -551,6 +551,26 @@ protected:
 };
 
 template<>
+class MFXStructureRef <mfxExtCodingOptionAV1E>
+    : public MFXStructureBase<mfxExtCodingOptionAV1E>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtCodingOptionAV1E>((mfxExtCodingOptionAV1E &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtCodingOptionAV1E & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtCodingOptionAV1E>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues() const;
+};
+
+
+template<>
 class MFXStructureRef <mfxExtCodingOptionHEVC>
     : public MFXStructureBase<mfxExtCodingOptionHEVC>
 {
@@ -568,7 +588,6 @@ public:
 protected:
     virtual void ConstructValues () const;
 };
-
 
 template<>
 class MFXStructureRef <mfxExtHEVCTiles>

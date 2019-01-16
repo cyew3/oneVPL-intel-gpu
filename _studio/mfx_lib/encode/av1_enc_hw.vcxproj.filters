@@ -1,0 +1,199 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="av1\src\mfx_av1_dispatcher.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_probabilities.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_get_context.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_bit_count.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_scan.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_deblocking.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_prob_opt.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_trace.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_dispatcher_fptr.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_entropy.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_copy.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_mv_refs.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_cdef.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_deblocking.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_scan.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_bit_count.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_gpu_mode_decision.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_brc.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_ctb.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_defaults.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_enc.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_encode.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_encode_api.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_frame.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_interpred.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_intrapred.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_lookahead.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_quant.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_set.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_tables.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_set_hwpak.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="av1\include\mfx_av1_bitwriter.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_core_iface_wrapper.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_scan.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_probabilities.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_get_context.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_binarization.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_bit_count.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_dispatcher.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_prob_opt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_trace.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_deblocking.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_dispatcher_proto.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_dispatcher_fptr.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_dispatcher_wrappers.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_dependency_graph.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_copy.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_cdef.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_scan.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_gpu_mode_decision.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_brc.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_ctb.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_defaults.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_defs.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_enc.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_encode.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_encode_api.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_frame.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_quant.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_tables.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_lookahead.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{c2132a95-fc9a-4c1a-b96c-d043118509ad}</UniqueIdentifier>
+      <Extensions>*.cpp</Extensions>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{b5a983a5-d67c-4886-ad9b-b42f652bcb15}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

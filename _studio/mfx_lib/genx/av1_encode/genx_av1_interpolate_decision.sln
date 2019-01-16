@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{F41A7994-7317-4BA6-8FC7-261FCBCED974}") = "genx_av1_interpolate_decision", "genx_av1_interpolate_decision.vcxproj", "{420DD32E-56C1-49D0-A664-26019BA90242}"
+EndProject
+Global
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        Debug_HSW_Emu|x64 = Debug_HSW_Emu|x64
+        Debug|x64 = Debug|x64
+        Release|x64 = Release|x64
+    EndGlobalSection
+    GlobalSection(ProjectConfigurationPlatforms) = postSolution
+        {420DD32E-56C1-49D0-A664-26019BA90242}.Debug_HSW_Emu|x64.ActiveCfg = Debug_HSW_Emu|x64
+        {420DD32E-56C1-49D0-A664-26019BA90242}.Debug_HSW_Emu|x64.Build.0 = Debug_HSW_Emu|x64
+        {420DD32E-56C1-49D0-A664-26019BA90242}.Debug|x64.ActiveCfg = Debug|x64
+        {420DD32E-56C1-49D0-A664-26019BA90242}.Debug|x64.Build.0 = Debug|x64
+        {420DD32E-56C1-49D0-A664-26019BA90242}.Release|x64.ActiveCfg = Release|x64
+        {420DD32E-56C1-49D0-A664-26019BA90242}.Release|x64.Build.0 = Release|x64
+    EndGlobalSection
+    GlobalSection(SolutionProperties) = preSolution
+        HideSolutionNode = FALSE
+    EndGlobalSection
+EndGlobal

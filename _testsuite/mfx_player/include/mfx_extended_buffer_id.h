@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_extended_buffer_id.h
 
@@ -102,6 +102,7 @@ DECL_BUFFER_TYPE(mfxExtCodingOption3,           MFX_EXTBUFF_CODING_OPTION3      
 DECL_BUFFER_TYPE(mfxExtCodingOptionDDI, MFX_EXTBUFF_DDI);
 DECL_BUFFER_TYPE(mfxExtCodingOptionQuantMatrix, MFX_EXTBUFF_QM);
 DECL_BUFFER_TYPE(mfxExtCodingOptionHEVC, MFX_EXTBUFF_HEVCENC);
+DECL_BUFFER_TYPE(mfxExtCodingOptionAV1E, MFX_EXTBUFF_AV1ENC);
 DECL_BUFFER_TYPE(mfxExtHEVCTiles, MFX_EXTBUFF_HEVC_TILES);
 DECL_BUFFER_TYPE(mfxExtHEVCParam, MFX_EXTBUFF_HEVC_PARAM);
 DECL_BUFFER_TYPE(mfxExtVP8CodingOption, MFX_EXTBUFF_VP8_CODING_OPTION);

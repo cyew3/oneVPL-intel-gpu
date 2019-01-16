@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- h265_fei.vcxproj specific settings -->
+  <PropertyGroup Label="av1_fei settings">
+    <MfxUsingSettings>av1_fei;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\fei\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\fei\av1\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\genx\av1_encode\include;
+    </MfxIncludes>
+    <MfxDefinitions>AS_AV1E_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;</MfxDefinitions>
+    <MfxDefinitions Condition="'$(Configuration)'=='Debug_HSW_Emu'">CMRT_EMU;$(MfxDefinitions)</MfxDefinitions>
+    <MfxDefinitions Condition="'$(SolutionName)'=='libmfxhw_plugin_av1fei'">AS_AV1E_FEI_PLUGIN;$(MfxDefinitions)</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+  </PropertyGroup>
+<!-- End of av1_fei.vcxproj specific settings -->
+</Project>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- hevc_pp_px.vcxproj specific settings -->
+  <PropertyGroup Label="av1_pp_px settings">
+    <MfxUsingSettings>av1_pp_px;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\optimization\av1\include;
+    </MfxIncludes>
+    <MfxDefinitions>AS_AV1E_PLUGIN;MFX_D3D11_ENABLED;MFX_MAKENAME_PX</MfxDefinitions>
+    <MfxDefinitions Condition="'$(MfxSoftwareOnly)'!='true'">MFX_VA;$(MfxDefinitions)</MfxDefinitions>
+    <MfxDefinitions Condition="'$(Configuration)'=='Debug_HSW_Emu'">CMRT_EMU;$(MfxDefinitions)</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+    <MfxPlatformToolset>$(MfxIntelPlatformToolset)</MfxPlatformToolset>
+  </PropertyGroup>
+<!-- End of hevc_pp_px.vcxproj specific settings -->
+</Project>

@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\genx_av1_vartx_decision_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_vartx_decision_emu.cpp" />
+    <ClCompile Include="src\genx_av1_vartx_decision_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_vartx_decision_skl_isa.cpp" />
+    <ClCompile Include="src\test_av1_vartx_decision.cpp" />
+    <ClCompile Include="src\vartx\mfx_av1_scan.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_interpolation_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_interpolation_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_fwd_transform_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_fwd_transform_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_inv_transform_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_inv_transform_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_bit_count.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_ctb.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_quant.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_tables.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_bit_count_9.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_copy.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_diff_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_diff_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_dispatcher.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_dispatcher_fptr.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_fwd_transform_avx2_9.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_fwd_transform_px_9.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_inv_transform_avx2_9.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_inv_transform_px_9.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_probabilities.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_quantization_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_quantization_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_sse_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_sse_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vartx\mfx_av1_transform_fwd_sse.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\test_common.h" />
+    <ClInclude Include="src\vartx\mfx_av1_scan.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_fwd_transform_common.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_inv_transform_common.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_ctb.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_defs.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_tables.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_dispatcher.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_dispatcher_fptr.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_dispatcher_proto.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_dispatcher_wrappers.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\fwd_txfm_sse2.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_bit_count.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_copy.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_enc.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_frame.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_opts_common.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_opts_intrin.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_probabilities.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_quant.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_transform_common.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_transform_common_avx2.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\mfx_av1_transform_common_avx2_9.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vartx\txfm_common.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\genx_av1_vartx_decision.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="av1e_files">
+      <UniqueIdentifier>{aa892ee6-3cba-4179-9544-bee14d1ea694}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -104,7 +104,7 @@ struct mfxTraceAlgorithm
 
 static mfxTraceU32      g_OutputMode = MFX_TRACE_OUTPUT_TRASH;
 static mfxTraceU32      g_Level      = MFX_TRACE_LEVEL_DEFAULT;
-static volatile Ipp32u  g_refCounter = 0;
+static volatile uint32_t  g_refCounter = 0;
 
 static mfxTraceU32           g_mfxTraceCategoriesNum = 0;
 static mfxTraceCategoryItem* g_mfxTraceCategoriesTable = NULL;

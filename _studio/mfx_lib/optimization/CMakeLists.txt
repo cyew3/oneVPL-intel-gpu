@@ -57,7 +57,7 @@ if (ENABLE_HEVC)
   set( sources "" )
   set( sources.plus "" )
 
-  foreach( dir ${CMAKE_CURRENT_SOURCE_DIR} )
+  foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h265/src )
     file( GLOB_RECURSE srcs "${dir}/*avx2.c" "${dir}/*avx2.cpp" )
     list( APPEND sources ${srcs} )
   endforeach()
@@ -132,3 +132,117 @@ if (ENABLE_HEVC)
   # =============================================================================
 
 endif() # ENABLE_HEVC
+
+
+
+#AV1 part
+
+find_program(YASM_EXE NAMES yasm)
+
+set ( AV1CPP_LIBS "" )
+# =============================================================================
+
+set( ENABLE_AV1 FALSE )
+
+if (CMAKE_C_COMPILER MATCHES icc AND YASM_EXE MATCHES yasm)
+  set(ENABLE_AV1 TRUE)
+endif()
+
+
+if (ENABLE_AV1)
+
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode/av1/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/av1 )
+
+  # =============================================================================
+
+  set( defs "-DMFX_MAKENAME_AVX2 -DAS_AV1E_PLUGIN ${API_FLAGS}" )
+  set( sources "" )
+  set( sources.plus "" )
+
+  foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/av1/avx2 )
+    file( GLOB_RECURSE srcs "${dir}/*.cpp" )
+    list( APPEND sources ${srcs} )
+  endforeach()
+
+  make_library( av1_pp_avx2 none static )
+  append_property( av1_pp_avx2 COMPILE_FLAGS "-mavx2 -march=core-avx2")
+  append_property( av1_pp_avx2 LINK_FLAGS "-mavx2 -march=core-avx2")
+  set( defs "" )
+  list( APPEND AV1CPP_LIBS av1_pp_avx2 )
+
+  # =============================================================================
+
+  set( defs "-DMFX_MAKENAME_PX -DAS_AV1E_PLUGIN ${API_FLAGS}" )
+  set( sources "" )
+  set( sources.plus "" )
+
+  foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/av1/px )
+    file( GLOB_RECURSE srcs "${dir}/*.cpp" )
+    list( APPEND sources ${srcs})
+  endforeach()
+
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/av1/px )
+
+  make_library( av1_pp_px none static )
+  set( defs "" )
+  list( APPEND AV1CPP_LIBS av1_pp_px )
+
+  # =============================================================================
+
+  set( defs "-DMFX_MAKENAME_SSSE3 -DAS_AV1E_PLUGIN ${API_FLAGS}" )
+  set( sources "" )
+  set( sources.plus "" )
+
+  foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/av1/ssse3 )
+    file( GLOB_RECURSE srcs "${dir}/*.cpp" )
+    list( APPEND sources ${srcs} )
+  endforeach()
+
+  set( asm "")
+ foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/av1/ssse3 )
+    file( GLOB_RECURSE srcs "${dir}/*.asm")
+    list( APPEND asm ${srcs} )
+  endforeach()
+
+  list( APPEND sources intrapred_sse2.o intrapred_ssse3.o vpx_convolve_copy_sse2.o vpx_subpixel_8t_ssse3.o vpx_subpixel_bilinear_ssse3.o)
+  find_program(YASM_EXE NAMES yasm REQUIRED)
+  if(NOT YASM_EXE)
+     message(SEND_ERROR "yasm was not found : av1_pp_sse3 will not be compiled")
+  endif()
+
+  message("YASM: ${YASM_EXE}")
+
+  if(YASM_EXE)
+
+     add_custom_command(OUTPUT intrapred_sse2.o COMMAND ${YASM_EXE}
+                   ARGS -Xvc -f elf64  -I"." -I"${CMAKE_CURRENT_SOURCE_DIR}/av1" -o intrapred_sse2.o ${CMAKE_CURRENT_SOURCE_DIR}/av1/ssse3/intrapred_sse2.asm)
+     add_custom_command(OUTPUT intrapred_ssse3.o COMMAND ${YASM_EXE}
+                   ARGS -Xvc -f elf64  -I"." -I"${CMAKE_CURRENT_SOURCE_DIR}/av1" -o intrapred_ssse3.o ${CMAKE_CURRENT_SOURCE_DIR}/av1/ssse3/intrapred_ssse3.asm)
+     add_custom_command(OUTPUT vpx_convolve_copy_sse2.o COMMAND ${YASM_EXE}
+                   ARGS -Xvc -f elf64  -I"." -I"${CMAKE_CURRENT_SOURCE_DIR}/av1" -o vpx_convolve_copy_sse2.o ${CMAKE_CURRENT_SOURCE_DIR}/av1/ssse3/vpx_convolve_copy_sse2.asm)
+     add_custom_command(OUTPUT vpx_subpixel_8t_ssse3.o COMMAND ${YASM_EXE}
+                   ARGS -Xvc -f elf64  -I"." -I"${CMAKE_CURRENT_SOURCE_DIR}/av1" -o vpx_subpixel_8t_ssse3.o ${CMAKE_CURRENT_SOURCE_DIR}/av1/ssse3/vpx_subpixel_8t_ssse3.asm)
+     add_custom_command(OUTPUT vpx_subpixel_bilinear_ssse3.o COMMAND ${YASM_EXE}
+                     ARGS -Xvc -f elf64  -I"." -I"${CMAKE_CURRENT_SOURCE_DIR}/av1" -o vpx_subpixel_bilinear_ssse3.o ${CMAKE_CURRENT_SOURCE_DIR}/av1/ssse3/vpx_subpixel_bilinear_ssse3.asm)
+     make_library( av1_pp_ssse3 none static )
+
+     append_property( av1_pp_ssse3 COMPILE_FLAGS "-mssse3")
+     append_property( av1_pp_ssse3 LINK_FLAGS "-mssse3" )
+     list( APPEND AV1CPP_LIBS av1_pp_ssse3 )
+  endif()
+
+  set( defs "" )
+
+  # =============================================================================
+  set ( AV1CPP_LIBS ${AV1CPP_LIBS} PARENT_SCOPE )
+  set ( ENABLE_AV1 ${ENABLE_AV1} PARENT_SCOPE )
+  # =============================================================================
+
+endif() # ENABLE_AV1
+
+
+
+
+
+

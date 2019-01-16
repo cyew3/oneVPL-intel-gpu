@@ -88,6 +88,7 @@ Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 #define HANDLE_VP9_PARAM(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP9Param, member, OPT_TYPE, description, MFX_CODEC_VP9)
 #define HANDLE_ENCRESET_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderReset, member, OPT_TYPE, description, 0)
 #define HANDLE_EXT_MFE(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extMFEParam, member, OPT_TYPE, description, 0)
+#define HANDLE_AV1_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsAV1E, member, OPT_TYPE, description, MFX_CODEC_AV1)
 
 
 #define FILL_MASK(type, ptr)\
@@ -120,6 +121,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_extDumpFiles(new mfxExtDumpFiles())
     , m_extVideoSignalInfo(new mfxExtVideoSignalInfo())
     , m_extCodingOptionsHEVC(new mfxExtCodingOptionHEVC())
+    , m_extCodingOptionsAV1E(new mfxExtCodingOptionAV1E())
     , m_extHEVCTiles(new mfxExtHEVCTiles())
     , m_extHEVCParam(new mfxExtHEVCParam())
     , m_extVP8CodingOptions(new mfxExtVP8CodingOption())
@@ -318,6 +320,119 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(AutoScaleToCoresUsingTiles, OPT_TRI_STATE,  "Automaticaly Scale to available Cores using Tiles if needed"),
         HANDLE_HEVC_OPTION(MaxTaskChainEnc,          OPT_UINT_16,    "Max Task Chain in LCU for Multi-threading Efficiency"),
         HANDLE_HEVC_OPTION(MaxTaskChainInloop,       OPT_UINT_16,    "Max Task Chain in LCU for Multi-threading Efficiency"),
+
+        //AV1 options
+        HANDLE_AV1_OPTION(Log2MaxCUSize, OPT_UINT_16, "4-6"),
+        HANDLE_AV1_OPTION(MaxCUDepth, OPT_UINT_16, "1-(Log2MaxCUSize-1)"),
+        HANDLE_AV1_OPTION(QuadtreeTULog2MaxSize, OPT_UINT_16, "2-min(5,Log2MaxCUSize)"),
+        HANDLE_AV1_OPTION(QuadtreeTULog2MinSize, OPT_UINT_16, "2-QuadtreeTULog2MaxSize"),
+        HANDLE_AV1_OPTION(QuadtreeTUMaxDepthIntra, OPT_UINT_16, "1-(Log2MaxCUSize-1)"),
+        HANDLE_AV1_OPTION(QuadtreeTUMaxDepthInter, OPT_UINT_16, "1-(Log2MaxCUSize-1)"),
+        HANDLE_AV1_OPTION(QuadtreeTUMaxDepthInterRD, OPT_UINT_16, "1-(Log2MaxCUSize-1)"),
+        HANDLE_AV1_OPTION(AnalyzeChroma, OPT_TRI_STATE, "on/off chroma intra mode"),
+        HANDLE_AV1_OPTION(SignBitHiding, OPT_TRI_STATE, ""),
+        HANDLE_AV1_OPTION(RDOQuant, OPT_TRI_STATE, ""),
+        HANDLE_AV1_OPTION(SAO, OPT_TRI_STATE, ""),
+        HANDLE_AV1_OPTION(SplitThresholdStrengthCUIntra, OPT_UINT_16, "0=default; 1=disabled; 2-4"),
+        HANDLE_AV1_OPTION(SplitThresholdStrengthTUIntra, OPT_UINT_16, "0=default; 1=disabled; 2-4"),
+        HANDLE_AV1_OPTION(SplitThresholdStrengthCUInter, OPT_UINT_16, "0=default; 1=disabled; 2-4"),
+        HANDLE_AV1_OPTION(IntraNumCand1_2, OPT_UINT_16, "1-35: 4x4 stage1"),
+        HANDLE_AV1_OPTION(IntraNumCand1_3, OPT_UINT_16, "1-35: 8x8 stage1"),
+        HANDLE_AV1_OPTION(IntraNumCand1_4, OPT_UINT_16, "1-35: 16x16 stage1"),
+        HANDLE_AV1_OPTION(IntraNumCand1_5, OPT_UINT_16, "1-35: 32x32 stage1"),
+        HANDLE_AV1_OPTION(IntraNumCand1_6, OPT_UINT_16, "1-35: 64x64 stage1"),
+        HANDLE_AV1_OPTION(IntraNumCand2_2, OPT_UINT_16, "1-35: 4x4 stage2"),
+        HANDLE_AV1_OPTION(IntraNumCand2_3, OPT_UINT_16, "1-35: 8x8 stage2"),
+        HANDLE_AV1_OPTION(IntraNumCand2_4, OPT_UINT_16, "1-35: 16x16 stage2"),
+        HANDLE_AV1_OPTION(IntraNumCand2_5, OPT_UINT_16, "1-35: 32x32 stage2"),
+        HANDLE_AV1_OPTION(IntraNumCand2_6, OPT_UINT_16, "1-35: 64x14 stage2"),
+        HANDLE_AV1_OPTION(WPP, OPT_TRI_STATE, "Wavefront Parallel Processing"),
+        HANDLE_AV1_OPTION(Log2MinCuQpDeltaSize, OPT_UINT_16, "6-64x64; 5-32x32; 4-16x16 3-8x8"),
+        HANDLE_AV1_OPTION(PartModes, OPT_UINT_16, "0-default; 1-square only; 2-no AMP; 3-all"),
+        HANDLE_AV1_OPTION(CmIntraThreshold, OPT_UINT_16, "threshold = CmIntraThreshold / 256.0"),
+        HANDLE_AV1_OPTION(TUSplitIntra, OPT_UINT_16, "0-default; 1-always; 2-never; 3-for Intra frames only"),
+        HANDLE_AV1_OPTION(CUSplit, OPT_UINT_16, "0-default; 1-check Skip cost first"),
+        HANDLE_AV1_OPTION(IntraAngModes, OPT_UINT_16, "I slice Intra Angular modes: 0-default: 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99- DC&Planar only"),
+        HANDLE_AV1_OPTION(IntraAngModesP, OPT_UINT_16, "P slice Intra Angular modes: 0-default; 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99- DC&Planar only, 100- disable"),
+        HANDLE_AV1_OPTION(IntraAngModesBRef, OPT_UINT_16, "B Ref slice Intra Angular modes: 0-default; 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99- DC&Planar only, 100- disable"),
+        HANDLE_AV1_OPTION(IntraAngModesBnonRef, OPT_UINT_16, "B non Ref slice Intra Angular modes: 0-default; 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99- DC&Planar only, 100- disable"),
+        HANDLE_AV1_OPTION(EnableCm, OPT_TRI_STATE, "on/off CM branch"),
+        HANDLE_AV1_OPTION(BPyramid, OPT_TRI_STATE, "B-Pyramid"),
+        HANDLE_AV1_OPTION(FastPUDecision, OPT_TRI_STATE, "on/off fast PU decision (fast means no TU split)"),
+        HANDLE_AV1_OPTION(HadamardMe, OPT_UINT_16, "0-default 1-never; 2-subpel; 3-always"),
+        HANDLE_AV1_OPTION(TMVP, OPT_TRI_STATE, "on/off temporal MV predictor"),
+        HANDLE_AV1_OPTION(Deblocking, OPT_TRI_STATE, "on/off deblocking"),
+        HANDLE_AV1_OPTION(RDOQuantChroma, OPT_TRI_STATE, "on/off RDO quantization for chroma"),
+        HANDLE_AV1_OPTION(RDOQuantCGZ, OPT_TRI_STATE, "on/off try zero coeff groups in RDO"),
+        HANDLE_AV1_OPTION(SaoOpt, OPT_UINT_16, "0-default; 1-all modes; 2-fast four modes only"),
+        HANDLE_AV1_OPTION(SaoSubOpt, OPT_UINT_16, "0-default; 1-All; 2-SubOpt, 3-Ref Frames only"),
+        HANDLE_AV1_OPTION(IntraNumCand0_2, OPT_UINT_16, "number of candidates for SATD stage after gradient analysis for TU4x4"),
+        HANDLE_AV1_OPTION(IntraNumCand0_3, OPT_UINT_16, "number of candidates for SATD stage after gradient analysis for TU8x8"),
+        HANDLE_AV1_OPTION(IntraNumCand0_4, OPT_UINT_16, "number of candidates for SATD stage after gradient analysis for TU16x16"),
+        HANDLE_AV1_OPTION(IntraNumCand0_5, OPT_UINT_16, "number of candidates for SATD stage after gradient analysis for TU32x32"),
+        HANDLE_AV1_OPTION(IntraNumCand0_6, OPT_UINT_16, "number of candidates for SATD stage after gradient analysis for TU64x64"),
+        HANDLE_AV1_OPTION(CostChroma, OPT_TRI_STATE, "on/off include chroma in cost"),
+        HANDLE_AV1_OPTION(IntraChromaRDO, OPT_TRI_STATE, "on/off adjusted chroma RDO"),
+        HANDLE_AV1_OPTION(FastInterp, OPT_TRI_STATE, "on/off fast filters for motion estimation"),
+        HANDLE_AV1_OPTION(SplitThresholdTabIndex, OPT_UINT_16, "select tab for split threshold: 1, 2, 3, default or 0 = #2"),
+        HANDLE_AV1_OPTION(PatternIntPel, OPT_UINT_16, "0-default; 1-log; 3- dia; 100-fullsearch"),
+        HANDLE_AV1_OPTION(PatternSubPel, OPT_UINT_16, "0-default; 1-int pel only; 2-halfpel; 3-quarter pel"),
+        HANDLE_AV1_OPTION(FastSkip, OPT_TRI_STATE, "on/off stop decision if cbf for best merge is 0"),
+        HANDLE_AV1_OPTION(ForceNumThread, OPT_UINT_16, "0-default"),
+        HANDLE_AV1_OPTION(FastCbfMode, OPT_TRI_STATE, "on/off stop TU mode serch after zero cbf"),
+        HANDLE_AV1_OPTION(PuDecisionSatd, OPT_TRI_STATE, "on/off use SATD for PU decision"),
+        HANDLE_AV1_OPTION(MinCUDepthAdapt, OPT_TRI_STATE, "on/off adaptive min CU depth"),
+        HANDLE_AV1_OPTION(MaxCUDepthAdapt, OPT_TRI_STATE, "on/off adaptive max CU depth"),
+        HANDLE_AV1_OPTION(NumBiRefineIter, OPT_UINT_16, "1-check best L0+L1; N-check best L0+L1 then N-1 refinement iterations"),
+        HANDLE_AV1_OPTION(CUSplitThreshold, OPT_UINT_16, "skip CU split check: threshold = CUSplitThreshold / 256.0"),
+        HANDLE_AV1_OPTION(DeltaQpMode, OPT_UINT_16, "DeltaQP modes: 0-default; 1-disabled;  1+(0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ, 0x8 = PSY, 0x10=HROI)"),
+        HANDLE_AV1_OPTION(Enable10bit, OPT_TRI_STATE, "on/off 10 bit coding"),
+        HANDLE_AV1_OPTION(CpuFeature, OPT_UINT_16, "0-auto, 1-px, 2-sse4, 3-sse4atom, 4-ssse3, 5-avx2"),
+        HANDLE_AV1_OPTION(TryIntra, OPT_UINT_16, "Try Intra in Inter; 0-default, 1-Always, 2-Based on Content Analysis"),
+        HANDLE_AV1_OPTION(FastAMPSkipME, OPT_UINT_16, "Skip AMP ME; 0-default, 1-Never, 2-Adaptive"),
+        HANDLE_AV1_OPTION(FastAMPRD, OPT_UINT_16, "Fast AMP RD; 0-default, 1-Never, 2-Adaptive"),
+        HANDLE_AV1_OPTION(SkipMotionPartition, OPT_UINT_16, "Skip Motion Partition RD; 0-default, 1-Never, 2-Adaptive"),
+        HANDLE_AV1_OPTION(SkipCandRD, OPT_TRI_STATE, "Skip Candidate RD; on-Full RD, off-Fast Decision"),
+        HANDLE_AV1_OPTION(FramesInParallel, OPT_UINT_16, "encoding multiple frames at the same time (0 - auto detect, 1 - default, no frame threading)."),
+        HANDLE_AV1_OPTION(AdaptiveRefs, OPT_TRI_STATE, "Adaptive Ref Selection"),
+        HANDLE_AV1_OPTION(FastCoeffCost, OPT_TRI_STATE, "Use Fast Coeff cost Estimator"),
+        HANDLE_AV1_OPTION(NumRefFrameB, OPT_UINT_16, "Total Number of Reference Frames used for B Frames in Pyramid"),
+        HANDLE_AV1_OPTION(IntraMinDepthSC, OPT_UINT_16, "Spatial complexity for Intra min depth 1"),
+        HANDLE_AV1_OPTION(InterMinDepthSTC, OPT_UINT_16, "Spatio-Temrpoal complexity for Inter min depth 1"),
+        HANDLE_AV1_OPTION(MotionPartitionDepth, OPT_UINT_16, "Motion Partitioning Depth"),
+        HANDLE_AV1_OPTION(AnalyzeCmplx, OPT_UINT_16, "0-default, 1-off, 2-on"),
+        HANDLE_AV1_OPTION(RateControlDepth, OPT_UINT_16, "how many frames analyzed by BRC including current frame"),
+        HANDLE_AV1_OPTION(LowresFactor, OPT_UINT_16, "downscale factor for analyze complexity: 0-default 1-fullsize 2-halfsize 3-quartersize"),
+        HANDLE_AV1_OPTION(DeblockBorders, OPT_TRI_STATE, "on/off deblock borders"),
+        HANDLE_AV1_OPTION(SAOChroma, OPT_TRI_STATE, "on/off SAO for Chroma"),
+        HANDLE_AV1_OPTION(RepackProb, OPT_UINT_16, "percent of random repack probabiility, 0 - no random repacks"),
+        HANDLE_AV1_OPTION(NumRefLayers, OPT_UINT_16, "Reference Frames Layers used for B Frames in Pyramid"),
+        HANDLE_AV1_OPTION(ConstQpOffset, OPT_UINT_16, "allows setting negative QPs for 10bit: finalQP[IPB] = mfx.QP[IPB] - ConstQpOffset"),
+        HANDLE_AV1_OPTION(SplitThresholdMultiplier, OPT_UINT_16, "0-10-default: multipler = SplitThresholdMultiplier / 10.0"),
+        HANDLE_AV1_OPTION(EnableCmBiref, OPT_UINT_16, "default is ON for TU1-5 and OFF for TU6-7"),
+        HANDLE_AV1_OPTION(RepackForMaxFrameSize, OPT_TRI_STATE, "Repack for Max Frame Size violations (default is ON)"),
+        HANDLE_AV1_OPTION(AutoScaleToCoresUsingTiles, OPT_TRI_STATE, "Automaticaly Scale to available Cores using Tiles if needed"),
+        HANDLE_AV1_OPTION(MaxTaskChainEnc, OPT_UINT_16, "Max Task Chain in LCU for Multi-threading Efficiency"),
+        HANDLE_AV1_OPTION(MaxTaskChainInloop, OPT_UINT_16, "Max Task Chain in LCU for Multi-threading Efficiency"),
+        /* AV1 */
+        HANDLE_AV1_OPTION(FwdProbUpdateCoef, OPT_TRI_STATE, "on/off forward probability update for coefficients"),
+        HANDLE_AV1_OPTION(FwdProbUpdateSyntax, OPT_TRI_STATE, "on/off forward probability update for other syntax elements"),
+        HANDLE_AV1_OPTION(DeblockingLevelMethod, OPT_UINT_16, "0-default, 1-QP based, 2-Full search on full pic, 3-Smart search on full pic"),
+        HANDLE_AV1_OPTION(AllowHpMv, OPT_TRI_STATE, "on/off high precision motion vectors"),
+        HANDLE_AV1_OPTION(MaxTxDepthIntra, OPT_UINT_16, "Number of Tx sizes tested during Intra mode decision: 0-default, 1..4"),
+        HANDLE_AV1_OPTION(MaxTxDepthInter, OPT_UINT_16, "Number of Tx sizes tested during Inter mode decision: 0-default, 1..4"),
+        HANDLE_AV1_OPTION(MaxTxDepthIntraRefine, OPT_UINT_16, "Number of Tx sizes tested during Intra mode refinement: 0-default, 1..4"),
+        HANDLE_AV1_OPTION(MaxTxDepthInterRefine, OPT_UINT_16, "Number of Tx sizes tested during Inter mode refinement: 0-default, 1..4"),
+        HANDLE_AV1_OPTION(ChromaRDO, OPT_TRI_STATE, "on/off Chroma RDO during mode decision"),
+        HANDLE_AV1_OPTION(InterpFilter, OPT_TRI_STATE, "on/off Interpolation filters during mode decision"),
+        HANDLE_AV1_OPTION(InterpFilterRefine, OPT_TRI_STATE, "on/off Interpolation filters during mode refinement"),
+        HANDLE_AV1_OPTION(IntraRDO, OPT_TRI_STATE, "on/off Intra mode decision by RDO"),
+        HANDLE_AV1_OPTION(InterRDO, OPT_TRI_STATE, "on/off Inter mode decision by RDO"),
+        HANDLE_AV1_OPTION(IntraInterRDO, OPT_TRI_STATE, "on/off Intra/Inter mode decision by RDO"),
+        HANDLE_AV1_OPTION(CodecTypeExt, OPT_UINT_16, "Codec type: 0-default; 1-VP9; 2-AV1"),
+        HANDLE_AV1_OPTION(CDEF, OPT_TRI_STATE, "on/off CDEF"),
+        HANDLE_AV1_OPTION(LRMode, OPT_TRI_STATE, "on/off Loop Restoration Mode"),
+
 
         HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "number of tile columns (1 - default)"),
         HANDLE_HEVC_TILES(NumTileRows,               OPT_UINT_16,    "number of tile rows (1 - default)"),
@@ -536,8 +651,8 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
     for (; argv < argvEnd; argv++)
     {
         int nPattern = 0;
-        if ((0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("(-| )(m2|mpeg2|avc|h264|jpeg|vp8|h265|h263|vp9)"), VM_STRING("target format")))) ||
-            m_OptProc.Check(argv[0], VM_STRING("-CodecType"), VM_STRING("target format"),OPT_SPECIAL, VM_STRING("m2|mpeg2|avc|h264|jpeg|vp8|h265|h263|vp9")))
+        if ((0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("(-| )(m2|mpeg2|avc|h264|jpeg|vp8|h265|h263|vp9|av1)"), VM_STRING("target format")))) ||
+            m_OptProc.Check(argv[0], VM_STRING("-CodecType"), VM_STRING("target format"),OPT_SPECIAL, VM_STRING("m2|mpeg2|avc|h264|jpeg|vp8|h265|h263|vp9|av1")))
 
         {
             if (!nPattern)
@@ -547,7 +662,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 argv++;
             }
 
-            switch ((nPattern - 1) % 9)
+            switch ((nPattern - 1) % 10)
             {
                 case 0:
                 case 1:
@@ -590,6 +705,11 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 case 8:
                 {
                     pMFXParams->mfx.CodecId = MFX_CODEC_VP9;
+                    break;
+                }
+                case 9:
+                {
+                    pMFXParams->mfx.CodecId = MFX_CODEC_AV1;
                     break;
                 }
             }
@@ -2207,6 +2327,7 @@ mfxStatus MFXTranscodingPipeline::ProcessOption(vm_char **&argv, vm_char **argve
         }
         if (m_OptProc.Check(argv[0], opt.opt_pattern, opt.description, opt.nType, NULL, &pNode))
         {
+
             mfxU32 codecId = m_EncParams.mfx.CodecId;
             if (codecId && opt.codecId && codecId != opt.codecId)
             {
@@ -2464,8 +2585,11 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
     if (!m_extVideoSignalInfo.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVideoSignalInfo);
 
-    if (!m_extCodingOptionsHEVC.IsZero())
+    if (!m_extCodingOptionsHEVC.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_HEVC)
         m_components[eREN].m_extParams.push_back(m_extCodingOptionsHEVC);
+
+    if (!m_extCodingOptionsAV1E.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
+    m_components[eREN].m_extParams.push_back(m_extCodingOptionsAV1E);
 
     if (!m_extHEVCTiles.IsZero())
         m_components[eREN].m_extParams.push_back(m_extHEVCTiles);

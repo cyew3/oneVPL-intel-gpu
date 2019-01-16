@@ -143,6 +143,12 @@
             #define MFX_ENABLE_H265_VIDEO_ENCODE
         #endif
 
+        #if defined(AS_AV1E_PLUGIN)
+            #define MFX_ENABLE_AV1_VIDEO_ENCODE
+        #endif
+
+
+
         #if defined(MFX_VA_LINUX) && (MFX_VERSION >= 1025)
             #if !defined(AS_H264LA_PLUGIN)
                 #define MFX_ENABLE_MFE
@@ -293,6 +299,11 @@
             #define MFX_ENABLE_CM
         #endif
     #endif
+
+    #if defined(AS_AV1E_PLUGIN)
+        #define MFX_ENABLE_AV1_VIDEO_ENCODE
+    #endif
+
     #if defined(AS_VP8DHW_PLUGIN)
         #define MFX_ENABLE_VP8_VIDEO_DECODE
         #define MFX_ENABLE_VP8_VIDEO_DECODE_HW

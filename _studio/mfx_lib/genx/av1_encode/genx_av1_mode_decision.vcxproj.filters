@@ -1,0 +1,192 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\mode_decision\mfx_av1_mv_refs.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_bit_count.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_scan.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_interpolation_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_interpolation_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_inv_hbd_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_fwd_hbd_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\genx_av1_mode_decision_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_emu.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_skl_isa.cpp" />
+    <ClCompile Include="src\test_av1_mode_decision.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_ctb.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_encode.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_frame.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_quant.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_tables.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_inv_sse.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_inv_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_fwd_sse.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_fwd_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_sse_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_sse_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_scan_9.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_sad_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_sad_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_quantization_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_quantization_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_probabilities.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_interpolation_px_9.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_interpolation_avx2_9.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_get_context.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_dispatcher_fptr.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_dispatcher.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_diff_px.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_diff_avx2.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_copy.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_bit_count_9.cpp">
+      <Filter>av1e_files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\test_common.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_scan.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\txfm_common.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\inv_txfm_sse2.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\fwd_txfm_sse2.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_ctb.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_defs.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_enc.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_encode.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_frame.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_quant.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_tables.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_transform_common_avx2.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_scan_9.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_probabilities.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_opts_intrin.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_opts_common.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_get_context.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_dispatcher_wrappers.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_dispatcher_proto.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_dispatcher_fptr.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_dispatcher.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_copy.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mode_decision\mfx_av1_bit_count.h">
+      <Filter>av1e_files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="av1e_files">
+      <UniqueIdentifier>{fc8f1d4c-b1dc-4df8-a62f-dedd65f375a4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\genx_av1_mode_decision.cpp" />
+  </ItemGroup>
+</Project>

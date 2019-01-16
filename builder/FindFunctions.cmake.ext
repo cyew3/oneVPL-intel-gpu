@@ -75,7 +75,7 @@ endfunction( )
 # .....................................................
 function( get_source include sources)
   file( GLOB_RECURSE include "[^.]*.h" )
-  file( GLOB_RECURSE sources "[^.]*.c" "[^.]*.cpp" )
+  file( GLOB_RECURSE sources "[^.]*.c" "[^.]*.cpp" "[^.]*.asm")
 
   set( ${ARGV0} ${include} PARENT_SCOPE )
   set( ${ARGV1} ${sources} PARENT_SCOPE )

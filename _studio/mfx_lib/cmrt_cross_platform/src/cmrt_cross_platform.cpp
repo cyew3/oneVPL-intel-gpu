@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 Intel Corporation
+// Copyright (c) 2013-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -325,7 +325,9 @@ public:
 #endif
     IMPL_FOR_ALL(INT, InitPrintBuffer, (size_t printbufsize), (printbufsize));
     IMPL_FOR_ALL(INT, FlushPrintBuffer, (), ());
+#ifdef CMAPIUPDATE
     IMPL_FOR_ALL(int32_t, CreateQueueEx, (CmQueue *&pQueue, CM_QUEUE_CREATE_OPTION QueueCreateOption = CM_DEFAULT_QUEUE_CREATE_OPTION), (pQueue, QueueCreateOption));
+#endif
 };
 
 #ifdef CM_WIN

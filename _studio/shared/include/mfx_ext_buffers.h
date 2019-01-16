@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -269,6 +269,125 @@ typedef struct {
     mfxU16      MaxTaskChainInloop;
     mfxU16      reserved[31];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;
+
+#define MFX_EXTBUFF_AV1ENC MFX_MAKEFOURCC('E','A','V','1')
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16      Log2MaxCUSize;
+    mfxU16      MaxCUDepth;
+    mfxU16      QuadtreeTULog2MaxSize;
+    mfxU16      QuadtreeTULog2MinSize;
+    mfxU16      QuadtreeTUMaxDepthIntra;
+    mfxU16      QuadtreeTUMaxDepthInter;
+    mfxU16      QuadtreeTUMaxDepthInterRD;
+    mfxU16      AnalyzeChroma;      // tri-state, look for chroma intra mode
+    mfxU16      SignBitHiding;
+    mfxU16      RDOQuant;
+    mfxU16      SAO;
+    mfxU16      SplitThresholdStrengthCUIntra;
+    mfxU16      SplitThresholdStrengthTUIntra;
+    mfxU16      SplitThresholdStrengthCUInter;
+    mfxU16      IntraNumCand1_2;
+    mfxU16      IntraNumCand1_3;
+    mfxU16      IntraNumCand1_4;
+    mfxU16      IntraNumCand1_5;
+    mfxU16      IntraNumCand1_6;
+    mfxU16      IntraNumCand2_2;
+    mfxU16      IntraNumCand2_3;
+    mfxU16      IntraNumCand2_4;
+    mfxU16      IntraNumCand2_5;
+    mfxU16      IntraNumCand2_6;
+    mfxU16      WPP;
+    mfxU16      Log2MinCuQpDeltaSize; // 6-64x64; 5-32x32; 4-16x16 3-8x8
+    mfxU16      PartModes;          // 0-default; 1-square only; 2-no AMP; 3-all
+    mfxU16      CmIntraThreshold;   // threshold = CmIntraThreshold / 256.0
+    mfxU16      TUSplitIntra;       // 0-default 1-always 2-never 3-for Intra frames only
+    mfxU16      CUSplit;            // 0-default 1-always 2-check Skip cost first
+    mfxU16      IntraAngModes;      // I slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only
+    mfxU16      EnableCm;           // tri-state
+    mfxU16      BPyramid;           // tri-state
+    mfxU16      FastPUDecision;     // tri-state
+    mfxU16      HadamardMe;         // 0-default 1-never; 2-subpel; 3-always
+    mfxU16      TMVP;               // tri-state
+    mfxU16      Deblocking;         // tri-state
+    mfxU16      RDOQuantChroma;     // tri-state
+    mfxU16      RDOQuantCGZ;        // tri-state
+    mfxU16      SaoOpt;             // 0-default; 1-all modes; 2-fast four modes only, 3-one first mode only
+    mfxU16      SaoSubOpt;          // 0-default; 1-All; 2-SubOpt, 3-Ref Frames only
+    mfxU16      IntraNumCand0_2;    // number of candidates for SATD stage after gradient analysis for TU4x4
+    mfxU16      IntraNumCand0_3;    // number of candidates for SATD stage after gradient analysis for TU8x8
+    mfxU16      IntraNumCand0_4;    // number of candidates for SATD stage after gradient analysis for TU16x16
+    mfxU16      IntraNumCand0_5;    // number of candidates for SATD stage after gradient analysis for TU32x32
+    mfxU16      IntraNumCand0_6;    // number of candidates for SATD stage after gradient analysis for TU64x64
+    mfxU16      CostChroma;         // tri-state, include chroma in cost
+    mfxU16      PatternIntPel;      // 0-default; 1-log; 100-fullsearch
+    mfxU16      FastSkip;           // tri-state
+    mfxU16      PatternSubPel;      // 0-default; 1-int pel only; 2-halfpel; 3-quarter pel
+    mfxU16      ForceNumThread;     // 0-default
+    mfxU16      FastCbfMode;        // tri-state, stop PU modes after cbf is 0
+    mfxU16      PuDecisionSatd;     // tri-state, use SATD for PU decision
+    mfxU16      MinCUDepthAdapt;    // tri-state, adaptive min CU depth
+    mfxU16      MaxCUDepthAdapt;    // tri-state, adaptive max CU depth
+    mfxU16      NumBiRefineIter;    // 1-check best L0+L1; N-check best L0+L1 then N-1 refinement iterations
+    mfxU16      CUSplitThreshold;   // skip CU split check: threshold = CUSplitThreshold / 256.0
+    mfxU16      DeltaQpMode;        // DeltaQP modes: 0-default 1-disabled; 1+(0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ, 0x8 = PSY, 0x10 = HROI)
+    mfxU16      Enable10bit;        // tri-state
+    mfxU16      IntraAngModesP;     // P slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100- disable
+    mfxU16      IntraAngModesBRef;  // B Ref slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100- disable
+    mfxU16      IntraAngModesBnonRef;// B non Ref slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100- disable
+    mfxU16      IntraChromaRDO;     // tri-state, adjusted intra chroma RDO
+    mfxU16      FastInterp;         // tri-state, adjusted intra chroma RDO
+    mfxU16      SplitThresholdTabIndex;// 0,1,2 to select table
+    mfxU16      CpuFeature;         // 0-auto, 1-px, 2-sse4, 3-sse4atom, 4-ssse3, 5-avx2
+    mfxU16      TryIntra;           // Try Intra in Inter: 0-default, 1-Always, 2-Based on Content Analysis
+    mfxU16      FastAMPSkipME;      // 0-default, 1-never, 2-Skip AMP ME of Large Partition when Skip is best
+    mfxU16      FastAMPRD;          // 0-default, 1-never, 2-Adaptive Fast Decision
+    mfxU16      SkipMotionPartition;          // 0-default, 1-never, 2-Adaptive
+    mfxU16      SkipCandRD;         // on-Full RD, off-fast decision
+    mfxU16      FramesInParallel;   // number of frames for encoding at the same time (0 - auto detect, 1 - default, no frame threading).
+    mfxU16      AdaptiveRefs;      // on / off
+    mfxU16      FastCoeffCost;
+    mfxU16      NumRefFrameB;       // 0-1-default, 2+ use given
+    mfxU16      IntraMinDepthSC;    // 0-default, 1+ use given
+    mfxU16      InterMinDepthSTC;   // 0-default, 1+ use given
+    mfxU16      MotionPartitionDepth;   // 0-default, 1+ use given
+    mfxU16      reserved1;          //
+    mfxU16      AnalyzeCmplx;       // 0-default, 1-off, 2-on
+    mfxU16      RateControlDepth;   // how many frames analyzed by BRC including current frame
+    mfxU16      LowresFactor;       // downscale factor for analyze complexity: 0-default 1-fullsize 2-halfsize 3-quartersize
+    mfxU16      DeblockBorders;     // tri-state, deblock borders
+    mfxU16      SAOChroma;          // on / off
+    mfxU16      RepackProb;         // percent of random repack probabiility, 0 - no random repacks
+    mfxU16      NumRefLayers;       // 0-1-default, 2+ use given
+    mfxU16      ConstQpOffset;      // allows setting negative QPs for 10bit: finalQP[IPB] = mfx.QP[IPB] - ConstQpOffset
+    mfxU16      SplitThresholdMultiplier; //0-10-default: multipler = SplitThresholdMultiplier / 10.0
+    mfxU16      EnableCmBiref;      // 0-default 1-enables Interpolation and GpuBiref
+    mfxU16      RepackForMaxFrameSize;
+    mfxU16      AutoScaleToCoresUsingTiles; // Automatically Scale to detected cores using tiles if needed.
+    mfxU16      MaxTaskChainEnc;
+    mfxU16      MaxTaskChainInloop;
+    // AV1 stuff
+    mfxU16      FwdProbUpdateCoef;      // on/off forward probability update for coefficients
+    mfxU16      FwdProbUpdateSyntax;    // on/off forward probability update for other syntax elements
+    mfxU16      DeblockingLevelMethod;  // 0-default, 1-QP based, 2-Full search on full pic, 3-Smart search on full pic
+    mfxU16      AllowHpMv;              // on/off high precision motion vectors
+    mfxU16      MaxTxDepthIntra;        // Number of Tx sizes tested during Intra mode decision: 0-default, 1..4
+    mfxU16      MaxTxDepthInter;        // Number of Tx sizes tested during Inter mode decision: 0-default, 1..4
+    mfxU16      MaxTxDepthIntraRefine;  // Number of Tx sizes tested during Intra mode refinement: 0-default, 1..4
+    mfxU16      MaxTxDepthInterRefine;  // Number of Tx sizes tested during Inter mode refinement: 0-default, 1..4
+    mfxU16      ChromaRDO;              // on/off Chroma RDO during mode decision
+    mfxU16      InterpFilter;           // on/off Interpolation filters during mode decision
+    mfxU16      InterpFilterRefine;     // on/off Interpolation filters during mode refinement
+    mfxU16      IntraRDO;               // on/off Intra mode decision by RDO
+    mfxU16      InterRDO;               // on/off Inter mode decision by RDO
+    mfxU16      IntraInterRDO;          // on/off Inter mode decision by RDO
+    mfxU16      CodecTypeExt;           // Codec type: 0-default; 1-VP9; 2-AV1
+    mfxU16      CDEF;                   // tri-state
+        mfxU16      LRMode;                 // tri-state
+    mfxU16      reserved[15];           // 256 bytes total} mfxExtCodingOptionHEVC;
+} mfxExtCodingOptionAV1E;
+
 
 #ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
 #define MFX_EXTBUFF_FORCE_PRIVATE_DDI MFX_MAKEFOURCC('F','P','R','V')

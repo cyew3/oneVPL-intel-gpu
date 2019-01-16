@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="include\test_common.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\genx_av1_prepare_src_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_emu.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_skl_isa.cpp" />
+    <ClCompile Include="src\test_av1_prepare_src.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\genx_av1_prepare_src.cpp" />
+  </ItemGroup>
+</Project>

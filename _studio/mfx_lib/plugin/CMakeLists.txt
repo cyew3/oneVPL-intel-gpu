@@ -12,6 +12,7 @@ set(VP8_DECODER_HW_GUID    "f622394d8d87452f878c51f2fc9b4131")
 set(VP8_DECODER_SW_GUID    "bca276ec7a854a598c30e0dc5748f1f6")
 set(VP9_DECODER_HW_GUID    "a922394d8d87452f878c51f2fc9b4131")
 set(VP9_DECODER_SW_GUID    "a9a276ec7a854a598c30e0dc5748f1f6")
+set(AV1_ENCODER_GACC_GUID  "343d689665ba4548829942a32a386569")
 # =============================================================================
 
 mfx_include_dirs( )
@@ -262,6 +263,10 @@ endforeach()
 
 # HEVC Encoder (SW & GACC)
 
+set( sources "" )
+set( sources.plus "" )
+list( APPEND sources ${plugin_common_sources} )
+
 set( hevce_variants "" )
 if (ENABLE_HEVC)
   set( hevce_variants
@@ -372,6 +377,142 @@ foreach( variant ${hevce_variants} )
 
 endforeach()
 set( defs "" )
+
+set( av1e_variants "" )
+
+# AV1 Encoder (GACC)
+if ( ENABLE_AV1 )
+  message( STATUS "Building AV1 with software libraries: GACC." )
+  set( av1e_variants hw)
+else( )
+  message( STATUS "Building AV1 disabled." )
+endif( )
+
+set( sources "" )
+set( sources.plus "" )
+set(plugin_common_sources_av1 "")
+
+list( APPEND plugin_common_sources_av1
+  ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+)
+
+foreach( prefix ${MSDK_LIB_ROOT}/genx/copy_kernels/src )
+  list( APPEND plugin_common_sources_av1
+    ${prefix}/genx_cht_copy_isa.cpp
+    ${prefix}/genx_skl_copy_isa.cpp
+    ${prefix}/genx_cnl_copy_isa.cpp
+    ${prefix}/genx_icl_copy_isa.cpp
+    ${prefix}/genx_icllp_copy_isa.cpp
+    ${prefix}/genx_tgllp_copy_isa.cpp
+    ${prefix}/genx_tgl_copy_isa.cpp
+  )
+endforeach()
+
+list( APPEND sources ${plugin_common_sources_av1} )
+
+set (AV1_PRODUCT_NAME "Intel(R) Media SDK")
+set (sw_AV1_DECODER_DESCRIPTION "Intel(R) Media SDK - AV1 Software Decode Plug-in")
+set (hw_AV1_DECODER_DESCRIPTION "Intel(R) Media SDK - AV1 Hardware Decode Plug-in")
+set (sw_AV1_ENCODER_DESCRIPTION "Intel(R) Media SDK - AV1 Software Encode Plug-in")
+set (hw_AV1_ENCODER_DESCRIPTION "Intel(R) Media SDK - AV1 GPU Accelerated Encode Plug-in")
+
+include_directories( ${MSDK_LIB_ROOT}/encode/av1/include )
+include_directories( ${MSDK_LIB_ROOT}/optimization/av1 )
+include_directories( ${MSDK_LIB_ROOT}/fei/av1/include )
+include_directories( ${MSDK_LIB_ROOT}/genx/av1_encode/include )
+
+set( defs "" )
+
+foreach( dir ${MSDK_LIB_ROOT}/encode/av1/src )
+  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
+foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
+  list( APPEND sources.plus
+    ${prefix}/mfx_av1_enc_plugin.cpp
+    ${prefix}/watermark.cpp
+  )
+endforeach()
+
+foreach( dir ${MSDK_LIB_ROOT}/genx/av1_encode/src )
+  file( GLOB_RECURSE srcs "${dir}/*_isa.cpp" )
+  list( APPEND sources ${srcs})
+endforeach()
+
+foreach( dir ${MSDK_LIB_ROOT}/fei/av1/src )
+  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+  list( APPEND sources.plus ${srcs})
+endforeach()
+
+foreach( variant ${av1e_variants} )
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+    if( variant MATCHES hw )
+      set( plugin_name mfx_av1e_gacc64 )
+      set( eval_plugin_name mfx_eval_av1e_gacc64 )
+    else()
+      set( plugin_name mfx_av1e_${variant}64 )
+      set( eval_plugin_name mfx_eval_av1e_${variant}64 )
+    endif()
+  else()
+    if( variant MATCHES hw )
+      set( plugin_name mfx_av1e_gacc32 )
+      set( eval_plugin_name mfx_eval_av1e_gacc32 )
+    else()
+      set( plugin_name mfx_av1e_${variant}32 )
+      set( eval_plugin_name mfx_eval_av1e_${variant}32 )
+    endif()
+  endif()
+
+  set( description_name ${${variant}_AV1_ENCODER_DESCRIPTION} )
+  set( LIBS "" )
+  list( APPEND LIBS
+    av1_pp_avx2
+    av1_pp_px
+    av1_pp_ssse3
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
+    ${ITT_LIBS}
+    ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    pthread
+    dl
+    )
+
+  if( variant MATCHES hw)
+    list( APPEND LIBS
+      umc_va_elk_hw
+    )
+  endif()
+
+  set( defs "-DAS_AV1E_PLUGIN ${API_FLAGS} -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${AV1_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${av1_version_defs}" )
+  if(${variant} MATCHES hw)
+    gen_plugins_cfg("AV1_Encoder_GACC" ${AV1_ENCODER_GACC_GUID} ${plugin_name} "02" "AV1" "not_eval")
+  else()
+    gen_plugins_cfg("AV1_Encoder_SW" ${AV1_ENCODER_SW_GUID} ${plugin_name} "02" "AV1" "not_eval")
+  endif()
+  make_library( ${plugin_name} ${variant} shared)
+
+  set( defs "-DAS_AV1E_PLUGIN -DAV1E_EVALUATION ${API_FLAGS} -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${AV1_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${av1_version_defs}" )
+  if(${variant} MATCHES hw)
+    gen_plugins_cfg("AV1_Encoder_GACC" ${AV1_ENCODER_GACC_GUID} ${eval_plugin_name} "02" "AV1" "eval")
+  else()
+    gen_plugins_cfg("AV1_Encoder_SW" ${AV1_ENCODER_SW_GUID} ${eval_plugin_name} "02" "AV1" "eval")
+  endif()
+  make_library( ${eval_plugin_name} ${variant} shared)
+
+  if( Windows )
+    install( TARGETS ${plugin_name} ${eval_plugin_name} RUNTIME DESTINATION ${MFX_PLUGINS_DIR} )
+  else()
+    install( TARGETS ${plugin_name} ${eval_plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+  endif()
+
+endforeach()
+
+set( defs "" )
+
 
 # =============================================================================
 # 1toN Lookahead

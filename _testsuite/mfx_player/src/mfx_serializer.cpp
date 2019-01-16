@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010 - 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010 - 2019 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_serializer.cpp
 
@@ -377,6 +377,119 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(AutoScaleToCoresUsingTiles);
     SERIALIZE_INT(MaxTaskChainEnc);
     SERIALIZE_INT(MaxTaskChainInloop);
+}
+
+void MFXStructureRef <mfxExtCodingOptionAV1E>::ConstructValues() const
+{
+    SERIALIZE_INT(Log2MaxCUSize);
+    SERIALIZE_INT(MaxCUDepth);
+    SERIALIZE_INT(QuadtreeTULog2MaxSize);
+    SERIALIZE_INT(QuadtreeTULog2MinSize);
+    SERIALIZE_INT(QuadtreeTUMaxDepthIntra);
+    SERIALIZE_INT(QuadtreeTUMaxDepthInter);
+    SERIALIZE_INT(QuadtreeTUMaxDepthInterRD);
+    SERIALIZE_INT(AnalyzeChroma);
+    SERIALIZE_INT(SignBitHiding);
+    SERIALIZE_INT(RDOQuant);
+    SERIALIZE_INT(SAO);
+    SERIALIZE_INT(SplitThresholdStrengthCUIntra);
+    SERIALIZE_INT(SplitThresholdStrengthTUIntra);
+    SERIALIZE_INT(SplitThresholdStrengthCUInter);
+    SERIALIZE_INT(IntraNumCand0_2);
+    SERIALIZE_INT(IntraNumCand0_3);
+    SERIALIZE_INT(IntraNumCand0_4);
+    SERIALIZE_INT(IntraNumCand0_5);
+    SERIALIZE_INT(IntraNumCand0_6);
+    SERIALIZE_INT(IntraNumCand1_2);
+    SERIALIZE_INT(IntraNumCand1_3);
+    SERIALIZE_INT(IntraNumCand1_4);
+    SERIALIZE_INT(IntraNumCand1_5);
+    SERIALIZE_INT(IntraNumCand1_6);
+    SERIALIZE_INT(IntraNumCand2_2);
+    SERIALIZE_INT(IntraNumCand2_3);
+    SERIALIZE_INT(IntraNumCand2_4);
+    SERIALIZE_INT(IntraNumCand2_5);
+    SERIALIZE_INT(IntraNumCand2_6);
+    SERIALIZE_INT(WPP);
+    SERIALIZE_INT(Log2MinCuQpDeltaSize);
+    SERIALIZE_INT(PartModes);
+    SERIALIZE_INT(CmIntraThreshold);
+    SERIALIZE_INT(TUSplitIntra);
+    SERIALIZE_INT(CUSplit);
+    SERIALIZE_INT(IntraAngModes);
+    SERIALIZE_INT(EnableCm);
+    SERIALIZE_INT(BPyramid);
+    SERIALIZE_INT(HadamardMe);
+    SERIALIZE_INT(TMVP);
+    SERIALIZE_INT(Deblocking);
+    SERIALIZE_INT(RDOQuantChroma);
+    SERIALIZE_INT(RDOQuantCGZ);
+    SERIALIZE_INT(CostChroma);
+    SERIALIZE_INT(IntraChromaRDO);
+    SERIALIZE_INT(FastInterp);
+    SERIALIZE_INT(SaoOpt);
+    SERIALIZE_INT(SaoSubOpt);
+    SERIALIZE_INT(PatternIntPel);
+    SERIALIZE_INT(FastSkip);
+    SERIALIZE_INT(PatternSubPel);
+    SERIALIZE_INT(ForceNumThread);
+    SERIALIZE_INT(FastCbfMode);
+    SERIALIZE_INT(PuDecisionSatd);
+    SERIALIZE_INT(MinCUDepthAdapt);
+    SERIALIZE_INT(MaxCUDepthAdapt);
+    SERIALIZE_INT(NumBiRefineIter);
+    SERIALIZE_INT(CUSplitThreshold);
+    SERIALIZE_INT(DeltaQpMode);
+    SERIALIZE_INT(Enable10bit);
+    SERIALIZE_INT(IntraAngModesP);
+    SERIALIZE_INT(IntraAngModesBRef);
+    SERIALIZE_INT(IntraAngModesBnonRef);
+    SERIALIZE_INT(SplitThresholdTabIndex);
+    SERIALIZE_INT(CpuFeature);
+    SERIALIZE_INT(TryIntra);
+    SERIALIZE_INT(FastAMPSkipME);
+    SERIALIZE_INT(FastAMPRD);
+    SERIALIZE_INT(SkipMotionPartition);
+    SERIALIZE_INT(SkipCandRD);
+    SERIALIZE_INT(FramesInParallel);
+    SERIALIZE_INT(AdaptiveRefs);
+    SERIALIZE_INT(FastCoeffCost);
+    SERIALIZE_INT(NumRefFrameB);
+    SERIALIZE_INT(IntraMinDepthSC);
+    SERIALIZE_INT(InterMinDepthSTC);
+    SERIALIZE_INT(MotionPartitionDepth);
+    SERIALIZE_INT(AnalyzeCmplx);
+    SERIALIZE_INT(RateControlDepth);
+    SERIALIZE_INT(LowresFactor);
+    SERIALIZE_INT(DeblockBorders);
+    SERIALIZE_INT(SAOChroma);
+    SERIALIZE_INT(RepackProb);
+    SERIALIZE_INT(NumRefLayers);
+    SERIALIZE_INT(ConstQpOffset);
+    SERIALIZE_INT(SplitThresholdMultiplier);
+    SERIALIZE_INT(EnableCmBiref);
+    SERIALIZE_INT(RepackForMaxFrameSize);
+    SERIALIZE_INT(AutoScaleToCoresUsingTiles);
+    SERIALIZE_INT(MaxTaskChainEnc);
+    SERIALIZE_INT(MaxTaskChainInloop);
+    //AV1
+    SERIALIZE_INT(FwdProbUpdateCoef);
+    SERIALIZE_INT(FwdProbUpdateSyntax);
+    SERIALIZE_INT(DeblockingLevelMethod);
+    SERIALIZE_INT(AllowHpMv);
+    SERIALIZE_INT(MaxTxDepthIntra);
+    SERIALIZE_INT(MaxTxDepthInter);
+    SERIALIZE_INT(MaxTxDepthIntraRefine);
+    SERIALIZE_INT(MaxTxDepthInterRefine);
+    SERIALIZE_INT(ChromaRDO);
+    SERIALIZE_INT(InterpFilter);
+    SERIALIZE_INT(InterpFilterRefine);
+    SERIALIZE_INT(IntraRDO);
+    SERIALIZE_INT(InterRDO);
+    SERIALIZE_INT(IntraInterRDO);
+    SERIALIZE_INT(CodecTypeExt);
+    SERIALIZE_INT(CDEF);
+    SERIALIZE_INT(LRMode);
 }
 
 void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const
@@ -1061,6 +1174,10 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
         }
         case MFX_EXTBUFF_HEVCENC :{
             SerializeStruct(VM_STRING("HEVC."), *(mfxExtCodingOptionHEVC*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_AV1ENC: {
+            SerializeStruct(VM_STRING("AV1."), *(mfxExtCodingOptionAV1E*)m_pStruct);
             break;
         }
         case MFX_EXTBUFF_HEVC_PARAM :{

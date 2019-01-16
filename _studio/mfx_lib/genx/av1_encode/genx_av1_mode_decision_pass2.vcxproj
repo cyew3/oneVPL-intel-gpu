@@ -1,0 +1,272 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_HSW_Emu|x64">
+      <Configuration>Debug_HSW_Emu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B98FEE3C-3476-448C-8653-43553C7018E3}</ProjectGuid>
+    <RootNamespace>encode</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>genx_av1e_mode_decision_pass2</ProjectName>
+    <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>11.0.51106.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_d</TargetName>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">
+    <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_emu</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MDGPU_PASS2;WIN64;_CRT_SECURE_NO_WARNINGS;_DEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <UseProcessorExtensions>AVX2</UseProcessorExtensions>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)lib\$(ProjectName)_d.lib</OutputFile>
+    </Lib>
+    <Bscmake>
+      <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>rem for /L %%i in (0,1,0) do $(TargetPath)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MDGPU_PASS2;WIN64;_CRT_SECURE_NO_WARNINGS;NDEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <UseProcessorExtensions>AVX2</UseProcessorExtensions>
+      <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)lib\$(ProjectName).lib</OutputFile>
+    </Lib>
+    <Bscmake>
+      <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
+    </Bscmake>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <Link>
+      <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <PostBuildEvent>
+      <Command>for /L %%i in (0,1,4) do $(TargetPath)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MDGPU_PASS2;WIN64;_CRT_SECURE_NO_WARNINGS;_DEBUG;_LIB;MFX_VA;CM_VME_GEN7_5;CMRT_EMU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <UseProcessorExtensions>AVX2</UseProcessorExtensions>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)lib\$(ProjectName)_d.lib</OutputFile>
+    </Lib>
+    <Bscmake>
+      <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcm.lib;igfxcmrt64_emu.lib</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\mode_decision\mfx_av1_bit_count_9.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_copy.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_ctb.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_diff_avx2.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_diff_px.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_dispatcher.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_dispatcher_fptr.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_encode.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_frame.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_get_context.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_interpolation_avx2_9.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_interpolation_px_9.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_probabilities.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_quant.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_quantization_avx2.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_quantization_px.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_sad_avx2.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_sad_px.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_scan_9.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_sse_avx2.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_sse_px.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_tables.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_fwd_avx2.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_fwd_sse.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_inv_avx2.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_inv_sse.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_px.cpp" />
+    <ClCompile Include="src\test_av1_mode_decision_pass2.cpp" />
+    <CustomBuild Include="src\genx_av1_mode_decision_pass2.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">build_codec_kernel.cmd av1 mode_decision_pass2 hsw</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">build_codec_kernel_all_targets.cmd av1 mode_decision_pass2 /Qxcm_release</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/genx_av1_mode_decision_pass2_hsw_isa.cpp;src/genx_av1_mode_decision_pass2_bdw_isa.cpp;src/genx_av1_mode_decision_pass2_skl_isa.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/genx_av1_mode_decision_pass2_hsw_isa.cpp</Outputs>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
+    </CustomBuild>
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_bdw_isa.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_emu.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <UseMSVC Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</UseMSVC>
+    </ClCompile>
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_hsw_isa.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_skl_isa.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\mode_decision\mfx_av1_bit_count.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_interpolation_avx2.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_interpolation_px.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_mv_refs.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_scan.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_fwd_hbd_avx2.cpp" />
+    <ClCompile Include="src\mode_decision\mfx_av1_transform_inv_hbd_avx2.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\test_common.h" />
+    <ClInclude Include="src\mode_decision\fwd_txfm_sse2.h" />
+    <ClInclude Include="src\mode_decision\inv_txfm_sse2.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_bit_count.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_copy.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_ctb.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_defs.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_dispatcher.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_dispatcher_fptr.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_dispatcher_proto.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_dispatcher_wrappers.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_enc.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_encode.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_frame.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_get_context.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_opts_common.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_opts_intrin.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_probabilities.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_quant.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_scan.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_scan_9.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_tables.h" />
+    <ClInclude Include="src\mode_decision\mfx_av1_transform_common_avx2.h" />
+    <ClInclude Include="src\mode_decision\txfm_common.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
