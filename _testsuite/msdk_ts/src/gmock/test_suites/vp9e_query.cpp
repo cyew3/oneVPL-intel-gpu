@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -84,6 +84,7 @@ private:
 #define VP9_VDENC_MAX_RESOL_CNL (4096)
 #define VP9_VDENC_MAX_RESOL_ICL (7680)
 #define VP9E_MAX_QP_VALUE (255)
+#define MAX_DXVA_VIDEO_SURFACE_DIMENSION_SIZE (16384)
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
@@ -484,6 +485,12 @@ int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
     }
 
     g_tsStatus.expect(tc.sts);
+
+#if defined (_WIN32) || defined (_WIN64)
+    if (m_par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444
+        && (((mfxU32)((m_par.mfx.FrameInfo.Height * 3)+7)) & (~(mfxU32)7)) > MAX_DXVA_VIDEO_SURFACE_DIMENSION_SIZE)
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+#endif
 
     if (tc.type == EXT_BUFF)
     {
