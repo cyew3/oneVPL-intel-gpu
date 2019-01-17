@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 Intel Corporation
+// Copyright (c) 2013-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -60,7 +60,7 @@ namespace UMC_HEVC_DECODER
 
     public:
 
-        PackerDXVA2intel(UMC::VideoAccelerator * va)
+        PackerDXVA2intel(VideoAccelerator * va)
             : PackerDXVA2(va)
         {
             static_assert(check_ddi(),
@@ -76,11 +76,11 @@ namespace UMC_HEVC_DECODER
         void PackSubsets(H265DecoderFrame const*);
     };
 
-    Packer * CreatePackerIntel(UMC::VideoAccelerator* va)
+    Packer * CreatePackerIntel(VideoAccelerator* va)
     { return new PackerDXVA2intel(va); }
 
     template <typename T>
-    void GetPicParamsBuffer(UMC::VideoAccelerator* va, T** ppPicParams, int32_t size)
+    void GetPicParamsBuffer(VideoAccelerator* va, T** ppPicParams, int32_t size)
     {
         VM_ASSERT(va);
         VM_ASSERT(ppPicParams);
@@ -100,7 +100,7 @@ namespace UMC_HEVC_DECODER
     }
 
     template <typename T>
-    void GetSliceVABuffers(UMC::VideoAccelerator* va, T** ppSliceHeader, int32_t headerSize, void **ppSliceData, int32_t dataSize, int32_t dataAlignment)
+    void GetSliceVABuffers(VideoAccelerator* va, T** ppSliceHeader, int32_t headerSize, void **ppSliceData, int32_t dataSize, int32_t dataAlignment)
     {
         VM_ASSERT(va);
         VM_ASSERT(ppSliceHeader);
@@ -160,13 +160,13 @@ namespace UMC_HEVC_DECODER
         VM_ASSERT(dpb);
         VM_ASSERT(pPicParam);
 
-        H265Slice *pSlice = pSliceInfo->GetSlice(0);
+        auto pSlice = pSliceInfo->GetSlice(0);
         if (!pSlice)
-            return;
+            throw h265_exception(UMC_ERR_FAILED);
 
-        const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+        H265SeqParamSet const* pSeqParamSet = pSlice->GetSeqParam();
         VM_ASSERT(pSeqParamSet);
-        const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+        H265PicParamSet const* pPicParamSet = pSlice->GetPicParam();
         VM_ASSERT(pPicParamSet);
 
         H265SliceHeader const* sliceHeader = pSlice->GetSliceHeader();
@@ -401,12 +401,12 @@ namespace UMC_HEVC_DECODER
     {
         PackPicHeaderCommon(pCurrentFrame, pSliceInfo, dpb, &pPicParam->PicParamsMain);
 
-        const H265Slice *pSlice = pSliceInfo->GetSlice(0);
+        auto pSlice = pSliceInfo->GetSlice(0);
         VM_ASSERT(pSlice);
 
-        const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+        H265SeqParamSet const* pSeqParamSet = pSlice->GetSeqParam();
         VM_ASSERT(pSeqParamSet);
-        const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+        H265PicParamSet const* pPicParamSet = pSlice->GetPicParam();
         VM_ASSERT(pPicParamSet);
 
         pPicParam->PicRangeExtensionFlags.fields.transform_skip_rotation_enabled_flag = pSeqParamSet->transform_skip_rotation_enabled_flag;
@@ -455,12 +455,12 @@ namespace UMC_HEVC_DECODER
     {
         PackPicHeader(pCurrentFrame, pSliceInfo, dpb, &pPicParam->PicParamsRext);
 
-        const H265Slice *pSlice = pSliceInfo->GetSlice(0);
+        auto pSlice = pSliceInfo->GetSlice(0);
         VM_ASSERT(pSlice);
 
-        const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+        H265SeqParamSet const* pSeqParamSet = pSlice->GetSeqParam();
         VM_ASSERT(pSeqParamSet);
-        const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+        H265PicParamSet const* pPicParamSet = pSlice->GetPicParam();
         VM_ASSERT(pPicParamSet);
 
         pPicParam->PicSCCExtensionFlags.fields.pps_curr_pic_ref_enabled_flag = pPicParamSet->pps_curr_pic_ref_enabled_flag;
@@ -503,7 +503,7 @@ namespace UMC_HEVC_DECODER
 
         H265DecoderFrameInfo const* pSliceInfo = pCurrentFrame->GetAU();
         if (!pSliceInfo)
-            throw h265_exception(UMC::UMC_ERR_FAILED);
+            throw h265_exception(UMC_ERR_FAILED);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         if (m_va->m_Profile & VA_PROFILE_SCC)

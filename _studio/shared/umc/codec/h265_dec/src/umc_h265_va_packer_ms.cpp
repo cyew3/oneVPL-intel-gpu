@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 Intel Corporation
+// Copyright (c) 2013-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ namespace UMC_HEVC_DECODER
 
     public:
 
-        MSPackerDXVA2(UMC::VideoAccelerator * va)
+        MSPackerDXVA2(VideoAccelerator * va)
             : PackerDXVA2(va)
         {}
 
@@ -50,7 +50,7 @@ namespace UMC_HEVC_DECODER
         bool PackSliceParams(H265Slice const* pSlice, size_t, bool isLastSlice);
     };
 
-    Packer* CreatePackerMS(UMC::VideoAccelerator* va)
+    Packer* CreatePackerMS(VideoAccelerator* va)
     { return new MSPackerDXVA2(va); }
 
     void MSPackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier)
@@ -61,24 +61,21 @@ namespace UMC_HEVC_DECODER
 
         compBuf->SetDataSize(sizeof(DXVA_PicParams_HEVC));
 
-        H265DecoderFrameInfo const* sliceInfo = pCurrentFrame->GetAU();
-        if (!sliceInfo)
-            throw h265_exception(UMC::UMC_ERR_FAILED);
+        H265DecoderFrameInfo const* pSliceInfo = pCurrentFrame->GetAU();
+        if (!pSliceInfo)
+            throw h265_exception(UMC_ERR_FAILED);
 
-        H265Slice *pSlice = sliceInfo->GetSlice(0);
+        auto pSlice = pSliceInfo->GetSlice(0);
         if (!pSlice)
-            return;
-        H265SliceHeader *sliceHeader = pSlice->GetSliceHeader();
-        const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
-        const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+            throw h265_exception(UMC_ERR_FAILED);
 
-        //
-        //
+        H265SliceHeader const* sliceHeader = pSlice->GetSliceHeader();
+        H265SeqParamSet const* pSeqParamSet = pSlice->GetSeqParam();
+        H265PicParamSet const* pPicParamSet = pSlice->GetPicParam();
+
         pPicParam->PicWidthInMinCbsY = (USHORT)LengthInMinCb(pSeqParamSet->pic_width_in_luma_samples, pSeqParamSet->log2_min_luma_coding_block_size);
         pPicParam->PicHeightInMinCbsY = (USHORT)LengthInMinCb(pSeqParamSet->pic_height_in_luma_samples, pSeqParamSet->log2_min_luma_coding_block_size);
 
-        //
-        //
         pPicParam->chroma_format_idc = pSeqParamSet->chroma_format_idc;
         pPicParam->separate_colour_plane_flag = 0;    // 0 in HEVC spec HM10 by design
         pPicParam->bit_depth_luma_minus8 = (UCHAR)(pSeqParamSet->bit_depth_luma - 8);
@@ -146,7 +143,7 @@ namespace UMC_HEVC_DECODER
         pPicParam->slice_segment_header_extension_present_flag = pPicParamSet->slice_segment_header_extension_present_flag;
         pPicParam->IrapPicFlag = (sliceHeader->nal_unit_type >= NAL_UT_CODED_SLICE_BLA_W_LP && sliceHeader->nal_unit_type <= NAL_UT_CODED_SLICE_CRA) ? 1 : 0;
         pPicParam->IdrPicFlag = sliceHeader->IdrPicFlag;
-        pPicParam->IntraPicFlag = sliceInfo->IsIntraAU() ? 1 : 0;
+        pPicParam->IntraPicFlag = pSliceInfo->IsIntraAU() ? 1 : 0;
 
         pPicParam->pps_cb_qp_offset = (CHAR)pPicParamSet->pps_cb_qp_offset;
         pPicParam->pps_cr_qp_offset = (CHAR)pPicParamSet->pps_cr_qp_offset;

@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ namespace UMC_HEVC_DECODER
         void PackPicParams(H265DecoderFrame const*, TaskSupplier_H265*) override;
     };
 
-    Packer* CreatePackerCENC(UMC::VideoAccelerator* va)
+    Packer* CreatePackerCENC(VideoAccelerator* va)
     { return new PackerVA_CENC(va); }
 
     void PackerVA_CENC::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier)
@@ -58,21 +58,7 @@ namespace UMC_HEVC_DECODER
         if (!frame || !supplier)
             throw h265_exception(UMC_ERR_NULL_PTR);
 
-        H265DecoderFrameInfo const* pSliceInfo = frame->GetAU();
-        if (!pSliceInfo)
-            throw h265_exception(UMC::UMC_ERR_FAILED);
-
-        int sliceCount = pSliceInfo->GetSliceCount();
-        if (!sliceCount)
-            return;
-
-        H265Slice *pSlice = pSliceInfo->GetSlice(0);
-        if (!pSlice)
-            throw h265_exception(UMC_ERR_NULL_PTR);
-
-        H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
-
-        PackPicParams(pCurrentFrame, supplier);
+        PackPicParams(frame, supplier);
 
         Status s = m_va->Execute();
         if (s != UMC_OK)
@@ -83,11 +69,13 @@ namespace UMC_HEVC_DECODER
     {
         H265DecoderFrameInfo const* pSliceInfo = pCurrentFrame->GetAU();
         if (!pSliceInfo)
-            throw h265_exception(UMC::UMC_ERR_FAILED);
+            throw h265_exception(UMC_ERR_FAILED);
 
         auto pSlice = static_cast<H265CENCSlice*>(pSliceInfo->GetSlice(0));
-        const H265SeqParamSet* pSeqParamSet = pSlice->GetSeqParam();
+        if (!pSlice)
+            throw h265_exception(UMC_ERR_FAILED);
 
+        H265SeqParamSet const* pSeqParamSet = pSlice->GetSeqParam();
         UMCVACompBuffer *picParamBuf;
         auto picParam = reinterpret_cast<VAPictureParameterBufferHEVC*>(m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VAPictureParameterBufferHEVC)));
         if (!picParam)

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2019 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -40,35 +40,28 @@ namespace UMC_HEVC_DECODER
 
         void PackAU(H265DecoderFrame const*, TaskSupplier_H265*) override;
         void PackPicParams(H265DecoderFrame const*, TaskSupplier_H265*) override;
-        bool PackSliceParams(H265Slice const*, size_t /*sliceNum*/, bool /*isLastSlice*/) override 
+        bool PackSliceParams(H265Slice const*, size_t /*sliceNum*/, bool /*isLastSlice*/) override
         { return true; }
         void PackQmatrix(const H265Slice* /*pSlice*/) override {}
     };
 
-    Packer* CreatePackerWidevine(UMC::VideoAccelerator* va)
+    Packer* CreatePackerWidevine(VideoAccelerator* va)
     { return new PackerDXVA2_Widevine(va); }
 
     void PackerDXVA2_Widevine::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier)
     {
-        if (!m_va || !frame || !supplier)
-            return;
+        if (!frame || !supplier)
+            throw h265_exception(UMC_ERR_NULL_PTR);
 
-        H265DecoderFrameInfo * sliceInfo = frame->m_pSlicesInfo;
-        if (!sliceInfo)
-            return;
+        H265DecoderFrameInfo const* pSliceInfo = frame->GetAU();
+        if (!pSliceInfo)
+            throw h265_exception(UMC_ERR_FAILED);
 
-        int sliceCount = sliceInfo->GetSliceCount();
-        H265Slice *pSlice = sliceInfo->GetSlice(0);
-        if (!pSlice || !sliceCount)
-            return;
+        PackPicParams(frame, supplier);
 
-        H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
-
-        PackPicParams(pCurrentFrame, supplier);
-
-            Status s = m_va->Execute();
-            if(s != UMC_OK)
-                throw h265_exception(s);
+        Status s = m_va->Execute();
+        if(s != UMC_OK)
+            throw h265_exception(s);
 
         if (m_va->GetProtectedVA())
         {
@@ -76,7 +69,7 @@ namespace UMC_HEVC_DECODER
 
             if (bs && bs->EncryptedData)
             {
-                int32_t count = sliceInfo->GetSliceCount();
+                int32_t count = pSliceInfo->GetSliceCount();
                 m_va->GetProtectedVA()->MoveBSCurrentEncrypt(count);
             }
         }
@@ -89,21 +82,18 @@ namespace UMC_HEVC_DECODER
         compBuf->SetDataSize(sizeof(DXVA_Intel_PicParams_HEVC));
         *pPicParam = {};
 
-        H265DecoderFrameInfo const* sliceInfo = pCurrentFrame->GetAU();
-        if (!sliceInfo)
-            throw h265_exception(UMC::UMC_ERR_FAILED);
+        H265DecoderFrameInfo const* pSliceInfo = pCurrentFrame->GetAU();
+        if (!pSliceInfo)
+            throw h265_exception(UMC_ERR_FAILED);
 
-        auto pSlice = sliceInfo ? reinterpret_cast<H265WidevineSlice*>(sliceInfo->GetSlice(0)) : nullptr;
+        auto pSlice = reinterpret_cast<H265WidevineSlice*>(pSliceInfo->GetSlice(0));
         if (!pSlice)
-            return;
+            throw h265_exception(UMC_ERR_FAILED);
 
-        H265SliceHeader * sliceHeader = pSlice->GetSliceHeader();
-        const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+        H265SeqParamSet const* pSeqParamSet = pSlice->GetSeqParam();
 
-        //
-        //
-        pPicParam->CurrPic.Index7bits   = pCurrentFrame->m_index;    // ?
-        pPicParam->CurrPicOrderCntVal   = sliceHeader->slice_pic_order_cnt_lsb;
+        pPicParam->CurrPic.Index7bits   = pCurrentFrame->m_index;
+        pPicParam->CurrPicOrderCntVal   = pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb;
 
         int count = 0;
         int cntRefPicSetStCurrBefore = 0,

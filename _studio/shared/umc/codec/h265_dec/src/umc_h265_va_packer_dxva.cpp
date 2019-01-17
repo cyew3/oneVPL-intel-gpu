@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 Intel Corporation
+// Copyright (c) 2013-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -84,31 +84,27 @@ namespace UMC_HEVC_DECODER
 
     void PackerDXVA2::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier)
     {
-        H265DecoderFrameInfo * sliceInfo = frame->m_pSlicesInfo;
-        int sliceCount = sliceInfo->GetSliceCount();
+        if (!frame || !supplier)
+            throw h265_exception(UMC_ERR_NULL_PTR);
 
-        if (!sliceCount)
-            return;
+        H265DecoderFrameInfo const* pSliceInfo = frame->GetAU();
+        if (!pSliceInfo)
+            throw h265_exception(UMC_ERR_FAILED);
 
-        H265Slice *pSlice = sliceInfo->GetSlice(0);
+        auto pSlice = pSliceInfo->GetSlice(0);
         if (!pSlice)
-            return;
+            throw h265_exception(UMC_ERR_FAILED);
 
-        const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
-        const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+        H265SeqParamSet const* pSeqParamSet = pSlice->GetSeqParam();
+        H265PicParamSet const* pPicParamSet = pSlice->GetPicParam();
         if (!pSeqParamSet || !pPicParamSet)
             throw h265_exception(UMC_ERR_FAILED);
 
-        H265DecoderFrame const* pCurrentFrame = pSlice->GetCurrentFrame();
-        if (!pCurrentFrame)
-            throw h265_exception(UMC_ERR_FAILED);
-
         int32_t first_slice = 0;
-
         for (;;)
         {
             bool notchopping = true;
-            PackPicParams(pCurrentFrame, supplier);
+            PackPicParams(frame, supplier);
             if (pSeqParamSet->scaling_list_enabled_flag)
             {
                 PackQmatrix(pSlice);
@@ -120,15 +116,16 @@ namespace UMC_HEVC_DECODER
             }
 
             uint32_t sliceNum = 0;
+            int32_t sliceCount = pSliceInfo->GetSliceCount();
             for (int32_t n = first_slice; n < sliceCount; n++)
             {
-                notchopping = PackSliceParams(sliceInfo->GetSlice(n), sliceNum, n == sliceCount - 1);
+                notchopping = PackSliceParams(pSliceInfo->GetSlice(n), sliceNum, n == sliceCount - 1);
                 if (!notchopping)
                 {
                     //dependent slices should be with first independent slice
                     for (int32_t i = n; i >= first_slice; i--)
                     {
-                        if (!sliceInfo->GetSlice(i)->GetSliceHeader()->dependent_slice_segment_flag)
+                        if (!pSliceInfo->GetSlice(i)->GetSliceHeader()->dependent_slice_segment_flag)
                             break;
 
                         UMCVACompBuffer *headVABffr = 0;
@@ -172,7 +169,7 @@ namespace UMC_HEVC_DECODER
         UMCVACompBuffer* buffer = nullptr;
         auto qmatrix = reinterpret_cast<DXVA_Qmatrix_HEVC*>(m_va->GetCompBuffer(DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER, &buffer));
         if (!qmatrix)
-            throw h265_exception(UMC::UMC_ERR_FAILED);
+            throw h265_exception(UMC_ERR_FAILED);
 
         buffer->SetDataSize(sizeof(DXVA_Qmatrix_HEVC));
         *qmatrix = {};
