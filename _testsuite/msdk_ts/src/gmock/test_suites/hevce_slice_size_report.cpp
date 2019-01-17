@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2019 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_slice_size_report.cpp
 
@@ -19,7 +19,18 @@ class TestSuite : tsVideoEncoder
 public:
     TestSuite() : tsVideoEncoder(MFX_CODEC_HEVC) {}
     ~TestSuite() { }
-    int RunTest(unsigned int id);
+
+    struct tc_struct
+    {
+        mfxStatus exp_sts;
+        mfxU32 func;
+        mfxU32 mode;
+    };
+
+    template<mfxU32 fourcc>
+    int RunTest_Subtype(const unsigned int id);
+    int RunTest(tc_struct tc, unsigned int fourcc_id);
+
     static const unsigned int n_cases;
 
 private:
@@ -31,15 +42,7 @@ private:
         MFXENCODE = 3
     };
 
-    struct tc_struct
-    {
-        mfxStatus exp_sts;
-        mfxU32 func;
-        mfxU32 mode;
-    };
-
     static const tc_struct test_case[];
-    const unsigned int lcu_size = 64;
 };
 
 const TestSuite::tc_struct TestSuite::test_case[] =
@@ -114,10 +117,54 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     return MFX_ERR_NONE;
 }
 
-
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
-int TestSuite::RunTest (unsigned int id)
+struct streamDesc
+{
+    mfxU16 w;
+    mfxU16 h;
+    mfxU32 FourCC;
+    mfxU16 ChromaFormat;
+    mfxU16 BitDepthLuma;
+    mfxU16 Shift;
+    mfxU16 CodecProfile;
+    const char *name;
+
+};
+const streamDesc streams[2][4] = {
+    {
+        {1920,1088,MFX_FOURCC_NV12, MFX_CHROMAFORMAT_YUV420, 8 , 0, MFX_PROFILE_HEVC_MAIN,   "forBehaviorTest/Kimono1_1920x1088_30_content_1920x1080.yuv" },                //NV12 nosim
+        {1920,1088,MFX_FOURCC_P010, MFX_CHROMAFORMAT_YUV420, 10, 1, MFX_PROFILE_HEVC_MAIN10, "forBehaviorTest/Kimono1_1920x1088_24_p010_shifted_30_content_1920x1080.yuv"}, //P010 nosim
+        {1920,1088,MFX_FOURCC_AYUV, MFX_CHROMAFORMAT_YUV444, 8 , 0, MFX_PROFILE_HEVC_REXT,   "forBehaviorTest/Kimono1_1920x1088_24_ayuv_30_content_1920x1080.yuv"},         //AYUV nosim
+        {1920,1088,MFX_FOURCC_Y410, MFX_CHROMAFORMAT_YUV444, 10, 0, MFX_PROFILE_HEVC_REXT,   "forBehaviorTest/Kimono1_1920x1088_24_y410_30_content_1920x1080.yuv"},         //Y410 nosim
+    },
+    {
+        {352, 288, MFX_FOURCC_NV12, MFX_CHROMAFORMAT_YUV420, 8 , 0, MFX_PROFILE_HEVC_MAIN,   "forBehaviorTest/foreman_cif.nv12"},                       //NV12 sim
+        {352, 288, MFX_FOURCC_P010, MFX_CHROMAFORMAT_YUV420, 10, 1, MFX_PROFILE_HEVC_MAIN10, "forBehaviorTest/Kimono1_352x288_24_p010_shifted_50.yuv"}, //P010 sim
+        {352, 288, MFX_FOURCC_AYUV, MFX_CHROMAFORMAT_YUV444, 8 , 0, MFX_PROFILE_HEVC_REXT,   "forBehaviorTest/Kimono1_352x288_24_ayuv_50.yuv"},         //AYUV sim
+        {352, 288, MFX_FOURCC_Y410, MFX_CHROMAFORMAT_YUV444, 10, 0, MFX_PROFILE_HEVC_REXT,   "forBehaviorTest/Kimono1_352x288_24_y410_50.yuv"},         //Y410 sim
+    }
+};
+
+const streamDesc& getStreamDesc(const unsigned int id, bool sim)
+{
+    switch (id)
+    {
+    case MFX_FOURCC_NV12: return streams[sim][0];
+    case MFX_FOURCC_P010: return streams[sim][1];
+    case MFX_FOURCC_AYUV: return streams[sim][2];
+    case MFX_FOURCC_Y410: return streams[sim][3];
+    }
+}
+
+template<mfxU32 fourcc>
+int TestSuite::RunTest_Subtype(const unsigned int id)
+{
+    const tc_struct& tc = test_case[id];
+    return RunTest(tc, fourcc);
+}
+
+int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
 {
     TS_START;
 
@@ -127,16 +174,27 @@ int TestSuite::RunTest (unsigned int id)
     mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
     mfxStatus sts = GetCaps(&caps, &capSize);
 
+    const unsigned int lcu_size = (caps.LCUSizeSupported & 4) ? 64 : ((caps.LCUSizeSupported & 2) ? 32 : 16);
+
     if (!caps.SliceByteSizeCtrl || !caps.SliceLevelReportSupport || (sts == MFX_ERR_UNSUPPORTED)) {
         g_tsLog << "\n\nWARNING: SliceByteSizeCtrl or SliceLevelReportSupport is not supported in this platform. Test is skipped.\n\n\n";
         throw tsSKIP;
     }
     g_tsStatus.check(sts);
 
+    const streamDesc& desc = getStreamDesc(fourcc_id, g_tsConfig.sim);
+    const char* stream                 = g_tsStreamPool.Get(desc.name);
+    m_par.mfx.FrameInfo.Width          = m_par.mfx.FrameInfo.CropW = desc.w;
+    m_par.mfx.FrameInfo.Height         = m_par.mfx.FrameInfo.CropH = desc.h;
+    m_par.mfx.FrameInfo.FourCC         = desc.FourCC;
+    m_par.mfx.FrameInfo.ChromaFormat   = desc.ChromaFormat;
+    m_par.mfx.FrameInfo.BitDepthLuma   = desc.BitDepthLuma;
+    m_par.mfx.FrameInfo.BitDepthChroma = desc.BitDepthLuma;
+    m_par.mfx.FrameInfo.Shift          = desc.Shift;
+    m_par.mfx.CodecProfile             = desc.CodecProfile;
+
     mfxU32 maxslices = ((m_par.mfx.FrameInfo.Width + (lcu_size - 1)) / lcu_size) * ((m_par.mfx.FrameInfo.Height + (lcu_size - 1)) / lcu_size);
 
-    //set input stream
-    const char* stream = g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12");
     g_tsStreamPool.Reg();
     tsRawReader reader = tsRawReader(stream, m_par.mfx.FrameInfo);
     m_filler = (tsSurfaceProcessor*)(&reader);
@@ -157,7 +215,6 @@ int TestSuite::RunTest (unsigned int id)
     m_par.ExtParam = pBuf;
     m_par.NumExtParam = 2;
 
-    const tc_struct& tc = test_case[id];
     g_tsStatus.expect(tc.exp_sts);
 
     if (tc.func == MFXQUERY) {
@@ -173,7 +230,10 @@ int TestSuite::RunTest (unsigned int id)
         BitstreamChecker bs_check(CO2.MaxSliceSize, maxslices);
         m_bs_processor = &bs_check;
 
-        m_pPar->AsyncDepth = 1;     // sergo: WA for CNL
+        if (g_tsConfig.sim)
+            m_pPar->AsyncDepth = 1;
+        else
+            m_pPar->AsyncDepth = 4;
         g_tsStatus.check(Init());
 
         mfxExtEncodedUnitsInfo UnitInfo = { 0 };
@@ -197,6 +257,8 @@ int TestSuite::RunTest (unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS(hevce_slice_size_report);
-
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_slice_size_report, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_slice_size_report, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_slice_size_report, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_slice_size_report, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
 }
