@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2018 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2019 Intel Corporation. All Rights Reserved.
 //
 */
 #include "ts_decoder.h"
@@ -26,6 +26,7 @@ protected:
         const char* stream;
         mfxU32 n_frames;
         mfxStatus sts;
+        HWType   platform; //expect geven sts only for this HW, MFX_ERR_INVALID_VIDEO_PARAM otherwise
     };
 
 public:
@@ -206,7 +207,10 @@ int TestSuite::RunTest(tc_struct const* first, tc_struct const* last)
         {
             mfxU32 nSurfPreReset = GetAllocator()->cnt_surf();
 
-            g_tsStatus.expect(tc.sts);
+            g_tsStatus.expect(
+                tc.platform <= g_tsHWtype ?
+                tc.sts : MFX_ERR_INVALID_VIDEO_PARAM
+            );
             Reset();
 
             EXPECT_EQ(nSurfPreReset, GetAllocator()->cnt_surf()) << "ERROR: expected no surface allocation at Reset!\n";
