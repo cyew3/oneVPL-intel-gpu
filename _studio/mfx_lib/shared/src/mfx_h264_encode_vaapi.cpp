@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2029,7 +2029,6 @@ mfxStatus VAAPIEncoder::Execute(
     std::vector<VABufferID> configBuffers;
     std::vector<mfxU32> packedBufferIndexes;
     mfxU32      i;
-    mfxU16      buffersCount = 0;
     mfxU32      packedDataSize = 0;
     VAStatus    vaSts;
     mfxStatus   mfxSts;
@@ -2050,8 +2049,6 @@ mfxStatus VAAPIEncoder::Execute(
         skipFlag = 0; // encode current frame as normal
         m_numSkipFrames += (mfxU8)task.m_ctrl.SkipFrame;
     }
-
-    configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size() * 2 + m_packedSvcPrefixBufferId.size() * 2);
 
     // update params
     {
@@ -2097,9 +2094,9 @@ mfxStatus VAAPIEncoder::Execute(
                 m_packedSvcPrefixBufferId.resize(m_slice.size());
             }
         }
-
-        configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size() * 2 + m_packedSvcPrefixBufferId.size() * 2);
     }
+    configBuffers.reserve(MAX_CONFIG_BUFFERS_COUNT + m_slice.size() * 2 + m_packedSvcPrefixBufferId.size() * 2);
+
     /* for debug only */
     //fprintf(stderr, "----> Encoding frame = %u, type = %u\n", debug_frame_bum++, ConvertMfxFrameType2SliceType( task.m_type[fieldId]) -5 );
 
@@ -2405,7 +2402,7 @@ mfxStatus VAAPIEncoder::Execute(
             }
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            configBuffers[buffersCount++] = vaFeiFrameControlId;
+            configBuffers.push_back(vaFeiFrameControlId);
         }
     }
 #endif
@@ -2427,7 +2424,7 @@ mfxStatus VAAPIEncoder::Execute(
                                    &m_spsBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            configBuffers[buffersCount++] = m_spsBufferId;
+            configBuffers.push_back(m_spsBufferId);
         }
 
         // 2. Picture level
@@ -2444,7 +2441,7 @@ mfxStatus VAAPIEncoder::Execute(
                                    &m_ppsBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            configBuffers[buffersCount++] = m_ppsBufferId;
+            configBuffers.push_back(m_ppsBufferId);
         }
 
         // 3. Slice level
@@ -2494,8 +2491,8 @@ mfxStatus VAAPIEncoder::Execute(
                                 &m_packedSeiBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            configBuffers[buffersCount++] = m_packedSeiHeaderBufferId;
-            configBuffers[buffersCount++] = m_packedSeiBufferId;
+            configBuffers.push_back(m_packedSeiHeaderBufferId);
+            configBuffers.push_back(m_packedSeiBufferId);
         }
     }
     else
@@ -2532,10 +2529,10 @@ mfxStatus VAAPIEncoder::Execute(
                                 &m_packedAudBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            packedBufferIndexes.push_back(buffersCount);
+            packedBufferIndexes.push_back(configBuffers.size());
             packedDataSize += packed_header_param_buffer.bit_length;
-            configBuffers[buffersCount++] = m_packedAudHeaderBufferId;
-            configBuffers[buffersCount++] = m_packedAudBufferId;
+            configBuffers.push_back(m_packedAudHeaderBufferId);
+            configBuffers.push_back(m_packedAudBufferId);
         }
         // SPS
         if (task.m_insertSps[fieldId])
@@ -2570,10 +2567,10 @@ mfxStatus VAAPIEncoder::Execute(
                                 &m_packedSpsBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            packedBufferIndexes.push_back(buffersCount);
+            packedBufferIndexes.push_back(configBuffers.size());
             packedDataSize += packed_header_param_buffer.bit_length;
-            configBuffers[buffersCount++] = m_packedSpsHeaderBufferId;
-            configBuffers[buffersCount++] = m_packedSpsBufferId;
+            configBuffers.push_back(m_packedSpsHeaderBufferId);
+            configBuffers.push_back(m_packedSpsBufferId);
         }
 
         if (task.m_insertPps[fieldId])
@@ -2609,10 +2606,10 @@ mfxStatus VAAPIEncoder::Execute(
                                 &m_packedPpsBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            packedBufferIndexes.push_back(buffersCount);
+            packedBufferIndexes.push_back(configBuffers.size());
             packedDataSize += packed_header_param_buffer.bit_length;
-            configBuffers[buffersCount++] = m_packedPpsHeaderBufferId;
-            configBuffers[buffersCount++] = m_packedPpsBufferId;
+            configBuffers.push_back(m_packedPpsHeaderBufferId);
+            configBuffers.push_back(m_packedPpsBufferId);
         }
 
         // SEI
@@ -2645,10 +2642,10 @@ mfxStatus VAAPIEncoder::Execute(
                                 &m_packedSeiBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            packedBufferIndexes.push_back(buffersCount);
+            packedBufferIndexes.push_back(configBuffers.size());
             packedDataSize += packed_header_param_buffer.bit_length;
-            configBuffers[buffersCount++] = m_packedSeiHeaderBufferId;
-            configBuffers[buffersCount++] = m_packedSeiBufferId;
+            configBuffers.push_back(m_packedSeiHeaderBufferId);
+            configBuffers.push_back(m_packedSeiBufferId);
         }
 
         if (skipFlag != NO_SKIP)
@@ -2683,10 +2680,10 @@ mfxStatus VAAPIEncoder::Execute(
                 &m_packedSkippedSliceBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            packedBufferIndexes.push_back(buffersCount);
+            packedBufferIndexes.push_back(configBuffers.size());
             packedDataSize += packed_header_param_buffer.bit_length;
-            configBuffers[buffersCount++] = m_packedSkippedSliceHeaderBufferId;
-            configBuffers[buffersCount++] = m_packedSkippedSliceBufferId;
+            configBuffers.push_back(m_packedSkippedSliceHeaderBufferId);
+            configBuffers.push_back(m_packedSkippedSliceBufferId);
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
             if (PAVP_MODE == skipFlag)
@@ -2732,8 +2729,8 @@ mfxStatus VAAPIEncoder::Execute(
                                             &m_packedSvcPrefixBufferId[i]);
                         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-                        configBuffers[buffersCount++] = m_packedSvcPrefixHeaderBufferId[i];
-                        configBuffers[buffersCount++] = m_packedSvcPrefixBufferId[i];
+                        configBuffers.push_back(m_packedSvcPrefixHeaderBufferId[i]);
+                        configBuffers.push_back(m_packedSvcPrefixBufferId[i]);
                     }
 
                     packed_header_param_buffer.type = VAEncPackedHeaderH264_Slice;
@@ -2758,19 +2755,19 @@ mfxStatus VAAPIEncoder::Execute(
                                         &m_packedSliceBufferId[i]);
                     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-                    configBuffers[buffersCount++] = m_packedSliceHeaderBufferId[i];
-                    configBuffers[buffersCount++] = m_packedSliceBufferId[i];
+                    configBuffers.push_back(m_packedSliceHeaderBufferId[i]);
+                    configBuffers.push_back(m_packedSliceBufferId[i]);
                 }
             }
         }
     }
 
-    configBuffers[buffersCount++] = m_hrdBufferId;
+    configBuffers.push_back(m_hrdBufferId);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(m_videoParam, m_mbbrc, task.m_minQP, task.m_maxQP,
                                                          m_vaDisplay, m_vaContextEncode, m_rateParamBufferId), MFX_ERR_DEVICE_FAILED);
-    configBuffers[buffersCount++] = m_rateParamBufferId;
-    configBuffers[buffersCount++] = m_frameRateId;
-    configBuffers[buffersCount++] = m_qualityLevelId;
+    configBuffers.push_back(m_rateParamBufferId);
+    configBuffers.push_back(m_frameRateId);
+    configBuffers.push_back(m_qualityLevelId);
 
 /*
  * Limit frame size by application/user level
@@ -2780,7 +2777,7 @@ mfxStatus VAAPIEncoder::Execute(
 //        m_sps.bResetBRC = true;
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(m_userMaxFrameSize, m_vaDisplay,
                                                           m_vaContextEncode, m_maxFrameSizeId), MFX_ERR_DEVICE_FAILED);
-    configBuffers[buffersCount++] = m_maxFrameSizeId;
+    configBuffers.push_back(m_maxFrameSizeId);
 
 #if !defined(ANDROID)
 /*
@@ -2793,7 +2790,7 @@ mfxStatus VAAPIEncoder::Execute(
         m_curTrellisQuantization = m_newTrellisQuantization;
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetTrellisQuantization(m_curTrellisQuantization, m_vaDisplay,
                                                                      m_vaContextEncode, m_quantizationId), MFX_ERR_DEVICE_FAILED);
-        configBuffers[buffersCount++] = m_quantizationId;
+        configBuffers.push_back(m_quantizationId);
     }
 #endif
 
@@ -2805,14 +2802,14 @@ mfxStatus VAAPIEncoder::Execute(
         m_RIRState = task.m_IRState;
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRollingIntraRefresh(m_RIRState, m_vaDisplay,
                                                                      m_vaContextEncode, m_rirId), MFX_ERR_DEVICE_FAILED);
-        configBuffers[buffersCount++] = m_rirId;
+        configBuffers.push_back(m_rirId);
     }
 
     if (task.m_numRoi)
     {
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetROI(task, m_arrayVAEncROI, m_vaDisplay, m_vaContextEncode, m_roiBufferId),
                               MFX_ERR_DEVICE_FAILED);
-        configBuffers[buffersCount++] = m_roiBufferId;
+        configBuffers.push_back(m_roiBufferId);
     }
 
     /*FEI has its own interface for MBQp*/
@@ -2847,7 +2844,7 @@ mfxStatus VAAPIEncoder::Execute(
                 &m_mbqpBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            configBuffers[buffersCount++] = m_mbqpBufferId;
+            configBuffers.push_back(m_mbqpBufferId);
         }
     }
 
@@ -2880,7 +2877,7 @@ mfxStatus VAAPIEncoder::Execute(
                     &m_mbNoSkipBufferId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            configBuffers[buffersCount++] = m_mbNoSkipBufferId;
+            configBuffers.push_back(m_mbNoSkipBufferId);
         }
     }
 
@@ -2889,7 +2886,7 @@ mfxStatus VAAPIEncoder::Execute(
     {
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRoundingOffset(m_vaDisplay, m_vaContextEncode, *ctrlRoundingOffset, m_roundingOffsetId), MFX_ERR_DEVICE_FAILED);
 
-        configBuffers[buffersCount++] = m_roundingOffsetId;
+        configBuffers.push_back(m_roundingOffsetId);
     }
 #endif
 
@@ -2908,7 +2905,7 @@ mfxStatus VAAPIEncoder::Execute(
                                &m_triggerGpuHangBufferId);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-        configBuffers[buffersCount++] = m_triggerGpuHangBufferId;
+        configBuffers.push_back(m_triggerGpuHangBufferId);
     }
 #endif
 
@@ -2917,9 +2914,7 @@ mfxStatus VAAPIEncoder::Execute(
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityParams(m_videoParam, m_vaDisplay,
                                                                m_vaContextEncode, m_qualityParamsId, &task.m_ctrl), MFX_ERR_DEVICE_FAILED);
     }
-    if (VA_INVALID_ID != m_qualityParamsId) configBuffers[buffersCount++] = m_qualityParamsId;
-
-    assert(buffersCount <= configBuffers.size());
+    if (VA_INVALID_ID != m_qualityParamsId) configBuffers.push_back(m_qualityParamsId);
 
     mfxU32 storedSize = 0;
 
@@ -2936,7 +2931,7 @@ mfxStatus VAAPIEncoder::Execute(
                                                            skipFlag ? skipFlag : !!m_numSkipFrames,
                                                            m_numSkipFrames, m_sizeSkipFrames), MFX_ERR_DEVICE_FAILED);
 
-        configBuffers[buffersCount++] = m_miscParameterSkipBufferId;
+        configBuffers.push_back(m_miscParameterSkipBufferId);
 
         m_numSkipFrames  = 0;
         m_sizeSkipFrames = 0;
@@ -2964,8 +2959,8 @@ mfxStatus VAAPIEncoder::Execute(
             vaSts = vaRenderPicture(
                 m_vaDisplay,
                 m_vaContextEncode,
-                Begin(configBuffers),
-                buffersCount);
+                configBuffers.data(),
+                configBuffers.size());
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             for(i = 0; i < m_slice.size(); i++)
