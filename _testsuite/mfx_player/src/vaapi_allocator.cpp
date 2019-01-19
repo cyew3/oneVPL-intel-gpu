@@ -340,20 +340,21 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         else
         {
             VAContextID context_id = request->AllocId;
-            int codedbuf_size;
-
-            int width32 = 32 * ((request->Info.Width + 31) >> 5);
-            int height32 = 32 * ((request->Info.Height + 31) >> 5);
+            int codedbuf_size, codedbuf_num;
 
             VABufferType codedbuf_type;
             if (fourcc == MFX_FOURCC_VP8_SEGMAP)
             {
-                codedbuf_size = request->Info.Width * request->Info.Height;
-                codedbuf_type = (VABufferType)VAEncMacroblockMapBufferType;
+                codedbuf_size = request->Info.Width;
+                codedbuf_num = request->Info.Height;
+                codedbuf_type = VAEncMacroblockMapBufferType;
             }
             else
             {
+                int width32 = 32 * ((request->Info.Width + 31) >> 5);
+                int height32 = 32 * ((request->Info.Height + 31) >> 5);
                 codedbuf_size = static_cast<int>((width32 * height32) * 400LL / (16 * 16));
+                codedbuf_num = 1;
                 codedbuf_type = VAEncCodedBufferType;
             }
 
@@ -365,7 +366,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                                       context_id,
                                       codedbuf_type,
                                       codedbuf_size,
-                                      1,
+                                      codedbuf_num,
                                       NULL,
                                       &coded_buf);
                 mfx_res = va_to_mfx_status(va_res);
@@ -505,20 +506,21 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         }
         else
         {
-            int codedbuf_size;
-
-            int width32 = 32 * ((m_Width + 31) >> 5);
-            int height32 = 32 * ((m_Height + 31) >> 5);
+            int codedbuf_size, codedbuf_num;
 
             VABufferType codedbuf_type;
             if (mfx_fourcc == MFX_FOURCC_VP8_SEGMAP)
             {
-                codedbuf_size = m_Width * m_Height;
-                codedbuf_type = (VABufferType)VAEncMacroblockMapBufferType;
+                codedbuf_size = m_Width;
+                codedbuf_num = m_Height;
+                codedbuf_type = VAEncMacroblockMapBufferType;
             }
             else
             {
+                int width32 = 32 * ((m_Width + 31) >> 5);
+                int height32 = 32 * ((m_Height + 31) >> 5);
                 codedbuf_size = static_cast<int>((width32 * height32) * 400LL / (16 * 16));
+                codedbuf_num = 1;
                 codedbuf_type = VAEncCodedBufferType;
             }
             VABufferID coded_buf;
@@ -527,7 +529,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                                     VA_INVALID_ID,
                                     codedbuf_type,
                                     codedbuf_size,
-                                    1,
+                                    codedbuf_num,
                                     NULL,
                                     &coded_buf);
             mfx_res = va_to_mfx_status(va_res);

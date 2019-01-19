@@ -43,7 +43,6 @@
 
 #define VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER    0x00000002
 #define VASurfaceAttribUsageHint 8
-#define VAEncMacroblockMapBufferType 29
 
 // TODO: remove this internal definition once it appears in VAAPI
 #if !defined (VA_FOURCC_R5G6B5)
@@ -282,19 +281,21 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
         else
         {
             VAContextID context_id = request->AllocId;
-            mfxU32 codedbuf_size;
+            mfxU32 codedbuf_size, codedbuf_num;
             VABufferType codedbuf_type;
 
             if (fourcc == MFX_FOURCC_VP8_SEGMAP)
             {
-                codedbuf_size = request->Info.Width * request->Info.Height;
-                codedbuf_type = (VABufferType)VAEncMacroblockMapBufferType;
+                codedbuf_size = request->Info.Width;
+                codedbuf_num = request->Info.Height;
+                codedbuf_type = VAEncMacroblockMapBufferType;
             }
             else
             {
                 int width32 = 32 * ((request->Info.Width + 31) >> 5);
                 int height32 = 32 * ((request->Info.Height + 31) >> 5);
                 codedbuf_size = static_cast<mfxU32>((width32 * height32) * 400LL / (16 * 16));
+                codedbuf_num = 1;
 
                 codedbuf_type = VAEncCodedBufferType;
             }
@@ -307,7 +308,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                                       context_id,
                                       codedbuf_type,
                                       codedbuf_size,
-                                      1,
+                                      codedbuf_num,
                                       NULL,
                                       &coded_buf);
                 mfx_res = VA_TO_MFX_STATUS(va_res);

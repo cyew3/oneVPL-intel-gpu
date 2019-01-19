@@ -280,16 +280,17 @@ namespace MfxHwVP9Encode
         Zero(segPar);
 
         mfxFrameInfo const & dstFi = task.m_pSegmentMap->pSurface->Info;
-        mfxU32 dstW = dstFi.Width;
+        // driver seg map is always in 16x16 blocks because of HW limitation
+        constexpr mfxU16 dstBlockSize = 16;
+        mfxU32 dstW = dstFi.CropW / dstBlockSize; // width should be in MBs
         mfxU32 dstH = dstFi.Height;
-        mfxU32 dstPitch = segMap.Pitch;
+        mfxU32 dstPitch = dstFi.Width;
 
         mfxFrameInfo const & srcFi = task.m_pRawFrame->pSurface->Info;
         mfxU16 srcBlockSize = MapIdToBlockSize(seg.SegmentIdBlockSize);
         mfxU32 srcW = (srcFi.Width + srcBlockSize - 1)  / srcBlockSize;
         mfxU32 srcH = (srcFi.Height + srcBlockSize - 1) / srcBlockSize;
-        // driver seg map is always in 16x16 blocks because of HW limitation
-        const mfxU16 dstBlockSize = 16;
+
         mfxU16 ratio = srcBlockSize / dstBlockSize;
 
         if (seg.NumSegmentIdAlloc < srcW * srcH || seg.SegmentId == 0 ||
@@ -906,9 +907,11 @@ mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     }
     else if (type == D3DDDIFMT_INTELENCODE_MBSEGMENTMAP)
     {
+        // driver seg map is always in 16x16 blocks because of HW limitation
+        constexpr mfxU16 blockSize = 16;
         request.Info.FourCC = MFX_FOURCC_VP9_SEGMAP;
-        request.Info.Width  = ALIGN(frameWidth >> 5, 64);
-        request.Info.Height = frameHeight >> 5;//VDENC 32x32 block size ??
+        request.Info.Width  = ALIGN(frameWidth / blockSize, 64);
+        request.Info.Height = frameHeight / blockSize;
     }
 
     request.AllocId = m_vaContextEncode;
@@ -1052,8 +1055,11 @@ mfxStatus VAAPIEncoder::Execute(
         if (task.m_frameParam.segmentation == APP_SEGMENTATION)
         {
             // 4. Segmentation map
-
             // segmentation map buffer is already allocated and filled. Need just to attach it
+            mfxU32 segCodedBuffer = task.m_pSegmentMap->idInPool;
+            MFX_CHECK( segCodedBuffer < m_segMapQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
+            m_segMapBufferId = m_segMapQueue[segCodedBuffer].surface;
+
             configBuffers.push_back(m_segMapBufferId);
 
             // 5. Per-segment parameters
@@ -1100,8 +1106,6 @@ mfxStatus VAAPIEncoder::Execute(
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
         configBuffers.push_back(m_packedHeaderDataBufferId);
-
-//*********
 
         // 8. hrd parameters
         configBuffers.push_back(m_hrdBufferId);
