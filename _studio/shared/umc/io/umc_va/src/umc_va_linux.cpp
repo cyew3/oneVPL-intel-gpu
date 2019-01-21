@@ -101,6 +101,12 @@ VAEntrypoint umc_to_va_entrypoint(uint32_t umc_entrypoint)
     case UMC::VA_VLD | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_444:
     case UMC::VA_VLD | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_10 | UMC::VA_PROFILE_422:
     case UMC::VA_VLD | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_10 | UMC::VA_PROFILE_444:
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case UMC::VA_VLD |                        UMC::VA_PROFILE_12 | UMC::VA_PROFILE_444:
+    case UMC::VA_VLD | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_12:
+    case UMC::VA_VLD | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_12 | UMC::VA_PROFILE_422:
+    case UMC::VA_VLD | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_12 | UMC::VA_PROFILE_444:
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
         va_entrypoint = VAEntrypointVLD;
         break;
     default:
@@ -219,6 +225,15 @@ VAProfile get_next_va_profile(uint32_t umc_codec, uint32_t profile)
         va_profile = VAProfileHEVCMain444_10;
         break;
 #endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case UMC::VA_H265 | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_12:
+    case UMC::VA_H265 | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_12 | UMC::VA_PROFILE_422:
+        va_profile = VAProfileHEVCMain422_12;
+        break;
+    case UMC::VA_H265 | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_12 | UMC::VA_PROFILE_444:
+        va_profile = VAProfileHEVCMain444_12;
+        break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
     case UMC::VA_VC1:
         if (profile < UMC_ARRAY_SIZE(g_VC1Profiles)) va_profile = g_VC1Profiles[profile];
         break;
@@ -234,11 +249,16 @@ VAProfile get_next_va_profile(uint32_t umc_codec, uint32_t profile)
         if (profile < UMC_ARRAY_SIZE(g_VP910BitsProfiles)) va_profile = g_VP910BitsProfiles[profile];
         break;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case UMC::VA_VP9 | UMC::VA_PROFILE_12:
+    case UMC::VA_VP9 | UMC::VA_PROFILE_12 | UMC::VA_PROFILE_444:
+        if (profile < UMC_ARRAY_SIZE(g_VP910BitsProfiles)) va_profile = g_VP910BitsProfiles[profile];
+        break;
+
     case UMC::VA_AV1:
     case UMC::VA_AV1 | UMC::VA_PROFILE_10:
         if (profile < UMC_ARRAY_SIZE(g_AV1Profiles)) va_profile = g_AV1Profiles[profile];
         break;
-#endif
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
     case UMC::VA_JPEG:
         if (profile < UMC_ARRAY_SIZE(g_JPEGProfiles)) va_profile = g_JPEGProfiles[profile];
         break;

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -703,6 +703,12 @@ VAAPIVideoCORE::CreateVA(
         {
             profile |= VA_PROFILE_10;
         }
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        else if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P016 ||
+                 param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 ||
+                 param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416)
+            profile |= VA_PROFILE_12;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
 
         if (MFX_CHROMAFORMAT_YUV422 == param->mfx.FrameInfo.ChromaFormat)
             profile |= (VA_PROFILE_422 | VA_PROFILE_REXT);
@@ -710,6 +716,7 @@ VAAPIVideoCORE::CreateVA(
             profile |= (VA_PROFILE_444 |VA_PROFILE_REXT);
 
         break;
+
     case MFX_CODEC_VP8:
         profile |= VA_VP8;
         break;
@@ -728,6 +735,14 @@ VAAPIVideoCORE::CreateVA(
             profile |= VA_PROFILE_10 | VA_PROFILE_444;
             break;
 #endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_P016:
+            profile |= VA_PROFILE_12;
+            break;
+        case MFX_FOURCC_Y416:
+            profile |= VA_PROFILE_12 | VA_PROFILE_444;
+            break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
         }
         break;
     case MFX_CODEC_JPEG:
