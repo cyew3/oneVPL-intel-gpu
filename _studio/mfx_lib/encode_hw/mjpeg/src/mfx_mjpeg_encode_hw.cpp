@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -995,6 +995,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
 
     bs->TimeStamp = surface->Data.TimeStamp;
     bs->DecodeTimeStamp = surface->Data.TimeStamp;
+    bs->FrameType = MFX_FRAMETYPE_I;
 
     m_pCore->IncreaseReference(&surface->Data);
     task->surface = surface;
