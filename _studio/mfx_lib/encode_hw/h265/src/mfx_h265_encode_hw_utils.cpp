@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -3638,7 +3638,13 @@ void ConfigureTask(
 #if MFX_VERSION > 1021
         task.m_bPriorityToDQPpar = (par.isSWBRC() && task.m_roiMode == MFX_ROI_MODE_PRIORITY);
         if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+        {
             task.m_roiMode = parRoi->ROIMode;
+        }
+        else
+        {
+            task.m_roiMode = MFX_ROI_MODE_QP_DELTA;
+        }
 #endif // MFX_VERSION > 1021
     }
 
