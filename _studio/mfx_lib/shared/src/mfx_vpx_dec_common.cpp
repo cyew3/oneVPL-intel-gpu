@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -439,7 +439,7 @@ namespace MFX_VPX_Utility
         p_request->NumFrameMin += p_params->AsyncDepth ? p_params->AsyncDepth : MFX_AUTO_ASYNC_DEPTH_VALUE;
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-        if (MFX_CODEC_AV1 && p_params->mfx.FilmGrain)
+        if ((p_params->mfx.CodecId == MFX_CODEC_AV1) && p_params->mfx.FilmGrain)
             p_request->NumFrameMin = 2 * p_request->NumFrameMin; // we need two output surfaces for each frame when film_grain is applied
 #endif
         p_request->NumFrameSuggested = p_request->NumFrameMin;
