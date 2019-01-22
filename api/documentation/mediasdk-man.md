@@ -8481,6 +8481,7 @@ The `PlatformCodeName` enumerator itemizes Intel® processor microarchitecture c
 `MFX_PLATFORM_LAKEFIELD`    | Lakefield
 `MFX_PLATFORM_JASPERLAKE`   | Jasper lake
 `MFX_PLATFORM_TIGERLAKE`    | Tiger Lake
+`MFX_PLATFORM_ROCKETLAKE`   | Rocket Lake
 
 **Change History**
 
@@ -8491,7 +8492,7 @@ SDK API 1.25 adds `MFX_PLATFORM_GEMINILAKE`, `MFX_PLATFORM_COFFEELAKE` and `MFX_
 
 SDK API 1.27 adds `MFX_PLATFORM_ICELAKE`.
 
-SDK API **TBD** adds `MFX_PLATFORM_LAKEFIELD`, `MFX_PLATFORM_JASPERLAKE` and `MFX_PLATFORM_TIGERLAKE`.
+SDK API **TBD** adds `MFX_PLATFORM_LAKEFIELD`, `MFX_PLATFORM_JASPERLAKE`, `MFX_PLATFORM_TIGERLAKE` and `MFX_PLATFORM_ROCKETLAKE`.
 
 ## <a id='PayloadCtrlFlags'>PayloadCtrlFlags</a>
 

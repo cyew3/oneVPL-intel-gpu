@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-Copyright (C) 2013-2018 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -185,6 +185,7 @@ enum {
     MFX_PLATFORM_LAKEFIELD      = 31,
     MFX_PLATFORM_JASPERLAKE     = 32,
     MFX_PLATFORM_TIGERLAKE      = 40,
+    MFX_PLATFORM_ROCKETLAKE     = 42,
 #endif
 };
 
