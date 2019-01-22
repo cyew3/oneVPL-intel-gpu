@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -450,7 +450,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(DirectSpatialMvPredFlag, OPT_TRI_STATE,  "on=spatial, off=temporal"),
         HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),
         HANDLE_DDI_OPTION(LCUSize,                 OPT_UINT_16,    "32 or 64 - overrides default value of Largest Coding Unit"),
-        HANDLE_DDI_OPTION(QpAdjust,                OPT_TRI_STATE,  "on/off - forces sps.QpAdjustment, default on for TU1-5, off for TU6-7"),
+        HANDLE_DDI_OPTION(QpAdjust,                OPT_TRI_STATE,  "on/off - forces sps.QpAdjustment, default is off for all TUs"),
         HANDLE_DDI_OPTION(WriteIVFHeaders,         OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(RefreshFrameContext,     OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(ChangeFrameContextIdxForTS, OPT_TRI_STATE, ""),
