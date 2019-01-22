@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -323,6 +323,12 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
             std::swap(m_components[eREN].m_params.mfx.FrameInfo.CropW, m_components[eREN].m_params.mfx.FrameInfo.CropH);
         }
         m_components[eVPP].m_params.vpp.Out = m_components[eREN].m_params.mfx.FrameInfo;
+        // in case of JPEG, input of vpp is already progressive: one is weaved right after decode
+        if ( m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_JPEG
+             && m_components[eVPP].m_params.vpp.Out.PicStruct == MFX_PICSTRUCT_PROGRESSIVE )
+        {
+            m_components[eVPP].m_params.vpp.In.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        }
         if ( m_components[eVPP].m_params.vpp.In.FourCC == MFX_FOURCC_R16 )
         {
             m_components[eVPP].m_params.vpp.In.BitDepthLuma  = m_inParams.nInputBitdepth;
