@@ -36,8 +36,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "color_space_converter_hw", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmrt_cross_platform", "..\cmrt_cross_platform\cmrt_cross_platform.vcxproj", "{A3D890F5-7362-404D-95BF-B6C8AABA786B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vp8_libvpx", "..\..\..\..\mdp_msdk-contrib\vp8_libvpx.vcxproj", "{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_HSW_Emu|Win32 = Debug_HSW_Emu|Win32

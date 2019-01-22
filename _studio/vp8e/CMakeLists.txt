@@ -49,7 +49,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/vp8e_plugin/src )
   )
 endforeach()
 
-# sw veriants of VP8E deprecated as newer versions of libvpx incompatible with MSDK
 foreach( variant hw )
 
   if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
@@ -66,10 +65,10 @@ foreach( variant hw )
 
   foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/vp8e_plugin/src )
   list( APPEND sources
-    ${prefix}/mfx_vp8_enc_common_hw.cpp    
+    ${prefix}/mfx_vp8_enc_common_hw.cpp
     ${prefix}/mfx_vp8_encode_ddi_hw.cpp
     ${prefix}/mfx_vp8_encode_hybrid_bse.cpp
-    ${prefix}/mfx_vp8_encode_utils_hybrid_hw.cpp      
+    ${prefix}/mfx_vp8_encode_utils_hybrid_hw.cpp
   )
   endforeach()
 

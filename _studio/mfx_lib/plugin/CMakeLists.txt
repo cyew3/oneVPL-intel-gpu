@@ -740,7 +740,6 @@ set( defs "" )
 # VP8
 # =============================================================================
   set (VP8_PRODUCT_NAME "Intel(R) Media SDK")
-  set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK - VP8 Software Decode Plug-in")
   set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK - VP8 Hardware Decode Plug-in")
 
   if( NOT DEFINED ENV{MFX_VP8_VERSION} )
@@ -770,8 +769,6 @@ set( sources.plus "" )
 list( APPEND sources ${plugin_common_sources} )
 
 include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
-
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/include )
 
 list( APPEND sources ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/src/vp8_tables.cpp )
@@ -790,7 +787,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
 endforeach()
 
 foreach( variant
-         sw
          hw )
 
   if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
@@ -812,7 +808,6 @@ foreach( variant
     foreach( prefix ${MSDK_LIB_ROOT}/decode/vp8/src )
     list( APPEND sources
       ${prefix}/mfx_vp8_dec_decode_hw.cpp
-      ${prefix}/mfx_vp8_dec_decode.cpp
       ${prefix}/mfx_vp8_dec_decode_common.cpp
       ${prefix}/mfx_vp8_dec_decode_hw_vaapi.cpp
       ${prefix}/mfx_vp8_dec_decode_tables.cpp
@@ -828,22 +823,9 @@ foreach( variant
     set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
 
     gen_plugins_cfg("VP8_Decoder_HW" ${VP8_DECODER_HW_GUID} ${plugin_name} "01" "VP8")
-  else()
-    foreach( prefix ${MSDK_LIB_ROOT}/decode/vp8/src )
-    list( APPEND sources
-      ${prefix}/mfx_vp8_dec_decode.cpp
-      ${prefix}/mfx_vp8_dec_decode_common.cpp
-      ${prefix}/mfx_vp8_dec_decode_tables.cpp
-    )
-    endforeach()
-
-    set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
-
-    gen_plugins_cfg("VP8_Decoder_SW" ${VP8_DECODER_SW_GUID} ${plugin_name} "01" "VP8")
   endif()
 
   list( APPEND LIBS
-    vpx
     color_space_converter_sw
     media_buffers
     umc_io
@@ -870,7 +852,6 @@ set( defs "" )
 # VP9
 # =============================================================================
   set (VP9_PRODUCT_NAME "Intel(R) Media SDK")
-  set (sw_VP9_DECODER_DESCRIPTION "Intel(R) Media SDK - VP9 Software Decode Plug-in")
   set (hw_VP9_DECODER_DESCRIPTION "Intel(R) Media SDK - VP9 Hardware Decode Plug-in")
 
   if( NOT DEFINED ENV{MFX_VP9_VERSION} )
@@ -900,7 +881,6 @@ set( sources.plus "" )
 list( APPEND sources ${plugin_common_sources} )
 
 include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/libvpx/libvpx )
 
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/include )
 
@@ -917,7 +897,6 @@ list( APPEND sources.plus
 )
 
 foreach( variant
-         sw
          hw )
 
   if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
@@ -956,32 +935,16 @@ foreach( variant
     set( defs "-DAS_VP9D_PLUGIN -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
 
     gen_plugins_cfg("VP9_Decoder_HW" ${VP9_DECODER_HW_GUID} ${plugin_name} "01" "VP9")
-  else()
-
-    list( APPEND sources
-      ${MSDK_LIB_ROOT}/decode/vp9/src/mfx_vp9_dec_decode.cpp
-      ${MSDK_LIB_ROOT}/decode/vp9/src/mfx_vp9_dec_decode_utils.cpp
-    )
-
-    list( APPEND sources
-      ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_bitstream.cpp
-      ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_utils.cpp
-    )
-
-    set( defs "-DAS_VP9D_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
-
-    gen_plugins_cfg("VP9_Decoder_SW" ${VP9_DECODER_SW_GUID} ${plugin_name} "01" "VP9")
   endif()
 
   list( APPEND LIBS
-    vpx
     media_buffers
     umc_io
     umc
     vm
     vm_plus
     ${ITT_LIBS}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    ippcc_l ippi_l ippcore_l
     pthread
     dl
     )

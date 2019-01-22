@@ -257,21 +257,21 @@
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\f622394d8d87452f878c51f2fc9b4131\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>mfxplugin32_vp8d_hw</TargetName>
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(MfxBuildDir)win_$(Platform)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>mfxplugin32_vp8d_hw</TargetName>
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(MfxBuildDir)win_$(Platform)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\evaluation\15dd936825ad475ea34e35f3f54217a6\</OutDir>
     <IntDir>$(OutDir)..\..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>mfxplugin32_hevcd_sw</TargetName>
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(MfxBuildDir)win_$(Platform)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -289,16 +289,16 @@
     <IntDir>$(OutDir)..\..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(MfxBuildDir)win_$(Platform)\lib;$(LibraryPath)</LibraryPath>
     <ExecutablePath>$(VCInstallDir)PlatformSDK\bin;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(MfxBuildDir)win_$(Platform)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">
-    <IncludePath>$(ProjectDir)\..\..\..\thirdparty\vp8_libvpx;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(MfxBuildDir)win_$(Platform)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -346,7 +346,7 @@
     <Link>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;vp8_libvpx_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER17)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
@@ -495,7 +495,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;vp8_libvpx.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER17)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
@@ -613,9 +613,6 @@
     <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\mdp_msdk-contrib\vp8_libvpx.vcxproj">
-      <Project>{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\shared\mfx_trace\mfx_trace.vcxproj">
       <Project>{68AD0BD0-170B-4CEA-8A55-D6B841D66203}</Project>
     </ProjectReference>

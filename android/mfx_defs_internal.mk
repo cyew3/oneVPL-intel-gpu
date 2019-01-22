@@ -83,18 +83,15 @@ MFX_INCLUDES_INTERNAL :=  \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/shared/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/optimization/h264/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/optimization/h265/include \
-    $(MFX_HOME)/mdp_msdk-contrib/libvpx/libvpx \
     $(MFX_HOME)/mdp_msdk-contrib/SafeStringStaticLibrary/include \
     $(MDF_ROOT)/runtime/include \
     $(MDF_ROOT)/compiler/include \
     $(MDF_ROOT)/compiler/include/cm
 
 MFX_INCLUDES_INTERNAL_32 :=  \
-    $(MFX_HOME)/mdp_msdk-contrib/libvpx/android/x86 \
     $(IPP_ROOT_32)/include
 
 MFX_INCLUDES_INTERNAL_64 :=  \
-    $(MFX_HOME)/mdp_msdk-contrib/libvpx/android/x86_64 \
     $(IPP_ROOT_64)/include
 
 MFX_INCLUDES_INTERNAL_HW := \

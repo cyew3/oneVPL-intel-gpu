@@ -81,8 +81,7 @@ MFX_LOCAL_STATIC_LIBRARIES_HW := \
     libippi_l \
     libipps_l \
     libippmsdk_l \
-    libippcore_l \
-    libvpx-mfx
+    libippcore_l
 
 MFX_LOCAL_STATIC_LIBRARIES_SW := \
     libmfx_lib_merged_sw \
@@ -100,8 +99,7 @@ MFX_LOCAL_STATIC_LIBRARIES_SW := \
     libippi_l \
     libipps_l \
     libippcore_l \
-    libippmsdk_l \
-    libvpx-mfx
+    libippmsdk_l
 
 MFX_LOCAL_LDFLAGS_HW := \
     $(MFX_LDFLAGS) \

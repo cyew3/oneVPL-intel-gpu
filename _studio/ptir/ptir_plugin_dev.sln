@@ -159,8 +159,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmrt_cross_platform", "..\m
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h264_la", "..\mfx_lib\fei\h264_la.vcxproj", "{F1BDC47D-0532-4BCC-8217-44C46A8FD5CF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vp8_libvpx", "..\..\..\mdp_msdk-contrib\vp8_libvpx.vcxproj", "{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bitrate_control", "..\shared\umc\codec\brc\brc.vcxproj", "{E8E76842-6CF5-450F-A29E-CD15D7955AA4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MSDK_GMOCK", "MSDK_GMOCK", "{ADEDB8E7-B505-4D4A-A244-1F7416AB5867}"

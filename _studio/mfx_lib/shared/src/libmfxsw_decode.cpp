@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,6 @@
 #endif
 
 #if defined (MFX_ENABLE_VP8_VIDEO_DECODE) || defined (MFX_ENABLE_VP8_VIDEO_DECODE_HW)
-#include "mfx_vp8_dec_decode_common.h"
 #if defined (MFX_VA) && defined (MFX_ENABLE_VP8_VIDEO_DECODE_HW)
 #include "mfx_vp8_dec_decode_hw.h"
 #else
@@ -565,7 +564,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
             task.pSrc[0] = *surface_out;
 #endif
             task.pDst[0] = *surface_out;
-            // this is wa to remove external task dependency for HEVC SW decode plugin. 
+            // this is wa to remove external task dependency for HEVC SW decode plugin.
             // need only because SW HEVC decode is pseudo
             {
                 mfxPlugin plugin;

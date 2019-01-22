@@ -59,8 +59,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_trace", "..\shared\mfx_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vp8_dec", "..\shared\umc\codec\vp8_dec\vp8_dec.vcxproj", "{DBF436DC-46BA-4E1B-879A-E4DEB6B63605}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vp8_libvpx", "..\..\..\mdp_msdk-contrib\vp8_libvpx.vcxproj", "{18A3F3BC-74D2-4155-9BE1-9B29BB7DB2DB}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jpeg_common", "..\shared\umc\codec\jpeg_common\jpeg_common.vcxproj", "{E11AF8AB-D422-4649-B478-ED418F97448D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jpeg_dec", "..\shared\umc\codec\jpeg_dec\jpeg_dec.vcxproj", "{82EE233A-DAF4-4677-8D29-A92FCD42ECAF}"
