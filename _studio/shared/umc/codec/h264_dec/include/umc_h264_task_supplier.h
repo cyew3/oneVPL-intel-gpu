@@ -315,6 +315,9 @@ struct ViewItem
     H264DecoderFrame *pCurFrame;
 
     double localFrameTime;
+
+    // SPS.VUI.(bitstream_restriction_flag == 1).max_num_reorder_frames
+    uint32_t maxNumReorderFrames;
 };
 
 typedef std::list<ViewItem> ViewList;
