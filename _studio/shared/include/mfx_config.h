@@ -24,10 +24,6 @@
 #include "mfxdefs.h"
 
 #define CMAPIUPDATE
-#define MFX_ENABLE_VPP_COMPOSITION
-//#define MFX_ENABLE_VPP_FRC
-#define MFX_ENABLE_VPP_ROTATION
-#define MFX_ENABLE_VPP_VIDEO_SIGNAL
 
 #ifndef OPEN_SOURCE
 // disable additional features
@@ -462,6 +458,16 @@
 
 #endif//#if defined(_WIN32) || defined(_WIN64)
 
+#if defined(MFX_ENABLE_VPP)
+    #define MFX_ENABLE_VPP_COMPOSITION
+    #define MFX_ENABLE_VPP_ROTATION
+    #define MFX_ENABLE_VPP_VIDEO_SIGNAL
+    #if MFX_VERSION >= MFX_VERSION_NEXT
+        #define MFX_ENABLE_VPP_RUNTIME_HSBC
+    #endif
+    //#define MFX_ENABLE_VPP_FRC
+#endif
+
 #if defined(MFX_ENABLE_ASC)
     #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
 #endif
@@ -473,12 +479,6 @@
 #if MFX_VERSION >= 1028
     #define MFX_ENABLE_RGBP
     #define MFX_ENABLE_FOURCC_RGB565
-#endif
-
-// The line below HAS to be changed to MFX_VERSION >= 1027
-// after THE API is switched to 1.27
-#if MFX_VERSION >= MFX_VERSION_NEXT
-    #define MFX_ENABLE_VPP_RUNTIME_HSBC
 #endif
 
 #if defined(MFX_VA_LINUX)
