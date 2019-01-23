@@ -4923,6 +4923,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     if (!CheckRangeDflt(extOpt2->DisableDeblockingIdc, 0, 2, 0)) changed = true;
+#if MFX_VERSION >= MFX_VERSION_NEXT
+    if (!CheckRangeDflt(extOpt3->DeblockingAlphaTcOffset, -12, 12, 0)) changed = true;
+    if (!CheckRangeDflt(extOpt3->DeblockingBetaOffset, -12, 12, 0)) changed = true;
+#endif
     if (!CheckTriStateOption(extOpt2->EnableMAD)) changed = true;
 
     if (!CheckTriStateOption(extOpt2->AdaptiveI)) changed = true;

@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2097,6 +2097,7 @@ void MfxHwH264Encode::ConfigureTask(
     mfxExtEncoderROI const &        extRoi         = GetExtBufferRef(video);
     mfxExtEncoderROI const *        extRoiRuntime  = GetExtBuffer(task.m_ctrl);
     mfxExtCodingOption3 const &     extOpt3        = GetExtBufferRef(video);
+    mfxExtCodingOption3 const *     extOpt3Runtime = GetExtBuffer(task.m_ctrl);
     mfxExtDirtyRect const *    extDirtyRect        = GetExtBuffer(video);
     mfxExtDirtyRect const *    extDirtyRectRuntime = GetExtBuffer(task.m_ctrl);
     mfxExtMoveRect const *     extMoveRect         = GetExtBuffer(video);
@@ -2444,8 +2445,14 @@ void MfxHwH264Encode::ConfigureTask(
 
         // Fill deblocking parameters
         mfxU8 disableDeblockingIdc   = (mfxU8)extOpt2Cur->DisableDeblockingIdc;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        const mfxExtCodingOption3* extOpt3Cur = (extOpt3Runtime ? extOpt3Runtime : &extOpt3);
+        mfxI8 sliceAlphaC0OffsetDiv2 = mfxI8(extOpt3Cur->DeblockingAlphaTcOffset * 0.5);
+        mfxI8 sliceBetaOffsetDiv2    = mfxI8(extOpt3Cur->DeblockingBetaOffset * 0.5);
+#else
         mfxI8 sliceAlphaC0OffsetDiv2 = 0;
         mfxI8 sliceBetaOffsetDiv2    = 0;
+#endif
 
         for (mfxU32 i = 0; i < task.m_numSlice[task.m_fid[field]]; i++)
         {

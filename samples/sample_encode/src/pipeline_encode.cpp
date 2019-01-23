@@ -613,6 +613,9 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         || pInParams->nPRefType || pInParams->IntRefCycleDist || pInParams->nAdaptiveMaxFrameSize
         || pInParams->nNumRefActiveP || pInParams->nNumRefActiveBL0 || pInParams->nNumRefActiveBL1
         || pInParams->ExtBrcAdaptiveLTR || pInParams->QVBRQuality || pInParams->WinBRCSize
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        || pInParams->DeblockingAlphaTcOffset || pInParams->DeblockingBetaOffset
+#endif
         || pInParams->WinBRCMaxAvgKbps)
     {
         if (pInParams->CodecId == MFX_CODEC_HEVC)
@@ -638,6 +641,13 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_CodingOption3.WinBRCSize = pInParams->WinBRCSize;
         m_CodingOption3.WinBRCMaxAvgKbps = pInParams->WinBRCMaxAvgKbps;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        if (pInParams->DeblockingAlphaTcOffset || pInParams->DeblockingBetaOffset)
+        {
+            m_CodingOption3.DeblockingAlphaTcOffset = pInParams->DeblockingAlphaTcOffset;
+            m_CodingOption3.DeblockingBetaOffset = pInParams->DeblockingBetaOffset;
+        }
+#endif
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
     }
 

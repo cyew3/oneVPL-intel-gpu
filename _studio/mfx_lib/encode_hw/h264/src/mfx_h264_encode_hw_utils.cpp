@@ -4988,6 +4988,16 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         }
     }
 
+#if MFX_VERSION >= MFX_VERSION_NEXT
+    if (ctrl)
+    {
+        mfxExtCodingOption3* pCO3 = GetExtBuffer(*ctrl);
+        if (pCO3) {
+            MFX_CHECK(pCO3->DeblockingAlphaTcOffset >= -12 && pCO3->DeblockingAlphaTcOffset <= 12, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            MFX_CHECK(pCO3->DeblockingBetaOffset >= -12 && pCO3->DeblockingBetaOffset <= 12, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        }
+    }
+#endif
     if (surface != 0)
     {
         // Check Runtime extension buffers if not buffered frames processing
