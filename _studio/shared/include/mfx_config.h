@@ -47,11 +47,7 @@
 #define MFX_UNDOCUMENTED_DUMP_FILES
 #define MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
 #define MFX_UNDOCUMENTED_CO_DDI
-#define MFX_ENABLE_AVCE_DIRTY_RECTANGLE
-#define MFX_ENABLE_AVCE_MOVE_RECTANGLE
 //#define MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
-
-#undef MFX_ENABLE_H264_REPARTITION_CHECK
 
 //#define MFX_ENABLE_SVC_VIDEO_DECODE
 #define MFX_ENABLE_VPP_SVC
@@ -155,10 +151,7 @@
         #endif
 
         #if defined(LINUX64)
-            #define MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
-            #define MFX_ENABLE_H264_VIDEO_FEI_PREENC
-            #define MFX_ENABLE_H264_VIDEO_FEI_ENC
-            #define MFX_ENABLE_H264_VIDEO_FEI_PAK
+            #define MFX_ENABLE_H264_VIDEO_FEI_ENCODE
         #endif
         // mpeg2
         #define MFX_ENABLE_MPEG2_VIDEO_DECODE
@@ -222,8 +215,6 @@
             #endif
             #define MFX_ENABLE_MJPEG_ROTATE_VPP
             #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
-            #undef MFX_ENABLE_AVCE_DIRTY_RECTANGLE
-            #undef MFX_ENABLE_AVCE_MOVE_RECTANGLE
         #endif
         #if defined (MFX_VA_LINUX)
             #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
@@ -239,10 +230,7 @@
     #if defined(AS_H264LA_PLUGIN)
         #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
         #undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
-        #undef MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
-        #undef MFX_ENABLE_H264_VIDEO_FEI_PREENC
-        #undef MFX_ENABLE_H264_VIDEO_FEI_ENC
-        #undef MFX_ENABLE_H264_VIDEO_FEI_PAK
+        #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
         #if defined(__linux__)
             #undef MFX_ENABLE_VPP
         #endif
@@ -273,8 +261,7 @@
         #undef MFX_ENABLE_AAC_AUDIO_DECODE
         #undef MFX_ENABLE_AAC_AUDIO_ENCODE
         #undef MFX_ENABLE_MP3_AUDIO_DECODE
-        #undef MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
-        #undef MFX_ENABLE_H264_VIDEO_FEI_PREENC
+        #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
         #undef MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
         #undef MFX_ENABLE_AV1_VIDEO_DECODE
         #if defined(__linux__) // for MFX_RT
@@ -375,6 +362,36 @@
 
 // Here follows per-codec feature enable options which as of now we don't
 // want to expose on build system level since they are too detailed.
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
+    #if MFX_VERSION >= 1023
+        #define MFX_ENABLE_H264_REPARTITION_CHECK
+        #if defined(MFX_VA_WIN)
+            #define ENABLE_H264_MBFORCE_INTRA
+        #endif
+    #endif
+    #if MFX_VERSION >= 1027
+        #define MFX_ENABLE_H264_ROUNDING_OFFSET
+    #endif
+    #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCODE)
+        #define MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
+        #define MFX_ENABLE_H264_VIDEO_FEI_PREENC
+        #define MFX_ENABLE_H264_VIDEO_FEI_ENC
+        #define MFX_ENABLE_H264_VIDEO_FEI_PAK
+    #endif
+    #ifndef OPEN_SOURCE
+        #define MFX_ENABLE_AVCE_DIRTY_RECTANGLE
+        #define MFX_ENABLE_AVCE_MOVE_RECTANGLE
+        #if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+            #define MFX_ENABLE_AVCE_VDENC_B_FRAMES
+        #endif
+        #if (MFX_VERSION >= MFX_VERSION_NEXT)
+            #ifdef _WIN32
+                #define MFX_ENABLE_AVC_CUSTOM_QMATRIX
+            #endif
+        #endif
+    #endif
+#endif
+
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
     #define MFX_ENABLE_HEVCE_INTERLACE
     #define MFX_ENABLE_HEVCE_ROI
@@ -398,10 +415,6 @@
     #define MFX_ENABLE_HEVCD_SUBSET
 #endif
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
-    #define MFX_ENABLE_AVCE_VDENC_B_FRAMES
-#endif // PRE_SI_TARGET_PLATFORM_GEN12P5
-
 #if !defined(PRE_SI_TARGET_PLATFORM_GEN12)
     #undef MFX_ENABLE_AV1_VIDEO_DECODE
 #endif
@@ -416,16 +429,6 @@
         #define MFX_ENABLE_VPP_SCD_PARALLEL_COPY
     #endif //defined (AS_VPP_SCD_PLUGIN)
 #endif //defined (AS_VPP_SCD_PLUGIN) || defined (AS_ENC_SCD_PLUGIN)
-
-#if MFX_VERSION >= 1023
-#define MFX_ENABLE_H264_REPARTITION_CHECK
-#if defined(MFX_VA_WIN)
-    #define ENABLE_H264_MBFORCE_INTRA
-#endif
-#endif
-#if MFX_VERSION >= 1027
-#define MFX_ENABLE_H264_ROUNDING_OFFSET
-#endif
 
 #if ((MFX_VERSION >= 1026) && (!AS_CAMERA_PLUGIN))
 #define MFX_ENABLE_MCTF
@@ -460,12 +463,6 @@
 #if MFX_VERSION >= 1028
     #define MFX_ENABLE_RGBP
     #define MFX_ENABLE_FOURCC_RGB565
-#endif
-
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-#ifdef _WIN32
-#define MFX_ENABLE_AVC_CUSTOM_QMATRIX
-#endif
 #endif
 
 // The line below HAS to be changed to MFX_VERSION >= 1027
