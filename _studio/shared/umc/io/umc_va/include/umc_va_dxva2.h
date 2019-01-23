@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2018 Intel Corporation
+// Copyright (c) 2006-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -203,9 +203,9 @@ public:
 
     Status SyncTask(int32_t index, void * error = nullptr) override;
     Status ExecuteStatusReportBuffer(void * buffer, int32_t size) override;
-
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
     virtual Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE&);
-
+#endif
 
 private:
 

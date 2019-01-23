@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2018 Intel Corporation
+// Copyright (c) 2006-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -221,18 +221,19 @@ Status DXAccelerator::ExecuteStatusReportBuffer(void * buffer, int32_t size)
     return ExecuteExtension(DXVA2_GET_STATUS_REPORT, ext);
 }
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
 Status DXAccelerator::RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXAccelerator::RegisterGpuEvent");
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     ExtensionData ext{};
     ext.input = std::make_pair(&ev, sizeof(ev));
     return ExecuteExtension(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, ext);
-#else
-    (void)ev;
-    return MFX_ERR_NONE;
-#endif
+//#else
+//    (void)ev;
+//    return MFX_ERR_NONE;
+//#endif
 }
+#endif
 
 inline
 int32_t GetBufferIndex(int32_t buffer_type)

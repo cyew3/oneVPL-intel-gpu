@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -228,20 +228,28 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
     HRESULT hr = S_OK;
     mfxHDLPair Pair;
 
-    if (UMC_OK != m_allocator->GetFrameHandle(index, &Pair))
-        return UMC_ERR_DEVICE_FAILED;
-
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "MFXD3D11Accelerator::BeginFrame");
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "MFXD3D11Accelerator::m_allocator->GetFrameHandle");
+        if (UMC_OK != m_allocator->GetFrameHandle(index, &Pair))
+            return UMC_ERR_DEVICE_FAILED;
+    }
     D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC OutputDesc;
     OutputDesc.DecodeProfile = m_DecoderGuid;
     OutputDesc.ViewDimension = D3D11_VDOV_DIMENSION_TEXTURE2D;
     OutputDesc.Texture2D.ArraySlice = (UINT)(size_t)Pair.second;
-    m_pVDOView.Release();
+    {
 
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "m_pVDOView.Release()");
+        m_pVDOView.Release();
+    }
 
-    hr = m_pVideoDevice->CreateVideoDecoderOutputView((ID3D11Resource *)Pair.first, 
-                                                      &OutputDesc,
-                                                      &m_pVDOView);
-
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoderOutputView");
+        hr = m_pVideoDevice->CreateVideoDecoderOutputView((ID3D11Resource *)Pair.first,
+            &OutputDesc,
+            &m_pVDOView);
+    }
 
     if( SUCCEEDED( hr ) )
     {
@@ -259,6 +267,7 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
 
 Status MFXD3D11Accelerator::EndFrame(void *handle)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::EndFrame");
     std::for_each(std::begin(m_bufferOrder), std::end(m_bufferOrder),
         [this](Ipp32s type)
         { ReleaseBuffer(type);  }
@@ -290,6 +299,7 @@ Status MFXD3D11Accelerator::GetCompBufferInternal(UMCVACompBuffer* buffer)
 
     void* data = NULL;
     UINT buffer_size = 0;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "GetCompBufferInternal");
     HRESULT hr = m_pVideoContext->GetDecoderBuffer(m_pDecoder, MapDXVAToD3D11BufType(type), &buffer_size,  &data);
     if (FAILED(hr))
     {
@@ -309,6 +319,7 @@ Status MFXD3D11Accelerator::ReleaseBufferInternal(UMCVACompBuffer* buffer)
 {
     VM_ASSERT(buffer);
 
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ReleaseDecoderBuffer");
     Ipp32s const type = buffer->GetType();
     HRESULT hr = m_pVideoContext->ReleaseDecoderBuffer(m_pDecoder, MapDXVAToD3D11BufType(type));
     if (FAILED(hr))
@@ -384,7 +395,7 @@ Status MFXD3D11Accelerator::ExecuteExtensionBuffer(void * buffer)
 
     HRESULT hr;
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "ExecuteExtensionBuffer");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
 
         auto ext = reinterpret_cast<D3D11_VIDEO_DECODER_EXTENSION*>(buffer);
         hr = m_pVideoContext->DecoderExtension(m_pDecoder, ext);

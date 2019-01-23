@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -264,6 +264,7 @@ mfxStatus CommonCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrame
 }
 mfxStatus CommonCORE::LockFrame(mfxHDL mid, mfxFrameData *ptr)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CommonCORE::LockFrame");
     UMC::AutomaticUMCMutex guard(m_guard);
     MFX::AutoTimer timer("CommonCORE::LockFrame");
     try
@@ -273,6 +274,7 @@ mfxStatus CommonCORE::LockFrame(mfxHDL mid, mfxFrameData *ptr)
         mfxFrameAllocator* pAlloc = GetAllocatorAndMid(mid);
         if (!pAlloc)
             return MFX_ERR_INVALID_HANDLE;
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CommonCORE::LockFrame->Allocator");
         return (*pAlloc->Lock)(pAlloc->pthis, mid, ptr);
     }
     catch(...)
@@ -283,6 +285,8 @@ mfxStatus CommonCORE::LockFrame(mfxHDL mid, mfxFrameData *ptr)
 mfxStatus CommonCORE::GetFrameHDL(mfxHDL mid, mfxHDL* handle, bool ExtendedSearch)
 {
     mfxStatus sts;
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CommonCORE::GetFrameHDL");
     try
     {
         MFX_CHECK_HDL(mid);
@@ -312,6 +316,7 @@ mfxStatus CommonCORE::GetFrameHDL(mfxHDL mid, mfxHDL* handle, bool ExtendedSearc
 }
 mfxStatus CommonCORE::UnlockFrame(mfxHDL mid, mfxFrameData *ptr)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CommonCORE::UnlockFrame");
     UMC::AutomaticUMCMutex guard(m_guard);
 
     try
@@ -320,7 +325,10 @@ mfxStatus CommonCORE::UnlockFrame(mfxHDL mid, mfxFrameData *ptr)
         mfxFrameAllocator* pAlloc = GetAllocatorAndMid(mid);
         if (!pAlloc)
             return MFX_ERR_INVALID_HANDLE;
-        return (*pAlloc->Unlock)(pAlloc->pthis, mid, ptr);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CommonCORE::UnlockFrame->Allocator");
+            return (*pAlloc->Unlock)(pAlloc->pthis, mid, ptr);
+        }
     }
     catch(...)
     {
@@ -478,6 +486,7 @@ mfxStatus CommonCORE::InternalFreeFrames(mfxFrameAllocResponse *response)
 mfxStatus  CommonCORE::LockExternalFrame(mfxMemId mid, mfxFrameData *ptr, bool ExtendedSearch)
 {
     mfxStatus sts;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CommonCORE::LockExternalFrame");
     MFX::AutoTimer timer("CommonCORE::LockExternalFrame");
     try
     {
@@ -487,6 +496,7 @@ mfxStatus  CommonCORE::LockExternalFrame(mfxMemId mid, mfxFrameData *ptr, bool E
             // if exist opaque surface - take a look in them (internal surfaces)
             if (m_OpqTbl.size())
             {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "LockFrame");
                 sts = LockFrame(mid, ptr);
                 if (MFX_ERR_NONE == sts)
                     return sts;
@@ -495,6 +505,7 @@ mfxStatus  CommonCORE::LockExternalFrame(mfxMemId mid, mfxFrameData *ptr, bool E
 
             if (m_bSetExtFrameAlloc)
             {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "pAlloc->Lock");
                 mfxFrameAllocator* pAlloc = &m_FrameAllocator.frameAllocator;
                 return (*pAlloc->Lock)(pAlloc->pthis, mid, ptr);
             }
@@ -517,6 +528,7 @@ mfxStatus  CommonCORE::LockExternalFrame(mfxMemId mid, mfxFrameData *ptr, bool E
 mfxStatus  CommonCORE::GetExternalFrameHDL(mfxMemId mid, mfxHDL *handle, bool ExtendedSearch)
 {
     mfxStatus sts;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CommonCORE::GetExternalFrameHDL");
     try
     {
         MFX_CHECK_NULL_PTR1(handle);
@@ -544,12 +556,14 @@ mfxStatus  CommonCORE::GetExternalFrameHDL(mfxMemId mid, mfxHDL *handle, bool Ex
 mfxStatus  CommonCORE::UnlockExternalFrame(mfxMemId mid, mfxFrameData *ptr, bool ExtendedSearch)
 {
     mfxStatus sts;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CommonCORE::UnlockExternalFrame");
     if(!ptr)
         return MFX_ERR_NULL_PTR;
     try
     {
         {
             UMC::AutomaticUMCMutex guard(m_guard);
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "UnlockFrame");
             // if exist opaque surface - take a look in them (internal surfaces)
             if (m_OpqTbl.size())
             {
@@ -596,9 +610,11 @@ mfxFrameSurface1* CommonCORE::GetNativeSurface(mfxFrameSurface1 *pOpqSurface, bo
 {
     if (0 == pOpqSurface)
         return 0;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CommonCORE::GetNativeSurface");
 
     {
         UMC::AutomaticUMCMutex guard(m_guard);
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetNativeSurface");
         OpqTbl::iterator oqp_it;
         oqp_it = m_OpqTbl.find(pOpqSurface);
         if (m_OpqTbl.end() != oqp_it)
@@ -616,8 +632,10 @@ mfxFrameSurface1* CommonCORE::GetOpaqSurface(mfxMemId mid, bool ExtendedSearch)
     if (0 == mid)
         return 0;
 
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CommonCORE::GetOpaqSurface");
     {
         UMC::AutomaticUMCMutex guard(m_guard);
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetOpaqSurface");
         OpqTbl_MemId::iterator opq_it = m_OpqTbl_MemId.find(mid);
         if (m_OpqTbl_MemId.end() != opq_it) {
             return opq_it->second;
