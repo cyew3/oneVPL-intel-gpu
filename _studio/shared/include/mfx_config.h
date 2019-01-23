@@ -23,8 +23,6 @@
 
 #include "mfxdefs.h"
 
-#define CMAPIUPDATE
-
 #ifndef OPEN_SOURCE
 // disable additional features
 //#define MFX_FADE_DETECTION_FEATURE_DISABLE
@@ -126,98 +124,106 @@
         #define MFX_ENABLE_H265_VIDEO_ENCODE
     #endif
 #elif defined(ANDROID)
-    // placeholder: #include "mfx_android_defs.h"
+    #include "mfx_android_defs.h"
+
+    #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
 #else
     // mfxconfig.h is auto-generated file containing mediasdk per-component
     // enable defines
     #include "mfxconfig.h"
+
+    #ifdef OPEN_SOURCE
+    #if defined(AS_H264LA_PLUGIN)
+        #define MFX_ENABLE_LA_H264_VIDEO_HW
+        #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
+    #else
+        #if MFX_VERSION >= 1025
+            #define MFX_ENABLE_MFE
+        #endif
+        #define MFX_ENABLE_VPP
+    #endif
+    #endif // #ifdef OPEN_SOURCE
 #endif
 
+#if !defined(OPEN_SOURCE) && !defined(ANDROID)
 #if !defined(LINUX_TARGET_PLATFORM) || defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)  || defined(LINUX_TARGET_PLATFORM_ATS)
     #if defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)
         #define PRE_SI_GEN 11
     #endif
 
-    #if !defined(ANDROID)
-        // h265d
-        #if defined(MFX_VA)
-            #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-            #if (MFX_VERSION >= MFX_VERSION_NEXT) && (!defined(LINUX_TARGET_PLATFORM) || defined(LINUX_TARGET_PLATFORM_ATS)) // TODO: change to VAAPI version check
-                #define MFX_ENABLE_AV1_VIDEO_DECODE
-            #endif
+    // h265d
+    #if defined(MFX_VA)
+        #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
+        #if (MFX_VERSION >= MFX_VERSION_NEXT) && (!defined(LINUX_TARGET_PLATFORM) || defined(LINUX_TARGET_PLATFORM_ATS)) // TODO: change to VAAPI version check
+            #define MFX_ENABLE_AV1_VIDEO_DECODE
         #endif
+    #endif
 
-        #if defined(AS_AV1E_PLUGIN)
-            #define MFX_ENABLE_AV1_VIDEO_ENCODE
+    #if defined(AS_AV1E_PLUGIN)
+        #define MFX_ENABLE_AV1_VIDEO_ENCODE
+    #endif
+
+    #if defined(MFX_VA_LINUX) && (MFX_VERSION >= 1025)
+        #if !defined(AS_H264LA_PLUGIN)
+            #define MFX_ENABLE_MFE
         #endif
+    #endif
 
-        #if defined(MFX_VA_LINUX) && (MFX_VERSION >= 1025)
-            #if !defined(AS_H264LA_PLUGIN)
-                #define MFX_ENABLE_MFE
-            #endif
+    #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
+    #define MFX_ENABLE_MPEG2_VIDEO_PAK
+    #define MFX_ENABLE_MPEG2_VIDEO_ENC
+
+    // vpp
+    #define MFX_ENABLE_DENOISE_VIDEO_VPP
+    #define MFX_ENABLE_IMAGE_STABILIZATION_VPP
+    #define MFX_ENABLE_VPP
+    #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
+
+    //#define MFX_ENABLE_H264_VIDEO_ENC_HW
+    #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
+    #if defined(AS_H264LA_PLUGIN)
+        #define MFX_ENABLE_LA_H264_VIDEO_HW
+    #endif
+
+    // H265 FEI plugin
+    #if defined(AS_H265FEI_PLUGIN)
+        #define MFX_ENABLE_H265FEI_HW
+    #endif
+
+    // user plugin for decoder, encoder, and vpp
+    #define MFX_ENABLE_USER_DECODE
+    #define MFX_ENABLE_USER_ENCODE
+    #define MFX_ENABLE_USER_ENC
+    #define MFX_ENABLE_USER_VPP
+
+    // aac
+    #define MFX_ENABLE_AAC_AUDIO_DECODE
+    #define MFX_ENABLE_AAC_AUDIO_ENCODE
+
+    //mp3
+    #define MFX_ENABLE_MP3_AUDIO_DECODE
+
+    #if defined(_WIN32) || defined(_WIN64)
+        #define MFX_ENABLE_MVC_VIDEO_ENCODE
+        #define MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+    #elif defined(__linux__)
+        // Unsupported on Linux:
+        #define MFX_PROTECTED_FEATURE_DISABLE
+        #define MFX_CAMERA_FEATURE_DISABLE
+
+        #if (MFX_VERSION < MFX_VERSION_NEXT)
+            #define MFX_CLOSED_PLATFORMS_DISABLE
+            #define MFX_EXT_DPB_HEVC_DISABLE
+            #define MFX_ADAPTIVE_PLAYBACK_DISABLE
+            #define MFX_FUTURE_FEATURE_DISABLE
         #endif
-
-        #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
-        #define MFX_ENABLE_MPEG2_VIDEO_PAK
-        #define MFX_ENABLE_MPEG2_VIDEO_ENC
-
-        // vpp
-        #define MFX_ENABLE_DENOISE_VIDEO_VPP
-        #define MFX_ENABLE_IMAGE_STABILIZATION_VPP
-        #define MFX_ENABLE_VPP
-        #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
-
-        //#define MFX_ENABLE_H264_VIDEO_ENC_HW
-        #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
-        #if defined(AS_H264LA_PLUGIN)
-            #define MFX_ENABLE_LA_H264_VIDEO_HW
-        #endif
-
-        // H265 FEI plugin
-        #if defined(AS_H265FEI_PLUGIN)
-            #define MFX_ENABLE_H265FEI_HW
-        #endif
-
-        // user plugin for decoder, encoder, and vpp
-        #define MFX_ENABLE_USER_DECODE
-        #define MFX_ENABLE_USER_ENCODE
-        #define MFX_ENABLE_USER_ENC
-        #define MFX_ENABLE_USER_VPP
-
-        // aac
-        #define MFX_ENABLE_AAC_AUDIO_DECODE
-        #define MFX_ENABLE_AAC_AUDIO_ENCODE
-
-        //mp3
-        #define MFX_ENABLE_MP3_AUDIO_DECODE
-
-        #if defined(_WIN32) || defined(_WIN64)
-            #define MFX_ENABLE_MVC_VIDEO_ENCODE
-            #define MFX_ENABLE_SVC_VIDEO_ENCODE_HW
-        #elif defined(__linux__)
-            // Unsupported on Linux:
-            #define MFX_PROTECTED_FEATURE_DISABLE
-            #define MFX_CAMERA_FEATURE_DISABLE
-
-            #if (MFX_VERSION < MFX_VERSION_NEXT)
-                #define MFX_CLOSED_PLATFORMS_DISABLE
-                #define MFX_EXT_DPB_HEVC_DISABLE
-                #define MFX_ADAPTIVE_PLAYBACK_DISABLE
-                #define MFX_FUTURE_FEATURE_DISABLE
-            #endif
-            #define MFX_ENABLE_MJPEG_ROTATE_VPP
-            #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
-        #endif
-        #if defined (MFX_VA_LINUX)
-            #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
-            #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-        #endif
-    #else // #if !defined(ANDROID)
-        #include "mfx_android_defs.h"
-
+        #define MFX_ENABLE_MJPEG_ROTATE_VPP
+        #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
+    #endif
+    #if defined (MFX_VA_LINUX)
+        #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
         #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
-
-    #endif // #if !defined(ANDROID)
+    #endif
 
     #if defined(AS_H264LA_PLUGIN)
         #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
@@ -348,6 +354,50 @@
     #endif // ENABLE_PRE_SI_FEATURES
 #endif
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    #define MFX_ENABLE_HEVCD_SUBSET
+#endif
+
+#if !defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    #undef MFX_ENABLE_AV1_VIDEO_DECODE
+#endif
+
+#define MFX_ENABLE_GET_CM_DEVICE
+
+#if defined (AS_VPP_SCD_PLUGIN) || defined (AS_ENC_SCD_PLUGIN)
+    #undef MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
+    #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
+
+    #if defined (AS_VPP_SCD_PLUGIN)
+        #define MFX_ENABLE_VPP_SCD_PARALLEL_COPY
+    #endif //defined (AS_VPP_SCD_PLUGIN)
+#endif //defined (AS_VPP_SCD_PLUGIN) || defined (AS_ENC_SCD_PLUGIN)
+
+#if defined(_WIN32) || defined(_WIN64)
+    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_MPEG2D) || \
+    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D)  || \
+    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VC1D)   || \
+    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD)  || \
+    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D)   || \
+    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D)  || \
+    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP9D)
+
+    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+#endif
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_AV1D) && !defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
+        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+    #endif
+#endif
+
+#endif//#if defined(_WIN32) || defined(_WIN64)
+
+#endif // #ifndef OPEN_SOURCE
+
 // Here follows per-codec feature enable options which as of now we don't
 // want to expose on build system level since they are too detailed.
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
@@ -416,48 +466,6 @@
 #endif
 #endif // #ifdef OPEN_SOURCE
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    #define MFX_ENABLE_HEVCD_SUBSET
-#endif
-
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    #undef MFX_ENABLE_AV1_VIDEO_DECODE
-#endif
-
-#define MFX_ENABLE_GET_CM_DEVICE
-
-#if defined (AS_VPP_SCD_PLUGIN) || defined (AS_ENC_SCD_PLUGIN)
-    #undef MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
-    #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
-
-    #if defined (AS_VPP_SCD_PLUGIN)
-        #define MFX_ENABLE_VPP_SCD_PARALLEL_COPY
-    #endif //defined (AS_VPP_SCD_PLUGIN)
-#endif //defined (AS_VPP_SCD_PLUGIN) || defined (AS_ENC_SCD_PLUGIN)
-
-#if defined(_WIN32) || defined(_WIN64)
-    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
-
-#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_MPEG2D) || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D)  || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VC1D)   || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD)  || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D)   || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D)  || \
-    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP9D)
-
-    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-#endif
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_AV1D) && !defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
-        #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-    #endif
-#endif
-
-#endif//#if defined(_WIN32) || defined(_WIN64)
-
 #if defined(MFX_ENABLE_VPP)
     #define MFX_ENABLE_VPP_COMPOSITION
     #define MFX_ENABLE_VPP_ROTATION
@@ -486,5 +494,7 @@
         #define MFX_ENABLE_QVBR
     #endif
 #endif
+
+#define CMAPIUPDATE
 
 #endif // _MFX_CONFIG_H_
