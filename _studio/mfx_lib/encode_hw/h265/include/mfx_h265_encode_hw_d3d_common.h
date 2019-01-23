@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -93,6 +93,6 @@ namespace MfxHwH265Encode
     };
 }; // namespace
 
-#endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE_HW) && (MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) && (MFX_VA_WIN)
 #endif // __MFX_H265_ENCODE_HW_D3D_COMMON_H
 /* EOF */

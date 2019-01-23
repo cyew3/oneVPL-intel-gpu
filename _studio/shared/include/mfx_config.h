@@ -55,7 +55,6 @@
 
 //#define MFX_ENABLE_SVC_VIDEO_DECODE
 #define MFX_ENABLE_VPP_SVC
-#define MFX_ENABLE_HEVCE_HDR_SEI
 #endif // #ifndef OPEN_SOURCE
 
 #ifdef UMC_VA_LINUX
@@ -225,7 +224,6 @@
             #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
             #undef MFX_ENABLE_AVCE_DIRTY_RECTANGLE
             #undef MFX_ENABLE_AVCE_MOVE_RECTANGLE
-            #undef MFX_ENABLE_HEVCE_HDR_SEI
         #endif
         #if defined (MFX_VA_LINUX)
             #define SYNCHRONIZATION_BY_VA_MAP_BUFFER
@@ -375,22 +373,30 @@
     #endif // ENABLE_PRE_SI_FEATURES
 #endif
 
-#define MFX_ENABLE_HEVCE_ROI
-#define MFX_ENABLE_HEVCE_DIRTY_RECT
-#define MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
-
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    #define MFX_ENABLE_HEVCE_UNITS_INFO
+// Here follows per-codec feature enable options which as of now we don't
+// want to expose on build system level since they are too detailed.
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+    #define MFX_ENABLE_HEVCE_INTERLACE
+    #define MFX_ENABLE_HEVCE_ROI
+    #ifndef OPEN_SOURCE
+        #define MFX_ENABLE_HEVCE_DIRTY_RECT
+        #define MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
+        #if defined (MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+            #define MFX_ENABLE_HEVCE_FADE_DETECTION
+        #endif
+        #define MFX_ENABLE_HEVCE_HDR_SEI
+        #if (MFX_VERSION >= MFX_VERSION_NEXT)
+            #define MFX_ENABLE_HEVCE_UNITS_INFO
+        #endif
+        #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+            #define MFX_ENABLE_HEVCE_SCC
+        #endif
+    #endif
 #endif
-
-#if defined (MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
-    #define MFX_ENABLE_HEVCE_FADE_DETECTION
-#endif // MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     #define MFX_ENABLE_HEVCD_SUBSET
-    #define MFX_ENABLE_HEVCE_SCC
-#endif // PRE_SI_TARGET_PLATFORM_GEN12
+#endif
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
     #define MFX_ENABLE_AVCE_VDENC_B_FRAMES
@@ -400,7 +406,6 @@
     #undef MFX_ENABLE_AV1_VIDEO_DECODE
 #endif
 
-#define MFX_ENABLE_HEVCE_INTERLACE
 #define MFX_ENABLE_GET_CM_DEVICE
 
 #if defined (AS_VPP_SCD_PLUGIN) || defined (AS_ENC_SCD_PLUGIN)

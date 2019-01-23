@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -171,5 +171,5 @@ mfxStatus D3DXCommonEncoder::QueryStatus(
     return sts;
 }
 
-#endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_WIN)
 /* EOF */
