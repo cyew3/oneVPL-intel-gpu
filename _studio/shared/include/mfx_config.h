@@ -146,7 +146,6 @@
 #endif
 
 #if !defined(OPEN_SOURCE) && !defined(ANDROID)
-#if !defined(LINUX_TARGET_PLATFORM) || defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)  || defined(LINUX_TARGET_PLATFORM_ATS)
     #if defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)
         #define PRE_SI_GEN 11
     #endif
@@ -154,7 +153,7 @@
     // h265d
     #if defined(MFX_VA)
         #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-        #if (MFX_VERSION >= MFX_VERSION_NEXT) && (!defined(LINUX_TARGET_PLATFORM) || defined(LINUX_TARGET_PLATFORM_ATS)) // TODO: change to VAAPI version check
+        #if (MFX_VERSION >= MFX_VERSION_NEXT) && defined(LINUX_TARGET_PLATFORM_ATS) // TODO: change to VAAPI version check
             #define MFX_ENABLE_AV1_VIDEO_DECODE
         #endif
     #endif
@@ -313,14 +312,6 @@
         #define MFX_ENABLE_USER_ENCODE
         #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
     #endif
-
-#else // LINUX_TARGET_PLATFORM
-    #if defined(LINUX_TARGET_PLATFORM_BXTMIN) // PRE_SI_GEN == 11
-        #include "mfx_common_linux_bxtmin.h"
-    #else
-        #error "Target platform should be specified!"
-    #endif
-#endif // LINUX_TARGET_PLATFORM
 
 #if defined (PRE_SI_GEN)
     #define ENABLE_PRE_SI_FEATURES
