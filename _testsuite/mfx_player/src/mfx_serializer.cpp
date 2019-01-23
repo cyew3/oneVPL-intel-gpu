@@ -276,7 +276,6 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     SERIALIZE_INT(DirectSpatialMvPredFlag);
     SERIALIZE_INT(CabacInitIdcPlus1);
 
-    SERIALIZE_INT(LCUSize);
     SERIALIZE_INT(QpAdjust);
     SERIALIZE_INT(WriteIVFHeaders);
     SERIALIZE_INT(RefreshFrameContext);
@@ -1039,6 +1038,7 @@ void MFXStructureRef <mfxExtHEVCParam>::ConstructValues () const
     SERIALIZE_INT(PicWidthInLumaSamples);
     SERIALIZE_INT(PicHeightInLumaSamples);
     SERIALIZE_INT(SampleAdaptiveOffset);
+    SERIALIZE_INT(LCUSize);
 }
 
 void MFXStructureRef<mfxExtAVCRefLists::mfxRefPic>::ConstructValues() const

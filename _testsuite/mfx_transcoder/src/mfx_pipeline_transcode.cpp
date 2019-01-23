@@ -440,6 +440,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_PARAM(PicWidthInLumaSamples,     OPT_UINT_16,    "HEVC encoded picture width (SPS.pic_width_in_luma_samples)"),
         HANDLE_HEVC_PARAM(PicHeightInLumaSamples,    OPT_UINT_16,    "HEVC encoded picture height (SPS.pic_height_in_luma_samples)"),
         HANDLE_HEVC_PARAM(SampleAdaptiveOffset,      OPT_UINT_16,    "HEVC SAO public API: 0=unknown, 1=disabled, 2=luma, 4=chroma, 6=luma&chroma"),
+        HANDLE_HEVC_PARAM(LCUSize,                   OPT_UINT_16,    "32 or 64 - overrides default value of Largest Coding Unit"),
 
         HANDLE_VP8_OPTION(EnableMultipleSegments, OPT_UINT_16, "0-maxU32"),
         HANDLE_VP8_OPTION(LoopFilterType, OPT_UINT_16, "0-maxU16"),
@@ -564,7 +565,6 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(WeightedBiPredIdc,       OPT_UINT_16,    "0 - off, 1 - explicit (unsupported), 2 - implicit"),
         HANDLE_DDI_OPTION(DirectSpatialMvPredFlag, OPT_TRI_STATE,  "on=spatial, off=temporal"),
         HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),
-        HANDLE_DDI_OPTION(LCUSize,                 OPT_UINT_16,    "32 or 64 - overrides default value of Largest Coding Unit"),
         HANDLE_DDI_OPTION(QpAdjust,                OPT_TRI_STATE,  "on/off - forces sps.QpAdjustment, default is off for all TUs"),
         HANDLE_DDI_OPTION(WriteIVFHeaders,         OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(RefreshFrameContext,     OPT_TRI_STATE,  ""),
