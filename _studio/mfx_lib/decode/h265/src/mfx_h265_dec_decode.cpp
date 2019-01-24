@@ -906,7 +906,11 @@ mfxStatus VideoDECODEH265::GetDecodeStat(mfxDecodeStat *stat)
     m_stat.NumSkippedFrame = m_pH265VideoDecoder->GetSkipInfo().numberOfSkippedFrames;
     m_stat.NumCachedFrame = 0;
 
-    H265DecoderFrame *pFrame = m_pH265VideoDecoder->GetDPBList()->head();
+    H265DBPList *dpb = m_pH265VideoDecoder->GetDPBList();
+    if (!dpb)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    H265DecoderFrame *pFrame = dpb->head();
     for (; pFrame; pFrame = pFrame->future())
     {
         if (!pFrame->wasOutputted() && !isAlmostDisposable(pFrame))
@@ -1028,7 +1032,11 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
         {
             UMC::AutomaticUMCMutex mGuard(m_mGuardRunThread);
 
-            H265DecoderFrame *pFrame = m_pH265VideoDecoder->GetDPBList()->head();
+            H265DBPList *dpb = m_pH265VideoDecoder->GetDPBList();
+            if (!dpb)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+            H265DecoderFrame *pFrame = dpb->head();
             for (; pFrame; pFrame = pFrame->future())
             {
                 if (!pFrame->m_pic_output && !pFrame->IsDecoded())

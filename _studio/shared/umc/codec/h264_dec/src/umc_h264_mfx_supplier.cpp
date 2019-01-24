@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -411,8 +411,8 @@ Status MFXTaskSupplier::DecodeSEI(NalUnit *nalUnit)
 
         bitStream.Reset((uint8_t*)swappedMem.GetPointer(), (uint32_t)swappedMem.GetDataSize());
 
-        NAL_Unit_Type nal_unit_type;
-        uint32_t nal_ref_idc;
+        NAL_Unit_Type nal_unit_type = NAL_UT_UNSPECIFIED;
+        uint32_t nal_ref_idc = 0;
 
         bitStream.GetNALUnitType(nal_unit_type, nal_ref_idc);
         nalUnit->MoveDataPointer(1); // nal_unit_type - 8 bits
