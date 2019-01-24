@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -197,7 +197,7 @@ namespace hevce_sao
     {
         return ((hp.SampleAdaptiveOffset == MFX_SAO_ENABLE_LUMA
                 || hp.SampleAdaptiveOffset == MFX_SAO_ENABLE_CHROMA)
-                && g_tsHWtype >= MFX_HW_CNL && g_tsHWtype < MFX_HW_TGL
+                && g_tsHWtype == MFX_HW_CNL
                 && par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
                 && g_tsConfig.lowpower == MFX_CODINGOPTION_ON);
     }
