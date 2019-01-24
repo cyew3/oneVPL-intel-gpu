@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -1022,6 +1022,9 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         MSDK_CHECK_POINTER(p_vaapiAllocParams, MFX_ERR_MEMORY_ALLOC);
 
         p_vaapiAllocParams->m_dpy = (VADisplay)hdl;
+#ifdef ENABLE_V4L2_SUPPORT
+        p_vaapiAllocParams->m_export_mode = vaapiAllocatorParams::PRIME;
+#endif
         m_pmfxAllocatorParams = p_vaapiAllocParams;
 
         /* In case of video memory we must provide MediaSDK with external allocator

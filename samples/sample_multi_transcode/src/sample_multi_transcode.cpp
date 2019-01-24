@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -170,6 +170,10 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                 pVAAPIParams->m_export_mode = vaapiAllocatorParams::CUSTOM_FLINK;
                 pVAAPIParams->m_exporter = dynamic_cast<vaapiAllocatorParams::Exporter*>(drmdev->getRenderer());
 
+            }
+            else if (params.libvaBackend == MFX_LIBVA_X11)
+            {
+                pVAAPIParams->m_export_mode = vaapiAllocatorParams::PRIME;
             }
 #endif
 #if defined(LIBVA_WAYLAND_SUPPORT)
