@@ -4,13 +4,14 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #pragma once
 
 #include "mfx_base_allocator.h"
+#include <vector>
 
 struct sBuffer
 {
@@ -50,6 +51,16 @@ protected:
 
     MFXBufferAllocator *m_pBufferAllocator;
     bool m_bOwnBufferAllocator;
+
+    struct RespMids
+    {
+        mfxMemId   *mids;
+        mfxU32     count;
+
+        RespMids(mfxMemId *init_mids, mfxU32 num):mids(init_mids), count(num) {}
+    };
+
+    std::vector<RespMids> m_mids;
 };
 
 class SysMemBufferAllocator : public MFXBufferAllocator
