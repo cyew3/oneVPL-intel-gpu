@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1399,7 +1399,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9DecoderFrame
         // setup_tile_info()
         {
             const mfxI32 alignedWidth = AlignPowerOfTwo(info.width, MI_SIZE_LOG2);
-            int minLog2TileColumns, maxLog2TileColumns, maxOnes;
+            int minLog2TileColumns = 0, maxLog2TileColumns = 0, maxOnes = 0;
             mfxU32 miCols = alignedWidth >> MI_SIZE_LOG2;
             GetTileNBits(miCols, minLog2TileColumns, maxLog2TileColumns);
 
