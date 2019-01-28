@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,7 @@ namespace UMC
                                                                 m_pDescriptorQueue(nullptr),
                                                                 m_iNumFramesProcessing(0),
                                                                 m_iNumDSActiveinQueue(0),
+                                                                m_mDSGuard(),
                                                                 m_pGuardGet(),
                                                                 pMainVC1Decoder(nullptr),
                                                                 m_lNextFrameCounter(1),
