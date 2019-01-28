@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,18 +58,24 @@ namespace UMC
 
         /*
         Get events by index from map
-        One of events may be INVALID_HANDLE_VALUE 
+        One of events may be INVALID_HANDLE_VALUE
         if only single field added by GetFreeEventAndMap
         both events is INVALID_HANDLE_VALUE
         if no associated events found
         */
         EventCache::MapValue EventCache::GetEvents(int32_t index);
-        
+
         /*
         return Events to cache and mark it as free
         MFX_ERR_NONE if successes
         */
         Status FreeEvents(int32_t index);
+
+        EventCache() :
+            m_Free(),
+            eventCache(),
+            m_eventCacheGuard()
+        {}
 
         virtual ~EventCache()
         {
