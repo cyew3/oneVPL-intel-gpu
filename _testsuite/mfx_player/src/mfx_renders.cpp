@@ -2067,6 +2067,7 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
 
         switch (pSurfaceIn->Info.FourCC)
         {
+#if (MFX_VERSION >= 1027)
             case MFX_FOURCC_Y410:
                 {
                     mfxY410 const* pSrc = pSurfaceIn->Data.Y410;
@@ -2082,6 +2083,7 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
                     }
                 }
                 break;
+#endif
             case MFX_FOURCC_AYUV:
                 for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
                 {
