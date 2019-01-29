@@ -119,7 +119,7 @@ mfxU16 UMC2MFX_PicStruct(int dps, bool extended)
 inline
 UMC::Status FillParam(VideoCORE *core, MFXTaskSupplier_H265 * decoder, mfxVideoParam *par, bool full)
 {
-    UMC::Status umcRes = decoder->FillVideoParam(core->GetHWType(), par, full);
+    UMC::Status umcRes = decoder->FillVideoParam(par, full);
 
     if (MFX_Utility::GetPlatform_H265(core, par) != MFX_PLATFORM_SOFTWARE)
     {

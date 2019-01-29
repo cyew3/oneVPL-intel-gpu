@@ -104,7 +104,7 @@ public:
     void SetVideoParams(mfxVideoParam * par);
 
     // Initialize mfxVideoParam structure based on decoded bitstream header values
-    UMC::Status FillVideoParam(eMFXHWType, mfxVideoParam*, bool full);
+    UMC::Status FillVideoParam(mfxVideoParam *par, bool full);
 
 protected:
 
