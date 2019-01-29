@@ -4535,11 +4535,11 @@ The `mfxExtEncoderROI` structure is used by the application to specify different
 --- | ---
 `Header.BufferId` | Must be [MFX_EXTBUFF_ENCODER_ROI](#ExtendedBufferID)
 `NumROI` | Number of ROI descriptions in array. The Query function mode 2 returns maximum supported value (set it to 256 and Query will update it to maximum supported value).
-`ROIMode` | QP adjustment mode for ROIs. Defines if Priority or `DeltaQP` is used during encoding in BRC mode (only CBR and VBR are affected). For CQP rate control mode `DeltaQP` is always used for ROI encoding.
+`ROIMode` | QP adjustment mode for ROIs. Defines if Priority or `DeltaQP` is used during encoding.
 `ROI` | Array of ROIs. Different ROI may overlap each other. If macroblock belongs to several ROI, **Priority** from ROI with lowest index is used.
 `Left, Top, Right, Bottom` | ROI location rectangle. ROI rectangle definition is using end-point exclusive notation. In other words, the pixel with (Right, Bottom) coordinates lies immediately outside of the ROI. Left, Top, Right, Bottom should be aligned by codec-specific block boundaries (should be dividable by 16 for AVC, or by 32 for HEVC). Every ROI with unaligned coordinates will be expanded by SDK to minimal-area block-aligned ROI, enclosing the original one. For example (5, 5, 15, 31) ROI will be expanded to (0, 0, 16, 32) for AVC encoder, or to (0, 0, 32, 32) for HEVC.
 `DeltaQP` | Delta QP of ROI. Used if `ROIMode` = `MFX_ROI_MODE_QP_DELTA`. This is absolute value in the -51…51 range, which will be added to the MB QP. Lesser value produces better quality.
-`Priority` | Priority of ROI.<br><br>For VBR, CBR and AVBR modes, this is relative priority of the region in the -3…3 range. Bigger value produces better quality.<br><br>For CQP mode, this is absolute value in the -51…51 range, that will be added to the MB QP. Lesser value produces better quality.
+`Priority` | Priority of ROI.<br><br>Used if `ROIMode` = `MFX_ROI_MODE_PRIORITY`.This is absolute value in the -3…3 range, which will be added to the MB QP. Priority is deprecated mode and is used only for backward compatibility. Bigger value produces better quality.
 
 **Change History**
 
