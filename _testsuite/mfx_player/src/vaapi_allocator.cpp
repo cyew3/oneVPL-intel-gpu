@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -44,6 +44,14 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_Y210;
     case MFX_FOURCC_Y410:
         return VA_FOURCC_Y410;
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    case MFX_FOURCC_P016:
+        return VA_FOURCC_P016;
+    case MFX_FOURCC_Y216:
+        return VA_FOURCC_Y216;
+    case MFX_FOURCC_Y416:
+        return VA_FOURCC_Y416;
 #endif
     case MFX_FOURCC_AYUV:
         return VA_FOURCC_AYUV;
@@ -133,6 +141,11 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameSurface1 * surf)
 #if (MFX_VERSION >= 1027)
                        (VA_FOURCC_Y210 != va_fourcc) &&
                        (VA_FOURCC_Y410 != va_fourcc) &&
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                       (VA_FOURCC_P016 != va_fourcc) &&
+                       (VA_FOURCC_Y216 != va_fourcc) &&
+                       (VA_FOURCC_Y416 != va_fourcc) &&
 #endif
                        (VA_FOURCC_AYUV != va_fourcc) ))
     {
@@ -228,6 +241,11 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 #if (MFX_VERSION >= 1027)
                        (VA_FOURCC_Y210 != va_fourcc) &&
                        (VA_FOURCC_Y410 != va_fourcc) &&
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+                       (VA_FOURCC_P016 != va_fourcc) &&
+                       (VA_FOURCC_Y216 != va_fourcc) &&
+                       (VA_FOURCC_Y416 != va_fourcc) &&
 #endif
                        (VA_FOURCC_AYUV != va_fourcc) ))
     {
@@ -552,43 +570,38 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             switch (vaapi_mid->m_image.format.fourcc)
             {
             case VA_FOURCC_NV12:
-                if (mfx_fourcc == MFX_FOURCC_NV12)
+                if (mfx_fourcc != vaapi_mid->m_image.format.fourcc)
+                    mfx_res = MFX_ERR_LOCK_MEMORY;
+                else
                 {
-                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
-                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->U = pBuffer + vaapi_mid->m_image.offsets[1];
                     ptr->V = ptr->U + 1;
                 }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
             case VA_FOURCC_YV12:
-                if (mfx_fourcc == MFX_FOURCC_YV12)
+                if (mfx_fourcc != vaapi_mid->m_image.format.fourcc)
+                    mfx_res = MFX_ERR_LOCK_MEMORY;
+                else
                 {
-                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
-                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->V = pBuffer + vaapi_mid->m_image.offsets[1];
                     ptr->U = pBuffer + vaapi_mid->m_image.offsets[2];
                 }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
             case VA_FOURCC_YUY2:
-                if (mfx_fourcc == MFX_FOURCC_YUY2)
+                if (mfx_fourcc != vaapi_mid->m_image.format.fourcc)
+                    mfx_res = MFX_ERR_LOCK_MEMORY;
+                else
                 {
-                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
-                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->U = ptr->Y + 1;
                     ptr->V = ptr->Y + 3;
                 }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
             case VA_FOURCC_ARGB:
                 if (mfx_fourcc == MFX_FOURCC_RGB4)
                 {
-                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
-                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->B = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->G = ptr->B + 1;
                     ptr->R = ptr->B + 2;
@@ -599,8 +612,6 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             case VA_FOURCC_ABGR:
                 if (mfx_fourcc == MFX_FOURCC_BGR4)
                 {
-                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
-                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->R = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->G = ptr->R + 1;
                     ptr->B = ptr->R + 2;
@@ -611,64 +622,83 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             case VA_FOURCC_P208:
                 if (mfx_fourcc == MFX_FOURCC_NV12)
                 {
-                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
-                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
             case VA_FOURCC_P010:
-                if (mfx_fourcc == MFX_FOURCC_P010)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            case VA_FOURCC_P016:
+#endif
+                if (mfx_fourcc != vaapi_mid->m_image.format.fourcc)
+                    mfx_res = MFX_ERR_LOCK_MEMORY;
+                else
                 {
-                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
-                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
-                    ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
-                    ptr->U = pBuffer + vaapi_mid->m_image.offsets[1];
-                    ptr->V = ptr->U + 2;
+                    ptr->Y16 = (mfxU16 *) (pBuffer + vaapi_mid->m_image.offsets[0]);
+                    ptr->U16 = (mfxU16 *) (pBuffer + vaapi_mid->m_image.offsets[1]);
+                    ptr->V16 = ptr->U16 + 1;
                 }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
             case VA_FOURCC_AYUV:
-                if (mfx_fourcc == MFX_FOURCC_AYUV)
+                if (mfx_fourcc != vaapi_mid->m_image.format.fourcc)
+                    mfx_res = MFX_ERR_LOCK_MEMORY;
+                else
                 {
-                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
-                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->V = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->U = ptr->V + 1;
                     ptr->Y = ptr->V + 2;
                     ptr->A = ptr->V + 3;
                 }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
 #if (MFX_VERSION >= 1027)
-            case MFX_FOURCC_Y210:
-                if (mfx_fourcc == MFX_FOURCC_Y210)
+            case VA_FOURCC_Y210:
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            case VA_FOURCC_Y216:
+#endif
+                if (mfx_fourcc != vaapi_mid->m_image.format.fourcc)
+                    mfx_res = MFX_ERR_LOCK_MEMORY;
+                else
                 {
-                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
-                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->Y16 = (mfxU16 *) (pBuffer + vaapi_mid->m_image.offsets[0]);
                     ptr->U16 = ptr->Y16 + 1;
                     ptr->V16 = ptr->Y16 + 3;
                 }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
             case VA_FOURCC_Y410:
-                if (mfx_fourcc == MFX_FOURCC_Y410)
+                if (mfx_fourcc != vaapi_mid->m_image.format.fourcc)
+                    mfx_res = MFX_ERR_LOCK_MEMORY;
+                else
                 {
-                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
-                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
                     ptr->Y410 = (mfxY410 *)(pBuffer + vaapi_mid->m_image.offsets[0]);
                     ptr->Y = 0;
                     ptr->V = 0;
                     ptr->A = 0;
                 }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
+                break;
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            case VA_FOURCC_Y416:
+                if (mfx_fourcc != vaapi_mid->m_image.format.fourcc)
+                    mfx_res = MFX_ERR_LOCK_MEMORY;
+                else
+                {
+                    ptr->U16 = (mfxU16 *) (pBuffer + vaapi_mid->m_image.offsets[0]);
+                    ptr->Y16 = ptr->U16 + 1;
+                    ptr->V16 = ptr->Y16 + 1;
+                    ptr->A   = (mfxU8 *)ptr->V16 + 1;
+                }
                 break;
 #endif
             default:
                 mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
             }
+        }
+
+        if (mfx_res == MFX_ERR_NONE)
+        {
+            ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
+            ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
         }
     }
     return mfx_res;
