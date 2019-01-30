@@ -50,8 +50,10 @@ public:
     }
     ~TestSuite()
     {
-        for (mfxU32 i = 0; i < 100; i++)
-            delete [] buffers[i];
+        for (mfxU32 i = 0; i < 100; i++) {
+            delete [] buffers[i][0];
+            delete [] buffers[i][1];
+        }
     }
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
