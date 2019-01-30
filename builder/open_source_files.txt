@@ -715,7 +715,6 @@ samples/sample_common/include/preset_manager.h
 samples/sample_common/include/sample_defs.h
 samples/sample_common/include/sample_types.h
 samples/sample_common/include/sample_utils.h
-samples/sample_common/include/shared_ptr.h
 samples/sample_common/include/surface_auto_lock.h
 samples/sample_common/include/sysmem_allocator.h
 samples/sample_common/include/time_statistics.h
