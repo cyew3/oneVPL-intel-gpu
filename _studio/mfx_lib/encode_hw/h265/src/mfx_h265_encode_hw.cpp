@@ -1250,6 +1250,7 @@ void SetEncFrameInfo(MfxVideoParam &m_vpar,
 
 mfxStatus MFXVideoENCODEH265_HW::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXVideoENCODEH265_HW::Execute");
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_STS(m_runtimeErr);
 
@@ -1432,16 +1433,17 @@ mfxStatus MFXVideoENCODEH265_HW::Execute(mfxThreadTask thread_task, mfxU32 /*uid
 
             MFX_CHECK(bytesAvailable >= bytes2copy, MFX_ERR_NOT_ENOUGH_BUFFER);
             //codedFrame.MemType = MFX_MEMTYPE_INTERNAL_FRAME;
-
-            sts = m_core->LockFrame(taskForQuery->m_midBs, &codedFrame);
-            MFX_CHECK_STS(sts);
-            MFX_CHECK(codedFrame.Y, MFX_ERR_LOCK_MEMORY);
-
-            IppiSize roi = {(Ipp32s)bytes2copy, 1};
-            FastCopy::Copy(bsData,bytes2copy,codedFrame.Y,codedFrame.Pitch,roi,COPY_VIDEO_TO_SYS);
-
-            sts = m_core->UnlockFrame(taskForQuery->m_midBs, &codedFrame);
-            MFX_CHECK_STS(sts);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXVideoENCODEH265_HW::CopyBitsream");
+                sts = m_core->LockFrame(taskForQuery->m_midBs, &codedFrame);
+                MFX_CHECK_STS(sts);
+                MFX_CHECK(codedFrame.Y, MFX_ERR_LOCK_MEMORY);
+                IppiSize roi = {(Ipp32s)bytes2copy,1};
+                //memcpy_s(bs->Data + bs->DataOffset + bs->DataLength, bytes2copy, codedFrame.Y, bytes2copy);
+                FastCopy::Copy(bsData,bytes2copy,codedFrame.Y,codedFrame.Pitch,roi,COPY_VIDEO_TO_SYS);
+                sts = m_core->UnlockFrame(taskForQuery->m_midBs, &codedFrame);
+                MFX_CHECK_STS(sts);
+            }
 
             *pDataLength   += bytes2copy;
             bytesAvailable -= bytes2copy;

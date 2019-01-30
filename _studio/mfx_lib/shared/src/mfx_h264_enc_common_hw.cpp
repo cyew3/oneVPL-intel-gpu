@@ -927,6 +927,7 @@ namespace
         eMFXGTConfig config)
     {
         targetUsage;//no specific check for TU now, can be added later
+        if (!config) config = MFX_GT4;//WA while windows doesn't support GTT config report
         if (platform <= MFX_HW_BDW)//no MFE support prior to SKL.
             return 1;
         else if (platform == MFX_HW_SCL && config >= MFX_GT3)

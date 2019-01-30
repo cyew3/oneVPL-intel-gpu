@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -133,6 +133,14 @@ private:
     FeedbackStorage                             m_feedbackPool;
 
     std::vector<ENCODE_RECT>                    m_dirtyRects;
+    ENCODE_INPUT_DESC                           m_eid;
+    ENCODE_EXECUTE_PARAMS                       m_executeParams;
+    mfxU32                                      RES_ID_BS;
+    mfxU32                                      RES_ID_RAW;
+    mfxU32                                      RES_ID_REF;
+    mfxU32                                      RES_ID_REC;
+    std::vector<ID3D11Resource*>                m_resourceList;
+    D3D11_VIDEO_DECODER_EXTENSION               m_ext;
 
     HRESULT DecoderExtension(D3D11_VIDEO_DECODER_EXTENSION const & ext);
 };

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2018 Intel Corporation
+// Copyright (c) 2018-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,12 +24,6 @@
 #define DXVA2_GET_STATUS_REPORT 0x07
 
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC) || defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
-// KMD Event prototype
-// D3DDDIFMT_INTELENCODE_SYNCOBJECT
-//typedef struct tagGPU_SYNC_EVENT_HANDLE
-//{
-//    HANDLE   gpuSyncEvent;
-//} GPU_SYNC_EVENT_HANDLE, *PGPU_SYNC_EVENT_HANDLE;
 
 enum GPU_COMPONENT_ID
 {
@@ -37,6 +31,8 @@ enum GPU_COMPONENT_ID
     GPU_COMPONENT_CM,
     GPU_COMPONENT_DECODE,
     GPU_COMPONENT_ENCODE,
+    GPU_COMPONENT_MFE,
+    GPU_COMPONENT_DEFAULT,
     MAX_GPU_COMPONENT_IDS
 };
 

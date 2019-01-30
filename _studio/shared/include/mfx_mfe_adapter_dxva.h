@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 #include <mfxstructures.h>
 #include "encoding_ddi.h"
 #include "hevce_ddi_main.h"
+#define DEBUG_TRACE
 class MFEDXVAEncoder
 {
     typedef void* CAPS;
@@ -35,43 +36,42 @@ class MFEDXVAEncoder
     {
         ENCODE_MULTISTREAM_INFO info;
         mfxStatus sts;
-        bool      interlace;
-        mfxU8     fieldNum;
+        unsigned long long timeout;
+        mfxU32 restoreCount;
+        mfxU32 restoreCountBase;
         bool      isSubmitted;
-        mfxU32    feedbackSize;
         m_stream_ids_t( ENCODE_MULTISTREAM_INFO _info,
                         mfxStatus _sts,
-                        bool fields):
+                        unsigned long long defaultTimeout):
         info(_info),
         sts(_sts),
-        interlace(fields),
-        fieldNum(0),
-        isSubmitted(false),
-        feedbackSize(0)
+        timeout(defaultTimeout),
+        restoreCount(0),
+        restoreCountBase(0),
+        isSubmitted(false)
         {
         };
         inline void reset()
         {
             sts = MFX_ERR_NONE;
-            fieldNum = 0;
+            restoreCount = restoreCountBase;
             isSubmitted = false;
         };
-        inline void resetField()
+        inline mfxU32 getRestoreCount()
         {
-            isSubmitted = false;
+            return restoreCount;
         };
-        inline void fieldSubmitted()
+        inline void updateRestoreCount()
         {
-            fieldNum++;
+            restoreCount--;
+        };
+        inline void frameSubmitted()
+        {
             isSubmitted = true;
-        };
-        inline bool isFieldSubmitted()
-        {
-            return (fieldNum!=0 && isSubmitted);
         };
         inline bool isFrameSubmitted()
         {
-            return isSubmitted && ((interlace && fieldNum == 2) || (fieldNum==1 && !interlace));
+            return isSubmitted;
         };
     };
 
@@ -80,18 +80,20 @@ public:
 
     virtual
         ~MFEDXVAEncoder();
-    mfxStatus Create(ID3D11VideoDevice *pVideoDevice,
-                     ID3D11VideoContext *pVideoContext);
+    mfxStatus Create(ID3D11VideoDevice  *pVideoDevice,
+                     ID3D11VideoContext *pVideoContext,
+                     uint32_t            width,
+                     uint32_t            height);
 
     mfxStatus Join(mfxExtMultiFrameParam const & par,
                    ENCODE_MULTISTREAM_INFO &info,
-                   bool doubleField);
-    mfxStatus Disjoin(ENCODE_MULTISTREAM_INFO info);
+                   unsigned long long  timeout);
+    mfxStatus Disjoin(const ENCODE_MULTISTREAM_INFO info);
     mfxStatus Destroy();
     //MSFT runtime restrict multiple contexts per device
     //so for DXVA MFE implementation the same context being used for encoder and MFE submission
     ID3D11VideoDecoder* GetVideoDecoder();
-    mfxStatus Submit(ENCODE_MULTISTREAM_INFO info, long long timeToWait, bool skipFrame);//time passed in microseconds
+    mfxStatus Submit(const ENCODE_MULTISTREAM_INFO info, unsigned long long timeToWait, bool skipFrame);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
     //returns pointer to particular caps with only read access, NULL if caps not set.
     CAPS GetCaps(MFE_CODEC codecId);
 //placeholder
@@ -102,10 +104,11 @@ public:
     virtual void Release();
 
 private:
-    mfxU32      m_refCounter;
+    mfxStatus reconfigureRestorationCounts(ENCODE_MULTISTREAM_INFO &info);
+    uint32_t      m_refCounter;
 
-    std::condition_variable     m_mfe_wait;
-    std::mutex                  m_mfe_guard;
+    std::condition_variable m_mfe_wait;
+    std::mutex              m_mfe_guard;
 
     ID3D11VideoDevice*  m_pVideoDevice;
     ID3D11VideoContext* m_pVideoContext;
@@ -123,17 +126,17 @@ private:
     typedef std::list<m_stream_ids_t>::iterator StreamsIter_t;
 
     //A number of frames which will be submitted together (Combined)
-    mfxU32 m_framesToCombine;
+    uint32_t m_framesToCombine;
 
     //A desired number of frames which might be submitted. if
     // actual number of sessions less then it,  m_framesToCombine
     // will be adjusted
-    mfxU32 m_maxFramesToCombine;
+    uint32_t m_maxFramesToCombine;
 
     // A counter frames collected for the next submission. These
     // frames will be submitted together either when get equal to
     // m_pipelineStreams or when collection timeout elapses.
-    mfxU32 m_framesCollected;
+    uint32_t m_framesCollected;
 
     //To save caps for different codecs and reuse - no need in cycling query each time
     ENCODE_CAPS *m_pAvcCAPS;
@@ -147,12 +150,12 @@ private:
     // store iterators to particular items
     std::vector<StreamsIter_t> m_streams;
     // store iterators to particular items
-    std::map<mfxU32, StreamsIter_t> m_streamsMap;
-    //time frequency for conversion to us/ms
-    long long m_time_frequency;
+    std::map<uint32_t, StreamsIter_t> m_streamsMap;
 
+    //minimal timeout of all streams
+    unsigned long long m_minTimeToWait;
     // currently up-to-to 3 frames worth combining
-    static const mfxU32 MAX_FRAMES_TO_COMBINE = 3;
+    static const uint32_t MAX_FRAMES_TO_COMBINE = 3;
 };
 #endif // MFX_VA_WIN && MFX_ENABLE_MFE
 

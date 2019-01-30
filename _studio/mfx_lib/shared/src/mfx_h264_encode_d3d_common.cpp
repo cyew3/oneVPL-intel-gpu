@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -167,7 +167,11 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
         sts = MFX_ERR_GPU_HANG;
 
 #else
-sts = QueryStatusAsync(task, fieldId);
+#if defined(MFX_ENABLE_MFE)
+    sts = MFX_WRN_DEVICE_BUSY;
+    while(sts == MFX_WRN_DEVICE_BUSY)//WA while blocking sync is absent
+#endif
+       sts = QueryStatusAsync(task, fieldId);
 #endif
 return sts;
 }

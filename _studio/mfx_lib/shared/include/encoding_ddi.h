@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -126,6 +126,19 @@ typedef struct tagENCODE_MULTISTREAM_INFO
     MFE_CODEC   CodecId;
     UINT        reserved32bits[3];
 } ENCODE_MULTISTREAM_INFO;
+
+#if defined(MFX_ENABLE_MFE)//now MFE defines own event model, need DDI redesign!!!!
+typedef struct _GPU_SYNC_MFE_EVENT_HANDLE
+{
+    uint8_t         m_gpuComponentId;   //GPU_COMPONENT_ID
+    UINT            StatusReportFeedbackNumber;
+    ENCODE_MULTISTREAM_INFO StreamInfo;
+    HANDLE          gpuSyncEvent;
+    UINT            reserved[1];
+} GPU_SYNC_MFE_EVENT_HANDLE, *PGPU_SYNC_MFE_EVENT_HANDLE;
+
+#define ENCODE_MFE_EVENT_ID                       0x15
+#endif
 
 #define AVC_D3D9_DDI_VERSION 928
 #define AVC_D3D11_DDI_VERSION 370  

@@ -14,6 +14,7 @@
     $(MSDK_STUDIO_ROOT)\shared\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\plugin\include;
+    $(MSDK_STUDIO_ROOT)\hevce_hw\h265\include;
     </MfxIncludes>
     <MfxDefinitions>AS_H264LA_PLUGIN;LIBMFXHW_EXPORTS;MFX_D3D11_ENABLED;MFX_VA;</MfxDefinitions>
     <MfxLibraries>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;D3d9.lib;d3d11.lib;dxva2.lib;dxgi.lib;</MfxLibraries>

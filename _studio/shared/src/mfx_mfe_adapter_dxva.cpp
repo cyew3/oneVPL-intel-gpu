@@ -33,14 +33,16 @@
 
 MFEDXVAEncoder::MFEDXVAEncoder() :
       m_refCounter(1)
-    , m_pVideoDevice(NULL)
-    , m_pMfeContext(NULL)
+    , m_mfe_wait()
+    , m_mfe_guard()
+    , m_pVideoDevice(nullptr)
+    , m_pMfeContext(nullptr)
     , m_framesToCombine(0)
     , m_maxFramesToCombine(0)
     , m_framesCollected(0)
-    , m_time_frequency(vm_time_get_frequency())
-    , m_pAvcCAPS(NULL)
-    , m_pHevcCAPS(NULL)
+    , m_minTimeToWait(0)
+    , m_pAvcCAPS(nullptr)
+    , m_pHevcCAPS(nullptr)
 #ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
     , m_pAv1CAPS(NULL)
 #endif
@@ -95,7 +97,7 @@ MFEDXVAEncoder::CAPS MFEDXVAEncoder::GetCaps(MFE_CODEC codecId)
             hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
             if (hr != S_OK)
             {
-                return NULL;
+                return nullptr;
             }
             m_pAvcCAPS = new ENCODE_CAPS;
             decoderExtParam.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
@@ -109,7 +111,7 @@ MFEDXVAEncoder::CAPS MFEDXVAEncoder::GetCaps(MFE_CODEC codecId)
             hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
             if (hr != S_OK)
             {
-                return NULL;
+                return nullptr;
             }
         }
         return (CAPS)m_pAvcCAPS;
@@ -131,7 +133,7 @@ MFEDXVAEncoder::CAPS MFEDXVAEncoder::GetCaps(MFE_CODEC codecId)
             hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
             if (hr != S_OK)
             {
-                return NULL;
+                return nullptr;
             }
             m_pHevcCAPS = new ENCODE_CAPS_HEVC;
             decoderExtParam.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
@@ -145,7 +147,7 @@ MFEDXVAEncoder::CAPS MFEDXVAEncoder::GetCaps(MFE_CODEC codecId)
             hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
             if (hr != S_OK)
             {
-                return NULL;
+                return nullptr;
             }
         }
         return (CAPS)m_pHevcCAPS;
@@ -158,7 +160,9 @@ MFEDXVAEncoder::CAPS MFEDXVAEncoder::GetCaps(MFE_CODEC codecId)
 }
 
 mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
-                                 ID3D11VideoContext *pVideoContext)
+                                 ID3D11VideoContext *pVideoContext,
+                                 uint32_t width,
+                                 uint32_t height)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFEDXVAEncoder::Create");
     assert(pVideoDevice);
@@ -168,7 +172,7 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
         return MFX_ERR_UNDEFINED_BEHAVIOR;//encoder should not create MFE for single frame as nothing to be combined.*/
     //Comparing to Linux implemetation we don't have frame amount verification here, but check it in Join implementation
     //ToDo - align linux to the same.
-    if (NULL != m_pMfeContext)
+    if (nullptr != m_pMfeContext)
     {
         //TMP WA for SKL due to number of frames limitation in different scenarios:
         //to simplify submission process and not add additional checks for frame wait depending on input parameters
@@ -192,7 +196,7 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
     HRESULT hr = S_OK;
     bool isFound = false;
     GUID profileGuid;
-#ifdef DEBUG
+#ifdef DEBUG_TRACE
     printf("\n\nCheck MFE guid supported\n\n");
 #endif
     for (UINT indxProfile = 0; indxProfile < profileCount; indxProfile++)
@@ -209,20 +213,20 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
 
     if (!isFound)
     {
-#ifdef DEBUG
+#ifdef DEBUG_TRACE
         printf("\n\nMFE guid not found\n\n");
 #endif
         return MFX_ERR_UNSUPPORTED;
     }
 
-    video_desc.SampleWidth  = 4096;//hardcoded for AVC now
-    video_desc.SampleHeight = 4096;//even for HEVC we don't need higher resolution for MFE, this to be managed individually per codec.
+    video_desc.SampleWidth  = width;
+    video_desc.SampleHeight = height;//current Gen12lp support only same resolution combining, so take initialization size from parameters, later we need to set max resolution for MFE.
     video_desc.OutputFormat = DXGI_FORMAT_NV12;
     video_desc.Guid = DXVA2_Intel_MFE;
 
     video_config.ConfigDecoderSpecific = ENCODE_ENC_PAK;
     video_config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;
-#ifdef DEBUG
+#ifdef DEBUG_TRACE
     printf("\n\nTry Create MFE device\n\n");
 #endif
     {
@@ -231,7 +235,7 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
 
         if (hr != S_OK)
         {
-#ifdef DEBUG
+#ifdef DEBUG_TRACE
             printf("\n\nFailed to create MFE device\n\n");
 #endif
             return MFX_ERR_DEVICE_FAILED;
@@ -239,10 +243,46 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
     }
     return MFX_ERR_NONE;
 }
+mfxStatus MFEDXVAEncoder::reconfigureRestorationCounts(ENCODE_MULTISTREAM_INFO &info)
+{
+    //used in Join function which already covered by mutex
+    //accurate calculation should involve float calculation for different framerates
+    //and base divisor for all the framerates in pipeline, so far simple cases are using
+    //straight forward framerates with integer calculation enough to cover engines load and AVG latency for SKL.
+    std::map<uint32_t, StreamsIter_t>::iterator iter = m_streamsMap.find(info.StreamId);
+    if(iter == m_streamsMap.end())
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    if(m_streamsMap.size()==1)
+    {
+        //if only one stream - restore every submission
+        iter->second->restoreCount = iter->second->restoreCountBase = 1;
+        m_minTimeToWait = iter->second->timeout;
 
+        return MFX_ERR_NONE;
+    }
+    if(iter->second->timeout >= m_minTimeToWait)
+    {
+        //can be problematic for cases like 24/30, but more like an exception
+        iter->second->restoreCount = iter->second->restoreCountBase = (mfxU32)(iter->second->timeout/m_minTimeToWait);
+
+        return MFX_ERR_NONE;
+    }
+    m_minTimeToWait = iter->second->timeout;
+    iter->second->restoreCount = iter->second->restoreCountBase = 1;
+    for(std::map<uint32_t, StreamsIter_t>::iterator it = m_streamsMap.begin(); it != m_streamsMap.end();it++)
+    {
+        if(iter != it)
+        {
+            it->second->restoreCount = it->second->restoreCountBase = (mfxU32)(it->second->timeout/m_minTimeToWait);
+        }
+    }
+    return MFX_ERR_NONE;
+}
 mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
                                ENCODE_MULTISTREAM_INFO &info,
-                               bool doubleField)
+                               unsigned long long timeout)
 {
     std::lock_guard<std::mutex> guard(m_mfe_guard);//need to protect in case there are streams added/removed in runtime.
     //no specific function needed for DXVA implementation to join stream to MFE
@@ -250,9 +290,8 @@ mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
     StreamsIter_t iter;
     // append the pool with a new item;
     //Adapter requires to assign stream Id here for encoder.
-    if (NULL != m_pMfeContext)
+    if (nullptr != m_pMfeContext)
     {
-        
         //TMP WA for SKL due to number of frames limitation in different scenarios:
         //to simplify submission process and not add additional checks for frame wait depending on input parameters
         //if there are encoder want to run less frames within the same MFE Adapter(parent session) align to less now
@@ -269,12 +308,12 @@ mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
         return MFX_ERR_UNDEFINED_BEHAVIOR;//something went wrong and we got non zero StreamID from encoder;
     }
     info.StreamId = (int)m_streams_pool.size();
-#ifdef DEBUG
+#ifdef DEBUG_TRACE
     printf("\n\nadded stream id %d to stream pool\n\n", info.StreamId);
 #endif
     for (iter = m_streams_pool.begin(); iter != m_streams_pool.end(); iter++)
     {
-        //if we get into mfxU32 max - fail now(assume we never get so big amount of streams reallocation in one process session)
+        //if we get into uint32_t max - fail now(assume we never get so big amount of streams reallocation in one process session)
         //ToDo for fix: start from the beggining and search m_streamsMap, if not found - assign non existing StreamID.
         if (iter->info.StreamId == 0xFFFFFFFF)
             return MFX_ERR_MEMORY_ALLOC;
@@ -282,26 +321,27 @@ mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
             info.StreamId = iter->info.StreamId+1;
     }
     ENCODE_MULTISTREAM_INFO _info = info;
-    m_streams_pool.push_back(m_stream_ids_t(_info, MFX_ERR_NONE, doubleField));
+    m_streams_pool.push_back(m_stream_ids_t(_info, MFX_ERR_NONE, timeout));
     iter = m_streams_pool.end();
-    m_streamsMap.insert(std::pair<mfxU32, StreamsIter_t>(_info.StreamId,--iter));
+    m_streamsMap.insert(std::pair<uint32_t, StreamsIter_t>(_info.StreamId,--iter));
     // to deal with the situation when a number of sessions < requested
     if (m_framesToCombine < m_maxFramesToCombine)
         ++m_framesToCombine;
-    return MFX_ERR_NONE;
+    //new stream can come with new framerate, possibly need to change existing streams
+    //restoration counts to align with new stream
+    mfxStatus sts = reconfigureRestorationCounts(info);
+    return sts;
 }
 
 mfxStatus MFEDXVAEncoder::Disjoin(ENCODE_MULTISTREAM_INFO info)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFEDXVAEncoder::Disjoin");
     std::lock_guard<std::mutex> guard(m_mfe_guard);//need to protect in case there are streams added/removed in runtime
-    std::map<mfxU32, StreamsIter_t>::iterator iter = m_streamsMap.find(info.StreamId);
+    std::map<uint32_t, StreamsIter_t>::iterator iter = m_streamsMap.find(info.StreamId);
     if (iter == m_streamsMap.end())
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    //ToDo: Function call ENCODE_MFE_END_STREAM_ID 0x114 needed here.
-    //VAStatus vaSts = vaMFReleaseContext(m_vaDisplay, m_pMfeContext, ctx);
     ENCODE_MULTISTREAM_INFO _info = info;
     if(iter == m_streamsMap.end())
     {
@@ -311,7 +351,7 @@ mfxStatus MFEDXVAEncoder::Disjoin(ENCODE_MULTISTREAM_INFO info)
     memset(&encodeCompBufferDesc,0,sizeof(ENCODE_COMPBUFFERDESC));
 
     encodeCompBufferDesc.CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS);
-    encodeCompBufferDesc.DataSize             = mfxU32(sizeof ENCODE_MULTISTREAM_INFO);
+    encodeCompBufferDesc.DataSize             = uint32_t(sizeof ENCODE_MULTISTREAM_INFO);
     encodeCompBufferDesc.pCompBuffer          = &_info;
 
     ENCODE_EXECUTE_PARAMS encodeExecuteParams;
@@ -326,7 +366,7 @@ mfxStatus MFEDXVAEncoder::Disjoin(ENCODE_MULTISTREAM_INFO info)
     decoderExtParams.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
     decoderExtParams.pPrivateOutputData    = 0;
     decoderExtParams.PrivateOutputDataSize = 0;
-    decoderExtParams.ResourceCount         = 0; 
+    decoderExtParams.ResourceCount         = 0;
     decoderExtParams.ppResourceList        = 0;
     HRESULT hr;
     hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParams);
@@ -335,7 +375,7 @@ mfxStatus MFEDXVAEncoder::Disjoin(ENCODE_MULTISTREAM_INFO info)
 
     if (hr != S_OK)
         return MFX_ERR_DEVICE_FAILED;
-    
+
     m_streams_pool.erase(iter->second);
     m_streamsMap.erase(iter);
     if (m_framesToCombine > 0 && m_framesToCombine >= m_maxFramesToCombine)
@@ -349,38 +389,58 @@ mfxStatus MFEDXVAEncoder::Destroy()
     m_streams_pool.clear();
     m_streamsMap.clear();
     SAFE_RELEASE(m_pMfeContext);
-    m_pMfeContext = NULL;
+    m_pMfeContext = nullptr;
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, long long timeToWait, bool skipFrame)
+mfxStatus MFEDXVAEncoder::Submit(const ENCODE_MULTISTREAM_INFO info, unsigned long long timeToWait, bool skipFrame)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFEDXVAEncoder::Submit");
     std::unique_lock<std::mutex> guard(m_mfe_guard);
     //stream in pool corresponding to particular context;
     StreamsIter_t cur_stream;
+    bool curStreamSubmitted = false;//current stream submitted frames
     //we can wait for less frames than expected by pipeline due to avilability.
-    mfxU32 framesToSubmit = m_framesToCombine;
+    uint32_t framesToSubmit = m_framesToCombine;
     if (m_streams_pool.empty())
     {
         //if current stream came to empty pool - others already submitted or in process of submission
         //start pool from the beggining
-        while(!m_submitted_pool.empty())
+        for(std::list<m_stream_ids_t>::iterator it = m_submitted_pool.begin(); it != m_submitted_pool.end(); it++)
         {
-            m_submitted_pool.begin()->reset();
-            m_streams_pool.splice(m_streams_pool.end(), m_submitted_pool,m_submitted_pool.begin());
+            it->updateRestoreCount();
+        }
+        std::list<m_stream_ids_t>::iterator it = m_submitted_pool.begin();
+        while(it != m_submitted_pool.end())
+        {
+            for(it = m_submitted_pool.begin(); it != m_submitted_pool.end(); it++)
+            {
+                if(it->getRestoreCount() == 0 || it->info.StreamId == info.StreamId)
+                {
+                    it->reset();
+                    m_streams_pool.splice(m_streams_pool.end(), m_submitted_pool, it);
+                    it = m_submitted_pool.begin();
+                    break;
+                }
+            }
         }
     }
     if(m_streams_pool.empty())
     {
+#ifdef DEBUG_TRACE
+        printf("\n\nm_streams_pool.empty()\n\n");
+#endif
         return MFX_ERR_MEMORY_ALLOC;
     }
 
-    //get curret stream by info
-    std::map<mfxU32, StreamsIter_t>::iterator iter = m_streamsMap.find(info.StreamId);
+    //get current stream by info
+    std::map<uint32_t, StreamsIter_t>::iterator iter = m_streamsMap.find(info.StreamId);
     if(iter == m_streamsMap.end())
     {
+#ifdef DEBUG_TRACE
+        printf("\n\niter == m_streamsMap.end()\n\n");
+#endif
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
@@ -389,6 +449,9 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, long long timeToW
     {
         //if current info is not submitted - it is in stream pull
         m_toSubmit.splice(m_toSubmit.end(), m_streams_pool, cur_stream);
+#ifdef DEBUG_TRACE
+        printf("\n\n add stream %d into toSubmit from stream pull pull %d frames\n\n", cur_stream->info.StreamId, (int)m_toSubmit.size());
+#endif
     }
     else
     {
@@ -400,6 +463,9 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, long long timeToW
         //submit current
         //take it back from submitted pull
         m_toSubmit.splice(m_toSubmit.end(), m_submitted_pool, cur_stream);
+#ifdef DEBUG_TRACE
+        printf("\n\n add stream %d into toSubmit from submitted pull %d frames\n\n", cur_stream->info.StreamId, (int)m_toSubmit.size());
+#endif
         cur_stream->reset();//cleanup stream state
     }
     if (skipFrame)
@@ -407,6 +473,10 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, long long timeToW
         //if frame is skipped - threat it as submitted without real submission
         //to not lock other streams waiting for it
         m_submitted_pool.splice(m_submitted_pool.end(), m_toSubmit, cur_stream);
+        cur_stream->frameSubmitted();
+#ifdef DEBUG_TRACE
+        printf("\n\n skip frame, move stream to submitted without processing toSubmit %d frames\n\n", (int)m_toSubmit.size());
+#endif
         return MFX_ERR_NONE;
     }
     ++m_framesCollected;
@@ -422,32 +492,62 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, long long timeToW
 
     if(!framesToSubmit)
     {
+#ifdef DEBUG_TRACE
+        printf("\n\n !framesToSubmit\n\n");
+#endif
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    m_mfe_wait.wait_for(guard, std::chrono::microseconds(timeToWait), [this, framesToSubmit, cur_stream] {
-        return (m_framesCollected >= framesToSubmit) || cur_stream->isFrameSubmitted();
+#ifdef DEBUG_TRACE
+    printf("\n\ntime to wait in microseconds %d\n\n", (int)timeToWait);
+#endif
+    bool timeout = m_mfe_wait.wait_for(guard, std::chrono::microseconds(timeToWait), [this, framesToSubmit, cur_stream]{
+        return ((m_framesCollected >= framesToSubmit) || cur_stream->isFrameSubmitted());
+    });
 
-    //for interlace we will return stream back to stream pool when first field submitted
-    //to submit next one imediately after that, and don't count it as submitted
-    if (!cur_stream->isFieldSubmitted())
+#ifdef DEBUG_TRACE
+    if (!timeout)
     {
+        printf("\n\n !timeout\n\n");
+    }
+#endif
+
+    if (!cur_stream->isFrameSubmitted())
+    {
+        if (!m_framesCollected)
+        {
+#ifdef DEBUG_TRACE
+            printf("\n\n !m_framesCollected\n\n");
+#endif
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+#ifdef DEBUG_TRACE
+        printf("\n\nframes collected %d\n\n", m_framesCollected);
+        printf("\n\nframes required to submit %d\n\n", framesToSubmit);
+        printf("\n\n before toSubmit %d frames\n\n", (int)m_toSubmit.size());
+#endif
         // Form a linear array of stream info comp buffers for submission
         for (StreamsIter_t it = m_toSubmit.begin(); it != m_toSubmit.end(); ++it)
         {
-            if (!it->isFieldSubmitted())
+            if (!it->isFrameSubmitted())
             {
                 m_streams.push_back(it);
                 ENCODE_COMPBUFFERDESC  encodeCompBufferDesc;
                 memset(&encodeCompBufferDesc, 0, sizeof(ENCODE_COMPBUFFERDESC));
 
                 encodeCompBufferDesc.CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS);
-                encodeCompBufferDesc.DataSize             = mfxU32(sizeof ENCODE_MULTISTREAM_INFO);
+                encodeCompBufferDesc.DataSize             = uint32_t(sizeof ENCODE_MULTISTREAM_INFO);
                 encodeCompBufferDesc.pCompBuffer          = &(it->info);
                 m_contexts.push_back(encodeCompBufferDesc);
             }
+#ifdef DEBUG_TRACE
+            else
+                printf("\n\n unexpected submitted frame for stream %d\n\n", it->info.StreamId);
+#endif
         }
-
-        if (m_framesCollected < m_contexts.size() || m_contexts.empty())
+#ifdef DEBUG_TRACE
+        printf("\n\nnumber of contexts %d\n\n", (int)m_contexts.size());
+#endif
+        if (m_framesCollected != m_contexts.size() || m_contexts.empty())
         {
             for (std::vector<StreamsIter_t>::iterator it = m_streams.begin();
                  it != m_streams.end(); ++it)
@@ -456,6 +556,9 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, long long timeToW
             }
             // if cur_stream is not in m_streams (somehow)
             cur_stream->sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+#ifdef DEBUG_TRACE
+            printf("\n\n m_framesCollected != m_contexts.size() || m_contexts.empty()\n\n");
+#endif
         }
         else
         {
@@ -470,37 +573,70 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, long long timeToW
             decoderExtParams.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
             decoderExtParams.pPrivateOutputData    = 0;
             decoderExtParams.PrivateOutputDataSize = 0;
-            decoderExtParams.ResourceCount         = 0; 
+            decoderExtParams.ResourceCount         = 0;
             decoderExtParams.ppResourceList        = 0;
 
-            hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParams);
+#ifdef DEBUG_TRACE
+            printf("\n\nSubmit frames to driver\n\n");
+#endif
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ENCODE_MFE_START_ID");
+                try
+                {
+                    hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParams);
+                }
+                catch (...)
+                {
+#ifdef DEBUG_TRACE
+                    printf("\n\n ENCODE_MFE_START_ID failed with exception\n\n");
+#endif
+                    hr = E_FAIL;
+                }
+            }
 
-            mfxStatus tmp_res = (S_OK == hr) ? MFX_ERR_NONE : MFX_ERR_DEVICE_FAILED;
+#ifdef DEBUG_TRACE
+            printf("\n\nENCODE_MFE_START_ID failed with %d error\n\n", hr);
+#endif
+            mfxStatus tmp_res = MFX_ERR_NONE;
+            if(S_OK != hr)
+                tmp_res = MFX_ERR_DEVICE_FAILED;
             for (std::vector<StreamsIter_t>::iterator it = m_streams.begin();
                  it != m_streams.end(); ++it)
             {
-                (*it)->fieldSubmitted();
+                (*it)->frameSubmitted();
                 (*it)->sts = tmp_res;
+#ifdef DEBUG_TRACE
+                printf("\n\n stream %d submission status %d\n\n", (*it)->info.StreamId, tmp_res);
+#endif
             }
-            m_framesCollected -= (mfxU32)m_contexts.size();
+            m_framesCollected -= (uint32_t)m_contexts.size();
         }
         // Broadcast is done before unlock for this case to simplify the code avoiding extra ifs
-        m_mfe_wait.notify_all();
+
         m_contexts.clear();
         m_streams.clear();
+        curStreamSubmitted = true;
+#ifdef DEBUG_TRACE
+        printf("\n\nframes submitted by stream %d\n\n", cur_stream->info.StreamId);
+#endif
     }
 
-    // This frame can be already submitted or errored
-    // we have to return strm to the pool, release mutex and exit
-    mfxStatus res = cur_stream->sts;
     if(cur_stream->isFrameSubmitted())
     {
         m_submitted_pool.splice(m_submitted_pool.end(), m_toSubmit, cur_stream);
+#ifdef DEBUG_TRACE
+        printf("\n\ntoSubmit %d, submitted %d stream\n\n", (int)m_toSubmit.size(), cur_stream->info.StreamId);
+#endif
     }
-    else
+    // This frame can be already submitted or errored
+    // put it into submitted pool, release mutex and exit
+    mfxStatus res = cur_stream->sts;
+    if (curStreamSubmitted)
     {
-        cur_stream->resetField();
-        m_streams_pool.splice(m_streams_pool.end(), m_toSubmit, cur_stream);
+#ifdef DEBUG_TRACE
+        printf("\n\nnotify all by stream %d\n\n", cur_stream->info.StreamId);
+#endif
+        m_mfe_wait.notify_all();
     }
     return res;
 }

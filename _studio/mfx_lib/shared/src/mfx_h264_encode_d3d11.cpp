@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@
 #include "vm_time.h"
 #include "mfx_session.h"
 
-DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report, 
+DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
 0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 
 
@@ -47,31 +47,50 @@ mfxU16 ownConvertD3DFMT_TO_MFX(DXGI_FORMAT format);
 mfxU8 convertDX9TypeToDX11Type(mfxU8 type);
 
 D3D11Encoder::D3D11Encoder()
-: m_core(0)
-, m_pVideoDevice(0)
-, m_pVideoContext(0)
-, m_pDecoder(0)
+: m_core(nullptr)
+, m_pVideoDevice(nullptr)
+, m_pVideoContext(nullptr)
+, m_pDecoder(nullptr)
+#if defined(MFX_ENABLE_MFE)
+, m_pMFEAdapter(nullptr)
+, m_StreamInfo()
+#endif
 , m_guid()
 , m_requestedGuid()
-, m_infoQueried(false)
+, m_caps()
+, m_capsQuery()
+, m_capsGet()
+, m_compBufInfo()
+, m_uncompBufInfo()
+, m_infoQueried()
+, m_sps()
+, m_vui()
+, m_pps()
+, m_slice()
+#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
+, m_qMatrix()
+#endif
+, m_compBufDesc()
+, m_feedbackUpdate()
+, m_feedbackCached()
+, m_headerPacker()
+, m_reconQueue()
+, m_bsQueue()
+, m_mbqpQueue()
 , m_forcedCodingFunction(0)
 , m_numSkipFrames(0)
 , m_sizeSkipFrames(0)
 , m_skipMode(0)
-, m_sps()
-, m_vui()
-, m_pps()
-#ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
-, m_qMatrix()
-#endif
-, m_headerPacker()
-, m_caps()
-, m_capsQuery()
-, m_capsGet()
-#if defined(MFX_ENABLE_MFE)
-, m_StreamInfo()
-, m_pMFEAdapter(NULL)
-#endif
+, m_dirtyRects()
+, m_movingRects()
+, m_encodeExecuteParams()
+, m_encodeInputDesc()
+, m_idBit(0)
+, m_idMBQP(0)
+, m_packedSei()
+, m_decoderExtParams()
+, m_resourceList()
+, m_resourceCount(0)
 {
 }
 
@@ -99,8 +118,8 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     m_core = core;
     mfxStatus sts = Init(
         guid,
-        pD3d11->GetD3D11VideoDevice(isTemporal), 
-        pD3d11->GetD3D11VideoContext(isTemporal), 
+        pD3d11->GetD3D11VideoDevice(isTemporal),
+        pD3d11->GetD3D11VideoContext(isTemporal),
         width,
         height,
         NULL); // no encryption
@@ -122,7 +141,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if( IsProtectionPavp(par.Protected) )
-    {   
+    {
         Destroy(); //release decoder device
 
         D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(m_core);
@@ -132,8 +151,8 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
         mfxStatus sts = Init(
             m_guid,
-            pD3d11->GetD3D11VideoDevice(), 
-            pD3d11->GetD3D11VideoContext(), 
+            pD3d11->GetD3D11VideoDevice(),
+            pD3d11->GetD3D11VideoContext(),
             par.mfx.FrameInfo.Width,
             par.mfx.FrameInfo.Height,
             extPavp);
@@ -177,12 +196,12 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
     m_headerPacker.Init(par, m_caps);
 #if defined(MFX_ENABLE_MFE)
-    if (m_pMFEAdapter != NULL)
+    if (m_pMFEAdapter != nullptr)
     {
         mfxExtMultiFrameParam const & mfeParam = GetExtBufferRef(par);
         m_StreamInfo.CodecId = DDI_CODEC_AVC;
-        mfxStatus sts = m_pMFEAdapter->Join(mfeParam, m_StreamInfo, par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE);
-        return sts;
+        unsigned long long timeout = (((mfxU64)par.mfx.FrameInfo.FrameRateExtD) * 1000000 / par.mfx.FrameInfo.FrameRateExtN) / ((par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) ? 2 : 1);
+        return m_pMFEAdapter->Join(mfeParam, m_StreamInfo, timeout);
     }
 #endif
     return MFX_ERR_NONE;
@@ -228,6 +247,7 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
 {
     type = (D3DDDIFORMAT)convertDX9TypeToDX11Type((mfxU8)type);
 
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryCompBufferInfo");
     MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
 
     if (!m_infoQueried)
@@ -235,10 +255,10 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
         ENCODE_FORMAT_COUNT encodeFormatCount;
         encodeFormatCount.CompressedBufferInfoCount = 0;
         encodeFormatCount.UncompressedFormatCount = 0;
-        
-        //HRESULT hr = m_auxDevice->Execute(ENCODE_FORMAT_COUNT_ID, guid, encodeFormatCount);        
+
+        //HRESULT hr = m_auxDevice->Execute(ENCODE_FORMAT_COUNT_ID, guid, encodeFormatCount);
         D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-        decoderExtParam.Function = ENCODE_FORMAT_COUNT_ID; 
+        decoderExtParam.Function = ENCODE_FORMAT_COUNT_ID;
         decoderExtParam.pPrivateInputData = 0; //m_guid ???
         decoderExtParam.PrivateInputDataSize = 0; // sizeof(m_guid) ???
         decoderExtParam.pPrivateOutputData = &encodeFormatCount;
@@ -260,7 +280,7 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
         encodeFormats.pUncompressedFormats = &m_uncompBufInfo[0];
 
         //D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-        decoderExtParam.Function = ENCODE_FORMATS_ID; 
+        decoderExtParam.Function = ENCODE_FORMATS_ID;
         decoderExtParam.pPrivateInputData = 0; //m_guid ???
         decoderExtParam.PrivateInputDataSize = 0; // sizeof(m_guid) ???
         decoderExtParam.pPrivateOutputData = &encodeFormats;
@@ -271,7 +291,7 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
         //hr = m_auxDevice->Execute(ENCODE_FORMATS_ID, (void *)0, encodeFormats);
         hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
         CHECK_HRES(hRes);
-       
+
         MFX_CHECK(encodeFormats.CompressedBufferInfoSize > 0, MFX_ERR_DEVICE_FAILED);
         MFX_CHECK(encodeFormats.UncompressedFormatSize > 0, MFX_ERR_DEVICE_FAILED);
 
@@ -299,7 +319,7 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
 
 
 mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS& caps)
-{    
+{
     MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
 
     caps = m_caps;
@@ -310,6 +330,7 @@ mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS& caps)
 
 mfxStatus D3D11Encoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerSec)[16])
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryMbPerSec");
     HRESULT hRes;
     ENCODE_QUERY_PROCESSING_RATE_INPUT inPar;
     // Some encoding parameters affect MB processibng rate. Pass them to driver.
@@ -368,24 +389,25 @@ mfxStatus D3D11Encoder::SetEncCtrlCaps(ENCODE_ENC_CTRL_CAPS const & caps)
 }
 
 mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT type)
-{   
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Register");
     // we should register allocated HW bitstreams and recon surfaces
-    std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_NV12) ? 
-        m_reconQueue: (type == D3DDDIFMT_INTELENCODE_MBQPDATA) ? 
+    std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_NV12) ?
+        m_reconQueue: (type == D3DDDIFMT_INTELENCODE_MBQPDATA) ?
         m_mbqpQueue : m_bsQueue;
 
     queue.resize(response.NumFrameActual);
 
     //wo_d3d11
     for (mfxU32 i = 0; i < response.NumFrameActual; i++)
-    {   
+    {
         mfxHDLPair handlePair;
 
         //mfxStatus sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL *)&handlePair);
-        
+
         mfxStatus sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL *)&handlePair);
         MFX_CHECK_STS(sts);
-                        
+
         queue[i] = handlePair;
     }
 
@@ -418,9 +440,9 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     DdiTask const &            task,
     mfxU32                     fieldId,
     PreAllocatedVector const & sei)
-{   
+{
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
-    ENCODE_PACKEDHEADER_DATA packedSei = { 0 };
+    m_packedSei = { 0 };
 
     ID3D11Resource * pSurface = static_cast<ID3D11Resource *>(pair.first);
     UINT subResourceIndex = (UINT)(UINT_PTR)(pair.second);
@@ -432,7 +454,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
 
     if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_BRC_ONLY)
         skipMode = ctrlOpt2->SkipFrame;
-    
+
     if (skipMode == MFX_SKIPFRAME_BRC_ONLY)
     {
         SkipFlag = 0; // encode current frame as normal
@@ -441,7 +463,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
 
 
     // Execute()
-    
+
     // mvc hack
     // base view has separate sps/pps
     // all other views share another sps/pps
@@ -489,109 +511,108 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     }
     // prepare resource list
     // it contains resources in video memory that needed for the encoding operation
-    mfxU32       RES_ID_BITSTREAM   = 0;          // bitstream surface takes first place in resourceList
-    mfxU32       RES_ID_ORIGINAL    = 1;    
-    mfxU32       RES_ID_REFERENCE   = 2;          // then goes all reference frames from dpb    
-    mfxU32       RES_ID_RECONSTRUCT = RES_ID_REFERENCE + task.m_idxRecon;
-    mfxU32       RES_ID_MBQP        = RES_ID_REFERENCE + (mfxU32)m_reconQueue.size();
+    mfxU32 *RES_ID_BITSREAM = &m_idBit;          // bitstream surface takes first place in resourceList, always zero, initialized in constructor
+    mfxU32 RES_ID_ORIGINAL = 1;
+    mfxU32 RES_ID_REFERENCE = 2;          // then goes all reference frames from dpb
+    mfxU32 RES_ID_RECONSTRUCT = RES_ID_REFERENCE + task.m_idxRecon;
+    mfxU32 *RES_ID_MBQP = &m_idMBQP;
+    m_idMBQP = RES_ID_REFERENCE + (mfxU32)m_reconQueue.size();
 
-    mfxU32 resourceCount = mfxU32(RES_ID_REFERENCE + m_reconQueue.size() + task.m_isMBQP);    
-    std::vector<ID3D11Resource*> resourceList;
-    resourceList.resize(resourceCount);
+    m_resourceCount = mfxU32(RES_ID_REFERENCE + m_reconQueue.size() + task.m_isMBQP);
+    if(m_resourceCount > m_resourceList.size())
+        m_resourceList.resize(m_resourceCount);
 
-    resourceList[RES_ID_BITSTREAM] = static_cast<ID3D11Resource *>(m_bsQueue[task.m_idxBs[fieldId]].first);
-    resourceList[RES_ID_ORIGINAL] = pSurface;
+    m_resourceList[m_idBit] = static_cast<ID3D11Resource *>(m_bsQueue[task.m_idxBs[fieldId]].first); //Bitsream
+    m_resourceList[RES_ID_ORIGINAL] = pSurface;
 
     if (task.m_isMBQP)
-        resourceList[RES_ID_MBQP]      = static_cast<ID3D11Resource *>(m_mbqpQueue[task.m_idxMBQP].first);
-    
+        m_resourceList[m_idMBQP]      = static_cast<ID3D11Resource *>(m_mbqpQueue[task.m_idxMBQP].first);
+
     for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
-    {        
-        resourceList[RES_ID_REFERENCE + i] = static_cast<ID3D11Resource *>(m_reconQueue[i].first);
+    {
+        m_resourceList[RES_ID_REFERENCE + i] = static_cast<ID3D11Resource *>(m_reconQueue[i].first);
     }
 
-    // [1]. buffers in system memory (configuration buffers)    
+    // [1]. buffers in system memory (configuration buffers)
     //const mfxU32 NUM_COMP_BUFFER = 10;
     //ENCODE_COMPBUFFERDESC encodeCompBufferDesc[NUM_COMP_BUFFER];
-    ENCODE_EXECUTE_PARAMS encodeExecuteParams = { 0 };
-    encodeExecuteParams.NumCompBuffers = 0;
-    encodeExecuteParams.pCompressedBuffers = Begin(m_compBufDesc);
+    m_encodeExecuteParams = { 0 };
+    m_encodeExecuteParams.NumCompBuffers = 0;
+    m_encodeExecuteParams.pCompressedBuffers = Begin(m_compBufDesc);
 
     // FIXME: need this until production driver moves to DDI 0.87
-    encodeExecuteParams.pCipherCounter                     = 0;
-    encodeExecuteParams.PavpEncryptionMode.eCounterMode    = 0;
-    encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
+    m_encodeExecuteParams.pCipherCounter                     = 0;
+    m_encodeExecuteParams.PavpEncryptionMode.eCounterMode    = 0;
+    m_encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
 
-    UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
 #if defined(MFX_ENABLE_MFE)
-    if (m_pMFEAdapter != NULL)
+    if (m_pMFEAdapter != nullptr)
     {
-        ENCODE_MULTISTREAM_INFO streamInfo = m_StreamInfo;
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS);
-        m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(ENCODE_MULTISTREAM_INFO));
-        m_compBufDesc[bufCnt].pCompBuffer = &streamInfo;
-        bufCnt++;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS);
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize = mfxU32(sizeof(ENCODE_MULTISTREAM_INFO));
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer = &m_StreamInfo;
+        m_encodeExecuteParams.NumCompBuffers++;
     }
 #endif
     m_sps.bNoAccelerationSPSInsertion = !task.m_insertSps[fieldId];
 
-    m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA);
-    m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(m_sps));
-    m_compBufDesc[bufCnt].pCompBuffer          = &m_sps;
-    bufCnt++;
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA);
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(m_sps));
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = &m_sps;
+    m_encodeExecuteParams.NumCompBuffers++;
 
     if (m_sps.vui_parameters_present_flag)
     {
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_VUIDATA);
-        m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(m_vui));
-        m_compBufDesc[bufCnt].pCompBuffer          = &m_vui;
-        bufCnt++;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_VUIDATA);
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(m_vui));
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = &m_vui;
+        m_encodeExecuteParams.NumCompBuffers++;
     }
 
-    m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA);
-    m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(m_pps));
-    m_compBufDesc[bufCnt].pCompBuffer          = &m_pps;
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA);
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(m_pps));
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = &m_pps;
 
-    ENCODE_INPUT_DESC encodeInputDesc;
-    encodeInputDesc.ArraSliceOriginal = subResourceIndex;
-    encodeInputDesc.IndexOriginal     = RES_ID_ORIGINAL;
-    encodeInputDesc.ArraySliceRecon   = (UINT)(size_t(m_reconQueue[task.m_idxRecon].second));
-    encodeInputDesc.IndexRecon        = RES_ID_RECONSTRUCT;
-    m_compBufDesc[bufCnt].pReserved   = &encodeInputDesc;
-    bufCnt++;
+    m_encodeInputDesc = { 0 };
+    m_encodeInputDesc.ArraSliceOriginal = subResourceIndex;
+    m_encodeInputDesc.IndexOriginal     = RES_ID_ORIGINAL;
+    m_encodeInputDesc.ArraySliceRecon   = (UINT)(size_t(m_reconQueue[task.m_idxRecon].second));
+    m_encodeInputDesc.IndexRecon        = RES_ID_RECONSTRUCT;
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pReserved     = &m_encodeInputDesc;
+    m_encodeExecuteParams.NumCompBuffers++;
 
 #ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
     if (m_pps.pic_scaling_matrix_present_flag)
     {
         m_qMatrix = task.m_qMatrix;
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_QUANTDATA);
-        m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_qMatrix));
-        m_compBufDesc[bufCnt].pCompBuffer = &m_qMatrix;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_QUANTDATA);
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize = mfxU32(sizeof(m_qMatrix));
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer = &m_qMatrix;
         m_pps.pic_scaling_list_present_flag = true;
         m_pps.pic_scaling_matrix_present_flag = true;
-        bufCnt++;
+        m_encodeExecuteParams.NumCompBuffers++;
     }
     else if (m_sps.seq_scaling_matrix_present_flag)
     {
         m_qMatrix = task.m_qMatrix;
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_QUANTDATA);
-        m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_qMatrix));
-        m_compBufDesc[bufCnt].pCompBuffer = &m_qMatrix;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_QUANTDATA);
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize = mfxU32(sizeof(m_qMatrix));
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer = &m_qMatrix;
         m_sps.seq_scaling_list_present_flag = true;
         m_sps.seq_scaling_matrix_present_flag = true;
-        bufCnt++;
+        m_encodeExecuteParams.NumCompBuffers++;
     }
 #endif
 
-    m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA);
-    m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(m_slice[0]) * m_slice.size());
-    m_compBufDesc[bufCnt].pCompBuffer          = &m_slice[0];
-    bufCnt++;
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA);
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(m_slice[0]) * m_slice.size());
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = &m_slice[0];
+    m_encodeExecuteParams.NumCompBuffers++;
 
-    m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA);
-    m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(RES_ID_BITSTREAM));
-    m_compBufDesc[bufCnt].pCompBuffer          = &RES_ID_BITSTREAM;
-    bufCnt++;
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA);
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(m_idBit));
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = RES_ID_BITSREAM;
+    m_encodeExecuteParams.NumCompBuffers++;
 
     if (task.m_isMBQP)
     {
@@ -608,10 +629,10 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         for (mfxU32 i = 0; i < hMB; i++)
             MFX_INTERNAL_CPY(&qpsurf.Y[i * qpsurf.Pitch], &mbqp->QP[fieldOffset + i * wMB], wMB);
 
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
-        m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(RES_ID_MBQP));
-        m_compBufDesc[bufCnt].pCompBuffer          = &RES_ID_MBQP;
-        bufCnt++;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(m_idMBQP));
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = RES_ID_MBQP;
+        m_encodeExecuteParams.NumCompBuffers++;
     }
 
     if (task.m_isMBControl)
@@ -622,63 +643,63 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         mfxFrameData mbsurf = {};
         FrameLocker lock(m_core, mbsurf, task.m_midMBControl);
 
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)convertDX9TypeToDX11Type(D3DDDIFMT_INTELENCODE_MBCONTROL);
-        m_compBufDesc[bufCnt].DataSize = wMB*hMB * sizeof(ENCODE_MBCONTROL);
-        m_compBufDesc[bufCnt].pCompBuffer = mbsurf.Y;
-        bufCnt++;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)convertDX9TypeToDX11Type(D3DDDIFMT_INTELENCODE_MBCONTROL);
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize = wMB*hMB * sizeof(ENCODE_MBCONTROL);
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer = mbsurf.Y;
+        m_encodeExecuteParams.NumCompBuffers++;
     }
 
     if (task.m_insertAud[fieldId])
     {
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
-        m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
-        m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&m_headerPacker.PackAud(task, fieldId));
-        bufCnt++;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = RemoveConst(&m_headerPacker.PackAud(task, fieldId));
+        m_encodeExecuteParams.NumCompBuffers++;
     }
 
     if (task.m_insertSps[fieldId])
     {
         std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSps = m_headerPacker.GetSps();
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
-        m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
-        m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&packedSps[!!task.m_viewIdx]);
-        bufCnt++;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = RemoveConst(&packedSps[!!task.m_viewIdx]);
+        m_encodeExecuteParams.NumCompBuffers++;
     }
 
     if (task.m_insertPps[fieldId])
     {
         std::vector<ENCODE_PACKEDHEADER_DATA> const & packedPps = m_headerPacker.GetPps();
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
-        m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
-        m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&packedPps[!!task.m_viewIdx]);
-        bufCnt++;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = RemoveConst(&packedPps[!!task.m_viewIdx]);
+        m_encodeExecuteParams.NumCompBuffers++;
     }
 
     if (sei.Size() > 0)
     {
-        packedSei.pData                  = RemoveConst(sei.Buffer());
-        packedSei.BufferSize             = sei.Size();
-        packedSei.DataLength             = sei.Size();
-        packedSei.SkipEmulationByteCount = 0; // choose not to let accelerator insert emulation byte
+        m_packedSei.pData                  = RemoveConst(sei.Buffer());
+        m_packedSei.BufferSize             = sei.Size();
+        m_packedSei.DataLength             = sei.Size();
+        m_packedSei.SkipEmulationByteCount = 0; // choose not to let accelerator insert emulation byte
 
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
-        m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
-        m_compBufDesc[bufCnt].pCompBuffer          = &packedSei;
-        bufCnt++;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = &m_packedSei;
+        m_encodeExecuteParams.NumCompBuffers++;
     }
 
     if (SkipFlag != 0)
     {
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
-        m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
-        m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&m_headerPacker.PackSkippedSlice(task, fieldId));
-        bufCnt++;
-        
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = RemoveConst(&m_headerPacker.PackSkippedSlice(task, fieldId));
+        m_encodeExecuteParams.NumCompBuffers++;
+
         if (SkipFlag == 2 && skipMode != MFX_SKIPFRAME_INSERT_NOTHING)
         {
             m_sizeSkipFrames = 0;
 
-            for (UINT i = 0; i < bufCnt; i++)
+            for (UINT i = 0; i < m_encodeExecuteParams.NumCompBuffers; i++)
             {
                 if (m_compBufDesc[i].CompressedBufferType == (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA)
                 {
@@ -687,21 +708,21 @@ mfxStatus D3D11Encoder::ExecuteImpl(
                 }
             }
         }
-    } 
+    }
     else
     {
         std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
         for (mfxU32 i = 0; i < packedSlices.size(); i++)
         {
-            m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA;
-            m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
-            m_compBufDesc[bufCnt].pCompBuffer          = RemoveConst(&packedSlices[i]);
-            bufCnt++;
+            m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA;
+            m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
+            m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = RemoveConst(&packedSlices[i]);
+            m_encodeExecuteParams.NumCompBuffers++;
         }
     }
 
-    assert(bufCnt <= m_compBufDesc.size());
-
+    assert(m_encodeExecuteParams.NumCompBuffers <= m_compBufDesc.size());
+    m_compBufDesc[m_encodeExecuteParams.NumCompBuffers] = {};
 #ifndef MFX_AVC_ENCODING_UNIT_DISABLE
     if (task.m_collectUnitsInfo)
     {
@@ -712,6 +733,32 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     if(SkipFlag != 1)
     {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#if 0 //defined MFX_ENABLE_MFE - currently blocking synchronization is disabled for MFE
+        if(m_pMFEAdapter != nullptr)
+        {
+            // allocate the event
+            DdiTask & task1 = RemoveConst(task);
+            task1.m_GpuMfeEvent[fieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;
+            task1.m_GpuMfeEvent[fieldId].StreamInfo = m_StreamInfo;
+            task1.m_GpuMfeEvent[fieldId].StatusReportFeedbackNumber = task1.m_statusReportNumber[fieldId];
+            m_EventCache->GetEvent(task1.m_GpuMfeEvent[fieldId].gpuSyncEvent);
+
+            D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
+            decoderExtParams.Function = ENCODE_MFE_EVENT_ID;
+            decoderExtParams.pPrivateInputData = &task1.m_GpuMfeEvent[fieldId];
+            decoderExtParams.PrivateInputDataSize = sizeof(task1.m_GpuMfeEvent[fieldId]);
+            decoderExtParams.pPrivateOutputData = nullptr;
+            decoderExtParams.PrivateOutputDataSize = 0;
+            decoderExtParams.ResourceCount = 0;
+            decoderExtParams.ppResourceList = nullptr;
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuMfeEventHandle");
+                hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+            }
+            CHECK_HRES(hr);
+        }
+        else
+#endif
         {
             // allocate the event
             DdiTask & task1 = RemoveConst(task);
@@ -722,14 +769,13 @@ mfxStatus D3D11Encoder::ExecuteImpl(
             decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
             decoderExtParams.pPrivateInputData = &task1.m_GpuEvent[fieldId];
             decoderExtParams.PrivateInputDataSize = sizeof(task1.m_GpuEvent[fieldId]);
-            decoderExtParams.pPrivateOutputData = NULL;
+            decoderExtParams.pPrivateOutputData = nullptr;
             decoderExtParams.PrivateOutputDataSize = 0;
             decoderExtParams.ResourceCount = 0;
-            decoderExtParams.ppResourceList = NULL;
+            decoderExtParams.ppResourceList = nullptr;
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
                 hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
-
             }
             CHECK_HRES(hr);
         }
@@ -740,21 +786,21 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         m_pps.SizeSkipFrames = m_sizeSkipFrames;
         m_numSkipFrames      = 0;
         m_sizeSkipFrames     = 0;
-
         // [2.4] send to driver
-        D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-        decoderExtParams.Function              = ENCODE_ENC_PAK_ID;
-        decoderExtParams.pPrivateInputData     = &encodeExecuteParams;
-        decoderExtParams.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
-        decoderExtParams.pPrivateOutputData    = 0;
-        decoderExtParams.PrivateOutputDataSize = 0;
-        decoderExtParams.ResourceCount         = resourceCount; 
-        decoderExtParams.ppResourceList        = &resourceList[0];
-
-        //printf("before:\n");
+        m_decoderExtParams = { 0 };
+        m_decoderExtParams.Function              = ENCODE_ENC_PAK_ID;
+        m_decoderExtParams.pPrivateInputData     = &m_encodeExecuteParams;
+        m_decoderExtParams.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
+        m_decoderExtParams.pPrivateOutputData    = 0;
+        m_decoderExtParams.PrivateOutputDataSize = 0;
+        m_decoderExtParams.ResourceCount         = m_resourceCount;
+        m_decoderExtParams.ppResourceList        = &(m_resourceList[0]);
+#if defined(MFX_ENABLE_MFE) && defined(DEBUG_TRACE)
+        printf("\n\nSubmit ENCODE_ENC_PAK_ID for stream %d, field %d, Feedback %d\n\n", m_StreamInfo.StreamId, fieldId, task.m_statusReportNumber[fieldId]);
+#endif
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Execute");
-            hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+            hr = DecoderExtension(m_pVideoContext, m_pDecoder, m_decoderExtParams);
         }
         CHECK_HRES(hr);
 
@@ -778,7 +824,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
             mfxU8 *  bsEnd       = bs.Y + m_sps.FrameWidth * m_sps.FrameHeight;
             mfxU8 *  bsDataEnd   = bsDataStart;
 
-            for (UINT i = 0; i < bufCnt; i++)
+            for (UINT i = 0; i < m_encodeExecuteParams.NumCompBuffers; i++)
             {
                 if (m_compBufDesc[i].CompressedBufferType == (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA)
                 {
@@ -796,7 +842,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     }
 
 #if defined(MFX_ENABLE_MFE)
-    if (m_pMFEAdapter != NULL)
+    if (m_pMFEAdapter != nullptr)
     {
         mfxU32 timeout = task.m_mfeTimeToWait >> task.m_fieldPicFlag;
         /*if(!task.m_userTimeout)
@@ -816,14 +862,12 @@ mfxStatus D3D11Encoder::ExecuteImpl(
             return sts;
     }
 #endif
-
     m_sps.bResetBRC = false;
 
     // mvc hack
     m_sps.seq_parameter_set_id = initSpsId;
     m_pps.seq_parameter_set_id = initSpsId;
     m_pps.pic_parameter_set_id = initPpsId;
-    
     return MFX_ERR_NONE;
 
 } //  mfxStatus D3D11Encoder::Execute(...)
@@ -838,7 +882,7 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
     mfxU32 curTime = vm_time_get_current_time();
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
-    // As we won't get all bitstreams we need to cache all other statuses. 
+    // As we won't get all bitstreams we need to cache all other statuses.
 
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber[fieldId]);
@@ -856,8 +900,11 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
     {
 
 #if defined(MFX_ENABLE_MFE)
-        if (m_pMFEAdapter != NULL)
+        if (m_pMFEAdapter != nullptr)
         {
+#ifdef DEBUG_TRACE
+            printf("\n\nquery status for %d stream\n\n", m_StreamInfo.StreamId);
+#endif
             feedbackDescr.StreamID = m_StreamInfo.StreamId;
         }
 #endif
@@ -894,6 +941,9 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
         MFX_CHECK(feedback != 0, MFX_ERR_DEVICE_FAILED);
     }
 
+#ifdef DEBUG_TRACE
+    printf("\n\nstatus %d for stream %d, filed %d, feedback %d\n\n", feedback->bStatus, feedback->StreamId, fieldId, feedback->StatusReportFeedbackNumber);
+#endif
     switch (feedback->bStatus)
     {
     case ENCODE_OK:
@@ -935,6 +985,7 @@ mfxStatus D3D11Encoder::QueryHWGUID(
     D3D11_VIDEO_DECODER_DESC video_desc = {0};
     D3D11_VIDEO_DECODER_CONFIG video_config = {0};
 
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryHWGUID");
     MFX_CHECK_NULL_PTR1(core);
 
     D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(core);
@@ -1047,7 +1098,7 @@ mfxStatus D3D11Encoder::Init(
     {
         D3D11_VIDEO_DECODER_DESC video_desc;
         D3D11_VIDEO_DECODER_CONFIG video_config = {0};
-        m_pDecoder = NULL;
+        m_pDecoder = nullptr;
 
         if (pVideoDecoder->get() && bUseDecoderInCore)
         {
@@ -1066,16 +1117,17 @@ mfxStatus D3D11Encoder::Init(
 #if defined(MFX_ENABLE_MFE)
         else if (guid == DXVA2_Intel_MFE)
         {
-            if(m_pMFEAdapter == NULL)
+            if(m_pMFEAdapter == nullptr)
             m_pMFEAdapter = CreatePlatformMFEEncoder(m_core);
-            sts = m_pMFEAdapter->Create(m_pVideoDevice, m_pVideoContext);
+
+            sts = m_pMFEAdapter->Create(m_pVideoDevice, m_pVideoContext, width, height);
             if (sts != MFX_ERR_NONE)
                 return sts;
             m_pDecoder = m_pMFEAdapter->GetVideoDecoder();
-            if (m_pDecoder == NULL)
+            if (m_pDecoder == nullptr)
                 return MFX_ERR_UNSUPPORTED;
             ENCODE_CAPS* caps = (ENCODE_CAPS*)m_pMFEAdapter->GetCaps(DDI_CODEC_AVC);
-            if (caps != NULL)
+            if (caps != nullptr)
                 m_caps = *caps;
             else
                 return MFX_ERR_UNSUPPORTED;
@@ -1171,21 +1223,24 @@ mfxStatus D3D11Encoder::Init(
         }
         CHECK_HRES(hRes);
     }
-#if 1
-    // [3] Query the encoding device capabilities 
-    D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-
-    decoderExtParam.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
-    decoderExtParam.pPrivateInputData = 0;
-    decoderExtParam.PrivateInputDataSize = 0;
-    decoderExtParam.pPrivateOutputData = &m_caps;
-    decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_CAPS);
-    decoderExtParam.ResourceCount = 0;
-    decoderExtParam.ppResourceList = 0;
-
-    hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
-    CHECK_HRES(hRes);
+#if defined(MFX_ENABLE_MFE)
+    if (m_pMFEAdapter == nullptr)
 #endif
+    {
+        // [3] Query the encoding device capabilities 
+        D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
+
+        decoderExtParam.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
+        decoderExtParam.pPrivateInputData = 0;
+        decoderExtParam.PrivateInputDataSize = 0;
+        decoderExtParam.pPrivateOutputData = &m_caps;
+        decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_CAPS);
+        decoderExtParam.ResourceCount = 0;
+        decoderExtParam.ppResourceList = 0;
+
+        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+        CHECK_HRES(hRes);
+    }
 
     D3DXCommonEncoder::Init(m_core);
     // [6] specific encoder caps

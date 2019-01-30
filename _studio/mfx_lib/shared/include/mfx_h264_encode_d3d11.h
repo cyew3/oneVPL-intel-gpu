@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -157,6 +157,7 @@ namespace MfxHwH264Encode
         ID3D11VideoDecoder *                        m_pDecoder;
 #if defined (MFX_ENABLE_MFE)
         MFEDXVAEncoder *                            m_pMFEAdapter;
+        ENCODE_MULTISTREAM_INFO                     m_StreamInfo;
 #endif
         GUID                                        m_guid;
         GUID                                        m_requestedGuid;
@@ -171,14 +172,11 @@ namespace MfxHwH264Encode
         ENCODE_SET_SEQUENCE_PARAMETERS_H264         m_sps;
         ENCODE_SET_VUI_PARAMETER                    m_vui;
         ENCODE_SET_PICTURE_PARAMETERS_H264          m_pps;
+        std::vector<ENCODE_SET_SLICE_HEADER_H264>   m_slice;
 #ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
         ENCODE_SET_PICTURE_QUANT                    m_qMatrix; //buffer for quantization matrix
 #endif
-        std::vector<ENCODE_SET_SLICE_HEADER_H264>   m_slice;
         std::vector<ENCODE_COMPBUFFERDESC>          m_compBufDesc;
-#if defined(MFX_ENABLE_MFE)
-        ENCODE_MULTISTREAM_INFO                     m_StreamInfo;
-#endif
         std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
         CachedFeedback                              m_feedbackCached;
         HeaderPacker                                m_headerPacker;
@@ -194,6 +192,14 @@ namespace MfxHwH264Encode
 
         std::vector<ENCODE_RECT>                    m_dirtyRects;
         std::vector<MOVE_RECT>                      m_movingRects;
+        ENCODE_EXECUTE_PARAMS                       m_encodeExecuteParams;
+        ENCODE_INPUT_DESC                           m_encodeInputDesc;
+        mfxU32                                      m_idBit;
+        mfxU32                                      m_idMBQP;
+        ENCODE_PACKEDHEADER_DATA                    m_packedSei;
+        D3D11_VIDEO_DECODER_EXTENSION               m_decoderExtParams;
+        std::vector<ID3D11Resource*>                m_resourceList;
+        mfxU32                                      m_resourceCount;
     };
 
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,9 +27,7 @@
 #include "mfx_trace.h"
 #define DDI_086
 #define AVC_DDI_VERSION_0952
-
 #define AVC_DDI_VERSION_0960
-
 #include "mfx_ext_ddi.h"
 
 namespace
@@ -45,6 +43,7 @@ namespace
         HRESULT hr = S_OK;
         try
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "context->DecoderExtension");
             hr = context->DecoderExtension(decoder, &param);
         }
         catch (...)
