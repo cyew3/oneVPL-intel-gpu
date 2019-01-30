@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -62,8 +62,8 @@ public:
     Status GetSliceHeaderPart4(UMC_H264_DECODER::H264SliceHeader *hdr,
                                 const UMC_H264_DECODER::H264SeqParamSetSVCExtension *spsSvcExt);
 
-    uint16_t GetStatusReportNumber() const {return m_CENCStatusReportNumber;}
-    void SetStatusReportNumber(uint16_t statusReportNumber) {m_CENCStatusReportNumber = statusReportNumber;}
+    uint32_t GetStatusReportNumber() const {return m_CENCStatusReportNumber;}
+    void SetStatusReportNumber(uint32_t statusReportNumber) {m_CENCStatusReportNumber = statusReportNumber;}
 
     double GetTime() const {return m_pts;}
     void SetTime(double pts) {m_pts = pts;}
@@ -73,7 +73,7 @@ private:
 
 private:
     double m_pts;
-    uint16_t m_CENCStatusReportNumber;
+    uint32_t m_CENCStatusReportNumber;
 };
 
 #if !defined(OPEN_SOURCE)
@@ -136,7 +136,7 @@ public:
 protected:
     VideoAccelerator *m_va;
     bool m_bitstreamSubmitted;
-    uint16_t m_PESPacketCounter;
+    uint32_t m_PESPacketCounter;
 
     VADisplay m_dpy;
     VACencStatusBuf m_paramsSet;

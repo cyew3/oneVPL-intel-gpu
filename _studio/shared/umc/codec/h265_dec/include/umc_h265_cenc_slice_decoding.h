@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,8 +51,8 @@ public:
     // Build reference lists from slice reference pic set. HEVC spec 8.3.2
     UMC::Status UpdateReferenceList(H265DBPList *dpb);
 
-    void SetCENCStatusReportNumber(uint16_t number) {m_CENCStatusReportNumber = number;}
-    uint16_t GetCENCStatusReportNumber() {return m_CENCStatusReportNumber;}
+    void SetCENCStatusReportNumber(uint32_t number) {m_CENCStatusReportNumber = number;}
+    uint32_t GetCENCStatusReportNumber() {return m_CENCStatusReportNumber;}
 
 public:  // DEBUG !!!! should remove dependence
 
@@ -68,7 +68,7 @@ public:  // DEBUG !!!! should remove dependence
 private:
     CENCParametersWrapper m_DecryptParams;
 
-    uint16_t m_CENCStatusReportNumber;
+    uint32_t m_CENCStatusReportNumber;
 
 };
 
