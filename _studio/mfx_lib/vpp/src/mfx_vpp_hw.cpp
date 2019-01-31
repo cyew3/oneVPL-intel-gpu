@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -4169,7 +4169,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         // For 30i->60p, this happens every odd frames as:
         // m_frame_num = 0: input0 -> BOB -> ouput0 but we need to feed SCD engine with first reference frame
         // m_frame_num = 1: input1 + reference input 0 -> ADI -> output1
-        // m_frame_num = 2: input1 + referemce input 0 -> ADI -> output2 (no need to check as same input is used)
+        // m_frame_num = 2: input1 + reference input 0 -> ADI -> output2 (no need to check as same input is used)
         // m_frame_num = 3: input2 + reference input 1 -> ADI -> output3
 
         if (is30i60pConversion == 0 || (m_frame_num % 2) == 1 || m_frame_num == 0)

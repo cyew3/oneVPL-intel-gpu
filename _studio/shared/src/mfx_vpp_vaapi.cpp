@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -487,6 +487,11 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
 #endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_P016:
+        case MFX_FOURCC_Y216:
+        case MFX_FOURCC_Y416:
+#endif
         case MFX_FOURCC_P010:
             caps.mFormatSupport[fourcc] |= MFX_FORMAT_SUPPORT_INPUT;
             break;
@@ -505,6 +510,11 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
         case MFX_FOURCC_AYUV:
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
+#endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_P016:
+        case MFX_FOURCC_Y216:
+        case MFX_FOURCC_Y416:
 #endif
         case MFX_FOURCC_P010:
             caps.mFormatSupport[fourcc] |= MFX_FORMAT_SUPPORT_OUTPUT;
