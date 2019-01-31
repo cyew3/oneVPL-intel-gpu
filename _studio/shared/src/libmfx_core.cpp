@@ -237,17 +237,16 @@ mfxStatus CommonCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrame
         (request->Type & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))
         // should be SW
         return MFX_ERR_UNSUPPORTED;
-    else //if (request->Type & MFX_MEMTYPE_INTERNAL_FRAME) // TBD - only internal frames can be allocated
+
+    //if (request->Type & MFX_MEMTYPE_INTERNAL_FRAME) // TBD - only internal frames can be allocated
     {
         mfxBaseWideFrameAllocator* pAlloc = GetAllocatorByReq(request->Type);
         // VPP, ENC, PAK can request frames for several times
-        if (!pAlloc)
-        {
-            m_pcAlloc.reset(new mfxWideSWFrameAllocator(request->Type));
-            pAlloc = m_pcAlloc.get();
-        }
-        else
+        if (pAlloc)
             return MFX_ERR_MEMORY_ALLOC;
+
+        m_pcAlloc.reset(new mfxWideSWFrameAllocator(request->Type));
+        pAlloc = m_pcAlloc.get();
 
         // set frame allocator
         pAlloc->frameAllocator.pthis = pAlloc;
@@ -259,7 +258,7 @@ mfxStatus CommonCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrame
         MFX_CHECK_STS(sts);
     }
     ++m_NumAllocators;
-    m_pcAlloc.pop();
+    m_pcAlloc.release();
     return sts;
 }
 mfxStatus CommonCORE::LockFrame(mfxHDL mid, mfxFrameData *ptr)
@@ -441,7 +440,7 @@ mfxStatus CommonCORE::InternalFreeFrames(mfxFrameAllocResponse *response)
             ctbl_it = m_CTbl.find(response->mids[i]);
             if (m_CTbl.end() == ctbl_it)
                 return MFX_ERR_INVALID_HANDLE;
-            m_pMemId.get()[i] = ctbl_it->second.InternalMid;
+            m_pMemId[i] = ctbl_it->second.InternalMid;
             pAlloc = GetAllocatorAndMid(extMem);
             // all frames should be allocated by one allocator
             if ((IsDefaultMem != ctbl_it->second.isDefaultMem)||
@@ -472,7 +471,7 @@ mfxStatus CommonCORE::InternalFreeFrames(mfxFrameAllocResponse *response)
                 m_AllocatorQueue.erase(response->mids[i]);
             m_CTbl.erase(ctbl_it);
         }
-        m_pMemId.reset(0);
+        m_pMemId.reset();
         // we sure about response->mids
         delete[] response->mids;
         response->mids = 0;
@@ -686,11 +685,11 @@ mfxStatus CommonCORE::RegisterMids(mfxFrameAllocResponse *response, mfxU16 memTy
         // set render target memory description
         ds.memType = memType;
         m_CTbl.insert(pair<mfxMemId, MemDesc>(mId, ds));
-        m_pMemId.get()[i] = mId;
+        m_pMemId[i] = mId;
     }
     m_RespMidQ.insert(pair<mfxMemId*, mfxMemId*>(m_pMemId.get(), response->mids));
-    response->mids = m_pMemId.get();
-    m_pMemId.pop();
+    response->mids = m_pMemId.release();
+
     return  MFX_ERR_NONE;
 }
 
@@ -1307,10 +1306,9 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
     Ipp32u srcPitch;
     Ipp32u dstPitch;
 
-    FastCopy *pFastCopy = m_pFastCopy.get();
-    if(!pFastCopy){
+    if(!m_pFastCopy)
+    {
         m_pFastCopy.reset(new FastCopy());
-        pFastCopy = m_pFastCopy.get();
     }
 
     pDst = dst->Data.Y;
@@ -1328,7 +1326,7 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
     {
     case MFX_FOURCC_NV12:
 
-        sts = pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
+        sts = m_pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
 
         roi.height >>= 1;
 
@@ -1340,13 +1338,13 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
             return MFX_ERR_NULL_PTR;
         }
 
-        sts = pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
+        sts = m_pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
 
         break;
 
     case MFX_FOURCC_YV12:
 
-        sts = pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
+        sts = m_pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
 
         roi.height >>= 1;
 
@@ -1363,7 +1361,7 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
         srcPitch >>= 1;
         dstPitch >>= 1;
 
-        sts = pFastCopy->Copy((mfxU8 *)pDst, dstPitch, (mfxU8 *)pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
+        sts = m_pFastCopy->Copy((mfxU8 *)pDst, dstPitch, (mfxU8 *)pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
 
         pSrc = src->Data.V;
         pDst = dst->Data.V;
@@ -1373,7 +1371,7 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
             return MFX_ERR_NULL_PTR;
         }
 
-        sts = pFastCopy->Copy((mfxU8 *)pDst, dstPitch, (mfxU8 *)pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
+        sts = m_pFastCopy->Copy((mfxU8 *)pDst, dstPitch, (mfxU8 *)pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
 
         break;
 
@@ -1381,13 +1379,13 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
 
         roi.width *= 2;
 
-        sts = pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
+        sts = m_pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
 
         break;
 
     case MFX_FOURCC_P8:
 
-        sts = pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
+        sts = m_pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
 
         break;
 
@@ -1890,9 +1888,8 @@ bool CommonCORE::IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface,
         // consistent already checked in CheckOpaqueRequest function
         if (oqp_it != m_OpqTbl.end())
         {
-            m_pMemId.reset(new mfxMemId[NumOpaqueSurface]);
-            response->mids = m_pMemId.get();
-            m_pMemId.pop();
+            m_pMemId.reset();
+            response->mids = new mfxMemId[NumOpaqueSurface];
 
             for (; i < NumOpaqueSurface; i++)
             {

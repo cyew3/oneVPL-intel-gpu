@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,8 @@
 
 #include "fast_compositing_ddi.h"
 #include "auxiliary_device.h"
+
+#include <memory>
 
 // disable the "conditional expression is constant" warning
 #pragma warning(disable: 4127)
@@ -265,7 +267,7 @@ private:
     IDirectXVideoDecoderService         *m_pDirectXVideoService;
     bool                                 m_bUseExtAllocForHWFrames;
 
-    s_ptr<mfxDefaultAllocatorD3D9::mfxWideHWFrameAllocator, true> m_pcHWAlloc;
+    std::unique_ptr<mfxDefaultAllocatorD3D9::mfxWideHWFrameAllocator> m_pcHWAlloc;
 
     eMFXHWType                           m_HWType;
     eMFXGTConfig                         m_GTConfig;
@@ -276,9 +278,9 @@ private:
     bool m_bCmCopySwap;
     bool m_bCmCopyAllowed;
 
-    s_ptr<CmCopyWrapper, true>            m_pCmCopy;
-    s_ptr<D3D9Adapter, true>              m_pAdapter;
-    s_ptr<CMEnabledCoreAdapter, true>     m_pCmAdapter;
+    std::unique_ptr<CmCopyWrapper>            m_pCmCopy;
+    std::unique_ptr<D3D9Adapter>              m_pAdapter;
+    std::unique_ptr<CMEnabledCoreAdapter>     m_pCmAdapter;
 
     D3D9DllCallHelper m_d3d9hlp;
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC

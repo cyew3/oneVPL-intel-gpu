@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -101,7 +101,7 @@ protected:
     // Ordinal number of adapter to work
     const mfxU32                         m_adapterNum;  
 //    bool                                 m_bUseExtAllocForHWFrames;
-//    s_ptr<mfxWideHWFrameAllocator, true> m_pcHWAlloc;
+//    std::unique_ptr<mfxWideHWFrameAllocator> m_pcHWAlloc;
     eMFXHWType                           m_HWType;
     
 public:

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,7 @@ D3D11VideoCORE::~D3D11VideoCORE()
 {
     if (m_bCmCopy)
     {
-        m_pCmCopy.get()->Release();
+        m_pCmCopy->Release();
         m_bCmCopy = false;
         m_bCmCopySwap = false;
     }
@@ -383,28 +383,28 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
         if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy)
         {
             m_pCmCopy.reset(new CmCopyWrapper);
-            if (!m_pCmCopy.get()->GetCmDevice<ID3D11Device>(m_pD11Device)){
+            if (!m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device)){
                 //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
                 //if failed to create CM device, continue without CmCopy
                 m_bCmCopy = false;
                 m_bCmCopyAllowed = false;
-                m_pCmCopy.get()->Release();
+                m_pCmCopy->Release();
                 m_pCmCopy.reset();
                 //return MFX_ERR_DEVICE_FAILED;
             }else{
-                sts = m_pCmCopy.get()->Initialize(GetHWType());
+                sts = m_pCmCopy->Initialize(GetHWType());
                 MFX_CHECK_STS(sts);
                 m_bCmCopy = true;
             }
         }else if(m_bCmCopy){
-            if(m_pCmCopy.get())
-                m_pCmCopy.get()->ReleaseCmSurfaces();
+            if(m_pCmCopy)
+                m_pCmCopy->ReleaseCmSurfaces();
             else
                 m_bCmCopy = false;
         }
-        if(m_pCmCopy.get() && !m_bCmCopySwap && (request->Info.FourCC == MFX_FOURCC_BGR4 || request->Info.FourCC == MFX_FOURCC_RGB4 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_P010))
+        if(m_pCmCopy && !m_bCmCopySwap && (request->Info.FourCC == MFX_FOURCC_BGR4 || request->Info.FourCC == MFX_FOURCC_RGB4 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_P010))
         {
-            sts = m_pCmCopy.get()->InitializeSwapKernels(GetHWType());
+            sts = m_pCmCopy->InitializeSwapKernels(GetHWType());
             m_bCmCopySwap = true;
         }
 
@@ -576,7 +576,7 @@ mfxStatus D3D11VideoCORE::CreateVideoProcessing(mfxVideoParam * param)
 mfxStatus D3D11VideoCORE::ProcessRenderTargets(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxBaseWideFrameAllocator* pAlloc)
 {
     RegisterMids(response, request->Type, !m_bUseExtAllocForHWFrames, pAlloc);
-    m_pcHWAlloc.pop();
+    m_pcHWAlloc.release();
     return MFX_ERR_NONE;
 }
 
@@ -585,9 +585,9 @@ mfxStatus D3D11VideoCORE::SetCmCopyStatus(bool enable)
     m_bCmCopyAllowed = enable;
     if (!enable)
     {
-        if (m_pCmCopy.get())
+        if (m_pCmCopy)
         {
-            m_pCmCopy.get()->Release();
+            m_pCmCopy->Release();
         }
         m_bCmCopy = false;
     }
@@ -647,34 +647,34 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         if (!m_bCmCopy)
         {
             m_pCmCopy.reset(new CmCopyWrapper);
-            pCmDevice = m_pCmCopy.get()->GetCmDevice<ID3D11Device>(m_pD11Device);
+            pCmDevice = m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device);
             if (!pCmDevice)
                 return NULL;
-            if (MFX_ERR_NONE != m_pCmCopy.get()->Initialize(GetHWType()))
+            if (MFX_ERR_NONE != m_pCmCopy->Initialize(GetHWType()))
                 return NULL;
             m_bCmCopy = true;
         }
         else
         {
-            pCmDevice =  m_pCmCopy.get()->GetCmDevice<ID3D11Device>(m_pD11Device);
+            pCmDevice =  m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device);
         }
         return (void*)pCmDevice;
     }
     else if (MFXICORECMCOPYWRAPPER_GUID == guid)
     {
-        if (!m_pCmCopy.get())
+        if (!m_pCmCopy)
         {
             m_pCmCopy.reset(new CmCopyWrapper);
-            if (!m_pCmCopy.get()->GetCmDevice<ID3D11Device>(m_pD11Device)){
+            if (!m_pCmCopy->GetCmDevice<ID3D11Device>(m_pD11Device)){
                 //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
                 //if failed to create CM device, continue without CmCopy
                 m_bCmCopy = false;
                 m_bCmCopyAllowed = false;
-                m_pCmCopy.get()->Release();
+                m_pCmCopy->Release();
                 m_pCmCopy.reset();
                 return NULL;
             }else{
-                if(MFX_ERR_NONE != m_pCmCopy.get()->Initialize(GetHWType()))
+                if(MFX_ERR_NONE != m_pCmCopy->Initialize(GetHWType()))
                     return NULL;
                 else
                     m_bCmCopy = true;
@@ -684,7 +684,7 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     }
     else if (MFXICMEnabledCore_GUID == guid)
     {
-        if (!m_pCmAdapter.get())
+        if (!m_pCmAdapter)
         {
             m_pCmAdapter.reset(new CMEnabledCoreAdapter(this));
         }
@@ -905,15 +905,13 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     mfxU32 srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
     mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
 
-    CmCopyWrapper *pCmCopy = m_pCmCopy.get();
-
     bool canUseCMCopy = m_bCmCopy ? CmCopyWrapper::CanUseCmCopy(pDst, pSrc) : false;
 
     if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
     {
         if (canUseCMCopy)
         {
-            sts = pCmCopy->CopyVideoToVideo(pDst, pSrc);
+            sts = m_pCmCopy->CopyVideoToVideo(pDst, pSrc);
             MFX_CHECK_STS(sts);
         }
         else
@@ -933,7 +931,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     {
         if (canUseCMCopy)
         {
-            sts = pCmCopy->CopyVideoToSys(pDst, pSrc);
+            sts = m_pCmCopy->CopyVideoToSys(pDst, pSrc);
             MFX_CHECK_STS(sts);
         }
         else
@@ -1031,7 +1029,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
 
         if (canUseCMCopy)
         {
-            sts = pCmCopy->CopySysToVideo(pDst, pSrc);
+            sts = m_pCmCopy->CopySysToVideo(pDst, pSrc);
             MFX_CHECK_STS(sts);
         }
         else

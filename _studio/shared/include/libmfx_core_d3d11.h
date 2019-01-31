@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,8 @@
 #include "mfx_mfe_adapter_dxva.h"
 #endif
 #include <d3d11.h>
+
+#include <memory>
 
 #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
 #include "d3d11_video_processor.h"
@@ -168,8 +170,8 @@ private:
 
     D3D11_VIDEO_DECODER_CONFIG* GetConfig(D3D11_VIDEO_DECODER_DESC *video_desc, mfxU32 start, mfxU32 end, const GUID guid);
     
-    bool                                                           m_bUseExtAllocForHWFrames;
-    s_ptr<mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator, true> m_pcHWAlloc; 
+    bool                                                               m_bUseExtAllocForHWFrames;
+    std::unique_ptr<mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator> m_pcHWAlloc; 
 
     // D3D11 services
     CComPtr<ID3D11Device>            m_pD11Device;
@@ -198,9 +200,9 @@ private:
     bool m_bCmCopy;
     bool m_bCmCopySwap;
     bool m_bCmCopyAllowed;
-    s_ptr<CmCopyWrapper, true>           m_pCmCopy;
-    s_ptr<CMEnabledCoreAdapter, true>    m_pCmAdapter;
-    mfxU32                               m_VideoDecoderConfigCount;
+    std::unique_ptr<CmCopyWrapper>        m_pCmCopy;
+    std::unique_ptr<CMEnabledCoreAdapter> m_pCmAdapter;
+    mfxU32                                m_VideoDecoderConfigCount;
     std::vector<D3D11_VIDEO_DECODER_CONFIG>     m_Configs;
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     bool m_bIsBlockingTaskSyncEnabled;

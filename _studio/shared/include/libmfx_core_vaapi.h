@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,8 @@
 #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
 #include "mfx_vpp_interface.h"
 #endif
+
+#include <memory>
 
 // helper struct, it is helper for conversion from between [linux/android GUIDs] and [VAProfile + VAEntryPoint]
 // linux/android GUIDs is defined in _studio/shared/include/mfxvideo++int.h
@@ -202,7 +204,8 @@ protected:
     mfxStatus              OnDeblockingInWinRegistry(mfxU32 codecId);
 
     void                   ReleaseHandle();
-    s_ptr<UMC::LinuxVideoAccelerator, true> m_pVA;
+
+    std::unique_ptr<UMC::LinuxVideoAccelerator> m_pVA;
     VADisplay                            m_Display;
     mfxHDL                               m_VAConfigHandle;
     mfxHDL                               m_VAContextHandle;
@@ -210,21 +213,22 @@ protected:
 
     const mfxU32                         m_adapterNum; // Ordinal number of adapter to work
     bool                                 m_bUseExtAllocForHWFrames;
-    s_ptr<mfxDefaultAllocatorVAAPI::mfxWideHWFrameAllocator, true> m_pcHWAlloc;
+    std::unique_ptr<mfxDefaultAllocatorVAAPI::mfxWideHWFrameAllocator>
+                                                m_pcHWAlloc;
     eMFXHWType                           m_HWType;
     eMFXGTConfig                         m_GTConfig;
 
     bool                                 m_bCmCopy;
     bool                                 m_bCmCopyAllowed;
-    s_ptr<CmCopyWrapper, true>           m_pCmCopy;
+    std::unique_ptr<CmCopyWrapper>              m_pCmCopy;
 #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
     VPPHWResMng                          m_vpp_hw_resmng;
 #endif
 
 private:
 
-    s_ptr<VAAPIAdapter, true>            m_pAdapter;
-    s_ptr<CMEnabledCoreAdapter, true>    m_pCmAdapter;
+    std::unique_ptr<VAAPIAdapter>               m_pAdapter;
+    std::unique_ptr<CMEnabledCoreAdapter>       m_pCmAdapter;
 #ifdef MFX_ENABLE_MFE
     ComPtrCore<MFEVAAPIEncoder> m_mfe;
 #endif

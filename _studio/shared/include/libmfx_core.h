@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,8 @@
 #include "mfx_ext_buffers.h"
 #include "fast_copy.h"
 #include "libmfx_core_interface.h"
+
+#include <memory>
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -75,12 +77,12 @@ public:
 
     virtual mfxStatus  GetFrameHDL(mfxMemId mid, mfxHDL *handle, bool ExtendedSearch = true);
 
-    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request, 
+    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request,
                                    mfxFrameAllocResponse *response, bool isNeedCopy = true);
-   
-    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request, 
+
+    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request,
                                    mfxFrameAllocResponse *response,
-                                   mfxFrameSurface1 **pOpaqueSurface, 
+                                   mfxFrameSurface1 **pOpaqueSurface,
                                    mfxU32 NumOpaqueSurface);
 
     virtual mfxStatus  LockFrame(mfxMemId mid, mfxFrameData *ptr);
@@ -149,7 +151,7 @@ public:
     virtual mfxStatus IsGuidSupported(const GUID /*guid*/, mfxVideoParam * /*par*/, bool /*isEncoder = false*/) { return MFX_ERR_NONE; };
 
     bool CheckOpaqueRequest(mfxFrameAllocRequest *request, mfxFrameSurface1 **pOpaqueSurface, mfxU32 NumOpaqueSurface, bool ExtendedSearch = true);
-    
+
     virtual eMFXVAType   GetVAType() const {return MFX_HW_NO; };
 
     virtual bool SetCoreId(mfxU32 Id);
@@ -161,7 +163,7 @@ public:
 
     virtual mfxU16 GetAutoAsyncDepth();
 
-    virtual bool IsCompatibleForOpaq() {return true;};  
+    virtual bool IsCompatibleForOpaq() {return true;};
 
     // keep frame response structure dwscribing plug-in memory surfaces
     void AddPluginAllocResponse(mfxFrameAllocResponse& response);
@@ -173,47 +175,8 @@ public:
     mfxStatus QueryPlatform(mfxPlatform* platform);
 
 protected:
-    
-    CommonCORE(const mfxU32 numThreadsAvailable, const mfxSession session = NULL);
 
-    template <class T, bool isSingle>
-    class s_ptr
-    {
-    public:
-        s_ptr():m_ptr(0)
-        {
-        };
-        ~s_ptr()
-        {
-            reset(0);
-        }
-        T* get()
-        {
-            return m_ptr;
-        }
-        T* pop()
-        {
-            T* ptr = m_ptr;
-            m_ptr = 0;
-            return ptr;
-        }
-        void reset(T* ptr = NULL)
-        {
-            if (m_ptr)
-            {
-                if (isSingle)
-                    delete m_ptr;
-                else
-                    delete[] m_ptr;
-            }
-            m_ptr = ptr;
-        }
-    protected:
-        T* m_ptr;
-    private:
-        s_ptr(const s_ptr&);
-        void operator =(s_ptr &);
-    };
+    CommonCORE(const mfxU32 numThreadsAvailable, const mfxSession session = NULL);
 
     class API_1_19_Adapter : public IVideoCore_API_1_19
     {
@@ -301,10 +264,10 @@ protected:
     bool m_bSetExtBufAlloc;
     bool m_bSetExtFrameAlloc;
 
-    s_ptr<mfxMemId, false> m_pMemId;
-    s_ptr<mfxBaseWideFrameAllocator, true> m_pcAlloc;
+    std::unique_ptr<mfxMemId[]>                m_pMemId;
+    std::unique_ptr<mfxBaseWideFrameAllocator> m_pcAlloc;
 
-    s_ptr<FastCopy, true> m_pFastCopy;
+    std::unique_ptr<FastCopy>                  m_pFastCopy;
     bool m_bUseExtManager;
     UMC::Mutex m_guard;
 
