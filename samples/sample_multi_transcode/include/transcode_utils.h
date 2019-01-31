@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -60,42 +60,6 @@ namespace TranscodingSample
     void PrintInfo(mfxU32 session_number, sInputParams* pParams, mfxVersion *pVer);
 
     bool PrintDllInfo(msdk_char *buf, mfxU32 buf_size, sInputParams* pParams);
-
-    template <class T, bool isSingle>
-    class s_ptr
-    {
-    public:
-        s_ptr():m_ptr(0)
-        {
-        };
-        ~s_ptr()
-        {
-            reset(0);
-        }
-        T* get()
-        {
-            return m_ptr;
-        }
-        T* pop()
-        {
-            T* ptr = m_ptr;
-            m_ptr = 0;
-            return ptr;
-        }
-        void reset(T* ptr)
-        {
-            if (m_ptr)
-            {
-                if (isSingle)
-                    delete m_ptr;
-                else
-                    delete[] m_ptr;
-            }
-            m_ptr = ptr;
-        }
-    protected:
-        T* m_ptr;
-    };
 
     class CmdProcessor
     {

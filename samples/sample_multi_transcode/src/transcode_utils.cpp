@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -648,8 +648,7 @@ mfxStatus CmdProcessor::ParseParFile(FILE *parFile)
     fseek(parFile, 0, SEEK_SET);
 
     // allocate buffer for parsing
-    s_ptr<msdk_char, false> parBuf;
-    parBuf.reset(new msdk_char[fileSize]);
+    std::unique_ptr<msdk_char[]> parBuf(new msdk_char[fileSize]);
     msdk_char *pCur;
 
     while(currPos < fileSize)
@@ -684,9 +683,7 @@ mfxStatus CmdProcessor::TokenizeLine(msdk_char *pLine, mfxU32 length)
     const mfxU8 maxArgNum = 255;
     msdk_char *argv[maxArgNum+1];
     mfxU32 argc = 0;
-    s_ptr<msdk_char, false> pMemLine;
-
-    pMemLine.reset(new msdk_char[length+2]);
+    std::unique_ptr<msdk_char[]> pMemLine(new msdk_char[length+2]);
 
     msdk_char *pTempLine = pMemLine.get();
     pTempLine[0] = ' ';
