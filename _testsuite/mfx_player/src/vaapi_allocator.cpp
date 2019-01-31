@@ -324,7 +324,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 #if defined(ANDROID)
             // It seems that VA implementation on android(W49) doesn't accept "attrib" parameter (ERR_UNKNOWN on
             // anything exept NULL). According to QuerySurfaceAttributes only NV12 is supported.
-            if (vaapi_mid->m_fourcc != VA_FOURCC_NV12) return MFX_ERR_UNSUPPORTED;
+            if (va_fourcc != VA_FOURCC_NV12) return MFX_ERR_UNSUPPORTED;
             pAttrib = 0;
 #endif
 
