@@ -786,9 +786,9 @@ namespace hevce_init
             {
                 // If InitialDelayInKB == 0 it is calculated as BufferSizeInKB / 2
                 // For MFX_RATECONTROL_CQP mode BufferSizeInKB should be >= rawBytes / 1000
-                // Maximum of rawBytes = w * h * 3 + 1;
+                // Maximum of rawBytes = (w * h * 3 * BitDepthLuma + 7) / 8;
                 // For others BufferSizeInKB = <valid_non_zero_value>
-                m_par.mfx.BufferSizeInKB = (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 3 + 1) / 1000;
+                m_par.mfx.BufferSizeInKB = (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 3 * m_par.mfx.FrameInfo.BitDepthLuma + 7) / 8 / 1000;
                 m_par.mfx.InitialDelayInKB = 0;
                 break;
             }
@@ -800,7 +800,7 @@ namespace hevce_init
             }
             case NONE:
             {
-                m_par.mfx.BufferSizeInKB = (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 3 + 1) / 1000;
+                m_par.mfx.BufferSizeInKB = (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 3 * m_par.mfx.FrameInfo.BitDepthLuma + 7) / 8 / 1000;
                 m_par.mfx.InitialDelayInKB = m_par.mfx.MaxKbps / 4 + 1;
                 break;
             }
@@ -809,8 +809,8 @@ namespace hevce_init
             if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
             {
                 m_par.mfx.QPI = 26;
-                m_par.mfx.QPI = 26;
-                m_par.mfx.QPI = 26;
+                m_par.mfx.QPP = 26;
+                m_par.mfx.QPB = 26;
             }
         }
 
