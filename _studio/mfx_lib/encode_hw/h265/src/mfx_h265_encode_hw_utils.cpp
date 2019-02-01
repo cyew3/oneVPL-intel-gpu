@@ -1617,7 +1617,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_sps.max_transform_hierarchy_depth_intra      = 2;
     m_sps.scaling_list_enabled_flag                = 0;
 #if (MFX_VERSION >= 1025)
-    if (m_platform == MFX_HW_CNL)
+    if (m_platform >= MFX_HW_CNL)
     {
         m_sps.amp_enabled_flag = 1; // only 1
         m_sps.sample_adaptive_offset_enabled_flag = !(m_ext.HEVCParam.SampleAdaptiveOffset & MFX_SAO_DISABLE);
