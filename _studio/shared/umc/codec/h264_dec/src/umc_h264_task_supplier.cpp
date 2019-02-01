@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2881,25 +2881,6 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, int32_t field, int32_
 
     return UMC_OK;
 }   // ProcessFrameNumGap
-
-bool TaskSupplier::IsWantToShowFrame(bool force)
-{
-    for (int32_t i = 0; i < GetViewCount(); i++)
-    {
-        ViewItem &view = GetViewByNumber(i);
-
-        if ((view.GetDPBList(0)->countNumDisplayable() > view.maxDecFrameBuffering) ||
-            force)
-        {
-            H264DecoderFrame * pTmp;
-
-            pTmp = view.GetDPBList(0)->findOldestDisplayable(view.maxDecFrameBuffering);
-            return !!pTmp;
-        }
-    }
-
-    return false;
-}
 
 void TaskSupplier::PostProcessDisplayFrame(H264DecoderFrame *pFrame)
 {

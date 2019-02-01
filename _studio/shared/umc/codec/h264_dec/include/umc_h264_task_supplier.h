@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -533,8 +533,6 @@ public:
     virtual H264DecoderFrame *GetFrameToDisplayInternal(bool force);
 
     Status GetUserData(MediaData *pUD);
-
-    bool IsWantToShowFrame(bool force = false);
 
     H264DBPList *GetDPBList(uint32_t viewId, int32_t dIdRev)
     {
