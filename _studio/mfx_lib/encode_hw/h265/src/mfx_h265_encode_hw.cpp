@@ -1445,29 +1445,45 @@ mfxStatus MFXVideoENCODEH265_HW::Execute(mfxThreadTask thread_task, mfxU32 /*uid
                 MFX_CHECK_STS(sts);
             }
 
-            *pDataLength   += bytes2copy;
-            bytesAvailable -= bytes2copy;
-
-            if (SEI_len)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+            if (m_vpar.Protected)
             {
-                MFX_CHECK(bytesAvailable >= pSEI->DataLength, MFX_ERR_NOT_ENOUGH_BUFFER);
+                // Driver encyptes aligned number of bytes after encoding
+                // So aligned number of bytes should be copied.
+                //
+                // To let app know which bytes are padding added by encryption
+                // DataLength in mfxEncryptedData is set to what returned from Query (may be not aligned)
 
-                std::copy(pSEI->pData + pSEI->DataOffset, pSEI->pData + pSEI->DataOffset + pSEI->DataLength, bs->Data + bs->DataOffset + bs->DataLength);
-
-                bs->DataLength += pSEI->DataLength;
-                bytes2copy     += pSEI->DataLength;
-                bytesAvailable -= pSEI->DataLength;
+                *pDataLength   += taskForQuery->m_bsDataLength;
+                bytesAvailable -= taskForQuery->m_bsDataLength;
             }
-
-            if (taskForQuery->m_minFrameSize > bytes2copy)
+            else
+#endif
             {
-                mfxU32 padding = taskForQuery->m_minFrameSize - bytes2copy;
-                MFX_CHECK(bytesAvailable >= padding , MFX_ERR_NOT_ENOUGH_BUFFER);
-                memset(bs->Data + bs->DataOffset + bs->DataLength, 0, padding);
+                *pDataLength   += bytes2copy;
+                bytesAvailable -= bytes2copy;
 
-                bs->DataLength += padding;
-                bytes2copy     += padding;
-                bytesAvailable -= padding;
+                if (SEI_len)
+                {
+                    MFX_CHECK(bytesAvailable >= pSEI->DataLength, MFX_ERR_NOT_ENOUGH_BUFFER);
+
+                    std::copy(pSEI->pData + pSEI->DataOffset, pSEI->pData + pSEI->DataOffset + pSEI->DataLength, bs->Data + bs->DataOffset + bs->DataLength);
+
+                    bs->DataLength += pSEI->DataLength;
+                    bytes2copy     += pSEI->DataLength;
+                    bytesAvailable -= pSEI->DataLength;
+                }
+
+                if (taskForQuery->m_minFrameSize > bytes2copy)
+                {
+                    mfxU32 padding = taskForQuery->m_minFrameSize - bytes2copy;
+                    MFX_CHECK(bytesAvailable >= padding, MFX_ERR_NOT_ENOUGH_BUFFER);
+                    memset(bs->Data + bs->DataOffset + bs->DataLength, 0, padding);
+
+                    bs->DataLength += padding;
+                    bytes2copy     += padding;
+                    bytesAvailable -= padding;
+                }
             }
 
             m_hrd.Update(bytes2copy * 8, *taskForQuery);
