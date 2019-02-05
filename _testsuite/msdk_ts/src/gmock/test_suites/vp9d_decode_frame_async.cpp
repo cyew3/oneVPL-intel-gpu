@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -106,7 +106,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*13*/ MFX_ERR_NONE, 0, 1, {&tsStruct::mfxBitstream.DataFlag, 0, RUNTIME_BS} },
     {/*14*/ MFX_ERR_NONE, 0, 1, {&tsStruct::mfxBitstream.DataFlag, MFX_BITSTREAM_COMPLETE_FRAME, RUNTIME_BS} },
     {/*15*/ MFX_ERR_NULL_PTR,  0, 1, {&tsStruct::mfxBitstream.Data, 0, RUNTIME_BS} },
-    {/*16*/ MFX_ERR_NULL_PTR,  0, 1, { {&tsStruct::mfxBitstream.Data, 0, RUNTIME_BS}, 
+    {/*16*/ MFX_ERR_MORE_DATA,  0, 1, { {&tsStruct::mfxBitstream.Data, 0, RUNTIME_BS},
                                        {&tsStruct::mfxBitstream.DataLength, 0, RUNTIME_BS} , 
                                        {&tsStruct::mfxBitstream.MaxLength, 0,  RUNTIME_BS},
                                      } },
