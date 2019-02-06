@@ -1046,21 +1046,28 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
 #endif //H264_RECODE_PCM
                 }
             }
-        } else {
+        }
+        else {
             tRow = *td->incRow;
             H264Slice_8u16s *cur_s = &core_enc->m_Slices_MBT[tNum];
             cur_s->m_MB_Counter = 0;
             H264CurrentMacroblockDescriptor_8u16s &cur_mb = cur_s->m_cur_mb;
             while (tRow <= last_slice_row) {
-                vm_mutex_lock((vm_mutex *)&core_enc->mutexIncRow); // cast from const vm_mutex *
+                ((std::mutex *)core_enc->mutexIncRow)->lock(); // cast from const std::mutex *
                 tRow = *td->incRow;
-                (*td->incRow) ++;
+                (*td->incRow)++;
 #ifdef MB_THREADING_TW
-                if (tRow < last_slice_row)
-                    for (tCol = 0; tCol < core_enc->m_WidthInMBs; tCol ++)
-                        vm_mutex_lock((vm_mutex *)core_enc->mMutexMT + tRow * core_enc->m_WidthInMBs + tCol);
+                if (tRow < last_slice_row) {
+                    try {
+                        for (tCol = 0; tCol < core_enc->m_WidthInMBs; tCol++)
+                            core_enc->mMutexMT.at(tRow * core_enc->m_WidthInMBs + tCol)->lock();
+                    }
+                    catch (...) {
+                        return UMC_ERR_FAILED;
+                    }
+                }
 #endif // MB_THREADING_TW
-                vm_mutex_unlock((vm_mutex *)&core_enc->mutexIncRow); // cast from const vm_mutex *
+                ((std::mutex *)core_enc->mutexIncRow)->unlock(); // cast from const std::mutex *
                 if (tRow <= last_slice_row) {
                     cur_s->m_uSkipRun = 0;
                     if (core_enc->m_PicParamSet->entropy_coding_mode == 0) {
@@ -1068,7 +1075,7 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                         H264BsBase_GetState(cur_s->m_pbitstream, &pBuffS, &bitOffS);
                     }
                     Ipp32s fsr = -1;
-                    for (tCol = 0; tCol < core_enc->m_WidthInMBs; tCol ++) {
+                    for (tCol = 0; tCol < core_enc->m_WidthInMBs; tCol++) {
                         Ipp32s uMB = tRow * core_enc->m_WidthInMBs + tCol;
                         cur_s->m_MB_Counter++;
                         cur_mb.uMB = uMB;
@@ -1082,12 +1089,17 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                         cur_mb.mbPitchPixels = core_enc->m_pCurrentFrame->m_pitchPixels << cur_s->m_is_cur_mb_field;
 #ifdef MB_THREADING_TW
                         if ((tRow > first_slice_row) && (tCol < (core_enc->m_WidthInMBs - 1))) {
-                            vm_mutex_lock((vm_mutex *)core_enc->mMutexMT + (tRow - 1) * core_enc->m_WidthInMBs + tCol + 1);
-                            vm_mutex_unlock((vm_mutex *)core_enc->mMutexMT + (tRow - 1) * core_enc->m_WidthInMBs + tCol + 1);
+                            try {
+                                core_enc->mMutexMT.at((tRow - 1) * core_enc->m_WidthInMBs + tCol + 1)->lock();
+                                core_enc->mMutexMT.at((tRow - 1) * core_enc->m_WidthInMBs + tCol + 1)->unlock();
+                            }
+                            catch (...) {
+                                return UMC_ERR_FAILED;
+                            }
                         }
 #else
                         if ((tRow > first_slice_row) && (tCol < (core_enc->m_WidthInMBs - 1)))
-                            while (core_enc->mbReady_MBT[tRow-1] <= tCol);
+                            while (core_enc->mbReady_MBT[tRow - 1] <= tCol);
 #endif // MB_THREADING_TW
                         H264CoreEncoder_LoadPredictedMBInfo_8u16s(state, cur_s);
                         H264CoreEncoder_UpdateCurrentMBInfo_8u16s(state, cur_s);
@@ -1104,27 +1116,27 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
 
                         H264CoreEncoder_setInCropWindow_8u16s(state, cur_s);
 
-            //if (core_enc->m_uFrames_Num == 1// && cur_mb.uMBx == 1 && cur_mb.uMBy == 0
-            //    &&core_enc->m_svc_layer.svc_ext.dependency_id == 0
-            //    //                && core_enc->m_svc_layer.svc_ext.quality_id == 1
-            //    ) {
-            //        printf("");
-            //}
+                        //if (core_enc->m_uFrames_Num == 1// && cur_mb.uMBx == 1 && cur_mb.uMBy == 0
+                        //    &&core_enc->m_svc_layer.svc_ext.dependency_id == 0
+                        //    //                && core_enc->m_svc_layer.svc_ext.quality_id == 1
+                        //    ) {
+                        //        printf("");
+                        //}
 
-            ////{
-            ////    printf("frame = %i, did = %d, qid = %d, x = %i, y = %i\n", core_enc->m_uFrames_Num,
-            ////        core_enc->m_svc_layer.svc_ext.dependency_id,
-            ////        core_enc->m_svc_layer.svc_ext.quality_id,
-            ////        cur_mb.uMBx, cur_mb.uMBy); /* RD */
-            ////    fflush(stdout);
-            ////}
+                        ////{
+                        ////    printf("frame = %i, did = %d, qid = %d, x = %i, y = %i\n", core_enc->m_uFrames_Num,
+                        ////        core_enc->m_svc_layer.svc_ext.dependency_id,
+                        ////        core_enc->m_svc_layer.svc_ext.quality_id,
+                        ////        cur_mb.uMBx, cur_mb.uMBy); /* RD */
+                        ////    fflush(stdout);
+                        ////}
 
                         if (core_enc->m_svc_layer.isActive) {
-                            MFX_INTERNAL_CPY(cur_s->m_cur_mb.intra_types_save, cur_s->m_cur_mb.intra_types, 16*sizeof(T_AIMode));
+                            MFX_INTERNAL_CPY(cur_s->m_cur_mb.intra_types_save, cur_s->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
                         }
 
 #ifdef H264_RECODE_PCM
-                        if(core_enc->m_mbPCM[uMB])
+                        if (core_enc->m_mbPCM[uMB])
                         {
                             cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_PCM;
                             cur_mb.LocalMacroblockInfo->cbp_luma = 0xffff;
@@ -1141,7 +1153,8 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                             }
 
                             H264CoreEncoder_Reconstruct_PCM_MB_8u16s(state, curr_slice);
-                        } else {
+                        }
+                        else {
 #endif //H264_RECODE_PCM
 
                             if (core_enc->m_svc_layer.isActive)
@@ -1155,7 +1168,7 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                                 H264CoreEncoder_CEncAndRecMB_SVC_8u16s(state, cur_s);
                             else // AVC case
                                 H264CoreEncoder_CEncAndRecMB_8u16s(state, cur_s);
-                        
+
 #ifdef H264_RECODE_PCM
                         }
 #endif //H264_RECODE_PCM
@@ -1260,8 +1273,14 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                         }
 #endif // !NO_PADDING
 #ifdef MB_THREADING_TW
-                        if (tCol < (core_enc->m_WidthInMBs - 1))
-                            vm_mutex_unlock(core_enc->mMutexMT + tRow * core_enc->m_WidthInMBs + tCol);
+                        if (tCol < (core_enc->m_WidthInMBs - 1)) {
+                            try {
+                                core_enc->mMutexMT.at(tRow * core_enc->m_WidthInMBs + tCol)->unlock();
+                            }
+                            catch (...) {
+                                return UMC_ERR_FAILED;
+                            }
+                        }
 #endif // MB_THREADING_TW
                         if (tCol < (core_enc->m_WidthInMBs - 1))
                             vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *>(core_enc->mbReady_MBT + tRow));
@@ -1272,17 +1291,20 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                         nBits = H264BsBase_GetBsOffset(cur_s->m_pbitstream);
                         if (tRow == first_slice_row) {
                             ippsCopy_1u(pBuffS, bitOffS, pBuffM, bitOffM, nBits);
-                        } else {
+                        }
+                        else {
                             if (core_enc->lSR_MBT[tRow - 1] == 0) {
                                 ippsCopy_1u(pBuffS, bitOffS, pBuffM, bitOffM, nBits);
-                            } else if (core_enc->lSR_MBT[tRow] == core_enc->m_WidthInMBs) {
+                            }
+                            else if (core_enc->lSR_MBT[tRow] == core_enc->m_WidthInMBs) {
                                 core_enc->lSR_MBT[tRow] += core_enc->lSR_MBT[tRow - 1];
-                            } else {
+                            }
+                            else {
                                 Ipp32s l = -1;
                                 Ipp32u c = fsr + 1;
                                 while (c) {
                                     c >>= 1;
-                                    l ++;
+                                    l++;
                                 }
                                 l = 1 + (l << 1);
                                 nBits -= l;
@@ -1308,7 +1330,12 @@ Status MFXVideoENCODEH264::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                         */
                     }
 #ifdef MB_THREADING_TW
-                    vm_mutex_unlock(core_enc->mMutexMT + tRow * core_enc->m_WidthInMBs + tCol - 1);
+                    try {
+                        core_enc->mMutexMT.at(tRow * core_enc->m_WidthInMBs + tCol - 1)->unlock();
+                    }
+                    catch (...) {
+                        return UMC_ERR_FAILED;
+                    }
 #endif // MB_THREADING_TW
                     vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *>(core_enc->mbReady_MBT + tRow));
                 }

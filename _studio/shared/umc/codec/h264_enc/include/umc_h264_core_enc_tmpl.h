@@ -1332,7 +1332,7 @@ typedef struct sH264CoreEncoderType
 #ifndef UMC_RESTRICTED_CODE_MBT
 #ifdef MB_THREADING
     bool   useMBT;
-    vm_mutex mutexIncRow;
+    std::mutex *mutexIncRow;
     H264SliceType *m_Slices_MBT; // thread independent slice information.
     volatile Ipp32s *mbReady_MBT;
     Ipp32s *lSR_MBT;
@@ -1343,7 +1343,7 @@ typedef struct sH264CoreEncoderType
 #endif // MB_THREADING_VM
 #ifdef MB_THREADING_TW
 #ifdef MB_THREADING_VM
-    vm_mutex *mMutexMT;
+    std::vector<std::mutex *> mMutexMT;
 #else // MB_THREADING_VM
 #ifdef _OPENMP
     omp_lock_t *mLockMT;
