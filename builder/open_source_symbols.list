@@ -83,7 +83,6 @@ MFX_ENABLE_H264_VIDEO_FEI_PREENC
 _MFX_H264_PREENC_H_
 _MFX_ENC_EXT_H_
 _MFX_PAK_EXT_H_
-__genx_fcopy_cmcode__
 __genx_fcopy_gen7_5__
 __genx_fcopy_gen8__
 __genx_fcopy_gen9__

@@ -504,8 +504,6 @@ _studio/mfx_lib/genx/asc/isa/asc_gen8_isa.cpp
 _studio/mfx_lib/genx/asc/isa/asc_gen9_isa.cpp
 _studio/mfx_lib/genx/asc/isa/asc_gen11_isa.cpp
 _studio/mfx_lib/genx/asc/isa/asc_gen11lp_isa.cpp
-_studio/mfx_lib/genx/field_copy/include/genx_fcopy_cmcode_isa.h
-_studio/mfx_lib/genx/field_copy/src/genx_fcopy_cmcode_isa.cpp
 _studio/mfx_lib/genx/field_copy/include/genx_fcopy_gen7_5_isa.h
 _studio/mfx_lib/genx/field_copy/src/genx_fcopy_gen7_5_isa.cpp
 _studio/mfx_lib/genx/field_copy/include/genx_fcopy_gen8_isa.h
