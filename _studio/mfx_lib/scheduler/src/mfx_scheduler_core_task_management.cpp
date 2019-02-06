@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -322,7 +322,7 @@ mfxStatus mfxSchedulerCore::WrapUpTask(MFX_CALL_INFO &callInfo,
             return MFX_ERR_NOT_FOUND;
         }
         // check the 'waiting' time period
-        else
+        else if (m_timeWaitPeriod)
         {
             mfxU64 time;
 

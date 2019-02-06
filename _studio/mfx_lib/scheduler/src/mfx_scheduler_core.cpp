@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,12 +36,8 @@
 #endif // defined(MFX_SCHEDULER_LOG)
 
 mfxSchedulerCore::mfxSchedulerCore(void)
-    :  m_currentTimeStamp(0)
-#if defined(_MSC_VER)
-    , m_timeWaitPeriod(1000000)
-#else // !defined(_MSC_VER)
-    , m_timeWaitPeriod(vm_time_get_frequency() / 1000)
-#endif // defined(_MSC_VER)
+    : m_currentTimeStamp(0)
+    , m_timeWaitPeriod(0)
     , m_hwWakeUpThread()
     , m_occupancyTable()
 {
@@ -351,17 +347,7 @@ void mfxSchedulerCore::Wait(const mfxU32 curThreadNum)
     MFX_SCHEDULER_THREAD_CONTEXT* thctx = GetThreadCtx(curThreadNum);
 
     if (thctx) {
-        mfxU32 timeout = (curThreadNum)? MFX_THREAD_TIME_TO_WAIT: 1;
-
-#if defined(_WIN32) || defined(_WIN64)
-        // Dedicated thread will poll driver for GPU tasks completion, but
-        // if HW thread exists we can relax this polling
-        if ((0 == curThreadNum) && m_hwTaskDone.handle) {
-            timeout = 15;
-        }
-#endif
-
-        thctx->taskAdded.Wait(timeout);
+        thctx->taskAdded.Wait();
     }
 }
 

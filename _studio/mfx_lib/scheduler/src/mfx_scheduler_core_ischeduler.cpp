@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -361,7 +361,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
             if (MFX_TASK_DONE!= call.res)
             {
                 vm_status vmRes;
-                vmRes = vm_event_timed_wait(&m_hwTaskDone, 15 /*ms*/);
+                vmRes = vm_event_wait(&m_hwTaskDone);
                 if (VM_OK == vmRes|| VM_TIMEOUT == vmRes)
                 {
                     vmRes = vm_event_reset(&m_hwTaskDone);
