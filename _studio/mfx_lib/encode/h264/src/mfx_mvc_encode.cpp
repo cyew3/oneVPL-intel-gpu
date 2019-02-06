@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -762,15 +762,15 @@ Status MFXVideoENCODEMVC::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
             cur_s->m_MB_Counter = 0;
             H264CurrentMacroblockDescriptor_8u16s &cur_mb = cur_s->m_cur_mb;
             while (tRow <= last_slice_row) {
-                vm_mutex_lock(&core_enc->mutexIncRow);
+                core_enc->mutexIncRow.lock();
                 tRow = *td->incRow;
                 (*td->incRow) ++;
 #ifdef MB_THREADING_TW
                 if (tRow < last_slice_row)
                     for (tCol = 0; tCol < core_enc->m_WidthInMBs; tCol ++)
-                        vm_mutex_lock(core_enc->mMutexMT + tRow * core_enc->m_WidthInMBs + tCol);
+                        (core_enc->mMutexMT + tRow * core_enc->m_WidthInMBs + tCol)->lock();
 #endif // MB_THREADING_TW
-                vm_mutex_unlock(&core_enc->mutexIncRow);
+                core_enc->mutexIncRow.lock();
                 if (tRow <= last_slice_row) {
                     cur_s->m_uSkipRun = 0;
                     if (core_enc->m_PicParamSet->entropy_coding_mode == 0) {
@@ -790,8 +790,8 @@ Status MFXVideoENCODEMVC::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                         cur_mb.mbPitchPixels = core_enc->m_pCurrentFrame->m_pitchPixels << cur_s->m_is_cur_mb_field;
 #ifdef MB_THREADING_TW
                         if ((tRow > first_slice_row) && (tCol < (core_enc->m_WidthInMBs - 1))) {
-                            vm_mutex_lock(core_enc->mMutexMT + (tRow - 1) * core_enc->m_WidthInMBs + tCol + 1);
-                            vm_mutex_unlock(core_enc->mMutexMT + (tRow - 1) * core_enc->m_WidthInMBs + tCol + 1);
+                            (core_enc->mMutexMT + (tRow - 1) * core_enc->m_WidthInMBs + tCol + 1)->lock();
+                            (core_enc->mMutexMT + (tRow - 1) * core_enc->m_WidthInMBs + tCol + 1)->unlock();
                         }
 #else
                         if ((tRow > first_slice_row) && (tCol < (core_enc->m_WidthInMBs - 1)))
@@ -908,7 +908,7 @@ Status MFXVideoENCODEMVC::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
 #endif // !NO_PADDING
 #ifdef MB_THREADING_TW
                         if (tCol < (core_enc->m_WidthInMBs - 1))
-                            vm_mutex_unlock(core_enc->mMutexMT + tRow * core_enc->m_WidthInMBs + tCol);
+                            (core_enc->mMutexMT + tRow * core_enc->m_WidthInMBs + tCol)->unlock();
 #endif // MB_THREADING_TW
                         if (tCol < (core_enc->m_WidthInMBs - 1))
                             vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *>(core_enc->mbReady_MBT + tRow));
@@ -955,7 +955,7 @@ Status MFXVideoENCODEMVC::ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd)
                         */
                     }
 #ifdef MB_THREADING_TW
-                    vm_mutex_unlock(core_enc->mMutexMT + tRow * core_enc->m_WidthInMBs + tCol - 1);
+                    (core_enc->mMutexMT + tRow * core_enc->m_WidthInMBs + tCol - 1)->unlock();
 #endif // MB_THREADING_TW
                     vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *>(core_enc->mbReady_MBT + tRow));
                 }
