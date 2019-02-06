@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -3169,10 +3169,6 @@ mfxStatus MFXVideoENCODEMPEG2::CreateTaskInfo()
     vm_event_init (&m_IntTasks.m_exit_event,0,0);
   vm_event_reset (&m_IntTasks.m_exit_event);
 
-
-  if (!vm_mutex_is_valid(&m_IntTasks.m_mGuard))
-    vm_mutex_init(&m_IntTasks.m_mGuard);
-
   if (!m_pExtTasks)
   {
     m_pExtTasks = new clExtTasks1;
@@ -3230,11 +3226,7 @@ void MFXVideoENCODEMPEG2::DeleteTaskInfo()
         m_pExtTasks = 0;
     }
     m_IntTasks.m_NumTasks = 0;
-    if (vm_mutex_is_valid(&m_IntTasks.m_mGuard))
-    {
-        vm_mutex_destroy(&m_IntTasks.m_mGuard);
-        vm_mutex_set_invalid(&m_IntTasks.m_mGuard);
-    }
+
     if (vm_event_is_valid(&m_IntTasks.m_exit_event))
     {
         vm_event_destroy(&m_IntTasks.m_exit_event);

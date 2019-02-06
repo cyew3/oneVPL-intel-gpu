@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 #include "vm_event.h"
 #include "mfx_enc_common.h"
 #include "mfx_mpeg2_enc_common.h"
+#include <mutex>
 
 class MFXVideoENCODEMPEG2;
 
@@ -49,7 +50,7 @@ struct sIntTasks
     sIntTaskInfo  *                                        m_TaskInfo;
     mfxU32                                                 m_NumTasks;
     mfxU32                                                 m_CurrTask;
-    vm_mutex                                               m_mGuard;
+    std::mutex                                             m_mGuard;
     vm_event                                               m_exit_event;
 
     sIntTasks()
@@ -58,13 +59,12 @@ struct sIntTasks
         m_TaskInfo = 0;
         m_NumTasks = 0;
         m_CurrTask = 0;
-        vm_mutex_set_invalid(&m_mGuard);
         vm_event_set_invalid (&m_exit_event);        
     }
 
     mfxStatus GetIntTask(mfxU32 & nTask)
     {
-        vm_mutex_lock(&m_mGuard);
+        std::lock_guard<std::mutex> guard(m_mGuard);
         if (m_CurrTask < m_NumTasks)
         {
             mfxStatus sts = MFX_ERR_NONE;
@@ -77,10 +77,8 @@ struct sIntTasks
             {
                 sts = MFX_ERR_MORE_DATA;
             }
-            vm_mutex_unlock(&m_mGuard);
             return sts;
         }
-        vm_mutex_unlock(&m_mGuard);
         return MFX_ERR_NOT_FOUND;            
     }
 };

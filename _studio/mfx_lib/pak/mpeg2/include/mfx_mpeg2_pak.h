@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include "mfx_mpeg2_enc_common_hw.h"
 #include "vm_thread.h"
 #include "vm_event.h"
-#include "vm_mutex.h"
+#include <mutex>
 #include <queue>
 
 #define IPP_NV12
@@ -375,7 +375,7 @@ protected:
     mfxI32              m_nThreads;
     mfxU8**             m_pTastksBuffers;
     mfxI32              m_TasksBuffersLen;
-    vm_mutex            m_mGuard;
+    std::mutex          m_mGuard;
     VideoCORE *            m_pCore;
     void *              m_pEncoder;
 public:
@@ -389,7 +389,7 @@ public:
     ~ThreadedMPEG2PAK();
     mfxStatus  GetNextTask(sTaskInfo** p)
     {
-        vm_mutex_lock(&m_mGuard);
+        std::lock_guard<std::mutex> guard(m_mGuard);
         if (m_curTask < m_nTasks)
         {
             mfxStatus sts = MFX_ERR_NONE;
@@ -403,10 +403,8 @@ public:
                 sts = MFX_ERR_MORE_DATA;
             }
 
-            vm_mutex_unlock(&m_mGuard);
             return sts;
         }
-        vm_mutex_unlock(&m_mGuard);
         return MFX_ERR_NOT_FOUND; 
     }    
     mfxStatus   EncodeFrame (mfxFrameCUC* pCUC, MFXVideoPAKMPEG2::MPEG2FrameState *pState);

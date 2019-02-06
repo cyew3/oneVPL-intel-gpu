@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -75,8 +75,6 @@ ThreadedMPEG2PAK::ThreadedMPEG2PAK(mfxI32 nSlices, mfxI32 nThreads, MFXVideoPAKM
     m_curStatus = MFX_ERR_NONE; 
     m_nTasks = 0;
     m_pMPEG2PAK = pPAKMPEG2;
-    vm_mutex_set_invalid(&m_mGuard);
-    vm_mutex_init(&m_mGuard);
     m_pCUC = 0;
     m_pState = 0;
 
@@ -146,12 +144,11 @@ ThreadedMPEG2PAK::~ThreadedMPEG2PAK()
         delete [] m_pTasks;
 
 
-    vm_mutex_destroy(&m_mGuard);    
 }
     
 void ThreadedMPEG2PAK::PrepareNewFrame(mfxFrameCUC* pCUC, MFXVideoPAKMPEG2::MPEG2FrameState *pState)
 {
-    vm_mutex_lock(&m_mGuard);
+    std::lock_guard<std::mutex> guard(m_mGuard);
 
     m_pCUC = pCUC;
     m_curTask = 0;
@@ -186,8 +183,6 @@ void ThreadedMPEG2PAK::PrepareNewFrame(mfxFrameCUC* pCUC, MFXVideoPAKMPEG2::MPEG
         pTask->sBitstream.DataOffset = 0;
         
     }
-    vm_mutex_unlock(&m_mGuard);
-     
 }
 mfxStatus ThreadedMPEG2PAK::CopyTaskBuffers ()
 {
