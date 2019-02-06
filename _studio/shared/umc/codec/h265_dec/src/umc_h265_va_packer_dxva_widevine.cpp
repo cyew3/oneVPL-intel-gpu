@@ -102,6 +102,7 @@ namespace UMC_HEVC_DECODER
         H265DBPList *dpb = supplier->GetDPBList();
         if (!dpb)
             throw h265_exception(UMC_ERR_FAILED);
+
         ReferencePictureSet *rps = pSlice->getRPS();
         for(H265DecoderFrame* frame = dpb->head() ; frame && count < sizeof(pPicParam->RefFrameList)/sizeof(pPicParam->RefFrameList[0]) ; frame = frame->future())
         {
@@ -133,7 +134,7 @@ namespace UMC_HEVC_DECODER
         for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
         {
             int32_t poc = rps->getPOC(index);
-            H265DecoderFrame *pFrm = supplier->GetDPBList()->findLongTermRefPic(pCurrentFrame, poc, pSeqParamSet->log2_max_pic_order_cnt_lsb, !rps->getCheckLTMSBPresent(index));
+            H265DecoderFrame *pFrm = dpb->findLongTermRefPic(pCurrentFrame, poc, pSeqParamSet->log2_max_pic_order_cnt_lsb, !rps->getCheckLTMSBPresent(index));
 
             if (pFrm)
             {
