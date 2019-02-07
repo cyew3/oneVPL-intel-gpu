@@ -29,7 +29,6 @@
 #include "ippvc.h"
 #include "umc_mpeg2_newfunc.h"
 #include "mfx_mpeg2_enc_common_hw.h"
-#include "vm_thread.h"
 #include "vm_event.h"
 #include <mutex>
 #include <queue>

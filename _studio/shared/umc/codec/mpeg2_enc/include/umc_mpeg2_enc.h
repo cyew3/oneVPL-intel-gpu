@@ -1,4 +1,4 @@
-// Copyright (c) 2002-2018 Intel Corporation
+// Copyright (c) 2002-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 #define __UMC_MPEG2_ENC_H
 
 #include <limits.h>
+#include <thread>
 #include "ippvc.h"
 #include "vm_debug.h"
 #include "umc_memory_allocator.h"
@@ -297,7 +298,7 @@ typedef IppStatus (__STDCALL *functype_mcB_nv12)(
       vm_event  start_event;
       vm_event  stop_event;
       vm_event  quit_event;
-      vm_thread thread;
+      std::thread thread;
     } threadInfo;
 
 public:

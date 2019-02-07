@@ -1,4 +1,4 @@
-// Copyright (c) 2002-2018 Intel Corporation
+// Copyright (c) 2002-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,6 @@
 #include "ippvc.h"
 #include "vm_semaphore.h"
 #include "vm_event.h"
-#include "vm_thread.h"
 #include "umc_mpeg2_enc.h"
 
 #define SCENE_DETECTION

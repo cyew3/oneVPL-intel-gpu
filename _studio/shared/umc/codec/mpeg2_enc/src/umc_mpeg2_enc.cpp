@@ -1,4 +1,4 @@
-// Copyright (c) 2002-2018 Intel Corporation
+// Copyright (c) 2002-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -652,12 +652,9 @@ Status MPEG2VideoEncoderBase::Init(BaseCodecParams *params)
         vm_event_set_invalid(&threads[i-1]->quit_event);
         if (VM_OK != vm_event_init(&threads[i-1]->quit_event, 0, 0))
           return UMC_ERR_ALLOC;
-        vm_thread_set_invalid(&threads[i-1]->thread);
-        if (0 == vm_thread_create(&threads[i-1]->thread,
-                                  ThreadWorkingRoutine,
-                                  threads[i-1])) {
-          return UMC_ERR_ALLOC;
-        }
+
+        threads[i - 1]->thread = std::thread([threads, i]() { ThreadWorkingRoutine(threads[i - 1]); });
+
         threads[i-1]->numTh = i;
         threads[i-1]->m_lpOwner = this;
       }
@@ -791,9 +788,8 @@ Status MPEG2VideoEncoderBase::Close()
 
       for (i = 0; i < threadsAllocated - 1; i++)
       {
-        if (&threads[i]->thread) {
-          vm_thread_close(&threads[i]->thread);
-          vm_thread_set_invalid(&threads[i]->thread);
+        if (threads[i]->thread.joinable()) {
+          threads[i]->thread.join();
         }
         if (vm_event_is_valid(&threads[i]->start_event)) {
           vm_event_destroy(&threads[i]->start_event);
