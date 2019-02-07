@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -286,7 +286,7 @@ char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOUR
 
 /* 12 bit */
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P016>)
-{ return "forBehaviorTest/dif_resol/hevc/420format_12bit/Kimono1_704x576_24_420_12.265 "; }
+{ return "forBehaviorTest/dif_resol/hevc/420format_12bit/Kimono1_704x576_24_420_12.265"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y216>)
 { return "forBehaviorTest/dif_resol/hevc/422format_12bit/Kimono1_704x576_24_422_12.265"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y416>)
