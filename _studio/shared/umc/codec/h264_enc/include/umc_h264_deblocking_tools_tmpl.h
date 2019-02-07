@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -88,8 +88,8 @@ typedef struct H264ENC_MAKE_NAME(sH264EncoderThreadedDeblockingTools)
 
     H264ENC_MAKE_NAME(H264CoreEncoder)* m_pDecoder;             // (H264CoreEncoder *) pointer to decoder-owner
 
-    vm_thread m_hDeblockingSliceSecondThread;                   // (vm_thread) handle to deblocking slice second thread
-    vm_thread m_hDeblockingSliceAsyncSecondThread;              // (vm_thread) handle to deblocking slice second thread
+    std::thread m_hDeblockingSliceSecondThread;                 // (std::thread) handle to deblocking slice second thread
+    std::thread m_hDeblockingSliceAsyncSecondThread;            // (std::thread) handle to deblocking slice second thread
 
     vm_event m_hBeginFrame;                                     // (vm_event) event to begin of deblocking frame
     vm_event m_hBeginSlice;                                     // (vm_event) event to begin of deblocking slice

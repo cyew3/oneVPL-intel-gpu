@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,7 @@
 
 #ifdef VM_SLICE_THREADING_H264
 #include "vm_thread.h"
+#include <thread>
 #endif
 
 #include "mfxdefs.h"
@@ -67,7 +68,7 @@ struct threadInfoH264
   vm_event  start_event;
   vm_event  stop_event;
   vm_event  quit_event;
-  vm_thread thread;
+  std::thread thread;
 };
 #endif
 

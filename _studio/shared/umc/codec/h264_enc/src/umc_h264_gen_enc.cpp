@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,6 @@
 #include <math.h>
 #include <string.h>
 #include "vm_strings.h"
-#include "vm_thread.h"
 #include "umc_h264_video_encoder.h"
 #include "umc_h264_core_enc.h"
 #include "umc_video_data.h"

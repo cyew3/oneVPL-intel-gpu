@@ -1339,7 +1339,7 @@ typedef struct sH264CoreEncoderType
     H264ENC_MAKE_NAME(GlobalData_MBT) *gd_MBT;
 #ifdef MB_THREADING_VM
     H264ENC_MAKE_NAME(ThreadDataVM_MBT) *m_ThreadDataVM;
-    vm_thread *m_ThreadVM_MBT;
+    std::thread *m_ThreadVM_MBT;
 #endif // MB_THREADING_VM
 #ifdef MB_THREADING_TW
 #ifdef MB_THREADING_VM

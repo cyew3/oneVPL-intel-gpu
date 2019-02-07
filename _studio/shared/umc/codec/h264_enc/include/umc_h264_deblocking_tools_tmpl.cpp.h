@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,21 +43,19 @@ void H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_Release)(
 {
     H264EncoderThreadedDeblockingToolsType* tools = (H264EncoderThreadedDeblockingToolsType *)state;
     // terminate second thread(s)
-    if (vm_thread_is_valid(&tools->m_hDeblockingSliceSecondThread))
+    if (tools->m_hDeblockingSliceSecondThread.joinable())
     {
         tools->m_bQuit = true;
         vm_event_signal(&tools->m_hBeginRow);
 
-        vm_thread_wait(&tools->m_hDeblockingSliceSecondThread);
-        vm_thread_close(&tools->m_hDeblockingSliceSecondThread);
+        tools->m_hDeblockingSliceSecondThread.join();
     }
-    if (vm_thread_is_valid(&tools->m_hDeblockingSliceAsyncSecondThread))
+    if (tools->m_hDeblockingSliceAsyncSecondThread.joinable())
     {
         tools->m_bQuit = true;
         vm_event_signal(&tools->m_hBeginSlice);
 
-        vm_thread_wait(&tools->m_hDeblockingSliceAsyncSecondThread);
-        vm_thread_close(&tools->m_hDeblockingSliceAsyncSecondThread);
+        tools->m_hDeblockingSliceAsyncSecondThread.join();
     }
 
     // destroy objects
@@ -74,8 +72,6 @@ void H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_Release)(
     if (vm_event_is_valid(&tools->m_hDoneSlice))
         vm_event_destroy(&tools->m_hDoneSlice);
 
-    vm_thread_set_invalid(&tools->m_hDeblockingSliceSecondThread);
-    vm_thread_set_invalid(&tools->m_hDeblockingSliceAsyncSecondThread);
     vm_event_set_invalid(&tools->m_hBeginFrame);
     vm_event_set_invalid(&tools->m_hBeginSlice);
     vm_event_set_invalid(&tools->m_hBeginRow);
@@ -127,21 +123,8 @@ Status H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_Initialize)(
 
     // run second thread(s)
     {
-        Ipp32s resi;
-
-        resi = vm_thread_create(
-            &tools->m_hDeblockingSliceSecondThread,
-            H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_DeblockSliceSecondThread),
-            state);
-        if (0 == res)
-            return UMC_ERR_INIT;
-
-        resi = vm_thread_create(
-            &tools->m_hDeblockingSliceAsyncSecondThread,
-            H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_DeblockSliceAsyncSecondThread),
-            state);
-        if (0 == resi)
-            return UMC_ERR_INIT;
+        tools->m_hDeblockingSliceSecondThread = std::thread([state]() { H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_DeblockSliceSecondThread)(state); });
+        tools->m_hDeblockingSliceAsyncSecondThread = std::thread([state]() {H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_DeblockSliceAsyncSecondThread)(state); });
     }
 
     return UMC_OK;
@@ -152,8 +135,6 @@ Status H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_Create)(
     void* state)
 {
     H264EncoderThreadedDeblockingToolsType* tools = (H264EncoderThreadedDeblockingToolsType *)state;
-    vm_thread_set_invalid(&tools->m_hDeblockingSliceSecondThread);
-    vm_thread_set_invalid(&tools->m_hDeblockingSliceAsyncSecondThread);
     vm_event_set_invalid(&tools->m_hBeginFrame);
     vm_event_set_invalid(&tools->m_hBeginSlice);
     vm_event_set_invalid(&tools->m_hBeginRow);

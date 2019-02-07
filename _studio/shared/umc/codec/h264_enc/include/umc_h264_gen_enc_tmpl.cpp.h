@@ -18,8 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <vm_thread.h>
-
 #if PIXBITS == 8
 
 #define PIXTYPE Ipp8u
@@ -1789,7 +1787,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Init)(
         return UMC_ERR_ALLOC;
 #endif //H264_RECODE_PCM
 #ifdef MB_THREADING_VM
-    core_enc->m_ThreadVM_MBT = (vm_thread*)H264_Malloc(sizeof(vm_thread) * core_enc->m_info.numThreads);
+    core_enc->m_ThreadVM_MBT = (std::thread*)H264_Malloc(sizeof(std::thread) * core_enc->m_info.numThreads);
     if (!core_enc->m_ThreadVM_MBT)
         return UMC_ERR_ALLOC;
     core_enc->m_ThreadDataVM = (H264ENC_MAKE_NAME(ThreadDataVM_MBT)*)H264_Malloc(sizeof(H264ENC_MAKE_NAME(ThreadDataVM_MBT)) * core_enc->m_info.numThreads);

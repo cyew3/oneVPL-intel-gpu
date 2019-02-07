@@ -47,7 +47,6 @@
 #include "mfx_tools.h"
 #include "umc_h264_brc.h"
 #include "umc_svc_brc.h"
-#include "vm_thread.h"
 #include "vm_interlocked.h"
 #include "mfx_ext_buffers.h"
 #include <new>
@@ -56,6 +55,36 @@
 #include "vm_event.h"
 #include "vm_sys_info.h"
 #endif // VM_SLICE_THREADING_H264
+
+#if defined _OPENMP
+#if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
+
+#ifndef _WIN32_WCE
+#include <process.h>
+#endif /* _WIN32_WCE */
+#include <windows.h>
+inline int vm_get_current_thread_priority()
+{
+    return GetThreadPriority(GetCurrentThread());
+}
+inline void vm_set_current_thread_priority(int priority)
+{
+    SetThreadPriority(GetCurrentThread(), priority);
+}
+#elseif
+    #if defined(LINUX32) || defined(__APPLE__)
+        inline int vm_get_current_thread_priority()
+        {
+            return 2;  //VM_THREAD_PRIORITY_NORMAL
+        }
+
+        void vm_set_current_thread_priority(int /*priority*/)
+        {
+            return;
+        }
+    #endif
+#endif
+#endif
 
 ////extern int rd_frame_num;
 
@@ -3692,14 +3721,9 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
               vm_event_set_invalid(&threads[i-1]->quit_event);
               if (VM_OK != vm_event_init(&threads[i-1]->quit_event, 0, 0))
                   return h264enc_ConvertStatus(UMC_ERR_ALLOC);
-              vm_thread_set_invalid(&threads[i-1]->thread);
               threads[i-1]->numTh = i;
               threads[i-1]->m_lpOwner = this;
-              if (0 == vm_thread_create(&threads[i-1]->thread,
-                                    ThreadWorkingRoutine,
-                                    threads[i-1])) {
-              return h264enc_ConvertStatus(UMC_ERR_ALLOC);
-              }
+              threads[i - 1]->thread = std::thread([threads, i]() { ThreadWorkingRoutine(threads[i - 1]); });
           }
       }
       threadsAllocated = numThreads;
@@ -3781,9 +3805,8 @@ mfxStatus MFXVideoENCODEH264::Close()
 
             for (i = 0; i < threadsAllocated - 1; i++)
             {
-                if (&threads[i]->thread) {
-                    vm_thread_close(&threads[i]->thread);
-                    vm_thread_set_invalid(&threads[i]->thread);
+                if (threads[i]->thread.joinable()) {
+                    threads[i]->thread.join();
                 }
                 if (vm_event_is_valid(&threads[i]->start_event)) {
                     vm_event_destroy(&threads[i]->start_event);
@@ -8983,7 +9006,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_CompressFrame(
         }
 
 #if defined _OPENMP
-        vm_thread_priority mainTreadPriority = vm_get_current_thread_priority();
+        int mainTreadPriority = vm_get_current_thread_priority();
 #ifndef MB_THREADING
 #pragma omp parallel for private(slice)
 #endif // MB_THREADING
