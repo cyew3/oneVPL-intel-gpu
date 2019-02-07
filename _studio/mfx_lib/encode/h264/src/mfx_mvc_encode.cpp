@@ -47,7 +47,6 @@
 #include "mfx_session.h"
 #include "mfx_tools.h"
 #include "umc_h264_brc.h"
-#include "vm_thread.h"
 #include "vm_interlocked.h"
 #include "mfx_ext_buffers.h"
 #include <new>
@@ -5542,7 +5541,7 @@ Status MFXVideoENCODEMVC::H264CoreEncoder_CompressFrame(
         // prepare all ref pic marking here
         H264CoreEncoder_PrepareRefPicMarking(core_enc, ctrl, ePic_Class, 0);
 #if defined _OPENMP
-        vm_thread_priority mainTreadPriority = vm_get_current_thread_priority();
+        int mainTreadPriority = vm_get_current_thread_priority();
 #ifndef MB_THREADING
 #pragma omp parallel for private(slice)
 #endif // MB_THREADING

@@ -47,6 +47,36 @@
 
 #include "mfx_umc_alloc_wrapper.h"
 
+#if defined _OPENMP
+#if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
+
+#ifndef _WIN32_WCE
+#include <process.h>
+#endif /* _WIN32_WCE */
+#include <windows.h>
+inline int vm_get_current_thread_priority()
+{
+    return GetThreadPriority(GetCurrentThread());
+}
+inline void vm_set_current_thread_priority(int priority)
+{
+    SetThreadPriority(GetCurrentThread(), priority);
+}
+#elseif
+#if defined(LINUX32) || defined(__APPLE__)
+inline int vm_get_current_thread_priority()
+{
+    return 2;  //VM_THREAD_PRIORITY_NORMAL
+}
+
+void vm_set_current_thread_priority(int /*priority*/)
+{
+    return;
+}
+#endif
+#endif
+#endif
+
 class MFXVideoENCODEH264;
 class mfxVideoInternalParam;
 

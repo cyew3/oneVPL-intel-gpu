@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,10 +33,6 @@
 #define VM_SLICE_THREADING_H264
 #define VM_MB_THREADING_H264
 #define H264_NEW_THREADING
-
-#ifdef VM_SLICE_THREADING_H264
-#include "vm_thread.h"
-#endif
 
 #include "mfxdefs.h"
 #include "mfxvideo.h"
