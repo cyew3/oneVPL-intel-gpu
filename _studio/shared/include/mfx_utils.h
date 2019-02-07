@@ -113,8 +113,6 @@ bool LumaIsNull(const mfxFrameSurface1 * surf)
     }
 }
 
-#define MFX_ZERO_MEM(_X)    memset(&_X, 0, sizeof(_X))
-
 #ifndef SAFE_DELETE
 #define SAFE_DELETE(PTR)    { if (PTR) { delete PTR; PTR = NULL; } }
 #endif
