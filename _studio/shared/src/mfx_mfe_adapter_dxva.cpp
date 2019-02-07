@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,10 +27,6 @@
 #include <assert.h>
 #include <iterator>
 #include "mfx_h264_encode_d3d11.h"
-
-#ifndef MFX_CHECK_WITH_ASSERT
-#define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
-#endif
 
 #define CTX(dpy) (((VADisplayContextP)dpy)->pDriverContext)
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 Intel Corporation
+// Copyright (c) 2016-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -76,8 +76,6 @@ D3D11Encoder::~D3D11Encoder()
     Destroy();
 
 } // D3D11Encoder::~D3D11Encoder()
-
-#define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
 mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     VideoCORE* pCore,
