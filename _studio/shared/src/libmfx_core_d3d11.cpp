@@ -703,6 +703,9 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         return &m_bIsBlockingTaskSyncEnabled;
     }
 #endif
+    else if (MFXIFEIEnabled_GUID == guid)
+        return const_cast<bool*>(&s_bHEVCFEIEnabled);
+
     return NULL;
 }
 

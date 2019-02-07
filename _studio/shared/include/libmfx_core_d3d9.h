@@ -254,6 +254,9 @@ private:
     // this function should not be virtual
     mfxStatus SetCmCopyStatus(bool enable);
 
+    // no HEVC FEI, always false
+    static const bool s_bHEVCFEIEnabled = false;
+
     HANDLE                                     m_hDirectXHandle; // if m_pDirect3DDeviceManager was used
     std::auto_ptr<UMC::DXVA2Accelerator>       m_pVA;
     #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
