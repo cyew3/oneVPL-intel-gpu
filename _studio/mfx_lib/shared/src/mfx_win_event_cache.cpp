@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,6 @@ MFX_ERR_NONE if successes
 MFX_ERR_MEMORY_ALLOC if failed to allocate event
 MFX_ERR_NOT_INITIALIZED if already initialized
 */
-
-//vm_mutex gLock = { 0 };
 
 mfxStatus EventCache::Init(size_t nPreallocEvents)
 {
