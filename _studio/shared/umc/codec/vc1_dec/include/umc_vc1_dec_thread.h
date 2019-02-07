@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@
 #include "umc_va_base.h"
 
 #include <new>
+#include <thread>
 
 namespace UMC
 {
@@ -70,7 +71,7 @@ protected:
     //
 
 
-    vm_thread m_hThread;                                        // (vm_thread) handle to asynchronously working thread
+    std::thread m_hThread;                                       // (std::thread) handle to asynchronously working thread
 
     int32_t m_iNumber;                                           // (int32_t) ordinal number of decoder
 

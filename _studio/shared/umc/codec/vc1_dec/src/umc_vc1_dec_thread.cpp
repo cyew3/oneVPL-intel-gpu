@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,6 @@
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 
 #include "umc_vc1_dec_thread.h"
-#include "vm_thread.h"
 #include "vm_event.h"
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_dec_task_store.h"
@@ -34,12 +33,11 @@
 namespace UMC
 {
 
-VC1ThreadDecoder::VC1ThreadDecoder() : m_hThread()
+VC1ThreadDecoder::VC1ThreadDecoder()
 {
     m_pMemoryAllocator = NULL;
     m_pStore = NULL;
     m_pJobSlice = NULL;
-    vm_thread_set_invalid(&m_hThread);
 
     m_bQuit = false;
     m_bStartDecoding = false;
@@ -67,12 +65,11 @@ void VC1ThreadDecoder::Release(void)
     }
 
     // threading tools
-    if (vm_thread_is_valid(&m_hThread))
+    if (m_hThread.joinable())
     {
         m_bQuit = true;
 
-        vm_thread_wait(&m_hThread);
-        vm_thread_close(&m_hThread);
+        m_hThread.join();
     }
 
     m_bQuit = false;
