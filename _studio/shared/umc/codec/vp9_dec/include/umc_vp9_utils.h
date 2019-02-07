@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,8 @@
 #if defined(UMC_ENABLE_VP9_VIDEO_DECODER) || defined(UMC_ENABLE_AV1_VIDEO_DECODER)
 
 #include "umc_vp9_dec_defs.h"
+
+#define VP9_CHECK_AND_THROW(exp, err) if(!exp) throw UMC_VP9_DECODER::vp9_exception(MFX_ERR_UNKNOWN)
 
 
 namespace UMC_VP9_DECODER

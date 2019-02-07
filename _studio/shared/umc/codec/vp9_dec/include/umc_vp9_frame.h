@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -107,6 +107,8 @@ public:
 
     uint32_t frameCountInBS;
     uint32_t currFrameInBS;
+
+    bool isDecoded;
 };
 
 } // end namespace UMC_VP9_DECODER

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,8 @@ namespace UMC_VP9_DECODER { class Packer; }
     };
 #endif
 
+class FrameStorage;
+
 class VideoDECODEVP9_HW : public VideoDECODE, public MfxCriticalErrorHandler
 {
 public:
@@ -75,7 +77,8 @@ protected:
     void CalculateTimeSteps(mfxFrameSurface1 *);
     static mfxStatus QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *, mfxFrameAllocRequest *);
 
-    mfxStatus UpdateRefFrames(const mfxU8 refreshFrameFlags, UMC_VP9_DECODER::VP9DecoderFrame & info);
+    mfxStatus UpdateRefFrames();
+    mfxStatus CleanRefList();
 
     mfxStatus DecodeSuperFrame(mfxBitstream *in, UMC_VP9_DECODER::VP9DecoderFrame & info);
     mfxStatus DecodeFrameHeader(mfxBitstream *in, UMC_VP9_DECODER::VP9DecoderFrame & info);
@@ -112,6 +115,7 @@ private:
 #endif
 
     std::unique_ptr<UMC_VP9_DECODER::Packer>  m_Packer;
+    std::unique_ptr<FrameStorage> m_framesStorage;
 
     mfxFrameAllocRequest     m_request;
     mfxFrameAllocResponse    m_response;
