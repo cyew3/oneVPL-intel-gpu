@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -688,7 +688,8 @@ mfxStatus D3D11VideoProcessor::Close()
     std::map<void *, D3D11_VIDEO_PROCESSOR_STREAM *>::iterator itVPS;
     for (itVPS = m_videoProcessorStreams.begin() ; itVPS != m_videoProcessorStreams.end(); itVPS++)
     {
-        SAFE_DELETE(itVPS->second);
+        delete itVPS->second;
+        itVPS->second = nullptr;
     }
 
     std::map<void *, ID3D11VideoProcessorInputView *>::iterator itVPIV;

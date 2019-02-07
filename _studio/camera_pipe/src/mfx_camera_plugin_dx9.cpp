@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -632,7 +632,8 @@ mfxStatus DXVAHDVideoProcessor::DestroyDevice(void)
     std::map<void *, DXVAHD_STREAM_DATA *>::iterator itVPS;
     for (itVPS = m_Streams.begin() ; itVPS != m_Streams.end(); itVPS++)
     {
-        SAFE_DELETE(itVPS->second);
+        delete itVPS->second;
+        itVPS->second = nullptr;
     }
 
     if ( m_pDXVAVideoProcessor )

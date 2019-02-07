@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 // mfx_pavp.cpp : Defines the entry point for the DLL application.
 //
 #include <initguid.h>
@@ -81,7 +91,7 @@ extern "C" CPAVPSession * CreateCSIGMASession(
         (uint32*)&seed, sizeof(seed));
     if (PAVP_EPID_FAILURE(PavpStatus))
     {
-        SAFE_DELETE(session);
+        delete session;
         return NULL;
     }
     return session;
@@ -105,7 +115,7 @@ extern "C" CPAVPVideo* CreateCPAVPVideo_D3D11(
     PavpEpidStatus PavpStatus = v->PreInit(decryptorMode);
     if (PAVP_EPID_FAILURE(PavpStatus))
     {
-        SAFE_DELETE(v);
+        delete v;
         return NULL;
     }
     return v;
@@ -122,7 +132,7 @@ extern "C" CPAVPVideo* CreateCPAVPVideo_CryptoSession9(
     PavpEpidStatus PavpStatus = v->PreInit(decryptorMode);
     if (PAVP_EPID_FAILURE(PavpStatus))
     {
-        SAFE_DELETE(v);
+        delete v;
         return NULL;
     }
     return v;
@@ -141,7 +151,7 @@ extern "C" CPAVPVideo* CreateCPAVPVideo_Auxiliary9(
     PavpEpidStatus PavpStatus = v->PreInit(encryptorMode, decryptorMode);
     if (PAVP_EPID_FAILURE(PavpStatus))
     {
-        SAFE_DELETE(v);
+        delete v;
         return NULL;
     }
     return v;
@@ -150,5 +160,6 @@ extern "C" CPAVPVideo* CreateCPAVPVideo_Auxiliary9(
 
 extern "C" void mfxPAVPDestroy(void * ptr)
 {
-    SAFE_DELETE(ptr);
+    delete ptr;
+    ptr = nullptr;
 }   
