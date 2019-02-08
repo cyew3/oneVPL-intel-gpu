@@ -30,7 +30,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <algorithm>
-#include <thread>
 
 #include "mfxdefs.h"
 #include "mfx_task.h"
@@ -1051,7 +1050,8 @@ AV1Encoder::~AV1Encoder()
     m_stopFeiThread = 1;
     m_feiCritSect.unlock();
     m_feiCondVar.notify_one();
-    m_feiThread.Close();
+    if (m_feiThread.joinable())
+        m_feiThread.join();
 
     // aya: issue on my HSW systems - not investigated yet
 #if 1
@@ -1335,9 +1335,7 @@ mfxStatus AV1Encoder::Init(const mfxVideoParam &par)
     m_pauseFeiThread = 0;
     m_feiThreadRunning = 0;
     if (m_videoParam.enableCmFlag) {
-        int32_t umcSts = m_feiThread.Create(AV1Encoder::FeiThreadRoutineStarter, this);
-        if (umcSts != UMC::UMC_OK)
-            return MFX_ERR_MEMORY_ALLOC;
+        m_feiThread = std::thread([this]() { AV1Encoder::FeiThreadRoutineStarter(this); });
     }
 
     m_laFrame[0] = NULL;

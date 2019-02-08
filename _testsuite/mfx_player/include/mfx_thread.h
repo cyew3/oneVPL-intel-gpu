@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -13,10 +13,11 @@ File Name: .h
 #pragma once
 #include <list>
 #include <stdexcept>
+#include <thread>
 #include "mfxdefs.h"
 #include "umc_event.h"
-#include "umc_thread.h"
 #include "umc_mutex.h"
+#include "vm_thread.h"
 
 #ifndef _WIN32
     #include <pthread.h>
@@ -60,7 +61,7 @@ namespace MFXThread
     };
 
     class ThreadPool {
-        UMC::Thread mThread;
+        std::thread mThread;
         UMC::Event mWakeupThread;
         UMC::Event mTaskReady;
         UMC::Mutex mQueAccess;
@@ -71,9 +72,8 @@ namespace MFXThread
         ThreadPool () 
             : mQuit()
             , mThreadId() {
-            if (UMC::UMC_OK != mThread.Create(Runner, this)) {
-                throw std::runtime_error("cannot create new thread");
-            }
+            mThread = std::thread([this]() { Runner(this); });
+
             //autoreset event
             mWakeupThread.Init(0, 0);
             
@@ -82,7 +82,8 @@ namespace MFXThread
         }
         ~ThreadPool() {
             mQuit = true;
-            mThread.Wait();
+            if (mThread.joinable())
+                mThread.join();
         }
         template <class Functor>
         mfx_shared_ptr<Task> Queue(const Functor & callback) { 

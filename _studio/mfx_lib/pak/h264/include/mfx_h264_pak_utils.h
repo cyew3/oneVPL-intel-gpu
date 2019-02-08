@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,9 @@
 #include <assert.h>
 #include "mfxdefs.h"
 #include "vm_interlocked.h"
-#include "umc_thread.h"
 #include "umc_event.h"
+#include "vm_thread.h"
+#include <thread>
 
 #if (defined(__INTEL_COMPILER) || defined(_MSC_VER)) && !defined(_WIN32_WCE)
 #define H264PAK_ALIGN16 __declspec (align(16))
@@ -823,7 +824,7 @@ namespace H264Pak
 
         ThreadRoutine* m_routine;
 
-        UMC::Thread m_thread;
+        std::thread m_thread;
         UMC::Event m_onRun;
         UMC::Event m_onReady;
         bool m_onStop;

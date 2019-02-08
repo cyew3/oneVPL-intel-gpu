@@ -256,7 +256,6 @@
     <ClCompile Include="src\umc_mmap.cpp" />
     <ClCompile Include="src\umc_semaphore.cpp" />
     <ClCompile Include="src\umc_sys_info.cpp" />
-    <ClCompile Include="src\umc_thread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_vm++_pthread.h" />
@@ -264,7 +263,6 @@
     <ClInclude Include="include\umc_mmap.h" />
     <ClInclude Include="include\umc_semaphore.h" />
     <ClInclude Include="include\umc_sys_info.h" />
-    <ClInclude Include="include\umc_thread.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

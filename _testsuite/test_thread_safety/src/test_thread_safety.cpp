@@ -4,16 +4,17 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: test_thread_safety.cpp
 
 \* ****************************************************************************** */
 
-#include "umc_thread.h"
+#include "vm_thread.h"
 #include "test_thread_safety.h"
 #include "test_thread_safety_cmdline.h"
 #include "mfx_pipeline_sync.h"
+#include <thread>
 
 std::auto_ptr<OutputRegistrator> outReg;
 
@@ -62,7 +63,7 @@ mfxI32 main(mfxI32 argc, vm_char** argv)
     }
 
     mfxU32 numThread = cmd.GetNumThread();
-    AutoArray<UMC::Thread> thread(new UMC::Thread[numThread]);
+    AutoArray<std::thread> thread(new std::thread[numThread]);
     AutoArray<ThreadParam> param(new ThreadParam[numThread]);
     std::auto_ptr<IPipelineSynhro> init_stage_sync (new PipelineSynhro());
 
@@ -77,17 +78,19 @@ mfxI32 main(mfxI32 argc, vm_char** argv)
 
     for (mfxU32 i = 0; i < numThread; i++)
     {
-        param[i].testType = cmd.GetTestType();
-        param[i].argc = cmd.GetArgc();
-        param[i].argv = cmd.GetArgv();
-        param[i].pExternalSync = init_stage_sync.get();
-        thread[i].Create(ThreadStarter, &param[i]);
+        ThreadParam * _param = &param[i];
+        _param->testType = cmd.GetTestType();
+        _param->argc = cmd.GetArgc();
+        _param->argv = cmd.GetArgv();
+        _param->pExternalSync = init_stage_sync.get();
+        thread[i] = std::thread([_param](){ ThreadStarter(_param); });
     }
 
     mfxI32 result = 0;
     for (mfxU32 i = 0; i < numThread; i++)
     {
-        thread[i].Wait();
+        if (thread[i].joinable())
+            thread[i].join();
         if (param[i].result != 0)
             result = 1;
     }

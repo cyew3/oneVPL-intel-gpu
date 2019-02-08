@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -280,19 +280,20 @@ PredThread::PredThread()
 {
     m_onRun.Init(0, 0);
     m_onReady.Init(0, 0);
-    m_thread.Create(PredThread::Callback, this);
+    m_thread = std::thread([this]() { PredThread::Callback((void*)this); });
 }
 
 PredThread::~PredThread()
 {
     m_onStop = true;
     m_onRun.Set();
-    m_thread.Close();
+    if (m_thread.joinable())
+        m_thread.join();
 }
 
 bool PredThread::IsValid()
 {
-    return m_thread.IsValid();
+    return true;
 }
 
 void PredThread::Run(ThreadRoutine& routine)

@@ -1,4 +1,4 @@
-// Copyright (c) 2005-2018 Intel Corporation
+// Copyright (c) 2005-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,12 +23,13 @@
 
 #define VM_THREAD_CATCHCRASH
 
-#include "umc_thread.h"
+#include "vm_thread.h"
 #include "umc_event.h"
 #include "umc_mutex.h"
 #include "umc_media_data.h"
 #include "umc_splitter.h"
 #include "umc_demuxer.h"
+#include <thread>
 
 namespace UMC
 {
@@ -76,7 +77,7 @@ namespace UMC
         // signaled when PSI is changed
         Event *m_pOnPSIChangeEvent;
         // internal thread
-        Thread m_DemuxerThread;
+        std::thread m_DemuxerThread;
         // signaled when init finished
         Event m_OnInit;
         // signaled when blocking buffer is unlocked

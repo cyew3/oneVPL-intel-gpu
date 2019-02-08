@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 #include "umc_splitter_ex.h"
 #include "umc_mutex.h"
 
-#include "umc_thread.h"
+#include "vm_thread.h"
 #include "umc_index.h"
 #include "umc_media_buffer.h"
 

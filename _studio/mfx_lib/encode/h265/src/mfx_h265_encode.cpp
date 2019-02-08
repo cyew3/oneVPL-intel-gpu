@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -984,7 +984,8 @@ H265Encoder::~H265Encoder()
     m_stopFeiThread = 1;
     m_feiCritSect.unlock();
     m_feiCondVar.notify_one();
-    m_feiThread.Close();
+    if (m_feiThread.joinable())
+        m_feiThread.join();
 
     for_each(m_free.begin(), m_free.end(), Deleter());
     m_free.resize(0);
@@ -1409,9 +1410,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
     m_pauseFeiThread = 0;
     m_feiThreadRunning = 0;
     if (m_videoParam.enableCmFlag) {
-        Ipp32s umcSts = m_feiThread.Create(H265Encoder::FeiThreadRoutineStarter, this);
-        if (umcSts != UMC::UMC_OK)
-            return MFX_ERR_MEMORY_ALLOC;
+        m_feiThread = std::thread([this]() { H265Encoder::FeiThreadRoutineStarter(this); });
     }
 
     m_laFrame[0] = NULL;

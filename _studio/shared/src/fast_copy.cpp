@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
 #include "fast_copy.h"
 
 #include "umc_event.h"
-#include "umc_thread.h"
+#include <thread>
 #include "libmfx_allocator.h"
 
 struct FC_TASK
@@ -75,7 +75,7 @@ protected:
     static IppBool m_bCopyQuit;
 
     // handles
-    UMC::Thread *m_pThreads;
+    std::thread *m_pThreads;
     Ipp32u m_numThreads;
 
     FC_TASK *m_tasks;
@@ -113,7 +113,7 @@ mfxStatus FastCopyMultithreading::Initialize(void)
     }
     if (MFX_ERR_NONE == sts)
     {
-        m_pThreads = new UMC::Thread[m_numThreads];
+        m_pThreads = new std::thread[m_numThreads];
         m_tasks = new FC_TASK[m_numThreads];
 
         if (!m_pThreads || !m_tasks) sts = MFX_ERR_MEMORY_ALLOC;
@@ -133,10 +133,7 @@ mfxStatus FastCopyMultithreading::Initialize(void)
     // run threads
     for (i = 0; (MFX_ERR_NONE == sts) && (i < m_numThreads - 1); i += 1)
     {
-        if (UMC::UMC_OK != m_pThreads[i].Create(CopyByThread, (void *)(m_tasks + i)))
-        {
-            sts = MFX_ERR_UNKNOWN;
-        }
+        m_pThreads[i] = std::thread([this, i]() { CopyByThread((void *)(m_tasks + i)); });
     }
 
     return MFX_ERR_NONE;
@@ -152,7 +149,8 @@ mfxStatus FastCopyMultithreading::Release(void)
         for (mfxU32 i = 0; i < m_numThreads - 1; i += 1)
         {
             m_tasks[i].EventStart.Set();
-            m_pThreads[i].Wait();
+            if (m_pThreads[i].joinable())
+                m_pThreads[i].join();
         }
     }
 

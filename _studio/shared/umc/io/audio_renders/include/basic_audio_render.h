@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,6 @@
 
 #include "umc_audio_render.h"
 #include "umc_cyclic_buffer.h"
-#include "umc_thread.h"
 #include "umc_event.h"
 
 namespace UMC

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,11 +26,12 @@
 
 #include "memory"
 #include <condition_variable>
+#include <thread>
 #include "deque"
 
 #include "ippdefs.h"
 
-#include "umc_thread.h"
+#include "vm_thread.h"
 
 #include "mfxdefs.h"
 #include "mfxvideo.h"
@@ -221,7 +222,7 @@ namespace H265Enc {
         void FeiThreadSubmit(ThreadingTask &task);
         bool FeiThreadWait(Ipp32u timeout);
         void *m_fei;
-        UMC::Thread m_feiThread;
+        std::thread m_feiThread;
         Ipp32s m_pauseFeiThread;
         Ipp32s m_stopFeiThread;
         volatile Ipp32s m_feiThreadRunning;

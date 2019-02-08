@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 #include "umc_asf_parser.h"
 #include "umc_data_reader.h"
 #include "umc_asf_fb.h"
-#include "umc_thread.h"
+#include "vm_thread.h"
 
 
 #define ASF_NUMBER_OF_FRAMES    1

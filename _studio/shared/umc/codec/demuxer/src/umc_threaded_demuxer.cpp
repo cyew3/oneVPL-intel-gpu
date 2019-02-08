@@ -1,4 +1,4 @@
-// Copyright (c) 2005-2018 Intel Corporation
+// Copyright (c) 2005-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -113,8 +113,8 @@ Status ThreadedDemuxer::Stop(void)
     m_bStop = true;
     m_pDemuxer->Stop();
     m_OnUnlock.Set();
-    if (m_DemuxerThread.IsValid())
-        m_DemuxerThread.Wait();
+    if (m_DemuxerThread.joinable())
+        m_DemuxerThread.join();
     return UMC_OK;
 }
 
@@ -124,17 +124,14 @@ Status ThreadedDemuxer::Run(void)
     if (!m_bStop)
         return UMC_OK;
 
-    if (m_DemuxerThread.IsValid())
+    if (m_DemuxerThread.joinable())
     {
-        m_DemuxerThread.Wait();
-        m_DemuxerThread.Close();
+        m_DemuxerThread.join();
     }
 
     m_bStop = false;
     m_OnInit.Reset();
-    Status umcRes = m_DemuxerThread.Create((vm_thread_callback)ThreadRoutineStarter,(void *)this);
-    if (UMC_OK != umcRes)
-        return umcRes;
+    m_DemuxerThread = std::thread([this]() { ThreadRoutineStarter((void *)this); });
 
     m_OnInit.Wait();
     return UMC_OK;
@@ -233,12 +230,7 @@ Status ThreadedDemuxer::Init(SplitterParams& init)
         return umcRes;
     }
 
-    umcRes = m_DemuxerThread.Create((vm_thread_callback)ThreadRoutineStarter, (void *)this);
-    if (UMC_OK != umcRes)
-    {
-        TerminateInit();
-        return umcRes;
-    }
+    m_DemuxerThread = std::thread([this]() { ThreadRoutineStarter((void *)this); });
 
     m_OnInit.Wait();
     return UMC_OK;

@@ -330,10 +330,6 @@
 				RelativePath=".\src\umc_sys_info.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\src\umc_thread.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -365,10 +361,6 @@
 			</File>
 			<File
 				RelativePath=".\include\umc_sys_info.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\umc_thread.h"
 				>
 			</File>
 		</Filter>

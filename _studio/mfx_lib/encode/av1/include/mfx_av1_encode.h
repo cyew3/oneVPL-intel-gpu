@@ -28,11 +28,12 @@
 #include "deque"
 #include "ippdefs.h"
 #include "umc_mutex.h"
-#include "umc_thread.h"
+#include "vm_thread.h"
 #include "mfx_av1_defs.h"
 #include "mfx_av1_enc.h"
 
 #include <condition_variable>
+#include <thread>
 
 class CmDevice;
 class MFXCoreInterface1;
@@ -172,7 +173,7 @@ namespace AV1Enc {
         void FeiThreadSubmit(ThreadingTask &task);
         bool FeiThreadWait(uint32_t timeout);
         void *m_fei;
-        UMC::Thread m_feiThread;
+        std::thread m_feiThread;
         int32_t m_pauseFeiThread;
         int32_t m_stopFeiThread;
         volatile int32_t m_feiThreadRunning;
