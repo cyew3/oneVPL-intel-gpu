@@ -420,6 +420,7 @@ mfxStatus SetRateControl(
             rate_param->rc_flags.bits.temporal_id = tl;
         }
 
+        rate_param->rc_flags.bits.enable_dynamic_scaling = 1;
         vaSts = vaUnmapBuffer(m_vaDisplay, rateParamBuf_ids[tl]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
@@ -855,7 +856,6 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     mfxSts = SetTemporalStructure(par, m_vaDisplay, m_vaContextEncode, m_tempLayersBufferId);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
 
-	
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
     InitVp9SeqLevelParam(par, m_seqParam);
 

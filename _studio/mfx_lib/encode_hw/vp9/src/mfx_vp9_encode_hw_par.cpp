@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 Intel Corporation
+// Copyright (c) 2016-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -178,7 +178,6 @@ inline void SetOrCopy(mfxExtVP9Param *pDst, mfxExtVP9Param const *pSrc = 0, bool
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     SET_OR_COPY_PAR(NumTileRows);
     SET_OR_COPY_PAR(NumTileColumns);
-    SET_OR_COPY_PAR(DynamicScaling);
 #endif
 }
 
@@ -1555,31 +1554,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
-    if (false == CheckTriStateOption(extPar.DynamicScaling))
-    {
-        changed = true;
-    }
-    if (!caps.DynamicScaling && IsOn(extPar.DynamicScaling))
-    {
-        extPar.DynamicScaling = MFX_CODINGOPTION_OFF;
-        unsupported = true;
-    }
-
     // KNOWN FEATURES LIMITATIONS:
-
-    // dynamic scaling and temporal scalability don't work together
-    if (IsOn(extPar.DynamicScaling) && par.m_numLayers > 1)
-    {
-        extPar.DynamicScaling = MFX_CODINGOPTION_OFF;
-        unsupported = true;
-    }
-
-    // dynamic scaling and segmentation don't work together
-    if (IsOn(extPar.DynamicScaling) && seg.NumSegments > 1)
-    {
-        extPar.DynamicScaling = MFX_CODINGOPTION_OFF;
-        unsupported = true;
-    }
 
     // temporal scalability and tiles don't work together
     if (par.m_numLayers > 1 && (rows > 1 || cols > 1))
@@ -1588,12 +1563,6 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
-    // dynamic scaling and tiles don't work together
-    if (IsOn(extPar.DynamicScaling) && (rows > 1 || cols > 1))
-    {
-        extPar.DynamicScaling = MFX_CODINGOPTION_OFF;
-        unsupported = true;
-    }
 #endif // MFX_VERSION >= MFX_VERSION_NEXT
 
     return GetCheckStatus(changed, unsupported);
@@ -1787,7 +1756,6 @@ mfxStatus SetDefaults(
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     SetDefault(extPar.NumTileColumns, (extPar.FrameWidth + MAX_TILE_WIDTH - 1) / MAX_TILE_WIDTH);
     SetDefault(extPar.NumTileRows, 1);
-    SetDefault(extPar.DynamicScaling, MFX_CODINGOPTION_OFF);
 #endif // (MFX_VERSION >= MFX_VERSION_NEXT)
 
     // ext buffers

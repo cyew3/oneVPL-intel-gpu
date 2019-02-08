@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2007-2018 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -2050,8 +2050,7 @@ typedef struct {
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16  NumTileRows;
     mfxU16  NumTileColumns;
-    mfxU16  DynamicScaling;
-    mfxU16  reserved[109];
+    mfxU16  reserved[110];
 #else // API 1.26
     mfxU16  reserved[112];
 #endif
