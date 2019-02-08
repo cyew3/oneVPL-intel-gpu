@@ -39,15 +39,6 @@
 #include "mfx_h264_encode_interface.h"
 #include "mfx_h264_encode_hw_utils.h"
 
-#define MFX_DESTROY_VABUFFER(vaBufferId, vaDisplay)    \
-do {                                               \
-    if ( vaBufferId != VA_INVALID_ID)              \
-    {                                              \
-        vaDestroyBuffer(vaDisplay, vaBufferId);    \
-        vaBufferId = VA_INVALID_ID;                \
-    }                                              \
-} while (0)
-
 uint32_t ConvertRateControlMFX2VAAPI(mfxU8 rateControl);
 
 VAProfile ConvertProfileTypeMFX2VAAPI(mfxU32 type);
