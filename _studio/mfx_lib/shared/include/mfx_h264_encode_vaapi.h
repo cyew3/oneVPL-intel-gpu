@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,19 +47,6 @@ do {                                               \
         vaBufferId = VA_INVALID_ID;                \
     }                                              \
 } while (0)
-
-inline mfxStatus CheckAndDestroyVAbuffer(VADisplay display, VABufferID & buffer_id)
-{
-    if (buffer_id != VA_INVALID_ID)
-    {
-        VAStatus vaSts = vaDestroyBuffer(display, buffer_id);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        buffer_id = VA_INVALID_ID;
-    }
-
-    return MFX_ERR_NONE;
-}
 
 uint32_t ConvertRateControlMFX2VAAPI(mfxU8 rateControl);
 

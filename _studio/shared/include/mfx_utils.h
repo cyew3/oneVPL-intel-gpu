@@ -29,6 +29,12 @@
 #include "mfx_trace.h"
 #include "mfx_timing.h"
 
+#if defined(MFX_VA_LINUX)
+#include <va/va.h>
+#endif
+
+#include <cassert>
+
 #ifndef MFX_DEBUG_TRACE
 #define MFX_STS_TRACE(sts) sts
 #else
@@ -175,5 +181,20 @@ constexpr uint8_t byte_clamp(T v)
     return uint8_t(clamp<T>(v, 0, 255));
 }
 }
+
+#if defined(MFX_VA_LINUX)
+inline mfxStatus CheckAndDestroyVAbuffer(VADisplay display, VABufferID & buffer_id)
+{
+    if (buffer_id != VA_INVALID_ID)
+    {
+        VAStatus vaSts = vaDestroyBuffer(display, buffer_id);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        buffer_id = VA_INVALID_ID;
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif
 
 #endif // __MFXUTILS_H__
