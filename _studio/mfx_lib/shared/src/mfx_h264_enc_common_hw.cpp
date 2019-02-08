@@ -746,8 +746,7 @@ namespace
 #else
         IsEnabledSwBrc = bRateControlLA(par.mfx.RateControlMethod);
 #endif
-        if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CBR && // max fram size suported only for VBR based methods
-            par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) ||
+        if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) || // max fram size suported only for VBR based methods
             (hwCaps.UserMaxFrameSizeSupport == 0 && !IsEnabledSwBrc))
         {
             if (extOpt2->MaxFrameSize != 0 || extOpt3->MaxFrameSizeI != 0 || extOpt3->MaxFrameSizeP != 0)
