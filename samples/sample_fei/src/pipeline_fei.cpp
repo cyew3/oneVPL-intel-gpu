@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -1900,7 +1900,7 @@ mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, mfxU16 picstruct)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    bool reset_point = m_DRCqueue.size() && m_DRCqueue[m_nDRC_idx].start_frame == m_frameCount;
+    bool reset_point = (m_DRCqueue.size() > m_nDRC_idx) && (m_DRCqueue[m_nDRC_idx].start_frame == m_frameCount);
 
     if (!reset_point)
         return sts;
