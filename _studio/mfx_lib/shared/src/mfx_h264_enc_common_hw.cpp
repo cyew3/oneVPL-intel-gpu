@@ -2357,12 +2357,19 @@ mfxStatus MfxHwH264Encode::CheckAndFixRoiQueryLike(
     mfxStatus checkSts = CheckAndFixOpenRectQueryLike(par, (mfxRectDesc*)roi);
 
     // check QP
-    if (roiMode == MFX_ROI_MODE_QP_DELTA && !CheckRangeDflt(roi->ROIValue, -51, 51, 0))
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        if (!CheckRangeDflt(roi->ROIValue, -51, 51, 0))
+            checkSts = MFX_ERR_UNSUPPORTED;
+    }
+    else
+    {
+        if (roiMode == MFX_ROI_MODE_QP_DELTA && !CheckRangeDflt(roi->ROIValue, -51, 51, 0))
             checkSts = MFX_ERR_UNSUPPORTED;
 
-    if (roiMode == MFX_ROI_MODE_PRIORITY && !CheckRangeDflt(roi->ROIValue, -3, 3, 0))
+        else if (roiMode == MFX_ROI_MODE_PRIORITY && !CheckRangeDflt(roi->ROIValue, -3, 3, 0))
             checkSts = MFX_ERR_UNSUPPORTED;
-
+    }
     return checkSts;
 }
 
@@ -4596,8 +4603,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extRoi->NumROI = 0;
     }
 
-    if ((extRoi->ROIMode == MFX_ROI_MODE_QP_DELTA ||
-        extRoi->ROIMode == MFX_ROI_MODE_PRIORITY )&&
+    if ((extRoi->NumROI && (extRoi->ROIMode == MFX_ROI_MODE_QP_DELTA ||
+        extRoi->ROIMode == MFX_ROI_MODE_PRIORITY ))&&
         hwCaps.ROIBRCDeltaQPLevelSupport == 0)
     {
         unsupported = true;
