@@ -140,4 +140,16 @@ void SetPars(::mfxFrameAllocRequest* base, const T& tc, const mfxU32 stage = 0)
     }
 }
 
+template <typename T>
+mfxU32 CountPars(const T& tc, const mfxU32 stage = 0)
+{
+    mfxU32 stage_cnt=0;
+    const size_t npars = sizeof(tc.set_par) / sizeof(tc.set_par[0]);
+    for (size_t i = 0; i < npars; ++i)
+    {
+        if (0 != tc.set_par[i].f && tc.set_par[i].stage == stage)
+        stage_cnt++;
+    }
+    return stage_cnt;
+}
 };

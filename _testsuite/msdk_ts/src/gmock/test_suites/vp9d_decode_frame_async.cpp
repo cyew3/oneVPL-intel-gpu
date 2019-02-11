@@ -130,12 +130,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                       {&tsStruct::mfxFrameSurface1.Info.Height, 96, RUNTIME_SURF},
                                                     } },
 
-    {/*24*/ MFX_ERR_NONE, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096, AFTER_INIT}, 
-                                  {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096, AFTER_INIT}, 
+    {/*24*/ MFX_ERR_NONE, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096, AFTER_INIT},
+                                  {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096, AFTER_INIT},
                                 } },
 
-    {/*25*/ MFX_ERR_NONE, 0, 20, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096, AFTER_INIT}, 
-                                   {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096, AFTER_INIT}, 
+    {/*25*/ MFX_ERR_NONE, 0, 20, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096, AFTER_INIT},
+                                   {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096, AFTER_INIT},
                                  } },
 
     {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.FourCC, 0xFFFF, RUNTIME_SURF} },
@@ -144,10 +144,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.Height, 0, RUNTIME_SURF} },
     {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.BitDepthLuma, 100, RUNTIME_SURF} },
 
-    {/*31*/ MFX_ERR_UNDEFINED_BEHAVIOR, 0, 1, { {&tsStruct::mfxFrameSurface1.Data.Y, 0, RUNTIME_SURF}, 
-                                         {&tsStruct::mfxFrameSurface1.Data.U, 0, RUNTIME_SURF}, 
-                                         {&tsStruct::mfxFrameSurface1.Data.A, 0, RUNTIME_SURF}, 
-                                         {&tsStruct::mfxFrameSurface1.Data.MemId, 0, RUNTIME_SURF}, 
+    {/*31*/ MFX_ERR_UNDEFINED_BEHAVIOR, 0, 1, { {&tsStruct::mfxFrameSurface1.Data.Y, 0, RUNTIME_SURF},
+                                         {&tsStruct::mfxFrameSurface1.Data.U, 0, RUNTIME_SURF},
+                                         {&tsStruct::mfxFrameSurface1.Data.A, 0, RUNTIME_SURF},
+                                         {&tsStruct::mfxFrameSurface1.Data.MemId, 0, RUNTIME_SURF},
                                        } },
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -155,17 +155,17 @@ const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(Test
 const TestSuite::tc_struct TestSuite::test_case_nv12[] =
 {
     {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.BitDepthLuma, 10, RUNTIME_SURF} },
-    {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_NV12, RUNTIME_SURF}, 
-                                                 {&tsStruct::mfxFrameSurface1.Info.ChromaFormat, MFX_CHROMAFORMAT_YUV422, RUNTIME_SURF}, 
+    {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_NV12, RUNTIME_SURF},
+                                                 {&tsStruct::mfxFrameSurface1.Info.ChromaFormat, MFX_CHROMAFORMAT_YUV422, RUNTIME_SURF},
                                                } },
-    {/*34*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_AYUV, AFTER_INIT}, 
-                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT}, 
+    {/*34*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_AYUV, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT},
                                                     } },
-    {/*35*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_P010, AFTER_INIT}, 
-                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT}, 
+    {/*35*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_P010, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT},
                                                     } },
-    {/*36*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y410, AFTER_INIT}, 
-                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT}, 
+    {/*36*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y410, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT},
                                                     } },
 };
 const unsigned int TestSuite::n_cases_nv12 = sizeof(TestSuite::test_case_nv12)/sizeof(TestSuite::tc_struct) + n_cases;
@@ -173,17 +173,17 @@ const unsigned int TestSuite::n_cases_nv12 = sizeof(TestSuite::test_case_nv12)/s
 const TestSuite::tc_struct TestSuite::test_case_ayuv[] =
 {
     {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.BitDepthLuma, 7, RUNTIME_SURF} },
-    {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_AYUV, RUNTIME_SURF}, 
-                                                 {&tsStruct::mfxFrameSurface1.Info.ChromaFormat, MFX_CHROMAFORMAT_YUV422, RUNTIME_SURF}, 
+    {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_AYUV, RUNTIME_SURF},
+                                                 {&tsStruct::mfxFrameSurface1.Info.ChromaFormat, MFX_CHROMAFORMAT_YUV422, RUNTIME_SURF},
                                                } },
-    {/*34*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12, AFTER_INIT}, 
-                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT}, 
+    {/*34*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT},
                                                     } },
-    {/*35*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_P010, AFTER_INIT}, 
-                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT}, 
+    {/*35*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_P010, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT},
                                                     } },
-    {/*36*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y410, AFTER_INIT}, 
-                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT}, 
+    {/*36*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y410, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT},
                                                     } },
 };
 const unsigned int TestSuite::n_cases_ayuv = sizeof(TestSuite::test_case_ayuv)/sizeof(TestSuite::tc_struct) + n_cases;
@@ -191,17 +191,24 @@ const unsigned int TestSuite::n_cases_ayuv = sizeof(TestSuite::test_case_ayuv)/s
 const TestSuite::tc_struct TestSuite::test_case_p010[] =
 {
     {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.BitDepthLuma, 11, RUNTIME_SURF} },
-    {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_P010, RUNTIME_SURF}, 
-                                                 {&tsStruct::mfxFrameSurface1.Info.ChromaFormat, MFX_CHROMAFORMAT_YUV422, RUNTIME_SURF}, 
+    {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_P010, RUNTIME_SURF},
+                                                 {&tsStruct::mfxFrameSurface1.Info.ChromaFormat, MFX_CHROMAFORMAT_YUV422, RUNTIME_SURF},
                                                } },
-    {/*34*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12, AFTER_INIT}, 
-                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT}, 
+    {/*34*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.Shift, 0, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 8, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 8, AFTER_INIT}
                                                     } },
-    {/*35*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_AYUV, AFTER_INIT}, 
-                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT}, 
+    {/*35*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_AYUV, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.Shift, 0, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 8, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 8, AFTER_INIT}
                                                     } },
-    {/*36*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y410, AFTER_INIT}, 
-                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT}, 
+    {/*36*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y410, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT},
+                                                      {&tsStruct::mfxVideoParam.mfx.FrameInfo.Shift, 0, AFTER_INIT},
                                                     } },
 };
 const unsigned int TestSuite::n_cases_p010 = sizeof(TestSuite::test_case_p010)/sizeof(TestSuite::tc_struct) + n_cases;
@@ -209,17 +216,21 @@ const unsigned int TestSuite::n_cases_p010 = sizeof(TestSuite::test_case_p010)/s
 const TestSuite::tc_struct TestSuite::test_case_y410[] =
 {
     {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.BitDepthLuma, 11, RUNTIME_SURF} },
-    {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_Y410, RUNTIME_SURF}, 
-                                                 {&tsStruct::mfxFrameSurface1.Info.ChromaFormat, MFX_CHROMAFORMAT_YUV422, RUNTIME_SURF}, 
+    {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_Y410, RUNTIME_SURF},
+                                                 {&tsStruct::mfxFrameSurface1.Info.ChromaFormat, MFX_CHROMAFORMAT_YUV422, RUNTIME_SURF},
                                                } },
-    {/*34*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12, AFTER_INIT}, 
-                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT}, 
+    {/*34*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12, AFTER_INIT},
+                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT},
+                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 8, AFTER_INIT},
+                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 8, AFTER_INIT}
                                                } },
-    {/*35*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_AYUV, AFTER_INIT}, 
-                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT}, 
+    {/*35*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_AYUV, AFTER_INIT},
+                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT},
+                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 8, AFTER_INIT},
+                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 8, AFTER_INIT}
                                                } },
-    {/*36*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_P010, AFTER_INIT}, 
-                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT}, 
+    {/*36*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_P010, AFTER_INIT},
+                                                 {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT},
                                                } },
 };
 const unsigned int TestSuite::n_cases_y410 = sizeof(TestSuite::test_case_y410)/sizeof(TestSuite::tc_struct) + n_cases;
@@ -383,7 +394,13 @@ int TestSuite::RunTest(const tc_struct& tc)
         }
     }
 
-    AllocSurfaces();
+    mfxU32 after_init_cnt = tsStruct::CountPars(tc, AFTER_INIT);
+
+    if (!after_init_cnt)
+    {
+        AllocSurfaces();
+    }
+
     if(FAILED_INIT == tc.mode)
         g_tsStatus.disable_next_check();
 
@@ -399,8 +416,11 @@ int TestSuite::RunTest(const tc_struct& tc)
         }
     }
 
-    tsStruct::SetPars(m_par, tc, AFTER_INIT);
-
+    if (after_init_cnt)
+    {
+        tsStruct::SetPars(m_par, tc, AFTER_INIT);
+        AllocSurfaces();
+    }
 
     if(CLOSED_DECODER == tc.mode)
     {
