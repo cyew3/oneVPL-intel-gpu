@@ -3635,7 +3635,7 @@ void ConfigureTask(
         {
             task.m_roi[i] = {parRoi->ROI[i].Left,  parRoi->ROI[i].Top,
                              parRoi->ROI[i].Right, parRoi->ROI[i].Bottom,
-                            (mfxI16)(parRoi->ROIMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1 * parRoi->ROI[i].DeltaQP) };
+                            (mfxI16)((parRoi->ROIMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1) * parRoi->ROI[i].DeltaQP) };
             task.m_numRoi ++;
         }
 

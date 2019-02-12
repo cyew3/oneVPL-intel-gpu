@@ -137,7 +137,7 @@ static mfxStatus SetROI(
             roi_Param->roi[i].roi_rectangle.y = task.m_roi[i].Top;
             roi_Param->roi[i].roi_rectangle.width = task.m_roi[i].Right - task.m_roi[i].Left;
             roi_Param->roi[i].roi_rectangle.height = task.m_roi[i].Bottom - task.m_roi[i].Top;
-            roi_Param->roi[i].roi_value = (mfxI8)(task.m_roiMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1 * task.m_roi[i].DeltaQP);
+            roi_Param->roi[i].roi_value = (mfxI8)((task.m_roiMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1) * task.m_roi[i].DeltaQP);
         }
         roi_Param->max_delta_qp = 51;
         roi_Param->min_delta_qp = -51;

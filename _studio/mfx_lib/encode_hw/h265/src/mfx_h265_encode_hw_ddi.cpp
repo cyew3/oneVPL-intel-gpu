@@ -1004,7 +1004,7 @@ void FillPpsBuffer(
             // and Right > Left and Bottom > Top
             pps.ROI[i].Roi.Right = (mfxU16)(rect->Right / blkSize) - 1;
             pps.ROI[i].Roi.Bottom = (mfxU16)(rect->Bottom / blkSize) - 1;
-            pps.ROI[i].PriorityLevelOrDQp = (mfxI8)(par.m_ext.ROI.ROIMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1 * par.m_ext.ROI.ROI[i].DeltaQP);
+            pps.ROI[i].PriorityLevelOrDQp = (mfxI8)((par.m_ext.ROI.ROIMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1) * par.m_ext.ROI.ROI[i].DeltaQP);
         }
         pps.MaxDeltaQp = 51;    // is used for BRC only
         pps.MinDeltaQp = -51;

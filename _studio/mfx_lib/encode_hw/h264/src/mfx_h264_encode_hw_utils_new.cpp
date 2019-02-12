@@ -2247,7 +2247,7 @@ void MfxHwH264Encode::ConfigureTask(
             if (extRoiRuntime)
             {
                 mfxRoiDesc task_roi = {pRoi->ROI[i].Left,  pRoi->ROI[i].Top,
-                                       pRoi->ROI[i].Right, pRoi->ROI[i].Bottom, (mfxI16)(pRoi->ROIMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1 * pRoi->ROI[i].DeltaQP) };
+                                       pRoi->ROI[i].Right, pRoi->ROI[i].Bottom, (mfxI16)((pRoi->ROIMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1) * pRoi->ROI[i].DeltaQP) };
 
                 // check runtime ROI
                 mfxStatus sts = CheckAndFixRoiQueryLike(video, &task_roi, extRoiRuntime->ROIMode);
@@ -2259,7 +2259,7 @@ void MfxHwH264Encode::ConfigureTask(
             else
             {
                 task.m_roi[task.m_numRoi] = {pRoi->ROI[i].Left,  pRoi->ROI[i].Top,
-                                             pRoi->ROI[i].Right, pRoi->ROI[i].Bottom, (mfxI16)(pRoi->ROIMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1 * pRoi->ROI[i].DeltaQP) };
+                                             pRoi->ROI[i].Right, pRoi->ROI[i].Bottom, (mfxI16)((pRoi->ROIMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1) * pRoi->ROI[i].DeltaQP) };
                 task.m_numRoi ++;
             }
         }
