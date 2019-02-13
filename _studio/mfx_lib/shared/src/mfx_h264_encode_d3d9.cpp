@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1978,6 +1978,7 @@ namespace
 
 D3D9SvcEncoder::D3D9SvcEncoder()
 : m_core(0)
+, m_headerPacker()
 , m_video(NULL)
 , m_guid()
 , m_caps()

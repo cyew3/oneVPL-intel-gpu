@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,9 @@ using namespace MfxHwH264Encode;
 TaskManagerSvc::TaskManagerSvc()
     : m_core(0)
     , m_video(0)
+    , m_layer()
     , m_layerNum(0)
+    , m_task()
     , m_taskNum(0)
     , m_currentTask(NULL)
     , m_currentLayerId(0)

@@ -3503,21 +3503,21 @@ void MfxHwH264Encode::FillTaskScalingList(mfxExtSpsHeader const &extSps, mfxExtP
         }
         else
         {
-            if (extSps.seqScalingListPresentFlag[i])
+            if (i == 6 || i == 7) //Intra Y or Inter Y
             {
-                ZigZagToPlane<mfxU8>(extSps.scalingList8x8[i - 6], 8, &task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6], sizeof(task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6]));
-            }
-            else
-            {
-                //Scaling list fall-back rule A, Rec. ITU-T H.264, Table 7-2
-                if (i == 6 || i == 7) //Intra Y or Inter Y
+                if (extSps.seqScalingListPresentFlag[i])
                 {
-                    GetDefaultScalingList(task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6], sizeof(task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6]), i);
+                    ZigZagToPlane<mfxU8>(extSps.scalingList8x8[i - 6], 8, &task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6], sizeof(task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6]));
                 }
                 else
                 {
-                    assert("levelIdc == 3 isn't supported");
+                   //Scaling list fall-back rule A, Rec. ITU-T H.264, Table 7-2
+                    GetDefaultScalingList(task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6], sizeof(task.m_qMatrix.QmatrixAVC.bScalingLists8x8[i - 6]), i);
                 }
+            }
+            else
+            {
+                assert("levelIdc == 3 isn't supported");
             }
         }
     }
