@@ -243,22 +243,26 @@ int DecodeSuite::run(unsigned int id, unsigned int fourcc, const char* sname)
     else
     {
         g_tsStatus.expect(expected);
-        TRACE_FUNC5(MFXVideoDECODE_DecodeFrameAsync, m_session, m_pBitstream, m_pSurf, m_ppSurfOut, m_pSyncPoint);
-        mfxStatus mfxRes = MFXVideoDECODE_DecodeFrameAsync(m_session, m_pBitstream, m_pSurf, m_ppSurfOut, m_pSyncPoint);
-        TS_TRACE(mfxRes);
-        TS_TRACE(m_pBitstream);
-        TS_TRACE(m_ppSurfOut);
-        TS_TRACE(m_pSyncPoint);
-        if (mfxRes == MFX_ERR_NONE)
+        int sanityCheck = 1000; // to avoid an infinite loop
+        mfxStatus mfxRes = MFX_ERR_NONE;
+        while (mfxRes >= MFX_ERR_NONE && sanityCheck-- > 0)
         {
-            SyncOperation(*m_pSyncPoint);
+            TRACE_FUNC5(MFXVideoDECODE_DecodeFrameAsync, m_session, m_pBitstream, m_pSurf, m_ppSurfOut, m_pSyncPoint);
+            mfxRes = MFXVideoDECODE_DecodeFrameAsync(m_session, m_pBitstream, m_pSurf, m_ppSurfOut, m_pSyncPoint);
+            TS_TRACE(mfxRes);
+            TS_TRACE(m_pBitstream);
+            TS_TRACE(m_ppSurfOut);
+            TS_TRACE(m_pSyncPoint);
+            if (mfxRes >= MFX_ERR_NONE && *m_pSyncPoint != nullptr)
+            {
+                g_tsStatus.disable_next_check();
+                mfxRes = SyncOperation(*m_pSyncPoint);
+                break;
+            }
         }
-        else
-        {
-            g_tsStatus.m_status = mfxRes;
-            g_tsStatus.check();
-        }
-
+        EXPECT_TRUE(sanityCheck > 0) << "Test case is invalid: an infinite loop has occurred";
+        g_tsStatus.m_status = mfxRes;
+        g_tsStatus.check();
     }
 
     TS_END;
