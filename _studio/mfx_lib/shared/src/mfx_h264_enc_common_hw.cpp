@@ -732,28 +732,28 @@ namespace
 
     mfxStatus CheckMaxFrameSize(MfxVideoParam & par, ENCODE_CAPS const & hwCaps)
     {
-        mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
-        mfxExtCodingOption3 *      extOpt3 = GetExtBuffer(par);
+        mfxExtCodingOption2 & extOpt2 = GetExtBufferRef(par);
+        mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(par);
         bool changed = false;
         bool unsupported = false;
 
-        if (extOpt2->MaxFrameSize == 0 && extOpt3->MaxFrameSizeI == 0 && extOpt3->MaxFrameSizeP == 0)
+        if (extOpt2.MaxFrameSize == 0 && extOpt3.MaxFrameSizeI == 0 && extOpt3.MaxFrameSizeP == 0)
             return MFX_ERR_NONE;
 
         bool IsEnabledSwBrc = false;
 #if !defined(MFX_EXT_BRC_DISABLE)
-        IsEnabledSwBrc = bRateControlLA(par.mfx.RateControlMethod) || (IsOn(extOpt2->ExtBRC) && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR));
+        IsEnabledSwBrc = bRateControlLA(par.mfx.RateControlMethod) || (IsOn(extOpt2.ExtBRC) && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR));
 #else
         IsEnabledSwBrc = bRateControlLA(par.mfx.RateControlMethod);
 #endif
         if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) || // max fram size suported only for VBR based methods
             (hwCaps.UserMaxFrameSizeSupport == 0 && !IsEnabledSwBrc))
         {
-            if (extOpt2->MaxFrameSize != 0 || extOpt3->MaxFrameSizeI != 0 || extOpt3->MaxFrameSizeP != 0)
+            if (extOpt2.MaxFrameSize != 0 || extOpt3.MaxFrameSizeI != 0 || extOpt3.MaxFrameSizeP != 0)
                 changed = true;
-            extOpt2->MaxFrameSize = 0;
-            extOpt3->MaxFrameSizeI = 0;
-            extOpt3->MaxFrameSizeP = 0;
+            extOpt2.MaxFrameSize = 0;
+            extOpt3.MaxFrameSizeI = 0;
+            extOpt3.MaxFrameSizeP = 0;
         }
         else
         {
@@ -762,52 +762,53 @@ namespace
             {
                 mfxF64 frameRate = mfxF64(par.mfx.FrameInfo.FrameRateExtN) / par.mfx.FrameInfo.FrameRateExtD;
                 mfxU32 avgFrameSizeInBytes = mfxU32(par.calcParam.targetKbps * 1000 / frameRate / 8);
-                if ((extOpt2->MaxFrameSize < avgFrameSizeInBytes) && (extOpt2->MaxFrameSize != 0))
+                if ((extOpt2.MaxFrameSize < avgFrameSizeInBytes) && (extOpt2.MaxFrameSize != 0))
                 {
                     changed = true;
-                    extOpt2->MaxFrameSize = 0;
+                    extOpt2.MaxFrameSize = 0;
                 }
-                if ((extOpt3->MaxFrameSizeI < avgFrameSizeInBytes) && (extOpt3->MaxFrameSizeI != 0))
+                if ((extOpt3.MaxFrameSizeI < avgFrameSizeInBytes) && (extOpt3.MaxFrameSizeI != 0))
                 {
                     changed = true;
-                    extOpt3->MaxFrameSizeI = 0;
+                    extOpt3.MaxFrameSizeI = 0;
+                    extOpt3.MaxFrameSizeP = 0;
                 }
             }
-            if ((extOpt2->MaxFrameSize != 0 && extOpt3->MaxFrameSizeI != 0) &&
-                extOpt3->MaxFrameSizeI != extOpt2->MaxFrameSize)
+            if ((extOpt2.MaxFrameSize != 0 && extOpt3.MaxFrameSizeI != 0) &&
+                extOpt3.MaxFrameSizeI != extOpt2.MaxFrameSize)
             {
-                extOpt2->MaxFrameSize = 0;
+                extOpt2.MaxFrameSize = 0;
                 changed = true;
             }
-            if (extOpt3->MaxFrameSizeI == 0 && extOpt3->MaxFrameSizeP != 0)
+            if (extOpt3.MaxFrameSizeI == 0 && extOpt3.MaxFrameSizeP != 0)
             {
-                extOpt3->MaxFrameSizeP = 0;
+                extOpt3.MaxFrameSizeP = 0;
                 unsupported = true;
             }
         }
 
 #if MFX_VERSION >= 1023
-        if (!CheckTriStateOption(extOpt3->AdaptiveMaxFrameSize)) changed = true;
+        if (!CheckTriStateOption(extOpt3.AdaptiveMaxFrameSize)) changed = true;
 
-        if (hwCaps.UserMaxFrameSizeSupport == 0 && !IsEnabledSwBrc && IsOn(extOpt3->AdaptiveMaxFrameSize))
+        if (hwCaps.UserMaxFrameSizeSupport == 0 && !IsEnabledSwBrc && IsOn(extOpt3.AdaptiveMaxFrameSize))
         {
-            extOpt3->AdaptiveMaxFrameSize = 0;
+            extOpt3.AdaptiveMaxFrameSize = 0;
             unsupported = true;
         }
 
 #if defined(MFX_VA_WIN)
         if (hwCaps.UserMaxFrameSizeSupport == 1 && !IsEnabledSwBrc &&
-            (extOpt3->MaxFrameSizeP == 0 || IsOn(par.mfx.LowPower)) &&
-            IsOn(extOpt3->AdaptiveMaxFrameSize))
+            (extOpt3.MaxFrameSizeP == 0 || IsOn(par.mfx.LowPower)) &&
+            IsOn(extOpt3.AdaptiveMaxFrameSize))
         {
-            extOpt3->AdaptiveMaxFrameSize = 0;
+            extOpt3.AdaptiveMaxFrameSize = 0;
             changed = true;
         }
 #else // i.e. NOT defined(MFX_VA_WIN)
         //  LINUX DO NOT SUPPORT AdaptiveMaxFrameSize so reset it to zero if it is set
-        if (IsOn(extOpt3->AdaptiveMaxFrameSize) && !IsEnabledSwBrc)
+        if (IsOn(extOpt3.AdaptiveMaxFrameSize) && !IsEnabledSwBrc)
         {
-            extOpt3->AdaptiveMaxFrameSize = 0;
+            extOpt3.AdaptiveMaxFrameSize = 0;
             unsupported = true;
         }
 #endif
