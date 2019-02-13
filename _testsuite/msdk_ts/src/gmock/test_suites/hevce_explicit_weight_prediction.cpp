@@ -30,7 +30,7 @@ namespace hevce_explicit_weight_pred
 
     const mfxU8 L0 = 0, L1 = 1, Y = 0, Cb = 1, Cr = 2, Weight = 0, Offset = 1;
     const mfxU16 nframes_to_encode = 10;
-    const mfxF64 PSNR_THRESHOLD = 27.0;
+    const mfxF64 PSNR_THRESHOLD = 30.0;
 
     enum
     {
@@ -488,6 +488,7 @@ namespace hevce_explicit_weight_pred
         m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = yuv_descr.bd;
         m_par.mfx.FrameInfo.Shift = yuv_descr.shift;
         m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        m_par.mfx.QPI = m_par.mfx.QPP = m_par.mfx.QPB = 26 + (m_par.mfx.FrameInfo.BitDepthLuma - 8) * 6;
         switch(fourcc)
         {
             case GMOCK_FOURCC_P012: m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P016; break;
@@ -499,6 +500,7 @@ namespace hevce_explicit_weight_pred
 
         auto stream = g_tsStreamPool.Get(yuv_descr.name);
         m_reader.reset(new tsRawReader(stream, m_par.mfx.FrameInfo));
+        m_reader->m_disable_shift_hack = true; // disable shift for 10b+ streams
         g_tsStreamPool.Reg();
 
         // save bs for PSNR check below
