@@ -176,7 +176,9 @@ mfxStatus SetRateControl(
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterRateControl *rate_param;
+#ifdef MFX_ENABLE_QVBR
     mfxExtCodingOption3 const & extOpt3 = GetExtBufferRef(par);
+#endif
 
     mfxStatus mfxSts = CheckAndDestroyVAbuffer(vaDisplay, rateParamBuf_id);
     MFX_CHECK_STS(mfxSts);
