@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -644,6 +644,7 @@ namespace vp9e_temporal_scalability
         TestSuite *m_TestPtr;
         std::map<mfxU32, mfxFrameSurface1*>* m_pInputSurfaces;
         bool m_CheckPsnr;
+        bool m_NoIvf;
     public:
         BitstreamChecker(TestSuite *testPtr, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool check_psnr, bool check_no_ivf);
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
@@ -659,6 +660,7 @@ namespace vp9e_temporal_scalability
         , m_TestPtr(testPtr)
         , m_pInputSurfaces(pSurfaces)
         , m_CheckPsnr(check_psnr)
+        , m_NoIvf(check_no_ivf)
         , m_AllFramesSize(0)
         , m_DecodedFramesCount(0)
         , m_DecoderInited(false)
@@ -707,6 +709,28 @@ namespace vp9e_temporal_scalability
                         {
                             if (bs.Data[bs.DataLength - index_size] == superframe_header)
                             {
+                                mfxU32 byte_count = 0;
+                                mfxU32 total_frame_size = 0;
+                                for (mfxU32 frame_count = 0; frame_count < frames_in_superframe; frame_count++)
+                                {
+                                    mfxU32 frame_size = 0;
+                                    for (mfxU32 bytes_in_size = 0; bytes_in_size < bytes_per_framesize; bytes_in_size++)
+                                    {
+                                        frame_size += (bs.Data[bs.DataLength - 1 - 1 - byte_count++] << 8*(bytes_per_framesize-bytes_in_size-1));
+                                    }
+                                    total_frame_size += frame_size;
+                                    g_tsLog << "INFO: Superframe header: frame[" << (frames_in_superframe-frame_count) << "] has size " << frame_size << " bytes\n";
+                                }
+
+                                total_frame_size += index_size;
+                                total_frame_size += m_NoIvf ? 0 : IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
+
+                                if (total_frame_size != bs.DataLength)
+                                {
+                                    ADD_FAILURE() << "ERROR: Superframe header: total sub-frame sizes (" << total_frame_size << ") dont't match with actual encoded frame size (" << bs.DataLength << ")!";
+                                    throw tsFAIL;
+                                }
+
                                 // Let's check the second frame inside the superframe
                                 const unsigned char frame_header = bs.Data[bs.DataLength - index_size - 1];
 
@@ -775,7 +799,7 @@ namespace vp9e_temporal_scalability
             // do the decoder initialization on the first encoded frame
             if (m_DecodedFramesCount == 0 && m_CheckPsnr)
             {
-                const mfxU32 headers_shift = IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
+                const mfxU32 headers_shift = m_NoIvf ? 0 : IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
                 m_pBitstream->Data = bs.Data + headers_shift;
                 m_pBitstream->DataOffset = 0;
                 m_pBitstream->DataLength = bs.DataLength - headers_shift;
@@ -783,9 +807,8 @@ namespace vp9e_temporal_scalability
 
                 m_pPar->AsyncDepth = 1;
 
-                mfxStatus decode_header_status = DecodeHeader();
-
                 mfxStatus init_status = Init();
+
                 m_par_set = true;
                 if (init_status >= 0)
                 {
@@ -816,14 +839,14 @@ namespace vp9e_temporal_scalability
             {
                 if (m_TestPtr->m_LayerToCheck != -1 && m_TestPtr->m_LayerNestingLevel[m_ChunkCount] > m_TestPtr->m_LayerToCheck)
                 {
-                    g_tsLog << "INFO: Frame " << m_ChunkCount << " is not sending to the decoder because layer " << (mfxI32)m_TestPtr->m_LayerToCheck
+                    g_tsLog << "INFO: Frame " << m_ChunkCount << " is not sending to the decoder because only layer " << (mfxI32)m_TestPtr->m_LayerToCheck
                         << " is being checked\n";
                 }
                 else
                 {
                     g_tsLog << "INFO: Decoding frame " << m_ChunkCount << ", checked layer is " << (mfxI32)m_TestPtr->m_LayerToCheck << "\n";
 
-                    const mfxU32 headers_shift = IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
+                    const mfxU32 headers_shift = m_NoIvf ? 0 : IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
                     m_pBitstream->Data = bs.Data + headers_shift;
                     m_pBitstream->DataOffset = 0;
                     m_pBitstream->DataLength = bs.DataLength - headers_shift;
