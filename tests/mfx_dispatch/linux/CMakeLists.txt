@@ -50,5 +50,3 @@ add_test(NAME run_mfx_dispatch_test
 
 set_property(TEST run_mfx_dispatch_test PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE}")
 
-install(TARGETS mfx_dispatch_test RUNTIME DESTINATION ${MFX_APPS_DIR}/tests)
-
