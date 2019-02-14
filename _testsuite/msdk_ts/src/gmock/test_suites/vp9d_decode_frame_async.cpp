@@ -399,8 +399,7 @@ int TestSuite::RunTest(const tc_struct& tc)
         }
     }
 
-    if (tsStruct::SetPars(m_par, tc, AFTER_INIT))
-        Reset();
+    tsStruct::SetPars(m_par, tc, AFTER_INIT);
 
 
     if(CLOSED_DECODER == tc.mode)

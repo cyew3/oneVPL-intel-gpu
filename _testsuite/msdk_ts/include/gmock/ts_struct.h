@@ -75,87 +75,69 @@ inline mfxU64 get(void* base, const Field& field) { mfxU64 value = 0; memcpy(&va
 #undef FIELD_S
 
 template <typename T, typename TFP>
-mfxU32 SetParamIfStage(tsExtBufType<T>& base, const TFP& fpair, const mfxU32 stage = 0)
+void SetParamIfStage(tsExtBufType<T>& base, const TFP& fpair, const mfxU32 stage = 0)
 {
     if(0 != fpair.f && fpair.stage == stage)
-    {
-        SetParam(base, fpair.f->name, fpair.f->offset, fpair.f->size, fpair.v);
-        return 1;
-    }
+        return SetParam(base, fpair.f->name, fpair.f->offset, fpair.f->size, fpair.v);
     else
-        return 0;
+        return;
 }
 
 template <typename TFP>
-mfxU32 SetParamIfStage(::mfxFrameSurface1* base, const TFP& fpair, const mfxU32 stage = 0)
+void SetParamIfStage(::mfxFrameSurface1* base, const TFP& fpair, const mfxU32 stage = 0)
 {
     if(0 != fpair.f && fpair.stage == stage && fpair.f->name.find("mfxFrameSurface1") != std::string::npos)
-    {
-        SetParam((void*) base, fpair.f->name, fpair.f->offset, fpair.f->size, fpair.v);
-        return 1;
-    }
+        return SetParam((void*) base, fpair.f->name, fpair.f->offset, fpair.f->size, fpair.v);
     else
-        return 0;
+        return;
 }
 
 template <typename TFP>
-mfxU32 SetParamIfStage(::mfxFrameAllocRequest* base, const TFP& fpair, const mfxU32 stage = 0)
+void SetParamIfStage(::mfxFrameAllocRequest* base, const TFP& fpair, const mfxU32 stage = 0)
 {
     if (0 != fpair.f && fpair.stage == stage && fpair.f->name.find("mfxFrameAllocRequest") != std::string::npos)
-    {
-        SetParam((void*)base, fpair.f->name, fpair.f->offset, fpair.f->size, fpair.v);
-        return 1;
-    }
+        return SetParam((void*)base, fpair.f->name, fpair.f->offset, fpair.f->size, fpair.v);
     else
-        return 0;
+        return;
 }
 
 template <typename T, typename TB>
-mfxU32 SetPars(tsExtBufType<TB>& base, const T& tc, const mfxU32 stage = 0)
+void SetPars(tsExtBufType<TB>& base, const T& tc, const mfxU32 stage = 0)
 {
     const size_t npars = sizeof(tc.set_par) / sizeof(tc.set_par[0]);
-    mfxU32 cnt = 0;
     for(size_t i = 0; i < npars; ++i)
     {
-        cnt +=SetParamIfStage(base, tc.set_par[i], stage);
+        SetParamIfStage(base, tc.set_par[i], stage);
     }
-    return cnt;
 }
 
 template <typename T, typename TB>
-mfxU32 SetPars(const tsExtBufType<TB>*& base, const T& tc, const mfxU32 stage = 0)
+void SetPars(const tsExtBufType<TB>*& base, const T& tc, const mfxU32 stage = 0)
 {
     assert(0 != base);
-    if(base)
-        return SetPars(*base, tc, stage);
-    else
-        return 0;
+    if(base)    return SetPars(*base, tc, stage);
 }
 
 template <typename T>
-mfxU32 SetPars(::mfxFrameSurface1* base, const T& tc, const mfxU32 stage = 0)
+void SetPars(::mfxFrameSurface1* base, const T& tc, const mfxU32 stage = 0)
 {
     assert(0 != base);
     const size_t npars = sizeof(tc.set_par) / sizeof(tc.set_par[0]);
-    mfxU32 cnt = 0;
     for(size_t i = 0; i < npars; ++i)
     {
-        cnt+=SetParamIfStage(base, tc.set_par[i], stage);
+        SetParamIfStage(base, tc.set_par[i], stage);
     }
-    return cnt;
 }
 
 template <typename T>
-mfxU32 SetPars(::mfxFrameAllocRequest* base, const T& tc, const mfxU32 stage = 0)
+void SetPars(::mfxFrameAllocRequest* base, const T& tc, const mfxU32 stage = 0)
 {
     assert(0 != base);
-    mfxU32 cnt=0;
     const size_t npars = sizeof(tc.set_par) / sizeof(tc.set_par[0]);
     for (size_t i = 0; i < npars; ++i)
     {
-        cnt+=SetParamIfStage(base, tc.set_par[i], stage);
+        SetParamIfStage(base, tc.set_par[i], stage);
     }
-    return cnt;
 }
 
 };
