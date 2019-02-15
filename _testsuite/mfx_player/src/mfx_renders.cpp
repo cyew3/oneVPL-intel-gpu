@@ -1464,10 +1464,10 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
             break;
 #if defined(_WIN32) || defined(_WIN64)
         case DXGI_FORMAT_AYUV :
+#endif
         case MFX_FOURCC_AYUV :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4 ;
             break;
-#endif
         case MFX_FOURCC_YUY2 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2 ;
             break;
