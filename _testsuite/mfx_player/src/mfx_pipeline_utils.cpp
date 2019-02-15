@@ -1077,6 +1077,9 @@ mfxU32 GetMinPlaneSize(mfxFrameInfo & info)
             bpp_m2 = 3;
             break;
         case MFX_FOURCC_P010:
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_P016:
+#endif
             bpp_m2 = 6;
             break;
         case MFX_FOURCC_RGB3:
@@ -1092,8 +1095,13 @@ mfxU32 GetMinPlaneSize(mfxFrameInfo & info)
         case MFX_FOURCC_NV16:
             bpp_m2 = 4;
             break;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_Y416:
+            bpp_m2 = 16;
+            break;
+#endif
         default:
-            bpp_m2 = 8;
+            bpp_m2 = 8; // including Y210, Y216, Y410, AYUV
             break;
         }
     }
