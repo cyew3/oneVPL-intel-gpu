@@ -442,6 +442,11 @@ namespace MFX_VPX_Utility
         if ((p_params->mfx.CodecId == MFX_CODEC_AV1) && p_params->mfx.FilmGrain)
             p_request->NumFrameMin = 2 * p_request->NumFrameMin; // we need two output surfaces for each frame when film_grain is applied
 #endif
+        // Increase minimum number by one
+        // E.g., decoder unlocks references in sync part (NOT async), so in order to free some surface
+        // application need an additional surface to call DecodeFrameAsync()
+        p_request->NumFrameMin += 1;
+
         p_request->NumFrameSuggested = p_request->NumFrameMin;
 
         if (p_params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
