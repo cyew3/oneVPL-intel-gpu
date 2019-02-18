@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -13,7 +13,7 @@ Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 
 //#define DUMP_BS
-#define MAX_P_PYRAMID_WIDTH 4
+#define MAX_P_PYRAMID_WIDTH 3
 
 namespace hevce_p_pyramid
 {
