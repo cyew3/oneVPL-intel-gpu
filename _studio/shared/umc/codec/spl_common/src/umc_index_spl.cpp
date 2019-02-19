@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -99,9 +99,8 @@ Status IndexSplitter::StopSplitter()
     // do no rely on the status returned by vm_thread_is_valid function.
     // threads, which went exit, required to be closed anyway.
     {
-      vm_thread_wait(&m_pReadESThread[i]);
-      vm_thread_close(&m_pReadESThread[i]);
-      vm_thread_set_invalid(&m_pReadESThread[i]);
+      if (m_pReadESThread[i].joinable())
+          m_pReadESThread[i].join();
     }
     if (m_ppMediaBuffer[i]) {
       umcRes = m_ppMediaBuffer[i]->Reset();
@@ -227,7 +226,6 @@ Status IndexSplitter::Run()
       return UMC_OK;
 
   Ipp32u i;
-  int res;
 
   m_bFlagStop = false;
   for (i = 0; i < m_pInfo->m_nOfTracks; i++) {
@@ -238,10 +236,7 @@ Status IndexSplitter::Run()
       m_pESParam->uiPin = i;
       m_pESParam->pThis = this;
 
-      res = vm_thread_create(&m_pReadESThread[i], (vm_thread_callback)ReadESThreadCallback, (void *)m_pESParam);
-      if (res != 1) {
-        return UMC_ERR_FAILED;
-      }
+      m_pReadESThread[i] = std::thread([m_pESParam]() { ReadESThreadCallback((void *)m_pESParam); });
     }
     else if (m_ppMediaBuffer[i]) {
       m_ppMediaBuffer[i]->UnLockInputBuffer(NULL, UMC_ERR_END_OF_STREAM);
@@ -393,10 +388,9 @@ Status IndexSplitter::EnableTrack(Ipp32u nTrack, Ipp32s iState)
     return UMC_OK;
 
   if (!iState) {  // disable track
-    if (vm_thread_is_valid(&m_pReadESThread[nTrack])) {
-      vm_thread_close(&m_pReadESThread[nTrack]);
-      vm_thread_set_invalid(&m_pReadESThread[nTrack]);
-    }
+    if (m_pReadESThread[nTrack].joinable())
+        m_pReadESThread[nTrack].join();
+
     if (m_ppMediaBuffer[nTrack]) {
       umcRes = m_ppMediaBuffer[nTrack]->Reset();
       UMC_CHECK_STATUS(umcRes)
@@ -412,7 +406,6 @@ Status IndexSplitter::EnableTrack(Ipp32u nTrack, Ipp32s iState)
       (m_pInfo->m_dRate != 1.0))
       return UMC_OK;
 
-    int res = 0;
     IndexEntry entry;
     Ipp64f curPos;
 
@@ -432,10 +425,7 @@ Status IndexSplitter::EnableTrack(Ipp32u nTrack, Ipp32s iState)
     m_pESParam->uiPin = nTrack;
     m_pESParam->pThis = this;
 
-    umcRes = vm_thread_create(&m_pReadESThread[nTrack], (vm_thread_callback)ReadESThreadCallback, (void *)m_pESParam);
-    if (res != 1) {
-      return UMC_ERR_FAILED;
-    }
+    m_pReadESThread[nTrack] = std::thread([m_pESParam]() { ReadESThreadCallback((void *)m_pESParam); });
   }
 
   m_pInfo->m_ppTrackInfo[nTrack]->m_isSelected = iState;

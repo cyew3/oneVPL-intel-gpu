@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,12 @@ extern "C"
 #define VM_ALIGN32_DECL(X) VM_ALIGN_DECL(32,X)
 
 #define _MAX_LEN 256
+
+#if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
+#define VM_CALLCONVENTION __stdcall
+#else
+#define VM_CALLCONVENTION
+#endif
 
 typedef enum e_vm_Status
 {

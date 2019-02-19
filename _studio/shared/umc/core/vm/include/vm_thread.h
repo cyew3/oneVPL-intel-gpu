@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,57 +40,6 @@ extern "C" {
 #endif
 
 typedef uint32_t (VM_THREAD_CALLCONVENTION * vm_thread_callback)(void *);
-
-typedef enum
-{
-    VM_THREAD_PRIORITY_HIGHEST,
-    VM_THREAD_PRIORITY_HIGH,
-    VM_THREAD_PRIORITY_NORMAL,
-    VM_THREAD_PRIORITY_LOW,
-    VM_THREAD_PRIORITY_LOWEST
-} vm_thread_priority;
-
-/* Set the thread handler to an invalid value */
-void vm_thread_set_invalid(vm_thread *thread);
-
-/* Verify if the thread handler is valid */
-int32_t vm_thread_is_valid(vm_thread *thread);
-
-/* Create a thread. The thread is set to run at the call.
-   Return 1 if successful */
-int32_t vm_thread_create(vm_thread *thread, vm_thread_callback func, void *arg);
-
-
-/* Attach to externally created thread. Should be called from the thread in question.
-Return 1 if successful */
-int32_t vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg);
-
-/* Wait until a thread exists */
-void vm_thread_wait(vm_thread *thread);
-
-/* Set thread priority. Return 1 if successful */
-int32_t vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority);
-
-/* Close thread after all */
-void vm_thread_close(vm_thread *thread);
-
-/* Get current thread priority */
-vm_thread_priority vm_get_current_thread_priority(void);
-
-/* Set current thread priority */
-void vm_set_current_thread_priority(vm_thread_priority priority);
-
-typedef struct
-{
-  int32_t schedtype;
-  int32_t priority;
-} vm_thread_linux_schedparams;
-
-/* Set thread scheduling type and corresponding parameters. */
-int32_t vm_thread_set_scheduling(vm_thread* thread, void* params);
-
-/* Set thread's affinity mask */
-void vm_set_thread_affinity_mask(vm_thread *thread, unsigned long long mask);
 
 #ifdef __cplusplus
 }

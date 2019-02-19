@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,8 @@ namespace UMC
 
 Splitter *CreateASFSplitter() { return (new ASFSplitter()); }
 
-ASFSplitter::ASFSplitter()
+ASFSplitter::ASFSplitter() :
+    m_pReadDataPacketThread()
 {
     m_pDataReader = NULL;
     m_pDataObject = NULL;
@@ -36,7 +37,6 @@ ASFSplitter::ASFSplitter()
     m_pES2PIDTbl = NULL;
     m_pInfo = &m_info;
     m_bFlagStop = true;
-    m_pReadDataPacketThread = NULL;
 }
 
 ASFSplitter::~ASFSplitter()
@@ -334,11 +334,8 @@ Status ASFSplitter::Close()
 {
 
     m_bFlagStop = true;
-    if (vm_thread_is_valid(m_pReadDataPacketThread)) {
-        vm_thread_wait(m_pReadDataPacketThread);
-        vm_thread_close(m_pReadDataPacketThread);
-        vm_thread_set_invalid(m_pReadDataPacketThread);
-    }
+    if (m_pReadDataPacketThread.joinable())
+        m_pReadDataPacketThread.join();
 
     UMC_DELETE(m_pDataObject);
     CleanInternalObjects();
@@ -356,18 +353,11 @@ Status ASFSplitter::GetInfo(SplitterInfo** ppInfo)
 
 Status ASFSplitter::Run()
 {
-    int res = 0;
-
     if (!m_bFlagStop)
         return UMC_OK;
 
-    m_pReadDataPacketThread = new vm_thread;
-    vm_thread_set_invalid(m_pReadDataPacketThread);
     /*** start thread which read data and fill buffers ***/
-    res = vm_thread_create(m_pReadDataPacketThread, (vm_thread_callback)ReadDataPacketThreadCallback, (void *)this);
-    if (res != 1) {
-      return UMC_ERR_FAILED;
-    }
+    m_pReadDataPacketThread = std::thread([this]() { ReadDataPacketThreadCallback((void *)this); });
 
     m_bFlagStop = false;
 

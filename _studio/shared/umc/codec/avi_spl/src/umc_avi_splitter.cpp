@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +68,7 @@ Status AVISplitter::Init(SplitterParams& rInitParams)
     if (UMC_OK != umcRes) return TerminateInit(umcRes);
 
     m_pTrackIndex = new TrackIndex[m_AviHdr.uiStreams];
-    m_pReadESThread = new vm_thread[m_AviHdr.uiStreams];
+    m_pReadESThread = new std::thread[m_AviHdr.uiStreams];
     if (!m_pTrackIndex || !m_pReadESThread) return TerminateInit(UMC_ERR_ALLOC);
 
     m_ppMediaBuffer = (MediaBuffer **)new SampleBuffer *[m_AviHdr.uiStreams];
@@ -94,7 +94,6 @@ Status AVISplitter::Init(SplitterParams& rInitParams)
         m_ppLockedFrame[i] = new MediaData;
         if (!m_ppLockedFrame[i]) return TerminateInit(UMC_ERR_ALLOC);
         m_pIsLocked[i] = 0;
-        vm_thread_set_invalid(&m_pReadESThread[i]);
     }
 
     umcRes = Run();

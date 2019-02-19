@@ -28,6 +28,7 @@
 #include "vm_thread.h"
 #include "umc_index.h"
 #include "umc_media_buffer.h"
+#include <thread>
 
 namespace UMC
 {
@@ -69,7 +70,7 @@ protected:
     void    ReadES(Ipp32u uiPin);
 
     bool                 m_bFlagStop;
-    vm_thread           *m_pReadESThread;
+    std::thread          *m_pReadESThread;
 
     DataReader          *m_pReader;
     Mutex                m_ReaderMutex;

@@ -62,8 +62,7 @@ inline void vm_set_current_thread_priority(int priority)
 {
     SetThreadPriority(GetCurrentThread(), priority);
 }
-#elseif
-#if defined(LINUX32) || defined(__APPLE__)
+#elif defined(LINUX32) || defined(__APPLE__)
 inline int vm_get_current_thread_priority()
 {
     return 2;  //VM_THREAD_PRIORITY_NORMAL
@@ -74,8 +73,8 @@ void vm_set_current_thread_priority(int /*priority*/)
     return;
 }
 #endif
-#endif
-#endif
+#endif // _OPENMP
+
 
 class MFXVideoENCODEH264;
 class mfxVideoInternalParam;

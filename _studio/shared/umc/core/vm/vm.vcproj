@@ -375,14 +375,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\vm_thread_linux32.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\vm_thread_win32.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\vm_time_linux32.c"
 				>
 			</File>

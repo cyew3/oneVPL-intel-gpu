@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -15,6 +15,13 @@ File Name: .h
 //#include "mfx_io_utils.h"
 #include "vm_thread.h"
 
+#if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
+#ifndef _WIN32_WCE
+#include <process.h>
+#endif /* _WIN32_WCE */
+#include <windows.h>
+#endif
+
 MFXLoopDecoder::MFXLoopDecoder( mfxI32 nNumFramesInLoop, std::auto_ptr<IYUVSource>& target )
     : base(target)
     , m_CurrSurfaceIndex()
@@ -22,8 +29,9 @@ MFXLoopDecoder::MFXLoopDecoder( mfxI32 nNumFramesInLoop, std::auto_ptr<IYUVSourc
 {
     m_Surfaces.reserve(nNumFramesInLoop);
     
-
-    vm_set_current_thread_priority(VM_THREAD_PRIORITY_HIGHEST);
+#if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
+    SetThreadPriority(GetCurrentThread(), 4 /*THREAD_PRIORITY_HIGHEST*/);
+#endif
 }
 
 mfxStatus MFXLoopDecoder::QueryIOSurf(mfxVideoParam * par, mfxFrameAllocRequest *request)

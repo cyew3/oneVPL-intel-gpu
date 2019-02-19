@@ -276,8 +276,6 @@
     <ClCompile Include="src\vm_socket_win32.c" />
     <ClCompile Include="src\vm_sys_info_linux32.c" />
     <ClCompile Include="src\vm_sys_info_win32.c" />
-    <ClCompile Include="src\vm_thread_linux32.c" />
-    <ClCompile Include="src\vm_thread_win32.c" />
     <ClCompile Include="src\vm_time_linux32.c" />
     <ClCompile Include="src\vm_time_win32.c" />
   </ItemGroup>

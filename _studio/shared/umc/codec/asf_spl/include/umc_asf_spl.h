@@ -26,6 +26,7 @@
 #include "umc_data_reader.h"
 #include "umc_asf_fb.h"
 #include "vm_thread.h"
+#include <thread>
 
 
 #define ASF_NUMBER_OF_FRAMES    1
@@ -123,7 +124,7 @@ protected:
      };
 
     asf_LockedFrame     **m_ppLockedFrame;
-    vm_thread           *m_pReadDataPacketThread;
+    std::thread         m_pReadDataPacketThread;
 
 };
 

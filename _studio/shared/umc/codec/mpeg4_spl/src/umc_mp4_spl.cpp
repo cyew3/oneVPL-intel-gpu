@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ Splitter *CreateMPEG4Splitter() { return (new MP4Splitter()); }
 
 MP4Splitter::MP4Splitter():
     IndexSplitter(),
-    m_pInitMoofThread(NULL),
+    m_pInitMoofThread(),
     m_nFragPosEnd(0),
     m_pFirstSegmentDuration(NULL),
     m_pLastPTS(NULL),
@@ -1050,7 +1050,7 @@ Status MP4Splitter::Init(SplitterParams& init)
   m_pIsLocked = new Ipp32s[m_pInfo->m_nOfTracks];
   memset(m_pIsLocked, 0, m_pInfo->m_nOfTracks*sizeof(Ipp32s));
 
-  UMC_NEW_ARR(m_pReadESThread, vm_thread, m_pInfo->m_nOfTracks)
+  UMC_NEW_ARR(m_pReadESThread, std::thread, m_pInfo->m_nOfTracks)
   m_pLastPTS = new Ipp64f[m_pInfo->m_nOfTracks];
   memset(m_pLastPTS, 0, m_pInfo->m_nOfTracks*sizeof(Ipp64f));
 
@@ -1066,7 +1066,6 @@ Status MP4Splitter::Init(SplitterParams& init)
     m_pInfo->m_ppTrackInfo[iES]->m_PID = pTrak->tkhd.track_id;
     MP4TrackInfo *pMP4TrackInfo = (MP4TrackInfo *)m_pInfo->m_ppTrackInfo[iES];
     pMP4TrackInfo->m_DpndPID = pTrak->tref.dpnd.idTrak;
-    vm_thread_set_invalid(&m_pReadESThread[iES]);
 
     umcRes = m_pTrackIndex[iES].First(entry);
     if ((umcRes == UMC_ERR_NOT_ENOUGH_DATA) && (!m_headerMPEG4.moov.mvex.total_tracks)) {
@@ -1139,13 +1138,7 @@ Status MP4Splitter::Init(SplitterParams& init)
   }
 
   if (m_headerMPEG4.moov.mvex.total_tracks) { // there are fragments
-    Ipp32s res = 0;
-    m_pInitMoofThread = new vm_thread;
-    vm_thread_set_invalid(m_pInitMoofThread);
-    res = vm_thread_create(m_pInitMoofThread, (vm_thread_callback)InitMoofThreadCallback, (void *)this);
-    if (res != 1) {
-      return UMC_ERR_FAILED;
-    }
+    m_pInitMoofThread = std::thread([this]() { InitMoofThreadCallback((void *)this); });
     do {
       vm_time_sleep(10);
       umcRes = CheckMoofInit();
@@ -1164,11 +1157,8 @@ Status MP4Splitter::Close()
     return umcRes;
 
   m_bFlagStopInitMoof = true;
-  if (vm_thread_is_valid(m_pInitMoofThread)) {
-    vm_thread_wait(m_pInitMoofThread);
-    vm_thread_close(m_pInitMoofThread);
-    vm_thread_set_invalid(m_pInitMoofThread);
-  }
+  if (m_pInitMoofThread.joinable())
+      m_pInitMoofThread.join();
 
   IndexSplitter::Close();
 
