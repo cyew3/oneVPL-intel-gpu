@@ -20,7 +20,6 @@
 
 #include <ipps.h>
 #include "ippdefs.h"
-#include "vm_thread.h"
 #include "vm_types.h"
 #include "vm_time.h"
 #include "umc_media_data.h"

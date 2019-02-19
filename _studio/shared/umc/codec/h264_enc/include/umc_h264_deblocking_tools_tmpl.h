@@ -72,11 +72,11 @@ void H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_Release)(
     void* state);
 
 // Additional deblocking thread
-Ipp32u VM_THREAD_CALLCONVENTION
+Ipp32u VM_CALLCONVENTION
 H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_DeblockSliceSecondThread)(
     void *p);
 
-Ipp32u VM_THREAD_CALLCONVENTION
+Ipp32u VM_CALLCONVENTION
 H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_DeblockSliceAsyncSecondThread)(
     void *p);
 

@@ -242,7 +242,7 @@ void H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_WaitEndOfSlice)(
 
 } // void H264EncoderThreadedDeblockingTools<PIXTYPE, COEFFSTYPE> ::WaitEndOfSlice(void)
 
-Ipp32u VM_THREAD_CALLCONVENTION
+Ipp32u VM_CALLCONVENTION
 H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_DeblockSliceSecondThread)(
     void *p)
 {
@@ -314,7 +314,7 @@ H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_DeblockSliceSecondThread)(
 
 } // Ipp32u VM_THREAD_CALLCONVENTION H264EncoderThreadedDeblockingTools<PIXTYPE, COEFFSTYPE> ::DeblockSliceSecondThread(void *p)
 
-Ipp32u VM_THREAD_CALLCONVENTION
+Ipp32u VM_CALLCONVENTION
 H264ENC_MAKE_NAME(H264EncoderThreadedDeblockingTools_DeblockSliceAsyncSecondThread)(
     void *p)
 {

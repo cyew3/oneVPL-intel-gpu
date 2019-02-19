@@ -134,7 +134,7 @@ public:
 
 #ifdef VM_SLICE_THREADING_H264
     Status ThreadedSliceCompress(Ipp32s numTh);
-    static Ipp32u VM_THREAD_CALLCONVENTION ThreadWorkingRoutine(void* ptr);
+    static Ipp32u VM_CALLCONVENTION ThreadWorkingRoutine(void* ptr);
 #ifdef VM_MB_THREADING_H264
     Status ThreadCallBackVM_MBT(threadSpecificDataH264 &tsd);
     Status H264CoreEncoder_Compress_Slice_MBT(void* state, H264Slice_8u16s *curr_slice);

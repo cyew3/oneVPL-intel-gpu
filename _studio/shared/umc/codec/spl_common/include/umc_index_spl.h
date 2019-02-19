@@ -25,7 +25,6 @@
 #include "umc_splitter_ex.h"
 #include "umc_mutex.h"
 
-#include "vm_thread.h"
 #include "umc_index.h"
 #include "umc_media_buffer.h"
 #include <thread>
@@ -66,7 +65,7 @@ public:
 protected:
     virtual Status StopSplitter();
 
-    static Ipp32u  VM_THREAD_CALLCONVENTION  ReadESThreadCallback(void* ptr);
+    static Ipp32u  VM_CALLCONVENTION  ReadESThreadCallback(void* ptr);
     void    ReadES(Ipp32u uiPin);
 
     bool                 m_bFlagStop;

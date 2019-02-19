@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1326,21 +1326,21 @@ void AVSync::AudioProc()
     //LOG  (VM_STRING("AudioProc,-"));
 }
 
-Ipp32u VM_THREAD_CALLCONVENTION AVSync::SyncThreadProc(void* pvParam)
+Ipp32u VM_CALLCONVENTION AVSync::SyncThreadProc(void* pvParam)
 {
     VM_ASSERT(NULL != pvParam);
     reinterpret_cast<AVSync*>(pvParam)->SyncProc();
     return 0;
 }
 
-Ipp32u VM_THREAD_CALLCONVENTION AVSync::VideoThreadProc(void* pvParam)
+Ipp32u VM_CALLCONVENTION AVSync::VideoThreadProc(void* pvParam)
 {
     VM_ASSERT(NULL != pvParam);
     reinterpret_cast<AVSync*>(pvParam)->VideoProc();
     return 0;
 }
 
-Ipp32u VM_THREAD_CALLCONVENTION AVSync::AudioThreadProc(void* pvParam)
+Ipp32u VM_CALLCONVENTION AVSync::AudioThreadProc(void* pvParam)
 {
     VM_ASSERT(NULL != pvParam);
     reinterpret_cast<AVSync*>(pvParam)->AudioProc();

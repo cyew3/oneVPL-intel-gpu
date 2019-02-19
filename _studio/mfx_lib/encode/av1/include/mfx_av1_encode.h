@@ -28,7 +28,6 @@
 #include "deque"
 #include "ippdefs.h"
 #include "umc_mutex.h"
-#include "vm_thread.h"
 #include "mfx_av1_defs.h"
 #include "mfx_av1_enc.h"
 
@@ -168,7 +167,7 @@ namespace AV1Enc {
         std::unique_ptr<Lookahead> m_la;
 
 
-        static uint32_t VM_THREAD_CALLCONVENTION FeiThreadRoutineStarter(void *p);
+        static uint32_t VM_CALLCONVENTION FeiThreadRoutineStarter(void *p);
         void FeiThreadRoutine();
         void FeiThreadSubmit(ThreadingTask &task);
         bool FeiThreadWait(uint32_t timeout);

@@ -10,7 +10,6 @@ File Name: test_thread_safety.cpp
 
 \* ****************************************************************************** */
 
-#include "vm_thread.h"
 #include "test_thread_safety.h"
 #include "test_thread_safety_cmdline.h"
 #include "mfx_pipeline_sync.h"
@@ -38,7 +37,7 @@ int VC1EncPakStarter(int argc, vm_char* argv[]);
 
 mfxU32 OpenOutputFiles(vm_file** fdOut, mfxU32 numThread, const vm_char* name, const vm_char* mode);
 mfxU32 CompareOutputFiles(vm_file** fdOut, vm_file* fdRef, mfxU32 numThread);
-Ipp32u VM_THREAD_CALLCONVENTION ThreadStarter(void *p);
+Ipp32u VM_CALLCONVENTION ThreadStarter(void *p);
 
 #if defined(_WIN32) || defined(_WIN64)
 mfxI32 _tmain(mfxI32 argc, vm_char** argv)
@@ -219,7 +218,7 @@ mfxU32 CompareOutputFiles(vm_file** fdOut, vm_file* fdRef, mfxU32 numThread)
     return 0;
 }
 
-Ipp32u VM_THREAD_CALLCONVENTION ThreadStarter(void *p)
+Ipp32u VM_CALLCONVENTION ThreadStarter(void *p)
 {
     if (!p)
         return 1;

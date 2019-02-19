@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
 #include "basic_audio_render.h"
 #include "umc_audio_codec.h"
 
-Ipp32u VM_THREAD_CALLCONVENTION BasicAudioRenderThreadProc(void* vpParam)
+Ipp32u VM_CALLCONVENTION BasicAudioRenderThreadProc(void* vpParam)
 {
   VM_ASSERT(NULL != vpParam);
   UMC::BasicAudioRender* pThis =

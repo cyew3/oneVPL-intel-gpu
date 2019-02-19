@@ -21,7 +21,6 @@
 #include <ipps.h>
 #include "ippdefs.h"
 #include "vm_semaphore.h"
-#include "vm_thread.h"
 #include "vm_types.h"
 #include "vm_time.h"
 #include "bstream.h"

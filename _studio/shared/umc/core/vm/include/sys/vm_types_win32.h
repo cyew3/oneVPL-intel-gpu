@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -82,20 +82,6 @@ typedef struct vm_semaphore
     vm_handle handle;
 
 } vm_semaphore;
-
-/* vm_thread.h */
-#ifndef OPEN_SOURCE
-typedef struct vm_thread
-{
-    vm_handle handle;
-    vm_mutex access_mut;
-    int32_t i_wait_count;
-
-    uint32_t (__stdcall * protected_func)(void *);
-    void *protected_arg;
-
-} vm_thread;
-#endif
 
 #if defined(_SOCKET_SUPPORT)
 /* vm_socket.h */

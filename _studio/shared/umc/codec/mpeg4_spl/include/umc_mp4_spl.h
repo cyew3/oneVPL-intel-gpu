@@ -63,7 +63,7 @@ public:
     virtual Status  Close();
 
 protected:
-    static Ipp32u VM_THREAD_CALLCONVENTION InitMoofThreadCallback(void* pParam);
+    static Ipp32u VM_CALLCONVENTION InitMoofThreadCallback(void* pParam);
     Status          ParseMP4Header();
     Status          InitMoof();
     Status          SelectNextFragment();

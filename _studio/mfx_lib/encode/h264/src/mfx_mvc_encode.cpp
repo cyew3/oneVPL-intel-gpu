@@ -1675,7 +1675,7 @@ mfxStatus MFXVideoENCODEMVC::TaskCompleteProc(void *pState, void *pParam, mfxSta
 }
 #else
 #ifdef VM_SLICE_THREADING_H264
-Ipp32u VM_THREAD_CALLCONVENTION MFXVideoENCODEMVC::ThreadWorkingRoutine(void* ptr)
+Ipp32u VM_CALLCONVENTION MFXVideoENCODEMVC::ThreadWorkingRoutine(void* ptr)
 {
   threadInfoH264* th = (threadInfoH264*)ptr;
 

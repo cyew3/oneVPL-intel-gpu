@@ -31,8 +31,6 @@
 
 #include "ippdefs.h"
 
-#include "vm_thread.h"
-
 #include "mfxdefs.h"
 #include "mfxvideo.h"
 #include "mfxvideo++int.h"
@@ -217,7 +215,7 @@ namespace H265Enc {
         FSP m_faceSkinDet;
 #endif
 
-        static Ipp32u VM_THREAD_CALLCONVENTION FeiThreadRoutineStarter(void *p);
+        static Ipp32u VM_CALLCONVENTION FeiThreadRoutineStarter(void *p);
         void FeiThreadRoutine();
         void FeiThreadSubmit(ThreadingTask &task);
         bool FeiThreadWait(Ipp32u timeout);

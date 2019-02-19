@@ -13,7 +13,6 @@ File Name: .h
 #pragma once
 
 #include "mfx_rnd_wrapper.h"
-#include "vm_thread.h"
 #include "mfx_itime.h"
 #include "vm_event.h"
 #include "mfx_thread.h"
@@ -37,7 +36,7 @@ public:
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request);
 
 protected:
-    static mfxU32 VM_THREAD_CALLCONVENTION ThreadRoutine(void * pthis);
+    static mfxU32 VM_CALLCONVENTION ThreadRoutine(void * pthis);
 
     virtual mfxStatus RenderThread();
     virtual mfxStatus CloseLocal();

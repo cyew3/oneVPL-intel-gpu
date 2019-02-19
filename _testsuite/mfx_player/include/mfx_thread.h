@@ -17,7 +17,6 @@ File Name: .h
 #include "mfxdefs.h"
 #include "umc_event.h"
 #include "umc_mutex.h"
-#include "vm_thread.h"
 
 #ifndef _WIN32
     #include <pthread.h>
@@ -124,7 +123,7 @@ namespace MFXThread
                 mTaskReady.Set();
             }
         }
-        static Ipp32u VM_THREAD_CALLCONVENTION Runner(void * threadPoolPtr) {
+        static Ipp32u VM_CALLCONVENTION Runner(void * threadPoolPtr) {
             ((ThreadPool*)(threadPoolPtr))->LocalRunner();
             return 0;
         }

@@ -432,10 +432,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\vm_thread.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\vm_time.h"
 				>
 			</File>

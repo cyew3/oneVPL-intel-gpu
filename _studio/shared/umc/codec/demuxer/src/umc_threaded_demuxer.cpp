@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 #include "vm_time.h"
-#include "vm_thread.h"
 #include "umc_threaded_demuxer.h"
 #include "umc_demuxer.h"
 
@@ -59,7 +58,7 @@ const SplInitPreset SplInitPresets[] = {
     ADD_SPL_INIT_PRESET(SplInitPreset_AA_AV)
 };
 
-Ipp32u VM_THREAD_CALLCONVENTION ThreadRoutineStarter(void* u)
+Ipp32u VM_CALLCONVENTION ThreadRoutineStarter(void* u)
 {
     return ((UMC::ThreadedDemuxer*)u)->ThreadRoutine();
 }

@@ -281,9 +281,9 @@ protected:
                              Ipp64f& rdfDecTime);
 
 
-    static Ipp32u VM_THREAD_CALLCONVENTION SyncThreadProc(void* pvParam);
-    static Ipp32u VM_THREAD_CALLCONVENTION AudioThreadProc(void* pvParam);
-    static Ipp32u VM_THREAD_CALLCONVENTION VideoThreadProc(void* pvParam);
+    static Ipp32u VM_CALLCONVENTION SyncThreadProc(void* pvParam);
+    static Ipp32u VM_CALLCONVENTION AudioThreadProc(void* pvParam);
+    static Ipp32u VM_CALLCONVENTION VideoThreadProc(void* pvParam);
 
     void GetAVInfo (UMC::SplitterInfo*  pSplitterInfo);
 

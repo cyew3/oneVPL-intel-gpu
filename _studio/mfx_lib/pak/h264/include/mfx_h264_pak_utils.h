@@ -28,7 +28,6 @@
 #include "mfxdefs.h"
 #include "vm_interlocked.h"
 #include "umc_event.h"
-#include "vm_thread.h"
 #include <thread>
 
 #if (defined(__INTEL_COMPILER) || defined(_MSC_VER)) && !defined(_WIN32_WCE)
@@ -820,7 +819,7 @@ namespace H264Pak
         void Wait();
 
     private:
-        static mfxU32 VM_THREAD_CALLCONVENTION Callback(void* p);
+        static mfxU32 VM_CALLCONVENTION Callback(void* p);
 
         ThreadRoutine* m_routine;
 

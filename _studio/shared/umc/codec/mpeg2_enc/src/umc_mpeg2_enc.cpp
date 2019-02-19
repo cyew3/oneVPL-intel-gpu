@@ -221,7 +221,7 @@ MPEG2VideoEncoderBase::~MPEG2VideoEncoderBase ()
 }
 
 #ifndef _NEW_THREADING
-static Ipp32u VM_THREAD_CALLCONVENTION ThreadWorkingRoutine(void* ptr)
+static Ipp32u VM_CALLCONVENTION ThreadWorkingRoutine(void* ptr)
 {
   MPEG2VideoEncoderBase::threadInfo* th = (MPEG2VideoEncoderBase::threadInfo*)ptr;
 

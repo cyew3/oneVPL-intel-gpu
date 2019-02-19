@@ -56,7 +56,6 @@
     <ClInclude Include="include\vm_socket.h" />
     <ClInclude Include="include\vm_strings.h" />
     <ClInclude Include="include\vm_sys_info.h" />
-    <ClInclude Include="include\vm_thread.h" />
     <ClInclude Include="include\vm_time.h" />
     <ClInclude Include="include\vm_types.h" />
     <ClInclude Include="include\sys\vm_file_unix.h" />

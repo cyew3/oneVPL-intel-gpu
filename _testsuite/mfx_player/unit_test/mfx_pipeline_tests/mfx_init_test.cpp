@@ -20,7 +20,7 @@ SUITE(MFXInit)
 #ifdef RUN_MULTIINIT
     struct Spawner
     {
-        static mfxU32 VM_THREAD_CALLCONVENTION spawn(void* pCtx)
+        static mfxU32 VM_CALLCONVENTION spawn(void* pCtx)
         {
             int p = reinterpret_cast<int>(pCtx);
             for (size_t i = 0; true; i++)

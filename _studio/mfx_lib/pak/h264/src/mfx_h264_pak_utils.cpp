@@ -307,7 +307,7 @@ void PredThread::Wait()
     m_onReady.Wait();
 }
 
-mfxU32 VM_THREAD_CALLCONVENTION PredThread::Callback(void* p)
+mfxU32 VM_CALLCONVENTION PredThread::Callback(void* p)
 {
     PredThread& self = *((PredThread *)p);
 

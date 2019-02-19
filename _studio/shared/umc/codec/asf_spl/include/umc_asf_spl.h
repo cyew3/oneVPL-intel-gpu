@@ -25,7 +25,6 @@
 #include "umc_asf_parser.h"
 #include "umc_data_reader.h"
 #include "umc_asf_fb.h"
-#include "vm_thread.h"
 #include <thread>
 
 
@@ -93,7 +92,7 @@ protected:
     Status    CleanInternalObjects();
     Status    CleanHeaderObject();
 
-    static Ipp32u VM_THREAD_CALLCONVENTION ReadDataPacketThreadCallback(void* pParam);
+    static Ipp32u VM_CALLCONVENTION ReadDataPacketThreadCallback(void* pParam);
 
 protected:
 

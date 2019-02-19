@@ -13,7 +13,6 @@ File Name: .h
 #include "mfx_pipeline_defs.h"
 #include "mfx_loop_decoder.h"
 //#include "mfx_io_utils.h"
-#include "vm_thread.h"
 
 #if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
 #ifndef _WIN32_WCE

@@ -23,7 +23,6 @@
 
 #define VM_THREAD_CATCHCRASH
 
-#include "vm_thread.h"
 #include "umc_event.h"
 #include "umc_mutex.h"
 #include "umc_media_data.h"
@@ -35,7 +34,7 @@ namespace UMC
 {
     class Demuxer;
     struct RulesMatchingState;
-    Ipp32u VM_THREAD_CALLCONVENTION ThreadRoutineStarter(void* u);
+    Ipp32u VM_CALLCONVENTION ThreadRoutineStarter(void* u);
 
     class ThreadedDemuxer : public Splitter
     {
@@ -69,7 +68,7 @@ namespace UMC
         void TerminateInit(void);
         bool TryTrackByRules(Ipp32u uiTrack);
         Ipp32u ThreadRoutine();
-        friend Ipp32u VM_THREAD_CALLCONVENTION ThreadRoutineStarter(void* u);
+        friend Ipp32u VM_CALLCONVENTION ThreadRoutineStarter(void* u);
 
         // pointer to the core demuxing object
         // this pointer is used to check if object initialized

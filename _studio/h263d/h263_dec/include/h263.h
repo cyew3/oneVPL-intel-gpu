@@ -1,4 +1,4 @@
-// Copyright (c) 2005-2018 Intel Corporation
+// Copyright (c) 2005-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,6 @@
 #include "ippi.h"
 #include "ippvc.h"
 #include "vm_debug.h"
-#include "vm_thread.h"
 //#include "ippcc.h"
 
 #pragma warning(disable : 4710) // function not inlined

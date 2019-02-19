@@ -94,8 +94,6 @@
 #ifdef MB_THREADING_VM
 #include <thread>
 #include <mutex>
-#include "vm_thread.h"
-#include <mutex>
 #endif // // MB_THREADING_VM
 
 #endif // UMC_RESTRICTED_CODE_MBT

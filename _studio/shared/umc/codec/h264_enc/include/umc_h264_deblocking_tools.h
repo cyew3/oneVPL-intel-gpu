@@ -26,7 +26,6 @@
 
 #include <ippi.h>
 #include "vm_event.h"
-#include "vm_thread.h"
 #include "umc_structures.h"
 #include "umc_h264_video_encoder.h"
 #include "umc_h264_core_enc.h"

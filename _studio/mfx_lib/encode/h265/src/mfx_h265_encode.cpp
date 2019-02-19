@@ -3528,7 +3528,7 @@ void H265Encoder::PerformPadRecon(Frame *frame)
     PadRectLumaAndChroma(*frame->m_recon, m_videoParam.fourcc, 0, 0, frame->m_recon->width, frame->m_recon->height);
 }
 
-Ipp32u VM_THREAD_CALLCONVENTION H265Encoder::FeiThreadRoutineStarter(void *p)
+Ipp32u VM_CALLCONVENTION H265Encoder::FeiThreadRoutineStarter(void *p)
 {
     ((H265Encoder *)p)->FeiThreadRoutine();
     return 0;

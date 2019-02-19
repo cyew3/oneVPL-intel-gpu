@@ -3090,7 +3090,7 @@ void AV1Encoder::PerformPadRecon(Frame *frame)
     PadRectLumaAndChroma(*frame->m_recon, m_videoParam.fourcc, 0, 0, frame->m_recon->width, frame->m_recon->height);
 }
 
-uint32_t VM_THREAD_CALLCONVENTION AV1Encoder::FeiThreadRoutineStarter(void *p)
+uint32_t VM_CALLCONVENTION AV1Encoder::FeiThreadRoutineStarter(void *p)
 {
     ((AV1Encoder *)p)->FeiThreadRoutine();
     return 0;
