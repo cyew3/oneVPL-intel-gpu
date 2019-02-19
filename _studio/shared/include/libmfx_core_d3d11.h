@@ -170,9 +170,6 @@ private:
 
     D3D11_VIDEO_DECODER_CONFIG* GetConfig(D3D11_VIDEO_DECODER_DESC *video_desc, mfxU32 start, mfxU32 end, const GUID guid);
 
-    // no HEVC FEI, always false
-    static const bool s_bHEVCFEIEnabled = false;
-
     bool                                                               m_bUseExtAllocForHWFrames;
     std::unique_ptr<mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator> m_pcHWAlloc; 
 

@@ -86,6 +86,9 @@ mfxStatus MFXVideoCORE_QueryPlatform(mfxSession session, mfxPlatform* platform)
 }
 
 
+// no HEVC FEI, always false
+bool CommonCORE::s_bHEVCFEIEnabled = false;
+
 mfxStatus CommonCORE::API_1_19_Adapter::QueryPlatform(mfxPlatform* platform)
 {
     return m_core->QueryPlatform(platform);
@@ -1975,6 +1978,9 @@ void* CommonCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return &m_API_1_19;
     }
+
+    if (MFXIFEIEnabled_GUID == guid)
+        return const_cast<bool*>(&s_bHEVCFEIEnabled);
 
     return NULL;
 }

@@ -284,6 +284,9 @@ protected:
 
     API_1_19_Adapter m_API_1_19;
 
+    // no HEVC FEI, always false
+    static bool s_bHEVCFEIEnabled;
+
 private:
     // Forbid the assignment operator
     CommonCORE & operator = (const CommonCORE &);
