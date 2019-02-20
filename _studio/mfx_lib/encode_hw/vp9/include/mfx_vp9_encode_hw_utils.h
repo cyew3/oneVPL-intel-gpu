@@ -48,9 +48,6 @@ namespace MfxHwVP9Encode
 #endif
 #endif //OPEN_SOURCE
 
-#define MAX_DXVA_VIDEO_SURFACE_DIMENSION_SIZE 16384
-
-
 #define DPB_SIZE 8 // DPB size by VP9 spec
 #define DPB_SIZE_REAL 3 // DPB size really used by encoder
 #define MAX_SEGMENTS 8
@@ -83,9 +80,6 @@ namespace MfxHwVP9Encode
 #define MAX_NUM_TILES 16
 
 #define SB_SIZE 64
-
-#define ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
-#define ALIGN8(X) (((mfxU32)((X)+7)) & (~ (mfxU32)7))
 
 const mfxU16 segmentSkipMask = 0xf0;
 const mfxU16 segmentRefMask = 0x0f;
@@ -1003,18 +997,6 @@ enum
     FEAT_REF = 2,
     FEAT_SKIP = 3
 };
-
-inline mfxU16 GetReconSurfaceHeight(mfxU16 const & frameHeight, mfxU16 const & format)
-{
-    if (format == MFX_CHROMAFORMAT_YUV444)
-    {
-        return ALIGN8(frameHeight * 3);
-    }
-    else
-    {
-        return ALIGN8(frameHeight);
-    }
-}
 
 inline bool IsFeatureEnabled(mfxU16 features, mfxU8 feature)
 {
