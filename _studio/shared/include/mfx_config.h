@@ -47,11 +47,6 @@
 #define MFX_ENABLE_VPP_SVC
 #endif // #ifndef OPEN_SOURCE
 
-#ifdef UMC_VA_LINUX
-    #undef  MFX_VA
-    #define MFX_VA
-#endif // UMC_VA_LINUX
-
 #if defined(_WIN32) || defined(_WIN64)
 #undef MFX_DEBUG_TOOLS
 #define MFX_DEBUG_TOOLS

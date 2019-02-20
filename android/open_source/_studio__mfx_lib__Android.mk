@@ -3,7 +3,7 @@ LOCAL_PATH:= $(MFX_HOME)/_studio
 # =============================================================================
 
 MFX_LOCAL_DECODERS := h265 h264 mpeg2 vc1 mjpeg vp8 vp9
-MFX_LOCAL_ENCODERS := h264 mjpeg
+MFX_LOCAL_ENCODERS := h265 h264 mjpeg
 
 # Setting subdirectories to march thru
 MFX_LOCAL_DIRS := \
@@ -16,7 +16,6 @@ MFX_LOCAL_DIRS_IMPL := \
 
 MFX_LOCAL_DIRS_HW := \
     $(addprefix encode_hw/, $(MFX_LOCAL_ENCODERS)) \
-    encode_hw/h265 \
     genx/h264_encode \
     mctf_package/mctf \
     cmrt_cross_platform
@@ -41,10 +40,10 @@ MFX_LOCAL_INCLUDES_IMPL := \
 MFX_LOCAL_INCLUDES_HW := \
     $(MFX_LOCAL_INCLUDES_IMPL) \
     $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include)) \
-    $(MFX_HOME)/_studio/mfx_lib/genx/asc/include \
     $(MFX_HOME)/_studio/mfx_lib/genx/field_copy/include \
     $(MFX_HOME)/_studio/mfx_lib/genx/copy_kernels/include \
-    $(MFX_HOME)/_studio/mfx_lib/genx/mctf/include \
+    $(MFX_HOME)/_studio/mfx_lib/genx/mctf/isa \
+    $(MFX_HOME)/_studio/mfx_lib/genx/asc/isa \
     $(MFX_HOME)/_studio/shared/asc/include
 
 MFX_LOCAL_STATIC_LIBRARIES_HW := \
@@ -59,7 +58,7 @@ MFX_LOCAL_STATIC_LIBRARIES_HW := \
 
 MFX_LOCAL_LDFLAGS_HW := \
     $(MFX_LDFLAGS) \
-    -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map
+    -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfxhw.map
 
 # =============================================================================
 
@@ -114,19 +113,19 @@ MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/field_copy/src/, \
     genx_fcopy_gen11_isa.cpp \
     genx_fcopy_gen11lp_isa.cpp)
 
-MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/mctf/src/, \
-    genx_me_skl_isa.cpp \
-    genx_me_icl_isa.cpp \
-    genx_me_icllp_isa.cpp \
-    genx_me_bdw_isa.cpp \
-    genx_mc_skl_isa.cpp \
-    genx_mc_icl_isa.cpp \
-    genx_mc_icllp_isa.cpp \
-    genx_mc_bdw_isa.cpp \
-    genx_sd_skl_isa.cpp \
-    genx_sd_icl_isa.cpp \
-    genx_sd_icllp_isa.cpp \
-    genx_sd_bdw_isa.cpp)
+MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/mctf/isa/, \
+    mctf_me_gen8_isa.cpp \
+    mctf_me_gen9_isa.cpp \
+    mctf_me_gen11_isa.cpp \
+    mctf_me_gen11lp_isa.cpp \
+    mctf_mc_gen8_isa.cpp \
+    mctf_mc_gen9_isa.cpp \
+    mctf_mc_gen11_isa.cpp \
+    mctf_mc_gen11lp_isa.cpp \
+    mctf_sd_gen8_isa.cpp \
+    mctf_sd_gen9_isa.cpp \
+    mctf_sd_gen11_isa.cpp \
+    mctf_sd_gen11lp_isa.cpp)
 
 MFX_LIB_SHARED_FILES_1 := $(addprefix mfx_lib/shared/src/, \
     libmfxsw.cpp \
@@ -151,7 +150,8 @@ MFX_LIB_SHARED_FILES_2 := $(addprefix shared/src/, \
     libmfx_core.cpp \
     libmfx_core_factory.cpp \
     libmfx_core_vaapi.cpp \
-    mfx_umc_alloc_wrapper.cpp)
+    mfx_umc_alloc_wrapper.cpp \
+    mfx_umc_mjpeg_vpp.cpp)
 
 # =============================================================================
 
