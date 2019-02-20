@@ -866,23 +866,28 @@ mfxStatus MFXDecPipeline::InitBitDepthByFourCC(mfxFrameInfo &info)
             // 10 bit
         case MFX_FOURCC_P010:
         case MFX_FOURCC_P210:
+#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
+#endif
             info.BitDepthLuma = 10;
             break;
             // 12 bit
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:
             info.BitDepthLuma = 12;
             break;
-
+#endif
             // not applicable
         case MFX_FOURCC_P8:
         case MFX_FOURCC_P8_TEXTURE:
+#if (MFX_VERSION >= 1028)
         case MFX_FOURCC_RGB565:
-        case MFX_FOURCC_RGB4:
         case MFX_FOURCC_RGBP:
+#endif
+        case MFX_FOURCC_RGB4:
         case MFX_FOURCC_RGB3:
         case MFX_FOURCC_BGR4:
         case MFX_FOURCC_AYUV_RGB4:

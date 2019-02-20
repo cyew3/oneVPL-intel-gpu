@@ -2193,7 +2193,9 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
     bool  isB   = !!(task.m_frameType & MFX_FRAMETYPE_B);
 
     mfxExtCodingOption2 *ext2 = ExtBuffer::Get(task.m_ctrl);
+#if MFX_VERSION >= MFX_VERSION_NEXT
     mfxExtCodingOption3 *ext3 = ExtBuffer::Get(task.m_ctrl);
+#endif
     Zero(s);
 
     s.first_slice_segment_in_pic_flag = 1;

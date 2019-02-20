@@ -168,6 +168,8 @@ protected:
 
     virtual mfxStatus ExtraParametersCheck(mfxEncodeCtrl * ctrl, mfxFrameSurface1 * /*surface*/, mfxBitstream * /*bs*/)
     {
+        (void)ctrl;
+
 #if MFX_VERSION >= MFX_VERSION_NEXT
         if (ctrl)
         {
