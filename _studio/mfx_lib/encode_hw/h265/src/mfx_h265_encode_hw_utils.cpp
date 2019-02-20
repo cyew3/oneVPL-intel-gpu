@@ -2042,6 +2042,13 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.deblocking_filter_control_present_flag  = 1;
     m_pps.deblocking_filter_disabled_flag = !!m_ext.CO2.DisableDeblockingIdc;
     m_pps.deblocking_filter_override_enabled_flag = 1; // to disable deblocking per frame
+#if MFX_VERSION >= MFX_VERSION_NEXT
+    if (!m_pps.deblocking_filter_disabled_flag)
+    {
+        m_pps.beta_offset_div2 = mfxI8(m_ext.CO3.DeblockingBetaOffset * 0.5);
+        m_pps.tc_offset_div2 = mfxI8(m_ext.CO3.DeblockingAlphaTcOffset * 0.5);
+    }
+#endif
 
     m_pps.scaling_list_data_present_flag              = 0;
     m_pps.lists_modification_present_flag             = 1;
@@ -2186,6 +2193,7 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
     bool  isB   = !!(task.m_frameType & MFX_FRAMETYPE_B);
 
     mfxExtCodingOption2 *ext2 = ExtBuffer::Get(task.m_ctrl);
+    mfxExtCodingOption3 *ext3 = ExtBuffer::Get(task.m_ctrl);
     Zero(s);
 
     s.first_slice_segment_in_pic_flag = 1;
@@ -2507,18 +2515,24 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
      s.beta_offset_div2     = m_pps.beta_offset_div2;
      s.tc_offset_div2       = m_pps.tc_offset_div2;
      s.deblocking_filter_override_flag = 0;
-
      if ( ext2 && ext2->DisableDeblockingIdc != m_ext.CO2.DisableDeblockingIdc && m_pps.deblocking_filter_override_enabled_flag)
      {
         s.deblocking_filter_disabled_flag = !!ext2->DisableDeblockingIdc;
-        s.deblocking_filter_override_flag = (s.deblocking_filter_disabled_flag != m_pps.deblocking_filter_disabled_flag);
-
-        if (s.deblocking_filter_override_flag)
+        if (s.deblocking_filter_disabled_flag != m_pps.deblocking_filter_disabled_flag)
         {
             s.beta_offset_div2 = 0;
             s.tc_offset_div2 = 0;
         }
      }
+#if MFX_VERSION >= MFX_VERSION_NEXT
+     if (ext3 && (ext3->DeblockingAlphaTcOffset != m_ext.CO3.DeblockingAlphaTcOffset || ext3->DeblockingBetaOffset != m_ext.CO3.DeblockingBetaOffset)
+              && m_pps.deblocking_filter_override_enabled_flag && !s.deblocking_filter_disabled_flag)
+     {
+         s.beta_offset_div2 = mfxI8(ext3->DeblockingBetaOffset * 0.5);
+         s.tc_offset_div2 = mfxI8(ext3->DeblockingAlphaTcOffset * 0.5);
+     }
+#endif
+    s.deblocking_filter_override_flag = s.deblocking_filter_disabled_flag || s.beta_offset_div2 || s.tc_offset_div2;
 
     s.loop_filter_across_slices_enabled_flag = m_pps.loop_filter_across_slices_enabled_flag;
 

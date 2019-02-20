@@ -2773,6 +2773,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #endif //defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 
+#if MFX_VERSION >= MFX_VERSION_NEXT
+    changed += CheckRangeDflt(CO3.DeblockingAlphaTcOffset, -12, 12, 0);
+    changed += CheckRangeDflt(CO3.DeblockingBetaOffset, -12, 12, 0);
+#endif
+
 #if (MFX_VERSION >= 1027)
     if (par.m_platform < MFX_HW_ICL)
         changed += CheckOption(par.m_ext.HEVCParam.GeneralConstraintFlags, 0);

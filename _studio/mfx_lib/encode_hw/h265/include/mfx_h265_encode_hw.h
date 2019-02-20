@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -166,8 +166,18 @@ protected:
         return MFX_ERR_NONE;
     }
 
-    virtual mfxStatus ExtraParametersCheck(mfxEncodeCtrl * /*ctrl*/, mfxFrameSurface1 * /*surface*/, mfxBitstream * /*bs*/)
+    virtual mfxStatus ExtraParametersCheck(mfxEncodeCtrl * ctrl, mfxFrameSurface1 * /*surface*/, mfxBitstream * /*bs*/)
     {
+#if MFX_VERSION >= MFX_VERSION_NEXT
+        if (ctrl)
+        {
+            mfxExtCodingOption3* pCO3 = ExtBuffer::Get(*ctrl);
+            if (pCO3) {
+                MFX_CHECK(pCO3->DeblockingAlphaTcOffset >= -12 && pCO3->DeblockingAlphaTcOffset <= 12, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+                MFX_CHECK(pCO3->DeblockingBetaOffset >= -12 && pCO3->DeblockingBetaOffset <= 12, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+            }
+        }
+#endif
         return MFX_ERR_NONE;
     }
 
