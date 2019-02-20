@@ -1,10 +1,10 @@
-﻿/* ****************************************************************************** *\
+/* ****************************************************************************** *\
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -33,8 +33,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         SetParam(p, iterPar.set_par[i].f->name, iterPar.set_par[i].f->offset, iterPar.set_par[i].f->size, iterPar.set_par[i].v);    \
     }                                                                                                                                                                                       \
 }
-
-#define MAX_VIDEO_SURFACE_DIMENSION_SIZE (16384)
 
 #define MAX_ITERATIONS 10
 #define MAX_EXT_BUFFERS 4
@@ -1566,14 +1564,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             const mfxVideoParam& defaults = (idx == 0) ? *m_pPar : iterations[idx - 1]->m_param[CHECK];
             Iteration* pIter = new Iteration(defaults, tc.iteration_par[idx], fourcc, tc.type, iterationStart);
-
-#if defined WIN32 || WIN64
-            if (pIter->m_param->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444 && (pIter->m_param->mfx.FrameInfo.Height * 3) > MAX_VIDEO_SURFACE_DIMENSION_SIZE)
-            {
-                g_tsLog << ">>SKIP<<: HEIGHT > 5K not supported for 444 formats due to DXVA \n  surface dimension limitation (16384) and recon allocation demand (3 x height)\n";
-                throw tsSKIP;
-            }
-#endif
 
             iterationStart += pIter->m_numFramesToEncode;
             iterations.push_back(pIter);
