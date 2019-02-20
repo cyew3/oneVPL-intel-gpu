@@ -245,6 +245,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Create)(
     core_enc->mbReady_MBT = NULL;
     core_enc->lSR_MBT = NULL;
     core_enc->gd_MBT = NULL;
+    vm_mutex_set_invalid(&core_enc->mutexIncRow);
 #ifdef H264_RECODE_PCM
     core_enc->m_nPCM = 0;
     core_enc->m_mbPCM = NULL;
@@ -1781,6 +1782,8 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Init)(
             return UMC_ERR_ALLOC;
     }
 
+    vm_mutex_set_invalid(&core_enc->mutexIncRow);
+    vm_mutex_init(&core_enc->mutexIncRow);
 #ifdef H264_RECODE_PCM
     core_enc->m_mbPCM = (Ipp32s*)H264_Malloc(core_enc->m_HeightInMBs * core_enc->m_WidthInMBs * 2 * sizeof(Ipp32s));
     if (!core_enc->m_mbPCM)
@@ -1796,9 +1799,12 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Init)(
 #endif // MB_THREADING_VM
 #ifdef MB_THREADING_TW
 #ifdef MB_THREADING_VM
-    core_enc->mMutexMT = (std::mutex*)H264_Malloc(sizeof(std::mutex) * nMBCount);
+    core_enc->mMutexMT = (vm_mutex*)H264_Malloc(sizeof(vm_mutex) * nMBCount);
     if (!core_enc->mMutexMT)
         return UMC_ERR_ALLOC;
+    for (i = 0; i < nMBCount; i ++) {
+        vm_mutex_set_invalid(core_enc->mMutexMT + i);
+        vm_mutex_init(core_enc->mMutexMT + i);
     }
 #else // MB_THREADING_VM
 #ifdef _OPENMP
@@ -2149,11 +2155,14 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Close)(
     core_enc->m_ThreadVM_MBT = NULL;
     H264_Free((void*)core_enc->m_ThreadDataVM);
     core_enc->m_ThreadDataVM = NULL;
+    vm_mutex_destroy(&core_enc->mutexIncRow);
 #endif // MB_THREADING_VM
 #ifdef MB_THREADING_TW
 #ifdef MB_THREADING_VM
     if (core_enc->mMutexMT)
     {
+        for (int i = 0; i < core_enc->m_HeightInMBs * core_enc->m_WidthInMBs; i ++)
+            vm_mutex_destroy(core_enc->mMutexMT + i);
         H264_Free((void*)core_enc->mMutexMT);
         core_enc->mMutexMT = NULL;
     }
