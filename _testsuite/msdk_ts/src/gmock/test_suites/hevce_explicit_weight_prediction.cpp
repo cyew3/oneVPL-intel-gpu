@@ -97,8 +97,6 @@ namespace hevce_explicit_weight_pred
                 mfxI16 w_luma;
                 mfxI16 o_luma;
             };
-            mfxU16 L0_ref;
-            mfxU16 L1_ref;
             struct f_pair
             {
                 mfxU32 ext_type;
@@ -113,6 +111,9 @@ namespace hevce_explicit_weight_pred
         mfxU8  m_def_luma_denom;
         mfxI16 m_def_w_luma;
         mfxI16 m_def_o_luma;
+
+        mfxU8 max_wp_l0;
+        mfxU8 max_wp_l1;
 
         std::mt19937 m_Gen;
         std::unique_ptr <tsRawReader> m_reader;
@@ -136,6 +137,14 @@ namespace hevce_explicit_weight_pred
             m_bs_processor = this;
 
             m_par.AsyncDepth = 1;
+            m_par.mfx.GopPicSize = 32;
+            m_par.mfx.GopRefDist = 4;
+            m_par.mfx.NumRefFrame = 8;
+
+            mfxExtCodingOption3& cod3 = m_par;
+            cod3.WeightedPred = MFX_WEIGHTED_PRED_EXPLICIT;
+            cod3.WeightedBiPred = MFX_WEIGHTED_PRED_EXPLICIT;
+
             m_ctrls.resize(2 * nframes_to_encode);
 
             m_Gen.seed(0);
@@ -155,7 +164,77 @@ namespace hevce_explicit_weight_pred
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
         mfxI32    GetRandomNumber(mfxI32 min, mfxI32 max);
         void      GeneratePredTable(mfxExtPredWeightTable& pwt, mfxU8 num_l0, mfxU8 num_l1, bool gpb);
+        void      HardcodeRefLists(mfxExtHEVCRefLists& rl, mfxI32 fo);
     };
+
+    // set ref lists for GopPicSize=32, GopRefDist=4, NumRefFrame=8
+    // maximum number of active references can be 4/2,
+    // number is adjusted according to MSDK settings
+    void TestSuite::HardcodeRefLists(mfxExtHEVCRefLists& rl, mfxI32 fo)
+    {
+        // description for reference frames in minigop
+        // frames described as (ref frame order - curr frame order)
+        // 0 means no reference frame
+        // first 4 frames - l0, the following 2 frames - l1
+        const mfxI32 ref_dist4[4][6] = { {-4, -6, -8, -10, -4, -6},
+                                         {-1, -3, -5, -7,   3,  1},
+                                         {-2, -4, -6, -8,   2,  0},
+                                         {-1, -3, -5, -7,   1,  0}
+                                        };
+        const mfxU8 end_l0 = 4;
+        const mfxU8 end_l1 = 6;
+
+        mfxExtCodingOption3& cod3 = m_par;
+        mfxU16 max_l0 = cod3.NumRefActiveP[0];
+        mfxU16 max_l1 = cod3.NumRefActiveBL1[1];
+        bool pframe = !!(fo % m_par.mfx.GopRefDist == 0);
+        bool gpb = !!(pframe && cod3.GPB != MFX_CODINGOPTION_OFF);
+
+        mfxU8 pl_idx = fo % m_par.mfx.GopRefDist;
+
+        for (mfxU8 ref = 0; ref < max_l0; ref++)
+        {
+            if (ref < end_l0 && (fo + ref_dist4[pl_idx][ref] >= 0) && (ref_dist4[pl_idx][ref] != 0))
+            {
+                rl.RefPicList0[ref].FrameOrder = fo + ref_dist4[pl_idx][ref];
+                rl.RefPicList0[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
+                rl.NumRefIdxL0Active += 1;
+            }
+            else // mark unused entries
+            {
+                rl.RefPicList0[ref].FrameOrder = MFX_FRAMEORDER_UNKNOWN;
+                rl.RefPicList0[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
+            }
+        }
+        for (mfxU8 ref = max_l0; ref < 16; ref++) // mark unused entries
+        {
+            rl.RefPicList0[ref].FrameOrder = MFX_FRAMEORDER_UNKNOWN;
+            rl.RefPicList0[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
+        }
+
+        if (gpb || !pframe)
+        {
+            for (mfxU8 ref = 0; ref < max_l1; ref++)
+            {
+                if (ref < end_l1 && (fo + ref_dist4[pl_idx][ref + end_l0] >= 0) && (ref_dist4[pl_idx][ref + end_l0] != 0))
+                {
+                    rl.RefPicList1[ref].FrameOrder = fo + ref_dist4[pl_idx][ref + end_l0];
+                    rl.RefPicList1[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
+                    rl.NumRefIdxL1Active += 1;
+                }
+                else // mark unused entries
+                {
+                    rl.RefPicList1[ref].FrameOrder = MFX_FRAMEORDER_UNKNOWN;
+                    rl.RefPicList1[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
+                }
+            }
+            for (mfxU8 ref = max_l0; ref < 16; ref++) // mark unused entries
+            {
+                rl.RefPicList1[ref].FrameOrder = MFX_FRAMEORDER_UNKNOWN;
+                rl.RefPicList1[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
+            }
+        }
+    }
 
     mfxI32 TestSuite::GetRandomNumber(mfxI32 min, mfxI32 max)
     {
@@ -168,13 +247,13 @@ namespace hevce_explicit_weight_pred
         if (m_mode & PREDEFINED)
         {
             pwt.LumaLog2WeightDenom = m_def_luma_denom;
-            for (mfxU8 ref = 0; ref < num_l0; ref++)
+            for (mfxU8 ref = 0; ref < std::min(max_wp_l0, num_l0); ref++)
             {
                 pwt.LumaWeightFlag[L0][ref] = 1;
                 pwt.Weights[L0][ref][Y][Weight] = m_def_w_luma;
                 pwt.Weights[L0][ref][Y][Offset] = m_def_o_luma;
             }
-            for (mfxU8 ref = 0; ref < num_l1; ref++)
+            for (mfxU8 ref = 0; ref < std::min(max_wp_l1, num_l1); ref++)
             {
                 if (gpb)
                 {
@@ -206,7 +285,7 @@ namespace hevce_explicit_weight_pred
         mfxI16 minOffsetY = -1 * WpOffsetHalfRangeY;
         mfxI16 maxOffsetY = WpOffsetHalfRangeY - 1;
 
-        for (mfxU8 ref = 0; ref < num_l0; ref++)
+        for (mfxU8 ref = 0; ref < std::min(max_wp_l0, num_l0); ref++)
         {
             pwt.LumaWeightFlag[L0][ref] = GetRandomNumber(0, 1);
             if (pwt.LumaWeightFlag[L0][ref] == 1)
@@ -220,7 +299,7 @@ namespace hevce_explicit_weight_pred
                 pwt.Weights[L0][ref][Y][Offset] = 0;
             }
         }
-        for (mfxU8 ref = 0; ref < num_l1; ref++)
+        for (mfxU8 ref = 0; ref < std::min(max_wp_l1, num_l1); ref++)
         {
             if (gpb)
             {
@@ -256,11 +335,10 @@ namespace hevce_explicit_weight_pred
         {
             mfxExtPredWeightTable& pwt = m_ctrls[s.Data.FrameOrder];
             mfxExtCodingOption3& cod3 = m_par;
-            mfxU8 nref_l0 = s.Data.FrameOrder < cod3.NumRefActiveP[0] ? s.Data.FrameOrder : cod3.NumRefActiveP[0];
-            mfxU8 nref_l1 = s.Data.FrameOrder < cod3.NumRefActiveBL1[0] ? s.Data.FrameOrder : cod3.NumRefActiveBL1[0];
-            bool pframe = !!(s.Data.FrameOrder % m_par.mfx.GopRefDist == 0);
-            bool gpb = !!(pframe && cod3.GPB != MFX_CODINGOPTION_OFF);
-            GeneratePredTable(pwt, nref_l0, ((!pframe || gpb) ? nref_l1 : 0), gpb);
+            bool gpb = !!(s.Data.FrameOrder % m_par.mfx.GopRefDist == 0 && cod3.GPB != MFX_CODINGOPTION_OFF);
+            mfxExtHEVCRefLists& ref_lists = m_ctrls[s.Data.FrameOrder];
+            HardcodeRefLists(ref_lists, s.Data.FrameOrder);
+            GeneratePredTable(pwt, ref_lists.NumRefIdxL0Active, ref_lists.NumRefIdxL1Active, gpb);
 
  #ifdef DEBUG
              printf("Frame #%d\n", s.Data.FrameOrder);
@@ -350,29 +428,25 @@ namespace hevce_explicit_weight_pred
 
                 for (mfxU8 lx = 0; lx < (slice.type == B ? 2 : 1); lx++) // L0, L1
                 {
-                    mfxU8 check_lx = lx;
-                    if (lx == 1 && slice.L0 != nullptr && slice.L1 != nullptr &&
-                        slice.L0[0].POC == slice.L1[0].POC) // GPB frame
-                        check_lx = 0;
                     for (mfxU8 ref = 0; ref < (lx ? slice.num_ref_idx_l1_active : slice.num_ref_idx_l0_active); ref++)
                     {
                         g_tsLog << "Check List" << lx << " for reference #" << ref << "\n";
-                        if (exp_pwt.LumaWeightFlag[check_lx][ref])
+                        if (exp_pwt.LumaWeightFlag[lx][ref])
                         {
-                            EXPECT_EQ(exp_pwt.Weights[check_lx][ref][Y][Weight], pwt[lx][ref][Y][Weight]);
-                            EXPECT_EQ(exp_pwt.Weights[check_lx][ref][Y][Offset], pwt[lx][ref][Y][Offset]);
+                            EXPECT_EQ(exp_pwt.Weights[lx][ref][Y][Weight], pwt[lx][ref][Y][Weight]);
+                            EXPECT_EQ(exp_pwt.Weights[lx][ref][Y][Offset], pwt[lx][ref][Y][Offset]);
                         }
                         else
                         {
                             EXPECT_EQ(1 << slice.luma_log2_weight_denom, pwt[lx][ref][Y][Weight]);
                             EXPECT_EQ(0, pwt[lx][ref][Y][Offset]);
                         }
-                        if (exp_pwt.ChromaWeightFlag[check_lx][ref])
+                        if (exp_pwt.ChromaWeightFlag[lx][ref])
                         {
-                            EXPECT_EQ(exp_pwt.Weights[check_lx][ref][Cb][Weight], pwt[lx][ref][Cb][Weight]);
-                            EXPECT_EQ(exp_pwt.Weights[check_lx][ref][Cb][Offset], pwt[lx][ref][Cb][Offset]);
-                            EXPECT_EQ(exp_pwt.Weights[check_lx][ref][Cr][Weight], pwt[lx][ref][Cr][Weight]);
-                            EXPECT_EQ(exp_pwt.Weights[check_lx][ref][Cr][Offset], pwt[lx][ref][Cr][Offset]);
+                            EXPECT_EQ(exp_pwt.Weights[lx][ref][Cb][Weight], pwt[lx][ref][Cb][Weight]);
+                            EXPECT_EQ(exp_pwt.Weights[lx][ref][Cb][Offset], pwt[lx][ref][Cb][Offset]);
+                            EXPECT_EQ(exp_pwt.Weights[lx][ref][Cr][Weight], pwt[lx][ref][Cr][Weight]);
+                            EXPECT_EQ(exp_pwt.Weights[lx][ref][Cr][Offset], pwt[lx][ref][Cr][Offset]);
                         }
                         else
                         {
@@ -393,19 +467,15 @@ namespace hevce_explicit_weight_pred
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ PREDEFINED, {6, 60, -128}, MAX_ACT_REF, MAX_ACT_REF, { {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
-                                                                       {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10}}
+        {/*00*/ PREDEFINED, {6, 60, -128}, { {MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4}}
         },
-        {/*00*/ PREDEFINED, {6, -34, 127}, 2, 1, { {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 3},
-                                                   {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10}}
+        {/*01*/ PREDEFINED, {6, -34, 127}, { {MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 1}}
         },
-        {/*00*/ PREDEFINED, {6, 191, 0}, 2, 1, { {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 3},
-                                                 {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10},
-                                                 {EXT_COD3, &tsStruct::mfxExtCodingOption3.GPB, MFX_CODINGOPTION_OFF} }
+        {/*02*/ RAND, {0, 0, 0}, { {MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4}}
         },
-        {/*00*/ RAND, {0, 0, 0},  2, 1, { {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 3},
-                                          {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10}}
-        }
+        {/*03*/ PREDEFINED, {6, 191, 0}, { {MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4},
+                                           {EXT_COD3, &tsStruct::mfxExtCodingOption3.GPB, MFX_CODINGOPTION_OFF} }
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -459,21 +529,14 @@ namespace hevce_explicit_weight_pred
         mfxExtCodingOption3& cod3 = m_par;
         SETPARS(&cod3, EXT_COD3);
 
-        if (tc.L0_ref == MAX_ACT_REF && tc.L1_ref == MAX_ACT_REF)
-        {
-            ENCODE_CAPS_HEVC caps = {};
-            mfxU32 caps_size = sizeof(ENCODE_CAPS_HEVC);
-            g_tsStatus.check(GetCaps(&caps, &caps_size));
-            std::fill(std::begin(cod3.NumRefActiveP),   std::end(cod3.NumRefActiveP),   caps.MaxNum_Reference0);
-            std::fill(std::begin(cod3.NumRefActiveBL0), std::end(cod3.NumRefActiveBL0), caps.MaxNum_Reference0);
-            std::fill(std::begin(cod3.NumRefActiveBL1), std::end(cod3.NumRefActiveBL1), caps.MaxNum_Reference1);
-        }
-        else
-        {
-            std::fill(std::begin(cod3.NumRefActiveP),   std::end(cod3.NumRefActiveP),   tc.L0_ref);
-            std::fill(std::begin(cod3.NumRefActiveBL0), std::end(cod3.NumRefActiveBL0), tc.L0_ref);
-            std::fill(std::begin(cod3.NumRefActiveBL1), std::end(cod3.NumRefActiveBL1), tc.L1_ref);
-        }
+        MFXInit();
+
+        ENCODE_CAPS_HEVC caps = {};
+        mfxU32 caps_size = sizeof(ENCODE_CAPS_HEVC);
+        g_tsStatus.check(GetCaps(&caps, &caps_size));
+
+        max_wp_l0 = caps.MaxNum_WeightedPredL0 ? caps.MaxNum_WeightedPredL0 : 1;
+        max_wp_l1 = caps.MaxNum_WeightedPredL1 ? caps.MaxNum_WeightedPredL1 : 1;
 
         if (cod3.GPB == MFX_CODINGOPTION_OFF && (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS || m_par.mfx.LowPower == MFX_CODINGOPTION_ON))
         {
@@ -506,15 +569,6 @@ namespace hevce_explicit_weight_pred
         // save bs for PSNR check below
         m_bs_copy.MaxLength = m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * nframes_to_encode * 3; // 3 - magic number :)
         m_bs_copy.Data = new mfxU8[m_bs_copy.MaxLength];
-
-        MFXInit();
-
-        // call Query to let MSDK correct NumRefActiveP/BL0/BL1 according to TU, VDEnc/VME, etc.
-        g_tsStatus.disable_next_check();
-        Query(m_session, m_pPar, m_pPar);
-
-        cod3.WeightedPred = MFX_WEIGHTED_PRED_EXPLICIT;
-        cod3.WeightedBiPred = MFX_WEIGHTED_PRED_EXPLICIT;
 
         Init();
         EncodeFrames(nframes_to_encode);
