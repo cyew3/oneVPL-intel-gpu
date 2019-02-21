@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@
 #include <vector>
 
 //#define HEADER_PACKING_TEST
-#if defined(_DEBUG) && defined(_WIN32)
+#if defined(_DEBUG)// && defined(_WIN32)
     #define DDI_TRACE
 #endif
 

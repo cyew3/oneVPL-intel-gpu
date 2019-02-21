@@ -126,6 +126,19 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
 {
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(core);
+
+#if defined (MFX_VA_LINUX)
+    // common part for OS and CS Linux (moved from vaapi)
+    caps.BlockSize = 2;   // = 1 on Win (16x16); to clarify!!!
+    caps.UserMaxFrameSizeSupport = 1;
+    caps.MBBRCSupport            = 1;
+    caps.MbQpDataSupport         = 1; // = 0 on Win; to clarify!!!
+    caps.TUSupport               = 73; // 1,
+    caps.SliceStructure = 4;
+    caps.BRCReset = 1;  // = 0 on Win (no bitrate resolution control); to clarify!!!
+#endif
+
+    // common part for all Windows and CS Linux
     if (!caps.BitDepth8Only && !caps.MaxEncodedBitDepth)
         caps.MaxEncodedBitDepth = 1;
     if (!caps.Color420Only && !(caps.YUV444ReconSupport || caps.YUV422ReconSupport))
@@ -135,6 +148,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     caps.MaxEncodedBitDepth = 2;
 #endif
+
 #if (MFX_VERSION >= 1025)
     eMFXHWType platform = core->GetHWType();
 
@@ -159,18 +173,51 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
         caps.ChromaWeightedPred = 1;
 
         if (!caps.MaxNum_WeightedPredL0)
-            caps.MaxNum_WeightedPredL0 = 3;
+            caps.MaxNum_WeightedPredL0 = caps.MaxNum_Reference0;
         if (!caps.MaxNum_WeightedPredL1)
-            caps.MaxNum_WeightedPredL1 = 3;
+            caps.MaxNum_WeightedPredL1 = caps.MaxNum_Reference1;
 
         //caps.SliceLevelWeightedPred;
     }
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+
 #else
     if (!caps.LCUSizeSupported)
         caps.LCUSizeSupported = 2;
     caps.BlockSize = 2; // 32x32
     (void)core;
+#endif
+
+#if defined (MFX_VA_LINUX) && !defined (OPEN_SOURCE)
+    // align wint Windows for Gen12+
+    if (platform >= MFX_HW_TGL_LP)
+    {   // taken from  Windows TGLLP (temporarily)
+        caps.CodingLimitSet = 1; // = 0 now but should be always set to 1 according to DDI (what about Linux ???)
+        caps.Color420Only = 0;  // = 1 now
+        caps.SliceIPBOnly = 1;  // = 0 now (SliceIP is also 0)cz
+//        caps.NoWeightedPred = 1;  // = 0 now
+        caps.NoMinorMVs = 1;  // = 0 now
+        caps.RawReconRefToggle = 1;  // = 0 now
+        caps.NoInterlacedField = 1;  // = 0 now
+//        caps.RollingIntraRefresh = 0;  // = 1 now
+//        caps.VCMBitRateControl = 0;  // = 1 now
+        caps.ParallelBRC = 1;  // = 0 now
+        caps.TileSupport = 1;  // = 0 now
+//        caps.LumaWeightedPred = 0;  // = 1 now
+//        caps.ChromaWeightedPred = 0;  // = 1 now
+        caps.QVBRBRCSupport = 1;  // = 0 now
+        caps.MaxEncodedBitDepth = 2;  // = 1 now (8/10b only)
+        caps.MaxPicWidth = 16384;  // = 8192 now
+        caps.MaxPicHeight = 16384;  // = 8192 now
+        caps.MaxNumOfROI = 16;  // = 0 now
+        caps.ROIDeltaQPSupport = 1;  // = 0 now
+        caps.BlockSize = 1;  // = 0 now (set to 16x16 like in Win)
+        caps.SliceLevelReportSupport = 1;  // = 0 now
+        caps.FrameSizeToleranceSupport = 1;  // = 0 now
+        caps.NumScalablePipesMinus1 = 1;  // = 0 now
+//        caps.MaxNum_WeightedPredL0 = 0;  // = 3 now
+//        caps.MaxNum_WeightedPredL1 = 0;  // = 3 now
+    }
 #endif
 
     return sts;

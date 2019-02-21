@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -71,13 +71,88 @@ void DDITracer::Trace(type const & b, mfxU32 idx)\
 
 void DDITracer::TraceGUID(GUID const & guid, FILE* f)
 {
-    fprintf(f, "GUID = { %08X, %04X, %04X, { %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X } }\n"
+    fprintf(f, "GUID = { %08lX, %04X, %04X, { %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X } }\n"
         , guid.Data1, guid.Data2, guid.Data3
         , guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3]
         , guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
     fflush(f);
 }
 
+#define FIELD_FORMAT "%-32s"
+DECL_START(ENCODE_CAPS_HEVC)
+    TRACE("%d", CodingLimitSet          );
+    TRACE("%d", BitDepth8Only           );
+    TRACE("%d", Color420Only            );
+    TRACE("%d", SliceStructure          );
+    TRACE("%d", SliceIPOnly             );
+    TRACE("%d", SliceIPBOnly            );
+    TRACE("%d", NoWeightedPred          );
+    TRACE("%d", NoMinorMVs              );
+    TRACE("%d", RawReconRefToggle       );
+    TRACE("%d", NoInterlacedField       );
+    TRACE("%d", BRCReset                );
+    TRACE("%d", RollingIntraRefresh     );
+    TRACE("%d", UserMaxFrameSizeSupport );
+    TRACE("%d", FrameLevelRateCtrl      );
+    TRACE("%d", SliceByteSizeCtrl       );
+    TRACE("%d", VCMBitRateControl       );
+    TRACE("%d", ParallelBRC             );
+    TRACE("%d", TileSupport             );
+    TRACE("%d", SkipFrame               );
+    TRACE("%d", MbQpDataSupport         );
+    TRACE("%d", NegativeQPSupport       );
+    TRACE("%d", SliceLevelWeightedPred  );
+    TRACE("%d", LumaWeightedPred        );
+    TRACE("%d", ChromaWeightedPred      );
+    TRACE("%d", QVBRBRCSupport          ); 
+    TRACE("%d", HMEOffsetSupport        );
+    TRACE("%d", YUV422ReconSupport      );
+    TRACE("%d", YUV444ReconSupport      );
+    TRACE("%d", RGBReconSupport         );
+    TRACE("%d", MaxEncodedBitDepth      );
+
+    TRACE("%d", MaxPicWidth);
+    TRACE("%d", MaxPicHeight);
+    TRACE("%d", MaxNum_Reference0);
+    TRACE("%d", MaxNum_Reference1);
+    TRACE("%d", MBBRCSupport);
+    TRACE("%d", TUSupport);
+
+    TRACE("%d", MaxNumOfROI               );
+    TRACE("%d", ROIDeltaQPSupport         );
+    TRACE("%d", ROIBRCPriorityLevelSupport);
+
+    TRACE("%d", BlockSize);
+
+    TRACE("%d", SliceLevelReportSupport      );
+
+    TRACE("%d", CTULevelReportSupport        );
+    TRACE("%d", SearchWindow64Support        );
+    TRACE("%d", CustomRoundingControl        );
+    TRACE("%d", IntraRefreshBlockUnitSize    );
+    TRACE("%d", LCUSizeSupported             );
+    TRACE("%d", MaxNumDeltaQP                );
+    TRACE("%d", DirtyRectSupport             );
+    TRACE("%d", MoveRectSupport              );
+    TRACE("%d", FrameSizeToleranceSupport    );
+    TRACE("%d", HWCounterAutoIncrementSupport);
+    TRACE("%d", NumScalablePipesMinus1       );
+    TRACE("%d", NegativeQPSupport            );
+    TRACE("%d", TileBasedEncodingSupport     );
+    TRACE("%d", PartialFrameUpdateSupport    );
+    TRACE("%d", RGBEncodingSupport           );
+    TRACE("%d", LLCStreamingBufferSupport    );
+    TRACE("%d", DDRStreamingBufferSupport    );
+    TRACE("%d", MaxNum_WeightedPredL0         );
+    TRACE("%d", MaxNum_WeightedPredL1         );
+    TRACE("%d", MaxNumOfDirtyRect             );
+    TRACE("%d", MaxNumOfMoveRect              );
+    TRACE("%d", MaxNumOfConcurrentFramesMinus1);
+    TRACE("%d", LLCSizeInMBytes               );
+    DECL_END
+#undef FIELD_FORMAT
+
+#if defined(_WIN32)
 
 #define FIELD_FORMAT "%-24s"
 DECL_START(D3D11_VIDEO_DECODER_EXTENSION)
@@ -149,81 +224,6 @@ DECL_START(ENCODE_COMPBUFFERDESC)
         break;
     }
 DECL_END
-#undef FIELD_FORMAT
-
-#define FIELD_FORMAT "%-32s"
-DECL_START(ENCODE_CAPS_HEVC)
-    TRACE("%d", CodingLimitSet          );
-    TRACE("%d", BitDepth8Only           );
-    TRACE("%d", Color420Only            );
-    TRACE("%d", SliceStructure          );
-    TRACE("%d", SliceIPOnly             );
-    TRACE("%d", SliceIPBOnly            );
-    TRACE("%d", NoWeightedPred          );
-    TRACE("%d", NoMinorMVs              );
-    TRACE("%d", RawReconRefToggle       );
-    TRACE("%d", NoInterlacedField       );
-    TRACE("%d", BRCReset                );
-    TRACE("%d", RollingIntraRefresh     );
-    TRACE("%d", UserMaxFrameSizeSupport );
-    TRACE("%d", FrameLevelRateCtrl      );
-    TRACE("%d", SliceByteSizeCtrl       );
-    TRACE("%d", VCMBitRateControl       );
-    TRACE("%d", ParallelBRC             );
-    TRACE("%d", TileSupport             );
-    TRACE("%d", SkipFrame               );
-    TRACE("%d", MbQpDataSupport         );
-    TRACE("%d", NegativeQPSupport       );
-    TRACE("%d", SliceLevelWeightedPred  );
-    TRACE("%d", LumaWeightedPred        );
-    TRACE("%d", ChromaWeightedPred      );
-    TRACE("%d", QVBRBRCSupport          ); 
-    TRACE("%d", HMEOffsetSupport        );
-    TRACE("%d", YUV422ReconSupport      );
-    TRACE("%d", YUV444ReconSupport      );
-    TRACE("%d", RGBReconSupport         );
-    TRACE("%d", MaxEncodedBitDepth      );
-
-    TRACE("%d", MaxPicWidth);
-    TRACE("%d", MaxPicHeight);
-    TRACE("%d", MaxNum_Reference0);
-    TRACE("%d", MaxNum_Reference1);
-    TRACE("%d", MBBRCSupport);
-    TRACE("%d", TUSupport);
-
-    TRACE("%d", MaxNumOfROI               );
-    TRACE("%d", ROIDeltaQPSupport         );
-    TRACE("%d", ROIBRCPriorityLevelSupport);
-
-    TRACE("%d", BlockSize);
-
-    TRACE("%d", SliceLevelReportSupport      );
-
-    TRACE("%d", CTULevelReportSupport        );
-    TRACE("%d", SearchWindow64Support        );
-    TRACE("%d", CustomRoundingControl        );
-    TRACE("%d", IntraRefreshBlockUnitSize    );
-    TRACE("%d", LCUSizeSupported             );
-    TRACE("%d", MaxNumDeltaQP                );
-    TRACE("%d", DirtyRectSupport             );
-    TRACE("%d", MoveRectSupport              );
-    TRACE("%d", FrameSizeToleranceSupport    );
-    TRACE("%d", HWCounterAutoIncrementSupport);
-    TRACE("%d", ROIDeltaQPSupport            );
-    TRACE("%d", NumScalablePipesMinus1       );
-    TRACE("%d", NegativeQPSupport            );
-    TRACE("%d", TileBasedEncodingSupport     );
-    TRACE("%d", PartialFrameUpdateSupport    );
-    TRACE("%d", RGBEncodingSupport           );
-    TRACE("%d", LLCStreamingBufferSupport    );
-    TRACE("%d", DDRStreamingBufferSupport    );
-    TRACE("%d", MaxNum_WeightedPredL0         );
-    TRACE("%d", MaxNum_WeightedPredL1         );
-    TRACE("%d", MaxNumOfDirtyRect             );
-    TRACE("%d", MaxNumOfMoveRect              );
-    TRACE("%d", MaxNumOfConcurrentFramesMinus1);
-    TRACE("%d", LLCSizeInMBytes               );
-    DECL_END
 #undef FIELD_FORMAT
 
 #define FIELD_FORMAT "%-38s"
@@ -703,6 +703,8 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC_REXT)
     TRACE_ARRAY_ROW("%d", ChromaOffsetL1[14], 2);
 DECL_END
 #undef FIELD_FORMAT
+
+#endif // defined(_WIN32)
 
 #endif //#ifdef DDI_TRACE
 }

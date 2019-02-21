@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,8 +43,8 @@ public:
     };
     inline void TraceArray(void const *, mfxU32) {};
 
+#if not defined(MFX_VA_LINUX)
     void Trace(ENCODE_COMPBUFFERDESC const & b, mfxU32 idx);
-    void Trace(ENCODE_CAPS_HEVC const & b, mfxU32 idx);
     void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & b, mfxU32 idx);
     void Trace(ENCODE_SET_PICTURE_PARAMETERS_HEVC const & b, mfxU32 idx);
     void Trace(ENCODE_SET_SLICE_HEADER_HEVC const & b, mfxU32 idx);
@@ -58,12 +58,14 @@ public:
     void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT const & b, mfxU32 idx);
     void Trace(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & b, mfxU32 idx);
     void Trace(ENCODE_SET_SLICE_HEADER_HEVC_REXT const & b, mfxU32 idx);
+#endif
 
     inline void Trace(GUID const & guid, mfxU32) { TraceGUID(guid, m_log); };
     void Trace(const char* name, mfxU32 value);
     template<mfxU32 N> inline void Trace(const char name[N], mfxU32 value) { Trace((const char*) name, value);  }
 
     static void TraceGUID(GUID const & guid, FILE*);
+    void Trace(ENCODE_CAPS_HEVC const & b, mfxU32 idx);
 };
 #else
 class DDITracer
@@ -74,6 +76,7 @@ public:
     template<class T> inline void Trace(T const &, mfxU32) {};
     template<class T> inline void TraceArray(T const *, mfxU32) {};
     static void TraceGUID(GUID const &, FILE*) {};
+    void Trace(ENCODE_CAPS_HEVC const &, mfxU32) {};
 };
 #endif
 

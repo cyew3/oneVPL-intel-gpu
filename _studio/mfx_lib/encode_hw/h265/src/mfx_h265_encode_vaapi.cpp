@@ -769,7 +769,8 @@ void UpdateSlice(
 }
 
 VAAPIEncoder::VAAPIEncoder()
-: m_core(nullptr)
+: DDITracer(ENCODER_DEFAULT)
+, m_core(nullptr)
 , m_numSkipFrames(0)
 , m_sizeSkipFrames(0)
 , m_vaContextEncode(VA_INVALID_ID)
@@ -779,7 +780,6 @@ VAAPIEncoder::VAAPIEncoder()
 , m_width(0)
 , m_height(0)
 , m_caps()
-
 {
 }
 
@@ -884,8 +884,6 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     memset(&m_caps, 0, sizeof(m_caps));
 
-    m_caps.BRCReset = 1; // no bitrate resolution control
-
     std::map<VAConfigAttribType, int> idx_map;
     VAConfigAttribType attr_types[] = {
         VAConfigAttribRTFormat,
@@ -936,16 +934,10 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.LCUSizeSupported = (32 >> 4);
     }
 
-    m_caps.BlockSize = 2;
-
     m_caps.VCMBitRateControl =
         attrs[ idx_map[VAConfigAttribRateControl] ].value & VA_RC_VCM ? 1 : 0; //Video conference mode
     m_caps.RollingIntraRefresh =
             (attrs[idx_map[VAConfigAttribEncIntraRefresh]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
-    m_caps.UserMaxFrameSizeSupport = 1;
-    m_caps.MBBRCSupport            = 1;
-    m_caps.MbQpDataSupport         = 1;
-    m_caps.TUSupport               = 73;
 
 #if VA_CHECK_VERSION(1,2,0)
     if (attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV420_12)
@@ -965,17 +957,18 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_caps.Color420Only = (attrs[idx_map[VAConfigAttribRTFormat]].value &
         (VA_RT_FORMAT_YUV422 | VA_RT_FORMAT_YUV444)) ? 0 : 1;
+		
 #if VA_CHECK_VERSION(1,2,0)
     m_caps.BitDepth8Only = (attrs[idx_map[VAConfigAttribRTFormat]].value &
         (VA_RT_FORMAT_YUV420_10 | VA_RT_FORMAT_YUV420_12)) ? 0 : 1;
 #else
     m_caps.BitDepth8Only = 1;
 #endif
+
     m_caps.YUV422ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value &
         VA_RT_FORMAT_YUV422 ? 1 : 0;
     m_caps.YUV444ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value &
         VA_RT_FORMAT_YUV444 ? 1 : 0;
-
 
     if ((attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value != VA_ATTRIB_NOT_SUPPORTED) &&
         (attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value != 0))
@@ -988,8 +981,6 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.MaxPicHeight = attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value;
     else
         m_caps.MaxPicHeight = 1088;
-
-    m_caps.SliceStructure = 4;
 
     if (attrs[ idx_map[VAConfigAttribEncMaxRefFrames] ].value != VA_ATTRIB_NOT_SUPPORTED)
     {
@@ -1026,23 +1017,11 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.MaxNumOfROI = 0;
     }
 
-    // FIXME: No caps reporting in VAAPI for now, hard code for validation purpose
-#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
-    if (platform > MFX_HW_ICL)
-    {
-        if (m_caps.NoWeightedPred)
-            m_caps.NoWeightedPred = 0;
+    sts = HardcodeCaps(m_caps, core);
+    MFX_CHECK_STS(sts);
 
-        m_caps.LumaWeightedPred = 1;
-        m_caps.ChromaWeightedPred = 1;
-
-        if (!m_caps.MaxNum_WeightedPredL0)
-            m_caps.MaxNum_WeightedPredL0 = m_caps.MaxNum_Reference0;
-        if (!m_caps.MaxNum_WeightedPredL1)
-            m_caps.MaxNum_WeightedPredL1 = m_caps.MaxNum_Reference1;
-    }
-#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
-
+    Trace(guid, 0);
+    Trace(m_caps, 0);
 
     return MFX_ERR_NONE;
 }
