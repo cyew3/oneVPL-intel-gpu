@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 Intel Corporation
+// Copyright (c) 2013-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,7 @@
 
 #include "umc_vp9_dec_defs.h"
 
-#ifdef UMC_ENABLE_VP9_VIDEO_DECODER
+#ifdef MFX_ENABLE_VP9_VIDEO_DECODE
 
 #include "umc_vp9_va_packer.h"
 #include "umc_vp9_bitstream.h"
@@ -607,4 +607,4 @@ void PackerVA::PackSliceParams(VASliceParameterBufferVP9* sliceParam, VP9Decoder
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // UMC_ENABLE_VP9_VIDEO_DECODER
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE

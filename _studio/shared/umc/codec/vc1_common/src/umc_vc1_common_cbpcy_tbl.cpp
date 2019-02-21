@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,7 @@
 
 #include "umc_defs.h"
 
-#if defined (UMC_ENABLE_VC1_VIDEO_DECODER) || defined (UMC_ENABLE_VC1_SPLITTER) || defined (UMC_ENABLE_VC1_VIDEO_ENCODER)
+#if defined (MFX_ENABLE_VC1_VIDEO_DECODE) || defined (UMC_ENABLE_VC1_SPLITTER) || defined (UMC_ENABLE_VC1_VIDEO_ENCODER)
 
 #include "umc_vc1_common_defs.h"
 #include "umc_vc1_common_cbpcy_tbl.h"
@@ -458,4 +458,4 @@ const extern int32_t VC1_CBPCY_PBpic_tbl3[] =
 
 -1 /* end of table */
 };
-#endif //UMC_ENABLE_VC1_VIDEO_DECODER
+#endif //MFX_ENABLE_VC1_VIDEO_DECODE

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -87,7 +87,7 @@ DEFINE_GUID_VA(sDXVA_ModeH264_VLD_Stereo_NoFGT,              VAProfileH264Stereo
 DEFINE_GUID_VA(sDXVA2_ModeH264_VLD_NoFGT,                    VAProfileH264High,                VAEntrypointVLD);
 DEFINE_GUID_VA(sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT,  VAProfileH264StereoHigh,          VAEntrypointVLD);
 
-#if defined (UMC_ENABLE_H264_VIDEO_DECODER)
+#if defined (MFX_ENABLE_H264_VIDEO_DECODE)
 #if defined (MFX_VA)
 #if !defined (MFX_PROTECTED_FEATURE_DISABLE) || defined(MFX_ENABLE_CPLIB)
 DEFINE_GUID_VA(DXVA_Intel_Decode_Elementary_Stream_AVC,      VAProfileH264High,                VAEntrypointVLD);

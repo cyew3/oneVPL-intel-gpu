@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined(UMC_ENABLE_VP9_VIDEO_DECODER)
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE)
 
 #ifndef __UMC_VP9_FRAME_H__
 #define __UMC_VP9_FRAME_H__
@@ -114,4 +114,4 @@ public:
 } // end namespace UMC_VP9_DECODER
 
 #endif // __UMC_VP9_FRAME_H__
-#endif // UMC_ENABLE_VP9_VIDEO_DECODER
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE

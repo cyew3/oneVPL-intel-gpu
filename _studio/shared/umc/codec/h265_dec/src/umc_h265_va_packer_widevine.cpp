@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_H265_VIDEO_DECODER)
+#if defined (MFX_ENABLE_H265_VIDEO_DECODE)
 
 #include "umc_va_base.h"
 #if defined (UMC_VA_LINUX) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
@@ -194,4 +194,4 @@ namespace UMC_HEVC_DECODER
 
 #endif // #ifndef MFX_ENABLE_CPLIB
 #endif // #if defined (UMC_VA_LINUX) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-#endif // UMC_ENABLE_H265_VIDEO_DECODER
+#endif // MFX_ENABLE_H265_VIDEO_DECODE

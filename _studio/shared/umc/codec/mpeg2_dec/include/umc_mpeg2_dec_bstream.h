@@ -1,4 +1,4 @@
-// Copyright (c) 2001-2018 Intel Corporation
+// Copyright (c) 2001-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
 #pragma once
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
 
 //#ifdef __ICL
 #if (defined( _MSC_VER ) || defined( __ICL )) && (!defined(_WIN32_WCE))

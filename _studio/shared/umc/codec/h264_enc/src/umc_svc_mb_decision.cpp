@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 #include "umc_h264_bme.h"
 #include "ippi.h"
 
-#if defined(UMC_ENABLE_H264_VIDEO_ENCODER)
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
 #define PIXTYPE Ipp8u
 #define COEFFSTYPE Ipp16s
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,7 @@
 
 #include "umc_defs.h"
 
-#if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
+#if defined (MFX_ENABLE_VC1_VIDEO_DECODE)
 #if defined(__GNUC__)
 #if defined(__INTEL_COMPILER)
 #pragma warning (disable:1478)
@@ -1526,4 +1526,4 @@ void write_Interluma_to_interlace_B_frame_MC_Adv(VC1MB * pCurrMB,
     }
 }
 
-#endif //UMC_ENABLE_VC1_VIDEO_DECODER
+#endif //MFX_ENABLE_VC1_VIDEO_DECODE

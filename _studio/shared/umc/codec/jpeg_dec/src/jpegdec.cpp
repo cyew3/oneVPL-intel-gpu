@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
 #if defined(__GNUC__)
 #if defined(__INTEL_COMPILER)
 #pragma warning (disable:1478)
@@ -5638,4 +5638,4 @@ void ConvertFrom_YUV422V_4Y_To_NV12(const uint8_t *src[3], uint32_t srcPitch, ui
 }
 
 
-#endif // UMC_ENABLE_MJPEG_VIDEO_DECODER
+#endif // MFX_ENABLE_MJPEG_VIDEO_DECODE

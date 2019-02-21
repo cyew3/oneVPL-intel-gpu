@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_H264_VIDEO_DECODER)
+#if defined (MFX_ENABLE_H264_VIDEO_DECODE)
 
 #ifndef __UMC_H264_CENC_DECRYPTER_H
 #define __UMC_H264_CENC_DECRYPTER_H
@@ -151,4 +151,4 @@ protected:
 #endif // #if defined (MFX_ENABLE_CPLIB)
 #endif // #if defined (UMC_VA_LINUX)
 #endif // __UMC_H264_CENC_DECRYPTER_H
-#endif // UMC_ENABLE_H264_VIDEO_DECODER
+#endif // MFX_ENABLE_H264_VIDEO_DECODE

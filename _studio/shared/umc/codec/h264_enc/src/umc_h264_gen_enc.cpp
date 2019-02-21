@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined(UMC_ENABLE_H264_VIDEO_ENCODER)
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
 
 #if defined _OPENMP
 #include "omp.h"
@@ -68,6 +68,6 @@ static std::list<int> frame_qp;
 
 } //namespace UMC_H264_ENCODER
 
-#endif //UMC_ENABLE_H264_VIDEO_ENCODER
+#endif //MFX_ENABLE_H264_VIDEO_ENCODE
 
 

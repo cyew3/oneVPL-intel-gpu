@@ -7,10 +7,8 @@ MFX_LOCAL_DIRS := \
     aac_common \
     asf_spl \
     avi_spl \
-    brc \
     common \
     demuxer \
-    h264_enc \
     h264_spl \
     mpeg2_enc \
     mpeg4_spl \
@@ -19,9 +17,7 @@ MFX_LOCAL_DIRS := \
     vc1_common \
     vc1_enc \
     vc1_spl \
-    jpeg_enc \
-    vp8_dec \
-    jpeg_common
+    vp8_dec
 
 MFX_LOCAL_DIRS_IMPL := \
     color_space_converter \
@@ -30,7 +26,11 @@ MFX_LOCAL_DIRS_IMPL := \
     h264_dec \
     vc1_dec \
     jpeg_dec \
-    vp9_dec
+    vp9_dec \
+    h264_enc \
+    jpeg_common \
+    brc \
+    jpeg_enc
 
 MFX_LOCAL_SRC_FILES := \
   $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.c))) \

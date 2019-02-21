@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#ifdef UMC_ENABLE_H265_VIDEO_DECODER
+#ifdef MFX_ENABLE_H265_VIDEO_DECODE
 
 #ifndef __UMC_H265_TASK_SUPPLIER_H
 #define __UMC_H265_TASK_SUPPLIER_H
@@ -492,4 +492,4 @@ extern int32_t CalculateDPBSize(uint32_t profile_idc, uint32_t &level_idc, int32
 } // namespace UMC_HEVC_DECODER
 
 #endif // __UMC_H265_TASK_SUPPLIER_H
-#endif // UMC_ENABLE_H265_VIDEO_DECODER
+#endif // MFX_ENABLE_H265_VIDEO_DECODE

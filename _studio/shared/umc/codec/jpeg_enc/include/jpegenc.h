@@ -22,7 +22,7 @@
 #define __JPEGENC_H__
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_MJPEG_VIDEO_ENCODER)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 
 #include "ippdefs.h"
 #include "ippcore.h"

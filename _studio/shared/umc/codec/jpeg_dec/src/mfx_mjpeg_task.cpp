@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,7 @@
 
 #include <mfx_mjpeg_task.h>
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
 
 #include <umc_mjpeg_mfx_decode.h>
 #include <jpegbase.h>
@@ -310,4 +310,4 @@ mfxStatus CJpegTask::CheckBufferSize(const size_t srcSize)
 
 } // mfxStatus CJpegTask::CheckBufferSize(const size_t srcSize)
 
-#endif // UMC_ENABLE_MJPEG_VIDEO_DECODER
+#endif // MFX_ENABLE_MJPEG_VIDEO_DECODE

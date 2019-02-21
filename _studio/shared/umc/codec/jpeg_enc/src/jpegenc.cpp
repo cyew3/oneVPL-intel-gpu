@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_MJPEG_VIDEO_ENCODER)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 #if defined(__GNUC__)
 #if defined(__INTEL_COMPILER)
 #pragma warning (disable:1478)

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
 
 #include <vector>
 #include "umc_mpeg2_dec_hw.h"
@@ -1364,4 +1364,4 @@ Status MPEG2VideoDecoderHW::UpdateFrameBuffer(int , uint8_t* iqm, uint8_t*niqm)
 
 #endif // #if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
 
-#endif // UMC_ENABLE_MPEG2_VIDEO_DECODER
+#endif // MFX_ENABLE_MPEG2_VIDEO_DECODE

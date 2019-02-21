@@ -5,6 +5,7 @@
     <MfxUsingSettings>me;$(MfxUsedSettings)</MfxUsingSettings>
     <MfxIncludes>
     $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
     </MfxIncludes>
     <MfxDefinitions>MFX_D3D11_ENABLED;</MfxDefinitions>

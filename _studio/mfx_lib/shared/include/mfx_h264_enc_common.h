@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 #include "mfx_common.h"
 
 #if defined (MFX_ENABLE_H264_VIDEO_PAK) || defined (MFX_ENABLE_H264_VIDEO_ENC) || defined (MFX_ENABLE_H264_VIDEO_ENCODE)
-#define UMC_ENABLE_H264_VIDEO_ENCODER
+#define MFX_ENABLE_H264_VIDEO_ENCODE
 #define MFX_ENABLE_H264_VIDEO_ENCODER_COMMON
 
 #include "mfx_enc_common.h"

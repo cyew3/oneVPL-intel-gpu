@@ -20,7 +20,7 @@
 
 #include "umc_defs.h"
 
-#if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
+#if defined (MFX_ENABLE_VC1_VIDEO_DECODE)
 #if defined(__GNUC__)
 #if defined(__INTEL_COMPILER)
 #pragma warning (disable:1478)
@@ -731,4 +731,4 @@ VC1Status DMVRangeDecode(VC1Context* pContext)
     return VC1_OK;
 }
 
-#endif //UMC_ENABLE_VC1_VIDEO_DECODER
+#endif //MFX_ENABLE_VC1_VIDEO_DECODE

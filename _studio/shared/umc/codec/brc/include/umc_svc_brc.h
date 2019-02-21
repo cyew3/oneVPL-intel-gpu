@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,8 @@
 #ifndef _UMC_VIDEO_BRC_H_
 #include "umc_video_brc.h"
 #endif
+
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
 
 /*
 typedef struct _BRCSVC_Params
@@ -166,3 +168,4 @@ protected:
 } // namespace UMC
 #endif
 
+#endif //defined(MFX_ENABLE_H264_VIDEO_ENCODE)

@@ -1,4 +1,4 @@
-// Copyright (c) 2001-2018 Intel Corporation
+// Copyright (c) 2001-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 #define __JPEGDEC_H__
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
 #ifdef _OPENMP
 #include "omp.h"
 #endif
@@ -209,5 +209,5 @@ public:
   ChromaType GetChromaType();
 };
 
-#endif // UMC_ENABLE_MJPEG_VIDEO_DECODER
+#endif // MFX_ENABLE_MJPEG_VIDEO_DECODE
 #endif // __JPEGDEC_H__

@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 
 #include "umc_vp9_dec_defs.h"
 
-#if defined(UMC_ENABLE_VP9_VIDEO_DECODER) || defined(UMC_ENABLE_AV1_VIDEO_DECODER)
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(UMC_ENABLE_AV1_VIDEO_DECODER)
 
 #ifndef __UMC_VP9_BITSTREAM_H_
 #define __UMC_VP9_BITSTREAM_H_
@@ -116,4 +116,4 @@ namespace UMC_VP9_DECODER
 
 #endif // __UMC_VP9_BITSTREAM_H_
 
-#endif // UMC_ENABLE_VP9_VIDEO_DECODER
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE

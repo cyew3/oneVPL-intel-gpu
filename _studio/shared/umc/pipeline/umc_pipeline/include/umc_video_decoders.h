@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,11 +28,11 @@
     #include "umc_mpeg4_video_decoder.h"
 #endif
 
-#ifdef UMC_ENABLE_H264_VIDEO_DECODER
+#ifdef MFX_ENABLE_H264_VIDEO_DECODE
     #include "umc_h264_dec.h"
 #endif
 
-#if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
     #include "umc_mpeg2_dec.h"
 #endif
 
@@ -45,7 +45,7 @@
 
 #endif
 
-#ifdef UMC_ENABLE_MJPEG_VIDEO_DECODER
+#ifdef MFX_ENABLE_MJPEG_VIDEO_DECODE
     #include "umc_mjpeg_video_decoder.h"
 #endif
 
@@ -57,7 +57,7 @@
     #include "umc_h261_video_decoder.h"
 #endif
 
-#if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
+#if defined (MFX_ENABLE_VC1_VIDEO_DECODE)
     #include "umc_vc1_video_decoder.h"
 #endif
 
@@ -82,11 +82,11 @@ namespace UMC
 static VideoDecoder* CreateVideoDecoder(VideoStreamType stream_type)
 {
   switch(stream_type) {
-#if defined(UMC_ENABLE_MPEG2_VIDEO_DECODER)
+#if defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)
      case MPEG1_VIDEO:
      case MPEG2_VIDEO:
        return (VideoDecoder*)(new MPEG2VideoDecoder());
-#endif // defined(UMC_ENABLE_MPEG2_VIDEO_DECODER)
+#endif // defined(MFX_ENABLE_MPEG2_VIDEO_DECODE)
 
 #if defined(UMC_ENABLE_DV_VIDEO_DECODER)
 #if defined(UMC_ENABLE_DV50_VIDEO_DECODER)
@@ -118,22 +118,22 @@ static VideoDecoder* CreateVideoDecoder(VideoStreamType stream_type)
         return (VideoDecoder*)(new H261VideoDecoder());
 #endif // defined(UMC_ENABLE_H261_VIDEO_DECODER)
 
-#if defined(UMC_ENABLE_H264_VIDEO_DECODER)
+#if defined(MFX_ENABLE_H264_VIDEO_DECODE)
       case H264_VIDEO:
         return (VideoDecoder*)(new H264VideoDecoder());
-#endif // defined(UMC_ENABLE_H264_VIDEO_DECODER)
+#endif // defined(MFX_ENABLE_H264_VIDEO_DECODE)
 
-#if defined(UMC_ENABLE_MJPEG_VIDEO_DECODER)
+#if defined(MFX_ENABLE_MJPEG_VIDEO_DECODE)
       case MJPEG_VIDEO:
         return (VideoDecoder*)(new MJPEGVideoDecoder());
-#endif // defined(UMC_ENABLE_MJPEG_VIDEO_DECODER)
+#endif // defined(MFX_ENABLE_MJPEG_VIDEO_DECODE)
 
 #if defined (UMC_ENABLE_UNCOMPRESSED_VIDEO_DECODER)
       case UNCOMPRESSED_VIDEO:
         return (VideoDecoder*)(new UncompressedVideoDecoder());
 #endif // defined (UMC_ENABLE_UNCOMPRESSED_VIDEO_DECODER)
 
-#if defined(UMC_ENABLE_VC1_VIDEO_DECODER)
+#if defined(MFX_ENABLE_VC1_VIDEO_DECODE)
       case VC1_VIDEO:
       case WMV_VIDEO:
         return (VideoDecoder*)(new VC1VideoDecoder());

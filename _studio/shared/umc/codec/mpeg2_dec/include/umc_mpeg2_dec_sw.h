@@ -26,7 +26,7 @@
 #pragma once
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
 
 #include "umc_mpeg2_dec_defs_sw.h"
 #include "umc_mpeg2_dec_base.h"
@@ -188,4 +188,4 @@ private:
 #pragma warning(default: 4324)
 #endif
 
-#endif // UMC_ENABLE_MPEG2_VIDEO_DECODER
+#endif // MFX_ENABLE_MPEG2_VIDEO_DECODE

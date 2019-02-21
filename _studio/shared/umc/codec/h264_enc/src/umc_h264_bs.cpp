@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined(UMC_ENABLE_H264_VIDEO_ENCODER)
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
 
 #include <string.h>
 #include "umc_h264_bs.h"
@@ -2873,5 +2873,5 @@ void InitInterContextExtra_H264(
 
 } //namespace UMC_H264_ENCODER
 
-#endif //UMC_ENABLE_H264_VIDEO_ENCODER
+#endif //MFX_ENABLE_H264_VIDEO_ENCODE
 

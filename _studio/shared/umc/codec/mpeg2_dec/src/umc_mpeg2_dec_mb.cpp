@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
 
 #include "umc_mpeg2_dec_defs_sw.h"
 #include "umc_mpeg2_dec_sw.h"
@@ -441,7 +441,7 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_420(VideoContext *video, int tas
             RECONSTRUCT_INTER_MB_420(video->bs, dct_type);
         }
     }
-#if (defined UMC_VA_DXVA && defined ELK) || defined(UMC_VA_LINUX)
+#if (defined UMC_VA_DXVA && defined ELK)
   if(pack_w. m_va)
   {
 #if defined UMC_VA_DXVA
@@ -526,14 +526,14 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_420(VideoContext *video, int tas
     video->col_c += 8;
 
     if (IS_NEXTBIT1(video->bs)) { // increment=1
-#if (defined UMC_VA_DXVA && defined ELK) || defined(UMC_VA_LINUX)
+#if (defined UMC_VA_DXVA && defined ELK)
     if(pack_w. m_va)
         break;
 #endif
         SKIP_BITS(video->bs, 1)
     } else {
       DECODE_MB_INCREMENT(video->bs, macroblock_address_increment);
-#if (defined UMC_VA_DXVA && defined ELK) || defined(UMC_VA_LINUX)
+#if (defined UMC_VA_DXVA && defined ELK)
     if(pack_w. m_va)
         break;
 #endif
@@ -682,7 +682,7 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_420(VideoContext *video, int tas
       RECONSTRUCT_INTER_MB_420(video->bs, 2);
     }
   }
-#if (defined UMC_VA_DXVA && defined ELK) || defined(UMC_VA_LINUX)
+#if (defined UMC_VA_DXVA && defined ELK)
   if(pack_w. m_va)
   {
 #if defined UMC_VA_DXVA
@@ -700,4 +700,4 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_420(VideoContext *video, int tas
 
 }//DecodeSlice_FieldPB_420
 
-#endif // UMC_ENABLE_MPEG2_VIDEO_DECODER
+#endif // MFX_ENABLE_MPEG2_VIDEO_DECODE

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#ifdef UMC_ENABLE_H265_VIDEO_DECODER
+#ifdef MFX_ENABLE_H265_VIDEO_DECODE
 #ifndef MFX_VA
 
 #include "umc_h265_tr_quant.h"
@@ -409,4 +409,4 @@ void H265TrQuant::InvTransformSkip(CoeffsPtr pCoeff, DstCoeffsType* pResidual, s
 } // end namespace UMC_HEVC_DECODER
 
 #endif // #ifndef MFX_VA
-#endif // UMC_ENABLE_H265_VIDEO_DECODER
+#endif // MFX_ENABLE_H265_VIDEO_DECODE

@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 #define __UMC_MJPEG_VIDEO_DECODER_H
 
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_MJPEG_VIDEO_ENCODER)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 
 #include <vector>
 #include <memory>
@@ -220,5 +220,5 @@ protected:
 
 } // end namespace UMC
 
-#endif // UMC_ENABLE_MJPEG_VIDEO_ENCODER
+#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 #endif //__UMC_MJPEG_VIDEO_ENCODER_H

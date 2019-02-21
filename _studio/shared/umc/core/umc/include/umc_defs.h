@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,13 @@
 #ifndef __UMC_DEFS_H__
 #define __UMC_DEFS_H__
 
+#ifdef _WIN32
+#include "../../../../include/mfx_config.h"
+#else
+#include "mfx_config.h"
+#endif
 #define ALLOW_SW_VC1_FALLBACK
+
 // This file contains defines which switch on/off support of
 // codecs and renderers on application level
 /*
@@ -30,24 +36,17 @@
 #if defined(WIN64) || defined (WIN32)
 
     // video decoders
-    #define UMC_ENABLE_H264_VIDEO_DECODER
-    #define UMC_ENABLE_H265_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG2_VIDEO_DECODER
-    #define UMC_ENABLE_MJPEG_VIDEO_DECODER
-    #define UMC_ENABLE_VC1_VIDEO_DECODER
     //#define UMC_ENABLE_VP8_VIDEO_DECODER
-    #define UMC_ENABLE_VP9_VIDEO_DECODER
+    #define MFX_ENABLE_VP9_VIDEO_DECODE
     #define UMC_ENABLE_AV1_VIDEO_DECODER
 
     // video encoders
-    #define UMC_ENABLE_H264_VIDEO_ENCODER
     #define UMC_ENABLE_MVC_VIDEO_ENCODER
     #define UMC_ENABLE_MPEG2_VIDEO_ENCODER
-    #define UMC_ENABLE_MJPEG_VIDEO_ENCODER
 
     #define UMC_ENABLE_UMC_SCENE_ANALYZER
 
-// audio decoders
+    // audio decoders
     #define UMC_ENABLE_AAC_AUDIO_DECODER
     #define UMC_ENABLE_MP3_AUDIO_DECODER
 
@@ -64,24 +63,17 @@
 #if (defined(LINUX32) || defined(__APPLE__)) && !defined(ANDROID)
 
     // video decoders
-    #define UMC_ENABLE_MJPEG_VIDEO_DECODER
     //#define UMC_ENABLE_VP8_VIDEO_DECODER
-    #define UMC_ENABLE_VC1_VIDEO_DECODER
-    #define UMC_ENABLE_H264_VIDEO_DECODER
-    #define UMC_ENABLE_H265_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG2_VIDEO_DECODER
-    #define UMC_ENABLE_VP9_VIDEO_DECODER
+    #define MFX_ENABLE_VP9_VIDEO_DECODE
 #if defined(LINUX_TARGET_PLATFORM_ATS)
     #define UMC_ENABLE_AV1_VIDEO_DECODER
 #endif
 
 
     // video encoders
-    #define UMC_ENABLE_H264_VIDEO_ENCODER
     #define UMC_ENABLE_MVC_VIDEO_ENCODER
     #define UMC_ENABLE_MPEG2_VIDEO_ENCODER
     #define UMC_ENABLE_MPEG4_VIDEO_ENCODER
-    #define UMC_ENABLE_MJPEG_VIDEO_ENCODER
 
     #define UMC_ENABLE_UMC_SCENE_ANALYZER
 
@@ -103,17 +95,10 @@
 #if defined(ANDROID)
 
     // video decoders
-    #define UMC_ENABLE_MJPEG_VIDEO_DECODER
-    #define UMC_ENABLE_VC1_VIDEO_DECODER
-    #define UMC_ENABLE_H264_VIDEO_DECODER
-    #define UMC_ENABLE_H265_VIDEO_DECODER
-    #define UMC_ENABLE_MPEG2_VIDEO_DECODER
-    #define UMC_ENABLE_VP9_VIDEO_DECODER
+    #define MFX_ENABLE_VP9_VIDEO_DECODE
 
     // video encoders
-    #define UMC_ENABLE_H264_VIDEO_ENCODER
     #define UMC_ENABLE_MVC_VIDEO_ENCODER
-    #define UMC_ENABLE_MJPEG_VIDEO_ENCODER
 
     #define UMC_ENABLE_UMC_SCENE_ANALYZER
 

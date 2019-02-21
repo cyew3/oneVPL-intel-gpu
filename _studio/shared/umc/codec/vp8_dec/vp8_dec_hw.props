@@ -5,6 +5,7 @@
     <MfxUsingSettings>vp8_dec_hw;$(MfxUsedSettings)</MfxUsingSettings>
     <MfxIncludes>
     $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\codec\vp8_dec\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;

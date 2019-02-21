@@ -1,4 +1,4 @@
-// Copyright (c) 2001-2018 Intel Corporation
+// Copyright (c) 2001-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
 #include "umc_defs.h"
 #include "umc_structures.h"
 
-#if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
 #if defined(__GNUC__)
 #if defined(__INTEL_COMPILER)
 #pragma warning (disable:1478)
@@ -181,4 +181,4 @@ JERRCODE CJPEGDecoderQuantTable::ConvertToHighPrecision(void)
 } // CJPEGDecoderQuantTable::ConvertToHighPrecision()
 #endif
 
-#endif // UMC_ENABLE_MJPEG_VIDEO_DECODER
+#endif // MFX_ENABLE_MJPEG_VIDEO_DECODE

@@ -25,7 +25,7 @@
 #include "umc_defs.h"
 #include "mfxstructures.h"
 
-#if defined(UMC_ENABLE_VP9_VIDEO_DECODER) || defined(UMC_ENABLE_AV1_VIDEO_DECODER)
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(UMC_ENABLE_AV1_VIDEO_DECODER)
 
 #include "umc_vp9_dec_defs.h"
 
@@ -130,5 +130,5 @@ namespace UMC_VP9_DECODER
 
 } //UMC_VP9_DECODER
 
-#endif //UMC_ENABLE_VP9_VIDEO_DECODER
+#endif //MFX_ENABLE_VP9_VIDEO_DECODE
 #endif //__UMC_VP9_UTILS_H_

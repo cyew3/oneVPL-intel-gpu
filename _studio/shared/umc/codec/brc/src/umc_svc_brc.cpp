@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,8 @@
 #include "umc_svc_brc.h"
 #include "umc_h264_video_encoder.h"
 #include "umc_h264_tables.h"
+
+#if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
 
 namespace UMC
 {
@@ -1269,3 +1271,5 @@ Status SVCBRC::GetInitialCPBRemovalDelay(int32_t tid, uint32_t *initial_cpb_remo
 }
 */
 }
+
+#endif //defined(MFX_ENABLE_H264_VIDEO_ENCODE)

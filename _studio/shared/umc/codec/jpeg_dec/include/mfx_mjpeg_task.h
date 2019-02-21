@@ -23,7 +23,7 @@
 
 #include "mfx_common.h"
 #include "umc_defs.h"
-#if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
 
 #include <vector>
 #include <memory>
@@ -177,5 +177,5 @@ mfxU32 CJpegTask::NumPiecesCollected(void) const
 
 } // mfxU32 CJpegTask::NumPiecesCollected(void) const
 
-#endif // UMC_ENABLE_MJPEG_VIDEO_DECODER
+#endif // MFX_ENABLE_MJPEG_VIDEO_DECODE
 #endif // _MFX_MJPEG_TASK_H_
