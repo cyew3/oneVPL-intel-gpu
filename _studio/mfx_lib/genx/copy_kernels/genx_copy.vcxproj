@@ -31,7 +31,7 @@
     <ProjectGuid>{75017A77-F4E6-449C-98F9-14460BE8FE26}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'" Label="Configuration">
@@ -147,13 +147,13 @@ SET INSTALLDIR=$(MEDIASDK_ROOT)\CMRT
 SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
-cmc -c -Qxcm_jit_target=gen8 .\src\cht_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o cht_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen9 .\src\skl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o skl_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen10 .\src\skl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o cnl_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen11lp .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o icllp_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen11 .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o icl_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen12lp .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o tgllp_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen12 .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o tgl_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen8 .\src\cht_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o cht_copy_kernel_genx.isa -mCM_no_debug
+cmc -c -Qxcm_jit_target=gen9 .\src\skl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o skl_copy_kernel_genx.isa -mCM_no_debug
+cmc -c -Qxcm_jit_target=gen10 .\src\skl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o cnl_copy_kernel_genx.isa -mCM_no_debug
+cmc -c -Qxcm_jit_target=gen11lp .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o icllp_copy_kernel_genx.isa -mCM_no_debug
+cmc -c -Qxcm_jit_target=gen11 .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o icl_copy_kernel_genx.isa -mCM_no_debug
+cmc -c -Qxcm_jit_target=gen12lp .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o tgllp_copy_kernel_genx.isa -mCM_no_debug
+cmc -c -Qxcm_jit_target=gen12 .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o tgl_copy_kernel_genx.isa -mCM_no_debug
 
 cl .\src\embed_isa.c
 embed_isa cht_copy_kernel_genx.isa
