@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -76,7 +76,7 @@ namespace TEST_NAME
             { MFXVPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, { MFX_RATECONTROL_VCM } },
             { BUFPAR_2, &tsStruct::mfxExtCodingOption2.MaxFrameSize, { 3000 } } }
         },
-        {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        {/*03*/ MFX_ERR_NONE,
             { { QUERY | INIT | RESET | BUFPAR_3, &tsStruct::mfxExtCodingOption3.LowDelayBRC, { MFX_CODINGOPTION_ON } },
             { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCSize, { 0 } },
             { BUFPAR_3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, { 0 } },
