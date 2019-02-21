@@ -98,7 +98,6 @@ namespace avce_adaptivemaxframesize
             { EXT_COD3_EXPECTED_INIT, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_OFF },
         } },
 
-        #if defined(_WIN32) || defined(_WIN64)
         // Can be ON
         {/*04*/ MFX_ERR_NONE, QUERY | INIT ,{
             { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeI, NORMAL_FRAME_SIZE },
@@ -107,16 +106,6 @@ namespace avce_adaptivemaxframesize
             { EXT_COD3_EXPECTED_QUERY, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_ON },
             { EXT_COD3_EXPECTED_INIT, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_ON },
         } },
-        #else // LINUX, IOTG , OPEN SOURCE
-        // Can't be ON
-        {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY | INIT ,{
-            { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeI, NORMAL_FRAME_SIZE },
-            { EXT_COD3, &tsStruct::mfxExtCodingOption3.MaxFrameSizeP, NORMAL_FRAME_SIZE + 1 },
-            { EXT_COD3, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_ON },
-            { EXT_COD3_EXPECTED_QUERY, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, 0 },
-            { EXT_COD3_EXPECTED_INIT, &tsStruct::mfxExtCodingOption3.AdaptiveMaxFrameSize, MFX_CODINGOPTION_OFF },
-        } },
-        #endif
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
