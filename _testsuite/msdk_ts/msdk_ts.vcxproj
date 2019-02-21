@@ -106,7 +106,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;$(MSDK_API_ROOT)\include;..\..\..\mdp_msdk-val-tools\bs_parser\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\include;..\..\samples\sample_common\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\src;..\..\samples\sample_common\include\vm;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_CONSOLE;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;WIN32;_DEBUG;_CONSOLE;MFX_D3D11_ENABLED;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -130,7 +130,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;$(MSDK_API_ROOT)\include;..\..\..\mdp_msdk-val-tools\bs_parser\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\include;..\..\samples\sample_common\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\src;..\..\samples\sample_common\include\vm;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;MFX_D3D11_ENABLED;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -149,7 +149,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;$(MSDK_API_ROOT)\include;..\..\..\mdp_msdk-val-tools\bs_parser\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\include;..\..\samples\sample_common\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\src;..\..\samples\sample_common\include\vm;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MFX_D3D11_ENABLED;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -171,7 +171,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);.\include;$(MSDK_API_ROOT)\include;..\..\..\mdp_msdk-val-tools\bs_parser\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\include;..\..\samples\sample_common\include;..\..\..\mdp_msdk-lib\_studio\shared\umc\core\vm\src;..\..\samples\sample_common\include\vm;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;NDEBUG;_CONSOLE;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN64;NDEBUG;_CONSOLE;MFX_D3D11_ENABLED;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>

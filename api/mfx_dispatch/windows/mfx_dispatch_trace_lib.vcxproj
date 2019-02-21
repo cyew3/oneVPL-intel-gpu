@@ -159,7 +159,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Async</ExceptionHandling>
-      <PreprocessorDefinitions>MFX_D3D11_ENABLED;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>MFX_D3D11_ENABLED;_UNICODE;UNICODE;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -246,7 +246,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>include;../../include;$(INTELMEDIASDK_WINSDK_PATH)/include;$(INTELMEDIASDK_WINSDK_PATH)/include/shared;$(INTELMEDIASDK_WINSDK_PATH)/include/um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -259,7 +259,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>include;../../include;$(INTELMEDIASDK_WINSDK_PATH)/include;$(INTELMEDIASDK_WINSDK_PATH)/include/shared;$(INTELMEDIASDK_WINSDK_PATH)/include/um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;WIN32;_DEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;WIN32;_DEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -275,7 +275,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>include;../../include;$(INTELMEDIASDK_WINSDK_PATH)/include;$(INTELMEDIASDK_WINSDK_PATH)/include/shared;$(INTELMEDIASDK_WINSDK_PATH)/include/um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -291,7 +291,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>include;../../include;$(INTELMEDIASDK_WINSDK_PATH)/include;$(INTELMEDIASDK_WINSDK_PATH)/include/shared;$(INTELMEDIASDK_WINSDK_PATH)/include/um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -306,7 +306,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>include;../../include;$(INTELMEDIASDK_WINSDK_PATH)/include;$(INTELMEDIASDK_WINSDK_PATH)/include/shared;$(INTELMEDIASDK_WINSDK_PATH)/include/um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>true</BufferSecurityCheck>
@@ -322,7 +322,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>include;../../include;$(INTELMEDIASDK_WINSDK_PATH)/include;$(INTELMEDIASDK_WINSDK_PATH)/include/shared;$(INTELMEDIASDK_WINSDK_PATH)/include/um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;WIN32;NDEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;WIN32;NDEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>true</BufferSecurityCheck>
@@ -341,7 +341,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>include;../../include;$(INTELMEDIASDK_WINSDK_PATH)/include;$(INTELMEDIASDK_WINSDK_PATH)/include/shared;$(INTELMEDIASDK_WINSDK_PATH)/include/um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;NDEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN64;NDEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>true</BufferSecurityCheck>
@@ -360,7 +360,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>include;../../include;$(INTELMEDIASDK_WINSDK_PATH)/include;$(INTELMEDIASDK_WINSDK_PATH)/include/shared;$(INTELMEDIASDK_WINSDK_PATH)/include/um;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;WIN64;NDEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN_TRESHOLD_MOBILE;WIN64;NDEBUG;_CONSOLE;MFX_DISPATCHER_LOG;DXVA2DEVICE_LOG;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>true</BufferSecurityCheck>

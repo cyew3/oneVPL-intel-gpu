@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,6 +20,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "avc_bitstream.h"
 #include "sample_defs.h"
+#include <algorithm>
 
 namespace ProtectedLibrary
 {
@@ -1004,7 +1005,7 @@ mfxStatus AVCHeadersBitstream::GetPictureParamSetPart2(AVCPicParamSet  *pps,
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
 
-                mfxI32 len = MSDK_MAX(1, pps->SliceGroupInfo.t3.pic_size_in_map_units);
+                mfxI32 len = std::max(1u, pps->SliceGroupInfo.t3.pic_size_in_map_units);
 
                 pps->SliceGroupInfo.pSliceGroupIDMap.resize(len);
 
