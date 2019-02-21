@@ -20,5 +20,5 @@
 
 #ifndef __genx_bdw_simple_me__
 #define __genx_bdw_simple_me__
-extern const unsigned char genx_bdw_simple_me[259932];
+extern const unsigned char genx_bdw_simple_me[253430];
 #endif

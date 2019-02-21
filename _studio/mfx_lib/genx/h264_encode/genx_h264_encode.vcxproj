@@ -131,62 +131,62 @@ SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include\cm%3b%25INCLUDE%25
 
-cmc -c -Qxcm_release -Qxcm_jit_target=gen8 .\src\genx_bdw_simple_me.cpp -Qxcm_print_asm_count
+cmc -c -Qxcm_release -Qxcm_jit_target=gen8 .\src\genx_bdw_simple_me.cpp -Qxcm_print_asm_count -mCM_no_debug
 move genx_bdw_simple_me.isa genx_bdw_simple_me.isa
 embed_isa genx_bdw_simple_me.isa
 move genx_bdw_simple_me.cpp .\src\genx_bdw_simple_me_isa.cpp
 move genx_bdw_simple_me.h .\include\genx_bdw_simple_me_isa.h
 
-cmc -c -Qxcm_release -Qxcm_jit_target=gen8 .\src\genx_histogram.cpp -Qxcm_print_asm_count
+cmc -c -Qxcm_release -Qxcm_jit_target=gen8 .\src\genx_histogram.cpp -Qxcm_print_asm_count -mCM_no_debug
 move genx_histogram.isa genx_bdw_histogram.isa
 embed_isa genx_bdw_histogram.isa
 move genx_bdw_histogram.cpp .\src\genx_bdw_histogram_isa.cpp
 move genx_bdw_histogram.h .\include\genx_bdw_histogram_isa.h
 
-cmc -c -Qxcm_release -Qxcm_jit_target=gen9 .\src\genx_skl_simple_me.cpp -Qxcm_print_asm_count
+cmc -c -Qxcm_release -Qxcm_jit_target=gen9 .\src\genx_skl_simple_me.cpp -Qxcm_print_asm_count -mCM_no_debug
 move genx_skl_simple_me.isa genx_skl_simple_me.isa
 embed_isa genx_skl_simple_me.isa
 move genx_skl_simple_me.cpp .\src\genx_skl_simple_me_isa.cpp
 move genx_skl_simple_me.h .\include\genx_skl_simple_me_isa.h
 
-cmc -c -Qxcm_release -Qxcm_jit_target=gen9 .\src\genx_histogram.cpp -Qxcm_print_asm_count
+cmc -c -Qxcm_release -Qxcm_jit_target=gen9 .\src\genx_histogram.cpp -Qxcm_print_asm_count -mCM_no_debug
 move genx_histogram.isa genx_skl_histogram.isa
 embed_isa genx_skl_histogram.isa
 move genx_skl_histogram.cpp .\src\genx_skl_histogram_isa.cpp
 move genx_skl_histogram.h .\include\genx_skl_histogram_isa.h
 
-cmc -c -Qxcm_release -Qxcm_jit_target=gen10 .\src\genx_skl_simple_me.cpp -Qxcm_print_asm_count
+cmc -c -Qxcm_release -Qxcm_jit_target=gen10 .\src\genx_skl_simple_me.cpp -Qxcm_print_asm_count -mCM_no_debug
 move genx_skl_simple_me.isa genx_cnl_simple_me.isa
 embed_isa genx_cnl_simple_me.isa
 move genx_cnl_simple_me.cpp .\src\genx_cnl_simple_me_isa.cpp
 move genx_cnl_simple_me.h .\include\genx_cnl_simple_me_isa.h
 
-cmc -c -Qxcm_release -Qxcm_jit_target=gen10 .\src\genx_histogram.cpp -Qxcm_print_asm_count
+cmc -c -Qxcm_release -Qxcm_jit_target=gen10 .\src\genx_histogram.cpp -Qxcm_print_asm_count -mCM_no_debug
 move genx_histogram.isa genx_cnl_histogram.isa
 embed_isa genx_cnl_histogram.isa
 move genx_cnl_histogram.cpp .\src\genx_cnl_histogram_isa.cpp
 move genx_cnl_histogram.h .\include\genx_cnl_histogram_isa.h
 
-cmc -c -Qxcm_release -Qxcm_jit_target=gen11 .\src\genx_skl_simple_me.cpp -Qxcm_print_asm_count
+cmc -c -Qxcm_release -Qxcm_jit_target=gen11 .\src\genx_skl_simple_me.cpp -Qxcm_print_asm_count -mCM_no_debug
 move genx_skl_simple_me.isa genx_icl_simple_me.isa
 embed_isa genx_icl_simple_me.isa
 move genx_icl_simple_me.cpp .\src\genx_icl_simple_me_isa.cpp
 move genx_icl_simple_me.h .\include\genx_icl_simple_me_isa.h
 
-cmc -c -Qxcm_release -Qxcm_jit_target=gen11 .\src\genx_histogram.cpp -Qxcm_print_asm_count
+cmc -c -Qxcm_release -Qxcm_jit_target=gen11 .\src\genx_histogram.cpp -Qxcm_print_asm_count -mCM_no_debug
 move genx_histogram.isa genx_icl_histogram.isa
 embed_isa genx_icl_histogram.isa
 move genx_icl_histogram.cpp .\src\genx_icl_histogram_isa.cpp
 move genx_icl_histogram.h .\include\genx_icl_histogram_isa.h
 
 
-cmc -c -Qxcm_release -Qxcm_jit_target=gen11lp .\src\genx_skl_simple_me.cpp -Qxcm_print_asm_count
+cmc -c -Qxcm_release -Qxcm_jit_target=gen11lp .\src\genx_skl_simple_me.cpp -Qxcm_print_asm_count -mCM_no_debug
 move genx_skl_simple_me.isa genx_icllp_simple_me.isa
 embed_isa genx_icllp_simple_me.isa
 move genx_icllp_simple_me.cpp .\src\genx_icllp_simple_me_isa.cpp
 move genx_icllp_simple_me.h .\include\genx_icllp_simple_me_isa.h
 
-cmc -c -Qxcm_release -Qxcm_jit_target=gen11lp .\src\genx_histogram.cpp -Qxcm_print_asm_count
+cmc -c -Qxcm_release -Qxcm_jit_target=gen11lp .\src\genx_histogram.cpp -Qxcm_print_asm_count -mCM_no_debug
 move genx_histogram.isa genx_icllp_histogram.isa
 embed_isa genx_icllp_histogram.isa
 move genx_icllp_histogram.cpp .\src\genx_icllp_histogram_isa.cpp

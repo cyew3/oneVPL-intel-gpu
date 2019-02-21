@@ -35,7 +35,7 @@
     <MfxDefinitions Condition="'$(MfxSoftwareOnly)'=='true'">MFX_NO_VA;$(MfxDefinitions)</MfxDefinitions>
     <MfxDefinitions>NOMINMAX;$(MfxDefinitions)</MfxDefinitions>
     <!-- Destination file name -->
-    <MfxTargetName Condition="'$(IntelDebugConf)'=='true' and '$(MfxTargetName)'==''">$(ProjectName)$(PlatformArchitecture)_d</MfxTargetName>
+    <MfxTargetName Condition="'$(IntelDebugConf)'=='true' and '$(MfxTargetName)'==''">$(ProjectName)$(PlatformArchitecture)</MfxTargetName>
     <MfxTargetName Condition="'$(MfxTargetName)'==''">$(ProjectName)$(PlatformArchitecture)</MfxTargetName>
     <MfxTargetName Condition="'$(IsTHM)'=='true' And '$(MfxConfigurationType)'=='StaticLibrary'">$(MfxTargetName)_thm</MfxTargetName>
     <MfxTargetName Condition="'$(MfxSoftwareOnly)'=='true' And '$(MfxConfigurationType)'=='StaticLibrary'">$(MfxTargetName)_sw</MfxTargetName>
