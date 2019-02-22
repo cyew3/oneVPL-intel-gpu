@@ -129,11 +129,11 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     m_auxDevice = auxDevice;
 #endif
 
-    Trace(m_guid, 0);
-    Trace(m_caps, 0);
-
     sts = HardcodeCaps(m_caps, core);
     MFX_CHECK_STS(sts);
+
+    Trace(m_guid, 0);
+    Trace(m_caps, 0);
 
     return MFX_ERR_NONE;
 }

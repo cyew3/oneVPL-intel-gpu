@@ -104,7 +104,7 @@ DECL_START(ENCODE_CAPS_HEVC)
     TRACE("%d", SliceLevelWeightedPred  );
     TRACE("%d", LumaWeightedPred        );
     TRACE("%d", ChromaWeightedPred      );
-    TRACE("%d", QVBRBRCSupport          ); 
+    TRACE("%d", QVBRBRCSupport          );
     TRACE("%d", HMEOffsetSupport        );
     TRACE("%d", YUV422ReconSupport      );
     TRACE("%d", YUV444ReconSupport      );
@@ -152,7 +152,7 @@ DECL_START(ENCODE_CAPS_HEVC)
     DECL_END
 #undef FIELD_FORMAT
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(_WIN64)
 
 #define FIELD_FORMAT "%-24s"
 DECL_START(D3D11_VIDEO_DECODER_EXTENSION)
@@ -318,7 +318,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
     TRACE("%d", CurrOriginalPic.AssociatedFlag);
     TRACE("%d", CurrReconstructedPic.Index7Bits);
     TRACE("%d", CurrReconstructedPic.AssociatedFlag);
-    
+
     TRACE("%d", CollocatedRefPicIndex);
 
     for (mfxU32 i = 0; i < 15; i ++)
@@ -392,7 +392,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
         TRACE("%d", ROI[i].Roi.Right);
         TRACE("%d", ROI[i].PriorityLevelOrDQp);
     }
-    
+
     TRACE("%d", MaxDeltaQp);
     TRACE("%d", MinDeltaQp);
 
@@ -407,7 +407,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
     TRACE("%d", SkipFrameFlag);
     TRACE("%d", NumSkipFrames);
     TRACE("%d", SizeSkipFrames);
-    
+
     TRACE("%d", BRCMaxQp);
     TRACE("%d", BRCMinQp);
 
@@ -443,7 +443,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
             TRACE("%d", pDirtyRect[i].Right);
         }
     }
-    
+
     TRACE("%d", NumMoveRects);
     if (b.NumMoveRects)
     {
@@ -604,8 +604,8 @@ DECL_END
 #define FIELD_FORMAT "%-28s"
 DECL_START(ENCODE_QUERY_STATUS_PARAMS)
     TRACE("%d", StatusReportFeedbackNumber);
-    TRACE("%d", CurrOriginalPic.bPicEntry); 
-    TRACE("%d", field_pic_flag); 
+    TRACE("%d", CurrOriginalPic.bPicEntry);
+    TRACE("%d", field_pic_flag);
     TRACE("%d", bStatus);
     TRACE("%d", Func);
     TRACE("%d", bitstreamSize);
@@ -704,7 +704,7 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC_REXT)
 DECL_END
 #undef FIELD_FORMAT
 
-#endif // defined(_WIN32)
+#endif // defined(_WIN32) || defined(_WIN64)
 
 #endif //#ifdef DDI_TRACE
 }

@@ -43,7 +43,7 @@ public:
     };
     inline void TraceArray(void const *, mfxU32) {};
 
-#if not defined(MFX_VA_LINUX)
+#if !defined(MFX_VA_LINUX)
     void Trace(ENCODE_COMPBUFFERDESC const & b, mfxU32 idx);
     void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & b, mfxU32 idx);
     void Trace(ENCODE_SET_PICTURE_PARAMETERS_HEVC const & b, mfxU32 idx);
