@@ -161,25 +161,17 @@ Status WidevineTaskSupplier::Init(VideoDecoderParams *pInit)
     if (umsRes != UMC_OK)
         return umsRes;
 
-    if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
-        (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
-    {
-        m_pWidevineDecrypter->Init();
-        m_pWidevineDecrypter->SetVideoHardwareAccelerator(((UMC::VideoDecoderParams*)pInit)->pVideoAccelerator);
+    m_pWidevineDecrypter->Init();
+    m_pWidevineDecrypter->SetVideoHardwareAccelerator(((UMC::VideoDecoderParams*)pInit)->pVideoAccelerator);
 
-        for (int32_t i = 0; i < MVC_Extension::GetViewCount(); i++)
+    for (int32_t i = 0; i < MVC_Extension::GetViewCount(); i++)
+    {
+        ViewItem &view = GetViewByNumber(i);
+        for (uint32_t j = 0; j < MAX_NUM_LAYERS; j++)
         {
-            ViewItem &view = GetViewByNumber(i);
-            for (uint32_t j = 0; j < MAX_NUM_LAYERS; j++)
-            {
-                view.pPOCDec[j].reset(new POCDecoderWidevine());
-            }
+            view.pPOCDec[j].reset(new POCDecoderWidevine());
         }
     }
-
-#if defined(ANDROID)
-    m_DPBSizeEx += 2; // Fix for Netflix freeze issue
-#endif
 
     return UMC_OK;
 }
@@ -188,11 +180,7 @@ void WidevineTaskSupplier::Reset()
 {
     VATaskSupplier::Reset();
 
-    if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
-        (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
-    {
-        m_pWidevineDecrypter->Reset();
-    }
+    m_pWidevineDecrypter->Reset();
 }
 
 static
@@ -698,12 +686,6 @@ Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDecrypt
 
 Status WidevineTaskSupplier::AddOneFrame(MediaData* src)
 {
-    if (!m_initializationParams.pVideoAccelerator->GetProtectedVA() ||
-        !IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected()))
-    {
-        return UMC_ERR_FAILED;
-    }
-
     Status umsRes = UMC_OK;
 
     if (m_pLastSlice)
@@ -777,11 +759,7 @@ Status WidevineTaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, int32_t fi
 {
     Status sts = VATaskSupplier::CompleteFrame(pFrame, field);
 
-    if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
-        (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
-    {
-        m_pWidevineDecrypter->ReleaseForNewBitstream();
-    }
+    m_pWidevineDecrypter->ReleaseForNewBitstream();
 
     return sts;
 }

@@ -42,6 +42,7 @@
 #include "umc_va_video_processing.h"
 #include "umc_va_fei.h"
 
+#include "mfx_common_int.h"
 #include "mfx_ext_buffers.h"
 #endif
 
@@ -2606,7 +2607,7 @@ PackerVA_CENC::PackerVA_CENC(VideoAccelerator * va, TaskSupplier * supplier)
 void PackerVA_CENC::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice)
 {
     const UMC_H264_DECODER::H264SliceHeader* pSliceHeader = pSlice->GetSliceHeader();
-    const H264DecoderFrame* pCurrentFrame = pSliceInfo->m_pFrame;
+    const H264DecoderFrame *pCurrentFrame = pSliceInfo->m_pFrame;
 
     UMCVACompBuffer *picParamBuf;
     VAPictureParameterBufferH264* pPicParams_H264 = (VAPictureParameterBufferH264*)m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VAPictureParameterBufferH264));
@@ -2619,6 +2620,29 @@ void PackerVA_CENC::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice *
 
     FillFrame(&(pPicParams_H264->CurrPic), pCurrentFrame, pSliceHeader->bottom_field_flag, reference, 0);
 
+    pPicParams_H264->CurrPic.flags = 0;
+
+    if (reference == 1)
+        pPicParams_H264->CurrPic.flags |= VA_PICTURE_H264_SHORT_TERM_REFERENCE;
+
+    if (reference == 2)
+        pPicParams_H264->CurrPic.flags |= VA_PICTURE_H264_LONG_TERM_REFERENCE;
+
+    if (pSliceHeader->field_pic_flag)
+    {
+        if (pSliceHeader->bottom_field_flag)
+        {
+            pPicParams_H264->CurrPic.flags |= VA_PICTURE_H264_BOTTOM_FIELD;
+            pPicParams_H264->CurrPic.TopFieldOrderCnt = 0;
+        }
+        else
+        {
+            pPicParams_H264->CurrPic.flags |= VA_PICTURE_H264_TOP_FIELD;
+            pPicParams_H264->CurrPic.BottomFieldOrderCnt = 0;
+        }
+    }
+
+    //create reference picture list
     for (int32_t i = 0; i < 16; i++)
     {
         FillFrameAsInvalid(&(pPicParams_H264->ReferenceFrames[i]));
@@ -2661,12 +2685,15 @@ void PackerVA_CENC::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice *
             }
 
             if (!reference)
+            {
                 continue;
+            }
 
             reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
-            ++referenceCount;
+            referenceCount ++;
             int32_t field = pFrm->m_bottom_field_flag[0];
-            FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm, field, reference, defaultIndex);
+            FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm,
+                field, reference, defaultIndex);
 
             reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
 
@@ -2675,47 +2702,47 @@ void PackerVA_CENC::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice *
                 FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm, 0, reference, defaultIndex);
             }
 
-            ++j;
+            j++;
         }
     }
 
     picParamBuf->SetDataSize(sizeof(VAPictureParameterBufferH264));
+
+    mfxBitstream *bs = m_va->GetProtectedVA()->GetBitstream();
+    if (!bs)
+        throw h264_exception(UMC_ERR_FAILED);
+
+    auto decryptParam = reinterpret_cast<mfxExtCencParam*>(GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_CENC_PARAM));
+    if (!decryptParam)
+        throw h264_exception(UMC_ERR_FAILED);
 
     UMCVACompBuffer *pParamBuf;
     VACencStatusParameters* pCENCStatusParams = (VACencStatusParameters*)m_va->GetCompBuffer(VACencStatusParameterBufferType, &pParamBuf, sizeof(VACencStatusParameters));
     if (!pCENCStatusParams)
         throw h264_exception(UMC_ERR_FAILED);
 
-    pCENCStatusParams->status_report_index_feedback = pSlice->m_CENCStatusReportNumber;
+    pCENCStatusParams->status_report_index_feedback = decryptParam->StatusReportIndex;
 
     pParamBuf->SetDataSize(sizeof(VACencStatusParameters));
 }
 
 void PackerVA_CENC::PackAU(const H264DecoderFrame *pFrame, int32_t isTop)
 {
-    H264DecoderFrameInfo * sliceInfo = const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(isTop));
-    int32_t count_all = sliceInfo->GetSliceCount();
+    H264DecoderFrameInfo* sliceInfo =
+        const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(isTop));
 
+    uint32_t const count_all = sliceInfo->GetSliceCount();
     if (!m_va || !count_all)
         return;
 
-    int32_t first_slice = 0;
+    uint32_t first_slice = 0;
     H264Slice* slice = sliceInfo->GetSlice(first_slice);
 
-    for ( ; count_all; )
-    {
-        PackPicParams(sliceInfo, slice);
+    PackPicParams(sliceInfo, slice);
 
-        uint32_t partial_count = count_all;
-        Status sts = m_va->Execute();
-        if (sts != UMC_OK)
-        {
-            throw h264_exception(sts);
-        }
-
-        first_slice += partial_count;
-        count_all -= partial_count;
-    }
+    Status sts = m_va->Execute();
+    if (sts != UMC_OK)
+        throw h264_exception(sts);
 }
 
 #elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -2728,7 +2755,7 @@ PackerVA_Widevine::PackerVA_Widevine(VideoAccelerator * va, TaskSupplier * suppl
 void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice)
 {
     const UMC_H264_DECODER::H264SliceHeader* pSliceHeader = pSlice->GetSliceHeader();
-    const H264DecoderFrame* pCurrentFrame = pSliceInfo->m_pFrame;
+    const H264DecoderFrame *pCurrentFrame = pSliceInfo->m_pFrame;
 
     UMCVACompBuffer *picParamBuf;
     VAPictureParameterBufferH264* pPicParams_H264 = (VAPictureParameterBufferH264*)m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VAPictureParameterBufferH264));
@@ -2741,6 +2768,29 @@ void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Sli
 
     FillFrame(&(pPicParams_H264->CurrPic), pCurrentFrame, pSliceHeader->bottom_field_flag, reference, 0);
 
+    pPicParams_H264->CurrPic.flags = 0;
+
+    if (reference == 1)
+        pPicParams_H264->CurrPic.flags |= VA_PICTURE_H264_SHORT_TERM_REFERENCE;
+
+    if (reference == 2)
+        pPicParams_H264->CurrPic.flags |= VA_PICTURE_H264_LONG_TERM_REFERENCE;
+
+    if (pSliceHeader->field_pic_flag)
+    {
+        if (pSliceHeader->bottom_field_flag)
+        {
+            pPicParams_H264->CurrPic.flags |= VA_PICTURE_H264_BOTTOM_FIELD;
+            pPicParams_H264->CurrPic.TopFieldOrderCnt = 0;
+        }
+        else
+        {
+            pPicParams_H264->CurrPic.flags |= VA_PICTURE_H264_TOP_FIELD;
+            pPicParams_H264->CurrPic.BottomFieldOrderCnt = 0;
+        }
+    }
+
+    //create reference picture list
     for (int32_t i = 0; i < 16; i++)
     {
         FillFrameAsInvalid(&(pPicParams_H264->ReferenceFrames[i]));
@@ -2783,12 +2833,15 @@ void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Sli
             }
 
             if (!reference)
+            {
                 continue;
+            }
 
             reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
-            ++referenceCount;
+            referenceCount ++;
             int32_t field = pFrm->m_bottom_field_flag[0];
-            FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm, field, reference, defaultIndex);
+            FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm,
+                field, reference, defaultIndex);
 
             reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
 
@@ -2797,7 +2850,7 @@ void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Sli
                 FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm, 0, reference, defaultIndex);
             }
 
-            ++j;
+            j++;
         }
     }
 
@@ -2815,29 +2868,21 @@ void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Sli
 
 void PackerVA_Widevine::PackAU(const H264DecoderFrame *pFrame, int32_t isTop)
 {
-    H264DecoderFrameInfo * sliceInfo = const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(isTop));
-    int32_t count_all = sliceInfo->GetSliceCount();
+    H264DecoderFrameInfo* sliceInfo =
+        const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(isTop));
 
+    uint32_t const count_all = sliceInfo->GetSliceCount();
     if (!m_va || !count_all)
         return;
 
-    int32_t first_slice = 0;
+    uint32_t first_slice = 0;
     H264Slice* slice = sliceInfo->GetSlice(first_slice);
 
-    for ( ; count_all; )
-    {
-        PackPicParams(sliceInfo, slice);
+    PackPicParams(sliceInfo, slice);
 
-        uint32_t partial_count = count_all;
-        Status sts = m_va->Execute();
-        if (sts != UMC_OK)
-        {
-            throw h264_exception(sts);
-        }
-
-        first_slice += partial_count;
-        count_all -= partial_count;
-    }
+    Status sts = m_va->Execute();
+    if (sts != UMC_OK)
+        throw h264_exception(sts);
 }
 #endif
 

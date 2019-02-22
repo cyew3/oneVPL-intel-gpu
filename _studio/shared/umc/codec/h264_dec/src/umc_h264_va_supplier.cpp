@@ -41,6 +41,14 @@
 
 #include "mfxfei.h"
 
+#ifdef UMC_VA_DXVA
+#include "umc_va_dxva2_protected.h"
+#endif
+
+#ifdef UMC_VA_LINUX
+#include "umc_va_linux_protected.h"
+#endif
+
 namespace UMC
 {
 
@@ -126,6 +134,20 @@ Status VATaskSupplier::Init(VideoDecoderParams *pInit)
 
     H264VideoDecoderParams *initH264 = DynamicCast<H264VideoDecoderParams> (pInit);
     m_DPBSizeEx = m_iThreadNum + (initH264 ? initH264->m_bufferedFrames : 0);
+
+#if defined (UMC_VA) && defined(ANDROID) && (defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE))
+    if (m_va &&
+        m_va->GetProtectedVA() &&
+#ifdef MFX_ENABLE_CPLIB
+        IS_PROTECTION_CENC(m_va->GetProtectedVA()->GetProtected())
+#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
+        IS_PROTECTION_WIDEVINE(m_va->GetProtectedVA()->GetProtected())
+#endif
+    )
+    {
+        m_DPBSizeEx += 2;
+    }
+#endif
 
     m_sei_messages = new SEI_Storer();
     m_sei_messages->Init();
