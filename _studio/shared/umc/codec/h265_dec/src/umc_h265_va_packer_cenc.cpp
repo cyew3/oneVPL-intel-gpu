@@ -27,7 +27,11 @@
 
 #include "umc_h265_va_packer.h"
 #include "umc_h265_task_supplier.h"
-#include "umc_h265_cenc_slice_decoding.h"
+#include "umc_va_linux_protected.h"
+
+#include "mfx_common_int.h"
+
+#include "va_cp_private.h"
 
 using namespace UMC;
 
@@ -71,12 +75,12 @@ namespace UMC_HEVC_DECODER
         if (!pSliceInfo)
             throw h265_exception(UMC_ERR_FAILED);
 
-        auto pSlice = static_cast<H265CENCSlice*>(pSliceInfo->GetSlice(0));
+        auto pSlice = pSliceInfo->GetSlice(0);
         if (!pSlice)
             throw h265_exception(UMC_ERR_FAILED);
 
         H265SeqParamSet const* pSeqParamSet = pSlice->GetSeqParam();
-        UMCVACompBuffer *picParamBuf;
+        UMCVACompBuffer *picParamBuf = nullptr;
         auto picParam = reinterpret_cast<VAPictureParameterBufferHEVC*>(m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VAPictureParameterBufferHEVC)));
         if (!picParam)
             throw h265_exception(UMC_ERR_FAILED);
@@ -108,13 +112,13 @@ namespace UMC_HEVC_DECODER
             }
         }
 
-        for (size_t n = count;n < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]); n++)
+        for (size_t n = count; n < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]); n++)
         {
             picParam->ReferenceFrames[n].picture_id = VA_INVALID_SURFACE;
             picParam->ReferenceFrames[n].flags = VA_PICTURE_HEVC_INVALID;
         }
 
-        ReferencePictureSet *rps = pSlice->getRPS();
+        auto rps = pSlice->getRPS();
         uint32_t index;
         int32_t pocList[3*8];
         int32_t numRefPicSetStCurrBefore = 0,
@@ -181,12 +185,20 @@ namespace UMC_HEVC_DECODER
 
         MFX_INTERNAL_CPY(picParam->ReferenceFrames, sortedReferenceFrames, sizeof(sortedReferenceFrames));
 
+        mfxBitstream *bs = m_va->GetProtectedVA()->GetBitstream();
+        if (!bs)
+            throw h265_exception(UMC_ERR_FAILED);
+
+        auto decryptParam = reinterpret_cast<mfxExtCencParam*>(GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_CENC_PARAM));
+        if (!decryptParam)
+            throw h265_exception(UMC_ERR_FAILED);
+
         UMCVACompBuffer *pParamBuf;
         VACencStatusParameters* pCENCStatusParams = (VACencStatusParameters*)m_va->GetCompBuffer(VACencStatusParameterBufferType, &pParamBuf, sizeof(VACencStatusParameters));
         if (!pCENCStatusParams)
             throw h265_exception(UMC_ERR_FAILED);
 
-        pCENCStatusParams->status_report_index_feedback = pSlice->GetCENCStatusReportNumber();
+        pCENCStatusParams->status_report_index_feedback = decryptParam->StatusReportIndex;
 
         pParamBuf->SetDataSize(sizeof(VACencStatusParameters));
     }

@@ -76,7 +76,7 @@ namespace UMC_HEVC_DECODER
             throw h265_exception(UMC_ERR_FAILED);
 
         H265SeqParamSet const* pSeqParamSet = pSlice->GetSeqParam();
-        UMCVACompBuffer *picParamBuf;
+        UMCVACompBuffer *picParamBuf = nullptr;
         auto picParam = reinterpret_cast<VAPictureParameterBufferHEVC*>(m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VAPictureParameterBufferHEVC)));
         if (!picParam)
             throw h265_exception(UMC_ERR_FAILED);
@@ -108,13 +108,13 @@ namespace UMC_HEVC_DECODER
             }
         }
 
-        for (size_t n = count;n < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]); n++)
+        for (size_t n = count; n < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]); n++)
         {
             picParam->ReferenceFrames[n].picture_id = VA_INVALID_SURFACE;
             picParam->ReferenceFrames[n].flags = VA_PICTURE_HEVC_INVALID;
         }
 
-        ReferencePictureSet *rps = pSlice->getRPS();
+        auto rps = pSlice->getRPS();
         uint32_t index;
         int32_t pocList[3*8];
         int32_t numRefPicSetStCurrBefore = 0,

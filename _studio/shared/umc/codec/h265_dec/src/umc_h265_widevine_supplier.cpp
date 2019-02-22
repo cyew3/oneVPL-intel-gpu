@@ -75,12 +75,8 @@ UMC::Status WidevineTaskSupplier::Init(UMC::VideoDecoderParams *pInit)
     if (umsRes != UMC::UMC_OK)
         return umsRes;
 
-    if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
-        (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
-    {
-        m_pWidevineDecrypter->Init();
-        m_pWidevineDecrypter->SetVideoHardwareAccelerator(((UMC::VideoDecoderParams*)pInit)->pVideoAccelerator);
-    }
+    m_pWidevineDecrypter->Init();
+    m_pWidevineDecrypter->SetVideoHardwareAccelerator(((UMC::VideoDecoderParams*)pInit)->pVideoAccelerator);
 
     return UMC::UMC_OK;
 }
@@ -89,11 +85,7 @@ void WidevineTaskSupplier::Reset()
 {
     VATaskSupplier::Reset();
 
-    if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
-        (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
-    {
-        m_pWidevineDecrypter->Reset();
-    }
+    m_pWidevineDecrypter->Reset();
 }
 
 static
@@ -566,12 +558,6 @@ UMC::Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDe
 
 UMC::Status WidevineTaskSupplier::AddOneFrame(UMC::MediaData* src)
 {
-    if (!m_initializationParams.pVideoAccelerator->GetProtectedVA() ||
-        !IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected()))
-    {
-        return UMC::UMC_ERR_FAILED;
-    }
-
     UMC::Status umsRes = UMC::UMC_OK;
 
     if (m_pLastSlice)
@@ -639,11 +625,7 @@ void WidevineTaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
 {
     VATaskSupplier::CompleteFrame(pFrame);
 
-    if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
-        (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
-    {
-        m_pWidevineDecrypter->ReleaseForNewBitstream();
-    }
+    m_pWidevineDecrypter->ReleaseForNewBitstream();
 }
 
 } // namespace UMC_HEVC_DECODER
