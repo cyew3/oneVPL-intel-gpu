@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2018 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2019 Intel Corporation. All Rights Reserved.
 //
 
 #define ENABLE_OUTPUT    // Disabling this flag removes all YUV file writing
@@ -281,6 +281,9 @@ struct ProgramArguments
     // height of dst video
     mfxU32 dH;
 
+    //Timeout for Sync Operation
+    mfxU32 time_out;
+
     mfxU32 frames_to_process;
     mfxU32 maxWidth;
     mfxU32 maxHeight;
@@ -372,6 +375,8 @@ ProgramArguments ParseInputString(const vector<string> &args)
         pa.dW = 0;
     if (!ParseValue(args, "-dH", pa.dH))
         pa.dH = 0;
+    if (!ParseValue(args, "-time_out", pa.time_out))
+        pa.time_out = 60000; //milliseconds
     if (!ParseValue(args, "-numTiles", pa.iNumTiles))
         pa.iNumTiles = 0;
     if (ParseValue(args, "-reset_par", pa.reset_par))
@@ -1504,7 +1509,7 @@ int main(int argc, char *argv[])
 
         MSDK_BREAK_ON_ERROR(sts);
 
-        sts = mfxSession.SyncOperation(syncp, 60000); // Synchronize. Wait until frame processing is ready
+        sts = mfxSession.SyncOperation(syncp, pa.time_out); // Synchronize. Wait until frame processing is ready
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         ++nFrame;
@@ -1539,7 +1544,7 @@ int main(int argc, char *argv[])
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_SURFACE);
         MSDK_BREAK_ON_ERROR(sts);
 
-        sts = mfxSession.SyncOperation(syncp, 60000); // Synchronize. Wait until frame processing is ready
+        sts = mfxSession.SyncOperation(syncp, pa.time_out); // Synchronize. Wait until frame processing is ready
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         ++nFrame;
@@ -1623,7 +1628,7 @@ int main(int argc, char *argv[])
 
             MSDK_BREAK_ON_ERROR(sts);
 
-            sts = mfxSession.SyncOperation(syncp, 60000); // Synchronize. Wait until frame processing is ready
+            sts = mfxSession.SyncOperation(syncp, pa.time_out); // Synchronize. Wait until frame processing is ready
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             ++nFrame;
@@ -1656,7 +1661,7 @@ int main(int argc, char *argv[])
             MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_SURFACE);
             MSDK_BREAK_ON_ERROR(sts);
 
-            sts = mfxSession.SyncOperation(syncp, 60000); // Synchronize. Wait until frame processing is ready
+            sts = mfxSession.SyncOperation(syncp, pa.time_out); // Synchronize. Wait until frame processing is ready
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             ++nFrame;
