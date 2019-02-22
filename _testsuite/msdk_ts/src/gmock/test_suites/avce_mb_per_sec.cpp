@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 File Name: avce_mb_per_sec.cpp
 \* ****************************************************************************** */
@@ -20,9 +20,10 @@ Algorithm:
 - Initialize MSDK lib
 - Set suite params
 - Set case params
-- Set expected status (depends on HW, D3D9, D3D11 implementation)
+- Set expected status (depends on rate control method)
 - Call Query() function
-- Check MBPerSec value (if D3D11 should changed to non zero and non 0xFFFFFFFF value, else should be zeroed)
+- Check MBPerSec value (if Query returns MFX_ERR_NONE MBPerSec should changed to non zero and non 0xFFFFFFFF value,
+else should be zeroed)
 
 */
 #include "ts_encoder.h"
@@ -41,7 +42,7 @@ namespace avce_mb_per_sec{
 
     struct tc_struct{
         /*! \brief Structure contains params for some fields of encoder */
-
+        mfxStatus sts;
         struct f_pair{
 
             //! Number of the params set (if there is more than one in a test case)
@@ -82,7 +83,28 @@ namespace avce_mb_per_sec{
 
     const tc_struct TestSuite::test_case[] =
     {
-        {/*00*/{{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF}}}
+        {/*00*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR }}},
+        {/*01*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR }}},
+        {/*02*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP }}},
+        {/*03*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR }}}, // supported with va_version >= 1.3.0
+        {/*04*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ }}},
+        {/*05*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR }}}, // supported with va_version >= 1.3.0
+        {/*06*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA }}},
+        {/*07*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM }}},
+        {/*08*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ }}},
+        {/*09*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT }}},
+        {/*10*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD }}}
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
 
@@ -95,12 +117,9 @@ namespace avce_mb_per_sec{
         m_par = initParams();
         SETPARS(&m_par, MFX_PAR);
 
-        mfxStatus exp = MFX_ERR_NONE;
-        if (!(g_tsImpl & MFX_IMPL_VIA_D3D11))
-            exp = MFX_ERR_UNSUPPORTED;
-        
         mfxExtEncoderCapability *m_ec = reinterpret_cast <mfxExtEncoderCapability*> (m_par.GetExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY));
 
+        mfxStatus exp = tc.sts;
         g_tsStatus.expect(exp);
 
         Query();
