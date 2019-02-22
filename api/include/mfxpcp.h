@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2007-2018 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -84,7 +84,8 @@ enum
 /* Extended Buffer Ids */
 enum {
     MFX_EXTBUFF_PAVP_OPTION         = MFX_MAKEFOURCC('P','V','O','P'),
-    MFX_EXTBUFF_DECRYPTED_PARAM     = MFX_MAKEFOURCC('D','C','R','P')
+    MFX_EXTBUFF_DECRYPTED_PARAM     = MFX_MAKEFOURCC('D','C','R','P'),
+    MFX_EXTBUFF_CENC_PARAM          = MFX_MAKEFOURCC('C','E','N','P')
 };
 
 typedef struct _mfxAES128CipherCounter{
@@ -112,6 +113,13 @@ typedef struct _mfxExtPAVPOption{
     mfxU16      CounterType;
     mfxU32      reserved[8];
 } mfxExtPAVPOption;
+
+typedef struct _mfxExtCencParam{
+    mfxExtBuffer Header;
+
+    mfxU32 StatusReportIndex;
+    mfxU32 reserved[15];
+} mfxExtCencParam;
 
 typedef struct _mfxExtDecryptedParam{
     mfxExtBuffer Header;

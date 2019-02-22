@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 Intel Corporation
+// Copyright (c) 2016-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -101,7 +101,21 @@ int32_t ProtectedVA::GetCounterMode() const
 
 void ProtectedVA::SetBitstream(mfxBitstream *bs)
 {
-    if (!bs || !bs->EncryptedData)
+    if (!bs)
+        return;
+
+#ifdef MFX_ENABLE_CPLIB
+    if (IS_PROTECTION_CENC(m_protected))
+    {
+        m_bs = *bs;
+        return;
+    }
+#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    if (IS_PROTECTION_WIDEVINE(m_protected))
+        return;
+#endif
+
+    if (!bs->EncryptedData)
         return;
 
     if (m_encryptBegin && !memcmp(&m_bs, bs, sizeof(mfxBitstream)))

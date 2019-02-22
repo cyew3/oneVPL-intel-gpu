@@ -296,11 +296,13 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAES128CipherCounter  ,16   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncryptedData        ,88   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtPAVPOption        ,64   )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtCencParam         ,72   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtDecryptedParam    ,64   )
     #elif defined(_WIN32) || defined(LINUX32)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAES128CipherCounter  ,16   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncryptedData        ,72   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtPAVPOption        ,64   )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtCencParam         ,72   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtDecryptedParam    ,60   )
     #endif
 #endif //defined (__MFXPCP_H__)
@@ -3704,6 +3706,9 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                 ,EncryptionType                        ,28   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                 ,CounterType                           ,30   )
 
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtCencParam                  ,Header                                ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtCencParam                  ,StatusReportIndex                     ,8    )
+
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtDecryptedParam             ,Header                                ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtDecryptedParam             ,Data                                  ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtDecryptedParam             ,DataLength                            ,16   )
@@ -3724,6 +3729,9 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                 ,CounterIncrement                      ,24   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                 ,EncryptionType                        ,28   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                 ,CounterType                           ,30   )
+
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtCencParam                  ,Header                                ,0    )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtCencParam                  ,StatusReportIndex                     ,8    )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtDecryptedParam             ,Header                                ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtDecryptedParam             ,Data                                  ,8    )
