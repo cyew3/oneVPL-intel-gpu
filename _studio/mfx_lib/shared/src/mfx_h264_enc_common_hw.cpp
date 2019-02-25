@@ -968,8 +968,8 @@ namespace
             }
         }
         else
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        if (platform >= MFX_HW_TGL_HP)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+        if (platform >= MFX_HW_TGL_LP)
             return 4;
         else
 #endif

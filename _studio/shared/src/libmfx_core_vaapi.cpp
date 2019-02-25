@@ -286,10 +286,6 @@ typedef struct {
     { 0x5A41, MFX_HW_CNL, MFX_GT2 },//ICNL_3x8_ULX_DEVICE_F0_ID
     { 0x5A49, MFX_HW_CNL, MFX_GT2 },//ICNL_2x8_ULX_DEVICE_F0_ID
     { 0x5A5C, MFX_HW_CNL, MFX_GT2 },//ICNL_4x8_HALO_DEVICE_F0_ID
-
-    { 0x9940, MFX_HW_RYF, MFX_GT2 },
-    { 0x4905, MFX_HW_DG1, MFX_GT2 },
-    { 0x0201, MFX_HW_ATS, MFX_GT2 },
 #endif
 
     /* ICL */
@@ -310,7 +306,14 @@ typedef struct {
     { 0x9A49, MFX_HW_TGL_LP, MFX_GT2 },//iTGLLPDEVMOB5
     { 0x9A59, MFX_HW_TGL_LP, MFX_GT2 },//iTGLLPDEVMOB6
     { 0x9A69, MFX_HW_TGL_LP, MFX_GT2 },//iTGLLPDEVMOB7
-    { 0x9A79, MFX_HW_TGL_LP, MFX_GT2 } //iTGLLPDEVMOB8
+    { 0x9A79, MFX_HW_TGL_LP, MFX_GT2 }, //iTGLLPDEVMOB8
+
+    /* RYF */
+    { 0x9940, MFX_HW_RYF, MFX_GT2 },
+    /* DG1 */
+    { 0x4905, MFX_HW_DG1, MFX_GT2 },
+    /* ATS */
+    { 0x0201, MFX_HW_ATS, MFX_GT4 }
 #endif
 
 };

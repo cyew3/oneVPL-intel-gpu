@@ -3064,6 +3064,10 @@ mfxStatus VAAPIEncoder::Execute(
 #ifdef MFX_ENABLE_MFE
     if (m_mfe){
         mfxU32 timeout = task.m_mfeTimeToWait>>task.m_fieldPicFlag;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+    if (m_core->GetHWType() >= MFX_HW_ATS)
+        timeout = 3600000000;//one hour for pre-si
+#endif
         /*if(!task.m_userTimeout)
         {
             mfxU32 passed = (task.m_beginTime - vm_time_get_tick());
