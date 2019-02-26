@@ -29,9 +29,9 @@ File Name: .h
 
 MFXVideoRender::MFXVideoRender( IVideoSession * core
                               , mfxStatus *status)
-    : m_nFrames()
+    : m_nFourCC()
+    , m_nFrames()
     , m_bFrameLocked()
-    //, m_nFourCC()
     , m_VideoParams()
     , m_bIsViewRender(false)//until we call to init we don't know whether the render is a view render
     , m_bAutoView(false)
@@ -171,11 +171,11 @@ mfxStatus MFXVideoRender::WaitTasks(mfxU32 nMilisecconds)
     return MFX_WRN_IN_EXECUTION; 
 }
 
-//mfxStatus MFXVideoRender::SetOutputFourcc(mfxU32 nFourCC)
-//{
-//    m_nFourCC = nFourCC;
-//    return MFX_ERR_NONE;
-//}
+mfxStatus MFXVideoRender::SetOutputFourcc(mfxU32 nFourCC)
+{
+    m_nFourCC = nFourCC;
+    return MFX_ERR_NONE;
+}
 
 mfxStatus MFXVideoRender::SetAutoView(bool bIsAutoViewRender)
 {
@@ -537,6 +537,32 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
     }
 #endif
 
+    MFX_CHECK_STS(AllocAuxSurface());
+
+    m_copier = HWtoSYSCopier::CreateGenericPlugin(m_pSessionWrapper->GetMFXSession());
+    if (!m_copier)
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXFileWriteRender::Close()
+{
+    MFX_CHECK_STS(ReleaseSurface(m_auxSurface));
+    MFX_CHECK_STS(ReleaseSurface(m_surfaceForCopy));
+
+    m_nTimesClosed++;
+
+    HWtoSYSCopier::UnloadGenericPlugin(m_copier, m_pSessionWrapper->GetMFXSession());
+    m_copier = 0;
+    
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXFileWriteRender::AllocAuxSurface()
+{
     if (m_nFourCC == 0 || m_nFourCC == MFX_FOURCC_YV12 || m_nFourCC == MFX_FOURCC_YV16 ||
         m_nFourCC == MFX_FOURCC_YUV420_16 || m_nFourCC == MFX_FOURCC_YUV422_16 || m_nFourCC == MFX_FOURCC_YUV444_16 ||
         m_nFourCC == MFX_FOURCC_YUV444_8)
@@ -556,33 +582,28 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
         }
         MFX_CHECK_STS(AllocSurface(&targetInfo, &m_auxSurface));
     }
+  return MFX_ERR_NONE;
+}
 
-    m_copier = HWtoSYSCopier::CreateGenericPlugin(m_pSessionWrapper->GetMFXSession());
-    if (!m_copier)
+mfxStatus MFXFileWriteRender::SetOutputFourcc(mfxU32 nFourCC)
+{
+    if (m_nFourCC != nFourCC)
     {
-        return MFX_ERR_MEMORY_ALLOC;
+        m_nFourCC = nFourCC;
+        //Clean up previos surface data
+        MFX_CHECK_STS(ReleaseSurface(m_auxSurface));
+        //Reallocate surface with new fcc
+        MFX_CHECK_STS(AllocAuxSurface());
     }
-
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXFileWriteRender::Close()
+mfxStatus MFXFileWriteRender::ReleaseSurface(mfxFrameSurface1& surf)
 {
-    mfxU8* ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(m_auxSurface.Data.Y, m_auxSurface.Data.U), MFX_MIN_POINTER(m_auxSurface.Data.V, m_auxSurface.Data.A));
+    mfxU8* ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(surf.Data.Y, surf.Data.U), MFX_MIN_POINTER(surf.Data.V, surf.Data.A));
     if (ptr)
-        delete [] ptr;
-    MFX_ZERO_MEM(m_auxSurface);
-
-    ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(m_surfaceForCopy.Data.Y, m_surfaceForCopy.Data.U), MFX_MIN_POINTER(m_surfaceForCopy.Data.V, m_surfaceForCopy.Data.A));
-    if (ptr)
-        delete [] ptr;
-    MFX_ZERO_MEM(m_surfaceForCopy);
-
-    m_nTimesClosed++;
-
-    HWtoSYSCopier::UnloadGenericPlugin(m_copier, m_pSessionWrapper->GetMFXSession());
-    m_copier = 0;
-    
+        delete[] ptr;
+    MFX_ZERO_MEM(surf);
     return MFX_ERR_NONE;
 }
 
@@ -621,9 +642,7 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
         if (pSurface->Info.Width != m_auxSurface.Info.Width || pSurface->Info.Height != m_auxSurface.Info.Height)
         {
             // reallocate
-            mfxU8* ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(m_auxSurface.Data.Y, m_auxSurface.Data.U), MFX_MIN_POINTER(m_auxSurface.Data.V, m_auxSurface.Data.A));
-            if (ptr)
-                delete [] ptr;
+            MFX_CHECK_STS(ReleaseSurface(m_auxSurface));
             mfxU32 nOldCC = m_VideoParams.mfx.FrameInfo.FourCC;
             if (!m_params.useHMstyle)
             {
@@ -1465,6 +1484,9 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
 #if defined(_WIN32) || defined(_WIN64)
         case DXGI_FORMAT_AYUV :
 #endif
+        case MFX_FOURCC_YUV444_8:
+            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 3;
+            break;
         case MFX_FOURCC_AYUV :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4 ;
             break;

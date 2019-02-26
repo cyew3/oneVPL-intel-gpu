@@ -912,6 +912,8 @@ mfxStatus MFXDecPipeline::LightReset()
 {
     //double reset will goes to long almost infinite run
     MFX_CHECK_STS(ReleaseMFXPart());
+    //fourcc could change after reset
+    m_inParams.outFrameInfo.FourCC = MFX_FOURCC_UNKNOWN;
     MFX_CHECK_STS(BuildMFXPart());
 
     return MFX_ERR_NONE;
@@ -1938,7 +1940,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         m_inParams.outFrameInfo.ChromaFormat = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
 
         if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV)
-            m_inParams.outFrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YUV444_8;
 
         if (   m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010
             || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P210
@@ -2006,6 +2008,8 @@ mfxStatus MFXDecPipeline::CreateRender()
     // Shouldn't recreate existing render in case of light reset
     if(NULL != m_pRender)
     {
+        // Update output fourcc in case it was changed after light reset
+        m_pRender->SetOutputFourcc(m_inParams.outFrameInfo.FourCC);
         return MFX_ERR_NONE;
     }
 

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -71,7 +71,7 @@ public:
     virtual mfxStatus GetEncodeStat(mfxEncodeStat *stat);
     virtual mfxStatus RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pCtrl = NULL);
     virtual mfxStatus WaitTasks(mfxU32 nMilisecconds);
-    //virtual mfxStatus SetOutputFourcc(mfxU32 nFourCC);
+    virtual mfxStatus SetOutputFourcc(mfxU32 nFourCC);
     virtual mfxStatus SetAutoView(bool bIsAutoViewRender);
     virtual mfxStatus GetDownStream(IFile **ppFile);
     virtual mfxStatus SetDownStream(IFile *ppFile);
@@ -79,7 +79,7 @@ public:
 
 
 protected:
-//    mfxU32                  m_nFourCC; //output color format
+    mfxU32                  m_nFourCC; //output color format
     mfxU32                  m_nFrames;
     IVideoSession          *m_pSessionWrapper;
     bool                    m_bFrameLocked;
@@ -103,6 +103,7 @@ public :
     virtual mfxStatus Init(mfxVideoParam *par, const vm_char *pFilename = NULL);
     virtual mfxStatus RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pCtrl = NULL);
     virtual mfxStatus Close();
+    virtual mfxStatus SetOutputFourcc(mfxU32);
 
     //Icloneable
     virtual MFXFileWriteRender * Clone();
@@ -112,6 +113,8 @@ protected:
     virtual mfxStatus PutBsData(mfxBitstream *pBs);
     //converted surface passed to this function
     virtual mfxStatus WriteSurface(mfxFrameSurface1*pSurface);
+    mfxStatus AllocAuxSurface();
+    mfxStatus ReleaseSurface(mfxFrameSurface1& surf);
 
     FileWriterRenderInputParams  m_params;
     
