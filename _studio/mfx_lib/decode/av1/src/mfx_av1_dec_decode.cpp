@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -113,6 +113,28 @@ namespace MFX_VPX_Utility
         return
             platform != MFX_PLATFORM_SOFTWARE && !CheckGUID(core, core->GetHWType(), par) ?
             MFX_PLATFORM_SOFTWARE : platform;
+    }
+}
+
+static void SetFrameType(const UMC_AV1_DECODER::AV1DecoderFrame& frame, mfxFrameSurface1 &surface_out)
+{
+    auto extFrameInfo = reinterpret_cast<mfxExtDecodedFrameInfo *>(GetExtendedBuffer(surface_out.Data.ExtParam, surface_out.Data.NumExtParam, MFX_EXTBUFF_DECODED_FRAME_INFO));
+    if (extFrameInfo == nullptr)
+        return;
+
+    const UMC_AV1_DECODER::FrameHeader& fh = frame.GetFrameHeader();
+    switch (fh.frame_type)
+    {
+    case UMC_AV1_DECODER::KEY_FRAME:
+        extFrameInfo->FrameType = MFX_FRAMETYPE_I;
+        break;
+    case UMC_AV1_DECODER::INTER_FRAME:
+    case UMC_AV1_DECODER::INTRA_ONLY_FRAME:
+    case UMC_AV1_DECODER::SWITCH_FRAME:
+        extFrameInfo->FrameType = MFX_FRAMETYPE_P;
+        break;
+    default:
+        extFrameInfo->FrameType = MFX_FRAMETYPE_UNKNOWN;
     }
 }
 
@@ -874,6 +896,8 @@ void VideoDECODEAV1::FillOutputSurface(mfxFrameSurface1* surface_work, mfxFrameS
 
     mfxFrameSurface1* surface = *surface_out;
     VM_ASSERT(surface);
+
+    SetFrameType(*frame, *surface);
 
     surface->Info.FrameId.TemporalId = 0;
 
