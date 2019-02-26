@@ -9,7 +9,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;../../../include;..\..\..\opensource\mfx_dispatch\include;..\..\shared\include;..\..\mfx_lib\shared\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../../../include;..\..\..\mfx_dispatch\windows\include;..\..\shared\include;..\..\mfx_lib\shared\include</AdditionalIncludeDirectories>
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>

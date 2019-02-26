@@ -12,7 +12,7 @@ MFX_PIPELINE_CFLAGS := \
 MFX_PIPELINE_INCLUDES += \
     $(MFX_INCLUDES_INTERNAL) \
     $(MFX_INCLUDES_LIBVA) \
-    $(MFX_HOME)/mdp_msdk-lib/api/opensource/mfx_dispatch/include \
+    $(MFX_HOME)/mdp_msdk-lib/api/mfx_dispatch/windows/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/spl_common/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/avi_spl/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/demuxer/include \

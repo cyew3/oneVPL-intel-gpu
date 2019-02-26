@@ -10,7 +10,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_vpp_multisession", "te
 		{F5C4912C-0F81-49A7-BA3D-3E397B267ED9} = {F5C4912C-0F81-49A7-BA3D-3E397B267ED9}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx_vs2015", "..\..\api\opensource\mfx_dispatch\libmfx_vs2015.vcxproj", "{A9F7AEFB-DC6C-49E8-8E71-5351ABDCE627}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx_vs2015", "..\..\api\mfx_dispatch\windows\libmfx_vs2015.vcxproj", "{A9F7AEFB-DC6C-49E8-8E71-5351ABDCE627}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_utils", "..\shared\shared_utils.vcxproj", "{F5C4912C-0F81-49A7-BA3D-3E397B267ED9}"
 EndProject

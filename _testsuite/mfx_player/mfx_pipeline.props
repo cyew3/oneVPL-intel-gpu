@@ -6,7 +6,7 @@
     <MfxIncludes>
     $(MfxIppGoldIncludeDir);
     $(MSDK_API_ROOT)\include;
-    $(MSDK_API_ROOT)\opensource\mfx_dispatch\include;
+    $(MSDK_API_ROOT)\mfx_dispatch\windows\include;
     $(MSDK_STUDIO_ROOT)\..\_testsuite\mfx_player\include;
     $(MSDK_STUDIO_ROOT)\..\_testsuite\mfx_pavp;
     $(MSDK_STUDIO_ROOT)\..\_testsuite\dxva2_dump\include;

@@ -10,7 +10,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx-tracer-config", "mfx-tr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tracer_vs12", "gui\tracer_vs12.csproj", "{54E94009-6BF9-4847-A614-1DDDC863EB3F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace_lib", "..\opensource\mfx_dispatch\mfx_prefixed_dispatch_trace_lib.vcxproj", "{45806EE4-0256-4B1D-A730-EB70966E070A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace_lib", "..\mfx_dispatch\windows\mfx_prefixed_dispatch_trace_lib.vcxproj", "{45806EE4-0256-4B1D-A730-EB70966E070A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -40,7 +40,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spl_common", "..\..\_studio
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "..\..\_studio\shared\umc\codec\common\common.vcxproj", "{39BDEF92-C4FD-4049-957A-EA0C3E4BAEDC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{AB838320-0D1D-4766-89CA-A1590FCA8E53}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\api\mfx_dispatch\windows\mfx_dispatch_trace_lib.vcxproj", "{AB838320-0D1D-4766-89CA-A1590FCA8E53}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "color_space_converter", "..\..\_studio\shared\umc\codec\color_space_converter\color_space_converter.vcxproj", "{51904F5C-544A-47FD-8220-B6B3B3B06FFE}"
 EndProject

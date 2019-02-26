@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="include;../../../include;&quot;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include&quot;;..\..\..\opensource\mfx_dispatch\include;..\..\shared\include;..\..\mfx_lib\shared\include"
+				AdditionalIncludeDirectories="include;../../../include;&quot;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include&quot;;..\..\..\mfx_dispatch\windows\include;..\..\shared\include;..\..\mfx_lib\shared\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA"
 				ExceptionHandling="2"
 				BasicRuntimeChecks="3"
@@ -124,7 +124,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="include;../../../include;&quot;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include&quot;;..\..\..\opensource\mfx_dispatch\include;..\..\shared\include"
+				AdditionalIncludeDirectories="include;../../../include;&quot;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include&quot;;..\..\..\mfx_dispatch\windows\include;..\..\shared\include"
 				PreprocessorDefinitions="WIN64;_DEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA"
 				MinimalRebuild="false"
 				ExceptionHandling="2"
@@ -209,7 +209,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="include;../../../include;&quot;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include&quot;;..\..\..\opensource\mfx_dispatch\include;..\..\shared\include;..\..\mfx_lib\shared\include"
+				AdditionalIncludeDirectories="include;../../../include;&quot;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include&quot;;..\..\..\mfx_dispatch\windows\include;..\..\shared\include;..\..\mfx_lib\shared\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA"
 				ExceptionHandling="2"
 				RuntimeLibrary="0"
@@ -286,7 +286,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="include;../../../include;&quot;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include&quot;;..\..\..\opensource\mfx_dispatch\include;..\..\shared\include;..\..\mfx_lib\shared\include"
+				AdditionalIncludeDirectories="include;../../../include;&quot;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include&quot;;..\..\..\mfx_dispatch\windows\include;..\..\shared\include;..\..\mfx_lib\shared\include"
 				PreprocessorDefinitions="WIN64;NDEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA"
 				ExceptionHandling="2"
 				BasicRuntimeChecks="0"
@@ -452,7 +452,7 @@
 				Name="external"
 				>
 				<File
-					RelativePath="..\..\..\opensource\mfx_dispatch\include\mfx_exposed_functions_list.h"
+					RelativePath="..\..\..\mfx_dispatch\windows\include\mfx_exposed_functions_list.h"
 					>
 				</File>
 				<File

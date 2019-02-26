@@ -211,7 +211,7 @@
     <ClCompile Include="mfx_jpeg_encode_wrap_test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
+    <ProjectReference Include="..\..\..\api\mfx_dispatch\windows\mfx_dispatch_trace_lib.vcxproj">
       <Project>{AB838320-0D1D-4766-89CA-A1590FCA8E53}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

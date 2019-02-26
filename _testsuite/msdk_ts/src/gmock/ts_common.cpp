@@ -12,7 +12,7 @@ Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 #include "ts_struct.h"
 
 #if defined(_WIN32) || defined(_WIN64)
-    #include "..\opensource\mfx_dispatch\include\mfx_dxva2_device.h"
+    #include "..\mfx_dispatch\windows\include\mfx_dxva2_device.h"
 #endif
 
 tsTrace      g_tsLog(std::cout.rdbuf());

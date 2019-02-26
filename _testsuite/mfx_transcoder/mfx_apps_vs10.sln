@@ -40,7 +40,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_trans_pipeline", "mfx_t
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_player", "..\mfx_player\mfx_player.vcxproj", "{FB277501-3146-49AB-8C49-A6E978DE201A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{AB838320-0D1D-4766-89CA-A1590FCA8E53}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\api\mfx_dispatch\windows\mfx_dispatch_trace_lib.vcxproj", "{AB838320-0D1D-4766-89CA-A1590FCA8E53}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_thread_safety", "..\test_thread_safety\test_thread_safety.vcxproj", "{1C4651E5-BD8B-4F24-B6B7-2530D03714DC}"
 EndProject

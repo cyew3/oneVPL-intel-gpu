@@ -16,7 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\..\..\mdp_msdk-lib\_studio\mfx_lib\Intel.Mfx.StaticLib.props = ..\..\..\mdp_msdk-lib\_studio\mfx_lib\Intel.Mfx.StaticLib.props
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{AB838320-0D1D-4766-89CA-A1590FCA8E53}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\api\mfx_dispatch\windows\mfx_dispatch_trace_lib.vcxproj", "{AB838320-0D1D-4766-89CA-A1590FCA8E53}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

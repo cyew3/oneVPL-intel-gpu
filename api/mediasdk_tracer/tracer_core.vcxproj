@@ -91,7 +91,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;..\opensource\mfx_dispatch\include;..\..\shared\include;$(MSDK_LIB_ROOT)\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;..\mfx_dispatch\windows\include;..\..\shared\include;$(MSDK_LIB_ROOT)\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -116,7 +116,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;..\opensource\mfx_dispatch\include;$(MSDK_LIB_ROOT)\_studio\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;..\mfx_dispatch\windows\include;$(MSDK_LIB_ROOT)\_studio\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -144,7 +144,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;..\opensource\mfx_dispatch\include;$(MSDK_LIB_ROOT)\_studio\shared\include;$(MSDK_LIB_ROOT)\shared\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;..\mfx_dispatch\windows\include;$(MSDK_LIB_ROOT)\_studio\shared\include;$(MSDK_LIB_ROOT)\shared\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -166,7 +166,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;..\opensource\mfx_dispatch\include;$(MSDK_LIB_ROOT)\_studio\shared\include;$(MSDK_LIB_ROOT)\shared\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;..\mfx_dispatch\windows\include;$(MSDK_LIB_ROOT)\_studio\shared\include;$(MSDK_LIB_ROOT)\shared\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_DISPATCHER_EXPOSED_PREFIX;MFX_DISPATCHER_LOG;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -215,7 +215,7 @@
     <ClInclude Include="include\msdka_singleton.h" />
     <ClInclude Include="include\msdka_structures.h" />
     <ClInclude Include="include\shared_mem.h" />
-    <ClInclude Include="..\..\..\opensource\mfx_dispatch\include\mfx_exposed_functions_list.h" />
+    <ClInclude Include="..\..\..\mfx_dispatch\windows\include\mfx_exposed_functions_list.h" />
     <ClInclude Include="..\..\..\include\mfxdefs.h" />
     <ClInclude Include="..\..\..\include\mfxstructures.h" />
     <ClInclude Include="..\..\..\include\mfxvideo.h" />
@@ -233,7 +233,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\opensource\mfx_dispatch\mfx_prefixed_dispatch_trace_lib.vcxproj">
+    <ProjectReference Include="..\mfx_dispatch\windows\mfx_prefixed_dispatch_trace_lib.vcxproj">
       <Project>{45806EE4-0256-4B1D-A730-EB70966E070A}</Project>
     </ProjectReference>
   </ItemGroup>

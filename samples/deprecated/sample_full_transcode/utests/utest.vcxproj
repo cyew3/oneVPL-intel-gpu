@@ -49,7 +49,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\api\opensource\mfx_dispatch\libmfx.vcxproj">
+    <ProjectReference Include="..\..\..\..\api\mfx_dispatch\windows\libmfx.vcxproj">
       <Project>{659C63A7-0F19-45F6-89D3-04C9A03FCB14}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2010\gmock.vcxproj">

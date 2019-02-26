@@ -208,7 +208,7 @@
     <ClInclude Include="include\transcode_model_reference.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\api\opensource\mfx_dispatch\libmfx_vs2015.vcxproj">
+    <ProjectReference Include="..\..\api\mfx_dispatch\windows\libmfx_vs2015.vcxproj">
       <Project>{A9F7AEFB-DC6C-49E8-8E71-5351ABDCE627}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\samples\sample_common\sample_common_vs2017.vcxproj">

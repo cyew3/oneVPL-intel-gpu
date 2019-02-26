@@ -113,7 +113,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfxaudio", "libmfxaudio.
 		{49678095-A730-426D-B5B9-589B6851823F} = {49678095-A730-426D-B5B9-589B6851823F}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx", "..\..\api\opensource\mfx_dispatch\libmfx.vcxproj", "{659C63A7-0F19-45F6-89D3-04C9A03FCB14}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx", "..\..\api\mfx_dispatch\windows\libmfx.vcxproj", "{659C63A7-0F19-45F6-89D3-04C9A03FCB14}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "behavior_tests", "..\..\..\mdp_msdk-val-tools\unit_tests\behavior_tests\behavior_tests.vcxproj", "{D5E0197E-38AA-41E6-B7F4-726929094A19}"
 EndProject

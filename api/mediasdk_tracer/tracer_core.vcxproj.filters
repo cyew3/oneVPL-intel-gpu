@@ -92,7 +92,7 @@
     <ClInclude Include="include\shared_mem.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\opensource\mfx_dispatch\include\mfx_exposed_functions_list.h">
+    <ClInclude Include="..\..\..\mfx_dispatch\windows\include\mfx_exposed_functions_list.h">
       <Filter>include\external</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\mfxdefs.h">

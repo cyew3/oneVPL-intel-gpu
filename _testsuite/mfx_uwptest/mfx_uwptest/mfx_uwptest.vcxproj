@@ -204,7 +204,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\api\opensource\mfx_dispatch\libmfx_uwp.vcxproj">
+    <ProjectReference Include="..\..\..\api\mfx_dispatch\windows\libmfx_uwp.vcxproj">
       <Project>{336AEFC3-987C-40AA-9678-E8BF1EC9C26F}</Project>
     </ProjectReference>
   </ItemGroup>
