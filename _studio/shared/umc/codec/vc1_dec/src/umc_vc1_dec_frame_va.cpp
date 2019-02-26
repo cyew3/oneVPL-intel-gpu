@@ -596,7 +596,6 @@ namespace UMC
             lut_bitplane[1] = &pContext->m_picLayerHeader->SKIPMB;
             lut_bitplane[2] = &pContext->m_picLayerHeader->FORWARDMB;
             break;
-        case VC1_SKIPPED_FRAME:
         default:
             return;
         }
@@ -926,8 +925,6 @@ namespace UMC
             lut_bitplane[1] = &pContext->m_picLayerHeader->SKIPMB;
             lut_bitplane[2] = &pContext->m_picLayerHeader->FORWARDMB;
             break;
-        case VC1_SKIPPED_FRAME:
-            return;
         default:
             return;
         }
@@ -1130,11 +1127,11 @@ namespace UMC
             case VC1_BI_FRAME:
                 ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 3);
                 break;
-            case VC1_SKIPPED_FRAME:
-                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
-                break;
             default:
-                VM_ASSERT(0);
+                if (VC1_IS_SKIPPED(pContext->m_picLayerHeader->PTYPE))
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
+                else
+                    VM_ASSERT(0);
                 break;
             }
         }
@@ -1429,8 +1426,6 @@ namespace UMC
             lut_bitplane[1] = &pContext->m_picLayerHeader->SKIPMB;
             lut_bitplane[2] = &pContext->m_picLayerHeader->FORWARDMB;
             break;
-        case VC1_SKIPPED_FRAME:
-            return;
         default:
             return;
         }
@@ -2111,11 +2106,11 @@ namespace UMC
             case VC1_BI_FRAME:
                 ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 3);
                 break;
-            case VC1_SKIPPED_FRAME:
-                ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
-                break;
             default:
-                VM_ASSERT(0);
+                if (VC1_IS_SKIPPED(pContext->m_picLayerHeader->PTYPE))
+                    ptr->bPictureFlags = bit_set(ptr->bPictureFlags, 2, 3, 4);
+                else
+                    VM_ASSERT(0);
                 break;
             }
         }
@@ -2410,8 +2405,6 @@ namespace UMC
             lut_bitplane[1] = &pContext->m_picLayerHeader->SKIPMB;
             lut_bitplane[2] = &pContext->m_picLayerHeader->FORWARDMB;
             break;
-        case VC1_SKIPPED_FRAME:
-            return;
         default:
             return;
         }
@@ -2836,9 +2829,10 @@ namespace UMC
             lut_bitplane[1] = &pContext->m_picLayerHeader->SKIPMB;
             lut_bitplane[2] = &pContext->m_picLayerHeader->FORWARDMB;
             break;
-        case VC1_SKIPPED_FRAME:
-            return;
         }
+
+        if (VC1_IS_SKIPPED(pContext->m_picLayerHeader->PTYPE))
+            return;
 
         for (i = 0; i < 3; i++)
         {

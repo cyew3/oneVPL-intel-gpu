@@ -826,10 +826,21 @@ Status VC1VideoDecoderSW::VC1DecodeFrame(MediaData* in, VideoData* out_data)
                 throw vc1_exception(internal_pipeline_error);
         }
 
-        if (VC1_SKIPPED_FRAME == pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE)
-            out_data->SetFrameType(D_PICTURE); // means skipped 
-        else
+        switch (pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE & VC1_BI_FRAME)
+        {
+        case VC1_I_FRAME:
             out_data->SetFrameType(I_PICTURE);
+            break;
+        case VC1_P_FRAME:
+            out_data->SetFrameType(P_PICTURE);
+            break;
+        case VC1_B_FRAME:
+        case VC1_BI_FRAME:
+            out_data->SetFrameType(B_PICTURE);
+            break;
+        default://unexpected type
+            assert(0);
+        }
 
         if (!pCurrDescriptor->isEmpty())//check descriptor correctness
             pCurrDescriptor->VC1FrameDescriptor::processFrame(m_pContext->m_Offsets,m_pContext->m_values);
@@ -1287,7 +1298,7 @@ FrameMemID  VC1VideoDecoderSW::ProcessQueuesForNextFrame(bool& isSkip, mfxU16& C
     if (pCurrDescriptor)
     {
         SetCorrupted(pCurrDescriptor, Corrupted);
-        if (pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
+        if (VC1_IS_SKIPPED(pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE))
         {
             isSkip = true;
             m_pStore->GetReadySkippedDS(&pCurrDescriptor);
@@ -1396,7 +1407,7 @@ FrameMemID  VC1VideoDecoderSW::GetDisplayIndex(bool isDecodeOrder, bool isSamePo
     if (!pCurrDescriptor)
         return -1;
 
-    if ((VC1_SKIPPED_FRAME == pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE) && isSamePolarSurf)
+    if ((VC1_IS_SKIPPED(pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE)) && isSamePolarSurf)
     {
         return m_pStore->GetIdx(pCurrDescriptor->m_pContext->m_frmBuff.m_iToSkipCoping);
     }

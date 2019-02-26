@@ -732,7 +732,7 @@ namespace UMC
             slparams.MBStartRow = 0;
             slparams.MBEndRow = m_pContext->m_seqLayerHeader.heightMB;
             m_pContext->m_picLayerHeader->CurrField = 0;
-            if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
+            if (VC1_IS_SKIPPED(m_pContext->m_picLayerHeader->PTYPE))
             {
                 m_bIsSkippedFrame = true;
                 m_bIsReadyToProcess = false;
@@ -1312,7 +1312,7 @@ namespace UMC
                                          uint8_t*   pOriginalData,
                                          MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
-            if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
+            if (VC1_IS_SKIPPED(m_pContext->m_picLayerHeader->PTYPE))
             {
                 m_bIsSkippedFrame = true;
                 m_bIsReadyToProcess = false;
@@ -1448,7 +1448,7 @@ namespace UMC
                                  uint8_t*   pOriginalData,
                                  MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
-            if (this->m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
+            if (VC1_IS_SKIPPED(this->m_pContext->m_picLayerHeader->PTYPE))
             {
                 this->m_bIsSkippedFrame = true;
                 this->m_bIsReadyToProcess = false;
@@ -1513,7 +1513,7 @@ namespace UMC
             slparams.MBEndRow = this->m_pContext->m_seqLayerHeader.heightMB;
             this->m_pContext->m_picLayerHeader->CurrField = 0;
 
-            if (this->m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
+            if (VC1_IS_SKIPPED(this->m_pContext->m_picLayerHeader->PTYPE))
             {
                 this->m_bIsSkippedFrame = true;
                 this->m_bIsReadyToProcess = false;
@@ -1872,7 +1872,7 @@ namespace UMC
                                  uint8_t*   pOriginalData,
                                  MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
-            if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
+            if (VC1_IS_SKIPPED(m_pContext->m_picLayerHeader->PTYPE))
             {
                 m_bIsSkippedFrame = true;
                 m_bIsReadyToProcess = false;
@@ -1945,7 +1945,7 @@ namespace UMC
             printf("\n\n\nPicture type %d  %d\n\n\n", m_pContext->m_picLayerHeader->PTYPE, Num);
 #endif
             
-            if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
+            if (VC1_IS_SKIPPED(m_pContext->m_picLayerHeader->PTYPE))
             {
                 m_bIsSkippedFrame = true;
                 m_bIsReadyToProcess = false;
@@ -2489,7 +2489,7 @@ namespace UMC
             uint8_t*   pOriginalData,
             MediaDataEx::_MediaDataEx* pOrigStCodes)
         {
-            if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
+            if (VC1_IS_SKIPPED(m_pContext->m_picLayerHeader->PTYPE))
             {
                 m_bIsSkippedFrame = true;
                 m_bIsReadyToProcess = false;
@@ -2595,7 +2595,7 @@ namespace UMC
             Num++;
 #endif
 
-            if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
+            if (VC1_IS_SKIPPED(m_pContext->m_picLayerHeader->PTYPE))
             {
                 m_bIsSkippedFrame = true;
                 m_bIsReadyToProcess = false;
@@ -3170,7 +3170,7 @@ namespace UMC
             if (VC1_PROFILE_ADVANCED != m_pContext->m_seqLayerHeader.PROFILE)
                 return;
 
-            if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
+            if (VC1_IS_SKIPPED(m_pContext->m_picLayerHeader->PTYPE))
             {
                 m_bIsSkippedFrame = true;
                 m_bIsReadyToProcess = false;

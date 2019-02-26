@@ -1322,7 +1322,7 @@ void VC1VideoDecoder::SetCorrupted(UMC::VC1FrameDescriptor *pCurrDescriptor, mfx
     }
     mfxU32 Ptype = pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE;
 
-    if (VC1_IS_PRED(Ptype) || VC1_SKIPPED_FRAME == Ptype)
+    if (VC1_IS_PRED(Ptype) || VC1_IS_SKIPPED(Ptype))
     {
         if (pCurrDescriptor->m_pContext->m_frmBuff.m_iPrevIndex > -1)
         {
@@ -1348,7 +1348,18 @@ bool VC1VideoDecoder::IsFrameSkipped()
     UMC::VC1FrameDescriptor *pCurrDescriptor = m_pStore->GetFirstDS();
     if (pCurrDescriptor)
     {
-        return (pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME);
+        return (VC1_IS_SKIPPED(pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE));
+    }
+    else
+        return false;
+}
+
+bool VC1VideoDecoder::IsLastFrameSkipped()
+{
+    UMC::VC1FrameDescriptor *pCurrDescriptor = m_pStore->GetLastDS();
+    if (pCurrDescriptor)
+    {
+        return (VC1_IS_SKIPPED(pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE));
     }
     else
         return false;
@@ -1370,7 +1381,7 @@ FrameMemID  VC1VideoDecoder::GetDisplayIndex(bool isDecodeOrder, bool )
 
         if (VC1_IS_REFERENCE(pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE))
         {
-            if (VC1_SKIPPED_FRAME == pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE)
+            if (VC1_IS_SKIPPED(pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE))
                 return m_pStore->GetIdx(pCurrDescriptor->m_pContext->m_frmBuff.m_iRangeMapIndex);
             else
                 return m_pStore->GetIdx(pCurrDescriptor->m_pContext->m_frmBuff.m_iRangeMapIndexPrev);
@@ -1395,7 +1406,7 @@ FrameMemID  VC1VideoDecoder::GetLastDisplayIndex()
         m_bLastFrameNeedDisplay = false;
 
         if ((!VC1_IS_REFERENCE(pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE)) ||
-            (pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME))
+            (VC1_IS_SKIPPED(pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE)))
             dispIndex = pCurrDescriptor->m_pContext->m_frmBuff.m_iNextIndex;
         else
             dispIndex = pCurrDescriptor->m_pContext->m_frmBuff.m_iCurrIndex;
@@ -1452,7 +1463,7 @@ UMC::FrameMemID VC1VideoDecoder::GetSkippedIndex(UMC::VC1FrameDescriptor *desc, 
     UMC::VC1FrameDescriptor *pCurrDescriptor = desc;
     if (!pCurrDescriptor)
         return -1;
-    if (VC1_SKIPPED_FRAME != pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE)
+    if (!VC1_IS_SKIPPED(pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE))
         return -1;
     if (isIn)
     {
@@ -1499,7 +1510,7 @@ FrameMemID VC1VideoDecoder::GetFrameOrder(bool isLast, bool isSamePolar, uint32_
             {
                 idx = rmap ? pCurrDescriptor->m_pContext->m_frmBuff.m_iRangeMapIndexPrev : pCurrDescriptor->m_pContext->m_frmBuff.m_iPrevIndex;
 
-                if (VC1_SKIPPED_FRAME == pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE)
+                if (VC1_IS_SKIPPED(pCurrDescriptor->m_pContext->m_picLayerHeader->PTYPE))
                 {
                     if (isSamePolar)
                         idx = pCurrDescriptor->m_pContext->m_frmBuff.m_iToSkipCoping;

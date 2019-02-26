@@ -288,8 +288,13 @@ Status VC1FrameDescriptor::SetPictureIndices(uint32_t PTYPE, bool& skip)
         m_pContext->m_frmBuff.m_iDisplayIndex = m_pContext->m_frmBuff.m_iCurrIndex;
         m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].corrupted= 0;
         break;
-    case VC1_SKIPPED_FRAME:
-        m_pContext->m_frmBuff.m_iCurrIndex = m_pContext->m_frmBuff.m_iNextIndex =  m_pContext->m_frmBuff.m_iDisplayIndex = m_pStore->GetNextIndex();
+    default:
+        break;
+    }
+
+    if (VC1_IS_SKIPPED(PTYPE))
+    {
+        m_pContext->m_frmBuff.m_iCurrIndex = m_pContext->m_frmBuff.m_iNextIndex = m_pContext->m_frmBuff.m_iDisplayIndex = m_pStore->GetNextIndex();
         if (-1 == m_pContext->m_frmBuff.m_iCurrIndex)
             m_pContext->m_frmBuff.m_iCurrIndex = m_pStore->GetPrevIndex();
         if (-1 == m_pContext->m_frmBuff.m_iDisplayIndex)
@@ -301,17 +306,13 @@ Status VC1FrameDescriptor::SetPictureIndices(uint32_t PTYPE, bool& skip)
 
         m_pContext->m_frmBuff.m_iPrevIndex = m_pStore->GetPrevIndex();
         CheckIdx = m_pStore->LockSurface(&m_pContext->m_frmBuff.m_iToSkipCoping, true);
-        m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].corrupted= 0;
-
-        break;
-    default:
-        break;
+        m_pContext->m_frmBuff.m_pFrames[m_pContext->m_frmBuff.m_iCurrIndex].corrupted = 0;
     }
         
     if (-1 == CheckIdx)
         return VC1_FAIL;
 
-    if ((VC1_P_FRAME == PTYPE) || (VC1_SKIPPED_FRAME == PTYPE))
+    if ((VC1_P_FRAME == PTYPE) || VC1_IS_SKIPPED(PTYPE))
     {
         if (m_pContext->m_frmBuff.m_iPrevIndex == -1)
             return UMC_ERR_NOT_ENOUGH_DATA;
@@ -378,7 +379,7 @@ void VC1FrameDescriptor::processFrame(uint32_t*  pOffsets,
     slparams.is_continue = 1;
     slparams.MBEndRow = heightMB;
 
-    if (m_pContext->m_picLayerHeader->PTYPE == VC1_SKIPPED_FRAME)
+    if (VC1_IS_SKIPPED(m_pContext->m_picLayerHeader->PTYPE))
     {
         m_bIsSkippedFrame = true;
         m_bIsReadyToProcess = false;

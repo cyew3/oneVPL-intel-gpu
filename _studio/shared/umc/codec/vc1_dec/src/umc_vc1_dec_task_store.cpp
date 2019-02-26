@@ -858,7 +858,7 @@ namespace UMC
         else
             ++(*CurBDst);
 
-        if (pDS->m_pContext->m_picLayerHeader->PTYPE != VC1_SKIPPED_FRAME)
+        if (!VC1_IS_SKIPPED(pDS->m_pContext->m_picLayerHeader->PTYPE))
             pDS->m_bIsReadyToProcess = true;
         else
             pDS->m_bIsReadyToProcess = false;
@@ -904,7 +904,7 @@ namespace UMC
         else
             ++(*CurBDst);
 
-        if (pDS->m_pContext->m_picLayerHeader->PTYPE != VC1_SKIPPED_FRAME)
+        if (!VC1_IS_SKIPPED(pDS->m_pContext->m_picLayerHeader->PTYPE))
             pDS->m_bIsReadyToProcess = true;
         else
             pDS->m_bIsReadyToProcess = false;

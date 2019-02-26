@@ -167,6 +167,7 @@ namespace UMC
 
         void SetCorrupted(UMC::VC1FrameDescriptor *pCurrDescriptor, mfxU16& Corrupted);
         bool IsFrameSkipped();
+        bool IsLastFrameSkipped();
         virtual FrameMemID  GetDisplayIndex(bool isDecodeOrder, bool isSamePolarSurf);
         FrameMemID  GetLastDisplayIndex();
         virtual UMC::Status  SetRMSurface();

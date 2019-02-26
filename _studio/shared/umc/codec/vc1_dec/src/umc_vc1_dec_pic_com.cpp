@@ -52,12 +52,7 @@ VC1Status DecodePictureHeader (VC1Context* pContext,  bool isExtHeader)
     else
         picLayerHeader->RANGEREDFRM = 0;
 
-    if(pContext->m_FrameSize < SkFrameSize) //changed from 2
-    {
-        picLayerHeader->PTYPE = VC1_SKIPPED_FRAME;
-    }
-
-    else if(seqLayerHeader->MAXBFRAMES == 0)
+    if(seqLayerHeader->MAXBFRAMES == 0)
     {
         VC1_GET_BITS(1, picLayerHeader->PTYPE);//0 = I, 1 = P
     }
@@ -81,6 +76,11 @@ VC1Status DecodePictureHeader (VC1Context* pContext,  bool isExtHeader)
         {
             picLayerHeader->PTYPE = VC1_P_FRAME;
         }
+    }
+
+    if (pContext->m_FrameSize < SkFrameSize) //changed from 2
+    {
+        picLayerHeader->PTYPE |= VC1_SKIPPED_FRAME;
     }
 
     if(picLayerHeader->PTYPE == VC1_B_FRAME)
@@ -138,10 +138,11 @@ VC1Status Decode_PictureLayer(VC1Context* pContext)
         vc1Sts = DecodePictureLayer_ProgressiveBpicture(pContext);
         break;
 
-    case VC1_SKIPPED_FRAME:
-        pContext->m_frmBuff.m_iDisplayIndex = pContext->m_frmBuff.m_iCurrIndex;
-        break;
     }
+
+    if (VC1_IS_SKIPPED(pContext->m_picLayerHeader->PTYPE))
+        pContext->m_frmBuff.m_iDisplayIndex = pContext->m_frmBuff.m_iCurrIndex;
+
     return vc1Sts;
 }
 

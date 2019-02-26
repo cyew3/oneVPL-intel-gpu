@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,30 @@ using namespace MFXVC1DecCommon;
 using namespace UMC;
 
 class VC1TaskStore;
+
+static void SetFrameType(const uint32_t type, mfxFrameSurface1 &surface)
+{
+    auto extFrameInfo = reinterpret_cast<mfxExtDecodedFrameInfo *>(GetExtendedBuffer(surface.Data.ExtParam, surface.Data.NumExtParam, MFX_EXTBUFF_DECODED_FRAME_INFO));
+    if (extFrameInfo == nullptr)
+        return;
+
+    switch (type & VC1_BI_FRAME)
+    {
+    case VC1_I_FRAME:
+        extFrameInfo->FrameType = MFX_FRAMETYPE_I;
+        break;
+    case VC1_P_FRAME:
+        extFrameInfo->FrameType = MFX_FRAMETYPE_P;
+        break;
+    case VC1_B_FRAME:
+    case VC1_BI_FRAME:
+        extFrameInfo->FrameType = MFX_FRAMETYPE_B;
+        break;
+    default:// unexpected type
+        extFrameInfo->FrameType = MFX_FRAMETYPE_UNKNOWN;
+        assert(0);
+    }
+}
 
 #ifdef MFX_VA
 #define VC1_SKIPPED_DISABLE
@@ -1094,7 +1118,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
 #ifndef VC1_SKIPPED_DISABLE
             // if we faced with skipped frame - let coping it
             if (!m_isSWPlatform &&
-                m_InternMediaDataOut.GetFrameType() == D_PICTURE &&
+                m_pVC1VideoDecoder->IsLastFrameSkipped() &&
                 m_bIsSamePolar)
             {
                 MFXSts = ProcessSkippedFrame();
@@ -1106,7 +1130,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
         if (((m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.RANGE_MAPY_FLAG)||
             (m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.RANGE_MAPUV_FLAG)||
             (m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.RANGERED))&&
-            (m_InternMediaDataOut.GetFrameType() != D_PICTURE)) // skipped picture
+            (!m_pVC1VideoDecoder->IsLastFrameSkipped())) // skipped picture
         {
             m_bIsNeedToProcFrame = false;
             return MFX_ERR_MORE_SURFACE;
@@ -2006,6 +2030,9 @@ mfxStatus   MFXVideoDECODEVC1::FillOutputSurface(mfxFrameSurface1 *surface)
                 surface->Info.PicStruct |= MFX_PICSTRUCT_FIELD_REPEATED;
         }
     }
+
+    SetFrameType(m_pVC1VideoDecoder->m_pStore->GetLastDS()->m_pContext->m_picLayerHeader->PTYPE, *surface);
+
     return MFX_ERR_NONE;
 }
 

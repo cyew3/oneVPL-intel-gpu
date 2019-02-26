@@ -80,10 +80,11 @@ enum
     VC1_I_FRAME = 0,
     VC1_P_FRAME = 1,
     VC1_B_FRAME = 2,
-    VC1_BI_FRAME= 3,
-    VC1_SKIPPED_FRAME = 4
+    VC1_BI_FRAME = 3,
+    VC1_SKIPPED_FRAME = 0x4
 };
-#define VC1_IS_REFERENCE(value) ((value < VC1_B_FRAME)||(value == VC1_SKIPPED_FRAME))
+#define VC1_IS_SKIPPED(value) ((value & VC1_SKIPPED_FRAME) == VC1_SKIPPED_FRAME)
+#define VC1_IS_REFERENCE(value) ((value < VC1_B_FRAME)||VC1_IS_SKIPPED(value))
 #define VC1_IS_NOT_PRED(value) ((value == VC1_I_FRAME)||(value == VC1_BI_FRAME))
 #define VC1_IS_PRED(value) ((value == VC1_P_FRAME)||(value == VC1_B_FRAME))
 

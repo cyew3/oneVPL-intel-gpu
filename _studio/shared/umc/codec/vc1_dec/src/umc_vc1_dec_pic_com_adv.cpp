@@ -115,7 +115,7 @@ VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
                     if(picLayerHeader->PTYPE)
                     {
                         //1111
-                        picLayerHeader->PTYPE = VC1_SKIPPED_FRAME;
+                        picLayerHeader->PTYPE = VC1_P_FRAME | VC1_SKIPPED_FRAME;
                     }
                     else
                     {
@@ -141,7 +141,7 @@ VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
             picLayerHeader->PTYPE = VC1_P_FRAME;
         }
 
-        if(!(picLayerHeader->PTYPE == VC1_SKIPPED_FRAME))
+        if(!VC1_IS_SKIPPED(picLayerHeader->PTYPE))
         {
             if(seqLayerHeader->TFCNTRFLAG)
             {
@@ -215,7 +215,7 @@ VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
             }
         }
 
-        if(!(picLayerHeader->PTYPE == VC1_SKIPPED_FRAME))
+        if(!VC1_IS_SKIPPED(picLayerHeader->PTYPE))
         {
             //rounding control
             VC1_GET_BITS(1,picLayerHeader->RNDCTRL);
