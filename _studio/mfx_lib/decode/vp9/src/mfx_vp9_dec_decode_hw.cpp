@@ -114,6 +114,25 @@ GUID guid;
     return true;
 }
 
+static void SetFrameType(const VP9DecoderFrame &frameInfo, mfxFrameSurface1 &surface_out)
+{
+    auto extFrameInfo = reinterpret_cast<mfxExtDecodedFrameInfo *>(GetExtendedBuffer(surface_out.Data.ExtParam, surface_out.Data.NumExtParam, MFX_EXTBUFF_DECODED_FRAME_INFO));
+    if (extFrameInfo == nullptr)
+        return;
+
+    switch (frameInfo.frameType)
+    {
+    case KEY_FRAME:
+        extFrameInfo->FrameType = MFX_FRAMETYPE_I;
+        break;
+    case INTER_FRAME:
+        extFrameInfo->FrameType = MFX_FRAMETYPE_P;
+        break;
+    default:
+        extFrameInfo->FrameType = MFX_FRAMETYPE_UNKNOWN;
+    }
+}
+
 #ifdef UMC_VA_DXVA
 
 // The class looks for the first free DXVA index.
@@ -1271,6 +1290,8 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
 
     if (m_frameInfo.showFrame)
     {
+        SetFrameType(m_frameInfo, **surface_out);
+
         (*surface_out)->Data.TimeStamp = bs->TimeStamp != static_cast<mfxU64>(MFX_TIMESTAMP_UNKNOWN) ? bs->TimeStamp : GetMfxTimeStamp(m_frameOrder * m_in_framerate);
         (*surface_out)->Data.Corrupted = 0;
         (*surface_out)->Data.FrameOrder = m_frameOrder;
