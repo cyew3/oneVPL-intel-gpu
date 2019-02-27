@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,7 @@ public:
     virtual ~Packer();
 
     virtual UMC::Status GetStatusReport(void* pStatusReport, size_t size) = 0;
+    virtual UMC::Status SyncTask(int32_t index, void * error) = 0;
 
     virtual void BeginFrame() = 0;
     virtual void EndFrame() = 0;
@@ -78,6 +79,8 @@ public:
     void EndFrame();
 
     UMC::Status GetStatusReport(void* pStatusReport, size_t size);
+    UMC::Status SyncTask(int32_t, void *) override
+    { return UMC::UMC_OK; }
 
 protected:
 
@@ -113,6 +116,8 @@ public:
     PackerVA(UMC::VideoAccelerator * va);
 
     UMC::Status GetStatusReport(void * pStatusReport, size_t size);
+    UMC::Status SyncTask(int32_t index, void * error) override
+    { return m_va->SyncTask(index, error); }
 
     void BeginFrame();
     void EndFrame();

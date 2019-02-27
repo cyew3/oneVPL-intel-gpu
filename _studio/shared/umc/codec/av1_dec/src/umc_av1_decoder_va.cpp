@@ -131,8 +131,7 @@ namespace UMC_AV1_DECODER
 
     bool AV1DecoderVA::QueryFrames()
     {
-        std::unique_lock<std::mutex> l(guard); // bad ideo to work under mutex for blocking sync
-                                               // TODO: [Global] figure out solution for blocking sync.
+        std::unique_lock<std::mutex> auto_guard(guard);
 
         // form frame queue in decoded order
         DPBType decode_queue;
@@ -150,7 +149,35 @@ namespace UMC_AV1_DECODER
         for (DPBType::iterator frm = decode_queue.begin(); frm != decode_queue.end(); frm++)
         {
             AV1DecoderFrame& frame = **frm;
-#ifndef UMC_VA_LINUX
+            uint32_t index = 0;
+#ifdef UMC_VA_LINUX
+            VAStatus surfErr = VA_STATUS_SUCCESS;
+            index = frame.GetMemID();
+            auto_guard.unlock();
+            UMC::Status sts =  packer->SyncTask(index, &surfErr);
+            auto_guard.lock();
+
+            frame.CompleteDecoding();
+            wasCompleted = true;
+
+            if (sts < UMC::UMC_OK)
+            {
+                // TODO: [Global] Add GPU hang reporting
+            }
+            else if (sts == UMC::UMC_OK)
+            {
+                switch (surfErr)
+                {
+                    case MFX_CORRUPTION_MAJOR:
+                        frame.AddError(UMC::ERROR_FRAME_MAJOR);
+                        break;
+
+                    case MFX_CORRUPTION_MINOR:
+                        frame.AddError(UMC::ERROR_FRAME_MINOR);
+                        break;
+                }
+            }
+#else
             // check previously cached reports
             for (uint32_t i = 0; i < reports.size(); i++)
             {
@@ -180,11 +207,11 @@ namespace UMC_AV1_DECODER
 
                     bool wasFound = false;
 #if AV1D_DDI_VERSION >= 31
-                    const uint16_t index = pStatusReport[i].current_picture.bPicEntry;
+                    index = pStatusReport[i].current_picture.bPicEntry;
 #else
-                    const uint16_t index = pStatusReport[i].current_picture.wPicEntry;
+                    index = pStatusReport[i].current_picture.wPicEntry;
 #endif
-                    if (index == frame.GetMemID()) // report for the frame was found in new reports
+                    if (index == static_cast<uint32_t>(frame.GetMemID())) // report for the frame was found in new reports
                     {
                         SetError(frame, pStatusReport[i].bStatus);
                         frame.CompleteDecoding();
@@ -205,13 +232,14 @@ namespace UMC_AV1_DECODER
                 }
             }
 
-#endif
-
 #if UMC_AV1_DECODER_REV <= 8500
-            // so far driver doesn't support status reporting for AV1 decoder
+            // so far driver doesn't support status reporting for AV1 decoder on Windows
+            // TODO: check if status reporting is still not supported
             // workaround by marking frame as decoding_completed and setting wasCompleted to true
             frame.CompleteDecoding();
             wasCompleted = true;
+#endif
+
 #endif
         }
 
