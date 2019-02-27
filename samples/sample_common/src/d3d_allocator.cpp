@@ -433,14 +433,10 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
             }
         }
     } else {
-        safe_array<IDirect3DSurface9*> dxSrf(new IDirect3DSurface9*[request->NumFrameSuggested]);
-        if (!dxSrf.get())
-        {
-            DeallocateMids(dxMidPtrs, request->NumFrameSuggested);
-            return MFX_ERR_MEMORY_ALLOC;
-        }
+        std::vector<IDirect3DSurface9*> dxSrf(request->NumFrameSuggested, nullptr);
+
         hr = videoService->CreateSurface(request->Info.Width, request->Info.Height, request->NumFrameSuggested - 1,  format,
-                                            D3DPOOL_DEFAULT, m_surfaceUsage, target, dxSrf.get(), NULL);
+                                            D3DPOOL_DEFAULT, m_surfaceUsage, target, dxSrf.data(), NULL);
         if (FAILED(hr))
         {
             DeallocateMids(dxMidPtrs, request->NumFrameSuggested);
@@ -448,7 +444,7 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
         }
 
         for (int i = 0; i < request->NumFrameSuggested; i++) {
-            dxMidPtrs[i]->first = dxSrf.get()[i];
+            dxMidPtrs[i]->first = dxSrf[i];
         }
     }
     m_midsAllocated.push_back(dxMidPtrs);
