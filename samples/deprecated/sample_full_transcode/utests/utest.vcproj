@@ -422,10 +422,6 @@
                     RelativePath=".\src\vm\shared_object.cpp"
                     >
                 </File>
-                <File
-                    RelativePath=".\src\vm\thread.cpp"
-                    >
-                </File>
             </Filter>
         </Filter>
     </Files>

@@ -751,7 +751,6 @@ samples/sample_common/src/vm/atomic.cpp
 samples/sample_common/src/vm/atomic_linux.cpp
 samples/sample_common/src/vm/shared_object.cpp
 samples/sample_common/src/vm/shared_object_linux.cpp
-samples/sample_common/src/vm/thread.cpp
 samples/sample_common/src/vm/thread_linux.cpp
 samples/sample_common/src/vm/thread_windows.cpp
 samples/sample_common/src/vm/time.cpp

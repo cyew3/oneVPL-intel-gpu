@@ -930,9 +930,6 @@
     <ClCompile Include="..\..\samples\sample_common\src\vm\shared_object.cpp">
       <Filter>sample_common\vm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp">
-      <Filter>sample_common\vm</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\samples\sample_common\src\vm\thread_windows.cpp">
       <Filter>sample_common\vm</Filter>
     </ClCompile>

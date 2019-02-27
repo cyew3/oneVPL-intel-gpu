@@ -83,9 +83,6 @@
     <ClCompile Include="..\..\samples\sample_common\src\vm\shared_object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\samples\sample_common\src\vm\thread_linux.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

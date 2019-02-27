@@ -199,7 +199,6 @@
     <ClCompile Include="..\..\samples\sample_common\src\sysmem_allocator.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\atomic.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\shared_object.cpp" />
-    <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\thread_linux.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\thread_windows.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\time.cpp" />

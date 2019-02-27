@@ -170,9 +170,6 @@
     <ClCompile Include="src\vm\shared_object.cpp">
       <Filter>Source Files\vm</Filter>
     </ClCompile>
-    <ClCompile Include="src\vm\thread.cpp">
-      <Filter>Source Files\vm</Filter>
-    </ClCompile>
     <ClCompile Include="src\vm\thread_windows.cpp">
       <Filter>Source Files\vm</Filter>
     </ClCompile>

@@ -71,9 +71,6 @@
     <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\shared_object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread_windows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

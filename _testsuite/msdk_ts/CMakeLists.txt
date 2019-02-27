@@ -35,7 +35,6 @@ list(APPEND sources
    ${MSDK_SAMPLES_ROOT}/sample_common/src/sysmem_allocator.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/atomic.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/shared_object.cpp
-   ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/thread.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/time_linux.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/atomic_linux.cpp
    ${MSDK_SAMPLES_ROOT}/sample_common/src/vm/shared_object_linux.cpp
