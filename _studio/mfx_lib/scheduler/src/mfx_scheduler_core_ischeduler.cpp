@@ -230,27 +230,10 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
         // to run HW listen thread. Will be enabled if tests are OK
 #if defined (MFX_VA)
 #if defined(_WIN32) || defined(_WIN64)
-#if defined  (MFX_D3D11_ENABLED)
-        {
-            if (!m_pdx11event && !m_hwTaskDone.handle)
-            {
-                m_pdx11event = new DX11GlobalEvent(m_param.pCore);
-                m_hwTaskDone.handle = m_pdx11event->CreateBatchBufferEvent();
-
-                //back original sleep
-                if (!m_hwTaskDone.handle)
-                {
-                    delete m_pdx11event;
-                    m_pdx11event = 0;
-                }
-            }
-        }
-#endif
-        if (!m_hwTaskDone.handle)
-            m_hwTaskDone.handle = CreateEventExW(NULL,
-                _T("Global\\IGFXKMDNotifyBatchBuffersComplete"),
-                CREATE_EVENT_MANUAL_RESET,
-                STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE);
+        m_hwTaskDone.handle = CreateEventExW(NULL, 
+            _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
+            CREATE_EVENT_MANUAL_RESET, 
+            STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE);
 #endif
 #else
         MFX_CHECK_STS(StartWakeUpThread());
@@ -378,18 +361,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
             if (MFX_TASK_DONE!= call.res)
             {
                 vm_status vmRes;
-                // KMD HW events not supported for KBL and newer
-                if ((m_param.pCore->GetHWType() > MFX_HW_UNKNOWN &&
-                     m_param.pCore->GetHWType() <= MFX_HW_APL)
-#if defined(MFX_D3D11_ENABLED) && defined(MFX_VA)
-                    || m_pdx11event
-#endif
-                   )
-                    vmRes = vm_event_wait(&m_hwTaskDone);
-                else
-                    // polling if m_hwTaskDone will not be signalled by driver
-                    vmRes = vm_event_timed_wait(&m_hwTaskDone, 15 /*ms*/);
-
+                vmRes = vm_event_timed_wait(&m_hwTaskDone, 15 /*ms*/);
                 if (VM_OK == vmRes|| VM_TIMEOUT == vmRes)
                 {
                     vmRes = vm_event_reset(&m_hwTaskDone);

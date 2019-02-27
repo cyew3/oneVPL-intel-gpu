@@ -322,7 +322,7 @@ mfxStatus mfxSchedulerCore::WrapUpTask(MFX_CALL_INFO &callInfo,
             return MFX_ERR_NOT_FOUND;
         }
         // check the 'waiting' time period
-        else if (m_timeWaitPeriod)
+        else if(m_timeWaitPeriod)
         {
             mfxU64 time;
 
