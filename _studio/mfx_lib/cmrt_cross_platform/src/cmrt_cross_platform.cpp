@@ -476,26 +476,7 @@ vm_so_handle cm_dll_load(const vm_char *so_file_name)
 
     handle = vm_so_load(so_file_name);
 
-    /* try load from DriverStore #1 Legacy path*/
-    if (handle == NULL)
-    {
-        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-            _T("SOFTWARE\\Intel\\MDF"),
-            0,
-            KEY_READ,
-            &hkey) == ERROR_SUCCESS)
-        {
-            if (ERROR_SUCCESS == RegQueryValueEx(hkey, _T("DriverStorePath"), 0, NULL, (LPBYTE)path, &size))
-            {
-                wcscat_s(path, MAX_PATH, _T("\\"));
-                wcscat_s(path, MAX_PATH, so_file_name);
-                handle =vm_so_load(path);
-            }
-            RegCloseKey(hkey);
-        }
-    }
-
-    /* try load from DriverStore #2 UWD path*/
+    /* try load from DriverStore #1 UWD path*/
     if (handle == NULL)
     {
         if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
@@ -515,7 +496,7 @@ vm_so_handle cm_dll_load(const vm_char *so_file_name)
         }
     }
 
-    /* try to load from DriverStore #3 UWD/HKR path */
+    /* try to load from DriverStore #2 UWD/HKR path */
     if (handle == NULL)
     {
         size = sizeof(path);
