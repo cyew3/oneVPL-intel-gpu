@@ -94,9 +94,6 @@
 
 #if defined(ANDROID)
 
-    // video decoders
-    #define MFX_ENABLE_VP9_VIDEO_DECODE
-
     // video encoders
     #define UMC_ENABLE_MVC_VIDEO_ENCODER
 
