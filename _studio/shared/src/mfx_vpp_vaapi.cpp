@@ -180,48 +180,45 @@ mfxStatus VAAPIVideoProcessing::DestroyDevice(void)
 
 mfxStatus VAAPIVideoProcessing::Close(void)
 {
+    VAStatus vaSts;
     if (m_primarySurface4Composition != NULL)
     {
-        vaDestroySurfaces(m_vaDisplay,m_primarySurface4Composition,1);
+        vaSts = vaDestroySurfaces(m_vaDisplay,m_primarySurface4Composition,1);
+        std::ignore = MFX_STS_TRACE(vaSts);
+
         free(m_primarySurface4Composition);
         m_primarySurface4Composition = NULL;
     }
 
-    if( VA_INVALID_ID != m_denoiseFilterID )
-    {
-        vaDestroyBuffer(m_vaDisplay, m_denoiseFilterID);
-    }
+    mfxStatus sts = CheckAndDestroyVAbuffer(m_vaDisplay, m_denoiseFilterID);
+    std::ignore = MFX_STS_TRACE(sts);
 
-    if( VA_INVALID_ID != m_detailFilterID )
-    {
-        vaDestroyBuffer(m_vaDisplay, m_detailFilterID);
-    }
+    sts = CheckAndDestroyVAbuffer(m_vaDisplay, m_detailFilterID);
+    std::ignore = MFX_STS_TRACE(sts);
 
-    if( VA_INVALID_ID != m_procampFilterID )
-    {
-        vaDestroyBuffer(m_vaDisplay, m_procampFilterID);
-    }
+    sts = CheckAndDestroyVAbuffer(m_vaDisplay, m_procampFilterID);
+    std::ignore = MFX_STS_TRACE(sts);
 
-    if( VA_INVALID_ID != m_deintFilterID )
-    {
-        vaDestroyBuffer(m_vaDisplay, m_deintFilterID);
-    }
+    sts = CheckAndDestroyVAbuffer(m_vaDisplay, m_deintFilterID);
+    std::ignore = MFX_STS_TRACE(sts);
 
-    if( VA_INVALID_ID != m_frcFilterID )
-    {
-        vaDestroyBuffer(m_vaDisplay, m_frcFilterID);
-    }
+    sts = CheckAndDestroyVAbuffer(m_vaDisplay, m_frcFilterID);
+    std::ignore = MFX_STS_TRACE(sts);
 
     if (m_vaContextVPP != VA_INVALID_ID)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaDestroyContext");
-        vaDestroyContext( m_vaDisplay, m_vaContextVPP );
+        vaSts = vaDestroyContext( m_vaDisplay, m_vaContextVPP );
+        std::ignore = MFX_STS_TRACE(vaSts);
+
         m_vaContextVPP = VA_INVALID_ID;
     }
 
     if (m_vaConfig != VA_INVALID_ID)
     {
-        vaDestroyConfig( m_vaDisplay, m_vaConfig );
+        vaSts = vaDestroyConfig( m_vaDisplay, m_vaConfig );
+        std::ignore = MFX_STS_TRACE(vaSts);
+
         m_vaConfig = VA_INVALID_ID;
     }
 
@@ -831,11 +828,11 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         }
     }
 
-    if (VA_INVALID_ID != m_procampFilterID && pParams->bEnableProcAmp)
+    if (pParams->bEnableProcAmp)
     {
         /* Buffer was created earlier and it's time to refresh its value */
-        MFX_CHECK_STS(RemoveBufferFromPipe(m_procampFilterID));
-        m_procampFilterID = VA_INVALID_ID;
+        mfxSts = RemoveBufferFromPipe(m_procampFilterID);
+        MFX_CHECK_STS(mfxSts);
     }
 
     if (VA_INVALID_ID == m_procampFilterID)
@@ -914,16 +911,16 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         }
     }
 
-    if (VA_INVALID_ID != m_denoiseFilterID && (pParams->denoiseFactor || true == pParams->bDenoiseAutoAdjust))
+    if (pParams->denoiseFactor || pParams->bDenoiseAutoAdjust)
     {
         /* Buffer was created earlier and it's time to refresh its value */
-        MFX_CHECK_STS(RemoveBufferFromPipe(m_denoiseFilterID));
-        m_denoiseFilterID = VA_INVALID_ID;
+        mfxSts = RemoveBufferFromPipe(m_denoiseFilterID);
+        MFX_CHECK_STS(mfxSts);
     }
 
     if (VA_INVALID_ID == m_denoiseFilterID)
     {
-        if (pParams->denoiseFactor || true == pParams->bDenoiseAutoAdjust)
+        if (pParams->denoiseFactor || pParams->bDenoiseAutoAdjust)
         {
             VAProcFilterParameterBuffer denoise;
             denoise.type  = VAProcFilterNoiseReduction;
@@ -949,16 +946,16 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         }
     }
 
-    if (VA_INVALID_ID != m_detailFilterID && (pParams->detailFactor || true == pParams->bDetailAutoAdjust))
+    if (pParams->detailFactor || pParams->bDetailAutoAdjust)
     {
         /* Buffer was created earlier and it's time to refresh its value */
-        MFX_CHECK_STS(RemoveBufferFromPipe(m_detailFilterID));
-        m_detailFilterID = VA_INVALID_ID;
+        mfxSts = RemoveBufferFromPipe(m_detailFilterID);
+        MFX_CHECK_STS(mfxSts);
     }
 
     if (VA_INVALID_ID == m_detailFilterID)
     {
-        if (pParams->detailFactor || true == pParams->bDetailAutoAdjust)
+        if (pParams->detailFactor || pParams->bDetailAutoAdjust)
         {
             VAProcFilterParameterBuffer detail;
             detail.type  = VAProcFilterSharpening;
@@ -1394,14 +1391,10 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     }
     MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|VPP|FILTER|PACKET_END|", "%d|%d", m_vaContextVPP, 0);
 
-    for( mfxU32 refIdx = 0; refIdx < m_pipelineParamID.size(); refIdx++ )
+    for (VABufferID& id : m_pipelineParamID)
     {
-        if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
-        {
-            vaSts = vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[refIdx]);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            m_pipelineParamID[refIdx] = VA_INVALID_ID;
-        }
+        mfxSts = CheckAndDestroyVAbuffer(m_vaDisplay, id);
+        MFX_CHECK_STS(mfxSts);
     }
 
 #if defined(VPP_NO_COLORFILL)
@@ -1409,16 +1402,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 #endif
 
-    if (m_deintFilterID != VA_INVALID_ID)
-    {
-        vaSts = vaDestroyBuffer(m_vaDisplay, m_deintFilterID);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        std::remove(m_filterBufs, m_filterBufs + m_numFilterBufs, m_deintFilterID);
-        m_deintFilterID = VA_INVALID_ID;
-        m_numFilterBufs--;
-        m_filterBufs[m_numFilterBufs] = VA_INVALID_ID;
-    }
-
+    mfxSts = RemoveBufferFromPipe(m_deintFilterID);
+    MFX_CHECK_STS(mfxSts);
     // (3) info needed for sync operation
     //-------------------------------------------------------
     {
@@ -1430,36 +1415,26 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         m_feedbackCache.push_back(currentFeedback);
     }
 
-
-    if (m_frcFilterID != VA_INVALID_ID)
-    {
-        vaSts = vaDestroyBuffer(m_vaDisplay, m_frcFilterID);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        std::remove(m_filterBufs, m_filterBufs + m_numFilterBufs, m_frcFilterID);
-        m_frcFilterID = VA_INVALID_ID;
-        m_filterBufs[m_numFilterBufs] = VA_INVALID_ID;
-        m_numFilterBufs--;
-    }
+    mfxSts = RemoveBufferFromPipe(m_frcFilterID);
+    MFX_CHECK_STS(mfxSts);
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIVideoProcessing::Execute(FASTCOMP_BLT_PARAMS *pVideoCompositingBlt)
 
-mfxStatus VAAPIVideoProcessing::RemoveBufferFromPipe(VABufferID id)
+mfxStatus VAAPIVideoProcessing::RemoveBufferFromPipe(VABufferID& id)
 {
-    VAStatus vaSts;
     if (id != VA_INVALID_ID)
     {
-        vaSts = vaDestroyBuffer(m_vaDisplay, id);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        mfxStatus sts = CheckAndDestroyVAbuffer(m_vaDisplay, id);
+        MFX_CHECK_STS(sts);
+
         std::remove(m_filterBufs, m_filterBufs + m_numFilterBufs, id);
         m_filterBufs[m_numFilterBufs] = VA_INVALID_ID;
-        m_numFilterBufs--;
+        --m_numFilterBufs;
     }
 
     return MFX_ERR_NONE;
 }
-
-
 
 
 BOOL    VAAPIVideoProcessing::isVideoWall(mfxExecuteParams *pParams)
@@ -1587,6 +1562,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_TiledVideoWall(mfxExecutePar
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoProcessing::Execute_Composition_TiledVideoWall");
 
+    mfxStatus sts;
     VAStatus vaSts = VA_STATUS_SUCCESS;
     std::vector<VABlendState> blend_state;
 
@@ -1815,20 +1791,16 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_TiledVideoWall(mfxExecutePar
             vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
-        vaSts = vaDestroyBuffer(m_vaDisplay, vpp_pipeline_outbuf);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        sts = CheckAndDestroyVAbuffer(m_vaDisplay, vpp_pipeline_outbuf);
+        MFX_CHECK_STS(sts);
     }
 
-    for( unsigned int i = 0; i < m_pipelineParamID.size(); i++ )
+    for (VABufferID& id : m_pipelineParamID)
     {
-        if ( m_pipelineParamID[i] != VA_INVALID_ID)
-        {
-            vaSts = vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[i]);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            m_pipelineParamID[i] = VA_INVALID_ID;
-        }
+        sts = CheckAndDestroyVAbuffer(m_vaDisplay, id);
+        MFX_CHECK_STS(sts);
     }
-
 
     // (3) info needed for sync operation
     //-------------------------------------------------------
@@ -2362,24 +2334,17 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     } /* for( refIdx = 1; refIdx <= (pParams->fwdRefCount); refIdx++ )*/
     MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|VPP|COMP|PACKET_END|", "%d|%d", m_vaContextVPP, 0);
 
-    for( refIdx = 0; refIdx < m_pipelineParamCompID.size(); refIdx++ )
+    mfxStatus sts;
+    for (VABufferID& id : m_pipelineParamCompID)
     {
-        if ( m_pipelineParamCompID[refIdx] != VA_INVALID_ID)
-        {
-            vaSts = vaDestroyBuffer(m_vaDisplay, m_pipelineParamCompID[refIdx]);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            m_pipelineParamCompID[refIdx] = VA_INVALID_ID;
-        }
+        sts = CheckAndDestroyVAbuffer(m_vaDisplay, id);
+        MFX_CHECK_STS(sts);
     }
 
-    for( refIdx = 0; refIdx < m_pipelineParamID.size(); refIdx++ )
+    for (VABufferID& id : m_pipelineParamID)
     {
-        if ( m_pipelineParamID[refIdx] != VA_INVALID_ID)
-        {
-            vaSts = vaDestroyBuffer(m_vaDisplay, m_pipelineParamID[refIdx]);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-            m_pipelineParamID[refIdx] = VA_INVALID_ID;
-        }
+        sts = CheckAndDestroyVAbuffer(m_vaDisplay, id);
+        MFX_CHECK_STS(sts);
     }
 
     // (3) info needed for sync operation
