@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -31,7 +31,6 @@ protected:
             HWType platform; //on which platform [type == VARIED] matters
         } ctrl[max_num_ctrl];
 
-        OSFamily family;   //expect geven sts only for this OS, MFX_UNSUPPORTED otherwise
         HWType   platform; //expect geven sts only for this HW, MFX_UNSUPPORTED otherwise
     };
 
@@ -153,8 +152,6 @@ int TestSuite::RunTest(tc_struct const& tc)
     }
 
     g_tsStatus.expect(
-        (tc.family   == MFX_OS_FAMILY_UNKNOWN ||
-         tc.family   == g_tsOSFamily) &&
         (tc.platform <= g_tsHWtype) ?
         tc.sts : MFX_ERR_UNSUPPORTED
     );
@@ -285,12 +282,10 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN>:
           { MFX_IN | INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.Shift, {1} } }
     },
 
-    /* spec. cases: actual status depends on OS family */
     {/*35*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_HEVC_MAIN10} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } },
-        MFX_OS_FAMILY_WINDOWS
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } }
     },
 
     {/*36*/ MFX_ERR_NONE,
@@ -298,8 +293,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN>:
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {8} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {8} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } },
-        MFX_OS_FAMILY_WINDOWS
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } }
     },
 
     {/*37*/ MFX_ERR_UNSUPPORTED,
@@ -307,8 +301,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN>:
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {10} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {10} },
-          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } },
-        MFX_OS_FAMILY_WINDOWS
+          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } }
     },
 
     /* spec. cases: actual status depends on platform */
@@ -326,7 +319,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN>:
         { { MFX_IN|VARIED, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_HEVC_REXT}, MFX_HW_ICL },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } },
-        MFX_OS_FAMILY_WINDOWS, MFX_HW_ICL
+        MFX_HW_ICL
     },
 
     {/*41*/ MFX_ERR_NONE,
@@ -335,7 +328,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN>:
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {8} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {8} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } },
-        MFX_OS_FAMILY_WINDOWS, MFX_HW_ICL
+        MFX_HW_ICL
     },
 
     {/*42*/ MFX_ERR_UNSUPPORTED,
@@ -344,7 +337,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_MAIN>:
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {10} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {10} },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } },
-        MFX_OS_FAMILY_WINDOWS, MFX_HW_ICL
+        MFX_HW_ICL
     },
 };
 template <>
@@ -570,7 +563,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_MAIN10
         { { MFX_IN|VARIED, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_HEVC_REXT}, MFX_HW_ICL },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } },
-        MFX_OS_FAMILY_WINDOWS, MFX_HW_ICL
+        MFX_HW_ICL
     },
 
     {/*37*/ MFX_ERR_NONE,
@@ -579,7 +572,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_MAIN10
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {10} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {10} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } },
-        MFX_OS_FAMILY_WINDOWS, MFX_HW_ICL
+        MFX_HW_ICL
     }
 };
 template <>
