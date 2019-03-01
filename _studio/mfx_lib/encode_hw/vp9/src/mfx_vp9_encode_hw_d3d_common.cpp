@@ -16,7 +16,7 @@
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
+// SOFTWARE
 
 #include "mfx_common.h"
 
@@ -98,7 +98,7 @@ namespace MfxHwVP9Encode
         if (WAIT_OBJECT_0 != waitRes)
         {
             MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "WaitForSingleObject", "(WAIT_OBJECT_0 != waitRes) => sts = MFX_WRN_DEVICE_BUSY", task.m_GpuEvent.gpuSyncEvent);
-            sts = MFX_ERR_GPU_HANG;
+            sts = MFX_WRN_DEVICE_BUSY;
         }
         else
         {
@@ -128,7 +128,13 @@ namespace MfxHwVP9Encode
             }
 
             sts = WaitTaskSync(task, timeOutMs);
-            MFX_CHECK_STS(sts);
+            if (sts == MFX_WRN_DEVICE_BUSY && m_bSingleThreadMode)
+            {
+                // Need to add a check for TDRHang
+                return MFX_WRN_DEVICE_BUSY;
+            }
+            else if (sts == MFX_WRN_DEVICE_BUSY && !m_bSingleThreadMode)
+                return MFX_ERR_GPU_HANG;
 
             m_EventCache->ReturnEvent(task.m_GpuEvent.gpuSyncEvent);
 
