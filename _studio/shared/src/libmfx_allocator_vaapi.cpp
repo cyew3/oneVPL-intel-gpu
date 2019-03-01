@@ -112,6 +112,7 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
     }
 }
 
+
 mfxStatus
 mfxDefaultAllocatorVAAPI::AllocFramesHW(
     mfxHDL                  pthis,
@@ -333,12 +334,19 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
         if (VA_FOURCC_P208 != va_fourcc
             || fourcc == MFX_FOURCC_VP8_MBDATA)
         {
-            if (bCreateSrfSucceeded) vaDestroySurfaces(pSelf->pVADisplay, surfaces, surfaces_num);
+            if (bCreateSrfSucceeded)
+            {
+                va_res = vaDestroySurfaces(pSelf->pVADisplay, surfaces, surfaces_num);
+                MFX_CHECK(VA_STATUS_SUCCESS == va_res, MFX_ERR_DEVICE_FAILED);
+            }
         }
         else
         {
-            for (i = 0; i < numAllocated; i++)
-                vaDestroyBuffer(pSelf->pVADisplay, surfaces[i]);
+            for (i = 0; i < numAllocated; ++i)
+            {
+                mfx_res = CheckAndDestroyVAbuffer(pSelf->pVADisplay, surfaces[i]);
+                MFX_CHECK_STS(mfx_res);
+            }
         }
         if (vaapi_mids) { free(vaapi_mids); vaapi_mids = NULL; }
         if (surfaces) { free(surfaces); surfaces = NULL; }
@@ -353,32 +361,33 @@ mfxStatus mfxDefaultAllocatorVAAPI::FreeFramesHW(
     if (!pthis)
         return MFX_ERR_INVALID_HANDLE;
 
-    mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
-
-    vaapiMemIdInt *vaapi_mids = NULL;
-    VASurfaceID* surfaces = NULL;
-    mfxU32 i = 0;
-    bool isBufferMemory=false;
-
     if (!response) return MFX_ERR_NULL_PTR;
 
     if (response->mids)
     {
-        vaapi_mids = (vaapiMemIdInt*)(response->mids[0]);
-        mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mids->m_fourcc);
-        isBufferMemory = (MFX_FOURCC_P8 == mfx_fourcc)?true:false;
-        surfaces = vaapi_mids->m_surface;
-        for (i = 0; i < response->NumFrameActual; ++i)
+        auto vaapi_mids = (vaapiMemIdInt*)(response->mids[0]);
+
+        bool isBufferMemory = ConvertVP8FourccToMfxFourcc(vaapi_mids->m_fourcc) == MFX_FOURCC_P8;
+        auto surfaces = vaapi_mids->m_surface;
+
+        auto pSelf = (mfxWideHWFrameAllocator*)pthis;
+        for (mfxU32 i = 0; i < response->NumFrameActual; ++i)
         {
             if (MFX_FOURCC_P8 == vaapi_mids[i].m_fourcc)
             {
-                vaDestroyBuffer(pSelf->pVADisplay, surfaces[i]);
+                mfxStatus sts = CheckAndDestroyVAbuffer(pSelf->pVADisplay, surfaces[i]);
+                MFX_CHECK_STS(sts);
             }
         }
         free(vaapi_mids);
         response->mids = NULL;
 
-        if (!isBufferMemory) vaDestroySurfaces(pSelf->pVADisplay, surfaces, response->NumFrameActual);
+        if (!isBufferMemory)
+        {
+            VAStatus vaSts = vaDestroySurfaces(pSelf->pVADisplay, surfaces, response->NumFrameActual);
+            MFX_CHECK(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
+
         free(surfaces);
     }
     response->NumFrameActual = 0;
