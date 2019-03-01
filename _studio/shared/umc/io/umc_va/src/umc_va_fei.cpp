@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2018 Intel Corporation
+// Copyright (c) 2006-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,13 +42,16 @@ namespace UMC
     {
         VABufferID id;
         VAStatus res =
-            vaCreateBuffer(display, ctx, static_cast<VABufferType>(VADecodeStreamoutBufferType), sizeof(mfxFeiDecStreamOutMBCtrl) * 4096, 1, NULL, &id);
+            vaCreateBuffer(display, ctx, VADecodeStreamoutBufferType, sizeof(mfxFeiDecStreamOutMBCtrl) * 4096, 1, NULL, &id);
+        std::ignore = MFX_STS_TRACE(res);
 
         if (res != VA_STATUS_SUCCESS)
             return false;
 
-        vaDestroyBuffer(display, id);
-        return true;
+        mfxStatus sts = CheckAndDestroyVAbuffer(display, id);
+        std::ignore = MFX_STS_TRACE(res);
+
+        return sts == MFX_ERR_NONE;
     }
 
     inline
@@ -300,9 +303,13 @@ namespace UMC
     {
         if (m_streamOutBuffer)
         {
-            VABufferID const id = m_streamOutBuffer->GetID();
-            vaUnmapBuffer(m_dpy, id);
-            vaDestroyBuffer(m_dpy, id);
+            VABufferID id = m_streamOutBuffer->GetID();
+
+            VAStatus vaSts = vaUnmapBuffer(m_dpy, id);
+            MFX_CHECK(vaSts != VA_STATUS_SUCCESS, UMC_ERR_FAILED);
+
+            mfxStatus sts = CheckAndDestroyVAbuffer(m_dpy, id);
+            MFX_CHECK(sts != MFX_ERR_NONE, UMC_ERR_FAILED);
 
             UMC_DELETE(m_streamOutBuffer);
         }
@@ -382,12 +389,15 @@ namespace UMC
     {
         std::lock_guard<std::mutex> l(m_SyncMutex);
 
-        VABufferID const id = buffer->GetID();
-        vaUnmapBuffer(m_dpy, id);
-        vaDestroyBuffer(m_dpy, id);
+        VABufferID id = buffer->GetID();
 
-        std::vector<VAStreamOutBuffer*>::iterator
-            i = std::find(m_streamOutCache.begin(), m_streamOutCache.end(), buffer);
+        VAStatus vaSts = vaUnmapBuffer(m_dpy, id);
+        std::ignore = MFX_STS_TRACE(vaSts);
+
+        mfxStatus sts = CheckAndDestroyVAbuffer(m_dpy, id);
+        std::ignore = MFX_STS_TRACE(sts);
+
+        auto i = std::find(m_streamOutCache.begin(), m_streamOutCache.end(), buffer);
         VM_ASSERT(i != m_streamOutCache.end());
         m_streamOutCache.erase(i);
 
