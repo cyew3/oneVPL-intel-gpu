@@ -1732,9 +1732,12 @@ bool TaskBrokerTwoThread_H265::GetDeblockingTask(H265DecoderFrameInfo * info, H2
     bool bPrevDeblocked = true;
 
     int32_t sliceCount = info->GetSliceCount();
-    for (int32_t i = 0; i < sliceCount; i += 1)
+    for (int32_t i = 0; i < sliceCount; ++i)
     {
         H265Slice *pSlice = info->GetSlice(i);
+        if (!pSlice)
+            return false;
+
         CUProcessInfo * processInfo = &pSlice->processInfo;
 
         int32_t iMBWidth = info->m_pFrame->getCD()->m_WidthInCU;
