@@ -210,7 +210,7 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
         // this buffer is always frame sized for mixed picstructs case
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAStatsStatisticsBufferType,
+                                VAStatsStatisticsBufferType,
                                 sizeof(VAStatsStatisticsH264) * currNumMbs_first_buff,
                                 1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
@@ -221,7 +221,7 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
         // this buffer is always half frame sized
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAStatsStatisticsBottomFieldBufferType,
+                                VAStatsStatisticsBottomFieldBufferType,
                                 sizeof(VAStatsStatisticsH264) * currNumMbs / 2,
                                 1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
@@ -233,7 +233,7 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAStatsMVBufferType,
+                                VAStatsMVBufferType,
                                 //sizeof (VAMotionVector)*mvsOut->NumMBAlloc * 16, //16 MV per MB
                                 sizeof(VAMotionVector) * currNumMbs_first_buff * 16,
                                 1, //limitation from driver, num elements should be 1
@@ -243,7 +243,7 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAStatsMVBufferType,
+                                VAStatsMVBufferType,
                                 //sizeof (VAMotionVector)*mvsOut->NumMBAlloc * 16, //16 MV per MB
                                 sizeof(VAMotionVector) * currNumMbs / 2 * 16,
                                 1, //limitation from driver, num elements should be 1
@@ -261,7 +261,7 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
         // buffer for frame
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAStatsStatisticsBufferType,
+                                VAStatsStatisticsBufferType,
                                 sizeof(VAStatsStatisticsH264) * currNumMbs,
                                 1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
@@ -274,7 +274,7 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAStatsMVBufferType,
+                                VAStatsMVBufferType,
                                 //sizeof (VAMotionVector)*mvsOut->NumMBAlloc * 16, //16 MV per MB
                                 sizeof(VAMotionVector)* currNumMbs * 16,
                                 1,
@@ -402,7 +402,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     {
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAStatsMVPredictorBufferType,
+                                VAStatsMVPredictorBufferType,
                                 sizeof(VAMotionVector) *feiMVPred->NumMBAlloc,
                                 1, //limitation from driver, num elements should be 1
                                 feiMVPred->MB,
@@ -418,7 +418,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     {
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAEncQPBufferType,
+                                VAEncQPBufferType,
                                 sizeof(VAEncQPBufferH264)*feiQP->NumMBAlloc,
                                 1, //limitation from driver, num elements should be 1
                                 feiQP->MB,
@@ -433,7 +433,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     {
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAEncQPBufferType,
+                                VAEncQPBufferType,
                                 sizeof (VAEncQPBufferH264)*feiQP->NumQPAlloc,
                                 1, //limitation from driver, num elements should be 1
                                 feiQP->QP,
@@ -582,7 +582,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
     vaSts = vaCreateBuffer(m_vaDisplay,
                             m_vaContextEncode,
-                            (VABufferType)VAStatsStatisticsParameterBufferType,
+                            VAStatsStatisticsParameterBufferType,
                             sizeof (statParams),
                             1,
                             &statParams,
@@ -1187,7 +1187,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MVP)");
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAEncFEIMVPredictorBufferType,
+                                VAEncFEIMVPredictorBufferType,
                                 sizeof(VAEncFEIMVPredictorH264)*mvpred->NumMBAlloc,
                                 1, //limitation from driver, num elements should be 1
                                 mvpred->MB,
@@ -1201,7 +1201,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MBctrl)");
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAEncFEIMBControlBufferType,
+                                VAEncFEIMBControlBufferType,
                                 sizeof(VAEncFEIMBControlH264)*mbctrl->NumMBAlloc,
                                 1,//limitation from driver, num elements should be 1
                                 mbctrl->MB,
@@ -1216,7 +1216,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 #if MFX_VERSION >= 1023
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAEncQPBufferType,
+                                VAEncQPBufferType,
                                 sizeof(VAEncQPBufferH264)*mbqp->NumMBAlloc,
                                 1, //limitation from driver, num elements should be 1
                                 mbqp->MB,
@@ -1224,7 +1224,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 #else
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAEncQPBufferType,
+                                VAEncQPBufferType,
                                 sizeof (VAEncQPBufferH264)*mbqp->NumQPAlloc,
                                 1, //limitation from driver, num elements should be 1
                                 mbqp->QP,
@@ -1241,7 +1241,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MBstat)");
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAEncFEIDistortionBufferType,
+                                VAEncFEIDistortionBufferType,
                                 sizeof(VAEncFEIDistortionH264)*mbstat->NumMBAlloc,
                                 1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
@@ -1256,7 +1256,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MV)");
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAEncFEIMVBufferType,
+                                VAEncFEIMVBufferType,
                                 sizeof(VAMotionVector) * 16 * mvout->NumMBAlloc,
                                 1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
@@ -1271,7 +1271,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MBcode)");
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAEncFEIMBCodeBufferType,
+                                VAEncFEIMBCodeBufferType,
                                 sizeof(VAEncFEIMBCodeH264)*mbcodeout->NumMBAlloc,
                                 1, //limitation from driver, num elements should be 1
                                 NULL, //should be mapped later
@@ -2163,7 +2163,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MV");
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAEncFEIMVBufferType,
+                                VAEncFEIMVBufferType,
                                 sizeof(VAMotionVector) * 16 * mvout->NumMBAlloc,
                                 1, //limitation from driver, num elements should be 1
                                 mvout->MB,
@@ -2178,7 +2178,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextEncode,
-                                (VABufferType)VAEncFEIMBCodeBufferType,
+                                VAEncFEIMBCodeBufferType,
                                 sizeof(VAEncFEIMBCodeH264)*mbcodeout->NumMBAlloc,
                                 1, //limitation from driver, num elements should be 1
                                 mbcodeout->MB,
