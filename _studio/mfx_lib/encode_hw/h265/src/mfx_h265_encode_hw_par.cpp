@@ -537,6 +537,15 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
     if (nTile == 1) //TileScan = RasterScan, no SegmentAddress conversion required
         return (mfxU16)AddTileSlices(par, SliceStructure, nCol, nRow, nSlice);
 
+    if (nTile > 1 && nSlice > nTile && IsOn(par.mfx.LowPower))
+    {
+        // DDI:0.9972: VDEnc supports multiple static slices in case of single tile frame only.
+        //             But for multi tiles frame, no single tile can contain multiple static slices.
+        // Actually it's no matter for driver whether dynamic or static slices are used
+        // It returns an error in the both cases.
+        nSlice = nTile;
+    }
+
     std::vector<mfxU32> colWidth(nTCol, 0);
     std::vector<mfxU32> rowHeight(nTRow, 0);
     std::vector<mfxU32> colBd(nTCol+1, 0);
