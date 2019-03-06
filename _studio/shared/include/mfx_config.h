@@ -150,10 +150,9 @@
         #define PRE_SI_GEN 11
     #endif
 
-    // h265d
     #if defined(MFX_VA)
         #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-        #if (MFX_VERSION >= MFX_VERSION_NEXT) && defined(LINUX_TARGET_PLATFORM_ATS) // TODO: change to VAAPI version check
+        #if (MFX_VERSION >= MFX_VERSION_NEXT) && (defined(LINUX_TARGET_PLATFORM_ATS) || defined(MFX_VA_WIN))
             #define MFX_ENABLE_AV1_VIDEO_DECODE
         #endif
     #endif
