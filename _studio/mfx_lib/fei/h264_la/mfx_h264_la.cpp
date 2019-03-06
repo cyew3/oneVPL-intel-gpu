@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -415,7 +415,9 @@ mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
     MFX_CHECK_NULL_PTR1( par );
     MFX_CHECK( m_bInit == false, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    mfxExtLAControl *pControl = (mfxExtLAControl *) GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_LOOKAHEAD_CTRL);
+    auto pControl = (mfxExtLAControl *) GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_LOOKAHEAD_CTRL);
+    MFX_CHECK_NULL_PTR1(pControl);
+
     m_LaControl = *pControl;
     bPyramid = (m_LaControl.BPyramid == MFX_CODINGOPTION_ON);
 
@@ -504,8 +506,6 @@ mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
         MFX_CHECK_STS(sts);
     }
     
-     mfxExtOpaqueSurfaceAlloc * extOpaq =  (mfxExtOpaqueSurfaceAlloc *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
     if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         request.Type        = MfxHwH264Encode::MFX_MEMTYPE_D3D_INT;
@@ -516,6 +516,9 @@ mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
     }
     else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
+        auto extOpaq = (mfxExtOpaqueSurfaceAlloc *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+        MFX_CHECK_NULL_PTR1(extOpaq);
+
         request.Type        = extOpaq->In.Type;
         request.NumFrameMin = extOpaq->In.NumSurface;
 
