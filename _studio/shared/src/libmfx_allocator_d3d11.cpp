@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -75,7 +75,7 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
     case MFX_FOURCC_YUV422H:
     case MFX_FOURCC_YUV422V:
     case MFX_FOURCC_YUV444:
-    case MFX_FOURCC_RGBP24:
+    case MFX_FOURCC_RGBP:
         return DXGI_FORMAT_420_OPAQUE;
 
     case MFX_FOURCC_RGB4:
@@ -140,7 +140,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     case MFX_FOURCC_YUV422H:
     case MFX_FOURCC_YUV422V:
     case MFX_FOURCC_YUV444:
-    case MFX_FOURCC_RGBP24:
+    case MFX_FOURCC_RGBP:
     case MFX_FOURCC_RGB4:
     case MFX_FOURCC_BGR4:
     case MFX_FOURCC_P8:

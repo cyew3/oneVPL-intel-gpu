@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -77,7 +77,10 @@ namespace MfxHwVideoProcessing
         MFX_FOURCC_RGB4      ,
 #if defined (MFX_ENABLE_FOURCC_RGB565)
         MFX_FOURCC_RGB565    ,
-#endif // MFX_ENABLE_FOURCC_RGB565
+#endif
+#ifdef MFX_ENABLE_RGBP
+        MFX_FOURCC_RGBP      ,
+#endif
         MFX_FOURCC_P8        ,
         MFX_FOURCC_P8_TEXTURE,
         MFX_FOURCC_P010      ,

@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -74,6 +74,9 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     case MFX_FOURCC_YUY2:
     case MFX_FOURCC_RGB3:
     case MFX_FOURCC_RGB4:
+#ifdef MFX_ENABLE_RGBP
+    case MFX_FOURCC_RGBP:
+#endif
     case MFX_FOURCC_P010:
     case MFX_FOURCC_NV16:
     case MFX_FOURCC_P210:
@@ -633,6 +636,9 @@ mfxStatus CheckFramePointers(mfxFrameInfo const& info, mfxFrameData const& data)
 #if defined (MFX_ENABLE_FOURCC_RGB565)
         case MFX_FOURCC_RGB565:      MFX_CHECK(data.R && data.G && data.B, MFX_ERR_UNDEFINED_BEHAVIOR); break;
 #endif // MFX_ENABLE_FOURCC_RGB565
+#ifdef MFX_ENABLE_RGBP
+        case MFX_FOURCC_RGBP:
+#endif
         case MFX_FOURCC_RGB3:        MFX_CHECK(data.R && data.G && data.B, MFX_ERR_UNDEFINED_BEHAVIOR); break;
 
         case MFX_FOURCC_AYUV:
@@ -1078,6 +1084,9 @@ mfxU32 GetMinPitch(mfxU32 fourcc, mfxU16 width)
         case MFX_FOURCC_P8_TEXTURE:
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_YV12:
+#ifdef MFX_ENABLE_RGBP
+        case MFX_FOURCC_RGBP:
+#endif
         case MFX_FOURCC_NV16:        return width * 1;
 #if defined (MFX_ENABLE_FOURCC_RGB565)
         case MFX_FOURCC_RGB565:      return width * 2;
@@ -1131,6 +1140,9 @@ mfxU8* GetFramePointer(mfxU32 fourcc, mfxFrameData const& data)
         case MFX_FOURCC_RGB3:
         case MFX_FOURCC_RGB4:
         case MFX_FOURCC_BGR4:
+#ifdef MFX_ENABLE_RGBP
+        case MFX_FOURCC_RGBP:
+#endif
         case MFX_FOURCC_ARGB16:
         case MFX_FOURCC_ABGR16:      return IPP_MIN(IPP_MIN(data.R, data.G), data.B); break;
 #if defined (MFX_ENABLE_FOURCC_RGB565)

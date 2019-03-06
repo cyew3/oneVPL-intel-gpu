@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -347,6 +347,10 @@ mfxU32 Str2FourCC( msdk_char* strInput )
     else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("rgb4")) )
     {
         fourcc = MFX_FOURCC_RGB4;
+    }
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("rgbp")) )
+    {
+        fourcc = MFX_FOURCC_RGBP;
     }
     else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("yuy2")) )
     {

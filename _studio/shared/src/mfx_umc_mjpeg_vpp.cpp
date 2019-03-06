@@ -125,7 +125,7 @@ UMC::Status mfx_UMC_FrameAllocator_D3D_Converter::InitMfx(UMC::FrameAllocatorPar
     case MFX_FOURCC_YUV411:
         color_format = UMC::YUV411;
         break;
-    case MFX_FOURCC_RGBP24:
+    case MFX_FOURCC_RGBP:
         color_format = UMC::YUV444;
         break;
     case MFX_FOURCC_YUY2:

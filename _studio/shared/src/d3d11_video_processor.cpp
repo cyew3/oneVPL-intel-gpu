@@ -2662,7 +2662,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             inInfo->FourCC == MFX_FOURCC_YUV422V ||
             inInfo->FourCC == MFX_FOURCC_YUV444 ||
             inInfo->FourCC == MFX_FOURCC_R16 ||
-            inInfo->FourCC == MFX_FOURCC_RGBP24)
+            inInfo->FourCC == MFX_FOURCC_RGBP)
         {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
             inColorSpace.Usage = 0;

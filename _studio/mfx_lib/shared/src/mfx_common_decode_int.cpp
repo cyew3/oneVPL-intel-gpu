@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -178,7 +178,7 @@ void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoStreamInfo *umcVi
     case MFX_FOURCC_YUV422H:
     case MFX_FOURCC_YUV422V:
     case MFX_FOURCC_YUV444:
-    case MFX_FOURCC_RGBP24:
+    case MFX_FOURCC_RGBP:
         umcVideoParams->color_format = UMC::YUY2;
         break;
 

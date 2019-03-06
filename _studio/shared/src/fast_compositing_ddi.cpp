@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -899,9 +899,9 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
             pRefSurf->frameInfo.FourCC == MFX_FOURCC_YUV422H ||
             pRefSurf->frameInfo.FourCC == MFX_FOURCC_YUV422V ||
             pRefSurf->frameInfo.FourCC == MFX_FOURCC_YUV444 ||
-            pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGBP24) &&
+            pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGBP) &&
             pExecuteParams->targetSurface.frameInfo.FourCC == MFX_FOURCC_RGB4 ||
-            pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGBP24 &&
+            pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGBP &&
            (pExecuteParams->targetSurface.frameInfo.FourCC == MFX_FOURCC_NV12 || 
             pExecuteParams->targetSurface.frameInfo.FourCC == MFX_FOURCC_YUY2))
         {

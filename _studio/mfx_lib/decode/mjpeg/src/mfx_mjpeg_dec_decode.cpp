@@ -2091,7 +2091,7 @@ void VideoDECODEMJPEGBase_HW::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxIn
             }
             else
             {
-                requestFrameInfo->FourCC = MFX_FOURCC_RGBP24;
+                requestFrameInfo->FourCC = MFX_FOURCC_RGBP;
                 *needVpp = true;
             }
             break;

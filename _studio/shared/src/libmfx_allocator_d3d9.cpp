@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -79,7 +79,7 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     case MFX_FOURCC_YUV422H:
     case MFX_FOURCC_YUV422V:
     case MFX_FOURCC_YUV444:
-    case MFX_FOURCC_RGBP24:
+    case MFX_FOURCC_RGBP:
     case MFX_FOURCC_P010:
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_AYUV:
