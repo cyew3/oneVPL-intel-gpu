@@ -162,25 +162,6 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
         caps.NegativeQPSupport = 0;
     else
         caps.NegativeQPSupport = 1; // driver should set it for Gen11+ VME only
-
-#if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
-    if (platform >= MFX_HW_ICL)
-    {
-        if (caps.NoWeightedPred)
-            caps.NoWeightedPred = 0;
-
-        caps.LumaWeightedPred = 1;
-        caps.ChromaWeightedPred = 1;
-
-        if (!caps.MaxNum_WeightedPredL0)
-            caps.MaxNum_WeightedPredL0 = caps.MaxNum_Reference0;
-        if (!caps.MaxNum_WeightedPredL1)
-            caps.MaxNum_WeightedPredL1 = caps.MaxNum_Reference1;
-
-        //caps.SliceLevelWeightedPred;
-    }
-#endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
-
 #else
     if (!caps.LCUSizeSupported)
         caps.LCUSizeSupported = 2;
@@ -195,7 +176,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
         caps.CodingLimitSet = 1; // = 0 now but should be always set to 1 according to DDI (what about Linux ???)
         caps.Color420Only = 0;  // = 1 now
         caps.SliceIPBOnly = 1;  // = 0 now (SliceIP is also 0)cz
-//        caps.NoWeightedPred = 1;  // = 0 now
+        caps.NoWeightedPred = 0; // = 1 now
         caps.NoMinorMVs = 1;  // = 0 now
         caps.RawReconRefToggle = 1;  // = 0 now
         caps.NoInterlacedField = 1;  // = 0 now
@@ -203,8 +184,8 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
 //        caps.VCMBitRateControl = 0;  // = 1 now
         caps.ParallelBRC = 1;  // = 0 now
         caps.TileSupport = 1;  // = 0 now
-//        caps.LumaWeightedPred = 0;  // = 1 now
-//        caps.ChromaWeightedPred = 0;  // = 1 now
+        caps.LumaWeightedPred = 1; // = 0 now
+        caps.ChromaWeightedPred = 0; // = 0 now
         caps.QVBRBRCSupport = 1;  // = 0 now
         caps.MaxEncodedBitDepth = 2;  // = 1 now (8/10b only)
         caps.MaxPicWidth = 16384;  // = 8192 now
@@ -215,8 +196,8 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
         caps.SliceLevelReportSupport = 1;  // = 0 now
         caps.FrameSizeToleranceSupport = 1;  // = 0 now
         caps.NumScalablePipesMinus1 = 1;  // = 0 now
-//        caps.MaxNum_WeightedPredL0 = 0;  // = 3 now
-//        caps.MaxNum_WeightedPredL1 = 0;  // = 3 now
+        caps.MaxNum_WeightedPredL0 = 4; // = 0 now
+        caps.MaxNum_WeightedPredL1 = 2; // = 0 now
     }
 #endif
 
