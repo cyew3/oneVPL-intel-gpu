@@ -44,11 +44,6 @@
 #define VA_SURFACE_ATTRIB_USAGE_HINT_ENCODER    0x00000002
 #define VASurfaceAttribUsageHint 8
 
-// TODO: remove this internal definition once it appears in VAAPI
-#if !defined (VA_FOURCC_R5G6B5)
-#define VA_FOURCC_R5G6B5 MFX_MAKEFOURCC('R','G','1','6')
-#endif // VA_FOURCC_R5G6B5
-
 enum {
     MFX_FOURCC_VP8_NV12    = MFX_MAKEFOURCC('V','P','8','N'),
     MFX_FOURCC_VP8_MBDATA  = MFX_MAKEFOURCC('V','P','8','M'),
@@ -82,7 +77,7 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_YV12;
 #if defined (MFX_ENABLE_FOURCC_RGB565)
     case MFX_FOURCC_RGB565:
-        return VA_FOURCC_R5G6B5;
+        return VA_FOURCC_RGB565;
 #endif // MFX_ENABLE_FOURCC_RGB565
     case MFX_FOURCC_RGB4:
         return VA_FOURCC_ARGB;
@@ -152,7 +147,7 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                        (VA_FOURCC_UYVY   != va_fourcc) &&
                        (VA_FOURCC_P208   != va_fourcc) &&
                        (VA_FOURCC_P010   != va_fourcc) &&
-                       (VA_FOURCC_R5G6B5 != va_fourcc) &&
+                       (VA_FOURCC_RGB565 != va_fourcc) &&
                        (VA_FOURCC_AYUV   != va_fourcc)
 #if VA_CHECK_VERSION(1,2,0)
                        && (VA_FOURCC_Y210   != va_fourcc)
@@ -442,7 +437,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
         break;
 
 #if defined (MFX_ENABLE_FOURCC_RGB565)
-    case VA_FOURCC_R5G6B5:
+    case VA_FOURCC_RGB565:
         if (mfx_fourcc != va_image.format.fourcc)
             mfx_res = MFX_ERR_LOCK_MEMORY;
         else
