@@ -58,10 +58,10 @@ namespace mfxDefaultAllocatorVAAPI
 
         VADisplay* pVADisplay;
 
-//        VASurfaceID* m_SrfQueue;
-//        vaapiMemIdInt* m_SrfQueue;
-
         mfxU32 m_DecId;
+
+        std::vector<VASurfaceID>   m_allocatedSurfaces;
+        std::vector<vaapiMemIdInt> m_allocatedMids;
     };
 
 } //  namespace mfxDefaultAllocatorVAAPI
