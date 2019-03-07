@@ -836,6 +836,34 @@ void FillSpsBuffer(
     else
         sps.ICQQualityFactor = 0;
 
+    // fill NumOfBInGop for Pyramids
+    if (par.isBPyramid() && (par.mfx.GopRefDist <= 8))
+    {
+        static UINT B[9] = { 0,0,1,1,1,1,1,1,1 };
+        static UINT B1[9] = { 0,0,0,1,2,2,2,2,2 };
+        static UINT B2[9] = { 0,0,0,0,0,1,2,3,4 };
+
+        mfxI32 numBpyr = par.mfx.GopPicSize / par.mfx.GopRefDist;
+        mfxI32 lastBpyrW = par.mfx.GopPicSize % par.mfx.GopRefDist;
+
+        sps.NumOfBInGop[0] = numBpyr * B[par.mfx.GopRefDist] + B[lastBpyrW];
+        sps.NumOfBInGop[1] = numBpyr * B1[par.mfx.GopRefDist] + B1[lastBpyrW];
+        sps.NumOfBInGop[2] = numBpyr * B2[par.mfx.GopRefDist] + B2[lastBpyrW];
+    }
+
+    if (par.isPPyramid() && par.isTL() && (par.NumTL() <= 3))
+    {   // for PPyramid TLs should be always supplied
+        static UINT B[4] = { 0,0,1,1 };
+        static UINT B1[4] = { 0,0,0,1 };
+
+        mfxI32 sizePpyr = par.m_ext.AVCTL.Layer[par.NumTL() - 1].Scale; // 2 or 4
+        mfxI32 numPpyr = par.mfx.GopPicSize / sizePpyr;
+        mfxI32 lastPpyrW = par.mfx.GopPicSize % sizePpyr;
+
+        sps.NumOfBInGop[0] = numPpyr * (par.m_ext.AVCTL.Layer[1].Scale >> 1) + B[lastPpyrW];
+        sps.NumOfBInGop[1] = numPpyr * (par.m_ext.AVCTL.Layer[2].Scale >> 1) + B1[lastPpyrW];
+    }
+
     if (sps.ParallelBRC)
     {
         if (!par.isBPyramid())
@@ -844,20 +872,7 @@ void FillSpsBuffer(
             sps.NumOfBInGop[1]  = 0;
             sps.NumOfBInGop[2]  = 0;
         }
-        else if (par.mfx.GopRefDist <= 8)
-        {
-            static UINT B[9]  = {0,0,1,1,1,1,1,1,1};
-            static UINT B1[9] = {0,0,0,1,2,2,2,2,2};
-            static UINT B2[9] = {0,0,0,0,0,1,2,3,4};
-
-            mfxI32 numBpyr   = par.mfx.GopPicSize/par.mfx.GopRefDist;
-            mfxI32 lastBpyrW = par.mfx.GopPicSize%par.mfx.GopRefDist;
-
-            sps.NumOfBInGop[0]  = numBpyr*B[par.mfx.GopRefDist] + B[lastBpyrW];
-            sps.NumOfBInGop[1]  = numBpyr*B1[par.mfx.GopRefDist]+ B1[lastBpyrW];
-            sps.NumOfBInGop[2]  = numBpyr*B2[par.mfx.GopRefDist]+ B2[lastBpyrW];
-        }
-        else
+        else if (par.mfx.GopRefDist > 8)
         {
             assert(0);
         }
@@ -934,6 +949,8 @@ void FillSpsBuffer(
 #if defined(MFX_ENABLE_HEVCE_SCC)
     sps.palette_mode_enabled_flag = par.m_sps.palette_mode_enabled_flag;
 #endif
+
+    sps.LowDelayMode = (par.mfx.GopRefDist == 1) ? 1 : 0;
 }
 
 void FillPpsBuffer(
@@ -1144,9 +1161,6 @@ void FillPpsBuffer(
 
     pps.CodingType      = task.m_codingType;
     pps.CurrPicOrderCnt = task.m_poc;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    pps.FrameLevel      = (mfxU8)task.m_level; // QP modulation feature; used in low delay mode only
-#endif
 
     pps.bEnableRollingIntraRefresh = task.m_IRState.refrType;
 

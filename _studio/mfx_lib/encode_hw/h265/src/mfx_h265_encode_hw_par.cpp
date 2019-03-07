@@ -2409,7 +2409,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         }
     }
 
-    if (par.m_ext.CO3.PRefType == MFX_P_REF_PYRAMID &&  par.mfx.GopRefDist > 1)
+    if (par.isPPyramid() &&  par.mfx.GopRefDist > 1)
     {
         par.m_ext.CO3.PRefType = MFX_P_REF_DEFAULT;
         changed ++;

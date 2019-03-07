@@ -809,7 +809,6 @@ void MfxVideoParam::CopyCalcParams(MfxVideoParam const & par)
     WiDi             = par.WiDi;
 #endif
     SetTL(par.m_ext.AVCTL);
-
 }
 
 MfxVideoParam& MfxVideoParam::operator=(MfxVideoParam const & par)
@@ -1582,7 +1581,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     }
 
     slo.max_dec_pic_buffering_minus1    = mfx.NumRefFrame;
-    slo.max_num_reorder_pics            = Min(GetNumReorderFrames(mfx.GopRefDist - 1, isBPyramid(),isField(), bFieldReord), slo.max_dec_pic_buffering_minus1);
+    slo.max_num_reorder_pics            = Min(GetNumReorderFrames(mfx.GopRefDist - 1, isBPyramid(), isField(), bFieldReord), slo.max_dec_pic_buffering_minus1);
     slo.max_latency_increase_plus1      = 0;
 
     Zero(m_sps);
@@ -3408,11 +3407,17 @@ mfxU8 GetCodingType(Task const & task)
     if (task.m_frameType & MFX_FRAMETYPE_I)
         return CODING_TYPE_I;
 
-    if (task.m_frameType & MFX_FRAMETYPE_P)
-        return CODING_TYPE_P;
-
-    if (task.m_ldb)
-        return CODING_TYPE_B;
+    // CodingType is required for QP Modulation
+    // Hierarchical structure supported: for LDB: 2, 4 and for RA B: 2, 4, 8
+    if ((task.m_frameType & MFX_FRAMETYPE_P) || (task.m_ldb))
+    {
+        if (task.m_tid == 1)
+            return CODING_TYPE_B;
+        else if (task.m_tid == 2)
+            return CODING_TYPE_B1;
+        else
+            return CODING_TYPE_P;
+    }
 
     for (mfxU8 i = 0; i < 2; i ++)
     {
@@ -3617,7 +3622,7 @@ void ConfigureTask(
         }
     }
 #if (MFX_VERSION >= 1025)
-    if (!IsOn(par.m_ext.CO3.EnableNalUnitType) && task.m_ctrl.MfxNalUnitType!=0)
+    if (!IsOn(par.m_ext.CO3.EnableNalUnitType) && task.m_ctrl.MfxNalUnitType != 0)
         task.m_ctrl.MfxNalUnitType = 0;
 #endif
 
@@ -3635,7 +3640,7 @@ void ConfigureTask(
     {
         bool bTryROIViaMBQP;
         mfxStatus sts = CheckAndFixRoi(par, caps, rtRoi, bTryROIViaMBQP);
-        if (sts == MFX_ERR_INVALID_VIDEO_PARAM  || (bTryROIViaMBQP && !par.bROIViaMBQP))
+        if (sts == MFX_ERR_INVALID_VIDEO_PARAM || (bTryROIViaMBQP && !par.bROIViaMBQP))
             parRoi = 0;
         else
             parRoi = (mfxExtEncoderROI const *)rtRoi;
@@ -3647,12 +3652,12 @@ void ConfigureTask(
     task.m_numRoi = 0;
     if (parRoi && parRoi->NumROI && !par.bROIViaMBQP)
     {
-        for (mfxU16 i = 0; i < parRoi->NumROI; i ++)
+        for (mfxU16 i = 0; i < parRoi->NumROI; i++)
         {
-            task.m_roi[i] = {parRoi->ROI[i].Left,  parRoi->ROI[i].Top,
+            task.m_roi[i] = { parRoi->ROI[i].Left,  parRoi->ROI[i].Top,
                              parRoi->ROI[i].Right, parRoi->ROI[i].Bottom,
                             (mfxI16)((parRoi->ROIMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1) * parRoi->ROI[i].DeltaQP) };
-            task.m_numRoi ++;
+            task.m_numRoi++;
         }
 
         task.m_roiMode = MFX_ROI_MODE_QP_DELTA;
@@ -3699,10 +3704,10 @@ void ConfigureTask(
     task.m_numDirtyRect = 0;
     if (parDirtyRect && parDirtyRect->NumRect) {
         for (mfxU16 i = 0; i < parDirtyRect->NumRect; i++) {
-            task.m_dirtyRect[i] = {parDirtyRect->Rect[i].Left,
-                    parDirtyRect->Rect[i].Top,
-                    parDirtyRect->Rect[i].Right,
-                    parDirtyRect->Rect[i].Bottom};
+            task.m_dirtyRect[i] = { parDirtyRect->Rect[i].Left,
+                                    parDirtyRect->Rect[i].Top,
+                                    parDirtyRect->Rect[i].Right,
+                                    parDirtyRect->Rect[i].Bottom };
             task.m_numDirtyRect++;
         }
     }
@@ -3710,16 +3715,16 @@ void ConfigureTask(
 
     if (task.m_tid == 0 && IntRefType)
     {
-       if (isI)
+        if (isI)
             baseLayerOrder = 0;
 
         task.m_IRState = GetIntraRefreshState(
             par,
-            baseLayerOrder ++,
+            baseLayerOrder++,
             &(task.m_ctrl));
     }
 
-     mfxU32 needRecoveryPointSei = (par.m_ext.CO.RecoveryPointSEI == MFX_CODINGOPTION_ON &&
+    mfxU32 needRecoveryPointSei = (par.m_ext.CO.RecoveryPointSEI == MFX_CODINGOPTION_ON &&
         ((IntRefType && task.m_IRState.firstFrameInCycle && task.m_IRState.IntraLocation == 0) ||
         (IntRefType == 0 && isI)));
 
@@ -3727,7 +3732,7 @@ void ConfigureTask(
 
     if (par.isTL())
     {
-        task.m_tid = isI ? 0 : par.GetTId((task.m_poc - prevTask.m_lastIPoc)/(par.isField()?2:1));
+        task.m_tid = isI ? 0 : par.GetTId((task.m_poc - prevTask.m_lastIPoc) / (par.isField() ? 2 : 1));
 
         if (par.HighestTId() == task.m_tid && (!par.isField() || task.m_secondField))
             task.m_frameType &= ~MFX_FRAMETYPE_REF;
@@ -3746,7 +3751,7 @@ void ConfigureTask(
                 if (task.m_level == 0)
                     task.m_qpY = (mfxI8)par.mfx.QPP;
                 else
-                // m_level starts from 1
+                    // m_level starts from 1
                     task.m_qpY = (mfxI8)clamp<mfxI32>(par.m_ext.CO3.QPOffset[clamp<mfxI32>(task.m_level - 1, 0, 7)] + task.m_qpY, 1, maxQP);
             }
         }
@@ -3815,10 +3820,6 @@ void ConfigureTask(
         mfxI32 layer = PLayer(task.m_poc - prevTask.m_lastIPoc, par);
         task.m_numRefActive[0] = (mfxU8)CO3.NumRefActiveP[layer];
         task.m_numRefActive[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], par.m_ext.DDI.NumActiveRefBL1);
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        if (par.m_platform >= MFX_HW_TGL_LP)
-            task.m_level = (par.isTL()) ? task.m_tid : layer; // for QP modulation; low delay mode only
-#endif
     }
 
     if (!isI)

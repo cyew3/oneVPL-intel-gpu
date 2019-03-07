@@ -269,6 +269,8 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", EnableStreamingBufferLLC);
     TRACE("%d", EnableStreamingBufferDDR);
 
+    TRACE("%d", LowDelayMode);
+
     TRACE("%d", UserMaxIFrameSize );
     TRACE("%d", UserMaxPBFrameSize);
     //TRACE("%d", AVBRAccuracy     );
@@ -334,7 +336,6 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
     TRACE_ARRAY_ROW("%d", RefFramePOCList, 15);
 
     TRACE("%d", CodingType);
-    TRACE("%d", FrameLevel);
     TRACE("%d", NumSlices);
 
     TRACE("%d", tiles_enabled_flag                      );
