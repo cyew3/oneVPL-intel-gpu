@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -169,8 +169,8 @@ struct streamDesc
 const streamDesc NO_STREAM = { 0, 0, "" };
 
 const streamDesc streams[] = {
-    { 432, 240, "conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1"},
-    { 432, 240, "conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1"},
+    { 432, 240, "conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_mainb8ss420_432x240_101_inter_basic_1_1.3_20190124.av1"},
+    { 432, 240, "conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_mainb10ss420_432x240_101_inter_basic_2_1.3_20190124.av1"},
 };
 
 const streamDesc& getStreamDesc(const mfxU32& fourcc)

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -284,7 +284,7 @@ namespace av1d_decode_frame_async
     /* 8 bit */
     TestSuite::stream_desc const& query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>, std::integral_constant<unsigned, MFX_PROFILE_AV1_MAIN>)
     {
-        static const TestSuite::stream_desc sd{ 432, 240, "conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1" };
+        static const TestSuite::stream_desc sd{ 432, 240, "conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_mainb8ss420_432x240_101_inter_basic_1_1.3_20190124.av1" };
         return sd;
     }
 
@@ -312,7 +312,7 @@ namespace av1d_decode_frame_async
     /* 10 bit */
     TestSuite::stream_desc const& query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>, std::integral_constant<unsigned, MFX_PROFILE_AV1_MAIN>)
     {
-        static const TestSuite::stream_desc sd{ 432, 240, "conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1" };
+        static const TestSuite::stream_desc sd{ 432, 240, "conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_mainb10ss420_432x240_101_inter_basic_2_1.3_20190124.av1" };
         return sd;
     }
 

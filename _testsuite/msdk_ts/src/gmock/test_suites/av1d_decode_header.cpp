@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -63,7 +63,7 @@ const char TestSuite::path[] = "conformance/av1/";
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/* 0*/ MFX_ERR_NONE,  "DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1",
+    {/* 0*/ MFX_ERR_NONE,  "DVK/MainProfile_8bit420/Syntax_AV1_mainb8ss420_432x240_101_inter_basic_1_1.3_20190124.av1",
       { { &tsStruct::mfxVideoParam.mfx.CodecProfile,             MFX_PROFILE_AV1_MAIN },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma,   8 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 8 },
@@ -102,7 +102,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,         288 } },
     },
 
-    {/* 3*/ MFX_ERR_NONE,  "DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1",
+    {/* 3*/ MFX_ERR_NONE,  "DVK/MainProfile_10bit420/Syntax_AV1_mainb10ss420_432x240_101_inter_basic_2_1.3_20190124.av1",
       { { &tsStruct::mfxVideoParam.mfx.CodecProfile,             MFX_PROFILE_AV1_MAIN },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma,   10 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 10 },
@@ -134,11 +134,12 @@ void CheckParams(mfxVideoParam const & expected, mfxVideoParam const & actual)
     tmp.mfx.CodecProfile = actual.mfx.CodecProfile;
     tmp.mfx.CodecLevel = actual.mfx.CodecLevel;
     tmp.mfx.DecodedOrder = actual.mfx.DecodedOrder;
+    tmp.mfx.FilmGrain = actual.mfx.FilmGrain;
     tmp.mfx.MaxDecFrameBuffering = actual.mfx.MaxDecFrameBuffering;
 
     if (memcmp(&actual, &tmp, sizeof(mfxVideoParam)))
     {
-        ADD_FAILURE() << "FAILED: DecodeHeader should not change fields other than FrameInfo, CodecProfile, CodecLevel, DecodedOrder";
+        ADD_FAILURE() << "FAILED: DecodeHeader should not change fields other than FrameInfo, CodecProfile, CodecLevel, DecodedOrder, FilmGrain, MaxDecFrameBuffering";
     }
 }
 
