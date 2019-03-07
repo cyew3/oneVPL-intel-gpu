@@ -162,9 +162,12 @@ DECL_START(D3D11_VIDEO_DECODER_EXTENSION)
     TRACE("%d", PrivateOutputDataSize);
     TRACE_HEX_ROW(pPrivateOutputData, b.PrivateOutputDataSize);
     TRACE("%d", ResourceCount);
+    if (b.Function == ENCODE_ENC_PAK_ID)
+    {
+         Trace(*((ENCODE_EXECUTE_PARAMS*)b.pPrivateInputData), 0);
+    }
 DECL_END
 #undef FIELD_FORMAT
-
 
 #define FIELD_FORMAT "%-24s"
 DECL_START(ENCODE_COMPBUFFERDESC)
