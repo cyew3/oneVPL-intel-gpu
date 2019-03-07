@@ -42,7 +42,7 @@ if( PKG_LIBDRM_FOUND AND
       include_directories( ${dir} )
     endforeach( )
 
-    file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp" )
+    file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/test/*.c" )
     list( APPEND sources ${srcs})
     list( APPEND LIBS
       pthread
