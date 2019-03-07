@@ -150,13 +150,13 @@ mfxStatus D3DXCommonEncoder::QueryStatus(
         }
 
         sts = WaitTaskSync(task, timeOutMs);
-        if (sts == MFX_WRN_DEVICE_BUSY && m_bSingleThreadMode)
+        if (sts == MFX_WRN_DEVICE_BUSY)
         {
             // Need to add a check for TDRHang
-            return MFX_WRN_DEVICE_BUSY;
+            return m_bSingleThreadMode ? MFX_WRN_DEVICE_BUSY : MFX_ERR_GPU_HANG;
         }
-        else if (sts == MFX_WRN_DEVICE_BUSY && !m_bSingleThreadMode)
-            return MFX_ERR_GPU_HANG;
+        else if (sts != MFX_ERR_NONE)
+            return MFX_ERR_DEVICE_FAILED;
 
         // Return event to the EventCache
         m_EventCache->ReturnEvent(task.m_GpuEvent.gpuSyncEvent);

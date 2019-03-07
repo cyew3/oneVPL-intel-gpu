@@ -147,15 +147,15 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
 
         // for single thread mode the timeOutMs can be too small, need to use an extra check
         mfxU32 curTime = vm_time_get_current_time();
-        if (sts == MFX_WRN_DEVICE_BUSY && m_bSingleThreadMode)
+        if (sts == MFX_WRN_DEVICE_BUSY)
         {
-            if (task.CheckForTDRHang(curTime, m_timeoutForTDR))
+            if (task.CheckForTDRHang(curTime, m_timeoutForTDR) || !m_bSingleThreadMode)
                 return MFX_ERR_GPU_HANG;
             else
                 return MFX_WRN_DEVICE_BUSY;
         }
-        else if (sts == MFX_WRN_DEVICE_BUSY && !m_bSingleThreadMode)
-            return MFX_ERR_GPU_HANG;
+        else if (sts != MFX_ERR_NONE)
+            return MFX_ERR_DEVICE_FAILED;
 
         // Return event to the EventCache
         m_EventCache->ReturnEvent(task.m_GpuEvent[fieldId].gpuSyncEvent);
