@@ -42,15 +42,15 @@
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <ProjectName>intel_gfx_api</ProjectName>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformVersion>$(MINIDDK_VERSION)</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(MINIDDK_VERSION)'!=''">$(MINIDDK_VERSION)</WindowsTargetPlatformVersion>
     <WindowsTargetPlatformMinVersion>10.0.10240.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
-  <Import Project="$(MSBuildThisFileDirectory)..\mfx_dispatch\windows\WinSDKTargetPlatfrom.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
+    <SpectreMitigation>Spectre</SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DFP|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -63,6 +63,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
+    <SpectreMitigation>Spectre</SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DFP|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -76,6 +77,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <PlatformToolset>v141</PlatformToolset>
+    <SpectreMitigation>Spectre</SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_DFP|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -90,6 +92,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <PlatformToolset>v141</PlatformToolset>
+    <SpectreMitigation>Spectre</SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_DFP|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -186,7 +189,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)dispatcher_uwp\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -206,7 +209,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DFP|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)dispatcher_uwp\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_DX_LOADER;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -226,7 +229,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)dispatcher_uwp\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -242,7 +245,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_DFP|Win32'">
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)dispatcher_uwp\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_DX_LOADER;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -260,7 +263,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)dispatcher_uwp\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -275,7 +278,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DFP|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)dispatcher_uwp\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_DX_LOADER;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -295,7 +298,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)dispatcher_uwp\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -311,7 +314,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_DFP|x64'">
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\mfx_dispatch\windows\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)dispatcher_uwp\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_DX_LOADER;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -333,37 +336,38 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <None Include="src\intel_api.def" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_win_reg_key.cpp" />
     <ClCompile Include="src\intel_api_factory.cpp" />
     <ClCompile Include="src\mfx_dxloader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\mfx_dispatch\windows\src\main.cpp" />
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_critical_section.cpp" />
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_dispatcher.cpp" />
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_dispatcher_log.cpp" />
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_dxva2_device.cpp" />
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_function_table.cpp" />
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_library_iterator.cpp" />
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_load_dll.cpp" />
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_load_plugin.cpp" />
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_plugin_hive.cpp" />
+    <ClCompile Include="dispatcher_uwp\src\main.cpp" />
+    <ClCompile Include="dispatcher_uwp\src\mfx_critical_section.cpp" />
+    <ClCompile Include="dispatcher_uwp\src\mfx_dispatcher.cpp" />
+    <ClCompile Include="dispatcher_uwp\src\mfx_dispatcher_log.cpp" />
+    <ClCompile Include="dispatcher_uwp\src\mfx_dxva2_device.cpp" />
+    <ClCompile Include="dispatcher_uwp\src\mfx_function_table.cpp" />
+    <ClCompile Include="dispatcher_uwp\src\mfx_library_iterator.cpp" />
+    <ClCompile Include="dispatcher_uwp\src\mfx_load_dll.cpp" />
+    <ClCompile Include="dispatcher_uwp\src\mfx_load_plugin.cpp" />
+    <ClCompile Include="dispatcher_uwp\src\mfx_plugin_hive.cpp" />
+    <ClCompile Include="dispatcher_uwp\src\mfx_win_reg_key.cpp" />
     <ResourceCompile Include="src\intel_gfx_api.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfxaudio_exposed_functions_list.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_critical_section.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_dispatcher.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_dispatcher_defs.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_dispatcher_log.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_dxva2_device.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_exposed_functions_list.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_library_iterator.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_load_dll.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_load_plugin.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_plugin_hive.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_win_reg_key.h" />
-    <ClInclude Include="..\mfx_dispatch\windows\include\intel_api_factory.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfxaudio_exposed_functions_list.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_critical_section.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_dispatcher.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_dispatcher_defs.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_dispatcher_log.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_dxva2_device.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_exposed_functions_list.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_library_iterator.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_load_dll.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_load_plugin.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_plugin_hive.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_vector.h" />
+    <ClInclude Include="dispatcher_uwp\include\mfx_win_reg_key.h" />
+    <ClInclude Include="include\intel_api_factory.h" />
     <ClInclude Include="include\mfx_dxloader.h" />
     <ClInclude Include="src\resource.h" />
   </ItemGroup>

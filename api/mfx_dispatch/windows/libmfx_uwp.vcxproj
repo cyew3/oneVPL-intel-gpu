@@ -63,7 +63,6 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
   </PropertyGroup>
-  <Import Project="$(MSBuildThisFileDirectory)WinSDKTargetPlatfrom.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="$(Configuration.Contains('Release'))" Label="Configuration">
     <WholeProgramOptimization>false</WholeProgramOptimization>

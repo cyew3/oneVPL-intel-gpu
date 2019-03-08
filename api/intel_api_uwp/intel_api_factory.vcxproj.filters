@@ -20,37 +20,37 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\intel_api_factory.cpp" />
-    <ClCompile Include="..\mfx_dispatch\windows\src\main.cpp">
+    <ClCompile Include="dispatcher_uwp\src\main.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_critical_section.cpp">
+    <ClCompile Include="dispatcher_uwp\src\mfx_critical_section.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_dispatcher.cpp">
+    <ClCompile Include="dispatcher_uwp\src\mfx_dispatcher.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_dispatcher_log.cpp">
+    <ClCompile Include="dispatcher_uwp\src\mfx_dispatcher_log.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_dxva2_device.cpp">
+    <ClCompile Include="dispatcher_uwp\src\mfx_dxva2_device.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_function_table.cpp">
+    <ClCompile Include="dispatcher_uwp\src\mfx_function_table.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_library_iterator.cpp">
+    <ClCompile Include="dispatcher_uwp\src\mfx_library_iterator.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_load_dll.cpp">
+    <ClCompile Include="dispatcher_uwp\src\mfx_load_dll.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_load_plugin.cpp">
+    <ClCompile Include="dispatcher_uwp\src\mfx_load_plugin.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_plugin_hive.cpp">
+    <ClCompile Include="dispatcher_uwp\src\mfx_plugin_hive.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
-    <ClCompile Include="..\mfx_dispatch\windows\src\mfx_win_reg_key.cpp">
+    <ClCompile Include="dispatcher_uwp\src\mfx_win_reg_key.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
     <ClCompile Include="src\mfx_dxloader.cpp">
@@ -61,46 +61,49 @@
     <ClInclude Include="src\resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_critical_section.h">
+    <ClInclude Include="dispatcher_uwp\include\mfx_critical_section.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_dispatcher.h">
+    <ClInclude Include="dispatcher_uwp\include\mfx_dispatcher.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_dispatcher_defs.h">
+    <ClInclude Include="dispatcher_uwp\include\mfx_dispatcher_defs.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_dispatcher_log.h">
+    <ClInclude Include="dispatcher_uwp\include\mfx_dispatcher_log.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_dxva2_device.h">
+    <ClInclude Include="dispatcher_uwp\include\mfx_dxva2_device.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_exposed_functions_list.h">
+    <ClInclude Include="dispatcher_uwp\include\mfx_exposed_functions_list.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_library_iterator.h">
+    <ClInclude Include="dispatcher_uwp\include\mfx_library_iterator.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_load_dll.h">
+    <ClInclude Include="dispatcher_uwp\include\mfx_load_dll.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_load_plugin.h">
+    <ClInclude Include="dispatcher_uwp\include\mfx_load_plugin.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_plugin_hive.h">
+    <ClInclude Include="dispatcher_uwp\include\mfx_plugin_hive.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfx_win_reg_key.h">
+    <ClInclude Include="dispatcher_uwp\include\mfx_win_reg_key.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\mfxaudio_exposed_functions_list.h">
+    <ClInclude Include="dispatcher_uwp\include\mfxaudio_exposed_functions_list.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfx_dispatch\windows\include\intel_api_factory.h" />
     <ClInclude Include="include\mfx_dxloader.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
+    <ClInclude Include="dispatcher_uwp\include\mfx_vector.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\intel_api_factory.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="src\intel_gfx_api.rc">
