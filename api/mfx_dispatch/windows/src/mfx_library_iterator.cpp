@@ -122,9 +122,7 @@ mfxStatus SelectImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterf
 }
 
 MFXLibraryIterator::MFXLibraryIterator(void)
-#if (defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)))
     : m_baseRegKey()
-#endif
 {
     m_implType = MFX_LIB_PSEUDO;
     m_implInterface = MFX_IMPL_UNSUPPORTED;
@@ -160,7 +158,7 @@ void MFXLibraryIterator::Release(void)
     m_SubKeyName[0] = 0;
 
 } // void MFXLibraryIterator::Release(void)
-#if !defined(MEDIASDK_DFP_LOADER)
+
 DECLSPEC_NOINLINE HMODULE GetThisDllModuleHandle()
 {
   HMODULE hDll = HMODULE(-1);
@@ -170,7 +168,6 @@ DECLSPEC_NOINLINE HMODULE GetThisDllModuleHandle()
                       reinterpret_cast<LPCWSTR>(&GetThisDllModuleHandle), &hDll);
   return hDll;
 }
-#endif
 
 // wchar_t* sImplPath must be allocated with size not less then msdk_disp_path_len
 bool GetImplPath(int storageID, wchar_t* sImplPath)
@@ -182,6 +179,12 @@ bool GetImplPath(int storageID, wchar_t* sImplPath)
     switch (storageID) {
     case MFX_APP_FOLDER:
         hModule = 0;
+        break;
+    case MFX_PATH_MSDK_FOLDER:
+        hModule = GetThisDllModuleHandle();
+        //It should works only if Dispatcher is linked with Dynamic Linked Library
+        if (hModule != HMODULE(-1) && GetProcAddress(hModule, "DllMain") == NULL)
+            return false;
         break;
     }
 
@@ -225,12 +228,10 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
     m_StorageID = storageID;
     m_lastLibIndex = 0;
 
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
     if (storageID == MFX_CURRENT_USER_KEY || storageID == MFX_LOCAL_MACHINE_KEY)
     {
         return InitRegistry(implType, implInterface, adapterNum, storageID);
     }
-#endif
 
     wchar_t  sCurrentModulePath[msdk_disp_path_len];
 
@@ -244,7 +245,6 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
 
 mfxStatus MFXLibraryIterator::InitRegistry(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID)
 {
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
     HKEY rootHKey;
     bool bRes;
 
@@ -280,14 +280,6 @@ mfxStatus MFXLibraryIterator::InitRegistry(eMfxImplType implType, mfxIMPL implIn
         rootDispPath))
 
     return MFX_ERR_NONE;
-#else
-    (void) storageID;
-    (void) adapterNum;
-    (void) implInterface;
-    (void) implType;
-    return MFX_ERR_UNSUPPORTED;
-#endif // #if !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
-
 } // mfxStatus MFXLibraryIterator::InitRegistry(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID)
 
 mfxStatus MFXLibraryIterator::InitFolder(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, const wchar_t * path, const int storageID)
@@ -344,7 +336,19 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
         return MFX_ERR_NONE;
     }
 
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+    if (m_StorageID == MFX_PATH_MSDK_FOLDER)
+    {
+        if (m_lastLibIndex != 0)
+            return MFX_ERR_NOT_FOUND;
+        if (m_vendorID != INTEL_VENDOR_ID)
+            return MFX_ERR_UNKNOWN;
+
+        m_lastLibIndex = 1;
+        wcscpy_s(pPath, pathSize, m_path);
+        // do not change impl type
+        return MFX_ERR_NONE;
+    }
+
     wchar_t libPath[MFX_MAX_DLL_PATH] = L"";
     DWORD libIndex = 0;
     DWORD libMerit = 0;
@@ -517,8 +521,6 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
     m_lastLibIndex = libIndex;
     m_lastLibMerit = libMerit;
     m_bIsSubKeyValid = true;
-
-#endif
 
     return MFX_ERR_NONE;
 

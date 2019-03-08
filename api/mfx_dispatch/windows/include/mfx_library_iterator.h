@@ -24,9 +24,7 @@
 
 #include <mfxvideo.h>
 
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
 #include "mfx_win_reg_key.h"
-#endif
 
 #include "mfx_dispatcher.h"
 
@@ -40,6 +38,7 @@ enum
     MFX_CURRENT_USER_KEY        = 0,
     MFX_LOCAL_MACHINE_KEY       = 1,
     MFX_APP_FOLDER              = 2,
+    MFX_PATH_MSDK_FOLDER        = 3,
     MFX_STORAGE_ID_FIRST    = MFX_CURRENT_USER_KEY,
     MFX_STORAGE_ID_LAST     = MFX_LOCAL_MACHINE_KEY
 };
@@ -92,9 +91,7 @@ protected:
     wchar_t m_SubKeyName[MFX_MAX_REGISTRY_KEY_NAME];            // registry subkey for selected module loaded
     int    m_StorageID;
 
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
     WinRegKey m_baseRegKey;                                     // (WinRegKey) main registry key
-#endif
 
     mfxU32 m_lastLibIndex;                                      // (mfxU32) index of previously returned library
     mfxU32 m_lastLibMerit;                                      // (mfxU32) merit of previously returned library

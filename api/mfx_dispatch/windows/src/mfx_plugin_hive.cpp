@@ -70,7 +70,6 @@ namespace
 MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const wchar_t *msdkLibSubKey, mfxVersion currentAPIVersion)
     : MFXPluginStorageBase(currentAPIVersion)
 {
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
     HKEY rootHKey;
     bool bRes;
     WinRegKey regKey;
@@ -211,16 +210,8 @@ MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const wchar_t *msdkLib
             TRACE_HIVE_ERROR("operator[](%d) = descriptionRecord; - threw exception \n", index);
         }
     }
-#else
-
-    (void)mfxStorageID;
-    (void)msdkLibSubKey;
-    (void)currentAPIVersion;
-
-#endif //#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
 }
 
-#if defined(MEDIASDK_USE_CFGFILES) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
 MFX::MFXPluginsInFS::MFXPluginsInFS( mfxVersion currentAPIVersion )
     : MFXPluginStorageBase(currentAPIVersion)
     , mIsVersionParsed()
@@ -450,7 +441,6 @@ bool MFX::MFXPluginsInFS::ParseKVPair( wchar_t * key, wchar_t* value, PluginDesc
 
     return true;
 }
-#endif //#if defined(MEDIASDK_USE_CFGFILES) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
 
 MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP_HANDLE * hdl, int implType)
     : MFXPluginStorageBase(currentAPIVersion)

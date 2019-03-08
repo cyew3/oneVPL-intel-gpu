@@ -21,15 +21,10 @@
 #if !defined(__MFX_WIN_REG_KEY_H)
 #define __MFX_WIN_REG_KEY_H
 
-#ifdef MEDIASDK_DFP_LOADER
-#undef MEDIASDK_USE_REGISTRY
-#endif
-
 #include <windows.h>
 #include "mfxplugin.h"
 #include "mfx_dispatcher_log.h"
 
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
 namespace MFX {
 
 template<class T> struct RegKey{};
@@ -103,7 +98,4 @@ inline bool QueryKey<bool>(WinRegKey & key, const wchar_t *pValueName, bool &dat
 
 
 } // namespace MFX
-#endif // #if !defined(MEDIASDK_DFP_LOADER)
-
-
-#endif // __MFX_WIN_REG_KEY_H
+#endif

@@ -182,17 +182,6 @@
   </ItemDefinitionGroup>
   <!-- End of Platform dependent settings -->
   <ItemGroup>
-    <None Include="..\..\documentation\header-template.md" />
-    <None Include="..\..\documentation\media-raw-accelerator-man.md" />
-    <None Include="..\..\documentation\mediasdk-man.md" />
-    <None Include="..\..\documentation\mediasdkfei-man.md" />
-    <None Include="..\..\documentation\mediasdkjpeg-man.md" />
-    <None Include="..\..\documentation\mediasdkmvc-man.md" />
-    <None Include="..\..\documentation\mediasdkscreencap-man.md" />
-    <None Include="..\..\documentation\mediasdkusr-man.md" />
-    <None Include="..\..\documentation\mediasdkvp8-man.md" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\mfx_dispatcher.cpp" />
     <ClCompile Include="src\mfx_dispatcher_log.cpp" />

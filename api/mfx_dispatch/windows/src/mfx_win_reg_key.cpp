@@ -18,11 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifdef MEDIASDK_DFP_LOADER
-#undef MEDIASDK_USE_REGISTRY
-#endif
-
-#if (defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)))
 #include "mfx_win_reg_key.h"
 #include "mfx_dispatcher_log.h"
 
@@ -217,5 +212,3 @@ bool WinRegKey::QueryInfo(LPDWORD lpcSubkeys)
 } //bool QueryInfo(LPDWORD lpcSubkeys);
 
 } // namespace MFX
-
-#endif // #if (defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)))
