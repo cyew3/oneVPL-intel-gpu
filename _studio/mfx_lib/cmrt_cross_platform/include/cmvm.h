@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1117,9 +1117,7 @@ const vector<T, R2*WD> matrix<T, R, C>::genx_select(OFFSET ioff, OFFSET joff)
 {
     static_assert((!std::is_same<T, double>::value), "genx_select is not supported for matrices with element type of 'double'");
     static_assert(R2 > 0, "invalid dimensions");
-    static_assert(VS >= 0, "invalid dimensions");
     static_assert(WD > 0, "invalid dimensions");
-    static_assert(HS >= 0, "invalid dimensions");
 
     assert(ioff < R);
     assert(joff < C);
@@ -1146,8 +1144,6 @@ vector<T, WD> matrix<T, R, C>::iselect(const vector<T2, WD>& index, std::true_ty
 {
     static_assert(is_inttype<T2>::value, "invalid type");
     static_assert(WD > 0, "invalid dimensions");
-    static_assert(R >= 0, "invalid dimensions");
-    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1166,8 +1162,6 @@ vector<T, WD> matrix<T, R, C>::iselect(const vector<T2, WD>& index, std::false_t
 {
     static_assert(is_inttype<T2>::value, "invalid type");
     static_assert(WD > 0, "invalid dimensions");
-    static_assert(R >= 0, "invalid dimensions");
-    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1193,8 +1187,6 @@ vector<T, WD> matrix<T, R, C>::iselect(const vector_ref<T2, WD>& index, std::tru
 {
     static_assert(is_inttype<T2>::value, "invalid type");
     static_assert(WD > 0, "invalid dimensions");
-    static_assert(R >= 0, "invalid dimensions");
-    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1213,8 +1205,6 @@ vector<T, WD> matrix<T, R, C>::iselect(const vector_ref<T2, WD>& index, std::fal
 {
     static_assert(is_inttype<T2>::value, "invalid type");
     static_assert(WD > 0, "invalid dimensions");
-    static_assert(R >= 0, "invalid dimensions");
-    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1233,8 +1223,6 @@ vector<T, WD> matrix<T, R, C>::iselect(const vector<T2, WD>& index)
 {
     static_assert(is_inttype<T2>::value, "invalid type");
     static_assert(WD > 0, "invalid dimensions");
-    static_assert(R >= 0, "invalid dimensions");
-    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1253,8 +1241,6 @@ vector<T, WD> matrix<T, R, C>::iselect(const vector_ref<T2, WD>& index)
 {
     static_assert(is_inttype<T2>::value, "invalid type");
     static_assert(WD > 0, "invalid dimensions");
-    static_assert(R >= 0, "invalid dimensions");
-    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1275,8 +1261,6 @@ vector<T, WD> matrix<T, R, C>::iselect(const vector<T2, WD>& index_x, const vect
 {
     static_assert((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
     static_assert(WD > 0, "invalid dimensions");
-    static_assert(R >= 0, "invalid dimensions");
-    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index_x.get(i) < R), WD, i);
@@ -1296,8 +1280,6 @@ vector<T, WD> matrix<T, R, C>::iselect(const vector_ref<T2, WD>& index_x, const 
 {
     static_assert((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
     static_assert(WD > 0, "invalid dimensions");
-    static_assert(R >= 0, "invalid dimensions");
-    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index_x.get(i) < R), WD, i);
@@ -1318,8 +1300,6 @@ vector<T, WD> matrix<T, R, C>::iselect(const vector<T2, WD>& index_x, const vect
 {
     static_assert((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
     static_assert(WD > 0, "invalid dimensions");
-    static_assert(R >= 0, "invalid dimensions");
-    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index_x.get(i) < R), WD, i);
@@ -1339,8 +1319,6 @@ vector<T, WD> matrix<T, R, C>::iselect(const vector_ref<T2, WD>& index_x, const 
 {
     static_assert((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
     static_assert(WD > 0, "invalid dimensions");
-    static_assert(R >= 0, "invalid dimensions");
-    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index_x.get(i) < R), WD, i);
