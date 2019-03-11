@@ -2514,7 +2514,7 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::PAK::QueryStatus");
     VAStatus vaSts;
-    mfxStatus sts = MFX_ERR_NONE;
+    mfxStatus stsRet = MFX_ERR_NONE;
 
     mdprintf(stderr, "VAAPIFEIPAKEncoder::QueryStatus frame: %d\n", task.m_frameOrder);
     //------------------------------------------
@@ -2560,11 +2560,11 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
 
     if (codedBufferSegment->status & VA_CODED_BUF_STATUS_BAD_BITSTREAM)
     {
-        sts = MFX_ERR_GPU_HANG;
+        stsRet = MFX_ERR_GPU_HANG;
     }
     else if (!codedBufferSegment->size || !codedBufferSegment->buf)
     {
-        sts = MFX_ERR_DEVICE_FAILED;
+        stsRet = MFX_ERR_DEVICE_FAILED;
     }
     else
     {
@@ -2586,24 +2586,23 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
             task.m_bs->FrameType = mfxU16(task.m_bs->FrameType |
                                           ((task.m_type[!task.GetFirstField()]& ~MFX_FRAMETYPE_KEYPIC) << 8));
 
-        sts = MFX_ERR_NONE;
+        stsRet = MFX_ERR_NONE;
     }
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
         vaSts = vaUnmapBuffer( m_vaDisplay, m_codedBufferId[feiFieldId] );
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-        // ??? may affect for performance
-        sts = CheckAndDestroyVAbuffer(m_vaDisplay, m_codedBufferId[feiFieldId]);
-        MFX_CHECK_STS(sts);
     }
+    // ??? may affect for performance
+    mfxStatus sts = CheckAndDestroyVAbuffer(m_vaDisplay, m_codedBufferId[feiFieldId]);
+    MFX_CHECK_STS(sts);
 
     // remove task
     m_statFeedbackCache.erase(m_statFeedbackCache.begin() + indxSurf);
 
     mdprintf(stderr, "query_vaapi done\n");
-    return sts;
+    return stsRet;
 } // mfxStatus VAAPIFEIPAKEncoder::QueryStatus( DdiTask & task, mfxU32 fieldId)
 
 #endif //defined(MFX_ENABLE_H264_VIDEO_FEI_ENC) && defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)
