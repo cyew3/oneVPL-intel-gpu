@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -416,12 +416,15 @@ mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
 
     bs->FrameType = pInternalParams->FrameType;
     bs->TimeStamp = pIntTask->m_Frames.m_pInputFrame->Data.TimeStamp;
+
+    Ipp64f fr = CalculateUMCFramerate(pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtN, pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtD);
+    MFX_CHECK(fr != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+
     bs->DecodeTimeStamp = (pInternalParams->FrameType & MFX_FRAMETYPE_B)
         ? CalcDTSForNonRefFrameMpeg2(bs->TimeStamp)
         : CalcDTSForRefFrameMpeg2(bs->TimeStamp,
         Frames.m_nFrame - Frames.m_nRefFrame[0],
-        pParams->mfxVideoParams.mfx.GopRefDist,
-        CalculateUMCFramerate(pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtN, pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtD));
+        pParams->mfxVideoParams.mfx.GopRefDist, fr);
 
     sts = pIntTask->FillFrameParams((mfxU8)pInternalParams->FrameType,
                                         m_pController->getVideoParamsEx(),
