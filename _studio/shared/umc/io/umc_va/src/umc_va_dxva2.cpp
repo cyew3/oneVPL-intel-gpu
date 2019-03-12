@@ -355,6 +355,7 @@ Status DXVA2Accelerator::Execute()
     {
         UMCVACompBuffer const* pCompBuffer = FindBuffer(type);
 
+        if (!pCompBuffer) continue;
         if (!pCompBuffer->GetPtr()) continue;
         if (!pCompBuffer->GetBufferSize()) continue;
 
