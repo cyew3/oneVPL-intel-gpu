@@ -1415,6 +1415,7 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
     surfaceReg.num_surf = response.NumFrameActual;
 
     MFX_CHECK(response.mids, MFX_ERR_NULL_PTR);
+    MFX_CHECK(response.NumFrameActual > 0, MFX_ERR_UNSUPPORTED);
     for (mfxU32 i = 0; i < response.NumFrameActual; i++)
     {
         mfxStatus sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL *)&surfaceReg.surface[i]);
@@ -2161,6 +2162,7 @@ mfxStatus D3D9SvcEncoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMA
     surfaceReg.num_surf = response.NumFrameActual;
 
     MFX_CHECK(response.mids, MFX_ERR_NULL_PTR);
+    MFX_CHECK(response.NumFrameActual > 0, MFX_ERR_UNSUPPORTED);
     for (mfxU32 i = 0; i < response.NumFrameActual; i++)
     {
         mfxStatus sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL *)&surfaceReg.surface[i]);
