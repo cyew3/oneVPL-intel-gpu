@@ -723,7 +723,7 @@ namespace vp9e_temporal_scalability
                                 }
 
                                 total_frame_size += index_size;
-                                total_frame_size += m_NoIvf ? 0 : IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
+                                total_frame_size += m_NoIvf ? 0 : IVF_PIC_HEADER_SIZE_BYTES + (m_ChunkCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
 
                                 if (total_frame_size != bs.DataLength)
                                 {
@@ -799,7 +799,7 @@ namespace vp9e_temporal_scalability
             // do the decoder initialization on the first encoded frame
             if (m_DecodedFramesCount == 0 && m_CheckPsnr)
             {
-                const mfxU32 headers_shift = m_NoIvf ? 0 : IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
+                const mfxU32 headers_shift = m_NoIvf ? 0 : IVF_PIC_HEADER_SIZE_BYTES + (m_ChunkCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
                 m_pBitstream->Data = bs.Data + headers_shift;
                 m_pBitstream->DataOffset = 0;
                 m_pBitstream->DataLength = bs.DataLength - headers_shift;
@@ -846,7 +846,7 @@ namespace vp9e_temporal_scalability
                 {
                     g_tsLog << "INFO: Decoding frame " << m_ChunkCount << ", checked layer is " << (mfxI32)m_TestPtr->m_LayerToCheck << "\n";
 
-                    const mfxU32 headers_shift = m_NoIvf ? 0 : IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
+                    const mfxU32 headers_shift = m_NoIvf ? 0 : IVF_PIC_HEADER_SIZE_BYTES + (m_ChunkCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
                     m_pBitstream->Data = bs.Data + headers_shift;
                     m_pBitstream->DataOffset = 0;
                     m_pBitstream->DataLength = bs.DataLength - headers_shift;
