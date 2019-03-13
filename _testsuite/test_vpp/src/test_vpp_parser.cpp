@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 - 2018 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010 - 2019 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_vpp_utils.h"
@@ -196,7 +196,7 @@ mfxU32 Str2FourCC( vm_char* strInput )
     {
         fourcc = MFX_FOURCC_RGB4;
     }
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("rgbp")) )
     {
         fourcc = MFX_FOURCC_RGBP;

@@ -196,7 +196,7 @@ The SDK video processing pipeline does not support HW acceleration for P210 form
 
 This chapter describes the concepts used in programming the SDK.
 
-The application must use the include file, **mfxvideo.h** (for C programming), or **mfxvideo++.h** (for C++ programming), and link the SDK dispatcher library, **libmfx.lib** or **libmfx.so**. If the application is written in C then **libstdc++.a** library should also be linked.
+The application must use the include file, **mfxvideo.h** (for C programming), or **mfxvideo++.h** (for C++ programming), and link the SDK dispatcher library, **libmfx.so**.
 
 Include these files:
 ```C
@@ -204,10 +204,6 @@ Include these files:
     #include "mfxvideo++.h"  /* Optional for C++ development */
 ```
 Link this library:
-```
-      libmfx.lib               /* The SDK static dispatcher library */
-```
-or
 ```
       libmfx.so                /* The SDK dynamic dispatcher library (Linux)*/
 ```
@@ -3464,7 +3460,7 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `MaxFrameSize` | Specify maximum encoded frame size in byte. This parameter is used in VBR based bitrate control modes and ignored in others. The SDK encoder tries to keep frame size below specified limit but minor overshoots are possible to preserve visual quality. This parameter is valid during initialization and runtime.
 `MaxSliceSize` | Specify maximum slice size in bytes. If this parameter is specified other controls over number of slices are ignored.<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
 `BitrateLimit` | Turn off this flag to remove bitrate limitations imposed by the SDK encoder. This flag is intended for special usage models and usually the application should not set it. Setting this flag may lead to violation of HRD conformance and severe visual artifacts. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. The default value is ON, i.e. bitrate is limitted. This parameter is valid only during initialization.
-`MBBRC` | Setting this flag enables macroblock level bitrate control that generally improves subjective visual quality. Enabling this flag may have negative impact on performance and objective visual quality metric. See the CodingOptionValue enumerator for values of this option. The default value depends on target usage settings.
+`MBBRC` | Setting this flag enables macroblock level bitrate control that generally improves subjective visual quality. Enabling this flag may have negative impact on performance and objective visual quality metric. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. The default value depends on target usage settings.
 `ExtBRC` | Turn ON this option to enable [external BRC](#mfxExtBRC). See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
 `LookAheadDepth` | Specifies the depth of look ahead rate control algorithm. It is the number of frames that SDK encoder analyzes before encoding. Valid value range is from 10 to 100 inclusive. To instruct the SDK encoder to use the default value the application should zero this field.
 `Trellis` | This option is used to control trellis quantization in AVC encoder. See [TrellisControl](#TrellisControl) enumerator for possible values of this option. This parameter is valid only during initialization.
@@ -3673,6 +3669,8 @@ The SDK API 1.25 adds `EnableNalUnitType` field.
 The SDK API 1.26 adds `TransformSkip`, `ExtBrcAdaptiveLTR` fields.
 
 The SDK API 1.27 adds `TargetChromaFormatPlus1`, `TargetBitDepthLuma` and `TargetBitDepthChroma` fields.
+
+The SDK API **TBD** adds `QuantScaleType`, `IntraVLCFormat`, `ScanType` fields.
 
 ## <a id='mfxExtCodingOptionSPSPPS'>mfxExtCodingOptionSPSPPS</a>
 
@@ -5382,7 +5380,7 @@ The `mfxPlatform` structure contains information about hardware platform.
 
 | | |
 --- | ---
-`CodeName` | Intel® processor microarchitecture codename. See the [PlatformCodeName](#PlatformCodeName) enumerator for a list of possible values.
+`CodeName` | Intel® microarchitecture code name. See the [PlatformCodeName](#PlatformCodeName) enumerator for a list of possible values.
 `DeviceId` | Reserved.
 
 **Change History**
@@ -6638,7 +6636,9 @@ Attached to the [mfxVideoParam](#mfxVideoParam) structure extends it with VP9-sp
 **Change History**
 
 This structure is available since SDK API 1.26.
-The SDK API **TBD** adds `LoopFilterRefDelta`,`LoopFilterModeDelta`,`NumTileRows` add `NumTileColumns` fields.
+The SDK API 1.29 adds `NumTileRows` and `NumTileColumns` fields.
+
+The SDK API **TBD** adds `LoopFilterRefDelta`,`LoopFilterModeDelta` and `DynamicScaling` fields.
 
 ## <a id='mfxExtVP9Segmentation'>mfxExtVP9Segmentation</a>
 
@@ -6984,9 +6984,15 @@ SDK API 1.26 adds `SceneChange`, `LongTerm` and `FrameCmplx`.
 
 ```C
 typedef struct {
-    mfxI32 QpY;
-    mfxU32 reserved1[13];
-    mfxHDL reserved2;
+    mfxI32 QpY;             
+    mfxU32 InitialCpbRemovalDelay;
+    mfxU32 InitialCpbRemovalOffset;
+    mfxU32 reserved1[7];
+    mfxU32 MaxFrameSize;    // Max frame size in bytes (used for rePak)
+    mfxU8  DeltaQP[8];      // deltaQP[i] is adding to QP value while i-rePak
+    mfxU16 MaxNumRepak;     // Max number of rePak to provide MaxFrameSize (from 0 to 8)
+    mfxU16 NumExtParam;
+    mfxExtBuffer** ExtParam;   // extension buffer list
 } mfxBRCFrameCtrl;
 ```
 
@@ -6999,10 +7005,17 @@ Structure specifies controls for next frame encoding provided by external BRC fu
 | | |
 --- | ---
 `QpY` | Frame-level Luma QP
+`InitialCpbRemovalDelay`| See initial_cpb_removal_delay in codec standard. Ignored  if no HRD control: mfxExtCodingOption:: VuiNalHrdParameters = MFX_CODINGOPTION_OFF. Calculated by encoder if initial_cpb_removal_delay==0 && initial_cpb_removal_offset == 0 && HRD control is switched on.
+`InitialCpbRemovalOffset`| See initial_cpb_removal_offset in codec standard. Ignored  if no HRD control: mfxExtCodingOption:: VuiNalHrdParameters = MFX_CODINGOPTION_OFF. Calculated by encoder if initial_cpb_removal_delay==0 && initial_cpb_removal_offset == 0 && HRD control is switched on.
+`MaxFrameSize` | Max frame size in bytes. This is option for  repack feature.  Driver calls PAK until current frame size is less or equal maxFrameSize or number of repacking for this frame  is equal to maxNumRePak.Repack is available if driver support, MaxFrameSize !=0, MaxNumRePak != 0. Ignored if maxNumRePak == 0.
+`MaxNumRePak` | Number of possible repacks in driver if current frame size > maxFrameSize. Ignored if maxFrameSize==0. See  maxFrameSize description. Possible values are [0,8];
+`DeltaQP` | This is option for  repack feature. Ignored  if maxNumRePak == 0 or maxNumRePak==0. If current frame size > maxFrameSize and or number of repacking (nRepack) for this frame  <= maxNumRePak , PAK is called with QP = mfxBRCFrameCtrl::QpY+  ∑DeltaQP[i], where i = [0,nRepack]. Non zero DeltaQP[nRepack] are ignored if nRepack > maxNumRePak. If repacking feature is on ( maxFrameSize & maxNumRePak are not zero), it is calculated by encoder. 
+`NumExtParam`, `ExtParam` | Reserved for future extension
 
 **Change History**
-
+ 
 This structure is available since SDK API 1.24.
+The SDK API 1.29 adds `MaxFrameSize` , `MaxNumRePak`, `DeltaQP`, `InitialCpbRemovalDelay`, `InitialCpbRemovalOffset`, `NumExtParam` and `ExtParam` fields 
 
 ## <a id='mfxBRCFrameStatus'>mfxBRCFrameStatus</a>
 
@@ -7497,16 +7510,17 @@ The SDK API 1.1 adds `MFX_FOURCC_P8.`
 
 The SDK API 1.6 adds `MFX_FOURCC_P8_TEXTURE.`
 
-The SDK API 1.9 adds `MFX_FOURCC_P010`, `MFX_FOURCC_BGR4`, `MFX_FOURCC_A2RGB10`, `MFX_FOURCC_ARGB16`
-and `MFX_FOURCC_R16`.
+The SDK API 1.9 adds `MFX_FOURCC_P010`, `MFX_FOURCC_BGR4`, `MFX_FOURCC_A2RGB10`, `MFX_FOURCC_ARGB16` and `MFX_FOURCC_R16`.
 
 The SDK API 1.11 adds `MFX_FOURCC_NV16` and `MFX_FOURCC_P210`.
 
-The SDK API 1.17 adds `MFX_FOURCC_ABGR16`, `MFX_FOURCC_AYUV`, `MFX_FOURCC_AYUV_RGB4`, and
-`MFX_FOURCC_UYVY`.
+The SDK API 1.17 adds `MFX_FOURCC_ABGR16`, `MFX_FOURCC_AYUV`, `MFX_FOURCC_AYUV_RGB4`, and `MFX_FOURCC_UYVY`.
 
-The SDK API **TBD** adds `MFX_FOURCC_P016`, `MFX_FOURCC_Y210`, `MFX_FOURCC_Y216`, `MFX_FOURCC_Y410`,
-`MFX_FOURCC_Y416`, `MFX_FOURCC_RGB565` and `MFX_FOURCC_RGBP`.
+The SDK API 1.27 adds `MFX_FOURCC_Y210` and `MFX_FOURCC_Y410`.
+
+The SDK API 1.28 adds `MFX_FOURCC_RGB565` and `MFX_FOURCC_RGBP`.
+
+The SDK API **TBD** adds `MFX_FOURCC_P016`, `MFX_FOURCC_Y216` and `MFX_FOURCC_Y416`.
 
 ## <a id='Corruption'>Corruption</a>
 
@@ -8456,7 +8470,7 @@ This enumerator is available since SDK API 1.17.
 
 **Description**
 
-The `PlatformCodeName` enumerator itemizes Intel® processor microarchitecture codenames. For details about any particular codename, see [ark.intel.com](http://ark.intel.com).
+The `PlatformCodeName` enumerator itemizes Intel® microarchitecture code names. For details about any particular code name, see [ark.intel.com](http://ark.intel.com).
 
 **Name/Description**
 

@@ -1379,13 +1379,55 @@ STRUCT(mfxExtPredWeightTable,
 #if defined(__MFXBRC_H__)
 STRUCT(mfxExtBRC,
     FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxHDL, pthis)
-    FIELD_T(mfxHDL, Init)
-    FIELD_T(mfxHDL, Reset)
-    FIELD_T(mfxHDL, Close)
-    FIELD_T(mfxHDL, GetFrameCtrl)
-    FIELD_T(mfxHDL, Update)
+    FIELD_T(mfxHDL      , pthis)
+    FIELD_T(mfxHDL      , Init)
+    FIELD_T(mfxHDL      , Reset)
+    FIELD_T(mfxHDL      , Close)
+    FIELD_T(mfxHDL      , GetFrameCtrl)
+    FIELD_T(mfxHDL      , Update)
 )
+
+STRUCT(mfxBRCFrameParam,
+    FIELD_T(mfxU16        , SceneChange)
+    FIELD_T(mfxU16        , LongTerm)
+    FIELD_T(mfxU32        , FrameCmplx)
+    FIELD_T(mfxU32        , EncodedOrder)
+    FIELD_T(mfxU32        , DisplayOrder)
+    FIELD_T(mfxU32        , CodedFrameSize)
+    FIELD_T(mfxU16        , FrameType)
+    FIELD_T(mfxU16        , PyramidLayer)
+    FIELD_T(mfxU16        , NumRecode)
+    FIELD_T(mfxU16        , NumExtParam)
+    FIELD_T(mfxExtBuffer**, ExtParam)
+)
+
+#if (MFX_VERSION >= 1029)
+STRUCT(mfxBRCFrameCtrl,
+    FIELD_T(mfxI32        , QpY)
+    FIELD_T(mfxU32        , InitialCpbRemovalDelay)
+    FIELD_T(mfxU32        , InitialCpbRemovalOffset)
+    FIELD_T(mfxU32        , reserved1)
+    FIELD_T(mfxU32        , MaxFrameSize)
+    FIELD_T(mfxU8         , DeltaQP)
+    FIELD_T(mfxU16        , MaxNumRepak)
+    FIELD_T(mfxU16        , NumExtParam)
+    FIELD_T(mfxExtBuffer**, ExtParam)
+)
+#else
+STRUCT(mfxBRCFrameCtrl,
+    FIELD_T(mfxI32, QpY)
+    FIELD_T(mfxU32, reserved1)
+    FIELD_T(mfxHDL, reserved2)
+)
+#endif
+
+STRUCT(mfxBRCFrameStatus,
+    FIELD_T(mfxU32, MinFrameSize)
+    FIELD_T(mfxU16, BRCStatus)
+    FIELD_T(mfxU16, reserved)
+    FIELD_T(mfxHDL, reserved1)
+)
+
 #endif // defined(__MFXBRC_H__)
 
 STRUCT(mfxExtMultiFrameParam,

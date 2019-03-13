@@ -530,7 +530,7 @@ void MFXStructureRef <mfxExtVP9Param>::ConstructValues() const
     SERIALIZE_INT(QIndexDeltaChromaAC);
     SERIALIZE_INT(QIndexDeltaChromaDC);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1029)
     SERIALIZE_INT(NumTileRows);
     SERIALIZE_INT(NumTileColumns);
 #endif

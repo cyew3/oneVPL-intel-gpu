@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -35,7 +35,7 @@ tsFrame::tsFrame(mfxFrameSurface1 s)
     case MFX_FOURCC_Y410: m_pFrame = new tsFrameY410(s.Data); break;
     case MFX_FOURCC_Y416: m_pFrame = new tsFrameY416(s.Data); break;    // currently 12b only
     case MFX_FOURCC_BGR4: std::swap(s.Data.B, s.Data.R);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGB565: m_pFrame = new tsFrameRGB565(s.Data); break;
 #endif
     case MFX_FOURCC_RGB4: m_pFrame = new tsFrameRGB4(s.Data); break;

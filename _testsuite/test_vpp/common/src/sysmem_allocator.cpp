@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -118,7 +118,7 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->R = ptr->B + 2;
         ptr->Pitch = 3 * Width2;
         break;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
         ptr->G = ptr->B + Width2 * Height2;
         ptr->R = ptr->B + Width2 * Height2 * 2;
@@ -248,7 +248,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
     case MFX_FOURCC_NV16:
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         break;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
 #endif
     case MFX_FOURCC_RGB3:

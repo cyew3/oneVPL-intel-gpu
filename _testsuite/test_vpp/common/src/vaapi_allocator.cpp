@@ -30,7 +30,7 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_YV12;
     case MFX_FOURCC_RGB4:
         return VA_FOURCC_ARGB;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
         return VA_FOURCC_RGBP;
 #endif
@@ -151,7 +151,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             {
                 format = VA_RT_FORMAT_YUV420;
             }
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
             else if (fourcc == MFX_FOURCC_RGBP)
             {
                 format = VA_RT_FORMAT_RGBP;
@@ -358,7 +358,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->A = ptr->B + 3;
                 }
                 break;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
             case VA_FOURCC_RGBP:
                 if (mfx_fourcc != vaapi_mid->m_image.format.fourcc)
                 {

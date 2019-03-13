@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2018 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2019 Intel Corporation. All Rights Reserved.
 //
 
 #include <string>
@@ -57,7 +57,7 @@ const vm_char* FourCC2Str( mfxU32 FourCC )
         return VM_STRING("RGB3");
     case MFX_FOURCC_RGB4:
         return VM_STRING("RGB4");
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
         return MSDK_STRING("RGBP");
 #endif
@@ -1979,7 +1979,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, 4*w);
         }
     }
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
     else if (pInfo->FourCC == MFX_FOURCC_RGBP)
     {
         CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);

@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2017-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -72,9 +72,18 @@ std::string DumpContext::dump(const std::string structName, const mfxBRCFrameCtr
     std::string str;
 
     DUMP_FIELD(QpY);
+#if (MFX_VERSION >= 1029)
+    DUMP_FIELD(InitialCpbRemovalDelay);
+    DUMP_FIELD(InitialCpbRemovalOffset);
+    DUMP_FIELD_RESERVED(reserved1);
+    DUMP_FIELD(MaxFrameSize);
+    DUMP_FIELD(DeltaQP);
+    DUMP_FIELD(MaxNumRepak);
+    dump_mfxExtParams(structName, _struct);
+#else
     DUMP_FIELD_RESERVED(reserved1);
     DUMP_FIELD(reserved2);
-
+#endif
     return str;
 }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,12 +35,7 @@ mfxStatus H265FeiEncode_HW::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSu
 
     eMFXHWType platform = m_core->GetHWType();
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
     bool isSKL = platform == MFX_HW_SCL, isICLplus = platform >= MFX_HW_ICL;
-#else
-    bool isSKL = platform == MFX_HW_SCL, isICLplus = false;
-#endif
-
 
     // mfxExtFeiHevcEncFrameCtrl is a mandatory buffer
     mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl = reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL));

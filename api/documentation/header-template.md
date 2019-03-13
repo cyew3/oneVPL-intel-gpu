@@ -1,7 +1,7 @@
 ![](./pic/intel_logo.png)
 <br><br><br>
 #**Title**
-API Version 1.27
+Media SDK API Version 1.29
 
 <div style="page-break-before:always" />
 
@@ -25,7 +25,7 @@ Intel and the Intel logo are trademarks or registered trademarks of Intel Corpor
 
 \*Other names and brands may be claimed as the property of others.
 
-Copyright © 2007-2018, Intel Corporation. All Rights reserved.
+Copyright © 2007-2019, Intel Corporation. All Rights reserved.
 <div style="page-break-before:always" /> 
 
 **Optimization Notice**

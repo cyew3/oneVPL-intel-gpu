@@ -2047,7 +2047,7 @@ typedef struct {
     mfxI16  QIndexDeltaLumaDC;
     mfxI16  QIndexDeltaChromaAC;
     mfxI16  QIndexDeltaChromaDC;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1029)
     mfxU16  NumTileRows;
     mfxU16  NumTileColumns;
     mfxU16  reserved[110];

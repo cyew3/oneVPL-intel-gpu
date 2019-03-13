@@ -456,7 +456,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_VP9_PARAM(QIndexDeltaLumaDC,   OPT_INT_16, ""),
         HANDLE_VP9_PARAM(QIndexDeltaChromaAC, OPT_INT_16, ""),
         HANDLE_VP9_PARAM(QIndexDeltaChromaDC, OPT_INT_16, ""),
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1029)
         HANDLE_VP9_PARAM(NumTileRows,         OPT_INT_16, "number of tile rows (1 - default)"),
         HANDLE_VP9_PARAM(NumTileColumns,      OPT_INT_16, "number of tile columns (1 - default)"),
 #endif
@@ -1527,7 +1527,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1029)
             if (m_EncParams.mfx.CodecId == MFX_CODEC_VP9)
             {
                 mfxExtVP9Param *pExt = NULL;
@@ -1582,7 +1582,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1029)
             if (m_EncParams.mfx.CodecId == MFX_CODEC_VP9)
             {
                 mfxExtVP9Param *pExt = NULL;

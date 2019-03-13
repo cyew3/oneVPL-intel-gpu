@@ -1499,7 +1499,7 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtVP9Para
     DUMP_FIELD(QIndexDeltaLumaDC);
     DUMP_FIELD(QIndexDeltaChromaAC);
     DUMP_FIELD(QIndexDeltaChromaDC);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1029)
     DUMP_FIELD(NumTileRows);
     DUMP_FIELD(NumTileColumns);
 #endif
