@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -45,6 +45,7 @@ enum HWType
 
     MFX_HW_TGL       = 0xe00000,
     MFX_HW_DG1       = MFX_HW_TGL + 1,
+    MFX_HW_ATS       = MFX_HW_DG1 + 1
 };
 
 enum OSFamily

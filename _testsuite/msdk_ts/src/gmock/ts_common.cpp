@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -322,6 +322,8 @@ void MFXVideoTest::SetUp()
                 g_tsHWtype = MFX_HW_TGL;
             else if (platform.find("dg1") != std::string::npos)
                 g_tsHWtype = MFX_HW_DG1;
+            else if (platform.find("ats") != std::string::npos)
+                g_tsHWtype = MFX_HW_ATS;
             else
                 g_tsHWtype = MFX_HW_UNKNOWN;
 
@@ -486,8 +488,8 @@ void SetParam(tsExtBufType<T>& base, const std::string name, const mfxU32 offset
     assert(!name.empty() );
     void* ptr = &base;
 
-    if( (typeid(T) == typeid(mfxVideoParam) && ( name.find("mfxVideoParam") == std::string::npos) ) || 
-        (typeid(T) == typeid(mfxBitstream)  && ( name.find("mfxBitstream")  == std::string::npos) ) || 
+    if( (typeid(T) == typeid(mfxVideoParam) && ( name.find("mfxVideoParam") == std::string::npos) ) ||
+        (typeid(T) == typeid(mfxBitstream)  && ( name.find("mfxBitstream")  == std::string::npos) ) ||
         (typeid(T) == typeid(mfxEncodeCtrl) && ( name.find("mfxEncodeCtrl") == std::string::npos) ) ||
         (typeid(T) == typeid(mfxInitParam) &&  ( name.find("mfxInitParam") == std::string::npos) ) )
     {
