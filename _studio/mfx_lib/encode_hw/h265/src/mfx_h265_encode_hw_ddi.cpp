@@ -813,7 +813,7 @@ void FillSpsBuffer(
     sps.GlobalSearch     = 0;
     sps.LocalSearch      = 0;
     sps.EarlySkip        = 0;
-    sps.MBBRC            = IsOn(par.m_ext.CO2.MBBRC);
+    sps.MBBRC            = IsOn(par.m_ext.CO2.MBBRC) ? 1 : IsOff(par.m_ext.CO2.MBBRC) ? 2 : 1; /*it should be zero by default (MBBRC == UNKNOWN), but to save previous behavior MBBRC is on by default */
 
     //WA:  Parallel BRC is switched on in sync & async mode (quality drop in noParallelBRC in driver)
     sps.ParallelBRC = (sps.GopRefDist > 1) && (sps.GopRefDist <= 8) && par.isBPyramid() && !IsOn(par.mfx.LowPower);
