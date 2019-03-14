@@ -1,4 +1,4 @@
-// Copyright (c) 2005-2018 Intel Corporation
+// Copyright (c) 2005-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 #if defined (UMC_ENABLE_MPEG2_VIDEO_ENCODER)
 
 #include "umc_mpeg2_enc_defs.h"
+#include "mfx_utils.h"
 
 using namespace UMC;
 
@@ -271,7 +272,7 @@ Ipp32s MPEG2VideoEncoderBase::InitRateControl(Ipp32s BitRate)
   }
   encodeInfo.VBV_BufferSize = IPP_MIN(encodeInfo.VBV_BufferSize, (encodeInfo.mpeg1 ? 0x3fe : 0x3fffe));
   encodeInfo.m_SuggestedOutputSize = 2 * encodeInfo.VBV_BufferSize * (16384/8); // in bytes
-  encodeInfo.m_SuggestedOutputSize = align_value<Ipp32u>(encodeInfo.m_SuggestedOutputSize);
+  encodeInfo.m_SuggestedOutputSize = mfx::align_value(encodeInfo.m_SuggestedOutputSize);
 
   // one can vary weights, can be added to API
   if(encodeInfo.rc_mode == RC_CBR) {

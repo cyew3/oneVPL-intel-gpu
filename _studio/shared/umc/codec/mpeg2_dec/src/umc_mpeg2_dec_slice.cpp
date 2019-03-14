@@ -25,6 +25,7 @@
 #include "umc_mpeg2_dec_defs_sw.h"
 #include "umc_mpeg2_dec_sw.h"
 #include "umc_mpeg2_dec_tbl.h"
+#include "mfx_utils.h"
 
 // turn off the "conversion from 'type1' to 'type2', possible loss of data" warning
 #ifdef _MSVC_LANG
@@ -32,8 +33,6 @@
 #endif
 
 using namespace UMC;
-
-const int32_t ALIGN_VALUE  = 16;
 
 static void mp2_HuffmanTableFree(mp2_VLCTable *vlc)
 {
@@ -790,8 +789,8 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, uint8_t* iqm, uint8_
       int32_t height_l, height_c;
       int32_t size_l, size_c;
 
-      pitch_l = align_value<int32_t>(sequenceHeader.mb_width[task_num]*16, ALIGN_VALUE);
-      height_l = align_value<int32_t>(sequenceHeader.mb_height[task_num]*16, ALIGN_VALUE);
+      pitch_l  = mfx::align_value<int32_t>(sequenceHeader.mb_width[task_num] *16, 16);
+      height_l = mfx::align_value<int32_t>(sequenceHeader.mb_height[task_num]*16, 16);
       size_l = height_l*pitch_l;
       if (m_ClipInfo.color_format != YUV444) {
 

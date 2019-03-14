@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@
 #include <ippi.h>
 #include <ipps.h>
 #include "umc_scene_analyzer_frame.h"
+#include "mfx_utils.h"
 
 namespace UMC
 {
@@ -92,7 +93,7 @@ Status SceneAnalyzerPicture::Init(int32_t srcWidth, int32_t srcHeight,
     Close();
 
     // calculate step
-    picStep = align_value<size_t> (srcWidth, SA_STEP_ALIGN);
+    picStep = mfx::align_value(srcWidth, SA_STEP_ALIGN);
 
     // calculate picture size
     switch (colorFormat)

@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -461,8 +461,8 @@ Status VP8VideoDecoderSoftware::FillVideoParam(mfxVideoParam *par, bool /*full*/
     par->mfx.FrameInfo.CropH = par->mfx.FrameInfo.Height;
     par->mfx.FrameInfo.CropW = par->mfx.FrameInfo.Width;
 
-    par->mfx.FrameInfo.CropW = UMC::align_value<mfxU16>(par->mfx.FrameInfo.CropW, 2);
-    par->mfx.FrameInfo.CropH = UMC::align_value<mfxU16>(par->mfx.FrameInfo.CropH, 2);
+    par->mfx.FrameInfo.CropW = mfx::align_value(par->mfx.FrameInfo.CropW, 2);
+    par->mfx.FrameInfo.CropH = mfx::align_value(par->mfx.FrameInfo.CropH, 2);
 
     par->mfx.FrameInfo.PicStruct = (mfxU8)(MFX_PICSTRUCT_PROGRESSIVE);
     par->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;

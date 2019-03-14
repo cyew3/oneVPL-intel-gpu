@@ -298,7 +298,7 @@ namespace UMC_HEVC_DECODER
         int32_t fullSize = dataVABffr->GetDataSize() + storedSize;
         if (isLastSlice)
         {
-            int32_t alignedSize = align_value<int32_t>(fullSize, 128);
+            int32_t alignedSize = mfx::align_value(fullSize, 128);
             VM_ASSERT(alignedSize < dataVABffr->GetBufferSize());
             memset(dataBffr + storedSize, 0, alignedSize - fullSize);
             fullSize = alignedSize;

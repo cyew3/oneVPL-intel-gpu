@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,7 @@
 #include "umc_asf_fb.h"
 #include "umc_linear_buffer.h"
 #include "umc_sample_buffer.h"
+#include "mfx_utils.h"
 
 namespace UMC
 {
@@ -174,7 +175,7 @@ Status ASFFrameBuffer::UnLockInputBuffer(MediaData *in, Status frameStat)
     pTemp->m_FrameType = m_pCurFrame->m_FrameType;
     pTemp->m_dTime = m_pCurFrame->m_dTime;
     pTemp->m_dTimeAux = m_pCurFrame->m_dTimeAux;
-    pTemp->m_lBufferSize = align_value<size_t> (pb + sizeof(SampleInfo) - m_pbFree, ASF_ALIGN_VALUE);
+    pTemp->m_lBufferSize = mfx::align_value(pb + sizeof(SampleInfo) - m_pbFree, ASF_ALIGN_VALUE);
     pTemp->m_lDataSize = m_pCurFrame->m_lDataSize;
     pTemp->m_pNext = NULL;
 

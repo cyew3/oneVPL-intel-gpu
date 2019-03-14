@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 
 #include <umc_linear_buffer.h>
 #include <umc_sample_buffer.h>
+#include "mfx_utils.h"
 
 namespace UMC
 {
@@ -259,7 +260,7 @@ Status SampleBuffer::UnLockInputBuffer(MediaData* in, Status StreamStatus)
     // fill sample info
     in->GetTime(pTemp->m_dTime, pTemp->m_dTimeAux);
     pTemp->m_FrameType = in->GetFrameType();
-    pTemp->m_lBufferSize = align_value<size_t> (pb + sizeof(SampleInfo) - m_pbFree, ALIGN_VALUE);
+    pTemp->m_lBufferSize = mfx::align_value(pb + sizeof(SampleInfo) - m_pbFree, ALIGN_VALUE);
     pTemp->m_lDataSize = in->GetDataSize();
     pTemp->m_pbData = m_pbFree;
     pTemp->m_pNext = NULL;

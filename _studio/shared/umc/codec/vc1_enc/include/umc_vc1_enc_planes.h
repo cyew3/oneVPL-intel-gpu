@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -482,13 +482,13 @@ namespace UMC_VC1_ENCODER
             uint32_t memSize = 0;
             if (bNV12)
             {
-                memSize += UMC::align_value<uint32_t>(nFrames*sizeof(FrameNV12));
-                memSize += nFrames*UMC::align_value<uint32_t>(FrameNV12::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
+                memSize += mfx::align_value(nFrames*sizeof(FrameNV12));
+                memSize += nFrames*mfx::align_value(FrameNV12::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
             }
             else
             {
-                memSize += UMC::align_value<uint32_t>(nFrames*sizeof(Frame));
-                memSize += nFrames*UMC::align_value<uint32_t>(Frame::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
+                memSize += mfx::align_value(nFrames*sizeof(Frame));
+                memSize += nFrames*mfx::align_value(Frame::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
             }
 
             return memSize;
@@ -515,12 +515,12 @@ namespace UMC_VC1_ENCODER
                 if (!m_pFrames)
                     return UMC::UMC_ERR_ALLOC;
 
-                pBuffer += UMC::align_value<uint32_t>(m_nFrames*sizeof(FrameNV12));
-                memSize -= UMC::align_value<uint32_t>(m_nFrames*sizeof(FrameNV12));
+                pBuffer += mfx::align_value(m_nFrames*sizeof(FrameNV12));
+                memSize -= mfx::align_value(m_nFrames*sizeof(FrameNV12));
                 if(memSize < 0)
                     return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                frameSize = UMC::align_value<uint32_t>(FrameNV12::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
+                frameSize = mfx::align_value(FrameNV12::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
             }
             else
             {
@@ -528,12 +528,12 @@ namespace UMC_VC1_ENCODER
                 if (!m_pFrames)
                     return UMC::UMC_ERR_ALLOC;
 
-                pBuffer += UMC::align_value<uint32_t>(m_nFrames*sizeof(Frame));
-                memSize -= UMC::align_value<uint32_t>(m_nFrames*sizeof(Frame));
+                pBuffer += mfx::align_value(m_nFrames*sizeof(Frame));
+                memSize -= mfx::align_value(m_nFrames*sizeof(Frame));
                 if(memSize < 0)
                     return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                frameSize = UMC::align_value<uint32_t>(Frame::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
+                frameSize = mfx::align_value(Frame::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
 
             }
             for (i=0;i<m_nFrames;i++)

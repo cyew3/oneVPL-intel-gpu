@@ -51,13 +51,6 @@
 #define D3DFMT_Y416     (D3DFORMAT)MFX_FOURCC_Y416
 #endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
 
-template<class T> inline
-T align_value(size_t nValue, size_t lAlignValue = DEFAULT_ALIGN_VALUE)
-{
-    return static_cast<T> ((nValue + (lAlignValue - 1)) &
-        ~(lAlignValue - 1));
-}
-
 // D3D9 surface working
 mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {

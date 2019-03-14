@@ -204,8 +204,8 @@ mfxStatus FillVideoParam(VideoCORE* core, UMC_VP9_DECODER::VP9DecoderFrame const
     params->mfx.FrameInfo.CropW = static_cast<mfxU16>(frame.width);
     params->mfx.FrameInfo.CropH = static_cast<mfxU16>(frame.height);
 
-    params->mfx.FrameInfo.Width  = UMC::align_value<mfxU16>(params->mfx.FrameInfo.CropW, 16);
-    params->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(params->mfx.FrameInfo.CropH, 16);
+    params->mfx.FrameInfo.Width  = mfx::align_value<mfxU16>(params->mfx.FrameInfo.CropW, 16);
+    params->mfx.FrameInfo.Height = mfx::align_value<mfxU16>(params->mfx.FrameInfo.CropH, 16);
 
     if (!frame.subsamplingX && !frame.subsamplingY)
         params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,18 +38,18 @@ uint32_t Frame::CalcAllocatedMemSize(uint32_t w, uint32_t h, uint32_t paddingSiz
     uint32_t wMB = (w+15)>>4;
     uint32_t hMB = (h+15)>>4;
 
-    uint32_t stepY =  UMC::align_value<uint32_t>(wMB*VC1_ENC_LUMA_SIZE   + 2*paddingSize);
-    uint32_t stepUV=  UMC::align_value<uint32_t>(wMB*VC1_ENC_CHROMA_SIZE + paddingSize);
+    uint32_t stepY =  mfx::align_value(wMB*VC1_ENC_LUMA_SIZE   + 2*paddingSize);
+    uint32_t stepUV=  mfx::align_value(wMB*VC1_ENC_CHROMA_SIZE + paddingSize);
 
 
     //Y
-    size += UMC::align_value<uint32_t>(stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*paddingSize)
+    size += mfx::align_value(stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*paddingSize)
                     + 32 + stepY * 4);
     //U
-    size += UMC::align_value<uint32_t>(stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ paddingSize)
+    size += mfx::align_value(stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ paddingSize)
                     + 32 + stepUV * 4);
     //V
-    size += UMC::align_value<uint32_t>(stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ paddingSize)
+    size += mfx::align_value(stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ paddingSize)
                     + 32 + stepUV * 4);
     if (bUdata)
     {
@@ -80,14 +80,14 @@ UMC::Status Frame::Init(uint8_t* pBuffer, int32_t memSize, int32_t w, int32_t h,
 
     m_paddingSize = paddingSize;
 
-    m_stepY =  UMC::align_value<uint32_t>(wMB*VC1_ENC_LUMA_SIZE   + 2*m_paddingSize);
-    m_stepUV=  UMC::align_value<uint32_t>(wMB*VC1_ENC_CHROMA_SIZE + m_paddingSize);
+    m_stepY =  mfx::align_value(wMB*VC1_ENC_LUMA_SIZE   + 2*m_paddingSize);
+    m_stepUV=  mfx::align_value(wMB*VC1_ENC_CHROMA_SIZE + m_paddingSize);
 
     //Y
     m_pYFrame = pBuffer;
-    pBuffer += UMC::align_value<uint32_t>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
+    pBuffer += mfx::align_value(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
                     + 32 + m_stepY * 4);
-    memSize -= UMC::align_value<uint32_t>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
+    memSize -= mfx::align_value(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
                     + 32 + m_stepY * 4);
 
     if(memSize <= 0)
@@ -95,9 +95,9 @@ UMC::Status Frame::Init(uint8_t* pBuffer, int32_t memSize, int32_t w, int32_t h,
 
     //U
     m_pUFrame = pBuffer;
-    pBuffer += UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    pBuffer += mfx::align_value(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
                     + 32 + m_stepUV * 4);
-    memSize -= UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    memSize -= mfx::align_value(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
                     + 32 + m_stepUV * 4);
 
     if(memSize <= 0)
@@ -106,9 +106,9 @@ UMC::Status Frame::Init(uint8_t* pBuffer, int32_t memSize, int32_t w, int32_t h,
 
      //V
     m_pVFrame = pBuffer;
-    pBuffer += UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    pBuffer += mfx::align_value(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
                     + 32 + m_stepUV * 4);
-    memSize -= UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    memSize -= mfx::align_value(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
                     + 32 + m_stepUV * 4);
 
     if(memSize < 0)
@@ -153,14 +153,14 @@ UMC::Status FrameNV12::Init(uint8_t* pBuffer, int32_t memSize, int32_t w, int32_
 
     m_paddingSize = paddingSize;
 
-    m_stepY  =  UMC::align_value<uint32_t>(wMB*VC1_ENC_LUMA_SIZE   + 2*m_paddingSize);
+    m_stepY  =  mfx::align_value(wMB*VC1_ENC_LUMA_SIZE   + 2*m_paddingSize);
     m_stepUV =  m_stepY;
 
     //Y
     m_pYFrame = pBuffer;
-    pBuffer += UMC::align_value<uint32_t>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
+    pBuffer += mfx::align_value(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
         + 32 + m_stepY * 4);
-    memSize -= UMC::align_value<uint32_t>(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
+    memSize -= mfx::align_value(m_stepY  * (hMB*VC1_ENC_LUMA_SIZE + 2*m_paddingSize)
         + 32 + m_stepY * 4);
 
     if(memSize <= 0)
@@ -168,9 +168,9 @@ UMC::Status FrameNV12::Init(uint8_t* pBuffer, int32_t memSize, int32_t w, int32_
 
     //U
     m_pUFrame = pBuffer;
-    pBuffer += UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    pBuffer += mfx::align_value(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
         + 32 + m_stepUV * 4);
-    memSize -= UMC::align_value<uint32_t>(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
+    memSize -= mfx::align_value(m_stepUV  * (hMB*VC1_ENC_CHROMA_SIZE+ m_paddingSize)
         + 32 + m_stepUV * 4);
 
     if(memSize <= 0)
@@ -293,8 +293,8 @@ UMC::Status FrameNV12::CopyPlane ( Frame * fr)
 uint32_t BufferedFrames::CalcAllocatedMemSize(uint32_t w, uint32_t h, uint32_t paddingSize, uint32_t n)
 {
     uint32_t memSize = 0;
-    memSize += UMC::align_value<uint32_t>(n*sizeof(Frame));
-    memSize += n*UMC::align_value<uint32_t>(Frame::CalcAllocatedMemSize(w, h, paddingSize));
+    memSize += mfx::align_value(n*sizeof(Frame));
+    memSize += n*mfx::align_value(Frame::CalcAllocatedMemSize(w, h, paddingSize));
 
     return memSize;
 }
@@ -316,15 +316,15 @@ UMC::Status BufferedFrames::Init (uint8_t* pBuffer, uint32_t memSize, uint32_t w
     if (!m_pFrames)
         return UMC::UMC_ERR_ALLOC;
 
-    pBuffer += UMC::align_value<uint32_t>(n * sizeof(Frame));
-    memSize -= UMC::align_value<uint32_t>(n * sizeof(Frame));
+    pBuffer += mfx::align_value(n * sizeof(Frame));
+    memSize -= mfx::align_value(n * sizeof(Frame));
 
     if(memSize < 0)
         return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
     m_bufferSize    = n;
 
-    uint32_t frameSize = UMC::align_value<uint32_t>(Frame::CalcAllocatedMemSize(w,h,paddingSize));
+    uint32_t frameSize = mfx::align_value(Frame::CalcAllocatedMemSize(w,h,paddingSize));
     for (i = 0; i < n ; i++)
     {
         err = m_pFrames[i].Init (pBuffer, memSize, w,h,paddingSize);

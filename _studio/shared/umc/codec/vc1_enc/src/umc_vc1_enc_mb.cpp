@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -75,7 +75,7 @@ UMC::Status VC1EncoderMBs::Init(uint8_t* pPicBufer,   uint32_t AllocatedMemSize,
 
     pBufferData = (int16_t*)ptr;
 
-    tempSize = UMC::align_value<uint32_t>(sizeof(int16_t)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16));
+    tempSize = mfx::align_value(sizeof(int16_t)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16));
     ptr = ptr + tempSize;
     memSize -= tempSize;
     if(memSize < 0)
@@ -85,7 +85,7 @@ UMC::Status VC1EncoderMBs::Init(uint8_t* pPicBufer,   uint32_t AllocatedMemSize,
 
     pBufferRecData = (int16_t*)ptr;
 
-    tempSize = UMC::align_value<uint32_t>(sizeof(int16_t)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16));
+    tempSize = mfx::align_value(sizeof(int16_t)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16));
     ptr = ptr + tempSize ;
     memSize  -= tempSize ;
     if(memSize < 0)
@@ -97,7 +97,7 @@ UMC::Status VC1EncoderMBs::Init(uint8_t* pPicBufer,   uint32_t AllocatedMemSize,
     if (!m_MBInfo)
         return UMC::UMC_ERR_ALLOC;
 
-    tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBInfo*) * MBsInCol); 
+    tempSize = mfx::align_value(sizeof(VC1EncoderMBInfo*) * MBsInCol); 
     ptr = ptr +  tempSize ;
     memSize   -= tempSize;
     if(memSize < 0)
@@ -109,7 +109,7 @@ UMC::Status VC1EncoderMBs::Init(uint8_t* pPicBufer,   uint32_t AllocatedMemSize,
         if (!m_MBInfo[i])
             return UMC::UMC_ERR_ALLOC;
 
-        tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBInfo)*MBsInRow);
+        tempSize = mfx::align_value(sizeof(VC1EncoderMBInfo)*MBsInRow);
         ptr = ptr + tempSize;
         memSize  -= tempSize;
         if(memSize < 0)
@@ -122,7 +122,7 @@ UMC::Status VC1EncoderMBs::Init(uint8_t* pPicBufer,   uint32_t AllocatedMemSize,
     if (!m_MBData)
         return UMC::UMC_ERR_ALLOC;
 
-    tempSize =  UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData*)*MBsInCol);
+    tempSize =  mfx::align_value(sizeof(VC1EncoderMBData*)*MBsInCol);
     ptr = ptr + tempSize;
     memSize -=  tempSize;
     if(memSize < 0)
@@ -133,7 +133,7 @@ UMC::Status VC1EncoderMBs::Init(uint8_t* pPicBufer,   uint32_t AllocatedMemSize,
     if (!m_MBData)
         return UMC::UMC_ERR_ALLOC;
 
-    tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData*)*MBsInCol);
+    tempSize = mfx::align_value(sizeof(VC1EncoderMBData*)*MBsInCol);
     ptr = ptr + tempSize;
     memSize  -= tempSize;
     if(memSize < 0)
@@ -149,7 +149,7 @@ UMC::Status VC1EncoderMBs::Init(uint8_t* pPicBufer,   uint32_t AllocatedMemSize,
             if (!m_MBData[i])
                 return UMC::UMC_ERR_ALLOC;
 
-            tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBDataNV12)*MBsInRow);
+            tempSize = mfx::align_value(sizeof(VC1EncoderMBDataNV12)*MBsInRow);
             ptr = ptr + tempSize;
             memSize -=  tempSize;
             if(memSize < 0)
@@ -160,7 +160,7 @@ UMC::Status VC1EncoderMBs::Init(uint8_t* pPicBufer,   uint32_t AllocatedMemSize,
             if (!m_MBData[i])
                 return UMC::UMC_ERR_ALLOC;
 
-            tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBDataNV12)*MBsInRow);
+            tempSize = mfx::align_value(sizeof(VC1EncoderMBDataNV12)*MBsInRow);
             ptr = ptr + tempSize;
             memSize -=  tempSize;
             if(memSize < 0)
@@ -177,7 +177,7 @@ UMC::Status VC1EncoderMBs::Init(uint8_t* pPicBufer,   uint32_t AllocatedMemSize,
             if (!m_MBData[i])
                 return UMC::UMC_ERR_ALLOC;
 
-            tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData)*MBsInRow);
+            tempSize = mfx::align_value(sizeof(VC1EncoderMBData)*MBsInRow);
             ptr = ptr + tempSize;
             memSize  -= tempSize;
             if(memSize < 0)
@@ -187,7 +187,7 @@ UMC::Status VC1EncoderMBs::Init(uint8_t* pPicBufer,   uint32_t AllocatedMemSize,
             if (!m_MBData[i])
                 return UMC::UMC_ERR_ALLOC;
 
-            tempSize = UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData)*MBsInRow);
+            tempSize = mfx::align_value(sizeof(VC1EncoderMBData)*MBsInRow);
             ptr = ptr + tempSize;
             memSize -= tempSize;
             if(memSize < 0)
@@ -221,26 +221,26 @@ uint32_t VC1EncoderMBs::CalcAllocMemorySize(uint32_t MBsInRow, uint32_t MBsInCol
     uint32_t i = 0;
 
     //buffers for MB Data and Rec MB Data
-    mem_size = 2 * (UMC::align_value<uint32_t>(sizeof(int16_t)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16)));
+    mem_size = 2 * (mfx::align_value(sizeof(int16_t)*(MBsInRow*MBsInCol*VC1_ENC_BLOCK_SIZE*VC1_ENC_NUMBER_OF_BLOCKS + 16)));
 
     //m_MBInfo
     
-    mem_size += UMC::align_value<uint32_t>(sizeof(VC1EncoderMBInfo*)*MBsInCol);
+    mem_size += mfx::align_value(sizeof(VC1EncoderMBInfo*)*MBsInCol);
     for (i = 0; i < MBsInCol; i++)
     {
         //m_MBInfo[i]
-        mem_size += UMC::align_value<uint32_t>(sizeof(VC1EncoderMBInfo)*MBsInRow);
+        mem_size += mfx::align_value(sizeof(VC1EncoderMBInfo)*MBsInRow);
     }
     
     //m_MBData and m_MBRecData
     
-    mem_size += 2* (UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData*)*MBsInCol));
+    mem_size += 2* (mfx::align_value(sizeof(VC1EncoderMBData*)*MBsInCol));
     if (bNV12)
     {
         for (i = 0; i < MBsInCol; i++)
         {
             //m_MBData[i] and m_MBRecData[i]
-            mem_size += 2*(UMC::align_value<uint32_t>(sizeof(VC1EncoderMBDataNV12)*MBsInRow));
+            mem_size += 2*(mfx::align_value(sizeof(VC1EncoderMBDataNV12)*MBsInRow));
         }
     }
     else
@@ -249,7 +249,7 @@ uint32_t VC1EncoderMBs::CalcAllocMemorySize(uint32_t MBsInRow, uint32_t MBsInCol
         for (i = 0; i < MBsInCol; i++)
         {
             //m_MBData[i] and m_MBRecData[i]
-            mem_size += 2*(UMC::align_value<uint32_t>(sizeof(VC1EncoderMBData)*MBsInRow));
+            mem_size += 2*(mfx::align_value(sizeof(VC1EncoderMBData)*MBsInRow));
         }
     }
     return mem_size;

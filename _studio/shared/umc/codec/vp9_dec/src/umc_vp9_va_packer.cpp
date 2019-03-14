@@ -296,9 +296,8 @@ void PackerMS::PackAU(VP9Bitstream* bs, VP9DecoderFrame const* info)
         mfxU32 lenght2 = length;
         if (compBufBs->GetBufferSize() < (mfxI32)length)
             lenght2 = compBufBs->GetBufferSize();
-        
-        mfxU32 const padding = 
-            align_value<int32_t>(lenght2, 128) - lenght2;
+
+        mfxU32 const padding = mfx::align_value(lenght2, 128) - lenght2;
 
         std::copy(data, data + lenght2, bistreamData);
 

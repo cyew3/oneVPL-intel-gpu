@@ -33,6 +33,8 @@
 #include "umc_h264_config.h"
 #include "umc_h264_video_encoder.h"
 
+#include "mfx_utils.h"
+
 using namespace UMC;
 
 #define H264ENC_UNREFERENCED_PARAMETER(X) X=X
@@ -745,9 +747,9 @@ extern const H264MotionVector null_mv;
 inline Ipp32u CalcPitchFromWidth(Ipp32u width, Ipp32s pixSize)
 {
 #ifdef NO_PADDING
-    return align_value<Ipp32u> (((width + LUMA_PADDING * 4) * pixSize), 16);
+    return mxf::align_value<Ipp32u>(((width + LUMA_PADDING * 4) * pixSize), 16);
 #else // NO_PADDING
-    return align_value<Ipp32u> (((width + LUMA_PADDING * 4) * pixSize), DATA_ALIGN);
+    return mfx::align_value<Ipp32u>(((width + LUMA_PADDING * 4) * pixSize), DATA_ALIGN);
 #endif
 }
 

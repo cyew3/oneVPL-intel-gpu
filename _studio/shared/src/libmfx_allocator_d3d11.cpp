@@ -48,14 +48,6 @@
 #define DXGI_FORMAT_GRBG MAKEFOURCC('I','R','W','2')
 #define DXGI_FORMAT_GBRG MAKEFOURCC('I','R','W','3')
 
-template<class T> inline
-T align_value(size_t nValue, size_t lAlignValue = DEFAULT_ALIGN_VALUE)
-{
-    return static_cast<T> ((nValue + (lAlignValue - 1)) &
-        ~(lAlignValue - 1));
-}
-
-
 DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
 {
     switch (format)

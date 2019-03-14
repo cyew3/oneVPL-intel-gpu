@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,16 +48,16 @@ int32_t VC1BitRateControl::CalcAllocMemorySize(uint32_t GOPLength, uint32_t BFrL
     uint32_t mem_size = 0;
 
     if(GOPLength == 1)
-        mem_size +=  UMC::align_value<uint32_t>(sizeof(VC1BRC_I));
+        mem_size +=  mfx::align_value(sizeof(VC1BRC_I));
     else if (BFrLength == 0)
-         mem_size +=   UMC::align_value<uint32_t>(sizeof(VC1BRC_IP));
+         mem_size +=   mfx::align_value(sizeof(VC1BRC_IP));
     else
-         mem_size +=   UMC::align_value<uint32_t>(sizeof(VC1BRC_IPB));
+         mem_size +=   mfx::align_value(sizeof(VC1BRC_IPB));
 
-    mem_size +=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
+    mem_size +=  mfx::align_value(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
 
 
-    mem_size +=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
+    mem_size +=  mfx::align_value(sizeof(VC1HRDecoder))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
 
    return mem_size;
 }
@@ -100,8 +100,8 @@ UMC::Status VC1BitRateControl::Init(uint8_t* pBuffer, int32_t AllocatedMemSize,
 
     //hypothetical reference decoder
     m_HRD =  new (ptr) (VC1HRDecoder*);
-    ptr +=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
-    memSize -=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
+    ptr +=  mfx::align_value(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
+    memSize -=  mfx::align_value(sizeof(VC1HRDecoder*))*VC1_ENC_MAX_NUM_LEAKY_BUCKET;
     if(!m_HRD || memSize < 0)
     {
        Close();
@@ -116,8 +116,8 @@ UMC::Status VC1BitRateControl::Init(uint8_t* pBuffer, int32_t AllocatedMemSize,
             Close();
             return UMC::UMC_ERR_ALLOC;
         }
-        ptr +=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder));
-        memSize -=  UMC::align_value<uint32_t>(sizeof(VC1HRDecoder));
+        ptr +=  mfx::align_value(sizeof(VC1HRDecoder));
+        memSize -=  mfx::align_value(sizeof(VC1HRDecoder));
         if(!m_HRD[i] || memSize < 0)
         {
            Close();
@@ -128,20 +128,20 @@ UMC::Status VC1BitRateControl::Init(uint8_t* pBuffer, int32_t AllocatedMemSize,
     if(GOPLength == 1)
     {
         m_BRC = new (ptr) VC1BRC_I();
-        ptr +=  UMC::align_value<uint32_t>(sizeof(VC1BRC_I));
-        memSize -=  UMC::align_value<uint32_t>(sizeof(VC1BRC_I));
+        ptr +=  mfx::align_value(sizeof(VC1BRC_I));
+        memSize -=  mfx::align_value(sizeof(VC1BRC_I));
     }
     else if (BFrLength == 0)
     {
         m_BRC = new (ptr) VC1BRC_IP();
-        ptr +=  UMC::align_value<uint32_t>(sizeof(VC1BRC_IP));
-        memSize -=  UMC::align_value<uint32_t>(sizeof(VC1BRC_IP));
+        ptr +=  mfx::align_value(sizeof(VC1BRC_IP));
+        memSize -=  mfx::align_value(sizeof(VC1BRC_IP));
     }
     else
     {
         m_BRC = new (ptr) VC1BRC_IPB();
-        ptr +=  UMC::align_value<uint32_t>(sizeof(VC1BRC_IPB));
-        memSize -=  UMC::align_value<uint32_t>(sizeof(VC1BRC_IPB));
+        ptr +=  mfx::align_value(sizeof(VC1BRC_IPB));
+        memSize -=  mfx::align_value(sizeof(VC1BRC_IPB));
     }
 
     if(!m_BRC || memSize < 0)

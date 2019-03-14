@@ -180,6 +180,12 @@ constexpr uint8_t byte_clamp(T v)
 {
     return uint8_t(clamp<T>(v, 0, 255));
 }
+
+template<class T> inline
+T align_value(T value, size_t alignment = 16)
+{
+    return static_cast<T> ((value + (alignment - 1)) & ~(alignment - 1));
+}
 }
 
 #if defined(MFX_VA_LINUX)

@@ -184,7 +184,7 @@ namespace UMC
 
     uint32_t VC1TaskStore::CalculateHeapSize()
     {
-        uint32_t Size = align_value<uint32_t>(sizeof(VC1FrameDescriptor*)*(m_iNumFramesProcessing));
+        uint32_t Size = mfx::align_value<uint32_t>(sizeof(VC1FrameDescriptor*)*(m_iNumFramesProcessing));
 
         for (uint32_t counter = 0; counter < m_iNumFramesProcessing; counter++)
         {
@@ -195,24 +195,24 @@ namespace UMC
                 {
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
                     if (pMainVC1Decoder->m_va->GetProtectedVA())
-                        Size += align_value<uint32_t>(sizeof(VC1FrameDescriptorVA_Protected<VC1PackerDXVA_Protected>));
+                        Size += mfx::align_value<uint32_t>(sizeof(VC1FrameDescriptorVA_Protected<VC1PackerDXVA_Protected>));
                     else
 #endif
-                        Size += align_value<uint32_t>(sizeof(VC1FrameDescriptorVA_EagleLake<VC1PackerDXVA_EagleLake>));
+                        Size += mfx::align_value<uint32_t>(sizeof(VC1FrameDescriptorVA_EagleLake<VC1PackerDXVA_EagleLake>));
                 }
                 else
-                    Size += align_value<uint32_t>(sizeof(VC1FrameDescriptorVA<VC1PackerDXVA>));
+                    Size += mfx::align_value<uint32_t>(sizeof(VC1FrameDescriptorVA<VC1PackerDXVA>));
             }
             else
 #endif
 #ifdef UMC_VA_LINUX
                 if (pMainVC1Decoder->m_va)
                 {
-                    Size += align_value<uint32_t>(sizeof(VC1FrameDescriptorVA_Linux<VC1PackerLVA>));
+                    Size += mfx::align_value<uint32_t>(sizeof(VC1FrameDescriptorVA_Linux<VC1PackerLVA>));
                 }
                 else
 #endif
-                    Size += align_value<uint32_t>(sizeof(VC1FrameDescriptor));
+                    Size += mfx::align_value<uint32_t>(sizeof(VC1FrameDescriptor));
         }
 
         return Size;
@@ -454,12 +454,12 @@ namespace UMC
         if (!m_pDSIndicate)
         {
             uint8_t* ptr = NULL;
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
 
             if (m_pMemoryAllocator->Alloc(&m_iIntStructID,
                 (size_t)ptr,
@@ -471,19 +471,19 @@ namespace UMC
             memset(m_pDSIndicate, 0, size_t(ptr));
             ptr = (uint8_t*)m_pDSIndicate;
 
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
             m_pDSIndicateSwap = (int32_t*)ptr;
 
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
             m_pTasksInQueue = (uint32_t*)ptr;
 
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
             m_pSlicesInQueue = (uint32_t*)ptr;
 
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
             m_pMainQueueTasksState = (uint32_t*)ptr;
 
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
             m_pAdditionaQueueTasksState = (uint32_t*)ptr;
         }
 
@@ -522,12 +522,12 @@ namespace UMC
             m_pDSIndicateSwap = 0;
 
             uint8_t* ptr = NULL;
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
 
             if (m_pMemoryAllocator->Alloc(&m_iIntStructID,
                 (size_t)ptr,
@@ -539,22 +539,22 @@ namespace UMC
             memset(m_pDSIndicate, 0, size_t(ptr));
             ptr = (uint8_t*)m_pDSIndicate;
 
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
             m_pDSIndicateSwap = (int32_t*)ptr;
 
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
             m_pTasksInQueue = (uint32_t*)ptr;
 
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
             m_pSlicesInQueue = (uint32_t*)ptr;
 
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(int32_t));
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(int32_t));
             m_pMainQueueTasksState = (uint32_t*)ptr;
 
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
             m_pAdditionaQueueTasksState = (uint32_t*)ptr;
 
-            ptr += align_value<uint32_t>(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
+            ptr += mfx::align_value(m_iNumFramesProcessing * sizeof(uint32_t) * 64);
 
             m_pSHeap->s_new(&m_pCommonQueue, m_iNumFramesProcessing);
             m_pSHeap->s_new(&m_pAdditionalQueue, m_iNumFramesProcessing);
@@ -592,23 +592,23 @@ namespace UMC
         uint32_t counter = 0;
         uint32_t counter2 = 0;
 
-        Size += align_value<uint32_t>(sizeof(VC1Task***)*m_iNumFramesProcessing); //m_pCommonQueue
-        Size += align_value<uint32_t>(sizeof(VC1Task***)*m_iNumFramesProcessing); //m_pAdditionalQueue
+        Size += mfx::align_value<uint32_t>(sizeof(VC1Task***)*m_iNumFramesProcessing); //m_pCommonQueue
+        Size += mfx::align_value<uint32_t>(sizeof(VC1Task***)*m_iNumFramesProcessing); //m_pAdditionalQueue
 
         for (counter = 0; counter < m_iNumFramesProcessing; counter++)
         {
-            Size += align_value<uint32_t>(sizeof(VC1Task**)*VC1SLICEINPARAL); //m_pCommonQueue
-            Size += align_value<uint32_t>(sizeof(VC1Task**)*VC1SLICEINPARAL); //m_pAdditionalQueue
+            Size += mfx::align_value<uint32_t>(sizeof(VC1Task**)*VC1SLICEINPARAL); //m_pCommonQueue
+            Size += mfx::align_value<uint32_t>(sizeof(VC1Task**)*VC1SLICEINPARAL); //m_pAdditionalQueue
         }
 
         for (counter = 0; counter < m_iNumFramesProcessing; counter++)
         {
             for (counter2 = 0; counter2 < VC1SLICEINPARAL; counter2++)
             {
-                Size += align_value<uint32_t>(sizeof(VC1Task)); //m_pCommonQueue
-                Size += align_value<uint32_t>(sizeof(VC1Task)); //m_pAdditionalQueue
-                Size += align_value<uint32_t>(sizeof(SliceParams));
-                Size += align_value<uint32_t>(sizeof(SliceParams));
+                Size += mfx::align_value<uint32_t>(sizeof(VC1Task)); //m_pCommonQueue
+                Size += mfx::align_value<uint32_t>(sizeof(VC1Task)); //m_pAdditionalQueue
+                Size += mfx::align_value<uint32_t>(sizeof(SliceParams));
+                Size += mfx::align_value<uint32_t>(sizeof(SliceParams));
             }
         }
 

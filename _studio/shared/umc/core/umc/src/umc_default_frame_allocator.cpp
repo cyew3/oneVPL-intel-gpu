@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2018 Intel Corporation
+// Copyright (c) 2006-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,7 @@
 
 #include "umc_default_frame_allocator.h"
 #include "umc_frame_data.h"
+#include "mfx_utils.h"
 #include <memory>
 
 namespace UMC
@@ -194,12 +195,12 @@ Status DefaultFrameAllocator::Alloc(FrameMemID *pNewMemID, const VideoDataInfo *
         idx++;
     }
 
-    std::auto_ptr<FrameInformation> frameMID(new FrameInformation());
+    std::unique_ptr<FrameInformation> frameMID(new FrameInformation());
 
     frameMID->m_frame.Init(frameInfo, idx, this);
 
-    size_t pitch = align_value<size_t>(frameInfo->GetWidth(), 64);
-    size_t size = frameMID->CalculateSize(pitch);
+    size_t pitch = mfx::align_value(frameInfo->GetWidth(), 64);
+    size_t size  = frameMID->CalculateSize(pitch);
 
     frameMID->m_ptr = new uint8_t[size];
     frameMID->m_flags = flags;
