@@ -15,10 +15,10 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../codec/vp9_dec/include )
 
 set( sources "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
-list( APPEND sources ${srcs}) 
+list( APPEND sources ${srcs})
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../../codec/vp9_dec/src/umc_vp9_bitstream.cpp )
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS} -DUMC_AV1_DECODER_REV=5000" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS} -DUMC_AV1_DECODER_REV=8500" )
 make_library( umc_av1 hw static )
 
 set( defs "" )
