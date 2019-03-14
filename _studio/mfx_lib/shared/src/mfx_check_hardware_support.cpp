@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -93,6 +93,7 @@ enum PRODUCT_FAMILY
     IGFX_ICELAKE_LP,
     IGFX_LAKEFIELD,
     IGFX_JASPERLAKE,
+    IGFX_LAKEFIELD_R,
     IGFX_TIGERLAKE_LP,
     IGFX_RYEFIELD,
     IGFX_ROCKETLAKE,
@@ -148,6 +149,7 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
     case IGFX_CNX_G:
         return MFX_HW_CNX_G;
     case IGFX_LAKEFIELD:
+    case IGFX_LAKEFIELD_R:
         return MFX_HW_LKF;
     case IGFX_JASPERLAKE:
         return MFX_HW_JSL;
