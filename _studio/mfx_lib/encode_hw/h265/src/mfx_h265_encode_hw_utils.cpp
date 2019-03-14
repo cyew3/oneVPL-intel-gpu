@@ -3407,17 +3407,11 @@ mfxU8 GetCodingType(Task const & task)
     if (task.m_frameType & MFX_FRAMETYPE_I)
         return CODING_TYPE_I;
 
-    // CodingType is required for QP Modulation
-    // Hierarchical structure supported: for LDB: 2, 4 and for RA B: 2, 4, 8
-    if ((task.m_frameType & MFX_FRAMETYPE_P) || (task.m_ldb))
-    {
-        if (task.m_tid == 1)
-            return CODING_TYPE_B;
-        else if (task.m_tid == 2)
-            return CODING_TYPE_B1;
-        else
-            return CODING_TYPE_P;
-    }
+    if (task.m_frameType & MFX_FRAMETYPE_P)
+        return CODING_TYPE_P;
+
+    if (task.m_ldb)
+        return CODING_TYPE_B;
 
     for (mfxU8 i = 0; i < 2; i ++)
     {
@@ -3829,6 +3823,20 @@ void ConfigureTask(
     }
 
     task.m_codingType = GetCodingType(task);
+
+    if (par.m_platform >= MFX_HW_ICL)
+    {   // enable QP Modulation for PPyramid
+        if (((task.m_frameType & MFX_FRAMETYPE_P) || (task.m_ldb)) &&
+            (par.isPPyramid()) && (par.NumTL() <= 3))
+        {
+            if (task.m_tid == 1)
+                task.m_codingType = CODING_TYPE_B;
+            else if (task.m_tid == 2)
+                task.m_codingType = CODING_TYPE_B1;
+            else
+                task.m_codingType = CODING_TYPE_P;
+        }
+    }
 
     if (isIDR)
         task.m_insertHeaders |= (INSERT_VPS | INSERT_SPS | INSERT_PPS);
