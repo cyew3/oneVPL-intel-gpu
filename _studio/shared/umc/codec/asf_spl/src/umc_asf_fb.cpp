@@ -175,7 +175,7 @@ Status ASFFrameBuffer::UnLockInputBuffer(MediaData *in, Status frameStat)
     pTemp->m_FrameType = m_pCurFrame->m_FrameType;
     pTemp->m_dTime = m_pCurFrame->m_dTime;
     pTemp->m_dTimeAux = m_pCurFrame->m_dTimeAux;
-    pTemp->m_lBufferSize = mfx::align_value(pb + sizeof(SampleInfo) - m_pbFree, ASF_ALIGN_VALUE);
+    pTemp->m_lBufferSize = mfx::align2_value(pb + sizeof(SampleInfo) - m_pbFree, ASF_ALIGN_VALUE);
     pTemp->m_lDataSize = m_pCurFrame->m_lDataSize;
     pTemp->m_pNext = NULL;
 

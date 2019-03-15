@@ -93,7 +93,7 @@ Status SceneAnalyzerPicture::Init(int32_t srcWidth, int32_t srcHeight,
     Close();
 
     // calculate step
-    picStep = mfx::align_value(srcWidth, SA_STEP_ALIGN);
+    picStep = mfx::align2_value(srcWidth, SA_STEP_ALIGN);
 
     // calculate picture size
     switch (colorFormat)

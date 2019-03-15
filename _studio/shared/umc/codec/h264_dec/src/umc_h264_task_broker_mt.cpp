@@ -1419,7 +1419,7 @@ bool TaskBrokerTwoThread::GetDeblockingTask(H264DecoderFrameInfo * info, H264Tas
                                             iAvailableToDeblock);
                 pTask->m_iMBToProcess = MFX_MAX(pTask->m_iMBToProcess,
                                             iDebUnit);
-                pTask->m_iMBToProcess = mfx::align_value<int32_t>(pTask->m_iMBToProcess, iDebUnit);
+                pTask->m_iMBToProcess = mfx::align2_value<int32_t>(pTask->m_iMBToProcess, iDebUnit);
             }
 
             pTask->m_iTaskID = TASK_DEB;

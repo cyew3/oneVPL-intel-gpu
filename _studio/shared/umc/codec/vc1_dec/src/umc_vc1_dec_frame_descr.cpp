@@ -54,14 +54,14 @@ bool VC1FrameDescriptor::Init(uint32_t         DescriporID,
     if (!m_pContext)
     {
         uint8_t* ptr = NULL;
-        ptr += mfx::align_value<uint32_t>(sizeof(VC1Context));
-        ptr += mfx::align_value<uint32_t>(sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM);
-        ptr += mfx::align_value<uint32_t>((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
+        ptr += mfx::align2_value<uint32_t>(sizeof(VC1Context));
+        ptr += mfx::align2_value<uint32_t>(sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM);
+        ptr += mfx::align2_value<uint32_t>((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
 #ifdef ALLOW_SW_VC1_FALLBACK
-        ptr += mfx::align_value(sizeof(int16_t)*HeightMB*WidthMB * 2 * 2);
-        ptr += mfx::align_value(sizeof(uint8_t)*HeightMB*WidthMB);
-        ptr += mfx::align_value(sizeof(VC1MB)*(HeightMB*WidthMB));
-        ptr += mfx::align_value(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
+        ptr += mfx::align2_value(sizeof(int16_t)*HeightMB*WidthMB * 2 * 2);
+        ptr += mfx::align2_value(sizeof(uint8_t)*HeightMB*WidthMB);
+        ptr += mfx::align2_value(sizeof(VC1MB)*(HeightMB*WidthMB));
+        ptr += mfx::align2_value(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
 #endif
 
         // Need to replace with MFX allocator
@@ -76,21 +76,21 @@ bool VC1FrameDescriptor::Init(uint32_t         DescriporID,
         m_pContext->bp_round_count = -1;
         ptr = (uint8_t*)m_pContext;
 
-        ptr += mfx::align_value<uint32_t>(sizeof(VC1Context));
+        ptr += mfx::align2_value<uint32_t>(sizeof(VC1Context));
         m_pContext->m_picLayerHeader = (VC1PictureLayerHeader*)ptr;
         m_pContext->m_InitPicLayer = m_pContext->m_picLayerHeader;
 
-        ptr += mfx::align_value<uint32_t>((sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM));
+        ptr += mfx::align2_value<uint32_t>((sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM));
         m_pContext->m_pBitplane.m_databits = ptr;
 
 #ifdef ALLOW_SW_VC1_FALLBACK
-        ptr += mfx::align_value((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
+        ptr += mfx::align2_value((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
         m_pContext->m_MBs = (VC1MB*)ptr;
-        ptr += mfx::align_value(sizeof(VC1MB)*(HeightMB*WidthMB));
+        ptr += mfx::align2_value(sizeof(VC1MB)*(HeightMB*WidthMB));
         m_pContext->DCACParams = (VC1DCMBParam*)ptr;
-        ptr += mfx::align_value(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
+        ptr += mfx::align2_value(sizeof(VC1DCMBParam)*HeightMB*WidthMB);
         m_pContext->savedMV = (int16_t*)(ptr);
-        ptr += mfx::align_value(sizeof(int16_t)*HeightMB*WidthMB * 2 * 2);
+        ptr += mfx::align2_value(sizeof(int16_t)*HeightMB*WidthMB * 2 * 2);
         m_pContext->savedMVSamePolarity  = ptr;
 #endif
     }

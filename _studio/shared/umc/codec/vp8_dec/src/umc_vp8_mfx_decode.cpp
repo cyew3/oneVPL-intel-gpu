@@ -461,8 +461,8 @@ Status VP8VideoDecoderSoftware::FillVideoParam(mfxVideoParam *par, bool /*full*/
     par->mfx.FrameInfo.CropH = par->mfx.FrameInfo.Height;
     par->mfx.FrameInfo.CropW = par->mfx.FrameInfo.Width;
 
-    par->mfx.FrameInfo.CropW = mfx::align_value(par->mfx.FrameInfo.CropW, 2);
-    par->mfx.FrameInfo.CropH = mfx::align_value(par->mfx.FrameInfo.CropH, 2);
+    par->mfx.FrameInfo.CropW = mfx::align2_value(par->mfx.FrameInfo.CropW, 2);
+    par->mfx.FrameInfo.CropH = mfx::align2_value(par->mfx.FrameInfo.CropH, 2);
 
     par->mfx.FrameInfo.PicStruct = (mfxU8)(MFX_PICSTRUCT_PROGRESSIVE);
     par->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;

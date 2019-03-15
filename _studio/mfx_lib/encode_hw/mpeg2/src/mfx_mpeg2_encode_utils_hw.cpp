@@ -1345,7 +1345,7 @@ namespace MPEG2EncoderHW
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         if (pFrameInfo->CropW)
-            pFrameInfo->Width = mfx::align_value<mfxU16>(pFrameInfo->CropW, 16);
+            pFrameInfo->Width = mfx::align2_value(pFrameInfo->CropW, 16);
 
         mfxU32 heightAlignment = bProgressiveSequence ? 16 : 32;
 
@@ -1353,7 +1353,7 @@ namespace MPEG2EncoderHW
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         if (pFrameInfo->CropH)
-            pFrameInfo->Height = mfx::align_value<mfxU16>(pFrameInfo->CropH, heightAlignment);
+            pFrameInfo->Height = mfx::align2_value(pFrameInfo->CropH, heightAlignment);
 
         if (m_bInitialized == false)
         {

@@ -482,13 +482,13 @@ namespace UMC_VC1_ENCODER
             uint32_t memSize = 0;
             if (bNV12)
             {
-                memSize += mfx::align_value(nFrames*sizeof(FrameNV12));
-                memSize += nFrames*mfx::align_value(FrameNV12::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
+                memSize += mfx::align2_value(nFrames*sizeof(FrameNV12));
+                memSize += nFrames*mfx::align2_value(FrameNV12::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
             }
             else
             {
-                memSize += mfx::align_value(nFrames*sizeof(Frame));
-                memSize += nFrames*mfx::align_value(Frame::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
+                memSize += mfx::align2_value(nFrames*sizeof(Frame));
+                memSize += nFrames*mfx::align2_value(Frame::CalcAllocatedMemSize(w, h, paddingSize, bUserData));
             }
 
             return memSize;
@@ -515,12 +515,12 @@ namespace UMC_VC1_ENCODER
                 if (!m_pFrames)
                     return UMC::UMC_ERR_ALLOC;
 
-                pBuffer += mfx::align_value(m_nFrames*sizeof(FrameNV12));
-                memSize -= mfx::align_value(m_nFrames*sizeof(FrameNV12));
+                pBuffer += mfx::align2_value(m_nFrames*sizeof(FrameNV12));
+                memSize -= mfx::align2_value(m_nFrames*sizeof(FrameNV12));
                 if(memSize < 0)
                     return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                frameSize = mfx::align_value(FrameNV12::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
+                frameSize = mfx::align2_value(FrameNV12::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
             }
             else
             {
@@ -528,12 +528,12 @@ namespace UMC_VC1_ENCODER
                 if (!m_pFrames)
                     return UMC::UMC_ERR_ALLOC;
 
-                pBuffer += mfx::align_value(m_nFrames*sizeof(Frame));
-                memSize -= mfx::align_value(m_nFrames*sizeof(Frame));
+                pBuffer += mfx::align2_value(m_nFrames*sizeof(Frame));
+                memSize -= mfx::align2_value(m_nFrames*sizeof(Frame));
                 if(memSize < 0)
                     return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
-                frameSize = mfx::align_value(Frame::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
+                frameSize = mfx::align2_value(Frame::CalcAllocatedMemSize(w,h,paddingSize,bUserData));
 
             }
             for (i=0;i<m_nFrames;i++)

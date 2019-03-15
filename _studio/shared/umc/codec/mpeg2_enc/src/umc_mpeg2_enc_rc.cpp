@@ -272,7 +272,7 @@ Ipp32s MPEG2VideoEncoderBase::InitRateControl(Ipp32s BitRate)
   }
   encodeInfo.VBV_BufferSize = IPP_MIN(encodeInfo.VBV_BufferSize, (encodeInfo.mpeg1 ? 0x3fe : 0x3fffe));
   encodeInfo.m_SuggestedOutputSize = 2 * encodeInfo.VBV_BufferSize * (16384/8); // in bytes
-  encodeInfo.m_SuggestedOutputSize = mfx::align_value(encodeInfo.m_SuggestedOutputSize);
+  encodeInfo.m_SuggestedOutputSize = mfx::align2_value(encodeInfo.m_SuggestedOutputSize);
 
   // one can vary weights, can be added to API
   if(encodeInfo.rc_mode == RC_CBR) {

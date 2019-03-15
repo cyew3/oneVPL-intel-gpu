@@ -181,9 +181,11 @@ constexpr uint8_t byte_clamp(T v)
     return uint8_t(clamp<T>(v, 0, 255));
 }
 
+// Aligns value to next power of two
 template<class T> inline
-T align_value(T value, size_t alignment = 16)
+T align2_value(T value, size_t alignment = 16)
 {
+    assert((alignment & (alignment - 1)) == 0);
     return static_cast<T> ((value + (alignment - 1)) & ~(alignment - 1));
 }
 }

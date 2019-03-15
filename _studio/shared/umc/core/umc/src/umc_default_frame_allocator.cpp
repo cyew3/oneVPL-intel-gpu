@@ -199,7 +199,7 @@ Status DefaultFrameAllocator::Alloc(FrameMemID *pNewMemID, const VideoDataInfo *
 
     frameMID->m_frame.Init(frameInfo, idx, this);
 
-    size_t pitch = mfx::align_value(frameInfo->GetWidth(), 64);
+    size_t pitch = mfx::align2_value(frameInfo->GetWidth(), 64);
     size_t size  = frameMID->CalculateSize(pitch);
 
     frameMID->m_ptr = new uint8_t[size];

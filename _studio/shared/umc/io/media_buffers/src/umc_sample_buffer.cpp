@@ -260,7 +260,7 @@ Status SampleBuffer::UnLockInputBuffer(MediaData* in, Status StreamStatus)
     // fill sample info
     in->GetTime(pTemp->m_dTime, pTemp->m_dTimeAux);
     pTemp->m_FrameType = in->GetFrameType();
-    pTemp->m_lBufferSize = mfx::align_value(pb + sizeof(SampleInfo) - m_pbFree, ALIGN_VALUE);
+    pTemp->m_lBufferSize = mfx::align2_value(pb + sizeof(SampleInfo) - m_pbFree, ALIGN_VALUE);
     pTemp->m_lDataSize = in->GetDataSize();
     pTemp->m_pbData = m_pbFree;
     pTemp->m_pNext = NULL;

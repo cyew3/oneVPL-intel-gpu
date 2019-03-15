@@ -996,14 +996,14 @@ Status VC1TaskProcessorUMC::Init(VC1Context* pContext,
 
     uint8_t* pBuf;
     if (m_pMemoryAllocator->Alloc(&m_iMemContextID,
-                                  mfx::align_value(sizeof(VC1Context))+ mfx::align_value(sizeof(VC1SingletonMB)),
+                                  mfx::align2_value(sizeof(VC1Context))+ mfx::align2_value(sizeof(VC1SingletonMB)),
                                   UMC_ALLOC_PERSISTENT,
                                   16) != UMC_OK)
                                   return false;
 
     pBuf = (uint8_t*)m_pMemoryAllocator->Lock(m_iMemContextID);
     m_pContext = (VC1Context*)pBuf;
-    m_pSingleMB = (VC1SingletonMB*)(pBuf +  mfx::align_value(sizeof(VC1Context)));
+    m_pSingleMB = (VC1SingletonMB*)(pBuf +  mfx::align2_value(sizeof(VC1Context)));
     memset(m_pContext, 0, sizeof(VC1Context));
     memset(m_pSingleMB, 0, sizeof(VC1SingletonMB));
 

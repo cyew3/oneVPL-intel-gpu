@@ -705,16 +705,16 @@ uint32_t VC1VideoDecoderSW::CalculateHeapSize()
     uint32_t Size = 0;
     uint32_t counter = 0;
 
-    Size += mfx::align_value<uint32_t>(sizeof(VC1TaskStoreSW));
-    Size += mfx::align_value<uint32_t>(sizeof(VC1ThreadDecoder**)*m_iThreadDecoderNum);
-    Size += mfx::align_value<uint32_t>(sizeof(Frame)*(2*m_iMaxFramesInProcessing + 2*VC1NUMREFFRAMES));
+    Size += mfx::align2_value<uint32_t>(sizeof(VC1TaskStoreSW));
+    Size += mfx::align2_value<uint32_t>(sizeof(VC1ThreadDecoder**)*m_iThreadDecoderNum);
+    Size += mfx::align2_value<uint32_t>(sizeof(Frame)*(2*m_iMaxFramesInProcessing + 2*VC1NUMREFFRAMES));
 
     for (counter = 0; counter < m_iThreadDecoderNum; counter += 1)
     {
-        Size += mfx::align_value<uint32_t>(sizeof(VC1ThreadDecoder));
+        Size += mfx::align2_value<uint32_t>(sizeof(VC1ThreadDecoder));
     }
 
-    Size += mfx::align_value<uint32_t>(sizeof(MediaDataEx));
+    Size += mfx::align2_value<uint32_t>(sizeof(MediaDataEx));
 
     return Size;
 }
