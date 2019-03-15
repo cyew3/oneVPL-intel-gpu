@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 Intel Corporation
+// Copyright (c) 2016-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -382,7 +382,7 @@ namespace MfxHwVP9Encode
         mfxU8 maxLog2TileCols = 1;
         mfxU8 ones;
 
-        const mfxU8 sb64Cols = (ALIGN_POWER_OF_TWO(framePar.modeInfoCols, MI_BLOCK_SIZE_LOG2)) >> MI_BLOCK_SIZE_LOG2;
+        const mfxU8 sb64Cols = mfxU8((mfx::align2_value(framePar.modeInfoCols, 1 << MI_BLOCK_SIZE_LOG2)) >> MI_BLOCK_SIZE_LOG2);
         while ((MAX_TILE_WIDTH_B64 << minLog2TileCols) < sb64Cols)
         {
             minLog2TileCols ++;

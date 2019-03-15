@@ -1206,7 +1206,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     {
         const mfxU32 hrdBufSize = m_video.calcParam.bufferSizeInKB * 1000;
         if (hrdBufSize > static_cast<mfxU32>(request.Info.Width * request.Info.Height))
-            request.Info.Height = AlignValue<mfxU16>(static_cast<mfxU16>(hrdBufSize / request.Info.Width), 16);
+            request.Info.Height = mfx::align2_value(static_cast<mfxU16>(hrdBufSize / request.Info.Width), 16);
     }
 
     //limit bs size to 4095*nMBs + slice_hdr_size * nSlice
@@ -1220,7 +1220,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         const mfxU32 maxBufSize = MAX_MB_SIZE * nMBs + SLICE_BUFFER_SIZE * maxNumSlices;
 
         if (maxBufSize > static_cast<mfxU32>(request.Info.Width * request.Info.Height))
-            request.Info.Height = AlignValue<mfxU16>(static_cast<mfxU16>(maxBufSize / request.Info.Width), 16);
+            request.Info.Height = mfx::align2_value(static_cast<mfxU16>(maxBufSize / request.Info.Width), 16);
     }
 
 #ifdef MFX_VA_WIN
@@ -1228,7 +1228,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     {
         const mfxU32 curBufSize = request.Info.Height * request.Info.Width;
         request.Info.Height = IPP_MIN(request.Info.Height, 4096);
-        request.Info.Width = AlignValue<mfxU16>(static_cast<mfxU16>(curBufSize / request.Info.Height), 16);
+        request.Info.Width = mfx::align2_value(static_cast<mfxU16>(curBufSize / request.Info.Height), 16);
     }
 #endif
 
@@ -1345,8 +1345,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         if(!m_cmCtx.get())
             m_cmCtx.reset(new CmContext(m_video, m_cmDevice));
 
-        mfxU16 widthAGOP = AlignValue<mfxU16>((m_video.mfx.FrameInfo.Width / 4), 16);
-        mfxU16 heightAGOP = AlignValue<mfxU16>((m_video.mfx.FrameInfo.Height / 4), 16);
+        mfxU16 widthAGOP  = mfx::align2_value(m_video.mfx.FrameInfo.Width / 4, 16);
+        mfxU16 heightAGOP = mfx::align2_value(m_video.mfx.FrameInfo.Height / 4, 16);
 
         request.Info.FourCC = MFX_FOURCC_NV12;
         request.Type        = MFX_MEMTYPE_D3D_INT;
@@ -4223,7 +4223,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
 
         bsData        = edata->Data + edata->DataOffset + edata->DataLength;
         dataLength    = &edata->DataLength;
-        bsSizeToCopy  = AlignValue(bsSizeActual, 16);
+        bsSizeToCopy  = mfx::align2_value(bsSizeActual, 16);
         bsSizeAvail   = edata->MaxLength - edata->DataOffset - edata->DataLength;
     }
 #endif
@@ -4238,7 +4238,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         bsSizeActual = bsSizeAvail;
         if (m_video.Protected)
         {
-            bsSizeToCopy = AlignValue(bsSizeToCopy - 15, 16);
+            bsSizeToCopy = mfx::align2_value(bsSizeToCopy - 15, 16);
             bsSizeActual = IPP_MIN(bsSizeActual, bsSizeToCopy);
         }
     }

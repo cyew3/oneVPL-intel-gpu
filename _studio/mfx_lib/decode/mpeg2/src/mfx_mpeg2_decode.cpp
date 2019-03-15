@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -291,8 +291,8 @@ void UpdateMfxVideoParam(mfxVideoParam& vPar, const UMC::sSequenceHeader& sh, co
     vPar.mfx.FrameInfo.CropH = (mfxU16)sh.height;
     vPar.mfx.FrameInfo.CropX = 0;
     vPar.mfx.FrameInfo.CropY = 0;
-    vPar.mfx.FrameInfo.Width = AlignValue(vPar.mfx.FrameInfo.CropW, MFX_MB_WIDTH);
-    vPar.mfx.FrameInfo.Height = AlignValue(vPar.mfx.FrameInfo.CropH, MFX_MB_WIDTH);
+    vPar.mfx.FrameInfo.Width  = mfx::align2_value(vPar.mfx.FrameInfo.CropW, MFX_MB_WIDTH);
+    vPar.mfx.FrameInfo.Height = mfx::align2_value(vPar.mfx.FrameInfo.CropH, MFX_MB_WIDTH);
     vPar.mfx.FrameInfo.ChromaFormat = Mpeg2GetMfxChromaFormatFromUmcMpeg2(sh.chroma_format);
     GetMfxFrameRate((mfxU8)sh.frame_rate_code, &vPar.mfx.FrameInfo.FrameRateExtN, &vPar.mfx.FrameInfo.FrameRateExtD);
 

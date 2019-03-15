@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,12 +32,6 @@
 
 void GetMfxFrameRate(mfxU8 umcFrameRateCode, mfxU32 *frameRateNom, mfxU32 *frameRateDenom);
 inline bool IsMpeg2StartCodeEx(const mfxU8* p);
-
-template<class T> inline
-T AlignValue(T value, mfxU32 divisor)
-{
-    return static_cast<T>(((value + divisor - 1) / divisor) * divisor);
-}
 
 #endif
 

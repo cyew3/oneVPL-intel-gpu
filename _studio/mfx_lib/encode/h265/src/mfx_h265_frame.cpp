@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -481,8 +481,8 @@ namespace H265Enc {
         Ipp32s paddingR = fdata.padding;
         Ipp32s bppShift = ((fourcc == P010) || (fourcc == P210)) ? 1 : 0;
         if (fdata.m_handle) {
-            paddingR = fdata.pitch_luma_pix - fdata.width - (AlignValue(fdata.padding << bppShift, 64) >> bppShift);
-            paddingL = AlignValue(fdata.padding << bppShift, 64) >> bppShift;
+            paddingR = fdata.pitch_luma_pix - fdata.width - (mfx::align2_value(fdata.padding << bppShift, 64) >> bppShift);
+            paddingL = mfx::align2_value(fdata.padding << bppShift, 64) >> bppShift;
         }
 
         (fourcc == NV12 || fourcc == NV16)

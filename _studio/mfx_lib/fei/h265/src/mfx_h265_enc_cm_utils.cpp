@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,12 +35,6 @@ namespace H265Enc {
 
 
 template<class T> inline void Zero(T &obj) { memset(&obj, 0, sizeof(obj)); }
-
-template<class T> inline T AlignValue(T value, mfxU32 alignment)
-{
-    assert((alignment & (alignment - 1)) == 0); // should be 2^n
-    return static_cast<T>((value + alignment - 1) & ~(alignment - 1));
-}
 
 const char   ME_PROGRAM_NAME[] = "genx_h265_cmcode.isa";
 

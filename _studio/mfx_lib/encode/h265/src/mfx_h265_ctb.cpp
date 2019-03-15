@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -5024,7 +5024,7 @@ void H265CU<PixType>::MatchingMetricPuCombine(Ipp32s *had, const PixType *src, c
     PixType *rec0 = (PixType*)refFrame[0]->m_recon->y + refOffset0;
     PixType *rec1 = (PixType*)refFrame[1]->m_recon->y + refOffset1;
 
-    Ipp32s pitchBufHi = AlignValue(meInfo->width, 16);
+    Ipp32s pitchBufHi = mfx::align2_value(meInfo->width, 16);
     Ipp16s *predBufHi0 = m_scratchPad.interp.matchingMetricPuCombine.predBufHi;
     Ipp16s *predBufHi1 = predBufHi0 + pitchBufHi * meInfo->height + 32;
 

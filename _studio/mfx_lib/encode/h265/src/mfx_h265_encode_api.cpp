@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 Intel Corporation
+// Copyright (c) 2015-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1807,9 +1807,9 @@ mfxStatus MFXVideoENCODEH265::Query(MFXCoreInterface1 *core, mfxVideoParam *in, 
         CopyParam(*out, *in);
 
         if (out->mfx.FrameInfo.Width & 15)
-            out->mfx.FrameInfo.Width = AlignValue(out->mfx.FrameInfo.Width, 16), wrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            out->mfx.FrameInfo.Width  = mfx::align2_value(out->mfx.FrameInfo.Width, 16),  wrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         if (out->mfx.FrameInfo.Height & 15)
-            out->mfx.FrameInfo.Height = AlignValue(out->mfx.FrameInfo.Height, 16), wrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            out->mfx.FrameInfo.Height = mfx::align2_value(out->mfx.FrameInfo.Height, 16), wrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         
         st = CheckParam(*out);
 

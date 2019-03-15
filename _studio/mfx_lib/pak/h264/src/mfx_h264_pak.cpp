@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -141,13 +141,13 @@ mfxStatus MFXVideoPAKH264::Init(mfxVideoParam* par)
     sts = m_core->LockBuffer(m_res.m_resId, &resBuf);
     MFX_CHECK_STS(sts);
 
-    m_res.m_mvdBuffer = AlignValue(resBuf, 16);
-    m_res.m_bsBuffer = AlignValue(m_res.m_mvdBuffer + m_res.m_mvdBufferSize, 16);
+    m_res.m_mvdBuffer = mfx::align2_value(resBuf, 16);
+    m_res.m_bsBuffer  = mfx::align2_value(m_res.m_mvdBuffer + m_res.m_mvdBufferSize, 16);
 
     if (numThread > 1)
     {
-        m_res.m_coeffs = AlignValue(m_res.m_bsBuffer + m_res.m_bsBufferSize, 16);
-        m_res.m_mbDone = AlignValue(m_res.m_coeffs + m_res.m_coeffsSize, 16);
+        m_res.m_coeffs = mfx::align2_value(m_res.m_bsBuffer + m_res.m_bsBufferSize, 16);
+        m_res.m_mbDone = mfx::align2_value(m_res.m_coeffs   + m_res.m_coeffsSize,   16);
 
         sts = m_threads.Create(numThread - 1);
         MFX_CHECK_STS(sts);
@@ -239,11 +239,11 @@ mfxStatus MFXVideoPAKH264::Query(mfxVideoParam *in, mfxVideoParam *out)
             out->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         }
 
-        out->mfx.FrameInfo.Width = AlignValue(in->mfx.FrameInfo.Width, 16);
+        out->mfx.FrameInfo.Width = mfx::align2_value(in->mfx.FrameInfo.Width, 16);
         out->mfx.FrameInfo.Width = IPP_MIN(out->mfx.FrameInfo.Width, 4096);
 
         mfxU32 heightAlignment = out->mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE ? 16 : 32;
-        out->mfx.FrameInfo.Height = AlignValue(in->mfx.FrameInfo.Height, heightAlignment);
+        out->mfx.FrameInfo.Height = mfx::align2_value(in->mfx.FrameInfo.Height, heightAlignment);
         out->mfx.FrameInfo.Height = IPP_MIN(out->mfx.FrameInfo.Height, 4096);
 
         out->mfx.FrameInfo.CropX = IPP_MIN(in->mfx.FrameInfo.CropX, in->mfx.FrameInfo.Width);

@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -142,7 +142,7 @@ void H265CU<PixType>::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s pu
     PixType *src = GetRefPointer<PixType, PLANE_TYPE>(ref, (Ipp32s)m_ctbPelX + puX, (Ipp32s)m_ctbPelY + puY, mvs[listIdx], m_par->chromaShiftH);
 
     //Ipp32s dstBufPitch = MAX_CU_SIZE << (!isLuma ? m_par->chromaShiftWInv : 0);
-    Ipp32s dstBufPitch = AlignValue(puW << (PLANE_TYPE == TEXT_CHROMA), 16);
+    Ipp32s dstBufPitch = mfx::align2_value(puW << (PLANE_TYPE == TEXT_CHROMA), 16);
     Ipp16s *dstBuf = m_scratchPad.interp.predInterUni.interpBuf;
     Ipp16s *preAvgTmpBuf = m_scratchPad.interp.interpWithAvg.tmpBuf;
 
@@ -198,7 +198,7 @@ void H265CU<PixType>::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s pu
     }
     else {
         Ipp16s *horBuf = m_scratchPad.interp.predInterUni.tmpBuf;
-        const Ipp32s horBufPitch = AlignValue(puW << (PLANE_TYPE == TEXT_CHROMA), 16);
+        const Ipp32s horBufPitch = mfx::align2_value(puW << (PLANE_TYPE == TEXT_CHROMA), 16);
         Ipp16s *horBufPtr = horBuf;
 
         InterpolateEnc<PLANE_TYPE_>(INTERP_HOR,  src - ((tap >> 1) - 1) * srcPitch, srcPitch, horBufPtr, horBufPitch, dx, puW, puH + tap - 1, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
@@ -368,7 +368,7 @@ void H265CU<PixType>::MeInterpolate(const H265MEInfo* me_info, const H265MV *MV,
     {
         Ipp16s *tmpBuf = (Ipp16s *)m_scratchPad.interp.meInterpolate.tmpBuf;
         Ipp16s *tmp = tmpBuf;
-        Ipp32s tmpPitch = AlignValue(w, 16);
+        Ipp32s tmpPitch = mfx::align2_value(w, 16);
         InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 7, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
 
         Ipp32s shift  = 20 - bitDepth;
@@ -405,7 +405,7 @@ void H265CU<PixType>::MeInterpolateCombine(const H265MEInfo* me_info, const H265
     }
     else
     {
-        Ipp32s tmpPitch = AlignValue(w, 16);
+        Ipp32s tmpPitch = mfx::align2_value(w, 16);
         InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 7, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
 
         Ipp32s shift  = 6;

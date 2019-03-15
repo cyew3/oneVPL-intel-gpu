@@ -861,8 +861,8 @@ static void TaskLogDump()
 
         allocInfo.feiHdl = m_fei;
         if (m_fei) {
-            assert(feiLumaPitch >= AlignValue( AlignValue(paddingLu*bpp, 64) + widthLu*bpp + paddingLu*bpp, 64 ));
-            assert(feiChromaPitch >= AlignValue( AlignValue(allocInfo.paddingChW*bpp, 64) + widthCh*bpp + allocInfo.paddingChW*bpp, 64 ));
+            assert(feiLumaPitch >= mfx::align2_value( mfx::align2_value(paddingLu*bpp, 64) + widthLu*bpp + paddingLu*bpp, 64 ));
+            assert(feiChromaPitch >= mfx::align2_value( mfx::align2_value(allocInfo.paddingChW*bpp, 64) + widthCh*bpp + allocInfo.paddingChW*bpp, 64 ));
             assert((feiLumaPitch & 63) == 0);
             assert((feiChromaPitch & 63) == 0);
             allocInfo.alignment = 0x1000;
@@ -872,8 +872,8 @@ static void TaskLogDump()
             allocInfo.sizeInBytesCh = allocInfo.pitchInBytesCh * (heightCh + allocInfo.paddingChH * 2);
         } else {
             allocInfo.alignment = 64;
-            allocInfo.pitchInBytesLu = AlignValue( AlignValue(paddingLu*bpp, 64) + widthLu*bpp + paddingLu*bpp, 64 );
-            allocInfo.pitchInBytesCh = AlignValue( AlignValue(allocInfo.paddingChW*bpp, 64) + widthCh*bpp + allocInfo.paddingChW*bpp, 64 );
+            allocInfo.pitchInBytesLu = mfx::align2_value( mfx::align2_value(paddingLu*bpp, 64) + widthLu*bpp + paddingLu*bpp, 64 );
+            allocInfo.pitchInBytesCh = mfx::align2_value( mfx::align2_value(allocInfo.paddingChW*bpp, 64) + widthCh*bpp + allocInfo.paddingChW*bpp, 64 );
             if ((allocInfo.pitchInBytesLu & (allocInfo.pitchInBytesLu - 1)) == 0)
                 allocInfo.pitchInBytesLu += 64;
             if ((allocInfo.pitchInBytesCh & (allocInfo.pitchInBytesCh - 1)) == 0)
@@ -3360,7 +3360,7 @@ template <class PixType> void H265Enc::CopyAndPad(const mfxFrameSurface1 &src, F
     Ipp32s paddingH = dst.padding;
     Ipp32s bppShift = sizeof(PixType) == 1 ? 0 : 1;
     if (dst.m_handle) {
-        paddingL = AlignValue(dst.padding << bppShift, 64) >> bppShift;
+        paddingL = mfx::align2_value(dst.padding << bppShift, 64) >> bppShift;
         paddingR = dst.pitch_luma_pix - dst.width - paddingL;
     }
 

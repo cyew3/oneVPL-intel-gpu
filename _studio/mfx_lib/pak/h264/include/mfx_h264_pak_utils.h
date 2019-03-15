@@ -465,15 +465,9 @@ namespace H264Pak
         ((CavlcCoeffInfo *)mb.reserved1a)->chroma[block] = numCoeff;
     }
 
-    template<class T> inline T AlignValue(T value, size_t alignment)
-    {
-        assert((alignment & (alignment - 1)) == 0); // should be 2^n
-        return static_cast<T>((value + alignment - 1) & ~(alignment - 1));
-    }
-
     template<class T> inline T* AlignValue(T* value, size_t alignment)
     {
-        return reinterpret_cast<T*>(AlignValue<size_t>(reinterpret_cast<size_t>(value), alignment));
+        return reinterpret_cast<T*>(mfx::align2_value(reinterpret_cast<size_t>(value), alignment));
     }
 
     inline mfxExtBuffer* GetExtBuffer(mfxExtBuffer** extBuffer, mfxU32 numExtBuffer, mfxU32 id)

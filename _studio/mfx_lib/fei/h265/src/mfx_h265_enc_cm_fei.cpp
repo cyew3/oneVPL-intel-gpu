@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -107,11 +107,6 @@ namespace H265Enc {
 #define GET_OUTSURF(s) ( ((mfxFEIH265Surface *)(s))->sOut.bufOut )
 #define GET_OUTBUF(s)  ( ((mfxFEIH265Surface *)(s))->sBuf.bufOut )
 
-template<class T> inline T AlignValue(T value, mfxU32 alignment)
-{
-    assert((alignment & (alignment - 1)) == 0); // should be 2^n
-    return static_cast<T>((value + alignment - 1) & ~(alignment - 1));
-}
 
 /* leave in same file to avoid difficulties with templates (T is arbitrary type) */
 template <class T>
@@ -211,16 +206,16 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     mfxU32 height = param->Height;
 
     /* pad and align to 16 pixels */
-    width32  = AlignValue(width, 32);
-    height32 = AlignValue(height, 32);
-    width    = AlignValue(width, 16);
-    height   = AlignValue(height, 16);
+    width32  = mfx::align2_value(width, 32);
+    height32 = mfx::align2_value(height, 32);
+    width    = mfx::align2_value(width, 16);
+    height   = mfx::align2_value(height, 16);
 
-    width2x  = AlignValue(width / 2, 16);
-    height2x = AlignValue(height / 2, 16);
+    width2x  = mfx::align2_value(width / 2, 16);
+    height2x = mfx::align2_value(height / 2, 16);
 
-    width4x  = AlignValue(width / 4, 16);
-    height4x = AlignValue(height / 4, 16);
+    width4x  = mfx::align2_value(width / 4, 16);
+    height4x = mfx::align2_value(height / 4, 16);
 
     /* dimensions of output MV grid for each block size (width/height were aligned to multiple of 16) */
     cmMvW[MFX_FEI_H265_BLK_16x16   ] = width / 16;      cmMvH[MFX_FEI_H265_BLK_16x16   ] = height / 16;
@@ -265,12 +260,12 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     /* source and reconstructed reference frames */
     Ipp32s bppShift = (param->FourCC == MFX_FOURCC_P010 || param->FourCC == MFX_FOURCC_P210) ? 1 : 0;
     CM_SURFACE_FORMAT format = (param->FourCC == MFX_FOURCC_P010 || param->FourCC == MFX_FOURCC_P210) ? CM_SURFACE_FORMAT_V8U8 : CM_SURFACE_FORMAT_P8;
-    Ipp32s minPitchInBytes = AlignValue(AlignValue(param->Padding<<bppShift, 64) + (param->Width<<bppShift) + (param->Padding<<bppShift), 64);
+    Ipp32s minPitchInBytes = mfx::align2_value(mfx::align2_value(param->Padding<<bppShift, 64) + (param->Width<<bppShift) + (param->Padding<<bppShift), 64);
     if ((minPitchInBytes & (minPitchInBytes - 1)) == 0)
         minPitchInBytes += 64;
     GetDimensionsCmSurface2DUp<Ipp8u>(device, minPitchInBytes>>bppShift, param->Height, format, &extAlloc->SrcRefLuma);
 
-    minPitchInBytes = AlignValue(AlignValue(param->PaddingChroma<<bppShift, 64) + (param->WidthChroma<<bppShift) + (param->PaddingChroma<<bppShift), 64);
+    minPitchInBytes = mfx::align2_value(mfx::align2_value(param->PaddingChroma<<bppShift, 64) + (param->WidthChroma<<bppShift) + (param->PaddingChroma<<bppShift), 64);
     if ((minPitchInBytes & (minPitchInBytes - 1)) == 0)
         minPitchInBytes += 64;
     GetDimensionsCmSurface2DUp<Ipp8u>(device, minPitchInBytes>>bppShift, param->HeightChroma, format, &extAlloc->SrcRefChroma);
@@ -289,8 +284,8 @@ void * H265CmCtx::AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMe
     Ipp32s minPitchInBytes;
 
     CM_SURFACE_FORMAT format = (fourcc == MFX_FOURCC_P010 || fourcc == MFX_FOURCC_P210) ? CM_SURFACE_FORMAT_V8U8 : CM_SURFACE_FORMAT_P8;
-    mfxU8 *sysMemLu = (mfxU8 *)sysMem1 - AlignValue(padding<<bppShift, 64);
-    mfxU8 *sysMemCh = (mfxU8 *)sysMem2 - AlignValue(paddingChroma<<bppShift, 64);
+    mfxU8 *sysMemLu = (mfxU8 *)sysMem1 - mfx::align2_value(padding<<bppShift, 64);
+    mfxU8 *sysMemCh = (mfxU8 *)sysMem2 - mfx::align2_value(paddingChroma<<bppShift, 64);
 
     switch (surfaceType) {
     case MFX_FEI_H265_SURFTYPE_INPUT:
@@ -326,7 +321,7 @@ void * H265CmCtx::AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMe
     case MFX_FEI_H265_SURFTYPE_UP:
         s = new mfxFEIH265Surface();    // zero-init
         s->surfaceType = MFX_FEI_H265_SURFTYPE_UP;
-        minPitchInBytes = AlignValue(AlignValue(padding<<bppShift, 64) + (width<<bppShift) + (padding<<bppShift), 64);
+        minPitchInBytes = mfx::align2_value(mfx::align2_value(padding<<bppShift, 64) + (width<<bppShift) + (padding<<bppShift), 64);
         if ((minPitchInBytes & (minPitchInBytes - 1)) == 0)
             minPitchInBytes += 64;
         s->sUp.luma = CreateCmSurface2DUpPreAlloc(device, minPitchInBytes>>bppShift, height, format, sysMemLu);
@@ -442,18 +437,18 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     sourceHeight = height;
 
     /* pad and align to 16 pixels */
-    width32  = AlignValue(width, 32);
-    height32 = AlignValue(height, 32);
-    width    = AlignValue(width, 16);
-    height   = AlignValue(height, 16);
-    width2x  = AlignValue(width / 2, 16);
-    height2x = AlignValue(height / 2, 16);
-    width4x  = AlignValue(width / 4, 16);
-    height4x = AlignValue(height / 4, 16);
-    width8x  = AlignValue(width / 8, 16);
-    height8x = AlignValue(height / 8, 16);
-    width16x = AlignValue(width / 16, 16);
-    height16x = AlignValue(height / 16, 16);
+    width32   = mfx::align2_value(width, 32);
+    height32  = mfx::align2_value(height, 32);
+    width     = mfx::align2_value(width, 16);
+    height    = mfx::align2_value(height, 16);
+    width2x   = mfx::align2_value(width / 2, 16);
+    height2x  = mfx::align2_value(height / 2, 16);
+    width4x   = mfx::align2_value(width / 4, 16);
+    height4x  = mfx::align2_value(height / 4, 16);
+    width8x   = mfx::align2_value(width / 8, 16);
+    height8x  = mfx::align2_value(height / 8, 16);
+    width16x  = mfx::align2_value(width / 16, 16);
+    height16x = mfx::align2_value(height / 16, 16);
 
     interpWidth  = width/*  + 2*MFX_FEI_H265_INTERP_BORDER*/;
     interpHeight = height/* + 2*MFX_FEI_H265_INTERP_BORDER*/;
@@ -766,13 +761,13 @@ mfxStatus H265CmCtx::CopyInputFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *i
     mfxFEIH265InputSurface *surf = &((mfxFEIH265Surface *)in->copyArgs.surfVid)->sIn;
     CmSurface2D *dummy = surf->bufOrigNv12;
     if (fourcc == MFX_FOURCC_NV12)
-        SetKernelArg(kernelPrepareSrc.kernel, inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareSrc.kernel, inLu, inCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     else if (fourcc == MFX_FOURCC_NV16)
-        SetKernelArg(kernelPrepareSrc.kernel, inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareSrc.kernel, inLu, inCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     else if (fourcc == MFX_FOURCC_P010)
-        SetKernelArg(kernelPrepareSrc.kernel, inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareSrc.kernel, inLu, inCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     else if (fourcc == MFX_FOURCC_P210)
-        SetKernelArg(kernelPrepareSrc.kernel, inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareSrc.kernel, inLu, inCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     kernelPrepareSrc.Enqueue(queue, *lastEvent);
     return MFX_ERR_NONE;
 }
@@ -786,13 +781,13 @@ mfxStatus H265CmCtx::CopyReconFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *i
     mfxFEIH265ReconSurface *surf = &((mfxFEIH265Surface *)in->copyArgs.surfVid)->sRec;
     CmSurface2D *dummy = surf->bufOrigNv12;
     if (fourcc == MFX_FOURCC_NV12)
-        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     else if (fourcc == MFX_FOURCC_NV16)
-        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     else if (fourcc == MFX_FOURCC_P010)
-        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     else if (fourcc == MFX_FOURCC_P210)
-        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
 
     if (enableInterp) {
         // coupling of interp
@@ -971,9 +966,9 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
 
             if (dblTsWidth > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {  // split into 2 parts
                 int kernelIdx = 0;
-                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, 0, 0); // Deblocking1
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, 0, 0); // Deblocking1
                 mfxU32 startMbX = dblTsWidth / 2;
-                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, startMbX, 0); // Deblocking2
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, startMbX, 0); // Deblocking2
 
                 mfxU32 saoTsWidth = (width + 63) / 64 * 4;
                 SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, postprocParam, saoStat, 0, 0); // SaoStat1
@@ -994,7 +989,7 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
             } else {
                 // could be (1) Deblock + SaoStat + SaoEst + SaoApply or (2) Deblock + SaoStat + SaoStatChroma + SaoEst + SaoApply
                 int kernelIdx = 0;
-                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, 0, 0); // Deblocking
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, 0, 0); // Deblocking
                 SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, postprocParam, saoStat, 0, 0); // SaoStat
                 if (enableChromaSao)
                     SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, postprocParam, saoStat, 0, 0); // SaoStatChroma
@@ -1007,12 +1002,12 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Deblock");
             mfxU32 dblTsWidth = (width + 12 + 15) / 16;
             if (dblTsWidth > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {  // split into 2 parts
-                SetKernelArg(kernelDeblock.m_kernel[0], recUpLu, recUpCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, 0, 0); // Deblocking1
+                SetKernelArg(kernelDeblock.m_kernel[0], recUpLu, recUpCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, 0, 0); // Deblocking1
                 mfxU32 startMbX = dblTsWidth / 2;
-                SetKernelArg(kernelDeblock.m_kernel[1], recUpLu, recUpCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, startMbX, 0); // Deblocking2
+                SetKernelArg(kernelDeblock.m_kernel[1], recUpLu, recUpCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, startMbX, 0); // Deblocking2
                 kernelDeblock.Enqueue(queue, lastEvent);
             } else {
-                SetKernelArg(kernelDeblock.kernel, recUpLu, recUpCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, 0, 0); // Deblocking
+                SetKernelArg(kernelDeblock.kernel, recUpLu, recUpCh, mfx::align2_value(padding<<bppShift,64)>>bppShift, mfx::align2_value(paddingChroma<<bppShift,64)>>bppShift, doSao ? deblocked : recon, cuData, postprocParam, 0, 0); // Deblocking
                 kernelDeblock.Enqueue(queue, lastEvent);
             }
         }

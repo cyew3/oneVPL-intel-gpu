@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -114,12 +114,6 @@ static inline void H265_FORCEINLINE small_memcpy( void* dst, const void* src, in
 #else
     ippsCopy_8u((const Ipp8u*)src, (Ipp8u*)dst, len);
 #endif
-}
-
-template<class T> inline T AlignValue(T value, mfxU32 alignment)
-{
-    assert((alignment & (alignment - 1)) == 0); // should be 2^n
-    return static_cast<T>((value + alignment - 1) & ~(alignment - 1));
 }
 
 static inline IppStatus _ippsSet(Ipp8u val, Ipp8u* pDst, int len )

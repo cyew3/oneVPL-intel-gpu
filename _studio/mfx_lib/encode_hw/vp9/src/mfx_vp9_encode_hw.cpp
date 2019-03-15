@@ -141,8 +141,6 @@ mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(VideoCORE *core, mfxVideoParam *par,
     return MFX_ERR_NONE;
 }
 
-#define ALIGN64(X) (((mfxU32)((X)+63)) & (~ (mfxU32)63))
-#define ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
 
 #if (MFX_VERSION >= 1027)
 void SetReconInfo(VP9MfxVideoParam const &par, mfxFrameInfo &fi, eMFXHWType const &platform)
@@ -151,8 +149,8 @@ void SetReconInfo(VP9MfxVideoParam const &par, mfxFrameInfo &fi, eMFXHWType cons
     mfxU16 format = opt3.TargetChromaFormatPlus1 - 1;
     mfxU16 depth = opt3.TargetBitDepthLuma;
 
-    fi.Width = ALIGN64(fi.Width);
-    fi.Height = ALIGN64(fi.Height);
+    fi.Width  = mfx::align2_value(fi.Width,  64);
+    fi.Height = mfx::align2_value(fi.Height, 64);
 
     if (format == MFX_CHROMAFORMAT_YUV444 && depth == BITDEPTH_10)
     {
@@ -172,13 +170,13 @@ void SetReconInfo(VP9MfxVideoParam const &par, mfxFrameInfo &fi, eMFXHWType cons
         if (platform >= MFX_HW_TGL_LP)
         {
             fi.FourCC = MFX_FOURCC_NV12;
-            fi.Width = ALIGN32(fi.Width) * 2;
+            fi.Width  = mfx::align2_value(fi.Width, 32) * 2;
         }
         else
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
         {
             std::ignore = platform;
-            fi.FourCC = MFX_FOURCC_P010;
+            fi.FourCC  = MFX_FOURCC_P010;
         }
     }
     else if (format == MFX_CHROMAFORMAT_YUV420 && depth == BITDEPTH_8)

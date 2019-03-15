@@ -3591,11 +3591,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (extOpt2->LookAheadDS > MFX_LOOKAHEAD_DS_OFF)
     {
-        par.calcParam.widthLa = AlignValue<mfxU16>((par.mfx.FrameInfo.Width / LaDSenumToFactor(extOpt2->LookAheadDS)), 16);
-        par.calcParam.heightLa = AlignValue<mfxU16>((par.mfx.FrameInfo.Height / LaDSenumToFactor(extOpt2->LookAheadDS)), 16);
+        par.calcParam.widthLa  = mfx::align2_value(mfxU16(par.mfx.FrameInfo.Width  / LaDSenumToFactor(extOpt2->LookAheadDS)), 16);
+        par.calcParam.heightLa = mfx::align2_value(mfxU16(par.mfx.FrameInfo.Height / LaDSenumToFactor(extOpt2->LookAheadDS)), 16);
     } else
     {
-        par.calcParam.widthLa = par.mfx.FrameInfo.Width;
+        par.calcParam.widthLa  = par.mfx.FrameInfo.Width;
         par.calcParam.heightLa = par.mfx.FrameInfo.Height;
     }
 
