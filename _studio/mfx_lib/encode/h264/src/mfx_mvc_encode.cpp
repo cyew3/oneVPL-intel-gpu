@@ -1940,6 +1940,8 @@ mfxStatus MFXVideoENCODEMVC::InitMVCView(mfxVideoParam *par_in, mfxExtCodingOpti
     mfxExtVideoSignalInfo* videoSignalInfo = (mfxExtVideoSignalInfo*)GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO );
     mfxExtOpaqueSurfaceAlloc* opaqAllocReq = (mfxExtOpaqueSurfaceAlloc*)GetExtBuffer( par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION );
 
+    if (depinfo == NULL) return MFX_ERR_INVALID_VIDEO_PARAM;
+
     view->m_maxdepvoid = 0;
     view->m_is_ref4anchor = view->m_is_ref4nonanchor = false;
     view->m_dependency.ViewId = depinfo->View[viewoid].ViewId;
@@ -2011,7 +2013,7 @@ mfxStatus MFXVideoENCODEMVC::InitMVCView(mfxVideoParam *par_in, mfxExtCodingOpti
     view->m_useVideoOpaq = false;
 
     if (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || m_isOpaque) {
-        bool bOpaqVideoMem = m_isOpaque && !(opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
+        bool bOpaqVideoMem = m_isOpaque && opaqAllocReq && !(opaqAllocReq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
         bool bNeedAuxInput = (par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) || bOpaqVideoMem;
 
         mfxFrameAllocRequest request;
@@ -2049,7 +2051,7 @@ mfxStatus MFXVideoENCODEMVC::InitMVCView(mfxVideoParam *par_in, mfxExtCodingOpti
             request.NumFrameSuggested = 1;
             st = m_core->AllocFrames(&request, &view->m_response);
             MFX_CHECK_STS(st);
-        } else {
+        } else if (opaqAllocReq) {
             // allocate opaque surfaces in system memory
             request.Type =  (mfxU16)opaqAllocReq->In.Type;
             request.NumFrameMin       = opaqAllocReq->In.NumSurface;
@@ -5359,7 +5361,7 @@ Status MFXVideoENCODEMVC::H264CoreEncoder_CompressFrame(
     Ipp32s brcRecode = 0;
     Ipp32s payloadBits = 0;
     Ipp32s brc_data_size;
-    H264EncoderFrame_8u16s tempRefFrame;
+    H264EncoderFrame_8u16s tempRefFrame = {};
     Ipp32s picStartDataSize = 0;
     bool isRefForIVP = false;
     Ipp8u  nal_header_ext[3] = {0,};
