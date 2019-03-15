@@ -741,11 +741,10 @@ namespace UMC
     }
     bool VC1TaskStoreSW::HaveTasksToBeDone()
     {
-        std::lock_guard<std::mutex> guard(m_mDSGuard);
-        if (m_bIsLastFramesMode)
+        if (false == IsProcessingDS())
         {
-            bool sts = IsProcessingDS();
-            if (false == sts)
+            std::lock_guard<std::mutex> guard(m_mDSGuard);
+            if (m_bIsLastFramesMode)
             {
                 m_bIsLastFramesMode = false;
                 return false;
@@ -754,7 +753,6 @@ namespace UMC
         }
         else
             return true;
-
     }
 
     void VC1TaskStoreSW::OpenNextFrames(VC1FrameDescriptor* pDS, VC1FrameDescriptor** pPrevDS, int32_t* CurrRefDst, int32_t* CurBDst)
