@@ -46,14 +46,14 @@ enum
 namespace MFX
 {
 
-mfxU32 mfxInterlockedCas32(mfxCriticalSection *pCSection, mfxU32 value_to_exchange, mfxU32 value_to_compare)
+mfxU64 mfxInterlockedCas32(mfxCriticalSection *pCSection, mfxU32 value_to_exchange, mfxU32 value_to_compare)
 {
-    return _InterlockedCompareExchange(pCSection, value_to_exchange, value_to_compare);
+    return _InterlockedCompareExchange(reinterpret_cast<volatile unsigned long long*>(pCSection), value_to_exchange, value_to_compare);
 }
 
-mfxU32 mfxInterlockedXchg32(mfxCriticalSection *pCSection, mfxU32 value)  
-{ 
-    return _InterlockedExchange(pCSection, value);
+mfxU64 mfxInterlockedXchg32(mfxCriticalSection *pCSection, mfxU32 value)
+{
+    return _InterlockedExchange(reinterpret_cast<volatile unsigned long long*>(pCSection), value);
 }
 
 void mfxEnterCriticalSection(mfxCriticalSection *pCSection)
