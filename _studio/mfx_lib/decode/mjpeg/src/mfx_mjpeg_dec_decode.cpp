@@ -1644,7 +1644,6 @@ VideoDECODEMJPEGBase_HW::VideoDECODEMJPEGBase_HW()
     m_va = 0;
     m_dst = 0;
     m_numPic = 0;
-    m_pCc    = NULL;
     m_needVpp = false;
 }
 
@@ -1682,8 +1681,6 @@ mfxStatus VideoDECODEMJPEGBase_HW::Init(mfxVideoParam *decPar, mfxFrameAllocRequ
     }
 
     m_numPic = 0;
-    delete m_pCc;
-    m_pCc    = 0;
 #else
     m_pMJPEGVideoDecoder->SetFourCC(request_internal->Info.FourCC);
     m_numPic = 0;
@@ -1696,8 +1693,6 @@ mfxStatus VideoDECODEMJPEGBase_HW::Reset(mfxVideoParam *par)
 {
     m_pMJPEGVideoDecoder->Reset();
     m_numPic = 0;
-    delete m_pCc;
-    m_pCc    = 0;
 
     m_vPar = *par;
 
@@ -1733,9 +1728,6 @@ mfxStatus VideoDECODEMJPEGBase_HW::Close(void)
     m_pMJPEGVideoDecoder->Close();
     m_numPic = 0;
     m_isOpaq = false;
-
-    delete m_pCc;
-    m_pCc    = 0;
 
     {
         std::lock_guard<std::mutex> guard(m_guard);
@@ -2305,7 +2297,6 @@ mfxStatus VideoDECODEMJPEGBase_HW::RunThread(void *params, mfxU32, mfxU32 )
             mfxSts = ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->CheckPreparingToOutput(info->surface_out,
                                                                                                               info->dst,
                                                                                                               &m_vPar,
-                                                                                                              &m_pCc,
                                                                                                               (mfxU16)info->vppTaskID);
             if(mfxSts != MFX_TASK_DONE)
             {
@@ -2484,7 +2475,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, 
         ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->SetJPEGInfo(&info);
 
         // decoding is ready. prepare to output:
-        mfxStatus mfxSts = ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->StartPreparingToOutput(surface_out, dst, &m_vPar, &m_pCc, &taskId, m_isOpaq);
+        mfxStatus mfxSts = ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->StartPreparingToOutput(surface_out, dst, &m_vPar, &taskId, m_isOpaq);
         if (mfxSts < MFX_ERR_NONE)
         {
             return mfxSts;
