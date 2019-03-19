@@ -2240,11 +2240,8 @@ mfxStatus MFXDecPipeline::CreateRender()
             pRender->SetDecoderVideoParamsPtr(&m_components[eDEC].m_params);
             //if outline key with file, then output of outline should be to this file, but bitstream output will be to -o file
             if (0 != vm_string_strlen(m_inParams.strOutlineFile))
-            {
-                tstring buf = m_inParams.strDstFile;
-                vm_string_strcpy(m_inParams.strDstFile, m_inParams.strOutlineFile);
-                vm_string_strcpy(m_inParams.strOutlineFile, buf.c_str());
-            }
+                std::swap(m_inParams.strDstFile, m_inParams.strOutlineFile);
+
             pRender->SetFiles(m_inParams.strOutlineFile, m_inParams.refFile);
             m_pRender = pRender;
             break;

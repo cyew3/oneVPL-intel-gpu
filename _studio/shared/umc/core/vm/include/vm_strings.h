@@ -115,7 +115,7 @@ typedef char vm_char;
 #define vm_string_sprintf_s sprintf
 #define vm_string_strcat_s(dest, size, src)  (strncat((dest), (src), (size)),0)
 #define vm_string_strncat   strncat
-#define vm_string_strcpy_s(dest, size, src)  (strncpy((dest), (src), (size)),0)
+#define vm_string_strcpy_s(dest, size, src)  (strncpy((dest), (src), (size-1)),dest[size-1]='\0',0)
 #define vm_string_strncpy_s(dst, dst_size, src, n) (strncpy(dst,src,n))
 #define vm_string_strnlen_s strnlen_s
 #endif
