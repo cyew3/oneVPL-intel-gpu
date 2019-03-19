@@ -53,6 +53,7 @@ public:
         , VABID_BRCParallel
         , VABID_FrameRate
         , VABID_QualityLevel
+        , VABID_EncQuality
         , VABID_MaxFrameSize
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         , VABID_TriggerCodecHang
@@ -123,6 +124,12 @@ mfxStatus SetHRD(
     VABufferID & hrdBuf_id);
 
 mfxStatus SetQualityLevelParams(
+    MfxHwH265Encode::MfxVideoParam const & par,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & qualityParams_id);
+
+mfxStatus SetQualityParams(
     MfxHwH265Encode::MfxVideoParam const & par,
     VADisplay    vaDisplay,
     VAContextID  vaContextEncode,

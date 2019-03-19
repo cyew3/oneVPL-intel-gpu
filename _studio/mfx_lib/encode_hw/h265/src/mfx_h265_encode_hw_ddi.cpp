@@ -134,8 +134,11 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
     caps.MBBRCSupport            = 1;
     caps.MbQpDataSupport         = 1; // = 0 on Win; to clarify!!!
     caps.TUSupport               = 73; // 1,
-    caps.SliceStructure = 4;
-    caps.BRCReset = 1;  // = 0 on Win (no bitrate resolution control); to clarify!!!
+    caps.SliceStructure          = 4;
+    caps.BRCReset                = 1;  // = 0 on Win (no bitrate resolution control); to clarify!!!
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    caps.HRDConformanceSupport   = core->GetHWType() >= MFX_HW_TGL_LP ? 1 : 0;
+#endif
 #endif
 
     // common part for all Windows and CS Linux
@@ -934,6 +937,8 @@ void FillSpsBuffer(
 #if defined(MFX_ENABLE_HEVCE_SCC)
     sps.palette_mode_enabled_flag = par.m_sps.palette_mode_enabled_flag;
 #endif
+
+    sps.DisableHRDConformance = IsOff(par.m_ext.CO3.BRCPanicMode);
 }
 
 void FillPpsBuffer(

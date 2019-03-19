@@ -1927,6 +1927,12 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 #endif //#if (MFX_VERSION >= 1027)
 
+    if (IsOn(CO3.BRCPanicMode) && !caps.HRDConformanceSupport)
+    {
+        CO3.BRCPanicMode = MFX_CODINGOPTION_OFF;
+        changed++;
+    }
+
     if (CO3.LowDelayBRC == MFX_CODINGOPTION_ON) {
         if ((par.m_platform < MFX_HW_ICL) ||
             (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
@@ -3075,6 +3081,9 @@ void SetDefaults(
         else
             par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
     }
+
+    if (CO3.BRCPanicMode == MFX_CODINGOPTION_UNKNOWN)
+        CO3.BRCPanicMode = (mfxU16) (hwCaps.HRDConformanceSupport ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
 
     if (CO3.LowDelayBRC == MFX_CODINGOPTION_UNKNOWN)
         CO3.LowDelayBRC = MFX_CODINGOPTION_OFF;

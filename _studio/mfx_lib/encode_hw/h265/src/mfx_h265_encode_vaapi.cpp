@@ -538,6 +538,44 @@ mfxStatus SetQualityLevelParams(
     return MFX_ERR_NONE;
 }
 
+mfxStatus SetQualityParams(
+    MfxVideoParam const & par,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & qualityParams_id)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param = nullptr;
+    VAEncMiscParameterEncQuality *quality_param = nullptr;
+
+    mfxStatus sts = CheckAndDestroyVAbuffer(vaDisplay, qualityParams_id);
+    MFX_CHECK_STS(sts);
+
+    vaSts = vaCreateBuffer(vaDisplay,
+                   vaContextEncode,
+                   VAEncMiscParameterBufferType,
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterEncQuality),
+                   1,
+                   NULL,
+                   &qualityParams_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(vaDisplay,
+                 qualityParams_id,
+                (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypeEncQuality;
+    quality_param = (VAEncMiscParameterEncQuality *)misc_param->data;
+
+    quality_param->PanicModeDisable = IsOff(par.m_ext.CO3.BRCPanicMode);
+
+    vaSts = vaUnmapBuffer(vaDisplay, qualityParams_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+}
+
 #ifdef MAX_HEVC_FRAME_SIZE_SUPPORT
 static mfxStatus SetMaxFrameSize(
     const UINT   userMaxFrameSize,
@@ -1172,6 +1210,8 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 #endif
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_FrameRate, 1)), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityLevelParams(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_QualityLevel, 1)), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityParams(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_EncQuality, 1)), MFX_ERR_DEVICE_FAILED);
+
 #ifdef MAX_HEVC_FRAME_SIZE_SUPPORT
     if (par.m_ext.CO2.MaxFrameSize)
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(par.m_ext.CO2.MaxFrameSize, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_MaxFrameSize, 1)), MFX_ERR_DEVICE_FAILED);
@@ -1205,6 +1245,7 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par, bool bResetBRC)
 #endif
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_FrameRate, 1)), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityLevelParams(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_QualityLevel, 1)), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityParams(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_EncQuality, 1)), MFX_ERR_DEVICE_FAILED);
 
 #ifdef MAX_HEVC_FRAME_SIZE_SUPPORT
     if (par.m_ext.CO2.MaxFrameSize)

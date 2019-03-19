@@ -661,6 +661,7 @@ namespace ExtBuffer
         MFX_COPY_FIELD(DeblockingBetaOffset);
 #endif
         MFX_COPY_FIELD(LowDelayBRC);
+        MFX_COPY_FIELD(BRCPanicMode);
     }
 
     inline void  CopySupportedParams(mfxExtCodingOptionDDI& buf_dst, mfxExtCodingOptionDDI& buf_src)

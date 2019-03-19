@@ -80,7 +80,7 @@ typedef struct tagENCODE_CAPS_HEVC
             UINT    CTULevelReportSupport           : 1;
             UINT    SearchWindow64Support           : 1;
             UINT    CustomRoundingControl           : 1;
-            UINT    ReservedBit1                    : 1;
+            UINT    LowDelayBRCSupport              : 1;
             UINT    IntraRefreshBlockUnitSize       : 2;
             UINT    LCUSizeSupported                : 3;
             UINT    MaxNumDeltaQP                   : 4;
@@ -91,7 +91,7 @@ typedef struct tagENCODE_CAPS_HEVC
             UINT    ROIDeltaQPSupport               : 1;
             UINT    NumScalablePipesMinus1          : 5;
             UINT    NegativeQPSupport               : 1;
-            UINT    ReservedBit2                    : 1;
+            UINT    HRDConformanceSupport           : 1;
             UINT    TileBasedEncodingSupport        : 1;
             UINT    PartialFrameUpdateSupport       : 1;
             UINT    RGBEncodingSupport              : 1;
@@ -100,6 +100,7 @@ typedef struct tagENCODE_CAPS_HEVC
         };
         UINT    CodingLimits2;
     };
+
     UCHAR    MaxNum_WeightedPredL0;
     UCHAR    MaxNum_WeightedPredL1;
     USHORT   MaxNumOfDirtyRect;
@@ -111,6 +112,7 @@ typedef struct tagENCODE_CAPS_HEVC
     UINT     reserved32bits2;
     UINT     reserved32bits3;
 } ENCODE_CAPS_HEVC;
+
 
 #if !defined(OPEN_SOURCE)
 typedef struct tagFRAMERATE
@@ -183,7 +185,9 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
             UINT    bAutoMaxPBFrameSizeForSceneChange   : 1;
             UINT    EnableStreamingBufferLLC            : 1;
             UINT    EnableStreamingBufferDDR            : 1;
-            UINT                                        : 6;
+            UINT    LowDelayMode                        : 1;
+            UINT    DisableHRDConformance               : 1;
+            UINT                                        : 4;
         };
         UINT    EncodeFlags;
     };
