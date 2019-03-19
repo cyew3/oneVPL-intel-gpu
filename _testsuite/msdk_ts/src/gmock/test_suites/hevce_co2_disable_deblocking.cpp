@@ -137,7 +137,7 @@ private:
         memset(CO3, 0, sizeof(mfxExtCodingOption3));
         CO3->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
         CO3->Header.BufferSz = sizeof(mfxExtCodingOption3);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
         CO3->DeblockingAlphaTcOffset = alpha;
         CO3->DeblockingBetaOffset = beta;
 #endif
@@ -152,14 +152,19 @@ private:
         {
             m_ctrl.ExtParam = buffers[n_frame];
             m_ctrl.NumExtParam = 2;
+#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
             s.Data.TimeStamp = FEATURE_ENABLED;
+#elif (defined(_WIN32) || defined(_WIN64))
+            s.Data.TimeStamp = mode & RUNTIME_ONLY ? FEATURE_ENABLED : FEATURE_DEBLOCKING_DISABLED;
+#else
+            s.Data.TimeStamp = CO2->DisableDeblockingIdc ? FEATURE_ENABLED : 0;
+#endif
         }
         else if (m_par.NumExtParam)
         {
             mfxExtCodingOption2* co2 = (mfxExtCodingOption2*)m_par.ExtParam[0];
             s.Data.TimeStamp = co2->DisableDeblockingIdc ? FEATURE_DEBLOCKING_DISABLED : 0;
         }
-
         n_frame++;
 
         return MFX_ERR_NONE;
@@ -170,51 +175,52 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 {
     /*00*/{MFX_ERR_NONE, MFX_ERR_NONE, 0, {}},
     /*01*/{MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {}},
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    /*02*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
-                                  { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
-                                  { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}} },
-    /*03*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 1 },
-                                  { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
-                                  { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}} },
-    /*04*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
-                                                      { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
-                                                      { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 13}} },
-    /*05*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
-                                                      { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 13},
-                                                      { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}} },
-    /*06*/{MFX_ERR_NONE, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INVALID_PARAMS | RUNTIME_ONLY, {}},
-#endif
-    /*07*/{MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 2}},
-    /*08*/{MFX_ERR_NONE, MFX_ERR_NONE, RUNTIME_ONLY, {}},
-    /*09*/{MFX_ERR_NONE, MFX_ERR_NONE, EVERY_OTHER, {}},
-    /*10*/{MFX_ERR_NONE, MFX_ERR_NONE, RUNTIME_ONLY|EVERY_OTHER, {}},
-    /*11*/{MFX_ERR_NONE, MFX_ERR_NONE, EVERY_OTHER, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
+    /*02*/{MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 1}},
+    /*03*/{MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 2}},
+    /*04*/{MFX_ERR_NONE, MFX_ERR_NONE, RUNTIME_ONLY, {}},
+    /*05*/{MFX_ERR_NONE, MFX_ERR_NONE, EVERY_OTHER, {}},
+    /*06*/{MFX_ERR_NONE, MFX_ERR_NONE, RUNTIME_ONLY|EVERY_OTHER, {}},
+    /*07*/{MFX_ERR_NONE, MFX_ERR_NONE, EVERY_OTHER, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
                                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
-    /*12*/{MFX_ERR_NONE, MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
+    /*08*/{MFX_ERR_NONE, MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
                              {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10}}},
-    /*13*/{MFX_ERR_NONE, MFX_ERR_NONE, EVERY_OTHER, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
+    /*09*/{MFX_ERR_NONE, MFX_ERR_NONE, EVERY_OTHER, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
                                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 8}}},
-    /*14*/{MFX_ERR_NONE, MFX_ERR_NONE, EVERY_OTHER, {
+    /*10*/{MFX_ERR_NONE, MFX_ERR_NONE, EVERY_OTHER, {
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 700},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 0},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}}},
-    /*15*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_ON, {}},
-    /*16*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_ON|RUNTIME_ONLY, {}},
-    /*17*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_ON|EVERY_OTHER, {}},
-    /*18*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_OFF, {}},
-    /*19*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_OFF|RUNTIME_ONLY, {}},
-    /*20*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY | HUGE_SIZE_4K,{
+    /*11*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_ON, {}},
+    /*12*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_ON|RUNTIME_ONLY, {}},
+    /*13*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_ON|EVERY_OTHER, {}},
+    /*14*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_OFF, {}},
+    /*15*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_OFF|RUNTIME_ONLY, {}},
+    /*16*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY | HUGE_SIZE_4K,{
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2160 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4096 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  2160 } } },
-    /*21*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY | HUGE_SIZE_8K,{
+    /*17*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY | HUGE_SIZE_8K,{
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  8192 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096 },
         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  8192 },
-        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4096 } } }
+        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4096 } } },
+#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
+    /*18*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
+                                                { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
+                                                { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}} },
+    /*19*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 1 },
+                                                { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
+                                                { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}} },
+    /*20*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
+                                                                                        { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
+                                                                                        { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 13}} },
+    /*21*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
+                                                                                        { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 13},
+                                                                                        { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingBetaOffset, 10}} },
+    /*22*/{MFX_ERR_NONE, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INVALID_PARAMS | RUNTIME_ONLY, {}},
+#endif
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -262,8 +268,10 @@ public:
                 if (bs.TimeStamp == FEATURE_ENABLED)
                 {
                     expected_idc = n_frame % 2 ? 0 : 1;
+#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
                     expected_alpha = expected_idc == 1 ? 0 : (n_frame % 12 - 6) * 2;
                     expected_beta = expected_idc == 1 ? 0 : (n_frame % 12 - 6) * 2;
+#endif
                 }
                 auto& slice = *au.nalu[i]->slice;
 
@@ -405,7 +413,7 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
         cod2.DisableDeblockingIdc = 1;
         SETPARS(&cod2, EXT_COD2);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
         cod3.DeblockingAlphaTcOffset = MAX_ALPHA;
         cod3.DeblockingBetaOffset = MAX_BETA;
         SETPARS(&cod3, EXT_COD3);
@@ -542,7 +550,7 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
                 cod2.DisableDeblockingIdc = 1;
                 SETPARS(&cod2, EXT_COD2);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
                 cod3.DeblockingAlphaTcOffset = MAX_ALPHA;
                 cod3.DeblockingBetaOffset = MAX_BETA;
                 SETPARS(&cod3, EXT_COD3);
@@ -567,7 +575,7 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
                 mfxExtCodingOption3& cod3 = m_par;
 
                 cod2.DisableDeblockingIdc = 0;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
                 cod3.DeblockingAlphaTcOffset = MAX_ALPHA;
                 cod3.DeblockingBetaOffset = MAX_BETA;
 
