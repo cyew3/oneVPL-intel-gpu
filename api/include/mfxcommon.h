@@ -62,8 +62,8 @@ enum  {
     MFX_IMPL_HARDWARE3    = 0x0006,  /* Hardware accelerated implementation (3rd device) */
     MFX_IMPL_HARDWARE4    = 0x0007,  /* Hardware accelerated implementation (4th device) */
     MFX_IMPL_RUNTIME      = 0x0008,
-#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
-    MFX_IMPL_SINGLE_THREAD    = 0x0009,
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    MFX_IMPL_SINGLE_THREAD= 0x0009,
 #endif
     MFX_IMPL_VIA_ANY      = 0x0100,
     MFX_IMPL_VIA_D3D9     = 0x0200,
@@ -71,7 +71,7 @@ enum  {
     MFX_IMPL_VIA_VAAPI    = 0x0400,
 
     MFX_IMPL_AUDIO                     = 0x8000,
-#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_IMPL_EXTERNAL_THREADING        = 0x10000,
 #endif
 
