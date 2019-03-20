@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,18 +19,19 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined (MFX_VA_WIN)
+#if defined (MFX_VA)
 
 #include "libmfx_core_hw.h"
-#include "umc_va_dxva2.h"
 #include "mfx_common_decode_int.h"
 #include "mfx_enc_common.h"
 #include "mfxpcp.h"
 #include "mfx_ext_buffers.h"
 
+#include "umc_va_base.h"
+
 using namespace UMC;
 
-mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
+mfxU32 ChooseProfile(mfxVideoParam const* param, eMFXHWType)
 {
     mfxU32 profile = UMC::VA_VLD;
 
@@ -90,23 +91,15 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
 
     case MFX_CODEC_VP9:
         profile |= VA_VP9;
-#ifndef OPEN_SOURCE
         switch (param->mfx.FrameInfo.FourCC)
         {
         case MFX_FOURCC_P010:
             profile |= VA_PROFILE_10;
             break;
-#if (MFX_VERSION >= 1027)
-        case MFX_FOURCC_YUY2:
-        case MFX_FOURCC_UYVY:
-            profile |= VA_PROFILE_422;
-            break;
         case MFX_FOURCC_AYUV:
             profile |= VA_PROFILE_444;
             break;
-        case MFX_FOURCC_Y210:
-            profile |= VA_PROFILE_10 | VA_PROFILE_422;
-            break;
+#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_Y410:
             profile |= VA_PROFILE_10 | VA_PROFILE_444;
             break;
@@ -115,15 +108,11 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         case MFX_FOURCC_P016:
             profile |= VA_PROFILE_12;
             break;
-        case MFX_FOURCC_Y216:
-            profile |= VA_PROFILE_12 | VA_PROFILE_422;
-            break;
         case MFX_FOURCC_Y416:
             profile |= VA_PROFILE_12 | VA_PROFILE_444;
             break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
         }
-#endif
         break;
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
@@ -140,7 +129,6 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
 
     case MFX_CODEC_HEVC:
         profile |= VA_H265;
-#ifndef OPEN_SOURCE
         switch (param->mfx.FrameInfo.FourCC)
         {
             case MFX_FOURCC_P010:
@@ -172,7 +160,6 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
                 break;
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
         }
-#endif
 
         {
             mfxU32 const profile_idc = ExtractProfile(param->mfx.CodecProfile);
@@ -211,10 +198,12 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
     return profile;
 }
 
+#if defined (MFX_VA_WIN)
 bool IsHwMvcEncSupported()
 {
     return true;
 }
+#endif
 
 #endif
 /* EOF */

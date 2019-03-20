@@ -33,6 +33,7 @@
 #include "mfx_common_decode_int.h"
 #include "mfx_enc_common.h"
 #include "mfxfei.h"
+#include "libmfx_core_hw.h"
 
 #include "umc_va_linux_protected.h"
 #include "umc_va_fei.h"
@@ -723,94 +724,9 @@ VAAPIVideoCORE::CreateVA(
         !(request->Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
         return MFX_ERR_NONE;
 
-    int profile = UMC::VA_VLD;
-
-    // video accelerator is needed for decoders only
-    switch (param->mfx.CodecId)
-    {
-    case MFX_CODEC_VC1:
-        profile |= VA_VC1;
-        break;
-    case MFX_CODEC_MPEG2:
-        profile |= VA_MPEG2;
-        break;
-    case MFX_CODEC_AVC:
-        profile |= VA_H264;
-        break;
-    case MFX_CODEC_HEVC:
-        profile |= VA_H265;
-        if (MFX_PROFILE_HEVC_REXT == param->mfx.CodecProfile)
-        {
-            profile |= VA_PROFILE_REXT;
-        }
-        if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
-#if (MFX_VERSION >= 1027)
-            || param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
-            || param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
-#endif
-        )
-        {
-            profile |= VA_PROFILE_10;
-        }
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
-        else if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P016 ||
-                 param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 ||
-                 param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416)
-            profile |= VA_PROFILE_12;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
-
-        if (MFX_CHROMAFORMAT_YUV422 == param->mfx.FrameInfo.ChromaFormat)
-            profile |= (VA_PROFILE_422 | VA_PROFILE_REXT);
-        else if (MFX_CHROMAFORMAT_YUV444 == param->mfx.FrameInfo.ChromaFormat)
-            profile |= (VA_PROFILE_444 |VA_PROFILE_REXT);
-
-        break;
-
-    case MFX_CODEC_VP8:
-        profile |= VA_VP8;
-        break;
-    case MFX_CODEC_VP9:
-        profile |= VA_VP9;
-        switch (param->mfx.FrameInfo.FourCC)
-        {
-        case MFX_FOURCC_P010:
-            profile |= VA_PROFILE_10;
-            break;
-        case MFX_FOURCC_AYUV:
-            profile |= VA_PROFILE_444;
-            break;
-#if (MFX_VERSION >= 1027)
-        case MFX_FOURCC_Y410:
-            profile |= VA_PROFILE_10 | VA_PROFILE_444;
-            break;
-#endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
-        case MFX_FOURCC_P016:
-            profile |= VA_PROFILE_12;
-            break;
-        case MFX_FOURCC_Y416:
-            profile |= VA_PROFILE_12 | VA_PROFILE_444;
-            break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
-        }
-        break;
-    case MFX_CODEC_JPEG:
-        profile |= VA_JPEG;
-        break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
-    case MFX_CODEC_AV1:
-        profile |= VA_AV1;
-        switch (param->mfx.FrameInfo.FourCC)
-        {
-        case MFX_FOURCC_P010:
-            profile |= VA_PROFILE_10;
-            break;
-        }
-        break;
-#endif
-    default:
+    auto const profile = ChooseProfile(param, GetHWType());
+    if (!profile)
         return MFX_ERR_UNSUPPORTED;
-    }
 
     bool init_render_targets =
 #if defined(ANDROID)

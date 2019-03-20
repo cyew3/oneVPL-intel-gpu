@@ -290,6 +290,7 @@ _studio/shared/src/cm_mem_copy.cpp
 _studio/shared/src/libmfx_allocator.cpp
 _studio/shared/src/libmfx_allocator_vaapi.cpp
 _studio/shared/src/libmfx_core.cpp
+_studio/shared/src/libmfx_core_hw.cpp
 _studio/shared/src/libmfx_core_factory.cpp
 _studio/shared/src/libmfx_core_vaapi.cpp
 _studio/shared/src/mfx_mfe_adapter.cpp
