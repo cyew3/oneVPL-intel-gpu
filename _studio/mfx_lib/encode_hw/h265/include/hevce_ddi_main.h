@@ -183,8 +183,7 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
             UINT    bAutoMaxPBFrameSizeForSceneChange   : 1;
             UINT    EnableStreamingBufferLLC            : 1;
             UINT    EnableStreamingBufferDDR            : 1;
-            UINT    LowDelayMode                        : 1;
-            UINT                                        : 5;
+            UINT                                        : 6;
         };
         UINT    EncodeFlags;
     };
@@ -250,7 +249,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     INT              RefFramePOCList[15];
 
     UCHAR   CodingType;
-    UCHAR   FrameLevel; // deprecated in DDI 0.9966
+    UCHAR   FrameLevel; // [0..3]
     USHORT  NumSlices;
 
     union

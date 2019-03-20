@@ -958,13 +958,12 @@ public:
     mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
     bool CheckExtBufferParam();
 
-    bool isPPyramid() const { return m_ext.CO3.PRefType == MFX_P_REF_PYRAMID; }
     bool isBPyramid() const { return m_ext.CO2.BRefType == MFX_B_REF_PYRAMID; }
-    bool isLowDelay() const { return (isPPyramid() && !isTL()); }
+    bool isLowDelay() const { return ((m_ext.CO3.PRefType == MFX_P_REF_PYRAMID) && !isTL()); }
     bool isTL()       const { return NumTL() > 1; }
-    bool isSWBRC()    const { return (IsOn(m_ext.CO2.ExtBRC) && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))|| mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ;}
-    bool isField()    const { return !!(mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE); }
-    bool isBFF()      const { return ((mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BOTTOM) == MFX_PICSTRUCT_FIELD_BOTTOM); }
+    bool isSWBRC()    const {return  (IsOn(m_ext.CO2.ExtBRC) && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))|| mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ;}
+    bool isField()    const { return  !!(mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE); }
+    bool isBFF()      const { return  ((mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BOTTOM) == MFX_PICSTRUCT_FIELD_BOTTOM); }
 
 private:
     void Construct(mfxVideoParam const & par);
