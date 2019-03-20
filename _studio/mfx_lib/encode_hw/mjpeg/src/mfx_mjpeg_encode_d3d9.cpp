@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -123,6 +123,12 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     mfxU32      height,
     bool        isTemporal)
 {
+    mfxStatus sts = MFX_ERR_NONE;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    sts = InitCommonEnc(core);
+    MFX_CHECK_STS(sts);
+#endif
+
     m_core = core;
     GUID guid = DXVA2_Intel_Encode_JPEG;
 
@@ -131,7 +137,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
 
     IDirectXVideoDecoderService *service = 0;
-    mfxStatus sts = pID3D->GetD3DService(mfxU16(width), mfxU16(height), &service, isTemporal);
+    sts = pID3D->GetD3DService(mfxU16(width), mfxU16(height), &service, isTemporal);
     MFX_CHECK_STS(sts);
     MFX_CHECK(service, MFX_ERR_DEVICE_FAILED);
 
@@ -287,7 +293,6 @@ mfxStatus D3D9Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
     m_feedbackCached.Reset(response.NumFrameActual);
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    m_EventCache.reset(new EventCache());
     m_EventCache->Init(response.NumFrameActual);
 #endif
 

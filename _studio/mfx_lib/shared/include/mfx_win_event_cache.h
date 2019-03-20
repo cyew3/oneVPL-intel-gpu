@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -59,6 +59,21 @@ public:
     */
     mfxStatus  ReturnEvent(EVENT_TYPE& event);
 
+    /*
+    set global HW(BB completion) event from scheduler
+    */
+    void SetGlobalHwEvent(HANDLE *globalHwEvent)
+    {
+        m_pGlobalHwEvent = globalHwEvent;
+    }
+
+    EventCache()
+        : m_Free()
+        , m_nInitNumberOfEvents(0)
+        , m_guard()
+        , m_pGlobalHwEvent(nullptr)
+    {}
+
     virtual ~EventCache()
     {
         (void)Close();
@@ -67,6 +82,7 @@ private:
     std::deque<EVENT_TYPE> m_Free;
     mfxU16 m_nInitNumberOfEvents;
     std::mutex m_guard;
+    HANDLE *m_pGlobalHwEvent;
 };
 
 #endif /* #if defined(MFX_VA_WIN) */

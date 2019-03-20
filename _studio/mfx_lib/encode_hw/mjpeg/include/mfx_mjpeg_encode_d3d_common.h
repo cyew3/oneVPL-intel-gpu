@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,10 @@ namespace MfxHwMJpegEncode
         D3DXCommonEncoder();
 
         virtual ~D3DXCommonEncoder();
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        mfxStatus InitCommonEnc(VideoCORE *pCore);
+#endif
 
         virtual mfxStatus QueryStatus(DdiTask & task);
 

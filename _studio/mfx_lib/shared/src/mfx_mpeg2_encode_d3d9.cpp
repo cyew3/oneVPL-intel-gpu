@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -356,7 +356,6 @@ mfxStatus D3D9Encoder::Register(const mfxFrameAllocResponse* pResponse, D3DDDIFO
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     if (m_bIsBlockingTaskSyncEnabled)
     {
-        m_EventCache.reset(new EventCache());
         m_EventCache->Init(256); // allocate a cache for 256 elements as _NUM_STORED_FEEDBACKS
     }
 #endif

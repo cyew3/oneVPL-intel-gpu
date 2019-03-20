@@ -73,6 +73,12 @@ namespace MfxHwVP9Encode
 
         MFX_CHECK_STS(SetGPUSyncEventEnable(pCore));
 
+        if (m_bIsBlockingTaskSyncEnabled)
+        {
+            m_EventCache.reset(new EventCache());
+            m_EventCache->SetGlobalHwEvent(pScheduler->GetHwEvent());
+        }
+
         return MFX_ERR_NONE;
     }
 

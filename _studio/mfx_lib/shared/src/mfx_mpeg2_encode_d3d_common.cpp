@@ -39,6 +39,16 @@ mfxStatus D3DXCommonEncoder::InitCommonEnc(VideoCORE *pCore)
     if (eventsEnabled)
         m_bIsBlockingTaskSyncEnabled = *eventsEnabled;
 
+    auto pScheduler = (MFXIScheduler2 *)pCore->GetSession()->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
+    if (pScheduler == NULL)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    if (m_bIsBlockingTaskSyncEnabled)
+    {
+        m_EventCache.reset(new EventCache());
+        m_EventCache->SetGlobalHwEvent(pScheduler->GetHwEvent());
+    }
+
     return MFX_ERR_NONE;
 }
 

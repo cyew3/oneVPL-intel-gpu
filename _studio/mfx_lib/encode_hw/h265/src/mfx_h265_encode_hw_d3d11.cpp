@@ -532,7 +532,6 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespo
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     if (m_bIsBlockingTaskSyncEnabled)
     {
-        m_EventCache.reset(new EventCache());
         m_EventCache->Init(response.NumFrameActual);
     }
 #endif

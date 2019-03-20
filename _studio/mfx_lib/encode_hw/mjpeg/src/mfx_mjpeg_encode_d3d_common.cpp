@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,22 @@ D3DXCommonEncoder::D3DXCommonEncoder()
 D3DXCommonEncoder::~D3DXCommonEncoder()
 {
 }
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+mfxStatus D3DXCommonEncoder::InitCommonEnc(VideoCORE *pCore)
+{
+    MFX_CHECK_NULL_PTR1(pCore);
+
+    auto pScheduler = (MFXIScheduler2 *)pCore->GetSession()->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
+    if (pScheduler == NULL)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    m_EventCache.reset(new EventCache());
+    m_EventCache->SetGlobalHwEvent(pScheduler->GetHwEvent());
+
+    return MFX_ERR_NONE;
+}
+#endif
 
 mfxStatus D3DXCommonEncoder::WaitTaskSync(DdiTask & task, mfxU32 timeOutMs)
 {

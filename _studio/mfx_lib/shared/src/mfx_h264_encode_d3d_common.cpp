@@ -62,6 +62,11 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *core)
         m_timeoutForTDR = (platform >= MFX_HW_LKF) ? MFX_H264ENC_HW_TASK_TIMEOUT_SIM : MFX_H264ENC_HW_TASK_TIMEOUT;
     }
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    m_EventCache.reset(new EventCache());
+    m_EventCache->SetGlobalHwEvent(pSheduler->GetHwEvent());
+#endif
+
     return MFX_ERR_NONE;
 }
 

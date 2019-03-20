@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -68,11 +68,17 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 {
     MFX_CHECK_NULL_PTR1(core);
 
+    mfxStatus sts = MFX_ERR_NONE;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    sts = InitCommonEnc(core);
+    MFX_CHECK_STS(sts);
+#endif
+
     D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(core);
 
     MFX_CHECK_NULL_PTR1(pD3d11);
 
-    mfxStatus sts = Init(
+    sts = Init(
         DXVA2_Intel_Encode_JPEG,
         pD3d11->GetD3D11VideoDevice(isTemporal),
         pD3d11->GetD3D11VideoContext(isTemporal),
@@ -212,7 +218,6 @@ mfxStatus D3D11Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
     m_feedbackCached.Reset(response.NumFrameActual);
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    m_EventCache.reset(new EventCache());
     m_EventCache->Init(response.NumFrameActual);
 #endif
 

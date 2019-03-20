@@ -419,7 +419,6 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
     }
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        m_EventCache.reset(new EventCache());
         m_EventCache->Init(response.NumFrameActual);
 #endif
 

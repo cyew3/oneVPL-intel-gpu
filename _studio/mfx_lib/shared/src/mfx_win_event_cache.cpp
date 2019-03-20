@@ -33,6 +33,13 @@ mfxStatus EventCache::Init(size_t nPreallocEvents)
     for (size_t i = 0; i < nPreallocEvents; i++)
     {
         EVENT_TYPE ev= CreateEvent(NULL, FALSE, FALSE, NULL);
+        // WA for avoid cases whan global HW (BB completion) event is equal created event
+        // should be removed after enablin event based synchronization for all components
+        if (m_pGlobalHwEvent != nullptr && ev == *m_pGlobalHwEvent)
+        {
+            CloseHandle(ev);
+            ev = CreateEvent(NULL, FALSE, FALSE, NULL);
+        }
         m_Free.push_back(ev);
     }
     m_nInitNumberOfEvents = (mfxU16)nPreallocEvents;
@@ -48,6 +55,8 @@ MFX_ERR_NOT_INITIALIZED if not initialized
 */
 mfxStatus EventCache::Close()
 {
+    m_pGlobalHwEvent = nullptr;
+
     if (m_Free.size() != m_nInitNumberOfEvents)
         return MFX_ERR_NOT_FOUND;
 

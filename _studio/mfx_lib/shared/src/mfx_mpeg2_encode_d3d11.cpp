@@ -713,7 +713,6 @@ mfxStatus D3D11Encoder::Register(
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     if (m_bIsBlockingTaskSyncEnabled)
     {
-        m_EventCache.reset(new EventCache());
         m_EventCache->Init(256); // allocate a cache for 256 elements as _NUM_STORED_FEEDBACKS
     }
 #endif
