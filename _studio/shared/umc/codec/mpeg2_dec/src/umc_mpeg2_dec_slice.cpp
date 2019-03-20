@@ -789,8 +789,8 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, uint8_t* iqm, uint8_
       int32_t height_l, height_c;
       int32_t size_l, size_c;
 
-      pitch_l  = mfx::align2_value<int32_t>(sequenceHeader.mb_width[task_num] *16, 16);
-      height_l = mfx::align2_value<int32_t>(sequenceHeader.mb_height[task_num]*16, 16);
+      pitch_l  = mfx::align2_value(sequenceHeader.mb_width[task_num] *16, 16);
+      height_l = mfx::align2_value(sequenceHeader.mb_height[task_num]*16, 16);
       size_l = height_l*pitch_l;
       if (m_ClipInfo.color_format != YUV444) {
 

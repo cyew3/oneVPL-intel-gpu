@@ -747,9 +747,9 @@ extern const H264MotionVector null_mv;
 inline Ipp32u CalcPitchFromWidth(Ipp32u width, Ipp32s pixSize)
 {
 #ifdef NO_PADDING
-    return mxf::align_value<Ipp32u>(((width + LUMA_PADDING * 4) * pixSize), 16);
+    return mxf::align2_value(((width + LUMA_PADDING * 4) * pixSize), 16);
 #else // NO_PADDING
-    return mfx::align2_value<Ipp32u>(((width + LUMA_PADDING * 4) * pixSize), DATA_ALIGN);
+    return mfx::align2_value(((width + LUMA_PADDING * 4) * pixSize), DATA_ALIGN);
 #endif
 }
 

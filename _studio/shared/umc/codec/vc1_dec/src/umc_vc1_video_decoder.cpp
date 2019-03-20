@@ -316,14 +316,14 @@ Status VC1VideoDecoder::ContextAllocation(uint32_t mbWidth,uint32_t mbHeight)
     {
 
         uint8_t* ptr = NULL;
-        ptr += mfx::align2_value<uint32_t>(sizeof(VC1Context));
-        ptr += mfx::align2_value<uint32_t>(sizeof(VC1VLCTables));
-        ptr += mfx::align2_value<uint32_t>(sizeof(int16_t)*mbHeight*mbWidth*2*2);
-        ptr += mfx::align2_value<uint32_t>(mbHeight*mbWidth);
-        ptr += mfx::align2_value<uint32_t>(sizeof(VC1TSHeap));
+        ptr += mfx::align2_value(sizeof(VC1Context));
+        ptr += mfx::align2_value(sizeof(VC1VLCTables));
+        ptr += mfx::align2_value(sizeof(int16_t)*mbHeight*mbWidth*2*2);
+        ptr += mfx::align2_value(mbHeight*mbWidth);
+        ptr += mfx::align2_value(sizeof(VC1TSHeap));
         if(m_stCodes == NULL)
         {
-            ptr += mfx::align2_value<uint32_t>(START_CODE_NUMBER*2*sizeof(uint32_t)+sizeof(MediaDataEx::_MediaDataEx));
+            ptr += mfx::align2_value(START_CODE_NUMBER*2*sizeof(uint32_t)+sizeof(MediaDataEx::_MediaDataEx));
         }
 
         // Need to replace with MFX allocator
@@ -337,24 +337,24 @@ Status VC1VideoDecoder::ContextAllocation(uint32_t mbWidth,uint32_t mbHeight)
         memset(m_pContext,0,(size_t)ptr);
         ptr = (uint8_t*)m_pContext;
 
-        ptr += mfx::align2_value<uint32_t>(sizeof(VC1Context));
+        ptr += mfx::align2_value(sizeof(VC1Context));
         m_pContext->m_vlcTbl = (VC1VLCTables*)ptr;
 
-        ptr += mfx::align2_value<uint32_t>(sizeof(VC1VLCTables));
+        ptr += mfx::align2_value(sizeof(VC1VLCTables));
 #ifdef ALLOW_SW_VC1_FALLBACK
         m_pContext->savedMV_Curr = (int16_t*)ptr;
 #endif
-        ptr += mfx::align2_value<uint32_t>(sizeof(int16_t)*mbHeight*mbWidth*2*2);
+        ptr += mfx::align2_value(sizeof(int16_t)*mbHeight*mbWidth*2*2);
 #ifdef ALLOW_SW_VC1_FALLBACK
         m_pContext->savedMVSamePolarity_Curr = ptr;
 #endif
 
-        ptr +=  mfx::align2_value<uint32_t>(mbHeight*mbWidth);
+        ptr +=  mfx::align2_value(mbHeight*mbWidth);
         m_pHeap = (VC1TSHeap*)ptr;
 
         if(m_stCodes == NULL)
         {
-            ptr += mfx::align2_value<uint32_t>(sizeof(VC1TSHeap));
+            ptr += mfx::align2_value(sizeof(VC1TSHeap));
             m_stCodes = (MediaDataEx::_MediaDataEx *)(ptr);
 
 
@@ -394,7 +394,7 @@ Status VC1VideoDecoder::StartCodesProcessing(uint8_t*   pBStream,
         {
             // copy data to self buffer
             MFX_INTERNAL_CPY(m_dataBuffer, pBStream + *pOffsets, UnitSize);
-            SwapData(m_dataBuffer, mfx::align2_value<uint32_t>(UnitSize));
+            SwapData(m_dataBuffer, mfx::align2_value(UnitSize));
             m_pContext->m_bitstream.pBitstream = (uint32_t*)m_dataBuffer + 1; //skip start code
         }
         readSize += UnitSize;
@@ -413,11 +413,11 @@ Status VC1VideoDecoder::StartCodesProcessing(uint8_t*   pBStream,
             alignment = (context.m_seqLayerHeader.INTERLACE)?32:16;
 
 
-            if (mfx::align2_value<uint32_t>(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) > mfx::align2_value<uint32_t>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_WIDTH+1)))
+            if (mfx::align2_value(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) > mfx::align2_value(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_WIDTH+1)))
                 return UMC_ERR_INVALID_PARAMS;
             if (context.m_seqLayerHeader.INTERLACE != m_pInitContext.m_seqLayerHeader.INTERLACE )
                 return UMC_ERR_INVALID_PARAMS;
-            if (mfx::align2_value<uint32_t>(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) > mfx::align2_value<uint32_t>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
+            if (mfx::align2_value(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) > mfx::align2_value(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
                 return UMC_ERR_INVALID_PARAMS;
             // start codes are applicable for advanced profile only
             if (context.m_seqLayerHeader.PROFILE != VC1_PROFILE_ADVANCED)
@@ -432,8 +432,8 @@ Status VC1VideoDecoder::StartCodesProcessing(uint8_t*   pBStream,
             {
                 *m_pContext = context;
 
-                if (mfx::align2_value<uint32_t>(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) != mfx::align2_value<uint32_t>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_WIDTH+1))
-                   || mfx::align2_value<uint32_t>(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) != mfx::align2_value<uint32_t>(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
+                if (mfx::align2_value(2*(context.m_seqLayerHeader.MAX_CODED_WIDTH+1)) != mfx::align2_value(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_WIDTH+1))
+                   || mfx::align2_value(2*(context.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment) != mfx::align2_value(2*(m_pInitContext.m_seqLayerHeader.MAX_CODED_HEIGHT+1),alignment))
                 {
                     m_pStore->SetNewSHParams(m_pContext);
                     umcRes = UMC_NTF_NEW_RESOLUTION;
@@ -479,7 +479,7 @@ Status VC1VideoDecoder::StartCodesProcessing(uint8_t*   pBStream,
                 (uint8_t*)m_frameData->GetDataPointer() + *pOffsets,
                 UnitSize);
             //use own buffer
-            SwapData(m_dataBuffer, mfx::align2_value<uint32_t>(UnitSize));
+            SwapData(m_dataBuffer, mfx::align2_value(UnitSize));
             m_pContext->m_pBufferStart = m_dataBuffer; //skip start code
         }
         else

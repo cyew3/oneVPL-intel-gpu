@@ -203,7 +203,7 @@ void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, int32_t first_slice, 
         CompBuf->SetDataSize(passedSliceNum * sliceStructSize);
 
         uint8_t *pDXVA_BitStreamBuffer = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
-        int32_t AlignedNalUnitSize = mfx::align2_value<int32_t>(CompBuf->GetDataSize(), 128);
+        int32_t AlignedNalUnitSize = mfx::align2_value(CompBuf->GetDataSize(), 128);
         pDXVA_BitStreamBuffer += CompBuf->GetDataSize();
         memset(pDXVA_BitStreamBuffer, 0, AlignedNalUnitSize - CompBuf->GetDataSize());
         CompBuf->SetDataSize(AlignedNalUnitSize);
@@ -2105,7 +2105,7 @@ void PackerVA::CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo)
         size += NalUnitSize;
     }
 
-    uint32_t const AlignedNalUnitSize = mfx::align2_value<uint32_t>(size, 128);
+    uint32_t const AlignedNalUnitSize = mfx::align2_value(size, 128);
 
     UMCVACompBuffer* compBuf;
     m_va->GetCompBuffer(VASliceDataBufferType, &compBuf, AlignedNalUnitSize);

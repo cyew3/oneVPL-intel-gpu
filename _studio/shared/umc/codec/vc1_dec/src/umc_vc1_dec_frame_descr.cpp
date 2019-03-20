@@ -54,9 +54,9 @@ bool VC1FrameDescriptor::Init(uint32_t         DescriporID,
     if (!m_pContext)
     {
         uint8_t* ptr = NULL;
-        ptr += mfx::align2_value<uint32_t>(sizeof(VC1Context));
-        ptr += mfx::align2_value<uint32_t>(sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM);
-        ptr += mfx::align2_value<uint32_t>((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
+        ptr += mfx::align2_value(sizeof(VC1Context));
+        ptr += mfx::align2_value(sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM);
+        ptr += mfx::align2_value((HeightMB*seqLayerHeader->MaxWidthMB*VC1_MAX_BITPANE_CHUNCKS));
 #ifdef ALLOW_SW_VC1_FALLBACK
         ptr += mfx::align2_value(sizeof(int16_t)*HeightMB*WidthMB * 2 * 2);
         ptr += mfx::align2_value(sizeof(uint8_t)*HeightMB*WidthMB);
@@ -76,11 +76,11 @@ bool VC1FrameDescriptor::Init(uint32_t         DescriporID,
         m_pContext->bp_round_count = -1;
         ptr = (uint8_t*)m_pContext;
 
-        ptr += mfx::align2_value<uint32_t>(sizeof(VC1Context));
+        ptr += mfx::align2_value(sizeof(VC1Context));
         m_pContext->m_picLayerHeader = (VC1PictureLayerHeader*)ptr;
         m_pContext->m_InitPicLayer = m_pContext->m_picLayerHeader;
 
-        ptr += mfx::align2_value<uint32_t>((sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM));
+        ptr += mfx::align2_value((sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM));
         m_pContext->m_pBitplane.m_databits = ptr;
 
 #ifdef ALLOW_SW_VC1_FALLBACK
