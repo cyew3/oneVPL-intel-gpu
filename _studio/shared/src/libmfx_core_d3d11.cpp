@@ -527,6 +527,14 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
 
     m_pAccelerator.reset(new MFXD3D11Accelerator(m_pD11VideoDevice.p, m_pD11VideoContext));
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+    auto pScheduler = (MFXIScheduler2 *)m_session->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
+    if (pScheduler == nullptr)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    m_pAccelerator->SetGlobalHwEvent(pScheduler->GetHwEvent());
+#endif
+
+
     mfxU32 hwProfile = ChooseProfile(param, GetHWType());
     if (!hwProfile)
         return MFX_ERR_UNSUPPORTED;

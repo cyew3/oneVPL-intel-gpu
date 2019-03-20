@@ -459,6 +459,13 @@ mfxStatus mfxSchedulerCore::GetTimeout(mfxU32& maxTimeToRun)
 #endif
 }
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+void ** mfxSchedulerCore::GetHwEvent()
+{
+    return &m_hwTaskDone.handle;
+}
+#endif
+
 mfxStatus mfxSchedulerCore::WaitForDependencyResolved(const void *pDependency)
 {
     mfxTaskHandle waitHandle = {};

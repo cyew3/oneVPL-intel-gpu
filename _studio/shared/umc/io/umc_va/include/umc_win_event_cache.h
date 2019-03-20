@@ -71,10 +71,19 @@ namespace UMC
         */
         Status FreeEvents(int32_t index);
 
+        /*
+        set global HW(BB completion) event from scheduler
+        */
+        void SetGlobalHwEvent(HANDLE *globalHwEvent)
+        {
+            m_pGlobalHwEvent = globalHwEvent;
+        }
+
         EventCache() :
             m_Free(),
             eventCache(),
-            m_eventCacheGuard()
+            m_eventCacheGuard(),
+            m_pGlobalHwEvent(nullptr)
         {}
 
         virtual ~EventCache()
@@ -85,7 +94,7 @@ namespace UMC
         std::vector<EVENT_TYPE> m_Free;
         std::map<MapKey, MapValue> eventCache;
         std::mutex m_eventCacheGuard;
-
+        HANDLE *m_pGlobalHwEvent;
     };
 
 }

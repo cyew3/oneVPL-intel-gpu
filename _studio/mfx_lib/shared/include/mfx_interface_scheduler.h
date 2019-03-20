@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -149,6 +149,11 @@ public:
 
     virtual
     mfxStatus GetTimeout(mfxU32 & maxTimeToRun) = 0;
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    virtual
+    void ** GetHwEvent() = 0;
+#endif
 };
 
 #endif // __MFX_INTERFACE_SCHEDULER_H

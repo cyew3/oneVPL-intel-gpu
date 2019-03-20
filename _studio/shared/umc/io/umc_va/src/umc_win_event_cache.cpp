@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,8 @@ namespace UMC
     {
         {
             std::lock_guard<std::mutex> guard(m_eventCacheGuard);
+
+            m_pGlobalHwEvent = nullptr;
 
             while (m_Free.empty() == false)
             {
@@ -75,6 +77,13 @@ namespace UMC
         else
         {
             event = CreateEvent(NULL, FALSE, FALSE, NULL);
+            // WA for avoid cases whan global HW (BB completion) event is equal created event
+            // should be removed after enablin event based synchronization for all components
+            if (m_pGlobalHwEvent != nullptr && event == *m_pGlobalHwEvent)
+            {
+                CloseHandle(event);
+                event = CreateEvent(NULL, FALSE, FALSE, NULL);
+            }
         }
 
         auto iFoundE = eventCache.find(index);

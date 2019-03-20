@@ -739,6 +739,13 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
     mfxStatus sts = MFX_ERR_NONE;
     m_pVA.reset(new DXVA2Accelerator);
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+    auto pScheduler = (MFXIScheduler2 *)m_session->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
+    if (pScheduler == nullptr)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    m_pVA->SetGlobalHwEvent(pScheduler->GetHwEvent());
+#endif
+
     m_pVA->m_HWPlatform = m_HWType;
 
     mfxFrameInfo *pInfo = &(param->mfx.FrameInfo);

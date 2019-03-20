@@ -205,6 +205,10 @@ public:
     Status ExecuteStatusReportBuffer(void * buffer, int32_t size) override;
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
     virtual Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE&);
+    void SetGlobalHwEvent(HANDLE *globalHwEvent)
+    {
+        m_EventsMap.SetGlobalHwEvent(globalHwEvent);
+    }
 #endif
 
 private:

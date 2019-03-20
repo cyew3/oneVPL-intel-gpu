@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -243,6 +243,12 @@ public:
     // WA for SINGLE THREAD MODE
     virtual
     mfxStatus GetTimeout(mfxU32 & maxTimeToRun);
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    // WA for avoid cases whan global HW (BB completion) event is equal event created by MSDK
+    virtual
+    void ** GetHwEvent();
+#endif
 protected:
     // Destructor is protected to avoid deletion the object by occasion.
     virtual
