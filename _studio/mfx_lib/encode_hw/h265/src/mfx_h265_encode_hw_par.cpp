@@ -3293,10 +3293,8 @@ void SetDefaults(
 #endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 #if (MFX_VERSION >= 1026)
-    if (!CO3.TransformSkip && par.m_platform < MFX_HW_ICL)
-        CO3.TransformSkip = MFX_CODINGOPTION_OFF;
-    else
-        CO3.TransformSkip = MFX_CODINGOPTION_ON;
+    if (!CO3.TransformSkip)
+        CO3.TransformSkip = (mfxU16)((par.m_platform < MFX_HW_ICL) ? MFX_CODINGOPTION_OFF : MFX_CODINGOPTION_ON);
 
     if (!par.m_ext.HEVCParam.SampleAdaptiveOffset)
         par.m_ext.HEVCParam.SampleAdaptiveOffset = isSAOSupported(par) ? (MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA) : MFX_SAO_DISABLE;
