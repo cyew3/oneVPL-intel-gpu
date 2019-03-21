@@ -744,6 +744,7 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
     if (pScheduler == nullptr)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     m_pVA->SetGlobalHwEvent(pScheduler->GetHwEvent());
+    pScheduler->Release();
 #endif
 
     m_pVA->m_HWPlatform = m_HWType;

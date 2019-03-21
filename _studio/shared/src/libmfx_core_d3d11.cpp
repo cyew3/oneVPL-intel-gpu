@@ -532,6 +532,7 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
     if (pScheduler == nullptr)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     m_pAccelerator->SetGlobalHwEvent(pScheduler->GetHwEvent());
+    pScheduler->Release();
 #endif
 
 

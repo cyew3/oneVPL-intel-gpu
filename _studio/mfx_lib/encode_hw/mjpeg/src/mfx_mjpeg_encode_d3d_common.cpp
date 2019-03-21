@@ -52,6 +52,8 @@ mfxStatus D3DXCommonEncoder::InitCommonEnc(VideoCORE *pCore)
     m_EventCache.reset(new EventCache());
     m_EventCache->SetGlobalHwEvent(pScheduler->GetHwEvent());
 
+    pScheduler->Release();
+
     return MFX_ERR_NONE;
 }
 #endif
