@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,7 @@ namespace mfxDefaultAllocatorVAAPI
     mfxStatus GetHDLHW(mfxHDL pthis, mfxMemId mid, mfxHDL *handle);
     mfxStatus UnlockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0);
     mfxStatus FreeFramesHW(mfxHDL pthis, mfxFrameAllocResponse *response);
+    mfxStatus ReallocFrameHW(mfxHDL pthis, mfxFrameSurface1 *surf, VASurfaceID *va_surf);
 
     mfxStatus SetFrameData(const VAImage &va_image, mfxU32 mfx_fourcc, mfxU8* pBuffer, mfxFrameData*  ptr);
 

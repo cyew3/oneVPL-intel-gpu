@@ -127,6 +127,8 @@ private:
 
     void ResetFrameInfo();
 
+    mfxStatus PrepareInternalSurface(UMC::FrameMemID &mid, mfxFrameInfo &info);
+
     struct VP9DECODERoutineData
     {
         VideoDECODEVP9_HW* decoder;
