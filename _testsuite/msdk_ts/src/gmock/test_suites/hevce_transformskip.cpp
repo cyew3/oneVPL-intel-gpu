@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -280,7 +280,7 @@ namespace hevce_transformskip
         }
         else
         {
-            EXPECT_EQ(MFX_CODINGOPTION_OFF, CO3.TransformSkip);
+            EXPECT_EQ((g_tsHWtype < MFX_HW_ICL) ? MFX_CODINGOPTION_OFF : MFX_CODINGOPTION_ON, CO3.TransformSkip); //for Gen11+, TransformSkip = ON by default
         }
 
         BreakOnFailure();
@@ -344,7 +344,7 @@ namespace hevce_transformskip
         }
         else
         {
-            EXPECT_EQ(MFX_CODINGOPTION_OFF, CO3.TransformSkip);
+            EXPECT_EQ((g_tsHWtype < MFX_HW_ICL) ? MFX_CODINGOPTION_OFF : MFX_CODINGOPTION_ON, CO3.TransformSkip); //for Gen11+, TransformSkip = ON by default
         }
 
         BreakOnFailure();
