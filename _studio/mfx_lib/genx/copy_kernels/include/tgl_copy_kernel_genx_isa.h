@@ -20,5 +20,5 @@
 
 #ifndef __tgl_copy_kernel_genx__
 #define __tgl_copy_kernel_genx__
-extern const unsigned char tgl_copy_kernel_genx[1427924];
+extern const unsigned char tgl_copy_kernel_genx[1448002];
 #endif
