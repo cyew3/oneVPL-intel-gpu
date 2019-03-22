@@ -592,6 +592,7 @@ mfxStatus GetNativeHandleToRawSurface(
     VideoCORE &    core,
     MfxVideoParam const & video,
     Task const &          task,
+    bool                  toSkip,
     mfxHDLPair &          handle)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -602,7 +603,8 @@ mfxStatus GetNativeHandleToRawSurface(
     mfxHDL * nativeHandle = &handle.first;
 
     if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+        || toSkip)
         sts = core.GetFrameHDL(task.m_midRaw, nativeHandle);
     else if (video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
         sts = core.GetExternalFrameHDL(surface->Data.MemId, nativeHandle);
@@ -3994,7 +3996,7 @@ mfxStatus CodeAsSkipFrame(     VideoCORE &            core,
     }
     else
     {
-        mfxU8 ind = task.m_refPicList[0][0] ;
+        mfxU8 ind = ((task.m_frameType & MFX_FRAMETYPE_B) && (!task.m_ldb) && task.m_numRefActive[1]!=0) ? task.m_refPicList[1][0] : task.m_refPicList[0][0] ;
         MFX_CHECK(ind < 15, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         DpbFrame& refFrame = task.m_dpb[0][ind];
@@ -4009,7 +4011,8 @@ mfxStatus CodeAsSkipFrame(     VideoCORE &            core,
         sts = core.DoFastCopyWrapper(&surfDst, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE);
         MFX_CHECK_STS(sts);
 
-        //poolRec.SetFlag(refFrame.m_idxRec, 1);
+        if (ind!=0)
+            poolRec.SetFlag(refFrame.m_idxRec, 1);
 
     }
     poolRec.SetFlag(task.m_idxRec, 1);

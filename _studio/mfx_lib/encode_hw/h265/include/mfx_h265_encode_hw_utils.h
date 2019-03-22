@@ -1157,6 +1157,7 @@ mfxStatus GetNativeHandleToRawSurface(
     VideoCORE &    core,
     MfxVideoParam const & video,
     Task const &          task,
+    bool                  toSkip,
     mfxHDLPair &          handle);
 
 mfxStatus CopyRawSurfaceToVideoMemory(
