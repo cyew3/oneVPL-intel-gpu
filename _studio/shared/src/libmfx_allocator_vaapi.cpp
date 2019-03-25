@@ -227,26 +227,23 @@ static mfxStatus ReallocImpl(VADisplay* vaDisp, vaapiMemIdInt *vaapi_mid, mfxFra
         return MFX_ERR_UNSUPPORTED;
     }
 
-    VASurfaceID surfaces[1];
-    std::vector<VASurfaceAttrib> attrib;
-    unsigned int format;
+    VASurfaceID surfaces[1] = { *vaapi_mid->m_surface };
 
-    surfaces[0] = *vaapi_mid->m_surface;
     if (MFX_FOURCC_P8 == vaapi_mid->m_fourcc)
     {
-        va_res = vaDestroyBuffer(vaDisp, surfaces[0]);
-        if (VA_STATUS_SUCCESS != va_res)
-            return MFX_ERR_MEMORY_ALLOC;
+        mfxStatus sts = CheckAndDestroyVAbuffer(vaDisp, surfaces[0]);
+        MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
     }
     else
     {
-        va_res = vaDestroySurfaces(vaDisp, &surfaces[0], 1);
-        if (VA_STATUS_SUCCESS != va_res)
-            return MFX_ERR_MEMORY_ALLOC;
+        va_res = vaDestroySurfaces(vaDisp, surfaces, 1);
+        MFX_CHECK(va_res == VA_STATUS_SUCCESS, MFX_ERR_MEMORY_ALLOC);
     }
 
     *vaapi_mid->m_surface = VA_INVALID_ID;
 
+    std::vector<VASurfaceAttrib> attrib;
+    unsigned int format;
     FillSurfaceAttrs(attrib, format,  fourcc, va_fourcc, 0);
 
     va_res = vaCreateSurfaces(vaDisp,
@@ -314,11 +311,11 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
     // to comply with them additional logic is required to support regular and VP8/VP9 allocation pathes
     mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(fourcc);
     va_fourcc = ConvertMfxFourccToVAFormat(mfx_fourcc);
+
     if (!isFourCCSupported(va_fourcc))
     {
         return MFX_ERR_UNSUPPORTED;
     }
-
 
     if (!surfaces_num)
     {
@@ -401,7 +398,8 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                                       NULL,
                                       &coded_buf);
                 mfx_res = VA_TO_MFX_STATUS(va_res);
-                if (MFX_ERR_NONE != mfx_res) break;
+                if (MFX_ERR_NONE != mfx_res)
+                    break;
                 surfaces[numAllocated] = coded_buf;
             }
         }
