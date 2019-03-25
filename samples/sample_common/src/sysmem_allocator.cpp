@@ -159,7 +159,7 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Y16 = (mfxU16 *)ptr->B;
         ptr->Pitch = 2 * Width2;
         break;
-#ifdef ENABLE_PS
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
 #endif
     case MFX_FOURCC_P010:
@@ -179,7 +179,7 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->A = ptr->V + 3;
         ptr->Pitch = 4 * Width2;
         break;
-#ifdef ENABLE_PS
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:
         ptr->U16 = (mfxU16*)ptr->B;
         ptr->Y16 = ptr->U16 + 1;
@@ -297,7 +297,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         nbytes = 2*Width2*Height2;
         break;
     case MFX_FOURCC_P010:
-#ifdef ENABLE_PS
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
 #endif
         nbytes = Width2*Height2 + (Width2>>1)*(Height2>>1) + (Width2>>1)*(Height2>>1);
@@ -310,14 +310,14 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
 #if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
 #endif
-#ifdef ENABLE_PS
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
 #endif
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         nbytes *= 2; // 16bits
         break;
 
-#ifdef ENABLE_PS
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:
         nbytes = (Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2) * 2;
         break;

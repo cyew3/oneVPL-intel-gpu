@@ -833,7 +833,9 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
     mfxU32 i, h, w;
     mfxU32 vid = pInfo.FrameId.ViewId;
 
-    // Temporary buffer to convert MS-P010 to P010
+    mfxU32 shiftSizeLuma   = 16 - pInfo.BitDepthLuma;
+    mfxU32 shiftSizeChroma = 16 - pInfo.BitDepthChroma;
+    // Temporary buffer to convert MS to no-MS format
     std::vector<mfxU16> tmp;
 
     if (!m_bIsMultiView)
@@ -861,6 +863,10 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         break;
 #if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    case MFX_FOURCC_Y216: //Lumas and chromas will be writed here
+#endif
     {
         for (i = 0; i < pInfo.CropH; i++)
         {
@@ -871,7 +877,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
 
                 for (int idx = 0; idx < pInfo.CropW*2; idx++)
                 {
-                    tmp[idx] = ((mfxU16*)pBuffer)[idx] >> 6;
+                    tmp[idx] = ((mfxU16*)pBuffer)[idx] >> shiftSizeLuma;
                 }
 
                 MSDK_CHECK_NOT_EQUAL(
@@ -888,13 +894,10 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         return MFX_ERR_NONE;
     }
     break;
-
-    case MFX_FOURCC_Y410:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    case MFX_FOURCC_Y216:
-#endif
+#if (MFX_VERSION >= 1027)
+    case MFX_FOURCC_Y410: //Lumas and chromas will be writed here
     {
-        mfxU8* pBuffer = pInfo.FourCC == MFX_FOURCC_Y410 ? (mfxU8*)pData.Y410 : (mfxU8*)pData.Y;
+        mfxU8* pBuffer = (mfxU8*)pData.Y410;
         for (i = 0; i < pInfo.CropH; i++)
         {
             MSDK_CHECK_NOT_EQUAL(
@@ -905,7 +908,40 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
     }
     break;
 #endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    case MFX_FOURCC_Y416:  //Lumas and chromas will be writed here
+    {
+        for (i = 0; i < pInfo.CropH; i++)
+        {
+            mfxU8* pBuffer = ((mfxU8*)pData.U) + (pInfo.CropY * pData.Pitch + pInfo.CropX * 8) + i * pData.Pitch;
+            if (pInfo.Shift)
+            {
+                tmp.resize(pInfo.CropW * 4);
+
+                for (int idx = 0; idx < pInfo.CropW*4; idx++)
+                {
+                    tmp[idx] = ((mfxU16*)pBuffer)[idx] >> shiftSizeLuma;
+                }
+
+                MSDK_CHECK_NOT_EQUAL(
+                    fwrite(((const mfxU8*)tmp.data()), 8, pInfo.CropW, dstFile),
+                    pInfo.CropW, MFX_ERR_UNDEFINED_BEHAVIOR);
+            }
+            else
+            {
+                MSDK_CHECK_NOT_EQUAL(
+                    fwrite(pBuffer, 8, pInfo.CropW, dstFile),
+                    pInfo.CropW, MFX_ERR_UNDEFINED_BEHAVIOR);
+            }
+        }
+        return MFX_ERR_NONE;
+    }
+    break;
+#endif
     case MFX_FOURCC_P010:
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    case MFX_FOURCC_P016:
+#endif
     case MFX_FOURCC_P210:
     {
         for (i = 0; i < pInfo.CropH; i++)
@@ -913,12 +949,12 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
             mfxU16* shortPtr = (mfxU16*)(pData.Y + (pInfo.CropY * pData.Pitch + pInfo.CropX) + i * pData.Pitch);
             if (pInfo.Shift)
             {
-                // Convert MS-P010 to P010 and write
+                // Convert MS-P*1* to P*1* and write
                 tmp.resize(pData.Pitch);
 
                 for (int idx = 0; idx < pInfo.CropW; idx++)
                 {
-                    tmp[idx] = shortPtr[idx] >> 6;
+                    tmp[idx] = shortPtr[idx] >> shiftSizeLuma;
                 }
 
                 MSDK_CHECK_NOT_EQUAL(
@@ -976,21 +1012,24 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         break;
     }
     case MFX_FOURCC_P010:
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    case MFX_FOURCC_P016:
+#endif
     case MFX_FOURCC_P210:
     {
-        mfxU32 height = pInfo.FourCC == MFX_FOURCC_P010 ? (mfxU32)pInfo.CropH / 2 : (mfxU32)pInfo.CropH;
+        mfxU32 height = pInfo.FourCC == MFX_FOURCC_P210 ? (mfxU32)pInfo.CropH : (mfxU32)pInfo.CropH / 2;
 
         for (i = 0; i < height; i++)
         {
             mfxU16* shortPtr = (mfxU16*)(pData.UV + (pInfo.CropY * pData.Pitch + pInfo.CropX*2) + i * pData.Pitch);
             if (pInfo.Shift)
             {
-                // Convert MS-P010 to P010 and write
+                // Convert MS-P*1* to P*1* and write
                 tmp.resize(pData.Pitch);
 
                 for (int idx = 0; idx < pInfo.CropW; idx++)
                 {
-                    tmp[idx] = shortPtr[idx] >> 6;
+                    tmp[idx] = shortPtr[idx] >> shiftSizeChroma;
                 }
 
                 MSDK_CHECK_NOT_EQUAL(
