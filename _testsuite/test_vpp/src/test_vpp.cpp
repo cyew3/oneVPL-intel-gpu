@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2017 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2019 Intel Corporation. All Rights Reserved.
 //
 
 #include <vector>
@@ -104,6 +104,7 @@ void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFilters
     pParams->scalingMode  = MFX_SCALING_MODE_DEFAULT;
     pParams->bChromaSiting = false;
     pParams->uChromaSiting = 0;
+    pParams->syncop_timeout = VPP_WAIT_INTERVAL;
 
     pParams->numFrames    = 0;
 
@@ -214,8 +215,8 @@ mfxStatus OutputProcessFrame(
     for(;!Resources.pSurfStore->m_SyncPoints.empty();Resources.pSurfStore->m_SyncPoints.pop_front())
     {
         sts = Resources.pProcessor->mfxSession.SyncOperation(
-            Resources.pSurfStore->m_SyncPoints.front().first, 
-            VPP_WAIT_INTERVAL);
+            Resources.pSurfStore->m_SyncPoints.front().first,
+            Resources.pParams->syncop_timeout);
         if(sts)
             vm_string_printf(VM_STRING("SyncOperation wait interval exceeded\n"));
         CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
@@ -901,17 +902,17 @@ int main(int argc, vm_char *argv[])
                 {
                     vm_time_sleep(500);
                     sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx( 
-                        NULL, 
+                        NULL,
                         pSurf[VPP_WORK],
                         //(VPP_FILTER_DISABLED != Params.vaParam.mode || VPP_FILTER_DISABLED != Params.varianceParam.mode)? reinterpret_cast<mfxExtVppAuxData*>(&extVPPAuxData[0]) : NULL, 
                         &pSurf[VPP_OUT],
                         &syncPoint );
                 }
             }
-            else 
+            else
             {
-                sts = frameProcessor.pmfxVPP->RunFrameVPPAsync( 
-                    NULL, 
+                sts = frameProcessor.pmfxVPP->RunFrameVPPAsync(
+                    NULL,
                     pSurf[VPP_OUT],
                     (VPP_FILTER_DISABLED != Params.vaParam[paramID].mode || VPP_FILTER_DISABLED != Params.varianceParam[0].mode)? reinterpret_cast<mfxExtVppAuxData*>(&extVPPAuxData[paramID]) : NULL,
                     &syncPoint );
@@ -920,15 +921,15 @@ int main(int argc, vm_char *argv[])
             BREAK_ON_ERROR(sts);
 
             sts = Resources.pProcessor->mfxSession.SyncOperation(
-                syncPoint, 
-                VPP_WAIT_INTERVAL);
+                syncPoint,
+                Resources.pParams->syncop_timeout);
             if(sts)
                 vm_string_printf(VM_STRING("SyncOperation wait interval exceeded\n"));
             BREAK_ON_ERROR(sts);
 
             GeneralWriter* writer = (1 == Resources.dstFileWritersN) ? &Resources.pDstFileWriters[0] : &Resources.pDstFileWriters[paramID];
             sts = writer->PutNextFrame(
-                Resources.pAllocator, 
+                Resources.pAllocator,
                 (bSvcMode) ?  &(Resources.realSvcOutFrameInfo[pSurf[VPP_OUT]->Info.FrameId.DependencyId]) : &(realFrameInfo[VPP_OUT]), 
                 pSurf[VPP_OUT]);
             if(sts)

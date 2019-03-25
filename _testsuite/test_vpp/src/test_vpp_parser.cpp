@@ -121,6 +121,7 @@ void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-sptr frame type] -  inpur or output allocated frames with predefined pointers. in - input surfaces, out - out surfaces, all input/output  (def: all frames with MemIDs)\n"));
     vm_string_printf(VM_STRING("   [-defalloc] - using of default allocator. Valid with -sptr all only \n"));
     vm_string_printf(VM_STRING("   [-async n] - maximum number of asynchronious tasks. def: -async 1 \n"));
+    vm_string_printf(VM_STRING("   [-syncop_timeout n] - maximum wait time of synchronize until frame processing is ready \n"));
     vm_string_printf(VM_STRING("   [-perf_opt n m] - n: number of prefetech frames. m : number of passes. In performance mode app preallocates bufer and load first n frames,  def: no performace 1 \n"));
     vm_string_printf(VM_STRING("   [-pts_check] - checking of time stampls. Default is OFF \n"));
     vm_string_printf(VM_STRING("   [-pts_jump ] - checking of time stamps jumps. Jump for random value since 13-th frame. Also, you can change input frame rate (via pts). Default frame_rate = sf \n"));
@@ -1348,6 +1349,12 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 i++;
                 vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->asyncNum);
 
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-syncop_timeout")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%u"), &pParams->syncop_timeout);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-perf_opt")) )
             {

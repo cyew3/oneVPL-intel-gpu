@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2008 - 2018 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2019 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -186,6 +186,9 @@ struct sInputParams
     bool     ptsJump;
     bool     ptsAdvanced;
     mfxF64   ptsFR;
+
+    /* Timeout for Sync Operation */
+    mfxU32   syncop_timeout;
 
     /* roi checking parameters */
     sROICheckParam roiCheckParam;
