@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -215,6 +215,13 @@ mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr);
 // compare ROI between 3 surfaces
 bool IsROIConstant(mfxFrameSurface1* pSrc1, mfxFrameSurface1* pSrc2, mfxFrameSurface1* pSrc3);
 #endif
+
+// ToDo: we have 5 copies of IsOn() function. 
+// It should be moved into api/include/mfxstructures.h
+inline bool IsOn(mfxU16 opt)
+{
+    return opt == MFX_CODINGOPTION_ON;
+}
 
 #endif // __MFX_VPP_UTILS_H
 
