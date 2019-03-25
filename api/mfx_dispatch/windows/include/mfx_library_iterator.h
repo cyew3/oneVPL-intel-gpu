@@ -40,7 +40,7 @@ enum
     MFX_APP_FOLDER              = 2,
     MFX_PATH_MSDK_FOLDER        = 3,
     MFX_STORAGE_ID_FIRST    = MFX_CURRENT_USER_KEY,
-    MFX_STORAGE_ID_LAST     = MFX_LOCAL_MACHINE_KEY
+    MFX_STORAGE_ID_LAST     = MFX_PATH_MSDK_FOLDER
 };
 
 // Try to initialize using given implementation type. Select appropriate type automatically in case of MFX_IMPL_VIA_ANY.

@@ -33,7 +33,6 @@
 
 #if _MSC_VER < 1400
 #define wcscpy_s(to,to_size, from) wcscpy(to, from)
-#define msdk_disp_char_cpy_s(to, to_size, from) wcscpy(to, from)
 #endif
 
 // declare library module's handle
