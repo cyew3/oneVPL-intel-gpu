@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -156,8 +156,8 @@ void  CmdOptionProcessor::PrintPatternHelp( vm_char *print_at
                 vm_string_strcat(tmp_print_at, VM_STRING("  ( "));
             }
 
-            vm_string_strcat(tmp_print_at, it->c_str());
-            
+            vm_string_strcat_s(tmp_print_at, MFX_ARRAY_SIZE(tmp_print_at), it->c_str());
+
             if (i > 0)
             {
                 vm_string_strcat(tmp_print_at, VM_STRING(", "));
@@ -177,7 +177,7 @@ void  CmdOptionProcessor::PrintPatternHelp( vm_char *print_at
             if (1 == i)
                 vm_string_strcat(tmp_print_at, VM_STRING("  ( "));
 
-            vm_string_strcat(tmp_print_at, it->c_str());
+            vm_string_strcat_s(tmp_print_at, MFX_ARRAY_SIZE(tmp_print_at), it->c_str());
 
             if (options.size() > 1)
                 vm_string_strcat(tmp_print_at, VM_STRING(")"));

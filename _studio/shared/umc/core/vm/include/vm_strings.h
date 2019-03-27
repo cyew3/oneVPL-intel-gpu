@@ -113,7 +113,8 @@ typedef char vm_char;
 
 #ifndef OPEN_SOURCE
 #define vm_string_sprintf_s sprintf
-#define vm_string_strcat_s(dest, size, src)  (strncat((dest), (src), (size)),0)
+#define vm_string_strcat_s(dest, size, src) (dest[(size)-1]='\0', strncat((dest), (src), ( \
+        std::min(strlen(src), (size)-strlen(dest)-1) )), 0)
 #define vm_string_strncat   strncat
 #define vm_string_strcpy_s(dest, size, src)  (strncpy((dest), (src), (size-1)),dest[size-1]='\0',0)
 #define vm_string_strncpy_s(dst, dst_size, src, n) (strncpy(dst,src,n))

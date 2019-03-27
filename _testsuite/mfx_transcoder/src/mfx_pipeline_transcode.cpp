@@ -733,7 +733,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(argv + 1 != argvEnd);
             argv++;
 
-            vm_string_strcpy(m_extDumpFiles->ReconFilename, argv[0]);
+            vm_string_strcpy_s(m_extDumpFiles->ReconFilename, MFX_ARRAY_SIZE(m_extDumpFiles->ReconFilename), argv[0]);
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("--qp"), VM_STRING("Base QP for CQP mode."), OPT_INT_32))
         {
@@ -807,7 +807,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         {
             MFX_CHECK(argv + 1 != argvEnd);
             argv++;
-            vm_string_strcpy(m_extDumpFiles->InputFramesFilename, argv[0]);
+            vm_string_strcpy_s(m_extDumpFiles->InputFramesFilename, MFX_ARRAY_SIZE(m_extDumpFiles->InputFramesFilename), argv[0]);
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-c"), VM_STRING("set CAVLC/CBAC mode: 1=CAVLC, 0=CABAC"), OPT_INT_32))
         {
@@ -2811,7 +2811,7 @@ mfxStatus MFXTranscodingPipeline::CreateSplitter()
         for (size_t i = 0; i < m_filesForDependency.size() && !m_filesForDependency[i].empty(); i++)
         {
             //TODO: for now it is impossible to have several mfx_decoders, since they require separate sessions
-            vm_string_strcpy(m_inParams.strSrcFile, m_filesForDependency[i].c_str());
+            vm_string_strcpy_s(m_inParams.strSrcFile, MFX_ARRAY_SIZE(m_inParams.strSrcFile), m_filesForDependency[i].c_str());
 
             m_inParams.bExactSizeBsReader = true;
             m_inParams.FrameInfo.Width = m_svcSeq.get()->DependencyLayer[i].Width;
