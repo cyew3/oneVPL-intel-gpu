@@ -339,7 +339,7 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
         ptr->U16 = (mfxU16*)LockedRect.pBits;
         ptr->Y16 = ptr->U16 + 1;
         ptr->V16 = ptr->Y16 + 1;
-        ptr->A   = (mfxU8 *)ptr->V16 + 1;
+        ptr->A   = (mfxU8 *)(ptr->V16 + 1);
         break;
 #endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
 

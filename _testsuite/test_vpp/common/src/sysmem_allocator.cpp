@@ -177,7 +177,7 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->U16 = (mfxU16*)ptr->B;
         ptr->Y16 = ptr->U16 + 1;
         ptr->V16 = ptr->Y16 + 1;
-        ptr->A   = (mfxU8 *)ptr->V16 + 1;
+        ptr->A   = (mfxU8 *)(ptr->V16 + 1);
         break;
 #endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
     default:

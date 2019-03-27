@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 - 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011 - 2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #if (defined(_WIN32) || defined(_WIN64))
@@ -281,7 +281,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             ptr->U16 = (mfxU16*)lockedRect.pData;
             ptr->Y16 = ptr->U16 + 1;
             ptr->V16 = ptr->Y16 + 1;
-            ptr->A   = (mfxU8 *)ptr->V16 + 1;
+            ptr->A   = (mfxU8 *)(ptr->V16 + 1);
 
             break;
 

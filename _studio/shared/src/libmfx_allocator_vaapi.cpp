@@ -660,7 +660,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
             ptr->U16 = (mfxU16 *) (pBuffer + va_image.offsets[0]);
             ptr->Y16 = ptr->U16 + 1;
             ptr->V16 = ptr->Y16 + 1;
-            ptr->A   = (mfxU8 *)ptr->V16 + 1;
+            ptr->A   = (mfxU8 *)(ptr->V16 + 1);
         }
         break;
 

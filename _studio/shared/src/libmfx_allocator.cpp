@@ -446,7 +446,7 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
         ptr->U16 = (mfxU16*)sptr;
         ptr->Y16 = ptr->U16 + 1;
         ptr->V16 = ptr->Y16 + 1;
-        ptr->A   = (mfxU8 *)ptr->V16 + 1;
+        ptr->A   = (mfxU8 *)(ptr->V16 + 1);
         break;
 #endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
 

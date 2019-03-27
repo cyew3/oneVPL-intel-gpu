@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -257,7 +257,7 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->U16 = (mfxU16*)locked.pBits;
         ptr->Y16 = ptr->U16 + 1;
         ptr->V16 = ptr->Y16 + 1;
-        ptr->A   = (mfxU8 *)ptr->V16 + 1;
+        ptr->A   = (mfxU8 *)(ptr->V16 + 1);
         break;
     case D3DFMT_Y216:
 #endif
