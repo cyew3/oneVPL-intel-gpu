@@ -865,7 +865,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
     case MFX_FOURCC_Y210:
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-    case MFX_FOURCC_Y216: //Lumas and chromas will be writed here
+    case MFX_FOURCC_Y216: //Lumas and chromas will be written here
 #endif
     {
         for (i = 0; i < pInfo.CropH; i++)
@@ -895,7 +895,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
     }
     break;
 #if (MFX_VERSION >= 1027)
-    case MFX_FOURCC_Y410: //Lumas and chromas will be writed here
+    case MFX_FOURCC_Y410: //Lumas and chromas will be written here
     {
         mfxU8* pBuffer = (mfxU8*)pData.Y410;
         for (i = 0; i < pInfo.CropH; i++)
@@ -909,7 +909,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
     break;
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-    case MFX_FOURCC_Y416:  //Lumas and chromas will be writed here
+    case MFX_FOURCC_Y416:  //Lumas and chromas will be written here
     {
         for (i = 0; i < pInfo.CropH; i++)
         {
