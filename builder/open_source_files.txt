@@ -416,7 +416,6 @@ _studio/shared/umc/codec/mpeg2_dec/src/umc_mpeg2_dec_pic.cpp
 _studio/shared/umc/codec/mpeg2_dec/src/umc_mpeg2_dec_slice_hw.cpp
 _studio/shared/umc/codec/mpeg2_dec/src/umc_mpeg2_dec_tbl.cpp
 _studio/shared/umc/core/umc/CMakeLists.txt
-_studio/shared/umc/core/umc/include/umc_array.h
 _studio/shared/umc/core/umc/include/umc_base_codec.h
 _studio/shared/umc/core/umc/include/umc_defs.h
 _studio/shared/umc/core/umc/include/umc_dynamic_cast.h

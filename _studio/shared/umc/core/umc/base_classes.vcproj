@@ -384,10 +384,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			>
 			<File
-				RelativePath=".\include\umc_array.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\umc_audio_codec.h"
 				>
 			</File>

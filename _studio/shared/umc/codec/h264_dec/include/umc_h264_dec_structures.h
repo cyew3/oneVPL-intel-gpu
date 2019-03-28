@@ -33,7 +33,6 @@
 #include "umc_memory_allocator.h"
 #include "umc_structures.h"
 #include "umc_h264_dec_tables.h"
-#include "umc_array.h"
 
 using namespace UMC_H264_DECODER;
 
