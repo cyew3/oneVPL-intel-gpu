@@ -1223,13 +1223,13 @@ void MVC_Extension::ChooseLevelIdc(const H264SeqParamSetMVCExtension * extension
     if (m_level_idc)
         return;
 
-    VM_ASSERT(extension->viewInfo.Size() == extension->num_views_minus1 + 1);
+    VM_ASSERT(extension->viewInfo.size() == extension->num_views_minus1 + 1);
 
-    if (!m_viewIDsList.size())
+    if (m_viewIDsList.empty())
     {
-        for (size_t i = 0; i <= extension->num_views_minus1; i++)
+        for (const auto & viewInfo : extension->viewInfo)
         {
-            m_viewIDsList.push_back(extension->viewInfo[i].view_id);
+            m_viewIDsList.push_back(viewInfo.view_id);
         }
 
         ViewIDsList::iterator iter = m_viewIDsList.begin();
@@ -1249,33 +1249,18 @@ void MVC_Extension::ChooseLevelIdc(const H264SeqParamSetMVCExtension * extension
 
     m_level_idc = 0;
 
-    for (uint32_t i = 0; i <= extension->num_level_values_signalled_minus1; i++)
+    for (const auto & levelInfo : extension->levelInfo)
     {
-        const H264LevelValueSignaled & levelInfo = extension->levelInfo[i];
-
-        for (uint32_t j = 0; j <= levelInfo.num_applicable_ops_minus1; j++)
+        for (const auto & operationPoint : levelInfo.opsInfo)
         {
-            const H264ApplicableOp & operationPoint = levelInfo.opsInfo[j];
-
-            ViewIDsList::const_iterator iter = m_viewIDsList.begin();
-            ViewIDsList::const_iterator iter_end = m_viewIDsList.end();
-
             bool foundAll = true;
 
-            for (; iter != iter_end; ++iter)
+            for (const auto & targetView : m_viewIDsList)
             {
-                bool found = false;
-                uint32_t targetView = *iter;
-                for (uint32_t tv = 0; tv <= operationPoint.applicable_op_num_target_views_minus1; tv++)
-                {
-                    if (targetView == operationPoint.applicable_op_target_view_id[tv])
-                    {
-                        found = true;
-                        break;
-                    }
-                }
+                auto it = std::find_if(operationPoint.applicable_op_target_view_id.begin(), operationPoint.applicable_op_target_view_id.end(),
+                    [targetView](const uint16_t & item) { return item == targetView; });
 
-                if (!found)
+                if (it == operationPoint.applicable_op_target_view_id.end())
                 {
                     foundAll = false;
                     break;
