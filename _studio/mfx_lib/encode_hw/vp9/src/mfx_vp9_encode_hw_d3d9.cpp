@@ -512,29 +512,7 @@ D3D9Encoder::~D3D9Encoder()
 void HardcodeCaps(ENCODE_CAPS_VP9& caps, VideoCORE* pCore)
 {
     caps;
-
-    eMFXHWType type = pCore->GetHWType();
-
-#if (MFX_VERSION >= 1027)
-    if (type >= MFX_HW_ICL)
-    {
-        // for now driver supports only 2 pipes for LP and HP configurations, but for HP it reports 4 (actual
-        // support will be added to the driver later), until then this hardcode is required
-        // TODO: remove this when actual support of 4 pipes is implemented in the driver for HP configuration
-        caps.NumScalablePipesMinus1 = 1;
-    }
-#endif //MFX_VERSION >= 1027
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    if (type >= MFX_HW_TGL_LP)
-    {
-        // mainline driver doesn't report REXT support correctly for TGL
-        // hardcode proper CAPS values for now
-        caps.MaxEncodedBitDepth = 1; // bit depths 8 and 10 are supported
-        caps.YUV444ReconSupport = 1;
-    }
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
-
+    pCore;
 }
 
 mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
