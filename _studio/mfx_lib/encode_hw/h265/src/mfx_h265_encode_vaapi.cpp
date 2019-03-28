@@ -632,11 +632,11 @@ void FillConstPartOfPps(
     pps.num_tile_columns_minus1 = (mfxU8)par.m_pps.num_tile_columns_minus1;
     pps.num_tile_rows_minus1    = (mfxU8)par.m_pps.num_tile_rows_minus1;
 
-    for (mfxU32 i = 0; i < 19; ++i)
-        pps.column_width_minus1[i] = par.m_pps.column_width[i];
+    for (size_t i = 0; i < (par.m_pps.num_tile_columns_minus1 + 1u); ++i)
+        pps.column_width_minus1[i] = par.m_pps.column_width[i] - 1;
 
-    for (mfxU32 i = 0; i < 21; ++i)
-        pps.row_height_minus1[i] = par.m_pps.row_height[i];
+    for (size_t i = 0; i < (par.m_pps.num_tile_rows_minus1 + 1u); ++i)
+        pps.row_height_minus1[i] = par.m_pps.row_height[i] - 1;
 
     pps.log2_parallel_merge_level_minus2     = (mfxU8)par.m_pps.log2_parallel_merge_level_minus2;
     pps.ctu_max_bitsize_allowed              = 0;
@@ -956,7 +956,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         VAConfigAttribEncParallelRateControl,
         VAConfigAttribEncMaxRefFrames,
         VAConfigAttribEncSliceStructure,
-        VAConfigAttribEncROI
+        VAConfigAttribEncROI,
+        VAConfigAttribEncTileSupport
     };
     std::vector<VAConfigAttrib> attrs;
 
@@ -1077,6 +1078,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     {
         m_caps.MaxNumOfROI = 0;
     }
+
+    m_caps.TileSupport = (attrs[idx_map[VAConfigAttribEncTileSupport]].value == 1);
 
     sts = HardcodeCaps(m_caps, core);
     MFX_CHECK_STS(sts);

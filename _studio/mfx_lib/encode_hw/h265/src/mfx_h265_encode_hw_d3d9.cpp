@@ -90,7 +90,6 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     m_caps.SliceByteSizeCtrl        = 0;
     m_caps.VCMBitRateControl        = 1;
     m_caps.ParallelBRC              = 1;
-    m_caps.TileSupport              = 0;
     m_caps.MaxPicWidth              = 8192;
     m_caps.MaxPicHeight             = 4096;
     m_caps.MaxNum_Reference0        = 3;

@@ -186,7 +186,6 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
 //        caps.RollingIntraRefresh = 0;  // = 1 now
 //        caps.VCMBitRateControl = 0;  // = 1 now
         caps.ParallelBRC = 1;  // = 0 now
-        caps.TileSupport = 1;  // = 0 now
         caps.LumaWeightedPred = 1; // = 0 now
         caps.ChromaWeightedPred = 0; // = 0 now
         caps.QVBRBRCSupport = 1;  // = 0 now
