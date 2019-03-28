@@ -71,8 +71,7 @@ mfxStatus CopyBitstream2(mfxBitstream *dest, mfxBitstream *src)
 CSmplYUVReader::CSmplYUVReader()
 {
     m_bInited = false;
-    m_ColorFormat 
-        = MFX_FOURCC_YV12;
+    m_ColorFormat = MFX_FOURCC_YV12;
     shouldShift10BitsHigh = false;
 }
 
@@ -863,9 +862,8 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         break;
 #if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
-#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-    case MFX_FOURCC_Y216: //Lumas and chromas will be written here
+    case MFX_FOURCC_Y216: // Luma and chroma will be filled below
 #endif
     {
         for (i = 0; i < pInfo.CropH; i++)
@@ -873,6 +871,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
             mfxU8* pBuffer = ((mfxU8*)pData.Y) + (pInfo.CropY * pData.Pitch + pInfo.CropX * 4) + i * pData.Pitch;
             if (pInfo.Shift)
             {
+                // Bits will be shifted to the lower position
                 tmp.resize(pInfo.CropW * 2);
 
                 for (int idx = 0; idx < pInfo.CropW*2; idx++)
@@ -894,8 +893,9 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
         return MFX_ERR_NONE;
     }
     break;
+#endif
 #if (MFX_VERSION >= 1027)
-    case MFX_FOURCC_Y410: //Lumas and chromas will be written here
+    case MFX_FOURCC_Y410: // Luma and chroma will be filled below
     {
         mfxU8* pBuffer = (mfxU8*)pData.Y410;
         for (i = 0; i < pInfo.CropH; i++)
@@ -909,7 +909,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
     break;
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-    case MFX_FOURCC_Y416:  //Lumas and chromas will be written here
+    case MFX_FOURCC_Y416:  // Luma and chroma will be filled below
     {
         for (i = 0; i < pInfo.CropH; i++)
         {
@@ -950,6 +950,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
             if (pInfo.Shift)
             {
                 // Convert MS-P*1* to P*1* and write
+                // Bits will be shifted to the lower position
                 tmp.resize(pData.Pitch);
 
                 for (int idx = 0; idx < pInfo.CropW; idx++)
@@ -1025,6 +1026,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
             if (pInfo.Shift)
             {
                 // Convert MS-P*1* to P*1* and write
+                // Bits will be shifted to the lower position
                 tmp.resize(pData.Pitch);
 
                 for (int idx = 0; idx < pInfo.CropW; idx++)
