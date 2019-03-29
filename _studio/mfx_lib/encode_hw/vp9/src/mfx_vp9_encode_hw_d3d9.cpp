@@ -336,7 +336,7 @@ void FillPpsBuffer(
 mfxStatus FillSegmentMap(Task const & task,
                          VideoCORE* m_pmfxCore)
 {
-    // for now application seg map is accepted in 32x32 and 64x64 blocks
+    // for now application seg map is accepted in 64x64 blocks
     // and driver seg map is always in 16x16 blocks
     // need to map one to another
 
