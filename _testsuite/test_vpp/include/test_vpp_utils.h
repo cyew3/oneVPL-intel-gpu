@@ -59,6 +59,7 @@
 // it allows to remove final error message due to EOF
 #define IOSTREAM_CHECK_NOT_EQUAL(P, X, ERR)          {if ((X) != (P)) {return ERR;}}
 
+#define MFX_ARRAY_SIZE(array) (sizeof(array)/sizeof(*(array)))
 /* ************************************************************************* */
 
 enum

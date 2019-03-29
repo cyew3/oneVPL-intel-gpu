@@ -1235,13 +1235,13 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_strcpy(pParams->strSrcFile, strInput[i]);
+                vm_string_strcpy_s(pParams->strSrcFile, MFX_ARRAY_SIZE(pParams->strSrcFile), strInput[i]);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-crc")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_strcpy(pParams->strCRCFile, strInput[i]);
+                vm_string_strcpy_s(pParams->strCRCFile, MFX_ARRAY_SIZE(pParams->strCRCFile), strInput[i]);
                 pParams->need_crc = true;
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-o")))
@@ -1260,7 +1260,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_strcpy(pParams->strPerfFile, strInput[i]);
+                vm_string_strcpy_s(pParams->strPerfFile, MFX_ARRAY_SIZE(pParams->strPerfFile), strInput[i]);
 
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-scc")))
@@ -1401,7 +1401,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_strcpy(pParams->strPlgGuid, strInput[i]);
+                vm_string_strcpy_s(pParams->strPlgGuid, MFX_ARRAY_SIZE(pParams->strPlgGuid), strInput[i]);
                 pParams->need_plugin = true;
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-extapi")) )
