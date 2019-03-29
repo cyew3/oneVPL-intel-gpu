@@ -61,6 +61,7 @@ if(MFX_ENABLE_KERNELS)
     ${prefix}/genx_fcopy_gen10_isa.cpp
     ${prefix}/genx_fcopy_gen11_isa.cpp
     ${prefix}/genx_fcopy_gen11lp_isa.cpp
+    ${prefix}/genx_fcopy_gen12lp_isa.cpp
     ${prefix}/genx_fcopy_gen12_isa.cpp
   )
 

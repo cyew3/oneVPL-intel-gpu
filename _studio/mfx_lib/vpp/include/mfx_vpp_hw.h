@@ -46,6 +46,7 @@
  #include "genx_fcopy_gen11lp_isa.h"
  #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
   #include "genx_fcopy_gen12_isa.h"
+  #include "genx_fcopy_gen12lp_isa.h"
  #endif
 #else
 #undef MFX_ENABLE_MCTF

@@ -2329,9 +2329,11 @@ mfxStatus  VideoVPPHW::Init(
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen11lp,sizeof(genx_fcopy_gen11lp),m_pCmProgram,"nojitter");
                 break;
         #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-            case MFX_HW_TGL_HP:
             case MFX_HW_TGL_LP:
-                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12,sizeof(genx_fcopy_gen12),m_pCmProgram,"nojitter");
+                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12lp,sizeof(genx_fcopy_gen12lp),m_pCmProgram,"nojitter");
+                break;
+            case MFX_HW_TGL_HP:
+                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12, sizeof(genx_fcopy_gen12), m_pCmProgram, "nojitter");
                 break;
         #endif  // PRE_SI_TARGET_PLATFORM_GEN12
 #endif

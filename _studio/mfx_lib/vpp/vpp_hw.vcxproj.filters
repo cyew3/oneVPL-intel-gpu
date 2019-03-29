@@ -143,6 +143,9 @@
     <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen11lp_isa.cpp">
       <Filter>Source Files\field_copy</Filter>
     </ClCompile>
+    <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen12lp_isa.cpp">
+      <Filter>Source Files\field_copy</Filter>
+    </ClCompile>
     <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen12_isa.cpp">
       <Filter>Source Files\field_copy</Filter>
     </ClCompile>

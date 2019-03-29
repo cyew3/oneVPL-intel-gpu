@@ -183,17 +183,26 @@ rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_
 SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
-SET CM_RT_PLATFORM=hsw
-icl /c /Qunroll1 /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_fcopy_cmcode.cpp /mGLOB_override_limits /mCM_print_asm_count
+rem SET CM_RT_PLATFORM=hsw
+rem icl /c /Qunroll1 /Qxcm /Qxcm_jit_target=gen7_5 .\src\genx_fcopy_cmcode.cpp /mGLOB_override_limits /mCM_print_asm_count
+cmc -c -Qxcm_jit_target=gen12lp .\src\genx_fcopy_cmcode.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o genx_fcopy_gen12lp.isa -mCM_no_debug
+cmc -c -Qxcm_jit_target=gen12 .\src\genx_fcopy_cmcode.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o genx_fcopy_gen12.isa -mCM_no_debug
 cl .\src\embed_isa.c
-embed_isa genx_fcopy_cmcode.isa
-move genx_fcopy_cmcode.cpp .\src\genx_fcopy_cmcode_isa.cpp
-move genx_fcopy_cmcode.h .\include\genx_fcopy_cmcode_isa.h
 
+embed_isa genx_fcopy_gen12lp.isa
+embed_isa genx_fcopy_gen12.isa
+rem embed_isa genx_fcopy_cmcode.isa
+
+move genx_fcopy_gen12lp.cpp .\src\genx_fcopy_gen12lp_isa.cpp
+move genx_fcopy_gen12.cpp .\src\genx_fcopy_gen12_isa.cpp
+rem move genx_fcopy_cmcode.cpp .\src\genx_fcopy_cmcode_isa.cpp
+rem move genx_fcopy_cmcode.h .\include\genx_fcopy_cmcode_isa.h
+
+move genx_fcopy_gen12lp.h .\include\genx_fcopy_gen12lp_isa.h
+move genx_fcopy_gen12.h .\include\genx_fcopy_gen12_isa.h
 rem copy genx_fcopy_cmcode.isa ..\..\..\..\build\win_$(Platform)\bin
 rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmrt32.dll ..\..\..\..\build\win_$(Platform)\bin
-rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(Platform)\bin
-</Command>
+rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(Platform)\bin</Command>
     </PreBuildEvent>
     <CustomBuildStep>
       <Command />
@@ -215,11 +224,12 @@ rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>$(TargetPath)</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <Link>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x86;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x86;$(ICPP_COMPILER13)compiler\lib\ia32</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libircmt.lib;igfxcmrt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>igfxcmrt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\$(TargetName)$(TargetExt)</OutputFile>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
