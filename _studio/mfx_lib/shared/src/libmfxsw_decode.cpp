@@ -42,7 +42,11 @@
 #endif
 
 #if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
-#include "mfx_mpeg2_decode.h"
+#if !defined(MFX_NEW_MPEG2_DECODE)
+    #include "mfx_mpeg2_decode_internal.h"
+#else
+    #include "mfx_mpeg2_decode.h"
+#endif
 #endif
 
 #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)

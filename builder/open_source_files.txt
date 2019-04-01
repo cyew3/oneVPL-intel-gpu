@@ -56,8 +56,8 @@ _studio/mfx_lib/decode/h264/include/mfx_h264_dec_decode.h
 _studio/mfx_lib/decode/h264/src/mfx_h264_dec_decode.cpp
 _studio/mfx_lib/decode/h265/include/mfx_h265_dec_decode.h
 _studio/mfx_lib/decode/h265/src/mfx_h265_dec_decode.cpp
-_studio/mfx_lib/decode/mpeg2/include/mfx_mpeg2_decode.h
-_studio/mfx_lib/decode/mpeg2/src/mfx_mpeg2_decode.cpp
+_studio/mfx_lib/decode/mpeg2/include/mfx_mpeg2_decode_internal.h
+_studio/mfx_lib/decode/mpeg2/src/mfx_mpeg2_decode_internal.cpp
 _studio/mfx_lib/encode_hw/CMakeLists.txt
 _studio/mfx_lib/encode_hw/h264/include/mfx_h264_encode_cm.h
 _studio/mfx_lib/encode_hw/h264/include/mfx_h264_encode_cm_defs.h

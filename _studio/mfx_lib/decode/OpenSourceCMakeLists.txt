@@ -77,7 +77,7 @@ set( defs "" )
 set( sources "" )
 file( GLOB_RECURSE srcs "${SRC_DIR}/*.c" "${SRC_DIR}/*.cpp" )
 list( APPEND sources ${srcs})
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/mpeg2/src/mfx_mpeg2_decode.cpp)
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/mpeg2/src/mfx_mpeg2_decode_internal.cpp)
 make_library( mpeg2_dec hw static )
 
 ### VC1 Decoder

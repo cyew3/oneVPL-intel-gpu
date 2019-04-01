@@ -22,7 +22,7 @@
 #ifdef MFX_ENABLE_MPEG2_VIDEO_DECODE
 
 #include "mfx_common_decode_int.h"
-#include "mfx_mpeg2_decode.h"
+#include "mfx_mpeg2_decode_internal.h"
 #include "mfx_mpeg2_dec_common.h"
 #include "mfx_enc_common.h"
 #include "mfx_ext_buffers.h"
