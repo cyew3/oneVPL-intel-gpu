@@ -44,6 +44,9 @@ D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::D3D9Encoder()
     , m_maxSlices(0)
     , m_sps()
     , m_pps()
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+    , m_qMatrix()
+#endif
     , DDITracer(std::is_same<DDI_SPS, ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT>::value ? ENCODER_REXT : ENCODER_DEFAULT)
 {
 }
@@ -383,6 +386,13 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & tas
 
     ADD_CBD(D3DDDIFMT_INTELENCODE_SPSDATA,          m_sps,      1);
     ADD_CBD(D3DDDIFMT_INTELENCODE_PPSDATA,          m_pps,      1);
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+    if (m_sps.scaling_list_enable_flag && m_pps.scaling_list_data_present_flag)
+    {
+        m_qMatrix = task.m_qMatrix;
+        ADD_CBD(D3DDDIFMT_INTELENCODE_QUANTDATA, m_qMatrix, 1);
+    }
+#endif
     ADD_CBD(D3DDDIFMT_INTELENCODE_SLICEDATA,        m_slice[0], m_slice.size());
     ADD_CBD(D3DDDIFMT_INTELENCODE_BITSTREAMDATA,    bitstream,  1);
 

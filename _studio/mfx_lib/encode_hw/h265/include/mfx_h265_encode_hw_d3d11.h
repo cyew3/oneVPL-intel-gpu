@@ -124,6 +124,9 @@ private:
 
     DDI_SPS                                     m_sps;
     DDI_PPS                                     m_pps;
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+    DXVA_Qmatrix_HEVC                           m_qMatrix; //buffer for quantization matrix
+#endif
     std::vector<DDI_SLICE>                      m_slice;
     std::vector<ENCODE_COMP_BUFFER_INFO>        m_compBufInfo;
     std::vector<D3DDDIFORMAT>                   m_uncompBufInfo;

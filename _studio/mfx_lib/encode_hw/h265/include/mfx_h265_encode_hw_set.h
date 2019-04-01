@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -436,7 +436,14 @@ struct SPS : LayersInfo
     mfxU32 num_palette_predictor_initializer_minus1;
     mfxU32 palette_predictor_initializers[3][128];
 #endif
-
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+    mfxU8 scalingLists0[6][16];
+    mfxU8 scalingLists1[6][64];
+    mfxU8 scalingLists2[6][64];
+    mfxU8 scalingLists3[2][64];
+    mfxU8 scalingListDCCoefSizeID2[6];
+    mfxU8 scalingListDCCoefSizeID3[2];
+#endif
     VUI vui;
 };
 

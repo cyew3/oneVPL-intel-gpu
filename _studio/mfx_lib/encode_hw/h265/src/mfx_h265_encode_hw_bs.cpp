@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+﻿// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -288,6 +288,14 @@ const
     { 137, }
 };
 
+enum ScalingListSize
+{
+    SCALING_LIST_4x4 = 0,
+    SCALING_LIST_8x8,
+    SCALING_LIST_16x16,
+    SCALING_LIST_32x32,
+    SCALING_LIST_SIZE_NUM
+};
 
 static
     void InitializeContext(mfxU8 *pContext, mfxU8 initVal, mfxI32 SliceQPy)
@@ -934,9 +942,7 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
         sps.max_transform_hierarchy_depth_inter = bs.GetUE();
         sps.max_transform_hierarchy_depth_intra = bs.GetUE();
         sps.scaling_list_enabled_flag = bs.GetBit();
-
-        if (sps.scaling_list_enabled_flag)
-            return MFX_ERR_UNSUPPORTED;
+        MFX_CHECK(sps.scaling_list_enabled_flag, MFX_ERR_UNSUPPORTED);
 
         sps.amp_enabled_flag = bs.GetBit();
         sps.sample_adaptive_offset_enabled_flag = bs.GetBit();
@@ -1831,6 +1837,83 @@ void HeaderPacker::PackVUI(BitstreamWriter& bs, VUI const & vui, mfxU16 max_sub_
     }
 }
 
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+namespace {
+void WriteScalingListDeltaCoef(BitstreamWriter& writer, mfxU32 sizeId, mfxU32 nextCoef, const mfxU8* scalingList)
+{
+    mfxU32 coefNum = std::min(64, (1 << (4 + (sizeId << 1))));
+    writer.PutSE(int8_t(scalingList[0] - nextCoef));
+    for (mfxU32 i = 1; i < coefNum; i++) {
+        writer.PutSE(int8_t(scalingList[i] - scalingList[i - 1])); //here casting to int8_t will perform as x -= 256 if x > 127 and x += 256 if x < -128
+    }
+}
+
+mfxI32 GetScalingListDCCoeff(SPS const & sps, mfxU32 sizeId, mfxU32 matrixId)
+{
+    assert(sizeId < SCALING_LIST_SIZE_NUM);
+    assert(matrixId < 6);
+
+    switch (sizeId)
+    {
+    case SCALING_LIST_16x16:
+    {
+        return sps.scalingLists2[matrixId][0];
+    }
+    case SCALING_LIST_32x32:
+    {
+        return (matrixId == 0) ? sps.scalingLists3[matrixId][0] : sps.scalingLists3[matrixId - 2][0];
+    }
+    default: assert(!"Invalid sizeId");  return -1;
+    }
+}
+
+// Write scaling list data in accordingly ITU Rec.H265-201802 7.3.4 Scaling list data syntax
+void WriteScalingListData(BitstreamWriter& writer, SPS const & sps)
+{
+    //for each size
+    for (mfxU32 sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
+    {
+        for (mfxU32 matrixId = 0; matrixId < 6; matrixId += (sizeId == SCALING_LIST_32x32) ? 3 : 1)
+        {
+            mfxU8 scaling_list_pred_mode_flag = 1;//There is no implementation for reference scaling list(scaling_list_pred_mode_flag = 0).
+            writer.PutBit(scaling_list_pred_mode_flag);
+
+            mfxU32 nextCoef = 8;
+            if (sizeId > SCALING_LIST_8x8) {
+                mfxI32 scaling_list_dc_coef_minus8 = GetScalingListDCCoeff(sps, sizeId, matrixId) - 8;
+
+                assert(scaling_list_dc_coef_minus8 >= -7 && scaling_list_dc_coef_minus8 < 247);
+
+                writer.PutSE(scaling_list_dc_coef_minus8);
+                nextCoef = scaling_list_dc_coef_minus8 + 8;
+            }
+
+            switch (sizeId)
+            {
+            case SCALING_LIST_4x4:
+                WriteScalingListDeltaCoef(writer, sizeId, nextCoef, &sps.scalingLists0[matrixId][0]);
+                break;
+            case SCALING_LIST_8x8:
+                WriteScalingListDeltaCoef(writer, sizeId, nextCoef, &sps.scalingLists1[matrixId][0]);
+                break;
+            case SCALING_LIST_16x16:
+                WriteScalingListDeltaCoef(writer, sizeId, nextCoef, &sps.scalingLists2[matrixId][0]);
+                break;
+            case SCALING_LIST_32x32:
+                if (matrixId == 0)
+                    WriteScalingListDeltaCoef(writer, sizeId, nextCoef, &sps.scalingLists3[matrixId][0]);
+                else
+                    WriteScalingListDeltaCoef(writer, sizeId, nextCoef, &sps.scalingLists3[1][0]);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
+}
+#endif
+
 void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
 {
     NALU nalu = {0, SPS_NUT, 0, 1};
@@ -1875,7 +1958,18 @@ void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
     bs.PutUE(sps.max_transform_hierarchy_depth_intra);
     bs.PutBit(sps.scaling_list_enabled_flag);
 
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+    if (sps.scaling_list_enabled_flag)
+    {
+        bs.PutBit(sps.scaling_list_data_present_flag);
+        if (sps.scaling_list_data_present_flag)
+        {
+            WriteScalingListData(bs, sps);
+        }
+    }
+#else
     assert(0 == sps.scaling_list_enabled_flag);
+#endif
 
     bs.PutBit(sps.amp_enabled_flag);
     bs.PutBit(sps.sample_adaptive_offset_enabled_flag);

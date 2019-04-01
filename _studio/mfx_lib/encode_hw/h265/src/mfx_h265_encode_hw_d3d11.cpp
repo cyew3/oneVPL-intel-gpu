@@ -69,6 +69,9 @@ D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::D3D11Encoder()
     , RES_ID_REC(0)
     , m_resourceList()
     , m_ext()
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+    , m_qMatrix()
+#endif
     , DDITracer(std::is_same<DDI_SPS, ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT>::value ? ENCODER_REXT : ENCODER_DEFAULT)
 {
 }
@@ -605,6 +608,13 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA,        m_slice[0], m_slice.size());
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA,    RES_ID_BS,  1);
 
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+    if (m_sps.scaling_list_enable_flag && m_pps.scaling_list_data_present_flag)
+    {
+        m_qMatrix = task.m_qMatrix;
+        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_QUANTDATA, m_qMatrix, 1);
+    }
+#endif
 
 #if MFX_EXTBUFF_CU_QP_ENABLE
     if (task.m_bCUQPMap)

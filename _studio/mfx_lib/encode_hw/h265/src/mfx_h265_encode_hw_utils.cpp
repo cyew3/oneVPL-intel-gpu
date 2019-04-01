@@ -1940,6 +1940,15 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     }
 #endif
 
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+    if (m_platform >= MFX_HW_ICL && (m_ext.CO3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING || m_ext.CO3.ScenarioInfo == MFX_SCENARIO_REMOTE_GAMING && IsOn(mfx.LowPower)))
+    {
+        m_sps.scaling_list_data_present_flag = 1;
+        m_sps.scaling_list_enabled_flag = 1;
+        FillCustomScalingLists(m_sps);
+    }
+#endif
+
     Zero(m_pps);
     m_pps.seq_parameter_set_id = m_sps.seq_parameter_set_id;
 
@@ -3598,7 +3607,6 @@ void ConfigureTask(
 
     mfxExtAVCRefLists*      pExtLists = ExtBuffer::Get(task.m_ctrl);
     mfxExtAVCRefListCtrl*   pExtListCtrl = ExtBuffer::Get(task.m_ctrl);
-
     mfxU16 IntRefType = par.m_ext.CO2.IntRefType;
     task.m_SkipMode = 0;
 
@@ -3798,6 +3806,14 @@ void ConfigureTask(
     task.m_lastRAP = prevTask.m_lastRAP;
     task.m_eo = prevTask.m_eo + 1;
     task.m_dpb_output_delay = (task.m_fo + par.m_sps.sub_layer[0].max_num_reorder_pics - task.m_eo);
+
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+    SPS const &         extSps = par.m_sps;
+    if (extSps.scaling_list_enabled_flag && extSps.scaling_list_data_present_flag)
+    {
+        FillTaskScalingList(extSps, task);
+    }
+#endif
 
     InitDPB(task, prevTask, pExtListCtrl);
 
@@ -4209,5 +4225,83 @@ void WriteFrameData(
     }
 }
 #endif // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
+
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+const uint8_t scalingList0[16] = {
+        16, 34, 53, 74,
+        34, 53, 74, 85,
+        53, 74, 85, 98,
+        74, 85, 98, 112
+};
+
+const uint8_t scalingList_intra[64] = {
+    16,26,34,42,48,61,66,72,
+    26,29,42,48,61,66,72,77,
+    34,42,48,61,66,72,77,82,
+    42,48,61,66,72,77,82,88,
+    48,61,66,72,77,82,88,96,
+    61,66,72,77,82,88,96,101,
+    66,72,77,82,88,96,101,106,
+    72,77,82,88,96,101,106,112 };
+
+const uint8_t scalingList_inter[64] = {
+    16,23,26,30,33,37,39,42,
+    23,23,30,33,37,39,42,44,
+    26,30,33,37,39,42,44,48,
+    30,33,37,39,42,44,48,49,
+    33,37,39,42,44,48,49,53,
+    37,39,42,44,48,49,53,56,
+    39,42,44,48,49,53,56,58,
+    42,44,48,49,53,56,58,62 };
+
+void FillCustomScalingLists(SPS &extSps)
+{
+    for (int i = 0; i < 6; ++i)
+    {
+        UpRightToPlane(scalingList0, 4, extSps.scalingLists0[i]);
+
+        if (i < 3)
+        {
+            UpRightToPlane(scalingList_intra, 8, extSps.scalingLists1[i]);
+            UpRightToPlane(scalingList_intra, 8, extSps.scalingLists2[i]);
+        }
+        else
+        {
+            UpRightToPlane(scalingList_inter, 8, extSps.scalingLists1[i]);
+            UpRightToPlane(scalingList_inter, 8, extSps.scalingLists2[i]);
+        }
+
+        if (i == 0)
+        {
+            UpRightToPlane(scalingList_intra, 8, extSps.scalingLists3[i]);
+            extSps.scalingListDCCoefSizeID3[i] = extSps.scalingLists3[i][0];
+        }
+        else if (i == 1)
+        {
+            UpRightToPlane(scalingList_inter, 8, extSps.scalingLists3[i]);
+            extSps.scalingListDCCoefSizeID3[i] = extSps.scalingLists3[i][0];
+        }
+
+        extSps.scalingListDCCoefSizeID2[i] = extSps.scalingLists2[i][0];
+    }
+}
+
+void FillTaskScalingList(SPS const &extSps, Task &task)
+{
+    for (mfxU8 i = 0; i < 6; ++i)
+    {
+        MakeUpRight(extSps.scalingLists0[i], 4, task.m_qMatrix.ucScalingLists0[i]);
+        MakeUpRight(extSps.scalingLists1[i], 8, task.m_qMatrix.ucScalingLists1[i]);
+        MakeUpRight(extSps.scalingLists2[i], 8, task.m_qMatrix.ucScalingLists2[i]);
+        if (i < 2)
+        {
+            MakeUpRight(extSps.scalingLists3[i], 8, task.m_qMatrix.ucScalingLists3[i]);
+            task.m_qMatrix.ucScalingListDCCoefSizeID3[i] = extSps.scalingListDCCoefSizeID3[i];
+        }
+
+        task.m_qMatrix.ucScalingListDCCoefSizeID2[i] = extSps.scalingListDCCoefSizeID2[i];
+    }
+}
+#endif
 }; //namespace MfxHwH265Encode
 #endif

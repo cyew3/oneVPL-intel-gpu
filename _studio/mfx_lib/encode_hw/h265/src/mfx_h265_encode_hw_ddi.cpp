@@ -1005,7 +1005,11 @@ void FillPpsBuffer(
 
     pps.loop_filter_across_slices_flag        = par.m_pps.loop_filter_across_slices_enabled_flag;
     pps.loop_filter_across_tiles_flag         = par.m_pps.loop_filter_across_tiles_enabled_flag;
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+    pps.scaling_list_data_present_flag = (par.m_sps.scaling_list_enabled_flag && par.m_sps.scaling_list_data_present_flag);
+#else
     pps.scaling_list_data_present_flag        = par.m_pps.scaling_list_data_present_flag;
+#endif
     pps.dependent_slice_segments_enabled_flag = par.m_pps.dependent_slice_segments_enabled_flag;
     pps.bLastPicInSeq                         = 0;
     pps.bLastPicInStream                      = 0;

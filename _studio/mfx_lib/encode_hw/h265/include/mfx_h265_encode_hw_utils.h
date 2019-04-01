@@ -429,6 +429,9 @@ struct Task : DpbFrame
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     GPU_SYNC_EVENT_HANDLE m_GpuEvent                  = {};
 #endif
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+    DXVA_Qmatrix_HEVC m_qMatrix                       = {};
+#endif
 };
 
 enum
@@ -1301,6 +1304,58 @@ inline mfxI32 GetFrameNum(bool bField, mfxI32 Poc, bool bSecondField)
 {
     return bField ? (Poc + (!bSecondField)) / 2 : Poc;
 }
+
+#ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
+template<typename F> void ProcessUpRight(size_t size, F&& f)
+{
+    int y = 0, x = 0;
+    size_t i = 0;
+    while (i < size * size)
+    {
+        while (y >= 0)
+        {
+            if ((((size_t)x) < size) && (((size_t)y) < size))
+            {
+                std::forward<F>(f)(x, y, i);
+                i++;
+            }
+            y--;
+            x++;
+        }
+        y = x;
+        x = 0;
+    }
+}
+
+
+/// 1 2 3    1 2 4
+/// 4 5 6 -> 3 5 7
+/// 7 8 9    6 8 9
+/// For scanning from plane to up-right
+template<typename T> void MakeUpRight(T const * in, size_t size, T * out)
+{
+    ProcessUpRight(size,
+        [in, out, size](size_t x, size_t y, size_t i)
+        { out[x * size + y] = in[i]; }
+    );
+}
+
+/// 1 2 4    1 2 3
+/// 3 5 7 -> 4 5 6
+/// 6 8 9    7 8 9
+    /// For scanning from up-right order to plane
+template<typename T> void UpRightToPlane(T const * in, size_t size, T * out)
+{
+    ProcessUpRight(size,
+        [in, out, size](size_t x, size_t y, size_t i)
+        { out[i] = in[x * size + y]; }
+    );
+}
+
+void FillCustomScalingLists(SPS &extSps);
+
+void FillTaskScalingList(SPS const &extSps, Task &task);
+#endif
 
 }; //namespace MfxHwH265Encode
 #endif
