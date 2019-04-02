@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -1025,7 +1025,7 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
     // ViewOutput mode: 3 bitstreams - 2 separate & 1 merged
     else if ( (MVC_VIEWOUTPUT & pParams->MVC_flags) && (pParams->dstFileBuff.size() <= 3))
     {
-        std::auto_ptr<CSmplBitstreamDuplicateWriter> first(new CSmplBitstreamDuplicateWriter);
+        std::unique_ptr<CSmplBitstreamDuplicateWriter> first(new CSmplBitstreamDuplicateWriter);
 
         // init first duplicate writer
         MSDK_CHECK_POINTER(first.get(), MFX_ERR_MEMORY_ALLOC);
@@ -1035,7 +1035,7 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
         MSDK_CHECK_STATUS(sts, "first->InitDuplicate failed");
 
         // init second duplicate writer
-        std::auto_ptr<CSmplBitstreamDuplicateWriter> second(new CSmplBitstreamDuplicateWriter);
+        std::unique_ptr<CSmplBitstreamDuplicateWriter> second(new CSmplBitstreamDuplicateWriter);
         MSDK_CHECK_POINTER(second.get(), MFX_ERR_MEMORY_ALLOC);
         sts = second->Init(pParams->dstFileBuff[1]);
         MSDK_CHECK_STATUS(sts, "second->Init failed");
