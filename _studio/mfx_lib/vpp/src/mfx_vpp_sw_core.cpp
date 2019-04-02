@@ -1175,6 +1175,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
         {
             if ( (out->vpp.Out.Width & 15 ) != 0 )
             {
+                out->vpp.Out.Width = 0;
                 mfxSts = MFX_ERR_UNSUPPORTED;
             }
         }
