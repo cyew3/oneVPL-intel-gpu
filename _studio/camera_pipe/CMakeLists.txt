@@ -1,10 +1,6 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 # Plugin version info
-
-set (CAMERA_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - RAW Accelerator")
-set (CAMERA_DESCRIPTION "Intel(R) Media Server Studio 2017 - RAW Accelerator Plug-in")
-
   if( NOT DEFINED ENV{MFX_CAMERA_VERSION} )
     set( camera_version 0.0.000.0000 )
   else( )
@@ -35,6 +31,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/src )
 include_directories( ${MSDK_LIB_ROOT}/cmrt_cross_platform/include )
 include_directories( ${MSDK_LIB_ROOT}/genx/copy_kernels/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/include )
 
 # =============================================================================
 

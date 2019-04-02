@@ -53,6 +53,9 @@ File Name: mfxdefs.h
     #define MFX_VERSION (MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR)
   #endif
 #else
+  #define STRINGIZE(s) #s
+  #define CONVERT_TO_STRING(s) STRINGIZE(s)
+  #define MFX_VERSION_STR CONVERT_TO_STRING(MFX_VERSION);
   #undef MFX_VERSION_MINOR
   #define MFX_VERSION_MINOR ((MFX_VERSION) % 1000)
 #endif

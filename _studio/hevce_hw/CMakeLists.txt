@@ -1,3 +1,5 @@
+# Copyright (c) 2017-2019 Intel Corporation
+
 set( MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 mfx_include_dirs()
@@ -5,9 +7,6 @@ mfx_include_dirs()
 set( HEVC_Encoder_HW_GUID "6fadc791a0c2eb479ab6dcd5ea9da347" )
 
 # Plugin version info
-set( HEVCE_HW_PRODUCT_NAME "Intel(R) Media SDK" )
-set( HEVCE_HW_DESCRIPTION "Intel(R) Media SDK HEVCe plugin" )
-
 if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
   set( hevc_version 0.0.000.0000 )
 else()
@@ -28,12 +27,11 @@ set( LIBS "" )
 set( defs "" )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/include )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/h265/src/mfx_h265_encode_plugin.cpp )
 
 set( USE_STRICT_NAME TRUE )
 set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_STUDIO_ROOT}/mfx_lib/plugin/libmfxsw_plugin.map" )
-set( defs "${defs} -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVCE_HW_PRODUCT_NAME}\"\\\"" )
-set( defs "${defs} -DMFX_FILE_DESCRIPTION=\"\\\"${HEVCE_HW_DESCRIPTION}\"\\\"" )
 set( defs "${defs} ${version_defs}" )
 set( defs "-DAS_HEVCE_PLUGIN ${defs} " )
 gen_plugins_cfg( "HEVC_Encoder_HW" ${HEVC_Encoder_HW_GUID} ${plugin_name} "02" "HEVC" )

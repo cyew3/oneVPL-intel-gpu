@@ -25,7 +25,6 @@
 #include "mfx_av1_enc_plugin.h"
 #include "vm_sys_info.h"
 #include "mfx_plugin_module.h"
-#include "plugin_version_linux.h"
 #include "mfx_av1_encode_api.h"
 
 PluginModuleTemplate g_PluginModule = {

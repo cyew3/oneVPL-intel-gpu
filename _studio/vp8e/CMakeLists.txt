@@ -5,26 +5,13 @@ mfx_include_dirs( )
 # VP8E
 # =============================================================================
 
-set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2018 - SDK VP8 Pack")
-set (hw_VP8_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2018 - SDK VP8 Hardware Encode Plug-in")
+set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2019 - SDK VP8 Pack")
+set (hw_VP8_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2019 - SDK VP8 Hardware Encode Plug-in")
 
 if( NOT DEFINED ENV{MFX_VP8_VERSION} )
   set( vp8_version 0.0.000.0000 )
 else( )
   set( vp8_version $ENV{MFX_VP8_VERSION} )
-endif( )
-
-if( Linux OR Darwin )
-  execute_process(
-    COMMAND echo
-    COMMAND cut -f 1 -d.
-    COMMAND date "+.%-y.%-m.%-d"
-    OUTPUT_VARIABLE cur_date
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-  string( SUBSTRING ${vp8_version} 0 1 ver )
-
-  set(vp8_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${vp8_version}\"\\\"")
 endif( )
 
 
@@ -34,6 +21,7 @@ set( sources.plus "" )
 list( APPEND sources ${plugin_common_sources} )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/scheduler/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/vp8e_plugin/include )
 
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/src/mfx_enc_common.cpp )

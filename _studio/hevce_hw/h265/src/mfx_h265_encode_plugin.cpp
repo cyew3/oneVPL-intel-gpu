@@ -21,7 +21,7 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && (defined(OPEN_SOURCE) || defined(AS_HEVCE_PLUGIN))
 #include "mfx_h265_encode_plugin_hw.h"
-#include "plugin_version_linux.h"
+#include "mediasdk_version.h"
 
 #if defined(_WIN32)
 #define MSDK_PLUGIN_API(ret_type) extern "C" __declspec(dllexport)  ret_type __cdecl

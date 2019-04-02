@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 #if defined (AS_ENC_SCD_PLUGIN)
 #include "enc_scd.h"
 #endif //defined (AS_ENC_SCD_PLUGIN)
-#include "plugin_version_linux.h"
+#include "mediasdk_version.h"
 
 #if defined(_WIN32)
 #define MSDK_PLUGIN_API(ret_type) extern "C" __declspec(dllexport)  ret_type __cdecl

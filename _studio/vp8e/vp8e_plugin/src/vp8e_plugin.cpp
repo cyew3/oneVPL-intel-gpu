@@ -21,7 +21,7 @@
 #include "vp8e_plugin.h"
 #include "mfx_plugin_module.h"
 #include "mfxvideo++int.h"
-#include "plugin_version_linux.h"
+#include "mediasdk_version.h"
 
 PluginModuleTemplate g_PluginModule = {
     NULL,

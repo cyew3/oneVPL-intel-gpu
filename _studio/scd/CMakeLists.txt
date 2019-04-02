@@ -4,18 +4,6 @@ set(VPP_SCD_GUID "4f4e2f8290079c47bf7aff37dd5fcd4f")
 set(ENC_SCD_GUID "dfc215b3e3d3904d7fa504127ef564d5")
 
 # Plugin version info
-if( __TARGET_PLATFORM STREQUAL "BXTMIN" OR __TARGET_PLATFORM STREQUAL "BXT" )
-  set (VPP_SCD_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
-  set (VPP_SCD_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - VPP Scene Change Detection Plug-in")
-  set (ENC_SCD_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
-  set (ENC_SCD_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - ENC Scene Change Detection Plug-in")
-else()
-  set (VPP_SCD_PRODUCT_NAME "Intel(R) Media Server Studio 2018 - VPP Scene Change Detection")
-  set (VPP_SCD_DESCRIPTION "Intel(R) Media Server Studio 2018 - VPP Scene Change Detection Plug-in")
-  set (ENC_SCD_PRODUCT_NAME "Intel(R) Media Server Studio 2018 - ENC Scene Change Detection")
-  set (ENC_SCD_DESCRIPTION "Intel(R) Media Server Studio 2018 - ENC Scene Change Detection Plug-in")
-endif()
-
 if( NOT DEFINED ENV{MFX_SCD_VERSION} )
   set( scd_version 0.0.000.0000 )
 else( )
@@ -83,8 +71,6 @@ list( APPEND LIBS
     asc
 )
 
-set( defs "-DMFX_VA -DMFX_VA_LINUX -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VPP_SCD_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${VPP_SCD_DESCRIPTION}\"\\\" ${SCD_version_defs}" )
-
 gen_plugins_cfg("VPP_SCD" ${VPP_SCD_GUID} "mfx_vpp_scd64" "03" "")
 
 set( defs " -DAS_VPP_SCD_PLUGIN ${defs} ${WARNING_FLAGS}" )
@@ -100,9 +86,8 @@ list( APPEND sources
     ${CMAKE_CURRENT_SOURCE_DIR}/src/export.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/scd_tools.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/enc_scd.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/include
 )
-
-set( defs "-DMFX_VA -DMFX_VA_LINUX -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${ENC_SCD_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${ENC_SCD_DESCRIPTION}\"\\\" ${SCD_version_defs}" )
 
 gen_plugins_cfg("ENC_SCD" ${ENC_SCD_GUID} "mfx_enc_scd64" "04" "")
 

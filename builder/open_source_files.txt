@@ -24,14 +24,12 @@ builder/FindITT.cmake
 builder/FindOpenCL.cmake
 _studio/hevce_hw/libmfx_h265e_plugin.map
 _studio/hevce_hw/h265/include/mfx_h265_encode_plugin_hw.h
-_studio/hevce_hw/h265/include/plugin_version_linux.h
 _studio/hevce_hw/h265/src/mfx_h265_encode_plugin.cpp
 _studio/hevc_fei/CMakeLists.txt
 _studio/hevc_fei/h265_fei/include/mfx_h265_fei_encode_plugin_hw.h
 _studio/hevc_fei/h265_fei/src/export.cpp
 _studio/vp9e_hw/CMakeLists.txt
 _studio/vp9e_hw/include/mfx_vp9_encode_plugin_hw.h
-_studio/vp9e_hw/include/plugin_version_linux.h
 _studio/vp9e_hw/src/mfx_vp9_encode_plugin.cpp
 _studio/mfx_lib/libmfxhw.map
 _studio/mfx_lib/pkg-config.pc.cmake
@@ -126,7 +124,6 @@ _studio/mfx_lib/plugin/include/mfx_hevc_dec_plugin.h
 _studio/mfx_lib/plugin/include/mfx_hevc_enc_plugin.h
 _studio/mfx_lib/plugin/include/mfx_plugin_module.h
 _studio/mfx_lib/plugin/include/mfx_vpp_plugin.h
-_studio/mfx_lib/plugin/include/plugin_version_linux.h
 _studio/mfx_lib/plugin/src/mfx_h264la_plugin.cpp
 _studio/mfx_lib/plugin/src/mfx_hevc_dec_plugin.cpp
 _studio/mfx_lib/plugin/src/mfx_hevc_enc_plugin.cpp
@@ -174,6 +171,7 @@ _studio/mfx_lib/shared/include/mfx_thread_task.h
 _studio/mfx_lib/shared/include/mfx_tools.h
 _studio/mfx_lib/shared/include/mfx_user_plugin.h
 _studio/mfx_lib/shared/include/mfx_vpx_dec_common.h
+_studio/mfx_lib/shared/include/mediasdk_version.h
 _studio/mfx_lib/shared/src/libmfxsw.cpp
 _studio/mfx_lib/shared/src/libmfxsw_async.cpp
 _studio/mfx_lib/shared/src/libmfxsw_decode.cpp

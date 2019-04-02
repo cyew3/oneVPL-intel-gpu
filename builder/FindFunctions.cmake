@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2019 Intel Corporation. All Rights Reserved.
 ##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -364,10 +364,10 @@ function( git_describe git_commit )
     COMMAND git rev-parse --short HEAD
     OUTPUT_VARIABLE git_commit
     OUTPUT_STRIP_TRAILING_WHITESPACE
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/mdp_msdk-lib"
   )
   if( NOT ${git_commit} MATCHES "^$" )
-    set( git_commit ".${git_commit}" PARENT_SCOPE )
+    set( git_commit "${git_commit}" PARENT_SCOPE )
   endif()
 endfunction()
 

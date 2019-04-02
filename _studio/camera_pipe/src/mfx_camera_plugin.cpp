@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,7 @@
 #include "mfx_task.h"
 
 #include "mfx_plugin_module.h"
-#if defined(LINUX32) || defined(LINUX64)
-#include "plugin_version_linux.h"
-#endif
+
 PluginModuleTemplate g_PluginModule = {
     NULL,
     NULL,

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,11 +23,9 @@
 //defining module template for decoder plugin
 #include "mfx_plugin_module.h"
 
-#include "plugin_version_linux.h"
-
 #include "mfx_utils.h"
 
-#ifndef UNIFIED_PLUGIN 
+#ifndef UNIFIED_PLUGIN
 
 MSDK_PLUGIN_API(MFXDecoderPlugin*) mfxCreateDecoderPlugin() {
     return MFXVP9DecoderPlugin::Create();

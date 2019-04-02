@@ -1,10 +1,6 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 # Plugin version info
-
-set (PTIR_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - PTIR")
-set (PTIR_DESCRIPTION "Intel(R) Media Server Studio 2017 - Premium Telecine Interlace Reverser Plug-in")
-
   if( NOT DEFINED ENV{MFX_PTIR_VERSION} )
     set( ptir_version 0.0.000.0000 )
   else( )
@@ -40,6 +36,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/pacm/cmut )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/pacm/kernels )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/cmrt_cross_platform/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/include )
 
 # =============================================================================
 
@@ -117,8 +114,6 @@ endforeach()
     dl
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
   )
-
-set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${PTIR_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${PTIR_DESCRIPTION}\"\\\" ${ptir_version_defs}" )
 
 set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
 make_library( mfx_ptir_hw64 hw shared )

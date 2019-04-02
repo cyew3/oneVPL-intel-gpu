@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,8 @@
 #include <tchar.h>
 #endif
 
+#include "mediasdk_version.h"
+
 #if (MFX_VERSION_MAJOR == 1) && (MFX_VERSION_MINOR >= 10)
   #define MFX_USE_VERSIONED_SESSION
 #endif
@@ -42,29 +44,6 @@ namespace
 void* g_hModule = NULL; // DLL handle received in DllMain
 
 } // namespace
-
-/* These string constants set Media SDK version information for Linux, Android, OSX. */
-#ifndef MFX_FILE_VERSION
-#define MFX_FILE_VERSION "0.0.0.0"
-#endif
-#ifndef MFX_PRODUCT_VERSION
-#define MFX_PRODUCT_VERSION "0.0.000.0000"
-#endif
-
-// Copyright strings
-#if defined(mfxhw64_EXPORTS) || defined(mfxhw32_EXPORTS) || defined(mfxsw64_EXPORTS) || defined(mfxsw32_EXPORTS)
-const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media SDK";
-const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2011-2018 Intel Corporation";
-const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
-const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
-#endif
-
-#if defined(ANDROID)
-const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media SDK 2018 for Android";
-const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2011-2018 Intel Corporation";
-const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
-const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
-#endif
 
 mfxStatus MFXInit(mfxIMPL implParam, mfxVersion *ver, mfxSession *session)
 {
@@ -265,7 +244,7 @@ mfxStatus MFXClose(mfxSession session)
 
         // parent session can't be closed,
         // because there is no way to let children know about parent's death.
-        
+
         // child session should be uncoupled from the parent before closing.
         if (session->IsChildSession())
         {
@@ -275,12 +254,12 @@ mfxStatus MFXClose(mfxSession session)
                 return mfxRes;
             }
         }
-        
+
         if (session->IsParentSession())
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
-        
+
         // deallocate the object
 #if defined(MFX_USE_VERSIONED_SESSION)
         _mfxSession_1_10 *newSession  = (_mfxSession_1_10 *)session;
