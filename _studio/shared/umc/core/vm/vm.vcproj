@@ -335,14 +335,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\vm_mutex_linux32.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\vm_mutex_win32.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\vm_semaphore_linux32.c"
 				>
 			</File>
@@ -405,10 +397,6 @@
 			</File>
 			<File
 				RelativePath=".\include\vm_mmap.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\vm_mutex.h"
 				>
 			</File>
 			<File

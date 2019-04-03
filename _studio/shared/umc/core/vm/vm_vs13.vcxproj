@@ -261,8 +261,6 @@
     <ClCompile Include="src\vm_interlocked_win.c" />
     <ClCompile Include="src\vm_mmap_linux32.c" />
     <ClCompile Include="src\vm_mmap_win32.c" />
-    <ClCompile Include="src\vm_mutex_linux32.c" />
-    <ClCompile Include="src\vm_mutex_win32.c" />
     <ClCompile Include="src\vm_semaphore_linux32.c" />
     <ClCompile Include="src\vm_semaphore_win32.c" />
     <ClCompile Include="src\vm_shared_object_linux32.c" />
@@ -280,7 +278,6 @@
     <ClInclude Include="include\vm_file.h" />
     <ClInclude Include="include\vm_interlocked.h" />
     <ClInclude Include="include\vm_mmap.h" />
-    <ClInclude Include="include\vm_mutex.h" />
     <ClInclude Include="include\vm_semaphore.h" />
     <ClInclude Include="include\vm_shared_object.h" />
     <ClInclude Include="include\vm_socket.h" />

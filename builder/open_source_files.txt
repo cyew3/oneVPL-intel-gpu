@@ -438,7 +438,6 @@ _studio/shared/umc/core/vm/CMakeLists.txt
 _studio/shared/umc/core/vm/include/vm_debug.h
 _studio/shared/umc/core/vm/include/vm_event.h
 _studio/shared/umc/core/vm/include/vm_interlocked.h
-_studio/shared/umc/core/vm/include/vm_mutex.h
 _studio/shared/umc/core/vm/include/vm_semaphore.h
 _studio/shared/umc/core/vm/include/vm_shared_object.h
 _studio/shared/umc/core/vm/include/vm_strings.h
@@ -451,8 +450,6 @@ _studio/shared/umc/core/vm/src/vm_event_linux32.c
 _studio/shared/umc/core/vm/src/vm_event_win32.c
 _studio/shared/umc/core/vm/src/vm_interlocked_unix.c
 _studio/shared/umc/core/vm/src/vm_interlocked_win.c
-_studio/shared/umc/core/vm/src/vm_mutex_linux32.c
-_studio/shared/umc/core/vm/src/vm_mutex_win32.c
 _studio/shared/umc/core/vm/src/vm_semaphore_linux32.c
 _studio/shared/umc/core/vm/src/vm_semaphore_win32.c
 _studio/shared/umc/core/vm/src/vm_shared_object_linux32.c

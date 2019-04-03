@@ -69,13 +69,6 @@ typedef struct vm_mmap
     int32_t fAccessAttr;
 } vm_mmap;
 
-/* vm_mutex.h */
-typedef struct vm_mutex
-{
-    vm_handle handle;
-
-} vm_mutex;
-
 /* vm_semaphore.h */
 typedef struct vm_semaphore
 {
