@@ -35,10 +35,6 @@
 namespace MfxHwVP9Encode
 {
 
-#define ALIGN(x, align) (((x) + (align) - 1) & (~((align) - 1)))
-#define ALIGN_POWER_OF_TWO(value, n) \
-    (((value)+((1 << (n)) - 1)) & ~((1 << (n)) - 1))
-
 #ifndef OPEN_SOURCE // MFX_MIN/MFX_MAX defined in umc_defs.h which is used in Open Source
 #ifndef MFX_MAX // this macro is defined in HEVC encoder as well. Unified plugin includes both this header and HEVC headers. So need to check to avoid re-definition.
     #define MFX_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
