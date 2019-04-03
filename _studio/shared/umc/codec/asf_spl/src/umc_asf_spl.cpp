@@ -356,10 +356,10 @@ Status ASFSplitter::Run()
     if (!m_bFlagStop)
         return UMC_OK;
 
+    m_bFlagStop = false;
+
     /*** start thread which read data and fill buffers ***/
     m_pReadDataPacketThread = std::thread([this]() { ReadDataPacketThreadCallback((void *)this); });
-
-    m_bFlagStop = false;
 
     return UMC_OK;
 }
