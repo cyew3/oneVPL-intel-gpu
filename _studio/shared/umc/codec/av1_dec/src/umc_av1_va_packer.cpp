@@ -565,22 +565,44 @@ namespace UMC_AV1_DECODER
         FrameHeader const& info =
             frame.GetFrameHeader();
 
+#if UMC_AV1_DECODER_REV >= 8500
+        // TODO: [Rev0.85] Add correct setting for large scale tile mode
+        picParam.output_frame_width_in_tiles_minus_1 = 0;
+        picParam.output_frame_height_in_tiles_minus_1 = 0;
+#endif
+
         // fill seq parameters
         picParam.profile = (uint8_t)sh.seq_profile;
 
         auto& seqInfo = picParam.seq_info_fields.fields;
 
         seqInfo.still_picture = 0;
+#if UMC_AV1_DECODER_REV >= 8500
+        seqInfo.use_128x128_superblock = (sh.sbSize == BLOCK_128X128) ? 1 : 0;
+
+        seqInfo.enable_filter_intra = sh.enable_filter_intra;
+        seqInfo.enable_intra_edge_filter = sh.enable_intra_edge_filter;
+        seqInfo.enable_interintra_compound = sh.enable_interintra_compound;
+        seqInfo.enable_masked_compound = sh.enable_masked_compound;
+
+        seqInfo.enable_cdef = sh.enable_cdef;
+        seqInfo.enable_restoration = sh.enable_restoration;
+        seqInfo.large_scale_tile = info.large_scale_tile;
+#else
         seqInfo.sb_size_128x128 = (sh.sbSize == BLOCK_128X128) ? 1 : 0;
+
         seqInfo.enable_filter_intra = info.enable_filter_intra;
         seqInfo.enable_intra_edge_filter = info.enable_intra_edge_filter;
         seqInfo.enable_interintra_compound = info.enable_interintra_compound;
         seqInfo.enable_masked_compound = info.enable_masked_compound;
+
+        seqInfo.enable_cdef = 1;
+        seqInfo.enable_restoration = 1;
+#endif
+
         seqInfo.enable_dual_filter = sh.enable_dual_filter;
         seqInfo.enable_order_hint = sh.enable_order_hint;
         seqInfo.enable_jnt_comp = sh.enable_jnt_comp;
-        seqInfo.enable_cdef = 1;
-        seqInfo.enable_restoration = 1;
         seqInfo.mono_chrome = sh.color_config.mono_chrome;
         seqInfo.color_range = sh.color_config.color_range;
         seqInfo.subsampling_x = sh.color_config.subsampling_x;
@@ -590,7 +612,7 @@ namespace UMC_AV1_DECODER
 
         picParam.bit_depth_idx = (sh.color_config.BitDepth == 10) ? 1 :
             (sh.color_config.BitDepth == 12) ? 2 : 0;
-        picParam.order_hint_bits_minus_1 = sh.order_hint_bits_minus1;
+        picParam.order_hint_bits_minus_1 = (uint8_t)sh.order_hint_bits_minus1;
 
         // fill pic params
         auto& picInfo = picParam.pic_info_fields.bits;
@@ -610,8 +632,10 @@ namespace UMC_AV1_DECODER
         picInfo.disable_frame_end_update_cdf = info.disable_frame_end_update_cdf;
         picInfo.uniform_tile_spacing_flag = info.tile_info.uniform_tile_spacing_flag;
         picInfo.allow_warped_motion = info.allow_warped_motion;
-        picInfo.refresh_frame_context = info.disable_frame_end_update_cdf ? REFRESH_FRAME_CONTEXT_DISABLED : REFRESH_FRAME_CONTEXT_BACKWARD;;
+#if UMC_AV1_DECODER_REV == 5000
+        picInfo.refresh_frame_context = info.disable_frame_end_update_cdf ? REFRESH_FRAME_CONTEXT_DISABLED : REFRESH_FRAME_CONTEXT_BACKWARD;
         picInfo.large_scale_tile = info.large_scale_tile;
+#endif
 
         picParam.order_hint = (uint8_t)info.order_hint;
         picParam.superres_scale_denominator = (uint8_t)info.SuperresDenom;
@@ -626,8 +650,9 @@ namespace UMC_AV1_DECODER
         seg.segment_info_fields.bits.update_data = info.segmentation_params.segmentation_update_data;
 
         // set current and reference frames
-        picParam.current_frame = (VASurfaceID)m_va->GetSurfaceID(frame.GetMemID());
-        picParam.current_display_picture = (VASurfaceID)m_va->GetSurfaceID(frame.GetMemID());
+        picParam.current_frame = (VASurfaceID)m_va->GetSurfaceID(frame.GetMemID(SURFACE_RECON));
+        if (!frame.FilmGrainDisabled())
+            picParam.current_display_picture = (VASurfaceID)m_va->GetSurfaceID(frame.GetMemID());
 
         if (seg.segment_info_fields.bits.enabled)
         {
@@ -649,13 +674,15 @@ namespace UMC_AV1_DECODER
         else
         {
             for (uint8_t ref = 0; ref < NUM_REF_FRAMES; ++ref)
-                picParam.ref_frame_map[ref] = (VASurfaceID)m_va->GetSurfaceID(frame.frame_dpb[ref]->GetMemID());
+                picParam.ref_frame_map[ref] = (VASurfaceID)m_va->GetSurfaceID(frame.frame_dpb[ref]->GetMemID(SURFACE_RECON));
 
             for (uint8_t ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
                 const uint8_t idxInDPB = (uint8_t)info.ref_frame_idx[ref_idx];
-                picParam.ref_order_hint[ref_idx] = frame.frame_dpb[idxInDPB]->GetFrameHeader().order_hint;
                 picParam.ref_frame_idx[ref_idx] = idxInDPB;
+#if UMC_AV1_DECODER_REV == 5000
+                picParam.ref_order_hint[ref_idx] = frame.frame_dpb[idxInDPB]->GetFrameHeader().order_hint;
+#endif
             }
         }
 
@@ -743,12 +770,70 @@ namespace UMC_AV1_DECODER
             }
         }
 
-        // fill tile params
-        picParam.tile_cols = (uint16_t)info.tile_info.TileCols;
-        picParam.tile_rows = (uint16_t)info.tile_info.TileRows;
+        // fill film grain params
+        auto& fg = picParam.film_grain_info;
+        auto& fgInfo = fg.film_grain_info_fields.bits;
 
+        if (!frame.FilmGrainDisabled())
+        {
+            fgInfo.apply_grain = info.film_grain_params.apply_grain;
+#if UMC_AV1_DECODER_REV == 5000
+            fgInfo.update_grain = info.film_grain_params.update_grain;
+            fgInfo.film_grain_params_ref_idx = info.film_grain_params.film_grain_params_ref_idx;
+#endif
+            fgInfo.chroma_scaling_from_luma = info.film_grain_params.chroma_scaling_from_luma;
+            fgInfo.grain_scaling_minus_8 = info.film_grain_params.grain_scaling - 8;
+            fgInfo.ar_coeff_lag = info.film_grain_params.ar_coeff_lag;
+            fgInfo.ar_coeff_shift_minus_6 = info.film_grain_params.ar_coeff_shift - 6;
+            fgInfo.grain_scale_shift = info.film_grain_params.grain_scale_shift;
+            fgInfo.overlap_flag = info.film_grain_params.overlap_flag;
+            fgInfo.clip_to_restricted_range = info.film_grain_params.clip_to_restricted_range;
+
+            fg.random_seed = (uint16_t)info.film_grain_params.grain_seed;
+            fg.num_y_points = (uint8_t)info.film_grain_params.num_y_points;
+
+            for (uint8_t i = 0; i < MAX_POINTS_IN_SCALING_FUNCTION_LUMA; i++)
+            {
+                fg.point_y_value[i] = (uint8_t)info.film_grain_params.point_y_value[i];
+                fg.point_y_scaling[i] = (uint8_t)info.film_grain_params.point_y_scaling[i];
+            }
+
+            fg.num_cb_points = (uint8_t)info.film_grain_params.num_cb_points;
+            fg.num_cr_points = (uint8_t)info.film_grain_params.num_cr_points;
+
+            for (uint8_t i = 0; i < MAX_POINTS_IN_SCALING_FUNCTION_CHROMA; i++)
+            {
+                fg.point_cb_value[i] = (uint8_t)info.film_grain_params.point_cb_value[i];
+                fg.point_cb_scaling[i] = (uint8_t)info.film_grain_params.point_cb_scaling[i];
+                fg.point_cr_value[i] = (uint8_t)info.film_grain_params.point_cr_value[i];
+                fg.point_cr_scaling[i] = (uint8_t)info.film_grain_params.point_cr_scaling[i];
+            }
+
+            for (uint8_t i = 0; i < MAX_AUTOREG_COEFFS_LUMA; i++)
+                fg.ar_coeffs_y[i] = (int8_t)info.film_grain_params.ar_coeffs_y[i];
+
+            for (uint8_t i = 0; i < MAX_AUTOREG_COEFFS_CHROMA; i++)
+            {
+                fg.ar_coeffs_cb[i] = (int8_t)info.film_grain_params.ar_coeffs_cb[i];
+                fg.ar_coeffs_cr[i] = (int8_t)info.film_grain_params.ar_coeffs_cr[i];
+            }
+
+            fg.cb_mult = (uint8_t)info.film_grain_params.cb_mult;
+            fg.cb_luma_mult = (uint8_t)info.film_grain_params.cb_luma_mult;
+            fg.cb_offset = (uint8_t)info.film_grain_params.cb_offset;
+            fg.cr_mult = (uint8_t)info.film_grain_params.cr_mult;
+            fg.cr_luma_mult = (uint8_t)info.film_grain_params.cr_luma_mult;
+            fg.cr_offset = (uint8_t)info.film_grain_params.cr_offset;
+        }
+
+        // fill tile params
+        picParam.tile_cols = (uint8_t)info.tile_info.TileCols;
+        picParam.tile_rows = (uint8_t)info.tile_info.TileRows;
+
+#if UMC_AV1_DECODER_REV == 5000
         if (!info.tile_info.uniform_tile_spacing_flag)
         {
+#endif
             for (uint32_t i = 0; i < picParam.tile_cols; i++)
             {
                 picParam.width_in_sbs_minus_1[i] =
@@ -760,10 +845,14 @@ namespace UMC_AV1_DECODER
                 picParam.height_in_sbs_minus_1[i] =
                     (uint16_t)(info.tile_info.SbRowStarts[i + 1] - info.tile_info.SbRowStarts[i] - 1);
             }
+#if UMC_AV1_DECODER_REV == 5000
         }
+#endif
 
 #if UMC_AV1_DECODER_REV >= 8500
         picParam.context_update_tile_id = (uint16_t)info.tile_info.context_update_tile_id;
+        // TODO: [Rev0.85] Add correct setting for large scale tile mode
+        picParam.tile_count_minus_1 = 0;
 #endif
     }
 
