@@ -970,7 +970,8 @@ namespace {
                          roi->ROI[i].Bottom = (roi->ROI[i].Bottom + mask) & ~mask, wrnIncompatible = true;
                  }
 
-                 if (mfx.RateControlMethod == CQP) {
+                 if (roi->ROIMode == MFX_ROI_MODE_QP_DELTA)
+                 {
                      if (fi.FourCC) {
                          Ipp32s maxdqp = 51;
                          if (fi.FourCC == P010 || fi.FourCC == P210)
@@ -979,7 +980,9 @@ namespace {
                      }
                  }
                  else
+                 {
                      wrnIncompatible = !CheckRangeSat(roi->ROI[i].Priority, -3, 3);
+                 }
              }
              if (optHevc)
                 wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);

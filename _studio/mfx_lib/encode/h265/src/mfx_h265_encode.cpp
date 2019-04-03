@@ -558,21 +558,13 @@ static void TaskLogDump()
         intParam.numRoi = roi.NumROI;
 
         if (intParam.numRoi > 0) {
-            Ipp16s maxAbsDeltaQp = -1;
-            if (mfx.RateControlMethod == CBR)
-                maxAbsDeltaQp = 1;
-            else if (mfx.RateControlMethod == VBR)
-                maxAbsDeltaQp = 2;
-            else if (mfx.RateControlMethod != CQP)
-                maxAbsDeltaQp = 3;
+
             for (Ipp32s i = 0; i < intParam.numRoi; i++) {
                 intParam.roi[i].left = roi.ROI[i].Left;
                 intParam.roi[i].top = roi.ROI[i].Top;
                 intParam.roi[i].right = roi.ROI[i].Right;
                 intParam.roi[i].bottom = roi.ROI[i].Bottom;
-                intParam.roi[i].priority = roi.ROI[i].Priority;
-                if (maxAbsDeltaQp > 0)
-                    intParam.roi[i].priority = Saturate(-maxAbsDeltaQp, maxAbsDeltaQp, intParam.roi[i].priority);
+                intParam.roi[i].priority = (roi.ROIMode == MFX_ROI_MODE_PRIORITY ? -1 : 1) * roi.ROI[i].Priority;
             }
 #ifndef AMT_HROI_PSY_AQ
             intParam.DeltaQpMode = 0;
