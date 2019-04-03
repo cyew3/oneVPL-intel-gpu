@@ -5,7 +5,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2019 Intel Corporation. All Rights Reserved.
 
 File Name: msdka_singletone.h
 
@@ -67,14 +67,14 @@ public:
 
 private:
     static Mutex m_createMutex;
-    static std::auto_ptr<T> m_pInstance;
+    static std::unique_ptr<T> m_pInstance;
 };
 
 template<class T>
 Mutex Singleton<T>::m_createMutex;
 
 template<class T>
-std::auto_ptr<T> Singleton<T>::m_pInstance(0);
+std::unique_ptr<T> Singleton<T>::m_pInstance(0);
 
 template<class T>
 T& Singleton<T>::Instance(void)

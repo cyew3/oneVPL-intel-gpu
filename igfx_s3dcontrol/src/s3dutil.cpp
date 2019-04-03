@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+//        Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 //
 
 #include <memory>
@@ -474,7 +474,7 @@ HRESULT MFXS3DWrapper::SelectView(BOOL isLeft)
 
 IGFXS3DControl * CreateIGFXS3DControl()
 {
-    std::auto_ptr<MFXS3DWrapper> s3dWrapper(new MFXS3DWrapper());
+    std::unique_ptr<MFXS3DWrapper> s3dWrapper(new MFXS3DWrapper());
 
     return s3dWrapper.release();
 }

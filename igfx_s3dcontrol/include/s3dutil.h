@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright(c) 2011-2011 Intel Corporation. All Rights Reserved.
+//        Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __S3D_UTIL_H
@@ -48,7 +48,7 @@ public:
 protected:
 
     CS3DUtil  m_utilS3D;
-    std::auto_ptr<CPrivateQueryDevice> m_privateDevice;
+    std::unique_ptr<CPrivateQueryDevice> m_privateDevice;
 
     HRESULT SwitchToMode(BOOL isS3D, IGFX_DISPLAY_MODE *pMode = NULL);
     HRESULT SelectView(BOOL isLeft);

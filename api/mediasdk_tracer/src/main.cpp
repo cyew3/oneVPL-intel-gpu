@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2019 Intel Corporation. All Rights Reserved.
 
 File Name: main.cpp
 
@@ -132,7 +132,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *pVer, mfxSession *session) {
         *session = 0;
     }
 
-    std::auto_ptr<AnalyzerSession> as(new AnalyzerSession());
+    std::unique_ptr<AnalyzerSession> as(new AnalyzerSession());
     if (!as.get()) return MFX_ERR_MEMORY_ALLOC;
     //memset not required: see initialisation of POD types   
     //memset(as->get(),0,sizeof(*as));
