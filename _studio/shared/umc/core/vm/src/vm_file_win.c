@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,8 +46,8 @@
   }
 
 #ifdef THREAD_SAFETY
-# define LOCK  vm_mutex_lock(fd[0].fd)
-# define UNLOCK vm_mutex_unlock(fd[0].fd)
+# define LOCK  fd[0].mutex.lock()
+# define UNLOCK fd[0].mutex.unlock()
 #else
 # define LOCK
 # define UNLOCK

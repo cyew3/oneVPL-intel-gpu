@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,6 @@
 #  include <Winbase.h>
 #  include <stdarg.h>
 #  include <string.h>
-#  include "vm_mutex.h"
 #  if _MSC_VER >= 1400
 #    pragma warning( disable: 4996 )
 
@@ -43,6 +42,9 @@
 
 typedef struct {
   HANDLE fd;
+#ifdef THREAD_SAFETY
+  std::mutex mutex;
+#endif
   vm_char *tbuf;    /* temporary buffer for character io operations */
   unsigned long long fsize;
   uint32_t fattributes;
