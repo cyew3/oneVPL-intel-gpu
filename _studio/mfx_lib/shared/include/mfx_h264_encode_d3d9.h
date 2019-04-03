@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -288,8 +288,8 @@ namespace MfxHwH264Encode
         D3D9Encoder(D3D9Encoder const &); // no implementation
         D3D9Encoder & operator =(D3D9Encoder const &); // no implementation
 
-        VideoCORE *                       m_core;
-        std::auto_ptr<AuxiliaryDeviceHlp> m_auxDevice;
+        VideoCORE *                         m_core;
+        std::unique_ptr<AuxiliaryDeviceHlp> m_auxDevice;
 
         ENCODE_SET_SEQUENCE_PARAMETERS_H264         m_sps;
         ENCODE_SET_VUI_PARAMETER                    m_vui;
@@ -410,7 +410,7 @@ namespace MfxHwH264Encode
         D3D9SvcEncoder & operator =(D3D9SvcEncoder const &); // no implementation
 
         VideoCORE *                                     m_core;
-        std::auto_ptr<AuxiliaryDeviceHlp>               m_auxDevice;
+        std::unique_ptr<AuxiliaryDeviceHlp>               m_auxDevice;
 
         std::vector<ENCODE_SET_SEQUENCE_PARAMETERS_SVC> m_sps;
         std::vector<ENCODE_SET_PICTURE_PARAMETERS_SVC>  m_pps;

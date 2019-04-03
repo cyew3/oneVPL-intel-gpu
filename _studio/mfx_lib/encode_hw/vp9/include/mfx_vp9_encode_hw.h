@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 Intel Corporation
+// Copyright (c) 2016-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -158,7 +158,7 @@ protected:
     std::list<VP9MfxVideoParam>   m_videoForParamChange; // encoder keeps several versions of encoding parameters
                                                          // to allow dynamic parameter change w/o drain of all buffered tasks.
                                                          // Tasks submitted before the change reference to previous parameters version.
-    std::auto_ptr <DriverEncoder> m_ddi;
+    std::unique_ptr <DriverEncoder> m_ddi;
     UMC::Mutex m_taskMutex;
     bool       m_bStartIVFSequence;
     mfxU64     m_maxBsSize;

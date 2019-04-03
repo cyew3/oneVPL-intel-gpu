@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -129,7 +129,7 @@ protected:
     mfxPluginParam m_PluginParam;
     mfxVideoParam m_mfxpar;
     bool m_createdByDispatcher;
-    std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
+    std::unique_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
 };
 
 #if defined(_WIN32) || defined(_WIN64)

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -78,13 +78,13 @@ protected:
 
     OutlineParams m_params;
 
-    std::auto_ptr<OutlineReader> m_pReader;
-    std::auto_ptr<VideoOutlineWriter> m_pOutlineWriter;
-    std::auto_ptr<CheckerBase> m_checker;
+    std::unique_ptr<OutlineReader> m_pReader;
+    std::unique_ptr<VideoOutlineWriter> m_pOutlineWriter;
+    std::unique_ptr<CheckerBase> m_checker;
     UMC::VideoDecoderParams m_CurrentSequence;
 
     UMC::Status PerformPreprocessing(VideoData *pDataIn, VideoData *pDataOut);
-    std::auto_ptr<UMC::VideoProcessing> m_Preprocessing; //for conversion of input media data
+    std::unique_ptr<UMC::VideoProcessing> m_Preprocessing; //for conversion of input media data
                                      //to certain color format
 
     Ipp32u ComputeCRC32(UMC::VideoData *data);

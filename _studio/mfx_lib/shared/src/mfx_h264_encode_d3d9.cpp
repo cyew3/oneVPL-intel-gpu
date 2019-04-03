@@ -1103,7 +1103,6 @@ void CachedFeedback::Remove(mfxU32 feedbackNumber)
 
 D3D9Encoder::D3D9Encoder()
 : m_core(0)
-, m_auxDevice(0)
 , m_infoQueried(false)
 , m_forcedCodingFunction(0)
 , m_numSkipFrames(0)
@@ -1156,7 +1155,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     MFX_CHECK_STS(sts);
     MFX_CHECK(service, MFX_ERR_DEVICE_FAILED);
 
-    std::auto_ptr<AuxiliaryDeviceHlp> auxDevice(new AuxiliaryDeviceHlp());
+    std::unique_ptr<AuxiliaryDeviceHlp> auxDevice(new AuxiliaryDeviceHlp());
     sts = auxDevice->Initialize(0, service);
     MFX_CHECK_STS(sts);
 
@@ -1171,7 +1170,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     m_width = width;
     m_height = height;
     m_caps = caps;
-    m_auxDevice = auxDevice;
+    m_auxDevice = std::move(auxDevice);
 
     // Below is WA for limited SKUs (on which AVC encoding is supported for WiDi only)
     // On limited platforms driver reports that AVC encoder GUID is supported (IsAccelerationServiceExist() returns OK)
@@ -2010,7 +2009,7 @@ mfxStatus D3D9SvcEncoder::CreateAuxilliaryDevice(
     MFX_CHECK_STS(sts);
     MFX_CHECK(service, MFX_ERR_DEVICE_FAILED);
 
-    std::auto_ptr<AuxiliaryDeviceHlp> auxDevice(new AuxiliaryDeviceHlp());
+    std::unique_ptr<AuxiliaryDeviceHlp> auxDevice(new AuxiliaryDeviceHlp());
     sts = auxDevice->Initialize(0, service);
     MFX_CHECK_STS(sts);
 
@@ -2027,7 +2026,7 @@ mfxStatus D3D9SvcEncoder::CreateAuxilliaryDevice(
     caps.MaxNum_TemporalLayer = 8;
     m_guid = guid;
     m_caps = caps;
-    m_auxDevice = auxDevice;
+    m_auxDevice = std::move(auxDevice);
     return MFX_ERR_NONE;
 }
 

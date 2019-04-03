@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -108,7 +108,7 @@ public:
 private:
     mfxSize m_srcSize;
     mfxSize m_dstSize;
-    std::auto_ptr<uint8_t> m_workBuff;
+    std::unique_ptr<uint8_t> m_workBuff;
 };
 
 inline

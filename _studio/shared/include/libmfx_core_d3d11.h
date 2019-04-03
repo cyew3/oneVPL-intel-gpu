@@ -159,7 +159,7 @@ private:
     mfxStatus DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
     mfxStatus DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType);
 
-    std::auto_ptr<D3D11Adapter> m_pid3d11Adapter;
+    std::unique_ptr<D3D11Adapter> m_pid3d11Adapter;
 
     mfxStatus InitializeDevice(bool isTemporal = false);
     mfxStatus InternalCreateDevice();
@@ -185,7 +185,7 @@ private:
 
     // D3D11 VideoAccelrator which works with decode components on MFX/UMC levels
     // and providing HW capabilities
-    std::auto_ptr<MFXD3D11Accelerator>    m_pAccelerator;
+    std::unique_ptr<MFXD3D11Accelerator>    m_pAccelerator;
     #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
     VPPHWResMng                          m_vpp_hw_resmng;
     #endif

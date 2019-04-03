@@ -355,7 +355,7 @@ private:
     D3D9Encoder(const D3D9Encoder&); // no implementation
     D3D9Encoder& operator=(const D3D9Encoder&); // no implementation
 
-    std::auto_ptr<AuxiliaryDevice> m_auxDevice;
+    std::unique_ptr<AuxiliaryDevice> m_auxDevice;
     GUID m_guid;
 
     VideoCORE*  m_pmfxCore;

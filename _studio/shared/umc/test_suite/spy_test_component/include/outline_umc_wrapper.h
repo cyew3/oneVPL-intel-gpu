@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -97,7 +97,7 @@ public:
 
 private:
     UMC::VideoDecoder     *m_dec;
-    std::auto_ptr<VideoDataChecker> m_checker;
+    std::unique_ptr<VideoDataChecker> m_checker;
 };
 
 #endif //__OUTLINE_UMC_WRAPPER_H__

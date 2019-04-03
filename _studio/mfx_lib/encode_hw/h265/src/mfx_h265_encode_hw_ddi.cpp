@@ -222,7 +222,7 @@ mfxStatus QueryMbProcRate(VideoCORE* core, mfxVideoParam const & par, mfxU32(&mb
             return MFX_ERR_NONE;
     }
 
-    std::auto_ptr<DriverEncoder> ddi;
+    std::unique_ptr<DriverEncoder> ddi;
 
     ddi.reset(CreatePlatformH265Encoder(core));
     if (ddi.get() == 0)

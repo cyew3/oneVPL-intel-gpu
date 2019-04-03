@@ -209,7 +209,7 @@ namespace H265Enc {
         H265CUData *data_temp;
 
         BrcIface *m_brc;
-        std::auto_ptr<Lookahead> m_la;
+        std::unique_ptr<Lookahead> m_la;
 
 #ifdef AMT_HROI_PSY_AQ
         FSP m_faceSkinDet;

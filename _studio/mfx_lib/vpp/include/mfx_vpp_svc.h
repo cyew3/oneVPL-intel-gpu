@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -100,7 +100,7 @@ namespace MfxVideoProcessing
         bool                      m_bInit;
         VideoCORE*                m_core;
         mfxExtSVCSeqDesc          m_svcDesc;
-        std::auto_ptr<VideoVPPBase> m_VPP[8];
+        std::unique_ptr<VideoVPPBase> m_VPP[8];
 
         std::vector<mfxU32>       m_declaredDidList;
         std::vector<mfxU32>       m_recievedDidList;

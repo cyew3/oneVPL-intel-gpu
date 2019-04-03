@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -84,23 +84,23 @@ protected:
     void SumRs (CmSurface2DUPEx &rsFrame, Frame *pfrmCur, UINT size, int threadsWidth, int PLANE_WIDTH, unsigned int uiCorrection);
 
 private:
-    std::auto_ptr<CmDeviceEx> device;
-    std::auto_ptr<CmQueueEx> queue;
-    std::auto_ptr<CmKernelEx> kernelMedianDeinterlace;
-    std::auto_ptr<CmKernelEx> kernelMedianDeinterlaceTop;
-    std::auto_ptr<CmKernelEx> kernelMedianDeinterlaceBot;
-    std::auto_ptr<CmKernelEx> kernelSadRs;
-    std::auto_ptr<CmKernelEx> kernelSad;
-    std::auto_ptr<CmKernelEx> kernelRs;
-    std::auto_ptr<CmKernelEx> kernelFixEdgeBottom;
-    std::auto_ptr<CmKernelEx> kernelFixEdgeTop;
-    std::auto_ptr<CmKernelEx> kernelLowEdgeMaskBottom;
-    std::auto_ptr<CmKernelEx> kernelLowEdgeMaskTop;
-    std::auto_ptr<CmKernelEx> kernelLowEdgeMask2Fields;
-    std::auto_ptr<CmKernelEx> kernelUndo2FrameTop;
-    std::auto_ptr<CmKernelEx> kernelUndo2FrameBottom;
-    std::auto_ptr<CmKernelEx> kernelDeinterlaceBorderTop;
-    std::auto_ptr<CmKernelEx> kernelDeinterlaceBorderBottom;
+    std::unique_ptr<CmDeviceEx> device;
+    std::unique_ptr<CmQueueEx> queue;
+    std::unique_ptr<CmKernelEx> kernelMedianDeinterlace;
+    std::unique_ptr<CmKernelEx> kernelMedianDeinterlaceTop;
+    std::unique_ptr<CmKernelEx> kernelMedianDeinterlaceBot;
+    std::unique_ptr<CmKernelEx> kernelSadRs;
+    std::unique_ptr<CmKernelEx> kernelSad;
+    std::unique_ptr<CmKernelEx> kernelRs;
+    std::unique_ptr<CmKernelEx> kernelFixEdgeBottom;
+    std::unique_ptr<CmKernelEx> kernelFixEdgeTop;
+    std::unique_ptr<CmKernelEx> kernelLowEdgeMaskBottom;
+    std::unique_ptr<CmKernelEx> kernelLowEdgeMaskTop;
+    std::unique_ptr<CmKernelEx> kernelLowEdgeMask2Fields;
+    std::unique_ptr<CmKernelEx> kernelUndo2FrameTop;
+    std::unique_ptr<CmKernelEx> kernelUndo2FrameBottom;
+    std::unique_ptr<CmKernelEx> kernelDeinterlaceBorderTop;
+    std::unique_ptr<CmKernelEx> kernelDeinterlaceBorderBottom;
     std::vector<std::string> isaFileNames;
 
     void CopyBadMCFrameToCPU(Frame *pFrameDst1, Frame *pFrameDst2);
@@ -111,9 +111,9 @@ private:
     unsigned int width;
     unsigned int height;
 
-    std::auto_ptr<CmSurface2DEx> badMCFrame;
-    std::auto_ptr<CmSurface2DUPEx> sadFrame;
-    std::auto_ptr<CmSurface2DUPEx> rsFrame;
+    std::unique_ptr<CmSurface2DEx> badMCFrame;
+    std::unique_ptr<CmSurface2DUPEx> sadFrame;
+    std::unique_ptr<CmSurface2DUPEx> rsFrame;
 
     Clock clockDeinterlace;
     Clock clockDeinterlaceOne;

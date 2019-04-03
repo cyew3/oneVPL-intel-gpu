@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -945,7 +945,7 @@ private:
     mfxU16                                           m_AsyncDepth;
     MfxHwVideoProcessing::mfxExecuteParams          *m_executeParams;
     MfxHwVideoProcessing::mfxDrvSurface             *m_executeSurf;
-    std::auto_ptr<DXVAHDVideoProcessor>              m_ddi;
+    std::unique_ptr<DXVAHDVideoProcessor>              m_ddi;
     mfxU32                                           m_counter;
     mfxU16                                           m_width;
     mfxU16                                           m_height;

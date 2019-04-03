@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -62,7 +62,6 @@ const mfxPluginUID MFX_PTIR_Plugin::g_VPP_PluginGuid = MFX_PLUGINID_ITELECINE_HW
 
 MFX_PTIR_Plugin::MFX_PTIR_Plugin(bool CreateByDispatcher)
     : m_extVPPDeint()
-    , m_adapter(0)
 {
     m_session = 0;
     m_pmfxCore = 0;

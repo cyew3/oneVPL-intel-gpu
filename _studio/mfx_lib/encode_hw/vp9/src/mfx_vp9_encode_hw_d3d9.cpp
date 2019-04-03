@@ -560,7 +560,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     device = pID3D->GetD3D9DeviceManager();
     MFX_CHECK(device, MFX_ERR_DEVICE_FAILED);
 
-    std::auto_ptr<AuxiliaryDevice> auxDevice(new AuxiliaryDevice());
+    std::unique_ptr<AuxiliaryDevice> auxDevice(new AuxiliaryDevice());
     mfxStatus sts = auxDevice->Initialize(device);
     MFX_CHECK_STS(sts);
 
@@ -579,7 +579,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     m_width  = width;
     m_height = height;
 
-    m_auxDevice = auxDevice;
+    m_auxDevice = std::move(auxDevice);
 
     MFX_CHECK_STS(sts);
 

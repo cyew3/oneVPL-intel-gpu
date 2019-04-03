@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -95,7 +95,7 @@ protected:
     MFX_VP8ENC::VP8MfxParam                     m_video;
     MFX_VP8ENC::TaskManagerHybridPakDDI       * m_pTaskManager;
     MFX_VP8ENC::Vp8CoreBSE                      m_BSE;
-    std::auto_ptr <MFX_VP8ENC::DriverEncoder>   m_ddi;
+    std::unique_ptr <MFX_VP8ENC::DriverEncoder>   m_ddi;
 
     UMC::Mutex                      m_taskMutex;
 
@@ -106,7 +106,7 @@ protected:
     mfxPluginParam      m_PluginParam;
     mfxVideoParam       m_mfxpar;
     bool                m_createdByDispatcher;
-    std::auto_ptr<MFXPluginAdapter<MFXEncoderPlugin> > m_adapter;
+    std::unique_ptr<MFXPluginAdapter<MFXEncoderPlugin> > m_adapter;
 };
 
 #if defined(_WIN32) || defined(_WIN64)

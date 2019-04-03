@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -125,7 +125,7 @@ public:
 protected:
     MFXCamera_Plugin(bool CreateByDispatcher);
     virtual ~MFXCamera_Plugin();
-    std::auto_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
+    std::unique_ptr<MFXPluginAdapter<MFXVPPPlugin> > m_adapter;
 
     UMC::Mutex m_guard1;
 

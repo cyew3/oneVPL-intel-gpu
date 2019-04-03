@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,17 +42,17 @@ DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height,
     case MFX_HW_HSW_ULT:
     case MFX_HW_HSW:
         jit = false;
-        this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_hsw, sizeof(deinterlace_genx_hsw), mfxDeviceType, mfxDeviceHdl, jit));
+        this->device.reset(new CmDeviceEx(deinterlace_genx_hsw, sizeof(deinterlace_genx_hsw), mfxDeviceType, mfxDeviceHdl, jit));
         break;
     case MFX_HW_BDW:
         jit = false;
-        this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_bdw, sizeof(deinterlace_genx_bdw), mfxDeviceType, mfxDeviceHdl, jit));
+        this->device.reset(new CmDeviceEx(deinterlace_genx_bdw, sizeof(deinterlace_genx_bdw), mfxDeviceType, mfxDeviceHdl, jit));
         break;
     case MFX_HW_VLV:
     case MFX_HW_IVB:
     default:
         jit = true;
-        this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(deinterlace_genx_hsw, sizeof(deinterlace_genx_hsw), mfxDeviceType, mfxDeviceHdl, jit));
+        this->device.reset(new CmDeviceEx(deinterlace_genx_hsw, sizeof(deinterlace_genx_hsw), mfxDeviceType, mfxDeviceHdl, jit));
         break;
     }
 
@@ -60,69 +60,69 @@ DeinterlaceFilter::DeinterlaceFilter(eMFXHWType HWType, UINT width, UINT height,
     this->width = width;
 
     // Reuse the device and queue since CM runtime only supports one queue now
-    //this->device = std::auto_ptr<CmDeviceEx>(new CmDeviceEx(pIsaFileNames, size, mfxDeviceType, mfxDeviceHdl));
-    this->queue = std::auto_ptr<CmQueueEx>(new CmQueueEx(this->DeviceEx()));
+    //this->device.reset(new CmDeviceEx(pIsaFileNames, size, mfxDeviceType, mfxDeviceHdl));
+    this->queue.reset(new CmQueueEx(this->DeviceEx()));
 
-    this->kernelMedianDeinterlace = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_media_deinterlace_nv12<64U, 16U>)));
-    this->kernelMedianDeinterlaceTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_media_deinterlace_single_field_nv12<1, 64U, 16U>)));
-    this->kernelMedianDeinterlaceBot = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_media_deinterlace_single_field_nv12<0, 64U, 16U>)));
-    this->kernelSadRs = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_sad_rs_nv12<64U, 8U>)));
-    this->kernelSad = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_sad_nv12<64U, 8U>)));
-    this->kernelRs = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_rs_nv12<64U, 8U>)));
+    this->kernelMedianDeinterlace.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_media_deinterlace_nv12<64U, 16U>)));
+    this->kernelMedianDeinterlaceTop.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_media_deinterlace_single_field_nv12<1, 64U, 16U>)));
+    this->kernelMedianDeinterlaceBot.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_media_deinterlace_single_field_nv12<0, 64U, 16U>)));
+    this->kernelSadRs.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_sad_rs_nv12<64U, 8U>)));
+    this->kernelSad.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_sad_nv12<64U, 8U>)));
+    this->kernelRs.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_rs_nv12<64U, 8U>)));
 
-    this->kernelFixEdgeTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FixEdgeDirectionalIYUV_Main_Top_Instance)));
-    this->kernelFixEdgeBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FixEdgeDirectionalIYUV_Main_Bottom_Instance)));
+    this->kernelFixEdgeTop.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FixEdgeDirectionalIYUV_Main_Top_Instance)));
+    this->kernelFixEdgeBottom.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FixEdgeDirectionalIYUV_Main_Bottom_Instance)));
 
  //select most fit kernel base on video width. Kernel with _VarWidth surfix can handle smaller width,
  //while kernels without surfix can only handle fixed width.
     if (704 == width) {
-        this->kernelLowEdgeMaskTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<704U, 0, 32U>)));
-        this->kernelLowEdgeMaskBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<704U, 1, 32U>)));
-        this->kernelLowEdgeMask2Fields = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields<704U, 32U>)));
+        this->kernelLowEdgeMaskTop.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<704U, 0, 32U>)));
+        this->kernelLowEdgeMaskBottom.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<704U, 1, 32U>)));
+        this->kernelLowEdgeMask2Fields.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields<704U, 32U>)));
     }
     else if (1920 == width) {
-        this->kernelLowEdgeMaskTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<1920U, 0, 32U>)));
-        this->kernelLowEdgeMaskBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<1920U, 1, 32U>)));
-        this->kernelLowEdgeMask2Fields = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields<1920U, 32U>)));
+        this->kernelLowEdgeMaskTop.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<1920U, 0, 32U>)));
+        this->kernelLowEdgeMaskBottom.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<1920U, 1, 32U>)));
+        this->kernelLowEdgeMask2Fields.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields<1920U, 32U>)));
     }
     else if (3840 == width) {
-        this->kernelLowEdgeMaskTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<3840U, 0, 32U>)));
-        this->kernelLowEdgeMaskBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<3840U, 1, 32U>)));
-        this->kernelLowEdgeMask2Fields = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields<3840U, 32U>)));
+        this->kernelLowEdgeMaskTop.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<3840U, 0, 32U>)));
+        this->kernelLowEdgeMaskBottom.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main<3840U, 1, 32U>)));
+        this->kernelLowEdgeMask2Fields.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields<3840U, 32U>)));
     }
     else if (704 > width) {
-        this->kernelLowEdgeMaskTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<704U, 0, 32U>)));
-        this->kernelLowEdgeMaskBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<704U, 1, 32U>)));
-        this->kernelLowEdgeMask2Fields = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields_VarWidth<704U, 32U>)));
+        this->kernelLowEdgeMaskTop.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<704U, 0, 32U>)));
+        this->kernelLowEdgeMaskBottom.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<704U, 1, 32U>)));
+        this->kernelLowEdgeMask2Fields.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields_VarWidth<704U, 32U>)));
     }
     else if (1920 > width) {
-        this->kernelLowEdgeMaskTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<1920U, 0, 32U>)));
-        this->kernelLowEdgeMaskBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<1920U, 1, 32U>)));
-        this->kernelLowEdgeMask2Fields = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields_VarWidth<1920U, 32U>)));
+        this->kernelLowEdgeMaskTop.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<1920U, 0, 32U>)));
+        this->kernelLowEdgeMaskBottom.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<1920U, 1, 32U>)));
+        this->kernelLowEdgeMask2Fields.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields_VarWidth<1920U, 32U>)));
     }
     else if (3840 > width) {
-        this->kernelLowEdgeMaskTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<3840U, 0, 32U>)));
-        this->kernelLowEdgeMaskBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<3840U, 1, 32U>)));
-        this->kernelLowEdgeMask2Fields = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields_VarWidth<3840U, 32U>)));
+        this->kernelLowEdgeMaskTop.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<3840U, 0, 32U>)));
+        this->kernelLowEdgeMaskBottom.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_VarWidth<3840U, 1, 32U>)));
+        this->kernelLowEdgeMask2Fields.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_FilterMask_Main_2Fields_VarWidth<3840U, 32U>)));
     }
 
-    this->kernelUndo2FrameTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_undo2frame_nv12<32U, 8U, 1U>)));
-    this->kernelUndo2FrameBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_undo2frame_nv12<32U, 8U, 0U>)));
+    this->kernelUndo2FrameTop.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_undo2frame_nv12<32U, 8U, 1U>)));
+    this->kernelUndo2FrameBottom.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_undo2frame_nv12<32U, 8U, 0U>)));
 
-    this->kernelDeinterlaceBorderTop = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_DeinterlaceBorder<4U, 4U, 1U>)));
-    this->kernelDeinterlaceBorderBottom = std::auto_ptr<CmKernelEx>(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_DeinterlaceBorder<4U, 4U, 0U>)));
+    this->kernelDeinterlaceBorderTop.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_DeinterlaceBorder<4U, 4U, 1U>)));
+    this->kernelDeinterlaceBorderBottom.reset(new CmKernelEx(this->DeviceEx(), CM_KERNEL_FUNCTION(cmk_DeinterlaceBorder<4U, 4U, 0U>)));
 
-    this->badMCFrame = std::auto_ptr<CmSurface2DEx>(new CmSurface2DEx(this->DeviceEx(), this->width, this->height, CM_SURFACE_FORMAT_NV12));
+    this->badMCFrame.reset(new CmSurface2DEx(this->DeviceEx(), this->width, this->height, CM_SURFACE_FORMAT_NV12));
 
     UINT threadsWidth = cmut::DivUp(width, RSSAD_PLANE_WIDTH);
     UINT threadsHeight = cmut::DivUp(height, RSSAD_PLANE_HEIGHT);
 
 #if defined(LINUX32) || defined (LINUX64)
-    this->sadFrame = std::auto_ptr<CmSurface2DUPEx>(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * 8, threadsHeight, CM_SURFACE_FORMAT_X8R8G8B8));
-    this->rsFrame = std::auto_ptr<CmSurface2DUPEx>(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * RS_UNIT_SIZE, threadsHeight, CM_SURFACE_FORMAT_X8R8G8B8));
+    this->sadFrame.reset(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * 8, threadsHeight, CM_SURFACE_FORMAT_X8R8G8B8));
+    this->rsFrame.reset(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * RS_UNIT_SIZE, threadsHeight, CM_SURFACE_FORMAT_X8R8G8B8));
 #else
-    this->sadFrame = std::auto_ptr<CmSurface2DUPEx>(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * 8, threadsHeight, CM_SURFACE_FORMAT_A8R8G8B8));
-    this->rsFrame = std::auto_ptr<CmSurface2DUPEx>(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * RS_UNIT_SIZE, threadsHeight, CM_SURFACE_FORMAT_A8R8G8B8));
+    this->sadFrame.reset(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * 8, threadsHeight, CM_SURFACE_FORMAT_A8R8G8B8));
+    this->rsFrame.reset(new CmSurface2DUPEx(this->DeviceEx(), threadsWidth * RS_UNIT_SIZE, threadsHeight, CM_SURFACE_FORMAT_A8R8G8B8));
 #endif
 
 #if 1

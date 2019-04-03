@@ -27,7 +27,7 @@ namespace MFX_VP8ENC
 {
     mfxStatus QueryHwCaps(mfxCoreInterface * pCore, ENCODE_CAPS_VP8 & caps)
     {
-        std::auto_ptr<DriverEncoder> ddi;
+        std::unique_ptr<DriverEncoder> ddi;
 
         ddi.reset(CreatePlatformVp8Encoder());
         MFX_CHECK(ddi.get() != NULL, MFX_WRN_PARTIAL_ACCELERATION);

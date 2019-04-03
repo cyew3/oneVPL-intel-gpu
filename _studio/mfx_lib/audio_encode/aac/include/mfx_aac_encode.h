@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -83,7 +83,7 @@ protected:
     void MoveBitstreamData(mfxAudioFrame& bs, mfxU32 offset);
 
    // UMC encoder 
-    std::auto_ptr<UMC::AACEncoder>  m_pAACAudioEncoder;
+    std::unique_ptr<UMC::AACEncoder>  m_pAACAudioEncoder;
     UMC::MediaData        mInData;
     UMC::MediaData        mOutData;
     // end UMC encoder
@@ -128,7 +128,7 @@ protected:
     public:
         //LockFreeQueue_ts2<mfxBitstream*> m_Bitstreams;
         std::list<mfxBitstream*> m_Bitstreams;
-        std::auto_ptr<AudioFramesCollector> m_AudioFrames;
+        std::unique_ptr<AudioFramesCollector> m_AudioFrames;
     protected:
         int m_nRestBytes;
         mfxU32 m_FrameSize;
@@ -217,7 +217,7 @@ protected:
     };
 
     mfxU32 m_FrameSize;
-    std::auto_ptr<StateDataDivider> m_divider;
+    std::unique_ptr<StateDataDivider> m_divider;
 };
 
 #endif // __MFX_AAC_ENCODE_H__

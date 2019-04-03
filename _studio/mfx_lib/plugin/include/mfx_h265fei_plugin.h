@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 Intel Corporation
+// Copyright (c) 2013-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -127,7 +127,7 @@ protected:
     mfxSession          m_session;
     mfxPluginParam      m_PluginParam;
     bool                m_createdByDispatcher;
-    std::auto_ptr<MFXPluginAdapter<MFXEncPlugin> > m_adapter;
+    std::unique_ptr<MFXPluginAdapter<MFXEncPlugin> > m_adapter;
 };
 
 #endif //#if defined( AS_H265FEI_PLUGIN )

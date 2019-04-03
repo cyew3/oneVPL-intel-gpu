@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,7 +72,6 @@ MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
 const mfxPluginUID MFX_H263E_Plugin::g_PluginGuid = MFX_H263ENC::MFX_PLUGINID_H263E_HW;
 
 MFX_H263E_Plugin::MFX_H263E_Plugin(bool CreateByDispatcher)
-    :m_adapter(0)
 {
   m_session = 0;
   m_pmfxCore = NULL;

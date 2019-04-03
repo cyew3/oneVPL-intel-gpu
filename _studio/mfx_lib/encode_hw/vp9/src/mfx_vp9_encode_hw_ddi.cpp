@@ -64,7 +64,7 @@ namespace MfxHwVP9Encode
 
     mfxStatus QueryCaps(VideoCORE* pCore, ENCODE_CAPS_VP9 & caps, GUID guid, mfxU32 width, mfxU32 height)
     {
-        std::auto_ptr<DriverEncoder> ddi;
+        std::unique_ptr<DriverEncoder> ddi;
 
         ddi.reset(CreatePlatformVp9Encoder(pCore));
         MFX_CHECK(ddi.get() != NULL, MFX_WRN_PARTIAL_ACCELERATION);

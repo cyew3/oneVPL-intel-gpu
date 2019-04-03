@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -87,7 +87,7 @@ protected:
     mfxStatus CopyBitstream(mfxBitstream& bs, const mfxU8* ptr, mfxU32 bytes);
     void MoveBitstreamData(mfxBitstream& bs, mfxU32 offset);
     // UMC decoder 
-    std::auto_ptr<UMC::MP3Decoder>  m_pMP3AudioDecoder;
+    std::unique_ptr<UMC::MP3Decoder>  m_pMP3AudioDecoder;
     UMC::MediaData        mInData;
     UMC::MediaData        mOutData;
 

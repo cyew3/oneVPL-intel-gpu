@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,6 @@ MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
 const mfxPluginUID MFX_VP8E_Plugin::g_PluginGuid = MFX_PLUGINID_VP8E_HW;
 
 MFX_VP8E_Plugin::MFX_VP8E_Plugin(bool CreateByDispatcher)
-    :m_adapter(0)
 {
     m_pmfxCore = 0;
     memset(&m_PluginParam, 0, sizeof(mfxPluginParam));

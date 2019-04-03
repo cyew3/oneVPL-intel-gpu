@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -270,7 +270,7 @@ private:
     }
 
 
-    std::auto_ptr<D3D11VideoProcessor>               m_ddi;
+    std::unique_ptr<D3D11VideoProcessor>               m_ddi;
     MfxHwVideoProcessing::mfxExecuteParams          *m_executeParams;
     MfxHwVideoProcessing::mfxDrvSurface             *m_executeSurf;
     mfxU32                                           m_counter;

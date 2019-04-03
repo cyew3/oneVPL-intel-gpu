@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -121,7 +121,7 @@ public:
 protected:
     explicit MFXScreenCapture_Plugin(bool CreateByDispatcher);
     virtual ~MFXScreenCapture_Plugin();
-    std::auto_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
+    std::unique_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
 
     mfxStatus DecodeFrameSubmit(mfxFrameSurface1 *surface, bool& rt_fallback_d3d, bool& rt_fallback_dxgi, mfxFrameSurface1 *ext_surface);
     mfxStatus CheckFrameInfo(const mfxFrameInfo& info);
@@ -148,11 +148,11 @@ protected:
 
     mfxU32              m_StatusReportFeedbackNumber;
 
-    std::auto_ptr<Capturer>         m_pCapturer;
-    std::auto_ptr<Capturer>         m_pFallbackDXGICapturer;
-    std::auto_ptr<Capturer>         m_pFallbackD3D9Capturer;
+    std::unique_ptr<Capturer>         m_pCapturer;
+    std::unique_ptr<Capturer>         m_pFallbackDXGICapturer;
+    std::unique_ptr<Capturer>         m_pFallbackD3D9Capturer;
 
-    std::auto_ptr<DirtyRectFilter>         m_pDirtyRectAnalyzer;
+    std::unique_ptr<DirtyRectFilter>         m_pDirtyRectAnalyzer;
     mfxFrameSurface1*               m_pPrevSurface;
     mfxFrameSurface1*               m_pPrevIntSurface;
 

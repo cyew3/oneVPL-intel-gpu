@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -92,7 +92,7 @@ namespace MfxHwH264Encode
 
     private:
         VideoCORE *                  m_core;
-        std::auto_ptr<DriverEncoder> m_ddi[8];
+        std::unique_ptr<DriverEncoder> m_ddi[8];
         mfxU32                       m_reconRegCnt;
         mfxU32                       m_bitsrRegCnt;
         mfxU16                        m_forcedCodingFunction;

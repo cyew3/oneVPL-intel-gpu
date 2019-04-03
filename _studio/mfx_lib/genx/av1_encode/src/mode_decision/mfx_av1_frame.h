@@ -312,7 +312,7 @@ namespace H265Enc {
                 if (vm_interlocked_cas32(&(*i)->m_refCounter, 1, 0) == 0)
                     return *i;
 
-            std::auto_ptr<T> newFrame(new T());
+            std::unique_ptr<T> newFrame(new T());
             newFrame->Create(m_allocInfo);
             newFrame->AddRef();
             m_objects.push_back(newFrame.release());

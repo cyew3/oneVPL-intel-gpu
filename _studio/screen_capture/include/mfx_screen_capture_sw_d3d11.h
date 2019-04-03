@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 Intel Corporation
+// Copyright (c) 2015-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -77,7 +77,7 @@ protected:
     bool                             m_bOwnDevice;
 
     std::list<DESKTOP_QUERY_STATUS_PARAMS> m_IntStatusList;
-    std::auto_ptr<MFXVideoVPPColorSpaceConversion> m_pColorConverter;
+    std::unique_ptr<MFXVideoVPPColorSpaceConversion> m_pColorConverter;
     //std::list<mfxFrameSurface1> m_InternalSurfPool;
     //std::list<mfxFrameSurface1> m_InternalNV12ResizeSurfPool;
 

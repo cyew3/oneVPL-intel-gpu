@@ -31,7 +31,6 @@ namespace MfxHwH265Encode
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::D3D9Encoder()
     : m_core(nullptr)
-    , m_auxDevice(0)
     , m_guid()
     , m_width(0)
     , m_height(0)
@@ -112,7 +111,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     device = pID3D->GetD3D9DeviceManager();
     MFX_CHECK(device, MFX_ERR_DEVICE_FAILED);
 
-    std::auto_ptr<AuxiliaryDevice> auxDevice(new AuxiliaryDevice());
+    std::unique_ptr<AuxiliaryDevice> auxDevice(new AuxiliaryDevice());
     sts = auxDevice->Initialize(device);
     MFX_CHECK_STS(sts);
 
@@ -125,7 +124,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     m_guid      = guid;
     m_width     = width;
     m_height    = height;
-    m_auxDevice = auxDevice;
+    m_auxDevice = std::move(auxDevice);
 #endif
 
     sts = HardcodeCaps(m_caps, core);

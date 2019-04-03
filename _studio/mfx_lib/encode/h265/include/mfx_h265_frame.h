@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -543,7 +543,7 @@ namespace H265Enc {
                 if (vm_interlocked_cas32(&(*i)->m_refCounter, 1, 0) == 0)
                     return *i;
 
-            std::auto_ptr<T> newFrame(new T());
+            std::unique_ptr<T> newFrame(new T());
             newFrame->Create(m_allocInfo);
             newFrame->AddRef();
             m_objects.push_back(newFrame.release());
@@ -577,7 +577,7 @@ namespace H265Enc {
                     return *i;
                 }
             }
-            std::auto_ptr<ThreadingTask> newHub(new ThreadingTask());
+            std::unique_ptr<ThreadingTask> newHub(new ThreadingTask());
             newHub->action = TT_HUB;
             newHub->finished = 0;
             newHub->numDownstreamDependencies = 0;

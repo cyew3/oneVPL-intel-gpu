@@ -95,8 +95,8 @@ protected:
 //    mfxStatus              OnDeblockingInWinRegistry(mfxU32 codecId);
 
 //    void                   ReleaseHandle();   
-//    std::auto_ptr<UMC::DXVA2Accelerator>       m_pVA;
-//    std::auto_ptr<UMC::ProtectedVA>            m_protectedVA;
+//    std::unique_ptr<UMC::DXVA2Accelerator>       m_pVA;
+//    std::unique_ptr<UMC::ProtectedVA>            m_protectedVA;
    
     // Ordinal number of adapter to work
     const mfxU32                         m_adapterNum;  
@@ -106,7 +106,7 @@ protected:
     
 public:
     
-    std::auto_ptr<VDAAPIAdapter>            m_pAdapter;
+    std::unique_ptr<VDAAPIAdapter>            m_pAdapter;
     
 };
 #endif  //__LIBMFX_CORE__VDAAPI_H__

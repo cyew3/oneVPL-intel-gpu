@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -108,7 +108,7 @@ bool VideoDataChecker::IsFrameExist(Ipp32s frameNumber) const
 
     if (m_Mode & TEST_OUTLINE_READ)
     {
-        std::auto_ptr<Entry_Read> entry(m_pReader->GetEntry(m_SequenceNumber, frameNum));
+        std::unique_ptr<Entry_Read> entry(m_pReader->GetEntry(m_SequenceNumber, frameNum));
 
         if (!entry.get())
             return false;
@@ -125,7 +125,7 @@ bool VideoDataChecker::IsSequenceExist(Ipp32s id) const
 
     if (m_Mode & TEST_OUTLINE_READ)
     {
-        std::auto_ptr<Entry_Read> entry(m_pReader->GetSequenceEntry(seqNum));
+        std::unique_ptr<Entry_Read> entry(m_pReader->GetSequenceEntry(seqNum));
 
         if (!entry.get())
             return false;
@@ -261,7 +261,7 @@ Status VideoDataChecker::ProcessSequence(BaseCodecParams *info, Ipp32s id)
      
         if (m_Mode & TEST_OUTLINE_READ)
         {
-            std::auto_ptr<Entry_Read> entry(m_pReader->GetSequenceEntry(m_SequenceNumber));
+            std::unique_ptr<Entry_Read> entry(m_pReader->GetSequenceEntry(m_SequenceNumber));
 
             if (!entry.get())
                 return UMC_ERR_FAILED;
