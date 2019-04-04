@@ -30,7 +30,7 @@ include_directories( ${MSDK_LIB_ROOT}/fs_det/include )
 list( APPEND umc_dirs
   common
   brc scene_analyzer
-  mpeg2_dec h264_dec h264_enc
+  mpeg2_dec/hw mpeg2_dec/sw h264_dec h264_enc
   vc1_common vc1_dec vc1_spl
   mpeg2_enc jpeg_enc color_space_converter
 
@@ -48,7 +48,7 @@ foreach( dir ${umc_dirs} )
 endforeach( )
 
 list( APPEND vdecs
-  h264 mpeg2 mjpeg vp8 vp9
+  h264 mpeg2/hw mpeg2/sw mjpeg vp8 vp9
   vc1
   )
 

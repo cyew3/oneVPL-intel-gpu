@@ -12,7 +12,7 @@
     $(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_dec\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\codec\vp9_dec\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\codec\jpeg_dec\include;
-    $(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\sw\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\codec\jpeg_common\include;
@@ -23,7 +23,7 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\decode\h264\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\decode\vc1\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\decode\vp9\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\decode\mpeg2\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\decode\mpeg2\sw\include;
     </MfxIncludes>
     <MfxDefinitions>MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
