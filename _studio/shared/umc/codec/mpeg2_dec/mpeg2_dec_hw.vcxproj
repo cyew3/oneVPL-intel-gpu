@@ -21,16 +21,27 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Building.props" />
   <ItemGroup>
-    <ClCompile Include="src\umc_mpeg2_dec.cpp" />
-    <ClCompile Include="src\umc_mpeg2_dec_defs.cpp" />
-    <ClCompile Include="src\umc_mpeg2_dec_dxva.cpp" />
-    <ClCompile Include="src\umc_mpeg2_dec_pic.cpp" />
-    <ClCompile Include="src\umc_mpeg2_dec_slice_hw.cpp" />
+    <ClCompile Include="hw\src\umc_mpeg2_bitstream.cpp" />
+    <ClCompile Include="hw\src\umc_mpeg2_decoder.cpp" />
+    <ClCompile Include="hw\src\umc_mpeg2_decoder_va.cpp" />
+    <ClCompile Include="hw\src\umc_mpeg2_frame.cpp" />
+    <ClCompile Include="hw\src\umc_mpeg2_slice.cpp" />
+    <ClCompile Include="hw\src\umc_mpeg2_splitter.cpp" />
+    <ClCompile Include="hw\src\umc_mpeg2_utils.cpp" />
+    <ClCompile Include="hw\src\umc_mpeg2_va_packer.cpp" />
+	<ClCompile Include="hw\src\umc_mpeg2_dxva_packer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\umc_mpeg2_dec_base.h" />
-    <ClInclude Include="include\umc_mpeg2_dec_defs.h" />
-    <ClInclude Include="include\umc_mpeg2_dec_hw.h" />
+    <ClInclude Include="hw\include\umc_mpeg2_bitstream.h" />
+    <ClInclude Include="hw\include\umc_mpeg2_decoder.h" />
+    <ClInclude Include="hw\include\umc_mpeg2_decoder_va.h" />
+    <ClInclude Include="hw\include\umc_mpeg2_defs.h" />
+    <ClInclude Include="hw\include\umc_mpeg2_frame.h" />
+    <ClInclude Include="hw\include\umc_mpeg2_slice.h" />
+    <ClInclude Include="hw\include\umc_mpeg2_splitter.h" />
+    <ClInclude Include="hw\include\umc_mpeg2_utils.h" />
+    <ClInclude Include="hw\include\umc_mpeg2_va_packer.h" />
+	<ClInclude Include="hw\include\umc_mpeg2_dxva_packer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />

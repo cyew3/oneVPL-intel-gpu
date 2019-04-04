@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2018-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,20 +18,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef __MFX_MPEG2_DEC_COMMON_H__
-#define __MFX_MPEG2_DEC_COMMON_H__
-
-#include "mfx_common.h"
+#include "umc_defs.h"
 #if defined MFX_ENABLE_MPEG2_VIDEO_DECODE
 
-#include "mfx_common_int.h"
-#include "mfxvideo.h"
+#include "umc_mpeg2_defs.h"
+#include "umc_mpeg2_slice.h"
 
-#define MFX_PROFILE_MPEG1 8
+namespace UMC_MPEG2_DECODER
+{
+    // Decode slice header and initialize slice structure with parsed values
+    bool MPEG2Slice::Reset()
+    {
+        m_bitStream.Reset((uint8_t *) source.GetDataPointer(), (uint32_t) source.GetDataSize());
 
-void GetMfxFrameRate(mfxU8 umcFrameRateCode, mfxU32 *frameRateNom, mfxU32 *frameRateDenom);
-inline bool IsMpeg2StartCodeEx(const mfxU8* p);
+        return DecodeSliceHeader();
+    }
 
-#endif
+    // Decoder slice header
+    bool MPEG2Slice::DecodeSliceHeader()
+    {
+        UMC::Status umcRes = UMC::UMC_OK;
+        try
+        {
+            umcRes = m_bitStream.GetSliceHeaderFull(*this, *m_seqHdr.get(), *m_seqExtHdr.get());
+        }
+        catch(...)
+        {
+            return false;
+        }
 
-#endif //__MFX_MPEG2_DEC_COMMON_H__
+        return (UMC::UMC_OK == umcRes);
+    }
+}
+
+#endif // MFX_ENABLE_MPEG2_VIDEO_DECODE

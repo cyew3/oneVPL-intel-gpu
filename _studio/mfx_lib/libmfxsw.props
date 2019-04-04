@@ -15,7 +15,7 @@
     <!-- UMC Bitrate Control -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;
     <!-- UMC Color Space Converter -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;
     <!-- UMC jpeg -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\jpeg_enc\include;
-    <!-- UMC MPEG2 -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_enc\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;
+    <!-- UMC MPEG2 -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_enc\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\sw\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\hw\include;
     <!-- UMC h264 -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;
     <!-- UMC VP9 --> $(MSDK_STUDIO_ROOT)\shared\umc\codec\vp9_dec\include;
     <!-- MediaSDK Common -->$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
@@ -26,7 +26,7 @@
     <!-- VPP -->$(MSDK_STUDIO_ROOT)\mfx_lib\vpp\include;
     <!-- ASC -->$(MSDK_STUDIO_ROOT)\shared\asc\include;
     <!-- MediaSDK MJPEG -->$(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\mjpeg\include;$(MSDK_STUDIO_ROOT)\mfx_lib\encode\mjpeg\include;
-    <!-- MediaSDK MPEG2 -->$(MSDK_STUDIO_ROOT)\mfx_lib\pak\mpeg2\include;$(MSDK_STUDIO_ROOT)\mfx_lib\decode\mpeg2\include;$(MSDK_STUDIO_ROOT)\mfx_lib\enc\mpeg2\include;
+    <!-- MediaSDK MPEG2 -->$(MSDK_STUDIO_ROOT)\mfx_lib\pak\mpeg2\include;$(MSDK_STUDIO_ROOT)\mfx_lib\decode\mpeg2\sw\include;$(MSDK_STUDIO_ROOT)\mfx_lib\enc\mpeg2\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\mpeg2\include;$(MSDK_STUDIO_ROOT)\mfx_lib\enc_hw\mpeg2\include;$(MSDK_STUDIO_ROOT)\mfx_lib\encode\mpeg2\include;
     <!-- MediaSDK VC1 -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\vc1\include;
     <!-- MediaSDK h264 --> $(MSDK_STUDIO_ROOT)\mfx_lib\decode\h264\include;$(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h264\include;$(MSDK_STUDIO_ROOT)\mfx_lib\encode\h264\include;

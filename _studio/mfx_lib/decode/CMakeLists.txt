@@ -1,10 +1,10 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 list( APPEND vdirs
-  h264 h265 mjpeg mpeg2 vc1 vp8 vp9 av1
+  h264 h265 mjpeg mpeg2/hw mpeg2/sw vc1 vp8 vp9 av1
   )
 list( APPEND cdirs
-  h265_dec h264_dec mpeg2_dec vp9_dec av1_dec vc1_dec jpeg_dec vc1_common color_space_converter jpeg_common
+  h265_dec h264_dec mpeg2_dec/hw mpeg2_dec/sw vp9_dec av1_dec vc1_dec jpeg_dec vc1_common color_space_converter jpeg_common
   )
 mfx_include_dirs( )
 foreach( dir ${vdirs} )
@@ -81,14 +81,17 @@ list(APPEND sources
     )
 
 list(APPEND sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/mpeg2/src/mfx_mpeg2_decode_internal.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec_defs.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec_dxva.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec_pic.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec_slice_hw.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec_tbl.cpp
-    )
+    ${CMAKE_CURRENT_SOURCE_DIR}/mpeg2/hw/src/mfx_mpeg2_decode.cpp
+    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_bitstream.cpp
+    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_decoder.cpp
+    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_decoder_va.cpp
+    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_frame.cpp
+    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_slice.cpp
+    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_splitter.cpp
+    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_utils.cpp
+    ${UMC_CODECS}/mpeg2_dec/hw/src/umc_mpeg2_va_packer.cpp
+  )
+
 
 list(APPEND sources
     ${CMAKE_CURRENT_SOURCE_DIR}/vc1/src/mfx_vc1_decode.cpp

@@ -72,13 +72,18 @@ if(NOT OPEN_SOURCE)
     )
 
   list(APPEND sources
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg1_dec.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec_blk.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec_mb422.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec_mb.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec_mc.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec_mv.cpp
-    ${UMC_CODECS}/mpeg2_dec/src/umc_mpeg2_dec_slice.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mpeg2/sw/src/mfx_mpeg2_decode_internal.cpp
+    ${UMC_CODECS}/mpeg2_dec/sw/src/umc_mpeg1_dec.cpp
+    ${UMC_CODECS}/mpeg2_dec/sw/src/umc_mpeg2_dec_blk.cpp
+    ${UMC_CODECS}/mpeg2_dec/sw/src/umc_mpeg2_dec.cpp
+    ${UMC_CODECS}/mpeg2_dec/sw/src/umc_mpeg2_dec_defs.cpp
+    ${UMC_CODECS}/mpeg2_dec/sw/src/umc_mpeg2_dec_mb422.cpp
+    ${UMC_CODECS}/mpeg2_dec/sw/src/umc_mpeg2_dec_mb.cpp
+    ${UMC_CODECS}/mpeg2_dec/sw/src/umc_mpeg2_dec_mc.cpp
+    ${UMC_CODECS}/mpeg2_dec/sw/src/umc_mpeg2_dec_mv.cpp
+    ${UMC_CODECS}/mpeg2_dec/sw/src/umc_mpeg2_dec_pic.cpp
+    ${UMC_CODECS}/mpeg2_dec/sw/src/umc_mpeg2_dec_slice.cpp
+    ${UMC_CODECS}/mpeg2_dec/sw/src/umc_mpeg2_dec_tbl.cpp
     )
 
   list(APPEND sources

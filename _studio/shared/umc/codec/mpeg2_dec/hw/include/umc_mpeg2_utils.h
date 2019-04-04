@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2018-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,20 +18,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef __MFX_MPEG2_DEC_COMMON_H__
-#define __MFX_MPEG2_DEC_COMMON_H__
+#pragma once
 
-#include "mfx_common.h"
+#include "umc_defs.h"
+
 #if defined MFX_ENABLE_MPEG2_VIDEO_DECODE
 
-#include "mfx_common_int.h"
-#include "mfxvideo.h"
+#include "umc_mpeg2_defs.h"
 
-#define MFX_PROFILE_MPEG1 8
+namespace UMC_MPEG2_DECODER
+{
+    eMFXPlatform GetPlatform_MPEG2(VideoCORE * core, mfxVideoParam * par);
+    mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
+    bool CheckVideoParam(mfxVideoParam *in);
 
-void GetMfxFrameRate(mfxU8 umcFrameRateCode, mfxU32 *frameRateNom, mfxU32 *frameRateDenom);
-inline bool IsMpeg2StartCodeEx(const mfxU8* p);
+    void GetMfxFrameRate(uint8_t frame_rate_value, mfxU32 & frameRateN, mfxU32 & frameRateD);
+    mfxU8 GetMfxCodecProfile(uint8_t profile);
+    mfxU8 GetMfxCodecLevel(uint8_t level);
+    void CalcAspectRatio(uint32_t dar, uint32_t width, uint32_t height, uint16_t & aspectRatioW, uint16_t & aspectRatioH);
 
-#endif
+    namespace MFX_Utility
+    {
+        UMC::Status FillVideoParam(const MPEG2SequenceHeader & seq,
+                                   const MPEG2SequenceExtension * seqExt,
+                                   const MPEG2SequenceDisplayExtension * dispExt,
+                                   mfxVideoParam & par);
+    }
+}
 
-#endif //__MFX_MPEG2_DEC_COMMON_H__
+#endif // MFX_ENABLE_MPEG2_VIDEO_DECODE
