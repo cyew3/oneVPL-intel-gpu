@@ -338,7 +338,11 @@ void H264SegmentDecoderMultiThreaded::RestoreErrorRect(int32_t startMb, int32_t 
 
         if (!pRefFrame || pRefFrame->IsSkipped())
         {
-            pRefFrame = m_pTaskBroker->m_pTaskSupplier->GetDPBList(BASE_VIEW, 0)->FindClosest(pCurrentFrame);
+            H264DBPList * lst = m_pTaskBroker->m_pTaskSupplier->GetDPBList(BASE_VIEW, 0);
+            if (lst)
+            {
+                pRefFrame = lst->FindClosest(pCurrentFrame);
+            }
         }
 
         m_pCurrentFrame = pCurrentFrame;
