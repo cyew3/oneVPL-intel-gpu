@@ -746,6 +746,9 @@ void TaskBrokerSingleThread_H265::AddPerformedTask(H265Task *pTask)
         if (pTask->m_pSlicesInfo->m_hasTiles) // tile case
         {
             TileThreadingInfo *tileInfo = pTask->m_threadingInfo;
+            if (!tileInfo)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
             processInfo->m_processInProgress[DEC_PROCESS_ID] = 0;
 
             processInfo->m_curCUToProcess[DEC_PROCESS_ID] += pTask->m_iMBToProcess;
@@ -859,6 +862,9 @@ void TaskBrokerSingleThread_H265::AddPerformedTask(H265Task *pTask)
         if (pTask->m_pSlicesInfo->m_hasTiles) // tile case
         {
             TileThreadingInfo *tileInfo = pTask->m_threadingInfo;
+            if (!tileInfo)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
             processInfo->m_processInProgress[REC_PROCESS_ID] = 0;
 
             processInfo->m_curCUToProcess[REC_PROCESS_ID] += pTask->m_iMBToProcess;
@@ -968,6 +974,9 @@ void TaskBrokerSingleThread_H265::AddPerformedTask(H265Task *pTask)
         if (pTask->m_pSlicesInfo->m_hasTiles) // tile case
         {
             TileThreadingInfo *tileInfo = pTask->m_threadingInfo;
+            if (!tileInfo)
+                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
             processInfo->m_processInProgress[DEC_PROCESS_ID] = 0;
             processInfo->m_processInProgress[REC_PROCESS_ID] = 0;
 
@@ -1538,6 +1547,8 @@ bool TaskBrokerTwoThread_H265::GetDecodingTileTask(H265DecoderFrameInfo * info, 
     // wrap task
     CUProcessInfo * processInfo = &tileToWrap->processInfo;
     H265Slice *slice = FindSliceByCUAddr(info, processInfo->m_curCUToProcess[DEC_PROCESS_ID]);
+    if (!slice)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     if (refAU != 0)// && slice->GetSliceHeader()->slice_temporal_mvp_enabled_flag)
     {
@@ -1546,8 +1557,6 @@ bool TaskBrokerTwoThread_H265::GetDecodingTileTask(H265DecoderFrameInfo * info, 
         if (rasterOrderCUAddr + (int32_t)info->m_pFrame->getCD()->m_WidthInCU >= refAU->m_curCUToProcess[DEC_PROCESS_ID])
             return false;
     }
-
-    VM_ASSERT(slice);
 
     InitTask(info, pTask, slice);
     pTask->m_iTaskID = TASK_DEC_H265;
@@ -1584,7 +1593,8 @@ bool TaskBrokerTwoThread_H265::GetReconstructTileTask(H265DecoderFrameInfo * inf
     // wrap task
     CUProcessInfo * processInfo = &tileToWrap->processInfo;    
     H265Slice *slice = FindSliceByCUAddr(info, processInfo->m_curCUToProcess[REC_PROCESS_ID]);
-    VM_ASSERT(slice);
+    if (!slice)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     VM_ASSERT(tileToWrap->m_context);
     if (refAU != 0)
@@ -1632,7 +1642,8 @@ bool TaskBrokerTwoThread_H265::GetDecRecTileTask(H265DecoderFrameInfo * info, H2
     CUProcessInfo * processInfo = &tileToWrap->processInfo;
 
     H265Slice *slice = FindSliceByCUAddr(info, processInfo->m_curCUToProcess[DEC_PROCESS_ID]);
-    VM_ASSERT(slice);
+    if (!slice)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     InitTask(info, pTask, slice);
     pTask->m_iTaskID = TASK_DEC_REC_H265;
