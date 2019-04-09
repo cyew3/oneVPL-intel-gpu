@@ -193,7 +193,12 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     {
         return MFX_ERR_NULL_PTR;
     }
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (((MFX_IMPL_AUTO > implMethod) || (MFX_IMPL_SINGLE_THREAD < implMethod)) && !(par.Implementation & MFX_IMPL_AUDIO))
+#else
     if (((MFX_IMPL_AUTO > implMethod) || (MFX_IMPL_RUNTIME < implMethod)) && !(par.Implementation & MFX_IMPL_AUDIO))
+#endif
     {
         return MFX_ERR_UNSUPPORTED;
     }
