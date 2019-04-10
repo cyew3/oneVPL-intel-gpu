@@ -1688,6 +1688,21 @@ mfxU32 VideoDECODEMJPEGBase_HW::AdjustFrameAllocRequest(mfxFrameAllocRequest *re
     // set FourCC
     AdjustFourCC(&request->Info, info, hwType, vaType, &needVpp);
 
+#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
+    if(info->Rotation == MFX_ROTATION_90 || info->Rotation == MFX_ROTATION_180 || info->Rotation == MFX_ROTATION_270)
+    {
+        needVpp = true;
+    }
+
+    if(info->Rotation == MFX_ROTATION_90 || info->Rotation == MFX_ROTATION_270)
+    {
+        std::swap(request->Info.Height, request->Info.Width);
+        std::swap(request->Info.AspectRatioH, request->Info.AspectRatioW);
+        std::swap(request->Info.CropH, request->Info.CropW);
+        std::swap(request->Info.CropY, request->Info.CropX);
+    }
+#else  // MFX_ENABLE_MJPEG_ROTATE_VPP
+
     // WA for rotation of unaligned images
     mfxU16 mcuWidth;
     mfxU16 mcuHeight;
@@ -1720,22 +1735,6 @@ mfxU32 VideoDECODEMJPEGBase_HW::AdjustFrameAllocRequest(mfxFrameAllocRequest *re
         break;
     }
 
-#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
-    if(info->Rotation == MFX_ROTATION_90 || info->Rotation == MFX_ROTATION_180 || info->Rotation == MFX_ROTATION_270)
-    {
-        needVpp = true;
-    }
-
-    if(info->Rotation == MFX_ROTATION_90 || info->Rotation == MFX_ROTATION_270)
-    {
-        std::swap(request->Info.Height, request->Info.Width);
-        std::swap(request->Info.AspectRatioH, request->Info.AspectRatioW);
-        std::swap(request->Info.CropH, request->Info.CropW);
-        std::swap(request->Info.CropY, request->Info.CropX);
-    }
-#endif
-
-
     if(info->Rotation == MFX_ROTATION_90 || info->Rotation == MFX_ROTATION_270)
         std::swap(mcuWidth, mcuHeight);
 
@@ -1760,6 +1759,7 @@ mfxU32 VideoDECODEMJPEGBase_HW::AdjustFrameAllocRequest(mfxFrameAllocRequest *re
         break;
     }
 
+#endif // MFX_ENABLE_MJPEG_ROTATE_VPP
     m_needVpp = needVpp;
     if (m_needVpp)
     {
