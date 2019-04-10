@@ -35,7 +35,7 @@
 #define CHECK_CODEC_ID(id, myid) /*id==myid;*/
 
 #define RANGE_TO_F_CODE(range, fcode) { \
-    Ipp32s fc = 1;                        \
+    int32_t fc = 1;                        \
     while((4<<fc) < range && fc <= 15)    \
     fc++;                               \
     fcode = fc;                           \
@@ -1490,7 +1490,7 @@ namespace MPEG2EncoderHW
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
-        Ipp64f fr = CalculateUMCFramerate(m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.FrameRateExtN,
+        double fr = CalculateUMCFramerate(m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.FrameRateExtN,
             m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.FrameRateExtD);
 
         if (CorrectProfileLevelMpeg2(m_VideoParamsEx.mfxVideoParams.mfx.CodecProfile,
@@ -1713,7 +1713,7 @@ namespace MPEG2EncoderHW
             if (m_pGOP->GetFrameExReference(&refFrame))
             {
 
-                MFX_CHECK((CurFrame.m_FrameOrder > refFrame.m_FrameOrder) && ((Ipp32s)CurFrame.m_FrameOrder - (Ipp32s)refFrame.m_FrameOrder <= m_VideoParamsEx.mfxVideoParams.mfx.GopRefDist) ,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+                MFX_CHECK((CurFrame.m_FrameOrder > refFrame.m_FrameOrder) && ((int32_t)CurFrame.m_FrameOrder - (int32_t)refFrame.m_FrameOrder <= m_VideoParamsEx.mfxVideoParams.mfx.GopRefDist) ,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
             }
         }
         else if (isBPredictedFrame(frameType))
@@ -1723,7 +1723,7 @@ namespace MPEG2EncoderHW
                 sFrameEx refFrame = {};
                 if (m_pGOP->GetFrameExReference(&refFrame,true))
                 {
-                    MFX_CHECK((CurFrame.m_FrameOrder < refFrame.m_FrameOrder) && ((Ipp32s)refFrame.m_FrameOrder - (Ipp32s)CurFrame.m_FrameOrder < m_VideoParamsEx.mfxVideoParams.mfx.GopRefDist) ,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+                    MFX_CHECK((CurFrame.m_FrameOrder < refFrame.m_FrameOrder) && ((int32_t)refFrame.m_FrameOrder - (int32_t)CurFrame.m_FrameOrder < m_VideoParamsEx.mfxVideoParams.mfx.GopRefDist) ,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
                 }
             }
             else if (CurFrame.m_bOnlyFwdPrediction)
@@ -1731,7 +1731,7 @@ namespace MPEG2EncoderHW
                 sFrameEx refFrame = {};
                 if (m_pGOP->GetFrameExReference(&refFrame,false))
                 {
-                    MFX_CHECK((CurFrame.m_FrameOrder > refFrame.m_FrameOrder) && ((Ipp32s)CurFrame.m_FrameOrder - (Ipp32s)refFrame.m_FrameOrder < m_VideoParamsEx.mfxVideoParams.mfx.GopRefDist) ,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+                    MFX_CHECK((CurFrame.m_FrameOrder > refFrame.m_FrameOrder) && ((int32_t)CurFrame.m_FrameOrder - (int32_t)refFrame.m_FrameOrder < m_VideoParamsEx.mfxVideoParams.mfx.GopRefDist) ,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
                 }
             }
             else
@@ -1923,10 +1923,10 @@ namespace MPEG2EncoderHW
 
 #define RET_UMC_TO_MFX(umc_ret) ConvertStatusUmc2Mfx(umc_ret)
     static void ConvertFrameParamsToUMC(const mfxFrameParamMPEG2* pFrameParams, UMC::FrameType &frType,
-        Ipp32u &picture_structure,
-        Ipp32u &repeat_first_field,
-        Ipp32u &top_field_first,
-        Ipp32u &second_field)
+        uint32_t &picture_structure,
+        uint32_t &repeat_first_field,
+        uint32_t &top_field_first,
+        uint32_t &second_field)
     {
         frType             = ((pFrameParams->FrameType &  MFX_FRAMETYPE_I) ? UMC::I_PICTURE : (pFrameParams->FrameType &  MFX_FRAMETYPE_P ? UMC::P_PICTURE : UMC::B_PICTURE));
         picture_structure  =  pFrameParams->PicStructure;
@@ -1935,7 +1935,7 @@ namespace MPEG2EncoderHW
         second_field       = (pFrameParams->SecondFieldFlag) ? 1:0;
     }
 
-    void MPEG2BRC_HW::QuantIntoScaleTypeAndCode (Ipp32s quant_value, Ipp32s &q_scale_type, Ipp32s &quantiser_scale_code)
+    void MPEG2BRC_HW::QuantIntoScaleTypeAndCode (int32_t quant_value, int32_t &q_scale_type, int32_t &quantiser_scale_code)
     {
         if(quant_value > 7 && quant_value <= 62)
         {
@@ -1963,11 +1963,11 @@ namespace MPEG2EncoderHW
             quantiser_scale_code = 31;
         }
     }
-    Ipp32s MPEG2BRC_HW::ChangeQuant(Ipp32s quant_value_old, Ipp32s quant_value_new)
+    int32_t MPEG2BRC_HW::ChangeQuant(int32_t quant_value_old, int32_t quant_value_new)
     {
-        Ipp32s q_scale_type         = 0;
-        Ipp32s quantiser_scale_code = 0;
-        Ipp32s quant_value = quant_value_new;
+        int32_t q_scale_type         = 0;
+        int32_t quantiser_scale_code = 0;
+        int32_t quant_value = quant_value_new;
 
 
         if(quant_value_old == quant_value)
@@ -2047,7 +2047,7 @@ namespace MPEG2EncoderHW
             sts = ConvertVideoParam_Brc(par, &brcParams);
             MFX_CHECK_STS(sts);
             if (brcParams.HRDBufferSizeBytes == 0)
-                brcParams.HRDBufferSizeBytes = IPP_MIN(65535000, brcParams.targetBitrate / 4); // limit buffer size with 2 seconds
+                brcParams.HRDBufferSizeBytes = MFX_MIN(65535000, brcParams.targetBitrate / 4); // limit buffer size with 2 seconds
             if (brcParams.maxBitrate == 0)
                 brcParams.maxBitrate = brcParams.targetBitrate;
 
@@ -2086,11 +2086,11 @@ namespace MPEG2EncoderHW
             m_bufferSizeInKB = (mfxU32)(brcParams.HRDBufferSizeBytes / 1000);
             m_InputBitsPerFrame = (mfxI32)(brcParams.targetBitrate / brcParams.info.framerate);
 
-            mfxU32 maxVal32 = IPP_MAX(
-                IPP_MAX(
+            mfxU32 maxVal32 = MFX_MAX(
+                MFX_MAX(
                 (mfxU32)brcParams.HRDInitialDelayBytes / 1000,
                 (mfxU32)brcParams.HRDBufferSizeBytes / 1000),
-                IPP_MAX(
+                MFX_MAX(
                 (mfxU32)brcParams.targetBitrate / 1000,
                 (mfxU32)brcParams.maxBitrate / 1000));
 
@@ -2153,10 +2153,10 @@ namespace MPEG2EncoderHW
     mfxStatus MPEG2BRC_HW::StartNewFrame(const mfxFrameParamMPEG2 *pFrameParams, mfxI32 recode)
     {
         UMC::Status ret = UMC::UMC_OK;
-        Ipp32u        picture_structure  = 0;
-        Ipp32u        repeat_first_field = 0;
-        Ipp32u        top_field_first    = 0;
-        Ipp32u        second_field       = 0;
+        uint32_t        picture_structure  = 0;
+        uint32_t        repeat_first_field = 0;
+        uint32_t        top_field_first    = 0;
+        uint32_t        second_field       = 0;
         UMC::FrameType frType   = ((pFrameParams->FrameType &  MFX_FRAMETYPE_I) ?
             UMC::I_PICTURE : (pFrameParams->FrameType &  MFX_FRAMETYPE_P ? UMC::P_PICTURE : UMC::B_PICTURE));
 
@@ -2187,11 +2187,11 @@ namespace MPEG2EncoderHW
         UMC::FrameType  frType   = ((pCUC->FrameParam->MPEG2.FrameType &  MFX_FRAMETYPE_I) ?
             UMC::I_PICTURE : (pCUC->FrameParam->MPEG2.FrameType &  MFX_FRAMETYPE_P ? UMC::P_PICTURE : UMC::B_PICTURE));
 
-        Ipp32s        quant_value             = m_pBRC->GetQP(frType);
-        Ipp32s        q_scale_type            = 0;
-        Ipp32s        quantiser_scale_code    = 0;
+        int32_t        quant_value             = m_pBRC->GetQP(frType);
+        int32_t        q_scale_type            = 0;
+        int32_t        quantiser_scale_code    = 0;
         UMC::Status   ret                     = UMC::UMC_OK;
-        Ipp64f        hrdBufFullness          = 0;
+        double        hrdBufFullness          = 0;
         UMC::VideoBrcParams brcParams;
 
         QuantIntoScaleTypeAndCode (quant_value, q_scale_type, quantiser_scale_code);
@@ -2222,7 +2222,7 @@ namespace MPEG2EncoderHW
         }
         if (pCUC->FrameParam->MPEG2.VBVDelay != 0xffff)
         {
-            pCUC->FrameParam->MPEG2.VBVDelay = (Ipp32s)((hrdBufFullness  - 32) * 90000.0 / brcParams.maxBitrate);
+            pCUC->FrameParam->MPEG2.VBVDelay = (int32_t)((hrdBufFullness  - 32) * 90000.0 / brcParams.maxBitrate);
         }
 
         if(quant_value  >= 8)
@@ -2247,11 +2247,11 @@ namespace MPEG2EncoderHW
         UMC::FrameType  frType   = ((pFrameParams->FrameType &  MFX_FRAMETYPE_I) ?
                                     UMC::I_PICTURE : (pFrameParams->FrameType &  MFX_FRAMETYPE_P ? UMC::P_PICTURE : UMC::B_PICTURE));
 
-        Ipp32s        quant_value             = m_pBRC->GetQP(frType);
-        Ipp32s        q_scale_type            = 0;
-        Ipp32s        quantiser_scale_code    = 0;
+        int32_t        quant_value             = m_pBRC->GetQP(frType);
+        int32_t        q_scale_type            = 0;
+        int32_t        quantiser_scale_code    = 0;
         UMC::Status   ret                     = UMC::UMC_OK;
-        Ipp64f        hrdBufFullness          = 0;
+        double        hrdBufFullness          = 0;
         UMC::VideoBrcParams brcParams;
 
         QuantIntoScaleTypeAndCode (quant_value, q_scale_type, quantiser_scale_code);
@@ -2298,11 +2298,11 @@ namespace MPEG2EncoderHW
 
         UMC::BRCStatus  hrdSts      = UMC::BRC_OK;
         mfxStatus       sts         = MFX_ERR_NONE;
-        Ipp32s          framestoI   = 0;
-        Ipp32s          gopSize     = 0;
-        Ipp32s          maxSize = 0, minSize = 0;
-        Ipp64f          buffullness = 0;
-        Ipp32s          buffullnessbyI = 0;
+        int32_t          framestoI   = 0;
+        int32_t          gopSize     = 0;
+        int32_t          maxSize = 0, minSize = 0;
+        double          buffullness = 0;
+        int32_t          buffullnessbyI = 0;
 
         UMC::VideoBrcParams brcParams;
         UMC::FrameType      frType   = ((pParams->FrameType &  MFX_FRAMETYPE_I) ?
@@ -2332,8 +2332,8 @@ namespace MPEG2EncoderHW
 
         if (hrdSts == UMC::BRC_OK)
         {
-            Ipp32s inputbitsPerPic = m_InputBitsPerFrame;
-            Ipp32s minbitsPerPredPic = 0, minbitsPerIPic = 0;
+            int32_t inputbitsPerPic = m_InputBitsPerFrame;
+            int32_t minbitsPerPredPic = 0, minbitsPerIPic = 0;
             recode = 0;
 
             if (pParams->FieldPicFlag)
@@ -2352,7 +2352,7 @@ namespace MPEG2EncoderHW
                 minbitsPerPredPic   = m_MinFrameSizeBits[1];
                 minbitsPerIPic      = m_MinFrameSizeBits[0];
             }
-            buffullnessbyI = (Ipp32s)buffullness + framestoI * (inputbitsPerPic - minbitsPerPredPic);
+            buffullnessbyI = (int32_t)buffullness + framestoI * (inputbitsPerPic - minbitsPerPredPic);
 
             if (buffullnessbyI < minbitsPerIPic ||
                 (pParams->FieldPicFlag && !pParams->SecondFieldFlag &&
@@ -2360,8 +2360,8 @@ namespace MPEG2EncoderHW
             {
                 if (!m_bLimitedMode)
                 {
-                    Ipp32s quant     = m_pBRC->GetQP(frType);
-                    Ipp32s new_quant = ChangeQuant(quant, quant+2);
+                    int32_t quant     = m_pBRC->GetQP(frType);
+                    int32_t new_quant = ChangeQuant(quant, quant+2);
 
                     recode = UMC::BRC_RECODE_EXT_QP;
 
@@ -2396,7 +2396,7 @@ namespace MPEG2EncoderHW
                 if (hrdSts & UMC::BRC_ERR_SMALL_FRAME)
                 {
                     maxSize = 0, minSize = 0;
-                    Ipp8u *p = pBitsream->Data + pBitsream->DataOffset + pBitsream->DataLength;
+                    uint8_t *p = pBitsream->Data + pBitsream->DataOffset + pBitsream->DataLength;
                     m_pBRC->GetMinMaxFrameSize(&minSize, &maxSize);
                     if (bitsize < (mfxU32)minSize && pBitsream->DataOffset + 1 + pBitsream->DataLength < pBitsream->MaxLength)
                     {
@@ -2887,7 +2887,7 @@ namespace MPEG2EncoderHW
 
             sCoeffs->Header.BufferId = MFX_CUC_MPEG2_RESCOEFF;
             sCoeffs->Header.BufferSz = sizeof(mfxExtMpeg2Coeffs) + sizeof(mfxI16)*numCoeffs;
-            sCoeffs->Coeffs = UMC::align_pointer<Ipp16s*>(p);
+            sCoeffs->Coeffs = UMC::align_pointer<int16_t*>(p);
 
             m_initNumSlice = numSlices;
             m_initNumMb    = numMBs;

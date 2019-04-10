@@ -57,11 +57,11 @@ mfxStatus RunSeqHeader(mfxVideoParam *par, mfxU8* pBuffer, mfxU16 maxLen, mfxU16
         bitrate      = (par->mfx.TargetKbps * 5 + 1)>>1;
         buffer_size  =  par->mfx.BufferSizeInKB>>1;   
     }
-    Ipp32s  prog_seq = (par->mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
-    Ipp32s  chroma_format_code = 1;
+    int32_t  prog_seq = (par->mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
+    int32_t  chroma_format_code = 1;
 
-    Ipp32u profile = 4;
-    Ipp32u level = 8;
+    uint32_t profile = 4;
+    uint32_t level = 8;
 
     switch (par->mfx.CodecProfile)
     {
@@ -417,7 +417,7 @@ mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
     bs->FrameType = pInternalParams->FrameType;
     bs->TimeStamp = pIntTask->m_Frames.m_pInputFrame->Data.TimeStamp;
 
-    Ipp64f fr = CalculateUMCFramerate(pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtN, pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtD);
+    double fr = CalculateUMCFramerate(pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtN, pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtD);
     MFX_CHECK(fr != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     bs->DecodeTimeStamp = (pInternalParams->FrameType & MFX_FRAMETYPE_B)

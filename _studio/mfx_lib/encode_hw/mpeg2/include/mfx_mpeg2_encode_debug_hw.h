@@ -1,4 +1,4 @@
-// Copyright (c) 2002-2018 Intel Corporation
+// Copyright (c) 2002-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,16 +44,16 @@ typedef struct
 {
   int ref_vfield_select[3][2];//fld1|fld2|frame, fwd|bwd 
 
-  Ipp8u YBlockRec[2][2][128];//fwd|bwd, fld1|fld2, fld data
-  Ipp8u UBlockRec[2][2][128];
-  Ipp8u VBlockRec[2][2][128];
+  uint8_t YBlockRec[2][2][128];//fwd|bwd, fld1|fld2, fld data
+  uint8_t UBlockRec[2][2][128];
+  uint8_t VBlockRec[2][2][128];
 
-  Ipp16s encMbData[12][64];//reconstructed blocks
-  Ipp32s Count[12];//coded_block_pattern
-  Ipp32s no_motion_flag;
-  Ipp32s quant_skip_flag;
-  Ipp32s quantizer;
-  Ipp32s skipped;
+  int16_t encMbData[12][64];//reconstructed blocks
+  int32_t Count[12];//coded_block_pattern
+  int32_t no_motion_flag;
+  int32_t quant_skip_flag;
+  int32_t quantizer;
+  int32_t skipped;
 
 } MbDebugInfo;
 
@@ -83,9 +83,9 @@ class MPEG2EncodeDebug_HW
     mfxU8       *U_src;
     mfxU8       *V_src;
     // Input reference reconstructed frames
-    Ipp8u       *YRecFrame[2][2];   // [top/bottom][fwd/bwd]
-    Ipp8u       *URecFrame[2][2];
-    Ipp8u       *VRecFrame[2][2];
+    uint8_t       *YRecFrame[2][2];   // [top/bottom][fwd/bwd]
+    uint8_t       *URecFrame[2][2];
+    uint8_t       *VRecFrame[2][2];
     // Output reconstructed frame
     mfxU8       *Y_out;
     mfxU8       *U_out;
@@ -133,7 +133,7 @@ public:
   void Free();
 
   void GatherInterRefMBlocksData(int k,void *vector_in,void* state,void *mbinfo);
-  void GatherBlockData(int k,int blk,int picture_coding_type,int quantiser_scale_value,Ipp16s *quantMatrix,Ipp16s *pMBlock,int Count,int intra_flag,int intra_dc_shift);
+  void GatherBlockData(int k,int blk,int picture_coding_type,int quantiser_scale_value,int16_t *quantMatrix,int16_t *pMBlock,int Count,int intra_flag,int intra_dc_shift);
   void SetSkippedMb(int k);
   void SetNoMVMb(int k);
   void SetMotionFlag(int k,int value);

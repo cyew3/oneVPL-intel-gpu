@@ -18,9 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "math.h"
-#include <map>
 #include "mfx_vp9_encode_hw_utils.h"
+
+#include "umc_defs.h"
+
+#include <math.h>
+#include <map>
 
 namespace MfxHwVP9Encode
 {

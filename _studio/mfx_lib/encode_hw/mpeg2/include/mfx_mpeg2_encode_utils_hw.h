@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -268,10 +268,10 @@ namespace MPEG2EncoderHW
 
     protected:
 
-        void QuantIntoScaleTypeAndCode (Ipp32s quant_value, Ipp32s &q_scale_type, Ipp32s &quantiser_scale_code);
-        inline Ipp32s ScaleTypeAndCodeIntoQuant (Ipp32s q_scale_type, Ipp32s quantiser_scale_code)
+        void QuantIntoScaleTypeAndCode (int32_t quant_value, int32_t &q_scale_type, int32_t &quantiser_scale_code);
+        inline int32_t ScaleTypeAndCodeIntoQuant (int32_t q_scale_type, int32_t quantiser_scale_code)
         {
-            static Ipp32s Val_QScale[2][32] =
+            static int32_t Val_QScale[2][32] =
             {
                 /* linear q_scale */
                 {0,  2,  4,  6,  8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30,
@@ -284,7 +284,7 @@ namespace MPEG2EncoderHW
         }
 
 
-        Ipp32s ChangeQuant(Ipp32s quant_value_old, Ipp32s quant_value_new);
+        int32_t ChangeQuant(int32_t quant_value_old, int32_t quant_value_new);
 
     public:
         MPEG2BRC_HW(VideoCORE* pCore)

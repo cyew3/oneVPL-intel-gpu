@@ -388,7 +388,7 @@ namespace
             avcSliceBegin += reader.NumBitsRead() / 8;
             mvcSliceBegin += writer.GetNumBits() / 8;
 
-            MFX_INTERNAL_CPY(mvcSliceBegin, avcSliceBegin, (Ipp32u)(avcSliceEnd - avcSliceBegin));
+            MFX_INTERNAL_CPY(mvcSliceBegin, avcSliceBegin, (uint32_t)(avcSliceEnd - avcSliceBegin));
             mvcSliceBegin += avcSliceEnd - avcSliceBegin;
         }
         else
@@ -1010,9 +1010,9 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
         sts = m_ddi[i]->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_BITSTREAMDATA, request);
         MFX_CHECK_STS(sts);
         // driver may suggest too small buffer for bitstream
-        request.Info.Width  = IPP_MAX(request.Info.Width,  m_video.mfx.FrameInfo.Width);
+        request.Info.Width  = MFX_MAX(request.Info.Width,  m_video.mfx.FrameInfo.Width);
         mfxU8 hMult = m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR ? 5 : 3;
-        request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * hMult / 2);
+        request.Info.Height = MFX_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * hMult / 2);
 
         sts = m_bitstream[i].Alloc(m_core, request);
         MFX_CHECK_STS(sts);
@@ -1357,7 +1357,7 @@ mfxU32 PaddingBytesToWorkAroundHrdIssue(
 
     const mfxU32 maxFrameSize = video.mfx.FrameInfo.Width * video.mfx.FrameInfo.Height;
     if (fullness > bufsize)
-        return IPP_MIN((fullness - bufsize + 7) / 8, maxFrameSize);
+        return MFX_MIN((fullness - bufsize + 7) / 8, maxFrameSize);
 
     return 0;
 }

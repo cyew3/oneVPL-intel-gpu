@@ -31,7 +31,7 @@
 using namespace MfxHwMJpegEncode;
 
 template<typename T>
-bool setPlaneROI(T value, T* pDst, int dstStep, IppiSize roiSize)
+bool setPlaneROI(T value, T* pDst, int dstStep, mfxSize roiSize)
 {
     if (!pDst || roiSize.width < 0 || roiSize.height < 0)
         return false;
@@ -46,7 +46,7 @@ bool setPlaneROI(T value, T* pDst, int dstStep, IppiSize roiSize)
 
 template<typename T>
 bool swapChannels(const T* pSrc, int srcStep,
-    T* pDst, int dstStep, IppiSize roiSize, const int dstOrder[3])
+    T* pDst, int dstStep, mfxSize roiSize, const int dstOrder[3])
 {
     const T *src0, *src1, *src2;
     T *dst = pDst;
@@ -91,14 +91,14 @@ bool swapChannels(const T* pSrc, int srcStep,
 #include "ippi.h"
 
 template<>
-bool setPlaneROI<Ipp8u>(Ipp8u value, Ipp8u* pDst, int dstStep, IppiSize roiSize)
+bool setPlaneROI<uint8_t>(uint8_t value, uint8_t* pDst, int dstStep, mfxSize roiSize)
 {
-    return ippiSet_8u_C1R(value, (Ipp8u*)pDst, dstStep, roiSize) == ippStsNoErr;
+    return ippiSet_8u_C1R(value, (uint8_t*)pDst, dstStep, roiSize) == ippStsNoErr;
 }
 
 template<>
 bool swapChannels<mfxU8>(const mfxU8* pSrc, int srcStep,
-    mfxU8* pDst, int dstStep, IppiSize roiSize, const int dstOrder[3])
+    mfxU8* pDst, int dstStep, mfxSize roiSize, const int dstOrder[3])
 {
     return ippiSwapChannels_8u_AC4R(pSrc, srcStep, pDst, dstStep, roiSize, dstOrder) == ippStsNoErr;
 }
@@ -533,7 +533,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
     }
-    request->NumFrameSuggested = IPP_MAX( request->NumFrameMin,par->AsyncDepth);
+    request->NumFrameSuggested = MFX_MAX( request->NumFrameMin,par->AsyncDepth);
 
     return MFX_ERR_NONE;
 }
@@ -722,8 +722,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
             doubleBytesPerPx = 8;
             break;
     }
-    request.Info.Width  = IPP_MAX(request.Info.Width,  m_vParam.mfx.FrameInfo.Width);
-    request.Info.Height = IPP_MAX(request.Info.Height, m_vParam.mfx.FrameInfo.Height * doubleBytesPerPx / 2);
+    request.Info.Width  = MFX_MAX(request.Info.Width,  m_vParam.mfx.FrameInfo.Width);
+    request.Info.Height = MFX_MAX(request.Info.Height, m_vParam.mfx.FrameInfo.Height * doubleBytesPerPx / 2);
 
     sts = m_bitstream.Alloc(m_pCore, request);
     MFX_CHECK(
@@ -1113,8 +1113,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
 
 
             const int dstOrder[3] = {2, 1, 0};
-            IppiSize roi = {nativeSurf->Info.Width, nativeSurf->Info.Height};
-            IppiSize setroi = {nativeSurf->Info.Width*4, nativeSurf->Info.Height};
+            mfxSize roi = {nativeSurf->Info.Width, nativeSurf->Info.Height};
+            mfxSize setroi = {nativeSurf->Info.Width*4, nativeSurf->Info.Height};
             if (0 == roi.width || 0 == roi.height)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 

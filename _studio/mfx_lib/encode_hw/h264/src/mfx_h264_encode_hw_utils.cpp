@@ -70,7 +70,7 @@ namespace MfxHwH264Encode
             numFrameMin = numFrameMin + par.AsyncDepth - 1;
 
             mfxExtMVCSeqDesc & extMvc = GetExtBufferRef(par);
-            numFrameMin = mfxU16(IPP_MIN(0xffff, numFrameMin       * extMvc.NumView));
+            numFrameMin = mfxU16(MFX_MIN(0xffff, numFrameMin       * extMvc.NumView));
         }
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         if (IsSvcProfile(par.mfx.CodecProfile))//SVC
@@ -307,7 +307,7 @@ namespace MfxHwH264Encode
                     return 10;
 #endif
                 // get per frame qp
-                return mfxU8(IPP_MIN(ctrl.QP, 51));
+                return mfxU8(MFX_MIN(ctrl.QP, 51));
             }
             else
             {
@@ -630,8 +630,8 @@ FrameTypeGenerator::FrameTypeGenerator()
 void FrameTypeGenerator::Init(MfxVideoParam const & video)
 {
     m_gopOptFlag = video.mfx.GopOptFlag;
-    m_gopPicSize = IPP_MAX(video.mfx.GopPicSize, 1);
-    m_gopRefDist = IPP_MAX(video.mfx.GopRefDist, 1);
+    m_gopPicSize = MFX_MAX(video.mfx.GopPicSize, 1);
+    m_gopRefDist = MFX_MAX(video.mfx.GopRefDist, 1);
     m_idrDist    = m_gopPicSize * (video.mfx.IdrInterval + 1);
 
     mfxExtCodingOption2 * extOpt2 = GetExtBuffer(video);
@@ -2166,13 +2166,13 @@ void TaskManager::ModifyRefPicLists(
             : extDdi->NumActiveRefBL0;
         if (task.m_type[fieldId] & MFX_FRAMETYPE_PB)
         {
-            numActiveRefL0 = ctrl->NumRefIdxL0Active ? IPP_MIN(ctrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
+            numActiveRefL0 = ctrl->NumRefIdxL0Active ? MFX_MIN(ctrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
             ReorderRefPicList(list0, dpb, m_recons, *ctrl, numActiveRefL0, ps);
         }
 
         if (task.m_type[fieldId] & MFX_FRAMETYPE_B)
         {
-            mfxU32 numActiveRefL1 = ctrl->NumRefIdxL1Active ? IPP_MIN(ctrl->NumRefIdxL1Active,extDdi->NumActiveRefBL1) : extDdi->NumActiveRefBL1;
+            mfxU32 numActiveRefL1 = ctrl->NumRefIdxL1Active ? MFX_MIN(ctrl->NumRefIdxL1Active,extDdi->NumActiveRefBL1) : extDdi->NumActiveRefBL1;
             ReorderRefPicList(list1, dpb, m_recons, *ctrl, numActiveRefL1, ps);
         }
     }
@@ -2230,8 +2230,8 @@ void TaskManager::ModifyRefPicLists(
 
             if (m_video.calcParam.tempScalabilityMode)
             { // cut lists to 1 element for tempScalabilityMode
-                list0.Resize(IPP_MIN(list0.Size(), 1));
-                list1.Resize(IPP_MIN(list1.Size(), 1));
+                list0.Resize(MFX_MIN(list0.Size(), 1));
+                list1.Resize(MFX_MIN(list1.Size(), 1));
             }
         }
 
@@ -2664,7 +2664,7 @@ mfxU32 MfxHwH264Encode::CalculateSeiSize(
         dataSizeInBits += 4; // msg.pic_struct;
 
         assert(msg.pic_struct <= 8);
-        mfxU32 numClockTS = NUM_CLOCK_TS[IPP_MIN(msg.pic_struct, 8)];
+        mfxU32 numClockTS = NUM_CLOCK_TS[MFX_MIN(msg.pic_struct, 8)];
 
         dataSizeInBits += numClockTS; // clock_timestamp_flag[i]
         for (mfxU32 i = 0; i < numClockTS; i++)
@@ -2943,7 +2943,7 @@ namespace MfxHwH264EncodeHW
         mfxF64 qoff = 1.0 / 6;
         mfxF64 norm = 0.1666;
 
-        mfxF64 qskip = IPP_MAX(IPP_MAX(IPP_MAX(
+        mfxF64 qskip = MFX_MAX(MFX_MAX(MFX_MAX(
             nzc[0] ? (sumc[0] * norm / nzc[0]) / (1 - qoff) * LOG2_64 : 0,
             nzc[1] ? (sumc[1] * norm / nzc[1]) / (1 - qoff) * LOG2_64 : 0),
             nzc[2] ? (sumc[2] * norm / nzc[2]) / (1 - qoff) * LOG2_64 : 0),
@@ -3679,7 +3679,7 @@ mfxU32 LookAheadBrc2::Report(const BRCFrameParams& par, mfxU32 /* userDataLength
     m_currRate = ((rateCalcPeriod - 1.0)*m_currRate + realRatePerMb) / rateCalcPeriod;
 
     mfxF64 oldCoeff = m_rateCoeffHistory[qp].GetCoeff();
-    mfxF64 y = IPP_MAX(0.0, realRatePerMb);
+    mfxF64 y = MFX_MAX(0.0, realRatePerMb);
     mfxF64 x = m_laData[0].estRate[qp];
     mfxF64 minY = NORM_EST_RATE * INIT_RATE_COEFF[qp] * MIN_RATE_COEFF_CHANGE;
     mfxF64 maxY = NORM_EST_RATE * INIT_RATE_COEFF[qp] * MAX_RATE_COEFF_CHANGE;
@@ -3714,7 +3714,7 @@ mfxU32 VMEBrc::Report(const BRCFrameParams& par, mfxU32 /*userDataLength*/, mfxU
     m_skipped = (par.NumRecode < 100) ? 0 : 1;  //frame was skipped (panic mode)
                                                 //we will skip all frames until next reference
     if (m_AvgBitrate)
-        maxFS = IPP_MIN(maxFS, m_AvgBitrate->GetMaxFrameSize(m_skipped>0, (par.FrameType & MFX_FRAMETYPE_I)!=0, par.NumRecode));
+        maxFS = MFX_MIN(maxFS, m_AvgBitrate->GetMaxFrameSize(m_skipped>0, (par.FrameType & MFX_FRAMETYPE_I)!=0, par.NumRecode));
 
     if ((8 * par.CodedFrameSize + 24) > maxFS)
     {
@@ -3738,12 +3738,12 @@ mfxU32 VMEBrc::Report(const BRCFrameParams& par, mfxU32 /*userDataLength*/, mfxU
     for (std::list<LaFrameData>::iterator it = start; it != m_laData.end(); ++it)
         numFrames++;
 
-    numFrames = IPP_MIN(numFrames, m_lookAhead);
+    numFrames = MFX_MIN(numFrames, m_lookAhead);
 
     if (start != m_laData.end())
     {
 
-        mfxF64 framesBeyond = (mfxF64)(IPP_MAX(2, numFrames - 1) - 1);
+        mfxF64 framesBeyond = (mfxF64)(MFX_MAX(2, numFrames - 1) - 1);
 
 
         m_targetRateMax = (m_initTargetRate * (m_framesBehind + (m_lookAhead - 1)) - m_bitsBehind) / framesBeyond;
@@ -3752,7 +3752,7 @@ mfxU32 VMEBrc::Report(const BRCFrameParams& par, mfxU32 /*userDataLength*/, mfxU
         //printf("Target: Max %f, Min %f, framesBeyond %f, m_framesBehind %d, m_bitsBehind %f, m_lookAhead %d, picOrder %d, m_laData[0] %d, delta %d, qp %d \n", m_targetRateMax, m_targetRateMin, framesBeyond, m_framesBehind, m_bitsBehind, m_lookAhead, picOrder, (*start).encOrder, (*start).deltaQp, qp);
 
         mfxF64 oldCoeff = m_rateCoeffHistory[qp].GetCoeff();
-        mfxF64 y = IPP_MAX(0.0, realRatePerMb);
+        mfxF64 y = MFX_MAX(0.0, realRatePerMb);
         mfxF64 x = (*start).estRate[qp];
         mfxF64 minY = NORM_EST_RATE * INIT_RATE_COEFF[qp] * MIN_RATE_COEFF_CHANGE;
         mfxF64 maxY = NORM_EST_RATE * INIT_RATE_COEFF[qp] * MAX_RATE_COEFF_CHANGE;
@@ -3810,7 +3810,7 @@ void VMEBrc::GetQp(const BRCFrameParams& par, mfxBRCFrameCtrl &frameCtrl)
     for(it = start;it != m_laData.end(); ++it)
         numberOfFrames++;
 
-    numberOfFrames = IPP_MIN( numberOfFrames, m_lookAhead);
+    numberOfFrames = MFX_MIN( numberOfFrames, m_lookAhead);
 
 
     // fill totalEstRate
@@ -3820,7 +3820,7 @@ void VMEBrc::GetQp(const BRCFrameParams& par, mfxBRCFrameCtrl &frameCtrl)
         for (mfxU32 qp = 0; qp < 52; qp++)
         {
 
-            (*it).estRateTotal[qp] = IPP_MAX(MIN_EST_RATE, m_rateCoeffHistory[qp].GetCoeff() * (*it).estRate[qp]);
+            (*it).estRateTotal[qp] = MFX_MAX(MIN_EST_RATE, m_rateCoeffHistory[qp].GetCoeff() * (*it).estRate[qp]);
             totalEstRate[qp] += (*it).estRateTotal[qp];
         }
         ++it;
@@ -3843,7 +3843,7 @@ void VMEBrc::GetQp(const BRCFrameParams& par, mfxBRCFrameCtrl &frameCtrl)
             (*it).deltaQp = (interCost >= intraCost * 0.9)
                 ? -mfxI32(deltaQp * 2 * strength + 0.5)
                 : -mfxI32(deltaQp * 1 * strength + 0.5);
-            maxDeltaQp = IPP_MAX(maxDeltaQp, (*it).deltaQp);
+            maxDeltaQp = MFX_MAX(maxDeltaQp, (*it).deltaQp);
             //printf("%d intra %d inter %d prop %d currQP %d delta %f(%d)\n", (*it).encOrder, intraCost/4, interCost/4, propCost/4, curQp, deltaQp, (*it).deltaQp );
             ++it;
         }
@@ -3856,7 +3856,7 @@ void VMEBrc::GetQp(const BRCFrameParams& par, mfxBRCFrameCtrl &frameCtrl)
             mfxU32 intraCost    = (*it).intraCost;
             mfxU32 interCost    = (*it).interCost;
             (*it).deltaQp = (interCost >= intraCost * 0.9) ? -5 : (*it).bframe ? 0 : -2;
-            maxDeltaQp = IPP_MAX(maxDeltaQp, (*it).deltaQp);
+            maxDeltaQp = MFX_MAX(maxDeltaQp, (*it).deltaQp);
             ++it;
         }
     }
@@ -4054,7 +4054,7 @@ void Hrd::RemoveAccessUnit(mfxU32 size, mfxU32 interlace, mfxU32 bufferingPeriod
         : m_trn_cur - (m_hrdIn90k / 90000.0);
 
     double tai_cur = (m_rcMethod == MFX_RATECONTROL_VBR)
-        ? IPP_MAX(m_taf_prv, tai_earliest)
+        ? MFX_MAX(m_taf_prv, tai_earliest)
         : m_taf_prv;
 
     m_taf_prv = tai_cur + double(8) * size / m_bitrate;
@@ -4066,7 +4066,7 @@ mfxU32 Hrd::GetInitCpbRemovalDelay() const
     if (m_bIsHrdRequired == false)
         return 0;
 
-    double delay = IPP_MAX(0.0, m_trn_cur - m_taf_prv);
+    double delay = MFX_MAX(0.0, m_trn_cur - m_taf_prv);
     mfxU32 initialCpbRemovalDelay = mfxU32(90000 * delay + 0.5);
 
     return initialCpbRemovalDelay == 0
@@ -4096,7 +4096,7 @@ mfxU32 Hrd::GetMaxFrameSize(mfxU32 bufferingPeriod) const
         : m_trn_cur - (m_hrdIn90k / 90000.0);
 
     double tai_cur = (m_rcMethod == MFX_RATECONTROL_VBR)
-        ? IPP_MAX(m_taf_prv, tai_earliest)
+        ? MFX_MAX(m_taf_prv, tai_earliest)
         : m_taf_prv;
 
     mfxU32 maxFrameSize = (mfxU32)((m_trn_cur - tai_cur)*m_bitrate);
@@ -4302,7 +4302,7 @@ void OutputBitstream::PutRawBytes(mfxU8 const * begin, mfxU8 const * end)
     if (m_bufEnd - m_ptr < end - begin)
         throw EndOfBuffer();
 
-    MFX_INTERNAL_CPY(m_ptr, begin, (Ipp32u)(end - begin));
+    MFX_INTERNAL_CPY(m_ptr, begin, (uint32_t)(end - begin));
     m_bitOff = 0;
     m_ptr += end - begin;
 
@@ -4390,7 +4390,7 @@ void MfxHwH264Encode::PutSeiMessage(
     if (msg.pic_struct_present_flag)
     {
         assert(msg.pic_struct <= 8);
-        mfxU32 numClockTS = NUM_CLOCK_TS[IPP_MIN(msg.pic_struct, 8)];
+        mfxU32 numClockTS = NUM_CLOCK_TS[MFX_MIN(msg.pic_struct, 8)];
 
         bs.PutBits(msg.pic_struct, 4);
         for (mfxU32 i = 0; i < numClockTS; i ++)
@@ -5319,8 +5319,8 @@ void MfxHwH264Encode::FastCopyBufferVid2Sys(void * dstSys, void const * srcVid, 
     assert(dstSys != 0);
     assert(srcVid != 0);
 
-    IppiSize roi = { bytes, 1 };
-    mfxStatus sts = FastCopy::Copy((Ipp8u *)dstSys, bytes, (Ipp8u *)srcVid, bytes, roi, COPY_VIDEO_TO_SYS);
+    mfxSize roi = { bytes, 1 };
+    mfxStatus sts = FastCopy::Copy((uint8_t *)dstSys, bytes, (uint8_t *)srcVid, bytes, roi, COPY_VIDEO_TO_SYS);
     assert(sts == MFX_ERR_NONE);
     (void)sts;
 }
@@ -5330,13 +5330,13 @@ void MfxHwH264Encode::FastCopyBufferSys2Vid(void * dstVid, void const * srcSys, 
     assert(dstVid != 0);
     assert(srcSys != 0);
 
-    IppiSize roi = { bytes, 1 };
+    mfxSize roi = { bytes, 1 };
 #if defined(IPP_NONTEMPORAL_STORE)
-    IppStatus sts = ippiCopyManaged_8u_C1R((Ipp8u *)srcSys, bytes, (Ipp8u *)dstVid, bytes, roi, IPP_NONTEMPORAL_STORE);
+    int sts = ippiCopyManaged_8u_C1R((uint8_t *)srcSys, bytes, (uint8_t *)dstVid, bytes, roi, IPP_NONTEMPORAL_STORE);
     assert(sts == ippStsNoErr);
     (void)sts;
 #else
-    mfxStatus sts = FastCopy::Copy((Ipp8u *)dstVid, bytes, (Ipp8u *)srcSys, bytes, roi, COPY_SYS_TO_VIDEO);
+    mfxStatus sts = FastCopy::Copy((uint8_t *)dstVid, bytes, (uint8_t *)srcSys, bytes, roi, COPY_SYS_TO_VIDEO);
     assert(sts == MFX_ERR_NONE);
     (void)sts;
 #endif
@@ -5494,7 +5494,7 @@ mfxU8 * MfxHwH264Encode::CheckedMFX_INTERNAL_CPY(
         throw EndOfBuffer();
     }
 
-    MFX_INTERNAL_CPY(dbegin, sbegin, (Ipp32u)(send - sbegin));
+    MFX_INTERNAL_CPY(dbegin, sbegin, (uint32_t)(send - sbegin));
     return dbegin + (send - sbegin);
 }
 
@@ -5758,7 +5758,7 @@ mfxU8 * MfxHwH264Encode::RePackSlice(
         sbegin += reader.NumBitsRead() / 8;
         dbegin += writer.GetNumBits() / 8;
 
-        MFX_INTERNAL_CPY(dbegin, sbegin, (Ipp32u)(send - sbegin));
+        MFX_INTERNAL_CPY(dbegin, sbegin, (uint32_t)(send - sbegin));
         dbegin += send - sbegin;
     }
     else
@@ -6511,10 +6511,10 @@ namespace
         mfxU32 pocL0,
         mfxU32 pocL1)
     {
-        mfxI32 tb = IPP_MIN(IPP_MAX(-128, mfxI32(pocCur - pocL0)), 127);
-        mfxI32 td = IPP_MIN(IPP_MAX(-128, mfxI32(pocL1  - pocL0)), 127);
+        mfxI32 tb = MFX_MIN(MFX_MAX(-128, mfxI32(pocCur - pocL0)), 127);
+        mfxI32 td = MFX_MIN(MFX_MAX(-128, mfxI32(pocL1  - pocL0)), 127);
         mfxI32 tx = (16384 + abs(td/2)) / td;
-        mfxI32 distScaleFactor = IPP_MIN(IPP_MAX(-1024, (tb * tx + 32) >> 6), 1023);
+        mfxI32 distScaleFactor = MFX_MIN(MFX_MAX(-1024, (tb * tx + 32) >> 6), 1023);
         return distScaleFactor;
     }
 

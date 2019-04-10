@@ -22,8 +22,8 @@
 #include "mfx_vp9_encode_hw.h"
 #include "mfx_vp9_encode_hw_par.h"
 #include "mfx_vp9_encode_hw_ddi.h"
-#include "ippi.h"
-#include "ipps.h"
+
+#include "umc_defs.h"
 #include "fast_copy.h"
 
 namespace MfxHwVP9Encode
@@ -1037,7 +1037,7 @@ mfxStatus MFXVideoENCODEVP9_HW::UpdateBitstream(
     // Copy compressed picture from d3d surface to buffer in system memory
     if (bsSizeToCopy)
     {
-        IppiSize roi = {(Ipp32s)bsSizeToCopy,1};
+        mfxSize roi = {(int32_t)bsSizeToCopy,1};
         FastCopy::Copy(bsData, bsSizeToCopy, bitstream.Y, bitstream.Pitch, roi, COPY_VIDEO_TO_SYS);
     }
 

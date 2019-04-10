@@ -1025,7 +1025,7 @@ mfxStatus ImplementationSvc::UpdateBitstream(
         if (needIntermediateBitstreamBuffer)
         {
             bsData      = &m_tmpBsBuf[0];
-            bsSizeAvail = mfxU32(IPP_MIN(bsSizeAvail, m_tmpBsBuf.size()));
+            bsSizeAvail = mfxU32(MFX_MIN(bsSizeAvail, m_tmpBsBuf.size()));
         }
 
         assert(bsSize <= bsSizeAvail);

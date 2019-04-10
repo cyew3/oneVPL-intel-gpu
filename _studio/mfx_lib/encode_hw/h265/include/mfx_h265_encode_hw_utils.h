@@ -28,10 +28,12 @@
 #include "mfx_h265_encode_hw_set.h"
 #include "mfx_ext_buffers.h"
 #include "mfxplugin++.h"
-#include "umc_mutex.h"
 #include "mfxla.h"
 #include "mfxpcp.h"
 #include "mfxwidi.h"
+
+#include "umc_mutex.h"
+#include "umc_defs.h"
 
 #if !defined(MFX_EXT_BRC_DISABLE)
 #include "mfxbrc.h"
@@ -46,13 +48,6 @@
 #include <vector>
 #include <list>
 #include <assert.h>
-
-#ifndef MFX_MAX
-#define MFX_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
-#endif
-#ifndef MFX_MIN
-#define MFX_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
-#endif
 
 #define MFX_SORT_COMMON(_AR, _SZ, _COND)\
     for (mfxU32 _i = 0; _i < (_SZ); _i ++)\

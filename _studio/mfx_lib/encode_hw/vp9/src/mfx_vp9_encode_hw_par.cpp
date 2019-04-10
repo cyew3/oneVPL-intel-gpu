@@ -24,10 +24,13 @@
 #include "mfx_enc_common.h"
 #include "mfx_vp9_encode_hw_par.h"
 #include "mfx_vp9_encode_hw_utils.h"
-#include <math.h>
-#include <memory.h>
 #include "mfx_common_int.h"
 #include "mfx_ext_buffers.h"
+
+#include "umc_defs.h"
+
+#include <math.h>
+#include <memory.h>
 
 namespace MfxHwVP9Encode
 {

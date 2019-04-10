@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 Intel Corporation
+// Copyright (c) 2016-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -313,7 +313,7 @@ public:
         m_pBRC->GetFrameCtrl(m_pBRC->pthis,&frame_par, &frame_ctrl);
         return frame_ctrl.QpY;    
     }
-    virtual mfxStatus   SetQP(mfxI32 , Ipp16u , bool )
+    virtual mfxStatus   SetQP(mfxI32 , uint16_t , bool )
     {
         return MFX_ERR_NONE;    
     }

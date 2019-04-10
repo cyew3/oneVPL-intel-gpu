@@ -1,4 +1,4 @@
-// Copyright (c) 2002-2018 Intel Corporation
+// Copyright (c) 2002-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,15 +34,15 @@ enum MPEG2FrameType
 
 typedef struct _IppMotionVector2
 {
-  Ipp32s x;
-  Ipp32s y;
-  Ipp32s mctype_l;
-  Ipp32s offset_l;
-  Ipp32s mctype_c;
-  Ipp32s offset_c;
+  int32_t x;
+  int32_t y;
+  int32_t mctype_l;
+  int32_t offset_l;
+  int32_t mctype_c;
+  int32_t offset_c;
 } IppMotionVector2;
 
-int ImgCopy(Ipp8u* pSrc, int srcStep, Ipp8u* pDst, int dstStep,IppiSize roiSize, int cc_flag)
+int ImgCopy(uint8_t* pSrc, int srcStep, uint8_t* pDst, int dstStep,mfxSize roiSize, int cc_flag)
 {
   int x,y;
   for(y = 0; y < roiSize.height; y++)
@@ -140,7 +140,7 @@ void MPEG2EncodeDebug_HW::GatherInterRefMBlocksData(int k,void *vector_in,void *
   if(use_reference_log != 1 || numEncodedFrames < minFrameIndex || numEncodedFrames > maxFrameIndex)
     return;
 
-  Ipp32s    curr_field = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.SecondFieldFlag;
+  int32_t    curr_field = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.SecondFieldFlag;
   mfxI32      MBcountV = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.FrameHinMbMinus1+1;
   mfxI32      MBcountH = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.FrameWinMbMinus1+1;
   mfxI32       mbstart = (curr_field == 0)?0:(MBcountV*MBcountH / 2);// offset to switch between top and bottom
@@ -157,7 +157,7 @@ void MPEG2EncodeDebug_HW::GatherInterRefMBlocksData(int k,void *vector_in,void *
   MFX_INTERNAL_CPY(mb_debug_info[k].ref_vfield_select,mbinfo->mv_field_sel,sizeof(int[3][2]));
 
   MFX_INTERNAL_CPY(vector,vector_in,sizeof(IppMotionVector2[3][2]));
-  IppiSize roi_l = {16,16},
+  mfxSize roi_l = {16,16},
     roi_c = {pPAK->BlkWidth_c,pPAK->BlkHeight_c};
 
   if(mbinfo->prediction_type == MC_FRAME)
@@ -236,7 +236,7 @@ void MPEG2EncodeDebug_HW::SetNoMVMb(int k)
   if(numEncodedFrames < minFrameIndex || numEncodedFrames > maxFrameIndex)
     return;
 
-  Ipp32s    curr_field = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.SecondFieldFlag;
+  int32_t    curr_field = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.SecondFieldFlag;
   mfxI32      MBcountV = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.FrameHinMbMinus1+1;
   mfxI32      MBcountH = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.FrameWinMbMinus1+1;
   mfxI32       mbstart = (curr_field == 0)?0:(MBcountV*MBcountH / 2);// offset to switch between top and bottom
@@ -251,7 +251,7 @@ void MPEG2EncodeDebug_HW::SetSkippedMb(int k)
   if(numEncodedFrames < minFrameIndex || numEncodedFrames > maxFrameIndex)
     return;
 
-  Ipp32s    curr_field = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.SecondFieldFlag;
+  int32_t    curr_field = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.SecondFieldFlag;
   mfxI32      MBcountV = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.FrameHinMbMinus1+1;
   mfxI32      MBcountH = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.FrameWinMbMinus1+1;
   mfxI32       mbstart = (curr_field == 0)?0:(MBcountV*MBcountH / 2);// offset to switch between top and bottom
@@ -269,7 +269,7 @@ void MPEG2EncodeDebug_HW::CreateDEBUGframeLog()
   MFXVideoENCMPEG2_HW *enc_hw = encode_hw->m_pENC;
 
   mfxU8     mFrameType = enc_hw->m_cuc->FrameParam->MPEG2.FrameType;
-  Ipp32s    curr_field = enc_hw->m_cuc->FrameParam->MPEG2.SecondFieldFlag;
+  int32_t    curr_field = enc_hw->m_cuc->FrameParam->MPEG2.SecondFieldFlag;
   mfxI32      MBcountV = enc_hw->m_cuc->FrameParam->MPEG2.FrameHinMbMinus1+1;
   mfxI32      MBcountH = enc_hw->m_cuc->FrameParam->MPEG2.FrameWinMbMinus1+1;
   mfxI32       mbstart = (curr_field == 0)?0:(MBcountV*MBcountH / 2);
@@ -488,14 +488,14 @@ void MPEG2EncodeDebug_HW::CreateDEBUGframeLog()
 }
 
 
-void MPEG2EncodeDebug_HW::GatherBlockData(int k,int blk,int picture_coding_type,int quantiser_scale_value,Ipp16s *quantMatrix,Ipp16s *pBlock,int Count,int intra_flag,int intra_dc_shift)
+void MPEG2EncodeDebug_HW::GatherBlockData(int k,int blk,int picture_coding_type,int quantiser_scale_value,int16_t *quantMatrix,int16_t *pBlock,int Count,int intra_flag,int intra_dc_shift)
 {
   int numEncodedFrames = encode_hw->m_OutputFrameOrder + 1;
 
   if(use_extended_log == 0 || numEncodedFrames < minFrameIndex || numEncodedFrames > maxFrameIndex)
     return;
 
-  Ipp32s    curr_field = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.SecondFieldFlag;
+  int32_t    curr_field = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.SecondFieldFlag;
   mfxI32      MBcountV = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.FrameHinMbMinus1+1;
   mfxI32      MBcountH = encode_hw->m_pPAK->m_cuc->FrameParam->MPEG2.FrameWinMbMinus1+1;
   mfxI32       mbstart = (curr_field == 0)?0:(MBcountV*MBcountH / 2);// offset to switch between top and bottom
@@ -520,7 +520,7 @@ void MPEG2EncodeDebug_HW::GatherBlockData(int k,int blk,int picture_coding_type,
           ippiQuantInv_MPEG2_16s_C1I(pBlock, quantiser_scale_value, quantMatrix);
         }
       }
-      MFX_INTERNAL_CPY(mb_debug_info[k].encMbData[blk],pBlock,8*8*sizeof(Ipp16s));
+      MFX_INTERNAL_CPY(mb_debug_info[k].encMbData[blk],pBlock,8*8*sizeof(int16_t));
     }
     else if(intra_flag)
     {

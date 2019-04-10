@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -169,7 +169,7 @@ namespace MPEG2EncoderHW
              return sts;
          }
 
-         static void QuantIntoScaleTypeAndCode (Ipp32s quant_value, Ipp32s &q_scale_type, Ipp32s &quantiser_scale_code)
+         static void QuantIntoScaleTypeAndCode (int32_t quant_value, int32_t &q_scale_type, int32_t &quantiser_scale_code)
          {
              if(quant_value > 7 && quant_value <= 62)
              {
@@ -202,10 +202,10 @@ namespace MPEG2EncoderHW
          {
              mfxStatus sts = MFX_ERR_NONE;
 
-//             Ipp32s scale_type = 0; 
-//             Ipp32s scale_code = 0;
+//             int32_t scale_type = 0; 
+//             int32_t scale_code = 0;
 //             QuantIntoScaleTypeAndCode(qp, scale_type, scale_code);
-//             pIntTask->m_FrameParams.QuantScaleType = (Ipp8u)scale_type;
+//             pIntTask->m_FrameParams.QuantScaleType = (uint8_t)scale_type;
              m_pExecuteBuffers->m_SkipFrame = (mfxU8)pIntTask->m_sEncodeInternalParams.SkipFrame;
 
              sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, qp, mbqp, numMB);

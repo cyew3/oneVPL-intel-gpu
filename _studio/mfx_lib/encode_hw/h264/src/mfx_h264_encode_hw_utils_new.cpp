@@ -749,12 +749,12 @@ void MfxHwH264Encode::ModifyRefPicLists(
             {
                 if (advCtrl) // advanced ref list control has priority
                 {
-                    mfxU32 numActiveRefL0Final = advCtrl->NumRefIdxL0Active ? IPP_MIN(advCtrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
+                    mfxU32 numActiveRefL0Final = advCtrl->NumRefIdxL0Active ? MFX_MIN(advCtrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
                     ReorderRefPicList(list0, dpb, (mfxRefPic*)(&advCtrl->RefPicList0[0]), numActiveRefL0Final);
                 }
                 else
                 {
-                    mfxU32 numActiveRefL0Final = ctrl->NumRefIdxL0Active ? IPP_MIN(ctrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
+                    mfxU32 numActiveRefL0Final = ctrl->NumRefIdxL0Active ? MFX_MIN(ctrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
                     ReorderRefPicList(list0, dpb, *ctrl, numActiveRefL0Final);
                 }
             }
@@ -763,12 +763,12 @@ void MfxHwH264Encode::ModifyRefPicLists(
             {
                 if (advCtrl) // advanced ref list control has priority
                 {
-                    numActiveRefL1 = advCtrl->NumRefIdxL1Active ? IPP_MIN(advCtrl->NumRefIdxL1Active,numMaxActiveRefL1) : numActiveRefL1;
+                    numActiveRefL1 = advCtrl->NumRefIdxL1Active ? MFX_MIN(advCtrl->NumRefIdxL1Active,numMaxActiveRefL1) : numActiveRefL1;
                     ReorderRefPicList(list1, dpb, (mfxRefPic*)(&advCtrl->RefPicList1[0]), numActiveRefL1);
                 }
                 else
                 {
-                    numActiveRefL1 = ctrl->NumRefIdxL1Active ? IPP_MIN(ctrl->NumRefIdxL1Active,numMaxActiveRefL1) : numActiveRefL1;
+                    numActiveRefL1 = ctrl->NumRefIdxL1Active ? MFX_MIN(ctrl->NumRefIdxL1Active,numMaxActiveRefL1) : numActiveRefL1;
                     ReorderRefPicList(list1, dpb, *ctrl, numActiveRefL1);
                 }
             }
@@ -877,8 +877,8 @@ void MfxHwH264Encode::ModifyRefPicLists(
 
                 if (video.calcParam.tempScalabilityMode)
                 { // cut lists to 1 element for tempScalabilityMode
-                    list0.Resize(IPP_MIN(list0.Size(), 1));
-                    list1.Resize(IPP_MIN(list1.Size(), 1));
+                    list0.Resize(MFX_MIN(list0.Size(), 1));
+                    list1.Resize(MFX_MIN(list1.Size(), 1));
                 }
             }
             else if (extOpt2.BRefType == MFX_B_REF_PYRAMID && (task.m_type[0] & MFX_FRAMETYPE_P))
@@ -2187,7 +2187,7 @@ void MfxHwH264Encode::ConfigureTask(
     }
     else
     {
-        task.m_ctrl.SkipFrame = IPP_MIN(0xFF, task.m_ctrl.SkipFrame);
+        task.m_ctrl.SkipFrame = MFX_MIN(0xFF, task.m_ctrl.SkipFrame);
     }
 
     task.m_reference[ffid]  = !!(task.m_type[ffid] & MFX_FRAMETYPE_REF);
@@ -2400,7 +2400,7 @@ void MfxHwH264Encode::ConfigureTask(
 #if defined(MFX_ENABLE_MFE)
     //if previous frame finished later than current submitted(e.g. reordering or async) - use sync-sync time for counting timeout for better performance
     //otherwise if current frame submitted later than previous finished - use submit->sync time for better performance handling
-    task.m_beginTime = IPP_MAX(task.m_beginTime, prevTask.m_endTime);
+    task.m_beginTime = MFX_MAX(task.m_beginTime, prevTask.m_endTime);
 #endif
     const mfxExtCodingOption2* extOpt2Cur = (extOpt2Runtime ? extOpt2Runtime : &extOpt2);
 
@@ -2969,7 +2969,7 @@ namespace FadeDetectionHistLSE
         AveSampleDiff = AveSampleDiff > 0 ? ((AveSampleDiff + numSegments / 2) / numSegments) : -((abs(AveSampleDiff) + numSegments / 2) / numSegments);
         CheckRange = y[numSegments - 1] - y[0];
 
-        Weight = mfxI16(((sxy - ((sx * sy + numSegments / 2) / numSegments)) << logWDc) / IPP_MAX(1, (sxx - ((sx * sx + numSegments / 2) / numSegments))));
+        Weight = mfxI16(((sxy - ((sx * sy + numSegments / 2) / numSegments)) << logWDc) / MFX_MAX(1, (sxx - ((sx * sx + numSegments / 2) / numSegments))));
         Offset = mfxI16(sy - ((Weight * sx + rounding) >> logWDc));
         Offset = (Offset + (Offset > 0 ? numSegments / 2 : -numSegments / 2)) / numSegments;
 
@@ -2983,7 +2983,7 @@ namespace FadeDetectionHistLSE
         }
         else
         {
-            mfxI16 Weight1 = mfxI16(((sxy - ((sx * sy + numSegments / 2) / numSegments)) << logWDc) / IPP_MAX(1, (syy - ((sy * sy + numSegments / 2) / numSegments))));
+            mfxI16 Weight1 = mfxI16(((sxy - ((sx * sy + numSegments / 2) / numSegments)) << logWDc) / MFX_MAX(1, (syy - ((sy * sy + numSegments / 2) / numSegments))));
             mfxI16 Offset1 = mfxI16(sx - ((Weight1 * sy + rounding) >> logWDc));
             Offset1 = (Offset1 + (Offset1 > 0 ? numSegments / 2 : -numSegments / 2)) / numSegments;
 
@@ -3039,7 +3039,7 @@ namespace FadeDetectionHistLSE
         {
             mfxI16 transformedClosedPixel = (((x[i] * Weight + rounding) >> logWDc) + Offset);
 
-            transformedClosedPixel = IPP_MAX(0, IPP_MIN(range - 1, transformedClosedPixel));
+            transformedClosedPixel = MFX_MAX(0, MFX_MIN(range - 1, transformedClosedPixel));
 
             if (i < numClosedPixels)
             {
@@ -3068,7 +3068,7 @@ namespace FadeDetectionHistLSE
             || ((CheckRange > 35) && Weight != (1 << logWDc) && abs(AveSampleDiff) <= 1 && VarSampleDiff == 0)
             || ((CheckRange > 25) && abs(RefPeakPos - CurPeakPos) <= 1 && abs(TransformedPeakPos - CurPeakPos) > abs(RefPeakPos - CurPeakPos) + 2)
             || (numClosedPixels >= (numSegments / 2) && (CheckRange > 35) && (transformedClosedPixelsDiff - sumClosedPixelsDiff > 2 || transformMaxDiff >= 2))
-            || (Weight == (1 << logWDc) && ((abs(AveSampleDiff) <= 2 && AveDiff > 1) || (AveDiff * AveDiff) > IPP_MAX(1, VarSampleDiff / 2)))
+            || (Weight == (1 << logWDc) && ((abs(AveSampleDiff) <= 2 && AveDiff > 1) || (AveDiff * AveDiff) > MFX_MAX(1, VarSampleDiff / 2)))
             || (Weight != (1 << logWDc) && (maxdiff > 3 * abs(AveSampleDiff) || sumdiff >= 8 * abs(AveSampleDiff))))
         {
             pwt.LumaWeightFlag[list][idx] = 0;

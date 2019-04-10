@@ -442,7 +442,7 @@ mfxStatus D3D11Encoder::UpdateBitstream(
     DdiTask      & task)
 {
     mfxU8      * bsData    = task.bs->Data + task.bs->DataOffset + task.bs->DataLength;
-    IppiSize     roi       = {(int)(task.m_bsDataLength), 1};
+    mfxSize     roi       = {(int)(task.m_bsDataLength), 1};
     mfxFrameData bitstream = {0};
 
     if (task.m_bsDataLength + task.bs->DataOffset + task.bs->DataLength > task.bs->MaxLength)
@@ -453,7 +453,7 @@ mfxStatus D3D11Encoder::UpdateBitstream(
 
     mfxStatus sts = FastCopy::Copy(
         bsData, task.m_bsDataLength,
-        (Ipp8u *)bitstream.Y, task.m_bsDataLength,
+        (uint8_t *)bitstream.Y, task.m_bsDataLength,
         roi, COPY_VIDEO_TO_SYS);
     assert(sts == MFX_ERR_NONE);
 
