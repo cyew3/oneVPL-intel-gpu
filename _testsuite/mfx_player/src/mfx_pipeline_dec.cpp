@@ -3235,10 +3235,11 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     MPA_TRACE("rundecode");
 
-    mfxFrameSurface1 *pDecodedSurface = NULL;
     SrfEncCtl        inSurface;
-    mfxSyncPoint     syncp           = NULL;
-    mfxStatus        sts             = MFX_ERR_MORE_SURFACE;
+    mfxFrameSurface1 *pDecodedSurface  = nullptr;
+    mfxMemId         inMid             = nullptr;
+    mfxSyncPoint     syncp             = nullptr;
+    mfxStatus        sts               = MFX_ERR_MORE_SURFACE;
     MFXDecodeOrderedRender* pReoderRnd = dynamic_cast<MFXDecodeOrderedRender*>(m_pRender);
     Timeout<5>    dec_timeout;
 
@@ -3261,7 +3262,7 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
                 MFX_CHECK_STS(m_pYUVSource->SyncOperation(m_components[eDEC].m_SyncPoints.begin()->first, TimeoutVal<>::val()));
             }
         }
-        MFX_CHECK_STS(m_components[eDEC].FindFreeSurface(bs.DependencyId, &inSurface, m_pRender));
+        MFX_CHECK_STS(m_components[eDEC].FindFreeSurface(bs.DependencyId, &inSurface, m_pRender, &inMid));
         if (m_inParams.bPrintSplTimeStamps && !bs.isNull)
         {
             vm_string_printf(VM_STRING("spl_pts = %.2lf\n"), ConvertMFXTime2mfxF64(bs.TimeStamp));
@@ -3279,7 +3280,7 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
             inSurface.pSurface->Info.Width = m_YUV_Width;
             inSurface.pSurface->Info.Height = m_YUV_Height;
 
-            m_components[eDEC].ReallocSurface(inSurface.pSurface);
+            m_components[eDEC].ReallocSurface(inMid, &inSurface.pSurface->Info, inSurface.pSurface->Data.MemType, &inSurface.pSurface->Data.MemId);
         }
 
         bs.DataFlag = (mfxU16)(m_inParams.bCompleteFrame ? MFX_BITSTREAM_COMPLETE_FRAME : 0);
@@ -3497,20 +3498,22 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
     Timeout<5>    vpp_timeout;
     for (mfxU32 times = 0; NULL != m_pVPP; ++times)
     {
-        SrfEncCtl     vppOut           = NULL;
-        SrfEncCtl     vppWork          = NULL;
-        mfxSyncPoint  syncp            = NULL;
+        SrfEncCtl     vppOut           = nullptr;
+        SrfEncCtl     vppWork          = nullptr;
+        mfxMemId      workMid          = nullptr;
+        mfxMemId      outMid           = nullptr;
+        mfxSyncPoint  syncp            = nullptr;
         mfxStatus     sts              = MFX_ERR_MORE_SURFACE;
         bool          bOneMoreRunFrame = false;
 
         if( m_inParams.bExtVppApi )
         {
             // RunFrameVPPAsyncEx needs work surfaces
-            MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppWork, m_pRender));
+            MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppWork, m_pRender, &workMid));
         }
         else
         {
-            MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppOut, m_pRender));
+            MFX_CHECK_STS(m_components[eVPP].FindFreeSurface(NULL != pSurface? pSurface->Info.FrameId.DependencyId : 0,  &vppOut, m_pRender, &outMid));
             if ( vppOut.pSurface )
             {
                 /* picstruct of the output frame could be incorrect since frames are taken from a single pool. To eliminate
@@ -5688,20 +5691,12 @@ mfxStatus AllocatorAdapterRW::AllocFrames(mfxFrameAllocRequest *request, mfxFram
     return status;
 }
 
-mfxStatus AllocatorAdapterRW::AllocFrame(mfxFrameSurface1 *surface)
+mfxStatus AllocatorAdapterRW::ReallocFrame(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut)
 {
-    mfxMemId mid = surface->Data.MemId;
-    if ((size_t)mid > m_mids.size())
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-    surface->Data.MemId = m_mids[(size_t)(mid) - 1].second;
-    mfxStatus  status =  m_allocator->AllocFrame(surface);
-    if (status < MFX_ERR_NONE)
-        return status;
-
+    MFX_CHECK_POINTER(midOut);
+    mfxStatus  status = m_allocator->ReallocFrame(midIn, info, memType, midOut);
     // update surface after reallocation
-    m_mids[(size_t)(mid) - 1].second = surface->Data.MemId;
-    surface->Data.MemId = mid;
+    m_mids[(size_t)(midIn)-1].second = *midOut;
     return status;
 }
 

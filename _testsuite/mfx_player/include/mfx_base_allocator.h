@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -33,7 +33,7 @@ public:
     virtual mfxStatus Close() = 0;
     
     virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response) = 0;
-    virtual mfxStatus AllocFrame(mfxFrameSurface1 * surface) = 0;
+    virtual mfxStatus ReallocFrame(mfxMemId mid, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut) = 0;
     virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr) = 0;
     virtual mfxStatus UnlockFrame(mfxMemId mid, mfxFrameData *ptr) = 0;
     virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle) = 0;
@@ -51,20 +51,20 @@ private:
 // Manages responses for different components according to allocation request type
 // External frames of a particular component-related type are allocated in one call
 // Further calls return previously allocated response.
-// Ex. Preallocated frame chain with type=FROM_ENCODE | FROM_VPPIN will be returned when 
+// Ex. Preallocated frame chain with type=FROM_ENCODE | FROM_VPPIN will be returned when
 // request type contains either FROM_ENCODE or FROM_VPPIN
 
 // This class does not allocate any actual memory
 class BaseFrameAllocator: public MFXFrameAllocator
-{    
+{
 public:
     BaseFrameAllocator();
-    virtual ~BaseFrameAllocator();       
+    virtual ~BaseFrameAllocator();
 
-    virtual mfxStatus Init(mfxAllocatorParams *pParams) = 0; 
+    virtual mfxStatus Init(mfxAllocatorParams *pParams) = 0;
     virtual mfxStatus Close();
-    virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);   
-    virtual mfxStatus AllocFrame(mfxFrameSurface1 *surface);
+    virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
+    virtual mfxStatus ReallocFrame(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut);
     virtual mfxStatus FreeFrames(mfxFrameAllocResponse *response);
 
 protected:
@@ -72,7 +72,7 @@ protected:
     static const mfxU32 MEMTYPE_FROM_MASK = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_FROM_VPPOUT;
 
     struct UniqueResponse
-        : mfxFrameAllocResponse 
+        : mfxFrameAllocResponse
     {
         mfxU16 m_cropw;
         mfxU16 m_croph;
@@ -81,7 +81,7 @@ protected:
 
         UniqueResponse()
         {
-            memset(this, 0, sizeof(*this)); 
+            memset(this, 0, sizeof(*this));
         }
 
         // compare responses by actual frame size, alignment (w and h) is up to application
@@ -108,28 +108,28 @@ protected:
     {
         bool operator () (const mfxFrameAllocResponse & l, const mfxFrameAllocResponse &r)const
         {
-            return r.mids != 0 && l.mids != 0 && 
-                r.mids[0] == l.mids[0] && 
+            return r.mids != 0 && l.mids != 0 &&
+                r.mids[0] == l.mids[0] &&
                 r.NumFrameActual == l.NumFrameActual;
         }
     };
 
     // checks if request is supported
     virtual mfxStatus CheckRequestType(mfxFrameAllocRequest *request);
-    
+
     // frees memory attached to response
     virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response) = 0;
     // allocates memory
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response) = 0;
-    virtual mfxStatus AllocImpl(mfxFrameSurface1 * surface) = 0;
+    virtual mfxStatus ReallocImpl(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut) = 0;
 
     template <class T>
     class safe_array
     {
     public:
         safe_array(T *ptr = 0):m_ptr(ptr)
-        { // construct from object pointer            
-        };        
+        { // construct from object pointer
+        };
         ~safe_array()
         {
             reset(0);

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -99,11 +99,12 @@ public:
                                    , mfxFrameAllocRequest  * pRequest
                                    , bool bCreateEncCtl);
 
-      virtual mfxStatus ReallocSurface(mfxFrameSurface1  * pSurface);
+      virtual mfxStatus ReallocSurface(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut);
 
       virtual mfxStatus FindFreeSurface( mfxU32 sourceId
                                        , SrfEncCtl *ppSurface
-                                       , IMFXVideoRender *pRender);
+                                       , IMFXVideoRender *pRender
+                                       , mfxMemId *mid);
 
       //relase all resources asociated with surfaces
       virtual mfxStatus DestroySurfaces();

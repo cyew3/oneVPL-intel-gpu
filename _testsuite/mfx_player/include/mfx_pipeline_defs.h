@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -332,6 +332,12 @@ if (0 == (expr))\
 
 #define MFX_CHECK_POINTER(ptr)\
     MFX_CHECK_SET_ERR(NULL != (ptr), LAST_ERR_OR_UNK(), MFX_ERR_NULL_PTR);\
+
+#define MFX_CHECK_POINTER2(ptr1, ptr2)\
+    MFX_CHECK_SET_ERR(NULL != (ptr1) && NULL != (ptr2), LAST_ERR_OR_UNK(), MFX_ERR_NULL_PTR);\
+
+#define MFX_CHECK_POINTER3(ptr1, ptr2, ptr3)\
+    MFX_CHECK_SET_ERR(NULL != (ptr1) && NULL != (ptr2) && NULL != (ptr3), LAST_ERR_OR_UNK(), MFX_ERR_NULL_PTR);\
 
 #define MFX_CHECK(expr) \
     MFX_CHECK_SET_ERR(expr, LAST_ERR_OR_UNK(), MFX_ERR_UNKNOWN);\

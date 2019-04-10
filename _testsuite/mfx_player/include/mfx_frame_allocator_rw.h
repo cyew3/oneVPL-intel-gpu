@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -45,9 +45,9 @@ public:
     {
         return m_pTarget->Close();
     }
-    virtual mfxStatus AllocFrame(mfxFrameSurface1 * surface)
+    virtual mfxStatus ReallocFrame(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut)
     {
-        return m_pTarget->AllocFrame(surface);
+        return m_pTarget->ReallocFrame(midIn, info, memType, midOut);
     }
     virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
     {
@@ -88,7 +88,7 @@ public:
     virtual mfxStatus Init(mfxAllocatorParams *pParams);
     virtual mfxStatus Close();
     virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
-    virtual mfxStatus AllocFrame(mfxFrameSurface1 *surface);
+    virtual mfxStatus ReallocFrame(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memTypemfx, mfxMemId *midOut);
     virtual mfxStatus FreeFrames(mfxFrameAllocResponse *response);
 
     virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr);

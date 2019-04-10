@@ -12,6 +12,8 @@ Copyright(c) 2011 - 2019 Intel Corporation. All Rights Reserved.
 
 #include "mfx_pipeline_features.h"
 #include "mfx_d3d11_allocator.h"
+#include "mfx_utils.h"
+#include <vm_strings.h>
 
 #if 1//;//MFX_D3D11_SUPPORT
 
@@ -167,7 +169,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     hRes = m_pDeviceContext->Map(sr.GetStaging(), 0, mapType, mapFlags, &lockedRect);
                     if (S_OK != hRes && DXGI_ERROR_WAS_STILL_DRAWING != hRes)
                     {
-                        printf("ERROR: m_pDeviceContext->Map = 0x%X\n", hRes);
+                        vm_string_printf(VM_STRING("ERROR: m_pDeviceContext->Map = 0x%X\n"), hRes);
                     }
                 }
                 while (DXGI_ERROR_WAS_STILL_DRAWING == hRes);
@@ -376,19 +378,21 @@ mfxStatus D3D11FrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
+mfxStatus D3D11FrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut)
 {
+    MFX_CHECK_NULL_PTR2(info, midOut);
+
     HRESULT hRes;
 
-    DXGI_FORMAT colorFormat = ConverColortFormat(surface->Info.FourCC);
+    DXGI_FORMAT colorFormat = ConverColortFormat(info->FourCC);
 
     if (DXGI_FORMAT_UNKNOWN == colorFormat)
     {
-       return MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_UNSUPPORTED;
     }
 
 
-    if (surface->Info.FourCC == MFX_FOURCC_P8)
+    if (info->FourCC == MFX_FOURCC_P8)
     {
         /*D3D11_BUFFER_DESC desc = { 0 };
 
@@ -408,15 +412,15 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
     }
     else
     {
-        D3D11_TEXTURE2D_DESC desc = {0};
+        D3D11_TEXTURE2D_DESC desc = { 0 };
 
-        desc.Width = surface->Info.Width;
-        desc.Height =  surface->Info.Height;
+        desc.Width = info->Width;
+        desc.Height = info->Height;
 
         desc.MipLevels = 1;
         //number of subresources is 1 in case of not single texture
         desc.ArraySize = 1;
-        desc.Format = ConverColortFormat(surface->Info.FourCC);
+        desc.Format = ConverColortFormat(info->FourCC);
         desc.SampleDesc.Count = 1;
         desc.Usage = D3D11_USAGE_DEFAULT;
         desc.MiscFlags = m_initParams.uncompressedResourceMiscFlags;
@@ -440,14 +444,14 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
                 return MFX_ERR_MEMORY_ALLOC;
         }*/
 
-        if( DXGI_FORMAT_P8 == desc.Format )
+        if (DXGI_FORMAT_P8 == desc.Format)
         {
             desc.BindFlags = 0;
         }
 
-        size_t index = (size_t)MFXReadWriteMid(surface->Data.MemId).raw() - 1;
+        size_t index = (size_t)MFXReadWriteMid(mid).raw() - 1;
 
-        if(m_memIdMap.size() <= index)
+        if (m_memIdMap.size() <= index)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         //reverse iterator dereferencing
@@ -460,7 +464,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
         hRes = m_initParams.pDevice->CreateTexture2D(&desc, NULL, &pTexture2D);
         if (FAILED(hRes))
         {
-            printf("CreateTexture2D failed, hr = 0x%X\n", hRes);
+            vm_string_printf(VM_STRING("CreateTexture2D failed, hr = 0x%X\n"), hRes);
             return MFX_ERR_MEMORY_ALLOC;
         }
 
@@ -473,17 +477,18 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
         hRes = m_initParams.pDevice->CreateTexture2D(&desc, NULL, &pStagingTexture2D);
         if (FAILED(hRes))
         {
-            printf("CreateTexture2D failed, hr = 0x%X\n", hRes);
+            vm_string_printf(VM_STRING("CreateTexture2D failed, hr = 0x%X\n"), hRes);
             return MFX_ERR_MEMORY_ALLOC;
         }
 
-        ptrdiff_t idx = (uintptr_t)MFXReadWriteMid(surface->Data.MemId).raw() - (uintptr_t)p->outerMids.front();
+        ptrdiff_t idx = (uintptr_t)MFXReadWriteMid(mid).raw() - (uintptr_t)p->outerMids.front();
         p->textures[idx]->Release();
         p->stagingTexture[idx]->Release();
         p->textures[idx] = pTexture2D;
         p->stagingTexture[idx] = pStagingTexture2D;
     }
 
+    *midOut = mid;
     return MFX_ERR_NONE;
 }
 
@@ -596,7 +601,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             hRes = SetResourceExtension(&extnDesc);
             if (FAILED(hRes))
             {
-                printf("SetResourceExtension failed, hr = 0x%X\n", hRes);
+                vm_string_printf(VM_STRING("SetResourceExtension failed, hr = 0x%X\n"), hRes);
                 return MFX_ERR_MEMORY_ALLOC;
             }
         }
@@ -609,7 +614,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
             if (FAILED(hRes))
             {
-                printf("CreateTexture2D(%d) failed, hr = 0x%X\n", i, hRes);
+                vm_string_printf(VM_STRING("CreateTexture2D(%d) failed, hr = 0x%X\n"), i, hRes);
                 return MFX_ERR_MEMORY_ALLOC;
             }
             newTexture.textures.push_back(pTexture2D);
@@ -627,7 +632,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
             if (FAILED(hRes))
             {
-                printf("Create staging texture(%d) failed hr = 0x%X\n", i, hRes);
+                vm_string_printf(VM_STRING("Create staging texture(%d) failed hr = 0x%X\n"), i, hRes);
                 return MFX_ERR_MEMORY_ALLOC;
             }
             newTexture.stagingTexture.push_back(pTexture2D);

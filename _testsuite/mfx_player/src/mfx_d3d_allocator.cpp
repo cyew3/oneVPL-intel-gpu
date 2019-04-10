@@ -16,6 +16,7 @@ Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 #include <d3d9.h>
 
 #include "mfx_d3d_allocator.h"
+#include "mfx_utils.h"
 
 #define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
@@ -372,18 +373,20 @@ mfxStatus D3DFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
     return sts;
 }
 
-mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
+mfxStatus D3DFrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut)
 {
+    MFX_CHECK_NULL_PTR2(info, midOut);
+
     HRESULT hr;
 
-    D3DFORMAT format = ConvertMfxFourccToD3dFormat(surface->Info.FourCC);
+    D3DFORMAT format = ConvertMfxFourccToD3dFormat(info->FourCC);
 
     if (format == D3DFMT_UNKNOWN)
         return MFX_ERR_UNSUPPORTED;
 
     DWORD   target = DXVA2_VideoDecoderRenderTarget;
 
-    ((IDirect3DSurface9 *)surface->Data.MemId)->Release();
+    ((IDirect3DSurface9 *)mid)->Release();
 
     /*if (MFX_MEMTYPE_DXVA2_DECODER_TARGET & request->Type)
     {
@@ -396,8 +399,8 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
     else
         return MFX_ERR_UNSUPPORTED;*/
 
-    // VPP may require at input/output surfaces with color format other than NV12 (in case of color conversion)
-    // VideoProcessorService must used to create such surfaces
+        // VPP may require at input/output surfaces with color format other than NV12 (in case of color conversion)
+        // VideoProcessorService must used to create such surfaces
     if (target == DXVA2_VideoProcessorRenderTarget)
     {
         if (!m_hProcessor)
@@ -406,14 +409,14 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
         }
 
         hr = m_processorService->CreateSurface(
-            surface->Info.Width,
-            surface->Info.Height,
+            info->Width,
+            info->Height,
             0,
             format,
             D3DPOOL_DEFAULT,
             m_surfaceUsage,
             target,
-            (IDirect3DSurface9 **)&surface->Data.MemId,
+            (IDirect3DSurface9 **)midOut,
             NULL);
     }
     else
@@ -424,14 +427,14 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
         }
 
         hr = m_decoderService->CreateSurface(
-            surface->Info.Width,
-            surface->Info.Height,
+            info->Width,
+            info->Height,
             0,
             format,
             D3DPOOL_DEFAULT,
             m_surfaceUsage,
             target,
-            (IDirect3DSurface9 **)&surface->Data.MemId,
+            (IDirect3DSurface9 **)midOut,
             NULL);
     }
 

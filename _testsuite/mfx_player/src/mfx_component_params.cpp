@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -390,24 +390,29 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
     return MFX_ERR_NONE;
 }
 
-mfxStatus ComponentParams::ReallocSurface(mfxFrameSurface1  * pSurface)
+mfxStatus ComponentParams::ReallocSurface(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut)
 {
     if (!m_pAllocator)
         return MFX_ERR_MEMORY_ALLOC;
 
-    return m_pAllocator->AllocFrame(pSurface);
+    return m_pAllocator->ReallocFrame(midIn, info, memType, midOut);
 }
 
 mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
                                           , SrfEncCtl *pSurface
-                                          , IMFXVideoRender *pRender)
+                                          , IMFXVideoRender *pRender
+                                          , mfxMemId *mid)
 {
     mfxStatus res = MFX_WRN_IN_EXECUTION;
     Timeout<10> ffstimeout;
+
+    MFX_CHECK_POINTER3(pSurface, pRender, mid);
+
     //different surfaces allocated only in svc case, however for mvc case source id might present
     //sourceId = 1;
-    std::vector<SrfEncCtl>  & refSurfaces 
-        = 1 == m_sufacesByIDx.size() ? m_sufacesByIDx[0]->surfaces : m_sufacesByIDx[sourceId]->surfaces;
+    mfxU32 refIdx = 1 == m_sufacesByIDx.size() ? 0 : sourceId;
+    std::vector<SrfEncCtl>  & refSurfaces = m_sufacesByIDx[refIdx]->surfaces;
+    mfxMemId * respMids = m_sufacesByIDx[refIdx]->allocResponce.mids;
 
     for (; !ffstimeout ; )
     {
@@ -433,12 +438,15 @@ mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
                 if (0 == refSurfaces[idx].pSurface->Data.Locked)
                 {
                     *pSurface = refSurfaces[idx];
-                    if (m_nSelectAlgo == USE_OLDEST_DIRECT || 
+                    if (m_nSelectAlgo == USE_OLDEST_DIRECT ||
                         m_nSelectAlgo == USE_OLDEST_REVERSE)
                     {
                         m_nStartSearch = (i+1) % (mfxU16)refSurfaces.size();
-                        //printf("srf, %d\n",i);
                     }
+
+                    if (idx >= m_sufacesByIDx[refIdx]->allocResponce.NumFrameActual)
+                        return MFX_ERR_INVALID_HANDLE;
+                    *mid = respMids[idx];
 
                     return MFX_ERR_NONE;
                 }
@@ -465,6 +473,11 @@ mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
                 if (0 == refSurfaces[usedNumbers[curIdx]].pSurface->Data.Locked)
                 {
                     *pSurface = refSurfaces[usedNumbers[curIdx]];
+
+                    if (curIdx >= m_sufacesByIDx[refIdx]->allocResponce.NumFrameActual)
+                        return MFX_ERR_INVALID_HANDLE;
+                    *mid = respMids[curIdx];
+
                     return MFX_ERR_NONE;
                 }
                 std::swap(usedNumbers[i], usedNumbers[curIdx]);

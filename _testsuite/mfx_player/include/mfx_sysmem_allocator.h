@@ -29,47 +29,41 @@ struct sFrame
 struct SysMemAllocatorParams : mfxAllocatorParams
 {
     MFXBufferAllocator *pBufferAllocator;
-}; 
+};
 
-class SysMemFrameAllocator: public BaseFrameAllocator
+class SysMemFrameAllocator : public BaseFrameAllocator
 {
 public:
     SysMemFrameAllocator();
-    virtual ~SysMemFrameAllocator(); 
+    virtual ~SysMemFrameAllocator();
 
     virtual mfxStatus Init(mfxAllocatorParams *pParams);
     virtual mfxStatus Close();
     virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr);
     virtual mfxStatus UnlockFrame(mfxMemId mid, mfxFrameData *ptr);
-    virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle);       
+    virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle);
 
 protected:
     virtual mfxStatus CheckRequestType(mfxFrameAllocRequest *request);
     virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
-    virtual mfxStatus AllocImpl(mfxFrameSurface1 *surface);
+    virtual mfxStatus ReallocImpl(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut);
 
     MFXBufferAllocator *m_pBufferAllocator;
     bool m_bOwnBufferAllocator;
 
-    struct RespMids
-    {
-        mfxMemId   *mids;
-        mfxU32     count;
+    std::vector<mfxFrameAllocResponse *> m_vResp;
 
-        RespMids(mfxMemId *init_mids, mfxU32 num):mids(init_mids), count(num) {}
-    };
-
-    std::vector<RespMids> m_mids;
+    mfxMemId *GetMidHolder(mfxMemId mid);
 };
 
 class SysMemBufferAllocator : public MFXBufferAllocator
 {
 public:
     SysMemBufferAllocator();
-    virtual ~SysMemBufferAllocator();  
+    virtual ~SysMemBufferAllocator();
     virtual mfxStatus AllocBuffer(mfxU32 nbytes, mfxU16 type, mfxMemId *mid);
     virtual mfxStatus LockBuffer(mfxMemId mid, mfxU8 **ptr);
-    virtual mfxStatus UnlockBuffer(mfxMemId mid);    
-    virtual mfxStatus FreeBuffer(mfxMemId mid); 
+    virtual mfxStatus UnlockBuffer(mfxMemId mid);
+    virtual mfxStatus FreeBuffer(mfxMemId mid);
 };
