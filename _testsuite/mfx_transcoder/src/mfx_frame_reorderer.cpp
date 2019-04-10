@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -209,7 +209,7 @@ namespace
         // it is frame with minimal FrameOrder
         // special check for B frames makes reordering
         Frame * frameToEncode = 0;
-        
+
         // frame with minimal FrameOrder w/o check for B frames
         Frame * oldestFrame = 0;
 
@@ -305,7 +305,7 @@ mfxStatus MFXH264FrameReorderer::DataPerView::ReorderFrame(const mfxVideoParam &
     }
 
     Frame * frameToEncode = FindFrameToEncode(m_bufferedFrames, m_dpb, m_numFrameInDpb);
-    
+
     if (frameToEncode == 0 && in == 0 && m_numFrameBuffered > 0)
     {
         // no more frames incoming
@@ -390,7 +390,7 @@ MFXMPEG2FrameReorderer::MFXMPEG2FrameReorderer(const mfxVideoParam& par, mfxStat
     if (MFX_ERR_NONE != ret)
         return;
     ret = m_waitingList.Init(par.mfx.GopPicSize);
-    
+
     if (MFX_ERR_NONE != ret)
         return;
 }
@@ -407,11 +407,11 @@ mfxStatus MFXMPEG2FrameReorderer::ReorderFrame(mfxFrameSurface1 * in, mfxFrameSu
         mfxU16 frameType2 = 0;
         GetFrameTypeMpeg2(
             m_frameOrder,
-            m_par.mfx.GopPicSize, 
+            m_par.mfx.GopPicSize,
             m_par.mfx.GopRefDist,
             false/*(mfxParamsVideo.mfx.GopOptFlag & MFX_GOP_CLOSED)!=0*/,
             &frameType2);
-                 
+
         bool bOK = m_waitingList.AddFrame(in, frameType2);
         if (!bOK)
         {
@@ -443,7 +443,7 @@ mfxStatus MFXMPEG2FrameReorderer::ReorderFrame(mfxFrameSurface1 * in, mfxFrameSu
         m_gop.CloseGop();
     }
 
-    // Extract next frame from GOP structure 
+    // Extract next frame from GOP structure
     *out = m_gop.GetInFrameForDecoding();
     if (*out == 0)
     {
@@ -490,7 +490,7 @@ start:
         vm_char sbuf[256], *pStr;
 
         pStr = vm_file_fgets(sbuf, 256, m_par_file);
-        m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %i"), &m_nextFrame, &m_nextType));
+        m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%u %u"), &m_nextFrame, &m_nextType));
 
 
         if (m_eof)
@@ -500,7 +500,7 @@ start:
             vm_file_fseek(m_par_file, 0, VM_FILE_SEEK_SET);
 
             pStr = vm_file_fgets(sbuf, 256, m_par_file);
-            m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %i"), &m_nextFrame, &m_nextType));
+            m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%u %u"), &m_nextFrame, &m_nextType));
         }
 
         m_nextFrame += m_nFrames;
