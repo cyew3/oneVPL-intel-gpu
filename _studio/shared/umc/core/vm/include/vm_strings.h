@@ -112,12 +112,19 @@ typedef char vm_char;
 #define vm_string_strrchr   strrchr
 
 #ifndef OPEN_SOURCE
+/* The vm_strings_* macros parameters:
+   dest     - pointer to the character array to copy to
+   src      - pointer to the character array to copy from
+   count    - maximum number of characters to copy
+   dst_size - the size of the destination buffer */
 #define vm_string_sprintf_s sprintf
-#define vm_string_strcat_s(dest, size, src) (dest[(size)-1]='\0', strncat((dest), (src), ( \
-        std::min(strlen(src), (size)-strlen(dest)-1) )), 0)
+#define vm_string_strcat_s(dest, dst_size, src) (dest[(dst_size)-1]='\0', strncat((dest), (src), ( \
+        std::min(strlen(src), (dst_size)-strlen(dest)-1) )), 0)
 #define vm_string_strncat   strncat
-#define vm_string_strcpy_s(dest, size, src)  (strncpy((dest), (src), (size-1)),dest[size-1]='\0',0)
-#define vm_string_strncpy_s(dst, dst_size, src, n) (strncpy(dst,src,n))
+#define vm_string_strcpy_s(dest, dst_size, src) (strncpy((dest), (src), \
+        (dst_size-1)),0)
+#define vm_string_strncpy_s(dst, dst_size, src, count) (strncpy((dst), (src), \
+        (unsigned)(count)<(unsigned)(dst_size)?(count):(dst_size)-1))
 #define vm_string_strnlen_s strnlen_s
 #endif
 
