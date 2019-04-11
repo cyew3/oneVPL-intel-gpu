@@ -652,6 +652,7 @@ namespace vp9e_temporal_scalability
         mfxU32 m_DecodedFramesCount;
         bool m_DecoderInited;
         mfxU32 m_ChunkCount;
+        mfxU32 m_FrameCountInGop;
     };
 
     BitstreamChecker::BitstreamChecker(TestSuite *testPtr, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool check_psnr, bool check_no_ivf)
@@ -665,6 +666,7 @@ namespace vp9e_temporal_scalability
         , m_DecodedFramesCount(0)
         , m_DecoderInited(false)
         , m_ChunkCount(0)
+        , m_FrameCountInGop(0)
     {}
 
     mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
@@ -685,6 +687,12 @@ namespace vp9e_temporal_scalability
         while (checked++ < nFrames)
         {
             tsParserVP9::UnitType& hdr = ParseOrDie();
+
+            if (hdr.uh.frame_is_intra)
+            {
+                g_tsLog << "INFO: starting new GOP on frame #" << m_ChunkCount << " because it is I-frame\n";
+                m_FrameCountInGop = 0;
+            }
 
             mfxU32 index_size = 0;
 
@@ -837,7 +845,7 @@ namespace vp9e_temporal_scalability
 
             if (m_DecoderInited)
             {
-                if (m_TestPtr->m_LayerToCheck != -1 && m_TestPtr->m_LayerNestingLevel[m_ChunkCount] > m_TestPtr->m_LayerToCheck)
+                if (m_TestPtr->m_LayerToCheck != -1 && m_TestPtr->m_LayerNestingLevel[m_FrameCountInGop] > m_TestPtr->m_LayerToCheck)
                 {
                     g_tsLog << "INFO: Frame " << m_ChunkCount << " is not sending to the decoder because only layer " << (mfxI32)m_TestPtr->m_LayerToCheck
                         << " is being checked\n";
@@ -930,6 +938,7 @@ namespace vp9e_temporal_scalability
         bs.DataLength = 0;
 
         m_ChunkCount++;
+        m_FrameCountInGop++;
 
         return MFX_ERR_NONE;
     }
