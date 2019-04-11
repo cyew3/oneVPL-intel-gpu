@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2018 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2019 Intel Corporation. All Rights Reserved.
 //
 #include <math.h>
 #include <memory.h>
@@ -198,7 +198,7 @@ mfxStatus ParseInputString(vm_char* strInput[], int nArgNum, sInputParams* pPara
                   break;
                 }
                 GET_OPTION_POINTER(strArgument);
-                vm_string_strcpy(pParams->strSrcFile, strArgument);
+                vm_string_strcpy_s(pParams->strSrcFile, MFX_ARRAY_SIZE(pParams->strSrcFile), strArgument);
                 break;
             case 'o':
                 GET_OPTION_POINTER(strArgument);

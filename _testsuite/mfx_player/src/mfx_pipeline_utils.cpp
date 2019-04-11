@@ -757,11 +757,6 @@ tstring GetMFXImplString(mfxIMPL impl)
     return str1 + (str2 == VM_STRING("UNDEF(0)")? VM_STRING("") : VM_STRING(" | ") + str2);
 }
 
-void SetPrintInfoAlignLen(int val)
-{
-    vm_string_sprintf(g_AlignStr, VM_STRING("%%-%ds"), val);
-}
-
 //this type of print uses to print on the same line, it wont work if redirection case
 void PrintInfoNoCR(const vm_char *name, const vm_char *value, ...)
 {
