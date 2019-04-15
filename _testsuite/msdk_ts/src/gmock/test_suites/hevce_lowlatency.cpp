@@ -179,13 +179,17 @@ namespace hevce_lowlatency
             throw tsSKIP;
         }
 
+        if ((g_tsHWtype <= MFX_HW_CNL) && (tc.type & HUGE_SIZE_8K))
+        {
+            g_tsLog << "[SKIPPED] 8K is not supported for this platform\n";
+            throw tsSKIP;
+        }
+
         mfxStatus sts = MFX_ERR_NONE;
 
         MFXInit();
         set_brc_params(&m_par);
         Load();
-
-        bool unsupportedCase = (tc.type & HUGE_SIZE_8K) && (g_tsHWtype <= MFX_HW_CNL && m_par.mfx.LowPower != MFX_CODINGOPTION_ON);
 
         if (fourcc_id == MFX_FOURCC_NV12)
         {
@@ -214,6 +218,7 @@ namespace hevce_lowlatency
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
             m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+            m_par.mfx.FrameInfo.Shift = 0;
         }
         else if (fourcc_id == MFX_FOURCC_YUY2)
         {
@@ -228,6 +233,7 @@ namespace hevce_lowlatency
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
             m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+            m_par.mfx.FrameInfo.Shift = 1;
         }
         else
         {
@@ -237,16 +243,8 @@ namespace hevce_lowlatency
 
         if (tc.type & QUERY) {
             SETPARS(m_par, MFX_PAR);
-
-            if (unsupportedCase)
-                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-            else
-                g_tsStatus.expect(tc.sts.query);
-
+            g_tsStatus.expect(tc.sts.query);
             Query();
-
-            if (unsupportedCase)
-                throw tsSKIP;
         }
 
         if (tc.type & INIT) {
@@ -271,7 +269,7 @@ namespace hevce_lowlatency
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_420_nv12_lowlatency,  RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_lowlatency,  RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_lowlatency, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_lowlatency,  RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_lowlatency, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
