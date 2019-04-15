@@ -823,11 +823,12 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 #endif //MFX_SKIP_FRAME_SUPPORT
-#if defined(MFX_ENABLE_MFE)
+#if defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
         if (m_pMfeAdapter != nullptr)
         {
-            //for pre-si set to 1 hour
-            mfxU32 timeout = 3600000000;// task.m_mfeTimeToWait;
+            mfxU32 timeout = task.m_mfeTimeToWait;
+            if (m_core->GetHWType() >= MFX_HW_ATS)
+                timeout = 3600000000;//one hour for pre-si, ToDo:remove for silicon
             mfxStatus sts = m_pMfeAdapter->Submit(m_StreamInfo, (task.m_flushMfe ? 0 : timeout), false);
             if (sts != MFX_ERR_NONE)
                 return sts;

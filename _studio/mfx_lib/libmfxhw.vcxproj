@@ -38,7 +38,6 @@
     <ClCompile Include="..\shared\src\libmfx_core_hw.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_vaapi.cpp" />
     <ClCompile Include="..\shared\src\libmfx_core_vdaapi.cpp" />
-    <ClCompile Include="..\shared\src\mfx_mfe_adapter_dxva.cpp" />
     <ClCompile Include="..\shared\src\mfx_static_assert_structs.cpp" />
     <ClCompile Include="genx\copy_kernels\src\genx_cht_copy_isa.cpp" />
     <ClCompile Include="genx\copy_kernels\src\genx_cnl_copy_isa.cpp" />
@@ -96,7 +95,6 @@
     <ClInclude Include="..\shared\include\libmfx_core_operation.h" />
     <ClInclude Include="..\shared\include\libmfx_core_vaapi.h" />
     <ClInclude Include="..\shared\include\mfx_config.h" />
-    <ClInclude Include="..\shared\include\mfx_mfe_adapter_dxva.h" />
     <ClInclude Include="genx\copy_kernels\include\cnl_copy_kernel_genx_isa.h" />
     <ClInclude Include="genx\copy_kernels\include\icllp_copy_kernel_genx_isa.h" />
     <ClInclude Include="genx\copy_kernels\include\icl_copy_kernel_genx_isa.h" />

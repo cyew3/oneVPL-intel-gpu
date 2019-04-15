@@ -47,6 +47,9 @@
     <ClCompile Include="src\mfx_mpeg2_encode_d3d_common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\shared\src\mfx_mfe_adapter_dxva.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\encoder_ddi.hpp">
@@ -89,6 +92,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\mfx_mpeg2_encode_d3d_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\mfx_mfe_adapter_dxva.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

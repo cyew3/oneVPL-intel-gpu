@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_VA_WIN) && defined(MFX_ENABLE_MFE)
+#if defined(MFX_VA_WIN) && defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
 
 #include "mfx_mfe_adapter_dxva.h"
 #include "vm_interlocked.h"
@@ -499,15 +499,17 @@ mfxStatus MFEDXVAEncoder::Submit(const ENCODE_MULTISTREAM_INFO info, unsigned lo
     }
 #ifdef DEBUG_TRACE
     printf("\n\ntime to wait in microseconds %d\n\n", (int)timeToWait);
+    bool timeout = 
 #endif
-    bool timeout = m_mfe_wait.wait_for(guard, std::chrono::microseconds(timeToWait), [this, framesToSubmit, cur_stream]{
+
+    m_mfe_wait.wait_for(guard, std::chrono::microseconds(timeToWait), [this, framesToSubmit, cur_stream]{
         return ((m_framesCollected >= framesToSubmit) || cur_stream->isFrameSubmitted());
     });
 
 #ifdef DEBUG_TRACE
     if (!timeout)
     {
-        printf("\n\n !timeout\n\n");
+        printf("\n\n !timeout, not all frames collected\n\n");
     }
 #endif
 

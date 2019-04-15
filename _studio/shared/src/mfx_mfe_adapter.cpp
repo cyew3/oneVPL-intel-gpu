@@ -137,7 +137,7 @@ mfxStatus MFEVAAPIEncoder::reconfigureRestorationCounts(VAContextID newCtx)
     }
     return MFX_ERR_NONE;
 }
-mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx, long long timeout)
+mfxStatus MFEVAAPIEncoder::Join(VAContextID ctx, unsigned long long timeout)
 {
     std::lock_guard<std::mutex> guard(m_mfe_guard);//need to protect in case there are streams added/removed in runtime.
 
@@ -222,7 +222,7 @@ mfxStatus MFEVAAPIEncoder::Destroy()
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, long long timeToWait, bool skipFrame)
+mfxStatus MFEVAAPIEncoder::Submit(VAContextID context, unsigned long long timeToWait, bool skipFrame)
 {
     std::unique_lock<std::mutex> guard(m_mfe_guard);
     //stream in pool corresponding to particular context;

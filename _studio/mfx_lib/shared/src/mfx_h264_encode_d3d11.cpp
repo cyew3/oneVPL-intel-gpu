@@ -840,22 +840,12 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         m_sizeSkipFrames += feedback.bitstreamSize;
     }
 
-#if defined(MFX_ENABLE_MFE)
+#if defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
     if (m_pMFEAdapter != nullptr)
     {
         mfxU32 timeout = task.m_mfeTimeToWait >> task.m_fieldPicFlag;
-        /*if(!task.m_userTimeout)
-        {
-        mfxU32 passed = (task.m_beginTime - vm_time_get_tick());
-        if (passed < task.m_mfeTimeToWait)
-        {
-        timeout = timeout - passed;//-time for encode;//need to add a table with encoding times
-        }
-        else
-        {
-        timeout = 0;
-        }
-        }*/
+        if (m_core->GetHWType() >= MFX_HW_ATS)
+            timeout = 360000000;//one hour for pre-si, ToDo:remove for silicon
         mfxStatus sts = m_pMFEAdapter->Submit(m_StreamInfo, (task.m_flushMfe ? 0 : timeout), SkipFlag == 1);
         if (sts != MFX_ERR_NONE)
             return sts;

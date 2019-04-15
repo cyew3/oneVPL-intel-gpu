@@ -1720,7 +1720,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     }
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-#ifdef MFX_ENABLE_MFE
+#if defined(MFX_ENABLE_MFE)
     const mfxExtMultiFrameParam & mfeParam = GetExtBufferRef(par);
 
     if (mfeParam.MaxNumFrames > 1)
@@ -3064,9 +3064,9 @@ mfxStatus VAAPIEncoder::Execute(
 #ifdef MFX_ENABLE_MFE
     if (m_mfe){
         mfxU32 timeout = task.m_mfeTimeToWait>>task.m_fieldPicFlag;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
-    if (m_core->GetHWType() >= MFX_HW_ATS)
-        timeout = 3600000000;//one hour for pre-si
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+        if (m_core->GetHWType() >= MFX_HW_ATS)
+            timeout = 360000000;//one hour for pre-si, ToDo:remove for silicon
 #endif
         /*if(!task.m_userTimeout)
         {

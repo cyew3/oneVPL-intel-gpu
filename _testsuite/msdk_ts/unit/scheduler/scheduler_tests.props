@@ -7,6 +7,7 @@
     ..\..\..\..\_studio\mfx_lib\scheduler\include;
     ..\..\..\..\_studio\mfx_lib\fs_det\include;
     ..\..\..\..\_studio\mfx_lib\encode\h265\include;
+    ..\..\..\..\_studio\mfx_lib\encode_hw\h265\include;
     ..\..\..\..\_studio\mfx_lib\optimization\h265\include;
     ..\..\..\..\_studio\mfx_lib\shared\include;
     ..\..\..\..\_studio\mfx_lib\fei\h265\include;

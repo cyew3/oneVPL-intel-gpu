@@ -103,13 +103,14 @@ DriverEncoder* CreatePlatformH265Encoder(VideoCORE* core, ENCODER_TYPE type)
     return nullptr;
 }
 
-#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
+#if defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_VA_WIN)
 MFEDXVAEncoder* CreatePlatformMFEEncoder(VideoCORE* core)
 {
 
     if (core)
     {
-        ComPtrCore<MFEDXVAEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEDXVAEncoder> >(core, MFXMFEDDIENCODER_SEARCH_GUID);
+        ComPtrCore<MFEDXVAEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEDXVAEncoder> >(core, MFXMFEHEVCENCODER_SEARCH_GUID);
         if (!pVideoEncoder) return nullptr;
         if (!pVideoEncoder->get())
             *pVideoEncoder = new MFEDXVAEncoder;
@@ -119,6 +120,23 @@ MFEDXVAEncoder* CreatePlatformMFEEncoder(VideoCORE* core)
 
     return nullptr;
 }
+#else
+MFEVAAPIEncoder* CreatePlatformMFEEncoder(VideoCORE* core)
+{
+
+    if (core)
+    {
+        ComPtrCore<MFEVAAPIEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEVAAPIEncoder> >(core, MFXMFEHEVCENCODER_SEARCH_GUID);
+        if (!pVideoEncoder) return nullptr;
+        if (!pVideoEncoder->get())
+            *pVideoEncoder = new MFEVAAPIEncoder;
+
+        return pVideoEncoder->get();
+    }
+
+    return nullptr;
+}
+#endif
 #endif
 
 // this function is aimed to workaround all CAPS reporting problems in mainline driver

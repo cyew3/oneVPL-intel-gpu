@@ -841,6 +841,9 @@ VAAPIEncoder::VAAPIEncoder()
 , m_width(0)
 , m_height(0)
 , m_caps()
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+, m_pMfeAdapter(nullptr)
+#endif
 {
 }
 
@@ -1230,7 +1233,22 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         m_cuqpMap.Init (par.m_ext.HEVCParam.PicWidthInLumaSamples, par.m_ext.HEVCParam.PicHeightInLumaSamples);
     }
 #endif
+#if defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
 
+    if (par.m_ext.mfeParam.MaxNumFrames > 1)
+    {
+        m_pMfeAdapter = CreatePlatformMFEEncoder(m_core);
+        if (0 == m_pMfeAdapter)
+            return MFX_ERR_DEVICE_FAILED;
+
+        mfxStatus sts = m_pMfeAdapter->Create(par.m_ext.mfeParam, m_vaDisplay);
+        MFX_CHECK_STS(sts);
+        //progressive to be changed for particular 2 field cases
+        unsigned long long timeout = (((mfxU64)par.mfx.FrameInfo.FrameRateExtD) * 1000000 / par.mfx.FrameInfo.FrameRateExtN) / ((par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) ? 2 : 1);
+        sts = m_pMfeAdapter->Join(m_vaContextEncode, timeout); //replace with proper control value to be managed in one place.
+        MFX_CHECK_STS(sts);
+    }
+#endif
     return MFX_ERR_NONE;
 }
 
@@ -1923,6 +1941,17 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDLPair pair)
            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
     }
+#if defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+    if (m_pMfeAdapter) {
+        //ToDo: need to implement correct timeout handling from user.
+        unsigned long long timeout = task.m_mfeTimeToWait;
+        if (m_core->GetHWType() >= MFX_HW_ATS)
+            timeout = 360000000;//one hour for pre-si, ToDo:remove for silicon
+        mfxStatus sts = m_pMfeAdapter->Submit(m_vaContextEncode, (task.m_flushMfe ? 0 : timeout), !skipMode.NeedDriverCall());
+        if (sts != MFX_ERR_NONE)
+            return sts;
+    }
+#endif
     //------------------------------------------------------------------
     // PostStage
     //------------------------------------------------------------------

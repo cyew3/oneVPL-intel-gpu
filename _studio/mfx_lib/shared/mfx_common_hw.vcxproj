@@ -22,6 +22,7 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Building.props" />
   <ItemGroup>
+    <ClCompile Include="..\..\shared\src\mfx_mfe_adapter_dxva.cpp" />
     <ClCompile Include="src\mfx_ddi_enc_dump.cpp" />
     <ClCompile Include="src\mfx_h264_encode_d3d_common.cpp" />
     <ClCompile Include="src\mfx_h264_enc_common_hw.cpp" />
@@ -36,6 +37,7 @@
     <ClCompile Include="src\mfx_win_event_cache.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\shared\include\mfx_mfe_adapter_dxva.h" />
     <ClInclude Include="include\encoder_ddi.hpp" />
     <ClInclude Include="include\encoding_ddi.h" />
     <ClInclude Include="include\mfx_ddi_enc_dump.h" />

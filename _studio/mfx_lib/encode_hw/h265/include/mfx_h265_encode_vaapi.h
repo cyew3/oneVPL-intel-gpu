@@ -33,6 +33,9 @@
 #include "mfx_h265_encode_hw_utils.h"
 #include "mfx_h265_encode_hw_ddi.h"
 #include "mfx_h265_encode_hw_ddi_trace.h"
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#include "mfx_mfe_adapter.h"
+#endif
 #include <vector>
 #include <map>
 #include <algorithm>
@@ -308,7 +311,10 @@ mfxStatus SetSkipFrame(
         static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 26 + 5;
 
         UMC::Mutex m_guard;
-        HeaderPacker m_headerPacker;
+        HeaderPacker m_headerPacker; 
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+        MFEVAAPIEncoder *m_pMfeAdapter;
+#endif
     };
 }
 #endif

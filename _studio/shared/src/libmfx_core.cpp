@@ -798,24 +798,6 @@ mfxStatus CommonCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
         return MFX_ERR_NOT_FOUND;
     }
 #endif //defined (MFX_ENABLE_GET_CM_DEVICE)
-#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
-    //to be removed after HEVC moved back to library
-    //while not removed, if new handle introduced in library
-    else if (MFX_HANDLE_MFE_DEVICE == type)
-    {
-        ComPtrCore<MFEDXVAEncoder> *pVideoEncoder = ::QueryCoreInterface<ComPtrCore<MFEDXVAEncoder>>(this, MFXMFEDDIENCODER_SEARCH_GUID);
-        if (!pVideoEncoder)
-        {
-            *handle = NULL;
-            return MFX_ERR_NOT_FOUND;
-        }
-        if (!pVideoEncoder->get())
-            *pVideoEncoder = new MFEDXVAEncoder;
-        *handle = pVideoEncoder->get();
-
-        return MFX_ERR_NONE;
-    }
-#endif //defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
 #endif // #if defined(_WIN32) || defined(_WIN64)
 #if defined(LINUX32) || defined(LINUX64) || defined(MFX_VA_LINUX)
     if (MFX_HANDLE_VA_DISPLAY == type )

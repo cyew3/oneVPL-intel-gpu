@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -113,7 +113,7 @@ MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder(VideoCORE* core)
     assert( core );
 
     // needs to search, thus use special GUID
-    ComPtrCore<MFEVAAPIEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEVAAPIEncoder> >(core, MFXMFEDDIENCODER_SEARCH_GUID);
+    ComPtrCore<MFEVAAPIEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEVAAPIEncoder> >(core, MFXMFEAVCENCODER_SEARCH_GUID);
     if (!pVideoEncoder) return NULL;
     if (!pVideoEncoder->get())
         *pVideoEncoder = new MFEVAAPIEncoder;
@@ -122,14 +122,14 @@ MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder(VideoCORE* core)
 
 } // MFEVAAPIEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder( VideoCORE* core )
 
-#else
+#elif defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
 
 MFEDXVAEncoder* MfxHwH264Encode::CreatePlatformMFEEncoder(VideoCORE* core)
 {
     assert(core);
 
     // needs to search, thus use special GUID
-    ComPtrCore<MFEDXVAEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEDXVAEncoder> >(core, MFXMFEDDIENCODER_SEARCH_GUID);
+    ComPtrCore<MFEDXVAEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEDXVAEncoder> >(core, MFXMFEAVCENCODER_SEARCH_GUID);
     if (!pVideoEncoder) return NULL;
     if (!pVideoEncoder->get())
         *pVideoEncoder = new MFEDXVAEncoder;

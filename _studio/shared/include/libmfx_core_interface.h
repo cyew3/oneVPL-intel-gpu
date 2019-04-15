@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -94,12 +94,23 @@ MFX_GUID MFXICMEnabledCore_GUID =
 // cores by MFXMFEDDIENCODER_GUID, to verify adapter availability and return when exist.
 // {E4E4823F-90D2-4945-823E-00B5F3F3184C}
 static const
-MFX_GUID MFXMFEDDIENCODER_GUID =
+MFX_GUID MFXMFEAVCENCODER_GUID =
 { 0xe4e4823f, 0x90d2, 0x4945, { 0x82, 0x3e, 0x0, 0xb5, 0xf3, 0xf3, 0x18, 0x4c } };
 
 // {AAA16189-4E5A-4DA9-BB97-4CD1B0BAAC73}
-static const MFX_GUID MFXMFEDDIENCODER_SEARCH_GUID =
+static const MFX_GUID MFXMFEAVCENCODER_SEARCH_GUID =
 { 0xaaa16189, 0x4e5a, 0x4da9, { 0xbb, 0x97, 0x4c, 0xd1, 0xb0, 0xba, 0xac, 0x73 } };
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+// {221CB6EA-72B7-47C9-87A2-1F8586BCC4E7}
+static const
+MFX_GUID MFXMFEHEVCENCODER_GUID =
+{ 0x221cb6ea, 0x72b7, 0x47c9, { 0x87, 0xa2, 0x1f, 0x85, 0x86, 0xbc, 0xc4, 0xe7 } };
+
+// {2B1FD020-C447-4712-BE22-2C450B2429AF}
+static const MFX_GUID MFXMFEHEVCENCODER_SEARCH_GUID =
+{ 0x2b1fd020, 0xc447, 0x4712, { 0xbe, 0x22, 0x2c, 0x45, 0xb, 0x24, 0x29, 0xaf } };
+#endif
 
 #endif
 
@@ -217,10 +228,10 @@ public:
 #if defined(MFX_VA_WIN) || !defined(MFX_ENABLE_MFE)
         return MFXID3D11DECODER_GUID;
 #else
-        return MFXMFEDDIENCODER_GUID;
+        return MFXMFEAVCENCODER_GUID;
 #endif
     }
-    ComPtrCore():m_pComPtr(NULL)
+    ComPtrCore():m_pComPtr(nullptr)
     {
     };
     virtual ~ComPtrCore()
@@ -228,7 +239,7 @@ public:
         if (m_pComPtr)
         {
             m_pComPtr->Release();
-            m_pComPtr = NULL;
+            m_pComPtr = nullptr;
         }
     };
     ComPtrCore& operator = (T* ptr)

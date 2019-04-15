@@ -40,7 +40,6 @@
     <ClCompile Include="..\..\shared\src\libmfx_core_vaapi.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core_vdaapi.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_dxva2_device.cpp" />
-    <ClCompile Include="..\..\shared\src\mfx_mfe_adapter_dxva.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_search_dll.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_vpp_vaapi.cpp" />
     <ClCompile Include="..\genx\copy_kernels\src\genx_icllp_copy_isa.cpp" />
@@ -101,7 +100,6 @@
     <ClInclude Include="..\..\shared\include\mfx_dxva2_device.h" />
     <ClInclude Include="..\..\shared\include\mfx_ext_buffers.h" />
     <ClInclude Include="..\..\shared\include\mfx_h264_ex_param_buf.h" />
-    <ClInclude Include="..\..\shared\include\mfx_mfe_adapter_dxva.h" />
     <ClInclude Include="..\..\shared\include\mfx_search_dll.h" />
     <ClInclude Include="..\..\shared\include\mfx_trace.h" />
     <ClInclude Include="..\..\shared\include\mfx_vc1_enc_ex_param_buf.h" />

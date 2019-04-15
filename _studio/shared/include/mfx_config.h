@@ -144,7 +144,6 @@
     #endif
     #endif // #ifdef OPEN_SOURCE
 #endif
-
 #if !defined(OPEN_SOURCE) && !defined(ANDROID)
     #if defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)
         #define PRE_SI_GEN 11
@@ -161,7 +160,7 @@
         #define MFX_ENABLE_AV1_VIDEO_ENCODE
     #endif
 
-    #if defined(MFX_VA_LINUX) && (MFX_VERSION >= 1025)
+    #if /*defined(MFX_VA_LINUX) &&*/ (MFX_VERSION >= 1025) && defined(MFX_VA)
         #if !defined(AS_H264LA_PLUGIN)
             #define MFX_ENABLE_MFE
         #endif
@@ -221,6 +220,7 @@
         #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
         #undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
         #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
+        #undef MFX_ENABLE_MFE
         #if defined(__linux__)
             #undef MFX_ENABLE_VPP
         #endif
@@ -253,6 +253,7 @@
         #undef MFX_ENABLE_H264_VIDEO_FEI_ENCODE
         #undef MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
         #undef MFX_ENABLE_AV1_VIDEO_DECODE
+        #undef MFX_ENABLE_MFE
         #if defined(__linux__) // for MFX_RT
             #undef MFX_ENABLE_VP8_VIDEO_DECODE
             #undef MFX_ENABLE_VP8_VIDEO_DECODE_HW

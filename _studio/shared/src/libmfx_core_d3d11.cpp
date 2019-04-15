@@ -58,6 +58,10 @@ D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsA
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     ,   m_bIsBlockingTaskSyncEnabled(false)
 #endif
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+    ,   m_mfeAvc()
+    ,   m_mfeHevc()
+#endif
 {
 }
 
@@ -634,20 +638,34 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return (void*)&m_comptr;
     }
-#ifdef MFX_ENABLE_MFE
-    else if (MFXMFEDDIENCODER_SEARCH_GUID == guid)
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+    else if (MFXMFEAVCENCODER_SEARCH_GUID == guid)
     {
-        if (!m_mfe.get())
+        if (!m_mfeAvc.get())
         {
-            m_mfe = (MFEDXVAEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEDXVAEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEDDIENCODER_GUID);
-            if (m_mfe.get())
-                m_mfe.get()->AddRef();
+            m_mfeAvc = (MFEDXVAEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEDXVAEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEAVCENCODER_GUID);
+            if (m_mfeAvc.get())
+                m_mfeAvc.get()->AddRef();
         }
-        return (void*)&m_mfe;
+        return (void*)&m_mfeAvc;
     }
-    else if (MFXMFEDDIENCODER_GUID == guid)
+    else if (MFXMFEAVCENCODER_GUID == guid)
     {
-        return (void*)&m_mfe;
+        return (void*)&m_mfeAvc;
+    }
+    else if (MFXMFEHEVCENCODER_SEARCH_GUID == guid)
+    {
+        if (!m_mfeHevc.get())
+        {
+            m_mfeHevc = (MFEDXVAEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEDXVAEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEHEVCENCODER_GUID);
+            if (m_mfeHevc.get())
+                m_mfeHevc.get()->AddRef();
+        }
+        return (void*)&m_mfeHevc;
+    }
+    else if (MFXMFEHEVCENCODER_GUID == guid)
+    {
+        return (void*)&m_mfeHevc;
     }
 #endif
     else if (MFXICORECM_GUID == guid)

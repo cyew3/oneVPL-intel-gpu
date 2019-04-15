@@ -21,14 +21,14 @@
 #ifndef _MFX_MFE_ADAPTER_DXVA_
 #define _MFX_MFE_ADAPTER_DXVA_
 
-#if defined(MFX_VA_WIN) && defined(MFX_ENABLE_MFE)
+#if defined(MFX_VA_WIN) && defined(MFX_ENABLE_MFE) && !defined(AS_MFX_LA_PLUGIN) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
 #include <vector>
 #include <list>
 #include <condition_variable>
 #include <mfxstructures.h>
 #include "encoding_ddi.h"
 #include "hevce_ddi_main.h"
-#define DEBUG_TRACE
+//#define DEBUG_TRACE
 class MFEDXVAEncoder
 {
     typedef void* CAPS;

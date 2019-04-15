@@ -389,6 +389,12 @@ VAAPIVideoCORE::VAAPIVideoCORE(
           , m_bCmCopyAllowed(false)
 #endif
           , m_bHEVCFEIEnabled(false)
+#if defined(MFX_ENABLE_MFE)
+          , m_mfeAvc()
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+          , m_mfeHevc()
+#endif
+#endif
 {
 } // VAAPIVideoCORE::VAAPIVideoCORE(...)
 
@@ -1479,20 +1485,36 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         return (void*) &m_encode_caps;
     }
 #ifdef MFX_ENABLE_MFE
-    else if (MFXMFEDDIENCODER_SEARCH_GUID == guid)
+    else if (MFXMFEAVCENCODER_SEARCH_GUID == guid)
     {
-        if (!m_mfe.get())
+        if (!m_mfeAvc.get())
         {
-            m_mfe = (MFEVAAPIEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEDDIENCODER_GUID);
-            if (m_mfe.get())
-                m_mfe.get()->AddRef();
+            m_mfeAvc = (MFEVAAPIEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEAVCENCODER_GUID);
+            if (m_mfeAvc.get())
+                m_mfeAvc.get()->AddRef();
         }
-        return (void*)&m_mfe;
+        return (void*)&m_mfeAvc;
     }
-    else if (MFXMFEDDIENCODER_GUID == guid)
+    else if (MFXMFEAVCENCODER_GUID == guid)
     {
-        return (void*)&m_mfe;
+        return (void*)&m_mfeAvc;
     }
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+    else if (MFXMFEHEVCENCODER_SEARCH_GUID == guid)
+    {
+        if (!m_mfeHevc.get())
+        {
+            m_mfeHevc = (MFEVAAPIEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEVAAPIEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEHEVCENCODER_GUID);
+            if (m_mfeHevc.get())
+                m_mfeHevc.get()->AddRef();
+        }
+        return (void*)&m_mfeHevc;
+    }
+    else if (MFXMFEHEVCENCODER_GUID == guid)
+    {
+        return (void*)&m_mfeHevc;
+    }
+#endif
 #endif
     else if (MFXICORECM_GUID == guid)
     {

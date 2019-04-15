@@ -194,8 +194,9 @@ private:
     // Ordinal number of adapter to work
     const mfxU32                         m_adapterNum;
     ComPtrCore<ID3D11VideoDecoder>       m_comptr;
-#ifdef MFX_ENABLE_MFE
-    ComPtrCore<MFEDXVAEncoder>           m_mfe;
+#if defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+    ComPtrCore<MFEDXVAEncoder>           m_mfeAvc;
+    ComPtrCore<MFEDXVAEncoder>           m_mfeHevc;
 #endif
     bool m_bCmCopy;
     bool m_bCmCopySwap;

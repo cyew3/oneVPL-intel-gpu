@@ -230,11 +230,14 @@ private:
 
     std::unique_ptr<VAAPIAdapter>               m_pAdapter;
     std::unique_ptr<CMEnabledCoreAdapter>       m_pCmAdapter;
-#ifdef MFX_ENABLE_MFE
-    ComPtrCore<MFEVAAPIEncoder> m_mfe;
-#endif
     //required to WA FEI enabling after move it from plugin to library
     bool                                 m_bHEVCFEIEnabled;
+#ifdef MFX_ENABLE_MFE
+    ComPtrCore<MFEVAAPIEncoder>          m_mfeAvc;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+    ComPtrCore<MFEVAAPIEncoder>          m_mfeHevc;
+#endif
+#endif
 };
 
 class PointerProxy

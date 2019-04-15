@@ -27,8 +27,12 @@
 
 #include "mfx_h265_encode_hw_utils.h"
 #include "mfx_h265_encode_hw_bs.h"
-#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
+#if defined(MFX_ENABLE_MFE)
+#if defined(MFX_VA_WIN)
 #include "mfx_mfe_adapter_dxva.h"
+#else
+#include "mfx_mfe_adapter.h"
+#endif
 #endif
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
@@ -165,8 +169,12 @@ const GUID GuidTable[3][3][3] =
 
 #endif
 };
-#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
+#if defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_VA_WIN)
 MFEDXVAEncoder* CreatePlatformMFEEncoder(VideoCORE* core);
+#else
+MFEVAAPIEncoder* CreatePlatformMFEEncoder(VideoCORE* core);
+#endif
 #endif
 mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* pCore);
 

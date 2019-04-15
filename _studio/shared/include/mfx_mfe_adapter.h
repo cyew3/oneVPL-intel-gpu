@@ -83,10 +83,10 @@ public:
     mfxStatus Create(mfxExtMultiFrameParam const & par, VADisplay vaDisplay);
 
 
-    mfxStatus Join(VAContextID ctx, long long timeout);
+    mfxStatus Join(VAContextID ctx, unsigned long long timeout);
     mfxStatus Disjoin(VAContextID ctx);
     mfxStatus Destroy();
-    mfxStatus Submit(VAContextID context, long long timeToWait, bool skipFrame);//time passed in microseconds
+    mfxStatus Submit(VAContextID context, unsigned long long timeToWait, bool skipFrame);//time passed in microseconds
 
     virtual void AddRef();
     virtual void Release();
