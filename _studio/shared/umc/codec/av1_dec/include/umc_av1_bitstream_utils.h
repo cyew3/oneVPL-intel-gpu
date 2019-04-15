@@ -199,7 +199,7 @@ namespace UMC_AV1_DECODER
     /* Shift down with rounding for signed integers, for use when n >= 0 */
     inline int64_t RoundPowerOfTwoSigned(int64_t value, uint16_t n)
     {
-        return (value < 0) ? RoundPowerOfTwo(-value, n)
+        return (value < 0) ? -(static_cast<int64_t>(RoundPowerOfTwo(-value, n)))
             : RoundPowerOfTwo(value, n);
     }
 
@@ -241,8 +241,8 @@ namespace UMC_AV1_DECODER
         if (!is_affine_valid(params))
             return false;
 
-        const int32_t int16Min = std::numeric_limits<int32_t>::min();
-        const int32_t int16Max = std::numeric_limits<int32_t>::max();
+        const int32_t int16Min = std::numeric_limits<int16_t>::min();
+        const int32_t int16Max = std::numeric_limits<int16_t>::max();
 
         params.alpha =
             static_cast<int16_t>(mfx::clamp(params.wmmat[2] - (1 << WARPEDMODEL_PREC_BITS), int16Min, int16Max));

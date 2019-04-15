@@ -392,8 +392,14 @@ namespace UMC_AV1_DECODER
                 case OBU_FRAME:
                     if (!sequence_header.get())
                         break; // bypass frame header if there is no active seq header
-                    bs.ReadUncompressedHeader(fh, *sequence_header, prev_fh, updated_refs, obuInfo.header);
-                    gotFrameHeader = true;
+                    if (!gotFrameHeader)
+                    {
+                        // we read only first entry of uncompressed header in the frame
+                        // each subsequent copy of uncompressed header (i.e. OBU_REDUNDANT_FRAME_HEADER) must be exact copy of first entry by AV1 spec
+                        // TODO: [robust] maybe need to add check that OBU_REDUNDANT_FRAME_HEADER contains copy of OBU_FRAME_HEADER
+                        bs.ReadUncompressedHeader(fh, *sequence_header, prev_fh, updated_refs, obuInfo.header);
+                        gotFrameHeader = true;
+                    }
                     if (obuType != OBU_FRAME)
                     {
                         if (fh.show_existing_frame)
