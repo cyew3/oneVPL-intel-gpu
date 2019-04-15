@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -26,8 +26,9 @@ int RunTest(unsigned int id)
     dec.m_par.AsyncDepth = 1; // enable LowLatency mode for decoder (by doc.)
 
     dec.DecodeHeader();
-
-    for (mfxU32 i = 0; i < 96; i++) // 96 frames in stream; no buffering, so no zero bitstream required at the end
+    
+    mfxU32 frame_number = g_tsConfig.sim ? 48 : 96;
+    for (mfxU32 i = 0; i < frame_number; i++) // no buffering, so no zero bitstream required at the end
     {
         dec.DecodeFrameAsync();
         g_tsStatus.check(); // expect MFX_ERR_NONE for each call
