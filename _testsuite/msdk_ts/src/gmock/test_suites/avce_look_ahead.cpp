@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 File Name: avce_look_ahead.cpp
 \* ****************************************************************************** */
@@ -164,7 +164,7 @@ namespace avce_look_ahead{
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_2x}}},
 
-        {/*12*/ MFX_ERR_NONE, MFX_ERR_NONE,
+        {/*12*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 201},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, 4}}},
@@ -189,7 +189,7 @@ namespace avce_look_ahead{
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_4x}}},
 
-        {/*17*/ MFX_ERR_NONE, MFX_ERR_NONE,
+        {/*17*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, 4}}}
@@ -228,7 +228,7 @@ namespace avce_look_ahead{
         if (exp ==  MFX_ERR_UNSUPPORTED && par.mfx.RateControlMethod != MFX_RATECONTROL_LA && g_tsImpl == MFX_IMPL_SOFTWARE)
             EXPECT_NE(m_co2->LookAheadDS, co2->LookAheadDS) << "LookAheadDS was not changed";
 
-        if (exp == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM && co2->LookAheadDS!=MFX_LOOKAHEAD_DS_4x)
+        if (exp == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM && co2->LookAheadDS < MFX_LOOKAHEAD_DS_4x)
             EXPECT_NE(m_co2->LookAheadDepth, co2->LookAheadDepth) << "LookAheadDepth was not changed";
 
         m_par = initParams();
@@ -236,7 +236,7 @@ namespace avce_look_ahead{
         par = m_par;
         m_co2 = reinterpret_cast <mfxExtCodingOption2*> (m_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2));
         co2 = reinterpret_cast <mfxExtCodingOption2*> (par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2));
-        
+
         exp = tc.i_sts;
         if (g_tsHWtype < MFX_HW_HSW)
             exp = MFX_ERR_UNSUPPORTED;
@@ -250,7 +250,7 @@ namespace avce_look_ahead{
 
         if (exp == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM){
             GetVideoParam();
-            if (co2->LookAheadDS != MFX_LOOKAHEAD_DS_4x)
+            if (co2->LookAheadDS < MFX_LOOKAHEAD_DS_4x)
                 EXPECT_NE(m_co2->LookAheadDepth, co2->LookAheadDepth) << "LookAheadDepth was not changed";
             if (g_tsImpl == MFX_IMPL_SOFTWARE && !(m_co2->LookAheadDS == MFX_LOOKAHEAD_DS_UNKNOWN
                                           || m_co2->LookAheadDS == MFX_LOOKAHEAD_DS_OFF ))
