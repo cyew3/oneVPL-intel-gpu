@@ -202,7 +202,7 @@ mfxModuleHandle mfx_dll_load(const msdk_disp_char *pFileName)
 
 // load the library's module
 #if !defined(OPEN_SOURCE)
-#if !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
+#if !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_ARM_LOADER)
     hModule = LoadLibraryExW(pFileName, NULL, 0);
 #else
     hModule = LoadPackagedLibrary(pFileName, 0);

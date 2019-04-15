@@ -206,5 +206,9 @@ namespace MFX
             mRecords = 0;
             mNrecords = 0;
         }
+        T * data() const
+        {
+            return mRecords;
+        }
     };
 }

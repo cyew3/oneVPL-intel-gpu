@@ -145,9 +145,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="!$(Configuration.Contains('DFP')) and !$(Platform.Contains('ARM'))">
+    <ClCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WINAPI_FAMILY=WINAPI_FAMILY_DESKTOP_APP</PreprocessorDefinitions>
+    </ClCompile>
     <Lib>
-      <AdditionalDependencies Condition="!$(Configuration.Contains('Debug'))">intel_gfx_api-$(PlatformTarget).lib;</AdditionalDependencies>
-      <AdditionalDependencies Condition="$(Configuration.Contains('Debug'))">intel_gfx_api-$(PlatformTarget)_d.lib;</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MfxBuildDir)..\build\win_$(Platform)\lib\</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
@@ -185,6 +186,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\mfx_dispatcher.cpp" />
     <ClCompile Include="src\mfx_dispatcher_log.cpp" />
+    <ClCompile Include="src\mfx_driver_store_loader.cpp" />
     <ClCompile Include="src\mfx_function_table.cpp" />
     <ClCompile Include="src\mfx_load_dll.cpp" />
   </ItemGroup>
@@ -193,6 +195,7 @@
     <ClInclude Include="include\mfx_dispatcher.h" />
     <ClInclude Include="include\mfx_dispatcher_defs.h" />
     <ClInclude Include="include\mfx_dispatcher_log.h" />
+    <ClInclude Include="include\mfx_driver_store_loader.h" />
     <ClInclude Include="include\mfx_exposed_functions_list.h" />
     <ClInclude Include="include\mfx_load_dll.h" />
     <ClInclude Include="include\mfx_vector.h" />

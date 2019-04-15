@@ -6,6 +6,7 @@
     <ClCompile Include="src\mfx_function_table.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\mfx_load_dll.cpp" />
+    <ClCompile Include="src\mfx_driver_store_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mfxaudio_exposed_functions_list.h" />
@@ -15,6 +16,7 @@
     <ClInclude Include="include\mfx_exposed_functions_list.h" />
     <ClInclude Include="include\mfx_vector.h" />
     <ClInclude Include="include\mfx_load_dll.h" />
+    <ClInclude Include="include\mfx_driver_store_loader.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Documentation">

@@ -32,6 +32,10 @@
 #include "mfx_library_iterator.h"
 #include "mfx_critical_section.h"
 
+#if defined(MEDIASDK_UWP_PROCTABLE)
+#include "mfx_driver_store_loader.h"
+#endif
+
 #include <string.h> /* for memset on Linux */
 
 #include <stdlib.h> /* for qsort on Linux */
@@ -937,7 +941,7 @@ mfxStatus MFXAudioUSER_UnLoad(mfxSession session, const mfxPluginUID *uid)
 #include <windows.h>
 #include "intel_api_factory.h"
 
-#if !defined(OPEN_SOURCE) && defined(MEDIASDK_DFP_LOADER)
+#if !defined(OPEN_SOURCE)
 static mfxModuleHandle hModule;
 #endif
 
@@ -948,9 +952,22 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     HRESULT hr = S_OK;
 
 #if !defined(OPEN_SOURCE)
-#if defined(MEDIASDK_DFP_LOADER)
+#if !defined(MEDIASDK_DFP_LOADER) && defined(MEDIASDK_ARM_LOADER)
+    hr = E_NOTIMPL;
+#else
     msdk_disp_char IntelGFXAPIdllName[MFX_MAX_DLL_PATH] = { 0 };
-    mfx_get_default_intel_gfx_api_dll_name(IntelGFXAPIdllName, sizeof(IntelGFXAPIdllName) / sizeof(IntelGFXAPIdllName[0]));
+
+#if !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_ARM_LOADER)
+    DriverStoreLoader dsLoader;
+    if (!dsLoader.GetDriverStorePath(IntelGFXAPIdllName, sizeof(IntelGFXAPIdllName)))
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+#endif
+
+    size_t pathLen = wcslen(IntelGFXAPIdllName);
+    mfx_get_default_intel_gfx_api_dll_name(IntelGFXAPIdllName + pathLen, sizeof(IntelGFXAPIdllName) / sizeof(IntelGFXAPIdllName[0]) - pathLen);
+    DISPATCHER_LOG_INFO((("loading %S\n"), IntelGFXAPIdllName));
     hModule = MFX::mfx_dll_load(IntelGFXAPIdllName);
     if (!hModule)
     {
@@ -964,10 +981,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         return MFX_ERR_UNSUPPORTED;
     }
     hr = (*(HRESULT(APIENTRY *) (HANDLE*, LPVOID, LPVOID)) pFunc) ((HANDLE*)session, &par, nullptr);
-#elif defined(MEDIASDK_ARM_LOADER)
-    hr = E_NOTIMPL;
-#else
-    hr = InitialiseMediaSession((HANDLE*)session, &par, nullptr);
 #endif
 #else // !defined(OPEN_SOURCE)
 #if defined(MEDIASDK_ARM_LOADER)
@@ -991,7 +1004,9 @@ mfxStatus MFXClose(mfxSession session)
     HRESULT hr = S_OK;
 
 #if !defined(OPEN_SOURCE)
-#if defined(MEDIASDK_DFP_LOADER)
+#if !defined(MEDIASDK_DFP_LOADER) && defined(MEDIASDK_ARM_LOADER)
+    hr = E_NOTIMPL;
+#else
     if (hModule)
     {
         mfxFunctionPointer pFunc = (mfxFunctionPointer)mfx_dll_get_addr(hModule, "DisposeMediaSession");
@@ -1004,10 +1019,6 @@ mfxStatus MFXClose(mfxSession session)
     }
     else
         return MFX_ERR_INVALID_HANDLE;
-#elif defined(MEDIASDK_ARM_LOADER)
-    hr = E_NOTIMPL;
-#else
-    hr = DisposeMediaSession(HANDLE(session));
 #endif
 #else // !defined(OPEN_SOURCE)
 #if defined(MEDIASDK_ARM_LOADER)
