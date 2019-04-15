@@ -1320,7 +1320,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 else if (0 == vm_string_strcmp(strInput[i], VM_STRING("hw")) )
                 {
                     //pParams->ImpLib = (isD3D11Required) ? (MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11): (MFX_IMPL_HARDWARE|MFX_IMPL_VIA_D3D9);
-                    pParams->ImpLib = MFX_IMPL_HARDWARE;
+                    pParams->ImpLib = MFX_IMPL_HARDWARE_ANY;
                 }
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-d3d11")) )
@@ -1486,7 +1486,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
         pParams->vaType = isD3D11Required ? ALLOC_IMPL_VIA_D3D11 : ALLOC_IMPL_VIA_D3D9;
     }
 
-    if (pParams->ImpLib & MFX_IMPL_HARDWARE)
+    if (pParams->ImpLib & MFX_IMPL_HARDWARE_ANY)
     {
 #if defined(_WIN32) || defined(_WIN64)
         pParams->ImpLib |= (isD3D11Required)? MFX_IMPL_VIA_D3D11 : MFX_IMPL_VIA_D3D9;

@@ -25,6 +25,10 @@
 
 #include "fast_copy.h"
 
+#ifdef MFX_D3D11_SUPPORT
+#include <dxgi1_2.h>
+#endif
+
 #define MFX_CHECK_STS(sts) {if (MFX_ERR_NONE != sts) return sts;}
 
 /* ******************************************************************* */
@@ -251,7 +255,7 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     //-------------------------------------------------------
     mfxIMPL impl;
     pMfxSession->QueryIMPL(&impl);
-    bool isHWlib = (MFX_IMPL_HARDWARE & impl) ? true:false;
+    bool isHWlib = (MFX_IMPL_HARDWARE_ANY & impl || MFX_IMPL_HARDWARE & impl) ? true:false;
 
     const vm_char* sImpl = (isHWlib) ? VM_STRING("hw") : VM_STRING("sw");
     vm_string_printf(VM_STRING("MediaSDK impl\t%s"), sImpl);
@@ -259,7 +263,8 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
 #ifndef LIBVA_SUPPORT
     if (isHWlib || (pParams->vaType & (ALLOC_IMPL_VIA_D3D9 | ALLOC_IMPL_VIA_D3D11)))
     {
-        bool  isD3D11 = (( ALLOC_IMPL_VIA_D3D11 == pParams->vaType) || (pParams->ImpLib == (MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11))) ?  true : false;
+        bool  isD3D11 = (( ALLOC_IMPL_VIA_D3D11 == pParams->vaType) || (pParams->ImpLib == (MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11))
+                                                                    || (pParams->ImpLib == (MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11))) ?  true : false;
         const vm_char* sIface = ( isD3D11 ) ? VM_STRING("VIA_D3D11") : VM_STRING("VIA_D3D9");
         vm_string_printf(VM_STRING(" | %s"), sIface);
     }
@@ -465,7 +470,7 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
 
 #ifdef MFX_D3D11_SUPPORT
 
-mfxStatus CreateD3D11Device(ID3D11Device** ppD3D11Device, ID3D11DeviceContext** ppD3D11DeviceContext)
+mfxStatus CreateD3D11Device(ID3D11Device** ppD3D11Device, ID3D11DeviceContext** ppD3D11DeviceContext, mfxU32 nAdapter)
 {
 
     HRESULT hRes = S_OK;
@@ -473,8 +478,18 @@ mfxStatus CreateD3D11Device(ID3D11Device** ppD3D11Device, ID3D11DeviceContext** 
     static D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
     D3D_FEATURE_LEVEL pFeatureLevelsOut;
 
-    hRes = D3D11CreateDevice(NULL,
-        D3D_DRIVER_TYPE_HARDWARE,
+    CComPtr<IDXGIFactory2> dxgiFactory;
+    CComPtr<IDXGIAdapter1> dxgiAdapter;
+    hRes = CreateDXGIFactory(__uuidof(IDXGIFactory2), (void**)(&dxgiFactory));
+    if (FAILED(hRes))
+        return MFX_ERR_DEVICE_FAILED;
+
+    hRes = dxgiFactory->EnumAdapters1(nAdapter, &dxgiAdapter);
+    if (FAILED(hRes))
+        return MFX_ERR_DEVICE_FAILED;
+
+    hRes = D3D11CreateDevice(dxgiAdapter,
+        D3D_DRIVER_TYPE_UNKNOWN,
         NULL,
         0,
         FeatureLevels,
@@ -731,7 +746,7 @@ mfxStatus InitMemoryAllocator(
 
     pAllocator->pMfxAllocator =  new GeneralAllocator;
 
-    bool isHWLib       = (MFX_IMPL_HARDWARE & pInParams->ImpLib) ? true : false;
+    bool isHWLib       = (MFX_IMPL_HARDWARE_ANY & pInParams->ImpLib) ? true : false;
     bool isExtVideoMem = (pInParams->IOPattern != (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY)) ? true : false;
 
     bool isNeedExtAllocator = (isHWLib || isExtVideoMem);
@@ -739,7 +754,7 @@ mfxStatus InitMemoryAllocator(
     if( isNeedExtAllocator )
     {
 #ifdef D3D_SURFACES_SUPPORT
-        if( ((MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9) == pInParams->ImpLib) || (ALLOC_IMPL_VIA_D3D9 == pInParams->vaType) )
+        if( ((MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D9) == pInParams->ImpLib) || (ALLOC_IMPL_VIA_D3D9 == pInParams->vaType) )
         {
             D3DAllocatorParams *pd3dAllocParams = new D3DAllocatorParams;
             // prepare device manager
@@ -759,14 +774,14 @@ mfxStatus InitMemoryAllocator(
             sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
             CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetFrameAllocator\n"));  WipeMemoryAllocator(pAllocator);});
         }
-        else if ( ((MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11) == pInParams->ImpLib) || ((ALLOC_IMPL_VIA_D3D11 == pInParams->vaType)))
+        else if ( ((MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11) == pInParams->ImpLib) || ((ALLOC_IMPL_VIA_D3D11 == pInParams->vaType)))
         {
 #ifdef MFX_D3D11_SUPPORT
 
             D3D11AllocatorParams *pd3d11AllocParams = new D3D11AllocatorParams;
 
             // prepare device manager
-            sts = CreateD3D11Device(&(pAllocator->pD3D11Device), &(pAllocator->pD3D11DeviceContext));
+            sts = CreateD3D11Device(&(pAllocator->pD3D11Device), &(pAllocator->pD3D11DeviceContext), MSDKAdapter::GetNumber(pProcessor->mfxSession));
             CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to CreateD3D11Device\n"));  WipeMemoryAllocator(pAllocator);});
 
             sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_D3D11_DEVICE, pAllocator->pD3D11Device);
