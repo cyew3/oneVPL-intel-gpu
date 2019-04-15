@@ -1167,6 +1167,10 @@ static mfxStatus CheckFrameInfo(mfxFrameInfo const &currInfo, mfxFrameInfo &info
         case MFX_FOURCC_Y410:
 #endif
             break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_P016:
+        case MFX_FOURCC_Y416:
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
         case MFX_FOURCC_P010:
 #if (MFX_VERSION >= 1027)
         case MFX_FOURCC_Y210:
