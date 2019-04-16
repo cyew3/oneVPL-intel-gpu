@@ -789,6 +789,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
             case 2:
                 gold_indx = altref_indx;
+                break;
 
             case 0:
             default:
@@ -803,6 +804,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
             case 2:
                 altref_indx = oldgold_indx;
+                break;
 
             case 0:
             default:
