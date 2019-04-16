@@ -348,10 +348,12 @@ mfxU32 Str2FourCC( msdk_char* strInput )
     {
         fourcc = MFX_FOURCC_RGB4;
     }
+#if (MFX_VERSION >= 1028)
     else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("rgbp")) )
     {
         fourcc = MFX_FOURCC_RGBP;
     }
+#endif
     else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("yuy2")) )
     {
         fourcc = MFX_FOURCC_YUY2;

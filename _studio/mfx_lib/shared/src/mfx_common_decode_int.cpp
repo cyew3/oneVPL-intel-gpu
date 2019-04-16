@@ -178,7 +178,9 @@ void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoStreamInfo *umcVi
     case MFX_FOURCC_YUV422H:
     case MFX_FOURCC_YUV422V:
     case MFX_FOURCC_YUV444:
+#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
+#endif
         umcVideoParams->color_format = UMC::YUY2;
         break;
 

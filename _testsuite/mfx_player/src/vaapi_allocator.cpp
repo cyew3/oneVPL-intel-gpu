@@ -323,10 +323,12 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             {
                 format = VA_RT_FORMAT_YUV420;
             }
+#if VA_CHECK_VERSION(1,2,0)
             else if (va_fourcc == VA_FOURCC_P010)
             {
                 format = VA_RT_FORMAT_YUV420_10;
             }
+#endif
 
 #if defined(ANDROID)
             // It seems that VA implementation on android(W49) doesn't accept "attrib" parameter (ERR_UNKNOWN on

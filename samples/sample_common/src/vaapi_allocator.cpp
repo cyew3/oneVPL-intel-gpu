@@ -240,10 +240,12 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             {
                 format = VA_RT_FORMAT_RGB32_10BPP;
             }
+#if (MFX_VERSION >= 1028)
             else if (fourcc == MFX_FOURCC_RGBP)
             {
                 format = VA_RT_FORMAT_RGBP;
             }
+#endif
 
             va_res = m_libva->vaCreateSurfaces(m_dpy,
                                     format,

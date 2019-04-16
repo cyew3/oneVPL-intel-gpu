@@ -82,8 +82,10 @@ static
         return MSDK_STRING("RGB3");
     case MFX_FOURCC_RGB4:
         return MSDK_STRING("RGB4");
+#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGBP:
         return MSDK_STRING("RGBP");
+#endif
     case MFX_FOURCC_YUV400:
         return MSDK_STRING("YUV400");
     case MFX_FOURCC_YUV411:
@@ -1897,6 +1899,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL( fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4u*w, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
+#if (MFX_VERSION >= 1028)
     else if (pInfo->FourCC == MFX_FOURCC_RGBP)
     {
         MSDK_CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);
@@ -1919,6 +1922,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL( fwrite(ptr + i * pitch, 1, w, m_fDst), w, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
+#endif
     else if (pInfo->FourCC == MFX_FOURCC_AYUV)
     {
         ptr = std::min( std::min(pData->Y, pData->U), std::min(pData->V, pData->A) );
