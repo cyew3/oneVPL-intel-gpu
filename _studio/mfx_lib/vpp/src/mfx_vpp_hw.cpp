@@ -1082,9 +1082,9 @@ mfxStatus ResMngr::FillTask(
             }
         }
         pTask->m_refList.push_back(fwdSurf);
-        if (m_pSubResource && refIndx && m_multiBlt)
+        if (m_pSubResource && m_multiBlt)
         {
-            m_pSubResource->subTasks.push_back(pTask->taskIndex + refIndx);
+            m_pSubResource->subTasks.push_back(pTask->taskIndex + refIndx + 1);
         }
         actualNumber++;
     }
