@@ -123,20 +123,7 @@ struct SrfEncCtlDelete : public std::unary_function<SrfEncCtl,void>
     }
 };
 
-struct SrfUnlocker : public std::binary_function<mfxFrameAllocator , SrfEncCtl, bool>
-{
-    bool operator ()(const mfxFrameAllocator & alloc, const SrfEncCtl & ctrl)const
-    {
-        MFX_CHECK_WITH_ERR( !alloc.Unlock(alloc.pthis
-                          , ctrl.pSurface->Data.MemId
-                          , &ctrl.pSurface->Data)
-                          , true);
-
-        return false;
-    }
-};
-
-struct BufferIdCompare 
+struct BufferIdCompare
     : public std::binary_function<mfxExtBuffer*, mfxU32 , bool>
 {
     bool operator ()(mfxExtBuffer* a, mfxU32 bufferid) const
@@ -147,7 +134,7 @@ struct BufferIdCompare
     }
 };
 
-struct mfxExtBufferIdEqual 
+struct mfxExtBufferIdEqual
     : public std::binary_function<mfxExtBuffer*, mfxExtBuffer* , bool>
 {
     bool operator ()(mfxExtBuffer* a, mfxExtBuffer *b) const

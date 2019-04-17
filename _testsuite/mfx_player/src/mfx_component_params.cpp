@@ -181,9 +181,18 @@ mfxStatus ComponentParams::DestroySurfaces()
         {
             if (!m_bExternalAlloc)
             {
+                size_t idx = 0;
+                mfxFrameAllocator* alloc = (mfxFrameAllocator*)m_pAllocator;
                 MFX_CHECK( i->surfaces.end() == std::find_if( i->surfaces.begin()
                     , i->surfaces.end()
-                    , bind1st(SrfUnlocker(), *(mfxFrameAllocator*)m_pAllocator)));
+                    , [alloc, i, &idx](SrfEncCtl& s) {
+                    MFX_CHECK_WITH_ERR(!alloc->Unlock(
+                        alloc->pthis
+                        , (*i).allocResponce.mids[idx++]
+                        , &s.pSurface->Data)
+                        , true);
+                    return false;
+                }));
             }
 
             MFX_CHECK_STS(m_pAllocator->FreeFrames(&i->allocResponce));

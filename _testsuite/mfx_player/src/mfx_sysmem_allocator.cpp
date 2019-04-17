@@ -231,11 +231,11 @@ mfxStatus SysMemFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 {
     MFX_CHECK(m_pBufferAllocator, MFX_ERR_NOT_INITIALIZED);
 
-    mfxMemId *pmid = GetMidHolder(ptr);
-    MFX_CHECK(pmid, MFX_ERR_INVALID_HANDLE);
-
-    mfxStatus sts = m_pBufferAllocator->Unlock(m_pBufferAllocator->pthis, *pmid);
-    MFX_CHECK_STS(sts);
+    if (!mid && ptr && (ptr->Y || ptr->Y410))
+    {
+        mfxStatus sts = m_pBufferAllocator->Unlock(m_pBufferAllocator->pthis, mid);
+        MFX_CHECK_STS(sts);
+    }
 
     if (ptr)
     {
