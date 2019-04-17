@@ -1539,6 +1539,7 @@ namespace MfxHwH264Encode
         bool                            m_emulPrev;                 // insert emualtion prevention bytes when possible (sps/pps/sei/aud)
         bool                            m_isMVC;
         bool                            m_longStartCodes;
+        bool                            m_isLowPower;
 
         ENCODE_PACKEDHEADER_DATA                m_packedAud;
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
