@@ -71,6 +71,9 @@ h264d:
   - sergey.solodkov@intel.com
   - roman.kazantsev@intel.com
   - dmitry.gurulev@intel.com
+  - ilya.sergeev@intel.com
+  - alexander.smirnov@intel.com
+  - anton.dranitsin@intel.com
 
 h264e:
   paths:
@@ -100,6 +103,9 @@ mpeg2d:
   - dmitry.ermilov@intel.com
   - alexei.leonenko@intel.com
   - dmitry.gurulev@intel.com
+  - ilya.sergeev@intel.com
+  - alexander.smirnov@intel.com
+  - anton.dranitsin@intel.com
 
 mpeg2e:
   paths:
@@ -141,6 +147,9 @@ hevcd:
   - dmitry.ermilov@intel.com
   - alexei.leonenko@intel.com
   - dmitry.gurulev@intel.com
+  - ilya.sergeev@intel.com
+  - alexander.smirnov@intel.com
+  - anton.dranitsin@intel.com
 
 hevce:
   paths:
@@ -175,6 +184,9 @@ mjpegd:
   - dmitry.brazhkin@intel.com
   - andrey.larionov@intel.com
   - dmitry.gurulev@intel.com
+  - ilya.sergeev@intel.com
+  - alexander.smirnov@intel.com
+  - anton.dranitsin@intel.com
 
 mjpege:
   paths:
@@ -200,6 +212,9 @@ vp8d:
   - sergey.solodkov@intel.com
   - alexei.leonenko@intel.com
   - dmitry.gurulev@intel.com
+  - ilya.sergeev@intel.com
+  - alexander.smirnov@intel.com
+  - anton.dranitsin@intel.com
 
 vp8e:
   paths:
@@ -224,6 +239,11 @@ vp9d:
   - alexei.leonenko@intel.com
   - dmitry.gurulev@intel.com
   - mikhailx.aksenov@intel.com
+  - ilya.sergeev@intel.com
+  - alexander.smirnov@intel.com
+  - anton.dranitsin@intel.com
+  - anastasiia.sokolova@intel.com
+  - ekaterina.shiryaeva.alexandrovna@intel.com
 
 vp9e:
   paths:
@@ -234,6 +254,8 @@ vp9e:
   - alexei.leonenko@intel.com
   - stanislav.efremov@intel.com
   - dmitryx.malishev@intel.com
+  - anastasiia.sokolova@intel.com
+  - ekaterina.shiryaeva.alexandrovna@intel.com
 
 av1d:
   paths:
@@ -246,6 +268,9 @@ av1d:
   reviewers:
   - dmitry.gurulev@intel.com
   - stanislav.efremov@intel.com
+  - ilya.sergeev@intel.com
+  - alexander.smirnov@intel.com
+  - anton.dranitsin@intel.com
 
 vpp:
   paths:
