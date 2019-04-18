@@ -31,6 +31,7 @@
 #include <string>
 
 #include "ippj.h"
+#include "ippcc2mfx.h"
 #include "jpegbase.h"
 #include "jpegenc.h"
 
@@ -149,7 +150,7 @@ JERRCODE CJPEGEncoder::Clean(void)
 
   if(0 != m_block_buffer)
   {
-    ippFree(m_block_buffer);
+    mfxFree(m_block_buffer);
     m_block_buffer = 0;
   }
 
@@ -1706,7 +1707,7 @@ JERRCODE CJPEGEncoder::ProcessRestart(
   int       currPos;
   uint8_t*    dst;
   JERRCODE  jerr;
-  IppStatus status = ippStsNoErr;
+  int status = ippStsNoErr;
 
   TRC0("-> ProcessRestart");
 
@@ -1725,7 +1726,7 @@ JERRCODE CJPEGEncoder::ProcessRestart(
   case JPEG_BASELINE:
   case JPEG_EXTENDED:
     {
-      status = ippiEncodeHuffman8x8_JPEG_16s1u_C1(
+      status = mfxiEncodeHuffman8x8_JPEG_16s1u_C1(
                  0,dst,dstLen,&currPos,0,0,0,m_state,1);
       break;
     }
@@ -1736,12 +1737,12 @@ JERRCODE CJPEGEncoder::ProcessRestart(
       // DC scan
       if(Ah == 0)
       {
-        status = ippiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1(
+        status = mfxiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1(
                    0,dst,dstLen,&currPos,0,0,0,m_state,1);
       }
       else
       {
-        status = ippiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1(
+        status = mfxiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1(
                    0,dst,dstLen,&currPos,0,m_state,1);
       }
     }
@@ -1752,19 +1753,19 @@ JERRCODE CJPEGEncoder::ProcessRestart(
 
       if(Ah == 0)
       {
-        status = ippiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1(
+        status = mfxiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1(
                    0,dst,dstLen,&currPos,Ss,Se,Al,actbl,m_state,1);
       }
       else
       {
-        status = ippiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1(
+        status = mfxiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1(
                    0,dst,dstLen,&currPos,Ss,Se,Al,actbl,m_state,1);
       }
     }
     break;
 
   case JPEG_LOSSLESS:
-    status = ippiEncodeHuffmanOne_JPEG_16s1u_C1(
+    status = mfxiEncodeHuffmanOne_JPEG_16s1u_C1(
                0,dst,dstLen,&currPos,0,m_state,1);
     break;
   default:
@@ -1775,11 +1776,11 @@ JERRCODE CJPEGEncoder::ProcessRestart(
 
   if(ippStsNoErr > status)
   {
-    LOG1("IPP Error: ippiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
+    LOG1("IPP Error: mfxiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -1811,7 +1812,7 @@ JERRCODE CJPEGEncoder::ProcessRestart(
   int    Ah,
   int    Al)
 {
-  IppStatus status;
+  int status;
 
   TRC0("-> ProcessRestart");
 
@@ -1829,30 +1830,30 @@ JERRCODE CJPEGEncoder::ProcessRestart(
 
       if(Ah == 0)
       {
-        status = ippiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1(
+        status = mfxiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1(
                    0,&stat[m_ccomp[id[0]].m_ac_selector][0],Ss,Se,Al,m_state,1);
 
         if(ippStsNoErr > status)
         {
-          LOG1("IPP Error: ippiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1() failed - ",status);
+          LOG1("IPP Error: mfxiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1() failed - ",status);
           return JPEG_ERR_INTERNAL;
         }
       }
       else
       {
-        status = ippiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1(
+        status = mfxiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1(
                    0,&stat[m_ccomp[id[0]].m_ac_selector][0],Ss,Se,Al,m_state,1);
 
         if(ippStsNoErr > status)
         {
-          LOG1("IPP Error: ippiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1() failed - ",status);
+          LOG1("IPP Error: mfxiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1() failed - ",status);
           return JPEG_ERR_INTERNAL;
         }
       }
     }
   }
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -2113,7 +2114,7 @@ JERRCODE CJPEGEncoder::Init(void)
   {
       if(m_block_buffer)
       {
-          ippFree(m_block_buffer);
+          mfxFree(m_block_buffer);
           m_block_buffer = 0;
       }
       m_block_buffer_size = 0;
@@ -2122,7 +2123,7 @@ JERRCODE CJPEGEncoder::Init(void)
   // MCUs buffer
   if(0 == m_block_buffer)
   {
-    m_block_buffer = (int16_t*)ippMalloc(tr_buf_size);
+    m_block_buffer = (int16_t*)mfxMalloc(tr_buf_size);
     if(0 == m_block_buffer)
     {
       return JPEG_ERR_ALLOC;
@@ -2196,7 +2197,7 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
   uint8_t*    pSrc8u  = 0;
   uint16_t*   pSrc16u = 0;
   mfxSize  roi;
-  IppStatus status;
+  int status;
 
   cc_h = m_ccHeight;
 
@@ -2233,18 +2234,18 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
         {
           pDst8u = m_ccomp[0].GetCCBufferPtr(0/*thread_id*/);
 
-          status = ippiCopy_8u_C1R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+          status = mfxiCopy_8u_C1R(pSrc8u,srcStep,pDst8u,dstStep,roi);
         }
         else
         {
           pDst16u = (uint16_t*)m_ccomp[0].GetCCBufferPtr(0/*thread_id*/);
 
-          status = ippiCopy_16s_C1R((int16_t*)pSrc16u,srcStep,(int16_t*)pDst16u,dstStep,roi);
+          status = mfxiCopy_16s_C1R((int16_t*)pSrc16u,srcStep,(int16_t*)pDst16u,dstStep,roi);
         }
 
         if(ippStsNoErr != status)
         {
-          LOG1("IPP Error: ippiCopy_8u_C1R() failed - ",status);
+          LOG1("IPP Error: mfxiCopy_8u_C1R() failed - ",status);
           return JPEG_ERR_INTERNAL;
         }
       }
@@ -2265,7 +2266,7 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
           pDst8u[1] = m_ccomp[1].GetCCBufferPtr(0/*thread_id*/);
           pDst8u[2] = m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
 
-          status = ippiCopy_8u_C3P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+          status = mfxiCopy_8u_C3P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
         }
         else
         {
@@ -2273,12 +2274,12 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
           pDst16u[1] = (uint16_t*)m_ccomp[1].GetCCBufferPtr(0/*thread_id*/);
           pDst16u[2] = (uint16_t*)m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
 
-          status = ippiCopy_16s_C3P3R((int16_t*)pSrc16u,srcStep,(int16_t**)pDst16u,dstStep,roi);
+          status = mfxiCopy_16s_C3P3R((int16_t*)pSrc16u,srcStep,(int16_t**)pDst16u,dstStep,roi);
         }
 
         if(ippStsNoErr != status)
         {
-          LOG1("IPP Error: ippiCopy_8u_C3P3R() failed - ",status);
+          LOG1("IPP Error: mfxiCopy_8u_C3P3R() failed - ",status);
           return JPEG_ERR_INTERNAL;
         }
       }
@@ -2300,7 +2301,7 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
           pDst8u[2] = m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
           pDst8u[3] = m_ccomp[3].GetCCBufferPtr(0/*thread_id*/);
 
-          status = ippiCopy_8u_C4P4R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+          status = mfxiCopy_8u_C4P4R(pSrc8u,srcStep,pDst8u,dstStep,roi);
         }
         else
         {
@@ -2309,12 +2310,12 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
           pDst16u[2] = (uint16_t*)m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
           pDst16u[3] = (uint16_t*)m_ccomp[3].GetCCBufferPtr(0/*thread_id*/);
 
-          status = ippiCopy_16s_C4P4R((int16_t*)pSrc16u,srcStep,(int16_t**)pDst16u,dstStep,roi);
+          status = mfxiCopy_16s_C4P4R((int16_t*)pSrc16u,srcStep,(int16_t**)pDst16u,dstStep,roi);
         }
 
         if(ippStsNoErr != status)
         {
-          LOG1("IPP Error: ippiCopy_8u_C4P4R() failed - ",status);
+          LOG1("IPP Error: mfxiCopy_8u_C4P4R() failed - ",status);
           return JPEG_ERR_INTERNAL;
         }
       }
@@ -2339,18 +2340,18 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
     {
       pDst8u  = m_ccomp[0].GetCCBufferPtr(0/*thread_id*/);
 
-      status  = ippiCopy_8u_C1R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+      status  = mfxiCopy_8u_C1R(pSrc8u,srcStep,pDst8u,dstStep,roi);
     }
     else
     {
       pDst16u = (uint16_t*)m_ccomp[0].GetCCBufferPtr(0/*thread_id*/);
 
-      status = ippiCopy_16s_C1R((int16_t*)pSrc16u,srcStep,(int16_t*)pDst16u,dstStep,roi);
+      status = mfxiCopy_16s_C1R((int16_t*)pSrc16u,srcStep,(int16_t*)pDst16u,dstStep,roi);
     }
 
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiCopy_8u_C1R() failed - ",status);
+      LOG1("IPP Error: mfxiCopy_8u_C1R() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
   }
@@ -2376,10 +2377,10 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
       LOG0("Error: empty pSrc8u in CJPEGEncoder::ColorConvert()");
       return JPEG_ERR_INTERNAL;
     }
-    status = ippiRGBToY_JPEG_8u_C3C1R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+    status = mfxiRGBToY_JPEG_8u_C3C1R(pSrc8u,srcStep,pDst8u,dstStep,roi);
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiRGBToY_JPEG_8u_C3C1R() failed - ",status);
+      LOG1("IPP Error: mfxiRGBToY_JPEG_8u_C3C1R() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
   }
@@ -2400,7 +2401,7 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
       pDst8u[1] = m_ccomp[1].GetCCBufferPtr(0/*thread_id*/);
       pDst8u[2] = m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
 
-      status = ippiCopy_8u_C3P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+      status = mfxiCopy_8u_C3P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
     }
     else
     {
@@ -2408,12 +2409,12 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
       pDst16u[1] = (uint16_t*)m_ccomp[1].GetCCBufferPtr(0/*thread_id*/);
       pDst16u[2] = (uint16_t*)m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
 
-      status = ippiCopy_16s_C3P3R((int16_t*)pSrc16u,srcStep,(int16_t**)pDst16u,dstStep,roi);
+      status = mfxiCopy_16s_C3P3R((int16_t*)pSrc16u,srcStep,(int16_t**)pDst16u,dstStep,roi);
     }
 
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiCopy_8u_C3P3R() failed - ",status);
+      LOG1("IPP Error: mfxiCopy_8u_C3P3R() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
   }
@@ -2434,7 +2435,7 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
       pDst8u[1] = m_ccomp[1].GetCCBufferPtr(0/*thread_id*/);
       pDst8u[0] = m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
 
-      status = ippiCopy_8u_C3P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+      status = mfxiCopy_8u_C3P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
     }
     else
     {
@@ -2442,12 +2443,12 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
       pDst16u[1] = (uint16_t*)m_ccomp[1].GetCCBufferPtr(0/*thread_id*/);
       pDst16u[0] = (uint16_t*)m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
 
-      status = ippiCopy_16s_C3P3R((int16_t*)pSrc16u,srcStep,(int16_t**)pDst16u,dstStep,roi);
+      status = mfxiCopy_16s_C3P3R((int16_t*)pSrc16u,srcStep,(int16_t**)pDst16u,dstStep,roi);
     }
 
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiCopy_8u_C3P3R() failed - ",status);
+      LOG1("IPP Error: mfxiCopy_8u_C3P3R() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
   }
@@ -2506,7 +2507,7 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
       {
         return JPEG_ERR_INTERNAL;
       }
-      status = ippiRGBToYCbCr_JPEG_8u_C3P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+      status = mfxiRGBToYCbCr_JPEG_8u_C3P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
     }
     else
     {
@@ -2516,12 +2517,12 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
       pSrcP[1] = m_src.p.Data8u[1]  + colMCU * m_mcuHeight * srcStep + 8 * colMCU * m_ccomp[0].m_hsampling;
       pSrcP[2] = m_src.p.Data8u[2]  + colMCU * m_mcuHeight * srcStep + 8 * colMCU * m_ccomp[0].m_hsampling;
 
-      status = ippiRGBToYCbCr_JPEG_8u_P3R(pSrcP,srcStep,pDst8u,dstStep,roi);
+      status = mfxiRGBToYCbCr_JPEG_8u_P3R(pSrcP,srcStep,pDst8u,dstStep,roi);
     }
 
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiRGBToYCbCr_JPEG_8u_C3P3R() failed - ",status);
+      LOG1("IPP Error: mfxiRGBToYCbCr_JPEG_8u_C3P3R() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
   }
@@ -2544,11 +2545,11 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
     pDst8u[1] = m_ccomp[1].GetCCBufferPtr(0/*thread_id*/);
     pDst8u[2] = m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
 
-    status = ippiBGRToYCbCr_JPEG_8u_C3P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+    status = mfxiBGRToYCbCr_JPEG_8u_C3P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiBGRToYCbCr_JPEG_8u_C3P3R() failed - ",status);
+      LOG1("IPP Error: mfxiBGRToYCbCr_JPEG_8u_C3P3R() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
   }
@@ -2571,11 +2572,11 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
     pDst8u[1] = m_ccomp[1].GetCCBufferPtr(0/*thread_id*/);
     pDst8u[2] = m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
 
-    status = ippiRGBToYCbCr_JPEG_8u_C4P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+    status = mfxiRGBToYCbCr_JPEG_8u_C4P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiRGBToYCbCr_JPEG_8u_C4P3R() failed - ",status);
+      LOG1("IPP Error: mfxiRGBToYCbCr_JPEG_8u_C4P3R() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
   }
@@ -2602,11 +2603,11 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
     pDst8u[1] = m_ccomp[1].GetCCBufferPtr(0/*thread_id*/);
     pDst8u[2] = m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
 
-    status = ippiYCbCr422_8u_C2P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+    status = mfxiYCbCr422_8u_C2P3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiYCbCr422_8u_C2P3R() failed - ",status);
+      LOG1("IPP Error: mfxiYCbCr422_8u_C2P3R() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
   }
@@ -2630,11 +2631,11 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
     pDst8u[2] = m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
     pDst8u[3] = m_ccomp[3].GetCCBufferPtr(0/*thread_id*/);
 
-    status = ippiCopy_8u_C4P4R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+    status = mfxiCopy_8u_C4P4R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiCopy_8u_C4P4R() failed - ",status);
+      LOG1("IPP Error: mfxiCopy_8u_C4P4R() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
   }
@@ -2658,11 +2659,11 @@ JERRCODE CJPEGEncoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t m
     pDst8u[2] = m_ccomp[2].GetCCBufferPtr(0/*thread_id*/);
     pDst8u[3] = m_ccomp[3].GetCCBufferPtr(0/*thread_id*/);
 
-    status = ippiCMYKToYCCK_JPEG_8u_C4P4R(pSrc8u,srcStep,pDst8u,dstStep,roi);
+    status = mfxiCMYKToYCCK_JPEG_8u_C4P4R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiCMYKToYCCK_JPEG_8u_C4P4R() failed - ",status);
+      LOG1("IPP Error: mfxiCMYKToYCCK_JPEG_8u_C4P4R() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
   }
@@ -2679,7 +2680,7 @@ JERRCODE CJPEGEncoder::DownSampling(uint32_t rowMCU, uint32_t colMCU, uint32_t m
   int i, j, k;
   int cc_h;
   CJPEGColorComponent* curr_comp;
-  IppStatus status;
+  int status;
 
   uint8_t  val;
   uint8_t* p;
@@ -2762,10 +2763,10 @@ JERRCODE CJPEGEncoder::DownSampling(uint32_t rowMCU, uint32_t colMCU, uint32_t m
         roi.width  = (maxMCU - colMCU) * 8 * curr_comp->m_hsampling;//curr_comp->m_ss_step;
         roi.height = curr_comp->m_ss_height;
 
-        status = ippiCopy_8u_C1R(pSrc,srcStep,pDst,dstStep,roi);
+        status = mfxiCopy_8u_C1R(pSrc,srcStep,pDst,dstStep,roi);
         if(ippStsNoErr != status)
         {
-          LOG0("Error: ippiCopy_8u_C1R() failed!");
+          LOG0("Error: mfxiCopy_8u_C1R() failed!");
           return JPEG_ERR_INTERNAL;
         }
       }
@@ -2775,10 +2776,10 @@ JERRCODE CJPEGEncoder::DownSampling(uint32_t rowMCU, uint32_t colMCU, uint32_t m
         {
           int srcWidth = (maxMCU - colMCU) * 8 * curr_comp->m_hsampling;
 
-          status = ippiSampleDownRowH2V1_Box_JPEG_8u_C1(pSrc, srcWidth, pDst);
+          status = mfxiSampleDownRowH2V1_Box_JPEG_8u_C1(pSrc, srcWidth, pDst);
           if(ippStsNoErr != status)
           {
-            LOG0("Error: ippiSampleDownRowH2V1_Box_JPEG_8u_C1() failed!");
+            LOG0("Error: mfxiSampleDownRowH2V1_Box_JPEG_8u_C1() failed!");
             return JPEG_ERR_INTERNAL;
           }
 
@@ -2807,10 +2808,10 @@ JERRCODE CJPEGEncoder::DownSampling(uint32_t rowMCU, uint32_t colMCU, uint32_t m
         p1 = pSrc + (i+0)*srcStep;
         p2 = pSrc + (i+1)*srcStep;
 
-        status = ippiSampleDownRowH2V2_Box_JPEG_8u_C1(p1, p2, srcWidth, pDst);
+        status = mfxiSampleDownRowH2V2_Box_JPEG_8u_C1(p1, p2, srcWidth, pDst);
         if(ippStsNoErr != status)
         {
-          LOG0("Error: ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1() failed!");
+          LOG0("Error: mfxiSampleUpRowH2V2_Triangle_JPEG_8u_C1() failed!");
           return JPEG_ERR_INTERNAL;
         }
 
@@ -2835,7 +2836,7 @@ JERRCODE CJPEGEncoder::ProcessBuffer(uint32_t rowMCU, uint32_t colMCU, uint32_t 
   //uint16_t*              pSrc16u = 0;
   //uint16_t*              pDst16u = 0;
   CJPEGColorComponent* curr_comp;
-  IppStatus            status;
+  int            status;
   mfxSize             roi;
 
   uint8_t  val;
@@ -2872,7 +2873,7 @@ JERRCODE CJPEGEncoder::ProcessBuffer(uint32_t rowMCU, uint32_t colMCU, uint32_t 
 
       pDst8u = curr_comp->GetSSBufferPtr(0);//thread_id);
 
-      status = ippiCopy_8u_C1R(pSrc8u, srcStep, pDst8u, curr_comp->m_ss_step, roi);
+      status = mfxiCopy_8u_C1R(pSrc8u, srcStep, pDst8u, curr_comp->m_ss_step, roi);
     }
     else
     {
@@ -2881,7 +2882,7 @@ JERRCODE CJPEGEncoder::ProcessBuffer(uint32_t rowMCU, uint32_t colMCU, uint32_t 
 
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiCopy_8u_C1R() failed - ",status);
+      LOG1("IPP Error: mfxiCopy_8u_C1R() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
 
@@ -2942,7 +2943,7 @@ JERRCODE CJPEGEncoder::TransformMCURowBL(int16_t* pMCUBuf, uint32_t colMCU, uint
   uint8_t*               src;
   uint16_t*              qtbl;
   CJPEGColorComponent* curr_comp;
-  IppStatus            status;
+  int            status;
 
   for(curr_mcu = 0; curr_mcu < (int)(maxMCU - colMCU); curr_mcu++)
   {
@@ -2964,12 +2965,12 @@ JERRCODE CJPEGEncoder::TransformMCURowBL(int16_t* pMCUBuf, uint32_t colMCU, uint
         {
           src += 8*hs;
 
-          status = ippiDCTQuantFwd8x8LS_JPEG_8u16s_C1R(
+          status = mfxiDCTQuantFwd8x8LS_JPEG_8u16s_C1R(
                      src,srcStep,pMCUBuf,qtbl);
 
           if(ippStsNoErr != status)
           {
-            LOG0("Error: ippiDCTQuantFwd8x8LS_JPEG_8u16s_C1R() failed!");
+            LOG0("Error: mfxiDCTQuantFwd8x8LS_JPEG_8u16s_C1R() failed!");
             return JPEG_ERR_INTERNAL;
           }
 
@@ -2995,7 +2996,7 @@ JERRCODE CJPEGEncoder::TransformMCURowEX(
   uint16_t*              src;
   float*              qtbl;
   CJPEGColorComponent* curr_comp;
-  IppStatus            status;
+  int            status;
 
   for(curr_mcu = 0; curr_mcu < m_numxMCU; curr_mcu++)
   {
@@ -3017,12 +3018,12 @@ JERRCODE CJPEGEncoder::TransformMCURowEX(
         {
           src += 8*hs;
 
-          status = ippiDCTQuantFwd8x8LS_JPEG_16u16s_C1R(
+          status = mfxiDCTQuantFwd8x8LS_JPEG_16u16s_C1R(
                      src,srcStep,pMCUBuf,qtbl);
 
           if(ippStsNoErr != status)
           {
-            LOG0("Error: ippiDCTQuantFwd8x8LS_JPEG_8u16s_C1R() failed!");
+            LOG0("Error: mfxiDCTQuantFwd8x8LS_JPEG_8u16s_C1R() failed!");
             return JPEG_ERR_INTERNAL;
           }
 
@@ -3115,7 +3116,7 @@ JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL(int16_t* pMCUBuf, uint32_t colMCU, 
   IppiEncodeHuffmanSpec* pDCTbl = 0;
   IppiEncodeHuffmanSpec* pACTbl = 0;
   JERRCODE               jerr;
-  IppStatus              status;
+  int              status;
 
   dst    = m_BitStreamOut.GetDataPtr();
   dstLen = m_BitStreamOut.GetDataLen();
@@ -3149,7 +3150,7 @@ JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL(int16_t* pMCUBuf, uint32_t colMCU, 
 
           currPos = m_BitStreamOut.GetCurrPos();
 
-          status = ippiEncodeHuffman8x8_JPEG_16s1u_C1(
+          status = mfxiEncodeHuffman8x8_JPEG_16s1u_C1(
                      pMCUBuf,dst,dstLen,&currPos,
                      &curr_comp->m_lastDC,pDCTbl,pACTbl,m_state,0);
 
@@ -3161,7 +3162,7 @@ JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL(int16_t* pMCUBuf, uint32_t colMCU, 
           }
           else if(ippStsNoErr > status)
           {
-            LOG1("IPP Error: ippiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
+            LOG1("IPP Error: mfxiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
             return JPEG_ERR_INTERNAL;
           }
 
@@ -3265,13 +3266,13 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTables(
   uint8_t bits[16];
   uint8_t vals[256];
   JERRCODE  jerr;
-  IppStatus status;
+  int status;
 
-  ippsZero_8u((uint8_t*)dc_statistics,sizeof(dc_statistics));
-  ippsZero_8u((uint8_t*)ac_statistics,sizeof(ac_statistics));
+  mfxsZero_8u((uint8_t*)dc_statistics,sizeof(dc_statistics));
+  mfxsZero_8u((uint8_t*)ac_statistics,sizeof(ac_statistics));
 
-  ippsZero_8u(bits,sizeof(bits));
-  ippsZero_8u(vals,sizeof(vals));
+  mfxsZero_8u(bits,sizeof(bits));
+  mfxsZero_8u(vals,sizeof(vals));
 
   for(n = 0; n < m_jpeg_ncomp; n++)
   {
@@ -3281,7 +3282,7 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTables(
   //m_next_restart_num = 0;
   //m_restarts_to_go   = m_jpeg_restart_interval;
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -3334,25 +3335,25 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTables(
 
             if(Ah == 0)
             {
-              status = ippiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1(
+              status = mfxiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1(
                          block,&ac_statistics[m_ccomp[id[0]].m_ac_selector][0],
                          Ss,Se,Al,m_state,0);
 
               if(ippStsNoErr > status)
               {
-                LOG0("Error: ippiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1() failed!");
+                LOG0("Error: mfxiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1() failed!");
                 return JPEG_ERR_INTERNAL;
               }
             }
             else
             {
-              status = ippiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1(
+              status = mfxiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1(
                          block,&ac_statistics[m_ccomp[id[0]].m_ac_selector][0],
                          Ss,Se,Al,m_state,0);
 
               if(ippStsNoErr > status)
               {
-                LOG0("Error: ippiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1() failed!");
+                LOG0("Error: mfxiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1() failed!");
                 return JPEG_ERR_INTERNAL;
               }
             }
@@ -3366,36 +3367,36 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTables(
 
     if(Ah == 0)
     {
-      status = ippiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1(
+      status = mfxiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1(
                  0,ac_statistics[m_ccomp[id[0]].m_ac_selector],
                  Ss,Se,Al,m_state,1);
 
       if(ippStsNoErr > status)
       {
-        LOG0("Error: ippiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1() failed!");
+        LOG0("Error: mfxiGetHuffmanStatistics8x8_ACFirst_JPEG_16s_C1() failed!");
         return JPEG_ERR_INTERNAL;
       }
     }
     else
     {
-      status = ippiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1(
+      status = mfxiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1(
                  0,ac_statistics[m_ccomp[id[0]].m_ac_selector],
                  Ss,Se,Al,m_state,1);
 
       if(ippStsNoErr > status)
       {
-        LOG0("Error: ippiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1() failed!");
+        LOG0("Error: mfxiGetHuffmanStatistics8x8_ACRefine_JPEG_16s_C1() failed!");
         return JPEG_ERR_INTERNAL;
       }
     }
 
-    status = ippiEncodeHuffmanRawTableInit_JPEG_8u(
+    status = mfxiEncodeHuffmanRawTableInit_JPEG_8u(
                &ac_statistics[m_ccomp[id[0]].m_ac_selector][0],
                bits,vals);
 
     if(ippStsNoErr > status)
     {
-      LOG0("Error: ippiEncodeHuffmanRawTableInit_JPEG_8u() failed!");
+      LOG0("Error: mfxiEncodeHuffmanRawTableInit_JPEG_8u() failed!");
       return JPEG_ERR_INTERNAL;
     }
 
@@ -3446,13 +3447,13 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTables(
             {
               for(l = 0; l < m_ccomp[n].m_hsampling; l++)
               {
-                status = ippiGetHuffmanStatistics8x8_DCFirst_JPEG_16s_C1(
+                status = mfxiGetHuffmanStatistics8x8_DCFirst_JPEG_16s_C1(
                            block,dc_statistics[m_ccomp[n].m_dc_selector],
                            lastDC,Al);
 
                 if(ippStsNoErr > status)
                 {
-                  LOG0("Error: ippiGetHuffmanStatistics8x8_DCFirst_JPEG_16s_C1() failed!");
+                  LOG0("Error: mfxiGetHuffmanStatistics8x8_DCFirst_JPEG_16s_C1() failed!");
                   return JPEG_ERR_INTERNAL;
                 }
 
@@ -3466,13 +3467,13 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTables(
 
       for(n = 0; n < ncomp; n++)
       {
-        status = ippiEncodeHuffmanRawTableInit_JPEG_8u(
+        status = mfxiEncodeHuffmanRawTableInit_JPEG_8u(
                    dc_statistics[m_ccomp[n].m_dc_selector],
                    bits,vals);
 
         if(ippStsNoErr > status)
         {
-          LOG0("Error: ippiEncodeHuffmanRawTableInit_JPEG_8u() failed!");
+          LOG0("Error: mfxiEncodeHuffmanRawTableInit_JPEG_8u() failed!");
           return JPEG_ERR_INTERNAL;
         }
 
@@ -3510,41 +3511,41 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTables(void)
   unsigned long long   c1;
 #endif
   JERRCODE  jerr;
-  IppStatus status;
+  int status;
 
   //m_next_restart_num = 0;
   //m_restarts_to_go   = m_jpeg_restart_interval;
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
   }
 
-  ippsZero_8u((uint8_t*)huffStatistics,sizeof(huffStatistics));
+  mfxsZero_8u((uint8_t*)huffStatistics,sizeof(huffStatistics));
 
   for(i = 0; i < m_numyMCU; i++)
   {
     pMCUBuf = m_block_buffer + i * m_jpeg_ncomp * m_numxMCU;
 
 #ifdef __TIMING__
-    c0 = ippGetCpuClocks();
+    c0 = mfxGetCpuClocks();
 #endif
     jerr = ColorConvert(i, 0, m_numxMCU);
     if(JPEG_OK != jerr)
       return jerr;
 #ifdef __TIMING__
-    c1 = ippGetCpuClocks();
+    c1 = mfxGetCpuClocks();
     m_clk_cc += c1 - c0;
 #endif
 #ifdef __TIMING__
-    c0 = ippGetCpuClocks();
+    c0 = mfxGetCpuClocks();
 #endif
     jerr = TransformMCURowLS(pMCUBuf, i);
     if(JPEG_OK != jerr)
       return jerr;
 #ifdef __TIMING__
-    c1 = ippGetCpuClocks();
+    c1 = mfxGetCpuClocks();
     m_clk_dct += c1 - c0;
 #endif
 
@@ -3564,12 +3565,12 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTables(void)
       ptr = pMCUBuf + c * m_numxMCU;
       for(j = 0; j < m_numxMCU; j++)
       {
-        status = ippiGetHuffmanStatisticsOne_JPEG_16s_C1(
+        status = mfxiGetHuffmanStatisticsOne_JPEG_16s_C1(
                    ptr, huffStatistics[c]);
 
         if(ippStsNoErr > status)
         {
-          LOG1("IPP Error: ippiGetHuffmanStatisticsOne_JPEG_16s_C1() failed - ",status);
+          LOG1("IPP Error: mfxiGetHuffmanStatisticsOne_JPEG_16s_C1() failed - ",status);
           return JPEG_ERR_INTERNAL;
         }
 
@@ -3589,13 +3590,13 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTables(void)
 
   for(c = 0; c < m_jpeg_ncomp; c++)
   {
-    ippsZero_8u(bits,sizeof(bits));
-    ippsZero_8u(vals,sizeof(vals));
+    mfxsZero_8u(bits,sizeof(bits));
+    mfxsZero_8u(vals,sizeof(vals));
 
-    status = ippiEncodeHuffmanRawTableInit_JPEG_8u(huffStatistics[c],bits,vals);
+    status = mfxiEncodeHuffmanRawTableInit_JPEG_8u(huffStatistics[c],bits,vals);
     if(ippStsNoErr > status)
     {
-      LOG0("Error: ippiEncodeHuffmanRawTableInit_JPEG_8u() failed!");
+      LOG0("Error: mfxiEncodeHuffmanRawTableInit_JPEG_8u() failed!");
       return JPEG_ERR_INTERNAL;
     }
 
@@ -3641,19 +3642,19 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTablesEX(void)
   unsigned long long   c1 = 0;
 #endif
   JERRCODE  jerr;
-  IppStatus status;
+  int status;
 
   //m_next_restart_num = 0;
   //m_restarts_to_go   = m_jpeg_restart_interval;
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
   }
 
-  ippsZero_8u((uint8_t*)dc_Statistics,sizeof(dc_Statistics));
-  ippsZero_8u((uint8_t*)ac_Statistics,sizeof(ac_Statistics));
+  mfxsZero_8u((uint8_t*)dc_Statistics,sizeof(dc_Statistics));
+  mfxsZero_8u((uint8_t*)ac_Statistics,sizeof(ac_Statistics));
 
   for(i = 0; i < m_numyMCU; i++)
   {
@@ -3661,23 +3662,23 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTablesEX(void)
     if(JD_PIXEL == m_src.order)
     {
 #ifdef __TIMING__
-      c0 = ippGetCpuClocks();
+      c0 = mfxGetCpuClocks();
 #endif
       jerr = ColorConvert(i, 0, m_numxMCU);
       if(JPEG_OK != jerr)
         return jerr;
 #ifdef __TIMING__
-      c1 = ippGetCpuClocks();
+      c1 = mfxGetCpuClocks();
       m_clk_cc += c1 - c0;
 #endif
 #ifdef __TIMING__
-      c0 = ippGetCpuClocks();
+      c0 = mfxGetCpuClocks();
 #endif
       jerr = DownSampling(i, 0, m_numxMCU);
       if(JPEG_OK != jerr)
         return jerr;
 #ifdef __TIMING__
-      c1 = ippGetCpuClocks();
+      c1 = mfxGetCpuClocks();
       m_clk_ss += c1 - c0;
 #endif
     }
@@ -3689,7 +3690,7 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTablesEX(void)
     }
 
 #ifdef __TIMING__
-      c0 = ippGetCpuClocks();
+      c0 = mfxGetCpuClocks();
 #endif
     if(JPEG_BASELINE == m_jpeg_mode)
     {
@@ -3706,7 +3707,7 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTablesEX(void)
     if(JPEG_OK != jerr)
       return jerr;
 #ifdef __TIMING__
-    c1 = ippGetCpuClocks();
+    c1 = mfxGetCpuClocks();
     m_clk_dct += c1 - c0;
 #endif
 
@@ -3740,16 +3741,16 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTablesEX(void)
         {
           for(hs = 0; hs < curr_comp->m_hsampling; hs++)
           {
-            status = ippiGetHuffmanStatistics8x8_JPEG_16s_C1(
+            status = mfxiGetHuffmanStatistics8x8_JPEG_16s_C1(
                        pMCUBuf, dc_Statistics[cc], ac_Statistics[cc], &m_ccomp[c].m_lastDC);
 
-          if(ippStsNoErr > status)
-          {
-            LOG1("IPP Error: ippiGetHuffmanStatistics8x8_JPEG_16s_C1() failed - ",status);
-            return JPEG_ERR_INTERNAL;
-          }
+            if(ippStsNoErr > status)
+            {
+              LOG1("IPP Error: mfxiGetHuffmanStatistics8x8_JPEG_16s_C1() failed - ",status);
+              return JPEG_ERR_INTERNAL;
+            }
 
-          pMCUBuf += DCTSIZE2;
+            pMCUBuf += DCTSIZE2;
           }
         }
       } // for m_jpeg_ncomp
@@ -3778,13 +3779,13 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTablesEX(void)
         cc = 0;
     }
 
-    ippsZero_8u(bits,sizeof(bits));
-    ippsZero_8u(vals,sizeof(vals));
+    mfxsZero_8u(bits,sizeof(bits));
+    mfxsZero_8u(vals,sizeof(vals));
 
-    status = ippiEncodeHuffmanRawTableInit_JPEG_8u(dc_Statistics[cc],bits,vals);
+    status = mfxiEncodeHuffmanRawTableInit_JPEG_8u(dc_Statistics[cc],bits,vals);
     if(ippStsNoErr > status)
     {
-      LOG0("Error: ippiEncodeHuffmanRawTableInit_JPEG_8u() failed!");
+      LOG0("Error: mfxiEncodeHuffmanRawTableInit_JPEG_8u() failed!");
       return JPEG_ERR_INTERNAL;
     }
 
@@ -3799,13 +3800,13 @@ JERRCODE CJPEGEncoder::GenerateHuffmanTablesEX(void)
       return jerr;
     }
 
-    ippsZero_8u(bits,sizeof(bits));
-    ippsZero_8u(vals,sizeof(vals));
+    mfxsZero_8u(bits,sizeof(bits));
+    mfxsZero_8u(vals,sizeof(vals));
 
-    status = ippiEncodeHuffmanRawTableInit_JPEG_8u(ac_Statistics[cc],bits,vals);
+    status = mfxiEncodeHuffmanRawTableInit_JPEG_8u(ac_Statistics[cc],bits,vals);
     if(ippStsNoErr > status)
     {
-      LOG0("Error: ippiEncodeHuffmanRawTableInit_JPEG_8u() failed!");
+      LOG0("Error: mfxiEncodeHuffmanRawTableInit_JPEG_8u() failed!");
       return JPEG_ERR_INTERNAL;
     }
 
@@ -3885,7 +3886,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
   uint8_t*    dst;
   int16_t*   block;
   JERRCODE  jerr;
-  IppStatus status;
+  int status;
 
   //m_next_restart_num = 0;
   //m_restarts_to_go   = m_jpeg_restart_interval;
@@ -3898,7 +3899,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
     m_ccomp[n].m_lastDC = 0;
   }
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -3964,7 +3965,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
               currPos = m_BitStreamOut.GetCurrPos();
 
-              status = ippiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1(
+              status = mfxiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1(
                          block,dst,dstLen,&currPos,Ss,Se,
                          Al,actbl,m_state,0);
 
@@ -3972,7 +3973,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
               if(ippStsNoErr > status)
               {
-                LOG1("Error: ippiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1() failed!",ippGetStatusString(status));
+                LOG1("Error: mfxiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1() failed!",ippGetStatusString(status));
                 return JPEG_ERR_INTERNAL;
               }
             }
@@ -3984,7 +3985,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
               currPos = m_BitStreamOut.GetCurrPos();
 
-              status = ippiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1(
+              status = mfxiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1(
                          block,dst,dstLen,&currPos,Ss,Se,
                          Al,actbl,m_state,0);
 
@@ -3992,7 +3993,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
               if(ippStsNoErr > status)
               {
-                LOG1("Error: ippiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1() failed!",ippGetStatusString(status));
+                LOG1("Error: mfxiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1() failed!",ippGetStatusString(status));
                 return JPEG_ERR_INTERNAL;
               }
             }
@@ -4015,7 +4016,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
       currPos = m_BitStreamOut.GetCurrPos();
 
-      status = ippiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1(
+      status = mfxiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1(
                  0,dst,dstLen,&currPos,Ss,Se,
                  Al,actbl,m_state,1);
 
@@ -4023,7 +4024,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
       if(ippStsNoErr > status)
       {
-        LOG0("Error: ippiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1() failed!");
+        LOG0("Error: mfxiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1() failed!");
         return JPEG_ERR_INTERNAL;
       }
     }
@@ -4035,7 +4036,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
       currPos = m_BitStreamOut.GetCurrPos();
 
-      status = ippiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1(
+      status = mfxiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1(
                  0,dst,dstLen,&currPos,Ss,Se,
                  Al,actbl,m_state,1);
 
@@ -4043,7 +4044,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
       if(ippStsNoErr > status)
       {
-        LOG0("Error: ippiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1() failed!");
+        LOG0("Error: mfxiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1() failed!");
         return JPEG_ERR_INTERNAL;
       }
     }
@@ -4088,7 +4089,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
                 currPos = m_BitStreamOut.GetCurrPos();
 
-                status = ippiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1(
+                status = mfxiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1(
                            block,dst,dstLen,&currPos,
                            lastDC,Al,dctbl,m_state,0);
 
@@ -4096,7 +4097,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
                 if(ippStsNoErr > status)
                 {
-                  LOG1("Error: ippiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1() failed!",ippGetStatusString(status));
+                  LOG1("Error: mfxiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1() failed!",ippGetStatusString(status));
                   return JPEG_ERR_INTERNAL;
                 }
 
@@ -4120,7 +4121,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
                 currPos = m_BitStreamOut.GetCurrPos();
 
-                status = ippiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1(
+                status = mfxiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1(
                            block,dst,dstLen,&currPos,
                            Al,m_state,0);
 
@@ -4128,7 +4129,7 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
                 if(ippStsNoErr > status)
                 {
-                  LOG0("Error: ippiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1() failed!");
+                  LOG0("Error: mfxiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1() failed!");
                   return JPEG_ERR_INTERNAL;
                 }
 
@@ -4149,14 +4150,14 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
       currPos = m_BitStreamOut.GetCurrPos();
 
-      status = ippiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1(
+      status = mfxiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1(
                  0,dst,dstLen,&currPos,0,0,0,m_state,1);
 
       m_BitStreamOut.SetCurrPos(currPos);
 
       if(ippStsNoErr > status)
       {
-        LOG0("Error: ippiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1() failed!");
+        LOG0("Error: mfxiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1() failed!");
         return JPEG_ERR_INTERNAL;
       }
     }
@@ -4168,14 +4169,14 @@ JERRCODE CJPEGEncoder::EncodeScan(
 
       currPos = m_BitStreamOut.GetCurrPos();
 
-      status = ippiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1(
+      status = mfxiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1(
                  0,dst,dstLen,&currPos,0,m_state,1);
 
       m_BitStreamOut.SetCurrPos(currPos);
 
       if(ippStsNoErr > status)
       {
-        LOG0("Error: ippiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1() failed!");
+        LOG0("Error: mfxiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1() failed!");
         return JPEG_ERR_INTERNAL;
       }
     }
@@ -4198,7 +4199,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
   unsigned long long   c1;
 #endif
   JERRCODE  jerr = JPEG_OK;
-  IppStatus status;
+  int status;
 
   for(i = 0; i < m_jpeg_ncomp; i++)
   {
@@ -4208,7 +4209,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
   //m_next_restart_num = 0;
   //m_restarts_to_go   = m_jpeg_restart_interval;
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -4266,7 +4267,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
       if(rowMCU < (uint32_t)m_curr_scan.numyMCU)
       {
 #ifdef __TIMING__
-        c0 = ippGetCpuClocks();
+        c0 = mfxGetCpuClocks();
 #endif
         if(m_src.color == m_jpeg_color && JD_PLANE == m_src.order)
         {
@@ -4291,12 +4292,12 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
           }
         }
 #ifdef __TIMING__
-        c1 = ippGetCpuClocks();
+        c1 = mfxGetCpuClocks();
         m_clk_cc += c1 - c0;
 #endif
 
 #ifdef __TIMING__
-        c0 = ippGetCpuClocks();
+        c0 = mfxGetCpuClocks();
 #endif
         jerr = TransformMCURowBL(pMCUBuf, colMCU, maxMCU);
         if(JPEG_OK != jerr)
@@ -4304,7 +4305,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
             return jerr;
         }
 #ifdef __TIMING__
-        c1 = ippGetCpuClocks();
+        c1 = mfxGetCpuClocks();
         m_clk_dct += c1 - c0;
 #endif
 
@@ -4316,7 +4317,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
         }
 #endif
 #ifdef __TIMING__
-        c0 = ippGetCpuClocks();
+        c0 = mfxGetCpuClocks();
 #endif
         jerr = EncodeHuffmanMCURowBL(pMCUBuf, colMCU, maxMCU);
         if(JPEG_OK != jerr)
@@ -4324,7 +4325,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
             return jerr;
         }
 #ifdef __TIMING__
-        c1 = ippGetCpuClocks();
+        c1 = mfxGetCpuClocks();
         m_clk_huff += (c1 - c0);
 #endif
 #ifdef _OPENMP
@@ -4371,7 +4372,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
   currPos = m_BitStreamOut.GetCurrPos();
 
   // flush IppiEncodeHuffmanState
-  status = ippiEncodeHuffman8x8_JPEG_16s1u_C1(0,dst,dstLen,&currPos,0,0,0,m_state,1);
+  status = mfxiEncodeHuffman8x8_JPEG_16s1u_C1(0,dst,dstLen,&currPos,0,0,0,m_state,1);
 
   m_BitStreamOut.SetCurrPos(currPos);
 
@@ -4383,7 +4384,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaseline(void)
 
   if(ippStsNoErr > status)
   {
-      LOG1("IPP Error: ippiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
+      LOG1("IPP Error: mfxiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
       return JPEG_ERR_INTERNAL;
   }
 
@@ -4405,7 +4406,7 @@ JERRCODE CJPEGEncoder::EncodeScanExtended(void)
   unsigned long long   c1;
 #endif
   JERRCODE  jerr;
-  IppStatus status;
+  int status;
 
   for(i = 0; i < m_jpeg_ncomp; i++)
   {
@@ -4415,7 +4416,7 @@ JERRCODE CJPEGEncoder::EncodeScanExtended(void)
   //m_next_restart_num = 0;
   //m_restarts_to_go   = m_jpeg_restart_interval;
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -4472,29 +4473,29 @@ JERRCODE CJPEGEncoder::EncodeScanExtended(void)
       if(curr_row < m_numyMCU)
       {
 #ifdef __TIMING__
-        c0 = ippGetCpuClocks();
+        c0 = mfxGetCpuClocks();
 #endif
         ColorConvert(curr_row, 0, m_numxMCU/*thread_id*/);
 #ifdef __TIMING__
-        c1 = ippGetCpuClocks();
+        c1 = mfxGetCpuClocks();
         m_clk_cc += c1 - c0;
 #endif
 
 #ifdef __TIMING__
-        c0 = ippGetCpuClocks();
+        c0 = mfxGetCpuClocks();
 #endif
         DownSampling(curr_row, 0, m_numxMCU/*thread_id*/);
 #ifdef __TIMING__
-        c1 = ippGetCpuClocks();
+        c1 = mfxGetCpuClocks();
         m_clk_ss += c1 - c0;
 #endif
 
 #ifdef __TIMING__
-        c0 = ippGetCpuClocks();
+        c0 = mfxGetCpuClocks();
 #endif
         TransformMCURowEX(pMCUBuf, thread_id);
 #ifdef __TIMING__
-        c1 = ippGetCpuClocks();
+        c1 = mfxGetCpuClocks();
         m_clk_dct += c1 - c0;
 #endif
 
@@ -4506,11 +4507,11 @@ JERRCODE CJPEGEncoder::EncodeScanExtended(void)
         }
 #endif
 #ifdef __TIMING__
-        c0 = ippGetCpuClocks();
+        c0 = mfxGetCpuClocks();
 #endif
         EncodeHuffmanMCURowBL(pMCUBuf, 0, m_numxMCU);
 #ifdef __TIMING__
-        c1 = ippGetCpuClocks();
+        c1 = mfxGetCpuClocks();
         m_clk_huff += (c1 - c0);
 #endif
 #ifdef _OPENMP
@@ -4539,13 +4540,13 @@ JERRCODE CJPEGEncoder::EncodeScanExtended(void)
     {
       mcurow = m_block_buffer + i * m_numxMCU * m_nblock * DCTSIZE2;
 #ifdef __TIMING__
-      c0 = ippGetCpuClocks();
+      c0 = mfxGetCpuClocks();
 #endif
       jerr = EncodeHuffmanMCURowBL(mcurow, 0, m_numxMCU);
       if(JPEG_OK != jerr)
         return jerr;
 #ifdef __TIMING__
-      c1 = ippGetCpuClocks();
+      c1 = mfxGetCpuClocks();
       m_clk_huff += (c1 - c0);
 #endif
     }
@@ -4561,14 +4562,14 @@ JERRCODE CJPEGEncoder::EncodeScanExtended(void)
   currPos = m_BitStreamOut.GetCurrPos();
 
   // flush IppiEncodeHuffmanState
-  status = ippiEncodeHuffman8x8_JPEG_16s1u_C1(
+  status = mfxiEncodeHuffman8x8_JPEG_16s1u_C1(
              0,dst,dstLen,&currPos,0,0,0,m_state,1);
 
   m_BitStreamOut.SetCurrPos(currPos);
 
   if(ippStsNoErr > status)
   {
-    LOG1("IPP Error: ippiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
+    LOG1("IPP Error: mfxiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 
@@ -4590,7 +4591,7 @@ JERRCODE CJPEGEncoder::EncodeScanExtended_P(void)
   unsigned long long   c1;
 #endif
   JERRCODE  jerr;
-  IppStatus status;
+  int status;
 
   for(i = 0; i < m_jpeg_ncomp; i++)
   {
@@ -4600,7 +4601,7 @@ JERRCODE CJPEGEncoder::EncodeScanExtended_P(void)
   //m_next_restart_num = 0;
   //m_restarts_to_go   = m_jpeg_restart_interval;
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -4658,20 +4659,20 @@ JERRCODE CJPEGEncoder::EncodeScanExtended_P(void)
       if(curr_row < m_numyMCU)
       {
 #ifdef __TIMING__
-        c0 = ippGetCpuClocks();
+        c0 = mfxGetCpuClocks();
 #endif
         ProcessBuffer(curr_row, 0, m_numxMCU/*thread_id*/);
 #ifdef __TIMING__
-        c1 = ippGetCpuClocks();
+        c1 = mfxGetCpuClocks();
         m_clk_cc += c1 - c0;
 #endif
 
 #ifdef __TIMING__
-        c0 = ippGetCpuClocks();
+        c0 = mfxGetCpuClocks();
 #endif
         TransformMCURowEX(pMCUBuf, thread_id);
 #ifdef __TIMING__
-        c1 = ippGetCpuClocks();
+        c1 = mfxGetCpuClocks();
         m_clk_dct += c1 - c0;
 #endif
 
@@ -4683,11 +4684,11 @@ JERRCODE CJPEGEncoder::EncodeScanExtended_P(void)
         }
 #endif
 #ifdef __TIMING__
-        c0 = ippGetCpuClocks();
+        c0 = mfxGetCpuClocks();
 #endif
         EncodeHuffmanMCURowBL(pMCUBuf, 0, m_numxMCU);
 #ifdef __TIMING__
-        c1 = ippGetCpuClocks();
+        c1 = mfxGetCpuClocks();
         m_clk_huff += (c1 - c0);
 #endif
 #ifdef _OPENMP
@@ -4716,13 +4717,13 @@ JERRCODE CJPEGEncoder::EncodeScanExtended_P(void)
     {
       mcurow = m_block_buffer + i * m_numxMCU * m_nblock * DCTSIZE2;
 #ifdef __TIMING__
-      c0 = ippGetCpuClocks();
+      c0 = mfxGetCpuClocks();
 #endif
       jerr = EncodeHuffmanMCURowBL(mcurow, 0, m_numxMCU);
       if(JPEG_OK != jerr)
         return jerr;
 #ifdef __TIMING__
-      c1 = ippGetCpuClocks();
+      c1 = mfxGetCpuClocks();
       m_clk_huff += (c1 - c0);
 #endif
     }
@@ -4738,14 +4739,14 @@ JERRCODE CJPEGEncoder::EncodeScanExtended_P(void)
   currPos = m_BitStreamOut.GetCurrPos();
 
   // flush IppiEncodeHuffmanState
-  status = ippiEncodeHuffman8x8_JPEG_16s1u_C1(
+  status = mfxiEncodeHuffman8x8_JPEG_16s1u_C1(
              0,dst,dstLen,&currPos,0,0,0,m_state,1);
 
   m_BitStreamOut.SetCurrPos(currPos);
 
   if(ippStsNoErr > status)
   {
-    LOG1("IPP Error: ippiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
+    LOG1("IPP Error: mfxiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 
@@ -4893,13 +4894,13 @@ JERRCODE CJPEGEncoder::EncodeScanLossless(void)
   unsigned long long   c0;
   unsigned long long   c1;
 #endif
-  IppStatus   status;
+  int   status;
   JERRCODE    jerr;
 
   //m_next_restart_num = 0;
   //m_restarts_to_go   = m_jpeg_restart_interval;
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -4923,35 +4924,35 @@ JERRCODE CJPEGEncoder::EncodeScanLossless(void)
     {
       pMCUBuf  = m_block_buffer;
 #ifdef __TIMING__
-      c0 = ippGetCpuClocks();
+      c0 = mfxGetCpuClocks();
 #endif
       jerr = ColorConvert(i, 0, m_numxMCU);
       if(JPEG_OK != jerr)
         return jerr;
 #ifdef __TIMING__
-      c1 = ippGetCpuClocks();
+      c1 = mfxGetCpuClocks();
       m_clk_cc += c1 - c0;
 #endif
 
 #ifdef __TIMING__
-      c0 = ippGetCpuClocks();
+      c0 = mfxGetCpuClocks();
 #endif
       jerr = TransformMCURowLS(pMCUBuf, i);
       if(JPEG_OK != jerr)
         return jerr;
 #ifdef __TIMING__
-      c1 = ippGetCpuClocks();
+      c1 = mfxGetCpuClocks();
       m_clk_dct += c1 - c0;
 #endif
 
 #ifdef __TIMING__
-      c0 = ippGetCpuClocks();
+      c0 = mfxGetCpuClocks();
 #endif
       jerr = EncodeHuffmanMCURowLS(pMCUBuf);
       if(JPEG_OK != jerr)
         return jerr;
 #ifdef __TIMING__
-      c1 = ippGetCpuClocks();
+      c1 = mfxGetCpuClocks();
       m_clk_huff += (c1 - c0);
 #endif
     } // for m_numyMCU
@@ -4959,7 +4960,7 @@ JERRCODE CJPEGEncoder::EncodeScanLossless(void)
   else
   {
 #ifdef __TIMING__
-      c0 = ippGetCpuClocks();
+      c0 = mfxGetCpuClocks();
 #endif
     for(i = 0; i < m_numyMCU; i++)
     {
@@ -4970,7 +4971,7 @@ JERRCODE CJPEGEncoder::EncodeScanLossless(void)
         return jerr;
     } // for m_numyMCU
 #ifdef __TIMING__
-      c1 = ippGetCpuClocks();
+      c1 = mfxGetCpuClocks();
       m_clk_huff += (c1 - c0);
 #endif
   }
@@ -4985,14 +4986,14 @@ JERRCODE CJPEGEncoder::EncodeScanLossless(void)
   currPos = m_BitStreamOut.GetCurrPos();
 
   // flush IppiEncodeHuffmanState
-  status = ippiEncodeHuffmanOne_JPEG_16s1u_C1(
+  status = mfxiEncodeHuffmanOne_JPEG_16s1u_C1(
              0,dst,dstLen,&currPos,0,m_state,1);
 
   m_BitStreamOut.SetCurrPos(currPos);
 
   if(ippStsNoErr > status)
   {
-    LOG1("IPP Error: ippiEncodeHuffmanOne_JPEG_16s1u_C1() failed - ",status);
+    LOG1("IPP Error: mfxiEncodeHuffmanOne_JPEG_16s1u_C1() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 
@@ -5259,4 +5260,4 @@ JERRCODE CJPEGEncoder::SetJFIFApp0Resolution(JRESUNITS units, int xdensity, int 
 
   return JPEG_OK;
 } // CJPEGEncoder::SetApp0Params()
-#endif
+#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE

@@ -67,7 +67,7 @@ CJPEGEncoderQuantTable::~CJPEGEncoderQuantTable(void)
 
 JERRCODE CJPEGEncoderQuantTable::Init(int id,uint8_t raw[64],int quality)
 {
-  IppStatus status;
+  int status;
 
   m_id        = id;
   m_precision = 0; // 8-bit precision
@@ -77,18 +77,18 @@ JERRCODE CJPEGEncoderQuantTable::Init(int id,uint8_t raw[64],int quality)
   // scale according quality parameter
   if(quality)
   {
-    status = ippiQuantFwdRawTableInit_JPEG_8u(m_raw8u,quality);
+    status = mfxiQuantFwdRawTableInit_JPEG_8u(m_raw8u,quality);
     if(ippStsNoErr != status)
     {
-      LOG1("IPP Error: ippiQuantFwdRawTableInit_JPEG_8u() failed - ",status);
+      LOG1("IPP Error: mfxiQuantFwdRawTableInit_JPEG_8u() failed - ",status);
       return JPEG_ERR_INTERNAL;
     }
   }
 
-  status = ippiQuantFwdTableInit_JPEG_8u16u(m_raw8u,m_qnt16u);
+  status = mfxiQuantFwdTableInit_JPEG_8u16u(m_raw8u,m_qnt16u);
   if(ippStsNoErr != status)
   {
-    LOG1("IPP Error: ippiQuantFwdTableInit_JPEG_8u() failed - ",status);
+    LOG1("IPP Error: mfxiQuantFwdTableInit_JPEG_8u() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 
@@ -99,7 +99,7 @@ JERRCODE CJPEGEncoderQuantTable::Init(int id,uint8_t raw[64],int quality)
 
 
 static
-IppStatus ippiQuantFwdRawTableInit_JPEG_16u(
+int ippiQuantFwdRawTableInit_JPEG_16u(
   uint16_t* raw,
   int     quality)
 {
@@ -136,15 +136,15 @@ IppStatus ippiQuantFwdRawTableInit_JPEG_16u(
 
 
 static
-IppStatus ippiQuantFwdTableInit_JPEG_16u(
+int ippiQuantFwdTableInit_JPEG_16u(
   uint16_t* raw,
   float* qnt)
 {
   int       i;
   uint16_t    wb[DCTSIZE2];
-  IppStatus status;
+  int status;
 
-  status = ippiZigzagInv8x8_16s_C1((const int16_t*)&raw[0],(int16_t*)&wb[0]);
+  status = mfxiZigzagInv8x8_16s_C1((const int16_t*)&raw[0],(int16_t*)&wb[0]);
   if(ippStsNoErr != status)
   {
     LOG1("IPP Error: ippiZigzagInv8x8_16s_C1() failed - ",status);
@@ -162,7 +162,7 @@ IppStatus ippiQuantFwdTableInit_JPEG_16u(
 
 JERRCODE CJPEGEncoderQuantTable::Init(int id,uint16_t raw[64],int quality)
 {
-  IppStatus status;
+  int status;
 
   m_id        = id;
   m_precision = 1; // 16-bit precision
@@ -192,4 +192,4 @@ JERRCODE CJPEGEncoderQuantTable::Init(int id,uint16_t raw[64],int quality)
   return JPEG_OK;
 } // CJPEGEncoderQuantTable::Init()
 
-#endif
+#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE

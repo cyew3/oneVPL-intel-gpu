@@ -701,7 +701,7 @@ Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const uint32_t 
         return UMC_ERR_UNSUPPORTED;
     }
 
-    status = streamOut.Open((uint8_t*)m_pBitstreamBuffer[threadNumber]->GetBufferPointer() + m_pBitstreamBuffer[threadNumber]->GetDataSize(), 
+    status = streamOut.Open((uint8_t*)m_pBitstreamBuffer[threadNumber]->GetBufferPointer() + m_pBitstreamBuffer[threadNumber]->GetDataSize(),
                             (int)m_pBitstreamBuffer[threadNumber]->GetBufferSize() - (int)m_pBitstreamBuffer[threadNumber]->GetDataSize());
     if(JPEG_OK != status)
         return UMC_ERR_FAILED;

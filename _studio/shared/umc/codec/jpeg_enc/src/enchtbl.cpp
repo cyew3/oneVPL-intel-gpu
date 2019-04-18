@@ -49,11 +49,11 @@ CJPEGEncoderHuffmanTable::~CJPEGEncoderHuffmanTable(void)
 JERRCODE CJPEGEncoderHuffmanTable::Create(void)
 {
   int       size;
-  IppStatus status;
+  int status;
 
   m_bValid = false;
 
-  status = ippiEncodeHuffmanSpecGetBufSize_JPEG_8u(&size);
+  status = mfxiEncodeHuffmanSpecGetBufSize_JPEG_8u(&size);
   if(ippStsNoErr != status)
   {
     LOG1("IPP Error: ippiEncodeHuffmanSpecGetBufSize_JPEG_8u() failed - ",status);
@@ -62,14 +62,14 @@ JERRCODE CJPEGEncoderHuffmanTable::Create(void)
 
   if(0 != m_table)
   {
-    ippFree(m_table);
+    mfxFree(m_table);
     m_table = 0;
   }
 
-  m_table = (IppiEncodeHuffmanSpec*)ippMalloc(size);
+  m_table = (IppiEncodeHuffmanSpec*)mfxMalloc(size);
   if(0 == m_table)
   {
-    LOG0("IPP Error: ippMalloc() failed");
+    LOG0("IPP Error: mfx_Malloc() failed");
     return JPEG_ERR_ALLOC;
   }
 
@@ -88,7 +88,7 @@ JERRCODE CJPEGEncoderHuffmanTable::Destroy(void)
 
   if(0 != m_table)
   {
-    ippFree(m_table);
+    mfxFree(m_table);
     m_table = 0;
   }
 
@@ -98,7 +98,7 @@ JERRCODE CJPEGEncoderHuffmanTable::Destroy(void)
 
 JERRCODE CJPEGEncoderHuffmanTable::Init(int id,int hclass,uint8_t* bits,uint8_t* vals)
 {
-  IppStatus status;
+  int status;
 
   m_id     = id     & 0x0f;
   m_hclass = hclass & 0x0f;
@@ -106,7 +106,7 @@ JERRCODE CJPEGEncoderHuffmanTable::Init(int id,int hclass,uint8_t* bits,uint8_t*
   MFX_INTERNAL_CPY(m_bits,bits,16);
   MFX_INTERNAL_CPY(m_vals,vals,256);
 
-  status = ippiEncodeHuffmanSpecInit_JPEG_8u(m_bits,m_vals,m_table);
+  status = mfxiEncodeHuffmanSpecInit_JPEG_8u(m_bits,m_vals,m_table);
   if(ippStsNoErr != status)
   {
     LOG1("IPP Error: ippiEncodeHuffmanSpecInit_JPEG_8u() failes - ", status);
@@ -138,25 +138,25 @@ CJPEGEncoderHuffmanState::~CJPEGEncoderHuffmanState(void)
 JERRCODE CJPEGEncoderHuffmanState::Create(void)
 {
   int       size;
-  IppStatus status;
+  int status;
 
-  status = ippiEncodeHuffmanStateGetBufSize_JPEG_8u(&size);
+  status = mfxiEncodeHuffmanStateGetBufSize_JPEG_8u(&size);
   if(ippStsNoErr != status)
   {
-    LOG1("IPP Error: ippiEncodeHuffmanStateGetBufSize_JPEG_8u() failed - ",status);
+    LOG1("IPP Error: mfxiEncodeHuffmanStateGetBufSize_JPEG_8u() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 
   if(0 != m_state)
   {
-    ippFree(m_state);
+    mfxFree(m_state);
     m_state = 0;
   }
 
-  m_state = (IppiEncodeHuffmanState*)ippMalloc(size);
+  m_state = (IppiEncodeHuffmanState*)mfxMalloc(size);
   if(0 == m_state)
   {
-    LOG0("IPP Error: ippMalloc() failed");
+    LOG0("IPP Error: mfx_Malloc() failed");
     return JPEG_ERR_ALLOC;
   }
 
@@ -168,7 +168,7 @@ JERRCODE CJPEGEncoderHuffmanState::Destroy(void)
 {
   if(0 != m_state)
   {
-    ippFree(m_state);
+    mfxFree(m_state);
     m_state = 0;
   }
 
@@ -178,16 +178,16 @@ JERRCODE CJPEGEncoderHuffmanState::Destroy(void)
 
 JERRCODE CJPEGEncoderHuffmanState::Init(void)
 {
-  IppStatus status;
+  int status;
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
-    LOG1("IPP Error: ippiEncodeHuffmanStateInit_JPEG_8u() failed - ",status);
+    LOG1("IPP Error: mfxiEncodeHuffmanStateInit_JPEG_8u() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 
   return JPEG_OK;
 } // CJPEGEncoderHuffmanState::Init()
 
-#endif
+#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE

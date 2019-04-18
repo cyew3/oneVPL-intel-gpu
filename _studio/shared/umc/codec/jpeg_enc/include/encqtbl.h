@@ -23,7 +23,6 @@
 
 #include "umc_defs.h"
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
-
 #include "ippj.h"
 #include "jpegbase.h"
 
@@ -52,5 +51,5 @@ public:
   operator float*() { return m_precision == 1 ? m_qnt32f : 0; }
 };
 
-#endif
+#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 #endif // __ENCQTBL_H__

@@ -23,7 +23,6 @@
 
 #include "umc_defs.h"
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
-
 #include "ippj.h"
 #include "jpegbase.h"
 
@@ -68,5 +67,5 @@ public:
   operator IppiEncodeHuffmanState*(void) { return m_state; }
 };
 
-#endif
+#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 #endif // __ENCHTBL_H__

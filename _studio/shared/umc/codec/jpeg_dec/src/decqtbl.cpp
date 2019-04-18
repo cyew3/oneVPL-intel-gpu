@@ -75,10 +75,10 @@ JERRCODE CJPEGDecoderQuantTable::Init(int id,uint8_t raw[64])
   MFX_INTERNAL_CPY(m_raw8u,raw,DCTSIZE2);
 
 #ifdef ALLOW_JPEG_SW_FALLBACK
-  IppStatus status = ippiQuantInvTableInit_JPEG_8u16u(m_raw8u,m_qnt16u);
+  int status = mfxiQuantInvTableInit_JPEG_8u16u(m_raw8u,m_qnt16u);
   if(ippStsNoErr != status)
   {
-    LOG1("IPP Error: ippiQuantInvTableInit_JPEG_8u16u() failed - ",status);
+    LOG1("IPP Error: mfxiQuantInvTableInit_JPEG_8u16u() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 #endif
@@ -89,14 +89,14 @@ JERRCODE CJPEGDecoderQuantTable::Init(int id,uint8_t raw[64])
 
 #ifdef ALLOW_JPEG_SW_FALLBACK
 static
-IppStatus ippiQuantInvTableInit_JPEG_16u32f(
+int mfxiQuantInvTableInit_JPEG_16u32f(
   uint16_t* raw,
   float* qnt)
 {
   uint16_t    wb[DCTSIZE2];
-  IppStatus status;
+  int status;
 
-  status = ippiZigzagInv8x8_16s_C1((int16_t*)raw,(int16_t*)wb);
+  status = mfxiZigzagInv8x8_16s_C1((int16_t*)raw,(int16_t*)wb);
   if(ippStsNoErr != status)
   {
     return status;
@@ -106,7 +106,7 @@ IppStatus ippiQuantInvTableInit_JPEG_16u32f(
     ((float*)qnt)[i] = (float)((uint16_t*)wb)[i];
 
   return ippStsNoErr;
-} // ippiQuantInvTableInit_JPEG_16u32f()
+} // mfxiQuantInvTableInit_JPEG_16u32f()
 #endif
 
 JERRCODE CJPEGDecoderQuantTable::Init(int id,uint16_t raw[64])
@@ -116,10 +116,10 @@ JERRCODE CJPEGDecoderQuantTable::Init(int id,uint16_t raw[64])
 
   MFX_INTERNAL_CPY((int16_t*)m_raw16u, (int16_t*)raw, DCTSIZE2*sizeof(int16_t));
 #ifdef ALLOW_JPEG_SW_FALLBACK
-  IppStatus status = ippiQuantInvTableInit_JPEG_16u32f(m_raw16u,m_qnt32f);
+  int status = mfxiQuantInvTableInit_JPEG_16u32f(m_raw16u,m_qnt32f);
   if(ippStsNoErr != status)
   {
-    LOG1("IPP Error: ippiQuantInvTableInit_JPEG_16u32f() failed - ",status);
+    LOG1("IPP Error: mfxiQuantInvTableInit_JPEG_16u32f() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 #endif
@@ -132,9 +132,9 @@ JERRCODE CJPEGDecoderQuantTable::Init(int id,uint16_t raw[64])
 #ifdef ALLOW_JPEG_SW_FALLBACK
 JERRCODE CJPEGDecoderQuantTable::ConvertToLowPrecision(void)
 {
-  IppStatus status;
+  int status;
 
-  status = ippiZigzagInv8x8_16s_C1((int16_t*)m_raw16u,(int16_t*)m_qnt16u);
+  status = mfxiZigzagInv8x8_16s_C1((int16_t*)m_raw16u,(int16_t*)m_qnt16u);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -152,23 +152,23 @@ JERRCODE CJPEGDecoderQuantTable::ConvertToHighPrecision(void)
   int       step;
   mfxSize  roi = { DCTSIZE, DCTSIZE };
   uint16_t    wb[DCTSIZE2];
-  IppStatus status;
+  int status;
 
   step = DCTSIZE * sizeof(int16_t);
 
-  status = ippiConvert_8u16u_C1R(m_raw8u,DCTSIZE*sizeof(uint8_t),wb,step,roi);
+  status = mfxiConvert_8u16u_C1R(m_raw8u,DCTSIZE*sizeof(uint8_t),wb,step,roi);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
   }
 
-  status = ippiCopy_16s_C1R((int16_t*)wb,step,(int16_t*)m_raw16u,step,roi);
+  status = mfxiCopy_16s_C1R((int16_t*)wb,step,(int16_t*)m_raw16u,step,roi);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
   }
 
-  status = ippiQuantInvTableInit_JPEG_16u32f(m_raw16u,m_qnt32f);
+  status = mfxiQuantInvTableInit_JPEG_16u32f(m_raw16u,m_qnt32f);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;

@@ -114,15 +114,15 @@ mfxU32 MJPEGEncodeTask::NumPiecesCollected(void)
 
 mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInfo* frameInfo, bool useAuxInput)
 {
-    Ipp32u  width       = frameInfo->CropW - frameInfo->CropX;
-    Ipp32u  height      = frameInfo->CropH - frameInfo->CropY;
-    Ipp32u  alignedWidth  = frameInfo->Width;
-    Ipp32u  alignedHeight = frameInfo->Height;
-    Ipp32u  numFields   = 0;
-    Ipp32u  isBottom    = 0;
-    Ipp32u  fieldOffset = 0;
-    Ipp32u  numPieces   = 0;
-    Ipp32u  mcuWidth, mcuHeight, numxMCU, numyMCU;
+    uint32_t  width       = frameInfo->CropW - frameInfo->CropX;
+    uint32_t  height      = frameInfo->CropH - frameInfo->CropY;
+    uint32_t  alignedWidth  = frameInfo->Width;
+    uint32_t  alignedHeight = frameInfo->Height;
+    uint32_t  numFields   = 0;
+    uint32_t  isBottom    = 0;
+    uint32_t  fieldOffset = 0;
+    uint32_t  numPieces   = 0;
+    uint32_t  mcuWidth, mcuHeight, numxMCU, numyMCU;
     UMC::Status sts = UMC::UMC_OK;
 
     UMC::MJPEGEncoderParams params;
@@ -216,17 +216,17 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
                 else if(MFX_CHROMAFORMAT_YUV422V == frameSurface->Info.ChromaFormat)
                 {
                     fieldOffset = pitch * isBottom;
-                    Ipp8u* src = frameSurface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset;
-                    Ipp32u srcPitch = pitch * numFields;
+                    uint8_t* src = frameSurface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset;
+                    uint32_t srcPitch = pitch * numFields;
 
-                    Ipp8u* dst[3] = {(Ipp8u*)cvt->GetPlanePointer(0),
-                                     (Ipp8u*)cvt->GetPlanePointer(1),
-                                     (Ipp8u*)cvt->GetPlanePointer(2)};
-                    Ipp32u dstPitch[3] = {(Ipp32u)cvt->GetPlanePitch(0),
-                                          (Ipp32u)cvt->GetPlanePitch(1),
-                                          (Ipp32u)cvt->GetPlanePitch(2)};
-                    for(Ipp32u i=0; i<height; i++)
-                        for(Ipp32u j=0; j<width/2; j++)
+                    uint8_t* dst[3] = {(uint8_t*)cvt->GetPlanePointer(0),
+                                     (uint8_t*)cvt->GetPlanePointer(1),
+                                     (uint8_t*)cvt->GetPlanePointer(2)};
+                    uint32_t dstPitch[3] = {(uint32_t)cvt->GetPlanePitch(0),
+                                          (uint32_t)cvt->GetPlanePitch(1),
+                                          (uint32_t)cvt->GetPlanePitch(2)};
+                    for(uint32_t i=0; i<height; i++)
+                        for(uint32_t j=0; j<width/2; j++)
                         {
                             dst[0][i*dstPitch[0] + 2*j]                   = src[i*srcPitch + (j<<2)];
                             dst[1][((i/2)*2)*dstPitch[1] + 2*j + (i % 2)] = src[i*srcPitch + (j<<2)+1];
@@ -327,13 +327,13 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
                     return MFX_ERR_MEMORY_ALLOC;
                 }
 
-                Ipp8u* src = frameSurface->Data.Y;
-                Ipp32u srcPitch = pitch;
-                Ipp8u* dst = (Ipp8u*)cvt->GetPlanePointer(0);
-                Ipp32u dstPitch = (Ipp32u)cvt->GetPlanePitch(0);
+                uint8_t* src = frameSurface->Data.Y;
+                uint32_t srcPitch = pitch;
+                uint8_t* dst = (uint8_t*)cvt->GetPlanePointer(0);
+                uint32_t dstPitch = (uint32_t)cvt->GetPlanePitch(0);
 
-                for(Ipp32u i=0; i<height; i++)
-                    for(Ipp32u j=0; j<width; j++)
+                for(uint32_t i=0; i<height; i++)
+                    for(uint32_t j=0; j<width; j++)
                     {
                         dst[i*dstPitch + j] = src[i*srcPitch + (j<<1)];
                     }
@@ -366,7 +366,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
             }
         }
 
-        encPic->m_sourceData->SetTime((Ipp64f)frameSurface->Data.TimeStamp);
+        encPic->m_sourceData->SetTime((double)frameSurface->Data.TimeStamp);
 
         if(MFX_SCANTYPE_INTERLEAVED == params.interleaved || MFX_CHROMAFORMAT_YUV400 == frameSurface->Info.ChromaFormat)
         {
@@ -413,7 +413,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
         }
         else
         {
-            for(Ipp32u i=0; i<3; i++)
+            for(uint32_t i=0; i<3; i++)
             {
                 std::unique_ptr<UMC::MJPEGEncoderScan> scan(new UMC::MJPEGEncoderScan());
 
@@ -473,11 +473,11 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
 
 mfxU32 MJPEGEncodeTask::CalculateNumPieces(mfxFrameSurface1* frameSurface, mfxFrameInfo* frameInfo)
 {
-    Ipp32u  width       = frameInfo->CropW - frameInfo->CropX;
-    Ipp32u  height      = frameInfo->CropH - frameInfo->CropY;
-    Ipp32u  numFields   = 0;
-    Ipp32u  numPieces   = 0;
-    Ipp32u  mcuWidth, mcuHeight, numxMCU, numyMCU;
+    uint32_t  width       = frameInfo->CropW - frameInfo->CropX;
+    uint32_t  height      = frameInfo->CropH - frameInfo->CropY;
+    uint32_t  numFields   = 0;
+    uint32_t  numPieces   = 0;
+    uint32_t  mcuWidth, mcuHeight, numxMCU, numyMCU;
 
     UMC::MJPEGEncoderParams params;
     m_pMJPEGVideoEncoder->GetInfo(&params);
@@ -506,7 +506,7 @@ mfxU32 MJPEGEncodeTask::CalculateNumPieces(mfxFrameSurface1* frameSurface, mfxFr
     }
 
     // create an entry in the array
-    for(Ipp32u i=0; i<numFields; i++)
+    for(uint32_t i=0; i<numFields; i++)
     {
         if(MFX_SCANTYPE_INTERLEAVED == params.interleaved || MFX_CHROMAFORMAT_YUV400 == frameSurface->Info.ChromaFormat)
         {
@@ -547,7 +547,7 @@ mfxU32 MJPEGEncodeTask::CalculateNumPieces(mfxFrameSurface1* frameSurface, mfxFr
         }
         else
         {
-            for(Ipp32u j=0; j<3; j++)
+            for(uint32_t j=0; j<3; j++)
             {
                 if(params.restart_interval)
                 {
@@ -600,7 +600,7 @@ mfxStatus MJPEGEncodeTask::EncodePiece(const mfxU32 threadNumber)
     mfxU32 pieceNum = 0;
 
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        std::lock_guard<std::mutex> guard(m_guard);
         pieceNum = encodedPieces;
 
         if (pieceNum >= NumPiecesCollected())
@@ -680,7 +680,7 @@ mfxStatus MFXVideoENCODEMJPEG::MJPEGENCODECompleteProc(void *pState, void *pPara
     pTask->Reset();
 
     {
-        UMC::AutomaticUMCMutex guard(obj.m_guard);
+        std::lock_guard<std::mutex> guard(obj.m_guard);
         obj.m_freeTasks.push(pTask);
     }
 
@@ -1455,7 +1455,7 @@ mfxStatus MFXVideoENCODEMJPEG::Reset(mfxVideoParam *par)
     pLastTask = NULL;
     while(!m_freeTasks.empty())
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        std::lock_guard<std::mutex> guard(m_guard);
         delete m_freeTasks.front();
         m_freeTasks.pop();
     }
@@ -1529,7 +1529,7 @@ mfxStatus MFXVideoENCODEMJPEG::Close(void)
     // delete free tasks queue
     while (false == m_freeTasks.empty())
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        std::lock_guard<std::mutex> guard(m_guard);
         delete m_freeTasks.front();
         m_freeTasks.pop();
     }
@@ -1947,7 +1947,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
             // save the task object into the queue
             {
-                UMC::AutomaticUMCMutex guard(m_guard);
+                std::lock_guard<std::mutex> guard(m_guard);
                 m_freeTasks.push(pTask.release());
             }
         }
@@ -2103,13 +2103,13 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
         MJPEGEncodeTask *pTask = NULL;
         {
-            UMC::AutomaticUMCMutex guard(m_guard);
+            std::lock_guard<std::mutex> guard(m_guard);
             pTask = m_freeTasks.front();
         }
 
-        pEntryPoint->requiredNumThreads = IPP_MIN(pTask->m_pMJPEGVideoEncoder->NumEncodersAllocated(),
-                                                  IPP_MIN(m_vParam.mfx.NumThread,
-                                                          pTask->CalculateNumPieces(pOriginalSurface, &(m_vParam.mfx.FrameInfo))));
+        pEntryPoint->requiredNumThreads = std::min(pTask->m_pMJPEGVideoEncoder->NumEncodersAllocated(),
+                                                   std::min(static_cast<mfxU32>(m_vParam.mfx.NumThread),
+                                                            pTask->CalculateNumPieces(pOriginalSurface, &(m_vParam.mfx.FrameInfo))));
 
         pTask->bs           = bs;
         pTask->ctrl         = ctrl;
@@ -2122,7 +2122,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
         // remove the ready task from the queue
         {
-            UMC::AutomaticUMCMutex guard(m_guard);
+            std::lock_guard<std::mutex> guard(m_guard);
             m_freeTasks.pop();
         }
     }

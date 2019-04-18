@@ -71,7 +71,7 @@ JERRCODE CJPEGEncoder::ProcessRestart(
   int       currPos;
   uint8_t*    dst;
   JERRCODE  jerr;
-  IppStatus status = ippStsNoErr;
+  int status = ippStsNoErr;
 
   TRC0("-> ProcessRestart");
 #ifdef _OPENMP
@@ -98,10 +98,10 @@ JERRCODE CJPEGEncoder::ProcessRestart(
   case JPEG_EXTENDED:
     {
 #ifdef _OPENMP
-      status = ippiEncodeHuffman8x8_JPEG_16s1u_C1(
+      status = mfxiEncodeHuffman8x8_JPEG_16s1u_C1(
                  0,dst,dstLen,&currPos,0,0,0,m_state_t[thread_id],1);
 #else
-      status = ippiEncodeHuffman8x8_JPEG_16s1u_C1(
+      status = mfxiEncodeHuffman8x8_JPEG_16s1u_C1(
                  0,dst,dstLen,&currPos,0,0,0,m_state,1);
 
 #endif
@@ -114,12 +114,12 @@ JERRCODE CJPEGEncoder::ProcessRestart(
       // DC scan
       if(Ah == 0)
       {
-        status = ippiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1(
+        status = mfxiEncodeHuffman8x8_DCFirst_JPEG_16s1u_C1(
                    0,dst,dstLen,&currPos,0,0,0,m_state_t[thread_id],1);
       }
       else
       {
-        status = ippiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1(
+        status = mfxiEncodeHuffman8x8_DCRefine_JPEG_16s1u_C1(
                    0,dst,dstLen,&currPos,0,m_state_t[thread_id],1);
       }
     }
@@ -130,19 +130,19 @@ JERRCODE CJPEGEncoder::ProcessRestart(
 
       if(Ah == 0)
       {
-        status = ippiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1(
+        status = mfxiEncodeHuffman8x8_ACFirst_JPEG_16s1u_C1(
                    0,dst,dstLen,&currPos,Ss,Se,Al,actbl,m_state_t[thread_id],1);
       }
       else
       {
-        status = ippiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1(
+        status = mfxiEncodeHuffman8x8_ACRefine_JPEG_16s1u_C1(
                    0,dst,dstLen,&currPos,Ss,Se,Al,actbl,m_state_t[thread_id],1);
       }
     }
     break;
 
   case JPEG_LOSSLESS:
-    status = ippiEncodeHuffmanOne_JPEG_16s1u_C1(
+    status = mfxiEncodeHuffmanOne_JPEG_16s1u_C1(
                0,dst,dstLen,&currPos,0,m_state_t[thread_id],1);
     break;
   default:
@@ -155,14 +155,10 @@ JERRCODE CJPEGEncoder::ProcessRestart(
 #endif
   if(ippStsNoErr > status)
   {
-    LOG1("IPP Error: ippiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
+    LOG1("IPP Error: mfxiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
-#ifdef _OPENMP
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state_t[thread_id]);
-#else
-   status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
-#endif
+   status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -201,7 +197,7 @@ JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL_RSTI(int16_t* pMCUBuf, int thread_i
   CJPEGColorComponent*   curr_comp;
   IppiEncodeHuffmanSpec* pDCTbl = 0;
   IppiEncodeHuffmanSpec* pACTbl = 0;
-  IppStatus              status;
+  int              status;
 
   (void)thread_id;
 
@@ -235,11 +231,11 @@ JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL_RSTI(int16_t* pMCUBuf, int thread_i
 #endif
 
 #ifdef _OPENMP
-          status = ippiEncodeHuffman8x8_JPEG_16s1u_C1(
+          status = mfxiEncodeHuffman8x8_JPEG_16s1u_C1(
                      pMCUBuf,dst,dstLen,&currPos,
                      &m_lastDC[thread_id][c],pDCTbl,pACTbl,m_state_t[thread_id],0);
 #else
-          status = ippiEncodeHuffman8x8_JPEG_16s1u_C1(
+          status = mfxiEncodeHuffman8x8_JPEG_16s1u_C1(
                      pMCUBuf,dst,dstLen,&currPos,
                      &curr_comp->m_lastDC,pDCTbl,pACTbl,m_state,0);
 
@@ -252,7 +248,7 @@ JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL_RSTI(int16_t* pMCUBuf, int thread_i
 #endif
           if(ippStsNoErr > status)
           {
-            LOG1("IPP Error: ippiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
+            LOG1("IPP Error: mfxiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
             return JPEG_ERR_INTERNAL;
           }
 
@@ -275,14 +271,14 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI(void)
   uint8_t* dst;
 
   JERRCODE  jerr;
-  IppStatus status;
+  int status;
 
   for(i = 0; i < m_jpeg_ncomp; i++)
   {
     m_ccomp[i].m_lastDC = 0;
   }
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -368,7 +364,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI(void)
 
            currPos = m_BitStreamOutT[thread_id].GetCurrPos();
 
-           status = ippiEncodeHuffman8x8_JPEG_16s1u_C1(
+           status = mfxiEncodeHuffman8x8_JPEG_16s1u_C1(
                     0,dst,dstLen,&currPos,0,0,0,m_state_t[thread_id],1);
 
            m_BitStreamOutT[thread_id].SetCurrPos(currPos);
@@ -391,7 +387,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI(void)
 
   if(ippStsNoErr > status)
   {
-    LOG1("IPP Error: ippiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
+    LOG1("IPP Error: mfxiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 
@@ -408,14 +404,14 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI_P(void)
   uint8_t* dst;
 
   JERRCODE  jerr;
-  IppStatus status;
+  int status;
 
   for(i = 0; i < m_jpeg_ncomp; i++)
   {
     m_ccomp[i].m_lastDC = 0;
   }
 
-  status = ippiEncodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiEncodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -512,7 +508,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI_P(void)
 
            currPos = m_BitStreamOutT[thread_id].GetCurrPos();
 
-           status = ippiEncodeHuffman8x8_JPEG_16s1u_C1(
+           status = mfxiEncodeHuffman8x8_JPEG_16s1u_C1(
                     0,dst,dstLen,&currPos,0,0,0,m_state_t[thread_id],1);
 
            m_BitStreamOutT[thread_id].SetCurrPos(currPos);
@@ -535,11 +531,11 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI_P(void)
 
   if(ippStsNoErr > status)
   {
-    LOG1("IPP Error: ippiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
+    LOG1("IPP Error: mfxiEncodeHuffman8x8_JPEG_16s1u_C1() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 
   return JPEG_OK;
 } // CJPEGEncoder::EncodeScanBaselineRSTI_P()
 
-#endif
+#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE

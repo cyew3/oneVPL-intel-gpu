@@ -26,12 +26,9 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include "ippdefs.h"
-#include "ippcore.h"
-#include "ipps.h"
-#include "ippi.h"
-#include "ippcc.h"
-#include "ippj.h"
+#ifndef OPEN_SOURCE
+#include "ipp2mfx.h"
+#endif
 #include "vm_strings.h"
 
 #ifdef _DEBUG

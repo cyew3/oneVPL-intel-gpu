@@ -453,7 +453,7 @@ MediaDataEx * JpegFrameConstructor::GetFrame(MediaData * in, uint32_t maxBitstre
             break;
         }
 
-        if (AddMarker(marker, &m_mediaDataEx, MFX_MAX(in != nullptr ? in->GetBufferSize() : 0, maxBitstreamSize), &dst) != UMC_OK)
+        if (AddMarker(marker, &m_mediaDataEx, std::max(in != nullptr ? in->GetBufferSize() : 0, (size_t)maxBitstreamSize), &dst) != UMC_OK)
         {
             ResetForNewFrame();
             continue;

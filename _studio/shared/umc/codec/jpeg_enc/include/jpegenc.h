@@ -296,5 +296,5 @@ protected:
 
 };
 
-#endif
+#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 #endif // __JPEGENC_H__

@@ -53,12 +53,12 @@ JERRCODE CJPEGDecoderHuffmanTable::Create(void)
 {
 #ifdef ALLOW_JPEG_SW_FALLBACK
   int       size;
-  IppStatus status;
+  int status;
 
-  status = ippiDecodeHuffmanSpecGetBufSize_JPEG_8u(&size);
+  status = mfxiDecodeHuffmanSpecGetBufSize_JPEG_8u(&size);
   if(ippStsNoErr != status)
   {
-    LOG1("IPP Error: ippiDecodeHuffmanSpecGetBufSize_JPEG_8u() failed - ",status);
+    LOG1("IPP Error: mfxiDecodeHuffmanSpecGetBufSize_JPEG_8u() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 
@@ -113,10 +113,10 @@ JERRCODE CJPEGDecoderHuffmanTable::Init(int id,int hclass,uint8_t* bits,uint8_t*
   MFX_INTERNAL_CPY(m_vals,vals,256);
 
 #ifdef ALLOW_JPEG_SW_FALLBACK
-  IppStatus status = ippiDecodeHuffmanSpecInit_JPEG_8u(m_bits,m_vals,m_table);
+  int status = mfxiDecodeHuffmanSpecInit_JPEG_8u(m_bits,m_vals,m_table);
   if(ippStsNoErr != status)
   {
-    LOG1("IPP Error: ippiDecodeHuffmanSpecInit_JPEG_8u() failed - ",status);
+    LOG1("IPP Error: mfxiDecodeHuffmanSpecInit_JPEG_8u() failed - ",status);
     return JPEG_ERR_DHT_DATA;
   }
 #endif
@@ -146,12 +146,12 @@ CJPEGDecoderHuffmanState::~CJPEGDecoderHuffmanState(void)
 JERRCODE CJPEGDecoderHuffmanState::Create(void)
 {
   int       size;
-  IppStatus status;
+  int status;
 
-  status = ippiDecodeHuffmanStateGetBufSize_JPEG_8u(&size);
+  status = mfxiDecodeHuffmanStateGetBufSize_JPEG_8u(&size);
   if(ippStsNoErr != status)
   {
-    LOG1("IPP Error: ippiDecodeHuffmanStateGetBufSize_JPEG_8u() failed - ",status);
+    LOG1("IPP Error: mfxiDecodeHuffmanStateGetBufSize_JPEG_8u() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 
@@ -186,12 +186,12 @@ JERRCODE CJPEGDecoderHuffmanState::Destroy(void)
 
 JERRCODE CJPEGDecoderHuffmanState::Init(void)
 {
-  IppStatus status;
+  int status;
 
-  status = ippiDecodeHuffmanStateInit_JPEG_8u(m_state);
+  status = mfxiDecodeHuffmanStateInit_JPEG_8u(m_state);
   if(ippStsNoErr != status)
   {
-    LOG1("IPP Error: ippiDecodeHuffmanStateInit_JPEG_8u() failed - ",status);
+    LOG1("IPP Error: mfxiDecodeHuffmanStateInit_JPEG_8u() failed - ",status);
     return JPEG_ERR_INTERNAL;
   }
 

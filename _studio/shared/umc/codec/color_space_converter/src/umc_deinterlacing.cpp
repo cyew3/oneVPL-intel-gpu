@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,8 +20,7 @@
 
 #include "umc_deinterlacing.h"
 #include "umc_video_data.h"
-#include "ippi.h"
-#include "ippvc.h"
+#include "ipp2mfx.h"
 
 using namespace UMC;
 
@@ -86,7 +85,7 @@ Status Deinterlacing::GetFrame(MediaData *input, MediaData *output)
         //return UMC_ERR_UNSUPPORTED;
         method = DEINTERLACING_DUPLICATE;
       }
-      ippiDeinterlaceFilterTriangle_8u_C1R(pSrc0, srcPitch,
+      mfxiDeinterlaceFilterTriangle_8u_C1R(pSrc0, srcPitch,
                                            pDst0, dstPitch,
                                            size,
                                            128,
@@ -116,8 +115,8 @@ Status Deinterlacing::GetFrame(MediaData *input, MediaData *output)
     pDst1 = pDst0 + dstPitch;
     dstPitch *= 2;
     size.height /= 2;
-    ippiCopy_8u_C1R(pSrc0, srcPitch, pDst0, dstPitch, size);
-    ippiCopy_8u_C1R(pSrc0, srcPitch, pDst1, dstPitch, size);
+    mfxiCopy_8u_C1R(pSrc0, srcPitch, pDst0, dstPitch, size);
+    mfxiCopy_8u_C1R(pSrc0, srcPitch, pDst1, dstPitch, size);
   }
 
   return UMC_OK;
@@ -137,7 +136,7 @@ static void DeinterlacingEdgeDetect(uint8_t *psrc,
   mfxSize roi = {w, h/2};
 
   // copy even lines
-  ippiCopy_8u_C1R(psrc, 2*iSrcPitch, pdst, 2*iDstPitch, roi);
+  mfxiCopy_8u_C1R(psrc, 2*iSrcPitch, pdst, 2*iDstPitch, roi);
 
   // then line #1 and line before last
   std::copy(psrc + iSrcPitch, psrc + 2*iSrcPitch, pdst + iDstPitch);

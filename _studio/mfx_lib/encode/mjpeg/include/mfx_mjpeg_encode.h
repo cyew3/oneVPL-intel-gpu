@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,8 @@
 #include "mfxvideo.h"
 
 #include "umc_mjpeg_video_encoder.h"
-#include "umc_mutex.h"
 
+#include <mutex>
 #include <queue>
 
 class MJPEGEncodeTask
@@ -75,7 +75,7 @@ protected:
     // Close the object, release all resources
     void      Close(void);
 
-    UMC::Mutex m_guard;
+    std::mutex m_guard;
 
     mfxU32 encodedPieces;
 };
@@ -120,7 +120,7 @@ protected:
     //mfxFrameAllocResponse m_response_alien;
 
     // Free tasks queue guard (if SW is used)
-    UMC::Mutex m_guard;
+    std::mutex m_guard;
     // Free tasks queue (if SW is used)
     std::queue<MJPEGEncodeTask *> m_freeTasks;
     // Count of created tasks (if SW is used)
