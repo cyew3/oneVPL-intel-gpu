@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -75,7 +75,11 @@ namespace hevce_lterm_reflist
             m_filler = this;
         }
         ~TestSuite() { }
-        int RunTest(unsigned int id);
+
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+        int RunTest(tc_struct tc, unsigned int fourcc_id);
+
         mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa);
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
         mfxExtAVCRefListCtrl m_RefList;
@@ -241,9 +245,15 @@ namespace hevce_lterm_reflist
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
 
-    int TestSuite::RunTest(unsigned int id) {
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct& tc = test_case[id];
+        return RunTest(tc, fourcc);
+    }
+
+    int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id) {
         TS_START;
-        auto& tc = test_case[id];
 
         if (g_tsOSFamily != MFX_OS_FAMILY_WINDOWS) {
             g_tsLog << "[ SKIPPED ] This test is only for windows platform\n";
@@ -271,6 +281,56 @@ namespace hevce_lterm_reflist
         m_par.mfx.FrameInfo.Width =  m_par.mfx.FrameInfo.CropW = FRAME_WIDTH;
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = FRAME_HEIGHT;
 
+        if (fourcc_id == MFX_FOURCC_NV12)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_P010)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN10;
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y410)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+            m_par.mfx.FrameInfo.Shift = 0;
+        }
+        else if (fourcc_id == MFX_FOURCC_YUY2)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y210)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+            m_par.mfx.FrameInfo.Shift = 1;
+        }
+        else
+        {
+            g_tsLog << "WARNING: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
+
         for (auto& ctrl : tc.mfx)
             if (ctrl.field)
                 tsStruct::set(m_pPar, *ctrl.field, ctrl.value);
@@ -287,5 +347,10 @@ namespace hevce_lterm_reflist
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(hevce_lterm_reflist);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_lterm_reflist, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_lterm_reflist, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_lterm_reflist, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_lterm_reflist, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_lterm_reflist, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_lterm_reflist, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
 }
