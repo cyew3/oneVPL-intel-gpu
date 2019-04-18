@@ -965,6 +965,17 @@ void FillSpsBuffer(
     {
         sps.ScenarioInfo = eScenario_RemoteGaming;
     }
+
+    // QpModulation support
+    if ((par.m_platform >= MFX_HW_ICL) && (par.m_platform < MFX_HW_TGL_LP))
+    {
+        if (par.mfx.GopRefDist == 1)
+            sps.LowDelayMode = 1;
+
+        if ((par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID) &&
+            ((par.mfx.GopRefDist == 4) || (par.mfx.GopRefDist == 8)))
+            sps.HierarchicalFlag = 1;
+    }
 }
 
 void FillPpsBuffer(

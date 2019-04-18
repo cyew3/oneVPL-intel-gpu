@@ -187,7 +187,8 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
             UINT    EnableStreamingBufferDDR            : 1;
             UINT    LowDelayMode                        : 1;
             UINT    DisableHRDConformance               : 1;
-            UINT                                        : 4;
+            UINT    HierarchicalFlag                    : 1;
+            UINT    ReservedBits                        : 3;
         };
         UINT    EncodeFlags;
     };

@@ -268,6 +268,9 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", bAutoMaxPBFrameSizeForSceneChange);
     TRACE("%d", EnableStreamingBufferLLC);
     TRACE("%d", EnableStreamingBufferDDR);
+    TRACE("%d", LowDelayMode);
+    TRACE("%d", DisableHRDConformance);
+    TRACE("%d", HierarchicalFlag);
 
     TRACE("%d", UserMaxIFrameSize );
     TRACE("%d", UserMaxPBFrameSize);
