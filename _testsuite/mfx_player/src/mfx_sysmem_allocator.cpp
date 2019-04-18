@@ -264,16 +264,12 @@ mfxStatus SysMemFrameAllocator::CheckRequestType(mfxFrameAllocRequest *request)
     return MFX_ERR_NONE;
 }
 
-mfxStatus SysMemFrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut)
+
+static mfxU32 GetSurfaceSize(mfxU32 FourCC, mfxU32 Width2, mfxU32 Height2)
 {
-    MFX_CHECK(m_pBufferAllocator, MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK_NULL_PTR2(info, midOut);
+    mfxU32 nbytes = 0;
 
-    mfxU32 Width2 = MSDK_ALIGN32(info->Width);
-    mfxU32 Height2 = MSDK_ALIGN32(info->Height);
-    mfxU32 nbytes;
-
-    switch (info->FourCC)
+    switch (FourCC)
     {
     case MFX_FOURCC_YV12:
     case MFX_FOURCC_NV12:
@@ -293,99 +289,7 @@ mfxStatus SysMemFrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *in
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
 #endif
-        nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
-        nbytes *= 2; // 16bits
-        break;
-    case MFX_FOURCC_RGB3:
-        nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2;
-        break;
-    case MFX_FOURCC_RGB4:
-    case MFX_FOURCC_AYUV:
-        nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2;
-        break;
-    case MFX_FOURCC_A2RGB10:
-        nbytes = Width2*Height2*4; // 4 bytes per pixel
-        break;
-    case MFX_FOURCC_YUY2:
-        nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
-        break;
-    case MFX_FOURCC_NV16:
-        nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
-        break;
-    case MFX_FOURCC_R16:
-        nbytes = 2*Width2*Height2;
-        break;
-    case MFX_FOURCC_ARGB16:
-        nbytes = (Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2) << 1;
-        break;
-#if (MFX_VERSION >= 1027)
-    case MFX_FOURCC_Y410:
-        nbytes = 4 * Width2*Height2;
-        break;
-#endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    case MFX_FOURCC_Y416:
-        nbytes = 8 * Width2*Height2;
-        break;
-#endif
-      default:
-        return MFX_ERR_UNSUPPORTED;
-    }
-
-    {
-        // pointer to the record in m_mids structure
-        mfxMemId *pmid = GetMidHolder(mid);
-        MFX_CHECK(pmid, MFX_ERR_MEMORY_ALLOC);
-
-        mfxStatus sts = m_pBufferAllocator->Free(m_pBufferAllocator->pthis, *pmid);
-        MFX_CHECK_STS(sts);
-
-        sts = m_pBufferAllocator->Alloc(m_pBufferAllocator->pthis,
-            MSDK_ALIGN32(nbytes) + MSDK_ALIGN32(sizeof(sFrame)), MFX_MEMTYPE_SYSTEM_MEMORY, pmid);
-        MFX_CHECK_STS(sts);
-
-        sFrame *fs;
-        sts = m_pBufferAllocator->Lock(m_pBufferAllocator->pthis, *pmid, (mfxU8 **)&fs);
-        MFX_CHECK_STS(sts);
-
-        fs->id = ID_FRAME;
-        fs->info = *info;
-        m_pBufferAllocator->Unlock(m_pBufferAllocator->pthis, *pmid);
-    }
-    return MFX_ERR_NONE;
-}
-
-mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
-{
-    MFX_CHECK(m_pBufferAllocator, MFX_ERR_NOT_INITIALIZED);
-
-    mfxU32 numAllocated = 0;
-
-    mfxU32 Width2 = MSDK_ALIGN32(request->Info.Width);
-    mfxU32 Height2 = MSDK_ALIGN32(request->Info.Height);
-    mfxU32 nbytes;
-
-    switch (request->Info.FourCC)
-    {
-    case MFX_FOURCC_YV12:
-    case MFX_FOURCC_NV12:
-        nbytes = Width2*Height2 + (Width2>>1)*(Height2>>1) + (Width2>>1)*(Height2>>1);
-        break;
-    case MFX_FOURCC_P010:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    case MFX_FOURCC_P016:
-#endif
-        nbytes = Width2*Height2 + (Width2>>1)*(Height2>>1) + (Width2>>1)*(Height2>>1);
-        nbytes *= 2; // 16bits
-        break;
-    case MFX_FOURCC_P210:
-#if (MFX_VERSION >= 1027)
-    case MFX_FOURCC_Y210:
-#endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    case MFX_FOURCC_Y216:
-#endif
-        nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
+        nbytes = Width2*Height2 + (Width2>>1)*(Height2)+(Width2>>1)*(Height2);
         nbytes *= 2; // 16bits
         break;
 #if (MFX_VERSION >= 1027)
@@ -417,12 +321,54 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         nbytes = 8 * Width2*Height2;
         break;
     default:
-        return MFX_ERR_UNSUPPORTED;
+        break;
     }
+    return nbytes;
+}
+
+mfxStatus SysMemFrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut)
+{
+    MFX_CHECK(m_pBufferAllocator, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK_NULL_PTR2(info, midOut);
+
+    mfxU32 nbytes = GetSurfaceSize(info->FourCC, MSDK_ALIGN32(info->Width), MSDK_ALIGN32(info->Height));
+    MFX_CHECK(nbytes, MFX_ERR_UNSUPPORTED);
+
+    // pointer to the record in m_mids structure
+    mfxMemId *pmid = GetMidHolder(mid);
+    MFX_CHECK(pmid, MFX_ERR_MEMORY_ALLOC);
+
+    mfxStatus sts = m_pBufferAllocator->Free(m_pBufferAllocator->pthis, *pmid);
+    MFX_CHECK_STS(sts);
+
+    sts = m_pBufferAllocator->Alloc(m_pBufferAllocator->pthis,
+        MSDK_ALIGN32(nbytes) + MSDK_ALIGN32(sizeof(sFrame)), MFX_MEMTYPE_SYSTEM_MEMORY, pmid);
+    MFX_CHECK_STS(sts);
+
+    sFrame *fs;
+    sts = m_pBufferAllocator->Lock(m_pBufferAllocator->pthis, *pmid, (mfxU8 **)&fs);
+    MFX_CHECK_STS(sts);
+
+    fs->id = ID_FRAME;
+    fs->info = *info;
+    m_pBufferAllocator->Unlock(m_pBufferAllocator->pthis, *pmid);
+
+    *midOut = *pmid;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
+{
+    MFX_CHECK(m_pBufferAllocator, MFX_ERR_NOT_INITIALIZED);
+
+    mfxU32 nbytes = GetSurfaceSize(request->Info.FourCC, MSDK_ALIGN32(request->Info.Width), MSDK_ALIGN32(request->Info.Height));
+    MFX_CHECK(nbytes, MFX_ERR_UNSUPPORTED);
 
     std::unique_ptr<mfxMemId[]> umids(new mfxMemId[request->NumFrameSuggested]);
 
     // allocate frames
+    mfxU32 numAllocated = 0;
+
     for (numAllocated = 0; numAllocated < request->NumFrameSuggested; numAllocated++)
     {
         mfxStatus sts = m_pBufferAllocator->Alloc(m_pBufferAllocator->pthis,

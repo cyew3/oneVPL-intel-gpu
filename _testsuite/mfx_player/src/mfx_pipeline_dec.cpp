@@ -3238,6 +3238,7 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
     SrfEncCtl        inSurface;
     mfxFrameSurface1 *pDecodedSurface  = nullptr;
     mfxMemId         inMid             = nullptr;
+    mfxMemId         outMid            = nullptr;
     mfxSyncPoint     syncp             = nullptr;
     mfxStatus        sts               = MFX_ERR_MORE_SURFACE;
     MFXDecodeOrderedRender* pReoderRnd = dynamic_cast<MFXDecodeOrderedRender*>(m_pRender);
@@ -3280,7 +3281,20 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
             inSurface.pSurface->Info.Width = m_YUV_Width;
             inSurface.pSurface->Info.Height = m_YUV_Height;
 
-            m_components[eDEC].ReallocSurface(inMid, &inSurface.pSurface->Info, inSurface.pSurface->Data.MemType, &inSurface.pSurface->Data.MemId);
+            m_components[eDEC].ReallocSurface(inMid, &inSurface.pSurface->Info, inSurface.pSurface->Data.MemType, &outMid);
+            // We have to lock surface in case of system memory allocator to have right pitches in Data
+            // (that can be needed for INTERNAL->SYS copy operations)
+            // Better way is locking surface in decoder, but we don't know real memid inside decoders (in case of sysmem)
+            // It's a good point for improvement
+            if (inSurface.pSurface->Data.MemType & MFX_MEMTYPE_SYSTEM_MEMORY)
+            {
+                m_components[eDEC].m_pAllocator->Lock(m_components[eDEC].m_pAllocator->pthis, outMid, &inSurface.pSurface->Data);
+                m_components[eDEC].m_pAllocator->Unlock(m_components[eDEC].m_pAllocator->pthis, outMid, NULL);
+            }
+            else
+            {
+                inSurface.pSurface->Data.MemId = outMid;
+            }
         }
 
         bs.DataFlag = (mfxU16)(m_inParams.bCompleteFrame ? MFX_BITSTREAM_COMPLETE_FRAME : 0);
