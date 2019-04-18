@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018 - 2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -20,10 +20,7 @@ namespace hevce_sliding_window
     public:
         TestSuite() : tsVideoEncoder(MFX_CODEC_HEVC) {}
         ~TestSuite() { }
-        int RunTest(unsigned int id);
-        static const unsigned int n_cases;
 
-    private:
         struct tc_struct
         {
             struct status {
@@ -38,6 +35,14 @@ namespace hevce_sliding_window
                 mfxU32 v;
             } set_par[MAX_NPARS];
         };
+
+        template<mfxU32 fourcc>
+        int RunTest_Subtype(const unsigned int id);
+        int RunTest(tc_struct tc, unsigned int fourcc_id);
+
+        static const unsigned int n_cases;
+
+    private:
 
         static const tc_struct test_case[];
 
@@ -106,7 +111,7 @@ namespace hevce_sliding_window
     } },
 
     // MaxKbps is not set. Error expected
-    {/*04*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
+    {/*04*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 5000 },
@@ -130,7 +135,7 @@ namespace hevce_sliding_window
     } },
 
     // WinBRCMaxAvgKbps is not set. Error expected
-    {/*06*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
+    {/*06*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 0 },
@@ -192,7 +197,7 @@ namespace hevce_sliding_window
     } },
 
     // MaxKbps is not set. Error expected
-    {/*11*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
+    {/*11*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 5000 },
@@ -216,7 +221,7 @@ namespace hevce_sliding_window
     } },
 
     // WinBRCMaxAvgKbps is not set. Error expected
-    {/*13*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
+    {/*13*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 0 },
@@ -231,13 +236,69 @@ namespace hevce_sliding_window
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
-    int TestSuite::RunTest(unsigned int id)
+    template<mfxU32 fourcc>
+    int TestSuite::RunTest_Subtype(const unsigned int id)
+    {
+        const tc_struct& tc = test_case[id];
+        return RunTest(tc, fourcc);
+    }
+
+    int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START;
-        const tc_struct& tc = test_case[id];
         MFXInit();
         Load();
         mfxExtCodingOption3& ext3 = m_par;
+
+        if (fourcc_id == MFX_FOURCC_NV12)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_P010)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN10;
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y410)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+            m_par.mfx.FrameInfo.Shift = 0;
+        }
+        else if (fourcc_id == MFX_FOURCC_YUY2)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y210)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+            m_par.mfx.FrameInfo.Shift = 1;
+        }
+        else
+        {
+            g_tsLog << "WARNING: invalid fourcc_id parameter: " << fourcc_id << "\n";
+            return 0;
+        }
 
         if (tc.type & QUERY)
         {
@@ -267,5 +328,10 @@ namespace hevce_sliding_window
         return 0;
     }
 
-TS_REG_TEST_SUITE_CLASS(hevce_sliding_window);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_sliding_window, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_sliding_window, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_sliding_window, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_sliding_window, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_sliding_window, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_sliding_window, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
 }
