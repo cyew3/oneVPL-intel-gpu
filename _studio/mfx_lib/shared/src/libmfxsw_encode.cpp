@@ -787,11 +787,11 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
 #ifndef OPEN_SOURCE
 #if !defined (MFX_RT)
             session->m_pENCODE.reset(session->Create<VideoENCODE>(*par));
-            MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_NULL_PTR);
+            MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
             mfxRes = session->m_pENCODE->Init(par);
 #endif
 #else // OPEN_SOURCE
-            mfxRes = MFX_ERR_UNSUPPORTED;
+            mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
 #endif // OPEN_SOURCE
         }
         else if (mfxRes >= MFX_ERR_NONE)
@@ -804,7 +804,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
 #ifndef OPEN_SOURCE
             mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
 #else // OPEN_SOURCE
-            mfxRes = MFX_ERR_UNSUPPORTED;
+            mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
 #endif // OPEN_SOURCE
         }
     }
