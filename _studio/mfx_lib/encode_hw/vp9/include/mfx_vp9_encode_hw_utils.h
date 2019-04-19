@@ -261,14 +261,13 @@ enum // identifies memory type at encoder input w/o any details
         return MFX_ERR_NONE;
     }
 
-#define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE
-
-    template<class T> inline void Zero(T & obj)                { memset(&obj, 0, sizeof(obj)); }
-    template<class T> inline void Zero(std::vector<T> & vec)   { memset(&vec[0], 0, sizeof(T) * vec.size()); }
+    template<class T> inline void Zero(T & obj)                { obj = T(); }
+    template<class T, size_t N> inline void Zero(T (&obj)[N])  { std::fill_n(obj, N, T()); }
+    template<class T> inline void Zero(std::vector<T> & vec)   { vec.assign(vec.size(), T()); }
     template<class T> inline void ZeroExtBuffer(T & obj)
     {
         mfxExtBuffer header = obj.Header;
-        memset(&obj, 0, sizeof(obj));
+        obj = T();
         obj.Header = header;
     }
 
@@ -446,6 +445,9 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
     public:
         MfxFrameAllocResponse();
 
+        MfxFrameAllocResponse(MfxFrameAllocResponse const &) = delete;
+        MfxFrameAllocResponse & operator =(MfxFrameAllocResponse const &) = delete;
+
         ~MfxFrameAllocResponse();
 
         mfxStatus Alloc(
@@ -458,8 +460,6 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         mfxFrameInfo               m_info;
 
     private:
-        MfxFrameAllocResponse(MfxFrameAllocResponse const &);
-
         VideoCORE* m_pCore;
         mfxU16      m_numFrameActualReturnedByAllocFrames;
 

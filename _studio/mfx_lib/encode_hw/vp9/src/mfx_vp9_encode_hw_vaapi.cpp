@@ -24,6 +24,7 @@
 #include "mfx_vp9_encode_hw_par.h"
 #include "mfx_vp9_encode_hw_vaapi.h"
 #include "mfx_common_int.h"
+#include <map>
 
 namespace MfxHwVP9Encode
 {
@@ -188,7 +189,7 @@ namespace MfxHwVP9Encode
         for (mfxU16 i = 0; i < 2; i ++)
             pps.mode_lf_delta[i] = framePar.lfModeDelta[i];
 
-        pps.ref_flags.bits.temporal_id = static_cast<mfxU8>(framePar.temporalLayer); //Temporal scalability is not fully implemented yet
+       pps.ref_flags.bits.temporal_id = static_cast<mfxU8>(framePar.temporalLayer);
 
         pps.bit_offset_ref_lf_delta         = offsets.BitOffsetForLFRefDelta;
         pps.bit_offset_mode_lf_delta        = offsets.BitOffsetForLFModeDelta;
@@ -363,19 +364,14 @@ mfxStatus SetRateControl(
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterRateControl *rate_param;
 
+    mfxU8 numTL = par.m_numLayers;
     bool TL_attached = false;
-    mfxExtVP9TemporalLayers& extTL = GetExtBufferRef(par);
-
-    mfxU8 numTL = 0;
-    for (numTL = 0; numTL < 4 && extTL.Layer[numTL].FrameRateScale != 0; numTL++);
     if (numTL == 0)
-    {
         numTL = 1;
-    }
     else
-    {
         TL_attached = true;
-    }
+
+    mfxExtVP9TemporalLayers& extTL = GetExtBufferRef(par);
 
     mfxStatus sts;
     for (VABufferID& id : rateParamBuf_ids)
@@ -418,6 +414,7 @@ mfxStatus SetRateControl(
         }
 
         rate_param->rc_flags.bits.enable_dynamic_scaling = 1;
+
         vaSts = vaUnmapBuffer(m_vaDisplay, rateParamBuf_ids[tl]);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
@@ -526,6 +523,7 @@ mfxStatus SetFrameRate(
     VAEncMiscParameterFrameRate *frameRate_param;
 
     mfxExtVP9TemporalLayers& extTL = GetExtBufferRef(par);
+    mfxU16 numTL = std::max<mfxU16>(par.m_numLayers, 1);
 
     mfxStatus sts;
     for (VABufferID& id : frameRateBufIds)
@@ -534,12 +532,12 @@ mfxStatus SetFrameRate(
         MFX_CHECK_STS(sts);
     }
 
-    frameRateBufIds.resize(par.m_numLayers);
+    frameRateBufIds.resize(numTL);
 
-    mfxU32 base_framerate;
-    PackMfxFrameRate(par.mfx.FrameInfo.FrameRateExtN, par.mfx.FrameInfo.FrameRateExtD, base_framerate);
+    mfxU32 nom = par.mfx.FrameInfo.FrameRateExtN;
+    mfxU32 denom = par.mfx.FrameInfo.FrameRateExtD;
 
-    for (mfxU8 tl = 0; tl < frameRateBufIds.size(); tl++)
+    for (mfxU16 tl = 0; tl < numTL; tl++)
     {
         vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
@@ -558,7 +556,10 @@ mfxStatus SetFrameRate(
         misc_param->type = VAEncMiscParameterTypeFrameRate;
         frameRate_param = (VAEncMiscParameterFrameRate *)misc_param->data;
 
-        frameRate_param->framerate = base_framerate / extTL.Layer[par.m_numLayers - 1 - tl].FrameRateScale;
+        if (tl == numTL - 1)
+            PackMfxFrameRate(nom, denom, frameRate_param->framerate);
+        else
+            PackMfxFrameRate(nom*extTL.Layer[tl].FrameRateScale, denom*extTL.Layer[numTL - 1].FrameRateScale, frameRate_param->framerate);
         frameRate_param->framerate_flags.bits.temporal_id = tl;
 
         vaSts = vaUnmapBuffer(m_vaDisplay, frameRateBufIds[tl]);
@@ -582,6 +583,11 @@ VAAPIEncoder::VAAPIEncoder()
 , m_packedHeaderParameterBufferId(VA_INVALID_ID)
 , m_packedHeaderDataBufferId(VA_INVALID_ID)
 , m_tempLayersBufferId(VA_INVALID_ID)
+, m_tempLayersParamsReset(false)
+, m_width(0)
+, m_height(0)
+, m_isBrcResetRequired(false)
+, m_platform()
 {
 } // VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
 
@@ -606,6 +612,32 @@ VAProfile ConvertGuidToVAAPIProfile(const GUID& guid)
     return VAProfileNone; /// Lowpower == OFF is not supported yet.
 }
 
+// this function is aimed to workaround all CAPS reporting problems in driver
+void HardcodeCaps(ENCODE_CAPS_VP9& caps, eMFXHWType platform)
+{
+    caps.CodingLimitSet = 1;
+    caps.Color420Only =  1;
+
+#if (MFX_VERSION >= 1027)
+    if (platform >= MFX_HW_ICL)
+    {
+        caps.Color420Only = 0;
+        caps.MaxEncodedBitDepth = 1; //0: 8bit, 1: 8 and 10 bit;
+        caps.NumScalablePipesMinus1 = 0; // TODO: for now driver doesn't support multiple pipes scalability
+    }
+#else
+    std::ignore = platform;
+#endif
+
+    caps.ForcedSegmentationSupport = 1;
+    caps.AutoSegmentationSupport = 1;
+    caps.SegmentFeatureSupport = 1 << FEAT_QIDX | 1 << FEAT_LF_LVL;
+
+    caps.DynamicScaling = 1;
+
+    caps.EncodeFunc = 1;
+    caps.HybridPakFunc = 1;
+}
 
 mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     VideoCORE* pCore,
@@ -641,6 +673,9 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         VAConfigAttribFrameSizeToleranceSupport,
         VAConfigAttribProcessingRate,
         VAConfigAttribEncDynamicScaling,
+        VAConfigAttribEncMacroblockInfo,
+        VAConfigAttribEncMaxRefFrames,
+        VAConfigAttribEncSkipFrame,
     };
     std::vector<VAConfigAttrib> attrs;
 
@@ -661,16 +696,6 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
                           (int)attrs.size());
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    m_caps.CodingLimitSet = 1;
-    m_caps.Color420Only =  1; // See DDI
-#if (MFX_VERSION >= 1027)
-    if (m_platform >= MFX_HW_ICL)
-    {
-        m_caps.Color420Only = 0;
-        m_caps.MaxEncodedBitDepth = 1; //0: 8bit, 1: 8 and 10 bit;
-        m_caps.NumScalablePipesMinus1 = 0; // TODO: for now driver doesn't support multiple pipes scalability
-    }
-#endif
     if (attrs[idx_map[VAConfigAttribRTFormat]].value != VA_ATTRIB_NOT_SUPPORTED)
     {
         m_caps.YUV422ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV422 ? 1 : 0;
@@ -700,20 +725,17 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.TemporalLayerRateCtrl = rateControlConf.bits.max_num_temporal_layers_minus1;
     }
 
-    m_caps.ForcedSegmentationSupport = 1;
-    m_caps.AutoSegmentationSupport = 1;
-
     if (attrs[idx_map[VAConfigAttribEncMacroblockInfo]].value != VA_ATTRIB_NOT_SUPPORTED &&
         attrs[idx_map[VAConfigAttribEncMacroblockInfo]].value)
-        m_caps.SegmentFeatureSupport &= 0b0001;
+        m_caps.SegmentFeatureSupport |= 1 << FEAT_QIDX;
 
     if (attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value != VA_ATTRIB_NOT_SUPPORTED &&
         attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value)
-        m_caps.SegmentFeatureSupport &= 0b0100;
+        m_caps.SegmentFeatureSupport |= 1 << FEAT_REF;
 
     if (attrs[idx_map[VAConfigAttribEncSkipFrame]].value != VA_ATTRIB_NOT_SUPPORTED &&
         attrs[idx_map[VAConfigAttribEncSkipFrame]].value)
-        m_caps.SegmentFeatureSupport &= 0b1000;
+        m_caps.SegmentFeatureSupport |= 1 << FEAT_SKIP;
 
     if (attrs[idx_map[VAConfigAttribEncDynamicScaling]].value != VA_ATTRIB_NOT_SUPPORTED)
     {
@@ -728,13 +750,12 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.FrameLevelRateCtrl = attrs[idx_map[VAConfigAttribProcessingRate]].value == VA_PROCESSING_RATE_ENCODE;
         m_caps.BRCReset = attrs[idx_map[VAConfigAttribProcessingRate]].value == VA_PROCESSING_RATE_ENCODE;
     }
-    m_caps.EncodeFunc = 1;
-    m_caps.HybridPakFunc = 1;
+
+    HardcodeCaps(m_caps, m_platform);
 
     return MFX_ERR_NONE;
 
 } // mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, mfxU32 width, mfxU32 height)
-
 
 mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 {
@@ -840,13 +861,20 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     mfxStatus mfxSts;
     mfxSts = SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
+
+    if (par.m_numLayers)
+    {
+        mfxSts = SetTemporalStructure(par, m_vaDisplay, m_vaContextEncode, m_tempLayersBufferId);
+        MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
+    }
+
     mfxSts = SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_rateCtrlBufferIds);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
+
     mfxSts = SetQualityLevel(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelBufferId);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
+
     mfxSts = SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferIds);
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
-    mfxSts = SetTemporalStructure(par, m_vaDisplay, m_vaContextEncode, m_tempLayersBufferId);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
 
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
@@ -870,15 +898,21 @@ mfxStatus VAAPIEncoder::Reset(VP9MfxVideoParam const & par)
     mfxStatus mfxSts;
     mfxSts = SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
-    mfxSts = SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_rateCtrlBufferIds);
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
-    mfxSts = SetQualityLevel(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelBufferId);
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
-    mfxSts = SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferIds);
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
+
+    // even we have not temporal layers (after reset),
+    // we have to update driver temporal layers structures in the next render cycle
     mfxSts = SetTemporalStructure(par, m_vaDisplay, m_vaContextEncode, m_tempLayersBufferId);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
+    m_tempLayersParamsReset = true;
 
+    mfxSts = SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_rateCtrlBufferIds);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
+
+    mfxSts = SetQualityLevel(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelBufferId);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
+
+    mfxSts = SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateBufferIds);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == mfxSts, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
@@ -1048,10 +1082,11 @@ mfxStatus VAAPIEncoder::Execute(
 
             configBuffers.push_back(m_ppsBufferId);
         }
-        //segmentation functionality is not fully implemented yet
+
         if (task.m_frameParam.segmentation == APP_SEGMENTATION)
         {
             // 4. Segmentation map
+
             // segmentation map buffer is already allocated and filled. Need just to attach it
             mfxU32 segCodedBuffer = task.m_pSegmentMap->idInPool;
             MFX_CHECK( segCodedBuffer < m_segMapQueue.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -1114,7 +1149,15 @@ mfxStatus VAAPIEncoder::Execute(
 
         // 8. hrd parameters
         configBuffers.push_back(m_hrdBufferId);
-        // 9. RC parameters
+
+        // 9. temporal layers
+        if (m_video.m_numLayers || m_tempLayersParamsReset)
+        {
+            configBuffers.push_back(m_tempLayersBufferId);
+            m_tempLayersParamsReset = false;
+        }
+
+        // 10. RC parameters
         SetRateControl(m_video, m_vaDisplay, m_vaContextEncode, m_rateCtrlBufferIds, m_isBrcResetRequired);
         MFX_CHECK_WITH_ASSERT(m_rateCtrlBufferIds.size() == m_frameRateBufferIds.size(), MFX_ERR_DEVICE_FAILED);
         m_isBrcResetRequired = false; // reset BRC only once
@@ -1122,15 +1165,15 @@ mfxStatus VAAPIEncoder::Execute(
         {
             configBuffers.push_back(m_rateCtrlBufferIds[i]);
         }
-        // 10. frame rate
+
+        // 11. frame rate
         for (VABufferID id : m_frameRateBufferIds)
         {
             configBuffers.push_back(id);
         }
-        // 11. quality level
+
+        // 12. quality level
         configBuffers.push_back(m_qualityLevelBufferId);
-        // 12. temporal layers
-        configBuffers.push_back(m_tempLayersBufferId);
     }
 
     //------------------------------------------------------------------
