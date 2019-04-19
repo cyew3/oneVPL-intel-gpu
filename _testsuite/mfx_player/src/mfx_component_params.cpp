@@ -421,7 +421,6 @@ mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
     //sourceId = 1;
     mfxU32 refIdx = 1 == m_sufacesByIDx.size() ? 0 : sourceId;
     std::vector<SrfEncCtl>  & refSurfaces = m_sufacesByIDx[refIdx]->surfaces;
-    mfxMemId * respMids = m_sufacesByIDx[refIdx]->allocResponce.mids;
 
     for (; !ffstimeout ; )
     {
@@ -455,7 +454,8 @@ mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
 
                     if (idx >= m_sufacesByIDx[refIdx]->allocResponce.NumFrameActual)
                         return MFX_ERR_INVALID_HANDLE;
-                    *mid = respMids[idx];
+                    else
+                        *mid = m_bufType == MFX_BUF_OPAQ ? 0 : m_sufacesByIDx[refIdx]->allocResponce.mids[idx];
 
                     return MFX_ERR_NONE;
                 }
@@ -485,7 +485,8 @@ mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
 
                     if (curIdx >= m_sufacesByIDx[refIdx]->allocResponce.NumFrameActual)
                         return MFX_ERR_INVALID_HANDLE;
-                    *mid = respMids[curIdx];
+                    else
+                        *mid = m_bufType == MFX_BUF_OPAQ ? 0 : m_sufacesByIDx[refIdx]->allocResponce.mids[curIdx];
 
                     return MFX_ERR_NONE;
                 }
