@@ -231,7 +231,11 @@ mfxStatus SysMemFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 {
     MFX_CHECK(m_pBufferAllocator, MFX_ERR_NOT_INITIALIZED);
 
-    if (!mid && ptr && (ptr->Y || ptr->Y410))
+    if (!mid && ptr && (ptr->Y
+#if (MFX_VERSION >= 1027)
+        || ptr->Y410
+#endif
+    ))
     {
         mfxStatus sts = m_pBufferAllocator->Unlock(m_pBufferAllocator->pthis, mid);
         MFX_CHECK_STS(sts);
