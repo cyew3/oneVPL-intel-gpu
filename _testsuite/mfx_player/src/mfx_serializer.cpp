@@ -205,6 +205,7 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
 #endif
     SERIALIZE_INT(GPB);
     SERIALIZE_INT(EnableQPOffset);
+    SERIALIZE_INT(ScenarioInfo);
     SERIALIZE_INT(MaxFrameSizeI);
     SERIALIZE_INT(MaxFrameSizeP);
     SERIALIZE_POD_ARRAY(QPOffset, 8);
