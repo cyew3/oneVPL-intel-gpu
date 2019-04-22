@@ -938,6 +938,15 @@ void FillSpsBuffer(
 #endif
 
     sps.DisableHRDConformance = IsOff(par.m_ext.CO3.BRCPanicMode);
+
+    if (par.m_ext.CO3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING)
+    {
+        sps.ScenarioInfo = eScenario_GameStreaming;
+    }
+    else if (par.m_ext.CO3.ScenarioInfo == MFX_SCENARIO_REMOTE_GAMING)
+    {
+        sps.ScenarioInfo = eScenario_RemoteGaming;
+    }
 }
 
 void FillPpsBuffer(

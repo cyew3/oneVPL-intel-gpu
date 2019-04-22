@@ -153,6 +153,15 @@ void MfxHwH264Encode::FillSpsBuffer(
         sps.InitVBVBufferFullnessInBit = par.calcParam.mvcPerViewPar.initialDelayInKB * 8000;
         sps.VBVBufferSizeInBit         = par.calcParam.mvcPerViewPar.bufferSizeInKB   * 8000;;
     }
+
+    if (extOpt3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING)
+    {
+        sps.ScenarioInfo = eScenario_GameStreaming;
+    }
+    else if (extOpt3.ScenarioInfo == MFX_SCENARIO_REMOTE_GAMING)
+    {
+        sps.ScenarioInfo = eScenario_RemoteGaming;
+    }
 }
 
 void MfxHwH264Encode::FillVaringPartOfSpsBuffer(

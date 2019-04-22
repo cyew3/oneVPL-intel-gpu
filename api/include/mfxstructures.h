@@ -681,9 +681,8 @@ enum {
     MFX_SCENARIO_ARCHIVE             = 3,
     MFX_SCENARIO_LIVE_STREAMING      = 4,
     MFX_SCENARIO_CAMERA_CAPTURE      = 5,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_SCENARIO_GAME_STREAMING      = 6,
-#endif
+    MFX_SCENARIO_REMOTE_GAMING       = 7,
 };
 
 /* ContentInfo */

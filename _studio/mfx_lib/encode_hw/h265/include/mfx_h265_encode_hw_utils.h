@@ -627,6 +627,7 @@ namespace ExtBuffer
         MFX_COPY_FIELD(EnableQPOffset);
         MFX_COPY_FIELD(GPB);
         MFX_COPY_FIELD(QVBRQuality);
+        MFX_COPY_FIELD(ScenarioInfo);
         MFX_COPY_FIELD(EnableMBQP);
 
         MFX_COPY_ARRAY_FIELD(QPOffset);

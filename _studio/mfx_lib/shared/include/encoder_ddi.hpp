@@ -928,7 +928,9 @@ typedef enum tagENCODE_SCENARIO
     eScenario_Archive = 3,
     eScenario_LiveStreaming = 4,
     eScenario_VideoCapture = 5,
-    eScenario_VideoSurveillance = 6
+    eScenario_VideoSurveillance = 6,
+    eScenario_GameStreaming = 7,
+    eScenario_RemoteGaming = 8
 } ENCODE_SCENARIO;
 
 typedef enum tagENCODE_CONTENT
