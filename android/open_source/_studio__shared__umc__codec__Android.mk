@@ -8,7 +8,7 @@ MFX_LOCAL_DIRS := \
     jpeg_common
 
 MFX_LOCAL_DIRS_IMPL := \
-    mpeg2_dec \
+    mpeg2_dec/hw \
     h265_dec \
     h264_dec \
     vc1_dec \
