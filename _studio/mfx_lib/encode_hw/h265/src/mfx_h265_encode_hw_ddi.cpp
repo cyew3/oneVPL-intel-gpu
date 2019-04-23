@@ -218,6 +218,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
         caps.NumScalablePipesMinus1 = 1;  // = 0 now
         caps.MaxNum_WeightedPredL0 = 4; // = 0 now
         caps.MaxNum_WeightedPredL1 = 2; // = 0 now
+        caps.TileSupport = 1;
     }
 #endif
 
