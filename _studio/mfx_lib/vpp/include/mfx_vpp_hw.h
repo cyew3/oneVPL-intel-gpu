@@ -1020,11 +1020,6 @@ namespace MfxHwVideoProcessing
 #endif
     };
 
-    class VpUnsupportedError : public std::exception
-    {
-    public:
-        VpUnsupportedError() : std::exception() { assert(!"VpUnsupportedError"); }
-    };
 }; // namespace MfxHwVideoProcessing
 
 

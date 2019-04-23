@@ -5281,9 +5281,6 @@ mfxU64 make_back_color_yuv(mfxU16 bit_depth, mfxU16 Y, mfxU16 U, mfxU16 V)
 inline
 mfxU64 make_back_color_argb(mfxU16 bit_depth, mfxU16 R, mfxU16 G, mfxU16 B)
 {
-    if (bit_depth < 8)
-        throw MfxHwVideoProcessing::VpUnsupportedError();
-
     mfxU64 const max_val = (1 << bit_depth) - 1;
 
     return ((mfxU64)max_val << 48) |
@@ -5344,6 +5341,12 @@ mfxU64 get_background_color(const mfxVideoParam & videoParam)
                     return make_back_color_argb(8, extComp->R, extComp->G, extComp->B);
                 case MFX_FOURCC_A2RGB10:
                     return make_back_color_argb(10, extComp->R, extComp->G, extComp->B);
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+                case MFX_FOURCC_P016:
+                case MFX_FOURCC_Y216:
+                case MFX_FOURCC_Y416:
+                    return make_back_color_yuv(videoParam.vpp.Out.BitDepthLuma ? videoParam.vpp.Out.BitDepthLuma : 16, extComp->Y, extComp->U, extComp->V);
+#endif // (MFX_VERSION >= MFX_VERSION_NEXT)
                 default:
                     break;
             }
@@ -5376,11 +5379,17 @@ mfxU64 get_background_color(const mfxVideoParam & videoParam)
             return make_def_back_color_argb(8);
         case MFX_FOURCC_A2RGB10:
             return make_def_back_color_argb(10);
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+        case MFX_FOURCC_P016:
+        case MFX_FOURCC_Y216:
+        case MFX_FOURCC_Y416:
+            return make_def_back_color_yuv(videoParam.vpp.Out.BitDepthLuma ? videoParam.vpp.Out.BitDepthLuma : 16);
+#endif // (MFX_VERSION >= MFX_VERSION_NEXT)
         default:
             break;
     }
-
-    throw MfxHwVideoProcessing::VpUnsupportedError();
+    /* Default case */
+    return make_def_back_color_argb(8);
 }
 
 //---------------------------------------------------------
