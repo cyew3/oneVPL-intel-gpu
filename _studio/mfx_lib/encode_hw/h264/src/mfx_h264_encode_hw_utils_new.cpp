@@ -3260,7 +3260,12 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
         m_stageGreediness[STG_START_HIST  ] = 1;
         m_stageGreediness[STG_WAIT_HIST   ] = 1;
         m_stageGreediness[STG_START_ENCODE] = 1;
-        m_stageGreediness[STG_WAIT_ENCODE ] = std::min<mfxU16>(std::max<mfxU16>(video.mfx.GopRefDist, 2), video.AsyncDepth);
+        m_stageGreediness[STG_WAIT_ENCODE ] = 1 + !!(video.AsyncDepth > 1);
+        if (video.AsyncDepth > 1)
+        { // for parallel ENC/PAK optimization
+            m_stageGreediness[STG_START_ENCODE] += !!(video.mfx.GopRefDist > 1);
+            m_stageGreediness[STG_WAIT_ENCODE ] += !!(video.mfx.GopRefDist > 1) + !!(video.AsyncDepth > 2 && video.mfx.GopRefDist > 2);
+        }
         break;
     case MFX_RATECONTROL_LA:
     case MFX_RATECONTROL_LA_ICQ:
