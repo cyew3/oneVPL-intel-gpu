@@ -1751,7 +1751,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 if (!pStr)
                     break;
 
-                MFX_CHECK(5 == vm_string_sscanf(pStr, VM_STRING("%u,%hu,%hu,%hu,%hu")
+                MFX_CHECK(5 == vm_string_sscanf(pStr, VM_STRING("%i,%hi,%hi,%hi,%hi")
                     , &frameOrder
                     , &pwt.LumaLog2WeightDenom
                     , &pwt.ChromaLog2WeightDenom
@@ -1768,7 +1768,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                         mfxExtAVCRefLists::mfxRefPic& ref = l ? rpl.RefPicList1[i] : rpl.RefPicList0[i];
 
                         MFX_CHECK(pStr = vm_file_fgets(sbuf, sizeof(sbuf), par_file));
-                        MFX_CHECK(8 == vm_string_sscanf(pStr, VM_STRING("%u,%hu,%hi,%hi,%hi,%hi,%hi,%hi")
+                        MFX_CHECK(8 == vm_string_sscanf(pStr, VM_STRING("%i,%hi,%hi,%hi,%hi,%hi,%hi,%hi")
                             , &ref.FrameOrder
                             , &ref.PicStruct
                             , &pwt.Weights[l][i][Y][W]
