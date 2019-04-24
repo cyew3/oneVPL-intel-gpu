@@ -1598,7 +1598,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     mfxU32 maxBR   = 0xFFFFFFFF;
     mfxU32 maxBuf  = 0xFFFFFFFF;
     mfxU16 maxDPB  = 16;
-    mfxU16 minQP   = 1;
+    mfxU16 minQP   = (IsOn(par.mfx.LowPower) && !par.isSWBRC()) ? 10 : 1;   // 10 is min QP for VDENC
     mfxU16 maxQP   = 51;
     mfxU16 surfAlignW = HW_SURF_ALIGN_W;
     mfxU16 surfAlignH = HW_SURF_ALIGN_H;
@@ -2307,6 +2307,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckRangeDflt(par.mfx.QPI, minQP, maxQP, 0);
         changed += CheckRangeDflt(par.mfx.QPP, minQP, maxQP, 0);
         changed += CheckRangeDflt(par.mfx.QPB, minQP, maxQP, 0);
+        if ((par.mfx.QPI == 0) && (par.mfx.QPP || par.mfx.QPB))
+        {
+            par.mfx.QPP = par.mfx.QPB = 0;
+            changed++;
+        }
     }
 
     if (par.BufferSizeInKB != 0)
@@ -2848,7 +2853,7 @@ void SetDefaults(
     mfxU32 maxBuf  = 0xFFFFFFFF;
     mfxU16 maxDPB  = 16;
     mfxU16 maxQP   = 51;
-    mfxU16 minQP   = 1;
+    mfxU16 minQP = (IsOn(par.mfx.LowPower) && !par.isSWBRC()) ? 10 : 1;   // 10 is min QP for VDENC
 
     mfxExtCodingOption2& CO2 = par.m_ext.CO2;
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
