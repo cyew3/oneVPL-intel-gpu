@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="PlayerSample_TemporaryKey.pfx" />
+    <None Include="key.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainPage.xaml" />
