@@ -149,7 +149,6 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
     // common part for OS and CS Linux (moved from vaapi)
     caps.BlockSize = 2;   // = 1 on Win (16x16); to clarify!!!
     caps.UserMaxFrameSizeSupport = 1;
-    caps.MBBRCSupport            = 1;
     caps.MbQpDataSupport         = 1; // = 0 on Win; to clarify!!!
     caps.TUSupport               = 73; // 1,
     caps.SliceStructure          = 4;
@@ -207,7 +206,6 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
         caps.ParallelBRC = 1;  // = 0 now
         caps.LumaWeightedPred = 1; // = 0 now
         caps.ChromaWeightedPred = 0; // = 0 now
-        caps.QVBRBRCSupport = 1;  // = 0 now
         caps.MaxEncodedBitDepth = 2;  // = 1 now (8/10b only)
         caps.MaxPicWidth = 16384;  // = 8192 now
         caps.MaxPicHeight = 16384;  // = 8192 now

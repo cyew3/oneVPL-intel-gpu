@@ -280,8 +280,11 @@ uint32_t ConvertRateControlMFX2VAAPI(mfxU8 rateControl, bool bSWBRC)
         case MFX_RATECONTROL_LA_EXT: return VA_RC_CQP;
         case MFX_RATECONTROL_CBR:    return VA_RC_CBR | VA_RC_MB;
         case MFX_RATECONTROL_VBR:    return VA_RC_VBR | VA_RC_MB;
-        case MFX_RATECONTROL_ICQ:    return VA_RC_ICQ | VA_RC_MB;
-        case MFX_RATECONTROL_VCM:    return VA_RC_VCM | VA_RC_MB;
+        case MFX_RATECONTROL_ICQ:    return VA_RC_ICQ;
+        case MFX_RATECONTROL_VCM:    return VA_RC_VCM;
+#ifdef MFX_ENABLE_QVBR
+        case MFX_RATECONTROL_QVBR:   return VA_RC_QVBR;
+#endif
         default: assert(!"Unsupported RateControl"); return 0;
     }
 }
@@ -345,6 +348,7 @@ mfxStatus SetRateControl(
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterRateControl *rate_param;
+    mfxExtCodingOption3 const & extOpt3 = par.m_ext.CO3;
 
     mfxStatus sts = CheckAndDestroyVAbuffer(vaDisplay, rateParamBuf_id);
     MFX_CHECK_STS(sts);
@@ -385,6 +389,10 @@ mfxStatus SetRateControl(
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         rate_param->ICQ_quality_factor = par.mfx.ICQQuality;
+#ifdef MFX_ENABLE_QVBR
+    else if (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+        rate_param->quality_factor = extOpt3.QVBRQuality;
+#endif
 
     rate_param->initial_qp = par.m_pps.init_qp_minus26 + 26;
 
@@ -1001,6 +1009,11 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_caps.VCMBitRateControl =
         attrs[ idx_map[VAConfigAttribRateControl] ].value & VA_RC_VCM ? 1 : 0; //Video conference mode
+#ifdef MFX_ENABLE_QVBR
+    m_caps.QVBRBRCSupport = attrs[ idx_map[VAConfigAttribRateControl] ].value & VA_RC_QVBR ? 1 : 0;
+#endif
+    m_caps.MBBRCSupport = attrs[ idx_map[VAConfigAttribRateControl] ].value & VA_RC_MB ? 1 : 0;
+
     m_caps.RollingIntraRefresh =
             (attrs[idx_map[VAConfigAttribEncIntraRefresh]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
 
@@ -1022,7 +1035,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_caps.Color420Only = (attrs[idx_map[VAConfigAttribRTFormat]].value &
         (VA_RT_FORMAT_YUV422 | VA_RT_FORMAT_YUV444)) ? 0 : 1;
-		
+
 #if VA_CHECK_VERSION(1,2,0)
     m_caps.BitDepth8Only = (attrs[idx_map[VAConfigAttribRTFormat]].value &
         (VA_RT_FORMAT_YUV420_10 | VA_RT_FORMAT_YUV420_12)) ? 0 : 1;
