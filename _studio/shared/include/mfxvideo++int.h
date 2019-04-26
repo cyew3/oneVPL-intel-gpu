@@ -40,9 +40,10 @@
 #else
 #ifndef GUID_TYPE_DEFINED
 
-#include <cstring>
+#include <string>
 #include <functional>
 #include <sstream>
+#include <algorithm>
 
 struct GUID
 {
@@ -63,7 +64,11 @@ struct GUID
 
 static inline int operator==(const GUID & guidOne, const GUID & guidOther)
 {
-    return !memcmp(&guidOne, &guidOther, sizeof(GUID));
+    return
+        guidOne.Data1 == guidOther.Data1 &&
+        guidOne.Data2 == guidOther.Data2 &&
+        guidOne.Data3 == guidOther.Data3 &&
+        std::equal(guidOne.Data4, guidOne.Data4 + sizeof(guidOne.Data4), guidOther.Data4);
 }
 
 
