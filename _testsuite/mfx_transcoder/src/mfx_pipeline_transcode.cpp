@@ -156,7 +156,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     OptContainer options [] =
     {
         //series of parameters that uses callback function to retain it's inter dependencies
-        HANDLE_GLOBAL_OPTION("-b|--bitrate|",  m_,BitRate,    OPT_INT_32, "Target bitrate in bits per second", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("-b|--bitrate|",  m_,BitRate,    OPT_INT_32, "Target bitrate in bits per second. Note: maximum allowed value w/o using of BRCParamMultiplier is 65535000 bits per second", &m_applyBitrateParams),
         HANDLE_GLOBAL_OPTION("-bm|", m_,MaxBitrate, OPT_INT_32, "Max bitrate in case of VBR", &m_applyBitrateParams),
         HANDLE_GLOBAL_OPTION("-s|",  m_inParams.n,PicStruct,  OPT_INT_32, "0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff, 5=single field, 6=single top, 7=single bottom", &m_applyBitrateParams),
 
@@ -190,7 +190,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_MFX_INFO("",             GopOptFlag,               "1=GOP_CLOSED, 2=GOP_STRICT"),
         HANDLE_MFX_INFO("",             IdrInterval,              "IDR frame interval (0 means every I-frame is an IDR frame"),
         HANDLE_MFX_INFO("",             RateControlMethod,        "1=CBR, 2=VBR, 3=ConstantQP, 4=AVBR, 8=Lookahead, 13==Lookahead with HRD support "),
-        HANDLE_MFX_INFO("",             TargetKbps,               "Target bitrate in kbits per seconds"),
+        HANDLE_MFX_INFO("",             TargetKbps,               "Target bitrate in kbits per second. Note: maximum allowed value w/o using of BRCParamMultiplier is 65535 kbits per second"),
         HANDLE_MFX_INFO("",             MaxKbps,                  "Maximum bitrate in the case of VBR"),
         HANDLE_MFX_INFO("-id|",         InitialDelayInKB,         "For bitrate control"),
         HANDLE_MFX_INFO("-bs|",         BufferSizeInKB,           "For bitrate control"),
