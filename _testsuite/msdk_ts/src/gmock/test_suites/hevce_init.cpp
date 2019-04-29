@@ -15,6 +15,8 @@ File Name: hevce_init.cpp
 
 #define INVALID_WIDTH   16384
 #define INVALID_HEIGHT  16384
+#define QP 26
+#define ICQ_QUALITY 51
 
 namespace hevce_init
 {
@@ -456,26 +458,63 @@ namespace hevce_init
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_OFF}
             }
         },
+
          // BRC modes with different BufferSizeInKB and InitialDelayInKB values
         {/*74*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
         {/*75*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
         {/*76*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*77*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*77*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP }},
+#if !(defined(LINUX32) || defined(LINUX64))
+        {/*78*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+#else
+        {/*78*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+#endif
+        {/*79*/ MFX_ERR_NONE, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
+        {/*80*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*81*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
+        {/*82*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, BUFFER_SIZE_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
 
-        {/*78*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
-        {/*79*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
-        {/*80*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*81*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*83*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*84*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*85*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
+        {/*86*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+#if !(defined(LINUX32) || defined(LINUX64))
+        {/*87*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+#else
+        {/*87*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+#endif
+        {/*88*/ MFX_ERR_NONE, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
+        {/*89*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*90*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
+        {/*91*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, INITIAL_DELAY_DEFAULT, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
 
-        {/*82*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
-        {/*83*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
-        {/*84*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*85*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*92*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*93*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*94*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
+        {/*95*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+#if !(defined(LINUX32) || defined(LINUX64))
+        {/*96*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+#else
+        {/*96*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+#endif
+        {/*97*/ MFX_ERR_NONE, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
+        {/*98*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*99*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
+        {/*100*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, DEFAULTS, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } },
 
-        {/*86*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
-        {/*87*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
-        {/*88*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
-        {/*89*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*101*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*102*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*103*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_EXT } },
+        {/*104*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+#if !(defined(LINUX32) || defined(LINUX64))
+        {/*105*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+#else
+        {/*105*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+#endif
+        {/*106*/ MFX_ERR_NONE, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
+        {/*107*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA } },
+        {/*108*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD } },
+        {/*109*/ MFX_ERR_INVALID_VIDEO_PARAM, BUFFER_SIZE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_ICQ } }
 
     };
 
@@ -732,12 +771,64 @@ namespace hevce_init
                 }
             }
 
-            if (tc.type == RATE_CONTROL)
+            if (tc.type == RATE_CONTROL || tc.type == BUFFER_SIZE)
             {
                 if ((m_pPar->mfx.RateControlMethod == MFX_RATECONTROL_AVBR) && (tc.sts == MFX_ERR_NONE))
                     sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
                 if (tc.sts < MFX_ERR_NONE)
                     sts = MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+
+            if (tc.type == BUFFER_SIZE)
+            {
+                switch (tc.sub_type)
+                {
+                case BUFFER_SIZE_DEFAULT:
+                {
+                    // We need to set a quite large InitialDelayInKB,
+                    // it should be more than bufferSizeInKB = m_par.mfx.TargetKbps / 4
+                    // (from MSDK HEVC encoder implementation, SetDefaults(...))
+                    // It is the same as bufferSizeInKB = m_par.mfx.TargetKbps* DEFAULT_CPB_IN_SECONDS(=2) / 8 in AVC
+                    // so DEFAULT_CPB_IN_SECONDS will be increased
+                    // to make sure that BufferSizeInKB >= InitialDelayInKB after MFXVideoENCODE_Init
+                    m_par.mfx.BufferSizeInKB = 0;
+                    m_par.mfx.InitialDelayInKB = m_par.mfx.TargetKbps * 3 / 8;
+                    break;
+                }
+                case INITIAL_DELAY_DEFAULT:
+                {
+                    // If InitialDelayInKB == 0 it is calculated as BufferSizeInKB / 2
+                    // For MFX_RATECONTROL_CQP mode BufferSizeInKB should be >= rawBytes / 1000
+                    // Maximum of rawBytes = (w * h * 3 * BitDepthLuma + 7) / 8;
+                    // For others BufferSizeInKB = <valid_non_zero_value>
+                    m_par.mfx.BufferSizeInKB = (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 3 * m_par.mfx.FrameInfo.BitDepthLuma + 7) / 8 / 1000;
+                    m_par.mfx.InitialDelayInKB = 0;
+                    break;
+                }
+                case DEFAULTS:
+                {
+                    m_par.mfx.BufferSizeInKB = 0;
+                    m_par.mfx.InitialDelayInKB = 0;
+                    break;
+                }
+                case NONE:
+                {
+                    m_par.mfx.BufferSizeInKB = (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 3 * m_par.mfx.FrameInfo.BitDepthLuma + 7) / 8 / 1000;
+                    m_par.mfx.InitialDelayInKB = m_par.mfx.TargetKbps * 3 / 8;
+                    break;
+                }
+                default: break;
+                }
+                if (m_pPar->mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+                {
+                    m_pPar->mfx.QPI = QP;
+                    m_pPar->mfx.QPP = QP;
+                    m_pPar->mfx.QPB = QP;
+                }
+                if (m_pPar->mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
+                {
+                    m_pPar->mfx.ICQQuality = ICQ_QUALITY;
+                }
             }
 
             if (tc.type == CROP)
@@ -767,51 +858,6 @@ namespace hevce_init
             // different expected status for SW HEVCe and GACC
             if (tc.type == PIC_STRUCT && tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
                 sts = MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-        if (tc.type == BUFFER_SIZE)
-        {
-            switch (tc.sub_type)
-            {
-            case BUFFER_SIZE_DEFAULT:
-            {
-                // If BufferSizeInKB == 0 initially it is calculated as Min(maxBuf, MaxKbps / 4)
-                // further BufferSizeInKB is calculated as Max(BufferSizeInKB, InitialDelayInKB)
-                // After MFXVideoENCODE_Init it should be >= InitialDelayInKB for correct work,
-                // so InitialDelayInKB is increased by 1
-                m_par.mfx.BufferSizeInKB = 0;
-                m_par.mfx.InitialDelayInKB = m_par.mfx.MaxKbps / 4 + 1;
-                break;
-            }
-            case INITIAL_DELAY_DEFAULT:
-            {
-                // If InitialDelayInKB == 0 it is calculated as BufferSizeInKB / 2
-                // For MFX_RATECONTROL_CQP mode BufferSizeInKB should be >= rawBytes / 1000
-                // Maximum of rawBytes = (w * h * 3 * BitDepthLuma + 7) / 8;
-                // For others BufferSizeInKB = <valid_non_zero_value>
-                m_par.mfx.BufferSizeInKB = (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 3 * m_par.mfx.FrameInfo.BitDepthLuma + 7) / 8 / 1000;
-                m_par.mfx.InitialDelayInKB = 0;
-                break;
-            }
-            case DEFAULTS:
-            {
-                m_par.mfx.BufferSizeInKB = 0;
-                m_par.mfx.InitialDelayInKB = 0;
-                break;
-            }
-            case NONE:
-            {
-                m_par.mfx.BufferSizeInKB = (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * 3 * m_par.mfx.FrameInfo.BitDepthLuma + 7) / 8 / 1000;
-                m_par.mfx.InitialDelayInKB = m_par.mfx.MaxKbps / 4 + 1;
-                break;
-            }
-            default: break;
-            }
-            if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
-            {
-                m_par.mfx.QPI = 26;
-                m_par.mfx.QPP = 26;
-                m_par.mfx.QPB = 26;
-            }
         }
 
         mfxVideoParam *orig_par = NULL;
@@ -862,21 +908,34 @@ namespace hevce_init
             delete orig_par;
         }
 
-        if (tc.type == BUFFER_SIZE)
+        if (tc.type == BUFFER_SIZE && tc.sts == MFX_ERR_NONE)
         {
             mfxVideoParam get_par = {};
             GetVideoParam(m_session, &get_par);
-            if (tc.sub_type == NONE)
+            if (m_par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+                m_par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR &&
+                m_par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
+                m_par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ &&
+                m_par.mfx.RateControlMethod != MFX_RATECONTROL_LA)
+                //InitialDelayInKB is not used if RateControlMethod is not HRD compliant
             {
-                EXPECT_EQ(get_par.mfx.BufferSizeInKB, m_par.mfx.BufferSizeInKB)
-                    << "ERROR: BufferSizeInKB must not be changed";
-                EXPECT_EQ(get_par.mfx.InitialDelayInKB, m_par.mfx.InitialDelayInKB)
-                    << "ERROR: InitialDelayInKB must not be changed";
+                if (tc.sub_type == NONE)
+                {
+                    EXPECT_EQ(get_par.mfx.BufferSizeInKB, m_par.mfx.BufferSizeInKB)
+                        << "ERROR: BufferSizeInKB must not be changed";
+                    EXPECT_EQ(get_par.mfx.InitialDelayInKB, m_par.mfx.InitialDelayInKB)
+                        << "ERROR: InitialDelayInKB must not be changed";
+                }
+                else
+                {
+                    EXPECT_GE(get_par.mfx.BufferSizeInKB, get_par.mfx.InitialDelayInKB)
+                        << "ERROR: BufferSizeInKB must not be less than InitialDelayInKB";
+                }
             }
             else
             {
-                EXPECT_GE(get_par.mfx.BufferSizeInKB, get_par.mfx.InitialDelayInKB)
-                    << "ERROR: BufferSizeInKB must not be less than InitialDelayInKB";
+                EXPECT_GE(get_par.mfx.BufferSizeInKB, 0u)
+                    << "ERROR: BufferSizeInKB must be greater than 0";
             }
         }
 
