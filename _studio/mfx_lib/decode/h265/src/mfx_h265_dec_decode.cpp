@@ -1079,10 +1079,13 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 #if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected))
 #endif
-        sts = bs ? CheckBitstream(bs) : MFX_ERR_NONE;
 
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    if (bs)
+    {
+       sts = CheckBitstream(bs);
+       MFX_CHECK_STS(sts);
+    }
+
     UMC::Status umcRes = UMC::UMC_OK;
 
     *surface_out = 0;
@@ -1090,32 +1093,27 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
     if (m_isOpaq)
     {
         sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_HEVC, m_platform != MFX_PLATFORM_SOFTWARE);
-        if (sts != MFX_ERR_NONE)
-            return MFX_ERR_UNSUPPORTED;
+        MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
 
         if (surface_work->Data.MemId || surface_work->Data.Y || surface_work->Data.R || surface_work->Data.A || surface_work->Data.UV) // opaq surface
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
 
         surface_work = GetOriginalSurface(surface_work);
         if (!surface_work)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
     }
 
     sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_HEVC, m_platform != MFX_PLATFORM_SOFTWARE);
-    if (sts != MFX_ERR_NONE)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
 
     sts = CheckFrameData(surface_work);
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK_STS(sts);
 
     sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, m_isOpaq);
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK_STS(sts);
 
 #ifdef MFX_MAX_DECODE_FRAMES
-    if (m_stat.NumFrame >= MFX_MAX_DECODE_FRAMES)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_CHECK(m_stat.NumFrame < MFX_MAX_DECODE_FRAMES, MFX_ERR_UNDEFINED_BEHAVIOR);
 #endif
 
     sts = MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1124,9 +1122,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (bs && IS_PROTECTION_ANY(m_vPar.Protected))
     {
-        if (!m_va->GetProtectedVA() || !(bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME))
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-
+        MFX_CHECK(m_va->GetProtectedVA() && (bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME), MFX_ERR_UNDEFINED_BEHAVIOR);
         m_va->GetProtectedVA()->SetBitstream(bs);
     }
 #endif // #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -1151,7 +1147,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
         for (;;)
         {
-
             umcRes = m_FrameAllocator->FindFreeSurface() == -1 ?
                 UMC::UMC_ERR_NEED_FORCE_OUTPUT : m_pH265VideoDecoder->AddSource(bs ? &src : 0);
 
@@ -1228,7 +1223,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             }
 
             if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
-                return sts;
+                MFX_RETURN(sts);
 
             //return these errors immediatelly unless we have [input == 0]
             if (sts == MFX_ERR_DEVICE_FAILED || sts == MFX_ERR_GPU_HANG)
@@ -1236,7 +1231,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 if (!bs || bs->DataFlag == MFX_BITSTREAM_EOS)
                     force = true;
                 else
-                    return sts;
+                    MFX_RETURN(sts);
             }
             umcRes = m_pH265VideoDecoder->RunDecoding();
 
@@ -1271,22 +1266,21 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             if (m_vInitPar.mfx.FrameInfo.Width != m_vPar.mfx.FrameInfo.Width ||
                 m_vInitPar.mfx.FrameInfo.Height != m_vPar.mfx.FrameInfo.Height)
             {
-                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                MFX_RETURN(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
             }
         }
-
-        return ConvertUMCStatusToMfx(ex.GetStatus());
+        MFX_RETURN(ConvertUMCStatusToMfx(ex.GetStatus()));
     }
     catch(const std::bad_alloc &)
     {
-        return MFX_ERR_MEMORY_ALLOC;
+        MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
     }
     catch(...)
     {
-        return MFX_ERR_UNKNOWN;
+        MFX_RETURN(MFX_ERR_UNKNOWN);
     }
 
-    return sts;
+    MFX_RETURN(sts);
 }
 
 // Fill up resolution information if new header arrived
