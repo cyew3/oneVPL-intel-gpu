@@ -91,20 +91,10 @@ namespace avce_mb_per_sec{
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP }}},
         {/*03*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ }}},
- #if VA_CHECK_VERSION(1,3,0)
-        {/*04*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+        {/*04*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF}, // supported with va_version >= 1.3.0
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR }}},
-#else
-        {/*04*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR }}},
-#endif
-#ifdef MFX_ENABLE_QVBR
-        {/*05*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
+        {/*05*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF}, // supported with va_version >= 1.3.0
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR }}},
-#else
-        {/*05*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR }}},
-#endif
         {/*06*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA }}},
         {/*07*/ MFX_ERR_UNSUPPORTED, {{MFX_PAR, &tsStruct::mfxExtEncoderCapability.MBPerSec, 0xFFFFFFFF},
@@ -130,10 +120,13 @@ namespace avce_mb_per_sec{
         mfxExtEncoderCapability *m_ec = reinterpret_cast <mfxExtEncoderCapability*> (m_par.GetExtBuffer(MFX_EXTBUFF_ENCODER_CAPABILITY));
 
         mfxStatus exp = tc.sts;
-        if (g_tsImpl & MFX_IMPL_VIA_D3D9)
-            exp = MFX_ERR_UNSUPPORTED;
-        if (g_tsImpl & MFX_IMPL_VIA_D3D11)
-            exp = MFX_ERR_NONE;
+        if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
+        {
+            if (!(g_tsImpl & MFX_IMPL_VIA_D3D11))
+                exp = MFX_ERR_UNSUPPORTED;
+            else
+                exp = MFX_ERR_NONE;
+        }
         g_tsStatus.expect(exp);
 
         Query();
