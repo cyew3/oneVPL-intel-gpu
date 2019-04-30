@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2010-2018 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2019 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -104,6 +104,17 @@ mfxStatus BufferedBitstreamReader::Init(const vm_char *strFileName)
             sts = base::ReadNextFrame(bs);
             if (sts == MFX_ERR_NONE)
                 break;
+            if (sts == MFX_WRN_IN_EXECUTION)
+            {
+                /* Need to reallocated buffer for bitstream and...
+                   try to read frame again */
+                advanceFrame.resize(advanceFrame.size() *2);
+                bs.MaxLength = advanceFrame.size();
+                bs.Data = &advanceFrame.front();
+                sts = MFX_ERR_NONE;
+                PrintInfo(VM_STRING("Re-allocation of bitstream done. Error status cleared!"), VM_STRING(""));
+                continue;
+            }
 
             if (m_pFileAccess->GetLastError() != MFX_WRN_DEVICE_BUSY)
                 break;

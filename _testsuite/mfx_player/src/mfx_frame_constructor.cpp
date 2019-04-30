@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -93,20 +93,9 @@ mfxStatus MFXFrameConstructor::ConstructFrame(mfxBitstream *pBSIn, mfxBitstream 
     
     //checking whether we can survive in current array
     if (pBSOut->DataLength + pBSIn->DataLength> pBSOut->MaxLength)
-    {
-        mfxU32 nNewLen = pBSIn->DataLength + pBSOut->DataLength + 100;
-        mfxU8 * p;
-        MFX_CHECK_WITH_ERR(p = new mfxU8[nNewLen], MFX_ERR_MEMORY_ALLOC);
-
-        pBSOut->MaxLength = nNewLen;
-
-        memcpy(p, pBSOut->Data + pBSOut->DataOffset, pBSOut->DataLength);
-        delete [] pBSOut->Data;
-        pBSOut->Data = p;
-    }else
-    {
+        return MFX_WRN_IN_EXECUTION; /* Buffer reallocation done on the upper level */
+    else
         memmove(pBSOut->Data, pBSOut->Data + pBSOut->DataOffset, pBSOut->DataLength);
-    }
 
     //copying params : timestamp, frametype, etc
     pBSOut->FrameType  = pBSIn->FrameType;
