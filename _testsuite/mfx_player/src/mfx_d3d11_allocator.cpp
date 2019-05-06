@@ -388,7 +388,9 @@ mfxStatus D3D11FrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *inf
 
     if (DXGI_FORMAT_UNKNOWN == colorFormat)
     {
-        return MFX_ERR_UNSUPPORTED;
+        char *cfcc = (char *)&info->FourCC;
+        vm_string_printf(VM_STRING("Unknown format: %c%c%c%c\n"), cfcc[0], cfcc[1], cfcc[2], cfcc[3]);
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
     }
 
 
@@ -452,12 +454,12 @@ mfxStatus D3D11FrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *inf
         size_t index = (size_t)MFXReadWriteMid(mid).raw() - 1;
 
         if (m_memIdMap.size() <= index)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
 
         //reverse iterator dereferencing
         TextureResource * p = &(*m_memIdMap[index]);
         if (!p->bAlloc)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
 
         ID3D11Texture2D* pTexture2D, *pStagingTexture2D;
 
@@ -465,7 +467,7 @@ mfxStatus D3D11FrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *inf
         if (FAILED(hRes))
         {
             vm_string_printf(VM_STRING("CreateTexture2D failed, hr = 0x%X\n"), hRes);
-            return MFX_ERR_MEMORY_ALLOC;
+            MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
         }
 
         desc.ArraySize = 1;
@@ -478,7 +480,7 @@ mfxStatus D3D11FrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *inf
         if (FAILED(hRes))
         {
             vm_string_printf(VM_STRING("CreateTexture2D failed, hr = 0x%X\n"), hRes);
-            return MFX_ERR_MEMORY_ALLOC;
+            MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
         }
 
         ptrdiff_t idx = (uintptr_t)MFXReadWriteMid(mid).raw() - (uintptr_t)p->outerMids.front();
@@ -500,7 +502,9 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
     if (DXGI_FORMAT_UNKNOWN == colorFormat)
     {
-       return MFX_ERR_UNSUPPORTED;
+        char *cfcc = (char *)&request->Info.FourCC;
+        vm_string_printf(VM_STRING("Unknown format: %c%c%c%c\n"), cfcc[0], cfcc[1], cfcc[2], cfcc[3]);
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
     }
 
     TextureResource newTexture;
@@ -527,7 +531,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         ID3D11Buffer * buffer = 0;
         hRes = m_initParams.pDevice->CreateBuffer(&desc, 0, &buffer);
         if (FAILED(hRes))
-            return MFX_ERR_MEMORY_ALLOC;
+            MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
 
         newTexture.textures.push_back(reinterpret_cast<ID3D11Texture2D *>(buffer));
     }
@@ -559,7 +563,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         {
             desc.BindFlags = D3D11_BIND_RENDER_TARGET;
             if (desc.ArraySize > 2)
-                return MFX_ERR_MEMORY_ALLOC;
+                MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
         }
 
         if ( (MFX_MEMTYPE_FROM_VPPOUT & request->Type) ||
@@ -567,7 +571,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         {
             desc.BindFlags = D3D11_BIND_RENDER_TARGET;
             if (desc.ArraySize > 2)
-                return MFX_ERR_MEMORY_ALLOC;
+                MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
         }
 
         if(request->Type&MFX_MEMTYPE_SHARED_RESOURCE)
@@ -602,7 +606,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             if (FAILED(hRes))
             {
                 vm_string_printf(VM_STRING("SetResourceExtension failed, hr = 0x%X\n"), hRes);
-                return MFX_ERR_MEMORY_ALLOC;
+                MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
             }
         }
 
@@ -615,7 +619,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             if (FAILED(hRes))
             {
                 vm_string_printf(VM_STRING("CreateTexture2D(%d) failed, hr = 0x%X\n"), i, hRes);
-                return MFX_ERR_MEMORY_ALLOC;
+                MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
             }
             newTexture.textures.push_back(pTexture2D);
         }
@@ -633,7 +637,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             if (FAILED(hRes))
             {
                 vm_string_printf(VM_STRING("Create staging texture(%d) failed hr = 0x%X\n"), i, hRes);
-                return MFX_ERR_MEMORY_ALLOC;
+                MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
             }
             newTexture.stagingTexture.push_back(pTexture2D);
         }
