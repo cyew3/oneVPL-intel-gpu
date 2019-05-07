@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,6 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #include <cm/cm.h>
 #include <cm/cmtl.h>
-
 
 enum { W_STAT = 16, H_STAT = 16 };
 enum { W_STAT_CHROMA = 8, H_STAT_CHROMA = 16 };                // <=  use separate Chroma kernel with alternative threadspace
@@ -134,7 +133,7 @@ const uint2 EO_CLASSES[4] = {SAO_TYPE_EO_0, SAO_TYPE_EO_90, SAO_TYPE_EO_135, SAO
 
 #define ENABLE_RDO
 
-template<uint W> _GENX_ inline void Classify(vector_ref<int2,W> diff, vector_ref<int2,W> cls, matrix_ref<int2,4,W> totalDiffEO, matrix_ref<int2,4,W> totalCountEO, int row)
+template<uint W> _GENX_ inline void Classify(vector_ref<int2,W> diff, vector<int2,W> cls, matrix_ref<int2,4,W> totalDiffEO, matrix_ref<int2,4,W> totalCountEO, int row)
 {
     if (row == 0) {
         totalDiffEO.row(0).merge(diff, 0, cls == -2);
@@ -1569,9 +1568,13 @@ extern "C" _GENX_MAIN_ void SaoEstimate(SurfaceIndex PARAM, SurfaceIndex STATS, 
 
     cm_wait();
 
-    
+#ifdef target_gen11lp
+    const int2 enableMergeMode = 0;
+#else
+    const int2 enableMergeMode = 1;
+#endif
+
     matrix<int1,2,16> saoMergeModes;
-    const int2 enableMergeMode = 1;//par.enableBandOffset >> 1;
     read(SAO_MODES, GENX_MODIFIED, (ctb - 1) * 16, saoMergeModes.row(0));
     read(SAO_MODES, GENX_MODIFIED, (ctb - par.PicWidthInCtbs) * 16, saoMergeModes.row(1));
 

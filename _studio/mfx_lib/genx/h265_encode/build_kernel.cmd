@@ -11,7 +11,9 @@ set JIT_TARGET=
 if "%2"=="hsw" set JIT_TARGET=gen7_5 & set PLATFORM_NAME=hsw
 if "%2"=="bdw" set JIT_TARGET=gen8 & set PLATFORM_NAME=bdw
 if "%2"=="skl" set JIT_TARGET=gen9 & set PLATFORM_NAME=skl
-if "%2"=="cnl" set JIT_TARGET=gen9 & set PLATFORM_NAME=cnl
+if "%2"=="cnl" set JIT_TARGET=gen10 & set PLATFORM_NAME=cnl
+if "%2"=="icl" set JIT_TARGET=gen11 & set PLATFORM_NAME=icl
+
 if "%JIT_TARGET%"=="" goto HELP
 
 set CURDIR=%cd%

@@ -469,11 +469,16 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         return MFX_ERR_UNSUPPORTED;
     }
 
-    device->CreateQueue(queue);
-
     GPU_PLATFORM hwType;
     size_t size = sizeof(mfxU32);
     device->GetCaps(CAP_GPU_PLATFORM, size, &hwType);
+
+    INT res = 0;
+    if (hwType == PLATFORM_INTEL_ICL || hwType == PLATFORM_INTEL_ICLLP)
+        res = device->CreateQueueEx(queue, CM_VME_QUEUE_CREATE_OPTION);
+    else
+        res = device->CreateQueue(queue);
+
     switch (hwType)
     {
 #if defined (CMRT_EMU)
@@ -670,8 +675,9 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         }
     }
 
+    const CM_DEPENDENCY_PATTERN saoEstimateDependencyPattern = (hwType == PLATFORM_INTEL_ICLLP) ? CM_NONE_DEPENDENCY : CM_WAVEFRONT;
     kernelFullPostProc.AddKernel(device, programSao, "SaoEstimate",
-        (width + 63) / 64, (height + 63) / 64, CM_WAVEFRONT, true);
+        (width + 63) / 64, (height + 63) / 64, saoEstimateDependencyPattern, true);
     kernelFullPostProc.AddKernel(device, programSao, "SaoApply",
         (width + 63) / 64, (height + 63) / 64, CM_NONE_DEPENDENCY, true);
 

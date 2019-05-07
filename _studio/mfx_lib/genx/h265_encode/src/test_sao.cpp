@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2018 Intel Corporation
+// Copyright (c) 2018-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,9 @@
 #include "../include/test_common.h"
 #include "../include/genx_hevce_sao_hsw_isa.h"
 #include "../include/genx_hevce_sao_bdw_isa.h"
+#include "../include/genx_hevce_sao_skl_isa.h"
 #include "../include/genx_hevce_sao_cnl_isa.h"
+#include "../include/genx_hevce_sao_icl_isa.h"
 
 #ifdef CMRT_EMU
 extern "C" void SaoStatAndEstimate(SurfaceIndex SURF_SRC, SurfaceIndex SURF_RECON, SurfaceIndex SURF_VIDEO_PARAM, Ipp32u recPaddingLu) {};
@@ -40,6 +42,23 @@ extern "C" void SaoEstimate(SurfaceIndex PARAM, SurfaceIndex STATS, SurfaceIndex
 extern "C" void SaoEstimateAndApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceIndex PARAM, SurfaceIndex STATS) {}; 
 #endif //CMRT_EMU
 
+const std::pair<const uint8_t *, size_t> GENX_SAO_PROGRAMS[PLATFORM_INTEL_ICLLP + 1] = {
+    { nullptr,            0                          }, // PLATFORM_INTEL_UNKNOWN = 0,
+    { nullptr,            0                          }, // PLATFORM_INTEL_SNB = 1,   //Sandy Bridge
+    { nullptr,            0                          }, // PLATFORM_INTEL_IVB = 2,   //Ivy Bridge
+    { genx_hevce_sao_hsw, sizeof(genx_hevce_sao_hsw) }, // PLATFORM_INTEL_HSW = 3,   //Haswell
+    { genx_hevce_sao_bdw, sizeof(genx_hevce_sao_bdw) }, // PLATFORM_INTEL_BDW = 4,   //Broadwell
+    { genx_hevce_sao_bdw, sizeof(genx_hevce_sao_bdw) }, // PLATFORM_INTEL_VLV = 5,   //ValleyView
+    { genx_hevce_sao_bdw, sizeof(genx_hevce_sao_bdw) }, // PLATFORM_INTEL_CHV = 6,   //CherryView
+    { genx_hevce_sao_skl, sizeof(genx_hevce_sao_skl) }, // PLATFORM_INTEL_SKL = 7,   //SKL
+    { genx_hevce_sao_skl, sizeof(genx_hevce_sao_skl) }, // PLATFORM_INTEL_BXT = 8,   //Broxton
+    { genx_hevce_sao_cnl, sizeof(genx_hevce_sao_cnl) }, // PLATFORM_INTEL_CNL = 9,   //Cannonlake
+    { genx_hevce_sao_icl, sizeof(genx_hevce_sao_icl) }, // PLATFORM_INTEL_ICL = 10,  //Icelake
+    { genx_hevce_sao_skl, sizeof(genx_hevce_sao_skl) }, // PLATFORM_INTEL_KBL = 11,  //Kabylake
+    { genx_hevce_sao_skl, sizeof(genx_hevce_sao_skl) }, // PLATFORM_INTEL_GLV = 12,  //Glenview
+    { genx_hevce_sao_icl, sizeof(genx_hevce_sao_icl) }, // PLATFORM_INTEL_ICLLP = 13,  //IcelakeLP
+};
+
 #ifndef CM_MAX_THREADSPACE_WIDTH
 // old style cm-spec
 #define CM_MAX_THREADSPACE_WIDTH (CM_MAX_THREADSPACE_WIDTH_FOR_MW)
@@ -47,14 +66,7 @@ extern "C" void SaoEstimateAndApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceI
 
 enum { GPU_STAT_BLOCK_WIDTH = 16, GPU_STAT_BLOCK_HEIGHT = 16 };
 
-// CHROMA_SEPARATIST means: (1) use separate kernel (2) use alternative threadspace (vs luma)
-#define CHROMA_SEPARATIST
-
-#if defined CHROMA_SEPARATIST
 enum { GPU_STAT_CHROMA_BLOCK_WIDTH = 8, GPU_STAT_CHROMA_BLOCK_HEIGHT = 16 };
-#else
-enum { GPU_STAT_CHROMA_BLOCK_WIDTH = GPU_STAT_BLOCK_WIDTH/2, GPU_STAT_CHROMA_BLOCK_HEIGHT = GPU_STAT_BLOCK_HEIGHT/2 };
-#endif
 #define SAO_MODE_MERGE_ENABLED
 
 
@@ -203,7 +215,7 @@ void SimulateRecon(Ipp8u *input, Ipp32s inPitch, Ipp8u *recon, Ipp32s reconPitch
 #endif
 void EstimateSao(const Ipp8u* frameOrigin, int pitchOrigin, Ipp8u* frameRecon, int pitchRecon, const VideoParam* m_par, const AddrInfo* frame_addr_info, SaoCtuParam* frame_sao_param,
                  Ipp32s* diffEO, Ipp16u* countEO, Ipp32s* diffBO, Ipp16u* countBO,
-                 Ipp8u* availLeft, Ipp8u* availAbove);
+                 Ipp8u* availLeft, Ipp8u* availAbove, Ipp32s enableMergeMode);
 
 struct SaoOffsetOut_gfx
 {
@@ -224,8 +236,17 @@ int RunGpuStatAndEstimate(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, con
     Ipp32s res = ::CreateCmDevice(device, version);
     CHECK_CM_ERR(res);
 
+    GPU_PLATFORM hwType;
+    size_t capSize = sizeof(mfxU32);
+    res = device->GetCaps(CAP_GPU_PLATFORM, capSize, &hwType);
+    CHECK_CM_ERR(res);
+    if (hwType > sizeof(GENX_SAO_PROGRAMS) || GENX_SAO_PROGRAMS[hwType].first == nullptr) {
+        printf("FAILED at file: %s, line: %d, unsupported hwtype: %d\n", __FILE__, __LINE__, hwType);
+        return FAILED;
+    }
+
     CmProgram *program = 0;
-    res = device->LoadProgram((void *)genx_hevce_sao_hsw, sizeof(genx_hevce_sao_hsw), program);
+    res = device->LoadProgram((void *)GENX_SAO_PROGRAMS[hwType].first, GENX_SAO_PROGRAMS[hwType].second, program/*, "nojitter"*/);
     CHECK_CM_ERR(res);
 
     CmKernel *kernel = 0;
@@ -387,7 +408,7 @@ int RunGpuStatAndEstimate(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, con
     res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
     CHECK_CM_ERR(res);
 
-    res = threadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT);
+    res = threadSpace->SelectThreadDependencyPattern(hwType == PLATFORM_INTEL_ICLLP ? CM_NONE_DEPENDENCY : CM_WAVEFRONT);
     CHECK_CM_ERR(res);
 
     CmTask * task = 0;
@@ -530,8 +551,17 @@ int RunGpuStat(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, const VideoPar
     Ipp32s res = ::CreateCmDevice(device, version);
     CHECK_CM_ERR(res);
 
+    GPU_PLATFORM hwType;
+    size_t capSize = sizeof(mfxU32);
+    res = device->GetCaps(CAP_GPU_PLATFORM, capSize, &hwType);
+    CHECK_CM_ERR(res);
+    if (hwType > sizeof(GENX_SAO_PROGRAMS) || GENX_SAO_PROGRAMS[hwType].first == nullptr) {
+        printf("FAILED at file: %s, line: %d, unsupported hwtype: %d\n", __FILE__, __LINE__, hwType);
+        return FAILED;
+    }
+
     CmProgram *program = 0;
-    res = device->LoadProgram((void *)genx_hevce_sao_hsw, sizeof(genx_hevce_sao_hsw), program);
+    res = device->LoadProgram((void *)GENX_SAO_PROGRAMS[hwType].first, GENX_SAO_PROGRAMS[hwType].second, program/*, "nojitter"*/);
     CHECK_CM_ERR(res);
 
     CmKernel *kernel = 0;
@@ -759,8 +789,17 @@ int RunGpuStatChroma(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, const Vi
     Ipp32s res = ::CreateCmDevice(device, version);
     CHECK_CM_ERR(res);
     
+    GPU_PLATFORM hwType;
+    size_t capSize = sizeof(mfxU32);
+    res = device->GetCaps(CAP_GPU_PLATFORM, capSize, &hwType);
+    CHECK_CM_ERR(res);
+    if (hwType > sizeof(GENX_SAO_PROGRAMS) || GENX_SAO_PROGRAMS[hwType].first == nullptr) {
+        printf("FAILED at file: %s, line: %d, unsupported hwtype: %d\n", __FILE__, __LINE__, hwType);
+        return FAILED;
+    }
+
     CmProgram *program = 0;
-    res = device->LoadProgram((void *)genx_hevce_sao_hsw, sizeof(genx_hevce_sao_hsw), program);
+    res = device->LoadProgram((void *)GENX_SAO_PROGRAMS[hwType].first, GENX_SAO_PROGRAMS[hwType].second, program/*, "nojitter"*/);
     CHECK_CM_ERR(res);
 
     CmKernel *kernel = 0;
@@ -996,8 +1035,17 @@ int RunGpuEstimate(const Ipp16s *blockStats, int blockStatsSize, const VideoPara
     Ipp32s res = ::CreateCmDevice(device, version);
     CHECK_CM_ERR(res);
 
+    GPU_PLATFORM hwType;
+    size_t capSize = sizeof(mfxU32);
+    res = device->GetCaps(CAP_GPU_PLATFORM, capSize, &hwType);
+    CHECK_CM_ERR(res);
+    if (hwType > sizeof(GENX_SAO_PROGRAMS) || GENX_SAO_PROGRAMS[hwType].first == nullptr) {
+        printf("FAILED at file: %s, line: %d, unsupported hwtype: %d\n", __FILE__, __LINE__, hwType);
+        return FAILED;
+    }
+
     CmProgram *program = 0;
-    res = device->LoadProgram((void *)genx_hevce_sao_hsw, sizeof(genx_hevce_sao_hsw), program);
+    res = device->LoadProgram((void *)GENX_SAO_PROGRAMS[hwType].first, GENX_SAO_PROGRAMS[hwType].second, program/*, "nojitter"*/);
     CHECK_CM_ERR(res);
 
     CmKernel *kernel = 0;
@@ -1058,7 +1106,7 @@ int RunGpuEstimate(const Ipp16s *blockStats, int blockStatsSize, const VideoPara
     res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
     CHECK_CM_ERR(res);
 
-    res = threadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT);
+    res = threadSpace->SelectThreadDependencyPattern(hwType == PLATFORM_INTEL_ICLLP ? CM_NONE_DEPENDENCY : CM_WAVEFRONT);
     CHECK_CM_ERR(res);
 
     CmTask * task = 0;
@@ -1138,8 +1186,17 @@ int RunGpuApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const VideoParam* m_pa
     Ipp32s res = ::CreateCmDevice(device, version);
     CHECK_CM_ERR(res);
 
+    GPU_PLATFORM hwType;
+    size_t capSize = sizeof(mfxU32);
+    res = device->GetCaps(CAP_GPU_PLATFORM, capSize, &hwType);
+    CHECK_CM_ERR(res);
+    if (hwType > sizeof(GENX_SAO_PROGRAMS) || GENX_SAO_PROGRAMS[hwType].first == nullptr) {
+        printf("FAILED at file: %s, line: %d, unsupported hwtype: %d\n", __FILE__, __LINE__, hwType);
+        return FAILED;
+    }
+
     CmProgram *program = 0;
-    res = device->LoadProgram((void *)genx_hevce_sao_hsw, sizeof(genx_hevce_sao_hsw), program);
+    res = device->LoadProgram((void *)GENX_SAO_PROGRAMS[hwType].first, GENX_SAO_PROGRAMS[hwType].second, program/*, "nojitter"*/);
     CHECK_CM_ERR(res);
 
     CmKernel *kernel = 0;
@@ -1326,8 +1383,17 @@ int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16
     Ipp32s res = ::CreateCmDevice(device, version);
     CHECK_CM_ERR(res);
 
+    GPU_PLATFORM hwType;
+    size_t capSize = sizeof(mfxU32);
+    res = device->GetCaps(CAP_GPU_PLATFORM, capSize, &hwType);
+    CHECK_CM_ERR(res);
+    if (hwType > sizeof(GENX_SAO_PROGRAMS) || GENX_SAO_PROGRAMS[hwType].first == nullptr) {
+        printf("FAILED at file: %s, line: %d, unsupported hwtype: %d\n", __FILE__, __LINE__, hwType);
+        return FAILED;
+    }
+
     CmProgram *program = 0;
-    res = device->LoadProgram((void *)genx_hevce_sao_hsw, sizeof(genx_hevce_sao_hsw), program);
+    res = device->LoadProgram((void *)GENX_SAO_PROGRAMS[hwType].first, GENX_SAO_PROGRAMS[hwType].second, program/*, "nojitter"*/);
     CHECK_CM_ERR(res);
 
     CmKernel *kernel = 0;
@@ -1409,7 +1475,7 @@ int RunGpuEstimateAndApply(const Ipp8u *frameRecon, Ipp8u *frameDst, const Ipp16
     res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
     CHECK_CM_ERR(res);        
 
-    res = threadSpace->SelectThreadDependencyPattern(CM_WAVEFRONT);	
+    res = threadSpace->SelectThreadDependencyPattern(hwType == PLATFORM_INTEL_ICLLP ? CM_NONE_DEPENDENCY : CM_WAVEFRONT);
     CHECK_CM_ERR(res);
 
     CmTask * task = 0;
@@ -1493,7 +1559,7 @@ void PadOnePix(Ipp8u *frame, Ipp32s pitch, Ipp32s width, Ipp32s height)
 }
 
 int RunCpuStatAndEstimate(const Ipp8u* frameOrigin, Ipp8u* frameRecon, const VideoParam* m_par, const AddrInfo* frame_addr_info,
-                          SaoCtuParam* frame_sao_param, Ipp32s* diffEO, Ipp16u* countEO, Ipp32s* diffBO, Ipp16u* countBO, Ipp8u* availLeft, Ipp8u* availAbove)
+                          SaoCtuParam* frame_sao_param, Ipp32s* diffEO, Ipp16u* countEO, Ipp32s* diffBO, Ipp16u* countBO, Ipp8u* availLeft, Ipp8u* availAbove, Ipp32s enableMergeMode)
 {
     int pitchOrigin = m_par->Width;
     int pitchRecon = m_par->Width;
@@ -1509,7 +1575,8 @@ int RunCpuStatAndEstimate(const Ipp8u* frameOrigin, Ipp8u* frameRecon, const Vid
         diffBO,
         countBO,
         availLeft,
-        availAbove);
+        availAbove,
+        enableMergeMode);
 
     return PASSED;
 }
@@ -3544,7 +3611,7 @@ void h265_GetCtuStatistics_8u_fast(
 
 void EstimateSao(const Ipp8u* frameOrigin, int pitchOrigin, Ipp8u* frameRecon, int pitchRecon, const VideoParam* m_par, const AddrInfo* frame_addr_info, SaoCtuParam* frame_sao_param,
                  Ipp32s* diffEO, Ipp16u* countEO, Ipp32s* diffBO, Ipp16u* countBO,
-                 Ipp8u* availLeft, Ipp8u* availAbove)
+                 Ipp8u* availLeft, Ipp8u* availAbove, Ipp32s enableMergeMode)
 {
     SaoEstimator m_saoEst;
 
@@ -3704,7 +3771,6 @@ void EstimateSao(const Ipp8u* frameOrigin, int pitchOrigin, Ipp8u* frameRecon, i
         /*if (ctbAddr == 410) {
             printf ("\n stop \n");
         }*/
-        Ipp32s enableMergeMode = 1;//m_par->enableBandOffset >> 1;
         Ipp32s enableBandOffset = m_par->enableBandOffset & 0x1;
         GetBestSao_BitCost(sliceEnabled, mergeList, &frame_sao_param[ctbAddr], m_saoEst, enableBandOffset, enableMergeMode, ctbAddr);
 
@@ -3783,10 +3849,37 @@ void SimulateTiles(Ipp8u* availLeftAboveMask, Ipp32s numCtbX, Ipp32s numCtbY, Ip
     }
 }
 
-int main()
+Ipp32s GetEnableMergeMode()
 {
-    Ipp32s width = WIDTH;
-    Ipp32s height = HEIGHT;
+    Ipp32s enableMergeMode = 1;
+
+    mfxU32 version = 0;
+    CmDevice *device = 0;
+    Ipp32s res = ::CreateCmDevice(device, version);
+    if (res == CM_SUCCESS) {
+        GPU_PLATFORM hwType;
+        size_t capSize = sizeof(mfxU32);
+        res = device->GetCaps(CAP_GPU_PLATFORM, capSize, &hwType);
+        if (res == CM_SUCCESS && hwType == PLATFORM_INTEL_ICLLP)
+            enableMergeMode = 0;
+        ::DestroyCmDevice(device);
+    }
+
+    return enableMergeMode;
+}
+
+int main(int argc, char **argv)
+{
+    const char *yuvname = "C:/yuv/1080p/bq_terrace_1920x1080p_600_60.yuv";
+    int width = 1920;
+    int height = 1080;
+
+    if (argc >= 4) {
+        yuvname = argv[1];
+        width = atoi(argv[2]);
+        height = atoi(argv[3]);
+    }
+
     VideoParam videoParam;
     SetVideoParam(videoParam, width, height);
     Ipp32s numCtbs = videoParam.PicHeightInCtbs * videoParam.PicWidthInCtbs;
@@ -3809,16 +3902,14 @@ int main()
     std::vector<Ipp16u> countBoGpu(3*numCtbs*1*32, 0);
     Ipp32s numBlocks = videoParam.PicWidthInCtbs * videoParam.PicHeightInCtbs * videoParam.MaxCUSize * videoParam.MaxCUSize / GPU_STAT_BLOCK_WIDTH / GPU_STAT_BLOCK_HEIGHT;
     Ipp32s numBlocksChroma = numBlocks;
-#if defined(CHROMA_SEPARATIST)
     numBlocksChroma = videoParam.PicWidthInCtbs * videoParam.PicHeightInCtbs * ((videoParam.MaxCUSize >> 1) / GPU_STAT_CHROMA_BLOCK_WIDTH) * ((videoParam.MaxCUSize >> 1) /  GPU_STAT_CHROMA_BLOCK_HEIGHT);
-#endif
     std::vector<Ipp16s> blockStats(numBlocks * (16+16+32+32) + (2 * (numBlocksChroma * (16+16+32+32))));
 
-    FILE *f = fopen(YUV_NAME, "rb");
+    FILE *f = fopen(yuvname, "rb");
     if (!f)
-        return FAILED;
+        return printf("FAILED to open YUV file %s\n", yuvname), FAILED;
     if (fread(input.data(), 1, input.size(), f) != input.size())
-        return FAILED;
+        return printf("FAILED to read frame from YUV file %s\n", yuvname), FAILED;
     fclose(f);
 
     SimulateRecon(input.data(), width, recon.data(), width, width, height, 10);
@@ -3849,17 +3940,15 @@ int main()
     //videoParam.enableBandOffset |= (1<<1); // merge mode enabled (case for debug only)
     videoParam.SAOChromaFlag = 1;
 
+    Ipp32s enableMergeMode = GetEnableMergeMode();
+
     printf("Stat EO:       ");
     res = RunCpuStatAndEstimate(input.data(), recon.data(), &videoParam, frame_addr_info.data(), saoModesCpu.data(), diffEoCpu.data(), countEoCpu.data(), diffBoCpu.data(), countBoCpu.data(),
-        videoParam.availLeftAbove, videoParam.availLeftAbove + maxNumCtbX);
+        videoParam.availLeftAbove, videoParam.availLeftAbove + maxNumCtbX, enableMergeMode);
     CHECK_ERR(res);
-#if defined(CHROMA_SEPARATIST)
     res = RunGpuStat(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false);
     CHECK_ERR(res);
     res = RunGpuStatChroma(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false, 1);
-#else
-    res = RunGpuStat(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false);
-#endif
     CHECK_ERR(res);
     AccumulateStats(&videoParam, blockStats.data(), diffEoGpu.data(), countEoGpu.data(), diffBoGpu.data(), countBoGpu.data(), 0); // <- LUMA (compIdx = 0)
     if (videoParam.SAOChromaFlag) {
@@ -3897,39 +3986,17 @@ int main()
     CHECK_ERR(res);
     printf("passed\n");
 
-    //printf("Est&Apply EO:  ");
-    //memset(outputGpu.data(), 0, sizeof(outputGpu[0]) * outputGpu.size());
-    //res = RunGpuEstimateAndApply(recon.data(), outputGpu.data(), blockStats.data(), saoModesGpu.data(), &videoParam);
-    //CHECK_ERR(res);
-    //res = CompareParam(saoModesCpu.data(), saoModesGpu.data(), numCtbs);
-    //CHECK_ERR(res);
-    //res = Compare(outputCpu.data(), outputGpu.data(), width, height);
-    //CHECK_ERR(res);
-    //printf("passed\n");
-
-    //printf("Stats&Est EO:  ");
-    //memset(saoModesGpu.data(), 0, sizeof(saoModesGpu[0]) * saoModesGpu.size());
-    //res = RunGpuStatAndEstimate(input.data(), recon.data(), &videoParam, saoModesGpu.data(), false);
-    //CHECK_ERR(res);
-    //res = CompareParam(saoModesCpu.data(), saoModesGpu.data(), numCtbs);
-    //CHECK_ERR(res);
-    //printf("passed\n");
-
     videoParam.enableBandOffset |= 1;
 
     printf("Stats all:     ");
     memset(blockStats.data(), 0, sizeof(blockStats[0]) * blockStats.size());
     res = RunCpuStatAndEstimate(input.data(), recon.data(), &videoParam, frame_addr_info.data(), saoModesCpu.data(), diffEoCpu.data(), countEoCpu.data(), diffBoCpu.data(), countBoCpu.data(),
-        availLeftAboveMask.data(), availLeftAboveMask.data() + maxNumCtbX);
+        availLeftAboveMask.data(), availLeftAboveMask.data() + maxNumCtbX, enableMergeMode);
     CHECK_ERR(res);
 
-#if defined(CHROMA_SEPARATIST)
     res = RunGpuStat(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false);
     CHECK_ERR(res);
     res = RunGpuStatChroma(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false, 1);
-#else
-    res = RunGpuStat(input.data(), recon.data(), &videoParam, blockStats.data(), blockStats.size() * 2, false);
-#endif
     CHECK_ERR(res);
     AccumulateStats(&videoParam, blockStats.data(), diffEoGpu.data(), countEoGpu.data(), diffBoGpu.data(), countBoGpu.data(), 0);// <- LUMA (compIdx = 0)
     if (videoParam.SAOChromaFlag) {

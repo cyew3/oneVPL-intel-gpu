@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_HSW_Emu|x64">
@@ -19,22 +19,23 @@
     <ProjectGuid>{61A2BF5E-98DC-4157-9E56-18798E1729CF}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -91,13 +92,13 @@
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <Link>
-      <AdditionalDependencies>igfxcmrt64.lib;Advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>igfxcmrt64.lib;Ole32.lib;Advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>build_kernel.cmd sao hsw</Command>
+      <Command>build_kernel.cmd sao skl</Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>for /L %%i in (0,1,0) do $(TargetPath)</Command>
@@ -126,10 +127,10 @@
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <PreBuildEvent>
-      <Command>build_kernel_all_targets.cmd sao /Qxcm_release</Command>
+      <Command>build_kernel.cmd sao bdw /Qxcm_release &amp;&amp; build_kernel.cmd sao skl /Qxcm_release &amp;&amp; build_kernel.cmd sao cnl /Qxcm_release &amp;&amp; build_kernel.cmd sao icl /Qxcm_release &amp;&amp; build_kernel_cmc.cmd sao icllp /Qxcm_release</Command>
     </PreBuildEvent>
     <Link>
-      <AdditionalDependencies>igfxcmrt64.lib; Advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>igfxcmrt64.lib;Ole32.lib;Advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -175,13 +176,15 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="src\genx_hevce_sao_apply_icllp_isa.cpp" />
     <ClCompile Include="src\genx_hevce_sao_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_sao_cnl_isa.cpp" />
     <ClCompile Include="src\genx_hevce_sao_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_sao_icl_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_sao_skl_isa.cpp" />
     <ClCompile Include="src\test_sao.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\genx_hevce_sao_bdw_isa.h" />
-    <ClInclude Include="include\genx_hevce_sao_hsw_isa.h" />
     <ClInclude Include="include\test_common.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
