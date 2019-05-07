@@ -401,9 +401,7 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
 
 mfxStatus ComponentParams::ReallocSurface(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut)
 {
-    if (!m_pAllocator)
-        return MFX_ERR_MEMORY_ALLOC;
-
+    MFX_CHECK_WITH_ERR(m_pAllocator, MFX_ERR_MEMORY_ALLOC);
     return m_pAllocator->ReallocFrame(midIn, info, memType, midOut);
 }
 
@@ -452,10 +450,8 @@ mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
                         m_nStartSearch = (i+1) % (mfxU16)refSurfaces.size();
                     }
 
-                    if (idx >= m_sufacesByIDx[refIdx]->allocResponce.NumFrameActual)
-                        return MFX_ERR_INVALID_HANDLE;
-                    else
-                        *mid = m_bufType == MFX_BUF_OPAQ ? 0 : m_sufacesByIDx[refIdx]->allocResponce.mids[idx];
+                    MFX_CHECK_WITH_ERR(idx < m_sufacesByIDx[refIdx]->allocResponce.NumFrameActual, MFX_ERR_INVALID_HANDLE);
+                    *mid = m_bufType == MFX_BUF_OPAQ ? 0 : m_sufacesByIDx[refIdx]->allocResponce.mids[idx];
 
                     return MFX_ERR_NONE;
                 }
@@ -483,10 +479,8 @@ mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
                 {
                     *pSurface = refSurfaces[usedNumbers[curIdx]];
 
-                    if (curIdx >= m_sufacesByIDx[refIdx]->allocResponce.NumFrameActual)
-                        return MFX_ERR_INVALID_HANDLE;
-                    else
-                        *mid = m_bufType == MFX_BUF_OPAQ ? 0 : m_sufacesByIDx[refIdx]->allocResponce.mids[curIdx];
+                    MFX_CHECK_WITH_ERR(curIdx < m_sufacesByIDx[refIdx]->allocResponce.NumFrameActual, MFX_ERR_INVALID_HANDLE);
+                    *mid = m_bufType == MFX_BUF_OPAQ ? 0 : m_sufacesByIDx[refIdx]->allocResponce.mids[curIdx];
 
                     return MFX_ERR_NONE;
                 }

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -70,16 +70,14 @@ mfxStatus MFXD3D11Device::Init( mfxU32 nAdapter
     MFX_CHECK_WITH_ERR(!FAILED(hres), MFX_ERR_DEVICE_FAILED);
     m_pDX11VideoDevice = m_pD3D11Device;
     m_pVideoContext = m_pD3D11Ctx;
-    
+
     MFX_CHECK_POINTER(m_pDX11VideoDevice.p);
     MFX_CHECK_POINTER(m_pVideoContext.p);
-   
+
     CComQIPtr<ID3D10Multithread> p_mt(m_pVideoContext);
 
-    if (p_mt)
-        p_mt->SetMultithreadProtected(true);
-    else
-        return MFX_ERR_DEVICE_FAILED;
+    MFX_CHECK(p_mt, MFX_ERR_DEVICE_FAILED);
+    p_mt->SetMultithreadProtected(true);
 
     m_format = (DXGI_FORMAT)renderTargetFmt;
 
@@ -88,7 +86,7 @@ mfxStatus MFXD3D11Device::Init( mfxU32 nAdapter
         RECT dummy = {0};
         MFX_CHECK_STS(Reset(hDeviceWindow, dummy, bIsWindowed));
     }
-   
+
     return MFX_ERR_NONE;
 }
 
@@ -142,35 +140,30 @@ mfxStatus MFXD3D11Device::Reset(WindowHandle hDeviceWindow, RECT, bool bIsWindow
 
 mfxStatus MFXD3D11Device::GetHandle(mfxHandleType type, mfxHDL *pHdl)
 {
-    if (type == MFX_HANDLE_D3D11_DEVICE)
-    {
-        *pHdl  = (mfxHDL )m_pD3D11Device.p;
-        return MFX_ERR_NONE;
-    }
-    return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(type == MFX_HANDLE_D3D11_DEVICE, MFX_ERR_UNSUPPORTED);
+    *pHdl  = (mfxHDL )m_pD3D11Device.p;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXD3D11Device::RenderFrame(mfxFrameSurface1 * pSrf, mfxFrameAllocator *pAlloc)
 {
     MFX_CHECK_STS(CreateVideoProcessor(pSrf));
-    
+
     // Get Backbuffer
     ID3D11VideoProcessorInputView* pInputView = NULL;
     ID3D11VideoProcessorOutputView* pOutputView = NULL;
     ID3D11Texture2D* pDXGIBackBuffer = NULL;
 
     MFX_CHECK_WITH_ERR(!FAILED(m_pSwapChain->GetBuffer(0, __uuidof( ID3D11Texture2D ), (void**)&pDXGIBackBuffer)), MFX_ERR_DEVICE_FAILED);
-    
+
     D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC OutputViewDesc;
     OutputViewDesc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
     OutputViewDesc.Texture2D.MipSlice = 0;
-    MFX_CHECK_WITH_ERR(!FAILED(m_pDX11VideoDevice->CreateVideoProcessorOutputView( 
+    MFX_CHECK_WITH_ERR(!FAILED(m_pDX11VideoDevice->CreateVideoProcessorOutputView(
         pDXGIBackBuffer,
         m_VideoProcessorEnum,
         &OutputViewDesc,
         &pOutputView )), MFX_ERR_DEVICE_FAILED);
-
-
 
     mfxHDLPair pair = {NULL};
     MFX_CHECK_STS(pAlloc->GetHDL(pAlloc->pthis, pSrf->Data.MemId, (mfxHDL*)&pair));

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -12,6 +12,7 @@ Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
 #include "mfx_pipeline_defs.h"
 #include "mfx_d3d9_device.h"
+#include "mfx_utils.h"
 #include <algorithm>
 
 MFXD3D9Device::MFXD3D9Device()
@@ -162,7 +163,7 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     // Note: DXVA2 emulators may work without D3D device
     if (!m_pD3DD9Ex && (NULL == pDXVA2libname || 0 == vm_string_strlen(pDXVA2libname)))
     {
-        return MFX_ERR_UNKNOWN;
+        MFX_RETURN(MFX_ERR_UNKNOWN);
     }
 
     // create IDirect3DDeviceManager9
@@ -171,14 +172,14 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
     if (FAILED(hr) || !m_pDeviceManager) 
     {
         MFX_TRACE_ERR(VM_STRING("DXVA2CreateDirect3DDeviceManager9 failed with error 0x") << std::hex<<hr);
-        return MFX_ERR_UNKNOWN;
+        MFX_RETURN(MFX_ERR_UNKNOWN);
     }
 
     hr = m_pDeviceManager->ResetDevice(m_pD3DD9Ex, ResetToken);
     if (FAILED(hr))
     {
         MFX_TRACE_ERR(VM_STRING("ResetDevice failed with error 0x") << std::hex<<hr);
-        return MFX_ERR_UNKNOWN;
+        MFX_RETURN(MFX_ERR_UNKNOWN);
     }
 
     return MFX_ERR_NONE;
@@ -237,7 +238,7 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
     if (FAILED(hr))
     {
         MFX_TRACE_ERR(VM_STRING("Reset failed with error 0x") << std::hex<<hr);
-        return MFX_ERR_UNKNOWN;
+        MFX_RETURN(MFX_ERR_UNKNOWN);
     }
 
     if ( ! IsFullscreen() && ! IsOverlay() && 8 == m_nBit )
@@ -248,7 +249,7 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
         if (FAILED(hr))
         {
             MFX_TRACE_ERR(VM_STRING("GetSwapChain failed with error 0x") << std::hex<<hr);
-            return MFX_ERR_UNKNOWN;
+            MFX_RETURN(MFX_ERR_UNKNOWN);
         }
 
         D3DPRESENT_PARAMETERS pp = {0};
@@ -256,7 +257,7 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
         if (FAILED(hr))
         {
             MFX_TRACE_ERR(VM_STRING("GetPresentParameters failed with error 0x") << std::hex<<hr);
-            return MFX_ERR_UNKNOWN;
+            MFX_RETURN(MFX_ERR_UNKNOWN);
         }
 
         pp.BackBufferWidth  = m_D3DPP.BackBufferWidth;
@@ -267,7 +268,7 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
         if (FAILED(hr))
         {
             MFX_TRACE_ERR(VM_STRING("CreateAdditionalSwapChain failed with error 0x") << std::hex<<hr);
-            return MFX_ERR_UNKNOWN;
+            MFX_RETURN(MFX_ERR_UNKNOWN);
         }
     }
 
@@ -356,13 +357,9 @@ HRESULT MFXD3D9Device::myDXVA2CreateDirect3DDeviceManager9(UINT* pResetToken,
 
 mfxStatus MFXD3D9Device::GetHandle(mfxHandleType type, mfxHDL *pHdl)
 {
-    if (MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == type && pHdl != NULL)
-    {
-        *pHdl = m_pDeviceManager;
-
-        return MFX_ERR_NONE;
-    }
-    return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == type && pHdl != NULL, MFX_ERR_UNSUPPORTED);
+    *pHdl = m_pDeviceManager;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * /*Palloc*/)
@@ -380,7 +377,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         case D3DERR_DEVICELOST :
         {
             MFX_TRACE_ERR(VM_STRING("TestCooperativeLevel returned D3DERR_DEVICELOST"));
-            return MFX_ERR_DEVICE_LOST;
+            MFX_RETURN(MFX_ERR_DEVICE_LOST);
         }
 
         case D3DERR_DEVICENOTRESET :
@@ -388,7 +385,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
             MFX_TRACE_ERR(VM_STRING("TestCooperativeLevel returned D3DERR_DEVICENOTRESET"));
             //if (!ResetDevice())
             {
-                return MFX_ERR_UNKNOWN;
+                MFX_RETURN(MFX_ERR_UNKNOWN);
             }
             break;
         }
@@ -396,7 +393,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         default :
         {
             MFX_TRACE_ERR(VM_STRING("TestCooperativeLevel failed with error 0x") << std::hex<<hr);
-            return MFX_ERR_UNKNOWN;
+            MFX_RETURN(MFX_ERR_UNKNOWN);
         }
     }
 
@@ -424,7 +421,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         if (FAILED(hr))
         {
             MFX_TRACE_ERR(VM_STRING("StretchRect failed with error 0x") << std::hex<<hr);
-            return MFX_ERR_UNKNOWN;
+            MFX_RETURN(MFX_ERR_UNKNOWN);
         }
     }
 
@@ -449,7 +446,7 @@ mfxStatus MFXD3D9Device::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAlloca
         if (FAILED(hr))
         {
             MFX_TRACE_ERR(VM_STRING("Present failed with error 0x") << std::hex<<hr);
-            return MFX_ERR_UNKNOWN;
+            MFX_RETURN(MFX_ERR_UNKNOWN);
         }
     }
 

@@ -84,11 +84,7 @@ mfxStatus D3D11FrameAllocator::Init(mfxAllocatorParams *pParams)
     D3D11AllocatorParams *pd3d11Params = 0;
     pd3d11Params = dynamic_cast<D3D11AllocatorParams *>(pParams);
 
-    if (NULL == pd3d11Params ||
-        NULL == pd3d11Params->pDevice)
-    {
-        return MFX_ERR_NOT_INITIALIZED;
-    }
+    MFX_CHECK (pd3d11Params && pd3d11Params->pDevice, MFX_ERR_NOT_INITIALIZED);
 
     m_initParams = *pd3d11Params;
     m_pDeviceContext.Release();
@@ -120,8 +116,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 
     //check that texture exists
     TextureSubResource sr = GetResourceFromMid(mid);
-    if (!sr.GetTexture())
-        return MFX_ERR_LOCK_MEMORY;
+    MFX_CHECK(sr.GetTexture(), MFX_ERR_LOCK_MEMORY);
 
     D3D11_MAP mapType = D3D11_MAP_READ;
     UINT mapFlags = D3D11_MAP_FLAG_DO_NOT_WAIT;
@@ -153,7 +148,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 DXGI_FORMAT_Y216 != desc.Format &&
                 DXGI_FORMAT_Y416 != desc.Format)
             {
-                return MFX_ERR_LOCK_MEMORY;
+                MFX_RETURN(MFX_ERR_LOCK_MEMORY);
             }
 
             //coping data only in case user wants to read from stored surface
@@ -178,8 +173,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         }
     }
 
-    if (FAILED(hRes))
-        return MFX_ERR_LOCK_MEMORY;
+    MFX_CHECK(!FAILED(hRes), MFX_ERR_LOCK_MEMORY);
 
     ptr->PitchHigh = (mfxU16)(lockedRect.RowPitch / (1 << 16));
     ptr->PitchLow  = (mfxU16)(lockedRect.RowPitch % (1 << 16));
@@ -282,7 +276,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 
         default:
 
-            return MFX_ERR_LOCK_MEMORY;
+            MFX_RETURN(MFX_ERR_LOCK_MEMORY);
     }
 
     return MFX_ERR_NONE;
@@ -292,8 +286,7 @@ mfxStatus D3D11FrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 {
     //check that texture exists
     TextureSubResource sr = GetResourceFromMid(mid);
-    if (!sr.GetTexture())
-        return MFX_ERR_LOCK_MEMORY;
+    MFX_CHECK(sr.GetTexture(), MFX_ERR_LOCK_MEMORY);
 
     if (NULL == sr.GetStaging())
     {
@@ -323,13 +316,11 @@ mfxStatus D3D11FrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 
 mfxStatus D3D11FrameAllocator::GetFrameHDL(mfxMemId mid, mfxHDL *handle)
 {
-    if (NULL == handle)
-        return MFX_ERR_INVALID_HANDLE;
+    MFX_CHECK(handle, MFX_ERR_INVALID_HANDLE);
 
     TextureSubResource sr = GetResourceFromMid(mid);
 
-    if (!sr.GetTexture())
-        return MFX_ERR_INVALID_HANDLE;
+    MFX_CHECK(sr.GetTexture(), MFX_ERR_INVALID_HANDLE);
 
     mfxHDLPair *pPair  =  (mfxHDLPair*)handle;
 
@@ -345,24 +336,20 @@ mfxStatus D3D11FrameAllocator::CheckRequestType(mfxFrameAllocRequest *request)
     if (MFX_ERR_NONE != sts)
         return sts;
 
-    if ((request->Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)) != 0)
-        return MFX_ERR_NONE;
-    else
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(((request->Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)) != 0), MFX_ERR_UNSUPPORTED);
+    return MFX_ERR_NONE;
 }
 
 mfxStatus D3D11FrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
 {
-    if (NULL == response)
-        return MFX_ERR_NULL_PTR;
+    MFX_CHECK(response, MFX_ERR_NULL_PTR);
 
     if (response->mids && 0 != response->NumFrameActual)
     {
         //check whether texture exsist
         TextureSubResource sr = GetResourceFromMid(response->mids[0]);
 
-        if (!sr.GetTexture())
-            return MFX_ERR_NULL_PTR;
+        MFX_CHECK(sr.GetTexture(), MFX_ERR_NULL_PTR);
 
         sr.Release();
 
