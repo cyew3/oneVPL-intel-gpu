@@ -3431,7 +3431,8 @@ mfxStatus MfxHwH264Encode::FillCustomScalingLists(void *inMatrix, mfxU16 Scenari
 {
     DXVA_Qmatrix_H264 &matrix = *static_cast<DXVA_Qmatrix_H264*>(inMatrix);
 
-    if (ScenarioInfo != MFX_SCENARIO_GAME_STREAMING)
+    if ((ScenarioInfo != MFX_SCENARIO_GAME_STREAMING) &&
+        (ScenarioInfo != MFX_SCENARIO_REMOTE_GAMING))
         return MFX_ERR_NOT_FOUND;
 
     uint8_t intra_4x4[16] = {

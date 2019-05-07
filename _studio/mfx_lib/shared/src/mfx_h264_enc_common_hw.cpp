@@ -6723,7 +6723,11 @@ void MfxHwH264Encode::SetDefaults(
         }
 
 #ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
-        if (extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING)
+        //We use CQM in case of
+        //MFX_SCENARIO_GAME_STREAMING AVC VDEnc/VME on Gen11+ or
+        //MFX_SCENARIO_REMOTE_GAMING  AVC VDEnc     on Gen9+
+        if ((extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && platform >= MFX_HW_ICL) ||
+            (extOpt3->ScenarioInfo == MFX_SCENARIO_REMOTE_GAMING  && platform >= MFX_HW_SCL && IsOn(par.mfx.LowPower)))
         {
             FillCustomScalingLists(&(extSps->scalingList4x4[0][0]), extOpt3->ScenarioInfo);
             extSps->seqScalingMatrixPresentFlag = 1;
