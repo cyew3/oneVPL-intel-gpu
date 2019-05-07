@@ -162,8 +162,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    if (m_decoder)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_CHECK(!m_decoder, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     m_platform = MFX_VPX_Utility::GetPlatform(m_core, par);
     eMFXHWType type = MFX_HW_UNKNOWN;
@@ -172,25 +171,17 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
         type = m_core->GetHWType();
     }
 
-    if (CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) < MFX_ERR_NONE)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if (!MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_AV1, m_platform))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_AV1, m_platform), MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if (m_platform == MFX_PLATFORM_SOFTWARE)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-    else
-    {
+    MFX_CHECK(m_platform != MFX_PLATFORM_SOFTWARE, MFX_ERR_UNSUPPORTED);
 #if !defined (MFX_VA)
-        return MFX_ERR_UNSUPPORTED;
+    MFX_RETURN(MFX_ERR_UNSUPPORTED);
 #else
-        m_decoder.reset(new UMC_AV1_DECODER::AV1DecoderVA());
-        m_allocator.reset(new mfx_UMC_FrameAllocator_D3D());
+    m_decoder.reset(new UMC_AV1_DECODER::AV1DecoderVA());
+    m_allocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #endif
-    }
 
     mfxFrameAllocRequest request{};
     mfxStatus sts = MFX_VPX_Utility::QueryIOSurfInternal(par, &request);
@@ -212,10 +203,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
         auto opaq =
             reinterpret_cast<mfxExtOpaqueSurfaceAlloc*>(GetExtendedBuffer(par->ExtParam, par->NumExtParam,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION));
 
-        if (!opaq || request.NumFrameMin > opaq->Out.NumSurface)
-        {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
+        MFX_CHECK(opaq && request.NumFrameMin <= opaq->Out.NumSurface, MFX_ERR_INVALID_VIDEO_PARAM);
 
         m_opaque = true;
 
@@ -235,8 +223,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     m_allocator->SetExternalFramesResponse(&m_response);
 
     UMC::Status umcSts = m_allocator->InitMfx(0, m_core, par, &request, &m_response, !internal, m_platform == MFX_PLATFORM_SOFTWARE);
-    if (umcSts != UMC::UMC_OK)
-        return MFX_ERR_MEMORY_ALLOC;
+    MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
     UMC_AV1_DECODER::AV1DecoderParams vp{};
     vp.allocator = m_allocator.get();
@@ -255,8 +242,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     ConvertMFXParamsToUMC(par, &vp);
 
     umcSts = m_decoder->Init(&vp);
-    if (umcSts != UMC::UMC_OK)
-        return MFX_ERR_NOT_INITIALIZED;
+    MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_NOT_INITIALIZED);
 
     m_first_run = true;
     m_init_video_par = *par;
@@ -316,22 +302,26 @@ mfxStatus VideoDECODEAV1::QueryIOSurf(VideoCORE* core, mfxVideoParam* par, mfxFr
     MFX_CHECK(core, MFX_ERR_UNDEFINED_BEHAVIOR)
     MFX_CHECK_NULL_PTR2(par, request);
 
-    if (!(par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)  &&
-        !(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) &&
-        !(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(
+        par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY  ||
+        par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY ||
+        par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY,
+        MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if ((par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
-        (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(!(
+        par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY &&
+        par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY),
+        MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if ((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) &&
-        (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(!(
+        par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY &&
+        par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY),
+        MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if ((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) &&
-        (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(!(
+        par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY &&
+        par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY),
+        MFX_ERR_INVALID_VIDEO_PARAM);
 
     mfxStatus sts = MFX_ERR_NONE;
     if (!(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
@@ -434,12 +424,12 @@ mfxStatus VideoDECODEAV1::DecodeFrameCheck(mfxBitstream* bs, mfxFrameSurface1* s
 
 mfxStatus VideoDECODEAV1::SetSkipMode(mfxSkipMode /*mode*/)
 {
-    return MFX_ERR_UNSUPPORTED;
+    MFX_RETURN(MFX_ERR_UNSUPPORTED);
 }
 
 mfxStatus VideoDECODEAV1::GetPayload(mfxU64* /*time_stamp*/, mfxPayload* /*pPayload*/)
 {
-    return MFX_ERR_UNSUPPORTED;
+    MFX_RETURN(MFX_ERR_UNSUPPORTED);
 }
 
 mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, mfxThreadTask* task)
@@ -452,8 +442,7 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
     MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
 
     mfxStatus sts = SubmitFrame(bs, surface_work, surface_out);
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK_STS(sts);
 
     std::unique_ptr<TaskInfo> info(new TaskInfo);
     //auto info = std::make_unique<TaskInfo>();
@@ -478,10 +467,8 @@ mfxStatus VideoDECODEAV1::DecodeFrame(mfxFrameSurface1 *surface_out, AV1DecoderF
     if (error & UMC::ERROR_FRAME_DEVICE_FAILURE)
     {
         surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
-        if (error == UMC::UMC_ERR_GPU_HANG)
-            return MFX_ERR_GPU_HANG;
-        else
-            return MFX_ERR_DEVICE_FAILED;
+        MFX_CHECK(error != UMC::UMC_ERR_GPU_HANG, MFX_ERR_GPU_HANG);
+        MFX_RETURN(MFX_ERR_DEVICE_FAILED);
     }
     else
     {
@@ -537,23 +524,19 @@ mfxStatus VideoDECODEAV1::QueryFrame(mfxThreadTask task)
 
     MFX_CHECK(frame, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    if (!frame->DecodingStarted())
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_CHECK(frame->DecodingStarted(), MFX_ERR_UNDEFINED_BEHAVIOR);
 
     if (!frame->DecodingCompleted())
     {
         m_decoder->QueryFrames();
     }
 
-    if (frame->DecodingCompleted())
-    {
-        mfxStatus sts = DecodeFrame(surface_out, frame);
-        MFX_CHECK_STS(sts);
+    MFX_CHECK(frame->DecodingCompleted(), MFX_TASK_WORKING);
 
-        return MFX_TASK_DONE;
-    }
-    else
-        return MFX_TASK_WORKING;
+    mfxStatus sts = DecodeFrame(surface_out, frame);
+    MFX_CHECK_STS(sts);
+
+    return MFX_TASK_DONE;
 }
 
 mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out)
@@ -566,20 +549,15 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
     sts = CheckFrameData(surface_work);
     MFX_CHECK_STS(sts);
 
-    sts = bs ? CheckBitstream(bs) : MFX_ERR_NONE;
+    MFX_CHECK(bs, MFX_ERR_MORE_DATA);
+
+    sts = CheckBitstream(bs);
     MFX_CHECK_STS(sts);
 
-    if (!bs)
-    {
-        return MFX_ERR_MORE_DATA;
-    }
-
-    if (surface_work->Data.Locked)
-        return MFX_ERR_MORE_SURFACE;
+    MFX_CHECK(!surface_work->Data.Locked, MFX_ERR_MORE_SURFACE);
 
     sts = m_allocator->SetCurrentMFXSurface(surface_work, m_opaque);
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK_STS(sts);
 
     try
     {
@@ -609,7 +587,7 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
                     break;
 
                 case UMC::UMC_NTF_NEW_RESOLUTION:
-                    return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                    MFX_RETURN(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
 #if defined(MFX_VA)
                 case UMC::UMC_ERR_DEVICE_FAILED:
@@ -689,28 +667,29 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
     }
     catch (std::bad_alloc const&)
     {
-        return MFX_ERR_MEMORY_ALLOC;
+        MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
     }
     catch(...)
     {
-        return MFX_ERR_UNKNOWN;
+        MFX_RETURN(MFX_ERR_UNKNOWN);
     }
 
+    MFX_CHECK_STS(sts);
     return sts;
 }
 
 mfxStatus VideoDECODEAV1::DecodeRoutine(void* state, void* param, mfxU32, mfxU32)
 {
     auto decoder = reinterpret_cast<VideoDECODEAV1*>(state);
-    if (!decoder)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_CHECK(decoder, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxThreadTask task =
         reinterpret_cast<TaskInfo*>(param);
-    if (!task)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    MFX_CHECK(task, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxStatus sts = decoder->QueryFrame(task);
+    MFX_CHECK_STS(sts);
     return sts;
 }
 
