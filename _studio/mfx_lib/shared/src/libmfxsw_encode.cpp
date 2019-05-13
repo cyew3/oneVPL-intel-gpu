@@ -515,6 +515,9 @@ static const CodecId2Handlers codecId2Handlers =
                 {
                     return MfxHwVP9Encode::MFXVideoENCODEVP9_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
                 }
+            },
+            // .fallback =
+            {
             }
         }
     }
