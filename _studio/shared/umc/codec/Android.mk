@@ -21,8 +21,7 @@ MFX_LOCAL_DIRS := \
 
 MFX_LOCAL_DIRS_IMPL := \
     color_space_converter \
-    mpeg2_dec/hw \
-    mpeg2_dec/sw \
+    mpeg2_dec \
     h265_dec \
     h264_dec \
     vc1_dec \

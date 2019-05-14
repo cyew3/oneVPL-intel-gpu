@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2019 Intel Corporation
+# Copyright (c) 2017-2018 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 mfx_include_dirs()
 
-list( APPEND Decoders h264 h265 vp8 vp9 mjpeg vc1 )
+list( APPEND Decoders h264 h265 mpeg2 vp8 vp9 mjpeg vc1 )
 foreach( dir ${Decoders} )
   include_directories( ${MSDK_LIB_ROOT}/decode/${dir}/include )
   include_directories( ${MSDK_UMC_ROOT}/codec/${dir}_dec/include )
@@ -33,8 +33,6 @@ include_directories( ${MSDK_UMC_ROOT}/codec/jpeg_enc/include )
 include_directories( ${MSDK_UMC_ROOT}/codec/jpeg_common/include )
 include_directories( ${MSDK_UMC_ROOT}/codec/vc1_common/include )
 include_directories( ${MSDK_UMC_ROOT}/codec/color_space_converter/include )
-include_directories( ${MSDK_LIB_ROOT}/decode/mpeg2/hw/include )
-include_directories( ${MSDK_UMC_ROOT}/codec/mpeg2_dec/hw/include )
 
 set( sources.plus "" )
 
@@ -74,12 +72,12 @@ list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/mjpeg/src/mfx_mjpeg_dec_decode.
 make_library( jpeg_dec hw static )
 
 ### MPEG2 Decoder
-set( SRC_DIR "${MSDK_UMC_ROOT}/codec/mpeg2_dec/hw/src" )
+set( SRC_DIR "${MSDK_UMC_ROOT}/codec/mpeg2_dec/src" )
 set( defs "" )
 set( sources "" )
 file( GLOB_RECURSE srcs "${SRC_DIR}/*.c" "${SRC_DIR}/*.cpp" )
 list( APPEND sources ${srcs})
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/mpeg2/hw/src/mfx_mpeg2_decode.cpp)
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/mpeg2/src/mfx_mpeg2_decode_internal.cpp)
 make_library( mpeg2_dec hw static )
 
 ### VC1 Decoder

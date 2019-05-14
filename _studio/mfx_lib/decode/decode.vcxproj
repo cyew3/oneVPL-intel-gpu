@@ -23,7 +23,7 @@
   <ItemGroup>
     <ClCompile Include="h264\src\mfx_h264_dec_decode.cpp" />
     <ClCompile Include="mjpeg\src\mfx_mjpeg_dec_decode.cpp" />
-    <ClCompile Include="mpeg2\sw\src\mfx_mpeg2_decode_internal.cpp" />
+    <ClCompile Include="mpeg2\src\mfx_mpeg2_decode_internal.cpp" />
     <ClCompile Include="vc1\src\mfx_vc1_decode.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_dec_decode.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_dec_decode_hw.cpp" />
@@ -32,7 +32,7 @@
   <ItemGroup>
     <ClInclude Include="h264\include\mfx_h264_dec_decode.h" />
     <ClInclude Include="mjpeg\include\mfx_mjpeg_dec_decode.h" />
-    <ClInclude Include="mpeg2\sw\include\mfx_mpeg2_decode_internal.h" />
+    <ClInclude Include="mpeg2\include\mfx_mpeg2_decode_internal.h" />
     <ClInclude Include="vc1\include\mfx_vc1_decode.h" />
     <ClInclude Include="vp9\include\mfx_vp9_dec_decode.h" />
     <ClInclude Include="vp9\include\mfx_vp9_dec_decode_hw.h" />

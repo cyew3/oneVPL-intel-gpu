@@ -26,6 +26,7 @@
 
 #include "mfx_common_int.h"
 #include "mfxvideo.h"
+#include "umc_mpeg2_dec_defs.h"
 
 #define MFX_PROFILE_MPEG1 8
 

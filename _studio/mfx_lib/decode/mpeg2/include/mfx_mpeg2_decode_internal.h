@@ -264,6 +264,58 @@ protected:
     }
 };
 
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+namespace UMC
+{
+    class MPEG2VideoDecoderHW;
+};
+class VideoDECODEMPEG2Internal_HW : public VideoDECODEMPEG2InternalBase
+{
+public:
+    VideoDECODEMPEG2Internal_HW();
+
+    virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs,
+                               mfxFrameSurface1 *surface_work,
+                               mfxFrameSurface1 **surface_out,
+                               MFX_ENTRY_POINT *pEntryPoint);
+
+    virtual mfxStatus TaskRoutine(void *pParam);
+    virtual mfxStatus Init(mfxVideoParam *par, VideoCORE * core);
+    virtual mfxStatus Reset(mfxVideoParam *par);
+    virtual mfxStatus Close();
+
+    virtual mfxStatus CompleteTasks(void *pParam);
+
+    virtual mfxStatus GetVideoParam(mfxVideoParam *par);
+
+protected:
+
+#ifdef UMC_VA_DXVA
+    enum {
+        MPEG2_STATUS_REPORT_NUM = 512,
+    };
+
+    DXVA_Status_VC1 m_pStatusReport[MPEG2_STATUS_REPORT_NUM];
+    std::list<DXVA_Status_VC1> m_pStatusList;
+#endif
+
+    UMC::MPEG2VideoDecoderHW * m_implUmcHW;
+
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+    mfxExtPAVPOption m_pavpOpt;
+#endif
+
+    virtual mfxStatus ConstructFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work);
+    mfxStatus PerformStatusCheck(void *pParam);
+    mfxStatus GetStatusReport(int32_t current_index, UMC::FrameMemID surface_id);
+    mfxStatus GetStatusReportByIndex(int32_t current_index, mfxU32 currIdx);
+    virtual mfxStatus AllocFrames(mfxVideoParam *par);
+    mfxStatus RestoreDecoder(int32_t frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, int32_t task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count);
+    void TranslateCorruptionFlag(int32_t disp_index, mfxFrameSurface1 * surface_work);
+};
+
+#endif // #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+
 #if !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER) || !defined (MFX_VA)
 namespace UMC
 {

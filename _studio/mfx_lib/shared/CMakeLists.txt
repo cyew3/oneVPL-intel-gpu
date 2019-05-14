@@ -3,10 +3,10 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 mfx_include_dirs( )
 
 list( APPEND decdirs
-  vc1 h264 mpeg2/hw mpeg2/sw mjpeg
+  vc1 h264 mpeg2 mjpeg
   )
 list( APPEND cdirs
-  vc1_dec vc1_common h264 h264_enc brc mpeg2_dec/hw mpeg2_dec/sw common mp3_dec
+  vc1_dec vc1_common h264 h264_enc brc mpeg2_dec common mp3_dec
   color_space_converter aac_enc aac_dec aac_common mp3_common
   )
 foreach( dir ${decdirs})
