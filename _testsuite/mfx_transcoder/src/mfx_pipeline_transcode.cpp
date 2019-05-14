@@ -515,7 +515,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 #endif
         HANDLE_EXT_OPTION3(GPB,                        OPT_TRI_STATE, "Generalized P/B"),
         HANDLE_EXT_OPTION3(EnableQPOffset,             OPT_TRI_STATE, ""),
-        HANDLE_EXT_OPTION3(ScenarioInfo,               OPT_UINT_16,   "0=unknown, 6=MFX_SCENARIO_GAME_STREAMING, 7=MFX_SCENARIO_REMOTE_GAMING"),
+        HANDLE_EXT_OPTION3(ScenarioInfo,               OPT_UINT_16,   "0=unknown, 7=MFX_SCENARIO_GAME_STREAMING, 8=MFX_SCENARIO_REMOTE_GAMING"),
         HANDLE_EXT_OPTION3(MaxFrameSizeI,              OPT_UINT_32,   ""),
         HANDLE_EXT_OPTION3(MaxFrameSizeP,              OPT_UINT_32,   ""),
         HANDLE_EXT_OPTION3(TransformSkip,              OPT_TRI_STATE, "HEVC transform_skip_enabled_flag"),
