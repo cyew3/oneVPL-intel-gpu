@@ -1456,13 +1456,12 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     {
         TS_START;
 
-#if defined(LINUX)
+        // Now driver supports only Nx1 and 1xM tiles for ICL
         if ((g_tsHWtype == MFX_HW_ICL) && (tc.type & SCALABLE_PIPE))
         {
             g_tsLog << "\n\nWARNING: SKIP test - MxN tiles are unsupported in driver for ICL\n\n";
             throw tsSKIP;
         }
-#endif
 
         if (false == NeedToRun(tc.type))
         {
