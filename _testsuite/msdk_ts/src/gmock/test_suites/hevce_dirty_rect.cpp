@@ -396,7 +396,7 @@ namespace hevce_dirty_rect {
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_420_nv12_dirty_rect, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_dirty_rect, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_dirty_rect, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_dirty_rect, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_dirty_rect, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
