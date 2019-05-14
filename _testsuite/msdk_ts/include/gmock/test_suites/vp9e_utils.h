@@ -20,7 +20,7 @@ inline bool SetDefaultSegmentationParams(mfxExtVP9Segmentation &segmentation_ext
 
     if (!segmentation_ext_params.SegmentIdBlockSize)
     {
-        segmentation_ext_params.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32;
+        segmentation_ext_params.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64;
     }
 
     for (mfxU32 i = 0; i < segmentation_ext_params.NumSegments; ++i)
