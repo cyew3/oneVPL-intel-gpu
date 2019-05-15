@@ -622,7 +622,7 @@ mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void * /*pp_param*/, mfxU32 
 #endif
     {
     UMC::Status status = decoder.m_p_video_accelerator->SyncTask(data.memId);
-    if (status != UMC::UMC_OK)
+    if (status != UMC::UMC_OK && status != UMC::UMC_ERR_TIMEOUT)
     {
         mfxStatus CriticalErrorStatus = (status == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
         decoder.SetCriticalErrorOccured(CriticalErrorStatus);

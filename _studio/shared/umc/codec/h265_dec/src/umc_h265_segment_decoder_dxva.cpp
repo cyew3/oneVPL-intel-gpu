@@ -213,10 +213,10 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 #endif
 #elif defined(UMC_VA_DXVA)
     bool wasCompleted = false;
+    UMC::Status sts = UMC::UMC_OK;
 
     for (H265DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
-        UMC::Status sts = UMC::UMC_OK;
         if (dxva_sd->GetPacker()->IsGPUSyncEventEnable())
         {
             int32_t index = au->m_pFrame->GetFrameMID();
@@ -303,7 +303,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
             }
         }
         //check exit from waiting status.
-        if (sts != UMC::UMC_OK && dxva_sd->GetPacker()->IsGPUSyncEventEnable())
+        if (sts != UMC::UMC_OK && sts != UMC::UMC_ERR_TIMEOUT && dxva_sd->GetPacker()->IsGPUSyncEventEnable())
         {
             // SyncTask failed for some reason
             au->m_pFrame->SetError(UMC::UMC_ERR_DEVICE_FAILED);
@@ -321,7 +321,8 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
             m_lastCounter = currentCounter;
 
         unsigned long long diff = (currentCounter - m_lastCounter);
-        if (diff >= m_counterFrequency)
+        if (diff >= m_counterFrequency ||
+            (sts == UMC::UMC_ERR_TIMEOUT && dxva_sd->GetPacker()->IsGPUSyncEventEnable()))
         {
             Report::iterator iter = std::find(m_reports.begin(), m_reports.end(), ReportItem(m_FirstAU->m_pFrame->m_index, false, 0));
             if (iter != m_reports.end())

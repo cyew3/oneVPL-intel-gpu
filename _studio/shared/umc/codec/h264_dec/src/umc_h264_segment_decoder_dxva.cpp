@@ -231,6 +231,9 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 
 #if defined(UMC_VA_DXVA)
     bool wasCompleted = false;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+    Status waitSts = UMC_OK;
+#endif
 
     for (H264DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
@@ -238,7 +241,6 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
         //skip second field for sync.
         H264DecoderFrameInfo* prev = au->GetPrevAU();
         bool skip = (prev && prev->m_pFrame == au->m_pFrame);
-        Status waitSts = UMC_OK;
 
         if (!skip)
         {
@@ -292,7 +294,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
         //check exit from waiting status.
-        if (waitSts != UMC_OK)
+        if (waitSts != UMC_OK && waitSts != UMC_ERR_TIMEOUT)
         {
             // we have a problem wait is failed due to some reason
             SetCompletedAndErrorStatus(2, au); //ERROR_FRAME_MAJOR
@@ -310,7 +312,11 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
             m_lastCounter = currentCounter;
 
         unsigned long long diff = (currentCounter - m_lastCounter);
-        if (diff >= m_counterFrequency)
+        if (diff >= m_counterFrequency
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+            || waitSts == UMC_ERR_TIMEOUT
+#endif
+            )
         {
             Report::iterator iter = std::find(m_reports.begin(), m_reports.end(), ReportItem(m_FirstAU->m_pFrame->m_index, m_FirstAU->IsBottom(), 0));
             if (iter != m_reports.end())

@@ -98,7 +98,7 @@ Status DXAccelerator::SyncTask(int32_t index, void * error)
     {
         return UMC_ERR_UNSUPPORTED;
     }
-    const uint32_t timeoutms = 60000*5; // TIMEOUT FOR DECODE OPERATION
+    const uint32_t timeoutms = 60000; // TIMEOUT FOR DECODE OPERATION = 1 min
     const size_t MAX_FIELD_SUPPORTED = 2;
 
     Status sts = UMC_OK;
