@@ -424,6 +424,7 @@ UMC::Status mfx_UMC_FrameAllocator::Reset()
     if (m_IsUseExternalFrames && m_isSWDecode)
     {
         m_extSurfaces.clear();
+        m_frameDataInternal.Close();
     }
 
     return UMC::UMC_OK;
