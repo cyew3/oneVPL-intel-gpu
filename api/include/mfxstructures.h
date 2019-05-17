@@ -102,12 +102,12 @@ enum {
     MFX_FOURCC_YV12         = MFX_MAKEFOURCC('Y','V','1','2'),
     MFX_FOURCC_NV16         = MFX_MAKEFOURCC('N','V','1','6'),
     MFX_FOURCC_YUY2         = MFX_MAKEFOURCC('Y','U','Y','2'),
-    MFX_FOURCC_RGB3         = MFX_MAKEFOURCC('R','G','B','3'),   /* deprecated */
-    MFX_FOURCC_RGB4         = MFX_MAKEFOURCC('R','G','B','4'),   /* ARGB in that order, A channel is 8 MSBs */
 #if (MFX_VERSION >= 1028)
     MFX_FOURCC_RGB565       = MFX_MAKEFOURCC('R','G','B','2'),   /* 2 bytes per pixel, uint16 in little-endian format, where 0-4 bits are blue, bits 5-10 are green and bits 11-15 are red */
     MFX_FOURCC_RGBP         = MFX_MAKEFOURCC('R','G','B','P'),   /* RGB 24 bit planar layout */
 #endif
+    MFX_FOURCC_RGB3         = MFX_MAKEFOURCC('R','G','B','3'),   /* deprecated */
+    MFX_FOURCC_RGB4         = MFX_MAKEFOURCC('R','G','B','4'),   /* ARGB in that order, A channel is 8 MSBs */
     MFX_FOURCC_P8           = 41,                                /*  D3DFMT_P8   */
     MFX_FOURCC_P8_TEXTURE   = MFX_MAKEFOURCC('P','8','M','B'),
     MFX_FOURCC_P010         = MFX_MAKEFOURCC('P','0','1','0'),
@@ -209,7 +209,6 @@ typedef struct
     mfxU32 A :  2;
 } mfxA2RGB10;
 #pragma pack(pop)
-
 #endif
 
 /* Frame Data Info */
@@ -1142,9 +1141,11 @@ typedef enum {
     MFX_HANDLE_D3D11_DEVICE                     = 3,
     MFX_HANDLE_VA_DISPLAY                       = 4,
     MFX_HANDLE_RESERVED3                        = 5,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1030)
     MFX_HANDLE_VA_CONFIG_ID                     = 6,
     MFX_HANDLE_VA_CONTEXT_ID                    = 7,
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_HANDLE_CM_DEVICE                        = 8
 #endif
 } mfxHandleType;
@@ -2050,7 +2051,7 @@ typedef struct {
     mfxU16  NumTileRows;
     mfxU16  NumTileColumns;
     mfxU16  reserved[110];
-#else // API 1.26
+#else
     mfxU16  reserved[112];
 #endif
 } mfxExtVP9Param;

@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2007-2016 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -152,7 +152,6 @@ protected:
     mfxSession m_session;                                       // (mfxSession) handle to the owning session
 };
 
-//FEI
 class MFXVideoENC
 {
 public:
@@ -167,8 +166,6 @@ public:
     virtual mfxStatus Close(void) { return MFXVideoENC_Close(m_session); }
 
     virtual mfxStatus GetVideoParam(mfxVideoParam *par) { return MFXVideoENC_GetVideoParam(m_session, par); }
-    //virtual mfxStatus GetEncodeStat(mfxEncodeStat *stat) { return MFXVideoENCODE_GetEncodeStat(m_session, stat); }
-
     virtual mfxStatus ProcessFrameAsync(mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp) { return MFXVideoENC_ProcessFrameAsync(m_session, in, out, syncp); }
 
 protected:
