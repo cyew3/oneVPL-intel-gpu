@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2019 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_roi.cpp
 
@@ -560,15 +560,10 @@ namespace hevce_roi
 
         ENCODE_CAPS_HEVC caps = {};
 
-        if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
-        {
-            mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
-            g_tsStatus.check(GetCaps(&caps, &capSize));
-        }
-        else
-        {
-            caps.MaxNumOfROI = HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS;
-        }
+
+        mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
+        g_tsStatus.check(GetCaps(&caps, &capSize));
+
 
         mfxExtEncoderROI& roi = m_par;
 
