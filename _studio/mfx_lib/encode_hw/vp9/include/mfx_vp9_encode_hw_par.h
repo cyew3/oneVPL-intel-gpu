@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 Intel Corporation
+// Copyright (c) 2016-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,7 @@ mfxStatus CheckAndFixCtrl(VP9MfxVideoParam const & video,
 
 mfxStatus CheckBitstream(VP9MfxVideoParam const & video, mfxBitstream * bs);
 
-void SetDefailtsForProfileAndFrameInfo(VP9MfxVideoParam& par);
+void SetDefaultsForProfileAndFrameInfo(VP9MfxVideoParam& par);
 
 bool CheckAndFixQIndexDelta(mfxI16& qIndexDelta, mfxU16 qIndex);
 } // MfxHwVP9Encode
