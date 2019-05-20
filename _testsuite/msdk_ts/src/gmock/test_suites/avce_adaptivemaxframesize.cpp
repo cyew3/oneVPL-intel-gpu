@@ -139,6 +139,12 @@ namespace avce_adaptivemaxframesize
 
         mfxExtCodingOption3 extOpt3_expectation;
 
+        if (g_tsHWtype < MFX_HW_SKL && m_par.mfx.LowPower == MFX_CODINGOPTION_ON)
+        {
+            g_tsLog << "\n\nLowpower aren't supported on platform < SKL!\n\n";
+            throw tsSKIP;
+        }
+
         g_tsStatus.expect(tc.sts);
 
         if (tc.type & QUERY)
