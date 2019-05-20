@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -134,7 +134,9 @@ typedef struct _SET_PREPROC_PARAMS
     UINT bSceneDetectionEnable  : 1;
     UINT bVarianceQuery         : 1;
     UINT bFieldWeaving          : 1;
-    UINT Reserved               : 26;
+    UINT bFieldWeavingExt       : 1;
+    UINT bFieldSplittingExt     : 1;
+    UINT Reserved               : 24;
     UINT StatusReportID;
 
 } SET_PREPROC_PARAMS;
@@ -418,7 +420,9 @@ typedef enum _VPE_VPREP_INTERLACE_MODE
 {
     VPE_VPREP_INTERLACE_MODE_NONE,
     VPE_VPREP_INTERLACE_MODE_ISCALE,
-    VPE_VPREP_INTERLACE_MODE_FIELD_WEAVE
+    VPE_VPREP_INTERLACE_MODE_FIELD_WEAVE,
+    VPE_VPREP_INTERLACE_MODE_FIELD_SPLIT,
+    VPE_VPREP_INTERLACE_MODE_FIELD
 } VPE_VPREP_INTERLACE_MODE;
 
 

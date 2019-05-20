@@ -139,6 +139,8 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->iBackgroundColor = 0;
     pMfxExecuteParams->statusReportID = 0;
     pMfxExecuteParams->bFieldWeaving = false;
+    pMfxExecuteParams->bFieldWeavingExt = false;
+    pMfxExecuteParams->bFieldSplittingExt = false;
     pMfxExecuteParams->iFieldProcessingMode = 0;
 #ifndef MFX_CAMERA_FEATURE_DISABLE
     pMfxExecuteParams->bCameraPipeEnabled = false;
@@ -4005,8 +4007,12 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         }
     }
 
-    if ((m_executeParams.iFieldProcessingMode != 0) && /* If Mode is enabled*/
-        ((imfxFPMode - 1) != (mfxU32)FRAME2FRAME)) /* And we don't do copy frame to frame lets call our FieldCopy*/
+    if ((m_executeParams.iFieldProcessingMode != 0)   /* If Mode is enabled*/
+        && ((imfxFPMode - 1) != (mfxU32)FRAME2FRAME)  /* And we don't do copy frame to frame lets call our FieldCopy*/
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && defined(MFX_VA_WIN) /* Starting with ATS we call driver instead of kernel */
+        && (m_pCore->GetHWType() < MFX_HW_TGL_HP)                /* Now driver has support only for Windows */
+#endif
+       )
     /* And remember our previous line imfxFPMode++;*/
     {
         imfxFPMode--;
@@ -4363,6 +4369,17 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         m_executeParams.iDeinterlacingAlgorithm = 0;
         m_executeParams.bFMDEnable = false;
     }
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    if ((imfxFPMode - 1 == FIELD2TFF || imfxFPMode - 1 == FIELD2BFF) && m_pCore->GetHWType() >= MFX_HW_TGL_HP)
+    {
+        m_executeParams.bFieldWeavingExt = true;
+    }
+    if ((imfxFPMode - 1 == TFF2FIELD || imfxFPMode - 1 == BFF2FIELD) && m_pCore->GetHWType() >= MFX_HW_TGL_HP)
+    {
+        m_executeParams.bFieldSplittingExt = true;
+    }
+#endif
 
     // Need special handling for progressive frame in 30i->60p ADI mode
     if ((pTask->bkwdRefCount == 1) && m_executeParams.bDeinterlace30i60p) {
@@ -6184,14 +6201,16 @@ mfxStatus ConfigureExecuteParams(
                 }
 
                 config.m_bWeave = true;
+                config.m_bRefFrameEnable = true;
                 config.m_extConfig.customRateData.bkwdRefCount = 1;
                 config.m_extConfig.customRateData.fwdRefCount  = 0;
-                config.m_extConfig.customRateData.inputFramesOrFieldPerCycle = 2;
+                config.m_extConfig.customRateData.inputFramesOrFieldPerCycle = 1;
                 config.m_extConfig.customRateData.outputIndexCountPerCycle   = 1;
 
                 config.m_surfCount[VPP_IN]   = MFX_MAX(2, config.m_surfCount[VPP_IN]);
                 config.m_surfCount[VPP_OUT]  = MFX_MAX(1, config.m_surfCount[VPP_OUT]);
                 config.m_extConfig.mode = IS_REFERENCES;
+                executeParams.bFieldWeaving = true;
                 // kernel uses "0"  as a "valid" data, but HW_VPP doesn't.
                 // To prevent an issue we increment here and decrement before kernel call.
                 executeParams.iFieldProcessingMode++;

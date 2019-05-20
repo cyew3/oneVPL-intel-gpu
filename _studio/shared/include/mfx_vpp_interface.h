@@ -418,6 +418,8 @@ namespace MfxHwVideoProcessing
                ,execIdx(NO_INDEX)
                ,statusReportID(0)
                ,bFieldWeaving(false)
+               ,bFieldWeavingExt(false)
+               ,bFieldSplittingExt(false)
                ,iFieldProcessingMode(0)
 #ifndef MFX_CAMERA_FEATURE_DISABLE
                ,bCameraPipeEnabled(false)
@@ -502,6 +504,7 @@ namespace MfxHwVideoProcessing
                     bFRCEnable != false ||
                     bComposite != false ||
                     bFieldWeaving != false ||
+                    bFieldSplittingExt != false ||
                     iFieldProcessingMode != 0 ||
 #ifndef MFX_CAMERA_FEATURE_DISABLE
                     bCameraPipeEnabled != false ||
@@ -580,6 +583,8 @@ namespace MfxHwVideoProcessing
         mfxU32         statusReportID;
 
         bool           bFieldWeaving;
+        bool           bFieldWeavingExt;
+        bool           bFieldSplittingExt;
 
         mfxU32         iFieldProcessingMode;
 

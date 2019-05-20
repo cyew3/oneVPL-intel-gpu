@@ -2433,6 +2433,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         setParams.bTargetInSysMemory     = 0;
         setParams.bVarianceQuery         = pParams->bVarianceEnable;
         setParams.bFieldWeaving          = pParams->bFieldWeaving;
+        setParams.bFieldWeavingExt       = pParams->bFieldWeavingExt;
+        setParams.bFieldSplittingExt     = pParams->bFieldSplittingExt;
 
         //take into consederation. if you change it, QueryVariance should be changed too
         setParams.StatusReportID         = pParams->statusReportID;// + 1;
@@ -2495,6 +2497,10 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         if(pParams->bFieldWeaving)
         {
             interlaceParam.Mode = VPE_VPREP_INTERLACE_MODE_FIELD_WEAVE;
+        }
+        else if (pParams->bFieldSplittingExt)
+        {
+            interlaceParam.Mode = VPE_VPREP_INTERLACE_MODE_FIELD_SPLIT;
         }
         else if(pParams->iTargetInterlacingMode)
         {
@@ -2592,7 +2598,18 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
     for (refIdx = 0; refIdx < numRef; refIdx++)
     {
-        SetStreamFrameFormat(refIdx, D3D11PictureStructureMapping(pParams->pRefSurfaces[startIdx + refIdx].frameInfo.PicStruct));
+        if (pParams->bFieldWeavingExt || pParams->bFieldSplittingExt)
+        {
+            SetStreamFrameFormat(refIdx, D3D11PictureStructureMapping(pParams->targetSurface.frameInfo.PicStruct));
+            if (pParams->bFieldWeavingExt)
+            {
+                videoProcessorStreams[refIdx].OutputIndex = 1;
+            }
+        }
+        else
+        {
+            SetStreamFrameFormat(refIdx, D3D11PictureStructureMapping(pParams->pRefSurfaces[startIdx + refIdx].frameInfo.PicStruct));
+        }
 
         if ( pParams->pRefSurfaces[startIdx + refIdx].frameInfo.FourCC == MFX_FOURCC_A2RGB10    ||
                 pParams->pRefSurfaces[startIdx + refIdx].frameInfo.FourCC == MFX_FOURCC_ARGB16     ||
