@@ -52,6 +52,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "brc_routines.h"
 #endif
 
+#if defined(_WIN64) || defined(_WIN32)
+#include "mfx_dispatcher.h"
+#endif
+
 #ifndef MFX_VERSION
 #error MFX_VERSION not defined
 #endif
@@ -108,6 +112,11 @@ struct sInputParams
 
     MemType memType;
     bool bUseHWLib; // true if application wants to use HW MSDK library
+
+#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    bool bPrefferdGfx;
+    bool bPrefferiGfx;
+#endif
 
     std::list<msdk_string> InputFiles;
 
@@ -439,6 +448,11 @@ protected:
 
     CTimeStatisticsReal m_statOverall;
     CTimeStatisticsReal m_statFile;
+
+#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    mfxU32    GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params);
+#endif
+    mfxStatus GetImpl(const sInputParams & params, mfxIMPL & impl);
     virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
     virtual mfxStatus InitMfxVppParams(sInputParams *pParams);
 
