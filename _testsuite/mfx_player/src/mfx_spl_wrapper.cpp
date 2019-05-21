@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -322,7 +322,7 @@ mfxStatus UMCSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
         bs.MaxLength  = (mfxU32)m_pInputData->GetDataSize();
         bs.DataLength = bs.MaxLength;
         bs.TimeStamp  = ConvertmfxF642MFXTime(m_fLastTime);
-        
+
         switch(m_pInputData->GetFrameType())
         {
             case I_PICTURE    : bs.FrameType  = MFX_FRAMETYPE_I; break;
@@ -330,9 +330,20 @@ mfxStatus UMCSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
             case B_PICTURE    : bs.FrameType  = MFX_FRAMETYPE_B; break;
             default: break;
         }
-        
+
+        if (bs.DataLength + bs2.DataLength > bs2.MaxLength)
+        {
+            mfxU32 nNewLen = bs.DataLength + bs2.DataLength + 100;
+            mfxU8 * p;
+            p = new mfxU8[nNewLen];
+            bs2.MaxLength = nNewLen;
+            memcpy(p, bs2.Data + bs2.DataOffset, bs2.DataLength);
+            delete[] bs2.Data;
+            bs2.Data = p;
+        }
 
         MFX_CHECK_STS_SKIP(m_pConstructor->ConstructFrame(&bs, &bs2), MFX_ERR_MORE_DATA);
+
         //skip whole frame
         m_pInputData->MoveDataPointer(m_pInputData->GetDataSize());
 
