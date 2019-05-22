@@ -467,8 +467,14 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 
     m_mfxEncParams.mfx.NumSlice = pInParams->nNumSlice;
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
-    m_mfxEncParams.mfx.EncodedOrder            = 0; // binary flag, 0 signals encoder to take frames in display order
 
+    m_bQPFileMode = pInParams->QPFileMode;
+    m_mfxEncParams.mfx.EncodedOrder = m_bQPFileMode ? 1 : 0; // binary flag, 0 signals encoder to take frames in display order
+    if (m_bQPFileMode)
+    {
+        mfxStatus sts = m_QPFileReader.Read(pInParams->strQPFilePath, pInParams->CodecId);
+        MSDK_CHECK_STATUS(sts, m_QPFileReader.GetErrorMessage().c_str());
+    }
 
     // specify memory type
     if (D3D9_MEMORY == pInParams->memType || D3D11_MEMORY == pInParams->memType)
@@ -958,6 +964,17 @@ mfxStatus CEncodingPipeline::AllocFrames()
                 sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, m_VppResponse.mids[i], &(m_pVppSurfaces[i].Data));
                 MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
             }
+        }
+    }
+
+    // prepare mfxEncodeCtrl array for encoder if qpfile mode is enabled
+    if (m_bQPFileMode)
+    {
+        m_EncCtrls.resize(m_EncResponse.NumFrameActual);
+        for (auto& ctrl : m_EncCtrls)
+        {
+            ctrl.Payload = m_UserDataUnregSEI.data();
+            ctrl.NumPayload = (mfxU16)m_UserDataUnregSEI.size();
         }
     }
 
@@ -1757,6 +1774,7 @@ void CEncodingPipeline::CaptureStopV4L2Pipeline()
 
 void CEncodingPipeline::InsertIDR(bool bIsNextFrameIDR)
 {
+    if (m_bQPFileMode) return;
     if (bIsNextFrameIDR)
     {
         m_encCtrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
@@ -1807,6 +1825,14 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(sTask* pTask)
     {
         m_encCtrl.NumExtParam = (mfxU16)(pTask->extBufs->buffers.size());
         m_encCtrl.ExtParam    = pTask->extBufs->buffers.data();
+        if (m_bQPFileMode)
+        {
+            for (auto& ctrl : m_EncCtrls)
+            {
+                ctrl.NumExtParam = (mfxU16)(pTask->extBufs->buffers.size());
+                ctrl.ExtParam = pTask->extBufs->buffers.data();
+            }
+        }
     }
 
     return sts;
@@ -2114,6 +2140,7 @@ mfxStatus CEncodingPipeline::Run()
     mfxStatus sts = MFX_ERR_NONE;
 
     mfxFrameSurface1* pSurf = NULL; // dispatching pointer
+    mfxEncodeCtrl* pCtrl = NULL;
 
     sTask *pCurrentTask = NULL; // a pointer to the current task
     mfxU16 nEncSurfIdx = 0;     // index of free surface for encoder input (vpp output)
@@ -2171,6 +2198,7 @@ mfxStatus CEncodingPipeline::Run()
 
         // point pSurf to encoder surface
         pSurf = &m_pEncSurfaces[nEncSurfIdx];
+
         if (!bVppMultipleOutput)
         {
             if(!skipLoadingNextFrame)
@@ -2208,6 +2236,12 @@ mfxStatus CEncodingPipeline::Run()
                     continue;
 
                 MSDK_BREAK_ON_ERROR(sts);
+
+                if (m_bQPFileMode)
+                {
+                   LoadNextControl(pCtrl, nEncSurfIdx);
+                }
+                else pCtrl = &m_encCtrl;
 
                 if (MVC_ENABLED & m_MVCflags)
                 {
@@ -2277,7 +2311,7 @@ mfxStatus CEncodingPipeline::Run()
             MSDK_CHECK_STATUS(sts, "ENCODE: InitEncFrameParams failed");
 
             // at this point surface for encoder contains either a frame from file or a frame processed by vpp
-            sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+            sts = m_pmfxENC->EncodeFrameAsync(pCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
             m_bInsertIDR = false;
 
             if (m_nPerfOpt)
@@ -2368,7 +2402,7 @@ mfxStatus CEncodingPipeline::Run()
             for (;;)
             {
                 InsertIDR(m_bInsertIDR);
-                sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+                sts = m_pmfxENC->EncodeFrameAsync(pCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
                 m_bInsertIDR = false;
 
                 if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
@@ -2412,7 +2446,7 @@ mfxStatus CEncodingPipeline::Run()
         for (;;)
         {
             InsertIDR(m_bInsertIDR);
-            sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+            sts = m_pmfxENC->EncodeFrameAsync(pCtrl, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
             m_bInsertIDR = false;
 
             if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
@@ -2500,6 +2534,15 @@ mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
             mfxStatus sts1 = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &(pSurf->Data));
             MSDK_CHECK_STATUS(sts1, "m_pMFXAllocator->Lock failed");
 
+            if (m_bQPFileMode)
+            {
+                mfxU16 w = pSurf->Info.CropW ? pSurf->Info.CropW : pSurf->Info.Width;
+                mfxU16 h = pSurf->Info.CropH ? pSurf->Info.CropH : pSurf->Info.Height;
+                mfxU32 vid = pSurf->Info.FrameId.ViewId;
+                sts = m_FileReader.SkipNframesFromBeginning(w, h, vid, m_QPFileReader.GetCurrentDisplayOrder());
+                MSDK_CHECK_STATUS(sts, "m_FileReader.SkipNframesFromBeginning failed");
+            }
+
             sts = m_FileReader.LoadNextFrame(pSurf);
 
             sts1 = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &(pSurf->Data));
@@ -2507,6 +2550,15 @@ mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
         }
         else
         {
+            if (m_bQPFileMode)
+            {
+                mfxU16 w = pSurf->Info.CropW ? pSurf->Info.CropW : pSurf->Info.Width;
+                mfxU16 h = pSurf->Info.CropH ? pSurf->Info.CropH : pSurf->Info.Height;
+                mfxU32 vid = pSurf->Info.FrameId.ViewId;
+                sts = m_FileReader.SkipNframesFromBeginning(w, h, vid, m_QPFileReader.GetCurrentDisplayOrder());
+                MSDK_CHECK_STATUS(sts, "m_FileReader.SkipNframesFromBeginning failed");
+            }
+
             sts = m_FileReader.LoadNextFrame(pSurf);
         }
 
@@ -2520,10 +2572,19 @@ mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
         }
     }
     // frameorder required for reflist, dbp, and decrefpicmarking operations
-    if (pSurf) pSurf->Data.FrameOrder = m_nFramesRead;
+    if (pSurf)
+        pSurf->Data.FrameOrder = m_bQPFileMode ? m_QPFileReader.GetCurrentDisplayOrder() : m_nFramesRead;
     m_nFramesRead++;
 
     return sts;
+}
+
+void CEncodingPipeline::LoadNextControl(mfxEncodeCtrl*& pCtrl, mfxU32 encSurfIdx)
+{
+    pCtrl = &m_EncCtrls[encSurfIdx];
+    pCtrl->QP = m_QPFileReader.GetCurrentQP();
+    pCtrl->FrameType = m_QPFileReader.GetCurrentFrameType();
+    m_QPFileReader.NextFrame();
 }
 
 void CEncodingPipeline::PrintInfo()
