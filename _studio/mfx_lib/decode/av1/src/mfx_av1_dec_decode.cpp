@@ -188,7 +188,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     MFX_CHECK_STS(sts);
 
     //mfxFrameAllocResponse response{};
-    bool internal = m_platform == !!(MFX_PLATFORM_SOFTWARE ?
+    bool internal = ((m_platform == MFX_PLATFORM_SOFTWARE) ?
         (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
 
     if (!(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
