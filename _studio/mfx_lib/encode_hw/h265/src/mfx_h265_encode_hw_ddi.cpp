@@ -196,6 +196,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
     {   // taken from  Windows TGLLP (temporarily)
         caps.CodingLimitSet = 1; // = 0 now but should be always set to 1 according to DDI (what about Linux ???)
         caps.Color420Only = 0;  // = 1 now
+        caps.YUV422ReconSupport = 1; // = 0 now
         caps.SliceIPBOnly = 1;  // = 0 now (SliceIP is also 0)cz
         caps.NoWeightedPred = 0; // = 1 now
         caps.NoMinorMVs = 1;  // = 0 now
