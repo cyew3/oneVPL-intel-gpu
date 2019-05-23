@@ -62,7 +62,7 @@ namespace MfxHwH264Encode
             mfxFrameAllocRequest & request);
 
         virtual mfxStatus QueryEncodeCaps(
-            ENCODE_CAPS & caps);
+            MFX_ENCODE_CAPS & caps);
 
         virtual
         mfxStatus QueryMbPerSec(

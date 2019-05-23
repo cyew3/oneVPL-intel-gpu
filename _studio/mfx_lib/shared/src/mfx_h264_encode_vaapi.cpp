@@ -900,7 +900,7 @@ void UpdatePPS(
 } // void UpdatePPS(...)
 
 void FillPWT(
-    ENCODE_CAPS const &                         hwCaps,
+    MFX_ENCODE_CAPS const &                     hwCaps,
     VAEncPictureParameterBufferH264 const &     pps,
     mfxExtPredWeightTable const &               pwt,
     VAEncSliceParameterBufferH264 &             slice)
@@ -915,8 +915,8 @@ void FillPWT(
           (pps.pic_fields.bits.weighted_bipred_idc == 1 && slice.slice_type % 5 == SLICE_TYPE_B)))
         return;
 
-    iNumRefL0 = hwCaps.MaxNum_WeightedPredL0 < slice.num_ref_idx_l0_active_minus1 + 1 ? hwCaps.MaxNum_WeightedPredL0 : slice.num_ref_idx_l0_active_minus1 + 1;
-    iNumRefL1 = hwCaps.MaxNum_WeightedPredL1 < slice.num_ref_idx_l1_active_minus1 + 1 ? hwCaps.MaxNum_WeightedPredL1 : slice.num_ref_idx_l1_active_minus1 + 1;
+    iNumRefL0 = hwCaps.ddi_caps.MaxNum_WeightedPredL0 < slice.num_ref_idx_l0_active_minus1 + 1 ? hwCaps.ddi_caps.MaxNum_WeightedPredL0 : slice.num_ref_idx_l0_active_minus1 + 1;
+    iNumRefL1 = hwCaps.ddi_caps.MaxNum_WeightedPredL1 < slice.num_ref_idx_l1_active_minus1 + 1 ? hwCaps.ddi_caps.MaxNum_WeightedPredL1 : slice.num_ref_idx_l1_active_minus1 + 1;
 
     // initialize
     Zero(slice.luma_log2_weight_denom);
@@ -937,7 +937,7 @@ void FillPWT(
     slice.luma_log2_weight_denom = (mfxU8)pwt.LumaLog2WeightDenom;
     slice.chroma_log2_weight_denom = (mfxU8)pwt.ChromaLog2WeightDenom;
 
-    if (hwCaps.LumaWeightedPred)
+    if (hwCaps.ddi_caps.LumaWeightedPred)
     {
         // Set Luma L0
         if ((slice.slice_type % 5) == SLICE_TYPE_P || (slice.slice_type % 5) == SLICE_TYPE_B)
@@ -978,7 +978,7 @@ void FillPWT(
         }
     }
 
-    if (hwCaps.ChromaWeightedPred)
+    if (hwCaps.ddi_caps.ChromaWeightedPred)
     {
         // Set Chroma L0
         if ((slice.slice_type % 5) == SLICE_TYPE_P || (slice.slice_type % 5) == SLICE_TYPE_B)
@@ -1029,7 +1029,7 @@ void FillPWT(
 }
 
     void UpdateSlice(
-        ENCODE_CAPS const &                         hwCaps,
+        MFX_ENCODE_CAPS const &                     hwCaps,
         DdiTask const &                             task,
         mfxU32                                      fieldId,
         VAEncSequenceParameterBufferH264 const     & sps,
@@ -1057,7 +1057,7 @@ void FillPWT(
             pPWT = &task.m_pwt[fieldId];
 
         SliceDivider divider = MakeSliceDivider(
-            hwCaps.SliceStructure,
+            hwCaps.ddi_caps.SliceStructure,
             task.m_numMbPerSlice,
             numSlice,
             sps.picture_width_in_mbs,
@@ -1134,7 +1134,7 @@ void FillPWT(
 } // namespace MfxHwH264Encode
 
 void UpdateSliceSizeLimited(
-    ENCODE_CAPS const &                         hwCaps,
+    MFX_ENCODE_CAPS const &                     hwCaps,
     DdiTask const &                             task,
     mfxU32                                      fieldId,
     VAEncSequenceParameterBufferH264 const     & sps,
@@ -1417,8 +1417,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     memset(&m_caps, 0, sizeof(m_caps));
 
-    m_caps.BRCReset        = 1; // no bitrate resolution control
-    m_caps.HeaderInsertion = 0; // we will provide headers (SPS, PPS) in binary format to the driver
+    m_caps.ddi_caps.BRCReset        = 1; // no bitrate resolution control
+    m_caps.ddi_caps.HeaderInsertion = 0; // we will provide headers (SPS, PPS) in binary format to the driver
 
     std::map<VAConfigAttribType, int> idx_map;
     VAConfigAttribType attr_types[] = {
@@ -1459,50 +1459,56 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
                           Begin(attrs), attrs.size());
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    m_caps.VCMBitrateControl =
+    m_caps.CQPSupport =
+        (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_CQP) ? 1 : 0;
+    m_caps.CBRSupport =
+        (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_CBR) ? 1 : 0;
+    m_caps.VBRSupport =
+        (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_VBR) ? 1 : 0;
+    m_caps.ddi_caps.VCMBitrateControl =
         (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_VCM) ? 1 : 0; //Video conference mode
-    m_caps.ICQBRCSupport =
+    m_caps.ddi_caps.ICQBRCSupport =
         (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_ICQ) ? 1 : 0;
 #ifdef MFX_ENABLE_QVBR
-    m_caps.QVBRBRCSupport =
+    m_caps.ddi_caps.QVBRBRCSupport =
         (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_QVBR) ? 1 : 0;
 #endif
-    m_caps.TrelisQuantization =
+    m_caps.ddi_caps.TrelisQuantization =
         (attrs[idx_map[VAConfigAttribEncQuantization]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0;
-    m_caps.vaTrellisQuantization =
+    m_caps.ddi_caps.vaTrellisQuantization =
         attrs[idx_map[VAConfigAttribEncQuantization]].value;
-    m_caps.RollingIntraRefresh =
+    m_caps.ddi_caps.RollingIntraRefresh =
         (attrs[idx_map[VAConfigAttribEncIntraRefresh]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
-    m_caps.vaRollingIntraRefresh =
+    m_caps.ddi_caps.vaRollingIntraRefresh =
         attrs[idx_map[VAConfigAttribEncIntraRefresh]].value;
-    m_caps.SkipFrame =
+    m_caps.ddi_caps.SkipFrame =
         (attrs[idx_map[VAConfigAttribEncSkipFrame]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
 #if defined (MFX_ENABLE_H264_ROUNDING_OFFSET)
-    m_caps.RoundingOffset =
+    m_caps.ddi_caps.RoundingOffset =
         (attrs[idx_map[VAConfigAttribCustomRoundingControl]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
 #endif
 
-    m_caps.UserMaxFrameSizeSupport = 1;
-    m_caps.MBBRCSupport            = 1;
-    m_caps.MbQpDataSupport         = 1;
-    m_caps.NoWeightedPred          = 0;
-    m_caps.LumaWeightedPred        = 1;
-    m_caps.ChromaWeightedPred      = 1;
-    m_caps.MaxNum_WeightedPredL0   = 4;
-    m_caps.MaxNum_WeightedPredL1   = 2;
-    m_caps.Color420Only            = 1;
+    m_caps.ddi_caps.UserMaxFrameSizeSupport = 1;
+    m_caps.ddi_caps.MBBRCSupport            = 1;
+    m_caps.ddi_caps.MbQpDataSupport         = 1;
+    m_caps.ddi_caps.NoWeightedPred          = 0;
+    m_caps.ddi_caps.LumaWeightedPred        = 1;
+    m_caps.ddi_caps.ChromaWeightedPred      = 1;
+    m_caps.ddi_caps.MaxNum_WeightedPredL0   = 4;
+    m_caps.ddi_caps.MaxNum_WeightedPredL1   = 2;
+    m_caps.ddi_caps.Color420Only            = 1;
 
     if ((attrs[idx_map[VAConfigAttribMaxPictureWidth]].value != VA_ATTRIB_NOT_SUPPORTED) &&
         (attrs[idx_map[VAConfigAttribMaxPictureWidth]].value != 0))
-        m_caps.MaxPicWidth  = attrs[idx_map[VAConfigAttribMaxPictureWidth]].value;
+        m_caps.ddi_caps.MaxPicWidth  = attrs[idx_map[VAConfigAttribMaxPictureWidth]].value;
     else
-        m_caps.MaxPicWidth = 1920;
+        m_caps.ddi_caps.MaxPicWidth = 1920;
 
     if ((attrs[idx_map[VAConfigAttribMaxPictureHeight]].value != VA_ATTRIB_NOT_SUPPORTED) &&
         (attrs[idx_map[VAConfigAttribMaxPictureHeight]].value != 0))
-        m_caps.MaxPicHeight = attrs[idx_map[VAConfigAttribMaxPictureHeight]].value;
+        m_caps.ddi_caps.MaxPicHeight = attrs[idx_map[VAConfigAttribMaxPictureHeight]].value;
     else
-        m_caps.MaxPicHeight = 1088;
+        m_caps.ddi_caps.MaxPicHeight = 1088;
 
     if (attrs[idx_map[VAConfigAttribEncSliceStructure]].value != VA_ATTRIB_NOT_SUPPORTED)
     {
@@ -1510,29 +1516,29 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         // (2) indication of support for max slice size feature
         const unsigned int sliceCapabilities = attrs[idx_map[VAConfigAttribEncSliceStructure]].value;
         const unsigned int sliceStructure = sliceCapabilities & ~VA_ENC_SLICE_STRUCTURE_MAX_SLICE_SIZE;
-        m_caps.SliceStructure =
+        m_caps.ddi_caps.SliceStructure =
             ConvertSliceStructureVAAPIToMFX(sliceStructure);
     }
     else
     {
         const eMFXHWType hwtype = m_core->GetHWType();
-        m_caps.SliceStructure = (hwtype != MFX_HW_VLV && hwtype >= MFX_HW_HSW) ? 4 : 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw;
+        m_caps.ddi_caps.SliceStructure = (hwtype != MFX_HW_VLV && hwtype >= MFX_HW_HSW) ? 4 : 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw;
     }                                                                                   // 3 - SliceDividerBluRay; 4 - arbitrary slice size in MBs; the other - SliceDividerOneSlice
 
     if (attrs[idx_map[VAConfigAttribEncInterlaced]].value != VA_ATTRIB_NOT_SUPPORTED)
-        m_caps.NoInterlacedField = attrs[idx_map[VAConfigAttribEncInterlaced]].value;
+        m_caps.ddi_caps.NoInterlacedField = attrs[idx_map[VAConfigAttribEncInterlaced]].value;
     else
-        m_caps.NoInterlacedField = 0;
+        m_caps.ddi_caps.NoInterlacedField = 0;
 
     if (attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value != VA_ATTRIB_NOT_SUPPORTED)
     {
-        m_caps.MaxNum_Reference  =  attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value & 0xffff;
-        m_caps.MaxNum_Reference1 = (attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value >>16) & 0xffff;
+        m_caps.ddi_caps.MaxNum_Reference  =  attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value & 0xffff;
+        m_caps.ddi_caps.MaxNum_Reference1 = (attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value >>16) & 0xffff;
     }
     else
     {
-        m_caps.MaxNum_Reference  = 1;
-        m_caps.MaxNum_Reference1 = 1;
+        m_caps.ddi_caps.MaxNum_Reference  = 1;
+        m_caps.ddi_caps.MaxNum_Reference1 = 1;
     }
 
     if (attrs[idx_map[VAConfigAttribEncROI]].value != VA_ATTRIB_NOT_SUPPORTED)
@@ -1540,13 +1546,13 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         VAConfigAttribValEncROI *VaEncROIValPtr = reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
         assert(VaEncROIValPtr->bits.num_roi_regions < 32);
 
-        m_caps.MaxNumOfROI                = VaEncROIValPtr->bits.num_roi_regions;
-        m_caps.ROIBRCPriorityLevelSupport = VaEncROIValPtr->bits.roi_rc_priority_support;
-        m_caps.ROIBRCDeltaQPLevelSupport  = VaEncROIValPtr->bits.roi_rc_qp_delta_support;
+        m_caps.ddi_caps.MaxNumOfROI                = VaEncROIValPtr->bits.num_roi_regions;
+        m_caps.ddi_caps.ROIBRCPriorityLevelSupport = VaEncROIValPtr->bits.roi_rc_priority_support;
+        m_caps.ddi_caps.ROIBRCDeltaQPLevelSupport  = VaEncROIValPtr->bits.roi_rc_qp_delta_support;
     }
     else
     {
-        m_caps.MaxNumOfROI = 0;
+        m_caps.ddi_caps.MaxNumOfROI = 0;
     }
 
     return MFX_ERR_NONE;
@@ -1791,7 +1797,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
     FillConstPartOfPps(par, m_pps);
 
-    if (m_caps.HeaderInsertion == 0)
+    if (m_caps.ddi_caps.HeaderInsertion == 0)
     {
         m_headerPacker.Init(par, m_caps);
 
@@ -1850,7 +1856,7 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
 
     FillConstPartOfPps(par, m_pps);
 
-    if (m_caps.HeaderInsertion == 0)
+    if (m_caps.ddi_caps.HeaderInsertion == 0)
         m_headerPacker.Init(par, m_caps);
 
     if (extOpt3)
@@ -1908,14 +1914,14 @@ mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT /*type*/, mfxFrameAlloc
 } // mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
 
 
-mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS& caps)
+mfxStatus VAAPIEncoder::QueryEncodeCaps(MFX_ENCODE_CAPS& caps)
 {
 
     caps = m_caps;
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS& caps)
+} // mfxStatus VAAPIEncoder::QueryEncodeCaps(MFX_ENCODE_CAPS& caps)
 
 mfxStatus VAAPIEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerSec)[16])
 {
@@ -2465,7 +2471,7 @@ mfxStatus VAAPIEncoder::Execute(
         }
     }
 
-    if (m_caps.HeaderInsertion == 1 && skipFlag == NO_SKIP)
+    if (m_caps.ddi_caps.HeaderInsertion == 1 && skipFlag == NO_SKIP)
     {
         // SEI
         if (sei.Size() > 0)
@@ -2888,7 +2894,7 @@ mfxStatus VAAPIEncoder::Execute(
     }
 
 #if defined (MFX_ENABLE_H264_ROUNDING_OFFSET)
-    if (m_caps.RoundingOffset && ctrlRoundingOffset)
+    if (m_caps.ddi_caps.RoundingOffset && ctrlRoundingOffset)
     {
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRoundingOffset(m_vaDisplay, m_vaContextEncode, *ctrlRoundingOffset, m_roundingOffsetId), MFX_ERR_DEVICE_FAILED);
 

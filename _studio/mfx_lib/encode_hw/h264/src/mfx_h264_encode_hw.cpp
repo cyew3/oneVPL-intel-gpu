@@ -424,7 +424,7 @@ mfxStatus ImplementationAvc::Query(
     }
     else if (queryMode == 2)  // see MSDK spec for details related to Query mode 2
     {
-        ENCODE_CAPS hwCaps = { };
+        MFX_ENCODE_CAPS hwCaps = { };
         MfxVideoParam tmp = *in; // deep copy, create all supported extended buffers
 
         eMFXHWType platfrom = core->GetHWType();
@@ -652,7 +652,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
         MFX_ERR_INVALID_VIDEO_PARAM);
 
-    ENCODE_CAPS hwCaps = {};
+    MFX_ENCODE_CAPS hwCaps = {};
     MfxVideoParam tmp(*par);
     eMFXHWType platfrom = core->GetHWType();
     mfxStatus lpSts = SetLowPowerDefault(tmp, platfrom);
@@ -1461,7 +1461,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     // init slice divider
     bool fieldCoding = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
     m_sliceDivider = MakeSliceDivider(
-        (m_caps.SliceLevelRateCtrl) ? 4 : m_caps.SliceStructure,
+        (m_caps.ddi_caps.SliceLevelRateCtrl) ? 4 : m_caps.ddi_caps.SliceStructure,
         extOpt2.NumMbPerSlice,
         extOpt3.NumSliceP,
         m_video.mfx.FrameInfo.Width / 16,
@@ -1681,7 +1681,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
     {
         bool fieldCoding = (newPar.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
         m_sliceDivider = MakeSliceDivider(
-            (m_caps.SliceLevelRateCtrl) ? 4 : m_caps.SliceStructure,
+            (m_caps.ddi_caps.SliceLevelRateCtrl) ? 4 : m_caps.ddi_caps.SliceStructure,
             extOpt2New.NumMbPerSlice,
             extOpt3New.NumSliceP,
             newPar.mfx.FrameInfo.Width / 16,
@@ -3148,7 +3148,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
 
         //printf("\rLA_SUBMITTED  do=%4d eo=%4d type=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0]); fflush(stdout);
-        if (extOpt2.MaxSliceSize && m_lastTask.m_yuv && !m_caps.SliceLevelRateCtrl)
+        if (extOpt2.MaxSliceSize && m_lastTask.m_yuv && !m_caps.ddi_caps.SliceLevelRateCtrl)
         {
             if (m_raw.Unlock(m_lastTask.m_idx) == (mfxU32)-1)
             {
@@ -3163,7 +3163,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             }
         }
         m_lastTask = *task;
-        if (extOpt2.MaxSliceSize && m_lastTask.m_yuv && !m_caps.SliceLevelRateCtrl)
+        if (extOpt2.MaxSliceSize && m_lastTask.m_yuv && !m_caps.ddi_caps.SliceLevelRateCtrl)
         {
             if (m_raw.Lock(m_lastTask.m_idx) == 0)
             {
@@ -3213,7 +3213,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         if(sts != MFX_ERR_NONE)
             return sts;
-        CalcPredWeightTable(task, m_caps.MaxNum_WeightedPredL0, m_caps.MaxNum_WeightedPredL1);
+        CalcPredWeightTable(task, m_caps.ddi_caps.MaxNum_WeightedPredL0, m_caps.ddi_caps.MaxNum_WeightedPredL1);
 
         OnHistogramQueried();
 
@@ -4173,7 +4173,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
 #endif
 
     if ((!((IsOn(m_video.mfx.LowPower) && (m_video.calcParam.numTemporalLayer > 0))) &&
-        m_caps.HeaderInsertion == 0 &&
+        m_caps.ddi_caps.HeaderInsertion == 0 &&
         (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI))
         || m_video.Protected != 0)
         doPatch = needIntermediateBitstreamBuffer = false;

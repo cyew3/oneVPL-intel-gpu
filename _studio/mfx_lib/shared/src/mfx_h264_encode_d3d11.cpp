@@ -318,7 +318,7 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
 } // mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
 
 
-mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS& caps)
+mfxStatus D3D11Encoder::QueryEncodeCaps(MFX_ENCODE_CAPS& caps)
 {
     MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
 
@@ -326,7 +326,7 @@ mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS& caps)
 
     return MFX_ERR_NONE;
 
-} // mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS& caps)
+} // mfxStatus D3D11Encoder::QueryEncodeCaps(MFX_ENCODE_CAPS& caps)
 
 mfxStatus D3D11Encoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerSec)[16])
 {
@@ -943,7 +943,7 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
         task.m_resetBRC = !!feedback->reserved0; //WiDi w/a
         //for KBL we need retrive counter from HW instead of incrementing ourselfs.
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        if(m_caps.HWCounterAutoIncrement && (m_forcedCodingFunction & ENCODE_WIDI))
+        if(m_caps.ddi_caps.HWCounterAutoIncrement && (m_forcedCodingFunction & ENCODE_WIDI))
         {
             task.m_aesCounter[0].Count = feedback->aes_counter.Counter;
             task.m_aesCounter[0].IV = feedback->aes_counter.IV;
@@ -1117,7 +1117,12 @@ mfxStatus D3D11Encoder::Init(
                 return MFX_ERR_UNSUPPORTED;
             ENCODE_CAPS* caps = (ENCODE_CAPS*)m_pMFEAdapter->GetCaps(DDI_CODEC_AVC);
             if (caps != nullptr)
-                m_caps = *caps;
+            {
+                m_caps.ddi_caps = *caps;
+                m_caps.CQPSupport = 1;
+                m_caps.CBRSupport = 1;
+                m_caps.VBRSupport = 1;
+            }
             else
                 return MFX_ERR_UNSUPPORTED;
         }
@@ -1129,7 +1134,7 @@ mfxStatus D3D11Encoder::Init(
             UINT profileCount = m_pVideoDevice->GetVideoDecoderProfileCount( );
             assert( profileCount > 0 );
 
-            bool isFound = false;    
+            bool isFound = false;
             GUID profileGuid;
             for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
             {
@@ -1216,18 +1221,23 @@ mfxStatus D3D11Encoder::Init(
     if (m_pMFEAdapter == nullptr)
 #endif
     {
-        // [3] Query the encoding device capabilities 
+        // [3] Query the encoding device capabilities
         D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
 
         decoderExtParam.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
         decoderExtParam.pPrivateInputData = 0;
         decoderExtParam.PrivateInputDataSize = 0;
-        decoderExtParam.pPrivateOutputData = &m_caps;
+        decoderExtParam.pPrivateOutputData = &m_caps.ddi_caps;
         decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_CAPS);
         decoderExtParam.ResourceCount = 0;
         decoderExtParam.ppResourceList = 0;
 
         hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+        //after prev line m_caps set ddi_part, so change our part of caps
+        m_caps.CQPSupport = 1;
+        m_caps.CBRSupport = 1;
+        m_caps.VBRSupport = 1;
+
         CHECK_HRES(hRes);
     }
 
@@ -1784,11 +1794,11 @@ mfxStatus D3D11SvcEncoder::QueryCompBufferInfo(
     request.Info.Height = m_compBufInfo[i].CreationHeight;
     request.Info.FourCC = ownConvertD3DFMT_TO_MFX( (DXGI_FORMAT)(m_compBufInfo[i].CompressedFormats) ); // P8
 
-    return MFX_ERR_NONE;    
+    return MFX_ERR_NONE;
 }
 
 mfxStatus D3D11SvcEncoder::QueryEncodeCaps(
-    ENCODE_CAPS & caps)
+    MFX_ENCODE_CAPS & caps)
 {
     MFX_CHECK_WITH_ASSERT(m_pDecoder, MFX_ERR_NOT_INITIALIZED);
     caps = m_caps;
@@ -1971,7 +1981,7 @@ mfxStatus D3D11SvcEncoder::Init(
     decoderExtParam.Function = 0x110; //ENCODE_QUERY_ACCEL_CAPS_ID = 0x110;
     decoderExtParam.pPrivateInputData = 0;
     decoderExtParam.PrivateInputDataSize = 0;
-    decoderExtParam.pPrivateOutputData = &m_caps;
+    decoderExtParam.pPrivateOutputData = &m_caps.ddi_caps;
     decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_CAPS);
     decoderExtParam.ResourceCount = 0;
     decoderExtParam.ppResourceList = 0;

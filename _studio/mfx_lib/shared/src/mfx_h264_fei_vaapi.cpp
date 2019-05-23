@@ -848,7 +848,7 @@ mfxStatus VAAPIFEIENCEncoder::Reset(MfxVideoParam const & par)
 
     FillConstPartOfPps(par, m_pps);
 
-    if (m_caps.HeaderInsertion == 0)
+    if (m_caps.ddi_caps.HeaderInsertion == 0)
         m_headerPacker.Init(par, m_caps);
 
     return MFX_ERR_NONE;
@@ -978,7 +978,7 @@ mfxStatus VAAPIFEIENCEncoder::CreateENCAccelerationService(MfxVideoParam const &
     SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId);
     FillConstPartOfPps(par, m_pps);
 
-    if (m_caps.HeaderInsertion == 0)
+    if (m_caps.ddi_caps.HeaderInsertion == 0)
         m_headerPacker.Init(par, m_caps);
 
     return MFX_ERR_NONE;
@@ -1786,7 +1786,7 @@ mfxStatus VAAPIFEIPAKEncoder::Reset(MfxVideoParam const & par)
 
     FillConstPartOfPps(par, m_pps);
 
-    if (m_caps.HeaderInsertion == 0)
+    if (m_caps.ddi_caps.HeaderInsertion == 0)
         m_headerPacker.Init(par, m_caps);
 
     return MFX_ERR_NONE;
@@ -1909,7 +1909,7 @@ mfxStatus VAAPIFEIPAKEncoder::CreatePAKAccelerationService(MfxVideoParam const &
     SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId);
     FillConstPartOfPps(par, m_pps);
 
-    if (m_caps.HeaderInsertion == 0)
+    if (m_caps.ddi_caps.HeaderInsertion == 0)
         m_headerPacker.Init(par, m_caps);
 
     return MFX_ERR_NONE;

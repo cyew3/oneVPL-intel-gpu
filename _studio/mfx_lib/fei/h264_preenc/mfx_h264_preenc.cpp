@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -102,10 +102,10 @@ bool CheckTriStateOption(mfxU16 & opt)
 }
 
 mfxStatus CheckVideoParamQueryLikePreEnc(
-    MfxVideoParam &     par,
-    ENCODE_CAPS const & hwCaps,
-    eMFXHWType          platform,
-    eMFXVAType          vaType)
+    MfxVideoParam &         par,
+    MFX_ENCODE_CAPS const & hwCaps,
+    eMFXHWType              platform,
+    eMFXVAType              vaType)
 {
     bool unsupported(false);
     bool changed(false);
@@ -115,11 +115,11 @@ mfxStatus CheckVideoParamQueryLikePreEnc(
     bool isPREENC = MFX_FEI_FUNCTION_PREENC == feiParam->Func;
 
     // check hw capabilities
-    if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
-        par.mfx.FrameInfo.Height > hwCaps.MaxPicHeight)
+    if (par.mfx.FrameInfo.Width  > hwCaps.ddi_caps.MaxPicWidth ||
+        par.mfx.FrameInfo.Height > hwCaps.ddi_caps.MaxPicHeight)
         return Error(MFX_ERR_UNSUPPORTED);
 
-    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1 )!= MFX_PICSTRUCT_PROGRESSIVE && hwCaps.NoInterlacedField){
+    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1 )!= MFX_PICSTRUCT_PROGRESSIVE && hwCaps.ddi_caps.NoInterlacedField){
         if(IsOn(par.mfx.LowPower))
         {
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
@@ -129,8 +129,8 @@ mfxStatus CheckVideoParamQueryLikePreEnc(
             return Error(MFX_WRN_PARTIAL_ACCELERATION);
     }
 
-    if (hwCaps.MaxNum_TemporalLayer != 0 &&
-        hwCaps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
+    if (hwCaps.ddi_caps.MaxNum_TemporalLayer != 0 &&
+        hwCaps.ddi_caps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
         return Error(MFX_WRN_PARTIAL_ACCELERATION);
 
     if (!CheckTriStateOption(par.mfx.LowPower))
@@ -291,7 +291,7 @@ mfxStatus CheckVideoParamQueryLikePreEnc(
         par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     }
 
-    if (hwCaps.Color420Only &&
+    if (hwCaps.ddi_caps.Color420Only &&
         (par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ||
          par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444))
     {
@@ -310,10 +310,10 @@ mfxStatus CheckVideoParamQueryLikePreEnc(
 }
 
 mfxStatus CheckVideoParamPreEncInit(
-    MfxVideoParam &     par,
-    ENCODE_CAPS const & hwCaps,
-    eMFXHWType          platform,
-    eMFXVAType          vaType)
+    MfxVideoParam &         par,
+    MFX_ENCODE_CAPS const & hwCaps,
+    eMFXHWType              platform,
+    eMFXVAType              vaType)
 {
     bool unsupported(false);
     bool changed(false);
@@ -326,11 +326,11 @@ mfxStatus CheckVideoParamPreEncInit(
         unsupported = true;
 
     // check hw capabilities
-    if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
-        par.mfx.FrameInfo.Height > hwCaps.MaxPicHeight)
+    if (par.mfx.FrameInfo.Width  > hwCaps.ddi_caps.MaxPicWidth ||
+        par.mfx.FrameInfo.Height > hwCaps.ddi_caps.MaxPicHeight)
         return Error(MFX_ERR_UNSUPPORTED);
 
-    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1 )!= MFX_PICSTRUCT_PROGRESSIVE && hwCaps.NoInterlacedField){
+    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1 )!= MFX_PICSTRUCT_PROGRESSIVE && hwCaps.ddi_caps.NoInterlacedField){
         if(par.mfx.LowPower == MFX_CODINGOPTION_ON)
         {
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
@@ -340,8 +340,8 @@ mfxStatus CheckVideoParamPreEncInit(
             return Error(MFX_WRN_PARTIAL_ACCELERATION);
     }
 
-    if (hwCaps.MaxNum_TemporalLayer != 0 &&
-        hwCaps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
+    if (hwCaps.ddi_caps.MaxNum_TemporalLayer != 0 &&
+        hwCaps.ddi_caps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
         return Error(MFX_WRN_PARTIAL_ACCELERATION);
 
     if (!CheckTriStateOption(par.mfx.LowPower))
@@ -495,7 +495,7 @@ mfxStatus CheckVideoParamPreEncInit(
         par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     }
 
-    if (hwCaps.Color420Only &&
+    if (hwCaps.ddi_caps.Color420Only &&
         (par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ||
          par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444))
     {
@@ -646,7 +646,7 @@ mfxStatus VideoENC_PREENC::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoENC_PREENC::Query");
     MFX_CHECK_NULL_PTR2(core, out);
     mfxStatus sts = MFX_ERR_NONE;
-    ENCODE_CAPS hwCaps = { };
+    MFX_ENCODE_CAPS hwCaps = { };
 
     if (NULL == in)
     {

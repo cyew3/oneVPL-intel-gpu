@@ -765,9 +765,9 @@ namespace MfxHwH264Encode
         const eMFXHWType& platfrom);
 
     mfxStatus QueryHwCaps(
-        VideoCORE *     core,
-        ENCODE_CAPS & hwCaps,
-        mfxVideoParam * par);
+        VideoCORE *       core,
+        MFX_ENCODE_CAPS & hwCaps,
+        mfxVideoParam *   par);
 
     mfxStatus QueryMbProcRate(
         VideoCORE* core,
@@ -842,23 +842,23 @@ namespace MfxHwH264Encode
 
 
     mfxStatus CheckVideoParam(
-        MfxVideoParam &     par,
-        ENCODE_CAPS const & hwCaps,
-        bool                setExtAlloc,
-        eMFXHWType          platform = MFX_HW_UNKNOWN,
-        eMFXVAType          vaType = MFX_HW_NO,
-        eMFXGTConfig        config = MFX_GT_UNKNOWN,
-        bool                bInit = false);
+        MfxVideoParam &         par,
+        MFX_ENCODE_CAPS const & hwCaps,
+        bool                    setExtAlloc,
+        eMFXHWType              platform = MFX_HW_UNKNOWN,
+        eMFXVAType              vaType = MFX_HW_NO,
+        eMFXGTConfig            config = MFX_GT_UNKNOWN,
+        bool                    bInit = false);
 
     mfxStatus CheckVideoParamFEI(
         MfxVideoParam &     par);
 
     mfxStatus CheckVideoParamQueryLike(
-        MfxVideoParam &     par,
-        ENCODE_CAPS const & hwCaps,
-        eMFXHWType          platform = MFX_HW_UNKNOWN,
-        eMFXVAType          vaType = MFX_HW_NO,
-        eMFXGTConfig        config = MFX_GT_UNKNOWN);
+        MfxVideoParam &         par,
+        MFX_ENCODE_CAPS const & hwCaps,
+        eMFXHWType              platform = MFX_HW_UNKNOWN,
+        eMFXVAType              vaType = MFX_HW_NO,
+        eMFXGTConfig            config = MFX_GT_UNKNOWN);
 
     mfxStatus CheckVideoParamMvcQueryLike(MfxVideoParam &     par);
 
@@ -867,12 +867,12 @@ namespace MfxHwH264Encode
     mfxStatus CheckAndFixMVCSeqDesc(mfxExtMVCSeqDesc * mvcSeqDesc, bool isViewOutput);
 
     void SetDefaults(
-        MfxVideoParam &     par,
-        ENCODE_CAPS const & hwCaps,
-        bool                setExtAlloc,
-        eMFXHWType          platform = MFX_HW_UNKNOWN,
-        eMFXVAType          vaType = MFX_HW_NO,
-        eMFXGTConfig        config = MFX_GT_UNKNOWN);
+        MfxVideoParam &         par,
+        MFX_ENCODE_CAPS const & hwCaps,
+        bool                    setExtAlloc,
+        eMFXHWType              platform = MFX_HW_UNKNOWN,
+        eMFXVAType              vaType = MFX_HW_NO,
+        eMFXGTConfig            config = MFX_GT_UNKNOWN);
 
     void InheritDefaultValues(
         MfxVideoParam const & parInit,
@@ -884,12 +884,12 @@ namespace MfxHwH264Encode
         mfxU16                     numPayload);
 
     mfxStatus CheckRunTimeExtBuffers(
-        MfxVideoParam const & video,
-        mfxEncodeCtrl *       ctrl,
-        mfxFrameSurface1 *    surface,
-        mfxBitstream *        bs,
-        ENCODE_CAPS const &   caps,
-        eMFXHWType            platform = MFX_HW_UNKNOWN);
+        MfxVideoParam const &     video,
+        mfxEncodeCtrl *           ctrl,
+        mfxFrameSurface1 *        surface,
+        mfxBitstream *            bs,
+        MFX_ENCODE_CAPS const &   caps,
+        eMFXHWType                platform = MFX_HW_UNKNOWN);
 
     mfxStatus CheckFEIRunTimeExtBuffersContent(
         MfxVideoParam const & video,
@@ -1467,9 +1467,9 @@ namespace MfxHwH264Encode
     {
     public:
         void Init(
-            MfxVideoParam const & par,
-            ENCODE_CAPS const &   hwCaps,
-            bool                  emulPrev = true); // insert emualtion prevention bytes when possible (sps/pps/sei/aud)
+            MfxVideoParam const &     par,
+            MFX_ENCODE_CAPS const &   hwCaps,
+            bool                      emulPrev = true); // insert emualtion prevention bytes when possible (sps/pps/sei/aud)
 
         std::vector<ENCODE_PACKEDHEADER_DATA> const & PackSlices(
             DdiTask const & task,
@@ -1527,7 +1527,7 @@ namespace MfxHwH264Encode
         std::vector<mfxExtSpsSvcHeader> m_subset;
 #endif
         std::vector<mfxExtPpsHeader>    m_pps;
-        ENCODE_CAPS                     m_hwCaps;
+        MFX_ENCODE_CAPS                 m_hwCaps;
         mfxU8                           m_spsIdx[8][16];            // for lookup by did & qid
         mfxU8                           m_ppsIdx[8][16];            // for lookup by did & qid
         mfxU8                           m_refDqId[8];               // for lookup by did

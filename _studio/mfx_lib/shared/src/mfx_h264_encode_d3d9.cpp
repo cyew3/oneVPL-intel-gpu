@@ -253,7 +253,7 @@ void MfxHwH264Encode::FillVuiBuffer(
 
 void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     MfxVideoParam const &                par,
-    ENCODE_CAPS const &                  hwCaps,
+    MFX_ENCODE_CAPS const &              hwCaps,
     ENCODE_SET_PICTURE_PARAMETERS_H264 & pps)
 {
     hwCaps;
@@ -459,7 +459,7 @@ void MfxHwH264Encode::FillConstPartOfSliceBuffer(
 }
 
 void FillPWT(
-    ENCODE_CAPS const &                         hwCaps,
+    MFX_ENCODE_CAPS const &                     hwCaps,
     ENCODE_SET_PICTURE_PARAMETERS_H264 const &  pps,
     mfxExtPredWeightTable const &               pwt,
     ENCODE_SET_SLICE_HEADER_H264 &              slice)
@@ -468,7 +468,7 @@ void FillPWT(
          || pps.weighted_bipred_idc == 1 && (slice.slice_type % 5) == SLICE_TYPE_B)))
          return;
 
-    mfxU32 maxWeights[2] = { hwCaps.MaxNum_WeightedPredL0, hwCaps.MaxNum_WeightedPredL1 };
+    mfxU32 maxWeights[2] = { hwCaps.ddi_caps.MaxNum_WeightedPredL0, hwCaps.ddi_caps.MaxNum_WeightedPredL1 };
     mfxU32 numRef[2] = { static_cast<mfxU32>(slice.num_ref_idx_l0_active_minus1 + 1), static_cast<mfxU32>(slice.num_ref_idx_l1_active_minus1 + 1) };
     const mfxU32 iWeight = 0, iOffset = 1, iY = 0, iCb = 1, iCr = 2;
 
@@ -479,7 +479,7 @@ void FillPWT(
     Zero(slice.chroma_weight_flag);
     Zero(slice.Weights);
 
-    if (hwCaps.LumaWeightedPred)
+    if (hwCaps.ddi_caps.LumaWeightedPred)
     {
         for (mfxU32 lx = 0; lx <= (mfxU32)((slice.slice_type % 5) == SLICE_TYPE_B); lx++)
         {
@@ -500,7 +500,7 @@ void FillPWT(
         }
     }
 
-    if (hwCaps.ChromaWeightedPred)
+    if (hwCaps.ddi_caps.ChromaWeightedPred)
     {
         for (mfxU32 lx = 0; lx <= (mfxU32)((slice.slice_type % 5) == SLICE_TYPE_B); lx++)
         {
@@ -528,7 +528,7 @@ void FillPWT(
 }
 
 void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
-    ENCODE_CAPS const &                         hwCaps,
+    MFX_ENCODE_CAPS const &                     hwCaps,
     DdiTask const &                             task,
     mfxU32                                      fieldId,
     ENCODE_SET_SEQUENCE_PARAMETERS_H264 const & sps,
@@ -548,7 +548,7 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
     mfxU32 numPics = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
 
     SliceDivider divider = MakeSliceDivider(
-        (hwCaps.SliceLevelRateCtrl)?4:hwCaps.SliceStructure,//temporal WA for KBL multislice as it reports 3 instead of 4
+        (hwCaps.ddi_caps.SliceLevelRateCtrl)?4:hwCaps.ddi_caps.SliceStructure,//temporal WA for KBL multislice as it reports 3 instead of 4
         task.m_numMbPerSlice,
         pps.NumSlice,
         sps.FrameWidth  / 16,
@@ -600,7 +600,7 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
 }
 
 mfxStatus MfxHwH264Encode::FillVaringPartOfSliceBufferSizeLimited(
-    ENCODE_CAPS const &                         hwCaps,
+    MFX_ENCODE_CAPS const &                     hwCaps,
     DdiTask const &                             task,
     mfxU32                                      fieldId,
     ENCODE_SET_SEQUENCE_PARAMETERS_H264 const & /* sps */,
@@ -966,7 +966,7 @@ void MfxHwH264Encode::FillConstPartOfSliceBuffer(
 }
 
 void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
-    ENCODE_CAPS const &                        hwCaps,
+    MFX_ENCODE_CAPS const &                    hwCaps,
     mfxExtSVCSeqDesc const &                   extSvc,
     DdiTask const &                            task,
     mfxU32                                     fieldId,
@@ -983,7 +983,7 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
                         IsOff(extSvc.DependencyLayer[did].ResidualPred) ? 1 : 0;
 
     SliceDivider divider = MakeSliceDivider(
-        hwCaps.SliceStructure,
+        hwCaps.ddi_caps.SliceStructure,
         task.m_numMbPerSlice,
         pps.NumSlice,
         sps.FrameWidth  / 16,
@@ -1171,9 +1171,13 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     sts = auxDevice->IsAccelerationServiceExist(guid);
     MFX_CHECK_STS(sts);
 
-    ENCODE_CAPS caps = { 0, };
-    HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, guid, caps);
+    MFX_ENCODE_CAPS caps = { 0, };
+    HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, guid, caps.ddi_caps);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+
+    caps.CQPSupport = 1;
+    caps.CBRSupport = 1;
+    caps.VBRSupport = 1;
 
     m_guid = guid;
     m_width = width;
@@ -1186,7 +1190,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     // but after it driver fails to create AVC encoding acceleration service.
     // To check AVC-E support in Query MSDK should try to create AVC acceleration service here
     // WA start
-    if (isTemporal && (m_width<=caps.MaxPicWidth && m_height<=caps.MaxPicHeight))
+    if (isTemporal && (m_width<=caps.ddi_caps.MaxPicWidth && m_height<=caps.ddi_caps.MaxPicHeight))
     {
         DXVADDI_VIDEODESC desc;
         Zero(desc);
@@ -1397,7 +1401,7 @@ mfxStatus D3D9Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocReque
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS& caps)
+mfxStatus D3D9Encoder::QueryEncodeCaps(MFX_ENCODE_CAPS& caps)
 {
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
@@ -1659,7 +1663,7 @@ mfxStatus D3D9Encoder::ExecuteImpl(
         bufCnt++;
     }
 
-    if (m_caps.HeaderInsertion == 1 && SkipFlag == 0)
+    if (m_caps.ddi_caps.HeaderInsertion == 1 && SkipFlag == 0)
     {
         if (sei.Size() > 0)
         {
@@ -1942,7 +1946,7 @@ mfxStatus D3D9Encoder::QueryStatusAsync(
         task.m_resetBRC = !!feedback->reserved0; //WiDi w/a
         //for KBL we need retrive counter from HW instead of incrementing ourselfs.
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        if(m_caps.HWCounterAutoIncrement)
+        if(m_caps.ddi_caps.HWCounterAutoIncrement)
         {
             task.m_aesCounter[0].Count = feedback->aes_counter.Counter;
             task.m_aesCounter[0].IV = feedback->aes_counter.IV;
@@ -2025,14 +2029,17 @@ mfxStatus D3D9SvcEncoder::CreateAuxilliaryDevice(
     sts = auxDevice->IsAccelerationServiceExist(guid);
     MFX_CHECK_STS(sts);
 
-    ENCODE_CAPS caps = { 0, };
+    MFX_ENCODE_CAPS caps = { 0, };
     HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, guid, caps);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-    caps.HeaderInsertion = 0;
-    caps.MaxNum_QualityLayer = 16;
-    caps.MaxNum_DependencyLayer = 8;
-    caps.MaxNum_TemporalLayer = 8;
+    caps.CQPSupport = 1;
+    caps.CBRSupport = 1;
+    caps.VBRSupport = 1;
+    caps.ddi_caps.HeaderInsertion = 0;
+    caps.ddi_caps.MaxNum_QualityLayer = 16;
+    caps.ddi_caps.MaxNum_DependencyLayer = 8;
+    caps.ddi_caps.MaxNum_TemporalLayer = 8;
     m_guid = guid;
     m_caps = caps;
     m_auxDevice = std::move(auxDevice);
@@ -2143,7 +2150,7 @@ mfxStatus D3D9SvcEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRe
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9SvcEncoder::QueryEncodeCaps(ENCODE_CAPS& caps)
+mfxStatus D3D9SvcEncoder::QueryEncodeCaps(MFX_ENCODE_CAPS& caps)
 {
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 

@@ -309,7 +309,7 @@ mfxStatus ImplementationSvc::QueryIOSurf(
         inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
         MFX_ERR_INVALID_VIDEO_PARAM);
 
-    ENCODE_CAPS hwCaps = { 0 };
+    MFX_ENCODE_CAPS hwCaps = { 0 };
     sts = QueryHwCaps(core, hwCaps, par);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -559,7 +559,7 @@ mfxStatus ImplementationSvc::Init(mfxVideoParam * par)
 
     m_manager.Init(m_core, m_video);
 
-    if (m_caps.HeaderInsertion == 1 && m_video.Protected == 0)
+    if (m_caps.ddi_caps.HeaderInsertion == 1 && m_video.Protected == 0)
     {
         m_tmpBsBuf.resize(m_maxBsSize);
 
@@ -984,7 +984,7 @@ mfxStatus ImplementationSvc::UpdateBitstream(
 
     mfxBitstream & outBits = *task[0]->m_bs;
 
-    if (m_caps.HeaderInsertion && !m_video.Protected)
+    if (m_caps.ddi_caps.HeaderInsertion && !m_video.Protected)
     {
         mfxU8 * dbegin = outBits.Data + outBits.DataOffset + outBits.DataLength;
         mfxU8 * dend   = outBits.Data + outBits.MaxLength;
@@ -1003,7 +1003,7 @@ mfxStatus ImplementationSvc::UpdateBitstream(
             needIntermediateBitstreamBuffer ||
             IsInplacePatchNeeded(m_video, *task[i], fieldId);
 
-        if (m_caps.HeaderInsertion == 0 || m_video.Protected != 0)
+        if (m_caps.ddi_caps.HeaderInsertion == 0 || m_video.Protected != 0)
             doPatch = needIntermediateBitstreamBuffer = false;
 
         //printf("locking bitstream bsidx=%d did=%d qid=%d\n",

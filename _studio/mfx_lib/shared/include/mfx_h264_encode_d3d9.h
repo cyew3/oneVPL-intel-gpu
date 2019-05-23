@@ -115,7 +115,7 @@ namespace MfxHwH264Encode
 
     void FillConstPartOfPpsBuffer(
         MfxVideoParam const &                par,
-        ENCODE_CAPS const &                  hwCaps,
+        MFX_ENCODE_CAPS const &              hwCaps,
         ENCODE_SET_PICTURE_PARAMETERS_H264 & pps);
 
     void FillVaringPartOfPpsBuffer(
@@ -130,7 +130,7 @@ namespace MfxHwH264Encode
         std::vector<ENCODE_SET_SLICE_HEADER_H264> & slice);
 
     void FillVaringPartOfSliceBuffer(
-        ENCODE_CAPS const &                         hwCaps,
+        MFX_ENCODE_CAPS const &                     hwCaps,
         DdiTask const &                             task,
         mfxU32                                      fieldId,
         ENCODE_SET_SEQUENCE_PARAMETERS_H264 const & sps,
@@ -138,7 +138,7 @@ namespace MfxHwH264Encode
         std::vector<ENCODE_SET_SLICE_HEADER_H264> & slice);
 
     mfxStatus FillVaringPartOfSliceBufferSizeLimited(
-        ENCODE_CAPS const &                         hwCaps,
+        MFX_ENCODE_CAPS const &                     hwCaps,
         DdiTask const &                             task,
         mfxU32                                      fieldId,
         ENCODE_SET_SEQUENCE_PARAMETERS_H264 const & sps,
@@ -170,7 +170,7 @@ namespace MfxHwH264Encode
         std::vector<ENCODE_SET_SLICE_HEADER_SVC> & slice);
 
     void FillVaringPartOfSliceBuffer(
-        ENCODE_CAPS const &                        hwCaps,
+        MFX_ENCODE_CAPS const &                    hwCaps,
         mfxExtSVCSeqDesc const &                   extSvc,
         DdiTask const &                            task,
         mfxU32                                     fieldId,
@@ -229,7 +229,7 @@ namespace MfxHwH264Encode
 
         virtual
         mfxStatus QueryEncodeCaps(
-            ENCODE_CAPS & caps);
+            MFX_ENCODE_CAPS & caps);
 
         virtual
         mfxStatus QueryMbPerSec(
@@ -308,7 +308,7 @@ namespace MfxHwH264Encode
         GUID                 m_guid;
         mfxU32               m_width;
         mfxU32               m_height;
-        ENCODE_CAPS          m_caps;
+        MFX_ENCODE_CAPS      m_caps;
         ENCODE_ENC_CTRL_CAPS m_capsQuery; // from ENCODE_ENC_CTRL_CAPS_ID
         ENCODE_ENC_CTRL_CAPS m_capsGet;   // from ENCODE_ENC_CTRL_GET_ID
         bool                 m_infoQueried;
@@ -365,7 +365,7 @@ namespace MfxHwH264Encode
 
         virtual
         mfxStatus QueryEncodeCaps(
-            ENCODE_CAPS & caps);
+            MFX_ENCODE_CAPS & caps);
 
         virtual
         mfxStatus QueryMbPerSec(
@@ -424,7 +424,7 @@ namespace MfxHwH264Encode
 
         MfxVideoParam const * m_video;
         GUID                  m_guid;
-        ENCODE_CAPS           m_caps;
+        MFX_ENCODE_CAPS       m_caps;
         ENCODE_ENC_CTRL_CAPS  m_capsQuery; // from ENCODE_ENC_CTRL_CAPS_ID
         ENCODE_ENC_CTRL_CAPS  m_capsGet;   // from ENCODE_ENC_CTRL_GET_ID
         bool                  m_infoQueried;

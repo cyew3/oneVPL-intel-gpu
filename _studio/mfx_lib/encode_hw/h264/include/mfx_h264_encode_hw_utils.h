@@ -326,7 +326,7 @@ namespace MfxHwH264Encode
         DdiTask const &       task);
 
     bool isBitstreamUpdateRequired(MfxVideoParam const & video,
-        ENCODE_CAPS caps,
+        MFX_ENCODE_CAPS caps,
         eMFXHWType platform);
     // Helper which checks number of allocated frames and auto-free.
 #if USE_AGOP
@@ -434,13 +434,13 @@ namespace MfxHwH264Encode
 
     // add hwType param
     mfxStatus CheckEncodeFrameParam(
-        MfxVideoParam const & video,
-        mfxEncodeCtrl *       ctrl,
-        mfxFrameSurface1 *    surface,
-        mfxBitstream *        bs,
-        bool                  isExternalFrameAllocator,
-        ENCODE_CAPS const &   caps,
-        eMFXHWType            hwType = MFX_HW_UNKNOWN);
+        MfxVideoParam const &     video,
+        mfxEncodeCtrl *           ctrl,
+        mfxFrameSurface1 *        surface,
+        mfxBitstream *            bs,
+        bool                      isExternalFrameAllocator,
+        MFX_ENCODE_CAPS const &   caps,
+        eMFXHWType                hwType = MFX_HW_UNKNOWN);
 
     template<typename T> void Clear(std::vector<T> & v)
     {
@@ -2358,7 +2358,7 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse   m_opaqResponse;     // Response for opaq
         MfxFrameAllocResponse   m_histogram;
 
-        ENCODE_CAPS             m_caps;
+        MFX_ENCODE_CAPS         m_caps;
         mfxStatus               m_failedStatus;
         mfxU32                  m_inputFrameType;
         mfxU32                  m_NumSlices;
@@ -2556,7 +2556,7 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse   m_bitstream;
         MfxFrameAllocResponse   m_opaqResponse;     // Response for opaq
         ENCODE_MBDATA_LAYOUT    m_layout;
-        ENCODE_CAPS             m_caps;
+        MFX_ENCODE_CAPS         m_caps;
         bool                    m_deviceFailed;
         mfxU32                  m_inputFrameType;
 
@@ -2922,11 +2922,11 @@ namespace MfxHwH264Encode
         mfxStatus GetRawSurfaceHandle(DdiTask const & task, mfxHDLPair & hdl);
 // MVC BD }
 
-        VideoCORE *     m_core;
-        MfxVideoParam   m_video;
-        MfxVideoParam   m_videoInit;  // m_video may change by Reset, m_videoInit doesn't change
-        TaskManagerMvc  m_taskMan;
-        ENCODE_CAPS     m_ddiCaps;
+        VideoCORE *         m_core;
+        MfxVideoParam       m_video;
+        MfxVideoParam       m_videoInit;  // m_video may change by Reset, m_videoInit doesn't change
+        TaskManagerMvc      m_taskMan;
+        MFX_ENCODE_CAPS     m_ddiCaps;
 
         std::vector<Hrd>            m_hrd;
 // MVC BD {
@@ -3420,7 +3420,7 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse               m_bitstream;
         MfxFrameAllocResponse               m_opaqResponse;     // Response for opaq
         ENCODE_MBDATA_LAYOUT                m_layout;
-        ENCODE_CAPS                         m_caps;
+        MFX_ENCODE_CAPS                     m_caps;
         bool                                m_deviceFailed;
         mfxU32                              m_inputFrameType;
         PreAllocatedVector                  m_sei;
@@ -3562,8 +3562,8 @@ namespace MfxHwH264Encode
         mfxU32                frameOrderInGop,
         mfxEncodeCtrl const * ctrl,
         mfxU16                intraStripeWidthInMBs,
-        SliceDivider &  divider,
-        ENCODE_CAPS     caps);
+        SliceDivider &        divider,
+        MFX_ENCODE_CAPS       caps);
 
     mfxStatus UpdateIntraRefreshWithoutIDR(
         MfxVideoParam const & oldPar,
@@ -3572,8 +3572,8 @@ namespace MfxHwH264Encode
         mfxI64                oldStartFrame,
         mfxI64 &              updatedStartFrame,
         mfxU16 &              updatedStripeWidthInMBs,
-        SliceDivider &  divider,
-        ENCODE_CAPS     caps);
+        SliceDivider &        divider,
+        MFX_ENCODE_CAPS       caps);
 
     BiFrameLocation GetBiFrameLocation(
         MfxVideoParam const & video,
@@ -3607,10 +3607,10 @@ namespace MfxHwH264Encode
         bool                  optimize);
 
     void ConfigureTask(
-        DdiTask &             task,
-        DdiTask const &       prevTask,
-        MfxVideoParam const & video,
-        ENCODE_CAPS const &   caps);
+        DdiTask &                 task,
+        DdiTask const &           prevTask,
+        MfxVideoParam const &     video,
+        MFX_ENCODE_CAPS const &   caps);
 
     mfxStatus GetNativeHandleToRawSurface(
         VideoCORE &           core,

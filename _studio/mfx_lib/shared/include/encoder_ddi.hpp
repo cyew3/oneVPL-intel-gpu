@@ -630,6 +630,16 @@ typedef struct tagENCODE_CAPS
 #endif
 } ENCODE_CAPS;
 
+//Linux compatibility
+struct MFX_ENCODE_CAPS
+{
+    ENCODE_CAPS ddi_caps;
+    //bitrate control capabilities provided by MSDK
+    bool CQPSupport;
+    bool CBRSupport;
+    bool VBRSupport;
+};
+
 // DDI v0.947
 // 3.12.12 MB Control Surface(D3DDDIFMT_INTELENCODE_MBCONTROL)
 // The application can provide this surface that contains desired coding properties

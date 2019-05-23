@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,11 +39,11 @@ using namespace MfxHwH264Encode;
 namespace
 {
     mfxStatus CheckVideoParamMvc(
-        MfxVideoParam &     par,
-        ENCODE_CAPS const & hwCaps,
-        bool                setExtAlloc,
-        eMFXHWType          platform = MFX_HW_UNKNOWN,
-        eMFXVAType          vaType = MFX_HW_NO)
+        MfxVideoParam &         par,
+        MFX_ENCODE_CAPS const & hwCaps,
+        bool                    setExtAlloc,
+        eMFXHWType              platform = MFX_HW_UNKNOWN,
+        eMFXVAType              vaType = MFX_HW_NO)
     {
         mfxStatus sts = CheckVideoParam(par, hwCaps, setExtAlloc, platform, vaType);
 
@@ -787,7 +787,7 @@ mfxStatus ImplementationMvc::QueryIOSurf(
         inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
         MFX_ERR_INVALID_VIDEO_PARAM);
 
-    ENCODE_CAPS hwCaps = {};
+    MFX_ENCODE_CAPS hwCaps = {};
     mfxStatus sts = QueryHwCaps(core, hwCaps, par);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
