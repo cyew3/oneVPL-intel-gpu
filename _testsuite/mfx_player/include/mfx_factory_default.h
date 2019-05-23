@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -303,6 +303,6 @@ public:
     virtual IFile               * CreateFileWriter( IPipelineObjectDesc * pParams);
     virtual IVideoEncode        * CreateVideoEncode ( IPipelineObjectDesc * pParams);
     virtual IAllocatorFactory   * CreateAllocatorFactory( IPipelineObjectDesc * pParams);
-    virtual IBitstreamConverterFactory * CreateBitstreamCVTFactory( IPipelineObjectDesc * pParams);
+    virtual std::unique_ptr<IBitstreamConverterFactory> CreateBitstreamCVTFactory( IPipelineObjectDesc * pParams);
     virtual IFile *               CreatePARReader(IPipelineObjectDesc * pParams);
 };

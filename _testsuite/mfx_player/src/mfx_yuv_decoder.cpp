@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -65,9 +65,8 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
     info.Width         = mfx_align((mfxU16)(infoIn.Width  + infoIn.CropX), 0x10);
     info.Height        = mfx_align((mfxU16)(infoIn.Height + infoIn.CropY), (info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)? 0x10 : 0x20);
 
-
-    std::auto_ptr <IBitstreamConverterFactory > bsfac (pFactory->CreateBitstreamCVTFactory(NULL));
-    m_pConverter.reset(bsfac->Create(nInFourCC, info.FourCC));
+    std::unique_ptr <IBitstreamConverterFactory > bsfac(pFactory->CreateBitstreamCVTFactory(NULL));
+    m_pConverter.reset(bsfac->MakeConverter(nInFourCC, info.FourCC));
     if (NULL == m_pConverter.get())
     {
         MFX_TRACE_AND_THROW((VM_STRING("[MFXYUVDecoder] cannot create converter : %s -> %s\n"),
