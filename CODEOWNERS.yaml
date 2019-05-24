@@ -285,6 +285,9 @@ vpp:
   - roman.bykadorov@intel.com
   - andrey.larionov@intel.com
   - tuyet.trang.lam@intel.com
+  - fedor.zharinov@intel.com
+  - alexandra.tyugina@intel.com
+  - natalia.domnina@intel.com
 
 tests:
   paths:
