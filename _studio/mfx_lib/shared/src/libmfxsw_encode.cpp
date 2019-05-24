@@ -654,6 +654,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     }
 
 #if (MFX_VERSION >= 1025)
+#if !defined(AS_HEVCE_PLUGIN)
     if (mfxRes == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM || mfxRes == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
     {
         try
@@ -674,6 +675,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, "Unknown exception was caught while comparing In and Out VideoParams.");
         }
     }
+#endif
 #endif
 
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, out);

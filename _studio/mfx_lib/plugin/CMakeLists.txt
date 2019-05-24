@@ -338,6 +338,7 @@ foreach( variant ${hevce_variants} )
     hevc_pp_sse4
     hevc_pp_ssse3
     media_buffers
+    genx
     umc_io
     umc
     vm
