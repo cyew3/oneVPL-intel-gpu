@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2018 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2018-2019 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1063,60 +1063,52 @@ int TestSuite::RunTest(unsigned int id)
     SETPARS(m_pPar, MFX_PAR);
 
     mfxStatus sts_query = tc.sts_query,
-              sts_init  = tc.sts_init;
+              sts_init = tc.sts_init;
 
-    if (g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)
+    if (g_tsHWtype >= MFX_HW_KBL && m_par.vpp.Out.FourCC == MFX_FOURCC_P010
+        && sts_query == MFX_WRN_PARTIAL_ACCELERATION
+        && sts_init == MFX_WRN_PARTIAL_ACCELERATION)
     {
-        sts_query = MFX_WRN_PARTIAL_ACCELERATION;
-        sts_init  = MFX_WRN_PARTIAL_ACCELERATION;
-    }
-    else
-    {
-        if (g_tsHWtype >= MFX_HW_KBL && m_par.vpp.Out.FourCC == MFX_FOURCC_P010
-            && sts_query == MFX_WRN_PARTIAL_ACCELERATION
-            && sts_init  == MFX_WRN_PARTIAL_ACCELERATION)
+        // KBL on Windows supports p010 output
+        if (!m_par.vpp.Out.BitDepthLuma || !m_par.vpp.Out.BitDepthChroma)
         {
-            // KBL on Windows supports p010 output
-            if (!m_par.vpp.Out.BitDepthLuma || !m_par.vpp.Out.BitDepthChroma)
-            {
-                sts_query = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-                sts_init  = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-            }
-            else
-            {
-                sts_query = MFX_ERR_NONE;
-                sts_init  = MFX_ERR_NONE;
-            }
+            sts_query = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            sts_init = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
-
-        if (g_tsHWtype <= MFX_HW_CNL
-            && (m_par.vpp.In.FourCC == MFX_FOURCC_AYUV || m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV
-            ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y210 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y210
-            ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y410 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y410))
+        else
         {
-            if ((m_par.vpp.In.FourCC == MFX_FOURCC_AYUV || m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV)
-                && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && g_tsImpl & MFX_IMPL_VIA_D3D11)
-            {
-                // AYUV is supported on windows with DX11
-            }
-            else
-            {
-                sts_query = MFX_ERR_UNSUPPORTED;
-                sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
-            }
+            sts_query = MFX_ERR_NONE;
+            sts_init = MFX_ERR_NONE;
+        }
+    }
+
+    if (g_tsHWtype <= MFX_HW_CNL
+        && (m_par.vpp.In.FourCC == MFX_FOURCC_AYUV || m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV
+            || m_par.vpp.In.FourCC == MFX_FOURCC_Y210 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y210
+            || m_par.vpp.In.FourCC == MFX_FOURCC_Y410 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y410))
+    {
+        if ((m_par.vpp.In.FourCC == MFX_FOURCC_AYUV || m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV)
+            && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && g_tsImpl & MFX_IMPL_VIA_D3D11)
+        {
+            // AYUV is supported on windows with DX11
+        }
+        else
+        {
+            sts_query = MFX_ERR_UNSUPPORTED;
+            sts_init = MFX_ERR_INVALID_VIDEO_PARAM;
         }
     }
 
     if (g_tsImpl == MFX_IMPL_SOFTWARE)
     {
         sts_query = MFX_ERR_NONE;
-        sts_init  = MFX_ERR_NONE;
+        sts_init = MFX_ERR_NONE;
     }
 
     if (m_par.vpp.In.FourCC == MFX_FOURCC_P210)
     {
         sts_query = MFX_WRN_PARTIAL_ACCELERATION;
-        sts_init  = MFX_WRN_PARTIAL_ACCELERATION;
+        sts_init = MFX_WRN_PARTIAL_ACCELERATION;
     }
 
     if (m_par.vpp.In.FourCC == MFX_FOURCC_Y210 || m_par.vpp.In.FourCC == MFX_FOURCC_Y410)
@@ -1129,7 +1121,7 @@ int TestSuite::RunTest(unsigned int id)
     SetHandle();
 
     tsExtBufType<mfxVideoParam> par_out;
-    par_out=m_par;
+    par_out = m_par;
 
     g_tsStatus.expect(sts_query);
     Query(m_session, m_pPar, &par_out);
