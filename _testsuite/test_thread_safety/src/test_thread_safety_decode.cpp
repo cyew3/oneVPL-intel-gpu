@@ -4,9 +4,9 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
-File Name: test_thread_safety_h264_decode.cpp
+File Name: test_thread_safety_decode.cpp
 
 \* ****************************************************************************** */
 
@@ -187,7 +187,7 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
     }
     else if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
     {
-        mfxU8* ptr = surface->Data.Y + surface->Info.CropY * surface->Data.Pitch + surface->Info.CropX;
+        mfxU8* ptr = surface->Data.B + surface->Info.CropY * surface->Data.Pitch + surface->Info.CropX;
         for (mfxU32 i = 0; i < surface->Info.CropH; i++, ptr += surface->Data.Pitch)
         {
             if (outReg->CommitData(m_handle, ptr, surface->Info.CropW*4) < 0)
