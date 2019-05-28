@@ -249,6 +249,7 @@ vp9d:
 vp9e:
   paths:
   - _studio/vp9e_hw
+  - _studio/mfx_lib/encode_hw/vp9
   - _testsuite/msdk_ts/src/gmock/test_suites/vp9e
   reviewers:
   - alexey.s.kokoshnikov@intel.com
