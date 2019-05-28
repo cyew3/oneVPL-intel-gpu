@@ -83,7 +83,8 @@ enum eMFXHWType
     MFX_HW_RKL       = MFX_HW_TGL_LP + 2,
     MFX_HW_DG1       = MFX_HW_TGL_LP + 3,
     MFX_HW_TGL_HP    = MFX_HW_TGL_LP + 4,
-    MFX_HW_ATS       = MFX_HW_TGL_HP
+    MFX_HW_ATS       = MFX_HW_TGL_HP,
+    MFX_HW_DG2       = MFX_HW_ATS + 1
 #endif
 };
 

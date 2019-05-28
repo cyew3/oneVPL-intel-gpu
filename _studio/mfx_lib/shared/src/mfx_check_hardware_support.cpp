@@ -99,6 +99,7 @@ enum PRODUCT_FAMILY
     IGFX_ROCKETLAKE,
     IGFX_DG1 = 1210,
     IGFX_TIGERLAKE_HP = 1250,
+    IGFX_DG2 = 1270,
 
     IGFX_SOFIA_LTE1 = 1001,
     IGFX_SOFIA_LTE2 = 1002,
@@ -163,6 +164,8 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_DG1;
     case IGFX_TIGERLAKE_HP:
         return MFX_HW_TGL_HP;
+    case IGFX_DG2:
+        return MFX_HW_DG2;
     default:
         break;
     }
