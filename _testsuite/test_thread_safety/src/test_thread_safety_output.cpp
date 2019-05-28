@@ -4,12 +4,13 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: test_thread_safety_output.cpp
 
 \* ****************************************************************************** */
 
+#include <stdexcept> // std::invalid_argument()
 #include "test_thread_safety.h"
 #include "test_thread_safety_output.h"
 
@@ -26,6 +27,12 @@ OutputRegistrator::OutputRegistrator(mfxU32 numWriter, vm_file* fdRef, vm_file**
 , m_fdOut(fdOut)
 , m_syncOpt(syncOpt)
 {
+    if (numWriter + HandleBase < 0)
+    {
+        vm_file_fprintf(vm_stderr, VM_STRING("TEST: numWriter %u is too big for HandleBase %llu\n"),
+                        numWriter, HandleBase);
+        throw std::invalid_argument("numWriter is too big");
+    }
     m_allIn.Init(1, 0);
     m_allOut.Init(1, 0);
 
@@ -42,16 +49,22 @@ mfxHDL OutputRegistrator::Register()
     if (m_numRegistered == m_numWriter)
         m_allOut.Set(); // allow commits
 
-    return (mfxHDL)(mfxU64)(m_numRegistered + 0xff000000);
+    return (mfxHDL)(mfxU64)(m_numRegistered + HandleBase);
 }
 
-void OutputRegistrator::UnRegister(mfxHDL handle)
+mfxI32 OutputRegistrator::UnRegister(mfxHDL handle)
 {
-    CommitData(handle, 0, 0);
+    return CommitData(handle, nullptr, 0);
 }
 
 mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
 {
+    if (!IsRegistered(handle))
+    {
+        vm_file_fprintf(vm_stderr, VM_STRING("TEST: invalid handle %p is out of range [%p; %p]\n"),
+                        handle, (mfxHDL)(HandleBase + 1), (mfxHDL)(HandleBase + m_numWriter));
+        return -1;
+    }
     if (m_syncOpt == SYNC_OPT_PER_WRITE)
     {
         m_allOut.Wait();
@@ -92,16 +105,7 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
         }
     }
 
-    {
-        UMC::AutomaticUMCMutex guard(m_counterMutex);
-        if (ptr == 0 && m_numRegistered > 0)
-        {
-            // came here from UnRegister
-            m_numRegistered--;
-        }
-    }
-
-    mfxU32 intHdl = (mfxU32)((mfxU64)handle - 0xff000000);
+    mfxU32 intHdl = (mfxU32)((mfxU64)handle - HandleBase);
     if (m_fdOut[intHdl - 1] && ptr)
     {
         if (vm_file_write(ptr, 1, len, m_fdOut[intHdl - 1]) != len)
@@ -145,6 +149,7 @@ mfxU32 OutputRegistrator::Compare() const
 
 bool OutputRegistrator::IsRegistered(mfxHDL handle) const
 {
-    mfxU32 intHdl = (mfxU32)((mfxU64)handle - 0xff000000);
-    return 1 <= intHdl && intHdl <= m_numWriter;
+    // a <= x <= b is equivalent to x - a <= b - a for unsigned comparison,
+    // see Warren, Hacker's Delight (2nd Edition), 4 - 1
+    return  (mfxU64)handle > HandleBase && (mfxU64)handle - (HandleBase + 1) <= m_numWriter + HandleBase - (HandleBase + 1);
 }

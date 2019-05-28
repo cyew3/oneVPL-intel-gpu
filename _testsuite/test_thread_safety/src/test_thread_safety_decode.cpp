@@ -95,7 +95,8 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
     {
         if (m_handle != 0)
         {
-            outReg->UnRegister(m_handle);
+            if (outReg->UnRegister(m_handle) < 0)
+                return MFX_ERR_UNKNOWN;
             m_handle = 0;
         }
 
@@ -206,7 +207,8 @@ mfxStatus OutputYuvTester::Close()
 {
     if (m_handle != 0)
     {
-        outReg->UnRegister(m_handle);
+        if (outReg->UnRegister(m_handle) < 0)
+            return MFX_ERR_UNKNOWN;
         m_handle = 0;
     }
 

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: test_thread_safety_output.h
 
@@ -29,7 +29,7 @@ public:
     OutputRegistrator(mfxU32 numWriter, vm_file* fdRef, vm_file** fdOut, mfxU32 syncOpt);
     mfxHDL Register();
     mfxI32 CommitData(mfxHDL handle, void* ptr, mfxU32 len);
-    void UnRegister(mfxHDL handle);
+    mfxI32 UnRegister(mfxHDL handle);
     bool IsRegistered(mfxHDL handle) const;
     mfxU32 QueryStatus() const { return m_compareStatus; }
 
@@ -50,6 +50,8 @@ private:
     vm_file* m_fdRef;
     vm_file** m_fdOut;
     mfxU32 m_syncOpt;
+
+    static const mfxU64 HandleBase = 0xff000000;
 };
 
 extern std::auto_ptr<OutputRegistrator> outReg;
