@@ -159,8 +159,8 @@ namespace hevce_tiles {
         }
 
         if (g_tsImpl & MFX_IMPL_HARDWARE) {
-            if (g_tsHWtype < MFX_HW_CNL || m_par.mfx.LowPower != MFX_CODINGOPTION_ON) { //this test is for VDEnc only
-                g_tsLog << "SKIPPED for this platform or LowPower mode is off\n";
+            if (g_tsHWtype < MFX_HW_CNL) {
+                g_tsLog << "[ SKIPPED ] : SKIPPED for this platform\n";
                 return 0;
             }
         }
@@ -228,6 +228,21 @@ namespace hevce_tiles {
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
             m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
             m_par.mfx.FrameInfo.Shift = 0;
+        }
+        else if (fourcc_id == MFX_FOURCC_YUY2)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y210)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+            m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+            m_par.mfx.FrameInfo.Shift = 1;
         }
         else
         {
@@ -335,4 +350,6 @@ namespace hevce_tiles {
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_tiles, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_tiles,  RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_tiles, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_tiles, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_tiles, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
 }
