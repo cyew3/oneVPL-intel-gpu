@@ -1307,7 +1307,7 @@ namespace UMC_AV1_DECODER
     {
         bs.GetBit(); // first bit is obu_forbidden_bit (0) - hello and thanks to Dima G. :)
 
-        OBUHeader header;
+        OBUHeader header = {};
 
         header.obu_type = (AV1_OBU_TYPE)bs.GetBits(4);
 #if UMC_AV1_DECODER_REV >= 8500
@@ -1580,7 +1580,7 @@ namespace UMC_AV1_DECODER
         RefFrameInfo refFrameInfo[NUM_REF_FRAMES]; // RefFrameInfo structure contains
                                                    // (1) shiftedOrderHint
                                                    // (2) index in DPB (allows to correct sorting of frames having equal shiftedOrderHint)
-        uint32_t refFlagList[INTER_REFS] = { 0, 0, 0, 0, 0, 0, 0 };
+        uint32_t refFlagList[INTER_REFS] = {};
 
         for (int i = 0; i < NUM_REF_FRAMES; ++i)
         {
