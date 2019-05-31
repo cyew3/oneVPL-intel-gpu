@@ -1081,6 +1081,17 @@ mfxStatus CheckAndFixRoi(MfxVideoParam  const & par, ENCODE_CAPS_HEVC const & ca
 
         rsts = CheckAndFixRect(rect, par, caps);
 
+        // Elimination of invalid rects
+        // Driver requirement
+        if (ROI->ROI[i].Left >= ROI->ROI[i].Right || ROI->ROI[i].Top >= ROI->ROI[i].Bottom) {
+            ROI->NumROI--;
+            for (mfxU16 j = i; j < ROI->NumROI; j++)
+                ROI->ROI[j] = ROI->ROI[j + 1];
+            changed++;
+            i--;
+            continue;
+        }
+
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
             invalid += CheckRange(ROI->ROI[i].Priority, -51, 51);
         } else if (par.mfx.RateControlMethod) {
@@ -1125,6 +1136,17 @@ mfxStatus CheckAndFixDirtyRect(ENCODE_CAPS_HEVC const & caps, MfxVideoParam cons
         RectData *rect = (RectData *)&(DirtyRect->Rect[i]);
 
         rsts = CheckAndFixRect(rect, par, caps);
+
+        // Elimination of invalid rects
+        // Driver requirement
+        if (rect->Left >= rect->Right || rect->Top >= rect->Bottom) {
+            DirtyRect->NumRect--;
+            for (mfxU16 j = i; j < DirtyRect->NumRect; j++)
+                DirtyRect->Rect[j] = DirtyRect->Rect[j + 1];
+            changed++;
+            i--;
+            continue;
+        }
     }
 
     if (changed)

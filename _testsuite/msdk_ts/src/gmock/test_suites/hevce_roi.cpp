@@ -97,7 +97,7 @@ namespace hevce_roi
         {/*06*/ MFX_ERR_NONE, NONE, CAPS_NUM_ROI_EQ_MAX, MFX_ROI_MODE_PRIORITY, TBD_ON_RUNTIME, 32, 32, 64, 64, 1 },
 
         // one region with invalid dimensions [quantity, top, left, right, bottom, qp-alter]
-        {/*07*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 128, 128, 32, 32, 11 },
+        {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 128, 128, 32, 32, 11 },
 
         // region with invalid unaligned coordinates [quantity, top, left, right, bottom, qp-alter]
         {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 111, 13, 3, 1, 11},
@@ -123,7 +123,7 @@ namespace hevce_roi
         },
 
         // one null-region [quantity, top, left, right, bottom, qp-alter]
-        {/*14*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 0, 0, 0, 0, 11 },
+        {/*14*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 0, 0, 0, 0, 11 },
 
         // checking Query with correct region [quantity, top, left, right, bottom, qp-alter]
         {/*15*/ MFX_ERR_NONE, CHECK_QUERY, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 128, 128, 11 },
@@ -215,21 +215,21 @@ namespace hevce_roi
         },
 
         // one region with invalid dimensions in CBR
-        {/*30*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 64, 64, 32, 32, 11,
+        {/*30*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 64, 64, 32, 32, 11,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
         }
         },
 
         // region with invalid dimensions in VBR
-        {/*31*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 128, 128, 32, 32, 11,
+        {/*31*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 128, 128, 32, 32, 11,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
         }
         },
 
         // region with invalid dimensions in CQP
-        {/*32*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 128, 128, 32, 32, 11,
+        {/*32*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 128, 128, 32, 32, 11,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
         }
@@ -299,14 +299,14 @@ namespace hevce_roi
         },
 
         // one null-region in CBR
-        {/*42*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 0, 0, 0, 0, 11,
+        {/*42*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 0, 0, 0, 0, 11,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
         }
         },
 
         // one null-region in CQP
-        {/*43*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 0, 0, 0, 0, 11,
+        {/*43*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 0, 0, 0, 0, 11,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
         }
