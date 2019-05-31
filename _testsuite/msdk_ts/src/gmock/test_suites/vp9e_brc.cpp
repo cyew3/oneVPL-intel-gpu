@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -58,6 +58,7 @@ namespace vp9e_brc
             MFX_BS,
             MULTIPLIER_CHECK,
             CHECK_BITRATE_DYNAMIC_CHANGE,
+            BS_TOO_SMALL,
             NONE
         };
 
@@ -96,7 +97,7 @@ namespace vp9e_brc
             }
         },
 
-        {/*04 too small 'BufferSizeInKB'*/ MFX_ERR_NONE, NONE,
+        {/*04 too small 'BufferSizeInKB'*/ MFX_ERR_NONE, BS_TOO_SMALL,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
@@ -395,6 +396,13 @@ ICQ-based brc is not supported by the driver now, cases are left for the future 
                 }
 
                 g_tsStatus.check(); TS_CHECK_MFX;
+                if (tc.type == BS_TOO_SMALL)
+                {
+                    g_tsStatus.expect(MFX_ERR_NOT_ENOUGH_BUFFER);
+                    SyncOperation(); TS_CHECK_MFX;
+                    throw tsOK;
+                }
+
                 SyncOperation(); TS_CHECK_MFX;
 
                 BSErr bserror = set_buffer(m_pBitstream->Data, m_pBitstream->DataLength);
