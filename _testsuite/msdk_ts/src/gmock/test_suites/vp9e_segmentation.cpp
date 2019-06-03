@@ -58,6 +58,7 @@ namespace vp9e_segmentation
         CHECK_STRESS_SCENARIO_2 = 0x1 << 17,
         CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER = 0x1 << 18,
         CHECK_ARTIFACTS = 0x1 << 19,
+        CHECK_QP_OVERFLOW = 0x1 << 20,
     };
 
     struct tc_struct
@@ -196,6 +197,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         mfxStatus AllocateAndSetMap(mfxExtVP9Segmentation &segment_ext_params, mfxU32 is_check_no_buffer = 0);
         static const tc_struct test_case[];
         mfxU32 m_SourceFrameCount;
+        std::unique_ptr<mfxExtBuffer> m_ExtBuff;
     };
 
     const tc_struct TestSuite::test_case[] =
@@ -600,6 +602,17 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         // Stress-test: Scenario #2 (see the script below in RunTest)
         {/*39*/ MFX_ERR_NONE, CHECK_STRESS_TEST | CHECK_STRESS_SCENARIO_2 | CHECK_PSNR | CHECK_ARTIFACTS, {} },
+
+        // Check overall QP overflow: QP_GLOBAL + QP_FRAME_DELTA + Q_SEGMENT_DELTA > MAX_FRAME_QP
+        // expected MFX_WRN_INCOMPATIBLE_VIDEO_PARAM on EncodeFrameAsync()
+        {/*40*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_QP_OVERFLOW | CHECK_SEGM_ON_FRAME,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[0].QIndexDelta, 10 },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, (mfxU32)(10) },
+            }
+        },
 
     };
 
@@ -1138,7 +1151,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             {
                 g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
             }
-            else if (is_frame_with_out_of_range_params && flags & CHECK_SEGM_OUT_OF_RANGE_PARAMS)
+            else if ((is_frame_with_out_of_range_params && flags & CHECK_SEGM_OUT_OF_RANGE_PARAMS) || (flags & CHECK_QP_OVERFLOW && m_SourceFrameCount == 1))
             {
                 g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
                 // for out-of-range segmentation params a warning expected at this point
@@ -1422,6 +1435,25 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         m_SourceHeight = m_par.mfx.FrameInfo.Height;
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         m_par.mfx.QPI = m_par.mfx.QPP = 50;
+
+        if (tc.type & CHECK_QP_OVERFLOW)
+        {
+            m_par.mfx.QPI = m_par.mfx.QPP = 240;
+            m_pCtrl->QP = 240;
+
+            m_ExtBuff.reset((mfxExtBuffer*)(new mfxExtVP9Param()));
+            memset(m_ExtBuff.get(), 0, sizeof(mfxExtVP9Param));
+            m_ExtBuff->BufferId = MFX_EXTBUFF_VP9_PARAM;
+            m_ExtBuff->BufferSz = sizeof(mfxExtVP9Param);
+
+            ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaLumaDC = 10;
+            ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaChromaAC = 10;
+            ((mfxExtVP9Param*)m_ExtBuff.get())->QIndexDeltaChromaDC = 10;
+
+            m_pCtrl->NumExtParam = 1;
+            m_pCtrl->ExtParam = (mfxExtBuffer **)&m_ExtBuff;
+            m_pPar->AsyncDepth = 1;
+        }
 
         BitstreamChecker bs_checker(this, &inputSurfaces, tc.type & CHECK_PSNR ? true : false, tc.type & CHECK_ARTIFACTS ? true : false);
         m_bs_processor = &bs_checker;
