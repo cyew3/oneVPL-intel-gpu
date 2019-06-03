@@ -1109,6 +1109,9 @@ mfxStatus D3D11Encoder::Init(
             if(m_pMFEAdapter == nullptr)
             m_pMFEAdapter = CreatePlatformMFEEncoder(m_core);
 
+            if (m_pMFEAdapter == nullptr)
+                return MFX_ERR_UNSUPPORTED;
+
             sts = m_pMFEAdapter->Create(m_pVideoDevice, m_pVideoContext, width, height);
             if (sts != MFX_ERR_NONE)
                 return sts;

@@ -36,6 +36,7 @@ MFEDXVAEncoder::MFEDXVAEncoder() :
     , m_mfe_wait()
     , m_mfe_guard()
     , m_pVideoDevice(nullptr)
+    , m_pVideoContext(nullptr)
     , m_pMfeContext(nullptr)
     , m_framesToCombine(0)
     , m_maxFramesToCombine(0)
