@@ -603,17 +603,6 @@ public:
     {
         m_sample_size = 4;
     }
-
-protected:
-    mfxU8* start_pointer(mfxFrameSurface1 *surface) override
-    {
-        mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
-
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return data.R + info.CropX * m_sample_size + info.CropY * pitch;
-    }
 };
 
 class DECL_CONVERTER(MFX_FOURCC_BGR4, MFX_FOURCC_RGB4)
@@ -704,17 +693,6 @@ public:
         : BSConverterPacketedCopy(MFX_FOURCC_RGB4, MFX_FOURCC_RGB4)
     {
         m_sample_size = 4;//base class donot touch this member
-    }
-
-protected:
-    mfxU8* start_pointer(mfxFrameSurface1 *surface) override
-    {
-        mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
-
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return data.B + info.CropX * m_sample_size + info.CropY * pitch;
     }
 };
 
