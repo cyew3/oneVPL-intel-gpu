@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -12,18 +12,19 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 #include "ts_struct.h"
 #include "ts_parser.h"
 
+//set idr to every 50 frame
+#define IDR_FRAME_NUMBER 50
+
 namespace avce_idr_insertion
 {
+bool is_frame_idr(int time_stamp);
+bool is_frame_last_before_idr(int time_stamp);
 
 class TestSuite : public tsVideoEncoder, tsBitstreamProcessor, tsParserH264AU, tsSurfaceProcessor
 {
 public:
     TestSuite() : tsVideoEncoder(MFX_CODEC_AVC)
                 , m_fo(0)
-                , idr_timestamp(0) 
-                , prev_timestamp(0)
-                , pred_frame_type(-1)
-
     {
         m_bs_processor = this;
         set_trace_level(0);
@@ -54,22 +55,17 @@ public:
     static const unsigned int n_cases;
 
     mfxU32 m_fo;
-    mfxU64 idr_timestamp;
-    mfxU64 prev_timestamp;
-    int pred_frame_type;
     bool isSliceHeader(Bs8u nalu_type){
         return (nalu_type == 1 || nalu_type == 5 || nalu_type == 20);
     }
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
-
         s.Data.TimeStamp = s.Data.FrameOrder = m_fo++;
-        if (s.Data.TimeStamp % 50 == 0)
+        // if frame should be idr set idr frame type
+        if (is_frame_idr(s.Data.TimeStamp))
         {
-            m_ctrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;  
-            idr_timestamp = s.Data.TimeStamp;
-            prev_timestamp = idr_timestamp - 1;
+            m_ctrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
         }
         else 
         {
@@ -94,13 +90,17 @@ public:
                 if(nalu->slice_hdr->first_mb_in_slice)  continue;
 
                 slice_header& frame = *nalu->slice_hdr;
-                if(bs.TimeStamp == prev_timestamp)
+                // check slice type for frame which should be idr
+                if (is_frame_idr(bs.TimeStamp))
                 {
-                    pred_frame_type = (int)frame.slice_type;
+                    int frame_type = (int)frame.slice_type;
+                    EXPECT_EQ(7, frame_type) << "error, idr frame has type: " << frame_type << " \n";
                 }
-                if(pred_frame_type != -1)
+                // check slice type for last frame before idr frame
+                if (is_frame_last_before_idr(bs.TimeStamp))
                 {
-                    EXPECT_EQ(5, pred_frame_type) << "error last frame type: " << pred_frame_type << " \n";
+                    int frame_type = (int)frame.slice_type;
+                    EXPECT_EQ(5, frame_type) << "error, previous frame from idr has type: " << frame_type << " \n";
                 }
             }
         }
@@ -111,6 +111,20 @@ public:
     }
 };
 
+bool is_frame_idr(int time_stamp)
+{
+    // every IDR_FRAME_NUMBER (=50) frame should be idr
+    if (time_stamp % IDR_FRAME_NUMBER == 0)
+    {
+        return true;
+    }
+    return false;
+}
+
+bool is_frame_last_before_idr(int time_stamp)
+{
+    return is_frame_idr(time_stamp + 1);
+}
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
@@ -156,7 +170,6 @@ int TestSuite::RunTest(unsigned int id)
 
     mfxU32 nframes = 60;
     EncodeFrames(nframes, true);
-    EXPECT_EQ(true, pred_frame_type != -1) << "error last frame type: " << pred_frame_type << " \n";
     TS_END;
     return 0;
 }
