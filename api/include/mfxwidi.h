@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2019 Intel Corporation. All Rights Reserved.
 
 File Name: mfxwidi.h
 
@@ -23,10 +23,12 @@ enum {
     MFX_EXTBUFF_ENCODER_WIDI_USAGE = MFX_MAKEFOURCC('W','I','D','I')
 };
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer    Header; 
     mfxU32          reserved[30];
 } mfxExtAVCEncoderWiDiUsage;
+MFX_PACK_END()
 
 #ifdef __cplusplus
 } // extern "C"

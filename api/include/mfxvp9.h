@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2007-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -43,7 +43,7 @@ enum {
     MFX_EXTBUFF_VP9_DECODED_FRAME_INFO = MFX_MAKEFOURCC('9','D','F','I')
 };
 
-
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer Header;
 
@@ -51,6 +51,7 @@ typedef struct {
     mfxU16       DisplayHeight;
     mfxU16       reserved[58];
 } mfxExtVP9DecodedFrameInfo;
+MFX_PACK_END()
 
 #endif
 

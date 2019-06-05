@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2007-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -38,6 +38,7 @@ extern "C"
 #endif
 
 /* MFXVideoCORE */
+MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct {
     mfxU32      reserved[4];
     mfxHDL      pthis;
@@ -46,7 +47,9 @@ typedef struct {
     mfxStatus  (MFX_CDECL *Unlock)   (mfxHDL pthis, mfxMemId mid);
     mfxStatus  (MFX_CDECL *Free)     (mfxHDL pthis, mfxMemId mid);
 } mfxBufferAllocator;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct {
     mfxU32      reserved[4];
     mfxHDL      pthis;
@@ -57,6 +60,7 @@ typedef struct {
     mfxStatus  (MFX_CDECL  *GetHDL)   (mfxHDL pthis, mfxMemId mid, mfxHDL *handle);
     mfxStatus  (MFX_CDECL  *Free)     (mfxHDL pthis, mfxFrameAllocResponse *response);
 } mfxFrameAllocator;
+MFX_PACK_END()
 
 /* VideoCORE */
 mfxStatus MFX_CDECL MFXVideoCORE_SetBufferAllocator(mfxSession session, mfxBufferAllocator *allocator);

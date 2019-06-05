@@ -88,11 +88,14 @@ enum {
     MFX_EXTBUFF_CENC_PARAM          = MFX_MAKEFOURCC('C','E','N','P')
 };
 
+MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
 typedef struct _mfxAES128CipherCounter{
     mfxU64  IV;
     mfxU64  Count;
 } mfxAES128CipherCounter;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
 typedef struct _mfxEncryptedData{
     mfxEncryptedData *Next;
     mfxHDL reserved1;
@@ -104,7 +107,9 @@ typedef struct _mfxEncryptedData{
     mfxU32 AppId;
     mfxU32 reserved2[7];
 } mfxEncryptedData;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
 typedef struct _mfxExtPAVPOption{
     mfxExtBuffer    Header; /* MFX_EXTBUFF_PAVP_OPTION */
     mfxAES128CipherCounter CipherCounter;
@@ -113,14 +118,18 @@ typedef struct _mfxExtPAVPOption{
     mfxU16      CounterType;
     mfxU32      reserved[8];
 } mfxExtPAVPOption;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct _mfxExtCencParam{
     mfxExtBuffer Header;
 
     mfxU32 StatusReportIndex;
     mfxU32 reserved[15];
 } mfxExtCencParam;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct _mfxExtDecryptedParam{
     mfxExtBuffer Header;
 
@@ -128,6 +137,7 @@ typedef struct _mfxExtDecryptedParam{
     mfxU32 DataLength;
     mfxU32 reserved[11];
 } mfxExtDecryptedParam;
+MFX_PACK_END()
 
 #ifdef __cplusplus
 } // extern "C"

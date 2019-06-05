@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2010-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2010-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -77,6 +77,7 @@ enum {
     MFX_CHROMAFORMAT_JPEG_SAMPLING = 6
 };
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer    Header;
 
@@ -85,7 +86,9 @@ typedef struct {
 
     mfxU16    Qm[4][64];
 } mfxExtJPEGQuantTables;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer    Header;
 
@@ -103,6 +106,7 @@ typedef struct {
         mfxU8   Values[162];
     } ACTables[4];
 } mfxExtJPEGHuffmanTables;
+MFX_PACK_END()
 
 #ifdef __cplusplus
 } // extern "C"

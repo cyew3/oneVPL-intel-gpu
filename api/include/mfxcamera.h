@@ -62,6 +62,7 @@ typedef enum {
     MFX_CAM_GAMMA_LUT        = 0x0002,
 } mfxCamGammaParam;
 
+MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
 typedef struct {
     mfxExtBuffer    Header;
     mfxU16  Mode;
@@ -72,14 +73,16 @@ typedef struct {
     mfxU16  NumPoints;
     mfxU16  GammaPoint[1024];
     mfxU16  GammaCorrected[1024];
-    mfxU32  reserved3[4]; 
+    mfxU32  reserved3[4];
 } mfxExtCamGammaCorrection;
+MFX_PACK_END()
 
 typedef enum {
     MFX_CAM_WHITE_BALANCE_MANUAL   = 0x0001,
     MFX_CAM_WHITE_BALANCE_AUTO     = 0x0002
 } mfxCamWhiteBalanceMode;
 
+MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
 typedef struct {
     mfxExtBuffer    Header;
     mfxU32          Mode;
@@ -89,7 +92,9 @@ typedef struct {
     mfxF64          G1;
     mfxU32          reserved[8];
 } mfxExtCamWhiteBalance;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer Header;
     mfxU16        R;
@@ -100,7 +105,9 @@ typedef struct {
     mfxU16        Y;
     mfxU16        reserved[6];
 } mfxExtCamTotalColorControl;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer Header;
 
@@ -109,13 +116,17 @@ typedef struct {
     mfxF32       PostOffset[3];
     mfxU16       reserved[30];
 } mfxExtCamCscYuvRgb;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer    Header;
     mfxU16          PixelThresholdDifference;
     mfxU16          PixelCountThreshold;
 } mfxExtCamHotPixelRemoval;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer    Header;
     mfxU16          R;
@@ -124,19 +135,25 @@ typedef struct {
     mfxU16          G1;
     mfxU32          reserved[4];
 } mfxExtCamBlackLevelCorrection;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxU8 integer;
     mfxU8 mantissa;
 } mfxCamVignetteCorrectionElement;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxCamVignetteCorrectionElement R;
     mfxCamVignetteCorrectionElement G0;
     mfxCamVignetteCorrectionElement B;
     mfxCamVignetteCorrectionElement G1;
 } mfxCamVignetteCorrectionParam;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct {
     mfxExtBuffer    Header;
 
@@ -146,21 +163,27 @@ typedef struct {
     mfxU32          reserved[7];
 
     mfxCamVignetteCorrectionParam *CorrectionMap;
-    
-} mfxExtCamVignetteCorrection;
 
+} mfxExtCamVignetteCorrection;
+MFX_PACK_END()
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer    Header;
     mfxU16          Threshold;
     mfxU16          reserved[27];
 } mfxExtCamBayerDenoise;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
 typedef struct {
     mfxExtBuffer    Header;
     mfxF64          CCM[3][3];
     mfxU32          reserved[4];
 } mfxExtCamColorCorrection3x3;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer    Header;
     mfxU16 Top;
@@ -169,6 +192,7 @@ typedef struct {
     mfxU16 Right;
     mfxU32 reserved[4];
 } mfxExtCamPadding;
+MFX_PACK_END()
 
 typedef enum {
     MFX_CAM_BAYER_BGGR   = 0x0000,
@@ -177,20 +201,25 @@ typedef enum {
     MFX_CAM_BAYER_GRBG   = 0x0003
 } mfxCamBayerFormat;
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer    Header;
     mfxU16          RawFormat;
     mfxU16          reserved1;
     mfxU32          reserved[5];
 } mfxExtCamPipeControl;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct{
     mfxU16 Pixel;
     mfxU16 Red;
     mfxU16 Green;
     mfxU16 Blue;
 } mfxCamFwdGammaSegment;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
 typedef struct {
     mfxExtBuffer Header;
 
@@ -201,7 +230,9 @@ typedef struct {
         mfxU64 reserved1;
     };
 } mfxExtCamFwdGamma;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer Header;
 
@@ -211,6 +242,7 @@ typedef struct {
     mfxF32       d[3]; // [R, G, B]
     mfxU16       reserved[36];
 } mfxExtCamLensGeomDistCorrection;
+MFX_PACK_END()
 
 /* LUTSize */
 enum {
@@ -219,13 +251,16 @@ enum {
     MFX_CAM_3DLUT65_SIZE = (65 * 65 * 65)
 };
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxU16 R;
     mfxU16 G;
     mfxU16 B;
     mfxU16 Reserved;
 } mfxCam3DLutEntry;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
 typedef struct {
     mfxExtBuffer Header;
 
@@ -237,6 +272,7 @@ typedef struct {
         mfxU64 reserved1;
     };
 } mfxExtCam3DLut;
+MFX_PACK_END()
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2014-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2014-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -37,6 +37,7 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct {
     mfxU16 reserved[32];
 
@@ -53,7 +54,9 @@ typedef struct {
     mfxU16 NumPayload;
     mfxPayload      **Payload;
 } mfxPAKInput;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct {
     mfxU16  reserved[32];
 
@@ -64,6 +67,7 @@ typedef struct {
     mfxU16            NumExtParam;
     mfxExtBuffer    **ExtParam;
 } mfxPAKOutput;
+MFX_PACK_END()
 
 typedef struct _mfxSession *mfxSession;
 mfxStatus MFX_CDECL MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out);

@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2010-2013 Intel Corporation.  All rights reserved.
+Copyright (C) 2010-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -49,6 +49,7 @@ enum {
     MFX_EXTBUFF_MVC_TARGET_VIEWS    =   MFX_MAKEFOURCC('M','V','C','T')
 };
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct  {
     mfxU16 ViewId;
 
@@ -62,7 +63,9 @@ typedef struct  {
     mfxU16 NonAnchorRefL0[16];
     mfxU16 NonAnchorRefL1[16];
 } mfxMVCViewDependency;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct {
     mfxU16 TemporalId;
     mfxU16 LevelIdc;
@@ -71,7 +74,9 @@ typedef struct {
     mfxU16 NumTargetViews;
     mfxU16 *TargetViewId;
 } mfxMVCOperationPoint;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct  {
     mfxExtBuffer Header;
 
@@ -91,7 +96,9 @@ typedef struct  {
     mfxU32 Reserved[16];
 
 } mfxExtMVCSeqDesc;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer    Header;
 
@@ -99,7 +106,7 @@ typedef struct {
     mfxU32 NumView;
     mfxU16 ViewId[1024];
 } mfxExtMVCTargetViews ;
-
+MFX_PACK_END()
 
 #ifdef __cplusplus
 } // extern "C"
