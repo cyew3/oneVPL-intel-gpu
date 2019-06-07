@@ -71,7 +71,7 @@ public:
 
     virtual
     mfxStatus QueryEncodeCaps(
-        ENCODE_CAPS_HEVC & caps);
+        MFX_ENCODE_CAPS_HEVC & caps);
 
     virtual
     mfxStatus QueryMbPerSec(
@@ -112,7 +112,7 @@ private:
     MFEDXVAEncoder*                             m_pMfeAdapter;
     ENCODE_MULTISTREAM_INFO                     m_StreamInfo;
 #endif
-    ENCODE_CAPS_HEVC                            m_caps;
+    MFX_ENCODE_CAPS_HEVC                        m_caps;
     ENCODE_ENC_CTRL_CAPS                        m_capsQuery;
     ENCODE_ENC_CTRL_CAPS                        m_capsGet;
     bool                                        m_infoQueried;

@@ -67,7 +67,7 @@ public:
 
     virtual
     mfxStatus QueryEncodeCaps(
-        ENCODE_CAPS_HEVC & caps);
+        MFX_ENCODE_CAPS_HEVC & caps);
 
     virtual
     mfxStatus QueryMbPerSec(
@@ -101,7 +101,7 @@ private:
     GUID                 m_guid;
     mfxU32               m_width;
     mfxU32               m_height;
-    ENCODE_CAPS_HEVC     m_caps;
+    MFX_ENCODE_CAPS_HEVC m_caps;
     ENCODE_ENC_CTRL_CAPS m_capsQuery;
     ENCODE_ENC_CTRL_CAPS m_capsGet;
     bool                 m_infoQueried;

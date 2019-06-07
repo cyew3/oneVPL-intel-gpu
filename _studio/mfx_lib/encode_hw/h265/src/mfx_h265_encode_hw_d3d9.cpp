@@ -200,8 +200,8 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(Mf
     PAVP;
 #endif
 
-    FillSpsBuffer(par, m_caps, m_sps);
-    FillPpsBuffer(par, m_caps, m_pps);
+    FillSpsBuffer(par, m_caps.ddi_caps, m_sps);
+    FillPpsBuffer(par, m_caps.ddi_caps, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
     DDIHeaderPacker::Reset(par);
@@ -223,8 +223,8 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Reset(MfxVideoParam const & 
     Zero(m_pps);
     Zero(m_slice);
 
-    FillSpsBuffer(par, m_caps, m_sps);
-    FillPpsBuffer(par, m_caps, m_pps);
+    FillSpsBuffer(par, m_caps.ddi_caps, m_sps);
+    FillPpsBuffer(par, m_caps.ddi_caps, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
     DDIHeaderPacker::Reset(par);
@@ -290,7 +290,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIFO
 }
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
-mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryEncodeCaps(ENCODE_CAPS_HEVC & caps)
+mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryEncodeCaps(MFX_ENCODE_CAPS_HEVC & caps)
 {
 #ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
@@ -380,7 +380,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & tas
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
 
-    FillPpsBuffer(task, m_caps, m_pps, m_dirtyRects);
+    FillPpsBuffer(task, m_caps.ddi_caps, m_pps, m_dirtyRects);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
     m_pps.NumSlices = (USHORT)(m_slice.size());
 
@@ -646,7 +646,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & task
         task.m_avgQP = feedback->AverageQP;
         task.m_MAD = feedback->MAD;
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        if (m_widi && m_caps.HWCounterAutoIncrementSupport)
+        if (m_widi && m_caps.ddi_caps.HWCounterAutoIncrementSupport)
         {
             task.m_aes_counter.Count = feedback->aes_counter.Counter;
             task.m_aes_counter.IV    = feedback->aes_counter.IV;

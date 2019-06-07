@@ -220,7 +220,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
         ENCODE_CAPS_HEVC * caps = (ENCODE_CAPS_HEVC *)m_pMfeAdapter->GetCaps(DDI_CODEC_HEVC);
         if(caps == nullptr)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
-        m_caps = *caps;
+        m_caps.ddi_caps = *caps;
         m_vdecoder = m_pMfeAdapter->GetVideoDecoder();
         if (m_vdecoder == nullptr)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -299,8 +299,8 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
         m_pMfeAdapter->Join(par.m_ext.mfeParam, m_StreamInfo, timeout);
     }
 #endif
-    FillSpsBuffer(par, m_caps, m_sps);
-    FillPpsBuffer(par, m_caps, m_pps);
+    FillSpsBuffer(par, m_caps.ddi_caps, m_sps);
+    FillPpsBuffer(par, m_caps.ddi_caps, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
     DDIHeaderPacker::Reset(par);
@@ -324,8 +324,8 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Reset(MfxVideoParam const &
     Zero(m_pps);
     Zero(m_slice);
 
-    FillSpsBuffer(par, m_caps, m_sps);
-    FillPpsBuffer(par, m_caps, m_pps);
+    FillSpsBuffer(par, m_caps.ddi_caps, m_sps);
+    FillPpsBuffer(par, m_caps.ddi_caps, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
     DDIHeaderPacker::Reset(par);
@@ -462,7 +462,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIF
 }
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
-mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryEncodeCaps(ENCODE_CAPS_HEVC & caps)
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryEncodeCaps(MFX_ENCODE_CAPS_HEVC & caps)
 {
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
@@ -571,7 +571,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
 
-    FillPpsBuffer(task, m_caps, m_pps, m_dirtyRects);
+    FillPpsBuffer(task, m_caps.ddi_caps, m_pps, m_dirtyRects);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
 
     RES_ID_BS  = 0;
@@ -947,7 +947,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & tas
         task.m_MAD = feedback->MAD;
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        if (m_widi && m_caps.HWCounterAutoIncrementSupport)
+        if (m_widi && m_caps.ddi_caps.HWCounterAutoIncrementSupport)
         {
             task.m_aes_counter.Count = feedback->aes_counter.Counter;
             task.m_aes_counter.IV    = feedback->aes_counter.IV;

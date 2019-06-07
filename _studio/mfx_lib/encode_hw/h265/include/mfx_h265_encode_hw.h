@@ -158,10 +158,10 @@ protected:
         return CreatePlatformH265Encoder(core, type);
     }
 
-    mfxStatus CheckVideoParam(MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps, bool bInit = false);
+    mfxStatus CheckVideoParam(MfxVideoParam & par, MFX_ENCODE_CAPS_HEVC const & caps, bool bInit = false);
     mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
 
-    virtual mfxStatus ExtraCheckVideoParam(MfxVideoParam & /*par*/, ENCODE_CAPS_HEVC const & /*caps*/, bool /*bInit = false*/)
+    virtual mfxStatus ExtraCheckVideoParam(MfxVideoParam & /*par*/, MFX_ENCODE_CAPS_HEVC const & /*caps*/, bool /*bInit = false*/)
     {
         return MFX_ERR_NONE;
     }
@@ -195,7 +195,7 @@ protected:
     std::unique_ptr<DriverEncoder>  m_ddi;
     VideoCORE                      *m_core;
     MfxVideoParam                   m_vpar;
-    ENCODE_CAPS_HEVC                m_caps;
+    MFX_ENCODE_CAPS_HEVC            m_caps;
 
     MfxFrameAllocResponse           m_raw;
     MfxFrameAllocResponse           m_rawSkip;

@@ -113,6 +113,15 @@ typedef struct tagENCODE_CAPS_HEVC
     UINT     reserved32bits3;
 } ENCODE_CAPS_HEVC;
 
+struct MFX_ENCODE_CAPS_HEVC
+{
+    ENCODE_CAPS_HEVC ddi_caps;
+    //brc caps provided by msdk
+    bool CQPSupport;
+    bool CBRSupport;
+    bool VBRSupport;
+    bool ICQSupport;
+};
 
 #if !defined(OPEN_SOURCE)
 typedef struct tagFRAMERATE

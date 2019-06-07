@@ -176,7 +176,7 @@ MFEDXVAEncoder* CreatePlatformMFEEncoder(VideoCORE* core);
 MFEVAAPIEncoder* CreatePlatformMFEEncoder(VideoCORE* core);
 #endif
 #endif
-mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* pCore, MfxVideoParam const &par);
+mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* pCore, MfxVideoParam const &par);
 
 class DriverEncoder;
 
@@ -187,9 +187,9 @@ typedef enum tagENCODER_TYPE
 } ENCODER_TYPE;
 
 DriverEncoder* CreatePlatformH265Encoder(VideoCORE* core, ENCODER_TYPE type = ENCODER_DEFAULT);
-mfxStatus QueryHwCaps(VideoCORE* core, GUID guid, ENCODE_CAPS_HEVC & caps, MfxVideoParam const & par);
+mfxStatus QueryHwCaps(VideoCORE* core, GUID guid, MFX_ENCODE_CAPS_HEVC & caps, MfxVideoParam const & par);
 mfxStatus QueryMbProcRate(VideoCORE* core, mfxVideoParam const & par, mfxU32(&mbPerSec)[16], const MfxVideoParam * in);
-mfxStatus CheckHeaders(MfxVideoParam const & par, ENCODE_CAPS_HEVC const & caps);
+mfxStatus CheckHeaders(MfxVideoParam const & par, MFX_ENCODE_CAPS_HEVC const & caps);
 
 #if MFX_EXTBUFF_CU_QP_ENABLE
 mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, VideoCORE& core, mfxFrameInfo &CUQPFrameInfo);
@@ -239,7 +239,7 @@ public:
 
     virtual
     mfxStatus QueryEncodeCaps(
-        ENCODE_CAPS_HEVC & caps) = 0;
+        MFX_ENCODE_CAPS_HEVC & caps) = 0;
 
     virtual
     mfxStatus QueryMbPerSec(

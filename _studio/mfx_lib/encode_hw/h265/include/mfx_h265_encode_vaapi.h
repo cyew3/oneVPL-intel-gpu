@@ -235,7 +235,7 @@ mfxStatus SetSkipFrame(
 
         virtual
         mfxStatus QueryEncodeCaps(
-            ENCODE_CAPS_HEVC& caps);
+            MFX_ENCODE_CAPS_HEVC& caps);
 
         virtual
         mfxStatus QueryMbPerSec(
@@ -301,7 +301,7 @@ mfxStatus SetSkipFrame(
 
         mfxU32 m_width;
         mfxU32 m_height;
-        ENCODE_CAPS_HEVC m_caps;
+        MFX_ENCODE_CAPS_HEVC m_caps;
 
 #if MFX_EXTBUFF_CU_QP_ENABLE
         CUQPMap    m_cuqpMap;
@@ -311,7 +311,7 @@ mfxStatus SetSkipFrame(
         static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 26 + 5;
 
         UMC::Mutex m_guard;
-        HeaderPacker m_headerPacker; 
+        HeaderPacker m_headerPacker;
 #if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
         MFEVAAPIEncoder *m_pMfeAdapter;
 #endif

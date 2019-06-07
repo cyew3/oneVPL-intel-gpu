@@ -954,7 +954,7 @@ public:
 
     mfxStatus FillPar(mfxVideoParam& par, bool query = false);
 
-    mfxStatus GetSliceHeader(Task const & task, Task const & prevTask, ENCODE_CAPS_HEVC const & caps, Slice & s) const;
+    mfxStatus GetSliceHeader(Task const & task, Task const & prevTask, MFX_ENCODE_CAPS_HEVC const & caps, Slice & s) const;
 
     mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
     bool CheckExtBufferParam();
@@ -1134,7 +1134,7 @@ void ConfigureTask(
     Task &                   task,
     Task const &             prevTask,
     MfxVideoParam const &    video,
-    ENCODE_CAPS_HEVC const & caps,
+    MFX_ENCODE_CAPS_HEVC const & caps,
     mfxU32 &                 baseLayerOrder);
 
 mfxI64 CalcDTSFromPTS(
@@ -1170,7 +1170,7 @@ IntraRefreshState GetIntraRefreshState(
     MfxVideoParam const & video,
     mfxU32                frameOrderInGopDispOrder,
     mfxEncodeCtrl const * ctrl,
-    ENCODE_CAPS_HEVC const& caps);
+    MFX_ENCODE_CAPS_HEVC const& caps);
 
 mfxU8 GetNumReorderFrames(
     mfxU32 BFrameRate,
