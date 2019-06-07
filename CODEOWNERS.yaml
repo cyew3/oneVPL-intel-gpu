@@ -5,9 +5,7 @@ codeowners:
   paths:
   - CODEOWNERS.yaml
   reviewers:
-  - alexander.dydychkin@intel.com
   - dmitry.kozlov@intel.com
-  - alexander.zhogov@intel.com
   - eugene.ponomarev@intel.com
 
 camera plugin:
@@ -85,11 +83,13 @@ h264e:
   - _studio/shared/umc/codec/me
   - _testsuite/msdk_ts/src/gmock/test_suites/avce
   reviewers:
+  - georgy.krivoruchko@intel.com
+  - olga.a.kasatkina@intel.com
+  - evgeniy.starov@intel.com
   - oleg.nabiullin@intel.com
   - alexey.s.kokoshnikov@intel.com
   - roman.kazantsev@intel.com
   - andrey.larionov@intel.com
-  - evgeniy.starov@intel.com
   - stanislav.efremov@intel.com
   - timofei.a.kulakov@intel.com
 
