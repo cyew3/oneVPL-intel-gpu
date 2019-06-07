@@ -415,6 +415,7 @@
         #if (MFX_VERSION >= MFX_VERSION_NEXT)
             #ifdef _WIN32
                 #define MFX_ENABLE_AVC_CUSTOM_QMATRIX
+                #define MFX_ENABLE_GPU_BASED_SYNC
             #endif
         #endif
     #endif

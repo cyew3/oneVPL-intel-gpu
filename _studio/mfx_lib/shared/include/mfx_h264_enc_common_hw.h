@@ -268,6 +268,10 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMultiFrameParam,       MFX_EXTBUFF_MULTI_FRAME_PARAM       );
 #endif
 
+#if defined (MFX_ENABLE_GPU_BASED_SYNC)
+    BIND_EXTBUF_TYPE_TO_ID(mfxExtGameStreaming,          MFX_EXTBUFF_GAME_STREAMING          );
+#endif
+
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -619,7 +623,7 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[33];
+        mfxExtBuffer *              m_extParam[34];
         // external, documented
         mfxExtCodingOption          m_extOpt;
         mfxExtCodingOption2         m_extOpt2;
@@ -665,6 +669,9 @@ namespace MfxHwH264Encode
 
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
         mfxExtAVCScalingMatrix      m_extQM;
+#endif
+#if defined(MFX_ENABLE_GPU_BASED_SYNC)
+        mfxExtGameStreaming         m_extGameStreaming;
 #endif
 
 #if defined (MFX_ENABLE_MFE)

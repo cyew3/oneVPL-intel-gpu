@@ -933,6 +933,18 @@ namespace MfxHwH264Encode
     };
 #endif
 
+#ifdef MFX_ENABLE_GPU_BASED_SYNC
+    struct GPUSyncInfo
+    {
+        bool    EnableSync;
+        bool    RepeatFrame;
+        mfxU16  MarkerOffsetX;
+        mfxU16  MarkerOffsetY;
+        mfxU8*  MarkerValue;
+        mfxU32  MarkerSize;
+    };
+#endif
+
     class DdiTask : public Reconstruct
     {
     public:
@@ -1063,6 +1075,9 @@ namespace MfxHwH264Encode
 #endif
 #ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
             , m_qMatrix()
+#endif
+#ifdef MFX_ENABLE_GPU_BASED_SYNC
+            , m_gpuSync()
 #endif
         {
             Zero(m_ctrl);
@@ -1346,6 +1361,9 @@ namespace MfxHwH264Encode
 #endif
 #ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
         ENCODE_SET_PICTURE_QUANT m_qMatrix; //buffer for quantization matrix
+#endif
+#ifdef MFX_ENABLE_GPU_BASED_SYNC
+        GPUSyncInfo     m_gpuSync;
 #endif
     };
 

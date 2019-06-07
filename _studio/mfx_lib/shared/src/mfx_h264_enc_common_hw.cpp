@@ -1721,6 +1721,9 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
 #if defined (MFX_ENABLE_MFE)
         || id == MFX_EXTBUFF_MULTI_FRAME_CONTROL
 #endif
+#if defined MFX_ENABLE_GPU_BASED_SYNC
+        || id == MFX_EXTBUFF_GAME_STREAMING
+#endif
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || (isFeiENCPAK &&
              (  id == MFX_EXTBUFF_FEI_SLICE
@@ -1868,6 +1871,9 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
 #endif
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
         || id == MFX_EXTBUFF_AVC_SCALING_MATRIX
+#endif
+#if defined (MFX_ENABLE_GPU_BASED_SYNC)
+        || id == MFX_EXTBUFF_GAME_STREAMING
 #endif
        );
 }
@@ -2425,6 +2431,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #endif
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
     mfxExtAVCScalingMatrix*    extQM        = GetExtBuffer(par);
+#endif
+#ifdef MFX_ENABLE_GPU_BASED_SYNC
+    mfxExtGameStreaming*       extGameStreaming = GetExtBuffer(par);
 #endif
 
     bool isENCPAK = (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
@@ -5078,6 +5087,49 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #endif // MFX_VA_WIN
 #endif // MFX_ENABLE_H264_REPARTITION_CHECK
 
+#ifdef MFX_ENABLE_GPU_BASED_SYNC
+        if (!CheckTriStateOption(extGameStreaming->GPUPolling))     changed = true;
+        if (!CheckTriStateOption(extGameStreaming->RepeatFrame))    changed = true;
+        //check if feature is supported
+        if (IsOn(extGameStreaming->GPUPolling) && ((hwCaps.ddi_caps.PollingModeSupport == 0) || (extOpt3->ScenarioInfo != MFX_SCENARIO_REMOTE_GAMING)))
+        {
+            extGameStreaming->GPUPolling = MFX_CODINGOPTION_OFF;
+            unsupported = true;
+        }
+        //If GPU polling is not enabled but buffer contains some meaningful values - set parameters to zero
+        if ((!IsOn(extGameStreaming->GPUPolling)) &&
+            (IsOn(extGameStreaming->RepeatFrame)
+            || (extGameStreaming->MarkerOffsetX != 0)
+            || (extGameStreaming->MarkerOffsetY != 0)
+            || (extGameStreaming->MarkerValue   != nullptr)
+            || (extGameStreaming->MarkerSize    != 0)))
+        {
+            extGameStreaming->RepeatFrame = MFX_CODINGOPTION_OFF;
+            extGameStreaming->MarkerOffsetX = 0;
+            extGameStreaming->MarkerOffsetY = 0;
+            extGameStreaming->MarkerSize    = 0;
+            extGameStreaming->MarkerValue = nullptr;
+            changed = true;
+        }
+        //markerValue == nullptr means that we use default value, in this case MarkerSize must be 0.
+        //check that both parameters are equal to zero or both contains meaningful values
+        if (IsOn(extGameStreaming->GPUPolling) &&
+                (((extGameStreaming->MarkerValue != nullptr) || (extGameStreaming->MarkerSize != 0))
+              && !(extGameStreaming->MarkerValue != nullptr) && (extGameStreaming->MarkerSize != 0)))
+        {
+            extGameStreaming->RepeatFrame = MFX_CODINGOPTION_OFF;
+            extGameStreaming->MarkerSize = 0;
+            extGameStreaming->MarkerValue = nullptr;
+            unsupported = true;
+        }
+        //we can not repeat frame if no frame is provided. RepeatFrame setting must be used only on runtime
+        if (IsOn(extGameStreaming->GPUPolling) && IsOn(extGameStreaming->RepeatFrame))
+        {
+            extGameStreaming->RepeatFrame = MFX_CODINGOPTION_OFF;
+            unsupported = true;
+        }
+#endif
+
     return unsupported
         ? MFX_ERR_UNSUPPORTED
         : (changed || warning)
@@ -5661,6 +5713,9 @@ void MfxHwH264Encode::SetDefaults(
 #endif
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
     mfxExtAVCScalingMatrix*    extQM   = GetExtBuffer(par);
+#endif
+#if defined(MFX_ENABLE_GPU_BASED_SYNC)
+    mfxExtGameStreaming*       extGameStreaming = GetExtBuffer(par);
 #endif
 
     bool isENCPAK = (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
@@ -6813,6 +6868,11 @@ void MfxHwH264Encode::SetDefaults(
 
 #ifndef MFX_AVC_ENCODING_UNIT_DISABLE
     SetDefaultOff(extOpt3->EncodedUnitsInfo);
+#endif
+
+#if defined(MFX_ENABLE_GPU_BASED_SYNC)
+    SetDefaultOff(extGameStreaming->GPUPolling);
+    SetDefaultOff(extGameStreaming->RepeatFrame);
 #endif
 
     par.SyncCalculableToVideoParam();
@@ -8181,6 +8241,9 @@ MfxVideoParam::MfxVideoParam()
     , m_MfeControl()
 #endif
     , calcParam()
+#ifdef MFX_ENABLE_GPU_BASED_SYNC
+    , m_extGameStreaming()
+#endif
 {
     memset(m_extParam, 0, sizeof(m_extParam));
     memset(m_extFeiSlice, 0, sizeof(m_extFeiSlice));
@@ -8480,6 +8543,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
 #if defined(MFX_ENABLE_MFE)
     CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameParam, m_MfeParam);
     CONSTRUCT_EXT_BUFFER(mfxExtMultiFrameControl, m_MfeControl);
+#endif
+#if defined(MFX_ENABLE_GPU_BASED_SYNC)
+    CONSTRUCT_EXT_BUFFER(mfxExtGameStreaming, m_extGameStreaming);
 #endif
 
 

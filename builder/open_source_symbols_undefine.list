@@ -155,3 +155,4 @@ __genx_sd_tgl__
 __genx_mc_tgl__
 __genx_me_tgl__
 MFX_ENABLE_CPLIB
+MFX_ENABLE_GPU_BASED_SYNC

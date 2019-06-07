@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2014-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -39,7 +39,8 @@ extern "C" {
 
 /* Extended Buffer Ids */
 enum {
-    MFX_EXTBUFF_AVC_ENCODE_CTRL            = MFX_MAKEFOURCC('A','E','C','L')
+    MFX_EXTBUFF_AVC_ENCODE_CTRL             = MFX_MAKEFOURCC('A','E','C','L'),
+    MFX_EXTBUFF_GAME_STREAMING              = MFX_MAKEFOURCC('G','A','M','E')
 };
 
 enum
@@ -72,6 +73,18 @@ typedef struct {
     mfxU16 deprecated1[5];
 
 } mfxExtAVCEncodeCtrl;
+
+typedef struct {
+    mfxExtBuffer Header;
+    mfxU16       GPUPolling;            /* on/off - enable GPU raw surface polling mode*/
+    mfxU16       RepeatFrame;           /* on/off - indicates that current raw source is identical as the previous one to perform some optimizations*/
+    mfxU16       MarkerOffsetX;         /* in unit of pixels */
+    mfxU16       MarkerOffsetY;         /* in unit of pixels */
+    mfxU8*       MarkerValue;           /* pointer to a memory buffer allocated by app with marker value written to raw source*/
+                                        /* may be released by app when sync point to the accociated frame will be obtained*/
+    mfxU32       MarkerSize;            /* in unit of bytes */
+    mfxU16       Reserved[233];
+} mfxExtGameStreaming;
 
 #ifdef __cplusplus
 } // extern "C"

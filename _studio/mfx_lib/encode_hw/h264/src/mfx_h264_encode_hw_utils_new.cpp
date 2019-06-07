@@ -2105,6 +2105,11 @@ void MfxHwH264Encode::ConfigureTask(
     mfxExtMoveRect const *     extMoveRect         = GetExtBuffer(video);
     mfxExtMoveRect const *     extMoveRectRuntime  = GetExtBuffer(task.m_ctrl);
 
+#if defined MFX_ENABLE_GPU_BASED_SYNC
+    mfxExtGameStreaming const &     extGameStreaming        = GetExtBufferRef(video);
+    mfxExtGameStreaming const *     extGameStreamingRuntime = GetExtBuffer(task.m_ctrl);
+#endif
+
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
     mfxU32 ffid = task.m_fid[0];
@@ -2491,6 +2496,22 @@ void MfxHwH264Encode::ConfigureTask(
         default:
             assert(!"Invalid value for RepartitionCheckEnable!");
         }
+    }
+#endif
+
+#if defined (MFX_ENABLE_GPU_BASED_SYNC)
+    const mfxExtGameStreaming* extGameStreamingCur = (extGameStreamingRuntime != nullptr? extGameStreamingRuntime : &extGameStreaming);
+    task.m_gpuSync = {};
+    task.m_gpuSync.EnableSync = IsOn(extGameStreamingCur->GPUPolling)
+        && (caps.ddi_caps.PollingModeSupport == 1)
+        && (extOpt3.ScenarioInfo == MFX_SCENARIO_REMOTE_GAMING);
+    if (task.m_gpuSync.EnableSync)
+    {
+        task.m_gpuSync.RepeatFrame      = IsOn(extGameStreamingCur->RepeatFrame);
+        task.m_gpuSync.MarkerValue      = extGameStreamingCur->MarkerValue;
+        task.m_gpuSync.MarkerSize       = extGameStreamingCur->MarkerSize;
+        task.m_gpuSync.MarkerOffsetX    = extGameStreamingCur->MarkerOffsetX;
+        task.m_gpuSync.MarkerOffsetY    = extGameStreamingCur->MarkerOffsetY;
     }
 #endif
 }

@@ -630,6 +630,9 @@
 #if (MFX_VERSION >= 1026)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtVppMctf                ,64  )
 #endif
+#if defined MFX_ENABLE_GPU_BASED_SYNC
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtGameStreaming          ,256 )
+#endif
     #endif
 #endif //defined (__MFXSTRUCTURES_H__)
 

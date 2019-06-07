@@ -431,6 +431,15 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
 #if defined(MFX_ENABLE_H264_REPARTITION_CHECK)
     pps.ForceRepartitionCheck = task.m_RepartitionCheck;
 #endif
+
+#ifdef MFX_ENABLE_GPU_BASED_SYNC
+    pps.bEnablePollingMode  = task.m_gpuSync.EnableSync;
+    pps.bRepeatFrame        = task.m_gpuSync.RepeatFrame;
+    pps.SourceMarkerSize    = task.m_gpuSync.MarkerSize;
+    pps.SourceMarkerValue   = task.m_gpuSync.MarkerValue;
+    pps.SourceMarkerStartX  = task.m_gpuSync.MarkerOffsetX;
+    pps.SourceMarkerStartY  = task.m_gpuSync.MarkerOffsetY;
+#endif
 }
 
 
