@@ -28,6 +28,8 @@
 #define DDI_086
 #define AVC_DDI_VERSION_0952
 #define AVC_DDI_VERSION_0960
+#define AVC_DDI_VERSION_0964
+
 #include "mfx_ext_ddi.h"
 
 namespace
@@ -612,7 +614,9 @@ typedef struct tagENCODE_CAPS
             UINT    LowDelayBRCSupport           : 1;
             UINT    MaxNumDeltaQPMinus1          : 4;
             UINT    TCBRCSupport                 : 1;
-            UINT                                 : 8;
+            UINT    HRDConformanceSupport        : 1;
+            UINT    PollingModeSupport           : 1;
+            UINT                                 : 6;
         };
         UINT      CodingLimits2;
     };
@@ -1166,8 +1170,9 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
             UINT        bDisableRollingIntraRefreshOverlap       : 1;
             UINT        ForceRepartitionCheck                    : 2;
             UINT        bDisableFrameSkip                        : 1;
-            UINT        bReserved                                : 15;
-
+            UINT        bEnablePollingMode                       : 1;
+            UINT        bRepeatFrame                             : 1;
+            UINT        bReserved                                : 13;
         };
         BOOL    UserFlags;
     };
@@ -1244,6 +1249,13 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     CHAR        NonRectROIDeltaQpList[16];
 
     UINT        TargetFrameSize;
+#endif
+#ifdef AVC_DDI_VERSION_0964
+    USHORT      SourceMarkerStartX;
+    USHORT      SourceMarkerStartY;
+    UCHAR*      SourceMarkerValue;
+    UINT        SourceMarkerSize;
+    UINT        reserved32b[8];
 #endif
 } ENCODE_SET_PICTURE_PARAMETERS_H264;
 
@@ -1768,7 +1780,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_SVC
     UINT            pic_scaling_matrix_present_flag     : 1;
     UINT            pic_scaling_list_present_flag       : 1;
     UINT            RefPicFlag                          : 1;
-    USHORT    BRCPrecision                    : 2;
+    USHORT          BRCPrecision                    : 2;
 
     UINT            dependency_id                       : 3;
     UINT            quality_id                          : 4;
