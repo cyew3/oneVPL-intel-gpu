@@ -149,7 +149,7 @@ bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
         if (par.m_platform >= MFX_HW_TGL_LP)
         {
             rec.FourCC = MFX_FOURCC_NV12;
-            rec.Width = Align(rec.Width, 32) * 2;
+            rec.Width  = mfx::align2_value(rec.Width, 32) * 2;
         }
         else
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
@@ -177,7 +177,7 @@ bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
     else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 12)
     {
         rec.FourCC = MFX_FOURCC_NV12;
-        rec.Width = Align(rec.Width, 32) * 2;
+        rec.Width  = mfx::align2_value(rec.Width, 32) * 2;
     }
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
     else
@@ -1434,7 +1434,7 @@ mfxStatus MFXVideoENCODEH265_HW::Execute(mfxThreadTask thread_task, mfxU32 /*uid
                 bytesAvailable = ed->MaxLength - ed->DataOffset - ed->DataLength;
                 bsData         = ed->Data + ed->DataOffset + ed->DataLength;
                 pDataLength    = &ed->DataLength;
-                bytes2copy     = Align(bytes2copy, 16);
+                bytes2copy     = mfx::align2_value(bytes2copy, 16);
 
                 ed->CipherCounter = taskForQuery->m_aes_counter;
             }
