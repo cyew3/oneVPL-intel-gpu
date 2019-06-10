@@ -324,6 +324,8 @@ void MFXVideoTest::SetUp()
                 g_tsHWtype = MFX_HW_DG1;
             else if (platform.find("ats") != std::string::npos)
                 g_tsHWtype = MFX_HW_ATS;
+            else if (platform.find("dg2") != std::string::npos)
+                g_tsHWtype = MFX_HW_DG2;
             else
                 g_tsHWtype = MFX_HW_UNKNOWN;
 

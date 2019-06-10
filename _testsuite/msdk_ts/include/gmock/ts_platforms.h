@@ -45,7 +45,8 @@ enum HWType
 
     MFX_HW_TGL       = 0xe00000,
     MFX_HW_DG1       = MFX_HW_TGL + 1,
-    MFX_HW_ATS       = MFX_HW_DG1 + 1
+    MFX_HW_ATS       = MFX_HW_DG1 + 1,
+    MFX_HW_DG2       = MFX_HW_ATS + 1
 };
 
 enum OSFamily
