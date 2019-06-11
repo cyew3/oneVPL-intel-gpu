@@ -519,16 +519,6 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             // external allocator
             if (m_bSetExtFrameAlloc)
             {
-                // Default allocator should be used if D3D manager is not set and internal D3D buffers are required
-                if (!m_pDirect3DDeviceManager && request->Type & MFX_MEMTYPE_INTERNAL_FRAME)
-                {
-                    m_bUseExtAllocForHWFrames = false;
-                    sts = DefaultAllocFrames(request, response);
-                    MFX_CHECK_STS(sts);
-
-                    return sts;
-                }
-
                 sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis, &temp_request, response);
 
                 // if external allocator cannot allocate d3d frames - use default memory allocator
