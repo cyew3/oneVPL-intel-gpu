@@ -218,6 +218,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
         caps.MaxNum_WeightedPredL0 = 4; // = 0 now
         caps.MaxNum_WeightedPredL1 = 2; // = 0 now
         caps.TileSupport = 1;
+        caps.IntraRefreshBlockUnitSize = 2;
     }
 #endif
 
@@ -1198,8 +1199,8 @@ void FillPpsBuffer(
 
     if (pps.bEnableRollingIntraRefresh)
     {
-        pps.IntraInsertionLocation = task.m_IRState.IntraLocation << (3 - caps.IntraRefreshBlockUnitSize);
-        pps.IntraInsertionSize = task.m_IRState.IntraSize << (3 - caps.IntraRefreshBlockUnitSize);
+        pps.IntraInsertionLocation = task.m_IRState.IntraLocation;
+        pps.IntraInsertionSize = task.m_IRState.IntraSize;
         pps.QpDeltaForInsertedIntra = mfxU8(task.m_IRState.IntRefQPDelta);
     }
     pps.StatusReportFeedbackNumber = task.m_statusReportNumber;
