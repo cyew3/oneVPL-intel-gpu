@@ -1007,7 +1007,7 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
             }
         }
     }
-#endif // MSDK_API >= 1023
+#endif // MFX_VERSION >= 1023
 
     return sts;
 }

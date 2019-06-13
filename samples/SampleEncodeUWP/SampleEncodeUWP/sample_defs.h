@@ -27,9 +27,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxdefs.h"
 #include "sample_uwp_types.h"
 
-#define _MSDK_API (MFX_VERSION_MAJOR*256+MFX_VERSION_MINOR)
-#define MSDK_API(M,MM) (M*256+MM)
-
 #if defined(WIN32) || defined(WIN64)
 
 enum {
