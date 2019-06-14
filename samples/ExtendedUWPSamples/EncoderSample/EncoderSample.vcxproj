@@ -181,7 +181,7 @@
     <None Include="key.pfx" />
   </ItemGroup>
   <PropertyGroup>
-    <PackageCertificateKeyFile>key.pfx</PackageCertificateKeyFile>
+    <PackageCertificateKeyFile>$(SolutionDir)Certificate\key.pfx</PackageCertificateKeyFile>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
