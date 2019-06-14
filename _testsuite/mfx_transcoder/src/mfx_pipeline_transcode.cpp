@@ -563,6 +563,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(Hme,                     OPT_TRI_STATE,  "Hme on/off"),
         HANDLE_DDI_OPTION(DisablePSubMBPartition,  OPT_TRI_STATE,  "on=disabled 4x4 4x8 8x4 for P frames, off=enabled 4x4 4x8 8x4 for P frames"),
         HANDLE_DDI_OPTION(DisableBSubMBPartition,  OPT_TRI_STATE,  "on=disabled 4x4 4x8 8x4 for B frames, off=enabled 4x4 4x8 8x4 for B frames"),
+        HANDLE_DDI_OPTION(Transform8x8Mode,        OPT_TRI_STATE,  "on|off. Only for AVC high profile"),
         HANDLE_DDI_OPTION(WeightedBiPredIdc,       OPT_UINT_16,    "0 - off, 1 - explicit (unsupported), 2 - implicit"),
         HANDLE_DDI_OPTION(DirectSpatialMvPredFlag, OPT_TRI_STATE,  "on=spatial, off=temporal"),
         HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),

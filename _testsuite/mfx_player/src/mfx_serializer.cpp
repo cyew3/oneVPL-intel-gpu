@@ -275,6 +275,7 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     SERIALIZE_INT(DisableBSubMBPartition);
     SERIALIZE_INT(WeightedBiPredIdc);
     SERIALIZE_INT(DirectSpatialMvPredFlag);
+    SERIALIZE_INT(Transform8x8Mode);
     SERIALIZE_INT(CabacInitIdcPlus1);
 
     SERIALIZE_INT(QpAdjust);
