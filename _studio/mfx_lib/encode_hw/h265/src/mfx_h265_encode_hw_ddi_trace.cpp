@@ -137,7 +137,6 @@ DECL_START(ENCODE_CAPS_HEVC)
     TRACE("%d", FrameSizeToleranceSupport    );
     TRACE("%d", HWCounterAutoIncrementSupport);
     TRACE("%d", NumScalablePipesMinus1       );
-    TRACE("%d", NegativeQPSupport            );
     TRACE("%d", TileBasedEncodingSupport     );
     TRACE("%d", PartialFrameUpdateSupport    );
     TRACE("%d", RGBEncodingSupport           );

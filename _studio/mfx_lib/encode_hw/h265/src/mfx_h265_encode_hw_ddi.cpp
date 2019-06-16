@@ -140,10 +140,12 @@ MFEVAAPIEncoder* CreatePlatformMFEEncoder(VideoCORE* core)
 #endif
 
 // this function is aimed to workaround all CAPS reporting problems in mainline driver
-mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
+mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoParam const &par)
 {
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(core);
+
+    eMFXHWType platform = core->GetHWType();
 
 #if defined (MFX_VA_LINUX)
     // common part for OS and CS Linux (moved from vaapi)
@@ -154,40 +156,26 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
     caps.SliceStructure          = 4;
     caps.BRCReset                = 1;  // = 0 on Win (no bitrate resolution control); to clarify!!!
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    caps.HRDConformanceSupport   = core->GetHWType() >= MFX_HW_TGL_LP ? 1 : 0;
+    caps.HRDConformanceSupport   = platform >= MFX_HW_TGL_LP ? 1 : 0;
 #endif
-#endif
-
-    // common part for all Windows and CS Linux
+    // Below caps are correct on Windows
     if (!caps.BitDepth8Only && !caps.MaxEncodedBitDepth)
-        caps.MaxEncodedBitDepth = 1;
-    if (!caps.Color420Only && !(caps.YUV444ReconSupport || caps.YUV422ReconSupport))
+        caps.MaxEncodedBitDepth = 1;    // 8/10b
+    if (!caps.Color420Only && !(caps.YUV444ReconSupport) && IsOn(par.mfx.LowPower))
         caps.YUV444ReconSupport = 1;
-    if (!caps.Color420Only && !(caps.YUV422ReconSupport))   // VPG: caps are not correct now
+    if (!caps.Color420Only && !(caps.YUV422ReconSupport) && IsOff(par.mfx.LowPower))
         caps.YUV422ReconSupport = 1;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    caps.MaxEncodedBitDepth = 2;
+#else
+    if (!caps.Color420Only && !(caps.YUV422ReconSupport) &&
+        IsOff(par.mfx.LowPower) && (platform >= MFX_HW_TGL_LP))
+        caps.YUV422ReconSupport = 1;    // Win VME is not fixed yet
 #endif
-
-#if (MFX_VERSION >= 1025)
-    eMFXHWType platform = core->GetHWType();
 
     if (platform < MFX_HW_CNL)
     {   // not set until CNL now
         caps.LCUSizeSupported = 0b10;   // 32x32 lcu is only supported
         caps.BlockSize = 0b10; // 32x32
     }
-
-    if (platform < MFX_HW_ICL)
-        caps.NegativeQPSupport = 0;
-    else
-        caps.NegativeQPSupport = 1; // driver should set it for Gen11+ VME only
-#else
-    if (!caps.LCUSizeSupported)
-        caps.LCUSizeSupported = 2;
-    caps.BlockSize = 2; // 32x32
-    (void)core;
-#endif
 
 #if defined (MFX_VA_LINUX) && !defined (OPEN_SOURCE)
     // align wint Windows for Gen12+

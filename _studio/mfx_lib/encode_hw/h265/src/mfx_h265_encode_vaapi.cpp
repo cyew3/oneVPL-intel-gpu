@@ -943,7 +943,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     GUID guid,
     mfxU32 width,
     mfxU32 height,
-    MfxVideoParam const & /*par*/)
+    MfxVideoParam const &par)
 {
     MFX_CHECK_WITH_ASSERT(core != 0, MFX_ERR_NULL_PTR);
     m_core = core;
@@ -1097,7 +1097,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_caps.TileSupport = (attrs[idx_map[VAConfigAttribEncTileSupport]].value == 1);
 
-    sts = HardcodeCaps(m_caps, core);
+    sts = HardcodeCaps(m_caps, core, par);
     MFX_CHECK_STS(sts);
 
     Trace(guid, 0);

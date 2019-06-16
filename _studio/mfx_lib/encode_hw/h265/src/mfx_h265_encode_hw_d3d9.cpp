@@ -63,7 +63,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     GUID        guid,
     mfxU32      width,
     mfxU32      height,
-    MfxVideoParam const &)
+    MfxVideoParam const &par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAuxilliaryDevice");
     mfxStatus sts = MFX_ERR_NONE;
@@ -130,7 +130,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     m_auxDevice = std::move(auxDevice);
 #endif
 
-    sts = HardcodeCaps(m_caps, core);
+    sts = HardcodeCaps(m_caps, core, par);
     MFX_CHECK_STS(sts);
 
     Trace(m_guid, 0);

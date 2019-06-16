@@ -176,7 +176,7 @@ MFEDXVAEncoder* CreatePlatformMFEEncoder(VideoCORE* core);
 MFEVAAPIEncoder* CreatePlatformMFEEncoder(VideoCORE* core);
 #endif
 #endif
-mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* pCore);
+mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* pCore, MfxVideoParam const &par);
 
 class DriverEncoder;
 
