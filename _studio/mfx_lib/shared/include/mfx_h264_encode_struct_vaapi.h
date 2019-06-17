@@ -301,9 +301,9 @@ typedef struct tagENCODE_CAPS
 
     union {
         struct {
-            UINT    RoundingOffset          : 1;
-            UINT    SkipFrame               : 1;
-            UINT    MbQpDataSupport         : 1;
+            UINT    RoundingOffset               : 1;
+            UINT    SkipFrame                    : 1;
+            UINT    MbQpDataSupport              : 1;
             UINT    SliceLevelWeightedPred  : 1;
             UINT    LumaWeightedPred        : 1;
             UINT    ChromaWeightedPred      : 1;
@@ -312,7 +312,19 @@ typedef struct tagENCODE_CAPS
             UINT    HMEOffsetSupport        : 1;
             UINT    DirtyRectSupport        : 1;
             UINT    MoveRectSupport         : 1;
-            UINT                            : 21;
+            UINT    FrameSizeTolerance      : 1;
+            UINT    HWCounterAutoIncrement  : 2;
+            UINT    MBControlSupport        : 1;
+            UINT    ForceRepartitionCheckSupport : 1;
+            UINT    CustomRoundingControl   : 1;
+            UINT    LLCStreamingBufferSupport    : 1;
+            UINT    DDRStreamingBufferSupport    : 1;
+            UINT    LowDelayBRCSupport           : 1;
+            UINT    MaxNumDeltaQPMinus1          : 4;
+            UINT    TCBRCSupport                 : 1;
+            UINT    HRDConformanceSupport        : 1;
+            UINT    PollingModeSupport           : 1;
+            UINT                                 : 5;
         };
         UINT      CodingLimits2;
     };

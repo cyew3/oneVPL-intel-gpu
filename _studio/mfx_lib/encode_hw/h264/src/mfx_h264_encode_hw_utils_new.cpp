@@ -2498,6 +2498,7 @@ void MfxHwH264Encode::ConfigureTask(
         }
     }
 #endif
+    task.m_TCBRCTargetFrameSize = video.calcParam.TCBRCTargetFrameSize;
 
 #if defined (MFX_ENABLE_GPU_BASED_SYNC)
     const mfxExtGameStreaming* extGameStreamingCur = (extGameStreamingRuntime != nullptr? extGameStreamingRuntime : &extGameStreaming);

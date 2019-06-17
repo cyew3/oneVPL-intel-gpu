@@ -602,7 +602,7 @@ mfxStatus ImplementationSvc::Reset(mfxVideoParam *par)
         extOpaqOld->In.NumSurface == extOpaqNew->In.NumSurface,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    InheritDefaultValues(m_video, newPar);
+    InheritDefaultValues(m_video, newPar, m_caps);
 
     mfxStatus checkStatus = CheckVideoParam(newPar, m_caps, m_core->IsExternalFrameAllocator());
     if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)

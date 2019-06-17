@@ -1518,7 +1518,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     //set NumSliceI/P/B to Numslice if not set by new parameters.
     ResetNumSliceIPB(newPar);
 
-    InheritDefaultValues(m_video, newPar, newParIn);
+    InheritDefaultValues(m_video, newPar, m_caps, newParIn);
 
     eMFXGTConfig* pMFXGTConfig = QueryCoreInterface<eMFXGTConfig>(m_core, MFXICORE_GT_CONFIG_GUID);
     MFX_CHECK(pMFXGTConfig != nullptr, MFX_ERR_UNDEFINED_BEHAVIOR);

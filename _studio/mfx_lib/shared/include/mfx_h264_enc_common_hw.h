@@ -722,6 +722,7 @@ namespace MfxHwH264Encode
 
             mfxU16 widthLa;
             mfxU16 heightLa;
+            mfxU32 TCBRCTargetFrameSize;
         } calcParam;
     };
 
@@ -884,6 +885,7 @@ namespace MfxHwH264Encode
     void InheritDefaultValues(
         MfxVideoParam const & parInit,
         MfxVideoParam &       parReset,
+        MFX_ENCODE_CAPS const & hwCaps,
         mfxVideoParam const * parResetIn = 0);
 
     mfxStatus CheckPayloads(
@@ -1041,6 +1043,21 @@ namespace MfxHwH264Encode
         }
     }
 
+    inline mfxU32 GetAvgFrameSizeInBytes(const MfxVideoParam &  par, bool bMaxKbps)
+    {
+        return mfxU32(1000.0 / 8.0*((par.mfx.MaxKbps && bMaxKbps) ? par.mfx.MaxKbps : par.mfx.TargetKbps) * std::max<mfxU32>(par.mfx.BRCParamMultiplier,1) /
+            (mfxF64(par.mfx.FrameInfo.FrameRateExtN) / par.mfx.FrameInfo.FrameRateExtD) );
+    }
+    inline bool IsTCBRC(const MfxVideoParam &  par, MFX_ENCODE_CAPS const & hwCaps)
+    {
+        mfxExtCodingOption3 &extOpt3 = GetExtBufferRef(par);
+        mfxExtCodingOption  &extOpt = GetExtBufferRef(par);
+        return (IsOn(extOpt3.LowDelayBRC) && (hwCaps.ddi_caps.TCBRCSupport) && IsOff(extOpt.NalHrdConformance) &&
+               (par.mfx.RateControlMethod  ==  MFX_RATECONTROL_VBR  ||
+                par.mfx.RateControlMethod  ==  MFX_RATECONTROL_QVBR ||
+                par.mfx.RateControlMethod  ==  MFX_RATECONTROL_VCM ));
+    }
+
     inline mfxU8 GetPayloadLayout(mfxU32 fieldPicFlag, mfxU32 secondFieldPicFlag)
     {
         return fieldPicFlag == 0
@@ -1059,7 +1076,7 @@ namespace MfxHwH264Encode
 
     mfxU8 ConvertMfxFrameType2SliceType(mfxU8 type);
 
-    ENCODE_FRAME_SIZE_TOLERANCE ConvertLowDelayBRCMfx2Ddi(mfxU16 type);
+    ENCODE_FRAME_SIZE_TOLERANCE ConvertLowDelayBRCMfx2Ddi(mfxU16 type, bool bTCBRC);
 
     struct MfxMemId
     {

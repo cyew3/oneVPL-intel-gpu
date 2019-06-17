@@ -92,7 +92,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.num_ref_frames_in_pic_order_cnt_cycle   = extSps->numRefFramesInPicOrderCntCycle;
     sps.offset_for_non_ref_pic                  = extSps->offsetForNonRefPic;
     sps.offset_for_top_to_bottom_field          = extSps->offsetForTopToBottomField;
-    sps.FrameSizeTolerance = ConvertLowDelayBRCMfx2Ddi(extOpt3.LowDelayBRC);
+    sps.FrameSizeTolerance = ConvertLowDelayBRCMfx2Ddi(extOpt3.LowDelayBRC, par.calcParam.TCBRCTargetFrameSize);
 
     if ((par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR) && extOpt3.WinBRCSize)
         sps.FrameSizeTolerance = eFrameSizeTolerance_Low;
@@ -431,6 +431,8 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
 #if defined(MFX_ENABLE_H264_REPARTITION_CHECK)
     pps.ForceRepartitionCheck = task.m_RepartitionCheck;
 #endif
+
+    pps.TargetFrameSize = task.m_TCBRCTargetFrameSize;
 
 #ifdef MFX_ENABLE_GPU_BASED_SYNC
     pps.bEnablePollingMode  = task.m_gpuSync.EnableSync;
