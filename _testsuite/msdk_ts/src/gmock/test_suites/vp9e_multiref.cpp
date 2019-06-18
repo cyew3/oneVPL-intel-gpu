@@ -12,6 +12,7 @@ Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 #include "ts_decoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
+#include "math.h"
 
 namespace vp9e_multiref
 {
@@ -408,6 +409,11 @@ namespace vp9e_multiref
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
     };
 
+    inline mfxF64 round_psnr(mfxF64 value) // check only one decimal place
+    {
+        return (mfxF64)round(value * 10) / 10;
+    }
+
     mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
         mfxU32 checked = 0;
@@ -514,9 +520,9 @@ namespace vp9e_multiref
                 src.m_info.CropW = res.m_info.CropW = w;
                 src.m_info.CropH = res.m_info.CropH = h;
 
-                const mfxF64 psnrY = PSNR(src, res, 0);
-                const mfxF64 psnrU = PSNR(src, res, 1);
-                const mfxF64 psnrV = PSNR(src, res, 2);
+                const mfxF64 psnrY = round_psnr(PSNR(src, res, 0));
+                const mfxF64 psnrU = round_psnr(PSNR(src, res, 1));
+                const mfxF64 psnrV = round_psnr(PSNR(src, res, 2));
 
                 m_pInputSurfaces->erase(hdr.FrameOrder);
                 const mfxF64 minPsnr = PSNR_THRESHOLD;
