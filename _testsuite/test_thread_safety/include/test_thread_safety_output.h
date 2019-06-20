@@ -43,8 +43,13 @@ private:
     UMC::Event m_allIn;
     UMC::Event m_allOut;
     AutoArray<Data> m_data;
-    mfxU32 m_numWriter;
+    // expected number of writers, writers can be from same or different threads
+    const mfxU32 m_numWriter;
+    // number of currently registered writers
     mfxU32 m_numRegistered;
+    // number of writers that was unregistered;
+    // before unregistration, a writer must be registered
+    mfxU32 m_numUnregistered;
     mfxU32 m_numCommit;
     mfxU32 m_compareStatus;
     vm_file* m_fdRef;

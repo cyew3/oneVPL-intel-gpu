@@ -21,6 +21,7 @@ OutputRegistrator::OutputRegistrator(mfxU32 numWriter, vm_file* fdRef, vm_file**
 , m_data(new Data[numWriter])
 , m_numWriter(numWriter)
 , m_numRegistered(0)
+, m_numUnregistered(0)
 , m_numCommit(0)
 , m_compareStatus(OK)
 , m_fdRef(fdRef)
@@ -73,6 +74,12 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
 
         {
             UMC::AutomaticUMCMutex guard(m_counterMutex);
+            if (m_numCommit >= m_numWriter)
+            {
+                vm_file_fprintf(vm_stderr, VM_STRING("TEST: attempt of invalid commit with "
+                                                     "handle %p: commit out of bound\n"), handle);
+                return -1;
+            }
             m_data[m_numCommit].ptr = ptr;
             m_data[m_numCommit].len = len;
             m_numCommit++;
@@ -102,6 +109,30 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
         {
             m_allIn.Reset();
             m_allOut.Set();
+        }
+    }
+
+    {
+        UMC::AutomaticUMCMutex guard(m_counterMutex);
+        if (ptr == 0)
+        {
+            // came here from UnRegister
+            if (m_numRegistered <= m_numUnregistered)
+            {
+                vm_file_fprintf(vm_stderr, VM_STRING(
+                                    "TEST: %u writers registred, while %u unregistred"
+                                    " already. Can't unregister another one.\n"),
+                                m_numRegistered, m_numUnregistered);
+                return -1;
+            }
+
+            m_numUnregistered++;
+            if (m_numRegistered == m_numUnregistered)
+            {
+                // last writer unregistered, restore initial state
+                m_numUnregistered = 0;
+                m_numRegistered = 0;
+            }
         }
     }
 
