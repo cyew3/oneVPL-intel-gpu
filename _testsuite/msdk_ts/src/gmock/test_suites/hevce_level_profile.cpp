@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -949,6 +949,15 @@ namespace hevce_level_profile
 
         PreparePar(tc, fourcc_id);
 
+        if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
+        {
+            //This test doesn't check restriction of frame size so we have to skip those cases.
+            if (m_par.mfx.FrameInfo.Width < 128 || m_par.mfx.FrameInfo.Height < 128)
+            {
+                throw tsSKIP;
+            }
+        }
+
         m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width;
         m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
 
@@ -1060,7 +1069,6 @@ namespace hevce_level_profile
                     throw tsFAIL;
             }
         }
-
 
         TS_END;
         return 0;
