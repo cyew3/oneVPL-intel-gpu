@@ -70,14 +70,14 @@ IYUVSource      * MFXPipelineFactory ::CreateDecode( const IPipelineObjectDesc &
 IMFXVideoVPP    * MFXPipelineFactory ::CreateVPP( const IPipelineObjectDesc & pParams)
 {
     PipelineObjectDescPtr<IMFXVideoVPP> create(pParams);
-    
+
     switch (create->Type)
     {
         case VPP_MFX_NATIVE:
         {
             return new MFXVideoVPPImpl(create->session);
         }
-        case VPP_SVC : 
+        case VPP_SVC :
         {
             return new SVCedVpp(create->m_pObject);
         }
@@ -100,7 +100,7 @@ IVideoEncode   * MFXPipelineFactory :: CreateVideoEncode ( IPipelineObjectDesc *
 
     switch (create->Type)
     {
-        case ENCODER_MFX_NATIVE : 
+        case ENCODER_MFX_NATIVE :
         {
             return new MFXVideoEncode(create->session);
         }
@@ -177,7 +177,7 @@ std::unique_ptr<IBitstreamConverterFactory> MFXPipelineFactory::CreateBitstreamC
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_Y416, MFX_FOURCC_Y416)));
 #endif
 
-    return fac;
+    return std::move(fac);
 }
 
 IFile * MFXPipelineFactory::CreatePARReader(IPipelineObjectDesc * /*pParams*/)
@@ -216,5 +216,5 @@ IFile * MFXPipelineFactory::CreateFileWriter( IPipelineObjectDesc * pParams)
         }
     default:
         return NULL;
-    }   
+    }
 }
