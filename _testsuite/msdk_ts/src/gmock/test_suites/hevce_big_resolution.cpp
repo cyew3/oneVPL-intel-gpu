@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -59,6 +59,7 @@ namespace hevce_big_resolution
             ENCODE = 1 << 2,
             QUERY  = 1 << 3
         };
+        bool isResolutionSupported;
         void checkSupport(tc_struct ts);
         static const tc_struct test_case[];
     };
@@ -119,9 +120,58 @@ namespace hevce_big_resolution
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, HEVCE_16K_SIZE },
             }
         },
+        {/*09*/ MFX_ERR_NONE, INIT,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, HEVCE_8K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, HEVCE_4K_SIZE },
+            }
+        },
+        {/*10*/ MFX_ERR_NONE, INIT,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, HEVCE_4K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, HEVCE_8K_SIZE },
+            }
+        },
+        {/*11*/ MFX_ERR_NONE, INIT,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, HEVCE_8K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, HEVCE_16K_SIZE },
+            }
+        },
+        {/*12*/ MFX_ERR_NONE, INIT,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, HEVCE_16K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, HEVCE_8K_SIZE },
+            }
+        },
+        {/*13*/ MFX_ERR_NONE, QUERY,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, HEVCE_8K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, HEVCE_4K_SIZE },
+            }
+        },
+        {/*14*/ MFX_ERR_NONE, QUERY,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, HEVCE_4K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, HEVCE_8K_SIZE },
+            }
+        },
+        {/*15*/ MFX_ERR_NONE, QUERY,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, HEVCE_8K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, HEVCE_16K_SIZE },
+            }
+        },
+        {/*16*/ MFX_ERR_NONE, QUERY,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, HEVCE_16K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, HEVCE_8K_SIZE },
+            }
+        },
     };
 
     void TestSuite::checkSupport(tc_struct tc) {
+        isResolutionSupported = true;
         int width = m_par.mfx.FrameInfo.Width;
         int height = m_par.mfx.FrameInfo.Height;
         int fourcc_id = m_par.mfx.FrameInfo.FourCC;
@@ -169,13 +219,11 @@ namespace hevce_big_resolution
             }
             if ((g_tsHWtype < MFX_HW_CNL || (g_tsHWtype == MFX_HW_CNL && g_tsConfig.lowpower != MFX_CODINGOPTION_ON)) && (width > HEVCE_4K_SIZE || height > HEVCE_2K_SIZE))
             {
-                g_tsLog << "\n\nWARNING: SKIP test (unsupported on current platform)\n\n";
-                throw tsSKIP;
+                isResolutionSupported = false;
             }
             else if (g_tsHWtype <= MFX_HW_ICL && (width > HEVCE_8K_SIZE || height > HEVCE_8K_SIZE))
             {
-                g_tsLog << "\n\nWARNING: SKIP test (unsupported on current platform)\n\n";
-                throw tsSKIP;
+                isResolutionSupported = false;
             }
         }
     }
@@ -192,9 +240,7 @@ namespace hevce_big_resolution
     int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START;
-        mfxStatus sts;
         SETPARS(m_par, MFX_PAR);
-
 
         m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width;
         m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
@@ -263,10 +309,22 @@ namespace hevce_big_resolution
         checkSupport(tc);
 
         if (tc.type & QUERY)
+        {
+            if (!isResolutionSupported)
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
             Query();
+        }
 
         if (tc.type & INIT)
+        {
+            if (!isResolutionSupported)
+                g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
             Init();
+            if (!isResolutionSupported)
+            {
+                throw tsOK;
+            }
+        }
 
         if (tc.type & ENCODE && !g_tsConfig.sim) {
             AllocBitstream(m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * n_frames);
