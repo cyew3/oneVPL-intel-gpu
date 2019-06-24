@@ -2574,31 +2574,25 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
     }
 
     if (caps.ddi_caps.SliceByteSizeCtrl == 0)
-    {
         invalid += CheckOption(CO2.MaxSliceSize, 0);
 
+    if (IsOn(par.mfx.LowPower) && par.LCUSize == 64)
+    {
         // Minimum width is 128 pixels for LCU size of 64x64 when slice size conformance is not enabled
-        if (par.mfx.FrameInfo.Width < 128 && IsOn(par.mfx.LowPower) && par.LCUSize == 64)
+        // Minimum width is 192 pixels for LCU size of 64x64 when slice size conformance is enabled
+        if (par.mfx.FrameInfo.Width < (CO2.MaxSliceSize ? 192 : 128) )
         {
             par.mfx.FrameInfo.Width = 0;
             invalid++;
         }
+        // Minimum height of a frame is 128 pixel for LCU size of 64x64
+        if (par.mfx.FrameInfo.Height < 128)
+        {
+            par.mfx.FrameInfo.Height = 0;
+            invalid++;
+        }
     }
 
-    // Minimum width is 192 pixels for LCU size of 64x64 when slice size conformance is enabled
-    if (CO2.MaxSliceSize && IsOn(par.mfx.LowPower) &&
-        par.mfx.FrameInfo.Width < 192 && par.LCUSize == 64)
-    {
-        par.mfx.FrameInfo.Width = 0;
-        invalid++;
-    }
-
-    // Minimum height of a frame is 128 pixel for LCU size of 64x64
-    if (IsOn(par.mfx.LowPower) && par.mfx.FrameInfo.Height < 128 && par.LCUSize == 64)
-    {
-        par.mfx.FrameInfo.Height = 0;
-        invalid++;
-    }
 
 #if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
     changed += CheckTriStateOption(CO3.EncodedUnitsInfo);
