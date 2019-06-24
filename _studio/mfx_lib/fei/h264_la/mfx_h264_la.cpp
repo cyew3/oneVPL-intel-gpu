@@ -49,23 +49,34 @@
 #include "mfx_ext_buffers.h"
 
 using namespace MfxEncLA;
+using MfxHwH264Encode::IsOn;
 
 static mfxU16 GetGopSize(mfxVideoParam *par)
 {
     return  par->mfx.GopPicSize == 0 ?  256 : par->mfx.GopPicSize ;
 }
-static mfxU16 GetRefDist(mfxVideoParam *par)
+static mfxU16 GetRefDist(VideoCORE *core, mfxVideoParam *par)
 {
-    mfxExtLAControl *pControl = (mfxExtLAControl *) GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_LOOKAHEAD_CTRL);
     mfxU16 GopSize = GetGopSize(par);
-    mfxU16 refDist = par->mfx.GopRefDist == 0 ? ((pControl && pControl->BPyramid == MFX_CODINGOPTION_ON) ? 8 : 3) : par->mfx.GopRefDist;
-    return refDist <= GopSize ? refDist: GopSize;
+    mfxU16 refDist = par->mfx.GopRefDist;
+    if (refDist == 0)
+    {
+        mfxExtLAControl *pControl = (mfxExtLAControl *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_LOOKAHEAD_CTRL);
+        std::ignore = core;
+        refDist = (
+            IsOn(par->mfx.LowPower)
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+            && core->GetHWType() < MFX_HW_TGL_HP
+#endif
+        ) ? 1 : ((pControl && IsOn(pControl->BPyramid)) ? 8 : 3);
+    }
+    return (std::min)(refDist, GopSize);
 }
 static mfxU16 GetAsyncDeph(mfxVideoParam *par)
 {
     return par->AsyncDepth == 0 ? 3 : par->AsyncDepth;
 }
-static mfxStatus InitEncoderParameters(mfxVideoParam *par_in, mfxVideoParam *par_enc)
+static mfxStatus InitEncoderParameters(VideoCORE *core, mfxVideoParam *par_in, mfxVideoParam *par_enc)
 {
     mfxExtLAControl *pControl = (mfxExtLAControl *) GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_LOOKAHEAD_CTRL);
 
@@ -79,7 +90,7 @@ static mfxStatus InitEncoderParameters(mfxVideoParam *par_in, mfxVideoParam *par
     par_enc->AsyncDepth = GetAsyncDeph(par_in);
     par_enc->IOPattern  = par_in->IOPattern;
     par_enc->mfx.GopPicSize = GetGopSize(par_in);
-    par_enc->mfx.GopRefDist = GetRefDist(par_in);
+    par_enc->mfx.GopRefDist = GetRefDist(core, par_in);
     par_enc->mfx.RateControlMethod = MFX_RATECONTROL_LA;
     par_enc->mfx.NumRefFrame = 2;
     par_enc->mfx.FrameInfo = par_in->mfx.FrameInfo;  
@@ -276,7 +287,7 @@ mfxStatus VideoENC_LA::Query(VideoCORE* pCore, mfxVideoParam *in, mfxVideoParam 
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoENC_LA::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAllocRequest *request)
+mfxStatus VideoENC_LA::QueryIOSurf(VideoCORE *pCore, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     MFX_CHECK_NULL_PTR2(par,request);
 
@@ -306,7 +317,7 @@ mfxStatus VideoENC_LA::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAllo
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
     }
-    request->NumFrameMin         = GetRefDist(par) + GetAsyncDeph(par) + pControl->LookAheadDepth;
+    request->NumFrameMin         = GetRefDist(pCore, par) + GetAsyncDeph(par) + pControl->LookAheadDepth;
     request->NumFrameSuggested   = request->NumFrameMin;
     request->Info                = par->mfx.FrameInfo;
 
@@ -451,7 +462,7 @@ mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
         ddi_opt.LaScaleFactor = m_LaControl.DownScaleFactor = CheckScaleFactor(m_LaControl.DownScaleFactor, par->mfx.TargetUsage, par->mfx.FrameInfo.Width > 4000);
         ddi_opt.LookAheadDependency =  m_LaControl.DependencyDepth = CheckLookAheadDependency(m_LaControl.DependencyDepth,par->mfx.TargetUsage);
 
-        MFX_CHECK_STS (InitEncoderParameters(par, &par_enc));
+        MFX_CHECK_STS (InitEncoderParameters(m_core, par, &par_enc));
         m_video = par_enc;
 
         MFX_ENCODE_CAPS hwCaps = {};
