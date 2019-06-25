@@ -579,7 +579,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
                 {
                     session->m_plgDec.get()->GetPlugin(plugin);
                     MFX_CHECK_STS(plugin.GetPluginParam(plugin.pthis, &par));
-                    if (!memcmp(&MFX_PLUGINID_HEVCD_SW, &par.PluginUID, sizeof(MFX_PLUGINID_HEVCD_SW)))
+                    if (MFX_PLUGINID_HEVCD_SW == par.PluginUID)
                     {
                         task.pDst[0] = 0;
                     }

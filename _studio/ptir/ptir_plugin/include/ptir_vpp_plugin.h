@@ -102,7 +102,7 @@ public:
         return new MFX_PTIR_Plugin(false);
     }
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-        if (memcmp(& guid , &g_VPP_PluginGuid, sizeof(mfxPluginUID))) {
+        if (guid != g_VPP_PluginGuid) {
             return MFX_ERR_NOT_FOUND;
         }
         MFX_PTIR_Plugin* tmp_pplg = 0;

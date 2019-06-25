@@ -95,7 +95,7 @@ mfxStatus MFXVP9DecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin* 
 {
     MFX_CHECK_NULL_PTR1(mfxPlg);
 
-    if (memcmp(&guid, &g_VP9DecoderGuid, sizeof(mfxPluginUID))) {
+    if (guid != g_VP9DecoderGuid) {
         return MFX_ERR_NOT_FOUND;
     }
 
@@ -111,7 +111,7 @@ mfxStatus MFXVP9DecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin* 
 #else
 mfxStatus MFXVP9DecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
 {
-    if (memcmp(& guid , &g_VP9DecoderGuid, sizeof(mfxPluginUID))) {
+    if (guid != g_VP9DecoderGuid) {
         return MFX_ERR_NOT_FOUND;
     }
 

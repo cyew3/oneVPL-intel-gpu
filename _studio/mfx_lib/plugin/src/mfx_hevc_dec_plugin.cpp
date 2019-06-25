@@ -90,7 +90,7 @@ mfxStatus MFXHEVCDecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin*
 {
     MFX_CHECK_NULL_PTR1(mfxPlg);
 
-    if (memcmp(&guid, &g_HEVCDecoderGuid, sizeof(mfxPluginUID))) {
+    if (guid != g_HEVCDecoderGuid) {
         return MFX_ERR_NOT_FOUND;
     }
 
@@ -106,7 +106,7 @@ mfxStatus MFXHEVCDecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin*
 #else
 mfxStatus MFXHEVCDecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
 {
-    if (memcmp(& guid , &g_HEVCDecoderGuid, sizeof(mfxPluginUID))) {
+    if (guid != g_HEVCDecoderGuid) {
         return MFX_ERR_NOT_FOUND;
     }
 

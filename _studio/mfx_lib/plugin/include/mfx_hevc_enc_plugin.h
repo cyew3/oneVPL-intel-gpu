@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 Intel Corporation
+// Copyright (c) 2013-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -106,7 +106,7 @@ public:
         return new MFXHEVCEncoderPlugin(false);
     }
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-        if (memcmp(& guid , &g_HEVCEncoderGuid, sizeof(mfxPluginUID))) {
+        if (guid != g_HEVCEncoderGuid) {
             return MFX_ERR_NOT_FOUND;
         }
         MFXHEVCEncoderPlugin* tmp_pplg = 0;
@@ -164,7 +164,7 @@ public:
         return new MFXHEVCEncoderDPPlugin(false);
     }
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-        if (memcmp(&guid, &g_HEVCEncoderDPGuid, sizeof(mfxPluginUID))) {
+        if (guid != g_HEVCEncoderDPGuid) {
             return MFX_ERR_NOT_FOUND;
         }
         MFXHEVCEncoderDPPlugin* tmp_pplg = 0;

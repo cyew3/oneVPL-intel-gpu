@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ MFXEncPlugin* Plugin::Create()
 
 mfxStatus Plugin::CreateByDispatcher(const mfxPluginUID& guid, mfxPlugin* mfxPlg)
 {
-    if (memcmp(&guid, &MFX_PLUGINID_ENC_SCD, sizeof(mfxPluginUID)))
+    if (guid != MFX_PLUGINID_ENC_SCD)
         return MFX_ERR_NOT_FOUND;
 
     Plugin* tmp_pplg = 0;

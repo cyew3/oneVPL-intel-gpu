@@ -82,7 +82,7 @@ public:
 
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
     {
-        if (memcmp(&guid, &g_Camera_PluginGuid, sizeof(mfxPluginUID)))
+        if (guid != g_Camera_PluginGuid)
         {
             return MFX_ERR_NOT_FOUND;
         }

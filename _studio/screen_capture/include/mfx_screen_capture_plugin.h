@@ -40,7 +40,7 @@ public:
     }
 
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-        if (memcmp(& guid , &MFX_PLUGINID_CAPTURE_HW, sizeof(mfxPluginUID))) {
+        if (guid != MFX_PLUGINID_CAPTURE_HW) {
             return MFX_ERR_NOT_FOUND;
         }
         MFXScreenCapture_Plugin* tmp_pplg = 0;

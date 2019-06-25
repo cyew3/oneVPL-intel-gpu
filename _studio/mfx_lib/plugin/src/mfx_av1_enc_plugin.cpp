@@ -195,7 +195,7 @@ MFXEncoderPlugin* MFXAV1EncoderPlugin::Create() {
 }
 
 mfxStatus MFXAV1EncoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-    if (memcmp(& guid , &g_AV1EncoderGuid, sizeof(mfxPluginUID))) {
+    if (guid != g_AV1EncoderGuid) {
         return MFX_ERR_NOT_FOUND;
     }
     MFXAV1EncoderPlugin* tmp_pplg = 0;

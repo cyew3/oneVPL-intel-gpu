@@ -42,7 +42,7 @@ public:
         {
             return MFX_ERR_NULL_PTR;
         }
-        if (memcmp(&guid, &MFX_PLUGINID_HEVCE_HW, sizeof(mfxPluginUID)))
+        if (guid != MFX_PLUGINID_HEVCE_HW)
         {
             return MFX_ERR_NOT_FOUND;
         }

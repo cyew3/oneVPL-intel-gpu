@@ -32,7 +32,7 @@ MFXVPPPlugin* Plugin::Create()
 
 mfxStatus Plugin::CreateByDispatcher(const mfxPluginUID& guid, mfxPlugin* mfxPlg)
 {
-    if (memcmp(&guid, &MFX_PLUGINID_VPP_SCD, sizeof(mfxPluginUID)))
+    if (guid != MFX_PLUGINID_VPP_SCD)
         return MFX_ERR_NOT_FOUND;
 
     Plugin* tmp_pplg = 0;

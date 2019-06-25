@@ -29,6 +29,7 @@
 #include "mfxplugin++.h"
 #include "mfxvideo++int.h"
 #include "mfxenc.h"
+#include "mfx_utils.h"
 
 #if defined( AS_H265FEI_PLUGIN )
 
@@ -82,7 +83,7 @@ public:
         return new MFXH265FEIPlugin(false);
     }
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-        if (memcmp(& guid , &MFX_PLUGINID_HEVCE_FEI_HW, sizeof(mfxPluginUID))) {
+        if (guid != MFX_PLUGINID_HEVCE_FEI_HW) {
             return MFX_ERR_NOT_FOUND;
         }
         MFXH265FEIPlugin* tmp_pplg = 0;

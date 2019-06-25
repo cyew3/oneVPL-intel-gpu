@@ -75,7 +75,7 @@ public:
         return new MFX_H263D_Plugin(false);
     }
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
-        if (memcmp(& guid , &g_PluginGuid, sizeof(mfxPluginUID))) {
+        if (guid != g_PluginGuid) {
             return MFX_ERR_NOT_FOUND;
         }
         MFX_H263D_Plugin* tmp_pplg = 0;
