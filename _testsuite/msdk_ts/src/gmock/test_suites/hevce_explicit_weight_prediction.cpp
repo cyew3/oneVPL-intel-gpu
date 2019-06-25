@@ -19,8 +19,9 @@ Copyright(c) 2019 Intel Corporation. All Rights Reserved.
 #include "ts_struct.h"
 #include "ts_parser.h"
 #include <random>
+#include <algorithm>
 
-//#define DEBUG
+#define DEBUG
 
 template<class T> inline T Clip3(T min, T max, T x) { return std::min<T>(std::max<T>(min, x), max); }
 
@@ -125,12 +126,18 @@ namespace hevce_explicit_weight_pred
     // number is adjusted according to MSDK settings
     void TestSuite::HardcodeRefLists(mfxExtHEVCRefLists& rl, mfxI32 fo)
     {
+        mfxExtHEVCRefLists::mfxRefPic def_ref;
+        def_ref.FrameOrder = MFX_FRAMEORDER_UNKNOWN;
+        def_ref.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+        std::fill_n(rl.RefPicList0, 32, def_ref);
+        std::fill_n(rl.RefPicList1, 32, def_ref);
+
         // description for reference frames in minigop
-        // frames described as (ref frame order - curr frame order)
+        // described as distance between reference frame and current frame starting from closest
         // 0 means no reference frame
-        // first 4 frames - l0, the following 2 frames - l1
+        // first 4 values for l0, the following 2 values for l1
         const mfxI32 ref_dist4[4][6] = { {-4, -6, -8, -10, -4, -6},
-                                         {-1, -3, -5, -7,   3,  1},
+                                         {-1, -3, -5, -7,   1,  3},
                                          {-2, -4, -6, -8,   2,  0},
                                          {-1, -3, -5, -7,   1,  0}
                                         };
@@ -150,19 +157,8 @@ namespace hevce_explicit_weight_pred
             if (ref < end_l0 && (fo + ref_dist4[pl_idx][ref] >= 0) && (ref_dist4[pl_idx][ref] != 0))
             {
                 rl.RefPicList0[ref].FrameOrder = fo + ref_dist4[pl_idx][ref];
-                rl.RefPicList0[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
                 rl.NumRefIdxL0Active += 1;
             }
-            else // mark unused entries
-            {
-                rl.RefPicList0[ref].FrameOrder = MFX_FRAMEORDER_UNKNOWN;
-                rl.RefPicList0[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
-            }
-        }
-        for (mfxU8 ref = max_l0; ref < 16; ref++) // mark unused entries
-        {
-            rl.RefPicList0[ref].FrameOrder = MFX_FRAMEORDER_UNKNOWN;
-            rl.RefPicList0[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
         }
 
         if (gpb || !pframe)
@@ -172,19 +168,8 @@ namespace hevce_explicit_weight_pred
                 if (ref < end_l1 && (fo + ref_dist4[pl_idx][ref + end_l0] >= 0) && (ref_dist4[pl_idx][ref + end_l0] != 0))
                 {
                     rl.RefPicList1[ref].FrameOrder = fo + ref_dist4[pl_idx][ref + end_l0];
-                    rl.RefPicList1[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
                     rl.NumRefIdxL1Active += 1;
                 }
-                else // mark unused entries
-                {
-                    rl.RefPicList1[ref].FrameOrder = MFX_FRAMEORDER_UNKNOWN;
-                    rl.RefPicList1[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
-                }
-            }
-            for (mfxU8 ref = max_l0; ref < 16; ref++) // mark unused entries
-            {
-                rl.RefPicList1[ref].FrameOrder = MFX_FRAMEORDER_UNKNOWN;
-                rl.RefPicList1[ref].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
             }
         }
     }
