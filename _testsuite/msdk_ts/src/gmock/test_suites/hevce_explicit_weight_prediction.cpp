@@ -10,7 +10,7 @@ Copyright(c) 2019 Intel Corporation. All Rights Reserved.
 
 /*
     Test verifies that application-defined weighted prediction table is written
-    in bitstream. There's sanity quality check, but it can't verify that app WP parameters
+    in bitstream and there's no crash in encoding. Test can't verify that app WP parameters
     applied by encoder.
 */
 
@@ -30,7 +30,6 @@ namespace hevce_explicit_weight_pred
 
     const mfxU8 L0 = 0, L1 = 1, Y = 0, Cb = 1, Cr = 2, Weight = 0, Offset = 1;
     const mfxU16 nframes_to_encode = 10;
-    const mfxF64 PSNR_THRESHOLD = 30.0;
 
     enum
     {
@@ -42,47 +41,6 @@ namespace hevce_explicit_weight_pred
     {
         PREDEFINED  = 1,
         RAND        = 1 << 1
-    };
-
-    class PSNRVerifier : public tsSurfaceProcessor
-    {
-        std::unique_ptr<tsRawReader> m_reader;
-        mfxFrameSurface1 m_ref_surf;
-        mfxU32 m_frames;
-
-    public:
-        PSNRVerifier(mfxFrameSurface1& ref_surf, mfxU16 n_frames, const char* sn)
-            : tsSurfaceProcessor()
-        {
-            m_reader.reset(new tsRawReader(sn, ref_surf.Info, n_frames));
-            m_max = n_frames;
-            m_ref_surf = ref_surf;
-            m_frames = 0;
-        }
-
-        ~PSNRVerifier()
-        {}
-
-        mfxStatus ProcessSurface(mfxFrameSurface1& s)
-        {
-            m_reader->ProcessSurface(m_ref_surf);
-
-            tsFrame ref_frame(m_ref_surf);
-            tsFrame s_frame(s);
-            mfxF64 psnr_y = PSNR(ref_frame, s_frame, 0);
-            mfxF64 psnr_u = PSNR(ref_frame, s_frame, 1);
-            mfxF64 psnr_v = PSNR(ref_frame, s_frame, 2);
-            if ((psnr_y < PSNR_THRESHOLD) ||
-                (psnr_u < PSNR_THRESHOLD) ||
-                (psnr_v < PSNR_THRESHOLD))
-            {
-                g_tsLog << "ERROR: Low PSNR on frame " << m_frames << ": Y= " << psnr_y << " U=" << psnr_u << " V=" << psnr_v << "\n";
-                return MFX_ERR_ABORTED;
-            }
-            m_frames++;
-            return MFX_ERR_NONE;
-        }
-
     };
 
     class TestSuite : public tsVideoEncoder, tsSurfaceProcessor, tsBitstreamProcessor, tsParserHEVC2
@@ -118,7 +76,6 @@ namespace hevce_explicit_weight_pred
         std::mt19937 m_Gen;
         std::unique_ptr <tsRawReader> m_reader;
         std::vector <tsExtBufType<mfxEncodeCtrl>> m_ctrls;
-        mfxBitstream m_bs_copy;
 #ifdef DEBUG
         tsBitstreamWriter m_writer;
 #endif
@@ -128,7 +85,6 @@ namespace hevce_explicit_weight_pred
             : tsVideoEncoder(MFX_CODEC_HEVC)
             , tsParserHEVC2()
             , m_mode(RAND)
-            , m_bs_copy()
 #ifdef DEBUG
             , m_writer("debug_wp.bin")
 #endif
@@ -151,10 +107,7 @@ namespace hevce_explicit_weight_pred
         }
 
         ~TestSuite()
-        {
-            if (m_bs_copy.Data != nullptr)
-                delete[] m_bs_copy.Data;
-        }
+        {}
 
         static const unsigned int n_cases;
         template<mfxU32 fourcc>
@@ -374,14 +327,6 @@ namespace hevce_explicit_weight_pred
         mfxStatus sts = MFX_ERR_NONE;
         SetBuffer0(bs);
 
-        if (m_bs_copy.MaxLength >= m_bs_copy.DataLength + bs.DataLength)
-        {
-            memcpy(&m_bs_copy.Data[m_bs_copy.DataLength], &bs.Data[bs.DataOffset], bs.DataLength);
-            m_bs_copy.DataLength += bs.DataLength;
-        }
-        else
-            return MFX_ERR_ABORTED;
-
 #ifdef DEBUG
         sts = m_writer.ProcessBitstream(bs, nFrames);
 #endif
@@ -566,29 +511,9 @@ namespace hevce_explicit_weight_pred
         m_reader->m_disable_shift_hack = true; // disable shift for 10b+ streams
         g_tsStreamPool.Reg();
 
-        // save bs for PSNR check below
-        m_bs_copy.MaxLength = m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height * nframes_to_encode * 3; // 3 - magic number :)
-        m_bs_copy.Data = new mfxU8[m_bs_copy.MaxLength];
-
         Init();
         EncodeFrames(nframes_to_encode);
         DrainEncodedBitstream();
-
-        // sanity check of the encoded stream's quality
-        tsVideoDecoder dec(MFX_CODEC_HEVC);
-        tsBitstreamReader reader(m_bs_copy, m_bs_copy.MaxLength);
-        dec.m_bs_processor = &reader;
-
-        // Borrow one surface from encoder which is already done execution.
-        // This surface will be used in verifier only.
-        mfxFrameSurface1 *ref = GetSurface();
-        PSNRVerifier psnr_ver(*ref, nframes_to_encode, stream);
-        dec.m_surf_processor = &psnr_ver;
-
-        dec.Init();
-        dec.AllocSurfaces();
-        dec.DecodeFrames(nframes_to_encode);
-        dec.Close();
 
         Close(); // encode
 
