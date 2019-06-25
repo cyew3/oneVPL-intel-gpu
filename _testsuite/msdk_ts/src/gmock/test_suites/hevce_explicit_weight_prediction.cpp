@@ -209,8 +209,11 @@ namespace hevce_explicit_weight_pred
             return;
         }
 
-        // driver's limitation: kernel has hard-coded luma denom=6, so others are not allowed
-        pwt.LumaLog2WeightDenom = 6; // GetRandomNumber(0, 7);
+        // driver's limitation: kernel in VME HEVC for non-ATS platforms has hard-coded luma denom=6, so others are not allowed, VDEnc - ?
+        if (g_tsHWtype == MFX_HW_ATS)
+            pwt.LumaLog2WeightDenom = GetRandomNumber(1, 7);
+        else
+            pwt.LumaLog2WeightDenom = 6;
         mfxI16 wY = 1 << pwt.LumaLog2WeightDenom;
 
         // HEVC encoder writes not weights itself, but delta = weight - (1 << luma_denom) and delta
