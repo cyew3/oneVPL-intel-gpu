@@ -826,7 +826,7 @@ mfxStatus ImplementationMvc::QueryIOSurf(
     // get FrameInfo from original VideoParam
     request->Info = par->mfx.FrameInfo;
 
-    request->NumFrameMin = CalcNumFrameMin(tmp);
+    request->NumFrameMin = CalcNumFrameMin(tmp, hwCaps);
     request->NumFrameSuggested = request->NumFrameMin;
 
     return MFX_ERR_NONE;

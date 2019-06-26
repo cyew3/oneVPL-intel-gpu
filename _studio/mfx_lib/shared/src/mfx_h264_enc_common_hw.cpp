@@ -2166,7 +2166,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     {
         mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(par);
 
-        mfxU32 numFrameMin = CalcNumFrameMin(par);
+        mfxU32 numFrameMin = CalcNumFrameMin(par, hwCaps);
 
         MFX_CHECK(extOpaq.In.NumSurface >= numFrameMin, MFX_ERR_INVALID_VIDEO_PARAM);
     }
@@ -2595,7 +2595,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
-
     if (par.mfx.TargetUsage > 7)
     {
         changed = true;
@@ -2653,18 +2652,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod = 0;
     }
 
+    bool laEnabled = true;
     if (platform > MFX_HW_ICL_LP)
     {
+        laEnabled = false;
         if (bRateControlLA(par.mfx.RateControlMethod))
         {
             unsupported = true;
             par.mfx.RateControlMethod = 0;
-        }
-
-        if (extOpt2->MaxSliceSize && !(IsOn(par.mfx.LowPower) && hwCaps.ddi_caps.SliceLevelRateCtrl))
-        {
-            changed = true;
-            extOpt2->MaxSliceSize = 0;
         }
 
         if (IsOn(extOpt3->FadeDetection)
@@ -2676,6 +2671,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
             extOpt3->FadeDetection = MFX_CODINGOPTION_OFF;
         }
+    }
+
+    if (extOpt2->MaxSliceSize &&
+        !(IsDriverSliceSizeControlEnabled(par, hwCaps) ||  //driver slice control condition
+        (hwCaps.ddi_caps.SliceStructure == 4 && laEnabled))) //sw slice control condition
+    {
+        changed = true;
+        extOpt2->MaxSliceSize = 0;
     }
 
     if (bRateControlLA(par.mfx.RateControlMethod) && IsOn(extOpt->CAVLC))
@@ -2691,7 +2694,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
             par.mfx.GopRefDist = 1;
         }
-        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA && !(IsOn(par.mfx.LowPower) && hwCaps.ddi_caps.SliceLevelRateCtrl))
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA && !IsDriverSliceSizeControlEnabled(par, hwCaps))
         {
             par.mfx.RateControlMethod = MFX_RATECONTROL_LA;
             changed = true;
@@ -5778,7 +5781,7 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         if (par.AsyncDepth == 0)
             par.AsyncDepth = 1;
-        if (par.mfx.LowPower != MFX_CODINGOPTION_ON)
+        if (!IsDriverSliceSizeControlEnabled(par, hwCaps))
         {
             if (par.mfx.RateControlMethod == 0)
                 par.mfx.RateControlMethod = MFX_RATECONTROL_LA;

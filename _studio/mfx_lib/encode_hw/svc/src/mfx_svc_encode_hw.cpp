@@ -365,7 +365,7 @@ mfxStatus ImplementationSvc::QueryIOSurf(
     request->Info.Width = extSvc->DependencyLayer[lastDid].Width;
     request->Info.Height = extSvc->DependencyLayer[lastDid].Height;
 
-    request->NumFrameMin = CalcNumFrameMin(*par);
+    request->NumFrameMin = CalcNumFrameMin(*par, hwCaps);
     request->NumFrameSuggested = request->NumFrameMin;
 
     return MFX_ERR_NONE;

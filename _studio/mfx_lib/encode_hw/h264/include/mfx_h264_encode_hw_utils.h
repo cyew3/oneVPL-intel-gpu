@@ -100,7 +100,7 @@ namespace MfxHwH264Encode
         MFX_MEMTYPE_D3D_EXT | MFX_MEMTYPE_PROTECTED;
 #endif
 
-    mfxU16 CalcNumFrameMin(const MfxHwH264Encode::MfxVideoParam &par);
+    mfxU16 CalcNumFrameMin(const MfxHwH264Encode::MfxVideoParam &par, MFX_ENCODE_CAPS const & hwCaps);
 
     enum
     {
@@ -1161,7 +1161,6 @@ namespace MfxHwH264Encode
                 (IsOn(extOpt.VuiNalHrdParameters) || IsOn(extOpt.VuiVclHrdParameters)));
         }
 
-
         mfxEncodeCtrl   m_ctrl;
         DdiTask *       m_pushed;         // task which was pushed to queue when this task was chosen for encoding
         Pair<mfxU8>     m_type;           // encoding type (one for each field)
@@ -1549,7 +1548,7 @@ namespace MfxHwH264Encode
         virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) {return MFX_ERR_NONE;}
     };
 
-    BrcIface * CreateBrc(MfxVideoParam const & video);
+    BrcIface * CreateBrc(MfxVideoParam const & video, MFX_ENCODE_CAPS const & hwCaps);
 
     class Brc : public BrcIface
     {

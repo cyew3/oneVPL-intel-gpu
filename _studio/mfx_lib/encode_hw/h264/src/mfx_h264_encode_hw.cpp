@@ -706,7 +706,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
 #endif
     }
 
-    request->NumFrameMin = CalcNumFrameMin(tmp);
+    request->NumFrameMin = CalcNumFrameMin(tmp, hwCaps);
     request->NumFrameSuggested = request->NumFrameMin;
     // get FrameInfo from original VideoParam
     request->Info = tmp.mfx.FrameInfo;
@@ -982,7 +982,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 #endif
     if (m_enabledSwBrc)
     {
-        m_brc.SetImpl(CreateBrc(m_video));
+        m_brc.SetImpl(CreateBrc(m_video, m_caps));
         // to change m_video before BRC Init and DDI init
         ModifiedVideoParams mod_params;
         mod_params.ModifyForBRC(m_video, true);
