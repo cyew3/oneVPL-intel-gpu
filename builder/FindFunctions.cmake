@@ -234,7 +234,7 @@ function( make_library name variant type )
 
   configure_build_variant( ${target} ${ARGV1} )
 
-  if( NOT nosafestring )
+  if( NOT OPEN_SOURCE AND NOT nosafestring )
     target_link_libraries( ${target} SafeString )
   endif()
 

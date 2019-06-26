@@ -34,6 +34,9 @@
 # include <dirent.h>
 # include <errno.h>
 
+typedef char vm_char;
+
+#ifndef OPEN_SOURCE
 #if !defined(ANDROID)
 
 #ifdef __cplusplus
@@ -54,9 +57,6 @@ extern "C"
 
 #endif // !defined(ANDROID)
 
-typedef char vm_char;
-
-#ifndef OPEN_SOURCE
 # include "vm_file.h"
 #endif
 #define VM_STRING(x) x

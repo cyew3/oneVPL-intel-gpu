@@ -21,6 +21,8 @@
 cmake_minimum_required( VERSION 2.8.5 )
 project( mediasdk )
 
+set(OPEN_SOURCE ON)
+
 # Default to `release` build if nothing was specified
 if(NOT CMAKE_BUILD_TYPE)
   message(STATUS "No build type selected, default to release")
