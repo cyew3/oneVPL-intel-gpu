@@ -35,12 +35,14 @@ namespace MfxHwVP9Encode
 {
 
 #define DEFAULT_TIMEOUT_VP9_HW 60000
+#define DEFAULT_TIMEOUT_VP9_HW_SIM 3600000
 
     D3DXCommonEncoder::D3DXCommonEncoder()
         :m_bIsBlockingTaskSyncEnabled(false)
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
         ,pScheduler(NULL)
         ,m_bSingleThreadMode(false)
+        ,m_TaskSyncTimeOutMs(DEFAULT_TIMEOUT_VP9_HW)
 #endif
     {
     }
@@ -78,6 +80,10 @@ namespace MfxHwVP9Encode
             m_EventCache.reset(new EventCache());
             m_EventCache->SetGlobalHwEvent(pScheduler->GetHwEvent());
         }
+
+        eMFXHWType platform = pCore->GetHWType();
+        if (platform >= MFX_HW_JSL)
+            m_TaskSyncTimeOutMs = DEFAULT_TIMEOUT_VP9_HW_SIM;
 
         return MFX_ERR_NONE;
     }
@@ -125,7 +131,7 @@ namespace MfxHwVP9Encode
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
         if (m_bIsBlockingTaskSyncEnabled)
         {
-            mfxU32 timeOutMs = DEFAULT_TIMEOUT_VP9_HW;
+            mfxU32 timeOutMs = m_TaskSyncTimeOutMs;
 
             if (m_bSingleThreadMode)
             {

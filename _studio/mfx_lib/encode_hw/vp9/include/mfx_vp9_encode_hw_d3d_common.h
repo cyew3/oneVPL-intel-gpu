@@ -78,6 +78,7 @@ namespace MfxHwVP9Encode
 
         MFXIScheduler2 *pScheduler;
         bool m_bSingleThreadMode;
+        mfxU32 m_TaskSyncTimeOutMs;
 
         std::unique_ptr<EventCache> m_EventCache;
 #endif
