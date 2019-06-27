@@ -166,6 +166,8 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
     if (!caps.ddi_caps.Color420Only && !(caps.ddi_caps.YUV422ReconSupport) && IsOff(par.mfx.LowPower))
         caps.ddi_caps.YUV422ReconSupport = 1;
 #else
+    if ((platform >= MFX_HW_KBL) && (platform < MFX_HW_CNL) && !caps.ddi_caps.MaxEncodedBitDepth)
+        caps.ddi_caps.MaxEncodedBitDepth = 1;    // 10b
     if (!caps.ddi_caps.Color420Only && !(caps.ddi_caps.YUV422ReconSupport) &&
         IsOff(par.mfx.LowPower) && (platform >= MFX_HW_TGL_LP))
         caps.ddi_caps.YUV422ReconSupport = 1;    // Win VME is not fixed yet
