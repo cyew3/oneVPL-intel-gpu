@@ -171,6 +171,16 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
     if (!caps.ddi_caps.Color420Only && !(caps.ddi_caps.YUV422ReconSupport) &&
         IsOff(par.mfx.LowPower) && (platform >= MFX_HW_TGL_LP))
         caps.ddi_caps.YUV422ReconSupport = 1;    // Win VME is not fixed yet
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    if (platform >= MFX_HW_ATS && IsOn(par.mfx.LowPower))
+    {
+        // For now the driver reports in caps 8 pipes for ATS while in fact there are 2
+        // and more pipes are not expected to be supported.
+        // Delete the code when caps are fixed.
+        if (caps.ddi_caps.NumScalablePipesMinus1 > 1)
+            caps.ddi_caps.NumScalablePipesMinus1 = 1;
+    }
+#endif // defined(PRE_SI_TARGET_PLATFORM_GEN12)
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -187,7 +197,7 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
     }
 
 #if defined (MFX_VA_LINUX) && !defined (OPEN_SOURCE)
-    // align wint Windows for Gen12+
+    // align with Windows for Gen12+
     if (platform >= MFX_HW_TGL_LP)
     {   // taken from  Windows TGLLP (temporarily)
         caps.ddi_caps.CodingLimitSet = 1; // = 0 now but should be always set to 1 according to DDI (what about Linux ???)
