@@ -66,6 +66,7 @@ public:
 
     static void TraceGUID(GUID const & guid, FILE*);
     void Trace(ENCODE_CAPS_HEVC const & b, mfxU32 idx);
+    void Trace(MFX_ENCODE_CAPS_HEVC const & b, mfxU32 idx);
 };
 #else
 class DDITracer
@@ -77,6 +78,7 @@ public:
     template<class T> inline void TraceArray(T const *, mfxU32) {};
     static void TraceGUID(GUID const &, FILE*) {};
     void Trace(ENCODE_CAPS_HEVC const &, mfxU32) {};
+    void Trace(MFX_ENCODE_CAPS_HEVC const &, mfxU32) {};
 };
 #endif
 

@@ -79,6 +79,13 @@ void DDITracer::TraceGUID(GUID const & guid, FILE* f)
 }
 
 #define FIELD_FORMAT "%-32s"
+DECL_START(MFX_ENCODE_CAPS_HEVC)
+    TRACE("%d", CQPSupport              );
+    TRACE("%d", CBRSupport              );
+    TRACE("%d", VBRSupport              );
+    TRACE("%d", ICQSupport              );
+    Trace(b.ddi_caps, idx               );
+DECL_END
 DECL_START(ENCODE_CAPS_HEVC)
     TRACE("%d", CodingLimitSet          );
     TRACE("%d", BitDepth8Only           );
