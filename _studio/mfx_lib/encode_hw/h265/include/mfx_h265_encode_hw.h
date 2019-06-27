@@ -83,6 +83,11 @@ public:
         return MFX_ERR_UNSUPPORTED;
     }
 
+    virtual mfxTaskThreadingPolicy GetThreadingPolicy(void)
+    {
+        return MFX_TASK_THREADING_INTRA;
+    }
+
     virtual mfxStatus EncodeFrameCheck(mfxEncodeCtrl * /*ctrl*/, mfxFrameSurface1 * /*surface*/, mfxBitstream * /*bs*/, mfxFrameSurface1 ** /*reordered_surface*/, mfxEncodeInternalParams * /*pInternalParams*/)
     {
         return MFX_ERR_NONE;
