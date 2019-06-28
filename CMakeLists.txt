@@ -25,6 +25,8 @@ include(CMakeDependentOption)
 
 set(OPEN_SOURCE ON)
 add_definitions(-DOPEN_SOURCE)
+add_definitions(-DMFX_PROTECTED_FEATURE_DISABLE)
+add_definitions(-DSYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

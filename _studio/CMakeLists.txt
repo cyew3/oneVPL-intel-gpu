@@ -20,6 +20,7 @@
 
 add_subdirectory(shared/umc)
 add_subdirectory(shared/asc)
+add_subdirectory(mfx_lib/encode_hw)
 add_subdirectory(mfx_lib/fei)
 add_subdirectory(mfx_lib/genx)
 add_subdirectory(mfx_lib/mctf_package)
