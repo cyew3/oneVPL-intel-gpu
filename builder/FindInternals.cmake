@@ -51,6 +51,14 @@ function( mfx_include_dirs )
     ${MSDK_LIB_ROOT}/shared/include
     ${MSDK_LIB_ROOT}/fei/include
     ${MSDK_LIB_ROOT}/fei/h264_la
-    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/SafeStringStaticLibrary/include
   )
+  if (OPEN_SOURCE)
+    include_directories(
+      ${CMAKE_HOME_DIRECTORY}/contrib/ipp/include
+    )
+  else()
+    include_directories (
+      ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/SafeStringStaticLibrary/include
+    )
+  endif()
 endfunction()

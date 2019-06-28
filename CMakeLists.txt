@@ -24,6 +24,8 @@ project( mediasdk )
 include(CMakeDependentOption)
 
 set(OPEN_SOURCE ON)
+add_definitions(-DOPEN_SOURCE)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Default to `release` build if nothing was specified
@@ -132,7 +134,7 @@ if (BUILD_RUNTIME)
   if (MFX_ENABLE_SW_FALLBACK)
     add_subdirectory(${CMAKE_HOME_DIRECTORY}/contrib/ipp)
   endif()
-  #add_subdirectory(${CMAKE_HOME_DIRECTORY}/_studio)
+  add_subdirectory(${CMAKE_HOME_DIRECTORY}/_studio)
 endif()
 
 if (BUILD_TESTS)
