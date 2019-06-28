@@ -18,18 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_subdirectory(sample_common)
-add_subdirectory(sample_decode)
-add_subdirectory(sample_encode)
-add_subdirectory(sample_fei)
-add_subdirectory(sample_hevc_fei)
-add_subdirectory(sample_hevc_fei_abr)
-add_subdirectory(sample_vpp)
-add_subdirectory(sample_multi_transcode)
-add_subdirectory(sample_misc/wayland)
-add_subdirectory(sample_plugins/rotate_cpu)
-add_subdirectory(sample_plugins/rotate_opencl)
-add_subdirectory(sample_plugins/vpp_plugin)
-add_subdirectory(metrics_monitor)
-
-include(samples_ext.cmake OPTIONAL)
+if(NOT OPEN_SOURCE)
+  add_subdirectory(sample_mondello)
+  add_subdirectory(sample_camera)
+  add_subdirectory(DONT_RELEASE/sample_encode_mod)
+  add_subdirectory(DONT_RELEASE/sample_multi_transcode_mod)
+  add_subdirectory(deprecated/sample_spl_mux/dispatcher)
+endif()

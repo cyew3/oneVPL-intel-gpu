@@ -21,6 +21,8 @@
 cmake_minimum_required( VERSION 2.8.5 )
 project( mediasdk )
 
+include(CMakeDependentOption)
+
 set(OPEN_SOURCE ON)
 
 # Default to `release` build if nothing was specified
@@ -76,6 +78,7 @@ option( BUILD_ALL "Build all the targets?" OFF )
 
 option( BUILD_RUNTIME "Build mediasdk runtime (library, plugins, etc.)?" ON )
 option( BUILD_DISPATCHER "Build dispatcher?" ON )
+cmake_dependent_option(BUILD_SAMPLES "Build samples?" ON "BUILD_DISPATCHER" OFF )
 option( BUILD_TESTS "Build tests?" "${BUILD_ALL}" )
 
 include( ${BUILDER_ROOT}/FindOpenCL.cmake )
@@ -92,6 +95,10 @@ if (BUILD_DISPATCHER)
   add_subdirectory(api/mfx_dispatch/linux)
 endif()
 
+if (BUILD_SAMPLES)
+  add_subdirectory(${CMAKE_HOME_DIRECTORY}/samples)
+endif()
+
 if (BUILD_RUNTIME)
   add_subdirectory(${CMAKE_HOME_DIRECTORY}/_studio)
 endif()
@@ -99,11 +106,6 @@ endif()
 if (BUILD_TESTS AND GTEST_FOUND)
   add_subdirectory(tests)
 endif()
-
-foreach( dir contrib samples )
-  set( CMAKE_SOURCE_DIR "${CMAKE_HOME_DIRECTORY}/${dir}" )
-  create_build()
-endforeach()
 
 message("")
 message("********************** Media SDK Configuration Summary **********************")

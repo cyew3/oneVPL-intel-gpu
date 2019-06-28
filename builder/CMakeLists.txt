@@ -56,14 +56,6 @@ include( mdp_msdk-lib/builder/FindTrace.cmake )
 
 add_subdirectory( mdp_msdk-lib/api/mfx_dispatch/linux)
 
-## open-source-cut-start
-set( CMAKE_SOURCE_DIR "${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples" )
-foreach( dir sample_common deprecated/sample_spl_mux/dispatcher)
-  add_subdirectory( ${CMAKE_SOURCE_DIR}/${dir} )
-endforeach()
-
-## open-source-cut-end
-
 include( mdp_msdk-lib/builder/ConfTargets.cmake )
 
 foreach( dir
@@ -78,8 +70,7 @@ foreach( dir
   create_build()
 endforeach()
 
-
-add_subdirectory( ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples )
+add_subdirectory( mdp_msdk-lib/samples )
 
 message("")
 message("********************** Media SDK Configuration Summary **********************")

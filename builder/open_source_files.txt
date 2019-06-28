@@ -675,6 +675,7 @@ _studio/shared/umc/codec/vc1_dec/src/umc_vc1_video_decoder.cpp
 _studio/shared/umc/codec/vc1_dec/src/umc_vc1_video_decoder_hw.cpp
 _studio/mfx_lib/shared/include/mfx_vc1_dec_common.h
 _studio/mfx_lib/shared/src/mfx_vc1_dec_common.cpp
+samples/CMakeLists.txt
 samples/metrics_monitor
 samples/sample_common/CMakeLists.txt
 samples/sample_common/include/abstract_splitter.h
