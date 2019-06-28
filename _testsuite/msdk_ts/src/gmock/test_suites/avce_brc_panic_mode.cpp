@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-20198 Intel Corporation. All Rights Reserved.
 
 File Name: avce_brc_panic_mode.cpp
 
@@ -62,10 +62,10 @@ namespace avce_brc_panic_mode
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_ON }} },
 
-        {/*04*/ MFX_ERR_UNSUPPORTED, /* AVBR is unsupported in AVCe on Linux */
+        {/*04*/ MFX_ERR_NONE,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR },
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_OFF }} },
-        {/*05*/ MFX_ERR_UNSUPPORTED, /* AVBR is unsupported in AVCe on Linux */
+        {/*05*/ MFX_ERR_NONE,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR },
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_ON }} },
 
@@ -118,10 +118,10 @@ namespace avce_brc_panic_mode
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA_HRD},
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_ON }} },
 
-        {/*20*/ MFX_ERR_UNSUPPORTED, /* QVBR is unsupported in AVCe on Linux */
+        {/*20*/ MFX_ERR_NONE,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR },
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_OFF }} },
-        {/*21*/ MFX_ERR_UNSUPPORTED, /* QVBR is unsupported in AVCe on Linux */
+        {/*21*/ MFX_ERR_NONE,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR },
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_ON }} }
 #endif
