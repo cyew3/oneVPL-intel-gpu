@@ -218,6 +218,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
                 isD3DToSys = !((pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) == 0);
             }
 
+#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
             /* JPEG standard does not support crops as it is done in AVC, so:
                - CropX and CropY are always 0,
                - CropW and CropH represents picture size for current frame (in case of rotation,
@@ -225,15 +226,16 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
                - Width and Height represents surface allocation size (they are initialized
                  in decoder Init and are correct).
              */
-            if (par->mfx.Rotation == MFX_ROTATION_0 || par->mfx.Rotation == MFX_ROTATION_180)
-            {
-                pSrc.Info.CropW = surface_work->Info.CropW;
-                pSrc.Info.CropH = surface_work->Info.CropH;
-            }
-            else
+            if (par->mfx.Rotation == MFX_ROTATION_90 || par->mfx.Rotation == MFX_ROTATION_270)
             {
                 pSrc.Info.CropW = surface_work->Info.CropH;
                 pSrc.Info.CropH = surface_work->Info.CropW;
+            }
+            else
+#endif // MFX_ENABLE_MJPEG_ROTATE_VPP
+            {
+                pSrc.Info.CropW = surface_work->Info.CropW;
+                pSrc.Info.CropH = surface_work->Info.CropH;
             }
             sts = DoHwJpegCc(pCc, m_pCore, surface_work, &pSrc, par, isD3DToSys, taskId);
             if (sts < MFX_ERR_NONE)
