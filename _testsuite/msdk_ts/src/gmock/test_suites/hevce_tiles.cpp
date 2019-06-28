@@ -44,14 +44,15 @@ namespace hevce_tiles {
 
     enum SUB_TYPE {
         NONE,
-        TRIVIAL,
-        UNSUP,
-        GT_MAX_ROW,
-        GT_MAX_COL,
-        GT_MAX_COL_WRN,
-        MIN_TILE_SIZE,
-        NxN
-    };
+        TRIVIAL,        // 1x1
+        UNSUP,          // runs ok when supported, also runs on old platforms
+        GT_MAX_ROW,     // spec tile count limit, uses 8K
+        GT_MAX_COL,     // spec tile count limit, uses 8K
+        GT_MAX_COL_WRN, // spec tile width limit, use W < 2*256 to avoid #pipe conflict
+        GT_MAX_RAW_WRN, // spec tile height limit (x2 for 2 (>1) pipes)
+        NxN,            // square split. No case for MxN
+        GT_MAX_PIP_WRN  // #tiles <= #pipes when #pipes>1, use W >= 3*256 to avoid min tile width conflict
+   };
 
     struct tc_struct {
         struct status {
@@ -112,24 +113,27 @@ namespace hevce_tiles {
         } },
 
         {/*03*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
-            QUERY | INIT | ENCODE, MIN_TILE_SIZE, {
+            QUERY | INIT | ENCODE, GT_MAX_RAW_WRN, {
             TILES_PARS(TILES,          8, 1),
             TILES_PARS(TILES_EXPECTED, 7, 1),
             TILES_PARS(TILES_EXPECTED_VDENC, 3, 1)
         } },
 
+        // width < 2*256
         {/*04*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT | ENCODE, GT_MAX_COL_WRN, {
-            TILES_PARS(TILES,          1, 3),
-            TILES_PARS(TILES_EXPECTED, 1, 2)
+            TILES_PARS(TILES,          1, 2),
+            TILES_PARS(TILES_EXPECTED, 1, 1)
         } },
 
+        // height >= 23*128
         {/*05*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT | ENCODE, GT_MAX_ROW, {
             TILES_PARS(TILES,          23, 1),
             TILES_PARS(TILES_EXPECTED, 22, 1)
         } },
 
+        // width >= 21*256
         {/*06*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT | ENCODE, GT_MAX_COL, {
             TILES_PARS(TILES,          1, 21),
@@ -140,6 +144,19 @@ namespace hevce_tiles {
             QUERY | INIT | ENCODE, NxN, {
             TILES_PARS(TILES,          2, 2),
             TILES_PARS(TILES_EXPECTED, 2, 2)
+        } },
+
+        {/*08*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+            QUERY | INIT | ENCODE, NxN, {
+            TILES_PARS(TILES,          3, 2),
+            TILES_PARS(TILES_EXPECTED, 3, 2)
+        } },
+
+        // width >= 3*256, for #pipes > 1
+        {/*09*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
+            QUERY | INIT | ENCODE, GT_MAX_PIP_WRN, {
+            TILES_PARS(TILES,          1, 3),
+            TILES_PARS(TILES_EXPECTED, 1, 2)
         } },
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
@@ -185,11 +202,14 @@ namespace hevce_tiles {
         m_session = tsSession::m_session;
         initParams();
 
-        if (tc.sub_type == GT_MAX_COL || tc.sub_type == GT_MAX_ROW) {
-            m_par.mfx.FrameInfo.Width = 7680;
-            m_par.mfx.FrameInfo.Height = 4320;
-            m_par.mfx.FrameInfo.CropW = 7680;
-            m_par.mfx.FrameInfo.CropH = 4320;
+        if (tc.sub_type == GT_MAX_COL) {
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 256 * 21;
+        }
+        else if (tc.sub_type == GT_MAX_ROW) {
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 128 * 23; // 128 is 2*64 for LP
+        }
+        else if (tc.sub_type == GT_MAX_COL_WRN) {
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 256 * 2 - 64;
         }
 
         m_par.AddExtBuffer(MFX_EXTBUFF_HEVC_TILES, sizeof(mfxExtHEVCTiles));
@@ -254,42 +274,47 @@ namespace hevce_tiles {
             SETPARS(m_par, MFX_PAR);
             SETPARS(extHEVCTiles, TILES);
 
+            sts = tc.sts.query;
+
             if (unsupported_platform && tc.sub_type == UNSUP) {
                 SETPARS(&extHEVCTiles_expectation, TILES_EXPECTED_UNSUP);
+                sts = MFX_ERR_UNSUPPORTED;
             }
-            else if (lowpower && tc.sub_type == MIN_TILE_SIZE) {
+            else if (lowpower && tc.sub_type == GT_MAX_RAW_WRN) {
                 SETPARS(&extHEVCTiles_expectation, TILES_EXPECTED_VDENC);
             }
             else {
                 SETPARS(&extHEVCTiles_expectation, TILES_EXPECTED);
             }
 
-            if (tc.sub_type == GT_MAX_COL || tc.sub_type == GT_MAX_COL_WRN) {
+            if (tc.sub_type == GT_MAX_COL || tc.sub_type == GT_MAX_PIP_WRN) {
                 ENCODE_CAPS_HEVC caps = {};
                 mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
 
                 g_tsStatus.expect(MFX_ERR_NONE);
                 g_tsStatus.check(GetCaps(&caps, &capSize));
+
                 if (caps.NumScalablePipesMinus1 > 0) {
-                    if (tc.sub_type == GT_MAX_COL) {
+                    // 1 pipe can create any number of tiles, if more than 1 then maximum is (caps.NumScalablePipesMinus1 + 1)
+caps.NumScalablePipesMinus1 = 1; // hardcode while drv returns incorrect caps here
+                    mfxU16 maxPipes = caps.NumScalablePipesMinus1 + 1;
+                    if (tc.sub_type == GT_MAX_PIP_WRN) {
                         // we expect here the (max+1) number of Tile columns will be decreased to the (max) value
-                        ((mfxExtHEVCTiles*)extHEVCTiles)->NumTileColumns = caps.NumScalablePipesMinus1 + 2;
-                        extHEVCTiles_expectation.NumTileColumns = caps.NumScalablePipesMinus1 + 1;
+                        // and make width more than tile width limits
+                        ((mfxExtHEVCTiles*)extHEVCTiles)->NumTileColumns = maxPipes + 1;
+                        extHEVCTiles_expectation.NumTileColumns = maxPipes;
+                        m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 256 * (maxPipes + 1);
                     }
-                    else {
-                        ((mfxExtHEVCTiles*)extHEVCTiles)->NumTileColumns = caps.NumScalablePipesMinus1 + 1;
-                        extHEVCTiles_expectation.NumTileColumns = caps.NumScalablePipesMinus1 + 1;
+                    else { // tc.sub_type == GT_MAX_COL
+                        g_tsLog << "SKIPPED: having pipes can't reach spec limit for tile columns\n";
+                        return 0;
                     }
                 }
-                else if (tc.sub_type == GT_MAX_COL_WRN) {
-                    sts = tc.sts.query;
+                else if (tc.sub_type == GT_MAX_PIP_WRN) {
+                    g_tsLog << "SKIPPED: single pipe doesn't limit tile columns\n";
+                    return 0;
                 }
             }
-
-            if (unsupported_platform && tc.sub_type == UNSUP)
-                sts = MFX_ERR_UNSUPPORTED;
-            else if (tc.sub_type != GT_MAX_COL_WRN)
-                sts = tc.sts.query;
 
             g_tsStatus.expect(sts);
             Query();
@@ -304,10 +329,9 @@ namespace hevce_tiles {
             SETPARS(extHEVCTiles, TILES);
             SETPARS(&extHEVCTiles_expectation, TILES);
 
+            sts = tc.sts.init;
             if (unsupported_platform && tc.sub_type == UNSUP)
                 sts = MFX_ERR_INVALID_VIDEO_PARAM;
-            else if (tc.sub_type != GT_MAX_COL_WRN)
-                sts = tc.sts.init;
 
             g_tsStatus.expect(sts);
             sts = Init();
