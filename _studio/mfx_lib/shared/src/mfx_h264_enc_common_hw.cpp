@@ -6120,7 +6120,8 @@ void MfxHwH264Encode::SetDefaults(
     {
         if (bIntRateControlLA(par.mfx.RateControlMethod) && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)
         {
-            extDdi->LookAheadDependency = IPP_MIN(par.mfx.GopRefDist + 1, extOpt2->LookAheadDepth *2/3);
+            extDdi->LookAheadDependency = std::min<mfxU16>(10, extOpt2->LookAheadDepth / 4);
+            extDdi->LookAheadDependency = mfx::clamp<mfxU16>(extDdi->LookAheadDependency, std::min<mfxU16>(par.mfx.GopRefDist + 1, extOpt2->LookAheadDepth * 2 / 3), (extOpt2->LookAheadDepth * 2 / 3));
         }
         else
         {
