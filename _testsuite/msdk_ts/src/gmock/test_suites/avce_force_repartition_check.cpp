@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 File Name: avce_force_repartition_check.cpp
 \* ****************************************************************************** */
@@ -167,7 +167,11 @@ namespace avce_force_repartition_check {
             { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
             { MFX_PAR, &tsStruct::mfxExtCodingOption3.RepartitionCheckEnable, MFX_CODINGOPTION_ON },
             { RESET_PAR, &tsStruct::mfxExtCodingOption3.RepartitionCheckEnable, MFX_CODINGOPTION_ADAPTIVE },
+#if (defined(_WIN32) || defined(_WIN64))
             { QUERY_EXP, &tsStruct::mfxExtCodingOption3.RepartitionCheckEnable, MFX_CODINGOPTION_UNKNOWN },
+#else
+            { QUERY_EXP, &tsStruct::mfxExtCodingOption3.RepartitionCheckEnable, MFX_CODINGOPTION_ON },
+#endif
             { RESET_EXP, &tsStruct::mfxExtCodingOption3.RepartitionCheckEnable, MFX_CODINGOPTION_ADAPTIVE } }
         },
         // INVALID PARAMS. RepartitionCheckEnable is out of valid range [MFX_CODINGOPTION_UNKNOWN; MFX_CODINGOPTION_ADAPTIVE]
