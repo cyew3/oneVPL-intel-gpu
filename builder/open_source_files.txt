@@ -675,6 +675,7 @@ _studio/shared/umc/codec/vc1_dec/src/umc_vc1_video_decoder.cpp
 _studio/shared/umc/codec/vc1_dec/src/umc_vc1_video_decoder_hw.cpp
 _studio/mfx_lib/shared/include/mfx_vc1_dec_common.h
 _studio/mfx_lib/shared/src/mfx_vc1_dec_common.cpp
+samples/metrics_monitor
 samples/sample_common/CMakeLists.txt
 samples/sample_common/include/abstract_splitter.h
 samples/sample_common/include/avc_bitstream.h
@@ -789,6 +790,9 @@ samples/sample_fei/src/pipeline_fei.cpp
 samples/sample_fei/src/refListsManagement_fei.cpp
 samples/sample_fei/src/sample_fei.cpp
 samples/sample_hevc_fei
+samples/sample_hevc_fei_abr/include
+samples/sample_hevc_fei_abr/src
+samples/sample_hevc_fei_abr/CMakeLists.txt
 samples/sample_misc/wayland/CMakeLists.txt
 samples/sample_misc/wayland/include/class_wayland.h
 samples/sample_misc/wayland/include/listener_wayland.h
