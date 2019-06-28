@@ -160,7 +160,9 @@ public:
 #endif
 
   IMAGE                       m_dst;
+#ifdef ALLOW_JPEG_SW_FALLBACK
   CJPEGDecoderHuffmanState    m_state;
+#endif
 
 public:
   JERRCODE Init(void);

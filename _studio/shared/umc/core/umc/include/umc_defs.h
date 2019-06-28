@@ -26,7 +26,10 @@
 #else
 #include "mfx_config.h"
 #endif
+
+#ifndef OPEN_SOURCE
 #define ALLOW_SW_VC1_FALLBACK
+#endif
 
 // This file contains defines which switch on/off support of
 // codecs and renderers on application level
