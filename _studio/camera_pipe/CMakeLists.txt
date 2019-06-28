@@ -135,7 +135,7 @@ endforeach()
     scene_analyzer
     media_buffers
     umc_io
-    umc_va_elk_hw
+    umc_va_hw
     umc
     vm
     vm_plus

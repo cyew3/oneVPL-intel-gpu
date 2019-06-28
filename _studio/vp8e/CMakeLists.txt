@@ -76,7 +76,7 @@ foreach( variant hw )
     vm_plus
     media_buffers
     umc_io
-    umc_va_elk_hw
+    umc_va_hw
     mfx_trace
     ${ITT_LIBRARIES}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l

@@ -233,7 +233,7 @@ foreach( variant ${hevcd_variants} )
   if( variant MATCHES hw )
     set( hw_defs "-DMFX_VA -DVA_HEVC_DECODER" )
     list( APPEND LIBS
-      genx umc_va_elk_hw )
+      genx umc_va_hw )
   endif()
 
   set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs} ${hw_defs}" )
@@ -352,7 +352,7 @@ foreach( variant ${hevce_variants} )
 
   if( variant MATCHES hw)
     list( APPEND LIBS
-      umc_va_elk_hw
+      umc_va_hw
     )
   endif()
 
@@ -487,7 +487,7 @@ foreach( variant ${av1e_variants} )
 
   if( variant MATCHES hw)
     list( APPEND LIBS
-      umc_va_elk_hw
+      umc_va_hw
     )
   endif()
 
@@ -620,7 +620,7 @@ foreach( variant hw )
     h264_enc_sw
     media_buffers
     umc_io
-    umc_va_elk_hw
+    umc_va_hw
     umc
     vm
     vm_plus
@@ -727,7 +727,7 @@ if( ENABLE_HEVC_FEI )
     if(${variant} MATCHES hw)
       list( APPEND LIBS
         genx
-        umc_va_elk_hw
+        umc_va_hw
       )
     endif()
 
@@ -808,7 +808,7 @@ foreach( variant
 
     list( APPEND LIBS
       genx va
-      umc_va_elk_hw
+      umc_va_hw
     )
 
     foreach( prefix ${MSDK_LIB_ROOT}/decode/vp8/src )
@@ -920,7 +920,7 @@ foreach( variant
     list( APPEND LIBS
       genx
       va
-      umc_va_elk_hw
+      umc_va_hw
     )
 
     list( APPEND sources

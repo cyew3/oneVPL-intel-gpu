@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+add_subdirectory(shared/umc)
+
 if(MFX_ENABLE_USER_ENCODE)
   add_subdirectory(hevce_hw)
   add_subdirectory(hevc_fei)

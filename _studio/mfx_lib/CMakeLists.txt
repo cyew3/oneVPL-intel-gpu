@@ -119,7 +119,7 @@ foreach( variant
     vm
     vm_plus
     umc_io
-    umc_va_elk_hw
+    umc_va_hw
     cmrt_cross_platform_hw
     genx
     decode_${variant}
@@ -257,7 +257,7 @@ set( LIBS "" )
 list( APPEND LIBS
   media_buffers
   umc_io
-  umc_va_elk_hw
+  umc_va_hw
   umc
   vm
   vm_plus
@@ -342,7 +342,7 @@ foreach( variant sw )
     umc_acodecs_merged
     umc_codecs_merged
     media_buffers
-    umc_va_elk_hw
+    umc_va_hw
     umc_io
     umc
     vm
