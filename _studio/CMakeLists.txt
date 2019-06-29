@@ -23,6 +23,7 @@ add_subdirectory(shared/asc)
 add_subdirectory(mfx_lib/encode_hw)
 add_subdirectory(mfx_lib/fei)
 add_subdirectory(mfx_lib/genx)
+add_subdirectory(mfx_lib/vpp)
 add_subdirectory(mfx_lib/mctf_package)
 
 if(MFX_ENABLE_USER_ENCODE)
