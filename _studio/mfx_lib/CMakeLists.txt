@@ -55,12 +55,10 @@ set(sources
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_session.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_user_plugin.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_brc_common.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_h264_enc_common.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_mpeg2_dec_common.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_vc1_dec_common.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/auxiliary_device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/cm_mem_copy.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_compositing_ddi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_vpp_vaapi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_allocator.cpp
@@ -77,7 +75,14 @@ set(sources
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_dxva2_device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_static_assert_structs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_mfe_adapter.cpp
+    )
+
+if(NOT OPEN_SOURCE)
+  list(APPEND sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_h264_enc_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy.cpp
   )
+endif()
 
 set( sources.plus "" )
 
@@ -86,9 +91,13 @@ set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_LIB_ROOT}/libm
 
 get_mfx_version(mfx_version_major mfx_version_minor)
 
-foreach( variant
-         sw
-         hw )
+if(OPEN_SOURCE)
+  set(VARIANTS hw)
+else()
+  set(VARIANTS sw hw)
+endif()
+
+foreach( variant ${VARIANTS} )
   if( DEFINED MFX_LIBNAME )
     set( mfxlibname "${MFX_LIBNAME}")
   else()
@@ -103,11 +112,7 @@ foreach( variant
   list( APPEND LIBS
     mfx_trace_hw
     bitrate_control
-    h264_dec_${variant}
     h264_enc_sw
-    jpeg_common
-    jpeg_dec_${variant}
-    mpeg2_dec_${variant}
     umc
     vm
     vm_plus
@@ -116,12 +121,11 @@ foreach( variant
     cmrt_cross_platform_hw
     genx
     decode_${variant}
+    decode_ext_${variant}
     encode_hw
     enc_hw
     h264_la
     genx
-    vc1_common
-    vc1_dec_${variant}
     scene_analyzer
     color_space_converter_${variant}
     media_buffers
@@ -149,14 +153,6 @@ foreach( variant
     pthread
     dl
   )
-
-  if(${variant} MATCHES hw)
-  list( APPEND LIBS
-    umc_h265_${variant}
-    umc_vp9_${variant}
-    umc_av1_${variant}
-  )
-  endif()
 
   set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
   make_library( ${mfxlibname} ${variant} shared)
