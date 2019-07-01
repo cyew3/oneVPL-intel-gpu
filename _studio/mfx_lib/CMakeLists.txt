@@ -34,59 +34,52 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../hevc_fei/h265_fei/include )
 
 # =============================================================================
 
-set( sources "" )
-set( sources.plus "" )
-file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/*.c" "${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/*.cpp" )
-list( APPEND sources ${srcs})
-# =============================================================================
+set(sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_ischeduler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_iunknown.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_task.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_task_management.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_thread.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_async.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_decode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_enc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_encode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_pak.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_plugin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_query.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_session.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_vpp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_check_hardware_support.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_session.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_user_plugin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_brc_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_h264_enc_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_mpeg2_dec_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_vc1_dec_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/auxiliary_device.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/cm_mem_copy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_copy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/fast_compositing_ddi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_vpp_vaapi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_allocator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_allocator_vaapi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_allocator_vdaapi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core_factory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core_hw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core_vaapi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfx_core_vdaapi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_umc_alloc_wrapper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_umc_mjpeg_vpp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_timing.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_dxva2_device.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_static_assert_structs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_mfe_adapter.cpp
+  )
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
-  list( APPEND sources
-    ${prefix}/libmfxsw.cpp
-    ${prefix}/libmfxsw_async.cpp
-    ${prefix}/libmfxsw_decode.cpp
-    ${prefix}/libmfxsw_enc.cpp
-    ${prefix}/libmfxsw_encode.cpp
-    ${prefix}/libmfxsw_pak.cpp
-    ${prefix}/libmfxsw_plugin.cpp
-    ${prefix}/libmfxsw_query.cpp
-    ${prefix}/libmfxsw_session.cpp
-    ${prefix}/libmfxsw_vpp.cpp
-    ${prefix}/mfx_check_hardware_support.cpp
-    ${prefix}/mfx_session.cpp
-    ${prefix}/mfx_user_plugin.cpp
-    #=================
-    ${prefix}/mfx_brc_common.cpp
-    ${prefix}/mfx_h264_enc_common.cpp
-    ${prefix}/mfx_mpeg2_dec_common.cpp
-    ${prefix}/mfx_vc1_dec_common.cpp
-    #=================
-  )
-endforeach()
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
-  list( APPEND sources
-    ${prefix}/auxiliary_device.cpp
-    ${prefix}/cm_mem_copy.cpp
-    ${prefix}/fast_copy.cpp
-    ${prefix}/fast_compositing_ddi.cpp
-    ${prefix}/mfx_vpp_vaapi.cpp
-    ${prefix}/libmfx_allocator.cpp
-    ${prefix}/libmfx_allocator_vaapi.cpp
-    ${prefix}/libmfx_allocator_vdaapi.cpp
-    ${prefix}/libmfx_core.cpp
-    ${prefix}/libmfx_core_factory.cpp
-    ${prefix}/libmfx_core_hw.cpp
-    ${prefix}/libmfx_core_vaapi.cpp
-    ${prefix}/libmfx_core_vdaapi.cpp
-    ${prefix}/mfx_umc_alloc_wrapper.cpp
-    ${prefix}/mfx_umc_mjpeg_vpp.cpp
-    ${prefix}/mfx_timing.cpp
-    ${prefix}/mfx_dxva2_device.cpp
-    ${prefix}/mfx_static_assert_structs.cpp
-    #=======MFE==============
-    ${prefix}/mfx_mfe_adapter.cpp
-  )
-endforeach()
+set( sources.plus "" )
 
 set( USE_STRICT_NAME TRUE )
 set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_LIB_ROOT}/libmfxhw.map" )
@@ -180,191 +173,6 @@ foreach( variant
 
 
   set( defs "" )
-  #message( STATUS "xxxxxxxxxxxxxxx __ARCH: "${__ARCH}, "mfxlibname: "${mfxlibname}, "variant: "${variant})
 endforeach()
 
-# =============================================================================
-
-# libmfxrt reuse the same .map file as full library
-set( sources "" )
-set( sources.plus "" )
-
-# mfxrt library itself
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
-  list( APPEND sources
-    ${prefix}/auxiliary_device.cpp
-    ${prefix}/cm_mem_copy.cpp
-    ${prefix}/fast_compositing_ddi.cpp
-    ${prefix}/fast_copy.cpp
-    ${prefix}/libmfx_allocator.cpp
-    ${prefix}/libmfx_allocator_vaapi.cpp
-    ${prefix}/libmfx_core.cpp
-    ${prefix}/libmfx_core_vaapi.cpp
-    ${prefix}/libmfx_core_vdaapi.cpp
-    ${prefix}/libmfx_core_factory.cpp
-    ${prefix}/libmfx_core_hw.cpp
-    ${prefix}/mfx_dxva2_device.cpp
-    ${prefix}/mfx_search_dll.cpp
-    ${prefix}/mfx_timing.cpp
-    ${prefix}/mfx_umc_alloc_wrapper.cpp
-    ${prefix}/mfx_umc_mjpeg_vpp.cpp
-    ${prefix}/mfx_vpp_vaapi.cpp
-    ${prefix}/mfx_static_assert_structs.cpp
-  )
-endforeach()
-list( APPEND sources
-  ${CMAKE_CURRENT_SOURCE_DIR}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
-)
-
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR} )
-  list( APPEND sources
-    ${prefix}/shared/src/libmfxsw.cpp
-    ${prefix}/shared/src/libmfxsw_async.cpp
-    ${prefix}/shared/src/libmfxsw_decode.cpp
-    ${prefix}/shared/src/libmfxsw_enc.cpp
-    ${prefix}/shared/src/libmfxsw_encode.cpp
-    ${prefix}/shared/src/libmfxsw_plugin.cpp
-    ${prefix}/shared/src/libmfxsw_query.cpp
-    ${prefix}/shared/src/libmfxsw_session.cpp
-    ${prefix}/shared/src/libmfxsw_vpp.cpp
-    ${prefix}/shared/src/mfx_session.cpp
-    ${prefix}/shared/src/mfx_user_plugin.cpp
-    ${prefix}/shared/src/mfx_check_hardware_support.cpp
-    ${prefix}/scheduler/src/mfx_scheduler_core.cpp
-    ${prefix}/scheduler/src/mfx_scheduler_core_ischeduler.cpp
-    ${prefix}/scheduler/src/mfx_scheduler_core_iunknown.cpp
-    ${prefix}/scheduler/src/mfx_scheduler_core_task.cpp
-    ${prefix}/scheduler/src/mfx_scheduler_core_task_management.cpp
-    ${prefix}/scheduler/src/mfx_scheduler_core_thread.cpp
-    ${prefix}/vpp/src/mfx_vpp_factory.cpp
-  )
-endforeach()
-
-
-if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-  set( mfxrtlibname mfxrt64 )
-else()
-  set( mfxrtlibname mfxrt32 )
-endif()
-
-if( MFX_ENABLE_KERNELS )
-  set(GENX_LIB "genx")
-else()
-  set(GENX_LIB "")
-endif()
-
-set( LIBS "" )
-list( APPEND LIBS
-  media_buffers
-  umc_io
-  umc_va_hw
-  umc
-  vm
-  vm_plus
-  ${GENX_LIB}
-  mfx_common_hw
-  mfx_trace
-  ${ITT_LIBRARIES}
-  ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-  pthread
-  dl )
-
-set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-make_library( ${mfxrtlibname} hw shared)
-append_property( ${mfxrtlibname} COMPILE_FLAGS " -DMFX_RT" )
-set( defs "")
-
-# =============================================================================
-
-set( sources "" )
-set( sources.plus "" )
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
-  list( APPEND sources
-    ${prefix}/libmfxsw.cpp
-    ${prefix}/libmfxsw_async.cpp
-    ${prefix}/libmfxsw_audio_decode.cpp
-    ${prefix}/libmfxsw_audio_encode.cpp
-    ${prefix}/libmfxsw_ext.cpp
-    ${prefix}/libmfxsw_session.cpp
-    ${prefix}/mfx_session.cpp
-    #=====================
-    ${prefix}/mfx_common_int.cpp
-    #=====================
-  )
-endforeach()
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
-  list( APPEND sources
-    ${prefix}/fast_copy.cpp
-    ${prefix}/libmfx_allocator.cpp
-    ${prefix}/libmfx_core.cpp
-    ${prefix}/libmfx_core_factory.cpp
-    ${prefix}/mfx_umc_alloc_wrapper.cpp
-    ${prefix}/mfx_umc_mjpeg_vpp.cpp
-    ${prefix}/mfx_search_dll.cpp
-    ${prefix}/mfx_timing.cpp
-    ${prefix}/mfx_static_assert_structs.cpp
-  )
-endforeach()
-# =================================
-file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/*.c" "${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/*.cpp" )
-list( APPEND sources ${srcs})
-# =================================
-
-set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxaudio.map" )
-
-if( MFX_ENABLE_KERNELS )
-  set(MCTF_LIB "mctf_hw")
-else()
-  set(MCTF_LIB "")
-endif()
-
-foreach( variant sw )
-  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set( mfxlibname mfxaudio${variant}64 )
-  else()
-    set( mfxlibname mfxaudio${variant}32 )
-  endif()
-
-  set( LIBS "" )
-  list( APPEND LIBS
-    enc
-    encode
-    pak
-    decode_${variant}
-    asc
-    ${MCTF_LIB}
-    vpp_${variant}
-    cmrt_cross_platform_hw
-    genx
-    audio_decode
-    audio_encode
-    umc_acodecs_merged
-    umc_codecs_merged
-    media_buffers
-    umc_va_hw
-    umc_io
-    umc
-    vm
-    vm_plus
-    mfx_trace
-    ${ITT_LIBRARIES}
-    ippcc_l ippdc_l ippac_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
-    )
-
-  if(${variant} MATCHES hw)
-    list( APPEND LIBS
-    enc_hw
-    encode_hw
-    )
-  endif()
-
-  set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-  make_library( ${mfxlibname} ${variant} shared)
-  #make_library( mfxaudio${variant}_static ${variant} static)
-  set( defs "")
-endforeach()
-
-# =============================================================================
+include(sources_ext.cmake OPTIONAL)
