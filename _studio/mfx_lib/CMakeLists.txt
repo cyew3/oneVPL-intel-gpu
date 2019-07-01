@@ -110,7 +110,6 @@ foreach( variant ${VARIANTS} )
 
   set( LIBS "" )
   list( APPEND LIBS
-    mfx_trace_hw
     bitrate_control
     h264_enc_sw
     umc
