@@ -90,3 +90,23 @@ list( APPEND sources ${srcs} )
 
 make_library( umc_va hw static )
 ### UMC VA
+
+### UMC codec brc
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/codec/h264_enc/include )
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/include)
+
+set(sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_brc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_h264_brc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_mpeg2_brc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_video_brc.cpp
+    )
+
+if(NOT OPEN_SOURCE)
+  list(APPEND sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/codec/brc/src/umc_svc_brc.cpp
+    )
+endif()
+
+make_library( bitrate_control none static )
+### UMC codec brc
