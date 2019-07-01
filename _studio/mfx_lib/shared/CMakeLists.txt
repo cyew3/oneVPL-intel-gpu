@@ -26,32 +26,33 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../brc/mpeg2/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../end/mpeg2/include )
 
-set( sources "" )
+set(sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_brc_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_common_decode_int.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_common_int.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_enc_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_mpeg2_dec_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vc1_dec_common.cpp                ## open-source-cut-line
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_critical_error_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_ddi_enc_dump.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_h264_enc_common_hw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_h264_encode_vaapi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_h264_encode_factory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_mpeg2_enc_common_hw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_mpeg2_encode_vaapi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_mpeg2_encode_factory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vpx_dec_common.cpp                ## open-source-cut-line
+    )
 set( sources.plus "" )
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
-  list( APPEND sources
-    ${prefix}/mfx_brc_common.cpp
-    ${prefix}/mfx_common_decode_int.cpp
-    ${prefix}/mfx_common_int.cpp
-    ${prefix}/mfx_enc_common.cpp
-    ${prefix}/mfx_h264_enc_common.cpp
-    ${prefix}/mfx_mpeg2_dec_common.cpp
-    ${prefix}/mfx_vc1_dec_common.cpp                ## open-source-cut-line
-    ${prefix}/mfx_critical_error_handler.cpp
-    ${prefix}/mfx_ddi_enc_dump.cpp
-    ${prefix}/mfx_h264_enc_common_hw.cpp
-    ${prefix}/mfx_h264_encode_vaapi.cpp
-    ${prefix}/mfx_h264_encode_factory.cpp
-    ${prefix}/mfx_mpeg2_enc_common_hw.cpp
-    ${prefix}/mfx_mpeg2_encode_vaapi.cpp
-    ${prefix}/mfx_mpeg2_encode_factory.cpp
-    ${prefix}/mfx_vpx_dec_common.cpp                ## open-source-cut-line
-  )
-endforeach()
 
 set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
-make_library( mfx_common sw static )
-append_property( mfx_common_sw COMPILE_FLAGS " -DMFX_RT" )
+if(NOT OPEN_SOURCE)
+  list(APPEND sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_h264_enc_common.cpp
+    )
+  make_library( mfx_common sw static )
+  append_property( mfx_common_sw COMPILE_FLAGS " -DMFX_RT" )
+endif()
+
 make_library( mfx_common hw static )
-#append_property( mfx_common_hw COMPILE_FLAGS " -DMFX_RT" )
 set( defs "" )

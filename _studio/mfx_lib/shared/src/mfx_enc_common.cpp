@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -329,7 +329,7 @@ void ConvertFrameRateMPEG2(mfxU32 FrameRateExtD, mfxU32 FrameRateExtN, mfxI32 &f
 {
     Rational convertedFR;
     Rational bestFR = {INT_MAX, 1};
-    mfxF64 minDifference = IPP_MAXABS_64F;
+    mfxF64 minDifference = MFX_MAXABS_64F;
 
     for (mfxU32 i = 0; i < sizeof(RATETAB) / sizeof(RATETAB[0]); i++)
     {

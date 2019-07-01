@@ -27,6 +27,7 @@ add_subdirectory(mfx_lib/fei)
 add_subdirectory(mfx_lib/genx)
 add_subdirectory(mfx_lib/vpp)
 add_subdirectory(mfx_lib/mctf_package)
+add_subdirectory(mfx_lib/shared)
 
 if(MFX_ENABLE_USER_ENCODE)
   add_subdirectory(hevce_hw)
