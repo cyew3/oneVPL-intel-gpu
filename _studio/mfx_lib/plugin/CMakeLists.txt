@@ -754,8 +754,17 @@ endif()
 # =============================================================================
 # VP9
 # =============================================================================
+if( DEFINED VP9_DECODER_HW_GUID )
+  ## cleanup
+  set( version_defs "" )
+  set( defs "" )
+  set( sources "" )
+  set( sources.plus "" )
+  set( LIBS "" )
+
+  ## plugin info: name, description and version
   set (VP9_PRODUCT_NAME "Intel(R) Media SDK")
-  set (hw_VP9_DECODER_DESCRIPTION "Intel(R) Media SDK - VP9 Hardware Decode Plug-in")
+  set( hw_VP9_DECODER_DESCRIPTION "Intel(R) Media SDK VP9 Hardware Decode Plug-in - Compatibility Stub" )
 
   if( NOT DEFINED ENV{MFX_VP9_VERSION} )
     set( vp9_version 0.0.000.0000 )
@@ -763,86 +772,29 @@ endif()
     set( vp9_version $ENV{MFX_VP9_VERSION} )
   endif( )
 
-  set_file_and_product_version( ${vp9_version} vp9_version_defs )
-
-set( sources "" )
-set( sources.plus "" )
-
-list( APPEND sources ${plugin_common_sources} )
-
-include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
-
-include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/include )
-
-list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
-list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/mfx_vpx_dec_common.cpp )
-
-set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
-
-set( sources.plus "" )
-list( APPEND sources.plus
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vp9_dec_plugin.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_stub_dec_plugin.cpp
-)
-
-foreach( variant
-         hw )
-
   if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set( plugin_name mfx_vp9d_${variant}64 )
+    set( plugin_name mfx_vp9d_hw64 )
   else()
-    set( plugin_name mfx_vp9d_${variant}32 )
+    set( plugin_name mfx_vp9d_hw32 )
   endif()
 
-  set (description_name ${${variant}_VP9_DECODER_DESCRIPTION})
-  set( LIBS "" )
+  set_file_and_product_version( ${vp8_version} version_defs )
 
-  if(${variant} MATCHES hw)
+  ## include, source and libs
+  list( APPEND sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vp9_dec_plugin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_stub_dec_plugin.cpp
+  )
 
-    list( APPEND LIBS
-      genx
-      va
-      umc_va_hw
-    )
-
-    list( APPEND sources
-      ${MSDK_LIB_ROOT}/decode/vp9/src/mfx_vp9_dec_decode.cpp
-      ${MSDK_LIB_ROOT}/decode/vp9/src/mfx_vp9_dec_decode_hw.cpp
-      ${MSDK_LIB_ROOT}/decode/vp9/src/mfx_vp9_dec_decode_utils.cpp
-    )
-
-    list( APPEND sources
-      ${MSDK_STUDIO_ROOT}/shared/umc/io/umc_va/src/umc_va_linux.cpp
-    )
-
-    list( APPEND sources
-      ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_bitstream.cpp
-      ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_utils.cpp
-      ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_va_packer.cpp
-    )
-
-    set( defs "-DAS_VP9D_PLUGIN -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
-
-    gen_plugins_cfg("VP9_Decoder_HW" ${VP9_DECODER_HW_GUID} ${plugin_name} "01" "VP9")
-  endif()
-
-  list( APPEND LIBS
-    media_buffers
-    umc_io
-    umc
-    vm
-    vm_plus
-    mfx_trace
-    ${ITT_LIBRARIES}
-    ippcc_l ippi_l ippcore_l
-    pthread
-    dl
-    )
-
+  ## defs
+  set( USE_STRICT_NAME TRUE )
+  set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
+  set( defs "-DAS_VP9D_PLUGIN -DMFX_VA" )
+  set( defs "${defs} -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\"" )
+  set( defs "${defs} -DMFX_FILE_DESCRIPTION=\"\\\"${hw_VP9_DECODER_DESCRIPTION}\"\\\"" )
+  set( defs "${defs} ${version_defs}")
   set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-  make_library( ${plugin_name} ${variant} shared)
-
-  msdk_install( ${plugin_name} ${MFX_PLUGINS_DIR} )
-
-endforeach()
+  gen_plugins_cfg("VP9_Decoder_HW" ${VP9_DECODER_HW_GUID} ${plugin_name} "01" "VP9")
+  make_library( ${plugin_name} hw shared)
+  install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+endif()
