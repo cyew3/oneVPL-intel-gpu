@@ -144,18 +144,7 @@ endif( )
   set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK - HEVC Software Encode Plug-in")
   set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK - HEVC GPU Accelerated Encode Plug-in")
 
-  if( Linux OR Darwin )
-    execute_process(
-      COMMAND echo
-      COMMAND cut -f 1 -d.
-      COMMAND date "+.%-y.%-m.%-d"
-      OUTPUT_VARIABLE cur_date
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    string( SUBSTRING ${hevc_version} 0 1 ver )
-
-    set(hevc_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${hevc_version}\"\\\"")
-  endif( )
+  set_file_and_product_version( ${hevc_version} hevc_version_defs )
 
 set( sources "" )
 set( sources.plus "" )
@@ -179,16 +168,11 @@ set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
 
 # HEVC Decoder
-if( __TARGET_PLATFORM STREQUAL "BXTMIN" )
-  message( STATUS "Disabling HEVCd HW libraries for BXTMIN." )
-  set( hevcd_variants "" )
-else()
-  set( hevcd_variants hw )
-  if (ENABLE_HEVC)
-    set( hevcd_variants
-        sw
-        hw )
-  endif()
+set( hevcd_variants hw )
+if (ENABLE_HEVC)
+  set( hevcd_variants
+      sw
+      hw )
 endif()
 
 foreach( variant ${hevcd_variants} )
@@ -531,19 +515,7 @@ set( defs "" )
     set( h264la_version $ENV{MFX_H264LA_VERSION} )
   endif( )
 
-  if( Linux OR Darwin )
-    execute_process(
-      COMMAND echo
-      COMMAND cut -f 1 -d.
-      COMMAND date "+.%-y.%-m.%-d"
-      OUTPUT_VARIABLE cur_date
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    string( SUBSTRING ${h264la_version} 0 1 ver )
-
-    set(h264la_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${h264la_version}\"\\\"")
-  endif( )
-
+  set_file_and_product_version( ${h264la_version} h264la_version_defs )
 
 set( sources "" )
 set( sources.plus "" )
@@ -654,18 +626,7 @@ if( ENABLE_HEVC_FEI )
     set( h265fei_version $ENV{MFX_H265FEI_VERSION} )
   endif( )
 
-  if( Linux OR Darwin )
-    execute_process(
-      COMMAND echo
-      COMMAND cut -f 1 -d.
-      COMMAND date "+.%-y.%-m.%-d"
-      OUTPUT_VARIABLE cur_date
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    string( SUBSTRING ${h265fei_version} 0 1 ver )
-
-    set(h265fei_version_defs "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${h265fei_version}\"\\\"")
-  endif( )
+  set_file_and_product_version( ${h265fei_version} h265fei_version_defs )
 
   set( sources "" )
   set( sources.plus "" )
@@ -754,20 +715,7 @@ set( defs "" )
     set( vp8_version $ENV{MFX_VP8_VERSION} )
   endif( )
 
-  if( Linux OR Darwin )
-    execute_process(
-      COMMAND echo
-      COMMAND cut -f 1 -d.
-      COMMAND date "+.%-y.%-m.%-d"
-      OUTPUT_VARIABLE cur_date
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    string( SUBSTRING ${vp8_version} 0 1 ver )
-
-    set(vp8_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${vp8_version}\"\\\"")
-  endif( )
-
-
+  set_file_and_product_version( ${vp8_version} vp8_version_defs )
 
 set( sources "" )
 set( sources.plus "" )
@@ -867,20 +815,7 @@ set( defs "" )
     set( vp9_version $ENV{MFX_VP9_VERSION} )
   endif( )
 
-  if( Linux OR Darwin )
-    execute_process(
-      COMMAND echo
-      COMMAND cut -f 1 -d.
-      COMMAND date "+.%-y.%-m.%-d"
-      OUTPUT_VARIABLE cur_date
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    string( SUBSTRING ${vp9_version} 0 1 ver )
-
-    set(vp9_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${vp9_version}\"\\\"")
-  endif( )
-
-
+  set_file_and_product_version( ${vp9_version} vp9_version_defs )
 
 set( sources "" )
 set( sources.plus "" )
