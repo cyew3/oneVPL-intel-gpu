@@ -706,8 +706,17 @@ set( defs "" )
 # =============================================================================
 # VP8
 # =============================================================================
+if( DEFINED VP8_DECODER_HW_GUID )
+  ## cleanup
+  set( version_defs "" )
+  set( defs "" )
+  set( sources "" )
+  set( sources.plus "" )
+  set( LIBS "" )
+
+  ## plugin info: name, description and version
   set (VP8_PRODUCT_NAME "Intel(R) Media SDK")
-  set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK - VP8 Hardware Decode Plug-in")
+  set( hw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK VP8 Hardware Decode Plug-in - Compatibility Stub" )
 
   if( NOT DEFINED ENV{MFX_VP8_VERSION} )
     set( vp8_version 0.0.000.0000 )
@@ -715,93 +724,32 @@ set( defs "" )
     set( vp8_version $ENV{MFX_VP8_VERSION} )
   endif( )
 
-  set_file_and_product_version( ${vp8_version} vp8_version_defs )
-
-set( sources "" )
-set( sources.plus "" )
-
-list( APPEND sources ${plugin_common_sources} )
-
-include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
-include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/include )
-
-list( APPEND sources ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/src/vp8_tables.cpp )
-list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
-list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/mfx_vpx_dec_common.cpp )
-
-set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
-
-set( sources.plus "" )
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
-  list( APPEND sources.plus
-    ${prefix}/mfx_vp8_dec_plugin.cpp
-    ${prefix}/mfx_stub_dec_plugin.cpp
-  )
-endforeach()
-
-foreach( variant
-         hw )
-
   if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set( plugin_name mfx_vp8d_${variant}64 )
+    set( plugin_name mfx_vp8d_hw64 )
   else()
-    set( plugin_name mfx_vp8d_${variant}32 )
+    set( plugin_name mfx_vp8d_hw32 )
   endif()
 
-  set (description_name ${${variant}_VP8_DECODER_DESCRIPTION})
-  set( LIBS "" )
+  set_file_and_product_version( ${vp8_version} version_defs )
 
-  if(${variant} MATCHES hw)
+  ## include, source and libs
+  list( APPEND sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vp8_dec_plugin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_stub_dec_plugin.cpp
+  )
 
-    list( APPEND LIBS
-      genx va
-      umc_va_hw
-    )
-
-    foreach( prefix ${MSDK_LIB_ROOT}/decode/vp8/src )
-    list( APPEND sources
-      ${prefix}/mfx_vp8_dec_decode_hw.cpp
-      ${prefix}/mfx_vp8_dec_decode_common.cpp
-      ${prefix}/mfx_vp8_dec_decode_hw_vaapi.cpp
-      ${prefix}/mfx_vp8_dec_decode_tables.cpp
-    )
-    endforeach()
-
-    foreach( prefix ${MSDK_STUDIO_ROOT}/shared/umc/io/umc_va/src )
-    list( APPEND sources
-      ${prefix}/umc_va_linux.cpp
-    )
-    endforeach()
-
-    set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
-
-    gen_plugins_cfg("VP8_Decoder_HW" ${VP8_DECODER_HW_GUID} ${plugin_name} "01" "VP8")
-  endif()
-
-  list( APPEND LIBS
-    color_space_converter_sw
-    media_buffers
-    umc_io
-    umc
-    vm
-    vm_plus
-    mfx_trace
-    ${ITT_LIBRARIES}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
-    )
-
-
+  ## defs
+  set( USE_STRICT_NAME TRUE )
+  set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
+  set( defs "-DAS_VP8D_PLUGIN -DMFX_VA" )
+  set( defs "${defs} -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\"" )
+  set( defs "${defs} -DMFX_FILE_DESCRIPTION=\"\\\"${hw_VP8_DECODER_DESCRIPTION}\"\\\"" )
+  set( defs "${defs} ${version_defs}")
   set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-  make_library( ${plugin_name} ${variant} shared)
-
-  msdk_install( ${plugin_name} ${MFX_PLUGINS_DIR} )
-
-endforeach()
-
-set( defs "" )
+  gen_plugins_cfg("VP8_Decoder_HW" ${VP8_DECODER_HW_GUID} ${plugin_name} "01" "VP8")
+  make_library( ${plugin_name} hw shared)
+  install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+endif()
 
 # =============================================================================
 # VP9
