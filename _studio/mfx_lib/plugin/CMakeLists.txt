@@ -3,7 +3,6 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 set(HEVC_DECODER_HW_GUID   "33a61c0b4c27454ca8d85dde757c6f8e")
-set(HEVC_DECODER_SW_GUID   "15dd936825ad475ea34e35f3f54217a6")
 set(H264LA_ENCODER_GUID    "588f1185d47b42968dea377bb5d0dcb4")
 set(VP8_DECODER_HW_GUID    "f622394d8d87452f878c51f2fc9b4131")
 set(VP9_DECODER_HW_GUID    "a922394d8d87452f878c51f2fc9b4131")
@@ -13,6 +12,7 @@ mfx_include_dirs( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
+include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
 
 include_directories( ${MSDK_LIB_ROOT}/decode/h265/include )
 include_directories( ${MSDK_LIB_ROOT}/encode/h265/include )
@@ -30,12 +30,6 @@ list( APPEND umc_dirs
 
   h265_dec
   jpeg_common jpeg_dec )
-
-if ( ENABLE_HEVC )
-  message( STATUS "Building HEVC with software libraries: SW Decoder & Encoder, GACC." )
-else( )
-  message( STATUS "Building HEVC with only hardware libraries." )
-endif( )
 
 foreach( dir ${umc_dirs} )
   include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/${dir}/include )
@@ -80,7 +74,7 @@ endforeach( )
 # Plugins section
 # =============================================================================
 
-foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
+set( prefix ${MSDK_LIB_ROOT}/shared/src )
   list( APPEND plugin_common_sources
     ${prefix}/mfx_check_hardware_support.cpp
     ${prefix}/mfx_common_int.cpp
@@ -94,9 +88,8 @@ foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
     ${prefix}/mfx_enc_common.cpp
     ${prefix}/mfx_critical_error_handler.cpp
   )
-endforeach()
 
-foreach( prefix ${MSDK_STUDIO_ROOT}/shared/src )
+set( prefix ${MSDK_STUDIO_ROOT}/shared/src )
   list( APPEND plugin_common_sources
     ${prefix}/cm_mem_copy.cpp
     ${prefix}/fast_copy.cpp
@@ -108,12 +101,11 @@ foreach( prefix ${MSDK_STUDIO_ROOT}/shared/src )
     ${prefix}/libmfx_core_vaapi.cpp
     ${prefix}/mfx_umc_alloc_wrapper.cpp
   )
-endforeach()
 list( APPEND plugin_common_sources
   ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 )
 
-foreach( prefix ${MSDK_LIB_ROOT}/scheduler/src )
+set( prefix ${MSDK_LIB_ROOT}/scheduler/src )
   list( APPEND plugin_common_sources
     ${prefix}/mfx_scheduler_core.cpp
     ${prefix}/mfx_scheduler_core_iunknown.cpp
@@ -122,123 +114,6 @@ foreach( prefix ${MSDK_LIB_ROOT}/scheduler/src )
     ${prefix}/mfx_scheduler_core_task_management.cpp
     ${prefix}/mfx_scheduler_core_thread.cpp
   )
-endforeach()
-
-# HEVC Common Part
-
-if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
-  set( hevc_version 0.0.000.0000 )
-else( )
-  set( hevc_version $ENV{MFX_HEVC_VERSION} )
-endif( )
-
-  set (HEVC_PRODUCT_NAME "Intel(R) Media SDK")
-  set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK - HEVC Software Decode Plug-in")
-  set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK - HEVC Hardware Decode Plug-in")
-  set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK - HEVC Software Encode Plug-in")
-  set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK - HEVC GPU Accelerated Encode Plug-in")
-
-  set_file_and_product_version( ${hevc_version} hevc_version_defs )
-
-set( sources "" )
-set( sources.plus "" )
-
-list( APPEND sources ${plugin_common_sources} )
-
-include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
-
-list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
-list( APPEND sources ${MSDK_LIB_ROOT}/decode/h265/src/mfx_h265_dec_decode.cpp )
-
-set( sources.plus "" )
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
-  list( APPEND sources.plus
-    ${prefix}/mfx_hevc_dec_plugin.cpp
-    ${prefix}/mfx_stub_dec_plugin.cpp
-  )
-endforeach()
-
-set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
-
-# HEVC Decoder
-set( hevcd_variants hw )
-if (ENABLE_HEVC)
-  set( hevcd_variants
-      sw
-      hw )
-endif()
-
-foreach( variant ${hevcd_variants} )
-  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set( plugin_name mfx_hevcd_${variant}64 )
-    set( eval_plugin_name mfx_eval_hevcd_${variant}64 )
-  else()
-    set( plugin_name mfx_hevcd_${variant}32 )
-    set( eval_plugin_name mfx_eval_hevcd_${variant}32 )
-  endif()
-
-  set (description_name ${${variant}_HEVC_DECODER_DESCRIPTION})
-
-  set( LIBS "" )
-
-  list( APPEND LIBS
-      color_space_converter_sw
-      umc_h265_${variant} )
-
-  if( variant MATCHES sw )
-    list( APPEND LIBS
-      hevc_pp_dispatcher
-      hevc_pp_atom
-      hevc_pp_avx2
-      hevc_pp_px
-      hevc_pp_sse4
-      hevc_pp_ssse3 )
-  endif()
-
-  list( APPEND LIBS
-    media_buffers
-    umc_io
-    umc
-    vm
-    vm_plus
-    mfx_trace
-    ${ITT_LIBRARIES}
-    ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl )
-
-  if( variant MATCHES hw )
-    set( hw_defs "-DMFX_VA -DVA_HEVC_DECODER" )
-    list( APPEND LIBS
-      genx umc_va_hw )
-  endif()
-
-  set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs} ${hw_defs}" )
-  set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-  if( variant MATCHES hw)
-    gen_plugins_cfg("HEVC_Decoder_HW" ${HEVC_DECODER_HW_GUID} ${plugin_name} "01" "HEVC" "not_eval")
-  else( )
-    gen_plugins_cfg("HEVC_Decoder_SW" ${HEVC_DECODER_SW_GUID} ${plugin_name} "01" "HEVC" "not_eval")
-  endif( )
-  make_library( ${plugin_name} ${variant} shared)
-
-  set( defs "-DAS_HEVCD_PLUGIN -DHEVCD_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
-  set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-  if(${variant} MATCHES hw)
-    gen_plugins_cfg("HEVC_Decoder_HW" ${HEVC_DECODER_HW_GUID} ${eval_plugin_name} "01" "HEVC" "eval")
-  else()
-    gen_plugins_cfg("HEVC_Decoder_SW" ${HEVC_DECODER_SW_GUID} ${eval_plugin_name} "01" "HEVC" "eval")
-  endif()
-  make_library( ${eval_plugin_name} ${variant} shared)
-
-  if( Windows )
-    install( TARGETS ${plugin_name} ${eval_plugin_name} RUNTIME DESTINATION ${MFX_PLUGINS_DIR} )
-  else()
-    install( TARGETS ${plugin_name} ${eval_plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
-  endif()
-
-endforeach()
 
 ###############################################################################
 ## 1toN Lookahead (H264 LA)                                                  ##
@@ -331,6 +206,66 @@ if( DEFINED H264LA_ENCODER_GUID )
   gen_plugins_cfg("H264la_Encoder" ${H264LA_ENCODER_GUID} ${plugin_name} "04" "AVC")
   make_library( ${plugin_name} hw shared)
   install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+endif()
+
+###############################################################################
+## HEVC Decoder                                                              ##
+###############################################################################
+if( DEFINED HEVC_DECODER_HW_GUID )
+  set( version_defs "" )
+  set( defs "" )
+  set( sources "" )
+  set( sources.plus "" )
+  set( LIBS "" )
+
+  ## plugin info: name, description and version
+  set( HEVC_PRODUCT_NAME "Intel(R) Media SDK" )
+  set( hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK HEVC Hardware Decode Plug-in - Compatibility Stub" )
+
+  if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
+    set( hevc_version 0.0.000.0000 )
+  else()
+    set( hevc_version $ENV{MFX_HEVC_VERSION} )
+  endif()
+
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set( plugin_name mfx_hevcd_hw64 )
+  else()
+    set( plugin_name mfx_hevcd_hw32 )
+  endif()
+
+  set_file_and_product_version( ${hevc_version} version_defs )
+
+  list( APPEND sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_hevc_dec_plugin.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_stub_dec_plugin.cpp
+  )
+
+  ## defs
+  set( USE_STRICT_NAME TRUE )
+  set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_LIB_ROOT}/plugin/libmfxsw_plugin.map" )
+  set( defs "${defs} -DMFX_VA -DVA_HEVC_DECODER -DAS_HEVCD_PLUGIN" )
+  set( defs "${defs} -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\"" )
+  set( defs "${defs} -DMFX_FILE_DESCRIPTION=\"\\\"${hw_HEVC_DECODER_DESCRIPTION}\"\\\"" )
+  set( defs "${defs} ${version_defs}" )
+  gen_plugins_cfg("HEVC_Decoder_HW" ${HEVC_DECODER_HW_GUID} ${plugin_name} "01" "HEVC")
+  make_library( ${plugin_name} hw shared)
+  install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+
+  if(NOT OPEN_SOURCE)
+    if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+      set( eval_plugin_name mfx_eval_hevcd_hw64 )
+    else()
+      set( eval_plugin_name mfx_eval_hevcd_hw32 )
+    endif()
+
+    set( defs "${defs} -DHEVCD_EVALUATION" )
+    gen_plugins_cfg("HEVC_Decoder_HW" ${HEVC_DECODER_HW_GUID} ${eval_plugin_name} "01" "HEVC" "eval")
+    make_library( ${eval_plugin_name} hw shared)
+
+    install( TARGETS ${eval_plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+  endif()
+
 endif()
 
 # =============================================================================
