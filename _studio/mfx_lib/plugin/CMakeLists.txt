@@ -501,13 +501,21 @@ endforeach()
 
 set( defs "" )
 
+###############################################################################
+## 1toN Lookahead (H264 LA)                                                  ##
+###############################################################################
 
-# =============================================================================
-# 1toN Lookahead
-# =============================================================================
+if( DEFINED H264LA_ENCODER_GUID )
+  ## cleanup
+  set( version_defs "" )
+  set( defs "" )
+  set( sources "" )
+  set( sources.plus "" )
+  set( LIBS "" )
 
+  ## plugin info: name, description and version
   set (H264LA_PRODUCT_NAME "Intel(R) Media SDK")
-  set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media SDK - Advanced AVCe Plug-in")
+  set( hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media SDK Advanced AVCe Plug-in" )
 
   if( NOT DEFINED ENV{MFX_H264LA_VERSION} )
     set( h264la_version 0.0.000.0000 )
@@ -515,83 +523,53 @@ set( defs "" )
     set( h264la_version $ENV{MFX_H264LA_VERSION} )
   endif( )
 
-  set_file_and_product_version( ${h264la_version} h264la_version_defs )
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+    set( plugin_name mfx_h264la_hw64 )
+  else()
+    set( plugin_name mfx_h264la_hw32 )
+  endif()
 
-set( sources "" )
-set( sources.plus "" )
+  set_file_and_product_version( ${h264la_version} version_defs )
 
-list( APPEND sources ${plugin_common_sources} )
+  ## include, source and libs
+  list( APPEND sources ${plugin_common_sources} )
 
-foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
+  set( prefix ${MSDK_LIB_ROOT}/shared/src )
   list( APPEND sources
     ${prefix}/mfx_enc_common.cpp
     ${prefix}/mfx_brc_common.cpp
-    ${prefix}/mfx_ddi_enc_dump.cpp
     ${prefix}/mfx_h264_enc_common_hw.cpp
     ${prefix}/mfx_h264_encode_factory.cpp
     ${prefix}/mfx_h264_encode_vaapi.cpp
-    ${prefix}/mfx_mpeg2_enc_common_hw.cpp
-    ${prefix}/mfx_mpeg2_encode_factory.cpp
-    ${prefix}/mfx_mpeg2_encode_vaapi.cpp
     ${prefix}/libmfxsw_enc.cpp
   )
-endforeach()
 
-foreach( prefix ${MSDK_LIB_ROOT}/encode_hw/h264/src )
+  set( prefix ${MSDK_LIB_ROOT}/encode_hw/h264/src )
   list( APPEND sources
     ${prefix}/mfx_h264_encode_cm.cpp
     ${prefix}/mfx_h264_encode_hw_utils.cpp
     ${prefix}/mfx_h264_encode_hw_utils_new.cpp
     ${prefix}/mfx_h264_encode_hw.cpp
   )
-endforeach()
 
-list( APPEND sources ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp )
-list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/mvc/src/mfx_mvc_encode_hw.cpp )
-list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/svc/src/mfx_svc_encode_hw.cpp )
-list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/svc/src/mfx_svc_encode_simulcast_over_avc.cpp )
-list( APPEND sources ${MSDK_LIB_ROOT}/enc_hw/h264/src/mfx_h264_enc_hw.cpp )
-list( APPEND sources ${MSDK_LIB_ROOT}/fei/h264_la/mfx_h264_la.cpp )
+  set( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/src/ )
+  list( APPEND sources
+    ${prefix}/umc_video_brc.cpp
+    ${prefix}/umc_h264_brc.cpp
+    ${prefix}/umc_brc.cpp
+  )
 
-set( sources.plus "" )
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
+  list( APPEND sources ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp )
+  list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/mvc/src/mfx_mvc_encode_hw.cpp )
+  list( APPEND sources ${MSDK_LIB_ROOT}/fei/h264_la/mfx_h264_la.cpp )
+
+  set( prefix ${MSDK_LIB_ROOT}/plugin/src )
   list( APPEND sources.plus
     ${prefix}/mfx_h264la_plugin.cpp
   )
-endforeach()
 
-
-set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
-
-# H264LA
-
-foreach( variant hw )
-  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set( plugin_name mfx_h264la_${variant}64 )
-#    set( eval_plugin_name mfx_eval_h264la_${variant}64 )
-  else()
-    set( plugin_name mfx_h264la_${variant}32 )
-#    set( eval_plugin_name mfx_eval_h264la_${variant}32 )
-  endif()
-
-  set (description_name ${${variant}_H264LA_ENCODER_DESCRIPTION})
-
-  list( APPEND sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/src/umc_video_brc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/src/umc_h264_brc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/src/umc_brc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/src/umc_mpeg2_brc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/src/umc_svc_brc.cpp
-  )
-
-  set( LIBS "" )
   list( APPEND LIBS
     h264_la
-    color_space_converter_sw
-    h264_enc_sw
-    media_buffers
-    umc_io
     umc_va_hw
     umc
     vm
@@ -605,14 +583,16 @@ foreach( variant hw )
     dl
     )
 
-  set( defs "-DAS_H264LA_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${H264LA_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${h264la_version_defs}" )
+  set( USE_STRICT_NAME TRUE )
+  set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
+  set( defs "-DAS_H264LA_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${H264LA_PRODUCT_NAME}\"\\\"" )
+  set( defs "${defs} -DMFX_FILE_DESCRIPTION=\"\\\"${hw_H264LA_ENCODER_DESCRIPTION}\"\\\"" )
+  set( defs "${defs} ${version_defs}" )
   set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
   gen_plugins_cfg("H264la_Encoder" ${H264LA_ENCODER_GUID} ${plugin_name} "04" "AVC")
-  make_library( ${plugin_name} ${variant} shared)
-
-  msdk_install( ${plugin_name} ${MFX_PLUGINS_DIR} )
-
-endforeach()
+  make_library( ${plugin_name} hw shared)
+  install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+endif()
 
 # H265FEI
 
