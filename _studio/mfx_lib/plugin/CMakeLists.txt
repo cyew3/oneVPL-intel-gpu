@@ -92,7 +92,6 @@ set( prefix ${MSDK_LIB_ROOT}/shared/src )
 set( prefix ${MSDK_STUDIO_ROOT}/shared/src )
   list( APPEND plugin_common_sources
     ${prefix}/cm_mem_copy.cpp
-    ${prefix}/fast_copy.cpp
     ${prefix}/libmfx_allocator.cpp
     ${prefix}/libmfx_allocator_vaapi.cpp
     ${prefix}/libmfx_core.cpp
@@ -101,6 +100,12 @@ set( prefix ${MSDK_STUDIO_ROOT}/shared/src )
     ${prefix}/libmfx_core_vaapi.cpp
     ${prefix}/mfx_umc_alloc_wrapper.cpp
   )
+if(NOT OPEN_SOURCE)
+  list( APPEND plugin_common_sources
+    ${prefix}/fast_copy.cpp
+    )
+endif()
+
 list( APPEND plugin_common_sources
   ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 )
@@ -182,6 +187,10 @@ if( DEFINED H264LA_ENCODER_GUID )
     ${prefix}/mfx_h264la_plugin.cpp
   )
 
+  if(NOT OPEN_SOURCE)
+    set(la_IPPLIBS ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l)
+  endif()
+
   list( APPEND LIBS
     h264_la
     umc_va_hw
@@ -192,7 +201,7 @@ if( DEFINED H264LA_ENCODER_GUID )
     asc
     mfx_trace
     ${ITT_LIBRARIES}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    ${la_IPPLIBS}
     pthread
     dl
     )
