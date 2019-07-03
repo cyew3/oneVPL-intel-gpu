@@ -159,7 +159,7 @@ bool CDecodingPipeline::RunOnce()
 					EnqueueSurface(NULL); // Signal that decoding is over
                     return false;
                 }
-                else if (reader.ReadNextFrame() == MFX_ERR_MORE_DATA)
+                else if (reader.ReadNextFrame() < MFX_ERR_NONE)
                 {
                     //--- If we can't read more data from file - finish decoding, clean up buffers.
                     isDecodingEnding = true;

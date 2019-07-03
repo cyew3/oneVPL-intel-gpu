@@ -110,7 +110,7 @@ bool CThread11::Stop()
         WakeUp();
 
         // Waiting for thread to be killed
-		if (thread.joinable())
+		if (isRunning && thread.joinable())
 		{
 			thread.join();
 		}
