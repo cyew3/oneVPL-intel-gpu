@@ -48,7 +48,7 @@ D3DXCommonEncoder::~D3DXCommonEncoder()
 }
 
 // Init
-mfxStatus D3DXCommonEncoder::Init(VideoCORE *pCore)
+mfxStatus D3DXCommonEncoder::Init(VideoCORE *pCore, GUID guid)
 {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     MFX_CHECK_NULL_PTR1(pCore);
@@ -61,9 +61,17 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *pCore)
     if (paramsts == MFX_ERR_NONE && schedule_Param.flags == MFX_SINGLE_THREAD)
         m_bSingleThreadMode = true;
 
-    bool *eventsEnabled = (bool *)pCore->QueryCoreInterface(MFXBlockingTaskSyncEnabled_GUID);
-    if (eventsEnabled)
-        m_bIsBlockingTaskSyncEnabled = *eventsEnabled;
+    //  This is a _temporal_ workaround. Must be removed in a short-term.
+    if ((DXVA2_Intel_MFE == guid) && (pCore->GetHWType() >= MFX_HW_ATS))
+    {
+        m_bIsBlockingTaskSyncEnabled = false;
+    }
+    else
+    {
+        bool *eventsEnabled = (bool *)pCore->QueryCoreInterface(MFXBlockingTaskSyncEnabled_GUID);
+        if (eventsEnabled)
+            m_bIsBlockingTaskSyncEnabled = *eventsEnabled;
+    }
 
     if (m_bIsBlockingTaskSyncEnabled)
     {
