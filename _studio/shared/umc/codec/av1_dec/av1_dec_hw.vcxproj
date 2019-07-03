@@ -28,6 +28,8 @@
     <ClInclude Include="include\umc_av1_frame.h" />
     <ClInclude Include="include\umc_av1_utils.h" />
     <ClInclude Include="include\umc_av1_va_packer.h" />
+    <ClInclude Include="include\umc_av1_va_packer_vaapi.h" />
+    <ClInclude Include="include\umc_av1_va_packer_dxva.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\vp9_dec\src\umc_vp9_bitstream.cpp" />
@@ -36,7 +38,8 @@
     <ClCompile Include="src\umc_av1_decoder_va.cpp" />
     <ClCompile Include="src\umc_av1_frame.cpp" />
     <ClCompile Include="src\umc_av1_utils.cpp" />
-    <ClCompile Include="src\umc_av1_va_packer.cpp" />
+    <ClCompile Include="src\umc_av1_va_packer_vaapi.cpp" />
+    <ClCompile Include="src\umc_av1_va_packer_dxva.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />

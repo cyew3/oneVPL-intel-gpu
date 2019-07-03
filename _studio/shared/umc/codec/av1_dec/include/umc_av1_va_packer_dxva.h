@@ -18,55 +18,70 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+
+
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_AV1_VIDEO_DECODER
 
 #ifndef __UMC_AV1_VA_PACKER_H
+
+#include "umc_av1_va_packer.h"
+
 #define __UMC_AV1_VA_PACKER_H
 
-#include "umc_va_base.h"
-#include "umc_av1_frame.h"
-
 #ifdef UMC_VA_DXVA
-#include "umc_av1_ddi.h"
-#endif //UMC_VA_DXVA
-
-#ifdef UMC_VA_LINUX
-#include <va/va_dec_av1.h>
-#endif //UMC_VA_LINUX
 
 namespace UMC
-{ class MediaData; }
+{
+    class MediaData;
+}
 
 namespace UMC_AV1_DECODER
 {
     class VP9Bitstream;
     class VP9DecoderFrame;
 
-class Packer
-{
+    class PackerDXVA
+        : public Packer
+    {
+    public:
 
-public:
+        PackerDXVA(UMC::VideoAccelerator * va);
 
-    Packer(UMC::VideoAccelerator * va);
-    virtual ~Packer();
+        void BeginFrame() override;
+        void EndFrame() override;
 
-    virtual UMC::Status GetStatusReport(void* pStatusReport, size_t size) = 0;
-    virtual UMC::Status SyncTask(int32_t index, void * error) = 0;
+        UMC::Status GetStatusReport(void* pStatusReport, size_t size) override;
+        UMC::Status SyncTask(int32_t, void *) override
+        {
+            return UMC::UMC_OK;
+        }
 
-    virtual void BeginFrame() = 0;
-    virtual void EndFrame() = 0;
+    protected:
 
-    virtual void PackAU(std::vector<TileSet>&, AV1DecoderFrame const&, bool) = 0;
+        uint32_t  m_report_counter;
+    };
 
-    static Packer* CreatePacker(UMC::VideoAccelerator * va);
+    class PackerIntel
+        : public PackerDXVA
+    {
 
-protected:
+    public:
 
-    UMC::VideoAccelerator *m_va;
-};
+        PackerIntel(UMC::VideoAccelerator * va);
+
+        void PackAU(std::vector<TileSet>&, AV1DecoderFrame const&, bool) override;
+
+    private:
+
+        void PackPicParams(DXVA_Intel_PicParams_AV1&, AV1DecoderFrame const&);
+        void PackTileControlParams(DXVA_Intel_Tile_AV1&, TileLocation const&);
+    };
 
 } // namespace UMC_AV1_DECODER
 
+#endif // UMC_VA_DXVA
+
 #endif /* __UMC_AV1_VA_PACKER_H */
 #endif // UMC_ENABLE_AV1_VIDEO_DECODER
+

@@ -18,55 +18,54 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+
+
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_AV1_VIDEO_DECODER
 
 #ifndef __UMC_AV1_VA_PACKER_H
+
+#include "umc_av1_va_packer.h"
+
 #define __UMC_AV1_VA_PACKER_H
 
-#include "umc_va_base.h"
-#include "umc_av1_frame.h"
-
-#ifdef UMC_VA_DXVA
-#include "umc_av1_ddi.h"
-#endif //UMC_VA_DXVA
-
 #ifdef UMC_VA_LINUX
-#include <va/va_dec_av1.h>
-#endif //UMC_VA_LINUX
 
 namespace UMC
-{ class MediaData; }
+{
+    class MediaData;
+}
 
 namespace UMC_AV1_DECODER
 {
     class VP9Bitstream;
     class VP9DecoderFrame;
 
-class Packer
-{
+    class PackerVA
+        : public Packer
+    {
+    public:
+        PackerVA(UMC::VideoAccelerator * va);
 
-public:
+        UMC::Status GetStatusReport(void * pStatusReport, size_t size) override;
+        UMC::Status SyncTask(int32_t index, void * error) override
+        {
+            return m_va->SyncTask(index, error);
+        }
+        void BeginFrame() override;
+        void EndFrame() override;
 
-    Packer(UMC::VideoAccelerator * va);
-    virtual ~Packer();
+        void PackAU(std::vector<TileSet>&, AV1DecoderFrame const&, bool) override;
 
-    virtual UMC::Status GetStatusReport(void* pStatusReport, size_t size) = 0;
-    virtual UMC::Status SyncTask(int32_t index, void * error) = 0;
-
-    virtual void BeginFrame() = 0;
-    virtual void EndFrame() = 0;
-
-    virtual void PackAU(std::vector<TileSet>&, AV1DecoderFrame const&, bool) = 0;
-
-    static Packer* CreatePacker(UMC::VideoAccelerator * va);
-
-protected:
-
-    UMC::VideoAccelerator *m_va;
-};
+    private:
+        void PackPicParams(VADecPictureParameterBufferAV1&, AV1DecoderFrame const&);
+        void PackTileControlParams(VABitStreamParameterBufferAV1&, TileLocation const&);
+    };
 
 } // namespace UMC_AV1_DECODER
 
+#endif //UMC_VA_LINUX
+
 #endif /* __UMC_AV1_VA_PACKER_H */
 #endif // UMC_ENABLE_AV1_VIDEO_DECODER
+

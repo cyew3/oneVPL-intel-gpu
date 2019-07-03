@@ -147,7 +147,7 @@ list(APPEND sources
     ${UMC_CODECS}/av1_dec/src/umc_av1_decoder_va.cpp
     ${UMC_CODECS}/av1_dec/src/umc_av1_frame.cpp
     ${UMC_CODECS}/av1_dec/src/umc_av1_utils.cpp
-    ${UMC_CODECS}/av1_dec/src/umc_av1_va_packer.cpp
+    ${UMC_CODECS}/av1_dec/src/umc_av1_va_packer_vaapi.cpp
     )
 
 make_library( decode hw static )
