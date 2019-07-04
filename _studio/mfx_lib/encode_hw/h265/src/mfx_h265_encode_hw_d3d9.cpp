@@ -61,8 +61,6 @@ template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     VideoCORE * core,
     GUID        guid,
-    mfxU32      width,
-    mfxU32      height,
     MfxVideoParam const &par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAuxilliaryDevice");
@@ -70,12 +68,11 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
 
     m_core = core;
     MFX_CHECK_NULL_PTR1(m_core);
-#ifdef HEADER_PACKING_TEST
     m_guid      = guid;
-    m_width     = width;
-    m_height    = height;
-    //m_auxDevice.reset((AuxiliaryDevice*) 0xFFFFFFFF);
-
+    // Use default values if input resolution is zero. This allows to avoid MFX_ERR_DEVICE_FAILED error on attempt to get caps
+    m_width     = par.m_ext.HEVCParam.PicWidthInLumaSamples == 0 ? 1920 : par.m_ext.HEVCParam.PicWidthInLumaSamples;
+    m_height    = par.m_ext.HEVCParam.PicHeightInLumaSamples == 0 ? 1088 : par.m_ext.HEVCParam.PicHeightInLumaSamples;
+#ifdef HEADER_PACKING_TEST
     m_caps.CodingLimitSet           = 1;
     m_caps.BitDepth8Only            = 0;
     m_caps.Color420Only             = 0;
@@ -124,9 +121,6 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, &guid, sizeof(guid), &m_caps, sizeof(m_caps));
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-    m_guid      = guid;
-    m_width     = width;
-    m_height    = height;
     m_auxDevice = std::move(auxDevice);
 #endif
 

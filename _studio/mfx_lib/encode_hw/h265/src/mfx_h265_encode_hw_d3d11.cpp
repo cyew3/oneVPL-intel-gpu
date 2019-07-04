@@ -86,8 +86,6 @@ template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     VideoCORE * core,
     GUID        guid,
-    mfxU32      width,
-    mfxU32      height,
     MfxVideoParam const &par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAuxilliaryDevice");
@@ -100,8 +98,9 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     mfxU32 count = 0;
 
     m_guid      = guid;
-    m_width     = width;
-    m_height    = height;
+    // Use default values if input resolution is zero. This allows to avoid MFX_ERR_DEVICE_FAILED error on attempt to get caps
+    m_width     = par.m_ext.HEVCParam.PicWidthInLumaSamples == 0 ? 1920 : par.m_ext.HEVCParam.PicWidthInLumaSamples;
+    m_height    = par.m_ext.HEVCParam.PicHeightInLumaSamples == 0 ? 1088 : par.m_ext.HEVCParam.PicHeightInLumaSamples;
 
     // [0] Get device/context
     if (!m_vcontext)
@@ -255,7 +254,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
         m_widi = par.WiDi;
         m_pavp = (par.Protected == MFX_PROTECTION_PAVP || par.Protected == MFX_PROTECTION_GPUCP_PAVP);
 
-        mfxStatus sts = CreateAuxilliaryDevice(m_core, m_guid, par.mfx.FrameInfo.Width, par.mfx.FrameInfo.Height, par);
+        mfxStatus sts = CreateAuxilliaryDevice(m_core, m_guid, par);
         MFX_CHECK_STS(sts);
 
         if (m_pavp)

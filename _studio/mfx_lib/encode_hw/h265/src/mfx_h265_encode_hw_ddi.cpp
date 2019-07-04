@@ -196,6 +196,8 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
         caps.ddi_caps.BlockSize = 0b10; // 32x32
     }
 
+    caps.PSliceSupport = (IsOn(par.mfx.LowPower) || platform > MFX_HW_ICL) ? 0 : 1;
+
 #if defined (MFX_VA_LINUX) && !defined (OPEN_SOURCE)
     // align with Windows for Gen12+
     if (platform >= MFX_HW_TGL_LP)
@@ -234,9 +236,6 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
 
 mfxStatus QueryMbProcRate(VideoCORE* core, mfxVideoParam const & par, mfxU32(&mbPerSec)[16], const MfxVideoParam * in)
 {
-    mfxU32 width = in->mfx.FrameInfo.Width == 0 ? 1920 : in->mfx.FrameInfo.Width;
-    mfxU32 height = in->mfx.FrameInfo.Height == 0 ? 1088 : in->mfx.FrameInfo.Height;
-
     GUID guid = GetGUID(*in);
     EncodeHWCaps* pEncodeCaps = QueryCoreInterface<EncodeHWCaps>(core, MFXIHWMBPROCRATE_GUID);
     if (!pEncodeCaps)
@@ -256,7 +255,7 @@ mfxStatus QueryMbProcRate(VideoCORE* core, mfxVideoParam const & par, mfxU32(&mb
         return MFX_ERR_DEVICE_FAILED;
     }
 
-    mfxStatus sts = ddi->CreateAuxilliaryDevice(core, guid, width, height, *in);
+    mfxStatus sts = ddi->CreateAuxilliaryDevice(core, guid, *in);
     MFX_CHECK_STS(sts);
 
     mfxU32 tempMbPerSec[16] = { 0, };
@@ -277,7 +276,7 @@ mfxStatus QueryHwCaps(VideoCORE* core, GUID guid, MFX_ENCODE_CAPS_HEVC & caps, M
     ddi.reset(CreatePlatformH265Encoder(core));
     MFX_CHECK(ddi.get(), MFX_ERR_UNSUPPORTED);
 
-    mfxStatus sts = ddi.get()->CreateAuxilliaryDevice(core, guid, 1920, 1088, par);
+    mfxStatus sts = ddi.get()->CreateAuxilliaryDevice(core, guid, par);
     MFX_CHECK_STS(sts);
 
     sts = ddi.get()->QueryEncodeCaps(caps);

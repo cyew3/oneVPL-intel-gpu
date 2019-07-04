@@ -306,8 +306,6 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
     sts = m_ddi->CreateAuxilliaryDevice(
         m_core,
         encoder_guid,
-        m_vpar.m_ext.HEVCParam.PicWidthInLumaSamples,
-        m_vpar.m_ext.HEVCParam.PicHeightInLumaSamples,
         m_vpar);
 
     MFX_CHECK(sts != MFX_ERR_INVALID_VIDEO_PARAM, sts);
