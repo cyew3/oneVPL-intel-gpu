@@ -201,10 +201,11 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>onecore.lib;</AdditionalDependencies>
+      <AdditionalDependencies>WindowsApp.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
+      <AdditionalOptions>/APPCONTAINER %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DFP|Win32'">
@@ -238,8 +239,9 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <AdditionalDependencies>onecore.lib;</AdditionalDependencies>
+      <AdditionalDependencies>WindowsApp.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
+      <AdditionalOptions>/APPCONTAINER %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>$(MfxAppxPacking)</Command>
@@ -277,6 +279,8 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
       <SubSystem>Console</SubSystem>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
+      <AdditionalOptions>/APPCONTAINER %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>WindowsApp.lib;</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DFP|x64'">
@@ -310,8 +314,9 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <AdditionalDependencies>onecore.lib;</AdditionalDependencies>
+      <AdditionalDependencies>WindowsApp.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
+      <AdditionalOptions>/APPCONTAINER %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>$(MfxAppxPacking)</Command>
