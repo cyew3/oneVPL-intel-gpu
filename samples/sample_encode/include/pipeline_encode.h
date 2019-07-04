@@ -321,7 +321,7 @@ struct bufList
 
 struct sTask
 {
-    mfxBitstream mfxBS;
+    mfxBitstreamWrapper mfxBS;
     mfxSyncPoint EncSyncP;
     std::list<mfxSyncPoint> DependentVppTasks;
     CSmplBitstreamWriter *pWriter;
@@ -527,7 +527,7 @@ protected:
     virtual mfxStatus AllocFrames();
     virtual void DeleteFrames();
 
-    virtual mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
+    virtual mfxStatus AllocateSufficientBuffer(mfxBitstreamWrapper& bs);
     virtual mfxStatus FillBuffers();
     virtual mfxStatus LoadNextFrame(mfxFrameSurface1* pSurf);
     virtual void LoadNextControl(mfxEncodeCtrl*& pCtrl, mfxU32 encSurfIdx);
