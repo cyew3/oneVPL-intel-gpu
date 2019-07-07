@@ -2489,7 +2489,6 @@ CH264FrameReader::~CH264FrameReader()
 
 void CH264FrameReader::Close()
 {
-    WipeMfxBitstream(m_originalBS.get());
     CSmplBitstreamReader::Close();
 
     if (NULL != m_plainBuffer)
@@ -2511,10 +2510,7 @@ mfxStatus CH264FrameReader::Init(const msdk_char *strFileName)
     m_isEndOfStream = false;
     m_processedBS = NULL;
 
-    m_originalBS.reset(new mfxBitstream());
-    sts = InitMfxBitstream(m_originalBS.get(), 1024 * 1024);
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    m_originalBS.Extend(1024 * 1024);
 
     m_pNALSplitter.reset(new ProtectedLibrary::AVC_Spl());
 
@@ -2530,9 +2526,9 @@ mfxStatus CH264FrameReader::ReadNextFrame(mfxBitstream *pBS)
     mfxStatus sts = MFX_ERR_NONE;
     pBS->DataFlag = MFX_BITSTREAM_COMPLETE_FRAME;
     //read bit stream from source
-    while (!m_originalBS->DataLength)
+    while (!m_originalBS.DataLength)
     {
-        sts = CSmplBitstreamReader::ReadNextFrame(m_originalBS.get());
+        sts = CSmplBitstreamReader::ReadNextFrame(&m_originalBS);
         if (sts != MFX_ERR_NONE && sts != MFX_ERR_MORE_DATA)
             return sts;
         if (sts == MFX_ERR_MORE_DATA)
@@ -2544,7 +2540,7 @@ mfxStatus CH264FrameReader::ReadNextFrame(mfxBitstream *pBS)
 
     do
     {
-        sts = PrepareNextFrame(m_isEndOfStream ? NULL : m_originalBS.get(), &m_processedBS);
+        sts = PrepareNextFrame(m_isEndOfStream ? NULL : &m_originalBS, &m_processedBS);
 
         if (sts == MFX_ERR_MORE_DATA)
         {
@@ -2553,7 +2549,7 @@ mfxStatus CH264FrameReader::ReadNextFrame(mfxBitstream *pBS)
                 break;
             }
 
-            sts = CSmplBitstreamReader::ReadNextFrame(m_originalBS.get());
+            sts = CSmplBitstreamReader::ReadNextFrame(&m_originalBS);
             if (sts == MFX_ERR_MORE_DATA)
                 m_isEndOfStream = true;
             continue;
