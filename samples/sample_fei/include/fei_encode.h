@@ -41,7 +41,7 @@ public:
     mfxU32                m_allocId;
     bufList*              m_pExtBuffers;
     AppConfig*            m_pAppConfig;
-    mfxBitstream          m_mfxBS;
+    mfxBitstreamWrapper   m_mfxBS;
     mfxSyncPoint          m_SyncPoint;
     mfxExtFeiSliceHeader* m_pSliceHeader;
     bool                  m_bSingleFieldMode;
