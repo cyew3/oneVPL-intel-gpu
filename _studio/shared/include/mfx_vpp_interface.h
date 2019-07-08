@@ -380,6 +380,13 @@ namespace MfxHwVideoProcessing
             bool   enabled;
             mfxU16 TransferMatrix;
             mfxU16 NominalRange;
+
+            bool operator!=(const SignalInfo & other) const
+            {
+                return enabled        != other.enabled
+                    && TransferMatrix != other.TransferMatrix
+                    && NominalRange   != other.NominalRange;
+            }
         };
 
     public:
@@ -528,7 +535,7 @@ namespace MfxHwVideoProcessing
 #endif
                 )
                     return false;
-                if (memcmp(&VideoSignalInfoIn, &VideoSignalInfoOut, sizeof(SignalInfo)))
+                if (VideoSignalInfoIn != VideoSignalInfoOut)
                     return false;
                 return true;
             };
