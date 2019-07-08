@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -77,7 +77,6 @@ public:
     mfxStatus QueryFrame(mfxThreadTask);
 
 private:
-
     static mfxStatus FillVideoParam(VideoCORE*, UMC_AV1_DECODER::AV1DecoderParams const*, mfxVideoParam*);
     static mfxStatus DecodeRoutine(void* state, void* param, mfxU32, mfxU32);
     static mfxStatus CompleteProc(void*, void* param, mfxStatus);
@@ -96,6 +95,7 @@ private:
     }
 
     mfxStatus DecodeFrame(mfxFrameSurface1 *surface_out, AV1DecoderFrame* pFrame);
+    bool IsNeedChangeVideoParam(mfxVideoParam * newPar, mfxVideoParam * oldPar, eMFXHWType type) const;
 
 private:
 
@@ -112,6 +112,7 @@ private:
     mfxVideoParamWrapper                         m_init_video_par;
     mfxVideoParamWrapper                         m_video_par;
 
+    mfxFrameAllocRequest                         m_request;
     mfxFrameAllocResponse                        m_response;
 };
 

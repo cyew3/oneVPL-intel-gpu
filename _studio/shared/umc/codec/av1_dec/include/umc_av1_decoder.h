@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,7 @@ namespace UMC_AV1_DECODER
         UMC::FrameAllocator* allocator;
         uint32_t             async_depth;
         uint32_t             film_grain;
+        uint32_t             io_pattern;
     };
 
     class ReportItem // adopted from HEVC/AVC decoders

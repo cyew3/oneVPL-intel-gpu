@@ -35,6 +35,7 @@
 
 #include "umc_av1_dec_defs.h"
 #include "umc_av1_frame.h"
+#include "umc_av1_utils.h"
 
 #include "libmfx_core_hw.h"
 #include "umc_va_dxva2.h"
@@ -42,6 +43,19 @@
 #include "umc_av1_decoder_va.h"
 
 #include <algorithm>
+
+#include "vm_sys_info.h"
+
+#if defined(MFX_VA)
+#include "umc_h265_va_supplier.h"
+#if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "umc_h265_widevine_supplier.h"
+#endif
+#if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "umc_va_dxva2_protected.h"
+#include "umc_va_linux_protected.h"
+#endif
+#endif
 
 namespace MFX_VPX_Utility
 {
@@ -148,6 +162,7 @@ VideoDECODEAV1::VideoDECODEAV1(VideoCORE* core, mfxStatus* sts)
     , m_platform(MFX_PLATFORM_SOFTWARE)
     , m_opaque(false)
     , m_first_run(true)
+    , m_request()
     , m_response()
 {
     if (sts)
@@ -180,6 +195,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 
     MFX_CHECK(MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_AV1, m_platform), MFX_ERR_INVALID_VIDEO_PARAM);
 
+
     MFX_CHECK(m_platform != MFX_PLATFORM_SOFTWARE, MFX_ERR_UNSUPPORTED);
 #if !defined (MFX_VA)
     MFX_RETURN(MFX_ERR_UNSUPPORTED);
@@ -188,8 +204,10 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     m_allocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #endif
 
-    mfxFrameAllocRequest request{};
-    mfxStatus sts = MFX_VPX_Utility::QueryIOSurfInternal(par, &request);
+    memset(&m_request, 0, sizeof(m_request));
+    memset(&m_response, 0, sizeof(m_response));
+
+    mfxStatus sts = MFX_VPX_Utility::QueryIOSurfInternal(par, &m_request);
     MFX_CHECK_STS(sts);
 
     //mfxFrameAllocResponse response{};
@@ -199,27 +217,27 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     if (!(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
     {
         if (!internal)
-            request.AllocId = par->AllocId;
+            m_request.AllocId = par->AllocId;
 
-        sts = m_core->AllocFrames(&request, &m_response, internal);
+        sts = m_core->AllocFrames(&m_request, &m_response, internal);
     }
     else
     {
         auto opaq =
             reinterpret_cast<mfxExtOpaqueSurfaceAlloc*>(GetExtendedBuffer(par->ExtParam, par->NumExtParam,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION));
 
-        MFX_CHECK(opaq && request.NumFrameMin <= opaq->Out.NumSurface, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(opaq && m_request.NumFrameMin <= opaq->Out.NumSurface, MFX_ERR_INVALID_VIDEO_PARAM);
 
         m_opaque = true;
 
-        request.Type = MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_OPAQUE_FRAME;
-        request.Type |= (opaq->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) ?
+        m_request.Type = MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_OPAQUE_FRAME;
+        m_request.Type |= (opaq->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) ?
             MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET;
 
-        request.NumFrameMin       = opaq->Out.NumSurface;
-        request.NumFrameSuggested = request.NumFrameMin;
+        m_request.NumFrameMin       = opaq->Out.NumSurface;
+        m_request.NumFrameSuggested = m_request.NumFrameMin;
 
-        sts = m_core->AllocFrames(&request, &m_response,
+        sts = m_core->AllocFrames(&m_request, &m_response,
             opaq->Out.Surfaces, opaq->Out.NumSurface);
     }
 
@@ -227,7 +245,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 
     m_allocator->SetExternalFramesResponse(&m_response);
 
-    UMC::Status umcSts = m_allocator->InitMfx(0, m_core, par, &request, &m_response, !internal, m_platform == MFX_PLATFORM_SOFTWARE);
+    UMC::Status umcSts = m_allocator->InitMfx(0, m_core, par, &m_request, &m_response, !internal, m_platform == MFX_PLATFORM_SOFTWARE);
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
     UMC_AV1_DECODER::AV1DecoderParams vp{};
@@ -236,9 +254,10 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     vp.film_grain = par->mfx.FilmGrain ? 1 : 0; // 0 - film grain is forced off, 1 - film grain is controlled by apply_grain syntax parameter
     if (!vp.async_depth)
         vp.async_depth = MFX_AUTO_ASYNC_DEPTH_VALUE;
+    vp.io_pattern = par->IOPattern;
 
 #if defined (MFX_VA)
-    sts = m_core->CreateVA(par, &request, &m_response, m_allocator.get());
+    sts = m_core->CreateVA(par, &m_request, &m_response, m_allocator.get());
     MFX_CHECK_STS(sts);
 
     m_core->GetVA((mfxHDL*)&vp.pVideoAccelerator, MFX_MEMTYPE_FROM_DECODE);
@@ -255,6 +274,105 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     return MFX_ERR_NONE;
 }
 
+// Check if new parameters are compatible with old parameters
+bool VideoDECODEAV1::IsNeedChangeVideoParam(mfxVideoParam * newPar, mfxVideoParam * oldPar, eMFXHWType /*type*/) const
+{
+    if ((newPar->IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) !=
+        (oldPar->IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)))
+    {
+        return false;
+    }
+
+    if (CalculateAsyncDepth(m_platform, newPar) != CalculateAsyncDepth(m_platform, oldPar))
+    {
+        return false;
+    }
+
+    mfxFrameAllocRequest requestOld;
+    memset(&requestOld, 0, sizeof(requestOld));
+    mfxFrameAllocRequest requestNew;
+    memset(&requestNew, 0, sizeof(requestNew));
+
+    mfxStatus mfxSts = MFX_VPX_Utility::QueryIOSurfInternal(oldPar, &requestOld);
+
+    if (mfxSts != MFX_ERR_NONE)
+        return false;
+
+    mfxSts = MFX_VPX_Utility::QueryIOSurfInternal(newPar, &requestNew);
+
+    if (mfxSts != MFX_ERR_NONE)
+        return false;
+
+    if (newPar->mfx.FrameInfo.Height > oldPar->mfx.FrameInfo.Height)
+    {
+        return false;
+    }
+
+    if (newPar->mfx.FrameInfo.Width > oldPar->mfx.FrameInfo.Width)
+    {
+        return false;
+    }
+
+    if (m_response.NumFrameActual)
+    {
+        if (requestNew.NumFrameMin > m_response.NumFrameActual)
+            return false;
+    }
+    else
+    {
+        if (requestNew.NumFrameMin > requestOld.NumFrameMin || requestNew.Type != requestOld.Type)
+            return false;
+    }
+
+    if (newPar->mfx.FrameInfo.FourCC != oldPar->mfx.FrameInfo.FourCC)
+    {
+        return false;
+    }
+
+    if (newPar->mfx.FrameInfo.ChromaFormat != oldPar->mfx.FrameInfo.ChromaFormat)
+    {
+        return false;
+    }
+
+    if (oldPar->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+    {
+        mfxExtOpaqueSurfaceAlloc * opaqueNew = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+        mfxExtOpaqueSurfaceAlloc * opaqueOld = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(oldPar->ExtParam, oldPar->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+
+        if (opaqueNew && opaqueOld)
+        {
+            if (opaqueNew->In.Type != opaqueOld->In.Type)
+                return false;
+
+            if (opaqueNew->In.NumSurface != opaqueOld->In.NumSurface)
+                return false;
+
+            for (uint32_t i = 0; i < opaqueNew->In.NumSurface; i++)
+            {
+                if (opaqueNew->In.Surfaces[i] != opaqueOld->In.Surfaces[i])
+                    return false;
+            }
+
+            if (opaqueNew->Out.Type != opaqueOld->Out.Type)
+                return false;
+
+            if (opaqueNew->Out.NumSurface != opaqueOld->Out.NumSurface)
+                return false;
+
+            for (uint32_t i = 0; i < opaqueNew->Out.NumSurface; i++)
+            {
+                if (opaqueNew->Out.Surfaces[i] != opaqueOld->Out.Surfaces[i])
+                    return false;
+            }
+        }
+        else
+            return false;
+    }
+
+    return true;
+}
+
+
 mfxStatus VideoDECODEAV1::Reset(mfxVideoParam* par)
 {
     MFX_CHECK_NULL_PTR1(par);
@@ -263,7 +381,33 @@ mfxStatus VideoDECODEAV1::Reset(mfxVideoParam* par)
 
     MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK(m_platform == MFX_PLATFORM_HARDWARE, MFX_ERR_UNSUPPORTED);
 
+    eMFXHWType type = m_core->GetHWType();
+
+    MFX_CHECK(CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_AV1, m_platform), MFX_ERR_INVALID_VIDEO_PARAM);
+    bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(par, &m_init_video_par, type);
+
+    auto pOpaqAlloc = reinterpret_cast<mfxExtOpaqueSurfaceAlloc*>(
+        GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION));
+
+    if (pOpaqAlloc)
+    {
+        MFX_CHECK(m_init_video_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(m_request.NumFrameMin == pOpaqAlloc->Out.NumSurface, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    }
+
+    //m_decoder->Reset();
+    MFX_CHECK(m_allocator->Reset() == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
+
+    if (0 == m_video_par.mfx.FrameInfo.FrameRateExtN || 0 == m_video_par.mfx.FrameInfo.FrameRateExtD)
+    {
+        m_video_par.mfx.FrameInfo.FrameRateExtD = m_init_video_par.mfx.FrameInfo.FrameRateExtD;
+        m_video_par.mfx.FrameInfo.FrameRateExtN = m_init_video_par.mfx.FrameInfo.FrameRateExtN;
+    }
+
+    MFX_CHECK(!isNeedChangeVideoParamWarning, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     return MFX_ERR_NONE;
 }
 
@@ -345,33 +489,12 @@ mfxStatus VideoDECODEAV1::QueryIOSurf(VideoCORE* core, mfxVideoParam* par, mfxFr
     return sts;
 }
 
-mfxStatus VideoDECODEAV1::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVideoParam* par)
+inline
+UMC::Status FillParam(VideoCORE *core, mfxVideoParam *par)
 {
-    MFX_CHECK(core, MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK_NULL_PTR3(bs, bs->Data, par);
-
-    mfxStatus sts = MFX_ERR_NONE;
-    try
-    {
-        MFXMediaDataAdapter in(bs);
-
-        UMC_AV1_DECODER::AV1DecoderParams vp;
-        UMC::Status res = UMC_AV1_DECODER::AV1Decoder::DecodeHeader(&in, vp);
-        if (res != UMC::UMC_OK)
-            return ConvertStatusUmc2Mfx(res);
-
-        sts = FillVideoParam(core, &vp, par);
-    }
-    catch (UMC_AV1_DECODER::av1_exception & ex)
-    {
-        return ConvertStatusUmc2Mfx(ex.GetStatus());
-    }
-
-    MFX_CHECK_STS(sts);
-
     if (MFX_VPX_Utility::GetPlatform(core, par) != MFX_PLATFORM_SOFTWARE)
     {
-        if (   par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
+        if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
 #if (MFX_VERSION >= 1027)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
@@ -385,14 +508,82 @@ mfxStatus VideoDECODEAV1::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVid
             par->mfx.FrameInfo.Shift = 1;
     }
 
+    return UMC::UMC_OK;
+}
+
+mfxStatus VideoDECODEAV1::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVideoParam* par)
+{
+    MFX_CHECK(core, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK_NULL_PTR3(bs, bs->Data, par);
+
+    mfxStatus sts = MFX_ERR_NONE;
+
+    try
+    {
+        MFXMediaDataAdapter in(bs);
+
+        UMC_AV1_DECODER::AV1DecoderParams vp;
+        sts = ConvertStatusUmc2Mfx(UMC_AV1_DECODER::AV1Decoder::DecodeHeader(&in, vp));
+        MFX_CHECK_STS(sts);
+
+        sts = FillVideoParam(core, &vp, par);
+        MFX_CHECK_STS(sts);
+    }
+    catch (UMC_AV1_DECODER::av1_exception & ex)
+    {
+        return ConvertStatusUmc2Mfx(ex.GetStatus());
+    }
+
+
     return sts;
 }
 
 mfxStatus VideoDECODEAV1::GetVideoParam(mfxVideoParam *par)
 {
     MFX_CHECK_NULL_PTR1(par);
+    MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
 
     UMC::AutomaticUMCMutex guard(m_guard);
+
+    mfxStatus sts = MFX_ERR_NONE;
+    UMC_AV1_DECODER::AV1DecoderParams vp;
+
+    UMC::Status umcRes = m_decoder->GetInfo(&vp);
+    MFX_CHECK(umcRes == UMC::UMC_OK, MFX_ERR_UNKNOWN);
+
+    // fills par->mfx structure
+    sts = FillVideoParam(m_core, &vp, par);
+    MFX_CHECK_STS(sts);
+
+    par->mfx.FrameInfo.FrameRateExtN = m_init_video_par.mfx.FrameInfo.FrameRateExtN;
+    par->mfx.FrameInfo.FrameRateExtD = m_init_video_par.mfx.FrameInfo.FrameRateExtD;
+
+    if (!par->mfx.FrameInfo.FrameRateExtD && !par->mfx.FrameInfo.FrameRateExtN)
+    {
+        par->mfx.FrameInfo.FrameRateExtD = m_video_par.mfx.FrameInfo.FrameRateExtD;
+        par->mfx.FrameInfo.FrameRateExtN = m_video_par.mfx.FrameInfo.FrameRateExtN;
+
+        if (!par->mfx.FrameInfo.FrameRateExtD && !par->mfx.FrameInfo.FrameRateExtN)
+        {
+            par->mfx.FrameInfo.FrameRateExtN = 30;
+            par->mfx.FrameInfo.FrameRateExtD = 1;
+        }
+    }
+
+    par->mfx.FrameInfo.AspectRatioW = m_init_video_par.mfx.FrameInfo.AspectRatioW;
+    par->mfx.FrameInfo.AspectRatioH = m_init_video_par.mfx.FrameInfo.AspectRatioH;
+
+    if (!par->mfx.FrameInfo.AspectRatioH && !par->mfx.FrameInfo.AspectRatioW)
+    {
+        par->mfx.FrameInfo.AspectRatioH = m_video_par.mfx.FrameInfo.AspectRatioH;
+        par->mfx.FrameInfo.AspectRatioW = m_video_par.mfx.FrameInfo.AspectRatioW;
+
+        if (!par->mfx.FrameInfo.AspectRatioH && !par->mfx.FrameInfo.AspectRatioW)
+        {
+            par->mfx.FrameInfo.AspectRatioH = 1;
+            par->mfx.FrameInfo.AspectRatioW = 1;
+        }
+    }
 
     return MFX_ERR_NONE;
 }
@@ -761,7 +952,7 @@ mfxU16 av1_native_profile_to_mfx_profile(mfxU16 native)
     }
 }
 
-mfxStatus VideoDECODEAV1::FillVideoParam(VideoCORE* /*core*/, UMC_AV1_DECODER::AV1DecoderParams const* vp, mfxVideoParam* par)
+mfxStatus VideoDECODEAV1::FillVideoParam(VideoCORE* core, UMC_AV1_DECODER::AV1DecoderParams const* vp, mfxVideoParam* par)
 {
     VM_ASSERT(vp);
     VM_ASSERT(par);
@@ -783,6 +974,23 @@ mfxStatus VideoDECODEAV1::FillVideoParam(VideoCORE* /*core*/, UMC_AV1_DECODER::A
     par->mfx.MaxDecFrameBuffering = p.mfx.MaxDecFrameBuffering;
 
     par->mfx.FilmGrain = static_cast<mfxU16>(vp->film_grain);
+    par->AsyncDepth = static_cast<mfxU16>(vp->async_depth);
+
+    if (MFX_VPX_Utility::GetPlatform(core, par) != MFX_PLATFORM_SOFTWARE)
+    {
+        if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
+#if (MFX_VERSION >= 1027)
+            || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
+#endif
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+            || par->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
+            || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
+            || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
+#endif
+            )
+
+            par->mfx.FrameInfo.Shift = 1;
+    }
 
     return MFX_ERR_NONE;
 }
