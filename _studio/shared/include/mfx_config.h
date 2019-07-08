@@ -464,6 +464,9 @@
     #if MFX_VERSION >= MFX_VERSION_NEXT
         #define MFX_ENABLE_VPP_RUNTIME_HSBC
     #endif
+    #if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+        #define MFX_ENABLE_VPP_FIELD_WEAVE_SPLIT
+    #endif
     //#define MFX_ENABLE_VPP_FRC
 #endif
 

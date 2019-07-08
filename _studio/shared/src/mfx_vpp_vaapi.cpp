@@ -95,9 +95,8 @@ static float convertValue(const float OldMin,const float OldMax,const float NewM
 #define DEFAULT_CONTRAST 1
 #define DEFAULT_BRIGHTNESS 0
 
-
-#define VA_TOP_FIELD_WEAVE        0x00000004
-#define VA_BOTTOM_FIELD_WEAVE     0x00000008
+#define VA_TOP_FIELD_WEAVE        0x00000002
+#define VA_BOTTOM_FIELD_WEAVE     0x00000004
 
 #define VPP_COMP_BACKGROUND_SURFACE_WIDTH  320
 #define VPP_COMP_BACKGROUND_SURFACE_HEIGHT 256
@@ -1222,19 +1221,52 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             break;
     }
 
-    if (pParams->bFieldWeaving)
+#if defined(MFX_ENABLE_VPP_FIELD_WEAVE_SPLIT)
+    // Starting from ATS field weaving is perform on driver
+    // Kernel don't uses these parameters
+    if (pParams->bFieldWeavingExt)
     {
-        // Field weaving needs flags that are different from usual pipeline
+        // TFF and BFF are output frame types for field weaving
+        switch (pParams->targetSurface.frameInfo.PicStruct)
+        {
+            case MFX_PICSTRUCT_FIELD_TFF:
+            {
+                m_pipelineParam[0].filter_flags = VA_TOP_FIELD_WEAVE;
+                m_pipelineParam[0].input_surface_flag = VA_TOP_FIELD;
+                m_pipelineParam[0].output_surface_flag = VA_TOP_FIELD_FIRST;
+                break;
+            }
+            case MFX_PICSTRUCT_FIELD_BFF:
+            {
+                m_pipelineParam[0].filter_flags = VA_BOTTOM_FIELD_WEAVE;
+                m_pipelineParam[0].input_surface_flag = VA_BOTTOM_FIELD;
+                m_pipelineParam[0].output_surface_flag = VA_BOTTOM_FIELD_FIRST;
+                break;
+            }
+        }
+    }
+
+    // Starting from ATS field splitting is perform on driver
+    if (pParams->bFieldSplittingExt)
+    {
+        // TFF and BFF are input frame types for field splitting
         switch (pRefSurf->frameInfo.PicStruct)
         {
             case MFX_PICSTRUCT_FIELD_TFF:
-                m_pipelineParam[0].filter_flags = VA_TOP_FIELD_WEAVE;
+            {
+                m_pipelineParam[0].input_surface_flag = VA_TOP_FIELD_FIRST;
+                m_pipelineParam[0].output_surface_flag = (pParams->statusReportID % 2 == 0) ? VA_TOP_FIELD : VA_BOTTOM_FIELD;
                 break;
+            }
             case MFX_PICSTRUCT_FIELD_BFF:
-                m_pipelineParam[0].filter_flags = VA_BOTTOM_FIELD_WEAVE;
+            {
+                m_pipelineParam[0].input_surface_flag = VA_BOTTOM_FIELD_FIRST;
+                m_pipelineParam[0].output_surface_flag = (pParams->statusReportID % 2 == 0) ? VA_BOTTOM_FIELD : VA_TOP_FIELD;
                 break;
+            }
         }
     }
+#endif // MFX_ENABLE_VPP_FIELD_WEAVE_SPLIT
 
     m_pipelineParam[0].filters      = m_filterBufs;
     m_pipelineParam[0].num_filters  = m_numFilterBufs;
