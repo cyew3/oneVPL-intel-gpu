@@ -800,8 +800,8 @@ namespace hevce_level_profile
         // ok res, wrong framerate
         {/*85*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_62, NONE, NONE, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_62},
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8192 },
-            { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4320 },
+            { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
+            { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 350 },
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1 },
            },
