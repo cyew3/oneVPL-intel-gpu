@@ -145,16 +145,13 @@ mfxStatus BaseFrameAllocator::AllocFrames(mfxFrameAllocRequest *request, mfxFram
         // internal allocations
 
         // reserve space before allocation to avoid memory leak
-        m_responses.push_back(mfxFrameAllocResponse());
+        std::list<mfxFrameAllocResponse> tmp(1, mfxFrameAllocResponse(), m_responses.get_allocator());
 
         sts = AllocImpl(request, response);
         if (sts == MFX_ERR_NONE)
         {
+            m_responses.splice(m_responses.end(), tmp);
             m_responses.back() = *response;
-        }
-        else
-        {
-            m_responses.pop_back();
         }
     }
 
@@ -165,6 +162,9 @@ mfxStatus BaseFrameAllocator::FreeFrames(mfxFrameAllocResponse *response)
 {
     if (response == 0)
         return MFX_ERR_INVALID_HANDLE;
+
+    if (response->mids == nullptr || response->NumFrameActual == 0)
+        return MFX_ERR_NONE;
 
     mfxStatus sts = MFX_ERR_NONE;
 
