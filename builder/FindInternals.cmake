@@ -34,6 +34,7 @@ set( MSDK_TSUITE_ROOT  ${BUILDER_ROOT}/../_testsuite )
 set( MSDK_LIB_ROOT     ${MSDK_STUDIO_ROOT}/mfx_lib )
 set( MSDK_UMC_ROOT     ${MSDK_STUDIO_ROOT}/shared/umc )
 set( MSDK_SAMPLES_ROOT ${BUILDER_ROOT}/../samples )
+set( MSDK_TOOLS_ROOT ${BUILDER_ROOT}/../tools )
 set( MSDK_BUILDER_ROOT ${BUILDER_ROOT} )
 
 function( mfx_include_dirs )
