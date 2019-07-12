@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -365,7 +365,7 @@ public:
     virtual mfxStatus        GetOutFile(vm_char * ppOutFile, int bufsize);
     virtual mfxStatus        SetOutFile(const vm_char * pOutFile);
     virtual mfxStatus        ReduceMemoryUsage();
-    virtual mfxStatus        SetSyncro(IPipelineSynhro * pSynchro);
+    virtual mfxStatus        SetSyncro(std::mutex * pSynchro) override;
 
     //ITime
     virtual mfxU64           GetTick(){return 0;}
@@ -529,7 +529,7 @@ protected:
     std::vector<std::pair<mfxU16, mfxU16> > m_viewOrderMap;
 
     //external synhro holder
-    IPipelineSynhro* m_externalsync;
+    std::mutex* m_externalsync;
 
     //factory that creates everything inside pipeline
     std::auto_ptr<IMFXPipelineFactory>      m_pFactory;

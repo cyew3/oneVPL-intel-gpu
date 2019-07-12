@@ -986,7 +986,12 @@ mfxStatus MFXDecPipeline::CreateCore()
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     //shared access prevention section
     {
-        AutoPipelineSynhro d3dAcess(m_externalsync);
+        std::unique_lock<std::mutex> d3dAcess;
+        if (m_externalsync)
+        {
+            std::unique_lock<std::mutex> lock(*m_externalsync);
+            d3dAcess.swap(lock);
+        }
 #ifdef MFX_DISPATCHER_LOG
         if (m_inParams.bSkipUselessOutput)
             DispatchLog::get().DetachAllSinks();
@@ -5568,7 +5573,7 @@ mfxStatus MFXDecPipeline::ReduceMemoryUsage()
     return MFX_ERR_MEMORY_ALLOC;
 }
 
-mfxStatus MFXDecPipeline::SetSyncro(IPipelineSynhro * pSynchro)
+mfxStatus MFXDecPipeline::SetSyncro(std::mutex * pSynchro)
 {
     m_externalsync = pSynchro;
     return MFX_ERR_NONE;

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -13,8 +13,8 @@ File Name: .h
 #ifndef __MFX_PIPLINE_H
 #define __MFX_PIPLINE_H
 
+#include <mutex>
 #include <mfxstructures.h>
-#include "mfx_ipipeline_sync.h"
 #include "vm_strings.h"
 
 class IMFXPipeline
@@ -60,7 +60,7 @@ public:
     //returns whether memory usage could be reduced and reduce it. Pipeline /release / build required
     virtual mfxStatus   ReduceMemoryUsage()                               = 0;
     //instruct pipeline to use external synhro object to share access to non thread safety APIs
-    virtual mfxStatus   SetSyncro(IPipelineSynhro * pSynchro)             = 0;
+    virtual mfxStatus   SetSyncro(std::mutex      * pSynchro)             = 0;
 };
 
 #endif//__MFX_PIPLINE_H

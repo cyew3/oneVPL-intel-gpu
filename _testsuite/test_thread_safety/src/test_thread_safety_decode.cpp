@@ -215,7 +215,7 @@ mfxStatus OutputYuvTester::Close()
     return MFX_ERR_NONE;
 }
 
-mfxI32 RunDecode(mfxI32 argc, vm_char** argv, IPipelineSynhro *pExternalSync)
+mfxI32 RunDecode(mfxI32 argc, vm_char** argv, std::mutex *pExternalSync)
 {
     std::auto_ptr<IMFXPipelineConfig> cfg(new ConfigForTestThreadSafetyDecode(argc, argv, pExternalSync));
     MFXPipelineManager defMgr;

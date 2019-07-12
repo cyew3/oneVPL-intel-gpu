@@ -34,7 +34,7 @@ mfxStatus EncodePipelineForTestThreadSafety::CreateRender()
 
     m_pRender = new OutputBitstreamTester(m_components[eREN], &sts, pEncoder);
     MFX_CHECK_STS(sts);
-    
+
     return DecorateRender();
 }
 
@@ -80,7 +80,7 @@ mfxStatus OutputBitstreamTester::Close()
     return MFXEncodeWRAPPER::Close();
 }
 
-mfxI32 RunEncode(mfxI32 argc, vm_char** argv, IPipelineSynhro *pExternalSync)
+mfxI32 RunEncode(mfxI32 argc, vm_char** argv, std::mutex *pExternalSync)
 {
     std::auto_ptr<IMFXPipelineConfig> cfg(new ConfigForTestThreadSafetyEncode(argc, argv, pExternalSync));
     MFXPipelineManager defMgr;

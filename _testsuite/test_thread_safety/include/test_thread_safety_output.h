@@ -14,7 +14,7 @@ File Name: test_thread_safety_output.h
 #define __TEST_THREAD_SAFETY_OUTPUT_H__
 
 #include <memory>
-#include "umc_mutex.h"
+#include <mutex>
 #include "umc_event.h"
 #include "mfxstructures.h"
 #include "test_thread_safety_utils.h"
@@ -39,7 +39,7 @@ protected:
     mfxU32 Compare() const;
 
 private:
-    UMC::Mutex m_counterMutex;
+    std::mutex m_counterMutex;
     UMC::Event m_allIn;
     UMC::Event m_allOut;
     AutoArray<Data> m_data;
@@ -54,7 +54,7 @@ private:
     mfxU32 m_compareStatus;
     vm_file* m_fdRef;
     vm_file** m_fdOut;
-    mfxU32 m_syncOpt;
+    const mfxU32 m_syncOpt;
 
     static const mfxU64 HandleBase = 0xff000000;
 };

@@ -12,7 +12,6 @@ File Name: test_thread_safety.cpp
 
 #include "test_thread_safety.h"
 #include "test_thread_safety_cmdline.h"
-#include "mfx_pipeline_sync.h"
 #include <thread>
 
 std::auto_ptr<OutputRegistrator> outReg;
@@ -26,11 +25,11 @@ struct ThreadParam
     mfxI32 argc;
     vm_char** argv;
     mfxI32 result;
-    IPipelineSynhro *pExternalSync;
+    std::mutex *pExternalSync;
 };
 
-int RunDecode(int argc, vm_char** argv, IPipelineSynhro *pExternalSync);
-int RunEncode(int argc, vm_char** argv, IPipelineSynhro *pExternalSync);
+int RunDecode(int argc, vm_char** argv, std::mutex *pExternalSync);
+int RunEncode(int argc, vm_char** argv, std::mutex *pExternalSync);
 int Mpeg2EncPakStarter(int argc, vm_char* argv[]);
 int H264EncPakStarter(int argc, vm_char* argv[]);
 int VC1EncPakStarter(int argc, vm_char* argv[]);
@@ -64,7 +63,7 @@ mfxI32 main(mfxI32 argc, vm_char** argv)
     mfxU32 numThread = cmd.GetNumThread();
     AutoArray<std::thread> thread(new std::thread[numThread]);
     AutoArray<ThreadParam> param(new ThreadParam[numThread]);
-    std::auto_ptr<IPipelineSynhro> init_stage_sync (new PipelineSynhro());
+    std::mutex init_stage_sync;
 
     AutoArrayOfFiles fdOut(numThread);
     if (OpenOutputFiles(&fdOut[0], numThread, cmd.GetOutFileName(), VM_STRING("wb")) != 0)
@@ -81,7 +80,7 @@ mfxI32 main(mfxI32 argc, vm_char** argv)
         _param->testType = cmd.GetTestType();
         _param->argc = cmd.GetArgc();
         _param->argv = cmd.GetArgv();
-        _param->pExternalSync = init_stage_sync.get();
+        _param->pExternalSync = &init_stage_sync;
         thread[i] = std::thread([_param](){ ThreadStarter(_param); });
     }
 

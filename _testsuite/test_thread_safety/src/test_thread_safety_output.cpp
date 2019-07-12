@@ -42,7 +42,7 @@ OutputRegistrator::OutputRegistrator(mfxU32 numWriter, vm_file* fdRef, vm_file**
 
 mfxHDL OutputRegistrator::Register()
 {
-    UMC::AutomaticUMCMutex guard(m_counterMutex);
+    std::lock_guard<std::mutex> guard(m_counterMutex);
     if (m_numRegistered == m_numWriter)
         return 0;
 
@@ -73,7 +73,7 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
         bool last = false;
 
         {
-            UMC::AutomaticUMCMutex guard(m_counterMutex);
+            std::lock_guard<std::mutex> guard(m_counterMutex);
             if (m_numCommit >= m_numWriter)
             {
                 vm_file_fprintf(vm_stderr, VM_STRING("TEST: attempt of invalid commit with "
@@ -100,7 +100,7 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
         }
 
         {
-            UMC::AutomaticUMCMutex guard(m_counterMutex);
+            std::unique_lock<std::mutex> guard(m_counterMutex);
             m_numCommit--;
             last = (m_numCommit == 0);
         }
@@ -113,7 +113,7 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
     }
 
     {
-        UMC::AutomaticUMCMutex guard(m_counterMutex);
+        std::unique_lock<std::mutex> guard(m_counterMutex);
         if (ptr == 0)
         {
             // came here from UnRegister
