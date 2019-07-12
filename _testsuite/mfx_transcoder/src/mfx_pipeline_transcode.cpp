@@ -84,12 +84,14 @@ Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 #define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsHEVC, member, OPT_TYPE, description, MFX_CODEC_HEVC)
 #define HANDLE_HEVC_TILES(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extHEVCTiles, member, OPT_TYPE, description, MFX_CODEC_HEVC)
 #define HANDLE_HEVC_PARAM(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extHEVCParam, member, OPT_TYPE, description, MFX_CODEC_HEVC)
-#define HANDLE_VP8_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP8CodingOptions, member, OPT_TYPE, description, MFX_CODEC_VP8)
-#define HANDLE_VP9_PARAM(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP9Param, member, OPT_TYPE, description, MFX_CODEC_VP9)
+#define HANDLE_VP8_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP8CodingOptions, member, OPT_TYPE, description, MFX_CODEC_VP8)
+#define HANDLE_VP9_PARAM(member, OPT_TYPE, description)       HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP9Param, member, OPT_TYPE, description, MFX_CODEC_VP9)
 #define HANDLE_ENCRESET_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderReset, member, OPT_TYPE, description, 0)
-#define HANDLE_EXT_MFE(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extMFEParam, member, OPT_TYPE, description, 0)
-#define HANDLE_AV1_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsAV1E, member, OPT_TYPE, description, MFX_CODEC_AV1)
-
+#define HANDLE_EXT_MFE(member, OPT_TYPE, description)         HANDLE_OPTION_FOR_EXT_BUFFER(m_extMFEParam, member, OPT_TYPE, description, 0)
+#define HANDLE_AV1_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsAV1E, member, OPT_TYPE, description, MFX_CODEC_AV1)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#define HANDLE_AV1_PARAM(member, OPT_TYPE, description)       HANDLE_OPTION_FOR_EXT_BUFFER(m_extAV1Param, member, OPT_TYPE, description, MFX_CODEC_AV1)
+#endif
 
 #define FILL_MASK(type, ptr)\
     if (m_bResetParamsStart)\
@@ -122,6 +124,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_extVideoSignalInfo(new mfxExtVideoSignalInfo())
     , m_extCodingOptionsHEVC(new mfxExtCodingOptionHEVC())
     , m_extCodingOptionsAV1E(new mfxExtCodingOptionAV1E())
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    , m_extAV1Param(new mfxExtAV1Param())
+#endif
     , m_extHEVCTiles(new mfxExtHEVCTiles())
     , m_extHEVCParam(new mfxExtHEVCParam())
     , m_extVP8CodingOptions(new mfxExtVP8CodingOption())
@@ -424,18 +429,37 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_AV1_OPTION(MaxTxDepthIntraRefine, OPT_UINT_16, "Number of Tx sizes tested during Intra mode refinement: 0-default, 1..4"),
         HANDLE_AV1_OPTION(MaxTxDepthInterRefine, OPT_UINT_16, "Number of Tx sizes tested during Inter mode refinement: 0-default, 1..4"),
         HANDLE_AV1_OPTION(ChromaRDO, OPT_TRI_STATE, "on/off Chroma RDO during mode decision"),
-        HANDLE_AV1_OPTION(InterpFilter, OPT_TRI_STATE, "on/off Interpolation filters during mode decision"),
         HANDLE_AV1_OPTION(InterpFilterRefine, OPT_TRI_STATE, "on/off Interpolation filters during mode refinement"),
         HANDLE_AV1_OPTION(IntraRDO, OPT_TRI_STATE, "on/off Intra mode decision by RDO"),
         HANDLE_AV1_OPTION(InterRDO, OPT_TRI_STATE, "on/off Inter mode decision by RDO"),
         HANDLE_AV1_OPTION(IntraInterRDO, OPT_TRI_STATE, "on/off Intra/Inter mode decision by RDO"),
         HANDLE_AV1_OPTION(CodecTypeExt, OPT_UINT_16, "Codec type: 0-default; 1-VP9; 2-AV1"),
-        HANDLE_AV1_OPTION(CDEF, OPT_TRI_STATE, "on/off CDEF"),
-        HANDLE_AV1_OPTION(LRMode, OPT_TRI_STATE, "on/off Loop Restoration Mode"),
-
-
-        HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "number of tile columns (1 - default)"),
-        HANDLE_HEVC_TILES(NumTileRows,               OPT_UINT_16,    "number of tile rows (1 - default)"),
+        //AV1 params
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        HANDLE_AV1_PARAM(FrameWidth,               OPT_UINT_16,   "0-maxU16"),
+        HANDLE_AV1_PARAM(FrameHeight,              OPT_UINT_16,   "0-maxU16"),
+        HANDLE_AV1_PARAM(WriteIVFHeaders,          OPT_TRI_STATE, "on/off: Insertion IVF container headers to output stream"),
+        HANDLE_AV1_PARAM(UseAnnexB,                OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_PARAM(PackOBUFrame,             OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_PARAM(InsertTemporalDelimiter,  OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_PARAM(NumTileRows,              OPT_UINT_16,   "0-maxU16: Number of tile rows (1 - default)"),
+        HANDLE_AV1_PARAM(NumTileColumns,           OPT_UINT_16,   "0-maxU16: Number of tile columns (1 - default)"),
+        HANDLE_AV1_PARAM(NumTileGroups,            OPT_UINT_16,   "0-maxU16"),
+        HANDLE_AV1_PARAM(EnableCdef,               OPT_TRI_STATE, "on/off: Constrained Directional Enhancement Filter"),
+        HANDLE_AV1_PARAM(EnableRestoration,        OPT_TRI_STATE, "on/off: Enable Loop Restoration"),
+        HANDLE_AV1_PARAM(LoopFilterSharpness,      OPT_UINT_8,    "0-8: 0 - app default, map to bitstream: [1..8] => [0..7]"),
+        HANDLE_AV1_PARAM(InterpFilter,             OPT_UINT_8,    "0-4: Interpolation filters during mode decision"),
+        HANDLE_AV1_PARAM(SegmentationMode,         OPT_UINT_8,    "0 - off, 1 - auto, 2 - manual"),
+        HANDLE_AV1_PARAM(DisableCdfUpdate,         OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_PARAM(DisableFrameEndUpdateCdf, OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_PARAM(EnableSuperres,           OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_PARAM(SuperresScaleDenominator, OPT_UINT_8,    "9-16: 0 - app default"),
+        HANDLE_AV1_PARAM(StillPictureMode,         OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_PARAM(SwitchInterval,           OPT_UINT_16,   "0-maxU16: Interval (0 - disabled)"),
+#endif
+        //HEVC
+        HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "0-maxU16: Number of tile columns (1 - default)"),
+        HANDLE_HEVC_TILES(NumTileRows,               OPT_UINT_16,    "0-maxU16: Number of tile rows (1 - default)"),
 
         HANDLE_HEVC_PARAM(PicWidthInLumaSamples,     OPT_UINT_16,    "HEVC encoded picture width (SPS.pic_width_in_luma_samples)"),
         HANDLE_HEVC_PARAM(PicHeightInLumaSamples,    OPT_UINT_16,    "HEVC encoded picture height (SPS.pic_height_in_luma_samples)"),
@@ -450,15 +474,15 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_VP8_OPTION(NumFramesForIVFHeader, OPT_UINT_32, "0-maxU32"),
 
         // mfxExtVP9Param
-        HANDLE_VP9_PARAM(FrameWidth,          OPT_UINT_32, "0-maxU32"),
-        HANDLE_VP9_PARAM(FrameHeight,         OPT_UINT_32, "0-maxU32"),
+        HANDLE_VP9_PARAM(FrameWidth,          OPT_UINT_16, "0-maxU16"),
+        HANDLE_VP9_PARAM(FrameHeight,         OPT_UINT_16, "0-maxU16"),
         HANDLE_VP9_PARAM(WriteIVFHeaders,     OPT_TRI_STATE, ""),
         HANDLE_VP9_PARAM(QIndexDeltaLumaDC,   OPT_INT_16, ""),
         HANDLE_VP9_PARAM(QIndexDeltaChromaAC, OPT_INT_16, ""),
         HANDLE_VP9_PARAM(QIndexDeltaChromaDC, OPT_INT_16, ""),
 #if (MFX_VERSION >= 1029)
-        HANDLE_VP9_PARAM(NumTileRows,         OPT_INT_16, "number of tile rows (1 - default)"),
-        HANDLE_VP9_PARAM(NumTileColumns,      OPT_INT_16, "number of tile columns (1 - default)"),
+        HANDLE_VP9_PARAM(NumTileRows,         OPT_UINT_16, "0-maxU16: Number of tile rows (1 - default)"),
+        HANDLE_VP9_PARAM(NumTileColumns,      OPT_UINT_16, "0-maxU16: Number of tile columns (1 - default)"),
 #endif
 
         // mfxExtCodingOption2
@@ -2183,6 +2207,39 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 MFX_PARSE_INT(m_extCodingOptions3->NumRefActiveBL1[i], argv[0]);
             }
         }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        //AV1 VDEnc tiling parameters with array type
+        else if (m_OptProc.Check(argv[0], VM_STRING("-NumTilesPerTileGroup"), VM_STRING(""), OPT_SPECIAL, VM_STRING("uint[1..256]")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+
+            for (mfxU8 i = 0; i < 256 && argv + 1 < argvEnd && argv[1][0] != VM_STRING('-'); i++)
+            {
+                argv++;
+                MFX_PARSE_INT(m_extAV1Param->NumTilesPerTileGroup[i], argv[0]);
+            }
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-TileWidthInSB"), VM_STRING(""), OPT_SPECIAL, VM_STRING("uint[1..128]")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+
+            for (mfxU8 i = 0; i < 128 && argv + 1 < argvEnd && argv[1][0] != VM_STRING('-'); i++)
+            {
+                argv++;
+                MFX_PARSE_INT(m_extAV1Param->TileWidthInSB[i], argv[0]);
+            }
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-TileHeightInSB"), VM_STRING(""), OPT_SPECIAL, VM_STRING("uint[1..128]")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+
+            for (mfxU8 i = 0; i < 128 && argv + 1 < argvEnd && argv[1][0] != VM_STRING('-'); i++)
+            {
+                argv++;
+                MFX_PARSE_INT(m_extAV1Param->TileHeightInSB[i], argv[0]);
+            }
+        }
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
         else if (MFX_ERR_UNSUPPORTED == (mfxres = ProcessOption(argv, argvEnd)))
         {
             //check with base pipeline parser
@@ -2562,8 +2619,8 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
     if (!m_extCodingOptionsHEVC.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_HEVC)
         m_components[eREN].m_extParams.push_back(m_extCodingOptionsHEVC);
 
-    if (!m_extCodingOptionsAV1E.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
-    m_components[eREN].m_extParams.push_back(m_extCodingOptionsAV1E);
+    if (!m_extCodingOptionsAV1E.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1 && pMFXParams->mfx.LowPower == MFX_CODINGOPTION_OFF)
+        m_components[eREN].m_extParams.push_back(m_extCodingOptionsAV1E);
 
     if (!m_extHEVCTiles.IsZero())
         m_components[eREN].m_extParams.push_back(m_extHEVCTiles);
@@ -2576,7 +2633,10 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extVP9Param.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVP9Param);
-
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (!m_extAV1Param.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
+        m_components[eREN].m_extParams.push_back(m_extAV1Param);
+#endif
     if (!m_extVP9Segmentation.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVP9Segmentation);
 

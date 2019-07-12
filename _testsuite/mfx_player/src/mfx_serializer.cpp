@@ -483,14 +483,11 @@ void MFXStructureRef <mfxExtCodingOptionAV1E>::ConstructValues() const
     SERIALIZE_INT(MaxTxDepthIntraRefine);
     SERIALIZE_INT(MaxTxDepthInterRefine);
     SERIALIZE_INT(ChromaRDO);
-    SERIALIZE_INT(InterpFilter);
     SERIALIZE_INT(InterpFilterRefine);
     SERIALIZE_INT(IntraRDO);
     SERIALIZE_INT(InterRDO);
     SERIALIZE_INT(IntraInterRDO);
     SERIALIZE_INT(CodecTypeExt);
-    SERIALIZE_INT(CDEF);
-    SERIALIZE_INT(LRMode);
 }
 
 void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const
@@ -537,7 +534,34 @@ void MFXStructureRef <mfxExtVP9Param>::ConstructValues() const
     SERIALIZE_INT(NumTileColumns);
 #endif
 }
-
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+void MFXStructureRef <mfxExtAV1Param>::ConstructValues() const
+{
+    SERIALIZE_INT(FrameWidth);
+    SERIALIZE_INT(FrameHeight);
+    SERIALIZE_INT(WriteIVFHeaders);
+    SERIALIZE_INT(UseAnnexB);
+    SERIALIZE_INT(PackOBUFrame);
+    SERIALIZE_INT(InsertTemporalDelimiter);
+    SERIALIZE_INT(NumTileRows);
+    SERIALIZE_INT(NumTileColumns);
+    SERIALIZE_INT(NumTileGroups);
+    SERIALIZE_POD_ARRAY(NumTilesPerTileGroup, 8);
+    SERIALIZE_POD_ARRAY(TileWidthInSB, 8);
+    SERIALIZE_POD_ARRAY(TileHeightInSB, 8);
+    SERIALIZE_INT(EnableCdef);
+    SERIALIZE_INT(EnableRestoration);
+    SERIALIZE_INT(LoopFilterSharpness);
+    SERIALIZE_INT(InterpFilter);
+    SERIALIZE_INT(SegmentationMode);
+    SERIALIZE_INT(DisableCdfUpdate);
+    SERIALIZE_INT(DisableFrameEndUpdateCdf);
+    SERIALIZE_INT(EnableSuperres);
+    SERIALIZE_INT(SuperresScaleDenominator);
+    SERIALIZE_INT(StillPictureMode);
+    SERIALIZE_INT(SwitchInterval);
+}
+#endif
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
 {
     SERIALIZE_INT(BitDepthLuma);
@@ -1198,6 +1222,12 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
             SerializeStruct(VM_STRING("VP9."), *(mfxExtVP9Param*)m_pStruct);
             break;
         }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_EXTBUFF_AV1_PARAM: {
+            SerializeStruct(VM_STRING("AV1."), *(mfxExtAV1Param*)m_pStruct);
+            break;
+        }
+#endif
         case MFX_EXTBUFF_MVC_SEQ_DESC : {
             SerializeStruct(VM_STRING("MVC."), *(mfxExtMVCSeqDesc*)m_pStruct);
             break;

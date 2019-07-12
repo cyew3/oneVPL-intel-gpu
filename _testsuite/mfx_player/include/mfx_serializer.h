@@ -69,7 +69,7 @@ protected:
         m_values_map[str] = stream.str();
     }
     template <class ElementType, class PodFmt>
-    void SerializeArrayOfPODs(const tstring & str, ElementType * pArray, int nElements, PodFmt elementFormater ) const
+    void SerializeArrayOfPODs(const tstring & str, ElementType * pArray, int nElements,PodFmt elementFormater) const
     {
         tstringstream stream;
 
@@ -664,7 +664,26 @@ public:
 protected:
     virtual void ConstructValues () const;
 };
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+template<>
+class MFXStructureRef <mfxExtAV1Param>
+    : public MFXStructureBase<mfxExtAV1Param>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtAV1Param>((mfxExtAV1Param &)refStruct, flags)
+    {
+    }
 
+    MFXStructureRef(mfxExtAV1Param & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtAV1Param>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues() const;
+};
+#endif
 template<>
 class MFXStructureRef <mfxFrameInfo>
     : public MFXStructureBase<mfxFrameInfo>
