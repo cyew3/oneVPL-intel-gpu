@@ -313,7 +313,10 @@ typedef struct {
     /* DG1 */
     { 0x4905, MFX_HW_DG1, MFX_GT2 },
     /* ATS */
-    { 0x0201, MFX_HW_ATS, MFX_GT4 }
+    { 0x0201, MFX_HW_ATS, MFX_GT4 },
+    /* ADL */
+    { 0x4680, MFX_HW_ADL_S,  MFX_GT1 },//ADL-S
+    { 0x46A0, MFX_HW_ADL_UH, MFX_GT2 } //ADL-UH
 #endif
 
 };

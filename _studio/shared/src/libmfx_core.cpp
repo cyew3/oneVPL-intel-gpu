@@ -904,6 +904,8 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
     case MFX_HW_RKL:
     case MFX_HW_DG1:
     case MFX_HW_TGL_HP : platform->CodeName = MFX_PLATFORM_TIGERLAKE;   break;
+    case MFX_HW_ADL_S  : platform->CodeName = MFX_PLATFORM_ALDERLAKE_S; break;
+    case MFX_HW_ADL_UH : platform->CodeName = MFX_PLATFORM_ALDERLAKE_UH;break;
 #endif //MFX_CLOSED_PLATFORMS_DISABLE
 #endif
     default:             platform->CodeName = MFX_PLATFORM_UNKNOWN;     break;
