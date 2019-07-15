@@ -187,20 +187,20 @@ bool operator == (const mfxVersion &one, const mfxVersion &two)
 {
     return (one.Version == two.Version);
 
-} // bool operator == (const mfxVersion &one, const mfxVersion &two)
+}
 
 inline
 bool operator < (const mfxVersion &one, const mfxVersion &two)
 {
-    return (one.Major == two.Major) && (one.Minor < two.Minor);
+    return (one.Major < two.Major) || ((one.Major == two.Major) && (one.Minor < two.Minor));
 
-} // bool operator < (const mfxVersion &one, const mfxVersion &two)
+}
 
 inline
 bool operator <= (const mfxVersion &one, const mfxVersion &two)
 {
     return (one == two) || (one < two);
-} // bool operator <= (const mfxVersion &one, const mfxVersion &two)
+}
 
 
 //

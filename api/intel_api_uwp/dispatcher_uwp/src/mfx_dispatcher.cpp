@@ -69,7 +69,7 @@ mfxStatus MFX_DISP_HANDLE::Close(void)
     mfxRes = UnLoadSelectedDLL();
 
     // the library wasn't unloaded
-    if (MFX_ERR_NONE == mfxRes)
+    if (MFX_ERR_NONE != mfxRes)
     {
         implType = MFX_LIB_SOFTWARE;
         impl = MFX_IMPL_SOFTWARE;
@@ -99,7 +99,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
     }
     // only exact types of implementation is allowed
     if (!(reqImpl & MFX_IMPL_AUDIO) &&
-#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         !(reqImpl & MFX_IMPL_EXTERNAL_THREADING) &&
 #endif
         (MFX_IMPL_SOFTWARE != reqImpl) &&
