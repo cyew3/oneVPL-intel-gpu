@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -22,12 +22,12 @@ class MFXEncodeWRAPPER : public MFXFileWriteRender
 public:
     MFXEncodeWRAPPER( ComponentParams &refParams
                     , mfxStatus *status
-                    , std::auto_ptr<IVideoEncode> &pTargetEncode);
+                    , std::unique_ptr<IVideoEncode> &&pTargetEncode);
     ~MFXEncodeWRAPPER();
 
     virtual mfxStatus Init(mfxVideoParam *par, const vm_char *pFilename);
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request);
-    virtual mfxStatus GetVideoParam(mfxVideoParam *par); 
+    virtual mfxStatus GetVideoParam(mfxVideoParam *par);
     virtual mfxStatus GetEncodeStat(mfxEncodeStat *stat);
     virtual mfxStatus RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl * pCtrl=NULL);
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl);
@@ -36,7 +36,7 @@ public:
     virtual mfxStatus Close();
     virtual mfxStatus WaitTasks(mfxU32 nMilisecconds);
     virtual mfxStatus SetExtraParams(EncodeExtraParams *pExtraParams);
-    
+
 protected:
     //forces creation particular number of output bitstreams
     virtual mfxStatus SetOutBitstreamsNum(mfxU16 nBitstreamsOut);
@@ -46,7 +46,7 @@ protected:
     //link to out params
     ComponentParams&    m_refParams;
 
-    std::auto_ptr<IVideoEncode> m_encoder;
+    std::unique_ptr<IVideoEncode> m_encoder;
     mfxSession          m_InSession;
     mfxU64              m_EncodedSize;
     Timer               m_encTime;
@@ -71,6 +71,6 @@ protected:
     virtual mfxStatus PutBsData(mfxBitstream* pData);
 
     //asignments are not used
-    void operator = (const MFXEncodeWRAPPER & /*other*/){}
+    void operator = (const MFXEncodeWRAPPER & /*other*/) = delete;
 };
 

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2019 Intel Corporation. All Rights Reserved.
 
 
 File Name: mfx_ivideo_session.h
@@ -48,8 +48,8 @@ class InterfaceProxy<IVideoSession> : public InterfaceProxyBase<IVideoSession>
 public:
     typedef InterfaceProxyBase<IVideoSession> base;
 
-    InterfaceProxy(std::auto_ptr<IVideoSession> &pSession)
-        : base(pSession)
+    InterfaceProxy(std::unique_ptr<IVideoSession> &&pSession)
+        : base(std::move(pSession))
     {
     }
     virtual mfxStatus Init(mfxIMPL impl, mfxVersion *ver, const tstring &libraryPath) { return Target().Init(impl, ver, libraryPath); }

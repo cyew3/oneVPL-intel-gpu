@@ -59,6 +59,6 @@ private:
     static const mfxU64 HandleBase = 0xff000000;
 };
 
-extern std::auto_ptr<OutputRegistrator> outReg;
+extern std::unique_ptr<OutputRegistrator> outReg;
 
 #endif //__TEST_THREAD_SAFETY_OUTPUT_H__

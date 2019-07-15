@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -20,8 +20,8 @@ class EncodeOrderEncode
 {
 public:
 
-    EncodeOrderEncode(std::auto_ptr<IVideoEncode>& pTarget, bool useParFile, const vm_char* m_par_file)
-        : InterfaceProxy<IVideoEncode>(pTarget)
+    EncodeOrderEncode(std::unique_ptr<IVideoEncode> &&pTarget, bool useParFile, const vm_char* m_par_file)
+        : InterfaceProxy<IVideoEncode>(std::move(pTarget))
         , m_useParFile(useParFile)
         , m_par_file(m_par_file)
     {
@@ -57,7 +57,7 @@ public:
                 MFX_CHECK_TRACE(false, VM_STRING("unsupported CodecId for EncodeOrder"));
             }
         }
-        
+
         return sts;
     }
     virtual mfxStatus EncodeFrameAsync(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp)

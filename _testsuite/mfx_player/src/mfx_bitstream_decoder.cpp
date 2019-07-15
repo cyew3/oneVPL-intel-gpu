@@ -4,20 +4,21 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #include "mfx_pipeline_defs.h"
 #include "mfx_bitstream_decoder.h"
 
-BitstreamDecoder::BitstreamDecoder(DecodeContext * pCtx)
+BitstreamDecoder::BitstreamDecoder(DecodeContext &&ctx)
     : GenericStateContext<mfxBitstream2 &>(new DecodeState_DecodeHeader())
-    , InterfaceProxy<IYUVSource>(pCtx->pSource)
-    , m_Ctx(*pCtx)
-    , m_surfaces(pCtx->pTime)
+    , InterfaceProxy<IYUVSource>(std::move(ctx.pSource))
+    // note that ctx.pSource is moved out already, so m_Ctx.pSource became empty
+    , m_Ctx(std::move(ctx))
+    , m_surfaces(ctx.pTime)
     , m_bsRemained()
-    , m_Alloc(pCtx->pAlloc)
+    , m_Alloc(ctx.pAlloc)
 {
 }
 

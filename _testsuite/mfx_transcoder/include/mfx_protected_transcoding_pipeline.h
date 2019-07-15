@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -26,7 +26,7 @@ public:
     {
     };
 protected:
-    virtual mfxStatus CreateEncodeWRAPPER(std::auto_ptr<IVideoEncode> &pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp);
-    virtual mfxU32 getOutputCodecId() {return m_EncParams.mfx.CodecId;};
+    virtual mfxStatus CreateEncodeWRAPPER(std::unique_ptr<IVideoEncode> &&pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp) override;
+    virtual mfxU32 getOutputCodecId() {return m_EncParams.mfx.CodecId;}
 };
 #endif //PAVP_BUILD

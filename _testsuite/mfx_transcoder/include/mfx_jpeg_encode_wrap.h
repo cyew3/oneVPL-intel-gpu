@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -12,8 +12,8 @@ File Name: .h
 
 #pragma once
 
-//jpeg encoder has a lot of specific features 
-// for example it doesnot support several extended buffers like extcoding options 
+//jpeg encoder has a lot of specific features
+// for example it doesnot support several extended buffers like extcoding options
 // that automatically attaches in case of interlacing
 
 #include "mfx_ivideo_encode.h"
@@ -26,8 +26,8 @@ class MFXJpegEncWrap
 {
     typedef InterfaceProxy<IVideoEncode> base;
 public:
-    MFXJpegEncWrap(std::auto_ptr<IVideoEncode>& pEncode)
-        : base(pEncode)
+    MFXJpegEncWrap(std::unique_ptr<IVideoEncode> &&pEncode)
+        : base(std::move(pEncode))
     {
     }
 
@@ -40,7 +40,7 @@ public:
         push_ext_co(out);
 
         mfxStatus sts = base::Query(in, out);
-        
+
         pop_ext_co(out);
         pop_ext_co(in);
 
@@ -51,7 +51,7 @@ public:
     {
         if (NULL == par)
             return base::Init(par);
-        
+
         push_ext_co(par);
         mfxStatus sts = base::Init(par);
         pop_ext_co(par);

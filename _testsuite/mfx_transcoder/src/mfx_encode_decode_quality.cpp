@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "mfx_pipeline_defs.h"
@@ -19,8 +19,8 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 EncodeDecodeQuality::EncodeDecodeQuality( ComponentParams &refParams
                                         , mfxStatus *status
-                                        , std::auto_ptr<IVideoEncode>& pEncode)
-    : MFXEncodeWRAPPER(refParams, status, pEncode)
+                                        , std::unique_ptr<IVideoEncode> &&pEncode)
+    : MFXEncodeWRAPPER(refParams, status, std::move(pEncode))
     , m_ppMfxSurface()
     , m_pAllocator()
     , m_bInitialized()
@@ -123,7 +123,7 @@ mfxStatus EncodeDecodeQuality::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequ
 
     MFX_CHECK_STS(InitMFXDecoder(&tmpDecoder, par, MFX_IMPL_SOFTWARE));
     MFX_CHECK_STS(tmpDecoder.pmfxDEC->QueryIOSurf(par, &internalRequest));
-    
+
     //restoring params
     par->IOPattern   = (mfxU16)nOldPattern;
     par->NumExtParam = (mfxU16)nOldNumExtParams;
@@ -146,8 +146,8 @@ mfxStatus EncodeDecodeQuality::CreateAllocator()
 
     // Create allocator and frames
     request.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
-    std::auto_ptr<MFXFrameAllocatorRW> rw_ptr (new Adapter<MFXFrameAllocatorRW, MFXFrameAllocator> (new SysMemFrameAllocator));
-    m_pAllocator = new LCCheckFrameAllocator(rw_ptr);
+    std::unique_ptr<MFXFrameAllocatorRW> rw_ptr (new Adapter<MFXFrameAllocatorRW, MFXFrameAllocator> (new SysMemFrameAllocator));
+    m_pAllocator = new LCCheckFrameAllocator(std::move(rw_ptr));
     MFX_CHECK_POINTER(m_pAllocator);
     MFX_CHECK_STS(m_pAllocator->Init(NULL));
     MFX_CHECK_STS(m_pAllocator->Alloc(m_pAllocator->pthis, &request, &m_allocResponce));

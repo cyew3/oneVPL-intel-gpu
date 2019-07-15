@@ -2520,56 +2520,56 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
     }
 
     if (m_inParams.nYUVLoop) {
-        m_pYUVSource .reset( new MFXLoopDecoder( m_inParams.nYUVLoop, m_pYUVSource));
+        m_pYUVSource .reset( new MFXLoopDecoder( m_inParams.nYUVLoop, std::move(m_pYUVSource)));
     }
 
     if (m_inParams.nDecodeInAdvance) {
-        m_pYUVSource .reset( new MFXAdvanceDecoder(m_inParams.nDecodeInAdvance, m_pYUVSource));
+        m_pYUVSource .reset( new MFXAdvanceDecoder(m_inParams.nDecodeInAdvance, std::move(m_pYUVSource)));
     }
 
     if (!m_viewOrderMap.empty()) {
-        m_pYUVSource .reset( new TargetViewsDecoder(m_viewOrderMap, m_inParams.targetViewsTemporalId, m_pYUVSource));
+        m_pYUVSource .reset( new TargetViewsDecoder(m_viewOrderMap, m_inParams.targetViewsTemporalId, std::move(m_pYUVSource)));
     }
 
     //dependency structure specified
     if (!m_InputExtBuffers.empty()) {
-        m_pYUVSource .reset( new MVCDecoder(bGenerateViewIds, yuvDecParam, m_pYUVSource));
+        m_pYUVSource .reset( new MVCDecoder(bGenerateViewIds, yuvDecParam, std::move(m_pYUVSource)));
     }
 
     if (m_components[eDEC].m_bCalcLatency)
     {
         //calc aggregated timestamps only if there is no intermediate synchronizations
-        m_pYUVSource .reset( new LatencyDecoder(m_components[eREN].m_bCalcLatency && m_inParams.bNoPipelineSync, NULL, &PerfCounterTime::Instance(), VM_STRING("Decoder"), m_pYUVSource));
+        m_pYUVSource .reset( new LatencyDecoder(m_components[eREN].m_bCalcLatency && m_inParams.bNoPipelineSync, NULL, &PerfCounterTime::Instance(), VM_STRING("Decoder"), std::move(m_pYUVSource)));
     }
 
     if (!m_InputExtBuffers.empty() || MFX_CODEC_AVC == m_components[eDEC].m_params.mfx.CodecId || MFX_CODEC_VP8 == m_components[eDEC].m_params.mfx.CodecId)
     {
-        m_pYUVSource .reset( new MVCHandler<IYUVSource>(m_components[eDEC].m_extParams, m_components[eDEC].m_bForceMVCDetection, m_pYUVSource));
+        m_pYUVSource .reset( new MVCHandler<IYUVSource>(m_components[eDEC].m_extParams, m_components[eDEC].m_bForceMVCDetection, std::move(m_pYUVSource)));
     }
 
     if (MFX_CODEC_JPEG == m_components[eDEC].m_params.mfx.CodecId)
     {
-        m_pYUVSource .reset( new JPEGBsParser(m_inParams.FrameInfo, m_pYUVSource));
+        m_pYUVSource .reset( new JPEGBsParser(m_inParams.FrameInfo, std::move(m_pYUVSource)));
 
         if (0 != m_inParams.nRotation)
         {
-            m_pYUVSource .reset( new RotatedDecoder(m_inParams.nRotation, m_pYUVSource));
+            m_pYUVSource .reset( new RotatedDecoder(m_inParams.nRotation, std::move(m_pYUVSource)));
         }
     }
 
     if (!m_components[eDEC].m_SkipModes.empty())
     {
-        m_pYUVSource .reset( new SkipModesSeterDecoder(m_components[eDEC].m_SkipModes, m_pYUVSource));
+        m_pYUVSource .reset( new SkipModesSeterDecoder(m_components[eDEC].m_SkipModes, std::move(m_pYUVSource)));
     }
 
     //header is inited if option is specified
     if (m_inParams.svc_layer.Header.BufferId != 0 )
     {
-        m_pYUVSource .reset( new TargetLayerSvcDecoder(m_inParams.svc_layer, m_pYUVSource));
+        m_pYUVSource .reset( new TargetLayerSvcDecoder(m_inParams.svc_layer, std::move(m_pYUVSource)));
     }
 
     ///should be created on top of decorators
-    m_pYUVSource.reset(new PrintInfoDecoder(m_pYUVSource));
+    m_pYUVSource.reset(new PrintInfoDecoder(std::move(m_pYUVSource)));
 
     return MFX_ERR_NONE;
 }

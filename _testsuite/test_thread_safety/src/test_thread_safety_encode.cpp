@@ -30,16 +30,15 @@ EncodePipelineForTestThreadSafety::EncodePipelineForTestThreadSafety(IMFXPipelin
 mfxStatus EncodePipelineForTestThreadSafety::CreateRender()
 {
     mfxStatus sts = MFX_ERR_NONE;
-    std::auto_ptr<IVideoEncode> pEncoder = CreateEncoder();
 
-    m_pRender = new OutputBitstreamTester(m_components[eREN], &sts, pEncoder);
+    m_pRender = new OutputBitstreamTester(m_components[eREN], &sts, CreateEncoder());
     MFX_CHECK_STS(sts);
 
     return DecorateRender();
 }
 
-OutputBitstreamTester::OutputBitstreamTester(ComponentParams &refParams, mfxStatus *status, std::auto_ptr<IVideoEncode> &pEncode)
-: MFXEncodeWRAPPER(refParams, status, pEncode)
+OutputBitstreamTester::OutputBitstreamTester(ComponentParams &refParams, mfxStatus *status, std::unique_ptr<IVideoEncode> &&pEncode)
+    : MFXEncodeWRAPPER(refParams, status, std::move(pEncode))
 , m_handle(0)
 {
     if (status)

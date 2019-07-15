@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -40,22 +40,22 @@ public:
 
     virtual result_type* CreateD3DAllocator()
     {
-        std::auto_ptr<result_type> ptr (base::m_pTarget->CreateD3DAllocator());
-        return new TCreator(ptr);
+        std::unique_ptr<result_type> ptr (base::m_pTarget->CreateD3DAllocator());
+        return new TCreator(std::move(ptr));
     }
     virtual result_type* CreateD3D11Allocator()
     {
-        std::auto_ptr<result_type> ptr (base::m_pTarget->CreateD3D11Allocator());
-        return new TCreator(ptr);
+        std::unique_ptr<result_type> ptr (base::m_pTarget->CreateD3D11Allocator());
+        return new TCreator(std::move(ptr));
     }
     virtual result_type* CreateVAAPIAllocator()
     {
-        std::auto_ptr<result_type> ptr (base::m_pTarget->CreateVAAPIAllocator());
-        return new TCreator(ptr);
+        std::unique_ptr<result_type> ptr (base::m_pTarget->CreateVAAPIAllocator());
+        return new TCreator(std::move(ptr));
     }
     virtual result_type* CreateSysMemAllocator()
     {
-        std::auto_ptr<result_type> ptr (base::m_pTarget->CreateSysMemAllocator());
-        return new TCreator(ptr);
+        std::unique_ptr<result_type> ptr (base::m_pTarget->CreateSysMemAllocator());
+        return new TCreator(std::move(ptr));
     }
 };

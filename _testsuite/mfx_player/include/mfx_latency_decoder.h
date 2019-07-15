@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -27,7 +27,7 @@ public:
                   , IStringPrinter * pPrinter
                   , ITime * pTimer
                   , const tstring & name
-                  , std::auto_ptr<IYUVSource>& pTarget);
+                  , std::unique_ptr<IYUVSource> &&pTarget);
     virtual ~LatencyDecoder();
     //decode header also impact to latency
     virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par) ;

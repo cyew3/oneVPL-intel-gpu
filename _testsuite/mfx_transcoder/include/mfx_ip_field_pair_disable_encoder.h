@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -21,8 +21,8 @@ class IPFieldPairDisableEncode
 {
     typedef InterfaceProxy<IVideoEncode> base;
 public:
-    IPFieldPairDisableEncode(std::auto_ptr<IVideoEncode>& pTarget)
-        : base(pTarget)
+    IPFieldPairDisableEncode(std::unique_ptr<IVideoEncode> &&pTarget)
+        : base(std::move(pTarget))
         , m_gopPicSize()
         , m_nPos()
         , m_encCtl()

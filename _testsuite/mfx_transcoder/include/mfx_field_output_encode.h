@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 
 File Name: mfx_encode.h
@@ -16,13 +16,13 @@ File Name: mfx_encode.h
 #include <limits>
 #include "mfx_ivideo_encode.h"
 
-class FieldOutputEncoder : public InterfaceProxy<IVideoEncode> 
+class FieldOutputEncoder : public InterfaceProxy<IVideoEncode>
 {
     typedef  InterfaceProxy<IVideoEncode> base;
 public:
 
-    FieldOutputEncoder (std::auto_ptr<IVideoEncode>& pTarget)
-        : base(pTarget)
+    FieldOutputEncoder (std::unique_ptr<IVideoEncode> &&pTarget)
+        : base(std::move(pTarget))
         , bPairCompleted(true)
     {}
 
@@ -38,7 +38,7 @@ public:
         //lets handle this error codes in outer object
         if (MFX_WRN_DEVICE_BUSY == sts || MFX_ERR_MORE_DATA == sts)
             return sts;
-        
+
         MFX_CHECK_STS_SKIP(sts = EncodeSecond(ctrl, surface, syncp), MFX_ERR_MORE_DATA);
 
         return sts;

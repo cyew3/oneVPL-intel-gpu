@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -15,30 +15,30 @@ File Name: .h
 
 #include "mfx_iyuv_source.h"
 
-//encapsulate mvc specific buffers behavior 
+//encapsulate mvc specific buffers behavior
 //can be attached to any decoders, or encoders, but intended for MVC decoder
 template<class T>
-class MVCHandlerCommon 
+class MVCHandlerCommon
     : public InterfaceProxy<T>
 {
     typedef InterfaceProxy<T> base;
 public:
     //external buffer since pipeline uses it's information to setup followed filters
-    MVCHandlerCommon  ( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, std::auto_ptr<T>& pTarget)
-          : base(pTarget)
+    MVCHandlerCommon  ( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, std::unique_ptr<T> &&pTarget)
+        : base(std::move(pTarget))
           , m_extParams(extBufferVector)
           , m_bForceMVCDetection(bForceMVCDetection)
     {
     }
 
-    virtual mfxStatus GetVideoParam(mfxVideoParam *par) 
+    virtual mfxStatus GetVideoParam(mfxVideoParam *par)
     {
         std::mem_fun1_t<mfxStatus, MVCHandlerCommon, mfxVideoParam*> fnc(&MVCHandlerCommon::GetVideoParamBase);
-        
+
         m_extParams_current.clear();
-        
+
         mfxStatus sts;
-        //detaching ext seq buffer 
+        //detaching ext seq buffer
         //TODO: for some cases better to copy them back, it is not implemented
         {
             auto_ext_buffer auto_buffer(*par);
@@ -61,7 +61,7 @@ public:
         par->NumExtParam = (mfxU16)m_extParams_current.size();
         par->ExtParam= &m_extParams_current;
         //encoder cannot understand this buffer: we cannot guarantee certain error code for this
-        
+
         /*MFX_CHECK_STS_SKIP*/base::GetVideoParam(par);
 
         MFXExtBufferPtr<mfxExtMVCTargetViews> tgViews(m_extParams_current);
@@ -184,8 +184,8 @@ class MVCHandler
     : public MVCHandlerCommon<T>
 {
 public:
-    MVCHandler( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, std::auto_ptr<T>& pTarget)
-        : MVCHandlerCommon<T>(extBufferVector, bForceMVCDetection, pTarget)
+    MVCHandler( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, std::unique_ptr<T> &&pTarget)
+        : MVCHandlerCommon<T>(extBufferVector, bForceMVCDetection, std::move(pTarget))
     {
     }
 };
@@ -196,23 +196,23 @@ class MVCHandler<IYUVSource>
 {
     typedef MVCHandlerCommon<IYUVSource> base;
 public:
-    MVCHandler( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, std::auto_ptr<IYUVSource>& pTarget)
-        : base(extBufferVector, bForceMVCDetection, pTarget)
+    MVCHandler( MFXExtBufferVector &extBufferVector, bool bForceMVCDetection, std::unique_ptr<IYUVSource> &&pTarget)
+        : base(extBufferVector, bForceMVCDetection, std::move(pTarget))
     {
     }
-    virtual mfxStatus Init(mfxVideoParam *par) 
-    { 
+    virtual mfxStatus Init(mfxVideoParam *par)
+    {
         auto_ext_buffer auto_buf(*par);
 
         //copying MVC buffers if any
         auto_buf.insert(m_extParams.begin(), m_extParams.end());
 
         mfxStatus sts ;
-        MFX_CHECK_STS(sts = base::Init(par)); 
+        MFX_CHECK_STS(sts = base::Init(par));
 
         return sts;
     }
-    virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par) 
+    virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par)
     {
         mem_fun2_defA<mfxStatus, MVCHandler, mfxBitstream*, mfxVideoParam*> fnc(&MVCHandler::DecodeHeaderBase, bs);
         mfxStatus sts;

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -16,8 +16,8 @@ File Name: .h
 
 TargetViewsDecoder::TargetViewsDecoder( std::vector<std::pair<mfxU16, mfxU16> > & targetViewsMap
                                       , mfxU16      temporalId
-                                      , std::auto_ptr<IYUVSource>& pTarget)
-    : InterfaceProxy<IYUVSource>(pTarget)
+                                      , std::unique_ptr<IYUVSource> &&pTarget)
+    : InterfaceProxy<IYUVSource>(std::move(pTarget))
     , m_ViewOrder_ViewIdMap(targetViewsMap)
     , m_targetProfile()
     , m_TemporalId(temporalId)
@@ -70,17 +70,17 @@ mfxStatus TargetViewsDecoder::DecodeHeader(mfxBitstream *bs, mfxVideoParam *par)
     if (m_ViewOrder_ViewIdMap.size() < 2)
     {
         //the decoder becames AVC
-        par->mfx.CodecProfile = 0; 
+        par->mfx.CodecProfile = 0;
     }
     else if (MFX_ERR_NONE <= sts)
     {
         //decoder remains as MVC but should report different views
-        //par->mfx.CodecProfile = 0; //not sure what to point here same profile? 
+        //par->mfx.CodecProfile = 0; //not sure what to point here same profile?
         par->NumExtParam = (mfxU16)m_ModifiedExtParams.size();
         par->ExtParam = &m_ModifiedExtParams;
-        
-        std::auto_ptr<IYUVSource> nullSource;
-        std::auto_ptr<MVCDecoderHelper> pHlp (new MVCDecoderHelper(false, *par, nullSource));
+
+        std::unique_ptr<IYUVSource> nullSource;
+        std::unique_ptr<MVCDecoderHelper> pHlp (new MVCDecoderHelper(false, *par, std::move(nullSource)));
 
         //swapping extparams back;
         par->NumExtParam      = nOldNExtParams;
@@ -92,7 +92,7 @@ mfxStatus TargetViewsDecoder::DecodeHeader(mfxBitstream *bs, mfxVideoParam *par)
     //swapping extparams back;
     par->NumExtParam      = nOldNExtParams;
     par->ExtParam         = pOldExtParams;
-    
+
 
     return sts;
 }

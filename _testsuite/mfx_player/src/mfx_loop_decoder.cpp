@@ -21,8 +21,8 @@ File Name: .h
 #include <windows.h>
 #endif
 
-MFXLoopDecoder::MFXLoopDecoder( mfxI32 nNumFramesInLoop, std::auto_ptr<IYUVSource>& target )
-    : base(target)
+MFXLoopDecoder::MFXLoopDecoder( mfxI32 nNumFramesInLoop, std::unique_ptr<IYUVSource> &&target )
+    : base(std::move(target))
     , m_CurrSurfaceIndex()
     , m_syncPoint((mfxSyncPoint)0x101) //some random constant to distinguish from zero
 {

@@ -4,27 +4,29 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #include "mfx_pipeline_defs.h"
 #include "mfx_ref_list_control_encode.h"
 
-RefListControlEncode::RefListControlEncode (std::auto_ptr<IVideoEncode>& pTarget)
-    : InterfaceProxy<IVideoEncode>(pTarget)
+RefListControlEncode::RefListControlEncode (std::unique_ptr<IVideoEncode> &&pTarget)
+    : InterfaceProxy<IVideoEncode>(std::move(pTarget))
     , m_bAttach()
     , m_ctrl()
     , m_nFramesEncoded()
 {
     mfxExtAVCRefListCtrl tmp_elem = mfxExtAVCRefListCtrl();
+    // no dangling pointers, because MFXExtBufferPtr<mfxExtAVCRefListCtrl>::Clone() is
+    // called inside MFXExtBufferVector::push_back(MFXExtBufferPtrBase & pBuffer)
     m_extParams.push_back(&tmp_elem);
     m_pRefList = (mfxExtAVCRefListCtrl*)m_extParams.back();
     m_ctrl.NumExtParam = (mfxU16)m_extParams.size();
     m_ctrl.ExtParam = &m_extParams;
 }
 
-mfxStatus RefListControlEncode::EncodeFrameAsync(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp) 
+mfxStatus RefListControlEncode::EncodeFrameAsync(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxSyncPoint *syncp)
 {
     if (!m_bAttach)
     {
@@ -34,16 +36,16 @@ mfxStatus RefListControlEncode::EncodeFrameAsync(mfxEncodeCtrl *ctrl, mfxFrameSu
         }
         return InterfaceProxy<IVideoEncode>::EncodeFrameAsync(ctrl, surface, bs, syncp);
     }
-        
+
     //if using not our own buffer we need to recreate whole pointers array
     mfxExtBuffer ** ppExtParams = NULL;
     std::vector<mfxExtBuffer *> ppExtParamsNew ;
-    mfxExtAVCRefListCtrl * pCurrentRefList = m_pRefList; 
+    mfxExtAVCRefListCtrl * pCurrentRefList = m_pRefList;
 
     if (NULL == ctrl)
     {
         ctrl = &m_ctrl;
-    } 
+    }
     else
     {
         MFXExtBufferPtr<mfxExtAVCRefListCtrl> pRefList(MFXExtBufferVector(ctrl->ExtParam, ctrl->NumExtParam));
@@ -70,7 +72,7 @@ mfxStatus RefListControlEncode::EncodeFrameAsync(mfxEncodeCtrl *ctrl, mfxFrameSu
             pCurrentRefList = pRefList.get();
         }
     }
-    
+
     UpdateRefList(pCurrentRefList);
 
     if (NULL != surface)

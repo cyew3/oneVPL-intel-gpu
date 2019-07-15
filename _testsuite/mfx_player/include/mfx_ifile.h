@@ -66,8 +66,8 @@ class InterfaceProxy<IFile>
 {
     IMPLEMENT_CLONE(InterfaceProxy<IFile>);
 public:
-    InterfaceProxy(std::auto_ptr<IFile>& pTargetFile)
-        : InterfaceProxyBase<IFile>(pTargetFile)
+    InterfaceProxy(std::unique_ptr<IFile> &&pTargetFile)
+        : InterfaceProxyBase<IFile>(std::move(pTargetFile))
     {
     }
     virtual mfxStatus GetInfo(const tstring & path, mfxU64 &attr)

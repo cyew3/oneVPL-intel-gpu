@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -23,8 +23,8 @@ public:
         CPAVPVideo  *pavpVideo
         , ComponentParams &refParams
         , mfxStatus *status
-        , std::auto_ptr<IVideoEncode> &pTargetEncode)
-        :MFXEncodeWRAPPER(refParams, status, pTargetEncode)
+        , std::unique_ptr<IVideoEncode> &&pTargetEncode)
+        :MFXEncodeWRAPPER(refParams, status, std::move(pTargetEncode))
         ,m_pavpVideo(pavpVideo)
     {}
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out)

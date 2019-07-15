@@ -23,7 +23,7 @@ class MFXFrameAllocatorRW
 public :
     //read means SW surfaces filled with actual data, write means gained memory can be written
     virtual mfxStatus LockFrameRW(mfxMemId mid, mfxFrameData *ptr, mfxU8 lockflag /*MFXReadWriteMid::read|write*/) = 0;
-    //write means data should be reflected 
+    //write means data should be reflected
     virtual mfxStatus UnlockFrameRW(mfxMemId mid, mfxFrameData *ptr, mfxU8 writeflag /*MFXReadWriteMid::write|0*/) = 0;
 };
 
@@ -33,8 +33,8 @@ class InterfaceProxy<MFXFrameAllocatorRW>
 {
     typedef InterfaceProxyBase<MFXFrameAllocatorRW> base;
 public:
-    InterfaceProxy(std::auto_ptr<MFXFrameAllocatorRW>& pTarget)
-        : base(pTarget)
+    InterfaceProxy(std::unique_ptr<MFXFrameAllocatorRW> &&pTarget)
+        : base(std::move(pTarget))
     {
     }
     virtual mfxStatus Init(mfxAllocatorParams *pParams)

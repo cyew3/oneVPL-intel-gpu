@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -24,14 +24,14 @@ class PrintInfoDecoder : public InterfaceProxy<IYUVSource>
     typedef InterfaceProxy<IYUVSource> base;
 
 public:
-    PrintInfoDecoder(std::auto_ptr<IYUVSource>& pTarget)
-        : base(pTarget)
+    PrintInfoDecoder(std::unique_ptr<IYUVSource> &&pTarget)
+        : base(std::move(pTarget))
     {
     }
     /*
     @brief prints resolution, for SVC, or MVC prints info for each layer/view
     */
-    virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par) 
+    virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par)
     {
         mfxStatus  sts = base::DecodeHeader(bs, par);
         mfxExtSVCSeqDesc * pSvc = NULL;
@@ -59,10 +59,10 @@ public:
                     default:
                         break;
                 }
-                
+
             }
         }
-        
+
         if (NULL != pSvc)
         {
             for (size_t j = 0; j < MFX_ARRAY_SIZE(pSvc->DependencyLayer); j++)

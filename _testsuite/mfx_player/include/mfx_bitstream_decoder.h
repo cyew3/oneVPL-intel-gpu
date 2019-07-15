@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -17,12 +17,12 @@ Copyright(c) 2011-2012 Intel Corporation. All Rights Reserved.
 #include "mfx_iproxy.h"
 #include "mfx_frame_allocator_rw.h"
 
-//TODO: siwtch to another way of holding settings and logics
+//TODO: switch to another way of holding settings and logics
 //creating an external event listener for video params after decode
 class DecodeContext
 {
 public :
-    std::auto_ptr<IYUVSource> pSource;
+    std::unique_ptr<IYUVSource> pSource;
     //allocator already set to session and initialized
     MFXFrameAllocatorRW * pAlloc;
     //session life time managed by object accepted context
@@ -35,20 +35,27 @@ public :
     ITime             * pTime;
     //
     bool                bCompleteFrame;
+
+    DecodeContext()
+        : pAlloc{}
+        , session{}
+        , pTime{}
+        , bCompleteFrame{} {}
+
+    DecodeContext(DecodeContext &&ctx) = default;
 };
 
 class BitstreamDecoder
     : public GenericStateContext<mfxBitstream2 &>
     , public InterfaceProxy<IYUVSource>
     , public IBitstreamWriter
-   
 {
     typedef InterfaceProxy<IYUVSource> base;
 public:
     //todo: here a room for dynamic initializing
-    BitstreamDecoder(DecodeContext *pCtx);
+    explicit BitstreamDecoder(DecodeContext &&ctx);
     virtual ~BitstreamDecoder();
-    
+
     //need bitstream only on input
     virtual mfxStatus Write(mfxBitstream * pBs);
 

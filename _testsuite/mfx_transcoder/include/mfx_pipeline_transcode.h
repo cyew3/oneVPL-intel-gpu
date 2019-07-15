@@ -32,7 +32,7 @@ public :
     MFXTranscodingPipeline(IMFXPipelineFactory *pFactory);
     ~MFXTranscodingPipeline();
 
-    virtual std::auto_ptr<IVideoEncode> CreateEncoder();
+    virtual std::unique_ptr<IVideoEncode> CreateEncoder();
     virtual mfxStatus ReleasePipeline();
     virtual vm_char *   GetLastErrString();
     virtual int       PrintHelp();
@@ -171,7 +171,7 @@ protected:
     mfxU16                          m_Quality;
     mfxU16                          m_RestartInterval;
 
-    virtual mfxStatus  CreateEncodeWRAPPER(std::auto_ptr<IVideoEncode> &pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp);
+    virtual mfxStatus  CreateEncodeWRAPPER(std::unique_ptr<IVideoEncode> &&pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp);
     //overrides from decoding pipeline
     virtual mfxStatus  CheckParams();
     virtual mfxStatus  CreateRender();

@@ -60,7 +60,7 @@ public:
 class OutputBitstreamTester : public MFXEncodeWRAPPER
 {
 public:
-    OutputBitstreamTester(ComponentParams &refParams, mfxStatus *status, std::auto_ptr<IVideoEncode> &pEncode);
+    OutputBitstreamTester(ComponentParams &refParams, mfxStatus *status, std::unique_ptr<IVideoEncode> &&pEncode);
     virtual ~OutputBitstreamTester() { Close(); }
     virtual mfxStatus Init(mfxVideoParam *par, const vm_char *);
     virtual mfxStatus Close();

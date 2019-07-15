@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -21,7 +21,7 @@ class TargetViewsDecoder : public InterfaceProxy<IYUVSource>
 public:
     TargetViewsDecoder( std::vector<std::pair<mfxU16, mfxU16> > & targetViewsMap
                       , mfxU16      temporalId
-                      , std::auto_ptr<IYUVSource>& pTarget);
+                      , std::unique_ptr<IYUVSource> &&pTarget);
 
     virtual mfxStatus Init(mfxVideoParam *par);
     virtual mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par);
@@ -55,8 +55,8 @@ protected:
     public:
         MVCDecoderHelper( bool bGenerateViewIds
                         , mfxVideoParam &frameParam
-                        , std::auto_ptr<IYUVSource>& pTarget)
-            : MVCDecoder(bGenerateViewIds, frameParam, pTarget )
+                        , std::unique_ptr<IYUVSource> &&pTarget)
+            : MVCDecoder(bGenerateViewIds, frameParam, std::move(pTarget) )
         {
         }
 

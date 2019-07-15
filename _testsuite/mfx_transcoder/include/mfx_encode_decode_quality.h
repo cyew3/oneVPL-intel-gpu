@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -20,7 +20,7 @@ class EncodeDecodeQuality : public MFXEncodeWRAPPER, public IMetricComparator
 public:
     EncodeDecodeQuality( ComponentParams &refParams
                        , mfxStatus       *status
-                       , std::auto_ptr<IVideoEncode> & pEncode);
+                       , std::unique_ptr<IVideoEncode> &&pEncode);
     ~EncodeDecodeQuality();
 
     mfxStatus Init(mfxVideoParam *pInit, const vm_char *pFilename);
@@ -49,17 +49,17 @@ protected:
     std::list<mfxFrameSurface1 *> m_RefSurfaces;
     mfxFrameSurface1 **           m_ppMfxSurface;
     mfxU32                        m_cNumberSurfaces;
-                                
-    //decoding                  
+
+    //decoding
     sFrameDecoder                 m_mfxDec;
     mfxBitstream                  m_inBits;
     MFXFrameAllocator           * m_pAllocator;
     mfxFrameAllocResponse         m_allocResponce;
     mfxVideoParam                 m_initParam;
     bool                          m_bInitialized;
-                                
-    //metrics calc object       
+
+    //metrics calc object
     MFXMetricComparatorRender   * m_pComparator;
-    //putdata cannot report about an error 
+    //putdata cannot report about an error
     mfxStatus                     m_lastDecStatus;
 };

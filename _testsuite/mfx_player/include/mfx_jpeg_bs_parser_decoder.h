@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -22,8 +22,8 @@ class JPEGBsParser
     typedef InterfaceProxy<IYUVSource> base;
     mfxFrameInfo m_splInfo;
 public :
-    JPEGBsParser(const mfxFrameInfo &splInfo, std::auto_ptr<IYUVSource>& pTarget)
-        : base(pTarget)
+    JPEGBsParser(const mfxFrameInfo &splInfo, std::unique_ptr<IYUVSource> &&pTarget)
+        : base(std::move(pTarget))
         , m_splInfo(splInfo)
     {
     }

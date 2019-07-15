@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -22,14 +22,14 @@ class QueryMode4Encode : public InterfaceProxy<IVideoEncode> {
     };
 
 public:
-    QueryMode4Encode(std::auto_ptr<IVideoEncode>& pEnc)
-        : base(pEnc) {
+    QueryMode4Encode(std::unique_ptr<IVideoEncode> &&pEnc)
+        : base(std::move(pEnc)) {
     }
     virtual mfxStatus Init(mfxVideoParam *par) {
         auto_ext_buffer_remove auto_buf(*par, idToRemove);
         return base::Init(par);
     }
-    
+
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) {
         {
             //query mod2

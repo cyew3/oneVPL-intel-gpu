@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -35,15 +35,15 @@ public:
         : m_pTarget (pTarget)
     {
     }
-    InterfaceProxyBase(std::auto_ptr<TIface> &pTarget)
-        : m_pTarget (pTarget)
+    InterfaceProxyBase(std::unique_ptr<TIface> &&pTarget)
+        : m_pTarget (std::move(pTarget))
     {
     }
     virtual ~InterfaceProxyBase(){}
 
 protected:
     TIface &Target(){return *m_pTarget.get();}
-    std::auto_ptr<TIface> m_pTarget;
+    std::unique_ptr<TIface> m_pTarget;
 };
 
 //rationale : interface should be derived from that base to enable automatic proxy binding, especially if there several implemntations

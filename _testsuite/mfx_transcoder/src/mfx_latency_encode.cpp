@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -12,8 +12,8 @@ Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 #include "mfx_latency_encode.h"
 #include <iomanip>
 
-LatencyEncode::LatencyEncode(bool bAggregateStat, IStringPrinter * pPrinter, ITime * pTime, std::auto_ptr<IVideoEncode>& pTarget)
-    : InterfaceProxy<IVideoEncode>(pTarget)
+LatencyEncode::LatencyEncode(bool bAggregateStat, IStringPrinter * pPrinter, ITime * pTime, std::unique_ptr<IVideoEncode> &&pTarget)
+    : InterfaceProxy<IVideoEncode>(std::move(pTarget))
     , m_pTime(pTime)
     , m_pPrinter(pPrinter)
     , m_bAggregateStat(bAggregateStat)
@@ -36,13 +36,13 @@ mfxStatus LatencyEncode::EncodeFrameAsync(mfxEncodeCtrl *ctrl, mfxFrameSurface1 
     {
         m_lastAssignedPts = surface->Data.TimeStamp = m_pTime->GetTick();
     }
-    
+
     mfxStatus sts = InterfaceProxy<IVideoEncode>::EncodeFrameAsync(ctrl, surface, bs, syncp);
 
     if (sts >= MFX_ERR_NONE && sts != MFX_WRN_DEVICE_BUSY && NULL != bs && NULL != syncp)
     {
         FrameRecord data;
-        
+
         //Encoder set timestamps in async part
         //data.nTimeIn = bs->TimeStamp;
 
@@ -61,7 +61,7 @@ mfxStatus LatencyEncode::SyncOperation(mfxSyncPoint syncp, mfxU32 wait)
 
     if (sts >= MFX_ERR_NONE && sts != MFX_WRN_IN_EXECUTION)
     {
-        FrameRecord record;        
+        FrameRecord record;
 
         //searching for syncpoint should match to first
         if (!m_Queued.empty() && syncp == m_Queued.front().syncp)

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -13,8 +13,8 @@ File Name: .h
 #include "mfx_pipeline_defs.h"
 #include "mfx_mvc_decoder.h"
 
-MVCDecoder::MVCDecoder(bool bGenerateViewIds, mfxVideoParam &frameParam, std::auto_ptr<IYUVSource>& pTarget)
-: InterfaceProxy<IYUVSource>(pTarget)
+MVCDecoder::MVCDecoder(bool bGenerateViewIds, mfxVideoParam &frameParam, std::unique_ptr<IYUVSource> &&pTarget)
+    : InterfaceProxy<IYUVSource>(std::move(pTarget))
 , m_extParams(frameParam)
 , m_sequence(m_extParams)
 , m_nCurrentViewId()

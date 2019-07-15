@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -18,8 +18,8 @@ class SeparateFilesWriter
     IMPLEMENT_CLONE(SeparateFilesWriter);
 
 public :
-    SeparateFilesWriter(std::auto_ptr<IFile>& ptarget)
-        : InterfaceProxy<IFile>(ptarget)
+    SeparateFilesWriter(std::unique_ptr<IFile> &&ptarget)
+        : InterfaceProxy<IFile>(std::move(ptarget))
         , m_nTimesReopened(0)
     {
     }
@@ -28,14 +28,14 @@ public :
     {
         if (!isOpen())
             return MFX_ERR_NONE;
-        
+
         MFX_CHECK_STS(Close());
 
         //TODO: possible external file modificators required
         if (m_file_name.empty() && m_file_ext.empty() && !m_path.empty())
         {
             //if file name provided lets grab extension
-            
+
             size_t dotPos = m_path.find_last_of(VM_STRING('.'));
             m_file_name = m_path.substr(0, dotPos);
             m_file_ext = m_path.substr(dotPos + 1);
@@ -50,7 +50,7 @@ public :
 
         return sts;
     }
-        
+
     virtual mfxStatus Open(const tstring & path, const tstring& access)
     {
         m_path           = path;
@@ -58,7 +58,7 @@ public :
         m_nTimesReopened = 0;
         m_file_name.clear();
         m_file_ext.clear();
-    
+
         return InterfaceProxy<IFile>::Open(path, access);
     }
 

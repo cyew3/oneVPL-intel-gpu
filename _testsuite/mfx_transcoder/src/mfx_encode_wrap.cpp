@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -18,10 +18,10 @@ File Name: .h
 #include "ippi.h"
 
 
-MFXEncodeWRAPPER::MFXEncodeWRAPPER(ComponentParams & refParams, mfxStatus *status, std::auto_ptr<IVideoEncode>& pEncode)
+MFXEncodeWRAPPER::MFXEncodeWRAPPER(ComponentParams & refParams, mfxStatus *status, std::unique_ptr<IVideoEncode> &&pEncode)
     : MFXFileWriteRender(FileWriterRenderInputParams(MFX_FOURCC_NV12), refParams.m_pSession, status)
     , m_refParams(refParams)
-    , m_encoder(pEncode)
+    , m_encoder(std::move(pEncode))
     , m_ExtraParams()
 {
     m_pSyncPoints       = NULL;
@@ -29,7 +29,7 @@ MFXEncodeWRAPPER::MFXEncodeWRAPPER(ComponentParams & refParams, mfxStatus *statu
     m_nSyncPoints       = 0;
     m_pCacheBuffer      = NULL;
     m_pRefFile          = NULL;
-    
+
     if (!refParams.m_pSession && status)
     {
         *status = MFX_ERR_NULL_PTR;

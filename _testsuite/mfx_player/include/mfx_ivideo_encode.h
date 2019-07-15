@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 
 File Name: mfx_ivideo_encode.h
@@ -58,8 +58,8 @@ class InterfaceProxy<IVideoEncode>
 {
 public:
 
-    InterfaceProxy (std::auto_ptr<IVideoEncode>& pTarget)
-        : InterfaceProxyBase<IVideoEncode>(pTarget){}
+    InterfaceProxy (std::unique_ptr<IVideoEncode> &&pTarget)
+        : InterfaceProxyBase<IVideoEncode>(std::move(pTarget)){}
    mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) {
        return m_pTarget->Query(in, out);
    }

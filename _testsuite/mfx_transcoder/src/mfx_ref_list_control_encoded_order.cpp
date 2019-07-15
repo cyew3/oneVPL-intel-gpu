@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -13,8 +13,8 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 #include "mfx_serializer.h"
 #include "mfx_ref_list_control_encoded_order.h"
 
-RefListControlEncodedOrder::RefListControlEncodedOrder (std::auto_ptr<IVideoEncode>& pTarget, const vm_char* par_file)
-    : InterfaceProxy<IVideoEncode>(pTarget)
+RefListControlEncodedOrder::RefListControlEncodedOrder (std::unique_ptr<IVideoEncode> &&pTarget, const vm_char* par_file)
+    : InterfaceProxy<IVideoEncode>(std::move(pTarget))
     , m_file_name(par_file)
 {
 }

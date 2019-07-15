@@ -28,8 +28,8 @@ class CRCFileWriter
     tstring m_crcFile;
     int m_frameIndex = 0;
 public:
-    CRCFileWriter(const tstring &sCrcFile, std::auto_ptr<IFile>& pTargetFile)
-        : base(pTargetFile)
+    CRCFileWriter(const tstring &sCrcFile, std::unique_ptr<IFile> &&pTargetFile)
+        : base(std::move(pTargetFile))
         , m_crc32()
         , m_crcFile(sCrcFile)
     {

@@ -57,8 +57,8 @@ class InterfaceProxy <IMFXPipelineFactory>
     typedef InterfaceProxyBase<IMFXPipelineFactory> base;
 
 public:
-    InterfaceProxy(std::auto_ptr<IMFXPipelineFactory> & pActual)
-        : base(pActual)
+    InterfaceProxy(std::unique_ptr<IMFXPipelineFactory> &pActual)
+        : base(std::move(pActual))
     {
     }
     virtual mfx_shared_ptr<IRandom> CreateRandomizer()
@@ -73,11 +73,11 @@ public:
     {
         return m_pTarget->CreateVPP(pParams);
     }
-    virtual IYUVSource        * CreateDecode( const IPipelineObjectDesc & pParams) 
+    virtual IYUVSource        * CreateDecode( const IPipelineObjectDesc & pParams)
     {
         return m_pTarget->CreateDecode(pParams);
-    }    
-    virtual IMFXVideoRender   * CreateRender( IPipelineObjectDesc * pParams) 
+    }
+    virtual IMFXVideoRender   * CreateRender( IPipelineObjectDesc * pParams)
     {
         return m_pTarget->CreateRender(pParams);
     }
@@ -85,11 +85,11 @@ public:
     {
         return m_pTarget->CreateFileWriter(pParams);
     }
-    virtual IVideoEncode   * CreateVideoEncode ( IPipelineObjectDesc * pParams) 
+    virtual IVideoEncode   * CreateVideoEncode ( IPipelineObjectDesc * pParams)
     {
         return m_pTarget->CreateVideoEncode(pParams);
     }
-    virtual IAllocatorFactory * CreateAllocatorFactory( IPipelineObjectDesc * pParams) 
+    virtual IAllocatorFactory * CreateAllocatorFactory( IPipelineObjectDesc * pParams)
     {
         return m_pTarget->CreateAllocatorFactory(pParams);
     }
@@ -97,7 +97,7 @@ public:
     {
         return m_pTarget->CreateBitstreamCVTFactory(pParams);
     }
-    virtual IFile * CreatePARReader(IPipelineObjectDesc * pParams) 
+    virtual IFile * CreatePARReader(IPipelineObjectDesc * pParams)
     {
         return m_pTarget->CreatePARReader(pParams);
     }

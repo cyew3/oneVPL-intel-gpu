@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -17,12 +17,12 @@ File Name: .h
 #include "mfx_extended_buffer.h"
 
 
-class RefListControlEncode 
+class RefListControlEncode
     : public InterfaceProxy<IVideoEncode>
     , public ICurrentFrameControl
 {
 public:
-    RefListControlEncode (std::auto_ptr<IVideoEncode>& pTarget);
+    RefListControlEncode (std::unique_ptr<IVideoEncode> &&pTarget);
 
     //ICurrentFrameControl
     virtual void AddExtBuffer(mfxExtBuffer &buffer);

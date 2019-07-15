@@ -2724,7 +2724,7 @@ mfxStatus MFXTranscodingPipeline::CreateYUVSource()
 {
     if (IsMultiReaderEnabled())
     {
-        std::auto_ptr<MultiDecode> pDecode (new MultiDecode());
+        std::unique_ptr<MultiDecode> pDecode (new MultiDecode());
         for (size_t i = 0; i < m_filesForDependency.size() && !m_filesForDependency[i].empty(); i++)
         {
             //TODO: for now it is impossible to have several mfx_decoders, since they require separate sessions
@@ -2748,7 +2748,7 @@ mfxStatus MFXTranscodingPipeline::CreateYUVSource()
 
             pDecode->Register(m_pYUVSource.release(), 1);
         }
-        m_pYUVSource = pDecode;
+        m_pYUVSource = std::move(pDecode);
     }
     else
     {
@@ -2871,12 +2871,12 @@ mfxStatus  MFXTranscodingPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
         MFX_CHECK_STS(m_components[eREN].m_pSession->JoinSession(decCtx.session));
 
         //TODO: need to close session somehow
-        std::auto_ptr<IYUVSource> pDec(new MFXDecoder(decCtx.session));
+        std::unique_ptr<IYUVSource> pDec(new MFXDecoder(decCtx.session));
 
         //decorating decode
         if (m_components[eREN].m_bCalcLatency)
         {
-            pDec.reset(new LatencyDecoder(false, NULL, &PerfCounterTime::Instance(), VM_STRING("Decoder2"), pDec));
+            pDec.reset(new LatencyDecoder(false, NULL, &PerfCounterTime::Instance(), VM_STRING("Decoder2"), std::move(pDec)));
         }
 
         // pointer to allocator parameters structure needed for allocator init
@@ -2974,10 +2974,10 @@ mfxStatus  MFXTranscodingPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
         MFX_CHECK_STS(MFXVideoCORE_SetFrameAllocator(decCtx.session, pAlloc.get()));
 
         decCtx.pAlloc  = pAlloc.release();
-        decCtx.pSource = pDec;
+        decCtx.pSource = std::move(pDec);
 
         //TODO:pasthru -o option to downstream
-        pSink.reset(new Adapter<IFile, IBitstreamWriter>(new BitstreamDecoder(&decCtx)));
+        pSink.reset(new Adapter<IFile, IBitstreamWriter>(new BitstreamDecoder(std::move(decCtx))));
     }
 
     if (0 == vm_string_strlen(m_inParams.strDstFile))
@@ -2991,7 +2991,7 @@ mfxStatus  MFXTranscodingPipeline::CreateFileSink(std::auto_ptr<IFile> &pSink)
     return MFX_ERR_NONE;
 }
 
-std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
+std::unique_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
 {
     //create ivideoencode implementation
     PipelineObjectDesc<IVideoEncode> createParams;
@@ -3015,13 +3015,13 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
             , NULL);
     }
 
-    std::auto_ptr<IVideoEncode> pEncoder ( m_pFactory->CreateVideoEncode(&createParams));
+    std::unique_ptr<IVideoEncode> pEncoder ( m_pFactory->CreateVideoEncode(&createParams));
 
     //wrapper for jpeg encoder handles awkward behavior patterns
     switch (m_EncParams.mfx.CodecId)
     {
         case MFX_CODEC_JPEG :
-            pEncoder.reset(new MFXJpegEncWrap(pEncoder));
+            pEncoder.reset(new MFXJpegEncWrap(std::move(pEncoder)));
         break;
         default:
         break;
@@ -3033,49 +3033,49 @@ std::auto_ptr<IVideoEncode> MFXTranscodingPipeline::CreateEncoder()
               m_components[eDEC].m_bCalcLatency && m_inParams.bNoPipelineSync
             , NULL //console printer will be created
             , &PerfCounterTime::Instance()
-            , pEncoder));
+            , std::move(pEncoder)));
     }
 
     if (m_inParams.bCreateRefListControl )
     {
-        pEncoder.reset(new RefListControlEncode(pEncoder));
+        pEncoder.reset(new RefListControlEncode(std::move(pEncoder)));
     }
 
     if (m_inParams.bCreateEncFrameInfo )
     {
-        pEncoder.reset(new EncodedFrameInfoEncoder(pEncoder));
+        pEncoder.reset(new EncodedFrameInfoEncoder(std::move(pEncoder)));
     }
 
     if (m_inParams.EncodedOrder)
     {
         if (m_inParams.bExternalRefListEncodedOrder)
-            pEncoder.reset(new RefListControlEncodedOrder(pEncoder, m_inParams.encOrderRefListsParFile));
+            pEncoder.reset(new RefListControlEncodedOrder(std::move(pEncoder), m_inParams.encOrderRefListsParFile));
         else
-            pEncoder.reset(new EncodeOrderEncode(pEncoder, m_inParams.useEncOrderParFile, m_inParams.encOrderParFile));
+            pEncoder.reset(new EncodeOrderEncode(std::move(pEncoder), m_inParams.useEncOrderParFile, m_inParams.encOrderParFile));
     }
 
     if (m_inParams.bDisableIpFieldPair)
     {
-        pEncoder.reset(new IPFieldPairDisableEncode(pEncoder));
+        pEncoder.reset(new IPFieldPairDisableEncode(std::move(pEncoder)));
     }
 
     if (MFX_CODINGOPTION_ON == m_extCodingOptions->FieldOutput)
     {
-        pEncoder.reset(new FieldOutputEncoder(pEncoder));
+        pEncoder.reset(new FieldOutputEncoder(std::move(pEncoder)));
     }
 
     if (!m_extEncoderCapability.IsZero())
     {
-        pEncoder.reset(new QueryMode4Encode(pEncoder));
+        pEncoder.reset(new QueryMode4Encode(std::move(pEncoder)));
     }
 
     if (m_inParams.bCreatePerFrameExtBuf)
     {
-        pEncoder.reset(new PerFrameExtBufEncode(pEncoder));
+        pEncoder.reset(new PerFrameExtBufEncode(std::move(pEncoder)));
     }
 
     //TODO: always attaching MVC handler, is it possible not to do this
-    pEncoder.reset(new MVCHandler<IVideoEncode>(m_components[eREN].m_extParams, false, pEncoder));
+    pEncoder.reset(new MVCHandler<IVideoEncode>(m_components[eREN].m_extParams, false, std::move(pEncoder)));
     m_pEncoder = pEncoder.get();
     return pEncoder;
 }
@@ -3087,10 +3087,8 @@ mfxStatus MFXTranscodingPipeline::CreateRender()
         return MFX_ERR_NONE;
     }
 
-    std::auto_ptr<IVideoEncode> pEncoder = CreateEncoder();
-
     MFXEncodeWRAPPER * pEncoderWrp = NULL;
-    MFX_CHECK_STS(CreateEncodeWRAPPER(pEncoder, &pEncoderWrp));
+    MFX_CHECK_STS(CreateEncodeWRAPPER(CreateEncoder(), &pEncoderWrp));
     m_pRender = pEncoderWrp;
 
     m_inParams.encodeExtraParams.pRefFile = m_inParams.refFile;
@@ -3102,7 +3100,7 @@ mfxStatus MFXTranscodingPipeline::CreateRender()
     return DecorateRender();
 }
 
-mfxStatus MFXTranscodingPipeline::CreateEncodeWRAPPER(std::auto_ptr<IVideoEncode> &pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp)
+mfxStatus MFXTranscodingPipeline::CreateEncodeWRAPPER(std::unique_ptr<IVideoEncode> &&pEncoder, MFXEncodeWRAPPER ** ppEncoderWrp)
 {
     mfxStatus sts = MFX_ERR_NONE;
     //////////////////////////////////////////////////////////////////////////
@@ -3110,7 +3108,7 @@ mfxStatus MFXTranscodingPipeline::CreateEncodeWRAPPER(std::auto_ptr<IVideoEncode
     if (m_RenderType == MFX_METRIC_CHECK_RENDER)
     {
         EncodeDecodeQuality * pEncoderQlty;
-        MFX_CHECK_WITH_ERR(*ppEncoderWrp = pEncoderQlty = new EncodeDecodeQuality(m_components[eREN], &sts, pEncoder)
+        MFX_CHECK_WITH_ERR(*ppEncoderWrp = pEncoderQlty = new EncodeDecodeQuality(m_components[eREN], &sts, std::move(pEncoder))
             , MFX_ERR_MEMORY_ALLOC);
 
         if (m_bYuvDumpMode)
@@ -3126,7 +3124,7 @@ mfxStatus MFXTranscodingPipeline::CreateEncodeWRAPPER(std::auto_ptr<IVideoEncode
         MFX_CHECK_STS(pEncoderQlty->SetOutputPerfFile(m_inParams.perfFile));
     }else
     {
-        MFX_CHECK_WITH_ERR(*ppEncoderWrp = new MFXEncodeWRAPPER(m_components[eREN], &sts, pEncoder), MFX_ERR_MEMORY_ALLOC);
+        MFX_CHECK_WITH_ERR(*ppEncoderWrp = new MFXEncodeWRAPPER(m_components[eREN], &sts, std::move(pEncoder)), MFX_ERR_MEMORY_ALLOC);
     }
 
 

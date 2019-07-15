@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -20,11 +20,11 @@ class RotatedDecoder : public InterfaceProxy<IYUVSource>
     std::map<mfxU16, mfxU16> rotations;
 public:
 
-    RotatedDecoder(mfxU16 nRotation, std::auto_ptr<IYUVSource>& pActual)
-        : base(pActual)
+    RotatedDecoder(mfxU16 nRotation, std::unique_ptr<IYUVSource> &&pActual)
+        : base(std::move(pActual))
         , m_rotation(nRotation)
     {
-        //setting up rotation 
+        //setting up rotation
         rotations[0]   = MFX_ROTATION_0;
         rotations[90]  = MFX_ROTATION_90;
         rotations[180] = MFX_ROTATION_180;
@@ -40,7 +40,7 @@ public:
             MFX_CHECK((par->mfx.Rotation = rotations[m_rotation]) != 0);
 
             PrintInfo(VM_STRING("Rotation"), VM_STRING("%d"), m_rotation);
-         
+
             //pattern could be any I hope to check rotation
             mfxU16 ioPattern = par->IOPattern;
             par->IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;

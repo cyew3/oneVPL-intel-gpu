@@ -65,7 +65,7 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
     info.Width         = mfx_align((mfxU16)(infoIn.Width  + infoIn.CropX), 0x10);
     info.Height        = mfx_align((mfxU16)(infoIn.Height + infoIn.CropY), (info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)? 0x10 : 0x20);
 
-    std::unique_ptr <IBitstreamConverterFactory > bsfac(pFactory->CreateBitstreamCVTFactory(NULL));
+    std::unique_ptr <IBitstreamConverterFactory > bsfac(pFactory->CreateBitstreamCVTFactory(nullptr));
     m_pConverter.reset(bsfac->MakeConverter(nInFourCC, info.FourCC));
     if (NULL == m_pConverter.get())
     {

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -25,7 +25,7 @@ class ExecuteType
 
 //has single function execute for mediasdk execution functions, that can be called externally
 //other functions with same interface are supported already in InterfaceProxy
-//has single function Init : due to interfaces specific 
+//has single function Init : due to interfaces specific
 //has single function GetVideoparam : due to interfaces specific
 
 template<class T>
@@ -58,8 +58,8 @@ class UnifiedExecuteProxy<IYUVSource>
     : public InterfaceProxy<IYUVSource>
 {
 public:
-    UnifiedExecuteProxy(std::auto_ptr<IYUVSource>&p)
-        : InterfaceProxy<IYUVSource>(p)
+    UnifiedExecuteProxy(std::unique_ptr<IYUVSource> &&p)
+        : InterfaceProxy<IYUVSource>(std::move(p))
     {}
     virtual mfxStatus DecodeFrameAsync(mfxBitstream2 &bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)
     {
@@ -171,8 +171,8 @@ class UnifiedExecuteProxy<IVideoEncode>
     : public InterfaceProxy<IVideoEncode>
 {
 public:
-    UnifiedExecuteProxy(std::auto_ptr<IVideoEncode> p)
-        : InterfaceProxy<IVideoEncode>(p)
+    UnifiedExecuteProxy(std::unique_ptr<IVideoEncode> &&p)
+        : InterfaceProxy<IVideoEncode>(std::move(p))
     {}
     virtual mfxStatus EncodeFrameAsync(mfxEncodeCtrl * pCtrl, mfxFrameSurface1 *surface, mfxBitstream *pBs, mfxSyncPoint *pSync)
     {

@@ -14,7 +14,7 @@ File Name: test_thread_safety.cpp
 #include "test_thread_safety_cmdline.h"
 #include <thread>
 
-std::auto_ptr<OutputRegistrator> outReg;
+std::unique_ptr<OutputRegistrator> outReg;
 
 struct ThreadParam
 {

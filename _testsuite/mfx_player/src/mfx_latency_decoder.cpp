@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -14,8 +14,8 @@ File Name: .h
 #include "mfx_latency_decoder.h"
 #include <iomanip>
 
-LatencyDecoder::LatencyDecoder(bool bAggregateInfo, IStringPrinter * pPrinter, ITime * pTimer, const tstring & name, std::auto_ptr<IYUVSource>&  pTarget)
-    : InterfaceProxy<IYUVSource>(pTarget)
+LatencyDecoder::LatencyDecoder(bool bAggregateInfo, IStringPrinter * pPrinter, ITime * pTimer, const tstring & name, std::unique_ptr<IYUVSource> &&pTarget)
+    : InterfaceProxy<IYUVSource>(std::move(pTarget))
     , m_bAggregateInfo(bAggregateInfo)
     , m_bFirstCall(true)
     , m_decodeHeaderTimestamp()
