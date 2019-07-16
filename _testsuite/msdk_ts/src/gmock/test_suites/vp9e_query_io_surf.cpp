@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -283,7 +283,7 @@ namespace vp9e_query_io_surf
 
                 QueryIOSurf(m_session, m_pPar, &request2);
 
-                mfxU16 expected_numframemin = m_pRequest->NumFrameMin + m_pPar->AsyncDepth - 1;
+                mfxU16 expected_numframemin = m_pRequest->NumFrameMin + m_pPar->AsyncDepth;
                 EXPECT_EQ(expected_numframemin, request2.NumFrameMin)
                     << "ERROR: For AsyncDepth=" << m_pPar->AsyncDepth << " NumFrameMin expected to be "
                     << expected_numframemin << ", but it is " << request2.NumFrameMin;

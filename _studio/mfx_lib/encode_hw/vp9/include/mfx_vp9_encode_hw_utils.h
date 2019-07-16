@@ -661,7 +661,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
     {
         // number of input surfaces is same for VIDEO and SYSTEM memory
         // because so far encoder doesn't support LookAhead and B-frames
-        return video.AsyncDepth;
+        return video.AsyncDepth + ((video.AsyncDepth > 1)? 1: 0);
     }
 
     class Task
