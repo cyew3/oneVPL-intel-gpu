@@ -896,8 +896,8 @@ mfxU16 GetDefaultMFECount(MfxVideoParam const & par,
     ENCODE_CAPS_HEVC const & hwCaps)
 {
     par; hwCaps;
-    // 4 by default now
-    return 4;
+    // 8 by default now
+    return 8;
 }
 
 mfxU32 GetDefaultMFETimeout(MfxVideoParam const & par)
@@ -2864,7 +2864,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
     changed += CheckTriStateOption(par.m_ext.DDI.QpAdjust);
 
 #if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    if (mfeParam !=NULL && mfeParam->MaxNumFrames > 1)
+    if (mfeParam && mfeParam->MaxNumFrames > 1)
     {
         if (mfeParam->MFMode == MFX_MF_DEFAULT)
         {
@@ -2874,10 +2874,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
         mfxU16 maxNumFrames = GetDefaultMFECount(par, caps.ddi_caps);
         if (mfeParam->MaxNumFrames > maxNumFrames)
             mfeParam->MaxNumFrames = maxNumFrames;
-        if (mfeControl != NULL && mfeControl->Timeout == 0)
-        {
+        if (mfeControl && mfeControl->Timeout == 0)
             mfeControl->Timeout = GetDefaultMFETimeout(par);
-        }
     }
 
 #endif

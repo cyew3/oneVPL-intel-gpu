@@ -39,7 +39,7 @@ MFEDXVAEncoder::MFEDXVAEncoder() :
     , m_pVideoContext(nullptr)
     , m_pMfeContext(nullptr)
     , m_framesToCombine(0)
-    , m_maxFramesToCombine(0)
+    , m_maxFramesToCombine(MAX_FRAMES_TO_COMBINE)
     , m_framesCollected(0)
     , m_minTimeToWait(0)
     , m_pAvcCAPS(nullptr)
@@ -48,8 +48,8 @@ MFEDXVAEncoder::MFEDXVAEncoder() :
     , m_pAv1CAPS(NULL)
 #endif
 {
-    m_contexts.reserve(MAX_FRAMES_TO_COMBINE);
-    m_streams.reserve(MAX_FRAMES_TO_COMBINE);
+    m_contexts.reserve(m_maxFramesToCombine);
+    m_streams.reserve(m_maxFramesToCombine);
 }
 
 ID3D11VideoDecoder* MFEDXVAEncoder::GetVideoDecoder()
@@ -186,8 +186,6 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
     m_pVideoDevice = pVideoDevice;
     m_pVideoContext = pVideoContext;
 
-    m_maxFramesToCombine = MAX_FRAMES_TO_COMBINE;
-
     m_streams_pool.clear();
     m_toSubmit.clear();
 
@@ -290,13 +288,12 @@ mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
     //stream being added during BeginFrame call.
     StreamsIter_t iter;
     // append the pool with a new item;
-    //Adapter requires to assign stream Id here for encoder.
+    // Adapter requires to assign stream Id here for encoder.
     if (nullptr != m_pMfeContext)
     {
-        //TMP WA for SKL due to number of frames limitation in different scenarios:
-        //to simplify submission process and not add additional checks for frame wait depending on input parameters
-        //if there are encoder want to run less frames within the same MFE Adapter(parent session) align to less now
-        //in general just if someone set 3, but another one set 2 after that(or we need to decrease due to parameters) - use 2 for all.
+        // To simplify submission process and not add additional checks for frame wait depending on input parameters.
+        // If there are encoder want to run less frames within the same MFE Adapter(parent session) then align to less.
+        // In general if someone set 3, but another one set 2, after that(or we need to decrease due to parameters) - use 2 for all.
         m_maxFramesToCombine = m_maxFramesToCombine > par.MaxNumFrames ? par.MaxNumFrames : m_maxFramesToCombine;
     }
     else

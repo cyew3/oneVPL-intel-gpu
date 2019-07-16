@@ -154,8 +154,7 @@ private:
 
     //minimal timeout of all streams
     unsigned long long m_minTimeToWait;
-    // currently up-to-to 3 frames worth combining
-    static const uint32_t MAX_FRAMES_TO_COMBINE = 3;
+    static const uint32_t MAX_FRAMES_TO_COMBINE = 8;
 };
 #endif // MFX_VA_WIN && MFX_ENABLE_MFE
 
