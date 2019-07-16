@@ -3460,16 +3460,19 @@ void LookAheadBrc2::GetQp(const BRCFrameParams& par, mfxBRCFrameCtrl &frameCtrl)
     {
         minQp = SelectQp(m_laData, m_laDataStat, MaxRate * (m_laData.size() + m_laDataStat.size() - m_first), m_laData.size(), m_first);
     }
-    else if ((ratio > m_thresholds.maxAvgRateRatio &&  ratioLocal > 1.00) || (ratioLocal > m_thresholds.maxRateRatioLocal))
+    else if ((ratio > m_thresholds.maxAvgRateRatio &&  ratioLocal > 1.00) ||
+             (ratio > criticalRatio(m_thresholds.maxAvgRateRatio) && ratioLocal > m_thresholds.minRateRatioLocal) ||
+             (ratioLocal > m_thresholds.maxRateRatioLocal))
     {
-        minQp = std::max(minQp, (mfxU8)(baseQP + ((ratioLocal > criticalRatio(m_thresholds.maxAvgRateRatio)) ? 2 : 1)));
+        minQp = std::max(minQp, (mfxU8)(baseQP + ((ratioLocal > criticalRatio(m_thresholds.maxRateRatioLocal)) ? 2 : 1)));
     }
 
     if (MinRate)
     {
         maxQp = SelectQp(m_laData, m_laDataStat, MinRate * (m_laData.size() + m_laDataStat.size() - m_first), m_laData.size(), m_first);
     }
-    else  if ((ratio < m_thresholds.minAvgRateRatio && ratioLocal < 1.00) || (ratioLocal < m_thresholds.minRateRatioLocal))
+    else  if ((ratio < m_thresholds.minAvgRateRatio && ratioLocal < 1.00) ||
+              (ratioLocal < m_thresholds.minRateRatioLocal && ratio < m_thresholds.maxAvgRateRatio))
     {
         maxQp = (mfxU8)(baseQP - 1);
     }
