@@ -2600,10 +2600,6 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         if (pParams->bFieldWeavingExt || pParams->bFieldSplittingExt)
         {
             SetStreamFrameFormat(refIdx, D3D11PictureStructureMapping(pParams->targetSurface.frameInfo.PicStruct));
-            if (pParams->bFieldWeavingExt)
-            {
-                videoProcessorStreams[refIdx].OutputIndex = 1;
-            }
         }
         else
         {
@@ -2993,6 +2989,15 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
         videoProcessorStreams[0].ppFutureSurfaces = (pParams->fwdRefCount > 0) ? &(m_pInputView[pParams->bkwdRefCount + 1]) : NULL;
         videoProcessorStreams[0].FutureFrames     = pParams->fwdRefCount;
+
+        // Starting from ATS field weaving performs on driver.
+        // Driver expects that ppPastSurfaces contains a pointer to an array of ID3D11VideoProcessorInputView for the bottom field.
+        // Otherwise, the fields of the output stream will be placed in the wrong order.
+        if (pParams->bFieldWeavingExt)
+        {
+            videoProcessorStreams[0].ppPastSurfaces = (pParams->bkwdRefCount > 0) ? &m_pInputView[pParams->bkwdRefCount] : NULL;
+            videoProcessorStreams[0].pInputSurface = m_pInputView[0];
+        }
 
         sts = ExecuteBlt(
         (ID3D11Texture2D *)pParams->targetSurface.hdl.first,
