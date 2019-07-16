@@ -687,12 +687,9 @@ namespace hevce_init
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
         {
-            if ((g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
-                && (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2 ||
-                    m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 ||
-                    m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216))
+            if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON && m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216)
             {
-                g_tsLog << "\n\nWARNING: 4:2:2 formats are supported in HEVCe DualPipe only!\n\n\n";
+                g_tsLog << "\n\nWARNING: Y216 format is supported in HEVCe DualPipe only!\n\n\n";
                 throw tsSKIP;
             }
 

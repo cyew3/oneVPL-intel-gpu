@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2019 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_query.cpp
 
@@ -404,10 +404,9 @@ namespace hevce_query
                 return 0;
             }
 
-            if ((g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
-                && (fourcc_id == MFX_FOURCC_YUY2 || fourcc_id == MFX_FOURCC_Y210 || fourcc_id == GMOCK_FOURCC_Y212))
+            if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON && fourcc_id == GMOCK_FOURCC_Y212)
             {
-                g_tsLog << "\n\nWARNING: 4:2:2 formats are supported in HEVCe DualPipe only!\n\n\n";
+                g_tsLog << "\n\nWARNING: Y212 format is supported in HEVCe DualPipe only!\n\n\n";
                 throw tsSKIP;
             }
 

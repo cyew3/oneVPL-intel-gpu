@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -110,10 +110,9 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
             g_tsStatus.disable();
             throw tsSKIP;
         }
-        if ((fourcc_id == MFX_FOURCC_YUY2 || fourcc_id == MFX_FOURCC_Y210 || fourcc_id == MFX_FOURCC_Y216)
-            && (g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+        if (fourcc_id == MFX_FOURCC_Y216 && g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
         {
-            g_tsLog << "\n\nWARNING: 4:2:2 formats are NOT supported on VDENC!\n\n\n";
+            g_tsLog << "\n\nWARNING: Y216 format is NOT supported on VDENC!\n\n\n";
             g_tsStatus.disable();
             throw tsSKIP;
         }
