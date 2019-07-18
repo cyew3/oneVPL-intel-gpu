@@ -137,7 +137,7 @@ Perform detection of picture structure                                          
 
 ###### Table 2: Color Conversion Support in VPP*
 
-  **Output Color**><br>**Input Color**˅| **NV12** | **RGB32** | **P010** | **P210** | **NV16** | **A2RGB10**
+ **Output Color**><br>**Input Color**˅| **NV12** | **RGB32** | **P010** | **P210** | **NV16** | **A2RGB10**
  --- | --- | --- | --- | --- | --- | ---
 RGB4 (RGB32) | X<br>limited | X<br>Limited |  |  |  |
 NV12 | X | X | X |   | X |
@@ -153,7 +153,7 @@ The SDK video processing pipeline supports limited functionality for RGB4 input.
 
 ###### Table 3: Deinterlacing/Inverse Telecine Support in VPP
 
-**Input Field Rate (fps) Interlaced** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive**
+ **Input Field Rate (fps) Interlaced** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive**
  ---- | ---------------- | --- | ----- | --- | --- | ----- | ---
  -    | 23.976           | 25  | 29.97 | 30  | 50  | 59.94 | 60
 29.97 | Inverse Telecine |     | X     |     |     |       |
