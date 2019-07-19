@@ -115,8 +115,8 @@ namespace hevce_roi
         {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 64, 64, (-1)*HEVCE_ROI_MAXIMUM_ABS_QP_VALUE - 1 },
 
         // one correct region with CBR [quantity, top, left, right, bottom, qp-alter]
-        // CBR is no more supported - all new drivers are reporting caps.ROIBRCPriorityLevelSupport = 0.
-        {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 128, 128, 1,
+        // CBR is no more supported, but msdk make conversion to Delta QP mode
+        {/*13*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 128, 128, 1,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
         }
