@@ -32,10 +32,12 @@
 using namespace MfxHwH264Encode;
 
 #define DEFAULT_TIMEOUT_AVCE_HW 60000
+#define DEFAULT_TIMEOUT_AVCE_HW_SIM 600000
 
 D3DXCommonEncoder::D3DXCommonEncoder()
     :pSheduler(NULL)
     ,m_bSingleThreadMode(false)
+    ,m_timeoutSync(0)
     ,m_timeoutForTDR(0)
 {
 }
@@ -54,13 +56,15 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *core)
 
     MFX_SCHEDULER_PARAM schedule_Param;
     mfxStatus paramsts = pSheduler->GetParam(&schedule_Param);
+    eMFXHWType platform = core->GetHWType();
     if (paramsts == MFX_ERR_NONE && schedule_Param.flags == MFX_SINGLE_THREAD)
     {
         m_bSingleThreadMode = true;
 
-        eMFXHWType platform = core->GetHWType();
         m_timeoutForTDR = (platform >= MFX_HW_LKF) ? MFX_H264ENC_HW_TASK_TIMEOUT_SIM : MFX_H264ENC_HW_TASK_TIMEOUT;
     }
+
+    m_timeoutSync = (platform >= MFX_HW_LKF) ? DEFAULT_TIMEOUT_AVCE_HW_SIM : DEFAULT_TIMEOUT_AVCE_HW;
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     m_EventCache.reset(new EventCache());
@@ -140,7 +144,7 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
     // If the task was submitted to the driver
     if (task.m_GpuEvent[fieldId].gpuSyncEvent != INVALID_HANDLE_VALUE)
     {
-        mfxU32 timeOutMs = DEFAULT_TIMEOUT_AVCE_HW;
+        mfxU32 timeOutMs = m_timeoutSync;
 
         if (m_bSingleThreadMode)
         {
