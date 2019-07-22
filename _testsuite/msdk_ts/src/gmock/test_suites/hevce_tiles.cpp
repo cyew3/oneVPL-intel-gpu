@@ -46,12 +46,11 @@ namespace hevce_tiles {
         NONE,
         TRIVIAL,        // 1x1
         UNSUP,          // runs ok when supported, also runs on old platforms
-        GT_MAX_ROW,     // spec tile count limit, uses 8K
-        GT_MAX_COL,     // spec tile count limit, uses 8K
-        GT_MAX_COL_WRN, // spec tile width limit, use W < 2*256 to avoid #pipe conflict
-        GT_MAX_RAW_WRN, // spec tile height limit (x2 for 2 (>1) pipes)
-        NxN,            // square split. No case for MxN
-        GT_MAX_PIP_WRN  // #tiles <= #pipes when #pipes>1, use W >= 3*256 to avoid min tile width conflict
+        GT_MAX_ROW,     // spec tile count limit, H >= 256 * 23
+        GT_MAX_COL,     // spec tile count limit, W >= 256 * 21
+        GT_MAX_COL_WRN, // spec tile width limit  (256)
+        GT_MAX_RAW_WRN, // spec tile height limit (64 or 128 if >1 pipes)
+        NxN             // rectangular split
    };
 
     struct tc_struct {
@@ -119,11 +118,10 @@ namespace hevce_tiles {
             TILES_PARS(TILES_EXPECTED_VDENC, 3, 1)
         } },
 
-        // width < 2*256
         {/*04*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT | ENCODE, GT_MAX_COL_WRN, {
-            TILES_PARS(TILES,          1, 2),
-            TILES_PARS(TILES_EXPECTED, 1, 1)
+            TILES_PARS(TILES,          1, 3),
+            TILES_PARS(TILES_EXPECTED, 1, 2)
         } },
 
         // height >= 23*128
@@ -152,11 +150,10 @@ namespace hevce_tiles {
             TILES_PARS(TILES_EXPECTED, 3, 2)
         } },
 
-        // width >= 3*256, for #pipes > 1
         {/*09*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
-            QUERY | INIT | ENCODE, GT_MAX_PIP_WRN, {
-            TILES_PARS(TILES,          1, 3),
-            TILES_PARS(TILES_EXPECTED, 1, 2)
+            QUERY | INIT | ENCODE, NxN, {
+            TILES_PARS(TILES,          3, 5),
+            TILES_PARS(TILES_EXPECTED, 3, 2)
         } },
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
@@ -207,9 +204,6 @@ namespace hevce_tiles {
         }
         else if (tc.sub_type == GT_MAX_ROW) {
             m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 128 * 23; // 128 is 2*64 for LP
-        }
-        else if (tc.sub_type == GT_MAX_COL_WRN) {
-            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 256 * 2 - 64;
         }
 
         m_par.AddExtBuffer(MFX_EXTBUFF_HEVC_TILES, sizeof(mfxExtHEVCTiles));
@@ -287,34 +281,8 @@ namespace hevce_tiles {
                 SETPARS(&extHEVCTiles_expectation, TILES_EXPECTED);
             }
 
-            if (tc.sub_type == GT_MAX_COL || tc.sub_type == GT_MAX_PIP_WRN) {
-                ENCODE_CAPS_HEVC caps = {};
-                mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
-
-                g_tsStatus.expect(MFX_ERR_NONE);
-                g_tsStatus.check(GetCaps(&caps, &capSize));
-
-                if (caps.NumScalablePipesMinus1 > 0) {
-                    // 1 pipe can create any number of tiles, if more than 1 then maximum is (caps.NumScalablePipesMinus1 + 1)
-caps.NumScalablePipesMinus1 = 1; // hardcode while drv returns incorrect caps here
-                    mfxU16 maxPipes = caps.NumScalablePipesMinus1 + 1;
-                    if (tc.sub_type == GT_MAX_PIP_WRN) {
-                        // we expect here the (max+1) number of Tile columns will be decreased to the (max) value
-                        // and make width more than tile width limits
-                        ((mfxExtHEVCTiles*)extHEVCTiles)->NumTileColumns = maxPipes + 1;
-                        extHEVCTiles_expectation.NumTileColumns = maxPipes;
-                        m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 256 * (maxPipes + 1);
-                    }
-                    else { // tc.sub_type == GT_MAX_COL
-                        g_tsLog << "SKIPPED: having pipes can't reach spec limit for tile columns\n";
-                        return 0;
-                    }
-                }
-                else if (tc.sub_type == GT_MAX_PIP_WRN) {
-                    g_tsLog << "SKIPPED: single pipe doesn't limit tile columns\n";
-                    return 0;
-                }
-            }
+            // Driver selects number of pipes to use depending on configuration
+            // and and there are no restrictions to config from number of pipes
 
             g_tsStatus.expect(sts);
             Query();
