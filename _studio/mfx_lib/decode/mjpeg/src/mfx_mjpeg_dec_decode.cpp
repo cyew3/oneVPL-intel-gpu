@@ -1057,6 +1057,40 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
         return true;
 
 #if defined (MFX_VA_LINUX)
+    bool isVideoPostprocEnabled = false;
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    bool postProcessingRequested =
+        GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    // Decoding of 411 is supported only via DEC_VIDEO_POSTPROCESS, so check for postprocessing
+    // only when 411 is on input.
+    // For same reason, enable 411 HW decode only when post processing requested.
+    if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr &&
+        par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV411 &&
+        postProcessingRequested)
+    {
+        VAProfile vaProfile = VAProfileJPEGBaseline;
+        VAEntrypoint vaEntrypoint = VAEntrypointVLD;
+
+        VAConfigAttrib vaAttrib;
+        memset(&vaAttrib, 0, sizeof(vaAttrib));
+        vaAttrib.type = VAConfigAttribDecProcessing;
+        vaAttrib.value = 0;
+
+        VADisplay vaDisplay;
+        mfxStatus mfxSts = core->GetHandle(MFX_HANDLE_VA_DISPLAY, &vaDisplay);
+        if (MFX_ERR_NONE != mfxSts)
+            return true;
+
+        // Had to duplicate that functionality here, as LinuxVideoAccelerator::Init() has not
+        // called at this point.
+        VAStatus vaStatus = vaGetConfigAttributes(vaDisplay, vaProfile, vaEntrypoint, &vaAttrib, 1);
+        if (VA_STATUS_SUCCESS != vaStatus)
+            return true;
+
+        isVideoPostprocEnabled = vaAttrib.value == VA_DEC_PROCESSING;
+    }
+#endif
+
     if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_RGB4 &&
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_YUY2)
@@ -1090,7 +1124,7 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
                 if ((par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_RGB && par->mfx.JPEGChromaFormat != MFX_CHROMAFORMAT_YUV444) ||
                     (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr && par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422V) ||
                     (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr && par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_MONOCHROME)
-                    || (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr && par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV411)
+                    || (!isVideoPostprocEnabled && par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr && par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV411)
                     )
                     return true;
                 else
@@ -1104,7 +1138,7 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
         if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr &&
             par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_MONOCHROME)
             return true;
-        if (par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV411)
+        if (!isVideoPostprocEnabled && par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV411)
             return true;
         if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr &&
             par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV444)
@@ -1121,7 +1155,7 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
     }
 #else
     (void)core;
-#endif
+#endif // defined (MFX_VA_LINUX)
 
     return false;
 }
@@ -1353,41 +1387,44 @@ mfxStatus MFX_JPEG_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
             sts = MFX_WRN_PARTIAL_ACCELERATION;
         }
 
-        /*SFC*/
-        mfxExtDecVideoProcessing * videoProcessingTargetIn = (mfxExtDecVideoProcessing *)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
-        mfxExtDecVideoProcessing * videoProcessingTargetOut = (mfxExtDecVideoProcessing *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
-        if (videoProcessingTargetIn && videoProcessingTargetOut)
+        if (sts == MFX_ERR_NONE)
         {
-            // limits are from media_driver/agnostic/common/hw/mhw_sfc.h
-            // TODO: get them via API
-            const short unsigned MHW_SFC_MIN_HEIGHT        = 128;
-            const short unsigned MHW_SFC_MIN_WIDTH         = 128;
-            const short unsigned MHW_SFC_MAX_HEIGHT        = 4096;
-            const short unsigned MHW_SFC_MAX_WIDTH         = 4096;
+            /*SFC*/
+            mfxExtDecVideoProcessing * videoProcessingTargetIn = (mfxExtDecVideoProcessing *)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+            mfxExtDecVideoProcessing * videoProcessingTargetOut = (mfxExtDecVideoProcessing *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+            if (videoProcessingTargetIn && videoProcessingTargetOut)
+            {
+                // limits are from media_driver/agnostic/common/hw/mhw_sfc.h
+                // TODO: get them via API
+                const short unsigned MHW_SFC_MIN_HEIGHT        = 128;
+                const short unsigned MHW_SFC_MIN_WIDTH         = 128;
+                const short unsigned MHW_SFC_MAX_HEIGHT        = 4096;
+                const short unsigned MHW_SFC_MAX_WIDTH         = 4096;
 
-            if ( (MFX_HW_VAAPI == (core->GetVAType())) &&
-                 (MFX_PICSTRUCT_PROGRESSIVE == in->mfx.FrameInfo.PicStruct) &&
-                 (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
-                 // FtrSFCPipe is not supported on BDW, and there is a known issue on SCL
-                 (core->GetHWType() > MFX_HW_SCL) &&
-                 (videoProcessingTargetIn->Out.Width  >= MHW_SFC_MIN_WIDTH  &&
-                  videoProcessingTargetIn->Out.Width  <= MHW_SFC_MAX_WIDTH)  &&
-                 (videoProcessingTargetIn->Out.Height >= MHW_SFC_MIN_HEIGHT &&
-                  videoProcessingTargetIn->Out.Height <= MHW_SFC_MAX_HEIGHT) &&
-                 // only conversion to RGB4 is supported by driver
-                 (fourCC == MFX_FOURCC_RGB4) &&
-                 // resize is not supported by driver
-                 (videoProcessingTargetIn->In.CropX == videoProcessingTargetIn->Out.CropX &&
-                  videoProcessingTargetIn->In.CropY == videoProcessingTargetIn->Out.CropY &&
-                  videoProcessingTargetIn->In.CropW == videoProcessingTargetIn->Out.CropW &&
-                  videoProcessingTargetIn->In.CropH == videoProcessingTargetIn->Out.CropH)
-                )
-            {
-                *videoProcessingTargetOut = *videoProcessingTargetIn;
-            }
-            else
-            {
-                sts = MFX_ERR_UNSUPPORTED;
+                if ( (MFX_HW_VAAPI == (core->GetVAType())) &&
+                     (MFX_PICSTRUCT_PROGRESSIVE == in->mfx.FrameInfo.PicStruct) &&
+                     (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
+                     // FtrSFCPipe is not supported on BDW, and there is a known issue on SCL
+                     (core->GetHWType() > MFX_HW_SCL) &&
+                     (videoProcessingTargetIn->Out.Width  >= MHW_SFC_MIN_WIDTH  &&
+                      videoProcessingTargetIn->Out.Width  <= MHW_SFC_MAX_WIDTH)  &&
+                     (videoProcessingTargetIn->Out.Height >= MHW_SFC_MIN_HEIGHT &&
+                      videoProcessingTargetIn->Out.Height <= MHW_SFC_MAX_HEIGHT) &&
+                     // only conversion to RGB4 is supported by driver
+                     (fourCC == MFX_FOURCC_RGB4) &&
+                     // resize is not supported by driver
+                     (videoProcessingTargetIn->In.CropX == videoProcessingTargetIn->Out.CropX &&
+                      videoProcessingTargetIn->In.CropY == videoProcessingTargetIn->Out.CropY &&
+                      videoProcessingTargetIn->In.CropW == videoProcessingTargetIn->Out.CropW &&
+                      videoProcessingTargetIn->In.CropH == videoProcessingTargetIn->Out.CropH)
+                    )
+                {
+                    *videoProcessingTargetOut = *videoProcessingTargetIn;
+                }
+                else
+                {
+                    sts = MFX_ERR_UNSUPPORTED;
+                }
             }
         }
     }

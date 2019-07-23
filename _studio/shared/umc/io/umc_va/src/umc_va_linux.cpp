@@ -375,13 +375,6 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
             m_protectedVA = new ProtectedVA(pParams->m_protectedVA);
         }
 
-#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-        if (pParams->m_needVideoProcessingVA)
-        {
-            m_videoProcessingVA = new VideoProcessingVA();
-        }
-#endif
-
         // profile or stream type should be set
         if (UNKNOWN == (m_Profile & VA_CODEC))
         {
@@ -539,12 +532,25 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
         if (UMC_OK == umcRes && pParams->m_needVideoProcessingVA)
         {
-            // for VAProfileJPEGBaseline current driver doesn't report
-            // VAConfigAttribDecProcessing status correctly
-            if (va_attributes[2].value == VA_DEC_PROCESSING_NONE && va_profile != VAProfileJPEGBaseline)
-                umcRes = UMC_ERR_FAILED;
-            else
+            if (va_attributes[2].value == VA_DEC_PROCESSING)
+            {
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+                m_videoProcessingVA = new VideoProcessingVA();
+#endif
                 attribsNumber++;
+            }
+            // VA_DEC_PROCESSING_NONE returned, but for VAProfileJPEGBaseline
+            // current driver doesn't report VAConfigAttribDecProcessing status correctly:
+            // decoding and CSC to ARGB in SFC mode works despite VA_DEC_PROCESSING_NONE.
+            // Do not create m_videoProcessingVA in this case, because it's not used during jpeg decode.
+            else if (va_profile == VAProfileJPEGBaseline)
+            {
+                attribsNumber++;
+            }
+            else
+            {
+                umcRes = UMC_ERR_FAILED;
+            }
         }
 
 #ifdef MFX_ENABLE_CPLIB
