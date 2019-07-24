@@ -155,6 +155,7 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(uint32_t statusReport
             queryStatus[i].bStatus = 3;
         }
 #ifdef UMC_VA_DXVA
+        MFX_CHECK(m_va, MFX_ERR_DEVICE_FAILED);
         // execute call
         sts = m_va->ExecuteStatusReportBuffer((void*)queryStatus, sizeof(JPEG_DECODE_QUERY_STATUS) * numStructures);
 #else
