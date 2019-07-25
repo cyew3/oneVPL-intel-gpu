@@ -49,7 +49,6 @@
 #include "mfx_ext_buffers.h"
 
 using namespace MfxEncLA;
-using MfxHwH264Encode::IsOn;
 
 static mfxU16 GetGopSize(mfxVideoParam *par)
 {
