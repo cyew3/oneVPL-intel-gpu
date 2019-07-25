@@ -70,7 +70,6 @@ h264d:
   - dmitry.gurulev@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
-  - anton.dranitsin@intel.com
 
 h264e:
   paths:
@@ -87,7 +86,6 @@ h264e:
   - olga.a.kasatkina@intel.com
   - evgeniy.starov@intel.com
   - oleg.nabiullin@intel.com
-  - alexey.s.kokoshnikov@intel.com
   - roman.kazantsev@intel.com
   - andrey.larionov@intel.com
   - stanislav.efremov@intel.com
@@ -104,7 +102,6 @@ mpeg2d:
   - dmitry.gurulev@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
-  - anton.dranitsin@intel.com
 
 mpeg2e:
   paths:
@@ -119,7 +116,6 @@ mpeg2e:
   reviewers:
   - dmitry.ermilov@intel.com
   - oleg.nabiullin@intel.com
-  - alexey.s.kokoshnikov@intel.com
 
 vc1:
   paths:
@@ -148,7 +144,6 @@ hevcd:
   - dmitry.gurulev@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
-  - anton.dranitsin@intel.com
 
 hevce:
   paths:
@@ -187,7 +182,6 @@ mjpegd:
   - dmitry.gurulev@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
-  - anton.dranitsin@intel.com
 
 mjpege:
   paths:
@@ -215,7 +209,6 @@ vp8d:
   - dmitry.gurulev@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
-  - anton.dranitsin@intel.com
 
 vp8e:
   paths:
@@ -225,7 +218,6 @@ vp8e:
   - _studio/mfx_lib/shared/src/mfx_vpx_dec
   - _testsuite/msdk_ts/src/gmock/test_suites/vp8e
   reviewers:
-  - alexey.s.kokoshnikov@intel.com
   - alexei.leonenko@intel.com
 
 vp9d:
@@ -242,7 +234,6 @@ vp9d:
   - mikhailx.aksenov@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
-  - anton.dranitsin@intel.com
   - anastasiia.sokolova@intel.com
   - ekaterina.shiryaeva.alexandrovna@intel.com
 
@@ -252,7 +243,6 @@ vp9e:
   - _studio/mfx_lib/encode_hw/vp9
   - _testsuite/msdk_ts/src/gmock/test_suites/vp9e
   reviewers:
-  - alexey.s.kokoshnikov@intel.com
   - alexei.leonenko@intel.com
   - stanislav.efremov@intel.com
   - dmitryx.malishev@intel.com
@@ -272,7 +262,6 @@ av1d:
   - stanislav.efremov@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
-  - anton.dranitsin@intel.com
 
 vpp:
   paths:
@@ -301,7 +290,6 @@ mvce:
   - _studio/mfx_lib/encode_hw/mvc
   reviewers:
   - stanislav.efremov@intel.com
-  - alexey.s.kokoshnikov@intel.com
 
 avc_fei:
   paths:
@@ -358,7 +346,6 @@ core:
   reviewers:
   - vasily.aristarkhov@intel.com
   - oleg.nabiullin@intel.com
-  - artem.shaporenko@intel.com
 
 android:
   paths:
