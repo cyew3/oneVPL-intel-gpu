@@ -129,6 +129,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         CHECK_ASYNC3 = 0x200000,
         CHECK_MULTIREF = 0x400000,
         CHECK_WITH_SEGMENTATION = 0x800000,
+        SWITCH_OFF = 0x0100000
     };
 
     const std::vector<TestSubtype> executeTests =
@@ -155,7 +156,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         CHECK_ASYNC2,
         CHECK_ASYNC3,
         CHECK_MULTIREF,
-        CHECK_WITH_SEGMENTATION
+        CHECK_WITH_SEGMENTATION,
+        SWITCH_OFF
     };
 
     enum
@@ -481,7 +483,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // below test cases check on-the-fly change of number of tile rows and tile columns for CQP
-        {/*64*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP,
+        {/*64*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | RESET,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -489,7 +491,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*65*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP,
+        {/*65*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | RESET,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -497,7 +499,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(2) },
             }
         },
-        {/*66*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP,
+        {/*66*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | RESET | SWITCH_OFF,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(1) },
@@ -507,7 +509,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*67*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
+        {/*67*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION | RESET | SWITCH_OFF,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
@@ -519,7 +521,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // below test cases check on-the-fly change of number of tile rows and tile columns for CBR
-        {/*68*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR,
+        {/*68*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | RESET,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -527,7 +529,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*69*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR,
+        {/*69*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | RESET,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -535,7 +537,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(2) },
             }
         },
-        {/*70*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR,
+        {/*70*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | RESET | SWITCH_OFF,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(1) },
@@ -545,7 +547,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*71*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
+        {/*71*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION | RESET | SWITCH_OFF,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
@@ -557,7 +559,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // below test cases check on-the-fly change of number of tile rows and tile columns for VBR
-        {/*72*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR,
+        {/*72*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR | RESET,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -565,7 +567,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*73*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR,
+        {/*73*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR | RESET,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -573,7 +575,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(2) },
             }
         },
-        {/*74*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR,
+        {/*74*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR | RESET | SWITCH_OFF,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(1) },
@@ -583,7 +585,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*75*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION,
+        {/*75*/ MFX_ERR_NONE, DYNAMIC_CHANGE | VBR | SCALABLE_PIPE | CHECK_FULL_INITIALIZATION | RESET | SWITCH_OFF,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                                SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
@@ -601,7 +603,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {/*77*/ MFX_ERR_NONE, BASIC_TILE_COLS | CBR | TU4 | CHECK_ASYNC2,
             { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(1), SET_NUM_COLS(BASIC_NUM_TILE_COLS) } }
         },
-        {/*78*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | CHECK_ASYNC2,
+        {/*78*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | CHECK_ASYNC2 | RESET | SWITCH_OFF,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                 SET_NUM_ROWS(4), SET_NUM_COLS(1) },
@@ -611,7 +613,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*79*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | SCALABLE_PIPE | CHECK_ASYNC2,
+        {/*79*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | SCALABLE_PIPE | CHECK_ASYNC2 | RESET | SWITCH_OFF,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                 SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
@@ -621,7 +623,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
             }
         },
-        {/*80*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | CHECK_ASYNC3,
+        {/*80*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | CHECK_ASYNC3 | RESET | SWITCH_OFF,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                 SET_NUM_ROWS(4), SET_NUM_COLS(1) },
@@ -631,7 +633,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
             }
         },
-        {/*81*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | SCALABLE_PIPE | CHECK_ASYNC3,
+        {/*81*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | SCALABLE_PIPE | CHECK_ASYNC3 | RESET | SWITCH_OFF,
             {
                 { ITER_LENGTH, SET_W(1408), SET_H(1152),
                 SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
@@ -652,7 +654,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {/*84*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU1 | CHECK_MULTIREF | CHECK_ASYNC3,
             { { 10, SET_W(704), SET_H(576), SET_NUM_ROWS(2), SET_NUM_COLS(2) } }
         },
-        {/*85*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU1 | CHECK_MULTIREF | CHECK_ASYNC3 | DYNAMIC_CHANGE,
+        {/*85*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU1 | CHECK_MULTIREF | CHECK_ASYNC3 | DYNAMIC_CHANGE | RESET | SWITCH_OFF,
             {
                 { 5, SET_W(704), SET_H(576), SET_NUM_ROWS(2), SET_NUM_COLS(2) },
                 { 5, SET_NUM_ROWS(1), SET_NUM_COLS(1) },
@@ -1460,6 +1462,13 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         if ((g_tsHWtype == MFX_HW_ICL) && (tc.type & SCALABLE_PIPE))
         {
             g_tsLog << "\n\nWARNING: SKIP test - MxN tiles are unsupported in driver for ICL\n\n";
+            throw tsSKIP;
+        }
+
+        // Now driver does not support tile switching
+        if ((g_tsHWtype > MFX_HW_ICL) && (tc.type & SWITCH_OFF))
+        {
+            g_tsLog << "\n\nWARNING: SKIP test - Tile switching is unsupported by driver\n\n";
             throw tsSKIP;
         }
 

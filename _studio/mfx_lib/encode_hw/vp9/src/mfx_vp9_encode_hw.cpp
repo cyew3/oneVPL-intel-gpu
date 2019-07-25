@@ -533,6 +533,15 @@ mfxStatus MFXVideoENCODEVP9_HW::Reset(mfxVideoParam *par)
         {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
+
+        // Tile switching is unsupported by driver for Gen11+
+        eMFXHWType platform = m_pCore->GetHWType();
+        if (platform > MFX_HW_ICL_LP &&
+            (extParBefore.NumTileColumns > 1 || extParBefore.NumTileRows > 1) &&
+            extParAfter.NumTileColumns == 1 && extParAfter.NumTileRows == 1)
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
 #endif
 
         // dynamic scaling and segmentation don't work together
