@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -913,18 +913,14 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
             return MFX_ERR_UNSUPPORTED;
         }
     }
-#if defined(_WIN32) || defined(_WIN64)
-    if (par.NumExtParam || par.ExtParam)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-#endif
 
     // get the number of available threads
     maxNumThreads = 0;
-    if (par.ExternalThreads == 0) {
+    if (par.ExternalThreads == 0)
+    {
         maxNumThreads = vm_sys_info_get_cpu_num();
-        if (maxNumThreads == 1) {
+        if (maxNumThreads == 1)
+        {
             maxNumThreads = 2;
         }
     }
