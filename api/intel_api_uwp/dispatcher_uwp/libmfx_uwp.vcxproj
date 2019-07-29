@@ -106,6 +106,7 @@
       <PreprocessorDefinitions>_LIB;WINAPI_FAMILY=WINAPI_FAMILY_APP;MEDIASDK_UWP_PROCTABLE;MFX_D3D11_ENABLED;_UNICODE;UNICODE;MFX_VA;_ALLOW_MSC_VER_MISMATCH;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;_ALLOW_RUNTIME_LIBRARY_MISMATCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>include;..\..\include;..\..\intel_api_uwp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAsWinRT>false</CompileAsWinRT>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
