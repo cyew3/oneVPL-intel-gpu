@@ -182,7 +182,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\sample_common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\api\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\sample_common\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NOMINMAX;_WIN64;WIN64;_DEBUG;_CONSOLE;_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>

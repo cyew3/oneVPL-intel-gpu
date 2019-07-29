@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2020 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -20,13 +20,13 @@ public:
     mfxStatus ReadNextFrame( void );
     mfxStatus ExtendBitstream( void );
 
-    mfxBitstream* GetBitstreamPtr( void );
+    mfxBitstreamWrapper* GetBitstreamPtr( void );
 
 protected:    
 
 private:
-    CSmplBitstreamReader m_bitstreamReader;
-    mfxBitstream         m_bitstream;
+    CSmplBitstreamReader        m_bitstreamReader;
+    mfxBitstreamWrapper         m_bitstream;
 
     bool                 m_bInited;
     bool                 m_bEOF;

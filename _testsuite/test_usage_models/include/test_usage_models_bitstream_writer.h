@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2020 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -19,13 +19,13 @@ public:
     mfxStatus WriteNextFrame( void );
     mfxStatus WriteNextFrame( mfxBitstream* pBS );
 
-    mfxBitstream* GetBitstreamPtr( void );
+    mfxBitstreamWrapper* GetBitstreamPtr( void );
 
 protected:    
 
 private:
-    CSmplBitstreamWriter m_bitstreamWriter;
-    mfxBitstream         m_bitstream;
+    CSmplBitstreamWriter        m_bitstreamWriter;
+    mfxBitstreamWrapper         m_bitstream;
     
 };
 /* EOF */

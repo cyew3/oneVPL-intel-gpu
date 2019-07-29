@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2020 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -22,12 +22,12 @@
 
 struct mfxBitstreamEx
 {
-    mfxBitstreamEx(): syncp(0), bFree(true){ MSDK_ZERO_MEMORY(bitstream); };
+    mfxBitstreamEx(): syncp(0), bFree(true){};
 
     //mfxBitstream   *pBS;
-    mfxBitstream   bitstream;
-    mfxSyncPoint   syncp;
-    bool           bFree;
+    mfxBitstreamWrapper     bitstream;
+    mfxSyncPoint            syncp;
+    bool                    bFree;
 };
 
 class BitstreamExManager

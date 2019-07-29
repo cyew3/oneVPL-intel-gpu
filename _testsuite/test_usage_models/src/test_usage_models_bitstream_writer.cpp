@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2020 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_usage_models_bitstream_writer.h"
@@ -11,14 +11,13 @@
 
 TUMBitstreamWriter::TUMBitstreamWriter(const msdk_char *pFileName)
 {
-    mfxStatus sts1, sts2;
+    mfxStatus sts1;
 
     sts1 = m_bitstreamWriter.Init( pFileName );
 
-    MSDK_ZERO_MEMORY(m_bitstream);
-    sts2 = InitMfxBitstream(&m_bitstream, 1024 * 1024);
+    m_bitstream.Extend(1024 * 1024);
 
-    if(MFX_ERR_NONE == sts1 && MFX_ERR_NONE == sts2)
+    if(MFX_ERR_NONE == sts1)
     {
         ;
     }
@@ -36,8 +35,7 @@ TUMBitstreamWriter::TUMBitstreamWriter(const msdk_char *pFileName)
 
 TUMBitstreamWriter::~TUMBitstreamWriter()
 {
-    m_bitstreamWriter.Close();    
-    WipeMfxBitstream(&m_bitstream);
+    m_bitstreamWriter.Close();
 
 } // TUMBitstreamWriter::~TUMBitstreamWriter()
 
@@ -70,11 +68,11 @@ mfxStatus TUMBitstreamWriter::WriteNextFrame( mfxBitstream *pBS )
 } // mfxStatus TUMBitstreamWriter::WriteNextFrame( mfxBitstream *pBS )
 
 
-mfxBitstream* TUMBitstreamWriter::GetBitstreamPtr( void )
+mfxBitstreamWrapper* TUMBitstreamWriter::GetBitstreamPtr( void )
 {
     return &m_bitstream;
 
-} // mfxBitstream* TUMBitstreamWriter::GetBitstreamPtr( void )
+} // mfxBitstreamWrapper* TUMBitstreamWriter::GetBitstreamPtr( void )
 
 
 /* EOF */

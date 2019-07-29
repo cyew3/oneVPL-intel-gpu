@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2020 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __TRANSCODE_MODEL_REFERENCE_H__
@@ -42,12 +42,12 @@ protected:
 
 // auxiliary transcoding primitives
     mfxStatus ReadBitstreamHeader(mfxVideoParam& bsHeaderParam);
-    mfxStatus AllocEnoughBuffer(mfxBitstream* pBS);
+    mfxStatus AllocEnoughBuffer(mfxBitstreamWrapper& pBS);
 
 // universal transcoding primitives
     // [BSReader]
     mfxStatus ReadOneFrame( void );
-    mfxBitstream* GetSrcPtr( void );
+    mfxBitstreamWrapper* GetSrcPtr( void );
 
     // [decode]
     mfxStatus DecodeOneFrame(mfxBitstream *pBS, 
@@ -64,7 +64,7 @@ protected:
 
     // [BSWriter]    
     mfxStatus WriteOneFrame( mfxBitstream* pBS );
-    mfxBitstream* GetDstPtr( void );
+    mfxBitstreamWrapper* GetDstPtr( void );
     // ex function
     mfxStatus PutBS( mfxBitstreamEx *pBSEx );
 

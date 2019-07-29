@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2020 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_usage_models_bitstream_reader.h"
@@ -11,16 +11,15 @@
 
 TUMBitstreamReader::TUMBitstreamReader(const msdk_char * pFileName)
 {
-    mfxStatus sts1, sts2;
+    mfxStatus sts1;
 
     sts1 = m_bitstreamReader.Init( pFileName );   
 
-    MSDK_ZERO_MEMORY(m_bitstream);
-    sts2 = InitMfxBitstream(&m_bitstream, 1024 * 1024);
+    m_bitstream.Extend(1024 * 1024);
 
     m_bInited = false;
     m_bEOF    = false;
-    if(MFX_ERR_NONE == sts1 && MFX_ERR_NONE == sts2)
+    if(MFX_ERR_NONE == sts1)
     {
         m_bInited = true;
     }
@@ -38,8 +37,7 @@ TUMBitstreamReader::TUMBitstreamReader(const msdk_char * pFileName)
 
 TUMBitstreamReader::~TUMBitstreamReader()
 {    
-    m_bitstreamReader.Close();    
-    WipeMfxBitstream(&m_bitstream);
+    m_bitstreamReader.Close();
 
 } // TUMBitstreamReader::~TUMBitstreamReader()
 
@@ -64,16 +62,14 @@ mfxStatus TUMBitstreamReader::ExtendBitstream( void )
 {
     MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);
 
-    mfxStatus sts;
+    m_bitstream.Extend(m_bitstream.MaxLength * 2);
 
-    sts = ExtendMfxBitstream(&m_bitstream, m_bitstream.MaxLength * 2);
-
-    return sts;
+    return MFX_ERR_NONE;
 
 } // mfxStatus TUMBitstreamReader::ExtendBitstream( void )
 
 
-mfxBitstream* TUMBitstreamReader::GetBitstreamPtr( void )
+mfxBitstreamWrapper* TUMBitstreamReader::GetBitstreamPtr( void )
 {
     if( m_bEOF || !m_bInited )
     {
@@ -84,6 +80,6 @@ mfxBitstream* TUMBitstreamReader::GetBitstreamPtr( void )
         return &m_bitstream;
     }
 
-} // mfxBitstream* TUMBitstreamReader::GetBitstreamPtr( void )
+} // mfxBitstreamWrapper* TUMBitstreamReader::GetBitstreamPtr( void )
 
 /* EOF */

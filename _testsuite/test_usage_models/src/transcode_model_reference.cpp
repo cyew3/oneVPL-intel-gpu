@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2020 Intel Corporation. All Rights Reserved.
 //
 
 #include "transcode_model_reference.h"
@@ -843,7 +843,7 @@ mfxStatus TranscodeModelReference::ReadBitstreamHeader(mfxVideoParam& bsHeaderPa
     // if header is not found this function exits with error (e.g. if device was lost and there's no header in the remaining stream)
     for(;;)
     {
-        mfxBitstream* pBS = m_bsReader.GetBitstreamPtr();
+        mfxBitstreamWrapper* pBS = m_bsReader.GetBitstreamPtr();
         // parse bit stream and fill mfx param
         sts = m_pmfxDEC->DecodeHeader(pBS, &bsHeaderParam);
 
@@ -875,10 +875,8 @@ mfxStatus TranscodeModelReference::ReadBitstreamHeader(mfxVideoParam& bsHeaderPa
 } // mfxStatus ReadBitstreamHeader(mfxVideoParam& bsHeaderParam)
 
 
-mfxStatus TranscodeModelReference::AllocEnoughBuffer(mfxBitstream* pBS)
-{    
-    MSDK_CHECK_POINTER(pBS, MFX_ERR_NULL_PTR);
-
+mfxStatus TranscodeModelReference::AllocEnoughBuffer(mfxBitstreamWrapper& pBS)
+{
     mfxVideoParam par;
     MSDK_ZERO_MEMORY(par);
 
@@ -887,12 +885,11 @@ mfxStatus TranscodeModelReference::AllocEnoughBuffer(mfxBitstream* pBS)
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts); 
 
     // reallocate bigger buffer for output
-    sts = ExtendMfxBitstream(pBS, par.mfx.BufferSizeInKB * 1000); 
-    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMfxBitstream(pBS));
+    pBS.Extend(par.mfx.BufferSizeInKB * 1000);
 
     return MFX_ERR_NONE;
 
-} // mfxStatus TranscodeModelReference::AllocEnoughBuffer(mfxBitstream* pBS)
+} // mfxStatus TranscodeModelReference::AllocEnoughBuffer(mfxBitstreamWrapper& pBS)
 
 
 mfxStatus TranscodeModelReference::Run()
@@ -904,7 +901,7 @@ mfxStatus TranscodeModelReference::Run()
     mfxFrameSurfaceEx decSurfaceEx = {0};
     mfxFrameSurfaceEx vppSurfaceEx = {0};
     mfxFrameSurface1* pEncSurface = NULL;
-    mfxBitstream *pBS = NULL;
+    mfxBitstreamWrapper *pBS = NULL;
 
     int decFramesCount = 0, vppFramesCount = 0, encFramesCount = 0;    
 
@@ -1070,11 +1067,11 @@ mfxStatus TranscodeModelReference::ReadOneFrame( void )
 } // mfxStatus TranscodeModelReference::ReadOneFrame( void )
 
 
-mfxBitstream* TranscodeModelReference::GetSrcPtr( void )
+mfxBitstreamWrapper* TranscodeModelReference::GetSrcPtr( void )
 {
     return m_bsReader.GetBitstreamPtr();
 
-} // mfxBitstream* GetSrcPtr( void )
+} // mfxBitstreamWrapper* GetSrcPtr( void )
 
 
 mfxStatus TranscodeModelReference::DecodeOneFrame(mfxBitstream *pBS, 
@@ -1184,7 +1181,7 @@ mfxStatus TranscodeModelReference::EncodeOneFrame(mfxFrameSurface1 *pSurface, mf
         }
         else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
         {
-            sts = AllocEnoughBuffer( &(pBSEx->bitstream ));
+            sts = AllocEnoughBuffer(pBSEx->bitstream);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);                
         }
         else
@@ -1230,11 +1227,11 @@ mfxStatus TranscodeModelReference::WriteOneFrame( mfxBitstream* pBS )
 } // mfxStatus TranscodeModelReference::WriteOneFrame( void )
 
 
-mfxBitstream* TranscodeModelReference::GetDstPtr( void )
+mfxBitstreamWrapper* TranscodeModelReference::GetDstPtr( void )
 {
     return m_bsWriter.GetBitstreamPtr();
 
-} // mfxBitstream* GetDstPtr( void )
+} // mfxBitstreamWrapper* GetDstPtr( void )
 
 
 mfxStatus TranscodeModelReference::SynchronizeDecode( mfxSyncPoint syncp )
