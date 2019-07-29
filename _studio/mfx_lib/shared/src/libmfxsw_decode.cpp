@@ -543,10 +543,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
 
         // Wait for the bit stream
         mfxRes = session->m_pScheduler->WaitForDependencyResolved(bs);
-        if (MFX_ERR_NONE != mfxRes)
-        {
-            return mfxRes;
-        }
+        MFX_CHECK_STS(mfxRes);
 
         // reset the sync point
         *syncp = NULL;
@@ -554,6 +551,8 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
 
         memset(&task, 0, sizeof(MFX_TASK));
         mfxRes = session->m_pDECODE->DecodeFrameCheck(bs, surface_work, surface_out, &task.entryPoint);
+        MFX_CHECK(mfxRes >= 0 || MFX_ERR_MORE_DATA_SUBMIT_TASK == static_cast<int>(mfxRes), mfxRes);
+
         // source data is OK, go forward
         if (task.entryPoint.pRoutine)
         {
@@ -593,10 +592,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
 
             // register input and call the task
             mfxAddRes = session->m_pScheduler->AddTask(task, &syncPoint);
-            if (MFX_ERR_NONE != mfxAddRes)
-            {
-                return mfxAddRes;
-            }
+            MFX_CHECK_STS(mfxAddRes);
         }
 
         if (MFX_ERR_MORE_DATA_SUBMIT_TASK == static_cast<int>(mfxRes))
