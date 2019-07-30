@@ -959,50 +959,43 @@ bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU16& LCUSize)
 
 mfxU16 GetMaxNumRef(MfxVideoParam &par, bool bForward)
 {
-    switch (par.m_platform)
-    {
+    if (par.mfx.TargetUsage < 1 || par.mfx.TargetUsage > 7)
+        return 0;
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
-    case MFX_HW_LKF:    // VDENC only
-        {
-            //limited VDEnc support without HME and StreamIn 3rd reference
+    if (par.m_platform == MFX_HW_LKF)    // VDENC only
+    {
+        //limited VDEnc support without HME and StreamIn 3rd reference
+        mfxU16 maxNumRefsL0L1[7] = { 2, 2, 2, 2, 2, 1, 1 };
+        return  maxNumRefsL0L1[par.mfx.TargetUsage - 1];
+    }
+#endif
+    if (IsOff(par.mfx.LowPower))
+    {   // VME
+        mfxU16 maxNumRefsL0[7] = { 4, 4, 3, 3, 3, 1, 1 };
+        mfxU16 maxNumRefsL1[7] = { 2, 2, 1, 1, 1, 1, 1 };
+        return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
+    }
+
+    // VDENC
+    if (par.mfx.GopRefDist <= 1) { // LowDelay B (P)
+        if (par.m_platform == MFX_HW_DG2) {
             mfxU16 maxNumRefsL0L1[7] = { 2, 2, 2, 2, 2, 1, 1 };
             return  maxNumRefsL0L1[par.mfx.TargetUsage - 1];
         }
-        break;
-#endif
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
-    case MFX_HW_TGL_LP:
-    case MFX_HW_TGL_HP:
-        if (IsOn(par.mfx.LowPower)) {   // VDENC
-            if (par.mfx.GopRefDist > 1) {   // Gen12 VDENC RA B
-                mfxU16 maxNumRefsL0[7] = { 2, 2, 1, 1, 1, 1, 1 };
-                mfxU16 maxNumRefsL1[7] = { 1, 1, 1, 1, 1, 1, 1 };
-                return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
-            } else {
-                mfxU16 maxNumRefsL0L1[7] = { 3, 3, 2, 2, 2, 1, 1 };
-                return maxNumRefsL0L1[par.mfx.TargetUsage - 1];
-            }
-        } else {   // VME
-            mfxU16 maxNumRefsL0[7] = { 4, 4, 3, 3, 3, 1, 1 };
-            mfxU16 maxNumRefsL1[7] = { 2, 2, 1, 1, 1, 1, 1 };
-            return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
-        }
-        break;
-#endif
-    case MFX_HW_CNL:
-    case MFX_HW_ICL:
-    case MFX_HW_ICL_LP:
-    default:
-        if (IsOn(par.mfx.LowPower)) {   // VDENC
-            mfxU16 maxNumRefsL0L1[7] = { 3, 3, 2, 2, 2, 1, 1 };
-            return maxNumRefsL0L1[par.mfx.TargetUsage - 1];
-        } else {   // VME
-            mfxU16 maxNumRefsL0[7] = { 4, 4, 3, 3, 3, 1, 1 };
-            mfxU16 maxNumRefsL1[7] = { 2, 2, 1, 1, 1, 1, 1 };
-            return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
-        }
-        break;
+        mfxU16 maxNumRefsL0L1[7] = { 3, 3, 2, 2, 2, 1, 1 };
+        return maxNumRefsL0L1[par.mfx.TargetUsage - 1];
     }
+    else { // RA B (neither ICL nor CNL here)
+        if (par.m_platform == MFX_HW_DG2) {
+            mfxU16 maxNumRefsL0[7] = { 1, 1, 1, 1, 1, 1, 1 };
+            mfxU16 maxNumRefsL1[7] = { 1, 1, 1, 1, 1, 1, 1 };
+            return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
+        }
+        mfxU16 maxNumRefsL0[7] = { 2, 2, 1, 1, 1, 1, 1 };
+        mfxU16 maxNumRefsL1[7] = { 1, 1, 1, 1, 1, 1, 1 };
+        return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
+    }
+
 }
 
 #endif // (MFX_VERSION >= 1025)
