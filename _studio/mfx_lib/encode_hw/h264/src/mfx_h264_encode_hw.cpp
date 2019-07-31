@@ -3254,7 +3254,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         Hrd hrd = m_hrd; // tmp copy
         mfxU32 numEncCall = m_bDeferredFrame + 1;
         for (mfxU32 i = 0; i < numEncCall; i++)
-        {   
+        {
             DdiTaskIter task = FindFrameToStartEncode(m_video, m_lookaheadFinished.begin(), m_lookaheadFinished.end());
             if (task == m_lookaheadFinished.end())
                 break;
@@ -3265,7 +3265,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 m_bDeferredFrame ++;
                 m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_START_ENCODE;
                 break;
-            }            
+            }
 
             task->m_initCpbRemoval = hrd.GetInitCpbRemovalDelay();
             task->m_initCpbRemovalOffset = hrd.GetInitCpbRemovalDelayOffset();
@@ -3378,7 +3378,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 }
             }
 
-            task->m_singleFieldMode = IsOn(extFeiParams->SingleFieldProcessing);
+            // In case of progressive frames in PAFF mode need to switch the flag off to prevent m_fieldCounter changes
+            task->m_singleFieldMode = (task->m_fieldPicFlag != 0) && IsOn(extFeiParams->SingleFieldProcessing);
 
 #ifdef ENABLE_H264_MBFORCE_INTRA
             {
@@ -3486,7 +3487,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         }
         m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_START_ENCODE;
-        
+
     }
 
 
@@ -3510,7 +3511,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                     bsDataLength += task->m_bsDataLength[task->m_fid[f]];
                 }
                 //printf("Real frameSize %d, repack %d\n", bsDataLength, task->m_repack);
-                bool bRecoding = false; 
+                bool bRecoding = false;
                 if (extOpt2.MaxSliceSize)
                 {
                     mfxU32   bsSizeAvail = mfxU32(m_tmpBsBuf.size());
@@ -3649,7 +3650,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                     do
                     {
                         if (m_enabledSwBrc && (m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_video.mfx.RateControlMethod == MFX_RATECONTROL_VBR)) {
- 
+
                             if (nextTask->m_longTermFrameIdx != NO_INDEX_U8 && nextTask->m_LtrOrder == m_LtrOrder) {
                                 m_LtrQp = nextTask->m_cqpValue[0];
                             }
