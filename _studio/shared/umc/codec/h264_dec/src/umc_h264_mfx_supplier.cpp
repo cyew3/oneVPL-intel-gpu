@@ -578,6 +578,7 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
     case MFX_HW_CNL:
     case MFX_HW_ICL:
     case MFX_HW_ICL_LP:
+    case MFX_HW_EHL:
 #ifndef STRIP_EMBARGO
     case MFX_HW_LKF:
     case MFX_HW_JSL:
@@ -606,7 +607,7 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
 #endif // #ifndef OPEN_SOURCE
         break;
     default:
-            name = sDXVA2_ModeH264_VLD_NoFGT;
+        name = sDXVA2_ModeH264_VLD_NoFGT;
         break;
     }
 

@@ -2710,6 +2710,7 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
     case MFX_HW_LKF:
     case MFX_HW_JSL:
 #endif
+    case MFX_HW_EHL:
         cmSts = m_pCmDevice->LoadProgram((void*)icllp_copy_kernel_genx,sizeof(icllp_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
 #ifndef STRIP_EMBARGO

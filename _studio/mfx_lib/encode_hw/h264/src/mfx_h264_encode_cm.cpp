@@ -905,6 +905,7 @@ void CmContext::Setup(
         m_program = ReadProgram(m_device, genx_icl_simple_me, SizeOf(genx_icl_simple_me));
         m_programHist = ReadProgram(m_device, genx_icl_histogram, SizeOf(genx_icl_histogram));
         break;
+    case MFX_HW_EHL:
     case MFX_HW_ICL_LP:
         m_program = ReadProgram(m_device, genx_icllp_simple_me, SizeOf(genx_icllp_simple_me));
         m_programHist = ReadProgram(m_device, genx_icllp_histogram, SizeOf(genx_icllp_histogram));

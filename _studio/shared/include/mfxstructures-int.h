@@ -78,6 +78,7 @@ enum eMFXHWType
     MFX_HW_LKF       = 0x1500000,
     MFX_HW_JSL       = MFX_HW_LKF + 1,
 #endif
+    MFX_HW_EHL       = 0x1500002,
 
     MFX_HW_TGL_LP    = 0x1600000,
 #ifndef STRIP_EMBARGO
