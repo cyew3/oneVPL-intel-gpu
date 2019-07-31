@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -201,11 +201,6 @@ int TestSuite::RunTest(unsigned int id)
     m_init_par.Version = g_tsVersion;
 
     SETPARS(&m_init_par, INIT_PAR);
-
-    // regardless of test mode ext buffer mfxExtThreadsParam is attached to mfxInitParam
-    // Windows doesn't support external treading so doesn't allow any ext buffers to be attached
-    if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
-        expect = MFX_ERR_UNSUPPORTED;
 
     if (tc.mode == EXT_BUF)
     {
