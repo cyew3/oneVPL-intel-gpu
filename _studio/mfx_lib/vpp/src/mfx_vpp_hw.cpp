@@ -1128,49 +1128,27 @@ mfxStatus ResMngr::CompleteTask(DdiTask *pTask)
 
 } // mfxStatus ResMngr::CompleteTask(DdiTask *pTask)
 
-SubTask ResMngr::GetSubTask(DdiTask *pTask)
+mfxU32 ResMngr::GetSubTask(DdiTask *pTask)
 {
     if (pTask && pTask->pSubResource && pTask->pSubResource->subTasks.size())
         return pTask->pSubResource->subTasks[0];
     else
-        return SubTask();
+        return NO_INDEX;
 }
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-mfxStatus ResMngr::DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx, EventCache *EventCache)
-{
-    if (pTask && pTask->pSubResource)
-    {
-        std::vector<SubTask>::iterator sub_it;//find(pTask->pSubResource->subTasks.begin(), pTask->pSubResource->subTasks.end(), subtaskIdx);
-        for (sub_it = pTask->pSubResource->subTasks.begin(); sub_it != pTask->pSubResource->subTasks.end(); sub_it++)
-        {
-            if (sub_it->idx == subtaskIdx)
-            {
-                EventCache->ReturnEvent(sub_it->m_GpuEvent.gpuSyncEvent);
-                pTask->pSubResource->subTasks.erase(sub_it);
-                return MFX_ERR_NONE;
-            }
-        }
-    }
-    return MFX_ERR_NOT_FOUND;
-}
-#else
+
 mfxStatus ResMngr::DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx)
 {
     if (pTask && pTask->pSubResource)
     {
-        std::vector<SubTask>::iterator sub_it;//find(pTask->pSubResource->subTasks.begin(), pTask->pSubResource->subTasks.end(), subtaskIdx);
-        for (sub_it = pTask->pSubResource->subTasks.begin(); sub_it != pTask->pSubResource->subTasks.end(); sub_it++)
+        std::vector<mfxU32>::iterator sub_it = find(pTask->pSubResource->subTasks.begin(), pTask->pSubResource->subTasks.end(), subtaskIdx);
+        if (sub_it != pTask->pSubResource->subTasks.end())
         {
-            if (sub_it->idx == subtaskIdx)
-            {
-                pTask->pSubResource->subTasks.erase(sub_it);
-                return MFX_ERR_NONE;
-            }
+            pTask->pSubResource->subTasks.erase(sub_it);
+            return MFX_ERR_NONE;
         }
     }
     return MFX_ERR_NOT_FOUND;
 }
-#endif
 
 bool ResMngr::IsMultiBlt()
 {
@@ -1226,12 +1204,6 @@ mfxStatus TaskManager::Init(
 
     m_tasks.resize(config.m_surfCount[VPP_OUT]);
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-    m_EventCache.reset(new EventCache());
-    m_EventCache->Init(config.m_surfCount[VPP_OUT] * ((config.m_multiBlt) ?
-        config.m_extConfig.customRateData.fwdRefCount + 1 /* count all streams (not only secondary)*/ : 1));
-#endif
-
 #ifdef MFX_ENABLE_MCTF
     m_MCTFSurfacesInQueue = 0;
 #endif
@@ -1243,10 +1215,6 @@ mfxStatus TaskManager::Init(
 
 mfxStatus TaskManager::Close(void)
 {
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-    if(m_EventCache.get())
-        m_EventCache->Close();
-#endif
     m_actualNumber = m_taskIndex = 0;
 
     Clear(m_tasks);
@@ -1522,10 +1490,6 @@ mfxStatus TaskManager::CompleteTask(DdiTask* pTask)
         sts = m_core->DecreaseReference( &(pTask->input.pSurf->Data) );
     MFX_CHECK_STS(sts);
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-    m_EventCache->ReturnEvent(pTask->m_GpuEvent.gpuSyncEvent);
-#endif
-
     FreeTask(pTask);
 
     return MFX_TASK_DONE;
@@ -1696,21 +1660,6 @@ mfxStatus TaskManager::FillTask(
     }
 #endif
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-    sts = m_EventCache->GetEvent(pTask->m_GpuEvent.gpuSyncEvent);
-    MFX_CHECK_STS(sts);
-    if (pTask->pSubResource)
-    {
-        std::vector<SubTask>::iterator sub_it;
-        for (sub_it = pTask->pSubResource->subTasks.begin(); sub_it != pTask->pSubResource->subTasks.end(); sub_it++)
-        {
-            sts = m_EventCache->GetEvent(sub_it->m_GpuEvent.gpuSyncEvent);
-            MFX_CHECK_STS(sts);
-        }
-    }
-
-#endif
-
     pTask->SetFree(false);
 
     return MFX_ERR_NONE;
@@ -1834,15 +1783,8 @@ void TaskManager::UpdatePTS_Mode30i60p(
 
 } // void TaskManager::UpdatePTS_Mode30i60p(...)
 
-SubTask TaskManager::GetSubTask(DdiTask *pTask) { return m_resMngr.GetSubTask(pTask); }
-mfxStatus TaskManager::DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx)
-{
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-    return m_resMngr.DeleteSubTask(pTask, subtaskIdx, m_EventCache.get());
-#else
-    return m_resMngr.DeleteSubTask(pTask, subtaskIdx);
-#endif
-}
+mfxU32 TaskManager::GetSubTask(DdiTask *pTask) { return m_resMngr.GetSubTask(pTask); }
+mfxStatus TaskManager::DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx) { return m_resMngr.DeleteSubTask(pTask, subtaskIdx); }
 
 void TaskManager::UpdatePTS_SimpleMode(
     mfxFrameSurface1 *input,
@@ -4472,21 +4414,12 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     MfxHwVideoProcessing::mfxExecuteParams  execParams = m_executeParams;
     sts = MergeRuntimeParams(pTask, &execParams);
     MFX_CHECK_STS(sts);
-
     if (execParams.bComposite &&
         (MFX_HW_D3D11 == m_pCore->GetVAType() && execParams.refCount > MAX_STREAMS_PER_TILE))
     {
         mfxU32 NumExecute = execParams.refCount;
         for (mfxU32 execIdx = 0; execIdx < NumExecute; execIdx++)
         {
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-            execParams.m_GpuEvent.gpuSyncEvent = INVALID_HANDLE_VALUE;
-
-            if(execIdx == 0)
-                execParams.m_GpuEvent = pTask->m_GpuEvent;
-            else
-                execParams.m_GpuEvent = pTask->pSubResource->subTasks[execIdx - 1].m_GpuEvent;
-#endif
             execParams.execIdx = execIdx;
             sts = (*m_ddi)->Execute(&execParams);
             if (sts != MFX_ERR_NONE)
@@ -4494,14 +4427,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         }
     }
     else
-    {
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-        pTask->m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_VP;
-        execParams.m_GpuEvent = pTask->m_GpuEvent;
-#endif
         sts = (*m_ddi)->Execute(&execParams);
-    }
-
     if (sts != MFX_ERR_NONE)
     {
         pTask->SetFree(true);
@@ -4596,49 +4522,23 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
     {
 #endif
         if (!pTask->skipQueryStatus && !pHwVpp->m_executeParams.mirroring) {
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-            HRESULT waitRes = WAIT_OBJECT_0;
-            waitRes = WaitForSingleObject(pTask->m_GpuEvent.gpuSyncEvent, 5000); // 5000ms - timeout for VP operation
-            if (WAIT_OBJECT_0 != waitRes)
+            mfxU32 currSubTaskIdx = pHwVpp->m_taskMngr.GetSubTask(pTask);
+            while (currSubTaskIdx != NO_INDEX)
             {
-                return MFX_ERR_GPU_HANG;
-            }
-#endif
-            SubTask currSubTask = pHwVpp->m_taskMngr.GetSubTask(pTask);
-            while (currSubTask.idx != NO_INDEX)
-            {
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-                waitRes = WaitForSingleObject(currSubTask.m_GpuEvent.gpuSyncEvent, 5000); // 5000ms - timeout for VP operation
-                if (WAIT_OBJECT_0 != waitRes)
-                {
-                    sts = MFX_ERR_GPU_HANG;
-                }
-                else
-#endif
-                {
-                    sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currSubTask.idx);
-                }
+                sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currSubTaskIdx);
                 if (sts == MFX_TASK_DONE || sts == MFX_ERR_NONE)
                 {
-                    pHwVpp->m_taskMngr.DeleteSubTask(pTask, currSubTask.idx);
-                    currSubTask = pHwVpp->m_taskMngr.GetSubTask(pTask);
+                    pHwVpp->m_taskMngr.DeleteSubTask(pTask, currSubTaskIdx);
+                    currSubTaskIdx = pHwVpp->m_taskMngr.GetSubTask(pTask);
                 }
                 else
-                    currSubTask.idx = NO_INDEX;
+                    currSubTaskIdx = NO_INDEX;
             }
-
             if (sts == MFX_TASK_DONE || sts == MFX_ERR_NONE)
-            {
                 sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currentTaskIdx);
-            }
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-            if(sts != MFX_ERR_NONE)
-#else
-            if(sts == MFX_ERR_DEVICE_FAILED ||
+            if (sts == MFX_ERR_DEVICE_FAILED ||
                 sts == MFX_ERR_GPU_HANG)
-#endif
             {
-                sts = MFX_ERR_GPU_HANG;
                 pHwVpp->m_critical_error = sts;
                 pHwVpp->m_taskMngr.CompleteTask(pTask);
             }
@@ -4690,40 +4590,40 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
             MFX_CHECK_STS(sts);
             pHwVpp->m_Surfaces2Unlock.pop_front();
         }
-        }
-#endif
-#if 0
-    // code moved in Submission() part due to issue with encoder
-    //// [3] Copy sys -> vid
-    if (SYS_TO_SYS == pHwVpp->m_ioMode || D3D_TO_SYS == pHwVpp->m_ioMode)
-    {
-        mfxFrameData d3dSurf = { 0 };
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Surface lock (output frame)");
-        MFX_LTRACE_S(MFX_TRACE_LEVEL_INTERNAL, pTask->frameNumber);
-        FrameLocker lock(
-            pHwVpp->m_pCore,
-            d3dSurf,
-            pHwVpp->m_internalVidSurf[VPP_OUT].mids[pTask->output.resIdx]);
-
-        MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
-        MFX_AUTO_TRACE_STOP();
-
-        mfxFrameData sysSurf = pTask->output.pSurf->Data;
-        FrameLocker lock2(pHwVpp->m_pCore, sysSurf, true);
-        MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
-
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Copy output (d3d->sys)");
-            sts = CopyFrameDataBothFields(pHwVpp->m_pCore, sysSurf, d3dSurf, pTask->output.pSurf->Info);
-            MFX_CHECK_STS(sts);
-        }
     }
 #endif
-    // [4] Complete task
-    sts = pHwVpp->m_taskMngr.CompleteTask(pTask);
+#if 0
+        // code moved in Submission() part due to issue with encoder
+        //// [3] Copy sys -> vid
+        if (SYS_TO_SYS == pHwVpp->m_ioMode || D3D_TO_SYS == pHwVpp->m_ioMode)
+        {
+            mfxFrameData d3dSurf = { 0 };
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Surface lock (output frame)");
+            MFX_LTRACE_S(MFX_TRACE_LEVEL_INTERNAL, pTask->frameNumber);
+            FrameLocker lock(
+                pHwVpp->m_pCore,
+                d3dSurf,
+                pHwVpp->m_internalVidSurf[VPP_OUT].mids[pTask->output.resIdx]);
+
+            MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
+            MFX_AUTO_TRACE_STOP();
+
+            mfxFrameData sysSurf = pTask->output.pSurf->Data;
+            FrameLocker lock2(pHwVpp->m_pCore, sysSurf, true);
+            MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
+
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Copy output (d3d->sys)");
+                sts = CopyFrameDataBothFields(pHwVpp->m_pCore, sysSurf, d3dSurf, pTask->output.pSurf->Info);
+                MFX_CHECK_STS(sts);
+            }
+        }
+#endif
+        // [4] Complete task
+        sts = pHwVpp->m_taskMngr.CompleteTask(pTask);
     return sts;
 
-    } // mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
+} // mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 
 
 #ifdef MFX_ENABLE_MCTF
