@@ -212,18 +212,17 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     else
     {
         m_pMfeAdapter = CreatePlatformMFEEncoder(core);
-        if (m_pMfeAdapter == nullptr)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        MFX_CHECK(m_pMfeAdapter, MFX_ERR_UNSUPPORTED);
+
         sts = m_pMfeAdapter->Create(m_vdevice, m_vcontext, m_width, m_height);
         MFX_CHECK_STS(sts);
-        ENCODE_CAPS_HEVC * caps = (ENCODE_CAPS_HEVC *)m_pMfeAdapter->GetCaps(DDI_CODEC_HEVC);
-        if(caps == nullptr)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        auto caps = reinterpret_cast<ENCODE_CAPS_HEVC*>(m_pMfeAdapter->GetCaps(CODEC_HEVC));
+        MFX_CHECK(caps, MFX_ERR_UNSUPPORTED);
+
         m_caps.ddi_caps = *caps;
         m_vdecoder = m_pMfeAdapter->GetVideoDecoder();
-        if (m_vdecoder == nullptr)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-
+        MFX_CHECK(m_vdecoder, MFX_ERR_UNSUPPORTED);
     }
 #endif
 
@@ -275,25 +274,11 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
         }
     }
 #endif
-    /* not used
-    ext.Function = ENCODE_ENC_CTRL_CAPS_ID;
-    ext.pPrivateOutputData = &m_capsQuery;
-    ext.PrivateOutputDataSize = sizeof(m_capsQuery);
 
-    hr = DecoderExtension(ext);
-    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-    ext.Function = ENCODE_ENC_CTRL_GET_ID;
-    ext.pPrivateOutputData = &m_capsGet;
-    ext.PrivateOutputDataSize = sizeof(m_capsGet);
-
-    hr = DecoderExtension(ext);
-    MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-    */
 #if defined(MFX_ENABLE_MFE)
     if (m_pMfeAdapter != nullptr)
     {
-        m_StreamInfo.CodecId = DDI_CODEC_HEVC;
+        m_StreamInfo.CodecId = CODEC_HEVC;
         unsigned long long timeout = (((mfxU64)par.mfx.FrameInfo.FrameRateExtD) * 1000000 / par.mfx.FrameInfo.FrameRateExtN) / ((par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) ? 2 : 1);
         m_pMfeAdapter->Join(par.m_ext.mfeParam, m_StreamInfo, timeout);
     }
@@ -400,10 +385,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIF
 {
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
-    HRESULT hr;
-
     type = (D3DDDIFORMAT)convertDX9TypeToDX11Type((mfxU8)type);
-
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryCompBufferInfo");
     if (!m_infoQueried)
@@ -412,11 +394,18 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIF
 
         D3D11_VIDEO_DECODER_EXTENSION ext = {};
         ext.Function = ENCODE_FORMAT_COUNT_ID;
+#if defined(MFX_ENABLE_MFE)
+        MFE_CODEC codec = CODEC_HEVC;
+        if (m_pMfeAdapter)
+        {
+            ext.pPrivateInputData = &codec;
+            ext.PrivateInputDataSize = sizeof(codec);
+        }
+#endif
         ext.pPrivateOutputData = &cnt;
         ext.PrivateOutputDataSize = sizeof(ENCODE_FORMAT_COUNT);
 
-
-        hr = DecoderExtension(ext);
+        HRESULT hr = DecoderExtension(ext);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
         m_compBufInfo.resize(cnt.CompressedBufferInfoCount);
@@ -430,6 +419,13 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryCompBufferInfo(D3DDDIF
 
         Zero(ext);
         ext.Function = ENCODE_FORMATS_ID;
+#if defined(MFX_ENABLE_MFE)
+        if (m_pMfeAdapter)
+        {
+            ext.pPrivateInputData = &codec;
+            ext.PrivateInputDataSize = sizeof(codec);
+        }
+#endif
         ext.pPrivateOutputData = &encodeFormats;
         ext.PrivateOutputDataSize = sizeof(ENCODE_FORMATS);
 
@@ -590,7 +586,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
 #if defined(MFX_ENABLE_MFE)
     if (m_pMfeAdapter != nullptr)
     {
-        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS, m_StreamInfo, 1);
+        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_STREAMINFO, m_StreamInfo, 1);
     }
 #endif
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA,          m_sps,      1);

@@ -108,7 +108,7 @@ private:
     CComQIPtr<ID3D11VideoContext>               m_vcontext;
 #if defined(MFX_ENABLE_MFE)
     MFEDXVAEncoder*                             m_pMfeAdapter;
-    ENCODE_MULTISTREAM_INFO                     m_StreamInfo;
+    ENCODE_SINGLE_STREAM_INFO                   m_StreamInfo;
 #endif
     MFX_ENCODE_CAPS_HEVC                        m_caps;
     ENCODE_ENC_CTRL_CAPS                        m_capsQuery;

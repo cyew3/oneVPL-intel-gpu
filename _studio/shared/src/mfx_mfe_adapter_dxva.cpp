@@ -22,6 +22,7 @@
 
 #if defined(MFX_VA_WIN) && defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
 
+#include "hevce_ddi_main.h"
 #include "mfx_mfe_adapter_dxva.h"
 #include "vm_interlocked.h"
 #include <assert.h>
@@ -42,11 +43,6 @@ MFEDXVAEncoder::MFEDXVAEncoder() :
     , m_maxFramesToCombine(MAX_FRAMES_TO_COMBINE)
     , m_framesCollected(0)
     , m_minTimeToWait(0)
-    , m_pAvcCAPS(nullptr)
-    , m_pHevcCAPS(nullptr)
-#ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
-    , m_pAv1CAPS(NULL)
-#endif
 {
     m_contexts.reserve(m_maxFramesToCombine);
     m_streams.reserve(m_maxFramesToCombine);
@@ -75,89 +71,63 @@ void MFEDXVAEncoder::Release()
         delete this;
 }
 
-MFEDXVAEncoder::CAPS MFEDXVAEncoder::GetCaps(MFE_CODEC codecId)
+MFEDXVAEncoder::CAPS MFEDXVAEncoder::GetCaps(MFE_CODEC codec)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFEDXVAEncoder::GetCaps");
-    HRESULT hr = S_OK;
-    switch (codecId)
-    {
-    case DDI_CODEC_AVC:
-    {
-        if (!m_pAvcCAPS)
-        {
-            D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-            MFE_CODEC ddi_codec = DDI_CODEC_AVC;
-            decoderExtParam.Function = ENCODE_MFE_SET_CODEC_ID;
-            decoderExtParam.pPrivateInputData = &ddi_codec;
-            decoderExtParam.PrivateInputDataSize = sizeof(MFE_CODEC);
-            decoderExtParam.pPrivateOutputData = 0;
-            decoderExtParam.PrivateOutputDataSize = 0;
-            decoderExtParam.ResourceCount = 0;
-            decoderExtParam.ppResourceList = 0;
 
-            hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
-            if (hr != S_OK)
-            {
-                return nullptr;
-            }
-            m_pAvcCAPS = new ENCODE_CAPS;
-            decoderExtParam.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
-            decoderExtParam.pPrivateInputData = 0;
-            decoderExtParam.PrivateInputDataSize = 0;
-            decoderExtParam.pPrivateOutputData = m_pAvcCAPS;
-            decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_CAPS);
-            decoderExtParam.ResourceCount = 0;
-            decoderExtParam.ppResourceList = 0;
+    // Two steps of MFE Caps Query:
+    // [1] First with CODEC_MFE
+    if (!m_MFE_CAPS)
+    {
+        m_MFE_CAPS.reset(new MFE_CAPS);
 
-            hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
-            if (hr != S_OK)
-            {
-                return nullptr;
-            }
-        }
-        return (CAPS)m_pAvcCAPS;
+        MFE_CODEC mfeCodec = CODEC_MFE;
+        D3D11_VIDEO_DECODER_EXTENSION ext = { ENCODE_QUERY_ACCEL_CAPS_ID, &mfeCodec, sizeof(mfeCodec), m_MFE_CAPS.get(), sizeof(MFE_CAPS) };
+        HRESULT hr = DecoderExtension(m_pVideoContext, m_pMfeContext, ext);
+        if (FAILED(hr))
+            return nullptr;
+        // TODO: curently we don't handle MFE_CAPS the right way, just querying. Need to add support.
     }
-    case DDI_CODEC_HEVC:
+
+    // [2] Second with specific MFE CodecID
+    // Below we cache query caps results
+    MFEDXVAEncoder::CAPS capsPtr = nullptr;
+    UINT capsSize = 0;
+    switch (codec)
     {
-        if (!m_pHevcCAPS)
-        {
-            D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-            MFE_CODEC ddi_codec = DDI_CODEC_HEVC;
-            decoderExtParam.Function = ENCODE_MFE_SET_CODEC_ID;
-            decoderExtParam.pPrivateInputData = &ddi_codec;
-            decoderExtParam.PrivateInputDataSize = sizeof(MFE_CODEC);
-            decoderExtParam.pPrivateOutputData = 0;
-            decoderExtParam.PrivateOutputDataSize = 0;
-            decoderExtParam.ResourceCount = 0;
-            decoderExtParam.ppResourceList = 0;
-
-            hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
-            if (hr != S_OK)
-            {
-                return nullptr;
-            }
-            m_pHevcCAPS = new ENCODE_CAPS_HEVC;
-            decoderExtParam.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
-            decoderExtParam.pPrivateInputData = 0;
-            decoderExtParam.PrivateInputDataSize = 0;
-            decoderExtParam.pPrivateOutputData = m_pHevcCAPS;
-            decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_CAPS_HEVC);
-            decoderExtParam.ResourceCount = 0;
-            decoderExtParam.ppResourceList = 0;
-
-            hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
-            if (hr != S_OK)
-            {
-                return nullptr;
-            }
-        }
-        return (CAPS)m_pHevcCAPS;
-    }
+    case CODEC_AVC:
+        if (m_avcCAPS)
+            return m_avcCAPS.get();
+        m_avcCAPS.reset(new ENCODE_CAPS);
+        capsPtr = m_avcCAPS.get();
+        capsSize = sizeof(ENCODE_CAPS);
+        break;
+    case CODEC_HEVC:
+        if (m_hevcCAPS)
+            return m_hevcCAPS.get();
+        m_hevcCAPS.reset(new ENCODE_CAPS_HEVC);
+        capsPtr = m_hevcCAPS.get();
+        capsSize = sizeof(ENCODE_CAPS_HEVC);
+        break;
 #ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
-    case DDI_CODEC_AV1: return (CAPS)m_pAv1CAPS;
+    case CODEC_AV1:
+        if (m_av1CAPS)
+            return m_av1CAPS.get();
+        m_av1CAPS.reset(new ENCODE_CAPS_AV1);
+        capsPtr = m_av1CAPS.get();
+        capsSize = sizeof(ENCODE_CAPS_AV1);
+        break;
 #endif
-    default: return nullptr;
+    default:
+        break;
     };
+
+    D3D11_VIDEO_DECODER_EXTENSION ext = { ENCODE_QUERY_ACCEL_CAPS_ID, &codec, sizeof(codec), capsPtr, capsSize };
+    HRESULT hr = DecoderExtension(m_pVideoContext, m_pMfeContext, ext);
+    if (FAILED(hr))
+        return nullptr;
+
+    return capsPtr;
 }
 
 mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
@@ -242,7 +212,7 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
     }
     return MFX_ERR_NONE;
 }
-mfxStatus MFEDXVAEncoder::reconfigureRestorationCounts(ENCODE_MULTISTREAM_INFO &info)
+mfxStatus MFEDXVAEncoder::reconfigureRestorationCounts(ENCODE_SINGLE_STREAM_INFO &info)
 {
     //used in Join function which already covered by mutex
     //accurate calculation should involve float calculation for different framerates
@@ -280,7 +250,7 @@ mfxStatus MFEDXVAEncoder::reconfigureRestorationCounts(ENCODE_MULTISTREAM_INFO &
     return MFX_ERR_NONE;
 }
 mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
-                               ENCODE_MULTISTREAM_INFO &info,
+                               ENCODE_SINGLE_STREAM_INFO &info,
                                unsigned long long timeout)
 {
     std::lock_guard<std::mutex> guard(m_mfe_guard);//need to protect in case there are streams added/removed in runtime.
@@ -318,7 +288,7 @@ mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
         else if (iter->info.StreamId >= info.StreamId)
             info.StreamId = iter->info.StreamId+1;
     }
-    ENCODE_MULTISTREAM_INFO _info = info;
+    ENCODE_SINGLE_STREAM_INFO _info = info;
     m_streams_pool.push_back(m_stream_ids_t(_info, MFX_ERR_NONE, timeout));
     iter = m_streams_pool.end();
     m_streamsMap.insert(std::pair<uint32_t, StreamsIter_t>(_info.StreamId,--iter));
@@ -331,7 +301,7 @@ mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
     return sts;
 }
 
-mfxStatus MFEDXVAEncoder::Disjoin(ENCODE_MULTISTREAM_INFO info)
+mfxStatus MFEDXVAEncoder::Disjoin(ENCODE_SINGLE_STREAM_INFO info)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFEDXVAEncoder::Disjoin");
     std::lock_guard<std::mutex> guard(m_mfe_guard);//need to protect in case there are streams added/removed in runtime
@@ -340,25 +310,22 @@ mfxStatus MFEDXVAEncoder::Disjoin(ENCODE_MULTISTREAM_INFO info)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    ENCODE_MULTISTREAM_INFO _info = info;
+    ENCODE_SINGLE_STREAM_INFO _info = info;
     if(iter == m_streamsMap.end())
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    ENCODE_COMPBUFFERDESC  encodeCompBufferDesc;
-    memset(&encodeCompBufferDesc,0,sizeof(ENCODE_COMPBUFFERDESC));
+    ENCODE_COMPBUFFERDESC  encodeCompBufferDesc = {};
 
-    encodeCompBufferDesc.CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS);
-    encodeCompBufferDesc.DataSize             = uint32_t(sizeof ENCODE_MULTISTREAM_INFO);
+    encodeCompBufferDesc.CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_STREAMINFO);
+    encodeCompBufferDesc.DataSize             = uint32_t(sizeof ENCODE_SINGLE_STREAM_INFO);
     encodeCompBufferDesc.pCompBuffer          = &_info;
 
-    ENCODE_EXECUTE_PARAMS encodeExecuteParams;
-    memset(&encodeExecuteParams, 0, sizeof(ENCODE_EXECUTE_PARAMS));
+    ENCODE_EXECUTE_PARAMS encodeExecuteParams = {};
     encodeExecuteParams.NumCompBuffers = 1;
     encodeExecuteParams.pCompressedBuffers = &encodeCompBufferDesc;
 
-    D3D11_VIDEO_DECODER_EXTENSION decoderExtParams;
-    memset(&decoderExtParams, 0, sizeof(D3D11_VIDEO_DECODER_EXTENSION));
+    D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = {};
     decoderExtParams.Function              = ENCODE_MFE_END_STREAM_ID;
     decoderExtParams.pPrivateInputData     = &encodeExecuteParams;
     decoderExtParams.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
@@ -388,11 +355,16 @@ mfxStatus MFEDXVAEncoder::Destroy()
     m_streamsMap.clear();
     SAFE_RELEASE(m_pMfeContext);
     m_pMfeContext = nullptr;
-
+    m_MFE_CAPS.reset();
+    m_avcCAPS.reset();
+    m_hevcCAPS.reset();
+#ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
+    m_av1CAPS.reset();
+#endif
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFEDXVAEncoder::Submit(const ENCODE_MULTISTREAM_INFO info, unsigned long long timeToWait, bool skipFrame)
+mfxStatus MFEDXVAEncoder::Submit(const ENCODE_SINGLE_STREAM_INFO info, unsigned long long timeToWait, bool skipFrame)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFEDXVAEncoder::Submit");
     std::unique_lock<std::mutex> guard(m_mfe_guard);
@@ -531,11 +503,10 @@ mfxStatus MFEDXVAEncoder::Submit(const ENCODE_MULTISTREAM_INFO info, unsigned lo
             if (!it->isFrameSubmitted())
             {
                 m_streams.push_back(it);
-                ENCODE_COMPBUFFERDESC  encodeCompBufferDesc;
-                memset(&encodeCompBufferDesc, 0, sizeof(ENCODE_COMPBUFFERDESC));
+                ENCODE_COMPBUFFERDESC  encodeCompBufferDesc = {};
 
-                encodeCompBufferDesc.CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS);
-                encodeCompBufferDesc.DataSize             = uint32_t(sizeof ENCODE_MULTISTREAM_INFO);
+                encodeCompBufferDesc.CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_STREAMINFO);
+                encodeCompBufferDesc.DataSize             = uint32_t(sizeof ENCODE_SINGLE_STREAM_INFO);
                 encodeCompBufferDesc.pCompBuffer          = &(it->info);
                 m_contexts.push_back(encodeCompBufferDesc);
             }
@@ -563,18 +534,13 @@ mfxStatus MFEDXVAEncoder::Submit(const ENCODE_MULTISTREAM_INFO info, unsigned lo
         else
         {
             HRESULT hr;
-            ENCODE_EXECUTE_PARAMS encodeExecuteParams;
-            memset(&encodeExecuteParams,0,sizeof(ENCODE_EXECUTE_PARAMS));
+            ENCODE_EXECUTE_PARAMS encodeExecuteParams = {};
             encodeExecuteParams.NumCompBuffers = (UINT)m_contexts.size();
             encodeExecuteParams.pCompressedBuffers = &m_contexts[0];
             D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
             decoderExtParams.Function              = ENCODE_MFE_START_ID;
             decoderExtParams.pPrivateInputData     = &encodeExecuteParams;
             decoderExtParams.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
-            decoderExtParams.pPrivateOutputData    = 0;
-            decoderExtParams.PrivateOutputDataSize = 0;
-            decoderExtParams.ResourceCount         = 0;
-            decoderExtParams.ppResourceList        = 0;
 
 #ifdef DEBUG_TRACE
             printf("\n\nSubmit frames to driver\n\n");

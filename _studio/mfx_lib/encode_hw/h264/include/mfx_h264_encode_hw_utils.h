@@ -1096,9 +1096,6 @@ namespace MfxHwH264Encode
 #endif
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
             Zero(m_GpuEvent);
-#if defined(MFX_ENABLE_MFE)
-            Zero(m_GpuMfeEvent);
-#endif
 #endif
         }
 
@@ -1356,9 +1353,6 @@ namespace MfxHwH264Encode
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
         GPU_SYNC_EVENT_HANDLE m_GpuEvent[2]; // events for every field.
-#if defined(MFX_ENABLE_MFE)
-        GPU_SYNC_MFE_EVENT_HANDLE m_GpuMfeEvent[2];
-#endif
 #endif
 #ifdef MFX_ENABLE_AVC_CUSTOM_QMATRIX
         ENCODE_SET_PICTURE_QUANT m_qMatrix; //buffer for quantization matrix

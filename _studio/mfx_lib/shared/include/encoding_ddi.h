@@ -112,33 +112,57 @@ static const GUID DXVA2_Intel_MFE =
 
 #define ENCODE_MFE_START_ID      0x113 //Kick start MFE encoding
 #define ENCODE_MFE_END_STREAM_ID 0x114 //Indicate which streams to be destroyed in MFE
-#define ENCODE_MFE_SET_CODEC_ID  0x115 //set codec for MFE GUID before query to indicate what caps structure to be reported.
 typedef enum tagMFE_CODEC
 {
-    DDI_CODEC_AVC = 0,
-    DDI_CODEC_HEVC,
-    DDI_CODEC_AV1
+    CODEC_AVC = 0,
+    CODEC_HEVC,
+    CODEC_AV1,
+    CODEC_MFE = 0xFF,
 } MFE_CODEC;
 
-typedef struct tagENCODE_MULTISTREAM_INFO
+// D3D11_DDI_VIDEO_ENCODER_BUFFER_STREAMINFO type
+typedef struct tagENCODE_SINGLE_STREAM_INFO
 {
     UINT        StreamId;
     MFE_CODEC   CodecId;
-    UINT        reserved32bits[3];
-} ENCODE_MULTISTREAM_INFO;
+    UCHAR       SourceId;
+    UCHAR       reserved8b[2];
 
-#if defined(MFX_ENABLE_MFE)//now MFE defines own event model, need DDI redesign!!!!
-typedef struct _GPU_SYNC_MFE_EVENT_HANDLE
+    UINT        reserved32b[6];
+} ENCODE_SINGLE_STREAM_INFO;
+
+typedef struct tagMFE_CAPS
 {
-    uint8_t         m_gpuComponentId;   //GPU_COMPONENT_ID
-    UINT            StatusReportFeedbackNumber;
-    ENCODE_MULTISTREAM_INFO StreamInfo;
-    HANDLE          gpuSyncEvent;
-    UINT            reserved[1];
-} GPU_SYNC_MFE_EVENT_HANDLE, *PGPU_SYNC_MFE_EVENT_HANDLE;
+    union {
+        struct {
+            USHORT AVC : 1;
+            USHORT HEVC : 1;
+            USHORT VP9 : 1;
+            USHORT AV1 : 1;
+            USHORT VVC : 1;
+            USHORT ReservedBits : 11; // [0]
+        } bitfields;
+        USHORT value;
+    } CodecSupport;
+    USHORT MaxNumOfConcurrentFramesMinus1;
+    union {
+        struct {
+            UINT MixedCodecs : 1;
+            UINT MixedTUs : 1;
+            UINT ReservedBits : 30;
+        } bitfields;
+        UINT value;
+    } MFEFeatureSupport;
+    UINT reserved32bits[16];
+} MFE_CAPS;
 
-#define ENCODE_MFE_EVENT_ID                       0x15
-#endif
+// D3D11_DDI_VIDEO_ENCODER_BUFFER_EVENT type
+typedef struct tagENCODE_EVENT_DESCR
+{
+    UINT StatusReportFeedbackNumber;
+    HANDLE gpuSyncEvent;
+    UINT reserved[8];
+} ENCODE_EVENT_DESCR;
 
 #define AVC_D3D9_DDI_VERSION 928
 #define AVC_D3D11_DDI_VERSION 370  
@@ -176,7 +200,7 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS_DESCR
     UINT StatusParamType;
     UINT SizeOfStatusParamStruct;
     UINT StreamID;
-    UINT reserved;
+    UINT reserved[1];
 } ENCODE_QUERY_STATUS_PARAMS_DESCR;
 
 // new encode query status interface (starting from DDI 0.915)

@@ -157,7 +157,7 @@ namespace MfxHwH264Encode
         ID3D11VideoDecoder *                        m_pDecoder;
 #if defined (MFX_ENABLE_MFE)
         MFEDXVAEncoder *                            m_pMFEAdapter;
-        ENCODE_MULTISTREAM_INFO                     m_StreamInfo;
+        ENCODE_SINGLE_STREAM_INFO                   m_StreamInfo;
 #endif
         GUID                                        m_guid;
         GUID                                        m_requestedGuid;

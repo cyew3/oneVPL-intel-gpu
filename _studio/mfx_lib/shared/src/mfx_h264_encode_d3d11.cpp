@@ -199,7 +199,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     if (m_pMFEAdapter != nullptr)
     {
         mfxExtMultiFrameParam const & mfeParam = GetExtBufferRef(par);
-        m_StreamInfo.CodecId = DDI_CODEC_AVC;
+        m_StreamInfo.CodecId = CODEC_AVC;
         unsigned long long timeout = (((mfxU64)par.mfx.FrameInfo.FrameRateExtD) * 1000000 / par.mfx.FrameInfo.FrameRateExtN) / ((par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) ? 2 : 1);
         return m_pMFEAdapter->Join(mfeParam, m_StreamInfo, timeout);
     }
@@ -252,21 +252,22 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
 
     if (!m_infoQueried)
     {
-        ENCODE_FORMAT_COUNT encodeFormatCount;
-        encodeFormatCount.CompressedBufferInfoCount = 0;
-        encodeFormatCount.UncompressedFormatCount = 0;
+        ENCODE_FORMAT_COUNT encodeFormatCount = {};
 
-        //HRESULT hr = m_auxDevice->Execute(ENCODE_FORMAT_COUNT_ID, guid, encodeFormatCount);
-        D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-        decoderExtParam.Function = ENCODE_FORMAT_COUNT_ID;
-        decoderExtParam.pPrivateInputData = 0; //m_guid ???
-        decoderExtParam.PrivateInputDataSize = 0; // sizeof(m_guid) ???
-        decoderExtParam.pPrivateOutputData = &encodeFormatCount;
-        decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_FORMAT_COUNT);
-        decoderExtParam.ResourceCount = 0;
-        decoderExtParam.ppResourceList = 0;
+        D3D11_VIDEO_DECODER_EXTENSION ext = {};
+        ext.Function = ENCODE_FORMAT_COUNT_ID;
+#if defined(MFX_ENABLE_MFE)
+        MFE_CODEC codec = CODEC_AVC;
+        if (m_pMFEAdapter)
+        {
+            ext.pPrivateInputData = &codec;
+            ext.PrivateInputDataSize = sizeof(codec);
+        }
+#endif
+        ext.pPrivateOutputData = &encodeFormatCount;
+        ext.PrivateOutputDataSize = sizeof(ENCODE_FORMAT_COUNT);
 
-        HRESULT hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+        HRESULT hRes = DecoderExtension(m_pVideoContext, m_pDecoder, ext);
         CHECK_HRES(hRes);
         //---------------------------------------------------
 
@@ -279,17 +280,19 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
         encodeFormats.pCompressedBufferInfo = &m_compBufInfo[0];
         encodeFormats.pUncompressedFormats = &m_uncompBufInfo[0];
 
-        //D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-        decoderExtParam.Function = ENCODE_FORMATS_ID;
-        decoderExtParam.pPrivateInputData = 0; //m_guid ???
-        decoderExtParam.PrivateInputDataSize = 0; // sizeof(m_guid) ???
-        decoderExtParam.pPrivateOutputData = &encodeFormats;
-        decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_FORMATS);
-        decoderExtParam.ResourceCount = 0;
-        decoderExtParam.ppResourceList = 0;
+        Zero(ext);
+        ext.Function = ENCODE_FORMATS_ID;
+#if defined(MFX_ENABLE_MFE)
+        if (m_pMFEAdapter)
+        {
+            ext.pPrivateInputData = &codec;
+            ext.PrivateInputDataSize = sizeof(codec);
+        }
+#endif
+        ext.pPrivateOutputData = &encodeFormats;
+        ext.PrivateOutputDataSize = sizeof(ENCODE_FORMATS);
 
-        //hr = m_auxDevice->Execute(ENCODE_FORMATS_ID, (void *)0, encodeFormats);
-        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, ext);
         CHECK_HRES(hRes);
 
         MFX_CHECK(encodeFormats.CompressedBufferInfoSize > 0, MFX_ERR_DEVICE_FAILED);
@@ -547,8 +550,8 @@ mfxStatus D3D11Encoder::ExecuteImpl(
 #if defined(MFX_ENABLE_MFE)
     if (m_pMFEAdapter != nullptr)
     {
-        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS);
-        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize = mfxU32(sizeof(ENCODE_MULTISTREAM_INFO));
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_STREAMINFO);
+        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize = mfxU32(sizeof(ENCODE_SINGLE_STREAM_INFO));
         m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer = &m_StreamInfo;
         m_encodeExecuteParams.NumCompBuffers++;
     }
@@ -732,32 +735,6 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     if(SkipFlag != 1)
     {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-#if 0 //defined MFX_ENABLE_MFE - currently blocking synchronization is disabled for MFE
-        if(m_pMFEAdapter != nullptr)
-        {
-            // allocate the event
-            DdiTask & task1 = RemoveConst(task);
-            task1.m_GpuMfeEvent[fieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;
-            task1.m_GpuMfeEvent[fieldId].StreamInfo = m_StreamInfo;
-            task1.m_GpuMfeEvent[fieldId].StatusReportFeedbackNumber = task1.m_statusReportNumber[fieldId];
-            m_EventCache->GetEvent(task1.m_GpuMfeEvent[fieldId].gpuSyncEvent);
-
-            D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-            decoderExtParams.Function = ENCODE_MFE_EVENT_ID;
-            decoderExtParams.pPrivateInputData = &task1.m_GpuMfeEvent[fieldId];
-            decoderExtParams.PrivateInputDataSize = sizeof(task1.m_GpuMfeEvent[fieldId]);
-            decoderExtParams.pPrivateOutputData = nullptr;
-            decoderExtParams.PrivateOutputDataSize = 0;
-            decoderExtParams.ResourceCount = 0;
-            decoderExtParams.ppResourceList = nullptr;
-            {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuMfeEventHandle");
-                hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
-            }
-            CHECK_HRES(hr);
-        }
-        else
-#endif
         {
             // allocate the event
             DdiTask & task1 = RemoveConst(task);
@@ -1081,121 +1058,103 @@ mfxStatus D3D11Encoder::Init(
     bool bUseDecoderInCore = (guid != MSDK_Private_Guid_Encode_MVC_Dependent_View) && (guid != DXVA2_Intel_MFE);
 
     ComPtrCore<ID3D11VideoDecoder>* pVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_core, MFXID3D11DECODER_GUID); 
-    if (!pVideoDecoder)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    else
+    MFX_CHECK(pVideoDecoder, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    D3D11_VIDEO_DECODER_DESC video_desc = {};
+    D3D11_VIDEO_DECODER_CONFIG video_config = {};
+    m_pDecoder = nullptr;
+
+    if (pVideoDecoder->get() && bUseDecoderInCore)
     {
-        D3D11_VIDEO_DECODER_DESC video_desc;
-        D3D11_VIDEO_DECODER_CONFIG video_config = {0};
-        m_pDecoder = nullptr;
-
-        if (pVideoDecoder->get() && bUseDecoderInCore)
-        {
-            hRes = pVideoDecoder->get()->GetCreationParameters(&video_desc, &video_config);
-            CHECK_HRES(hRes);
-            // video decoder from Core should be used if it has been created with same resolution
-            // also decoder from Core created with lower resolution could be used for Query, QueryIOSurf (but not for Init)
-            // for PAVP case new instance of decoder should be created
-            if ((width <= video_desc.SampleWidth && height <= video_desc.SampleHeight
-                || guid == MSDK_Private_Guid_Encode_AVC_Query
-                || guid == MSDK_Private_Guid_Encode_AVC_LowPower_Query)
-                && !extPavp
-                && video_desc.Guid == m_guid)
-                m_pDecoder = pVideoDecoder->get();
-        }
+        hRes = pVideoDecoder->get()->GetCreationParameters(&video_desc, &video_config);
+        CHECK_HRES(hRes);
+        // video decoder from Core should be used if it has been created with same resolution
+        // also decoder from Core created with lower resolution could be used for Query, QueryIOSurf (but not for Init)
+        // for PAVP case new instance of decoder should be created
+        if ((width <= video_desc.SampleWidth && height <= video_desc.SampleHeight
+            || guid == MSDK_Private_Guid_Encode_AVC_Query
+            || guid == MSDK_Private_Guid_Encode_AVC_LowPower_Query)
+            && !extPavp
+            && video_desc.Guid == m_guid)
+            m_pDecoder = pVideoDecoder->get();
+    }
 #if defined(MFX_ENABLE_MFE)
-        else if (guid == DXVA2_Intel_MFE)
-        {
-            if(m_pMFEAdapter == nullptr)
+    else if (guid == DXVA2_Intel_MFE)
+    {
+        if (m_pMFEAdapter == nullptr)
             m_pMFEAdapter = CreatePlatformMFEEncoder(m_core);
+        MFX_CHECK(m_pMFEAdapter, MFX_ERR_UNSUPPORTED);
 
-            if (m_pMFEAdapter == nullptr)
-                return MFX_ERR_UNSUPPORTED;
+        sts = m_pMFEAdapter->Create(m_pVideoDevice, m_pVideoContext, width, height);
+        MFX_CHECK_STS(sts);
 
-            sts = m_pMFEAdapter->Create(m_pVideoDevice, m_pVideoContext, width, height);
-            if (sts != MFX_ERR_NONE)
-                return sts;
-            m_pDecoder = m_pMFEAdapter->GetVideoDecoder();
-            if (m_pDecoder == nullptr)
-                return MFX_ERR_UNSUPPORTED;
-            ENCODE_CAPS* caps = (ENCODE_CAPS*)m_pMFEAdapter->GetCaps(DDI_CODEC_AVC);
-            if (caps != nullptr)
-            {
-                m_caps.ddi_caps = *caps;
-                m_caps.CQPSupport = 1;
-                m_caps.CBRSupport = 1;
-                m_caps.VBRSupport = 1;
-            }
-            else
-                return MFX_ERR_UNSUPPORTED;
-        }
+        m_pDecoder = m_pMFEAdapter->GetVideoDecoder();
+        MFX_CHECK(m_pDecoder, MFX_ERR_UNSUPPORTED);
+
+        auto caps = reinterpret_cast<ENCODE_CAPS*>(m_pMFEAdapter->GetCaps(CODEC_AVC));
+        MFX_CHECK(caps, MFX_ERR_UNSUPPORTED);
+
+        m_caps.ddi_caps = *caps;
+        m_caps.CQPSupport = 1;
+        m_caps.CBRSupport = 1;
+        m_caps.VBRSupport = 1;
+    }
 #endif
-        if (!m_pDecoder)
+    if (!m_pDecoder)
+    {
+        // [1] Query supported decode profiles
+        UINT profileCount = m_pVideoDevice->GetVideoDecoderProfileCount( );
+        assert( profileCount > 0 );
+
+        bool isFound = false;
+        GUID profileGuid;
+        for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
         {
-
-            // [1] Query supported decode profiles
-            UINT profileCount = m_pVideoDevice->GetVideoDecoderProfileCount( );
-            assert( profileCount > 0 );
-
-            bool isFound = false;
-            GUID profileGuid;
-            for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
-            {
-                hRes = m_pVideoDevice->GetVideoDecoderProfile(indxProfile, &profileGuid);
-                CHECK_HRES(hRes);
-                if( m_guid == profileGuid )
-                {
-                    isFound = true;
-                    break;
-                }
-            }
-
-            if( !isFound )
-            {
-                return MFX_ERR_DEVICE_FAILED;
-            }
-
-            // [2] Query the supported encode functions
-            video_desc.SampleWidth  = width;
-            video_desc.SampleHeight = height;
-            video_desc.OutputFormat = DXGI_FORMAT_NV12;
-            video_desc.Guid = m_guid; 
-
-            mfxU32 count;
-
-            hRes = m_pVideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
+            hRes = m_pVideoDevice->GetVideoDecoderProfile(indxProfile, &profileGuid);
             CHECK_HRES(hRes);
-
-            //for (int i = 0; i < count; i++)
-            //{               
-            //    hRes = m_pVideoDevice->GetVideoDecoderConfig(&video_desc, i, &video_config);
-            //    CHECK_HRES(hRes);
-
-            // mfxSts = CheckDXVAConfig(video_desc->Guid, pConfig));
-            // MFX_CHECK_STS( mfxSts );
-            //}    
-
-            // [2] Calling other D3D11 Video Decoder API (as for normal proc)
-
-            // [4] CreateVideoDecoder
-            // D3D11_VIDEO_DECODER_DESC video_desc;
-            video_desc.SampleWidth  = width;
-            video_desc.SampleHeight = height;
-            video_desc.OutputFormat = DXGI_FORMAT_NV12;
-            video_desc.Guid = m_guid; 
-
-            // D3D11_VIDEO_DECODER_CONFIG video_config;
-            video_config.ConfigDecoderSpecific = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;  
-            video_config.guidConfigBitstreamEncryption = (extPavp) ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
-
+            if( m_guid == profileGuid )
             {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
-                hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
+                isFound = true;
+                break;
             }
-            CHECK_HRES(hRes);
-            if (bUseDecoderInCore)
-                *pVideoDecoder = m_pDecoder;
         }
+
+        if( !isFound )
+        {
+            return MFX_ERR_DEVICE_FAILED;
+        }
+
+        // [2] Query the supported encode functions
+        video_desc.SampleWidth  = width;
+        video_desc.SampleHeight = height;
+        video_desc.OutputFormat = DXGI_FORMAT_NV12;
+        video_desc.Guid = m_guid;
+
+        mfxU32 count;
+
+        hRes = m_pVideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
+        CHECK_HRES(hRes);
+
+        // [2] Calling other D3D11 Video Decoder API (as for normal proc)
+
+        // [4] CreateVideoDecoder
+        // D3D11_VIDEO_DECODER_DESC video_desc;
+        video_desc.SampleWidth  = width;
+        video_desc.SampleHeight = height;
+        video_desc.OutputFormat = DXGI_FORMAT_NV12;
+        video_desc.Guid = m_guid;
+
+        // D3D11_VIDEO_DECODER_CONFIG video_config;
+        video_config.ConfigDecoderSpecific = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;
+        video_config.guidConfigBitstreamEncryption = (extPavp) ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
+
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
+            hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
+        }
+        CHECK_HRES(hRes);
+        if (bUseDecoderInCore)
+            *pVideoDecoder = m_pDecoder;
     }
 
     // ENCRYPTION
@@ -1206,7 +1165,7 @@ mfxStatus D3D11Encoder::Init(
         ENCODE_ENCRYPTION_SET encryptSet     = { extPavp->CounterIncrement, &initialCounter, &encryptionMode};
 
         D3D11_VIDEO_DECODER_EXTENSION encryptParam;
-        encryptParam.Function = ENCODE_ENCRYPTION_SET_ID; //ENCODE_QUERY_ACCEL_CAPS_ID = 0x110;
+        encryptParam.Function = ENCODE_ENCRYPTION_SET_ID;
         encryptParam.pPrivateInputData     = &encryptSet;
         encryptParam.PrivateInputDataSize  = sizeof(ENCODE_ENCRYPTION_SET);
         encryptParam.pPrivateOutputData    = 0;
@@ -1225,17 +1184,12 @@ mfxStatus D3D11Encoder::Init(
 #endif
     {
         // [3] Query the encoding device capabilities
-        D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
+        D3D11_VIDEO_DECODER_EXTENSION ext = {};
+        ext.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
+        ext.pPrivateOutputData = &m_caps.ddi_caps;
+        ext.PrivateOutputDataSize = sizeof(ENCODE_CAPS);
 
-        decoderExtParam.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
-        decoderExtParam.pPrivateInputData = 0;
-        decoderExtParam.PrivateInputDataSize = 0;
-        decoderExtParam.pPrivateOutputData = &m_caps.ddi_caps;
-        decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_CAPS);
-        decoderExtParam.ResourceCount = 0;
-        decoderExtParam.ppResourceList = 0;
-
-        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, ext);
         //after prev line m_caps set ddi_part, so change our part of caps
         m_caps.CQPSupport = 1;
         m_caps.CBRSupport = 1;
@@ -1740,21 +1694,14 @@ mfxStatus D3D11SvcEncoder::QueryCompBufferInfo(
 
     if (!m_infoQueried)
     {
-        ENCODE_FORMAT_COUNT encodeFormatCount;
-        encodeFormatCount.CompressedBufferInfoCount = 0;
-        encodeFormatCount.UncompressedFormatCount = 0;
-        
-        //HRESULT hr = m_auxDevice->Execute(ENCODE_FORMAT_COUNT_ID, guid, encodeFormatCount);        
-        D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-        decoderExtParam.Function = ENCODE_FORMAT_COUNT_ID; 
-        decoderExtParam.pPrivateInputData = 0; //m_guid ???
-        decoderExtParam.PrivateInputDataSize = 0; // sizeof(m_guid) ???
-        decoderExtParam.pPrivateOutputData = &encodeFormatCount;
-        decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_FORMAT_COUNT);
-        decoderExtParam.ResourceCount = 0;
-        decoderExtParam.ppResourceList = 0;
+        ENCODE_FORMAT_COUNT encodeFormatCount = {};
 
-        HRESULT hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+        D3D11_VIDEO_DECODER_EXTENSION ext = {};
+        ext.Function = ENCODE_FORMAT_COUNT_ID;
+        ext.pPrivateOutputData = &encodeFormatCount;
+        ext.PrivateOutputDataSize = sizeof(ENCODE_FORMAT_COUNT);
+
+        HRESULT hRes = DecoderExtension(m_pVideoContext, m_pDecoder, ext);
         CHECK_HRES(hRes);
         //---------------------------------------------------
 
@@ -1767,19 +1714,16 @@ mfxStatus D3D11SvcEncoder::QueryCompBufferInfo(
         encodeFormats.pCompressedBufferInfo = &m_compBufInfo[0];
         encodeFormats.pUncompressedFormats = &m_uncompBufInfo[0];
 
-        //D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-        decoderExtParam.Function = ENCODE_FORMATS_ID; 
-        decoderExtParam.pPrivateInputData = 0; //m_guid ???
-        decoderExtParam.PrivateInputDataSize = 0; // sizeof(m_guid) ???
-        decoderExtParam.pPrivateOutputData = &encodeFormats;
-        decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_FORMATS);
-        decoderExtParam.ResourceCount = 0;
-        decoderExtParam.ppResourceList = 0;
+        Zero(ext);
+        ext.Function = ENCODE_FORMATS_ID;
+        ext.pPrivateInputData = 0; //m_guid ???
+        ext.PrivateInputDataSize = 0; // sizeof(m_guid) ???
+        ext.pPrivateOutputData = &encodeFormats;
+        ext.PrivateOutputDataSize = sizeof(ENCODE_FORMATS);
 
-        //hr = m_auxDevice->Execute(ENCODE_FORMATS_ID, (void *)0, encodeFormats);
-        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, ext);
         CHECK_HRES(hRes);
-       
+
         MFX_CHECK(encodeFormats.CompressedBufferInfoSize > 0, MFX_ERR_DEVICE_FAILED);
         MFX_CHECK(encodeFormats.UncompressedFormatSize > 0, MFX_ERR_DEVICE_FAILED);
 
@@ -1980,17 +1924,13 @@ mfxStatus D3D11SvcEncoder::Init(
     CHECK_HRES(hRes);
 
 #if 1
-    D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
-    decoderExtParam.Function = 0x110; //ENCODE_QUERY_ACCEL_CAPS_ID = 0x110;
-    decoderExtParam.pPrivateInputData = 0;
-    decoderExtParam.PrivateInputDataSize = 0;
-    decoderExtParam.pPrivateOutputData = &m_caps.ddi_caps;
-    decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_CAPS);
-    decoderExtParam.ResourceCount = 0;
-    decoderExtParam.ppResourceList = 0;
+    D3D11_VIDEO_DECODER_EXTENSION ext = {};
+    ext.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
+    ext.pPrivateOutputData = &m_caps.ddi_caps;
+    ext.PrivateOutputDataSize = sizeof(ENCODE_CAPS);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "QUERY_ACCEL_CAPS_ID");
-        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, ext);
     }
     CHECK_HRES(hRes);
 #endif
