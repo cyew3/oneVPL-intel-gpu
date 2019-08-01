@@ -241,6 +241,9 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
       <AdditionalDependencies>onecore.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>$(MfxAppxPacking)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_DFP|Win32'">
     <ClCompile>
@@ -310,6 +313,9 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
       <AdditionalDependencies>onecore.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>$(MfxAppxPacking)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_DFP|x64'">
     <ClCompile>
