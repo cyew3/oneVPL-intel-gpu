@@ -2188,6 +2188,16 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     sts = CheckVideoParamFEI(par);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    mfxExtCodingOption2 & extOpt2 = GetExtBufferRef(par);
+    // for game streaming scenario, if option enable lowpower lookahead, check encoder's capability
+    if (extOpt3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
+        && extOpt2.LookAheadDepth > 0 && !bIntRateControlLA(par.mfx.RateControlMethod))
+    {
+        MFX_CHECK(hwCaps.ddi_caps.LookaheadBRCSupport, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+#endif
+
     return checkSts;
 }
 
@@ -2754,8 +2764,20 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     {
         if (!bRateControlLA(par.mfx.RateControlMethod))
         {
-            changed = true;
-            extOpt2->LookAheadDepth = 0;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+            if (extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING)
+            {
+                if (!hwCaps.ddi_caps.LookaheadBRCSupport)
+                    unsupported = true;
+            }
+            else
+            {
+#endif
+                changed = true;
+                extOpt2->LookAheadDepth = 0;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+            }
+#endif
         }
         else if (par.mfx.GopRefDist > 0 && extOpt2->LookAheadDepth < 2 * par.mfx.GopRefDist)
         {
@@ -6877,7 +6899,10 @@ void MfxHwH264Encode::SetDefaults(
         //We use CQM in case of
         //MFX_SCENARIO_GAME_STREAMING AVC VDEnc/VME on Gen11+ or
         //MFX_SCENARIO_REMOTE_GAMING  AVC VDEnc     on Gen9+
-        if ((extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && platform >= MFX_HW_ICL) ||
+        if (
+#ifndef MFX_ENABLE_LP_LOOKAHEAD
+            (extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && platform >= MFX_HW_ICL) ||
+#endif
             (extOpt3->ScenarioInfo == MFX_SCENARIO_REMOTE_GAMING  && platform >= MFX_HW_SCL && IsOn(par.mfx.LowPower)))
         {
             FillCustomScalingLists(&(extSps->scalingList4x4[0][0]), extOpt3->ScenarioInfo);

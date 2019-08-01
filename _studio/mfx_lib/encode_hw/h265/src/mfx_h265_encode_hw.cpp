@@ -290,9 +290,6 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
     mfxStatus sts = MFX_ERR_NONE, qsts = MFX_ERR_NONE;
     ENCODER_TYPE ddiType = ENCODER_DEFAULT;
 
-    sts = CheckInputParam(par);
-    MFX_CHECK_STS(sts);
-
     eMFXHWType platform = m_core->GetHWType();
     MFX_CHECK_STS(sts);
 
@@ -372,6 +369,18 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
     MFX_CHECK_STS(sts);
+
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    mfxExtLplaParam* pLowpowerLA = ExtBuffer::Get(*par);
+    if (pLowpowerLA)
+    {
+        m_lplaBuffer = pLowpowerLA->response;
+        MFX_CHECK_NULL_PTR1(m_lplaBuffer);
+
+        sts = m_ddi->Register(*m_lplaBuffer, D3DDDIFMT_INTELENCODE_LOOKAHEADDATA);
+        MFX_CHECK_STS(sts);
+    }
+#endif
 
     qsts = CheckVideoParam(m_vpar, m_caps, true);
     MFX_CHECK(qsts >= MFX_ERR_NONE, qsts);
@@ -574,6 +583,9 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
     MFX_CHECK(par->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
     MFX_CHECK(!m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
 
+    sts = CheckInputParam(par);
+    MFX_CHECK_STS(sts);
+
     sts = InitImpl(par);
 
     if (!m_bInit)
@@ -581,6 +593,29 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
 
     return sts;
 }
+
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+mfxStatus MFXVideoENCODEH265_HW::InitInternal(mfxVideoParam *par)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    MFX_CHECK_NULL_PTR1(par);
+
+    MFX_CHECK(par->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(!m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    if ((par->mfx.FrameInfo.ChromaFormat != (mfxU16)MFX_CHROMAFORMAT_YUV420) &&
+        (par->mfx.FrameInfo.ChromaFormat != (mfxU16)MFX_CHROMAFORMAT_YUV422) &&
+        (par->mfx.FrameInfo.ChromaFormat != (mfxU16)MFX_CHROMAFORMAT_YUV444))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    sts = InitImpl(par);
+
+    if (!m_bInit)
+        FreeResources();
+
+    return sts;
+}
+#endif
 
 mfxStatus MFXVideoENCODEH265_HW::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
@@ -1262,7 +1297,12 @@ mfxStatus MFXVideoENCODEH265_HW::PrepareTask(Task& input_task)
         m_lastTask = *task;
         m_task.Submit(task);
     }
-
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    if (m_lplaBuffer)
+    {
+        task->m_midLpla = m_lplaBuffer->mids[0];
+    }
+#endif
     return sts;
 }
 template <class T> void SetUsedRefList(T list, Task* taskForQuery, mfxU32 dir, bool bInterlace)

@@ -197,6 +197,9 @@
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw_d3d_common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="lpla\mfx_lp_lookahead.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="hevc\hevcehw_disp.cpp">
       <Filter>hevc</Filter>
     </ClCompile>
@@ -497,6 +500,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw_d3d_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lpla\mfx_lp_lookahead.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hevc\hevcehw_disp.h">

@@ -397,6 +397,13 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & tas
     }
 #endif
 
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    if (task.m_midLpla)
+    {
+        ADD_CBD(D3DDDIFMT_INTELENCODE_LOOKAHEADDATA, task.m_idxLpla, 1);
+    }
+#endif
+
     if (task.m_insertHeaders & INSERT_AUD)
     {
         pPH = PackHeader(task, AUD_NUT); assert(pPH);

@@ -376,6 +376,10 @@ struct Task : DpbFrame
 
     mfxMemId          m_midBs                         = nullptr;
     mfxMemId          m_midCUQp                       = nullptr;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    mfxU32            m_idxLpla                       = 0;
+    mfxMemId          m_midLpla                       = nullptr;
+#endif
 
     bool              m_resetBRC                      = false;
 
@@ -553,6 +557,9 @@ namespace ExtBuffer
 #if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
         EXTBUF(mfxExtMultiFrameParam, MFX_EXTBUFF_MULTI_FRAME_PARAM);
         EXTBUF(mfxExtMultiFrameControl, MFX_EXTBUFF_MULTI_FRAME_CONTROL);
+#endif
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        EXTBUF(mfxExtLplaParam, MFX_EXTBUFF_LP_LOOKAHEAD);
 #endif
     #undef EXTBUF
 
@@ -910,6 +917,9 @@ public:
         mfxExtContentLightLevelInfo LightLevel;
 #endif
         mfxExtEncoderResetOption   ResetOpt;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        mfxExtLplaParam            lowpowerLA;
+#endif
         mfxExtBuffer *              m_extParam[SIZE_OF_ARRAY(ExtBuffer::allowed_buffers)];
     } m_ext;
 

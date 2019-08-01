@@ -2386,7 +2386,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
 
         if (  (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
             || par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
-            && par.BufferSizeInKB < rawBytes)
+            && par.BufferSizeInKB < rawBytes
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+            && par.m_ext.lowpowerLA.LookAheadDepth == 0
+#endif
+            )
         {
             par.BufferSizeInKB = rawBytes;
             changed ++;
@@ -2905,6 +2909,12 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
     }
 
 #endif
+
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    if (!caps.ddi_caps.LookaheadAnalysisSupport)
+        invalid += CheckOption(par.m_ext.lowpowerLA.LookAheadDepth, 0);
+#endif
+
     if (sts == MFX_ERR_NONE && changed)
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 

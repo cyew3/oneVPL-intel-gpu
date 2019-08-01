@@ -26,12 +26,14 @@
     <ClCompile Include="h264\src\mfx_h264_encode_hw.cpp" />
     <ClCompile Include="h264\src\mfx_h264_encode_hw_utils.cpp" />
     <ClCompile Include="h264\src\mfx_h264_encode_hw_utils_new.cpp" />
+    <ClCompile Include="lpla\mfx_lp_lookahead.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h264\include\mfx_h264_encode_cm.h" />
     <ClInclude Include="h264\include\mfx_h264_encode_cm_defs.h" />
     <ClInclude Include="h264\include\mfx_h264_encode_hw.h" />
     <ClInclude Include="h264\include\mfx_h264_encode_hw_utils.h" />
+    <ClInclude Include="lpla\mfx_lp_lookahead.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />

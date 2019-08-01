@@ -507,7 +507,11 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespo
     MFX_CHECK_WITH_ASSERT(m_core, MFX_ERR_NOT_INITIALIZED);
 
     std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA) ? m_bsQueue :
-        (type == D3DDDIFMT_INTELENCODE_MBQPDATA) ? m_mbqpQueue : m_reconQueue;
+        (type == D3DDDIFMT_INTELENCODE_MBQPDATA) ? m_mbqpQueue :
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        (type == D3DDDIFMT_INTELENCODE_LOOKAHEADDATA) ? m_lplaQueue :
+#endif
+        m_reconQueue;
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Register");
     queue.resize(response.NumFrameActual);
@@ -576,6 +580,12 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
     RES_ID_REF = 2;
     RES_ID_REC = RES_ID_REF + task.m_idxRec;
     size_t resourceListSize = RES_ID_REF + m_reconQueue.size() + task.m_bCUQPMap;
+
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    RES_ID_LPLA = RES_ID_REF + (mfxU32)m_reconQueue.size();
+    resourceListSize += (task.m_midLpla != nullptr);
+#endif
+
     if(resourceListSize > m_resourceList.size())
         m_resourceList.resize(resourceListSize);
 
@@ -588,6 +598,13 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
 
     for (mfxU32 i = 0; i < m_reconQueue.size(); i ++)
         m_resourceList[RES_ID_REF + i] = (ID3D11Resource*)m_reconQueue[i].first;
+
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    if (task.m_midLpla != nullptr)
+    {
+        m_resourceList[RES_ID_LPLA] = (ID3D11Resource *)(m_lplaQueue[0].first);
+    }
+#endif
 
 #if defined(MFX_ENABLE_MFE)
     if (m_pMfeAdapter != nullptr)
@@ -625,6 +642,13 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
     if (task.m_bCUQPMap)
     {
         ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA, RES_ID_MBQP,  1);
+    }
+#endif
+
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    if (task.m_midLpla != nullptr)
+    {
+        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_LOOKAHEADDATA, RES_ID_LPLA, 1);
     }
 #endif
 

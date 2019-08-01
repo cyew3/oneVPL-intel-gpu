@@ -132,6 +132,11 @@ private:
     std::vector<mfxHDLPair>                     m_reconQueue;
     std::vector<mfxHDLPair>                     m_bsQueue;
     std::vector<mfxHDLPair>                     m_mbqpQueue;
+
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    std::vector<mfxHDLPair>                     m_lplaQueue;
+    mfxU32                                      RES_ID_LPLA;
+#endif
     FeedbackStorage                             m_feedbackPool;
 
     std::vector<ENCODE_RECT>                    m_dirtyRects;

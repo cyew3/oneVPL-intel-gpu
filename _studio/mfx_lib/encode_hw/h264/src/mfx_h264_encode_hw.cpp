@@ -25,14 +25,12 @@
 #include <cmath>
 
 #include "cmrt_cross_platform.h"
-
 #include "mfx_session.h"
 #include "mfx_task.h"
 #include "libmfx_core.h"
 #include "libmfx_core_hw.h"
 #include "libmfx_core_interface.h"
 #include "mfx_ext_buffers.h"
-
 #include "mfx_h264_encode_hw.h"
 #include "mfx_h264_enc_common_hw.h"
 #include "mfx_h264_encode_hw_utils.h"
@@ -40,7 +38,9 @@
 
 #include "mfx_h264_encode_cm.h"
 #include "mfx_h264_encode_cm_defs.h"
-
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+#include "mfx_lp_lookahead.h"
+#endif
 #include "vm_time.h"
 
 #if USE_AGOP
@@ -1478,6 +1478,51 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         m_video.mfx.FrameInfo.Height / 16 / (fieldCoding ? 2 : 1));
 
     m_videoInit = m_video;
+
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    // for game streaming scenario, if option enable lowpower lookahead, check encoder's capability
+    if (extOpt3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && m_video.mfx.RateControlMethod != MFX_RATECONTROL_CQP
+        &&extOpt2.LookAheadDepth > 0 && !bIntRateControlLA(m_video.mfx.RateControlMethod))
+    {
+        //create and initialize lowpower lookahead module
+        m_lpLookAhead.reset(new MfxLpLookAhead(m_core));
+
+        //query lookahead data buffer info
+        sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_LOOKAHEADDATA, request);
+        MFX_CHECK_STS(sts);
+
+        request.Type = MFX_MEMTYPE_D3D_INT;
+        request.NumFrameMin = 1;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxFrameAllocResponse Alloc");
+            sts = m_lplaBuffer.Alloc(m_core, request, false);
+        }
+        MFX_CHECK_STS(sts);
+
+        sts = m_ddi->Register(m_lplaBuffer, D3DDDIFMT_INTELENCODE_LOOKAHEADDATA);
+        MFX_CHECK_STS(sts);
+
+        // create ext buffer to set the lookahead data buffer
+        mfxVideoParam lplaParam = m_video;
+        mfxExtLplaParam extBufLPLA = {};
+        extBufLPLA.Header.BufferId  = MFX_EXTBUFF_LP_LOOKAHEAD;
+        extBufLPLA.Header.BufferSz  = sizeof(extBufLPLA);
+        extBufLPLA.LookAheadDepth   = extOpt2.LookAheadDepth;
+        extBufLPLA.InitialDelayInKB = m_video.mfx.InitialDelayInKB;
+        extBufLPLA.BufferSizeInKB   = m_video.mfx.BufferSizeInKB;
+        extBufLPLA.TargetKbps       = m_video.mfx.TargetKbps;
+        extBufLPLA.response         = &m_lplaBuffer;
+
+        mfxExtBuffer *extBuffers[1];
+        extBuffers[0] = (mfxExtBuffer*)&extBufLPLA;
+
+        lplaParam.NumExtParam = 1;
+        lplaParam.ExtParam = (mfxExtBuffer**)&extBuffers[0];
+
+        sts = m_lpLookAhead->Init(&lplaParam);
+        MFX_CHECK_STS(sts);
+    }
+#endif
 
     return checkStatus;
 }
@@ -3287,6 +3332,15 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             SubmitLookahead(*task);
         }
 
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        //lowpower lookahead submit
+        if (m_lpLookAhead)
+        {
+            task->m_midLpla = m_lplaBuffer.mids[0];
+            sts = m_lpLookAhead->Submit(task->m_yuv);
+            MFX_CHECK_STS(sts);
+        }
+#endif
         //printf("\rLA_SUBMITTED  do=%4d eo=%4d type=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0]); fflush(stdout);
         if (extOpt2.MaxSliceSize && m_lastTask.m_yuv && !m_caps.ddi_caps.SliceLevelRateCtrl)
         {
@@ -3357,7 +3411,11 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         OnHistogramQueried();
 
-        if (extDdi.LookAheadDependency > 0 && m_lookaheadFinished.size() >= extDdi.LookAheadDependency)
+        if (
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+            bIntRateControlLA(m_video.mfx.RateControlMethod) &&
+#endif
+            extDdi.LookAheadDependency > 0 && m_lookaheadFinished.size() >= extDdi.LookAheadDependency)
         {
             DdiTaskIter end = m_lookaheadFinished.end();
             DdiTaskIter beg = end;

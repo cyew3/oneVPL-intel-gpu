@@ -42,6 +42,10 @@
 #include "vm_time.h"
 #include "asc.h"
 
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+class MfxLpLookAhead;
+#endif
+
 #ifdef MFX_UNDOCUMENTED_DUMP_FILES
 #include "vm_file.h"
 #endif
@@ -1054,7 +1058,10 @@ namespace MfxHwH264Encode
             , m_isMBControl(false)
             , m_midMBControl(MID_INVALID)
             , m_idxMBControl(NO_INDEX)
-
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+            , m_idxLpla(0)
+            , m_midLpla(MID_INVALID)
+#endif
             , m_cmRawForHist(0)
             , m_cmHist(0)
             , m_cmHistSys(0)
@@ -1317,7 +1324,10 @@ namespace MfxHwH264Encode
         bool     m_isMBControl;
         mfxMemId m_midMBControl;
         mfxU32   m_idxMBControl;
-
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        mfxU32   m_idxLpla;
+        mfxMemId m_midLpla;
+#endif
         CmSurface2D *         m_cmRawForHist;
         CmBufferUP *          m_cmHist;     // Histogram data, kernel output
         void *                m_cmHistSys;
@@ -2382,6 +2392,9 @@ namespace MfxHwH264Encode
         mfxU32      m_maxBsSize;
 
         std::unique_ptr<DriverEncoder>    m_ddi;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        std::unique_ptr<MfxLpLookAhead> m_lpLookAhead;
+#endif
 
         std::vector<mfxU32>     m_recFrameOrder;
 
@@ -2403,7 +2416,9 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse   m_bit;
         MfxFrameAllocResponse   m_opaqResponse;     // Response for opaq
         MfxFrameAllocResponse   m_histogram;
-
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        MfxFrameAllocResponse   m_lplaBuffer;
+#endif
         MFX_ENCODE_CAPS         m_caps;
         mfxStatus               m_failedStatus;
         mfxU32                  m_inputFrameType;

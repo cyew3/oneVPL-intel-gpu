@@ -886,6 +886,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.mfeParam, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.mfeControl, m_ext.m_extParam, base.NumExtParam);
 #endif
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    ExtBuffer::Construct(par, m_ext.lowpowerLA, m_ext.m_extParam, base.NumExtParam);
+#endif
 }
 
 mfxStatus MfxVideoParam::FillPar(mfxVideoParam& par, bool query)
@@ -2111,6 +2114,12 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         // Disable ref-list modification
         m_pps.lists_modification_present_flag = 0;
     }
+#endif
+
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    // need to disable SAO for lowpower lookahead analysis since the alogrithm doesn't support
+    if (m_ext.lowpowerLA.LookAheadDepth > 0)
+        m_sps.sample_adaptive_offset_enabled_flag = 0;
 #endif
 }
 

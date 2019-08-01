@@ -67,6 +67,10 @@ public:
 
     virtual mfxStatus Init(mfxVideoParam *par);
 
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+    virtual mfxStatus InitInternal(mfxVideoParam *par);
+#endif
+
     virtual mfxStatus Reset(mfxVideoParam *par);
 
     virtual mfxStatus Close();
@@ -208,6 +212,9 @@ protected:
     MfxFrameAllocResponse           m_rec;
     MfxFrameAllocResponse           m_bs;
     MfxFrameAllocResponse           m_CuQp; // for DDI only (not used in VA)
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    mfxFrameAllocResponse          *m_lplaBuffer = nullptr;
+#endif
 
     TaskManager                     m_task;
     Task                            m_lastTask;

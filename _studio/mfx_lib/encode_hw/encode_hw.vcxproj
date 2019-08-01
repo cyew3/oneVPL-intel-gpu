@@ -130,6 +130,7 @@
     <ClCompile Include="mvc\src\mfx_mvc_encode_hw.cpp" />
     <ClCompile Include="svc\src\mfx_svc_encode_hw.cpp" />
     <ClCompile Include="svc\src\mfx_svc_encode_simulcast_over_avc.cpp" />
+    <ClCompile Include="lpla\mfx_lp_lookahead.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="hevc\agnostic\g9\hevcehw_g9.h" />
@@ -248,6 +249,7 @@
     <ClInclude Include="mpeg2\include\mfx_mpeg2_encode_hybrid_hw.h" />
     <ClInclude Include="mpeg2\include\mfx_mpeg2_encode_utils_hw.h" />
     <ClInclude Include="svc\include\mfx_svc_encode_simulcast_over_avc.h" />
+    <ClInclude Include="lpla\mfx_lp_lookahead.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />

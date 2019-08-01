@@ -408,4 +408,17 @@ typedef struct {
 } mfxExtIntGPUHang;
 #endif
 
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+#define MFX_EXTBUFF_LP_LOOKAHEAD MFX_MAKEFOURCC('L','P','L','A')
+typedef struct {
+    mfxExtBuffer Header;
+    mfxU16       LookAheadDepth;
+    mfxU16       InitialDelayInKB;
+    mfxU16       BufferSizeInKB;
+    mfxU16       TargetKbps;
+    mfxFrameAllocResponse  *response;
+} mfxExtLplaParam;
+
+#endif
+
 #endif // __MFX_EXT_BUFFERS_H__

@@ -831,6 +831,17 @@ void FillSpsBuffer(
     sps.FrameRate.Denominator   = par.mfx.FrameInfo.FrameRateExtD;
     sps.InitVBVBufferFullnessInBit = 8000 * par.InitialDelayInKB;
     sps.VBVBufferSizeInBit         = 8000 * par.BufferSizeInKB;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    //when HEVC VDEnc as lookahead pass, the encoder works in CQP mode, but need to set
+    //BRC parameters in the sps for the lookahead kernel for analysis
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.m_ext.lowpowerLA.LookAheadDepth > 0)
+    {
+        sps.InitVBVBufferFullnessInBit = 8000 * par.m_ext.lowpowerLA.InitialDelayInKB;
+        sps.VBVBufferSizeInBit         = 8000 * par.m_ext.lowpowerLA.BufferSizeInKB;
+        sps.TargetBitRate              = par.m_ext.lowpowerLA.TargetKbps;
+        sps.LookaheadDepth             = (UCHAR)par.m_ext.lowpowerLA.LookAheadDepth;
+    }
+#endif
 
     sps.bResetBRC        = 0;
     sps.GlobalSearch     = 0;

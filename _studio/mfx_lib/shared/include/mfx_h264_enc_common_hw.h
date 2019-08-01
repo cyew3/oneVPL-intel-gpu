@@ -608,7 +608,7 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[34];
+        mfxExtBuffer *              m_extParam[35];
         // external, documented
         mfxExtCodingOption          m_extOpt;
         mfxExtCodingOption2         m_extOpt2;
@@ -657,6 +657,9 @@ namespace MfxHwH264Encode
 #endif
 #if defined(MFX_ENABLE_GPU_BASED_SYNC)
         mfxExtGameStreaming         m_extGameStreaming;
+#endif
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        mfxExtLplaParam            m_extLowpowerLA;
 #endif
 
 #if defined (MFX_ENABLE_MFE)

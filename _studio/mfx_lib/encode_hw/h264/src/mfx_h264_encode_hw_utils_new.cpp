@@ -3347,7 +3347,11 @@ void AsyncRoutineEmulator::Init(MfxVideoParam const & video)
 #else
         m_stageGreediness[STG_START_LA    ] = video.mfx.EncodedOrder ? 1 : video.mfx.GopRefDist;
 #endif
-        m_stageGreediness[STG_WAIT_LA     ] = 1;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        m_stageGreediness[STG_WAIT_LA]      = extOpt2.LookAheadDepth > 0 ? extOpt2.LookAheadDepth : 1;
+#else
+        m_stageGreediness[STG_WAIT_LA]      = 1;
+#endif
         m_stageGreediness[STG_START_HIST  ] = 1;
         m_stageGreediness[STG_WAIT_HIST   ] = 1;
         m_stageGreediness[STG_START_ENCODE] = 1;
