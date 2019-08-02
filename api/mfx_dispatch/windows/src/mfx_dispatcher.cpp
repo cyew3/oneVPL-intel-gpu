@@ -521,6 +521,9 @@ mfxStatus MFXQueryAdaptersDecode(mfxBitstream* bitstream, mfxU32 codec_id, mfxAd
 
         sts = MFXVideoDECODE_DecodeHeader(dummy_session.operator mfxSession(), bitstream, &stream_params);
 
+        if (sts == MFX_ERR_UNSUPPORTED) // Unsupported CodecId, try another adapter
+            continue;
+
         if (sts != MFX_ERR_NONE)
         {
             return sts;
