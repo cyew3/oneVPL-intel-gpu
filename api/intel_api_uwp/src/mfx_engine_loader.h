@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-Copyright (C) 2017-2018 Intel Corporation.  All rights reserved.
+Copyright (C) 2017-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -36,8 +36,20 @@ File Name: mfx_engine_loader.h
 extern "C" {
 #endif /* __cplusplus */
 
-    mfxStatus InitMediaSDKSession(mfxInitParam par, mfxSession* session);
-    mfxStatus DisposeMediaSDKSession(mfxSession session);
+    //
+    // intel_gfx_api-*.dll calls these functions to do not mix MFXInitEx exposed
+    // from dispatcher_proc_table.lib with the libmfx[hw/sw] engines' call MFXInitEx
+    //
+
+    inline mfxStatus InitMediaSDKSession(mfxInitParam par, mfxSession* session)
+    {
+        return MFXInitEx(par, session);
+    }
+
+    inline mfxStatus DisposeMediaSDKSession(mfxSession session)
+    {
+        return MFXClose(session);
+    }
 
 #ifdef __cplusplus
 }; //extern "C"

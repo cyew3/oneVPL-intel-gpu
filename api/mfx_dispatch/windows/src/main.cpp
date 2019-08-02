@@ -307,6 +307,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     curImplIdx = implTypesRange[implMethod].minIndex;
     maxImplIdx = implTypesRange[implMethod].maxIndex;
 
+#if !defined(MEDIASDK_UWP_LOADER)
     // Load RT from app folder (libmfxsw64 with API >= 1.10)
     do
     {
@@ -367,6 +368,8 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
             } while (MFX_ERR_NONE != mfxRes);
         }
     } while ((MFX_ERR_NONE != mfxRes) && (++curImplIdx <= maxImplIdx));
+
+#endif // !defined(MEDIASDK_UWP_LOADER)
 
     // Load HW and SW libraries using legacy default DLL search mechanism
     // set current library index again
@@ -471,14 +474,17 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
                 MFX::MFXDefaultPlugins defaultPugins(apiVerActual, *it, (*it)->implType);
                 hive.insert(hive.end(), defaultPugins.begin(), defaultPugins.end());
 
+#if !defined(MEDIASDK_UWP_LOADER)
                 if ((*it)->storageID != MFX::MFX_UNKNOWN_KEY)
                 {
                     // Scan HW plugins in subkeys of registry library
                     MFX::MFXPluginsInHive plgsInHive((*it)->storageID, (*it)->subkeyName, apiVerActual);
                     hive.insert(hive.end(), plgsInHive.begin(), plgsInHive.end());
                 }
+#endif
             }
 
+#if !defined(MEDIASDK_UWP_LOADER)
             //setting up plugins records
             for(int i = MFX::MFX_STORAGE_ID_FIRST; i <= MFX::MFX_STORAGE_ID_LAST; i++)
             {
@@ -489,6 +495,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
             // SOLID dispatcher also loads plug-ins from file system
             MFX::MFXPluginsInFS plgsInFS(apiVerActual);
             hive.insert(hive.end(), plgsInFS.begin(), plgsInFS.end());
+#endif
         }
 
         pHandle->callPlugInsTable[eMFXVideoUSER_Load] = (mfxFunctionPointer)MFXVideoUSER_Load;
@@ -1017,9 +1024,6 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *pVer, mfxSession *session)
 
 FUNCTION(mfxStatus, MFXQueryIMPL, (mfxSession session, mfxIMPL *impl), (session, impl))
 FUNCTION(mfxStatus, MFXQueryVersion, (mfxSession session, mfxVersion *version), (session, version))
-
-// these functions are not necessary in LOADER part of dispatcher and
-// need to be included only in in SOLID dispatcher or PROCTABLE part of dispatcher
 
 FUNCTION(mfxStatus, MFXDisjoinSession, (mfxSession session), (session))
 FUNCTION(mfxStatus, MFXSetPriority, (mfxSession session, mfxPriority priority), (session, priority))

@@ -190,7 +190,7 @@ mfxModuleHandle mfx_dll_load(const wchar_t *pFileName)
     {
         return NULL;
     }
-#if !defined(MEDIASDK_UWP_DISPATCHER)
+#if !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_DISPATCHER)
     // set the silent error mode
     DWORD prevErrorMode = 0;
 #if (_WIN32_WINNT >= 0x0600)
@@ -198,21 +198,21 @@ mfxModuleHandle mfx_dll_load(const wchar_t *pFileName)
 #else
     prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 #endif
-#endif // !defined(MEDIASDK_UWP_DISPATCHER)
+#endif // !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_DISPATCHER)
 
     // load the library's module
 #if !defined(MEDIASDK_ARM_LOADER)
     hModule = LoadLibraryExW(pFileName, NULL, 0);
 #endif
 
-#if !defined(MEDIASDK_UWP_DISPATCHER)
+#if !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_DISPATCHER)
     // set the previous error mode
 #if (_WIN32_WINNT >= 0x0600)
     SetThreadErrorMode(prevErrorMode, NULL);
 #else
     SetErrorMode(prevErrorMode);
 #endif
-#endif // !defined(MEDIASDK_UWP_DISPATCHER)
+#endif // !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_DISPATCHER)
 
     return hModule;
 
@@ -240,7 +240,7 @@ bool mfx_dll_free(mfxModuleHandle handle)
     return !!bRes;
 } // bool mfx_dll_free(mfxModuleHandle handle)
 
-#if !defined(MEDIASDK_UWP_DISPATCHER)
+#if !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_DISPATCHER)
 mfxModuleHandle mfx_get_dll_handle(const wchar_t *pFileName)
 {
     mfxModuleHandle hModule = (mfxModuleHandle) 0;
@@ -268,7 +268,7 @@ mfxModuleHandle mfx_get_dll_handle(const wchar_t *pFileName)
 #endif
     return hModule;
 }
-#endif //!defined(MEDIASDK_UWP_DISPATCHER)
+#endif //!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_DISPATCHER)
 
 } // namespace MFX
 
