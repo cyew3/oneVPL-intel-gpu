@@ -15,6 +15,15 @@ File Name: .h
 
 #include "mfx_pipeline_defs.h"
 
+#if !(defined(LINUX32) || defined(LINUX64))
+#define MFX_DISPATCHER_LOG
+#include "mfx_dispatcher_log.h"
+#endif // #if !(defined(LINUX32) || defined(LINUX64))
+
+#if defined(_WIN64) || defined(_WIN32)
+#include "mfx_dispatcher.h"
+#endif
+
 #ifdef D3D_SURFACES_SUPPORT
     #include <d3d9.h>
     #include <dxva2api.h>
@@ -69,6 +78,11 @@ struct sCommandlineParams
   mfxU32         nFrames;
   mfxI32         nPicStruct; // 0-progressive, 1-tff, 2-bff, 3-field tff, 4-field bff
   mfxU32         HWAcceleration; // 0=SW, 1=HW+SW, 2=SW+HW, 3=HW
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+  //Adapter type
+  bool           bPrefferiGfx;
+  bool           bPrefferdGfx;
+#endif
   mfxU32         nCorruptionLevel;
   double         fLimitPipelineFps; //sleeps in every frame processing
   mfxU32         nLimitFileReader; //sleeps in every frame processing
@@ -332,6 +346,12 @@ struct sCommandlineParams
 
       bInitEx = false;
       nGpuCopyMode = MFX_GPUCOPY_DEFAULT;
+
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+      //Adapter type
+      bPrefferiGfx = false;
+      bPrefferdGfx = false;
+#endif
   }
 };
 
@@ -467,6 +487,11 @@ protected:
     virtual mfxStatus        ReadParFile(const vm_char * pInFile, IProcessCommand * pHandler);
     virtual mfxStatus        CheckExitingCondition();//if number frames is limited by cmd line
 
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    //force implementation type for special user cases
+    mfxU32                   GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sCommandlineParams & params);
+    mfxStatus                ForceImpl(const sCommandlineParams & params, mfxIMPL & impl);
+#endif
 
     //////////////////////////////////////////////////////////////////////////
     //light reset support in case of invalid params, no reset for splitter, cmp render

@@ -82,11 +82,6 @@ Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 #include "mfxstructures-int.h"
 
-#if !(defined(LINUX32) || defined(LINUX64))
-#define MFX_DISPATCHER_LOG
-#include "mfx_dispatcher_log.h"
-#endif // #if !(defined(LINUX32) || defined(LINUX64))
-
 #ifdef LUCAS_DLL
 #include "lucas.h"
 #endif
@@ -251,6 +246,100 @@ mfxStatus MFXDecPipeline::CheckParams()
     return MFX_ERR_NONE;
 }
 
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+mfxU32 MFXDecPipeline::GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sCommandlineParams & params)
+{
+    if (adapters.NumActual == 0 || !adapters.Adapters)
+        return 0;
+
+    if (params.bPrefferdGfx)
+    {
+        // Find dGfx adapter in list and return it's index
+
+        auto idx = std::find_if(adapters.Adapters, adapters.Adapters + adapters.NumActual,
+            [](const mfxAdapterInfo info)
+        {
+            return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_DISCRETE;
+        });
+
+        // No dGfx in list
+        if (idx == adapters.Adapters + adapters.NumActual)
+        {
+            PipelineTrace((VM_STRING("Warning: No dGfx detected on machine. Will pick another adapter\n")));
+            return 0;
+        }
+
+        return static_cast<mfxU32>(std::distance(adapters.Adapters, idx));
+    }
+
+    if (params.bPrefferiGfx)
+    {
+        // Find iGfx adapter in list and return it's index
+
+        auto idx = std::find_if(adapters.Adapters, adapters.Adapters + adapters.NumActual,
+            [](const mfxAdapterInfo info)
+        {
+            return info.Platform.MediaAdapterType == mfxMediaAdapterType::MFX_MEDIA_INTEGRATED;
+        });
+
+        // No iGfx in list
+        if (idx == adapters.Adapters + adapters.NumActual)
+        {
+            PipelineTrace((VM_STRING("Warning: No iGfx detected on machine. Will pick another adapter\n")));
+            return 0;
+        }
+
+        return static_cast<mfxU32>(std::distance(adapters.Adapters, idx));
+    }
+
+    // Other ways return 0, i.e. best suitable detected by dispatcher
+    return 0;
+}
+
+mfxStatus MFXDecPipeline::ForceImpl(const sCommandlineParams & params, mfxIMPL & impl)
+{
+    //change only 8 bit of the implementation. Don't touch type of frames
+    impl = impl & mfxI32(~0xFF);
+
+    mfxU32 num_adapters_available;
+
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = MFXQueryAdaptersNumber(&num_adapters_available);
+    MFX_CHECK_STS(sts);
+
+    std::vector<mfxAdapterInfo> displays_data(num_adapters_available);
+    mfxAdaptersInfo adapters = { displays_data.data(), mfxU32(displays_data.size()), 0u };
+
+    sts = MFXQueryAdapters(nullptr, &adapters);
+    MFX_CHECK_STS(sts);
+
+    mfxU32 idx = GetPreferredAdapterNum(adapters, params);
+    switch (adapters.Adapters[idx].Number)
+    {
+    case 0:
+        impl |= MFX_IMPL_HARDWARE;
+        break;
+    case 1:
+        impl |= MFX_IMPL_HARDWARE2;
+        break;
+    case 2:
+        impl |= MFX_IMPL_HARDWARE3;
+        break;
+    case 3:
+        impl |= MFX_IMPL_HARDWARE4;
+        break;
+
+    default:
+        // try searching on all display adapters
+        impl |= MFX_IMPL_HARDWARE_ANY;
+        break;
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif
+
 mfxStatus MFXDecPipeline::BuildMFXPart()
 {
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
@@ -389,6 +478,24 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         pLastParams->m_nMaxAsync = last_params_async;
     }
 
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    //Force type of adapter in case if user set iGfx or dGfx
+    if (m_inParams.bPrefferiGfx || m_inParams.bPrefferdGfx)
+    {
+        if (m_inParams.bPrefferdGfx && m_inParams.bPrefferiGfx)
+        {
+            PipelineTrace((VM_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered")));
+            m_inParams.bPrefferdGfx = false;
+        }
+
+        mfxIMPL tmpImpl = m_components.front().m_libType;
+        mfxStatus sts = ForceImpl(m_inParams, tmpImpl);
+        MFX_CHECK_STS(sts);
+
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, tmpImpl));
+    }
+#endif
+
     MFX_CHECK_STS_SET_ERR(InitVPP(), PE_CREATE_VPP);
     TIME_PRINT(VM_STRING("InitVPP"));
 
@@ -411,7 +518,6 @@ mfxStatus MFXDecPipeline::ReleaseMFXPart()
     //cleaning up a decoder
     m_components[eDEC].m_extParams.clear();
     m_pYUVSource.reset(0);
-
 
     //cleaning up VPP and its buffers
     m_components[eVPP].m_extParams.clear();
@@ -5264,6 +5370,16 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 #ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
           else if(m_OptProc.Check(argv[0], VM_STRING("-dec:private_ddi"), VM_STRING("Use private DDI for decoder (HW only)"), OPT_UINT_32))
               m_inParams.bUsePrivateDDI = true;
+#endif
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+          else if (m_OptProc.Check(argv[0], VM_STRING("-iGfx"), VM_STRING("preffer processing on iGfx (by default system decides)"), OPT_BOOL))
+          {
+              m_inParams.bPrefferiGfx = true;
+          }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-dGfx"), VM_STRING("preffer processing on dGfx (by default system decides)"), OPT_BOOL))
+          {
+              m_inParams.bPrefferdGfx = true;
+          }
 #endif
           else
           {
