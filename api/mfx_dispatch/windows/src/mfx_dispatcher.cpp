@@ -380,7 +380,7 @@ static inline bool is_iGPU(const mfxAdapterInfo& adapter_info)
 
 static inline bool is_dGPU(const mfxAdapterInfo& adapter_info)
 {
-    return !is_iGPU(adapter_info);
+    return adapter_info.Platform.MediaAdapterType == MFX_MEDIA_DISCRETE;
 }
 
 // This function implies that iGPU has higher priority
