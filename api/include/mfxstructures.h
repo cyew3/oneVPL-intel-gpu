@@ -2348,6 +2348,191 @@ typedef struct {
 } mfxExtAV1FilmGrainParam;
 #endif
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct {
+    mfxU16 FrameRateScale;  /* Layer[n].FrameRateScale = Layer[n - 1].FrameRateScale * (uint)m */
+    mfxU16 TargetKbps;      /* affected by BRCParamMultiplier, Layer[n].TargetKbps > Layer[n - 1].TargetKbps */
+    mfxU16 reserved[14];
+} mfxAV1TemporalLayer;
+MFX_PACK_END()
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct {
+    mfxExtBuffer        Header;
+    mfxAV1TemporalLayer Layer[8];
+
+    mfxU16              reserved[16];
+} mfxExtAV1TemporalLayers;
+MFX_PACK_END()
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct {
+    mfxExtBuffer Header;
+
+    struct {
+        mfxU8  CdefDampingMinus3;   /* 0..3 */
+        mfxU8  CdefBits;            /* 0..3 */
+        mfxU8  CdefYStrengths[8];   /* 0..63 */
+        mfxU8  CdefUVStrengths[8];  /* 0..63 */
+        mfxU8  reserved[14];
+    } Cdef;
+
+    struct {
+        mfxU8  LFLevelYVert;        /* 0..63 */
+        mfxU8  LFLevelYHorz;        /* 0..63 */
+        mfxU8  LFLevelU;            /* 0..63 */
+        mfxU8  LFLevelV;            /* 0..63 */
+        mfxU8  ModeRefDeltaEnabled; /* 0, 1 */
+        mfxU8  ModeRefDeltaUpdate;  /* 0, 1 */
+        mfxI8  RefDeltas[8];        /* -63..63 */
+        mfxI8  ModeDeltas[2];       /* -63..63 */
+        mfxU8  reserved[16];
+    } LoopFilter;
+
+    struct {
+        mfxI8  YDcDeltaQ;           /* -63..63 */
+        mfxI8  UDcDeltaQ;           /* -63..63 */
+        mfxI8  VDcDeltaQ;           /* -63..63 */
+        mfxI8  UAcDeltaQ;           /* -63..63 */
+        mfxI8  VAcDeltaQ;           /* -63..63 */
+        mfxU8  MinBaseQIndex;
+        mfxU8  MaxBaseQIndex;
+        mfxU8  reserved[25];
+    } QP;
+
+    mfxU8  UniformTileSpacing;      /* tri-state option */
+    mfxU8  ErrorResilientMode;      /* tri-state option */
+    mfxU8  EnableOrderHint;         /* tri-state option */
+    mfxU8  OrderHintBits;           /* 0..8, 0 = default */
+    mfxU8  ContextUpdateTileId;     /* 0 = default */
+    mfxU8  DisplayFormatSwizzle;    /* 0, 1 */
+
+    mfxU8  reserved[58];
+} mfxExtAV1AuxData;
+MFX_PACK_END()
+
+/* AV1SegmentationMode */
+enum {
+    MFX_AV1_SEGMENT_DISABLED = 0,
+    MFX_AV1_SEGMENT_AUTO = 1,
+    MFX_AV1_SEGMENT_MANUAL = 2
+};
+
+/* AV1InterpolationMode */
+enum {
+    MFX_AV1_INTERP_DEFAULT = 0,
+    MFX_AV1_INTERP_EIGHTTAP = 1,
+    MFX_AV1_INTERP_EIGHTTAP_SMOOTH = 2,
+    MFX_AV1_INTERP_EIGHTTAP_SHARP = 3,
+    MFX_AV1_INTERP_BILINEAR = 4,
+    MFX_AV1_INTERP_SWITCHABLE = 5
+};
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16  FrameWidth;
+    mfxU16  FrameHeight;
+
+    mfxU8   WriteIVFHeaders;          /* tri-state option */
+    mfxU8   UseAnnexB;                /* tri-state option */
+    mfxU8   PackOBUFrame;             /* tri-state option */
+    mfxU8   InsertTemporalDelimiter;  /* tri-state option */
+
+    mfxU16  NumTileRows;
+    mfxU16  NumTileColumns;
+    mfxU16  NumTileGroups;
+    mfxU16  NumTilesPerTileGroup[256];
+    mfxU16  TileWidthInSB[128];
+    mfxU16  TileHeightInSB[128];
+
+    mfxU8   EnableCdef;               /* tri-state option */
+    mfxU8   EnableRestoration;        /* tri-state option */
+    mfxU8   LoopFilterSharpness;      /* 0..8, 0 = default, map to bitstream: [1..8] => [0..7] */
+
+    mfxU8   InterpFilter;             /* see enum AV1InterpolationMode */
+
+    mfxU8   SegmentationMode;         /* see enum AV1SegmentMode*/
+
+    mfxU8   DisableCdfUpdate;         /* tri-state option */
+    mfxU8   DisableFrameEndUpdateCdf; /* tri-state option */
+
+    mfxU8   EnableSuperres;           /* tri-state option */
+    mfxU8   SuperresScaleDenominator; /* 9..16, 0 = default */
+
+    mfxU8   StillPictureMode;         /* tri-state option */
+    mfxU16  SwitchInterval;           /* interval, 0 - disabled */
+
+    mfxU8   reserved[66];
+} mfxExtAV1Param;
+MFX_PACK_END()
+
+/* AV1 SegmentIdBlockSize */
+enum {
+    MFX_AV1_SEGMENT_ID_BLOCK_SIZE_UNKNOWN = 0,
+    MFX_AV1_SEGMENT_ID_BLOCK_SIZE_8x8 = 8,
+    MFX_AV1_SEGMENT_ID_BLOCK_SIZE_16x16 = 16,
+    MFX_AV1_SEGMENT_ID_BLOCK_SIZE_32x32 = 32,
+    MFX_AV1_SEGMENT_ID_BLOCK_SIZE_64x64 = 64,
+};
+
+/* AV1ReferenceFrame */
+enum {
+    MFX_AV1_REF_INTRA = 0,
+    MFX_AV1_REF_LAST = 1,
+    MFX_AV1_REF_LAST2 = 2,
+    MFX_AV1_REF_LAST3 = 3,
+    MFX_AV1_REF_GOLDEN = 4,
+    MFX_AV1_BWDREF = 5,
+    MFX_AV1_REF_ALTREF = 6,
+    MFX_AV1_REF_ALTREF2 = 7
+};
+
+/* AV1SegmentFeature */
+enum {
+    MFX_AV1_SEGMENT_FEATURE_ALT_QINDEX = 0x0001, // use alternate Quantizer
+    MFX_AV1_SEGMENT_FEATURE_ALT_LF_Y_VERT = 0x0002, // use alternate loop filter value on y plane vertical
+    MFX_AV1_SEGMENT_FEATURE_ALT_LF_Y_HORZ = 0x0004, // use alternate loop filter value on y plane horizontal
+    MFX_AV1_SEGMENT_FEATURE_ALT_LF_U = 0x0008, // use alternate loop filter value on u plane
+    MFX_AV1_SEGMENT_FEATURE_ALT_LF_V = 0x0010, // use alternate loop filter value on v plane
+    MFX_AV1_SEGMENT_FEATURE_REFERENCE = 0x0020, // segment reference frame
+    MFX_AV1_SEGMENT_FEATURE_SKIP = 0x0040, // segment (0,0) + skip mode
+    MFX_AV1_SEGMENT_FEATURE_GLOBALMV = 0x0080
+};
+
+typedef struct {
+    mfxU16  FeatureEnabled;  /* see enum AV1SegmentFeature */
+    mfxI16  AltQIndex;
+    mfxI16  AltLFLevelYVert;
+    mfxI16  AltLFLevelYHorz;
+    mfxI16  AltLFLevelU;
+    mfxI16  AltLFLevelV;
+    mfxU16  ReferenceFrame;  /* see enum AV1ReferenceFrame */
+
+    mfxU16  reserved[16];
+} mfxAV1SegmentParam;
+
+MFX_PACK_BEGIN_STRUCT_W_PTR()
+typedef struct {
+    mfxExtBuffer        Header;
+
+    mfxU16              NumSegments;        /* 0..8 */
+    mfxAV1SegmentParam  Segment[8];
+    mfxU16              SegmentIdBlockSize; /* see enum SegmentIdBlockSize */
+    mfxU32              NumSegmentIdAlloc;  /* >= (Ceil(Width / SegmentIdBlockSize) * Ceil(Height / SegmentIdBlockSize)) */
+    union {
+        mfxU8           *SegmentId;         /*[NumSegmentIdAlloc] = 0..7, index in Segment array, blocks of SegmentIdBlockSize map */
+        mfxU64          reserved1;
+    };
+    mfxU16              TemporalUpdate;
+
+    mfxU16              reserved[32];
+} mfxExtAV1Segmentation;
+MFX_PACK_END()
+#endif
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
