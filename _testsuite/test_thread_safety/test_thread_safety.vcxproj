@@ -40,6 +40,26 @@
       <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\mfx_dispatch\windows\include;$(MfxIncludes);$(MfxIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\mfx_dispatch\windows\include;$(MfxIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\mfx_dispatch\windows\include;$(MfxIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\mfx_dispatch\windows\include;$(MfxIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\mfx_dispatch\windows\include;$(MfxIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\test_thread_safety.cpp" />
     <ClCompile Include="src\test_thread_safety_cmdline.cpp" />
