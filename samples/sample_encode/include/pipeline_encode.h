@@ -107,8 +107,8 @@ struct sInputParams
     mfxU16 nDstWidth; // destination picture width, specified if resizing required
     mfxU16 nDstHeight; // destination picture height, specified if resizing required
 
-    mfxU16 nEncTileRows; // number of rows for encoding tileing
-    mfxU16 nEncTileCols; // number of columns for encoding tileing
+    mfxU16 nEncTileRows; // number of rows for encoding tiling
+    mfxU16 nEncTileCols; // number of columns for encoding tiling
 
     MemType memType;
     bool bUseHWLib; // true if application wants to use HW MSDK library

@@ -1846,11 +1846,11 @@ mfxStatus CDecodingPipeline::RunDecoding()
                 continue;
             }
 
-            if (!m_pCurrentFreeOutputSurface) 
+            if (!m_pCurrentFreeOutputSurface)
             {
                 m_pCurrentFreeOutputSurface = GetFreeOutputSurface();
             }
-            if (!m_pCurrentFreeOutputSurface) 
+            if (!m_pCurrentFreeOutputSurface)
             {
                 sts = MFX_ERR_NOT_FOUND;
                 break;
@@ -1864,7 +1864,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
         }
 
         if ((MFX_ERR_NONE == sts) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) {
-            if (m_bIsCompleteFrame) 
+            if (m_bIsCompleteFrame)
             {
                 m_pCurrentFreeSurface->submit = m_timer_overall.Sync();
             }
@@ -1994,11 +1994,11 @@ mfxStatus CDecodingPipeline::RunDecoding()
                     } while (MFX_WRN_DEVICE_BUSY == sts);
 
                     // process errors
-                    if (MFX_ERR_MORE_DATA == sts) 
+                    if (MFX_ERR_MORE_DATA == sts)
                     { // will never happen actually
                         continue;
                     }
-                    else if (MFX_ERR_NONE != sts) 
+                    else if (MFX_ERR_NONE != sts)
                     {
                         MSDK_PRINT_RET_MSG(sts, "RunFrameVPPAsync failed");
                         break;
