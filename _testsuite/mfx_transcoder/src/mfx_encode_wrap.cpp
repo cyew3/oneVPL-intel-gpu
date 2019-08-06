@@ -126,7 +126,7 @@ mfxStatus MFXEncodeWRAPPER::Init(mfxVideoParam *pInit, const vm_char *pFilename)
         vParamUser.mfx.BufferSizeInKB = 1;
     }
     
-    PipelineTrace((VM_STRING("---------------------- MFXInit SUCEED -------------\n")
+    PipelineTrace((VM_STRING("---------------------- MFXInit SUCCEED -------------\n")
                  VM_STRING("%s---------------------------------------------------\n"), structThree.Serialize().c_str()));
 
     MFX_CHECK_STS(MFXFileWriteRender::Init(pInit, pFilename));
