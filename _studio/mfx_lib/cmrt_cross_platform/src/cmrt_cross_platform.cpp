@@ -459,13 +459,12 @@ inline bool GetMDFDriverStorePath(TCHAR *path, DWORD *dwPathSize)
 }
 /*
 On windows we are looking for CMRT DLL in driver store directory
-Driver writes 'DriverStorePath' reg key during install.
+Driver writes 'DriverStorePathForMDF' reg key during install.
 Use path from driver to load igfx*cmrt*.dll
 */
 vm_so_handle cm_dll_load(const vm_char *so_file_name)
 {
     //mfx_trace_get_reg_string
-    HKEY hkey;
     vm_so_handle handle = NULL;
     TCHAR path[MAX_PATH] = _T("");
     DWORD size = sizeof(path);
@@ -474,38 +473,12 @@ vm_so_handle cm_dll_load(const vm_char *so_file_name)
     if (NULL == so_file_name)
         return NULL;
 
-    handle = vm_so_load(so_file_name);
-
-    /* try load from DriverStore #1 UWD path*/
-    if (handle == NULL)
+    /* try to load from DriverStore, UWD/HKR path */
+    if (GetMDFDriverStorePath(path, &size))
     {
-        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-            _T("SOFTWARE\\Classes\\CLSID\\{EB3C4B33-C93C-4A5C-91DE-43FDB945FF80}\\MDF"),
-            0,
-            KEY_READ,
-            &hkey) == ERROR_SUCCESS)
-        {
-            size = sizeof(path);
-            if (ERROR_SUCCESS == RegQueryValueEx(hkey, _T("DriverStorePath"), 0, NULL, (LPBYTE)path, &size))
-            {
-                wcscat_s(path, MAX_PATH, _T("\\"));
-                wcscat_s(path, MAX_PATH, so_file_name);
-                handle = vm_so_load(path);
-            }
-            RegCloseKey(hkey);
-        }
-    }
-
-    /* try to load from DriverStore #2 UWD/HKR path */
-    if (handle == NULL)
-    {
-        size = sizeof(path);
-        if (GetMDFDriverStorePath(path, &size))
-        {
-            wcscat_s(path, MAX_PATH, _T("\\"));
-            wcscat_s(path, MAX_PATH, so_file_name);
-            handle = vm_so_load(path);
-        }
+        wcscat_s(path, MAX_PATH, _T("\\"));
+        wcscat_s(path, MAX_PATH, so_file_name);
+        handle = vm_so_load(path);
     }
 
     return handle;
