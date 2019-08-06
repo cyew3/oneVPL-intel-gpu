@@ -42,6 +42,7 @@ mfx_player:
   reviewers:
   - sergey.solodkov@intel.com
   - andrey.larionov@intel.com
+  - roman.kopytin@intel.com
 
 mfx_transcoder:
   paths:
@@ -56,6 +57,7 @@ mfx_transcoder:
   reviewers:
   - sergey.solodkov@intel.com
   - andrey.larionov@intel.com
+  - roman.kopytin@intel.com
 
 h264d:
   paths:
