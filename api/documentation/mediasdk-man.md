@@ -2263,6 +2263,9 @@ The application can retrieve a copy of the bitstream header, by attaching the [m
 --- | ---
 `MFX_ERR_NONE` | The function successfully filled structure. It does not mean that the stream can be decoded by SDK. The application should call [MFXVideoDECODE_Query](#MFXVideoDECODE_Query) function to check if decoding of the stream is supported.
 `MFX_ERR_MORE_DATA` | The function requires more bitstream data.
+`MFX_ERR_UNSUPPORTED` | `CodecId` field of the [mfxVideoParam](#mfxVideoParam) structure indicates some unsupported codec.
+`MFX_ERR_INVALID_HANDLE` | `session` is not initialized.
+`MFX_ERR_NULL_PTR` | `bs` or `par` pointer is NULL.
 
 **Change History**
 
