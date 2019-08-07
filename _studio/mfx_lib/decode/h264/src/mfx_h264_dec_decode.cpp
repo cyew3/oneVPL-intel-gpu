@@ -157,8 +157,7 @@ mfxStatus Dependency(mfxExtMVCSeqDesc * mvcPoints, ViewIDsList & targetList, Vie
             }
         }
 
-        if (!refInfo)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+        MFX_CHECK(refInfo, MFX_ERR_INVALID_VIDEO_PARAM);
 
         bool wasAdded = false;
 
@@ -200,12 +199,10 @@ mfxStatus Dependency(mfxExtMVCSeqDesc * mvcPoints, mfxExtMVCTargetViews * target
     }
 
     mfxStatus sts = Dependency(mvcPoints, targetList, dependencyList);
-    if (sts < MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
     sts = Dependency(mvcPoints, dependencyList, dependencyList);
-    if (sts < MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
     return MFX_ERR_NONE;
 }
@@ -266,8 +263,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
-    if (m_isInit)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_CHECK(!m_isInit, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     MFX_CHECK_NULL_PTR1(par);
 
@@ -279,22 +275,22 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         type = m_core->GetHWType();
     }
 
-    if (CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) < MFX_ERR_NONE)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    mfxStatus mfxSts = CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type);
+    MFX_CHECK(mfxSts >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if (!MFX_Utility::CheckVideoParam(par, type))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    bool videoParamIsValid = MFX_Utility::CheckVideoParam(par, type);
+    MFX_CHECK(videoParamIsValid, MFX_ERR_INVALID_VIDEO_PARAM);
 
     if (m_core->GetVAType() == MFX_HW_VAAPI)
     {
-        int codecProfile = par->mfx.CodecProfile & 0xFF;
-        if (    (codecProfile == MFX_PROFILE_AVC_STEREO_HIGH) ||
-                (codecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH) )
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+        mfxU16 codecProfile = par->mfx.CodecProfile & 0xFF;
+        MFX_CHECK(codecProfile != MFX_PROFILE_AVC_STEREO_HIGH &&
+                  codecProfile != MFX_PROFILE_AVC_MULTIVIEW_HIGH,
+                  MFX_ERR_INVALID_VIDEO_PARAM);
+
 #ifdef MFX_ENABLE_SVC_VIDEO_DECODE
-        if (    (codecProfile == MFX_PROFILE_AVC_SCALABLE_BASELINE) ||
-                (codecProfile == MFX_PROFILE_AVC_SCALABLE_HIGH) )
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+        MFX_CHECK(codecProfile != MFX_PROFILE_AVC_SCALABLE_BASELINE &&
+                  codecProfile != MFX_PROFILE_AVC_SCALABLE_HIGH, MFX_ERR_INVALID_VIDEO_PARAM);
 #endif
     }
 
@@ -314,7 +310,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     if (MFX_PLATFORM_SOFTWARE == m_platform)
     {
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-        return MFX_ERR_UNSUPPORTED;
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
 #else
         m_pH264VideoDecoder.reset(new UMC::MFX_SW_TaskSupplier());
         m_FrameAllocator.reset(new mfx_UMC_FrameAllocator());
@@ -339,7 +335,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         m_pH264VideoDecoder.reset(new UMC::VDATaskSupplier()); // HW, OS X VDA version
         m_FrameAllocator.reset(new mfx_UMC_FrameAllocator);
 #else
-        return MFX_ERR_UNSUPPORTED;
+        MFX_RETURN(MFX_ERR_UNSUPPORTED);
 #endif
     }
 
@@ -361,7 +357,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
             (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
             useInternal = 1;
         else /* fixed function engine is not available */
-            return MFX_ERR_UNSUPPORTED;
+            MFX_RETURN(MFX_ERR_UNSUPPORTED);
     }
 #endif
 
@@ -372,9 +368,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     if (m_vPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        if (!pOpaqAlloc)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-
+        MFX_CHECK(pOpaqAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
         useInternal = (m_platform == MFX_PLATFORM_SOFTWARE) ? !(pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) : (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
     }
 
@@ -386,9 +380,8 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     memset(&m_response_alien, 0, sizeof(m_response_alien));
     m_isOpaq = false;
 
-    mfxStatus mfxSts = QueryIOSurfInternal(m_platform, type, &m_vPar, &request);
-    if (mfxSts != MFX_ERR_NONE)
-        return mfxSts;
+    mfxSts = QueryIOSurfInternal(m_platform, type, &m_vPar, &request);
+    MFX_CHECK_STS(mfxSts);
 
     request.Type |= useInternal ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
     request_internal = request;
@@ -397,12 +390,9 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     bool mapOpaq = true;
     mfxExtOpaqueSurfaceAlloc *pOpqAlloc = 0;
     mfxSts = UpdateAllocRequest(par, &request, pOpqAlloc, mapOpaq);
-    if (mfxSts < MFX_ERR_NONE)
-        return mfxSts;
+    MFX_CHECK(mfxSts >= MFX_ERR_NONE, mfxSts);
 
-    if (m_isOpaq && !m_core->IsCompatibleForOpaq())
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
+    MFX_CHECK(!m_isOpaq || m_core->IsCompatibleForOpaq(), MFX_ERR_UNDEFINED_BEHAVIOR);
 
     if (mapOpaq)
     {
@@ -422,8 +412,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     }
 #endif
 
-    if (mfxSts < MFX_ERR_NONE)
-        return mfxSts;
+    MFX_CHECK(mfxSts >= MFX_ERR_NONE, mfxSts);
 
     // allocates internal surfaces:
     if (useInternal)
@@ -435,8 +424,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 #endif
         request = request_internal;
         mfxSts = m_core->AllocFrames(&request_internal, &m_response, true);
-        if (mfxSts < MFX_ERR_NONE)
-            return mfxSts;
+        MFX_CHECK(mfxSts >= MFX_ERR_NONE, mfxSts);
 
     }
     else
@@ -451,8 +439,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     if (m_platform != MFX_PLATFORM_SOFTWARE)
     {
         mfxSts = m_core->CreateVA(&m_vFirstPar, &request, &m_response, m_FrameAllocator.get());
-        if (mfxSts < MFX_ERR_NONE)
-            return mfxSts;
+        MFX_CHECK(mfxSts >= MFX_ERR_NONE, mfxSts);
     }
 #endif
 
@@ -462,8 +449,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     UMC::Status umcSts = m_FrameAllocator->InitMfx(0, m_core, &m_vFirstPar, &request, &m_response, !useInternal, m_platform == MFX_PLATFORM_SOFTWARE);
 #endif
 
-    if (umcSts != UMC::UMC_OK)
-        return MFX_ERR_MEMORY_ALLOC;
+    MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     if (videoProcessing)
@@ -473,8 +459,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 #endif
 
     umcSts = m_MemoryAllocator.InitMem(0, m_core);
-    if (umcSts != UMC::UMC_OK)
-        return MFX_ERR_MEMORY_ALLOC;
+    MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
     m_pH264VideoDecoder->SetFrameAllocator(m_FrameAllocator.get());
 
@@ -497,8 +482,8 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         {
             if (m_va->GetProtectedVA())
             {
-                if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
+                umcSts = m_va->GetProtectedVA()->SetModes(par);
+                MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_INVALID_VIDEO_PARAM);
             }
         }
 #endif
@@ -506,8 +491,8 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
         if (m_va->GetVideoProcessingVA())
         {
-            if (m_va->GetVideoProcessingVA()->Init(par, videoProcessing) != UMC::UMC_OK)
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+            umcSts = m_va->GetVideoProcessingVA()->Init(par, videoProcessing);
+            MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_INVALID_VIDEO_PARAM);
         }
 #endif
     }
@@ -518,7 +503,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     umcSts = m_pH264VideoDecoder->Init(&umcVideoParams);
     if (umcSts != UMC::UMC_OK)
     {
-        return ConvertUMCStatusToMfx(umcSts);
+        MFX_RETURN(ConvertUMCStatusToMfx(umcSts));
     }
 
     m_vFirstPar.mfx.CodecProfile = oldProfile;
@@ -542,12 +527,12 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     if (m_platform != m_core->GetPlatformType())
     {
         VM_ASSERT(m_platform == MFX_PLATFORM_SOFTWARE);
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        MFX_RETURN(MFX_WRN_PARTIAL_ACCELERATION);
     }
 
     if (isNeedChangeVideoParamWarning)
     {
-        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        MFX_RETURN(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     }
 
     return MFX_ERR_NONE;
@@ -622,8 +607,7 @@ mfxStatus VideoDECODEH264::SetTargetViewList(mfxVideoParam *par)
     if (targetViews)
     {
         mfxStatus sts = Dependency(mvcPoints, targetViews, viewList, dependencyList);
-        if (sts < MFX_ERR_NONE)
-            return sts;
+        MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
         m_pH264VideoDecoder->SetTemporalId(targetViews->TemporalId);
     }
@@ -636,8 +620,7 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
-    if (!m_isInit)
-        return MFX_ERR_NOT_INITIALIZED;
+    MFX_CHECK(m_isInit, MFX_ERR_NOT_INITIALIZED);
 
     MFX_CHECK_NULL_PTR1(par);
 
@@ -649,28 +632,23 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
 
     eMFXPlatform platform = MFX_Utility::GetPlatform(m_core, par);
 
-    if (CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) < MFX_ERR_NONE)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    mfxStatus mfxSts = CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type);
+    MFX_CHECK(mfxSts >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if (!MFX_Utility::CheckVideoParam(par, type))
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    bool videoParamIsValid = MFX_Utility::CheckVideoParam(par, type);
+    MFX_CHECK(videoParamIsValid, MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if (!IsSameVideoParam(par, &m_vInitPar, type))
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    bool videoParamIsSame = IsSameVideoParam(par, &m_vInitPar, type);
+    MFX_CHECK(videoParamIsSame, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    if (m_platform != platform)
-    {
-        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    }
+    MFX_CHECK(m_platform == platform, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     m_pH264VideoDecoder->Reset();
 
     SetTargetViewList(par);
 
-    if (m_FrameAllocator->Reset() != UMC::UMC_OK)
-    {
-        return MFX_ERR_MEMORY_ALLOC;
-    }
+    UMC::Status umcSts = m_FrameAllocator->Reset();
+    MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
     m_frameOrder = (mfxU16)MFX_FRAMEORDER_UNKNOWN;
     m_globalTask = false;
@@ -691,15 +669,9 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
         !IS_PROTECTION_CENC(m_vFirstPar.Protected) &&
         !IS_PROTECTION_WIDEVINE(m_vFirstPar.Protected))
     {
-        if (m_va->GetProtectedVA())
-        {
-            if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
-                return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-        else
-        {
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        }
+        MFX_CHECK(m_va->GetProtectedVA(), MFX_ERR_UNDEFINED_BEHAVIOR);
+        umcSts = m_va->GetProtectedVA()->SetModes(par);
+        MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 #endif
 
@@ -708,12 +680,12 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
     if (m_platform != m_core->GetPlatformType())
     {
         VM_ASSERT(m_platform == MFX_PLATFORM_SOFTWARE);
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        MFX_RETURN(MFX_WRN_PARTIAL_ACCELERATION);
     }
 
     if (isNeedChangeVideoParamWarning)
     {
-        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        MFX_RETURN(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     }
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
@@ -724,8 +696,8 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
     mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
     if (m_va->GetVideoProcessingVA())
     {
-        if (m_va->GetVideoProcessingVA()->Init(par, videoProcessing) != UMC::UMC_OK)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+        umcSts = m_va->GetVideoProcessingVA()->Init(par, videoProcessing);
+        MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 #endif //MFX_VA_LINUX
 #endif //MFX_DEC_VIDEO_POSTPROCESS_DISABLE
@@ -737,8 +709,7 @@ mfxStatus VideoDECODEH264::Close(void)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
-    if (!m_isInit || !m_pH264VideoDecoder.get())
-        return MFX_ERR_NOT_INITIALIZED;
+    MFX_CHECK(m_isInit && m_pH264VideoDecoder.get(), MFX_ERR_NOT_INITIALIZED);
 
     m_pH264VideoDecoder->Close();
     m_FrameAllocator->Close();
@@ -776,15 +747,17 @@ mfxStatus VideoDECODEH264::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPar
         type = core->GetHWType();
     }
 
-    return MFX_Utility::Query(core, in, out, type);
+    mfxStatus mfxSts = MFX_Utility::Query(core, in, out, type);
+    MFX_CHECK_STS(mfxSts);
+
+    return mfxSts;
 }
 
 mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
-    if (!m_isInit)
-        return MFX_ERR_NOT_INITIALIZED;
+    MFX_CHECK(m_isInit, MFX_ERR_NOT_INITIALIZED);
 
     MFX_CHECK_NULL_PTR1(par);
 
@@ -800,8 +773,7 @@ mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
     mfxExtPAVPOption * buffer = (mfxExtPAVPOption*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
     if (buffer)
     {
-        if (!IS_PROTECTION_PAVP_ANY(m_vPar.Protected))
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+        MFX_CHECK(IS_PROTECTION_PAVP_ANY(m_vPar.Protected), MFX_ERR_INVALID_VIDEO_PARAM);
 
         mfxExtPAVPOption * bufferInternal = m_vPar.GetExtendedBuffer<mfxExtPAVPOption>(MFX_EXTBUFF_PAVP_OPTION);
         *buffer = *bufferInternal;
@@ -833,12 +805,10 @@ mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
         mvcSeqDesc->NumViewId = mvcSeqDescInternal->NumViewId;
         mvcSeqDesc->NumOP     = mvcSeqDescInternal->NumOP;
 
-        if (mvcSeqDesc->NumViewAlloc   < mvcSeqDescInternal->NumView   ||
-            mvcSeqDesc->NumViewIdAlloc < mvcSeqDescInternal->NumViewId ||
-            mvcSeqDesc->NumOPAlloc     < mvcSeqDescInternal->NumOP)
-        {
-            return MFX_ERR_NOT_ENOUGH_BUFFER;
-        }
+        MFX_CHECK(mvcSeqDesc->NumViewAlloc   >= mvcSeqDescInternal->NumView   &&
+                  mvcSeqDesc->NumViewIdAlloc >= mvcSeqDescInternal->NumViewId &&
+                  mvcSeqDesc->NumOPAlloc     >= mvcSeqDescInternal->NumOP,
+                  MFX_ERR_NOT_ENOUGH_BUFFER);
 
         std::copy(mvcSeqDescInternal->View,   mvcSeqDescInternal->View   + mvcSeqDescInternal->NumView,   mvcSeqDesc->View);
         std::copy(mvcSeqDescInternal->ViewId, mvcSeqDescInternal->ViewId + mvcSeqDescInternal->NumViewId, mvcSeqDesc->ViewId);
@@ -884,9 +854,7 @@ mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
         spsPps->SPSId = spsPpsInternal->SPSId;
         spsPps->PPSId = spsPpsInternal->PPSId;
 
-        if (spsPps->SPSBufSize < spsPpsInternal->SPSBufSize ||
-            spsPps->PPSBufSize < spsPpsInternal->PPSBufSize)
-            return MFX_ERR_NOT_ENOUGH_BUFFER;
+        MFX_CHECK(spsPps->SPSBufSize >= spsPpsInternal->SPSBufSize && spsPps->PPSBufSize >= spsPpsInternal->PPSBufSize, MFX_ERR_NOT_ENOUGH_BUFFER);
 
         spsPps->SPSBufSize = spsPpsInternal->SPSBufSize;
         spsPps->PPSBufSize = spsPpsInternal->PPSBufSize;
@@ -934,8 +902,7 @@ mfxStatus VideoDECODEH264::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
     MFX_CHECK_NULL_PTR2(bs, par);
 
     mfxStatus sts = CheckBitstream(bs);
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK_STS(sts);
 
     MFXMediaDataAdapter in(bs);
 
@@ -950,15 +917,12 @@ mfxStatus VideoDECODEH264::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
     decoder.SetMemoryAllocator(&tempAllocator);
     UMC::Status umcRes = MFX_Utility::DecodeHeader(&decoder, &avcInfo, bs, par);
 
-    if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
-        return MFX_ERR_MORE_DATA;
+    MFX_CHECK(umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA, MFX_ERR_MORE_DATA);
 
-    if (umcRes != UMC::UMC_OK)
-        return ConvertUMCStatusToMfx(umcRes);
+    MFX_CHECK_UMC_STS(umcRes);
 
     umcRes = MFX_Utility::FillVideoParamMVCEx(&decoder, par);
-    if (umcRes != UMC::UMC_OK)
-        return ConvertUMCStatusToMfx(umcRes);
+    MFX_CHECK_UMC_STS(umcRes);
 
     // sps/pps headers
     mfxExtCodingOptionSPSPPS * spsPps = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
@@ -969,8 +933,7 @@ mfxStatus VideoDECODEH264::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
 
         if (sps->GetSize())
         {
-            if (spsPps->SPSBufSize < sps->GetSize())
-                return MFX_ERR_NOT_ENOUGH_BUFFER;
+            MFX_CHECK(spsPps->SPSBufSize >= sps->GetSize(), MFX_ERR_NOT_ENOUGH_BUFFER);
 
             spsPps->SPSBufSize = (mfxU16)sps->GetSize();
 
@@ -983,8 +946,7 @@ mfxStatus VideoDECODEH264::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
 
         if (pps->GetSize())
         {
-            if (spsPps->PPSBufSize < pps->GetSize())
-                return MFX_ERR_NOT_ENOUGH_BUFFER;
+            MFX_CHECK(spsPps->PPSBufSize >= pps->GetSize(), MFX_ERR_NOT_ENOUGH_BUFFER);
 
             spsPps->PPSBufSize = (mfxU16)pps->GetSize();
 
@@ -1009,8 +971,7 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
 #endif
 
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-    if (platform != MFX_PLATFORM_HARDWARE)
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(platform == MFX_PLATFORM_HARDWARE, MFX_ERR_UNSUPPORTED);
 #endif
 
     eMFXHWType type = MFX_HW_UNKNOWN;
@@ -1039,9 +1000,7 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
         (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
     mfxStatus sts = QueryIOSurfInternal(platform, type, &params, request);
-    if (sts != MFX_ERR_NONE)
-        return sts;
-
+    MFX_CHECK_STS(sts);
 
     if (isInternalManaging)
     {
@@ -1083,12 +1042,12 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     if (platform != core->GetPlatformType())
     {
         VM_ASSERT(platform == MFX_PLATFORM_SOFTWARE);
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        MFX_RETURN(MFX_WRN_PARTIAL_ACCELERATION);
     }
 
     if (isNeedChangeVideoParamWarning)
     {
-        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        MFX_RETURN(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     }
 
     return MFX_ERR_NONE;
@@ -1116,8 +1075,10 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
 
     mfxU32 numMin = dpbSize + 1 + asyncDepth;
 
+#ifdef MFX_ENABLE_CPLIB
     if (IS_PROTECTION_CENC(par->Protected))
         numMin += 2;
+#endif
 
     if (platform != MFX_PLATFORM_SOFTWARE && useDelayedDisplay) // equals if (m_useDelayedDisplay) - workaround
         numMin += NUMBER_OF_ADDITIONAL_FRAMES;
@@ -1147,8 +1108,7 @@ mfxStatus VideoDECODEH264::GetDecodeStat(mfxDecodeStat *stat)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
-    if (!m_isInit)
-        return MFX_ERR_NOT_INITIALIZED;
+    MFX_CHECK(m_isInit, MFX_ERR_NOT_INITIALIZED);
 
     MFX_CHECK_NULL_PTR1(stat);
 
@@ -1177,13 +1137,11 @@ static mfxStatus AVCDECODERoutine(void *pState, void *pParam, mfxU32 threadNumbe
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "AVCDECODERoutine");
 
     auto decoder = reinterpret_cast<VideoDECODEH264*>(pState);
-    if (!decoder)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_CHECK(decoder, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     auto task =
         reinterpret_cast<ThreadTaskInfo*>(pParam);
-    if (!task)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_CHECK(task, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     return
         decoder->RunThread(task, threadNumber);
@@ -1229,7 +1187,7 @@ mfxStatus VideoDECODEH264::RunThread(ThreadTaskInfo* info, mfxU32 threadNumber)
         if (!pFrame || pFrame->m_UID == -1)
         {
             VM_ASSERT(false);
-            return MFX_ERR_NOT_FOUND;
+            MFX_RETURN(MFX_ERR_NOT_FOUND);
         }
 
         isDecoded = m_pH264VideoDecoder->CheckDecoding(pFrame);
@@ -1260,14 +1218,15 @@ mfxStatus VideoDECODEH264::RunThread(ThreadTaskInfo* info, mfxU32 threadNumber)
         if (!pFrame->wasDisplayed())
         {
             sts = DecodeFrame(0, info->surface_work, info->surface_out);
+            MFX_CHECK(sts == MFX_ERR_NONE || sts == MFX_ERR_NOT_FOUND, sts);
 
-            if (sts != MFX_ERR_NONE && sts != MFX_ERR_NOT_FOUND)
-                return sts;
+            return sts;
         }
 
         return MFX_TASK_DONE;
     }
 
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
     return sts;
 }
 
@@ -1302,25 +1261,24 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs,
         pEntryPoint->pParam        = info;
     }
 
+    MFX_CHECK_STS(mfxSts);
     return mfxSts;
 }
 
 mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out)
 {
-    if (!m_isInit)
-        return MFX_ERR_NOT_INITIALIZED;
+    MFX_CHECK(m_isInit, MFX_ERR_NOT_INITIALIZED);
 
     MFX_CHECK_NULL_PTR2(surface_work, surface_out);
 
     mfxStatus sts = MFX_ERR_NONE;
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected))
 #endif
         sts = bs ? CheckBitstream(bs) : MFX_ERR_NONE;
 
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK_STS(sts);
 
     UMC::Status umcRes = UMC::UMC_OK;
 
@@ -1329,28 +1287,23 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
     if (m_isOpaq)
     {
         sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_AVC);
-        if (sts != MFX_ERR_NONE)
-            return MFX_ERR_UNSUPPORTED;
+        MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
 
-        if (surface_work->Data.MemId || surface_work->Data.Y || surface_work->Data.R || surface_work->Data.A || surface_work->Data.UV) // opaq surface
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        // opaq surface
+        MFX_CHECK(!(surface_work->Data.MemId || surface_work->Data.Y || surface_work->Data.R || surface_work->Data.A || surface_work->Data.UV), MFX_ERR_UNDEFINED_BEHAVIOR);
 
         surface_work = GetOriginalSurface(surface_work);
-        if (!surface_work)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        MFX_CHECK(surface_work, MFX_ERR_UNDEFINED_BEHAVIOR);
     }
 
     sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_AVC);
-    if (sts != MFX_ERR_NONE)
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
 
     sts = CheckFrameData(surface_work);
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK_STS(sts);
 
     sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, m_isOpaq);
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK_STS(sts);
 
     sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 
@@ -1358,12 +1311,10 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (bs && IS_PROTECTION_ANY(m_vPar.Protected))
     {
-        if (!m_va->GetProtectedVA() || !(bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME))
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-
+        MFX_CHECK(m_va->GetProtectedVA() && (bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME), MFX_ERR_UNDEFINED_BEHAVIOR);
         m_va->GetProtectedVA()->SetBitstream(bs);
     }
-#endif
+#endif // #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     if (m_va->GetVideoProcessingVA())
@@ -1397,14 +1348,12 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
         }
 #endif
 
-#if defined(MFX_VA) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_VA) && !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
         mfxExtBuffer* widevineExtbuf = (bs) ? GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : nullptr;
         if (widevineExtbuf)
         {
             src.SetExtBuffer(widevineExtbuf);
         }
-#endif
 #endif
 
         for (;;)
@@ -1437,16 +1386,14 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                     }
                 }
 
-                if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION)
-                    return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                MFX_CHECK(umcRes != UMC::UMC_NTF_NEW_RESOLUTION, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
             }
 
             if (umcRes == UMC::UMC_ERR_INVALID_STREAM)
             {
                 umcAddSourceRes = umcFrameRes = umcRes = UMC::UMC_OK;
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-                if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
-                    sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+#if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+                MFX_CHECK(!IS_PROTECTION_WIDEVINE(m_vPar.Protected), MFX_ERR_UNDEFINED_BEHAVIOR);
 #endif
             }
 
@@ -1468,10 +1415,9 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             {
                 //return these errors immediatelly unless we have [input == 0]
                 sts = (umcRes == UMC::UMC_ERR_DEVICE_FAILED) ? MFX_ERR_DEVICE_FAILED : MFX_ERR_GPU_HANG;
-                if (!bs || bs->DataFlag == MFX_BITSTREAM_EOS)
-                    force = true;
-                else
-                    return sts;
+                if (bs && bs->DataFlag != MFX_BITSTREAM_EOS)
+                    MFX_RETURN(sts);
+                force = true;
             }
 
             umcRes = m_pH264VideoDecoder->RunDecoding();
@@ -1503,20 +1449,23 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
         if (ex.GetStatus() == UMC::UMC_ERR_ALLOC)
         {
             // check incompatibility of video params
-            if (m_vInitPar.mfx.FrameInfo.Width != m_vPar.mfx.FrameInfo.Width ||
-                m_vInitPar.mfx.FrameInfo.Height != m_vPar.mfx.FrameInfo.Height)
-            {
-                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-            }
+            MFX_CHECK(
+                m_vInitPar.mfx.FrameInfo.Width  == m_vPar.mfx.FrameInfo.Width &&
+                m_vInitPar.mfx.FrameInfo.Height == m_vPar.mfx.FrameInfo.Height,
+                MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         }
 
-        return ConvertUMCStatusToMfx(ex.GetStatus());
+        mfxStatus mfxSts = ConvertUMCStatusToMfx(ex.GetStatus());
+        MFX_CHECK_STS(mfxSts);
+
+        return mfxSts;
     }
     catch(...)
     {
-        return MFX_ERR_UNKNOWN;
+        MFX_RETURN(MFX_ERR_UNKNOWN);
     }
 
+    MFX_CHECK_STS(sts);
     return sts;
 }
 
@@ -1530,7 +1479,7 @@ void VideoDECODEH264::FillVideoParam(mfxVideoParamWrapper *par, bool full)
     UMC::RawHeader *sps = m_pH264VideoDecoder->GetSPS();
     UMC::RawHeader *pps = m_pH264VideoDecoder->GetPPS();
 
-    mfxExtCodingOptionSPSPPS * spsPps = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+    mfxExtCodingOptionSPSPPS * spsPps = reinterpret_cast<mfxExtCodingOptionSPSPPS *>(GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS));
     if (spsPps)
     {
         if (sps->GetSize())
@@ -1781,20 +1730,14 @@ mfxStatus VideoDECODEH264::DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264D
     {
         index = m_FrameAllocator->FindSurface(surface_out, m_isOpaq);
         pFrame = m_pH264VideoDecoder->FindSurface((UMC::FrameMemID)index);
-        if (!pFrame)
-        {
-            VM_ASSERT(false);
-            return MFX_ERR_NOT_FOUND;
-        }
+        MFX_CHECK(pFrame, MFX_ERR_NOT_FOUND);
     }
 
     int32_t const error = pFrame->GetError();
     if (error & UMC::ERROR_FRAME_DEVICE_FAILURE)
     {
-        if (error == UMC::UMC_ERR_GPU_HANG)
-            return MFX_ERR_GPU_HANG;
-        else
-            return MFX_ERR_DEVICE_FAILED;
+        MFX_CHECK(error != UMC::UMC_ERR_GPU_HANG, MFX_ERR_DEVICE_FAILED);
+        MFX_RETURN(MFX_ERR_GPU_HANG);
     }
 
     surface_out->Data.Corrupted = 0;
@@ -1820,6 +1763,7 @@ mfxStatus VideoDECODEH264::DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264D
         surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
 
     mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_out, index, &m_vPar, m_isOpaq);
+    MFX_CHECK_STS(sts);
 
     UMC::AutomaticUMCMutex guard(m_mGuard);
     pFrame->setWasDisplayed();
@@ -1828,19 +1772,18 @@ mfxStatus VideoDECODEH264::DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264D
 
 mfxStatus VideoDECODEH264::DecodeFrame(mfxBitstream *, mfxFrameSurface1 *, mfxFrameSurface1 *surface_out)
 {
-    if (!m_isInit)
-        return MFX_ERR_NOT_INITIALIZED;
-
+    MFX_CHECK(m_isInit, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_NULL_PTR1(surface_out);
+
     mfxStatus sts = DecodeFrame(surface_out);
 
+    MFX_CHECK_STS(sts);
     return sts;
 }
 
 mfxStatus VideoDECODEH264::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts)
 {
-    if (!m_isInit)
-        return MFX_ERR_NOT_INITIALIZED;
+    MFX_CHECK(m_isInit, MFX_ERR_NOT_INITIALIZED);
 
     MFX_CHECK_NULL_PTR3(ud, sz, ts);
 
@@ -1849,17 +1792,16 @@ mfxStatus VideoDECODEH264::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts)
     UMC::MediaData data;
     UMC::Status umcRes = m_pH264VideoDecoder->GetUserData(&data);
 
-    if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
-        return MFX_ERR_MORE_DATA;
+    MFX_CHECK(umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA, MFX_ERR_MORE_DATA);
 
-    if (*sz < data.GetDataSize())
-        return MFX_ERR_NOT_ENOUGH_BUFFER;
+    MFX_CHECK(*sz >= data.GetDataSize(), MFX_ERR_NOT_ENOUGH_BUFFER);
 
     *sz = (mfxU32)data.GetDataSize();
     *ts = GetMfxTimeStamp(data.GetTime());
 
     std::copy(reinterpret_cast<mfxU8 *>(data.GetDataPointer()), reinterpret_cast<mfxU8 *>(data.GetDataPointer()) + data.GetDataSize(), ud);
 
+    MFX_CHECK_STS(MFXSts);
     return MFXSts;
 }
 
@@ -1867,22 +1809,19 @@ mfxStatus VideoDECODEH264::GetPayload( mfxU64 *ts, mfxPayload *payload )
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
-    if (!m_isInit)
-        return MFX_ERR_NOT_INITIALIZED;
+    MFX_CHECK(m_isInit, MFX_ERR_NOT_INITIALIZED);
 
     MFX_CHECK_NULL_PTR3(ts, payload, payload->Data);
 
     UMC::SEI_Storer * storer = m_pH264VideoDecoder->GetSEIStorer();
 
-    if (!storer)
-        return MFX_ERR_UNKNOWN;
+    MFX_CHECK(storer, MFX_ERR_UNKNOWN);
 
     const UMC::SEI_Storer::SEI_Message * msg = storer->GetPayloadMessage();
 
     if (msg)
     {
-        if (payload->BufSize < msg->msg_size)
-            return MFX_ERR_NOT_ENOUGH_BUFFER;
+        MFX_CHECK(payload->BufSize >= msg->msg_size, MFX_ERR_NOT_ENOUGH_BUFFER);
 
         *ts = GetMfxTimeStamp(msg->timestamp);
 
@@ -1953,8 +1892,7 @@ mfxStatus VideoDECODEH264::SetSkipMode(mfxSkipMode mode)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
-    if (!m_isInit)
-        return MFX_ERR_NOT_INITIALIZED;
+    MFX_CHECK(m_isInit, MFX_ERR_NOT_INITIALIZED);
 
     int32_t test_num = 0;
     m_pH264VideoDecoder->ChangeVideoDecodingSpeed(test_num);
@@ -1976,8 +1914,9 @@ mfxStatus VideoDECODEH264::SetSkipMode(mfxSkipMode mode)
         default:
             {
 #if !defined OPEN_SOURCE
-                int const pmode =
+                mfxI32 const pmode =
                     impl::check_private_mode(mode);
+
                 if (pmode == impl::MFX_SKIPMODE_NODEBLOCK)
                 {
                     m_pH264VideoDecoder->PermanentDisableDeblocking(true);
@@ -1994,14 +1933,9 @@ mfxStatus VideoDECODEH264::SetSkipMode(mfxSkipMode mode)
 #endif
                     return MFX_ERR_NONE;
                 }
-                else
-                    return MFX_ERR_UNSUPPORTED;
-#else
-                return MFX_ERR_UNSUPPORTED;
 #endif // OPEN SOURCE
-
+                MFX_RETURN(MFX_ERR_UNSUPPORTED);
             }
-
     }
 
     m_pH264VideoDecoder->ChangeVideoDecodingSpeed(num);
@@ -2172,11 +2106,9 @@ mfxStatus VideoDECODEH264::UpdateAllocRequest(mfxVideoParam *par,
     m_isOpaq = true;
 
     pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-    if (!pOpaqAlloc)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(pOpaqAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
 
-    if (request->NumFrameMin > pOpaqAlloc->Out.NumSurface)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(request->NumFrameMin <= pOpaqAlloc->Out.NumSurface, MFX_ERR_INVALID_VIDEO_PARAM);
 
     request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE;
     request->Type |= (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET;
