@@ -1054,8 +1054,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::CheckEncodeFrameParam(
             MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
 
-        if (surface->Info.Width != m_vParam.mfx.FrameInfo.Width || surface->Info.Height != m_vParam.mfx.FrameInfo.Height)
-            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        MFX_CHECK(surface->Info.Width >= m_vParam.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(surface->Info.Height >= m_vParam.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
     }
     else
     {
