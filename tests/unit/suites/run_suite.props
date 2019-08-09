@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- unit test suites specific settings -->
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Message>Runnint tests...</Message>
+      <Command>
+setlocal
+$(TargetPath) --gmock_verbose=error
+endlocal &amp; exit /b %errorlevel%
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+<!-- End of cunit test suites specific settings -->
+</Project>

@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2015 - 2017 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2015 - 2019 Intel Corporation. All Rights Reserved.
 //
 
 #include "gtest/gtest.h"
@@ -12,9 +12,6 @@
 #include "mfxstructures.h"
 #include "mfx_trace.h"
 #include "mfx_common_int.h"
-
-//#include "Windows.h"
-//#include "WinBase.h"
 
 typedef std::pair<mfx_reflect::AccessorField, mfx_reflect::AccessorField> PairResult_t;
 
@@ -83,7 +80,7 @@ TEST_F(TestCompareTwoStructs, Test_with_changed_field_array_STR)
 
     std::string result = mfx_reflect::CompareStructsToString(m_collection.Access(&in), m_collection.Access(&out));
 
-    ASSERT_EQ(result, "Incompatible VideoParams were updated:\nmfxExtCodingOption3.NumRefActiveP[0] = 1 -> 2\n");
+    EXPECT_EQ(result, "Incompatible VideoParams were updated:\nmfxExtCodingOption3.NumRefActiveP[0] = 1 -> 2\n");
 }
 
 TEST_F(TestCompareTwoStructs, Test_with_two_changed_fields_STR)
@@ -95,7 +92,7 @@ TEST_F(TestCompareTwoStructs, Test_with_two_changed_fields_STR)
 
     std::string result = mfx_reflect::CompareStructsToString(m_collection.Access(&in), m_collection.Access(&out));
 
-    ASSERT_EQ(result, "Incompatible VideoParams were updated:\nmfxExtCodingOption3.BitstreamRestriction = 1 -> 5\nmfxExtCodingOption3.NumRefActiveP[0] = 1 -> 2\n");
+    EXPECT_EQ(result, "Incompatible VideoParams were updated:\nmfxExtCodingOption3.BitstreamRestriction = 1 -> 5\nmfxExtCodingOption3.NumRefActiveP[0] = 1 -> 2\n");
 }
 
 TEST_F(TestCompareTwoStructs, Test_with_changed_nested_fields_STR)
@@ -108,7 +105,15 @@ TEST_F(TestCompareTwoStructs, Test_with_changed_nested_fields_STR)
 
     std::string result = mfx_reflect::CompareStructsToString(m_collection.Access(&in), m_collection.Access(&out));
 
-    ASSERT_EQ(result, "Incompatible VideoParams were updated:\nmfxVideoParam.mfx.InitialDelayInKB = 3 -> 5\nmfxVideoParam.mfx.QPI = 3 -> 5\nmfxVideoParam.mfx.Accuracy = 3 -> 5\nmfxVideoParam.mfx.NumSlice = 1 -> 2\nmfxVideoParam.vpp.Out.FrameId.QualityId = 1 -> 2\nmfxVideoParam.vpp.Out.Shift = 3 -> 5\n");
+    EXPECT_EQ(result, "Incompatible VideoParams were updated:\n"
+        "mfxVideoParam.mfx.InitialDelayInKB = 3 -> 5\n"
+        "mfxVideoParam.mfx.QPI = 3 -> 5\n"
+        "mfxVideoParam.mfx.Accuracy = 3 -> 5\n"
+        "mfxVideoParam.mfx.NumSlice = 1 -> 2\n"
+        "mfxVideoParam.mfx.FilmGrain = 3 -> 5\n"
+        "mfxVideoParam.vpp.Out.FrameId.QualityId = 1 -> 2\n"
+        "mfxVideoParam.vpp.Out.Shift = 3 -> 5\n"
+    );
 }
 
 TEST_F(TestCompareTwoStructs, Test_with_changed_nested_fields_array_STR)
@@ -120,7 +125,7 @@ TEST_F(TestCompareTwoStructs, Test_with_changed_nested_fields_array_STR)
 
     std::string result = mfx_reflect::CompareStructsToString(m_collection.Access(&in), m_collection.Access(&out));
 
-    ASSERT_EQ(result, "Incompatible VideoParams were updated:\nmfxExtVP9Segmentation.Segment[0].FeatureEnabled = 1 -> 2\nmfxExtVP9Segmentation.Segment[6].LoopFilterLevelDelta = 4 -> 5\n");
+    EXPECT_EQ(result, "Incompatible VideoParams were updated:\nmfxExtVP9Segmentation.Segment[0].FeatureEnabled = 1 -> 2\nmfxExtVP9Segmentation.Segment[6].LoopFilterLevelDelta = 4 -> 5\n");
 }
 
 TEST_F(TestCompareTwoStructs, Test_with_changed_extended_parameters_STR)
@@ -143,7 +148,7 @@ TEST_F(TestCompareTwoStructs, Test_with_changed_extended_parameters_STR)
 
     std::string result = mfx_reflect::CompareStructsToString(m_collection.Access(&in), m_collection.Access(&out));
 
-    ASSERT_EQ(result, "Incompatible VideoParams were updated:\nmfxVideoParam.mfx.NumSlice = 1 -> 2\nmfxVideoParam.vpp.Out.FrameId.QualityId = 1 -> 2\nmfxExtCodingOption2.MaxFrameSize = 1 -> 2\nmfxExtCodingOption3.NumSliceB = 3 -> 5\n");
+    EXPECT_EQ(result, "Incompatible VideoParams were updated:\nmfxVideoParam.mfx.NumSlice = 1 -> 2\nmfxVideoParam.vpp.Out.FrameId.QualityId = 1 -> 2\nmfxExtCodingOption2.MaxFrameSize = 1 -> 2\nmfxExtCodingOption3.NumSliceB = 3 -> 5\n");
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -162,8 +167,8 @@ TEST_F(TestCompareTwoStructs, Test_with_changed_field_array)
 
     mfx_reflect::TypeComparisonResultP result = mfx_reflect::CompareTwoStructs(m_collection.Access(&in), m_collection.Access(&out));
 
-    ASSERT_EQ(CompareResultWithNestedFields(result, resultList), true);
-    ASSERT_EQ(resultList.size(), 0);
+    EXPECT_EQ(CompareResultWithNestedFields(result, resultList), true);
+    EXPECT_EQ(resultList.size(), 0);
 }
 
 TEST_F(TestCompareTwoStructs, Test_with_two_changed_fields)
@@ -183,8 +188,8 @@ TEST_F(TestCompareTwoStructs, Test_with_two_changed_fields)
 
     mfx_reflect::TypeComparisonResultP result = mfx_reflect::CompareTwoStructs(m_collection.Access(&in), m_collection.Access(&out));
 
-    ASSERT_EQ(CompareResultWithNestedFields(result, resultList), true);
-    ASSERT_EQ(resultList.size(), 0);
+    EXPECT_EQ(CompareResultWithNestedFields(result, resultList), true);
+    EXPECT_EQ(resultList.size(), 0);
 }
 
 TEST_F(TestCompareTwoStructs, Test_with_changed_nested_fields)
@@ -203,13 +208,14 @@ TEST_F(TestCompareTwoStructs, Test_with_changed_nested_fields)
     resultList.push_back(PairResult(data_in.AccessSubtype("mfx").AccessField("QPI"), delta));
     resultList.push_back(PairResult(data_in.AccessSubtype("mfx").AccessField("Accuracy"), delta));
     resultList.push_back(PairResult(data_in.AccessSubtype("mfx").AccessField("NumSlice"), delta));
+    resultList.push_back(PairResult(data_in.AccessSubtype("mfx").AccessField("FilmGrain"), delta));
     resultList.push_back(PairResult(data_in.AccessSubtype("vpp").AccessSubtype("Out").AccessSubtype("FrameId").AccessField("QualityId"), delta));
     resultList.push_back(PairResult(data_in.AccessSubtype("vpp").AccessSubtype("Out").AccessField("Shift"), delta));
 
     mfx_reflect::TypeComparisonResultP result = mfx_reflect::CompareTwoStructs(m_collection.Access(&in), m_collection.Access(&out));
 
-    ASSERT_EQ(CompareResultWithNestedFields(result, resultList), true);
-    ASSERT_EQ(resultList.size(), 0);
+    EXPECT_EQ(CompareResultWithNestedFields(result, resultList), true);
+    EXPECT_EQ(resultList.size(), 0);
 }
 
 TEST_F(TestCompareTwoStructs, Test_with_changed_nested_fields_array)
@@ -231,8 +237,8 @@ TEST_F(TestCompareTwoStructs, Test_with_changed_nested_fields_array)
 
     mfx_reflect::TypeComparisonResultP result = mfx_reflect::CompareTwoStructs(m_collection.Access(&in), m_collection.Access(&out));
 
-    ASSERT_EQ(CompareResultWithNestedFields(result, resultList), true);
-    ASSERT_EQ(resultList.size(), 0);
+    EXPECT_EQ(CompareResultWithNestedFields(result, resultList), true);
+    EXPECT_EQ(resultList.size(), 0);
 }
 
 TEST_F(TestCompareTwoStructs, Test_with_changed_extended_parameters)
@@ -264,8 +270,8 @@ TEST_F(TestCompareTwoStructs, Test_with_changed_extended_parameters)
 
     mfx_reflect::TypeComparisonResultP result = mfx_reflect::CompareTwoStructs(m_collection.Access(&in), m_collection.Access(&out));
 
-    ASSERT_EQ(CompareResultWithNestedFields(result, resultList), true);
-    ASSERT_EQ(resultList.size(), 0);
+    EXPECT_EQ(CompareResultWithNestedFields(result, resultList), true);
+    EXPECT_EQ(resultList.size(), 0);
 }
 
 /*-----------------------------------------------------------------------------------*/

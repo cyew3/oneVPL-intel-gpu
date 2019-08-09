@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- compare_struct.vcxproj specific settings -->
+  <PropertyGroup Label="compare_struct settings">
+    <MfxConfigurationType Label="compare_struct settings">Application</MfxConfigurationType>
+    <MfxUsingSettings>compare_struct;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+      $(MSDK_API_ROOT)\include;
+      $(MSDK_STUDIO_ROOT)\shared\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+      $(MSDK_STUDIO_ROOT)\shared\mfx_trace\include;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+      $(MSDK_MFX_CONTRIB_ROOT)\gmock\include;
+      $(MSDK_MFX_CONTRIB_ROOT)\gmock\gtest\include;
+      $(MfxIppIncludeDir)
+    </MfxIncludes>
+    <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
+    <MfxTargetName>$(ProjectName)</MfxTargetName>
+  </PropertyGroup>
+<!-- End of compare_struct.vcxproj specific settings -->
+</Project>

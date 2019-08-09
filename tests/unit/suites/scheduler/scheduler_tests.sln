@@ -1,19 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock.vcxproj", "{014D73AF-8FC7-4282-B25F-AA452C04B9B2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock_vs2015", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock.vcxproj", "{014D73AF-8FC7-4282-B25F-AA452C04B9B2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock_main", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock_main.vcxproj", "{5E197B84-F7CD-4A4A-98BE-E472765F5510}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock_main_vs2015", "..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock_main.vcxproj", "{5E197B84-F7CD-4A4A-98BE-E472765F5510}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_common", "..\..\..\..\_studio\mfx_lib\shared\mfx_common.vcxproj", "{5B832EA0-E58C-46B9-AFF6-2416CF805C09}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_trace", "..\..\..\..\_studio\shared\mfx_trace\mfx_trace.vcxproj", "{68AD0BD0-170B-4CEA-8A55-D6B841D66203}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scheduler_tests", "scheduler_tests.vcxproj", "{075CFCA4-20E0-48EB-ACE9-644F9B37C026}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "..\..\..\..\_studio\shared\umc\core\vm\vm.vcxproj", "{E48418E7-2DCA-4642-80D5-09A8799C2549}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm_plus", "..\..\..\..\_studio\shared\umc\core\vm_plus\vm_plus.vcxproj", "{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_trace", "..\..\..\..\_studio\shared\mfx_trace\mfx_trace.vcxproj", "{68AD0BD0-170B-4CEA-8A55-D6B841D66203}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

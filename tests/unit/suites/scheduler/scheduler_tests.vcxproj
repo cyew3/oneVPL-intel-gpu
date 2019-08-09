@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Header.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Header.props" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{075CFCA4-20E0-48EB-ACE9-644F9B37C026}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>scheduler_tests</RootNamespace>
+    <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(MSBuildThisFileDirectory)scheduler_tests.props" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Default.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+  </PropertyGroup>
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Building.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ItemGroup>
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core_task.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core_task_management.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core_thread.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\shared\src\d3d11_video_processor.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\shared\src\libmfx_allocator.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\shared\src\libmfx_allocator_d3d11.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\shared\src\libmfx_core.cpp" />
+    <ClCompile Include="scheduler_api.cpp" />
+    <ClCompile Include="scheduler_event.cpp" />
+    <ClCompile Include="scheduler_tasks.cpp" />
+    <ClCompile Include="test_main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock.vcxproj">
+      <Project>{014D73AF-8FC7-4282-B25F-AA452C04B9B2}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock_main.vcxproj">
+      <Project>{5E197B84-F7CD-4A4A-98BE-E472765F5510}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\shared\mfx_common.vcxproj">
+      <Project>{5B832EA0-E58C-46B9-AFF6-2416CF805C09}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm\vm.vcxproj">
+      <Project>{E48418E7-2DCA-4642-80D5-09A8799C2549}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm_plus\vm_plus.vcxproj">
+      <Project>{6052E5BC-625F-4A6F-AA98-EFDFD15975CE}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Choose>
+    <When Condition=" '$(SolutionName)' == 'scheduler_tests' ">
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\..\_studio\shared\mfx_trace\mfx_trace.vcxproj">
+          <Project>{68ad0bd0-170b-4cea-8a55-d6b841d66203}</Project>
+        </ProjectReference>
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\..\_studio\shared\mfx_trace\mfx_trace_hw.vcxproj">
+          <Project>{252BA91C-A180-41D8-8B2F-84904DD53000}</Project>
+        </ProjectReference>
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Footer.props" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
