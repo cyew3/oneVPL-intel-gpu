@@ -23,7 +23,7 @@
     <ProjectGuid>{C7D4CA10-B152-468E-B67B-867C0ACBE4CC}</ProjectGuid>
     <RootNamespace>camera_pipe_plugin</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project=".\Intel.Mfx.Common.props" />

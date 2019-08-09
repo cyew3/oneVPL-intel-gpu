@@ -30,7 +30,7 @@
     <ProjectGuid>{84B7EC7E-8EB4-4813-949E-9988A75C8649}</ProjectGuid>
     <RootNamespace>pavp_sample_common</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release IPPCP|Win32'" Label="Configuration">

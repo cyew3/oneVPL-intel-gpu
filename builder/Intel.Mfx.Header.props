@@ -18,7 +18,7 @@
 <!-- End of Making human-readable absolute path -->
     
 <!-- COMPILER SETTINGS --> 
-    <MfxWindowsTargetPlatformVersion>10.0.17134.0</MfxWindowsTargetPlatformVersion>
+    <MfxWindowsTargetPlatformVersion>10.0.18362.0</MfxWindowsTargetPlatformVersion>
     <MfxPlatformToolset>v141</MfxPlatformToolset>
     <MfxIntelPlatformToolset>Intel C++ Compiler 18.0</MfxIntelPlatformToolset>
     <MfxIntelPath>$(ICInstallDir)</MfxIntelPath>

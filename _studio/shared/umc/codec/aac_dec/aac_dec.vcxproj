@@ -64,7 +64,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0FC1910E-D09B-45FE-82B1-5A9B429CD311}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="..\..\..\..\mfx_lib\Intel.Mfx.Common.props" />

@@ -85,7 +85,7 @@
     <ProjectGuid>{AB838320-0D1D-4766-89CA-A1590FCA8E53}</ProjectGuid>
     <RootNamespace>mfx_dispatch_trace</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="$(MSDK_LIB_ROOT)\_studio\mfx_lib\Intel.Mfx.Common.props" />
