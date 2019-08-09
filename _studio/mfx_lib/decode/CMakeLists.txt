@@ -74,8 +74,11 @@ list(APPEND sources
     ${UMC_CODECS}/jpeg_common/src/membuffout.cpp
     ${UMC_CODECS}/jpeg_dec/src/dechtbl.cpp
     ${UMC_CODECS}/jpeg_dec/src/decqtbl.cpp
+    ${UMC_CODECS}/jpeg_dec/src/jpegdec.cpp
     ${UMC_CODECS}/jpeg_dec/src/jpegdec_base.cpp
+    ${UMC_CODECS}/jpeg_dec/src/mfx_mjpeg_task.cpp
     ${UMC_CODECS}/jpeg_dec/src/umc_jpeg_frame_constructor.cpp
+    ${UMC_CODECS}/jpeg_dec/src/umc_mjpeg_mfx_decode.cpp
     ${UMC_CODECS}/jpeg_dec/src/umc_mjpeg_mfx_decode_base.cpp
     ${UMC_CODECS}/jpeg_dec/src/umc_mjpeg_mfx_decode_hw.cpp
     )
@@ -134,6 +137,13 @@ list(APPEND sources
     ${UMC_CODECS}/vp9_dec/src/umc_vp9_bitstream.cpp
     ${UMC_CODECS}/vp9_dec/src/umc_vp9_utils.cpp
     ${UMC_CODECS}/vp9_dec/src/umc_vp9_va_packer.cpp
+    )
+
+list(APPEND sources
+    ${UMC_CODECS}/color_space_converter/src/umc_video_processing.cpp
+    ${UMC_CODECS}/color_space_converter/src/umc_video_resizing.cpp
+    ${UMC_CODECS}/color_space_converter/src/umc_color_space_conversion.cpp
+    ${UMC_CODECS}/color_space_converter/src/umc_deinterlacing.cpp
     )
 
 set( sources.plus "" )

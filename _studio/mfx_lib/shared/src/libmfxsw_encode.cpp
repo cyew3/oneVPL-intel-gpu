@@ -64,7 +64,7 @@
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 #if defined(MFX_VA)
 #include "mfx_mjpeg_encode_hw.h"
-#ifndef OPEN_SOURCE
+#if defined(MFX_ENABLE_SW_FALLBACK)
 #include "mfx_mjpeg_encode.h"
 #endif
 #else
@@ -389,7 +389,7 @@ static const CodecId2Handlers codecId2Handlers =
             },
             // .fallback =
             {
-  #ifndef OPEN_SOURCE
+  #if defined(MFX_ENABLE_SW_FALLBACK)
                 // .ctor =
                 [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
                 -> VideoENCODE*
@@ -406,7 +406,7 @@ static const CodecId2Handlers codecId2Handlers =
                 {
                     return MFXVideoENCODEMJPEG::QueryIOSurf(par, request);
                 }
-  #endif // OPEN_SOURCE
+  #endif
             }
 #else // MFX_VA
             // .primary =
@@ -649,11 +649,11 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         !bIsHWENCSupport &&
         MFX_ERR_NONE <= mfxRes)
     {
-#ifndef OPEN_SOURCE
+#if defined(MFX_ENABLE_SW_FALLBACK)
         mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
-#else // OPEN_SOURCE
+#else
         mfxRes = MFX_ERR_UNSUPPORTED;
-#endif // OPEN_SOURCE
+#endif
     }
 
 #if (MFX_VERSION >= 1025)
@@ -749,11 +749,11 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         !bIsHWENCSupport &&
         MFX_ERR_NONE <= mfxRes)
     {
-#ifndef OPEN_SOURCE
+#if defined(MFX_ENABLE_SW_FALLBACK)
         mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
-#else // OPEN_SOURCE
+#else
         mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
-#endif // OPEN_SOURCE
+#endif
     }
 
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, request);
@@ -789,15 +789,15 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
         if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
         {
             session->m_bIsHWENCSupport = false;
-#ifndef OPEN_SOURCE
+#if defined(MFX_ENABLE_SW_FALLBACK)
 #if !defined (MFX_RT)
             session->m_pENCODE.reset(session->Create<VideoENCODE>(*par));
             MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
             mfxRes = session->m_pENCODE->Init(par);
 #endif
-#else // OPEN_SOURCE
+#else
             mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
-#endif // OPEN_SOURCE
+#endif
         }
         else if (mfxRes >= MFX_ERR_NONE)
             session->m_bIsHWENCSupport = true;
@@ -806,11 +806,11 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
             !session->m_bIsHWENCSupport &&
             MFX_ERR_NONE <= mfxRes)
         {
-#ifndef OPEN_SOURCE
+#if defined(MFX_ENABLE_SW_FALLBACK)
             mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
-#else // OPEN_SOURCE
+#else
             mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
-#endif // OPEN_SOURCE
+#endif
         }
     }
     // handle error(s)

@@ -20,8 +20,14 @@
 
 #include "umc_color_space_conversion.h"
 #include "umc_video_data.h"
+#if defined(OPEN_SOURCE)
+#include "ippi.h"
+#include "ippcc.h"
+#include "ippvc.h"
+#else
 #include "ippcc2mfx.h"
 #include "ipp2mfx.h"
+#endif
 
 #if defined(__GNUC__)
 #if defined(__INTEL_COMPILER)

@@ -26,7 +26,7 @@
 #include "ippj.h"
 #include "jpegbase.h"
 
-#ifndef OPEN_SOURCE
+#if defined(MFX_ENABLE_SW_FALLBACK)
 #define ALLOW_JPEG_SW_FALLBACK
 #endif
 

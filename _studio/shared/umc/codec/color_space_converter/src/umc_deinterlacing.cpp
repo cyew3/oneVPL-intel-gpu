@@ -20,7 +20,12 @@
 
 #include "umc_deinterlacing.h"
 #include "umc_video_data.h"
+#if defined(OPEN_SOURCE)
+#include "ippi.h"
+#include "ippvc.h"
+#else
 #include "ipp2mfx.h"
+#endif
 
 using namespace UMC;
 

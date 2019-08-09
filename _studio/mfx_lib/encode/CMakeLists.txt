@@ -1,11 +1,21 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 list( APPEND vdirs
-  h264 ih265 mjpeg mpeg2
+  mjpeg
   )
 list( APPEND cdirs
-  mpeg2_enc h264_enc jpeg_enc color_space_converter brc 
+  jpeg_enc color_space_converter
   )
+
+if( NOT OPEN_SOURCE )
+  list( APPEND vdirs
+    h264 ih265 mpeg2
+    )
+  list( APPEND cdirs
+    mpeg2_enc h264_enc brc
+    )
+endif()
+
 mfx_include_dirs( )
 foreach( dir ${vdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include )
@@ -24,3 +34,21 @@ foreach( dir ${vdirs} )
 endforeach()
 make_library( encode none static )
 set( defs "" )
+
+if( MFX_ENABLE_SW_FALLBACK )
+  ### JPEG Encoder
+  include_directories( ${MSDK_UMC_ROOT}/codec/jpeg_common/include )
+  include_directories( ${MSDK_UMC_ROOT}/codec/jpeg_enc/include )
+  include_directories( ${MSDK_UMC_ROOT}/codec/color_space_converter/include )
+
+  set( sources "" )
+  set( defs "" )
+  list( APPEND sources
+      ${MSDK_UMC_ROOT}/codec/jpeg_enc/src/enchtbl.cpp
+      ${MSDK_UMC_ROOT}/codec/jpeg_enc/src/encqtbl.cpp
+      ${MSDK_UMC_ROOT}/codec/jpeg_enc/src/jpegenc.cpp
+      ${MSDK_UMC_ROOT}/codec/jpeg_enc/src/jpegencrst.cpp
+      ${MSDK_UMC_ROOT}/codec/jpeg_enc/src/umc_mjpeg_video_encoder.cpp
+      )
+  make_library( encode sw static )
+endif()

@@ -24,6 +24,16 @@ mfx_include_dirs()
 
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
+
+set( SRC_DIR "${MSDK_LIB_ROOT}/encode/mjpeg" )
+set( defs "" )
+set( srcs "" )
+set( sources "" )
+set( sources.plus "" )
+file( GLOB_RECURSE srcs "${SRC_DIR}/*.cpp" )
+list( APPEND sources ${srcs})
+make_library( encode none static )
+
 ### CM
 include_directories( ${MSDK_LIB_ROOT}/cmrt_cross_platform/include )
 set( SRC_DIR "${MSDK_LIB_ROOT}/cmrt_cross_platform/src" )
@@ -91,7 +101,7 @@ include_directories( ${MSDK_LIB_ROOT}/genx/copy_kernels/include )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/asc/include )
 
 list( APPEND cdirs
-  brc h264_enc mpeg2_dec/hw vc1_dec vp9_dec vc1_common jpeg_enc
+  brc h264_enc mpeg2_dec/hw vc1_dec vp9_dec vc1_common jpeg_enc color_space_converter
   )
 foreach( dir ${cdirs} )
   include_directories( ${MSDK_UMC_ROOT}/codec/${dir}/include )

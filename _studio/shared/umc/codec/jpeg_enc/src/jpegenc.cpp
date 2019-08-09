@@ -31,7 +31,11 @@
 #include <string>
 
 #include "ippj.h"
+#if defined(OPEN_SOURCE)
+#include "ippcc.h"
+#else
 #include "ippcc2mfx.h"
+#endif
 #include "jpegbase.h"
 #include "jpegenc.h"
 

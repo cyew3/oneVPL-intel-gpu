@@ -91,6 +91,12 @@ set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_LIB_ROOT}/libm
 
 get_mfx_version(mfx_version_major mfx_version_minor)
 
+if( MFX_ENABLE_SW_FALLBACK )
+    set(SW_FALLBACK_LIBS "encode;encode_sw;ipp")
+else()
+  set(SW_FALLBACK_LIBS "")
+endif()
+
 if(OPEN_SOURCE)
   set(VARIANTS hw)
 else()
@@ -111,6 +117,7 @@ foreach( variant ${VARIANTS} )
   if(OPEN_SOURCE)
     set(LIBS
       bitrate_control
+      ${SW_FALLBACK_LIBS}
       umc
       vm
       vm_plus
@@ -156,7 +163,7 @@ foreach( variant ${VARIANTS} )
       media_buffers
       encode
       vc1_enc
-      jpeg_enc
+      encode_sw
       me
       mpeg2_enc
       enc

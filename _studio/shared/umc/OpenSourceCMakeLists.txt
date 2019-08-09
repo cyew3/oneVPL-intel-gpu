@@ -55,3 +55,6 @@ list( APPEND sources ${srcs} )
 
 make_library( umc_va hw static )
 ### UMC VA
+
+add_subdirectory( ${CURRENT_SRC_ROOT}/codec/color_space_converter )
+add_subdirectory( ${CURRENT_SRC_ROOT}/codec/jpeg_enc )

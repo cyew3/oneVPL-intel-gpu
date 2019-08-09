@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2019 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,23 +18,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-add_subdirectory(shared/mfx_trace)
-add_subdirectory(shared/umc)
-add_subdirectory(shared/asc)
-add_subdirectory(mfx_lib/cmrt_cross_platform)
-add_subdirectory(mfx_lib/decode)
-add_subdirectory(mfx_lib/encode)
-add_subdirectory(mfx_lib/encode_hw)
-add_subdirectory(mfx_lib/fei)
-add_subdirectory(mfx_lib/genx)
-add_subdirectory(mfx_lib/vpp)
-add_subdirectory(mfx_lib/mctf_package)
-add_subdirectory(mfx_lib/shared)
-add_subdirectory(mfx_lib)
+mfx_include_dirs( )
 
-if(MFX_ENABLE_USER_ENCODE)
-  add_subdirectory(hevce_hw)
-  add_subdirectory(hevc_fei)
-  add_subdirectory(vp9e_hw)
-endif()
-add_subdirectory(mfx_lib/plugin)
+list( APPEND cdirs
+  jpeg_common
+  )
+foreach( dir ${cdirs} )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../${dir}/include )
+endforeach( )
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
+set( sources "" )
+file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
+list( APPEND sources ${srcs}) 
+make_library( jpeg_enc none static )
+set( defs "" )

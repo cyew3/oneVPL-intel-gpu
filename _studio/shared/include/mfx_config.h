@@ -123,6 +123,8 @@
     #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(MFX_VA)
         #define MFX_ENABLE_H265_VIDEO_ENCODE
     #endif
+
+    #define MFX_ENABLE_SW_FALLBACK
 #elif defined(ANDROID)
     #include "mfx_android_defs.h"
 

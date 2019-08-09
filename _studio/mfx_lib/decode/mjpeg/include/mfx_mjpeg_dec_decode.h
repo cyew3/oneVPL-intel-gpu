@@ -26,7 +26,7 @@
 #ifndef _MFX_MJPEG_DEC_DECODE_H_
 #define _MFX_MJPEG_DEC_DECODE_H_
 
-#ifndef OPEN_SOURCE
+#if defined(MFX_ENABLE_SW_FALLBACK)
   #define ALLOW_SW_FALLBACK
 #endif
 
