@@ -43,7 +43,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <algorithm>
 
 #if defined(_WIN64) || defined(_WIN32)
-#include "mfx_dispatcher.h"
+#include "mfxadapter.h"
 #endif
 
 #define MFX_CHECK_STS(sts) {if (MFX_ERR_NONE != sts) return sts;}
@@ -494,8 +494,8 @@ mfxStatus GetImpl(const mfxVideoParam & params, mfxIMPL & impl, const sInputPara
     mfxStatus sts = MFXQueryAdaptersNumber(&num_adapters_available);
     MSDK_CHECK_STATUS(sts, "MFXQueryAdaptersNumber failed");
 
-    mfxComponentInfo interface_request = { VPP };
-    interface_request.Requirements.VPP = params.vpp;
+    mfxComponentInfo interface_request = { mfxComponentType::MFX_VPP_COMPONENT };
+    interface_request.Requirements.vpp = params.vpp;
 
     std::vector<mfxAdapterInfo> displays_data(num_adapters_available);
     mfxAdaptersInfo adapters = { displays_data.data(), mfxU32(displays_data.size()), 0u };

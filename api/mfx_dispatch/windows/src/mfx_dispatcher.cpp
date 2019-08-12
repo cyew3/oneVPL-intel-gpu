@@ -30,6 +30,7 @@
 #include "mfx_dxva2_device.h"
 #include "mfxvideo++.h"
 #include "mfx_vector.h"
+#include "mfxadapter.h"
 #include <algorithm>
 
 #pragma warning(disable:4355)
@@ -363,16 +364,6 @@ static mfxStatus InitDummySession(mfxU32 adapter_n, MFXVideoSession & dummy_sess
     return dummy_session.InitEx(initPar);
 }
 
-static inline void CopyParams(const mfxAdapterRequirements& in_requirements, mfxVideoParam & out_params)
-{
-    out_params.mfx.CodecId      = in_requirements.Codec.CodecId;
-    out_params.mfx.LowPower     = in_requirements.Codec.LowPower;
-    out_params.mfx.TargetUsage  = in_requirements.Codec.TargetUsage;
-    out_params.mfx.CodecProfile = in_requirements.Codec.CodecProfile;
-    out_params.mfx.CodecLevel   = in_requirements.Codec.CodecLevel;
-    out_params.mfx.FrameInfo    = in_requirements.Codec.FrameInfo;
-}
-
 static inline bool is_iGPU(const mfxAdapterInfo& adapter_info)
 {
     return adapter_info.Platform.MediaAdapterType == MFX_MEDIA_INTEGRATED;
@@ -425,7 +416,7 @@ static inline mfxI32 dGPU_priority(const void* ll, const void* rr)
 static void RearrangeInPriorityOrder(const mfxComponentInfo & info, MFX::MFXVector<mfxAdapterInfo> & vec)
 {
 #ifndef OPEN_SOURCE
-    if (info.Type == ENCODE && info.Requirements.Codec.CodecId == MFX_CODEC_HEVC)
+    if (info.Type == mfxComponentType::MFX_ENCODE_COMPONENT && info.Requirements.mfx.CodecId == MFX_CODEC_HEVC)
     {
         // Move dGPU to top priority if iGPU is < Gen12
         qsort(vec.data(), vec.size(), sizeof(mfxAdapterInfo), &dGPU_priority);
@@ -492,8 +483,8 @@ mfxStatus MFXQueryAdaptersDecode(mfxBitstream* bitstream, mfxU32 codec_id, mfxAd
 
     mfxComponentInfo input_info;
     memset(&input_info, 0, sizeof(input_info));
-    input_info.Type                       = DECODE;
-    input_info.Requirements.Codec.CodecId = codec_id;
+    input_info.Type                     = mfxComponentType::MFX_DECODE_COMPONENT;
+    input_info.Requirements.mfx.CodecId = codec_id;
 
     for(;;)
     {
@@ -584,33 +575,28 @@ mfxStatus MFXQueryAdapters(mfxComponentInfo* input_info, mfxAdaptersInfo* adapte
         // If input_info is NULL just return all Intel adapters and information about them
         if (input_info)
         {
-            mfxVideoParam in, out;
-            memset(&in,  0, sizeof(in));
+            mfxVideoParam out;
             memset(&out, 0, sizeof(out));
 
             switch (input_info->Type)
             {
-            case ENCODE:
+            case mfxComponentType::MFX_ENCODE_COMPONENT:
                 {
-                    CopyParams(input_info->Requirements, in);
-                    out.mfx.CodecId = in.mfx.CodecId;
+                    out.mfx.CodecId = input_info->Requirements.mfx.CodecId;
 
-                    sts = MFXVideoENCODE_Query(dummy_session.operator mfxSession(), &in, &out);
+                    sts = MFXVideoENCODE_Query(dummy_session.operator mfxSession(), &input_info->Requirements, &out);
                 }
                 break;
-            case DECODE:
+            case mfxComponentType::MFX_DECODE_COMPONENT:
                 {
-                    CopyParams(input_info->Requirements, in);
-                    out.mfx.CodecId = in.mfx.CodecId;
+                    out.mfx.CodecId = input_info->Requirements.mfx.CodecId;
 
-                    sts = MFXVideoDECODE_Query(dummy_session.operator mfxSession(), &in, &out);
+                    sts = MFXVideoDECODE_Query(dummy_session.operator mfxSession(), &input_info->Requirements, &out);
                 }
                 break;
-            case VPP:
+            case mfxComponentType::MFX_VPP_COMPONENT:
                 {
-                    in.vpp = input_info->Requirements.VPP;
-
-                    sts = MFXVideoVPP_Query(dummy_session.operator mfxSession(), &in, &out);
+                    sts = MFXVideoVPP_Query(dummy_session.operator mfxSession(), &input_info->Requirements, &out);
                 }
                 break;
             default:

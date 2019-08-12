@@ -512,7 +512,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
                 Char2Hex(pInParams->uSEI[index * 2 + 1]);
             uuid.push_back(bt);
         }
-        index = 32; //32 charactors for uuid
+        index = 32; //32 characters for uuid
 
         if(msdk_strlen(pInParams->uSEI) > index)
         {
@@ -1380,26 +1380,35 @@ mfxStatus CEncodingPipeline::GetImpl(const sInputParams & params, mfxIMPL & impl
     mfxStatus sts = MFXQueryAdaptersNumber(&num_adapters_available);
     MSDK_CHECK_STATUS(sts, "MFXQueryAdaptersNumber failed");
 
-    mfxComponentInfo interface_request = { ENCODE };
+    mfxComponentInfo interface_request = { mfxComponentType::MFX_ENCODE_COMPONENT };
     mfxU16 Shift    = params.IsSourceMSB || (params.memType != SYSTEM_MEMORY && AreGuidsEqual(params.pluginParams.pluginGuid, MFX_PLUGINID_HEVCE_HW)) || params.CodecId == MFX_CODEC_VP9;
     mfxU16 Height   = (MFX_PICSTRUCT_PROGRESSIVE == m_mfxEncParams.mfx.FrameInfo.PicStruct) ? MSDK_ALIGN16(params.nDstHeight) : MSDK_ALIGN32(params.nDstHeight);
     mfxU16 LowPower = mfxU16(params.enableQSVFF ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_UNKNOWN);
     mfxU16 BitDepth = FourCcBitDepth(params.EncodeFourCC);
 
-    interface_request.Requirements.Codec                          = {};
-    interface_request.Requirements.Codec.LowPower                 = LowPower;
-    interface_request.Requirements.Codec.TargetUsage              = params.nTargetUsage;
-    interface_request.Requirements.Codec.CodecId                  = params.CodecId;
-    interface_request.Requirements.Codec.CodecProfile             = params.CodecProfile;
-    interface_request.Requirements.Codec.CodecLevel               = params.CodecLevel;
-    interface_request.Requirements.Codec.FrameInfo.BitDepthLuma   = BitDepth;
-    interface_request.Requirements.Codec.FrameInfo.BitDepthChroma = BitDepth;
-    interface_request.Requirements.Codec.FrameInfo.Shift          = Shift;
-    interface_request.Requirements.Codec.FrameInfo.FourCC         = params.EncodeFourCC;
-    interface_request.Requirements.Codec.FrameInfo.Width          = MSDK_ALIGN16(params.nDstWidth);
-    interface_request.Requirements.Codec.FrameInfo.Height         = Height;
-    interface_request.Requirements.Codec.FrameInfo.PicStruct      = params.nPicStruct;
-    interface_request.Requirements.Codec.FrameInfo.ChromaFormat   = FourCCToChroma(params.EncodeFourCC);
+    interface_request.Requirements                              = {};
+    interface_request.Requirements.mfx.LowPower                 = LowPower;
+    interface_request.Requirements.mfx.TargetUsage              = params.nTargetUsage;
+    interface_request.Requirements.mfx.CodecId                  = params.CodecId;
+    interface_request.Requirements.mfx.CodecProfile             = params.CodecProfile;
+    interface_request.Requirements.mfx.CodecLevel               = params.CodecLevel;
+    interface_request.Requirements.mfx.FrameInfo.BitDepthLuma   = BitDepth;
+    interface_request.Requirements.mfx.FrameInfo.BitDepthChroma = BitDepth;
+    interface_request.Requirements.mfx.FrameInfo.Shift          = Shift;
+    interface_request.Requirements.mfx.FrameInfo.FourCC         = params.EncodeFourCC;
+    interface_request.Requirements.mfx.FrameInfo.Width          = MSDK_ALIGN16(params.nDstWidth);
+    interface_request.Requirements.mfx.FrameInfo.Height         = Height;
+    interface_request.Requirements.mfx.FrameInfo.PicStruct      = params.nPicStruct;
+    interface_request.Requirements.mfx.FrameInfo.ChromaFormat   = FourCCToChroma(params.EncodeFourCC);
+
+    // JPEG encoder settings overlap with other encoders settings in mfxInfoMFX structure
+    if (MFX_CODEC_JPEG == params.CodecId)
+    {
+        interface_request.Requirements.mfx.Interleaved     = 1;
+        interface_request.Requirements.mfx.Quality         = params.nQuality;
+        interface_request.Requirements.mfx.RestartInterval = 0;
+        MSDK_ZERO_MEMORY(interface_request.Requirements.mfx.reserved5);
+    }
 
     std::vector<mfxAdapterInfo> displays_data(num_adapters_available);
     mfxAdaptersInfo adapters = { displays_data.data(), mfxU32(displays_data.size()), 0u };

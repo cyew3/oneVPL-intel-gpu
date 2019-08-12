@@ -21,7 +21,7 @@ File Name: .h
 #endif // #if !(defined(LINUX32) || defined(LINUX64))
 
 #if defined(_WIN64) || defined(_WIN32)
-#include "mfx_dispatcher.h"
+#include "mfxadapter.h"
 #endif
 
 #ifdef D3D_SURFACES_SUPPORT

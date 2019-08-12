@@ -53,7 +53,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #endif
 
 #if defined(_WIN64) || defined(_WIN32)
-#include "mfx_dispatcher.h"
+#include "mfxadapter.h"
 #endif
 
 #ifndef MFX_VERSION

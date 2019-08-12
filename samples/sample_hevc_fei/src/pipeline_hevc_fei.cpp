@@ -81,7 +81,7 @@ mfxStatus CEncodingPipeline::Init()
 
         if (m_inParams.bEncodedOrder)
         {
-            MfxVideoParamsWrapper param = GetEncodeParams(m_inParams, frameInfo, PIPELINE_COMPONENT::ENCODE);
+            MfxVideoParamsWrapper param = GetEncodeParams(m_inParams, frameInfo, PIPELINE_COMPONENT::FEI_ENCODE);
 
             sts = m_pParamChecker->Query(param);
             MSDK_CHECK_STATUS(sts, "m_pParamChecker->Query failed");
@@ -482,7 +482,7 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
     // configure B-pyramid settings
     pCO2->BRefType = user_pars.BRefType;
 
-    if (user_pars.bExtBRC && component == PIPELINE_COMPONENT::ENCODE) {
+    if (user_pars.bExtBRC && component == PIPELINE_COMPONENT::FEI_ENCODE) {
         // This is for explicit extbrc only. In case of implicit (built-into-library) version - we don't need this extension buffer
         mfxExtBRC* pBrc = pars.AddExtBuffer<mfxExtBRC>();
         if (!pBrc) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtBRC");
@@ -515,7 +515,7 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
     // This buffer is a correct way to pass coding window size to HEVC encoder
     // (if required, it will be rounded up to 16 or 8 alignment depending on HW (expect warning in such case)).
     // This code added to sample just to show this possibility. Current implementation of sample will work correctly without this buffer as well.
-    if (component == PIPELINE_COMPONENT::ENCODE) {
+    if (component == PIPELINE_COMPONENT::FEI_ENCODE) {
         mfxExtHEVCParam* pHP = pars.AddExtBuffer<mfxExtHEVCParam>();
         if (!pHP) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtHEVCParam");
 
@@ -561,7 +561,7 @@ IPreENC* CEncodingPipeline::CreatePreENC(mfxFrameInfo& in_fi)
     if (!m_inParams.bPREENC && (0 == msdk_strlen(m_inParams.mvpInFile) || !m_inParams.bFormattedMVPin))
         return NULL;
 
-    MfxVideoParamsWrapper pars = GetEncodeParams(m_inParams, in_fi, PIPELINE_COMPONENT::PREENC);
+    MfxVideoParamsWrapper pars = GetEncodeParams(m_inParams, in_fi, PIPELINE_COMPONENT::FEI_PREENC);
 
     mfxStatus sts = m_pParamChecker->Query(pars);
     CHECK_STS_AND_RETURN(sts, "m_pParamChecker->Query failed", NULL);
@@ -607,7 +607,7 @@ FEI_Encode* CEncodingPipeline::CreateEncode(mfxFrameInfo& in_fi)
     sts = LoadFEIPlugin();
     CHECK_STS_AND_RETURN(sts, "LoadFEIPlugin failed", NULL);
 
-    MfxVideoParamsWrapper pars = GetEncodeParams(m_inParams, in_fi, PIPELINE_COMPONENT::ENCODE);
+    MfxVideoParamsWrapper pars = GetEncodeParams(m_inParams, in_fi, PIPELINE_COMPONENT::FEI_ENCODE);
     sts = m_pParamChecker->Query(pars);
     CHECK_STS_AND_RETURN(sts, "m_pParamChecker->Query failed", NULL);
 
