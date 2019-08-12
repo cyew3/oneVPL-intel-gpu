@@ -2306,11 +2306,15 @@ enum {
     MFX_FILM_GRAIN_OVERLAP                  = (1 << 3),
     MFX_FILM_GRAIN_CLIP_TO_RESTRICTED_RANGE = (1 << 4)
 };
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxU8 Value;
     mfxU8 Scaling;
 } mfxAV1FilmGrainPoint;
+MFX_PACK_END()
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxExtBuffer Header;
 
@@ -2346,6 +2350,7 @@ typedef struct {
 
     mfxU16 reserved[43];
 } mfxExtAV1FilmGrainParam;
+MFX_PACK_END()
 #endif
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
