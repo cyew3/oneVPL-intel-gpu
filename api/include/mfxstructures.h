@@ -2507,6 +2507,7 @@ enum {
     MFX_AV1_SEGMENT_FEATURE_GLOBALMV = 0x0080
 };
 
+MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxU16  FeatureEnabled;  /* see enum AV1SegmentFeature */
     mfxI16  AltQIndex;
@@ -2518,6 +2519,7 @@ typedef struct {
 
     mfxU16  reserved[16];
 } mfxAV1SegmentParam;
+MFX_PACK_END()
 
 MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct {
@@ -2533,7 +2535,7 @@ typedef struct {
     };
     mfxU16              TemporalUpdate;
 
-    mfxU16              reserved[32];
+    mfxU16              reserved[34];
 } mfxExtAV1Segmentation;
 MFX_PACK_END()
 #endif
