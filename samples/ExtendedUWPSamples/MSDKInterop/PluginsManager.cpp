@@ -58,7 +58,6 @@ mfxStatus CPluginsManager::LoadVideoPlugin(mfxU32 codecID,EPluginSpecification s
         return sts;
     }
 
-    //LOG_ERROR("PipelineBase: Cannot load find plugin for video type (0x%X) and specification 0x%X",codecID,spec);
     // This means that system doesn't know about plugin for this type of videocodec, possibly it is not required
     return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 }

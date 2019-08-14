@@ -156,7 +156,6 @@ bool CDecodingPipeline::RunOnce()
                 if (isDecodingEnding)
                 {
                     //--- Buffered frames are taken, time to close thread
-					EnqueueSurface(NULL); // Signal that decoding is over
                     return false;
                 }
                 else if (reader.ReadNextFrame() < MFX_ERR_NONE)
@@ -219,6 +218,10 @@ void CDecodingPipeline::OnClose()
 {
 	//--- Syncing the rest of surfaces in the queue
 	while (decodingSurfaces.size() && SyncOneSurface() >= MFX_ERR_NONE);
+
+    //--- Signal that decoding is over
+    EnqueueSurface(NULL);
+
 	//--- Just in case of error, remove userlock from the rest surfaces in decodingSurfaces - to avoid hangs
 	for (auto surf : decodingSurfaces)
 	{
