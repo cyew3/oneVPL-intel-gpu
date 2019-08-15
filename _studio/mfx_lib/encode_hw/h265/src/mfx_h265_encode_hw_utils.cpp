@@ -3929,6 +3929,8 @@ void ConfigureTask(
     task.m_aes_counter = prevTask.m_aes_counter;
     Increment(task.m_aes_counter, par.m_ext.PAVP);
 #endif
+
+    task.m_platform = par.m_platform; // for ICL vs TGL QpModulation
 }
 
 mfxI64 CalcDTSFromPTS(
