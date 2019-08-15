@@ -861,8 +861,8 @@ void FillSpsBuffer(
     else
         sps.ICQQualityFactor = 0;
 
-    if (sps.ParallelBRC)
-    {
+    if ((par.m_platform < MFX_HW_TGL_LP) && (sps.ParallelBRC))
+    {   // NumOfBInGop is deprecated from Gen12
         if (!par.isBPyramid())
         {
             sps.NumOfBInGop[0]  = (par.mfx.GopPicSize - 1) - (par.mfx.GopPicSize - 1)/par.mfx.GopRefDist;
@@ -972,14 +972,23 @@ void FillSpsBuffer(
     }
 
     // QpModulation support
-    if ((par.m_platform >= MFX_HW_ICL) && (par.m_platform < MFX_HW_TGL_LP))
+
+    if (par.m_platform >= MFX_HW_ICL)
     {
-        if (par.mfx.GopRefDist == 1)
+        if (par.mfx.GopRefDist == 1)   // Maggie: need to change after MSDK having LDB Pyramid support
             sps.LowDelayMode = 1;
 
-        if ((par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID) &&
-            ((par.mfx.GopRefDist == 4) || (par.mfx.GopRefDist == 8)))
-            sps.HierarchicalFlag = 1;
+        if (par.m_platform < MFX_HW_TGL_LP)
+        {
+            if ((par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID) &&
+                ((par.mfx.GopRefDist == 4) || (par.mfx.GopRefDist == 8)))
+                sps.HierarchicalFlag = 1;
+        }
+        else
+        {
+            if (par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID)
+                sps.HierarchicalFlag = 1;
+        }
     }
 }
 
@@ -1091,7 +1100,7 @@ void FillPpsBuffer(
 
     // if ENCODE_BLOCKQPDATA surface is provided
     pps.NumDeltaQpForNonRectROI = 0;    // if no non-rect ROI
-    // pps.NumDeltaQpForNonRectROI    // total number of different delta QPs for non-rect ROI ( + the same for rect ROI should not exceed MaxNumDeltaQP in caps
+    // pps.NumDeltaQpForNonRectROI    // total number of different delta QPs for non-rect ROI ( + the same for rect ROI should not exceed MaxNumDeltaQPMinus1+1 in caps
     // pps.NonRectROIDeltaQpList[0..pps.NumDeltaQpForNonRectROI-1] // delta QPs for non-rect ROI
 #endif // MFX_ENABLE_HEVCE_ROI
 
@@ -1103,9 +1112,23 @@ void FillPpsBuffer(
 #endif
 }
 
+mfxU8 CodingTypeToHierarchLevel(mfxU16 ct, bool ldb)
+{
+    switch (ct)
+    {
+        case CODING_TYPE_B2: return 4;
+        case CODING_TYPE_B1: return 3;
+        case CODING_TYPE_B:  if (ldb) return 1; else return 2;
+        case CODING_TYPE_P:
+        case CODING_TYPE_I:  return 1;
+        default: assert(!"invalid coding type"); return 0;
+    }
+}
+
 void FillPpsBuffer(
     Task const & task,
     ENCODE_CAPS_HEVC const & caps,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & sps,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps,
     std::vector<ENCODE_RECT> & dirtyRects)
 {
@@ -1159,7 +1182,7 @@ void FillPpsBuffer(
 
     // if ENCODE_BLOCKQPDATA surface is provided
     pps.NumDeltaQpForNonRectROI = 0;    // if no non-rect ROI
-    // pps.NumDeltaQpForNonRectROI    // total number of different delta QPs for non-rect ROI ( + the same for rect ROI should not exceed MaxNumDeltaQP in caps
+    // pps.NumDeltaQpForNonRectROI    // total number of different delta QPs for non-rect ROI ( + the same for rect ROI should not exceed MaxNumDeltaQPMinus1+1 in caps
     // pps.NonRectROIDeltaQpList[0..pps.NumDeltaQpForNonRectROI-1] // delta QPs for non-rect ROI
 #endif // MFX_ENABLE_HEVCE_ROI
 
@@ -1195,9 +1218,25 @@ void FillPpsBuffer(
 
     pps.CodingType      = task.m_codingType;
     pps.CurrPicOrderCnt = task.m_poc;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    pps.FrameLevel      = (mfxU8)task.m_level; // QP modulation feature; used in low delay mode only
-#endif
+
+    if (task.m_platform < MFX_HW_TGL_LP)
+    {
+        pps.HierarchLevelPlus1 = 0;
+    } else
+    {   // TGL+ platforms
+        if (sps.LowDelayMode == 1)
+        {
+            pps.HierarchLevelPlus1 = (mfxU8)task.m_level + 1; // QP modulation feature; used in low delay mode only
+        } else
+        {   //RAB
+            if (sps.HierarchicalFlag)
+            {
+                pps.HierarchLevelPlus1 = CodingTypeToHierarchLevel(task.m_codingType, task.m_ldb);
+                if (task.m_codingType > CODING_TYPE_B)
+                    pps.CodingType = CODING_TYPE_B;
+            }
+        }
+    }
 
     pps.bEnableRollingIntraRefresh = task.m_IRState.refrType;
 

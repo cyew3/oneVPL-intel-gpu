@@ -416,6 +416,8 @@ struct Task : DpbFrame
 #ifdef MFX_ENABLE_HEVC_CUSTOM_QMATRIX
     DXVA_Qmatrix_HEVC m_qMatrix                       = {};
 #endif
+
+    eMFXHWType        m_platform                      = MFX_HW_UNKNOWN; // added temporarily to use different QpModulation behavior
 };
 
 enum

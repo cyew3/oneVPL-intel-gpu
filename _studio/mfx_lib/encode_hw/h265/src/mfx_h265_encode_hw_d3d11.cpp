@@ -566,7 +566,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
 
-    FillPpsBuffer(task, m_caps.ddi_caps, m_pps, m_dirtyRects);
+    FillPpsBuffer(task, m_caps.ddi_caps, m_sps, m_pps, m_dirtyRects);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
 
     RES_ID_BS  = 0;
