@@ -13,21 +13,21 @@ camera plugin:
   - _studio/camera_pipe
   - _testsuite/msdk_ts/src/gmock/test_suites/camera
   reviewers:
-  - roman.bykadorov@intel.com
+  - alexander.smirnov@intel.com
 
 screen_capture:
   paths:
   - _studio/screen_capture
   - _testsuite/msdk_ts/src/gmock/test_suites/screen_capture
   reviewers:
-  - alexey.s.kokoshnikov@intel.com
+  - alexander.smirnov@intel.com
 
 ptir:
   paths:
   - _studio/ptir
   - _testsuite/msdk_ts/src/gmock/test_suites/ptir
   reviewers:
-  - tuyet.trang.lam@intel.com
+  - alexander.smirnov@intel.com
 
 mfx_player:
   paths:
@@ -40,9 +40,8 @@ mfx_player:
   - _studio/shared/umc/codec/mpeg4_spl
   - _studio/shared/umc/codec/spl_common
   reviewers:
-  - sergey.solodkov@intel.com
-  - andrey.larionov@intel.com
   - roman.kopytin@intel.com
+  - anton.grishin@intel.com
 
 mfx_transcoder:
   paths:
@@ -55,9 +54,8 @@ mfx_transcoder:
   - _studio/shared/umc/codec/mpeg4_spl
   - _studio/shared/umc/codec/spl_common
   reviewers:
-  - sergey.solodkov@intel.com
-  - andrey.larionov@intel.com
   - roman.kopytin@intel.com
+  - anton.grishin@intel.com
 
 h264d:
   paths:
@@ -66,12 +64,11 @@ h264d:
   - _studio/shared/umc/codec/h264_dec
   - _testsuite/msdk_ts/src/gmock/test_suites/avcd
   reviewers:
-  - dmitry.ermilov@intel.com
-  - sergey.solodkov@intel.com
-  - roman.kazantsev@intel.com
-  - dmitry.gurulev@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
+  - will.guo@intel.com
+  - dmitry.gurulev@intel.com
+  - dmitry.ermilov@intel.com
 
 h264e:
   paths:
@@ -88,10 +85,8 @@ h264e:
   - olga.a.kasatkina@intel.com
   - evgeniy.starov@intel.com
   - oleg.nabiullin@intel.com
-  - roman.kazantsev@intel.com
   - andrey.larionov@intel.com
   - stanislav.efremov@intel.com
-  - timofei.a.kulakov@intel.com
 
 mpeg2d:
   paths:
@@ -99,11 +94,11 @@ mpeg2d:
   - _studio/mfx_lib/decode/mpeg2
   - _testsuite/msdk_ts/src/gmock/test_suites/mpeg2d
   reviewers:
-  - dmitry.ermilov@intel.com
-  - alexei.leonenko@intel.com
-  - dmitry.gurulev@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
+  - will.guo@intel.com
+  - dmitry.gurulev@intel.com
+  - dmitry.ermilov@intel.com
 
 mpeg2e:
   paths:
@@ -116,8 +111,11 @@ mpeg2e:
   - _studio/shared/umc/codec/me
   - _testsuite/msdk_ts/src/gmock/test_suites/mpeg2e
   reviewers:
-  - dmitry.ermilov@intel.com
-  - oleg.nabiullin@intel.com
+  - georgy.krivoruchko@intel.com
+  - olga.a.kasatkina@intel.com
+  - evgeniy.starov@intel.com
+  - olga.golikova@intel.com
+  - stanislav.efremov@intel.com
 
 vc1:
   paths:
@@ -131,9 +129,9 @@ vc1:
   - _testsuite/msdk_ts/src/gmock/test_suites/vc1
   reviewers:
   - dmitry.ermilov@intel.com
-  - sergey.solodkov@intel.com
-  - alexei.leonenko@intel.com
   - dmitry.gurulev@intel.com
+  - ilya.sergeev@intel.com
+  - alexander.smirnov@intel.com
 
 hevcd:
   paths:
@@ -141,11 +139,11 @@ hevcd:
   - _studio/shared/umc/codec/h265_dec
   - _testsuite/msdk_ts/src/gmock/test_suites/hevcd
   reviewers:
-  - dmitry.ermilov@intel.com
-  - alexei.leonenko@intel.com
-  - dmitry.gurulev@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
+  - will.guo@intel.com
+  - dmitry.gurulev@intel.com
+  - dmitry.ermilov@intel.com
 
 hevce:
   paths:
@@ -157,7 +155,6 @@ hevce:
   - leonid.a.kulakov@intel.com
   - timofei.a.kulakov@intel.com
   - olga.tsiruleva@intel.com
-  - dmitry.ermilov@intel.com
   - dmitry.menshov@intel.com
   - olga.golikova@intel.com
 
@@ -177,13 +174,11 @@ mjpegd:
   - _testsuite/msdk_ts/src/gmock/test_suites/mjpegd
   - _testsuite/msdk_ts/src/gmock/test_suites/jpegd
   reviewers:
-  - dmitry.ermilov@intel.com
-  - oleg.nabiullin@intel.com
-  - dmitry.brazhkin@intel.com
-  - andrey.larionov@intel.com
-  - dmitry.gurulev@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
+  - will.guo@intel.com
+  - dmitry.gurulev@intel.com
+  - dmitry.ermilov@intel.com
 
 mjpege:
   paths:
@@ -194,10 +189,11 @@ mjpege:
   - _testsuite/msdk_ts/src/gmock/test_suites/mjpege
   - _testsuite/msdk_ts/src/gmock/test_suites/jpege
   reviewers:
-  - dmitry.ermilov@intel.com
-  - oleg.nabiullin@intel.com
-  - dmitry.brazhkin@intel.com
-  - roman.kazantsev@intel.com
+  - georgy.krivoruchko@intel.com
+  - olga.a.kasatkina@intel.com
+  - evgeniy.starov@intel.com
+  - olga.golikova@intel.com
+  - stanislav.efremov@intel.com
 
 vp8d:
   paths:
@@ -205,12 +201,11 @@ vp8d:
   - _studio/shared/umc/codec/vp8_dec
   - _testsuite/msdk_ts/src/gmock/test_suites/vp8d
   reviewers:
-  - dmitry.ermilov@intel.com
-  - sergey.solodkov@intel.com
-  - alexei.leonenko@intel.com
-  - dmitry.gurulev@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
+  - will.guo@intel.com
+  - dmitry.gurulev@intel.com
+  - dmitry.ermilov@intel.com
 
 vp8e:
   paths:
@@ -230,14 +225,11 @@ vp9d:
   - _studio/shared/umc/codec/vp9_dec
   - _testsuite/msdk_ts/src/gmock/test_suites/vp9d
   reviewers:
-  - sergey.solodkov@intel.com
-  - alexei.leonenko@intel.com
-  - dmitry.gurulev@intel.com
-  - mikhailx.aksenov@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
-  - anastasiia.sokolova@intel.com
-  - ekaterina.shiryaeva.alexandrovna@intel.com
+  - will.guo@intel.com
+  - dmitry.gurulev@intel.com
+  - dmitry.ermilov@intel.com
 
 vp9e:
   paths:
@@ -260,10 +252,11 @@ av1d:
   - _studio/shared/umc/io/umc_va/include/umc_av1
   - _testsuite/msdk_ts/src/gmock/test_suites/av1d
   reviewers:
-  - dmitry.gurulev@intel.com
-  - stanislav.efremov@intel.com
   - ilya.sergeev@intel.com
   - alexander.smirnov@intel.com
+  - will.guo@intel.com
+  - dmitry.gurulev@intel.com
+  - dmitry.ermilov@intel.com
 
 vpp:
   paths:
@@ -272,9 +265,7 @@ vpp:
   - _studio/shared/umc/codec/scene_analyzer
   - _testsuite/msdk_ts/src/gmock/test_suites/vpp
   reviewers:
-  - dmitry.ermilov@intel.com
   - oleg.nabiullin@intel.com
-  - roman.bykadorov@intel.com
   - andrey.larionov@intel.com
   - tuyet.trang.lam@intel.com
   - fedor.zharinov@intel.com
@@ -285,7 +276,11 @@ tests:
   paths:
   - _testsuite/msdk_ts
   reviewers:
-  - alexey.s.kokoshnikov@intel.com
+  - stanislav.efremov@intel.com
+  - sergey.a.osipov@intel.com
+  - alexander.smirnov@intel.com
+  - georgy.krivoruchko@intel.com
+  - ilya.sergeev@intel.com
 
 mvce:
   paths:
@@ -334,8 +329,11 @@ samples:
   paths:
   - samples
   reviewers:
-  - fedor.zharinov@intel.com
-  - timofei.a.kulakov@intel.com
+  - georgy.krivoruchko@intel.com
+  - ilya.sergeev@intel.com
+  - oleg.nabiullin@intel.com
+  - dmitry.ermilov@intel.com
+  - dmitry.gurulev@intel.com
 
 core:
   paths:
@@ -348,6 +346,10 @@ core:
   reviewers:
   - vasily.aristarkhov@intel.com
   - oleg.nabiullin@intel.com
+  - dmitry.v.rogozhkin@intel.com
+  - dmitry.ermilov@intel.com
+  - sergey.a.osipov@intel.com
+  - dmitry.gurulev@intel.com
 
 android:
   paths:
@@ -376,5 +378,4 @@ plugin:
   - _studio/mfx_lib/plugin
   reviewers:
   - vasily.aristarkhov@intel.com
-  - artem.shaporenko@intel.com
   - oleg.nabiullin@intel.com
