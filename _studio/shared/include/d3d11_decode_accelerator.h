@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,19 @@
 class  D3D11VideoCORE;
 class mfx_UMC_FrameAllocator;
 
+class MFXD3D11AcceleratorParams
+    : public UMC::VideoAcceleratorParams
+{
+
+public:
+
+    DYNAMIC_CAST_DECL(MFXD3D11AcceleratorParams, VideoAcceleratorParams)
+
+        MFXD3D11AcceleratorParams()
+    {}
+
+};
+
 class MFXD3D11Accelerator : public UMC::DXAccelerator
 {
 
@@ -48,8 +61,7 @@ public:
     };
 
     // I/F between core and accelerator
-    UMC::Status Init(UMC::VideoAcceleratorParams*) override
-    { return UMC::UMC_ERR_UNSUPPORTED; };
+    UMC::Status Init(UMC::VideoAcceleratorParams*) override;
     UMC::Status Close() override;
 
     // I/F between UMC decoders and accelerator
@@ -95,9 +107,11 @@ private:
     CComPtr<ID3D11VideoDecoder>      m_pDecoder;
 
     // current decoder
-    GUID                              m_DecoderGuid;
+    GUID                             m_DecoderGuid;
 
     CComPtr<ID3D11VideoDecoderOutputView> m_pVDOView;
+
+    mfxU32                           m_numberSurfaces;
 };
 
 

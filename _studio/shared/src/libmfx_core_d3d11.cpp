@@ -533,18 +533,31 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
 
     m_pAccelerator.reset(new MFXD3D11Accelerator(m_pD11VideoDevice.p, m_pD11VideoContext));
 
+    UMC::VideoStreamInfo VideoInfo;
+    ConvertMFXParamsToUMC(param, &VideoInfo);
+
+    MFXD3D11AcceleratorParams vaParams;
+    vaParams.m_protectedVA = param->Protected;
+    vaParams.m_pVideoStreamInfo = &VideoInfo;
+    vaParams.m_iNumberSurfaces = request->NumFrameMin;
+    vaParams.m_allocator = allocator;
+
+    if (UMC::UMC_OK != m_pAccelerator->Init(&vaParams))
+    {
+        m_pAccelerator.reset();
+        return MFX_ERR_UNSUPPORTED;
+    }
+
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     auto pScheduler = (MFXIScheduler2 *)m_session->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
-    if (pScheduler == nullptr)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_CHECK(pScheduler, MFX_ERR_UNDEFINED_BEHAVIOR);
     m_pAccelerator->SetGlobalHwEvent(pScheduler->GetHwEvent());
     pScheduler->Release();
 #endif
 
 
     mfxU32 hwProfile = ChooseProfile(param, GetHWType());
-    if (!hwProfile)
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(hwProfile, MFX_ERR_UNSUPPORTED);
 
     sts = m_pAccelerator->CreateVideoAccelerator(hwProfile, param, allocator);
     MFX_CHECK_STS(sts);

@@ -45,28 +45,6 @@
 using namespace UMC_HEVC_DECODER;
 
 inline
-mfxU32 CalculateAsyncDepth(eMFXPlatform platform, mfxVideoParam *par)
-{
-    mfxU32 asyncDepth = par->AsyncDepth;
-    if (!asyncDepth)
-    {
-        asyncDepth = (platform == MFX_PLATFORM_SOFTWARE) ? vm_sys_info_get_cpu_num() : MFX_AUTO_ASYNC_DEPTH_VALUE;
-    }
-
-    return asyncDepth;
-}
-
-inline
-mfxU32 CalculateNumThread(mfxVideoParam *par, eMFXPlatform platform)
-{
-    mfxU32 numThread = (MFX_PLATFORM_SOFTWARE == platform) ? vm_sys_info_get_cpu_num() : 1;
-    if (!par->AsyncDepth)
-        return numThread;
-
-    return MFX_MIN(par->AsyncDepth, numThread);
-}
-
-inline
 bool IsNeedToUseHWBuffering(eMFXHWType /*type*/)
 {
     return false;

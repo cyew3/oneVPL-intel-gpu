@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 #include "mfx_common.h"
 #include "mfx_common_int.h"
 #include "umc_video_decoder.h"
+#include "vm_sys_info.h"
 
 class MFXMediaDataAdapter : public UMC::MediaData
 {
@@ -165,5 +166,27 @@ protected:
     {
     }
 };
+
+inline
+mfxU16 CalculateNumThread(mfxVideoParam *par, eMFXPlatform platform)
+{
+    mfxU16 numThread = (MFX_PLATFORM_SOFTWARE == platform) ? static_cast<mfxU16>(vm_sys_info_get_cpu_num()) : 1;
+    if (!par || !par->AsyncDepth)
+        return numThread;
+
+    return std::min(par->AsyncDepth, numThread);
+}
+
+inline
+mfxU32 CalculateAsyncDepth(eMFXPlatform platform, mfxVideoParam *par)
+{
+    mfxU32 asyncDepth = par ? par->AsyncDepth : 0;
+    if (!asyncDepth)
+    {
+        asyncDepth = (platform == MFX_PLATFORM_SOFTWARE) ? vm_sys_info_get_cpu_num() : MFX_AUTO_ASYNC_DEPTH_VALUE;
+    }
+
+    return asyncDepth;
+}
 
 #endif

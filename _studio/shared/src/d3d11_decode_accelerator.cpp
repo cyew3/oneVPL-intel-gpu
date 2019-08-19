@@ -21,6 +21,7 @@
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 
+#include <d3d11_1.h>
 #include "d3d11_decode_accelerator.h"
 #include "libmfx_core.h"
 #include "mfx_utils.h"
@@ -31,13 +32,14 @@
 #include "umc_va_video_processing.h"
 #include "libmfx_core_d3d11.h"
 #include "mfx_umc_alloc_wrapper.h"
+#include "mfx_common_int.h"
 
 #define DXVA2_VC1PICTURE_PARAMS_EXT_BUFFER 21
 #define DXVA2_VC1BITPLANE_EXT_BUFFER       22
 
 static const GUID DXVADDI_Intel_ModeVC1_D =
 { 0xe07ec519, 0xe651, 0x4cd6, { 0xac, 0x84, 0x13, 0x70, 0xcc, 0xee, 0xc8, 0x51 } };
-static const GUID DXVADDI_Intel_ModeVC1_D_Advanced = 
+static const GUID DXVADDI_Intel_ModeVC1_D_Advanced =
 { 0xbcc5db6d, 0xa2b6, 0x4af0, { 0xac, 0xe4, 0xad, 0xb1, 0xf7, 0x87, 0xbc, 0x89 } };
 
 using namespace UMC;
@@ -49,8 +51,21 @@ MFXD3D11Accelerator::MFXD3D11Accelerator(ID3D11VideoDevice  *pVideoDevice, ID3D1
     , m_pVideoContext(pVideoContext)
     , m_pVDOView(0)
     , m_DecoderGuid(GUID_NULL)
+    , m_numberSurfaces(128)
 {
 } //MFXD3D11Accelerator::MFXD3D11Accelerator
+
+
+UMC::Status MFXD3D11Accelerator::Init(UMC::VideoAcceleratorParams* pVAParams)
+{
+    MFX_CHECK(pVAParams, UMC::UMC_ERR_NULL_PTR);
+
+    MFXD3D11AcceleratorParams *pD3D11Params = DynamicCast<MFXD3D11AcceleratorParams>(pVAParams);
+    UMC_CHECK(pD3D11Params, UMC_ERR_INVALID_PARAMS);
+
+    m_numberSurfaces = pD3D11Params->m_iNumberSurfaces;
+    return UMC::UMC_OK;
+}
 
 mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mfxVideoParam *param, UMC::FrameAllocator *allocator)
 {
@@ -66,7 +81,7 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
 
     m_Profile = (VideoAccelerationProfile)hwProfile;
 
-    D3D11_VIDEO_DECODER_CONFIG video_config = {0}; // !!!!!!!!
+    D3D11_VIDEO_DECODER_CONFIG video_config = {};
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_ANY(param->Protected))
@@ -80,12 +95,49 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
 
     m_DecoderGuid = video_desc.Guid;
     HRESULT hres;
+
+
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    auto decVideoProcessing =
+        reinterpret_cast<mfxExtDecVideoProcessing *>(GetExtendedBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING));
+
+    if (decVideoProcessing)
+        video_config.ConfigDecoderSpecific = video_config.ConfigDecoderSpecific | DXVA_DECODE_CONFIG_DOWNSAMPLING_MASK;
+
+#endif
+
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
         hres  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
+        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
     }
-    if (FAILED(hres))
-        return MFX_ERR_DEVICE_FAILED;
+
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    if (decVideoProcessing)
+    {
+        // only YCBCR is supported now
+        MFX_CHECK(video_desc.OutputFormat == DXGI_FORMAT_NV12, MFX_ERR_UNSUPPORTED);
+        // SFC is implemented only for AVC yet
+        MFX_CHECK(param->mfx.CodecId == MFX_CODEC_AVC, MFX_ERR_UNSUPPORTED);
+
+        CComPtr<ID3D11Device1>       device1;
+        hres = m_pVideoDevice->QueryInterface(&device1);
+        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
+
+        DXGI_COLOR_SPACE_TYPE inputCSC;
+        inputCSC = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
+
+        D3D11_VIDEO_SAMPLE_DESC outputDesc;
+        outputDesc.Width = decVideoProcessing->Out.CropW;
+        outputDesc.Height = decVideoProcessing->Out.CropH;
+        outputDesc.Format = mfxDefaultAllocatorD3D11::MFXtoDXGI(decVideoProcessing->Out.FourCC);
+        outputDesc.ColorSpace = inputCSC;
+
+        CComQIPtr<ID3D11VideoContext1> ctx1(m_pVideoContext);
+        hres = ctx1->DecoderEnableDownsampling(m_pDecoder, inputCSC, &outputDesc, m_numberSurfaces);
+        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
+    }
+#endif
 
     m_bH264MVCSupport = GuidProfile::IsMVCGUID(m_DecoderGuid);
     m_isUseStatuReport = true;
@@ -95,9 +147,9 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
 
 } // mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator
 
-mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam            *param,                  
-                                                         D3D11_VIDEO_DECODER_DESC *video_desc,  
-                                                         D3D11_VIDEO_DECODER_CONFIG     *pConfig) 
+mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam        *param,
+                                                         D3D11_VIDEO_DECODER_DESC   *video_desc,
+                                                         D3D11_VIDEO_DECODER_CONFIG *pConfig)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::GetSuitVideoDecoderConfig");
     param;

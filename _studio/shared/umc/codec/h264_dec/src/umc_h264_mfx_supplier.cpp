@@ -1760,7 +1760,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
         mfxExtDecVideoProcessing * videoProcessingTargetOut = (mfxExtDecVideoProcessing *)GetExtendedBuffer(out->ExtParam, out->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
         if (videoProcessingTargetIn && videoProcessingTargetOut)
         {
-            if ( (MFX_HW_VAAPI == (core->GetVAType())) &&
+               if (((MFX_HW_VAAPI == core->GetVAType()) || (MFX_HW_D3D11 == core->GetVAType())) &&
                   (MFX_PICSTRUCT_PROGRESSIVE == in->mfx.FrameInfo.PicStruct) &&
                   (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) )
             {
