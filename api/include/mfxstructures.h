@@ -2549,7 +2549,7 @@ typedef enum
     MFX_VPP_COMPONENT    = 3
 } mfxComponentType;
 
-MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
+MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct
 {
     mfxComponentType Type;
@@ -2570,7 +2570,7 @@ typedef struct
 } mfxAdapterInfo;
 MFX_PACK_END()
 
-MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
+MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct
 {
     mfxAdapterInfo * Adapters;
