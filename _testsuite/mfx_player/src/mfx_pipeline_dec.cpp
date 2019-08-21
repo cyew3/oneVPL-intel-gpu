@@ -82,6 +82,11 @@ Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 
 #include "mfxstructures-int.h"
 
+#if !(defined(LINUX32) || defined(LINUX64))
+#define MFX_DISPATCHER_LOG
+#include "mfx_dispatcher_log.h"
+#endif // #if !(defined(LINUX32) || defined(LINUX64))
+
 #ifdef LUCAS_DLL
 #include "lucas.h"
 #endif

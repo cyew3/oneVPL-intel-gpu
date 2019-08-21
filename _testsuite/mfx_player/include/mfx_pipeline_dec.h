@@ -15,11 +15,6 @@ File Name: .h
 
 #include "mfx_pipeline_defs.h"
 
-#if !(defined(LINUX32) || defined(LINUX64))
-#define MFX_DISPATCHER_LOG
-#include "mfx_dispatcher_log.h"
-#endif // #if !(defined(LINUX32) || defined(LINUX64))
-
 #if defined(_WIN64) || defined(_WIN32)
 #include "mfxadapter.h"
 #endif
