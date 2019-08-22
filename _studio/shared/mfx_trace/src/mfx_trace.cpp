@@ -230,7 +230,7 @@ mfxTraceU32 MFXTrace_GetRegistryParams(void)
             {
                 g_mfxTraceCategoriesTable = pCategoriesTable;
                 // storing category name in the table
-                swprintf_s(g_mfxTraceCategoriesTable[g_mfxTraceCategoriesNum].m_name, sizeof(g_mfxTraceCategoriesTable[g_mfxTraceCategoriesNum].m_name)/sizeof(TCHAR), _T("%s"), p);
+                _stprintf_s(g_mfxTraceCategoriesTable[g_mfxTraceCategoriesNum].m_name, sizeof(g_mfxTraceCategoriesTable[g_mfxTraceCategoriesNum].m_name)/sizeof(TCHAR), _T("%s"), p);
                 // setting default ("global") level
                 g_mfxTraceCategoriesTable[g_mfxTraceCategoriesNum].m_level = g_Level;
                 // trying to obtain specific level for this category
