@@ -661,6 +661,41 @@ mfxFrameSurface1* tsSurfaceProcessor::ProcessSurface(mfxFrameSurface1* ps, mfxFr
     return ps;
 }
 
+mfxFrameSurface1* tsSurfaceProcessor::ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa, mfxU64 display_order)
+{
+    if (ps)
+    {
+        if (m_cur++ >= m_max)
+        {
+            return 0;
+        }
+        bool useAllocator = pfa && !ps->Data.Y;
+
+        if (useAllocator)
+        {
+            TRACE_FUNC3(mfxFrameAllocator::Lock, pfa->pthis, ps->Data.MemId, &(ps->Data));
+            g_tsStatus.check(pfa->Lock(pfa->pthis, ps->Data.MemId, &(ps->Data)));
+        }
+
+        TRACE_FUNC2(tsSurfaceProcessor::ProcessSurface, *ps, display_order);
+        g_tsStatus.check(ProcessSurface(*ps, display_order));
+
+        if (useAllocator)
+        {
+            TRACE_FUNC3(mfxFrameAllocator::Unlock, pfa->pthis, ps->Data.MemId, &(ps->Data));
+            g_tsStatus.check(pfa->Unlock(pfa->pthis, ps->Data.MemId, &(ps->Data)));
+        }
+    }
+
+    if (m_eos)
+    {
+        m_max = m_cur;
+        return 0;
+    }
+
+    return ps;
+}
+
 tsNoiseFiller::tsNoiseFiller(mfxU32 n_frames)
     : tsSurfaceProcessor(n_frames)
 {
@@ -907,6 +942,36 @@ mfxStatus tsRawReader::ProcessSurface(mfxFrameSurface1& s)
 
         dst = src;
         s.Data.FrameOrder = m_cur++;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus tsRawReader::ProcessSurface(mfxFrameSurface1& s, mfxU64 display_order)
+{
+    m_eos = (m_fsz != Read(m_buf, m_fsz, display_order));
+
+    /*WTF? Should be done inside "dst = src;" based on both src.shift and dst.shift if needed at all, not here.
+      Wrong place, wrong condidtion. Keeping for bkwd compatibility, have to use m_disable_shift_hack for straight P010.*/
+    if (m_surf.Info.Shift > 0 && !m_disable_shift_hack)
+    {
+        if (m_surf.Info.FourCC == MFX_FOURCC_P010)
+        {
+            mfxU16 *ptr = (mfxU16 *)m_buf;
+            for (mfxU32 i = 0; i < m_fsz / 2; i++)
+            {
+                ptr[i] = (ptr[i] << 6) & ~0x3F;
+            }
+        }
+    }
+
+    if (!m_eos)
+    {
+        tsFrame src(m_surf);
+        tsFrame dst(s);
+
+        dst = src;
+        s.Data.FrameOrder = /*display_order == 0xFFFFFFFF ? m_cur++ : */display_order;
     }
 
     return MFX_ERR_NONE;

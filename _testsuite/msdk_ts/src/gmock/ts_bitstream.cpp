@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -37,10 +37,12 @@ tsReader::~tsReader()
     }
 }
 
-mfxU32 tsReader::Read(mfxU8* dst, mfxU32 size)
+mfxU32 tsReader::Read(mfxU8* dst, mfxU32 size, mfxU64 display_order)
 {
     if(m_file)
     {
+        if (display_order != 0xFFFFFFFF)
+            fseek(m_file, display_order * size, SEEK_SET);
         return (mfxU32)fread(dst, 1, size, m_file);
     }
     else 

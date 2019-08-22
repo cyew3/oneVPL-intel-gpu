@@ -522,7 +522,9 @@ public:
     virtual ~tsSurfaceProcessor() {}
 
     virtual mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa);
+    virtual mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa, mfxU64 display_order);
     virtual mfxStatus ProcessSurface(mfxFrameSurface1&) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return MFX_ERR_UNDEFINED_BEHAVIOR; };
+    virtual mfxStatus ProcessSurface(mfxFrameSurface1&, mfxU64 display_order) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return MFX_ERR_UNDEFINED_BEHAVIOR; };
 };
 
 
@@ -554,6 +556,7 @@ public:
     mfxStatus ResetFile(bool reset_frame_order = false);
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s);
+    mfxStatus ProcessSurface(mfxFrameSurface1& s, mfxU64 display_order);
 };
 
 class tsSurfaceWriter : public tsSurfaceProcessor

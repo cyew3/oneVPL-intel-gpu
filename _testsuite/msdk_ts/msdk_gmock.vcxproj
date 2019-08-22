@@ -266,6 +266,7 @@
     <ClCompile Include="src\gmock\test_suites\hevce_custom_qmatrix.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_explicit_weight_prediction.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_get_video_param_tcbrc.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_qp_report.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_max_slice_size.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_argb.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_caps.cpp" />

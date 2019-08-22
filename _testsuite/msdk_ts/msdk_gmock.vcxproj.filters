@@ -1131,5 +1131,8 @@
     <ClCompile Include="src\gmock\test_suites\avce_reset_cbr_hrd_conf_vui.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_qp_report.cpp">
+      <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
