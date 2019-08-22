@@ -22,6 +22,7 @@
 #define __MFX_COMMON_DECODE_INT_H__
 
 #include <vector>
+
 #include "mfx_common.h"
 #include "mfx_common_int.h"
 #include "umc_video_decoder.h"
@@ -40,10 +41,12 @@ public:
 
 mfxStatus ConvertUMCStatusToMfx(UMC::Status status);
 
-void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoStreamInfo* umcVideoParams);
-void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoDecoderParams* umcVideoParams);
+void ConvertMFXParamsToUMC(mfxVideoParam const*, UMC::VideoStreamInfo*);
+void ConvertMFXParamsToUMC(mfxVideoParam const*, UMC::VideoDecoderParams*);
 
+UMC::ColorFormat ConvertFOURCCToUMCColorFormat(mfxU32);
 mfxU32 ConvertUMCColorFormatToFOURCC(UMC::ColorFormat);
+
 void ConvertUMCParamsToMFX(UMC::VideoStreamInfo const*, mfxVideoParam*);
 void ConvertUMCParamsToMFX(UMC::VideoDecoderParams const*, mfxVideoParam*);
 

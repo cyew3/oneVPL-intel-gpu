@@ -23,6 +23,8 @@
 
 #include "umc_va_base.h"
 #include "umc_defs.h"
+#include "umc_video_data.h"
+#include "umc_video_decoder.h"
 
 MFXMediaDataAdapter::MFXMediaDataAdapter(mfxBitstream *pBitstream)
 {
@@ -122,73 +124,17 @@ mfxStatus ConvertUMCStatusToMfx(UMC::Status status)
 void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoStreamInfo *umcVideoParams)
 {
     umcVideoParams->clip_info.height = par->mfx.FrameInfo.Height;
-    umcVideoParams->clip_info.width = par->mfx.FrameInfo.Width;
+    umcVideoParams->clip_info.width  = par->mfx.FrameInfo.Width;
 
     umcVideoParams->disp_clip_info.height = umcVideoParams->clip_info.height;
-    umcVideoParams->disp_clip_info.width = umcVideoParams->clip_info.width;
+    umcVideoParams->disp_clip_info.width  = umcVideoParams->clip_info.width;
 
     if(par->mfx.CodecId == MFX_CODEC_JPEG && (MFX_ROTATION_90 == par->mfx.Rotation || MFX_ROTATION_270 == par->mfx.Rotation))
     {
         std::swap(umcVideoParams->clip_info.height, umcVideoParams->clip_info.width);
     }
 
-    switch (par->mfx.FrameInfo.FourCC)
-    {
-    case MFX_FOURCC_RGB4:
-        umcVideoParams->color_format = UMC::RGB32;
-        break;
-    case MFX_FOURCC_RGB3:
-        umcVideoParams->color_format = UMC::RGB24;
-        break;
-    case MFX_FOURCC_YUY2:
-        umcVideoParams->color_format = UMC::YUY2;
-        break;
-    case MFX_FOURCC_YV12:
-        umcVideoParams->color_format = UMC::YV12;
-        break;
-    case MFX_FOURCC_P010:
-        umcVideoParams->color_format = UMC::P010;
-        break;
-    case MFX_FOURCC_P210:
-        umcVideoParams->color_format = UMC::P210;
-        break;
-#if (MFX_VERSION >= 1027)
-    case MFX_FOURCC_Y210:
-        umcVideoParams->color_format = UMC::Y210;
-        break;
-    case MFX_FOURCC_Y410:
-        umcVideoParams->color_format = UMC::Y410;
-        break;
-#endif
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
-    case MFX_FOURCC_Y216:
-        umcVideoParams->color_format = UMC::Y216;
-        break;
-    case MFX_FOURCC_Y416:
-        umcVideoParams->color_format = UMC::Y416;
-        break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
-
-    case MFX_FOURCC_AYUV:
-        umcVideoParams->color_format = UMC::YUV444A;
-        break;
-    case MFX_FOURCC_IMC3:
-    case MFX_FOURCC_YUV400:
-    case MFX_FOURCC_YUV411:
-    case MFX_FOURCC_YUV422H:
-    case MFX_FOURCC_YUV422V:
-    case MFX_FOURCC_YUV444:
-#if (MFX_VERSION >= 1028)
-    case MFX_FOURCC_RGBP:
-#endif
-        umcVideoParams->color_format = UMC::YUY2;
-        break;
-
-    case MFX_FOURCC_NV12:
-    default:
-        umcVideoParams->color_format = UMC::NV12;
-        break;
-    }
+    umcVideoParams->color_format = ConvertFOURCCToUMCColorFormat(par->mfx.FrameInfo.FourCC);
 
     umcVideoParams->interlace_type = UMC::PROGRESSIVE;
 
@@ -198,8 +144,17 @@ void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoStreamInfo *umcVi
     if (par->mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_TFF)
         umcVideoParams->interlace_type = UMC::INTERLEAVED_TOP_FIELD_FIRST;
 
+    umcVideoParams->stream_type = UMC::UNDEF_VIDEO;
+    switch (par->mfx.CodecId)
+    {
+        case MFX_CODEC_AVC:   umcVideoParams->stream_type = UMC::H264_VIDEO;  break;
+        case MFX_CODEC_HEVC:  umcVideoParams->stream_type = UMC::HEVC_VIDEO;  break;
+        case MFX_CODEC_MPEG2: umcVideoParams->stream_type = UMC::MPEG2_VIDEO; break;
+        case MFX_CODEC_VC1:   umcVideoParams->stream_type = UMC::VC1_VIDEO;   break;
+        case MFX_CODEC_VP9:   umcVideoParams->stream_type = UMC::VP9_VIDEO;   break;
+        case MFX_CODEC_AV1:   umcVideoParams->stream_type = UMC::AV1_VIDEO;   break;
+    }
     umcVideoParams->stream_subtype = UMC::UNDEF_VIDEO_SUBTYPE;
-    umcVideoParams->stream_type = UMC::H264_VIDEO;
 
     umcVideoParams->framerate = (par->mfx.FrameInfo.FrameRateExtN && par->mfx.FrameInfo.FrameRateExtD)? (Ipp64f)par->mfx.FrameInfo.FrameRateExtN / par->mfx.FrameInfo.FrameRateExtD: 0;
 
@@ -225,6 +180,54 @@ void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoDecoderParams *um
     default:
         VM_ASSERT(false);
         break;
+    }
+}
+
+UMC::ColorFormat ConvertFOURCCToUMCColorFormat(mfxU32 fourcc)
+{
+    switch (fourcc)
+    {
+        case MFX_FOURCC_RGB3:    return UMC::RGB24;
+        case MFX_FOURCC_BGR4:
+        case MFX_FOURCC_RGB4:    return UMC::RGB32;
+#if (MFX_VERSION >= 1028)
+        case MFX_FOURCC_RGB565:  return UMC::RGB565;
+        case MFX_FOURCC_RGBP:    return UMC::YUV444;
+#endif
+
+        case MFX_FOURCC_NV12:    return UMC::NV12;
+        case MFX_FOURCC_YV12:    return UMC::YV12;
+        case MFX_FOURCC_P010:    return UMC::P010;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_P016:    return UMC::P016;
+#endif
+
+        case MFX_FOURCC_YUY2:    return UMC::YUY2;
+        case MFX_FOURCC_UYVY:    return UMC::UYVY;
+        case MFX_FOURCC_NV16:    return UMC::NV16;
+        case MFX_FOURCC_P210:    return UMC::P210;
+#if (MFX_VERSION >= 1027)
+        case MFX_FOURCC_Y210:    return UMC::Y210;
+        case MFX_FOURCC_Y410:    return UMC::Y410;
+#endif
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        case MFX_FOURCC_Y216:    return UMC::Y216;
+        case MFX_FOURCC_Y416:    return UMC::Y416;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
+
+        case MFX_FOURCC_AYUV:    return UMC::YUV444A;
+
+        case MFX_FOURCC_IMC3:    return UMC::IMC3;
+        case MFX_FOURCC_YUV400:  return UMC::GRAY;
+        case MFX_FOURCC_YUV411:  return UMC::YUV411;
+
+        case MFX_FOURCC_YUV422H:
+        case MFX_FOURCC_YUV422V: return UMC::YUY2;
+
+        case MFX_FOURCC_YUV444:  return UMC::YUV444;
+        default:
+            VM_ASSERT(!"Unknown FOURCC");
+            return UMC::NV12;
     }
 }
 
