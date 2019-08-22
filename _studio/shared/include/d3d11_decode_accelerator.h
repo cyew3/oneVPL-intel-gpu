@@ -35,27 +35,33 @@
 class  D3D11VideoCORE;
 class mfx_UMC_FrameAllocator;
 
-class MFXD3D11AcceleratorParams
+struct MFXD3D11AcceleratorParams
     : public UMC::VideoAcceleratorParams
 {
 
-public:
+    DYNAMIC_CAST_DECL(MFXD3D11AcceleratorParams, UMC::VideoAcceleratorParams)
 
-    DYNAMIC_CAST_DECL(MFXD3D11AcceleratorParams, VideoAcceleratorParams)
-
-        MFXD3D11AcceleratorParams()
+    MFXD3D11AcceleratorParams()
+        : m_video_device(nullptr)
+        , m_video_context(nullptr)
+        , m_video_processing(nullptr)
     {}
 
+    ID3D11VideoDevice         *m_video_device;
+    ID3D11VideoContext        *m_video_context;
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing  *m_video_processing;
+#endif
 };
 
 class MFXD3D11Accelerator : public UMC::DXAccelerator
 {
 
 public:
-    MFXD3D11Accelerator(ID3D11VideoDevice  *pVideoDevice,
-                        ID3D11VideoContext *pVideoContext);
 
-    virtual ~MFXD3D11Accelerator()
+    MFXD3D11Accelerator();
+
+    ~MFXD3D11Accelerator()
     {
         Close();
     };
@@ -74,9 +80,7 @@ public:
 
     bool IsIntelCustomGUID() const override;
 
-    HRESULT GetVideoDecoderDriverHandle(HANDLE *pDriverHandle) {return m_pDecoder->GetDriverHandle(pDriverHandle);};
-    // Will use this function instead of previos two: FindConfiguration, Init
-    mfxStatus CreateVideoAccelerator(mfxU32 hwProfile, const mfxVideoParam *param, UMC::FrameAllocator *allocator);
+    UMC::Status GetVideoDecoderDriverHandle(HANDLE*);
 
     void GetVideoDecoder(void **handle)
     {
@@ -87,14 +91,9 @@ public:
 
 private:
 
-    mfxStatus GetSuitVideoDecoderConfig(const mfxVideoParam            *param,        //in
-                                        D3D11_VIDEO_DECODER_DESC *video_desc,   //in
-                                        D3D11_VIDEO_DECODER_CONFIG     *pConfig);     //out
-
-
     D3D11_VIDEO_DECODER_BUFFER_TYPE MapDXVAToD3D11BufType(const Ipp32s DXVABufType) const;
 
-
+    UMC::Status GetSuitVideoDecoderConfig(D3D11_VIDEO_DECODER_DESC*, D3D11_VIDEO_DECODER_CONFIG*);
     UMC::Status GetCompBufferInternal(UMC::UMCVACompBuffer*) override;
     UMC::Status ReleaseBufferInternal(UMC::UMCVACompBuffer*) override;
 

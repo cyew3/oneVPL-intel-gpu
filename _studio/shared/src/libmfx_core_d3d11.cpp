@@ -549,22 +549,31 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
     mfxStatus sts = MFX_ERR_NONE;
     param; request;
 
-    m_pAccelerator.reset(new MFXD3D11Accelerator(m_pD11VideoDevice.p, m_pD11VideoContext));
+    UMC::VideoStreamInfo vi{};
+    ConvertMFXParamsToUMC(param, &vi);
 
-    UMC::VideoStreamInfo VideoInfo;
-    ConvertMFXParamsToUMC(param, &VideoInfo);
+    MFXD3D11AcceleratorParams params{};
+    params.m_protectedVA      = param->Protected;
+    params.m_pVideoStreamInfo = &vi;
+    params.m_allocator        = allocator;
+    params.m_iNumberSurfaces  = request->NumFrameMin;
+    params.m_video_device     = m_pD11VideoDevice;
+    params.m_video_context    = m_pD11VideoContext;
 
-    MFXD3D11AcceleratorParams vaParams;
-    vaParams.m_protectedVA = param->Protected;
-    vaParams.m_pVideoStreamInfo = &VideoInfo;
-    vaParams.m_iNumberSurfaces = request->NumFrameMin;
-    vaParams.m_allocator = allocator;
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    params.m_video_processing =
+        reinterpret_cast<mfxExtDecVideoProcessing*>(GetExtendedBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING));
+#endif
 
-    if (UMC::UMC_OK != m_pAccelerator->Init(&vaParams))
-    {
-        m_pAccelerator.reset();
-        return MFX_ERR_UNSUPPORTED;
-    }
+    m_pAccelerator.reset(new MFXD3D11Accelerator());
+
+    auto const profile = ChooseProfile(param, GetHWType());
+    MFX_CHECK(profile, MFX_ERR_UNSUPPORTED);
+
+    m_pAccelerator->m_Profile = static_cast<UMC::VideoAccelerationProfile>(profile);
+
+    sts = ConvertUMCStatusToMfx(m_pAccelerator->Init(&params));
+    MFX_CHECK_STS(sts);
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     auto pScheduler = (MFXIScheduler2 *)m_session->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
@@ -573,24 +582,18 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
     pScheduler->Release();
 #endif
 
-
-    mfxU32 hwProfile = ChooseProfile(param, GetHWType());
-    MFX_CHECK(hwProfile, MFX_ERR_UNSUPPORTED);
-
-    sts = m_pAccelerator->CreateVideoAccelerator(hwProfile, param, allocator);
-    MFX_CHECK_STS(sts);
-
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_ANY(param->Protected) &&
         !IS_PROTECTION_CENC(param->Protected) &&
         !IS_PROTECTION_WIDEVINE(param->Protected))
     {
-        HRESULT hr = m_pAccelerator->GetVideoDecoderDriverHandle(&m_DXVA2DecodeHandle);
-        if (FAILED(hr))
+        sts = ConvertUMCStatusToMfx(m_pAccelerator->GetVideoDecoderDriverHandle(&m_DXVA2DecodeHandle));
+        if (sts != MFX_ERR_NONE)
         {
             m_pAccelerator->Close();
-            return MFX_ERR_UNSUPPORTED;
         }
+
+        MFX_CHECK_STS(sts);
     }
     else
 #endif
@@ -598,6 +601,7 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
 
     m_pAccelerator->GetVideoDecoder(&m_D3DDecodeHandle);
     m_pAccelerator->m_HWPlatform = m_HWType;
+
     return sts;
 }
 

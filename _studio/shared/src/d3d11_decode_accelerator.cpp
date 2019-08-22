@@ -17,7 +17,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 
@@ -30,9 +29,11 @@
 #include "umc_va_dxva2.h"
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_video_processing.h"
+#include "umc_dynamic_cast.h"
+
 #include "libmfx_core_d3d11.h"
 #include "mfx_umc_alloc_wrapper.h"
-#include "mfx_common_int.h"
+#include "mfx_common_decode_int.h"
 
 #define DXVA2_VC1PICTURE_PARAMS_EXT_BUFFER 21
 #define DXVA2_VC1BITPLANE_EXT_BUFFER       22
@@ -44,101 +45,94 @@ static const GUID DXVADDI_Intel_ModeVC1_D_Advanced =
 
 using namespace UMC;
 
-
-
-MFXD3D11Accelerator::MFXD3D11Accelerator(ID3D11VideoDevice  *pVideoDevice, ID3D11VideoContext *pVideoContext)
-    : m_pVideoDevice(pVideoDevice)
-    , m_pVideoContext(pVideoContext)
+MFXD3D11Accelerator::MFXD3D11Accelerator()
+    : m_pVideoDevice(nullptr)
+    , m_pVideoContext(nullptr)
     , m_pVDOView(0)
     , m_DecoderGuid(GUID_NULL)
     , m_numberSurfaces(128)
 {
-} //MFXD3D11Accelerator::MFXD3D11Accelerator
-
-
-UMC::Status MFXD3D11Accelerator::Init(UMC::VideoAcceleratorParams* pVAParams)
-{
-    MFX_CHECK(pVAParams, UMC::UMC_ERR_NULL_PTR);
-
-    MFXD3D11AcceleratorParams *pD3D11Params = DynamicCast<MFXD3D11AcceleratorParams>(pVAParams);
-    UMC_CHECK(pD3D11Params, UMC_ERR_INVALID_PARAMS);
-
-    m_numberSurfaces = pD3D11Params->m_iNumberSurfaces;
-    return UMC::UMC_OK;
 }
 
-mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mfxVideoParam *param, UMC::FrameAllocator *allocator)
+UMC::Status MFXD3D11Accelerator::Init(UMC::VideoAcceleratorParams* params)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::CreateVideoAccelerator");
-    D3D11_VIDEO_DECODER_DESC video_desc;
-    m_allocator = allocator;
-    if (!m_allocator)
-        return MFX_ERR_MEMORY_ALLOC;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::Init");
 
-    video_desc.SampleWidth = param->mfx.FrameInfo.Width;
-    video_desc.SampleHeight = param->mfx.FrameInfo.Height;
-    video_desc.OutputFormat = mfxDefaultAllocatorD3D11::MFXtoDXGI(param->mfx.FrameInfo.FourCC);//DXGI_FORMAT_NV12;
+    UMC_CHECK_PTR(params);
 
-    m_Profile = (VideoAccelerationProfile)hwProfile;
-
-    D3D11_VIDEO_DECODER_CONFIG video_config = {};
+    UMC_CHECK(params->m_allocator, UMC_ERR_ALLOC);
+    m_allocator = params->m_allocator;
+    m_numberSurfaces = params->m_iNumberSurfaces;
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    if (IS_PROTECTION_ANY(param->Protected))
+    if (IS_PROTECTION_ANY(params->m_protectedVA))
     {
-        m_protectedVA = new UMC::ProtectedVA(param->Protected);
+        m_protectedVA = new UMC::ProtectedVA((mfxU16)params->m_protectedVA);
     }
 #endif
 
-    mfxStatus sts = GetSuitVideoDecoderConfig(param, &video_desc, &video_config);
-    MFX_CHECK_STS(sts);
+    auto dx_params = DynamicCast<MFXD3D11AcceleratorParams>(params);
+    UMC_CHECK(dx_params, UMC_ERR_INVALID_PARAMS);
+
+    UMC_CHECK(dx_params->m_video_device, UMC_ERR_INVALID_PARAMS);
+    m_pVideoDevice = dx_params->m_video_device;
+
+    UMC_CHECK(dx_params->m_video_context, UMC_ERR_INVALID_PARAMS);
+    m_pVideoContext = dx_params->m_video_context;
+
+    UMC_CHECK(params->m_pVideoStreamInfo, UMC_ERR_INVALID_PARAMS);
+    auto vi = params->m_pVideoStreamInfo;
+
+    D3D11_VIDEO_DECODER_DESC video_desc{};
+    video_desc.SampleWidth  = vi->clip_info.width;
+    video_desc.SampleHeight = vi->clip_info.height;
+    video_desc.OutputFormat = mfxDefaultAllocatorD3D11::MFXtoDXGI(ConvertUMCColorFormatToFOURCC(vi->color_format));
+
+    D3D11_VIDEO_DECODER_CONFIG video_config{};
+    auto sts = GetSuitVideoDecoderConfig(&video_desc, &video_config);
+    UMC_CHECK_STATUS(sts);
 
     m_DecoderGuid = video_desc.Guid;
     HRESULT hres;
 
-
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-    auto decVideoProcessing =
-        reinterpret_cast<mfxExtDecVideoProcessing *>(GetExtendedBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING));
-
-    if (decVideoProcessing)
+    if (dx_params->m_video_processing)
         video_config.ConfigDecoderSpecific = video_config.ConfigDecoderSpecific | DXVA_DECODE_CONFIG_DOWNSAMPLING_MASK;
-
 #endif
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
         hres  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
-        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
+        UMC_CHECK(SUCCEEDED(hres), UMC_ERR_FAILED);
     }
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-    if (decVideoProcessing)
+    if (dx_params->m_video_processing)
     {
         // only YCBCR is supported now
-        MFX_CHECK(video_desc.OutputFormat == DXGI_FORMAT_NV12, MFX_ERR_UNSUPPORTED);
+        UMC_CHECK(video_desc.OutputFormat == DXGI_FORMAT_NV12, UMC_ERR_UNSUPPORTED);
         // SFC is implemented only for AVC yet
-        MFX_CHECK((param->mfx.CodecId == MFX_CODEC_AVC) ||
-            (param->mfx.CodecId == MFX_CODEC_HEVC) ||
-            (param->mfx.CodecId == MFX_CODEC_VP9), MFX_ERR_UNSUPPORTED);
+        UMC_CHECK(vi->stream_type == UMC::H264_VIDEO ||
+                  vi->stream_type == UMC::VP9_VIDEO  ||
+                  vi->stream_type == UMC::HEVC_VIDEO, UMC_ERR_UNSUPPORTED);
 
         CComPtr<ID3D11Device1>       device1;
         hres = m_pVideoDevice->QueryInterface(&device1);
-        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
+        UMC_CHECK(SUCCEEDED(hres), UMC_ERR_FAILED);
 
         DXGI_COLOR_SPACE_TYPE inputCSC;
         inputCSC = DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709;
 
-        D3D11_VIDEO_SAMPLE_DESC outputDesc;
-        outputDesc.Width = decVideoProcessing->Out.CropW;
-        outputDesc.Height = decVideoProcessing->Out.CropH;
-        outputDesc.Format = mfxDefaultAllocatorD3D11::MFXtoDXGI(decVideoProcessing->Out.FourCC);
+        D3D11_VIDEO_SAMPLE_DESC outputDesc{};
+        outputDesc.Width  = dx_params->m_video_processing->Out.CropW;
+        outputDesc.Height = dx_params->m_video_processing->Out.CropH;
+        outputDesc.Format = mfxDefaultAllocatorD3D11::MFXtoDXGI(dx_params->m_video_processing->Out.FourCC);
         outputDesc.ColorSpace = inputCSC;
 
         CComQIPtr<ID3D11VideoContext1> ctx1(m_pVideoContext);
         MFX_CHECK(ctx1, MFX_ERR_DEVICE_FAILED);
         hres = ctx1->DecoderEnableDownsampling(m_pDecoder, inputCSC, &outputDesc, m_numberSurfaces);
-        MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
+        UMC_CHECK(SUCCEEDED(hres), UMC_ERR_FAILED);
     }
 #endif
 
@@ -146,16 +140,17 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
     m_isUseStatuReport = true;
     m_bH264ShortSlice = GuidProfile::isShortFormat((m_Profile & 0xf) == VA_H265, video_config.ConfigBitstreamRaw);
     m_H265ScalingListScanOrder = (video_config.Config4GroupedCoefs & 0x80000000) ? 0 : 1;
-    return MFX_ERR_NONE;
+
+    return UMC_OK;
 
 } // mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator
 
-mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam        *param,
-                                                         D3D11_VIDEO_DECODER_DESC   *video_desc,
-                                                         D3D11_VIDEO_DECODER_CONFIG *pConfig)
+UMC::Status MFXD3D11Accelerator::GetSuitVideoDecoderConfig(D3D11_VIDEO_DECODER_DESC* video_desc, D3D11_VIDEO_DECODER_CONFIG* pConfig)
 {
+    UMC_CHECK_PTR(video_desc);
+    UMC_CHECK_PTR(pConfig);
+
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::GetSuitVideoDecoderConfig");
-    param;
 
     for (mfxU32 k = 0; k < GuidProfile::GetGuidProfileSize(); k++)
     {
@@ -220,14 +215,13 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfig");
                 hr = m_pVideoDevice->GetVideoDecoderConfig(video_desc, idxConfig, pConfig);
             }
-            if (FAILED(hr))
-                return MFX_ERR_DEVICE_FAILED;
+            UMC_CHECK(SUCCEEDED(hr), UMC_ERR_FAILED);
 
-            return MFX_ERR_NONE;
+            return UMC_OK;
         }
     }
 
-    return MFX_ERR_UNSUPPORTED;
+    return UMC_OK;
 
 } //mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig
 
@@ -462,6 +456,10 @@ Status MFXD3D11Accelerator::ExecuteExtensionBuffer(void * buffer)
 
 Status MFXD3D11Accelerator::Close()
 {
+    m_pVideoDevice  = nullptr;
+    m_pVideoContext = nullptr;
+
+    m_pDecoder.Release();
     m_pVDOView.Release();
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -480,6 +478,15 @@ Status MFXD3D11Accelerator::Close()
 bool MFXD3D11Accelerator::IsIntelCustomGUID() const
 {
     return GuidProfile::IsIntelCustomGUID(m_DecoderGuid);
+}
+
+UMC::Status MFXD3D11Accelerator::GetVideoDecoderDriverHandle(HANDLE* handle)
+{
+    UMC_CHECK_PTR(handle);
+    UMC_CHECK(m_pDecoder, UMC_ERR_NOT_INITIALIZED);
+
+    return SUCCEEDED(m_pDecoder->GetDriverHandle(handle)) ?
+        UMC_OK : UMC_ERR_UNSUPPORTED;
 }
 
 Status MFXD3D11Accelerator::ExecuteExtension(int function, ExtensionData const& data)
