@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -19,6 +19,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #ifndef __SAMPLE_MULTI_TRANSCODE_H__
 #define __SAMPLE_MULTI_TRANSCODE_H__
+
+#if defined(_WIN64) || defined(_WIN32)
+#include "mfxadapter.h"
+#endif
 
 #include "transcode_utils.h"
 #include "pipeline_transcode.h"
@@ -54,6 +58,11 @@ namespace TranscodingSample
         virtual mfxStatus ProcessResult();
 
     protected:
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        mfxStatus QueryAdapters();
+        void      ForceImplForSession(mfxU32 idxSession);
+        mfxStatus CheckAndFixAdapterDependency(mfxU32 idxSession, CTranscodingPipeline * pParentPipeline);
+#endif
         virtual mfxStatus VerifyCrossSessionsOptions();
         virtual mfxStatus CreateSafetyBuffers();
         virtual void      DoTranscoding();
@@ -84,6 +93,11 @@ namespace TranscodingSample
 
     private:
         DISALLOW_COPY_AND_ASSIGN(Launcher);
+
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        std::vector<mfxAdapterInfo> m_DisplaysData;
+        mfxAdaptersInfo             m_Adapters;
+#endif
 
     };
 }

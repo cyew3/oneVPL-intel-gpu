@@ -1213,6 +1213,16 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.libType = MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11;
         }
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-iGfx")))
+        {
+            InputParams.bPrefferiGfx = true;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-dGfx")))
+        {
+            InputParams.bPrefferdGfx = true;
+        }
+#endif
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sys")))
         {
             InputParams.bUseOpaqueMemory = false;
@@ -2397,6 +2407,14 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         InputParams.nEncTileRows = 0;
         InputParams.nEncTileCols = 0;
     }
+
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (InputParams.bPrefferiGfx && InputParams.bPrefferdGfx)
+    {
+        msdk_printf(MSDK_STRING("WARNING: both dGfx and iGfx flags set. iGfx will be preffered\n"));
+        InputParams.bPrefferdGfx = false;
+    }
+#endif
 
     return MFX_ERR_NONE;
 } //mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputParams &InputParams)
