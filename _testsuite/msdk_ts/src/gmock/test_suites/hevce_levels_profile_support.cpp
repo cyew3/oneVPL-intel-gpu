@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2017-2018 Intel Corporation.  All rights reserved.
+Copyright (C) 2017-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -135,13 +135,17 @@ public:
 
 private:
 
-    void SetParsPositiveTC(const LevelConstraints& LevelParam, bool maxWidthFlag)
+    void SetParsPositiveTC(const LevelConstraints& LevelParam)
     {
-        constexpr mfxU16 alignment    = 16;
-        constexpr mfxU16 MaxFrameRate = 300;  // the maximum frame rate supported by HEVC is 300 frames per second
-        constexpr mfxU16 MaxWidth     = 4096; // width limitation in HEVC hardware encoder
-        constexpr mfxU16 MaxHeight    = 2176; // height limitation in HEVC hardware encoder
-        constexpr mfxU16 MaxNumSlice  = 200;  // due to driver issue, NumSlice is limited to 200
+        const mfxU16 MaxFrameRate = 300;  // the maximum frame rate supported by HEVC is 300 frames per second
+        const mfxU16 MaxNumSlice  = 200;  // due to driver issue, NumSlice is limited to 200
+
+        ENCODE_CAPS_HEVC caps = {};
+        mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
+        g_tsStatus.check(GetCaps(&caps, &capSize));
+
+        const mfxU16 MaxWidth     = caps.MaxPicWidth;  // width limitation in HEVC hardware encoder
+        const mfxU16 MaxHeight    = caps.MaxPicHeight; // height limitation in HEVC hardware encoder
 
         // On the basis of formulas given in the HEVC Standard, Frame Width is defined as
         // the aligned value of maximum allowed width for specified Max Luma pic size:
@@ -152,18 +156,10 @@ private:
         // c) The value of pic_height_in_luma_samples shall be less than or equal to Sqrt( MaxLumaPs * 8 ).
         // ...
         // where MaxLumaPs is specified in Table A.6.
-        // Due to the restriction of HEVC Encoder implementation, the maximum supported resolution is 4096x2176.
-        // If a greater resolution is specified for HEVC Encoder, the Query function terminates with MFX_ERR_UNSUPPORTED status.
-        if (maxWidthFlag)
-        {
-            m_par.mfx.FrameInfo.Width  = std::min((mfxU16)(LevelParam.MaxResolution & ~(alignment-1)), MaxWidth);
-            m_par.mfx.FrameInfo.Height = std::min((mfxU16)((LevelParam.MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~(alignment-1)), MaxHeight );
-        }
-        else
-        {
-            m_par.mfx.FrameInfo.Height = std::min((mfxU16)(LevelParam.MaxResolution & ~(alignment-1)), MaxHeight);
-            m_par.mfx.FrameInfo.Width  = std::min((mfxU16)((LevelParam.MaxLumaPs / m_par.mfx.FrameInfo.Height) & ~(alignment-1)), MaxWidth );
-        }
+
+        m_par.mfx.FrameInfo.Width  = std::min((mfxU16)MSDK_ALIGN16(LevelParam.MaxResolution), MaxWidth);
+        m_par.mfx.FrameInfo.Height = std::min((mfxU16)MSDK_ALIGN16(LevelParam.MaxResolution), MaxHeight);
+
         m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width; // as the Frame Width and Height are aligned, we can use them as the Cropped Width and Height
         m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
 
@@ -259,7 +255,7 @@ mfxI32 TestSuite<PluginID>::RunTest(mfxU16 id)
     mfxU16 table_id = id % NumberOfLevels;
     bool maxWidthFlag = id < NumberOfLevels;
     // Set FrameInfo values according to specified Level
-    SetParsPositiveTC(TableA6[table_id], maxWidthFlag);
+    SetParsPositiveTC(TableA6[table_id]);
     PrintDebugInfo(TableA6[table_id], maxWidthFlag);
     // Load HEVC FEI/legacy plugin
     Load();
