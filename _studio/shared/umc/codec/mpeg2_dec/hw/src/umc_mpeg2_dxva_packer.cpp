@@ -107,15 +107,15 @@ namespace UMC_MPEG2_DECODER
 
         
         int32_t pict_type       = pic.picture_coding_type;
-        int32_t width_in_MBs    = (int32_t)(mfx::align2_value<uint32_t>(seq.horizontal_size_value, 16) / 16);
-        int32_t height_in_MBs   = (int32_t)(mfx::align2_value<uint32_t>(seq.vertical_size_value,   16) / 16);
-        int32_t numMB           = width_in_MBs * height_in_MBs;
+        uint32_t width_in_MBs   = (uint32_t)(mfx::align2_value<uint32_t>(seq.horizontal_size_value, 16) / 16);
+        uint32_t height_in_MBs  = (uint32_t)(mfx::align2_value<uint32_t>(seq.vertical_size_value,   16) / 16);
+        uint32_t numMB          = width_in_MBs * height_in_MBs;
         int32_t pict_struct     = picExt.picture_structure;
         int32_t secondfield     = (pict_struct != FRM_PICTURE) && (fieldIndex == 1);
 
         pPicParamBuf->SetDataSize((int32_t)(sizeof(DXVA_PictureParameters)));
         pPicParamBuf->FirstMb = 0;
-        pPicParamBuf->NumOfMB = (picExt.picture_structure == FRM_PICTURE) ? numMB : numMB / 2;
+        pPicParamBuf->NumOfMB = (int32_t)((picExt.picture_structure == FRM_PICTURE) ? numMB : numMB / 2);
 
         if (MPEG2_P_PICTURE == pic.picture_coding_type && refPic0)
         {
@@ -269,11 +269,11 @@ namespace UMC_MPEG2_DECODER
             slice->GetBitStream().GetOrg(rawDataPtr, rawDataSize);
             sliceParams->dwSliceBitsInBuffer = (rawDataSize + prefix_size) * 8;
 
-            int32_t width_in_MBs = (int32_t)(mfx::align2_value<uint32_t>(seqHeader.horizontal_size_value, 16) / 16);
-            int32_t height_in_MBs = (int32_t)(mfx::align2_value<uint32_t>(seqHeader.vertical_size_value, 16) / 16);
-            int32_t numMB = width_in_MBs * height_in_MBs;
+            uint32_t width_in_MBs = (uint32_t)(mfx::align2_value<uint32_t>(seqHeader.horizontal_size_value, 16) / 16);
+            uint32_t height_in_MBs = (uint32_t)(mfx::align2_value<uint32_t>(seqHeader.vertical_size_value, 16) / 16);
+            uint32_t numMB = width_in_MBs * height_in_MBs;
 
-            compBuf->NumOfMB = (picExt.picture_structure == FRM_PICTURE) ? numMB : numMB / 2;
+            compBuf->NumOfMB = (int32_t)((picExt.picture_structure == FRM_PICTURE) ? numMB : numMB / 2);
 
             auto sliceDataBuf = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &compBuf);
             if (!sliceDataBuf)
@@ -293,22 +293,7 @@ namespace UMC_MPEG2_DECODER
             sliceParams->wHorizontalPosition = (WORD)sliceHeader.macroblockAddressIncrement;
             sliceParams->wVerticalPosition = (WORD)sliceHeader.slice_vertical_position - 1;
             sliceParams->wQuantizerScaleCode = (WORD)sliceHeader.quantiser_scale_code;
-            sliceParams->wNumberMBsInSlice = (WORD)(width_in_MBs - sliceParams->wHorizontalPosition);
-
-            //need to comment this section (and others)
-            if (sliceNum > 0 && sliceParams->wHorizontalPosition > 0)
-            {
-                auto prevSliceParams = (DXVA_SliceInfo*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER);
-                if (!prevSliceParams)
-                    throw mpeg2_exception(UMC::UMC_ERR_FAILED);
-                
-                if (m_va->IsLongSliceControl())
-                    prevSliceParams += sliceNum - 1; //take previous
-                else
-                    prevSliceParams = (DXVA_SliceInfo*)(sliceParams + sliceNum - 1);
-
-                prevSliceParams->wNumberMBsInSlice = (WORD)(sliceHeader.macroblockAddressIncrement - prevSliceParams->wHorizontalPosition);
-            }
+            sliceParams->wNumberMBsInSlice = (WORD)sliceHeader.numberMBsInSlice;
         }
 
         return;

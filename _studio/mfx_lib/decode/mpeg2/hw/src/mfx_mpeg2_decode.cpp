@@ -752,7 +752,7 @@ mfxStatus VideoDECODEMPEG2::GetPayload(mfxU64 *ts, mfxPayload *payload)
 
     const auto msg = payloads->GetPayloadMessage();
 
-	static const mfxU16 USER_DATA_START_CODE = 0x000001B2;
+    static const mfxU16 USER_DATA_START_CODE = 0x000001B2;
 
     if (msg)
     {

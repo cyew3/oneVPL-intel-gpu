@@ -248,6 +248,7 @@ namespace UMC_MPEG2_DECODER
         // calculated params
         uint32_t mbOffset                         = 0;
         uint32_t macroblockAddressIncrement       = 0;
+        uint32_t numberMBsInSlice                 = 0; // only for DXVA
     };
 
     enum

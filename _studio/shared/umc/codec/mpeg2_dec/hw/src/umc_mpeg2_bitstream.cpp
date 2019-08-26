@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
+#include "mfx_utils.h"
 #if defined MFX_ENABLE_MPEG2_VIDEO_DECODE
 
 #include "umc_mpeg2_defs.h"
@@ -294,6 +295,15 @@ namespace UMC_MPEG2_DECODER
 
         if (CheckBSLeft())
             throw mpeg2_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+        uint32_t width_in_MBs = (uint32_t)(mfx::align2_value<uint32_t>(slice.GetSeqHeader().horizontal_size_value, 16) / 16);
+        uint32_t height_in_MBs = (uint32_t)(mfx::align2_value<uint32_t>(slice.GetSeqHeader().vertical_size_value, 16) / 16);
+
+        // invalid slice - skipping it
+        if (slice.sliceHeader.slice_vertical_position > height_in_MBs)
+            throw mpeg2_exception(UMC::UMC_ERR_INVALID_PARAMS);
+
+        slice.sliceHeader.numberMBsInSlice = width_in_MBs - slice.sliceHeader.macroblockAddressIncrement;
 
         return UMC::UMC_OK;
     }
