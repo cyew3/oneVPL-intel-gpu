@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -24,7 +24,7 @@ void ext_buf(tsExtBufType<mfxVideoParam>& par, mfxU32 id, mfxU32 size)
     par.AddExtBuffer(id, size);
 }
 
-class TestSuite : tsVideoVPP
+class TestSuite : protected tsVideoVPP
 {
 public:
     TestSuite() : tsVideoVPP() {}
@@ -32,7 +32,7 @@ public:
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
 
-private:
+protected:
 
     enum
     {
@@ -78,6 +78,8 @@ private:
     };
 
     static const tc_struct test_case[];
+
+    int RunTest(const tc_struct& tc);
 
     void AttachBuffers(const tc_struct& tc, const mfxU32 mode,
                        tsExtBufType<mfxVideoParam> &par_in, tsExtBufType<mfxVideoParam> &par_out)
@@ -249,14 +251,17 @@ const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(Test
 
 int TestSuite::RunTest(unsigned int id)
 {
+    return RunTest(test_case[id]);
+}
+
+
+int TestSuite::RunTest(const tc_struct& tc)
+{
     TS_START;
-    const tc_struct& tc = test_case[id];
 
     MFXInit();
 
     // set required parameters
-    m_par.vpp.In.FourCC = MFX_FOURCC_NV12;
-    m_par.vpp.Out.FourCC = MFX_FOURCC_NV12;
     m_par.vpp.In.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     m_par.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     m_par.vpp.In.FrameRateExtN = 30;
@@ -378,7 +383,7 @@ int TestSuite::RunTest(unsigned int id)
         Reset();
     } else
     {
-        g_tsLog << "ERROR: No mode for case #" << id << "\n";
+        g_tsLog << "ERROR: No mode for the case " << "\n";
         g_tsStatus.check(MFX_ERR_ABORTED);
     }
 
@@ -388,5 +393,57 @@ int TestSuite::RunTest(unsigned int id)
 
 TS_REG_TEST_SUITE_CLASS(vpp_frc_interp);
 
+}
+
+namespace vpp_rext_frc_interp
+{
+    using namespace tsVPPInfo;
+
+    template<eFmtId FmtID>
+    class TestSuite : public vpp_frc_interp::TestSuite
+    {
+    public:
+        TestSuite()
+            : vpp_frc_interp::TestSuite()
+        {}
+
+        int RunTest(unsigned int id)
+        {
+            m_par.vpp.In.FourCC         = m_par.vpp.Out.FourCC         = Formats[FmtID].FourCC;
+            m_par.vpp.In.BitDepthLuma   = m_par.vpp.Out.BitDepthLuma   = Formats[FmtID].BdY;
+            m_par.vpp.In.BitDepthChroma = m_par.vpp.Out.BitDepthChroma = Formats[FmtID].BdC;
+            m_par.vpp.In.ChromaFormat   = m_par.vpp.Out.ChromaFormat   = Formats[FmtID].ChromaFormat;
+            m_par.vpp.In.Shift          = m_par.vpp.Out.Shift          = Formats[FmtID].Shift;
+
+            tc_struct tc = test_case[id];
+            if (MFX_ERR_UNSUPPORTED == CCSupport()[FmtID][FmtID])
+            {
+                tc.sts[HW] = MFX_ERR_UNSUPPORTED;
+                tc.sts[SW] = MFX_ERR_UNSUPPORTED;
+            }
+            else if (!tc.sts[HW] && MFX_WRN_PARTIAL_ACCELERATION == CCSupport()[FmtID][FmtID])
+            {
+                tc.sts[HW] = MFX_WRN_PARTIAL_ACCELERATION;
+                tc.sts[SW] = MFX_WRN_PARTIAL_ACCELERATION;
+            }
+
+            return  vpp_frc_interp::TestSuite::RunTest(tc);
+        }
+    };
+
+#define REG_TEST(NAME, FMT_ID)                                     \
+    namespace NAME                                                 \
+    {                                                              \
+        typedef vpp_rext_frc_interp::TestSuite<FMT_ID> TestSuite; \
+        TS_REG_TEST_SUITE_CLASS(NAME);                             \
+    }
+
+    REG_TEST(vpp_8b_422_yuy2_frc_interp, FMT_ID_8B_422_YUY2);
+    REG_TEST(vpp_8b_444_ayuv_frc_interp, FMT_ID_8B_444_AYUV);
+    REG_TEST(vpp_10b_420_p010_frc_interp, FMT_ID_10B_420_P010);
+    REG_TEST(vpp_10b_422_y210_frc_interp, FMT_ID_10B_422_Y210);
+    REG_TEST(vpp_10b_444_y410_frc_interp, FMT_ID_10B_444_Y410);
+
+#undef REG_TEST
 }
 
