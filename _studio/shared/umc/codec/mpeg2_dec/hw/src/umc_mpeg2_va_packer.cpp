@@ -20,7 +20,7 @@
 
 #include "umc_defs.h"
 
-#if defined MFX_ENABLE_MPEG2_VIDEO_DECODE
+#if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
 
 #include "umc_mpeg2_defs.h"
 #include "umc_mpeg2_slice.h"
@@ -60,12 +60,13 @@ namespace UMC_MPEG2_DECODER
     // Pack picture
     void PackerVA::PackAU(MPEG2DecoderFrame const& frame, uint8_t fieldIndex)
     {
-        int sliceCount = frame.GetAU(fieldIndex)->GetSliceCount();
+        const MPEG2DecoderFrameInfo & frameInfo = *frame.GetAU(fieldIndex);
+
+        size_t sliceCount = frameInfo.GetSliceCount();
 
         if (!sliceCount)
             return;
 
-        const MPEG2DecoderFrameInfo & frameInfo = *frame.GetAU(fieldIndex);
         PackPicParams(frame, fieldIndex);
 
         PackQmatrix(frameInfo);
@@ -73,12 +74,7 @@ namespace UMC_MPEG2_DECODER
         CreateSliceDataBuffer(frameInfo);
         CreateSliceParamBuffer(frameInfo);
 
-        uint32_t sliceNum = 0;
-        for (int32_t n = 0; n < sliceCount; n++)
-        {
-            PackSliceParams(*frame.GetAU(fieldIndex)->GetSlice(n), sliceNum);
-            sliceNum++;
-        }
+        PackSliceParams(frameInfo);
 
         auto s = m_va->Execute();
         if(s != UMC::UMC_OK)
@@ -182,53 +178,60 @@ namespace UMC_MPEG2_DECODER
     }
 
     // Pack slice parameters
-    void PackerVA::PackSliceParams(const MPEG2Slice & slice, uint32_t sliceNum)
+    void PackerVA::PackSliceParams(const MPEG2DecoderFrameInfo & frameInfo)
     {
-        const auto sliceHeader = slice.GetSliceHeader();
-        const auto pic         = slice.GetPicHeader();
+        size_t sliceCount = frameInfo.GetSliceCount();
+        bool longSliceControl = m_va->IsLongSliceControl();
 
-        UMC::UMCVACompBuffer* compBuf;
-        auto sliceParams = (VASliceParameterBufferMPEG2*)m_va->GetCompBuffer(VASliceParameterBufferType, &compBuf);
-        if (!sliceParams)
-            throw mpeg2_exception(UMC::UMC_ERR_FAILED);
-
-        if (m_va->IsLongSliceControl())
+        for (uint32_t sliceNum = 0; sliceNum < sliceCount; sliceNum++)
         {
-            sliceParams += sliceNum;
-            memset(sliceParams, 0, sizeof(VASliceParameterBufferMPEG2));
+            const auto slice = frameInfo.GetSlice(sliceNum);
+            const auto sliceHeader = slice->GetSliceHeader();
+            const auto pic = slice->GetPicHeader();
+
+            UMC::UMCVACompBuffer* compBuf;
+            auto sliceParams = (VASliceParameterBufferMPEG2*)m_va->GetCompBuffer(VASliceParameterBufferType, &compBuf);
+            if (!sliceParams)
+                throw mpeg2_exception(UMC::UMC_ERR_FAILED);
+
+            if (longSliceControl)
+            {
+                sliceParams += sliceNum;
+                memset(sliceParams, 0, sizeof(VASliceParameterBufferMPEG2));
+            }
+            else
+            {
+                sliceParams = (VASliceParameterBufferMPEG2*)((VASliceParameterBufferBase*)sliceParams + sliceNum);
+                memset(sliceParams, 0, sizeof(VASliceParameterBufferBase));
+            }
+
+            uint8_t *  rawDataPtr = nullptr;
+            uint32_t  rawDataSize = 0;
+
+            slice->GetBitStream().GetOrg(rawDataPtr, rawDataSize);
+
+            sliceParams->slice_data_size = rawDataSize + prefix_size;
+            sliceParams->slice_data_flag = VA_SLICE_DATA_FLAG_ALL;
+
+            auto sliceDataBuf = (uint8_t*)m_va->GetCompBuffer(VASliceDataBufferType, &compBuf);
+            if (!sliceDataBuf)
+                throw mpeg2_exception(UMC::UMC_ERR_FAILED);
+
+            sliceParams->slice_data_offset = compBuf->GetDataSize();
+            sliceDataBuf += sliceParams->slice_data_offset;
+            std::copy(start_code_prefix, start_code_prefix + prefix_size, sliceDataBuf);
+            std::copy(rawDataPtr, rawDataPtr + rawDataSize, sliceDataBuf + prefix_size);
+            compBuf->SetDataSize(sliceParams->slice_data_offset + sliceParams->slice_data_size);
+
+            if (!longSliceControl)
+                continue;
+
+            sliceParams->macroblock_offset = sliceHeader.mbOffset + prefix_size * 8;
+            sliceParams->slice_horizontal_position = sliceHeader.macroblockAddressIncrement;
+            sliceParams->slice_vertical_position = sliceHeader.slice_vertical_position - 1;
+            sliceParams->quantiser_scale_code = sliceHeader.quantiser_scale_code;
+            sliceParams->intra_slice_flag = (pic.picture_coding_type == MPEG2_I_PICTURE);
         }
-        else
-        {
-            sliceParams = (VASliceParameterBufferMPEG2*)((VASliceParameterBufferBase*)sliceParams + sliceNum);
-            memset(sliceParams, 0, sizeof(VASliceParameterBufferBase));
-        }
-
-        uint8_t *  rawDataPtr = nullptr;
-        uint32_t  rawDataSize = 0;
-
-        slice.GetBitStream().GetOrg(rawDataPtr, rawDataSize);
-
-        sliceParams->slice_data_size = rawDataSize + prefix_size;
-        sliceParams->slice_data_flag = VA_SLICE_DATA_FLAG_ALL;
-
-        auto sliceDataBuf = (uint8_t*)m_va->GetCompBuffer(VASliceDataBufferType, &compBuf);
-        if (!sliceDataBuf)
-            throw mpeg2_exception(UMC::UMC_ERR_FAILED);
-
-        sliceParams->slice_data_offset = compBuf->GetDataSize();
-        sliceDataBuf += sliceParams->slice_data_offset;
-        std::copy(start_code_prefix, start_code_prefix + prefix_size, sliceDataBuf);
-        std::copy(rawDataPtr, rawDataPtr + rawDataSize, sliceDataBuf + prefix_size);
-        compBuf->SetDataSize(sliceParams->slice_data_offset + sliceParams->slice_data_size);
-
-        if (!m_va->IsLongSliceControl())
-            return;
-
-        sliceParams->macroblock_offset         = sliceHeader.mbOffset + prefix_size * 8;
-        sliceParams->slice_horizontal_position = sliceHeader.macroblockAddressIncrement;
-        sliceParams->slice_vertical_position   = sliceHeader.slice_vertical_position - 1;
-        sliceParams->quantiser_scale_code      = sliceHeader.quantiser_scale_code;
-        sliceParams->intra_slice_flag          = (pic.picture_coding_type == MPEG2_I_PICTURE);
 
         return;
     }

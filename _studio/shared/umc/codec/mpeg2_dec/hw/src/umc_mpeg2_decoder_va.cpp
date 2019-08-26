@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined MFX_ENABLE_MPEG2_VIDEO_DECODE
+#if defined (MFX_ENABLE_MPEG2_VIDEO_DECODE)
 
 #include <algorithm>
 

@@ -59,7 +59,7 @@ namespace UMC_MPEG2_DECODER
     protected:
         virtual void PackPicParams(const MPEG2DecoderFrame&, uint8_t) = 0;
         virtual void PackQmatrix(const MPEG2DecoderFrameInfo&) = 0;
-        virtual void PackSliceParams(const MPEG2Slice&, uint32_t) = 0;
+        virtual void PackSliceParams(const MPEG2DecoderFrameInfo &) = 0;
 
     protected:
 
@@ -97,7 +97,7 @@ namespace UMC_MPEG2_DECODER
         // Pack matrix parameters
         void PackQmatrix(const MPEG2DecoderFrameInfo&) override;
         // Pack slice parameters
-        void PackSliceParams(const MPEG2Slice&, uint32_t) override;
+        void PackSliceParams(const MPEG2DecoderFrameInfo &) override;
 
     private:
         void CreateSliceDataBuffer(const MPEG2DecoderFrameInfo&);

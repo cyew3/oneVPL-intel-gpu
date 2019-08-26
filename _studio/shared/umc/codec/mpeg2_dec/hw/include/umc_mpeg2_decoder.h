@@ -190,6 +190,8 @@ namespace UMC_MPEG2_DECODER
         virtual UMC::Status EliminateSliceErrors(MPEG2DecoderFrame& frame, uint8_t fieldIndex);
         virtual UMC::Status CompletePicture(MPEG2DecoderFrame& frame, uint8_t fieldIndex);
 
+        bool IsFieldOfCurrentFrame() const;
+
         // DPB update
         virtual void UpdateDPB(MPEG2DecoderFrame&, uint8_t);
 

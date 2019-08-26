@@ -66,12 +66,13 @@ namespace UMC_MPEG2_DECODER
     // Pack picture
     void PackerDXVA::PackAU(MPEG2DecoderFrame const& frame, uint8_t fieldIndex)
     {
-        size_t sliceCount = frame.GetAU(fieldIndex)->GetSliceCount();
+        const MPEG2DecoderFrameInfo & frameInfo = *frame.GetAU(fieldIndex);
+
+        size_t sliceCount = frameInfo.GetSliceCount();
 
         if (!sliceCount)
             return;
 
-        const MPEG2DecoderFrameInfo & frameInfo = *frame.GetAU(fieldIndex);
         PackPicParams(frame, fieldIndex);
 
         PackQmatrix(frameInfo);
