@@ -955,6 +955,12 @@ enum {
     MFX_EXTBUFF_TASK_DEPENDENCY                 = MFX_MAKEFOURCC('S','Y','N','C'),
     MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM            = MFX_MAKEFOURCC('A','1','F','G'),
 #endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    MFX_EXTBUFF_AV1_SEGMENTATION                = MFX_MAKEFOURCC('1', 'S', 'E', 'G'),
+    MFX_EXTBUFF_AV1_PARAM                       = MFX_MAKEFOURCC('1', 'P', 'A', 'R'),
+    MFX_EXTBUFF_AV1_AUXDATA                     = MFX_MAKEFOURCC('1', 'A', 'U', 'X'),
+    MFX_EXTBUFF_AV1_TEMPORAL_LAYERS             = MFX_MAKEFOURCC('1', 'T', 'M', 'L'),
+#endif
 };
 
 /* VPP Conf: Do not use certain algorithms  */
