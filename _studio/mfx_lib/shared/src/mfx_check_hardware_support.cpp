@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <mfx_common.h>
+
 #if defined (MFX_VA_WIN)
 //#define SET_ALWAYS_DEFAULT
 // MFX_HW_IVB = 0x400000, MFX_HW_HSW = 0x500000, etc
@@ -31,7 +33,6 @@
 
 #include <mfxdefs.h>
 #include <mfx_dxva2_device.h>
-#include <mfx_common.h>
 
 #pragma warning(disable : 4702)
 
