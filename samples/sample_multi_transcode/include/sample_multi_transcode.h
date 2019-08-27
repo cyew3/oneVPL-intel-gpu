@@ -20,7 +20,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #ifndef __SAMPLE_MULTI_TRANSCODE_H__
 #define __SAMPLE_MULTI_TRANSCODE_H__
 
-#if defined(_WIN64) || defined(_WIN32)
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
 #include "mfxadapter.h"
 #endif
 

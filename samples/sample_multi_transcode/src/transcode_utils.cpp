@@ -2274,7 +2274,7 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
     }
 
     // valid target usage range is: [MFX_TARGETUSAGE_BEST_QUALITY .. MFX_TARGETUSAGE_BEST_SPEED] (at the moment [1..7])
-    // If traget usage is kept unknown - presets manager will fill in proper value
+    // If target usage is kept unknown - presets manager will fill in proper value
     if ((InputParams.nTargetUsage < MFX_TARGETUSAGE_UNKNOWN) ||
         (InputParams.nTargetUsage > MFX_TARGETUSAGE_BEST_SPEED) )
     {
