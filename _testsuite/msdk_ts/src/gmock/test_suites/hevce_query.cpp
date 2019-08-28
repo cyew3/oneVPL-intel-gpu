@@ -231,6 +231,30 @@ namespace hevce_query
 
     };
 
+    bool IsChromaFormatSupported(mfxU16 chromaFormat, mfxU16 bitDepthLuma)
+    {
+        switch (bitDepthLuma)
+        {
+        case 10:
+            if (g_tsHWtype < MFX_HW_KBL)
+                return false;
+        case 8:
+            if (((chromaFormat == MFX_CHROMAFORMAT_YUV422
+                || chromaFormat == MFX_CHROMAFORMAT_YUV444)
+                && g_tsHWtype < MFX_HW_ICL)
+                || g_tsHWtype < MFX_HW_SKL)
+                return false;
+            break;
+        case 12:
+            if (g_tsHWtype < MFX_HW_TGL)
+                return false;
+            break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
     const tc_struct TestSuite::test_case[] =
     {
         //Target Usage
@@ -387,7 +411,7 @@ namespace hevce_query
         mfxHandleType type;
         mfxExtBuffer* buff_in = NULL;
         mfxExtBuffer* buff_out = NULL;
-        mfxStatus sts;
+        mfxStatus sts = tc.sts;
         ENCODE_CAPS_HEVC caps = {0};
         mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
 
@@ -399,8 +423,7 @@ namespace hevce_query
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
-                sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
-                g_tsStatus.check(sts);
+                g_tsStatus.check(MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut));
                 return 0;
             }
 
@@ -581,18 +604,17 @@ namespace hevce_query
             m_pParOut->ExtParam = &buff_out;
         }
 
-        g_tsStatus.expect(tc.sts);
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
         {
             if ((m_pPar->mfx.RateControlMethod == MFX_RATECONTROL_AVBR) && (tc.sts == MFX_ERR_NONE))
             {
-                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+                sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }
 
             if ((tc.type == IO_PATTERN) && (tc.sts == MFX_ERR_UNSUPPORTED))
             {
-                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+                sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }
 
             if (tc.type == EXT_BUFF)
@@ -600,47 +622,47 @@ namespace hevce_query
                 if ((tc.sub_type == MFX_EXTBUFF_AVC_REFLIST_CTRL) ||
                     (tc.sub_type == MFX_EXTBUFF_ENCODER_RESET_OPTION) ||
                     (tc.sub_type == MFX_EXTBUFF_VIDEO_SIGNAL_INFO))
-                    g_tsStatus.expect(MFX_ERR_NONE);
+                    sts = MFX_ERR_NONE;
                 else if (tc.sub_type == NONE)
-                    g_tsStatus.expect(MFX_ERR_NULL_PTR);
+                    sts = MFX_ERR_NULL_PTR;
                 else if (tc.sub_type == MFX_EXTBUFF_ENCODER_CAPABILITY && (g_tsImpl & MFX_IMPL_VIA_D3D11))
-                    g_tsStatus.expect(MFX_ERR_NONE);
+                    sts = MFX_ERR_NONE;
 
             }
             if (tc.type == CROP)
             {
                 if (tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
                 {
-                    g_tsStatus.expect(MFX_ERR_NONE);
+                    sts = MFX_ERR_NONE;
                 }
             }
 
             // HW: supported only TU = {1,4,7}. Mapping: 2->1; 3->4; 5->4; 6->7
             if ((!(tc.set_par[0].v == 1 || tc.set_par[0].v == 4 || tc.set_par[0].v == 7)) && (tc.type == TARGET_USAGE))
             {
-                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+                sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }
         }
         else if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data)))
         {
             if (tc.type == PROTECTED)
-                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                sts = MFX_ERR_UNSUPPORTED;
             // GACC: supported only TU = {4,5,6,7}
             if ((tc.set_par[0].v < 4) && (tc.type == TARGET_USAGE))
             {
-                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+                sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }
             // different expected status for SW HEVCe and GACC
             if (tc.type == PIC_STRUCT && tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
-                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                sts = MFX_ERR_UNSUPPORTED;
         }
         else
         {
             if (tc.type == PROTECTED)
-                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                sts = MFX_ERR_UNSUPPORTED;
             // different expected status for SW HEVCe and GACC
             if (tc.type == PIC_STRUCT && tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
-                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                sts = MFX_ERR_UNSUPPORTED;
         }
 
         if (tc.type == IN_PAR_NULL)
@@ -652,19 +674,24 @@ namespace hevce_query
             m_pParOut = NULL;
         }
 
+        if (!IsChromaFormatSupported(m_par.mfx.FrameInfo.ChromaFormat, m_par.mfx.FrameInfo.BitDepthLuma)
+            && sts >= MFX_ERR_NONE
+            && tc.type != IN_PAR_NULL) // in this case MFX_ERR_NONE returns all the time, m_par isn't used
+            sts = MFX_ERR_UNSUPPORTED;
+
+        g_tsStatus.expect(sts);
         //call tested function
         TRACE_FUNC3(MFXVideoENCODE_Query, m_session, m_pPar, m_pParOut);
         if (tc.type != SESSION_NULL)
-            sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
+            g_tsStatus.check(MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut));
         else
-            sts = MFXVideoENCODE_Query(NULL, m_pPar, m_pParOut);
+            g_tsStatus.check(MFXVideoENCODE_Query(NULL, m_pPar, m_pParOut));
 
         if (buff_in)
             delete buff_in;
         if (buff_out)
             delete buff_out;
 
-        g_tsStatus.check(sts);
         TS_TRACE(m_pParOut);
         CheckOutPar(tc);
 

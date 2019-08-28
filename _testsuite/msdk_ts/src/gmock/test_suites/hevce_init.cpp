@@ -80,7 +80,29 @@ namespace hevce_init
 
         static const tc_struct test_case[];
 
-
+        bool IsChromaFormatSupported(mfxU16 chromaFormat, mfxU16 bitDepthLuma)
+        {
+            switch(bitDepthLuma)
+            {
+                case 10:
+                    if (g_tsHWtype < MFX_HW_KBL)
+                        return false;
+                case 8:
+                    if (((chromaFormat == MFX_CHROMAFORMAT_YUV422
+                        || chromaFormat == MFX_CHROMAFORMAT_YUV444)
+                        && g_tsHWtype < MFX_HW_ICL)
+                        || g_tsHWtype < MFX_HW_SKL)
+                        return false;
+                    break;
+                case 12:
+                    if (g_tsHWtype < MFX_HW_TGL)
+                        return false;
+                    break;
+                default:
+                    return false;
+            }
+            return true;
+        }
 
         void CreateBuffer(mfxU32 buff_id, mfxExtBuffer** buff, mfxExtBuffer** buff_out)
         {
@@ -519,7 +541,7 @@ namespace hevce_init
         mfxHandleType type;
         mfxExtBuffer* buff_in = NULL;
         mfxExtBuffer* buff_out = NULL;
-        mfxStatus sts;
+        mfxStatus sts, chroma_support = IsChromaFormatSupported(m_par.mfx.FrameInfo.ChromaFormat, m_par.mfx.FrameInfo.BitDepthLuma) ? MFX_ERR_NONE : MFX_ERR_INVALID_VIDEO_PARAM;
 
         MFXInit();
 
@@ -741,14 +763,17 @@ namespace hevce_init
                 // encoder aligns PicWidthInLumaSamples and PicHeightInLumaSamples to next multiple of 16 (if necessary),
                 //   but libva returns VA_STATUS_ERROR_RESOLUTION_NOT_SUPPORTED for resolutions < 32x32
                 //   so on Linux we expect MFX_ERR_UNSUPPORTED
-                if (g_tsOSFamily == MFX_OS_FAMILY_LINUX && tc.sub_type == MFX_EXTBUFF_HEVC_PARAM)
+                if (g_tsOSFamily == MFX_OS_FAMILY_LINUX
+                    && tc.sub_type == MFX_EXTBUFF_HEVC_PARAM
+                    && chroma_support == MFX_ERR_NONE)
                 {
                     mfxU16 W = ((mfxExtHEVCParam *)(m_pPar->ExtParam[0]))->PicWidthInLumaSamples;
                     mfxU16 H = ((mfxExtHEVCParam *)(m_pPar->ExtParam[0]))->PicHeightInLumaSamples;
-                    if (W > 0 && W <= 16)
+                    if ((W > 0 && W <= 16)
+                        || (H > 0 && H <= 16))
+                    {
                         sts = MFX_ERR_UNSUPPORTED;
-                    if (H > 0 && H <= 16)
-                        sts = MFX_ERR_UNSUPPORTED;
+                    }
                 }
             }
 
@@ -863,6 +888,10 @@ namespace hevce_init
                 Close();
         }
 
+        if (chroma_support == MFX_ERR_INVALID_VIDEO_PARAM
+            && sts >= MFX_ERR_NONE)
+            sts = MFX_ERR_INVALID_VIDEO_PARAM;
+
         //call tested function
         g_tsStatus.expect(sts);
         TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
@@ -889,7 +918,7 @@ namespace hevce_init
             delete orig_par;
         }
 
-        if (tc.type == BUFFER_SIZE && tc.sts == MFX_ERR_NONE)
+        if (tc.type == BUFFER_SIZE && sts== MFX_ERR_NONE)
         {
             mfxVideoParam get_par = {};
             GetVideoParam(m_session, &get_par);
