@@ -293,8 +293,3 @@ TEST_F(TestCompareTwoStructs, Test_with_different_types_of_initial_data)
 
     ASSERT_ANY_THROW(mfx_reflect::CompareTwoStructs(m_collection.Access(&in), m_collection.Access(&out)));
 }
-
-int main(int argc, char *argv[]) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
