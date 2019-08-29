@@ -494,7 +494,7 @@ mfxStatus GetImpl(const mfxVideoParam & params, mfxIMPL & impl, const sInputPara
     mfxStatus sts = MFXQueryAdaptersNumber(&num_adapters_available);
     MSDK_CHECK_STATUS(sts, "MFXQueryAdaptersNumber failed");
 
-    mfxComponentInfo interface_request = { mfxComponentType::MFX_VPP_COMPONENT };
+    mfxComponentInfo interface_request = { mfxComponentType::MFX_COMPONENT_VPP };
     interface_request.Requirements.vpp = params.vpp;
 
     std::vector<mfxAdapterInfo> displays_data(num_adapters_available);

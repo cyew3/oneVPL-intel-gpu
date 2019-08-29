@@ -416,7 +416,7 @@ static inline mfxI32 dGPU_priority(const void* ll, const void* rr)
 static void RearrangeInPriorityOrder(const mfxComponentInfo & info, MFX::MFXVector<mfxAdapterInfo> & vec)
 {
 #ifndef OPEN_SOURCE
-    if (info.Type == mfxComponentType::MFX_ENCODE_COMPONENT && info.Requirements.mfx.CodecId == MFX_CODEC_HEVC)
+    if (info.Type == mfxComponentType::MFX_COMPONENT_ENCODE && info.Requirements.mfx.CodecId == MFX_CODEC_HEVC)
     {
         // Move dGPU to top priority if iGPU is < Gen12
         qsort(vec.data(), vec.size(), sizeof(mfxAdapterInfo), &dGPU_priority);
@@ -483,7 +483,7 @@ mfxStatus MFXQueryAdaptersDecode(mfxBitstream* bitstream, mfxU32 codec_id, mfxAd
 
     mfxComponentInfo input_info;
     memset(&input_info, 0, sizeof(input_info));
-    input_info.Type                     = mfxComponentType::MFX_DECODE_COMPONENT;
+    input_info.Type                     = mfxComponentType::MFX_COMPONENT_DECODE;
     input_info.Requirements.mfx.CodecId = codec_id;
 
     for(;;)
@@ -580,21 +580,21 @@ mfxStatus MFXQueryAdapters(mfxComponentInfo* input_info, mfxAdaptersInfo* adapte
 
             switch (input_info->Type)
             {
-            case mfxComponentType::MFX_ENCODE_COMPONENT:
+            case mfxComponentType::MFX_COMPONENT_ENCODE:
                 {
                     out.mfx.CodecId = input_info->Requirements.mfx.CodecId;
 
                     sts = MFXVideoENCODE_Query(dummy_session.operator mfxSession(), &input_info->Requirements, &out);
                 }
                 break;
-            case mfxComponentType::MFX_DECODE_COMPONENT:
+            case mfxComponentType::MFX_COMPONENT_DECODE:
                 {
                     out.mfx.CodecId = input_info->Requirements.mfx.CodecId;
 
                     sts = MFXVideoDECODE_Query(dummy_session.operator mfxSession(), &input_info->Requirements, &out);
                 }
                 break;
-            case mfxComponentType::MFX_VPP_COMPONENT:
+            case mfxComponentType::MFX_COMPONENT_VPP:
                 {
                     sts = MFXVideoVPP_Query(dummy_session.operator mfxSession(), &input_info->Requirements, &out);
                 }

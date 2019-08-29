@@ -948,7 +948,7 @@ std::vector<mfxAdapterInfo> displays_data(num_adapters_available);
 mfxAdaptersInfo adapters = { displays_data.data(), mfxU32(displays_data.size()), 0u };
 
 // Fill description of Encode workload
-mfxComponentInfo interface_request = { MFX_ENCODE_COMPONENT, Encode_mfxVideoParam };
+mfxComponentInfo interface_request = { MFX_COMPONENT_ENCODE, Encode_mfxVideoParam };
 
 // Query information about suitable adapters for Encode workload described by Encode_mfxVideoParam
 sts = MFXQueryAdapters(&interface_request, &adapters);
@@ -9129,9 +9129,9 @@ The `mfxComponentType` enumerator describes type of workload passed to [MFXQuery
 
 | | |
 --- | ---
-`MFX_ENCODE_COMPONENT` | Encode workload.
-`MFX_DECODE_COMPONENT` | Decode workload.
-`MFX_VPP_COMPONENT`    | VPP workload.
+`MFX_COMPONENT_ENCODE` | Encode workload.
+`MFX_COMPONENT_DECODE` | Decode workload.
+`MFX_COMPONENT_VPP`    | VPP workload.
 
 **Change History**
 

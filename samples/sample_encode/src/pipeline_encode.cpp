@@ -1380,7 +1380,7 @@ mfxStatus CEncodingPipeline::GetImpl(const sInputParams & params, mfxIMPL & impl
     mfxStatus sts = MFXQueryAdaptersNumber(&num_adapters_available);
     MSDK_CHECK_STATUS(sts, "MFXQueryAdaptersNumber failed");
 
-    mfxComponentInfo interface_request = { mfxComponentType::MFX_ENCODE_COMPONENT };
+    mfxComponentInfo interface_request = { mfxComponentType::MFX_COMPONENT_ENCODE };
     mfxU16 Shift    = params.IsSourceMSB || (params.memType != SYSTEM_MEMORY && AreGuidsEqual(params.pluginParams.pluginGuid, MFX_PLUGINID_HEVCE_HW)) || params.CodecId == MFX_CODEC_VP9;
     mfxU16 Height   = (MFX_PICSTRUCT_PROGRESSIVE == m_mfxEncParams.mfx.FrameInfo.PicStruct) ? MSDK_ALIGN16(params.nDstHeight) : MSDK_ALIGN32(params.nDstHeight);
     mfxU16 LowPower = mfxU16(params.enableQSVFF ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_UNKNOWN);

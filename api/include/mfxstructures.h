@@ -2550,9 +2550,9 @@ MFX_PACK_END()
 /* Multi-adapters Querying structs */
 typedef enum
 {
-    MFX_ENCODE_COMPONENT = 1,
-    MFX_DECODE_COMPONENT = 2,
-    MFX_VPP_COMPONENT    = 3
+    MFX_COMPONENT_ENCODE = 1,
+    MFX_COMPONENT_DECODE = 2,
+    MFX_COMPONENT_VPP    = 3
 } mfxComponentType;
 
 MFX_PACK_BEGIN_STRUCT_W_PTR()
