@@ -86,7 +86,8 @@ protected:
     MFXExtBufferPtr<mfxExtCodingOptionHEVC>  m_extCodingOptionsHEVC;
     MFXExtBufferPtr<mfxExtCodingOptionAV1E>  m_extCodingOptionsAV1E;
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-    MFXExtBufferPtr<mfxExtAV1Param>  m_extAV1Param;
+    MFXExtBufferPtr<mfxExtAV1Param>    m_extAV1Param;
+    MFXExtBufferPtr<mfxExtAV1AuxData>  m_extAV1AuxData;
 #endif
     MFXExtBufferPtr<mfxExtHEVCTiles> m_extHEVCTiles;
     MFXExtBufferPtr<mfxExtHEVCParam> m_extHEVCParam;

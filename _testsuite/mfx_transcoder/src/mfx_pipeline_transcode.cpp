@@ -91,6 +91,7 @@ Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 #define HANDLE_AV1_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsAV1E, member, OPT_TYPE, description, MFX_CODEC_AV1)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 #define HANDLE_AV1_PARAM(member, OPT_TYPE, description)       HANDLE_OPTION_FOR_EXT_BUFFER(m_extAV1Param, member, OPT_TYPE, description, MFX_CODEC_AV1)
+#define HANDLE_AV1_AUX_DATA(member, OPT_TYPE, description)    HANDLE_OPTION_FOR_EXT_BUFFER(m_extAV1AuxData, member, OPT_TYPE, description, MFX_CODEC_AV1)
 #endif
 
 #define FILL_MASK(type, ptr)\
@@ -126,6 +127,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_extCodingOptionsAV1E(new mfxExtCodingOptionAV1E())
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     , m_extAV1Param(new mfxExtAV1Param())
+    , m_extAV1AuxData(new mfxExtAV1AuxData())
 #endif
     , m_extHEVCTiles(new mfxExtHEVCTiles())
     , m_extHEVCParam(new mfxExtHEVCParam())
@@ -456,6 +458,28 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_AV1_PARAM(SuperresScaleDenominator, OPT_UINT_8,    "9-16: 0 - app default"),
         HANDLE_AV1_PARAM(StillPictureMode,         OPT_TRI_STATE, "on/off"),
         HANDLE_AV1_PARAM(SwitchInterval,           OPT_UINT_16,   "0-maxU16: Interval (0 - disabled)"),
+
+        HANDLE_AV1_AUX_DATA(Cdef.CdefDampingMinus3, OPT_UINT_8, "0-3"),
+        HANDLE_AV1_AUX_DATA(Cdef.CdefBits, OPT_UINT_8, "0-3"),
+        HANDLE_AV1_AUX_DATA(LoopFilter.LFLevelYVert, OPT_UINT_8, "0-63"),
+        HANDLE_AV1_AUX_DATA(LoopFilter.LFLevelYHorz, OPT_UINT_8, "0-63"),
+        HANDLE_AV1_AUX_DATA(LoopFilter.LFLevelU, OPT_UINT_8, "0-63"),
+        HANDLE_AV1_AUX_DATA(LoopFilter.LFLevelV, OPT_UINT_8, "0-63"),
+        HANDLE_AV1_AUX_DATA(LoopFilter.ModeRefDeltaEnabled, OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(LoopFilter.ModeRefDeltaUpdate, OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(QP.YDcDeltaQ, OPT_INT_8, "[-63..63]"),
+        HANDLE_AV1_AUX_DATA(QP.UDcDeltaQ, OPT_INT_8, "[-63..63]"),
+        HANDLE_AV1_AUX_DATA(QP.VDcDeltaQ, OPT_INT_8, "[-63..63]"),
+        HANDLE_AV1_AUX_DATA(QP.UAcDeltaQ, OPT_INT_8, "[-63..63]"),
+        HANDLE_AV1_AUX_DATA(QP.VAcDeltaQ, OPT_INT_8, "[-63..63]"),
+        HANDLE_AV1_AUX_DATA(QP.MinBaseQIndex, OPT_UINT_8, "[1-255]"),
+        HANDLE_AV1_AUX_DATA(QP.MaxBaseQIndex, OPT_UINT_8, "[1-255]"),
+        HANDLE_AV1_AUX_DATA(UniformTileSpacing, OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(ErrorResilientMode, OPT_TRI_STATE, "on/off"),
+        HANDLE_AV1_AUX_DATA(EnableOrderHint, OPT_TRI_STATE, "0-127"),
+        HANDLE_AV1_AUX_DATA(OrderHintBits, OPT_UINT_8, "0-8"),
+        HANDLE_AV1_AUX_DATA(ContextUpdateTileId, OPT_UINT_8, "0-127"),
+        HANDLE_AV1_AUX_DATA(DisplayFormatSwizzle, OPT_TRI_STATE, "on/off"),
 #endif
         //HEVC
         HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "0-maxU16: Number of tile columns (1 - default)"),
@@ -1906,25 +1930,53 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-LoopFilterRefTypeDelta"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
-            MFX_CHECK(4 + argv < argvEnd);
-            argv ++;
-            for (mfxU8 i = 0; i < 4; i ++)
+            if (m_EncParams.mfx.CodecId == MFX_CODEC_VP8)
             {
-                MFX_PARSE_INT(m_extVP8CodingOptions->LoopFilterRefTypeDelta[i], argv[0]);
-                argv ++;
+                MFX_CHECK(4 + argv < argvEnd);
+                for (mfxU8 i = 0; i < 4; i++)
+                {
+                    argv++;
+                    MFX_PARSE_INT(m_extVP8CodingOptions->LoopFilterRefTypeDelta[i], argv[0]);
 
+                }
             }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            else if (m_EncParams.mfx.CodecId == MFX_CODEC_AV1)
+            {
+                MFX_CHECK(8 + argv < argvEnd);
+                for (mfxU8 i = 0; i < 8; i++)
+                {
+                    argv++;
+                    MFX_PARSE_INT(m_extAV1AuxData->LoopFilter.RefDeltas[i], argv[0]);
+
+                }
+            }
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-LoopFilterMbModeDelta"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
-            MFX_CHECK(4 + argv < argvEnd);
-            argv ++;
-            for (mfxU8 i = 0; i < 4; i ++)
+            if (m_EncParams.mfx.CodecId == MFX_CODEC_VP8)
             {
-                MFX_PARSE_INT(m_extVP8CodingOptions->LoopFilterMbModeDelta[i], argv[0]);
-                argv ++;
+                MFX_CHECK(4 + argv < argvEnd);
+                for (mfxU8 i = 0; i < 4; i++)
+                {
+                    argv++;
+                    MFX_PARSE_INT(m_extVP8CodingOptions->LoopFilterMbModeDelta[i], argv[0]);
 
+                }
             }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            else if (m_EncParams.mfx.CodecId == MFX_CODEC_AV1)
+            {
+                MFX_CHECK(2 + argv < argvEnd);
+                for (mfxU8 i = 0; i < 2; i++)
+                {
+                    argv++;
+                    MFX_PARSE_INT(m_extAV1AuxData->LoopFilter.ModeDeltas[i], argv[0]);
+
+                }
+            }
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-SegmentQPDelta"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
@@ -2237,6 +2289,27 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             {
                 argv++;
                 MFX_PARSE_INT(m_extAV1Param->TileHeightInSB[i], argv[0]);
+            }
+        }
+        //AV1 VDEnc Aux Data
+        else if (m_OptProc.Check(argv[0], VM_STRING("-CdefYStrengths"), VM_STRING("0-63"), OPT_SPECIAL, VM_STRING("uint[1..8]")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+
+            for (mfxU8 i = 0; i < 8 && argv + 1 < argvEnd && argv[1][0] != VM_STRING('-'); i++)
+            {
+                argv++;
+                MFX_PARSE_INT(m_extAV1AuxData->Cdef.CdefYStrengths[i], argv[0]);
+            }
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-CdefUVStrengths"), VM_STRING("0-63"), OPT_SPECIAL, VM_STRING("uint[1..8]")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+
+            for (mfxU8 i = 0; i < 8 && argv + 1 < argvEnd && argv[1][0] != VM_STRING('-'); i++)
+            {
+                argv++;
+                MFX_PARSE_INT(m_extAV1AuxData->Cdef.CdefUVStrengths[i], argv[0]);
             }
         }
 #endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
@@ -2636,6 +2709,8 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (!m_extAV1Param.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
         m_components[eREN].m_extParams.push_back(m_extAV1Param);
+    if (!m_extAV1AuxData.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
+        m_components[eREN].m_extParams.push_back(m_extAV1AuxData);
 #endif
     if (!m_extVP9Segmentation.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVP9Segmentation);

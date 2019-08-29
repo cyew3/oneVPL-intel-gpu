@@ -561,6 +561,34 @@ void MFXStructureRef <mfxExtAV1Param>::ConstructValues() const
     SERIALIZE_INT(StillPictureMode);
     SERIALIZE_INT(SwitchInterval);
 }
+void MFXStructureRef <mfxExtAV1AuxData>::ConstructValues() const
+{
+    SerializeWithInserter(VM_STRING("CdefDampingMinus3"), m_pStruct->Cdef.CdefDampingMinus3);
+    SerializeWithInserter(VM_STRING("CdefBits"), m_pStruct->Cdef.CdefBits);
+    SerializeArrayOfPODs(VM_STRING("CdefYStrengths"), m_pStruct->Cdef.CdefYStrengths, 8);
+    SerializeArrayOfPODs(VM_STRING("CdefUVStrengths"), m_pStruct->Cdef.CdefUVStrengths, 8);
+    SerializeWithInserter(VM_STRING("LFLevelYVert"), m_pStruct->LoopFilter.LFLevelYVert);
+    SerializeWithInserter(VM_STRING("LFLevelYHorz"), m_pStruct->LoopFilter.LFLevelYHorz);
+    SerializeWithInserter(VM_STRING("LFLevelU"), m_pStruct->LoopFilter.LFLevelU);
+    SerializeWithInserter(VM_STRING("LFLevelV"), m_pStruct->LoopFilter.LFLevelV);
+    SerializeWithInserter(VM_STRING("ModeRefDeltaEnabled"), m_pStruct->LoopFilter.ModeRefDeltaEnabled);
+    SerializeWithInserter(VM_STRING("ModeRefDeltaUpdate"), m_pStruct->LoopFilter.ModeRefDeltaUpdate);
+    SerializeArrayOfPODs(VM_STRING("RefDeltas"), m_pStruct->LoopFilter.RefDeltas, 8);
+    SerializeArrayOfPODs(VM_STRING("ModeDeltas"), m_pStruct->LoopFilter.ModeDeltas, 2);
+    SerializeWithInserter(VM_STRING("YDcDeltaQ"), m_pStruct->QP.YDcDeltaQ);
+    SerializeWithInserter(VM_STRING("UDcDeltaQ"), m_pStruct->QP.UDcDeltaQ);
+    SerializeWithInserter(VM_STRING("VDcDeltaQ"), m_pStruct->QP.VDcDeltaQ);
+    SerializeWithInserter(VM_STRING("UAcDeltaQ"), m_pStruct->QP.UAcDeltaQ);
+    SerializeWithInserter(VM_STRING("VAcDeltaQ"), m_pStruct->QP.VAcDeltaQ);
+    SerializeWithInserter(VM_STRING("MinBaseQIndex"), m_pStruct->QP.MinBaseQIndex);
+    SerializeWithInserter(VM_STRING("MaxBaseQIndex"), m_pStruct->QP.MaxBaseQIndex);
+    SERIALIZE_INT(UniformTileSpacing);
+    SERIALIZE_INT(ErrorResilientMode);
+    SERIALIZE_INT(EnableOrderHint);
+    SERIALIZE_INT(OrderHintBits);
+    SERIALIZE_INT(ContextUpdateTileId);
+    SERIALIZE_INT(DisplayFormatSwizzle);
+}
 #endif
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
 {
@@ -1225,6 +1253,10 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_EXTBUFF_AV1_PARAM: {
             SerializeStruct(VM_STRING("AV1."), *(mfxExtAV1Param*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_AV1_AUXDATA: {
+            SerializeStruct(VM_STRING("AV1AuxData."), *(mfxExtAV1AuxData*)m_pStruct);
             break;
         }
 #endif

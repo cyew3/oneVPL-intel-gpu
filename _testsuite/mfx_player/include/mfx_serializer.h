@@ -683,6 +683,24 @@ public:
 protected:
     virtual void ConstructValues() const;
 };
+template<>
+class MFXStructureRef <mfxExtAV1AuxData>
+    : public MFXStructureBase<mfxExtAV1AuxData>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtAV1AuxData>((mfxExtAV1AuxData &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtAV1AuxData & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtAV1AuxData>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues() const;
+};
 #endif
 template<>
 class MFXStructureRef <mfxFrameInfo>
