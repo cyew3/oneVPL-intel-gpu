@@ -287,6 +287,7 @@ protected:
     // no HEVC FEI, always false
     static bool s_bHEVCFEIEnabled;
 
+    mfxU16      m_deviceId;
 private:
     // Forbid the assignment operator
     CommonCORE & operator = (const CommonCORE &);

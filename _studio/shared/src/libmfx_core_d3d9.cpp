@@ -346,6 +346,8 @@ mfxStatus D3D9VideoCORE::InternalInit()
     if (platformFromDriver == 12) // 12 - IGFX_GT, sandybridge
         m_bCmCopyAllowed = false;
 
+    m_deviceId = MFX::GetDeviceId(m_adapterNum);
+
     return MFX_ERR_NONE;
 }
 

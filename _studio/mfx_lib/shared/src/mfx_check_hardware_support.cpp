@@ -239,6 +239,19 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
 
 } // eMFXHWType GetHardwareType(const mfxU32 adapterNum)
 
+mfxU16 GetDeviceId(const mfxU32 adapterNum)
+{
+    DXGI1Device dxgiDevice;
+
+    // initialize the DXVA2 device
+    if (dxgiDevice.Init(adapterNum))
+    {
+        return mfxU16(dxgiDevice.GetDeviceID());
+    }
+
+    return 0;
+}
+
 } // namespace MFX
 
 #endif // #if defined (MFX_VA_WIN)

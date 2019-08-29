@@ -163,6 +163,7 @@ The SDK video processing pipeline supports limited functionality for RGB4 input.
 50    |                  | X   |       |     | X   |       |
 59.94 |                  |     | X     |     |     | X     |
 60    |                  |     |       | X   |     |       | X
+
 X indicates a supported function.
 
 This table describes pure deinterlacing algorithm. The application can combine it with frame rate conversion to achieve any desirable input/output frame rate ratio. Note, that in this table input rate is field rate, i.e. number of video fields in one second of video. The SDK uses frame rate in all configuration parameters, so this input field rate should be divided by two during the SDK configuration. For example, 60i to 60p conversion in this table is represented by right bottom cell. It should be described in mfxVideoParam as input frame rate equal to 30 and output 60.
@@ -189,6 +190,7 @@ Composition                | X                | X        |          |          |
 Field copy                 |                  | X        |          |          |          |          |
 Fields weaving             |                  | X        |          |          |          |          |
 Fields splitting           |                  | X        |          |          |          |          |
+
 X indicates a supported function
 
 The SDK video processing pipeline supports limited HW acceleration for P010 format - zeroed [mfxFrameInfo](#mfxFrameInfo)`::Shift` leads to partial acceleration.
@@ -5598,7 +5600,7 @@ The `mfxPlatform` structure contains information about hardware platform.
 | | |
 --- | ---
 `CodeName` | Intel® microarchitecture code name. See the [PlatformCodeName](#PlatformCodeName) enumerator for a list of possible values.
-`DeviceId` | Reserved.
+`DeviceId` | Unique identifier of graphics device.
 `MediaAdapterType` | Description of Intel Gen Graphics adapter type. See the [mfxMediaAdapterType](#mfxMediaAdapterType) enumerator for a list of possible values.
 
 **Change History**
@@ -5606,6 +5608,7 @@ The `mfxPlatform` structure contains information about hardware platform.
 This structure is available since SDK API 1.19.
 
 The SDK API **TBD** adds `MediaAdapterType` field.
+Starting with SDK API **TBD** `DeviceId` field is properly filled.
 
 ## <a id='mfxPayload'>mfxPayload</a>
 

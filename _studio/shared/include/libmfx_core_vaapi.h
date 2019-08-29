@@ -175,7 +175,7 @@ public:
 
 
     mfxStatus              CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator);
-    // to check HW capatbilities
+    // to check HW capabilities
     virtual mfxStatus IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncoder = false);
 
     virtual eMFXVAType   GetVAType() const {return MFX_HW_VAAPI; };

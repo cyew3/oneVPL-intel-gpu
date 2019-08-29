@@ -98,6 +98,8 @@ mfxStatus D3D11VideoCORE::InternalInit()
         m_bCmCopyAllowed = false;
 #endif
 
+    m_deviceId = MFX::GetDeviceId(m_adapterNum);
+
     return MFX_ERR_NONE;
 }
 
