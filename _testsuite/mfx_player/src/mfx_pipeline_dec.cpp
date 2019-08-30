@@ -372,23 +372,6 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
     m_components[eREN].m_params.IOPattern = m_components[eREN].GetIoPatternIn();
     m_components[eVPP].m_params.IOPattern = m_components[eDEC].GetIoPatternIn() | m_components[eREN].GetIoPatternOut();
 
-    if (NULL != m_pRender)
-    {
-        mfxVideoParam params;
-        memcpy(&params, &m_components[eREN].m_params, sizeof(params));
-
-        std::auto_ptr<MFXExtBufferVector> m_ExtBuffers(new MFXExtBufferVector(m_components[eREN].m_params));
-        if (!m_ExtBuffers->empty())
-        {
-            params.ExtParam = &(m_ExtBuffers.get()->operator [](0));
-            params.NumExtParam = (mfxU16)m_ExtBuffers.get()->size();
-        }
-
-        MFX_CHECK_STS_CUSTOM_HANDLER(m_pRender->Query(&params, &m_components[eREN].m_params), {
-            PipelineTrace((VM_STRING("%s"), MFXStructuresPair<mfxVideoParam>(params, m_components[eREN].m_params).Serialize().c_str()));
-        });
-    }
-
     //numthread could be modified by decode header
     m_components[eDEC].m_params.mfx.NumThread =  m_components[eDEC].m_NumThread;
     m_components[eREN].m_params.mfx.NumThread =  m_components[eREN].m_NumThread;
@@ -452,6 +435,22 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         refInfo.PicStruct   = m_components[eDEC].m_nOverPS;
         refInfo.Width       = mfx_align(refInfo.Width, 0x10);
         refInfo.Height      = mfx_align(refInfo.Height,(bProg) ? 0x10 : 0x20);
+    }
+
+    if (NULL != m_pRender)
+    {
+        mfxVideoParam params = m_components[eREN].m_params;
+        MFXExtBufferVector ExtBuffers(m_components[eREN].m_params);
+
+        if (!ExtBuffers.empty())
+        {
+            params.ExtParam = ExtBuffers.data();
+            params.NumExtParam = (mfxU16)ExtBuffers.size();
+        }
+
+        MFX_CHECK_STS_CUSTOM_HANDLER(m_pRender->Query(&params, &m_components[eREN].m_params), {
+            PipelineTrace((VM_STRING("%s"), MFXStructuresPair<mfxVideoParam>(params, m_components[eREN].m_params).Serialize().c_str()));
+        });
     }
 
     //cmd line params should be modified for par file
