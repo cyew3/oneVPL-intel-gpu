@@ -998,7 +998,7 @@ void FillPpsBuffer(
     pps.transquant_bypass_enabled_flag   = par.m_pps.transquant_bypass_enabled_flag;
     pps.cu_qp_delta_enabled_flag         = par.m_pps.cu_qp_delta_enabled_flag;
     pps.weighted_pred_flag               = par.m_pps.weighted_pred_flag;
-    pps.weighted_bipred_flag             = par.m_pps.weighted_pred_flag;
+    pps.weighted_bipred_flag             = par.m_pps.weighted_bipred_flag;
 
 #if defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
     pps.bEnableGPUWeightedPrediction     = IsOn(par.m_ext.CO3.FadeDetection) && (pps.weighted_pred_flag || pps.weighted_bipred_flag);

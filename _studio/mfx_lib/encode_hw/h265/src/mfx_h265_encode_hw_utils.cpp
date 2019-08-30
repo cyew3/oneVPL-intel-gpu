@@ -1714,7 +1714,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
                 {
                     mfxI32 layer = PLayer(cur->m_poc - lastIPoc, *this);
                     nRef[0] = (mfxU8)CO3.NumRefActiveP[layer];
-                    nRef[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], m_ext.DDI.NumActiveRefBL1);
+                    // on VDENC for LDB frames L1 must be completely identical to L0
+                    nRef[1] = (mfxU8)(IsOn(mfx.LowPower) ? CO3.NumRefActiveP[layer] : Min(CO3.NumRefActiveP[layer], m_ext.DDI.NumActiveRefBL1));
                 }
 
                 ConstructRPL(*this, dpb, !!(cur->m_frameType & MFX_FRAMETYPE_B), cur->m_poc, cur->m_tid, cur->m_level, cur->m_secondField, isBFF()? !cur->m_secondField : cur->m_secondField, rpl, nRef);
@@ -3857,7 +3858,8 @@ void ConfigureTask(
     {
         mfxI32 layer = PLayer(task.m_poc - prevTask.m_lastIPoc, par);
         task.m_numRefActive[0] = (mfxU8)CO3.NumRefActiveP[layer];
-        task.m_numRefActive[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], par.m_ext.DDI.NumActiveRefBL1);
+        // on VDENC for LDB frames L1 must be completely identical to L0
+        task.m_numRefActive[1] = (mfxU8)(IsOn(par.mfx.LowPower) ? CO3.NumRefActiveP[layer] : Min(CO3.NumRefActiveP[layer], par.m_ext.DDI.NumActiveRefBL1));
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         if (par.m_platform >= MFX_HW_TGL_LP)
             task.m_level = (par.isTL()) ? task.m_tid : layer; // for QP modulation; low delay mode only
