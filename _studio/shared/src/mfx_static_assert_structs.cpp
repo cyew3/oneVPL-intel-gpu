@@ -427,6 +427,9 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAdapterInfo               ,64   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAdaptersInfo              ,24   )
 #endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtPartialBitstreamParam  ,32   )
+#endif
     #elif defined(_WIN32)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameId                   ,8   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameInfo                 ,68  )
@@ -553,6 +556,9 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxComponentInfo             ,208 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAdapterInfo               ,64  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAdaptersInfo              ,20  )
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtPartialBitstreamParam  ,32  )
 #endif
     #elif defined(LINUX32)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxFrameId                   ,8   )
@@ -683,6 +689,9 @@
 #endif
 #if defined MFX_ENABLE_GPU_BASED_SYNC
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtGameStreaming          ,256 )
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtPartialBitstreamParam  ,32   )
 #endif
     #endif
 #endif //defined (__MFXSTRUCTURES_H__)
@@ -1884,6 +1893,11 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAdaptersInfo                    ,NumAlloc                      ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAdaptersInfo                    ,NumActual                     ,12   )
 #endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPartialBitstreamParam        ,Header                        ,0  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPartialBitstreamParam        ,BlockSize                     ,8  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPartialBitstreamParam        ,Granularity                  ,12  )
+#endif
     #elif defined(_WIN32)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameId                         ,TemporalId                    ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameId                         ,PriorityId                    ,2    )
@@ -2728,6 +2742,11 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAdaptersInfo                    ,NumAlloc                      ,4    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAdaptersInfo                    ,NumActual                     ,8    )
 #endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPartialBitstreamParam        ,Header                        ,0  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPartialBitstreamParam        ,BlockSize                     ,8  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPartialBitstreamParam        ,Granularity                  ,12  )
+#endif
     #elif defined(LINUX32)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameId                         ,TemporalId                    ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxFrameId                         ,PriorityId                    ,2    )
@@ -3571,6 +3590,11 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAdaptersInfo                    ,Adapters                      ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAdaptersInfo                    ,NumAlloc                      ,4    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAdaptersInfo                    ,NumActual                     ,8    )
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPartialBitstreamParam        ,Header                        ,0  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPartialBitstreamParam        ,BlockSize                     ,8  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPartialBitstreamParam        ,Granularity                  ,12  )
 #endif
     #endif
 #endif //defined (__MFXSTRUCTURES_H__)

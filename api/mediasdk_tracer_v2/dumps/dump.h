@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2018 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -711,6 +711,11 @@ public:
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     //custom scaling matrices
     DEFINE_DUMP_FUNCTION(mfxExtAVCScalingMatrix);
+#endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    //partial output
+    DEFINE_DUMP_FUNCTION(mfxExtPartialBitstreamParam);
 #endif
 };
 #endif //DUMP_H_

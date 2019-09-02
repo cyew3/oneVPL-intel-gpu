@@ -954,6 +954,7 @@ enum {
     MFX_EXTBUFF_MPEG2_QUANT_MATRIX              = MFX_MAKEFOURCC('M','2','Q','M'),
     MFX_EXTBUFF_TASK_DEPENDENCY                 = MFX_MAKEFOURCC('S','Y','N','C'),
     MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM            = MFX_MAKEFOURCC('A','1','F','G'),
+    MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM         = MFX_MAKEFOURCC('P','B','O','P'),
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_EXTBUFF_AV1_SEGMENTATION                = MFX_MAKEFOURCC('1', 'S', 'E', 'G'),
@@ -2587,6 +2588,25 @@ typedef struct
 } mfxAdaptersInfo;
 MFX_PACK_END()
 
+#endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+/* PartialBitstreamOutput */
+enum {
+    MFX_PARTIAL_BITSTREAM_NONE    = 0,     /* Don't use partial output */
+    MFX_PARTIAL_BITSTREAM_SLICE   = 1,     /* Partial bitstream output will be aligned to slice granularity */
+    MFX_PARTIAL_BITSTREAM_BLOCK   = 2,     /* Partial bitstream output will be aligned to user-defined block size granularity */
+    MFX_PARTIAL_BITSTREAM_ANY     = 3      /* Partial bitstream output will be return any coded data avilable at the end of SyncOperation timeout */
+};
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU32          BlockSize;        /* define block granulatiry for Granularity = MFX_PARTIAL_BITSTREAM_BLOCK */
+    mfxU16          Granularity;      /* granulatiry of the partial bitstream: slice/block/any */
+    mfxU16          reserved[8];
+} mfxExtPartialBitstreamParam;
+MFX_PACK_END()
 #endif
 
 #ifdef __cplusplus

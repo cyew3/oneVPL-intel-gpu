@@ -1567,3 +1567,11 @@ STRUCT(mfxExtAVCScalingMatrix,
     FIELD_T(mfxU16, Type)
 )
 #endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+STRUCT(mfxExtPartialBitstreamParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32, BlockSize)
+    FIELD_T(mfxU16, Granularity)
+)
+#endif

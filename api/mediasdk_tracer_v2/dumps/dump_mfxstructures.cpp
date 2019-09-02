@@ -1600,3 +1600,17 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAVCScali
     return str;
 }
 #endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+std::string DumpContext::dump(const std::string structName, const mfxExtPartialBitstreamParam &_struct)
+{
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    DUMP_FIELD(BlockSize);
+    DUMP_FIELD(Granularity);
+
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(_struct.reserved) + "\n";
+
+    return str;
+}
+#endif

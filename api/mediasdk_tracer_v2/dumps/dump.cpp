@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2018 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2019 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -235,7 +235,8 @@ static IdTable tbl_sts[] = {
     TABLE_ENTRY(MFX_WRN_INCOMPATIBLE_AUDIO_PARAM),
     TABLE_ENTRY(MFX_TASK_DONE),
     TABLE_ENTRY(MFX_TASK_WORKING),
-    TABLE_ENTRY(MFX_TASK_BUSY)
+    TABLE_ENTRY(MFX_TASK_BUSY),
+    TABLE_ENTRY(MFX_ERR_NONE_PARTIAL_OUTPUT)
 };
 
 static IdTable tbl_codecid[] = {
