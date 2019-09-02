@@ -885,7 +885,8 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
                   (MODE_DECODER_POSTPROC_FORCE == pParams->nDecoderPostProcessing)) &&
                  (MFX_CODEC_AVC == m_mfxVideoParams.mfx.CodecId ||
                   MFX_CODEC_JPEG == m_mfxVideoParams.mfx.CodecId || /* Only for AVC */
-                  MFX_CODEC_HEVC == m_mfxVideoParams.mfx.CodecId) && /* and HEVC */
+                  MFX_CODEC_HEVC == m_mfxVideoParams.mfx.CodecId|| /* Only for AVC */
+                  MFX_CODEC_VP9 == m_mfxVideoParams.mfx.CodecId) && /* and HEVC */
                 (MFX_PICSTRUCT_PROGRESSIVE == m_mfxVideoParams.mfx.FrameInfo.PicStruct)) /* ...And only for progressive!*/
             {   /* it is possible to use decoder's post-processing */
 

@@ -119,7 +119,8 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
         MFX_CHECK(video_desc.OutputFormat == DXGI_FORMAT_NV12, MFX_ERR_UNSUPPORTED);
         // SFC is implemented only for AVC yet
         MFX_CHECK((param->mfx.CodecId == MFX_CODEC_AVC) ||
-            (param->mfx.CodecId == MFX_CODEC_HEVC), MFX_ERR_UNSUPPORTED);
+            (param->mfx.CodecId == MFX_CODEC_HEVC) ||
+            (param->mfx.CodecId == MFX_CODEC_VP9), MFX_ERR_UNSUPPORTED);
 
         CComPtr<ID3D11Device1>       device1;
         hres = m_pVideoDevice->QueryInterface(&device1);

@@ -698,8 +698,17 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
 #if !defined (MFX_PROTECTED_FEATURE_DISABLE)
                                                                MFX_EXTBUFF_PAVP_OPTION,
 #endif
-                                                               };
+                                                         };
 
+    static const mfxU32 g_decoderSupportedExtBuffersVP9[] = { 
+                                                              MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
+#ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
+                                                              ,MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK
+#endif
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+                                                              ,MFX_EXTBUFF_DEC_VIDEO_PROCESSING
+#endif
+                                                        };
 
     static const mfxU32 g_decoderSupportedExtBuffersMJPEG[] = {MFX_EXTBUFF_JPEG_HUFFMAN,
                                                                MFX_EXTBUFF_DEC_VIDEO_PROCESSING,
@@ -727,6 +736,11 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
     {
         supported_buffers = g_decoderSupportedExtBuffersMJPEG;
         numberOfSupported = sizeof(g_decoderSupportedExtBuffersMJPEG) / sizeof(g_decoderSupportedExtBuffersMJPEG[0]);
+    }
+    else if (par->mfx.CodecId == MFX_CODEC_VP9)
+    {
+        supported_buffers = g_decoderSupportedExtBuffersVP9;
+        numberOfSupported = sizeof(g_decoderSupportedExtBuffersVP9) / sizeof(g_decoderSupportedExtBuffersVP9[0]);
     }
     else
     {
