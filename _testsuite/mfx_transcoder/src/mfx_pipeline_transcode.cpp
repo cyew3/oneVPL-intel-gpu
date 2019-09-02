@@ -112,6 +112,24 @@ Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
     ippsSet_8u(0xFF, (mfxU8*)&m_EncParamsMask + offset, sizeof(field));}\
 }
 
+//check if the string pointed by c is an integer number
+inline bool IsInteger(const vm_char *c)
+{
+    if (c == NULL)
+        return false;
+
+    if (*c == '-')
+        c++;
+
+#if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
+    std::wstring s(c);
+    return !s.empty() && s.find_first_not_of(L"0123456789") == std::wstring::npos;
+#else
+    std::string s(c);
+    return !s.empty() && s.find_first_not_of("0123456789") == std::string::npos;
+#endif
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
@@ -1933,7 +1951,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             if (m_EncParams.mfx.CodecId == MFX_CODEC_VP8)
             {
                 MFX_CHECK(4 + argv < argvEnd);
-                for (mfxU8 i = 0; i < 4; i++)
+                for (mfxU8 i = 0; i < 4 && IsInteger(argv[1]); i++)
                 {
                     argv++;
                     MFX_PARSE_INT(m_extVP8CodingOptions->LoopFilterRefTypeDelta[i], argv[0]);
@@ -1944,7 +1962,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             else if (m_EncParams.mfx.CodecId == MFX_CODEC_AV1)
             {
                 MFX_CHECK(8 + argv < argvEnd);
-                for (mfxU8 i = 0; i < 8; i++)
+                for (mfxU8 i = 0; i < 8 && IsInteger(argv[1]); i++)
                 {
                     argv++;
                     MFX_PARSE_INT(m_extAV1AuxData->LoopFilter.RefDeltas[i], argv[0]);
@@ -1958,7 +1976,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             if (m_EncParams.mfx.CodecId == MFX_CODEC_VP8)
             {
                 MFX_CHECK(4 + argv < argvEnd);
-                for (mfxU8 i = 0; i < 4; i++)
+                for (mfxU8 i = 0; i < 4 && IsInteger(argv[1]); i++)
                 {
                     argv++;
                     MFX_PARSE_INT(m_extVP8CodingOptions->LoopFilterMbModeDelta[i], argv[0]);
@@ -1969,7 +1987,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             else if (m_EncParams.mfx.CodecId == MFX_CODEC_AV1)
             {
                 MFX_CHECK(2 + argv < argvEnd);
-                for (mfxU8 i = 0; i < 2; i++)
+                for (mfxU8 i = 0; i < 2 && IsInteger(argv[1]); i++)
                 {
                     argv++;
                     MFX_PARSE_INT(m_extAV1AuxData->LoopFilter.ModeDeltas[i], argv[0]);
