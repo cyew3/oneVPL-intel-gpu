@@ -1813,7 +1813,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         m_sps.long_term_ref_pics_present_flag = 1; // !!LTRInterval;
     }
 
-    m_sps.temporal_mvp_enabled_flag             = 1; // SKL ?
+    m_sps.temporal_mvp_enabled_flag = IsOff(m_ext.DDI.TMVP) ? 0 : 1;
+
     m_sps.strong_intra_smoothing_enabled_flag   = 0; // SKL
 
     m_sps.vui_parameters_present_flag = 1;

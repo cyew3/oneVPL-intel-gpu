@@ -668,6 +668,7 @@ namespace ExtBuffer
         MFX_COPY_FIELD(NumActiveRefP);
         MFX_COPY_FIELD(LCUSize);
         MFX_COPY_FIELD(QpAdjust);
+        MFX_COPY_FIELD(TMVP);
     }
     inline void  CopySupportedParams(mfxExtEncoderCapability& buf_dst, mfxExtEncoderCapability& buf_src)
     {

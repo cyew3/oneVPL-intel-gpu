@@ -283,6 +283,7 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     SERIALIZE_INT(RefreshFrameContext);
     SERIALIZE_INT(ChangeFrameContextIdxForTS);
     SERIALIZE_INT(SuperFrameForTS);
+    SERIALIZE_INT(TMVP);
 }
 
 void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const

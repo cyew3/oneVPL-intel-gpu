@@ -105,6 +105,7 @@ typedef struct {
     mfxU16 ChangeFrameContextIdxForTS;
     mfxU16 SuperFrameForTS;
     mfxU16 QpAdjust;                // on/off - forces sps.QpAdjustment
+    mfxU16 TMVP;                    // tri-state: 0, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON
 
 } mfxExtCodingOptionDDI;
 

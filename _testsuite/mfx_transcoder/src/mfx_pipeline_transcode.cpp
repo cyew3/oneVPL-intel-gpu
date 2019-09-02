@@ -273,7 +273,6 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(BPyramid,                 OPT_TRI_STATE,  "B-Pyramid"),
         HANDLE_HEVC_OPTION(FastPUDecision,           OPT_TRI_STATE,  "on/off fast PU decision (fast means no TU split)"),
         HANDLE_HEVC_OPTION(HadamardMe,               OPT_UINT_16,    "0-default 1-never; 2-subpel; 3-always"),
-        HANDLE_HEVC_OPTION(TMVP,                     OPT_TRI_STATE,  "on/off temporal MV predictor"),
         HANDLE_HEVC_OPTION(Deblocking,               OPT_TRI_STATE,  "on/off deblocking"),
         HANDLE_HEVC_OPTION(RDOQuantChroma,           OPT_TRI_STATE,  "on/off RDO quantization for chroma"),
         HANDLE_HEVC_OPTION(RDOQuantCGZ,              OPT_TRI_STATE,  "on/off try zero coeff groups in RDO"),
@@ -620,6 +619,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(RefreshFrameContext,     OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(ChangeFrameContextIdxForTS, OPT_TRI_STATE, ""),
         HANDLE_DDI_OPTION(SuperFrameForTS,         OPT_TRI_STATE,  ""),
+        HANDLE_DDI_OPTION(TMVP,                    OPT_TRI_STATE,  "on/off temporal MV predictor"),
 
         //mfxExtEncoderCapability
         HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,       "Query Encoder for Max MB Per Second"),
