@@ -51,10 +51,16 @@ if( PKG_LIBDRM_FOUND AND
             message( STATUS "pciaccess was not found (optional), the following will not be built: test_monitor." )
         endif()
 
-        if( NOT PKG_LIBDRM_FOUND )
-            message( STATUS "libdrm was not found (optional), the following will not be built: test_monitor." )
-        endif()
+    endif()
 
+else()
+
+    if( NOT PKG_LIBDRM_FOUND )
+        message( STATUS "libdrm was not found, the following will not be built: metrics_monitor, test_monitor." )
+    endif()
+
+    if( NOT ${PKG_LIBDRM_VERSION} VERSION_GREATER 2.4.91 )
+        message( STATUS "libdrm version older than 2.4.92, the following will not be built: metrics_monitor, test_monitor." )
     endif()
 
 endif()
