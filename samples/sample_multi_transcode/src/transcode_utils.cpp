@@ -727,7 +727,7 @@ mfxStatus CmdProcessor::TokenizeLine(msdk_char *pLine, mfxU32 length)
 bool CmdProcessor::isspace(char a) { return (std::isspace(a) != 0); }
 
 bool CmdProcessor::is_not_allowed_char(char a) {
-    return (std::isdigit(a) != 0) && (std::isspace(a) != 0) && (a != ';') && (a != '-');
+    return (std::isdigit(a) == 0) && (std::isspace(a) == 0) && (a != ';') && (a != '-');
 }
 
 bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxExtEncoderROI>& m_ROIData)
