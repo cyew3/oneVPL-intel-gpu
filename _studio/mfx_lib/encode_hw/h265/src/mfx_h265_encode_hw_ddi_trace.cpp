@@ -80,43 +80,43 @@ void DDITracer::TraceGUID(GUID const & guid, FILE* f)
 
 #define FIELD_FORMAT "%-32s"
 DECL_START(MFX_ENCODE_CAPS_HEVC)
-    TRACE("%d", CQPSupport);
-    TRACE("%d", CBRSupport);
-    TRACE("%d", VBRSupport);
-    TRACE("%d", ICQSupport);
-    Trace(b.ddi_caps, idx);
+    TRACE("%d", CQPSupport              );
+    TRACE("%d", CBRSupport              );
+    TRACE("%d", VBRSupport              );
+    TRACE("%d", ICQSupport              );
+    Trace(b.ddi_caps, idx               );
 DECL_END
 DECL_START(ENCODE_CAPS_HEVC)
-    TRACE("%d", CodingLimitSet);
-    TRACE("%d", BitDepth8Only);
-    TRACE("%d", Color420Only);
-    TRACE("%d", SliceStructure);
-    TRACE("%d", SliceIPOnly);
-    TRACE("%d", SliceIPBOnly);
-    TRACE("%d", NoWeightedPred);
-    TRACE("%d", NoMinorMVs);
-    TRACE("%d", RawReconRefToggle);
-    TRACE("%d", NoInterlacedField);
-    TRACE("%d", BRCReset);
-    TRACE("%d", RollingIntraRefresh);
-    TRACE("%d", UserMaxFrameSizeSupport);
-    TRACE("%d", FrameLevelRateCtrl);
-    TRACE("%d", SliceByteSizeCtrl);
-    TRACE("%d", VCMBitRateControl);
-    TRACE("%d", ParallelBRC);
-    TRACE("%d", TileSupport);
-    TRACE("%d", SkipFrame);
-    TRACE("%d", MbQpDataSupport);
-    TRACE("%d", NegativeQPSupport);
-    TRACE("%d", SliceLevelWeightedPred);
-    TRACE("%d", LumaWeightedPred);
-    TRACE("%d", ChromaWeightedPred);
-    TRACE("%d", QVBRBRCSupport);
-    TRACE("%d", HMEOffsetSupport);
-    TRACE("%d", YUV422ReconSupport);
-    TRACE("%d", YUV444ReconSupport);
-    TRACE("%d", RGBReconSupport);
-    TRACE("%d", MaxEncodedBitDepth);
+    TRACE("%d", CodingLimitSet          );
+    TRACE("%d", BitDepth8Only           );
+    TRACE("%d", Color420Only            );
+    TRACE("%d", SliceStructure          );
+    TRACE("%d", SliceIPOnly             );
+    TRACE("%d", SliceIPBOnly            );
+    TRACE("%d", NoWeightedPred          );
+    TRACE("%d", NoMinorMVs              );
+    TRACE("%d", RawReconRefToggle       );
+    TRACE("%d", NoInterlacedField       );
+    TRACE("%d", BRCReset                );
+    TRACE("%d", RollingIntraRefresh     );
+    TRACE("%d", UserMaxFrameSizeSupport );
+    TRACE("%d", FrameLevelRateCtrl      );
+    TRACE("%d", SliceByteSizeCtrl       );
+    TRACE("%d", VCMBitRateControl       );
+    TRACE("%d", ParallelBRC             );
+    TRACE("%d", TileSupport             );
+    TRACE("%d", SkipFrame               );
+    TRACE("%d", MbQpDataSupport         );
+    TRACE("%d", NegativeQPSupport       );
+    TRACE("%d", SliceLevelWeightedPred  );
+    TRACE("%d", LumaWeightedPred        );
+    TRACE("%d", ChromaWeightedPred      );
+    TRACE("%d", QVBRBRCSupport          );
+    TRACE("%d", HMEOffsetSupport        );
+    TRACE("%d", YUV422ReconSupport      );
+    TRACE("%d", YUV444ReconSupport      );
+    TRACE("%d", RGBReconSupport         );
+    TRACE("%d", MaxEncodedBitDepth      );
 
     TRACE("%d", MaxPicWidth);
     TRACE("%d", MaxPicHeight);
@@ -125,40 +125,37 @@ DECL_START(ENCODE_CAPS_HEVC)
     TRACE("%d", MBBRCSupport);
     TRACE("%d", TUSupport);
 
-    TRACE("%d", MaxNumOfROI);
-    TRACE("%d", ROIDeltaQPSupport);
+    TRACE("%d", MaxNumOfROI               );
+    TRACE("%d", ROIDeltaQPSupport         );
     TRACE("%d", ROIBRCPriorityLevelSupport);
 
     TRACE("%d", BlockSize);
 
-    TRACE("%d", SliceLevelReportSupport);
+    TRACE("%d", SliceLevelReportSupport      );
 
-    TRACE("%d", CTULevelReportSupport);
-    TRACE("%d", SearchWindow64Support);
-    TRACE("%d", CustomRoundingControl);
-    TRACE("%d", IntraRefreshBlockUnitSize);
-    TRACE("%d", LCUSizeSupported);
-    TRACE("%d", MaxNumDeltaQPMinus1);
-    TRACE("%d", DirtyRectSupport);
-    TRACE("%d", MoveRectSupport);
-    TRACE("%d", FrameSizeToleranceSupport);
+    TRACE("%d", CTULevelReportSupport        );
+    TRACE("%d", SearchWindow64Support        );
+    TRACE("%d", CustomRoundingControl        );
+    TRACE("%d", IntraRefreshBlockUnitSize    );
+    TRACE("%d", LCUSizeSupported             );
+    TRACE("%d", MaxNumDeltaQP                );
+    TRACE("%d", DirtyRectSupport             );
+    TRACE("%d", MoveRectSupport              );
+    TRACE("%d", FrameSizeToleranceSupport    );
     TRACE("%d", HWCounterAutoIncrementSupport);
-    TRACE("%d", NumScalablePipesMinus1);
-    TRACE("%d", TileBasedEncodingSupport);
-    TRACE("%d", PartialFrameUpdateSupport);
-    TRACE("%d", RGBEncodingSupport);
-    TRACE("%d", LLCStreamingBufferSupport);
-    TRACE("%d", DDRStreamingBufferSupport);
-    TRACE("%d", MaxNum_WeightedPredL0);
-    TRACE("%d", MaxNum_WeightedPredL1);
-    TRACE("%d", MaxNumOfDirtyRect);
-    TRACE("%d", MaxNumOfMoveRect);
+    TRACE("%d", NumScalablePipesMinus1       );
+    TRACE("%d", TileBasedEncodingSupport     );
+    TRACE("%d", PartialFrameUpdateSupport    );
+    TRACE("%d", RGBEncodingSupport           );
+    TRACE("%d", LLCStreamingBufferSupport    );
+    TRACE("%d", DDRStreamingBufferSupport    );
+    TRACE("%d", MaxNum_WeightedPredL0         );
+    TRACE("%d", MaxNum_WeightedPredL1         );
+    TRACE("%d", MaxNumOfDirtyRect             );
+    TRACE("%d", MaxNumOfMoveRect              );
     TRACE("%d", MaxNumOfConcurrentFramesMinus1);
-    TRACE("%d", LLCSizeInMBytes);
-    TRACE("%d", PFrameSupport);
-    TRACE("%d", LookaheadAnalysisSupport);
-    TRACE("%d", LookaheadBRCSupport);
-DECL_END
+    TRACE("%d", LLCSizeInMBytes               );
+    DECL_END
 #undef FIELD_FORMAT
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -260,17 +257,17 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", InitVBVBufferFullnessInBit);
     TRACE("%d", VBVBufferSizeInBit);
 
-    TRACE("%d", bResetBRC);
-    TRACE("%d", GlobalSearch);
-    TRACE("%d", LocalSearch);
-    TRACE("%d", EarlySkip);
-    TRACE("%d", MBBRC);
-    TRACE("%d", ParallelBRC);
-    TRACE("%d", SliceSizeControl);
-    TRACE("%d", SourceFormat);
-    TRACE("%d", SourceBitDepth);
-    TRACE("%d", QpAdjustment);
-    TRACE("%d", ROIValueInDeltaQP);
+    TRACE("%d", bResetBRC        );
+    TRACE("%d", GlobalSearch     );
+    TRACE("%d", LocalSearch      );
+    TRACE("%d", EarlySkip        );
+    TRACE("%d", MBBRC            );
+    TRACE("%d", ParallelBRC      );
+    TRACE("%d", SliceSizeControl );
+    TRACE("%d", SourceFormat         );
+    TRACE("%d", SourceBitDepth       );
+    TRACE("%d", QpAdjustment         );
+    TRACE("%d", ROIValueInDeltaQP    );
 
     TRACE("%d", BlockQPforNonRectROI);
     TRACE("%d", EnableTileBasedEncode);
@@ -281,10 +278,12 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", DisableHRDConformance);
     TRACE("%d", HierarchicalFlag);
 
-    TRACE("%d", UserMaxIFrameSize);
+    TRACE("%d", UserMaxIFrameSize );
     TRACE("%d", UserMaxPBFrameSize);
-    TRACE("%d", ICQQualityFactor);
-    TRACE("%d", StreamBufferSessionID);
+    //TRACE("%d", AVBRAccuracy     );
+    //TRACE("%d", AVBRConvergence  );
+    //TRACE("%d", CRFQualityFactor );
+
     TRACE_ARRAY_ROW("%d", NumOfBInGop, 3);
 
     TRACE("%d", scaling_list_enable_flag);
@@ -321,9 +320,8 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", SlidingWindowSize);
     TRACE("%d", MaxBitRatePerSlidingWindow);
     TRACE("%d", MinBitRatePerSlidingWindow);
-//    TRACE("%d", LookaheadDepth);
 
- DECL_END
+DECL_END
 #undef FIELD_FORMAT
 
 #define FIELD_FORMAT "%-38s"
@@ -345,36 +343,36 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
     TRACE_ARRAY_ROW("%d", RefFramePOCList, 15);
 
     TRACE("%d", CodingType);
-    TRACE("%d", HierarchLevelPlus1);
+    TRACE("%d", FrameLevel);
     TRACE("%d", NumSlices);
 
-    TRACE("%d", tiles_enabled_flag);
-    TRACE("%d", entropy_coding_sync_enabled_flag);
-    TRACE("%d", sign_data_hiding_flag);
-    TRACE("%d", constrained_intra_pred_flag);
-    TRACE("%d", transform_skip_enabled_flag);
-    TRACE("%d", transquant_bypass_enabled_flag);
-    TRACE("%d", cu_qp_delta_enabled_flag);
-    TRACE("%d", weighted_pred_flag);
-    TRACE("%d", weighted_bipred_flag);
-    TRACE("%d", loop_filter_across_slices_flag);
-    TRACE("%d", loop_filter_across_tiles_flag);
-    TRACE("%d", scaling_list_data_present_flag);
-    TRACE("%d", dependent_slice_segments_enabled_flag);
-    TRACE("%d", bLastPicInSeq);
-    TRACE("%d", bLastPicInStream);
-    TRACE("%d", bUseRawPicForRef);
-    TRACE("%d", bEmulationByteInsertion);
-    TRACE("%d", BRCPrecision);
-    TRACE("%d", bEnableSliceLevelReport);
-    TRACE("%d", bEnableRollingIntraRefresh);
-    TRACE("%d", no_output_of_prior_pics_flag);
-    TRACE("%d", bEnableGPUWeightedPrediction);
-    TRACE("%d", DisplayFormatSwizzle);
-    TRACE("%d", deblocking_filter_override_enabled_flag);
-    TRACE("%d", pps_deblocking_filter_disabled_flag);
-    TRACE("%d", bEnableCTULevelReport);
-    TRACE("%d", bEnablePartialFrameUpdate);
+    TRACE("%d", tiles_enabled_flag                      );
+    TRACE("%d", entropy_coding_sync_enabled_flag        );
+    TRACE("%d", sign_data_hiding_flag                   );
+    TRACE("%d", constrained_intra_pred_flag             );
+    TRACE("%d", transform_skip_enabled_flag             );
+    TRACE("%d", transquant_bypass_enabled_flag          );
+    TRACE("%d", cu_qp_delta_enabled_flag                );
+    TRACE("%d", weighted_pred_flag                      );
+    TRACE("%d", weighted_bipred_flag                    );
+    TRACE("%d", loop_filter_across_slices_flag          );
+    TRACE("%d", loop_filter_across_tiles_flag           );
+    TRACE("%d", scaling_list_data_present_flag          );
+    TRACE("%d", dependent_slice_segments_enabled_flag   );
+    TRACE("%d", bLastPicInSeq                           );
+    TRACE("%d", bLastPicInStream                        );
+    TRACE("%d", bUseRawPicForRef                        );
+    TRACE("%d", bEmulationByteInsertion                 );
+    TRACE("%d", BRCPrecision                            );
+    TRACE("%d", bEnableSliceLevelReport                 );
+    TRACE("%d", bEnableRollingIntraRefresh              );
+    TRACE("%d", no_output_of_prior_pics_flag            );
+    TRACE("%d", bEnableGPUWeightedPrediction            );
+    TRACE("%d", DisplayFormatSwizzle                    );
+    TRACE("%d", deblocking_filter_override_enabled_flag );
+    TRACE("%d", pps_deblocking_filter_disabled_flag     );
+    TRACE("%d", bEnableCTULevelReport                   );
+    TRACE("%d", bEnablePartialFrameUpdate               );
 
     TRACE("%d", QpY);
     TRACE("%d", diff_cu_qp_delta_depth);
@@ -414,9 +412,9 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
     TRACE_ARRAY_ROW("%d", NonRectROIDeltaQpList, 16);
 
     TRACE("%d", EnableCustomRoudingIntra);
-    TRACE("%d", RoundingOffsetIntra);
+    TRACE("%d", RoundingOffsetIntra     );
     TRACE("%d", EnableCustomRoudingInter);
-    TRACE("%d", RoundingOffsetInter);
+    TRACE("%d", RoundingOffsetInter     );
 
     TRACE("%d", SkipFrameFlag);
     TRACE("%d", NumSkipFrames);
@@ -483,9 +481,8 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
             TRACE("%d", pTileOffset[i]);
         }
     }
-//    TRACE("%d", LcuMaxBitsizeAllowedHigh16b);
 
- DECL_END
+DECL_END
 #undef FIELD_FORMAT
 
 #define FIELD_FORMAT "%-38s"
@@ -498,16 +495,16 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC)
 #pragma warning(default:4477)
     TRACE("%d", num_ref_idx_l0_active_minus1);
     TRACE("%d", num_ref_idx_l1_active_minus1);
-    TRACE("%d", bLastSliceOfPic);
-    TRACE("%d", dependent_slice_segment_flag);
-    TRACE("%d", slice_temporal_mvp_enable_flag);
-    TRACE("%d", slice_type);
-    TRACE("%d", slice_sao_luma_flag);
-    TRACE("%d", slice_sao_chroma_flag);
-    TRACE("%d", mvd_l1_zero_flag);
-    TRACE("%d", cabac_init_flag);
+    TRACE("%d", bLastSliceOfPic                     );
+    TRACE("%d", dependent_slice_segment_flag        );
+    TRACE("%d", slice_temporal_mvp_enable_flag      );
+    TRACE("%d", slice_type                          );
+    TRACE("%d", slice_sao_luma_flag                 );
+    TRACE("%d", slice_sao_chroma_flag               );
+    TRACE("%d", mvd_l1_zero_flag                    );
+    TRACE("%d", cabac_init_flag                     );
     TRACE("%d", slice_deblocking_filter_disable_flag);
-    TRACE("%d", collocated_from_l0_flag);
+    TRACE("%d", collocated_from_l0_flag             );
     TRACE("%d", slice_qp_delta);
     TRACE("%d", slice_cb_qp_offset);
     TRACE("%d", slice_cr_qp_offset);
@@ -654,27 +651,27 @@ DECL_END
 #define FIELD_FORMAT "%-38s"
 DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT)
     Trace((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const &) b, idx);
-    TRACE("%d", transform_skip_rotation_enabled_flag);
-    TRACE("%d", transform_skip_context_enabled_flag);
-    TRACE("%d", implicit_rdpcm_enabled_flag);
-    TRACE("%d", explicit_rdpcm_enabled_flag);
-    TRACE("%d", extended_precision_processing_flag);
-    TRACE("%d", intra_smoothing_disabled_flag);
-    TRACE("%d", high_precision_offsets_enabled_flag);
+    TRACE("%d", transform_skip_rotation_enabled_flag   );
+    TRACE("%d", transform_skip_context_enabled_flag    );
+    TRACE("%d", implicit_rdpcm_enabled_flag            );
+    TRACE("%d", explicit_rdpcm_enabled_flag            );
+    TRACE("%d", extended_precision_processing_flag     );
+    TRACE("%d", intra_smoothing_disabled_flag          );
+    TRACE("%d", high_precision_offsets_enabled_flag    );
     TRACE("%d", persistent_rice_adaptation_enabled_flag);
-    TRACE("%d", cabac_bypass_alignment_enabled_flag);
+    TRACE("%d", cabac_bypass_alignment_enabled_flag    );
 DECL_END
 #undef FIELD_FORMAT
 
 #define FIELD_FORMAT "%-38s"
 DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT)
     Trace((ENCODE_SET_PICTURE_PARAMETERS_HEVC const &)b, idx);
-    TRACE("%d", cross_component_prediction_enabled_flag);
-    TRACE("%d", chroma_qp_offset_list_enabled_flag);
-    TRACE("%d", diff_cu_chroma_qp_offset_depth);
-    TRACE("%d", chroma_qp_offset_list_len_minus1);
-    TRACE("%d", log2_sao_offset_scale_luma);
-    TRACE("%d", log2_sao_offset_scale_chroma);
+    TRACE("%d", cross_component_prediction_enabled_flag  );
+    TRACE("%d", chroma_qp_offset_list_enabled_flag       );
+    TRACE("%d", diff_cu_chroma_qp_offset_depth           );
+    TRACE("%d", chroma_qp_offset_list_len_minus1         );
+    TRACE("%d", log2_sao_offset_scale_luma               );
+    TRACE("%d", log2_sao_offset_scale_chroma             );
     TRACE("%d", log2_max_transform_skip_block_size_minus2);
     TRACE_ARRAY_ROW("%d", cb_qp_offset_list, 6);
     TRACE_ARRAY_ROW("%d", cr_qp_offset_list, 6);

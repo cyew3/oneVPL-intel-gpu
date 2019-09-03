@@ -83,7 +83,7 @@ typedef struct tagENCODE_CAPS_HEVC
             UINT    LowDelayBRCSupport              : 1;
             UINT    IntraRefreshBlockUnitSize       : 2;
             UINT    LCUSizeSupported                : 3;
-            UINT    MaxNumDeltaQPMinus1             : 4;
+            UINT    MaxNumDeltaQP                   : 4;
             UINT    DirtyRectSupport                : 1;
             UINT    MoveRectSupport                 : 1;
             UINT    FrameSizeToleranceSupport       : 1;
@@ -107,21 +107,10 @@ typedef struct tagENCODE_CAPS_HEVC
     USHORT   MaxNumOfMoveRect;
     USHORT   MaxNumOfConcurrentFramesMinus1;
     USHORT   LLCSizeInMBytes;
-
-    union {
-        struct {
-            USHORT	PFrameSupport : 1;
-            USHORT	LookaheadAnalysisSupport : 1;
-            USHORT	LookaheadBRCSupport : 1;
-            USHORT	reservedbits : 13;
-        };
-        USHORT	CodingLimits3;
-    };
-
+    USHORT   reserved16bits0;
     UINT     reserved32bits1;
     UINT     reserved32bits2;
     UINT     reserved32bits3;
-
 } ENCODE_CAPS_HEVC;
 
 struct MFX_ENCODE_CAPS_HEVC
@@ -218,9 +207,7 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     UINT    UserMaxIFrameSize;
     UINT    UserMaxPBFrameSize;
     UCHAR   ICQQualityFactor;   // [1..51]
-    UCHAR   StreamBufferSessionID;
-    USHORT  Reserved16b;
-    UINT    NumOfBInGop[3];     // deprecated from Gen12
+    UINT    NumOfBInGop[3];
 
     union
     {
@@ -266,9 +253,6 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     USHORT  SlidingWindowSize;
     UINT    MaxBitRatePerSlidingWindow;
     UINT    MinBitRatePerSlidingWindow;
-//    UCHAR   LookaheadDepth;     // [0..127]
-//    UCHAR   reserved8b[3];
-
 } ENCODE_SET_SEQUENCE_PARAMETERS_HEVC;
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
@@ -281,7 +265,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     INT              RefFramePOCList[15];
 
     UCHAR   CodingType;
-    UCHAR   HierarchLevelPlus1;
+    UCHAR   FrameLevel; // [0..3]
     USHORT  NumSlices;
 
     union
@@ -400,7 +384,6 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
 
     UINT    TileOffsetBufferSizeInByte;
     UINT    *pTileOffset;
-//    USHORT  LcuMaxBitsizeAllowedHigh16b;
 
 } ENCODE_SET_PICTURE_PARAMETERS_HEVC;
 

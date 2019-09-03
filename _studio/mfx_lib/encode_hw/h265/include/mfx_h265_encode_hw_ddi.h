@@ -364,7 +364,6 @@ void FillPpsBuffer(
 void FillPpsBuffer(
     Task const & task,
     ENCODE_CAPS_HEVC const & caps,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & sps,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps,
     std::vector<ENCODE_RECT> & dirtyRects);
 
