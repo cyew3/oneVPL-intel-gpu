@@ -610,6 +610,19 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
         type = m_core->GetHWType();
     }
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * extVideoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(m_vFirstPar.ExtParam, m_vFirstPar.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+
+    if (extVideoProcessing != nullptr)
+    {
+        if (extVideoProcessing->Out.Width >= par->mfx.FrameInfo.Width ||
+            extVideoProcessing->Out.Height >= par->mfx.FrameInfo.Height)
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
+#endif
+
     eMFXPlatform platform = MFX_Utility::GetPlatform(m_core, par);
 
     mfxStatus mfxSts = CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type);
@@ -1001,24 +1014,6 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
         request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
 
-#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
-    if (videoProcessing)
-    {
-        // need to substitute output format
-        // number of surfaces is same
-        request->Info.FourCC = videoProcessing->Out.FourCC;
-
-        request->Info.ChromaFormat = videoProcessing->Out.ChromaFormat;
-        request->Info.Width = videoProcessing->Out.Width;
-        request->Info.Height = videoProcessing->Out.Height;
-        request->Info.CropX = videoProcessing->Out.CropX;
-        request->Info.CropY = videoProcessing->Out.CropY;
-        request->Info.CropW = videoProcessing->Out.CropW;
-        request->Info.CropH = videoProcessing->Out.CropH;
-    }
-#endif
-
     if (platform != core->GetPlatformType())
     {
         VM_ASSERT(platform == MFX_PLATFORM_SOFTWARE);
@@ -1080,23 +1075,6 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
     {
         request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
     }
-
-#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
-    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
-    if (videoProcessing)
-    {
-        // need to substitute output format
-        // number of surfaces is same
-        request->Info.FourCC = videoProcessing->Out.FourCC;
-        request->Info.ChromaFormat = videoProcessing->Out.ChromaFormat;
-        request->Info.Width = videoProcessing->Out.Width;
-        request->Info.Height = videoProcessing->Out.Height;
-        request->Info.CropX = videoProcessing->Out.CropX;
-        request->Info.CropY = videoProcessing->Out.CropY;
-        request->Info.CropW = videoProcessing->Out.CropW;
-        request->Info.CropH = videoProcessing->Out.CropH;
-    }
-#endif
 
     return MFX_ERR_NONE;
 }
