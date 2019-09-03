@@ -137,6 +137,10 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                      -hw - platform-specific on default display adapter (default)\n"));
     msdk_printf(MSDK_STRING("                      -hw_d3d11 - platform-specific via d3d11\n"));
     msdk_printf(MSDK_STRING("                      -sw - software\n"));
+#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    msdk_printf(MSDK_STRING("   [-dGfx] - preffer processing on dGfx (by default system decides)\n"));
+    msdk_printf(MSDK_STRING("   [-iGfx] - preffer processing on iGfx (by default system decides)\n"));
+#endif
 #if (MFX_VERSION >= 1025)
     msdk_printf(MSDK_STRING("  -mfe_frames <N> maximum number of frames to be combined in multi-frame encode pipeline"));
     msdk_printf(MSDK_STRING("               0 - default for platform will be used\n"));
