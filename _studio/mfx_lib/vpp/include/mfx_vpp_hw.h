@@ -32,9 +32,6 @@
 #include "umc_mutex.h"
 #include "mfx_vpp_interface.h"
 #include "mfx_vpp_defs.h"
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-#include "mfx_win_event_cache.h"
-#endif
 
 #if defined(MFX_VA)
  #include "cmrt_cross_platform.h" // Gpucopy stuff
@@ -239,32 +236,12 @@ namespace MfxHwVideoProcessing
     };
     //-----------------------------------------------------
 
-    struct SubTask
-    {
-        SubTask()
-            : idx(NO_INDEX)
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-            , m_GpuEvent()
-#endif
-        {}
-        SubTask(mfxU32 idx)
-            : idx(idx)
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-            , m_GpuEvent()
-#endif
-        {}
-
-        mfxU32 idx;
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-        GPU_SYNC_EVENT_HANDLE m_GpuEvent;
-#endif
-    };
 
     struct ReleaseResource
     {
         mfxU32 refCount;
         std::vector<ExtSurface> surfaceListForRelease;
-        std::vector<SubTask> subTasks;
+        std::vector<mfxU32> subTasks;
     };
 
     struct DdiTask : public State
@@ -291,9 +268,6 @@ namespace MfxHwVideoProcessing
             , skipQueryStatus(false)
             , pAuxData(NULL)
             , pSubResource(NULL)
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-            , m_GpuEvent()
-#endif
         {
 #ifdef MFX_ENABLE_MCTF
             memset(&MctfData, 0, sizeof(IntMctfParams));
@@ -333,9 +307,6 @@ namespace MfxHwVideoProcessing
         ReleaseResource* pSubResource;
 
         std::vector<ExtSurface> m_refList; //m_refList.size() == bkwdRefCount +fwdRefCount
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-        GPU_SYNC_EVENT_HANDLE     m_GpuEvent;
-#endif
     };
 
     struct ExtendedConfig
@@ -432,13 +403,8 @@ namespace MfxHwVideoProcessing
         mfxStatus CompleteTask(DdiTask *pTask);
         std::vector<State> m_surf[2];
 
-        SubTask GetSubTask(DdiTask *pTask);
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-        mfxStatus DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx, EventCache *EventCache);
-#else
+        mfxU32 GetSubTask(DdiTask *pTask);
         mfxStatus DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx);
-#endif
-
         bool IsMultiBlt();
 
     private:
@@ -754,13 +720,12 @@ namespace MfxHwVideoProcessing
 
         mfxStatus CompleteTask(DdiTask* pTask);
 
-        SubTask GetSubTask(DdiTask *pTask);
 #ifdef MFX_ENABLE_MCTF
         mfxU32 GetMCTFSurfacesInQueue() { return m_MCTFSurfacesInQueue; };
         void DecMCTFSurfacesInQueue() { if (m_MCTFSurfacesInQueue) --m_MCTFSurfacesInQueue; };
         void SetMctf(std::shared_ptr<CMC>& mctf) { pMCTF = mctf; }
 #endif
-        //mfxU32 GetSubTask(DdiTask *pTask);
+        mfxU32 GetSubTask(DdiTask *pTask);
         mfxStatus DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx);
 
     private:
@@ -871,10 +836,6 @@ namespace MfxHwVideoProcessing
 
         UMC::Mutex m_mutex;
 
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-        std::unique_ptr<EventCache> m_EventCache;
-#endif
-
 #ifdef MFX_ENABLE_MCTF
         mfxU32  m_MCTFSurfacesInQueue;
 #endif
@@ -944,7 +905,6 @@ namespace MfxHwVideoProcessing
         IOMode GetIOMode(
             mfxVideoParam *par,
             mfxFrameAllocRequest* opaqReq);
-
     private:
 
         mfxStatus MergeRuntimeParams(const DdiTask* pTask,  MfxHwVideoProcessing::mfxExecuteParams *execParams);

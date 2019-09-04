@@ -33,6 +33,7 @@
 #include "fast_compositing_ddi.h"
 #include <set>
 
+
 static const FASTCOMP_CAPS2 Caps2_Default = 
 {
     0,              // 0 used to indicate defaults
@@ -834,6 +835,7 @@ mfxStatus FastCompositingDDI::QueryVariance(
 
 } // mfxStatus FastCompositingDDI::QueryVariance(...)
 
+
 mfxStatus FastCompositingDDI::ExecuteBlt(FASTCOMP_BLT_PARAMS *pBltParams)
 {
     HRESULT hRes;
@@ -1295,14 +1297,6 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
         bltParams.ChromaSitingObject = chromaSitingObject;
 #endif // #ifndef MFX_FUTURE_FEATURE_DISABLE
     //}
-
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-        if (pParams->m_GpuEvent.gpuSyncEvent != INVALID_HANDLE_VALUE) {
-            HRESULT hr = m_pAuxDevice->Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, &pParams->m_GpuEvent, sizeof(GPU_SYNC_EVENT_HANDLE));
-            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-        }
-#endif
-
     sts = ExecuteBlt( &bltParams );
     MFX_CHECK_STS(sts);
 
