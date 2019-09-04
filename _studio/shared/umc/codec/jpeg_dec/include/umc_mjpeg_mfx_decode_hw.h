@@ -126,9 +126,6 @@ protected:
     std::set<mfxU32> m_cachedReadyTaskIndex;
     std::set<mfxU32> m_cachedCorruptedTaskIndex;
     VideoAccelerator *      m_va;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD
-    std::map<uint32_t, FrameMemID> m_pic_index;
-#endif
 };
 
 } // end namespace UMC
