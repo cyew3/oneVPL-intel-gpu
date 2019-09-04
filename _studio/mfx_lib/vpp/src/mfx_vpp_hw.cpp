@@ -50,12 +50,6 @@
 
 #include "umc_defs.h"
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) || defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
-    #define VP_OPERATION_TIMEOUT 120000
-#else
-    #define VP_OPERATION_TIMEOUT 5000
-#endif
-
 using namespace MfxHwVideoProcessing;
 enum
 {
@@ -4608,7 +4602,7 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
         if (!pTask->skipQueryStatus && !pHwVpp->m_executeParams.mirroring) {
 #ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
             HRESULT waitRes = WAIT_OBJECT_0;
-            waitRes = WaitForSingleObject(pTask->m_GpuEvent.gpuSyncEvent, VP_OPERATION_TIMEOUT); // timeout for VP operation
+            waitRes = WaitForSingleObject(pTask->m_GpuEvent.gpuSyncEvent, 5000); // 5000ms - timeout for VP operation
             if (WAIT_OBJECT_0 != waitRes)
             {
                 return MFX_ERR_GPU_HANG;
@@ -4618,7 +4612,7 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
             while (currSubTask.idx != NO_INDEX)
             {
 #ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-                waitRes = WaitForSingleObject(currSubTask.m_GpuEvent.gpuSyncEvent, VP_OPERATION_TIMEOUT); // timeout for VP operation
+                waitRes = WaitForSingleObject(currSubTask.m_GpuEvent.gpuSyncEvent, 5000); // 5000ms - timeout for VP operation
                 if (WAIT_OBJECT_0 != waitRes)
                 {
                     sts = MFX_ERR_GPU_HANG;
