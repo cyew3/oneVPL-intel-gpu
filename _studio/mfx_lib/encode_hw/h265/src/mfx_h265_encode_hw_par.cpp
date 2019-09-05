@@ -2078,9 +2078,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
 
     changed += CheckMax(par.mfx.GopRefDist, caps.ddi_caps.SliceIPOnly ? 1 : (par.mfx.GopPicSize ? Max(1, par.mfx.GopPicSize - 1) : 0xFFFF));
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    // RA B is not supported in TGL VDENC TU7
-    if ((par.m_platform == MFX_HW_TGL_LP || par.m_platform == MFX_HW_TGL_HP)
-        && IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7) && (par.mfx.GopRefDist > 1))
+    // RAB are not supported on VDENC TU7
+    if (IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7) && (par.mfx.GopRefDist > 1))
     {
         par.mfx.GopRefDist = 1;
         changed++;
