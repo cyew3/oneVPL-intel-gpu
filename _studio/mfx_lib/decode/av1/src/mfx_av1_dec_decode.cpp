@@ -52,9 +52,6 @@ namespace MFX_VPX_Utility
         return MFX_PROFILE_AV1_MAIN;
     }
 
-    const GUID DXVA_Intel_ModeAV1_VLD =
-        { 0xca44afc5, 0xe1d0, 0x42e6, { 0x91, 0x54, 0xb1, 0x27, 0x18, 0x6d, 0x4d, 0x40 } };
-
     inline
     bool CheckGUID(VideoCORE* core, eMFXHWType type, mfxVideoParam const* par)
     {
@@ -88,12 +85,12 @@ namespace MFX_VPX_Utility
         if (core->IsGuidSupported(DXVA_Intel_ModeAV1_VLD, &vp) != MFX_ERR_NONE)
             return false;
 
-        //Linux doesn't check GUID, just [mfxVideoParam]
         switch (profile)
         {
             case MFX_PROFILE_AV1_MAIN:
                 return true;
-            default: return false;
+            default:
+                return false;
         }
 #else
         core; type; par;

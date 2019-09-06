@@ -112,6 +112,11 @@ DEFINE_GUID_VA(sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT,          VAProfileJPEGBaseli
 DEFINE_GUID_VA(sDXVA2_ModeMPEG2_VLD,                         VAProfileMPEG2Main,     VAEntrypointVLD);
 DEFINE_GUID_VA(DXVA2_Intel_Encode_MPEG2,                     VAProfileMPEG2Main,     VAEntrypointEncSlice);
 
+/* AV1 */
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+DEFINE_GUID_VA(DXVA_Intel_ModeAV1_VLD,                       VAProfileAV1,    VAEntrypointVLD);
+#endif
+
 #else //if defined(MFX_VA_LINUX)
 #ifndef OPEN_SOURCE
 
