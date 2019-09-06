@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- detours.vcxproj specific settings -->
+  <PropertyGroup Label="detours settings">
+    <MfxConfigurationType Label="detours settings">StaticLibrary</MfxConfigurationType>
+    <MfxUsingSettings>detours;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxDetoursPath>$(MSDK_STUDIO_ROOT)../../contrib/detours</MfxDetoursPath>
+    <MfxDetoursMakeCommand>cd $(MfxDetoursPath) &amp; nmake</MfxDetoursMakeCommand>
+    <MfxDetoursMakeCommand Condition="'$(Platform)'=='x64'">$(MfxDetoursMakeCommand) DETOURS_TARGET_PROCESSOR=X64</MfxDetoursMakeCommand>
+    <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
+    <MfxTargetName>$(ProjectName)</MfxTargetName>
+  </PropertyGroup>
+<!-- End of compare_struct.vcxproj specific settings -->
+</Project>

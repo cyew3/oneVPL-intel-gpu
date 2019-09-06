@@ -16,6 +16,12 @@ _build
 /samples/SampleEncodeUWP/x64/
 Debug/
 Release/
+obj.X64
+obj.X86
+bin.X64
+bin.X86
+lib.X64
+lib.X86
 # CMake intermidiate files
 __cmake
 .project
