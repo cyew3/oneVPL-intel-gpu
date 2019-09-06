@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- test_multi_adapter.vcxproj specific settings -->
+  <PropertyGroup Label="test_multi_adapter settings">
+    <MfxConfigurationType Label="compare_struct settings">Application</MfxConfigurationType>
+    <MfxUsingSettings>test_multi_adapter;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+      $(MSDK_API_ROOT)\include;
+      $(MSDK_STUDIO_ROOT)\shared\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+      $(MSDK_STUDIO_ROOT)\..\tests\unit;
+      $(MSDK_STUDIO_ROOT)\..\contrib\detours\include;
+      $(MSDK_STUDIO_ROOT)\..\contrib\googletest\googletest\include;
+      $(MSDK_STUDIO_ROOT)\..\contrib\googletest\googlemock\include;
+      $(MfxIppIncludeDir)
+    </MfxIncludes>
+    <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
+    <MfxTargetName>$(ProjectName)</MfxTargetName>
+    <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;PRE_SI_TARGET_PLATFORM_GEN12;$(MfxDefinitions);</MfxDefinitions>
+    <MfxDefinitions Condition="'$(Platform)'=='x64'">MFX_ENABLE_UNIT_TEST_MULTI_ADAPTER;$(MfxDefinitions);</MfxDefinitions>
+    <MfxLibraries>dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib;</MfxLibraries>
+    <MfxLibraries Condition="'$(Platform)'=='Win32'">$(MSDK_STUDIO_ROOT)\..\contrib\detours\lib.X86\detours.lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraries Condition="'$(Platform)'=='x64'">$(MSDK_STUDIO_ROOT)\..\contrib\detours\lib.X64\detours.lib;$(MfxLibraries)</MfxLibraries>
+  </PropertyGroup>
+<!-- End of test_multi_adapter.vcxproj specific settings -->
+</Project>
