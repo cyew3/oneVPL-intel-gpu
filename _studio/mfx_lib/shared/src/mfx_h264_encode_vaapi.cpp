@@ -171,8 +171,7 @@ mfxStatus SetRateControl(
     mfxU8        maxQP,
     VADisplay    vaDisplay,
     VAContextID  vaContextEncode,
-    VABufferID & rateParamBuf_id,
-    bool         isBrcResetRequired = false)
+    VABufferID & rateParamBuf_id)
 {
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
@@ -239,7 +238,6 @@ mfxStatus SetRateControl(
     //  MBBRC control
     // Control VA_RC_MB 0: default, 1: enable, 2: disable, other: reserved
     rate_param->rc_flags.bits.mb_rate_control = mbbrc & 0xf;
-    rate_param->rc_flags.bits.reset = isBrcResetRequired;
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
@@ -247,6 +245,32 @@ mfxStatus SetRateControl(
     }
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
+    return MFX_ERR_NONE;
+}
+
+mfxStatus SetBrcResetRequired(
+    VADisplay             vaDisplay,
+    VABufferID            rateParamBuf_id,
+    bool                  isBrcResetRequired)
+{
+    if (rateParamBuf_id == VA_INVALID_ID)
+        return MFX_ERR_NONE; // if buf wasn't created
+
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+    VAEncMiscParameterRateControl *rate_param;
+
+    vaSts = vaMapBuffer(vaDisplay,
+                        rateParamBuf_id,
+                        (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    rate_param = (VAEncMiscParameterRateControl *)misc_param->data;
+    rate_param->rc_flags.bits.reset = isBrcResetRequired;
+
+    vaSts = vaUnmapBuffer(vaDisplay,
+                          rateParamBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     return MFX_ERR_NONE;
 }
 
@@ -1938,10 +1962,11 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
         || m_userMaxFrameSize != extOpt2->MaxFrameSize;
 
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId),                                                  MFX_ERR_DEVICE_FAILED);
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_mbbrc, 0, 0, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId, isBrcResetRequired), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_mbbrc, 0, 0, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId),                                            MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityLevel(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelId),                                      MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityParams(par, m_vaDisplay, m_vaContextEncode, m_qualityParamsId),                                    MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetBrcResetRequired(m_vaDisplay, m_rateParamBufferId, isBrcResetRequired),                                   MFX_ERR_DEVICE_FAILED);
 
     if (extOpt2->MaxSliceSize != 0)
     {
@@ -3226,6 +3251,9 @@ mfxStatus VAAPIEncoder::Execute(
     mfxSts = CheckAndDestroyVAbuffer(m_vaDisplay, vaFeiMBQPId);
     MFX_CHECK_STS(mfxSts);
 #endif
+
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetBrcResetRequired(m_vaDisplay, m_rateParamBufferId, false), MFX_ERR_DEVICE_FAILED);
+
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::Execute(ExecuteBuffers& data, mfxU32 fieldId)
