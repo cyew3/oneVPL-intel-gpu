@@ -88,15 +88,15 @@ public:
                      uint32_t            width,
                      uint32_t            height);
 
-    mfxStatus Join(mfxExtMultiFrameParam const & par,
+    mfxStatus Join(const mfxExtMultiFrameParam  & par,
                    ENCODE_SINGLE_STREAM_INFO &info,
                    unsigned long long  timeout);
-    mfxStatus Disjoin(const ENCODE_SINGLE_STREAM_INFO info);
+    mfxStatus Disjoin(const ENCODE_SINGLE_STREAM_INFO & info);
     mfxStatus Destroy();
     //MSFT runtime restrict multiple contexts per device
     //so for DXVA MFE implementation the same context being used for encoder and MFE submission
     ID3D11VideoDecoder* GetVideoDecoder();
-    mfxStatus Submit(const ENCODE_SINGLE_STREAM_INFO info, unsigned long long timeToWait, bool skipFrame);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
+    mfxStatus Submit(const uint32_t streamId, unsigned long long timeToWait, bool skipFrame);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
 
     //returns pointer to particular caps with only read access, NULL if caps not set.
     CAPS GetCaps(MFE_CODEC);
@@ -147,9 +147,6 @@ private:
 #ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
     std::unique_ptr<ENCODE_CAPS_AV1> m_av1CAPS;
 #endif
-    // We need contexts extracted from m_toSubmit to
-    // place to a linear vector to pass them to vaMFSubmit
-    std::vector<ENCODE_COMPBUFFERDESC> m_contexts;
     // store iterators to particular items
     std::vector<StreamsIter_t> m_streams;
     // store iterators to particular items

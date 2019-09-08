@@ -587,6 +587,10 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
     if (m_pMfeAdapter != nullptr)
     {
         ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_STREAMINFO, m_StreamInfo, 1);
+        if (m_bIsBlockingTaskSyncEnabled)
+        {
+            ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_EVENT, task.m_mfeGpuEvent, 1);
+        }
     }
 #endif
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA,          m_sps,      1);
@@ -772,26 +776,32 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
         if(m_bIsBlockingTaskSyncEnabled)
         {
-            // allocate the event
+            // 'allocate' the event
             Task & task1 = const_cast<Task &>(task);
-            task1.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
-            m_EventCache->GetEvent(task1.m_GpuEvent.gpuSyncEvent);
-
-            D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-            decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
-            decoderExtParams.pPrivateInputData = &task1.m_GpuEvent;
-            decoderExtParams.PrivateInputDataSize = sizeof(task1.m_GpuEvent);
-            decoderExtParams.pPrivateOutputData = NULL;
-            decoderExtParams.PrivateOutputDataSize = 0;
-            decoderExtParams.ResourceCount = 0;
-            decoderExtParams.ppResourceList = NULL;
-
-            HRESULT hr;
+#if defined(MFX_ENABLE_MFE)
+            if (m_pMfeAdapter)
             {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
-                hr = DecoderExtension(decoderExtParams);
+                m_EventCache->GetEvent(task1.m_mfeGpuEvent.gpuSyncEvent);
+                task1.m_mfeGpuEvent.StatusReportFeedbackNumber = task.m_statusReportNumber;
             }
-            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+            else
+#endif
+            {
+                task1.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
+                m_EventCache->GetEvent(task1.m_GpuEvent.gpuSyncEvent);
+
+                D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = {};
+                decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
+                decoderExtParams.pPrivateInputData = &task1.m_GpuEvent;
+                decoderExtParams.PrivateInputDataSize = sizeof(task1.m_GpuEvent);
+
+                HRESULT hr;
+                {
+                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
+                    hr = DecoderExtension(decoderExtParams);
+                }
+                MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+            }
         }
 #endif
 
@@ -834,7 +844,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
             mfxU32 timeout = task.m_mfeTimeToWait;
             if (m_core->GetHWType() >= MFX_HW_ATS)
                 timeout = 3600000000;//one hour for pre-si, ToDo:remove for silicon
-            mfxStatus sts = m_pMfeAdapter->Submit(m_StreamInfo, (task.m_flushMfe ? 0 : timeout), false);
+            mfxStatus sts = m_pMfeAdapter->Submit(m_StreamInfo.StreamId, (task.m_flushMfe ? 0 : timeout), false);
             if (sts != MFX_ERR_NONE)
                 return sts;
         }

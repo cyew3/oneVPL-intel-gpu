@@ -409,8 +409,11 @@ struct Task : DpbFrame
     mfxU16            m_SkipMode                      = 0;
 
 #if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    mfxU32            m_mfeTimeToWait                 = 0;
-    bool              m_flushMfe                      = false;
+    mfxU32             m_mfeTimeToWait                 = 0;
+    bool               m_flushMfe                      = false;
+#ifdef MFX_VA_WIN
+    ENCODE_EVENT_DESCR m_mfeGpuEvent                   = {};
+#endif
 #endif // MFX_ENABLE_MFE
 
 #if defined(MFX_ENABLE_HEVCE_SCC)

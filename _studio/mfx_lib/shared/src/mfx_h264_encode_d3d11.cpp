@@ -842,7 +842,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         mfxU32 timeout = task.m_mfeTimeToWait >> task.m_fieldPicFlag;
         if (m_core->GetHWType() >= MFX_HW_ATS)
             timeout = 360000000;//one hour for pre-si, ToDo:remove for silicon
-        mfxStatus sts = m_pMFEAdapter->Submit(m_StreamInfo, (task.m_flushMfe ? 0 : timeout), SkipFlag == 1);
+        mfxStatus sts = m_pMFEAdapter->Submit(m_StreamInfo.StreamId, (task.m_flushMfe ? 0 : timeout), SkipFlag == 1);
         if (sts != MFX_ERR_NONE)
             return sts;
     }

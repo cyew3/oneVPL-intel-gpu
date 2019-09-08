@@ -103,26 +103,28 @@ mfxStatus D3DXCommonEncoder::Destroy()
 }
 
 mfxStatus D3DXCommonEncoder::WaitTaskSync(
-    Task & task,
+    HANDLE gpuSyncEvent,
+    mfxU32 statusReportNumber,
     mfxU32 timeOutMs)
 {
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3DXCommonEncoder::WaitTaskSync");
     mfxStatus sts = MFX_ERR_NONE;
-    HRESULT waitRes = WaitForSingleObject(task.m_GpuEvent.gpuSyncEvent, timeOutMs);
+    HRESULT waitRes = WaitForSingleObject(gpuSyncEvent, timeOutMs);
     if (WAIT_OBJECT_0 != waitRes)
     {
-        MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "WaitForSingleObject", "(WAIT_OBJECT_0 != waitRes) => sts = MFX_WRN_DEVICE_BUSY", task.m_statusReportNumber);
+        MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "WaitForSingleObject", "(WAIT_OBJECT_0 != waitRes) => sts = MFX_WRN_DEVICE_BUSY", statusReportNumber);
         sts = MFX_WRN_DEVICE_BUSY;
     }
     else
     {
-        MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "WaitForSingleObject Event %p", "ReportNumber = %d", task.m_GpuEvent.gpuSyncEvent, task.m_statusReportNumber);
+        MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "WaitForSingleObject Event %p", "ReportNumber = %d", gpuSyncEvent, statusReportNumber);
     }
 
     return sts;
 #else
-    (void)task;
+    (void)gpuSyncEvent;
+    (void)statusReportNumber;
     (void)timeOutMs;
     return MFX_ERR_UNSUPPORTED;
 #endif
@@ -137,6 +139,9 @@ mfxStatus D3DXCommonEncoder::Execute(
     // Put dummy event in the task. Real event will be attached if the current task is not to be skipped
     Task & task1 = const_cast<Task&>(task);
     task1.m_GpuEvent.gpuSyncEvent = INVALID_HANDLE_VALUE;
+#if defined(MFX_ENABLE_MFE)
+    task1.m_mfeGpuEvent.gpuSyncEvent = INVALID_HANDLE_VALUE;
+#endif
 #endif
 
     sts = ExecuteImpl(task, surface);
@@ -149,11 +154,19 @@ mfxStatus D3DXCommonEncoder::QueryStatus(
     Task & task)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3DXCommonEncoder::QueryStatus");
-    mfxStatus sts=MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE;
 
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
     // If the task was submitted to the driver
-    if (task.m_GpuEvent.gpuSyncEvent != INVALID_HANDLE_VALUE)
+#if defined(MFX_ENABLE_MFE)
+    HANDLE & gpuSyncEvent = (task.m_mfeGpuEvent.gpuSyncEvent != INVALID_HANDLE_VALUE) ?
+                                task.m_mfeGpuEvent.gpuSyncEvent :
+                                task.m_GpuEvent.gpuSyncEvent;
+#else
+    HANDLE & gpuSyncEvent = task.m_GpuEvent.gpuSyncEvent;
+#endif
+
+    if (gpuSyncEvent != INVALID_HANDLE_VALUE)
     {
         mfxU32 timeOutMs = m_TaskSyncTimeOutMs;
 
@@ -163,7 +176,7 @@ mfxStatus D3DXCommonEncoder::QueryStatus(
             MFX_CHECK_STS(sts);
         }
 
-        sts = WaitTaskSync(task, timeOutMs);
+        sts = WaitTaskSync(gpuSyncEvent, task.m_statusReportNumber, timeOutMs);
         if (sts == MFX_WRN_DEVICE_BUSY)
         {
             // Need to add a check for TDRHang
@@ -173,8 +186,8 @@ mfxStatus D3DXCommonEncoder::QueryStatus(
             return MFX_ERR_DEVICE_FAILED;
 
         // Return event to the EventCache
-        m_EventCache->ReturnEvent(task.m_GpuEvent.gpuSyncEvent);
-        task.m_GpuEvent.gpuSyncEvent = INVALID_HANDLE_VALUE;
+        m_EventCache->ReturnEvent(gpuSyncEvent);
+        gpuSyncEvent = INVALID_HANDLE_VALUE;
     }
     // Get the current task status
     sts = QueryStatusAsync(task);

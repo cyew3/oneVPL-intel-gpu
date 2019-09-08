@@ -72,7 +72,8 @@ namespace MfxHwH265Encode
         // sync call
         virtual
         mfxStatus WaitTaskSync(
-            Task & task,
+            HANDLE gpuSyncEvent,
+            mfxU32 statusReportNumber,
             mfxU32 timeOutMs);
 
         virtual
