@@ -161,19 +161,26 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     }
 #endif
 
-    decoderExtParam.Function = ENCODE_ENC_CTRL_CAPS_ID;
-    decoderExtParam.pPrivateOutputData = &m_capsQuery;
-    decoderExtParam.PrivateOutputDataSize = sizeof(m_capsQuery);
+#if defined(MFX_ENABLE_MFE)
+    // Functions ENCODE_ENC_CTRL_CAPS_ID and ENCODE_ENC_CTRL_GET_ID are not needed
+    // for MFE case, they are also unsupported on driver side
+    if (m_pMFEAdapter == nullptr)
+#endif
+    {
+        decoderExtParam.Function = ENCODE_ENC_CTRL_CAPS_ID;
+        decoderExtParam.pPrivateOutputData = &m_capsQuery;
+        decoderExtParam.PrivateOutputDataSize = sizeof(m_capsQuery);
 
-    hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
-    CHECK_HRES(hRes);
+        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+        CHECK_HRES(hRes);
 
-    decoderExtParam.Function = ENCODE_ENC_CTRL_GET_ID;
-    decoderExtParam.pPrivateOutputData = &m_capsGet;
-    decoderExtParam.PrivateOutputDataSize = sizeof(m_capsGet);
+        decoderExtParam.Function = ENCODE_ENC_CTRL_GET_ID;
+        decoderExtParam.pPrivateOutputData = &m_capsGet;
+        decoderExtParam.PrivateOutputDataSize = sizeof(m_capsGet);
 
-    hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
-    CHECK_HRES(hRes);
+        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+        CHECK_HRES(hRes);
+    }
 
     mfxU16 maxNumSlice = GetMaxNumSlices(par);
 
@@ -735,6 +742,18 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     if(SkipFlag != 1)
     {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#if defined(MFX_ENABLE_MFE)
+        if (m_pMFEAdapter != nullptr)
+        {
+            // For now blocking synchronization does not work for MFE cases
+            // due to limitation on driver side (the same for MFE HEVC).
+            // By the way, when blocking sync will be available, it need to be done
+            // by new MFE DDI D3D11_VIDEO_ENCODER_BUFFER_EVENT which need to be sent
+            // as additional buffer by ENCODE_ENC_PAK_ID command instead of calling
+            // extention function DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE (like below)
+        }
+        else
+#endif
         {
             // allocate the event
             DdiTask & task1 = RemoveConst(task);
