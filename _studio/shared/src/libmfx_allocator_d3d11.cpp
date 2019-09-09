@@ -29,6 +29,7 @@
 
 #include "mfx_utils.h"
 #include "mfx_common.h"
+#include "mfxpcp.h"
 
 #define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
@@ -268,12 +269,20 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
         }
         pSelf->m_NumSurface = maxNumFrames;
         pSelf->m_SrfPool.resize(maxNumFrames);
-        
+
         if(request->Type & MFX_MEMTYPE_SHARED_RESOURCE)
         {
             Desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
             Desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
         }
+
+#if !defined(OPEN_SOURCE)
+        if (request->Type & MFX_MEMTYPE_PROTECTED)
+        {
+            Desc.MiscFlags |= D3D11_RESOURCE_MISC_HW_PROTECTED;
+        }
+#endif
+
         // d3d11 wo
         if( DXGI_FORMAT_P8 == Desc.Format )
         {
@@ -307,6 +316,13 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
             if (FAILED(hr))
                 return MFX_ERR_MEMORY_ALLOC;
         }
+
+#if !defined(OPEN_SOURCE)
+        if (request->Type & MFX_MEMTYPE_PROTECTED)
+        {
+            Desc.MiscFlags &= ~D3D11_RESOURCE_MISC_HW_PROTECTED;
+        }
+#endif
 
         // Create Staging buffers for fast coping (do not need for 420 opaque)
         if(Desc.Format != DXGI_FORMAT_420_OPAQUE)

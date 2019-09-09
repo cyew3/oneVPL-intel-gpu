@@ -434,7 +434,16 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
 
     request.Type        = MFX_MEMTYPE_D3D_INT;
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
-    if (m_vpar.Protected)
+    // TODO: temporal fix for miracast issue (hang in CP + MMC case).
+    //
+    // In case of MFX_MEMTYPE_PROTECTED we MUST specify D3D11_RESOURCE_MISC_HW_PROTECTED flag
+    //
+    // But now there is no enough time to investigate behavior on other platforms therefore
+    // TGL condition was added
+    //
+    // After TGL alpha code freeze TGL condition MUST be removed to setup protected flag on ALL platforms (which is correct behavior),
+    // because it is supposed to be used for any render target that will get protected output at some point in time
+    if (m_vpar.Protected && platform == MFX_HW_TGL_LP)
         request.Type = (MFX_MEMTYPE_D3D_INT | MFX_MEMTYPE_PROTECTED);
 #endif
 

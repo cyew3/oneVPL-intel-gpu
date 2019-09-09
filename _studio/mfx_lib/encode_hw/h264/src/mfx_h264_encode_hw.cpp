@@ -1102,7 +1102,16 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     request.Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     request.Type        = MFX_MEMTYPE_D3D_INT;
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
-    if (m_video.Protected)
+    // TODO: temporal fix for miracast issue (hang in CP + MMC case).
+    //
+    // In case of MFX_MEMTYPE_PROTECTED we MUST specify D3D11_RESOURCE_MISC_HW_PROTECTED flag
+    //
+    // But now there is no enough time to investigate behavior on other platforms therefore
+    // TGL condition was added
+    //
+    // After TGL alpha code freeze TGL condition MUST be removed to setup protected flag on ALL platforms (which is correct behavior),
+    // because it is supposed to be used for any render target that will get protected output at some point in time
+    if (m_video.Protected && m_currentPlatform == MFX_HW_TGL_LP)
         request.Type = MFX_MEMTYPE_D3D_SERPENT_INT;
 #endif
     request.NumFrameMin = mfxU16(m_video.mfx.NumRefFrame +
@@ -1129,8 +1138,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_recFrameOrder.resize(request.NumFrameMin, 0xffffffff);
 
     m_recNonRef[0] = m_recNonRef[1] = 0xffffffff;
-
-
 
 #if defined(MFX_VA_WIN)
     if (IsOn(extOpt3.EnableMBQP) && m_core->GetVAType() != MFX_HW_VAAPI)
