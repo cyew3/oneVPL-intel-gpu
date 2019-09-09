@@ -22,6 +22,7 @@
 #ifdef MFX_ENABLE_H264_VIDEO_ENCODE_HW
 #include <algorithm>
 #include <numeric>
+#include <cmath>
 
 #include "cmrt_cross_platform.h"
 
@@ -1908,6 +1909,12 @@ mfxStatus ImplementationAvc::GetVideoParam(mfxVideoParam *par)
 
     par->ExtParam    = ExtParam;
     par->NumExtParam = NumExtParam;
+
+    mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(m_video);
+    if (m_video.calcParam.TCBRCTargetFrameSize != 0 && IsOn(extOpt3.LowDelayBRC))
+        par->mfx.TargetKbps = (mfxU16)std::round(m_video.calcParam.TCBRCTargetFrameSize / 1000.0 * 8.0
+                              / std::max<mfxU32>(par->mfx.BRCParamMultiplier, 1)
+                              * (mfxF64(par->mfx.FrameInfo.FrameRateExtN) / par->mfx.FrameInfo.FrameRateExtD));
 
     return MFX_ERR_NONE;
 }
