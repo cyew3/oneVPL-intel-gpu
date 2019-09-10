@@ -1119,6 +1119,9 @@
     <ClCompile Include="src\gmock\test_suites\avce_mbbrc.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_get_video_param_tcbrc.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_crop_query_init.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
