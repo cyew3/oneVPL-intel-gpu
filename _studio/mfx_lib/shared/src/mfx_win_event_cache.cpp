@@ -69,13 +69,19 @@ mfxStatus EventCache::Close()
 }
 
 /*
-return free Event and mark it as used
+Get free Event from pool, reset it, mark it as used, then return it via event argument
 MFX_ERR_NONE if successes
 */
 mfxStatus  EventCache::GetEvent(EVENT_TYPE& event)
 {
     std::lock_guard<std::mutex> lock(m_guard);
+    if (m_Free.empty())
+    {
+        event = INVALID_HANDLE_VALUE;
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
     event = m_Free.front();
+    ResetEvent(event);
     m_Free.pop_front();
     return MFX_ERR_NONE;
 }
