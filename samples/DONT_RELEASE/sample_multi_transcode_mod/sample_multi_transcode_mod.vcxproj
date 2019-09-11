@@ -44,14 +44,12 @@
     <ClCompile Include="..\..\sample_multi_transcode\src\pipeline_transcode.cpp" />
     <ClCompile Include="..\..\sample_multi_transcode\src\sample_multi_transcode.cpp" />
     <ClCompile Include="..\..\sample_multi_transcode\src\transcode_utils.cpp" />
-    <ClCompile Include="..\..\sample_multi_transcode\src\vpp_ext_buffers_storage.cpp" />
     <ClCompile Include="src\modified_transcoding_pipeline.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\sample_multi_transcode\include\pipeline_transcode.h" />
     <ClInclude Include="..\..\sample_multi_transcode\include\sample_multi_transcode.h" />
     <ClInclude Include="..\..\sample_multi_transcode\include\transcode_utils.h" />
-    <ClInclude Include="..\..\sample_multi_transcode\include\vpp_ext_buffers_storage.h" />
     <ClInclude Include="include\extension_macros.h" />
     <ClInclude Include="include\modified_transcoding_pipeline.h" />
   </ItemGroup>

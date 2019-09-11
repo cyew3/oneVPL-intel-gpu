@@ -179,7 +179,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\sample_common\include;$(ProjectDir)\..\sample_plugins\vpp_plugin\include;$(ProjectDir)\..\sample_plugins\rotate_cpu\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\api\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\sample_common\include;$(ProjectDir)\..\sample_plugins\vpp_plugin\include;$(ProjectDir)\..\sample_plugins\rotate_cpu\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -262,13 +262,11 @@
     <ClCompile Include="src\pipeline_transcode.cpp" />
     <ClCompile Include="src\sample_multi_transcode.cpp" />
     <ClCompile Include="src\transcode_utils.cpp" />
-    <ClCompile Include="src\vpp_ext_buffers_storage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\pipeline_transcode.h" />
     <ClInclude Include="include\sample_multi_transcode.h" />
     <ClInclude Include="include\transcode_utils.h" />
-    <ClInclude Include="include\vpp_ext_buffers_storage.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\sample_common\sample_common.vcxproj">

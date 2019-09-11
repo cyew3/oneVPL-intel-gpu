@@ -1,9 +1,5 @@
 /******************************************************************************\
-<<<<<<< HEAD
-Copyright (c) 2005-2018, Intel Corporation
-=======
 Copyright (c) 2005-2020, Intel Corporation
->>>>>>> b76c44afe3... Use CL/cl2.hpp for rotate_opencl_plugin
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:

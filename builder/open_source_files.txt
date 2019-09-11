@@ -980,11 +980,9 @@ samples/sample_multi_transcode/CMakeLists.txt
 samples/sample_multi_transcode/include/pipeline_transcode.h
 samples/sample_multi_transcode/include/sample_multi_transcode.h
 samples/sample_multi_transcode/include/transcode_utils.h
-samples/sample_multi_transcode/include/vpp_ext_buffers_storage.h
 samples/sample_multi_transcode/src/pipeline_transcode.cpp
 samples/sample_multi_transcode/src/sample_multi_transcode.cpp
 samples/sample_multi_transcode/src/transcode_utils.cpp
-samples/sample_multi_transcode/src/vpp_ext_buffers_storage.cpp
 samples/sample_plugins/plugins_common_files/mfx_plugin.def
 samples/sample_plugins/plugins_common_files/mfx_plugin.map
 samples/sample_plugins/plugins_common_files/mfx_plugin_module.cpp

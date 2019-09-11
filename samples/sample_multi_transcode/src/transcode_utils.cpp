@@ -252,6 +252,9 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -nobref       Do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("  -bpyr         Enable B pyramid\n"));
     msdk_printf(MSDK_STRING("  -gpb:<on,off>          - Enable or disable Generalized P/B frames\n"));
+#if (MFX_VERSION >= 1026)
+    msdk_printf(MSDK_STRING("  -TransformSkip:<on,off>- Enable or disable TransformSkip\n"));
+#endif
     msdk_printf(MSDK_STRING("  -trows <rows>          - Number of rows for tiled encoding\n"));
     msdk_printf(MSDK_STRING("  -tcols <cols>          - Number of columns for tiled encoding\n"));
     msdk_printf(MSDK_STRING("  -CodecProfile          - Specifies codec profile\n"));
@@ -279,6 +282,10 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -roi_qpmap    Use QP map to emulate ROI for CQP mode\n"));
     msdk_printf(MSDK_STRING("  -extmbqp      Use external MBQP map\n"));
 #endif //MFX_VERSION >= 1022
+    msdk_printf(MSDK_STRING("  -AvcTemporalLayers [array:Layer.Scale]    Configures the temporal layers hierarchy\n"));
+    msdk_printf(MSDK_STRING("  -BaseLayerPID <pid>                       Sets priority ID for the base layer\n"));
+    msdk_printf(MSDK_STRING("  -SPSId <pid>                              Sets sequence parameter set ID\n"));
+    msdk_printf(MSDK_STRING("  -PPSId <pid>                              Sets picture parameter set ID\n"));
     msdk_printf(MSDK_STRING("  -PicTimingSEI:<on,off>                    Enables or disables picture timing SEI\n"));
     msdk_printf(MSDK_STRING("  -NalHrdConformance:<on,off>               Enables or disables picture HRD conformance\n"));
     msdk_printf(MSDK_STRING("  -VuiNalHrdParameters:<on,off>             Enables or disables NAL HRD parameters in VUI header\n"));
@@ -696,9 +703,34 @@ mfxStatus CmdProcessor::ParseParFile(FILE *parFile)
 
 } //mfxStatus CmdProcessor::ParseParFile(FILE *parFile)
 
-mfxStatus CmdProcessor::TokenizeLine(msdk_char *pLine, mfxU32 length)
+// calculate length of string literal, including leading and trailing "
+// pTempLine = start of string (must begin with ")
+// length = remaining characters in pTempLine
+// returns length of string, or 0 if error
+mfxU32 CmdProcessor::GetStringLength(msdk_char *pTempLine, mfxU32 length)
 {
     mfxU32 i;
+
+    // error - no leading " found
+    if (pTempLine[0] != '\"')
+        return 0;
+
+    for (i = 1; i < length; i++)
+    {
+        if (pTempLine[i] == '\"')
+            break;
+    }
+
+    // error - no closing " found
+    if (i == length)
+        return 0;
+
+    return i + 1;
+}
+
+mfxStatus CmdProcessor::TokenizeLine(msdk_char *pLine, mfxU32 length)
+{
+    mfxU32 i, strArgLen;
     const mfxU8 maxArgNum = 255;
     msdk_char *argv[maxArgNum+1];
     mfxU32 argc = 0;
@@ -723,6 +755,23 @@ mfxStatus CmdProcessor::TokenizeLine(msdk_char *pLine, mfxU32 length)
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+
+        if (*pTempLine == '\"' )
+        {
+            strArgLen = GetStringLength(pTempLine, length - i);
+            if (!strArgLen)
+            {
+                PrintError(MSDK_STRING("Error parsing string literal"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+
+            // remove leading and trailing ", bump pointer ahead to next argument
+            pTempLine[0] = ' ';
+            pTempLine[strArgLen-1] = ' ';
+            pTempLine += strArgLen;
+            i += strArgLen;
+        }
+
         if (*pTempLine == ' ' || *pTempLine == '\r' || *pTempLine == '\n')
         {
             *pTempLine = 0;
@@ -1066,9 +1115,55 @@ void ParseMCTFParams(msdk_char* strInput[], mfxU32 nArgNum, mfxU32& curArg, sInp
 // return values:
 //   0 if argv[i] is processed successfully (MFX_ERR_NONE)
 // < 1 if argv[i] is processed and generates an error OR argv[i] is not processed (no match)
-mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 /*argc*/, mfxU32& i, TranscodingSample::sInputParams& InputParams)
+mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, TranscodingSample::sInputParams& InputParams)
 {
-    if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lowpower:on")))
+    if (0 == msdk_strcmp(argv[i], MSDK_STRING("-AvcTemporalLayers")))
+    {
+        InputParams.nAvcTemp = 1;
+        VAL_CHECK(i + 1 >= argc, i, argv[i]);
+        mfxU16 arr[8] = { 0,0,0,0,0,0,0,0 };
+        int j, k;
+        k = msdk_sscanf(argv[i + 1], MSDK_STRING("%hu %hu %hu %hu %hu %hu %hu %hu"), &arr[0], &arr[1], &arr[2], &arr[3], &arr[4], &arr[5], &arr[6], &arr[7]);
+        if (k != 8)
+        {
+            PrintError(argv[0], MSDK_STRING("Invalid number of layers for AvcTemporalLayers"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+
+        for (j = 0; j < 8; j++)
+        {
+            InputParams.nAvcTemporalLayers[j] = arr[j];
+        }
+        i += 1;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-BaseLayerPID")))
+    {
+        VAL_CHECK(i + 1 >= argc, i, argv[i]);
+        if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.nBaseLayerPID))
+        {
+            PrintError(argv[0], MSDK_STRING("BaseLayerPID is invalid"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-SPSId")))
+    {
+        VAL_CHECK(i + 1 >= argc, i, argv[i]);
+        if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.nSPSId))
+        {
+            PrintError(argv[0], MSDK_STRING("SPSId is invalid"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-PPSId")))
+    {
+        VAL_CHECK(i + 1 >= argc, i, argv[i]);
+        if (MFX_ERR_NONE != msdk_opt_read(argv[++i], InputParams.nPPSId))
+        {
+            PrintError(argv[0], MSDK_STRING("PPSId is invalid"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lowpower:on")))
     {
         InputParams.enableQSVFF = true;
     }
@@ -1125,6 +1220,147 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 /*argc*/, mfxU32& i, T
     }
 
     return MFX_ERR_NONE;
+}
+
+mfxStatus ParseVPPCmdLine(msdk_char *argv[], mfxU32 argc, mfxU32& index, TranscodingSample::sInputParams* params, mfxU32& skipped)
+{
+    if (0 == msdk_strcmp(argv[index], MSDK_STRING("-denoise")))
+    {
+        VAL_CHECK(index+1 == argc, index, argv[index]);
+        index++;
+        if (MFX_ERR_NONE != msdk_opt_read(argv[index], params->DenoiseLevel) || !(params->DenoiseLevel>=0 && params->DenoiseLevel<=100))
+        {
+            PrintError(NULL, MSDK_STRING("-denoise \"%s\" is invalid"), argv[index]);
+            return MFX_ERR_UNSUPPORTED;
+        }
+        skipped+=2;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-detail")))
+    {
+        VAL_CHECK(index+1 == argc, index, argv[index]);
+        index++;
+        if (MFX_ERR_NONE != msdk_opt_read(argv[index], params->DetailLevel) || !(params->DetailLevel>=0 && params->DetailLevel<=100))
+        {
+            PrintError(NULL, MSDK_STRING("-detail \"%s\" is invalid"), argv[index]);
+            return MFX_ERR_UNSUPPORTED;
+        }
+        skipped+=2;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-FRC::PT")))
+    {
+        params->FRCAlgorithm=MFX_FRCALGM_PRESERVE_TIMESTAMP;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-FRC::DT")))
+    {
+        params->FRCAlgorithm=MFX_FRCALGM_DISTRIBUTED_TIMESTAMP;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-FRC::INTERP")))
+    {
+        params->FRCAlgorithm=MFX_FRCALGM_FRAME_INTERPOLATION;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-deinterlace")))
+    {
+        params->bEnableDeinterlacing = true;
+        params->DeinterlacingMode=0;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-deinterlace::ADI")))
+    {
+        params->bEnableDeinterlacing = true;
+        params->DeinterlacingMode=MFX_DEINTERLACING_ADVANCED;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-deinterlace::ADI_SCD")))
+    {
+        params->bEnableDeinterlacing = true;
+        params->DeinterlacingMode=MFX_DEINTERLACING_ADVANCED_SCD;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-deinterlace::BOB")))
+    {
+        params->bEnableDeinterlacing = true;
+        params->DeinterlacingMode=MFX_DEINTERLACING_BOB;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-deinterlace::ADI_NO_REF")))
+    {
+        params->bEnableDeinterlacing = true;
+        params->DeinterlacingMode=MFX_DEINTERLACING_ADVANCED_NOREF;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::rgb4")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_RGB4;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::yuy2")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_YUY2;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::nv12")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_NV12;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::nv16")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_NV16;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::p010")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_P010;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-ec::p210")))
+    {
+        params->EncoderFourCC = MFX_FOURCC_P210;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-dc::rgb4")))
+    {
+        params->DecoderFourCC = MFX_FOURCC_RGB4;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-dc::yuy2")))
+    {
+        params->DecoderFourCC = MFX_FOURCC_YUY2;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-dc::nv12")))
+    {
+        params->DecoderFourCC = MFX_FOURCC_NV12;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-field_processing")) )
+    {
+        VAL_CHECK(index+1 == argc, index, argv[index]);
+        index++;
+        if (0 == msdk_strcmp(argv[index], MSDK_STRING("t2t")) )
+            params->fieldProcessingMode = FC_T2T;
+        else if (0 == msdk_strcmp(argv[index], MSDK_STRING("t2b")) )
+            params->fieldProcessingMode = FC_T2B;
+        else if (0 == msdk_strcmp(argv[index], MSDK_STRING("b2t")) )
+            params->fieldProcessingMode = FC_B2T;
+        else if (0 == msdk_strcmp(argv[index], MSDK_STRING("b2b")) )
+            params->fieldProcessingMode = FC_B2B;
+        else if (0 == msdk_strcmp(argv[index], MSDK_STRING("fr2fr")) )
+            params->fieldProcessingMode = FC_FR2FR;
+        else
+        {
+            PrintError(NULL, MSDK_STRING("-field_processing \"%s\" is invalid"), argv[index]);
+            return MFX_ERR_UNSUPPORTED;
+        }
+        return MFX_ERR_NONE;
+    }
+
+    return MFX_ERR_MORE_DATA;
 }
 
 mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
@@ -1532,6 +1768,14 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-gpb:off")))
         {
             InputParams.GPB = MFX_CODINGOPTION_OFF;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-TransformSkip:on")))
+        {
+            InputParams.nTransformSkip = MFX_CODINGOPTION_ON;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-TransformSkip:off")))
+        {
+            InputParams.nTransformSkip = MFX_CODINGOPTION_OFF;
         }
         else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-u")))
         {
@@ -2210,12 +2454,10 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-
         MOD_SMT_PARSE_INPUT
-        else if((stsExtBuf = CVPPExtBuffersStorage::ParseCmdLine(argv,argc,i,&InputParams,skipped))
-            !=MFX_ERR_MORE_DATA)
+        else if ((stsExtBuf = ParseVPPCmdLine(argv,argc,i,&InputParams,skipped)) !=MFX_ERR_MORE_DATA)
         {
-            if(stsExtBuf==MFX_ERR_UNSUPPORTED)
+            if (stsExtBuf==MFX_ERR_UNSUPPORTED)
             {
                 return MFX_ERR_UNSUPPORTED;
             }

@@ -32,9 +32,6 @@ public:
 
     virtual mfxStatus InitEncMfxParams(sInputParams *pInParams);
 
-protected:
-    // for disabling HME
-    mfxExtFeiCodingOption m_ExtFeiCodingOption;
 
 };
 

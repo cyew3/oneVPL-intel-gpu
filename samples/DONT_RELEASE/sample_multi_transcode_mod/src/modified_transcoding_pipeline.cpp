@@ -21,9 +21,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 CModifiedTranscodingPipeline::CModifiedTranscodingPipeline(void)
 {
-    MSDK_ZERO_MEMORY(m_ExtFeiCodingOption);
-    m_ExtFeiCodingOption.Header.BufferId = MFX_EXTBUFF_FEI_CODING_OPTION;
-    m_ExtFeiCodingOption.Header.BufferSz = sizeof(m_ExtFeiCodingOption);
 }
 
 CModifiedTranscodingPipeline::~CModifiedTranscodingPipeline(void)
@@ -35,10 +32,10 @@ mfxStatus CModifiedTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams
     // disabling of HME is requested
     if (!!pInParams->reserved[0])
     {
-        m_ExtFeiCodingOption.DisableHME = 1;
-        m_ExtFeiCodingOption.DisableSuperHME = 1;
-        m_ExtFeiCodingOption.DisableUltraHME = 1;
-        m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtFeiCodingOption);
+        auto extFeiCodingOption = m_mfxEncParams.AddExtBuffer<mfxExtFeiCodingOption>();
+        extFeiCodingOption->DisableHME = 1;
+        extFeiCodingOption->DisableSuperHME = 1;
+        extFeiCodingOption->DisableUltraHME = 1;
     }
 
     mfxStatus sts = CTranscodingPipeline::InitEncMfxParams(pInParams);
