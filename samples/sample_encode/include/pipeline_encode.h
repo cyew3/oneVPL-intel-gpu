@@ -409,8 +409,8 @@ protected:
     MFXVideoENCODE* m_pmfxENC;
     MFXVideoVPP* m_pmfxVPP;
 
-    mfxVideoParam m_mfxEncParams;
-    mfxVideoParam m_mfxVppParams;
+    MfxVideoParamsWrapper m_mfxEncParams;
+    MfxVideoParamsWrapper m_mfxVppParams;
 
     mfxU16 m_MVCflags; // MVC codec is in use
 
@@ -438,34 +438,6 @@ protected:
 #if defined(LINUX32) || defined(LINUX64)
     std::string m_strDevicePath; //path to device for processing
 #endif
-
-    // for disabling VPP algorithms
-    mfxExtVPPDoNotUse m_VppDoNotUse;
-    // for MVC encoder and VPP configuration
-    mfxExtMVCSeqDesc m_MVCSeqDesc;
-    mfxExtCodingOption m_CodingOption;
-    // for look ahead BRC configuration
-    mfxExtCodingOption2 m_CodingOption2;
-    // HEVC
-    mfxExtHEVCParam m_ExtHEVCParam;
-    mfxExtHEVCTiles m_ExtHEVCTiles;
-    mfxExtCodingOption3 m_CodingOption3;
-
-#if (MFX_VERSION >= 1031)
-    //Partial Output
-    mfxExtPartialBitstreamParam m_ExtPartialOutputParam;
-#endif
-
-    // Set up video signal information
-    mfxExtVideoSignalInfo m_VideoSignalInfo;
-
-#if (MFX_VERSION >= 1024)
-    mfxExtBRC           m_ExtBRC;
-#endif
-
-    // external parameters for each component are stored in a vector
-    std::vector<mfxExtBuffer*> m_VppExtParams;
-    std::vector<mfxExtBuffer*> m_EncExtParams;
 
     std::vector<mfxPayload*> m_UserDataUnregSEI;
 
@@ -512,11 +484,11 @@ protected:
     virtual void FreeFileWriters();
     virtual mfxStatus InitFileWriter(CSmplBitstreamWriter **ppWriter, const msdk_char *filename);
 
-    virtual mfxStatus AllocAndInitVppDoNotUse();
-    virtual void FreeVppDoNotUse();
+    virtual mfxStatus InitVppFilters();
+    virtual void FreeVppFilters();
 
-    virtual mfxStatus AllocAndInitMVCSeqDesc();
-    virtual void FreeMVCSeqDesc();
+    virtual mfxStatus AllocateExtMVCBuffers();
+    virtual void DeallocateExtMVCBuffers();
 
     virtual mfxStatus CreateAllocator();
     virtual void DeleteAllocator();

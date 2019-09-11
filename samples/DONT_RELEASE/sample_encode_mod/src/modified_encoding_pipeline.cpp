@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,9 +21,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 CModifiedEncodingPipeline::CModifiedEncodingPipeline(void)
 {
-    MSDK_ZERO_MEMORY(m_ExtFeiCodingOption);
-    m_ExtFeiCodingOption.Header.BufferId = MFX_EXTBUFF_FEI_CODING_OPTION;
-    m_ExtFeiCodingOption.Header.BufferSz = sizeof(m_ExtFeiCodingOption);
 }
 
 CModifiedEncodingPipeline::~CModifiedEncodingPipeline(void)
@@ -35,10 +32,10 @@ mfxStatus CModifiedEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     // disabling of HME is requested
     if (!!pInParams->reserved[0])
     {
-        m_ExtFeiCodingOption.DisableHME = 1;
-        m_ExtFeiCodingOption.DisableSuperHME = 1;
-        m_ExtFeiCodingOption.DisableUltraHME = 1;
-        m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtFeiCodingOption);
+        auto extFeiCodingOption = m_mfxEncParams.GetExtBuffer<mfxExtFeiCodingOption>();
+        extFeiCodingOption->DisableHME = 1;
+        extFeiCodingOption->DisableSuperHME = 1;
+        extFeiCodingOption->DisableUltraHME = 1;
     }
 
     mfxStatus sts = CEncodingPipeline::InitMfxEncParams(pInParams);

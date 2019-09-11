@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -28,10 +28,6 @@ public:
     ~CModifiedEncodingPipeline(void);
 
     virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
-
-protected:
-    // for disabling HME
-    mfxExtFeiCodingOption m_ExtFeiCodingOption;
 
 };
 
