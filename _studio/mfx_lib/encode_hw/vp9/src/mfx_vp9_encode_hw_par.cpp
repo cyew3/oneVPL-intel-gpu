@@ -591,46 +591,47 @@ bool CheckAndFixQIndexDelta(mfxI16& qIndexDelta, mfxU16 qIndex)
     return Clamp(qIndexDelta, minQIdxDelta, maxQIdxDelta);
 }
 
-mfxStatus CheckPerSegmentParams(mfxVP9SegmentParam& segPar, ENCODE_CAPS_VP9 const & caps, mfxU16 QP, mfxEncodeCtrl *ctrl_par = nullptr)
+mfxStatus CheckPerSegmentParams(mfxVP9SegmentParam& segPar, ENCODE_CAPS_VP9 const & caps, mfxInfoMFX &video_par, mfxEncodeCtrl *ctrl_par = nullptr)
 {
     Bool changed = false;
     mfxU16& features = segPar.FeatureEnabled;
 
-    // check QIndex feature
-    if (false == CheckFeature(features, &segPar.QIndexDelta, FEAT_QIDX, caps))
-    {
-        changed = true;
-    }
-
-    // if delta Q index value is out of valid range - just ignore it
-    if (false == CheckRangeDflt(segPar.QIndexDelta, -MAX_Q_INDEX, MAX_Q_INDEX, 0))
-    {
-        changed = true;
-    }
-    else
-    {
-        // if delta Q index value is OK, but Q index value + delta is out of valid range - clamp Q index delta
-        if (false == CheckAndFixQIndexDelta(segPar.QIndexDelta, QP))
+    if (video_par.RateControlMethod == MFX_RATECONTROL_CQP) {
+        // check QIndex feature
+        if (false == CheckFeature(features, &segPar.QIndexDelta, FEAT_QIDX, caps))
         {
             changed = true;
         }
 
-        // if delta Q index value is OK, but Q index value + global QP + frame QP delta is out of valid range - clamp Q index delta
-        if (ctrl_par)
+        // if delta Q index value is out of valid range - just ignore it
+        if (false == CheckRangeDflt(segPar.QIndexDelta, -MAX_Q_INDEX, MAX_Q_INDEX, 0))
         {
-            mfxExtVP9Param* pExtParRuntime = GetExtBuffer(*ctrl_par);
-            if (pExtParRuntime)
+            changed = true;
+        }
+        else
+        {
+            // if delta Q index value is OK, but Q index value + delta is out of valid range - clamp Q index delta
+            if (false == CheckAndFixQIndexDelta(segPar.QIndexDelta, video_par.QPI))
             {
-                if (!CheckAndFixQIndexDelta(segPar.QIndexDelta, QP + pExtParRuntime->QIndexDeltaLumaDC) ||
-                    !CheckAndFixQIndexDelta(segPar.QIndexDelta, QP + pExtParRuntime->QIndexDeltaChromaAC) ||
-                    !CheckAndFixQIndexDelta(segPar.QIndexDelta, QP + pExtParRuntime->QIndexDeltaChromaDC))
+                changed = true;
+            }
+
+            // if delta Q index value is OK, but Q index value + global QP + frame QP delta is out of valid range - clamp Q index delta
+            if (ctrl_par)
+            {
+                mfxExtVP9Param* pExtParRuntime = GetExtBuffer(*ctrl_par);
+                if (pExtParRuntime)
                 {
-                    changed = true;
+                    if (!CheckAndFixQIndexDelta(segPar.QIndexDelta, video_par.QPI + pExtParRuntime->QIndexDeltaLumaDC) ||
+                        !CheckAndFixQIndexDelta(segPar.QIndexDelta, video_par.QPI + pExtParRuntime->QIndexDeltaChromaAC) ||
+                        !CheckAndFixQIndexDelta(segPar.QIndexDelta, video_par.QPI + pExtParRuntime->QIndexDeltaChromaDC))
+                    {
+                        changed = true;
+                    }
                 }
             }
         }
     }
-
 
     // check LF Level feature
     if (false == CheckFeature(features, &segPar.LoopFilterLevelDelta, FEAT_LF_LVL, caps))
@@ -750,7 +751,7 @@ mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxU32 frameWidth, 
 
     for (mfxU16 i = 0; i < seg.NumSegments; i++)
     {
-        mfxStatus sts = CheckPerSegmentParams(seg.Segment[i], caps, video_par.QPI, ctrl_par);
+        mfxStatus sts = CheckPerSegmentParams(seg.Segment[i], caps, video_par, ctrl_par);
         if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
         {
             changed = true;
