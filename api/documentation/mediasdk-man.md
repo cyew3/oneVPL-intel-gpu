@@ -870,7 +870,7 @@ Assume the pipeline is **A->B->C**. The application synchronizes on sync point *
 
 ### <a id='Working_with_multiple_intel_media_devices'>Working with multiple Intel media devices</a>
 
-If your system has multiple Intel Gen Graphics adapters you may need hints on which adapter suits better to process some particular workload. The SDK provides API to help with adapter selection. See Example 9 that showcases workload processing initialization on discrete adapter.
+If your system has multiple Intel Gen Graphics adapters you may need hints on which adapter suits better to process some particular workload. The SDK provides helper API to select best suitable adapter for your workload based on passed workload description. See Example 9 that showcases workload initialization on discrete adapter.
 
 ###### Example 9: Choose discrete Intel Gen Graphics adapter
 
@@ -932,7 +932,7 @@ default:
 
 As you see in Example 9, after obtaining adapter list with [MFXQueryAdapters](#MFXQueryAdapters) further initialization of [mfxSession](#mfxSession) is performed in regular way. Particular adapter choice is performed with [MFX_IMPL_HARDWARE](#mfxIMPL)**...**[MFX_IMPL_HARDWARE4](#mfxIMPL) values of [mfxIMPL](#mfxIMPL) (see [Multiple Monitors](#Multiple_monitors) section for details).
 
-Example 10 showcases usage of [MFXQueryAdapters](#MFXQueryAdapters) for querying best suitable adapter for particular encode workload processing (see [MFXQueryAdapters](#MFXQueryAdapters) description for adapter priority rules).
+Example 10 showcases usage of [MFXQueryAdapters](#MFXQueryAdapters) for querying best suitable adapter for particular encode workload (see [MFXQueryAdapters](#MFXQueryAdapters) description for adapter priority rules).
 
 ###### Example 10: Choose best suitable Intel Gen Graphics adapter for encode workload
 
@@ -1341,7 +1341,7 @@ This function is available since SDK API **TBD**.
 
 **Description**
 
-This function returns list of adapters suitable to handle workload `input_info`. The list is sorted in priority order: iGPU has advantage over dGPU with only exception when workload is HEVC encode and iGPU is less than Gen12. This rule might be changed in future.
+This function returns list of adapters suitable to handle workload `input_info`. The list is sorted in priority order: iGPU has advantage over dGPU with only exception when workload is HEVC encode and iGPU is less than Gen12. This rule might be changed in future. If `input_info` pointer is NULL, list of all available Intel adapters will be returned.
 
 **Return Status**
 
@@ -1372,7 +1372,7 @@ This function is available since SDK API **TBD**.
 
 **Description**
 
-This function returns list of adapters suitable to decode input `bitstream`. The list is sorted in priority order where iGPU has advantage.  This rule might be changed in future. This function is actually a simplification of [MFXQueryAdapters](#MFXQueryAdapters), because `bitstream` is description of workload itself.
+This function returns list of adapters suitable to decode input `bitstream`. The list is sorted in priority order where iGPU has advantage. This rule might be changed in future. This function is actually a simplification of [MFXQueryAdapters](#MFXQueryAdapters), because `bitstream` is description of workload itself.
 
 **Return Status**
 
@@ -7293,7 +7293,7 @@ SDK API 1.26 adds `SceneChange`, `LongTerm` and `FrameCmplx`.
 
 ```C
 typedef struct {
-    mfxI32 QpY;             
+    mfxI32 QpY;
     mfxU32 InitialCpbRemovalDelay;
     mfxU32 InitialCpbRemovalOffset;
     mfxU32 reserved1[7];
@@ -7324,7 +7324,8 @@ Structure specifies controls for next frame encoding provided by external BRC fu
 **Change History**
  
 This structure is available since SDK API 1.24.
-The SDK API 1.29 adds `MaxFrameSize` , `MaxNumRePak`, `DeltaQP`, `InitialCpbRemovalDelay`, `InitialCpbRemovalOffset`, `NumExtParam` and `ExtParam` fields 
+
+The SDK API 1.29 adds `MaxFrameSize` , `MaxNumRePak`, `DeltaQP`, `InitialCpbRemovalDelay`, `InitialCpbRemovalOffset`, `NumExtParam` and `ExtParam` fields.
 
 ## <a id='mfxBRCFrameStatus'>mfxBRCFrameStatus</a>
 
