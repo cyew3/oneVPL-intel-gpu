@@ -2147,6 +2147,12 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
             MFX_CHECK_NULL_PTR1(bufFRC);
             bufFRC->Algorithm = m_executeParams.frcModeOrig;
         }
+        else if (MFX_EXTBUFF_VPP_COLORFILL == bufferId)
+        {
+            mfxExtVPPColorFill *bufColorfill = reinterpret_cast<mfxExtVPPColorFill *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufColorfill);
+            bufColorfill->Enable = static_cast<mfxU16>(m_executeParams.iBackgroundColor?MFX_CODINGOPTION_ON:MFX_CODINGOPTION_OFF);
+        }
     }
 
     return MFX_ERR_NONE;

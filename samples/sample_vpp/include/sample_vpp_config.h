@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -40,10 +40,6 @@ enum MemType {
     D3D11_MEMORY  = 0x02,
     VAAPI_MEMORY  = 0x03
 };
-
-
-// number of video enhancement filters (denoise, procamp, detail, video_analysis, multi_view, ste, istab, tcc, ace, svc)
-#define ENH_FILTERS_COUNT                (20)
 
 #define VPP_PROCAMP_BRIGHTNESS_DEFAULT    0.0
 #define VPP_PROCAMP_CONTRAST_DEFAULT      1.0
@@ -98,8 +94,6 @@ struct sVideoSignalInfoParam: public mfxExtVPPVideoSignalInfo
     sVideoSignalInfoParam():
         mode(VPP_FILTER_DISABLED)
     {
-        Header.BufferId = MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO;
-        Header.BufferSz = sizeof(mfxExtVPPVideoSignalInfo);
         In.NominalRange   = MFX_NOMINALRANGE_UNKNOWN;
         In.TransferMatrix = MFX_TRANSFERMATRIX_UNKNOWN;
         Out = In;
@@ -112,8 +106,6 @@ struct sMirroringParam: public mfxExtVPPMirroring
     sMirroringParam():
         mode(VPP_FILTER_DISABLED)
     {
-        Header.BufferId = MFX_EXTBUFF_VPP_MIRRORING;
-        Header.BufferSz = sizeof(mfxExtVPPMirroring);
         Type = MFX_MIRRORING_DISABLED;
     };
 } ;
@@ -124,6 +116,14 @@ typedef struct
     FilterConfig mode;
 
 } sDenoiseParam;
+
+struct sColorFillParam: public mfxExtVPPColorFill
+{
+    FilterConfig mode;
+    sColorFillParam():
+        mfxExtVPPColorFill(),
+        mode(VPP_FILTER_DISABLED) { }
+} ;
 
 #ifdef ENABLE_MCTF
 typedef struct

@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -137,6 +137,7 @@ typedef struct _filtersParam
     sSVCParam                 *pSVCParam          ;
     sVideoSignalInfoParam     *pVideoSignalInfo   ;
     sMirroringParam           *pMirroringParam;
+    sColorFillParam           *pColorfillParam    ;
 } sFiltersParam;
 
 struct sInputParams
@@ -168,6 +169,7 @@ struct sInputParams
     std::vector<sSteParam                > steParam;
     std::vector<sIStabParam              > istabParam;
 
+    std::vector<sColorFillParam          > colorfillParam;
     // flag describes type of memory
     // true  - frames in video memory (d3d surfaces),
     // false - in system memory
@@ -475,45 +477,21 @@ struct sAppResources
     GeneralWriter*      pDstFileWriters;
     mfxU32              dstFileWritersN;
 
-    sFrameProcessor*    pProcessor;
-    mfxVideoParam*      pVppParams;
-    sMemoryAllocator*   pAllocator;
-    sInputParams*       pParams;
-    SurfaceVPPStore*    pSurfStore;
+    sFrameProcessor*       pProcessor;
+    MfxVideoParamsWrapper* pVppParams;
+    sMemoryAllocator*      pAllocator;
+    sInputParams*          pParams;
+    SurfaceVPPStore*       pSurfStore;
 
-    /* VPP extension */
-    mfxExtVppAuxData*   pExtVPPAuxData;
-    mfxExtVPPDoUse      extDoUse;
-    mfxU32              tabDoUseAlg[ENH_FILTERS_COUNT];
-    mfxExtBuffer*       pExtBuf[1+ENH_FILTERS_COUNT];
-
-    /* config video enhancement algorithms */
-    mfxExtVPPProcAmp    procampConfig;
-    mfxExtVPPDetail     detailConfig;
-    mfxExtVPPDenoise    denoiseConfig;
-#ifdef ENABLE_MCTF
-    mfxExtVppMctf       mctfConfig;
-#endif
-    mfxExtVPPRotation   rotationConfig;
-    mfxExtVPPScaling    scalingConfig;
-#if MFX_VERSION >= 1025
-    mfxExtColorConversion    chromaSitingConfig;
-#endif
-    mfxExtVPPFrameRateConversion    frcConfig;
-    mfxExtVPPDeinterlacing deinterlaceConfig;
-    mfxExtVPPVideoSignalInfo  videoSignalInfoConfig;
-    mfxExtVPPMirroring  mirroringConfig;
-    mfxExtVPPComposite     compositeConfig;
-
+    // number of video enhancement filters (denoise, procamp, detail, video_analysis, multi_view, ste, istab, tcc, ace, svc)
+    constexpr static uint32_t ENH_FILTERS_COUNT = 20;
+    mfxU32                    tabDoUseAlg[ENH_FILTERS_COUNT];
     // MSDK 3.0
     //  mfxExtVPPGamutMapping gamutConfig;
-    mfxExtMVCSeqDesc      multiViewConfig;
-
 
     ////MSDK API 1.5
     //mfxExtVPPSkinTone              steConfig;
     //mfxExtVPPColorSaturationLevel  tccConfig;
-    mfxExtVPPImageStab             istabConfig;
 
 };
 
