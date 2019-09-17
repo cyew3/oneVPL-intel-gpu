@@ -134,6 +134,7 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
         outputDesc.ColorSpace = inputCSC;
 
         CComQIPtr<ID3D11VideoContext1> ctx1(m_pVideoContext);
+        MFX_CHECK(ctx1, MFX_ERR_DEVICE_FAILED);
         hres = ctx1->DecoderEnableDownsampling(m_pDecoder, inputCSC, &outputDesc, m_numberSurfaces);
         MFX_CHECK(SUCCEEDED(hres), MFX_ERR_DEVICE_FAILED);
     }
