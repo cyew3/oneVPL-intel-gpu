@@ -52,6 +52,14 @@ namespace MFX_VPX_Utility
         return MFX_PROFILE_AV1_MAIN;
     }
 
+#if defined (MFX_VA_WIN)
+    const GUID DXVA_Intel_ModeAV1_VLD =
+    { 0xca44afc5, 0xe1d0, 0x42e6, { 0x91, 0x54, 0xb1, 0x27, 0x18, 0x6d, 0x4d, 0x40 } };
+
+    const GUID DXVA_Intel_ModeAV1_VLD_420_10b =
+    { 0xf9a16190, 0x3fb4, 0x4dc5, { 0x98, 0x46, 0xc8, 0x75, 0x1f, 0x83, 0xd6, 0xd7 } };
+#endif
+
     inline
     bool CheckGUID(VideoCORE* core, eMFXHWType type, mfxVideoParam const* par)
     {
