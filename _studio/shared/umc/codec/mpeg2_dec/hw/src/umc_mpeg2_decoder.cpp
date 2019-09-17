@@ -903,7 +903,7 @@ namespace UMC_MPEG2_DECODER
         return false;
     }
 
-    UMC::Status MPEG2Decoder::EliminateSliceErrors(MPEG2DecoderFrame& frame, uint8_t fieldIndex)
+    void MPEG2Decoder::EliminateSliceErrors(MPEG2DecoderFrame& frame, uint8_t fieldIndex)
     {
         MPEG2DecoderFrameInfo & frameInfo = *frame.GetAU(fieldIndex);
         size_t sliceCount = frameInfo.GetSliceCount();
@@ -919,14 +919,14 @@ namespace UMC_MPEG2_DECODER
             if (sliceNum > 0 && sliceHeader.macroblockAddressIncrement > 0)
             {
                 auto prevSlice = frameInfo.GetSlice(sliceNum - 1); //take previous
-                auto prevSliceHeader = prevSlice->GetSliceHeader();
+                auto& prevSliceHeader = prevSlice->GetSliceHeader();
 
                 // Check if this parts are located at the same row
                 if (sliceHeader.slice_vertical_position == prevSliceHeader.slice_vertical_position)
                     prevSliceHeader.numberMBsInSlice = sliceHeader.macroblockAddressIncrement - prevSliceHeader.macroblockAddressIncrement;
             }
         }
-        return UMC::UMC_OK;
+        return;
     }
 
     UMC::Status MPEG2Decoder::CompletePicture(MPEG2DecoderFrame& frame, uint8_t fieldIndex)
