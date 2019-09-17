@@ -671,64 +671,44 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
 {
     MFX_ITT_TASK("VPPOneFrame");
     MSDK_CHECK_POINTER(pExtSurface,  MFX_ERR_NULL_PTR);
-    mfxFrameSurface1 *pmfxSurface = NULL;
+
     // find/wait for a free working surface
-    pmfxSurface = GetFreeSurface(false, MSDK_SURFACE_WAIT_INTERVAL);
-    MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces for VPP in encoder pool (during long period)\n"))); // return an error if a free surface wasn't found
+    auto out_surface = GetFreeSurface(false, MSDK_SURFACE_WAIT_INTERVAL);
+    MSDK_CHECK_POINTER_SAFE(out_surface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces for VPP in encoder pool (during long period)\n"))); // return an error if a free surface wasn't found
 
     // make sure picture structure has the initial value
     // surfaces are reused and VPP may change this parameter in certain configurations
-    pmfxSurface->Info.PicStruct = m_mfxVppParams.vpp.Out.PicStruct ? m_mfxVppParams.vpp.Out.PicStruct : (m_bEncodeEnable ? m_mfxEncParams : m_mfxDecParams).mfx.FrameInfo.PicStruct;
+    out_surface->Info.PicStruct = m_mfxVppParams.vpp.Out.PicStruct ? m_mfxVppParams.vpp.Out.PicStruct : (m_bEncodeEnable ? m_mfxEncParams : m_mfxDecParams).mfx.FrameInfo.PicStruct;
 
-    pExtSurface->pSurface = pmfxSurface;
+    pExtSurface->pSurface = out_surface;
     mfxStatus sts = MFX_ERR_NONE;
 
 #ifdef ENABLE_MCTF
-    bool bAttachMctfBuffer = false;
-    mfxExtVppMctf * MctfRTParams = NULL;
-
-    const sMctfRunTimeParam* pMctfCurParam = m_MctfRTParams.GetCurParam();
-    bAttachMctfBuffer = NULL != pMctfCurParam;
-    if (bAttachMctfBuffer && pSurfaceIn->pSurface)
+    const auto MCTFCurParam = m_MctfRTParams.GetCurParam();
+    bool applyMCTF = !!MCTFCurParam;
+    if (pSurfaceIn->pSurface)
     {
-        // get a new (or existing) Mctf control buffer
-        MctfRTParams = GetMctfParamBuffer<mfxExtVppMctf, MFX_EXTBUFF_VPP_MCTF>(pSurfaceIn->pSurface);
-        if (MctfRTParams)
+        auto surface = static_cast<mfxFrameSurfaceWrap*>(pSurfaceIn->pSurface);
+        if (applyMCTF)
         {
-            // suppose the following is going to to be pass:
-            MctfRTParams->FilterStrength = pMctfCurParam->FilterStrength;
+            auto mctf = surface->AddExtBuffer<mfxExtVppMctf>();
+            mctf->FilterStrength = MCTFCurParam->FilterStrength;
 #if defined ENABLE_MCTF_EXT
-            MctfRTParams->BitsPerPixelx100k = mfxU32(MCTF_LOSSLESS_BPP * MCTF_BITRATE_MULTIPLIER);
-            MctfRTParams->Deblocking = MFX_CODINGOPTION_OFF;
+            mctf->BitsPerPixelx100k = mfxU32(MCTF_LOSSLESS_BPP * MCTF_BITRATE_MULTIPLIER);
+            mctf->Deblocking = MFX_CODINGOPTION_OFF;
 #endif
-            WipeOutExtParams(pSurfaceIn->pSurface, true, MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE);
-
-
-            if (pSurfaceIn->pSurface->Data.NumExtParam >= MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE) {
-                msdk_printf(MSDK_STRING("number of attached buffers to an input surface >= maximum allowed\n"));
-                sts = MFX_ERR_UNDEFINED_BEHAVIOR;
-                return sts;
-            }
-            else
-                pSurfaceIn->pSurface->Data.ExtParam[pSurfaceIn->pSurface->Data.NumExtParam++] = reinterpret_cast<mfxExtBuffer*>(MctfRTParams);
             m_MctfRTParams.MoveForward();
         }
         else
         {
-            msdk_printf(MSDK_STRING("the extended buffer is not created; nothing can be attached; exit.\n"));
-            sts = MFX_ERR_UNDEFINED_BEHAVIOR;
-            return(sts);
+            surface->RemoveExtBuffer<mfxExtVppMctf>();
         }
-    }
-    else if (!bAttachMctfBuffer && pSurfaceIn->pSurface)
-    {
-        pSurfaceIn->pSurface->Data.NumExtParam = 0;
     }
 #endif
 
     for(;;)
     {
-        sts = m_pmfxVPP->RunFrameVPPAsync(pSurfaceIn->pSurface, pmfxSurface, NULL, &pExtSurface->Syncp);
+        sts = m_pmfxVPP->RunFrameVPPAsync(pSurfaceIn->pSurface, out_surface, NULL, &pExtSurface->Syncp);
 
         if (MFX_ERR_NONE < sts && !pExtSurface->Syncp) // repeat the call if warning and no output
         {
@@ -3192,7 +3172,7 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
 
     for (i = 0; i < nSurfNum; i++)
     {
-        auto surface = std::unique_ptr<mfxFrameSurface1>(new mfxFrameSurface1());
+        auto surface = std::unique_ptr<mfxFrameSurfaceWrap>(new mfxFrameSurfaceWrap);
         surface->Info = pRequest->Info;
 
         if (m_rawInput)
@@ -3205,16 +3185,6 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
         {
             surface->Data.MemId = pResponse->mids[i];
         }
-#ifdef ENABLE_MCTF
-        if (isDecAlloc)
-        {
-            // to allocate a buffer of pointers to buffer and initialize it
-            surface->Data.ExtParam = new mfxExtBuffer*[MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE];
-            for (size_t k = 0; k < MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE; ++k)
-                surface->Data.ExtParam[k] = NULL;
-            surface->Data.NumExtParam = 0;
-        }
-#endif
 
         (isDecAlloc) ? m_pSurfaceDecPool.push_back(surface.get()) : m_pSurfaceEncPool.push_back(surface.get());
 
@@ -3530,7 +3500,7 @@ mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
     if (m_pmfxDEC.get() ||
         ((m_nVPPCompEnable == VppComp || m_nVPPCompEnable == VppCompOnly || m_nVPPCompEnable == VppCompOnlyEncode) && m_pSurfaceDecPool.size()))
     {
-        decOpaq->Out.Surfaces = &m_pSurfaceDecPool[0];
+        decOpaq->Out.Surfaces = m_pSurfaceDecPool.data();
         decOpaq->Out.NumSurface = (mfxU16)m_pSurfaceDecPool.size();
 
         if (m_DecSurfaceType & MFX_MEMTYPE_FROM_VPPOUT)
@@ -3546,7 +3516,7 @@ mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
 
     if (m_pmfxVPP.get())
     {
-        encOpaq->In.Surfaces = &m_pSurfaceEncPool[0];
+        encOpaq->In.Surfaces = m_pSurfaceEncPool.data();
         encOpaq->In.NumSurface = (mfxU16)m_pSurfaceEncPool.size();
         encOpaq->In.Type = (mfxU16)(MFX_MEMTYPE_BASE(m_EncSurfaceType) | MFX_MEMTYPE_FROM_ENCODE);
 
@@ -3584,27 +3554,12 @@ mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
 
 void CTranscodingPipeline::FreeFrames()
 {
-    // free mfxFrameSurface structures and arrays of pointers
-    mfxU32 i;
-    for (i = 0; i < m_pSurfaceDecPool.size(); i++)
-    {
-#ifdef ENABLE_MCTF
-        if (m_pSurfaceDecPool[i]->Data.ExtParam)
-        {
-            delete[] m_pSurfaceDecPool[i]->Data.ExtParam;
-            m_pSurfaceDecPool[i]->Data.ExtParam = NULL;
-        }
-#endif
-        MSDK_SAFE_DELETE(m_pSurfaceDecPool[i]);
-    }
-
+    std::for_each(m_pSurfaceDecPool.begin(), m_pSurfaceDecPool.end(), [](mfxFrameSurface1* s)
+    { auto surface = static_cast<mfxFrameSurfaceWrap*>(s); delete surface; });
     m_pSurfaceDecPool.clear();
 
-    for (i = 0; i < m_pSurfaceEncPool.size(); i++)
-    {
-        MSDK_SAFE_DELETE(m_pSurfaceEncPool[i]);
-    }
-
+    std::for_each(m_pSurfaceEncPool.begin(), m_pSurfaceEncPool.end(), [](mfxFrameSurface1* s)
+    { auto surface = static_cast<mfxFrameSurfaceWrap*>(s); delete surface; });
     m_pSurfaceEncPool.clear();
 
     if (m_pMFXAllocator && !m_bUseOpaqueMemory)
@@ -3612,9 +3567,6 @@ void CTranscodingPipeline::FreeFrames()
         m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_mfxEncResponse);
         m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_mfxDecResponse);
     }
-#ifdef ENABLE_MCTF
-    GetMctfParamBuffer<mfxExtVppMctf, MFX_EXTBUFF_VPP_MCTF>((mfxFrameSurface1*)NULL, true);
-#endif
 } // CTranscodingPipeline::FreeFrames()
 
 mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
