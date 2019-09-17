@@ -5110,7 +5110,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
             {
                 bool bHasFrameDelay(true);
 #ifdef MFX_ENABLE_MCTF_EXT
-                // mctf cannot work properly with FRC if 1 or 2 frame-delay mode is enabeled
+                // mctf cannot work properly with FRC if 1 or 2 frame-delay mode is enabled
                 // if no MctfBuffer in ExtParam, it means MCTF is enabled via DoUse list
                 mfxExtVppMctf * pMctfBuf = reinterpret_cast<mfxExtVppMctf *>(GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VPP_MCTF));
                 if (pMctfBuf)

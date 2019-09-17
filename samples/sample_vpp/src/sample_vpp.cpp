@@ -490,7 +490,7 @@ int main(int argc, msdk_char *argv[])
 
     //prepare mfxParams
     sts = InitParamsVPP(&mfxParamsVideo, &Params, 0);
-            MSDK_CHECK_STATUS_SAFE(sts, "InitParamsVPP failed", {WipeResources(&Resources); WipeParams(&Params);});
+    MSDK_CHECK_STATUS_SAFE(sts, "InitParamsVPP failed", {WipeResources(&Resources); WipeParams(&Params);});
 
     // prepare pts Checker
     if (ptsMaker.get())
