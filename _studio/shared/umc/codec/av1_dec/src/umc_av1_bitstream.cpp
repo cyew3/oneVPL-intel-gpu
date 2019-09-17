@@ -930,6 +930,9 @@ namespace UMC_AV1_DECODER
         }
         av1_calculate_tile_cols(info, limits, fh);
 
+        if (!info.TileCols)
+            throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+
         // Read tile rows
         if (info.uniform_tile_spacing_flag)
         {
