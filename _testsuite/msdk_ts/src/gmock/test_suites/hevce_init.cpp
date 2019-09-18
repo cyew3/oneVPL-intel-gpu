@@ -88,10 +88,11 @@ namespace hevce_init
                     if (g_tsHWtype < MFX_HW_KBL)
                         return false;
                 case 8:
-                    if (((chromaFormat == MFX_CHROMAFORMAT_YUV422
-                        || chromaFormat == MFX_CHROMAFORMAT_YUV444)
-                        && g_tsHWtype < MFX_HW_ICL)
-                        || g_tsHWtype < MFX_HW_SKL)
+                    if (g_tsHWtype < MFX_HW_SKL)
+                        return false;
+                    if (g_tsHWtype < MFX_HW_ICL
+                        && (chromaFormat == MFX_CHROMAFORMAT_YUV422
+                            || chromaFormat == MFX_CHROMAFORMAT_YUV444))
                         return false;
                     break;
                 case 12:
@@ -541,7 +542,7 @@ namespace hevce_init
         mfxHandleType type;
         mfxExtBuffer* buff_in = NULL;
         mfxExtBuffer* buff_out = NULL;
-        mfxStatus sts, chroma_support = IsChromaFormatSupported(m_par.mfx.FrameInfo.ChromaFormat, m_par.mfx.FrameInfo.BitDepthLuma) ? MFX_ERR_NONE : MFX_ERR_INVALID_VIDEO_PARAM;
+        mfxStatus sts, chroma_support;
 
         MFXInit();
 
@@ -622,6 +623,7 @@ namespace hevce_init
             return 0;
         }
 
+        chroma_support = IsChromaFormatSupported(m_par.mfx.FrameInfo.ChromaFormat, m_par.mfx.FrameInfo.BitDepthLuma) ? MFX_ERR_NONE : MFX_ERR_INVALID_VIDEO_PARAM;
         SETPARS(m_pPar, MFX_PAR);
 
         if (!GetAllocator())

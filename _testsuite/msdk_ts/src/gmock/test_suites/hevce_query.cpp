@@ -239,10 +239,11 @@ namespace hevce_query
             if (g_tsHWtype < MFX_HW_KBL)
                 return false;
         case 8:
-            if (((chromaFormat == MFX_CHROMAFORMAT_YUV422
-                || chromaFormat == MFX_CHROMAFORMAT_YUV444)
-                && g_tsHWtype < MFX_HW_ICL)
-                || g_tsHWtype < MFX_HW_SKL)
+            if (g_tsHWtype < MFX_HW_SKL)
+                return false;
+            if (g_tsHWtype < MFX_HW_ICL
+                && (chromaFormat == MFX_CHROMAFORMAT_YUV422
+                    || chromaFormat == MFX_CHROMAFORMAT_YUV444))
                 return false;
             break;
         case 12:
