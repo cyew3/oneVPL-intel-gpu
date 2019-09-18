@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -35,7 +35,7 @@ private:
     {
         mfxStatus sts;
         mfxU32 nframes;
-        struct f_pair 
+        struct f_pair
         {
             mfxU32 ext_type;
             const  tsStruct::Field* f;
@@ -44,10 +44,10 @@ private:
         std::string skips;
     };
 
-    static const tc_struct test_case[];
+    static tc_struct test_case[];
 };
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+TestSuite::tc_struct TestSuite::test_case[] =
 {
     // IPPP, all skipped
     {/*00*/ MFX_ERR_NONE, 10, {
@@ -78,27 +78,27 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, 3}}, ""},
 
     // IPPP|IBBBBP, not all skipped
-    {/*06*/ MFX_ERR_NONE, 30, {
+    {/*06*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 3 5 7"},
-    {/*07*/ MFX_ERR_NONE, 30, {
+    {/*07*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_DUMMY}}, "1 5 7"},
-    {/*08*/ MFX_ERR_NONE, 30, {
+    {/*08*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 3 5 7"},
-    {/*09*/ MFX_ERR_NONE, 30, {
+    {/*09*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, MFX_SKIPFRAME_INSERT_NOTHING}}, "1 5 7"},
-    {/*10*/ MFX_ERR_NONE, 30, {
+    {/*10*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, 3}}, "1 3 5 7"},
-    {/*11*/ MFX_ERR_NONE, 30, {
+    {/*11*/ MFX_ERR_NONE, 0, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 5},
         {EXT_COD2, &tsStruct::mfxExtCodingOption2.SkipFrame, 3}}, "1 5 7"},
@@ -147,6 +147,10 @@ class SurfProc : public tsSurfaceProcessor
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
+    if (!test_case[id].nframes)
+    {
+        test_case[id].nframes = g_tsConfig.sim? 15 : 30;
+    }
     const tc_struct& tc = test_case[id];
 
     MFXInit();
@@ -179,7 +183,7 @@ int TestSuite::RunTest(unsigned int id)
     {
 
         mfxU32 n = tc.nframes;
-        AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1024 * 1024 * n);
+        AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 4 * n);
 
         g_tsStatus.expect(tc.sts);
         EncodeFrames(n);
