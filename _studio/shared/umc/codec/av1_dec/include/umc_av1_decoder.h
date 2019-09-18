@@ -53,6 +53,7 @@ namespace UMC_AV1_DECODER
             : allocator(nullptr)
             , async_depth(0)
             , film_grain(0)
+            , io_pattern(0)
         {}
 
     public:

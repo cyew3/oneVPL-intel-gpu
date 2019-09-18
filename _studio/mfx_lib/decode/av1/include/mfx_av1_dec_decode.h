@@ -84,7 +84,7 @@ private:
     mfxStatus SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out);
 
     AV1DecoderFrame* GetFrameToDisplay();
-    void FillOutputSurface(mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, AV1DecoderFrame*);
+    mfxStatus FillOutputSurface(mfxFrameSurface1** surface_out, mfxFrameSurface1* surface_work, AV1DecoderFrame*);
 
     mfxFrameSurface1* GetOriginalSurface(mfxFrameSurface1* surface)
     {

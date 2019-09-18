@@ -644,15 +644,16 @@ namespace UMC_AV1_DECODER
         : public std::runtime_error
     {
     public:
-
-        av1_exception(int32_t /*status*/)
+        av1_exception(int32_t status)
             : std::runtime_error("AV1 error")
+            , m_status(status)
         {}
-
         int32_t GetStatus() const
         {
-            return UMC::UMC_OK;
+            return m_status;
         }
+    private:
+        int32_t m_status;
     };
 }
 
