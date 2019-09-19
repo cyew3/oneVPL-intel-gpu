@@ -29,6 +29,7 @@
 #define AVC_DDI_VERSION_0952
 #define AVC_DDI_VERSION_0960
 #define AVC_DDI_VERSION_0964
+#define AVC_DDI_VERSION_0965
 
 #include "mfx_ext_ddi.h"
 
@@ -112,6 +113,8 @@ typedef struct
 #define  D3DDDIFMT_INTELENCODE_SYNCOBJECT       (D3DDDIFORMAT)185
 #endif
 
+#define D3DDDIFMT_INTELENCODE_LOOKAHEADDATA     (D3DDDIFORMAT)188
+
 // Decode Extension Functions for DXVA11 Encode
 #define ENCODE_QUERY_ACCEL_CAPS_ID 0x110
 #define ENCODE_ENCRYPTION_SET_ID 0x111
@@ -141,14 +144,16 @@ enum D3D11_DDI_VIDEO_ENCODER_BUFFER_TYPE
     D3D11_DDI_VIDEO_ENCODER_BUFFER_HUFFTBLDATA      = 22,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA         = 23,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_MBCONTROL        = 24, //  in ddi it is called D3D11_VIDEO_ENCODER_BUFFER_MBCONTROL
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    D3D11_DDI_VIDEO_ENCODER_BUFFER_SYNCOBJECT       = 25,
-#endif
+    D3D11_DDI_VIDEO_ENCODER_BUFFER_LOOKAHEADDATA    = 25,
+
     D3D11_DDI_VIDEO_ENCODER_BUFFER_COEFFPROB        = 30,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_DISTORTIONDATA   = 31,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_COEFFICIENTS     = 32,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_STREAMINFO       = 33,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_EVENT            = 34,
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    D3D11_DDI_VIDEO_ENCODER_BUFFER_SYNCOBJECT       = 35, // not defined in D3D11 DDI v0.42 document, resevered
+#endif
 };
 
 typedef struct tagENCODE_QUERY_PROCESSING_RATE_INPUT
@@ -617,7 +622,8 @@ typedef struct tagENCODE_CAPS
             UINT    TCBRCSupport                 : 1;
             UINT    HRDConformanceSupport        : 1;
             UINT    PollingModeSupport           : 1;
-            UINT                                 : 6;
+            UINT    LookaheadBRCSupport          : 1;
+            UINT                                 : 5;
         };
         UINT      CodingLimits2;
     };
@@ -1038,8 +1044,10 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
     UINT    MaxBitRatePerSlidingWindow;
     UINT    MinBitRatePerSlidingWindow;
 #endif
-
-
+#ifdef AVC_DDI_VERSION_0965
+    UCHAR   LookaheadDepth;
+    UCHAR   reserved8b[3];
+#endif
 } ENCODE_SET_SEQUENCE_PARAMETERS_H264;
 
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_MPEG2
