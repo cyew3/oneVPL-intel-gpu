@@ -1703,7 +1703,7 @@ mfxStatus MFXVideoDECODEVC1::CheckForCriticalChanges(mfxVideoParam *in)
     {
         mfxExtOpaqueSurfaceAlloc * opaqueNew = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
 
-        MFX_CHECK(!opaqueNew, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(opaqueNew, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         MFX_CHECK(opaqueNew->In.Type == m_AlloExtBuffer.In.Type, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         MFX_CHECK(opaqueNew->In.NumSurface == m_AlloExtBuffer.In.NumSurface, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
