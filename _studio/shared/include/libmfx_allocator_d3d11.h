@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -240,6 +240,7 @@ namespace mfxDefaultAllocatorD3D11
     mfxStatus GetHDLHW(mfxHDL pthis, mfxMemId mid, mfxHDL *handle);
     mfxStatus UnlockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0);
     mfxStatus FreeFramesHW(mfxHDL pthis, mfxFrameAllocResponse *response);
+    mfxStatus ReallocFrameHW(mfxHDL pthis, const mfxMemId mid, const mfxFrameInfo *info);
 
     mfxStatus SetFrameData(const D3D11_TEXTURE2D_DESC &desc, const D3D11_MAPPED_SUBRESOURCE  &LockedRect, mfxFrameData *ptr);
 

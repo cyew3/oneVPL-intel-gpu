@@ -485,7 +485,23 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
 
 } // mfxStatus D3D11VideoCORE::AllocFrames
 
+mfxStatus D3D11VideoCORE::ReallocFrame(mfxFrameSurface1 *surf)
+{
+    MFX_CHECK_NULL_PTR1(surf);
 
+    mfxMemId memid = surf->Data.MemId;
+
+    if (!(surf->Data.MemType & MFX_MEMTYPE_INTERNAL_FRAME &&
+        (!(surf->Data.MemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET) ||
+        !(surf->Data.MemType & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))))
+        return MFX_ERR_MEMORY_ALLOC;
+
+    mfxFrameAllocator *pFrameAlloc = GetAllocatorAndMid(memid);
+    if (!pFrameAlloc)
+        return MFX_ERR_MEMORY_ALLOC;
+
+    return mfxDefaultAllocatorD3D11::ReallocFrameHW(pFrameAlloc->pthis, memid, &(surf->Info));
+}
 
 mfxStatus D3D11VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {

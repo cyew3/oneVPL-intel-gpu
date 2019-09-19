@@ -35,6 +35,9 @@
 #include "mfx_common_decode_int.h"
 #include "mfx_vpx_dec_common.h"
 #include <libmfx_core_vaapi.h>
+#ifndef MFX_VA_LINUX
+#include <libmfx_core_d3d11.h>
+#endif
 
 #if defined (_WIN32) || defined (_WIN64)
 #pragma warning(disable : 4189)
@@ -534,11 +537,7 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
 
     bool isUseExternalFrames = (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || m_is_opaque_memory;
     bool reallocFrames = (par->mfx.EnableReallocRequest == MFX_CODINGOPTION_ON);
-    m_adaptiveMode =
-#ifndef MFX_VA_LINUX
-            isUseExternalFrames &&
-#endif
-            reallocFrames;
+    m_adaptiveMode = reallocFrames;
 
     if (isUseExternalFrames && !reallocFrames)
     {
@@ -1064,7 +1063,23 @@ mfxStatus VideoDECODEVP9_HW::PrepareInternalSurface(UMC::FrameMemID &mid, mfxFra
 
 #ifndef MFX_VA_LINUX
     (void) frameInfo;
-    UMC::Status umc_sts = m_FrameAllocator->Alloc(&mid, &videoInfo, 0);
+    UMC::Status umc_sts = m_FrameAllocator->Alloc(&mid, &videoInfo, mfx_UMC_ReallocAllowed);
+    if (UMC::UMC_ERR_NOT_ENOUGH_BUFFER == umc_sts && m_adaptiveMode)
+    {
+        mfxFrameSurface1 *surf = m_FrameAllocator->GetSurfaceByIndex(mid);
+        MFX_CHECK(surf, MFX_ERR_INVALID_HANDLE);
+        surf->Info.Width = frameInfo.Width;
+        surf->Info.Height = frameInfo.Height;
+
+        eMFXVAType va_type = m_core->GetVAType();
+        if (va_type == MFX_HW_D3D11)
+        {
+            D3D11VideoCORE *d3d11_core = reinterpret_cast<D3D11VideoCORE *>(m_core);
+            return d3d11_core->ReallocFrame(surf);
+        }
+        else
+            return MFX_ERR_UNSUPPORTED; //reallocation for vp9 d3d9 is not implemented yet
+    }
 #else
     UMC::Status umc_sts = m_FrameAllocator->Alloc(&mid, &videoInfo, mfx_UMC_ReallocAllowed);
     if (UMC::UMC_ERR_NOT_ENOUGH_BUFFER == umc_sts && m_adaptiveMode)
@@ -1220,7 +1235,6 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
 
     if (m_FrameAllocator->FindFreeSurface() == -1)
         return MFX_WRN_DEVICE_BUSY;
-
     sts = PrepareInternalSurface(m_frameInfo.currFrame, surface_work->Info);
     MFX_CHECK_STS(sts);
 
