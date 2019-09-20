@@ -110,12 +110,12 @@ typedef struct tagENCODE_CAPS_HEVC
 
     union {
         struct {
-            USHORT	PFrameSupport : 1;
-            USHORT	LookaheadAnalysisSupport : 1;
-            USHORT	LookaheadBRCSupport : 1;
-            USHORT	reservedbits : 13;
+            USHORT    PFrameSupport            : 1;
+            USHORT    LookaheadAnalysisSupport : 1;
+            USHORT    LookaheadBRCSupport      : 1;
+            USHORT    reservedbits             : 13;
         };
-        USHORT	CodingLimits3;
+        USHORT    CodingLimits3;
     };
 
     UINT     reserved32bits1;
@@ -266,9 +266,9 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     USHORT  SlidingWindowSize;
     UINT    MaxBitRatePerSlidingWindow;
     UINT    MinBitRatePerSlidingWindow;
-//    UCHAR   LookaheadDepth;     // [0..127]
-//    UCHAR   reserved8b[3];
 
+    UCHAR   LookaheadDepth;               // [0..127]
+    UCHAR   reserved8b[3];
 } ENCODE_SET_SEQUENCE_PARAMETERS_HEVC;
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC

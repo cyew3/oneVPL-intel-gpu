@@ -321,7 +321,7 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", SlidingWindowSize);
     TRACE("%d", MaxBitRatePerSlidingWindow);
     TRACE("%d", MinBitRatePerSlidingWindow);
-//    TRACE("%d", LookaheadDepth);
+    TRACE("%d", LookaheadDepth);
 
  DECL_END
 #undef FIELD_FORMAT
