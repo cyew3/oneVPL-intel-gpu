@@ -375,39 +375,12 @@ bool VideoDECODEAV1::IsNeedChangeVideoParam(mfxVideoParam * newPar, mfxVideoPara
 
 mfxStatus VideoDECODEAV1::Reset(mfxVideoParam* par)
 {
-    MFX_CHECK_NULL_PTR1(par);
-
+    (void) par;
     UMC::AutomaticUMCMutex guard(m_guard);
 
     MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK(m_platform == MFX_PLATFORM_HARDWARE, MFX_ERR_UNSUPPORTED);
 
-    eMFXHWType type = m_core->GetHWType();
-
-    MFX_CHECK(CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
-    MFX_CHECK(MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_AV1, m_platform), MFX_ERR_INVALID_VIDEO_PARAM);
-    bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(par, &m_init_video_par, type);
-
-    auto pOpaqAlloc = reinterpret_cast<mfxExtOpaqueSurfaceAlloc*>(
-        GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION));
-
-    if (pOpaqAlloc)
-    {
-        MFX_CHECK(m_init_video_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-        MFX_CHECK(m_request.NumFrameMin == pOpaqAlloc->Out.NumSurface, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-    }
-
-    //m_decoder->Reset();
-    MFX_CHECK(m_allocator->Reset() == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
-
-    if (0 == m_video_par.mfx.FrameInfo.FrameRateExtN || 0 == m_video_par.mfx.FrameInfo.FrameRateExtD)
-    {
-        m_video_par.mfx.FrameInfo.FrameRateExtD = m_init_video_par.mfx.FrameInfo.FrameRateExtD;
-        m_video_par.mfx.FrameInfo.FrameRateExtN = m_init_video_par.mfx.FrameInfo.FrameRateExtN;
-    }
-
-    MFX_CHECK(!isNeedChangeVideoParamWarning, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     return MFX_ERR_NONE;
 }
 
@@ -524,9 +497,13 @@ mfxStatus VideoDECODEAV1::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVid
 
         UMC_AV1_DECODER::AV1DecoderParams vp;
         sts = ConvertStatusUmc2Mfx(UMC_AV1_DECODER::AV1Decoder::DecodeHeader(&in, vp));
+        if (sts == MFX_ERR_MORE_DATA || sts == MFX_ERR_MORE_SURFACE)
+            return sts;
         MFX_CHECK_STS(sts);
 
         sts = FillVideoParam(core, &vp, par);
+        if (sts == MFX_ERR_MORE_DATA || sts == MFX_ERR_MORE_SURFACE)
+            return sts;
         MFX_CHECK_STS(sts);
     }
     catch (UMC_AV1_DECODER::av1_exception const &ex)
