@@ -114,6 +114,8 @@ private:
 
     mfxFrameAllocRequest                         m_request;
     mfxFrameAllocResponse                        m_response;
+
+   bool                                          m_is_init;
 };
 
 #endif // MFX_ENABLE_AV1_VIDEO_DECODE

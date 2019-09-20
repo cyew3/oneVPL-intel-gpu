@@ -164,6 +164,7 @@ VideoDECODEAV1::VideoDECODEAV1(VideoCORE* core, mfxStatus* sts)
     , m_first_run(true)
     , m_request()
     , m_response()
+    , m_is_init(false)
 {
     if (sts)
     {
@@ -173,7 +174,10 @@ VideoDECODEAV1::VideoDECODEAV1(VideoCORE* core, mfxStatus* sts)
 
 VideoDECODEAV1::~VideoDECODEAV1()
 {
-    Close();
+    if (m_is_init)
+    {
+        Close();
+    }
 }
 
 mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
@@ -376,8 +380,8 @@ bool VideoDECODEAV1::IsNeedChangeVideoParam(mfxVideoParam * newPar, mfxVideoPara
 mfxStatus VideoDECODEAV1::Reset(mfxVideoParam* par)
 {
     (void) par;
-    UMC::AutomaticUMCMutex guard(m_guard);
 
+    MFX_CHECK(m_is_init, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
 
@@ -388,8 +392,18 @@ mfxStatus VideoDECODEAV1::Close()
 {
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK(m_is_init, MFX_ERR_NOT_INITIALIZED);
+
+    m_allocator->Close();
+
+    if (0 < m_response.NumFrameActual)
+    {
+        m_core->FreeFrames(&m_response);
+    }
+
+    memset(&m_request, 0, sizeof(m_request));
+    memset(&m_response, 0, sizeof(m_response));
+    m_is_init = false;
 
     return MFX_ERR_NONE;
 }
@@ -612,8 +626,6 @@ mfxStatus VideoDECODEAV1::GetPayload(mfxU64* /*time_stamp*/, mfxPayload* /*pPayl
 mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, mfxThreadTask* task)
 {
     MFX_CHECK_NULL_PTR1(task);
-
-    UMC::AutomaticUMCMutex guard(m_guard);
 
     MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
