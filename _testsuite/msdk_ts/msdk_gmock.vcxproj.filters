@@ -1119,5 +1119,8 @@
     <ClCompile Include="src\gmock\test_suites\hevce_custom_qmatrix.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_mbbrc.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
