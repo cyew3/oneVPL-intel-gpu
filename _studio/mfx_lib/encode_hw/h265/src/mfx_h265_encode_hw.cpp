@@ -507,6 +507,8 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
                                     request.Info.Width, request.Info.Height,
                                     request.Info.AspectRatioW, request.Info.AspectRatioH); //save block info in aspect ratio parameters
           MFX_CHECK_STS(sts);
+          m_CuQp.m_info.AspectRatioW = request.Info.AspectRatioW;
+          m_CuQp.m_info.AspectRatioH = request.Info.AspectRatioH;
     }
 #endif
 #endif
@@ -1601,7 +1603,7 @@ mfxStatus MFXVideoENCODEH265_HW::FreeTask(Task &task)
     }
     if (task.m_midCUQp)
     {
-        ReleaseResource(m_bs,  task.m_midCUQp);
+        ReleaseResource(m_CuQp,  task.m_midCUQp);
         task.m_midCUQp = 0;
     }
 

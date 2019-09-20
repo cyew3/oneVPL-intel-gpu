@@ -1604,8 +1604,8 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
                         r = (roi.ROI[i].Right + 15) >> 4,
                         b = (roi.ROI[i].Bottom + 15) >> 4;
 
-                //Additional 32x32 block alignment for HEVC
-                if(m_mfxEncParams.mfx.CodecId == MFX_CODEC_HEVC)
+                //Additional 32x32 block alignment for HEVC VDEnc, using caps could be better
+                if(m_mfxEncParams.mfx.CodecId == MFX_CODEC_HEVC && m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON)
                 {
                     l = ((roi.ROI[i].Left) >> 5) << 1;
                     t = ((roi.ROI[i].Top) >> 5) << 1;
