@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
@@ -147,16 +157,29 @@ public:
 #if !defined(MSDK_ALIGN16)
 #define MSDK_ALIGN16(value) (((value + 15) >> 4) << 4)
 #endif
+#if !defined(MSDK_ALIGN32)
+#define MSDK_ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
+#endif
 
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
+
+    if (id == 1 && g_tsConfig.sim && g_tsConfig.lowpower != MFX_CODINGOPTION_ON)
+    {
+        // workload is too big for sim environment
+        throw tsSKIP;
+    }
     auto& tc = test_case[id];
     int nframes = 10;
-    tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.Width, MSDK_ALIGN16(1920));
-    tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.Height, MSDK_ALIGN16(1080));
-    tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1920);
-    tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 1080);
+    mfxU16 width = g_tsConfig.sim? 256 : 1920;
+    mfxU16 height = g_tsConfig.sim ? 144 : 1080;
+
+    tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.Width, MSDK_ALIGN16(width));
+    // ALIGN32 required for MFX_PICSTRUCT_PROGRESSIVE
+    tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.Height, MSDK_ALIGN32(height));
+    tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, width);
+    tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, height);
     Init();
 
     Verifier verifier;
@@ -182,10 +205,13 @@ int TestSuite::RunTest(unsigned int id)
         }
         if(tc.set_par[i].ext_type & MFXRES)
         {
-            tsStruct::set(m_pPar, *tc.set_par[i].resw, MSDK_ALIGN16(tc.set_par[i].v_resw));
-            tsStruct::set(m_pPar, *tc.set_par[i].resh, MSDK_ALIGN16(tc.set_par[i].v_resh));
-            tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, tc.set_par[i].v_resw);
-            tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, tc.set_par[i].v_resh);
+            mfxU32 resw = g_tsConfig.sim? 180 : tc.set_par[i].v_resw;
+            mfxU32 resh = g_tsConfig.sim? 144 : tc.set_par[i].v_resh;
+
+            tsStruct::set(m_pPar, *tc.set_par[i].resw, MSDK_ALIGN16(resw));
+            tsStruct::set(m_pPar, *tc.set_par[i].resh, MSDK_ALIGN32(resh));
+            tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, resw);
+            tsStruct::set(m_pPar,tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, resh);
             resolution.Init(tc.set_par[i].v_resw, tc.set_par[i].v_resh);
         }
         Reset();
