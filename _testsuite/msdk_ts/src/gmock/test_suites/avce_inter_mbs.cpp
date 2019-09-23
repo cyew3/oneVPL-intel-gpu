@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -14,6 +14,13 @@ Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 #include <vector>
 
 //#define DEBUG_STREAM "avce_inter_mbs.264"
+
+#if !defined(MSDK_ALIGN16)
+#define MSDK_ALIGN16(value) (((value + 15) >> 4) << 4)
+#endif
+#if !defined(MSDK_ALIGN32)
+#define MSDK_ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
+#endif
 
 namespace avce_inter_mbs
 {
@@ -303,21 +310,22 @@ typedef struct
     mfxU16 GopRefDist;
     mfxU16 BRefType;
     mfxU16 NumRefFrame;
-    mfxU32 nFrames;
 } tc_struct;
 
 tc_struct test_case[] =
 {
-//       EncodedOrder PicStruct                 GopPicSize GopRefDist BRefType NumRefFrame nFrames
-/* 00 */{           1, MFX_PICSTRUCT_FIELD_TFF,          24,         4,       2,          3,    60 },
-/* 01 */{           0, MFX_PICSTRUCT_FIELD_TFF,          24,         4,       2,          3,    60 },
+//       EncodedOrder PicStruct                 GopPicSize GopRefDist BRefType NumRefFrame
+/* 00 */{           1, MFX_PICSTRUCT_FIELD_TFF,          24,         4,       2,          3 },
+/* 01 */{           0, MFX_PICSTRUCT_FIELD_TFF,          24,         4,       2,          3 },
 };
 
 int test(unsigned int id)
 {
     TS_START;
     tc_struct& tc = test_case[id];
-    const char* stream = g_tsStreamPool.Get("/YUV/720x480i29_jetcar_CC60f.nv12");
+    const char* stream = g_tsConfig.sim? g_tsStreamPool.Get("forBehaviorTest/salesman_176x144_50.yuv")
+        : g_tsStreamPool.Get("YUV/720x480i29_jetcar_CC60f.nv12");
+    mfxU32 nFrames = g_tsConfig.sim? 30 : 60;
     g_tsStreamPool.Reg();
 
     Test enc;
@@ -329,8 +337,18 @@ int test(unsigned int id)
     enc.m_par.mfx.GopPicSize = tc.GopPicSize;
     enc.m_par.mfx.GopOptFlag = MFX_GOP_STRICT;
     enc.m_par.mfx.EncodedOrder = tc.EncodedOrder;
-    enc.m_par.mfx.FrameInfo.Width  = enc.m_par.mfx.FrameInfo.CropW = 720;
-    enc.m_par.mfx.FrameInfo.Height = enc.m_par.mfx.FrameInfo.CropH = 480;
+    if (g_tsConfig.sim)
+    {
+        enc.m_par.mfx.FrameInfo.Width  = MSDK_ALIGN16(176);
+        enc.m_par.mfx.FrameInfo.CropW  = 176;
+        enc.m_par.mfx.FrameInfo.Height = MSDK_ALIGN32(144);
+        enc.m_par.mfx.FrameInfo.CropH  = 144;
+    }
+    else
+    {
+        enc.m_par.mfx.FrameInfo.Width  = enc.m_par.mfx.FrameInfo.CropW = 720;
+        enc.m_par.mfx.FrameInfo.Height = enc.m_par.mfx.FrameInfo.CropH = 480;
+    }
 
     tsRawReader f(stream, enc.m_par.mfx.FrameInfo);
     enc.m_filler = &f;
@@ -343,11 +361,11 @@ int test(unsigned int id)
     {
         enc.m_filler = &r;
         enc.QueryIOSurf();
-        enc.m_request.NumFrameMin = enc.m_request.NumFrameSuggested = 
+        enc.m_request.NumFrameMin = enc.m_request.NumFrameSuggested =
             enc.m_par.mfx.GopRefDist - 1 + enc.m_par.mfx.NumRefFrame + enc.m_par.AsyncDepth;
     }
 
-    enc.EncodeFrames(tc.nFrames);
+    enc.EncodeFrames(nFrames);
 
     TS_END;
     return 0;
