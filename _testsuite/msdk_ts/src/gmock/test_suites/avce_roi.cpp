@@ -326,15 +326,6 @@ tc_struct test_case[] =
 };
 #endif
 
-bool isRateControlMethodSupported(tsVideoEncoder& enc)
-{
-    // CBR and VBR aren't supported with LowPower
-    if (enc.m_par.mfx.LowPower == MFX_CODINGOPTION_ON
-        && enc.m_par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
-        return false;
-    return true;
-}
-
 int test(unsigned int id)
 {
     TS_START;
@@ -366,10 +357,6 @@ int test(unsigned int id)
 
     mfxStatus sts = MFX_ERR_NONE;
     g_tsStatus.expect(tc.sts);
-    if (!isRateControlMethodSupported(enc))
-    {
-        tc.sts = MFX_ERR_UNSUPPORTED;
-    }
 
     if(Query & tc.func)
     {
@@ -403,7 +390,7 @@ int test(unsigned int id)
 
             g_tsTrace = 0;
             enc.Query(enc.m_session, &enc.m_par, &pout);
-            std::cout << "Max supported NumROI for this HW: " << roi.NumROI << ".\n";
+            std::cout << "Max supported NumROI for this HW: " << roi_out.NumROI << ".\n";
             mfxU32 maxSupportedNumROI = roi_out.NumROI;
             g_tsTrace = temp_trace;
 
@@ -454,10 +441,6 @@ int test(unsigned int id)
             (*tc.set_rc)(enc, &enc.m_par, tc.p0, tc.p1, tc.p2);
 
         g_tsStatus.expect(MFX_ERR_NONE);
-        if (!isRateControlMethodSupported(enc))
-        {
-            g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
-        }
         sts = enc.Init(enc.m_session, &enc.m_par);
 
         if(WoROIInit & tc.func)
@@ -489,10 +472,6 @@ int test(unsigned int id)
                 (*tc.set_par)(enc, &enc.m_par, tc.p3, tc.p4, tc.p5);
         }
         g_tsStatus.expect(MFX_ERR_NONE);
-        if (!isRateControlMethodSupported(enc))
-        {
-            g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
-        }
         sts = enc.Init(enc.m_session, &enc.m_par);
         if (sts != MFX_ERR_INVALID_VIDEO_PARAM)
         {

@@ -135,34 +135,6 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
         }
     }
 
-    if (   par.mfx.LowPower == MFX_CODINGOPTION_ON && par.mfx.CodecId == MFX_CODEC_AVC
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-        && function != QUERYIOSURF)
-    {
-        mfxExtEncoderROI* roi = GetExtBufferPtr(par);
-        mfxStatus expect = g_tsStatus.m_expected;
-
-        if (roi && roi->NumROI)
-        {
-            switch (function)
-            {
-            case INIT:
-                expect = MFX_ERR_INVALID_VIDEO_PARAM;
-                break;
-            case RESET:
-                if (expect != MFX_ERR_NOT_INITIALIZED)
-                    expect = MFX_ERR_INVALID_VIDEO_PARAM;
-                break;
-            case QUERY:
-                expect = MFX_ERR_UNSUPPORTED;
-                break;
-            default:
-                break;
-            }
-        }
-        g_tsStatus.expect(expect);
-    }
-
     if (function != QUERYIOSURF && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
     {
         mfxExtCodingOption3* CO3 = GetExtBufferPtr(par);
