@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -17,6 +17,12 @@ Copyright(c) 2018 Intel Corporation. All Rights Reserved.
 
 using namespace BS_AVC2;
 
+#if !defined(MSDK_ALIGN16)
+#define MSDK_ALIGN16(value) (((value + 15) >> 4) << 4)
+#endif
+#if !defined(MSDK_ALIGN32)
+#define MSDK_ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
+#endif
 
 namespace avce_weight_prediction
 {
@@ -32,7 +38,7 @@ namespace avce_weight_prediction
         DEFAULT_WEIGHT_PREDICTION_B = 4, // init by mfx paramerers
         NONE = 0,
     };
-    const mfxU16 NumFrames = 30;
+    mfxU16 NumFrames = 30;
     const mfxF64 PSNR_THRESHOLD = 30;
     const mfxF64 SSIM_THRESHOLD = 0.8;
 
@@ -211,7 +217,7 @@ namespace avce_weight_prediction
     {
         if (m_reader)
             delete m_reader;
-        m_reader = new tsRawReader(stream, m_par.mfx.FrameInfo, 30);
+        m_reader = new tsRawReader(stream, m_par.mfx.FrameInfo, NumFrames);
         m_reader->ProcessSurface(s);
 
         if ((fn % 2) != 0)
@@ -375,12 +381,27 @@ namespace avce_weight_prediction
         m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
         m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
         m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-        m_par.mfx.FrameInfo.Width = 352;
-        m_par.mfx.FrameInfo.Height = 288;
-        m_par.mfx.FrameInfo.CropW = 352;
-        m_par.mfx.FrameInfo.CropH = 288;
 
-        stream = g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12");
+        if (g_tsConfig.sim)
+        {
+            NumFrames = 15;
+
+            m_par.mfx.FrameInfo.Width =  MSDK_ALIGN16(176);
+            m_par.mfx.FrameInfo.Height = MSDK_ALIGN32(144);
+            m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.CropH = 144;
+
+            stream = g_tsStreamPool.Get("forBehaviorTest/salesman_176x144_50.yuv");
+        }
+        else
+        {
+            m_par.mfx.FrameInfo.Width = 352;
+            m_par.mfx.FrameInfo.Height = 288;
+            m_par.mfx.FrameInfo.CropW = 352;
+            m_par.mfx.FrameInfo.CropH = 288;
+
+            stream = g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12");
+        }
         g_tsStreamPool.Reg();
 
         CO3.WeightedPred = tc.WeightPredP;
@@ -540,4 +561,4 @@ namespace avce_weight_prediction
     }
 
     TS_REG_TEST_SUITE_CLASS(avce_weight_prediction);
-};
+}
