@@ -274,6 +274,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 
     m_first_run = true;
     m_init_video_par = *par;
+    m_is_init = true;
 
     return MFX_ERR_NONE;
 }
