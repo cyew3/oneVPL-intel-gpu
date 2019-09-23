@@ -852,7 +852,7 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
             if (frame)
             {
                 sts = FillOutputSurface(surface_out, surface_work, frame);
-                MFX_CHECK_STS(sts);
+                return MFX_ERR_NONE;
             }
 
             if (umcFrameRes != UMC::UMC_OK)
