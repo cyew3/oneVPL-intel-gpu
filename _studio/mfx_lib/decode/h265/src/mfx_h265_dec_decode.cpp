@@ -40,6 +40,7 @@
         #include "umc_va_dxva2_protected.h"
         #include "umc_va_linux_protected.h"
     #endif
+#include "umc_va_video_processing.h"
 #endif
 
 using namespace UMC_HEVC_DECODER;
@@ -243,6 +244,26 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     int32_t useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
         (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (m_vPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    /* There are following conditions for post processing via HW fixed function engine:
+     * (1): AVC
+     * (2): Progressive only
+     * (3): Supported on SKL (Core) and APL (Atom) platform and above
+     * (4): Only video memory supported (so, OPAQ memory does not supported!)
+     * */
+    if (videoProcessing)
+    {
+        MFX_CHECK(MFX_HW_SCL <= m_core->GetHWType() &&
+            MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct &&
+            (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY),
+            MFX_ERR_UNSUPPORTED);
+
+        if (m_core->GetVAType() == MFX_HW_VAAPI)
+            useInternal = 1;
+    }
+#endif
+
     if (m_vPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
@@ -341,6 +362,14 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     UMC::Status umcSts = m_FrameAllocator->InitMfx(0, m_core, &m_vFirstPar, &request, &m_response, !useInternal, m_platform == MFX_PLATFORM_SOFTWARE);
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    if (videoProcessing)
+    {
+        MFX_CHECK(useInternal || MFX_HW_D3D11 == m_core->GetVAType(), MFX_ERR_UNSUPPORTED);
+        m_FrameAllocator->SetSfcPostProcessingFlag(true);
+    }
+#endif
+
     umcSts = m_MemoryAllocator.InitMem(0, m_core);
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
 
@@ -367,6 +396,14 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
             {
                 MFX_CHECK(m_va->GetProtectedVA()->SetModes(par) == UMC::UMC_OK, MFX_ERR_INVALID_VIDEO_PARAM);
             }
+        }
+#endif
+
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+        if (m_va->GetVideoProcessingVA())
+        {
+            umcSts = m_va->GetVideoProcessingVA()->Init(par, videoProcessing);
+            MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_INVALID_VIDEO_PARAM);
         }
 #endif
     }
@@ -421,6 +458,25 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
         type = m_core->GetHWType();
     }
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(m_vFirstPar.ExtParam, m_vFirstPar.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+
+    if (videoProcessing != nullptr)
+    {
+        // hardware resize is enabled
+        bool hardwareUpscale = 
+            videoProcessing->Out.Width >= par->mfx.FrameInfo.Width ||
+            videoProcessing->Out.Height >= par->mfx.FrameInfo.Height;
+
+        if (hardwareUpscale)
+        {
+            // for now only downscale is supported
+            // at least Windows DirectX 11 provides only downscale interface
+            // ID3D11VideoContext1->DecoderEnableDownsampling()
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
+#endif
     eMFXPlatform platform = MFX_Utility::GetPlatform_H265(m_core, par);
 
     MFX_CHECK(CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -567,6 +623,15 @@ mfxStatus VideoDECODEH265::GetVideoParam(mfxVideoParam *par)
         mfxExtVideoSignalInfo * videoSignalInternal = m_vPar.GetExtendedBuffer<mfxExtVideoSignalInfo>(MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
         *videoSignal = *videoSignalInternal;
     }
+
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    if (videoProcessing)
+    {
+        mfxExtDecVideoProcessing * videoProcessingInternal = m_vPar.GetExtendedBuffer<mfxExtDecVideoProcessing>(MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+        *videoProcessing = *videoProcessingInternal;
+    }
+#endif
 
     mfxExtHEVCParam * hevcParam = (mfxExtHEVCParam *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_HEVC_PARAM);
     if (hevcParam)
@@ -1044,6 +1109,21 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
         m_va->GetProtectedVA()->SetBitstream(bs);
     }
 #endif
+
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    if (m_va->GetVideoProcessingVA() && m_core->GetVAType() == MFX_HW_VAAPI)
+    {
+        mfxHDL surfHDL = {};
+        if (!m_isOpaq)
+            sts = m_core->GetExternalFrameHDL(surface_work->Data.MemId, &surfHDL, false);
+        else
+            sts = m_core->GetFrameHDL(surface_work->Data.MemId, &surfHDL, false);
+
+        MFX_CHECK_STS(sts);
+
+        m_va->GetVideoProcessingVA()->SetOutputSurface(surfHDL);
+    }
+#endif // !MFX_DEC_VIDEO_POSTPROCESS_DISABLE
 #endif
 
     try
@@ -1259,6 +1339,17 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     surface_out->Info.CropW = (mfxU16)(pFrame->lumaSize().width - pFrame->m_crop_right - pFrame->m_crop_left);
     surface_out->Info.CropX = (mfxU16)(pFrame->m_crop_left);
     surface_out->Info.CropY = (mfxU16)(pFrame->m_crop_top);
+
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(m_vFirstPar.ExtParam, m_vFirstPar.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    if (videoProcessing)
+    {
+        surface_out->Info.CropH = videoProcessing->Out.CropH;
+        surface_out->Info.CropW = videoProcessing->Out.CropW;
+        surface_out->Info.CropX = videoProcessing->Out.CropX;
+        surface_out->Info.CropY = videoProcessing->Out.CropY;
+    }
+#endif
 
     bool isShouldUpdate = !(m_vFirstPar.mfx.FrameInfo.AspectRatioH || m_vFirstPar.mfx.FrameInfo.AspectRatioW);
 
@@ -1619,6 +1710,39 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
             return false;
     }
 
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    mfxExtDecVideoProcessing * newVideoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    mfxExtDecVideoProcessing * oldVideoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(oldPar->ExtParam, oldPar->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+
+    if (((newVideoProcessing) && (!oldVideoProcessing)) ||
+        ((!newVideoProcessing) && (oldVideoProcessing)))
+        return false;
+    else if (newVideoProcessing && oldVideoProcessing)
+    {
+        if (newVideoProcessing->Out.Width > oldVideoProcessing->Out.Width)
+            return false;
+        if (newVideoProcessing->Out.Height > oldVideoProcessing->Out.Height)
+            return false;
+        /* Check Input cropping */
+        if (!((newVideoProcessing->In.CropX <= newVideoProcessing->In.CropW) &&
+            (newVideoProcessing->In.CropW <= newPar->mfx.FrameInfo.CropW) &&
+            (newVideoProcessing->In.CropY <= newVideoProcessing->In.CropH) &&
+            (newVideoProcessing->In.CropH <= newPar->mfx.FrameInfo.CropH)))
+            return false;
+
+        /* Check output cropping */
+        if (!((newVideoProcessing->Out.CropX <= newVideoProcessing->Out.CropW) &&
+            (newVideoProcessing->Out.CropW <= newVideoProcessing->Out.Width) &&
+            ((newVideoProcessing->Out.CropX + newVideoProcessing->Out.CropH)
+                <= newVideoProcessing->Out.Width) &&
+                (newVideoProcessing->Out.CropY <= newVideoProcessing->Out.CropH) &&
+            (newVideoProcessing->Out.CropH <= newVideoProcessing->Out.Height) &&
+            ((newVideoProcessing->Out.CropY + newVideoProcessing->Out.CropH)
+                <= newVideoProcessing->Out.Height)))
+            return false;
+
+    }
+#endif //MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     return true;
 }
 

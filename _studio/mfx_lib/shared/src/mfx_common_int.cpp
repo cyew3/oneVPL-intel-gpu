@@ -689,6 +689,9 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
 #ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
                                                                , MFX_EXTBUFF_FORCE_PRIVATE_DDI
 #endif
+#ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+                                                               ,MFX_EXTBUFF_DEC_VIDEO_PROCESSING
+#endif
                                                                };
 
     static const mfxU32 g_decoderSupportedExtBuffersVC1[]   = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,

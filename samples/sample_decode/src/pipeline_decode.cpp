@@ -884,8 +884,9 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
             if ( ((MODE_DECODER_POSTPROC_AUTO == pParams->nDecoderPostProcessing) ||
                   (MODE_DECODER_POSTPROC_FORCE == pParams->nDecoderPostProcessing)) &&
                  (MFX_CODEC_AVC == m_mfxVideoParams.mfx.CodecId ||
-                  MFX_CODEC_JPEG == m_mfxVideoParams.mfx.CodecId) && /* Only for AVC and JPEG */
-                 (MFX_PICSTRUCT_PROGRESSIVE == m_mfxVideoParams.mfx.FrameInfo.PicStruct)) /* ...And only for progressive!*/
+                  MFX_CODEC_JPEG == m_mfxVideoParams.mfx.CodecId || /* Only for AVC */
+                  MFX_CODEC_HEVC == m_mfxVideoParams.mfx.CodecId) && /* and HEVC */
+                (MFX_PICSTRUCT_PROGRESSIVE == m_mfxVideoParams.mfx.FrameInfo.PicStruct)) /* ...And only for progressive!*/
             {   /* it is possible to use decoder's post-processing */
 
                 // JPEG only suppoted w/o resize, so use W/H from DecodeHeader(), if they are not set
@@ -919,7 +920,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
             if (MODE_DECODER_POSTPROC_FORCE == pParams->nDecoderPostProcessing && m_bVppIsUsed)
             {
                 /* it is impossible to use decoder's post-processing */
-                msdk_printf(MSDK_STRING("ERROR: decoder postprocessing (-dec_postproc forced) cannot be used for this stream!\n") );
+                msdk_printf(MSDK_STRING("ERROR: decoder postprocessing (-dec_postproc forced) cannot resize this stream!\n") );
                 return MFX_ERR_UNSUPPORTED;
             }
             if ((m_bVppIsUsed) && (MODE_DECODER_POSTPROC_AUTO == pParams->nDecoderPostProcessing))

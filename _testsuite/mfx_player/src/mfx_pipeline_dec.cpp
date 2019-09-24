@@ -1843,10 +1843,7 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     {
         m_extDecVideoProcessing->Out.ChromaFormat = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
         m_extDecVideoProcessing->Out.FourCC       = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
-        m_inParams.FrameInfo.Width  = m_extDecVideoProcessing->Out.CropW;
-        m_inParams.FrameInfo.Height = m_extDecVideoProcessing->Out.CropH;
-        m_inParams.FrameInfo.CropW  = m_extDecVideoProcessing->Out.CropW;
-        m_inParams.FrameInfo.CropH  = m_extDecVideoProcessing->Out.CropH;
+
         m_components[eDEC].m_extParams.push_back(m_extDecVideoProcessing);
         m_components[eDEC].AssignExtBuffers();
     }
@@ -2516,16 +2513,6 @@ mfxStatus MFXDecPipeline::InitRenderParams()
     {
         // try to set up the bitDepth by FourCC
         MFX_CHECK_STS(InitBitDepthByFourCC(refInfoOut));
-    }
-
-    if (!m_extDecVideoProcessing.IsZero())
-    {
-        refInfoOut.Width    = m_extDecVideoProcessing->Out.Width;
-        refInfoOut.Height   = m_extDecVideoProcessing->Out.Height;
-        refInfoOut.CropX    = m_extDecVideoProcessing->Out.CropX;
-        refInfoOut.CropY    = m_extDecVideoProcessing->Out.CropY;
-        refInfoOut.CropW    = m_extDecVideoProcessing->Out.CropW;
-        refInfoOut.CropH    = m_extDecVideoProcessing->Out.CropH;
     }
 
     m_components[eREN].m_extParams.merge
