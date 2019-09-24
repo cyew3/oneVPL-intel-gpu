@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -12,11 +12,15 @@ Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 #include "ts_struct.h"
 
+#if !defined(MSDK_ALIGN16)
+#define MSDK_ALIGN16(value) (((value + 15) >> 4) << 4)
+#endif
+#if !defined(MSDK_ALIGN32)
+#define MSDK_ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
+#endif
+
 namespace avce_advanced_ref_lists
 {
-
-#define FRAME_WIDTH         720
-#define FRAME_HEIGHT        576
 
 #define MAX_REF_LIST_COUNT  12
 #define MAX_MFX_PARAM_COUNT 6
@@ -818,7 +822,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             {&tsStruct::mfxVideoParam.mfx.EncodedOrder,        eo}, \
 }
 
-const tc_struct test_case[] =
+const tc_struct hw_test_case[] =
 {
     {/*0*/
         SET_RPL_EXPLICITLY, 6, MFX_B_REF_OFF,
@@ -930,13 +934,102 @@ const tc_struct test_case[] =
     },
 };
 
+const tc_struct sim_test_case[] =
+{
+    {/*0*/
+    },
+    {/*1*/
+    },
+    {/*2*/
+    },
+    {/*3*/
+    },
+    // TU: 1; EncodedOrder: 0, 1; GopRefDist: 1, 2, 4, 8; NumRefFrame 9;
+    {/*4*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 5, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 5, /*GopRefDist*/ 1, /*NumRefFrame*/ 3, /*TU*/ 1, /*EncodedOrder*/ 0),
+    },
+    {/*5*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 5, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 5, /*GopRefDist*/ 1, /*NumRefFrame*/ 3, /*TU*/ 1, /*EncodedOrder*/ 1),
+    },
+    {/*6*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 5, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 5, /*GopRefDist*/ 2, /*NumRefFrame*/ 3, /*TU*/ 1, /*EncodedOrder*/ 1),
+    },
+    {/*7*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 5, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 5, /*GopRefDist*/ 4, /*NumRefFrame*/ 3, /*TU*/ 1, /*EncodedOrder*/ 1),
+    },
+    {/*8*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 10, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 10, /*GopRefDist*/ 8, /*NumRefFrame*/ 3, /*TU*/ 1, /*EncodedOrder*/ 1),
+    },
+    {/*9*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 10, MFX_B_REF_PYRAMID,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 10, /*GopRefDist*/ 3, /*NumRefFrame*/ 4, /*TU*/ 1, /*EncodedOrder*/ 1),
+    },
+    {/*10*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 10, MFX_B_REF_PYRAMID,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 10, /*GopRefDist*/ 4, /*NumRefFrame*/ 4, /*TU*/ 1, /*EncodedOrder*/ 1),
+    },
+
+    // TU: 4; EncodedOrder: 0, 1; GopRefDist: 1, 2, 4, 8; NumRefFrame 4;
+    {/*11*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 6, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 6, /*GopRefDist*/ 1, /*NumRefFrame*/ 4, /*TU*/ 4, /*EncodedOrder*/ 0),
+    },
+    {/*12*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 6, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 6, /*GopRefDist*/ 1, /*NumRefFrame*/ 4, /*TU*/ 4, /*EncodedOrder*/ 1),
+    },
+    {/*13*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 6, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 6, /*GopRefDist*/ 2, /*NumRefFrame*/ 4, /*TU*/ 4, /*EncodedOrder*/ 1),
+    },
+    {/*14*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 6, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 6, /*GopRefDist*/ 4, /*NumRefFrame*/ 4, /*TU*/ 4, /*EncodedOrder*/ 1),
+    },
+    {/*15*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 10, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 10, /*GopRefDist*/ 8, /*NumRefFrame*/ 4, /*TU*/ 4, /*EncodedOrder*/ 1),
+    },
+    {/*16*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 6, MFX_B_REF_PYRAMID,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 6, /*GopRefDist*/ 4, /*NumRefFrame*/ 4, /*TU*/ 4, /*EncodedOrder*/ 1),
+    },
+    {/*17*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 10, MFX_B_REF_PYRAMID,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 10, /*GopRefDist*/ 8, /*NumRefFrame*/ 4, /*TU*/ 4, /*EncodedOrder*/ 1),
+    },
+
+    // TU: 7; EncodedOrder: 0, 1; GopRefDist: 1, 2; NumRefFrame 2;
+    {/*18*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 5, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 5, /*GopRefDist*/ 1, /*NumRefFrame*/ 2, /*TU*/ 7, /*EncodedOrder*/ 0),
+    },
+    {/*19*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 5, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 5, /*GopRefDist*/ 1, /*NumRefFrame*/ 2, /*TU*/ 7, /*EncodedOrder*/ 1),
+    },
+    {/*20*/
+        CALCULATE_RPL_IN_TEST | REORDER_TO_1st_PLACE, 5, MFX_B_REF_OFF,
+        MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 5, /*GopRefDist*/ 2, /*NumRefFrame*/ 2, /*TU*/ 7, /*EncodedOrder*/ 1),
+    },
+};
+
 #define RUN_SUBCASE(c, s) if (conf.caseNum != c || conf.subCaseNum != s) continue;
 #define RUN_CASE(c) if (conf.caseNum != c) continue;
 
 int RunTest(unsigned int id)
 {
     TS_START;
-    const tc_struct& tc = test_case[id];
+    mfxU16 width  = g_tsConfig.sim? 176 : 720;
+    mfxU16 height = g_tsConfig.sim? 144 : 576;
+
+    const tc_struct& tc = g_tsConfig.sim && sim_test_case[id].nFrames ?
+        sim_test_case[id] : hw_test_case[id];
 
     mfxVideoParam testPar;
     memset(&testPar, 0, sizeof(mfxVideoParam));
@@ -1001,8 +1094,10 @@ int RunTest(unsigned int id)
 
         enc.m_par.AsyncDepth   = 1;
         enc.m_par.mfx.NumSlice = 1;
-        enc.m_par.mfx.FrameInfo.Width  = enc.m_par.mfx.FrameInfo.CropW = FRAME_WIDTH;
-        enc.m_par.mfx.FrameInfo.Height = enc.m_par.mfx.FrameInfo.CropH = FRAME_HEIGHT;
+        enc.m_par.mfx.FrameInfo.Width  = MSDK_ALIGN16(width);
+        enc.m_par.mfx.FrameInfo.CropW  = width;
+        enc.m_par.mfx.FrameInfo.Height = MSDK_ALIGN32(height);
+        enc.m_par.mfx.FrameInfo.CropH  = height;
 
         for (auto& ctrl : tc.mfx)
             if (ctrl.field)
@@ -1010,11 +1105,16 @@ int RunTest(unsigned int id)
 
         ((mfxExtCodingOption2&)enc.m_par).BRefType = tc.BRef;
         std::string inputName;
-        if (enc.m_par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE)
-            inputName = "/YUV/iceage_720x576_491.yuv";
+        if (g_tsConfig.sim)
+        {
+            inputName = enc.m_par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE?
+                "/YUV/salesman_176x144_449.yuv" : "/YUV/salesman_176x144_449i.yuv";
+        }
         else
-            inputName = "/YUV/stockholm_720x576i_252.yuv";
-
+        {
+            inputName = enc.m_par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE?
+                "/YUV/iceage_720x576_491.yuv" : "/YUV/stockholm_720x576i_252.yuv";
+        }
         SFiller sf(tc, *enc.m_pCtrl, *enc.m_pPar, conf, /*inputName.c_str()*/ g_tsStreamPool.Get(inputName.c_str()), enc.m_par.mfx.FrameInfo, tc.nFrames, enc);
         g_tsStreamPool.Reg();
         BitstreamChecker c(tc, *enc.m_pPar, conf);
@@ -1045,5 +1145,5 @@ int RunTest(unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE(avce_advanced_ref_lists, RunTest, sizeof(test_case) / sizeof(tc_struct));
+TS_REG_TEST_SUITE(avce_advanced_ref_lists, RunTest, sizeof(hw_test_case) / sizeof(tc_struct));
 }
