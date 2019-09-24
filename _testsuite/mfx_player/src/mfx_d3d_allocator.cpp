@@ -388,11 +388,11 @@ mfxStatus D3DFrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *info,
 
     ((IDirect3DSurface9 *)mid)->Release();
 
-    /*if (MFX_MEMTYPE_DXVA2_DECODER_TARGET & request->Type)
+    /*if (MFX_MEMTYPE_DXVA2_DECODER_TARGET | memType)
     {
         target = DXVA2_VideoDecoderRenderTarget;
     }
-    else if (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET & request->Type)
+    else if (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | memType)
     {
         target = DXVA2_VideoProcessorRenderTarget;
     }

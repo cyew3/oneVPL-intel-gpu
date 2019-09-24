@@ -3386,7 +3386,7 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
 
         if (sts == (mfxStatus)MFX_ERR_REALLOC_SURFACE)
         {
-            mfxVideoParam param;
+            mfxVideoParam param = {};
             m_pYUVSource->GetVideoParam(&param);
 
             inSurface.pSurface->Info.CropW = param.mfx.FrameInfo.CropW;
@@ -5833,9 +5833,11 @@ mfxStatus AllocatorAdapterRW::AllocFrames(mfxFrameAllocRequest *request, mfxFram
 mfxStatus AllocatorAdapterRW::ReallocFrame(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut)
 {
     MFX_CHECK_POINTER(midOut);
-    mfxStatus  status = m_allocator->ReallocFrame(midIn, info, memType, midOut);
+    mfxMemId RealmidIn = m_mids[(size_t)midIn - 1].second;
+    mfxStatus  status = m_allocator->ReallocFrame(RealmidIn, info, memType, midOut);
     // update surface after reallocation
     m_mids[(size_t)(midIn)-1].second = *midOut;
+    *midOut = midIn;
     return status;
 }
 
