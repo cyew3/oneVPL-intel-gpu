@@ -27,7 +27,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 File Name: mfxadapter.h
 
 *******************************************************************************/
-
+#include "mfxdefs.h"
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 #ifndef __MFXADAPTER_H__
 #define __MFXADAPTER_H__
