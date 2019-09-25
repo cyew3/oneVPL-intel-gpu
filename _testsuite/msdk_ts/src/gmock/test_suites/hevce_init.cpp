@@ -379,8 +379,8 @@ namespace hevce_init
         {/*42*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY, {} },
         {/*43*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_AVC_REFLIST_CTRL, {} },
         {/*44*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_ENCODER_RESET_OPTION, {} },
-        {/*45*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, NONE, {} },
-        //Rate Control Metod
+        {/*45*/ USE_REFACTORED_HEVCE ? MFX_ERR_UNDEFINED_BEHAVIOR : MFX_ERR_INVALID_VIDEO_PARAM,  EXT_BUFF, NONE, {} },
+        //Rate Control Method
         {/*46*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
         {/*47*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
         {/*48*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
@@ -772,7 +772,10 @@ namespace hevce_init
                 else if (tc.sub_type == MFX_EXTBUFF_HEVC_REGION)
                     sts = MFX_ERR_INVALID_VIDEO_PARAM;
                 else if (tc.sub_type == NONE)
-                    sts = MFX_ERR_NULL_PTR;
+                {
+                    if (tc.type != EXT_BUFF || !USE_REFACTORED_HEVCE)
+                        sts = MFX_ERR_NULL_PTR;
+                }
                 else if (tc.sub_type == MFX_EXTBUFF_ENCODER_CAPABILITY && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
                     sts = MFX_ERR_NONE;
                 else

@@ -76,13 +76,13 @@ namespace hevce_roi
     const tc_struct TestSuite::test_case[] =
     {
         // one correct region [quantity, top, left, right, bottom, qp-alter]
-        {/*00*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 64, 64, 11 },
+        {/*00*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 64, 64, USE_REFACTORED_HEVCE ? 3 : 11 },
 
         // one correct region with not aligned coordinates [quantity, top, left, right, bottom, qp-alter]
-        {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 10, 20, 120, 150, 11, },
+        {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 10, 20, 120, 150, USE_REFACTORED_HEVCE ? 3 : 11 },
 
         // one region with out of range coordinates [quantity, top, left, right, bottom, qp-alter]
-        {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 11 },
+        {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, USE_REFACTORED_HEVCE ? 3 : 11 },
 
         // checking Query with unsupported ROI quantity [quantity, top, left, right, bottom, qp-alter]
         {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, CAPS_NUM_ROI_GT_MAX, MFX_ROI_MODE_PRIORITY, TBD_ON_RUNTIME, 32, 32, 64, 64, 1 },
@@ -97,16 +97,16 @@ namespace hevce_roi
         {/*06*/ MFX_ERR_NONE, NONE, CAPS_NUM_ROI_EQ_MAX, MFX_ROI_MODE_PRIORITY, TBD_ON_RUNTIME, 32, 32, 64, 64, 1 },
 
         // one region with invalid dimensions [quantity, top, left, right, bottom, qp-alter]
-        {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 128, 128, 32, 32, 11 },
+        {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 128, 128, 32, 32, USE_REFACTORED_HEVCE ? 3 : 11 },
 
         // region with invalid unaligned coordinates [quantity, top, left, right, bottom, qp-alter]
-        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 111, 13, 3, 1, 11},
+        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 111, 13, 3, 1, USE_REFACTORED_HEVCE ? 3 : 11 },
 
         // three correct regions [quantity, top, left, right, bottom, qp-alter]
-        {/*09*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_PRIORITY, 3, 32, 32, 64, 64, 11 },
+        {/*09*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_PRIORITY, 3, 32, 32, 64, 64, USE_REFACTORED_HEVCE ? 3 : 11 },
 
         // three regions where some regions are out of the image [quantity, top, left, right, bottom, qp-alter]
-        {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI_OUT_OF_IMAGE, NONE, MFX_ROI_MODE_PRIORITY, 3, 32, 32, 64, 64, 13 },
+        {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI_OUT_OF_IMAGE, NONE, MFX_ROI_MODE_PRIORITY, 3, 32, 32, 64, 64, USE_REFACTORED_HEVCE ? 3 : 13 },
 
         // one correct region with incorrect positive qp-alter [quantity, top, left, right, bottom, qp-alter]
         {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 128, 128, HEVCE_ROI_MAXIMUM_ABS_QP_VALUE + 1 },
@@ -123,10 +123,10 @@ namespace hevce_roi
         },
 
         // one null-region [quantity, top, left, right, bottom, qp-alter]
-        {/*14*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 0, 0, 0, 0, 11 },
+        {/*14*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 0, 0, 0, 0, USE_REFACTORED_HEVCE ? 3 : 11 },
 
         // checking Query with correct region [quantity, top, left, right, bottom, qp-alter]
-        {/*15*/ MFX_ERR_NONE, CHECK_QUERY, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 128, 128, 11 },
+        {/*15*/ MFX_ERR_NONE, CHECK_QUERY, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 128, 128, USE_REFACTORED_HEVCE ? 3 : 11 },
 
         // checking Query with correct region and incorrect qp-alter [quantity, top, left, right, bottom, qp-alter]
         {/*16*/ MFX_ERR_UNSUPPORTED, CHECK_QUERY, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 128, 128, 0xff },
@@ -591,7 +591,7 @@ namespace hevce_roi
         //We want to check handling of NumRoI but in case of
         //small resolutions we will attach RoI with width/height > image size
         //and get INVALID_VIDEO_PARAM. So force all RoI to be equal each other
-        //and chech only NumRoI field
+        //and check only NumRoI field
         if (tc.sub_type == CAPS_NUM_ROI_GT_MAX || tc.sub_type == CAPS_NUM_ROI_EQ_MAX || tc.sub_type == MAX_SUPPORTED_REGIONS) {
             multiplier = 0;
         }
@@ -609,6 +609,12 @@ namespace hevce_roi
         //MSDK sends RoI mode to driver as DELTA_QP in case of CQP or MFX_ROI_MODE_QP_DELTA EVEN if MFX_ROI_MODE_PRIORITY set by application
         if ((m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || tc.roi_mode == MFX_ROI_MODE_QP_DELTA) && caps.ROIDeltaQPSupport == 0) {
             tc.sts = tc.type == CHECK_QUERY ? MFX_ERR_UNSUPPORTED : MFX_ERR_INVALID_VIDEO_PARAM;
+
+            if (USE_REFACTORED_HEVCE)
+            {
+                // Currently HEVCe adjusts number of ROI to 0 if settings are invalid
+                caps.MaxNumOfROI = 0;
+            }
         }
         if (m_par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && tc.roi_mode == MFX_ROI_MODE_PRIORITY && caps.ROIBRCPriorityLevelSupport == 1) {
             tc.sts = MFX_ERR_NONE;
@@ -652,6 +658,9 @@ namespace hevce_roi
                 m_filler = reader;
 
                 int encoded = 0;
+                if (USE_REFACTORED_HEVCE)
+                    g_tsStatus.expect(tc.sts);
+
                 while (encoded < 1)
                 {
                     if (MFX_ERR_MORE_DATA == EncodeFrameAsync())

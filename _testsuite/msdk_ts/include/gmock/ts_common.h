@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -18,6 +18,24 @@
 #include "test_sample_allocator.h"
 #include "ts_platforms.h"
 #include "ts_ext_buffers.h"
+
+
+#ifndef REFACTORED_HEVCE
+#define REFACTORED_HEVCE
+// TODO: remove block of code below when merge of refactored HEVCe to master will be completed
+#ifdef _WIN32
+    static std::vector<HWType> platforms_with_refactored_hevce = {}; // Platforms where refactored HEVCe used on Windows
+#else
+    static std::vector<HWType> platforms_with_refactored_hevce = {}; // Platforms where refactored HEVCe used on Linux
+#endif
+
+static bool use_refactored_hevce(HWType current_platform)
+{
+    return std::find(std::begin(platforms_with_refactored_hevce), std::end(platforms_with_refactored_hevce), current_platform) != std::end(platforms_with_refactored_hevce);
+}
+
+#define USE_REFACTORED_HEVCE false // use_refactored_hevce(g_tsHWtype)
+#endif
 
 typedef enum {
       tsOK = 0

@@ -2703,7 +2703,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 
             if ( IsBayerFormat(fourCC) )
             {
-                fourCC = BayerFourCC2FourCC(inInfo->FourCC);;
+                fourCC = BayerFourCC2FourCC(inInfo->FourCC);
             }
 
             /* [6.1.7] Set YUV Range Param

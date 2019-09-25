@@ -144,7 +144,7 @@ namespace hevce_reset
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY }
             }
         },
-        {/* 14*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, WRONG, 1,
+        {/* 14*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_REFACTORED_HEVCE ? MFX_ERR_INVALID_VIDEO_PARAM : MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, WRONG, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, 0x800 }
             }
@@ -168,12 +168,12 @@ namespace hevce_reset
          },
         {/* 18*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, H_GT_MAX, 1,
         },
-        {/* 19*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
+        {/* 19*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_REFACTORED_HEVCE ? MFX_ERR_INVALID_VIDEO_PARAM : MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 25 },
             }
         },
-        {/* 20*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
+        {/* 20*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_REFACTORED_HEVCE ? MFX_ERR_INVALID_VIDEO_PARAM : MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1 },
             }
@@ -346,7 +346,7 @@ namespace hevce_reset
         TS_START
 
         mfxStatus sts = tc.sts_sw;
-        tsRawReader *reader;
+        std::unique_ptr<tsRawReader> reader;
         mfxHDL hdl;
         mfxHandleType type;
         mfxEncryptedData ed;
@@ -542,9 +542,9 @@ namespace hevce_reset
 
         if (stream)
         {
-            reader = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
+            reader.reset(new tsRawReader(stream, m_pPar->mfx.FrameInfo));
             reader->m_disable_shift_hack = true; // don't shift
-            m_filler = reader;
+            m_filler = reader.get();
         }
 
         mfxStatus caps_sts = GetCaps(&caps, &capSize);

@@ -176,13 +176,13 @@ namespace hevce_sei_hdr
                         foundSEI++;
                         mfxU8* res = nalu->sei->message[sei_ind].rawData;
                         EXPECT_EQ(0, compareDisplayColourVolumeData(res, displayColour))
-                            << "Wrong MasteringDisplayColourVolume parametrs \n";
+                            << "Wrong MasteringDisplayColourVolume parameters \n";
                     }
                     else if (nalu->sei->message[sei_ind].payloadType == 144) {
                         foundSEI++;
                         mfxU8* res = nalu->sei->message[sei_ind].rawData;
                         EXPECT_EQ(0, compareContentLightLevelInfo(res, lightLevel))
-                            << "Wrong ContentLightLevelInfo parametrs \n";
+                            << "Wrong ContentLightLevelInfo parameters \n";
                     }
                 }
             }

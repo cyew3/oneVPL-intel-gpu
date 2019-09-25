@@ -488,7 +488,8 @@ namespace hevce_query
         }
 
         // set default parameters
-        m_pParOut = new mfxVideoParam;
+        std::unique_ptr<mfxVideoParam> tmp_par(new mfxVideoParam);
+        m_pParOut = tmp_par.get();
         *m_pParOut = m_par;
 
         MFXInit();
@@ -660,7 +661,7 @@ namespace hevce_query
                 sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }
 
-            if ((tc.type == IO_PATTERN) && (tc.sts == MFX_ERR_UNSUPPORTED))
+            if (!USE_REFACTORED_HEVCE && (tc.type == IO_PATTERN) && (tc.sts == MFX_ERR_UNSUPPORTED))
             {
                 sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }

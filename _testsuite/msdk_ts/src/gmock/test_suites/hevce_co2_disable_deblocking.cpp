@@ -142,8 +142,11 @@ private:
         CO3->DeblockingBetaOffset = beta;
 #endif
 
-        if (m_par.NumExtParam && CO2->DisableDeblockingIdc)
-            CO2->DisableDeblockingIdc = !((mfxExtCodingOption2&)m_par).DisableDeblockingIdc;
+        if (!USE_REFACTORED_HEVCE)
+        {
+            if (m_par.NumExtParam && CO2->DisableDeblockingIdc)
+                CO2->DisableDeblockingIdc = !((mfxExtCodingOption2&)m_par).DisableDeblockingIdc;
+        }
 
         m_ctrl.ExtParam = 0;
         m_ctrl.NumExtParam = 0;
@@ -187,25 +190,25 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     /*09*/{MFX_ERR_NONE, MFX_ERR_NONE, EVERY_OTHER, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 30},
                                        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 8}}},
     /*10*/{MFX_ERR_NONE, MFX_ERR_NONE, EVERY_OTHER, {
-        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 700},
-        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 0},
-        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0},
-        {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}}},
+          {MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 700},
+          {MFX_PAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 0},
+          {MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0},
+          {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}}},
     /*11*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_ON, {}},
     /*12*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_ON|RUNTIME_ONLY, {}},
     /*13*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_ON|EVERY_OTHER, {}},
     /*14*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_OFF, {}},
     /*15*/{MFX_ERR_NONE, MFX_ERR_NONE, RESET_OFF|RUNTIME_ONLY, {}},
     /*16*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY | HUGE_SIZE_4K,{
-        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096 },
-        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2160 },
-        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4096 },
-        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  2160 } } },
+                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096 },
+                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2160 },
+                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4096 },
+                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  2160 } } },
     /*17*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY | HUGE_SIZE_8K,{
-        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  8192 },
-        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096 },
-        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  8192 },
-        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4096 } } },
+                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  8192 },
+                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096 },
+                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  8192 },
+                                                  { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4096 } } },
 #if (MFX_VERSION >= MFX_VERSION_NEXT && (defined(_WIN32) || defined(_WIN64)))
     /*18*/{ MFX_ERR_NONE, MFX_ERR_NONE, QUERY, {{ EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 0 },
                                                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.DeblockingAlphaTcOffset, 4},
@@ -502,10 +505,8 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
         Load();
     }
 
-    if (tc.mode & HUGE_SIZE_8K && (g_tsHWtype <= MFX_HW_CNL && m_par.mfx.LowPower != MFX_CODINGOPTION_ON) )
-        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-    else
-        g_tsStatus.expect(tc.i_sts);
+    bool unsupported_resolution = tc.mode & HUGE_SIZE_8K && (g_tsHWtype <= MFX_HW_CNL && m_par.mfx.LowPower != MFX_CODINGOPTION_ON);
+    g_tsStatus.expect(unsupported_resolution ? MFX_ERR_UNSUPPORTED : tc.i_sts);
 
     if (tc.mode & QUERY)
     {
@@ -527,7 +528,7 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
         g_tsStatus.check(EncodeFrameAsync());
     }
 
-    if (tc.i_sts == MFX_ERR_NONE && !(mode & INVALID_PARAMS))
+    if ((!unsupported_resolution || !USE_REFACTORED_HEVCE) && tc.i_sts == MFX_ERR_NONE && !(mode & INVALID_PARAMS))
     {
         if (tc.mode & RESET_ON)
         {

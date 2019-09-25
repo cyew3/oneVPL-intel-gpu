@@ -235,7 +235,7 @@ namespace hevce_level_profile
                 m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 4096);
                 m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 2176);
                 m_par.mfx.TargetKbps = (mfxU16)(MaxBR * 1.1) + 10;
-                m_par.mfx.RateControlMethod = 0;
+                m_par.mfx.RateControlMethod = USE_REFACTORED_HEVCE ? MFX_RATECONTROL_CBR : 0;
                 break;
             }
             case NULL_GOPREFDIST:
@@ -280,7 +280,7 @@ namespace hevce_level_profile
 
            },
         },
-        // wrong resolution heigth
+        // wrong resolution height
         {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_2, RESOLUTION, BIG_H, {
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_1 },
 
@@ -330,7 +330,7 @@ namespace hevce_level_profile
 
            },
         },
-        // wrong resolution heigth
+        // wrong resolution height
         {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_21, RESOLUTION, BIG_H, {
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_2 },
 
@@ -380,7 +380,7 @@ namespace hevce_level_profile
 
            },
         },
-        // wrong resolution heigth
+        // wrong resolution height
         {/*18*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_3, RESOLUTION, BIG_H, {
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_21 },
 
@@ -430,7 +430,7 @@ namespace hevce_level_profile
 
            },
         },
-        // wrong resolution heigth
+        // wrong resolution height
         {/*26*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_31, RESOLUTION, BIG_H, {
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_3 },
 
@@ -480,7 +480,7 @@ namespace hevce_level_profile
 
            },
         },
-        // wrong resolution heigth
+        // wrong resolution height
         {/*34*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_4, RESOLUTION, BIG_H, {
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_31 },
 
@@ -530,7 +530,7 @@ namespace hevce_level_profile
 
            },
         },
-        // wrong resolution heigth
+        // wrong resolution height
         {/*42*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_5, RESOLUTION, BIG_H, {
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_4 },
 
@@ -580,7 +580,7 @@ namespace hevce_level_profile
 
            },
         },
-        // wrong resolution heigth
+        // wrong resolution height
         {/*50*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_5, RESOLUTION, BIG_H, {
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_41 },
 
@@ -865,8 +865,8 @@ namespace hevce_level_profile
     {
         TS_START;
 
-        m_pParOut = new mfxVideoParam;
-        *m_pParOut = m_par;
+        mfxVideoParam tmp = m_par;
+        m_pParOut = &tmp;
 
         tsExtBufType<mfxVideoParam> par_out(m_par);
 
@@ -1046,7 +1046,7 @@ namespace hevce_level_profile
             if ((tc.type == PROFILE_WRN) && (fourcc_id != MFX_FOURCC_NV12))
             {
                 g_tsStatus.expect(MFX_ERR_NONE);
-                g_tsLog << "\n\nWARNING: This test case ckecks MAINSP profile for NV12 format only!\n\n\n";
+                g_tsLog << "\n\nWARNING: This test case checks MAINSP profile for NV12 format only!\n\n\n";
                 throw tsSKIP;
             }
         }
