@@ -643,7 +643,7 @@ namespace hevce_level_profile
            },
         },
         // wrong slices
-        {/*60*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_5, SLICE, NONE, {
+        {/*60*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, SLICE, NONE, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_5},
 
            },
@@ -680,7 +680,7 @@ namespace hevce_level_profile
            },
         },
         // wrong slices
-        {/*66*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_51, SLICE, NONE, {
+        {/*66*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, SLICE, NONE, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_51},
 
            },
@@ -717,7 +717,7 @@ namespace hevce_level_profile
            },
         },
         // wrong slices
-        {/*72*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_52, SLICE, NONE, {
+        {/*72*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, SLICE, NONE, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_52},
 
            },
