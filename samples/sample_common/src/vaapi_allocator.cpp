@@ -509,7 +509,11 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->R = ptr->B + 2;
                     ptr->A = ptr->B + 3;
                 }
-                else if (mfx_fourcc == MFX_FOURCC_A2RGB10)
+                else return MFX_ERR_LOCK_MEMORY;
+                break;
+#ifndef ANDROID
+            case VA_FOURCC_A2R10G10B10:
+                if (mfx_fourcc == MFX_FOURCC_A2RGB10)
                 {
                     ptr->B = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->G = ptr->B;
@@ -518,6 +522,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else return MFX_ERR_LOCK_MEMORY;
                 break;
+#endif
             case VA_FOURCC_RGBP:
                 if (mfx_fourcc != vaapi_mid->m_image.format.fourcc) return MFX_ERR_LOCK_MEMORY;
 
