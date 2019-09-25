@@ -2629,10 +2629,12 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
 
 
     // set bitrate
-    pMFXParams->mfx.TargetKbps = (mfxU16)IPP_MIN(65535, m_BitRate/1000);
+    if (pMFXParams->mfx.TargetKbps == 0 && m_BitRate != 0)
+        pMFXParams->mfx.TargetKbps = (mfxU16)IPP_MIN(65535, m_BitRate/1000);
 
     //maxbitrate could be equal to target in VBR and CBR mode
-    pMFXParams->mfx.MaxKbps = (mfxU16)IPP_MIN(65535, m_MaxBitrate/1000);
+    if (pMFXParams->mfx.MaxKbps == 0 && m_MaxBitrate != 0)
+        pMFXParams->mfx.MaxKbps = (mfxU16)IPP_MIN(65535, m_MaxBitrate/1000);
 
     //however VBR mode set only if maxbitrate is higher or rate control specified directly
     if (pMFXParams->mfx.MaxKbps > pMFXParams->mfx.TargetKbps &&
