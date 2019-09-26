@@ -900,29 +900,34 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
 
             bs->DataLength -= (mfxU32)(m_FrameConstrData.GetDataSize() - ReadDataSize + Offset);
             bs->DataOffset += (mfxU32)(m_FrameConstrData.GetDataSize() - ReadDataSize + Offset);
-            MFX_CHECK(IntUMCStatus != UMC::UMC_ERR_NOT_ENOUGH_DATA, MFX_ERR_NOT_ENOUGH_BUFFER);
-            if(bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME)
+
+            if (IntUMCStatus == UMC::UMC_ERR_NOT_ENOUGH_DATA)
             {
-                if (bs->DataLength <= 4)
+
+                if (bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME)
                 {
-                    std::copy(bs->Data + bs->DataOffset, bs->Data + bs->DataOffset + bs->DataLength,
-                              reinterpret_cast<uint8_t*>(m_FrameConstrData.GetBufferPointer()) + m_FrameConstrData.GetDataSize());
+                    if (bs->DataLength <= 4)
+                    {
+                        std::copy(bs->Data + bs->DataOffset, bs->Data + bs->DataOffset + bs->DataLength,
+                            reinterpret_cast<uint8_t*>(m_FrameConstrData.GetBufferPointer()) + m_FrameConstrData.GetDataSize());
+                        m_sbs.TimeStamp = bs->TimeStamp;
+                    }
+                    m_SaveBytesSize = 0;
+                    m_FrameConstrData.SetDataSize(m_FrameConstrData.GetDataSize() + bs->DataLength);
+                    bs->DataOffset = bs->DataOffset + bs->DataLength;
+                    ReadDataSize = bs->DataOffset;
+                    bs->DataLength = 0;
+                }
+                else
+                {
+                    m_SaveBytesSize = bs->DataLength;
+                    MFX_CHECK(m_SaveBytesSize <= 4, MFX_ERR_UNDEFINED_BEHAVIOR);
+                    std::copy(bs->Data + bs->DataOffset, bs->Data + bs->DataOffset + m_SaveBytesSize, m_pSaveBytes);
                     m_sbs.TimeStamp = bs->TimeStamp;
                 }
-                m_SaveBytesSize = 0;
-                m_FrameConstrData.SetDataSize(m_FrameConstrData.GetDataSize() + bs->DataLength);
-                bs->DataOffset = bs->DataOffset+bs->DataLength;
-                ReadDataSize = bs->DataOffset;
-                bs->DataLength = 0;
+                return MFX_ERR_MORE_DATA;
             }
-            else
-            {
-                m_SaveBytesSize = bs->DataLength;
-                MFX_CHECK(m_SaveBytesSize > 4, MFX_ERR_UNDEFINED_BEHAVIOR);
-                std::copy(bs->Data + bs->DataOffset, bs->Data + bs->DataOffset + m_SaveBytesSize, m_pSaveBytes);
-                m_sbs.TimeStamp = bs->TimeStamp;
-            }
-            return MFX_ERR_MORE_DATA;
+            return MFX_ERR_NOT_ENOUGH_BUFFER;
         }
     }
 }
