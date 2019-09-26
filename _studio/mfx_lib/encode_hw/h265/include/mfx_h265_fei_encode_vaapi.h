@@ -76,14 +76,11 @@ namespace MfxHwH265FeiEncode
 
         virtual mfxStatus PostQueryExtraStage(MfxHwH265Encode::Task const & task, mfxU32 codedStatus) override;
 
-        virtual VAEntrypoint GetVAEntryPoint(MfxHwH265Encode::MfxVideoParam const &) override
-        {
-            return VAEntrypointFEI;
-        }
-
         virtual mfxStatus ConfigureExtraVAattribs(std::vector<VAConfigAttrib> & attrib) override;
 
         virtual mfxStatus CheckExtraVAattribs(std::vector<VAConfigAttrib> & attrib) override;
+
+        virtual MfxHwH265Encode::VAParameters GetVaParams(const GUID & guid) override;
     };
 }
 

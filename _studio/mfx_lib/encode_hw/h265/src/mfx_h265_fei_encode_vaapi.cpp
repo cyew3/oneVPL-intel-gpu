@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <unordered_map>
+
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
 
@@ -27,6 +29,22 @@ using namespace MfxHwH265Encode;
 
 namespace MfxHwH265FeiEncode
 {
+    static const std::unordered_map<GUID, VAParameters, GUIDhash> GUID2VAFEIParam = {
+    { DXVA2_Intel_Encode_HEVC_Main,                   VAParameters(VAProfileHEVCMain,       VAEntrypointFEI)},
+    { DXVA2_Intel_Encode_HEVC_Main10,                 VAParameters(VAProfileHEVCMain10,     VAEntrypointFEI)},
+#if VA_CHECK_VERSION(1,2,0)
+    { DXVA2_Intel_Encode_HEVC_Main422,                VAParameters(VAProfileHEVCMain422_10, VAEntrypointFEI)},
+    { DXVA2_Intel_Encode_HEVC_Main422_10,             VAParameters(VAProfileHEVCMain422_10, VAEntrypointFEI)},
+    { DXVA2_Intel_Encode_HEVC_Main444,                VAParameters(VAProfileHEVCMain444,    VAEntrypointFEI)},
+    { DXVA2_Intel_Encode_HEVC_Main444_10,             VAParameters(VAProfileHEVCMain444_10, VAEntrypointFEI)},
+#endif
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+    { DXVA2_Intel_Encode_HEVC_Main12,                 VAParameters(VAProfileHEVCMain12,     VAEntrypointFEI)},
+    { DXVA2_Intel_Encode_HEVC_Main422_12,             VAParameters(VAProfileHEVCMain422_12, VAEntrypointFEI)},
+    { DXVA2_Intel_Encode_HEVC_Main444_12,             VAParameters(VAProfileHEVCMain444_12, VAEntrypointFEI)}
+#endif
+    };
+
     VAAPIh265FeiEncoder::VAAPIh265FeiEncoder()
         : VAAPIEncoder()
     {}
@@ -61,6 +79,15 @@ namespace MfxHwH265FeiEncode
         attrib[i].value = VA_FEI_FUNCTION_ENC_PAK;
 
         return MFX_ERR_NONE;
+    }
+
+    MfxHwH265Encode::VAParameters VAAPIh265FeiEncoder::GetVaParams(const GUID & guid)
+    {
+        auto it = GUID2VAFEIParam.find(guid);
+        if (it != std::end(GUID2VAFEIParam))
+            return it->second;
+        else
+            return { VAProfileNone, static_cast<VAEntrypoint>(0) };
     }
 
     mfxStatus VAAPIh265FeiEncoder::PreSubmitExtraStage(Task const & task)
