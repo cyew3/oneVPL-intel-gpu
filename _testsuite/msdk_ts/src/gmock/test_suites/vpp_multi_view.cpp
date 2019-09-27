@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_multi_view.cpp
 \* ****************************************************************************** */
@@ -166,7 +166,7 @@ namespace vpp_multi_view
             if(sts == MFX_ERR_NONE) {
                 EXPECT_EQ(m_pSurfIn->Info.FrameId.ViewId, m_pSurfOut->Info.FrameId.ViewId) << "ERROR: ViewIds aren't the same. Frame - " << i << "\n";
                 SyncOperation();
-            } else if(sts == MFX_ERR_MORE_DATA || MFX_ERR_MORE_SURFACE){
+            } else if(sts == MFX_ERR_MORE_DATA || sts == MFX_ERR_MORE_SURFACE){
                 continue;
             } else {
                 g_tsLog << "ERROR: Unexpected return sts of RunFrameVPPAsync";
