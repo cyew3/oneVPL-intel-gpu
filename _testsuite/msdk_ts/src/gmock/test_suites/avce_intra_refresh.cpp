@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 File Name: avce_intra_refresh.cpp
 \* ****************************************************************************** */
@@ -176,7 +176,7 @@ namespace avce_intra_refresh{
         {/*10*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM,
          {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 3},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 1}}},
-        //INVALID NOT ZEROES NumMbPerSlice
+        // for MFX_REFRESH_SLICE, MaxSliceSize must be 0
         {/*11*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM,
          {{CDO2_PAR, &tsStruct::mfxExtCodingOption2.IntRefType, 3},
          {CDO2_PAR, &tsStruct::mfxExtCodingOption2.MaxSliceSize, 1}}},
