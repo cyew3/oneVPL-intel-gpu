@@ -214,7 +214,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_MFX_INFO("-r|",          GopRefDist,               "Distance between I- or P- key frames (1 means no B-frames)"),
         HANDLE_MFX_INFO("",             GopOptFlag,               "1=GOP_CLOSED, 2=GOP_STRICT"),
         HANDLE_MFX_INFO("",             IdrInterval,              "IDR frame interval (0 means every I-frame is an IDR frame"),
-        HANDLE_MFX_INFO("",             RateControlMethod,        "1=CBR, 2=VBR, 3=ConstantQP, 4=AVBR, 8=Lookahead, 13==Lookahead with HRD support "),
+        HANDLE_MFX_INFO("",             RateControlMethod,        "1=CBR, 2=VBR, 3=ConstantQP, 4=AVBR, 8=Lookahead, 13==Lookahead with HRD support, 14=QVBR"),
         HANDLE_MFX_INFO("",             TargetKbps,               "Target bitrate in kbits per second. Note: maximum allowed value w/o using of BRCParamMultiplier is 65535 kbits per second"),
         HANDLE_MFX_INFO("",             MaxKbps,                  "Maximum bitrate in the case of VBR"),
         HANDLE_MFX_INFO("-id|",         InitialDelayInKB,         "For bitrate control"),
