@@ -649,7 +649,7 @@ enum QueryStatus
     VPREP_GPU_FAILED        =   3
 };
 
-mfxStatus FastCompositingDDI::QueryTaskStatus(mfxU32 taskIndex)
+mfxStatus FastCompositingDDI::QueryTaskStatus(SynchronizedTask* pSyncTask)
 {
     HRESULT hRes;
 
@@ -657,6 +657,19 @@ mfxStatus FastCompositingDDI::QueryTaskStatus(mfxU32 taskIndex)
     FASTCOMP_QUERY_STATUS queryStatus[numStructures];
 
     std::set<mfxU32>::iterator iterator;
+
+#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+    if (pSyncTask->m_GpuEvent.gpuSyncEvent)
+    {
+        HRESULT waitRes = WAIT_OBJECT_0;
+        waitRes = WaitForSingleObject(pSyncTask->m_GpuEvent.gpuSyncEvent, VP_OPERATION_TIMEOUT); // timeout for VP operation
+        if (WAIT_OBJECT_0 != waitRes)
+        {
+            return MFX_ERR_GPU_HANG;
+        }
+    }
+#endif
+
     for (mfxU32 i = 0; i < numStructures; i += 1)
     {
         queryStatus[i].Status = VPREP_GPU_FAILED;
@@ -685,7 +698,7 @@ mfxStatus FastCompositingDDI::QueryTaskStatus(mfxU32 taskIndex)
         }
     }
 
-    iterator = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), taskIndex);
+    iterator = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), pSyncTask->taskIndex);
     
     if (m_cachedReadyTaskIndex.end() == iterator)
     {
@@ -696,7 +709,7 @@ mfxStatus FastCompositingDDI::QueryTaskStatus(mfxU32 taskIndex)
 
     return MFX_TASK_DONE;
 
-} // mfxStatus FastCompositingDDI::QueryTaskStatus(mfxU32 taskIndex)
+} // mfxStatus FastCompositingDDI::QueryTaskStatus(SynchronizedTask* pSyncTask)
 
 
 void FastCompositingDDI::ResetBltParams(FASTCOMP_BLT_PARAMS *pBlt)
@@ -1316,7 +1329,7 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
 
 #ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
         if (pParams->m_GpuEvent.gpuSyncEvent != INVALID_HANDLE_VALUE) {
-            HRESULT hr = m_pAuxDevice->Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, &pParams->m_GpuEvent, sizeof(GPU_SYNC_EVENT_HANDLE));
+            HRESULT hr = m_pAuxDevice->Execute(DXVA2_SET_GPU_TASK_EVENT_HANDLE, &pParams->m_GpuEvent, sizeof(GPU_SYNC_EVENT_HANDLE));
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
 #endif

@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -70,8 +70,7 @@ namespace MfxHwVideoProcessing
             mfxU32 num, 
             BOOL bRegister);
 
-        virtual mfxStatus QueryTaskStatus(
-            mfxU32 taskIndex);
+        virtual mfxStatus QueryTaskStatus(SynchronizedTask* pSyncTask);
 
         virtual mfxStatus QueryCapabilities( 
             mfxVppCaps& caps );

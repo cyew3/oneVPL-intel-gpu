@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -332,8 +332,10 @@ mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
     while (queryAttempt)
     {
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "QueyTaskStatus");
-            sts = m_ddi->QueryTaskStatus(m_executeParams[ddiIndex].statusReportID);
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "QueryTaskStatus");
+            SynchronizedTask task = {};
+            task.taskIndex = m_executeParams[ddiIndex].statusReportID;
+            sts = m_ddi->QueryTaskStatus(&task);
         }
 
         if ( MFX_TASK_DONE == sts )

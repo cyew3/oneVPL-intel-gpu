@@ -610,7 +610,7 @@ mfxStatus D3D9Encoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, m
             pExecuteBuffers->m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
             m_EventCache->GetEvent(pExecuteBuffers->m_GpuEvent.gpuSyncEvent);
 
-            hr = m_pDevice->Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, &pExecuteBuffers->m_GpuEvent, sizeof(pExecuteBuffers->m_GpuEvent));
+            hr = m_pDevice->Execute(DXVA2_SET_GPU_TASK_EVENT_HANDLE, &pExecuteBuffers->m_GpuEvent, sizeof(pExecuteBuffers->m_GpuEvent));
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
 #endif

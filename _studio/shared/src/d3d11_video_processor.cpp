@@ -1373,12 +1373,24 @@ enum QueryStatus
 };
 
 
-mfxStatus D3D11VideoProcessor::QueryTaskStatus(mfxU32 idx)
+mfxStatus D3D11VideoProcessor::QueryTaskStatus(SynchronizedTask* pSyncTask)
 {
     UMC::AutomaticUMCMutex guard(m_mutex);
 
     HRESULT hRes;
     mfxStatus sts;
+
+#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+    if (pSyncTask->m_GpuEvent.gpuSyncEvent)
+    {
+        DWORD waitRes = WaitForSingleObject(pSyncTask->m_GpuEvent.gpuSyncEvent, VP_OPERATION_TIMEOUT); // timeout for VP operation
+        if (WAIT_OBJECT_0 != waitRes)
+        {
+            return MFX_ERR_GPU_HANG;
+        }
+    }
+#endif
+
     if ( m_bUseEventHandle && ! m_eventHandle )
     {
         try
@@ -1492,12 +1504,12 @@ mfxStatus D3D11VideoProcessor::QueryTaskStatus(mfxU32 idx)
     }
     //-----------------------------------------------------
 
-    iterator = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), idx);
+    iterator = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), pSyncTask->taskIndex);
 
     if (m_cachedReadyTaskIndex.end() == iterator)
     {
 #ifdef DEBUG_DETAIL_INFO
-    printf("\n Task with ::StatusID = %i BUSY!!!\n\n", idx);fflush(stderr);
+    printf("\n Task with ::StatusID = %i BUSY!!!\n\n", pSyncTask->taskIndex);fflush(stderr);
 #endif
         return MFX_TASK_BUSY;
     }
@@ -1505,12 +1517,12 @@ mfxStatus D3D11VideoProcessor::QueryTaskStatus(mfxU32 idx)
     m_cachedReadyTaskIndex.erase(iterator);
 
 #ifdef DEBUG_DETAIL_INFO
-    printf("\n Task with ::StatusID = %i COMPLETED!!!\n\n", idx);fflush(stderr);
+    printf("\n Task with ::StatusID = %i COMPLETED!!!\n\n", pSyncTask->taskIndex);fflush(stderr);
 #endif
 
     return MFX_TASK_DONE;
 
-} // mfxStatus D3D11VideoProcessor::QueryTaskStatus(mfxU32 idx)
+} // mfxStatus D3D11VideoProcessor::QueryTaskStatus(SynchronizedTask* pSyncTask)
 
 
 mfxStatus D3D11VideoProcessor::QueryVariance(

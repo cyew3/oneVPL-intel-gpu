@@ -384,6 +384,13 @@
     #endif
 #endif
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) || defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#define VP_OPERATION_TIMEOUT 120000
+#else
+#define VP_OPERATION_TIMEOUT 5000
+#endif
+
+
 #endif//#if defined(_WIN32) || defined(_WIN64)
 
 #endif // #ifndef OPEN_SOURCE

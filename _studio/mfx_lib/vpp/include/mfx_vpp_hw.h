@@ -32,6 +32,7 @@
 #include "umc_mutex.h"
 #include "mfx_vpp_interface.h"
 #include "mfx_vpp_defs.h"
+#include "mfx_ext_ddi.h"
 #ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
 #include "mfx_win_event_cache.h"
 #endif
@@ -239,25 +240,16 @@ namespace MfxHwVideoProcessing
     };
     //-----------------------------------------------------
 
-    struct SubTask
+    struct SubTask : SynchronizedTask
     {
         SubTask()
-            : idx(NO_INDEX)
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-            , m_GpuEvent()
-#endif
-        {}
+        {
+            taskIndex = NO_INDEX;
+        }
         SubTask(mfxU32 idx)
-            : idx(idx)
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-            , m_GpuEvent()
-#endif
-        {}
-
-        mfxU32 idx;
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-        GPU_SYNC_EVENT_HANDLE m_GpuEvent;
-#endif
+        {
+            taskIndex = idx;
+        }
     };
 
     struct ReleaseResource
@@ -267,7 +259,7 @@ namespace MfxHwVideoProcessing
         std::vector<SubTask> subTasks;
     };
 
-    struct DdiTask : public State
+    struct DdiTask : public SynchronizedTask,State
     {
         DdiTask()
             : bkwdRefCount(0)
@@ -286,14 +278,10 @@ namespace MfxHwVideoProcessing
             , MctfControlActive(false)
             , pOuptutSurface(nullptr)
 #endif
-            , taskIndex(0)
             , frameNumber(0)
             , skipQueryStatus(false)
             , pAuxData(NULL)
             , pSubResource(NULL)
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-            , m_GpuEvent()
-#endif
         {
 #ifdef MFX_ENABLE_MCTF
             memset(&MctfData, 0, sizeof(IntMctfParams));
@@ -322,8 +310,6 @@ namespace MfxHwVideoProcessing
         mfxFrameSurface1* pOuptutSurface;
 #endif
 
-
-        mfxU32 taskIndex;
         mfxU32 frameNumber;
 
         bool   skipQueryStatus;
@@ -333,9 +319,6 @@ namespace MfxHwVideoProcessing
         ReleaseResource* pSubResource;
 
         std::vector<ExtSurface> m_refList; //m_refList.size() == bkwdRefCount +fwdRefCount
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-        GPU_SYNC_EVENT_HANDLE     m_GpuEvent;
-#endif
     };
 
     struct ExtendedConfig

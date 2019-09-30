@@ -165,6 +165,7 @@ namespace MfxHwVP9Encode
         return sts;
     }
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     mfxStatus D3DXCommonEncoder::SetGPUSyncEventEnable(VideoCORE *pCore)
     {
         MFX_CHECK_NULL_PTR1(pCore);
@@ -175,6 +176,7 @@ namespace MfxHwVP9Encode
 #endif
         return MFX_ERR_NONE;
     }
+#endif
 }// namespace MfxHwVP9Encode
 
 #endif // #if defined (MFX_VA_WIN)

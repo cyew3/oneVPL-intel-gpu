@@ -680,7 +680,7 @@ namespace MfxHwVideoProcessing
 
         virtual mfxStatus Register(mfxHDLPair* pSurfaces, mfxU32 num, BOOL bRegister) = 0;
 
-        virtual mfxStatus QueryTaskStatus(mfxU32 idx) = 0;
+        virtual mfxStatus QueryTaskStatus(SynchronizedTask* pSyncTask) = 0;
 
         virtual mfxStatus Execute(mfxExecuteParams *pParams) = 0;
 

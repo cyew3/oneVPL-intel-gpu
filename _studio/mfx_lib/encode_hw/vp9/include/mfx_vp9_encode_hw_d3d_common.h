@@ -66,10 +66,11 @@ namespace MfxHwVP9Encode
             mfxStatus QueryStatusAsync(
                 Task & task) = 0;
 
-        mfxStatus SetGPUSyncEventEnable(VideoCORE *pCore);
         bool m_bIsBlockingTaskSyncEnabled;
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        mfxStatus SetGPUSyncEventEnable(VideoCORE *pCore);
+
         // sync call
         virtual
             mfxStatus WaitTaskSync(

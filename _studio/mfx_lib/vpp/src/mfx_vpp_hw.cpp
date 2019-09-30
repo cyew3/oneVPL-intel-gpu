@@ -50,12 +50,6 @@
 
 #include "umc_defs.h"
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) || defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
-    #define VP_OPERATION_TIMEOUT 120000
-#else
-    #define VP_OPERATION_TIMEOUT 5000
-#endif
-
 using namespace MfxHwVideoProcessing;
 enum
 {
@@ -1148,7 +1142,7 @@ mfxStatus ResMngr::DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx, EventCache *
         std::vector<SubTask>::iterator sub_it;//find(pTask->pSubResource->subTasks.begin(), pTask->pSubResource->subTasks.end(), subtaskIdx);
         for (sub_it = pTask->pSubResource->subTasks.begin(); sub_it != pTask->pSubResource->subTasks.end(); sub_it++)
         {
-            if (sub_it->idx == subtaskIdx)
+            if (sub_it->taskIndex == subtaskIdx)
             {
                 EventCache->ReturnEvent(sub_it->m_GpuEvent.gpuSyncEvent);
                 pTask->pSubResource->subTasks.erase(sub_it);
@@ -1166,7 +1160,7 @@ mfxStatus ResMngr::DeleteSubTask(DdiTask *pTask, mfxU32 subtaskIdx)
         std::vector<SubTask>::iterator sub_it;//find(pTask->pSubResource->subTasks.begin(), pTask->pSubResource->subTasks.end(), subtaskIdx);
         for (sub_it = pTask->pSubResource->subTasks.begin(); sub_it != pTask->pSubResource->subTasks.end(); sub_it++)
         {
-            if (sub_it->idx == subtaskIdx)
+            if (sub_it->taskIndex == subtaskIdx)
             {
                 pTask->pSubResource->subTasks.erase(sub_it);
                 return MFX_ERR_NONE;
@@ -4618,8 +4612,6 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
     UMC::AutomaticUMCMutex guard(pHwVpp->m_guard);
 
-    mfxU32 currentTaskIdx = pTask->taskIndex;
-
 #ifdef MFX_ENABLE_MCTF
     bool InputSurfaceIsProcessed = true;
 
@@ -4631,47 +4623,27 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
     {
 #endif
         if (!pTask->skipQueryStatus && !pHwVpp->m_executeParams.mirroring) {
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-            HRESULT waitRes = WAIT_OBJECT_0;
-            waitRes = WaitForSingleObject(pTask->m_GpuEvent.gpuSyncEvent, VP_OPERATION_TIMEOUT); // timeout for VP operation
-            if (WAIT_OBJECT_0 != waitRes)
-            {
-                return MFX_ERR_GPU_HANG;
-            }
-#endif
             SubTask currSubTask = pHwVpp->m_taskMngr.GetSubTask(pTask);
-            while (currSubTask.idx != NO_INDEX)
+            while (currSubTask.taskIndex != NO_INDEX)
             {
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-                waitRes = WaitForSingleObject(currSubTask.m_GpuEvent.gpuSyncEvent, VP_OPERATION_TIMEOUT); // timeout for VP operation
-                if (WAIT_OBJECT_0 != waitRes)
-                {
-                    sts = MFX_ERR_GPU_HANG;
-                }
-                else
-#endif
-                {
-                    sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currSubTask.idx);
-                }
+                sts = (*pHwVpp->m_ddi)->QueryTaskStatus(&currSubTask);
+
                 if (sts == MFX_TASK_DONE || sts == MFX_ERR_NONE)
                 {
-                    pHwVpp->m_taskMngr.DeleteSubTask(pTask, currSubTask.idx);
+                    pHwVpp->m_taskMngr.DeleteSubTask(pTask, currSubTask.taskIndex);
                     currSubTask = pHwVpp->m_taskMngr.GetSubTask(pTask);
                 }
                 else
-                    currSubTask.idx = NO_INDEX;
+                    currSubTask.taskIndex = NO_INDEX;
             }
 
             if (sts == MFX_TASK_DONE || sts == MFX_ERR_NONE)
             {
-                sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currentTaskIdx);
+                sts = (*pHwVpp->m_ddi)->QueryTaskStatus(pTask);
             }
-#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
-            if(sts != MFX_ERR_NONE)
-#else
+
             if(sts == MFX_ERR_DEVICE_FAILED ||
                 sts == MFX_ERR_GPU_HANG)
-#endif
             {
                 sts = MFX_ERR_GPU_HANG;
                 pHwVpp->m_critical_error = sts;

@@ -774,7 +774,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
             // By the way, when blocking sync will be available, it need to be done
             // by new MFE DDI D3D11_VIDEO_ENCODER_BUFFER_EVENT which need to be sent
             // as additional buffer by ENCODE_ENC_PAK_ID command instead of calling
-            // extention function DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE (like below)
+            // extention function DXVA2_SET_GPU_TASK_EVENT_HANDLE (like below)
         }
         else
 #endif
@@ -785,7 +785,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
             m_EventCache->GetEvent(task1.m_GpuEvent[fieldId].gpuSyncEvent);
 
             D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-            decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
+            decoderExtParams.Function = DXVA2_SET_GPU_TASK_EVENT_HANDLE;
             decoderExtParams.pPrivateInputData = &task1.m_GpuEvent[fieldId];
             decoderExtParams.PrivateInputDataSize = sizeof(task1.m_GpuEvent[fieldId]);
             decoderExtParams.pPrivateOutputData = nullptr;

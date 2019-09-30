@@ -812,7 +812,7 @@ mfxStatus D3D9Encoder::Execute(
             task1.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
             m_EventCache->GetEvent(task1.m_GpuEvent.gpuSyncEvent);
 
-            hr = m_auxDevice->Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, task1.m_GpuEvent, (void *)0);
+            hr = m_auxDevice->Execute(DXVA2_SET_GPU_TASK_EVENT_HANDLE, task1.m_GpuEvent, (void *)0);
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
 #endif

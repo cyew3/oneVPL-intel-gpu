@@ -392,7 +392,7 @@ mfxStatus D3D9Encoder::ExecuteImpl(DdiTask &task, mfxHDL surface)
         task.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
         m_EventCache->GetEvent(task.m_GpuEvent.gpuSyncEvent);
 
-        hr = m_pAuxDevice->Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, &task.m_GpuEvent, sizeof(task.m_GpuEvent));
+        hr = m_pAuxDevice->Execute(DXVA2_SET_GPU_TASK_EVENT_HANDLE, &task.m_GpuEvent, sizeof(task.m_GpuEvent));
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 #endif
 

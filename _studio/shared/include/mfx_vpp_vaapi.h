@@ -56,7 +56,7 @@ namespace MfxHwVideoProcessing
                                    mfxU32 num,
                                    BOOL bRegister);
 
-        virtual mfxStatus QueryTaskStatus(mfxU32 taskIndex);
+        virtual mfxStatus QueryTaskStatus(SynchronizedTask* pSyncTask);
 
         virtual mfxStatus QueryCapabilities( mfxVppCaps& caps );
 

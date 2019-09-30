@@ -227,7 +227,7 @@ Status DXAccelerator::RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXAccelerator::RegisterGpuEvent");
     ExtensionData ext{};
     ext.input = std::make_pair(&ev, sizeof(ev));
-    return ExecuteExtension(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, ext);
+    return ExecuteExtension(DXVA2_SET_GPU_TASK_EVENT_HANDLE, ext);
 //#else
 //    (void)ev;
 //    return MFX_ERR_NONE;

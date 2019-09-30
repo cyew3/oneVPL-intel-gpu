@@ -1001,7 +1001,7 @@ mfxStatus D3D11Encoder::Execute(
         m_EventCache->GetEvent(pExecuteBuffers->m_GpuEvent.gpuSyncEvent);
 
         D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-        decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
+        decoderExtParams.Function = DXVA2_SET_GPU_TASK_EVENT_HANDLE;
         decoderExtParams.pPrivateInputData = &pExecuteBuffers->m_GpuEvent;
         decoderExtParams.PrivateInputDataSize = sizeof(pExecuteBuffers->m_GpuEvent);
         decoderExtParams.pPrivateOutputData = NULL;

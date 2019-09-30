@@ -69,7 +69,7 @@ void BlockingSync::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 
         {
             DDIExecParam submit;
-            submit.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
+            submit.Function = DXVA2_SET_GPU_TASK_EVENT_HANDLE;
 
             Glob::DDI_SubmitParam::GetOrConstruct(global).emplace_front(std::move(submit));
         }
@@ -126,7 +126,7 @@ void BlockingSync::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 
         auto& par       = Glob::DDI_SubmitParam::Get(global);
         auto itEventPar = std::find_if(par.begin(), par.end()
-            , [](const DDIExecParam& x) { return x.Function == DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE; });
+            , [](const DDIExecParam& x) { return x.Function == DXVA2_SET_GPU_TASK_EVENT_HANDLE; });
 
         MFX_CHECK(itEventPar != par.end(), MFX_ERR_UNDEFINED_BEHAVIOR);
 

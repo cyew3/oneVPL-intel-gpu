@@ -221,7 +221,7 @@ void Windows::Gen12::MFE::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
 
         MFX_CHECK(m_pMfeAdapter, MFX_ERR_NONE);
 
-        auto  IsEvent   = [](const Gen11::DDIExecParam& par) { return par.Function == DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE; };
+        auto  IsEvent   = [](const Gen11::DDIExecParam& par) { return par.Function == DXVA2_SET_GPU_TASK_EVENT_HANDLE; };
         auto& submit    = Glob::DDI_SubmitParam::Get(global);
         auto  itEvent   = std::find_if(submit.begin(), submit.end(), IsEvent);
 

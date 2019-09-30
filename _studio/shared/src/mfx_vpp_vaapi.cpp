@@ -2518,7 +2518,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 }
 #endif //#ifdef MFX_ENABLE_VPP_COMPOSITION
 
-mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
+mfxStatus VAAPIVideoProcessing::QueryTaskStatus(SynchronizedTask* pSyncTask)
 {
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     VASurfaceID waitSurface = VA_INVALID_SURFACE;
@@ -2531,7 +2531,7 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 
         for (indxSurf = 0; indxSurf < m_feedbackCache.size(); indxSurf++)
         {
-            if (m_feedbackCache[indxSurf].number == taskIndex)
+            if (m_feedbackCache[indxSurf].number == pSyncTask->taskIndex)
             {
                 waitSurface = m_feedbackCache[indxSurf].surface;
                 break;
@@ -2594,7 +2594,7 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
             }
         }
 
-        std::set<mfxU32>::iterator iterator = m_cachedReadyTaskIndex.find(taskIndex);
+        std::set<mfxU32>::iterator iterator = m_cachedReadyTaskIndex.find(pSyncTask->taskIndex);
 
         if (m_cachedReadyTaskIndex.end() == iterator)
         {
@@ -2606,7 +2606,7 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 
     return MFX_TASK_DONE;
 #endif
-} // mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
+} // mfxStatus VAAPIVideoProcessing::QueryTaskStatus(SynchronizedTask* pSyncTask)
 
 #endif // #if defined (MFX_VA_LINUX)
 #endif // #if defined (MFX_VPP_ENABLE)

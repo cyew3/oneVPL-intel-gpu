@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -569,7 +569,10 @@ mfxStatus VideoVppJpegD3D9::QueryTaskRoutine(mfxU16 taskId)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    sts = (m_ddi)->QueryTaskStatus(taskId);
+    SynchronizedTask task={};
+    task.taskIndex = taskId;
+
+    sts = (m_ddi)->QueryTaskStatus(&task);
 
     return sts;
 
