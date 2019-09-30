@@ -72,7 +72,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Query(VideoCORE *core, mfxVideoParam *in, mfxVid
 
         // get HW caps from driver
         ENCODE_CAPS_VP9 caps = {};
-        sts = QueryCaps(core, caps, GetGuid(toValidate), toValidate.mfx.FrameInfo.Width, toValidate.mfx.FrameInfo.Height);
+        sts = QueryCaps(core, caps, GetGuid(toValidate), toValidate);
         MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_UNSUPPORTED);
 
         toValidate = *in;
@@ -138,7 +138,7 @@ mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(VideoCORE *core, mfxVideoParam *par,
 
     // get HW caps from driver
     ENCODE_CAPS_VP9 caps = {};
-    sts = QueryCaps(core, caps, GetGuid(toValidate), toValidate.mfx.FrameInfo.Width, toValidate.mfx.FrameInfo.Height);
+    sts = QueryCaps(core, caps, GetGuid(toValidate), toValidate);
     MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_UNSUPPORTED);
 
     // get validated and properly initialized set of parameters
@@ -255,8 +255,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
     SetDefaultsForProfileAndFrameInfo(toGetGuid);
     SetDefaultForLowpower(toGetGuid.mfx.LowPower, platform);
 
-    sts = m_ddi->CreateAuxilliaryDevice(m_pCore, GetGuid(toGetGuid),
-        toGetGuid.mfx.FrameInfo.Width, toGetGuid.mfx.FrameInfo.Height);
+    sts = m_ddi->CreateAuxilliaryDevice(m_pCore, GetGuid(toGetGuid), toGetGuid);
     MFX_CHECK(sts != MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
 

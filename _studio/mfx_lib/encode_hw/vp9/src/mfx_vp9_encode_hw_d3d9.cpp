@@ -509,17 +509,37 @@ D3D9Encoder::~D3D9Encoder()
 } // D3D9Encoder::~D3D9Encoder()
 
 // this function is aimed to workaround all CAPS reporting problems in mainline driver
-void HardcodeCaps(ENCODE_CAPS_VP9& caps, VideoCORE* pCore)
+void HardcodeCaps(ENCODE_CAPS_VP9& caps, VideoCORE* pCore, VP9MfxVideoParam const & par)
 {
+//WA because of Direct3D 11 limitation
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    eMFXHWType platform = pCore->GetHWType();
+    eMFXVAType vatype = pCore->GetVAType();
+
+    if (platform >= MFX_HW_TGL_LP && vatype == MFX_HW_D3D11)
+    {
+        if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 &&
+            caps.MaxPicWidth > D3D11_REQ_TEXTURECUBE_DIMENSION / 2) 
+        {
+            caps.MaxPicWidth = D3D11_REQ_TEXTURECUBE_DIMENSION / 2;
+        }
+        if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410 && 
+            caps.MaxPicHeight > D3D11_REQ_TEXTURECUBE_DIMENSION * 2 / 3)
+        {
+            caps.MaxPicHeight = D3D11_REQ_TEXTURECUBE_DIMENSION * 2 / 3;
+        }
+    }
+#else
     caps;
     pCore;
+    par;
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
 }
 
 mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     VideoCORE* pCore,
     GUID guid,
-    mfxU32 width,
-    mfxU32 height)
+    VP9MfxVideoParam const & par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAuxilliaryDevice");
 
@@ -552,17 +572,17 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
     MFX_CHECK(m_caps.EncodeFunc, MFX_ERR_DEVICE_FAILED);
 
-    HardcodeCaps(m_caps, pCore);
+    HardcodeCaps(m_caps, pCore, par);
 
-    m_width  = width;
-    m_height = height;
+    m_width  = par.mfx.FrameInfo.Width;
+    m_height = par.mfx.FrameInfo.Height;
 
     m_auxDevice = std::move(auxDevice);
 
     MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
-} // mfxStatus D3D9Encoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, mfxU32 width, mfxU32 height)
+} // mfxStatus D3D9Encoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, VP9MfxVideoParam const & par)
 
 
 mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)

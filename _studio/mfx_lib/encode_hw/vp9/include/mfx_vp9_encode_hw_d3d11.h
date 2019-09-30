@@ -42,8 +42,7 @@ public:
     mfxStatus CreateAuxilliaryDevice(
         VideoCORE* core,
         GUID       guid,
-        mfxU32     width,
-        mfxU32     height);
+        VP9MfxVideoParam const & par);
 
     virtual
     mfxStatus CreateAccelerationService(

@@ -642,8 +642,7 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, eMFXHWType platform)
 mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     VideoCORE* pCore,
     GUID guid,
-    mfxU32 width,
-    mfxU32 height)
+    VP9MfxVideoParam const & par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CreateAuxilliaryDevice");
 
@@ -655,8 +654,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_platform = m_pmfxCore->GetHWType();
 
-    m_width  = width;
-    m_height = height;
+    m_width  = par.mfx.FrameInfo.Width;
+    m_height = par.mfx.FrameInfo.Height;
 
     // set encoder CAPS on our own for now
     memset(&m_caps, 0, sizeof(m_caps));
@@ -760,7 +759,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, mfxU32 width, mfxU32 height)
+} // mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, VP9MfxVideoParam const & par)
 
 mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 {

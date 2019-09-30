@@ -270,7 +270,8 @@ void FillSegmentParam(Task const & task,
 
 void HardcodeCaps(
     ENCODE_CAPS_VP9& caps,
-    VideoCORE* pCore);
+    VideoCORE* pCore,
+    VP9MfxVideoParam const & par);
 
 void PrintDdiToLog(
     ENCODE_CAPS_VP9 const &caps);
@@ -307,8 +308,7 @@ public:
     mfxStatus CreateAuxilliaryDevice(
         VideoCORE* core,
         GUID       guid,
-        mfxU32     width,
-        mfxU32     height);
+        VP9MfxVideoParam const & par);
 
     virtual
     mfxStatus CreateAccelerationService(

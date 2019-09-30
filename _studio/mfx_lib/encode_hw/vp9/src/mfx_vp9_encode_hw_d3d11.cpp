@@ -80,8 +80,7 @@ D3D11Encoder::~D3D11Encoder()
 mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     VideoCORE* pCore,
     GUID guid,
-    mfxU32 width,
-    mfxU32 height)
+    VP9MfxVideoParam const & par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAuxilliaryDevice");
 
@@ -95,10 +94,10 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
     m_guid = guid;
 
-    if (width && height)
+    if (par.mfx.FrameInfo.Width && par.mfx.FrameInfo.Height)
     {
-        m_width = width;
-        m_height = height;
+        m_width = par.mfx.FrameInfo.Width;
+        m_height = par.mfx.FrameInfo.Height;
     }
     else
     {
@@ -188,11 +187,11 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
         PrintDdiToLogOnce(m_caps);
 
-        HardcodeCaps(m_caps, pCore);
+        HardcodeCaps(m_caps, pCore, par);
     }
 
     return MFX_ERR_NONE;
-} // mfxStatus D3D11Encoder::CreateAuxilliaryDevice(VideoCORE* pCore, GUID guid, mfxU32 width, mfxU32 height)
+} // mfxStatus D3D11Encoder::CreateAuxilliaryDevice(VideoCORE* pCore, GUID guid, VP9MfxVideoParam const & par)
 
 #define VP9_MAX_UNCOMPRESSED_HEADER_SIZE 1000
 
