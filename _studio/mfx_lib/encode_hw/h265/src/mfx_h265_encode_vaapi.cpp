@@ -1093,6 +1093,14 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_caps.ddi_caps.TileSupport = (attrs[idx_map[VAConfigAttribEncTileSupport]].value == 1);
 
+
+    if (attrs[ idx_map[VAConfigAttribEncDirtyRect] ].value != VA_ATTRIB_NOT_SUPPORTED &&
+        attrs[ idx_map[VAConfigAttribEncDirtyRect] ].value != 0)
+    {
+        m_caps.ddi_caps.DirtyRectSupport = 1;
+        m_caps.ddi_caps.MaxNumOfDirtyRect = attrs[ idx_map[VAConfigAttribEncDirtyRect] ].value;
+    }
+
     sts = HardcodeCaps(m_caps, core, par);
     MFX_CHECK_STS(sts);
 
