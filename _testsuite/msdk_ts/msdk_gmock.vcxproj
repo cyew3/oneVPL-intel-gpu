@@ -522,6 +522,7 @@
     <ClCompile Include="src\gmock\test_suites\vpp_getvideoparam.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_rotate.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_crop_query_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8d_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_query_io_surf.cpp" />
