@@ -516,6 +516,16 @@ namespace vp9e_big_resolution
                 isResolutionSupported = false;
             }
 
+            // WA for P010/Y410 because of DirectX 11 limitation
+            if (g_tsHWtype >= MFX_HW_TGL && g_tsImpl & MFX_IMPL_VIA_D3D11)
+            {
+                if (fourcc_id == MFX_FOURCC_P010 && (tc.type & CHECK_16Kx16K || tc.type & CHECK_16Kx4K || tc.type & CHECK_16Kx256)
+                    || fourcc_id == MFX_FOURCC_Y410 && (tc.type & CHECK_16Kx16K))
+                {
+                    isResolutionSupported = false;
+                }
+            }
+
             mfxStatus query_expect_status = isResolutionSupported ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED;
             g_tsStatus.expect(query_expect_status);
             tsExtBufType<mfxVideoParam> par_query_out = m_par;
