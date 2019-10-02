@@ -36,6 +36,10 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
 #endif
     case MFX_FOURCC_BGR4:
         return VA_FOURCC_ABGR;
+
+    case MFX_FOURCC_A2RGB10:
+        return VA_FOURCC_ARGB;  // rt format will be VA_RT_FORMAT_RGB32_10BPP
+
     case MFX_FOURCC_P8:
         return VA_FOURCC_P208;
     case MFX_FOURCC_P010:
@@ -150,6 +154,10 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             else if (va_fourcc == VA_FOURCC_NV12)
             {
                 format = VA_RT_FORMAT_YUV420;
+            }
+            else if (fourcc == MFX_FOURCC_A2RGB10)
+            {
+                format = VA_RT_FORMAT_RGB32_10BPP;
             }
 #if (MFX_VERSION >= 1028)
             else if (fourcc == MFX_FOURCC_RGBP)
@@ -340,6 +348,13 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->G = ptr->B + 1;
                     ptr->R = ptr->B + 2;
                     ptr->A = ptr->B + 3;
+                }
+                else if (mfx_fourcc == MFX_FOURCC_A2RGB10)
+                {
+                    ptr->B = pBuffer + vaapi_mid->m_image.offsets[0];
+                    ptr->G = ptr->B;
+                    ptr->R = ptr->B;
+                    ptr->A = ptr->B;
                 }
                 else return MFX_ERR_LOCK_MEMORY;
                 break;

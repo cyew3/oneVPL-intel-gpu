@@ -614,7 +614,7 @@ mfxStatus InitMFXFrameSurfaceDec(mfxFrameSurface1* pSurface, mfxVideoParam* pPar
 
     ZERO_MEMORY(pSurface->Data);
 
-    if (pSurface->Info.Width * pSurface->Info.Height)
+    if (pSurface->Info.Width * pSurface->Info.Height != 0)
     {
         //prepare planes
         pSurface->Data.Y = new mfxU8[pSurface->Info.Width * pSurface->Info.Height];
