@@ -11,7 +11,7 @@ Copyright(c) 2018-2019 Intel Corporation. All Rights Reserved.
 #pragma once
 
 // set typical segmentation params for sanity checks
-inline bool SetDefaultSegmentationParams(mfxExtVP9Segmentation &segmentation_ext_params, const mfxVideoParam& par)
+inline bool SetDefaultSegmentationParams(mfxExtVP9Segmentation &segmentation_ext_params, const mfxVideoParam& par, HWType platform)
 {
     if (!segmentation_ext_params.NumSegments)
     {
@@ -20,7 +20,10 @@ inline bool SetDefaultSegmentationParams(mfxExtVP9Segmentation &segmentation_ext
 
     if (!segmentation_ext_params.SegmentIdBlockSize)
     {
-        segmentation_ext_params.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64;
+        if (platform < MFX_HW_DG2)
+            segmentation_ext_params.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64;
+        else
+            segmentation_ext_params.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32;
     }
 
     for (mfxU32 i = 0; i < segmentation_ext_params.NumSegments; ++i)

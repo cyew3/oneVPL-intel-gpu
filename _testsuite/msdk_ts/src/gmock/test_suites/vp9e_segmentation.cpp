@@ -59,6 +59,7 @@ namespace vp9e_segmentation
         CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER = 0x1 << 18,
         CHECK_ARTIFACTS = 0x1 << 19,
         CHECK_QP_OVERFLOW = 0x1 << 20,
+        CHECK_32_BLOCK_SIZE = 0x1 << 21, // for DG2+
     };
 
     struct tc_struct
@@ -194,7 +195,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         void EncodingCycle(const tc_struct& tc, const mfxU32& frames_count);
         void PrintFramesInfo();
         mfxStatus EncodeFrames(mfxU32 n, mfxU32 flags = 0, const runtime_segmentation_params *runtime_params = nullptr);
-        mfxStatus AllocateAndSetMap(mfxExtVP9Segmentation &segment_ext_params, mfxU32 is_check_no_buffer = 0);
+        mfxStatus AllocateAndSetMap(mfxExtVP9Segmentation &segment_ext_params, mfxU32 type);
         static const tc_struct test_case[];
         mfxU32 m_SourceFrameCount;
         std::unique_ptr<mfxExtBuffer> m_ExtBuff;
@@ -203,7 +204,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     const tc_struct TestSuite::test_case[] =
     {
         // query: correct segmentation params with 64x64 block and 1 segment
-        {/*00*/ MFX_ERR_NONE, CHECK_QUERY,
+        {/*00*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -212,7 +213,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // init + get_v_param: correct segmentation params with 64x64 block and 1 segment
-        {/*01*/ MFX_ERR_NONE, CHECK_GET_V_PARAM,
+        {/*01*/ MFX_ERR_NONE, CHECK_GET_V_PARAM | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -222,7 +223,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         // corner case: if set only 1 segment => apply QP_delta directly to QP and disable segmentation
         {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE
-                                                | CHECK_PSNR | CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER,
+            | CHECK_PSNR | CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -232,7 +233,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         // corner case: if set several segments => segmentation doesn't make sense and can be disabled
         {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE
-            | CHECK_PSNR | CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER,
+            | CHECK_PSNR | CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -240,7 +241,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: correct segmentation params with 2 segments and QIndexDelta for both segments
-        {/*04*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+        {/*04*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -250,7 +251,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: correct segmentation params with 2 segments and QIndexDelta for the first segment only
-        {/*05*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+        {/*05*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -259,7 +260,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: correct segmentation params with 2 segments and QIndexDelta for the second segment only
-        {/*06*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+        {/*06*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 50 },
@@ -270,7 +271,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: correct segmentation params with 2 segments and LoopFilterLevelDelta for the second segment only
-        {/*07*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR | CHECK_ARTIFACTS,
+        {/*07*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR | CHECK_ARTIFACTS | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -280,7 +281,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         // all routines: check ReferenceFrame feature for the segment
         // currently the feature is not supported by the driver - so check warning-status
-        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER,
+        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE
+            | CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64},
@@ -290,7 +292,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         // all routines: check Skip feature for the segment
         // currently the feature is not supported by the driver - so check warning-status
-        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER,
+        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE
+            | CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -299,7 +302,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: correct segmentation params with values for 8 segments
-        {/*10*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+        {/*10*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 8 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -334,7 +337,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // query: map-buffer is null, but other params are correct - OK-status on Query (Query doesn't check null-params)
-        {/*13*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_NO_BUFFER,
+        {/*13*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_NO_BUFFER | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -343,7 +346,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // init + get_v_param: map-buffer is null, but other params are correct - error (Init checks all params)
-        {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_GET_V_PARAM | CHECK_NO_BUFFER,
+        {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_GET_V_PARAM | CHECK_NO_BUFFER | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -352,7 +355,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // query: map-buffer and NumSegmentIdAlloc have small sizes - error
-        {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY,
+        {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -362,7 +365,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // init + get_v_param: map-buffer and NumSegmentIdAlloc have small sizes - error
-        {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_GET_V_PARAM,
+        {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_GET_V_PARAM | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -372,7 +375,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: too big NumSegments - error
-        {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM,
+        {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, VP9E_MAX_SUPPORTED_SEGMENTS + 1 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -380,7 +383,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: invalid seg. index in the map (value more than VP9E_MAX_SUPPORTED_SEGMENTS) - error
-        {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_INVALID_SEG_INDEX_IN_MAP,
+        {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM
+            | CHECK_INVALID_SEG_INDEX_IN_MAP | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -398,7 +402,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: MBBRC with segmentation - warning and MBBRC should be switched off by Init
-        {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM,
+        {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_32_BLOCK_SIZE,
             {
                 { CDO2_PAR, &tsStruct::mfxExtCodingOption2.MBBRC, MFX_CODINGOPTION_ON },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
@@ -411,7 +415,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // query: q_index and loop_filter delta-s are out of range - warning status + values should be corrected
-        {/*22*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY,
+        {/*22*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -423,7 +427,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // init + get_v_param: q_index and loop_filter delta-s out of range - warning status + values should be corrected
-        {/*23*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_GET_V_PARAM,
+        {/*23*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_GET_V_PARAM | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -437,7 +441,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         // CASES BELOW DO STREAM DECODING AND CALCULATION OF PSNR
 
         // all routines: base-QP + QIndexDelta give out-of-range positive value combined - expected QIndexDelta correction
-        {/*24*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR,
+        {/*24*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 200 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 200 },
@@ -448,7 +452,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: base-QP + QIndexDelta give out-of-range negative value combined - expected QIndexDelta correction
-        {/*25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR | CHECK_ARTIFACTS,
+        {/*25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE
+            | CHECK_PSNR | CHECK_ARTIFACTS | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 50 },
@@ -459,7 +464,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: BRC=CBR with correct bitrate and correct QIndexDelta on segmentation
-        {/*26*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR | CHECK_ARTIFACTS,
+        {/*26*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR | CHECK_ARTIFACTS | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -473,7 +478,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: BRC=CBR with high bitrate and big negative QP_delta on segmentation
-        {/*27*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR | CHECK_ARTIFACTS,
+        {/*27*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR | CHECK_ARTIFACTS | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -487,7 +492,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // all routines: BRC=CBR with low bitrate and big positive QP_delta on segmentation
-        {/*28*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR,
+        {/*28*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_PSNR | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -509,7 +514,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // check runtime segmentation set with enabled global segmentation
-        {/*30*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME | CHECK_PSNR | CHECK_ARTIFACTS,
+        {/*30*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME | CHECK_PSNR | CHECK_ARTIFACTS | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 100 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 100 },
@@ -529,7 +534,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // check disabling segmentation in runtime for one frame
-        {/*32*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME | CHECK_SEGM_DISABLE_FOR_FRAME | CHECK_PSNR | CHECK_ARTIFACTS,
+        {/*32*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME | CHECK_SEGM_DISABLE_FOR_FRAME | CHECK_PSNR
+            | CHECK_ARTIFACTS | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 100 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 100 },
@@ -540,7 +546,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // corner case: check disabling segmentation in runtime for one frame if only 1 segment is set
-        {/*33*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME | CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER | CHECK_PSNR | CHECK_ARTIFACTS,
+        {/*33*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_SEGM_ON_FRAME | CHECK_SEGMENTATION_IS_DISABLED_BY_ENCODER
+            | CHECK_PSNR | CHECK_ARTIFACTS | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 100 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 100 },
@@ -552,7 +559,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // check changing segmentation params on Reset
-        {/*34*/ MFX_ERR_NONE, CHECK_RESET | CHECK_RESET_NO_SEGM_EXT_BUFFER | CHECK_PSNR | CHECK_ARTIFACTS,
+        {/*34*/ MFX_ERR_NONE, CHECK_RESET | CHECK_RESET_NO_SEGM_EXT_BUFFER | CHECK_PSNR | CHECK_ARTIFACTS | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 90 },
@@ -565,7 +572,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         // CASES BELOW INCLUDE 2 ENCODING PARTS - IT IS EXPECTED THE SECOND PART TO ENCODE IN BETTER QUALITY (=> BIGGER SIZE)
 
         // check Reset with segmentation enabling after reset only
-        {/*35*/ MFX_ERR_NONE, CHECK_RESET_WITH_SEG_AFTER_ONLY | CHECK_SECOND_ENCODING_STREAM_IS_BIGGER,
+        {/*35*/ MFX_ERR_NONE, CHECK_RESET_WITH_SEG_AFTER_ONLY | CHECK_SECOND_ENCODING_STREAM_IS_BIGGER | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
@@ -574,7 +581,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // check Reset with segmentation enabled before reset only
-        {/*36*/ MFX_ERR_NONE, CHECK_RESET_WITH_SEG_BEFORE_ONLY | CHECK_SECOND_ENCODING_STREAM_IS_BIGGER,
+        {/*36*/ MFX_ERR_NONE, CHECK_RESET_WITH_SEG_BEFORE_ONLY | CHECK_SECOND_ENCODING_STREAM_IS_BIGGER | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 10 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 10 },
@@ -585,7 +592,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         },
 
         // check Reset with changing segmentation's params on reset
-        {/*37*/ MFX_ERR_NONE, CHECK_RESET | CHECK_SECOND_ENCODING_STREAM_IS_BIGGER,
+        {/*37*/ MFX_ERR_NONE, CHECK_RESET | CHECK_SECOND_ENCODING_STREAM_IS_BIGGER | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 128 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 128 },
@@ -605,13 +612,23 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         // Check overall QP overflow: QP_GLOBAL + QP_FRAME_DELTA + Q_SEGMENT_DELTA > MAX_FRAME_QP
         // expected MFX_WRN_INCOMPATIBLE_VIDEO_PARAM on EncodeFrameAsync()
-        {/*40*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE | CHECK_QP_OVERFLOW | CHECK_SEGM_ON_FRAME,
+        {/*40*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE
+            | CHECK_QP_OVERFLOW | CHECK_SEGM_ON_FRAME | CHECK_32_BLOCK_SIZE,
             {
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[0].QIndexDelta, 10 },
                 { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, (mfxU32)(10) },
             }
+        },
+
+        // For DG2+ 32x32 block size is supported
+        {/*41*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_INIT | CHECK_GET_V_PARAM | CHECK_ENCODE,
+           {
+               { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 2 },
+               { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.SegmentIdBlockSize, MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 },
+               { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.Segment[1].QIndexDelta, 1 },
+           }
         },
 
     };
@@ -1074,7 +1091,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 {
                     segment_ext_params_ctrl->NumSegments = 3;
                     segment_ext_params_ctrl->SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64;
-                    AllocateAndSetMap(*segment_ext_params_ctrl);
+                    AllocateAndSetMap(*segment_ext_params_ctrl, flags);
 
                     if (flags & CHECK_SEGM_OUT_OF_RANGE_PARAMS)
                     {
@@ -1191,7 +1208,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         return g_tsStatus.get();
     }
 
-    mfxStatus TestSuite::AllocateAndSetMap(mfxExtVP9Segmentation &segment_ext_params, mfxU32 is_check_no_buffer)
+    mfxStatus TestSuite::AllocateAndSetMap(mfxExtVP9Segmentation &segment_ext_params, mfxU32 type)
     {
         mfxU32 seg_block = 8;
         if (segment_ext_params.SegmentIdBlockSize == MFX_VP9_SEGMENT_ID_BLOCK_SIZE_16x16)
@@ -1207,6 +1224,11 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             seg_block = 64;
         }
 
+        if (g_tsHWtype >= MFX_HW_DG2 && type & CHECK_32_BLOCK_SIZE)
+        {
+            seg_block = 32;
+        }
+
         const mfxU32 map_width_qnt = (m_par.mfx.FrameInfo.Width + (seg_block - 1)) / seg_block;
         const mfxU32 map_height_qnt = (m_par.mfx.FrameInfo.Height + (seg_block - 1)) / seg_block;
 
@@ -1215,7 +1237,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             segment_ext_params.NumSegmentIdAlloc = map_width_qnt * map_height_qnt;
         }
 
-        if (is_check_no_buffer)
+        if (type & CHECK_NO_BUFFER)
         {
             return MFX_ERR_NONE;
         }
@@ -1430,6 +1452,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         MFXInit();
         Load();
 
+        mfxStatus sts = tc.sts;
+
         //set default params
         m_SourceWidth = m_par.mfx.FrameInfo.Width;
         m_SourceHeight = m_par.mfx.FrameInfo.Height;
@@ -1472,7 +1496,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         if (m_InitedSegmentExtParams)
         {
             SetFeatureEnable(*m_InitedSegmentExtParams);
-            AllocateAndSetMap(*m_InitedSegmentExtParams, tc.type & CHECK_NO_BUFFER ? 1 : 0);
+            AllocateAndSetMap(*m_InitedSegmentExtParams, tc.type);
             if (tc.type & CHECK_INVALID_SEG_INDEX_IN_MAP)
             {
                 m_InitedSegmentExtParams->SegmentId[m_InitedSegmentExtParams->NumSegmentIdAlloc / 2] = VP9E_MAX_SUPPORTED_SEGMENTS;
@@ -1496,6 +1520,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 Query();
                 return 0;
             }
+
+            if (g_tsHWtype < MFX_HW_DG2 && m_InitedSegmentExtParams->SegmentIdBlockSize == MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32)
+                sts = MFX_ERR_INVALID_VIDEO_PARAM;
         }
         else {
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
@@ -1518,7 +1545,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             memset(&cycle1_runtime_params, 0, sizeof(mfxExtVP9Segmentation));
             cycle1_runtime_params.NumSegments = 5;
             cycle1_runtime_params.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64;
-            AllocateAndSetMap(cycle1_runtime_params);
+            AllocateAndSetMap(cycle1_runtime_params, tc.type);
             cycle1_runtime_params.Segment[0].QIndexDelta = -50;
             cycle1_runtime_params.Segment[1].QIndexDelta = -20;
             cycle1_runtime_params.Segment[2].QIndexDelta = 0;
@@ -1565,7 +1592,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             memset(&cycle1_runtime_params, 0, sizeof(mfxExtVP9Segmentation));
             cycle1_runtime_params.NumSegments = 2;
             cycle1_runtime_params.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64;
-            AllocateAndSetMap(cycle1_runtime_params);
+            AllocateAndSetMap(cycle1_runtime_params, tc.type);
             cycle1_runtime_params.Segment[0].QIndexDelta = 10;
             SetFeatureEnable(cycle1_runtime_params);
             cycle1.runtime_params[1] = cycle1_runtime_params;
@@ -1574,7 +1601,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             memset(&cycle1_runtime_params_1, 0, sizeof(mfxExtVP9Segmentation));
             cycle1_runtime_params_1.NumSegments = 3;
             cycle1_runtime_params_1.SegmentIdBlockSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64;
-            AllocateAndSetMap(cycle1_runtime_params_1);
+            AllocateAndSetMap(cycle1_runtime_params_1, tc.type);
             cycle1_runtime_params_1.Segment[0].QIndexDelta = 22;
             SetFeatureEnable(cycle1_runtime_params_1);
             cycle1.runtime_params[2] = cycle1_runtime_params_1;
@@ -1588,11 +1615,11 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         if (tc.type & CHECK_QUERY)
         {
             mfxStatus query_expect_status = MFX_ERR_NONE;
-            if (tc.sts < 0)
+            if (sts < 0)
             {
                 query_expect_status = MFX_ERR_UNSUPPORTED;
             }
-            else if(tc.sts > 0)
+            else if(sts > 0)
             {
                 query_expect_status = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }
@@ -1634,14 +1661,14 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         if (tc.type & CHECK_INIT || tc.type & CHECK_GET_V_PARAM || tc.type & CHECK_ENCODE || tc.type & CHECK_RESET
             || tc.type & CHECK_RESET_WITH_SEG_BEFORE_ONLY || tc.type & CHECK_RESET_WITH_SEG_AFTER_ONLY || tc.type & CHECK_STRESS_TEST)
         {
-            g_tsStatus.expect(tc.sts);
+            g_tsStatus.expect(sts);
             TRACE_FUNC2(MFXVideoENCODE_Init, m_session, m_pPar);
             mfxStatus init_result_status = MFXVideoENCODE_Init(m_session, m_pPar);
             if (init_result_status >= MFX_ERR_NONE)
             {
                 m_initialized = true;
             }
-            g_tsLog << "Init() F " << init_result_status << ", expected status " << tc.sts << "\n";
+            g_tsLog << "Init() F " << init_result_status << ", expected status " << sts << "\n";
             g_tsStatus.check(init_result_status);
             m_EncodedFramesStat[m_SourceFrameCount].change_type = CHANGE_TYPE_INIT;
             if (m_InitedSegmentExtParams)
@@ -1696,7 +1723,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 m_filler = reader;
             }
 
-            if (tc.sts >= MFX_ERR_NONE)
+            if (sts >= MFX_ERR_NONE)
             {
                 TestSuite::EncodeFrames(m_EncodingSequenceCount, tc.type);
 
@@ -1724,7 +1751,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                     if (m_InitedSegmentExtParams)
                     {
                         SetFeatureEnable(*m_InitedSegmentExtParams);
-                        AllocateAndSetMap(*m_InitedSegmentExtParams, tc.type & CHECK_NO_BUFFER ? 1 : 0);
+                        AllocateAndSetMap(*m_InitedSegmentExtParams, tc.type);
 
                         m_EncodedFramesStat[m_SourceFrameCount].type = SEGMENTATION_MAP_UPDATE | SEGMENTATION_DATA_UPDATE;
                         m_EncodedFramesStat[m_SourceFrameCount].segm_params = *m_InitedSegmentExtParams;
@@ -1758,7 +1785,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                     if (m_InitedSegmentExtParams)
                     {
                         SetFeatureEnable(*m_InitedSegmentExtParams);
-                        AllocateAndSetMap(*m_InitedSegmentExtParams, tc.type & CHECK_NO_BUFFER ? 1 : 0);
+                        AllocateAndSetMap(*m_InitedSegmentExtParams, tc.type);
 
                         m_EncodedFramesStat[m_SourceFrameCount].type = m_StressTestScenario[st].segmentation_type_expected;
                         m_EncodedFramesStat[m_SourceFrameCount].segm_params = *m_InitedSegmentExtParams;
@@ -1775,9 +1802,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                     m_EncodedFramesStat[m_SourceFrameCount].change_type = CHANGE_TYPE_RESET;
                 }
 
-                g_tsStatus.expect(tc.sts);
+                g_tsStatus.expect(sts);
                 mfxStatus reset_status = Reset(m_session, m_pPar);
-                g_tsLog << "Reset() returned with status " << reset_status << ", expected status" << tc.sts << MFX_ERR_NONE << "\n";
+                g_tsLog << "Reset() returned with status " << reset_status << ", expected status" << sts << MFX_ERR_NONE << "\n";
             }
 
             // SECOND ENCODE SECTION

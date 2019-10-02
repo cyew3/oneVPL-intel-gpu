@@ -66,7 +66,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Query(VideoCORE *core, mfxVideoParam *in, mfxVid
         sts = CheckExtBufferHeaders(out->NumExtParam, out->ExtParam);
         MFX_CHECK_STS(sts);
 
-        VP9MfxVideoParam toValidate(*in);
+        VP9MfxVideoParam toValidate(*in, platform);
         SetDefaultsForProfileAndFrameInfo(toValidate);
         SetDefaultForLowpower(toValidate.mfx.LowPower, platform);
 
@@ -131,7 +131,7 @@ mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(VideoCORE *core, mfxVideoParam *par,
         inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
         inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY, MFX_ERR_INVALID_VIDEO_PARAM);
 
-    VP9MfxVideoParam toValidate(*par);
+    VP9MfxVideoParam toValidate(*par, platform);
 
     SetDefaultsForProfileAndFrameInfo(toValidate);
     SetDefaultForLowpower(toValidate.mfx.LowPower, platform);
@@ -243,9 +243,9 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
 
     mfxStatus checkSts = MFX_ERR_NONE; // to save warnings ater parameters checking
 
-    m_video = *par;
-
     eMFXHWType platform = m_pCore->GetHWType();
+
+    m_video = VP9MfxVideoParam(*par, platform);
 
     m_ddi.reset(CreatePlatformVp9Encoder(m_pCore));
     MFX_CHECK(m_ddi.get() != 0, MFX_ERR_UNSUPPORTED);
@@ -385,6 +385,10 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     mfxU16 blockSize = MapIdToBlockSize(MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64);
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+    if (platform >= MFX_HW_DG2)
+        blockSize = MapIdToBlockSize(MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32);
+#endif
     // allocate enough space for segmentation map for lowest supported segment block size and highest supported resolution
     mfxU16 wInBlocks = (static_cast<mfxU16>(caps.MaxPicWidth) + blockSize - 1) / blockSize;
     mfxU16 hInBlocks = (static_cast<mfxU16>(caps.MaxPicHeight) + blockSize - 1) / blockSize;
@@ -433,8 +437,10 @@ mfxStatus MFXVideoENCODEVP9_HW::Reset(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
     MFX_CHECK(par->IOPattern == m_video.IOPattern, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    VP9MfxVideoParam parBeforeReset = m_video;
-    VP9MfxVideoParam parAfterReset = *par;
+    eMFXHWType platform = m_pCore->GetHWType();
+
+    VP9MfxVideoParam parBeforeReset(m_video);
+    VP9MfxVideoParam parAfterReset(*par, platform);
 
     ENCODE_CAPS_VP9 caps = {};
     m_ddi->QueryEncodeCaps(caps);
@@ -534,7 +540,6 @@ mfxStatus MFXVideoENCODEVP9_HW::Reset(mfxVideoParam *par)
         }
 
         // Tile switching is unsupported by driver for Gen11+
-        eMFXHWType platform = m_pCore->GetHWType();
         if (platform > MFX_HW_ICL_LP &&
             (extParBefore.NumTileColumns > 1 || extParBefore.NumTileRows > 1) &&
             extParAfter.NumTileColumns == 1 && extParAfter.NumTileRows == 1)

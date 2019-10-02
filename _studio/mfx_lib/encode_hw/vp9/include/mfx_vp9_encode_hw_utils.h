@@ -524,10 +524,12 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         VP9MfxVideoParam();
         VP9MfxVideoParam(VP9MfxVideoParam const &);
         VP9MfxVideoParam(mfxVideoParam const &);
+        VP9MfxVideoParam(mfxVideoParam const & par, eMFXHWType const & platform);
 
         VP9MfxVideoParam & operator = (VP9MfxVideoParam const &);
         VP9MfxVideoParam & operator = (mfxVideoParam const &);
 
+        eMFXHWType m_platform;
         mfxU16 m_inMemType;
         mfxU32 m_targetKbps;
         mfxU32 m_maxKbps;

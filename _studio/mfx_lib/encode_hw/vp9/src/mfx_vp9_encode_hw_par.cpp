@@ -706,10 +706,12 @@ inline void ConvertStatusToBools(Bool& changed, Bool& unsupported, mfxStatus sts
 }
 
 // if called with only video_par - assumed stream init, if both video_par and ctrl_par - assumed on-frame checking
-mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxU32 frameWidth, mfxU32 frameHeight, ENCODE_CAPS_VP9 const & caps, mfxInfoMFX &video_par, mfxEncodeCtrl *ctrl_par = nullptr)
+mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxU32 frameWidth, mfxU32 frameHeight, ENCODE_CAPS_VP9 const & caps, VP9MfxVideoParam const &par, mfxEncodeCtrl *ctrl_par = nullptr)
 {
     Bool changed = false;
     Bool unsupported = false;
+
+    mfxInfoMFX video_par = par.mfx;
 
     if ((seg.NumSegments != 0 || true == AnyMandatorySegMapParam(seg)) && caps.ForcedSegmentationSupport == 0)
     {
@@ -726,8 +728,13 @@ mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxU32 frameWidth, 
         unsupported = true;
     }
 
-    // currently only 64x64 block size for segmentation map supported (HW limitation)
-    if (seg.SegmentIdBlockSize && seg.SegmentIdBlockSize != MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64)
+    // currently only 64x64 block size for segmentation map is supported (HW limitation) for platform < DG2
+    // for DG2+: 32x32 and 64x64 blocks
+    if (seg.SegmentIdBlockSize && seg.SegmentIdBlockSize != MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+         && seg.SegmentIdBlockSize != MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 && par.m_platform >= MFX_HW_DG2
+#endif
+        )
     {
         seg.SegmentIdBlockSize = 0;
         unsupported = true;
@@ -1475,7 +1482,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
     mfxExtVP9Segmentation& seg = GetExtBufferRef(par);
 
-    mfxStatus segSts = CheckSegmentationParam(seg, width, height, caps, par.mfx);
+    mfxStatus segSts = CheckSegmentationParam(seg, width, height, caps, par);
     ConvertStatusToBools(changed, unsupported, segSts);
 
     if (IsOn(opt2.MBBRC) && seg.NumSegments)
@@ -1984,9 +1991,7 @@ mfxStatus CheckAndFixCtrl(
         {
             const mfxExtVP9Param& extPar = GetExtBufferRef(video);
 
-            mfxInfoMFX video_par_tmp = video.mfx;
-
-            sts = CheckSegmentationParam(*seg, extPar.FrameWidth, extPar.FrameHeight, caps, video_par_tmp, &ctrl);
+            sts = CheckSegmentationParam(*seg, extPar.FrameWidth, extPar.FrameHeight, caps, video, &ctrl);
             if (sts == MFX_ERR_UNSUPPORTED ||
                 (true == AnyMandatorySegMapParam(*seg) && false == AllMandatorySegMapParams(*seg)) ||
                 IsOn(opt2.MBBRC) )
@@ -2027,8 +2032,7 @@ mfxStatus CheckAndFixCtrl(
     if (seg_video)
     {
         const mfxExtVP9Param& extParSeg = GetExtBufferRef(video);
-        mfxInfoMFX video_par = video.mfx;
-        mfxStatus sts = CheckSegmentationParam(*seg_video, extParSeg.FrameWidth, extParSeg.FrameHeight, caps, video_par, &ctrl);
+        mfxStatus sts = CheckSegmentationParam(*seg_video, extParSeg.FrameWidth, extParSeg.FrameHeight, caps, video, &ctrl);
         MFX_CHECK_STS(sts);
     }
 

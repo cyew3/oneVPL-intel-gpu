@@ -29,7 +29,8 @@ namespace MfxHwVP9Encode
 {
 
 VP9MfxVideoParam::VP9MfxVideoParam()
-    : m_inMemType(INPUT_VIDEO_MEMORY)
+    : m_platform(MFX_HW_UNKNOWN)
+    , m_inMemType(INPUT_VIDEO_MEMORY)
     , m_targetKbps(0)
     , m_maxKbps(0)
     , m_bufferSizeInKb(0)
@@ -59,8 +60,15 @@ VP9MfxVideoParam::VP9MfxVideoParam(mfxVideoParam const & par)
     Construct(par);
 }
 
+VP9MfxVideoParam::VP9MfxVideoParam(mfxVideoParam const & par, eMFXHWType const & platform)
+{
+    m_platform = platform;
+    Construct(par);
+}
+
 VP9MfxVideoParam& VP9MfxVideoParam::operator=(VP9MfxVideoParam const & par)
 {
+    m_platform = par.m_platform;
     Construct(par);
 
     return *this;

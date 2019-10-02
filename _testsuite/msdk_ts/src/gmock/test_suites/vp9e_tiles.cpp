@@ -968,7 +968,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             // prepare mfxEXtVP9Segmentation
             InitExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION, m_extSeg);
-            SetDefaultSegmentationParams(m_extSeg, m_param[SET]);
+            SetDefaultSegmentationParams(m_extSeg, m_param[SET], g_tsHWtype);
 
             if (false == IsZeroExtBuf(m_extSeg))
             {

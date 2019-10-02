@@ -1290,7 +1290,7 @@ namespace vp9e_temporal_scalability
         mfxExtVP9Segmentation *segmentation_ext_params = reinterpret_cast <mfxExtVP9Segmentation*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
         if (segmentation_ext_params)
         {
-            SetDefaultSegmentationParams(*segmentation_ext_params, m_par);
+            SetDefaultSegmentationParams(*segmentation_ext_params, m_par, g_tsHWtype);
         }
 
         InitAndSetAllocator();
