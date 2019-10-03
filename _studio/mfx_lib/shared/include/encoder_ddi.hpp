@@ -265,11 +265,11 @@ typedef struct tagENCODE_CREATEDEVICE
 
 typedef struct tagENCODE_COMPBUFFERDESC
 {
-    void*        pCompBuffer;
-    D3DFORMAT    CompressedBufferType;
+    const void* pCompBuffer;
+    D3DFORMAT   CompressedBufferType;
     UINT        DataOffset;
     UINT        DataSize;
-    void*        pReserved;
+    void*       pReserved;
 } ENCODE_COMPBUFFERDESC;
 
 typedef struct tagENCODE_EXECUTE_PARAMS

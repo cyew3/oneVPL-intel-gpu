@@ -391,10 +391,9 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & tas
     ADD_CBD(D3DDDIFMT_INTELENCODE_BITSTREAMDATA,    bitstream,  1);
 
 #if MFX_EXTBUFF_CU_QP_ENABLE
-    if (task.m_bCUQPMap )
+    if (task.m_bCUQPMap)
     {
-        mfxU32 idxCUQp  = task.m_idxCUQp;
-        ADD_CBD(D3DDDIFMT_INTELENCODE_MBQPDATA, idxCUQp,  1);
+        ADD_CBD(D3DDDIFMT_INTELENCODE_MBQPDATA, task.m_idxCUQp, 1);
     }
 #endif
 

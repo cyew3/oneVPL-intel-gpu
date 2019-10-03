@@ -349,7 +349,7 @@ struct Task : DpbFrame
 #endif
 
     mfxU32            m_idxBs                         = IDX_INVALID;
-    mfxU8             m_idxCUQp                       = IDX_INVALID;
+    mfxU32            m_idxCUQp                       = IDX_INVALID;
     bool              m_bCUQPMap                      = false;
 
     mfxU8             m_refPicList[2][MAX_DPB_SIZE]   = {};
