@@ -14,9 +14,17 @@ File Name: hevce_encode_frame_async.cpp
 #include "ts_parser.h"
 #include "ts_struct.h"
 #include "ts_aux_dev.h"
+#include <map>
 
 namespace hevce_encode_frame_async
 {
+    // {CodecLevel, MaxNumSlices} values are from HEVC SPEC
+    const std::map<int, int> LEVEL_LIMITS = {
+        {MFX_LEVEL_HEVC_4, 75},
+        {MFX_LEVEL_HEVC_5, 200},
+        {MFX_LEVEL_HEVC_6, 600}
+    };
+
     class TestSuite : tsVideoEncoder
     {
     public:
@@ -136,6 +144,7 @@ namespace hevce_encode_frame_async
         const char* stream = nullptr;
         tsSurfaceProcessor *reader;
         mfxStatus sts;
+        bool run_encode = true;
 
         if ((0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))))
         {
@@ -318,8 +327,6 @@ namespace hevce_encode_frame_async
 
         g_tsStreamPool.Reg();
 
-        mfxU32 LCUSize = (g_tsHWtype >= MFX_HW_CNL) ? 64 : 32;
-
         MFXInit();
         Load();
 
@@ -388,20 +395,33 @@ namespace hevce_encode_frame_async
         }
         else if (tc.type != NOT_INIT)
         {
-            mfxU32 nLCUrow = CEIL_DIV(m_pPar->mfx.FrameInfo.CropW, LCUSize);
-            mfxU32 nLCUcol = CEIL_DIV(m_pPar->mfx.FrameInfo.CropH, LCUSize);
-            mfxU32 maxSlices = 0;
-            bool RowAlignedSlice = false;
-            if ((caps.SliceStructure == 2) || (m_pPar->mfx.LowPower & MFX_CODINGOPTION_ON))
-                RowAlignedSlice = true;
-
-            if (RowAlignedSlice)
-                maxSlices = nLCUcol;
-            else
-                maxSlices = nLCUrow * nLCUcol;
-
             //check current supported MAX number of slices
-            m_pPar->mfx.NumSlice = maxSlices;
+            if (g_tsHWtype < MFX_HW_SKL)
+            {
+                m_pPar->mfx.CodecLevel = MFX_LEVEL_HEVC_4;
+            }
+            else if (g_tsHWtype < MFX_HW_ICL)
+            {
+                m_pPar->mfx.CodecLevel = MFX_LEVEL_HEVC_5;
+            }
+            else
+            {
+                m_pPar->mfx.CodecLevel = MFX_LEVEL_HEVC_6;
+            }
+            // without this params we can't check and correct codec level in init
+            // CorrectLevel func doesn't check and correct level if frame rate or GOP structure is unspecified
+            m_pPar->mfx.GopRefDist = 1;
+            m_pPar->mfx.FrameInfo.FrameRateExtN = 30;
+            m_pPar->mfx.FrameInfo.FrameRateExtD = 1;
+            try
+            {
+                m_pPar->mfx.NumSlice = LEVEL_LIMITS.at(m_pPar->mfx.CodecLevel);
+            }
+            catch (std::out_of_range)
+            {
+                g_tsLog << "Error: Undefiened NumSlice for codec level " << m_pPar->mfx.CodecLevel << "!\n";
+                g_tsStatus.check(MFX_ERR_ABORTED);
+            }
             g_tsStatus.disable_next_check();
             Query();
 
@@ -413,9 +433,9 @@ namespace hevce_encode_frame_async
                 In case of test type = NSLICE_LT_MAX, value for NumSlices was calculated like (maxSlices - 1),
                 but it is incorrect for VDEnc (SliceStructure = 2), because for this encoder mode we can specify for NumSlice
                 only those values, which are composed of any number of rows, but all must have the same size, except last one, which can be
-                smaller or equal to previous slices. For example,if maxSlices = 8 (resolution is 720x480), we cannot specify NumSlice = 7 
-                to check test case NSLICE_LT_MAX. The most closed correct value, that is less than max value, will be 8/2 = 4. 
-                For odd values (i.e. maxSlices = 5) correct value for NumSlice will be the result of a similar division, but with rounding(5/2 ~= 3). 
+                smaller or equal to previous slices. For example,if maxSlices = 8 (resolution is 720x480), we cannot specify NumSlice = 7
+                to check test case NSLICE_LT_MAX. The most closed correct value, that is less than max value, will be 8/2 = 4.
+                For odd values (i.e. maxSlices = 5) correct value for NumSlice will be the result of a similar division, but with rounding(5/2 ~= 3).
                 Thus, it is most convenient to use CEIL_DIV.
                 */
                 if (caps.SliceStructure == 2 || (m_pPar->mfx.LowPower & MFX_CODINGOPTION_ON)) {
@@ -446,6 +466,15 @@ namespace hevce_encode_frame_async
 
             Init();
 
+            mfxVideoParam get_par = {};
+            GetVideoParam(m_session, &get_par);
+            // we set max available codec level, check that wasn't increased
+            if (m_pPar->mfx.CodecLevel < get_par.mfx.CodecLevel)
+            {
+                // to avoid futher encode, because new level aren't supported
+                run_encode = false;
+            }
+
             //set test param
             AllocBitstream(); TS_CHECK_MFX;
             SETPARS(m_pBitstream, MFX_BS);
@@ -463,41 +492,44 @@ namespace hevce_encode_frame_async
             Close();
         }
 
-        //call test function
-        if (tc.sts >= MFX_ERR_NONE)
+        if (run_encode)
         {
-            int encoded = 0;
-            while (encoded < 1)
+            //call test function
+            if (tc.sts >= MFX_ERR_NONE)
             {
-                if (MFX_ERR_MORE_DATA == EncodeFrameAsync())
+                int encoded = 0;
+                while (encoded < 1)
                 {
-                    continue;
-                }
+                    if (MFX_ERR_MORE_DATA == EncodeFrameAsync())
+                    {
+                        continue;
+                    }
 
-                g_tsStatus.check(); TS_CHECK_MFX;
-                SyncOperation(); TS_CHECK_MFX;
-                encoded++;
+                    g_tsStatus.check(); TS_CHECK_MFX;
+                    SyncOperation(); TS_CHECK_MFX;
+                    encoded++;
+                }
+                sts = tc.sts;
             }
-            sts = tc.sts;
+            else if (tc.type == NULL_SESSION)
+            {
+                sts = EncodeFrameAsync(NULL, m_pSurf ? m_pCtrl : 0, m_pSurf, m_pBitstream, m_pSyncPoint);
+            }
+            else if (tc.type == NULL_BS)
+            {
+                sts = EncodeFrameAsync(m_session, m_pSurf ? m_pCtrl : 0, m_pSurf, NULL, m_pSyncPoint);
+            }
+            else if (tc.type == NULL_SURF)
+            {
+                sts = EncodeFrameAsync(m_session, m_pSurf ? m_pCtrl : 0, NULL, m_pBitstream, m_pSyncPoint);
+            }
+            else
+            {
+                sts = EncodeFrameAsync(m_session, m_pSurf ? m_pCtrl : 0, m_pSurf, m_pBitstream, m_pSyncPoint);
+            }
+            g_tsStatus.expect(tc.sts);
+            g_tsStatus.check(sts);
         }
-        else if (tc.type == NULL_SESSION)
-        {
-            sts = EncodeFrameAsync(NULL, m_pSurf ? m_pCtrl : 0, m_pSurf, m_pBitstream, m_pSyncPoint);
-        }
-        else if (tc.type == NULL_BS)
-        {
-            sts = EncodeFrameAsync(m_session, m_pSurf ? m_pCtrl : 0, m_pSurf, NULL, m_pSyncPoint);
-        }
-        else if (tc.type == NULL_SURF)
-        {
-            sts = EncodeFrameAsync(m_session, m_pSurf ? m_pCtrl : 0, NULL, m_pBitstream, m_pSyncPoint);
-        }
-        else
-        {
-            sts = EncodeFrameAsync(m_session, m_pSurf ? m_pCtrl : 0, m_pSurf, m_pBitstream, m_pSyncPoint);
-        }
-        g_tsStatus.expect(tc.sts);
-        g_tsStatus.check(sts);
         if (tc.sts != MFX_ERR_NOT_INITIALIZED)
             g_tsStatus.expect(MFX_ERR_NONE);
         else
