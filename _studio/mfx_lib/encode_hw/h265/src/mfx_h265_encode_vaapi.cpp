@@ -951,7 +951,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         VAConfigAttribEncMaxRefFrames,
         VAConfigAttribEncSliceStructure,
         VAConfigAttribEncROI,
-        VAConfigAttribEncTileSupport
+        VAConfigAttribEncTileSupport,
+        VAConfigAttribEncDirtyRect
     };
     std::vector<VAConfigAttrib> attrs;
 
