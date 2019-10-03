@@ -80,6 +80,7 @@ public:
         , VABID_PACKED_SkipBuffer
 
         , VABID_ROI
+        , VABID_MaxSliceSize
 
         , VABID_END_OF_LIST // Remain this item last in the list
     };
@@ -147,6 +148,12 @@ mfxStatus SetFrameRate(
     VADisplay    vaDisplay,
     VAContextID  vaContextEncode,
     VABufferID & frameRateBuf_id);
+
+mfxStatus SetMaxSliceSize(
+    MfxHwH265Encode::MfxVideoParam const & par,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & maxSliceSizeBuf_id);
 
 mfxStatus SetSkipFrame(
     VADisplay    vaDisplay,

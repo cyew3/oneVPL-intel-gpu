@@ -421,6 +421,41 @@ mfxStatus SetFrameRate(
     return MFX_ERR_NONE;
 }
 
+mfxStatus SetMaxSliceSize(
+    MfxVideoParam const & par,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & maxSliceSizeBuf_id)
+{
+    mfxStatus sts = CheckAndDestroyVAbuffer(vaDisplay, maxSliceSizeBuf_id);
+    MFX_CHECK_STS(sts);
+
+    VAStatus vaSts = vaCreateBuffer(vaDisplay,
+                   vaContextEncode,
+                   VAEncMiscParameterBufferType,
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterMaxSliceSize),
+                   1,
+                   nullptr,
+                   &maxSliceSizeBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    VAEncMiscParameterBuffer *misc_param;
+    vaSts = vaMapBuffer(vaDisplay,
+                 maxSliceSizeBuf_id,
+                (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = VAEncMiscParameterTypeMaxSliceSize;
+    auto maxSliceSize_param = reinterpret_cast<VAEncMiscParameterMaxSliceSize *>(misc_param->data);
+
+    maxSliceSize_param->max_slice_size = par.m_ext.CO2.MaxSliceSize;
+
+    vaSts = vaUnmapBuffer(vaDisplay, maxSliceSizeBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+}
+
 #ifdef PARALLEL_BRC_support
 mfxStatus SetBRCParallel(
     MfxVideoParam const & par,
@@ -1057,6 +1092,10 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     else
         m_caps.ddi_caps.MaxPicHeight = 1088;
 
+
+    m_caps.ddi_caps.SliceStructure = 4;
+    m_caps.ddi_caps.SliceByteSizeCtrl = 1; //It means that GPU may further split the slice region that slice control data specifies into finer slice segments based on slice size upper limit (MaxSliceSize).
+
     if (attrs[ idx_map[VAConfigAttribEncMaxRefFrames] ].value != VA_ATTRIB_NOT_SUPPORTED)
     {
         m_caps.ddi_caps.MaxNum_Reference0 =
@@ -1238,6 +1277,11 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     if (par.m_ext.CO2.MaxFrameSize)
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(par.m_ext.CO2.MaxFrameSize, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_MaxFrameSize, 1)), MFX_ERR_DEVICE_FAILED);
 #endif
+    if(par.m_ext.CO2.MaxSliceSize != 0)
+    {
+        mfxStatus sts = SetMaxSliceSize(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_MaxSliceSize, 1));
+        MFX_CHECK_WITH_ASSERT(sts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
+    }
     FillConstPartOfPps(par, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
@@ -1288,6 +1332,11 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par, bool bResetBRC)
     if (par.m_ext.CO2.MaxFrameSize)
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(par.m_ext.CO2.MaxFrameSize, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_MaxFrameSize, 1)), MFX_ERR_DEVICE_FAILED);
 #endif
+    if(par.m_ext.CO2.MaxSliceSize != 0)
+    {
+        mfxStatus sts = SetMaxSliceSize(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_MaxSliceSize, 1));
+        MFX_CHECK_WITH_ASSERT(sts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
+    }
 
     FillConstPartOfPps(par, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
