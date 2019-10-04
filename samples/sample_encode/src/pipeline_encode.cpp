@@ -156,7 +156,8 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
             sts = MFX_ERR_NONE;
             msdk_printf(MSDK_STRING("GPU hang happened\n"));
         }
-        MSDK_CHECK_STATUS_NO_RET(sts, "SyncOperation failed");
+        // MFX_WRN_IN_EXECUTION has to be reported
+        MSDK_CHECK_ERR_NONE_STATUS_NO_RET(sts, "SyncOperation fail or timeout");
 
         if (MFX_ERR_NONE == sts)
         {

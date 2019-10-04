@@ -1855,6 +1855,7 @@ mfxStatus CDecodingPipeline::RunDecoding()
                         break;
                     }
                 }
+                MSDK_CHECK_ERR_NONE_STATUS_NO_RET(sts, "SyncOperation fail or timeout");
                 // note: MFX_WRN_IN_EXECUTION will also be treated as an error at this point
                 continue;
             }
