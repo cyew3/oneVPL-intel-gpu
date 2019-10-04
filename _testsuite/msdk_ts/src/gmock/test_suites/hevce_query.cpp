@@ -39,7 +39,8 @@ namespace hevce_query
         PROTECTED,
         W_GT_MAX,
         H_GT_MAX,
-        NONE
+        NONE,
+        ALIGNMENT
     };
 
     struct tc_struct
@@ -71,6 +72,24 @@ namespace hevce_query
     private:
 
         static const tc_struct test_case[];
+
+        mfxU32 GetAlignmentByPlatform()
+        {
+            return g_tsHWtype >= MFX_HW_CNL ? 8 : 16;
+        }
+
+        bool IsResolutionAligned(mfxU16 width, mfxU16 height)
+        {
+            mfxU32 alignment = GetAlignmentByPlatform();
+            return !(width & (alignment - 1)) && !(height & alignment - 1);
+        }
+
+        mfxU64 AlignValue(mfxU64 value)
+        {
+            mfxU32 alignment = GetAlignmentByPlatform();
+            assert((alignment & (alignment - 1)) == 0);
+            return (value + (alignment - 1)) & ~(alignment - 1);
+        }
 
         void CheckOutPar(tc_struct tc)
         {
@@ -108,10 +127,18 @@ namespace hevce_query
                     else // SW: supported TU = {1,2,3,4,5,6,7}
                     {
                         tsStruct::check_eq(m_pParOut, *tc.set_par[0].f, tsStruct::get(m_pPar, *tc.set_par[0].f));
-
                     }
                     break;
                 }
+                case ALIGNMENT:
+                    //check width
+                    tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.Width, AlignValue(m_pPar->mfx.FrameInfo.Width));
+                    //check height
+                    tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.Height, AlignValue(m_pPar->mfx.FrameInfo.Height));
+                    //check crops
+                    tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, m_pPar->mfx.FrameInfo.CropW);
+                    tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, m_pPar->mfx.FrameInfo.CropH);
+                    break;
                 default: break;
             }
         }
@@ -228,7 +255,6 @@ namespace hevce_query
                 default: break;
                 }
             }
-
     };
 
     bool IsChromaFormatSupported(mfxU16 chromaFormat, mfxU16 bitDepthLuma)
@@ -394,6 +420,14 @@ namespace hevce_query
 #endif
                           PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
         {/*70*/ MFX_ERR_UNSUPPORTED, PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
+        //Alignment
+        {/*71*/ MFX_ERR_NONE, ALIGNMENT, NONE, {} },
+        {/*72*/ MFX_ERR_NONE, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
+        {/*73*/ MFX_ERR_NONE, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
+        {/*74*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1 } },
+        {/*75*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1 } },
+        {/*76*/ MFX_ERR_NONE, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
+        {/*77*/ MFX_ERR_NONE, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(tc_struct);
@@ -556,7 +590,7 @@ namespace hevce_query
         {   // pars depend on resolution
             for (mfxU32 i = 0; i < MAX_NPARS; i++) {
                 if (tc.set_par[i].f && tc.set_par[i].ext_type == MFX_PAR) {
-                    if (tc.type == RESOLUTION)
+                    if (tc.type == RESOLUTION || tc.type == ALIGNMENT)
                     {
                         if (tc.set_par[i].f->name.find("Width") != std::string::npos) {
                             m_pPar->mfx.FrameInfo.Width = ((m_pPar->mfx.FrameInfo.Width + 15) & ~15) + tc.set_par[i].v;
@@ -564,7 +598,7 @@ namespace hevce_query
                         if (tc.set_par[i].f->name.find("Height") != std::string::npos)
                             m_pPar->mfx.FrameInfo.Height = ((m_pPar->mfx.FrameInfo.Height + 15) & ~15) + tc.set_par[i].v;
                     }
-                    if (tc.type == CROP)
+                    if (tc.type == CROP || tc.type == ALIGNMENT)
                     {
                         if (tc.set_par[i].f->name.find("CropX") != std::string::npos)
                             m_pPar->mfx.FrameInfo.CropX += tc.set_par[i].v;
@@ -680,20 +714,28 @@ namespace hevce_query
             && tc.type != IN_PAR_NULL) // in this case MFX_ERR_NONE returns all the time, m_par isn't used
             sts = MFX_ERR_UNSUPPORTED;
 
+        if (sts >= MFX_ERR_NONE
+            && tc.type == ALIGNMENT
+            && !IsResolutionAligned(m_pPar->mfx.FrameInfo.Width, m_pPar->mfx.FrameInfo.Height))
+        {
+            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+
         g_tsStatus.expect(sts);
         //call tested function
         TRACE_FUNC3(MFXVideoENCODE_Query, m_session, m_pPar, m_pParOut);
         if (tc.type != SESSION_NULL)
-            g_tsStatus.check(MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut));
+            sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
         else
-            g_tsStatus.check(MFXVideoENCODE_Query(NULL, m_pPar, m_pParOut));
+            sts = MFXVideoENCODE_Query(NULL, m_pPar, m_pParOut);
 
+        TS_TRACE(m_pParOut);
         if (buff_in)
             delete buff_in;
         if (buff_out)
             delete buff_out;
 
-        TS_TRACE(m_pParOut);
+        g_tsStatus.check(sts);
         CheckOutPar(tc);
 
         if ((tc.type == SET_ALLOCK) && (tc.sub_type == AFTER))
