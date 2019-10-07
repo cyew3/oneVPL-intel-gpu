@@ -47,6 +47,22 @@ static bool parseGUID(const char* src, mfxPluginUID* uid)
     return true;
 }
 
+static std::string printUID(const mfxPluginUID& uid)
+{
+    std::stringstream ss;
+    ss << std::hex;
+    for (auto c: uid.Data) ss << static_cast<unsigned>(c);
+    return ss.str();
+}
+
+static std::string printCodecId(mfxU32 id)
+{
+    uint8_t* data = reinterpret_cast<uint8_t*>(&id);
+    std::stringstream ss;
+    for (size_t i=0; i < sizeof(id); ++i) ss << data[i];
+    return ss.str();
+}
+
 void PluginInfo::Load(const char* name, const char* value)
 {
 #ifdef LINUX64
