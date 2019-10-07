@@ -44,11 +44,7 @@ public:
 class CResourcesPool
 {
 public:
-    CResourcesPool()
-    {
-        size=0;
-        m_resources=NULL;
-    }
+    CResourcesPool() {}
 
     ~CResourcesPool()
     {
@@ -57,9 +53,13 @@ public:
 
     CMSDKResource& operator[](int index){return m_resources[index];}
 
-    int GetSize(){return size;}
+    int GetSize(){return m_size;}
 
-    mfxStatus Init(int size,mfxIMPL impl, mfxVersion *pVer);
+    mfxStatus Init(int size, mfxIMPL impl, mfxVersion *pVer
+#if defined(PRE_SI_GEN)
+                   , mfxU32 nSyncOpTimeout
+#endif
+        );
     mfxStatus InitTaskPools(CSmplBitstreamWriter* pWriter, mfxU32 nPoolSize, mfxU32 nBufferSize, CSmplBitstreamWriter *pOtherWriter = NULL);
     mfxStatus CreateEncoders();
     mfxStatus CreatePlugins(mfxPluginUID pluginGUID, mfxChar* pluginPath);
@@ -68,8 +68,11 @@ public:
     void CloseAndDeleteEverything();
 
 protected:
-    CMSDKResource* m_resources;
-    int size;
+    CMSDKResource* m_resources = nullptr;
+    int            m_size = 0;
+#if defined(PRE_SI_GEN)
+    mfxU32         m_nSyncOpTimeout = 0; // SyncOperation timeout in msec
+#endif
 
 private:
     CResourcesPool(const CResourcesPool& src){(void)src;}

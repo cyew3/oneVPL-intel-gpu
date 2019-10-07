@@ -155,6 +155,9 @@ CUserPipeline::CUserPipeline() : CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_pluginVideoParams);
     MSDK_ZERO_MEMORY(m_RotateParams);
     m_MVCflags = MVC_DISABLED;
+#if defined(PRE_SI_GEN)
+    m_nSyncOpTimeout = 0;
+#endif
 }
 
 CUserPipeline::~CUserPipeline()
@@ -188,6 +191,10 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     m_nPerfOpt = pParams->nPerfOpt;
     m_nTimeout = pParams->nTimeout;
     m_bCutOutput = !pParams->bUncut;
+
+#if defined(PRE_SI_GEN)
+    m_nSyncOpTimeout = pParams->nSyncOpTimeout;
+#endif
 
     // prepare output file writer
     sts = InitFileWriters(pParams);
@@ -460,7 +467,11 @@ mfxStatus CUserPipeline::Run()
     // synchronize all tasks that are left in task pool
     while (MFX_ERR_NONE == sts)
     {
-        sts = m_TaskPool.SynchronizeFirstTask();
+#if defined(PRE_SI_GEN)
+        sts = m_TaskPool.SynchronizeFirstTask(m_nSyncOpTimeout);
+#else
+        sts = m_TaskPool.SynchronizeFirstTask(MSDK_WAIT_INTERVAL);
+#endif
     }
 
     // MFX_ERR_NOT_FOUND is the correct status to exit the loop with,
