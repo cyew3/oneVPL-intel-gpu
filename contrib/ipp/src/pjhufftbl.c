@@ -27,6 +27,8 @@
 
 #include "precomp.h"
 
+#define MINUS_ONE (-1u)
+
 #ifndef __OWNJ_H__
 #include "ownj.h"
 #endif
@@ -64,21 +66,21 @@ const int mfxown_pj_extend_test[16] =
 const int mfxown_pj_extend_offset[16] =
 {
   0,
-  ((-1) <<  1) + 1,
-  ((-1) <<  2) + 1,
-  ((-1) <<  3) + 1,
-  ((-1) <<  4) + 1,
-  ((-1) <<  5) + 1,
-  ((-1) <<  6) + 1,
-  ((-1) <<  7) + 1,
-  ((-1) <<  8) + 1,
-  ((-1) <<  9) + 1,
-  ((-1) << 10) + 1,
-  ((-1) << 11) + 1,
-  ((-1) << 12) + 1,
-  ((-1) << 13) + 1,
-  ((-1) << 14) + 1,
-  ((-1) << 15) + 1
+  (MINUS_ONE <<  1) + 1,
+  (MINUS_ONE <<  2) + 1,
+  (MINUS_ONE <<  3) + 1,
+  (MINUS_ONE <<  4) + 1,
+  (MINUS_ONE <<  5) + 1,
+  (MINUS_ONE <<  6) + 1,
+  (MINUS_ONE <<  7) + 1,
+  (MINUS_ONE <<  8) + 1,
+  (MINUS_ONE <<  9) + 1,
+  (MINUS_ONE << 10) + 1,
+  (MINUS_ONE << 11) + 1,
+  (MINUS_ONE << 12) + 1,
+  (MINUS_ONE << 13) + 1,
+  (MINUS_ONE << 14) + 1,
+  (MINUS_ONE << 15) + 1
 };
 
 
