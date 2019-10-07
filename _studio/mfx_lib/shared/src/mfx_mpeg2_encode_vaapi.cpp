@@ -851,7 +851,7 @@ mfxStatus VAAPIEncoder::FillSlices(ExecuteBuffers* pExecuteBuffers)
 {
     VAEncSliceParameterBufferMPEG2 *sliceParam;
     VAStatus vaSts;
-    int i, width_in_mbs, height_in_mbs;
+    int width_in_mbs, height_in_mbs;
 
 //    assert(m_vaPpsBuf.picture_coding_extension.bits.q_scale_type == 0);
 
@@ -870,7 +870,7 @@ mfxStatus VAAPIEncoder::FillSlices(ExecuteBuffers* pExecuteBuffers)
 
     mfxStatus sts;
 #if 1                   //multiple slice
-    for (i = 0; i < height_in_mbs; i++) {
+    for (int i = 0; i < height_in_mbs; i++) {
         ENCODE_SET_SLICE_HEADER_MPEG2&  ddiSlice = pExecuteBuffers->m_pSlice[i];
         assert(ddiSlice.NumMbsForSlice == width_in_mbs);
         sliceParam = &m_sliceParam[i];
