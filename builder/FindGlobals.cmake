@@ -43,25 +43,26 @@ if( Linux OR Darwin )
 
   include( GNUInstallDirs )
 
-  add_definitions(-DUNIX)
+  set( common_flags "${common_flags} -DUNIX")
 
   if( Linux )
-    add_definitions(-D__USE_LARGEFILE64 -D_FILE_OFFSET_BITS=64)
+    set( common_flags "${common_flags} -D__USE_LARGEFILE64" )
+    set( common_flags "${common_flags} -D_FILE_OFFSET_BITS=64" )
 
-    add_definitions(-DLINUX)
-    add_definitions(-DLINUX32)
+    set( common_flags "${common_flags} -DLINUX" )
+    set( common_flags "${common_flags} -DLINUX32" )
 
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-      add_definitions(-DLINUX64)
+      set( common_flags "${common_flags} -DLINUX64" )
     endif()
   endif()
 
   if( Darwin )
-    add_definitions(-DOSX)
-    add_definitions(-DOSX32)
+    set( common_flags "${common_flags} -DOSX" )
+    set( common_flags "${common_flags} -DOSX32" )
 
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-      add_definitions(-DOSX64)
+      set( common_flags "${common_flags} -DOSX64" )
     endif()
   endif()
 
@@ -83,7 +84,7 @@ if( Linux OR Darwin )
       )
     string( SUBSTRING ${version} 0 1 ver )
 
-    add_definitions( -DMSDK_BUILD=\"$ENV{BUILD_NUMBER}\")
+    set( common_flags "${common_flags} -DMSDK_BUILD=\\\"$ENV{BUILD_NUMBER}\\\"" )
   endif()
 
   if (CMAKE_C_COMPILER MATCHES icc)
@@ -95,8 +96,8 @@ if( Linux OR Darwin )
   set(c_warnings "-Wall -Wformat -Wformat-security")
   set(cxx_warnings "${c_warnings} -Wnon-virtual-dtor")
 
-  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -pipe -fPIC ${c_warnings} ${no_warnings}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -fPIC ${cxx_warnings} ${no_warnings}")
+  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -pipe -fPIC ${c_warnings} ${no_warnings} ${common_flags}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -fPIC ${cxx_warnings} ${no_warnings} ${common_flags}")
   append("-fPIE -pie" CMAKE_EXEC_LINKER_FLAGS)
 
   # CACHE + FORCE should be used only here to make sure that this parameters applied globally
@@ -113,7 +114,7 @@ if( Linux OR Darwin )
 
   if ( Darwin )
     if (CMAKE_C_COMPILER MATCHES clang)
-       set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -v -std=c++11 -stdlib=libc++")
+      set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -v -std=c++11 -stdlib=libc++ ${common_flags}")
     endif()
   endif()
 
@@ -242,6 +243,10 @@ if(UNIX AND MFX_GLIBC)
 endif()
 
 git_describe( git_commit )
-add_definitions( -DMFX_BUILD_INFO=\"${BUILD_INFO}\" )
-add_definitions( -DMFX_API_VERSION=\"${API_VER_MODIF}\" )
-add_definitions( -DMFX_GIT_COMMIT=\"${git_commit}\" )
+
+set( version_flags "${version_flags} -DMFX_BUILD_INFO=\"\\\"${BUILD_INFO}\"\\\"" )
+set( version_flags "${version_flags} -DMFX_API_VERSION=\\\"${API_VER_MODIF}\\\"" )
+set( version_flags "${version_flags} -DMFX_GIT_COMMIT=\\\"${git_commit}\\\"" )
+
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${version_flags}" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${version_flags}" )
