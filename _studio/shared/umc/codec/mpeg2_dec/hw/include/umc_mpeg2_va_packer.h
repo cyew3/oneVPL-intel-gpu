@@ -75,18 +75,18 @@ namespace UMC_MPEG2_DECODER
 
         PackerVA(UMC::VideoAccelerator * va);
 
-        UMC::Status GetStatusReport(void * /*pStatusReport*/, size_t /*size*/)
+        UMC::Status GetStatusReport(void * /*pStatusReport*/, size_t /*size*/) override
         { return UMC::UMC_OK; }
 
         // Synchronize task
-        UMC::Status SyncTask(MPEG2DecoderFrame* frame, void * error)
+        UMC::Status SyncTask(MPEG2DecoderFrame* frame, void * error) override
         { return m_va->SyncTask(frame->GetMemID(), error); }
 
-        UMC::Status QueryTaskStatus(uint32_t index, void * status, void * error)
+        UMC::Status QueryTaskStatus(uint32_t index, void * status, void * error) override
         { return m_va->QueryTaskStatus(index, status, error); }
 
-        void BeginFrame();
-        void EndFrame();
+        void BeginFrame() override;
+        void EndFrame() override;
 
         // Pack the whole picture
         void PackAU(MPEG2DecoderFrame const&, uint8_t) override;
