@@ -2654,7 +2654,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     bool laEnabled = true;
-    if (platform > MFX_HW_ICL_LP)
+    if (platform > MFX_HW_ICL_LP
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+        && platform != MFX_HW_TGL_LP
+#endif
+        )
     {
         laEnabled = false;
         if (bRateControlLA(par.mfx.RateControlMethod))

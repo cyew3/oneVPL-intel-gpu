@@ -78,6 +78,8 @@ if(MFX_ENABLE_KERNELS)
     ${prefix}/genx_icllp_simple_me_isa.cpp
     ${prefix}/genx_skl_histogram_isa.cpp
     ${prefix}/genx_skl_simple_me_isa.cpp
+    ${prefix}/genx_tgllp_histogram_isa.cpp
+    ${prefix}/genx_tgllp_simple_me_isa.cpp
   )
 
   if( MFX_ENABLE_KERNELS )

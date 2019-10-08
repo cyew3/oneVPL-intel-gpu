@@ -43,6 +43,8 @@
     <ClCompile Include="src\genx_icl_simple_me_isa.cpp" />
     <ClCompile Include="src\genx_icllp_histogram_isa.cpp" />
     <ClCompile Include="src\genx_icllp_simple_me_isa.cpp" />
+    <ClCompile Include="src\genx_tgllp_histogram_isa.cpp" />
+    <ClCompile Include="src\genx_tgllp_simple_me_isa.cpp" />
     <ClCompile Include="src\genx_histogram.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">true</ExcludedFromBuild>
