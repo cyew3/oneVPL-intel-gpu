@@ -19,5 +19,5 @@
 // SOFTWARE.
 #ifndef __mctf_me_gen12_isa__
 #define __mctf_me_gen12_isa__
-extern const unsigned char mctf_me_gen12_isa[32864];
+extern const unsigned char mctf_me_gen12_isa[28900];
 #endif

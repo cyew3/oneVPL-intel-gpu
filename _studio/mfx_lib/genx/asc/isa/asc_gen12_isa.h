@@ -19,5 +19,5 @@
 // SOFTWARE.
 #ifndef __asc_gen12_isa__
 #define __asc_gen12_isa__
-extern const unsigned char asc_gen12_isa[25036];
+extern const unsigned char asc_gen12_isa[24538];
 #endif
