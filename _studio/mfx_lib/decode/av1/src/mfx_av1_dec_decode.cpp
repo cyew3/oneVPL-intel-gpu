@@ -199,6 +199,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 
     MFX_CHECK(MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_AV1, m_platform), MFX_ERR_INVALID_VIDEO_PARAM);
 
+    m_first_par = *par;
 
     MFX_CHECK(m_platform != MFX_PLATFORM_SOFTWARE, MFX_ERR_UNSUPPORTED);
 #if !defined (MFX_VA)
@@ -733,19 +734,58 @@ mfxStatus VideoDECODEAV1::QueryFrame(mfxThreadTask task)
     return MFX_TASK_DONE;
 }
 
+static mfxStatus CheckFrameInfo(mfxFrameInfo const &currInfo, mfxFrameInfo &info)
+{
+    MFX_SAFE_CALL(CheckFrameInfoCommon(&info, MFX_CODEC_AV1));
+
+    switch (info.FourCC)
+    {
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_AYUV:
+#if (MFX_VERSION >= 1027)
+    case MFX_FOURCC_Y410:
+#endif
+        break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    case MFX_FOURCC_P016:
+    case MFX_FOURCC_Y416:
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
+    case MFX_FOURCC_P010:
+#if (MFX_VERSION >= 1027)
+    case MFX_FOURCC_Y210:
+#endif
+        MFX_CHECK(info.Shift == 1, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        break;
+    default:
+        MFX_CHECK_STS(MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
+    switch (info.ChromaFormat)
+    {
+    case MFX_CHROMAFORMAT_YUV420:
+    case MFX_CHROMAFORMAT_YUV444:
+        break;
+    default:
+        MFX_CHECK_STS(MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
+    MFX_CHECK(currInfo.FourCC == info.FourCC, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out)
 {
     MFX_CHECK_NULL_PTR2(surface_work, surface_out);
 
-    mfxStatus sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_AV1, m_platform != MFX_PLATFORM_SOFTWARE);
+    mfxStatus sts = CheckFrameInfo(m_first_par.mfx.FrameInfo, surface_work->Info);
     MFX_CHECK_STS(sts);
 
     sts = CheckFrameData(surface_work);
+    MFX_CHECK_STS(sts);
 
     if (!bs)
         return MFX_ERR_MORE_DATA;
-
-    MFX_CHECK_STS(sts);
 
     sts = CheckBitstream(bs);
     MFX_CHECK_STS(sts);
