@@ -446,7 +446,8 @@ mfxStatus mfxSchedulerCore::GetTimeout(mfxU32& maxTimeToRun)
 #endif
 }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC) || \
+    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
 void ** mfxSchedulerCore::GetHwEvent()
 {
     return &m_hwTaskDone.handle;

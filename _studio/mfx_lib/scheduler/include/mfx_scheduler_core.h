@@ -244,7 +244,8 @@ public:
     virtual
     mfxStatus GetTimeout(mfxU32 & maxTimeToRun);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC) || \
+    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
     // WA for avoid cases whan global HW (BB completion) event is equal event created by MSDK
     virtual
     void ** GetHwEvent();

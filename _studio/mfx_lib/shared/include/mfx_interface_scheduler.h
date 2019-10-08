@@ -150,7 +150,8 @@ public:
     virtual
     mfxStatus GetTimeout(mfxU32 & maxTimeToRun) = 0;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#if defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC) || \
+    defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
     virtual
     void ** GetHwEvent() = 0;
 #endif

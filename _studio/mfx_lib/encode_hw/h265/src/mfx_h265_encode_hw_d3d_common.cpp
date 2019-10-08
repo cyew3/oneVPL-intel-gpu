@@ -84,7 +84,7 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *pCore, GUID guid)
         m_TaskSyncTimeOutMs = DEFAULT_H265_TIMEOUT_MS_SIM;
 
 #else
-    pCore;
+    pCore; guid;
 #endif
     return MFX_ERR_NONE;
 }

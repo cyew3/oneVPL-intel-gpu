@@ -168,9 +168,11 @@ namespace MfxHwVP9Encode
     mfxStatus D3DXCommonEncoder::SetGPUSyncEventEnable(VideoCORE *pCore)
     {
         MFX_CHECK_NULL_PTR1(pCore);
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
         bool *eventsEnabled = (bool *)pCore->QueryCoreInterface(MFXBlockingTaskSyncEnabled_GUID);
         if (eventsEnabled)
             m_bIsBlockingTaskSyncEnabled = *eventsEnabled;
+#endif
         return MFX_ERR_NONE;
     }
 }// namespace MfxHwVP9Encode
