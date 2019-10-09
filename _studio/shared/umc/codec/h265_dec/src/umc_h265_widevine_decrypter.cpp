@@ -215,7 +215,7 @@ void DecryptParametersWrapper::xDecodeScalingList(H265ScalingList *scalingList, 
 {
     VM_ASSERT(scalingList);
 
-    int i,coefNum = MFX_MIN(MAX_MATRIX_COEF_NUM,(int)g_scalingListSize[sizeId]);
+    int i,coefNum = std::min(MAX_MATRIX_COEF_NUM,(int)g_scalingListSize[sizeId]);
     //int nextCoef = SCALING_LIST_START_VALUE;
     const uint16_t *scan  = (sizeId == 0) ? ScanTableDiag4x4 : g_sigLastScanCG32x32;
     int *dst = scalingList->getScalingListAddress(sizeId, listId);
@@ -504,7 +504,7 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
     pcSPS->m_maxTrSize = 1 << pcSPS->log2_max_transform_block_size;
 
     uint32_t CtbLog2SizeY = pcSPS->log2_max_luma_coding_block_size;
-    if (pcSPS->log2_max_transform_block_size > MFX_MIN(5, CtbLog2SizeY))
+    if (pcSPS->log2_max_transform_block_size > std::min(5u, CtbLog2SizeY))
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     pcSPS->max_transform_hierarchy_depth_inter = SeqParams.sps_max_transform_hierarchy_depth_inter;
@@ -551,12 +551,12 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
 
         pcSPS->log2_min_pcm_luma_coding_block_size = SeqParams.sps_log2_min_pcm_luma_coding_block_size_minus3 + 3;
 
-        if (pcSPS->log2_min_pcm_luma_coding_block_size < MFX_MIN(MinCbLog2SizeY, 5) || pcSPS->log2_min_pcm_luma_coding_block_size > MFX_MIN(CtbLog2SizeY, 5))
+        if (pcSPS->log2_min_pcm_luma_coding_block_size < std::min(MinCbLog2SizeY, 5u) || pcSPS->log2_min_pcm_luma_coding_block_size > std::min(CtbLog2SizeY, 5u))
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         pcSPS->log2_max_pcm_luma_coding_block_size = SeqParams.sps_log2_diff_max_min_pcm_luma_coding_block_size + pcSPS->log2_min_pcm_luma_coding_block_size;
 
-        if (pcSPS->log2_max_pcm_luma_coding_block_size > MFX_MIN(CtbLog2SizeY, 5))
+        if (pcSPS->log2_max_pcm_luma_coding_block_size > std::min(CtbLog2SizeY, 5u))
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         pcSPS->pcm_loop_filter_disabled_flag = SeqParams.sps_pcm_loop_filter_disable_flag;

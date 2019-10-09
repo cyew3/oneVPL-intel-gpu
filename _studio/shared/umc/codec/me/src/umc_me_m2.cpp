@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -80,7 +80,7 @@ void MeMPEG2::me_block(const uint8_t* src, int32_t sstep, const uint8_t* ref, in
   int32_t bestcost = MFX_MAX_32S;
   int32_t changed = 0;
   int32_t step = (((bx - by) & 7) != 1) ? 2 :
-    (MFX_MAX(m_par->SearchRange.x, m_par->SearchRange.y)>>3<<1);
+    (std::max(m_par->SearchRange.x, m_par->SearchRange.y)>>3<<1);
 
   TRY_MV(bestmv, bestcost, 0, 0);
   mv->x &= ~1; // to full pixel
@@ -224,10 +224,10 @@ bool MeMPEG2::EstimateFrame(MeParams *par)
             m_BestMV[0].x = m_BestMV[0].y = 0;
             me_block(src, res->step[0], ref[0], par->pRefF[0]->step[0],
               16, x, y,
-              MFX_MAX(par->PicRange.top_left.x*2, x*16*2 - par->SearchRange.x*2),
-              MFX_MAX(par->PicRange.top_left.y*2, y*16*2 - par->SearchRange.y*2),
-              MFX_MIN(par->PicRange.bottom_right.x*2, (x+1)*16*2 + par->SearchRange.x*2 -1),
-              MFX_MIN(par->PicRange.bottom_right.y*2, (y+1)*16*2 + par->SearchRange.y*2 -1),
+              std::max(par->PicRange.top_left.x*2, x*16*2 - par->SearchRange.x*2),
+              std::max(par->PicRange.top_left.y*2, y*16*2 - par->SearchRange.y*2),
+              std::min(par->PicRange.bottom_right.x*2, (x+1)*16*2 + par->SearchRange.x*2 -1),
+              std::min(par->PicRange.bottom_right.y*2, (y+1)*16*2 + par->SearchRange.y*2 -1),
               &(m_BestMV[0]), &(m_BestCost[0]),
               x>0 ? &(m_ResMB[m_adr-1].MV[0][0]) : 0,
               y>0 ? &(m_ResMB[m_adr-m_HeightMB].MV[0][0]) : 0);
@@ -266,10 +266,10 @@ bool MeMPEG2::EstimateFrame(MeParams *par)
 
             me_block(src, res->step[0], ref[1], par->pRefF[0]->step[0],
               16, x, y,
-              MFX_MAX(par->PicRange.top_left.x*2, x*16*2 - par->SearchRange.x*2),
-              MFX_MAX(par->PicRange.top_left.y*2, y*16*2 - par->SearchRange.y*2),
-              MFX_MIN(par->PicRange.bottom_right.x*2, (x+1)*16*2 + par->SearchRange.x*2 -1),
-              MFX_MIN(par->PicRange.bottom_right.y*2, (y+1)*16*2 + par->SearchRange.y*2 -1),
+              std::max(par->PicRange.top_left.x*2, x*16*2 - par->SearchRange.x*2),
+              std::max(par->PicRange.top_left.y*2, y*16*2 - par->SearchRange.y*2),
+              std::min(par->PicRange.bottom_right.x*2, (x+1)*16*2 + par->SearchRange.x*2 -1),
+              std::min(par->PicRange.bottom_right.y*2, (y+1)*16*2 + par->SearchRange.y*2 -1),
               &(m_BestMV[1]), &(m_BestCost[1]),
               x>0 ? &(m_ResMB[m_adr-1].MV[1][0]) : 0,
               y>0 ? &(m_ResMB[m_adr-m_HeightMB].MV[1][0]) : 0);

@@ -785,9 +785,9 @@ Status MPEG2BRC::PreEncFrame(FrameType frameType, int32_t recode)
     q2--;
 
   if (rc_dev > 0) {
-    q2 = MFX_MAX(q0,q2);
+    q2 = std::max(q0,q2);
   } else {
-    q2 = MFX_MIN(q0,q2);
+    q2 = std::min(q0,q2);
   }
   // this call is used to accept small changes in value, which are mapped to the same code
   // changeQuant bothers about changing scale code if value changes

@@ -366,11 +366,8 @@ namespace UMC_HEVC_DECODER
         pPicParam->pps_cr_qp_offset = (CHAR)pPicParamSet->pps_cr_qp_offset;
         if (pPicParam->PicShortFormatFlags.fields.tiles_enabled_flag)
         {
-            pPicParam->num_tile_columns_minus1 = (UCHAR)pPicParamSet->num_tile_columns - 1;
-            pPicParam->num_tile_rows_minus1 = (UCHAR)pPicParamSet->num_tile_rows - 1;
-
-            pPicParam->num_tile_columns_minus1 = MFX_MIN(sizeof(pPicParam->column_width_minus1) / sizeof(pPicParam->column_width_minus1[0]) - 1, pPicParam->num_tile_columns_minus1);
-            pPicParam->num_tile_rows_minus1 = MFX_MIN(sizeof(pPicParam->row_height_minus1) / sizeof(pPicParam->row_height_minus1[0]) - 1, pPicParam->num_tile_rows_minus1);
+            pPicParam->num_tile_columns_minus1 = UCHAR(std::min<uint32_t>(sizeof(pPicParam->column_width_minus1) / sizeof(pPicParam->column_width_minus1[0]) - 1, pPicParamSet->num_tile_columns - 1));
+            pPicParam->num_tile_rows_minus1    = UCHAR(std::min<uint32_t>(sizeof(pPicParam->row_height_minus1)   / sizeof(pPicParam->row_height_minus1[0])   - 1, pPicParamSet->num_tile_rows    - 1));
 
             for (uint32_t i = 0; i <= pPicParam->num_tile_columns_minus1; i++)
                 pPicParam->column_width_minus1[i] = (uint16_t)(pPicParamSet->column_width[i] - 1);

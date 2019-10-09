@@ -122,9 +122,9 @@ Status SampleBuffer::Init(MediaReceiverParams *init)
     m_Params = *pParams;
 
     // allocate buffer
-    lMaxSampleSize = MFX_MAX(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize) +
+    lMaxSampleSize = std::max(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize) +
                      ALIGN_VALUE + sizeof(SampleInfo);
-    lAllocate = lMaxSampleSize * MFX_MAX(pParams->m_numberOfFrames, 3);
+    lAllocate = lMaxSampleSize * std::max(pParams->m_numberOfFrames, 3u);
     if (UMC_OK != m_pMemoryAllocator->Alloc(&m_midAllocatedBuffer, lAllocate + ALIGN_VALUE, UMC_ALLOC_PERSISTENT, 16))
         return UMC_ERR_ALLOC;
     m_pbAllocatedBuffer = (uint8_t *) m_pMemoryAllocator->Lock(m_midAllocatedBuffer);

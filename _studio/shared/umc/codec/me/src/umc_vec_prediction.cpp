@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -170,10 +170,10 @@ void MePredictCalculator::TrimSearchRange(MeMbPart mt, MePixelType /*pix*/, int3
         break;
     }
 
-    x0 = MFX_MAX(x0,MFX_MAX(4*m_pMeParams->PicRange.top_left.x-x, -4*m_pMeParams->SearchRange.x));
-    x1 = MFX_MIN(x1,MFX_MIN((4*m_pMeParams->PicRange.bottom_right.x-w)+1-x, 4*m_pMeParams->SearchRange.x));
-    y0= MFX_MAX(y0,MFX_MAX(4*m_pMeParams->PicRange.top_left.y-y, -4*m_pMeParams->SearchRange.y));
-    y1= MFX_MIN(y1,MFX_MIN((4*m_pMeParams->PicRange.bottom_right.y-h)+1-y, 4*m_pMeParams->SearchRange.y));
+    x0 = std::max({x0,  4*m_pMeParams->PicRange.top_left.x     - x,     -4*m_pMeParams->SearchRange.x});
+    x1 = std::min({x1, (4*m_pMeParams->PicRange.bottom_right.x - w)+1-x, 4*m_pMeParams->SearchRange.x});
+    y0 = std::max({y0,  4*m_pMeParams->PicRange.top_left.y     - y,     -4*m_pMeParams->SearchRange.y});
+    y1 = std::min({y1, (4*m_pMeParams->PicRange.bottom_right.y - h)+1-y, 4*m_pMeParams->SearchRange.y});
 }
 
 MeMV MePredictCalculator::GetCurrentBlockMV(int isBkw, int32_t idx)
@@ -222,9 +222,9 @@ int32_t MePredictCalculator::GetT2_16x16()
     }
     else
     {
-        T2 = 6*MFX_MIN(MFX_MIN(SadA,SadB), SadC)/5 + 128;
+        T2 = 6*std::min({SadA, SadB, SadC})/5 + 128;
     }
-    //T2 = MFX_MIN(MFX_MIN(SadA,SadB), MFX_MIN(SadC,SadCol));
+    //T2 = std::min({SadA, SadB, SadC, SadCol});
 
     return T2;
 }
@@ -294,7 +294,7 @@ int32_t MePredictCalculator::GetT2_8x8()
     }
     else
     {
-        T2 = (6*MFX_MIN(MFX_MIN(SadA,SadB), SadC)/5 + 32);///2;
+        T2 = (6*std::min(SadA, SadB, SadC)/5 + 32);///2;
     }
     return T2;
 }

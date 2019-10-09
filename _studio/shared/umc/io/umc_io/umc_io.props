@@ -6,6 +6,7 @@
     <MfxIncludes>
     $(MfxIppIncludeDir);
     $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\io\umc_io\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;

@@ -510,7 +510,7 @@ mfxStatus MFXVideoVPPDetailEnhancement::DetailFilterCore( uint8_t* pSrc, int src
                 localAdjust = m_strongWeight;
             }
 
-            diff = MFX_MIN((8 + pDiffRow[col]), 255); //8 bits
+            diff = std::min((8 + pDiffRow[col]), 255); //8 bits
 
             sharp   = (localAdjust * sharp * m_internalGainFactor + 64) >> 7;
             sharp   = (sharp * (int)m_divTable[diff] + (1 << 7)) >> 8;

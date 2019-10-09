@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -336,14 +336,14 @@ mfxStatus MFXVideoVPPResize::GetBufferSize( mfxU32* pBufferSize )
         bufSizeLanczos <<= 1;
 
         // Additional space for resize operation
-        mfxU32 add = MFX_MAX(srcRect.width, dstRect.width) * MFX_MAX(srcRect.height, dstRect.height) * 4;
+        mfxU32 add = std::max(srcRect.width, dstRect.width) * std::max(srcRect.height, dstRect.height) * 4;
         bufSizeSuper   += add;
         bufSizeLanczos += add;
   }
 
   VPP_CHECK_IPP_STS( ippSts );
 
-  bufSize = MFX_MAX(bufSizeSuper, bufSizeLanczos);
+  bufSize = std::max(bufSizeSuper, bufSizeLanczos);
 
   // correction: super_sampling method can require more work buffer memory in case of cropping
   mfxI32 bufSize_UpEstimation = 0;
@@ -351,7 +351,7 @@ mfxStatus MFXVideoVPPResize::GetBufferSize( mfxU32* pBufferSize )
   mfxSts = owniResizeGetBufSize_UpEstimation( srcSize, dstSize, &bufSize_UpEstimation );
   MFX_CHECK_STS( mfxSts );
 
-  bufSize = MFX_MAX(bufSize, bufSize_UpEstimation);
+  bufSize = std::max(bufSize, bufSize_UpEstimation);
 
 
   *pBufferSize = bufSize;
@@ -950,7 +950,7 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
   VPP_GET_CROPY(inInfo, cropY);
   inOffset0  = cropX*4  + cropY*inData->Pitch;
 
-  mfxU8* ptrStart = MFX_MIN( MFX_MIN(inData->R, inData->G), inData->B );
+  mfxU8* ptrStart = std::min({inData->R, inData->G, inData->B});
   const mfxU8* pSrc[1] = {ptrStart + inOffset0};
   mfxI32 pSrcStep[1] = {inData->Pitch};
 
@@ -962,7 +962,7 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
   VPP_GET_CROPY(outInfo, cropY);
   outOffset0  = cropX*4  + cropY*outData->Pitch;
 
-  ptrStart = MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
+  ptrStart = std::min({outData->R, outData->G, outData->B});
 
   mfxU8* pDst[1]   = {ptrStart + outOffset0};
 
@@ -1059,8 +1059,8 @@ mfxStatus owniResizeGetBufSize_UpEstimation( mfxSize srcSize, mfxSize dstSize, i
 {
     unsigned long long maxWidth, maxHeight, bufSize;
 
-    maxWidth = (unsigned long long)MFX_MAX( srcSize.width, dstSize.width );
-    maxHeight= (unsigned long long)MFX_MAX( srcSize.height, dstSize.height );
+    maxWidth = (unsigned long long)std::max( srcSize.width,  dstSize.width );
+    maxHeight= (unsigned long long)std::max( srcSize.height, dstSize.height );
 
     bufSize = 2 * maxWidth  * (maxWidth+2)  * sizeof(int) +
               3 * maxHeight * (maxHeight+2) * sizeof(int) +

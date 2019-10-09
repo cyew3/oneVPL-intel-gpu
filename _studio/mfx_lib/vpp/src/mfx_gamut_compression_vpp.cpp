@@ -792,7 +792,7 @@ mfxStatus MFXVideoVPPGamutCompression::FixedHueCompression_NV12_32f( Surface1_32
 
 
             // YT: 01/12/2010 -- The following part originally appears in the advanced compression mode; now is moved to here so that one can output the OORD for basic mode too
-            Luma_Reference = ((srcL >= Luma_Vertex) ? MFX_MAX(Luma_Intercept_L, Luma_Vertex) : MFX_MIN(Luma_Intercept_L, Luma_Vertex)); //reference point    // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to match the "ev = (srcL>=Luma_Vertex)?denorm:0;    "
+            Luma_Reference = ((srcL >= Luma_Vertex) ? std::max(Luma_Intercept_L, Luma_Vertex) : std::min(Luma_Intercept_L, Luma_Vertex)); //reference point    // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to match the "ev = (srcL>=Luma_Vertex)?denorm:0;    "
             Sat_Reference = (abs(Luma_Reference - Luma_Intercept_L)*abs(BoundarySlope)) >> (precision + m_CompressionFactor);
 
             //if(m_RTL_model)        // YT: RTL_model from Niraj
@@ -882,8 +882,8 @@ mfxStatus MFXVideoVPPGamutCompression::FixedHueCompression_NV12_32f( Surface1_32
                 //    Dout_Change = CLIP_VAL(Dout_Change, -(1<<13), ((1<<13) - 1));
                 //}
 
-                Din = (srcL >= Luma_Vertex) ? Din_Default : MFX_MAX(Din_Default, Din_Change);    // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to be consistent with other places for classifying upper/lower region
-                Dout = (srcL >= Luma_Vertex) ? Dout_Default : MFX_MAX(Dout_Default, Dout_Change); // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to be consistent with other places for classifying upper/lower region
+                Din  = (srcL >= Luma_Vertex) ? Din_Default  : std::max(Din_Default, Din_Change);   // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to be consistent with other places for classifying upper/lower region
+                Dout = (srcL >= Luma_Vertex) ? Dout_Default : std::max(Dout_Default, Dout_Change); // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to be consistent with other places for classifying upper/lower region
 
                 //if(m_RTL_model)        // YT: RTL_model from Niraj
                 //{
@@ -891,7 +891,7 @@ mfxStatus MFXVideoVPPGamutCompression::FixedHueCompression_NV12_32f( Surface1_32
                 //    Dout = CLIP_VAL(Dout, 0, ((1<<13) - 1));
                 //}
 
-                D_inner = MFX_MAX(D_Ref_Bound-Din , 0);
+                D_inner = std::max(D_Ref_Bound-Din , 0);
                 D_outer = D_Ref_Bound + Dout;
 
                 //if(m_RTL_model)        // YT: RTL_model from Niraj

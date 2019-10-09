@@ -1262,7 +1262,7 @@ mfxU32 CmContext::CalcCostAGOP(
         {
             mfxU16 bitCostLambda = mfxU16(Map44LutValueBack(costs.ModeCost[LUTMODE_INTRA_16x16]));
             //assert(mb[i].intraCost >= bitCostLambda);
-            mb[i].dist = MFX_MAX(0, mb[i].intraCost - bitCostLambda);
+            mb[i].dist = std::max(0, mb[i].intraCost - bitCostLambda);
             cost += mb[i].intraCost;
         }
         else
@@ -1276,7 +1276,7 @@ mfxU32 CmContext::CalcCostAGOP(
             mfxU32 modeCostLambda = Map44LutValueBack(costs.ModeCost[LUTMODE_INTER_16x16]);
             mfxU32 mvCostLambda   = (task.m_type[0] & MFX_FRAMETYPE_P)
                 ? GetVmeMvCostP(m_lutMvP, mb[i]) : GetVmeMvCostB(m_lutMvB, mb[i]);
-            mfxU16 bitCostLambda = mfxU16(MFX_MIN(mb[i].interCost, modeCostLambda + mvCostLambda));
+            mfxU16 bitCostLambda = mfxU16(std::min(mb[i].interCost, modeCostLambda + mvCostLambda));
 
             mb[i].dist = mb[i].interCost - bitCostLambda;
             if(!mb[i].SkipMbFlag)
@@ -1365,7 +1365,7 @@ bool CmContext::QueryVmeAGOP(
         {
             mfxU16 bitCostLambda = mfxU16(Map44LutValueBack(costs.ModeCost[LUTMODE_INTRA_16x16]));
             //assert(mb[i].intraCost >= bitCostLambda);
-            mb[i].dist = MFX_MAX(0, mb[i].intraCost - bitCostLambda);
+            mb[i].dist = std::max(0, mb[i].intraCost - bitCostLambda);
             cost += mb[i].intraCost;
         }
         else
@@ -1379,7 +1379,7 @@ bool CmContext::QueryVmeAGOP(
             mfxU32 modeCostLambda = Map44LutValueBack(costs.ModeCost[LUTMODE_INTER_16x16]);
             mfxU32 mvCostLambda   = (task.m_type[0] & MFX_FRAMETYPE_P)
                 ? GetVmeMvCostP(m_lutMvP, mb[i]) : GetVmeMvCostB(m_lutMvB, mb[i]);
-            mfxU16 bitCostLambda = mfxU16(MFX_MIN(mb[i].interCost, modeCostLambda + mvCostLambda));
+            mfxU16 bitCostLambda = mfxU16(std::min(mb[i].interCost, modeCostLambda + mvCostLambda));
 
             mb[i].dist = mb[i].interCost - bitCostLambda;
             if(!mb[i].SkipMbFlag)

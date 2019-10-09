@@ -1410,7 +1410,7 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCAST_8u_C1R(const mfxU8* pRef,
     {
         history_weight   = 128;
         //(Eric): division is once per frame, keep as integer division in HW
-        gaussian_th      = (mfxU8)MFX_MIN((noise_level/100), 12);
+        gaussian_th      = (mfxU8)std::min((noise_level/100), 12);
 
         if(MFX_PICSTRUCT_PROGRESSIVE & pState->picStruct)
         {

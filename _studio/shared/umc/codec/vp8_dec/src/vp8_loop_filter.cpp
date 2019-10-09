@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -459,7 +459,7 @@ void VP8VideoDecoder::LoopFilterInit(void)
       if(m_FrameInfo.sharpnessLevel)
       {
         interior_limit = (uint8_t)(filter_level >> ((m_FrameInfo.sharpnessLevel > 4) ? 2 : 1));
-        interior_limit = MFX_MIN(interior_limit, 9 - m_FrameInfo.sharpnessLevel);
+        interior_limit = std::min(interior_limit, 9 - m_FrameInfo.sharpnessLevel);
       }
 
       if(!interior_limit)

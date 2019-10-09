@@ -459,7 +459,7 @@ mfxStatus VideoVPPBase::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFram
     {
         // since MSDK_3.0 asyncDepth is mandatory
         mfxU16 vppAsyncDepth = (0 == par->AsyncDepth) ? MFX_AUTO_ASYNC_DEPTH_VALUE : par->AsyncDepth;
-        //vppAsyncDepth = MFX_MIN( MFX_MAX_ASYNC_DEPTH_VALUE, vppAsyncDepth);
+        //vppAsyncDepth = std::min( MFX_MAX_ASYNC_DEPTH_VALUE, vppAsyncDepth);
         {
             // suggested
             request[VPP_IN].NumFrameSuggested  += (vppAsyncDepth - 1);

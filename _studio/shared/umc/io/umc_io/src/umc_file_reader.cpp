@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,7 @@
 
 #include "umc_defs.h"
 #include "umc_file_reader.h"
+#include "mfx_utils.h"
 
 #if defined (UMC_ENABLE_FILE_READER) || defined (UMC_ENABLE_FIO_READER)
 
@@ -107,8 +108,7 @@ Status FileReader::OpenView(long long iSize)
     unsigned long long iiStart  = iStart, iiSize;                  // for vm_mmap_set_view
 
     iSize += iPos - iStart;                            // increase size due align
-    iSize  = MFX_MAX(iSize, m_iPortion);               // would like to open more if iSize small
-    iSize = MFX_MIN(iSize, iMax);             // cut off end of file
+    iSize  = mfx::clamp(iSize, (long long)m_iPortion, iMax);      // would like to open more if iSize small; cut off end of file
     iiSize = (unsigned long long) iSize;
     UMC_CHECK(((iSize - (iPos - iStart)) > (long long)(m_pEODPointer - m_pDataPointer)), UMC_OK); // ok after end of file cut
 
@@ -153,9 +153,9 @@ Status FileReader::CacheData(void *data, uint32_t *nsize, int32_t how_far)
     if (UMC_OK == umcRes)
     {
         umcRes = ((iSize += how_far) <= (iMax = (long long)(m_pEODPointer - m_pDataPointer))) ? UMC_OK : UMC_ERR_END_OF_STREAM;
-        iSize  = MFX_MIN(iSize, iMax);
+        iSize  = std::min(iSize, iMax);
         iSize -= how_far;
-        *nsize = (uint32_t)MFX_MAX(iSize, 0);
+        *nsize = (uint32_t)std::max(iSize, 0ll);
         if (iSize)
             std::copy(m_pDataPointer + how_far, m_pDataPointer + how_far + *nsize, (Ipp8u*)data);
     }
@@ -166,14 +166,13 @@ Status FileReader::CacheData(void *data, uint32_t *nsize, int32_t how_far)
 Status FileReader::MovePosition(unsigned long long npos)
 {
     UMC_CHECK(vm_mmap_is_valid(&m_mmap), UMC_ERR_NOT_INITIALIZED)
-        long long iOldPos = m_iOff + (long long)(m_pDataPointer - m_pBuffer);
+    long long iOldPos = m_iOff + (long long)(m_pDataPointer - m_pBuffer);
     long long iPos = iOldPos + npos;
 
     if ( iOldPos == m_iFileSize && iPos > m_iFileSize )
         return UMC_ERR_END_OF_STREAM;
 
-    iPos = MFX_MIN(m_iFileSize, iPos); // cut max
-    iPos = MFX_MAX(0, iPos);           // cut min
+    iPos = mfx::clamp(iPos, 0ll, m_iFileSize);
     if ((iPos < m_iOff) || (iPos > (m_iOff + (long long)(m_pEODPointer - m_pBuffer)))) // out of view
     {
         vm_mmap_unmap(&m_mmap);

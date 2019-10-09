@@ -148,7 +148,7 @@ namespace UMC_HEVC_DECODER
         }
         else
         {
-            int32_t diff = MFX_MIN(abs((int)LumaPredMode - (int)INTRA_LUMA_HOR_IDX), abs((int)LumaPredMode - (int)INTRA_LUMA_VER_IDX));
+            int32_t diff = std::min(abs((int)LumaPredMode - (int)INTRA_LUMA_HOR_IDX), abs((int)LumaPredMode - (int)INTRA_LUMA_VER_IDX));
 
             if (diff <= FilteredModes[h265_log2table[width - 4] - 2])
             {

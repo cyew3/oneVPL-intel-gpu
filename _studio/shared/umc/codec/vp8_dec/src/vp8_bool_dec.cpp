@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,7 @@ Status VP8VideoDecoder::InitBooleanDecoder(uint8_t *pBitStream, int32_t dataSize
     return UMC_ERR_INVALID_PARAMS;
 
 
-  dataSize = MFX_MIN(dataSize, 2);
+  dataSize = std::min(dataSize, 2);
 
   vp8BooleanDecoder *pBooldec = &m_BoolDecoder[dec_number];
 

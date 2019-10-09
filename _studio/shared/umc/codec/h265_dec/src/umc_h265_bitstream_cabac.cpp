@@ -63,8 +63,8 @@ void InitializeContext(uint8_t *pContext, uint8_t initVal, int32_t SliceQPy)
 {
     int32_t slope      = (initVal >> 4) * 5 - 45;
     int32_t offset     = ((initVal & 15) << 3) - 16;
-    int32_t initState  =  MFX_MIN(MFX_MAX(1, (((slope * SliceQPy) >> 4) + offset)), 126);
-    uint32_t mpState    = (initState >= 64);
+    int32_t initState  = mfx::clamp(((slope * SliceQPy) >> 4) + offset, 1, 126);
+    uint32_t mpState   = (initState >= 64);
     *pContext = uint8_t(((mpState? (initState - 64) : (63 - initState)) << 1) + mpState);
 }
 
@@ -72,8 +72,7 @@ void InitializeContext(uint8_t *pContext, uint8_t initVal, int32_t SliceQPy)
 void H265Bitstream::InitializeContextVariablesHEVC_CABAC(int32_t initializationType, int32_t SliceQPy)
 {
     uint32_t l = 0;
-    SliceQPy = MFX_MAX(0, SliceQPy);
-    SliceQPy = MFX_MIN(51, SliceQPy);
+    SliceQPy = mfx::clamp(SliceQPy, 0, 51);
 
     for (l = 0; l < NUM_CTX; l++)
     {

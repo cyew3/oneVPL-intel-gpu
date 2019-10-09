@@ -1,4 +1,4 @@
-// Copyright (c) 2005-2018 Intel Corporation
+// Copyright (c) 2005-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 #include "umc_media_buffer.h"
 #include "umc_linked_list.h"
 #include "umc_splitter.h"
+#include <algorithm>
 
 namespace UMC
 {
@@ -202,13 +203,13 @@ namespace UMC
     void UpdateInputSample(FCSample &sample, int32_t iFrom, int32_t iTo, bool isPure)
     {
         if (isPure && (iTo > sample.iBufOffset))
-            sample.uiAbsPos += MFX_MIN(iTo - MFX_MAX(iFrom, sample.iBufOffset), (int32_t)sample.uiSize);
+            sample.uiAbsPos += std::min(iTo - std::max(iFrom, sample.iBufOffset), (int32_t)sample.uiSize);
 
         int32_t iEndOffset = sample.iBufOffset + sample.uiSize;
         if (sample.iBufOffset > iFrom)
-            sample.iBufOffset -= MFX_MIN(sample.iBufOffset, iTo) - iFrom;
+            sample.iBufOffset -= std::min(sample.iBufOffset, iTo) - iFrom;
         if (iEndOffset > iFrom)
-            iEndOffset -= MFX_MIN(iEndOffset, iTo) - iFrom;
+            iEndOffset -= std::min(iEndOffset, iTo) - iFrom;
         sample.uiSize = iEndOffset - sample.iBufOffset;
     }
 

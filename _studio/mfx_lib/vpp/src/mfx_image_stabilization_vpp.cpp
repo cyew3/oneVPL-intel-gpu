@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -294,8 +294,8 @@ mfxStatus MFXVideoVPPImgStab::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
     m_destWidth  = m_width - (m_nCrpX << 1);
     m_destHeight = m_height - (m_nCrpY << 1);
 
-    m_scale_h = MFX_MAX(1, (m_width)/m_downWidth);
-    m_scale_v = MFX_MAX(1, (m_height)/m_downHeight);
+    m_scale_h = std::max(1u, (m_width)/m_downWidth);
+    m_scale_v = std::max(1u, (m_height)/m_downHeight);
 
     m_widthScale = m_width/m_scale_h;
     m_heightScale = m_height/m_scale_v;
@@ -784,8 +784,8 @@ MFXVideoVPPImgStab::Global_MV MFXVideoVPPImgStab::GetFilteredMP(int fn, int frm_
 
         if(m_nCrpX != 0) 
         {
-            filteredGMV.c = MFX_MIN(m_nCrpX, MFX_MAX(-(int)m_nCrpX, filteredGMV.c));
-            filteredGMV.d = MFX_MIN(m_nCrpY, MFX_MAX(-(int)m_nCrpY, filteredGMV.d));
+            filteredGMV.c = mfx::clamp<double>(filteredGMV.c, -(int)m_nCrpX, m_nCrpX);
+            filteredGMV.d = mfx::clamp<double>(filteredGMV.d, -(int)m_nCrpY, m_nCrpY);
         }
 
     }
@@ -992,7 +992,7 @@ uint8_t Interpolation(
         f12=(f1+(x-i1)*(f2-f1));
         f34=(f3+(x-i1)*(f4-f3));
         val = (int)(f12+(y-j1)*(f34-f12)+0.5);
-        val = MFX_MIN(255, MFX_MAX(0, val));
+        val = mfx::clamp(val, 0, 255);
     }
     else
     {
@@ -1007,7 +1007,7 @@ uint8_t Interpolation(
     }
 
 
-    uint8_t ret8u = (uint8_t)MFX_MIN(val, 255);
+    uint8_t ret8u = (uint8_t)std::min(val, 255);
 
     return ret8u;
 
@@ -1052,13 +1052,13 @@ mfxStatus MFXVideoVPPImgStab::GetBufferSizeEx( SizeInfo & sizeInf )
         mfxSize srcSize = {static_cast<int>(m_destWidth), static_cast<int>(m_destHeight)};
 
         ippSts = ippiResizeYUV420GetBufSize(
-            srcSize, 
-            dstSize, 
-            IPPI_INTER_LANCZOS, 
+            srcSize,
+            dstSize,
+            IPPI_INTER_LANCZOS,
             &bufSizeLanczos);
         VPP_CHECK_IPP_STS( ippSts );
 
-        sizeInf.m_workBufSize = MFX_MAX(sizeInf.m_workBufSize, (mfxU32)bufSizeLanczos);
+        sizeInf.m_workBufSize = std::max(sizeInf.m_workBufSize, (mfxU32)bufSizeLanczos);
     }
 
     return MFX_ERR_NONE;

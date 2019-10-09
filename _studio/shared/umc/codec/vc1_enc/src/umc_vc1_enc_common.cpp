@@ -448,7 +448,7 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32_t
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = MFX_MIN(_A(a1), _A(a2));
+                a3 = std::min(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -493,7 +493,7 @@ IppStatus _own_FilterDeblockingLuma_VerEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32_t
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = MFX_MIN(_A(a1), _A(a2));
+                    a3 = std::min(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -552,7 +552,7 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = MFX_MIN(_A(a1), _A(a2));
+                a3 = std::min(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -597,7 +597,7 @@ IppStatus _own_FilterDeblockingChroma_VerEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = MFX_MIN(_A(a1), _A(a2));
+                    a3 = std::min(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -655,7 +655,7 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32_t
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = MFX_MIN(_A(a1), _A(a2));
+                a3 = std::min(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -700,7 +700,7 @@ IppStatus _own_FilterDeblockingLuma_HorEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32_t
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = MFX_MIN(_A(a1), _A(a2));
+                    a3 = std::min(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -759,7 +759,7 @@ IppStatus _own_FilterDeblockingChroma_HorEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = MFX_MIN(_A(a1), _A(a2));
+                a3 = std::min(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -804,7 +804,7 @@ IppStatus _own_FilterDeblockingChroma_HorEdge_VC1_8u_C1IR(uint8_t* pSrcDst,int32
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = MFX_MIN(_A(a1), _A(a2));
+                    a3 = std::min(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -1099,7 +1099,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(uint8_t* pSrcDst,
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = MFX_MIN(_A(a1), _A(a2));
+                a3 = std::min(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -1144,7 +1144,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(uint8_t* pSrcDst,
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = MFX_MIN(_A(a1), _A(a2));
+                    a3 = std::min(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -1190,7 +1190,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(uint8_t* pSrcDst,
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = MFX_MIN(_A(a1), _A(a2));
+                a3 = std::min(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -1235,7 +1235,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_VerEdge_VC1_8u_C2IR(uint8_t* pSrcDst,
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = MFX_MIN(_A(a1), _A(a2));
+                    a3 = std::min(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -1294,7 +1294,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(uint8_t* pSrcDst,
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = MFX_MIN(_A(a1), _A(a2));
+                a3 = std::min(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -1341,7 +1341,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(uint8_t* pSrcDst,
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = MFX_MIN(_A(a1), _A(a2));
+                    a3 = std::min(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;
@@ -1387,7 +1387,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(uint8_t* pSrcDst,
             {
                 a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                 a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                a3 = MFX_MIN(_A(a1), _A(a2));
+                a3 = std::min(_A(a1), _A(a2));
                 if (a3 < _A(a0))
                 {
                     d = 5*((VC1_SIGN(a0)*a3) - a0) / 8;
@@ -1434,7 +1434,7 @@ IppStatus _own_FilterDeblockingChroma_NV12_HorEdge_VC1_8u_C2IR(uint8_t* pSrcDst,
                 {
                     a1 = (2*(p1 - p4) - 5*(p2 - p3) + 4) >> 3;
                     a2 = (2*(p5 - p8) - 5*(p6 - p7) + 4) >> 3;
-                    a3 = MFX_MIN(_A(a1), _A(a2));
+                    a3 = std::min(_A(a1), _A(a2));
                     if (a3 < _A(a0))
                     {
                         d = 5*((VC1_SIGN(a0) * a3) - a0) / 8;

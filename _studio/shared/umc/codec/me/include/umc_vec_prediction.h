@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,7 @@ namespace UMC
         int32_t m_distIdx[2][4];                        // (int32_t [][]) distance indecies of reference pictures
 
     protected:
-        inline int16_t median3( int16_t a, int16_t b, int16_t c ){return MFX_MIN(a,b)^MFX_MIN(b,c)^MFX_MIN(c,a);};
+        inline int16_t median3( int16_t a, int16_t b, int16_t c ){return std::min(a,b)^std::min(b,c)^std::min(c,a);};
 
         void SetMbEdges();
 

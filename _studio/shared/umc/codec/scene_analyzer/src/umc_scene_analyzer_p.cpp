@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -274,7 +274,7 @@ void SceneAnalyzerP::UpdateHistory(const SceneAnalyzerFrame *pFrame, FrameType a
     m_history[0].analyzedFrameType = analysisType;
     m_history[0].m_bChangeDetected = pFrame->m_bChangeDetected;
 
-    m_framesInHistory = MFX_MIN(8, m_framesInHistory + 1);
+    m_framesInHistory = std::min(8, m_framesInHistory + 1);
 
 } // void SceneAnalyzerP::UpdateHistory(const SceneAnalyzerFrame *pFrame, FrameType analysisType)
 
@@ -310,18 +310,18 @@ void SceneAnalyzerP::MakePPictureCodingDecision(SceneAnalyzerPicture *pRef,
         // select boundaries
         for (i = 1; i < availableFrames; i += 1)
         {
-            minColor = MFX_MIN(minColor, m_history[i].info.averageDev[SA_COLOR]);
-            maxColor = MFX_MAX(maxColor, m_history[i].info.averageDev[SA_COLOR]);
-            minIntraDev = MFX_MIN(minIntraDev, m_history[i].info.averageDev[SA_INTRA]);
-            maxIntraDev = MFX_MAX(maxIntraDev, m_history[i].info.averageDev[SA_INTRA]);
+            minColor = std::min(minColor, m_history[i].info.averageDev[SA_COLOR]);
+            maxColor = std::max(maxColor, m_history[i].info.averageDev[SA_COLOR]);
+            minIntraDev = std::min(minIntraDev, m_history[i].info.averageDev[SA_INTRA]);
+            maxIntraDev = std::max(maxIntraDev, m_history[i].info.averageDev[SA_INTRA]);
             // there is not INTER data in I frames,
             // and we skip still pictures
             if (false == m_history[i].m_bChangeDetected)
             {
-                minInterDev = MFX_MIN(minInterDev, m_history[i].info.averageDev[SA_INTER]);
-                maxInterDev = MFX_MAX(maxInterDev, m_history[i].info.averageDev[SA_INTER]);
-                minInterDevEst = MFX_MIN(minInterDevEst, m_history[i].info.averageDev[SA_INTER_ESTIMATED]);
-                maxInterDevEst = MFX_MAX(maxInterDevEst, m_history[i].info.averageDev[SA_INTER_ESTIMATED]);
+                minInterDev = std::min(minInterDev, m_history[i].info.averageDev[SA_INTER]);
+                maxInterDev = std::max(maxInterDev, m_history[i].info.averageDev[SA_INTER]);
+                minInterDevEst = std::min(minInterDevEst, m_history[i].info.averageDev[SA_INTER_ESTIMATED]);
+                maxInterDevEst = std::max(maxInterDevEst, m_history[i].info.averageDev[SA_INTER_ESTIMATED]);
             }
         }
 

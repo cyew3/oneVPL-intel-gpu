@@ -446,7 +446,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     UMC::H264VideoDecoderParams umcVideoParams;
     ConvertMFXParamsToUMC(&m_vFirstPar, &umcVideoParams);
     umcVideoParams.numThreads = m_vPar.mfx.NumThread;
-    umcVideoParams.m_bufferedFrames = MFX_MAX(asyncDepth - umcVideoParams.numThreads, 0);
+    umcVideoParams.m_bufferedFrames = (asyncDepth > mfxU32(umcVideoParams.numThreads)) ? asyncDepth - umcVideoParams.numThreads : 0;
 
 #if defined(MFX_VA)
     if (MFX_PLATFORM_SOFTWARE != m_platform)
@@ -1038,7 +1038,7 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
 
     if (IsMVCProfile(par->mfx.CodecProfile) && points && points->OP)
     {
-        level_idc = mfxU8 (MFX_MAX(level_idc, points->OP->LevelIdc));
+        level_idc = mfxU8 (std::max(mfxU16(level_idc), points->OP->LevelIdc));
     }
 
     mfxU32 asyncDepth = CalculateAsyncDepth(platform, par);

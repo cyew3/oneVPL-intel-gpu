@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1121,7 +1121,7 @@ IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   {
         ptr_y  = (mfxU16*)inData->Y;
         ptr_uv = (mfxU16*)inData->UV;
-        out = (mfxU32*)MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
+        out = (mfxU32*)std::min({outData->R, outData->G, outData->B});
 
         uv_offset    = 0;
         out_offset   = 0;
@@ -1186,7 +1186,7 @@ IppStatus cc_P210_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   {
         ptr_y  = (mfxU16*)inData->Y;
         ptr_uv = (mfxU16*)inData->UV;
-        out = (mfxU32*)MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
+        out = (mfxU32*)std::min({outData->R, outData->G, outData->B});
 
         uv_offset    = 0;
         out_offset   = 0;
@@ -1263,7 +1263,7 @@ IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, 
 
     ptr_y  = (mfxU16*)inData->Y;
     ptr_uv = (mfxU16*)inData->UV;
-    out    = (mfxU32*)MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
+    out    = (mfxU32*)std::min({outData->R, outData->G, outData->B});
 
     ymmMin  = _mm256_set1_epi32(0);
     ymmMax  = _mm256_set1_epi32(1023);
@@ -1366,7 +1366,7 @@ IppStatus cc_P210_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, 
 
     ptr_y  = (mfxU16*)inData->Y;
     ptr_uv = (mfxU16*)inData->UV;
-    out    = (mfxU32*)MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
+    out    = (mfxU32*)std::min({outData->R, outData->G, outData->B});
 
     ymmMin  = _mm256_set1_epi32(0);
     ymmMax  = _mm256_set1_epi32(1023);
@@ -1664,7 +1664,7 @@ IppStatus cc_RGB3_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   IPP_CHECK_NULL_PTR1(inData->G);
   IPP_CHECK_NULL_PTR1(inData->B);
 
-  mfxU8* ptrStart = MFX_MIN( MFX_MIN(inData->R, inData->G), inData->B );
+  mfxU8* ptrStart = std::min({inData->R, inData->G, inData->B});
 
   const mfxU8* pSrc[1] = {ptrStart + inOffset0};
 
@@ -1823,7 +1823,7 @@ IppStatus cc_RGB4_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   IPP_CHECK_NULL_PTR1(inData->B);
   // alpha channel is ignore due to d3d issue
 
-  mfxU8* ptrStart = MFX_MIN( MFX_MIN(inData->R, inData->G), inData->B );
+  mfxU8* ptrStart = std::min({inData->R, inData->G, inData->B});
 
   const mfxU8* pSrc[1] = {ptrStart + inOffset0};
 
@@ -2050,7 +2050,7 @@ IppStatus cc_NV12_to_RGB4(
     IPP_CHECK_NULL_PTR1(outData->B);
     // alpha channel is ignore due to d3d issue
 
-    mfxU8*   ptrStart = MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
+    mfxU8*   ptrStart = std::min({outData->R, outData->G, outData->B});
     mfxSize roiSize = {outInfo->Width, outInfo->Height};
     const mfxU8  AVAL = 0;
 

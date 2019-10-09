@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -124,8 +124,8 @@ mfxStatus MFXVideoVPPFrameRateConversion::SetParam( mfxExtBuffer* pHint )
     if( m_bAdvancedMode )
     {
 
-        m_minDeltaTime = MFX_MIN((mfxU64) (m_errPrtctState.In.FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / (2 * m_errPrtctState.In.FrameRateExtN), 
-                               (mfxU64) (m_errPrtctState.Out.FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / (2 * m_errPrtctState.Out.FrameRateExtN));
+        m_minDeltaTime = std::min((mfxU64) (m_errPrtctState.In.FrameRateExtD  * MFX_TIME_STAMP_FREQUENCY) / (2 * m_errPrtctState.In.FrameRateExtN),
+                                  (mfxU64) (m_errPrtctState.Out.FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / (2 * m_errPrtctState.Out.FrameRateExtN));
     }
 
     return mfxSts;
@@ -145,14 +145,14 @@ mfxStatus MFXVideoVPPFrameRateConversion::Reset(mfxVideoParam *par)
     if( m_pRefSurface[0] )
     {
         mfxStatus sts = m_core->DecreaseReference( &(m_pRefSurface[0]->Data) );
-        MFX_CHECK_STS( sts );       
+        MFX_CHECK_STS( sts );
     }   
     m_pRefSurface[0] = NULL;
 
     if( m_pRefSurface[1] )
     {
         mfxStatus sts = m_core->DecreaseReference( &(m_pRefSurface[1]->Data) );
-        MFX_CHECK_STS( sts );       
+        MFX_CHECK_STS( sts );
     }
     m_pRefSurface[1] = NULL;
 

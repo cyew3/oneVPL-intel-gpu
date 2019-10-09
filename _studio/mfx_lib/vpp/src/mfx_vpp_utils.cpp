@@ -1332,7 +1332,7 @@ mfxStatus GetPipelineList(
 
     /* [Deinterlace] FILTER */
 #if 0
-    mfxU32 extParamCount        = MFX_MAX(sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG), videoParam->NumExtParam);
+    mfxU32 extParamCount        = std::max(sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG), videoParam->NumExtParam);
     std::vector<mfxU32> extParamList(extParamCount);
 
     GetConfigurableFilterList( videoParam, &extParamList[0], &extParamCount );
@@ -2808,13 +2808,13 @@ mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROI
         MFX_CHECK_NULL_PTR1(inData->G);
         MFX_CHECK_NULL_PTR1(inData->B);
 
-        mfxU8* ptrInput = MFX_MIN( MFX_MIN(inData->R, inData->G), inData->B );
+        mfxU8* ptrInput = std::min({inData->R, inData->G, inData->B});
 
         MFX_CHECK_NULL_PTR1(outData->R);
         MFX_CHECK_NULL_PTR1(outData->G);
         MFX_CHECK_NULL_PTR1(outData->B);
 
-        mfxU8* ptrOutput = MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
+        mfxU8* ptrOutput = std::min({outData->R, outData->G, outData->B});
 
         VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
         VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -3097,7 +3097,7 @@ mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
         //------------------------------------
         //       ROI #1 of frame (UP)
         //------------------------------------
-        mfxU8* ptrBGRA = MFX_MIN( MFX_MIN(ptr->Data.B, ptr->Data.G), ptr->Data.R );
+        mfxU8* ptrBGRA = std::min({ptr->Data.B, ptr->Data.G, ptr->Data.R});
         MFX_CHECK_NULL_PTR1(ptrBGRA);
 
         if( ptr->Info.CropY > 0 )

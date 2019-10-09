@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2018 Intel Corporation
+// Copyright (c) 2006-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -178,7 +178,7 @@ Status DefaultMemoryAllocator::Alloc(MemID *pNewMemID, size_t Size, uint32_t /*F
     pmem = pmemtofree;
   }
   if (pmem == 0) { // relocate all descriptors
-    int32_t newcount = MFX_MAX(8, memCount*2);
+    int32_t newcount = std::max(8, memCount*2);
     MemoryInfo* newmem = new MemoryInfo[newcount];
     if (newmem == 0) {
       vm_debug_trace1(VM_DEBUG_ERROR, VM_STRING("failed to allocate %d bytes"), newcount*sizeof(MemoryInfo));

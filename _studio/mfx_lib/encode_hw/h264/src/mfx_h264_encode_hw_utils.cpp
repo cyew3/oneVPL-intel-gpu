@@ -2166,13 +2166,13 @@ void TaskManager::ModifyRefPicLists(
             : extDdi->NumActiveRefBL0;
         if (task.m_type[fieldId] & MFX_FRAMETYPE_PB)
         {
-            numActiveRefL0 = ctrl->NumRefIdxL0Active ? MFX_MIN(ctrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
+            numActiveRefL0 = ctrl->NumRefIdxL0Active ? std::min<mfxU32>(ctrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
             ReorderRefPicList(list0, dpb, m_recons, *ctrl, numActiveRefL0, ps);
         }
 
         if (task.m_type[fieldId] & MFX_FRAMETYPE_B)
         {
-            mfxU32 numActiveRefL1 = ctrl->NumRefIdxL1Active ? MFX_MIN(ctrl->NumRefIdxL1Active,extDdi->NumActiveRefBL1) : extDdi->NumActiveRefBL1;
+            mfxU32 numActiveRefL1 = ctrl->NumRefIdxL1Active ? std::min(ctrl->NumRefIdxL1Active,extDdi->NumActiveRefBL1) : extDdi->NumActiveRefBL1;
             ReorderRefPicList(list1, dpb, m_recons, *ctrl, numActiveRefL1, ps);
         }
     }
@@ -2230,8 +2230,8 @@ void TaskManager::ModifyRefPicLists(
 
             if (m_video.calcParam.tempScalabilityMode)
             { // cut lists to 1 element for tempScalabilityMode
-                list0.Resize(MFX_MIN(list0.Size(), 1));
-                list1.Resize(MFX_MIN(list1.Size(), 1));
+                list0.Resize(std::min(list0.Size(), 1u));
+                list1.Resize(std::min(list1.Size(), 1u));
             }
         }
 

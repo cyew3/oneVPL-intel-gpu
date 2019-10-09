@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1249,9 +1249,9 @@ void MeBase::MakeVlcTableDecision()
         return;
 
     //choose tables
-    int32_t BestPat= MFX_MIN(MFX_MIN(m_cur.CbpcyRate[0],m_cur.CbpcyRate[1]),MFX_MIN(m_cur.CbpcyRate[2],m_cur.CbpcyRate[3]));
-    int32_t BestMV= MFX_MIN(MFX_MIN(m_cur.MvRate[0],m_cur.MvRate[1]),MFX_MIN(m_cur.MvRate[2],m_cur.MvRate[3]));
-    int32_t BestAC= MFX_MIN(MFX_MIN(m_cur.AcRate[0],m_cur.AcRate[1]),MFX_MIN(m_cur.AcRate[2],m_cur.AcRate[2]));
+    int32_t BestPat = std::min({m_cur.CbpcyRate[0],m_cur.CbpcyRate[1], m_cur.CbpcyRate[2],m_cur.CbpcyRate[3]});
+    int32_t BestMV  = std::min({m_cur.MvRate[0],   m_cur.MvRate[1],    m_cur.MvRate[2],m_cur.MvRate[3]});
+    int32_t BestAC  = std::min({m_cur.AcRate[0],   m_cur.AcRate[1],    m_cur.AcRate[2],m_cur.AcRate[2]});
     for(int32_t idx=0; idx<4; idx++){
         if(m_cur.CbpcyRate[idx]==BestPat)m_par->OutCbpcyTableIndex=idx;
         if(m_cur.MvRate[idx]==BestMV)m_par->OutMvTableIndex=idx;
@@ -1590,7 +1590,7 @@ void  MeBase::MakeSkipModeDecision16x16BidirByFB()
 
 void MeBase::SetModeDecision16x16BidirByFB(MeMV &mvF, MeMV &mvB)
 {
-    int32_t bestCost = MFX_MIN(MFX_MIN(m_cur.IntraCost[0],m_cur.InterCost[0]),MFX_MIN(m_cur.DirectCost,m_cur.SkipCost[0]));
+    int32_t bestCost = std::min({m_cur.IntraCost[0], m_cur.InterCost[0], m_cur.DirectCost,m_cur.SkipCost[0]});
 
     if(bestCost == m_cur.SkipCost[0]){
         //skip
@@ -1680,7 +1680,7 @@ void MeBase::ModeDecision16x16ByFBFastFrw()
     #endif
 
     //make decision
-    int32_t bestCost=MFX_MIN(MFX_MIN(SkipCost,InterCost),IntraCost);
+    int32_t bestCost=std::min({SkipCost,InterCost,IntraCost});
     if(bestCost==SkipCost){
         //skip
         SetMB16x16B(ME_MbFrwSkipped, m_cur.PredMV[frw][0][0], 0, m_cur.SkipCost[0]);
@@ -1863,14 +1863,14 @@ void MeBase::ModeDecision16x16ByFBFullFrw()
 #endif
 
     //make decision
-    int32_t bestCost=MFX_MIN(MFX_MIN(SkipCost,InterCost),IntraCost);
+    int32_t bestCost=std::min({SkipCost,InterCost,IntraCost});
     /*
         if(FbestCost > bestCost)
         {
             FbestCost = bestCost;
             bestIdx = i;
             if(bestCost==SkipCost){
-                //skip              
+                //skip
                 bestType = ME_MbFrwSkipped;
             }else if(bestCost == InterCost){
                 //inter
@@ -2309,8 +2309,8 @@ void MeBase::MakeMBModeDecision8x8Org()
 
 int16_t median4(int16_t a, int16_t b, int16_t c, int16_t d)
 {
-    int16_t amin=MFX_MIN(MFX_MIN(a,b),MFX_MIN(c,d));
-    int16_t amax=MFX_MAX(MFX_MAX(a,b),MFX_MAX(c,d));
+    int16_t amin=std::min({a,b,c,d});
+    int16_t amax=std::max({a,b,c,d});
     return (a+b+c+d-amin-amax)/2;
 }
 
@@ -3268,10 +3268,10 @@ void MeBase::EstimateMbInterOneLevel(bool UpperLevel, int32_t level, MeMbPart mt
         for(int32_t p=0; p<UpPoints; p++){
             if(m_cur.DwnPoints[level+1][p].cost>thr)continue;
             int32_t xt0, xt1, yt0, yt1;
-            xt0=MFX_MAX(m_cur.DwnPoints[level+1][p].x-step,x0);
-            xt1=MFX_MIN(xt0+3*step,x1);
-            yt0=MFX_MAX(m_cur.DwnPoints[level+1][p].y-step,y0);
-            yt1=MFX_MIN(yt0+3*step,y1);
+            xt0=std::max(m_cur.DwnPoints[level+1][p].x-step,x0);
+            xt1=std::min(xt0+3*step,x1);
+            yt0=std::max(m_cur.DwnPoints[level+1][p].y-step,y0);
+            yt1=std::min(yt0+3*step,y1);
 //            xt0=m_cur.DwnPoints[level+1][p].x;
 //            xt1=xt0+2*step;
 //            yt0=m_cur.DwnPoints[level+1][p].y;
@@ -3926,7 +3926,7 @@ void MeVC1::SetInterpPixelType(MeParams *par)
         return;
     }
 
-    int32_t cost = MFX_MIN(CostOnInterpolation[1], CostOnInterpolation[3]);
+    int32_t cost = std::min(CostOnInterpolation[1], CostOnInterpolation[3]);
     if(cost == CostOnInterpolation[1])
     {
         par->OutInterpolation = ME_VC1_Bilinear;
@@ -6034,8 +6034,7 @@ void RegrFun::ProcessFeedback(int32_t *x, int32_t *y, int32_t N)
         printf("Regr was not initialised!!!\n");
 
         //find out step
-        int32_t xMax=0;
-        for(int32_t i=0; i<N; i++) xMax = MFX_MAX(xMax,x[i]);
+        int32_t xMax= *std::max_element(x, x+N);
         m_dx[m_QP] = 1+xMax/m_num;
 
         //reset history
@@ -6257,7 +6256,7 @@ void LowessRegrFun::ComputeRegression(int32_t I, int32_t* /*x*/, int32_t* /*y*/,
         avy += w*m_ay[m_QP][i];
     }
     skewness = (snL+0.00001)/(snR+0.00001);
-    skewness = MFX_MAX(skewness,1/skewness);
+    skewness = std::max(skewness,1/skewness);
 
     if(sw>5.){ //sw<5 is extrimly rare case
         //enough points to compute regression

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -76,11 +76,11 @@ void GetAverageIntraDeviation(UMC_SCENE_INFO *pSrc)
     uint32_t numItems;
 
     // get average intra deviation
-    numItems = MFX_MAX(1, pSrc->numItems[SA_INTRA]);
+    numItems = std::max(1u, pSrc->numItems[SA_INTRA]);
     pSrc->averageDev[SA_INTRA] = (pSrc->sumDev[SA_INTRA] + numItems / 2) /
                                  numItems;
     // get average color
-    numItems = MFX_MAX(1, pSrc->numItems[SA_COLOR]);
+    numItems = std::max(1u, pSrc->numItems[SA_COLOR]);
     pSrc->averageDev[SA_COLOR] = (pSrc->sumDev[SA_COLOR] + numItems / 2) /
                                  numItems;
 
@@ -103,11 +103,11 @@ void GetAverageInterDeviation(UMC_SCENE_INFO *pSrc)
     uint32_t numItems;
 
     // get average intra deviation
-    numItems = MFX_MAX(1, pSrc->numItems[SA_INTER]);
+    numItems = std::max(1u, pSrc->numItems[SA_INTER]);
     pSrc->averageDev[SA_INTER] = (pSrc->sumDev[SA_INTER] + numItems / 2) /
                                  numItems;
     // get average color
-    numItems = MFX_MAX(1, pSrc->numItems[SA_INTER_ESTIMATED]);
+    numItems = std::max(1u, pSrc->numItems[SA_INTER_ESTIMATED]);
     pSrc->averageDev[SA_INTER_ESTIMATED] = (pSrc->sumDev[SA_INTER_ESTIMATED] + numItems / 2) /
                                            numItems;
 

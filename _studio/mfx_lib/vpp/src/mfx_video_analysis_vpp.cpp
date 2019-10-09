@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -135,7 +135,7 @@ Status VPPSceneAnalyzer::GetFrameP(MediaData *pSource)
     }
   }
 
-  scale = MFX_MAX(1,m_pCur->m_scaledPic.m_info.numItems[SA_INTRA]);
+  scale = std::max(1u, m_pCur->m_scaledPic.m_info.numItems[SA_INTRA]);
   m_spatialComplexity  /= scale;
   m_temporalComplexity /= scale;
 
@@ -955,7 +955,7 @@ void VPPSceneAnalyzer::AnalyzeInterMBMotionOpt(const uint8_t *pRef, int32_t refS
   bottom-=y_cur;
 
   //init search step
-  searchStep=MFX_MAX(SA_ESTIMATION_HEIGHT>>3,SA_ESTIMATION_WIDTH>>3);
+  searchStep=std::max(SA_ESTIMATION_HEIGHT>>3,SA_ESTIMATION_WIDTH>>3);
   if(searchStep<1)
     searchStep=1;
 
@@ -979,7 +979,7 @@ void VPPSceneAnalyzer::AnalyzeInterMBMotionOpt(const uint8_t *pRef, int32_t refS
     x_mid=x_min;
     y_mid=y_min;
 
-    num_steps=MFX_MAX(SA_ESTIMATION_HEIGHT,SA_ESTIMATION_WIDTH);
+    num_steps=std::max(SA_ESTIMATION_HEIGHT,SA_ESTIMATION_WIDTH);
 
     while(searchStep > 0)
     {

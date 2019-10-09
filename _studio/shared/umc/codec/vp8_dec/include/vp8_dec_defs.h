@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -181,7 +181,7 @@ extern const uint8_t  vp8_default_mv_contexts[2][VP8_NUM_MV_PROBS];
 // get this from h264 sources - need test?????
 extern const uint8_t vp8_ClampTbl[768];
 
-#define clip(x) MFX_MIN(256, MFX_MAX(x, -256))
+#define clip(x) mfx::clamp(x, -256, 256)
 #define vp8_GetClampTblValue(x) vp8_ClampTbl[256 + (x)]
 #define vp8_ClampTblLookup(x, y) vp8_GetClampTblValue((x) + clip(y))
 

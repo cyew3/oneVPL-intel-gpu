@@ -28,7 +28,7 @@
 #include "mfx_h265_optimization.h"
 #include "umc_h265_task_broker.h"
 
-#define Saturate(min_val, max_val, val) MFX_MAX((min_val), MFX_MIN((max_val), (val)))
+#define Saturate(min_val, max_val, val) std::max((min_val), std::min((max_val), (val)))
 
 namespace UMC_HEVC_DECODER
 {
@@ -134,7 +134,7 @@ void DecodingContext::Init(H265Task *task)
     if (slice->m_iMaxMB - slice->m_iFirstMB > widthInCU)
     {
         rowCount = (slice->m_iMaxMB - slice->m_iFirstMB + widthInCU - 1) / widthInCU;
-        rowCount = MFX_MIN(4, rowCount);
+        rowCount = std::min(4, rowCount);
         rowCoeffSize =  widthInCU * oneCUSize;
     }
     else
@@ -515,7 +515,7 @@ void H265SegmentDecoder::parseSaoOffset(SAOLCUParam* psSaoLcuParam, uint32_t com
         return;
 
     int32_t bitDepth = compIdx ? m_pSeqParamSet->bit_depth_chroma : m_pSeqParamSet->bit_depth_luma;
-    int32_t offsetTh = (1 << MFX_MIN(bitDepth - 5, 5)) - 1;
+    int32_t offsetTh = (1 << std::min(bitDepth - 5, 5)) - 1;
 
     if (typeIdx == SAO_BO)
     {
@@ -2131,7 +2131,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(CoeffsPtr pCoef, uint32_t A
             for (uint32_t i = 0; i < numNonZero; i++)
                 absCoeff[i] = 1;
 
-            int32_t numC1Flag = MFX_MIN(numNonZero, LARGER_THAN_ONE_FLAG_NUMBER);
+            int32_t numC1Flag = std::min(numNonZero, uint32_t(LARGER_THAN_ONE_FLAG_NUMBER));
             int32_t firstC2FlagIdx = -1;
 
             for (int32_t idx = 0; idx < numC1Flag; idx++)
@@ -2184,7 +2184,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(CoeffsPtr pCoef, uint32_t A
                         ReadCoefRemainExGolombCABAC(Level, GoRiceParam);
                         absCoeff[idx] = Level + baseLevel;
                         if (absCoeff[idx] > 3 * (1 << GoRiceParam))
-                            GoRiceParam = MFX_MIN(GoRiceParam + 1, 4);
+                            GoRiceParam = std::min(GoRiceParam + 1, 4u);
                     }
 
                     if (absCoeff[idx] >= 2)
@@ -3028,7 +3028,7 @@ void H265SegmentDecoder::getInterMergeCandidates(uint32_t AbsPartIdx, uint32_t P
     if (Count == m_pSliceHeader->max_num_merge_cand)
         return;
 
-    int32_t numRefIdx = (m_pSliceHeader->slice_type == B_SLICE) ? MFX_MIN(m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_0], m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_1]) : m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_0];
+    int32_t numRefIdx = (m_pSliceHeader->slice_type == B_SLICE) ? std::min(m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_0], m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_1]) : m_pSliceHeader->m_numRefIdx[REF_PIC_LIST_0];
     int8_t r = 0;
     int32_t refcnt = 0;
 

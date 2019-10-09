@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -103,18 +103,18 @@ void SceneAnalyzerP::AnalyzeInterMBMotion(const uint8_t *pRef, int32_t refStep,
     //
 
     // horizontal direction
-    pixels = MFX_MIN(mbX * 4, SA_ESTIMATION_WIDTH / 2);
+    pixels = std::min(mbX * 4, uint32_t(SA_ESTIMATION_WIDTH / 2));
     pRef -= pixels;
     numberOfSADs -= (SA_ESTIMATION_WIDTH / 2 - pixels);
 
-    pixels = MFX_MIN((refMbDim.width - mbX - 1) * 4, SA_ESTIMATION_WIDTH / 2);
+    pixels = std::min((refMbDim.width - mbX - 1) * 4, uint32_t(SA_ESTIMATION_WIDTH / 2));
     numberOfSADs -= (SA_ESTIMATION_WIDTH / 2 - pixels);
     numberOfSADs = (numberOfSADs + 7) & -8;
 
     // vertical direction
-    topRows = MFX_MIN(mbY * 4, SA_ESTIMATION_HEIGHT / 2);
+    topRows = std::min(mbY * 4, uint32_t(SA_ESTIMATION_HEIGHT / 2));
 
-    bottomRows = MFX_MIN((refMbDim.height - mbY) * 4 - 3, SA_ESTIMATION_HEIGHT / 2);
+    bottomRows = std::min((refMbDim.height - mbY) * 4 - 3, uint32_t(SA_ESTIMATION_HEIGHT / 2));
 
     // main working cycle
     for (y = 0; y < SA_ESTIMATION_HEIGHT / 2; y += 1)
@@ -133,7 +133,7 @@ void SceneAnalyzerP::AnalyzeInterMBMotion(const uint8_t *pRef, int32_t refStep,
 
             // get the lowest SAD
             minSAD = (GetMinValue(pSADs, numberOfSADs) + 8) / 16;
-            pMbInfo->sumDev[SA_INTER_ESTIMATED] = MFX_MIN(minSAD, pMbInfo->sumDev[SA_INTER_ESTIMATED]);
+            pMbInfo->sumDev[SA_INTER_ESTIMATED] = std::min(minSAD, pMbInfo->sumDev[SA_INTER_ESTIMATED]);
             if (1 >= pMbInfo->sumDev[SA_INTER_ESTIMATED])
                 break;
         }
@@ -150,7 +150,7 @@ void SceneAnalyzerP::AnalyzeInterMBMotion(const uint8_t *pRef, int32_t refStep,
 
             // get the lowest SAD
             minSAD = (GetMinValue(pSADs, numberOfSADs) + 8) / 16;
-            pMbInfo->sumDev[SA_INTER_ESTIMATED] = MFX_MIN(minSAD, pMbInfo->sumDev[SA_INTER_ESTIMATED]);
+            pMbInfo->sumDev[SA_INTER_ESTIMATED] = std::min(minSAD, pMbInfo->sumDev[SA_INTER_ESTIMATED]);
             if (1 >= pMbInfo->sumDev[SA_INTER_ESTIMATED])
                 break;
         }

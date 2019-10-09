@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -108,7 +108,7 @@ Status VideoBuffer::Init(MediaReceiverParams* init)
     // release buffer
     Close();
 
-    pParams->m_numberOfFrames = MFX_MAX(pParams->m_lIPDistance + 2, pParams->m_numberOfFrames);
+    pParams->m_numberOfFrames = std::max(pParams->m_lIPDistance + 2, pParams->m_numberOfFrames);
 
     // initalize buffer (call to parent)
     umcRes = SampleBuffer::Init(pParams);

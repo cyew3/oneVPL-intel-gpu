@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -152,8 +152,8 @@ Status LinearBuffer::Init(MediaReceiverParams *init)
     m_Params = *pParams;
 
     // allocate buffer (one more)
-    lMaxSampleSize = MFX_MAX(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize);
-    lAllocate = lMaxSampleSize * (MFX_MAX(pParams->m_numberOfFrames, 3) + 1);
+    lMaxSampleSize = std::max(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize);
+    lAllocate = lMaxSampleSize * (std::max(pParams->m_numberOfFrames, 3u) + 1);
     if (UMC_OK != m_pMemoryAllocator->Alloc(&m_midAllocatedBuffer, lAllocate + ALIGN_VALUE, UMC_ALLOC_PERSISTENT, 16))
         return UMC_ERR_ALLOC;
     m_pbAllocatedBuffer = (uint8_t *) m_pMemoryAllocator->Lock(m_midAllocatedBuffer);
@@ -171,9 +171,9 @@ Status LinearBuffer::Init(MediaReceiverParams *init)
     m_lUsedSize = 0;
 
     // allocate sample info
-    lFramesNumber = (uint32_t)((MFX_MAX(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize) *
+    lFramesNumber = (uint32_t)((std::max(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize) *
                     pParams->m_numberOfFrames) /
-                    MFX_MIN(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize));
+                    std::min(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize));
     for (l = 0; l < lFramesNumber; l++)
     {
         SampleInfo *pTemp;
@@ -510,7 +510,7 @@ Status LinearBuffer::UnLockOutputBuffer(MediaData* out)
             if (lToSkip < pTemp->m_lDataSize)
                 lFreeSizeInc = 0;
             else
-                lFreeSizeInc = MFX_MAX(m_pbUsed + pTemp->m_lBufferSize - m_pbBuffer, 0);
+                lFreeSizeInc = std::max<size_t>(m_pbUsed + pTemp->m_lBufferSize - m_pbBuffer, 0);
         }
         // when skipped data is placed in middle of buffer
         else

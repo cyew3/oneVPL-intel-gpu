@@ -5871,8 +5871,8 @@ mfxStatus ConfigureExecuteParams(
                             config.m_extConfig.customRateData = caps.frcCaps.customRateData[frcIdx];
 
                             mfxU32 framesCount = (rateData->bkwdRefCount + 1 + rateData->fwdRefCount);
-                            config.m_surfCount[VPP_IN]  = (mfxU16)MFX_MAX(framesCount, config.m_surfCount[VPP_IN]);
-                            config.m_surfCount[VPP_OUT] = (mfxU16)MFX_MAX(rateData->outputIndexCountPerCycle, config.m_surfCount[VPP_OUT]);
+                            config.m_surfCount[VPP_IN]  = (mfxU16)std::max(framesCount, config.m_surfCount[VPP_IN]);
+                            config.m_surfCount[VPP_OUT] = (mfxU16)std::max(rateData->outputIndexCountPerCycle, config.m_surfCount[VPP_OUT]);
                             /* case 30->60, or (1->2) */
                             if (20 == floor(10*mfxRatio))
                             {

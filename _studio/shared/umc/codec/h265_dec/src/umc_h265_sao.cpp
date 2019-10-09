@@ -1008,7 +1008,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoUnits(int32_t firstC
 
     for (; ; )
     {
-        int32_t endAddr = MFX_MIN(firstCU + toProcessCU,
+        int32_t endAddr = std::min(firstCU + toProcessCU,
                       firstCU -
                       (firstCU % frameWidthInCU) +
                       frameWidthInCU);

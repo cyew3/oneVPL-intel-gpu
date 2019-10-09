@@ -137,7 +137,7 @@ void H265SegmentDecoderMultiThreaded::EndProcessingSegment(H265Task &Task)
     {
         int32_t mvsDistortion = m_context->m_mvsDistortionTemp;
         mvsDistortion = (mvsDistortion + 6) >> 2; // remove 1/2 pel
-        m_context->m_mvsDistortionTemp = MFX_MAX(mvsDistortion, m_context->m_mvsDistortion);
+        m_context->m_mvsDistortionTemp = std::max(mvsDistortion, m_context->m_mvsDistortion);
 
         Task.m_WrittenSize = (uint8_t*)m_context->m_coeffsWrite - (uint8_t*)Task.m_pBuffer;
     }
@@ -456,7 +456,7 @@ void H265SegmentDecoderMultiThreaded::InitializeDecoding(H265Task & task)
             if (m_pSlice->getTileLocationCount() > 1)
             { // need to find tile of slice and initialize bitstream
                 uint32_t numberOfTiles = m_pPicParamSet->getNumTiles();
-                int32_t iFirstPartition = MFX_MAX(m_pSliceHeader->SliceCurStartCUAddr, (int32_t)m_pSliceHeader->m_sliceSegmentCurStartCUAddr);
+                int32_t iFirstPartition = std::max(m_pSliceHeader->SliceCurStartCUAddr, (int32_t)m_pSliceHeader->m_sliceSegmentCurStartCUAddr);
                 int32_t firstSliceCU = iFirstPartition / m_pCurrentFrame->m_CodingData->m_NumPartitions;
 
                 int32_t uselessTiles = 0;
@@ -624,7 +624,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSlice(H265Task & task)
     UMC::Status umcRes = UMC::UMC_OK;
 
     // Convert slice beginning and end to encode order
-    int32_t iFirstPartition = MFX_MAX(m_pSliceHeader->SliceCurStartCUAddr, (int32_t)m_pSliceHeader->m_sliceSegmentCurStartCUAddr);
+    int32_t iFirstPartition = std::max(m_pSliceHeader->SliceCurStartCUAddr, (int32_t)m_pSliceHeader->m_sliceSegmentCurStartCUAddr);
     int32_t iFirstCU = iFirstPartition / m_pCurrentFrame->m_CodingData->m_NumPartitions;
     int32_t iMaxCUNumber = m_pCurrentFrame->getNumCUsInFrame();
 

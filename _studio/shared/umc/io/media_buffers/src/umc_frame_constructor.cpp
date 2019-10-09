@@ -1,4 +1,4 @@
-// Copyright (c) 2005-2018 Intel Corporation
+// Copyright (c) 2005-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +21,7 @@
 #include "umc_defs.h"
 #include "umc_default_memory_allocator.h"
 #include "umc_frame_constructor.h"
+#include "mfx_utils.h"
 
 namespace UMC
 {
@@ -349,7 +350,7 @@ Status Mpeg4FrameConstructor::ParseVideoObjectLayer(uint8_t *buf, int32_t iLen, 
     else
     {
         // treat forbidden or reserved values as a default value
-        aspect_ratio_info = MFX_MAX(1, MFX_MIN(aspect_ratio_info, 5));
+        aspect_ratio_info = mfx::clamp(aspect_ratio_info, 1u, 5u);
         vInfo.aspect_ratio_width = AspectRatio[aspect_ratio_info][0];
         vInfo.aspect_ratio_height = AspectRatio[aspect_ratio_info][1];
     }
@@ -817,7 +818,7 @@ Status FrameConstructor::LockInputBuffer(MediaData *in)
     lChunkSize = (int32_t)in->GetDataSize();
 
     in->SetBufferPointer(m_pBuf + m_lLastBytePos, (size_t)((m_lFirstBytePos > m_lLastBytePos) ?
-        MFX_MAX(0, m_lFirstBytePos - m_lLastBytePos - 4) : m_lBufferSize - m_lLastBytePos));
+        std::max(0, m_lFirstBytePos - m_lLastBytePos - 4) : m_lBufferSize - m_lLastBytePos));
 
     if ((m_lFirstBytePos > m_lLastBytePos) && (m_lLastBytePos + lChunkSize + 4 >= m_lFirstBytePos))
         return UMC_ERR_NOT_ENOUGH_BUFFER; // at least 4 bytes gap between last and first bytes
@@ -831,12 +832,12 @@ Status FrameConstructor::LockInputBuffer(MediaData *in)
         MFX_INTERNAL_CPY(m_pBuf, m_pBuf + curFramePos, m_lLastBytePos - curFramePos);
         m_lLastBytePos -= curFramePos;
         m_lCurPos -= curFramePos;
-        m_lCurPicStart -= MFX_MIN(m_lCurPicStart, curFramePos);
-        m_PrevSample.iBufOffset -= MFX_MIN(m_PrevSample.iBufOffset, curFramePos);
-        m_LastSample.iBufOffset -= MFX_MIN(m_LastSample.iBufOffset, curFramePos);
+        m_lCurPicStart -= std::min(m_lCurPicStart, curFramePos);
+        m_PrevSample.iBufOffset -= std::min(m_PrevSample.iBufOffset, curFramePos);
+        m_LastSample.iBufOffset -= std::min(m_LastSample.iBufOffset, curFramePos);
         m_CurFrame.iBufOffset = m_CurFrame.iBufOffset >= 0 ? 0 : m_CurFrame.iBufOffset;
         in->SetBufferPointer(m_pBuf + m_lLastBytePos,
-            (size_t)(MFX_MAX(0, m_lFirstBytePos - m_lLastBytePos - 4)));
+            (size_t)(std::max(0, m_lFirstBytePos - m_lLastBytePos - 4)));
     }
 
     return UMC_OK;
@@ -1586,7 +1587,7 @@ Status TimeStampedAudioFrameConstructor::GetFrame(SplMediaData *frame)
 }
 
 BufferedAudioFrameConstructor::BufferedAudioFrameConstructor(double dToBuf)
-: AudioFrameConstructor(), m_dToBuf(MFX_MAX(0.0, dToBuf))
+: AudioFrameConstructor(), m_dToBuf(std::max(0.0, dToBuf))
 {
 }
 
@@ -2172,7 +2173,7 @@ bool FCSample::GetFlag(uint32_t uiFlagMask)
 
 void FCSample::MovePointer(uint32_t off)
 {
-    off = MFX_MIN(off, uiSize);
+    off = std::min(off, uiSize);
     uiSize -= off;
     iBufOffset += off;
 }
@@ -2973,7 +2974,7 @@ H264ParsingCore::Result H264ParsingCore::Construct(MediaData& data, bool eos)
                     }
                     else
                     {
-                        m_type = MFX_MAX(m_type, SliceType[m_last.slice_type]);
+                        m_type = std::max(m_type, SliceType[m_last.slice_type]);
                         if (m_last.nal_ref_idc == 0)
                             m_prev.nal_ref_idc = 0;
                         if (m_last.idr_flag == 1)

@@ -634,7 +634,7 @@ public:
             if (color_format == 1)
                 k = i;
             else
-                k = MFX_MIN(i >> (3 & (color_format - 1)), 2);
+                k = std::min(i >> (3 & (color_format - 1)), 2);
 
             // get significant_coeff_flag
             if (bs->DecodeSingleBin_CABAC(localCtxIdxOffset+k))

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -558,7 +558,7 @@ void MeAVS::ModeDecision16x16ByFBFastFrw()
         #endif
 
         //make decision
-        int32_t bestCost=MFX_MIN(MFX_MIN(SkipCost,InterCost),IntraCost);
+        int32_t bestCost=std::min({SkipCost,InterCost,IntraCost});
         if(bestCost==SkipCost){
             //skip
             SetMB16x16B(ME_MbFrwSkipped, skipMv, 0, m_cur.SkipCost[0]);
@@ -621,7 +621,7 @@ void MeAVS::ModeDecision16x16ByFBFullFrw()
         #endif
 
         //make decision
-        int32_t bestCost=MFX_MIN(MFX_MIN(SkipCost,InterCost),IntraCost);
+        int32_t bestCost=std::min({SkipCost,InterCost,IntraCost});
         if(bestCost==SkipCost){
             //skip
             SetMB16x16B(ME_MbFrwSkipped, m_cur.PredMV[frw][0][0], 0, bestCost);
@@ -942,8 +942,8 @@ void MePredictCalculatorAVS::GetMotionVectorPredictor( MeMV mvA,
 
     // get the Median()
     median = distAB + distBC + distCA -
-             MFX_MIN(distAB, MFX_MIN(distBC, distCA)) -
-             MFX_MAX(distAB, MFX_MAX(distBC, distCA));
+             std::min({distAB, distBC, distCA}) -
+             std::max({distAB, distBC, distCA});
 
     if (distAB == median)
     {
@@ -1366,7 +1366,7 @@ void MePredictCalculatorAVS::ReconstructDirectMotionVector(int32_t blockNum)
         //
         // SECOND STEP
         //
-        BlockDistanceRef = MFX_MAX(1, (DistanceIndexBw - DistanceIndexRef + 512) % 512);
+        BlockDistanceRef = std::max(1, (DistanceIndexBw - DistanceIndexRef + 512) % 512);
 
         BlockDistanceFw = (DistanceIndexCur - DistanceIndexFw + 512) % 512;
         BlockDistanceBw = (DistanceIndexBw - DistanceIndexCur + 512) % 512;

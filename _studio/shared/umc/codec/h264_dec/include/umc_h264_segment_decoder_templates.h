@@ -1472,16 +1472,14 @@ public:
                 int32_t QPChromaIndexU, QPChromaIndexV;
                 QPChromaIndexU = sd->m_cur_mb.LocalMacroblockInfo->QP + sd->m_pPicParamSet->chroma_qp_index_offset[0];
 
-                QPChromaIndexU = MFX_MIN(QPChromaIndexU, (int32_t)QP_MAX);
-                QPChromaIndexU = MFX_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexU);
+                QPChromaIndexU = mfx::clamp(QPChromaIndexU, -bitdepth_chroma_qp_scale, (int32_t)QP_MAX);
                 QPChromaU = QPChromaIndexU < 0 ? QPChromaIndexU : QPtoChromaQP[QPChromaIndexU];
                 QPChromaU += bitdepth_chroma_qp_scale;
 
                 if (is_high_profile)
                 {
                     QPChromaIndexV = sd->m_cur_mb.LocalMacroblockInfo->QP + sd->m_pPicParamSet->chroma_qp_index_offset[1];
-                    QPChromaIndexV = MFX_MIN(QPChromaIndexV, (int32_t)QP_MAX);
-                    QPChromaIndexV = MFX_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexV);
+                    QPChromaIndexV = mfx::clamp(QPChromaIndexV, -bitdepth_chroma_qp_scale, (int32_t)QP_MAX);
                     QPChromaV = QPChromaIndexV < 0 ? QPChromaIndexV : QPtoChromaQP[QPChromaIndexV];
                     QPChromaV += bitdepth_chroma_qp_scale;
                 }
@@ -1721,16 +1719,14 @@ public:
             int32_t QPChromaIndexU, QPChromaIndexV;
             QPChromaIndexU = sd->m_cur_mb.LocalMacroblockInfo->QP + sd->m_pPicParamSet->chroma_qp_index_offset[0];
 
-            QPChromaIndexU = MFX_MIN(QPChromaIndexU, (int32_t)QP_MAX);
-            QPChromaIndexU = MFX_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexU);
+            QPChromaIndexU = mfx::clamp(QPChromaIndexU, -bitdepth_chroma_qp_scale, (int32_t)QP_MAX);
             QPChromaU = QPChromaIndexU < 0 ? QPChromaIndexU : QPtoChromaQP[QPChromaIndexU];
             QPChromaU += bitdepth_chroma_qp_scale;
 
             if (is_high_profile)
             {
                 QPChromaIndexV = sd->m_cur_mb.LocalMacroblockInfo->QP + sd->m_pPicParamSet->chroma_qp_index_offset[1];
-                QPChromaIndexV = MFX_MIN(QPChromaIndexV, (int32_t)QP_MAX);
-                QPChromaIndexV = MFX_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexV);
+                QPChromaIndexV = mfx::clamp(QPChromaIndexV, -bitdepth_chroma_qp_scale, (int32_t)QP_MAX);
                 QPChromaV = QPChromaIndexV < 0 ? QPChromaIndexV : QPtoChromaQP[QPChromaIndexV];
                 QPChromaV += bitdepth_chroma_qp_scale;
             } else {
