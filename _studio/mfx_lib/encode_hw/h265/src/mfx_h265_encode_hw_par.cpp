@@ -1649,6 +1649,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
     changed += CheckTriStateOption(par.mfx.LowPower);
 
 #if (MFX_VERSION >= 1025)
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+    if (par.m_platform == MFX_HW_DG2 && IsOff(par.mfx.LowPower))
+    {
+        sts = MFX_ERR_UNSUPPORTED;
+        return sts;
+    }
+#endif
     if (par.m_ext.DDI.LCUSize != 0)
     {
         if (CheckLCUSize(caps.ddi_caps.LCUSizeSupported, par.m_ext.DDI.LCUSize))
