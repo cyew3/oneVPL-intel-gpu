@@ -20,6 +20,18 @@ File Name: hevce_init.cpp
 
 namespace hevce_init
 {
+    // can't use std::clamp due to C++17 support isn't enabled
+    template<class T>
+    constexpr const T& clamp(const T& v, const T& lo, const T& hi)
+    {
+        return (v < lo) ? lo : (hi < v) ? hi : v;
+    }
+
+    inline bool IsOn(mfxU32 coding_option)
+    {
+        return coding_option == MFX_CODINGOPTION_ON;
+    }
+
     class TestSuite : tsVideoEncoder
     {
     private:
@@ -94,6 +106,10 @@ namespace hevce_init
                         && (chromaFormat == MFX_CHROMAFORMAT_YUV422
                             || chromaFormat == MFX_CHROMAFORMAT_YUV444))
                         return false;
+                    else // ICL+
+                        if (chromaFormat == MFX_CHROMAFORMAT_YUV444
+                            && !IsOn(g_tsConfig.lowpower))
+                            return false; // ICL + platforms do not support 444 without VDEnc
                     break;
                 case 12:
                     if (g_tsHWtype < MFX_HW_TGL)
@@ -623,8 +639,11 @@ namespace hevce_init
             return 0;
         }
 
-        chroma_support = IsChromaFormatSupported(m_par.mfx.FrameInfo.ChromaFormat, m_par.mfx.FrameInfo.BitDepthLuma) ? MFX_ERR_NONE : MFX_ERR_INVALID_VIDEO_PARAM;
         SETPARS(m_pPar, MFX_PAR);
+
+        // use clamp to handle ChromaFormat = MFX_CHROMAFORMAT_RESERVED1 like in HEVCe implementation for calculating CO3.TargetChromaFormatPlus1
+        mfxU16  target_chroma = clamp<mfxU16>(m_par.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444);
+        chroma_support = IsChromaFormatSupported(target_chroma, m_par.mfx.FrameInfo.BitDepthLuma) ? MFX_ERR_NONE : MFX_ERR_INVALID_VIDEO_PARAM;
 
         if (!GetAllocator())
         {
@@ -667,7 +686,6 @@ namespace hevce_init
                 SETPARS((mfxExtHEVCRegion *)buff_out, MFX_EXT_HEVCREGION);
             }
         }
-
 
         ENCODE_CAPS_HEVC caps = {};
         mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
