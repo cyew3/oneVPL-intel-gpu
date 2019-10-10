@@ -59,6 +59,7 @@ D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::D3D11Encoder()
     , m_cbd()
     , m_reconQueue()
     , m_bsQueue()
+    , m_mbqpQueue()
     , m_feedbackPool()
     , m_dirtyRects()
     , m_eid()
@@ -505,7 +506,8 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespo
 {
     MFX_CHECK_WITH_ASSERT(m_core, MFX_ERR_NOT_INITIALIZED);
 
-    std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA) ? m_bsQueue : m_reconQueue;
+    std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA) ? m_bsQueue :
+        (type == D3DDDIFMT_INTELENCODE_MBQPDATA) ? m_mbqpQueue : m_reconQueue;
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Register");
     queue.resize(response.NumFrameActual);
@@ -573,12 +575,16 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
     RES_ID_RAW = 1;
     RES_ID_REF = 2;
     RES_ID_REC = RES_ID_REF + task.m_idxRec;
-    size_t resourceListSize = RES_ID_REF + m_reconQueue.size();
+    size_t resourceListSize = RES_ID_REF + m_reconQueue.size() + task.m_bCUQPMap;
     if(resourceListSize > m_resourceList.size())
         m_resourceList.resize(resourceListSize);
 
     m_resourceList[RES_ID_BS ] = (ID3D11Resource*)m_bsQueue[task.m_idxBs].first;
     m_resourceList[RES_ID_RAW] = surface;
+
+    RES_ID_MBQP = mfxU32(resourceListSize - 1); // last or unused
+    if (task.m_bCUQPMap)
+        m_resourceList[RES_ID_MBQP] = (ID3D11Resource*)m_mbqpQueue[task.m_idxCUQp].first;
 
     for (mfxU32 i = 0; i < m_reconQueue.size(); i ++)
         m_resourceList[RES_ID_REF + i] = (ID3D11Resource*)m_reconQueue[i].first;
@@ -618,7 +624,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
 #if MFX_EXTBUFF_CU_QP_ENABLE
     if (task.m_bCUQPMap)
     {
-        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA, task.m_idxCUQp,  1);
+        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA, RES_ID_MBQP,  1);
     }
 #endif
 

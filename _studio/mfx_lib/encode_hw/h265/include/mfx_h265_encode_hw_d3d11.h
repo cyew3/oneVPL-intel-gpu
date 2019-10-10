@@ -131,6 +131,7 @@ private:
     std::vector<ENCODE_COMPBUFFERDESC>          m_cbd;
     std::vector<mfxHDLPair>                     m_reconQueue;
     std::vector<mfxHDLPair>                     m_bsQueue;
+    std::vector<mfxHDLPair>                     m_mbqpQueue;
     FeedbackStorage                             m_feedbackPool;
 
     std::vector<ENCODE_RECT>                    m_dirtyRects;
@@ -140,6 +141,7 @@ private:
     mfxU32                                      RES_ID_RAW;
     mfxU32                                      RES_ID_REF;
     mfxU32                                      RES_ID_REC;
+    mfxU32                                      RES_ID_MBQP;
     std::vector<ID3D11Resource*>                m_resourceList;
     D3D11_VIDEO_DECODER_EXTENSION               m_ext;
 
