@@ -3617,6 +3617,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod = 0;
     }
 
+    if (extOpt2->LookAheadDS > MFX_LOOKAHEAD_DS_4x) // invalid LookAheadDS
+    {
+        extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_UNKNOWN;
+        changed = true;
+    }
+
     if (extOpt2->LookAheadDS == MFX_LOOKAHEAD_DS_4x)
     {
         extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_2x;

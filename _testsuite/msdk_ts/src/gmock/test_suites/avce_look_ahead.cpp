@@ -104,7 +104,8 @@ namespace avce_look_ahead{
 
     const tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        // short LA is valid
+        {/*00*/ MFX_ERR_NONE, MFX_ERR_NONE,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 9},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_OFF}}},
@@ -129,7 +130,8 @@ namespace avce_look_ahead{
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 101},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_UNKNOWN}}},
 
-        {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        // short LA is valid
+        {/*05*/ MFX_ERR_NONE, MFX_ERR_NONE,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 9},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_UNKNOWN}}},
@@ -149,7 +151,8 @@ namespace avce_look_ahead{
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 141},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_2x}}},
 
-        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+        // short LA is valid
+        {/*09*/ MFX_ERR_NONE, MFX_ERR_NONE,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 9},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_2x}}},
@@ -189,6 +192,7 @@ namespace avce_look_ahead{
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDS, MFX_LOOKAHEAD_DS_4x}}},
 
+        // invalid LookAheadDS
         {/*17*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                 {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
                  {MFX_PAR, &tsStruct::mfxExtCodingOption2.LookAheadDepth, 10},
