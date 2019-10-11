@@ -169,6 +169,10 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_TGL_HP;
     case IGFX_DG2:
         return MFX_HW_DG2;
+    case IGFX_ALDERLAKE_S:
+        return MFX_HW_ADL_S;
+    case IGFX_ALDERLAKE_UH:
+        return MFX_HW_ADL_UH;
     default:
         break;
     }
