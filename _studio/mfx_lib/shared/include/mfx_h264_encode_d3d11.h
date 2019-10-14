@@ -110,6 +110,11 @@ namespace MfxHwH264Encode
         //    ENCODE_SET_SEQUENCE_PARAMETERS_H264 & sps,
         //    ENCODE_MBDATA_LAYOUT &                layout);
 
+        virtual
+        mfxStatus QueryStatus(
+            DdiTask & task,
+            mfxU32    fieldId);
+
     protected:
         // async call
         virtual

@@ -398,6 +398,30 @@ mfxStatus D3D11Encoder::SetEncCtrlCaps(ENCODE_ENC_CTRL_CAPS const & caps)
     return MFX_ERR_NONE;
 }
 
+mfxStatus D3D11Encoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatus");
+    mfxStatus sts = MFX_ERR_NONE;
+
+#if defined(MFX_ENABLE_MFE)
+    if (m_pMFEAdapter != nullptr)
+    {
+        // For now blocking synchronization does not work for MFE cases
+        // due to limitation on driver side
+
+        sts = MFX_WRN_DEVICE_BUSY;
+        while (sts == MFX_WRN_DEVICE_BUSY)
+            sts = QueryStatusAsync(task, fieldId);
+    }
+    else
+#endif
+    {
+        sts = D3DXCommonEncoder::QueryStatus(task, fieldId);
+    }
+
+    return sts;
+}
+
 mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT type)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Register");

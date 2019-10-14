@@ -176,11 +176,7 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
         sts = MFX_ERR_GPU_HANG;
 
 #else
-#if defined(MFX_ENABLE_MFE)
-    sts = MFX_WRN_DEVICE_BUSY;
-    while(sts == MFX_WRN_DEVICE_BUSY)//WA while blocking sync is absent
-#endif
-       sts = QueryStatusAsync(task, fieldId);
+    sts = QueryStatusAsync(task, fieldId);
 #endif
 return sts;
 }
