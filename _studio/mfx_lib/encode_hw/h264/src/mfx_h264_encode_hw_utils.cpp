@@ -3675,7 +3675,7 @@ mfxU32 LookAheadBrc2::Report(const BRCFrameParams& par, mfxU32 /* userDataLength
     m_framesBehind++;
     m_bitsBehind += realRatePerMb;
 
-    mfxF64 rateCalcPeriod = (mfxF64)(IPP_MIN(m_rateCalcPeriod, m_framesBehind));
+    mfxF64 rateCalcPeriod = std::min<mfxF64>(m_rateCalcPeriod, m_framesBehind);
     m_currRate = ((rateCalcPeriod - 1.0)*m_currRate + realRatePerMb) / rateCalcPeriod;
 
     mfxF64 oldCoeff = m_rateCoeffHistory[qp].GetCoeff();
