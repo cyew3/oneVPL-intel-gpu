@@ -101,7 +101,7 @@ public:
         maxWinBitsLim = std::min(maxWinBitsLim + recode*GetStep() / 2, m_maxWinBits);
 
         mfxU32 maxFrameSize = winBits >= m_maxWinBitsLim ?
-            (mfxU32)(IPP_MAX((mfxI32)m_maxWinBits - (mfxI32)winBits, 1)) :
+            mfxU32(std::max((mfxI32)m_maxWinBits - (mfxI32)winBits, 1)) :
             maxWinBitsLim - winBits;
 
         return maxFrameSize;
