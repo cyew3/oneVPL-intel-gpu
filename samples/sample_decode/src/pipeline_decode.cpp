@@ -1139,6 +1139,8 @@ mfxStatus CDecodingPipeline::AllocFrames()
 
     mfxU16 nSurfNum = 0; // number of surfaces for decoder
     mfxU16 nVppSurfNum = 0; // number of surfaces for vpp
+  
+    nSurfNum = std::max(0, 4);
 
     MSDK_ZERO_MEMORY(Request);
 
