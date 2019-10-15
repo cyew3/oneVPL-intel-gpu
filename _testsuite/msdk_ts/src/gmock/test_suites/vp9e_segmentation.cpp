@@ -1504,6 +1504,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
             m_EncodedFramesStat[0].type = SEGMENTATION_MAP_UPDATE | SEGMENTATION_DATA_UPDATE;
             m_EncodedFramesStat[0].segm_params = *m_InitedSegmentExtParams;
+
+            if (g_tsHWtype < MFX_HW_DG2 && m_InitedSegmentExtParams->SegmentIdBlockSize == MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32)
+                sts = MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
         InitAndSetAllocator();
@@ -1520,9 +1523,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 Query();
                 return 0;
             }
-
-            if (g_tsHWtype < MFX_HW_DG2 && m_InitedSegmentExtParams->SegmentIdBlockSize == MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32)
-                sts = MFX_ERR_INVALID_VIDEO_PARAM;
         }
         else {
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
