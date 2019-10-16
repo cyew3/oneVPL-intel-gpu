@@ -641,6 +641,19 @@ mfxStatus MFXDecPipeline::BuildPipeline()
         m_components[eDEC].m_params.mfx.FrameInfo.FourCC = m_inParams.FrameInfo.FourCC;
     }
 
+#if (MFX_VERSION >= 1027)
+    if ((MFX_FOURCC_Y210 == m_inParams.FrameInfo.FourCC)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        || (MFX_FOURCC_Y216 == m_inParams.FrameInfo.FourCC)
+        || (MFX_FOURCC_Y416 == m_inParams.FrameInfo.FourCC)
+        || (MFX_FOURCC_P016 == m_inParams.FrameInfo.FourCC)
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
+        )
+    {
+        m_components[eDEC].m_params.mfx.FrameInfo.Shift = 1;
+    }
+#endif // #if (MFX_VERSION >= 1027)
+
     if ( MFX_FOURCC_P210 == m_inParams.FrameInfo.FourCC ||
 #if (MFX_VERSION >= 1027)
          MFX_FOURCC_Y210 == m_inParams.FrameInfo.FourCC ||
