@@ -494,7 +494,10 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
           sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBQPDATA, request);
           MFX_CHECK_STS(sts);
 
-
+          if (MFX_HW_D3D11 == m_core->GetVAType())
+              request.Info.FourCC = MFX_FOURCC_P8_TEXTURE;
+          else
+              request.Info.FourCC = MFX_FOURCC_P8;
           request.Type        = MFX_MEMTYPE_D3D_INT;
           request.NumFrameMin = MaxBs(m_vpar);
 
