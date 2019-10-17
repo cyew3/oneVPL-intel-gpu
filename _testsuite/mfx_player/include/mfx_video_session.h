@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2019 Intel Corporation. All Rights Reserved.
 
 
 File Name: mfx_video_session.h
@@ -36,7 +36,7 @@ public:
         } else
 #endif // #if !(defined(LINUX32) || defined(LINUX64))
         {
-            return MFXInit(impl, ver, &m_session);
+            return MFXInitAndPrintLibMFXPath(impl, ver, &m_session);
         }
     }
 
@@ -50,15 +50,15 @@ public:
         } else
 #endif // #if !(defined(LINUX32) || defined(LINUX64))
         {
-            return MFXInitEx(par, &m_session);
+            return MFXInitExAndPrintLibMFXPath(par, &m_session);
         }
     }
 
-    virtual mfxStatus QueryIMPLExternal(mfxIMPL *impl) 
-    { 
+    virtual mfxStatus QueryIMPLExternal(mfxIMPL *impl)
+    {
         MFX_CHECK_POINTER(impl);
         *impl = m_externalImpl;
-        return MFX_ERR_NONE; 
+        return MFX_ERR_NONE;
     }
 
     virtual mfxStatus SetFrameAllocator(MFXFrameAllocatorRW *allocator)

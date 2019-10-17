@@ -205,8 +205,64 @@ mfxStatus myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSessi
 #include "mfxenc.h"
 #include "mfxpak.h"
 
+#include <iostream>
+#include <string>
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif // _GNU_SOURCE
+#include <link.h>
+
+#if defined(__i386__)
+#ifdef ANDROID
+#define LIBMFXSW "libmfxsw32.so"
+#define LIBMFXHW "libmfxhw32.so"
+#else
+#define LIBMFXSW "libmfxsw32.so.1"
+#define LIBMFXHW "libmfxhw32.so.1"
+#endif
+#elif defined(__x86_64__)
+#ifdef ANDROID
+#define LIBMFXSW "libmfxsw64.so"
+#define LIBMFXHW "libmfxhw64.so"
+#else
+#define LIBMFXSW "libmfxsw64.so.1"
+#define LIBMFXHW "libmfxhw64.so.1"
+#endif
+#else
+#error Unsupported architecture
+#endif
 #endif // #if !(defined(LINUX32) || defined(LINUX64))
 
+static int PrintLibMFXPath(struct dl_phdr_info *info, size_t size, void *data)
+{
+#if (defined(LINUX32) || defined(LINUX64))
+    std::string libPath = info->dlpi_name;
+    if (libPath.find(LIBMFXSW) != std::string::npos || libPath.find(LIBMFXHW) != std::string::npos)
+    {
+        vm_string_printf(VM_STRING("loaded module %s \n"), info->dlpi_name);
+    }
+#endif
+    return 0;
+}
+
+mfxStatus MFXInitAndPrintLibMFXPath(mfxIMPL impl, mfxVersion *pVer, mfxSession *session)
+{
+    mfxStatus res = MFXInit(impl, pVer, session);
+#if (defined(LINUX32) || defined(LINUX64))
+    dl_iterate_phdr(PrintLibMFXPath, NULL);
+#endif
+    return res;
+}
+
+mfxStatus MFXInitExAndPrintLibMFXPath(mfxInitParam par, mfxSession *session)
+{
+    mfxStatus res = MFXInitEx(par, session);
+#if (defined(LINUX32) || defined(LINUX64))
+    dl_iterate_phdr(PrintLibMFXPath, NULL);
+#endif
+    return res;
+}
 
 #include "mfxvp8.h"
 #include "mfxvp9.h"

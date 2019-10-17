@@ -129,19 +129,21 @@ mfxStatus        CheckStatusMultiSkip(mfxStatus status_to_check, ... );
 // Load specific MFX library
 mfxStatus       myMFXInit(const vm_char *pMFXLibraryPath, mfxIMPL impl, mfxVersion *pVer, mfxSession *session);
 mfxStatus       myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSession *session);
+mfxStatus       MFXInitAndPrintLibMFXPath(mfxIMPL impl, mfxVersion *pVer, mfxSession *session);
+mfxStatus       MFXInitExAndPrintLibMFXPath(mfxInitParam par, mfxSession *session);
 
 //bitstreams utils
 class BSUtil
 {
-public: 
+public:
     //copy as much data as it can, but no more than nBytes
-    //and move offset in source buffer, returns number of copied bytes 
+    //and move offset in source buffer, returns number of copied bytes
     static inline mfxU32 MoveNBytes(mfxU8 *pTo, mfxBitstream *pFrom, mfxU32 nBytes);
 
     //copy as much data as it can, but no more than nBytes, and donot move present bytes inside destination buffer
-    //and move offset in source buffer, nBytes contains number of copied bytes 
+    //and move offset in source buffer, nBytes contains number of copied bytes
     static mfxStatus MoveNBytesTail(mfxBitstream *pTo, mfxBitstream *pFrom, mfxU32 /*[IN OUT]*/ &nBytes);
-    
+
     //same behavior as MoveNBytesToEnd
     //if fail to move strictly nBytesReportsOf an error
     static mfxStatus MoveNBytesStrictTail(mfxBitstream *pTo, mfxBitstream *pFrom, mfxU32 nBytes);
