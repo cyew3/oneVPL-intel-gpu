@@ -159,6 +159,8 @@ protected:
     //////////////////////////////////////////////////////////////////////////
     mfxI32                          m_BitRate;
     mfxI32                          m_MaxBitrate;
+    mfxI32                          m_BitRateKbps;
+    mfxI32                          m_MaxBitrateKbps;
     mfxI32                          m_WinBRCMaxAvgBps;
     mfxU16                          m_WinBRCSize;
     mfxU16                          m_QPI;    // constant quantizer for I frames

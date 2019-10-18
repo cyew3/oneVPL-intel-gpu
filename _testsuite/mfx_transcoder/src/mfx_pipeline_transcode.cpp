@@ -182,7 +182,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     {
         //series of parameters that uses callback function to retain it's inter dependencies
         HANDLE_GLOBAL_OPTION("-b|--bitrate|",  m_,BitRate,    OPT_INT_32, "Target bitrate in bits per second. Note: maximum allowed value w/o using of BRCParamMultiplier is 65535000 bits per second", &m_applyBitrateParams),
-        HANDLE_GLOBAL_OPTION("-bm|", m_,MaxBitrate, OPT_INT_32, "Max bitrate in case of VBR", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("-bm|", m_,MaxBitrate, OPT_INT_32, "Max bitrate (in bits per second) in case of VBR", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("-TargetKbps|", m_,BitRateKbps, OPT_INT_32,"Target bitrate in kbits per second. Note: maximum allowed value w/o using of BRCParamMultiplier is 65535 kbits per second", &m_applyBitrateParams),
+        HANDLE_GLOBAL_OPTION("-MaxKbps|", m_,MaxBitrateKbps, OPT_INT_32,"Max bitrate (in kbits per second) in the case of VBR", &m_applyBitrateParams),
         HANDLE_GLOBAL_OPTION("-s|",  m_inParams.n,PicStruct,  OPT_INT_32, "0=progressive, 1=tff, 2=bff, 3=field tff, 4=field bff, 5=single field, 6=single top, 7=single bottom", &m_applyBitrateParams),
 
         //constant qp support
@@ -215,8 +217,6 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_MFX_INFO("",             GopOptFlag,               "1=GOP_CLOSED, 2=GOP_STRICT"),
         HANDLE_MFX_INFO("",             IdrInterval,              "IDR frame interval (0 means every I-frame is an IDR frame"),
         HANDLE_MFX_INFO("",             RateControlMethod,        "1=CBR, 2=VBR, 3=ConstantQP, 4=AVBR, 8=Lookahead, 13==Lookahead with HRD support, 14=QVBR"),
-        HANDLE_MFX_INFO("",             TargetKbps,               "Target bitrate in kbits per second. Note: maximum allowed value w/o using of BRCParamMultiplier is 65535 kbits per second"),
-        HANDLE_MFX_INFO("",             MaxKbps,                  "Maximum bitrate in the case of VBR"),
         HANDLE_MFX_INFO("-id|",         InitialDelayInKB,         "For bitrate control"),
         HANDLE_MFX_INFO("-bs|",         BufferSizeInKB,           "For bitrate control"),
         HANDLE_MFX_INFO("-l|",          NumSlice,                 "Number of slices in each video frame"),
@@ -679,6 +679,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 
     m_BitRate = 0;
     m_MaxBitrate = 0;
+    m_BitRateKbps = 0;
+    m_MaxBitrateKbps = 0;
     m_QPI = m_QPP = m_QPB = 0;
     m_Accuracy = 0;
     m_Convergence =0;
@@ -1711,8 +1713,8 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             //coping current parameters to buffer
             memcpy(&m_EncParamsOld, &m_EncParams, sizeof(m_EncParamsOld));
-            m_OldBitRate     = m_BitRate;
-            m_OldMaxBitrate  = m_MaxBitrate;
+            m_OldBitRate     = m_BitRateKbps ? (m_BitRateKbps*1000) : m_BitRate;
+            m_OldMaxBitrate  = m_MaxBitrateKbps ? (m_MaxBitrateKbps*1000) : m_MaxBitrate;
             m_OldPicStruct   = m_inParams.nPicStruct;
             m_OldQPI         = m_QPI;
             m_OldQPP         = m_QPP;
@@ -1765,7 +1767,9 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             memcpy(&m_EncParams, &m_EncParamsOld, sizeof(m_EncParamsOld));
 
             m_BitRate             = m_OldBitRate;
+            m_BitRateKbps         = m_OldBitRate/1000;
             m_MaxBitrate          = m_OldMaxBitrate;
+            m_MaxBitrateKbps      = m_OldMaxBitrate/1000;
             m_inParams.nPicStruct = m_OldPicStruct;
             m_QPI                 = m_OldQPI;
             m_QPP                 = m_OldQPP;
@@ -2627,14 +2631,15 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
     //todo for test cases with deinterlacing this may need to be changed
     m_components[eVPP].m_extCO = m_components[eDEC].m_extCO = m_extCodingOptions->FramePicture;
 
-
+    // if -b and -TargetKbps are mixed, prefer -b
+    if (m_BitRate) m_BitRateKbps = 0;
     // set bitrate
-    if (pMFXParams->mfx.TargetKbps == 0 && m_BitRate != 0)
-        pMFXParams->mfx.TargetKbps = (mfxU16)IPP_MIN(65535, m_BitRate/1000);
+    pMFXParams->mfx.TargetKbps = (mfxU16)IPP_MIN(65535, m_BitRateKbps ? m_BitRateKbps : (m_BitRate/1000));
 
+    // if -bm and -MaxKbps are mixed, prefer -bm
+    if (m_MaxBitrate) m_MaxBitrateKbps = 0;
     //maxbitrate could be equal to target in VBR and CBR mode
-    if (pMFXParams->mfx.MaxKbps == 0 && m_MaxBitrate != 0)
-        pMFXParams->mfx.MaxKbps = (mfxU16)IPP_MIN(65535, m_MaxBitrate/1000);
+    pMFXParams->mfx.MaxKbps = (mfxU16)IPP_MIN(65535, m_MaxBitrateKbps ? m_MaxBitrateKbps : (m_MaxBitrate/1000));
 
     //however VBR mode set only if maxbitrate is higher or rate control specified directly
     if (pMFXParams->mfx.MaxKbps > pMFXParams->mfx.TargetKbps &&
