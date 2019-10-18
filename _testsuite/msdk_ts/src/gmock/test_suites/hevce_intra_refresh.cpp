@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_intra_refresh.cpp
 \* ****************************************************************************** */
@@ -69,11 +69,11 @@ namespace hevce_intra_refresh{
     {
         int ret = 0;
 
-        if (g_tsHWtype == MFX_HW_CNL && g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
+        if (g_tsHWtype >= MFX_HW_CNL && g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
         {
             ret = LOWPOWER_SUPPORTED;
         }
-        else if (g_tsHWtype != MFX_HW_CNL && g_tsConfig.lowpower != MFX_CODINGOPTION_ON)
+        else
         {
             ret = DUALPIPE_SUPPORTED;
         }
@@ -351,9 +351,9 @@ tsExtBufType<mfxVideoParam> TestSuite::initParams() {
           TEST_CASE_PARAMETERS(QUERY_EXP, 1, 2, 0),
           TEST_CASE_PARAMETERS(INIT_EXP,  1, 2, 0),
           TEST_CASE_PARAMETERS(RESET_EXP, 1, 2, 0) } },
-        // INVALID when platform == CNL && LowPower is OFF or platform != CNL && LowPower is ON
-        {/*11*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, (mfxStatus)0,
-          UNSUPPORTED,
+        // VALID zero IntRefQPDelta
+        {/*11*/ MFX_ERR_NONE, MFX_ERR_NONE, (mfxStatus)0,
+          LOWPOWER_SUPPORTED | DUALPIPE_SUPPORTED,
         { TEST_CASE_PARAMETERS(CDO2_PAR,  1, 2, 0) } },
         // VALID VERTICAL PARAMS WITH ENCODE
         {/*12*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
