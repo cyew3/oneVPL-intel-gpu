@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@ namespace mfxDefaultAllocatorD3D9
 {
 
     mfxStatus AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
+    mfxStatus ReallocFrameHW(mfxHDL pthis, const mfxMemId mid, const mfxFrameInfo *info, const mfxU16 MemType);
     mfxStatus LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr);
     mfxStatus GetHDLHW(mfxHDL pthis, mfxMemId mid, mfxHDL *handle);
     mfxStatus UnlockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0);

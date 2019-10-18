@@ -37,6 +37,7 @@
 #include <libmfx_core_vaapi.h>
 #ifndef MFX_VA_LINUX
 #include <libmfx_core_d3d11.h>
+#include <libmfx_core_d3d9.h>
 #endif
 
 #if defined (_WIN32) || defined (_WIN64)
@@ -1130,7 +1131,10 @@ mfxStatus VideoDECODEVP9_HW::PrepareInternalSurface(UMC::FrameMemID &mid, mfxFra
             return d3d11_core->ReallocFrame(surf);
         }
         else
-            return MFX_ERR_UNSUPPORTED; //reallocation for vp9 d3d9 is not implemented yet
+        {
+            D3D9VideoCORE *d3d9_core = reinterpret_cast<D3D9VideoCORE *>(m_core);
+            return d3d9_core->ReallocFrame(surf);
+        }
     }
 #else
     UMC::Status umc_sts = m_FrameAllocator->Alloc(&mid, &videoInfo, mfx_UMC_ReallocAllowed);

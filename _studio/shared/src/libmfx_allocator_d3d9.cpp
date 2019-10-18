@@ -183,6 +183,114 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     return MFX_ERR_NONE;
 }
 
+mfxStatus mfxDefaultAllocatorD3D9::ReallocFrameHW(mfxHDL pthis, const mfxMemId mid, const mfxFrameInfo * info, const mfxU16 MemType)
+{
+    MFX_CHECK(info, MFX_ERR_NULL_PTR);
+    MFX_CHECK(pthis, MFX_ERR_NULL_PTR);
+    MFX_CHECK(mid, MFX_ERR_NULL_PTR);
+
+    // only NV12 and D3DFMT_P8 buffers are supported by HW
+    switch (info->FourCC)
+    {
+    case MFX_FOURCC_NV12:
+    case D3DFMT_P8:
+    case MFX_FOURCC_YUY2:
+    case MFX_FOURCC_YV12:
+    case MFX_FOURCC_IMC3:
+    case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_BGR4:
+    case MFX_FOURCC_YUV400:
+    case MFX_FOURCC_YUV411:
+    case MFX_FOURCC_YUV422H:
+    case MFX_FOURCC_YUV422V:
+    case MFX_FOURCC_YUV444:
+    case MFX_FOURCC_RGBP:
+    case MFX_FOURCC_P010:
+    case MFX_FOURCC_A2RGB10:
+    case MFX_FOURCC_AYUV:
+#if (MFX_VERSION >= 1027)
+    case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y410:
+#endif
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+    case MFX_FOURCC_P016:
+    case MFX_FOURCC_Y216:
+    case MFX_FOURCC_Y416:
+#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+        break;
+
+    default:
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    HRESULT hRes;
+
+    UINT    width  = info->Width;
+    UINT    height = info->Height;
+    mfxU32  fourcc = info->FourCC;
+
+    mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
+    if (!pSelf)
+        MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
+
+
+    if (MFX_FOURCC_RGB4 == fourcc)
+    {
+        fourcc = D3DFMT_A8R8G8B8;
+    }
+    else if (MFX_FOURCC_BGR4 == fourcc)
+    {
+        fourcc = D3DFMT_A8B8G8R8;
+    }
+    else if (MFX_FOURCC_A2RGB10 == fourcc)
+    {
+        fourcc = D3DFMT_A2R10G10B10;
+    }
+
+    DWORD   target;
+
+    if (MFX_MEMTYPE_DXVA2_DECODER_TARGET & MemType)
+    {
+        target = DXVA2_VideoDecoderRenderTarget;
+    }
+    else if (MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET & MemType)
+    {
+        target = DXVA2_VideoProcessorRenderTarget;
+    }
+    else
+        return MFX_ERR_INVALID_HANDLE;
+
+
+    IDirect3DSurface9 * pSurface;
+
+    
+    size_t index = (size_t)mid - 1;
+    if (pSelf->m_SrfQueue.size() <= index)
+        MFX_RETURN(MFX_ERR_UNDEFINED_BEHAVIOR);
+    //release surface that need to reallocate
+    pSurface = pSelf->m_SrfQueue[index];
+    pSurface->Release();
+
+    //reallocate realeased surface with new info
+    hRes = pSelf->pDirectXVideoService->CreateSurface(width,
+                                                      height,
+                                                      0, //number of BackBuffer
+                                                      (D3DFORMAT)fourcc,
+                                                      D3DPOOL_DEFAULT,
+                                                      0,
+                                                      target,
+                                                      &pSurface,
+                                                      NULL);
+    if (FAILED(hRes))
+    {
+        MFX_RETURN(MFX_ERR_MEMORY_ALLOC);
+    }
+    pSelf->m_SrfQueue[index] = pSurface;
+    return MFX_ERR_NONE;
+}
+
+
+
 mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, const D3DLOCKED_RECT &LockedRect, mfxFrameData *ptr)
 {
     switch ((DWORD)desc.Format)

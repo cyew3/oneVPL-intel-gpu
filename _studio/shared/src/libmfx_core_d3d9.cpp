@@ -580,6 +580,25 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
     }
 }
 
+mfxStatus D3D9VideoCORE::ReallocFrame(mfxFrameSurface1 *surf)
+{
+    MFX_CHECK_NULL_PTR1(surf);
+
+    mfxMemId memid = surf->Data.MemId;
+
+
+    if (!(surf->Data.MemType & MFX_MEMTYPE_INTERNAL_FRAME &&
+        (!(surf->Data.MemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET) ||
+            !(surf->Data.MemType & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))))
+        return MFX_ERR_MEMORY_ALLOC;
+
+    mfxFrameAllocator *pFrameAlloc = GetAllocatorAndMid(memid);
+    if (!pFrameAlloc)
+        return MFX_ERR_MEMORY_ALLOC;
+
+    return mfxDefaultAllocatorD3D9::ReallocFrameHW(pFrameAlloc->pthis, memid, &(surf->Info), surf->Data.MemType);
+}
+
 mfxStatus D3D9VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -1060,9 +1079,11 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
 
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FastCopySSE");
+            //static UMC::Mutex mutex; // This is thread-safe since C++11
+            //UMC::AutomaticUMCMutex guard(mutex);
             hRes |= pSurface->LockRect(&sLockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_LOCK_MEMORY);
-
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
             srcPitch = sLockRect.Pitch;
             sts = mfxDefaultAllocatorD3D9::SetFrameData(sSurfDesc, sLockRect, &pSrc->Data);
             MFX_CHECK_STS(sts);
