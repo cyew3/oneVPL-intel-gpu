@@ -24,11 +24,10 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
                              const vm_char *  outlineInput)
     : m_session(session)
     , m_vParam()
-    //check for null faster that examinee string lenght each time frame gots constructed
     , m_internalBS()
     , m_syncPoint((mfxSyncPoint)&m_syncPoint)
     , m_nFrames(0)
-    , m_pOutlineFileName(vm_string_strlen(outlineInput) ? outlineInput : NULL)
+    , m_pOutlineFileName(outlineInput && vm_string_strlen(outlineInput) ? outlineInput : NULL)
 {
     //Set up width and height from outline file if this information not found in stream info
     if ((m_pOutlineFileName != NULL) && (!frameParam.mfx.FrameInfo.Width) && (!frameParam.mfx.FrameInfo.Height))

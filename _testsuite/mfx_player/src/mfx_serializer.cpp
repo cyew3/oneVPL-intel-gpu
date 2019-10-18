@@ -590,6 +590,11 @@ void MFXStructureRef <mfxExtAV1AuxData>::ConstructValues() const
     SERIALIZE_INT(ContextUpdateTileId);
     SERIALIZE_INT(DisplayFormatSwizzle);
 }
+void MFXStructureRef <mfxExtAV1LargeScaleTileParam>::ConstructValues() const
+{
+    SERIALIZE_INT(AnchorFramesSource);
+    SERIALIZE_INT(AnchorFramesNum);
+}
 #endif
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
 {
@@ -1258,6 +1263,10 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
         }
         case MFX_EXTBUFF_AV1_AUXDATA: {
             SerializeStruct(VM_STRING("AV1AuxData."), *(mfxExtAV1AuxData*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_AV1_LST_PARAM: {
+            SerializeStruct(VM_STRING("AV1Lst."), *(mfxExtAV1LargeScaleTileParam*)m_pStruct);
             break;
         }
 #endif

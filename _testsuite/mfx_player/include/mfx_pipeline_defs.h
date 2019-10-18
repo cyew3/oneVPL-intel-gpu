@@ -603,6 +603,10 @@ if (m_OptProc.Check(argv[0], optname1, description, OPT_FILENAME)) \
 
 #define MFX_MIN_POINTER( a, b ) ( ((a) < (b)) ? ((a == 0) ? (b) : (a)) : ((b == 0) ? (a) : (b)) )
 
+#define MFX_DEC_DEFAULT_TIMEOUT    5
+#define MFX_VPP_DEFAULT_TIMEOUT    5
+#define MFX_RENDER_DEFAULT_TIMEOUT 5
+
 //TODO:fix includes
 #include "mfx_pipeline_types.h"
 

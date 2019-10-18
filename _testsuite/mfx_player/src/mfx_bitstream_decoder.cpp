@@ -142,7 +142,7 @@ mfxStatus BitstreamDecoder::DecodeFrameAsyncInternal( mfxBitstream2 &bs
 
 {
     SrfEncCtl         surface;
-    Timeout<5>     dec_timeout;
+    Timeout<MFX_DEC_DEFAULT_TIMEOUT>     dec_timeout;
     mfxFrameSurface1 *pDecodedSurface = NULL;
     mfxSyncPoint      syncp = NULL;
     mfxStatus         sts = MFX_ERR_MORE_SURFACE;

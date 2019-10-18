@@ -955,6 +955,7 @@ enum {
     MFX_EXTBUFF_TASK_DEPENDENCY                 = MFX_MAKEFOURCC('S','Y','N','C'),
     MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM            = MFX_MAKEFOURCC('A','1','F','G'),
     MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM         = MFX_MAKEFOURCC('P','B','O','P'),
+    MFX_EXTBUFF_AV1_LST_PARAM                   = MFX_MAKEFOURCC('A', '1', 'L', 'S'),
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_EXTBUFF_AV1_SEGMENTATION                = MFX_MAKEFOURCC('1', 'S', 'E', 'G'),
@@ -2358,7 +2359,25 @@ typedef struct {
     mfxU16 reserved[43];
 } mfxExtAV1FilmGrainParam;
 MFX_PACK_END()
-#endif
+
+/* AnchorFramesSource */
+enum {
+    MFX_LST_ANCHOR_FRAMES_FIRST_NUM_FROM_MAIN_STREAM = 1,
+    MFX_LST_ANCHOR_FRAMES_FROM_MFX_SURFACES = 2
+};
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct {
+    mfxExtBuffer     Header;
+    mfxU16           AnchorFramesSource;
+    mfxU16           AnchorFramesNum;
+    mfxFrameSurface1 **Anchors;
+    mfxU16           reserved[54];
+} mfxExtAV1LargeScaleTileParam;
+MFX_PACK_END()
+
+#endif // MFX_VERSION >= MFX_VERSION_NEXT
+
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 MFX_PACK_BEGIN_USUAL_STRUCT()

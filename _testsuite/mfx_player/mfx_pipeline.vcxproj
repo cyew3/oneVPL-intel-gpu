@@ -61,6 +61,7 @@
     <ClCompile Include="src\vaapi_utils_x11.cpp" />
     <ClCompile Include="src\video_window.cpp" />
     <ClCompile Include="src\mfx_advance_decoder.cpp" />
+    <ClCompile Include="src\mfx_anchors_decoder.cpp" />
     <ClCompile Include="src\mfx_bitstream_decoder.cpp" />
     <ClCompile Include="src\mfx_latency_decoder.cpp" />
     <ClCompile Include="src\mfx_latency_vpp.cpp" />

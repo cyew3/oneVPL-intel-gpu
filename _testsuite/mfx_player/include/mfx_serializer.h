@@ -701,6 +701,24 @@ public:
 protected:
     virtual void ConstructValues() const;
 };
+template<>
+class MFXStructureRef <mfxExtAV1LargeScaleTileParam>
+    : public MFXStructureBase<mfxExtAV1LargeScaleTileParam>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtAV1LargeScaleTileParam>((mfxExtAV1LargeScaleTileParam &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtAV1LargeScaleTileParam & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtAV1LargeScaleTileParam>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues() const;
+};
 #endif
 template<>
 class MFXStructureRef <mfxFrameInfo>

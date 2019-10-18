@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -80,12 +80,12 @@ mfxStatus MFXDecodeOrderedRender::RenderFrame(mfxFrameSurface1 *surface, mfxEnco
         IncreaseReference(&surface->Data);
     }
     //several frames could be ready at time
-    Timeout<5> timeout;
+    Timeout<MFX_RENDER_DEFAULT_TIMEOUT> timeout;
 
     for ( ;!timeout; )
     {
         mfxFrameSurface1 *pReorderedSrf = NULL;
-        
+
         // let find surface in main list
         //it = find_if(m_ReorderedList.begin(), m_ReorderedList.end(), std::bind2nd(ReorderedListPred1(), m_nCurOrder));
         std::list<mfxFrameSurface1*>::iterator it;

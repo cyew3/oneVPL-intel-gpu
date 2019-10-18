@@ -1557,6 +1557,7 @@ STRUCT(mfxExtAV1FilmGrainParam,
     FIELD_T(mfxU8, CrLumaMult)
     FIELD_T(mfxU16, CrOffset)
 )
+
 #endif
 
 #endif
@@ -1573,5 +1574,13 @@ STRUCT(mfxExtPartialBitstreamParam,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32, BlockSize)
     FIELD_T(mfxU16, Granularity)
+)
+#endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+STRUCT(mfxExtAV1LargeScaleTileParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, AnchorFramesSource)
+    FIELD_T(mfxU16, AnchorFramesNum)
 )
 #endif

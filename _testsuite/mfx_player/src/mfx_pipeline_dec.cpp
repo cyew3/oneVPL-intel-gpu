@@ -39,6 +39,7 @@ Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
 #include "mfx_serializer.h"
 #include "mfx_view_ordered_render.h"
 #include "mfx_advance_decoder.h"
+#include "mfx_anchors_decoder.h"
 //#include "mfx_virtualvpp_adapter.h"
 #include "mfx_vpp.h"
 #include "mfx_mvc_target_views_decoder.h"
@@ -714,6 +715,22 @@ mfxStatus MFXDecPipeline::BuildPipeline()
         //m_inParams.InputCodecType  = streamInfo.videoType;
         m_inParams.isDefaultFC = streamInfo.isDefaultFC;
     }
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FIRST_NUM_FROM_MAIN_STREAM || m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FROM_MFX_SURFACES)
+    {
+        MFXExtBufferPtr<mfxExtAV1LargeScaleTileParam> extLstTest(m_components[eDEC].m_extParams);
+        if (NULL == extLstTest.get())
+        {
+            m_components[eDEC].m_extParams.push_back(new mfxExtAV1LargeScaleTileParam());
+        }
+        MFXExtBufferPtr<mfxExtAV1LargeScaleTileParam> pLstBuffer(m_components[eDEC].m_extParams);
+        pLstBuffer->AnchorFramesSource = m_inParams.AV1LargeScaleTileMode;
+        pLstBuffer->AnchorFramesNum = m_inParams.AV1AnchorFramesNum;
+        m_components[eDEC].m_params.NumExtParam = (mfxU16)m_components[eDEC].m_extParams.size();
+        m_components[eDEC].m_params.ExtParam = &m_components[eDEC].m_extParams;
+    }
+#endif
 
     // Prepare Bitstream for Constructed Frame
     bool bExtended;
@@ -2633,6 +2650,33 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
         m_pYUVSource .reset( new MFXLoopDecoder( m_inParams.nYUVLoop, std::move(m_pYUVSource)));
     }
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    if (MFX_CODEC_AV1 == m_components[eDEC].m_params.mfx.CodecId)
+    {
+        if (m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FROM_MFX_SURFACES)
+        {
+            m_pYUVSource.reset(
+                new MFXAV1AnchorsDecoder(
+                    m_components[eDEC].m_pSession
+                    , std::move(m_pYUVSource)
+                    , yuvDecParam
+                    , m_pFactory.get()
+                    , m_inParams.strAV1AnchorFilePath
+                    , m_inParams.AV1AnchorFramesNum));
+        }
+        else if (m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FIRST_NUM_FROM_MAIN_STREAM)
+        {
+            m_pYUVSource.reset(
+                new MFXAV1AnchorsDecoder(
+                    m_components[eDEC].m_pSession
+                    , std::move(m_pYUVSource)
+                    , yuvDecParam
+                    , m_pFactory.get()
+                    , m_inParams.AV1AnchorFramesNum));
+        }
+    }
+#endif
+
     if (m_inParams.nDecodeInAdvance) {
         m_pYUVSource .reset( new MFXAdvanceDecoder(m_inParams.nDecodeInAdvance, std::move(m_pYUVSource)));
     }
@@ -3149,6 +3193,32 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         {
             MFX_CHECK_STS(m_components[eREN].m_pSession->SetFrameAllocator(m_components[eVPP].m_pAllocator));
         }
+
+        // AV1 Large Scale Tile Anchor frames
+        if (m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FROM_MFX_SURFACES)
+        {
+            MFXExtBufferPtr<mfxExtAV1LargeScaleTileParam> extLstTest(m_components[eDEC].m_extParams);
+            if (NULL == extLstTest.get())
+            {
+                m_components[eDEC].m_extParams.push_back(new mfxExtAV1LargeScaleTileParam());
+            }
+
+            MFXExtBufferPtr<mfxExtAV1LargeScaleTileParam> pLstBuffer(m_components[eDEC].m_extParams);
+            pLstBuffer->AnchorFramesSource = m_inParams.AV1LargeScaleTileMode;
+            pLstBuffer->AnchorFramesNum = m_inParams.AV1AnchorFramesNum;
+            m_components[eDEC].m_params.NumExtParam = (mfxU16)m_components[eDEC].m_extParams.size();
+            m_components[eDEC].m_params.ExtParam = &m_components[eDEC].m_extParams;
+
+            // use first AnchorFramesNum surfaces as anchors
+            for (auto &sfc_all : m_components[eDEC].m_Surfaces1)
+            {
+                if (sfc_all.allocResponce.NumFrameActual > m_inParams.AV1AnchorFramesNum)
+                {
+                    pLstBuffer->Anchors = sfc_all.surfacesLinear.data();
+                    break;
+                }
+            }
+        }
     }
 
     return MFX_ERR_NONE;
@@ -3357,7 +3427,7 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
     mfxSyncPoint     syncp             = nullptr;
     mfxStatus        sts               = MFX_ERR_MORE_SURFACE;
     MFXDecodeOrderedRender* pReoderRnd = dynamic_cast<MFXDecodeOrderedRender*>(m_pRender);
-    Timeout<5>    dec_timeout;
+    Timeout<MFX_DEC_DEFAULT_TIMEOUT>    dec_timeout;
 
     if (m_inParams.encodeExtraParams.nDelayOnMSDKCalls != 0)
     {
@@ -3624,7 +3694,7 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
     }
 
     //vpp async
-    Timeout<5>    vpp_timeout;
+    Timeout<MFX_VPP_DEFAULT_TIMEOUT>    vpp_timeout;
     for (mfxU32 times = 0; NULL != m_pVPP; ++times)
     {
         SrfEncCtl     vppOut           = nullptr;
@@ -5383,6 +5453,25 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
           else if (m_OptProc.Check(argv[0], VM_STRING("-dGfx"), VM_STRING("preffer processing on dGfx (by default system decides)"), OPT_BOOL))
           {
               m_inParams.bPrefferdGfx = true;
+          }
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+          else if (m_OptProc.Check(argv[0], VM_STRING("-anchors_num"), VM_STRING("number of anchor frames for AV1 large scale tile decode"), OPT_UINT_32))
+          {
+               mfxU32 anchorsNum = 0;
+               MFX_CHECK(1 + argv != argvEnd);
+               MFX_PARSE_INT(anchorsNum, argv[1]);
+               if (!m_inParams.AV1LargeScaleTileMode)
+                   m_inParams.AV1LargeScaleTileMode = MFX_LST_ANCHOR_FRAMES_FIRST_NUM_FROM_MAIN_STREAM;
+               m_inParams.AV1AnchorFramesNum = anchorsNum;
+               argv++;
+          }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-anchors_src"), VM_STRING("specify path to file, that contain anchors yuv"), OPT_FILENAME))
+          {
+              m_inParams.AV1LargeScaleTileMode = MFX_LST_ANCHOR_FRAMES_FROM_MFX_SURFACES;
+              MFX_CHECK(1 + argv != argvEnd);
+              MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.strAV1AnchorFilePath, MFX_ARRAY_SIZE(m_inParams.strAV1AnchorFilePath), argv[1]));
+              argv++;
           }
 #endif
           else

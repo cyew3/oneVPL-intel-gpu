@@ -268,6 +268,13 @@ struct sCommandlineParams
   mfxExtPAVPOption extEncPavpOption;
   mfxExtPAVPOption extDecPavpOption;
 #endif//PAVP_BUILD
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+  mfxU32           AV1LargeScaleTileMode; // MFX_LST_ANCHOR_FRAMES_*
+  mfxU32           AV1AnchorFramesNum;
+  vm_char          strAV1AnchorFilePath[MAX_FILE_PATH];
+#endif
+
   sCommandlineParams()
   {
       MFX_ZERO_MEM(*this);
@@ -347,6 +354,12 @@ struct sCommandlineParams
       bPrefferiGfx = false;
       bPrefferdGfx = false;
 #endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+      AV1LargeScaleTileMode = 0;
+      AV1AnchorFramesNum = 0;
+#endif
+
   }
 };
 
