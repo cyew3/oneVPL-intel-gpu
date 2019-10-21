@@ -141,6 +141,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->bFieldWeaving = false;
     pMfxExecuteParams->bFieldWeavingExt = false;
     pMfxExecuteParams->bFieldSplittingExt = false;
+    pMfxExecuteParams->mirroringExt = false;
     pMfxExecuteParams->iFieldProcessingMode = 0;
 #ifndef MFX_CAMERA_FEATURE_DISABLE
     pMfxExecuteParams->bCameraPipeEnabled = false;
@@ -2374,7 +2375,7 @@ mfxStatus  VideoVPPHW::Init(
     }
 #endif
 
-    if (m_executeParams.mirroring && !m_pCmCopy)
+    if (m_executeParams.mirroring && !m_executeParams.mirroringExt && !m_pCmCopy)
     {
         m_pCmCopy = QueryCoreInterface<CmCopyWrapper>(m_pCore, MFXICORECMCOPYWRAPPER_GUID);
         if ( m_pCmCopy )
@@ -3314,7 +3315,12 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
                 inputVidSurf.Info = surfQueue[i].pSurf->Info;
                 inputVidSurf.Data.MemId = m_internalVidSurf[VPP_IN].mids[ resIdx ];
 #if defined(MFX_VA)
-                if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_INPUT == m_executeParams.mirroringPosition)
+                if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring)
+                  && (MIRROR_INPUT == m_executeParams.mirroringPosition)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+                  && (m_pCore->GetHWType() < MFX_HW_TGL_LP) /* Starting with TGL we call driver instead of kernel */
+#endif
+                   )
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Mirror (sys->d3d)");
 
@@ -3471,7 +3477,12 @@ mfxStatus VideoVPPHW::PostWorkOutSurfaceCopy(ExtSurface & output)
         }
 
 #if defined(MFX_VA)
-        if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_OUTPUT == m_executeParams.mirroringPosition)
+        if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring)
+          && (MIRROR_OUTPUT == m_executeParams.mirroringPosition)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+          && (m_pCore->GetHWType() < MFX_HW_TGL_LP) /* Starting with TGL we call driver instead of kernel */
+#endif
+           )
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Mirror (d3d->sys)");
 
@@ -4085,7 +4096,12 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
 
 #if defined(MFX_VA)
-    if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_WO_EXEC == m_executeParams.mirroringPosition)
+    if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring)
+      && (MIRROR_WO_EXEC == m_executeParams.mirroringPosition)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+      && (m_pCore->GetHWType() < MFX_HW_TGL_LP) /* Starting with TGL we call driver instead of kernel */
+#endif
+       )
     {
         /* Temporal solution for mirroring that makes nothing but mirroring
          * TODO: merge mirroring into pipeline
@@ -4385,6 +4401,11 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     {
         m_executeParams.bFieldSplittingExt = true;
     }
+#endif
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    if (m_executeParams.mirroring && m_pCore->GetHWType() >= MFX_HW_TGL_LP)
+        m_executeParams.mirroringExt = true;
 #endif
 
     // Need special handling for progressive frame in 30i->60p ADI mode
@@ -4801,6 +4822,12 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     }
 #endif
 
+    std::vector<mfxU32> pipelineList;
+    mfxStatus internalSts = GetPipelineList(par, pipelineList, true);
+    mfxU32 pLen = (mfxU32)pipelineList.size();
+    mfxU32* pList = (pLen > 0) ? (mfxU32*)&pipelineList[0] : NULL;
+    MFX_CHECK_STS(internalSts);
+
     /* 1. Check ext param */
     for (mfxU32 i = 0; i < par->NumExtParam; i++)
     {
@@ -4810,6 +4837,58 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
 
         switch(id)
         {
+        case MFX_EXTBUFF_VPP_MIRRORING:
+        {
+            mfxExtVPPMirroring* extMir = (mfxExtVPPMirroring*)data;
+            // SW mirroring supports only horizontal mode
+            mfxU32 maxMirrorSupportMode = 1;
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+            if (core->GetHWType() >= MFX_HW_TGL_LP)
+                // Starting with TGL, mirroring performs through driver
+                // Driver supports horizontal and vertical modes
+                maxMirrorSupportMode = 2;
+#endif
+            // Only SW mirroring has these limitations, HW mirroring supports all SFC formats
+            if (maxMirrorSupportMode == 1 && (par->vpp.In.FourCC != MFX_FOURCC_NV12 || par->vpp.Out.FourCC != MFX_FOURCC_NV12))
+                sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
+
+            // SW mirroring does not support crop X and Y
+            if (maxMirrorSupportMode == 1 && (par->vpp.In.CropX || par->vpp.In.CropY || par->vpp.Out.CropX || par->vpp.Out.CropY))
+                sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
+
+            if (extMir->Type < 0 || extMir->Type > maxMirrorSupportMode)
+                sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
+
+            switch (par->IOPattern)
+            {
+            case MFX_IOPATTERN_IN_VIDEO_MEMORY  | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
+            case MFX_IOPATTERN_IN_VIDEO_MEMORY  | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
+            case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
+            case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
+            {
+                // SW d3d->d3d mirroring does not support resize
+                if ((maxMirrorSupportMode == 1) && (par->vpp.In.Width != par->vpp.Out.Width || par->vpp.In.Height != par->vpp.Out.Height))
+                    sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
+
+                // If pipeline contains resize, SW mirroring and other, VPP skips other filters
+                if (maxMirrorSupportMode == 1 && pLen > 2)
+                    sts = GetWorstSts(sts, MFX_WRN_FILTER_SKIPPED);
+
+                break;
+            }
+            default:
+                break;
+            }
+
+            if (maxMirrorSupportMode == 2 && core->GetVAType() == MFX_HW_D3D9)
+            {
+                // Driver doesn't have support for mirroring in this case
+                sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
+            }
+            break;
+        }
+
         case MFX_EXTBUFF_VPP_FIELD_PROCESSING:
         {
             mfxExtVPPFieldProcessing* extFP = (mfxExtVPPFieldProcessing*)data;
@@ -4934,16 +5013,9 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     /* 3. Check single field cases */
     if ( (par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE) && !(par->vpp.Out.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE) )
     {
-        std::vector<mfxU32> pipelineList;
-        mfxStatus internalSts = GetPipelineList( par, pipelineList, true );
-        MFX_CHECK_STS(internalSts);
-
-        mfxU32  len   = (mfxU32)pipelineList.size();
-        mfxU32* pList = (len > 0) ? (mfxU32*)&pipelineList[0] : NULL;
-
-        if (!IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FIELD_WEAVING) || // FIELD_WEAVING filter must be there
-            (IsFilterFound(pList, len, MFX_EXTBUFF_VPP_RESIZE) &&
-             len > 2) ) // there is another filter except implicit RESIZE
+        if (!IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_FIELD_WEAVING) || // FIELD_WEAVING filter must be there
+            (IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_RESIZE) &&
+             pLen > 2) ) // there is another filter except implicit RESIZE
         {
             sts = (MFX_ERR_UNSUPPORTED < sts) ? MFX_ERR_UNSUPPORTED : sts;
         }
@@ -4957,22 +5029,15 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
 
     if( !(par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE) && (par->vpp.Out.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE) )
     {
-        std::vector<mfxU32> pipelineList;
-        mfxStatus internalSts = GetPipelineList( par, pipelineList, true );
-        MFX_CHECK_STS(internalSts);
-
-        mfxU32  len   = (mfxU32)pipelineList.size();
-        mfxU32* pList = (len > 0) ? (mfxU32*)&pipelineList[0] : NULL;
-
         // Input can not be progressive
         if (!(par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_TFF) && !(par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_BFF) && !(par->vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN))
         {
             sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
         }
 
-        if (!IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FIELD_SPLITTING) || // FIELD_SPLITTING filter must be there
-            (IsFilterFound(pList, len, MFX_EXTBUFF_VPP_RESIZE)                &&
-             len > 2) ) // there are other filters except implicit RESIZE
+        if (!IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_FIELD_SPLITTING) || // FIELD_SPLITTING filter must be there
+            (IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_RESIZE)                &&
+             pLen > 2) ) // there are other filters except implicit RESIZE
         {
             sts = (MFX_ERR_UNSUPPORTED < sts) ? MFX_ERR_UNSUPPORTED : sts;
         }
@@ -5065,18 +5130,11 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     /* 8. Check unsupported filters on RGB */
     if( par->vpp.In.FourCC == MFX_FOURCC_RGB4)
     {
-        std::vector<mfxU32> pipelineList;
-        mfxStatus internalSts = GetPipelineList( par, pipelineList, true );
-        MFX_CHECK_STS(internalSts);
-
-        mfxU32  len   = (mfxU32)pipelineList.size();
-        mfxU32* pList = (len > 0) ? (mfxU32*)&pipelineList[0] : NULL;
-
-        if(IsFilterFound(pList, len, MFX_EXTBUFF_VPP_DENOISE)            ||
-           IsFilterFound(pList, len, MFX_EXTBUFF_VPP_DETAIL)             ||
-           IsFilterFound(pList, len, MFX_EXTBUFF_VPP_PROCAMP)            ||
-           IsFilterFound(pList, len, MFX_EXTBUFF_VPP_SCENE_CHANGE)       ||
-           IsFilterFound(pList, len, MFX_EXTBUFF_VPP_IMAGE_STABILIZATION) )
+        if(IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_DENOISE)            ||
+           IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_DETAIL)             ||
+           IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_PROCAMP)            ||
+           IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_SCENE_CHANGE)       ||
+           IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_IMAGE_STABILIZATION) )
         {
             sts = GetWorstSts(sts, MFX_WRN_FILTER_SKIPPED);
             if(bCorrectionEnable)
@@ -5089,26 +5147,19 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
 
 #ifdef MFX_ENABLE_MCTF
     {
-        std::vector<mfxU32> pipelineList;
-        mfxStatus internalSts = GetPipelineList(par, pipelineList, true);
-
-        mfxU32  len = (mfxU32)pipelineList.size();
-        mfxU32* pList = (len > 0) ? (mfxU32*)&pipelineList[0] : NULL;
-
-        MFX_CHECK_STS(internalSts);
         // mctf cannot work with CC others than NV12; also interlace is not supported
         if (par->vpp.Out.FourCC != MFX_FOURCC_NV12 || par->vpp.Out.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
         {
-            if (IsFilterFound(pList, len, MFX_EXTBUFF_VPP_MCTF))
+            if (IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_MCTF))
             {
                 sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
             }
         }
 
         if ((par->vpp.Out.FrameRateExtN * par->vpp.In.FrameRateExtD != par->vpp.Out.FrameRateExtD * par->vpp.In.FrameRateExtN) ||
-            IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) || IsFilterFound(pList, len, MFX_EXTBUFF_VPP_COMPOSITE))
+            IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) || IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_COMPOSITE))
         {
-            if (IsFilterFound(pList, len, MFX_EXTBUFF_VPP_MCTF))
+            if (IsFilterFound(pList, pLen, MFX_EXTBUFF_VPP_MCTF))
             {
                 bool bHasFrameDelay(true);
 #ifdef MFX_ENABLE_MCTF_EXT
@@ -5710,14 +5761,6 @@ mfxStatus ConfigureExecuteParams(
                         if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_MIRRORING)
                         {
                             mfxExtVPPMirroring *extMirroring = (mfxExtVPPMirroring*) videoParam.ExtParam[i];
-                            if (extMirroring->Type != MFX_MIRRORING_DISABLED && extMirroring->Type != MFX_MIRRORING_HORIZONTAL)
-                                return MFX_ERR_INVALID_VIDEO_PARAM;
-
-                            if (videoParam.vpp.In.FourCC != MFX_FOURCC_NV12 || videoParam.vpp.Out.FourCC != MFX_FOURCC_NV12)
-                                return MFX_ERR_INVALID_VIDEO_PARAM; // Only NV12 as in/out supported by mirroring now
-
-                            if (videoParam.vpp.In.CropX || videoParam.vpp.In.CropY || videoParam.vpp.Out.CropX || videoParam.vpp.Out.CropY)
-                                return MFX_ERR_INVALID_VIDEO_PARAM; // mirroring does not support crop X and Y
 
                             executeParams.mirroring = extMirroring->Type;
 
@@ -5728,12 +5771,6 @@ mfxStatus ConfigureExecuteParams(
                             case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
                             case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
                                 executeParams.mirroringPosition = MIRROR_WO_EXEC;
-
-                                if (videoParam.vpp.In.Width != videoParam.vpp.Out.Width || videoParam.vpp.In.Height != videoParam.vpp.Out.Height)
-                                    return MFX_ERR_INVALID_VIDEO_PARAM; // d3d->d3d mirroring does not support resize
-
-                                if (pipelineList.size() > 2) // if pipeline contains resize, mirroring and other
-                                    bIsFilterSkipped = true; // VPP skips other filters
 
                                 break;
                             case MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY:

@@ -1339,6 +1339,23 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         break;
     }
 
+if (pParams->mirroringExt)
+{
+    // First priority is HW fixed function scaling engine. If it can't work, revert to AVS
+    // Starting from ATS there is only HW fixed function scaling engine due to AVS removal
+    m_pipelineParam[0].filter_flags = VA_FILTER_SCALING_DEFAULT;
+
+    switch (pParams->mirroring)
+    {
+    case MFX_MIRRORING_VERTICAL:
+        m_pipelineParam[0].mirror_state = VA_MIRROR_VERTICAL;
+        break;
+    case MFX_MIRRORING_HORIZONTAL:
+        m_pipelineParam[0].mirror_state = VA_MIRROR_HORIZONTAL;
+        break;
+    }
+}
+
 // Additional parameters for interlaced cases on ATS
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     if (hwType >= MFX_HW_TGL_HP)

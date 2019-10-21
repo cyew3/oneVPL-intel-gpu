@@ -2280,7 +2280,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         case MFX_SCALING_MODE_QUALITY:
         case MFX_SCALING_MODE_DEFAULT:
         default:
-            param.FastMode = true;
+            // False for HW mirroring, true otherwise
+            param.FastMode = !pParams->mirroringExt;
             break;
         }
         sts = SetStreamScalingMode(0, param);
@@ -2396,17 +2397,19 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             angle);
     }
 
-
-    //switch(pParams->mirroring)
-    //{
-    //case MFX_MIRRORING_VERTICAL:
-    //    (reinterpret_cast<ID3D11VideoContext1 *>(m_pVideoContext))->VideoProcessorSetStreamMirror(m_pVideoProcessor, 0, TRUE, FALSE, TRUE);
-    //    break;
-    //case MFX_MIRRORING_HORIZONTAL:
-    //default:
-    //    (reinterpret_cast<ID3D11VideoContext1 *>(m_pVideoContext))->VideoProcessorSetStreamMirror(m_pVideoProcessor, 0, TRUE, TRUE, FALSE);
-    //    break;
-    //}
+    if (pParams->mirroringExt)
+    {
+        switch(pParams->mirroring)
+        {
+        case MFX_MIRRORING_VERTICAL:
+            (reinterpret_cast<ID3D11VideoContext1 *>(m_pVideoContext))->VideoProcessorSetStreamMirror(m_pVideoProcessor, 0, TRUE, FALSE, TRUE);
+            break;
+        case MFX_MIRRORING_HORIZONTAL:
+        default:
+            (reinterpret_cast<ID3D11VideoContext1 *>(m_pVideoContext))->VideoProcessorSetStreamMirror(m_pVideoProcessor, 0, TRUE, TRUE, FALSE);
+            break;
+        }
+    }
 
     // [5] Detail
     if (pParams->detailFactor > 0)
@@ -2435,6 +2438,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         setParams.bFieldWeaving          = pParams->bFieldWeaving;
         setParams.bFieldWeavingExt       = pParams->bFieldWeavingExt;
         setParams.bFieldSplittingExt     = pParams->bFieldSplittingExt;
+        setParams.mirroringExt           = pParams->mirroringExt;
 
         //take into consederation. if you change it, QueryVariance should be changed too
         setParams.StatusReportID         = pParams->statusReportID;// + 1;

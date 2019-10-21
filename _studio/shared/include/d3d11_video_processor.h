@@ -37,7 +37,7 @@
 #include "mfxdefs.h"
 #include "mfx_vpp_interface.h"
 
-//#include <d3d11_1.h> - VideoProcessorSetStreamMirror
+#include <d3d11_1.h>  // VideoProcessorSetStreamMirror
 
 #include <set>
 #include <algorithm>
@@ -136,7 +136,8 @@ typedef struct _SET_PREPROC_PARAMS
     UINT bFieldWeaving          : 1;
     UINT bFieldWeavingExt       : 1;
     UINT bFieldSplittingExt     : 1;
-    UINT Reserved               : 24;
+    UINT mirroringExt           : 1;
+    UINT Reserved               : 23;
     UINT StatusReportID;
 
 } SET_PREPROC_PARAMS;

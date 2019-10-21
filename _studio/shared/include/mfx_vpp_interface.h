@@ -459,6 +459,7 @@ namespace MfxHwVideoProcessing
                ,bEOS(false)
                ,mirroring(0)
                ,mirroringPosition(0)
+               ,mirroringExt(false)
                ,scene(VPP_NO_SCENE_CHANGE)
                ,bDeinterlace30i60p(false)
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
@@ -525,6 +526,7 @@ namespace MfxHwVideoProcessing
                     rotation != 0 ||
                     scalingMode != MFX_SCALING_MODE_DEFAULT ||
                     mirroring != 0 ||
+                    mirroringExt != false ||
                     scene != VPP_NO_SCENE_CHANGE ||
                     bDeinterlace30i60p != false
 #if (MFX_VERSION >= 1025)
@@ -636,6 +638,7 @@ namespace MfxHwVideoProcessing
 
         int        mirroring;
         int        mirroringPosition;
+        bool       mirroringExt;
 
         vppScene    scene;     // Keep information about scene change
         bool        bDeinterlace30i60p;
