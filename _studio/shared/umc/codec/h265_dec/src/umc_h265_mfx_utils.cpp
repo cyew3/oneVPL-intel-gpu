@@ -161,6 +161,9 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
         case MFX_PROFILE_HEVC_REXT:
         case MFX_PROFILE_HEVC_MAINSP:
         case MFX_PROFILE_HEVC_MAIN10:
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
+        case MFX_PROFILE_HEVC_SCC:
+#endif
             return true;
     }
 

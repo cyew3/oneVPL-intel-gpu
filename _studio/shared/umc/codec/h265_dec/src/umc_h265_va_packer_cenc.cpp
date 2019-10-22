@@ -25,7 +25,7 @@
 #if defined (UMC_VA_LINUX)
 #if defined (MFX_ENABLE_CPLIB)
 
-#include "umc_h265_va_packer.h"
+#include "umc_h265_va_packer_vaapi.h"
 #include "umc_h265_task_supplier.h"
 #include "umc_va_linux_protected.h"
 
@@ -35,17 +35,22 @@
 
 using namespace UMC;
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#define PACKER_VAAPI G12::PackerVAAPI
+#else
+#define PACKER_VAAPI G11::PackerVAAPI
+#endif
+
 namespace UMC_HEVC_DECODER
 {
 
     class PackerVA_CENC
-        : public PackerVA
+        : public PACKER_VAAPI
     {
-
     public:
 
         PackerVA_CENC(VideoAccelerator * va)
-            : PackerVA(va)
+            : PACKER_VAAPI(va)
         {}
 
     private:
@@ -202,6 +207,7 @@ namespace UMC_HEVC_DECODER
 
         pParamBuf->SetDataSize(sizeof(VACencStatusParameters));
     }
+
 } // namespace UMC_HEVC_DECODER
 
 #endif // #if defined (MFX_ENABLE_CPLIB)

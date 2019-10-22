@@ -36,6 +36,8 @@
 
 #include "umc_h265_tables.h"
 
+#include <cassert>
+
 namespace UMC_HEVC_DECODER
 {
 
@@ -167,55 +169,85 @@ public:
 
     virtual void PackAU(H265DecoderFrame const*, TaskSupplier_H265*) = 0;
     virtual void PackPicParams(H265DecoderFrame const*, TaskSupplier_H265*) = 0;
-    virtual bool PackSliceParams(H265Slice const*, size_t, bool isLastSlice) = 0;
     virtual void PackQmatrix(const H265Slice *pSlice) = 0;
 
     static Packer * CreatePacker(UMC::VideoAccelerator * va);
 
-protected:
+    virtual bool PackSliceParams(H265Slice const* slice, size_t, bool last_slice) = 0;
 
+protected:
     UMC::VideoAccelerator *m_va;
 };
 
-#if defined(UMC_VA_LINUX)
+    /* Helper struct to map given type [T] to certain [UMCVACompBuffer::type] */
+    template <typename T>
+    struct Type2Buffer;
 
-class PackerVA
-    : public Packer
-{
-public:
+    template <typename T>
+    inline
+    UMC::UMCVACompBuffer* GetParamsBuffer(UMC::VideoAccelerator* va, T** pb)
+    {
+        assert(va);
+        assert(pb);
 
-    PackerVA(UMC::VideoAccelerator* va)
-        : Packer(va)
-    {}
+        UMC::UMCVACompBuffer* buffer = nullptr;
+        *pb = reinterpret_cast<T*>(va->GetCompBuffer(Type2Buffer<T>::value, &buffer, sizeof(T)));
 
-    UMC::Status GetStatusReport(void*, size_t) override
-    { return UMC::UMC_OK; }
+        return buffer;
+    }
 
-    UMC::Status SyncTask(int32_t index, void* error) override
-    { return m_va->SyncTask(index, error); }
+    /* Creates [count] of parameter buffers for given type [T] */
+    template <typename T>
+    inline
+    void CreateParamsBuffer(UMC::VideoAccelerator* va, size_t count)
+    {
+        assert(va);
 
-    bool IsGPUSyncEventEnable() override
-    { return false; }
+        UMC::UMCVACompBuffer* buffer = nullptr;
+        va->GetCompBuffer(Type2Buffer<T>::value, &buffer, sizeof(T) * count);
+        if (!buffer)
+            throw h265_exception(UMC::UMC_ERR_FAILED);
+    }
 
-    void BeginFrame(H265DecoderFrame*) override;
-    void EndFrame() override
-    { /* Nothing to do */ }
+    /* Request next (offseted by used data size) buffer for given [type],
+       returns pointer to buffer data and its offset */
+    inline
+    std::pair<void*, size_t>
+    PeekBuffer(UMC::VideoAccelerator* va, int32_t type, size_t size, uint32_t data_alignment = 0)
+    {
+        assert(va);
 
-    void PackAU(H265DecoderFrame const*, TaskSupplier_H265*) override;
+        UMC::UMCVACompBuffer* buffer = nullptr;
+        void* ptr = va->GetCompBuffer(type, &buffer, (int32_t)size);
+        if (!buffer)
+            throw h265_exception(UMC::UMC_ERR_FAILED);
 
-private:
+        size_t const b_size = buffer->GetBufferSize();
+        size_t offset = buffer->GetDataSize();
 
-    void PackPicParams(H265DecoderFrame const*, TaskSupplier_H265*) override;
-    bool PackSliceParams(H265Slice const*, size_t, bool isLastSlice) override;
-    void PackQmatrix(H265Slice const*) override;
+        offset = data_alignment ? data_alignment*((offset+data_alignment-1)/data_alignment) : offset;
 
-private:
+        if (size + offset > b_size)
+            throw h265_exception(UMC::UMC_ERR_FAILED);
 
-    void CreateSliceDataBuffer(H265DecoderFrameInfo const*);
-    void CreateSliceParamBuffer(H265DecoderFrameInfo const*);
-};
+        buffer->SetDataSize(int32_t(size + offset));
+        ptr = reinterpret_cast<char*>(ptr) + offset;
 
-#endif // UMC_VA_LINUX
+        return std::make_pair(ptr, offset);
+    }
+
+    /* Request next (see [PeekBuffer]) buffer for given type [T] */
+    template <typename T>
+    inline
+    void PeekParamsBuffer(UMC::VideoAccelerator* va, T** pb, uint32_t data_alignment = 0)
+    {
+        auto p = PeekBuffer(va, Type2Buffer<T>::value, sizeof(T), data_alignment);
+        if (!p.first)
+            throw h265_exception(UMC::UMC_ERR_FAILED);
+
+        *pb = reinterpret_cast<T*>(p.first);
+        **pb = {};
+    }
 
 } // namespace UMC_HEVC_DECODER
 

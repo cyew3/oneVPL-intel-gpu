@@ -25,9 +25,16 @@
 #if defined (UMC_VA_LINUX) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #ifndef MFX_ENABLE_CPLIB
 
-#include "umc_h265_va_packer.h"
+#include "umc_h265_va_packer_vaapi.h"
 #include "umc_h265_task_supplier.h"
 #include "umc_h265_widevine_slice_decoding.h"
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#define PACKER_VAAPI G12::PackerVAAPI
+#else
+#define PACKER_VAAPI G11::PackerVAAPI
+#endif
+
 
 using namespace UMC;
 
@@ -35,13 +42,13 @@ namespace UMC_HEVC_DECODER
 {
 
     class PackerVA_Widevine
-        : public PackerVA
+        : public PACKER_VAAPI
     {
 
     public:
 
         PackerVA_Widevine(VideoAccelerator * va)
-            : PackerVA(va)
+            : PACKER_VAAPI(va)
         {}
 
     private:
