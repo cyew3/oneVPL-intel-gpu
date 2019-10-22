@@ -253,7 +253,7 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults, MsdkPluginType 
         m_par.mfx.FrameInfo.FrameRateExtN = 30;
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
 
-        if (   (CodecId == MFX_CODEC_AVC || CodecId == MFX_CODEC_MPEG2)
+        if (   (CodecId == MFX_CODEC_AVC || CodecId == MFX_CODEC_MPEG2 || CodecId == MFX_CODEC_JPEG)
             && m_par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
             m_par.mfx.FrameInfo.Height = (m_par.mfx.FrameInfo.Height + 31) & ~31;
     }
