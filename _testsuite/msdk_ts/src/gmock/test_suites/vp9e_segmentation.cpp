@@ -164,6 +164,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         std::map<mfxU32, FrameStatStruct> m_EncodedFramesStat;
         std::vector<test_iteration> m_StressTestScenario;
         mfxU32 m_CaseID;
+        mfxU32 m_TestType;
 
         TestSuite()
             : tsVideoEncoder(MFX_CODEC_VP9)
@@ -171,6 +172,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             , m_SourceWidth(0)
             , m_SourceHeight(0)
             , m_CaseID(0)
+            , m_TestType(0)
             , m_SourceFrameCount(0)
         {}
         ~TestSuite()
@@ -697,7 +699,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                         ADD_FAILURE() << "ERROR: encoded_frame[" << m_DecodedFramesCount << "] expected to have segmentation, but uncompr_hdr.segm.enabled=false";
                         throw tsFAIL;
                     }
-                    if (m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].type & SEGMENTATION_DATA_UPDATE)
+                    if (m_TestPtr->m_EncodedFramesStat[m_DecodedFramesCount].type & SEGMENTATION_DATA_UPDATE
+                        && (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS || (g_tsOSFamily == MFX_OS_FAMILY_LINUX && !(m_TestPtr->m_TestType & CHECK_SEGM_OUT_OF_RANGE_PARAMS))))
                     {
                         if (hdr.uh.segm.update_data == 0)
                         {
@@ -1389,6 +1392,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
     {
         TS_START;
+        m_TestType = tc.type;
 
         std::map<mfxU32, mfxFrameSurface1*> inputSurfaces;
         char* stream = nullptr;
