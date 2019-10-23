@@ -40,7 +40,7 @@ namespace hevce_query
         W_GT_MAX,
         H_GT_MAX,
         NONE,
-        ALIGNMENT
+        ALIGNMENT_HW
     };
 
     struct tc_struct
@@ -91,13 +91,23 @@ namespace hevce_query
             return (value + (alignment - 1)) & ~(alignment - 1);
         }
 
+        bool IsHevcHwPlugin()
+        {
+            return 0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data));
+        }
+
+        bool IsHevcGaccPlugin()
+        {
+            return 0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data));
+        }
+
         void CheckOutPar(tc_struct tc)
         {
             switch (tc.type)
             {
                 case TARGET_USAGE:
                 {
-                    if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
+                    if (IsHevcHwPlugin())
                     {
                         // HW: supported only TU = {1,4,7}. Mapping: 2->1; 3->4; 5->4; 6->7
                         if (tc.set_par[0].v == 1 || tc.set_par[0].v == 4 || tc.set_par[0].v == 7)
@@ -112,7 +122,7 @@ namespace hevce_query
                                 tsStruct::check_eq(m_pParOut, *tc.set_par[0].f, tsStruct::get(m_pPar, *tc.set_par[0].f) - 1);
                         }
                     }
-                    else if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data)))
+                    else if (IsHevcGaccPlugin())
                     {
                         // GACC: supported only TU = {4,5,6,7}
                         if (tc.set_par[0].v >= 4)
@@ -130,14 +140,17 @@ namespace hevce_query
                     }
                     break;
                 }
-                case ALIGNMENT:
-                    //check width
-                    tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.Width, AlignValue(m_pPar->mfx.FrameInfo.Width));
-                    //check height
-                    tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.Height, AlignValue(m_pPar->mfx.FrameInfo.Height));
-                    //check crops
-                    tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, m_pPar->mfx.FrameInfo.CropW);
-                    tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, m_pPar->mfx.FrameInfo.CropH);
+                case ALIGNMENT_HW:
+                    if (IsHevcHwPlugin())
+                    {
+                        //check width
+                        tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.Width, AlignValue(m_pPar->mfx.FrameInfo.Width));
+                        //check height
+                        tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.Height, AlignValue(m_pPar->mfx.FrameInfo.Height));
+                        //check crops
+                        tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, m_pPar->mfx.FrameInfo.CropW);
+                        tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, m_pPar->mfx.FrameInfo.CropH);
+                    }
                     break;
                 default: break;
             }
@@ -421,13 +434,13 @@ namespace hevce_query
                           PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
         {/*70*/ MFX_ERR_UNSUPPORTED, PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
         //Alignment
-        {/*71*/ MFX_ERR_NONE, ALIGNMENT, NONE, {} },
-        {/*72*/ MFX_ERR_NONE, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
-        {/*73*/ MFX_ERR_NONE, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
-        {/*74*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1 } },
-        {/*75*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1 } },
-        {/*76*/ MFX_ERR_NONE, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
-        {/*77*/ MFX_ERR_NONE, ALIGNMENT, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
+        {/*71*/ MFX_ERR_NONE, ALIGNMENT_HW, NONE, {} },
+        {/*72*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
+        {/*73*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
+        {/*74*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1 } },
+        {/*75*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1 } },
+        {/*76*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
+        {/*77*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(tc_struct);
@@ -450,11 +463,9 @@ namespace hevce_query
         ENCODE_CAPS_HEVC caps = {0};
         mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
 
-        if ((0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))) ||
-            (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data))))
+        if (IsHevcHwPlugin() || IsHevcGaccPlugin())
         {
-            if ((g_tsHWtype < MFX_HW_SKL) &&
-                (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
+            if (g_tsHWtype < MFX_HW_SKL && IsHevcHwPlugin()) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
@@ -590,7 +601,8 @@ namespace hevce_query
         {   // pars depend on resolution
             for (mfxU32 i = 0; i < MAX_NPARS; i++) {
                 if (tc.set_par[i].f && tc.set_par[i].ext_type == MFX_PAR) {
-                    if (tc.type == RESOLUTION || tc.type == ALIGNMENT)
+                    if (tc.type == RESOLUTION ||
+                        (tc.type == ALIGNMENT_HW && IsHevcHwPlugin()))
                     {
                         if (tc.set_par[i].f->name.find("Width") != std::string::npos) {
                             m_pPar->mfx.FrameInfo.Width = ((m_pPar->mfx.FrameInfo.Width + 15) & ~15) + tc.set_par[i].v;
@@ -598,7 +610,8 @@ namespace hevce_query
                         if (tc.set_par[i].f->name.find("Height") != std::string::npos)
                             m_pPar->mfx.FrameInfo.Height = ((m_pPar->mfx.FrameInfo.Height + 15) & ~15) + tc.set_par[i].v;
                     }
-                    if (tc.type == CROP || tc.type == ALIGNMENT)
+                    if (tc.type == CROP ||
+                        (tc.type == ALIGNMENT_HW && IsHevcHwPlugin()))
                     {
                         if (tc.set_par[i].f->name.find("CropX") != std::string::npos)
                             m_pPar->mfx.FrameInfo.CropX += tc.set_par[i].v;
@@ -640,7 +653,7 @@ namespace hevce_query
         }
 
 
-        if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
+        if (IsHevcHwPlugin())
         {
             if ((m_pPar->mfx.RateControlMethod == MFX_RATECONTROL_AVBR) && (tc.sts == MFX_ERR_NONE))
             {
@@ -678,7 +691,7 @@ namespace hevce_query
                 sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }
         }
-        else if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data)))
+        else if (IsHevcGaccPlugin())
         {
             if (tc.type == PROTECTED)
                 sts = MFX_ERR_UNSUPPORTED;
@@ -690,6 +703,11 @@ namespace hevce_query
             // different expected status for SW HEVCe and GACC
             if (tc.type == PIC_STRUCT && tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
                 sts = MFX_ERR_UNSUPPORTED;
+
+            if (tc.type == ALIGNMENT_HW)
+            {
+                sts = MFX_ERR_NONE;
+            }
         }
         else
         {
@@ -715,7 +733,8 @@ namespace hevce_query
             sts = MFX_ERR_UNSUPPORTED;
 
         if (sts >= MFX_ERR_NONE
-            && tc.type == ALIGNMENT
+            && tc.type == ALIGNMENT_HW
+            && IsHevcHwPlugin()
             && !IsResolutionAligned(m_pPar->mfx.FrameInfo.Width, m_pPar->mfx.FrameInfo.Height))
         {
             sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -747,7 +766,7 @@ namespace hevce_query
             {
                 m_pFrameAllocator->get_hdl(type, hdl);
 
-                if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
+                if (IsHevcHwPlugin())
                     g_tsStatus.expect(MFX_ERR_UNDEFINED_BEHAVIOR); // device was created by Core in Query() to get HW caps
                 SetHandle(m_session, type, hdl);
             }
