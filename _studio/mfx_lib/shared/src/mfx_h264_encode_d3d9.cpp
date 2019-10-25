@@ -295,6 +295,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     pps.BRCMaxQp                                = 0;
     pps.BRCMinQp                                = 0;
     pps.SliceSizeInBytes                        = extOpt2.MaxSliceSize;
+    pps.bEnableQpAdjustment                     = (IsOn(extOpt2.MBBRC) && par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) ? 1 : 0;
 }
 
 

@@ -711,6 +711,7 @@ namespace MfxHwH264Encode
         } calcParam;
     };
 
+    bool   isSWBRC (MfxVideoParam const & par);
     mfxU16 GetMaxNumSlices(MfxVideoParam const & par);
 
     mfxU16 GetNumSurfInput(MfxVideoParam const & video);

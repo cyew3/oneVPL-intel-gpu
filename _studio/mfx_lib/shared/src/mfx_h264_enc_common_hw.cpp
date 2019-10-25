@@ -742,7 +742,7 @@ namespace
 
         bool IsEnabledSwBrc = false;
 #if !defined(MFX_EXT_BRC_DISABLE)
-        IsEnabledSwBrc = bRateControlLA(par.mfx.RateControlMethod) || (IsOn(extOpt2.ExtBRC) && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR));
+        IsEnabledSwBrc = isSWBRC(par);
 #else
         IsEnabledSwBrc = bRateControlLA(par.mfx.RateControlMethod);
 #endif
@@ -3414,11 +3414,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
     }
-
-    if (hwCaps.ddi_caps.MBBRCSupport == 0 && hwCaps.ddi_caps.ICQBRCSupport == 0 && IsOn(extOpt2->MBBRC))
+    if (IsOn(extOpt2->MBBRC))
     {
-        changed = true;
-        extOpt2->MBBRC = MFX_CODINGOPTION_OFF;
+        if ((isSWBRC(par) && hwCaps.ddi_caps.QpAdjustmentSupport == 0) ||
+            (!isSWBRC(par) && (hwCaps.ddi_caps.MBBRCSupport == 0 && hwCaps.ddi_caps.ICQBRCSupport == 0)))
+        {
+            changed = true;
+            extOpt2->MBBRC = MFX_CODINGOPTION_OFF;
+        }
     }
 
     if (extOpt2->BRefType > 2)
@@ -5721,6 +5724,12 @@ bool IsHRDBasedBRCMethod(mfxU16  RateControlMethod)
             RateControlMethod != MFX_RATECONTROL_ICQ &&
             RateControlMethod != MFX_RATECONTROL_LA && RateControlMethod != MFX_RATECONTROL_LA_ICQ;
 }
+bool MfxHwH264Encode::isSWBRC(MfxVideoParam const & par)
+{
+    mfxExtCodingOption2       &extOpt2 = GetExtBufferRef(par);
+    return (bRateControlLA(par.mfx.RateControlMethod) || (IsOn(extOpt2.ExtBRC) && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)));
+}
+
 
 
 void MfxHwH264Encode::SetDefaults(
@@ -6516,7 +6525,7 @@ void MfxHwH264Encode::SetDefaults(
 
     bool IsEnabledSwBrc = false;
 #if !defined(MFX_EXT_BRC_DISABLE)
-    IsEnabledSwBrc = bRateControlLA(par.mfx.RateControlMethod) || (IsOn(extOpt2->ExtBRC) && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR));
+    IsEnabledSwBrc = isSWBRC(par);
 #else
     IsEnabledSwBrc = bRateControlLA(par.mfx.RateControlMethod);
 #endif

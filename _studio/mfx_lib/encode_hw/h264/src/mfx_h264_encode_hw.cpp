@@ -3603,6 +3603,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 if (!bRecoding)
                 {
                     task->m_brcFrameParams.CodedFrameSize = bsDataLength;
+                    if (IsOn(extOpt2.MBBRC))
+                        task->m_brcFrameCtrl.QpY = task->m_cqpValue[0];
+
                     mfxU32 res = m_brc.Report(task->m_brcFrameParams, 0, GetMaxFrameSize(*task, m_video, hrd), task->m_brcFrameCtrl);
                     MFX_CHECK((mfxI32)res != UMC::BRC_ERROR, MFX_ERR_UNDEFINED_BEHAVIOR);
                     if ((res != 0) && (!extOpt2.MaxSliceSize))

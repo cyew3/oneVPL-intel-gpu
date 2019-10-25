@@ -324,7 +324,9 @@ typedef struct tagENCODE_CAPS
             UINT    TCBRCSupport                 : 1;
             UINT    HRDConformanceSupport        : 1;
             UINT    PollingModeSupport           : 1;
-            UINT                                 : 5;
+            UINT    LookAheadBRCSupport          : 1;
+            UINT    QpAdjustmentSupport           : 1;
+            UINT                                 : 3;
         };
         UINT      CodingLimits2;
     };
@@ -749,7 +751,16 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
             UINT        bDisableSubMBPartition                   : 1;
             UINT        bEmulationByteInsertion                  : 1;
             UINT        bEnableRollingIntraRefresh               : 2;
-            UINT        bReserved                                : 21;
+            UINT        bSliceLevelReport                        : 1;
+            UINT        bDisableSubpixel                         : 1;
+            UINT        bDisableRollingIntraRefreshOverlap       : 1;
+            UINT        ForceRepartitionCheck                    : 2;
+            UINT        bDisableFrameSkip                        : 1;
+            UINT        bEnablePollingMode                       : 1;
+            UINT        bRepeatFrame                             : 1;
+            UINT        bEnableQpAdjustment                       : 1;
+            UINT        bLookAheadPhase                          : 1;
+            UINT        bReserved                                : 11;
 
         };
         BOOL    UserFlags;
