@@ -170,7 +170,7 @@ namespace hevce_reset
         },
         {/* 19*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 25 },
             }
         },
         {/* 20*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
