@@ -939,7 +939,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Close()
 
     if (m_prevSegment.SegmentId)
     {
-        delete m_prevSegment.SegmentId;
+        delete[] m_prevSegment.SegmentId;
         m_prevSegment.SegmentId = 0;
     }
 
