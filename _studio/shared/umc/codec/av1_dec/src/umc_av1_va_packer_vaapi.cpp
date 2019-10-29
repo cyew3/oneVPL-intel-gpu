@@ -151,8 +151,6 @@ namespace UMC_AV1_DECODER
         seqInfo.enable_masked_compound = sh.enable_masked_compound;
 
         seqInfo.enable_cdef = sh.enable_cdef;
-        seqInfo.enable_restoration = sh.enable_restoration;
-        seqInfo.large_scale_tile = info.large_scale_tile;
 #else
         seqInfo.sb_size_128x128 = (sh.sbSize == BLOCK_128X128) ? 1 : 0;
 
