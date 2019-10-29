@@ -91,14 +91,21 @@ mfxStatus cBRCParams::Init(mfxVideoParam* par, bool bField)
 
     mfxExtCodingOption * pExtCO = (mfxExtCodingOption*)Hevc_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION);
 
-    bHRDConformance =  (pExtCO && pExtCO->NalHrdConformance == MFX_CODINGOPTION_OFF) ? 0 : 1;
+    HRDConformance = MFX_BRC_NO_HRD;
+    if (pExtCO)
+    {
+        if ((MFX_CODINGOPTION_OFF != pExtCO->NalHrdConformance) && (MFX_CODINGOPTION_OFF != pExtCO->VuiNalHrdParameters))
+            HRDConformance = MFX_BRC_HRD_STRONG;
+        else if ((MFX_CODINGOPTION_ON == pExtCO->NalHrdConformance) && (MFX_CODINGOPTION_OFF == pExtCO->VuiNalHrdParameters))
+            HRDConformance = MFX_BRC_HRD_WEAK;
+    }
 
-    if (bHRDConformance)
+    if (HRDConformance != MFX_BRC_NO_HRD)
     {
         bufferSizeInBytes  = ((k*par->mfx.BufferSizeInKB*1000) >> (cpb_size_scale + 1)) << (cpb_size_scale + 1);
         initialDelayInBytes =((k*par->mfx.InitialDelayInKB*1000) >> (cpb_size_scale + 1)) << (cpb_size_scale + 1);
         bRec = 1;
-        bPanic = 1;
+        bPanic = (HRDConformance == MFX_BRC_HRD_STRONG) ? 1 : 0;
     }
     MFX_CHECK (par->mfx.FrameInfo.FrameRateExtD != 0 &&
                par->mfx.FrameInfo.FrameRateExtN != 0,
@@ -176,27 +183,23 @@ mfxStatus   cBRCParams::GetBRCResetType(mfxVideoParam* par, bool bNewSequence, b
     MFX_CHECK_STS(sts);
 
     MFX_CHECK(new_par.rateControlMethod == rateControlMethod, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM) ;
-    MFX_CHECK(new_par.bHRDConformance == bHRDConformance, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM) ;
+    MFX_CHECK(new_par.HRDConformance == HRDConformance, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM) ;
     MFX_CHECK(new_par.frameRate == frameRate, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     MFX_CHECK(new_par.width == width, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     MFX_CHECK(new_par.height == height, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     MFX_CHECK(new_par.chromaFormat == chromaFormat, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     MFX_CHECK(new_par.bitDepthLuma == bitDepthLuma, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    if (bHRDConformance)
+    if (HRDConformance == MFX_BRC_HRD_STRONG)
     {
-        MFX_CHECK(new_par.bufferSizeInBytes   == bufferSizeInBytes, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        MFX_CHECK(new_par.bufferSizeInBytes == bufferSizeInBytes, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         MFX_CHECK(new_par.initialDelayInBytes == initialDelayInBytes, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         MFX_CHECK(new_par.targetbps == targetbps, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
         MFX_CHECK(new_par.maxbps == maxbps, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     }
-    else
+    else if (new_par.targetbps != targetbps || new_par.maxbps != maxbps)
     {
-        if (new_par.targetbps != targetbps || new_par.maxbps != maxbps)
-        {
-            MFX_CHECK(new_par.rateControlMethod == MFX_RATECONTROL_VBR, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-            bBRCReset = true;
-        }
+        bBRCReset = true;
     }
 
     if (new_par.WinBRCMaxAvgKbps != WinBRCMaxAvgKbps)
@@ -350,7 +353,8 @@ mfxStatus ExtBRC::Init (mfxVideoParam* par)
     MFX_CHECK(!m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
     sts = m_par.Init(par, isFieldMode(par));
     MFX_CHECK_STS(sts);
-    if (m_par.bHRDConformance)
+
+    if (m_par.HRDConformance != MFX_BRC_NO_HRD)
     {
         if (m_par.codecId == MFX_CODEC_AVC)
             m_hrdSpec.reset(new H264_HRD());
@@ -641,7 +645,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
 
         bNeedUpdateQP = true;
 
-        if (m_par.bHRDConformance)
+        if (m_par.HRDConformance != MFX_BRC_NO_HRD)
         {
 
             m_hrdSpec->ResetQuant();
@@ -649,7 +653,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         //printf("m_ctx.SceneChange %d, m_ctx.poc %d, m_ctx.SChPoc, m_ctx.poc %d \n", m_ctx.SceneChange, m_ctx.poc, m_ctx.SChPoc, m_ctx.poc);
     }
     bool bIntra = picType == MFX_FRAMETYPE_I;
-    if (m_par.bHRDConformance)
+    if (m_par.HRDConformance != MFX_BRC_NO_HRD)
     {
         brcSts = CheckHrdAndUpdateQP(*m_hrdSpec.get(), bitsEncoded, frame_par->EncodedOrder, bIntra, qpY);
 
@@ -705,7 +709,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
 
         maxFrameSize = std::min(maxFrameSize,(mfxF64)frameSizeLim);
 
-        if (m_par.bHRDConformance)
+        if (m_par.HRDConformance != MFX_BRC_NO_HRD)
         {
             if (bSHStart || bIntra)
                 maxFrameSize = std::min(maxFrameSize, 3.5/9.* m_hrdSpec->GetMaxFrameSizeInBits(m_ctx.encOrder, bIntra) + 5.5/9.*targetFrameSize);
@@ -749,7 +753,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             SetRecodeParams(MFX_BRC_PANIC_BIG_FRAME,quant,quant, quantMin ,quantMax, m_ctx, status);
             return sts;
         }
-        if (m_par.bHRDConformance && frame_par->NumRecode == 0 && (quant < quantMax))
+        if (m_par.HRDConformance != MFX_BRC_NO_HRD && frame_par->NumRecode == 0 && (quant < quantMax))
         {
             mfxF64 maxFrameSizeHrd = m_hrdSpec->GetMaxFrameSizeInBits(frame_par->EncodedOrder, bIntra);
             mfxF64 FAMax = 1./9. * maxFrameSizeHrd + 8./9. * fAbLong;
@@ -776,9 +780,9 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
                     }
                 }//quant_new > quant
             }
-        }//m_par.bHRDConformance
+        }//m_par.HRDConformance
     }
-    if (((m_par.bHRDConformance && brcSts != MFX_BRC_OK) || (bitsEncoded > (mfxI32)frameSizeLim)) && m_par.bRec)
+    if (((m_par.HRDConformance != MFX_BRC_NO_HRD && brcSts != MFX_BRC_OK) || (bitsEncoded > (mfxI32)frameSizeLim)) && m_par.bRec)
     {
         mfxI32 quant = m_ctx.Quant;
         mfxI32 quant_new = quant;
@@ -861,7 +865,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             mfxF64 totDiv = m_ctx.totalDiviation;
             mfxF64 HRDDiv = 0.0;
             mfxF64 maxFrameSizeHrd = 0.0;
-            if (m_par.bHRDConformance)
+            if (m_par.HRDConformance != MFX_BRC_NO_HRD)
             {
                 HRDDiv = m_hrdSpec->GetBufferDiviation(frame_par->EncodedOrder);
                 maxFrameSizeHrd = m_hrdSpec->GetMaxFrameSizeInBits(frame_par->EncodedOrder, bIntra);
@@ -870,7 +874,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             mfxF64 dequant_new = m_ctx.dQuantAb*pow(m_par.inputBitsPerFrame/m_ctx.fAbLong, 1.2);
             mfxF64 bAbPreriod = m_par.bAbPeriod;
 
-            if (m_par.bHRDConformance)
+            if (m_par.HRDConformance != MFX_BRC_NO_HRD)
             {
                 if (m_par.rateControlMethod == MFX_RATECONTROL_VBR && m_par.maxbps > m_par.targetbps )
                 {
@@ -939,7 +943,7 @@ mfxStatus ExtBRC::GetFrameCtrl (mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl)
         qp = GetCurQP (type, par->PyramidLayer);
     }
     ctrl->QpY = qp - m_par.quantOffset;
-    if (m_par.bHRDConformance)
+    if (m_par.HRDConformance != MFX_BRC_NO_HRD)
     {
         ctrl->InitialCpbRemovalDelay = m_hrdSpec->GetInitCpbRemovalDelay(par->EncodedOrder);
         ctrl->InitialCpbRemovalOffset = m_hrdSpec->GetInitCpbRemovalDelayOffset(par->EncodedOrder);
