@@ -83,7 +83,7 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
             m_data[m_numCommit].ptr = ptr;
             m_data[m_numCommit].len = len;
             m_numCommit++;
-            last = (m_numCommit >= m_numRegistered);
+            last = (m_numCommit >= m_numWriter);
         }
 
         if (last)
@@ -127,7 +127,7 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
             }
 
             m_numUnregistered++;
-            if (m_numRegistered == m_numUnregistered)
+            if (m_numUnregistered == m_numWriter)
             {
                 // last writer unregistered, restore initial state
                 m_numUnregistered = 0;
