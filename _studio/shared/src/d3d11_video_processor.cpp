@@ -2862,20 +2862,12 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         outInfo->FourCC == MFX_FOURCC_AYUV )
     {
         bYCbCr = TRUE;
-        if (realColorSpace.Nominal_Range == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
-        {
-            Color.YCbCr.A = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
-            Color.YCbCr.Y = ((pParams->iBackgroundColor >> 32) & 0xff) / 255.0f;
-            Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
-            Color.YCbCr.Cr = ((pParams->iBackgroundColor) & 0xff) / 255.0f;
-        }
-        else //default D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235
-        {
-            Color.YCbCr.A = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
-            Color.YCbCr.Y = (((pParams->iBackgroundColor >> 32) & 0xff) - 16) / 219.0f;
-            Color.YCbCr.Cb = (((pParams->iBackgroundColor >> 16) & 0xff) - 16) / 224.0f;
-            Color.YCbCr.Cr = (((pParams->iBackgroundColor) & 0xff) - 16) / 224.0f;
-        }
+        // MSDN link: https://docs.microsoft.com/en-us/windows/win32/api/d3d11/ns-d3d11-d3d11_video_color_ycbcra
+        // Values have a nominal range of [0...1]. Given a format with n bits per channel, the value of each color component is calculated as follows: val = f * ((1 << n) - 1)
+        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
+        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 32) & 0xff) / 255.0f;
+        Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
+        Color.YCbCr.Cr = ((pParams->iBackgroundColor) & 0xff) / 255.0f;
     }
     if (outInfo->FourCC == MFX_FOURCC_P010 ||
 #if (MFX_VERSION >= 1027)
@@ -2885,21 +2877,12 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         outInfo->FourCC == MFX_FOURCC_P210 )
     {
         bYCbCr = TRUE;
-
-        if (realColorSpace.Nominal_Range == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
-        {
-            Color.YCbCr.A = ((pParams->iBackgroundColor >> 48) & 0x03ff) / 1023.0f;
-            Color.YCbCr.Y = ((pParams->iBackgroundColor >> 32) & 0x03ff) / 1023.0f;
-            Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0x03ff) / 1023.0f;
-            Color.YCbCr.Cr = ((pParams->iBackgroundColor) & 0x03ff) / 1023.0f;
-        }
-        else //default D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235
-        {
-            Color.YCbCr.A = ((pParams->iBackgroundColor >> 48) & 0x03ff) / 1023.0f;
-            Color.YCbCr.Y = (((pParams->iBackgroundColor >> 32) & 0x03ff) - 64) / 876.0f;
-            Color.YCbCr.Cb = (((pParams->iBackgroundColor >> 16) & 0x03ff) - 64) / 896.0f;
-            Color.YCbCr.Cr = (((pParams->iBackgroundColor) & 0x03ff) - 64) / 896.0f;
-        }
+        // MSDN link: https://docs.microsoft.com/en-us/windows/win32/api/d3d11/ns-d3d11-d3d11_video_color_ycbcra
+        // Values have a nominal range of [0...1]. Given a format with n bits per channel, the value of each color component is calculated as follows: val = f * ((1 << n) - 1)
+        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 48) & 0x03ff) / 1023.0f;
+        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 32) & 0x03ff) / 1023.0f;
+        Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0x03ff) / 1023.0f;
+        Color.YCbCr.Cr = ((pParams->iBackgroundColor) & 0x03ff) / 1023.0f;
     }
     if (outInfo->FourCC == MFX_FOURCC_RGB3    ||
         outInfo->FourCC == MFX_FOURCC_RGB4    ||
@@ -2909,20 +2892,12 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         outInfo->FourCC == MFX_FOURCC_R16)
     {
         bYCbCr = FALSE;
-        if (realColorSpace.RGB_Range == D3D11_RGB_NOMINALRANGE_16_235)
-        {
-            Color.RGBA.A = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
-            Color.RGBA.R = (((pParams->iBackgroundColor >> 32) & 0xff) - 16) / 219.0f;
-            Color.RGBA.G = (((pParams->iBackgroundColor >> 16) & 0xff) - 16) / 219.0f;
-            Color.RGBA.B = (((pParams->iBackgroundColor) & 0xff) - 16) / 219.0f;
-        }
-        else
-        {
-            Color.RGBA.A = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
-            Color.RGBA.R = ((pParams->iBackgroundColor >> 32) & 0xff) / 255.0f;
-            Color.RGBA.G = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
-            Color.RGBA.B = ((pParams->iBackgroundColor) & 0xff) / 255.0f;
-        }
+        // MSDN link https://docs.microsoft.com/en-us/windows/win32/api/d3d11/ns-d3d11-d3d11_video_color_rgba
+        // The RGB values have a nominal range of [0...1]. For a RGB format with n bits per channel, the value of each color component is calculated as follows: val = f * ((1 << n) - 1)
+        Color.RGBA.A = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
+        Color.RGBA.R = ((pParams->iBackgroundColor >> 32) & 0xff) / 255.0f;
+        Color.RGBA.G = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
+        Color.RGBA.B = ((pParams->iBackgroundColor) & 0xff) / 255.0f;
     }
 
     SetOutputBackgroundColor(bYCbCr, &Color);
