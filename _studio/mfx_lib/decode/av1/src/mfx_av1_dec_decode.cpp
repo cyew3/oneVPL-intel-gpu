@@ -215,6 +215,9 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     mfxStatus sts = MFX_VPX_Utility::QueryIOSurfInternal(par, &m_request);
     MFX_CHECK_STS(sts);
 
+    m_init_par = *par;
+    m_first_par = m_init_par;
+
     //mfxFrameAllocResponse response{};
     bool internal = ((m_platform == MFX_PLATFORM_SOFTWARE) ?
         (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
@@ -274,7 +277,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_NOT_INITIALIZED);
 
     m_first_run = true;
-    m_init_video_par = *par;
+    m_init_par = *par;
     m_is_init = true;
 
     return MFX_ERR_NONE;
@@ -381,11 +384,26 @@ bool VideoDECODEAV1::IsNeedChangeVideoParam(mfxVideoParam * newPar, mfxVideoPara
 
 mfxStatus VideoDECODEAV1::Reset(mfxVideoParam* par)
 {
-    (void) par;
+    UMC::AutomaticUMCMutex guard(m_guard);
+
+    MFX_CHECK_NULL_PTR1(par);
 
     MFX_CHECK(m_is_init, MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    eMFXHWType type = m_core->GetHWType();
+    eMFXPlatform platform = MFX_VPX_Utility::GetPlatform(m_core, par);
+
+    MFX_CHECK(CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) >= MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_AV1, m_platform), MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(IsNeedChangeVideoParam(par, &m_init_par, type), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+    MFX_CHECK(m_platform == platform, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+    MFX_CHECK(m_allocator->Reset() == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
+
+    m_first_par = *par;
 
     return MFX_ERR_NONE;
 }
@@ -548,8 +566,8 @@ mfxStatus VideoDECODEAV1::GetVideoParam(mfxVideoParam *par)
     sts = FillVideoParam(m_core, &vp, par);
     MFX_CHECK_STS(sts);
 
-    par->mfx.FrameInfo.FrameRateExtN = m_init_video_par.mfx.FrameInfo.FrameRateExtN;
-    par->mfx.FrameInfo.FrameRateExtD = m_init_video_par.mfx.FrameInfo.FrameRateExtD;
+    par->mfx.FrameInfo.FrameRateExtN = m_init_par.mfx.FrameInfo.FrameRateExtN;
+    par->mfx.FrameInfo.FrameRateExtD = m_init_par.mfx.FrameInfo.FrameRateExtD;
 
     if (!par->mfx.FrameInfo.FrameRateExtD && !par->mfx.FrameInfo.FrameRateExtN)
     {
@@ -563,8 +581,8 @@ mfxStatus VideoDECODEAV1::GetVideoParam(mfxVideoParam *par)
         }
     }
 
-    par->mfx.FrameInfo.AspectRatioW = m_init_video_par.mfx.FrameInfo.AspectRatioW;
-    par->mfx.FrameInfo.AspectRatioH = m_init_video_par.mfx.FrameInfo.AspectRatioH;
+    par->mfx.FrameInfo.AspectRatioW = m_video_par.mfx.FrameInfo.AspectRatioW;
+    par->mfx.FrameInfo.AspectRatioH = m_video_par.mfx.FrameInfo.AspectRatioH;
 
     if (!par->mfx.FrameInfo.AspectRatioH && !par->mfx.FrameInfo.AspectRatioW)
     {

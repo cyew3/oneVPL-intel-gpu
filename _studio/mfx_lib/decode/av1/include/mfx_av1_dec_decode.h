@@ -109,8 +109,8 @@ private:
     bool                                         m_opaque;
     bool                                         m_first_run;
 
-    mfxVideoParamWrapper                         m_init_video_par;
     mfxVideoParamWrapper                         m_video_par;
+    mfxVideoParamWrapper                         m_init_par;
     mfxVideoParamWrapper                         m_first_par;
 
     mfxFrameAllocRequest                         m_request;
