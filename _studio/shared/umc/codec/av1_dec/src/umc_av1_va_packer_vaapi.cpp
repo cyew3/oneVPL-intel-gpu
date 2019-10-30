@@ -89,7 +89,7 @@ namespace UMC_AV1_DECODER
         if (!bitstreamData || !compBufBs)
             throw av1_exception(MFX_ERR_MEMORY_ALLOC);
 
-        std::vector<VABitStreamParameterBufferAV1> tileControlParams;
+        std::vector<VASliceParameterBufferAV1> tileControlParams;
 
         for (auto& tileSet : tileSets)
         {
@@ -111,8 +111,8 @@ namespace UMC_AV1_DECODER
         }
 
         UMCVACompBuffer* compBufTile = nullptr;
-        const int32_t tileControlInfoSize = static_cast<int32_t>(sizeof(VABitStreamParameterBufferAV1) * tileControlParams.size());
-        VABitStreamParameterBufferAV1 *tileControlParam = (VABitStreamParameterBufferAV1*)m_va->GetCompBuffer(VASliceParameterBufferType, &compBufTile, tileControlInfoSize);
+        const int32_t tileControlInfoSize = static_cast<int32_t>(sizeof(VASliceParameterBufferAV1) * tileControlParams.size());
+        VASliceParameterBufferAV1 *tileControlParam = (VASliceParameterBufferAV1*)m_va->GetCompBuffer(VASliceParameterBufferType, &compBufTile, tileControlInfoSize);
         if (!tileControlParam || !compBufTile || (compBufTile->GetBufferSize() < tileControlInfoSize))
             throw av1_exception(MFX_ERR_MEMORY_ALLOC);
 
@@ -130,11 +130,8 @@ namespace UMC_AV1_DECODER
         FrameHeader const& info =
             frame.GetFrameHeader();
 
-#if UMC_AV1_DECODER_REV >= 8500
-        // TODO: [Rev0.85] Add correct setting for large scale tile mode
         picParam.output_frame_width_in_tiles_minus_1 = 0;
         picParam.output_frame_height_in_tiles_minus_1 = 0;
-#endif
 
         // fill seq parameters
         picParam.profile = (uint8_t)sh.seq_profile;
@@ -142,26 +139,13 @@ namespace UMC_AV1_DECODER
         auto& seqInfo = picParam.seq_info_fields.fields;
 
         seqInfo.still_picture = 0;
-#if UMC_AV1_DECODER_REV >= 8500
-        seqInfo.use_128x128_superblock = (sh.sbSize == BLOCK_128X128) ? 1 : 0;
 
+        seqInfo.use_128x128_superblock = (sh.sbSize == BLOCK_128X128) ? 1 : 0;
         seqInfo.enable_filter_intra = sh.enable_filter_intra;
         seqInfo.enable_intra_edge_filter = sh.enable_intra_edge_filter;
         seqInfo.enable_interintra_compound = sh.enable_interintra_compound;
         seqInfo.enable_masked_compound = sh.enable_masked_compound;
-
         seqInfo.enable_cdef = sh.enable_cdef;
-#else
-        seqInfo.sb_size_128x128 = (sh.sbSize == BLOCK_128X128) ? 1 : 0;
-
-        seqInfo.enable_filter_intra = info.enable_filter_intra;
-        seqInfo.enable_intra_edge_filter = info.enable_intra_edge_filter;
-        seqInfo.enable_interintra_compound = info.enable_interintra_compound;
-        seqInfo.enable_masked_compound = info.enable_masked_compound;
-
-        seqInfo.enable_cdef = 1;
-        seqInfo.enable_restoration = 1;
-#endif
 
         seqInfo.enable_dual_filter = sh.enable_dual_filter;
         seqInfo.enable_order_hint = sh.enable_order_hint;
@@ -195,10 +179,6 @@ namespace UMC_AV1_DECODER
         picInfo.disable_frame_end_update_cdf = info.disable_frame_end_update_cdf;
         picInfo.uniform_tile_spacing_flag = info.tile_info.uniform_tile_spacing_flag;
         picInfo.allow_warped_motion = info.allow_warped_motion;
-#if UMC_AV1_DECODER_REV == 5000
-        picInfo.refresh_frame_context = info.disable_frame_end_update_cdf ? REFRESH_FRAME_CONTEXT_DISABLED : REFRESH_FRAME_CONTEXT_BACKWARD;
-        picInfo.large_scale_tile = info.large_scale_tile;
-#endif
 
         picParam.order_hint = (uint8_t)info.order_hint;
         picParam.superres_scale_denominator = (uint8_t)info.SuperresDenom;
@@ -243,9 +223,6 @@ namespace UMC_AV1_DECODER
             {
                 const uint8_t idxInDPB = (uint8_t)info.ref_frame_idx[ref_idx];
                 picParam.ref_frame_idx[ref_idx] = idxInDPB;
-#if UMC_AV1_DECODER_REV == 5000
-                picParam.ref_order_hint[ref_idx] = frame.frame_dpb[idxInDPB]->GetFrameHeader().order_hint;
-#endif
             }
         }
 
@@ -286,13 +263,8 @@ namespace UMC_AV1_DECODER
 
         for (uint8_t i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
-#if UMC_AV1_DECODER_REV >= 8500
             picParam.cdef_y_strengths[i] = (uint8_t)((info.cdef_params.cdef_y_pri_strength[i] << 2) + info.cdef_params.cdef_y_sec_strength[i]);
             picParam.cdef_uv_strengths[i] = (uint8_t)((info.cdef_params.cdef_uv_pri_strength[i] << 2) + info.cdef_params.cdef_uv_sec_strength[i]);
-#else
-            picParam.cdef_y_strengths[i] = (uint8_t)info.cdef_params.cdef_y_strength[i];
-            picParam.cdef_uv_strengths[i] = (uint8_t)info.cdef_params.cdef_uv_strength[i];
-#endif
         }
 
         // fill quantization matrix params
@@ -310,7 +282,7 @@ namespace UMC_AV1_DECODER
         modeCtrl.log2_delta_lf_res = CeilLog2(info.delta_lf_res);
         modeCtrl.delta_lf_multi = info.delta_lf_multi;
         modeCtrl.tx_mode = info.TxMode;
-        modeCtrl.reference_mode = info.reference_mode;
+        modeCtrl.reference_select = info.reference_mode;
         modeCtrl.reduced_tx_set_used = info.reduced_tx_set;
         modeCtrl.skip_mode_present = info.skip_mode_present;
 
@@ -325,11 +297,15 @@ namespace UMC_AV1_DECODER
         // fill global motion params
         for (uint8_t i = 0; i < INTER_REFS; i++)
         {
-            picParam.wm[i].wmtype = static_cast<VATransformationType>(info.global_motion_params[i + 1].wmtype);
-            for (uint8_t j = 0; j < 8; j++)
+            if (!info.global_motion_params[i + 1].invalid)
             {
-                picParam.wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
-                // TODO: [Rev0.5] implement processing of alpha, beta, gamma, delta.
+                picParam.wm[i].wmtype = static_cast<VAAV1TransformationType>(info.global_motion_params[i + 1].wmtype);
+                for (uint8_t j = 0; j < 8; j++)
+                {
+                    picParam.wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
+                    for (uint8_t j = 0; j < 8; j++)
+                        picParam.wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
+                }
             }
         }
 
@@ -340,10 +316,6 @@ namespace UMC_AV1_DECODER
         if (!frame.FilmGrainDisabled())
         {
             fgInfo.apply_grain = info.film_grain_params.apply_grain;
-#if UMC_AV1_DECODER_REV == 5000
-            fgInfo.update_grain = info.film_grain_params.update_grain;
-            fgInfo.film_grain_params_ref_idx = info.film_grain_params.film_grain_params_ref_idx;
-#endif
             fgInfo.chroma_scaling_from_luma = info.film_grain_params.chroma_scaling_from_luma;
             fgInfo.grain_scaling_minus_8 = info.film_grain_params.grain_scaling - 8;
             fgInfo.ar_coeff_lag = info.film_grain_params.ar_coeff_lag;
@@ -352,7 +324,7 @@ namespace UMC_AV1_DECODER
             fgInfo.overlap_flag = info.film_grain_params.overlap_flag;
             fgInfo.clip_to_restricted_range = info.film_grain_params.clip_to_restricted_range;
 
-            fg.random_seed = (uint16_t)info.film_grain_params.grain_seed;
+            fg.grain_seed = (uint16_t)info.film_grain_params.grain_seed;
             fg.num_y_points = (uint8_t)info.film_grain_params.num_y_points;
 
             for (uint8_t i = 0; i < MAX_POINTS_IN_SCALING_FUNCTION_LUMA; i++)
@@ -393,43 +365,34 @@ namespace UMC_AV1_DECODER
         picParam.tile_cols = (uint8_t)info.tile_info.TileCols;
         picParam.tile_rows = (uint8_t)info.tile_info.TileRows;
 
-#if UMC_AV1_DECODER_REV == 5000
-        if (!info.tile_info.uniform_tile_spacing_flag)
+        for (uint32_t i = 0; i < picParam.tile_cols; i++)
         {
-#endif
-            for (uint32_t i = 0; i < picParam.tile_cols; i++)
-            {
-                picParam.width_in_sbs_minus_1[i] =
-                    (uint16_t)(info.tile_info.SbColStarts[i + 1] - info.tile_info.SbColStarts[i] - 1);
-            }
-
-            for (int i = 0; i < picParam.tile_rows; i++)
-            {
-                picParam.height_in_sbs_minus_1[i] =
-                    (uint16_t)(info.tile_info.SbRowStarts[i + 1] - info.tile_info.SbRowStarts[i] - 1);
-            }
-#if UMC_AV1_DECODER_REV == 5000
+            picParam.width_in_sbs_minus_1[i] =
+                (uint16_t)(info.tile_info.SbColStarts[i + 1] - info.tile_info.SbColStarts[i] - 1);
         }
-#endif
 
-#if UMC_AV1_DECODER_REV >= 8500
+        for (int i = 0; i < picParam.tile_rows; i++)
+        {
+            picParam.height_in_sbs_minus_1[i] =
+                (uint16_t)(info.tile_info.SbRowStarts[i + 1] - info.tile_info.SbRowStarts[i] - 1);
+        }
+
         picParam.context_update_tile_id = (uint16_t)info.tile_info.context_update_tile_id;
         // TODO: [Rev0.85] Add correct setting for large scale tile mode
         picParam.tile_count_minus_1 = 0;
-#endif
     }
 
-    void PackerVA::PackTileControlParams(VABitStreamParameterBufferAV1& tileControlParam, TileLocation const& loc)
+    void PackerVA::PackTileControlParams(VASliceParameterBufferAV1& tileControlParam, TileLocation const& loc)
     {
-        tileControlParam.bit_stream_data_offset = (uint32_t)loc.offset;
-        tileControlParam.bit_stream_data_size = (uint32_t)loc.size;
-        tileControlParam.bit_stream_data_flag = 0;
+        tileControlParam.Slice_data_offset = (uint32_t)loc.offset;
+        tileControlParam.Slice_data_size = (uint32_t)loc.size;
+        tileControlParam.Slice_data_flag = 0;
         tileControlParam.tile_row = (uint16_t)loc.row;
         tileControlParam.tile_column = (uint16_t)loc.col;
-        tileControlParam.start_tile_idx = (uint16_t)loc.startIdx;
-        tileControlParam.end_tile_idx = (uint16_t)loc.endIdx;
-        tileControlParam.anchor_frame_idx = 0;
+        tileControlParam.tg_start = (uint16_t)loc.startIdx;
+        tileControlParam.tg_end = (uint16_t)loc.endIdx;
     }
+
 } // namespace UMC_AV1_DECODER
 
 #endif //UMC_VA_LINUX

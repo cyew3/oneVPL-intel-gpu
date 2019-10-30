@@ -59,7 +59,7 @@ namespace UMC_AV1_DECODER
 
     private:
         void PackPicParams(VADecPictureParameterBufferAV1&, AV1DecoderFrame const&);
-        void PackTileControlParams(VABitStreamParameterBufferAV1&, TileLocation const&);
+        void PackTileControlParams(VASliceParameterBufferAV1&, TileLocation const&);
     };
 
 } // namespace UMC_AV1_DECODER

@@ -867,8 +867,8 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(int32_t type, int32_t size,
                 break;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
             case UMC::VA_AV1:
-                va_size         = sizeof(VABitStreamParameterBufferAV1);
-                va_num_elements = size/sizeof(VABitStreamParameterBufferAV1);
+                va_size         = sizeof(VASliceParameterBufferAV1);
+                va_num_elements = size/sizeof(VASliceParameterBufferAV1);
                 break;
 #endif
             default:
