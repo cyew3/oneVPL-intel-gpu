@@ -19,13 +19,11 @@ This sample was distributed or derived from the Intel's Media Samples package.
 #include "DecodingPipeline.h"
 #include "sample_defs.h"
 #include "MSDKHandle.h"
-#include "PluginsManager.h"
 
 #define WAIT_INTERVAL 20000
 #define BUFFERED_FRAMES_NUM 5
 
-CDecodingPipeline::CDecodingPipeline() : CThread11(1),
-    pluginsManager(session)
+CDecodingPipeline::CDecodingPipeline() : CThread11(1)
 {
     fileSource = nullptr;
     IsHWLib = true;
@@ -86,7 +84,10 @@ bool CDecodingPipeline::OnStart()
     decoderParams.AsyncDepth = AsyncDepth;
 
     reader.ReadNextFrame();
-    sts = LoadPluginsAndDecodeHeader(&reader.BitStream, codecID);
+
+    // Querying for correct parameters
+    sts = pDecoder->DecodeHeader(&reader.BitStream, &decoderParams);
+
     if (sts != MFX_ERR_NONE)
     {
         MSDK_PRINT_RET_MSG(sts, "Error reading stream header");
@@ -250,8 +251,6 @@ void CDecodingPipeline::Cleanup()
 
 	decodingSurfaces.clear();
     reader.Close();
-    
-	pluginsManager.UnloadAllPlugins();
 
 	session.Close();
 
@@ -324,55 +323,6 @@ void CDecodingPipeline::Load(Windows::Storage::StorageFile^ file)
     Stop();
     fileSource = file;
 }
-
-mfxStatus CDecodingPipeline::LoadPluginsAndDecodeHeader(mfxBitstream* pBS, mfxU32 codecID)
-{
-    mfxStatus sts = MFX_ERR_UNKNOWN;
-    mfxPluginUID guid;
-
-    //--- Load plugins if required (hardware version first, then software if hardware won't work)
-    mfxStatus stsPlugin = pluginsManager.LoadVideoPlugin(codecID, EPluginSpecification(PD_DECODE | PD_HARDWARE), &guid);
-    if (stsPlugin != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
-    {
-        if (stsPlugin >= MFX_ERR_NONE)
-        {
-            // Querying for correct parameters
-            sts = pDecoder->DecodeHeader(pBS, &decoderParams);
-
-            if (sts<MFX_ERR_NONE)
-            {
-                msdk_printf(MSDK_STRING("WARNING: HW plugin (%s) seems to be incompatible with current platform, so unloading it."), CPluginsManager::GUID2String(guid).c_str());
-                pluginsManager.UnloadPluginByGUID(guid);
-            }
-        }
-        else
-        {
-            msdk_printf(MSDK_STRING("ERROR: Requested HW (%s) plugin cannot be loaded, so we'll try with SW plugin."), CPluginsManager::GUID2String(guid).c_str());
-        }
-    }
-
-    if (stsPlugin != MFX_ERR_NONE || sts != MFX_ERR_NONE)
-    {
-        stsPlugin = pluginsManager.LoadVideoPlugin(codecID, EPluginSpecification(PD_DECODE | PD_SOFTWARE), &guid);
-        if (stsPlugin >= MFX_ERR_NONE)
-        {
-            // Querying for correct parameters
-            sts = pDecoder->DecodeHeader(pBS, &decoderParams);
-            if (sts<MFX_ERR_NONE)
-            {
-                if (stsPlugin != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
-                {
-                    //--- Unload plugin only if it was actually loaded
-                    msdk_printf(MSDK_STRING("ERROR: SW plugin (%s) might be incompatible with current platform, so unloading it."), CPluginsManager::GUID2String(guid).c_str());
-                    pluginsManager.UnloadPluginByGUID(guid);
-                }
-            }
-        }
-    }
-
-    return stsPlugin >= MFX_ERR_NONE ? sts : stsPlugin;
-}
-
 
 void CDecodingPipeline::EnqueueSurface(CMfxFrameSurfaceExt* surface)
 {

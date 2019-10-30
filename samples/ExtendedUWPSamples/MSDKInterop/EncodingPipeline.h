@@ -22,7 +22,6 @@ This sample was distributed or derived from the Intel's Media Samples package.
 
 #include "mfxvideo++.h"
 #include "StreamWriter.h"
-#include "PluginsManager.h"
 #include "surfacespool.h"
 
 #include <vector>
@@ -84,10 +83,6 @@ protected:
 	mfxU16 nEncSurfIdx = 0;     // index of free surface for encoder input (vpp output)
 
 	CStreamWriter* pStreamWriter = NULL;
-
-	CPluginsManager pluginsManager;
-
-	mfxStatus LoadPluginsAndQuery();
 };
 
 #endif // __ENCODING_PIPELINE_H__

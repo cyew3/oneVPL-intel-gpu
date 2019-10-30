@@ -19,7 +19,6 @@
     <ClCompile Include="d3d11_allocator.cpp" />
     <ClCompile Include="d3d11_device.cpp" />
     <ClCompile Include="DecodingPipeline.cpp" />
-    <ClCompile Include="PluginsManager.cpp" />
     <ClCompile Include="SimpleBitstreamReader.cpp" />
     <ClCompile Include="SurfacesPool.cpp" />
     <ClCompile Include="Thread11.cpp" />
@@ -45,7 +44,6 @@
     <ClInclude Include="MfxFrameSurfaceExt.h" />
     <ClInclude Include="MSDKHandle.h" />
     <ClInclude Include="MSDKTime.h" />
-    <ClInclude Include="PluginsManager.h" />
     <ClInclude Include="sample_defs.h" />
     <ClInclude Include="sample_types.h" />
     <ClInclude Include="simplebitstreamreader.h" />

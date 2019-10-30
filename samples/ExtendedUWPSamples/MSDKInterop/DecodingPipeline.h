@@ -27,7 +27,6 @@ This sample was distributed or derived from the Intel's Media Samples package.
 #include "SurfacesPool.h"
 #include "Thread11.h"
 #include "sample_defs.h"
-#include "PluginsManager.h"
 #include <mutex>
 
 using namespace Windows::Media::Core;
@@ -93,11 +92,8 @@ private:
 
     bool isDecodingEnding;
 
-    CPluginsManager pluginsManager;
     std::list<CMfxFrameSurfaceExt*> outputSurfaces;
     std::mutex mtxSurfaces;
-
-    mfxStatus LoadPluginsAndDecodeHeader(mfxBitstream* pBS, mfxU32 codecID);
 
     void EnqueueSurface(CMfxFrameSurfaceExt* surface);
 	void Cleanup();

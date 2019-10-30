@@ -35,8 +35,8 @@ mfxStatus CEncodingPipeline::SetEncParams(mfxVideoParam& pInParams)
 		MSDK_ALIGN16(pInParams.mfx.FrameInfo.Height) : MSDK_ALIGN32(pInParams.mfx.FrameInfo.Height);
 
 	// Loading plugin and querying for parameters
-	mfxStatus sts = LoadPluginsAndQuery();
-	MSDK_CHECK_STATUS(sts, "LoadPlugins/Query (for encoder) failed");
+	mfxStatus sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
+	MSDK_CHECK_STATUS(sts, "Query (for encoder) failed");
 
 	return MFX_ERR_NONE;
 }
@@ -86,7 +86,6 @@ CEncodingPipeline::CEncodingPipeline() :
 	m_mfxBS({ 0 })
 	, m_mfxEncParams({ 0 })
 	, m_encCtrl({ 0 })
-	, pluginsManager(m_mfxSession)
 	, m_pMFXAllocator(nullptr)
 	, m_pmfxAllocatorParams(nullptr)
 	, m_pmfxENC(nullptr)
@@ -162,8 +161,6 @@ void CEncodingPipeline::Close()
 
 	m_pmfxENC.reset();
 	m_mfxSession.Close();
-
-	pluginsManager.UnloadAllPlugins();
 
 	// allocator if used as external for MediaSDK must be deleted after SDK components
 	DeleteAllocator();
@@ -399,42 +396,4 @@ mfxStatus CEncodingPipeline::ProceedFrame(mfxFrameSurface1* pSurface, mfxSyncPoi
 	nFramesProcessed++;
 
 	return sts;
-}
-
-mfxStatus CEncodingPipeline::LoadPluginsAndQuery()
-{
-	mfxStatus sts = MFX_ERR_UNKNOWN;
-	mfxPluginUID guid;
-
-	//--- Load plugins if required (hardware version first, then software if hardware won't work)
-	mfxStatus stsPlugin = pluginsManager.LoadVideoPlugin(m_mfxEncParams.mfx.CodecId, EPluginSpecification(PD_ENCODE | PD_HARDWARE), &guid);
-	if (stsPlugin != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
-	{
-		if (stsPlugin >= MFX_ERR_NONE)
-		{
-			// Querying for correct parameters
-			sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
-			if (sts<MFX_ERR_NONE)
-			{
-				pluginsManager.UnloadPluginByGUID(guid);
-			}
-		}
-	}
-
-	if (stsPlugin != MFX_ERR_NONE || sts != MFX_ERR_NONE)
-	{
-		stsPlugin = pluginsManager.LoadVideoPlugin(m_mfxEncParams.mfx.CodecId, EPluginSpecification(PD_ENCODE | PD_SOFTWARE), &guid);
-		if (stsPlugin >= MFX_ERR_NONE)
-		{
-			// Querying for correct parameters
-			sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
-			if (sts<MFX_ERR_NONE)
-			{
-				pluginsManager.UnloadPluginByGUID(guid);
-			}
-
-		}
-	}
-
-	return stsPlugin >= MFX_ERR_NONE ? sts : stsPlugin;
 }
