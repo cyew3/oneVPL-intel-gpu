@@ -430,7 +430,6 @@
     <ClCompile Include="src\gmock\test_suites\multisession.cpp" />
     <ClCompile Include="src\gmock\test_suites\mvce_view_output.cpp" />
     <ClCompile Include="src\gmock\test_suites\mvc_sethandle_16.cpp" />
-    <ClCompile Include="src\gmock\test_suites\platform_unsupported.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_preenc_query_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_close.cpp" />

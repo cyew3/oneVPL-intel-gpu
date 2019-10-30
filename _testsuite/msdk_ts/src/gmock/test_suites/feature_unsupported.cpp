@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -138,66 +138,75 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                         { MaxKbps, 900, false }},
                                                         set_brc_params },
 #if !(defined(_WIN32) || defined(_WIN64))
+    //Protected content
+    {/*03*/ DECODE, MFX_CODEC_AVC,    E_UNSPRT, E_INVLID, {Protected, 1, true} },
+    {/*04*/ DECODE, MFX_CODEC_MPEG2,  E_UNSPRT, E_INVLID, {Protected, 1, true} },
+    {/*05*/ DECODE, MFX_CODEC_VC1,    E_UNSPRT, E_INVLID, {Protected, 1, true} },
+    {/*06*/ DECODE, MFX_CODEC_JPEG,   E_UNSPRT, E_INVLID, {Protected, 1, true} },
+    {/*07*/ VPP,    0,                E_UNSPRT, E_INVLID, {Protected, 1, true} },
+    {/*08*/ ENCODE, MFX_CODEC_AVC,    E_UNSPRT, E_INVLID, {Protected, 1, true} },
+    {/*09*/ ENCODE, MFX_CODEC_MPEG2,  E_UNSPRT, E_INVLID, {Protected, 1, true} },
+    {/*10*/ ENCODE, MFX_CODEC_JPEG,   E_UNSPRT, E_INVLID, {Protected, 1, true} },
     //Rate control
-    {/*3*/ ENCODE, MFX_CODEC_MPEG2, NONE,     W_INCOMP,{ RateCtrlMthd, MFX_RATECONTROL_AVBR     , false }, set_brc_params },
-    {/*4*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED1, true }, set_brc_params },
-    {/*5*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED2, true }, set_brc_params },
-    {/*6*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED3, true }, set_brc_params },
-    {/*7*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED4, true }, set_brc_params },
+    {/*11*/ ENCODE, MFX_CODEC_MPEG2, NONE,     W_INCOMP,{ RateCtrlMthd, MFX_RATECONTROL_AVBR     , false }, set_brc_params },
+    {/*12*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED1, true }, set_brc_params },
+    {/*13*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED2, true }, set_brc_params },
+    {/*14*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED3, true }, set_brc_params },
+    {/*15*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ RateCtrlMthd, MFX_RATECONTROL_RESERVED4, true }, set_brc_params },
     //FourCC
-    {/*8*/ VPP,           0,               E_UNSPRT, E_INVLID,{ { inFourCC, MFX_FOURCC_AYUV, true },{ outFourCC, MFX_FOURCC_AYUV, true } }, set_chromaformat_vpp },
+    {/*16*/ VPP,           0,               E_UNSPRT, E_INVLID,{ { inFourCC, MFX_FOURCC_AYUV, true },{ outFourCC, MFX_FOURCC_AYUV, true } }, set_chromaformat_vpp },
     //Fade Detection
-    {/*9*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.FadeDetection, MFX_CODINGOPTION_ON, true }, },
+    {/*17*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.FadeDetection, MFX_CODINGOPTION_ON, true }, },
     //{/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, { {&tsStruct::mfxExtCodingOptionVPS.VPSId,      0xFF },
     //                                                       {&tsStruct::mfxExtCodingOptionVPS.VPSBuffer,  (mfxU64) &g_StringsOfBuffers },
     //                                                       {&tsStruct::mfxExtCodingOptionVPS.VPSBufSize, (mfxU64) sizeof(g_StringsOfBuffers) } }},
     //WeightedPred, WeightedBiPred
-    {/*10*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedPred,   MFX_WEIGHTED_PRED_DEFAULT }, },
-    {/*11*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedPred,   MFX_WEIGHTED_PRED_EXPLICIT }, },
-    {/*12*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedPred,   MFX_WEIGHTED_PRED_IMPLICIT }, },
-    {/*13*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedBiPred, MFX_WEIGHTED_PRED_DEFAULT }, },
-    {/*14*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedBiPred, MFX_WEIGHTED_PRED_EXPLICIT }, },
-    {/*15*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedBiPred, MFX_WEIGHTED_PRED_IMPLICIT }, },
+    {/*18*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedPred,   MFX_WEIGHTED_PRED_DEFAULT }, },
+    {/*19*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedPred,   MFX_WEIGHTED_PRED_EXPLICIT }, },
+    {/*20*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedPred,   MFX_WEIGHTED_PRED_IMPLICIT }, },
+    {/*21*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedBiPred, MFX_WEIGHTED_PRED_DEFAULT }, },
+    {/*22*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedBiPred, MFX_WEIGHTED_PRED_EXPLICIT }, },
+    {/*23*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID,{ &tsStruct::mfxExtCodingOption3.WeightedBiPred, MFX_WEIGHTED_PRED_IMPLICIT }, },
 #endif
-    {/*03 / 16*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_ICQ      , true}, set_brc_params },
-    {/*04 / 17*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_VCM      , true}, set_brc_params },
-    {/*05 / 18*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA_ICQ   , true}, set_brc_params },
-    {/*06 / 19*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA_EXT   , true}, set_brc_params },
-    {/*07 / 20*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_QVBR     , true}, set_brc_params },
+    {/*03 / 24*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_ICQ      , true}, set_brc_params },
+    {/*04 / 25*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_VCM      , true}, set_brc_params },
+    {/*05 / 26*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA_ICQ   , true}, set_brc_params },
+    {/*06 / 27*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_LA_EXT   , true}, set_brc_params },
+    {/*07 / 28*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {RateCtrlMthd, MFX_RATECONTROL_QVBR     , true}, set_brc_params },
 
     //API 1.17
         //MFX_FOURCC_ABGR16
-    {/*08 / 21*/ DECODE|ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_ABGR16, true}, set_chromaformat_mfx },
-    {/*09 / 22*/ DECODE|ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_ABGR16, true}, set_chromaformat_mfx },
-    {/*10 / 23*/ VPP,           0,               E_UNSPRT, E_INVLID, { {inFourCC, MFX_FOURCC_ABGR16, true}, {outFourCC, MFX_FOURCC_ABGR16, true} }, set_chromaformat_vpp },
+    {/*08 / 29*/ DECODE|ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_ABGR16, true}, set_chromaformat_mfx },
+    {/*09 / 30*/ DECODE|ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_ABGR16, true}, set_chromaformat_mfx },
+    {/*10 / 31*/ VPP,           0,               E_UNSPRT, E_INVLID, { {inFourCC, MFX_FOURCC_ABGR16, true}, {outFourCC, MFX_FOURCC_ABGR16, true} }, set_chromaformat_vpp },
         //MFX_FOURCC_AYUV
-    {/*11 / 24*/ DECODE|ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_AYUV, true}, set_chromaformat_mfx },
-    {/*12 / 25*/ DECODE|ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_AYUV, true}, set_chromaformat_mfx },
+    {/*11 / 32*/ DECODE|ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_AYUV, true}, set_chromaformat_mfx },
+    {/*12 / 33*/ DECODE|ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_AYUV, true}, set_chromaformat_mfx },
         //MFX_FOURCC_AYUV_RGB4
-    {/*13 / 26*/ DECODE|ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_AYUV_RGB4, true}, set_chromaformat_mfx },
-    {/*14 / 27*/ DECODE|ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_AYUV_RGB4, true}, set_chromaformat_mfx },
-    {/*15 / 28*/ VPP,           0,               E_UNSPRT, E_INVLID, { {inFourCC, MFX_FOURCC_AYUV_RGB4, true}, {outFourCC, MFX_FOURCC_AYUV_RGB4, true} }, set_chromaformat_vpp },
+    {/*13 / 34*/ DECODE|ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_AYUV_RGB4, true}, set_chromaformat_mfx },
+    {/*14 / 35*/ DECODE|ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_AYUV_RGB4, true}, set_chromaformat_mfx },
+    {/*15 / 36*/ VPP,           0,               E_UNSPRT, E_INVLID, { {inFourCC, MFX_FOURCC_AYUV_RGB4, true}, {outFourCC, MFX_FOURCC_AYUV_RGB4, true} }, set_chromaformat_vpp },
         //MFX_FOURCC_UYVY
-    {/*16 / 29*/ DECODE|ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_UYVY, true}, set_chromaformat_mfx },
-    {/*17 / 30*/ DECODE|ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_UYVY, true}, set_chromaformat_mfx },
+    {/*16 / 37*/ DECODE|ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_UYVY, true}, set_chromaformat_mfx },
+    {/*17 / 38*/ DECODE|ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {mfxFourCC, MFX_FOURCC_UYVY, true}, set_chromaformat_mfx },
         //Unsupported ExtBuffer
-    {/*18 / 31*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL0Active, 0, false }, },
+    {/*18 / 39*/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL0Active, 0, false }, },
     //{/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, { {&tsStruct::mfxExtCodingOptionVPS.VPSId,      0xFF },
     //                                                       {&tsStruct::mfxExtCodingOptionVPS.VPSBuffer,  (mfxU64) &g_StringsOfBuffers },
     //                                                       {&tsStruct::mfxExtCodingOptionVPS.VPSBufSize, (mfxU64) sizeof(g_StringsOfBuffers) } }},
-    {/*19 / 32*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL0Active,   1, false }, },
-    {/*20 / 33*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL0Active,   2, false }, },
-    {/*21 / 34*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL0Active,   3, false }, },
-    {/*22 / 35*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL1Active,   0, false }, },
-    {/*23 / 36*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL1Active,   1, false }, },
-    {/*24 / 37*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL1Active,   2, false }, },
-//AVC ROI, DirtyRect, MoveRect
-    {/*25 / 38*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderROI.NumROI, 1} },
-    {/*26 / 39*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtDirtyRect.NumRect, 1} },
-    {/*27 / 40*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtMoveRect.NumRect,  1} },
+    {/*19 / 40*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL0Active,   1, false }, },
+    {/*20 / 41*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL0Active,   2, false }, },
+    {/*21 / 42*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL0Active,   3, false }, },
+    {/*22 / 43*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL1Active,   0, false }, },
+    {/*23 / 44*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL1Active,   1, false }, },
+    {/*24 / 45*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtAVCRefLists.NumRefIdxL1Active,   2, false }, },
+    //AVC ROI, DirtyRect, MoveRect
+    {/*25 / 46*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderROI.NumROI, 1} },
+    {/*26 / 47*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtDirtyRect.NumRect, 1} },
+    {/*27 / 48*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtMoveRect.NumRect,  1} },
 
-    {/*28 / 41*/ ENCODE, MFX_CODEC_AVC,     NONE, NONE, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
-    {/*30 / 43*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
+    {/*28 / 49*/ ENCODE, MFX_CODEC_AVC,     NONE, NONE, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
+    {/*30 / 50*/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
