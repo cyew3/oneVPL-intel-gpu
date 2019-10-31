@@ -705,6 +705,9 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     }
 #endif
 
+    if (m_mfxVideoParams.mfx.CodecId == MFX_CODEC_VP9)
+        m_mfxVideoParams.mfx.EnableReallocRequest = MFX_CODINGOPTION_ON;
+
     // try to find a sequence header in the stream
     // if header is not found this function exits with error (e.g. if device was lost and there's no header in the remaining stream)
     for (;;)
@@ -1242,6 +1245,7 @@ mfxStatus CDecodingPipeline::AllocFrames()
     {
         // initating each frame:
         MSDK_MEMCPY_VAR(m_pSurfaces[i].frame.Info, &(Request.Info), sizeof(mfxFrameInfo));
+        m_pSurfaces[i].frame.Data.MemType = Request.Type;
         if (m_bExternalAlloc) {
             m_pSurfaces[i].frame.Data.MemId = m_mfxResponse.mids[i];
             if (m_bVppFullColorRange)
@@ -1249,10 +1253,6 @@ mfxStatus CDecodingPipeline::AllocFrames()
                 m_pSurfaces[i].frame.Data.ExtParam = &m_VppSurfaceExtParams[0];
                 m_pSurfaces[i].frame.Data.NumExtParam = (mfxU16)m_VppSurfaceExtParams.size();
             }
-        }
-        else {
-            sts = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis, m_mfxResponse.mids[i], &(m_pSurfaces[i].frame.Data));
-            MSDK_CHECK_STATUS(sts, "m_pGeneralAllocator->Lock failed");
         }
     }
 
@@ -1267,14 +1267,36 @@ mfxStatus CDecodingPipeline::AllocFrames()
                 m_pVppSurfaces[i].frame.Data.NumExtParam = (mfxU16)m_VppSurfaceExtParams.size();
             }
         }
-        else {
-            sts = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis, m_mfxVppResponse.mids[i], &(m_pVppSurfaces[i].frame.Data));
-            if (MFX_ERR_NONE != sts) {
-                return sts;
-            }
-        }
     }
     return MFX_ERR_NONE;
+}
+
+mfxStatus CDecodingPipeline::ReallocCurrentSurface(const mfxFrameInfo & info)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxMemId inMid = nullptr;
+    mfxMemId outMid = nullptr;
+
+    if(!m_pGeneralAllocator)
+        return MFX_ERR_MEMORY_ALLOC;
+
+    m_pCurrentFreeSurface->frame.Info.CropW = info.CropW;
+    m_pCurrentFreeSurface->frame.Info.CropH = info.CropH;
+    m_mfxVideoParams.mfx.FrameInfo.Width =
+        MSDK_ALIGN16(std::max(info.Width, m_mfxVideoParams.mfx.FrameInfo.Width));
+    m_mfxVideoParams.mfx.FrameInfo.Height =
+        MSDK_ALIGN16(std::max(info.Height, m_mfxVideoParams.mfx.FrameInfo.Height));
+    m_pCurrentFreeSurface->frame.Info.Width = m_mfxVideoParams.mfx.FrameInfo.Width;
+    m_pCurrentFreeSurface->frame.Info.Height = m_mfxVideoParams.mfx.FrameInfo.Height;
+
+    inMid = m_pCurrentFreeSurface->frame.Data.MemId;
+
+    sts = m_pGeneralAllocator->ReallocFrame(inMid, &m_pCurrentFreeSurface->frame.Info,
+        m_pCurrentFreeSurface->frame.Data.MemType, &outMid);
+    if (MFX_ERR_NONE == sts)
+        m_pCurrentFreeSurface->frame.Data.MemId = outMid;
+
+    return sts;
 }
 
 mfxStatus CDecodingPipeline::CreateAllocator()
@@ -1856,6 +1878,23 @@ mfxStatus CDecodingPipeline::RunDecoding()
                 // need to go to the buffering loop prior to reset procedure
                 pBitstream = NULL;
                 sts = MFX_ERR_NONE;
+                continue;
+            } else if (MFX_ERR_REALLOC_SURFACE == sts) {
+                mfxVideoParam param{};
+                sts = m_pmfxDEC->GetVideoParam(&param);
+                if (MFX_ERR_NONE != sts) {
+                    // need to go to the buffering loop prior to reset procedure
+                    pBitstream = NULL;
+                    sts = MFX_ERR_NONE;
+                    continue;
+                }
+
+                sts = ReallocCurrentSurface(param.mfx.FrameInfo);
+                if (MFX_ERR_NONE != sts) {
+                    // need to go to the buffering loop prior to reset procedure
+                    pBitstream = NULL;
+                    sts = MFX_ERR_NONE;
+                }
                 continue;
             }
         }

@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010-2015 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2020 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_usage_models_allocator.h"
@@ -142,6 +142,22 @@ mfxStatus GeneralAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAll
 
 } // mfxStatus GeneralAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 
+
+mfxStatus GeneralAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut)
+{
+    if (!info || !midOut) return MFX_ERR_NULL_PTR;
+
+    mfxStatus sts;
+    if (memType & MFX_MEMTYPE_DXVA2_DECODER_TARGET || memType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
+    {
+        sts = m_HwAllocator->ReallocFrame(mid, info, memType, midOut);
+    }
+    else
+    {
+        sts = m_HwAllocator->ReallocFrame(mid, info, memType, midOut);
+    }
+    return sts;
+}
 
 void    GeneralAllocator::StoreFrameMids(bool isHwFrames, mfxFrameAllocResponse *response)
 {

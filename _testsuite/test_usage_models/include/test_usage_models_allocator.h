@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010-2015 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2020 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -81,6 +81,7 @@ protected:
 
     virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
+    virtual mfxStatus ReallocImpl(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut);
 
     void    StoreFrameMids(bool isHwFrames, mfxFrameAllocResponse *response);
     bool    isHwMid(mfxHDL mid);
