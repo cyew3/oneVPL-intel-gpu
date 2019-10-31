@@ -950,7 +950,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
 
                                 if(MFX_EXTBUFF_VPP_COMPOSITE == extDoUseIn->AlgList[algIdx])
                                 {
-                                    mfxSts = MFX_ERR_INVALID_VIDEO_PARAM;
+                                    mfxSts = MFX_ERR_UNSUPPORTED;
                                     continue; // stop working with ExtParam[i]
                                 }
 
