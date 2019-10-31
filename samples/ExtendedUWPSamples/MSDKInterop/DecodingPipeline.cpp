@@ -297,19 +297,6 @@ mfxStatus CDecodingPipeline::InitSession()
     sts = session.QueryIMPL(&impl); // get actual library implementation
     MSDK_CHECK_STATUS(sts, "m_mfxSession.QueryIMPL failed");
 
-    ////--- Initialize D3D11 device
-    //sts=dev.Init(0);
-    //MSDK_CHECK_STATUS(sts, "D3D11 Device Init failed");
-    //
-    ////--- Initialize D3D11 allocator
-    //mfxHDL hdl = NULL;
-    //sts = dev.GetHandle(MFX_HANDLE_D3D11_DEVICE, &hdl);
-    //MSDK_CHECK_STATUS(sts, "D3D11 Device GetHandle failed");
-    //session.SetHandle(MFX_HANDLE_D3D11_DEVICE, hdl);
-    //MSDK_CHECK_STATUS(sts, "SetHandle failed");
-
-//    D3D11AllocatorParams params;
-//    params.pDevice = reinterpret_cast<ID3D11Device*>(hdl);
     sts = allocator.Init(NULL);
     MSDK_CHECK_STATUS(sts, "Allocator Init failed");
     sts = session.SetFrameAllocator(&allocator);

@@ -50,11 +50,6 @@ public:
     void SetCodecID(mfxU32 codec) { codecID = codec; }
     bool IsHWLib;
     mfxU32 AsyncDepth;
-    mfxHDL GetHWDevHdl()
-    {
-        mfxHDL hdl = NULL;
-        return dev.GetHandle(MFX_HANDLE_D3D11_DEVICE, &hdl) >= MFX_ERR_NONE ? hdl : NULL;
-    }
 
     int GetProgressPromilleage() { return  reader.GetFileSize() ? (int)(reader.GetBytesProcessed() * 1000 / reader.GetFileSize()) : 0; }
     mfxVideoParam GetDecoderParams() { return isInitialized ? decoderParams : mfxVideoParam{ 0 }; }
@@ -66,6 +61,10 @@ protected:
     virtual bool OnStart() override;
     virtual bool RunOnce() override;
     virtual void OnClose() override;
+
+private:
+    CDecodingPipeline(const CDecodingPipeline&) = delete;
+    CDecodingPipeline& operator = (const CDecodingPipeline&) = delete;
 
 private:
     mfxStatus InitSession();
@@ -82,8 +81,6 @@ private:
     MFXVideoDECODE* pDecoder=NULL;
     mfxU32 codecID;
 
-    CD3D11Device dev;
-    //D3D11FrameAllocator allocator;
     SysMemFrameAllocator allocator;
     CSurfacesPool surfacesPool;
     std::list<CMfxFrameSurfaceExt*> decodingSurfaces;
