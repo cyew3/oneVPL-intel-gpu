@@ -1122,5 +1122,8 @@
     <ClCompile Include="src\gmock\test_suites\vpp_crop_query_init.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_reset_cbr_hrd_conf_vui.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
