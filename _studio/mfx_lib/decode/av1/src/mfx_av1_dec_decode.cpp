@@ -439,8 +439,9 @@ mfxStatus VideoDECODEAV1::Query(VideoCORE* core, mfxVideoParam* in, mfxVideoPara
     MFX_CHECK_NULL_PTR1(out);
 
     mfxStatus sts = MFX_VPX_Utility::Query(core, in, out, MFX_CODEC_AV1, core->GetHWType());
-    if (sts != MFX_ERR_NONE)
-        return sts;
+    MFX_CHECK_STS(sts);
+
+    out->mfx.FilmGrain = in->mfx.FilmGrain;
 
     eMFXPlatform platform = MFX_VPX_Utility::GetPlatform(core, out);
     if (platform != core->GetPlatformType())
@@ -450,6 +451,7 @@ mfxStatus VideoDECODEAV1::Query(VideoCORE* core, mfxVideoParam* in, mfxVideoPara
 #endif
     }
 
+    MFX_CHECK_STS(sts);
     return sts;
 }
 

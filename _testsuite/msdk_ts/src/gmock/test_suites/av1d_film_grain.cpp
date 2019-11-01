@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -124,8 +124,8 @@ namespace av1d_film_grain
         {/*02*/ MFX_ERR_NONE, CHECK_QUERY_IO_SURF, 0, 0, { {&tsStruct::mfxVideoParam.mfx.FilmGrain, NONZERO, SET},
                                                            {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY, SET},
                                                            {&tsStruct::mfxVideoParam.AsyncDepth, ASYNC_DEPTH, SET},
-                                                           {&tsStruct::mfxFrameAllocRequest.NumFrameMin, 2 * NUM_SURF_VIDEO, CHECK},
-                                                           {&tsStruct::mfxFrameAllocRequest.NumFrameSuggested, 2 * NUM_SURF_VIDEO, CHECK} } },
+                                                           {&tsStruct::mfxFrameAllocRequest.NumFrameMin, 2 * NUM_SURF_VIDEO + 1, CHECK},
+                                                           {&tsStruct::mfxFrameAllocRequest.NumFrameSuggested, 2 * NUM_SURF_VIDEO + 1, CHECK} } },
         // check that QueryIOSurf requests 1x surfaces for FilmGrain for system memory
         {/*03*/ MFX_ERR_NONE, CHECK_QUERY_IO_SURF, 0, 0, { {&tsStruct::mfxVideoParam.mfx.FilmGrain, ZERO, SET},
                                                            {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY, SET},
