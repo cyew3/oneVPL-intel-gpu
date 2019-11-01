@@ -1079,8 +1079,6 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
 
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FastCopySSE");
-            //static UMC::Mutex mutex; // This is thread-safe since C++11
-            //UMC::AutomaticUMCMutex guard(mutex);
             hRes |= pSurface->LockRect(&sLockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_LOCK_MEMORY);
             std::this_thread::sleep_for(std::chrono::milliseconds(20));

@@ -402,6 +402,7 @@ VideoDECODEVP9_HW::VideoDECODEVP9_HW(VideoCORE *p_core, mfxStatus *sts)
       m_frameOrder(0),
       m_statusReportFeedbackNumber(0),
       m_mGuard(),
+      m_mCopyGuard(),
       m_adaptiveMode(false),
       m_index(0),
       m_FrameAllocator(),
@@ -549,6 +550,8 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
     }
 
     MFX_CHECK_STS(sts);
+
+    m_mCopyGuard.resize(m_response.NumFrameActual);
 
     sts = m_core->CreateVA(&m_vInitPar, &m_request, &m_response, m_FrameAllocator.get());
     MFX_CHECK_STS(sts);
@@ -991,13 +994,17 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         mfxU16 dstMemType = opaqMemory ? (mfxU16) MFX_MEMTYPE_INTERNAL_FRAME : (mfxU16) MFX_MEMTYPE_EXTERNAL_FRAME;
         dstMemType |= systemMemory ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET;
 
-        mfxStatus sts = decoder.m_core->DoFastCopyWrapper(&surfaceDst, dstMemType, surfaceSrc, srcMemType);
-        MFX_CHECK_STS(sts);
+        mfxStatus sts = MFX_ERR_NONE;
+        {
+            UMC::AutomaticUMCMutex guardCopy(decoder.m_mCopyGuard[data.copyFromFrame]);
 
-        decoder.m_FrameAllocator->SetSfcPostProcessingFlag(true);
-        sts = decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.copyFromFrame, 0, false);
-        MFX_CHECK_STS(sts);
+            sts = decoder.m_core->DoFastCopyWrapper(&surfaceDst, dstMemType, surfaceSrc, srcMemType);
+            MFX_CHECK_STS(sts);
 
+            decoder.m_FrameAllocator->SetSfcPostProcessingFlag(true);
+            sts = decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.copyFromFrame, 0, false);
+            MFX_CHECK_STS(sts);
+        }
         if (data.currFrameId != -1)
            decoder.m_FrameAllocator->DecreaseReference(data.currFrameId);
         decoder.m_framesStorage->DecodeFrame(data.currFrameId);
@@ -1079,6 +1086,7 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     {
         if (data.showFrame)
         {
+            UMC::AutomaticUMCMutex guardCopy(decoder.m_mCopyGuard[data.currFrameId]);
             mfxStatus sts = decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.currFrameId, 0, false);
             MFX_CHECK_STS(sts);
         }

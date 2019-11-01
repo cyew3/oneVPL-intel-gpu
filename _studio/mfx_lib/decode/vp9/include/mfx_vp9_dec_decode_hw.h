@@ -34,6 +34,7 @@
 #include "umc_vp9_frame.h"
 #include <list>
 #include <set>
+#include <deque>
 
 namespace UMC_VP9_DECODER { class Packer; }
 
@@ -102,6 +103,7 @@ private:
     mfxU32                  m_statusReportFeedbackNumber;
 
     UMC::Mutex              m_mGuard;
+    std::deque<UMC::Mutex>  m_mCopyGuard; //For handling repeated frames
 
     bool                    m_adaptiveMode;
     mfxU32                  m_index;
