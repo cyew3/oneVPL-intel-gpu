@@ -111,13 +111,6 @@ public:
         return (m_map.find(key) != m_map.end());
     }
 
-    TKey UpperKey() const
-    {
-        if (Empty())
-            return 0;
-        return m_map.crbegin()->first + 1;
-    }
-
     bool Empty() const
     {
         return m_map.empty();
