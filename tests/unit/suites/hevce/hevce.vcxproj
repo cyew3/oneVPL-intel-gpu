@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Header.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Header.props" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6A003E21-DA8B-4B5B-800C-931523D80F9B}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>test_hevce</RootNamespace>
+    <ProjectName>test_hevce</ProjectName>
+    <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(MSBuildThisFileDirectory)hevce.props" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Default.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+  </PropertyGroup>
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Building.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\contrib\build\googletest\gmock.vcxproj">
+      <Project>{0060373a-26b6-324d-8b31-a1fd15770815}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\contrib\build\googletest\gtest.vcxproj">
+      <Project>{be595580-8023-35f2-8e73-c98debb85e23}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\contrib\build\googletest\gtest_main.vcxproj">
+      <Project>{c2b706a6-968d-355a-ae3d-c834291c9dfd}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\encode_hw\encode_hw.vcxproj">
+      <Project>{6e291a7c-090c-4922-bf63-cc83f06fb8b0}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\shared\mfx_common.vcxproj">
+      <Project>{5B832EA0-E58C-46B9-AFF6-2416CF805C09}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="hevce_feature_utils_blocks.cpp" />
+    <ClCompile Include="hevce_feature_utils_storage.cpp" />
+  </ItemGroup>
+  <Choose>
+    <When Condition=" '$(SolutionName)' == 'compare_struct' ">
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\..\_studio\shared\mfx_trace\mfx_trace.vcxproj">
+          <Project>{68ad0bd0-170b-4cea-8a55-d6b841d66203}</Project>
+        </ProjectReference>
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <ProjectReference Include="..\..\..\..\_studio\shared\mfx_trace\mfx_trace_hw.vcxproj">
+          <Project>{252BA91C-A180-41D8-8B2F-84904DD53000}</Project>
+        </ProjectReference>
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\run_suite.props" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Footer.props" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
