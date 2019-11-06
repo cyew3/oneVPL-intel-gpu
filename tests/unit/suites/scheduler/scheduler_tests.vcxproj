@@ -38,11 +38,11 @@
     <ClCompile Include="test_main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock.vcxproj">
-      <Project>{014D73AF-8FC7-4282-B25F-AA452C04B9B2}</Project>
+    <ProjectReference Include="..\..\..\..\contrib\build\googletest\gtest.vcxproj">
+      <Project>{be595580-8023-35f2-8e73-c98debb85e23}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock_main.vcxproj">
-      <Project>{5E197B84-F7CD-4A4A-98BE-E472765F5510}</Project>
+    <ProjectReference Include="..\..\..\..\contrib\build\googletest\gtest_main.vcxproj">
+      <Project>{c2b706a6-968d-355a-ae3d-c834291c9dfd}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\shared\mfx_common.vcxproj">
       <Project>{5B832EA0-E58C-46B9-AFF6-2416CF805C09}</Project>
