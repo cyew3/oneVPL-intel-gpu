@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_composition.cpp
 \* ****************************************************************************** */
@@ -139,10 +139,10 @@ namespace vpp_composition
             }
         }
     }
-  
+
   const tc_struct TestSuite::test_case[] =
     {
-        {/*00*/MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM,
+        {/*00*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM,
             {{MFX_PAR, &tsStruct::mfxExtVPPDoUse.NumAlg, 1}},
             { MFX_EXTBUFF_VPP_COMPOSITE }
         },

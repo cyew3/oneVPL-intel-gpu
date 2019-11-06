@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_query.cpp
 \* ****************************************************************************** */
@@ -415,6 +415,11 @@ namespace vpp_query
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
             }
+        }
+
+        if(g_tsHWtype <= MFX_HW_ICL && tc.expected_sts == MFX_WRN_PARTIAL_ACCELERATION)
+        {
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
         }
 
         Query(work_ses, m_pPar, m_pParOut);
