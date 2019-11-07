@@ -781,7 +781,7 @@ namespace MfxHwVideoProcessing
         mfxStatus CameraPipeSetVignetteParams(CameraVignetteCorrectionParams *params);
         mfxStatus CameraPipeSetLensParams(CameraLensCorrectionParams *params);
         mfxStatus SetStreamScalingMode(UINT StreamIndex, VPE_VPREP_SCALING_MODE_PARAM param);
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= 1025)
         mfxStatus SetStreamChromaSiting(UINT StreamIndex, VPE_VPREP_CHROMASITING_PARAM param);
 #endif
 

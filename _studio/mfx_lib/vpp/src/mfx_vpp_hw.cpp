@@ -5751,7 +5751,7 @@ mfxStatus ConfigureExecuteParams(
 
                 break;
             }
-#endif // #ifndef MFX_FUTURE_FEATURE_DISABLE
+#endif
             case MFX_EXTBUFF_VPP_MIRRORING:
             {
                 if (caps.uMirroring)

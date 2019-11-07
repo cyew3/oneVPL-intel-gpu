@@ -690,7 +690,7 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 break;
             }
 
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= 1025)
             case (mfxU32)MFX_EXTBUFF_VPP_COLOR_CONVERSION:
             {
                 sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_COLOR_CONVERSION");
@@ -884,7 +884,7 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 fprintf(stderr,"MFX_EXTBUFF_VPP_SCALING\n");
                 break;
             }
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= 1025)
             case (mfxU32)MFX_EXTBUFF_VPP_COLOR_CONVERSION:
             {
                 fprintf(stderr,"MFX_EXTBUFF_VPP_COLOR_CONVERSION\n");

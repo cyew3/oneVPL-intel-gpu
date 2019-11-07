@@ -1295,7 +1295,7 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
         }
 
         bltParams.ChromaSitingObject = chromaSitingObject;
-#endif // #ifndef MFX_FUTURE_FEATURE_DISABLE
+#endif
     //}
     sts = ExecuteBlt( &bltParams );
     MFX_CHECK_STS(sts);

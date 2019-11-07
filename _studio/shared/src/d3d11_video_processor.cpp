@@ -2017,7 +2017,7 @@ mfxStatus D3D11VideoProcessor::SetStreamScalingMode(UINT streamIndex, VPE_VPREP_
     return MFX_ERR_NONE;
 }
 
-#ifndef MFX_FUTURE_FEATURE_DISABLE
+#if (MFX_VERSION >= 1025)
 mfxStatus D3D11VideoProcessor::SetStreamChromaSiting(UINT streamIndex, VPE_VPREP_CHROMASITING_PARAM param)
 {
     HRESULT hRes;
@@ -2349,7 +2349,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             MFX_CHECK_STS(sts);
         }
     }
-#endif // #ifndef MFX_FUTURE_FEATURE_DISABLE
+#endif
 
     // [4] ProcAmp
     if(pParams->bEnableProcAmp)
@@ -2884,6 +2884,10 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0x03ff) / 1023.0f;
         Color.YCbCr.Cr = ((pParams->iBackgroundColor) & 0x03ff) / 1023.0f;
     }
+
+    //  D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255 :            Customer Black=0  Driver receives Black =0
+    //  D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_255 :            Customer Black=16  Driver receives Black = 16
+
     if (outInfo->FourCC == MFX_FOURCC_RGB3    ||
         outInfo->FourCC == MFX_FOURCC_RGB4    ||
         outInfo->FourCC == MFX_FOURCC_BGR4    ||
