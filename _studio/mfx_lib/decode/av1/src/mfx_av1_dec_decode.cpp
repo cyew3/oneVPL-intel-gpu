@@ -791,7 +791,7 @@ static mfxStatus CheckFrameInfo(mfxFrameInfo const &currInfo, mfxFrameInfo &info
 
     MFX_CHECK(currInfo.FourCC == info.FourCC, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    MFX_CHECK(info.Width < currInfo.Width || info.Height < currInfo.Height, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    MFX_CHECK(info.Width >= currInfo.Width && info.Height >= currInfo.Height, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     return MFX_ERR_NONE;
 }
