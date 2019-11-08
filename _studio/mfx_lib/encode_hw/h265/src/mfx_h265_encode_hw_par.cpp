@@ -2426,6 +2426,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
         }
     }
 
+    if (par.isTL())
+        changed += CheckOption(par.mfx.GopRefDist, 1, 0);
+
     if (   par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID
            && par.mfx.GopRefDist > 0
            && ( par.mfx.GopRefDist < 2
@@ -2484,9 +2487,6 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
             }
             prev = i;
         }
-
-        if (par.isTL())
-            changed += CheckOption(par.mfx.GopRefDist, 1, 0);
     }
 
     changed += CheckRangeDflt(par.m_ext.CO2.IntRefQPDelta, -51, 51, 0);

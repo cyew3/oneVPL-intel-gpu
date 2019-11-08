@@ -984,7 +984,8 @@ void FillSpsBuffer(
         }
         else
         {
-            if (par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID)
+            if (par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID ||
+                par.m_ext.CO3.PRefType == MFX_P_REF_PYRAMID)
                 sps.HierarchicalFlag = 1;
         }
     }
