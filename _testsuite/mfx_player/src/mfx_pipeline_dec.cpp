@@ -373,6 +373,32 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
     m_components[eREN].m_params.IOPattern = m_components[eREN].GetIoPatternIn();
     m_components[eVPP].m_params.IOPattern = m_components[eDEC].GetIoPatternIn() | m_components[eREN].GetIoPatternOut();
 
+    //vpp size params
+    if (m_inParams.bUseVPP)
+    {
+        if (m_components[eVPP].m_rotate == 270 || m_components[eVPP].m_rotate == 90)
+        {
+            std::swap(m_components[eREN].m_params.mfx.FrameInfo.Width, m_components[eREN].m_params.mfx.FrameInfo.Height);
+            std::swap(m_components[eREN].m_params.mfx.FrameInfo.CropW, m_components[eREN].m_params.mfx.FrameInfo.CropH);
+        }
+    }
+
+    if (NULL != m_pRender)
+    {
+        mfxVideoParam params = m_components[eREN].m_params;
+        MFXExtBufferVector ExtBuffers(m_components[eREN].m_params);
+
+        if (!ExtBuffers.empty())
+        {
+            params.ExtParam = ExtBuffers.data();
+            params.NumExtParam = (mfxU16)ExtBuffers.size();
+        }
+
+        MFX_CHECK_STS_CUSTOM_HANDLER(m_pRender->Query(&params, &m_components[eREN].m_params), {
+            PipelineTrace((VM_STRING("%s"), MFXStructuresPair<mfxVideoParam>(params, m_components[eREN].m_params).Serialize().c_str()));
+        });
+    }
+
     //numthread could be modified by decode header
     m_components[eDEC].m_params.mfx.NumThread =  m_components[eDEC].m_NumThread;
     m_components[eREN].m_params.mfx.NumThread =  m_components[eREN].m_NumThread;
@@ -394,12 +420,7 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
     //vpp size params
     if (m_inParams.bUseVPP)
     {
-        m_components[eVPP].m_params.vpp.In  = m_components[eDEC].m_params.mfx.FrameInfo;
-        if ( m_components[eVPP].m_rotate == 270 || m_components[eVPP].m_rotate == 90 )
-        {
-            std::swap(m_components[eREN].m_params.mfx.FrameInfo.Width, m_components[eREN].m_params.mfx.FrameInfo.Height);
-            std::swap(m_components[eREN].m_params.mfx.FrameInfo.CropW, m_components[eREN].m_params.mfx.FrameInfo.CropH);
-        }
+        m_components[eVPP].m_params.vpp.In = m_components[eDEC].m_params.mfx.FrameInfo;
         m_components[eVPP].m_params.vpp.Out = m_components[eREN].m_params.mfx.FrameInfo;
         // in case of JPEG, input of vpp is already progressive: one is weaved right after decode
         if ( m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_JPEG
@@ -436,22 +457,6 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         refInfo.PicStruct   = m_components[eDEC].m_nOverPS;
         refInfo.Width       = mfx_align(refInfo.Width, 0x10);
         refInfo.Height      = mfx_align(refInfo.Height,(bProg) ? 0x10 : 0x20);
-    }
-
-    if (NULL != m_pRender)
-    {
-        mfxVideoParam params = m_components[eREN].m_params;
-        MFXExtBufferVector ExtBuffers(m_components[eREN].m_params);
-
-        if (!ExtBuffers.empty())
-        {
-            params.ExtParam = ExtBuffers.data();
-            params.NumExtParam = (mfxU16)ExtBuffers.size();
-        }
-
-        MFX_CHECK_STS_CUSTOM_HANDLER(m_pRender->Query(&params, &m_components[eREN].m_params), {
-            PipelineTrace((VM_STRING("%s"), MFXStructuresPair<mfxVideoParam>(params, m_components[eREN].m_params).Serialize().c_str()));
-        });
     }
 
     //cmd line params should be modified for par file
