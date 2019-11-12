@@ -62,12 +62,19 @@ void HRD::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         if (task.NumRecode == 0)
             task.cpb_removal_delay = !!task.EncodedOrder * (task.EncodedOrder - m_prevBpEncOrderAsync);
 
-        if (task.InsertHeaders & INSERT_BPSEI)
+        bool bBPSEI    = (task.InsertHeaders & INSERT_BPSEI);
+        bool bSetBPPar =
+            bBPSEI
+            && !task.initial_cpb_removal_delay
+            && !task.initial_cpb_removal_offset;
+
+        if (bSetBPPar)
         {
             task.initial_cpb_removal_delay = GetInitCpbRemovalDelay(task.EncodedOrder);
             task.initial_cpb_removal_offset = GetInitCpbRemovalDelayOffset();
-            m_prevBpEncOrderAsync = task.EncodedOrder;
         }
+
+        SetIf(m_prevBpEncOrderAsync, bBPSEI, task.EncodedOrder);
 
         return MFX_ERR_NONE;
     });

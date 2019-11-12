@@ -332,6 +332,11 @@ namespace MfxHwH264Encode
 #if USE_AGOP
     static bool IsZero (mfxU32 i) { return (i == 0); }
 #endif
+    enum
+    {
+        H264_FRAME_FLAG_SKIPPED = 1,
+        H264_FRAME_FLAG_READY = 2
+    };
 
     class MfxFrameAllocResponse : public mfxFrameAllocResponse
     {
@@ -384,6 +389,11 @@ namespace MfxHwH264Encode
         mfxU32 Unlock(mfxU32 idx);
 
         mfxU32 Locked(mfxU32 idx) const;
+
+        void   ClearFlag(mfxU32 idx);
+        void   SetFlag(mfxU32 idx, mfxU32 flag);
+        mfxU32 GetFlag(mfxU32 idx) const;
+
 #if USE_AGOP //for debug
         mfxI32 CountNonLocked(){ return std::count_if(m_locked.begin(), m_locked.end(), IsZero); }
         mfxI32 CountLocked(){ return m_locked.size() - std::count_if(m_locked.begin(), m_locked.end(), IsZero); }
@@ -407,6 +417,7 @@ namespace MfxHwH264Encode
         std::vector<mfxFrameAllocResponse> m_responseQueue;
         std::vector<mfxMemId>              m_mids;
         std::vector<mfxU32>                m_locked;
+        std::vector<mfxU32>                m_flag;
         std::vector<void *>                m_sysmems;
     };
 
@@ -1038,7 +1049,8 @@ namespace MfxHwH264Encode
             , m_midMBQP(MID_INVALID)
             , m_isMBQP(false)
             , m_isUseRawRef(false)
-
+            , m_isSkipped (false)
+            , m_toRecode (false)
             , m_isMBControl(false)
             , m_midMBControl(MID_INVALID)
             , m_idxMBControl(NO_INDEX)
@@ -1299,6 +1311,8 @@ namespace MfxHwH264Encode
         mfxMemId m_midMBQP;
         bool     m_isMBQP;
         bool     m_isUseRawRef;
+        bool     m_isSkipped;
+        bool     m_toRecode;
 
         bool     m_isMBControl;
         mfxMemId m_midMBControl;
@@ -2238,6 +2252,10 @@ namespace MfxHwH264Encode
 
         mfxStatus AsyncRoutine(
             mfxBitstream * bs);
+
+        mfxStatus CheckSliceSize(DdiTask &task, bool &bToRecode);
+        mfxStatus CheckBufferSize(DdiTask &task, bool &bToRecode, mfxU32 bsDataLength, mfxBitstream * bs);
+        mfxStatus CheckBRCStatus(DdiTask &task, bool &bToRecode, mfxU32 bsDataLength);
 
         void OnNewFrame();
         void SubmitScd();
@@ -3646,10 +3664,12 @@ namespace MfxHwH264Encode
         DdiTask const &       task,
         mfxHDLPair &          handle);
 
+    bool IsFrameToSkip(DdiTask&  task, MfxFrameAllocResponse & poolRec, std::vector<mfxU32> fo, bool bSWBRC);
     mfxStatus CodeAsSkipFrame(  VideoCORE&            core,
                                 MfxVideoParam const & video,
                                 DdiTask&       task,
-                                MfxFrameAllocResponse & pool);
+                                MfxFrameAllocResponse & pool,
+                                MfxFrameAllocResponse & poolRec);
     mfxStatus CopyRawSurfaceToVideoMemory(
         VideoCORE &           core,
         MfxVideoParam const & video,

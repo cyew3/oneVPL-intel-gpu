@@ -2756,8 +2756,8 @@ void PackBPPayload(BitstreamWriter& rbsp, MfxVideoParam const & par, Task const 
     BufferingPeriodSEI bp = {};
 
     bp.seq_parameter_set_id = par.m_sps.seq_parameter_set_id;
-    bp.nal[0].initial_cpb_removal_delay  = bp.vcl[0].initial_cpb_removal_delay  = task.m_initial_cpb_removal_delay;
-    bp.nal[0].initial_cpb_removal_offset = bp.vcl[0].initial_cpb_removal_offset = task.m_initial_cpb_removal_offset;
+    bp.nal[0].initial_cpb_removal_delay  = bp.vcl[0].initial_cpb_removal_delay  = task.m_brcFrameCtrl.InitialCpbRemovalDelay;
+    bp.nal[0].initial_cpb_removal_offset = bp.vcl[0].initial_cpb_removal_offset = task.m_brcFrameCtrl.InitialCpbRemovalOffset;
 
     mfxU32 size = CeilDiv(rbsp.GetOffset(), 8);
     mfxU8* pl = rbsp.GetStart() + size; // payload start

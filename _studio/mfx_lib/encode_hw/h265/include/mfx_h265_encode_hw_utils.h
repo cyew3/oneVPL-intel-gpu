@@ -232,6 +232,11 @@ inline mfxStatus GetWorstSts(mfxStatus sts1, mfxStatus sts2)
 
     return sts_min == MFX_ERR_NONE ? sts_max : sts_min;
 }
+enum
+{
+    H265_FRAME_FLAG_SKIPPED = 1,
+    H265_FRAME_FLAG_READY = 2
+};
 
 class MfxFrameAllocResponse : public mfxFrameAllocResponse
 {
@@ -374,13 +379,10 @@ struct Task : DpbFrame
 
     bool              m_resetBRC                      = false;
 
-    mfxU32            m_initial_cpb_removal_delay     = 0;
-    mfxU32            m_initial_cpb_removal_offset    = 0;
     mfxU32            m_cpb_removal_delay             = 0;
     mfxU32            m_dpb_output_delay              = 0;
 
     mfxU32            m_stage                         = 0;
-    mfxU32            m_recode                        = 0;
     IntraRefreshState m_IRState                       = {};
     bool              m_bSkipped                      = false;
 
@@ -416,6 +418,8 @@ struct Task : DpbFrame
 #endif
 
     eMFXHWType        m_platform                      = MFX_HW_UNKNOWN; // added temporarily to use different QpModulation behavior
+    mfxBRCFrameParam  m_brcFrameParams                = {};
+    mfxBRCFrameCtrl m_brcFrameCtrl                    = {};
 };
 
 enum

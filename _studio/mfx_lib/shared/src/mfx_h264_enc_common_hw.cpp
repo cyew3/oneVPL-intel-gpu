@@ -6491,7 +6491,9 @@ void MfxHwH264Encode::SetDefaults(
 
         if (par.calcParam.initialDelayInKB == 0 && IsHRDBasedBRCMethod(par.mfx.RateControlMethod))
         {
-            par.calcParam.initialDelayInKB = par.calcParam.bufferSizeInKB / 2;
+            par.calcParam.initialDelayInKB = (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR && isSWBRC(par)) ?
+                3*par.calcParam.bufferSizeInKB / 4:
+                par.calcParam.bufferSizeInKB / 2;
             par.calcParam.mvcPerViewPar.initialDelayInKB = par.calcParam.mvcPerViewPar.bufferSizeInKB / 2;
         }
     }

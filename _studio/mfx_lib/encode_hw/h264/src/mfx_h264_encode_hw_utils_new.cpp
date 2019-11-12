@@ -2140,6 +2140,7 @@ void MfxHwH264Encode::ConfigureTask(
 
 
     task.m_isUseRawRef = IsOn(extOpt2.UseRawRef);
+    task.m_isSkipped = false;
     if (task.m_isUseRawRef && extOpt2Runtime)
       task.m_isUseRawRef = !IsOff(extOpt2Runtime->UseRawRef);
 
@@ -2571,10 +2572,29 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
 
     return MFX_ERR_NONE;
 }
+bool MfxHwH264Encode::IsFrameToSkip(DdiTask&  task, MfxFrameAllocResponse & poolRec, std::vector<mfxU32> fo, bool bSWBRC)
+{
+    if (task.m_isSkipped)
+        return true;
+
+    mfxI32 fid = task.m_fid[0];
+    if (task.m_list1[fid].Size() && bSWBRC && (task.GetFrameType() & MFX_FRAMETYPE_B))
+    {
+        mfxU8 ind = task.m_list1[fid][0] & 127;
+        if (ind < 15 )
+        {
+            ArrayDpbFrame & dpb = task.m_dpb[0];
+            mfxU32 idxRec = mfxU32(std::find(fo.begin(), fo.end(), dpb[ind].m_frameOrder) - fo.begin());
+            return ((poolRec.GetFlag(idxRec) & H264_FRAME_FLAG_SKIPPED) != 0);
+        }
+    }
+    return false;
+}
 mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
                                                 MfxVideoParam const &  video,
                                                 DdiTask&       task,
-                                                MfxFrameAllocResponse & pool)
+                                                MfxFrameAllocResponse & pool,
+                                                MfxFrameAllocResponse & poolRec)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -2614,8 +2634,10 @@ mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
     else
     {
         mfxI32 fid = task.m_fid[0];
-        MFX_CHECK(task.m_list0[fid].Size(), MFX_ERR_UNDEFINED_BEHAVIOR);
-        DpbFrame& refFrame = task.m_dpb[0][task.m_list0[fid][0] & 127];
+        mfxU8 ind = ((task.GetFrameType() & MFX_FRAMETYPE_B)  && task.m_list1[fid].Size() != 0) ? task.m_list1[fid][0] : task.m_list0[fid][0];
+        MFX_CHECK(ind < 15, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        DpbFrame& refFrame = task.m_dpb[0][ind];
         mfxFrameData curr = {};
         mfxFrameData ref = {};
         curr.MemId = task.m_midRaw;
@@ -2623,11 +2645,17 @@ mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
 
         mfxFrameSurface1 surfSrc = { {0,}, video.mfx.FrameInfo, ref  };
         mfxFrameSurface1 surfDst = { {0,}, video.mfx.FrameInfo, curr };
-        sts = core.DoFastCopyWrapper(&surfDst,MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE);
+        if ((poolRec.GetFlag(refFrame.m_frameIdx) & H264_FRAME_FLAG_READY) != 0)
+        {
+            sts = core.DoFastCopyWrapper(&surfDst, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE);
 
+            if (ind != 0)
+                poolRec.SetFlag(refFrame.m_frameIdx, H264_FRAME_FLAG_SKIPPED);
+        }
+        else
+            return MFX_WRN_DEVICE_BUSY;
     }
-
-
+    poolRec.SetFlag(task.m_idxRecon, H264_FRAME_FLAG_SKIPPED);
     return sts;
 }
 

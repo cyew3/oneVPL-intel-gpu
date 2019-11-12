@@ -745,6 +745,7 @@ namespace Gen11
     enum eRecFlag
     {
         REC_SKIPPED = 1
+        , REC_READY = 2
     };
 
     struct TaskCommonPar

@@ -53,19 +53,21 @@ namespace VmeBrcWrapper
     {
         MFX_CHECK_NULL_PTR3(pthis, par, ctrl);
 
-        //only EncodedOrder is really used by VMEBrc::GetQP
-        MfxHwH265Encode::MfxVideoParam fakePar;
+        //only EncodedOrder is really used by VMEBrc::GetFrameCtrl
         MfxHwH265Encode::Task task;
         task.m_eo = par->EncodedOrder;
 
-        ctrl->QpY = ((TBRC*)pthis)->GetQP(fakePar, task);
+        auto sts = ((TBRC*)pthis)->GetFrameCtrl(task);
 
-        return MFX_ERR_NONE;
+        ctrl->QpY = task.m_qpY;
+
+        return sts;
     }
-    static mfxStatus Update(mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl*, mfxBRCFrameStatus* status)
+    static mfxStatus Update(mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status)
     {
         MFX_CHECK_NULL_PTR3(pthis, par, status);
-        ((TBRC*)pthis)->Report(par->FrameType, par->CodedFrameSize, 0, 0, par->EncodedOrder, 0, 0);
+        MFX_CHECK_NULL_PTR1(ctrl);
+        ((TBRC*)pthis)->Report(par->FrameType, par->CodedFrameSize, 0, 0, par->EncodedOrder, 0, mfxU32(ctrl->QpY));
 
         status->BRCStatus = MFX_BRC_OK;
 
@@ -439,6 +441,12 @@ void ExtBRC::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
         mfxStatus sts = m_brc.GetFrameCtrl(m_brc.pthis, &fp, &fc);
         MFX_CHECK_STS(sts);
 
+        SetDefault(fc.InitialCpbRemovalDelay, task.initial_cpb_removal_delay);
+        SetDefault(fc.InitialCpbRemovalOffset, task.initial_cpb_removal_offset);
+
+        task.initial_cpb_removal_delay  = fc.InitialCpbRemovalDelay;
+        task.initial_cpb_removal_offset = fc.InitialCpbRemovalOffset;
+
         task.QpY = mfxI8(mfx::clamp(fc.QpY, minQP, maxQP));
         sh.slice_qp_delta = mfxI8(task.QpY - (pps.init_qp_minus26 + 26));
 
@@ -492,6 +500,8 @@ void ExtBRC::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
         default:
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
+
+        task.bForceSync |= task.bSkip;
 
         return MFX_ERR_NONE;
     });

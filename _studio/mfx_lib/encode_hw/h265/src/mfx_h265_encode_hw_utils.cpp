@@ -3999,7 +3999,7 @@ bool IsFrameToSkip(Task&  task, MfxFrameAllocResponse & poolRec, bool bSWBRC)
         mfxU8 ind =  task.m_refPicList[1][0];
         if (ind < 15)
         {
-            return poolRec.GetFlag(task.m_dpb[0][ind].m_idxRec)!=0;
+            return ((poolRec.GetFlag(task.m_dpb[0][ind].m_idxRec)& H265_FRAME_FLAG_SKIPPED) != 0);
         }
     }
     return false;
@@ -4055,14 +4055,17 @@ mfxStatus CodeAsSkipFrame(     VideoCORE &            core,
         mfxFrameSurface1 surfSrc = { {0,}, video.mfx.FrameInfo, src };
         mfxFrameSurface1 surfDst = { {0,}, video.mfx.FrameInfo, dst };
 
-        sts = core.DoFastCopyWrapper(&surfDst, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE);
-        MFX_CHECK_STS(sts);
+        if ((poolRec.GetFlag(refFrame.m_idxRec) & H265_FRAME_FLAG_READY) != 0)
+        {
+            sts = core.DoFastCopyWrapper(&surfDst, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE);
+            MFX_CHECK_STS(sts);
 
-        if (ind!=0)
-            poolRec.SetFlag(refFrame.m_idxRec, 1);
+            if (ind != 0)
+                poolRec.SetFlag(refFrame.m_idxRec, H265_FRAME_FLAG_SKIPPED);
+        }
 
     }
-    poolRec.SetFlag(task.m_idxRec, 1);
+    poolRec.SetFlag(task.m_idxRec, H265_FRAME_FLAG_SKIPPED);
 
 
     return sts;

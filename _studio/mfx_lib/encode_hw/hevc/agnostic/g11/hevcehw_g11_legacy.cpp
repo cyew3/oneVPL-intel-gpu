@@ -1681,6 +1681,8 @@ void Legacy::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
 
         MFX_CHECK(task.bSkip, MFX_ERR_NONE);
 
+        task.bForceSync = true;
+
         if (IsI(task.FrameType))
         {
             MFX_CHECK(
@@ -1695,38 +1697,41 @@ void Legacy::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
 
             memset(raw.Y, 0, size);
             memset(raw.UV, UVFiller, size >> 1);
+
+            allocRec.SetFlag(task.Rec.Idx, REC_SKIPPED);
+
+            return MFX_ERR_NONE;
         }
-        else
-        {
-            auto& core = Glob::VideoCore::Get(global);
 
-            bool bL1 = (IsB(task.FrameType) && !task.isLDB && task.NumRefActive[1]);
-            auto idx = task.RefPicList[bL1][0];
+        auto& core = Glob::VideoCore::Get(global);
+        bool  bL1  = (IsB(task.FrameType) && !task.isLDB && task.NumRefActive[1]);
+        auto  idx  = task.RefPicList[bL1][0];
 
-            mfxFrameSurface1 surfSrc = {};
-            mfxFrameSurface1 surfDst = {};
+        mfxFrameSurface1 surfSrc = {};
+        mfxFrameSurface1 surfDst = {};
 
-            surfSrc.Info = par.mfx.FrameInfo;
-            surfDst.Info = allocRec.Info();
+        surfSrc.Info = par.mfx.FrameInfo;
+        surfDst.Info = allocRec.Info();
 
-            MFX_CHECK(!memcmp(&surfSrc.Info, &surfDst.Info, sizeof(mfxFrameInfo)), MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(idx < MAX_DPB_SIZE, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(!memcmp(&surfSrc.Info, &surfDst.Info, sizeof(mfxFrameInfo)), MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(idx < MAX_DPB_SIZE, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-            auto& ref = task.DPB.Active[idx];
-
-            surfSrc.Data.MemId = ref.Rec.Mid;
-            surfDst.Data.MemId = task.Raw.Mid;
-
-            FrameLocker lock_dst(core, surfSrc.Data);
-            FrameLocker lock_src(core, surfDst.Data);
-
-            mfxStatus sts = core.CopyFrame(&surfDst, &surfSrc);
-            MFX_CHECK_STS(sts);
-
-            allocRec.SetFlag(ref.Rec.Idx, REC_SKIPPED * !!idx);
-        }
+        auto& ref = task.DPB.Active[idx];
 
         allocRec.SetFlag(task.Rec.Idx, REC_SKIPPED);
+
+        MFX_CHECK(allocRec.GetFlag(ref.Rec.Idx) & REC_READY, MFX_ERR_NONE);
+
+        surfSrc.Data.MemId = ref.Rec.Mid;
+        surfDst.Data.MemId = task.Raw.Mid;
+
+        FrameLocker lock_dst(core, surfSrc.Data);
+        FrameLocker lock_src(core, surfDst.Data);
+
+        mfxStatus sts = core.CopyFrame(&surfDst, &surfSrc);
+        MFX_CHECK_STS(sts);
+
+        allocRec.SetFlag(ref.Rec.Idx, REC_SKIPPED * !!idx);
 
         return MFX_ERR_NONE;
     });
@@ -1965,6 +1970,8 @@ void Legacy::FreeTask(const FeatureBlocks& /*blocks*/, TPushFT Push)
         ThrowAssert(!!task.pSurfIn, "failed in core.DecreaseReference");
 
         auto& atrRec = Glob::AllocRec::Get(global);
+
+        atrRec.SetFlag(task.Rec.Idx, REC_READY);
 
         ThrowAssert(
             !IsRef(task.FrameType)
@@ -3450,7 +3457,8 @@ void SetDefaultBRC(
     {
         TargetKbps(par.mfx) = defPar.base.GetTargetKbps(defPar);
         SetDefault<mfxU16>(par.mfx.MaxKbps, par.mfx.TargetKbps);
-        SetDefault<mfxU16>(par.mfx.InitialDelayInKB, par.mfx.BufferSizeInKB / 2);
+        SetDefault<mfxU16>(par.mfx.InitialDelayInKB
+            , par.mfx.BufferSizeInKB * (2 + (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR && Legacy::IsSWBRC(par, ExtBuffer::Get(par)))) / 4);
     }
 
     if (bSetICQ)

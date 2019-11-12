@@ -3099,7 +3099,7 @@ void SetDefaults(
             par.BufferSizeInKB = std::max(par.BufferSizeInKB, par.InitialDelayInKB);
         }
         if (!par.InitialDelayInKB)
-            par.InitialDelayInKB = par.BufferSizeInKB / 2;
+            par.InitialDelayInKB = (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR && par.isSWBRC()) ? (3* par.BufferSizeInKB / 4) : (par.BufferSizeInKB / 2);
     }
     else if(par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
     {
