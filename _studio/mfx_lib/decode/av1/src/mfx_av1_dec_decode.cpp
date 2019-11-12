@@ -568,6 +568,8 @@ mfxStatus VideoDECODEAV1::GetVideoParam(mfxVideoParam *par)
     sts = FillVideoParam(m_core, &vp, par);
     MFX_CHECK_STS(sts);
 
+    par->AsyncDepth = static_cast<mfxU16>(vp.async_depth);
+
     par->mfx.FrameInfo.FrameRateExtN = m_init_par.mfx.FrameInfo.FrameRateExtN;
     par->mfx.FrameInfo.FrameRateExtD = m_init_par.mfx.FrameInfo.FrameRateExtD;
 
@@ -837,6 +839,7 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
                  UMC_AV1_DECODER::AV1DecoderParams vp;
                  umcRes = m_decoder->GetInfo(&vp);
                  FillVideoParam(m_core, &vp, &m_video_par);
+                 m_video_par.AsyncDepth = static_cast<mfxU16>(vp.async_depth);
             }
 
             switch (umcRes)
@@ -1043,7 +1046,6 @@ mfxStatus VideoDECODEAV1::FillVideoParam(VideoCORE* core, UMC_AV1_DECODER::AV1De
     par->mfx.MaxDecFrameBuffering = p.mfx.MaxDecFrameBuffering;
 
     par->mfx.FilmGrain = static_cast<mfxU16>(vp->film_grain);
-    par->AsyncDepth = static_cast<mfxU16>(vp->async_depth);
 
     if (MFX_VPX_Utility::GetPlatform(core, par) != MFX_PLATFORM_SOFTWARE)
     {

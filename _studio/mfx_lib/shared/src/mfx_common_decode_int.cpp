@@ -251,7 +251,7 @@ mfxU32 ConvertUMCColorFormatToFOURCC(UMC::ColorFormat format)
         case UMC::Y216:    return MFX_FOURCC_Y216;
         case UMC::Y416:    return MFX_FOURCC_Y416;
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
-        case UMC::YUV444A: return MFX_FOURCC_AYUV;
+        case UMC::YUV444A: case UMC::AYUV: return MFX_FOURCC_AYUV;
         case UMC::IMC3:    return MFX_FOURCC_IMC3;
         case UMC::YUV411:  return MFX_FOURCC_YUV411;
         case UMC::YUV444:  return MFX_FOURCC_YUV444;

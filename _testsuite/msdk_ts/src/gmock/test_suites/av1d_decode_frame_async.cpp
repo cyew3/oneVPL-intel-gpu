@@ -150,8 +150,11 @@ namespace av1d_decode_frame_async
     {
         TS_START;
 
-        m_par.mfx.FrameInfo.Width  = sd.width;
-        m_par.mfx.FrameInfo.Height = sd.height;
+        if (FAILED_INIT != tc.mode)
+        {
+            m_par.mfx.FrameInfo.Width  = sd.width;
+            m_par.mfx.FrameInfo.Height = sd.height;
+        }
 
         const char* sname = g_tsStreamPool.Get(sd.name);
         g_tsStreamPool.Reg();
@@ -182,11 +185,15 @@ namespace av1d_decode_frame_async
             }
         }
 
-        if(FAILED_INIT == tc.mode)
-            g_tsStatus.disable_next_check();
         DecodeHeader();
-        if(NOT_INITIALIZED != tc.mode)
+        if (NOT_INITIALIZED != tc.mode)
+        {
+            if (FAILED_INIT == tc.mode)
+            {
+                g_tsStatus.disable_next_check();
+            }
             Init();
+        }
 
         tsStruct::SetPars(m_par, tc, AFTER_INIT);
         AllocSurfaces();
