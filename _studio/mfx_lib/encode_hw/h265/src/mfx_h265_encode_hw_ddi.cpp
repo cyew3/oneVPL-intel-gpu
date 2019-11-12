@@ -933,15 +933,9 @@ void FillSpsBuffer(
     sps.pcm_sample_bit_depth_chroma_minus1      = (mfxU8)par.m_sps.pcm_sample_bit_depth_chroma_minus1;
 
     if (par.m_ext.ROI.NumROI && !par.bROIViaMBQP) {
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.isSWBRC()) {
-            sps.ROIValueInDeltaQP = 1;
-        } else {
-            sps.ROIValueInDeltaQP = 0;  // 0 means Priorities (if supported in caps)
-#if MFX_VERSION > 1021
-            if(par.m_ext.ROI.ROIMode == MFX_ROI_MODE_QP_DELTA)
-                sps.ROIValueInDeltaQP = 1;
-#endif // MFX_VERSION > 1021
-        }
+        sps.ROIValueInDeltaQP = 1;
+        if (par.m_platform < MFX_HW_CNL)
+            sps.ROIValueInDeltaQP = 0;
     }
 
 #if (MFX_VERSION >= 1025)
