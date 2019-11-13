@@ -3125,7 +3125,8 @@ void SetDefaults(
     {
         if (par.isTL() || hwCaps.ddi_caps.SliceIPOnly || par.mfx.GopPicSize < 3 || par.mfx.NumRefFrame == 1
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-            || ((par.m_platform == MFX_HW_TGL_LP || par.m_platform == MFX_HW_TGL_HP) && IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7))
+            // RAB are not supported on VDENC TU7
+            || (IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7))
 #endif
            )
             par.mfx.GopRefDist = 1; // in case of correct SliceIPOnly using of IsOn(par.mfx.LowPower) is not necessary
