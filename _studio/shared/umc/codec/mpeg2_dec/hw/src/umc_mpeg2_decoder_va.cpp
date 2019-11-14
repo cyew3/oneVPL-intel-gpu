@@ -90,7 +90,7 @@ namespace UMC_MPEG2_DECODER
     // Check for frame completeness and get decoding errors
     bool MPEG2DecoderVA::QueryFrames(MPEG2DecoderFrame& frame)
     {
-#if !defined(_WIN32) || !defined(_WIN64)
+#if defined(LINUX32) || defined(LINUX64)
         DPBType decode_queue;
 
         {
