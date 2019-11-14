@@ -140,16 +140,19 @@ Perform detection of picture structure                                          
 
 ###### Table 2: Color Conversion Support in VPP*
 
- **Output Color**><br>**Input Color**˅| **NV12** | **RGB32** | **P010** | **P210** | **NV16** | **A2RGB10**
- --- | --- | --- | --- | --- | --- | ---
-RGB4 (RGB32) | X<br>limited | X<br>Limited |  |  |  |
-NV12 | X | X | X |   | X |
-YV12 | X | X |   |   |   |
-UYVY | X |   |   |   |   |
-YUY2 | X | X |   |   |   |
-P010 | X |   | X | X |   | X
-P210 | X |   | X | X | X | X
-NV16 | X |   |   | X | X |
+ **Output Color**><br>**Input Color**˅| **NV12** | **YUY2** | **AYUV** | **RGB32** | **P010** | **P210** | **NV16** | **A2RGB10** | **Y210** | **Y410**
+ --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+RGB4 (RGB32) | X<br>limited | X<br>limited | X<br>limited | X<br>Limited | X<br>Limited | X<br>Limited | X<br>Limited | X<br>Limited | X<br>Limited | X<br>Limited
+NV12 | X | X | X | X | X |   | X | X | X | X
+YV12 | X | X | X | X | X |   |   |   | X | X
+UYVY | X | X | X | X | X |   |   | X | X | X
+YUY2 | X | X | X | X | X |   |   | X | X | X
+AYUV | X | X | X | X | X |   |   | X | X | X
+P010 | X | X | X | X | X | X |   | X | X | X
+P210 | X |   |   |   | X | X | X | X |   |
+NV16 | X |   |   |   |   | X | X |   |   |
+Y210 | X | X | X | X | X |   |   | X | X | X
+Y410 | X | X | X | X | X |   |   | X | X | X
 X indicates a supported function<br>*Conversions absent in this table are unsupported
 
 The SDK video processing pipeline supports limited functionality for RGB4 input. Only filters that are required to convert input format to output one are included in pipeline. All optional filters are skipped. See description of [MFX_WRN_FILTER_SKIPPED](#MFX_WRN_FILTER_SKIPPED) warning for more details on how to retrieve list of active filters.
@@ -176,22 +179,23 @@ There is one special mode of deinterlacing available in combination with frame r
 
 ###### Table 4: Color formats supported by VPP filters
 
- **Color**><br>**Filter**˅ | **RGB4 (RGB32)** | **NV12** | **YV12** | **YUY2** | **P010** | **P210** | **NV16**
- ------------------------- | ---------------- | -------- | -------- | -------- | -------- | -------- | -------
-Denoise                    |                  | X        |          |          |          |          |
-MCTF                       |                  | X        |          |          |          |          |
-Deinterlace                |                  | X        |          |          |          |          |
-Image stabilization        |                  | X        |          |          |          |          |
-Frame rate conversion      |                  | X        |          |          |          |          |
-Resize                     |                  | X        |          |          | X        | X        | X
-Detail                     |                  | X        |          |          |          |          |
-Color conversion (see table 2 for details) | X | X | X | X | X | X | X
-Composition                | X                | X        |          |          |          |          |
-Field copy                 |                  | X        |          |          |          |          |
-Fields weaving             |                  | X        |          |          |          |          |
-Fields splitting           |                  | X        |          |          |          |          |
+ **Color**><br>**Filter**˅ | **RGB4 (RGB32)** | **NV12** | **YV12** | **YUY2** | **P010** | **P210** | **NV16**| **AYUV**| **Y210**| **Y410**|
+ ------------------------- | ---------------- | -------- | -------- | -------- | -------- | -------- | ------- | ------- | ------- | ------- |
+Denoise                    |                  | X        |          | X        | X        |          |         |         |         |
+MCTF                       |                  | X        |          |          |          |          |         |         |         |
+Deinterlace                |                  | X        |          | X        | X        |          |         |         |         |
+Image stabilization        |                  | X        |          |          |          |          |         |         |         |
+Frame rate conversion      |                  | X        |          | X        | X        |          |         | X       | X       | X
+Resize                     |                  | X        |          | X        | X        | X        | X       | X       | X       | X
+Detail                     |                  | X        |          | X        |          |          |         | X       |         | X
+Color conversion (see table 2 for details) | X | X | X | X | X | X | X | X | X | X
+Composition                | X                | X        |          | X        | X        |          |         | X       | X       | X
+Field copy                 |                  | X        |          |          |          |          |         |         |         |
+Fields weaving             |                  | X        |          |          |          |          |         |         |         |
+Fields splitting           |                  | X        |          |          |          |          |         |         |         |
 
 X indicates a supported function
+Note: Supported color formats might differ depending on HW platform type. Older HW platforms might not support all described color formats
 
 The SDK video processing pipeline supports limited HW acceleration for P010 format - zeroed [mfxFrameInfo](#mfxFrameInfo)`::Shift` leads to partial acceleration.
 
