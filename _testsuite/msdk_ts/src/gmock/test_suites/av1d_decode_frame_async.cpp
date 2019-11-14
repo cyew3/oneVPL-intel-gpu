@@ -94,7 +94,11 @@ namespace av1d_decode_frame_async
         {/*08*/ MFX_ERR_NULL_PTR,        NULL_SURF_OUT  , 1},
         {/*09*/ MFX_ERR_NULL_PTR,        NULL_SYNCP     , 1},
         {/*10*/ MFX_ERR_NOT_INITIALIZED, NOT_INITIALIZED, 1},
-        {/*11*/ MFX_ERR_NOT_INITIALIZED, FAILED_INIT    , 1, {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 777, INIT}},
+        // we have to fail init, but alloc frames before decode
+        {/*11*/ MFX_ERR_NOT_INITIALIZED, FAILED_INIT    , 1, {
+              {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, INIT},
+              {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY, AFTER_INIT},
+                                                             } },
         {/*12*/ MFX_ERR_NOT_INITIALIZED, CLOSED_DECODER , 1},
 
         {/*13*/ MFX_ERR_NONE, 0, 1, {&tsStruct::mfxBitstream.DataFlag, 0, RUNTIME_BS} },
@@ -186,12 +190,11 @@ namespace av1d_decode_frame_async
         }
 
         DecodeHeader();
+
         if (NOT_INITIALIZED != tc.mode)
         {
             if (FAILED_INIT == tc.mode)
-            {
                 g_tsStatus.disable_next_check();
-            }
             Init();
         }
 
