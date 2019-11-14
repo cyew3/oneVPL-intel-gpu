@@ -1645,7 +1645,7 @@ mfxStatus CheckProtectedMode( mfxU16 mode )
 #endif
 
 /* check each field of FrameInfo excluding PicStruct */
-mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform)
+mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform, eMFXVAType vaType)
 {
     mfxStatus mfxSts = MFX_ERR_NONE;
 
@@ -1700,7 +1700,7 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform
 #endif
         case MFX_FOURCC_A2RGB10:
             // 10bit RGB supported as output format only
-            if (VPP_IN == request)
+            if ((VPP_IN == request) || (vaType == MFX_HW_D3D11))
                 return MFX_ERR_INVALID_VIDEO_PARAM;
 
             break;

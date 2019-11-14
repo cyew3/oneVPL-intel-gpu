@@ -92,8 +92,9 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
     case MFX_FOURCC_ARGB16:
     case MFX_FOURCC_ABGR16:
         return DXGI_FORMAT_R16G16B16A16_UNORM;
+    // DXGI only has one permutation for 10bit RGB DXGI_FORMAT_R10G10B10A2_UNORM
     case MFX_FOURCC_A2RGB10:
-        return DXGI_FORMAT_R10G10B10A2_UNORM;
+        return DXGI_FORMAT_UNKNOWN;
 
 #if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
