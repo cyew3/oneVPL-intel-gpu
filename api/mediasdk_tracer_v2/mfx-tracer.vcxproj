@@ -69,6 +69,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>_build\$(Configuration)\win_$(Platform)\objs\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_32_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>..\..\..\build\win_$(Platform)\bin\</OutDir>
