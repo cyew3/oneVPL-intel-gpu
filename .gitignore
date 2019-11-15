@@ -5,6 +5,7 @@
 *.ncb
 *.opensdf
 *.user
+.vs
 _build
 *.VC.*
 /samples/SampleDecodeUWP/SampleDecodeUWP/Generated Files
