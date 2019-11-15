@@ -289,7 +289,7 @@ public:
 
     virtual bool IsExternalFrameAllocator(void) const = 0;
 
-    virtual eMFXHWType   GetHWType() = 0;
+    virtual eMFXHWType   GetHWType() { return MFX_HW_UNKNOWN; };
 
     virtual bool         SetCoreId(mfxU32 Id) = 0;
     virtual eMFXVAType   GetVAType() const = 0;

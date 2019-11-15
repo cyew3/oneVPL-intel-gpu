@@ -75,7 +75,11 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 #if defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN)
 #if defined(MFX_VA)
+#if defined(MFX_ENABLE_HEVCEHW_REFACTORING)
+#include "../../encode_hw/hevc/hevcehw_disp.h"
+#else
 #include "mfx_h265_encode_hw.h"
+#endif
 #endif
 #else
 #include "mfx_h265_encode_api.h"
@@ -469,6 +473,23 @@ static const CodecId2Handlers codecId2Handlers =
         {
             // .primary =
             {
+#if defined(MFX_ENABLE_HEVCEHW_REFACTORING)
+                
+                // .ctor =
+                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    if (core && mfxRes)
+                        return HEVCEHW::Create(*core, *mfxRes);
+                    return nullptr;
+                },
+                // .query =
+                [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
+                { return HEVCEHW::Query(session->m_pCORE.get(), in, out); },
+                // .queryIOSurf =
+                [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                { return HEVCEHW::QueryIOSurf(session->m_pCORE.get(), par, request); }
+#else
                 // .ctor =
                 [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
                 -> VideoENCODE*
@@ -481,6 +502,7 @@ static const CodecId2Handlers codecId2Handlers =
                 // .queryIOSurf =
                 [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
                 { return MfxHwH265Encode::MFXVideoENCODEH265_HW::QueryIOSurf(session->m_pCORE.get(), par, request); }
+#endif
             },
             // .fallback =
             {

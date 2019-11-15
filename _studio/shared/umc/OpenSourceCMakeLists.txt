@@ -58,3 +58,16 @@ make_library( umc_va hw static )
 
 add_subdirectory( ${CURRENT_SRC_ROOT}/codec/color_space_converter )
 add_subdirectory( ${CURRENT_SRC_ROOT}/codec/jpeg_enc )
+
+### BRC
+set( defs "" )
+set( sources "" )
+include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/brc/include )
+include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/h264_enc/include )
+list( APPEND sources 
+    ${MSDK_STUDIO_ROOT}/shared/umc/codec/brc/src/umc_brc.cpp
+    ${MSDK_STUDIO_ROOT}/shared/umc/codec/brc/src/umc_h264_brc.cpp
+    ${MSDK_STUDIO_ROOT}/shared/umc/codec/brc/src/umc_mpeg2_brc.cpp
+    ${MSDK_STUDIO_ROOT}/shared/umc/codec/brc/src/umc_video_brc.cpp
+)
+make_library( bitrate_control none static )

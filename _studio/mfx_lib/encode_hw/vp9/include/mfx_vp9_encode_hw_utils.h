@@ -72,7 +72,7 @@ namespace MfxHwVP9Encode
 
 #define MIN_TILE_WIDTH 256
 #define MAX_TILE_WIDTH 4096
-#define MAX_NUM_TILE_ROWS 4
+#define MAX_NUM_TILE_ROWS_VP9 4
 #define MAX_NUM_TILES 16
 
 #define SB_SIZE 64

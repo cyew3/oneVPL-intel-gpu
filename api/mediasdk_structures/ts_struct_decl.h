@@ -1079,6 +1079,15 @@ STRUCT(mfxExtLAControl,
 
 )
 
+STRUCT(mfxExtLAFrameStatistics,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16           , NumAlloc)
+    FIELD_T(mfxU16           , NumStream)
+    FIELD_T(mfxU16           , NumFrame)
+    FIELD_T(mfxLAFrameInfo  *, FrameStat)
+    FIELD_T(mfxFrameSurface1*, OutSurface)
+)
+
 STRUCT(mfxExtMBQP,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32      , NumQPAlloc)
@@ -1228,12 +1237,12 @@ STRUCT(mfxExtMBDisableSkipMap,
     FIELD_T(mfxU32      , MapSize)
 )
 
-//STRUCT(mfxExtCodingOptionVPS,
-//    FIELD_S(mfxExtBuffer, Header    )
-//    FIELD_T(mfxU8*      , VPSBuffer )
-//    FIELD_T(mfxU16      , VPSBufSize)
-//    FIELD_T(mfxU16      , VPSId)
-//)
+STRUCT(mfxExtCodingOptionVPS,
+    FIELD_S(mfxExtBuffer, Header    )
+    FIELD_T(mfxU8*      , VPSBuffer )
+    FIELD_T(mfxU16      , VPSBufSize)
+    FIELD_T(mfxU16      , VPSId)
+)
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 
@@ -1566,6 +1575,9 @@ STRUCT(mfxExtAV1FilmGrainParam,
 STRUCT(mfxExtAVCScalingMatrix,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16, Type)
+)
+STRUCT(mfxExtDPB,
+    FIELD_S(mfxExtBuffer, Header)
 )
 #endif
 
