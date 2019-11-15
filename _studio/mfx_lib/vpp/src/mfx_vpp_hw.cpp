@@ -5100,12 +5100,12 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     {
         if (0 == par->vpp.In.BitDepthLuma)
         {
-            par->vpp.In.BitDepthLuma = 16;
+            par->vpp.In.BitDepthLuma = 12;
             sts = GetWorstSts(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
         if (0 == par->vpp.In.BitDepthChroma)
         {
-            par->vpp.In.BitDepthChroma = 16;
+            par->vpp.In.BitDepthChroma = 12;
             sts = GetWorstSts(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
     }
@@ -5117,12 +5117,12 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     {
         if (0 == par->vpp.Out.BitDepthLuma)
         {
-            par->vpp.Out.BitDepthLuma = 16;
+            par->vpp.Out.BitDepthLuma = 12;
             sts = GetWorstSts(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
         if (0 == par->vpp.Out.BitDepthChroma)
         {
-            par->vpp.Out.BitDepthChroma = 16;
+            par->vpp.Out.BitDepthChroma = 12;
             sts = GetWorstSts(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
     }
@@ -5420,7 +5420,7 @@ mfxU64 get_background_color(const mfxVideoParam & videoParam)
                 case MFX_FOURCC_P016:
                 case MFX_FOURCC_Y216:
                 case MFX_FOURCC_Y416:
-                    return make_back_color_yuv(videoParam.vpp.Out.BitDepthLuma ? videoParam.vpp.Out.BitDepthLuma : 16, extComp->Y, extComp->U, extComp->V);
+                    return make_back_color_yuv(videoParam.vpp.Out.BitDepthLuma ? videoParam.vpp.Out.BitDepthLuma : 12, extComp->Y, extComp->U, extComp->V);
 #endif // (MFX_VERSION >= MFX_VERSION_NEXT)
                 default:
                     break;
@@ -5458,7 +5458,7 @@ mfxU64 get_background_color(const mfxVideoParam & videoParam)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:
-            return make_def_back_color_yuv(videoParam.vpp.Out.BitDepthLuma ? videoParam.vpp.Out.BitDepthLuma : 16);
+            return make_def_back_color_yuv(videoParam.vpp.Out.BitDepthLuma ? videoParam.vpp.Out.BitDepthLuma : 12);
 #endif // (MFX_VERSION >= MFX_VERSION_NEXT)
         default:
             break;
@@ -5494,6 +5494,11 @@ mfxStatus ConfigureExecuteParams(
     config.m_surfCount[VPP_OUT] = 1;
 
     executeParams.iBackgroundColor = get_background_color(videoParam);
+
+    // 16 Bit modes are not currently supported by MSDK
+    if(videoParam.vpp.In.BitDepthLuma == 16 || videoParam.vpp.In.BitDepthChroma == 16 ||
+        videoParam.vpp.Out.BitDepthLuma==16 || videoParam.vpp.Out.BitDepthChroma == 16)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     //-----------------------------------------------------
     for (mfxU32 j = 0; j < pipelineList.size(); j += 1)
@@ -6075,7 +6080,7 @@ mfxStatus ConfigureExecuteParams(
                             targetFourCC == MFX_FOURCC_Y216 ||
                             targetFourCC == MFX_FOURCC_Y416)
                         {
-                            executeParams.iBackgroundColor = make_back_color_yuv(videoParam.vpp.Out.BitDepthLuma ? videoParam.vpp.Out.BitDepthLuma : 16, extComp->Y, extComp->U, extComp->V);
+                            executeParams.iBackgroundColor = make_back_color_yuv(videoParam.vpp.Out.BitDepthLuma ? videoParam.vpp.Out.BitDepthLuma : 12, extComp->Y, extComp->U, extComp->V);
                         }
 #endif // PRE_SI_TARGET_PLATFORM_GEN12
                         if (targetFourCC == MFX_FOURCC_RGB4 ||
