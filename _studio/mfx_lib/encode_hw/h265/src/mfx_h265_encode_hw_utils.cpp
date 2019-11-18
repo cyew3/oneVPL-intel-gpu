@@ -3792,6 +3792,8 @@ void ConfigureTask(
             task.m_qpY = (mfxI8)par.mfx.QPP;
             if (par.isLowDelay())
                 task.m_qpY = (mfxI8)clamp<mfxI32>(par.m_ext.CO3.QPOffset[PLayer(task.m_poc - prevTask.m_lastIPoc, par)] + task.m_qpY, 1, maxQP);
+            else if (par.isTL())
+                task.m_qpY = (mfxI8)clamp<mfxI32>(par.m_ext.CO3.QPOffset[task.m_tid] + task.m_qpY, 1, maxQP);
         }
         else
         {
