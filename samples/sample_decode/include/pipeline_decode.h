@@ -135,11 +135,6 @@ struct sInputParams
     msdk_char     strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char     strDstFile[MSDK_MAX_FILENAME_LEN];
     sPluginParams pluginParams;
-
-    sInputParams()
-    {
-        MSDK_ZERO_MEMORY(*this);
-    }
 };
 
 template<>struct mfx_ext_buffer_id<mfxExtMVCSeqDesc>{
