@@ -3316,10 +3316,10 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
                 inputVidSurf.Info = surfQueue[i].pSurf->Info;
                 inputVidSurf.Data.MemId = m_internalVidSurf[VPP_IN].mids[ resIdx ];
 #if defined(MFX_VA)
-                if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring)
-                  && (MIRROR_INPUT == m_executeParams.mirroringPosition)
+                if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_INPUT == m_executeParams.mirroringPosition)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-                  && (m_pCore->GetHWType() < MFX_HW_TGL_LP) /* Starting with TGL we call driver instead of kernel */
+                  /* Starting with TGL we call driver instead of kernel, but only with d3d11 */
+                  && (m_pCore->GetHWType() < MFX_HW_TGL_LP || m_pCore->GetVAType() == MFX_HW_D3D9)
 #endif
                    )
                 {
@@ -3478,10 +3478,10 @@ mfxStatus VideoVPPHW::PostWorkOutSurfaceCopy(ExtSurface & output)
         }
 
 #if defined(MFX_VA)
-        if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring)
-          && (MIRROR_OUTPUT == m_executeParams.mirroringPosition)
+        if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_OUTPUT == m_executeParams.mirroringPosition)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-          && (m_pCore->GetHWType() < MFX_HW_TGL_LP) /* Starting with TGL we call driver instead of kernel */
+          /* Starting with TGL we call driver instead of kernel, but only with d3d11 */
+          && (m_pCore->GetHWType() < MFX_HW_TGL_LP || m_pCore->GetVAType() == MFX_HW_D3D9)
 #endif
            )
         {
@@ -4097,10 +4097,10 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
 
 #if defined(MFX_VA)
-    if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring)
-      && (MIRROR_WO_EXEC == m_executeParams.mirroringPosition)
+    if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_WO_EXEC == m_executeParams.mirroringPosition)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-      && (m_pCore->GetHWType() < MFX_HW_TGL_LP) /* Starting with TGL we call driver instead of kernel */
+      /* Starting with TGL we call driver instead of kernel, but only with d3d11 */
+      && (m_pCore->GetHWType() < MFX_HW_TGL_LP || m_pCore->GetVAType() == MFX_HW_D3D9)
 #endif
        )
     {
@@ -4405,7 +4405,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 #endif
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    if (m_executeParams.mirroring && m_pCore->GetHWType() >= MFX_HW_TGL_LP)
+    if (m_executeParams.mirroring && m_pCore->GetHWType() >= MFX_HW_TGL_LP && m_pCore->GetVAType() != MFX_HW_D3D9)
         m_executeParams.mirroringExt = true;
 #endif
 
@@ -4845,7 +4845,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
             mfxU32 maxMirrorSupportMode = 1;
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12)
-            if (core->GetHWType() >= MFX_HW_TGL_LP)
+            if (core->GetHWType() >= MFX_HW_TGL_LP && core->GetVAType() != MFX_HW_D3D9)
                 // Starting with TGL, mirroring performs through driver
                 // Driver supports horizontal and vertical modes
                 maxMirrorSupportMode = 2;
@@ -4882,11 +4882,6 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
                 break;
             }
 
-            if (maxMirrorSupportMode == 2 && core->GetVAType() == MFX_HW_D3D9)
-            {
-                // Driver doesn't have support for mirroring in this case
-                sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
-            }
             break;
         }
 
