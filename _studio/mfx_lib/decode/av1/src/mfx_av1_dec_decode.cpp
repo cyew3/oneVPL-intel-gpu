@@ -216,6 +216,13 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     MFX_CHECK_STS(sts);
 
     m_init_par = *par;
+
+    if (0 == m_init_par.mfx.FrameInfo.FrameRateExtN || 0 == m_init_par.mfx.FrameInfo.FrameRateExtD)
+    {
+        m_init_par.mfx.FrameInfo.FrameRateExtD = 1;
+        m_init_par.mfx.FrameInfo.FrameRateExtN = 30;
+    }
+
     m_first_par = m_init_par;
 
     //mfxFrameAllocResponse response{};
@@ -277,7 +284,6 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_NOT_INITIALIZED);
 
     m_first_run = true;
-    m_init_par = *par;
     m_is_init = true;
 
     return MFX_ERR_NONE;
@@ -569,31 +575,19 @@ mfxStatus VideoDECODEAV1::GetVideoParam(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     par->AsyncDepth = static_cast<mfxU16>(vp.async_depth);
+    par->IOPattern = static_cast<mfxU16>(vp.io_pattern  & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY));
 
     par->mfx.FrameInfo.FrameRateExtN = m_init_par.mfx.FrameInfo.FrameRateExtN;
     par->mfx.FrameInfo.FrameRateExtD = m_init_par.mfx.FrameInfo.FrameRateExtD;
 
-    if (!par->mfx.FrameInfo.FrameRateExtD && !par->mfx.FrameInfo.FrameRateExtN)
-    {
-        par->mfx.FrameInfo.FrameRateExtD = m_video_par.mfx.FrameInfo.FrameRateExtD;
-        par->mfx.FrameInfo.FrameRateExtN = m_video_par.mfx.FrameInfo.FrameRateExtN;
-
-        if (!par->mfx.FrameInfo.FrameRateExtD && !par->mfx.FrameInfo.FrameRateExtN)
-        {
-            par->mfx.FrameInfo.FrameRateExtN = 30;
-            par->mfx.FrameInfo.FrameRateExtD = 1;
-        }
-    }
-
-    par->mfx.FrameInfo.AspectRatioW = m_video_par.mfx.FrameInfo.AspectRatioW;
-    par->mfx.FrameInfo.AspectRatioH = m_video_par.mfx.FrameInfo.AspectRatioH;
-
     if (!par->mfx.FrameInfo.AspectRatioH && !par->mfx.FrameInfo.AspectRatioW)
     {
-        par->mfx.FrameInfo.AspectRatioH = m_video_par.mfx.FrameInfo.AspectRatioH;
-        par->mfx.FrameInfo.AspectRatioW = m_video_par.mfx.FrameInfo.AspectRatioW;
-
-        if (!par->mfx.FrameInfo.AspectRatioH && !par->mfx.FrameInfo.AspectRatioW)
+        if (m_init_par.mfx.FrameInfo.AspectRatioH || m_init_par.mfx.FrameInfo.AspectRatioW)
+        {
+            par->mfx.FrameInfo.AspectRatioH = m_init_par.mfx.FrameInfo.AspectRatioH;
+            par->mfx.FrameInfo.AspectRatioW = m_init_par.mfx.FrameInfo.AspectRatioW;
+        }
+        else
         {
             par->mfx.FrameInfo.AspectRatioH = 1;
             par->mfx.FrameInfo.AspectRatioW = 1;
