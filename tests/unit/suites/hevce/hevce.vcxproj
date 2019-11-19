@@ -22,7 +22,15 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\contrib\build\detours\detours.vcxproj">
+      <Project>{3c90ea1b-458c-4784-ab45-2a65ae2e4784}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\contrib\build\googletest\gmock.vcxproj">
       <Project>{0060373a-26b6-324d-8b31-a1fd15770815}</Project>
     </ProjectReference>
@@ -35,6 +43,9 @@
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\encode_hw\encode_hw.vcxproj">
       <Project>{6e291a7c-090c-4922-bf63-cc83f06fb8b0}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\libmfxhw.vcxproj">
+      <Project>{38e352c7-c5f5-459e-9338-a7dd164e6ca4}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm\vm.vcxproj">
       <Project>{e48418e7-2dca-4642-80d5-09a8799c2549}</Project>
     </ProjectReference>
@@ -46,6 +57,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Condition="'$(Platform)'=='x64'" Include="..\..\..\..\_studio\shared\src\auxiliary_device.cpp" />
+    <ClCompile Include="hevce_feature_blocks_dx11_ddi.cpp" />
     <ClCompile Include="hevce_feature_blocks_g11_interlace.cpp" />
     <ClCompile Include="hevce_feature_utils_blocks.cpp" />
     <ClCompile Include="hevce_feature_utils_storage.cpp" />
