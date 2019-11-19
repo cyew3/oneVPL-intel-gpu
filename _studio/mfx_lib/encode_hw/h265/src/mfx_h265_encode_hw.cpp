@@ -493,27 +493,34 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
         m_vpar.bROIViaMBQP) &&
         (m_core->GetVAType() != MFX_HW_VAAPI))
     {
-          sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBQPDATA, request);
-          MFX_CHECK_STS(sts);
+        sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBQPDATA, request);
+        MFX_CHECK_STS(sts);
 
-          if (MFX_HW_D3D11 == m_core->GetVAType())
-              request.Info.FourCC = MFX_FOURCC_P8_TEXTURE;
-          else
-              request.Info.FourCC = MFX_FOURCC_P8;
-          request.Type        = MFX_MEMTYPE_D3D_INT;
-          request.NumFrameMin = MaxBs(m_vpar);
+        if (MFX_HW_D3D11 == m_core->GetVAType())
+            request.Info.FourCC = MFX_FOURCC_P8_TEXTURE;
+        else
+            request.Info.FourCC = MFX_FOURCC_P8;
+        request.Type = MFX_MEMTYPE_D3D_INT;
+        request.NumFrameMin = MaxBs(m_vpar);
 
-          sts = m_CuQp.Alloc(m_core, request, true);
-          MFX_CHECK_STS(sts);
+        sts = GetCUQPMapBlockSize(m_vpar.mfx.FrameInfo.Width, m_vpar.mfx.FrameInfo.Height,
+            request.Info.Width, request.Info.Height,
+            request.Info.AspectRatioW, request.Info.AspectRatioH); //save block info in aspect ratio parameters
+        MFX_CHECK_STS(sts);
 
-          sts = m_ddi->Register(m_CuQp, D3DDDIFMT_INTELENCODE_MBQPDATA);
-          MFX_CHECK_STS(sts);
-          sts = GetCUQPMapBlockSize(m_vpar.mfx.FrameInfo.Width, m_vpar.mfx.FrameInfo.Height,
-                                    request.Info.Width, request.Info.Height,
-                                    request.Info.AspectRatioW, request.Info.AspectRatioH); //save block info in aspect ratio parameters
-          MFX_CHECK_STS(sts);
-          m_CuQp.m_info.AspectRatioW = request.Info.AspectRatioW;
-          m_CuQp.m_info.AspectRatioH = request.Info.AspectRatioH;
+        // need LCU aligned width for the buffer for proper averaging
+        mfxU16 saved_width = request.Info.Width;
+        mfxU16 numVal = mfxU16(m_vpar.LCUSize / request.Info.AspectRatioW);
+        if (numVal > 1)
+            request.Info.Width = (request.Info.Width + (numVal - 1)) & ~(numVal - 1);
+
+        sts = m_CuQp.Alloc(m_core, request, true); // request.Info is copied to m_CuQp.m_info here
+        MFX_CHECK_STS(sts);
+
+        m_CuQp.m_info.Width = saved_width;
+
+        sts = m_ddi->Register(m_CuQp, D3DDDIFMT_INTELENCODE_MBQPDATA);
+        MFX_CHECK_STS(sts);
     }
 #endif
 #endif
