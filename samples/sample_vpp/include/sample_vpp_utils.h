@@ -175,6 +175,10 @@ struct sInputParams
     mfxU16   IOPattern;
     mfxIMPL  ImpLib;
 
+#if defined(LINUX32) || defined(LINUX64)
+    std::string strDevicePath; // path to device for processing
+#endif
+
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
     bool bPrefferdGfx;
     bool bPrefferiGfx;
@@ -218,7 +222,7 @@ struct sInputParams
         bool   isEnabled;
         mfxU32 interval;
         mfxF64 value1;
-        mfxF64 value2;        
+        mfxF64 value2;
     } sRtProcAmpParam;
 
     sRtProcAmpParam rtHue;

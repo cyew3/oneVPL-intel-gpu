@@ -359,6 +359,9 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     if (pParams->Height)
         m_vppOutHeight = pParams->Height;
 
+#if defined(LINUX32) || defined(LINUX64)
+    m_strDevicePath = pParams->strDevicePath;
+#endif
 
     m_memType = pParams->memType;
 
@@ -661,7 +664,7 @@ mfxStatus CDecodingPipeline::CreateRenderingWindow(sInputParams *pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-#if D3D_SURFACES_SUPPORT    
+#if D3D_SURFACES_SUPPORT
     sWindowParams windowParams;
 
     windowParams.lpWindowName = pParams->bWallNoTitle ? NULL : MSDK_STRING("sample_decode");
@@ -1088,7 +1091,8 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
         m_d3dRender.SetHWDevice(m_hwdev);
 #elif LIBVA_SUPPORT
     mfxStatus sts = MFX_ERR_NONE;
-    m_hwdev = CreateVAAPIDevice(m_libvaBackend);
+
+    m_hwdev = CreateVAAPIDevice(m_strDevicePath, m_libvaBackend);
 
     if (NULL == m_hwdev) {
         return MFX_ERR_MEMORY_ALLOC;
@@ -1139,7 +1143,7 @@ mfxStatus CDecodingPipeline::AllocFrames()
 
     mfxU16 nSurfNum = 0; // number of surfaces for decoder
     mfxU16 nVppSurfNum = 0; // number of surfaces for vpp
-  
+
     nSurfNum = std::max(0, 4);
 
     MSDK_ZERO_MEMORY(Request);

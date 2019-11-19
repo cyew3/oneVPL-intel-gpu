@@ -137,6 +137,12 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                      -hw - platform-specific on default display adapter (default)\n"));
     msdk_printf(MSDK_STRING("                      -hw_d3d11 - platform-specific via d3d11\n"));
     msdk_printf(MSDK_STRING("                      -sw - software\n"));
+#if defined(LINUX32) || defined(LINUX64)
+    msdk_printf(MSDK_STRING("   -device /path/to/device - set graphics device for processing\n"));
+    msdk_printf(MSDK_STRING("                              For example: '-device /dev/dri/card0'\n"));
+    msdk_printf(MSDK_STRING("                                           '-device /dev/dri/renderD128'\n"));
+    msdk_printf(MSDK_STRING("                              If not specified, defaults to the first Intel device found on the system\n"));
+#endif
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
     msdk_printf(MSDK_STRING("   [-dGfx] - preffer processing on dGfx (by default system decides)\n"));
     msdk_printf(MSDK_STRING("   [-iGfx] - preffer processing on iGfx (by default system decides)\n"));
@@ -1217,6 +1223,18 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.libType = MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11;
         }
+#if (defined(LINUX32) || defined(LINUX64))
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-device")))
+        {
+            if (!InputParams.strDevicePath.empty()){
+                msdk_printf(MSDK_STRING("error: you can specify only one device\n"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            InputParams.strDevicePath = argv[++i];
+        }
+#endif
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-iGfx")))
         {

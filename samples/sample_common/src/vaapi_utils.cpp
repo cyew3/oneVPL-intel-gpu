@@ -287,7 +287,15 @@ mfxStatus va_to_mfx_status(VAStatus va_res)
 }
 
 #if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT)
+
+// temp compatibility with some old tools/val-tools
 CLibVA* CreateLibVA(int type)
+{
+    return CreateLibVA ("", type);
+}
+
+
+CLibVA* CreateLibVA(const std::string& devicePath, int type)
 {
     CLibVA * libva = NULL;
     switch (type)
@@ -296,7 +304,7 @@ CLibVA* CreateLibVA(int type)
 #if defined(LIBVA_DRM_SUPPORT)
         try
         {
-            libva = new DRMLibVA(type);
+            libva = new DRMLibVA(devicePath, type);
         }
         catch (std::exception&)
         {
@@ -334,7 +342,7 @@ CLibVA* CreateLibVA(int type)
         {
             try
             {
-                libva = new DRMLibVA(type);
+                libva = new DRMLibVA(devicePath, type);
             }
             catch (std::exception&)
             {
