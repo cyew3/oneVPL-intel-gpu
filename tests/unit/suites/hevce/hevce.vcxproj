@@ -60,6 +60,7 @@
     <ClCompile Condition="'$(Platform)'=='x64'" Include="..\..\..\..\_studio\shared\src\auxiliary_device.cpp" />
     <ClCompile Include="hevce_feature_blocks_dx11_ddi.cpp" />
     <ClCompile Include="hevce_feature_blocks_g11_interlace.cpp" />
+    <ClCompile Include="hevce_feature_blocks_g11_win_qmatrix.cpp" />
     <ClCompile Include="hevce_feature_utils_blocks.cpp" />
     <ClCompile Include="hevce_feature_utils_storage.cpp" />
   </ItemGroup>
