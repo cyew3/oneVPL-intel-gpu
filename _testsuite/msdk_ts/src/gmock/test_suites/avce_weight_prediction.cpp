@@ -374,6 +374,8 @@ namespace avce_weight_prediction
         o_chroma = tc.OChroma;
         mfxExtCodingOption2& CO2 = m_par;
         mfxExtCodingOption3& CO3 = m_par;
+        mfxStatus sts = tc.sts;
+        mfxStatus resetSts = tc.Resetsts;
 
         m_par.AsyncDepth = 1;
         m_par.mfx.GopRefDist = 2;
@@ -439,10 +441,29 @@ namespace avce_weight_prediction
             AllocOpaque(m_request, m_par);
         }
 
-        g_tsStatus.expect(tc.sts);
+        // WP on linux is FEI specific feature
+        // Change status for legacy encoder on linux to MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
+        if(g_tsOSFamily == MFX_OS_FAMILY_LINUX)
+        {
+            if (tc.WeightPredP == EXP_WEIGHT_PEREDICTION ||
+                tc.WeightPredB == EXP_WEIGHT_PEREDICTION ||
+                tc.WeightPredB == IMP_WEIGHT_PREDICTION)
+            {
+                sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            }
+
+            if (tc.ResetWeightPredP == EXP_WEIGHT_PEREDICTION ||
+                tc.ResetWeightPredB == EXP_WEIGHT_PEREDICTION ||
+                tc.ResetWeightPredB == IMP_WEIGHT_PREDICTION)
+            {
+                resetSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            }
+        }
+
+        g_tsStatus.expect(sts);
         Query(m_session, m_pPar, m_pParOut);
         Init(m_session, m_pPar);
-        if (tc.sts == MFX_ERR_NONE)
+        if (sts == MFX_ERR_NONE)
         {
             if ((tc.WeightPredP == EXP_WEIGHT_PEREDICTION || tc.WeightPredB == EXP_WEIGHT_PEREDICTION) &&
                 (tc.DenomLuma != 6 || tc.DenomLuma != 6) &&
@@ -509,10 +530,10 @@ namespace avce_weight_prediction
         else
             m_par.mfx.GopRefDist = 1;
 
-        g_tsStatus.expect(tc.Resetsts);
+        g_tsStatus.expect(resetSts);
         Reset(m_session, m_pPar);
 
-        if (tc.sts == MFX_ERR_NONE)//Check per frame PSNR
+        if (sts == MFX_ERR_NONE)//Check per frame PSNR
         {
             tsVideoDecoder dec(MFX_CODEC_AVC);
             dec.m_par.AsyncDepth = 1;
