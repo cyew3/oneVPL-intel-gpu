@@ -35,30 +35,21 @@
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\encode_hw\encode_hw.vcxproj">
       <Project>{6e291a7c-090c-4922-bf63-cc83f06fb8b0}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\shared\mfx_common.vcxproj">
-      <Project>{5B832EA0-E58C-46B9-AFF6-2416CF805C09}</Project>
+    <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm\vm.vcxproj">
+      <Project>{e48418e7-2dca-4642-80d5-09a8799c2549}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm_plus\vm_plus.vcxproj">
+      <Project>{6052e5bc-625f-4a6f-aa98-efdfd15975ce}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\mfx_trace\mfx_trace_hw.vcxproj">
+      <Project>{252BA91C-A180-41D8-8B2F-84904DD53000}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="hevce_feature_blocks_g11_interlace.cpp" />
     <ClCompile Include="hevce_feature_utils_blocks.cpp" />
     <ClCompile Include="hevce_feature_utils_storage.cpp" />
   </ItemGroup>
-  <Choose>
-    <When Condition=" '$(SolutionName)' == 'compare_struct' ">
-      <ItemGroup>
-        <ProjectReference Include="..\..\..\..\_studio\shared\mfx_trace\mfx_trace.vcxproj">
-          <Project>{68ad0bd0-170b-4cea-8a55-d6b841d66203}</Project>
-        </ProjectReference>
-      </ItemGroup>
-    </When>
-    <Otherwise>
-      <ItemGroup>
-        <ProjectReference Include="..\..\..\..\_studio\shared\mfx_trace\mfx_trace_hw.vcxproj">
-          <Project>{252BA91C-A180-41D8-8B2F-84904DD53000}</Project>
-        </ProjectReference>
-      </ItemGroup>
-    </Otherwise>
-  </Choose>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(MSBuildThisFileDirectory)..\run_suite.props" />
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />

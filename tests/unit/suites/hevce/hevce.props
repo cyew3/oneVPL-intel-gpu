@@ -9,12 +9,29 @@
       $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
       $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
       $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h265\include;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\agnostic;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\agnostic\g11;
+      <!-- embargoed >
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g11;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g11lkf;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g12;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g11;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g11lkf
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12;
+      -->
       $(MSDK_STUDIO_ROOT)\..\contrib\googletest\googletest\include;
       $(MSDK_STUDIO_ROOT)\..\contrib\googletest\googlemock\include;
       $(MfxIppIncludeDir)
     </MfxIncludes>
     <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
     <MfxTargetName>$(ProjectName)</MfxTargetName>
+    <MfxDefinitions>MFX_ENABLE_H265_VIDEO_ENCODE</MfxDefinitions>
+    <MfxLibraryDir>$(MfxIppLibraryDir)</MfxLibraryDir>
+    <MfxLibraries Condition="'$(Platform)'=='Win32'">ippcoremt.lib;ippi_s_p8.lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraries Condition="'$(Platform)'=='x64'">ippcoremt.lib;ippi_s_y8.lib;$(MfxLibraries)</MfxLibraries>
   </PropertyGroup>
 <!-- End of compare_struct.vcxproj specific settings -->
 </Project>
