@@ -594,6 +594,22 @@ mfxStatus VideoDECODEAV1::GetVideoParam(mfxVideoParam *par)
         }
     }
 
+    switch (par->mfx.FrameInfo.FourCC)
+    {
+    case MFX_FOURCC_P010:
+#if (MFX_VERSION >= 1027)
+    case MFX_FOURCC_Y210:
+#endif
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+    case MFX_FOURCC_P016:
+    case MFX_FOURCC_Y216:
+    case MFX_FOURCC_Y416:
+#endif
+        par->mfx.FrameInfo.Shift = 1;
+    default:
+        break;
+    }
+
     return MFX_ERR_NONE;
 }
 

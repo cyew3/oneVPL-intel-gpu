@@ -125,8 +125,9 @@ namespace UMC_AV1_DECODER
 
     UMC::Status AV1Decoder::GetInfo(UMC::BaseCodecParams* info)
     {
-        UMC::VideoDecoderParams* vp =
-            DynamicCast<UMC::VideoDecoderParams, UMC::BaseCodecParams>(info);
+        AV1DecoderParams* vp =
+            DynamicCast<AV1DecoderParams, UMC::BaseCodecParams>(info);
+
         if (!vp)
             return UMC::UMC_ERR_INVALID_PARAMS;
 
