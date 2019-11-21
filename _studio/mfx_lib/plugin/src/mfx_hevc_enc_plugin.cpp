@@ -103,10 +103,9 @@ mfxStatus MFXHEVCEncoderPlugin::PluginInit(mfxCoreInterface *core)
 
 mfxStatus MFXHEVCEncoderPlugin::PluginClose()
 {
-    if (m_encoder) {
-        delete m_encoder;
-        m_encoder = NULL;
-    }
+    delete m_encoder;
+    m_encoder = nullptr;
+
     if (m_createdByDispatcher) {
         delete this;
     }
