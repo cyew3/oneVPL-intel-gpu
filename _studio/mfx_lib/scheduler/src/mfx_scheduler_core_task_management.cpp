@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2019 Intel Corporation
+// Copyright (c) 2010-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -185,6 +185,12 @@ mfxStatus mfxSchedulerCore::GetTask(MFX_CALL_INFO &callInfo,
                     // run over the tasks list
                     while (pTask)
                     {
+                        if(pTask->curStatus == MFX_TASK_PAUSE) {
+                            // get the next task
+                            pTask = pTask->pNext;
+                            continue;
+                        }
+
                         mfxStatus mfxRes;
 
                         // is this task ready?
@@ -496,7 +502,11 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
             ResetWaitingTasks(pCallInfo->pTask->pOwner);
         }
         // update the task timing
-        else if (MFX_TASK_BUSY == pCallInfo->res)
+        else if (MFX_TASK_BUSY == pCallInfo->res
+ #if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+            || MFX_ERR_NONE_PARTIAL_OUTPUT == pCallInfo->res
+#endif
+            )
         {
             // try to not overwrite the newest status from other thread
             if (pTask->param.timing.timeLastCallProcessed <= pCallInfo->timeStamp)
@@ -504,6 +514,9 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
                 pTask->param.bWaiting = true;
             }
             pTask->param.timing.timeOverhead += pCallInfo->timeSpend;
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+            if(MFX_ERR_NONE_PARTIAL_OUTPUT == pCallInfo->res) pTask->curStatus = pCallInfo->res;
+#endif
         }
         else
         {
@@ -576,8 +589,21 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
                 // release all allocated resources
                 pTask->ReleaseResources();
             }
-            // process task completed
-            else if (MFX_TASK_DONE == pTask->curStatus)
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+            else if(MFX_ERR_NONE_PARTIAL_OUTPUT == pTask->curStatus) {
+                // process task completed
+                // save the status
+                pTask->curStatus = MFX_TASK_PAUSE;
+                pTask->param.bWaiting = true; //wait for sync call
+
+                pTask->opRes = MFX_ERR_NONE_PARTIAL_OUTPUT;
+
+                pTask->done.notify_all();
+                // Wake up all threads.
+                wakeUpThreads = true;
+            }
+#endif
+            else if(MFX_TASK_DONE == pTask->curStatus)
             {
                 mfxU32 i;
 

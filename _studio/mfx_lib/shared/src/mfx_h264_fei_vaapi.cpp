@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2019 Intel Corporation
+// Copyright (c) 2015-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -671,7 +671,8 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
 mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
         DdiTask & task,
-        mfxU32 fieldId)
+        mfxU32 fieldId,
+        bool      /*useEvent*/)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::PreENC::QueryStatus");
     VAStatus vaSts;
@@ -1593,7 +1594,8 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
 mfxStatus VAAPIFEIENCEncoder::QueryStatus(
         DdiTask & task,
-        mfxU32 fieldId)
+        mfxU32 fieldId,
+        bool      /*useEvent*/)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::ENC::QueryStatus");
     VAStatus vaSts;
@@ -2505,7 +2507,8 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
 mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
         DdiTask & task,
-        mfxU32 fieldId)
+        mfxU32 fieldId,
+        bool      /*useEvent*/)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::PAK::QueryStatus");
     VAStatus vaSts;

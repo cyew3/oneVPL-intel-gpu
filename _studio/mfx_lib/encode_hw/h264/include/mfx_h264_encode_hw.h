@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,9 @@ public:
 
     virtual mfxTaskThreadingPolicy GetThreadingPolicy()
     {
-        return MFX_TASK_THREADING_INTRA;
+        return m_impl.get()
+            ? m_impl->GetThreadingPolicy()
+            :  MFX_TASK_THREADING_INTRA;
     }
 
     virtual mfxStatus Reset(mfxVideoParam *par)

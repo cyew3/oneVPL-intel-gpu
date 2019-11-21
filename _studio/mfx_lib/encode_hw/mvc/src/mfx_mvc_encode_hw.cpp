@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1248,8 +1248,7 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
 
 // MVC BD }
         entryPoints[0].pCompleteProc        = 0;
-        entryPoints[0].pGetSubTaskProc      = 0;
-        entryPoints[0].pCompleteSubTaskProc = 0;
+        entryPoints[0].pOutputPostProc      = 0;
         entryPoints[0].requiredNumThreads   = 1;
         entryPoints[1]                      = entryPoints[0];
 // MVC BD {
@@ -1285,8 +1284,7 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
         entryPoints[0].pParam               = 0;
         entryPoints[0].pRoutine             = TaskRoutineDoNothing;
         entryPoints[0].pCompleteProc        = 0;
-        entryPoints[0].pGetSubTaskProc      = 0;
-        entryPoints[0].pCompleteSubTaskProc = 0;
+        entryPoints[0].pOutputPostProc      = 0;
         entryPoints[0].requiredNumThreads   = 1;
         entryPoints[0].pRoutineName         = "Encode Submit";
         numEntryPoints                      = 1;

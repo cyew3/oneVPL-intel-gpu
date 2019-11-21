@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,10 @@ class MfxLpLookAhead;
 
 #ifndef _MFX_H264_ENCODE_HW_UTILS_H_
 #define _MFX_H264_ENCODE_HW_UTILS_H_
+
+#include <unordered_map>
+#include <queue>
+#include <mutex>
 
 #define bRateControlLA(RCMethod) ((RCMethod == MFX_RATECONTROL_LA)||(RCMethod == MFX_RATECONTROL_LA_ICQ)||(RCMethod == MFX_RATECONTROL_LA_EXT)||(RCMethod == MFX_RATECONTROL_LA_HRD))
 #define bIntRateControlLA(RCMethod) ((RCMethod == MFX_RATECONTROL_LA)||(RCMethod == MFX_RATECONTROL_LA_ICQ)||(RCMethod == MFX_RATECONTROL_LA_HRD))
@@ -1099,6 +1103,14 @@ namespace MfxHwH264Encode
 #ifdef MFX_ENABLE_GPU_BASED_SYNC
             , m_gpuSync()
 #endif
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+            , m_procBO{0,0}
+            , m_scanBO{0,0}
+            , m_nextMarkerPtr{nullptr, nullptr}
+            , m_curNALtype()
+            , m_bsPO{}
+#endif
+
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1383,6 +1395,14 @@ namespace MfxHwH264Encode
 #endif
 #ifdef MFX_ENABLE_GPU_BASED_SYNC
         GPUSyncInfo     m_gpuSync;
+#endif
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        mfxU32       m_procBO[2];
+        mfxU32       m_scanBO[2];
+        mfxU8*       m_nextMarkerPtr[2];
+        mfxU8        m_curNALtype;
+
+        mfxFrameData m_bsPO[2];
 #endif
     };
 
@@ -2187,6 +2207,14 @@ namespace MfxHwH264Encode
 
         virtual mfxStatus GetEncodeStat(mfxEncodeStat * stat);
 
+        virtual mfxTaskThreadingPolicy GetThreadingPolicy() {
+            return mfxTaskThreadingPolicy(MFX_TASK_THREADING_INTRA
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+                | (m_isPOut ? MFX_TASK_POLLING : 0)
+#endif
+            );
+        }
+
         virtual mfxStatus EncodeFrameCheck(
             mfxEncodeCtrl *,
             mfxFrameSurface1 *,
@@ -2247,6 +2275,13 @@ namespace MfxHwH264Encode
         void      AssignFrameTypes(
             DdiTask & newTask);
 
+        void setFrameInfo(DdiTask & task,
+            mfxU32    fid);
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        void addPartialOutputOffset(DdiTask & task, mfxU64 offset, bool last = false);
+#endif
+
         mfxStatus UpdateBitstream(
             DdiTask & task,
             mfxU32    fid); // 0 - top/progressive, 1 - bottom
@@ -2266,6 +2301,11 @@ namespace MfxHwH264Encode
         mfxStatus CheckSliceSize(DdiTask &task, bool &bToRecode);
         mfxStatus CheckBufferSize(DdiTask &task, bool &bToRecode, mfxU32 bsDataLength, mfxBitstream * bs);
         mfxStatus CheckBRCStatus(DdiTask &task, bool &bToRecode, mfxU32 bsDataLength);
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        mfxStatus NextBitstreamDataLength(
+            mfxBitstream * bs);
+#endif
 
         void OnNewFrame();
         void SubmitScd();
@@ -2298,6 +2338,10 @@ namespace MfxHwH264Encode
             mfxU32 threadNumber,
             mfxU32 callNumber);
 
+        static mfxStatus UpdateBitstreamData(
+            void * state,
+            void * param);
+
         void RunPreMe(
             MfxVideoParam const & video,
             DdiTask const &       task);
@@ -2310,7 +2354,8 @@ namespace MfxHwH264Encode
 
         mfxStatus QueryStatus(
             DdiTask & task,
-            mfxU32    ffid);
+            mfxU32    ffid,
+            bool      useEvent = true);
 
 #if USE_AGOP
         mfxU32 CalcCostAGOP(
@@ -2442,6 +2487,15 @@ namespace MfxHwH264Encode
 #endif
         bool        m_resetBRC;
 
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        bool         m_isPOut;
+        int          m_modePOut;
+        mfxU32       m_blockPOut;
+
+        std::mutex   m_offsetMutex;
+        std::unordered_map<mfxBitstream*, std::queue<uint64_t>> m_offsetsMap;
+#endif
+
         // bitrate reset for SNB
 
         std::unique_ptr<CmContext>    m_cmCtx;
@@ -2498,6 +2552,10 @@ namespace MfxHwH264Encode
         virtual mfxStatus GetFrameParam(mfxFrameParam * par);
 
         virtual mfxStatus GetEncodeStat(mfxEncodeStat * stat);
+
+        virtual mfxTaskThreadingPolicy GetThreadingPolicy() {
+            return MFX_TASK_THREADING_INTRA;
+        }
 
         virtual mfxStatus EncodeFrameCheck(
             mfxEncodeCtrl *,
@@ -3381,6 +3439,10 @@ namespace MfxHwH264Encode
         virtual mfxStatus GetFrameParam(mfxFrameParam * par);
 
         virtual mfxStatus GetEncodeStat(mfxEncodeStat * stat);
+
+        virtual mfxTaskThreadingPolicy GetThreadingPolicy() {
+            return MFX_TASK_THREADING_INTRA;
+        }
 
         virtual mfxStatus EncodeFrameCheck(
             mfxEncodeCtrl *,

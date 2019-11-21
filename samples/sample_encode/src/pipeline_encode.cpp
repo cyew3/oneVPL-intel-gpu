@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -76,6 +76,10 @@ msdk_tick time_get_frequency(void)
 } /* vm_tick vm_time_get_frequency(void) */
 
 CEncTaskPool::CEncTaskPool()
+    : firstOut_total(0)
+    , firstOut_start(0)
+    , lastOut_total(0)
+    , lastOut_start(0)
 {
     m_pTasks  = NULL;
     m_pmfxSession       = NULL;
@@ -141,7 +145,20 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxU32 syncOpTimeout)
     // non-null sync point indicates that task is in execution
     if (NULL != m_pTasks[m_nTaskBufferStart].EncSyncP)
     {
+#if (MFX_VERSION >= 1031)
+      int iteration = 0;
+      do
+      {
+#endif
         sts = m_pmfxSession->SyncOperation(m_pTasks[m_nTaskBufferStart].EncSyncP, syncOpTimeout);
+
+#if (MFX_VERSION >= 1031)
+        msdk_tick stop = time_get_tick();
+
+        if(iteration == 0)
+            firstOut_total += stop - firstOut_start;
+#endif
+
         if (sts == MFX_ERR_GPU_HANG && m_bGpuHangRecovery)
         {
             bGpuHang = true;
@@ -157,10 +174,14 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxU32 syncOpTimeout)
             msdk_printf(MSDK_STRING("GPU hang happened\n"));
         }
         // MFX_WRN_IN_EXECUTION has to be reported
-        MSDK_CHECK_ERR_NONE_STATUS_NO_RET(sts, "SyncOperation fail or timeout");
+        MSDK_CHECK_NOERROR_STATUS_NO_RET(sts, "SyncOperation fail or timeout");
 
         if (MFX_ERR_NONE == sts)
         {
+#if (MFX_VERSION >= 1031)
+            lastOut_total += stop - lastOut_start;
+#endif
+
             m_statFile.StartTimeMeasurement();
             sts = m_pTasks[m_nTaskBufferStart].WriteBitstream();
             m_statFile.StopTimeMeasurement();
@@ -180,6 +201,15 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxU32 syncOpTimeout)
                 }
             }
         }
+#if (MFX_VERSION >= 1031)
+        else if(MFX_ERR_NONE_PARTIAL_OUTPUT == sts)
+        {
+            m_statFile.StartTimeMeasurement();
+            mfxStatus sts1 = m_pTasks[m_nTaskBufferStart].WriteBitstream(false);
+            m_statFile.StopTimeMeasurement();
+            MSDK_CHECK_STATUS(sts1, "m_pTasks[m_nTaskBufferStart].WriteBitstream failed");
+        }
+#endif
         else if (MFX_ERR_ABORTED == sts)
         {
             while (!m_pTasks[m_nTaskBufferStart].DependentVppTasks.empty())
@@ -206,6 +236,10 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask(mfxU32 syncOpTimeout)
                 }
             }
         }
+#if (MFX_VERSION >= 1031)
+        iteration++;
+      } while (sts == MFX_ERR_NONE_PARTIAL_OUTPUT);
+#endif
 
     }
     else
@@ -318,10 +352,10 @@ mfxStatus sTask::Close()
     return MFX_ERR_NONE;
 }
 
-mfxStatus sTask::WriteBitstream()
+mfxStatus sTask::WriteBitstream(bool isCompleteFrame)
 {
     if (pWriter)
-        return pWriter->WriteNextFrame(&mfxBS);
+        return pWriter->WriteNextFrame(&mfxBS, true, isCompleteFrame);
     else
         return MFX_ERR_NONE;
 }
@@ -694,6 +728,35 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_VideoSignalInfo.MatrixCoefficients = pInParams->TransferMatrix;
         m_EncExtParams.push_back((mfxExtBuffer*)&m_VideoSignalInfo);
     }
+
+#if (MFX_VERSION >= 1031)
+    if(pInParams->PartialOutputMode) {
+        m_bPartialOutput = true;
+        switch(pInParams->PartialOutputMode)
+        {
+        case MFX_PARTIAL_BITSTREAM_SLICE:
+            m_ExtPartialOutputParam.Granularity = MFX_PARTIAL_BITSTREAM_SLICE;
+            m_ExtPartialOutputParam.BlockSize = 0;
+            break;
+        case MFX_PARTIAL_BITSTREAM_BLOCK:
+            m_ExtPartialOutputParam.Granularity = MFX_PARTIAL_BITSTREAM_BLOCK;
+            m_ExtPartialOutputParam.BlockSize = pInParams->PartialOutputBlockSize;
+            break;
+        case MFX_PARTIAL_BITSTREAM_ANY:
+            m_ExtPartialOutputParam.Granularity = MFX_PARTIAL_BITSTREAM_ANY;
+            m_ExtPartialOutputParam.BlockSize = 0;
+            break;
+        default:
+            m_ExtPartialOutputParam.Granularity = MFX_PARTIAL_BITSTREAM_NONE;
+            m_ExtPartialOutputParam.BlockSize = 0;
+            m_bPartialOutput = false;
+            break;
+        }
+        if(m_bPartialOutput) {
+            m_EncExtParams.push_back((mfxExtBuffer *)&m_ExtPartialOutputParam);
+        }
+    }
+#endif
 
     if (!m_EncExtParams.empty())
     {
@@ -1167,6 +1230,8 @@ CEncodingPipeline::CEncodingPipeline()
     m_bSoftRobustFlag = false;
     m_bSingleTexture = false;
 
+    m_bPartialOutput = false;
+
     m_MVCflags = MVC_DISABLED;
     m_nNumView = 0;
 
@@ -1203,6 +1268,12 @@ CEncodingPipeline::CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_VideoSignalInfo);
     m_VideoSignalInfo.Header.BufferId = MFX_EXTBUFF_VIDEO_SIGNAL_INFO;
     m_VideoSignalInfo.Header.BufferSz = sizeof(m_VideoSignalInfo);
+
+#if (MFX_VERSION >= 1031)
+    MSDK_ZERO_MEMORY(m_ExtPartialOutputParam);
+    m_ExtPartialOutputParam.Header.BufferId = MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM;
+    m_ExtPartialOutputParam.Header.BufferSz = sizeof(m_ExtPartialOutputParam);
+#endif
 
 #if (MFX_VERSION >= 1024)
     MSDK_ZERO_MEMORY(m_ExtBRC);
@@ -1859,6 +1930,14 @@ void CEncodingPipeline::Close()
         msdk_printf(MSDK_STRING("Frame number: %u\r\n"), m_FileWriters.first->m_nProcessedFramesNum);
         mfxF64 ProcDeltaTime = m_statOverall.GetDeltaTime() - m_statFile.GetDeltaTime() - m_TaskPool.GetFileStatistics().GetDeltaTime();
         msdk_printf(MSDK_STRING("Encoding fps: %.0f\n"), m_FileWriters.first->m_nProcessedFramesNum / ProcDeltaTime);
+
+        if (m_bPartialOutput)
+        {
+            const msdk_tick freq = time_get_frequency();
+
+            msdk_printf(MSDK_STRING("Average first block latency: %.5f\n"), (1000.0 * m_TaskPool.firstOut_total) / (freq * m_FileWriters.first->m_nProcessedFramesNum));
+            msdk_printf(MSDK_STRING("Average last block latency: %.5f\n"), (1000.0 * m_TaskPool.lastOut_total) / (freq * m_FileWriters.first->m_nProcessedFramesNum));
+        }
     }
 
     if (m_UserDataUnregSEI.size() > 0)
@@ -2325,6 +2404,8 @@ mfxStatus CEncodingPipeline::Run()
             MSDK_CHECK_STATUS(sts, "ENCODE: InitEncFrameParams failed");
 
             // at this point surface for encoder contains either a frame from file or a frame processed by vpp
+            m_TaskPool.firstOut_start = m_TaskPool.lastOut_start = time_get_tick();
+
             sts = m_pmfxENC->EncodeFrameAsync(pCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
             m_bInsertIDR = false;
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1055,8 +1055,7 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
     pEntryPoints[0].pState               = this;
     pEntryPoints[0].pParam               = &m_incoming.front();
     pEntryPoints[0].pCompleteProc        = 0;
-    pEntryPoints[0].pGetSubTaskProc      = 0;
-    pEntryPoints[0].pCompleteSubTaskProc = 0;
+    pEntryPoints[0].pOutputPostProc      = 0;
     pEntryPoints[0].requiredNumThreads   = 1;
     pEntryPoints[0].pRoutineName         = "AsyncRoutine";
     pEntryPoints[0].pRoutine             = AsyncRoutine;
@@ -1064,6 +1063,7 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
     pEntryPoints[1].pRoutineName         = "Async Query";
     pEntryPoints[1].pRoutine             = AsyncQuery;
     pEntryPoints[1].pParam               = &m_incoming.front();
+    pEntryPoints[1].pOutputPostProc      = 0;
 
     numEntryPoints = 2;
 

@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -248,7 +248,7 @@ public :
     virtual ~CSmplBitstreamWriter();
 
     virtual mfxStatus Init(const msdk_char *strFileName);
-    virtual mfxStatus WriteNextFrame(mfxBitstream *pMfxBitstream, bool isPrint = true);
+    virtual mfxStatus WriteNextFrame(mfxBitstream *pMfxBitstream, bool isPrint = true, bool isCompleteFrame = true);
     virtual mfxStatus Reset();
     virtual void Close();
     mfxU32 m_nProcessedFramesNum;

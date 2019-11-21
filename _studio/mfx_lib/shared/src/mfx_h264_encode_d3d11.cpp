@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1840,7 +1840,8 @@ mfxStatus D3D11SvcEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbP
 
 mfxStatus D3D11SvcEncoder::QueryStatus(
     DdiTask & task,
-    mfxU32    fieldId)
+    mfxU32    fieldId,
+    bool     /* useEvent */)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11SvcEncoder::QueryStatus");
     // After SNB once reported ENCODE_OK for a certain feedbackNumber

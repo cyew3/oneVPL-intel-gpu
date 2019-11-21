@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -161,6 +161,11 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 #if (MFX_VERSION >= 1023)
     msdk_printf(MSDK_STRING("   [-LowDelayBRC]           - strictly obey average frame size set by MaxKbps\n"));
 #endif
+
+#if (MFX_VERSION >= 1031) && (defined(_WIN64) || defined(_WIN32))
+    msdk_printf(MSDK_STRING("   [-PartialOutput <mode> <<block_size>>]         - specify partial output mode [0 - slice, 1 - block <blocksize>B, 2 - any]\n"));
+#endif
+
     msdk_printf(MSDK_STRING("   [-signal:tm ]            - represents transfer matrix coefficients for mfxExtVideoSignalInfo. 0 - unknown, 1 - BT709, 2 - BT601\n"));
     msdk_printf(MSDK_STRING("   [-WeightedPred:default|implicit ]   - enables weighted prediction mode\n"));
     msdk_printf(MSDK_STRING("   [-WeightedBiPred:default|implicit ] - enables weighted bi-prediction mode\n"));
@@ -1074,6 +1079,27 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->UseRegionEncode = true;
         }
+#if (MFX_VERSION >= 1031) && (defined(_WIN64) || defined(_WIN32))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-PartialOutput")))
+        {
+            VAL_CHECK(i + 1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->PartialOutputMode))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("PartialOuput mode is not specified"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            pParams->PartialOutputMode++; //need to increment it because zero means parameter unset
+
+            if (pParams->PartialOutputMode == MFX_PARTIAL_BITSTREAM_BLOCK) {
+                VAL_CHECK(i + 1 >= nArgNum, i-1, strInput[i-1]);
+                if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->PartialOutputBlockSize))
+                {
+                    PrintHelp(strInput[0], MSDK_STRING("Block size for MFX_PARTIAL_BITSTREAM_BLOCK mode is not specified"));
+                    return MFX_ERR_UNSUPPORTED;
+                }
+            }
+        }
+#endif
 #ifdef MOD_ENC
         MOD_ENC_PARSE_INPUT
 #endif
@@ -1381,6 +1407,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         msdk_printf(MSDK_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered"));
         pParams->bPrefferdGfx = false;
+    }
+#endif
+
+#if (MFX_VERSION >= 1031)
+    if(pParams->PartialOutputMode) {
+        pParams->nAsyncDepth = 1;
+        msdk_printf(MSDK_STRING("Warning: async depth changed to 1 for partial output"));
     }
 #endif
 

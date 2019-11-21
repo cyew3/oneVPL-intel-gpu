@@ -150,6 +150,9 @@ enum LibVABackend
 #define MSDK_CHECK_WRN(X, MSG)                   {if ((X) > MFX_ERR_NONE) {MSDK_PRINT_WRN_MSG(X, MSG);          }}
 #define MSDK_CHECK_ERR_NONE_STATUS(X, ERR,  MSG) {if ((X) != MFX_ERR_NONE) {MSDK_PRINT_RET_MSG(X, MSG); return ERR;}}
 #define MSDK_CHECK_ERR_NONE_STATUS_NO_RET(X, MSG){if ((X) != MFX_ERR_NONE) {MSDK_PRINT_RET_MSG(X, MSG);         }}
+#if (MFX_VERSION >= 1031)
+   #define MSDK_CHECK_NOERROR_STATUS_NO_RET(X, MSG) {if ((X) != MFX_ERR_NONE && (X) != MFX_ERR_NONE_PARTIAL_OUTPUT) {MSDK_PRINT_RET_MSG(X, MSG);}}
+#endif
 #define MSDK_CHECK_PARSE_RESULT(P, X, ERR)       {if ((X) > (P)) {return ERR;}}
 
 #define MSDK_CHECK_STATUS_SAFE(X, FUNC, ADD)     {if ((X) < MFX_ERR_NONE) {ADD; MSDK_PRINT_RET_MSG(X, FUNC); return X;}}

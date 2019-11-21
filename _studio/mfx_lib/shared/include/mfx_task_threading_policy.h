@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,11 @@ enum
     // Task can be managed by thread 0 only
     MFX_TASK_DEDICATED = 4,
     // Task share executing threads with other tasks
-    MFX_TASK_SHARED = 8
-
+    MFX_TASK_SHARED = 8,
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    // Task share executing threads with other tasks
+    MFX_TASK_POLLING = 16
+#endif
 };
 
 typedef

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -270,6 +270,10 @@ namespace MfxHwH264Encode
 
 #if defined (MFX_ENABLE_GPU_BASED_SYNC)
     BIND_EXTBUF_TYPE_TO_ID(mfxExtGameStreaming,          MFX_EXTBUFF_GAME_STREAMING          );
+#endif
+
+#if defined (MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    BIND_EXTBUF_TYPE_TO_ID(mfxExtPartialBitstreamParam,  MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM );
 #endif
 
 #undef BIND_EXTBUF_TYPE_TO_ID
@@ -666,6 +670,11 @@ namespace MfxHwH264Encode
         mfxExtMultiFrameParam    m_MfeParam;
         mfxExtMultiFrameControl  m_MfeControl;
 #endif
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        mfxExtPartialBitstreamParam m_po;
+#endif
+
         std::vector<mfxMVCViewDependency> m_storageView;
         std::vector<mfxMVCOperationPoint> m_storageOp;
         std::vector<mfxU16>               m_storageViewId;
@@ -1111,19 +1120,19 @@ namespace MfxHwH264Encode
     // auto-lock for frames
     struct FrameLocker
     {
-        FrameLocker(VideoCORE * core, mfxFrameData & data, bool external = false)
+        FrameLocker(VideoCORE * core, mfxFrameData & data, bool external = false, bool lock = true)
             : m_core(core)
             , m_data(data)
             , m_memId(data.MemId)
-            , m_status(Lock(external))
+            , m_status(lock ? Lock(external) : LOCK_NO)
         {
         }
 
-        FrameLocker(VideoCORE * core, mfxFrameData & data, mfxMemId memId, bool external = false)
+        FrameLocker(VideoCORE * core, mfxFrameData & data, mfxMemId memId, bool external = false, bool lock = true)
             : m_core(core)
             , m_data(data)
             , m_memId(memId)
-            , m_status(Lock(external))
+            , m_status(lock ? Lock(external) : LOCK_NO)
         {
         }
 

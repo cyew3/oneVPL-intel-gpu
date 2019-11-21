@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1891,6 +1891,9 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
 #endif
 #if defined (MFX_ENABLE_GPU_BASED_SYNC)
         || id == MFX_EXTBUFF_GAME_STREAMING
+#endif
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        || id == MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM
 #endif
        );
 }
@@ -8648,6 +8651,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtGameStreaming, m_extGameStreaming);
 #endif
 
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    CONSTRUCT_EXT_BUFFER(mfxExtPartialBitstreamParam , m_po);
+#endif
 
 #undef CONSTRUCT_EXT_BUFFER
 #undef CONSTRUCT_EXT_BUFFER_EX

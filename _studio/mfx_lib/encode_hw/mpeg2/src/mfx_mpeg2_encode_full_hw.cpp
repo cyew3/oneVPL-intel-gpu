@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -615,16 +615,14 @@ mfxStatus FullEncode::EncodeFrameCheck(
     entryPoints[0].pParam = pExtTask;
     entryPoints[0].pRoutine = TaskRoutineSubmit;
     entryPoints[0].pCompleteProc = 0;
-    entryPoints[0].pGetSubTaskProc = 0;
-    entryPoints[0].pCompleteSubTaskProc = 0;
+    entryPoints[0].pOutputPostProc    = 0;
     entryPoints[0].requiredNumThreads = 1;
 
     entryPoints[1].pState = this;
     entryPoints[1].pParam = pExtTask;
     entryPoints[1].pRoutine = TaskRoutineQuery;
     entryPoints[1].pCompleteProc = 0;
-    entryPoints[1].pGetSubTaskProc = 0;
-    entryPoints[1].pCompleteSubTaskProc = 0;
+    entryPoints[1].pOutputPostProc    = 0;
     entryPoints[1].requiredNumThreads = 1;
 
     numEntryPoints = 2;

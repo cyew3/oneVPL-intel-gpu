@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2019 Intel Corporation
+// Copyright (c) 2010-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -326,7 +326,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         while (MFX_WRN_IN_EXECUTION == pTask->opRes)
         {
             task_sts = GetTask(call, previousTaskHandle, 0);
-            
+
             if (task_sts != MFX_ERR_NONE)
                 continue;
 
@@ -334,17 +334,23 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
                                                        call.pTask->entryPoint.pParam,
                                                        call.threadNum,
                                                        call.callNum);
-            
+
 
             // save the previous task's handle
             previousTaskHandle = call.taskHandle;
-            
+
             MarkTaskCompleted(&call, 0);
 
-                                   
+
             if ((mfxU32)((GetHighPerformanceCounter() - start)/frequency) > timeToWait)
                 break;
-            
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+            if (MFX_ERR_NONE_PARTIAL_OUTPUT == call.res) break;
+            if (MFX_TASK_BUSY == call.res &&
+                (call.pTask->threadingPolicy & MFX_TASK_POLLING)) continue; //respin task by skipping wait
+#endif
+
             if (MFX_TASK_DONE!= call.res)
             {
                 vm_status vmRes;
@@ -367,6 +373,24 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         //
         // inspect the task
         //
+
+        // pertial output is ready, but the task is not done
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        const MFX_TASK& tsk = pTask->param.task;
+        if(tsk.entryPoint.pOutputPostProc) { //if postprocessing required
+            mfxStatus sts = tsk.entryPoint.pOutputPostProc(tsk.entryPoint.pState, tsk.entryPoint.pParam);
+            MFX_CHECK_STS(sts);
+        }
+
+        if (MFX_ERR_NONE_PARTIAL_OUTPUT == pTask->opRes)
+        {
+            pTask->opRes = MFX_WRN_IN_EXECUTION;
+            pTask->curStatus = MFX_TASK_NEED_CONTINUE;
+            pTask->param.bWaiting = false;
+
+            return MFX_ERR_NONE_PARTIAL_OUTPUT;
+        }
+#endif
 
         // the handle is outdated,
         // the previous task job is over and completed with successful status
@@ -404,6 +428,24 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         pTask->done.wait_for(guard, std::chrono::milliseconds(timeToWait), [pTask, handle] {
             return (pTask->jobID != handle.jobID) || (MFX_WRN_IN_EXECUTION != pTask->opRes);
         });
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        const MFX_TASK& tsk = pTask->param.task;
+        if(tsk.entryPoint.pOutputPostProc) { //if postprocessing required
+            mfxStatus sts = tsk.entryPoint.pOutputPostProc(tsk.entryPoint.pState, tsk.entryPoint.pParam);
+            MFX_CHECK_STS(sts);
+        }
+
+        if (MFX_ERR_NONE_PARTIAL_OUTPUT == pTask->opRes)
+        {
+            pTask->opRes = MFX_WRN_IN_EXECUTION;
+            pTask->curStatus = MFX_TASK_NEED_CONTINUE;
+            pTask->param.bWaiting = false;
+            WakeUpThreads();
+
+            return MFX_ERR_NONE_PARTIAL_OUTPUT;
+        }
+#endif
 
         if (pTask->jobID == handle.jobID) {
             return pTask->opRes;

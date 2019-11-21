@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1008,8 +1008,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
     // callback to run after complete task / depricated
     pEntryPoints[0].pCompleteProc        = 0;
     // callback to run after complete sub-task (for SW implementation makes sense) / (NON-OBLIGATORY)
-    pEntryPoints[0].pGetSubTaskProc      = 0;
-    pEntryPoints[0].pCompleteSubTaskProc = 0;
+    pEntryPoints[0].pOutputPostProc      = 0;
 
     pEntryPoints[0].requiredNumThreads   = 1;
     pEntryPoints[1] = pEntryPoints[0];

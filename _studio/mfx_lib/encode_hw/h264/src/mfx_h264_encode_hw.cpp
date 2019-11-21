@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,12 @@ const char frameType[] = {'U','I','P','U','B'};
 
 using namespace MfxHwH264Encode;
 
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+// special value to mark untouch space in bitstream (should be not equal to start code or valid NAL type)
+#define PO_EMPTY_MARK 0xF4000000
+// mark interval in bitstream
+#define PO_MARK_INTERVAL  256
+#endif
 
 namespace MfxHwH264EncodeHW
 {
@@ -421,6 +427,13 @@ mfxStatus ImplementationAvc::Query(
             ExtMultiFrameControl->Flush = 1;
         }
 #endif
+#ifdef MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT
+        if(mfxExtPartialBitstreamParam* po = GetExtBuffer(*out))
+        {
+            po->Granularity = 1;
+            po->BlockSize = 1;
+        }
+#endif
 
     }
     else if (queryMode == 2)  // see MSDK spec for details related to Query mode 2
@@ -459,6 +472,22 @@ mfxStatus ImplementationAvc::Query(
         mfxExtFeiParam* feiParam = GetExtBuffer(*in);
         if ((NULL != feiParam) && (MFX_FEI_FUNCTION_ENCODE != feiParam->Func))
             checkSts = MFX_ERR_UNSUPPORTED;
+
+#ifdef MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT
+        if(mfxExtPartialBitstreamParam* po = GetExtBuffer(*out))
+        {
+            if(po->Granularity < MFX_PARTIAL_BITSTREAM_NONE || po->Granularity > MFX_PARTIAL_BITSTREAM_ANY) {
+                checkSts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            }
+
+            if(po->Granularity == MFX_PARTIAL_BITSTREAM_BLOCK && po->BlockSize == 0)
+                checkSts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+            if(out->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE) {
+                checkSts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            }
+        }
+#endif
 
         out->IOPattern  = tmp.IOPattern;
         out->Protected  = tmp.Protected;
@@ -748,6 +777,12 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 , m_isWiDi(false)
 #endif
 , m_resetBRC(false)
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+, m_isPOut(false)
+, m_modePOut(MFX_PARTIAL_BITSTREAM_NONE)
+, m_blockPOut(0)
+#endif
+
 #if USE_AGOP
 , m_agopBestIdx(0)
 , m_agopCurrentLen(0)
@@ -1138,6 +1173,57 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     m_recFrameOrder.resize(request.NumFrameMin, 0xffffffff);
 
     m_recNonRef[0] = m_recNonRef[1] = 0xffffffff;
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    if (mfxExtPartialBitstreamParam const * bo = GetExtBuffer(*par)) //need to check original par, because m_video always contains all buffers
+    {
+
+        //check for bitstream patching
+        bool needIntermediateBitstreamBuffer =
+            m_video.calcParam.numTemporalLayer > 0 || (m_video.mfx.NumRefFrame & 1);
+
+        mfxExtSpsHeader const & extSps = GetExtBufferRef(m_video);
+        mfxExtPpsHeader const & extPps = GetExtBufferRef(m_video);
+
+        mfxU8 constraintFlags =
+            (extSps.constraints.set0 << 7) | (extSps.constraints.set1 << 6) |
+            (extSps.constraints.set2 << 5) | (extSps.constraints.set3 << 4) |
+            (extSps.constraints.set4 << 3) | (extSps.constraints.set5 << 2) |
+            (extSps.constraints.set6 << 1) | (extSps.constraints.set7 << 0);
+
+        bool inPlacePatchNeeded =
+            constraintFlags != 0 ||
+            extSps.nalRefIdc != 1 ||
+            extPps.nalRefIdc != 1 ||
+            extSps.gapsInFrameNumValueAllowedFlag == 1 ||
+            (extSps.maxNumRefFrames & 1);
+
+        bool doPatch = (IsOn(m_video.mfx.LowPower) && (m_video.calcParam.numTemporalLayer > 0)) ||
+            needIntermediateBitstreamBuffer ||
+            inPlacePatchNeeded;
+
+        if ((!((IsOn(m_video.mfx.LowPower) && (m_video.calcParam.numTemporalLayer > 0))) &&
+            m_caps.ddi_caps.HeaderInsertion == 0 &&
+            (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI))
+            || m_video.Protected != 0)
+            doPatch = needIntermediateBitstreamBuffer = false;
+
+        m_isPOut = !doPatch;
+        MFX_CHECK(!doPatch, MFX_ERR_INVALID_VIDEO_PARAM);
+        m_modePOut = bo->Granularity;
+
+        MFX_CHECK((bo->Granularity >= MFX_PARTIAL_BITSTREAM_NONE && bo->Granularity <= MFX_PARTIAL_BITSTREAM_ANY), MFX_ERR_INVALID_VIDEO_PARAM);
+
+        if(m_modePOut == MFX_PARTIAL_BITSTREAM_NONE ||
+            (m_modePOut == MFX_PARTIAL_BITSTREAM_SLICE && par->mfx.NumSlice < 2)) { //No sense to use PO for 1 slice
+            m_isPOut = false;
+        }
+        else if(m_modePOut == MFX_PARTIAL_BITSTREAM_BLOCK) {
+            MFX_CHECK((bo->BlockSize != 0), MFX_ERR_INVALID_VIDEO_PARAM);
+            m_blockPOut = bo->BlockSize;
+        }
+    }
+#endif
 
 #if defined(MFX_VA_WIN)
     if (IsOn(extOpt3.EnableMBQP) && m_core->GetVAType() != MFX_HW_VAAPI)
@@ -1877,6 +1963,29 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
         mod_par.Restore(newPar);
     }
 #endif
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    //reconfigure partial output on reset if it exists in ext buffers
+    //otherwise, disable it
+    if (mfxExtPartialBitstreamParam const * bo = GetExtBuffer(m_video))
+    {
+
+        m_isPOut = true;
+        m_modePOut = bo->Granularity;
+
+        MFX_CHECK((bo->Granularity >= MFX_PARTIAL_BITSTREAM_NONE && bo->Granularity <= MFX_PARTIAL_BITSTREAM_ANY), MFX_ERR_INVALID_VIDEO_PARAM);
+
+        if(m_modePOut == MFX_PARTIAL_BITSTREAM_NONE ||
+            (m_modePOut == MFX_PARTIAL_BITSTREAM_SLICE && par->mfx.NumSlice < 2)) { //No sense to use PO for 1 slice
+            m_isPOut = false;
+        }
+        else if(m_modePOut == MFX_PARTIAL_BITSTREAM_BLOCK) {
+            MFX_CHECK((bo->BlockSize != 0), MFX_ERR_INVALID_VIDEO_PARAM);
+            m_blockPOut = bo->BlockSize;
+        }
+    }
+#endif
+
     return checkStatus;
 }
 
@@ -2532,12 +2641,22 @@ namespace
     mfxStatus CountLeadingFF(
         VideoCORE & core,
         DdiTask &   task,
-        mfxU32      fid)
+        mfxU32      fid
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        , bool        isPOut = false
+#endif
+    )
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CountLeadingFF");
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        if(isPOut)
+            return MFX_ERR_NONE;
+#endif
         mfxFrameData bitstream = {};
 
         task.m_numLeadingFF[fid] = 0;
+
         FrameLocker lock(&core, bitstream, task.m_midBit[fid]);
         if (bitstream.Y == 0)
             return Error(MFX_ERR_LOCK_MEMORY);
@@ -2894,6 +3013,8 @@ mfxStatus ImplementationAvc::CheckSliceSize(DdiTask &task, bool &bToRecode)
 
     MFX_CHECK(task.m_fieldPicFlag == 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
+
+
     if ((sts = CopyBitstream(*m_core, m_video, task, task.m_fid[0], pBS, bsSizeAvail)) != MFX_ERR_NONE)
         return Error(sts);
 
@@ -2991,11 +3112,37 @@ mfxStatus ImplementationAvc::CheckBRCStatus(DdiTask &task, bool &bToRecode, mfxU
         }
     }
     return MFX_ERR_NONE;
-
-
-
 }
 
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+mfxStatus ImplementationAvc::NextBitstreamDataLength(mfxBitstream * bs)
+{
+    //find task corresponding to required bitstream
+    mfxI64 off = 0;
+
+    {
+        std::lock_guard<std::mutex> lock(m_offsetMutex);
+        auto it = m_offsetsMap.find(bs);
+        if(it != m_offsetsMap.end()) {
+            std::queue<uint64_t>& q = (*it).second;
+            if(!q.empty()) {
+                off = q.front();
+                q.pop();
+                if(!q.empty() && q.front() == 0) {
+                    //last offset => remove bitstream
+                    m_offsetsMap.erase(it);
+                }
+            }
+        }
+    }
+
+    if(off){
+        //update bitstream length
+        bs->DataLength = (mfxU32)off;
+    }
+    return MFX_ERR_NONE;
+}
+#endif
 
 mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 {
@@ -3485,12 +3632,57 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             if (!task->m_midRec || !task->m_midBit[0])
                 return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
 
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+            if(m_isPOut)
+            {
+                task->m_procBO[0] = 0;
+                task->m_scanBO[0] = 0;
+
+                task->m_bsPO[0] = {};
+                MFX_CHECK(m_core->LockFrame(task->m_midBit[0], &task->m_bsPO[0]) == MFX_ERR_NONE, MFX_ERR_LOCK_MEMORY);
+                MFX_CHECK(task->m_bsPO[0].Y != 0, MFX_ERR_LOCK_MEMORY);
+
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::MARK_BS");
+                if(m_isPOut) {
+                    for(uint32_t o = 0; o < m_maxBsSize / PO_MARK_INTERVAL / 2; o++)
+                        *((uint32_t*)(task->m_bsPO[0].Y + PO_MARK_INTERVAL * o)) = PO_EMPTY_MARK;
+                }
+                task->m_nextMarkerPtr[0] = task->m_bsPO[0].Y + 256;
+            }
+#endif
+
             if (task->m_fieldPicFlag)
             {
                 task->m_idxBs[1] = FindFreeResourceIndex(m_bit);
                 task->m_midBit[1] = AcquireResource(m_bit, task->m_idxBs[1]);
                 if (!task->m_midBit[1])
                     return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+                if(m_isPOut)
+                {
+                    task->m_procBO[1] = 0;
+                    task->m_scanBO[1] = 0;
+                    //this should disable  repack effectivly setting NumPakPasses = 1 in driver
+                    task->m_minQP = 1;
+                    task->m_maxQP = 51;
+
+                    task->m_bsPO[0] = {};
+                    MFX_CHECK(m_core->LockFrame(task->m_midBit[0], &task->m_bsPO[0]) == MFX_ERR_NONE, MFX_ERR_LOCK_MEMORY);
+
+                    mfxU8* ptr = task->m_bsPO[0].Y;
+                    MFX_CHECK(ptr != 0, MFX_ERR_LOCK_MEMORY);
+
+                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::MARK_BS");
+                    const uint32_t offsets = m_maxBsSize >> 9; // m_maxBsSize / 256 / 2;
+                    mfxU8* ptrS = ptr;
+                    for(uint32_t o = 0; o < offsets; o++) {
+                        *((uint32_t*)(ptr)) = PO_EMPTY_MARK;
+                        ptr += PO_MARK_INTERVAL;
+                    }
+                    task->m_nextMarkerPtr[0] = ptrS + PO_MARK_INTERVAL;
+                }
+#endif
             }
 
             // Change DPB
@@ -3821,19 +4013,58 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             /* Query results if NO FEI Field processing mode (this is legacy encoding) */
             if (!task->m_singleFieldMode)
             {
-                for (f = f_start; f <= f_end; f++)
-                {
-                    if ((sts = QueryStatus(*task, task->m_fid[f])) != MFX_ERR_NONE)
-                        return sts;
-                }
-                task->m_bs = bs;
-                for (f = f_start; f <= f_end; f++)
-                {
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+                if(m_isPOut) {
+                    do { //polling while get busy state
+                        for(f = f_start; f <= f_end; f++)
+                        {
+                            sts = QueryStatus(*task, task->m_fid[f], false);
 
-                    if ((sts = UpdateBitstream(*task, task->m_fid[f])) != MFX_ERR_NONE)
-                        return Error(sts);
-                }
+                            switch(sts)
+                            {
+                            case MFX_TASK_DONE:
+                                break;
+                            case MFX_TASK_BUSY:
+                                break;
+                            default:
+                                return sts;
+                            }
+                        }
 
+                        task->m_bs = bs;
+                        for(f = f_start; f <= f_end; f++)
+                        {
+                            sts = UpdateBitstream(*task, task->m_fid[f]);
+                            if(sts == MFX_ERR_NONE) {
+                               sts = QueryStatus(*task, task->m_fid[f], false);
+                            }else if(sts == MFX_TASK_BUSY)
+                                break;
+
+                            MFX_CHECK(sts == MFX_ERR_NONE, sts);
+
+                            if(task->m_bsPO[f].Y != 0) {
+                                MFX_CHECK(m_core->UnlockFrame(task->m_midBit[f], &task->m_bsPO[f]) == MFX_ERR_NONE, MFX_ERR_LOCK_MEMORY);
+                            }
+                        }
+                    } while(sts == MFX_TASK_BUSY);
+                }
+                else
+                {
+#endif
+                    for(f = f_start; f <= f_end; f++)
+                    {
+                        if((sts = QueryStatus(*task, task->m_fid[f])) != MFX_ERR_NONE)
+                            return sts;
+                    }
+                    task->m_bs = bs;
+                    for(f = f_start; f <= f_end; f++)
+                    {
+                        if((sts = UpdateBitstream(*task, task->m_fid[f])) != MFX_ERR_NONE)
+                            return Error(sts);
+                    }
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+                }
+#endif
                 OnEncodingQueried(task);
             } // if (!task->m_singleFieldMode)
         }
@@ -3897,6 +4128,23 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     return MFX_TASK_DONE;
 }
 
+//function to be called from SyncOp to complete bitstream DataLength update
+//param should conttain pointer to bitstream
+mfxStatus ImplementationAvc::UpdateBitstreamData(void * state, void * param)
+{
+    ImplementationAvc & impl = *(ImplementationAvc *)state;
+
+    if (impl.m_failedStatus != MFX_ERR_NONE)
+        return impl.m_failedStatus;
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    if(impl.m_isPOut) {
+        return impl.NextBitstreamDataLength((mfxBitstream *)param);
+    }
+#endif
+
+    return MFX_ERR_NONE;
+}
 
 mfxStatus ImplementationAvc::AsyncRoutineHelper(void * state, void * param, mfxU32, mfxU32)
 {
@@ -3909,8 +4157,11 @@ mfxStatus ImplementationAvc::AsyncRoutineHelper(void * state, void * param, mfxU
     try
     {
         sts = impl.AsyncRoutine((mfxBitstream *)param);
-        //printf("encoder sts = %d\n",sts);
-        if (sts != MFX_TASK_BUSY && sts != MFX_TASK_DONE)
+        if (sts != MFX_TASK_BUSY && sts != MFX_TASK_DONE
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+            && sts != MFX_ERR_NONE_PARTIAL_OUTPUT
+#endif
+            )
             impl.m_failedStatus = sts;
     }
     catch (...)
@@ -3938,6 +4189,12 @@ mfxStatus ImplementationAvc::EncodeFrameCheck(
     mfxExtCodingOption const & extOpt = GetExtBufferRef(m_video);
     if (IsOff(extOpt.FieldOutput))
     {
+#ifdef MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT
+        if(m_isPOut) { //save new bitstream in map
+            std::lock_guard<std::mutex> lock(m_offsetMutex);
+            m_offsetsMap[bs] = std::queue<uint64_t>();
+        }
+#endif
         return EncodeFrameCheckNormalWay(ctrl, surface, bs,
             reordered_surface, internalParams, entryPoints, numEntryPoints);
     }
@@ -3969,8 +4226,11 @@ mfxStatus ImplementationAvc::EncodeFrameCheck(
             entryPoints[0].pState               = this;
             entryPoints[0].pParam               = &m_listOfPairsForFieldOutputMode.back();
             entryPoints[0].pCompleteProc        = 0;
-            entryPoints[0].pGetSubTaskProc      = 0;
-            entryPoints[0].pCompleteSubTaskProc = 0;
+            entryPoints[0].pOutputPostProc      =
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+                m_isPOut ? UpdateBitstreamData :
+#endif
+                nullptr;
             entryPoints[0].requiredNumThreads   = 1;
             entryPoints[0].pRoutineName         = "AsyncRoutine";
             entryPoints[0].pRoutine             = AsyncRoutineHelper;
@@ -4026,8 +4286,11 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
         entryPoints[0].pState               = this;
         entryPoints[0].pParam               = bs;
         entryPoints[0].pCompleteProc        = 0;
-        entryPoints[0].pGetSubTaskProc      = 0;
-        entryPoints[0].pCompleteSubTaskProc = 0;
+        entryPoints[0].pOutputPostProc      =
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+                m_isPOut ? UpdateBitstreamData :
+#endif
+                nullptr;
         entryPoints[0].requiredNumThreads   = 1;
         entryPoints[0].pRoutineName         = "AsyncRoutine";
         entryPoints[0].pRoutine             = AsyncRoutineHelper;
@@ -4116,8 +4379,11 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
     entryPoints[0].pState               = this;
     entryPoints[0].pParam               = bs;
     entryPoints[0].pCompleteProc        = 0;
-    entryPoints[0].pGetSubTaskProc      = 0;
-    entryPoints[0].pCompleteSubTaskProc = 0;
+    entryPoints[0].pOutputPostProc      =
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+                m_isPOut ? UpdateBitstreamData :
+#endif
+                nullptr;
     entryPoints[0].requiredNumThreads   = 1;
     entryPoints[0].pRoutineName         = "AsyncRoutine";
     entryPoints[0].pRoutine             = AsyncRoutineHelper;
@@ -4149,14 +4415,15 @@ mfxStatus ImplementationAvc::QueryLookahead(
 
 mfxStatus ImplementationAvc::QueryStatus(
     DdiTask & task,
-    mfxU32    fid)
+    mfxU32    fid,
+    bool      useEvent)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::QueryStatus");
     if (task.m_bsDataLength[fid] == 0)
     {
         mfxStatus sts = MFX_TASK_BUSY;
 
-        sts = m_ddi->QueryStatus(task, fid);
+        sts = m_ddi->QueryStatus(task, fid, useEvent);
         MFX_TRACE_3("m_ddi->QueryStatus", "Task[field=%d feedback=%d] sts=%d \n", fid, task.m_statusReportNumber[fid], sts);
 
         if (sts == MFX_WRN_DEVICE_BUSY)
@@ -4166,9 +4433,22 @@ mfxStatus ImplementationAvc::QueryStatus(
             return Error(sts);
 
         if (m_video.Protected == 0)
-            if ((sts = CountLeadingFF(*m_core, task, fid)) != MFX_ERR_NONE)
+            if ((sts = CountLeadingFF(*m_core, task, fid
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+                , m_isPOut
+#endif
+            )) != MFX_ERR_NONE)
                 return Error(sts);
     }
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    else { //free event if any
+        if(task.m_GpuEvent[fid].gpuSyncEvent != INVALID_HANDLE_VALUE) {
+            // Return event to the EventCache
+            m_ddi->m_EventCache->ReturnEvent(task.m_GpuEvent[fid].gpuSyncEvent);
+            task.m_GpuEvent[fid].gpuSyncEvent = INVALID_HANDLE_VALUE;
+        }
+    }
+#endif
 
     return MFX_ERR_NONE;
 }
@@ -4233,7 +4513,95 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     mfxU32    fid)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::UpdateBitstream");
-    mfxFrameData bitstream = {};
+
+    mfxFrameData bitstream =
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        task.m_bsPO[fid];
+#else
+        {};
+#endif
+
+    mfxU32   bsSizeAvail = task.m_bs->MaxLength - task.m_bs->DataOffset - task.m_bs->DataLength;
+    mfxU8   *bsData = task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength;
+    mfxU32  dataLength = task.m_bs->DataLength;
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    if (task.m_bsDataLength[fid] == 0) {
+        mfxU8 *alignedEndPtr = (bitstream.Y + bsSizeAvail);
+
+        MFX_CHECK((!(task.m_procBO[fid] && *(uint32_t*)bitstream.Y != PO_EMPTY_MARK)), MFX_ERR_DEVICE_FAILED);
+
+        mfxU8* nptr = task.m_nextMarkerPtr[fid];
+        while ((nptr < alignedEndPtr) && (*(uint32_t*)nptr != PO_EMPTY_MARK)) nptr += PO_MARK_INTERVAL;
+
+        mfxU32 bsSizeActual = (int)(nptr - bitstream.Y) - PO_MARK_INTERVAL,
+               bsSizeToCopy = 0;
+        mfxU8* alignedTailPtr = bitstream.Y + bsSizeActual;
+        task.m_nextMarkerPtr[fid] = nptr;
+
+        if (bsSizeActual > task.m_procBO[fid] + 5) {
+            if (m_modePOut == MFX_PARTIAL_BITSTREAM_BLOCK) {
+                bsSizeToCopy = (bsSizeActual - task.m_procBO[fid] > m_blockPOut) ? m_blockPOut : 0;
+            } else if(m_modePOut == MFX_PARTIAL_BITSTREAM_SLICE) {
+                //scan bitstream for next slice starting from the previous scan position
+                mfxU8 *nextNAL = bitstream.Y + task.m_scanBO[fid];
+                mfxU8 curNALType = task.m_curNALtype;
+
+                if (task.m_scanBO[fid] == task.m_procBO[fid])
+                {
+                    nextNAL += (nextNAL[2] == 1) ? 3 : 4;
+                    curNALType = *nextNAL & 0x1f;
+                }
+
+                mfxU32 b4 = (0xffff<<16) | (nextNAL[0] << 8) | nextNAL[1];
+                for(; nextNAL < alignedTailPtr - 5; ++nextNAL) {
+                    b4 <<= 8;
+                    b4 |= nextNAL[2];
+                    if((b4 & 0x00ffffff) == 1) {
+                        if(curNALType == 0x01 /*NAL_UT_SLICE*/ || curNALType == 0x05 /*NAL_UT_IDR_SLICE*/) {
+                            bsSizeToCopy = (mfxU32)(nextNAL - bitstream.Y) - task.m_procBO[fid];
+                            if(b4 == 1) bsSizeToCopy--;
+                            break;
+                        }
+                        else {
+                            nextNAL += 3;
+                            curNALType = *nextNAL & 0x1f;
+                        }
+                    }
+                }
+
+                task.m_curNALtype = curNALType;
+                task.m_scanBO[fid] = (int)(nextNAL - bitstream.Y);
+            }
+            else {
+                bsSizeToCopy = bsSizeActual - task.m_procBO[fid];
+            }
+        }
+
+        if(!bsSizeToCopy) return MFX_TASK_BUSY; //scheduler should respin task
+
+        FastCopyBufferVid2Sys(bsData, bitstream.Y + task.m_procBO[fid], bsSizeToCopy);
+        task.m_procBO[fid] += bsSizeToCopy;
+        *(int *)bitstream.Y = PO_EMPTY_MARK;
+
+        setFrameInfo(task, fid);
+
+        task.m_bs->TimeStamp       = task.m_timeStamp;
+        task.m_bs->DecodeTimeStamp = CalcDTSFromPTS(m_video.mfx.FrameInfo, mfxU16(task.m_dpbOutputDelay), task.m_timeStamp);
+        task.m_bs->PicStruct       = task.GetPicStructForDisplay();
+        task.m_bs->FrameType       = task.m_type[task.GetFirstField()] & ~MFX_FRAMETYPE_KEYPIC;
+
+        if(task.m_fieldPicFlag) {
+            task.m_bs->FrameType = mfxU16(task.m_bs->FrameType | ((task.m_type[!task.GetFirstField()] & ~MFX_FRAMETYPE_KEYPIC) << 8));
+        }
+
+        dataLength += bsSizeToCopy;
+
+        addPartialOutputOffset(task, dataLength);
+
+        return MFX_ERR_NONE_PARTIAL_OUTPUT;
+    }
+#endif
 
     bool needIntermediateBitstreamBuffer =
         m_video.calcParam.numTemporalLayer > 0 ||
@@ -4257,9 +4625,14 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     // Lock d3d surface with compressed picture.
     MFX_LTRACE_S(MFX_TRACE_LEVEL_INTERNAL, task.m_FrameName);
 
-    FrameLocker lock(m_core, bitstream, task.m_midBit[fid]);
-    if (bitstream.Y == 0)
-        return Error(MFX_ERR_LOCK_MEMORY);
+    FrameLocker lock(m_core, bitstream, task.m_midBit[fid], false,
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        !m_isPOut
+#else
+        true
+#endif
+    );
+    MFX_CHECK(bitstream.Y != 0, MFX_ERR_LOCK_MEMORY);
 
     mfxU32 skippedff = task.m_numLeadingFF[fid];
     task.m_bsDataLength[fid] -= skippedff;
@@ -4269,15 +4642,33 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         MFX_LTRACE_S(MFX_TRACE_LEVEL_EXTCALL, "First 4 bytes of output bitstream don't contain Annex B NAL unit startcode - start_code_prefix_one_3bytes");
     }
 
-    mfxU32   bsSizeActual  = task.m_bsDataLength[fid];
-    mfxU32   bsSizeToCopy  = task.m_bsDataLength[fid];
-    mfxU32   bsSizeAvail   = task.m_bs->MaxLength - task.m_bs->DataOffset - task.m_bs->DataLength;
-    mfxU8 *  bsData        = task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength;
-    mfxU32 * dataLength    = &task.m_bs->DataLength;
+    mfxU32   bsSizeActual = task.m_bsDataLength[fid];
+    mfxU32   bsSizeToCopy = task.m_bsDataLength[fid];
 
-    mfxU32 seconfFieldOffset = 0;
-    if (fid)
-        seconfFieldOffset = task.m_bs->DataLength;
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    if (m_isPOut && task.m_procBO[fid] < (uint32_t)task.m_bsDataLength[fid])
+    {
+        if (m_modePOut == MFX_PARTIAL_BITSTREAM_BLOCK) {
+            bsSizeActual = std::min(m_blockPOut, (mfxU32)task.m_bsDataLength[fid] - task.m_procBO[fid]);
+            bsSizeToCopy = bsSizeActual;
+        }
+        else if (m_modePOut == MFX_PARTIAL_BITSTREAM_SLICE) {
+            NalUnit nal;
+
+            bsSizeToCopy = 0;
+            do {
+                nal = GetNalUnit(bitstream.Y + task.m_procBO[fid] + bsSizeToCopy, bitstream.Y + task.m_bsDataLength[fid]);
+                bsSizeToCopy += (uint32_t)(nal.end - nal.begin);
+            } while (nal.type != 0x01 && nal.type != 0x05);
+
+            bsSizeActual = bsSizeToCopy;
+        }
+        else if (m_modePOut == MFX_PARTIAL_BITSTREAM_ANY) {
+            bsSizeActual = (mfxU32)task.m_bsDataLength[fid] - task.m_procBO[fid];
+            bsSizeToCopy = bsSizeActual;
+        }
+    }
+#endif
 
     if (m_video.Protected == 0 || task.m_notProtected)
     {
@@ -4298,13 +4689,13 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         mfxEncryptedData * edata = GetEncryptedData(*task.m_bs, fieldNumInStreamOrder);
 
         bsData        = edata->Data + edata->DataOffset + edata->DataLength;
-        dataLength    = &edata->DataLength;
+        dataLength    = edata->DataLength;
         bsSizeToCopy  = mfx::align2_value(bsSizeActual, 16);
         bsSizeAvail   = edata->MaxLength - edata->DataOffset - edata->DataLength;
     }
 #endif
 
-    mfxU32 initialDataLength = *dataLength;
+    mfxU32 initialDataLength = dataLength;
 
     assert(bsSizeToCopy <= bsSizeAvail);
 
@@ -4320,7 +4711,11 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     }
 
     // Avoid segfaults on very high bitrates
-    if (bsSizeToCopy > m_maxBsSize)
+    if (bsSizeToCopy > m_maxBsSize
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        && !m_isPOut
+#endif
+        )
     {
         // bsSizeToCopy = m_maxBsSize;
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Too big bitstream surface unlock (bitstream)");
@@ -4332,29 +4727,50 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     // Copy compressed picture from d3d surface to buffer in system memory
     if (bsSizeToCopy)
     {
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+        FastCopyBufferVid2Sys(bsData, bitstream.Y + task.m_procBO[fid], bsSizeToCopy);
+        task.m_procBO[fid] += bsSizeToCopy;
+#else
         FastCopyBufferVid2Sys(bsData, bitstream.Y, bsSizeToCopy);
+#endif
     }
 
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    if(!m_isPOut)
+#endif
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Surface unlock (bitstream)");
         MFX_LTRACE_S(MFX_TRACE_LEVEL_INTERNAL, task.m_FrameName);
         mfxStatus sts = lock.Unlock();
         MFX_CHECK_STS(sts);
     }
-
-#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
-    mfxExtEncodedUnitsInfo * encUnitsInfo = NULL;
-    if (task.m_collectUnitsInfo
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
-        && (!m_video.Protected || task.m_notProtected)
-#endif
-        )
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    else
     {
-        encUnitsInfo = (mfxExtEncodedUnitsInfo*)GetExtBuffer(task.m_bs->ExtParam, task.m_bs->NumExtParam, MFX_EXTBUFF_ENCODED_UNITS_INFO);
+        if (task.m_procBO[fid] < (uint32_t)task.m_bsDataLength[fid])
+        {
+            setFrameInfo(task, fid);
+
+            task.m_bs->TimeStamp       = task.m_timeStamp;
+            task.m_bs->DecodeTimeStamp = CalcDTSFromPTS(m_video.mfx.FrameInfo, mfxU16(task.m_dpbOutputDelay), task.m_timeStamp);
+            task.m_bs->PicStruct       = task.GetPicStructForDisplay();
+            task.m_bs->FrameType       = task.m_type[task.GetFirstField()] & ~MFX_FRAMETYPE_KEYPIC;
+            if (task.m_fieldPicFlag)
+                task.m_bs->FrameType   = mfxU16(task.m_bs->FrameType | ((task.m_type[!task.GetFirstField()] & ~MFX_FRAMETYPE_KEYPIC) << 8));
+
+            dataLength += bsSizeToCopy;
+
+            addPartialOutputOffset(task, dataLength);
+            return MFX_ERR_NONE_PARTIAL_OUTPUT;
+        }
     }
 #endif
 
-    if (doPatch)
+    if (doPatch
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    && !m_isPOut
+#endif
+        )
     {
         mfxU8 * dbegin = bsData;
         mfxU8 * dend   = bsData + bsSizeActual;
@@ -4370,30 +4786,32 @@ mfxStatus ImplementationAvc::UpdateBitstream(
             InsertSVCNAL(task, fid, bsData, bsData + bsSizeActual, dbegin, dend)://insert SVC NAL for temporal scalability
             PatchBitstream(m_video, task, fid, bsData, bsData + bsSizeActual, dbegin, dend);
 
-        *dataLength += (mfxU32)(endOfPatchedBitstream - dbegin);
+        dataLength += (mfxU32)(endOfPatchedBitstream - dbegin);
     }
     else
     {
-        *dataLength += bsSizeActual;
+        dataLength += bsSizeActual;
     }
 
     if (m_enabledSwBrc)
     {
         mfxU32 minFrameSize = task.m_minFrameSize;
-        mfxU32 frameSize = *dataLength - initialDataLength;
+        mfxU32 frameSize = dataLength - initialDataLength;
         bsData      += frameSize;
         bsSizeAvail -= frameSize;
         if (frameSize < minFrameSize)
         {
             CheckedMemset(bsData, bsData + bsSizeAvail, 0, minFrameSize - frameSize);
-            *dataLength += minFrameSize - frameSize;
+            dataLength += minFrameSize - frameSize;
         }
         else
         {
             CheckedMemset(bsData, bsData + bsSizeAvail, 0, skippedff);
-            *dataLength += skippedff;
+            dataLength += skippedff;
         }
     }
+
+    setFrameInfo(task, fid);
 
     // Update bitstream fields
     task.m_bs->TimeStamp = task.m_timeStamp;
@@ -4403,72 +4821,6 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     if (task.m_fieldPicFlag)
         task.m_bs->FrameType = mfxU16(task.m_bs->FrameType | ((task.m_type[!task.GetFirstField()]& ~MFX_FRAMETYPE_KEYPIC) << 8));
 
-    mfxExtCodingOption const &extOpt = GetExtBufferRef(m_video);
-
-    if (task.m_bs->NumExtParam > 0)
-    {
-        // setting of mfxExtAVCEncodedFrameInfo isn't supported for FieldOutput mode at the moment
-        if (IsOff(extOpt.FieldOutput))
-        {
-            mfxExtAVCEncodedFrameInfo * encFrameInfo = (mfxExtAVCEncodedFrameInfo*)GetExtBuffer(task.m_bs->ExtParam, task.m_bs->NumExtParam, MFX_EXTBUFF_ENCODED_FRAME_INFO);
-            if (encFrameInfo)
-            {
-                if (task.m_fieldPicFlag == 0)
-                {
-                    // should return actual reference lists to application
-                    // at the moment it's supported for progressive encoding only
-                    encFrameInfo->FrameOrder = task.m_extFrameTag;
-                    encFrameInfo->LongTermIdx = task.m_longTermFrameIdx == NO_INDEX_U8 ? NO_INDEX_U16 : task.m_longTermFrameIdx;
-                    encFrameInfo->MAD = task.m_mad[fid];
-
-                    if ( bRateControlLA(m_video.mfx.RateControlMethod))
-                        encFrameInfo->QP = task.m_cqpValue[fid];
-                    else
-                        encFrameInfo->QP = task.m_qpY[fid];
-
-                    // only return of ref list L0 is supported at the moment
-                    mfxU8 i = 0;
-                    for (i = 0; i < task.m_list0[0].Size(); i ++)
-                    {
-                        DpbFrame& refFrame = task.m_dpb[0][task.m_list0[0][i] & 127]; // retrieve corresponding ref frame from DPB
-                        encFrameInfo->UsedRefListL0[i].FrameOrder = refFrame.m_extFrameTag;
-                        if (refFrame.m_longterm && refFrame.m_longTermIdxPlus1) // reference frame is LTR with valid LTR idx
-                            encFrameInfo->UsedRefListL0[i].LongTermIdx = refFrame.m_longTermIdxPlus1 - 1;
-                        else
-                            encFrameInfo->UsedRefListL0[i].LongTermIdx = NO_INDEX_U16;
-                        encFrameInfo->UsedRefListL0[i].PicStruct = (mfxU16)MFX_PICSTRUCT_PROGRESSIVE;
-                    }
-
-                    for (; i < 32; i ++)
-                    {
-                        encFrameInfo->UsedRefListL0[i].FrameOrder  = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
-                        encFrameInfo->UsedRefListL0[i].LongTermIdx = NO_INDEX_U16;
-                        encFrameInfo->UsedRefListL0[i].PicStruct   = (mfxU16)MFX_PICSTRUCT_UNKNOWN;
-                    }
-                }
-                else if (fid)
-                {
-                    encFrameInfo->SecondFieldOffset = seconfFieldOffset;
-                }
-            }
-        }
-
-#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
-        if (task.m_collectUnitsInfo)
-        {
-            FillEncodingUnitsInfo(
-                task,
-                task.m_bs->Data + task.m_bs->DataOffset,
-                task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength,
-                encUnitsInfo,
-                fid
-            );
-
-        }
-        if (task.m_headersCache[fid].size() > 0) //if we have previously collected data about headers/slices
-            task.m_headersCache[fid].clear();
-#endif
-    } //if (task.m_bs->NumExtParam > 0)
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (m_video.Protected != 0 && !task.m_notProtected)
@@ -4483,15 +4835,28 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     task.m_fieldCounter++;
 
     // Update hrd buffer
-    m_hrd.RemoveAccessUnit(
-        task.m_bs->DataLength - initialDataLength,
-        task.m_fieldPicFlag,
-        (task.m_type[fid] & MFX_FRAMETYPE_IDR) != 0);
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    if(!m_isPOut) {
+#endif
+        m_hrd.RemoveAccessUnit(
+            task.m_bs->DataLength - initialDataLength,
+            task.m_fieldPicFlag,
+            (task.m_type[fid] & MFX_FRAMETYPE_IDR) != 0);
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    }
+#endif
 
-    if (initialDataLength == *dataLength)
+    if (initialDataLength == dataLength)
     {
         MFX_LTRACE_S(MFX_TRACE_LEVEL_PARAMS, "Unexpected behavior : length of bitstream stayed unchanged");
     }
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    if(m_isPOut)
+        addPartialOutputOffset(task, dataLength, true);
+    else
+#endif
+        task.m_bs->DataLength = dataLength;
 
     return MFX_ERR_NONE;
 }
@@ -4582,6 +4947,106 @@ void ImplementationAvc::FillEncodingUnitsInfo(
         }
     }
 } //ImplementationAvc::FillEncodingUnitsInfo
+#endif
+
+void ImplementationAvc::setFrameInfo( DdiTask & task, mfxU32    fid )
+{
+
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+    mfxExtEncodedUnitsInfo * encUnitsInfo = NULL;
+    if (task.m_collectUnitsInfo
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+        && (!m_video.Protected || task.m_notProtected)
+#endif
+        )
+    {
+        encUnitsInfo = (mfxExtEncodedUnitsInfo*)GetExtBuffer(task.m_bs->ExtParam, task.m_bs->NumExtParam, MFX_EXTBUFF_ENCODED_UNITS_INFO);
+    }
+#endif
+
+    mfxExtCodingOption const &extOpt = GetExtBufferRef(m_video);
+    mfxU32 seconfFieldOffset = 0;
+    if (fid)
+        seconfFieldOffset = task.m_bs->DataLength;
+
+    if (task.m_bs->NumExtParam > 0)
+    {
+        // setting of mfxExtAVCEncodedFrameInfo isn't supported for FieldOutput mode at the moment
+        if (IsOff(extOpt.FieldOutput))
+        {
+            mfxExtAVCEncodedFrameInfo * encFrameInfo = (mfxExtAVCEncodedFrameInfo*)GetExtBuffer(task.m_bs->ExtParam, task.m_bs->NumExtParam, MFX_EXTBUFF_ENCODED_FRAME_INFO);
+            if (encFrameInfo)
+            {
+                if (task.m_fieldPicFlag == 0)
+                {
+                    // should return actual reference lists to application
+                    // at the moment it's supported for progressive encoding only
+                    encFrameInfo->FrameOrder = task.m_extFrameTag;
+                    encFrameInfo->LongTermIdx = task.m_longTermFrameIdx == NO_INDEX_U8 ? NO_INDEX_U16 : task.m_longTermFrameIdx;
+                    encFrameInfo->MAD = task.m_mad[fid];
+
+                    if ( bRateControlLA(m_video.mfx.RateControlMethod))
+                        encFrameInfo->QP = task.m_cqpValue[fid];
+                    else
+                        encFrameInfo->QP = task.m_qpY[fid];
+
+                    // only return of ref list L0 is supported at the moment
+                    mfxU8 i = 0;
+                    for (i = 0; i < task.m_list0[0].Size(); i ++)
+                    {
+                        DpbFrame& refFrame = task.m_dpb[0][task.m_list0[0][i] & 127]; // retrieve corresponding ref frame from DPB
+                        encFrameInfo->UsedRefListL0[i].FrameOrder = refFrame.m_extFrameTag;
+                        if (refFrame.m_longterm && refFrame.m_longTermIdxPlus1) // reference frame is LTR with valid LTR idx
+                            encFrameInfo->UsedRefListL0[i].LongTermIdx = refFrame.m_longTermIdxPlus1 - 1;
+                        else
+                            encFrameInfo->UsedRefListL0[i].LongTermIdx = NO_INDEX_U16;
+                        encFrameInfo->UsedRefListL0[i].PicStruct = (mfxU16)MFX_PICSTRUCT_PROGRESSIVE;
+                    }
+
+                    for (; i < 32; i ++)
+                    {
+                        encFrameInfo->UsedRefListL0[i].FrameOrder  = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
+                        encFrameInfo->UsedRefListL0[i].LongTermIdx = NO_INDEX_U16;
+                        encFrameInfo->UsedRefListL0[i].PicStruct   = (mfxU16)MFX_PICSTRUCT_UNKNOWN;
+                    }
+                }
+                else if (fid)
+                {
+                    encFrameInfo->SecondFieldOffset = seconfFieldOffset;
+                }
+            }
+        }
+
+#ifndef MFX_AVC_ENCODING_UNIT_DISABLE
+        if (task.m_collectUnitsInfo)
+        {
+            FillEncodingUnitsInfo(
+                task,
+                task.m_bs->Data + task.m_bs->DataOffset,
+                task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength,
+                encUnitsInfo,
+                fid
+            );
+
+        }
+        if (task.m_headersCache[fid].size() > 0) //if we have previously collected data about headers/slices
+            task.m_headersCache[fid].clear();
+#endif
+    } //if (task.m_bs->NumExtParam > 0)
+
+}
+
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+void ImplementationAvc::addPartialOutputOffset(DdiTask & task, mfxU64 offset, bool last)
+{
+    std::lock_guard<std::mutex> lock(m_offsetMutex);
+    auto it = m_offsetsMap.find(task.m_bs);
+    if(it != m_offsetsMap.end()) {
+        std::queue<uint64_t>& q = (*it).second;
+        q.push(offset);
+        if(last) q.push(0);
+    }
+}
 #endif
 
 #if 0

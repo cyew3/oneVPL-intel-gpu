@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -294,7 +294,11 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     pps.transform_8x8_mode_flag                 = extPps->transform8x8ModeFlag;
     pps.pic_scaling_matrix_present_flag         = extPps->picScalingMatrixPresentFlag;
     pps.pic_scaling_list_present_flag           = extPps->picScalingMatrixPresentFlag;
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    pps.BRCPrecision                            = (mfxExtPartialBitstreamParam*)GetExtBuffer(par) != nullptr ? 1 : extDdi->BRCPrecision;
+#else
     pps.BRCPrecision                            = extDdi->BRCPrecision;
+#endif
     pps.BRCMaxQp                                = 0;
     pps.BRCMinQp                                = 0;
     pps.SliceSizeInBytes                        = extOpt2.MaxSliceSize;
@@ -3267,7 +3271,8 @@ mfxStatus D3D9SvcEncoder::Execute(
 
 mfxStatus D3D9SvcEncoder::QueryStatus(
     DdiTask & task,
-    mfxU32    fieldId)
+    mfxU32    fieldId,
+    bool      /*useEvent*/)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9SvcEncoder::QueryStatus");
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);

@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -503,26 +503,34 @@ mfxStatus CSmplBitstreamWriter::Reset()
     return Init(m_sFile.c_str());
 }
 
-mfxStatus CSmplBitstreamWriter::WriteNextFrame(mfxBitstream *pMfxBitstream, bool isPrint)
+mfxStatus CSmplBitstreamWriter::WriteNextFrame(mfxBitstream *pMfxBitstream, bool isPrint, bool isCompleteFrame)
 {
     // check if writer is initialized
     MSDK_CHECK_ERROR(m_bInited, false, MFX_ERR_NOT_INITIALIZED);
     MSDK_CHECK_POINTER(pMfxBitstream, MFX_ERR_NULL_PTR);
 
-    mfxU32 nBytesWritten = 0;
-
-    nBytesWritten = (mfxU32)fwrite(pMfxBitstream->Data + pMfxBitstream->DataOffset, 1, pMfxBitstream->DataLength, m_fSource);
-    MSDK_CHECK_NOT_EQUAL(nBytesWritten, pMfxBitstream->DataLength, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    // mark that we don't need bit stream data any more
-    pMfxBitstream->DataLength = 0;
-
-    m_nProcessedFramesNum++;
-
-    // print encoding progress to console every certain number of frames (not to affect performance too much)
-    if (isPrint && (1 == m_nProcessedFramesNum  || (0 == (m_nProcessedFramesNum % 100))))
+    if (isCompleteFrame)
     {
-        msdk_printf(MSDK_STRING("Frame number: %u\r"), m_nProcessedFramesNum);
+        mfxU32 nBytesWritten = 0;
+
+        nBytesWritten = (mfxU32)fwrite(pMfxBitstream->Data + pMfxBitstream->DataOffset, 1, pMfxBitstream->DataLength, m_fSource);
+        MSDK_CHECK_NOT_EQUAL(nBytesWritten, pMfxBitstream->DataLength, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        // mark that we don't need bit stream data any more
+        pMfxBitstream->DataLength = 0;
+        pMfxBitstream->DataOffset = 0;
+
+        m_nProcessedFramesNum++;
+
+        // print encoding progress to console every certain number of frames (not to affect performance too much)
+        if (isPrint && (1 == m_nProcessedFramesNum || (0 == (m_nProcessedFramesNum % 100))))
+        {
+            msdk_printf(MSDK_STRING("Frame number: %u\r"), m_nProcessedFramesNum);
+        }
+    }
+    else
+    {
+        // append new chunk of partial output to output buffer
     }
 
     return MFX_ERR_NONE;

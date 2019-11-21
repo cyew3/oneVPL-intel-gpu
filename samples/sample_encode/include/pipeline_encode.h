@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -187,6 +187,8 @@ struct sInputParams
     mfxU16 Accuracy;
     mfxU16 LowDelayBRC;
     mfxU16 ExtBrcAdaptiveLTR;
+    mfxU16 PartialOutputMode;
+    mfxU16 PartialOutputBlockSize;
 
     mfxU16 IntRefType;
     mfxU16 IntRefCycleSize;
@@ -314,7 +316,7 @@ struct sTask
     bufSet* extBufs;
 
     sTask();
-    mfxStatus WriteBitstream();
+    mfxStatus WriteBitstream(bool isCompleteFrame = true);
     mfxStatus Reset();
     mfxStatus Init(mfxU32 nBufferSize, CSmplBitstreamWriter *pWriter = NULL);
     mfxStatus Close();
@@ -335,6 +337,12 @@ public:
     virtual void Close();
     virtual void SetGpuHangRecoveryFlag();
     virtual void ClearTasks();
+
+    msdk_tick firstOut_total;
+    msdk_tick firstOut_start;
+    msdk_tick lastOut_total;
+    msdk_tick lastOut_start;
+
 protected:
     sTask* m_pTasks;
     mfxU32 m_nPoolSize;
@@ -431,6 +439,11 @@ protected:
     mfxExtHEVCTiles m_ExtHEVCTiles;
     mfxExtCodingOption3 m_CodingOption3;
 
+#if (MFX_VERSION >= 1031)
+    //Partial Output
+    mfxExtPartialBitstreamParam m_ExtPartialOutputParam;
+#endif
+
     // Set up video signal information
     mfxExtVideoSignalInfo m_VideoSignalInfo;
 
@@ -469,6 +482,7 @@ protected:
 
     bool   m_bIsFieldSplitting;
     bool   m_bSingleTexture;
+    bool   m_bPartialOutput;
 
     mfxEncodeCtrl m_encCtrl;
 
