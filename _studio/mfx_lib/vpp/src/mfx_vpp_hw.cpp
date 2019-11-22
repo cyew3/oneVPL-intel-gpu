@@ -5413,7 +5413,10 @@ mfxU64 get_background_color(const mfxVideoParam & videoParam)
                 case MFX_FOURCC_P016:
                 case MFX_FOURCC_Y216:
                 case MFX_FOURCC_Y416:
-                    return make_back_color_yuv(videoParam.vpp.Out.BitDepthLuma ? videoParam.vpp.Out.BitDepthLuma : 12, extComp->Y, extComp->U, extComp->V);
+                {
+                    mfxU16 depth = videoParam.vpp.Out.BitDepthLuma ? videoParam.vpp.Out.BitDepthLuma : 12;
+                    return make_back_color_yuv(depth, extComp->Y, extComp->U, extComp->V);
+                }
 #endif // (MFX_VERSION >= MFX_VERSION_NEXT)
                 default:
                     break;
@@ -6002,7 +6005,7 @@ mfxStatus ConfigureExecuteParams(
                 {
                     if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_COMPOSITE)
                     {
-                        mfxExtVPPComposite* extComp = (mfxExtVPPComposite*) videoParam.ExtParam[i];
+                        mfxExtVPPComposite* extComp = (mfxExtVPPComposite*)videoParam.ExtParam[i];
                         StreamCount = extComp->NumInputStream;
 
                         if (!executeParams.dstRects.empty())
@@ -6037,7 +6040,7 @@ mfxStatus ConfigureExecuteParams(
                                 rec.GlobalAlphaEnable = extComp->InputStream[cnt].GlobalAlphaEnable;
                                 rec.GlobalAlpha = extComp->InputStream[cnt].GlobalAlpha;
                             }
-                            if (extComp->InputStream[cnt].LumaKeyEnable !=0)
+                            if (extComp->InputStream[cnt].LumaKeyEnable != 0)
                             {
                                 rec.LumaKeyEnable = extComp->InputStream[cnt].LumaKeyEnable;
                                 rec.LumaKeyMin = extComp->InputStream[cnt].LumaKeyMin;
@@ -6045,44 +6048,7 @@ mfxStatus ConfigureExecuteParams(
                             }
                             if (extComp->InputStream[cnt].PixelAlphaEnable != 0)
                                 rec.PixelAlphaEnable = 1;
-                            executeParams.dstRects[cnt]= rec ;
-                        }
-                        /* And now lets calculate background color*/
-
-                        mfxU32 targetFourCC = videoParam.vpp.Out.FourCC;
-
-                        if (targetFourCC == MFX_FOURCC_NV12 ||
-                            targetFourCC == MFX_FOURCC_YV12 ||
-                            targetFourCC == MFX_FOURCC_NV16 ||
-                            targetFourCC == MFX_FOURCC_YUY2 ||
-                            targetFourCC == MFX_FOURCC_AYUV)
-                        {
-                            executeParams.iBackgroundColor = make_back_color_yuv(8, extComp->Y, extComp->U, extComp->V);
-                        }
-                        if (targetFourCC == MFX_FOURCC_P010 ||
-#if (MFX_VERSION >= 1027)
-                            targetFourCC == MFX_FOURCC_Y210 ||
-                            targetFourCC == MFX_FOURCC_Y410 ||
-#endif
-                            targetFourCC == MFX_FOURCC_P210)
-                        {
-                            executeParams.iBackgroundColor = make_back_color_yuv(10, extComp->Y, extComp->U, extComp->V);
-                        }
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
-                        if (targetFourCC == MFX_FOURCC_P016 ||
-                            targetFourCC == MFX_FOURCC_Y216 ||
-                            targetFourCC == MFX_FOURCC_Y416)
-                        {
-                            executeParams.iBackgroundColor = make_back_color_yuv(videoParam.vpp.Out.BitDepthLuma ? videoParam.vpp.Out.BitDepthLuma : 12, extComp->Y, extComp->U, extComp->V);
-                        }
-#endif // PRE_SI_TARGET_PLATFORM_GEN12
-                        if (targetFourCC == MFX_FOURCC_RGB4 ||
-                            targetFourCC == MFX_FOURCC_BGR4)
-                        {
-                            executeParams.iBackgroundColor = ((mfxU64)0xff << 48)|
-                               ((mfxU64)mfx::clamp<mfxU16>(extComp->R, 0, 255) << 32)|
-                               ((mfxU64)mfx::clamp<mfxU16>(extComp->G, 0, 255) << 16)|
-                               ((mfxU64)mfx::clamp<mfxU16>(extComp->B, 0, 255) <<  0);
+                            executeParams.dstRects[cnt] = rec;
                         }
                     }
                 }

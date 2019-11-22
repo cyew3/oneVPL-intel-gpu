@@ -1051,8 +1051,6 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         outInfo->FourCC == MFX_FOURCC_YV12 ||
         outInfo->FourCC == MFX_FOURCC_NV16 ||
         outInfo->FourCC == MFX_FOURCC_YUY2 ||
-        outInfo->FourCC == MFX_FOURCC_P010 ||
-        outInfo->FourCC == MFX_FOURCC_P210 ||
         outInfo->FourCC == MFX_FOURCC_AYUV )
     {
         pBltParams->BackgroundColor.Alpha = ((pExecuteParams->iBackgroundColor >> 48) & 0xff) << 8;
@@ -1060,16 +1058,36 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         pBltParams->BackgroundColor.Cb    = ((pExecuteParams->iBackgroundColor >> 16) & 0xff) << 8;
         pBltParams->BackgroundColor.Cr    = ((pExecuteParams->iBackgroundColor      ) & 0xff) << 8;
     }
+
+    mfxU32 shift=0xFF;
+    if(outInfo->FourCC == MFX_FOURCC_P010
+        || outInfo->FourCC == MFX_FOURCC_P210
 #if (MFX_VERSION >= 1027)
-    if (outInfo->FourCC == MFX_FOURCC_Y210 ||
-        outInfo->FourCC == MFX_FOURCC_Y410 )
+        || outInfo->FourCC == MFX_FOURCC_Y210
+        || outInfo->FourCC == MFX_FOURCC_Y410
+#endif
+    )
     {
-        pBltParams->BackgroundColor.Alpha = (pExecuteParams->iBackgroundColor >> 48) & 0xffff;
-        pBltParams->BackgroundColor.Y     = (pExecuteParams->iBackgroundColor >> 32) & 0xffff;
-        pBltParams->BackgroundColor.Cb    = (pExecuteParams->iBackgroundColor >> 16) & 0xffff;
-        pBltParams->BackgroundColor.Cr    = (pExecuteParams->iBackgroundColor      ) & 0xffff;
+        shift = 6; // Colors should be shifted to MSB
+    }
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+    if(outInfo->FourCC == MFX_FOURCC_P016 ||
+       outInfo->FourCC == MFX_FOURCC_Y216 ||
+       outInfo->FourCC == MFX_FOURCC_Y416)
+    {
+        mfxU32 depth = pExecuteParams->targetSurface.frameInfo.BitDepthLuma ? (16 - pExecuteParams->targetSurface.frameInfo.BitDepthLuma) : 12;
+        shift = 16-depth; // Colors should be shifted to MSB
     }
 #endif
+
+    if(shift!=0xFF)
+    {
+        pBltParams->BackgroundColor.Alpha = (pExecuteParams->iBackgroundColor >> (48-shift)) & 0xffff;
+        pBltParams->BackgroundColor.Y     = (pExecuteParams->iBackgroundColor >> (32-shift)) & 0xffff;
+        pBltParams->BackgroundColor.Cb    = (pExecuteParams->iBackgroundColor >> (16-shift)) & 0xffff;
+        pBltParams->BackgroundColor.Cr    = (pExecuteParams->iBackgroundColor << shift ) & 0xffff;
+    }
+
     if (outInfo->FourCC == MFX_FOURCC_RGB3    ||
         outInfo->FourCC == MFX_FOURCC_RGB4    ||
         outInfo->FourCC == MFX_FOURCC_BGR4    ||
@@ -1140,7 +1158,7 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
         istabObject.pParams = (void *)&istabParams;
         istabObject.iSizeofParams = sizeof(istabParams);
 
-        if( pParams->bImgStabilizationEnable ) 
+        if( pParams->bImgStabilizationEnable )
         {
             bltParams.ISObject = istabObject;
         }
