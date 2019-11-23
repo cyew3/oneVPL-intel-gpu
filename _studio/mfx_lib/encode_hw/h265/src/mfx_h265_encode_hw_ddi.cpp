@@ -45,10 +45,8 @@ GUID GetGUID(MfxVideoParam const & par)
 #if (MFX_VERSION >= 1027)
     if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || par.m_ext.CO3.TargetBitDepthLuma == 10)
         bdId = 1;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     if (par.m_ext.CO3.TargetBitDepthLuma == 12)
         bdId = 2;
-#endif
 
     cfId = mfx::clamp<mfxU16>(par.m_ext.CO3.TargetChromaFormatPlus1 - 1, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444) - MFX_CHROMAFORMAT_YUV420;
 

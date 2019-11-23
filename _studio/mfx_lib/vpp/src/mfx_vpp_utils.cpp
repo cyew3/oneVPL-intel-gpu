@@ -1673,14 +1673,14 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform
             MFX_CHECK(platform >= MFX_HW_ICL, MFX_ERR_INVALID_VIDEO_PARAM);
             break;
 #endif
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:
             if (platform < MFX_HW_TGL_LP)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
             break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
         case MFX_FOURCC_IMC3:
         case MFX_FOURCC_YV12:
         case MFX_FOURCC_YUV400:

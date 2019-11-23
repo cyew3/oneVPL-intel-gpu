@@ -2750,7 +2750,7 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
             par->vpp.Out.FourCC  == MFX_FOURCC_Y410))
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         if (type < MFX_HW_TGL_LP &&
            (par->vpp.In.FourCC   == MFX_FOURCC_P016 ||
             par->vpp.In.FourCC   == MFX_FOURCC_Y216 ||
@@ -5087,7 +5087,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
         }
     }
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (   par->vpp.In.FourCC == MFX_FOURCC_P016
         || par->vpp.In.FourCC == MFX_FOURCC_Y216
         || par->vpp.In.FourCC == MFX_FOURCC_Y416
@@ -5411,7 +5411,7 @@ mfxU64 get_background_color(const mfxVideoParam & videoParam)
                     return make_back_color_argb(8, extComp->R, extComp->G, extComp->B);
                 case MFX_FOURCC_A2RGB10:
                     return make_back_color_argb(10, extComp->R, extComp->G, extComp->B);
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
                 case MFX_FOURCC_P016:
                 case MFX_FOURCC_Y216:
                 case MFX_FOURCC_Y416:
@@ -5452,7 +5452,7 @@ mfxU64 get_background_color(const mfxVideoParam & videoParam)
             return make_def_back_color_argb(8);
         case MFX_FOURCC_A2RGB10:
             return make_def_back_color_argb(10);
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:

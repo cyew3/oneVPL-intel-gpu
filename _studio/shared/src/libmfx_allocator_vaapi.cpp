@@ -89,15 +89,14 @@ static inline unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
     case MFX_FOURCC_Y410:
         return VA_FOURCC_Y410;
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
         return VA_FOURCC_P016;
     case MFX_FOURCC_Y216:
         return VA_FOURCC_Y216;
     case MFX_FOURCC_Y416:
         return VA_FOURCC_Y416;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
-
+#endif
     default:
         VM_ASSERT(!"unsupported fourcc");
         return 0;
@@ -190,11 +189,11 @@ static inline bool isFourCCSupported(unsigned int va_fourcc)
         case VA_FOURCC_Y210:
         case VA_FOURCC_Y410:
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case VA_FOURCC_P016:
         case VA_FOURCC_Y216:
         case VA_FOURCC_Y416:
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
             return true;
         default:
             return false;
@@ -550,7 +549,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
         break;
 
     case VA_FOURCC_P010:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case VA_FOURCC_P016:
 #endif
         if (mfx_fourcc != va_image.format.fourcc) return MFX_ERR_LOCK_MEMORY;
@@ -575,7 +574,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
 
 #if (MFX_VERSION >= 1027)
     case VA_FOURCC_Y210:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case VA_FOURCC_Y216:
 #endif
         if (mfx_fourcc != va_image.format.fourcc) return MFX_ERR_LOCK_MEMORY;
@@ -597,7 +596,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
         break;
 #endif
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case VA_FOURCC_Y416:
         if (mfx_fourcc != va_image.format.fourcc) return MFX_ERR_LOCK_MEMORY;
 

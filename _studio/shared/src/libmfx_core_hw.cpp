@@ -104,14 +104,14 @@ mfxU32 ChooseProfile(mfxVideoParam const* param, eMFXHWType)
             profile |= VA_PROFILE_10 | VA_PROFILE_444;
             break;
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_P016:
             profile |= VA_PROFILE_12;
             break;
         case MFX_FOURCC_Y416:
             profile |= VA_PROFILE_12 | VA_PROFILE_444;
             break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
         }
         break;
 
@@ -148,7 +148,7 @@ mfxU32 ChooseProfile(mfxVideoParam const* param, eMFXHWType)
                 profile |= VA_PROFILE_10 | VA_PROFILE_444;
                 break;
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             case MFX_FOURCC_P016:
                 profile |= VA_PROFILE_12;
                 break;
@@ -158,7 +158,7 @@ mfxU32 ChooseProfile(mfxVideoParam const* param, eMFXHWType)
             case MFX_FOURCC_Y416:
                 profile |= VA_PROFILE_12 | VA_PROFILE_444;
                 break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
         }
 
         {

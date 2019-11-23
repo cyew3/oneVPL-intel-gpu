@@ -128,7 +128,7 @@ bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
     }
     else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 10)
     {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         if (par.m_platform >= MFX_HW_TGL_LP)
         {
             rec.FourCC = MFX_FOURCC_Y216;
@@ -136,7 +136,7 @@ bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
             rec.Height *= 2;
         }
         else
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#endif
         {
             rec.FourCC = MFX_FOURCC_Y210;
             rec.Width /= 2;
@@ -151,14 +151,14 @@ bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
     }
     else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 10)
     {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         if (par.m_platform >= MFX_HW_TGL_LP)
         {
             rec.FourCC = MFX_FOURCC_NV12;
             rec.Width  = mfx::align2_value(rec.Width, 32) * 2;
         }
         else
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#endif
         {
             rec.FourCC = MFX_FOURCC_P010;
         }
@@ -167,7 +167,7 @@ bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
     {
         rec.FourCC = MFX_FOURCC_NV12;
     }
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 12)
     {
         rec.FourCC = MFX_FOURCC_Y416;
@@ -185,7 +185,7 @@ bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
         rec.FourCC = MFX_FOURCC_NV12;
         rec.Width  = mfx::align2_value(rec.Width, 32) * 2;
     }
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#endif
     else
     {
         assert(!"undefined target format");
@@ -615,7 +615,7 @@ mfxStatus MFXVideoENCODEH265_HW::QueryIOSurf(VideoCORE *core, mfxVideoParam *par
     request->Info = tmp.mfx.FrameInfo;
 #if (MFX_VERSION >= 1027)
     request->Info.Shift = (tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
                            tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_P016 ||
                            tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 ||
                            tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_Y416 ||

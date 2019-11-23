@@ -80,7 +80,7 @@ mfxU16 MatchProfile(mfxU32 fourcc)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
 #endif
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:
@@ -235,29 +235,28 @@ mfxU16 QueryMaxProfile(eMFXHWType type)
         return MFX_PROFILE_HEVC_MAIN;
     else if (type < MFX_HW_ICL)
         return MFX_PROFILE_HEVC_MAIN10;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     else if (type < MFX_HW_TGL_LP)
         return MFX_PROFILE_HEVC_REXT;
     else
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
         return MFX_PROFILE_HEVC_SCC;
 #else
-    else
         return MFX_PROFILE_HEVC_REXT;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
-#endif //MFX_VA
+#endif
+#endif
 }
 
 inline
 bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
 {
     VM_ASSERT(profile != MFX_PROFILE_UNKNOWN);
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
     VM_ASSERT(
         !(profile >  MFX_PROFILE_HEVC_REXT) ||
-          profile == MFX_PROFILE_HEVC_SCC
+        profile == MFX_PROFILE_HEVC_SCC
     );
 #else
-    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_MAINSP));
+    VM_ASSERT(!(profile >  MFX_PROFILE_HEVC_REXT));
 #endif
 
     if (format > MFX_CHROMAFORMAT_YUV444)
@@ -299,13 +298,13 @@ inline
 bool CheckBitDepth(mfxU16 profile, mfxU16 bit_depth)
 {
     VM_ASSERT(profile != MFX_PROFILE_UNKNOWN);
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
     VM_ASSERT(
         !(profile >  MFX_PROFILE_HEVC_REXT) ||
-          profile == MFX_PROFILE_HEVC_SCC
+        profile == MFX_PROFILE_HEVC_SCC
     );
 #else
-    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_MAINSP));
+    VM_ASSERT(!(profile >  MFX_PROFILE_HEVC_REXT));
 #endif
 
     struct minmax_t
@@ -317,11 +316,9 @@ bool CheckBitDepth(mfxU16 profile, mfxU16 bit_depth)
         { MFX_PROFILE_HEVC_MAIN,   8,  8 },
         { MFX_PROFILE_HEVC_MAIN10, 8, 10 },
         { MFX_PROFILE_HEVC_MAINSP, 8,  8 },
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         { MFX_PROFILE_HEVC_REXT,   8, 12 }, //(12b max for Gen12)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         { MFX_PROFILE_HEVC_SCC,    8, 10 }, //(10b max for Gen12)
-#else
-        { MFX_PROFILE_HEVC_REXT,   8, 10 }, //(10b max for Gen11 & SW mode)
 #endif
     };
 
@@ -371,7 +368,7 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         { MFX_FOURCC_NV12, MFX_FOURCC_P010,               0, 0 }, //420
         { MFX_FOURCC_NV16, MFX_FOURCC_P210,               0, 0 }, //422
         {               0,               0,               0, 0 }, //444
-#elif defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#elif (MFX_VERSION >= MFX_VERSION_NEXT)
         {               0,               0,               0, 0 }, //400
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, MFX_FOURCC_P016, 0 }, //420
         { MFX_FOURCC_YUY2, MFX_FOURCC_Y210, MFX_FOURCC_Y216, 0 }, //422
@@ -401,20 +398,12 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
     bit_depth = (bit_depth + 2 - 1) & ~(2 - 1);
     VM_ASSERT(!(bit_depth & 1) && "Luma depth should be aligned up to 2");
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     VM_ASSERT(
         (bit_depth ==  8 ||
          bit_depth == 10 ||
          bit_depth == 12) &&
         "Unsupported bit depth, should be validated before"
     );
-#else
-    VM_ASSERT(
-        (bit_depth ==  8 ||
-         bit_depth == 10) &&
-        "Unsupported bit depth, should be validated before"
-    );
-#endif
 
     mfxU16 const bit_depth_idx     = (bit_depth - 8) / 2;
     mfxU16 const max_bit_depth_idx = sizeof(map) / sizeof(map[0]);
@@ -890,7 +879,7 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
 #endif
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
@@ -976,7 +965,7 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
 #if (MFX_VERSION >= 1027)
             || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P016 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
             || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
 #endif
@@ -1239,7 +1228,7 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y210
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y410
 #endif
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_P016
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y216
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y416
@@ -1255,7 +1244,7 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
         in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN10 &&
         in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAINSP &&
         in->mfx.CodecProfile != MFX_PROFILE_HEVC_REXT
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         && in->mfx.CodecProfile != MFX_PROFILE_HEVC_SCC
 #endif
         )
@@ -1269,7 +1258,7 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
 #if (MFX_VERSION >= 1027)
         || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P016 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
         || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
 #endif

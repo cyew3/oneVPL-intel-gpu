@@ -1068,7 +1068,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             out->vpp.In.FourCC != MFX_FOURCC_Y210 &&
             out->vpp.In.FourCC != MFX_FOURCC_Y410 &&
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             out->vpp.In.FourCC != MFX_FOURCC_P016 &&
             out->vpp.In.FourCC != MFX_FOURCC_Y216 &&
             out->vpp.In.FourCC != MFX_FOURCC_Y416 &&
@@ -1139,7 +1139,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             out->vpp.Out.FourCC != MFX_FOURCC_Y210 &&
             out->vpp.Out.FourCC != MFX_FOURCC_Y410 &&
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             out->vpp.Out.FourCC != MFX_FOURCC_P016 &&
             out->vpp.Out.FourCC != MFX_FOURCC_Y216 &&
             out->vpp.Out.FourCC != MFX_FOURCC_Y416 &&

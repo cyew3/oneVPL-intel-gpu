@@ -82,7 +82,6 @@ static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main444 =
 static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main444_10 =
 { 0x10e19ac8, 0xbf39, 0x4443, { 0xbe, 0xc3, 0x1b, 0x0c, 0xbf, 0xe4, 0xc7, 0xaa } };
 
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
 static const GUID DXVA2_Intel_Encode_HEVC_Main12 =
 { 0xd6d6bc4f, 0xd51a, 0x4712, { 0x97, 0xe8, 0x75, 0x9, 0x17, 0xc8, 0x60, 0xfd } };
 static const GUID DXVA2_Intel_Encode_HEVC_Main422_12 =
@@ -90,6 +89,7 @@ static const GUID DXVA2_Intel_Encode_HEVC_Main422_12 =
 static const GUID DXVA2_Intel_Encode_HEVC_Main444_12 =
 { 0xf8fa34b7, 0x93f5, 0x45a4, { 0xbf, 0xc0, 0x38, 0x17, 0xce, 0xe6, 0xbb, 0x93 } };
 
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
 // GUIDs from DDI for HEVC Encoder spec 0.991
 static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main =
 { 0x2dec00c7, 0x21ee, 0x4bf8, { 0x8f, 0x0e, 0x77, 0x3f, 0x11, 0xf1, 0x26, 0xa2 } };
@@ -121,7 +121,7 @@ const GUID GuidTable[3][3][3] =
         },
         // BitDepthLuma = 12
         {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             /*420*/ DXVA2_Intel_Encode_HEVC_Main12,
             /*422*/ DXVA2_Intel_Encode_HEVC_Main422_12,
             /*444*/ DXVA2_Intel_Encode_HEVC_Main444_12

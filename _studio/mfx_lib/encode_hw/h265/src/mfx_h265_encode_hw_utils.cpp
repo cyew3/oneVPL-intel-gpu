@@ -395,7 +395,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
             || (tmp.Info.FourCC == MFX_FOURCC_Y210)
             || (tmp.Info.FourCC == MFX_FOURCC_Y410)
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             || (tmp.Info.FourCC == MFX_FOURCC_P016)
             || (tmp.Info.FourCC == MFX_FOURCC_Y216)
             || (tmp.Info.FourCC == MFX_FOURCC_Y416)

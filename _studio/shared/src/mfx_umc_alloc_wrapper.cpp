@@ -276,12 +276,12 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
 #endif
         )
         bit_depth = 10;
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     else if (params->mfx.FrameInfo.FourCC == MFX_FOURCC_P016 ||
              params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 ||
              params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416)
         bit_depth = 12;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
     else
         bit_depth = 8;
 
@@ -321,7 +321,7 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
         color_format = UMC::Y410;
         break;
 #endif
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
         color_format = UMC::P016;
         break;
@@ -733,7 +733,7 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
 #if (MFX_VERSION >= 1027)
         || surf->Info.FourCC == MFX_FOURCC_Y210
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         || surf->Info.FourCC == MFX_FOURCC_P016
         || surf->Info.FourCC == MFX_FOURCC_Y216
         || surf->Info.FourCC == MFX_FOURCC_Y416
@@ -879,7 +879,7 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
 #endif
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
 #endif
 

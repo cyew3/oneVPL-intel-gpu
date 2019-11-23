@@ -155,9 +155,11 @@ enum VideoAccelerationProfile
     VA_PROFILE_444              = 0x0b000,
     VA_PROFILE_10               = 0x10000,
     VA_PROFILE_REXT             = 0x20000,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     VA_PROFILE_12               = 0x40000,
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     VA_PROFILE_SCC              = 0x80000,
+#endif
 #endif
 
     // configurations
@@ -198,29 +200,31 @@ enum VideoAccelerationProfile
     H264_VLD_MVC_MULTIVIEW      = VA_H264 | VA_VLD | VA_PROFILE_MVC_MV,
     H264_VLD_MVC_STEREO         = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO,
     H264_VLD_MVC_STEREO_PROG    = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,
+#endif
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     H265_12_VLD_420             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12,
     H265_12_VLD_422             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12 | VA_PROFILE_422,
     H265_12_VLD_444             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12 | VA_PROFILE_444,
+#endif
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     H265_VLD_SCC                = VA_H265 | VA_VLD | VA_PROFILE_SCC,
     H265_VLD_444_SCC            = VA_H265 | VA_VLD | VA_PROFILE_SCC  | VA_PROFILE_444,
     H265_10_VLD_SCC             = VA_H265 | VA_VLD | VA_PROFILE_SCC  | VA_PROFILE_10,
     H265_10_VLD_444_SCC         = VA_H265 | VA_VLD | VA_PROFILE_SCC  | VA_PROFILE_10 | VA_PROFILE_444,
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
 
     VP9_10_VLD                  = VA_VP9 | VA_VLD | VA_PROFILE_10,
     VP9_VLD_422                 = VA_VP9 | VA_VLD | VA_PROFILE_422,
     VP9_VLD_444                 = VA_VP9 | VA_VLD | VA_PROFILE_444,
     VP9_10_VLD_422              = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_422,
     VP9_10_VLD_444              = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_444,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     VP9_12_VLD_420              = VA_VP9 | VA_VLD | VA_PROFILE_12,
     VP9_12_VLD_444              = VA_VP9 | VA_VLD | VA_PROFILE_12 | VA_PROFILE_444,
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
 
-#endif // OPEN_SOURCE
 };
 
 #define MAX_BUFFER_TYPES    32

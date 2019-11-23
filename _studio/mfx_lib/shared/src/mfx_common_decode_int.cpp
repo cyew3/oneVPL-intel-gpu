@@ -210,10 +210,10 @@ UMC::ColorFormat ConvertFOURCCToUMCColorFormat(mfxU32 fourcc)
         case MFX_FOURCC_Y210:    return UMC::Y210;
         case MFX_FOURCC_Y410:    return UMC::Y410;
 #endif
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_Y216:    return UMC::Y216;
         case MFX_FOURCC_Y416:    return UMC::Y416;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
 
         case MFX_FOURCC_AYUV:    return UMC::YUV444A;
 
@@ -246,11 +246,11 @@ mfxU32 ConvertUMCColorFormatToFOURCC(UMC::ColorFormat format)
         case UMC::Y210:    return MFX_FOURCC_Y210;
         case UMC::Y410:    return MFX_FOURCC_Y410;
 #endif
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case UMC::P016:    return MFX_FOURCC_P016;
         case UMC::Y216:    return MFX_FOURCC_Y216;
         case UMC::Y416:    return MFX_FOURCC_Y416;
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
         case UMC::YUV444A: case UMC::AYUV: return MFX_FOURCC_AYUV;
         case UMC::IMC3:    return MFX_FOURCC_IMC3;
         case UMC::YUV411:  return MFX_FOURCC_YUV411;
@@ -379,7 +379,7 @@ mfxU16 FourCcBitDepth(mfxU32 fourCC)
         bitDepth = 10;
         break;
 
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
