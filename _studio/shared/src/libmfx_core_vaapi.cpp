@@ -251,54 +251,76 @@ typedef struct {
     { 0x593B, MFX_HW_KBL, MFX_GT4 }, // HALO GT4
     { 0x593D, MFX_HW_KBL, MFX_GT4 }, // WRK GT4
 
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
-    /* CFL, GT information can be wrong, need to verify */
-    { 0x3E90, MFX_HW_CFL, MFX_GT2 },
+    /* CFL */
+    { 0x3E90, MFX_HW_CFL, MFX_GT1 },
     { 0x3E91, MFX_HW_CFL, MFX_GT2 },
     { 0x3E92, MFX_HW_CFL, MFX_GT2 },
-    { 0x3E93, MFX_HW_CFL, MFX_GT2 },
+    { 0x3E93, MFX_HW_CFL, MFX_GT1 },
     { 0x3E94, MFX_HW_CFL, MFX_GT2 },
     { 0x3E96, MFX_HW_CFL, MFX_GT2 },
+    { 0x3E98, MFX_HW_CFL, MFX_GT2 },
+    { 0x3E99, MFX_HW_CFL, MFX_GT1 },
+    { 0x3E9A, MFX_HW_CFL, MFX_GT2 },
+    { 0x3E9C, MFX_HW_CFL, MFX_GT1 },
     { 0x3E9B, MFX_HW_CFL, MFX_GT2 },
+    { 0x3EA5, MFX_HW_CFL, MFX_GT3 },
+    { 0x3EA6, MFX_HW_CFL, MFX_GT3 },
+    { 0x3EA7, MFX_HW_CFL, MFX_GT3 },
+    { 0x3EA8, MFX_HW_CFL, MFX_GT3 },
+    { 0x3EA9, MFX_HW_CFL, MFX_GT2 },
+
+    /* WHL */
+    { 0x3EA0, MFX_HW_CFL, MFX_GT2 },
+    { 0x3EA1, MFX_HW_CFL, MFX_GT1 },
+    { 0x3EA2, MFX_HW_CFL, MFX_GT3 },
+    { 0x3EA3, MFX_HW_CFL, MFX_GT2 },
+    { 0x3EA4, MFX_HW_CFL, MFX_GT1 },
+
+
+    /* CML GT1 */
+    { 0x9b21, MFX_HW_CFL, MFX_GT1 },
+    { 0x9baa, MFX_HW_CFL, MFX_GT1 },
+    { 0x9bab, MFX_HW_CFL, MFX_GT1 },
+    { 0x9bac, MFX_HW_CFL, MFX_GT1 },
+    { 0x9ba0, MFX_HW_CFL, MFX_GT1 },
+    { 0x9ba5, MFX_HW_CFL, MFX_GT1 },
+    { 0x9ba8, MFX_HW_CFL, MFX_GT1 },
+    { 0x9ba4, MFX_HW_CFL, MFX_GT1 },
+    { 0x9ba2, MFX_HW_CFL, MFX_GT1 },
+
+    /* CML GT2 */
+    { 0x9b41, MFX_HW_CFL, MFX_GT2 },
+    { 0x9bca, MFX_HW_CFL, MFX_GT2 },
+    { 0x9bcb, MFX_HW_CFL, MFX_GT2 },
+    { 0x9bcc, MFX_HW_CFL, MFX_GT2 },
+    { 0x9bc0, MFX_HW_CFL, MFX_GT2 },
+    { 0x9bc5, MFX_HW_CFL, MFX_GT2 },
+    { 0x9bc8, MFX_HW_CFL, MFX_GT2 },
+    { 0x9bc4, MFX_HW_CFL, MFX_GT2 },
+    { 0x9bc2, MFX_HW_CFL, MFX_GT2 },
+
 
     /* CNL */
-    //ToDo: remove simulation Ids for OSS.
-    /* SImulation */
-    { 0x0A00, MFX_HW_CNL, MFX_GT2 },
-    { 0x0A01, MFX_HW_CNL, MFX_GT2 },
-    { 0x0A02, MFX_HW_CNL, MFX_GT2 },
-    { 0x0A05, MFX_HW_CNL, MFX_GT2 },
-    { 0x0A08, MFX_HW_CNL, MFX_GT2 },
-    //ToDo: cleaup device Ids which won't be manufactured(Halo/Desctop/etc) before adding to OSS.
-    { 0x5A51, MFX_HW_CNL, MFX_GT2 },//ICNL_5x8_ULX_DEVICE_F0_ID
-    { 0x5A52, MFX_HW_CNL, MFX_GT2 },//ICNL_5x8_ULT_DEVICE_F0_ID
-    { 0x5A5A, MFX_HW_CNL, MFX_GT2 },//ICNL_4x8_ULT_DEVICE_F0_ID
-    { 0x5A42, MFX_HW_CNL, MFX_GT2 },//ICNL_3x8_ULT_DEVICE_F0_ID
-    { 0x5A4A, MFX_HW_CNL, MFX_GT2 },//ICNL_2x8_ULT_DEVICE_F0_ID
-    { 0x5A62, MFX_HW_CNL, MFX_GT2 },//ICNL_9x8_ULT_DEVICE_F0_ID
-    { 0x5A60, MFX_HW_CNL, MFX_GT2 },//ICNL_9x8_SUPERSKU_DEVICE_F0_ID
-    { 0x5A50, MFX_HW_CNL, MFX_GT2 },//ICNL_5x8_SUPERSKU_DEVICE_F0_ID
-    { 0x5A40, MFX_HW_CNL, MFX_GT2 },//ICNL_1x6_5x8_SUPERSKU_DEVICE_F0_ID
-    { 0x5A54, MFX_HW_CNL, MFX_GT2 },//ICNL_5x8_HALO_DEVICE_F0_ID
-    { 0x5A44, MFX_HW_CNL, MFX_GT2 },//ICNL_3x8_HALO_DEVICE_F0_ID
-    { 0x5A55, MFX_HW_CNL, MFX_GT2 },//ICNL_5x8_DESKTOP_DEVICE_F0_ID
-    { 0x5A45, MFX_HW_CNL, MFX_GT2 },//ICNL_3x8_DESKTOP_DEVICE_F0_ID
-    { 0x5A59, MFX_HW_CNL, MFX_GT2 },//ICNL_4x8_ULX_DEVICE_F0_ID
-    { 0x5A41, MFX_HW_CNL, MFX_GT2 },//ICNL_3x8_ULX_DEVICE_F0_ID
-    { 0x5A49, MFX_HW_CNL, MFX_GT2 },//ICNL_2x8_ULX_DEVICE_F0_ID
-    { 0x5A5C, MFX_HW_CNL, MFX_GT2 },//ICNL_4x8_HALO_DEVICE_F0_ID
-#endif
+    { 0x5A51, MFX_HW_CNL, MFX_GT2 },
+    { 0x5A52, MFX_HW_CNL, MFX_GT2 },
+    { 0x5A5A, MFX_HW_CNL, MFX_GT2 },
+    { 0x5A42, MFX_HW_CNL, MFX_GT2 },
+    { 0x5A4A, MFX_HW_CNL, MFX_GT2 },
+    { 0x5A59, MFX_HW_CNL, MFX_GT2 },
+    { 0x5A41, MFX_HW_CNL, MFX_GT2 },
+    { 0x5A49, MFX_HW_CNL, MFX_GT2 },
 
     /* ICL */
-    { 0x8A50, MFX_HW_ICL_LP, MFX_GT2 },//iICLLPD_GT2_MOB
-    { 0x8A51, MFX_HW_ICL_LP, MFX_GT2 },//iICLLPD_GT2
-    { 0x8A5C, MFX_HW_ICL_LP, MFX_GT2 },//iICLLPD_GT2
-    { 0x8A5D, MFX_HW_ICL_LP, MFX_GT2 },//iICLLPD_GT2
-    { 0x8A52, MFX_HW_ICL_LP, MFX_GT2 },//iICLLPD_GT2
-    { 0x8A5A, MFX_HW_ICL_LP, MFX_GT2 },//iICLLPD_GT2
-    { 0x8A5B, MFX_HW_ICL_LP, MFX_GT2 },//iICLLPD_GT2
-    { 0x8A71, MFX_HW_ICL_LP, MFX_GT1 },//iICLLPD_GT0_P5
-    { 0x8A70, MFX_HW_ICL_LP, MFX_GT1 },//iICLD_GT0
+    { 0xFF05, MFX_HW_ICL_LP, MFX_GT1 },
+    { 0x8A50, MFX_HW_ICL_LP, MFX_GT2 },
+    { 0x8A51, MFX_HW_ICL_LP, MFX_GT2 },
+    { 0x8A52, MFX_HW_ICL_LP, MFX_GT2 },
+    { 0x8A5A, MFX_HW_ICL_LP, MFX_GT2 },
+    { 0x8A5B, MFX_HW_ICL_LP, MFX_GT2 },
+    { 0x8A5C, MFX_HW_ICL_LP, MFX_GT2 },
+    { 0x8A5D, MFX_HW_ICL_LP, MFX_GT2 },
+    { 0x8A71, MFX_HW_ICL_LP, MFX_GT1 },
+    { 0x8A70, MFX_HW_ICL_LP, MFX_GT1 },
 
 #ifndef OPEN_SOURCE
     /* TGL */
