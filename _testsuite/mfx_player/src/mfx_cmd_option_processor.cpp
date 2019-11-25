@@ -32,12 +32,12 @@ mfxU32 CmdOptionProcessor::Check( const vm_char *opt
                                 , const vm_char *description
                                 , OptParamType param_type
                                 , const vm_char *opt_param
-                                , SerialNode **ppInOutNode) 
+                                , SerialNode **ppInOutNode)
 {
     if (m_bPrint)
     {
         vm_char opt_name[512] = VM_STRING("");
-        
+
         PrintPatternHelp(opt_name, pattern, true);
 
         if (m_bAdaptivePrinter && (vm_string_strlen(opt_name) > nOptionNameAlign + nOptionNameOffset && GetOptionsFromPattern(pattern).size() > 1))
@@ -45,13 +45,13 @@ mfxU32 CmdOptionProcessor::Check( const vm_char *opt
             opt_name[0]=0;
             PrintPatternHelp(opt_name, pattern, false);
         }
-    
+
         if (!opt_param)
         {
             switch (param_type)
             {
                 case OPT_TRI_STATE: {
-                    opt_param = VM_STRING("on|off"); 
+                    opt_param = VM_STRING("on|off");
                     break;
                 }
                 case OPT_INT_32:
@@ -66,6 +66,7 @@ mfxU32 CmdOptionProcessor::Check( const vm_char *opt
                     opt_param = VM_STRING("float");
                     break;
                 }
+                case OPT_STR:
                 case OPT_FILENAME:{
                     opt_param = VM_STRING("filename");
                     break;
@@ -77,7 +78,7 @@ mfxU32 CmdOptionProcessor::Check( const vm_char *opt
                 }
             }
         }
-        
+
         vm_string_printf(VM_STRING("%s (%-*s) %s\n"), opt_name, nOptionParamAlign, opt_param, description);
 
         return 0;
@@ -86,12 +87,12 @@ mfxU32 CmdOptionProcessor::Check( const vm_char *opt
     //auto deserialization completed by fully using appropriate class, we return OK here
     switch (param_type)
     {
-        case OPT_AUTO_DESERIAL: 
+        case OPT_AUTO_DESERIAL:
         {
-            int nParams; 
+            int nParams;
             return (*ppInOutNode)->_IsDeserialPossible(opt, pattern, nParams, *ppInOutNode);
         }
-            
+
         default:
             break;
     }
@@ -111,13 +112,13 @@ mfxU32 CmdOptionProcessor::Check( const vm_char *opt
     {
         return 0;
     }
-    
+
     tstring in_no_spaces = in_str.substr(stpos, enpos - stpos + 1);
     std::transform(in_no_spaces.begin(), in_no_spaces.end(), in_no_spaces.begin(), ::_totlower);
-    
+
     for (it = options.begin(); it != options.end(); it++, i++)
     {
-        
+
         stpos = it->find_first_not_of(VM_STRING(" "));
         enpos = it->find_last_not_of(VM_STRING(" "));
 
@@ -139,7 +140,7 @@ void CmdOptionProcessor::ClearCache()
 }
 
 void  CmdOptionProcessor::PrintPatternHelp( vm_char *print_at
-                                          , const vm_char *pattern 
+                                          , const vm_char *pattern
                                           , bool bUseComas)
 {
     std::list<tstring>  options = GetOptionsFromPattern(pattern);
@@ -181,7 +182,7 @@ void  CmdOptionProcessor::PrintPatternHelp( vm_char *print_at
 
             if (options.size() > 1)
                 vm_string_strcat(tmp_print_at, VM_STRING(")"));
-            
+
             vm_string_sprintf(print_at, VM_STRING("%*s"), nOptionNameOffset," ");
             vm_string_sprintf(print_at + vm_string_strlen(print_at),VM_STRING("%-*s"), nOptionNameAlign, tmp_print_at);
         }
@@ -204,7 +205,7 @@ std::list<tstring> &  CmdOptionProcessor::GetOptionsFromPattern(const tstring &r
         OptionsContainer storage;
         if (OptionPatternParser::Parse(ref_pattern.c_str(), &storage))
         {
-            
+
             std::pair<_CacheType::iterator, bool>  it_bool = m_cachedPatterns.insert(_CacheType::value_type(ref_pattern, storage.get_all_options()));
             it = it_bool.first;
         }
@@ -226,38 +227,38 @@ bool  OptionPatternParser::Parse( const vm_char *cpattern
     int i;
     vm_char *pattern = const_cast<vm_char *>(cpattern);
     vm_char *pattern_start = pattern;
-    
+
     for (i =0; pattern[i] != 0; i++)
     {
         SpecialItemType item = ITEM_UNKNOWN;
-        
+
         switch(pattern[i])
         {
-            case VM_STRING('(') : 
+            case VM_STRING('(') :
             {
                 item = ITEM_CALLBACK_START;
                 break;
             }
-            case VM_STRING(')') : 
+            case VM_STRING(')') :
             {
                 item = ITEM_CALLBACK_END;
                 break;
             }
-            case VM_STRING('|') : 
+            case VM_STRING('|') :
             {
                 item = ITEM_SELECT;
                 break;
             }
-            case VM_STRING('{') : 
+            case VM_STRING('{') :
             {
                 item = ITEM_QUANTIFICATOR_START;
                 break;
             }
-            case VM_STRING('}') : 
+            case VM_STRING('}') :
             {
                 item = ITEM_QUANTIFICATOR_END;
                 break;
-            }        
+            }
         }
         if (item != ITEM_UNKNOWN)
         {
@@ -286,7 +287,7 @@ bool OptionsContainer::visit_string(vm_char *ptr, vm_char * ptr_end)
 {
     if (NULL == m_pcurrent)
         m_pcurrent = &m_rexpression;
-    
+
     if (ptr != ptr_end)
     {
         if (m_pcurrent->lst.empty())
@@ -376,7 +377,7 @@ bool OptionsContainer::visit_special(SpecialItemType type)
         default:
             return false;
     }
-    return true; 
+    return true;
 }
 
 void OptionsContainer::build_all_options()
@@ -388,7 +389,7 @@ void OptionsContainer::build_all_options()
     traverse_expression(&m_rexpression);
 }
 
-void OptionsContainer::stich_tree(_node_any_list * pCurrent, 
+void OptionsContainer::stich_tree(_node_any_list * pCurrent,
                                   _node_list     * pParent,
                                   _node_list::iterator itNext)
 {

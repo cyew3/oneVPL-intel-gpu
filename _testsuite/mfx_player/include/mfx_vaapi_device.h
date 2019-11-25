@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -31,7 +31,8 @@ class MFXVAAPIDeviceDRM : public IHWDevice
 {
 public:
 
-    MFXVAAPIDeviceDRM() : m_pDRMLibVA(&pDRMLibVA) {}
+    MFXVAAPIDeviceDRM(const std::string& devicePath = "", int type = MFX_LIBVA_DRM)
+                    : m_DRMLibVA(devicePath, type) {}
 
     virtual ~MFXVAAPIDeviceDRM() { }
 
@@ -48,7 +49,7 @@ public:
     {
         if ((MFX_HANDLE_VA_DISPLAY == type) && (NULL != pHdl))
         {
-            if (m_pDRMLibVA) *pHdl = m_pDRMLibVA->GetVADisplay();
+            *pHdl = m_DRMLibVA.GetVADisplay();
             return MFX_ERR_NONE;
         }
         return MFX_ERR_UNSUPPORTED;
@@ -57,8 +58,7 @@ public:
     virtual void Close() { }
 
 protected:
-    DRMLibVA *m_pDRMLibVA;
-    DRMLibVA pDRMLibVA;
+    DRMLibVA m_DRMLibVA;
 };
 #endif
 
@@ -95,7 +95,7 @@ private:
 };
 #endif
 
-IHWDevice* CreateVAAPIDevice(int type = MFX_LIBVA_DRM);
+IHWDevice* CreateVAAPIDevice(const std::string& devicePath = "", int type = MFX_LIBVA_DRM);
 
 
 #endif // #if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT)

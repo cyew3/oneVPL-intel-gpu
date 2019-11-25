@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -157,20 +157,20 @@ mfxStatus CVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllo
 #if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT)
 
 
-CHWDevice* CreateVAAPIDevice(int type)
+CHWDevice* CreateVAAPIDevice(std::string devicePath, int type)
 {
-   CHWDevice * device = 0;
+   CHWDevice * device = nullptr;
     switch (type)
     {
     case MFX_LIBVA_DRM:
 #if defined(LIBVA_DRM_SUPPORT)
         try
         {
-            device = new CVAAPIDeviceDRM;
+            device = new CVAAPIDeviceDRM(devicePath);
         }
         catch (std::exception&)
         {
-            device = 0;
+            device = nullptr;
         }
 #endif
         break;
@@ -182,7 +182,7 @@ CHWDevice* CreateVAAPIDevice(int type)
         }
         catch (std::exception&)
         {
-            device = 0;
+            device = nullptr;
         }
 #endif
         break;
@@ -194,7 +194,7 @@ CHWDevice* CreateVAAPIDevice(int type)
         }
         catch (std::exception&)
         {
-            device = 0;
+            device = nullptr;
         }
 #endif
 #if defined(LIBVA_DRM_SUPPORT)
@@ -202,11 +202,11 @@ CHWDevice* CreateVAAPIDevice(int type)
         {
             try
             {
-                device = new CVAAPIDeviceDRM;
+                device = new CVAAPIDeviceDRM(devicePath);
             }
             catch (std::exception&)
             {
-                device = 0;
+                device = nullptr;
             }
         }
 #endif
@@ -217,7 +217,7 @@ CHWDevice* CreateVAAPIDevice(int type)
 
 #elif defined(LIBVA_ANDROID_SUPPORT)
 
-CHWDevice* CreateVAAPIDevice(int)
+CHWDevice* CreateVAAPIDevice(const std::string&, int)
 {
     return new CVAAPIDeviceAndroid();
 }

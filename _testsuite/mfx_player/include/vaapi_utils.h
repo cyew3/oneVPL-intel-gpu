@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -25,6 +25,7 @@ Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 #endif
 
 #include <mfxdefs.h>
+#include <string>
 
 enum LibVABackend
 {
@@ -188,7 +189,7 @@ private:
     void operator=(const CLibVA&);
 };
 
-CLibVA* CreateLibVA(int type = MFX_LIBVA_DRM);
+CLibVA* CreateLibVA(const std::string& devicePath = "", int type = MFX_LIBVA_DRM);
 
 mfxStatus va_to_mfx_status(VAStatus va_res);
 

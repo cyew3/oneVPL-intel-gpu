@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -37,7 +37,7 @@ int get_drm_driver_name(int fd, char *name, int name_size)
     return ioctl(fd, DRM_IOWR(0, drm_version), &version);
 }
 
-int open_intel_adapter(int type)
+int open_first_intel_adapter(int type)
 {
     std::string adapterPath = MFX_DRI_PATH;
     char driverName[MFX_DRM_DRIVER_NAME_LEN + 1] = {};
@@ -73,12 +73,36 @@ int open_intel_adapter(int type)
     return -1;
 }
 
-DRMLibVA::DRMLibVA(int type)
+int open_intel_adapter(const std::string& devicePath, int type)
+{
+    if(devicePath.empty())
+        return open_first_intel_adapter(type);
+
+    int fd = open(devicePath.c_str(), O_RDWR);
+
+    if (fd < 0) {
+        printf("Failed to open specified device\n");
+        return -1;
+    }
+
+    char driverName[MFX_DRM_DRIVER_NAME_LEN + 1] = {};
+    if (!get_drm_driver_name(fd, driverName, MFX_DRM_DRIVER_NAME_LEN) &&
+        !strcmp(driverName, MFX_DRM_INTEL_DRIVER_NAME)) {
+            return fd;
+    }
+    else {
+        close(fd);
+        printf("Specified device is not Intel one\n");
+        return -1;
+    }
+}
+
+DRMLibVA::DRMLibVA(const std::string& devicePath, int type)
     : m_fd(-1)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    m_fd = open_intel_adapter(type);
+    m_fd = open_intel_adapter(devicePath, type);
     if (m_fd < 0) throw std::range_error("Intel GPU was not found");
 
     m_va_dpy = m_vadrmlib.vaGetDisplayDRM(m_fd);

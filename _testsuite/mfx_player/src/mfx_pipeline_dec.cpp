@@ -600,6 +600,8 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     }
     PrintInfo(VM_STRING("Memory Private"), VM_STRING("%.2f M"),
         (Ipp64f)(mem_used) / (1024));
+
+    m_strDevicePath = m_inParams.strDevicePath;
 #endif
 
 #if MFX_D3D11_SUPPORT
@@ -2859,7 +2861,8 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
         if (NULL == va_dpy)
         {
             ComponentParams &cparams = m_components[eDEC].m_bufType == MFX_BUF_HW ? m_components[eDEC] : m_components[eREN];
-            m_pHWDevice.reset(CreateVAAPIDevice(MFX_LIBVA_DRM));
+            m_pHWDevice.reset(CreateVAAPIDevice(m_strDevicePath, MFX_LIBVA_DRM));
+            MFX_CHECK_WITH_ERR(m_pHWDevice, MFX_ERR_NULL_PTR);
             if (m_pHWDevice.get())
             {
                 MFX_CHECK_STS(m_pHWDevice->Init(0, NULL, !m_inParams.bFullscreen, 0, 1, NULL));
@@ -5453,6 +5456,19 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
 #ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE
           else if(m_OptProc.Check(argv[0], VM_STRING("-dec:private_ddi"), VM_STRING("Use private DDI for decoder (HW only)"), OPT_UINT_32))
               m_inParams.bUsePrivateDDI = true;
+#endif
+#if (defined(LINUX32) || defined(LINUX64))
+          else if (m_OptProc.Check(argv[0], VM_STRING("-device"), VM_STRING("Set graphics device for processing"), OPT_STR))
+          {
+
+              if (!m_inParams.strDevicePath.empty()){
+                  PrintInfo(VM_STRING("Device spicify error"), VM_STRING("Only one device can be specified\n"));
+                  return MFX_ERR_UNSUPPORTED;
+              }
+              MFX_CHECK(1 + argv != argvEnd);
+              argv++;
+              m_inParams.strDevicePath = argv[0];
+          }
 #endif
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
           else if (m_OptProc.Check(argv[0], VM_STRING("-iGfx"), VM_STRING("preffer processing on iGfx (by default system decides)"), OPT_BOOL))

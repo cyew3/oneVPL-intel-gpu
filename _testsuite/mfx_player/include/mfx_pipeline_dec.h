@@ -73,6 +73,9 @@ struct sCommandlineParams
   mfxU32         nFrames;
   mfxI32         nPicStruct; // 0-progressive, 1-tff, 2-bff, 3-field tff, 4-field bff
   mfxU32         HWAcceleration; // 0=SW, 1=HW+SW, 2=SW+HW, 3=HW
+#if defined(LINUX32) || defined(LINUX64)
+  std::string    strDevicePath; // path to device for processing
+#endif
 #if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= MFX_VERSION_NEXT)
   //Adapter type
   bool           bPrefferiGfx;
@@ -277,7 +280,6 @@ struct sCommandlineParams
 
   sCommandlineParams()
   {
-      MFX_ZERO_MEM(*this);
 
 #ifdef PAVP_BUILD
       vm_string_strcpy_s(strPAVPLibPath, MFX_ARRAY_SIZE(strPAVPLibPath), VM_STRING("mfx_pavp"));
@@ -420,7 +422,7 @@ protected:
     mfxU32                   m_YUV_Height;
 
     //Pipeline parameters
-    sCommandlineParams       m_inParams;
+    sCommandlineParams       m_inParams = {};
     enum
     {
         eDEC,
@@ -443,6 +445,10 @@ protected:
     std::unique_ptr<IYUVSource>             m_pYUVSource;   // decoder
     IMFXVideoVPP           * m_pVPP;         // vpp
     IMFXVideoRender        * m_pRender;      // render
+
+#if defined(LINUX32) || defined(LINUX64)
+    std::string              m_strDevicePath; // path to device for processing
+#endif
 
     //d3d9 memory
     mfx_shared_ptr<IHWDevice> m_pHWDevice;

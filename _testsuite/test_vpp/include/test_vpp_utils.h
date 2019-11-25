@@ -156,7 +156,7 @@ struct sInputParams
     std::vector<sIStabParam              > istabParam;
 
     // flag describes type of memory
-    // true  - frames in video memory (d3d surfaces),  
+    // true  - frames in video memory (d3d surfaces),
     // false - in system memory
     //bool   bd3dAlloc;
     mfxU16   IOPattern;
@@ -168,6 +168,9 @@ struct sInputParams
 
     std::vector<mfxU16                   > rotate;
 
+#if defined(LINUX32) || defined(LINUX64)
+    std::string strDevicePath; // path to device for processing
+#endif
     bool     bScaling;
     mfxU16   scalingMode;
 
@@ -279,22 +282,22 @@ public :
     void       Close();
 
     mfxStatus  Init(
-        const vm_char *strFileName, 
+        const vm_char *strFileName,
         PTSMaker *pPTSMaker);
 
     mfxStatus  PreAllocateFrameChunk(
-        mfxVideoParam* pVideoParam, 
-        sInputParams* pParams, 
+        mfxVideoParam* pVideoParam,
+        sInputParams* pParams,
         MFXFrameAllocator* pAllocator);
 
     mfxStatus  GetNextInputFrame(
-        sMemoryAllocator* pAllocator, 
-        mfxFrameInfo* pInfo, 
+        sMemoryAllocator* pAllocator,
+        mfxFrameInfo* pInfo,
         mfxFrameSurface1** pSurface);
 
 private:
     mfxStatus  LoadNextFrame(
-        mfxFrameData* pData, 
+        mfxFrameData* pData,
         mfxFrameInfo* pInfo);
     mfxStatus  GetPreAllocFrame(mfxFrameSurface1 **pSurface);
 
@@ -318,26 +321,26 @@ public :
     void       Close();
 
     mfxStatus  Init(
-        const vm_char *strFileName, 
-        PTSMaker *pPTSMaker, 
+        const vm_char *strFileName,
+        PTSMaker *pPTSMaker,
         sInputParams &params);
 
     mfxStatus  PutNextFrame(
-        sMemoryAllocator* pAllocator, 
-        mfxFrameInfo* pInfo, 
+        sMemoryAllocator* pAllocator,
+        mfxFrameInfo* pInfo,
         mfxFrameSurface1* pSurface);
 
     mfxU32     GetCRC();
 
 private:
     mfxStatus  WriteFrame(
-        mfxFrameData* pData, 
+        mfxFrameData* pData,
         mfxFrameInfo* pInfo);
-    
+
     void WriteLine(mfxU8 *data, mfxU32 length);
 
     mfxStatus  CRC32(
-        mfxU8 *data, 
+        mfxU8 *data,
         mfxU32 length);
 
     vm_file*      m_fDst;
@@ -346,7 +349,7 @@ private:
     std::auto_ptr<mfxU8>                   m_outSurfYV12;
     Ipp32u                                 m_crc32c;
     bool                                   m_need_crc;
-    
+
     std::vector<mfxU8>                     m_temporalLine;
     bool                                   m_d3d_output;
 };
@@ -362,7 +365,7 @@ public :
     void       Close();
 
     mfxStatus  Init(
-        const vm_char *strFileName, 
+        const vm_char *strFileName,
         PTSMaker *pPTSMaker,
         sInputParams   &params,
         sSVCLayerDescr*  pDesc = NULL);
@@ -370,8 +373,8 @@ public :
     mfxU32     GetCRC(mfxFrameSurface1* pSurface);
 
     mfxStatus  PutNextFrame(
-        sMemoryAllocator* pAllocator, 
-        mfxFrameInfo* pInfo, 
+        sMemoryAllocator* pAllocator,
+        mfxFrameInfo* pInfo,
         mfxFrameSurface1* pSurface);
 
 private:
@@ -415,7 +418,7 @@ struct sAppResources
     /* VPP extension */
     mfxExtVppAuxData*   pExtVPPAuxData;
     mfxExtVPPDoUse      extDoUse;
-    mfxU32              tabDoUseAlg[ENH_FILTERS_COUNT];    
+    mfxU32              tabDoUseAlg[ENH_FILTERS_COUNT];
     mfxExtBuffer*       pExtBuf[1+ENH_FILTERS_COUNT];
 
     /* config video enhancement algorithms */
@@ -457,7 +460,7 @@ class GeneralAllocator : public BaseFrameAllocator
 {
 public:
     GeneralAllocator();
-    virtual ~GeneralAllocator();    
+    virtual ~GeneralAllocator();
 
     virtual mfxStatus Init(mfxAllocatorParams *pParams);
     virtual mfxStatus Close();
@@ -467,7 +470,7 @@ public:
 protected:
     virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr);
     virtual mfxStatus UnlockFrame(mfxMemId mid, mfxFrameData *ptr);
-    virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle);       
+    virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle);
 
     virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
@@ -496,20 +499,20 @@ protected:
 /* ******************************************************************* */
 
 void PrintInfo(
-    sInputParams* pParams, 
-    mfxVideoParam* pMfxParams, 
+    sInputParams* pParams,
+    mfxVideoParam* pMfxParams,
     MFXVideoSession *pMfxSession);
 
 void PrintDllInfo();
 
 mfxStatus InitParamsVPP(
-    mfxVideoParam* pMFXParams, 
+    mfxVideoParam* pMFXParams,
     sInputParams* pInParams,
     mfxU32 paramID);
 
 mfxStatus InitResources(
-    sAppResources* pResources, 
-    mfxVideoParam* pParams, 
+    sAppResources* pResources,
+    mfxVideoParam* pParams,
     sInputParams* pInParams);
 
 void WipeResources(sAppResources* pResources);
@@ -517,29 +520,29 @@ void WipeParams(sInputParams* pParams);
 
 mfxStatus UpdateSurfacePool(mfxFrameInfo SurfacesInfo, mfxU16 nPoolSize, mfxFrameSurface1* pSurface);
 mfxStatus GetFreeSurface(
-    mfxFrameSurface1* pSurfacesPool, 
-    mfxU16 nPoolSize, 
+    mfxFrameSurface1* pSurfacesPool,
+    mfxU16 nPoolSize,
     mfxFrameSurface1** ppSurface);
 
 const vm_char* IOpattern2Str(
     mfxU32 IOpattern);
 
 mfxStatus vppParseInputString(
-    vm_char* strInput[], 
-    mfxU8 nArgNum, 
+    vm_char* strInput[],
+    mfxU8 nArgNum,
     sInputParams* pParams,
     sFiltersParam* pDefaultFiltersParam);
 
 bool CheckInputParams(
-    vm_char* strInput[], 
+    vm_char* strInput[],
     sInputParams* pParams );
 
 void vppPrintHelp(
     const vm_char *strAppName,
     const vm_char *strErrorMessage);
 
-mfxStatus ConfigVideoEnhancementFilters( 
-    sInputParams* pParams, 
+mfxStatus ConfigVideoEnhancementFilters(
+    sInputParams* pParams,
     sAppResources* pResources,
     mfxU32 paramID );
 

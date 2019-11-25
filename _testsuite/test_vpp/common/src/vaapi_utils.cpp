@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -164,7 +164,7 @@ mfxStatus va_to_mfx_status(VAStatus va_res)
 }
 
 #if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT)
-CLibVA* CreateLibVA(int type)
+CLibVA* CreateLibVA(const std::string& devicePath, int type)
 {
     CLibVA * libva = 0;
     switch (type)
@@ -173,7 +173,7 @@ CLibVA* CreateLibVA(int type)
 #if defined(LIBVA_DRM_SUPPORT)
         try
         {
-            libva = new DRMLibVA;
+            libva = new DRMLibVA(devicePath);
         }
         catch  (std::exception&)
         {
@@ -209,7 +209,7 @@ CLibVA* CreateLibVA(int type)
         {
             try
             {
-                libva = new DRMLibVA;
+                libva = new DRMLibVA(devicePath);
             }
             catch (std::exception&)
             {

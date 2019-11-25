@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -24,7 +24,8 @@ CHWDevice* CreateVAAPIDevice(int type = MFX_LIBVA_DRM);
 class CVAAPIDeviceDRM : public CHWDevice
 {
 public:
-    CVAAPIDeviceDRM(){}
+    CVAAPIDeviceDRM(std::string devicePath = "", int type = MFX_LIBVA_DRM):
+                    m_DRMLibVA(devicePath, type) {}
     virtual ~CVAAPIDeviceDRM(void) {}
 
     virtual mfxStatus Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNum) { return MFX_ERR_NONE;}

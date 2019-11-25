@@ -193,11 +193,11 @@ void SaveRealInfoForSvcOut(sSVCLayerDescr in[8], mfxFrameInfo out[8], mfxU32 fou
 
 
 mfxStatus OutputProcessFrame(
-    sAppResources Resources, 
-    mfxFrameInfo* frameInfo, 
+    sAppResources Resources,
+    mfxFrameInfo* frameInfo,
     mfxU32 &nFrames,
     mfxU32 paramID)
-{ 
+{
     mfxStatus sts;
     mfxFrameSurface1*   pProcessedSurface;
     mfxU32 counter = 0;
@@ -227,7 +227,7 @@ mfxStatus OutputProcessFrame(
 
         GeneralWriter* writer = (1 == Resources.dstFileWritersN) ? &Resources.pDstFileWriters[0] : &Resources.pDstFileWriters[paramID];
         sts = writer->PutNextFrame(
-            Resources.pAllocator, 
+            Resources.pAllocator,
             //(bSvcMode) ? &(pProcessedSurface->Info) : &(frameInfo[VPP_OUT]),
             (bSvcMode) ? &(Resources.realSvcOutFrameInfo[pProcessedSurface->Info.FrameId.DependencyId]) : &(frameInfo[VPP_OUT]),
             pProcessedSurface);
@@ -238,7 +238,7 @@ mfxStatus OutputProcessFrame(
         nFrames++;
 
         //VPP progress
-        if( VPP_FILTER_DISABLED == Resources.pParams->vaParam[paramID].mode && 
+        if( VPP_FILTER_DISABLED == Resources.pParams->vaParam[paramID].mode &&
             VPP_FILTER_DISABLED == Resources.pParams->varianceParam[paramID].mode &&
             VPP_FILTER_DISABLED == Resources.pParams->idetectParam[paramID].mode)
         {
@@ -249,8 +249,8 @@ mfxStatus OutputProcessFrame(
                 if (!(nFrames % 100))
                     vm_string_printf(VM_STRING("."));
             }
-        } 
-        else 
+        }
+        else
         {
             if (!Resources.pParams->bPerf)
             {
@@ -276,8 +276,8 @@ mfxStatus OutputProcessFrame(
                 else if(VPP_FILTER_DISABLED != Resources.pParams->idetectParam[paramID].mode)
                 {
                     vm_string_printf(
-                        VM_STRING("Frame number: %hd PicStruct = %s\n"), 
-                        nFrames, 
+                        VM_STRING("Frame number: %hd PicStruct = %s\n"),
+                        nFrames,
                         PicStruct2Str(Resources.pExtVPPAuxData[counter].PicStruct));
                 }
                 counter++;
@@ -314,7 +314,7 @@ int main(int argc, vm_char *argv[])
     sInputParams        Params;
     mfxVideoParam       mfxParamsVideo;
 
-    // to prevent incorrect read/write of image in case of CropW/H != width/height 
+    // to prevent incorrect read/write of image in case of CropW/H != width/height
     mfxFrameInfo        realFrameInfo[2];
 
     mfxFrameSurface1*   pSurf[3];// 0 - in, 1 - out, 2 - work
@@ -333,7 +333,7 @@ int main(int argc, vm_char *argv[])
     auto_ptr<PTSMaker> ptsMaker;
 
     /* generators for ROI testing */
-    ROIGenerator       inROIGenerator;     
+    ROIGenerator       inROIGenerator;
     ROIGenerator       outROIGenerator;
     bool               bROITest[2] = {false, false};
     unsigned int       work_surf   = VPP_OUT;
@@ -349,7 +349,7 @@ int main(int argc, vm_char *argv[])
     sIDetectParam             defaultIDetectParam         = { VPP_FILTER_DISABLED };
     sFrameRateConversionParam defaultFRCParam             = { MFX_FRCALGM_PRESERVE_TIMESTAMP, VPP_FILTER_DISABLED };
     //MSDK 3.0
-    sMultiViewParam           defaultMultiViewParam       = { 1, VPP_FILTER_DISABLED }; 
+    sMultiViewParam           defaultMultiViewParam       = { 1, VPP_FILTER_DISABLED };
     //MSDK API 1.5
     sGamutMappingParam        defaultGamutParam           = { false,  VPP_FILTER_DISABLED };
     sTccParam                 defaultClrSaturationParam   = { 160, 160, 160, 160, VPP_FILTER_DISABLED };
@@ -360,7 +360,7 @@ int main(int argc, vm_char *argv[])
     sVideoSignalInfoParam     defaultVideoSignalInfoParam;
     sMirroringParam           defaultMirroringParam;
 
-    sFiltersParam             defaultFiltersParam = 
+    sFiltersParam             defaultFiltersParam =
             { &defaultOwnFrameInfo,
               &defaultDIParam,
               &defaultProcAmpParam,
@@ -412,7 +412,7 @@ int main(int argc, vm_char *argv[])
         work_surf = VPP_WORK;
     }
 
-    // to prevent incorrect read/write of image in case of CropW/H != width/height 
+    // to prevent incorrect read/write of image in case of CropW/H != width/height
     // application save real image size
     vppSafeRealInfo( &(Params.frameInfoIn[0]),  &realFrameInfo[VPP_IN]);
     vppSafeRealInfo( &(Params.frameInfoOut[0]), &realFrameInfo[VPP_OUT]);
@@ -421,7 +421,7 @@ int main(int argc, vm_char *argv[])
         SaveRealInfoForSvcOut(Params.svcParam[0].descr, Resources.realSvcOutFrameInfo, Params.frameInfoOut[0].FourCC);
     }
 
-    // to check time stamp settings 
+    // to check time stamp settings
     if (Params.ptsFR)
     {
         Params.frameInfoIn[0].dFrameRate = Params.ptsFR;
@@ -449,7 +449,7 @@ int main(int argc, vm_char *argv[])
     {
         istream = Params.isOutput ? Params.strDstFiles[i] : NULL;
         sts = Resources.pDstFileWriters[i].Init(
-            istream, 
+            istream,
             ptsMaker.get(),
             Params,
             (VPP_FILTER_DISABLED != Params.svcParam[0].mode) ? Params.svcParam[0].descr : NULL);
@@ -458,7 +458,10 @@ int main(int argc, vm_char *argv[])
 
 #ifdef LIBVA_SUPPORT
     if(!(Params.ImpLib & MFX_IMPL_SOFTWARE))
-        allocator.libvaKeeper.reset(CreateLibVA());
+    {
+        allocator.libvaKeeper.reset(CreateLibVA(Params.strDevicePath));
+        MSDK_CHECK_POINTER(allocator.libvaKeeper.get(), MFX_ERR_NULL_PTR);
+    }
 #endif
 
     //prepare mfxParams
@@ -481,7 +484,7 @@ int main(int argc, vm_char *argv[])
 
     }
     if( ROI_FIX_TO_VAR == Params.roiCheckParam.mode || ROI_VAR_TO_VAR == Params.roiCheckParam.mode )
-    {      
+    {
         outROIGenerator.Init(realFrameInfo[VPP_OUT].Width, realFrameInfo[VPP_OUT].Height, Params.roiCheckParam.dstSeed);
         Params.roiCheckParam.dstSeed = outROIGenerator.GetSeed();
         bROITest[VPP_OUT] = true;
@@ -492,7 +495,7 @@ int main(int argc, vm_char *argv[])
 
     Resources.pAllocator->bUsedAsExternalAllocator = !Params.bDefAlloc;
 
-    // allocate needed number of aux vpp data    
+    // allocate needed number of aux vpp data
     //-----------------------------------------------------
     extVPPAuxData = new mfxExtVppReport[Params.asyncNum * Params.multiViewParam[0].viewCount];
     Resources.pExtVPPAuxData = reinterpret_cast<mfxExtVppAuxData*>(extVPPAuxData);
@@ -557,7 +560,7 @@ int main(int argc, vm_char *argv[])
     nFrames = 0;
 
     vm_string_printf(VM_STRING("VPP started\n"));
-    statTimer.Start(); 
+    statTimer.Start();
 
     mfxU32 StartJumpFrame = 13;
 
@@ -592,14 +595,14 @@ int main(int argc, vm_char *argv[])
 
     // pre-multi-view preparation
     bool bMultiView   = (VPP_FILTER_ENABLED_CONFIGURED == Params.multiViewParam[0].mode) ? true : false;
-    vector<bool> bMultipleOutStore(Params.multiViewParam[0].viewCount, false);  
+    vector<bool> bMultipleOutStore(Params.multiViewParam[0].viewCount, false);
     mfxFrameSurface1* viewSurfaceStore[MULTI_VIEW_COUNT_MAX];
 
     ViewGenerator  viewGenerator( (bSvcMode) ? 8 : Params.multiViewParam[0].viewCount );
 
     if( bMultiView )
     {
-        memset(viewSurfaceStore, 0, Params.multiViewParam[0].viewCount * sizeof( mfxFrameSurface1* )); 
+        memset(viewSurfaceStore, 0, Params.multiViewParam[0].viewCount * sizeof( mfxFrameSurface1* ));
 
         if( bFrameNumLimit )
         {
@@ -657,15 +660,15 @@ int main(int argc, vm_char *argv[])
                 viewIndx = viewGenerator.GetViewIndx( viewID );
 
                 if( bMultipleOutStore[viewIndx] )
-                {              
+                {
                     pSurf[VPP_IN] = viewSurfaceStore[viewIndx];
-                    bDoNotUpdateIn = true;           
+                    bDoNotUpdateIn = true;
 
                     bMultipleOutStore[viewIndx] = false;
                 }
                 else
                 {
-                    bDoNotUpdateIn = false;  
+                    bDoNotUpdateIn = false;
                 }
             }
 
@@ -679,8 +682,8 @@ int main(int argc, vm_char *argv[])
                 }
 
                 sts = yuvReader.GetNextInputFrame(
-                    &allocator, 
-                    &(realFrameInfo[VPP_IN]), 
+                    &allocator,
+                    &(realFrameInfo[VPP_IN]),
                     &pSurf[VPP_IN]);
                 BREAK_ON_ERROR(sts);
 
@@ -696,22 +699,22 @@ int main(int argc, vm_char *argv[])
                 }
             }
 
-            // VPP processing    
+            // VPP processing
             bDoNotUpdateIn = false;
 
             if( !bSvcMode )
             {
                 sts = GetFreeSurface(
-                    allocator.pSurfaces[VPP_OUT], 
-                    allocator.response[VPP_OUT].NumFrameActual , 
+                    allocator.pSurfaces[VPP_OUT],
+                    allocator.response[VPP_OUT].NumFrameActual ,
                     &pSurf[work_surf]);
                 BREAK_ON_ERROR(sts);
             }
             else
             {
                 sts = GetFreeSurface(
-                    allocator.pSvcSurfaces[did], 
-                    allocator.svcResponse[did].NumFrameActual , 
+                    allocator.pSvcSurfaces[did],
+                    allocator.svcResponse[did].NumFrameActual ,
                     &pSurf[work_surf]);
                 BREAK_ON_ERROR(sts);
             }
@@ -726,29 +729,29 @@ int main(int argc, vm_char *argv[])
             }
 
             mfxExtVppAuxData* pExtData = NULL;
-            if( VPP_FILTER_DISABLED != Params.vaParam[0].mode || 
-                VPP_FILTER_DISABLED != Params.varianceParam[0].mode || 
+            if( VPP_FILTER_DISABLED != Params.vaParam[0].mode ||
+                VPP_FILTER_DISABLED != Params.varianceParam[0].mode ||
                 VPP_FILTER_DISABLED != Params.idetectParam[0].mode)
             {
                 pExtData = reinterpret_cast<mfxExtVppAuxData*>(&extVPPAuxData[surfStore.m_SyncPoints.size()]);
             }
 
-            if ( Params.use_extapi ) 
+            if ( Params.use_extapi )
             {
-                sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx( 
-                    pSurf[VPP_IN], 
+                sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx(
+                    pSurf[VPP_IN],
                     pSurf[VPP_WORK],
-                    //pExtData, 
+                    //pExtData,
                     &pSurf[VPP_OUT],
                     &syncPoint);
 
                 while(MFX_WRN_DEVICE_BUSY == sts)
                 {
                     vm_time_sleep(500);
-                    sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx( 
-                        pSurf[VPP_IN], 
+                    sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx(
+                        pSurf[VPP_IN],
                         pSurf[VPP_WORK],
-                        //pExtData, 
+                        //pExtData,
                         &pSurf[VPP_OUT],
                         &syncPoint);
                 }
@@ -756,15 +759,15 @@ int main(int argc, vm_char *argv[])
                 if(MFX_ERR_MORE_DATA != sts)
                     bDoNotUpdateIn = true;
             }
-            else 
+            else
             {
-                sts = frameProcessor.pmfxVPP->RunFrameVPPAsync( 
-                    pSurf[VPP_IN], 
+                sts = frameProcessor.pmfxVPP->RunFrameVPPAsync(
+                    pSurf[VPP_IN],
                     pSurf[VPP_OUT],
-                    pExtData, 
+                    pExtData,
                     &syncPoint);
             }
-        
+
             if (MFX_ERR_MORE_DATA == sts)
             {
                 if(bSvcMode)
@@ -781,18 +784,18 @@ int main(int argc, vm_char *argv[])
             //because VPP produce multiple out. example: Frame Rate Conversion 30->60
             //MFX_ERR_MORE_SURFACE && use_extapi means that component need more work surfaces
             if (MFX_ERR_MORE_SURFACE == sts)
-            {       
+            {
                 sts = MFX_ERR_NONE;
 
                 if( bMultiView )
-                {                      
+                {
                     if( viewSurfaceStore[viewIndx] )
                     {
                         DecreaseReference( &(viewSurfaceStore[viewIndx]->Data) );
                     }
 
                     viewSurfaceStore[viewIndx] = pSurf[VPP_IN];
-                    IncreaseReference( &(viewSurfaceStore[viewIndx]->Data) );            
+                    IncreaseReference( &(viewSurfaceStore[viewIndx]->Data) );
 
                     bMultipleOutStore[viewIndx] = true;
                 }
@@ -800,19 +803,19 @@ int main(int argc, vm_char *argv[])
                 {
                     bDoNotUpdateIn = true;
                 }
-            
+
                 if ( Params.use_extapi )
                 {
                     // RunFrameAsyncEx is used
                     continue;
                 }
             }
-            else if (MFX_ERR_NONE == sts && !((nFrames+1)% StartJumpFrame) && ptsMaker.get() && Params.ptsJump) // pts jump 
+            else if (MFX_ERR_NONE == sts && !((nFrames+1)% StartJumpFrame) && ptsMaker.get() && Params.ptsJump) // pts jump
             {
                 ptsMaker.get()->JumpPTS();
             }
             else if ( MFX_ERR_NONE == sts && bMultiView )
-            {       
+            {
                 if( viewSurfaceStore[viewIndx] )
                 {
                     DecreaseReference( &(viewSurfaceStore[viewIndx]->Data) );
@@ -841,7 +844,7 @@ int main(int argc, vm_char *argv[])
         } // main while loop
     //---------------------------------------------------------
 
-        //process remain sync points 
+        //process remain sync points
         if (MFX_ERR_MORE_DATA == sts)
         {
             sts = OutputProcessFrame(Resources, realFrameInfo, nFrames, paramID);
@@ -867,23 +870,23 @@ int main(int argc, vm_char *argv[])
             }
 
             /*sts = GetFreeSurface(
-                Allocator.pSurfaces[VPP_OUT], 
-                Allocator.response[VPP_OUT].NumFrameActual, 
+                Allocator.pSurfaces[VPP_OUT],
+                Allocator.response[VPP_OUT].NumFrameActual,
                 &pSurf[VPP_OUT]);
             BREAK_ON_ERROR(sts);*/
             if( !bSvcMode )
             {
                 sts = GetFreeSurface(
-                    allocator.pSurfaces[VPP_OUT], 
-                    allocator.response[VPP_OUT].NumFrameActual , 
+                    allocator.pSurfaces[VPP_OUT],
+                    allocator.response[VPP_OUT].NumFrameActual ,
                     &pSurf[work_surf]);
                 BREAK_ON_ERROR(sts);
             }
             else
             {
                 sts = GetFreeSurface(
-                    allocator.pSvcSurfaces[did], 
-                    allocator.svcResponse[did].NumFrameActual , 
+                    allocator.pSvcSurfaces[did],
+                    allocator.svcResponse[did].NumFrameActual ,
                     &pSurf[work_surf]);
                 BREAK_ON_ERROR(sts);
             }
@@ -892,19 +895,19 @@ int main(int argc, vm_char *argv[])
 
             if ( Params.use_extapi )
             {
-                sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx( 
-                    NULL, 
+                sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx(
+                    NULL,
                     pSurf[VPP_WORK],
-                    //(VPP_FILTER_DISABLED != Params.vaParam.mode || VPP_FILTER_DISABLED != Params.varianceParam.mode)? reinterpret_cast<mfxExtVppAuxData*>(&extVPPAuxData[0]) : NULL, 
+                    //(VPP_FILTER_DISABLED != Params.vaParam.mode || VPP_FILTER_DISABLED != Params.varianceParam.mode)? reinterpret_cast<mfxExtVppAuxData*>(&extVPPAuxData[0]) : NULL,
                     &pSurf[VPP_OUT],
                     &syncPoint );
                 while(MFX_WRN_DEVICE_BUSY == sts)
                 {
                     vm_time_sleep(500);
-                    sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx( 
+                    sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx(
                         NULL,
                         pSurf[VPP_WORK],
-                        //(VPP_FILTER_DISABLED != Params.vaParam.mode || VPP_FILTER_DISABLED != Params.varianceParam.mode)? reinterpret_cast<mfxExtVppAuxData*>(&extVPPAuxData[0]) : NULL, 
+                        //(VPP_FILTER_DISABLED != Params.vaParam.mode || VPP_FILTER_DISABLED != Params.varianceParam.mode)? reinterpret_cast<mfxExtVppAuxData*>(&extVPPAuxData[0]) : NULL,
                         &pSurf[VPP_OUT],
                         &syncPoint );
                 }
@@ -930,7 +933,7 @@ int main(int argc, vm_char *argv[])
             GeneralWriter* writer = (1 == Resources.dstFileWritersN) ? &Resources.pDstFileWriters[0] : &Resources.pDstFileWriters[paramID];
             sts = writer->PutNextFrame(
                 Resources.pAllocator,
-                (bSvcMode) ?  &(Resources.realSvcOutFrameInfo[pSurf[VPP_OUT]->Info.FrameId.DependencyId]) : &(realFrameInfo[VPP_OUT]), 
+                (bSvcMode) ?  &(Resources.realSvcOutFrameInfo[pSurf[VPP_OUT]->Info.FrameId.DependencyId]) : &(realFrameInfo[VPP_OUT]),
                 pSurf[VPP_OUT]);
             if(sts)
                 vm_string_printf(VM_STRING("Failed to write frame to disk\n"));
@@ -956,8 +959,8 @@ int main(int argc, vm_char *argv[])
                     if (!(nFrames % 100))
                         vm_string_printf(VM_STRING("."));
                 }
-            } 
-            else 
+            }
+            else
             {
                 if (!Params.bPerf)
                     vm_string_printf(VM_STRING("Frame number: %d, spatial: %hd, temporal: %d, scd: %d \n"), nFrames,
@@ -978,7 +981,7 @@ int main(int argc, vm_char *argv[])
 
     IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
 
-    // report any errors that occurred 
+    // report any errors that occurred
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Unexpected error during processing\n")); WipeResources(&Resources); WipeParams(&Params);});
 
     vm_string_printf(VM_STRING("\nVPP finished\n"));

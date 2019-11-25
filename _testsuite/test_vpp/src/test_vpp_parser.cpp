@@ -145,6 +145,13 @@ void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("                        1 - 2:3:3:2 pattern\n"));
     vm_string_printf(VM_STRING("                        0 - 3:2 pattern\n\n"));
 
+#if defined(LINUX32) || defined(LINUX64)
+    vm_string_printf(VM_STRING("   [-device /path/to/device]   - set graphics device for processing\n"));
+    vm_string_printf(VM_STRING("                                  For example: '-device /dev/dri/card0'\n"));
+    vm_string_printf(VM_STRING("                                               '-device /dev/dri/renderD128'\n"));
+    vm_string_printf(VM_STRING("                                  If not specified, defaults to the first Intel device found on the system\n\n"));
+#endif
+
     vm_string_printf(VM_STRING("   [-tc_pos (position)] - Position inside a telecine sequence of 5 frames where the artifacts starts - Value [0 - 4]\n\n"));
 
     vm_string_printf(VM_STRING("   [-reset_start (frame number)] - after reaching this frame, encoder will be reset with new parameters, followed after this command and before -reset_end \n"));
@@ -1323,6 +1330,17 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                     pParams->ImpLib = MFX_IMPL_HARDWARE_ANY;
                 }
             }
+#if (defined(LINUX32) || defined(LINUX64))
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-device")))
+            {
+                if (!pParams->strDevicePath.empty()){
+                    vppPrintHelp(strInput[0], VM_STRING("error: Only one device can be specified\n"));
+                    return MFX_ERR_UNSUPPORTED;
+                }
+                VAL_CHECK(i+1 == nArgNum);
+                pParams->strDevicePath = strInput[++i];
+            }
+#endif
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-d3d11")) )
             {
                 //pParams->ImpLib = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11;

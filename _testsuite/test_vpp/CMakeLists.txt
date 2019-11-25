@@ -19,7 +19,6 @@ list( APPEND sources ${srcs})
 set( LIBS "" )
 list( APPEND LIBS
     shared_utils
-    sample_common
     mfx
     umc
     vm
