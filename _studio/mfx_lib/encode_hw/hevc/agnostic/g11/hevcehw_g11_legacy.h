@@ -230,7 +230,6 @@ namespace Gen11
             , const SPS& sps
             , const PPS& pps
             , Slice & s);
-        TTaskIt ReorderWrap(const ExtBuffer::Param<mfxVideoParam> & par, TTaskIt begin, TTaskIt end, bool flush);
         static mfxU32 GetRawBytes(mfxU16 w, mfxU16 h, mfxU16 ChromaFormat, mfxU16 BitDepth);
         static bool IsSWBRC(mfxVideoParam const & par, const mfxExtCodingOption2* pCO2);
         static bool IsInVideoMem(const mfxVideoParam & par, const mfxExtOpaqueSurfaceAlloc* pOSA);
@@ -323,6 +322,18 @@ namespace Gen11
                 , m_hw
                 , Glob::Defaults::Get(strg));
         }
+
+        using TItWrap = TaskItWrap<FrameBaseInfo, Task::Common::Key>;
+        using TItWrapIt = std::list<TItWrap>::iterator;
+
+        static TItWrapIt BPyrReorder(TItWrapIt begin, TItWrapIt end);
+        static TItWrap Reorder(
+            ExtBuffer::Param<mfxVideoParam> const & par
+            , DpbArray const & dpb
+            , TItWrap begin
+            , TItWrap end
+            , bool flush);
+
     };
 
 } //Gen11

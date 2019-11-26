@@ -1029,10 +1029,17 @@ namespace Gen11
     };
 
     struct Reorderer
-        : CallChain<TTaskIt, TTaskIt, TTaskIt, bool>
+        : CallChain<TTaskIt, const DpbArray&, TTaskIt, TTaskIt, bool>
     {
         mfxU16 BufferSize = 0;
         NotNull<DpbArray*> DPB;
+
+        using TBaseCC = CallChain<TTaskIt, const DpbArray&, TTaskIt, TTaskIt, bool>;
+
+        TTaskIt operator()(TTaskIt itBegin, TTaskIt itEnd, bool bFlush)
+        {
+            return TBaseCC::operator()((const DpbArray&)*DPB, itBegin, itEnd, bFlush);
+        }
     };
 
     class EncodeCapsHevc

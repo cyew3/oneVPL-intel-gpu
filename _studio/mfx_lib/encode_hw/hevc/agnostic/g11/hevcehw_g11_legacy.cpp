@@ -940,13 +940,20 @@ void Legacy::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         auto& par = Glob::VideoParam::Get(strg);
 
         auto pReorderer = make_storable<Reorderer>();
-        pReorderer->Push(
-            [&](Reorderer::TExt, TTaskIt begin, TTaskIt end, bool bFlush)
-        {
-            return ReorderWrap(par, begin, end, bFlush);
-        });
+
         pReorderer->BufferSize = par.mfx.GopRefDist - 1;
-        pReorderer->DPB = &m_prevTask.DPB.After;
+        pReorderer->DPB        = &m_prevTask.DPB.After;
+
+        pReorderer->Push(
+            [&](Reorderer::TExt, const DpbArray& DPB, TTaskIt begin, TTaskIt end, bool bFlush)
+        {
+            auto IsIdrFrame = [](const TItWrap::reference fi) { return IsIdr(fi.FrameType); };
+            auto newEnd = std::find_if(TItWrap(begin), TItWrap(end), IsIdrFrame);
+
+            bFlush = newEnd != begin && newEnd != end;
+
+            return Reorder(par, DPB, TItWrap(begin), newEnd, bFlush).it;
+        });
 
         strg.Insert(Glob::Reorder::Key, std::move(pReorderer));
 
@@ -2390,10 +2397,9 @@ mfxU32 Legacy::GetBiFrameLocation(mfxU32 i, mfxU32 num, bool &ref, mfxU32 &level
     return GetEncodingOrder(i, 0, num, level, 0, ref);
 }
 
-template <class T>
-static T BPyrReorder(T begin, T end)
+Legacy::TItWrapIt Legacy::BPyrReorder(TItWrapIt begin, TItWrapIt end)
 {
-    typedef typename std::iterator_traits<T>::reference TRef;
+    using TRef = std::iterator_traits<TItWrapIt>::reference;
 
     mfxU32 num = mfxU32(std::distance(begin, end));
     bool bSetOrder = num && (*begin)->BPyramidOrder == mfxU32(MFX_FRAMEORDER_UNKNOWN);
@@ -2413,22 +2419,21 @@ static T BPyrReorder(T begin, T end)
         , [](TRef a, TRef b) { return a->BPyramidOrder < b->BPyramidOrder; });
 }
 
-template<class T>
-static T Reorder(
+Legacy::TItWrap Legacy::Reorder(
     ExtBuffer::Param<mfxVideoParam> const & par
     , DpbArray const & dpb
-    , T begin
-    , T end
+    , TItWrap begin
+    , TItWrap end
     , bool flush)
 {
-    typedef typename std::iterator_traits<T>::reference TRef;
+    using TRef = TItWrap::reference;
 
     const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par);
     bool isBPyramid = (CO2.BRefType == MFX_B_REF_PYRAMID);
-    T top = begin;
-    std::list<T> brefs;
+    TItWrap top = begin;
+    std::list<TItWrap> brefs;
     auto IsB = [](TRef f) { return HEVCEHW::IsB(f.FrameType); };
-    auto NoL1 = [&](T& f) { return !CountL1(dpb, f->POC); };
+    auto NoL1 = [&](TItWrap& f) { return !CountL1(dpb, f->POC); };
 
     std::generate_n(
         std::back_inserter(brefs)
@@ -2441,11 +2446,11 @@ static T Reorder(
     if (bNoPyramidB)
     {
         auto B0POC = brefs.front()->POC;
-        auto RefB = [B0POC](T& f)
+        auto RefB = [B0POC](TItWrap& f)
         {
             return IsRef(f->FrameType) && (f->POC - B0POC < 2);
         };
-        typename std::list<T>::iterator BCand[2] =
+        TItWrapIt BCand[2] =
         {
             std::find_if(brefs.begin() , brefs.end(), RefB)
             , brefs.begin()
@@ -2465,28 +2470,6 @@ static T Reorder(
     }
 
     return top;
-}
-
-TTaskIt Legacy::ReorderWrap(
-    ExtBuffer::Param<mfxVideoParam> const & par
-    , TTaskIt begin
-    , TTaskIt end
-    , bool flush)
-{
-    typedef TaskItWrap<FrameBaseInfo, Task::Common::Key> TItWrap;
-    TItWrap newEnd(begin);
-
-    while (newEnd != end)
-    {
-        if (newEnd != begin && IsIdr(newEnd->FrameType))
-        {
-            flush = true;
-            break;
-        }
-        newEnd++;
-    }
-
-    return Reorder(par, m_prevTask.DPB.After, TItWrap(begin), newEnd, flush).it;
 }
 
 std::tuple<mfxStatus, mfxU16, mfxU16>
@@ -3157,13 +3140,17 @@ void Legacy::SetSTRPS(
     STRPS     sets[65]   = {};
     auto      pSetsBegin = sets;
     auto      pSetsEnd   = pSetsBegin;
-    DpbArray& dpb        = *reorder.DPB;
     bool      bTL        = dflts.base.GetNumTemporalLayers(dflts) > 1;
     mfxI32    nGops      = par.mfx.IdrInterval + !par.mfx.IdrInterval * 4;
     mfxI32    stDist     = std::min<mfxI32>(par.mfx.GopPicSize * nGops, 128);
     mfxI32    lastIPoc   = 0;
     bool      bDone      = false;
     mfxI32    i          = 0;
+    Reorderer localReorder;
+    DpbArray  dpb;
+
+    localReorder        = reorder;
+    localReorder.DPB    = &dpb; //use own DPB
 
     do
     {
@@ -3176,7 +3163,7 @@ void Legacy::SetSTRPS(
             frames.back().Insert(Task::Common::Key, new FrameBaseInfo(fi));
         }
 
-        auto frIt  = reorder(frames.begin(), frames.end(), false);
+        auto frIt  = localReorder(frames.begin(), frames.end(), false);
         bool bNext = frIt == frames.end();
 
         FrameBaseInfo* cur = nullptr;
