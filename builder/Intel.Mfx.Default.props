@@ -42,6 +42,11 @@
     <MfxProgramDatabaseFile Condition="'$(MfxProgramDatabaseFile)'==''">$(MfxOutDir)$(MfxTargetName).pdb</MfxProgramDatabaseFile>
   </PropertyGroup>
 
+  <!-- Per-solution definitions -->
+  <PropertyGroup>
+    <MfxDefinitions Condition="'$(SolutionName)'=='libmfxhw_plugin_h264la'">AS_H264LA_PLUGIN;$(MfxDefinitions)</MfxDefinitions>
+  </PropertyGroup>
+
   <PropertyGroup Label="Configuration">
     <OutDir>$(MfxOutDir)</OutDir>
     <IntDir>$(MfxIntDir)</IntDir>

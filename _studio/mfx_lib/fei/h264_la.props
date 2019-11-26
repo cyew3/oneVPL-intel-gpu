@@ -19,7 +19,7 @@
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h264\include;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h265\include
     </MfxIncludes>
-    <MfxDefinitions>AS_H264LA_PLUGIN;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;AS_H264LA_PLUGIN;</MfxDefinitions>
+    <MfxDefinitions>MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>
   </PropertyGroup>
