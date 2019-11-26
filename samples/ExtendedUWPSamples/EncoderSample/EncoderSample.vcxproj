@@ -178,18 +178,18 @@
     <None Include="..\ffmpeg\Build\Windows10\x64\bin\*.dll" Condition="'$(Configuration)'=='DebugWithExtras' Or '$(Configuration)'=='ReleaseWithExtras'">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="key.pfx" />
+    <None Include="EncoderSample_TemporaryKey.pfx" />
   </ItemGroup>
   <PropertyGroup>
-    <PackageCertificateKeyFile>$(SolutionDir)Certificate\key.pfx</PackageCertificateKeyFile>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
     <AppxBundle>Never</AppxBundle>
     <AppInstallerUpdateFrequency>1</AppInstallerUpdateFrequency>
     <AppInstallerCheckForUpdateFrequency>OnApplicationRun</AppInstallerCheckForUpdateFrequency>
-    <PackageCertificateThumbprint>08BD5C9A60B42099231B5EF8728FD0ECF5E81651</PackageCertificateThumbprint>
     <AppxBundlePlatforms>x86|x64</AppxBundlePlatforms>
+    <PackageCertificateThumbprint>B93313B016963688AC835FB9060330CA4554BFB8</PackageCertificateThumbprint>
+    <PackageCertificateKeyFile>EncoderSample_TemporaryKey.pfx</PackageCertificateKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)_build\$(Platform)\$(Configuration)\$(TargetName)\</OutDir>
@@ -339,7 +339,6 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <None Include="EncoderSample_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png" />
