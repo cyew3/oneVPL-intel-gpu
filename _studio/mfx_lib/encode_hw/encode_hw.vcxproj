@@ -41,6 +41,7 @@
     <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_interlace.cpp" />
     <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_legacy.cpp" />
     <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_legacy_defaults.cpp" />
+    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_max_frame_size.cpp" />
     <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_packer.cpp" />
     <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_parser.cpp" />
     <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_roi.cpp" />
@@ -51,7 +52,6 @@
     <ClCompile Include="hevc\embargo\agnostic\g11lkf\hevcehw_g11lkf.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g11lkf\hevcehw_g11lkf_caps.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g11\hevcehw_g11_dump_files.cpp" />
-    <ClCompile Include="hevc\embargo\agnostic\g11\hevcehw_g11_max_frame_size.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12_caps.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12_mfe.cpp" />
@@ -142,6 +142,7 @@
     <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_iddi_packer.h" />
     <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_interlace.h" />
     <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_legacy.h" />
+    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_max_frame_size.h" />
     <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_packer.h" />
     <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_parser.h" />
     <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_roi.h" />
@@ -158,7 +159,6 @@
     <ClInclude Include="hevc\embargo\agnostic\g11lkf\hevcehw_g11lkf.h" />
     <ClInclude Include="hevc\embargo\agnostic\g11lkf\hevcehw_g11lkf_caps.h" />
     <ClInclude Include="hevc\embargo\agnostic\g11\hevcehw_g11_dump_files.h" />
-    <ClInclude Include="hevc\embargo\agnostic\g11\hevcehw_g11_max_frame_size.h" />
     <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12.h" />
     <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_caps.h" />
     <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_data.h" />

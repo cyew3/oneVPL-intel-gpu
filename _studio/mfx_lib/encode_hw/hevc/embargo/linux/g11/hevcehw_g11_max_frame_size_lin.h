@@ -41,6 +41,8 @@ namespace Gen11
 
     protected:
         virtual void InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push) override;
+
+        std::list<std::vector<mfxU8>> m_vaPerSeqMiscData;
     };
 
 } //Gen11

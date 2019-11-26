@@ -62,10 +62,17 @@ void MFXVideoENCODEH265_HW<TBaseGen>::InternalInitFeatures(
         pFeature->Init(mode, *this);
 
     TBaseGen::m_features.splice(TBaseGen::m_features.end(), newFeatures);
-        
+
     if (mode & (QUERY1 | QUERY_IO_SURF | INIT))
     {
         auto& qnc = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(*this);
+
+        qnc.splice(qnc.begin(), qnc, FeatureBlocks::Get(qnc, { FEATURE_CAPS, Caps::BLK_CheckLowPower }));
+
+        FeatureBlocks::Reorder(
+            qnc
+            , { Gen11::FEATURE_LEGACY, Gen11::Legacy::BLK_SetLowPowerDefault }
+            , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
         FeatureBlocks::Reorder(
             qnc
             , { Gen11::FEATURE_LEGACY, Gen11::Legacy::BLK_SetLowPowerDefault }

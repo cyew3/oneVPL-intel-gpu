@@ -170,6 +170,26 @@ void ROI::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
     Push(BLK_SetDefaults
         , [this](mfxVideoParam& par, StorageW& strg, StorageRW&)
     {
+        auto& defaults = Glob::Defaults::Get(strg);
+        auto& bSet = defaults.SetForFeature[GetID()];
+        if (!bSet)
+        {
+            defaults.GetPPS.Push([this](
+                Defaults::TGetPPS::TExt prev
+                , const Defaults::Param& defPar
+                , const Gen11::SPS& sps
+                , Gen11::PPS& pps)
+            {
+                auto sts = prev(defPar, sps, pps);
+
+                pps.cu_qp_delta_enabled_flag |= !!((const mfxExtEncoderROI&)ExtBuffer::Get(defPar.mvp)).NumROI;
+
+                return sts;
+            });
+
+            bSet = true;
+        }
+
         mfxExtEncoderROI* pROI = ExtBuffer::Get(par);
         mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
 
@@ -188,25 +208,7 @@ void ROI::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     Push(BLK_SetPPS
         , [this](StorageRW& strg, StorageRW&) -> mfxStatus
     {
-        auto& par = Glob::VideoParam::Get(strg);
-        mfxExtEncoderROI* pROI = ExtBuffer::Get(par);
-
-        MFX_CHECK(pROI && pROI->NumROI, MFX_ERR_NONE);
-
-        auto& caps = Glob::EncodeCaps::Get(strg);
-
-        m_bViaCuQp = ROIViaMBQP(caps, par);
-        MFX_CHECK(m_bViaCuQp, MFX_ERR_NONE);
-
-        PPS& pps = Glob::PPS::Get(strg);
-        pps.cu_qp_delta_enabled_flag = 1;
-
-        MFX_CHECK(strg.Contains(Glob::RealState::Key), MFX_ERR_NONE);
-
-        const PPS& oldPPS = Glob::PPS::Get(Glob::RealState::Get(strg));
-        Glob::ResetHint::Get(strg).Flags |=
-            RF_PPS_CHANGED * (pps.cu_qp_delta_enabled_flag != oldPPS.cu_qp_delta_enabled_flag);
-
+        m_bViaCuQp = ROIViaMBQP(Glob::EncodeCaps::Get(strg), Glob::VideoParam::Get(strg));
         return MFX_ERR_NONE;
     });
 }

@@ -257,9 +257,6 @@
     <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_qmatrix_win.cpp">
       <Filter>hevc\embargo\windows\g11</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\agnostic\g11\hevcehw_g11_max_frame_size.cpp">
-      <Filter>hevc\embargo\agnostic\g11</Filter>
-    </ClCompile>
     <ClCompile Include="hevc\embargo\linux\g11\hevcehw_g11_max_frame_size_lin.cpp">
       <Filter>hevc\embargo\linux\g11</Filter>
     </ClCompile>
@@ -358,6 +355,9 @@
     </ClCompile>
     <ClCompile Include="hevc\linux\g11\hevcehw_g11_roi_lin.cpp">
       <Filter>hevc\open\linux\g11</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_max_frame_size.cpp">
+      <Filter>hevc\open\agnostic\g11</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -568,9 +568,6 @@
     <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_qmatrix_win.h">
       <Filter>hevc\embargo\windows\g11</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\agnostic\g11\hevcehw_g11_max_frame_size.h">
-      <Filter>hevc\embargo\agnostic\g11</Filter>
-    </ClInclude>
     <ClInclude Include="hevc\embargo\linux\g11\hevcehw_g11_max_frame_size_lin.h">
       <Filter>hevc\embargo\linux\g11</Filter>
     </ClInclude>
@@ -696,6 +693,9 @@
     </ClInclude>
     <ClInclude Include="hevc\linux\g11\hevcehw_g11_roi_lin.h">
       <Filter>hevc\open\linux\g11</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_max_frame_size.h">
+      <Filter>hevc\open\agnostic\g11</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

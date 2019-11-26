@@ -2136,7 +2136,7 @@ void Packer::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
             };
 
             bool bErr =
-                   ((task.InsertHeaders & INSERT_AUD) && Res2Bool(sts, BSInsert(ph.AUD[2 - ssh.type])))
+                   ((task.InsertHeaders & INSERT_AUD) && Res2Bool(sts, BSInsert(ph.AUD[mfx::clamp(2 - ssh.type, 0, 2)])))
                 || ((task.InsertHeaders & INSERT_VPS) && Res2Bool(sts, BSInsert(ph.VPS)))
                 || ((task.InsertHeaders & INSERT_SPS) && Res2Bool(sts, BSInsert(ph.SPS)))
                 || ((task.InsertHeaders & INSERT_PPS) && Res2Bool(sts, BSInsert(ph.PPS)));

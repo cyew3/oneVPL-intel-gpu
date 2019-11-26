@@ -1194,6 +1194,13 @@ namespace Gen11
             , const FrameBaseInfo&    // refA
             , const FrameBaseInfo&>;  // refB
         TCmpRef CmpRefLX[2];
+        using TGetWeakRef = CallChain<
+            const DpbFrame*
+            , const Defaults::Param&
+            , const FrameBaseInfo&    // curFrame
+            , const DpbFrame*         // begin
+            , const DpbFrame*>;       // end
+        TGetWeakRef GetWeakRef;
 
         using TGetPreReorderInfo = CallChain<
             mfxStatus
@@ -1230,6 +1237,8 @@ namespace Gen11
 
         using TGetSPS = CallChain<mfxStatus, const Defaults::Param&, const VPS&, SPS&>;
         TGetSPS GetSPS;
+        using TGetPPS = CallChain<mfxStatus, const Defaults::Param&, const SPS&, PPS&>;
+        TGetPPS GetPPS;
 
         using TGetSHNUT = CallChain<
             mfxU8                       //NUT
@@ -1363,6 +1372,15 @@ namespace Gen11
         static const StorageR::TKey ReservedKey0 = __LINE__ - _KD;
         static const StorageR::TKey NUM_KEYS = __LINE__ - _KD;
     };
+
+    template<class TEB>
+    inline const TEB& GetRTExtBuffer(const StorageR& glob, const StorageR& task)
+    {
+        const TEB* pEB = ExtBuffer::Get(Task::Common::Get(task).ctrl);
+        if (pEB)
+            return *pEB;
+        return ExtBuffer::Get(Glob::VideoParam::Get(glob));
+    }
 
 } //namespace Gen11
 } //namespace HEVCEHW

@@ -42,7 +42,6 @@ void Allocator::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 MfxFrameAllocResponse::MfxFrameAllocResponse(VideoCORE& core)
     : mfxFrameAllocResponse({})
     , m_core(core)
-    , m_isExternal(true)
 {
 }
 

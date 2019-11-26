@@ -226,6 +226,7 @@ void ExtBRC::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
     {
         auto&                      par          = Glob::VideoParam::Get(strg);
         const mfxExtCodingOption2& CO2          = ExtBuffer::Get(par);
+        const mfxExtCodingOption3& CO3          = ExtBuffer::Get(par);
         mfxExtBRC&                 brc          = ExtBuffer::Get(par);
         bool                       bInternalBRC = IsOn(CO2.ExtBRC) && !brc.pthis && !m_brc.pthis;
         bool                       bExternalBRC = IsOn(CO2.ExtBRC) && brc.pthis && !m_brc.pthis;
@@ -249,8 +250,24 @@ void ExtBRC::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
             MFX_CHECK_STS(sts);
         }
 
+        m_bUseLevel = !(IGNORE_P_PYRAMID_LEVEL && CO3.PRefType == MFX_P_REF_PYRAMID);
+
         return MFX_ERR_NONE;
     });
+}
+
+mfxBRCFrameParam ExtBRC::MakeFrameParam(const TaskCommonPar& task)
+{
+    mfxBRCFrameParam    fp = {};
+
+    fp.DisplayOrder   = task.DisplayOrder;
+    fp.EncodedOrder   = task.EncodedOrder;
+    fp.FrameType      = task.FrameType;
+    fp.PyramidLayer   = mfxU16(task.PyramidLevel * m_bUseLevel + task.b2ndField);
+    fp.NumRecode      = task.NumRecode;
+    fp.CodedFrameSize = task.BsDataLength;
+
+    return fp;
 }
 
 void ExtBRC::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
@@ -274,14 +291,8 @@ void ExtBRC::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
         mfxI32 minQP = (-6 * sps.bit_depth_luma_minus8) * bNegativeQpAllowed;
         mfxI32 maxQP = 51;
 
-        mfxBRCFrameParam fp = {};
-        mfxBRCFrameCtrl fc = {};
-
-        fp.DisplayOrder = task.DisplayOrder;
-        fp.EncodedOrder = task.EncodedOrder;
-        fp.FrameType    = task.FrameType;
-        fp.PyramidLayer = mfxU16(task.PyramidLevel + task.b2ndField);
-        fp.NumRecode    = task.NumRecode;
+        mfxBRCFrameParam fp = MakeFrameParam(task);
+        mfxBRCFrameCtrl  fc = {};
 
         mfxStatus sts = m_brc.GetFrameCtrl(m_brc.pthis, &fp, &fc);
         MFX_CHECK_STS(sts);
@@ -307,16 +318,9 @@ void ExtBRC::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
 
         auto& task = Task::Common::Get(s_task);
             
-        mfxBRCFrameParam    fp = {};
+        mfxBRCFrameParam    fp = MakeFrameParam(task);
         mfxBRCFrameCtrl     fc = {};
         mfxBRCFrameStatus   fs = {};
-
-        fp.DisplayOrder   = task.DisplayOrder;
-        fp.EncodedOrder   = task.EncodedOrder;
-        fp.FrameType      = task.FrameType;
-        fp.PyramidLayer   = (mfxU16)task.PyramidLevel;
-        fp.NumRecode      = task.NumRecode;
-        fp.CodedFrameSize = task.BsDataLength;
 
         fc.QpY = task.QpY;
 

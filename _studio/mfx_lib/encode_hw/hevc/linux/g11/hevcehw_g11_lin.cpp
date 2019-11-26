@@ -52,6 +52,7 @@
 #if defined(MFX_ENABLE_HEVCE_ROI)
 #include "hevcehw_g11_roi_lin.h"
 #endif
+#include "hevcehw_g11_max_frame_size.h"
 #include <algorithm>
 
 using namespace HEVCEHW;
@@ -105,6 +106,7 @@ Linux::Gen11::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 #if defined(MFX_ENABLE_HEVCE_ROI)
     m_features.emplace_back(new ROI(FEATURE_ROI));
 #endif
+    m_features.emplace_back(new MaxFrameSize(FEATURE_MAX_FRAME_SIZE));
 
     InternalInitFeatures(status, mode);
 

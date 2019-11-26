@@ -45,12 +45,11 @@ void Linux::Gen11::ROI::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
             {
                 bool  bRes = prev(global, s_task, qpMap);
                 auto& task = Task::Common::Get(s_task);
-                auto  pROI = (const mfxExtEncoderROI*)ExtBuffer::Get(task.ctrl);
+                auto& roi = GetRTExtBuffer<mfxExtEncoderROI>(global, s_task);
 
                 bool bFillQPMap =
                     !bRes
-                    && pROI
-                    && pROI->NumROI
+                    && roi.NumROI
                     && qpMap.m_width
                     && qpMap.m_height
                     && qpMap.m_block_width
@@ -58,7 +57,7 @@ void Linux::Gen11::ROI::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 
                 if (bFillQPMap)
                 {
-                    mfxI32 dQPMult = 1 - 2 * (pROI->ROIMode == MFX_ROI_MODE_PRIORITY);
+                    mfxI32 dQPMult = 1 - 2 * (roi.ROIMode == MFX_ROI_MODE_PRIORITY);
                     mfxU32 x = 0, y = 0;
                     auto IsXYInRect = [&](const RectData& r)
                     {
@@ -69,8 +68,8 @@ void Linux::Gen11::ROI::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
                     };
                     auto NextQP = [&]()
                     {
-                        auto pEnd = pROI->ROI + pROI->NumROI;
-                        auto pRect = std::find_if(pROI->ROI, pEnd, IsXYInRect);
+                        auto pEnd = roi.ROI + roi.NumROI;
+                        auto pRect = std::find_if(roi.ROI, pEnd, IsXYInRect);
 
                         ++x;
 
@@ -100,20 +99,18 @@ void Linux::Gen11::ROI::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         {
             vaPacker.AddPerPicMiscData[VAEncMiscParameterTypeROI].Push([this](
                 VAPacker::CallChains::TAddMiscData::TExt
-                , const StorageR&
+                , const StorageR& global
                 , const StorageR& s_task
                 , std::list<std::vector<mfxU8>>& data)
             {
-                auto& task = Task::Common::Get(s_task);
-                auto  pROI = (const mfxExtEncoderROI*)ExtBuffer::Get(task.ctrl);
-
-                bool bNeedROI = pROI && pROI->NumROI;
+                auto& roi = GetRTExtBuffer<mfxExtEncoderROI>(global, s_task);
+                bool bNeedROI = !!roi.NumROI;
 
                 if (bNeedROI)
                 {
                     auto& vaROI = AddVaMisc<VAEncMiscParameterBufferROI>(VAEncMiscParameterTypeROI, data);
 
-                    mfxI32 dQPMult      = 1 - 2 * (pROI->ROIMode == MFX_ROI_MODE_PRIORITY);
+                    mfxI32 dQPMult      = 1 - 2 * (roi.ROIMode == MFX_ROI_MODE_PRIORITY);
                     auto   MakeVAEncROI = [dQPMult](const RectData& rect)
                     {
                         VAEncROI roi = {};
@@ -125,17 +122,15 @@ void Linux::Gen11::ROI::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
                         return roi;
                     };
 
-                    m_vaROI.resize(pROI->NumROI);
+                    m_vaROI.resize(roi.NumROI);
 
-                    vaROI.num_roi = pROI->NumROI;
+                    vaROI.num_roi = roi.NumROI;
                     vaROI.roi     = m_vaROI.data();
 
-                    std::transform(pROI->ROI, pROI->ROI + pROI->NumROI, vaROI.roi, MakeVAEncROI);
+                    std::transform(roi.ROI, roi.ROI + roi.NumROI, vaROI.roi, MakeVAEncROI);
 
                     vaROI.max_delta_qp = 51;
                     vaROI.min_delta_qp = -51;
-
-                    vaROI.roi_flags.bits.roi_value_is_qp_delta = 0;
                     vaROI.roi_flags.bits.roi_value_is_qp_delta = 1;
                 }
 

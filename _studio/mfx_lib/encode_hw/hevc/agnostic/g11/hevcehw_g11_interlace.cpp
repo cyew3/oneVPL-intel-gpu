@@ -200,7 +200,7 @@ void Interlace::Query1NoCaps(const FeatureBlocks& , TPushQ1 Push)
             MFX_CHECK_STS(sts);
 
             MFX_CHECK(IsField(par.mvp.mfx.FrameInfo.PicStruct), MFX_ERR_NONE);
-            
+
             bool bInfoValid = pSurfIn && !!(pSurfIn->Info.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF));
             fi.b2ndField = !!(frameOrder & 1);
             fi.bBottomField =
@@ -254,6 +254,32 @@ void Interlace::Query1NoCaps(const FeatureBlocks& , TPushQ1 Push)
             sps.vui.field_seq_flag                = 1;
 
             return sts;
+        });
+        defaults.GetWeakRef.Push([](
+            Defaults::TGetWeakRef::TExt
+            , const Defaults::Param& par
+            , const FrameBaseInfo  &/*cur*/
+            , const DpbFrame       *begin
+            , const DpbFrame       *end)
+        {
+            const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par.mvp);
+            auto POCLess = [](const DpbFrame& l, const DpbFrame& r) { return l.POC < r.POC; };
+
+            if (CO3.PRefType == MFX_P_REF_PYRAMID)
+            {
+                auto PyrInt = par.base.GetPPyrInterval(par);
+                auto FN     = [](const FrameBaseInfo& x) { return (x.POC + !x.b2ndField) / 2; };
+                auto IsWeak = [&](const FrameBaseInfo& x) { return (FN(x) - FN(*begin)) % PyrInt != 0; };
+
+                if (FN(begin[1]) == FN(begin[0]))
+                {
+                    return std::find_if(begin, end, IsWeak);
+                }
+
+                return begin;
+            }
+
+            return std::min_element(begin, end, POCLess);
         });
 
         bSet = true;

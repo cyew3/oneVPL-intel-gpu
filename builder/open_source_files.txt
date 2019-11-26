@@ -153,6 +153,8 @@ _studio/mfx_lib/encode_hw/hevc/agnostic/g11/hevcehw_g11_task.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/g11/hevcehw_g11_vme_brc.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/g11/hevcehw_g11_weighted_prediction.cpp
 _studio/mfx_lib/encode_hw/hevc/agnostic/g11/hevcehw_g11_weighted_prediction.h
+_studio/mfx_lib/encode_hw/hevc/agnostic/g11/hevcehw_g11_max_frame_size.cpp
+_studio/mfx_lib/encode_hw/hevc/agnostic/g11/hevcehw_g11_max_frame_size.h
 _studio/mfx_lib/encode_hw/hevc/linux/hevcehw_va_trace_lin.cpp
 _studio/mfx_lib/encode_hw/hevc/linux/hevcehw_va_trace_lin.h
 _studio/mfx_lib/encode_hw/hevc/linux/g11/hevcehw_g11_encoded_frame_info_lin.h

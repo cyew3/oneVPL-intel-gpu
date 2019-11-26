@@ -985,11 +985,12 @@ void Legacy::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
             SPS oldSPScopy = oldSPS;
             std::copy(newSPS.strps, newSPS.strps + Size(newSPS.strps), oldSPScopy.strps);
+            oldSPScopy.num_short_term_ref_pic_sets = newSPS.num_short_term_ref_pic_sets;
 
             if (!oldSPS.vui_parameters_present_flag)
                 oldSPScopy.vui = newSPS.vui;
 
-            bool bSPSChanged = !!memcmp(&newSPS, &oldSPS, sizeof(SPS));
+            bool bSPSChanged = !!memcmp(&newSPS, &oldSPScopy, sizeof(SPS));
 
             hint.Flags |= RF_SPS_CHANGED * (bSPSChanged || (hint.Flags & RF_IDR_REQUIRED));
         }
@@ -1030,7 +1031,7 @@ void Legacy::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
         auto dflts = GetRTDefaults(strg);
 
-        MFX_CHECK(dflts.base.GetNonStdReordering(dflts), MFX_ERR_NONE);
+        MFX_CHECK(!dflts.base.GetNonStdReordering(dflts), MFX_ERR_NONE);
 
         SetSTRPS(dflts, sps, Glob::Reorder::Get(strg));
 
@@ -1044,11 +1045,11 @@ void Legacy::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         if (!strg.Contains(Glob::PPS::Key))
         {
             std::unique_ptr<MakeStorable<PPS>> pPPS(new MakeStorable<PPS>);
-            SetPPS(
-                Glob::VideoParam::Get(strg)
-                , Glob::VideoCore::Get(strg).GetHWType()
-                , Glob::SPS::Get(strg)
-                , *pPPS);
+            auto dflts = GetRTDefaults(strg);
+
+            auto sts = dflts.base.GetPPS(dflts, Glob::SPS::Get(strg), *pPPS);
+            MFX_CHECK_STS(sts);
+
             strg.Insert(Glob::PPS::Key, std::move(pPPS));
         }
 
@@ -2319,7 +2320,7 @@ void Legacy::ConfigureTask(
     {
         task.PrevIPoc = isI * task.POC + !isI * task.PrevIPoc;
 
-        UpdateDPB(par, task, task.DPB.After, pExtListCtrl);
+        UpdateDPB(dflts, task, task.DPB.After, pExtListCtrl);
 
         using TRLtrDesc = decltype(pExtListCtrl->LongTermRefList[0]);
         auto IsCurFrame = [&](const TRLtrDesc ltr)
@@ -2688,101 +2689,6 @@ void Legacy::SetVPS(
     slo.max_latency_increase_plus1   = 0;
 }
 
-void Legacy::SetPPS(
-    const ExtBuffer::Param<mfxVideoParam>& par
-    , eMFXHWType hw
-    , const SPS& sps
-    , PPS& pps)
-{
-    const mfxExtHEVCParam& HEVCParam = ExtBuffer::Get(par);
-    const mfxExtHEVCTiles& HEVCTiles = ExtBuffer::Get(par);
-    const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par);
-    const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par);
-    bool bSWBRC = IsSWBRC(par, &CO2);
-    bool bCQP = (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP);
-
-    mfxU16 maxRefP   = *std::max_element(CO3.NumRefActiveP, CO3.NumRefActiveP + 8);
-    mfxU16 maxRefBL0 = *std::max_element(CO3.NumRefActiveBL0, CO3.NumRefActiveBL0 + 8);
-    mfxU16 maxRefBL1 = *std::max_element(CO3.NumRefActiveBL1, CO3.NumRefActiveBL1 + 8);
-
-    pps = {};
-
-    pps.seq_parameter_set_id = sps.seq_parameter_set_id;
-
-    pps.pic_parameter_set_id                  = 0;
-    pps.dependent_slice_segments_enabled_flag = 0;
-    pps.output_flag_present_flag              = 0;
-    pps.num_extra_slice_header_bits           = 0;
-    pps.sign_data_hiding_enabled_flag         = 0;
-    pps.cabac_init_present_flag               = 0;
-    pps.num_ref_idx_l0_default_active_minus1  = std::max<mfxU16>(maxRefP, maxRefBL0) - 1;
-    pps.num_ref_idx_l1_default_active_minus1  = maxRefBL1 - 1;
-    pps.init_qp_minus26                       = 0;
-    pps.constrained_intra_pred_flag           = 0;
-    pps.transform_skip_enabled_flag = (hw >= MFX_HW_CNL) && IsOn(CO3.TransformSkip);
-
-    pps.cu_qp_delta_enabled_flag = !(IsOff(CO3.EnableMBQP) && bCQP) && !bSWBRC;
-    pps.cu_qp_delta_enabled_flag |= (IsOn(par.mfx.LowPower) || CO2.MaxSliceSize);
-
-    // according to BSpec only 3 and 0 are supported
-    pps.diff_cu_qp_delta_depth                = (HEVCParam.LCUSize == 64) * 3;
-    pps.cb_qp_offset                          = (bSWBRC * -1);
-    pps.cr_qp_offset                          = (bSWBRC * -1);
-    pps.slice_chroma_qp_offsets_present_flag  = (bSWBRC *  1);
-
-    mfxI32 QP =
-        (par.mfx.GopPicSize == 1) * par.mfx.QPI
-        + (par.mfx.GopPicSize != 1 && par.mfx.GopRefDist == 1) * par.mfx.QPP
-        + (par.mfx.GopPicSize != 1 && par.mfx.GopRefDist != 1) * par.mfx.QPB;
-
-    pps.init_qp_minus26 = bCQP * (QP - 26 - (6 * sps.bit_depth_luma_minus8));
-
-    pps.slice_chroma_qp_offsets_present_flag  = 0;
-    pps.weighted_pred_flag                    = 0;
-    pps.weighted_bipred_flag                  = 0;
-    pps.transquant_bypass_enabled_flag        = 0;
-    pps.tiles_enabled_flag                    = 0;
-    pps.entropy_coding_sync_enabled_flag      = 0;
-
-    if (HEVCTiles.NumTileColumns * HEVCTiles.NumTileRows > 1)
-    {
-        mfxU16 nCol   = (mfxU16)CeilDiv(HEVCParam.PicWidthInLumaSamples,  HEVCParam.LCUSize);
-        mfxU16 nRow   = (mfxU16)CeilDiv(HEVCParam.PicHeightInLumaSamples, HEVCParam.LCUSize);
-        mfxU16 nTCol  = std::max<mfxU16>(HEVCTiles.NumTileColumns, 1);
-        mfxU16 nTRow  = std::max<mfxU16>(HEVCTiles.NumTileRows, 1);
-
-        pps.tiles_enabled_flag        = 1;
-        pps.uniform_spacing_flag      = 1;
-        pps.num_tile_columns_minus1   = nTCol - 1;
-        pps.num_tile_rows_minus1      = nTRow - 1;
-
-        mfxI32 i = -1;
-        std::generate(std::begin(pps.column_width), std::end(pps.column_width)
-            , [nCol, nTCol, &i]() { ++i; return mfxU16(((i + 1) * nCol) / nTCol - (i * nCol) / nTCol); });
-
-        i = -1;
-        std::generate(std::begin(pps.row_height), std::end(pps.row_height)
-            , [nRow, nTRow, &i]() { ++i; return mfxU16(((i + 1) * nRow) / nTRow - (i * nRow) / nTRow); });
-
-        pps.loop_filter_across_tiles_enabled_flag = 1;
-    }
-
-    pps.loop_filter_across_slices_enabled_flag = (hw >= MFX_HW_CNL);
-
-    pps.deblocking_filter_control_present_flag  = 1;
-    pps.deblocking_filter_disabled_flag         = !!CO2.DisableDeblockingIdc;
-    pps.deblocking_filter_override_enabled_flag = 1; // to disable deblocking per frame
-#if MFX_VERSION >= MFX_VERSION_NEXT
-    pps.beta_offset_div2                        = mfxI8(CO3.DeblockingBetaOffset * 0.5 * !pps.deblocking_filter_disabled_flag);
-    pps.tc_offset_div2                          = mfxI8(CO3.DeblockingAlphaTcOffset * 0.5 * !pps.deblocking_filter_disabled_flag);
-#endif
-
-    pps.scaling_list_data_present_flag              = 0;
-    pps.lists_modification_present_flag             = 1;
-    pps.log2_parallel_merge_level_minus2            = 0;
-    pps.slice_segment_header_extension_present_flag = 0;
-}
-
 typedef std::remove_reference<decltype(((mfxExtAVCRefListCtrl*)nullptr)->PreferredRefList[0])>::type TLCtrlRLE;
 
 void Legacy::InitDPB(
@@ -2859,14 +2765,13 @@ void Legacy::InitDPB(
 }
 
 mfxU16 Legacy::UpdateDPB(
-    const ExtBuffer::Param<mfxVideoParam> & par
+    const Defaults::Param& def
     , const DpbFrame& task
     , DpbArray & dpb
     , const mfxExtAVCRefListCtrl * pLCtrl)
 {
-    const mfxExtCodingOption3& CO3  = ExtBuffer::Get(par);
+    auto& par = def.mvp;
     const mfxExtCodingOption2& CO2  = ExtBuffer::Get(par);
-    bool isLowDelay                 = (CO3.PRefType == MFX_P_REF_PYRAMID);
     bool isBPyramid                 = (CO2.BRefType == MFX_B_REF_PYRAMID);
     mfxU16 end                      = 0; // DPB end
     mfxU16 st0                      = 0; // first ST ref in DPB
@@ -2887,17 +2792,7 @@ mfxU16 Legacy::UpdateDPB(
     bool bRunSlidingWindow = end && end == par.mfx.NumRefFrame;
     if (bRunSlidingWindow)
     {
-        auto CmpLDRefs = [&](DpbFrame& a, DpbFrame& b)
-        {
-            return (a.PyramidLevel > b.PyramidLevel
-                || (a.PyramidLevel == b.PyramidLevel && a.POC < b.POC));
-        };
-        auto WeakestLDRef = [&]()
-        {
-            return mfxU16(std::min_element(dpb + st0, dpb + end, CmpLDRefs) - dpb);
-        };
-
-        SetIf(st0, isLowDelay, WeakestLDRef); // use special algo for P-Pyramid
+        st0 = mfxU16(def.base.GetWeakRef(def, task, dpb + st0, dpb + end) - dpb);
 
         Remove(dpb, st0 * (st0 < end));
         --end;
@@ -3349,7 +3244,7 @@ void Legacy::SetSTRPS(
             DpbFrame tmp;
             (FrameBaseInfo&)tmp = *cur;
             tmp.Rec.Idx += bRef;
-            ThrowAssert(bRef && !UpdateDPB(par, tmp, dpb), "failed to UpdateDPB");
+            ThrowAssert(bRef && !UpdateDPB(dflts, tmp, dpb), "failed to UpdateDPB");
 
             frames.erase(frIt);
         }

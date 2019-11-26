@@ -39,17 +39,16 @@ void Windows::Gen11::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
         auto& task = Task::Common::Get(s_task);
         auto& pps = Deref(GetDDICB<ENCODE_SET_PICTURE_PARAMETERS_HEVC>(
             ENCODE_ENC_PAK_ID, DDIPar_In, vaType, par));
-        const mfxExtEncoderROI* pROI = ExtBuffer::Get(task.ctrl);
-        const mfxExtEncoderROI* pInitROI = ExtBuffer::Get(Glob::VideoParam::Get(global));
+        auto& roi = GetRTExtBuffer<mfxExtEncoderROI>(global, s_task);
         mfxExtMBQP* pMBQP = ExtBuffer::Get(task.ctrl);
 
         mfxU32 qpBlk = 3 + Glob::EncodeCaps::Get(global).BlockSize;
 
-        SetDefault(pROI, pInitROI);
-
         pps.NumROI = 0;
 
         bool bFillQpSurf = m_bViaCuQp && !pMBQP;
+
+        MFX_CHECK(roi.NumROI, MFX_ERR_NONE);
 
         if (bFillQpSurf)
         {
@@ -58,7 +57,7 @@ void Windows::Gen11::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
             FrameLocker qpMap(core, task.CUQP.Mid);
             MFX_CHECK(qpMap.Y, MFX_ERR_LOCK_MEMORY);
 
-            mfxI32 dQPMult = 1 - 2 * (pROI->ROIMode == MFX_ROI_MODE_PRIORITY);
+            mfxI32 dQPMult = 1 - 2 * (roi.ROIMode == MFX_ROI_MODE_PRIORITY);
 
             mfxU32 y = 0;
             std::for_each(
@@ -70,8 +69,8 @@ void Windows::Gen11::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
                 std::generate_n(&qpMapRow, qpMapInfo.Width
                     , [&]()
                 {
-                    auto pEnd = pROI->ROI + pROI->NumROI;
-                    auto pRect = std::find_if(pROI->ROI, pEnd
+                    auto pEnd = roi.ROI + roi.NumROI;
+                    auto pRect = std::find_if(roi.ROI, pEnd
                         , [x, y, qpBlk](const RectData& r)
                     {
                         return (x << qpBlk) >= r.Left
@@ -93,14 +92,14 @@ void Windows::Gen11::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
         }
         else
         {
-            MFX_CHECK(pROI->NumROI, MFX_ERR_NONE);
-
             auto& sps = Deref(GetDDICB<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC>(
                 ENCODE_ENC_PAK_ID, DDIPar_In, vaType, par));
 
-            mfxI32 dQPMult = 1 - 2 * (pROI->ROIMode == MFX_ROI_MODE_PRIORITY && sps.RateControlMethod == MFX_RATECONTROL_CQP);
+            mfxI32 dQPMult = 1 - 2 * (roi.ROIMode == MFX_ROI_MODE_PRIORITY && sps.RateControlMethod == MFX_RATECONTROL_CQP);
 
-            std::transform(pROI->ROI, pROI->ROI + pROI->NumROI, pps.ROI
+            sps.ROIValueInDeltaQP = (roi.ROIMode == MFX_ROI_MODE_QP_DELTA || sps.RateControlMethod == MFX_RATECONTROL_CQP);
+
+            std::transform(roi.ROI, roi.ROI + roi.NumROI, pps.ROI
                 , [qpBlk, dQPMult](RectData src)
             {
                 ENCODE_ROI dst = {};
@@ -120,7 +119,7 @@ void Windows::Gen11::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
                 return dst;
             });
 
-            auto pEnd = std::remove_if(pps.ROI, pps.ROI + pps.NumROI
+            auto pEnd = std::remove_if(pps.ROI, pps.ROI + roi.NumROI
                 , [](ENCODE_ROI roi)
             {
                 return (roi.Roi.Left >= roi.Roi.Right || roi.Roi.Top >= roi.Roi.Bottom);

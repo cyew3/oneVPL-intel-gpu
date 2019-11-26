@@ -28,12 +28,36 @@ using namespace HEVCEHW::Gen12;
 
 void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
+
+    Push(BLK_CheckLowPower,
+        [this](const mfxVideoParam& par, mfxVideoParam&, StorageRW& strg) -> mfxStatus
+    {
+        if (Glob::VideoCore::Get(strg).GetHWType() == MFX_HW_DG2)
+        {
+            MFX_CHECK(par.mfx.LowPower != MFX_CODINGOPTION_OFF, MFX_ERR_UNSUPPORTED);
+        }
+
+        return MFX_ERR_NONE;
+    });
+
     Push(BLK_SetDefaultsCallChain,
         [this](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
     {
         auto& defaults = Glob::Defaults::GetOrConstruct(strg);
         auto& bSet = defaults.SetForFeature[GetID()];
         MFX_CHECK(!bSet, MFX_ERR_NONE);
+
+        defaults.GetLowPower.Push([](
+            Defaults::TGetHWDefault<mfxU16>::TExt prev
+            , const mfxVideoParam& par
+            , eMFXHWType hw)
+        {
+            if (hw == MFX_HW_DG2) {
+                return mfxU16(MFX_CODINGOPTION_ON);
+            }
+
+            return prev(par, hw);
+        });
 
         defaults.GetMaxNumRef.Push([](
             Gen11::Defaults::TChain<std::tuple<mfxU16, mfxU16>>::TExt

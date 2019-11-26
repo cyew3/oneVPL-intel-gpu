@@ -862,18 +862,18 @@ public:
         , const Defaults::Param& par)
     {
         const mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par.mvp);
-        bool bPassThrough = pCO2 && pCO2->MBBRC;
-        mfxU16 rc =  par.base.GetRateControlMethod(par);
+        bool bPassThrough               = pCO2 && pCO2->MBBRC;
+        bool bON                        = bPassThrough && IsOn(pCO2->MBBRC);
+        bool bOFF                       = bPassThrough && IsOff(pCO2->MBBRC);
 
-        bool bOFF = !bPassThrough
-            && (   rc == MFX_RATECONTROL_CQP
+        bOFF |= !bPassThrough
+            && (   par.base.GetRateControlMethod(par) == MFX_RATECONTROL_CQP
                 || Legacy::IsSWBRC(par.mvp, pCO2)
                 || IsOn(par.mvp.mfx.LowPower));
 
-        return
-            bPassThrough * pCO2->MBBRC
-            + bOFF * MFX_CODINGOPTION_OFF
-            + !bOFF * MFX_CODINGOPTION_UNKNOWN;
+        return mfxU16(
+            bON * MFX_CODINGOPTION_ON
+            + bOFF * MFX_CODINGOPTION_OFF);
     }
 
     static mfxU16 AsyncDepth(
@@ -1104,7 +1104,7 @@ public:
             l0 += (idx < MAX_DPB_SIZE) && (l0 < maxL0);
         });
 
-        std::for_each(extRPL.RefPicList0
+        std::for_each(extRPL.RefPicList1
             , extRPL.RefPicList1 + extRPL.NumRefIdxL1Active
             , [&](TRExtRPL1Entry ref)
         {
@@ -1112,6 +1112,12 @@ public:
             RPL[1][l1] = idx;
             l1 += (idx < MAX_DPB_SIZE) && (l1 < maxL1);
         });
+
+        l0 = std::min(l0, mfxU8(maxL0));
+        l1 = std::min(l1, mfxU8(maxL1));
+
+        std::fill(RPL[0] + l0, RPL[0] + Size(RPL[0]), IDX_INVALID);
+        std::fill(RPL[1] + l1, RPL[1] + Size(RPL[1]), IDX_INVALID);
 
         return std::make_tuple(l0, l1);
     }
@@ -1155,6 +1161,31 @@ public:
         , const FrameBaseInfo &b)
     {
         return abs(cur.POC - a.POC) < abs(cur.POC - b.POC);
+    }
+
+    static const DpbFrame* WeakRef(
+        Defaults::TGetWeakRef::TExt
+        , const Defaults::Param& par
+        , const FrameBaseInfo  &/*cur*/
+        , const DpbFrame       *begin
+        , const DpbFrame       *end)
+    {
+        const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par.mvp);
+
+        if (CO3.PRefType == MFX_P_REF_PYRAMID)
+        {
+            auto CmpLDRefs = [&](const DpbFrame& a, const DpbFrame& b)
+            {
+                return (a.PyramidLevel > b.PyramidLevel
+                    || (a.PyramidLevel == b.PyramidLevel && a.POC < b.POC));
+            };
+
+            return std::min_element(begin, end, CmpLDRefs);
+        }
+
+        auto POCLess = [](const DpbFrame& a, const DpbFrame& b) { return a.POC < b.POC; };
+
+        return std::min_element(begin, end, POCLess);
     }
 
     static std::tuple<mfxU8, mfxU8> RPL(
@@ -1310,10 +1341,10 @@ public:
         , mfxU32 frameOrder)
     {
         mfxU16 ftype = 0;
-        auto SetFrameTypeFromGOP   = [&]() { return Res2Bool(ftype, par.base.GetFrameType(par, frameOrder, prevIDROrder)); };
-        auto SetFrameTypeFromCTRL  = [&]() { return Res2Bool(ftype, pCtrl->FrameType); };
-        auto ForceIdr              = [&]() { return Res2Bool(ftype, mfxU16(MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR)); };
-        auto SetFrameOrderFromSurf = [&]() { frameOrder = pSurfIn->Data.FrameOrder;  return true; };
+        auto SetFrameTypeFromGOP   = [&]() { return          Res2Bool(ftype, par.base.GetFrameType(par, frameOrder, prevIDROrder)); };
+        auto SetFrameTypeFromCTRL  = [&]() { return pCtrl && Res2Bool(ftype, pCtrl->FrameType); };
+        auto ForceIdr              = [&]() { return          Res2Bool(ftype, mfxU16(MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR)); };
+        auto SetFrameOrderFromSurf = [&]() { if (!pSurfIn) return false; frameOrder = pSurfIn->Data.FrameOrder;  return true; };
 
         bool bFrameInfoValid =
             (par.mvp.mfx.EncodedOrder && SetFrameOrderFromSurf() && SetFrameTypeFromCTRL() )
@@ -1877,6 +1908,104 @@ public:
         return MFX_ERR_NONE;
     }
 
+    static mfxStatus PPS(
+        Defaults::TGetPPS::TExt
+        , const Defaults::Param& defPar
+        , const Gen11::SPS& sps
+        , Gen11::PPS& pps)
+    {
+        auto& par = defPar.mvp;
+        auto  hw = defPar.hw;
+        const mfxExtHEVCParam& HEVCParam = ExtBuffer::Get(par);
+        const mfxExtHEVCTiles& HEVCTiles = ExtBuffer::Get(par);
+        const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par);
+        const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par);
+        bool bSWBRC = Legacy::IsSWBRC(par, &CO2);
+        bool bCQP = (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP);
+
+        mfxU16 maxRefP   = *std::max_element(CO3.NumRefActiveP, CO3.NumRefActiveP + 8);
+        mfxU16 maxRefBL0 = *std::max_element(CO3.NumRefActiveBL0, CO3.NumRefActiveBL0 + 8);
+        mfxU16 maxRefBL1 = *std::max_element(CO3.NumRefActiveBL1, CO3.NumRefActiveBL1 + 8);
+
+        pps = {};
+
+        pps.seq_parameter_set_id = sps.seq_parameter_set_id;
+
+        pps.pic_parameter_set_id                  = 0;
+        pps.dependent_slice_segments_enabled_flag = 0;
+        pps.output_flag_present_flag              = 0;
+        pps.num_extra_slice_header_bits           = 0;
+        pps.sign_data_hiding_enabled_flag         = 0;
+        pps.cabac_init_present_flag               = 0;
+        pps.num_ref_idx_l0_default_active_minus1  = std::max<mfxU16>(maxRefP, maxRefBL0) - 1;
+        pps.num_ref_idx_l1_default_active_minus1  = maxRefBL1 - 1;
+        pps.init_qp_minus26                       = 0;
+        pps.constrained_intra_pred_flag           = 0;
+        pps.transform_skip_enabled_flag = (hw >= MFX_HW_CNL) && IsOn(CO3.TransformSkip);
+
+        pps.cu_qp_delta_enabled_flag = !(IsOff(CO3.EnableMBQP) && bCQP) && !bSWBRC;
+        pps.cu_qp_delta_enabled_flag |= (IsOn(par.mfx.LowPower) || CO2.MaxSliceSize);
+
+        // according to BSpec only 3 and 0 are supported
+        pps.diff_cu_qp_delta_depth                = (HEVCParam.LCUSize == 64) * 3;
+        pps.cb_qp_offset                          = (bSWBRC * -1);
+        pps.cr_qp_offset                          = (bSWBRC * -1);
+        pps.slice_chroma_qp_offsets_present_flag  = (bSWBRC *  1);
+
+        mfxI32 QP =
+            (par.mfx.GopPicSize == 1) * par.mfx.QPI
+            + (par.mfx.GopPicSize != 1 && par.mfx.GopRefDist == 1) * par.mfx.QPP
+            + (par.mfx.GopPicSize != 1 && par.mfx.GopRefDist != 1) * par.mfx.QPB;
+
+        pps.init_qp_minus26 = bCQP * (QP - 26 - (6 * sps.bit_depth_luma_minus8));
+
+        pps.slice_chroma_qp_offsets_present_flag  = 0;
+        pps.weighted_pred_flag                    = 0;
+        pps.weighted_bipred_flag                  = 0;
+        pps.transquant_bypass_enabled_flag        = 0;
+        pps.tiles_enabled_flag                    = 0;
+        pps.entropy_coding_sync_enabled_flag      = 0;
+
+        if (HEVCTiles.NumTileColumns * HEVCTiles.NumTileRows > 1)
+        {
+            mfxU16 nCol   = (mfxU16)CeilDiv(HEVCParam.PicWidthInLumaSamples,  HEVCParam.LCUSize);
+            mfxU16 nRow   = (mfxU16)CeilDiv(HEVCParam.PicHeightInLumaSamples, HEVCParam.LCUSize);
+            mfxU16 nTCol  = std::max<mfxU16>(HEVCTiles.NumTileColumns, 1);
+            mfxU16 nTRow  = std::max<mfxU16>(HEVCTiles.NumTileRows, 1);
+
+            pps.tiles_enabled_flag        = 1;
+            pps.uniform_spacing_flag      = 1;
+            pps.num_tile_columns_minus1   = nTCol - 1;
+            pps.num_tile_rows_minus1      = nTRow - 1;
+
+            mfxI32 i = -1;
+            std::generate(std::begin(pps.column_width), std::end(pps.column_width)
+                , [nCol, nTCol, &i]() { ++i; return mfxU16(((i + 1) * nCol) / nTCol - (i * nCol) / nTCol); });
+
+            i = -1;
+            std::generate(std::begin(pps.row_height), std::end(pps.row_height)
+                , [nRow, nTRow, &i]() { ++i; return mfxU16(((i + 1) * nRow) / nTRow - (i * nRow) / nTRow); });
+
+            pps.loop_filter_across_tiles_enabled_flag = 1;
+        }
+
+        pps.loop_filter_across_slices_enabled_flag = (hw >= MFX_HW_CNL);
+
+        pps.deblocking_filter_control_present_flag  = 1;
+        pps.deblocking_filter_disabled_flag         = !!CO2.DisableDeblockingIdc;
+        pps.deblocking_filter_override_enabled_flag = 1; // to disable deblocking per frame
+#if MFX_VERSION >= MFX_VERSION_NEXT
+        pps.beta_offset_div2                        = mfxI8(CO3.DeblockingBetaOffset * 0.5 * !pps.deblocking_filter_disabled_flag);
+        pps.tc_offset_div2                          = mfxI8(CO3.DeblockingAlphaTcOffset * 0.5 * !pps.deblocking_filter_disabled_flag);
+#endif
+
+        pps.scaling_list_data_present_flag              = 0;
+        pps.lists_modification_present_flag             = 1;
+        pps.log2_parallel_merge_level_minus2            = 0;
+        pps.slice_segment_header_extension_present_flag = 0;
+
+        return MFX_ERR_NONE;
+    }
 
     static mfxU8 SHNUT(
         Defaults::TGetSHNUT::TExt
@@ -1981,8 +2110,10 @@ public:
         PUSH_DEFAULT(TileSlices);
         PUSH_DEFAULT(Slices);
         PUSH_DEFAULT(SPS);
+        PUSH_DEFAULT(PPS);
         PUSH_DEFAULT(FrameNumRefActive);
         PUSH_DEFAULT(SHNUT);
+        PUSH_DEFAULT(WeakRef);
 
 #undef PUSH_DEFAULT
 

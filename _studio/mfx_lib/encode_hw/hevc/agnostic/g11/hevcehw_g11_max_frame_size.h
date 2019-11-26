@@ -57,7 +57,6 @@ namespace HEVCEHW
             virtual void SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push) override {};
 
             bool m_bPatchNextDDITask = false;
-            std::list<std::vector<mfxU8>> m_vaPerSeqMiscData;
         };
 
     } //Gen11

@@ -220,12 +220,6 @@ namespace Gen11
             , SPS& sps
             , const Reorderer& reorder);
 
-        void SetPPS(
-            const ExtBuffer::Param<mfxVideoParam>& par
-            , eMFXHWType hw
-            , const SPS& sps
-            , PPS& pps);
-
         void ConfigureTask(
             TaskCommonPar & task
             , const Defaults::Param& dflts
@@ -289,7 +283,7 @@ namespace Gen11
             const mfxExtAVCRefListCtrl* pLCtrl);
 
         mfxU16 UpdateDPB(
-            const ExtBuffer::Param<mfxVideoParam> & par
+            const Defaults::Param& dflts
             , const DpbFrame& task
             , DpbArray & dpb
             , const mfxExtAVCRefListCtrl * pLCtrl = nullptr);

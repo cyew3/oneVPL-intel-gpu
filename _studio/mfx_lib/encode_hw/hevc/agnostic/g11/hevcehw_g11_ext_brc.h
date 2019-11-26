@@ -35,6 +35,9 @@ class ExtBRC
     : public FeatureBase
 {
 public:
+    //TODO: to align with legacy code behavior, disable after investigation effect on SWBRC
+    static const bool IGNORE_P_PYRAMID_LEVEL = true; 
+
 #define DECL_BLOCK_LIST\
     DECL_BLOCK(Check)\
     DECL_BLOCK(Init)\
@@ -63,8 +66,11 @@ protected:
     virtual void QueryTask(const FeatureBlocks& blocks, TPushQT Push) override;
     virtual void Close(const FeatureBlocks& blocks, TPushCLS Push) override;
 
+    mfxBRCFrameParam MakeFrameParam(const TaskCommonPar& task);
+
     mfxExtBRC m_brc = {};
     OnExit    m_destroy;
+    bool      m_bUseLevel = true;
 };
 
 } //Gen11

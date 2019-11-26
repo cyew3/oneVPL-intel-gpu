@@ -87,21 +87,21 @@ public:
     bool isExternal() { return m_isExternal; };
 
 
-    mfxFrameInfo m_info;
+    mfxFrameInfo m_info = {};
 
 private:
     MfxFrameAllocResponse(MfxFrameAllocResponse const &) = delete;
     MfxFrameAllocResponse & operator =(MfxFrameAllocResponse const &) = delete;
 
     VideoCORE& m_core;
-    mfxU16 m_numFrameActualReturnedByAllocFrames;
+    mfxU16 m_numFrameActualReturnedByAllocFrames = 0;
 
     std::vector<mfxFrameAllocResponse> m_responseQueue;
     std::vector<mfxMemId>              m_mids;
     std::vector<mfxU32>                m_locked;
     std::vector<mfxU32>                m_flag;
-    bool m_isExternal;
-    bool m_isOpaque = false;
+    bool m_isExternal = true;
+    bool m_isOpaque   = false;
 };
 
 class Allocator
