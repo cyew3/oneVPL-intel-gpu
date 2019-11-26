@@ -385,7 +385,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     mfxU16 blockSize = MapIdToBlockSize(MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64);
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
     if (platform >= MFX_HW_DG2)
         blockSize = MapIdToBlockSize(MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32);
 #endif

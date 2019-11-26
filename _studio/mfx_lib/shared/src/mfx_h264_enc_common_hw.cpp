@@ -1425,7 +1425,7 @@ mfxStatus MfxHwH264Encode::SetLowPowerDefault(MfxVideoParam& par, const eMFXHWTy
     mfxStatus sts = CheckTriStateOption(par.mfx.LowPower) == false ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
     (void)platfrom; // fix wrn for non Gen11 build
 
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
     if ((platfrom == MFX_HW_LKF || platfrom == MFX_HW_JSL)
         && par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
     {
@@ -2655,7 +2655,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     bool laEnabled = true;
     if (platform > MFX_HW_ICL_LP
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
         && platform != MFX_HW_TGL_LP
 #endif
         )
@@ -2668,7 +2668,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
 
         if (IsOn(extOpt3->FadeDetection)
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
             && platform != MFX_HW_LKF
 #endif
             )

@@ -224,7 +224,7 @@ mfxStatus SetLowpowerDefault(MfxVideoParam& par)
         return sts;
     }
 #endif // MFX_VERSION >= 1025
-#if !defined(MFX_CLOSED_PLATFORMS_DISABLE) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if !defined(STRIP_EMBARGO) && (MFX_VERSION >= MFX_VERSION_NEXT)
     if ((par.m_platform == MFX_HW_LKF || par.m_platform == MFX_HW_JSL || par.m_platform == MFX_HW_DG2)
         && par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
     {

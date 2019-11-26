@@ -731,7 +731,7 @@ mfxStatus CheckSegmentationParam(mfxExtVP9Segmentation& seg, mfxU32 frameWidth, 
     // currently only 64x64 block size for segmentation map is supported (HW limitation) for platform < DG2
     // for DG2+: 32x32 and 64x64 blocks
     if (seg.SegmentIdBlockSize &&
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
         ((seg.SegmentIdBlockSize != MFX_VP9_SEGMENT_ID_BLOCK_SIZE_64x64 && par.m_platform < MFX_HW_DG2) ||
         (seg.SegmentIdBlockSize < MFX_VP9_SEGMENT_ID_BLOCK_SIZE_32x32 && par.m_platform >= MFX_HW_DG2))
 #else

@@ -896,12 +896,12 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
     case MFX_HW_CNL    : platform->CodeName = MFX_PLATFORM_CANNONLAKE;    break;
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
     case MFX_HW_CNX_G  :
-#endif //MFX_CLOSED_PLATFORMS_DISABLE
+#endif //STRIP_EMBARGO
     case MFX_HW_ICL    :
     case MFX_HW_ICL_LP : platform->CodeName = MFX_PLATFORM_ICELAKE;       break;
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
     case MFX_HW_LKF    : platform->CodeName = MFX_PLATFORM_LAKEFIELD;     break;
     case MFX_HW_JSL    : platform->CodeName = MFX_PLATFORM_JASPERLAKE;    break;
     case MFX_HW_TGL_LP :
@@ -915,7 +915,7 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
                          platform->CodeName = MFX_PLATFORM_TIGERLAKE;     break;
     case MFX_HW_ADL_S  : platform->CodeName = MFX_PLATFORM_ALDERLAKE_S;   break;
     case MFX_HW_ADL_UH : platform->CodeName = MFX_PLATFORM_ALDERLAKE_UH;  break;
-#endif //MFX_CLOSED_PLATFORMS_DISABLE
+#endif //STRIP_EMBARGO
 #endif
     default:
 #if (MFX_VERSION >= MFX_VERSION_NEXT)

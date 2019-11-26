@@ -578,7 +578,7 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
     case MFX_HW_CNL:
     case MFX_HW_ICL:
     case MFX_HW_ICL_LP:
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
     case MFX_HW_LKF:
     case MFX_HW_JSL:
     case MFX_HW_ADL_S:

@@ -336,7 +336,7 @@ mfxStatus D3D9VideoCORE::InternalInit()
 
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
 
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
     if (m_HWType > MFX_HW_TGL_LP && m_HWType != MFX_HW_TGL_HP
                                  && m_HWType != MFX_HW_ADL_S
                                  && m_HWType != MFX_HW_ADL_UH)

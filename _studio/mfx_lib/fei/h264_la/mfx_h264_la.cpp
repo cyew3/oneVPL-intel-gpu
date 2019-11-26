@@ -64,7 +64,7 @@ static mfxU16 GetRefDist(VideoCORE *core, mfxVideoParam *par)
         std::ignore = core;
         refDist = (
             IsOn(par->mfx.LowPower)
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
             && core->GetHWType() < MFX_HW_TGL_HP
 #endif
         ) ? 1 : ((pControl && IsOn(pControl->BPyramid)) ? 8 : 3);

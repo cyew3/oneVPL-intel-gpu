@@ -72,7 +72,7 @@ enum eMFXHWType
 
     MFX_HW_ICL       = 0x1400000,
     MFX_HW_ICL_LP    = MFX_HW_ICL + 1,
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
     MFX_HW_CNX_G     = MFX_HW_ICL + 2,
 
     MFX_HW_LKF       = 0x1500000,

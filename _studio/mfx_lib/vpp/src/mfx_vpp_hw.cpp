@@ -2638,7 +2638,7 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
 #ifdef MFX_ENABLE_MCTF
     eMFXHWType  hwType = core->GetHWType();
     if (hwType < MFX_HW_BDW ||
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+#ifndef STRIP_EMBARGO
         hwType > MFX_HW_TGL_HP)
 #else
         hwType > MFX_HW_CNL)
