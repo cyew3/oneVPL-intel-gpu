@@ -326,7 +326,6 @@ typedef struct {
     { 0x8A71, MFX_HW_ICL_LP, MFX_GT1 },
     { 0x8A70, MFX_HW_ICL_LP, MFX_GT1 },
 
-#ifndef OPEN_SOURCE
     /* TGL */
     { 0x9A40, MFX_HW_TGL_LP, MFX_GT2 },
     { 0x9A49, MFX_HW_TGL_LP, MFX_GT2 },
@@ -336,6 +335,7 @@ typedef struct {
     { 0x9A70, MFX_HW_TGL_LP, MFX_GT2 },
     { 0x9A78, MFX_HW_TGL_LP, MFX_GT2 },
 
+#ifndef STRIP_EMBARGO
     { 0xFF20, MFX_HW_TGL_LP, MFX_GT2 },//iTGLSIM
     { 0x9A09, MFX_HW_TGL_LP, MFX_GT2 },
     { 0x9A39, MFX_HW_TGL_LP, MFX_GT2 },//iTGLLPDEVMOB4

@@ -62,6 +62,7 @@ __asc_gen8_isa__
 __asc_gen9_isa__
 __asc_gen11_isa__
 __asc_gen11lp_isa__
+__asc_gen12lp_isa__
 ASCVIDEOSTATSBUF
 _DEBUG
 brcprintf
@@ -91,6 +92,7 @@ __genx_fcopy_gen9__
 __genx_fcopy_gen10__
 __genx_fcopy_gen11__
 __genx_fcopy_gen11lp__
+__genx_fcopy_gen12lp__
 __genx_bdw_simple_me__
 __genx_hsw_histogram__
 __genx_hsw_simple_me__
@@ -102,10 +104,13 @@ __genx_icl_histogram__
 __genx_icl_simple_me__
 __genx_icllp_histogram__
 __genx_icllp_simple_me__
+__genx_tgllp_histogram__
+__genx_tgllp_simple_me__
 __skl_copy_kernel_genx__
 __cnl_copy_kernel_genx__
 __icl_copy_kernel_genx__
 __icllp_copy_kernel_genx__
+__tgllp_copy_kernel_genx__
 __cht_copy_kernel_genx__
 __MFX_STUB_DEC_PLUGIN_INCLUDED__
 __MFX_H264LA_PLUGIN_INCLUDED__
@@ -581,14 +586,17 @@ __mctf_mc_gen8_isa__
 __mctf_mc_gen9_isa__
 __mctf_mc_gen11_isa__
 __mctf_mc_gen11lp_isa__
+__mctf_mc_gen12lp_isa__
 __mctf_me_gen8_isa__
 __mctf_me_gen9_isa__
 __mctf_me_gen11_isa__
 __mctf_me_gen11lp_isa__
+__mctf_me_gen12lp_isa__
 __mctf_sd_gen8_isa__
 __mctf_sd_gen9_isa__
 __mctf_sd_gen11_isa__
 __mctf_sd_gen11lp_isa__
+__mctf_sd_gen12lp_isa__
 TEST
 PRINTDEBUG
 target_gen11lp

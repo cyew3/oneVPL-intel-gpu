@@ -45,10 +45,8 @@
 #include "genx_icl_histogram_isa.h"
 #include "genx_icllp_simple_me_isa.h"
 #include "genx_icllp_histogram_isa.h"
-#ifndef STRIP_EMBARGO
 #include "genx_tgllp_simple_me_isa.h"
 #include "genx_tgllp_histogram_isa.h"
-#endif
 
 
 namespace MfxHwH264EncodeHW
@@ -911,11 +909,11 @@ void CmContext::Setup(
         m_program = ReadProgram(m_device, genx_icllp_simple_me, SizeOf(genx_icllp_simple_me));
         m_programHist = ReadProgram(m_device, genx_icllp_histogram, SizeOf(genx_icllp_histogram));
         break;
-#ifndef STRIP_EMBARGO
     case MFX_HW_TGL_LP:
         m_program = ReadProgram(m_device, genx_tgllp_simple_me, SizeOf(genx_tgllp_simple_me));
         m_programHist = ReadProgram(m_device, genx_tgllp_histogram, SizeOf(genx_tgllp_histogram));
         break;
+#ifndef STRIP_EMBARGO
     case MFX_HW_LKF:
         m_programHist = ReadProgram(m_device, genx_icllp_histogram, SizeOf(genx_icllp_histogram));
         break;

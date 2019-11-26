@@ -2712,19 +2712,23 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
 #endif
         cmSts = m_pCmDevice->LoadProgram((void*)icllp_copy_kernel_genx,sizeof(icllp_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#ifndef STRIP_EMBARGO
     case MFX_HW_TGL_HP:
         cmSts = m_pCmDevice->LoadProgram((void*)tgl_copy_kernel_genx,sizeof(tgl_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
+#endif
     case MFX_HW_TGL_LP:
+#ifndef STRIP_EMBARGO
     case MFX_HW_DG1:
+#endif
         cmSts = m_pCmDevice->LoadProgram((void*)tgllp_copy_kernel_genx,sizeof(tgllp_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
+#ifndef STRIP_EMBARGO
     case MFX_HW_ADL_S:
     case MFX_HW_ADL_UH:
         cmSts = m_pCmDevice->LoadProgram((void*)tgllp_copy_kernel_genx, sizeof(tgllp_copy_kernel_genx), m_pCmProgram, "nojitter");
         break;
-#endif  // PRE_SI_TARGET_PLATFORM_GEN12
+#endif
 #endif
     default:
         cmSts = CM_FAILURE;

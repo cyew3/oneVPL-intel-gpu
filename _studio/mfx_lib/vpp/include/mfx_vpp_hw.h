@@ -44,10 +44,10 @@
  #include "genx_fcopy_gen10_isa.h"
  #include "genx_fcopy_gen11_isa.h"
  #include "genx_fcopy_gen11lp_isa.h"
- #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+ #ifndef STRIP_EMBARGO
   #include "genx_fcopy_gen12_isa.h"
-  #include "genx_fcopy_gen12lp_isa.h"
  #endif
+ #include "genx_fcopy_gen12lp_isa.h"
 #else
 #undef MFX_ENABLE_MCTF
 #undef MFX_ENABLE_MCTF_EXT

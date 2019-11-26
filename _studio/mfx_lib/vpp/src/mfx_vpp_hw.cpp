@@ -2327,11 +2327,13 @@ mfxStatus  VideoVPPHW::Init(
             case MFX_HW_ICL_LP:
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen11lp,sizeof(genx_fcopy_gen11lp),m_pCmProgram,"nojitter");
                 break;
-        #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
             case MFX_HW_TGL_LP:
+        #ifndef STRIP_EMBARGO
             case MFX_HW_DG1:
+        #endif
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12lp,sizeof(genx_fcopy_gen12lp),m_pCmProgram,"nojitter");
                 break;
+        #ifndef STRIP_EMBARGO
             case MFX_HW_TGL_HP:
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12, sizeof(genx_fcopy_gen12), m_pCmProgram, "nojitter");
                 break;
@@ -2339,7 +2341,7 @@ mfxStatus  VideoVPPHW::Init(
             case MFX_HW_ADL_UH:
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12lp, sizeof(genx_fcopy_gen12lp), m_pCmProgram, "nojitter");
                 break;
-        #endif  // PRE_SI_TARGET_PLATFORM_GEN12
+        #endif
 #endif
             default:
                 res = CM_FAILURE;

@@ -742,8 +742,8 @@ typedef enum _GPU_PLATFORM {
     PLATFORM_INTEL_ICLLP = 13,  //IcelakeLP
 #ifndef STRIP_EMBARGO
     PLATFORM_INTEL_TGL = 14,  //TigerLake
-    PLATFORM_INTEL_TGLLP = 15,  //TigerLakeLP
 #endif
+    PLATFORM_INTEL_TGLLP = 15,  //TigerLakeLP
     PLATFORM_INTEL_GLK = 16,   //GeminiLake
     PLATFORM_INTEL_CFL = 17,  //CofeeLake
 #ifndef STRIP_EMBARGO
@@ -1289,7 +1289,6 @@ typedef enum _L3_SUGGEST_CONFIG
     ICLLP_L3_PLANE_8,
     ICLLP_L3_CONFIG_COUNT,
 
-#ifndef STRIP_EMBARGO
     TGL_L3_PLANE_DEFAULT = 0,
     TGL_L3_PLANE_1,
     TGL_L3_PLANE_2,
@@ -1298,7 +1297,7 @@ typedef enum _L3_SUGGEST_CONFIG
     TGL_L3_PLANE_5,
     TGL_L3_PLANE_6,
     TGL_L3_CONFIG_COUNT,  // TGL and TGLLP have the same recommended L3 settings.
-#endif
+
     BDW_SLM_PLANE_DEFAULT = BDW_L3_PLANE_5,
     SKL_SLM_PLANE_DEFAULT = SKL_L3_PLANE_5
 } L3_SUGGEST_CONFIG;

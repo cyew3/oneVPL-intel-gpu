@@ -26,10 +26,10 @@
 #include "asc_gen9_isa.h"
 #include "asc_gen11_isa.h"
 #include "asc_gen11lp_isa.h"
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#ifndef STRIP_EMBARGO
 #include "asc_gen12_isa.h"
-#include "asc_gen12lp_isa.h"
 #endif
+#include "asc_gen12lp_isa.h"
 #include "tree.h"
 #include "iofunctions.h"
 #include "motion_estimation_engine.h"
@@ -342,13 +342,15 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
     case PLATFORM_INTEL_ICLLP:
         res = m_device->LoadProgram((void *)asc_gen11lp_isa, sizeof(asc_gen11lp_isa), m_program, "nojitter");
         break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
         res = m_device->LoadProgram((void *)asc_gen12_isa, sizeof(asc_gen12_isa), m_program, "nojitter");
         break;
+#endif
     case PLATFORM_INTEL_TGLLP:
         res = m_device->LoadProgram((void *)asc_gen12lp_isa, sizeof(asc_gen12lp_isa), m_program, "nojitter");
         break;
+#ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_ADL_S:
     case PLATFORM_INTEL_ADL_UH:
         res = m_device->LoadProgram((void *)asc_gen12lp_isa, sizeof(asc_gen12lp_isa), m_program, "nojitter");

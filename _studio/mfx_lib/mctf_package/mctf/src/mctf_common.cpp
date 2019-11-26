@@ -36,15 +36,16 @@
 #include "mctf_me_gen11lp_isa.h"
 #include "mctf_mc_gen11lp_isa.h"
 #include "mctf_sd_gen11lp_isa.h"
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#ifndef STRIP_EMBARGO
 #include "mctf_me_gen12_isa.h"
 #include "mctf_mc_gen12_isa.h"
 #include "mctf_sd_gen12_isa.h"
+#endif
 
 #include "mctf_me_gen12lp_isa.h"
 #include "mctf_mc_gen12lp_isa.h"
 #include "mctf_sd_gen12lp_isa.h"
-#endif
+
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -760,14 +761,14 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_ICLLP:
         res = device->LoadProgram((void *)mctf_me_gen11lp_isa, sizeof(mctf_me_gen11lp_isa), programMe, "nojitter");
         break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
         res = device->LoadProgram((void *)mctf_me_gen12_isa, sizeof(mctf_me_gen12_isa), programMe, "nojitter");
         break;
+#endif
     case PLATFORM_INTEL_TGLLP:
         res = device->LoadProgram((void *)mctf_me_gen12lp_isa, sizeof(mctf_me_gen12lp_isa), programMe, "nojitter");
         break;
-#endif
     case PLATFORM_INTEL_SKL:
     case PLATFORM_INTEL_BXT:
     case PLATFORM_INTEL_CNL:
@@ -811,14 +812,14 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_ICLLP:
         res = device->LoadProgram((void *)mctf_mc_gen11lp_isa, sizeof(mctf_mc_gen11lp_isa), programMc, "nojitter");
         break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
         res = device->LoadProgram((void *)mctf_mc_gen12_isa, sizeof(mctf_mc_gen12_isa), programMc, "nojitter");
         break;
+#endif
     case PLATFORM_INTEL_TGLLP:
         res = device->LoadProgram((void *)mctf_mc_gen12lp_isa, sizeof(mctf_mc_gen12lp_isa), programMc, "nojitter");
         break;
-#endif
     case PLATFORM_INTEL_SKL:
     case PLATFORM_INTEL_BXT:
     case PLATFORM_INTEL_CNL:
@@ -845,14 +846,14 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_ICLLP:
         res = device->LoadProgram((void *)mctf_sd_gen11lp_isa, sizeof(mctf_sd_gen11lp_isa), programDe, "nojitter");
         break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_TGL:
         res = device->LoadProgram((void *)mctf_sd_gen12_isa, sizeof(mctf_sd_gen12_isa), programDe, "nojitter");
         break;
+#endif
     case PLATFORM_INTEL_TGLLP:
         res = device->LoadProgram((void *)mctf_sd_gen12lp_isa, sizeof(mctf_sd_gen12lp_isa), programDe, "nojitter");
         break;
-#endif
     case PLATFORM_INTEL_SKL:
     case PLATFORM_INTEL_BXT:
     case PLATFORM_INTEL_CNL:
