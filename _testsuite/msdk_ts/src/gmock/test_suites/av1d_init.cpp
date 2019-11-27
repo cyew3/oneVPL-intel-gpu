@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018-2019 Intel Corporation. All Rights Reserved.
 
 File Name: av1d_init.cpp
 
@@ -271,6 +271,11 @@ int TestSuiteExt<profile, fourcc, void(b1, b2...), void(c1, c2...)>::RunTest(uns
 
     TestSuite suite;
     suite.m_par.mfx.CodecProfile = profile;
+
+    if (fourcc == MFX_FOURCC_P010
+        || fourcc == MFX_FOURCC_P016
+        || fourcc == MFX_FOURCC_Y416)
+        suite.m_par.mfx.FrameInfo.Shift = 1;
 
     return suite.RunTest(tc);
 }
