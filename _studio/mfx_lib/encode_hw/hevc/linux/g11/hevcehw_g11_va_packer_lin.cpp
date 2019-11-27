@@ -45,8 +45,8 @@ void VAPacker::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         bool bLP   = (vaGUID.Entrypoint == VAEntrypointEncSliceLP);
 
         caps.LCUSizeSupported |=
-              (32 >> 4) * (bGen9 || bLP)
-            + (64 >> 4) * (!bGen9 && !bLP);
+              (32 >> 4) * ( bGen9 || (!bGen9 && !bLP))
+            + (64 >> 4) * (!bGen9);
 
         caps.BRCReset                   = 1; // no bitrate resolution control
         caps.BlockSize                  = 2;
