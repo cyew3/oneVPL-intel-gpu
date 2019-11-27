@@ -118,10 +118,10 @@ namespace av1d_decode_frame_async
                                                   } },
 
         //Init resolution != stream resolution
-        {/*22*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920, INIT},
-                                                          {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088, INIT},
-                                                          {&tsStruct::mfxFrameSurface1.Info.Width, 1280, RUNTIME_SURF},
-                                                          {&tsStruct::mfxFrameSurface1.Info.Height, 768, RUNTIME_SURF},
+        {/*22*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1280, INIT},
+                                                          {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 768, INIT},
+                                                          {&tsStruct::mfxFrameSurface1.Info.Width, 1920, RUNTIME_SURF},
+                                                          {&tsStruct::mfxFrameSurface1.Info.Height, 1080, RUNTIME_SURF},
                                                         } },
         //Given frames resolution < init&stream resolution
         {/*23*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.Width, 160, RUNTIME_SURF},
