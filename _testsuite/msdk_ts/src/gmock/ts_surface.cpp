@@ -1029,7 +1029,7 @@ static mfxStatus ProcessSurfaceRowByRow(mfxFrameSurface1& s, std::function<size_
                 return MFX_ERR_UNKNOWN;
         }
     }
-    else if ((s.Info.FourCC == MFX_FOURCC_Y410) || (s.Info.FourCC == MFX_FOURCC_Y416))
+    else if (s.Info.FourCC == MFX_FOURCC_Y410)
     {
         mfxU16 cropX = s.Info.CropX;
         pitch /= 4; //bytes to dwords
@@ -1037,6 +1037,17 @@ static mfxStatus ProcessSurfaceRowByRow(mfxFrameSurface1& s, std::function<size_
         for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
         {
             if (processRow(s.Data.Y410 + pitch * i + cropX, 4, count) != count)
+                return MFX_ERR_UNKNOWN;
+        }
+    }
+    else if (s.Info.FourCC == MFX_FOURCC_Y416)
+    {
+        mfxU16 cropX = s.Info.CropX;
+        pitch /= 8; //bytes to dwords
+
+        for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
+        {
+            if (processRow(s.Data.Y416 + pitch * i + cropX, 8, count) != count)
                 return MFX_ERR_UNKNOWN;
         }
     }

@@ -202,6 +202,18 @@ typedef struct
 MFX_PACK_END()
 #endif
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct
+{
+    mfxU32 U : 16;
+    mfxU32 Y : 16;
+    mfxU32 V : 16;
+    mfxU32 A : 16;
+} mfxY416;
+MFX_PACK_END()
+#endif
+
 #if (MFX_VERSION >= 1025)
 MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct
@@ -252,6 +264,9 @@ typedef struct {
         mfxU8   *G;
 #if (MFX_VERSION >= 1027)
         mfxY410 *Y410;          /* for Y410 format (merged AVYU) */
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        mfxY416 *Y416;          /* for Y416 format (merged AVYU) */
 #endif
     };
     union {
