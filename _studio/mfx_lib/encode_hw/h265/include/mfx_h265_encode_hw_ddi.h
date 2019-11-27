@@ -89,7 +89,7 @@ static const GUID DXVA2_Intel_Encode_HEVC_Main422_12 =
 static const GUID DXVA2_Intel_Encode_HEVC_Main444_12 =
 { 0xf8fa34b7, 0x93f5, 0x45a4, { 0xbf, 0xc0, 0x38, 0x17, 0xce, 0xe6, 0xbb, 0x93 } };
 
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#ifdef MFX_ENABLE_HEVCE_SCC
 // GUIDs from DDI for HEVC Encoder spec 0.991
 static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main =
 { 0x2dec00c7, 0x21ee, 0x4bf8, { 0x8f, 0x0e, 0x77, 0x3f, 0x11, 0xf1, 0x26, 0xa2 } };

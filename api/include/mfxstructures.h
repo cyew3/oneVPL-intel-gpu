@@ -485,7 +485,7 @@ enum {
     MFX_PROFILE_HEVC_MAIN10           =2,
     MFX_PROFILE_HEVC_MAINSP           =3,
     MFX_PROFILE_HEVC_REXT             =4,
-#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
     MFX_PROFILE_HEVC_SCC              =9,
 #endif
 
