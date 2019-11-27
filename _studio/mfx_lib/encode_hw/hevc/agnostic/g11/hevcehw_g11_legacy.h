@@ -131,8 +131,8 @@ namespace Gen11
 
         void ResetState()
         {
-            m_frameOrder = 0;
-            m_lastIDR = 0;
+            m_frameOrder     = mfxU32(-1);
+            m_lastIDR        = 0;
             m_baseLayerOrder = 0;
             Invalidate(m_prevTask);
         }

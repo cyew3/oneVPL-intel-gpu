@@ -1253,6 +1253,12 @@ namespace Gen11
             , const TaskCommonPar&      //task
             , bool>;                    //RAPIntra
         TGetSHNUT GetSHNUT;
+        using TGetFrameOrder = CallChain<
+            mfxU32                 //FrameOrder
+            , const Defaults::Param&
+            , const StorageR&      //task
+            , mfxU32>;             //prevFrameOrder
+        TGetFrameOrder GetFrameOrder;
 
         //for Query w/o caps:
         using TPreCheck = CallChain<mfxStatus, const mfxVideoParam&>;

@@ -2048,6 +2048,24 @@ public:
         return mfxU8(NUT - 1);
     }
 
+    static mfxU32 FrameOrder(
+        Defaults::TGetFrameOrder::TExt
+        , const Defaults::Param& par
+        , const StorageR& s_task
+        , mfxU32 prevFrameOrder)
+    {
+        if (par.mvp.mfx.EncodedOrder)
+        {
+            auto& task = Task::Common::Get(s_task);
+            if (task.pSurfIn)
+            {
+                return task.pSurfIn->Data.FrameOrder;
+            }
+        }
+
+        return (prevFrameOrder + 1);
+    }
+
     static void Push(Defaults& df)
     {
 #define PUSH_DEFAULT(X) df.Get##X.Push(X);
@@ -2114,6 +2132,7 @@ public:
         PUSH_DEFAULT(FrameNumRefActive);
         PUSH_DEFAULT(SHNUT);
         PUSH_DEFAULT(WeakRef);
+        PUSH_DEFAULT(FrameOrder);
 
 #undef PUSH_DEFAULT
 

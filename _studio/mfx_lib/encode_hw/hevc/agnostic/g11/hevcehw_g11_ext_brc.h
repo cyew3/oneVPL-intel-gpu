@@ -71,6 +71,7 @@ protected:
     mfxExtBRC m_brc = {};
     OnExit    m_destroy;
     bool      m_bUseLevel = true;
+    NotNull<mfxExtLAFrameStatistics*> m_pLAStat;
 };
 
 } //Gen11

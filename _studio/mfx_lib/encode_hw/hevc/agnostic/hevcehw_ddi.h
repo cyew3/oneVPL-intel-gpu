@@ -24,6 +24,8 @@
 //TODO: move content here
 #include "hevce_ddi_main.h"
 #else
+namespace HEVCEHW
+{
 typedef struct tagENCODE_CAPS_HEVC
 {
     union{
@@ -126,4 +128,5 @@ typedef struct tagENCODE_CAPS_HEVC
     uint32_t reserved32bits3;
 
 } ENCODE_CAPS_HEVC;
+}; //namespace HEVCEHW
 #endif

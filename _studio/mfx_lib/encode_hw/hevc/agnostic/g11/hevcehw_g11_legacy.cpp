@@ -1389,7 +1389,7 @@ void Legacy::Reset(const FeatureBlocks& blocks, TPushR Push)
         if (bTlActive)
         {
             // calculate temporal layer for next frame
-            tempLayerIdx = defOld.base.GetTId(defOld, m_frameOrder);
+            tempLayerIdx = defOld.base.GetTId(defOld, m_frameOrder + 1);
             changeTScalLayers = numTlOld != numTlNew;
         }
 
@@ -1592,14 +1592,14 @@ void Legacy::PreReorderTask(const FeatureBlocks& blocks, TPushPreRT Push)
         auto& task = Task::Common::Get(s_task);
         auto  dflts = GetRTDefaults(global);
 
+        m_frameOrder = dflts.base.GetFrameOrder(dflts, s_task, m_frameOrder);
+
         auto sts = dflts.base.GetPreReorderInfo(
             dflts, task, task.pSurfIn, &task.ctrl, m_lastIDR, m_prevTask.PrevIPoc, m_frameOrder);
         MFX_CHECK_STS(sts);
 
         if (par.mfx.EncodedOrder)
         {
-            m_frameOrder   = task.pSurfIn->Data.FrameOrder;
-
             auto MaxReorder     = Glob::Reorder::Get(global).BufferSize;
             bool bFrameFromPast = m_frameOrder && (m_frameOrder < m_prevTask.DisplayOrder);
 
@@ -1612,8 +1612,6 @@ void Legacy::PreReorderTask(const FeatureBlocks& blocks, TPushPreRT Push)
         
         SetIf(m_lastIDR, IsIdr(task.FrameType), m_frameOrder);
         SetIf(task.PrevIPoc, IsI(task.FrameType), task.POC);
-
-        ++m_frameOrder;
 
         return MFX_ERR_NONE;
     });
