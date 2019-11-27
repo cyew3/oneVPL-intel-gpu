@@ -630,13 +630,21 @@ mfxStatus VideoDECODEAV1::DecodeFrameCheck(mfxBitstream* bs, mfxFrameSurface1* s
     MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
 
-    mfxThreadTask task;
-    mfxStatus sts = SubmitFrame(bs, surface_work, surface_out, &task);
+    mfxStatus sts = SubmitFrame(bs, surface_work, surface_out);
 
     if (sts == MFX_ERR_MORE_DATA || sts == MFX_ERR_MORE_SURFACE)
         return sts;
 
     MFX_CHECK_STS(sts);
+
+    std::unique_ptr<TaskInfo> info(new TaskInfo);
+
+    info->surface_work = GetOriginalSurface(surface_work);
+    if (*surface_out)
+        info->surface_out = GetOriginalSurface(*surface_out);
+
+    mfxThreadTask task =
+        reinterpret_cast<mfxThreadTask>(info.release());
 
     entry_point->pRoutine = &DecodeRoutine;
     entry_point->pCompleteProc = &CompleteProc;
@@ -655,32 +663,6 @@ mfxStatus VideoDECODEAV1::SetSkipMode(mfxSkipMode /*mode*/)
 mfxStatus VideoDECODEAV1::GetPayload(mfxU64* /*time_stamp*/, mfxPayload* /*pPayload*/)
 {
     MFX_RETURN(MFX_ERR_UNSUPPORTED);
-}
-
-mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, mfxThreadTask* task)
-{
-    MFX_CHECK_NULL_PTR1(task);
-
-    MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
-
-    mfxStatus sts = SubmitFrame(bs, surface_work, surface_out);
-
-    if (sts == MFX_ERR_MORE_DATA || sts == MFX_ERR_MORE_SURFACE)
-        return sts;
-
-    MFX_CHECK_STS(sts);
-
-    std::unique_ptr<TaskInfo> info(new TaskInfo);
-    //auto info = std::make_unique<TaskInfo>();
-    info->surface_work = GetOriginalSurface(surface_work);
-    if (*surface_out)
-        info->surface_out = GetOriginalSurface(*surface_out);
-
-    *task =
-        reinterpret_cast<mfxThreadTask>(info.release());
-
-    return MFX_ERR_NONE;
 }
 
 mfxStatus VideoDECODEAV1::DecodeFrame(mfxFrameSurface1 *surface_out, AV1DecoderFrame* frame)
@@ -811,6 +793,23 @@ static mfxStatus CheckFrameInfo(mfxFrameInfo const &currInfo, mfxFrameInfo &info
 mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out)
 {
     MFX_CHECK_NULL_PTR2(surface_work, surface_out);
+
+    bool workSfsIsClean =
+        !(surface_work->Data.MemId || surface_work->Data.Y
+            || surface_work->Data.UV || surface_work->Data.R
+            || surface_work->Data.A);
+
+    if (m_opaque)
+    {
+        MFX_CHECK(workSfsIsClean, MFX_ERR_UNDEFINED_BEHAVIOR);
+        // work with the native (original) surface
+        surface_work = GetOriginalSurface(surface_work);
+        MFX_CHECK(surface_work, MFX_ERR_UNDEFINED_BEHAVIOR);
+    }
+    else
+    {
+        MFX_CHECK(!workSfsIsClean, MFX_ERR_LOCK_MEMORY);
+    }
 
     mfxStatus sts = CheckFrameInfo(m_first_par.mfx.FrameInfo, surface_work->Info);
     MFX_CHECK_STS(sts);

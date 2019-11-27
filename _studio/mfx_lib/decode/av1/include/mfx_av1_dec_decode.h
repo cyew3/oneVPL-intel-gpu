@@ -73,7 +73,6 @@ public:
     mfxStatus SetSkipMode(mfxSkipMode);
     mfxStatus GetPayload(mfxU64* time_stamp, mfxPayload*);
 
-    mfxStatus SubmitFrame(mfxBitstream*, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, mfxThreadTask*);
     mfxStatus QueryFrame(mfxThreadTask);
 
 private:
