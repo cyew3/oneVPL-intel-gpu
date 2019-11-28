@@ -2369,24 +2369,24 @@ public:
         return MFX_ERR_NONE;
     }
 
+    static const std::map<mfxU32, std::array<mfxU16, 2>> FourCCPar;
+
     static mfxStatus FourCC(
         Defaults::TCheckAndFix::TExt
-        , const Defaults::Param& /*dpar*/
+        , const Defaults::Param& dpar
         , mfxVideoParam& par)
     {
-        bool bInvalid = CheckOrZero<mfxU32
-            , MFX_FOURCC_NV12
-            , MFX_FOURCC_RGB4
-            , MFX_FOURCC_Y210
-            , MFX_FOURCC_Y410
-            , MFX_FOURCC_AYUV
-            , MFX_FOURCC_P210
-            , MFX_FOURCC_YUY2
-            , MFX_FOURCC_P010
-            , MFX_FOURCC_A2RGB10>
-            (par.mfx.FrameInfo.FourCC);
+        auto it = FourCCPar.find(par.mfx.FrameInfo.FourCC);
+        bool bInvalid = (it == FourCCPar.end());
+
+        bInvalid = bInvalid || (it->second[0] == MFX_CHROMAFORMAT_YUV422 && !dpar.caps.YUV422ReconSupport);
+        bInvalid = bInvalid || (it->second[0] == MFX_CHROMAFORMAT_YUV444 && !dpar.caps.YUV444ReconSupport);
+        bInvalid = bInvalid || (it->second[1] > std::max(8, (1 << dpar.caps.MaxEncodedBitDepth)));
+
+        par.mfx.FrameInfo.FourCC *= !bInvalid;
 
         MFX_CHECK(!bInvalid, MFX_ERR_UNSUPPORTED);
+
         return MFX_ERR_NONE;
     }
 
@@ -2396,18 +2396,6 @@ public:
         , mfxVideoParam& par)
     {
         mfxU32 invalid = 0;
-        static const std::map<mfxU32, std::array<mfxU16, 2>> FourCCPar=
-        {
-            {mfxU32(MFX_FOURCC_AYUV),       {mfxU16(MFX_CHROMAFORMAT_YUV444), 8}}
-            , {mfxU32(MFX_FOURCC_RGB4),     {mfxU16(MFX_CHROMAFORMAT_YUV444), 8}}
-            , {mfxU32(MFX_FOURCC_A2RGB10),  {mfxU16(MFX_CHROMAFORMAT_YUV444), 10}}
-            , {mfxU32(MFX_FOURCC_Y410),     {mfxU16(MFX_CHROMAFORMAT_YUV444), 10}}
-            , {mfxU32(MFX_FOURCC_P210),     {mfxU16(MFX_CHROMAFORMAT_YUV422), 10}}
-            , {mfxU32(MFX_FOURCC_Y210),     {mfxU16(MFX_CHROMAFORMAT_YUV422), 10}}
-            , {mfxU32(MFX_FOURCC_YUY2),     {mfxU16(MFX_CHROMAFORMAT_YUV422), 8}}
-            , {mfxU32(MFX_FOURCC_P010),     {mfxU16(MFX_CHROMAFORMAT_YUV420), 10}}
-            , {mfxU32(MFX_FOURCC_NV12),     {mfxU16(MFX_CHROMAFORMAT_YUV420), 8}}
-        };
 
         auto itFourCCPar = FourCCPar.find(par.mfx.FrameInfo.FourCC);
         invalid += (itFourCCPar == FourCCPar.end() && Res2Bool(par.mfx.FrameInfo.FourCC, mfxU32(MFX_FOURCC_NV12)));
@@ -2675,6 +2663,19 @@ public:
 #undef PUSH_DEFAULT
     }
 
+};
+
+const std::map<mfxU32, std::array<mfxU16, 2>> CheckAndFix::FourCCPar =
+{
+    {mfxU32(MFX_FOURCC_AYUV),       {mfxU16(MFX_CHROMAFORMAT_YUV444), 8}}
+    , {mfxU32(MFX_FOURCC_RGB4),     {mfxU16(MFX_CHROMAFORMAT_YUV444), 8}}
+    , {mfxU32(MFX_FOURCC_A2RGB10),  {mfxU16(MFX_CHROMAFORMAT_YUV444), 10}}
+    , {mfxU32(MFX_FOURCC_Y410),     {mfxU16(MFX_CHROMAFORMAT_YUV444), 10}}
+    , {mfxU32(MFX_FOURCC_P210),     {mfxU16(MFX_CHROMAFORMAT_YUV422), 10}}
+    , {mfxU32(MFX_FOURCC_Y210),     {mfxU16(MFX_CHROMAFORMAT_YUV422), 10}}
+    , {mfxU32(MFX_FOURCC_YUY2),     {mfxU16(MFX_CHROMAFORMAT_YUV422), 8}}
+    , {mfxU32(MFX_FOURCC_P010),     {mfxU16(MFX_CHROMAFORMAT_YUV420), 10}}
+    , {mfxU32(MFX_FOURCC_NV12),     {mfxU16(MFX_CHROMAFORMAT_YUV420), 8}}
 };
 
 void Legacy::PushDefaults(Defaults& df)
