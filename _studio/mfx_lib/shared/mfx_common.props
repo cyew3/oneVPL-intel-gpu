@@ -20,6 +20,7 @@
     $(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;
     </MfxIncludes>
     <MfxDefinitions>MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxDefinitions Condition="'$(MfxSoftwareOnly)'!='true'">MFX_VA;$(MfxDefinitions)</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>
   </PropertyGroup>

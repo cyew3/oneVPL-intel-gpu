@@ -37,8 +37,9 @@ namespace MFX_VPX_Utility
         case MFX_CODEC_VP8:
         case MFX_CODEC_VP9:
             return 4096;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        case MFX_CODEC_AV1: return 16384;
+#if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
+        case MFX_CODEC_AV1:
+            return 16384;
 #endif
         default: return 0;
         }
@@ -51,8 +52,9 @@ namespace MFX_VPX_Utility
         case MFX_CODEC_VP8:
         case MFX_CODEC_VP9:
             return 2304;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        case MFX_CODEC_AV1: return GetMaxWidth(codecId);
+#if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
+        case MFX_CODEC_AV1:
+            return GetMaxWidth(codecId);
 #endif
         default: return 0;
         }
@@ -64,7 +66,7 @@ namespace MFX_VPX_Utility
         {
         case MFX_CODEC_VP8: return profile <= MFX_PROFILE_VP8_3;
         case MFX_CODEC_VP9: return profile <= MFX_PROFILE_VP9_3;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
         case MFX_CODEC_AV1: return profile <= MFX_PROFILE_AV1_PRO;
 #endif
         default: return false;

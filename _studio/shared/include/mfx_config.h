@@ -313,10 +313,10 @@
     #define ENABLE_PRE_SI_FEATURES
     #if PRE_SI_GEN == 11
         #ifdef ENABLE_PRE_SI_FEATURES
-             #undef ENABLE_PRE_SI_FEATURES
+                #undef ENABLE_PRE_SI_FEATURES
         #endif
         #ifdef PRE_SI_TARGET_PLATFORM_GEN12
-             #undef PRE_SI_TARGET_PLATFORM_GEN12
+                #undef PRE_SI_TARGET_PLATFORM_GEN12
         #endif
     #elif PRE_SI_GEN == 12
         #define PRE_SI_TARGET_PLATFORM_GEN12
@@ -329,16 +329,13 @@
 #else
     #define ENABLE_PRE_SI_FEATURES
 
-    #if defined (ENABLE_PRE_SI_FEATURES)
+    #define PRE_SI_TARGET_PLATFORM_GEN12P5 // target generation is Gen12p5 (TGL HP)
+    //#define PRE_SI_TARGET_PLATFORM_GEN12 // target generation is Gen12 (TGL LP, LKF)
 
-        #define PRE_SI_TARGET_PLATFORM_GEN12P5 // target generation is Gen12p5 (TGL HP)
-        //#define PRE_SI_TARGET_PLATFORM_GEN12 // target generation is Gen12 (TGL LP, LKF)
+    #if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+        #define PRE_SI_TARGET_PLATFORM_GEN12 // assume that all Gen12 features are supported on Gen12p5
+    #endif // PRE_SI_TARGET_PLATFORM_GEN12P5
 
-        #if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
-            #define PRE_SI_TARGET_PLATFORM_GEN12 // assume that all Gen12 features are supported on Gen12p5
-        #endif // PRE_SI_TARGET_PLATFORM_GEN12P5
-
-    #endif // ENABLE_PRE_SI_FEATURES
 #endif
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)

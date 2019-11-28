@@ -115,7 +115,7 @@ mfxU32 ChooseProfile(mfxVideoParam const* param, eMFXHWType)
         }
         break;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_ENABLE_AV1_VIDEO_DECODE) || defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
     case MFX_CODEC_AV1:
         profile |= VA_AV1;
         switch (param->mfx.FrameInfo.FourCC)
@@ -125,7 +125,7 @@ mfxU32 ChooseProfile(mfxVideoParam const* param, eMFXHWType)
             break;
         }
         break;
-#endif // PRE_SI_TARGET_PLATFORM_GEN12
+#endif
 
     case MFX_CODEC_HEVC:
         profile |= VA_H265;
