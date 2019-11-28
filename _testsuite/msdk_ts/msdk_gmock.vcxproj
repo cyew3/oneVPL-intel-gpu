@@ -283,6 +283,7 @@
     <ClCompile Include="src\gmock\test_suites\hevce_multislice.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_intra_refresh.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_ref_list1_checks.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_reset_swvbr_hrd_conf_vui.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_scc.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_sei_hdr.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_adaptivemaxframesize.cpp" />
