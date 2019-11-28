@@ -113,7 +113,7 @@ DEFINE_GUID_VA(sDXVA2_ModeMPEG2_VLD,                         VAProfileMPEG2Main,
 DEFINE_GUID_VA(DXVA2_Intel_Encode_MPEG2,                     VAProfileMPEG2Main,     VAEntrypointEncSlice);
 
 /* AV1 */
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
 DEFINE_GUID_VA(DXVA_Intel_ModeAV1_VLD,                       VAProfileAV1,    VAEntrypointVLD);
 #endif
 

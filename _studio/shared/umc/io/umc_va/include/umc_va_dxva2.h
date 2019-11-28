@@ -79,7 +79,7 @@ DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_10bit_VLD,
 DEFINE_GUID(DXVA_Intel_ModeVP9_Profile1_YUV444_VLD,
 0x68a21c7b, 0xd58f, 0x4e74, 0x99, 0x93, 0xe4, 0xb8, 0x17, 0x2b, 0x19, 0xa0);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
 // {CA44AFC5-E1D0-42e6-9154-B127186D4D40}
 DEFINE_GUID(DXVA_Intel_ModeAV1_VLD,
     0xca44afc5, 0xe1d0, 0x42e6, 0x91, 0x54, 0xb1, 0x27, 0x18, 0x6d, 0x4d, 0x40);
@@ -337,7 +337,7 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case VP9_12_VLD_420:
     case VP9_12_VLD_444:
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
     case AV1_VLD:
     case AV1_10_VLD:
 #endif
