@@ -2544,11 +2544,11 @@ mfxStatus CheckLimitationsSW(
         || param.vpp.In.FourCC == MFX_FOURCC_Y210
         || param.vpp.In.FourCC == MFX_FOURCC_Y410
 #endif
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         || param.vpp.In.FourCC == MFX_FOURCC_P016
         || param.vpp.In.FourCC == MFX_FOURCC_Y216
         || param.vpp.In.FourCC == MFX_FOURCC_Y416
-#endif // PRE_SI_TARGET_PLATFORM_GEN12
+#endif
         )
     {
         // [5] Unsupported input fourcc
@@ -2563,11 +2563,11 @@ mfxStatus CheckLimitationsSW(
         || param.vpp.Out.FourCC == MFX_FOURCC_Y210
         || param.vpp.Out.FourCC == MFX_FOURCC_Y410
 #endif
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         || param.vpp.In.FourCC == MFX_FOURCC_P016
         || param.vpp.In.FourCC == MFX_FOURCC_Y216
         || param.vpp.In.FourCC == MFX_FOURCC_Y416
-#endif // PRE_SI_TARGET_PLATFORM_GEN12
+#endif
         )
     {
         // [6] Unsupported output fourcc

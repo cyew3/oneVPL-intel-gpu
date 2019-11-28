@@ -102,14 +102,14 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
         return DXGI_FORMAT_Y410;
 #endif
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
         return DXGI_FORMAT_P016;
     case MFX_FOURCC_Y216:
         return DXGI_FORMAT_Y216;
     case MFX_FOURCC_Y416:
         return DXGI_FORMAT_Y416;
-#endif // PRE_SI_TARGET_PLATFORM_GEN12
+#endif
     }
     return DXGI_FORMAT_UNKNOWN;
 
@@ -151,7 +151,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
 #endif
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
@@ -370,7 +370,7 @@ mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Des
     switch (Desc.Format)
     {
     case DXGI_FORMAT_P010:
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case DXGI_FORMAT_P016:
 #endif
         ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
@@ -447,7 +447,7 @@ mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Des
         ptr->A = 0;
         break;
     case DXGI_FORMAT_Y210:
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case DXGI_FORMAT_Y216:
 #endif
         ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
@@ -458,7 +458,7 @@ mfxStatus mfxDefaultAllocatorD3D11::SetFrameData(const D3D11_TEXTURE2D_DESC &Des
         break;
 #endif
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case DXGI_FORMAT_Y416:
         ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
         ptr->PitchLow = (mfxU16)(LockedRect.RowPitch % (1 << 16));

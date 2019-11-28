@@ -87,8 +87,7 @@ DEFINE_GUID(DXVA_Intel_ModeAV1_VLD,
 // {F9A16190-3FB4-4DC5-9846-C8751F83D6D7}
 DEFINE_GUID(DXVA_Intel_ModeAV1_VLD_420_10b,
     0xf9a16190, 0x3fb4, 0x4dc5, 0x98, 0x46, 0xc8, 0x75, 0x1f, 0x83, 0xd6, 0xd7);
-
-#endif // PRE_SI_TARGET_PLATFORM_GEN12
+#endif
 
 // {1D5C4D76-B55A-4430-904C-3383A7AE3B16}
 DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD,
@@ -118,7 +117,6 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_10Profile,
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_10Profile,
     0x6a6a81ba, 0x912a, 0x485d, 0xb5, 0x7f, 0xcc, 0xd2, 0xd3, 0x7b, 0x8d, 0x94);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
 // {8FF8A3AA-C456-4132-B6EF-69D9DD72571D}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main12Profile,
     0x8ff8a3aa, 0xc456, 0x4132, 0xb6, 0xef, 0x69, 0xd9, 0xdd, 0x72, 0x57, 0x1d);
@@ -131,6 +129,7 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_12Profile,
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_12Profile,
     0x5b08e35d, 0xc66, 0x4c51, 0xa6, 0xf1, 0x89, 0xd0, 0xc, 0xb2, 0xc1, 0x97);
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
 // {0E4BC693-5D2C-4936-B125-AEFE32B16D8A}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main_Profile,
     0xe4bc693, 0x5d2c, 0x4936, 0xb1, 0x25, 0xae, 0xfe, 0x32, 0xb1, 0x6d, 0x8a);
@@ -146,6 +145,7 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main444_Profile,
 // {AE0D4E15-2360-40a8-BF82-028E6A0DD827}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main444_10Profile,
     0xae0d4e15, 0x2360, 0x40a8, 0xbf, 0x82, 0x2, 0x8e, 0x6a, 0xd, 0xd8, 0x27);
+#endif
 
 // {A7F759DD-5F54-4d7f-8291-42E883C546FE}
 DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_YUV420_12bit_VLD, 
@@ -154,8 +154,6 @@ DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_YUV420_12bit_VLD,
 // {F34FA92F-DC79-474c-B0DB-B7BD4522DF77}
 DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_12bit_VLD, 
     0xf34fa92f, 0xdc79, 0x474c, 0xb0, 0xdb, 0xb7, 0xbd, 0x45, 0x22, 0xdf, 0x77);
-
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
 
 struct GuidProfile
 {
@@ -335,12 +333,14 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case VP9_VLD_444:
     case VP9_10_VLD_422:
     case VP9_10_VLD_444:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case VP9_12_VLD_420:
     case VP9_12_VLD_444:
+#endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     case AV1_VLD:
     case AV1_10_VLD:
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
         res = true;
         break;
     case MPEG2_VLD:
@@ -379,11 +379,11 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case H265_VLD_444:
     case H265_10_VLD_422:
     case H265_10_VLD_444:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case H265_12_VLD_420:
     case H265_12_VLD_422:
     case H265_12_VLD_444:
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     case H265_VLD_SCC:
     case H265_10_VLD_SCC:

@@ -1460,7 +1460,7 @@ mfxU16 GetMaxChroma(MfxVideoParam const & par)
     {
     case MFX_FOURCC_NV12:
     case MFX_FOURCC_P010:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
 #endif
         c = std::min<mfxU16>(c, MFX_CHROMAFORMAT_YUV420);
@@ -1471,7 +1471,7 @@ mfxU16 GetMaxChroma(MfxVideoParam const & par)
     case MFX_FOURCC_Y210:
 #endif
     case MFX_FOURCC_P210:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
 #endif
         c = std::min<mfxU16>(c, MFX_CHROMAFORMAT_YUV422);
@@ -1482,7 +1482,7 @@ mfxU16 GetMaxChroma(MfxVideoParam const & par)
 #if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y410:
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:
 #endif
     default:
@@ -1509,7 +1509,7 @@ mfxU16 GetMaxBitDepth(mfxU32 FourCC)
     case MFX_FOURCC_Y410:
 #endif
         return 10;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
@@ -1703,7 +1703,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
         , (mfxU32)MFX_FOURCC_YUY2
         , (mfxU32)MFX_FOURCC_P010
         , (mfxU32)MFX_FOURCC_A2RGB10
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         , (mfxU32)MFX_FOURCC_P016
         , (mfxU32)MFX_FOURCC_Y216
         , (mfxU32)MFX_FOURCC_Y416
@@ -1754,7 +1754,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
         break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
         invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 12, 0);
@@ -1781,7 +1781,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
 
     switch (maxBitDepth)
     {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case 12:
         invalid += CheckOption(CO3.TargetBitDepthLuma, 12/*, 10, 8*/, 0);
         invalid += CheckOption(CO3.TargetBitDepthChroma, 12/*, 10, 8*/, 0);
@@ -1800,7 +1800,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
 
     switch (CO3.TargetBitDepthLuma)
     {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case 12:
         invalid += CheckOption(CO3.TargetBitDepthChroma, 12/*, 10, 8*/, 0);
         invalid += CheckOption(par.mfx.CodecProfile
@@ -1924,7 +1924,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
             , (mfxU32)MFX_FOURCC_YUY2, (mfxU32)MFX_FOURCC_P210, (mfxU32)MFX_FOURCC_Y210
             , (mfxU32)MFX_FOURCC_AYUV, (mfxU32)MFX_FOURCC_Y410, (mfxU32)MFX_FOURCC_A2RGB10);
     }
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 12)
     {   //In: 444x12
         invalid += CheckOption(par.mfx.FrameInfo.FourCC
@@ -2286,7 +2286,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
     if ((par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) && isInVideoMem(par))
             changed += CheckMin(par.mfx.FrameInfo.Shift, 1);
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if ((par.mfx.FrameInfo.FourCC == MFX_FOURCC_P016) && isInVideoMem(par))
             changed += CheckMin(par.mfx.FrameInfo.Shift, 1);
 #endif

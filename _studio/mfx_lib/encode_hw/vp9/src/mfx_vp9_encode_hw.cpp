@@ -200,14 +200,14 @@ void SetReconInfo(VP9MfxVideoParam const &par, mfxFrameInfo &fi, eMFXHWType cons
     }
     else if (format == MFX_CHROMAFORMAT_YUV420 && depth == BITDEPTH_10)
     {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         if (platform >= MFX_HW_TGL_LP)
         {
             fi.FourCC = MFX_FOURCC_NV12;
             fi.Width  = mfx::align2_value(fi.Width, 32) * 2;
         }
         else
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#endif
         {
             std::ignore = platform;
             fi.FourCC  = MFX_FOURCC_P010;

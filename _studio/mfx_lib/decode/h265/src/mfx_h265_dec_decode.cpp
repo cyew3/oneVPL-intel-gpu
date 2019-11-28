@@ -105,7 +105,7 @@ UMC::Status FillParam(VideoCORE *core, MFXTaskSupplier_H265 * decoder, mfxVideoP
 #if (MFX_VERSION >= 1027)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416

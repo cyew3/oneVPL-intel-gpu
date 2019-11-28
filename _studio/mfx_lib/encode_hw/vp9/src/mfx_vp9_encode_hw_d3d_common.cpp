@@ -177,5 +177,5 @@ namespace MfxHwVP9Encode
     }
 }// namespace MfxHwVP9Encode
 
-#endif // #if defined (PRE_SI_TARGET_PLATFORM_GEN10) && defined (MFX_VA_WIN)
+#endif // #if defined (MFX_VA_WIN)
 /* EOF */

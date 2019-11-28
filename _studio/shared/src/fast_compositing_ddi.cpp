@@ -1070,7 +1070,7 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
     {
         shift = 6; // Colors should be shifted to MSB
     }
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if(outInfo->FourCC == MFX_FOURCC_P016 ||
        outInfo->FourCC == MFX_FOURCC_Y216 ||
        outInfo->FourCC == MFX_FOURCC_Y416)

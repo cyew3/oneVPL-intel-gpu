@@ -2881,7 +2881,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         maxRange = 1023.f;
     }
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if(outInfo->FourCC == MFX_FOURCC_P016 ||
         outInfo->FourCC == MFX_FOURCC_Y216 ||
         outInfo->FourCC == MFX_FOURCC_Y416)

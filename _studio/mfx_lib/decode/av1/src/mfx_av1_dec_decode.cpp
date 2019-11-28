@@ -520,7 +520,7 @@ UMC::Status FillParam(VideoCORE *core, mfxVideoParam *par)
 #if (MFX_VERSION >= 1027)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
@@ -607,7 +607,7 @@ mfxStatus VideoDECODEAV1::GetVideoParam(mfxVideoParam *par)
 #if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
 #endif
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
@@ -767,10 +767,10 @@ static mfxStatus CheckFrameInfo(mfxFrameInfo const &currInfo, mfxFrameInfo &info
     case MFX_FOURCC_Y410:
 #endif
         break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y416:
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
     case MFX_FOURCC_P010:
 #if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
@@ -1069,7 +1069,7 @@ mfxStatus VideoDECODEAV1::FillVideoParam(VideoCORE* core, UMC_AV1_DECODER::AV1De
 #if (MFX_VERSION >= 1027)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
