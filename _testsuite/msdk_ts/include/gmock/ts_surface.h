@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -83,22 +83,22 @@ public:
 
     virtual ~tsFrameAbstract() { }
 
-    virtual tsSample<mfxU8>&  Y  (mfxU32 w, mfxU32 h) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
-    virtual tsSample<mfxU8>&  U  (mfxU32 w, mfxU32 h) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
-    virtual tsSample<mfxU8>&  V  (mfxU32 w, mfxU32 h) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
-    virtual tsSample<mfxU8>&  R  (mfxU32 w, mfxU32 h) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
-    virtual tsSample<mfxU8>&  G  (mfxU32 w, mfxU32 h) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
-    virtual tsSample<mfxU8>&  B  (mfxU32 w, mfxU32 h) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
-    virtual tsSample<mfxU8>&  A  (mfxU32 w, mfxU32 h) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
-    virtual tsSample<mfxU16>& Y16(mfxU32 w, mfxU32 h) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample16; }
-    virtual tsSample<mfxU16>& U16(mfxU32 w, mfxU32 h) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample16; }
-    virtual tsSample<mfxU16>& V16(mfxU32 w, mfxU32 h) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample16; }
+    virtual tsSample<mfxU8>&  Y  (mfxU32 /*w*/, mfxU32 /*h*/) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
+    virtual tsSample<mfxU8>&  U  (mfxU32 /*w*/, mfxU32 /*h*/) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
+    virtual tsSample<mfxU8>&  V  (mfxU32 /*w*/, mfxU32 /*h*/) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
+    virtual tsSample<mfxU8>&  R  (mfxU32 /*w*/, mfxU32 /*h*/) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
+    virtual tsSample<mfxU8>&  G  (mfxU32 /*w*/, mfxU32 /*h*/) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
+    virtual tsSample<mfxU8>&  B  (mfxU32 /*w*/, mfxU32 /*h*/) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
+    virtual tsSample<mfxU8>&  A  (mfxU32 /*w*/, mfxU32 /*h*/) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample8; }
+    virtual tsSample<mfxU16>& Y16(mfxU32 /*w*/, mfxU32 /*h*/) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample16; }
+    virtual tsSample<mfxU16>& U16(mfxU32 /*w*/, mfxU32 /*h*/) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample16; }
+    virtual tsSample<mfxU16>& V16(mfxU32 /*w*/, mfxU32 /*h*/) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_sample16; }
     virtual bool isYUV() { return false; }
     virtual bool isYUV16() { return false; }
     virtual bool isRGB() { return false; }
     virtual bool isRGB565() { return false; }
 
-    virtual bool Copy(tsFrameAbstract const & src, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo) { return false; }
+    virtual bool Copy(tsFrameAbstract const &, mfxFrameInfo const & /*srcInfo*/, mfxFrameInfo const & /*dstInfo*/) { return false; }
 };
 
 class tsFrameNV12 : public tsFrameAbstract
