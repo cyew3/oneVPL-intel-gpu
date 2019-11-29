@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2018-2019 Intel Corporation. All Rights Reserved.
 //
 */
 #include "ts_decoder.h"
@@ -277,20 +277,23 @@ struct TestSuiteExt
     static unsigned int const n_cases;
 };
 
+char const *stream_av1_8b_inter_basic = "conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_mainb8ss420_432x240_101_inter_basic_3_1.3_20190124.av1";
+char const *stream_av1_10b_inter_basic = "conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_mainb10ss420_432x240_101_inter_basic_4_1.3_20190124.av1";
+
 /* 8b 420 */
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12>::test_cases[] =
 {
-    {/* 0*/ MFX_ERR_NONE, {"conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1", ""},
+    {/*42*/ MFX_ERR_NONE, {stream_av1_8b_inter_basic, ""},
         {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {REPEAT, 0, {2}}}
     },
 
-    {/* 1*/ MFX_ERR_NONE, {"conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1", ""},
+    {/*43*/ MFX_ERR_NONE, {stream_av1_8b_inter_basic, ""},
         {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
-    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1", "conformance/av1/DVK/Syntax_AV1_p1b10ss444_432x240_101_inter_basic_1.1.av1"}},
+    {/*44*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {stream_av1_8b_inter_basic, stream_av1_10b_inter_basic }},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_NV12>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_NV12>::test_cases) / sizeof(TestSuite::tc_struct);
@@ -299,16 +302,16 @@ unsigned int const TestSuiteExt<MFX_FOURCC_NV12>::n_cases = TestSuite::n_cases +
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010>::test_cases[] =
 {
-    {/* 0*/ MFX_ERR_NONE, {"conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1", ""},
+    {/*42*/ MFX_ERR_NONE, {stream_av1_10b_inter_basic, ""},
         {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {REPEAT, 0, {2}}}
     },
 
-    {/* 1*/ MFX_ERR_NONE, {"conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1", ""},
+    {/*43*/ MFX_ERR_NONE, {stream_av1_10b_inter_basic, ""},
         {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
-    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1", "conformance/av1/DVK/Syntax_AV1_p1b10ss444_432x240_101_inter_basic_1.1.av1"}},
+    {/*44*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {stream_av1_10b_inter_basic, stream_av1_8b_inter_basic}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_P010>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P010>::test_cases) / sizeof(TestSuite::tc_struct);
