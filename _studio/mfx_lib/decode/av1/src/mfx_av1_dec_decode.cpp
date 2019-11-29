@@ -444,10 +444,17 @@ mfxStatus VideoDECODEAV1::Query(VideoCORE* core, mfxVideoParam* in, mfxVideoPara
     MFX_CHECK(core, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK_NULL_PTR1(out);
 
+    if (in)
+    {
+        MFX_CHECK((in->mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF | MFX_PICSTRUCT_FIELD_SINGLE)) == 0, MFX_ERR_UNSUPPORTED);
+        MFX_CHECK(in->Protected == 0, MFX_ERR_UNSUPPORTED);
+        MFX_CHECK(in->Protected == 0, MFX_ERR_UNSUPPORTED);
+        MFX_CHECK(in->mfx.ExtendedPicStruct == 0, MFX_ERR_UNSUPPORTED);
+        out->mfx.FilmGrain = in->mfx.FilmGrain;
+    }
+
     mfxStatus sts = MFX_VPX_Utility::Query(core, in, out, MFX_CODEC_AV1, core->GetHWType());
     MFX_CHECK_STS(sts);
-
-    out->mfx.FilmGrain = in->mfx.FilmGrain;
 
     eMFXPlatform platform = MFX_VPX_Utility::GetPlatform(core, out);
     if (platform != core->GetPlatformType())
