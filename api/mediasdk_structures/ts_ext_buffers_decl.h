@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -69,6 +69,9 @@ EXTBUF(mfxExtHEVCParam              , MFX_EXTBUFF_HEVC_PARAM                )
 EXTBUF(mfxExtHEVCTiles              , MFX_EXTBUFF_HEVC_TILES                )
 EXTBUF(mfxExtPredWeightTable        , MFX_EXTBUFF_PRED_WEIGHT_TABLE         )
 EXTBUF(mfxExtEncodedUnitsInfo       , MFX_EXTBUFF_ENCODED_UNITS_INFO        )
+#if (MFX_VERSION >= 1031)
+EXTBUF(mfxExtPartialBitstreamParam  , MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM   )
+#endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 EXTBUF(mfxExtAVCScalingMatrix       , MFX_EXTBUFF_AVC_SCALING_MATRIX        )
 #endif
@@ -131,12 +134,10 @@ EXTBUF(mfxExtCamPipeControl         , MFX_EXTBUF_CAM_PIPECONTROL             )
 EXTBUF(mfxExtThreadsParam           , MFX_EXTBUFF_THREADS_PARAM)
 #endif //defined(__MFXCOMMON_H__)
 
-
 #if defined(__MFXSC_H__)
 //Screen capture
 EXTBUF(mfxExtScreenCaptureParam     , MFX_EXTBUFF_SCREEN_CAPTURE_PARAM      )
 #endif //defined(__MFXSC_H__)
-
 
 #if defined(__MFXVP9_H__)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
@@ -144,13 +145,11 @@ EXTBUF(mfxExtVP9DecodedFrameInfo    , MFX_EXTBUFF_VP9_DECODED_FRAME_INFO    )
 #endif
 #endif //defined(__MFXVP9_H__)
 
-
 #if defined(__MFXBRC_H__)
 EXTBUF(mfxExtBRC, MFX_EXTBUFF_BRC)
 #endif // defined(__MFXBRC_H__)
 
 #if defined(__MFXPCP_H__)
-
 #if !defined(OPEN_SOURCE)
 EXTBUF(mfxExtPAVPOption             , MFX_EXTBUFF_PAVP_OPTION               )
 #endif
@@ -158,7 +157,6 @@ EXTBUF(mfxExtPAVPOption             , MFX_EXTBUFF_PAVP_OPTION               )
 #if (MFX_VERSION >= 1030)
 EXTBUF(mfxExtCencParam              , MFX_EXTBUFF_CENC_PARAM                )
 #endif
-
 #endif // defined(__MFXPCP_H__)
 
 #if defined(__MFXSCD_H__)

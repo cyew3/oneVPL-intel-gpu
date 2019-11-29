@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -104,7 +104,6 @@ private:
 public:
     tsTrace(std::streambuf* sb) : tsAutoTrace(sb), m_interpret_ext_buf(true) {}
 
-
     tsTrace& operator << (const mfxExtBuffer& p);
     tsTrace& operator << (const mfxVideoParam& p);
     tsTrace& operator << (const mfxEncodeCtrl& p);
@@ -124,6 +123,7 @@ public:
     tsTrace& operator << (const mfxExtAVCScalingMatrix& p);
     tsTrace& operator << (mfxStatus& p);
     tsTrace& operator << (BSErr& p);
+    tsTrace& operator << (const mfxExtPartialBitstreamParam& p);
     tsTrace& operator << (const mfxStatus& p){
         return operator<<(const_cast<mfxStatus&>(p));
     }
