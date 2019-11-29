@@ -503,6 +503,14 @@
     #endif
 #endif
 
+#if !defined(ANDROID)
+#define MFX_ENABLE_HEVCEHW_REFACTORING
+#endif //!defined(ANDROID)
+
+#if defined(MFX_ENABLE_HEVCEHW_REFACTORING)
+#define MFX_ENABLE_HEVCEHW_REFACTORING_WIN_SKL
+#endif //defined(MFX_ENABLE_HEVCEHW_REFACTORING)
+
 #define CMAPIUPDATE
 
 #endif // _MFX_CONFIG_H_

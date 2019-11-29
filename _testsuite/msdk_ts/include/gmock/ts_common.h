@@ -24,7 +24,7 @@
 #define REFACTORED_HEVCE
 // TODO: remove block of code below when merge of refactored HEVCe to master will be completed
 #ifdef _WIN32
-    static std::vector<HWType> platforms_with_refactored_hevce = {}; // Platforms where refactored HEVCe used on Windows
+    static std::vector<HWType> platforms_with_refactored_hevce = { MFX_HW_SKL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_APL }; // Platforms where refactored HEVCe used on Windows
 #else
     static std::vector<HWType> platforms_with_refactored_hevce = {}; // Platforms where refactored HEVCe used on Linux
 #endif
@@ -34,7 +34,7 @@ static bool use_refactored_hevce(HWType current_platform)
     return std::find(std::begin(platforms_with_refactored_hevce), std::end(platforms_with_refactored_hevce), current_platform) != std::end(platforms_with_refactored_hevce);
 }
 
-#define USE_REFACTORED_HEVCE false // use_refactored_hevce(g_tsHWtype)
+#define USE_REFACTORED_HEVCE use_refactored_hevce(g_tsHWtype)
 #endif
 
 typedef enum {
