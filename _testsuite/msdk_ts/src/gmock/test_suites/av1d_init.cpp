@@ -197,6 +197,7 @@ struct int_ : std::integral_constant<unsigned, v> {};
 static const tsStruct::Field* const FourCC        (&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC);
 static const tsStruct::Field* const ChromaFormat  (&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat);
 static const tsStruct::Field* const BitDepthLuma  (&tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma);
+static const tsStruct::Field* const Shift         (&tsStruct::mfxVideoParam.mfx.FrameInfo.Shift);
 
 template <unsigned profile, unsigned fourcc, typename Bits, typename Chromas>
 struct TestSuiteExt;
@@ -239,6 +240,21 @@ namespace detail
     }
 }
 
+const mfxU32 ShiftByFourCC(mfxU32 fourcc)
+{
+    switch (fourcc)
+    {
+    case MFX_FOURCC_P010:
+    case MFX_FOURCC_P016:
+    case MFX_FOURCC_Y416:
+        return 1;
+        break;
+    default:
+        return 0;
+        break;
+    }
+}
+
 template <
     unsigned profile,
     unsigned fourcc,
@@ -247,8 +263,8 @@ template <
 >
 TestSuite::tc_struct const TestSuiteExt<profile, fourcc, void(b1, b2...), void(c1, c2...)>::test_cases[] =
 {
-    {/*26*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b1::value},{ ChromaFormat, c1::value } }},
-    {/*27*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c1::value}}},
+    {/*26*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {Shift, ShiftByFourCC(fourcc)}, {BitDepthLuma, b1::value},{ ChromaFormat, c1::value } }},
+    {/*27*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {Shift, ShiftByFourCC(fourcc)}, {ChromaFormat, c1::value}}},
 
     //c3 pack specifies wrong chroma formats
     detail::make_chroma_format_tc(MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, fourcc, c2{})...,
@@ -271,11 +287,6 @@ int TestSuiteExt<profile, fourcc, void(b1, b2...), void(c1, c2...)>::RunTest(uns
 
     TestSuite suite;
     suite.m_par.mfx.CodecProfile = profile;
-
-    if (fourcc == MFX_FOURCC_P010
-        || fourcc == MFX_FOURCC_P016
-        || fourcc == MFX_FOURCC_Y416)
-        suite.m_par.mfx.FrameInfo.Shift = 1;
 
     return suite.RunTest(tc);
 }
