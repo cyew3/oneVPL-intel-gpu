@@ -23,17 +23,23 @@ namespace hevce_sao
         mfxU16  m_saoInit;
         mfxU16  m_slicesWithSAO;
         const mfxU16* m_saoRT;
+        mfxU16 m_saoLumaThreshold;
+        mfxU16 m_saoChromaThreshold;
 #ifdef DEBUG_STREAM
         tsBitstreamWriter m_bsw;
 #endif
         BitstreamChecker()
             : tsParserHEVC2(PARSE_SSD)
+            , m_saoInit(0)
+            , m_slicesWithSAO(0)
+            , m_saoRT(nullptr)
+            , m_saoLumaThreshold(20)
+            , m_saoChromaThreshold(0)
 #ifdef DEBUG_STREAM
             , m_bsw(DEBUG_STREAM)
 #endif
         {
             set_trace_level(0);
-            m_slicesWithSAO = 0;
         }
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
     };
@@ -104,7 +110,7 @@ namespace hevce_sao
 
                 if (slice.sao_luma_flag)
                 {
-                    EXPECT_GT(AppliedSAOPercent[0], 20);
+                    EXPECT_GT(AppliedSAOPercent[0], m_saoLumaThreshold);
                 }
                 else
                 {
@@ -113,10 +119,8 @@ namespace hevce_sao
 
                 if (slice.sao_chroma_flag)
                 {
-                    //EXPECT_GT(AppliedSAOPercent[1], 10);
-                    //EXPECT_GT(AppliedSAOPercent[2], 10);
-                    EXPECT_GE(AppliedSAOPercent[1], 0); // based on validation results
-                    EXPECT_GE(AppliedSAOPercent[2], 0);
+                    EXPECT_GE(AppliedSAOPercent[1], m_saoChromaThreshold); // based on validation results
+                    EXPECT_GE(AppliedSAOPercent[2], m_saoChromaThreshold);
                 }
                 else
                 {
@@ -222,7 +226,13 @@ namespace hevce_sao
         enc.m_filler = &sproc;
         enc.m_bs_processor = &checker;
         enc.m_par.mfx.TargetUsage = tc.TUInit;
+        enc.m_par.mfx.GopRefDist = 1; // to gain SAO effect
         hp.SampleAdaptiveOffset = tc.SaoInit;
+
+        if (enc.m_par.mfx.FrameInfo.BitDepthLuma == 12)
+        {
+            checker.m_saoLumaThreshold = 1;
+        }
 
         enc.MFXInit();
         enc.Load();
@@ -498,7 +508,7 @@ namespace hevce_sao
     int testP012(unsigned int id)
     {
         TS_START;
-        auto stream = g_tsStreamPool.Get("YUV16bit420/FruitStall_176x144_240_p016.yuv");
+        auto stream = g_tsStreamPool.Get("forBehaviorTest/BasketballDrillText_832x480p_50_p016_5.yuv");
         g_tsStreamPool.Reg();
 
         tsVideoEncoder enc(MFX_CODEC_HEVC);
@@ -507,8 +517,8 @@ namespace hevce_sao
         enc.m_par.mfx.FrameInfo.Shift = 1;
         enc.m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
         enc.m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P016;
-        enc.m_par.mfx.FrameInfo.CropW = enc.m_par.mfx.FrameInfo.Width = 176;
-        enc.m_par.mfx.FrameInfo.CropH = enc.m_par.mfx.FrameInfo.Height = 144;
+        enc.m_par.mfx.FrameInfo.CropW = enc.m_par.mfx.FrameInfo.Width = 832;
+        enc.m_par.mfx.FrameInfo.CropH = enc.m_par.mfx.FrameInfo.Height = 480;
         enc.m_par.mfx.FrameInfo.CropX = enc.m_par.mfx.FrameInfo.CropY = 0;
         enc.m_par.mfx.QPI = enc.m_par.mfx.QPP = enc.m_par.mfx.QPB = 26 + 24;
 
@@ -522,7 +532,7 @@ namespace hevce_sao
     int testY212(unsigned int id)
     {
         TS_START;
-        auto stream = g_tsStreamPool.Get("YUV16bit422/FruitStall_176x144_240_y216.yuv");
+        auto stream = g_tsStreamPool.Get("forBehaviorTest/BasketballDrillText_832x480p_50_y216_5.yuv");
         g_tsStreamPool.Reg();
 
         tsVideoEncoder enc(MFX_CODEC_HEVC);
@@ -531,8 +541,8 @@ namespace hevce_sao
         enc.m_par.mfx.FrameInfo.Shift = 1;
         enc.m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
         enc.m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y216;
-        enc.m_par.mfx.FrameInfo.CropW = enc.m_par.mfx.FrameInfo.Width = 176;
-        enc.m_par.mfx.FrameInfo.CropH = enc.m_par.mfx.FrameInfo.Height = 144;
+        enc.m_par.mfx.FrameInfo.CropW = enc.m_par.mfx.FrameInfo.Width = 832;
+        enc.m_par.mfx.FrameInfo.CropH = enc.m_par.mfx.FrameInfo.Height = 480;
         enc.m_par.mfx.FrameInfo.CropX = enc.m_par.mfx.FrameInfo.CropY = 0;
         enc.m_par.mfx.QPI = enc.m_par.mfx.QPP = enc.m_par.mfx.QPB = 26 + 24;
 
