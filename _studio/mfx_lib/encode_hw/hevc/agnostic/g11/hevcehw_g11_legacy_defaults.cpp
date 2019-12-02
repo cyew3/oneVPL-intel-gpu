@@ -651,9 +651,11 @@ public:
             bGen9 * (par.caps.MaxNum_Reference1 * !bTU7 + bTU7)
             + !bGen9 * nRefs[bLP][1][tu]);
 
+        mfxU16 numRefFrame = par.mvp.mfx.NumRefFrame + !par.mvp.mfx.NumRefFrame * 16;
+
         return std::make_tuple(
-            std::min<mfxU16>({ nRefL0, par.caps.MaxNum_Reference0, par.mvp.mfx.NumRefFrame })
-            , std::min<mfxU16>({ nRefL1, par.caps.MaxNum_Reference1, par.mvp.mfx.NumRefFrame }));
+            std::min<mfxU16>({ nRefL0, par.caps.MaxNum_Reference0, numRefFrame })
+            , std::min<mfxU16>({ nRefL1, par.caps.MaxNum_Reference1, numRefFrame }));
     }
 
     static mfxU16 RateControlMethod(
