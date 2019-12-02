@@ -950,7 +950,7 @@ void Legacy::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             auto IsIdrFrame = [](const TItWrap::reference fi) { return IsIdr(fi.FrameType); };
             auto newEnd = std::find_if(TItWrap(begin), TItWrap(end), IsIdrFrame);
 
-            bFlush = newEnd != begin && newEnd != end;
+            bFlush |= (newEnd != begin && newEnd != end);
 
             return Reorder(par, DPB, TItWrap(begin), newEnd, bFlush).it;
         });
