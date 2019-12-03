@@ -162,8 +162,8 @@ namespace UMC_HEVC_DECODER
                     GetParamsBuffer(m_va, &sp);
 
                     auto p = GetEntryPoint(slice);
-                    sp->num_entry_point_offsets      = p.first;
-                    sp->entry_offset_to_subset_array = p.second;
+                    sp->num_entry_point_offsets      = p.second;
+                    sp->entry_offset_to_subset_array = p.first;
                 }
 
                 if (last_slice)
@@ -179,7 +179,7 @@ namespace UMC_HEVC_DECODER
 
                 size_t const count = 22 * 20; //MaxTileRows * MaxTileCols (see ITU-T H.265 Annex A for details)
                 auto p = PeekBuffer(m_va, VASubsetsParameterBufferType, count);
-                auto begin = reinterpret_cast<char*>(p.first);
+                auto begin = reinterpret_cast<uint32_t*>(p.first);
                 FillSubsets(frame->GetAU(), begin,  begin+ count);
             }
 #endif //MFX_ENABLE_HEVCD_SUBSET
