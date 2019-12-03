@@ -151,13 +151,13 @@ mfxI32 GetRawFrameSize(mfxU32 lumaSize, mfxU16 chromaFormat, mfxU16 bitDepthLuma
     return frameSize * 8; //frame size in bits
 }
 
-mfxStatus cBRCParams::Init(mfxVideoParam* par, bool fieldMode)
+mfxStatus cBRCParams::Init(mfxVideoParam* par, bool bField)
 {
     MFX_CHECK_NULL_PTR1(par);
     MFX_CHECK(par->mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
               par->mfx.RateControlMethod == MFX_RATECONTROL_VBR,
               MFX_ERR_UNDEFINED_BEHAVIOR);
-    bFieldMode = fieldMode;
+    bFieldMode = bField;
     codecId = par->mfx.CodecId;
 
     mfxU32 k  = par->mfx.BRCParamMultiplier == 0 ?  1: par->mfx.BRCParamMultiplier;
@@ -369,6 +369,9 @@ mfxI32 QStep2QpFloor(mfxF64 qstep, mfxI32 qpoffset = 0) // QSTEP[qp] <= qstep, r
 mfxI32 Qstep2QP(mfxF64 qstep, mfxI32 qpoffset = 0) // return 0<=qp<=51+mQuantOffset
 {
     mfxI32 qp = QStep2QpFloor(qstep, qpoffset);
+    // prevent going QSTEP index out of bounds
+    if (qp >= (mfxI32)(sizeof(QSTEP)/sizeof(QSTEP[0])) - 1)
+        return 0;
     return (qp == 51 + qpoffset || qstep < (QSTEP[qp] + QSTEP[qp + 1]) / 2) ? qp : qp + 1;
 }
 mfxF64 QP2Qstep(mfxI32 qp, mfxI32 qpoffset = 0)
@@ -757,31 +760,31 @@ mfxF64 ExtBRC::ResetQuantAb(mfxI32 qp, mfxU32 type, mfxI32 layer, mfxU16 isRef, 
     mfxF64 dQuantAb_new = 1.0 / seqQP_new;
     mfxF64 bAbPreriod = m_par.bAbPeriod;
 
-    mfxF64 totDiv = m_ctx.totalDiviation;
+    mfxF64 totDev = m_ctx.totalDeviation;
 
-    mfxF64 HRDDivFactor = 0.0;
+    mfxF64 HRDDevFactor = 0.0;
     mfxF64 maxFrameSizeHrd = 0.0;
-    mfxF64 HRDDiv = 0.0;
+    mfxF64 HRDDev = 0.0;
     if (m_par.HRDConformance != MFX_BRC_NO_HRD)
     {
-        HRDDivFactor = m_hrdSpec->GetBufferDiviationFactor(eo);
-        HRDDiv = m_hrdSpec->GetBufferDiviation(eo);
+        HRDDevFactor = m_hrdSpec->GetBufferDeviationFactor(eo);
+        HRDDev = m_hrdSpec->GetBufferDeviation(eo);
         maxFrameSizeHrd = m_hrdSpec->GetMaxFrameSizeInBits(eo, bIdr);
     }
 
-    mfxF64 lf = 1.0 / pow(m_par.inputBitsPerFrame / fAbLong, 1.0 + HRDDivFactor);
+    mfxF64 lf = 1.0 / pow(m_par.inputBitsPerFrame / fAbLong, 1.0 + HRDDevFactor);
 
-    if (m_par.HRDConformance != MFX_BRC_NO_HRD && totDiv > 0)
+    if (m_par.HRDConformance != MFX_BRC_NO_HRD && totDev > 0)
     {
         if (m_par.rateControlMethod == MFX_RATECONTROL_VBR)
         {
-            totDiv = std::max(totDiv, HRDDiv);
+            totDev = std::max(totDev, HRDDev);
         }
         bAbPreriod = (mfxF64)(m_par.bPyr ? 4 : 3)*(mfxF64)maxFrameSizeHrd / m_par.inputBitsPerFrame*GetAbPeriodCoeff(m_ctx.encOrder - m_ctx.LastIDREncOrder, m_par.gopPicSize, m_ctx.LastIDRSceneChange);
         bAbPreriod = mfx::clamp(bAbPreriod, m_par.bAbPeriod / 10, m_par.bAbPeriod);
     }
 
-    mfxI32 quant_new = GetNewQPTotal(totDiv / bAbPreriod / (mfxF64)m_par.inputBitsPerFrame, dQuantAb_new, m_ctx.QuantMin, m_ctx.QuantMax, seqQP_new, m_par.bPyr && m_par.bRec, false);
+    mfxI32 quant_new = GetNewQPTotal(totDev / bAbPreriod / (mfxF64)m_par.inputBitsPerFrame, dQuantAb_new, m_ctx.QuantMin, m_ctx.QuantMax, seqQP_new, m_par.bPyr && m_par.bRec, false);
     seqQP_new += (seqQP_new - quant_new);
     mfxF64 dQuantAb =  lf * (1.0 / seqQP_new);
     return dQuantAb;
@@ -891,7 +894,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
     mfxF64 e2pe     =  0;
     bool bMaxFrameSizeMode = m_par.maxFrameSizeInBits != 0 &&
         m_par.maxFrameSizeInBits < m_par.inputBitsPerFrame * 2 &&
-        m_ctx.totalDiviation < (-1)*m_par.inputBitsPerFrame*m_par.frameRate;
+        m_ctx.totalDeviation < (-1)*m_par.inputBitsPerFrame*m_par.frameRate;
 
     if (IS_IFRAME(picType)) {
         e2pe = (m_ctx.eRateSH == 0) ? (BRC_SCENE_CHANGE_RATIO2 + 1) : eRate / m_ctx.eRateSH;
@@ -1013,10 +1016,10 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         mfxF64 maxFrameSizeByRatio = dqf * FRM_RATIO(picType, m_ctx.encOrder, bSHStart, m_par.bPyr) * targetFrameSize;
         if (m_par.rateControlMethod == MFX_RATECONTROL_CBR && m_par.HRDConformance != MFX_BRC_NO_HRD) {
 
-            mfxF64 bufferDiviation = m_hrdSpec->GetBufferDiviation(frame_par->EncodedOrder);
+            mfxF64 bufferDeviation = m_hrdSpec->GetBufferDeviation(frame_par->EncodedOrder);
 
-            //printf("bufferDiviation %f\n", bufferDiviation);
-            mfxF64 dev = -1.0*maxFrameSizeByRatio - bufferDiviation;
+            //printf("bufferDeviation %f\n", bufferDeviation);
+            mfxF64 dev = -1.0*maxFrameSizeByRatio - bufferDeviation;
             if (dev > 0) maxFrameSizeByRatio += (std::min)(maxFrameSizeByRatio, (dev / (IS_IFRAME(picType) ? 2.0 : 4.0)));
         }
 
@@ -1226,9 +1229,9 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             m_avg->UpdateSlidingWindow(bitsEncoded, m_ctx.encOrder, m_ctx.bPanic, bSHStart || IS_IFRAME(picType),frame_par->NumRecode, qpY);
         }
 
-        m_ctx.totalDiviation += ((mfxF64)bitsEncoded -m_par.inputBitsPerFrame);
+        m_ctx.totalDeviation += ((mfxF64)bitsEncoded -m_par.inputBitsPerFrame);
 
-        //printf("------------------ %d (%d)) Total diviation %d, old scene %d, bNeedUpdateQP %d, m_ctx.Quant %d, type %d, m_ctx.fAbLong %f m_par.inputBitsPerFrame %f\n", frame_par->EncodedOrder, frame_par->DisplayOrder,m_ctx.totalDiviation, oldScene , bNeedUpdateQP, m_ctx.Quant,picType, m_ctx.fAbLong, m_par.inputBitsPerFrame);
+        //printf("------------------ %d (%d)) Total deviation %f, old scene %d, bNeedUpdateQP %d, m_ctx.Quant %d, type %d, m_ctx.fAbLong %f m_par.inputBitsPerFrame %f\n", frame_par->EncodedOrder, frame_par->DisplayOrder,m_ctx.totalDeviation, oldScene , bNeedUpdateQP, m_ctx.Quant,picType, m_ctx.fAbLong, m_par.inputBitsPerFrame);
 
         if (!m_ctx.bPanic&& (!oldScene) && bNeedUpdateQP)
         {
@@ -1236,19 +1239,19 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
 
             //Update QP
 
-            mfxF64 totDiv = m_ctx.totalDiviation;
-            mfxF64 HRDDivFactor = 0.0;
-            mfxF64 HRDDiv = 0.0;
+            mfxF64 totDev = m_ctx.totalDeviation;
+            mfxF64 HRDDevFactor = 0.0;
+            mfxF64 HRDDev = 0.0;
             mfxF64 maxFrameSizeHrd = 0.0;
             if (m_par.HRDConformance != MFX_BRC_NO_HRD)
             {
 
-                HRDDivFactor = m_hrdSpec->GetBufferDiviationFactor(frame_par->EncodedOrder);
-                HRDDiv = m_hrdSpec->GetBufferDiviation(frame_par->EncodedOrder);
+                HRDDevFactor = m_hrdSpec->GetBufferDeviationFactor(frame_par->EncodedOrder);
+                HRDDev = m_hrdSpec->GetBufferDeviation(frame_par->EncodedOrder);
                 maxFrameSizeHrd = m_hrdSpec->GetMaxFrameSizeInBits(frame_par->EncodedOrder, bIdr);
             }
 
-            mfxF64 dequant_new = m_ctx.dQuantAb*pow(m_par.inputBitsPerFrame / m_ctx.fAbLong, 1.0 + HRDDivFactor);
+            mfxF64 dequant_new = m_ctx.dQuantAb*pow(m_par.inputBitsPerFrame / m_ctx.fAbLong, 1.0 + HRDDevFactor);
 
             mfxF64 bAbPreriod = m_par.bAbPeriod;
 
@@ -1256,19 +1259,19 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             {
                 if (m_par.rateControlMethod == MFX_RATECONTROL_VBR && m_par.maxbps > m_par.targetbps )
                 {
-                    totDiv = std::max(totDiv, HRDDiv);
+                    totDev = std::max(totDev, HRDDev);
                 }
                 else
                 {
-                    totDiv = HRDDiv;
+                    totDev = HRDDev;
                 }
-                if (totDiv > 0)
+                if (totDev > 0)
                 {
                     bAbPreriod = (mfxF64)(m_par.bPyr ? 4 : 3)*(mfxF64)maxFrameSizeHrd / fAbShort * GetAbPeriodCoeff(m_ctx.encOrder - m_ctx.LastIDREncOrder, m_par.gopPicSize, m_ctx.LastIDRSceneChange);
                     bAbPreriod = mfx::clamp(bAbPreriod, m_par.bAbPeriod / 10, m_par.bAbPeriod);
                 }
             }
-            quant_new = GetNewQPTotal(totDiv / bAbPreriod / (mfxF64)m_par.inputBitsPerFrame, dequant_new, m_ctx.QuantMin, m_ctx.QuantMax, GetSeqQP(qpY, picType, layer, frame_par->FrameType & MFX_FRAMETYPE_REF), m_par.bPyr && m_par.bRec, bSHStart && m_ctx.bToRecode == 0);
+            quant_new = GetNewQPTotal(totDev / bAbPreriod / (mfxF64)m_par.inputBitsPerFrame, dequant_new, m_ctx.QuantMin, m_ctx.QuantMax, GetSeqQP(qpY, picType, layer, frame_par->FrameType & MFX_FRAMETYPE_REF), m_par.bPyr && m_par.bRec, bSHStart && m_ctx.bToRecode == 0);
             quant_new = GetPicQP(quant_new, picType, layer, frame_par->FrameType & MFX_FRAMETYPE_REF);
             //printf("    ===%d quant old %d quant_new %d, bitsEncoded %d m_ctx.QuantMin %d m_ctx.QuantMax %d\n", frame_par->EncodedOrder, m_ctx.Quant, quant_new, bitsEncoded, m_ctx.QuantMin, m_ctx.QuantMax);
 
@@ -1296,7 +1299,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
 
             if ((quant_new - qpY)* (quant_new - GetCurQP (picType, layer, frame_par->FrameType & MFX_FRAMETYPE_REF)) > 0) // this check is actual for async scheme
             {
-                //printf("   +++ Update QP %d: totalDiviation %f, bAbPreriod %f (%f), QP %d (%d %d), qp_new %d (qpY %d), type %d, dequant_new %f (%f) , m_ctx.fAbLong %f, m_par.inputBitsPerFrame %f (%f)\n",frame_par->EncodedOrder,totDiv , bAbPreriod, GetAbPeriodCoeff(m_ctx.encOrder - m_ctx.LastIEncOrder, m_par.gopPicSize), m_ctx.Quant, m_ctx.QuantMin, m_ctx.QuantMax,quant_new, qpY, picType, 1.0/dequant_new, 1.0/m_ctx.dQuantAb, m_ctx.fAbLong, m_par.inputBitsPerFrame);
+                //printf("   +++ Update QP %d: totalDeviation %f, bAbPreriod %f (%f), QP %d (%d %d), qp_new %d (qpY %d), type %d, dequant_new %f (%f) , m_ctx.fAbLong %f, m_par.inputBitsPerFrame %f (%f)\n",frame_par->EncodedOrder,totDev , bAbPreriod, GetAbPeriodCoeff(m_ctx.encOrder - m_ctx.LastIEncOrder, m_par.gopPicSize), m_ctx.Quant, m_ctx.QuantMin, m_ctx.QuantMax,quant_new, qpY, picType, 1.0/dequant_new, 1.0/m_ctx.dQuantAb, m_ctx.fAbLong, m_par.inputBitsPerFrame);
                 UpdateQPParams(quant_new ,picType, m_ctx, 0, m_ctx.QuantMin , m_ctx.QuantMax, layer, m_par.iDQp, frame_par->FrameType & MFX_FRAMETYPE_REF);
             }
         }
@@ -1381,13 +1384,13 @@ mfxStatus ExtBRC::GetFrameCtrl (mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl)
     bool  bIdr = (type == MFX_FRAMETYPE_IDR);
 
 
-    mfxF64 HRDDivFactor = 0.0;
-    mfxF64 HRDDiv = 0.0;
+    mfxF64 HRDDevFactor = 0.0;
+    mfxF64 HRDDev = 0.0;
     mfxF64 maxFrameSizeHrd = 0.0;
     if (m_par.HRDConformance != MFX_BRC_NO_HRD)
     {
-        HRDDivFactor = m_hrdSpec->GetBufferDiviationFactor(par->EncodedOrder);
-        HRDDiv = m_hrdSpec->GetBufferDiviation(par->EncodedOrder);
+        HRDDevFactor = m_hrdSpec->GetBufferDeviationFactor(par->EncodedOrder);
+        HRDDev = m_hrdSpec->GetBufferDeviation(par->EncodedOrder);
         maxFrameSizeHrd = m_hrdSpec->GetMaxFrameSizeInBits(par->EncodedOrder, bIdr);
     }
 
@@ -1490,7 +1493,7 @@ mfxStatus ExtBRC::GetFrameCtrl (mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl)
                 mfxF64 targetFrameSize = dqf * FRM_RATIO(type, par->EncodedOrder, 0, m_par.bPyr) * m_par.inputBitsPerFrame;
                 if (m_par.rateControlMethod == MFX_RATECONTROL_CBR && m_par.HRDConformance != MFX_BRC_NO_HRD) {
                     // CBR HRD Buffer over flow has priority
-                    mfxF64 dev = -1.0*targetFrameSize - HRDDiv;
+                    mfxF64 dev = -1.0*targetFrameSize - HRDDev;
                     if (dev > 0) targetFrameSize += std::min(targetFrameSize, (dev/2.0));
                 }
 
@@ -1529,7 +1532,7 @@ mfxStatus ExtBRC::GetFrameCtrl (mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl)
 
             mfxF64 targetFrameSize = FRM_RATIO(ltype, par->EncodedOrder, 0, m_par.bPyr) * m_par.inputBitsPerFrame;
             if (m_par.rateControlMethod == MFX_RATECONTROL_CBR && m_par.HRDConformance != MFX_BRC_NO_HRD) {
-                mfxF64 dev = -1.0*targetFrameSize - HRDDiv;
+                mfxF64 dev = -1.0*targetFrameSize - HRDDev;
                 if (dev > 0) targetFrameSize += std::min(targetFrameSize, (dev/4.0));
             }
             targetFrameSize = std::min(maxFrameSize, targetFrameSize);
@@ -1725,13 +1728,13 @@ inline mfxF64 GetTargetDelay(mfxF64 cpbSize90k, mfxF64 initCpbRemovalDelay, bool
         std::max(std::min(3.0*cpbSize90k / 4.0, initCpbRemovalDelay), cpbSize90k / 2.0):
         std::min(cpbSize90k / 2.0, initCpbRemovalDelay);
 }
-mfxF64 HEVC_HRD::GetBufferDiviation(mfxU32 eo)  const
+mfxF64 HEVC_HRD::GetBufferDeviation(mfxU32 eo)  const
 {
     mfxU32 delay = GetInitCpbRemovalDelay(eo);
     mfxF64 targetDelay = GetTargetDelay(m_hrdInput.m_cpbSize90k, m_hrdInput.m_initCpbRemovalDelay, !m_hrdInput.m_cbrFlag);
     return (targetDelay - delay) / 90000.0*m_hrdInput.m_bitrate;
 }
-mfxF64 HEVC_HRD::GetBufferDiviationFactor(mfxU32 eo)  const
+mfxF64 HEVC_HRD::GetBufferDeviationFactor(mfxU32 eo)  const
 {
     mfxU32 delay = GetInitCpbRemovalDelay(eo);
     mfxF64 targetDelay = GetTargetDelay(m_hrdInput.m_cpbSize90k, m_hrdInput.m_initCpbRemovalDelay, !m_hrdInput.m_cbrFlag);
@@ -1803,15 +1806,15 @@ mfxU32 H264_HRD::GetInitCpbRemovalDelay(mfxU32 /* eo */)  const
         ? m_hrdInput.m_cpbSize90k  // should not exceed hrd buffer
         : initialCpbRemovalDelay);
 }
-mfxF64 H264_HRD::GetBufferDiviation(mfxU32 eo)  const
+mfxF64 H264_HRD::GetBufferDeviation(mfxU32 eo)  const
 {
     mfxU32 delay = GetInitCpbRemovalDelay(eo);
     mfxF64 targetDelay = GetTargetDelay(m_hrdInput.m_cpbSize90k, m_hrdInput.m_initCpbRemovalDelay, !m_hrdInput.m_cbrFlag);
-    //printf("%d) GetBufferDiviation %f (%d, target %d)\n", eo, (targetDelay - delay) / 90000.0*m_hrdInput.m_bitrate, delay, (int)targetDelay);
+    //printf("%d) GetBufferDeviation %f (%d, target %d)\n", eo, (targetDelay - delay) / 90000.0*m_hrdInput.m_bitrate, delay, (int)targetDelay);
 
     return (targetDelay - delay) / 90000.0*m_hrdInput.m_bitrate;
 }
-mfxF64 H264_HRD::GetBufferDiviationFactor(mfxU32 eo)  const
+mfxF64 H264_HRD::GetBufferDeviationFactor(mfxU32 eo)  const
 {
     mfxU32 delay = GetInitCpbRemovalDelay(eo);
     mfxF64 targetDelay = GetTargetDelay(m_hrdInput.m_cpbSize90k, m_hrdInput.m_initCpbRemovalDelay, !m_hrdInput.m_cbrFlag);

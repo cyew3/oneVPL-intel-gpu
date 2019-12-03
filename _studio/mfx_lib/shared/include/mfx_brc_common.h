@@ -328,8 +328,8 @@ public:
     virtual mfxU32 GetInitCpbRemovalDelayOffset(mfxU32 eo) const = 0;
     virtual mfxU32 GetMaxFrameSizeInBits(mfxU32 eo, bool bSEI) const = 0;
     virtual mfxU32 GetMinFrameSizeInBits(mfxU32 eo, bool bSEI) const = 0;
-    virtual mfxF64 GetBufferDiviation(mfxU32 eo) const = 0;
-    virtual mfxF64 GetBufferDiviationFactor(mfxU32 eo) const = 0;
+    virtual mfxF64 GetBufferDeviation(mfxU32 eo) const = 0;
+    virtual mfxF64 GetBufferDeviationFactor(mfxU32 eo) const = 0;
 };
 
 class HEVC_HRD: public HRDCodecSpec
@@ -353,8 +353,8 @@ public:
     }
     mfxU32 GetMaxFrameSizeInBits(mfxU32 eo, bool bSEI)  const override;
     mfxU32 GetMinFrameSizeInBits(mfxU32 eo, bool bSEI)  const override;
-    mfxF64 GetBufferDiviation(mfxU32 eo)  const override;
-    mfxF64 GetBufferDiviationFactor(mfxU32 eo)  const override;
+    mfxF64 GetBufferDeviation(mfxU32 eo)  const override;
+    mfxF64 GetBufferDeviationFactor(mfxU32 eo)  const override;
 
 protected:
     sHrdInput m_hrdInput;
@@ -377,8 +377,8 @@ public:
     mfxU32 GetInitCpbRemovalDelayOffset(mfxU32 eo)  const override;
     mfxU32 GetMaxFrameSizeInBits(mfxU32 eo, bool bSEI)  const override;
     mfxU32 GetMinFrameSizeInBits(mfxU32 eo, bool bSEI)  const override;
-    mfxF64 GetBufferDiviation(mfxU32 eo)  const override;
-    mfxF64 GetBufferDiviationFactor(mfxU32 eo)  const override;
+    mfxF64 GetBufferDeviation(mfxU32 eo)  const override;
+    mfxF64 GetBufferDeviationFactor(mfxU32 eo)  const override;
 
 
 private:
@@ -420,7 +420,7 @@ struct BRC_Ctx
     mfxF64 fAbLong;         // frame abberation (long period)
     mfxF64 fAbShort;        // frame abberation (short period)
     mfxF64 dQuantAb;        // dequant abberation
-    mfxF64 totalDiviation;   // divation from  target bitrate (total)
+    mfxF64 totalDeviation;   // deviation from  target bitrate (total)
 
     mfxF64 eRate;               // eRate of last encoded frame, this parameter is used for scene change calculation
     mfxF64 eRateSH;             // eRate of last encoded scene change frame, this parameter is used for scene change calculation
