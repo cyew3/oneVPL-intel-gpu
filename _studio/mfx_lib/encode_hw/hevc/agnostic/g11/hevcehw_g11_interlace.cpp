@@ -256,12 +256,17 @@ void Interlace::Query1NoCaps(const FeatureBlocks& , TPushQ1 Push)
             return sts;
         });
         defaults.GetWeakRef.Push([](
-            Defaults::TGetWeakRef::TExt
+            Defaults::TGetWeakRef::TExt prev
             , const Defaults::Param& par
-            , const FrameBaseInfo  &/*cur*/
+            , const FrameBaseInfo  &cur
             , const DpbFrame       *begin
             , const DpbFrame       *end)
         {
+            if (!IsField(par.mvp.mfx.FrameInfo.PicStruct))
+            {
+                return prev(par, cur, begin, end);
+            }
+
             const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par.mvp);
             auto POCLess = [](const DpbFrame& l, const DpbFrame& r) { return l.POC < r.POC; };
 
