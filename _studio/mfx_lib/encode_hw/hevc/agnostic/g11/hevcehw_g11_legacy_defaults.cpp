@@ -2378,14 +2378,17 @@ public:
         , const Defaults::Param& dpar
         , mfxVideoParam& par)
     {
-        auto it = FourCCPar.find(par.mfx.FrameInfo.FourCC);
-        bool bInvalid = (it == FourCCPar.end());
+        const mfxU16 BdMap[] = {8, 10, 12, 16};
+        auto& FourCC    = par.mfx.FrameInfo.FourCC;
+        auto  it        = FourCCPar.find(FourCC);
+        bool  bInvalid  = (it == FourCCPar.end());
+        bool  bRGB      = (FourCC == MFX_FOURCC_A2RGB10 || FourCC == MFX_FOURCC_RGB4);
 
         bInvalid = bInvalid || (it->second[0] == MFX_CHROMAFORMAT_YUV422 && !dpar.caps.YUV422ReconSupport);
-        bInvalid = bInvalid || (it->second[0] == MFX_CHROMAFORMAT_YUV444 && !dpar.caps.YUV444ReconSupport);
-        bInvalid = bInvalid || (it->second[1] > std::max(8, (1 << dpar.caps.MaxEncodedBitDepth)));
+        bInvalid = bInvalid || (it->second[0] == MFX_CHROMAFORMAT_YUV444 && !(bRGB || dpar.caps.YUV444ReconSupport));
+        bInvalid = bInvalid || (it->second[1] > BdMap[dpar.caps.MaxEncodedBitDepth & 3]);
 
-        par.mfx.FrameInfo.FourCC *= !bInvalid;
+        FourCC *= !bInvalid;
 
         MFX_CHECK(!bInvalid, MFX_ERR_UNSUPPORTED);
 
