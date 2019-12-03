@@ -29,6 +29,7 @@
     <ClInclude Include="include\umc_av1_decoder_va.h" />
     <ClInclude Include="include\umc_av1_dec_defs.h" />
     <ClInclude Include="include\umc_av1_frame.h" />
+    <ClInclude Include="include\umc_av1_msft_ddi.h" />
     <ClInclude Include="include\umc_av1_utils.h" />
     <ClInclude Include="include\umc_av1_va_packer.h" />
     <ClInclude Include="include\umc_av1_va_packer_vaapi.h" />
@@ -41,6 +42,7 @@
     <ClCompile Include="src\umc_av1_decoder_va.cpp" />
     <ClCompile Include="src\umc_av1_frame.cpp" />
     <ClCompile Include="src\umc_av1_utils.cpp" />
+    <ClCompile Include="src\umc_av1_va_packer_msft.cpp" />
     <ClCompile Include="src\umc_av1_va_packer_vaapi.cpp" />
     <ClCompile Include="src\umc_av1_va_packer_dxva.cpp" />
   </ItemGroup>

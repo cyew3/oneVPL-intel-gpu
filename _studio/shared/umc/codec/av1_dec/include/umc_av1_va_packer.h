@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,10 +26,6 @@
 
 #include "umc_va_base.h"
 #include "umc_av1_frame.h"
-
-#ifdef UMC_VA_DXVA
-#include "umc_av1_ddi.h"
-#endif //UMC_VA_DXVA
 
 #ifdef UMC_VA_LINUX
 #include <va/va_dec_av1.h>

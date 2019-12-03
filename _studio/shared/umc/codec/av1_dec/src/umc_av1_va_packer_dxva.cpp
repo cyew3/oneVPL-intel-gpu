@@ -44,7 +44,11 @@ namespace UMC_AV1_DECODER
 {
     Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
     {
-        return new PackerIntel(va);
+#ifdef UMC_VA_AV1_MSFT
+            return new PackerMSFT(va);
+#else
+            return new PackerIntel(va);
+#endif
     }
 
     Packer::Packer(UMC::VideoAccelerator * va)

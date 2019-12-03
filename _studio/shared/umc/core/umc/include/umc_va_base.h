@@ -111,6 +111,7 @@ typedef struct {
 #endif
 #endif
 
+#define UMC_VA_AV1_MSFT
 
 namespace UMC
 {

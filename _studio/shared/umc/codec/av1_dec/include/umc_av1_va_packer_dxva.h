@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,8 @@
 #ifndef __UMC_AV1_VA_PACKER_H
 
 #include "umc_av1_va_packer.h"
+#include "umc_av1_ddi.h"
+#include "umc_av1_msft_ddi.h"
 
 #define __UMC_AV1_VA_PACKER_H
 
@@ -76,6 +78,22 @@ namespace UMC_AV1_DECODER
 
         void PackPicParams(DXVA_Intel_PicParams_AV1&, AV1DecoderFrame const&);
         void PackTileControlParams(DXVA_Intel_Tile_AV1&, TileLocation const&);
+    };
+
+    class PackerMSFT
+        : public PackerDXVA
+    {
+
+    public:
+
+        PackerMSFT(UMC::VideoAccelerator * va);
+
+        void PackAU(std::vector<TileSet>&, AV1DecoderFrame const&, bool) override;
+
+    private:
+
+        void PackPicParams(DXVA_PicParams_AV1_MSFT&, AV1DecoderFrame const&);
+        void PackTileControlParams(DXVA_Tile_AV1&, TileLocation const&);
     };
 
 } // namespace UMC_AV1_DECODER
