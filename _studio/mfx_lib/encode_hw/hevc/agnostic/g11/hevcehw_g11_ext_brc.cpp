@@ -163,10 +163,10 @@ void ExtBRC::SetInherited(ParamInheritance& par)
 }
 
 
-void ExtBRC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
+void ExtBRC::Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push)
 {
     Push(BLK_Check,
-        [](const mfxVideoParam&, mfxVideoParam& par, StorageW&) -> mfxStatus
+        [&blocks](const mfxVideoParam&, mfxVideoParam& par, StorageW&) -> mfxStatus
     {
         mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
         mfxExtBRC* pBRC = ExtBuffer::Get(par);
@@ -199,7 +199,7 @@ void ExtBRC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             , mfxU16(MFX_CODINGOPTION_OFF)
             , mfxU16(MFX_CODINGOPTION_ON * (bAllowed && !bInvalid)));
 
-        bInvalid |=
+        bool bZeroPtrs =
             !IsOn(pCO2->ExtBRC)
             && pBRC
             && (   pBRC->pthis
@@ -209,7 +209,7 @@ void ExtBRC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
                 || pBRC->Update
                 || pBRC->Reset);
 
-        if (bInvalid)
+        if (bZeroPtrs)
         {
             pBRC->pthis         = nullptr;
             pBRC->Init          = nullptr;
@@ -220,6 +220,9 @@ void ExtBRC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             ++changed;
         }
 
+        bool bInitMode = !FeatureBlocks::BQ<FeatureBlocks::BQ_InitAlloc>::Get(blocks).empty();
+
+        MFX_CHECK(!(bInvalid && bInitMode), MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
         return MFX_ERR_NONE;

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -309,7 +309,9 @@ int TestSuite<CodecID>::RunTest(unsigned int id)
 
     invalid |= (CO2.ExtBRC == MFX_CODINGOPTION_ON) && !IsBRCSame(m_par, pPrevBRC);
 
-    if (invalid)
+    if (USE_REFACTORED_HEVCE && (CO2.ExtBRC == MFX_CODINGOPTION_ON) && !IsBRCValid(m_par) && m_par.mfx.CodecId == MFX_CODEC_HEVC)
+        g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
+    else if (invalid)
         g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     Reset();
