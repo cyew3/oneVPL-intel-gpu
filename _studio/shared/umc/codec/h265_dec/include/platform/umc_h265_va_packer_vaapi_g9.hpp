@@ -198,8 +198,8 @@ namespace UMC_HEVC_DECODER
 
             if (pps->tiles_enabled_flag)
             {
-                pp->num_tile_columns_minus1 = std::min<uint8_t>(sizeof(pp->column_width_minus1) /sizeof(pp->column_width_minus1[0]) - 1, (uint8_t)(pps->num_tile_columns - 1));
-                pp->num_tile_rows_minus1    = std::min<uint8_t>(sizeof(pp->row_height_minus1) /sizeof(pp->row_height_minus1[0]) - 1, (uint8_t)(pps->num_tile_rows - 1));
+                pp->num_tile_columns_minus1 = std::min<uint8_t>(sizeof(pp->column_width_minus1) /sizeof(pp->column_width_minus1[0]), (uint8_t)(pps->num_tile_columns - 1));
+                pp->num_tile_rows_minus1    = std::min<uint8_t>(sizeof(pp->row_height_minus1) /sizeof(pp->row_height_minus1[0]),     (uint8_t)(pps->num_tile_rows    - 1));
 
                 for (uint32_t i = 0; i <= pp->num_tile_columns_minus1; i++)
                     pp->column_width_minus1[i] = (uint16_t)(pps->column_width[i] - 1);
