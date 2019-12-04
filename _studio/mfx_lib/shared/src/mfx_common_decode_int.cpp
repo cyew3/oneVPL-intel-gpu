@@ -273,7 +273,7 @@ mfxU32 ConvertUMCStreamTypeToCodec(UMC::VideoStreamType type)
         case UMC::H264_VIDEO:  return MFX_CODEC_AVC;
         case UMC::HEVC_VIDEO:  return MFX_CODEC_HEVC;
         case UMC::VP9_VIDEO:   return MFX_CODEC_VP9;
-#if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
         case UMC::AV1_VIDEO:   return MFX_CODEC_AV1;
 #endif
         default:
