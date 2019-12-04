@@ -34,6 +34,7 @@
     <ClCompile Include="src\mfx_mpeg2_encode_d3d11.cpp" />
     <ClCompile Include="src\mfx_mpeg2_encode_d3d9.cpp" />
     <ClCompile Include="src\mfx_mpeg2_encode_factory.cpp" />
+    <ClCompile Include="src\mfx_vpx_dec_common.cpp" />
     <ClCompile Include="src\mfx_win_event_cache.cpp" />
   </ItemGroup>
   <ItemGroup>

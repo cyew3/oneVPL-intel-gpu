@@ -50,6 +50,9 @@
     <ClCompile Include="..\..\shared\src\mfx_mfe_adapter_dxva.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\mfx_vpx_dec_common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\encoder_ddi.hpp">

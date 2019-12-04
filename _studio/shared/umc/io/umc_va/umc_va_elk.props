@@ -13,7 +13,7 @@
     $(MSDK_STUDIO_ROOT)\shared\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
     </MfxIncludes>
-    <MfxDefinitions>UMC_VA_DXVA;VC1_EAGLELAKE;MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxDefinitions>UMC_VA_DXVA;VC1_EAGLELAKE;MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>
   </PropertyGroup>
