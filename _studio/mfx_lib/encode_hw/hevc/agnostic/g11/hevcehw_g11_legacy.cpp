@@ -1851,10 +1851,6 @@ void Legacy::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
     {
         auto& task = Task::Common::Get(s_task);
 
-        MFX_CHECK(task.BsDataLength, MFX_ERR_NONE);
-
-        mfxStatus sts = MFX_ERR_NONE;
-
         if (!task.pBsData)
         {
             auto& bs              = *task.pBsOut;
@@ -1862,6 +1858,10 @@ void Legacy::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
             task.pBsDataLength    = &bs.DataLength;
             task.BsBytesAvailable = bs.MaxLength - bs.DataOffset - bs.DataLength;
         }
+
+        MFX_CHECK(task.BsDataLength, MFX_ERR_NONE);
+
+        mfxStatus sts = MFX_ERR_NONE;
 
         MFX_CHECK(task.BsBytesAvailable >= task.BsDataLength, MFX_ERR_NOT_ENOUGH_BUFFER);
 
@@ -1971,7 +1971,8 @@ void Legacy::FreeTask(const FeatureBlocks& /*blocks*/, TPushFT Push)
 
         auto& atrRec = Glob::AllocRec::Get(global);
 
-        atrRec.SetFlag(task.Rec.Idx, REC_READY);
+        if (task.Rec.Idx != IDX_INVALID)
+            atrRec.SetFlag(task.Rec.Idx, REC_READY);
 
         ThrowAssert(
             !IsRef(task.FrameType)

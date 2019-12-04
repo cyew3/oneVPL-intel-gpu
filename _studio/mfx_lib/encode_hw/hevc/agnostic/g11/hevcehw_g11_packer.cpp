@@ -137,7 +137,7 @@ void CABACContext::Init(const PPS& pps, const Slice& sh)
         ++pInitVal;
     }
 
-    END_OF_SLICE_FLAG[0] = 63;
+    END_OF_SLICE_FLAG[0] = (63 << 1);
 }
 
 BitstreamWriter::BitstreamWriter(mfxU8* bs, mfxU32 size, mfxU8 bitOffset)
@@ -1736,7 +1736,7 @@ mfxU32 Packer::GetSuffixSEI(
     return PackRBSP(buf, rbsp.GetStart(), sizeInBytes, CeilDiv(rbsp.GetOffset(), 8u));
 }
 
-void PackSkipCTU(
+static void PackSkipCTU(
     mfxU32 xCtu
     , mfxU32 yCtu
     , mfxU32 log2CtuSize
@@ -1753,11 +1753,11 @@ void PackSkipCTU(
         || ((yCtu != y0) && xCtu > 0);
     bool mbB = //is above MB available
         (yCtu != y0)
-        && (   (xCtu >= x0 && yCtu > y0)
+        && ((xCtu >= x0 && yCtu > y0)
             || (xCtu < x0 && yCtu > (y0 + (1 << log2CtuSize))));
     bool boundary =
-        (     (xCtu + (1 << log2CtuSize) > sps.pic_width_in_luma_samples)
-           || (yCtu + (1 << log2CtuSize) > sps.pic_height_in_luma_samples))
+        ((xCtu + (1 << log2CtuSize) > sps.pic_width_in_luma_samples)
+            || (yCtu + (1 << log2CtuSize) > sps.pic_height_in_luma_samples))
         && (log2CtuSize > (sps.log2_min_luma_coding_block_size_minus3 + 3));
     mfxU8 split_flag = boundary && (log2CtuSize > (sps.log2_min_luma_coding_block_size_minus3 + 3));
 
@@ -1773,18 +1773,19 @@ void PackSkipCTU(
             mfxU32 x;
             mfxU32 y;
             bool   bPackCTU;
-        } splitMap[4] = 
+        };
+        auto PackSplitCTU = [&](const SplitMap& s)
         {
+            PackSkipCTU(s.x, s.y, log2CtuSize - 1, bs, sps, pps, slice, x0, y0, ctx);
+        };
+        std::list<SplitMap> splitMap({
             {xCtu, yCtu, true},
             {x1  , yCtu, x1 < sps.pic_width_in_luma_samples},
             {xCtu, y1  , y1 < sps.pic_height_in_luma_samples},
             {x1  , y1  , x1 < sps.pic_width_in_luma_samples && y1 < sps.pic_height_in_luma_samples}
-        };
-        auto PackSplitCTU = [&](const SplitMap& s)
-        {
-            if (s.bPackCTU)
-                PackSkipCTU(s.x, s.y, log2CtuSize - 1, bs, sps, pps, slice, x0, y0, ctx);
-        };
+        });
+
+        splitMap.remove_if([](const SplitMap& s) { return !s.bPackCTU; });
 
         std::for_each(std::begin(splitMap), std::end(splitMap), PackSplitCTU);
     }
@@ -1795,15 +1796,8 @@ void PackSkipCTU(
 
         bs.EncodeBin(ctx.SKIP_FLAG[mbA + mbB], 1);
 
-        mfxU32 num_cand = 5 - slice.five_minus_max_num_merge_cand;
-
-        if (num_cand > 1)
-        {
+        if (slice.five_minus_max_num_merge_cand < 4)
             bs.EncodeBin(ctx.MERGE_IDX[0], 0);
-
-            while (--num_cand > 1)
-                bs.EncodeBinEP(1);
-        }
     }
 }
 

@@ -228,7 +228,7 @@ void TaskManager::AsyncRoutine(const FeatureBlocks& blocks, TPushAR Push)
             auto& task        = Task::Common::Get(*pTask);
             task.pBsOut       = pBs;
             task.bRecode      = !!pPrevRecode;
-            task.BsDataLength = 0; //reset value from prev. recode if any
+            task.BsDataLength *= !task.bRecode; //reset value from prev. recode if any
             bool  bRecode     = false;
 
             do
