@@ -80,7 +80,7 @@ mfxU16 MatchProfile(mfxU32 fourcc)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:
@@ -368,7 +368,7 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         { MFX_FOURCC_NV12, MFX_FOURCC_P010,               0, 0 }, //420
         { MFX_FOURCC_NV16, MFX_FOURCC_P210,               0, 0 }, //422
         {               0,               0,               0, 0 }, //444
-#elif (MFX_VERSION >= MFX_VERSION_NEXT)
+#elif (MFX_VERSION >= 1031)
         {               0,               0,               0, 0 }, //400
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, MFX_FOURCC_P016, 0 }, //420
         { MFX_FOURCC_YUY2, MFX_FOURCC_Y210, MFX_FOURCC_Y216, 0 }, //422
@@ -879,7 +879,7 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
@@ -965,7 +965,7 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
 #if (MFX_VERSION >= 1027)
             || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
             || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P016 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
             || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
 #endif
@@ -1228,7 +1228,7 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y210
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y410
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_P016
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y216
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y416
@@ -1258,7 +1258,7 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
 #if (MFX_VERSION >= 1027)
         || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
         || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P016 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
         || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
 #endif

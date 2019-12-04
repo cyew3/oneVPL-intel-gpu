@@ -479,14 +479,14 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
         case MFX_FOURCC_RGB565:
 #endif
 #ifdef MFX_ENABLE_RGBP
-    case MFX_FOURCC_RGBP:
+        case MFX_FOURCC_RGBP:
 #endif
 #if (MFX_VERSION >= 1027)
         case MFX_FOURCC_AYUV:
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:
@@ -510,7 +510,10 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#ifdef MFX_ENABLE_RGBP
+        case MFX_FOURCC_RGBP:
+#endif
+#if (MFX_VERSION >= 1031)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:

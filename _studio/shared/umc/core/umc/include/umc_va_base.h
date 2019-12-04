@@ -155,7 +155,7 @@ enum VideoAccelerationProfile
     VA_PROFILE_444              = 0x0b000,
     VA_PROFILE_10               = 0x10000,
     VA_PROFILE_REXT             = 0x20000,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
     VA_PROFILE_12               = 0x40000,
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     VA_PROFILE_SCC              = 0x80000,
@@ -202,7 +202,7 @@ enum VideoAccelerationProfile
     H264_VLD_MVC_STEREO_PROG    = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
     H265_12_VLD_420             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12,
     H265_12_VLD_422             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12 | VA_PROFILE_422,
     H265_12_VLD_444             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12 | VA_PROFILE_444,
@@ -220,7 +220,7 @@ enum VideoAccelerationProfile
     VP9_VLD_444                 = VA_VP9 | VA_VLD | VA_PROFILE_444,
     VP9_10_VLD_422              = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_422,
     VP9_10_VLD_444              = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_444,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
     VP9_12_VLD_420              = VA_VP9 | VA_VLD | VA_PROFILE_12,
     VP9_12_VLD_444              = VA_VP9 | VA_VLD | VA_PROFILE_12 | VA_PROFILE_444,
 #endif

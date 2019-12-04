@@ -1419,7 +1419,7 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
     switch (pDst->Info.FourCC)
     {
     case MFX_FOURCC_P010:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_P016:
 #endif
 
@@ -1516,7 +1516,7 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
 #ifndef OPEN_SOURCE
 #if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_Y216:
 #endif
 
@@ -1558,7 +1558,7 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
         break;
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
     case MFX_FOURCC_Y416:
         MFX_CHECK_NULL_PTR1(pSrc->Data.U16);
 
