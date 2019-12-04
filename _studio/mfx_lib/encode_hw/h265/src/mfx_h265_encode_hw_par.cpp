@@ -1732,6 +1732,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
 #endif
     );
 
+    if (!caps.ddi_caps.RGBEncodingSupport && (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4 
+                                            || par.mfx.FrameInfo.FourCC == MFX_FOURCC_A2RGB10)) {
+        invalid++;
+    }
+
     if (IsOn(par.mfx.LowPower)) {   // 422 target is not supported on VDENC
         if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422))
         invalid++;

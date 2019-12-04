@@ -2406,6 +2406,7 @@ public:
         bInvalid = bInvalid || (it->second[0] == MFX_CHROMAFORMAT_YUV422 && !dpar.caps.YUV422ReconSupport);
         bInvalid = bInvalid || (it->second[0] == MFX_CHROMAFORMAT_YUV444 && !(bRGB || dpar.caps.YUV444ReconSupport));
         bInvalid = bInvalid || (it->second[1] > BdMap[dpar.caps.MaxEncodedBitDepth & 3]);
+        bInvalid = bInvalid || (bRGB && !dpar.caps.RGBEncodingSupport);
 
         FourCC *= !bInvalid;
 
