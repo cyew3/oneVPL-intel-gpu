@@ -554,7 +554,7 @@ mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, VideoCORE& core, mfxFr
                     mfxU32 y = i*drBlkH;
                     if (x >= roi->ROI[n].Left  &&  x < roi->ROI[n].Right  && y >= roi->ROI[n].Top && y < roi->ROI[n].Bottom)
                     {
-                        diff = (task.m_roiMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1) * roi->ROI[n].Priority;
+                        diff = roi->ROI[n].DeltaQP;
                         break;
                     }
 
@@ -933,9 +933,7 @@ void FillSpsBuffer(
     sps.pcm_sample_bit_depth_chroma_minus1      = (mfxU8)par.m_sps.pcm_sample_bit_depth_chroma_minus1;
 
     if (par.m_ext.ROI.NumROI && !par.bROIViaMBQP) {
-        sps.ROIValueInDeltaQP = 1;
-        if (par.m_platform < MFX_HW_CNL)
-            sps.ROIValueInDeltaQP = 0;
+        sps.ROIValueInDeltaQP = (par.m_ext.ROI.ROIMode == MFX_ROI_MODE_QP_DELTA) ? 1 : 0;
     }
 
 #if (MFX_VERSION >= 1025)
@@ -1084,7 +1082,7 @@ void FillPpsBuffer(
             // and Right > Left and Bottom > Top
             pps.ROI[i].Roi.Right = (mfxU16)(rect->Right / blkSize) - 1;
             pps.ROI[i].Roi.Bottom = (mfxU16)(rect->Bottom / blkSize) - 1;
-            pps.ROI[i].PriorityLevelOrDQp = (mfxI8)((par.m_ext.ROI.ROIMode == MFX_ROI_MODE_PRIORITY ? (-1) : 1) * par.m_ext.ROI.ROI[i].DeltaQP);
+            pps.ROI[i].PriorityLevelOrDQp = (mfxI8)(par.m_ext.ROI.ROI[i].DeltaQP);
         }
         pps.MaxDeltaQp = 51;    // is used for BRC only
         pps.MinDeltaQp = -51;
@@ -1165,7 +1163,7 @@ void FillPpsBuffer(
             // and Right > Left and Bottom > Top
             pps.ROI[i].Roi.Right = (mfxU16)(rect->Right / blkSize) - 1;
             pps.ROI[i].Roi.Bottom = (mfxU16)(rect->Bottom / blkSize) - 1;
-            pps.ROI[i].PriorityLevelOrDQp = (mfxI8)((task.m_roiMode == MFX_ROI_MODE_PRIORITY ? (-1): 1) * task.m_roi[i].DeltaQP);
+            pps.ROI[i].PriorityLevelOrDQp = (mfxI8)(task.m_roi[i].DeltaQP);
         }
 
         pps.MaxDeltaQp = 51;    // is used for BRC only

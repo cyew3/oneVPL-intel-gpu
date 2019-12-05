@@ -56,6 +56,12 @@ namespace hevce_roi
         } set_par[MAX_NPARS];
     };
 
+    inline mfxStatus GetWorstSts(mfxStatus sts1, mfxStatus sts2)
+    {
+        mfxStatus sts_min = std::min(sts1, sts2);
+        return sts_min == MFX_ERR_NONE ? std::max(sts1, sts2) : sts_min;
+    }
+
     class TestSuite : tsVideoEncoder
     {
     public:
@@ -619,6 +625,11 @@ namespace hevce_roi
         if (m_par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && tc.roi_mode == MFX_ROI_MODE_PRIORITY && caps.ROIBRCPriorityLevelSupport == 1) {
             tc.sts = MFX_ERR_NONE;
         }
+        if (tc.roi_mode == MFX_ROI_MODE_PRIORITY && !caps.ROIBRCPriorityLevelSupport)
+        {
+            // Priority mode is converted to delta QP on Query()/Init()
+            tc.sts = GetWorstSts(tc.sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+        }
 
         g_tsStatus.expect(tc.sts);
 
@@ -640,6 +651,13 @@ namespace hevce_roi
             }
             else if(MFX_ERR_NONE == tc.sts) //Check that buffer was copied
             {
+                if (tc.roi_mode == MFX_ROI_MODE_PRIORITY && !caps.ROIBRCPriorityLevelSupport) {
+                    // Priority mode is converted to delta QP on Query()
+                    roi.ROIMode = MFX_ROI_MODE_QP_DELTA;
+                    for (mfxU32 i = 0; i < end_count; ++i) {
+                        roi.ROI[i].DeltaQP = -1 * roi.ROI[i].Priority;
+                    }
+                }
                 EXPECT_EQ(0,(memcmp(*m_pPar->ExtParam, &roi, sizeof(mfxExtEncoderROI))));
             }
         }
