@@ -1231,6 +1231,8 @@ CEncodingPipeline::CEncodingPipeline()
     m_bInsertIDR = false;
 
     m_bIsFieldSplitting = false;
+
+    m_bQPFileMode = false;
 }
 
 CEncodingPipeline::~CEncodingPipeline()
