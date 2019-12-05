@@ -482,6 +482,10 @@
     #define MFX_ENABLE_FOURCC_RGB565
 #endif
 
+#if MFX_VERSION >= 1031
+//    #define MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT
+#endif
+
 #if defined(MFX_VA_LINUX)
     #if VA_CHECK_VERSION(1,3,0)
         #define MFX_ENABLE_QVBR
