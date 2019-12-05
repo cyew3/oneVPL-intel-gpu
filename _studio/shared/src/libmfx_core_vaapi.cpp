@@ -346,6 +346,8 @@ typedef struct {
     { 0x9940, MFX_HW_RYF, MFX_GT2 },
     /* DG1 */
     { 0x4905, MFX_HW_DG1, MFX_GT2 },
+    { 0x4906, MFX_HW_DG1, MFX_GT2 },
+    { 0x4907, MFX_HW_DG1, MFX_GT2 },
     /* ATS */
     { 0x0201, MFX_HW_ATS, MFX_GT4 },
     /* ADL */
