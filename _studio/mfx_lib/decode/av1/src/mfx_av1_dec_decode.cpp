@@ -450,7 +450,6 @@ mfxStatus VideoDECODEAV1::Query(VideoCORE* core, mfxVideoParam* in, mfxVideoPara
         MFX_CHECK(in->Protected == 0, MFX_ERR_UNSUPPORTED);
         MFX_CHECK(in->Protected == 0, MFX_ERR_UNSUPPORTED);
         MFX_CHECK(in->mfx.ExtendedPicStruct == 0, MFX_ERR_UNSUPPORTED);
-        out->mfx.FilmGrain = in->mfx.FilmGrain;
     }
 
     mfxStatus sts = MFX_VPX_Utility::Query(core, in, out, MFX_CODEC_AV1, core->GetHWType());
@@ -463,6 +462,11 @@ mfxStatus VideoDECODEAV1::Query(VideoCORE* core, mfxVideoParam* in, mfxVideoPara
         sts = MFX_ERR_UNSUPPORTED;
 #endif
     }
+
+    if (in)
+        out->mfx.FilmGrain = in->mfx.FilmGrain;
+    else
+        out->mfx.FilmGrain = 1;
 
     MFX_CHECK_STS(sts);
     return sts;
