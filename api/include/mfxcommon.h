@@ -203,7 +203,7 @@ enum {
 #endif
 };
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
 typedef enum
 {
     MFX_MEDIA_UNKNOWN           = 0xffff,
@@ -216,7 +216,7 @@ MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxU16 CodeName;
     mfxU16 DeviceId;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
     mfxU16 MediaAdapterType;
     mfxU16 reserved[13];
 #else

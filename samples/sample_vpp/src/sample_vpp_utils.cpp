@@ -277,7 +277,7 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     else
         msdk_printf(MSDK_STRING("HW accelaration is disabled\n"));
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
     if (pParams->bPrefferdGfx)
         msdk_printf(MSDK_STRING("dGfx adapter is preffered\n"));
 
@@ -434,7 +434,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
 
 /* ******************************************************************* */
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
 mfxU32 GetPreferredAdapterNum(const mfxAdaptersInfo & adapters, const sInputParams & params)
 {
     if (adapters.NumActual == 0 || !adapters.Adapters)
@@ -533,7 +533,7 @@ mfxStatus GetImpl(const mfxVideoParam & params, mfxIMPL & impl, const sInputPara
 
     return MFX_ERR_NONE;
 }
-#endif // (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#endif // (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
 
 mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams, sInputParams* pInParams)
 {
@@ -546,7 +546,7 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
 
     WipeFrameProcessor(pProcessor);
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
     sts = GetImpl(*pParams, impl, *pInParams);
     MSDK_CHECK_STATUS(sts, "GetImpl failed");
 #endif

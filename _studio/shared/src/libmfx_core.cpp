@@ -872,7 +872,7 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
     if (!m_hdl && MFX_HW_VAAPI == GetVAType())
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
     platform->MediaAdapterType = MFX_MEDIA_INTEGRATED;
 #endif
 
@@ -912,7 +912,7 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
 #ifndef STRIP_EMBARGO
     case MFX_HW_DG1    :
     case MFX_HW_TGL_HP :
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
                          platform->MediaAdapterType = MFX_MEDIA_DISCRETE;
 #endif
                          platform->CodeName = MFX_PLATFORM_TIGERLAKE;     break;
@@ -920,7 +920,7 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
     case MFX_HW_ADL_UH : platform->CodeName = MFX_PLATFORM_ALDERLAKE_UH;  break;
 #endif //STRIP_EMBARGO
     default:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
                          platform->MediaAdapterType = MFX_MEDIA_UNKNOWN;
 #endif
                          platform->CodeName = MFX_PLATFORM_UNKNOWN;       break;

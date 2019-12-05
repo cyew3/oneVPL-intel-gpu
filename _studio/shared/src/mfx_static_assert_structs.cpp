@@ -37,6 +37,7 @@
 #include "mfxsc.h"
 #include "mfxscd.h"
 #include "mfxcamera.h"
+#include "mfxadapter.h"
 
 #ifndef OPEN_SOURCE
 #include "mfxwidi.h"
@@ -422,7 +423,7 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1TemporalLayer          ,32   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1TemporalLayers      ,296  )
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxComponentInfo             ,224  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAdapterInfo               ,64   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAdaptersInfo              ,24   )
@@ -682,7 +683,7 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1TemporalLayer          ,32   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1TemporalLayers      ,296  )
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxComponentInfo             ,208 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAdapterInfo               ,64  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAdaptersInfo              ,20  )
@@ -986,7 +987,7 @@
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxPlatform                        ,CodeName                      ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxPlatform                        ,DeviceId                      ,2    )
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxPlatform                        ,MediaAdapterType              ,4    )
 #endif
     #elif defined(_WIN32) || defined(LINUX32)
@@ -1024,7 +1025,7 @@
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxPlatform                        ,CodeName                      ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxPlatform                        ,DeviceId                      ,2    )
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxPlatform                        ,MediaAdapterType              ,4    )
 #endif
     #endif
@@ -2731,7 +2732,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1TemporalLayers            ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1TemporalLayers            ,Layer                         ,8    )
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxComponentInfo                   ,Type                          ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxComponentInfo                   ,Requirements                  ,4    )
 
@@ -3580,7 +3581,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1TemporalLayers            ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1TemporalLayers            ,Layer                         ,8    )
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxComponentInfo                   ,Type                          ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxComponentInfo                   ,Requirements                  ,4    )
 

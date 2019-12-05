@@ -28,7 +28,7 @@ File Name: mfxadapter.h
 
 *******************************************************************************/
 #include "mfxdefs.h"
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1031)
 #ifndef __MFXADAPTER_H__
 #define __MFXADAPTER_H__
 

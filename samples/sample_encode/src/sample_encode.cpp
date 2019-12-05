@@ -76,7 +76,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("                                              '-device /dev/dri/renderD128'\n"));
     msdk_printf(MSDK_STRING("                                 If not specified, defaults to the first Intel device found on the system\n"));
 #endif
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
     msdk_printf(MSDK_STRING("   [-dGfx] - preffer processing on dGfx (by default system decides)\n"));
     msdk_printf(MSDK_STRING("   [-iGfx] - preffer processing on iGfx (by default system decides)\n"));
 #endif
@@ -307,7 +307,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->strDevicePath = strInput[++i];
         }
 #endif
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dGfx")))
         {
             pParams->bPrefferdGfx = true;
@@ -1376,7 +1376,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         msdk_printf(MSDK_STRING("File output is disabled as -o option isn't specified\n"));
     }
 
-#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
     if (pParams->bPrefferdGfx && pParams->bPrefferiGfx)
     {
         msdk_printf(MSDK_STRING("Warning: both dGfx and iGfx flags set. iGfx will be preffered"));
