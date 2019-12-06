@@ -76,8 +76,8 @@ enum eMFXHWType
     MFX_HW_CNX_G     = MFX_HW_ICL + 2,
 
     MFX_HW_LKF       = 0x1500000,
-    MFX_HW_JSL       = MFX_HW_LKF + 1,
 #endif
+    MFX_HW_JSL       = 0x1500001, // MFX_HW_LKF + 1
     MFX_HW_EHL       = 0x1500002,
 
     MFX_HW_TGL_LP    = 0x1600000,
