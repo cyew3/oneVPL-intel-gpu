@@ -1431,7 +1431,7 @@ public:
         if (pTiles)
         {
             nCol = std::max<mfxU16>(nCol, pTiles->NumTileColumns);
-            nRow = std::max<mfxU16>(nCol, pTiles->NumTileRows);
+            nRow = std::max<mfxU16>(nRow, pTiles->NumTileRows);
         }
 
         return std::make_tuple(nCol, nRow);

@@ -3946,10 +3946,13 @@ mfxStatus Legacy::CheckSlices(
         mfxU16 LCUSize          = defPar.base.GetLCUSize(defPar);
         mfxU32 nLCU             = CeilDiv(W, LCUSize) * CeilDiv(H, LCUSize);
         mfxU32 nTile            = std::get<0>(tiles) * std::get<1>(tiles);
-        mfxU32 minNumMbPerSlice = CeilDiv<mfxU32>(nLCU, MAX_SLICES) / nTile;
+        mfxU32 maxSlicesPerTile = MAX_SLICES / nTile;
+        mfxU32 maxSlicesTotal   = maxSlicesPerTile * nTile;
+        mfxU32 maxNumMbPerSlice = CeilDiv(nLCU, nTile);
+        mfxU32 minNumMbPerSlice = CeilDiv(nLCU, maxSlicesTotal);
 
         changed += CheckMinOrClip(pCO2->NumMbPerSlice, minNumMbPerSlice);
-        changed += CheckMaxOrClip(pCO2->NumMbPerSlice, nLCU / nTile);
+        changed += CheckMaxOrClip(pCO2->NumMbPerSlice, maxNumMbPerSlice);
     }
 
     std::vector<SliceInfo> slices;
@@ -4347,18 +4350,13 @@ mfxStatus Legacy::CheckTiles(
     {
         mfxU32 minTileWidth  = MIN_TILE_WIDTH_IN_SAMPLES;
         mfxU32 minTileHeight = MIN_TILE_HEIGHT_IN_SAMPLES;
-        bool   bUseCaps      = defPar.caps.NumScalablePipesMinus1 > 0;
-
-        MaxTileColumns =
-            (bUseCaps * mfxU16(defPar.caps.NumScalablePipesMinus1 + 1))
-            + (!bUseCaps * MaxTileColumns);
-
+        
         // min 2x2 lcu is supported on VDEnc
         // TODO: replace indirect NumScalablePipesMinus1 by platform
         SetIf(minTileHeight, defPar.caps.NumScalablePipesMinus1 > 0 && IsOn(par.mfx.LowPower), 128);
 
         mfxU16 maxCol = std::max<mfxU16>(1, std::min<mfxU16>(MaxTileColumns, mfxU16(defPar.base.GetCodedPicWidth(defPar) / minTileWidth)));
-        mfxU16 maxRow = std::max<mfxU16>(1, mfxU16(defPar.base.GetCodedPicHeight(defPar) / minTileHeight));
+        mfxU16 maxRow = std::max<mfxU16>(1, std::min<mfxU16>(MaxTileRows, mfxU16(defPar.base.GetCodedPicHeight(defPar) / minTileHeight)));
 
         changed += CheckMaxOrClip(pTile->NumTileColumns, maxCol);
         changed += CheckMaxOrClip(pTile->NumTileRows, maxRow);
