@@ -35,8 +35,9 @@ void Windows::Gen12::QpModulation::InitInternal(const FeatureBlocks& /*blocks*/,
     {
         auto& ddiCC = Gen11::DDIPacker::CC::Get(strg);
         using TCC = Gen11::DDIPacker::CallChains;
+        auto hwType = Glob::VideoCore::Get(strg).GetHWType();
 
-        ddiCC.InitSPS.Push([](
+        ddiCC.InitSPS.Push([hwType](
             TCC::TInitSPS::TExt prev
             , const StorageR& glob
             , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& sps)
@@ -48,8 +49,16 @@ void Windows::Gen12::QpModulation::InitInternal(const FeatureBlocks& /*blocks*/,
             sps.NumOfBInGop[1] = 0;
             sps.NumOfBInGop[2] = 0;
 
-            const mfxExtCodingOption2& CO2 = ExtBuffer::Get(Glob::VideoParam::Get(glob));
-            sps.HierarchicalFlag = (CO2.BRefType == MFX_B_REF_PYRAMID);
+            const mfxVideoParam& par = Glob::VideoParam::Get(glob);
+            const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par);
+            Defaults::Param dflts(
+                par
+                , Glob::EncodeCaps::Get(glob)
+                , hwType
+                , Glob::Defaults::Get(glob));
+            bool bTL = dflts.base.GetNumTemporalLayers(dflts) > 1;
+
+            sps.HierarchicalFlag = (CO2.BRefType == MFX_B_REF_PYRAMID) || bTL;
         });
         ddiCC.UpdatePPS.Push([this](
             TCC::TUpdatePPS::TExt prev
