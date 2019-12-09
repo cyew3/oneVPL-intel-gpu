@@ -26,7 +26,9 @@
 #include "hevcehw_g12_rext.h"
 #include "hevcehw_g12_scc_win.h"
 #include "hevcehw_g12_caps.h"
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
 #include "hevcehw_g11_blocking_sync_win.h"
+#endif
 #include "hevcehw_g11_iddi.h"
 #include "hevcehw_g12_sao.h"
 #include "hevcehw_g12_qp_modulation_win.h"
@@ -46,8 +48,10 @@ Windows::Gen12::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     , eFeatureMode mode)
     : TBaseImpl(core, status, mode)
 {
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
     const mfxU32 DEFAULT_H265_TIMEOUT_MS_SIM = 3600000; // 1 hour
     GetFeature<Gen11::BlockingSync>(Gen11::FEATURE_BLOCKING_SYNC).SetTimeout(DEFAULT_H265_TIMEOUT_MS_SIM);
+#endif
 
     // TODO: temporal fix for miracast issue (hang in CP + MMC case).
     //

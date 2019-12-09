@@ -214,6 +214,7 @@ void Windows::Gen12::MFE::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
             StorageW& global
             , StorageW& s_task) -> mfxStatus
     {
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
         using TaskEvent = Gen11::BlockingSync::TaskEvent;
 
         m_bSendEvent = false;
@@ -234,6 +235,10 @@ void Windows::Gen12::MFE::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
         m_bSendEvent = true;
 
         submit.erase(itEvent);
+#else
+        std::ignore = global;
+        std::ignore = s_task;
+#endif //defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
 
         return MFX_ERR_NONE;
     });
