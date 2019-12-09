@@ -1304,7 +1304,10 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             }
         }
         m_ctx.bToRecode = 0;
-        m_hrdSpec->Update(bitsEncoded, frame_par->EncodedOrder, bIdr);
+        if (m_par.HRDConformance != MFX_BRC_NO_HRD)
+        {
+            m_hrdSpec->Update(bitsEncoded, frame_par->EncodedOrder, bIdr);
+        }
     }
     return sts;
 
