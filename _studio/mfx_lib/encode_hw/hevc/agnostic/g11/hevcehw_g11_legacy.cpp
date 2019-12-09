@@ -2178,12 +2178,13 @@ public:
     }
 };
 
-void SetTaskQpY(
+static void SetTaskQpY(
     TaskCommonPar & task
     , const ExtBuffer::Param<mfxVideoParam> & par
     , const SPS& sps
-    , eMFXHWType hw)
+    , const Defaults::Param& dflts)
 {
+    const auto& hw = dflts.hw;
     const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par);
     const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par);
     const mfxU8 maxQP = mfxU8(51 + 6 * (CO3.TargetBitDepthLuma - 8));
@@ -2215,7 +2216,12 @@ void SetTaskQpY(
     {
         // encode P as GPB
         task.QpY = (mfxI8)par.mfx.QPP;
-        if (bUseQPOffset)
+
+        if (dflts.base.GetNumTemporalLayers(dflts) > 1)
+        {
+            task.QpY = (mfxI8)mfx::clamp<mfxI32>(CO3.QPOffset[task.TemporalID] + task.QpY, 1, maxQP);
+        }
+        else if (bUseQPOffset)
         {
             task.QpY = (mfxI8)mfx::clamp<mfxI32>(
                 CO3.QPOffset[std::min<size_t>(task.PyramidLevel, Size(CO3.QPOffset) - 1)] + task.QpY
@@ -2310,7 +2316,7 @@ void Legacy::ConfigureTask(
         ConstructRPL(dflts, task.DPB.Active, task, task.RefPicList, task.NumRefActive, pExtLists, pExtListCtrl);
     }
 
-    SetTaskQpY(task, par, sps, dflts.hw);
+    SetTaskQpY(task, par, sps, dflts);
     task.CodingType = GetCodingType(task);
 
     task.InsertHeaders |= m_forceHeaders;
