@@ -781,9 +781,9 @@ namespace Gen11
         mfxU32              RepackHeaders       = 0;
         mfxU32              StatusReportId      = mfxU32(-1);
 
-        mfxU32              initial_cpb_removal_delay   = mfxU32(-1);
-        mfxU32              initial_cpb_removal_offset  = mfxU32(-1);
-        mfxU32              cpb_removal_delay           = mfxU32(-1);
+        mfxU32              initial_cpb_removal_delay   = 0;
+        mfxU32              initial_cpb_removal_offset  = 0;
+        mfxU32              cpb_removal_delay           = 0;
         //dpb_output_delay = (DisplayOrder + sps.sub_layer[0].max_num_reorder_pics - EncodedOrder);
 
         mfxU8 RefPicList[2][MAX_DPB_SIZE] =
