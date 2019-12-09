@@ -3776,34 +3776,32 @@ mfxStatus Legacy::CheckIntraRefresh(
     mfxVideoParam & par
     , const Defaults::Param& defPar)
 {
+    mfxStatus sts = MFX_ERR_NONE;
     mfxU32 changed = 0;
     mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
     mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
 
     if (pCO2)
     {
-        MFX_CHECK(
-            !CheckOrZero<mfxU16>(pCO2->IntRefType
-                , mfxU16(MFX_REFRESH_NO)
-                , mfxU16(MFX_REFRESH_VERTICAL)
-                , mfxU16(MFX_REFRESH_HORIZONTAL))
-            , MFX_ERR_UNSUPPORTED);
+        MFX_CHECK_NO_RET(
+            !CheckMaxOrClip(pCO2->IntRefType, MFX_REFRESH_HORIZONTAL)
+            , sts, MFX_ERR_UNSUPPORTED);
 
-        MFX_CHECK(
+        MFX_CHECK_NO_RET(
             defPar.caps.RollingIntraRefresh
             || !CheckOrZero<mfxU16>(pCO2->IntRefType, MFX_REFRESH_NO)
-            , MFX_ERR_UNSUPPORTED);
+            , sts, MFX_ERR_UNSUPPORTED);
 
-        MFX_CHECK(
+        MFX_CHECK_NO_RET(
             defPar.caps.RollingIntraRefresh
             || !CheckOrZero<mfxU16>(pCO2->IntRefCycleSize, 0)
-            , MFX_ERR_UNSUPPORTED);
+            , sts, MFX_ERR_UNSUPPORTED);
 
-        MFX_CHECK(
+        MFX_CHECK_NO_RET(
             defPar.caps.RollingIntraRefresh
             || !pCO3
             || !CheckOrZero<mfxU16>(pCO3->IntRefCycleDist, 0)
-            , MFX_ERR_UNSUPPORTED);
+            , sts, MFX_ERR_UNSUPPORTED);
 
         // refresh cycle length shouldn't be greater or equal to GOP size
         bool bInvalidCycle =
@@ -3830,9 +3828,9 @@ mfxStatus Legacy::CheckIntraRefresh(
 
         mfxI16 qpDiff = defPar.base.GetMaxQPMFX(defPar) - defPar.base.GetMinQPMFX(defPar);
 
-        changed += CheckMinOrClip(pCO2->IntRefQPDelta, -qpDiff);
-        changed += CheckMaxOrClip(pCO2->IntRefQPDelta, qpDiff);
+        changed += CheckRangeOrSetDefault(pCO2->IntRefQPDelta, mfxI16(-qpDiff), qpDiff, mfxI16(0));
     }
+    MFX_CHECK_STS(sts);
 
     MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
     return MFX_ERR_NONE;
