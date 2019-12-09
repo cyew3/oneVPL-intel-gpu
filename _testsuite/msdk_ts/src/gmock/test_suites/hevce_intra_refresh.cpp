@@ -439,7 +439,7 @@ tsExtBufType<mfxVideoParam> TestSuite::initParams() {
         m_pParOut = &out_par;
         g_tsStatus.expect(tc.q_sts);
         Query();
-        EXPECT_TRUE(COMPAREPARS(out_par, QUERY_EXP)) << "Error! Paremeters mistmach.";
+        EXPECT_TRUE(COMPAREPARS(out_par, QUERY_EXP)) << "Error! Parameters mismatch.";
 
         SETPARS(&m_par, CDO2_PAR);
 
@@ -454,7 +454,7 @@ tsExtBufType<mfxVideoParam> TestSuite::initParams() {
             EXPECT_TRUE(COMPAREPARS(out_par, INIT_EXP)) << "ERROR: GetVideoParam(after INIT) parameters doesn't match expectation\n";
         }
         else
-            EXPECT_TRUE(COMPAREPARS(out_par, INIT_EXP)) << "Error! Paremeters mistmach.";
+            EXPECT_TRUE(COMPAREPARS(out_par, INIT_EXP)) << "Error! Parameters mismatch.";
 
         if (PERFORM_ENCODING & tc.mask)
         {
@@ -492,7 +492,7 @@ tsExtBufType<mfxVideoParam> TestSuite::initParams() {
                 EXPECT_TRUE(COMPAREPARS(out_par, RESET_EXP)) << "ERROR: GetVideoParam(after RESET) parameters doesn't match expectation\n";
             }
             else
-                EXPECT_TRUE(COMPAREPARS(out_par, RESET_EXP)) << "Error! Paremeters mistmach.";
+                EXPECT_TRUE(COMPAREPARS(out_par, RESET_EXP)) << "Error! Parameters mismatch.";
         }
 
         TS_END;
