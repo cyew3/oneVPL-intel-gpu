@@ -2435,7 +2435,10 @@ mfxStatus  VideoVPPHW::Init(
     }
 #endif
 
-    if (m_executeParams.mirroring && !m_executeParams.mirroringExt && !m_pCmCopy)
+    /* Starting with TGL we call driver instead of kernel, but only with d3d11 */
+    bool hwMirrorIsUsed = m_pCore->GetHWType() >= MFX_HW_TGL_LP && m_pCore->GetVAType() == MFX_HW_D3D11;
+
+    if (m_executeParams.mirroring && !hwMirrorIsUsed && !m_pCmCopy)
     {
         m_pCmCopy = QueryCoreInterface<CmCopyWrapper>(m_pCore, MFXICORECMCOPYWRAPPER_GUID);
         if ( m_pCmCopy )
@@ -3375,12 +3378,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
                 inputVidSurf.Info = surfQueue[i].pSurf->Info;
                 inputVidSurf.Data.MemId = m_internalVidSurf[VPP_IN].mids[ resIdx ];
 #if defined(MFX_VA)
-                if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_INPUT == m_executeParams.mirroringPosition)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-                  /* Starting with TGL we call driver instead of kernel, but only with d3d11 */
-                  && (m_pCore->GetHWType() < MFX_HW_TGL_LP || m_pCore->GetVAType() == MFX_HW_D3D9)
-#endif
-                   )
+                if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_INPUT == m_executeParams.mirroringPosition && m_pCmCopy)
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Mirror (sys->d3d)");
 
@@ -3537,12 +3535,7 @@ mfxStatus VideoVPPHW::PostWorkOutSurfaceCopy(ExtSurface & output)
         }
 
 #if defined(MFX_VA)
-        if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_OUTPUT == m_executeParams.mirroringPosition)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-          /* Starting with TGL we call driver instead of kernel, but only with d3d11 */
-          && (m_pCore->GetHWType() < MFX_HW_TGL_LP || m_pCore->GetVAType() == MFX_HW_D3D9)
-#endif
-           )
+        if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_OUTPUT == m_executeParams.mirroringPosition && m_pCmCopy)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Mirror (d3d->sys)");
 
@@ -4156,12 +4149,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
 
 #if defined(MFX_VA)
-    if ((MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_WO_EXEC == m_executeParams.mirroringPosition)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-      /* Starting with TGL we call driver instead of kernel, but only with d3d11 */
-      && (m_pCore->GetHWType() < MFX_HW_TGL_LP || m_pCore->GetVAType() == MFX_HW_D3D9)
-#endif
-       )
+    if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_WO_EXEC == m_executeParams.mirroringPosition && m_pCmCopy)
     {
         /* Temporal solution for mirroring that makes nothing but mirroring
          * TODO: merge mirroring into pipeline
