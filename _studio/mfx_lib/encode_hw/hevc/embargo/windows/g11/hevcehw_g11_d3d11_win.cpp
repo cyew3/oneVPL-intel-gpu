@@ -341,7 +341,7 @@ const std::map<DXGI_FORMAT, mfxU32> DXGIFormatToMFX =
     , {DXGI_FORMAT_P010, MFX_FOURCC_P010}
     , {DXGI_FORMAT_YUY2, MFX_FOURCC_YUY2}
     , {DXGI_FORMAT_Y210, MFX_FOURCC_P210}
-    , { DXGI_FORMAT_P8  , MFX_FOURCC_P8 }
+    , {DXGI_FORMAT_P8  , MFX_FOURCC_P8  }
 };
 
 const std::map<D3DDDIFORMAT, D3DDDIFORMAT> DX9TypeToDX11 =
@@ -399,7 +399,9 @@ mfxStatus DDI_D3D11::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameInfo& info)
         {
             info.Width  = cbinf.CreationWidth;
             info.Height = cbinf.CreationHeight;
-            info.FourCC = DXGIFormatToMFX.at((DXGI_FORMAT)cbinf.CompressedFormats);
+            info.FourCC = (type != D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA)
+                ? DXGIFormatToMFX.at((DXGI_FORMAT)cbinf.CompressedFormats)
+                : MFX_FOURCC_P8_TEXTURE;
             return MFX_ERR_NONE;
         }
     }
