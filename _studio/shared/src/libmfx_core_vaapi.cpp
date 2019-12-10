@@ -332,7 +332,6 @@ typedef struct {
     { 0x8A71, MFX_HW_ICL_LP, MFX_GT1 },
 
     /* JSL */
-    { 0x4500, MFX_HW_JSL, MFX_GT2 },
     { 0x4E51, MFX_HW_JSL, MFX_GT2 },
     { 0x4E61, MFX_HW_JSL, MFX_GT2 },
     { 0x4E71, MFX_HW_JSL, MFX_GT2 },
