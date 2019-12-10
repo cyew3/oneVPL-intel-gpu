@@ -8438,8 +8438,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
             calcParam.mvcPerViewPar.bufferSizeInKB   = calcParam.bufferSizeInKB / extMvc->NumView;
             if (mfx.RateControlMethod != MFX_RATECONTROL_CQP
                 && mfx.RateControlMethod != MFX_RATECONTROL_ICQ
-                && mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ
-                && mfx.RateControlMethod != MFX_RATECONTROL_AVBR)
+                && mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)
             {
                 calcParam.mvcPerViewPar.initialDelayInKB = calcParam.initialDelayInKB / extMvc->NumView;
                 calcParam.mvcPerViewPar.targetKbps       = calcParam.targetKbps / extMvc->NumView;
