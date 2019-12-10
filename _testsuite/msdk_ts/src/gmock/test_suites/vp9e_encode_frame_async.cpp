@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -122,41 +122,37 @@ namespace vp9e_encode_frame_async
             }
         },
 
-        {/*14*/ MFX_ERR_UNDEFINED_BEHAVIOR, NONE,
-            { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.PitchHigh, 0x8000 }
-        },
-
-        {/*15*/ MFX_ERR_NONE, NONE,
+        {/*14*/ MFX_ERR_NONE, NONE,
             { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 1 },
         },
-        {/*16*/ MFX_ERR_NONE, NONE,
+        {/*15*/ MFX_ERR_NONE, NONE,
             { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 5 },
         },
-        {/*17*/ MFX_ERR_NONE, NONE,
+        {/*16*/ MFX_ERR_NONE, NONE,
             { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 10 },
         },
 
         // IVF-headers check
-        {/*18 explicitly enabled IVF-headers*/ MFX_ERR_NONE, NONE,
+        {/*17 explicitly enabled IVF-headers*/ MFX_ERR_NONE, NONE,
             { MFX_PAR, &tsStruct::mfxExtVP9Param.WriteIVFHeaders, MFX_CODINGOPTION_ON }
         },
-        {/*19 explicitly disabled IVF-headers*/ MFX_ERR_NONE, NONE,
+        {/*18 explicitly disabled IVF-headers*/ MFX_ERR_NONE, NONE,
             { MFX_PAR, &tsStruct::mfxExtVP9Param.WriteIVFHeaders, MFX_CODINGOPTION_OFF }
         },
-        {/*20 check default state for IVF-headers [=enabled]*/ MFX_ERR_NONE, NONE,
+        {/*19 check default state for IVF-headers [=enabled]*/ MFX_ERR_NONE, NONE,
             { MFX_PAR, &tsStruct::mfxExtVP9Param.WriteIVFHeaders, MFX_CODINGOPTION_UNKNOWN }
         },
     };
 
     const TestSuite::tc_struct TestSuite::test_case_nv12[] =
     {
-        {/*21*/ MFX_ERR_NULL_PTR, NONE,
+        {/*20*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y, 0 }
         },
-        {/*22*/ MFX_ERR_NULL_PTR, NONE,
+        {/*21*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.U, 0 }
         },
-        {/*23*/ MFX_ERR_NULL_PTR, NONE,
+        {/*22*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.V, 0 }
         },
     };
@@ -164,13 +160,13 @@ namespace vp9e_encode_frame_async
 
     const TestSuite::tc_struct TestSuite::test_case_p010[] =
     {
-        {/*21*/ MFX_ERR_NULL_PTR, NONE,
+        {/*20*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y16, 0 }
         },
-        {/*22*/ MFX_ERR_NULL_PTR, NONE,
+        {/*21*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.U16, 0 }
         },
-        {/*23*/ MFX_ERR_NULL_PTR, NONE,
+        {/*22*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.V16, 0 }
         },
     };
@@ -178,7 +174,7 @@ namespace vp9e_encode_frame_async
 
     const TestSuite::tc_struct TestSuite::test_case_ayuv[] =
     {
-        {/*21*/ MFX_ERR_NULL_PTR, NONE,
+        {/*20*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y, 0 }
         },
     };
@@ -186,7 +182,7 @@ namespace vp9e_encode_frame_async
 
     const TestSuite::tc_struct TestSuite::test_case_y410[] =
     {
-        {/*21*/ MFX_ERR_NULL_PTR, NONE,
+        {/*20*/ MFX_ERR_NULL_PTR, NONE,
             { MFX_SURF, &tsStruct::mfxFrameSurface1.Data.Y, 0 }
         },
     };
