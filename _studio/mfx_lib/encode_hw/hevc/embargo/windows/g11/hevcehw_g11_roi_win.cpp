@@ -39,7 +39,7 @@ void Windows::Gen11::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
         auto& task = Task::Common::Get(s_task);
         auto& pps = Deref(GetDDICB<ENCODE_SET_PICTURE_PARAMETERS_HEVC>(
             ENCODE_ENC_PAK_ID, DDIPar_In, vaType, par));
-        auto& roi = GetRTExtBuffer<mfxExtEncoderROI>(global, s_task);
+        auto roi = GetRTExtBuffer<mfxExtEncoderROI>(global, s_task);
         mfxExtMBQP* pMBQP = ExtBuffer::Get(task.ctrl);
 
         mfxU32 qpBlk = 3 + Glob::EncodeCaps::Get(global).BlockSize;
@@ -48,6 +48,12 @@ void Windows::Gen11::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
 
         bool bFillQpSurf = m_bViaCuQp && !pMBQP;
 
+        if (roi.NumROI)
+        {
+            auto& caps = Glob::EncodeCaps::Get(global);
+            auto& vPar = Glob::VideoParam::Get(global);
+            CheckAndFixROI(caps, vPar, roi);
+        }
         MFX_CHECK(roi.NumROI, MFX_ERR_NONE);
 
         if (bFillQpSurf)
@@ -56,8 +62,6 @@ void Windows::Gen11::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
 
             FrameLocker qpMap(core, task.CUQP.Mid);
             MFX_CHECK(qpMap.Y, MFX_ERR_LOCK_MEMORY);
-
-            mfxI32 dQPMult = 1 - 2 * (roi.ROIMode == MFX_ROI_MODE_PRIORITY);
 
             mfxU32 y = 0;
             std::for_each(
@@ -82,7 +86,7 @@ void Windows::Gen11::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
                     ++x;
 
                     if (pRect != pEnd)
-                        return mfxU8(task.QpY + dQPMult * pRect->DeltaQP);
+                        return mfxU8(task.QpY + pRect->DeltaQP);
 
                     return mfxU8(task.QpY);
                 });
@@ -95,12 +99,10 @@ void Windows::Gen11::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
             auto& sps = Deref(GetDDICB<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC>(
                 ENCODE_ENC_PAK_ID, DDIPar_In, vaType, par));
 
-            mfxI32 dQPMult = 1 - 2 * (roi.ROIMode == MFX_ROI_MODE_PRIORITY && sps.RateControlMethod == MFX_RATECONTROL_CQP);
-
             sps.ROIValueInDeltaQP = (roi.ROIMode == MFX_ROI_MODE_QP_DELTA || sps.RateControlMethod == MFX_RATECONTROL_CQP);
 
             std::transform(roi.ROI, roi.ROI + roi.NumROI, pps.ROI
-                , [qpBlk, dQPMult](RectData src)
+                , [qpBlk](RectData src)
             {
                 ENCODE_ROI dst = {};
 
@@ -114,7 +116,7 @@ void Windows::Gen11::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
                 // and Right > Left and Bottom > Top
                 dst.Roi.Right = (mfxU16)(src.Right >> qpBlk) - 1;
                 dst.Roi.Bottom = (mfxU16)(src.Bottom >> qpBlk) - 1;
-                dst.PriorityLevelOrDQp = (mfxI8)(dQPMult * src.DeltaQP);
+                dst.PriorityLevelOrDQp = (mfxI8)(src.DeltaQP);
 
                 return dst;
             });
