@@ -73,21 +73,9 @@ namespace hevce_query
 
         static const tc_struct test_case[];
 
-        mfxU32 GetAlignmentByPlatform()
-        {
-            return g_tsHWtype >= MFX_HW_CNL ? 8 : 16;
-        }
-
-        bool IsResolutionAligned(mfxU16 width, mfxU16 height)
-        {
-            mfxU32 alignment = GetAlignmentByPlatform();
-            return !(width & (alignment - 1)) && !(height & alignment - 1);
-        }
-
         mfxU64 AlignValue(mfxU64 value)
         {
-            mfxU32 alignment = GetAlignmentByPlatform();
-            assert((alignment & (alignment - 1)) == 0);
+            mfxU32 alignment = 16;
             return (value + (alignment - 1)) & ~(alignment - 1);
         }
 
@@ -435,12 +423,10 @@ namespace hevce_query
         {/*70*/ MFX_ERR_UNSUPPORTED, PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
         //Alignment
         {/*71*/ MFX_ERR_NONE, ALIGNMENT_HW, NONE, {} },
-        {/*72*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
-        {/*73*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
-        {/*74*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1 } },
-        {/*75*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1 } },
-        {/*76*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
-        {/*77*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
+        {/*72*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8 } },
+        {/*73*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8 } },
+        {/*74*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 } },
+        {/*75*/ MFX_ERR_NONE, ALIGNMENT_HW, DELTA, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 } },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(tc_struct);
@@ -704,11 +690,6 @@ namespace hevce_query
             // different expected status for SW HEVCe and GACC
             if (tc.type == PIC_STRUCT && tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
                 sts = MFX_ERR_UNSUPPORTED;
-
-            if (tc.type == ALIGNMENT_HW)
-            {
-                sts = MFX_ERR_NONE;
-            }
         }
         else
         {
@@ -732,14 +713,6 @@ namespace hevce_query
             && sts >= MFX_ERR_NONE
             && tc.type != IN_PAR_NULL) // in this case MFX_ERR_NONE returns all the time, m_par isn't used
             sts = MFX_ERR_UNSUPPORTED;
-
-        if (sts >= MFX_ERR_NONE
-            && tc.type == ALIGNMENT_HW
-            && IsHevcHwPlugin()
-            && !IsResolutionAligned(m_pPar->mfx.FrameInfo.Width, m_pPar->mfx.FrameInfo.Height))
-        {
-            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        }
 
         g_tsStatus.expect(sts);
         //call tested function

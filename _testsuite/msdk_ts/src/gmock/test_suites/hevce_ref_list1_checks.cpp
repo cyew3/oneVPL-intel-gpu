@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2019 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_ref_list1_checks.cpp
 
@@ -303,7 +303,8 @@ namespace hevce_ref_list1_checks
             {
                 stream = g_tsStreamPool.Get("YUV10bit422/Fast_walk_1920x1080p50_300.p210.yuv");
                 m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 1920;
-                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 1080;
+                m_par.mfx.FrameInfo.Height = 1088;
+                m_par.mfx.FrameInfo.CropH = 1080;
             }
         }
         else if (fourcc_id == GMOCK_FOURCC_Y212)
