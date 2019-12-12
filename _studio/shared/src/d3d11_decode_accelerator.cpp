@@ -109,9 +109,7 @@ UMC::Status MFXD3D11Accelerator::Init(UMC::VideoAcceleratorParams* params)
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     if (dx_params->m_video_processing)
     {
-        // only YCBCR is supported now
-        UMC_CHECK(video_desc.OutputFormat == DXGI_FORMAT_NV12, UMC_ERR_UNSUPPORTED);
-        // SFC is implemented only for AVC yet
+        // SFC is implemented for AVC,HEVC and VP9
         UMC_CHECK(vi->stream_type == UMC::H264_VIDEO ||
                   vi->stream_type == UMC::VP9_VIDEO  ||
                   vi->stream_type == UMC::HEVC_VIDEO, UMC_ERR_UNSUPPORTED);
