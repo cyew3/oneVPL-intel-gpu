@@ -776,7 +776,7 @@ namespace hevce_init
                     if (tc.type != EXT_BUFF || !USE_REFACTORED_HEVCE)
                         sts = MFX_ERR_NULL_PTR;
                 }
-                else if (tc.sub_type == MFX_EXTBUFF_ENCODER_CAPABILITY && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
+                else if (tc.sub_type == MFX_EXTBUFF_ENCODER_CAPABILITY && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && (!USE_REFACTORED_HEVCE || (g_tsImpl & MFX_IMPL_VIA_D3D11)))
                     sts = MFX_ERR_NONE;
                 else
                     if (tc.sts != MFX_ERR_NONE)
