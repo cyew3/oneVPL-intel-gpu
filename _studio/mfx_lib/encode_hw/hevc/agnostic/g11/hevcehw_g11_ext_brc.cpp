@@ -232,7 +232,7 @@ void ExtBRC::Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push)
 void ExtBRC::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
 {
     Push(BLK_SetDefaults
-        , [this](mfxVideoParam& par, StorageW&, StorageRW&)
+        , [](mfxVideoParam& par, StorageW&, StorageRW&)
     {
         mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
 
@@ -244,7 +244,7 @@ void ExtBRC::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
 void ExtBRC::Reset(const FeatureBlocks& /*blocks*/, TPushR Push)
 {
     Push(BLK_ResetCheck
-        , [this](
+        , [](
             const mfxVideoParam& /*par*/
             , StorageRW& global
             , StorageRW&) -> mfxStatus

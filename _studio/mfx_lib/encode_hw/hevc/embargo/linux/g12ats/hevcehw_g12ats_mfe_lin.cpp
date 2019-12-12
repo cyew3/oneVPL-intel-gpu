@@ -21,19 +21,20 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE) && defined(MFX_VA_LINUX)
 
-#include "hevcehw_g12_mfe_lin.h"
+#include "hevcehw_g12ats_mfe_lin.h"
 #include "hevcehw_g12_data.h"
 #include "libmfx_core_interface.h"
 #include "hevcehw_g11_va_lin.h"
 
 using namespace HEVCEHW;
-using namespace HEVCEHW::Gen12;
+using namespace HEVCEHW::Gen12ATS;
 
-void Linux::Gen12::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
+void Linux::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_SetCallChains,
         [this](const mfxVideoParam& in, mfxVideoParam&, StorageRW& strg) -> mfxStatus
     {
+        using HEVCEHW::Gen11::Glob;
         using TCall             = Glob::DDI_Execute::TRef::TExt;
         using TCreateContextPar = decltype(TupleArgs(vaCreateContext));
         using TEndPicturePar    = decltype(TupleArgs(vaEndPicture));

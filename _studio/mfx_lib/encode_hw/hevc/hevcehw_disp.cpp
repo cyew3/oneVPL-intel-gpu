@@ -97,13 +97,39 @@ namespace HEVCEHW
         #include "hevcehw_g12_win.h"
         namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::Windows::Gen12; }; };
     #elif defined(MFX_ENABLE_HEVCEHW_REFACTORING_LIN_TGL) && defined(MFX_VA_LINUX)
+    #if defined(OPEN_SOURCE)
         #include "hevcehw_g12_lin.h"
         namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::Linux::Gen12; }; };
+    #else
+        #include "hevcehw_g12_embargo_lin.h"
+        namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::Linux::Gen12_Embargo; }; };
+    #endif //defined(OPEN_SOURCE)
     #else
         namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::LegacyFallback; }; };
     #endif
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+    #if defined(MFX_ENABLE_HEVCEHW_REFACTORING_WIN_ATS) && !defined(MFX_VA_LINUX)
+        #include "hevcehw_g12ats_win.h"
+        namespace HEVCEHWDisp { namespace ATS { using namespace HEVCEHW::Windows::Gen12ATS; }; };
+    #elif defined(MFX_ENABLE_HEVCEHW_REFACTORING_LIN_ATS) && defined(MFX_VA_LINUX)
+        #include "hevcehw_g12ats_lin.h"
+        namespace HEVCEHWDisp { namespace ATS { using namespace HEVCEHW::Linux::Gen12ATS; }; };
+    #else
+        namespace HEVCEHWDisp { namespace ATS { using namespace HEVCEHW::LegacyFallback; }; };
+    #endif
+
+    #if defined(MFX_ENABLE_HEVCEHW_REFACTORING_WIN_DG2) && !defined(MFX_VA_LINUX)
+        #include "hevcehw_g12dg2_win.h"
+        namespace HEVCEHWDisp { namespace DG2 { using namespace HEVCEHW::Windows::Gen12DG2; }; };
+    #elif defined(MFX_ENABLE_HEVCEHW_REFACTORING_LIN_DG2) && defined(MFX_VA_LINUX)
+        #include "hevcehw_g12dg2_lin.h"
+        namespace HEVCEHWDisp { namespace DG2 { using namespace HEVCEHW::Linux::Gen12DG2; }; };
+    #else
+        namespace HEVCEHWDisp { namespace DG2 { using namespace HEVCEHW::LegacyFallback; }; };
+    #endif
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
 namespace HEVCEHW
 {
 
@@ -113,6 +139,12 @@ static ImplBase* CreateSpecific(
     , mfxStatus& status
     , eFeatureMode mode)
 {
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+    if (HW == MFX_HW_DG2)
+        return new HEVCEHWDisp::DG2::MFXVideoENCODEH265_HW(core, status, mode);
+    if (HW >= MFX_HW_ATS)
+        return new HEVCEHWDisp::ATS::MFXVideoENCODEH265_HW(core, status, mode);
+#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     if (HW >= MFX_HW_TGL_LP)
         return new HEVCEHWDisp::TGL::MFXVideoENCODEH265_HW(core, status, mode);

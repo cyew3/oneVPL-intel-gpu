@@ -21,38 +21,31 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX) && (MFX_VERSION >= 1031)
 
-#include "hevcehw_g11_win.h"
-#include "hevcehw_g12_data.h"
+#include "hevcehw_g12_rext.h"
 
 namespace HEVCEHW
 {
-namespace Windows
+namespace Linux
 {
 namespace Gen12
 {
-    enum eFeatureId
-    {
-        FEATURE_SCC = HEVCEHW::Gen12::eFeatureId::NUM_FEATURES
-        , NUM_FEATURES
-    };
+class RExt
+    : public HEVCEHW::Gen12::RExt
+{
+public:
 
-    class MFXVideoENCODEH265_HW
-        : public Windows::Gen11::MFXVideoENCODEH265_HW
-    {
-    public:
-        using TBaseImpl = Windows::Gen11::MFXVideoENCODEH265_HW;
+    RExt(mfxU32 FeatureId)
+        : HEVCEHW::Gen12::RExt(FeatureId)
+    {}
 
-        MFXVideoENCODEH265_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
+protected:
+    virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
+};
 
-        virtual mfxStatus Init(mfxVideoParam *par) override;
-    };
+} //Linux
 } //Gen12
-} //Windows
-}// namespace HEVCEHW
+} //HEVCEHW
 
 #endif

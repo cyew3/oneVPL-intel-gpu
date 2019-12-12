@@ -142,6 +142,7 @@ namespace Gen11
         virtual void SubmitTask(const FeatureBlocks& blocks, TPushST Push) override;
         virtual void QueryTask(const FeatureBlocks& blocks, TPushQT Push) override;
 
+        using FeatureBase::Reset;
         mfxStatus Reset(
             const VPS& vps
             , const SPS& sps

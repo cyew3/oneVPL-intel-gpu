@@ -36,8 +36,7 @@ class Caps
 public:
 #define DECL_BLOCK_LIST\
     DECL_BLOCK(SetDefaultsCallChain)\
-    DECL_BLOCK(HardcodeCaps) \
-    DECL_BLOCK(CheckLowPower)
+    DECL_BLOCK(HardcodeCaps)
 #define DECL_FEATURE_NAME "G12_Caps"
 #include "hevcehw_decl_blocks.h"
 

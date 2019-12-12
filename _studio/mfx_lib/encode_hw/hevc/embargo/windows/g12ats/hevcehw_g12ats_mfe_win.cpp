@@ -21,7 +21,7 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE)
 
-#include "hevcehw_g12_mfe_win.h"
+#include "hevcehw_g12ats_mfe_win.h"
 #include "hevcehw_g12_data.h"
 #include "libmfx_core_interface.h"
 #include "hevcehw_g11_d3d11_win.h"
@@ -30,7 +30,7 @@
 using namespace HEVCEHW;
 using namespace HEVCEHW::Gen12;
 
-void Windows::Gen12::MFE::InitExternal(const FeatureBlocks& /*blocks*/, TPushIE Push)
+void Windows::Gen12ATS::MFE::InitExternal(const FeatureBlocks& /*blocks*/, TPushIE Push)
 {
     Push(BLK_SetCallChains,
         [this](const mfxVideoParam&, StorageRW& strg, StorageRW&) -> mfxStatus
@@ -62,7 +62,7 @@ void Windows::Gen12::MFE::InitExternal(const FeatureBlocks& /*blocks*/, TPushIE 
     });
 }
 
-void Windows::Gen12::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
+void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_SetCallChains,
         [this](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
@@ -187,7 +187,7 @@ void Windows::Gen12::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 
     });
 }
 
-void Windows::Gen12::MFE::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
+void Windows::Gen12ATS::MFE::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 {
     Push(BLK_Init
         , [this](StorageRW& strg, StorageRW&) -> mfxStatus
@@ -207,7 +207,7 @@ void Windows::Gen12::MFE::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Pus
     });
 }
 
-void Windows::Gen12::MFE::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
+void Windows::Gen12ATS::MFE::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 {
     Push(BLK_UpdateDDITask
         , [this](
@@ -238,6 +238,7 @@ void Windows::Gen12::MFE::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pu
 #else
         std::ignore = global;
         std::ignore = s_task;
+        std::ignore = this;
 #endif //defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
 
         return MFX_ERR_NONE;

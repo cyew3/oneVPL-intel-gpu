@@ -556,7 +556,7 @@ void Legacy::Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push)
     });
 
     Push(BLK_PreCheckCodecId,
-        [&blocks, this](const mfxVideoParam& in, mfxVideoParam&, StorageRW& /*strg*/) -> mfxStatus
+        [this](const mfxVideoParam& in, mfxVideoParam&, StorageRW& /*strg*/) -> mfxStatus
     {
         return m_pQNCDefaults->PreCheckCodecId(in);
     });
@@ -592,7 +592,7 @@ void Legacy::Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push)
     });
 
     Push(BLK_SetGUID
-        , [this](const mfxVideoParam&, mfxVideoParam& out, StorageRW& strg) -> mfxStatus
+        , [](const mfxVideoParam&, mfxVideoParam& out, StorageRW& strg) -> mfxStatus
     {
         MFX_CHECK(!strg.Contains(Glob::GUID::Key), MFX_ERR_NONE);
 
@@ -814,7 +814,7 @@ void Legacy::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 void Legacy::QueryIOSurf(const FeatureBlocks& blocks, TPushQIS Push)
 {
     Push(BLK_CheckVideoParam
-        , [this, &blocks](const mfxVideoParam& par, mfxFrameAllocRequest&, StorageRW& strg) -> mfxStatus
+        , [&blocks](const mfxVideoParam& par, mfxFrameAllocRequest&, StorageRW& strg) -> mfxStatus
     {
         mfxStatus sts = MFX_ERR_NONE;
         auto pTmpPar = make_storable<ExtBuffer::Param<mfxVideoParam>>(par);
@@ -835,7 +835,7 @@ void Legacy::QueryIOSurf(const FeatureBlocks& blocks, TPushQIS Push)
     });
 
     Push(BLK_SetDefaults
-        , [this, &blocks](const mfxVideoParam&, mfxFrameAllocRequest&, StorageRW& strg) -> mfxStatus
+        , [&blocks](const mfxVideoParam&, mfxFrameAllocRequest&, StorageRW& strg) -> mfxStatus
     {
         ExtBuffer::Param<mfxVideoParam>& par = Glob::VideoParam::Get(strg);
         StorageRW local;
@@ -845,7 +845,7 @@ void Legacy::QueryIOSurf(const FeatureBlocks& blocks, TPushQIS Push)
     });
 
     Push(BLK_SetFrameAllocRequest
-        , [this, &blocks](const mfxVideoParam&, mfxFrameAllocRequest& req, StorageRW& strg) -> mfxStatus
+        , [this](const mfxVideoParam&, mfxFrameAllocRequest& req, StorageRW& strg) -> mfxStatus
     {
         ExtBuffer::Param<mfxVideoParam>& par = Glob::VideoParam::Get(strg);
         auto fourCC = par.mfx.FrameInfo.FourCC;
@@ -885,7 +885,7 @@ void Legacy::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
 void Legacy::InitExternal(const FeatureBlocks& blocks, TPushIE Push)
 {
     Push(BLK_SetGUID
-        , [this, &blocks](const mfxVideoParam& in, StorageRW& strg, StorageRW&) -> mfxStatus
+        , [&blocks](const mfxVideoParam& in, StorageRW& strg, StorageRW&) -> mfxStatus
     {
         const auto& query = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(blocks);
         mfxStatus sts = MFX_ERR_NONE;
@@ -902,7 +902,7 @@ void Legacy::InitExternal(const FeatureBlocks& blocks, TPushIE Push)
     });
 
     Push(BLK_CheckVideoParam
-        , [this, &blocks](const mfxVideoParam& in, StorageRW& strg, StorageRW&) -> mfxStatus
+        , [&blocks](const mfxVideoParam& in, StorageRW& strg, StorageRW&) -> mfxStatus
     {
         const auto& query = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
         mfxStatus sts = MFX_ERR_NONE;
@@ -919,7 +919,7 @@ void Legacy::InitExternal(const FeatureBlocks& blocks, TPushIE Push)
     });
 
     Push(BLK_SetDefaults
-        , [this, &blocks](const mfxVideoParam&, StorageRW& strg, StorageRW& local) -> mfxStatus
+        , [&blocks](const mfxVideoParam&, StorageRW& strg, StorageRW& local) -> mfxStatus
     {
         auto& par = Glob::VideoParam::Get(strg);
 
@@ -947,7 +947,7 @@ void Legacy::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         pReorderer->Push(
             [&](Reorderer::TExt, const DpbArray& DPB, TTaskIt begin, TTaskIt end, bool bFlush)
         {
-            auto IsIdrFrame = [](const TItWrap::reference fi) { return IsIdr(fi.FrameType); };
+            auto IsIdrFrame = [](TItWrap::reference fi) { return IsIdr(fi.FrameType); };
             auto newEnd = std::find_if(TItWrap(begin), TItWrap(end), IsIdrFrame);
 
             bFlush |= (newEnd != begin && newEnd != end);
@@ -1008,7 +1008,7 @@ void Legacy::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     });
 
     Push(BLK_NestSTRPS
-        , [this](StorageRW& strg, StorageRW&) -> mfxStatus
+        , [](StorageRW& strg, StorageRW&) -> mfxStatus
     {
         MFX_CHECK(
             strg.Contains(Glob::RealState::Key)
@@ -1139,7 +1139,7 @@ void Legacy::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
             const mfxExtOpaqueSurfaceAlloc& osa = ExtBuffer::Get(par);
             std::unique_ptr<IAllocation> pAllocOpq(Tmp::MakeAlloc::Get(local)(Glob::VideoCore::Get(strg)));
 
-            sts = pAllocOpq->Alloc(par.mfx.FrameInfo, osa.In);
+            sts = pAllocOpq->AllocOpaque(par.mfx.FrameInfo, osa.In.Type, osa.In.Surfaces, osa.In.NumSurface);
             MFX_CHECK_STS(sts);
 
             strg.Insert(Glob::AllocOpq::Key, std::move(pAllocOpq));
@@ -1338,7 +1338,7 @@ void Legacy::Reset(const FeatureBlocks& blocks, TPushR Push)
     });
 
     Push(BLK_ResetCheck
-        , [this, &blocks](
+        , [this](
             const mfxVideoParam& par
             , StorageRW& global
             , StorageRW& local) -> mfxStatus
@@ -1475,10 +1475,10 @@ void Legacy::ResetState(const FeatureBlocks& blocks, TPushRS Push)
     });
 }
 
-void Legacy::FrameSubmit(const FeatureBlocks& blocks, TPushFS Push)
+void Legacy::FrameSubmit(const FeatureBlocks& /*blocks*/, TPushFS Push)
 {
     Push(BLK_CheckSurf
-        , [this, &blocks](
+        , [](
             const mfxEncodeCtrl* /*pCtrl*/
             , const mfxFrameSurface1* pSurf
             , mfxBitstream& /*bs*/
@@ -1496,7 +1496,7 @@ void Legacy::FrameSubmit(const FeatureBlocks& blocks, TPushFS Push)
     });
 
     Push(BLK_CheckBS
-        , [this, &blocks](
+        , [](
             const mfxEncodeCtrl* /*pCtrl*/
             , const mfxFrameSurface1* /*pSurf*/
             , mfxBitstream& bs
@@ -1522,10 +1522,10 @@ void Legacy::FrameSubmit(const FeatureBlocks& blocks, TPushFS Push)
     });
 }
 
-void Legacy::AllocTask(const FeatureBlocks& blocks, TPushAT Push)
+void Legacy::AllocTask(const FeatureBlocks& /*blocks*/, TPushAT Push)
 {
     Push(BLK_AllocTask
-        , [this, &blocks](
+        , [](
             StorageR& /*global*/
             , StorageRW& task) -> mfxStatus
     {
@@ -1535,10 +1535,10 @@ void Legacy::AllocTask(const FeatureBlocks& blocks, TPushAT Push)
     });
 }
 
-void Legacy::InitTask(const FeatureBlocks& blocks, TPushIT Push)
+void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
 {
     Push(BLK_InitTask
-        , [this, &blocks](
+        , [](
             mfxEncodeCtrl* pCtrl
             , mfxFrameSurface1* pSurf
             , mfxBitstream* pBs
@@ -1581,10 +1581,10 @@ void Legacy::InitTask(const FeatureBlocks& blocks, TPushIT Push)
     });
 }
 
-void Legacy::PreReorderTask(const FeatureBlocks& blocks, TPushPreRT Push)
+void Legacy::PreReorderTask(const FeatureBlocks& /*blocks*/, TPushPreRT Push)
 {
     Push(BLK_PrepareTask
-        , [this, &blocks](
+        , [this](
             StorageW& global
             , StorageW& s_task) -> mfxStatus
     {
@@ -1617,10 +1617,10 @@ void Legacy::PreReorderTask(const FeatureBlocks& blocks, TPushPreRT Push)
     });
 }
 
-void Legacy::PostReorderTask(const FeatureBlocks& blocks, TPushPostRT Push)
+void Legacy::PostReorderTask(const FeatureBlocks& /*blocks*/, TPushPostRT Push)
 {
     Push(BLK_ConfigureTask
-        , [this, &blocks](
+        , [this](
             StorageW& global
             , StorageW& s_task) -> mfxStatus
     {
@@ -1657,10 +1657,10 @@ void Legacy::PostReorderTask(const FeatureBlocks& blocks, TPushPostRT Push)
     });
 }
 
-void Legacy::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
+void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 {
     Push(BLK_SkipFrame
-        , [this, &blocks](
+        , [](
             StorageW& global
             , StorageW& s_task) -> mfxStatus
     {
@@ -1737,7 +1737,7 @@ void Legacy::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
     });
 
     Push(BLK_GetRawHDL
-        , [this, &blocks](
+        , [](
             StorageW& global
             , StorageW& s_task) -> mfxStatus
     {
@@ -1764,7 +1764,7 @@ void Legacy::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
     });
 
     Push(BLK_CopySysToRaw
-        , [this, &blocks](
+        , [](
             StorageW& global
             , StorageW& s_task)->mfxStatus
     {
@@ -1797,7 +1797,7 @@ void Legacy::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
     });
 
     Push(BLK_FillCUQPSurf
-        , [this, &blocks](
+        , [this](
             StorageW& global
             , StorageW& s_task)->mfxStatus
     {
@@ -1847,7 +1847,7 @@ void Legacy::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
 void Legacy::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
 {
     Push(BLK_CopyBS
-        , [this](StorageW& global, StorageW& s_task) -> mfxStatus
+        , [](StorageW& global, StorageW& s_task) -> mfxStatus
     {
         auto& task = Task::Common::Get(s_task);
 
@@ -1883,7 +1883,7 @@ void Legacy::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
     });
 
     Push(BLK_DoPadding
-        , [this](StorageW& /*global*/, StorageW& s_task) -> mfxStatus
+        , [](StorageW& /*global*/, StorageW& s_task) -> mfxStatus
     {
         auto& task = Task::Common::Get(s_task);
 
@@ -1903,7 +1903,7 @@ void Legacy::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
     });
 
     Push(BLK_UpdateBsInfo
-        , [this](StorageW& global, StorageW& s_task) -> mfxStatus
+        , [](StorageW& global, StorageW& s_task) -> mfxStatus
     {
         const auto& par = Glob::VideoParam::Get(global);
         auto& task = Task::Common::Get(s_task);
@@ -1949,7 +1949,7 @@ inline bool ReleaseResource(IAllocation& a, Resource& r)
 void Legacy::FreeTask(const FeatureBlocks& /*blocks*/, TPushFT Push)
 {
     Push(BLK_FreeTask
-        , [this](StorageW& global, StorageW& s_task) -> mfxStatus
+        , [](StorageW& global, StorageW& s_task) -> mfxStatus
     {
         auto& task = Task::Common::Get(s_task);
         auto& core = Glob::VideoCore::Get(global);
@@ -2251,7 +2251,6 @@ void Legacy::ConfigureTask(
     const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par);
     const bool isI    = IsI(task.FrameType);
     const bool isP    = IsP(task.FrameType);
-    const bool isB    = IsB(task.FrameType);
     const bool isIDR  = IsIdr(task.FrameType);
 
     mfxExtAVCRefLists*    pExtLists    = ExtBuffer::Get(task.ctrl);
@@ -2342,7 +2341,7 @@ void Legacy::ConfigureTask(
         UpdateDPB(dflts, task, task.DPB.After, pExtListCtrl);
 
         using TRLtrDesc = decltype(pExtListCtrl->LongTermRefList[0]);
-        auto IsCurFrame = [&](const TRLtrDesc ltr)
+        auto IsCurFrame = [&](TRLtrDesc ltr)
         {
             return ltr.FrameOrder == task.DisplayOrder;
         };
@@ -4608,7 +4607,7 @@ mfxU16 GetSliceHeaderLTRs(
     mfxU32 MaxPocLsb  = (1<<(sps.log2_max_pic_order_cnt_lsb_minus4+4));
     mfxU32 dPocCycleMSBprev = 0;
     mfxI32 DPBLT[MAX_DPB_SIZE] = {};
-    const mfxI32 InvalidPOC = -9000;
+    mfxI32 InvalidPOC = -9000;
 
     std::transform(DPB, DPB + Size(DPB), DPBLT
         , [InvalidPOC](const DpbFrame& x) { return (x.isLTR && isValid(x)) ? x.POC : InvalidPOC; });

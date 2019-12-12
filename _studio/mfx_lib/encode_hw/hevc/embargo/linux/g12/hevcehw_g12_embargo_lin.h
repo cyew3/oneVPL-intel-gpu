@@ -18,32 +18,41 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma once
+
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
-#include "hevcehw_g12_rext_lin.h"
-#include "va/va.h"
+#include "hevcehw_g11_lin.h"
+#include "hevcehw_g12_data.h"
 
-using namespace HEVCEHW;
-using namespace HEVCEHW::Gen12;
-using namespace HEVCEHW::Linux;
-
-void Linux::Gen12::RExt::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
+namespace HEVCEHW
 {
-    Push(BLK_SetGUID
-        , [this](const mfxVideoParam&, mfxVideoParam& par, StorageRW& strg) -> mfxStatus
+namespace Linux
+{
+namespace Gen12_Embargo
+{
+    enum eFeatureId
     {
-        //don't change GUID in Reset
-        MFX_CHECK(!strg.Contains(Glob::RealState::Key), MFX_ERR_NONE);
+        FEATURE_SCC = HEVCEHW::Gen12::eFeatureId::NUM_FEATURES
+        , NUM_FEATURES
+    };
 
-        auto& g2va = Glob::GuidToVa::GetOrConstruct(strg);
-        g2va[DXVA2_Intel_Encode_HEVC_Main12]     = { VAProfileHEVCMain12,     VAEntrypointEncSlice };
-        g2va[DXVA2_Intel_Encode_HEVC_Main422_12] = { VAProfileHEVCMain422_12, VAEntrypointEncSlice };
-        g2va[DXVA2_Intel_Encode_HEVC_Main444_12] = { VAProfileHEVCMain444_12, VAEntrypointEncSlice };
+    class MFXVideoENCODEH265_HW
+        : public Linux::Gen11::MFXVideoENCODEH265_HW
+    {
+    public:
+        using TBaseImpl = Linux::Gen11::MFXVideoENCODEH265_HW;
 
-        return SetGuid(par, strg);
-    });
-}
+        MFXVideoENCODEH265_HW(
+            VideoCORE& core
+            , mfxStatus& status
+            , eFeatureMode mode = eFeatureMode::INIT);
 
+        virtual mfxStatus Init(mfxVideoParam *par) override;
+    };
+} //Gen12_Embargo
+} //Linux
+}// namespace HEVCEHW
 
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif

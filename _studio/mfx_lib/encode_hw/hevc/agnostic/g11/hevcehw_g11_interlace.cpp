@@ -296,7 +296,7 @@ void Interlace::Query1NoCaps(const FeatureBlocks& , TPushQ1 Push)
 void Interlace::Query1WithCaps(const FeatureBlocks&, TPushQ1 Push)
 {
     Push(BLK_CheckPicStruct,
-        [this](const mfxVideoParam&, mfxVideoParam& par, StorageRW&) -> mfxStatus
+        [](const mfxVideoParam&, mfxVideoParam& par, StorageRW&) -> mfxStatus
     {
         mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
         bool bInterlaceAllowed =
@@ -324,7 +324,7 @@ void Interlace::Query1WithCaps(const FeatureBlocks&, TPushQ1 Push)
 void Interlace::QueryIOSurf(const FeatureBlocks&, TPushQIS Push)
 {
     Push(BLK_QueryIOSurf
-        , [this](const mfxVideoParam&, mfxFrameAllocRequest& req, StorageRW& strg) -> mfxStatus
+        , [](const mfxVideoParam&, mfxFrameAllocRequest& req, StorageRW& strg) -> mfxStatus
     {
         auto& par  = Glob::VideoParam::Get(strg);
         mfxU16 nExtraRaw = IsField(par.mfx.FrameInfo.PicStruct) * (par.mfx.GopRefDist - 1);
@@ -444,7 +444,7 @@ static TTaskItWrap IntReorder(
 void Interlace::InitInternal(const FeatureBlocks&, TPushII Push)
 {
     Push(BLK_SetReorder
-        , [this](StorageRW& strg, StorageRW&) -> mfxStatus
+        , [](StorageRW& strg, StorageRW&) -> mfxStatus
     {
         auto& par = Glob::VideoParam::Get(strg);
         MFX_CHECK(IsField(par.mfx.FrameInfo.PicStruct), MFX_ERR_NONE);
@@ -460,7 +460,7 @@ void Interlace::InitInternal(const FeatureBlocks&, TPushII Push)
     });
 
     Push(BLK_PatchRawInfo
-        , [this](StorageRW& strg, StorageRW& local) -> mfxStatus
+        , [](StorageRW& strg, StorageRW& local) -> mfxStatus
     {
         auto& par = Glob::VideoParam::Get(strg);
         MFX_CHECK(IsField(par.mfx.FrameInfo.PicStruct), MFX_ERR_NONE);

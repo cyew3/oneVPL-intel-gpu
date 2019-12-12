@@ -1458,7 +1458,7 @@ public:
         or equal to the previous slices.*/
         const mfxU32 RowSlice           = 2;
         //Arbitrary number of rows per slice for all slices.
-        const mfxU32 ArbitraryRowSlice  = 3;
+        //const mfxU32 ArbitraryRowSlice  = 3;
         //Arbitrary number of macroblocks per slice for all slices.
         const mfxU32 ArbitraryMbSlice   = 4;
 

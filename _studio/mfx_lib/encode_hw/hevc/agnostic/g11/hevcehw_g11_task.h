@@ -94,6 +94,7 @@ namespace Gen11
             return SimpleCheck([pTask](StorageR& b) { return &b == pTask; });
         }
 
+        using FeatureBase::Reset;
         //blocking
         mfxStatus Reset(mfxU32 numTask);
         //non-blocking

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && (MFX_VERSION >= 1031)
 
 #include "hevcehw_g12_rext.h"
 #include "hevcehw_g11_legacy.h"
@@ -37,7 +37,7 @@ const GUID RExt::DXVA2_Intel_Encode_HEVC_Main444_12 =
 void RExt::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 {
     Push(BLK_SetRecInfo
-        , [this](StorageRW& strg, StorageRW& local) -> mfxStatus
+        , [](StorageRW& strg, StorageRW& local) -> mfxStatus
     {
         MFX_CHECK(!local.Contains(Gen11::Tmp::RecInfo::Key), MFX_ERR_NONE);
 
@@ -62,12 +62,10 @@ void RExt::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
                     rec.Width  = mfx::align2_value<mfxU16>(rec.Width, 256 / 4);
                     rec.Height = mfx::align2_value<mfxU16>(rec.Height * 3 / 2, 8);
 
-                    // WA for RExt formats to fix CreateTexture2D failure
                     type = (
                         MFX_MEMTYPE_FROM_ENCODE
                         | MFX_MEMTYPE_DXVA2_DECODER_TARGET
-                        | MFX_MEMTYPE_INTERNAL_FRAME
-                        /*| MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET*/);
+                        | MFX_MEMTYPE_INTERNAL_FRAME);
                 }
             }
             , {
@@ -78,12 +76,10 @@ void RExt::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
                     rec.Width /= 2;
                     rec.Height *= 2;
 
-                    // WA for RExt formats to fix CreateTexture2D failure
                     type = (
                         MFX_MEMTYPE_FROM_ENCODE
                         | MFX_MEMTYPE_DXVA2_DECODER_TARGET
-                        | MFX_MEMTYPE_INTERNAL_FRAME
-                        /*| MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET*/);
+                        | MFX_MEMTYPE_INTERNAL_FRAME);
                 }
             }
             , {
@@ -267,7 +263,7 @@ void RExt::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 void RExt::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_CheckShift
-        , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
+        , [](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
     {
         auto& fi = out.mfx.FrameInfo;
         bool bVideoMem = Gen11::Legacy::IsInVideoMem(out, ExtBuffer::Get(out));
@@ -285,7 +281,7 @@ void RExt::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     });
 
     Push(BLK_HardcodeCaps
-        , [this](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
+        , [](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
     {
         Gen11::Glob::EncodeCaps::Get(strg).MaxEncodedBitDepth = 2;
         return MFX_ERR_NONE;

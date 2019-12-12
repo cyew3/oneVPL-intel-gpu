@@ -19,39 +19,44 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
-#include "hevcehw_g12.h"
-
-#if defined(MFX_VA_LINUX)
 #include "hevcehw_g12_lin.h"
-#else
-#include "hevcehw_g12_win.h"
+#if (MFX_VERSION >= 1031)
+#include "hevcehw_g12_rext_lin.h"
 #endif
-#include "hevcehw_g12_rext.h"
-#include "hevcehw_g12_scc.h"
+#include "hevcehw_g12_caps_lin.h"
+#include "hevcehw_g12_sao.h"
 #include "hevcehw_g11_legacy.h"
-#include "hevcehw_g11_parser.h"
 #include "hevcehw_g11_iddi_packer.h"
 #include "hevcehw_g11_iddi.h"
-#include "hevcehw_g12_caps.h"
-#include "hevcehw_g12_sao.h"
 
 namespace HEVCEHW
 {
+namespace Linux
+{
+namespace Gen12
+{
 using namespace HEVCEHW::Gen12;
 
-template<class TBaseGen>
-MFXVideoENCODEH265_HW<TBaseGen>::MFXVideoENCODEH265_HW(
+MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     VideoCORE& core
     , mfxStatus& status
     , eFeatureMode mode)
     : TBaseGen(core, status, mode)
 {
+    TFeatureList newFeatures;
+
+#if (MFX_VERSION >= 1031)
+    newFeatures.emplace_back(new RExt(FEATURE_REXT));
+#endif
+    newFeatures.emplace_back(new Caps(FEATURE_CAPS));
+    newFeatures.emplace_back(new SAO(FEATURE_SAO));
+
+    InternalInitFeatures(status, mode, newFeatures);
 }
 
-template<class TBaseGen>
-void MFXVideoENCODEH265_HW<TBaseGen>::InternalInitFeatures(
+void MFXVideoENCODEH265_HW::InternalInitFeatures(
     mfxStatus& status
     , eFeatureMode mode
     , TFeatureList& newFeatures)
@@ -67,58 +72,29 @@ void MFXVideoENCODEH265_HW<TBaseGen>::InternalInitFeatures(
     {
         auto& qnc = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(*this);
 
-        qnc.splice(qnc.begin(), qnc, FeatureBlocks::Get(qnc, { FEATURE_CAPS, Caps::BLK_CheckLowPower }));
-
         FeatureBlocks::Reorder(
             qnc
-            , { Gen11::FEATURE_LEGACY, Gen11::Legacy::BLK_SetLowPowerDefault }
+            , { HEVCEHW::Gen11::FEATURE_LEGACY, HEVCEHW::Gen11::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
-        FeatureBlocks::Reorder(
-            qnc
-            , { Gen11::FEATURE_LEGACY, Gen11::Legacy::BLK_SetLowPowerDefault }
-            , { FEATURE_SCC, SCC::BLK_SetLowPowerDefault });
-        FeatureBlocks::Reorder(
-            qnc
-            , { Gen11::FEATURE_PARSER, Gen11::Parser::BLK_LoadSPSPPS }
-            , { FEATURE_SCC, SCC::BLK_LoadSPSPPS });
 
         auto& qwc = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(*this);
+#if (MFX_VERSION >= 1031)
         FeatureBlocks::Reorder(
             qwc
-            , { Gen11::FEATURE_DDI_PACKER, Gen11::IDDIPacker::BLK_HardcodeCaps }
+            , { HEVCEHW::Gen11::FEATURE_DDI_PACKER, HEVCEHW::Gen11::IDDIPacker::BLK_HardcodeCaps }
             , { FEATURE_REXT, RExt::BLK_HardcodeCaps });
+#endif
         FeatureBlocks::Reorder(
             qwc
-            , { Gen11::FEATURE_DDI_PACKER, Gen11::IDDIPacker::BLK_HardcodeCaps }
+            , { HEVCEHW::Gen11::FEATURE_DDI_PACKER, HEVCEHW::Gen11::IDDIPacker::BLK_HardcodeCaps }
             , { FEATURE_CAPS, Caps::BLK_HardcodeCaps });
-    }
-
-    if (mode & INIT)
-    {
-        auto& iint = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(*this);
-        FeatureBlocks::Reorder(
-            iint
-            , { Gen11::FEATURE_LEGACY, Gen11::Legacy::BLK_SetSPS }
-            , { FEATURE_SCC, SCC::BLK_SetSPSExt });
-        FeatureBlocks::Reorder(
-            iint
-            , { Gen11::FEATURE_LEGACY, Gen11::Legacy::BLK_SetPPS }
-            , { FEATURE_SCC, SCC::BLK_SetPPSExt });
     }
 
     status = MFX_ERR_NONE;
 }
 
-template<class TBaseGen>
-mfxStatus MFXVideoENCODEH265_HW<TBaseGen>::Init(mfxVideoParam *par)
-{
-    auto sts = TBaseGen::Init(par);
-    MFX_CHECK_STS(sts);
-
-    return MFX_ERR_NONE;
-}
-
-template class Gen12::MFXVideoENCODEH265_HW<Gen12::TPrevGenImpl>;
+} //namespace Linux
+} //namespace Gen12
 } //namespace HEVCEHW
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

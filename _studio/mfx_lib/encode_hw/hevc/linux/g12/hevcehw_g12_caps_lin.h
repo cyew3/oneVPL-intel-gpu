@@ -43,30 +43,30 @@ public:
 protected:
     virtual void SetSpecificCaps(HEVCEHW::Gen11::EncodeCapsHevc& caps) override
     {
-        caps.CodingLimitSet             = 1;     // = 0 now but should be always set to 1 according to DDI (what about Linux ???)
-        caps.Color420Only               = 0;     // = 1 now
-        caps.SliceIPBOnly               = 1;     // = 0 now (SliceIP is also 0)cz
-        caps.NoMinorMVs                 = 1;     // = 0 now
-        caps.RawReconRefToggle          = 1;     // = 0 now
-        caps.NoInterlacedField          = 1;     // = 0 now
-        caps.ParallelBRC                = 1;     // = 0 now
-        caps.MaxEncodedBitDepth         = 2;     // = 1 now (8/10b only)
-        caps.MaxPicWidth                = 16384; // = 8192 now
-        caps.MaxPicHeight               = 16384; // = 8192 now
-        caps.MaxNumOfROI                = 16;    // = 0 now
-        caps.ROIDeltaQPSupport          = 1;     // = 0 now
-        caps.BlockSize                  = 1;     // = 0 now (set to 16x16 like in Win)
-        caps.SliceLevelReportSupport    = 1;     // = 0 now
-        caps.FrameSizeToleranceSupport  = 1;     // = 0 now
-        caps.NumScalablePipesMinus1     = 1;     // = 0 now
-        caps.NoWeightedPred             = 0;     // = 1 now
-        caps.LumaWeightedPred           = 1;     // = 0 now
-        caps.ChromaWeightedPred         = 0;     // = 0 now
-        caps.MaxNum_WeightedPredL0      = 4;     // = 0 now
-        caps.MaxNum_WeightedPredL1      = 2;     // = 0 now
+        caps.CodingLimitSet             = 1;
+        caps.Color420Only               = 0;
+        caps.SliceIPBOnly               = 1;
+        caps.NoMinorMVs                 = 1;
+        caps.RawReconRefToggle          = 1;
+        caps.NoInterlacedField          = 1;
+        caps.ParallelBRC                = 1;
+        caps.MaxEncodedBitDepth         = 2;
+        caps.MaxPicWidth                = 16384;
+        caps.MaxPicHeight               = 16384;
+        caps.MaxNumOfROI                = 16;
+        caps.ROIDeltaQPSupport          = 1;
+        caps.BlockSize                  = 1;
+        caps.SliceLevelReportSupport    = 1;
+        caps.FrameSizeToleranceSupport  = 1;
+        caps.NumScalablePipesMinus1     = 1;
+        caps.NoWeightedPred             = 0;
+        caps.LumaWeightedPred           = 1;
+        caps.ChromaWeightedPred         = 0;
+        caps.MaxNum_WeightedPredL0      = 4;
+        caps.MaxNum_WeightedPredL1      = 2;
         caps.HRDConformanceSupport      = 1;
         caps.TileSupport                = 1;
-        caps.YUV422ReconSupport         = 1;     // = 0 now
+        caps.YUV422ReconSupport         = 1;
         caps.IntraRefreshBlockUnitSize  = 2;
     }
 };

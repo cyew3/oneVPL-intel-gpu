@@ -106,7 +106,7 @@ void PackSEIPayload(
 void HdrSei::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_CheckAndFixMDCV
-        , [this](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& /*global*/) -> mfxStatus
+        , [](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& /*global*/) -> mfxStatus
     {
         mfxExtMasteringDisplayColourVolume* pMDCV = ExtBuffer::Get(par);
         MFX_CHECK(pMDCV, MFX_ERR_NONE);
@@ -125,7 +125,7 @@ void HdrSei::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         return changed ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
     });
     Push(BLK_CheckAndFixCLLI
-        , [this](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& /*global*/) -> mfxStatus
+        , [](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& /*global*/) -> mfxStatus
     {
         mfxExtContentLightLevelInfo* pCLLI = ExtBuffer::Get(par);
         MFX_CHECK(pCLLI, MFX_ERR_NONE);
@@ -140,7 +140,7 @@ void HdrSei::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 void HdrSei::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
 {
     Push(BLK_SetDefaultsMDCV
-        , [this](mfxVideoParam& par, StorageW& /*strg*/, StorageRW&)
+        , [](mfxVideoParam& par, StorageW& /*strg*/, StorageRW&)
     {
         mfxExtMasteringDisplayColourVolume* pMDCV = ExtBuffer::Get(par);
         MFX_CHECK(pMDCV, MFX_ERR_NONE);
@@ -150,7 +150,7 @@ void HdrSei::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
         return MFX_ERR_NONE;
     });
     Push(BLK_SetDefaultsCLLI
-        , [this](mfxVideoParam& par, StorageW& /*strg*/, StorageRW&)
+        , [](mfxVideoParam& par, StorageW& /*strg*/, StorageRW&)
     {
         mfxExtContentLightLevelInfo* pCLLI = ExtBuffer::Get(par);
         MFX_CHECK(pCLLI, MFX_ERR_NONE);

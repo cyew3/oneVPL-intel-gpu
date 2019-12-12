@@ -110,7 +110,7 @@ void DirtyRect::SetSupported(ParamSupport& blocks)
 void DirtyRect::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_CheckAndFix
-        , [this](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& global) -> mfxStatus
+        , [](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& global) -> mfxStatus
     {
         mfxExtDirtyRect* pDR = ExtBuffer::Get(par);
 

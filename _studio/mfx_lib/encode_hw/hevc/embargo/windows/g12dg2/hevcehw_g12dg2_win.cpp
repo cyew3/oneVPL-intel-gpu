@@ -18,41 +18,50 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
 
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
-#include "hevcehw_g11_win.h"
-#include "hevcehw_g12_data.h"
+#include "hevcehw_g12dg2_win.h"
+#include "hevcehw_g12dg2_caps.h"
+#include "hevcehw_g11_legacy.h"
 
 namespace HEVCEHW
 {
 namespace Windows
 {
-namespace Gen12
+namespace Gen12DG2
 {
-    enum eFeatureId
+using namespace HEVCEHW::Gen12DG2;
+
+MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
+    VideoCORE& core
+    , mfxStatus& status
+    , eFeatureMode mode)
+    : TBaseImpl(core, status, mode)
+{
+    TFeatureList newFeatures;
+
+    newFeatures.emplace_back(new Caps(FEATURE_CAPS));
+    
+    for (auto& pFeature : newFeatures)
+        pFeature->Init(mode, *this);
+
+    m_features.splice(m_features.end(), newFeatures);
+
+    if (mode & (QUERY1 | QUERY_IO_SURF | INIT))
     {
-        FEATURE_SCC = HEVCEHW::Gen12::eFeatureId::NUM_FEATURES
-        , NUM_FEATURES
-    };
+        auto& qnc = BQ<BQ_Query1NoCaps>::Get(*this);
 
-    class MFXVideoENCODEH265_HW
-        : public Windows::Gen11::MFXVideoENCODEH265_HW
-    {
-    public:
-        using TBaseImpl = Windows::Gen11::MFXVideoENCODEH265_HW;
+        qnc.splice(qnc.begin(), qnc, Get(qnc, { FEATURE_CAPS, Caps::BLK_CheckLowPower }));
 
-        MFXVideoENCODEH265_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
+        Reorder(
+            qnc
+            , { HEVCEHW::Gen11::FEATURE_LEGACY, HEVCEHW::Gen11::Legacy::BLK_SetLowPowerDefault }
+            , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
+    }
+}
 
-        virtual mfxStatus Init(mfxVideoParam *par) override;
-    };
-} //Gen12
-} //Windows
-}// namespace HEVCEHW
+}}} //namespace HEVCEHW::Windows::Gen12DG2
 
-#endif
+#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

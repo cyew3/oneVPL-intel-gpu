@@ -81,7 +81,9 @@ protected:
     virtual void SubmitTask(const FeatureBlocks& blocks, TPushST Push) override;
     virtual void QueryTask(const FeatureBlocks& blocks, TPushQT Push) override;
 
+    using FeatureBase::Init;
     void Init(const SPS &sps, mfxU32 InitialDelayInKB);
+    using FeatureBase::Reset;
     void Reset(SPS const & sps);
     void Update(mfxU32 sizeInbits, mfxU32 encOrder, bool bufferingPeriodPic);
     mfxU32 GetInitCpbRemovalDelay(mfxU32 encOrder);

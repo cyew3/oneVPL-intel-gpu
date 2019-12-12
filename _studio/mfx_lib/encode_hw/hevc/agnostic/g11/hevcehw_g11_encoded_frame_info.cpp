@@ -41,7 +41,7 @@ void EncodedFrameInfo::SetSupported(ParamSupport& blocks)
 void EncodedFrameInfo::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_CheckMAD
-        , [this](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& /*global*/) -> mfxStatus
+        , [](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& /*global*/) -> mfxStatus
     {
         mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
         MFX_CHECK(pCO2, MFX_ERR_NONE);

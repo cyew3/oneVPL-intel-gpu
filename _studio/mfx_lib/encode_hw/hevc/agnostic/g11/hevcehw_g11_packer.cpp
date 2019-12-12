@@ -1298,8 +1298,6 @@ void Packer::PackSSH(
     Slice const &    slice,
     bool             dyn_slice_size)
 {
-    const mfxU8 B = 0, P = 1, I = 2;
-
     PackNALU(bs, nalu);
 
     if (!dyn_slice_size)
@@ -2061,10 +2059,10 @@ mfxU32 Packer::GetPSEIAndSSH(
     return mfxU32(pBegin - buf);
 }
 
-void Packer::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
+void Packer::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 {
     Push(BLK_SubmitTask
-        , [this, &blocks](
+        , [this](
             StorageW& global
             , StorageW& s_task) -> mfxStatus
     {
@@ -2155,10 +2153,10 @@ void Packer::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
     });
 }
 
-void Packer::QueryTask(const FeatureBlocks& blocks, TPushQT Push)
+void Packer::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
 {
     Push(BLK_InsertSuffixSEI
-        , [this, &blocks](
+        , [this](
             StorageW& /*global*/
             , StorageW& s_task) -> mfxStatus
     {

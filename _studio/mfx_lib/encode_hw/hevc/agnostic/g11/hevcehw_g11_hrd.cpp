@@ -52,10 +52,10 @@ void HRD::ResetState(const FeatureBlocks& /*blocks*/, TPushRS Push)
 
 }
 
-void HRD::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
+void HRD::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 {
     Push(BLK_SubmitTask
-        , [this, &blocks](StorageW&, StorageW& s_task) -> mfxStatus
+        , [this](StorageW&, StorageW& s_task) -> mfxStatus
     {
         auto& task = Task::Common::Get(s_task);
 
@@ -80,10 +80,10 @@ void HRD::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
     });
 }
 
-void HRD::QueryTask(const FeatureBlocks& blocks, TPushQT Push)
+void HRD::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
 {
     Push(BLK_QueryTask
-        , [this, &blocks](StorageW&, StorageW& s_task) -> mfxStatus
+        , [this](StorageW&, StorageW& s_task) -> mfxStatus
     {
         auto& task = Task::Common::Get(s_task);
 

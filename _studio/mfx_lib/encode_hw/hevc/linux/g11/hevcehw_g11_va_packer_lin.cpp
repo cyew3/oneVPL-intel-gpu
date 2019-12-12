@@ -310,8 +310,8 @@ void AddVaMiscPBRC(
     pbrc.num_b_in_gop[1] = 0;
     pbrc.num_b_in_gop[2] = 0;
 #else
-    par;
-    buf;
+    std::ignore = par;
+    std::ignore = buf;
 #endif //PARALLEL_BRC_support
 }
 

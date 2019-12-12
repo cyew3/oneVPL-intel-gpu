@@ -57,7 +57,7 @@ void MaxFrameSize::SetInherited(ParamInheritance& par)
 void MaxFrameSize::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_CheckAndFix
-        , [this](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& global) -> mfxStatus
+        , [](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& global) -> mfxStatus
     {
         mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
         MFX_CHECK(pCO2 && pCO2->MaxFrameSize, MFX_ERR_NONE);
@@ -88,7 +88,7 @@ void MaxFrameSize::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 void MaxFrameSize::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
 {
     Push(BLK_SetDefaults
-        , [this](mfxVideoParam& par, StorageW& /*strg*/, StorageRW&)
+        , [](mfxVideoParam& par, StorageW& /*strg*/, StorageRW&)
     {
         mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
         mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
@@ -104,10 +104,10 @@ void MaxFrameSize::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
     });
 }
 
-void MaxFrameSize::Reset(const FeatureBlocks& blocks, TPushR Push)
+void MaxFrameSize::Reset(const FeatureBlocks& /*blocks*/, TPushR Push)
 {
     Push(BLK_Reset
-        , [this, &blocks](
+        , [](
             const mfxVideoParam& /*par*/
             , StorageRW& global
             , StorageRW& /*local*/) -> mfxStatus

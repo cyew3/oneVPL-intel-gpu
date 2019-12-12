@@ -287,8 +287,7 @@ void FEI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
     Push(BLK_SetTaskVaParam
         , [this](StorageW& global, StorageW& s_task) -> mfxStatus
     {
-        auto& task  = Task::Common::Get(s_task);
-        auto& vaPar = Glob::DDI_SubmitParam::Get(global);
+        auto& task = Task::Common::Get(s_task);
 
         mfxExtFeiHevcEncFrameCtrl* EncFrameCtrl =
             reinterpret_cast<mfxExtFeiHevcEncFrameCtrl*>(ExtBuffer::Get(task.ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTRL));

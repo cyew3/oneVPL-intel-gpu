@@ -31,7 +31,6 @@
 #include "hevcehw_g11_task.h"
 #include "hevcehw_g11_ext_brc.h"
 #include "hevcehw_g11_dirty_rect.h"
-#include "hevcehw_g11_extddi.h"
 #include "hevcehw_g11_hdr_sei.h"
 #include "hevcehw_g11_iddi.h"
 #include "hevcehw_g11_iddi_packer.h"

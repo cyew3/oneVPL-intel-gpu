@@ -29,8 +29,6 @@
 #include "hevcehw_g11_data.h"
 #include "hevcehw_g11_iddi.h"
 #include "va/va.h"
-#include "hevcehw_va_trace_lin.h"
-#include "hevcehw_ddi_trace.h"
 
 namespace HEVCEHW
 {
@@ -43,15 +41,11 @@ using namespace HEVCEHW::Gen11;
 class DDI_VA
     : public virtual FeatureBase
     , protected IDDI
-    , protected VAWrapper
-    , protected DDITracer
 {
 public:
     DDI_VA(mfxU32 FeatureId)
         : FeatureBase(FeatureId)
         , IDDI(FeatureId)
-        , VAWrapper()
-        , DDITracer(MFX_HW_VAAPI)
     {
         SetTraceName("G11_DDI_VA");
     }

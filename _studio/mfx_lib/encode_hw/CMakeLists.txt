@@ -9,8 +9,10 @@ list( APPEND cdirs
 list( APPEND hevcdir
   hevc/agnostic
   hevc/agnostic/g11
+  hevc/agnostic/g12
   hevc/linux
   hevc/linux/g11
+  hevc/linux/g12
   )
 if( NOT OPEN_SOURCE )
     list( APPEND hevcdir
@@ -18,10 +20,14 @@ if( NOT OPEN_SOURCE )
         hevc/embargo/agnostic/g11
         hevc/embargo/agnostic/g11lkf
         hevc/embargo/agnostic/g12
+        hevc/embargo/agnostic/g12ats
+        hevc/embargo/agnostic/g12dg2
         hevc/embargo/linux
         hevc/embargo/linux/g11
         hevc/embargo/linux/g11lkf
         hevc/embargo/linux/g12
+        hevc/embargo/linux/g12ats
+        hevc/embargo/linux/g12dg2
         )
 endif()
 mfx_include_dirs( )

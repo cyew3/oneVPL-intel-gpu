@@ -20,30 +20,26 @@
 
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
-#include "hevcehw_g12_win.h"
-#include "hevcehw_g12_rext.h"
-#include "hevcehw_g12_scc_win.h"
-#include "hevcehw_g12_caps.h"
-#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
-#include "hevcehw_g11_blocking_sync_win.h"
-#endif
+#include "hevcehw_g12_embargo_lin.h"
+#include "hevcehw_g12_rext_lin.h"
+#include "hevcehw_g12_scc_lin.h"
+#include "hevcehw_g12_caps_lin.h"
 #include "hevcehw_g11_iddi.h"
 #include "hevcehw_g12_sao.h"
-#include "hevcehw_g12_qp_modulation_win.h"
-#include "hevcehw_g11_protected_win.h"
 #include "hevcehw_g11_data.h"
 #include "hevcehw_g11_legacy.h"
 #include "hevcehw_g11_parser.h"
+#include "hevcehw_g11_iddi_packer.h"
 
 using namespace HEVCEHW::Gen12;
 
 namespace HEVCEHW
 {
-namespace Windows
+namespace Linux
 {
-namespace Gen12
+namespace Gen12_Embargo
 {
 
 MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
@@ -52,27 +48,12 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     , eFeatureMode mode)
     : TBaseImpl(core, status, mode)
 {
-    // TODO: temporal fix for miracast issue (hang in CP + MMC case).
-    //
-    // In case of MFX_MEMTYPE_PROTECTED we MUST specify D3D11_RESOURCE_MISC_HW_PROTECTED flag
-    //
-    // But now there is no enough time to investigate behavior on other platforms therefore
-    // TGL condition was added
-    //
-    // After TGL alpha code freeze TGL condition MUST be removed to setup protected flag on ALL platforms (which is correct behavior),
-    // because it is supposed to be used for any render target that will get protected output at some point in time
-    if (core.GetHWType() == MFX_HW_TGL_LP)
-    {
-        GetFeature<Gen11::Protected>(Gen11::FEATURE_PROTECTED).SetRecFlag(MFX_MEMTYPE_PROTECTED);
-    }
-
     TFeatureList newFeatures;
 
     newFeatures.emplace_back(new RExt(FEATURE_REXT));
     newFeatures.emplace_back(new SCC(FEATURE_SCC));
     newFeatures.emplace_back(new Caps(FEATURE_CAPS));
     newFeatures.emplace_back(new SAO(FEATURE_SAO));
-    newFeatures.emplace_back(new QpModulation(FEATURE_QP_MODULATION));
     
     for (auto& pFeature : newFeatures)
         pFeature->Init(mode, *this);
@@ -85,25 +66,25 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 
         Reorder(
             qnc
-            , { Gen11::FEATURE_LEGACY, Gen11::Legacy::BLK_SetLowPowerDefault }
+            , { HEVCEHW::Gen11::FEATURE_LEGACY, HEVCEHW::Gen11::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
         Reorder(
             qnc
-            , { Gen11::FEATURE_LEGACY, Gen11::Legacy::BLK_SetLowPowerDefault }
+            , { HEVCEHW::Gen11::FEATURE_LEGACY, HEVCEHW::Gen11::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_SCC, SCC::BLK_SetLowPowerDefault });
         Reorder(
             qnc
-            , { Gen11::FEATURE_PARSER, Gen11::Parser::BLK_LoadSPSPPS }
+            , { HEVCEHW::Gen11::FEATURE_PARSER, HEVCEHW::Gen11::Parser::BLK_LoadSPSPPS }
             , { FEATURE_SCC, SCC::BLK_LoadSPSPPS });
 
         auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
         Reorder(
             qwc
-            , { Gen11::FEATURE_DDI_PACKER, Gen11::IDDIPacker::BLK_HardcodeCaps }
+            , { HEVCEHW::Gen11::FEATURE_DDI_PACKER, HEVCEHW::Gen11::IDDIPacker::BLK_HardcodeCaps }
             , { FEATURE_REXT, RExt::BLK_HardcodeCaps });
         Reorder(
             qwc
-            , { Gen11::FEATURE_DDI_PACKER, Gen11::IDDIPacker::BLK_HardcodeCaps }
+            , { HEVCEHW::Gen11::FEATURE_DDI_PACKER, HEVCEHW::Gen11::IDDIPacker::BLK_HardcodeCaps }
             , { FEATURE_CAPS, Caps::BLK_HardcodeCaps });
     }
 
@@ -112,11 +93,11 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
         auto& iint = BQ<BQ_InitInternal>::Get(*this);
         Reorder(
             iint
-            , { Gen11::FEATURE_LEGACY, Gen11::Legacy::BLK_SetSPS }
+            , { HEVCEHW::Gen11::FEATURE_LEGACY, HEVCEHW::Gen11::Legacy::BLK_SetSPS }
             , { FEATURE_SCC, SCC::BLK_SetSPSExt });
         Reorder(
             iint
-            , { Gen11::FEATURE_LEGACY, Gen11::Legacy::BLK_SetPPS }
+            , { HEVCEHW::Gen11::FEATURE_LEGACY, HEVCEHW::Gen11::Legacy::BLK_SetPPS }
             , { FEATURE_SCC, SCC::BLK_SetPPSExt });
     }
 }
@@ -129,12 +110,12 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
     auto& st = BQ<BQ_SubmitTask>::Get(*this);
     Reorder(
         st
-        , { Gen11::FEATURE_DDI, Gen11::IDDI::BLK_SubmitTask }
+        , { HEVCEHW::Gen11::FEATURE_DDI, HEVCEHW::Gen11::IDDI::BLK_SubmitTask }
         , { FEATURE_SCC, SCC::BLK_PatchDDITask });
 
     return MFX_ERR_NONE;
 }
 
-}}} //namespace HEVCEHW::Windows::Gen12
+}}} //namespace HEVCEHW::Linux::Gen12
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

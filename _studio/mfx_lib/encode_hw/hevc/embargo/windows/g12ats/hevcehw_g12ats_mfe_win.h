@@ -21,53 +21,40 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE)
 
-#include "hevcehw_base.h"
-#include "hevcehw_g12_data.h"
+#include "hevcehw_g12ats_mfe.h"
+#include "mfx_mfe_adapter_dxva.h"
 
 namespace HEVCEHW
 {
-namespace Gen12
+namespace Windows
 {
-class RExt
-    : public FeatureBase
+namespace Gen12ATS
+{
+class MFE
+    : public HEVCEHW::Gen12ATS::MFE
 {
 public:
-#define DECL_BLOCK_LIST\
-    DECL_BLOCK(SetRecInfo)\
-    DECL_BLOCK(SetGUID)\
-    DECL_BLOCK(HardcodeCaps)\
-    DECL_BLOCK(SetDefaultsCallChain)\
-    DECL_BLOCK(CheckShift)
-#define DECL_FEATURE_NAME "G12_RExt"
-#include "hevcehw_decl_blocks.h"
-
-    RExt(mfxU32 FeatureId)
-        : FeatureBase(FeatureId)
+    MFE(mfxU32 FeatureId)
+        : HEVCEHW::Gen12ATS::MFE(FeatureId)
     {}
 
 protected:
-    virtual void InitInternal(const FeatureBlocks& blocks, TPushII Push) override;
+    virtual void InitExternal(const FeatureBlocks& blocks, TPushIE Push) override;
+    virtual void InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push) override;
     virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
-    virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
+    virtual void SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push) override;
 
-    mfxStatus SetGuid(mfxVideoParam& par, StorageRW& strg);
-
-    static bool IsRextFourCC(mfxU32 FourCC)
-    {
-        return !Check<mfxU32
-            , MFX_FOURCC_P016
-            , MFX_FOURCC_Y216
-            , MFX_FOURCC_Y416>(FourCC);
-    }
-
-    static const GUID DXVA2_Intel_Encode_HEVC_Main12;
-    static const GUID DXVA2_Intel_Encode_HEVC_Main422_12;
-    static const GUID DXVA2_Intel_Encode_HEVC_Main444_12;
+    MFEDXVAEncoder*                    m_pMfeAdapter = nullptr;
+    ENCODE_SINGLE_STREAM_INFO          m_streamInfo  = {};
+    MFE_CODEC                          m_codec       = CODEC_HEVC;
+    ENCODE_EVENT_DESCR                 m_mfeGpuEvent = {};
+    bool                               m_bSendEvent  = false;
+    std::vector<ENCODE_COMPBUFFERDESC> m_cbd;
 };
-
-} //Gen12
+} //Gen12ATS
+} //namespace Windows
 } //namespace HEVCEHW
 
 #endif

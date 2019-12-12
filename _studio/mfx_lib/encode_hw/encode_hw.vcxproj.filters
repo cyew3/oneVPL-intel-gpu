@@ -66,6 +66,30 @@
     <Filter Include="hevc\open\linux\g11">
       <UniqueIdentifier>{13f6d3af-40a5-4563-aa24-8ffeb4b7c479}</UniqueIdentifier>
     </Filter>
+    <Filter Include="hevc\open\linux\g12">
+      <UniqueIdentifier>{ddeac06b-3c31-428c-abd7-133109c40442}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hevc\open\agnostic\g12">
+      <UniqueIdentifier>{e2240d4b-4b9f-44fb-a3e6-1470deb32fe1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hevc\embargo\windows\g12ats">
+      <UniqueIdentifier>{0b5668d6-4d85-4bb2-b939-b872f1ad8fae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hevc\embargo\agnostic\g12ats">
+      <UniqueIdentifier>{3e7457c9-5bc6-489c-ad84-286d2644149a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hevc\embargo\linux\g12ats">
+      <UniqueIdentifier>{5a35a60e-997d-44a6-aefb-6220b7838268}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hevc\embargo\agnostic\g12dg2">
+      <UniqueIdentifier>{d3fe1062-e786-475e-8c63-a8af8bbba23f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hevc\embargo\windows\g12dg2">
+      <UniqueIdentifier>{a73b538c-90f7-422f-ab57-42c674e6e750}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hevc\embargo\linux\g12dg2">
+      <UniqueIdentifier>{1fda0ec1-22c5-4f3b-9012-59a8cd145670}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="h264\src\mfx_h264_encode_hw.cpp">
@@ -185,29 +209,11 @@
     <ClCompile Include="hevc\embargo\agnostic\g11lkf\hevcehw_g11lkf_caps.cpp">
       <Filter>hevc\embargo\agnostic\g11lkf</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12.cpp">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12_caps.cpp">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12_mfe.cpp">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12_rext.cpp">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
-    </ClCompile>
     <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12_scc.cpp">
       <Filter>hevc\embargo\agnostic\g12</Filter>
     </ClCompile>
     <ClCompile Include="hevc\embargo\linux\g11\hevcehw_g11_gpu_hang_lin.cpp">
       <Filter>hevc\embargo\linux\g11</Filter>
-    </ClCompile>
-    <ClCompile Include="hevc\embargo\linux\g12\hevcehw_g12_lin.cpp">
-      <Filter>hevc\embargo\linux\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="hevc\embargo\linux\g12\hevcehw_g12_rext_lin.cpp">
-      <Filter>hevc\embargo\linux\g12</Filter>
     </ClCompile>
     <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_blocking_sync_win.cpp">
       <Filter>hevc\embargo\windows\g11</Filter>
@@ -260,12 +266,6 @@
     <ClCompile Include="hevc\embargo\linux\g11\hevcehw_g11_max_frame_size_lin.cpp">
       <Filter>hevc\embargo\linux\g11</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g12\hevcehw_g12_mfe_win.cpp">
-      <Filter>hevc\embargo\windows\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="hevc\embargo\linux\g12\hevcehw_g12_mfe_lin.cpp">
-      <Filter>hevc\embargo\linux\g12</Filter>
-    </ClCompile>
     <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_units_info_win.cpp">
       <Filter>hevc\embargo\windows\g11</Filter>
     </ClCompile>
@@ -273,9 +273,6 @@
       <Filter>hevc\embargo\windows\g12</Filter>
     </ClCompile>
     <ClCompile Include="hevc\agnostic\hevcehw_base.cpp">
-      <Filter>hevc\open\agnostic</Filter>
-    </ClCompile>
-    <ClCompile Include="hevc\agnostic\hevcehw_ddi_trace.cpp">
       <Filter>hevc\open\agnostic</Filter>
     </ClCompile>
     <ClCompile Include="hevc\agnostic\g11\hevcehw_g11.cpp">
@@ -297,9 +294,6 @@
       <Filter>hevc\open\agnostic\g11</Filter>
     </ClCompile>
     <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_ext_brc.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
-    </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_extddi.cpp">
       <Filter>hevc\open\agnostic\g11</Filter>
     </ClCompile>
     <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_hdr_sei.cpp">
@@ -332,9 +326,6 @@
     <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_weighted_prediction.cpp">
       <Filter>hevc\open\agnostic\g11</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\linux\hevcehw_va_trace_lin.cpp">
-      <Filter>hevc\open\linux</Filter>
-    </ClCompile>
     <ClCompile Include="hevc\linux\g11\hevcehw_g11_fei_lin.cpp">
       <Filter>hevc\open\linux\g11</Filter>
     </ClCompile>
@@ -358,6 +349,54 @@
     </ClCompile>
     <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_max_frame_size.cpp">
       <Filter>hevc\open\agnostic\g11</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\agnostic\g11\hevcehw_g11_extddi.cpp">
+      <Filter>hevc\embargo\agnostic\g11</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\windows\hevcehw_ddi_trace.cpp">
+      <Filter>hevc\embargo\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_alloc_win.cpp">
+      <Filter>hevc\embargo\windows\g11</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\agnostic\g12\hevcehw_g12_caps.cpp">
+      <Filter>hevc\open\agnostic\g12</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\agnostic\g12\hevcehw_g12_rext.cpp">
+      <Filter>hevc\open\agnostic\g12</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\linux\g12\hevcehw_g12_lin.cpp">
+      <Filter>hevc\open\linux\g12</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\linux\g12\hevcehw_g12_rext_lin.cpp">
+      <Filter>hevc\open\linux\g12</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\agnostic\g12ats\hevcehw_g12ats_mfe.cpp">
+      <Filter>hevc\embargo\agnostic\g12ats</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\windows\g12ats\hevcehw_g12ats_mfe_win.cpp">
+      <Filter>hevc\embargo\windows\g12ats</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\windows\g12ats\hevcehw_g12ats_win.cpp">
+      <Filter>hevc\embargo\windows\g12ats</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_mfe_lin.cpp">
+      <Filter>hevc\embargo\linux\g12ats</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\agnostic\g12dg2\hevcehw_g12dg2_caps.cpp">
+      <Filter>hevc\embargo\agnostic\g12dg2</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\windows\g12dg2\hevcehw_g12dg2_win.cpp">
+      <Filter>hevc\embargo\windows\g12dg2</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\linux\g12\hevcehw_g12_embargo_lin.cpp">
+      <Filter>hevc\embargo\linux\g12</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_lin.cpp">
+      <Filter>hevc\embargo\linux\g12ats</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\embargo\linux\g12dg2\hevcehw_g12dg2_lin.cpp">
+      <Filter>hevc\embargo\linux\g12dg2</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -472,24 +511,6 @@
     <ClInclude Include="hevc\embargo\agnostic\g11lkf\hevcehw_g11lkf_caps.h">
       <Filter>hevc\embargo\agnostic\g11lkf</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12.h">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_caps.h">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_data.h">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_mfe.h">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_rext.h">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_sao.h">
-      <Filter>hevc\embargo\agnostic\g12</Filter>
-    </ClInclude>
     <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_scc.h">
       <Filter>hevc\embargo\agnostic\g12</Filter>
     </ClInclude>
@@ -498,15 +519,6 @@
     </ClInclude>
     <ClInclude Include="hevc\embargo\linux\g11lkf\hevcehw_g11lkf_lin.h">
       <Filter>hevc\embargo\linux\g11lkf</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\embargo\linux\g12\hevcehw_g12_caps_lin.h">
-      <Filter>hevc\embargo\linux\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\embargo\linux\g12\hevcehw_g12_lin.h">
-      <Filter>hevc\embargo\linux\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\embargo\linux\g12\hevcehw_g12_rext_lin.h">
-      <Filter>hevc\embargo\linux\g12</Filter>
     </ClInclude>
     <ClInclude Include="hevc\embargo\linux\g12\hevcehw_g12_scc_lin.h">
       <Filter>hevc\embargo\linux\g12</Filter>
@@ -571,12 +583,6 @@
     <ClInclude Include="hevc\embargo\linux\g11\hevcehw_g11_max_frame_size_lin.h">
       <Filter>hevc\embargo\linux\g11</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g12\hevcehw_g12_mfe_win.h">
-      <Filter>hevc\embargo\windows\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\embargo\linux\g12\hevcehw_g12_mfe_lin.h">
-      <Filter>hevc\embargo\linux\g12</Filter>
-    </ClInclude>
     <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_units_info_win.h">
       <Filter>hevc\embargo\windows\g11</Filter>
     </ClInclude>
@@ -590,9 +596,6 @@
       <Filter>hevc\open\agnostic</Filter>
     </ClInclude>
     <ClInclude Include="hevc\agnostic\hevcehw_ddi.h">
-      <Filter>hevc\open\agnostic</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\agnostic\hevcehw_ddi_trace.h">
       <Filter>hevc\open\agnostic</Filter>
     </ClInclude>
     <ClInclude Include="hevc\agnostic\hevcehw_decl_blocks.h">
@@ -628,9 +631,6 @@
     <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_ext_brc.h">
       <Filter>hevc\open\agnostic\g11</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_extddi.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
-    </ClInclude>
     <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_hdr_sei.h">
       <Filter>hevc\open\agnostic\g11</Filter>
     </ClInclude>
@@ -661,14 +661,8 @@
     <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_task.h">
       <Filter>hevc\open\agnostic\g11</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_vme_brc.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
-    </ClInclude>
     <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_weighted_prediction.h">
       <Filter>hevc\open\agnostic\g11</Filter>
-    </ClInclude>
-    <ClInclude Include="hevc\linux\hevcehw_va_trace_lin.h">
-      <Filter>hevc\open\linux</Filter>
     </ClInclude>
     <ClInclude Include="hevc\linux\g11\hevcehw_g11_encoded_frame_info_lin.h">
       <Filter>hevc\open\linux\g11</Filter>
@@ -696,6 +690,63 @@
     </ClInclude>
     <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_max_frame_size.h">
       <Filter>hevc\open\agnostic\g11</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\agnostic\g11\hevcehw_g11_extddi.h">
+      <Filter>hevc\embargo\agnostic\g11</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\windows\hevcehw_ddi_trace.h">
+      <Filter>hevc\embargo\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_alloc_win.h">
+      <Filter>hevc\embargo\windows\g11</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\agnostic\g12\hevcehw_g12_caps.h">
+      <Filter>hevc\open\agnostic\g12</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\agnostic\g12\hevcehw_g12_data.h">
+      <Filter>hevc\open\agnostic\g12</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\agnostic\g12\hevcehw_g12_rext.h">
+      <Filter>hevc\open\agnostic\g12</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\agnostic\g12\hevcehw_g12_sao.h">
+      <Filter>hevc\open\agnostic\g12</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\linux\g12\hevcehw_g12_caps_lin.h">
+      <Filter>hevc\open\linux\g12</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\linux\g12\hevcehw_g12_lin.h">
+      <Filter>hevc\open\linux\g12</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\linux\g12\hevcehw_g12_rext_lin.h">
+      <Filter>hevc\open\linux\g12</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\agnostic\g12ats\hevcehw_g12ats_mfe.h">
+      <Filter>hevc\embargo\agnostic\g12ats</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\windows\g12ats\hevcehw_g12ats_mfe_win.h">
+      <Filter>hevc\embargo\windows\g12ats</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\windows\g12ats\hevcehw_g12ats_win.h">
+      <Filter>hevc\embargo\windows\g12ats</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_mfe_lin.h">
+      <Filter>hevc\embargo\linux\g12ats</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\agnostic\g12dg2\hevcehw_g12dg2_caps.h">
+      <Filter>hevc\embargo\agnostic\g12dg2</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\windows\g12dg2\hevcehw_g12dg2_win.h">
+      <Filter>hevc\embargo\windows\g12dg2</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\linux\g12\hevcehw_g12_embargo_lin.h">
+      <Filter>hevc\embargo\linux\g12</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_lin.h">
+      <Filter>hevc\embargo\linux\g12ats</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\linux\g12dg2\hevcehw_g12dg2_lin.h">
+      <Filter>hevc\embargo\linux\g12dg2</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

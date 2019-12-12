@@ -30,7 +30,7 @@ namespace HEVCEHW
 {
 namespace Gen11
 {
-    class Interlace // TBD !!!
+    class Interlace
         : public FeatureBase
     {
     public:

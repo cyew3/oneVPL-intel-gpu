@@ -48,9 +48,11 @@ public:
         , bool isCopyRequired) override;
 
     virtual
-    mfxStatus Alloc(
+    mfxStatus AllocOpaque(
         const mfxFrameInfo & info
-        , const decltype(mfxExtOpaqueSurfaceAlloc::In)& opq) override;
+        , mfxU16 type
+        , mfxFrameSurface1 **surfaces
+        , mfxU16 numSurface) override;
 
     virtual
     const mfxFrameAllocResponse& Response() const override
@@ -82,14 +84,14 @@ public:
     mfxU32  Unlock(mfxU32 idx);
     mfxU32  Locked(mfxU32 idx) const;
 
-    void Free();
+    virtual void Free();
 
     bool isExternal() { return m_isExternal; };
 
 
     mfxFrameInfo m_info = {};
 
-private:
+protected:
     MfxFrameAllocResponse(MfxFrameAllocResponse const &) = delete;
     MfxFrameAllocResponse & operator =(MfxFrameAllocResponse const &) = delete;
 

@@ -48,7 +48,7 @@ void DPBReport::SetSupported(ParamSupport& blocks)
 void DPBReport::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
 {
     Push(BLK_Report
-        , [this](StorageW& /*global*/, StorageW& s_task) -> mfxStatus
+        , [](StorageW& /*global*/, StorageW& s_task) -> mfxStatus
     {
         auto& task = Task::Common::Get(s_task);
         MFX_CHECK(task.pBsOut, MFX_ERR_NONE);

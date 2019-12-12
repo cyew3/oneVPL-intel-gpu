@@ -28,18 +28,6 @@ using namespace HEVCEHW::Gen12;
 
 void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
-
-    Push(BLK_CheckLowPower,
-        [this](const mfxVideoParam& par, mfxVideoParam&, StorageRW& strg) -> mfxStatus
-    {
-        if (Glob::VideoCore::Get(strg).GetHWType() == MFX_HW_DG2)
-        {
-            MFX_CHECK(par.mfx.LowPower != MFX_CODINGOPTION_OFF, MFX_ERR_UNSUPPORTED);
-        }
-
-        return MFX_ERR_NONE;
-    });
-
     Push(BLK_SetDefaultsCallChain,
         [this](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
     {
@@ -47,23 +35,11 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         auto& bSet = defaults.SetForFeature[GetID()];
         MFX_CHECK(!bSet, MFX_ERR_NONE);
 
-        defaults.GetLowPower.Push([](
-            Defaults::TGetHWDefault<mfxU16>::TExt prev
-            , const mfxVideoParam& par
-            , eMFXHWType hw)
-        {
-            if (hw == MFX_HW_DG2) {
-                return mfxU16(MFX_CODINGOPTION_ON);
-            }
-
-            return prev(par, hw);
-        });
-
         defaults.GetMaxNumRef.Push([](
             Gen11::Defaults::TChain<std::tuple<mfxU16, mfxU16>>::TExt
             , const Gen11::Defaults::Param& dpar)
         {
-            const mfxU16 nRef[5][2][7] =
+            const mfxU16 nRef[3][2][7] =
             {
                 {   // VME
                     { 4, 4, 3, 3, 3, 1, 1 },
@@ -76,21 +52,12 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
                 {   // Gen12 VDENC RA B
                     { 2, 2, 1, 1, 1, 1, 1 },
                     { 1, 1, 1, 1, 1, 1, 1 }
-                },
-                {   // DG2 VDENC P
-                    { 2, 2, 2, 2, 2, 1, 1 },
-                    { 2, 2, 2, 2, 2, 1, 1 }
-                },
-                {   // DG2 VDENC RA B
-                    { 1, 1, 1, 1, 1, 1, 1 },
-                    { 1, 1, 1, 1, 1, 1, 1 }
                 }
             };
             bool    bBFrames = (dpar.mvp.mfx.GopRefDist > 1);
             bool    bVDEnc   = IsOn(dpar.mvp.mfx.LowPower);
-            bool    bDG2     = (dpar.hw == MFX_HW_DG2);
             mfxU16  tu       = dpar.mvp.mfx.TargetUsage;
-            mfxU32  idx      = bVDEnc * (1 + bBFrames + (bDG2 * 2));
+            mfxU32  idx      = bVDEnc * (1 + bBFrames);
 
             CheckRangeOrSetDefault<mfxU16>(tu, 1, 7, 4);
             --tu;
@@ -112,21 +79,11 @@ void Caps::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         , [this](const mfxVideoParam&, mfxVideoParam& par, StorageRW& strg) -> mfxStatus
     {
         auto& caps = Glob::EncodeCaps::Get(strg);
-        auto  hw   = Glob::VideoCore::Get(strg).GetHWType();
 
         caps.SliceIPOnly                = IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7);
         caps.msdk.bSingleSliceMultiTile = false;
 
         caps.YUV422ReconSupport |= (!caps.Color420Only && IsOff(par.mfx.LowPower));
-
-        // For now the driver reports in caps 8 pipes for ATS while in fact there are 2
-        // and more pipes are not expected to be supported.
-        // Delete the code when caps are fixed.
-        bool bMax2Pipes = hw >= MFX_HW_ATS && IsOn(par.mfx.LowPower);
-        if (bMax2Pipes)
-        {
-            caps.NumScalablePipesMinus1 = std::max<uint32_t>(caps.NumScalablePipesMinus1, 1);
-        }
 
         SetSpecificCaps(caps);
 

@@ -29,12 +29,15 @@ using namespace HEVCEHW::Gen11;
 void Allocator::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 {
     Push(BLK_Init
-        , [this](StorageRW&, StorageRW& local) -> mfxStatus
+        , [](StorageRW&, StorageRW& local) -> mfxStatus
     {
-        local.Insert(
-            Tmp::MakeAlloc::Key
-            , std::move(make_unique<MakeStorable<Tmp::MakeAlloc::TRef>>(
-                [](VideoCORE& core) { return new MfxFrameAllocResponse(core); })));
+        auto CreateAllocator = [](VideoCORE& core) -> IAllocation*
+        {
+            return new MfxFrameAllocResponse(core);
+        };
+
+        local.Insert(Tmp::MakeAlloc::Key, new Tmp::MakeAlloc::TRef(CreateAllocator));
+
         return MFX_ERR_NONE;
     });
 }
@@ -70,15 +73,6 @@ Resource MfxFrameAllocResponse::Acquire()
 
 void MfxFrameAllocResponse::Free()
 {
-    bool bRspQueue = m_core.GetVAType() == MFX_HW_D3D11 && !m_isOpaque;
-
-    if (bRspQueue)
-    {
-        std::for_each(m_responseQueue.begin(), m_responseQueue.end()
-            , [&](mfxFrameAllocResponse& rsp) { m_core.FreeFrames(&rsp); });
-        m_responseQueue.clear();
-        return;
-    }
 
     if (mids)
     {
@@ -90,51 +84,14 @@ void MfxFrameAllocResponse::Free()
 
 mfxStatus MfxFrameAllocResponse::Alloc(
     mfxFrameAllocRequest & req,
-    bool                   isCopyRequired)
+    bool                   /*isCopyRequired*/)
 {
     mfxFrameAllocResponse & response = *this;
 
     req.NumFrameSuggested = req.NumFrameMin;
 
-    if (m_core.GetVAType() == MFX_HW_D3D11)
-    {
-        mfxFrameAllocRequest tmp = req;
-        tmp.NumFrameMin = tmp.NumFrameSuggested = 1;
-
-        m_responseQueue.resize(req.NumFrameMin);
-        m_mids.resize(req.NumFrameMin);
-
-        // WA for RExt formats to fix CreateTexture2D failure
-        bool bNoEncTarget =
-               tmp.Info.FourCC == MFX_FOURCC_YUY2
-            || tmp.Info.FourCC == MFX_FOURCC_P210
-            || tmp.Info.FourCC == MFX_FOURCC_AYUV
-            || tmp.Info.FourCC == MFX_FOURCC_Y210
-            || tmp.Info.FourCC == MFX_FOURCC_Y410;
-
-        tmp.Type &= ~(MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET * bNoEncTarget);
-
-        mfxStatus sts = Catch(MFX_ERR_NONE,
-            [&]()
-        {
-            std::transform(m_responseQueue.begin(), m_responseQueue.end(), m_mids.begin()
-                , [&](mfxFrameAllocResponse& rsp)
-            {
-                mfxStatus asts = m_core.AllocFrames(&tmp, &rsp, isCopyRequired);
-                ThrowIf(!!asts, asts);
-                return rsp.mids[0];
-            });
-        });
-        MFX_CHECK_STS(sts);
-
-        mids = &m_mids[0];
-        NumFrameActual = req.NumFrameMin;
-    }
-    else
-    {
-        mfxStatus sts = m_core.AllocFrames(&req, &response);
-        MFX_CHECK_STS(sts);
-    }
+    mfxStatus sts = m_core.AllocFrames(&req, &response);
+    MFX_CHECK_STS(sts);
 
     MFX_CHECK(NumFrameActual >= req.NumFrameMin, MFX_ERR_MEMORY_ALLOC);
 
@@ -153,18 +110,22 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     return MFX_ERR_NONE;
 }
 
-mfxStatus MfxFrameAllocResponse::Alloc(
+mfxStatus MfxFrameAllocResponse::AllocOpaque(
     const mfxFrameInfo & info
-    , const decltype(mfxExtOpaqueSurfaceAlloc::In)& opq)
+    , mfxU16 type
+    , mfxFrameSurface1 **surfaces
+    , mfxU16 numSurface)
 {
+    mfxFrameAllocResponse & response = *this;
     mfxFrameAllocRequest req = {};
-    req.Info = info;
-    req.NumFrameMin = req.NumFrameSuggested = opq.NumSurface;
-    req.Type = opq.Type;
 
-    mfxStatus sts = m_core.AllocFrames(&req, this, opq.Surfaces, opq.NumSurface);
+    req.Info        = info;
+    req.NumFrameMin = req.NumFrameSuggested = numSurface;
+    req.Type        = type;
+
+    mfxStatus sts = m_core.AllocFrames(&req, &response, surfaces, numSurface);
     MFX_CHECK_STS(sts);
-    MFX_CHECK(NumFrameActual >= opq.NumSurface, MFX_ERR_MEMORY_ALLOC);
+    MFX_CHECK(NumFrameActual >= numSurface, MFX_ERR_MEMORY_ALLOC);
 
     m_info = info;
     m_numFrameActualReturnedByAllocFrames = NumFrameActual;

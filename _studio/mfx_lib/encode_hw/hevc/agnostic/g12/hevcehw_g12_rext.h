@@ -21,38 +21,53 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && (MFX_VERSION >= 1031)
 
-#include "hevcehw_g11_win.h"
+#include "hevcehw_base.h"
 #include "hevcehw_g12_data.h"
 
 namespace HEVCEHW
 {
-namespace Windows
-{
 namespace Gen12
 {
-    enum eFeatureId
+class RExt
+    : public FeatureBase
+{
+public:
+#define DECL_BLOCK_LIST\
+    DECL_BLOCK(SetRecInfo)\
+    DECL_BLOCK(SetGUID)\
+    DECL_BLOCK(HardcodeCaps)\
+    DECL_BLOCK(SetDefaultsCallChain)\
+    DECL_BLOCK(CheckShift)
+#define DECL_FEATURE_NAME "G12_RExt"
+#include "hevcehw_decl_blocks.h"
+
+    RExt(mfxU32 FeatureId)
+        : FeatureBase(FeatureId)
+    {}
+
+protected:
+    virtual void InitInternal(const FeatureBlocks& blocks, TPushII Push) override;
+    virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
+    virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
+
+    mfxStatus SetGuid(mfxVideoParam& par, StorageRW& strg);
+
+    static bool IsRextFourCC(mfxU32 FourCC)
     {
-        FEATURE_SCC = HEVCEHW::Gen12::eFeatureId::NUM_FEATURES
-        , NUM_FEATURES
-    };
+        return !Check<mfxU32
+            , MFX_FOURCC_P016
+            , MFX_FOURCC_Y216
+            , MFX_FOURCC_Y416>(FourCC);
+    }
 
-    class MFXVideoENCODEH265_HW
-        : public Windows::Gen11::MFXVideoENCODEH265_HW
-    {
-    public:
-        using TBaseImpl = Windows::Gen11::MFXVideoENCODEH265_HW;
+    static const GUID DXVA2_Intel_Encode_HEVC_Main12;
+    static const GUID DXVA2_Intel_Encode_HEVC_Main422_12;
+    static const GUID DXVA2_Intel_Encode_HEVC_Main444_12;
+};
 
-        MFXVideoENCODEH265_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
-
-        virtual mfxStatus Init(mfxVideoParam *par) override;
-    };
 } //Gen12
-} //Windows
-}// namespace HEVCEHW
+} //namespace HEVCEHW
 
 #endif

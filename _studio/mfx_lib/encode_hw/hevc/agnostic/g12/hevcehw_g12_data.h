@@ -21,38 +21,38 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "hevcehw_g11_win.h"
-#include "hevcehw_g12_data.h"
+#include "hevcehw_g11_data.h"
 
 namespace HEVCEHW
 {
-namespace Windows
-{
 namespace Gen12
 {
+    using Gen11::Defaults;
+    using Gen11::FrameBaseInfo;
+    using Gen11::Task;
+
     enum eFeatureId
     {
-        FEATURE_SCC = HEVCEHW::Gen12::eFeatureId::NUM_FEATURES
+        FEATURE_REXT = Gen11::eFeatureId::NUM_FEATURES
+        , FEATURE_CAPS
+        , FEATURE_SAO
+        , FEATURE_QP_MODULATION
         , NUM_FEATURES
     };
 
-    class MFXVideoENCODEH265_HW
-        : public Windows::Gen11::MFXVideoENCODEH265_HW
+    struct Glob
+        : Gen11::Glob
     {
-    public:
-        using TBaseImpl = Windows::Gen11::MFXVideoENCODEH265_HW;
-
-        MFXVideoENCODEH265_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
-
-        virtual mfxStatus Init(mfxVideoParam *par) override;
+        static const StorageR::TKey _KD = __LINE__ + 1 - Gen11::Glob::NUM_KEYS;
+        static const StorageR::TKey ReservedKey12_0 = __LINE__ - _KD;
+        static const StorageR::TKey ReservedKey12_1 = __LINE__ - _KD;
+        static const StorageR::TKey NUM_KEYS = __LINE__ - _KD;
     };
-} //Gen12
-} //Windows
-}// namespace HEVCEHW
+
+
+} //namespace Gen12
+} //namespace HEVCEHW
 
 #endif

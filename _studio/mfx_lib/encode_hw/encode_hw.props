@@ -29,20 +29,28 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\genx\h264_encode\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\agnostic;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\agnostic\g11;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\agnostic\g12;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\linux;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\linux\g11;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\linux\g12;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g11;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g11lkf;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g12;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g12ats;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\agnostic\g12dg2;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\linux;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\linux\g11;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\linux\g11lkf;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\linux\g12;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\linux\g12ats;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\linux\g12dg2;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g11;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g11lkf;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12ats;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12dg2;
     </MfxIncludes>
     <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>

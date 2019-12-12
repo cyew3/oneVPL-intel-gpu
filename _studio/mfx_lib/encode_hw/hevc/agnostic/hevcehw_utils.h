@@ -158,7 +158,7 @@ inline std::reverse_iterator<T> MakeRIter(T i)
 }
 
 template<class TIn, class TOut, class TPred>
-void MoveIf(TIn& src, TOut& dst, TPred pred)
+inline void MoveIf(TIn& src, TOut& dst, TPred pred)
 {
     TIn newSrc;
     std::partition_copy(
@@ -191,7 +191,7 @@ inline bool CheckGE(T opt)
 }
 
 template <class T, class... U>
-bool Check(T & opt, T next, U... other)
+inline bool Check(T & opt, T next, U... other)
 {
     if (opt == next)
         return false;
@@ -214,7 +214,7 @@ inline bool CheckOrZero(T & opt)
 }
 
 template <class T, class... U>
-bool CheckOrZero(T & opt, T next, U... other)
+inline bool CheckOrZero(T & opt, T next, U... other)
 {
     if (opt == next)
         return false;
@@ -222,7 +222,7 @@ bool CheckOrZero(T & opt, T next, U... other)
 }
 
 template <class T, class U>
-bool CheckMaxOrZero(T & opt, U max)
+inline bool CheckMaxOrZero(T & opt, U max)
 {
     if (opt <= max)
         return false;
@@ -231,7 +231,7 @@ bool CheckMaxOrZero(T & opt, U max)
 }
 
 template <class T, class U>
-bool CheckMinOrZero(T & opt, U min)
+inline bool CheckMinOrZero(T & opt, U min)
 {
     if (opt >= min)
         return false;
@@ -240,7 +240,7 @@ bool CheckMinOrZero(T & opt, U min)
 }
 
 template <class T, class U>
-bool CheckMaxOrClip(T & opt, U max)
+inline bool CheckMaxOrClip(T & opt, U max)
 {
     if (opt <= max)
         return false;
@@ -249,7 +249,7 @@ bool CheckMaxOrClip(T & opt, U max)
 }
 
 template <class T, class U>
-bool CheckMinOrClip(T & opt, U min)
+inline bool CheckMinOrClip(T & opt, U min)
 {
     if (opt >= min)
         return false;
@@ -258,7 +258,7 @@ bool CheckMinOrClip(T & opt, U min)
 }
 
 template <class T>
-bool CheckRangeOrSetDefault(T & opt, T min, T max, T dflt)
+inline bool CheckRangeOrSetDefault(T & opt, T min, T max, T dflt)
 {
     if (opt >= min && opt <= max)
         return false;
@@ -336,7 +336,7 @@ inline bool IsRef(mfxU32 type)
 }
 
 template<class T>
-bool AlignDown(T& value, mfxU32 alignment)
+inline bool AlignDown(T& value, mfxU32 alignment)
 {
     assert((alignment & (alignment - 1)) == 0); // should be 2^n
     if (!(value & (alignment - 1))) return false;
@@ -345,7 +345,7 @@ bool AlignDown(T& value, mfxU32 alignment)
 }
 
 template<class T>
-bool AlignUp(T& value, mfxU32 alignment)
+inline bool AlignUp(T& value, mfxU32 alignment)
 {
     assert((alignment & (alignment - 1)) == 0); // should be 2^n
     if (!(value & (alignment - 1))) return false;
@@ -390,7 +390,7 @@ struct DefaultFiller<T, typename std::enable_if<
 };
 
 template<class A>
-void Remove(
+inline void Remove(
     A &_from
     , size_t _where
     , size_t _num = 1)
@@ -403,7 +403,7 @@ void Remove(
 }
 
 template<class T, class Pr>
-T RemoveIf(
+inline T RemoveIf(
     T _begin
     , T _end
     , Pr _pr)
@@ -414,7 +414,7 @@ T RemoveIf(
 }
 
 template<class T, class A>
-void Insert(
+inline void Insert(
     A &_to
     , size_t _where
     , T const & _what)
@@ -427,7 +427,7 @@ void Insert(
 }
 
 template <class T>
-bool InheritOption(T optInit, T & optReset)
+inline bool InheritOption(T optInit, T & optReset)
 {
     if (optReset == 0)
     {
@@ -494,7 +494,7 @@ public:
             mfxU16 MN = std::max<mfxU16>(1, pcMfx->BRCParamMultiplier);
 
             while (CeilDiv<mfxU32>(x, MN) >= (1 << 16))
-                MN++;
+                ++MN;
 
             UpdateMultiplier(*pMfx, MN);
             V() = (mfxU16)CeilDiv<mfxU32>(x, MN);
@@ -567,7 +567,7 @@ private:
 };
 
 template <class T>
-IterStepWrapper<T> MakeStepIter(T ptr, ptrdiff_t step = 1)
+inline IterStepWrapper<T> MakeStepIter(T ptr, ptrdiff_t step = 1)
 {
     return IterStepWrapper<T>(ptr, step);
 }

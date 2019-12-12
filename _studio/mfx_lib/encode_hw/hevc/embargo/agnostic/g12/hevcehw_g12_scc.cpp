@@ -43,7 +43,7 @@ bool SCC::ReadSpsExt(StorageRW& strg, const Gen11::SPS&, mfxU8 id, Gen11::IBsRea
     if (id != SCC_EXT_ID)
         return false;
 
-    SccSpsExt& sps = Glob::SccSpsExt::GetOrConstruct(strg, SccSpsExt{});
+    SccSpsExt& sps = SpsExt::GetOrConstruct(strg, SccSpsExt{});
 
     sps.curr_pic_ref_enabled_flag = bs.GetBit();
     sps.palette_mode_enabled_flag = bs.GetBit();
@@ -91,7 +91,7 @@ bool SCC::ReadPpsExt(StorageRW& strg, const Gen11::PPS&, mfxU8 id, Gen11::IBsRea
 
     pps.scc_extension_flag = 1;
 
-    strg.Insert(Glob::SccPpsExt::Key, std::move(pExt));
+    strg.Insert(PpsExt::Key, std::move(pExt));
 
     return true;
 }
@@ -101,7 +101,7 @@ bool SCC::PackSpsExt(StorageRW& strg, const Gen11::SPS&, mfxU8 id, Gen11::IBsWri
     if (id != SCC_EXT_ID)
         return false;
 
-    auto& sps = Glob::SccSpsExt::Get(strg);
+    auto& sps = SpsExt::Get(strg);
 
     bs.PutBit(sps.curr_pic_ref_enabled_flag);
     bs.PutBit(sps.palette_mode_enabled_flag);
@@ -124,7 +124,7 @@ bool SCC::PackPpsExt(StorageRW& strg, const Gen11::PPS&, mfxU8 id, Gen11::IBsWri
     if (id != SCC_EXT_ID)
         return false;
 
-    auto& pps = Glob::SccPpsExt::Get(strg);
+    auto& pps = PpsExt::Get(strg);
 
     bs.PutBit(pps.curr_pic_ref_enabled_flag);
     bs.PutBit(0); // Gen12: pps.residual_adaptive_colour_transform_enabled_flag - MBZ
@@ -248,7 +248,7 @@ void SCC::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         MFX_CHECK(Glob::VideoParam::Get(strg).mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
 
         auto& sps = Glob::SPS::Get(strg);
-        auto& spsExt = Glob::SccSpsExt::GetOrConstruct(strg, SccSpsExt{});
+        auto& spsExt = SpsExt::GetOrConstruct(strg, SccSpsExt{});
 
         spsExt = {};
         spsExt.curr_pic_ref_enabled_flag = 1;
@@ -269,7 +269,7 @@ void SCC::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         MFX_CHECK(Glob::VideoParam::Get(strg).mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
 
         auto& pps = Glob::PPS::Get(strg);
-        auto& ppsExt = Glob::SccPpsExt::GetOrConstruct(strg, SccPpsExt{});
+        auto& ppsExt = PpsExt::GetOrConstruct(strg, SccPpsExt{});
 
         ppsExt = {};
         ppsExt.curr_pic_ref_enabled_flag = 1;

@@ -598,9 +598,11 @@ namespace Gen11
             , bool isCopyRequired) = 0;
 
         virtual
-        mfxStatus Alloc(
+        mfxStatus AllocOpaque(
             const mfxFrameInfo & info
-            , const decltype(mfxExtOpaqueSurfaceAlloc::In)& opq) = 0;
+            , mfxU16 type
+            , mfxFrameSurface1 **surfaces
+            , mfxU16 numSurface) = 0;
 
         virtual
         const mfxFrameAllocResponse& Response() const = 0;
@@ -967,7 +969,16 @@ namespace Gen11
     {
         bool operator()(const GUID& l, const GUID& r) const
         {
-            return (memcmp(&l, &r, sizeof(GUID)) < 0);
+            if (l == r)
+                return false;
+            bool bLess = l.Data1 < r.Data1;
+            bool bEQ   = l.Data1 == r.Data1;
+            bLess |= bEQ && l.Data2 < r.Data2;
+            bEQ   &= l.Data2 == r.Data2;
+            bLess |= bEQ && l.Data3 < r.Data3;
+            bEQ   &= l.Data3 == r.Data3;
+            bLess |= bEQ && (memcmp(l.Data4, r.Data4, sizeof(l.Data4)) < 0);
+            return bLess;
         }
     };
 

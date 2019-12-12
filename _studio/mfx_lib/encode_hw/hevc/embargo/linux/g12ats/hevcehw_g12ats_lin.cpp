@@ -18,35 +18,61 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
 
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
-#include "hevcehw_g12.h"
-#include "hevcehw_g11_lin.h"
+#include "hevcehw_g12ats_lin.h"
+#if defined(MFX_ENABLE_MFE)
+#include "hevcehw_g12ats_mfe_lin.h"
+#endif //defined(MFX_ENABLE_MFE)
+#include "hevcehw_g11_data.h"
+#include "hevcehw_g11_iddi.h"
 
 namespace HEVCEHW
 {
-namespace Gen12
-{
-    using TPrevGenImpl = Linux::Gen11::MFXVideoENCODEH265_HW;
-}; //Gen12
 namespace Linux
 {
-namespace Gen12
+namespace Gen12ATS
 {
-    class MFXVideoENCODEH265_HW
-        : public HEVCEHW::Gen12::MFXVideoENCODEH265_HW<HEVCEHW::Gen12::TPrevGenImpl>
-    {
-    public:
-        MFXVideoENCODEH265_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
-    };
-} //Gen12
-} //Linux
-}// namespace HEVCEHW
 
-#endif
+MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
+    VideoCORE& core
+    , mfxStatus& status
+    , eFeatureMode mode)
+    : TBaseImpl(core, status, mode)
+{
+    TFeatureList newFeatures;
+
+#if defined(MFX_ENABLE_MFE)
+    m_features.emplace_back(new MFE(FEATURE_MFE));
+#endif //defined(MFX_ENABLE_MFE)
+    
+    for (auto& pFeature : newFeatures)
+        pFeature->Init(mode, *this);
+
+    m_features.splice(m_features.end(), newFeatures);
+}
+
+mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
+{
+    auto sts = TBaseImpl::Init(par);
+    MFX_CHECK_STS(sts);
+
+#if defined(MFX_ENABLE_MFE)
+    auto& st = BQ<BQ_SubmitTask>::Get(*this);
+    if (m_core.GetVAType() == MFX_HW_D3D11)
+    {
+        Reorder(
+            st
+            , { HEVCEHW::Gen11::FEATURE_DDI, HEVCEHW::Gen11::IDDI::BLK_SubmitTask }
+            , { FEATURE_MFE, MFE::BLK_UpdateDDITask });
+    }
+#endif //defined(MFX_ENABLE_MFE)
+
+    return MFX_ERR_NONE;
+}
+
+}}} //namespace HEVCEHW::Linux::Gen12ATS
+
+#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

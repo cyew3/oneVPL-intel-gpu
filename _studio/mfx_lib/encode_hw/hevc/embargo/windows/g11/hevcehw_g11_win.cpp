@@ -27,7 +27,7 @@
 #include "hevcehw_g11_parser.h"
 #include "hevcehw_g11_packer.h"
 #include "hevcehw_g11_hrd.h"
-#include "hevcehw_g11_alloc.h"
+#include "hevcehw_g11_alloc_win.h"
 #include "hevcehw_g11_task.h"
 #include "hevcehw_g11_ext_brc.h"
 #include "hevcehw_g11_dirty_rect_win.h"

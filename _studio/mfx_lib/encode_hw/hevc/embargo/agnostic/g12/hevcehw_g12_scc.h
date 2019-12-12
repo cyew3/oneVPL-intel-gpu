@@ -51,6 +51,44 @@ public:
     SCC(mfxU32 FeatureId)
         : FeatureBase(FeatureId)
     {}
+    
+    struct SccSpsExt
+    {
+        mfxU8 scc_extension_flag                         : 1;
+        mfxU8 curr_pic_ref_enabled_flag                  : 1;
+        mfxU8 palette_mode_enabled_flag                  : 1;
+        mfxU8 motion_vector_resolution_control_idc       : 2; // MBZ for Gen12
+        mfxU8 intra_boundary_filtering_disabled_flag     : 1; // MBZ for Gen12
+        mfxU8 palette_predictor_initializer_present_flag : 1; // MBZ for Gen12
+        mfxU8 : 1;
+
+        mfxU32 palette_max_size;                    // A.3.7: palette_max_size<=64
+        mfxU32 delta_palette_max_predictor_size;    // A.3.7: palette_max_size+delta_palette_max_predictor_size <= 128
+        mfxU32 num_palette_predictor_initializer_minus1;
+        mfxU32 palette_predictor_initializers[3][128];
+    };
+
+    struct SccPpsExt
+    {
+        mfxU8 scc_extension_flag                                : 1;
+        mfxU8 curr_pic_ref_enabled_flag                         : 1;
+        mfxU8 residual_adaptive_colour_transform_enabled_flag   : 1;  // MBZ for Gen12
+        mfxU8 palette_predictor_initializer_present_flag        : 1;   // MBZ for Gen12
+        mfxU8 slice_act_qp_offsets_present_flag                 : 1;
+        mfxU8 monochrome_palette_flag                           : 1;
+        mfxU8 : 2;
+
+        mfxU32 act_y_qp_offset_plus5;
+        mfxU32 act_cb_qp_offset_plus5;
+        mfxU32 act_cr_qp_offset_plus3;
+        mfxU32 num_palette_predictor_initializer;
+        mfxU32 luma_bit_depth_entry_minus8;
+        mfxU32 chroma_bit_depth_entry_minus8;
+        mfxU32 palette_predictor_initializers[3][128];
+    };
+    
+    using SpsExt = StorageVar<Glob::ReservedKey12_0, SccSpsExt>;
+    using PpsExt = StorageVar<Glob::ReservedKey12_1, SccPpsExt>;
 
 protected:
     virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;

@@ -34,16 +34,9 @@
 #if !defined(MFX_EXT_DPB_HEVC_DISABLE) && (MFX_VERSION >= MFX_VERSION_NEXT)
 #include "hevcehw_g11_dpb_report.h"
 #endif
-#if (DEBUG_REC_FRAMES_INFO)
-#include "hevcehw_g11_dump_files.h"
-#endif
-#include "hevcehw_g11_extddi.h"
 #include "hevcehw_g11_hdr_sei.h"
 #include "hevcehw_g11_va_lin.h"
 #include "hevcehw_g11_va_packer_lin.h"
-#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
-#include "hevcehw_g11_gpu_hang_lin.h"
-#endif
 #include "hevcehw_g11_interlace_lin.h"
 #include "hevcehw_g11_encoded_frame_info_lin.h"
 #if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
@@ -90,14 +83,7 @@ Linux::Gen11::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 #if !defined(MFX_EXT_DPB_HEVC_DISABLE) && (MFX_VERSION >= MFX_VERSION_NEXT)
     m_features.emplace_back(new DPBReport(FEATURE_DPB_REPORT));
 #endif
-#if (DEBUG_REC_FRAMES_INFO)
-    m_features.emplace_back(new DumpFiles(FEATURE_DUMP_FILES));
-#endif //(DEBUG_REC_FRAMES_INFO)
-    m_features.emplace_back(new ExtDDI(FEATURE_EXTDDI));
     m_features.emplace_back(new HdrSei(FEATURE_HDR_SEI));
-#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
-    m_features.emplace_back(new GPUHang(FEATURE_GPU_HANG));
-#endif //defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     m_features.emplace_back(new Interlace(FEATURE_INTERLACE));
     m_features.emplace_back(new EncodedFrameInfo(FEATURE_ENCODED_FRAME_INFO));
 #if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
@@ -123,13 +109,6 @@ mfxStatus Linux::Gen11::MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
 {
     mfxStatus sts = HEVCEHW::Gen11::MFXVideoENCODEH265_HW::Init(par);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
-
-#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
-    {
-        auto& queue = BQ<BQ_SubmitTask>::Get(*this);
-        Reorder(queue, { FEATURE_DDI, IDDI::BLK_SubmitTask }, { FEATURE_GPU_HANG, GPUHang::BLK_PatchDDITask });
-    }
-#endif //defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
 
     return sts;
 }

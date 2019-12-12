@@ -21,40 +21,35 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
-#include "hevcehw_base.h"
-#include "hevcehw_g12_data.h"
+#include "hevcehw_g12ats_win.h"
 
 namespace HEVCEHW
 {
-namespace Gen12
+namespace Windows
 {
-class MFE
-    : public FeatureBase
+namespace Gen12DG2
 {
-public:
-#define DECL_BLOCK_LIST\
-    DECL_BLOCK(Init)\
-    DECL_BLOCK(SetCallChains)\
-    DECL_BLOCK(UpdateDDITask)\
-    DECL_BLOCK(CheckAndFix)
-#define DECL_FEATURE_NAME "G12_MFE"
-#include "hevcehw_decl_blocks.h"
+    enum eFeatureId
+    {
+        FEATURE_CAPS = Gen12ATS::eFeatureId::NUM_FEATURES
+        , NUM_FEATURES
+    };
 
-    MFE(mfxU32 FeatureId)
-        : FeatureBase(FeatureId)
-    {}
+    class MFXVideoENCODEH265_HW
+        : public Windows::Gen12ATS::MFXVideoENCODEH265_HW
+    {
+    public:
+        using TBaseImpl = Windows::Gen12ATS::MFXVideoENCODEH265_HW;
 
-protected:
-    virtual void SetSupported(ParamSupport& blocks) override;
-    virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
-
-    bool   m_bDDIExecSet = false;
-    mfxU32 m_timeout = 3600000000;//one hour for pre-si, ToDo:remove for silicon
-};
-
-} //Gen12
-} //namespace HEVCEHW
+        MFXVideoENCODEH265_HW(
+            VideoCORE& core
+            , mfxStatus& status
+            , eFeatureMode mode = eFeatureMode::INIT);
+    };
+} //Gen12DG2
+} //Windows
+}// namespace HEVCEHW
 
 #endif

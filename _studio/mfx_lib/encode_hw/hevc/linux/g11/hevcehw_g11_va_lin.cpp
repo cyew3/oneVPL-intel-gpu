@@ -108,7 +108,6 @@ void DDI_VA::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         auto  vap            = VAProfile(vaGuid.Profile);
         auto  vaep           = VAEntrypoint(vaGuid.Entrypoint);
         bool  bNeedNewDevice = vap != m_profile || vaep != m_entrypoint;
-        auto& ddiExec        = Glob::DDI_Execute::GetOrConstruct(strg);
 
         m_callVa = Glob::DDI_Execute::Get(strg);
 
@@ -141,9 +140,6 @@ void DDI_VA::InitExternal(const FeatureBlocks& /*blocks*/, TPushIE Push)
         MFX_CHECK(bNeedNewDevice, MFX_ERR_NONE);
 
         auto sts = CreateAuxilliaryDevice(core, vap, vaep);
-
-        Trace(guid, 0);
-        Trace(m_caps, 0);
 
         return sts;
     });
@@ -493,13 +489,8 @@ mfxStatus DDI_VA::CreateAuxilliaryDevice(
     , VAProfile profile
     , VAEntrypoint entrypoint)
 {
-#ifdef HEVCEHW_VA_FAKE_CALL
-    m_vaDisplay = (VADisplay)(-1);
-    core;
-#else
     mfxStatus sts = core.GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*)&m_vaDisplay);
     MFX_CHECK_STS(sts);
-#endif
 
     m_caps = {};
 

@@ -32,12 +32,11 @@ void Linux::Gen11::ROI::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
     Push(BLK_SetCallChains
         , [this](StorageRW& global, StorageRW& local) -> mfxStatus
     {
-        auto& par = Glob::VideoParam::Get(global);
         auto& vaPacker = VAPacker::CC::Get(global);
 
         if (m_bViaCuQp)
         {
-            vaPacker.FillCUQPData.Push([this](
+            vaPacker.FillCUQPData.Push([](
                 VAPacker::CallChains::TFillCUQPData::TExt prev
                 , const StorageR& global
                 , const StorageR& s_task

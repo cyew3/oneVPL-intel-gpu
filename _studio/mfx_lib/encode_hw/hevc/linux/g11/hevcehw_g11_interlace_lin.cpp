@@ -32,7 +32,7 @@ void Linux::Gen11::Interlace::SubmitTask(const FeatureBlocks& blocks, TPushST Pu
     HEVCEHW::Gen11::Interlace::SubmitTask(blocks, Push);
 
     Push(BLK_PatchDDITask
-        , [this](StorageW& global, StorageW& /*s_task*/) -> mfxStatus
+        , [](StorageW& global, StorageW& /*s_task*/) -> mfxStatus
     {
         auto& par = Glob::VideoParam::Get(global);
         MFX_CHECK(IsField(par.mfx.FrameInfo.PicStruct), MFX_ERR_NONE);

@@ -21,32 +21,34 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_MFE) && defined(MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "hevcehw_g12_mfe.h"
-#include "mfx_mfe_adapter.h"
+#include "hevcehw_base.h"
+#include "hevcehw_g12_data.h"
 
 namespace HEVCEHW
 {
-namespace Linux
+namespace Gen12DG2
 {
-namespace Gen12
-{
-class MFE
-    : public HEVCEHW::Gen12::MFE
+class Caps
+    : public FeatureBase
 {
 public:
-    MFE(mfxU32 FeatureId)
-        : HEVCEHW::Gen12::MFE(FeatureId)
+#define DECL_BLOCK_LIST\
+    DECL_BLOCK(SetDefaultsCallChain)\
+    DECL_BLOCK(CheckLowPower)
+#define DECL_FEATURE_NAME "G12DG2_Caps"
+#include "hevcehw_decl_blocks.h"
+
+    Caps(mfxU32 FeatureId)
+        : FeatureBase(FeatureId)
     {}
 
 protected:
-    virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
-
-    NotNull<MFEVAAPIEncoder*> m_pMfeAdapter = nullptr;
+    virtual void Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
 };
-} //Gen12
-} //namespace Linux
+
+} //Gen12DG2
 } //namespace HEVCEHW
 
 #endif

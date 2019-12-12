@@ -144,7 +144,7 @@ void ROI::SetSupported(ParamSupport& blocks)
 void ROI::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_CheckAndFix
-        , [this](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& global) -> mfxStatus
+        , [](const mfxVideoParam& /*in*/, mfxVideoParam& par, StorageW& global) -> mfxStatus
     {
         mfxExtEncoderROI* pROI = ExtBuffer::Get(par);
         MFX_CHECK(pROI && pROI->NumROI, MFX_ERR_NONE);
@@ -174,7 +174,7 @@ void ROI::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
         auto& bSet = defaults.SetForFeature[GetID()];
         if (!bSet)
         {
-            defaults.GetPPS.Push([this](
+            defaults.GetPPS.Push([](
                 Defaults::TGetPPS::TExt prev
                 , const Defaults::Param& defPar
                 , const Gen11::SPS& sps
