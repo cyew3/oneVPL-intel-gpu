@@ -705,6 +705,12 @@ namespace vp9e_multiref
                 Query();
                 return 0;
             }
+
+            if (g_tsHWtype == MFX_HW_DG2 && m_par.mfx.NumRefFrame > 2)
+            {
+                g_tsLog << "WARNING: Maximum 2ref is supported by driver for DG2!\n";
+                throw tsSKIP;
+            }
         }
         else {
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
