@@ -308,6 +308,7 @@ void Legacy::SetInherited(ParamInheritance& par)
 
         INHERIT_OPT(AsyncDepth);
         //INHERIT_OPT(mfx.BRCParamMultiplier);
+        INHERIT_OPT(mfx.LowPower);
         INHERIT_OPT(mfx.CodecId);
         INHERIT_OPT(mfx.CodecProfile);
         INHERIT_OPT(mfx.CodecLevel);
