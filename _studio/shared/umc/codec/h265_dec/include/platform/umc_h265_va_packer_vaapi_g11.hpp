@@ -63,7 +63,7 @@ namespace UMC_HEVC_DECODER
             pic_fields.intra_smoothing_disabled_flag               = sps->intra_smoothing_disabled_flag;
             pic_fields.high_precision_offsets_enabled_flag         = sps->high_precision_offsets_enabled_flag;;
             pic_fields.persistent_rice_adaptation_enabled_flag     = sps->fast_rice_adaptation_enabled_flag;
-            pic_fields.cabac_bypass_alignment_enabled_flag         = pps->cabac_init_present_flag;
+            pic_fields.cabac_bypass_alignment_enabled_flag         = sps->cabac_bypass_alignment_enabled_flag;
             pic_fields.cross_component_prediction_enabled_flag     = pps->cross_component_prediction_enabled_flag;
             pic_fields.chroma_qp_offset_list_enabled_flag          = pps->chroma_qp_offset_list_enabled_flag;
 
