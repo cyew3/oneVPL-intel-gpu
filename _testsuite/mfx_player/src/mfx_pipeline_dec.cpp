@@ -1107,6 +1107,7 @@ mfxStatus MFXDecPipeline::InitInputBs(bool &bExtended)
     {
         bs_size = (std::min)(m_inParams.nLimitInputBs, bs_size);
     }
+    m_bitstreamBuf.InputBsLength = m_inParams.nLimitInputBs;
 
     bExtended = false;
     if (bs_size > m_bitstreamBuf.MaxLength)
@@ -3330,6 +3331,17 @@ mfxStatus MFXDecPipeline::Play()
         {
             MFX_CHECK_STS(ProcessTrickCommands());
             mfxBitstream2 inputBs;
+
+            // To ensure there is enough BS data under CompleteFrame mode
+            if (m_inParams.bCompleteFrame
+                && (m_bitstreamBuf.ReadLength < m_bitstreamBuf.InputBsLength)
+                && (m_bitstreamBuf.DataLength
+                     < (m_components[eDEC].m_params.mfx.FrameInfo.Width
+                        * m_components[eDEC].m_params.mfx.FrameInfo.Height * 4)))
+            {
+                sts = MFX_ERR_MORE_DATA;
+                break;
+            }
 
             MFX_CHECK_STS_SKIP(sts = m_bitstreamBuf.LockOutput(&inputBs) , MFX_ERR_MORE_DATA);
 
