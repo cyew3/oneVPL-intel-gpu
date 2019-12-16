@@ -27,8 +27,8 @@
 #include "mfx_session.h"
 
 #include "hevcehw_extbuf.h"
-#include "g11/hevcehw_g11_legacy.h"
-#include "g11/hevcehw_g11_qmatrix_win.h"
+#include "g9/hevcehw_g9_legacy.h"
+#include "g9/hevcehw_g9_qmatrix_win.h"
 
 #include "mocks/include/dxgi/format.h"
 
@@ -55,14 +55,14 @@ namespace hevce { namespace tests
 
         FeatureBlocks                         blocks{};
 
-        HEVCEHW::Gen11::Legacy                legacy;
-        Windows::Gen11::QMatrix               qmatrix;
+        HEVCEHW::Gen9::Legacy                legacy;
+        Windows::Gen9::QMatrix               qmatrix;
 
         StorageRW                             storage;
 
         FeatureBlocksQMatrix()
-            : legacy(HEVCEHW::Gen11::FEATURE_LEGACY)
-            , qmatrix(HEVCEHW::Gen11::FEATURE_QMATRIX)
+            : legacy(HEVCEHW::Gen9::FEATURE_LEGACY)
+            , qmatrix(HEVCEHW::Gen9::FEATURE_QMATRIX)
         {}
 
         void SetUp() override
@@ -89,14 +89,14 @@ namespace hevce { namespace tests
 
             //populate session's dx11 core for encoder
             auto s = static_cast<_mfxSession*>(session);
-            storage.Insert(Gen11::Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
+            storage.Insert(Gen9::Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
 
             qmatrix.Init(HEVCEHW::INIT, blocks);
 
-            Gen11::Glob::VideoParam::GetOrConstruct(storage)
+            Gen9::Glob::VideoParam::GetOrConstruct(storage)
                 .NewEB(MFX_EXTBUFF_CODING_OPTION3);
-            Gen11::Glob::DDI_SubmitParam::GetOrConstruct(storage);
-            Gen11::Glob::SPS::GetOrConstruct(storage);
+            Gen9::Glob::DDI_SubmitParam::GetOrConstruct(storage);
+            Gen9::Glob::SPS::GetOrConstruct(storage);
         }
     };
 
@@ -107,7 +107,7 @@ namespace hevce { namespace tests
         {
             FeatureBlocksQMatrix::SetUp();
 
-            mfxVideoParam const& vp  = Gen11::Glob::VideoParam::Get(storage);
+            mfxVideoParam const& vp  = Gen9::Glob::VideoParam::Get(storage);
             device = mocks::mfx::dx11::make_encoder(nullptr, nullptr,
                 std::integral_constant<int, mocks::mfx::HW_SKL>{},
                 std::make_tuple(mocks::guid<&DXVA2_Intel_Encode_HEVC_Main>{}, vp)
@@ -118,14 +118,14 @@ namespace hevce { namespace tests
     TEST_F(FeatureBlocksQMatrixSCL, UpdateSPSUnsupported)
     {
         auto& queueUpdate = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueUpdate, { Gen11::FEATURE_QMATRIX, Windows::Gen11::QMatrix::BLK_UpdateSPS });
+        auto block = FeatureBlocks::Get(queueUpdate, { Gen9::FEATURE_QMATRIX, Windows::Gen9::QMatrix::BLK_UpdateSPS });
 
-        auto& vp  = Gen11::Glob::VideoParam::Get(storage);
+        auto& vp  = Gen9::Glob::VideoParam::Get(storage);
         vp.NewEB(MFX_EXTBUFF_CODING_OPTION3);
         mfxExtCodingOption3& co3  = ExtBuffer::Get(vp);
         co3.ScenarioInfo = MFX_SCENARIO_GAME_STREAMING;
 
-        auto& sps = Gen11::Glob::SPS::Get(storage);
+        auto& sps = Gen9::Glob::SPS::Get(storage);
         ASSERT_EQ(
             sps.scaling_list_enabled_flag, 0
         );
@@ -153,7 +153,7 @@ namespace hevce { namespace tests
         {
             FeatureBlocksQMatrix::SetUp();
 
-            mfxVideoParam const& vp  = Gen11::Glob::VideoParam::Get(storage);
+            mfxVideoParam const& vp  = Gen9::Glob::VideoParam::Get(storage);
             device = mocks::mfx::dx11::make_encoder(nullptr, nullptr,
                 std::integral_constant<int, mocks::mfx::HW_ICL>{},
                 std::make_tuple(mocks::guid<&DXVA2_Intel_Encode_HEVC_Main>{}, vp)
@@ -164,16 +164,16 @@ namespace hevce { namespace tests
     TEST_F(FeatureBlocksQMatrixICL, UpdateSPSScenarioNotApplicable)
     {
         auto& queueUpdate = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueUpdate, { Gen11::FEATURE_QMATRIX, Windows::Gen11::QMatrix::BLK_UpdateSPS });
+        auto block = FeatureBlocks::Get(queueUpdate, { Gen9::FEATURE_QMATRIX, Windows::Gen9::QMatrix::BLK_UpdateSPS });
 
-        auto& vp  = Gen11::Glob::VideoParam::Get(storage);
+        auto& vp  = Gen9::Glob::VideoParam::Get(storage);
         mfxExtCodingOption3& co3  = ExtBuffer::Get(vp);
         ASSERT_NE(
             co3.ScenarioInfo,
             MFX_SCENARIO_GAME_STREAMING
         );
 
-        auto& sps = Gen11::Glob::SPS::Get(storage);
+        auto& sps = Gen9::Glob::SPS::Get(storage);
         ASSERT_EQ(
             sps.scaling_list_enabled_flag, 0
         );
@@ -197,14 +197,14 @@ namespace hevce { namespace tests
     TEST_F(FeatureBlocksQMatrixICL, UpdateSPS)
     {
         auto& queueUpdate = FeatureBlocks::BQ<FeatureBlocks::BQ_InitInternal>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueUpdate, { Gen11::FEATURE_QMATRIX, Windows::Gen11::QMatrix::BLK_UpdateSPS });
+        auto block = FeatureBlocks::Get(queueUpdate, { Gen9::FEATURE_QMATRIX, Windows::Gen9::QMatrix::BLK_UpdateSPS });
 
-        auto& vp  = Gen11::Glob::VideoParam::Get(storage);
+        auto& vp  = Gen9::Glob::VideoParam::Get(storage);
         vp.NewEB(MFX_EXTBUFF_CODING_OPTION3);
         mfxExtCodingOption3& co3  = ExtBuffer::Get(vp);
         co3.ScenarioInfo = MFX_SCENARIO_GAME_STREAMING;
 
-        auto& sps = Gen11::Glob::SPS::Get(storage);
+        auto& sps = Gen9::Glob::SPS::Get(storage);
         ASSERT_EQ(
             sps.scaling_list_enabled_flag, 0
         );
@@ -228,9 +228,9 @@ namespace hevce { namespace tests
     TEST_F(FeatureBlocksQMatrixICL, UpdateDDISubmitNotEnabled)
     {
         auto& queueSubmit = FeatureBlocks::BQ<FeatureBlocks::BQ_InitAlloc>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueSubmit, { Gen11::FEATURE_QMATRIX, Windows::Gen11::QMatrix::BLK_UpdateDDISubmit });
+        auto block = FeatureBlocks::Get(queueSubmit, { Gen9::FEATURE_QMATRIX, Windows::Gen9::QMatrix::BLK_UpdateDDISubmit });
 
-        auto& sps = Gen11::Glob::SPS::Get(storage);
+        auto& sps = Gen9::Glob::SPS::Get(storage);
         ASSERT_EQ(
             sps.scaling_list_enabled_flag, 0
         );
@@ -243,7 +243,7 @@ namespace hevce { namespace tests
             MFX_ERR_NONE
         );
 
-        auto& sp = Gen11::Glob::DDI_SubmitParam::Get(storage);
+        auto& sp = Gen9::Glob::DDI_SubmitParam::Get(storage);
         EXPECT_TRUE(
             sp.empty()
         );
@@ -252,9 +252,9 @@ namespace hevce { namespace tests
     TEST_F(FeatureBlocksQMatrixICL, UpdateDDISubmit)
     {
         auto& queueSubmit = FeatureBlocks::BQ<FeatureBlocks::BQ_InitAlloc>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueSubmit, { Gen11::FEATURE_QMATRIX, Windows::Gen11::QMatrix::BLK_UpdateDDISubmit });
+        auto block = FeatureBlocks::Get(queueSubmit, { Gen9::FEATURE_QMATRIX, Windows::Gen9::QMatrix::BLK_UpdateDDISubmit });
 
-        auto& sps = Gen11::Glob::SPS::Get(storage);
+        auto& sps = Gen9::Glob::SPS::Get(storage);
         sps.scaling_list_enabled_flag = sps.scaling_list_data_present_flag = 1;
 
         ENCODE_SET_PICTURE_PARAMETERS_HEVC pps{};
@@ -264,9 +264,9 @@ namespace hevce { namespace tests
         };
         ENCODE_EXECUTE_PARAMS eep{ 1, &cb };
 
-        auto& sp = Gen11::Glob::DDI_SubmitParam::Get(storage);
+        auto& sp = Gen9::Glob::DDI_SubmitParam::Get(storage);
         sp.push_back(
-            Gen11::DDIExecParam{ ENCODE_ENC_PAK_ID, { &eep, sizeof(eep) } }
+            Gen9::DDIExecParam{ ENCODE_ENC_PAK_ID, { &eep, sizeof(eep) } }
         );
 
         EXPECT_EQ(

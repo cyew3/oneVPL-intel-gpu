@@ -27,7 +27,7 @@
     <Filter Include="hevc\embargo\windows">
       <UniqueIdentifier>{fead0fc5-b2c8-41cf-9674-63e6aa537151}</UniqueIdentifier>
     </Filter>
-    <Filter Include="hevc\embargo\agnostic\g11">
+    <Filter Include="hevc\embargo\agnostic\g9">
       <UniqueIdentifier>{a2d88b12-4c50-4aa3-a48e-3aba1ebac3da}</UniqueIdentifier>
     </Filter>
     <Filter Include="hevc\embargo\agnostic\g11lkf">
@@ -36,7 +36,7 @@
     <Filter Include="hevc\embargo\agnostic\g12">
       <UniqueIdentifier>{639a4410-2867-48de-b77a-58ef77dbf8bd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="hevc\embargo\linux\g11">
+    <Filter Include="hevc\embargo\linux\g9">
       <UniqueIdentifier>{4b0f63a2-1730-4d4c-b0cc-a89901061858}</UniqueIdentifier>
     </Filter>
     <Filter Include="hevc\embargo\linux\g11lkf">
@@ -45,7 +45,7 @@
     <Filter Include="hevc\embargo\linux\g12">
       <UniqueIdentifier>{6a448908-5ea9-462a-905c-e5124addfa6c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="hevc\embargo\windows\g11">
+    <Filter Include="hevc\embargo\windows\g9">
       <UniqueIdentifier>{920e2f4b-f6d9-4ae8-95ba-108d8f5861a2}</UniqueIdentifier>
     </Filter>
     <Filter Include="hevc\embargo\windows\g11lkf">
@@ -57,13 +57,13 @@
     <Filter Include="hevc\open\agnostic">
       <UniqueIdentifier>{a2d4e0ad-ec88-4294-9e36-4323ef3bdf86}</UniqueIdentifier>
     </Filter>
-    <Filter Include="hevc\open\agnostic\g11">
+    <Filter Include="hevc\open\agnostic\g9">
       <UniqueIdentifier>{f0b4dfa3-853d-4de7-99be-e433d8f1caf7}</UniqueIdentifier>
     </Filter>
     <Filter Include="hevc\open\linux">
       <UniqueIdentifier>{9de1445d-bfd8-4cbc-998f-0759bb369eb0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="hevc\open\linux\g11">
+    <Filter Include="hevc\open\linux\g9">
       <UniqueIdentifier>{13f6d3af-40a5-4563-aa24-8ffeb4b7c479}</UniqueIdentifier>
     </Filter>
     <Filter Include="hevc\open\linux\g12">
@@ -200,8 +200,8 @@
     <ClCompile Include="hevc\hevcehw_disp.cpp">
       <Filter>hevc</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\agnostic\g11\hevcehw_g11_dump_files.cpp">
-      <Filter>hevc\embargo\agnostic\g11</Filter>
+    <ClCompile Include="hevc\embargo\agnostic\g9\hevcehw_g9_dump_files.cpp">
+      <Filter>hevc\embargo\agnostic\g9</Filter>
     </ClCompile>
     <ClCompile Include="hevc\embargo\agnostic\g11lkf\hevcehw_g11lkf.cpp">
       <Filter>hevc\embargo\agnostic\g11lkf</Filter>
@@ -212,62 +212,62 @@
     <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12_scc.cpp">
       <Filter>hevc\embargo\agnostic\g12</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\linux\g11\hevcehw_g11_gpu_hang_lin.cpp">
-      <Filter>hevc\embargo\linux\g11</Filter>
+    <ClCompile Include="hevc\embargo\linux\g9\hevcehw_g9_gpu_hang_lin.cpp">
+      <Filter>hevc\embargo\linux\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_blocking_sync_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_blocking_sync_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_brc_sliding_window_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_brc_sliding_window_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_d3d9_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_d3d9_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_d3d11_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_d3d11_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_ddi_packer_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_ddi_packer_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_dirty_rect_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_dirty_rect_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_extddi_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_extddi_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_interlace_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_interlace_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_max_frame_size_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_max_frame_size_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_mb_per_sec_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_mb_per_sec_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_protected_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_protected_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_roi_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_roi_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_weighted_prediction_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_weighted_prediction_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
     <ClCompile Include="hevc\embargo\windows\g12\hevcehw_g12_win.cpp">
       <Filter>hevc\embargo\windows\g12</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_qmatrix_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_qmatrix_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\linux\g11\hevcehw_g11_max_frame_size_lin.cpp">
-      <Filter>hevc\embargo\linux\g11</Filter>
+    <ClCompile Include="hevc\embargo\linux\g9\hevcehw_g9_max_frame_size_lin.cpp">
+      <Filter>hevc\embargo\linux\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_units_info_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_units_info_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
     <ClCompile Include="hevc\embargo\windows\g12\hevcehw_g12_qp_modulation_win.cpp">
       <Filter>hevc\embargo\windows\g12</Filter>
@@ -275,89 +275,89 @@
     <ClCompile Include="hevc\agnostic\hevcehw_base.cpp">
       <Filter>hevc\open\agnostic</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_alloc.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_alloc.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_constraints.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_constraints.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_dirty_rect.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_dirty_rect.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_dpb_report.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_dpb_report.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_encoded_frame_info.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_encoded_frame_info.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_ext_brc.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_ext_brc.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_hdr_sei.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_hdr_sei.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_hrd.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_hrd.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_interlace.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_interlace.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_legacy.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_legacy.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_legacy_defaults.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_legacy_defaults.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_packer.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_packer.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_parser.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_parser.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_roi.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_roi.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_task.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_task.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_weighted_prediction.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_weighted_prediction.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\linux\g11\hevcehw_g11_fei_lin.cpp">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClCompile Include="hevc\linux\g9\hevcehw_g9_fei_lin.cpp">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\linux\g11\hevcehw_g11_interlace_lin.cpp">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClCompile Include="hevc\linux\g9\hevcehw_g9_interlace_lin.cpp">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\linux\g11\hevcehw_g11_lin.cpp">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClCompile Include="hevc\linux\g9\hevcehw_g9_lin.cpp">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\linux\g11\hevcehw_g11_va_lin.cpp">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClCompile Include="hevc\linux\g9\hevcehw_g9_va_lin.cpp">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\linux\g11\hevcehw_g11_va_packer_lin.cpp">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClCompile Include="hevc\linux\g9\hevcehw_g9_va_packer_lin.cpp">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\linux\g11\hevcehw_g11_weighted_prediction_lin.cpp">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClCompile Include="hevc\linux\g9\hevcehw_g9_weighted_prediction_lin.cpp">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\linux\g11\hevcehw_g11_roi_lin.cpp">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClCompile Include="hevc\linux\g9\hevcehw_g9_roi_lin.cpp">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\agnostic\g11\hevcehw_g11_max_frame_size.cpp">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClCompile Include="hevc\agnostic\g9\hevcehw_g9_max_frame_size.cpp">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\agnostic\g11\hevcehw_g11_extddi.cpp">
-      <Filter>hevc\embargo\agnostic\g11</Filter>
+    <ClCompile Include="hevc\embargo\agnostic\g9\hevcehw_g9_extddi.cpp">
+      <Filter>hevc\embargo\agnostic\g9</Filter>
     </ClCompile>
     <ClCompile Include="hevc\embargo\windows\hevcehw_ddi_trace.cpp">
       <Filter>hevc\embargo\windows</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\windows\g11\hevcehw_g11_alloc_win.cpp">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClCompile Include="hevc\embargo\windows\g9\hevcehw_g9_alloc_win.cpp">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClCompile>
     <ClCompile Include="hevc\agnostic\g12\hevcehw_g12_caps.cpp">
       <Filter>hevc\open\agnostic\g12</Filter>
@@ -502,8 +502,8 @@
     <ClInclude Include="hevc\hevcehw_disp.h">
       <Filter>hevc</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\agnostic\g11\hevcehw_g11_dump_files.h">
-      <Filter>hevc\embargo\agnostic\g11</Filter>
+    <ClInclude Include="hevc\embargo\agnostic\g9\hevcehw_g9_dump_files.h">
+      <Filter>hevc\embargo\agnostic\g9</Filter>
     </ClInclude>
     <ClInclude Include="hevc\embargo\agnostic\g11lkf\hevcehw_g11lkf.h">
       <Filter>hevc\embargo\agnostic\g11lkf</Filter>
@@ -514,8 +514,8 @@
     <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_scc.h">
       <Filter>hevc\embargo\agnostic\g12</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\linux\g11\hevcehw_g11_gpu_hang_lin.h">
-      <Filter>hevc\embargo\linux\g11</Filter>
+    <ClInclude Include="hevc\embargo\linux\g9\hevcehw_g9_gpu_hang_lin.h">
+      <Filter>hevc\embargo\linux\g9</Filter>
     </ClInclude>
     <ClInclude Include="hevc\embargo\linux\g11lkf\hevcehw_g11lkf_lin.h">
       <Filter>hevc\embargo\linux\g11lkf</Filter>
@@ -523,50 +523,50 @@
     <ClInclude Include="hevc\embargo\linux\g12\hevcehw_g12_scc_lin.h">
       <Filter>hevc\embargo\linux\g12</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_blocking_sync_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_blocking_sync_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_brc_sliding_window_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_brc_sliding_window_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_d3d9_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_d3d9_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_d3d11_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_d3d11_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_ddi_packer_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_ddi_packer_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_dirty_rect_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_dirty_rect_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_encoded_frame_info_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_encoded_frame_info_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_extddi_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_extddi_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_interlace_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_interlace_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_max_frame_size_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_max_frame_size_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_mb_per_sec_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_mb_per_sec_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_protected_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_protected_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_roi_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_roi_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_weighted_prediction_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_weighted_prediction_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
     <ClInclude Include="hevc\embargo\windows\g11lkf\hevcehw_g11lkf_win.h">
       <Filter>hevc\embargo\windows\g11lkf</Filter>
@@ -577,14 +577,14 @@
     <ClInclude Include="hevc\embargo\windows\g12\hevcehw_g12_win.h">
       <Filter>hevc\embargo\windows\g12</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_qmatrix_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_qmatrix_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\linux\g11\hevcehw_g11_max_frame_size_lin.h">
-      <Filter>hevc\embargo\linux\g11</Filter>
+    <ClInclude Include="hevc\embargo\linux\g9\hevcehw_g9_max_frame_size_lin.h">
+      <Filter>hevc\embargo\linux\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_units_info_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_units_info_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
     <ClInclude Include="hevc\embargo\windows\g12\hevcehw_g12_qp_modulation_win.h">
       <Filter>hevc\embargo\windows\g12</Filter>
@@ -607,98 +607,98 @@
     <ClInclude Include="hevc\agnostic\hevcehw_utils.h">
       <Filter>hevc\open\agnostic</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_alloc.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_alloc.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_constraints.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_constraints.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_data.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_data.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_dirty_rect.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_dirty_rect.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_dpb_report.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_dpb_report.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_encoded_frame_info.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_encoded_frame_info.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_ext_brc.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_ext_brc.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_hdr_sei.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_hdr_sei.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_hrd.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_hrd.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_iddi.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_iddi.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_iddi_packer.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_iddi_packer.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_interlace.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_interlace.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_legacy.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_legacy.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_packer.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_packer.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_parser.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_parser.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_roi.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_roi.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_task.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_task.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_weighted_prediction.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_weighted_prediction.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\linux\g11\hevcehw_g11_encoded_frame_info_lin.h">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClInclude Include="hevc\linux\g9\hevcehw_g9_encoded_frame_info_lin.h">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\linux\g11\hevcehw_g11_fei_lin.h">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClInclude Include="hevc\linux\g9\hevcehw_g9_fei_lin.h">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\linux\g11\hevcehw_g11_interlace_lin.h">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClInclude Include="hevc\linux\g9\hevcehw_g9_interlace_lin.h">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\linux\g11\hevcehw_g11_lin.h">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClInclude Include="hevc\linux\g9\hevcehw_g9_lin.h">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\linux\g11\hevcehw_g11_va_lin.h">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClInclude Include="hevc\linux\g9\hevcehw_g9_va_lin.h">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\linux\g11\hevcehw_g11_va_packer_lin.h">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClInclude Include="hevc\linux\g9\hevcehw_g9_va_packer_lin.h">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\linux\g11\hevcehw_g11_weighted_prediction_lin.h">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClInclude Include="hevc\linux\g9\hevcehw_g9_weighted_prediction_lin.h">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\linux\g11\hevcehw_g11_roi_lin.h">
-      <Filter>hevc\open\linux\g11</Filter>
+    <ClInclude Include="hevc\linux\g9\hevcehw_g9_roi_lin.h">
+      <Filter>hevc\open\linux\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\g11\hevcehw_g11_max_frame_size.h">
-      <Filter>hevc\open\agnostic\g11</Filter>
+    <ClInclude Include="hevc\agnostic\g9\hevcehw_g9_max_frame_size.h">
+      <Filter>hevc\open\agnostic\g9</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\agnostic\g11\hevcehw_g11_extddi.h">
-      <Filter>hevc\embargo\agnostic\g11</Filter>
+    <ClInclude Include="hevc\embargo\agnostic\g9\hevcehw_g9_extddi.h">
+      <Filter>hevc\embargo\agnostic\g9</Filter>
     </ClInclude>
     <ClInclude Include="hevc\embargo\windows\hevcehw_ddi_trace.h">
       <Filter>hevc\embargo\windows</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\windows\g11\hevcehw_g11_alloc_win.h">
-      <Filter>hevc\embargo\windows\g11</Filter>
+    <ClInclude Include="hevc\embargo\windows\g9\hevcehw_g9_alloc_win.h">
+      <Filter>hevc\embargo\windows\g9</Filter>
     </ClInclude>
     <ClInclude Include="hevc\agnostic\g12\hevcehw_g12_caps.h">
       <Filter>hevc\open\agnostic\g12</Filter>

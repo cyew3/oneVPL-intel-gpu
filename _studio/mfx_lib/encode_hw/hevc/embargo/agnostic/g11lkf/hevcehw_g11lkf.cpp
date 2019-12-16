@@ -28,7 +28,7 @@
 #else
 #include "hevcehw_g11lkf_win.h"
 #endif
-#include "hevcehw_g11_data.h"
+#include "hevcehw_g9_data.h"
 #include "hevcehw_g11lkf_caps.h"
 
 using namespace HEVCEHW;
@@ -40,7 +40,7 @@ namespace HEVCEHW
     {
         enum eFeatureId
         {
-            FEATURE_CAPS = Gen11::eFeatureId::NUM_FEATURES
+            FEATURE_CAPS = Gen9::eFeatureId::NUM_FEATURES
             , NUM_FEATURES
         };
     }

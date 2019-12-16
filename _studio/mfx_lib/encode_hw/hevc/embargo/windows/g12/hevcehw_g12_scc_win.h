@@ -24,7 +24,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
 #include "hevcehw_g12_scc.h"
-#include "hevcehw_g11_ddi_packer_win.h"
+#include "hevcehw_g9_ddi_packer_win.h"
 
 namespace HEVCEHW
 {
@@ -54,10 +54,10 @@ namespace Gen12
                 auto& par    = Glob::DDI_SubmitParam::Get(global);
                 auto  vaType = Glob::VideoCore::Get(global).GetVAType();
 
-                auto& ddiSPS = Deref(Gen11::GetDDICB<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC>(
-                    ENCODE_ENC_PAK_ID, Gen11::DDIPar_In, vaType, par));
-                auto& ddiPPS = Deref(Gen11::GetDDICB<ENCODE_SET_PICTURE_PARAMETERS_HEVC>(
-                    ENCODE_ENC_PAK_ID, Gen11::DDIPar_In, vaType, par));
+                auto& ddiSPS = Deref(Gen9::GetDDICB<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC>(
+                    ENCODE_ENC_PAK_ID, Gen9::DDIPar_In, vaType, par));
+                auto& ddiPPS = Deref(Gen9::GetDDICB<ENCODE_SET_PICTURE_PARAMETERS_HEVC>(
+                    ENCODE_ENC_PAK_ID, Gen9::DDIPar_In, vaType, par));
 
                 ddiSPS.palette_mode_enabled_flag     = SpsExt::Get(global).palette_mode_enabled_flag;
                 ddiPPS.pps_curr_pic_ref_enabled_flag = PpsExt::Get(global).curr_pic_ref_enabled_flag;

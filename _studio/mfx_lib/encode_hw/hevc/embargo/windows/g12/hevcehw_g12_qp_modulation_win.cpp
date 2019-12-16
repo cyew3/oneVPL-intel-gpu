@@ -23,7 +23,7 @@
 
 #include "hevcehw_g12_qp_modulation_win.h"
 #include "hevcehw_g12_data.h"
-#include "hevcehw_g11_ddi_packer_win.h"
+#include "hevcehw_g9_ddi_packer_win.h"
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Gen12;
@@ -33,8 +33,8 @@ void Windows::Gen12::QpModulation::InitInternal(const FeatureBlocks& /*blocks*/,
     Push(BLK_SetCallChains,
         [this](StorageRW& strg, StorageRW&) -> mfxStatus
     {
-        auto& ddiCC = Gen11::DDIPacker::CC::Get(strg);
-        using TCC = Gen11::DDIPacker::CallChains;
+        auto& ddiCC = Gen9::DDIPacker::CC::Get(strg);
+        using TCC = Gen9::DDIPacker::CallChains;
         auto hwType = Glob::VideoCore::Get(strg).GetHWType();
 
         ddiCC.InitSPS.Push([hwType](

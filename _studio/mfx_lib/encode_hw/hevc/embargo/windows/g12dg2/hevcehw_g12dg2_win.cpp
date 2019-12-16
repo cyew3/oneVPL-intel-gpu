@@ -24,7 +24,7 @@
 
 #include "hevcehw_g12dg2_win.h"
 #include "hevcehw_g12dg2_caps.h"
-#include "hevcehw_g11_legacy.h"
+#include "hevcehw_g9_legacy.h"
 
 namespace HEVCEHW
 {
@@ -57,7 +57,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 
         Reorder(
             qnc
-            , { HEVCEHW::Gen11::FEATURE_LEGACY, HEVCEHW::Gen11::Legacy::BLK_SetLowPowerDefault }
+            , { HEVCEHW::Gen9::FEATURE_LEGACY, HEVCEHW::Gen9::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
     }
 }

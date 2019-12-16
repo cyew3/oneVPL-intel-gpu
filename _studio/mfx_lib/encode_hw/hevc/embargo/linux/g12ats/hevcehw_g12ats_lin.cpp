@@ -26,8 +26,8 @@
 #if defined(MFX_ENABLE_MFE)
 #include "hevcehw_g12ats_mfe_lin.h"
 #endif //defined(MFX_ENABLE_MFE)
-#include "hevcehw_g11_data.h"
-#include "hevcehw_g11_iddi.h"
+#include "hevcehw_g9_data.h"
+#include "hevcehw_g9_iddi.h"
 
 namespace HEVCEHW
 {
@@ -65,7 +65,7 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
     {
         Reorder(
             st
-            , { HEVCEHW::Gen11::FEATURE_DDI, HEVCEHW::Gen11::IDDI::BLK_SubmitTask }
+            , { HEVCEHW::Gen9::FEATURE_DDI, HEVCEHW::Gen9::IDDI::BLK_SubmitTask }
             , { FEATURE_MFE, MFE::BLK_UpdateDDITask });
     }
 #endif //defined(MFX_ENABLE_MFE)

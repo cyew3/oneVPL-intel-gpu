@@ -26,8 +26,8 @@
 #include "mfxvideo++.h"
 #include "mfx_session.h"
 
-#include "g11/hevcehw_g11_legacy.h"
-#include "g11/hevcehw_g11_d3d11_win.h"
+#include "g9/hevcehw_g9_legacy.h"
+#include "g9/hevcehw_g9_d3d11_win.h"
 
 #include "mocks/include/guid.h"
 
@@ -64,15 +64,15 @@ namespace hevce { namespace tests
 
         FeatureBlocks                         blocks{};
 
-        HEVCEHW::Gen11::Legacy                legacy;
-        Windows::Gen11::DDI_D3D11             ddi;
+        HEVCEHW::Gen9::Legacy                legacy;
+        Windows::Gen9::DDI_D3D11             ddi;
 
         StorageRW                             storage;
         StorageRW                             tasks;
 
         FeatureBlocksDDI()
-            : legacy(HEVCEHW::Gen11::FEATURE_LEGACY)
-            , ddi(Gen11::FEATURE_DDI)
+            : legacy(HEVCEHW::Gen9::FEATURE_LEGACY)
+            , ddi(Gen9::FEATURE_DDI)
         {}
 
         void SetUp() override
@@ -114,14 +114,14 @@ namespace hevce { namespace tests
 
             //populate session's dx11 core for encoder
             auto s = static_cast<_mfxSession*>(session);
-            storage.Insert(Gen11::Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
+            storage.Insert(Gen9::Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
 
             legacy.Init(HEVCEHW::INIT, blocks);
 
             //select proper GUID for encoder
             auto guid = FeatureBlocks::Get(
                 FeatureBlocks::BQ<FeatureBlocks::BQ_InitExternal>::Get(blocks),
-                { Gen11::FEATURE_LEGACY, Gen11::Legacy::BLK_SetGUID }
+                { Gen9::FEATURE_LEGACY, Gen9::Legacy::BLK_SetGUID }
             );
 
             ASSERT_EQ(
@@ -134,7 +134,7 @@ namespace hevce { namespace tests
             //need to setup [DefaultExecute]
             auto chain = FeatureBlocks::Get(
                 FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(blocks),
-                { Gen11::FEATURE_DDI, Windows::Gen11::IDDI::BLK_SetCallChains }
+                { Gen9::FEATURE_DDI, Windows::Gen9::IDDI::BLK_SetCallChains }
             );
 
             ASSERT_EQ(
@@ -145,7 +145,7 @@ namespace hevce { namespace tests
             //create AUX device
             auto create = FeatureBlocks::Get(
                 FeatureBlocks::BQ<FeatureBlocks::BQ_InitExternal>::Get(blocks),
-                { Gen11::FEATURE_DDI, Windows::Gen11::IDDI::BLK_CreateDevice }
+                { Gen9::FEATURE_DDI, Windows::Gen9::IDDI::BLK_CreateDevice }
             );
 
             ASSERT_EQ(
@@ -153,21 +153,21 @@ namespace hevce { namespace tests
                 MFX_ERR_NONE
             );
 
-            Gen11::Glob::DDI_SubmitParam::GetOrConstruct(storage);
-            Gen11::Task::Common::GetOrConstruct(tasks);
+            Gen9::Glob::DDI_SubmitParam::GetOrConstruct(storage);
+            Gen9::Task::Common::GetOrConstruct(tasks);
         }
     };
 
     TEST_F(FeatureBlocksDDI, SubmitTaskSkipDriverCall)
     {
         auto& queueSubmit = FeatureBlocks::BQ<FeatureBlocks::BQ_SubmitTask>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueSubmit, { Gen11::FEATURE_DDI, Windows::Gen11::IDDI::BLK_SubmitTask });
+        auto block = FeatureBlocks::Get(queueSubmit, { Gen9::FEATURE_DDI, Windows::Gen9::IDDI::BLK_SubmitTask });
 
         auto& task =
-            Gen11::Task::Common::Get(tasks);
+            Gen9::Task::Common::Get(tasks);
 
         ASSERT_FALSE(
-            task.SkipCMD & Gen11::SKIPCMD_NeedDriverCall
+            task.SkipCMD & Gen9::SKIPCMD_NeedDriverCall
         );
 
         EXPECT_EQ(
@@ -179,13 +179,13 @@ namespace hevce { namespace tests
     TEST_F(FeatureBlocksDDI, SubmitTaskExecuteEmptyList)
     {
         auto& queueSubmit = FeatureBlocks::BQ<FeatureBlocks::BQ_SubmitTask>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueSubmit, { Gen11::FEATURE_DDI, Windows::Gen11::IDDI::BLK_SubmitTask });
+        auto block = FeatureBlocks::Get(queueSubmit, { Gen9::FEATURE_DDI, Windows::Gen9::IDDI::BLK_SubmitTask });
 
         auto& task =
-            Gen11::Task::Common::Get(tasks);
-        task.SkipCMD |= Gen11::SKIPCMD_NeedDriverCall;
+            Gen9::Task::Common::Get(tasks);
+        task.SkipCMD |= Gen9::SKIPCMD_NeedDriverCall;
 
-        auto& params = Gen11::Glob::DDI_SubmitParam::Get(storage);
+        auto& params = Gen9::Glob::DDI_SubmitParam::Get(storage);
         ASSERT_TRUE(
             params.empty()
         );
@@ -199,11 +199,11 @@ namespace hevce { namespace tests
     TEST_F(FeatureBlocksDDI, SubmitTaskExecuteUnknownFunction)
     {
         auto& queueSubmit = FeatureBlocks::BQ<FeatureBlocks::BQ_SubmitTask>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueSubmit, { Gen11::FEATURE_DDI, Windows::Gen11::IDDI::BLK_SubmitTask });
+        auto block = FeatureBlocks::Get(queueSubmit, { Gen9::FEATURE_DDI, Windows::Gen9::IDDI::BLK_SubmitTask });
 
-        auto& params = Gen11::Glob::DDI_SubmitParam::Get(storage);
+        auto& params = Gen9::Glob::DDI_SubmitParam::Get(storage);
         params.push_back(
-            Gen11::DDIExecParam{}
+            Gen9::DDIExecParam{}
         );
 
         ASSERT_EQ(
@@ -214,8 +214,8 @@ namespace hevce { namespace tests
         );
 
         auto& task =
-            Gen11::Task::Common::Get(tasks);
-        task.SkipCMD |= Gen11::SKIPCMD_NeedDriverCall;
+            Gen9::Task::Common::Get(tasks);
+        task.SkipCMD |= Gen9::SKIPCMD_NeedDriverCall;
 
         EXPECT_EQ(
             block->Call(storage, tasks),
@@ -236,16 +236,16 @@ namespace hevce { namespace tests
         );
 
         auto& queueSubmit = FeatureBlocks::BQ<FeatureBlocks::BQ_SubmitTask>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueSubmit, { Gen11::FEATURE_DDI, Windows::Gen11::IDDI::BLK_SubmitTask });
+        auto block = FeatureBlocks::Get(queueSubmit, { Gen9::FEATURE_DDI, Windows::Gen9::IDDI::BLK_SubmitTask });
 
-        auto& params = Gen11::Glob::DDI_SubmitParam::Get(storage);
+        auto& params = Gen9::Glob::DDI_SubmitParam::Get(storage);
         params.push_back(
-            Gen11::DDIExecParam{ ENCODE_QUERY_STATUS_ID }
+            Gen9::DDIExecParam{ ENCODE_QUERY_STATUS_ID }
         );
 
         auto& task =
-            Gen11::Task::Common::Get(tasks);
-        task.SkipCMD |= Gen11::SKIPCMD_NeedDriverCall;
+            Gen9::Task::Common::Get(tasks);
+        task.SkipCMD |= Gen9::SKIPCMD_NeedDriverCall;
 
         EXPECT_EQ(
             block->Call(storage, tasks),
@@ -263,16 +263,16 @@ namespace hevce { namespace tests
         );
 
         auto& queueSubmit = FeatureBlocks::BQ<FeatureBlocks::BQ_SubmitTask>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueSubmit, { Gen11::FEATURE_DDI, Windows::Gen11::IDDI::BLK_SubmitTask });
+        auto block = FeatureBlocks::Get(queueSubmit, { Gen9::FEATURE_DDI, Windows::Gen9::IDDI::BLK_SubmitTask });
 
-        auto& params = Gen11::Glob::DDI_SubmitParam::Get(storage);
+        auto& params = Gen9::Glob::DDI_SubmitParam::Get(storage);
         params.push_back(
-            Gen11::DDIExecParam{ ENCODE_QUERY_STATUS_ID }
+            Gen9::DDIExecParam{ ENCODE_QUERY_STATUS_ID }
         );
 
         auto& task =
-            Gen11::Task::Common::Get(tasks);
-        task.SkipCMD |= Gen11::SKIPCMD_NeedDriverCall;
+            Gen9::Task::Common::Get(tasks);
+        task.SkipCMD |= Gen9::SKIPCMD_NeedDriverCall;
 
         EXPECT_EQ(
             block->Call(storage, tasks),

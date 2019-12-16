@@ -49,7 +49,7 @@ protected:
     virtual void Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
     virtual void Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
 
-    virtual void SetSpecificCaps(Gen11::EncodeCapsHevc& /*caps*/) {};
+    virtual void SetSpecificCaps(Gen9::EncodeCapsHevc& /*caps*/) {};
 };
 
 } //Gen12

@@ -23,7 +23,7 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "hevcehw_g11.h"
+#include "hevcehw_g9.h"
 
 namespace HEVCEHW
 {

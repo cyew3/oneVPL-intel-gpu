@@ -26,12 +26,12 @@
 #include "hevcehw_g12_rext_lin.h"
 #include "hevcehw_g12_scc_lin.h"
 #include "hevcehw_g12_caps_lin.h"
-#include "hevcehw_g11_iddi.h"
+#include "hevcehw_g9_iddi.h"
 #include "hevcehw_g12_sao.h"
-#include "hevcehw_g11_data.h"
-#include "hevcehw_g11_legacy.h"
-#include "hevcehw_g11_parser.h"
-#include "hevcehw_g11_iddi_packer.h"
+#include "hevcehw_g9_data.h"
+#include "hevcehw_g9_legacy.h"
+#include "hevcehw_g9_parser.h"
+#include "hevcehw_g9_iddi_packer.h"
 
 using namespace HEVCEHW::Gen12;
 
@@ -66,25 +66,25 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 
         Reorder(
             qnc
-            , { HEVCEHW::Gen11::FEATURE_LEGACY, HEVCEHW::Gen11::Legacy::BLK_SetLowPowerDefault }
+            , { HEVCEHW::Gen9::FEATURE_LEGACY, HEVCEHW::Gen9::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
         Reorder(
             qnc
-            , { HEVCEHW::Gen11::FEATURE_LEGACY, HEVCEHW::Gen11::Legacy::BLK_SetLowPowerDefault }
+            , { HEVCEHW::Gen9::FEATURE_LEGACY, HEVCEHW::Gen9::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_SCC, SCC::BLK_SetLowPowerDefault });
         Reorder(
             qnc
-            , { HEVCEHW::Gen11::FEATURE_PARSER, HEVCEHW::Gen11::Parser::BLK_LoadSPSPPS }
+            , { HEVCEHW::Gen9::FEATURE_PARSER, HEVCEHW::Gen9::Parser::BLK_LoadSPSPPS }
             , { FEATURE_SCC, SCC::BLK_LoadSPSPPS });
 
         auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
         Reorder(
             qwc
-            , { HEVCEHW::Gen11::FEATURE_DDI_PACKER, HEVCEHW::Gen11::IDDIPacker::BLK_HardcodeCaps }
+            , { HEVCEHW::Gen9::FEATURE_DDI_PACKER, HEVCEHW::Gen9::IDDIPacker::BLK_HardcodeCaps }
             , { FEATURE_REXT, RExt::BLK_HardcodeCaps });
         Reorder(
             qwc
-            , { HEVCEHW::Gen11::FEATURE_DDI_PACKER, HEVCEHW::Gen11::IDDIPacker::BLK_HardcodeCaps }
+            , { HEVCEHW::Gen9::FEATURE_DDI_PACKER, HEVCEHW::Gen9::IDDIPacker::BLK_HardcodeCaps }
             , { FEATURE_CAPS, Caps::BLK_HardcodeCaps });
     }
 
@@ -93,11 +93,11 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
         auto& iint = BQ<BQ_InitInternal>::Get(*this);
         Reorder(
             iint
-            , { HEVCEHW::Gen11::FEATURE_LEGACY, HEVCEHW::Gen11::Legacy::BLK_SetSPS }
+            , { HEVCEHW::Gen9::FEATURE_LEGACY, HEVCEHW::Gen9::Legacy::BLK_SetSPS }
             , { FEATURE_SCC, SCC::BLK_SetSPSExt });
         Reorder(
             iint
-            , { HEVCEHW::Gen11::FEATURE_LEGACY, HEVCEHW::Gen11::Legacy::BLK_SetPPS }
+            , { HEVCEHW::Gen9::FEATURE_LEGACY, HEVCEHW::Gen9::Legacy::BLK_SetPPS }
             , { FEATURE_SCC, SCC::BLK_SetPPSExt });
     }
 }
@@ -110,7 +110,7 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
     auto& st = BQ<BQ_SubmitTask>::Get(*this);
     Reorder(
         st
-        , { HEVCEHW::Gen11::FEATURE_DDI, HEVCEHW::Gen11::IDDI::BLK_SubmitTask }
+        , { HEVCEHW::Gen9::FEATURE_DDI, HEVCEHW::Gen9::IDDI::BLK_SubmitTask }
         , { FEATURE_SCC, SCC::BLK_PatchDDITask });
 
     return MFX_ERR_NONE;
