@@ -70,12 +70,11 @@ namespace MfxHwVP9Encode
 #define MAX_UPSCALE_RATIO 16
 #define MAX_DOWNSCALE_RATIO 2
 
+#define MIN_TILE_HEIGHT 128
 #define MIN_TILE_WIDTH 256
 #define MAX_TILE_WIDTH 4096
 #define MAX_NUM_TILE_ROWS_VP9 4
 #define MAX_NUM_TILES 16
-
-#define SB_SIZE 64
 
 const mfxU16 segmentSkipMask = 0xf0;
 const mfxU16 segmentRefMask = 0x0f;

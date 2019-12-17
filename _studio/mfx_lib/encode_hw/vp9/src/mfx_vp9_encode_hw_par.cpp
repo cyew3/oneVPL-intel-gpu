@@ -1506,8 +1506,8 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
     if (rows && height)
     {
-        mfxU16 heightInSBs = static_cast<mfxU16>(CeilDiv(height, SB_SIZE));
-        mfxU16 maxPossibleRows = std::min<mfxU16>(heightInSBs, MAX_NUM_TILE_ROWS_VP9);
+        mfxU16 heightInTiles = static_cast<mfxU16>(CeilDiv(height, MIN_TILE_HEIGHT));
+        mfxU16 maxPossibleRows = std::min<mfxU16>(heightInTiles, MAX_NUM_TILE_ROWS_VP9);
         if (rows > maxPossibleRows)
         {
             rows = maxPossibleRows;
