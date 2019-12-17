@@ -52,6 +52,7 @@ Algorithm:
 #include "ts_decoder.h"
 
 #include <fstream>
+#include <math.h>
 
 namespace hevce_levels_profile_support {
 
@@ -66,7 +67,6 @@ struct LevelConstraints
 {
     mfxU16 Level;         // numerical representation of Level values: 10, 20, 21, 30, 31, 40, 41, 50, 51, 52, 60, 61, 62
     mfxU32 MaxLumaPs;     // max luma picture size (samples)
-    mfxU16 MaxResolution; // max Height or Width for the given Level which is computed as sqrt(MaxLumaPS*8) according to the HEVC Standard
     mfxU32 MaxSSPP;       // max number of slice segments per picture which means:
                           // max number of slices allowed per picture at both the max resolution and max Frame Rate
     mfxU32 MaxLumaSr;     // max luma sample rate (samples per second)
@@ -75,22 +75,22 @@ struct LevelConstraints
 // The following values are given according to the Table A.6 from the HEVC International Standard
 constexpr LevelConstraints TableA6[13] =
 {
-    // LevelID |  Level   | MaxLumaPs | MaxWidth/ | Max Slice  |  MaxLumaSr
-    //                                | MaxHeight |  Segments  |
-    //                                |           | PerPicture |
-    /*  0  */     { 10,      36864,       543,         16,         552960      }, // only MAIN TIER is available
-    /*  1  */     { 20,      122880,      991,         16,         3686400     }, // for all Levels < 4
-    /*  2  */     { 21,      245760,      1402,        20,         7372800     },
-    /*  3  */     { 30,      552960,      2103,        30,         16588800    },
-    /*  4  */     { 31,      983040,      2804,        40,         33177600    },
-    /*  5  */     { 40,      2228224,     4222,        75,         66846720    }, // MAIN and HIGH TIERs are available
-    /*  6  */     { 41,      2228224,     4222,        75,         133693440   }, // for all Levels >= 4
-    /*  7  */     { 50,      8912896,     8444,        200,        267386880   },
-    /*  8  */     { 51,      8912896,     8444,        200,        534773760   },
-    /*  9  */     { 52,      8912896,     8444,        200,        1069547520  },
-    /*  10 */     { 60,      35651584,    16888,       600,        1069547520  },
-    /*  11 */     { 61,      35651584,    16888,       600,        2139095040  },
-    /*  12 */     { 62,      35651584,    16888,       600,        4278190080  },
+    // LevelID |  Level   | MaxLumaPs | Max Slice  |  MaxLumaSr
+    //                                |  Segments  |
+    //                                | PerPicture |
+    /*  0  */     { 10,      36864,       16,         552960      }, // only MAIN TIER is available
+    /*  1  */     { 20,      122880,      16,         3686400     }, // for all Levels < 4
+    /*  2  */     { 21,      245760,      20,         7372800     },
+    /*  3  */     { 30,      552960,      30,         16588800    },
+    /*  4  */     { 31,      983040,      40,         33177600    },
+    /*  5  */     { 40,      2228224,     75,         66846720    }, // MAIN and HIGH TIERs are available
+    /*  6  */     { 41,      2228224,     75,         133693440   }, // for all Levels >= 4
+    /*  7  */     { 50,      8912896,     200,        267386880   },
+    /*  8  */     { 51,      8912896,     200,        534773760   },
+    /*  9  */     { 52,      8912896,     200,        1069547520  },
+    /*  10 */     { 60,      35651584,    600,        1069547520  },
+    /*  11 */     { 61,      35651584,    600,        2139095040  },
+    /*  12 */     { 62,      35651584,    600,        4278190080  },
 };
 
 constexpr mfxU16 NumberOfLevels = sizeof(TableA6)/sizeof(LevelConstraints);
@@ -135,7 +135,7 @@ public:
 
 private:
 
-    void SetParsPositiveTC(const LevelConstraints& LevelParam)
+    void SetParsPositiveTC(const LevelConstraints& LevelParam, bool iWidthChecking)
     {
         const mfxU16 MaxFrameRate = 300;  // the maximum frame rate supported by HEVC is 300 frames per second
         const mfxU16 MaxNumSlice  = 200;  // due to driver issue, NumSlice is limited to 200
@@ -157,8 +157,17 @@ private:
         // ...
         // where MaxLumaPs is specified in Table A.6.
 
-        m_par.mfx.FrameInfo.Width  = std::min((mfxU16)MSDK_ALIGN16(LevelParam.MaxResolution), MaxWidth);
-        m_par.mfx.FrameInfo.Height = std::min((mfxU16)MSDK_ALIGN16(LevelParam.MaxResolution), MaxHeight);
+        // lets calculate Max Width
+        double dTempWidth = sqrt(LevelParam.MaxLumaPs *8) - 16;
+        mfxU16 iTempWidth = MSDK_ALIGN16(static_cast<mfxU16>(dTempWidth));
+        m_par.mfx.FrameInfo.Width  = std::min(iTempWidth, MaxWidth);
+        // lets calculate Max Height based on  calculated Width
+        double dTempHeight = LevelParam.MaxLumaPs/iTempWidth - 16;
+        mfxU16 iTempHeight = MSDK_ALIGN16(static_cast<mfxU16>(dTempHeight));
+        m_par.mfx.FrameInfo.Height = std::min(iTempHeight, MaxHeight);
+
+        if (!iWidthChecking)
+            std::swap(m_par.mfx.FrameInfo.Width, m_par.mfx.FrameInfo.Height);
 
         m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width; // as the Frame Width and Height are aligned, we can use them as the Cropped Width and Height
         m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
@@ -255,7 +264,7 @@ mfxI32 TestSuite<PluginID>::RunTest(mfxU16 id)
     mfxU16 table_id = id % NumberOfLevels;
     bool maxWidthFlag = id < NumberOfLevels;
     // Set FrameInfo values according to specified Level
-    SetParsPositiveTC(TableA6[table_id]);
+    SetParsPositiveTC(TableA6[table_id], maxWidthFlag);
     PrintDebugInfo(TableA6[table_id], maxWidthFlag);
     // Load HEVC FEI/legacy plugin
     Load();
