@@ -2435,8 +2435,8 @@ mfxStatus  VideoVPPHW::Init(
     }
 #endif
 
-    /* Starting with TGL we call driver instead of kernel, but only with d3d11 */
-    bool hwMirrorIsUsed = m_pCore->GetHWType() >= MFX_HW_TGL_LP && m_pCore->GetVAType() == MFX_HW_D3D11;
+    /* We call driver instead of kernel on TGL+ for Linux and d3d11 Windows */
+    bool hwMirrorIsUsed = m_pCore->GetHWType() >= MFX_HW_TGL_LP && (m_pCore->GetVAType() == MFX_HW_D3D11 || m_pCore->GetVAType() == MFX_HW_VAAPI);
 
     if (m_executeParams.mirroring && !hwMirrorIsUsed && !m_pCmCopy)
     {
