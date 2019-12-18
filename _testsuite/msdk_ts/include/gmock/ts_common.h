@@ -26,7 +26,7 @@
 #ifdef _WIN32
     static std::vector<HWType> platforms_with_refactored_hevce = { MFX_HW_SKL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_APL }; // Platforms where refactored HEVCe used on Windows
 #else
-    static std::vector<HWType> platforms_with_refactored_hevce = {}; // Platforms where refactored HEVCe used on Linux
+    static std::vector<HWType> platforms_with_refactored_hevce = { MFX_HW_SKL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_APL }; // Platforms where refactored HEVCe used on Linux
 #endif
 
 static bool use_refactored_hevce(HWType current_platform)
