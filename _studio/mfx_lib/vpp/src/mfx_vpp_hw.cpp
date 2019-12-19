@@ -4451,10 +4451,8 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
 #endif
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     if (m_executeParams.mirroring && m_pCore->GetHWType() >= MFX_HW_TGL_LP && m_pCore->GetVAType() != MFX_HW_D3D9)
         m_executeParams.mirroringExt = true;
-#endif
 
     // Need special handling for progressive frame in 30i->60p ADI mode
     if ((pTask->bkwdRefCount == 1) && m_executeParams.bDeinterlace30i60p) {
@@ -4911,12 +4909,11 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
             // SW mirroring supports only horizontal mode
             mfxU32 maxMirrorSupportMode = 1;
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
             if (core->GetHWType() >= MFX_HW_TGL_LP && core->GetVAType() != MFX_HW_D3D9)
                 // Starting with TGL, mirroring performs through driver
                 // Driver supports horizontal and vertical modes
                 maxMirrorSupportMode = 2;
-#endif
+
             // Only SW mirroring has these limitations, HW mirroring supports all SFC formats
             if (maxMirrorSupportMode == 1 && (par->vpp.In.FourCC != MFX_FOURCC_NV12 || par->vpp.Out.FourCC != MFX_FOURCC_NV12))
                 sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);

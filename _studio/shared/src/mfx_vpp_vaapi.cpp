@@ -1995,7 +1995,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             attrib.value.value.i = VA_FOURCC_P010; // We're going to flood fill this surface, so let's use most common 10-bit format
             rt_format = VA_RT_FORMAT_YUV420_10BPP;
         }
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= 1031)
         else if(inInfo->FourCC == MFX_FOURCC_P016
                 || inInfo->FourCC == MFX_FOURCC_Y216
                 || inInfo->FourCC == MFX_FOURCC_Y416
@@ -2077,7 +2077,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             }
 
             if (imagePrimarySurface.format.fourcc == VA_FOURCC_P010
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= 1031)
                 || imagePrimarySurface.format.fourcc == VA_FOURCC_P016
 #endif
             )
@@ -2091,7 +2091,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
                     U = (uint32_t)((pParams->iBackgroundColor >> 10) & 0xffC0);
                     V = (uint32_t)((pParams->iBackgroundColor <<  6) & 0xffC0);
                 }
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= 1031)
                 else
                 {
                     // 12 bit depth is used for these CCs
