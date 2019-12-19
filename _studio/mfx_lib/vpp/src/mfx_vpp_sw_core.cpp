@@ -1435,10 +1435,18 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
     CommonCORE* pCommonCore = NULL;
 
     bool bIsFilterSkipped  = false;
-    bool isFieldProcessing = IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_PROCESSING)
-                          || IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_WEAVING)
-                          || IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_SPLITTING);
 
+    bool isSWFieldProcessing = IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_PROCESSING)
+                            || IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_WEAVING)
+                            || IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_SPLITTING);
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    /* We call driver instead of kernel on ATS+ for field weaving and splitting */
+    if ((IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_WEAVING)
+      || IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_SPLITTING))
+      && (m_core->GetHWType() >= MFX_HW_TGL_HP))
+        isSWFieldProcessing = false;
+#endif
 
     pCommonCore = QueryCoreInterface<CommonCORE>(m_core, MFXIVideoCORE_GUID);
     MFX_CHECK(pCommonCore, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -1447,7 +1455,7 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
 
     m_pHWVPP.reset(new VideoVPPHW(mode, m_core));
 
-    if (isFieldProcessing)
+    if (isSWFieldProcessing)
     {
         CmDevice * device = QueryCoreInterface<CmDevice>(m_core, MFXICORECM_GUID);
         MFX_CHECK(device, MFX_ERR_UNDEFINED_BEHAVIOR);

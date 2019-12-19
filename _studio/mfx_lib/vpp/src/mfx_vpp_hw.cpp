@@ -4079,8 +4079,8 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
     if ((m_executeParams.iFieldProcessingMode != 0)   /* If Mode is enabled*/
         && ((imfxFPMode - 1) != (mfxU32)FRAME2FRAME)  /* And we don't do copy frame to frame lets call our FieldCopy*/
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)             /* Starting with ATS we call driver instead of kernel */
-        && (m_pCore->GetHWType() < MFX_HW_TGL_HP)
+#if defined(MFX_VA)
+        && m_pCmDevice                                /* And cm device is loaded*/
 #endif
        )
     /* And remember our previous line imfxFPMode++;*/
