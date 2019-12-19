@@ -63,6 +63,7 @@
     <ClCompile Include="hevce_feature_blocks_g11_win_qmatrix.cpp" />
     <ClCompile Include="hevce_feature_utils_blocks.cpp" />
     <ClCompile Include="hevce_feature_utils_storage.cpp" />
+    <ClCompile Include="hevce_utils_misc.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(MSBuildThisFileDirectory)..\run_suite.props" />
