@@ -337,9 +337,11 @@ mfxStatus D3D9VideoCORE::InternalInit()
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
 
 #ifndef STRIP_EMBARGO
-    if (m_HWType > MFX_HW_TGL_LP && m_HWType != MFX_HW_TGL_HP
-                                 && m_HWType != MFX_HW_ADL_S
-                                 && m_HWType != MFX_HW_ADL_UH)
+    //Temproary disable CmCopy for Pre-Si platforms or if there is no loaded cm_copy_kernel at the moment
+    if (   m_HWType == MFX_HW_RYF
+        || m_HWType == MFX_HW_RKL
+        || m_HWType == MFX_HW_ATS
+        || m_HWType == MFX_HW_DG2)
         m_bCmCopyAllowed = false;
 #endif
 
@@ -1109,7 +1111,6 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "FastCopySSE");
             hRes |= pSurface->LockRect(&sLockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_LOCK_MEMORY);
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
             srcPitch = sLockRect.Pitch;
             sts = mfxDefaultAllocatorD3D9::SetFrameData(sSurfDesc, sLockRect, &pSrc->Data);
             MFX_CHECK_STS(sts);

@@ -92,9 +92,11 @@ mfxStatus D3D11VideoCORE::InternalInit()
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
 
 #ifndef STRIP_EMBARGO
-    if (m_HWType > MFX_HW_TGL_LP && m_HWType != MFX_HW_TGL_HP
-                                 && m_HWType != MFX_HW_ADL_S
-                                 && m_HWType != MFX_HW_ADL_UH)
+    //Temproary disable CmCopy for Pre-Si platforms or if there is no loaded cm_copy_kernel at the moment
+    if (   m_HWType == MFX_HW_RYF
+        || m_HWType == MFX_HW_RKL
+        || m_HWType == MFX_HW_ATS
+        || m_HWType == MFX_HW_DG2)
         m_bCmCopyAllowed = false;
 #endif
 
