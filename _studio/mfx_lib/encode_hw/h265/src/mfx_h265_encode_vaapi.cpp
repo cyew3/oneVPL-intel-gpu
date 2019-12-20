@@ -1080,17 +1080,11 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.ddi_caps.YUV444ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value &
         VA_RT_FORMAT_YUV444 ? 1 : 0;
 
-    if ((attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value != VA_ATTRIB_NOT_SUPPORTED) &&
-        (attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value != 0))
-        m_caps.ddi_caps.MaxPicWidth = attrs[idx_map[VAConfigAttribMaxPictureWidth] ].value;
-    else
-        m_caps.ddi_caps.MaxPicWidth = 1920;
-
-    if ((attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value != VA_ATTRIB_NOT_SUPPORTED) &&
-        (attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value != 0))
-        m_caps.ddi_caps.MaxPicHeight = attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value;
-    else
-        m_caps.ddi_caps.MaxPicHeight = 1088;
+    MFX_CHECK(attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value != VA_ATTRIB_NOT_SUPPORTED, MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value != VA_ATTRIB_NOT_SUPPORTED, MFX_ERR_UNSUPPORTED);
+    MFX_CHECK_COND(attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value && attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value);
+    m_caps.ddi_caps.MaxPicWidth  = attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value;
+    m_caps.ddi_caps.MaxPicHeight = attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value;
 
 
     m_caps.ddi_caps.SliceStructure = 4;
