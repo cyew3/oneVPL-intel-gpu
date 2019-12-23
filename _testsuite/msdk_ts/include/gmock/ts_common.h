@@ -24,12 +24,12 @@
 #define REFACTORED_HEVCE
 // TODO: remove block of code below when merge of refactored HEVCe to master will be completed
 #ifdef _WIN32
-    static std::vector<HWType> platforms_with_refactored_hevce = { MFX_HW_SKL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_APL,
-                                                                   MFX_HW_ICL, MFX_HW_LKF, MFX_HW_JSL,
-                                                                   MFX_HW_TGL, MFX_HW_DG1, MFX_HW_ATS, MFX_HW_DG2}; // Platforms where refactored HEVCe used on Windows
+    static HWType platforms_with_refactored_hevce[] = { MFX_HW_SKL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_APL,
+                                                                    MFX_HW_ICL, MFX_HW_LKF, MFX_HW_JSL,
+                                                                    MFX_HW_TGL, MFX_HW_DG1, MFX_HW_ATS, MFX_HW_DG2}; // Platforms where refactored HEVCe used on Windows
 #else
-    static std::vector<HWType> platforms_with_refactored_hevce = { MFX_HW_SKL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_APL,
-                                                                   MFX_HW_ICL, MFX_HW_LKF, MFX_HW_JSL}; // Platforms where refactored HEVCe used on Linux
+    static HWType platforms_with_refactored_hevce[] = { MFX_HW_SKL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_APL,
+                                                                    MFX_HW_ICL, MFX_HW_LKF, MFX_HW_JSL}; // Platforms where refactored HEVCe used on Linux
 #endif
 
 static bool use_refactored_hevce(HWType current_platform)

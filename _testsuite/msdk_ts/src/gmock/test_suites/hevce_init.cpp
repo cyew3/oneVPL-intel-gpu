@@ -379,7 +379,7 @@ namespace hevce_init
         {/*42*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY, {} },
         {/*43*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_AVC_REFLIST_CTRL, {} },
         {/*44*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_ENCODER_RESET_OPTION, {} },
-        {/*45*/ USE_REFACTORED_HEVCE ? MFX_ERR_UNDEFINED_BEHAVIOR : MFX_ERR_INVALID_VIDEO_PARAM,  EXT_BUFF, NONE, {} },
+        {/*45*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, NONE, {} },
         //Rate Control Method
         {/*46*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
         {/*47*/ MFX_ERR_NONE, RATE_CONTROL, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
@@ -546,7 +546,11 @@ namespace hevce_init
     template<mfxU32 fourcc>
     int TestSuite::RunTest_Subtype(const unsigned int id)
     {
-        const tc_struct& tc = test_case[id];
+        tc_struct tc = test_case[id];
+
+        if (USE_REFACTORED_HEVCE && id == 45)
+            tc.sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+
         return RunTest(tc, fourcc);
     }
 

@@ -144,7 +144,7 @@ namespace hevce_reset
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY }
             }
         },
-        {/* 14*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_REFACTORED_HEVCE ? MFX_ERR_INVALID_VIDEO_PARAM : MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, WRONG, 1,
+        {/* 14*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, WRONG, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, 0x800 }
             }
@@ -168,12 +168,12 @@ namespace hevce_reset
          },
         {/* 18*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, H_GT_MAX, 1,
         },
-        {/* 19*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_REFACTORED_HEVCE ? MFX_ERR_INVALID_VIDEO_PARAM : MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
+        {/* 19*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 25 },
             }
         },
-        {/* 20*/ MFX_ERR_INVALID_VIDEO_PARAM, USE_REFACTORED_HEVCE ? MFX_ERR_INVALID_VIDEO_PARAM : MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
+        {/* 20*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1 },
             }
@@ -337,7 +337,22 @@ namespace hevce_reset
     template<mfxU32 fourcc>
     int TestSuite::RunTest_Subtype(const unsigned int id)
     {
-        const tc_struct& tc = test_case[id];
+        tc_struct tc = test_case[id];
+
+        if (USE_REFACTORED_HEVCE)
+        {
+            switch (id)
+            {
+            case 14:
+            case 19:
+            case 20:
+                tc.sts_hw = MFX_ERR_INVALID_VIDEO_PARAM;
+                break;
+            default:
+                break;
+            }
+        }
+
         return RunTest(tc, fourcc);
     }
 

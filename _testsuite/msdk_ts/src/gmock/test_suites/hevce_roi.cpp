@@ -82,13 +82,13 @@ namespace hevce_roi
     const tc_struct TestSuite::test_case[] =
     {
         // one correct region [quantity, top, left, right, bottom, qp-alter]
-        {/*00*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 64, 64, USE_REFACTORED_HEVCE ? 3 : 11 },
+        {/*00*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 64, 64, 11 },
 
         // one correct region with not aligned coordinates [quantity, top, left, right, bottom, qp-alter]
-        {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 10, 20, 120, 150, USE_REFACTORED_HEVCE ? 3 : 11 },
+        {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 10, 20, 120, 150, 11 },
 
         // one region with out of range coordinates [quantity, top, left, right, bottom, qp-alter]
-        {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, USE_REFACTORED_HEVCE ? 3 : 11 },
+        {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 11 },
 
         // checking Query with unsupported ROI quantity [quantity, top, left, right, bottom, qp-alter]
         {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, CAPS_NUM_ROI_GT_MAX, MFX_ROI_MODE_PRIORITY, TBD_ON_RUNTIME, 32, 32, 64, 64, 1 },
@@ -103,16 +103,16 @@ namespace hevce_roi
         {/*06*/ MFX_ERR_NONE, NONE, CAPS_NUM_ROI_EQ_MAX, MFX_ROI_MODE_PRIORITY, TBD_ON_RUNTIME, 32, 32, 64, 64, 1 },
 
         // one region with invalid dimensions [quantity, top, left, right, bottom, qp-alter]
-        {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 128, 128, 32, 32, USE_REFACTORED_HEVCE ? 3 : 11 },
+        {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 128, 128, 32, 32, 11 },
 
         // region with invalid unaligned coordinates [quantity, top, left, right, bottom, qp-alter]
-        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 111, 13, 3, 1, USE_REFACTORED_HEVCE ? 3 : 11 },
+        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 111, 13, 3, 1, 11 },
 
         // three correct regions [quantity, top, left, right, bottom, qp-alter]
-        {/*09*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_PRIORITY, 3, 32, 32, 64, 64, USE_REFACTORED_HEVCE ? 3 : 11 },
+        {/*09*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_PRIORITY, 3, 32, 32, 64, 64, 11 },
 
         // three regions where some regions are out of the image [quantity, top, left, right, bottom, qp-alter]
-        {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI_OUT_OF_IMAGE, NONE, MFX_ROI_MODE_PRIORITY, 3, 32, 32, 64, 64, USE_REFACTORED_HEVCE ? 3 : 13 },
+        {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI_OUT_OF_IMAGE, NONE, MFX_ROI_MODE_PRIORITY, 3, 32, 32, 64, 64, 13 },
 
         // one correct region with incorrect positive qp-alter [quantity, top, left, right, bottom, qp-alter]
         {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 128, 128, HEVCE_ROI_MAXIMUM_ABS_QP_VALUE + 1 },
@@ -129,10 +129,10 @@ namespace hevce_roi
         },
 
         // one null-region [quantity, top, left, right, bottom, qp-alter]
-        {/*14*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 0, 0, 0, 0, USE_REFACTORED_HEVCE ? 3 : 11 },
+        {/*14*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_PRIORITY, 1, 0, 0, 0, 0, 11 },
 
         // checking Query with correct region [quantity, top, left, right, bottom, qp-alter]
-        {/*15*/ MFX_ERR_NONE, CHECK_QUERY, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 128, 128, USE_REFACTORED_HEVCE ? 3 : 11 },
+        {/*15*/ MFX_ERR_NONE, CHECK_QUERY, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 128, 128, 11 },
 
         // checking Query with correct region and incorrect qp-alter [quantity, top, left, right, bottom, qp-alter]
         {/*16*/ MFX_ERR_UNSUPPORTED, CHECK_QUERY, NONE, MFX_ROI_MODE_PRIORITY, 1, 32, 32, 128, 128, 0xff },
@@ -424,7 +424,28 @@ namespace hevce_roi
     template<mfxU32 fourcc>
     int TestSuite::RunTest_Subtype(const unsigned int id)
     {
-        const tc_struct& tc = test_case[id];
+        tc_struct tc = test_case[id];
+
+        if (USE_REFACTORED_HEVCE)
+        {
+            switch (id)
+            {
+            case 0:
+            case 1:
+            case 2:
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+            case 14:
+            case 15:
+                tc.prt = 3;
+                break;
+            default:
+                break;
+            }
+        }
+
         return RunTest(tc, fourcc);
     }
 
