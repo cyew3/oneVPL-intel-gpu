@@ -1,3 +1,36 @@
+![](./pic/intel_logo.png)
+<br><br><br>
+# **SDK Developer Reference for JPEG/Motion JPEG**
+## Media SDK API Version 1.30
+
+<div style="page-break-before:always" />
+
+[**LEGAL DISCLAIMER**](./header-template.md#legal-disclaimer)
+
+[**Optimization Notice**](./header-template.md#optimization-notice)
+
+<div style="page-break-before:always" />
+
+- [Overview](#overview)
+  * [Document Conventions](#document-conventions)
+  * [Acronyms and Abbreviations](#acronyms-and-abbreviations)
+- [Architecture & Programming Guide](#architecture---programming-guide)
+  * [Decoding Procedure](#decoding-procedure)
+  * [Encoding Procedure](#encoding-procedure)
+- [Structure Reference Extension](#structure-reference-extension)
+  * [mfxInfoMFX](#mfxInfoMFX)
+  * [mfxExtJPEGQuantTables](#mfxextjpegquanttables)
+  * [mfxExtJPEGHuffmanTables](#mfxextjpeghuffmantables)
+- [Enumerator Reference Extension](#enumerator-reference-extension)
+  * [CodecFormatFourCC](#CodecFormatFourCC)
+  * [CodecProfile](#CodecProfile)
+  * [ChromaFormatIdc](#chromaformatidc)
+  * [Rotation](#Rotation)
+  * [ExtendedBufferID](#ExtendedBufferID)
+  * [JPEG Color Format](#JPEG_Color_Format)
+  * [JPEG Scan Type](#JPEG_Scan_Type)
+
+
 # Overview
 
 Intel® Media Software Development Kit – SDK is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video processing. The API library covers a wide range of Intel platforms.
@@ -24,7 +57,7 @@ The SDK uses the Verdana typeface for normal prose. With the exception of sectio
 
 # Architecture & Programming Guide
 
-The SDK extension for JPEG*/motion JPEG requires the application to use an additional include file, `mfxjpeg.h`, in addition to the regular SDK include files. No additional library is required at link time.
+The SDK extension for JPEG\*/motion JPEG requires the application to use an additional include file, `mfxjpeg.h`, in addition to the regular SDK include files. No additional library is required at link time.
 
 ```C
 Include these files:
@@ -32,14 +65,14 @@ Include these files:
 #include “mfxvideo++.h”     /* Optional for C++ development */
 #include “mfxjpeg.h”        /* JPEG development */
 Link this library:
-    libmfx.lib              /* The SDK dispatcher library */
+    libmfx.so              /* The SDK dispatcher library */
 ```
 
 The SDK extends the codec identifier [MFX_CODEC_JPEG](#CodecFormatFourCC) for JPEG and motion JPEG processing.
 
 ## Decoding Procedure
 
-The application can use the same decoding procedures for JPEG/motion JPEG decoding, as illustrated in Figure 1. See the *SDK Developer Reference* for the description of the decoding procedures.
+The application can use the same decoding procedures for JPEG/motion JPEG decoding, as illustrated in Figure 1. See the [*SDK API Reference Manual*](./mediasdk-man.md) for the description of the decoding procedures.
 
 ###### Figure 1: Pseudo Code of the JPEG Decoding Procedure
 ```C
@@ -94,7 +127,7 @@ The application may specify Huffman and quantization tables during decoder initi
 
 ## Encoding Procedure
 
-The application can use the same encoding procedures for JPEG/motion JPEG encoding, as illustratedin Figure 12. See the *SDK Developer Reference* for the description of the encoding procedures.
+The application can use the same encoding procedures for JPEG/motion JPEG encoding, as illustratedin Figure 12. See the [*SDK API Reference Manual*](./mediasdk-man.md) for the description of the encoding procedures.
 
 ###### Figure 2: Pseudo Code of the JPEG encoding Procedure
 
@@ -191,13 +224,13 @@ typedef struct {
 
 **Description**
 
-The `mfxInfoMFX` structure is extended to include JPEG* decoding options. Other fields remain unchanged. See the *SDK Developer Reference* for additional structure descriptions.
+The `mfxInfoMFX` structure is extended to include JPEG* decoding options. Other fields remain unchanged. See the [*SDK API Reference Manual*](./mediasdk-man.md) for additional structure descriptions.
 
 **Members**
 
 | | |
 --- | ---
-`JPEGChromaFormat` | Specify the chroma sampling format that has been used to encode JPEG picture. See the **ChromaFormat** enumerator in *SDK Developer Reference* for details.
+`JPEGChromaFormat` | Specify the chroma sampling format that has been used to encode JPEG picture. See the **ChromaFormat** enumerator in [*SDK API Reference Manual*](./mediasdk-man.md) for details.
 `Rotation` | Rotation option of the output JPEG picture; see the [Rotation](#Rotation) enumerator for details.
 `JPEGColorFormat` | Specify the color format that has been used to encode JPEG picture. See the [JPEG Color Format](#JPEG_Color_Format) enumerator for details.
 `InterleavedDec` | Specify JPEG scan type for decoder. See the [JPEG Scan Type](#JPEG_Scan_Type) enumerator for details.
@@ -310,7 +343,7 @@ This structure is available since SDK API 1.5.
 
 **Description**
 
-Additional `CodecFormatFourCC` enumerator itemizes the JPEG* codec. See the *SDK Developer Reference* for additional enumerator definitions.
+Additional `CodecFormatFourCC` enumerator itemizes the JPEG* codec. See the [*SDK API Reference Manual*](./mediasdk-man.md) for additional enumerator definitions.
 
 **Name/Description**
 
@@ -322,7 +355,7 @@ Additional `CodecFormatFourCC` enumerator itemizes the JPEG* codec. See the *SDK
 
 **Description**
 
-Additional `CodecProfile` enumerator itemizes the supported JPEG profile. See the *SDK Developer Reference* for additional enumerator definitions.
+Additional `CodecProfile` enumerator itemizes the supported JPEG profile. See the [*SDK API Reference Manual*](./mediasdk-man.md) for additional enumerator definitions.
 
 **Name/Description**
 
@@ -334,7 +367,7 @@ Additional `CodecProfile` enumerator itemizes the supported JPEG profile. See th
 
 **Description**
 
-Additional `ChromaFormatIdc` enumerator itemizes the JPEG* color-sampling formats. See the *SDK Developer Reference* for additional enumerator definitions.
+Additional `ChromaFormatIdc` enumerator itemizes the JPEG* color-sampling formats. See the [*SDK API Reference Manual*](./mediasdk-man.md) for additional enumerator definitions.
 
 **Name/Description**
 
@@ -363,7 +396,7 @@ The `Rotation` enumerator itemizes the JPEG rotation options.
 
 **Description**
 
-Additional **ExtendedBufferID** were added for JPEG support. See the *SDK Developer Reference* for additional enumerator definitions.
+Additional **ExtendedBufferID** were added for JPEG support. See the [*SDK API Reference Manual*](./mediasdk-man.md) for additional enumerator definitions.
 
 **Name/Description**
 

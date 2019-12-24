@@ -1,3 +1,314 @@
+![](./pic/intel_logo.png)
+<br><br><br>
+# **Media SDK Developer Reference**
+## Media SDK API Version 1.31
+
+<div style="page-break-before:always" />
+
+**LEGAL DISCLAIMER**
+
+INFORMATION IN THIS DOCUMENT IS PROVIDED IN CONNECTION WITH INTEL PRODUCTS. NO LICENSE, EXPRESS OR IMPLIED, BY ESTOPPEL OR OTHERWISE, TO ANY INTELLECTUAL PROPERTY RIGHTS IS GRANTED BY THIS DOCUMENT.  EXCEPT AS PROVIDED IN INTEL'S TERMS AND CONDITIONS OF SALE FOR SUCH PRODUCTS, INTEL ASSUMES NO LIABILITY WHATSOEVER AND INTEL DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTY, RELATING TO SALE AND/OR USE OF INTEL PRODUCTS INCLUDING LIABILITY OR WARRANTIES RELATING TO FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR INFRINGEMENT OF ANY PATENT, COPYRIGHT OR OTHER INTELLECTUAL PROPERTY RIGHT.
+
+UNLESS OTHERWISE AGREED IN WRITING BY INTEL, THE INTEL PRODUCTS ARE NOT DESIGNED NOR INTENDED FOR ANY APPLICATION IN WHICH THE FAILURE OF THE INTEL PRODUCT COULD CREATE A SITUATION WHERE PERSONAL INJURY OR DEATH MAY OCCUR.
+
+Intel may make changes to specifications and product descriptions at any time, without notice. Designers must not rely on the absence or characteristics of any features or instructions marked "reserved" or "undefined." Intel reserves these for future definition and shall have no responsibility whatsoever for conflicts or incompatibilities arising from future changes to them. The information here is subject to change without notice. Do not finalize a design with this information. 
+
+The products described in this document may contain design defects or errors known as errata which may cause the product to deviate from published specifications. Current characterized errata are available on request. 
+
+Contact your local Intel sales office or your distributor to obtain the latest specifications and before placing your product order. 
+
+Copies of documents which have an order number and are referenced in this document, or other Intel literature, may be obtained by calling 1-800-548-4725, or by visiting [Intel's Web Site](http://www.intel.com/).
+
+MPEG is an international standard for video compression/decompression promoted by ISO. Implementations of MPEG CODECs, or MPEG enabled platforms may require licenses from various entities, including Intel Corporation.
+
+Intel and the Intel logo are trademarks or registered trademarks of Intel Corporation or its subsidiaries in the United States and other countries.
+
+\*Other names and brands may be claimed as the property of others.
+
+Copyright © 2007-2019, Intel Corporation. All Rights reserved.
+<div style="page-break-before:always" /> 
+
+**Optimization Notice**
+
+Intel's compilers may or may not optimize to the same degree for non-Intel microprocessors for optimizations that are not unique to Intel microprocessors. These optimizations include SSE2, SSE3, and SSSE3 instruction sets and other optimizations. Intel does not guarantee the availability, functionality, or effectiveness of any optimization on microprocessors not manufactured by Intel. 
+
+Microprocessor-dependent optimizations in this product are intended for use with Intel microprocessors. Certain optimizations not specific to Intel microarchitecture are reserved for Intel microprocessors. Please refer to the applicable product User and Reference Guides for more information regarding the specific instruction sets covered by this notice.
+
+Notice revision #20110804
+
+<div style="page-break-before:always" />
+
+- [Overview](#overview)
+  * [Document Conventions](#document-conventions)
+  * [Acronyms and Abbreviations](#acronyms-and-abbreviations)
+- [Architecture](#architecture)
+  * [Video Decoding](#video-decoding)
+  * [Video Encoding](#video-encoding)
+  * [Video Processing](#video-processing)
+- [Programming Guide](#programming-guide)
+  * [Status Codes](#status-codes)
+  * [SDK Session](#sdk-session)
+    + [Multiple Sessions](#multiple-sessions)
+  * [Frame and Fields](#frame-and-fields)
+    + [Frame Surface Locking](#frame-surface-locking)
+  * [Decoding Procedures](#decoding-procedures)
+    + [Bitstream Repositioning](#bitstream-repositioning)
+    + [Multiple Sequence Headers](#multiple-sequence-headers)
+    + [Broken Streams Handling](#broken-streams-handling)
+  * [Encoding Procedures](#encoding-procedures)
+    + [Configuration Change](#configuration-change)
+    + [External Bit Rate Control](#External_Bit_Rate_Control)
+  * [Video Processing Procedures](#video-processing-procedures)
+    + [Configuration](#Configuration)
+    + [Region of Interest](#region-of-interest)
+  * [Transcoding Procedures](#transcoding-procedures)
+    + [Asynchronous Pipeline](#asynchronous-pipeline)
+    + [Surface Pool Allocation](#Surface_Pool_Allocation)
+    + [Pipeline Error Reporting](#pipeline-error-reporting)
+  * [Working with hardware acceleration](#hardware_acceleration)
+    + [Working with multiple Intel media devices](#Working_with_multiple_intel_media_devices)
+    + [Working with video memory](#Working_with_video_memory)
+    + [Working with Microsoft* DirectX* Applications](#Working_with_Microsoft*)
+    + [Working with VA API Applications](#working-with-va-api-applications)
+  * [Memory Allocation and External Allocators](#Memory_Allocation)
+  * [Surface Type Neutral Transcoding](#surface-type-neutral-transcoding)
+  * [Hardware Device Error Handling](#hardware-device-error-handling)
+- [Function Reference](#function-reference)
+  * [Global Functions](#global-functions)
+    + [MFXCloneSession](#MFXCloneSession)
+    + [MFXClose](#MFXClose)
+    + [MFXDoWork](#MFXDoWork)
+    + [MFXDisjoinSession](#MFXDisjoinSession)
+    + [MFXGetPriority](#MFXGetPriority_1)
+    + [MFXInit](#MFXInit)
+    + [MFXInitEx](#MFXInitEx)
+    + [MFXJoinSession](#MFXJoinSession)
+    + [MFXQueryIMPL](#MFXQueryIMPL)
+    + [MFXQueryVersion](#MFXQueryVersion)
+    + [MFXSetPriority](#MFXSetPriority)
+  * [MFXVideoCORE](#mfxvideocore)
+    + [MFXVideoCORE_SetHandle](#MFXVideoCORE_SetHandle)
+    + [MFXVideoCORE_GetHandle](#MFXVideoCORE_GetHandle)
+    + [MFXVideoCORE_SetBufferAllocator](#MFXVideoCORE_SetBufferAllocator)
+    + [MFXVideoCORE_SetFrameAllocator](#MFXVideoCORE_SetFrameAllocator)
+    + [MFXVideoCORE_QueryPlatform](#MFXVideoCORE_QueryPlatform)
+    + [MFXVideoCORE_SyncOperation](#MFXVideoCORE_SyncOperation)
+  * [MFXVideoENCODE](#mfxvideoencode)
+    + [MFXVideoENCODE_Query](#MFXVideoENCODE_Query)
+    + [MFXVideoENCODE_QueryIOSurf](#MFXVideoENCODE_QueryIOSurf)
+    + [MFXVideoENCODE_Init](#MFXVideoENCODE_Init)
+    + [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset)
+    + [MFXVideoENCODE_Close](#MFXVideoENCODE_Close)
+    + [MFXVideoENCODE_GetVideoParam](#MFXVideoENCODE_GetVideoParam)
+    + [MFXVideoENCODE_GetEncodeStat](#MFXVideoENCODE_GetEncodeStat)
+    + [MFXVideoENCODE_EncodeFrameAsync](#MFXVideoENCODE_EncodeFrameAsync)
+  * [MFXVideoENC](#mfxvideoenc)
+    + [MFXVideoENC_Query](#MFXVideoENC_Query)
+    + [MFXVideoENC_QueryIOSurf](#MFXVideoENC_QueryIOSurf)
+    + [MFXVideoENC_Init](#MFXVideoENC_Init)
+    + [MFXVideoENC_Reset](#MFXVideoENC_Reset)
+    + [MFXVideoENC_Close](#MFXVideoENC_Close)
+    + [MFXVideoENC_GetVideoParam](#MFXVideoENC_GetVideoParam)
+    + [MFXVideoENC_ProcessFrameAsync](#MFXVideoENC_ProcessFrameAsync)
+  * [MFXVideoDECODE](#mfxvideodecode)
+    + [MFXVideoDECODE_DecodeHeader](#MFXVideoDECODE_DecodeHeader)
+    + [MFXVideoDECODE_Query](#MFXVideoDECODE_Query)
+    + [MFXVideoDECODE_QueryIOSurf](#MFXVideoDECODE_QueryIOSurf)
+    + [MFXVideoDECODE_Init](#MFXVideoDECODE_Init)
+    + [MFXVideoDECODE_Reset](#MFXVideoDECODE_Reset)
+    + [MFXVideoDECODE_Close](#MFXVideoDECODE_Close)
+    + [MFXVideoDECODE_GetVideoParam](#MFXVideoDECODE_GetParam)
+    + [MFXVideoDECODE_GetDecodeStat](#MFXVideoDECODE_GetDecodeStat)
+    + [MFXVideoDECODE_GetPayload](#MFXVideoDECODE_GetPayload)
+    + [MFXVideoDECODE_SetSkipMode](#MFXVideoDECODE_SetSkipMode)
+    + [MFXVideoDECODE_DecodeFrameAsync](#MFXVideoDECODE_DecodeFrameAsync)
+  * [MFXVideoVPP](#mfxvideovpp)
+    + [MFXVideoVPP_Query](#MFXVideoVPP_Query)
+    + [MFXVideoVPP_QueryIOSurf](#MFXVideoVPP_QueryIOSurf)
+    + [MFXVideoVPP_Init](#MFXVideoVPP_Init)
+    + [MFXVideoVPP_Reset](#MFXVideoVPP_Reset)
+    + [MFXVideoVPP_Close](#MFXVideoVPP_Close)
+    + [MFXVideoVPP_GetVideoParam](#MFXVideoVPP_GetVideoParam)
+    + [MFXVideoVPP_GetVPPStat](#MFXVideoVPP_GetVPPStat)
+    + [MFXVideoVPP_RunFrameVPPAsync](#MFXVideoVPP_RunFrameVPPAsync)
+- [Structure Reference](#structure-reference)
+  * [mfxBitstream](#mfxBitstream)
+  * [mfxBufferAllocator](#mfxbufferallocator)
+    + [Alloc](#BufferAlloc)
+    + [Free](#BufferFree)
+    + [Lock](#BufferLock)
+    + [Unlock](#BufferUnlock)
+  * [mfxDecodeStat](#mfxDecodeStat)
+  * [mfxEncodeCtrl](#mfxEncodeCtrl)
+  * [mfxEncodeStat](#mfxEncodeStat)
+  * [mfxExtBuffer](#mfxExtBuffer)
+  * [mfxExtAVCRefListCtrl](#mfxExtAVCRefListCtrl)
+  * [mfxExtAVCRefLists](#mfxextavcreflists)
+  * [mfxExtCodingOption](#mfxExtCodingOption)
+  * [mfxExtCodingOption2](#mfxExtCodingOption2)
+  * [mfxExtCodingOption3](#mfxExtCodingOption3)
+  * [mfxExtCodingOptionSPSPPS](#mfxExtCodingOptionSPSPPS)
+  * [mfxExtOpaqueSurfaceAlloc](#mfxExtOpaqueSurfaceAlloc)
+  * [mfxExtVideoSignalInfo](#mfxExtVideoSignalInfo)
+  * [mfxExtPictureTimingSEI](#mfxExtPictureTimingSEI)
+  * [mfxExtAvcTemporalLayers](#mfxExtAvcTemporalLayers)
+  * [mfxExtVppAuxData](#mfxExtVppAuxData)
+  * [mfxExtVPPDenoise](#mfxExtVPPDenoise)
+  * [mfxExtVppMctf](#mfxExtVppMctf)
+  * [mfxExtVPPDetail](#mfxExtVPPDetail)
+  * [mfxExtVPPDoNotUse](#mfxExtVPPDoNotUse)
+  * [mfxExtVPPDoUse](#mfxExtVPPDoUse)
+  * [mfxExtVPPFrameRateConversion](#mfxExtVPPFrameRateConversion)
+  * [mfxExtVPPProcAmp](#mfxExtVPPProcAmp)
+  * [mfxExtVPPImageStab](#mfxExtVPPImageStab)
+  * [mfxExtVPPComposite](#mfxExtEncoderCapability)
+  * [mfxExtVPPVideoSignalInfo](#mfxextvppvideosignalinfo)
+  * [mfxExtEncoderCapability](#mfxExtEncoderCapability_1)
+  * [mfxExtEncoderResetOption](#mfxExtEncoderResetOption)
+  * [mfxExtAVCEncodedFrameInfo](#mfxExtAVCEncodedFrameInfo)
+  * [mfxExtEncoderROI](#mfxextencoderroi)
+  * [mfxExtMasteringDisplayColourVolume](#mfxExtMasteringDisplayColourVolume)
+  * [mfxExtContentLightLevelInfo](#mfxExtContentLightLevelInfo)
+  * [mfxExtVPPDeinterlacing](#mfxExtVPPDeinterlacing)
+  * [mfxFrameAllocator](#mfxFrameAllocator)
+    + [Alloc](#Alloc)
+    + [Free](#FrameFree)
+    + [Lock](#FrameLock)
+    + [Unlock](#FrameUnlock)
+    + [GetHDL](#FrameGetHDL)
+  * [mfxFrameAllocRequest](#mfxFrameAllocRequest)
+  * [mfxFrameAllocResponse](#mfxFrameAllocResponse)
+  * [mfxFrameData](#mfxFrameData)
+  * [mfxFrameInfo](#mfxFrameInfo)
+  * [mfxFrameSurface1](#mfxFrameSurface)
+  * [mfxInfoMFX](#mfxInfoMFX)
+  * [mfxInfoVPP](#mfxInfoVPP)
+  * [mfxInitParam](#mfxInitParam)
+  * [mfxPlatform](#mfxPlatform)
+  * [mfxPayload](#mfxPayload)
+  * [mfxVersion](#mfxVersion)
+  * [mfxVideoParam](#mfxVideoParam)
+  * [mfxVPPStat](#mfxVPPStat)
+  * [mfxENCInput](#mfxENCInput)
+  * [mfxENCOutput](#mfxENCOutput)
+  * [mfxExtLAControl](#mfxExtLAControl)
+  * [mfxExtLAFrameStatistics](#mfxExtLAFrameStatistics)
+  * [mfxExtVPPFieldProcessing](#mfxExtVPPFieldProcessing)
+  * [mfxExtMBQP](#mfxExtMBQP)
+  * [mfxExtMBForceIntra](#mfxExtMBForceIntra)
+  * [mfxExtChromaLocInfo](#mfxExtChromaLocInfo)
+  * [mfxExtHEVCTiles](#mfxExtHEVCTiles)
+  * [mfxExtMBDisableSkipMap](#mfxExtMBDisableSkipMap)
+  * [mfxExtDecodedFrameInfo](#mfxExtDecodedFrameInfo)
+  * [mfxExtTimeCode](#mfxExtTimeCode)
+  * [mfxExtHEVCRegion](##mfxexthevcregion)
+  * [mfxExtThreadsParam](#mfxExtThreadsParam)
+  * [mfxExtHEVCParam](#mfxExtHEVCParam)
+  * [mfxExtPredWeightTable](#mfxExtPredWeightTable)
+  * [mfxExtAVCRoundingOffset](#mfxExtAVCRoundingOffset)
+  * [mfxExtDirtyRect](#mfxExtDirtyRect)
+  * [mfxExtMoveRect](#mfxExtMoveRect)
+  * [mfxExtCodingOptionVPS](#mfxExtCodingOptionVPS)
+  * [mfxExtVPPRotation](#mfxExtVPPRotation)
+  * [mfxExtVPPScaling](#mfxExtVPPScaling)
+  * [mfxExtVPPMirroring](#mfxExtVPPMirroring)
+  * [mfxExtVPPColorFill](#mfxExtVPPColorFill)
+  * [mfxExtEncodedSlicesInfo](#mfxExtEncodedSlicesInfo)
+  * [mfxExtMVOverPicBoundaries](#mfxExtMVOverPicBoundaries)
+  * [mfxExtDecVideoProcessing](#mfxExtDecVideoProcessing)
+  * [mfxExtVP9Param](#mfxExtVP9Param)
+  * [mfxExtVP9Segmentation](#mfxExtVP9Segmentation)
+  * [mfxExtVP9TemporalLayers](#mfxExtVP9TemporalLayers)
+  * [mfxExtBRC](#mfxExtBRC)
+    + [Init](#BRCInit)
+    + [Reset](#BRCReset)
+    + [Close](#BRCClose)
+    + [GetFrameCtrl](#BRCGetFrameCtrl)
+    + [Update](#BRCUpdate)
+  * [mfxBRCFrameParam](#mfxBRCFrameParam)
+  * [mfxBRCFrameCtrl](#mfxBRCFrameCtrl)
+  * [mfxBRCFrameStatus](#mfxBRCFrameStatus)
+  * [mfxExtMultiFrameParam](#mfxExtMultiFrameParam)
+  * [mfxExtMultiFrameControl](#mfxExtMultiFrameControl)
+  * [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo)
+  * [mfxExtColorConversion](#mfxExtColorConversion)
+  * [mfxExtDecodeErrorReport](#mfxExtDecodeErrorReport)
+  * [mfxExtCencParam](#mfxExtCencParam)
+- [Enumerator Reference](#enumerator-reference)
+  * [BitstreamDataFlag](#BitstreamDataFlag)
+  * [ChromaFormatIdc](#ChromaFormatIdc)
+  * [CodecFormatFourCC](#CodecFormatFourCC)
+  * [CodecLevel](#CodecLevel)
+  * [CodecProfile](#CodecProfile)
+  * [CodingOptionValue](#CodingOptionValue)
+  * [ColorFourCC](#ColorFourCC)
+  * [Corruption](#Corruption)
+  * [ExtendedBufferID](#ExtendedBufferID)
+  * [ExtMemBufferType](#ExtMemBufferType)
+  * [ExtMemFrameType](#ExtMemFrameType)
+  * [FrameDataFlag](#FrameDataFlag)
+  * [FrameType](#FrameType)
+  * [MfxNalUnitType](#MfxNalUnitType)
+  * [FrcAlgm](#FrcAlgm)
+  * [GopOptFlag](#GopOptFlag)
+  * [IOPattern](#IOPattern)
+  * [mfxHandleType](#mfxHandleType)
+  * [mfxIMPL](#mfxIMPL)
+  * [mfxPriority](#mfxPriority)
+  * [mfxSkipMode](#mfxSkipMode)
+  * [mfxStatus](#mfxStatus)
+  * [PicStruct](#PicStruct)
+  * [RateControlMethod](#RateControlMethod)
+  * [TimeStampCalc](#TimeStampCalc)
+  * [TargetUsage](#TargetUsage)
+  * [TrellisControl](#TrellisControl)
+  * [BRefControl](#BRefControl)
+  * [LookAheadDownSampling](#LookAheadDownSampling)
+  * [VPPFieldProcessingMode](#VPPFieldProcessingMode)
+  * [PicType](#PicType)
+  * [SkipFrame](#SkipFrame)
+  * [DeinterlacingMode](#DeinterlacingMode)
+  * [TelecinePattern](#TelecinePattern)
+  * [HEVCRegionType](#HEVCRegionType)
+  * [GPUCopy](#GPUCopy)
+  * [WeightedPred](#WeightedPred)
+  * [ScenarioInfo](#ScenarioInfo)
+  * [ContentInfo](#ContentInfo)
+  * [PRefType](#PRefType)
+  * [GeneralConstraintFlags](#GeneralConstraintFlags)
+  * [Angle](#Angle)
+  * [PlatformCodeName](#PlatformCodeName)
+  * [PayloadCtrlFlags](#PayloadCtrlFlags)
+  * [IntraRefreshTypes](#IntraRefreshTypes)
+  * [VP9ReferenceFrame](#VP9ReferenceFrame)
+  * [SegmentIdBlockSize](#SegmentIdBlockSize)
+  * [SegmentFeature](#SegmentFeature)
+  * [InsertHDRPayload](#InsertHDRPayload)
+  * [SampleAdaptiveOffset](#SampleAdaptiveOffset)
+  * [BRCStatus](#BRCStatus)
+  * [MFMode](#MFMode)
+  * [ErrorTypes](#ErrorTypes)
+  * [ChromaSiting](#ChromaSiting)
+  * [Protected](#Protected)
+- [Appendices](#appendices)
+  * [Appendix A: Configuration Parameter Constraints](#Appendix_A)
+  * [Appendix B: Multiple-Segment Encoding](#Appendix_B)
+  * [Appendix C: Streaming and Video Conferencing Features](#Appendix_C)
+    + [Dynamic Bitrate Change](#dynamic-bitrate-change)
+    + [Dynamic resolution change](#Dynamic_resolution_change)
+    + [Dynamic reference frame scaling](#Dynamic_scaling)
+    + [Forced Key Frame Generation](#forced-key-frame-generation)
+    + [Reference List Selection](#Reference_List_Selection)
+    + [Low Latency Encoding and Decoding](#low-latency-encoding-and-decoding)
+    + [Reference Picture Marking Repetition SEI message](#reference-picture-marking-repetition-sei-message)
+    + [Long-term Reference frame](#Long-term_Reference_frame)
+    + [Temporal scalability](#Temporal_scalability)
+  * [Appendix D: Switchable Graphics and Multiple Monitors](#Appendix_D)
+    + [Switchable Graphics](#switchable-graphics)
+    + [Multiple Monitors](#multiple-monitors)
+  * [Appendix E: Working directly with VA API for Linux\*](#Appendix_E)
+  * [Appendix F: CQP HRD mode encoding](#Appendix_F)
+
 # Overview
 
 Intel® Media Software Development Kit – SDK, further referred to as the SDK, is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video processing. The API library covers a wide range of Intel platforms.
@@ -153,7 +464,10 @@ P210 | X |   |   |   | X | X | X | X |   |
 NV16 | X |   |   |   |   | X | X |   |   |
 Y210 | X | X | X | X | X |   |   | X | X | X
 Y410 | X | X | X | X | X |   |   | X | X | X
-X indicates a supported function<br>*Conversions absent in this table are unsupported
+
+X indicates a supported function
+
+\* Conversions absent in this table are unsupported
 
 The SDK video processing pipeline supports limited functionality for RGB4 input. Only filters that are required to convert input format to output one are included in pipeline. All optional filters are skipped. See description of [MFX_WRN_FILTER_SKIPPED](#MFX_WRN_FILTER_SKIPPED) warning for more details on how to retrieve list of active filters.
 
@@ -161,7 +475,7 @@ The SDK video processing pipeline supports limited functionality for RGB4 input.
 
  **Input Field Rate (fps) Interlaced** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive** | **Output Frame Rate (fps) Progressive**
  ---- | ---------------- | --- | ----- | --- | --- | ----- | ---
- -    | 23.976           | 25  | 29.97 | 30  | 50  | 59.94 | 60
+\-     | 23.976           | 25  | 29.97 | 30  | 50  | 59.94 | 60
 29.97 | Inverse Telecine |     | X     |     |     |       |
 50    |                  | X   |       |     | X   |       |
 59.94 |                  |     | X     |     |     | X     |
@@ -205,7 +519,7 @@ The SDK video processing pipeline does not support HW acceleration for P210 form
 
 This chapter describes the concepts used in programming the SDK.
 
-The application must use the include file, **mfxvideo.h** (for C programming), or **mfxvideo++.h** (for C++ programming), and link the SDK dispatcher library, **libmfx.so**.
+The application must use the include file, **mfxvideo.h** (for C programming), or **mfxvideo++.h** (with optional C++ wrappers), and link the SDK dispatcher library, **libmfx.so**.
 
 Include these files:
 ```C
@@ -993,7 +1307,7 @@ default:
 
 ### <a id='Working_with_video_memory'>Working with video memory</a>
 
-To fully utilize the SDK acceleration capability, the application should support OS specific infrastructures, Microsoft* DirectX* for Micorosoft* Windows* and VA API for Linux*. The exception is transcoding scenario where opaque memory type may be used. See Surface Type Neutral Transcoding for more details.
+To fully utilize the SDK acceleration capability, the application should support OS specific infrastructures, Microsoft\* DirectX\* for Micorosoft\* Windows\* and VA API for Linux\*. The exception is transcoding scenario where opaque memory type may be used. See Surface Type Neutral Transcoding for more details.
 
 The hardware acceleration support in application consists of video memory support and acceleration
 device support.
@@ -1257,7 +1571,7 @@ MFXVideoENCODE_Init(session, &encode_param);
 The SDK accelerates decoding, encoding and video processing through a hardware device. The SDK functions may return the following errors or warnings if the hardware device encounters errors:
 
 | | |
---- | ---
+|--- | ---|
 `MFX_ERR_DEVICE_FAILED` | Hardware device returned unexpected errors. SDK was unable to restore operation.
 `MFX_ERR_DEVICE_LOST` | Hardware device was lost due to system lock or shutdown.
 `MFX_WRN_PARTIAL_ACCELERATION` | The hardware does not fully support the specified configuration. The encoding, decoding, or video processing operation may be partially accelerated.
@@ -1914,6 +2228,7 @@ when MFX_ERR_NONE_PARTIAL_OUTPUT code is returned, new portion of the encoded fr
 Finally, when MFX_ERR_NONE returned the bitstream buffer contains full bitstream for encoded frame with DataLengh equal to it length. 
 Any processing on app level of the partial result returned in bitstream buffer must be finished before next SyncOperation call.
 
+
 ## MFXVideoENCODE
 
 This class of functions performs the entire encoding pipeline from the input video frames to the output bitstream.
@@ -2194,7 +2509,7 @@ This function is asynchronous.
 `MFX_ERR_NONE` | The function completed successfully.
 `MFX_ERR_NOT_ENOUGH_BUFFER` | The bitstream buffer size is insufficient.
 `MFX_ERR_MORE_DATA` | The function requires more data to generate any output.
-`MFX_ERR_DEVICE_LOST` | Hardware device was lost; See [Working with Microsoft* DirectX* Applications](#Working_with_Microsoft*) section for further information.
+`MFX_ERR_DEVICE_LOST` | Hardware device was lost; See [Working with Microsoft\* DirectX\* Applications](#Working_with_Microsoft\*) section for further information.
 `MFX_WRN_DEVICE_BUSY` | Hardware device is currently busy. Call this function again in a few milliseconds.
 `MFX_ERR_INCOMPATIBLE_VIDEO_PARAM` | Inconsistent parameters detected not conforming to Appendix A.
 
@@ -2822,7 +3137,7 @@ This function is asynchronous.
 `MFX_ERR_NONE` | The function completed successfully and the output surface is ready for decoding.
 `MFX_ERR_MORE_DATA` | The function requires more bitstream at input before decoding can proceed.
 `MFX_ERR_MORE_SURFACE` | The function requires more frame surface at output before decoding can proceed.
-`MFX_ERR_DEVICE_LOST` | Hardware device was lost; See the [Working with Microsoft* DirectX* Applications](#Working_with_Microsoft*) section for further information.
+`MFX_ERR_DEVICE_LOST` | Hardware device was lost; See the [Working with Microsoft\* DirectX\* Applications](#Working_with_Microsoft\*) section for further information.
 `MFX_WRN_DEVICE_BUSY` | Hardware device is currently busy. Call this function again in a few milliseconds.
 `MFX_WRN_VIDEO_PARAM_CHANGED` | The decoder detected a new sequence header in the bitstream. Video parameters may have changed.
 `MFX_ERR_INCOMPATIBLE_VIDEO_PARAM` | The decoder detected incompatible video parameters in the bitstream and failed to follow them.
@@ -3867,6 +4182,7 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `TargetChromaFormatPlus1` | Minus 1 specifies target encoding chroma format (see [ChromaFormatIdc](#ChromaFormatIdc) enumerator). May differ from source one. `TargetChromaFormatPlus1 = 0` mean default target chroma format which is equal to source ([mfxVideoParam::](#mfxVideoParam)[mfx::](#mfxInfoMFX)[FrameInfo::](#mfxFrameInfo)`ChromaFormat + 1`), except RGB4 source format.<br>In case of RGB4 source format default target chroma format is 4:2:0 (instead of 4:4:4) for the purpose of backward compatibility.
 `TargetBitDepthLuma` | Target encoding bit-depth for luma samples. May differ from source one. `0` mean default target bit-depth which is equal to source ([mfxVideoParam::](#mfxVideoParam)[mfx::](#mfxInfoMFX)[FrameInfo::](#mfxFrameInfo)`BitDepthLuma`).
 `TargetBitDepthChroma` | Target encoding bit-depth for chroma samples. May differ from source one. `0` mean default target bit-depth which is equal to source ([mfxVideoParam::](#mfxVideoParam)[mfx::](#mfxInfoMFX)[FrameInfo::](#mfxFrameInfo)`BitDepthChroma`).
+
 
 **Change History**
 
@@ -5449,7 +5765,7 @@ This structure specifies configurations for decoding, encoding and transcoding p
 `ICQQuality`            | This parameter is for Intelligent Constant Quality (ICQ) bitrate control algorithm. It is value in the 1…51 range, where 1 corresponds the best quality.
 `BufferSizeInKB`        | `BufferSizeInKB` represents the maximum possible size of any compressed frames.
 `NumSlice`              | Number of slices in each video frame; each slice contains one or more macro-block rows. If `NumSlice` equals zero, the encoder may choose any slice partitioning allowed by the codec standard. See also [mfxExtCodingOption2](#mfxExtCodingOption2)`::NumMbPerSlice`.
-`NumRefFrame`           | Number of reference frames; if `NumRefFrame = 0`, this parameter is not specified.
+`NumRefFrame`           | Max number of **all** available reference frames (for AVC/HEVC `NumRefFrame` defines DPB size); if `NumRefFrame = 0`, this parameter is not specified.<br><br>See also [mfxExtCodingOption3](#mfxExtCodingOption3)`::NumRefActiveP`, `NumRefActiveBL0` and `NumRefActiveBL1` which set a number of **active** references.
 `EncodedOrder`          | If not zero, `EncodedOrder` specifies that **ENCODE** takes the input surfaces in the encoded order and uses explicit frame type control. Application still must provide `GopRefDist` and [mfxExtCodingOption2](#mfxExtCodingOption2)`::BRefType` so SDK can pack headers and build reference lists correctly.
 `NumThread`             | Deprecated; Used to represent the number of threads the underlying implementation can use on the host processor. Always set this parameter to zero.
 `DecodedOrder`          | For AVC and HEVC, used to instruct the decoder to return output frames in the decoded order. Deprecated and must be zero for all other decoders.<br><br>When enabled, correctness of [mfxFrameData](#mfxFrameData)`::TimeStamp` and `FrameOrder` for output surface is not guaranteed, the application should ignore them.
@@ -9148,8 +9464,8 @@ The `Protected` enumerator describes the protection schemes.
 
 | | |
 --- | ---
-`MFX_PROTECTION_CENC_WV_CLASSIC`             | The protection scheme is based on the Widevine* DRM from Google*.
-`MFX_PROTECTION_CENC_WV_GOOGLE_DASH`        | The protection scheme is based on the Widevine* Modular DRM* from Google*.
+`MFX_PROTECTION_CENC_WV_CLASSIC`             | The protection scheme is based on the Widevine\* DRM from Google\*.
+`MFX_PROTECTION_CENC_WV_GOOGLE_DASH`        | The protection scheme is based on the Widevine\* Modular DRM\* from Google\*.
 
 **Change History**
 
@@ -9214,7 +9530,7 @@ This enumerator is available since SDK API 1.31.
 
 # Appendices
 
-## Appendix A: Configuration Parameter Constraints
+## <a id='Appendix_A'>Appendix A: Configuration Parameter Constraints</a>
 
 The [mfxFrameInfo](#mfxFrameInfo) structure is used by both the [mfxVideoParam](#mfxVideoParam) structure during SDK class initialization and the [mfxFrameSurface1](#mfxFrameSurface) structure during the actual SDK class function. The following constraints apply:
 
@@ -9314,7 +9630,7 @@ The following table summarizes how to specify the configuration parameters durin
 <a id='appendix_A_profile_note'>\*</a>**Note:** `CodecProfile` is mandated for HEVC REXT and SCC profiles and optional for other cases. If application doesn't explicitly set `CodecProfile` during initialization, HEVC decoder will use profile up to Main10.
 
 
-## Appendix B: Multiple-Segment Encoding
+## <a id='Appendix_B'>Appendix B: Multiple-Segment Encoding</a>
 
 Multiple-segment encoding is useful in video editing applications when during production; the encoder encodes multiple video clips according to their time line. In general, one can define multiple-segment encoding as dividing an input sequence of frames into segments and encoding them in different encoding sessions with the same or different parameter sets, as illustrated in Figure 7. (Note that different encoders can also be used.)
 
@@ -9383,7 +9699,7 @@ mfxStatus init_encoder(…) {
 }
 ```
 
-## Appendix C: Streaming and Video Conferencing Features
+## <a id='Appendix_C'>Appendix C: Streaming and Video Conferencing Features</a>
 
 The following sections address a few aspects of additional requirements that streaming or video conferencing applications may use in the encoding or transcoding process. See also Configuration Change chapter.
 
@@ -9466,7 +9782,7 @@ Each temporal layer is a set of frames with the same temporal ID. Each layer is 
 
 For example, 30 frame per second video sequence typically is separated by three temporal layers, that can be decoded as 7.5 fps (base layer), 15 fps (base and first temporal layer) and 30 fps (all three layers). **Scale** for this case should have next values **{1,2,4,0,0,0,0,0}**.
 
-## Appendix D: Switchable Graphics and Multiple Monitors
+## <a id='Appendix_D'>Appendix D: Switchable Graphics and Multiple Monitors</a>
 
 The following sections address a few aspects of supporting switchable graphics and multiple monitors configurations.
 
@@ -9512,9 +9828,9 @@ Finally, similar to the switchable graphics cases, it is possible that the user 
 
 If the interruption occurs during decoding, video processing, or encoding operations, the SDK functions will return [MFX_ERR_DEVICE_LOST](#mfxStatus) or [MFX_ERR_DEVICE_FAILED](#mfxStatus). The application needs to handle these errors and exit gracefully.
 
-## Appendix E: Working directly with VA API for Linux*
+## <a id='Appendix_E'>Appendix E: Working directly with VA API for Linux\* </a>
 
-The SDK takes care of all memory and synchronization related operations in VA API. However, in some cases the application may need to extend the SDK functionality by working directly with VA API for Linux*. For example, to implement customized external allocator or **USER** functions (also known as “plug-in”). This chapter describes some basic memory management and synchronization techniques.
+The SDK takes care of all memory and synchronization related operations in VA API. However, in some cases the application may need to extend the SDK functionality by working directly with VA API for Linux\*. For example, to implement customized external allocator or **USER** functions (also known as “plug-in”). This chapter describes some basic memory management and synchronization techniques.
 
 To create VA surface pool the application should call vaCreateSurfaces as it is shown in Example 19.
 
@@ -9603,7 +9919,7 @@ vaUnmapBuffer(va_display, buf_id);
 vaDestroyBuffer(va_display, buf_id);
 ```
 
-## <a id='Appendix_F:_CQP'>Appendix F: CQP HRD mode encoding</a>
+## <a id='Appendix_F'>Appendix F: CQP HRD mode encoding</a>
 
 Application can configure AVC encoder to work in CQP rate control mode with HRD model parameters. SDK will place HRD information to SPS/VUI and choose appropriate profile/level. It’s responsibility of application to provide per-frame QP, track HRD conformance and insert required SEI messages to the bitstream.
 

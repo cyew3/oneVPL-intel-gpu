@@ -1,14 +1,39 @@
+![](./pic/intel_logo.png)
+<br><br><br>
+# **SDK Developer Reference for HEVC FEI**
+## Media SDK API Version 1.30
+
+<div style="page-break-before:always" />
+
+[**LEGAL DISCLAIMER**](./header-template.md##legal-disclaimer)
+
+[**Optimization Notice**](./header-template.md##optimization-notice)
+
+<div style="page-break-before:always" />
+
+- [Overview](#overview)
+  * [Acronyms and Abbreviations](#acronyms-and-abbreviations)
+- [Architecture](#architecture)
+  * [Direct access to VA buffers](#direct-access-to-va-buffers)
+- [Programming Guide](#programming-guide)
+- [Structure Reference](#Structure_Reference)
+  * [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl)
+  * [mfxExtFeiHevcEncMVPredictors](#mfxExtFeiHevcEncMVPredictors)
+  * [mfxExtFeiHevcEncQP](#mfxExtFeiHevcEncQP)
+  * [mfxExtFeiHevcEncCtuCtrl](#mfxExtFeiHevcEncCtuCtrl)
+  * [mfxExtFeiHevcRepackCtrl](#mfxExtFeiHevcRepackCtrl)
+  * [mfxExtFeiHevcRepackStat](#mfxExtFeiHevcRepackStat)
+
 # Overview
 
-This document describes HEVC extension of the Flexible Encode Infrastructure (FEI). It is not a comprehensive manual, it describes only HEVC specific functionality of FEI, mostly data structures. For complete description of FEI, including architecture details and usage models please refer to the *SDK API Reference Manual for Flexible Encode Infrastructure*. Both these manuals assume that reader is familiar with Media SDK architecture described in the *SDK API Reference Manual*.
+This document describes HEVC extension of the Flexible Encode Infrastructure (FEI). It is not a comprehensive manual, it describes only HEVC specific functionality of FEI, mostly data structures. For complete description of FEI, including architecture details and usage models please refer to the [*SDK API Reference Manual for Flexible Encode Infrastructure*](./mediasdkfei-man.md). Both these manuals assume that reader is familiar with Media SDK architecture described in the [*SDK API Reference Manual*](./mediasdk-man.md).
 
 In this manual term "AVC FEI" is often used to distinguish general FEI extension described in above mentioned manual from "HEVC FEI" extension described in this document.
 
 
-
 ## Acronyms and Abbreviations
 
-| |
+| | |
 --- | ---
 **FEI** | Flexible Encode Infrastructure
 **PreENC** | Pre Encoding - preliminary stage of encoding process, usually used for content analysis.
@@ -19,9 +44,10 @@ In this manual term "AVC FEI" is often used to distinguish general FEI extension
 
 
 <div style="page-break-before:always" />
+
 # Architecture
 
-HEVC FEI is built as extension of AVC FEI. It uses the same classes of functions **ENCODE**  and provides the same major usage model "PreENC followed by ENCODE", with AVC FEI PreENC. See *Architecture* chapter of the *SDK API Reference Manual for Flexible Encode Infrastructure* for more details.
+HEVC FEI is built as extension of AVC FEI. It uses the same classes of functions **ENCODE**  and provides the same major usage model "PreENC followed by ENCODE", with AVC FEI PreENC. See *Architecture* chapter of the [*SDK API Reference Manual for Flexible Encode Infrastructure*](./mediasdkfei-man.md) for more details.
 
 ## Direct access to VA buffers
 
@@ -35,7 +61,7 @@ To improve performance, HEVC FEI eliminates additional data copy inside SDK libr
 
 ![Direct access to VA buffers](./pic/va_buffers_direct_access.png)
 
-The application manages extension buffer allocation through VA API for Linux*. In order to do that, it is recommended to implement a buffer allocator and use it across the entire application.
+The application manages extension buffer allocation through VA API for Linux\*. In order to do that, it is recommended to implement a buffer allocator and use it across the entire application.
 The application must consider some driver requirements in the buffer allocator's implementation:
 * VA context should be created with the same input parameters (picture width/height, RateControlMethod) as passed in Media SDK library.
 * buffer allocation depends on HW layout implementation. See buffer structure description for more details.
@@ -97,17 +123,18 @@ for (;;)
 allocator.Free(qp);
 ```
 
-Please refer to Appendix E in the *SDK API Reference Manual* for more details about working directly with VA API.
+Please refer to Appendix E in the [*SDK API Reference Manual*](./mediasdk-man.md) for more details about working directly with VA API.
 
 
 <div style="page-break-before:always" />
+
 # Programming Guide
 
 To build HEVC FEI based application next header files should be included
 - mfxenc.h - for PreENC and ENC functionality
 - mfxfei.h - for basic FEI functionality and PreENC
 - mfxhevcfei.h - for HEVC FEI extension
-- mfxvideo.h - -for the rest of Media SDK functionality
+- mfxvideo.h - for the rest of Media SDK functionality
 
 HEVC FEI does not extend PreENC functionality. Exactly the same functions and data structures should be used for HEVC pre-processing.
 
@@ -118,6 +145,7 @@ The SDK distinguishes between AVC and HEVC FEI by `CodecId` parameter in `mfxVid
 
 
 <div style="page-break-before:always" />
+
 # <a id='Structure_Reference'>Structure Reference</a>
 
 In the following structures all reserved fields must be zeroed by application if structure is used as input, and should not be modified if structure is passed between different SDK components.
@@ -182,7 +210,6 @@ This extension buffer specifies frame level control for ENCODE. It is used durin
 **Change History**
 
 This structure is available since SDK API 1.27
-
 
 
 ## <a id='mfxExtFeiHevcEncMVPredictors'>mfxExtFeiHevcEncMVPredictors</a>

@@ -1,3 +1,28 @@
+![](./pic/intel_logo.png)
+<br><br><br>
+# **SDK Developer Reference for VP8**
+## Media SDK API Version 1.30
+
+<div style="page-break-before:always" />
+
+[**LEGAL DISCLAIMER**](./header-template.md#legal-disclaimer)
+
+[**Optimization Notice**](./header-template.md#optimization-notice)
+
+<div style="page-break-before:always" />
+
+- [Overview](#overview)
+  * [Document Conventions](#document-conventions)
+  * [Acronyms and Abbreviations](#acronyms-and-abbreviations)
+- [Architecture & Programming Guide](#architecture---programming-guide)
+  * [Decoding Procedure](#decoding-procedure)
+  * [Encoding Procedure](#encoding-procedure)
+- [Structure Reference](#structure-reference)
+  * [mfxExtVP8CodingOption](#mfxExtCodingOptionVP8)
+- [Enumerator Reference](#enumerator-reference)
+  * [CodecProfile](#CodecProfile)
+  * [ExtendedBufferID](#ExtendedBufferID)
+
 # Overview
 
 Intel® Media Software Development Kit – SDK is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video processing. The API library covers a wide range of Intel platforms.
@@ -33,11 +58,11 @@ The SDK extends the codec identifier `MFX_CODEC_VP8` for VP8 processing.
 
 ## Decoding Procedure
 
-The application should use the same decoding procedure that described in the *SDK Developer Reference*. The only difference is in partitioning of input bitstream. Unlike other supported by SDK decoders, VP8 can accept only complete frame as input and application should provide it accompanied by `MFX_BITSTREAM_COMPLETE_FRAME` flag.
+The application should use the same decoding procedure that described in the [*SDK API Reference Manual*](./mediasdk-man.md). The only difference is in partitioning of input bitstream. Unlike other supported by SDK decoders, VP8 can accept only complete frame as input and application should provide it accompanied by `MFX_BITSTREAM_COMPLETE_FRAME` flag.
 
 ## Encoding Procedure
 
-The application should use the same encoding procedure that described in the *SDK Developer Reference*.
+The application should use the same encoding procedure that described in the [*SDK API Reference Manual*](./mediasdk-man.md).
 
 # Structure Reference
 
@@ -75,7 +100,7 @@ This `mfxExtVP8CodingOption` structure describes VP8 encoder configuration param
 --- | ---
 `Header.BufferId` | Must be set to `MFX_EXTBUFF_VP8_CODING_OPTION.`
 `Version` | Determines the bitstream version. Corresponds to the same VP8 syntax element in `frame_tag`.
-`EnableMultipleSegments` | Set this option to ON, to enable segmentation. This is tri-state option. See the `CodingOptionValue` enumerator for values of this option in the *SDK Developer Reference* for details
+`EnableMultipleSegments` | Set this option to ON, to enable segmentation. This is tri-state option. See the `CodingOptionValue` enumerator for values of this option in the [*SDK API Reference Manual*](./mediasdk-man.md) for details
 `LoopFilterType` | Selecting the type of filter (normal or simple). Corresponds to VP8 syntax element `filter_type`.
 `LoopFilterLevel` | Controls the filter strength. Corresponds to VP8 syntax element `loop_filter_level`.
 `SharpnessLevel` | Controls the filter sensitivity. Corresponds to VP8 syntax element `sharpness_level`.
@@ -84,7 +109,7 @@ This `mfxExtVP8CodingOption` structure describes VP8 encoder configuration param
 `LoopFilterMbModeDelta` | Loop filter level delta for MB modes.
 `SegmentQPDelta` | QP delta for segment.
 `CoeffTypeQPDelta` | QP delta for coefficient type (YDC, Y2AC, Y2DC, UVAC, UVDC).
-`WriteIVFHeaders` | Set this option to ON, to enable insertion of IVF container headers into bitstream. This is tri-state option. See the `CodingOptionValue` enumerator for values of this option in the *SDK Developer Reference* for details
+`WriteIVFHeaders` | Set this option to ON, to enable insertion of IVF container headers into bitstream. This is tri-state option. See the `CodingOptionValue` enumerator for values of this option in the [*SDK API Reference Manual*](./mediasdk-man.md) for details
 `NumFramesForIVFHeader` | Specifies number of frames for IVF header when `WriteIVFHeaders` is ON.
 
 **Change History**
@@ -97,8 +122,7 @@ This structure is available since SDK API 1.12.
 
 **Description**
 
-The `CodecProfile` enumerator is extended to support VP8 profiles. See the *SDK Developer
-Reference* for additional profile definitions.
+The `CodecProfile` enumerator is extended to support VP8 profiles. See the [*SDK API Reference Manual*](./mediasdk-man.md) for additional profile definitions.
 
 **Name/Description**
 
@@ -114,7 +138,7 @@ This enumerator is available since SDK API 1.0. SDK API 1.12 added VP8 profiles.
 
 **Description**
 
-The `ExtendedBufferID` enumerator is extended to add VP8 support. See the *SDK Developer Reference* for additional definitions.
+The `ExtendedBufferID` enumerator is extended to add VP8 support. See the [*SDK API Reference Manual*](./mediasdk-man.md) for additional definitions.
 
 **Name/Description**
 

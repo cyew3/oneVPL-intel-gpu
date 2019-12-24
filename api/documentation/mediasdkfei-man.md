@@ -1,16 +1,68 @@
+![](./pic/intel_logo.png)
+<br><br><br>
+# **SDK Developer Reference for AVC FEI**
+## Media SDK API Version 1.30
+
+<div style="page-break-before:always" />
+
+[**LEGAL DISCLAIMER**](./header-template.md##legal-disclaimer)
+
+[**Optimization Notice**](./header-template.md##optimization-notice)
+
+<div style="page-break-before:always" />
+
+- [Overview](#overview)
+  - [Document Conventions](#document-conventions)
+  - [Acronyms and Abbreviations](#acronyms-and-abbreviations)
+- [Architecture](#architecture)
+  - [Usage models](#usage-models)
+    - [PreENC followed by ENCODE](#preenc-followed-by-encode)
+    - [ENC followed by PAK](#ENC_followed_by_PAK)
+    - [DSO followed by PAK](#DSO_followed_by_PAK)
+  - [Versioning](#versioning)
+- [Programming Guide](#programming-guide)
+  - [Working with interlaced content](#working-with-interlaced-content)
+  - [PreENC](#PreENC)
+  - [ENCODE](#ENCODE)
+  - [ENC](#enc)
+  - [PAK](#pak)
+- [Function Reference](#function-reference)
+  - [MFXVideoENC_Init](#mfxvideoenc_init)
+  - [MFXVideoENC_Reset](#mfxvideoenc_reset)
+  - [MFXVideoENC_Close](#mfxvideoenc_close)
+  - [MFXVideoENC_ProcessFrameAsync](#MFXVideoENC_ProcessFrameAsync)
+  - [MFXVideoPAK_QueryIOSurf](#MFXVideoPAK_QueryIOSurf)
+  - [MFXVideoPAK_Init](#mfxvideopak_init)
+  - [MFXVideoPAK_Reset](#mfxvideopak_reset)
+  - [MFXVideoPAK_Close](#mfxvideopak_close)
+  - [MFXVideoPAK_ProcessFrameAsync](#MFXVideoPAK_ProcessFrameAsync)
+- [Structure Reference](#structure-reference)
+  - [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl)
+  - [mfxExtFeiEncQP](#mfxExtFeiEncQP)
+  - [mfxExtFeiPreEncMBStat](#mfxExtFeiPreEncMBStat)
+  - [mfxExtFeiEncMVPredictors](#mfxExtFeiEncMVPredictors)
+  - [mfxExtFeiEncMV](#mfxExtFeiEncMV)
+  - [mfxExtFeiPakMBCtrl](#mfxExtFeiPakMBCtrl)
+  - [mfxExtFeiPPS](#mfxExtFeiPPS)
+  - [mfxExtFeiParam](#mfxextfeiparam)
+  - [mfxENCOutput](#mfxENCOutput)
+  - [mfxPAKOutput](#mfxPAKOutput)
+  - [mfxExtFeiRepackStat](#mfxextfeirepackstat)
+  - [mfxExtFeiDecStreamOut](#mfxextfeidecstreamout)
+
 # Overview
 
 Intel® Media Software Development Kit – SDK is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video preprocessing.
 
-This document describes Flexible Encode Infrastructure extension (FEI) of the SDK for fine-tuning of hardware encoding pipeline. Please refer to the *SDK API Reference Manual* for a complete description of the API.
+This document describes Flexible Encode Infrastructure extension (FEI) of the SDK for fine-tuning of hardware encoding pipeline. Please refer to the [*SDK API Reference Manual*](./mediasdk-man.md) for a complete description of the API.
 
 | | |
 --- | ---
-<img src="./pic/attention.png" width="200" height="150" align=left /> | It is intended for trusted experts, not for the broad adoption.<br><br>FEI API is not foolproof. Wrong configuration parameters may lead to crashes or even system hangs.<br><br>FEI API is not backward compatible. See also “Versioning” chapter.<br><br>FEI API is expected to change/expand often due to customers’ feedback.<br><br>Validation is limited to usage models defined in “Usage models” chapter.
+<img src="./pic/attention.png" width="200" height="150" align=left /> | It is intended for trusted experts, not for the broad adoption.<br><br>FEI API is not foolproof. Wrong configuration parameters may lead to crashes or even system hangs.<br><br>FEI API is not backward compatible. See also “[Versioning](#Versioning)” chapter.<br><br>FEI API is expected to change/expand often due to customers’ feedback.<br><br>Validation is limited to usage models defined in “[Usage models](#usage-models)” chapter.
 
 ## Document Conventions
 
-The SDK API uses the Verdana typeface for normal prose. With the exception of section headings and the table of contents, all code-related items appear in the `Courier New` typeface (`mxfStatus` and `MFXInit)`. All class-related items appear in all cap boldface, such as **DECODE** and **ENCODE**. Member functions appear in initial cap boldface, such as **Init** and **Reset**, and these refer to members of all classes, **DECODE**, **ENCODE** and **VPP**. Hyperlinks appear in underlined boldface, such as [mfxStatus](#mfxStatus).
+The SDK API uses the Verdana typeface for normal prose. With the exception of section headings and the table of contents, all code-related items appear in the `Courier New` typeface (`mxfStatus` and `MFXInit`). All class-related items appear in all cap boldface, such as **DECODE** and **ENCODE**. Member functions appear in initial cap boldface, such as **Init** and **Reset**, and these refer to members of all classes, **DECODE**, **ENCODE** and **VPP**. Hyperlinks appear in underlined boldface, such as [mfxStatus](#mfxStatus).
 
 ## Acronyms and Abbreviations
 
@@ -27,6 +79,7 @@ The SDK API uses the Verdana typeface for normal prose. With the exception of se
 **PPS** | Picture Parameter Set
 
 <div STYLE="page-break-after: always;"></div>
+
 # Architecture
 
 General SDK API provides **ENCODE** class of functions with broad range of configuration parameters that application developer can use to achieve quick results.
@@ -48,9 +101,9 @@ HME     – hierarchical motion estimation
 
 ME      – motion estimation
 
-T, T**<sup>-1</sup>**      – transform and inverse transform
+T, T<sup>**-1**</sup>      – transform and inverse transform
 
-Q, Q**<sup>-1</sup>**      – quantization and inverse quantization
+Q, Q<sup>**-1**</sup>      – quantization and inverse quantization
 
 COD     – entropy coding
 
@@ -58,6 +111,7 @@ MC      – motion compensation
 
 
 <div style="page-break-before:always" />
+
 ## Usage models
 
 Overall, there are four different kinds of FEI calls:
@@ -66,7 +120,7 @@ Overall, there are four different kinds of FEI calls:
 
 <img src="./pic/preenc.png" width="900" height="250" align=center />
 
-**ENCODE** – actual encoding. It differs from conventional encoding described in *SDK API Reference Manual* by additional MB level configuration parameters. This steps uses **ENCODE** class of functions, that internally combines **ENC** and **PAK** cases of functions. Note, that because application provides MV predictors, hierarchical motion estimation (HME) is skipped here.
+**ENCODE** – actual encoding. It differs from conventional encoding described in [*SDK API Reference Manual*](./mediasdk-man.md) by additional MB level configuration parameters. This steps uses **ENCODE** class of functions, that internally combines **ENC** and **PAK** cases of functions. Note, that because application provides MV predictors, hierarchical motion estimation (HME) is skipped here.
 
 <img src="./pic/encode.png" width="830" height="250" align=center />
 
@@ -88,9 +142,10 @@ This is the simplest FEI usage model. It is almost as simple to use as general S
 
 <img src="./pic/preenc_encode.png" width="810" height="250" align=center />
 
-### <a id='_ENC followed by PAK'>ENC followed by PAK</a>
+### <a id='ENC_followed_by_PAK'>ENC followed by PAK</a>
 
-This is the most powerful usage model. It lacks bitrate control and reference list handling logics but instead allows application to make changes between mode decision and actual entropy coding. Any step in pipeline, including ENC and PAK, may be repeated as many times as necessary to achieve better mode decision or satisfy bitrate control requirements.
+This is the most powerful usage model. It lacks bitrate control and reference list handling logics but instead allows application to make changes 
+between mode decision and actual entropy coding. Any step in pipeline, including ENC and PAK, may be repeated as many times as necessary to achieve better mode decision or satisfy bitrate control requirements.
 
 Major drawbacks of this model are performance degradation and high implementation complexity.
 
@@ -100,7 +155,7 @@ Complexity of this mode follows from its strengths. Direct control other referen
 <br>
 <img src="./pic/encpak.png" width="810" height="250" align=center />
 <br>
-### <a id='_DSO followed by PAK'>DSO followed by PAK</a>
+### <a id='DSO_followed_by_PAK'>DSO followed by PAK</a>
 
 This is the fast transrating model. The decoder is enabled with one FEI extension to deliver a so-called "decode stream out" (DSO). DSO consists of MVs from source stream, plus MB level syntax elements. Afterwards, this DSO is repacked into a PAK object which, along with output raw YUV frames and MVs, is fed to PAK.
 
@@ -122,11 +177,11 @@ The amount of changes depends on the usage model. The more control application g
 
 This chapter describes the concepts used in programming the FEI extension for SDK.
 
-The application must use next include files, **mfxenc.h, mfxfei.h** and **mfxvideo.h** (for C programming), or **mfxvideo++.h** (for C++ programming), and link the SDK static dispatcher library, **libmfx.lib** or **libmfx.a**. If the application is written in C then **libstdc++.a** library should also be linked.
+The application must use next include files, **mfxenc.h, mfxfei.h** and **mfxvideo.h** (for C programming), or **mfxvideo++.h** (for C++ programming), and link the SDK dispatcher library, **libmfx.so**.
 
 FEI API is built upon the concept of extension buffers and most of configuration parameters and video data are passed in such buffers. Usually FEI related functions work with list of such buffers at input and at output. For example, **MFXVideoENC_ProcessFrameAsync** function receives **mfxENCInput** structure and outputs **mfxENCOutput** structure. Both of these structures are simply list of extension buffers, with  **mfxENCInput** also holding input and reference frames.
 
-*SDK API Reference Manual* has more information about handling of extension buffers. In short – extension buffer is special SDK structure that holds **mfxExtBuffer** value as its first member. This value holds unique buffer ID and buffer size. The application should allocate this structure, properly set ID and size and then “attach” this buffer to one of the other structures, for example **mfxVideoParam** or **mfxENCInput**. “Attach” means to put pointer to this extension buffer to the **ExtParam** array and to increase buffer counter **NumExtParam**. It is very important to zero all reserved fields in the extension buffers to ensure seamless future extensions.
+[*SDK API Reference Manual*](./mediasdk-man.md) has more information about handling of extension buffers. In short – extension buffer is special SDK structure that holds **mfxExtBuffer** value as its first member. This value holds unique buffer ID and buffer size. The application should allocate this structure, properly set ID and size and then “attach” this buffer to one of the other structures, for example **mfxVideoParam** or **mfxENCInput**. “Attach” means to put pointer to this extension buffer to the **ExtParam** array and to increase buffer counter **NumExtParam**. It is very important to zero all reserved fields in the extension buffers to ensure seamless future extensions.
 
 Extension buffers may be used on any stages of the SDK pipeline – during initialization, at runtime and at reset. There are many limitations when and how particular extension buffer may be used, please refer to the buffer description for details.
 
@@ -134,7 +189,7 @@ Extension buffers may be used on any stages of the SDK pipeline – during initi
 
 FEI extension of the SDK API uses the same approach to the interlaced content processing as the rest of the SDK. Each **mfxFrameSurface1** structure holds either progressive frame or pair of interlaced fields. In later case, even lines represent top field and odd lines – bottom field.
 
-In most cases, the SDK processes both fields at ones, i.e. each call of the SDK function takes pair of the fields in input frame surface, processes both of them and output them in another frame surface or bitstream buffer. The only exception is field output mode in **ENCODE** class of functions. In this case, application still has to submit both fields in the same frame surface, but two separate calls of **MFXVideoENCODE_EncodeFrameAsync** are required, each one with separate bitstream buffer. After processing, each coded field is returned in separate bitstream buffer with corresponded sync point.
+In most cases, the SDK processes both fields at ones, i.e. each call of the SDK function takes pair of the fields in input frame surface, processes both of them and output them in another frame surface or bitstream buffer. The only exception is field output mode in **ENCODE** class of functions. In this case, application still has to submit both fields in the same frame surface, but two separate calls of **MFXVideoENCODEEncodeFrameAsync** are required, each one with separate bitstream buffer. After processing, each coded field is returned in separate bitstream buffer with corresponded sync point.
 
 The general SDK uses the same set of parameters for both fields. To overcome this limitation FEI allows different controls for different fields. That is done by providing two separate sets of extension buffers. Each type of buffer should be present twice in the list of extension buffers. The first instance of the buffer in the list belongs to the first field in encoding order, the second buffer – to the second field. Number of macroblocks in the buffer should be equal to the number of macroblocks in the field, i.e. should be halved in comparison to the progressive frame case.
 
@@ -157,7 +212,7 @@ Progressive or interlaced mode is selected during initialization by mfxVideoPara
 
 For interlaced content FEI supports two different processing modes – conventional, double field mode, when both fields from input surface are processed in single call of **MFXVideoXXX_ProcessFrameAsync** and single field mode, when one call of **MFXVideoXXX_ProcessFrameAsync** processes only one field. The mode is selected during initialization by **mfxExtFeiParam::SingleFieldProcessing**.
 
-## <a id='_PreENC'>PreENC</a>
+## <a id='PreENC'>PreENC</a>
 
 This is preliminary step in encoding process. Its major goal is to gather different kind of statistics for later steps. It is performed by **ENC** class of functions.
 
@@ -165,18 +220,19 @@ The table below provides summary of input and output parameters for this step.<b
 
 | Input | Input | Output | Output |
 | --- | --- | --- | --- |
-[mfxENCInput](#_mfxENCInput)**::InSurface** | input frame | [mfxExtFeiPreEncMV](#_mfxExtFeiPreEncMV) | best found MVs
-[mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl)**::RefFrame[2]** | reference frames | [mfxExtFeiPreEncMBStat](#_mfxExtFeiPreEncMBStat) | MB level statistics
-[mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) | frame level configuration |  |
-[mfxExtFeiPreEncMVPredictors](#_mfxExtFeiPreEncMVPredictors) | MV predictors for each MB |  |
-[mfxExtFeiEncQP](#_mfxExtFeiEncQP) | MB level QP |  |
+[mfxENCInput](#mfxENCInput)**::InSurface** | input frame | [mfxExtFeiPreEncMV](#mfxExtFeiPreEncMV) | best found MVs
+[mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl)**::RefFrame[2]** | reference frames | [mfxExtFeiPreEncMBStat](#mfxExtFeiPreEncMBStat) | MB level statistics
+[mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) | frame level configuration |  |
+[mfxExtFeiPreEncMVPredictors](#mfxExtFeiPreEncMVPredictors) | MV predictors for each MB |  |
+[mfxExtFeiEncQP](#mfxExtFeiEncQP) | MB level QP |  |
 
-Before using **ENC** the application should properly initialize this component by calling **MFXVideoENC_Init** function. Because **ENC** has different usage models, the application should choose PreENC by attaching **mfxExtFeiParam** extension buffer to **mfxVideoParam** structure and setting **Func** variable to **MFX_FEI_FUNCTION_PREENC**.
+Before using **ENC** the application should properly initialize this component by calling **MFXVideoENC_Init** function. Because **ENC** has different usage models, the application should choose PreENC by attaching **mfxExtFeiParam** extension buffer to **mfxVideoParam** structure and setting **Func** variable to **MFX_FEI_FUNCTIONPREENC**.
 
 After successful initialization, the application can use PreENC by calling **MFXVideoENC_ProcessFrameAsync** function. Each call is executed in several stages:
 
 <div class="indent">
-1.　Downsampling of input surface, **mfxENCOutput::InSurface**. After this stage, downsampled version of input is stored in internal cache for future usage. Up to 16 surfaces can be stored, i.e. 16 frames or 16 field pairs.</br>
+  
+1.　Downsampling of input surface, [mfxENCInput](#mfxENCInput)**::InSurface**. After this stage, downsampled version of input is stored in internal cache for future usage. Up to 16 surfaces can be stored, i.e. 16 frames or 16 field pairs.</br>
 
   During downsampling, pixel averages and variances are calculated and stored in **mfxExtFeiPreEncMBStat**.<br>
 
@@ -193,28 +249,31 @@ After successful initialization, the application can use PreENC by calling **MFX
    PreENC controls cache eviction and downsample reference surface if necessary, even if application turns off **mfxExtFeiPreEncCtrl::DownsampleReference[2]** flags.
 
    <div>Examples of reference picture downsampling:<br>
-　　　　　a.　　reference picture is firstly used as PreENC input
+　　　　　a. reference picture is firstly used as PreENC input
+
 ```
-          　　　        preenc_ctrl.DownsampleInput = MFX_CODINGOPTION_ON;
-              　　　    preenc_ctrl.DownsampleRef[0] = MFX_CODINGOPTION_OFF;
-              　　　    preenc_ctrl.DownsampleRef[1] = MFX_CODINGOPTION_OFF;
-           　　　       PreENC(InSurface=F1, L0Surface=NULL, L1Surface=NULL )
-           　　　       PreENC(InSurface=F2, L0Surface=NULL, L1Surface=NULL )
-            　　　      PreENC(InSurface=F3, L0Surface=F1, L1Surface=F2 )
+             preenc_ctrl.DownsampleInput = MFX_CODINGOPTION_ON;
+             preenc_ctrl.DownsampleRef[0] = MFX_CODINGOPTION_OFF;
+             preenc_ctrl.DownsampleRef[1] = MFX_CODINGOPTION_OFF;
+             PreENC(InSurface=F1, L0Surface=NULL, L1Surface=NULL )
+             PreENC(InSurface=F2, L0Surface=NULL, L1Surface=NULL )
+             PreENC(InSurface=F3, L0Surface=F1, L1Surface=F2 )
 ```
-　　　　　b.　　reference picture is downsampled in the same PreENC call
+　　　　　b. reference picture is downsampled in the same PreENC call
+
 ```
-               　　　   preenc_ctrl.DownsampleInput = MFX_CODINGOPTION_ON;
-               　　　   preenc_ctrl.DownsampleRef[0] = MFX_CODINGOPTION_ON;
-                 　　　 preenc_ctrl.DownsampleRef[1] = MFX_CODINGOPTION_ON;
-             　　　     PreENC(InSurface=F3, L0Surface=F1, L1Surface=F2 )
+             preenc_ctrl.DownsampleInput = MFX_CODINGOPTION_ON;
+             preenc_ctrl.DownsampleRef[0] = MFX_CODINGOPTION_ON;
+             preenc_ctrl.DownsampleRef[1] = MFX_CODINGOPTION_ON;
+             PreENC(InSurface=F3, L0Surface=F1, L1Surface=F2 )
 ```
-　　　　　c.　　reference picture has not been downsampled previously and automatically downsampled by PreENC
+　　　　　c. reference picture has not been downsampled previously and automatically downsampled by PreENC
+
 ```
-　　　　　　　　　　　　　　　　　　　　preenc_ctrl.DownsampleInput = MFX_CODINGOPTION_ON;
-　　　　　　　　　　　　　　　　　　　　preenc_ctrl.DownsampleRef[0] = MFX_CODINGOPTION_OFF;
-　　　　　　　　　　　　　　　　　　　　PreENC(InSurface=F1, L0Surface=NULL, L1Surface=NULL )
-　　　　　　　　　　　　　　　　　　　　PreENC(InSurface=F2, L0Surface=F3, L1Surface=NULL )
+             preenc_ctrl.DownsampleInput = MFX_CODINGOPTION_ON;
+             preenc_ctrl.DownsampleRef[0] = MFX_CODINGOPTION_OFF;
+             PreENC(InSurface=F1, L0Surface=NULL, L1Surface=NULL )
+             PreENC(InSurface=F2, L0Surface=F3, L1Surface=NULL )
 ```
 F3 is missed in cache, downsampled by PreENC
 
@@ -239,21 +298,21 @@ In single field mode both TFF and BFF picture structures are supported. It is po
 Apart from described above limitations, **PreENC** is stateless and no internal states are changed during processing, so application can call **PreENC** several times for the same frame or field pair. It is also possible to completely skip processing of frame or field pair.
 
 
-## <a id='_ENCODE'>ENCODE</a>
+## <a id='ENCODE'>ENCODE</a>
 
-This is extension of conventional encoding functionality described in *SDK API Reference Manual*. It covers all stages of encoding and produces encoded bitstream from original row frames. It is performed by **ENCODE** class of functions.
+This is extension of conventional encoding functionality described in [*SDK API Reference Manual*](./mediasdk-man.md). It covers all stages of encoding and produces encoded bitstream from original row frames. It is performed by **ENCODE** class of functions.
 
 The table below provides summary of additional input and output parameters that FEI adds to conventional encode. The application should attach input extension buffers to **mfxEncodeCtrl** structure and output ones to **mfxBitstream**.
 
 | Input | Input | Output | Output |
 | --- | --- | --- | --- |
-**surface** in  **MFXVideoENCODE_Encode FrameAsync** | input frame, the SDK encoder keeps track of reference frames internally | [mfxExtFeiEncMV](#_mfxExtFeiEncMVs) | estimated MVs
-[mfxExtFeiEncFrameCtrl](#_mfxExtFeiEncFrameCtrl) | frame level configuration | [mfxExtFeiEncMBStat](#_mfxExtFeiEncMBStat) | MB level statistics
-[mfxExtFeiEncMVPredictors](#_mfxExtFeiEncMVPredictors) | MV predictors for each MB | [mfxExtFeiPakMBCtrl](#_mfxExtFeiPakMBCtrl) | estimated MB level configuration
-[mfxExtFeiEncMBCtrl](#_mfxExtFeiEncMBCtrl) | MB level configuration |  |
-[mfxExtFeiEncQP](#_mfxExtFeiEncQP) | Per MB QP values |  |
+**surface** in  **MFXVideoENCODEEncode FrameAsync** | input frame, the SDK encoder keeps track of reference frames internally | [mfxExtFeiEncMV](#mfxExtFeiEncMVs) | estimated MVs
+[mfxExtFeiEncFrameCtrl](#mfxExtFeiEncFrameCtrl) | frame level configuration | [mfxExtFeiEncMBStat](#mfxExtFeiEncMBStat) | MB level statistics
+[mfxExtFeiEncMVPredictors](#mfxExtFeiEncMVPredictors) | MV predictors for each MB | [mfxExtFeiPakMBCtrl](#mfxExtFeiPakMBCtrl) | estimated MB level configuration
+[mfxExtFeiEncMBCtrl](#mfxExtFeiEncMBCtrl) | MB level configuration |  |
+[mfxExtFeiEncQP](#mfxExtFeiEncQP) | Per MB QP values |  |
 
-The usage model is completely described in *SDK API Reference Manual*. To allow additional extensions the application should attach **mfxExtFeiParam** buffer to **mfxVideoParam** structure during initialization and set **Func** variable to **MFX_FEI_FUNCTION_ENCPAK**. During runtime application can use different sets of extension buffers, see description of each buffer for more details.
+The usage model is completely described in [*SDK API Reference Manual*](./mediasdk-man.md). To allow additional extensions the application should attach **mfxExtFeiParam** buffer to **mfxVideoParam** structure during initialization and set **Func** variable to **MFX_FEI_FUNCTION_ENCPAK**. During runtime application can use different sets of extension buffers, see description of each buffer for more details.
 
 This function call changes internal encoder state so it should be done only once for each encoded frame.
 
@@ -268,14 +327,14 @@ The table below provides summary of input and output parameters for this step.<b
 
 | Input | Input | Output | Output |
 | --- | --- | --- | --- |
-[mfxENCInput](#_mfxENCInput)**::InSurface** | input frame | [mfxExtFeiEncMV](#_mfxExtFeiEncMVs) | estimated MVs
-[mfxENCInput](#_mfxENCInput)**::L0/1Surface** | reference frames | [mfxExtFeiEncMBStat](#_mfxExtFeiEncMBStat) | MB level statistics
-[mfxExtFeiEncFrameCtrl](#_mfxExtFeiEncFrameCtrl) | frame level configuration | [mfxExtFeiPakMBCtrl](#_mfxExtFeiPakMBCtrl) | estimated MB level configuration
-[mfxExtFeiEncMVPredictors](#_mfxExtFeiEncMVPredictors) | MV predictors for each MB |  |
-[mfxExtFeiEncMBCtrl](#_mfxExtFeiEncMBCtrl) | MB level configuration |  |
-[mfxExtFeiSPS](#_mfxExtFeiSPS) | Sequence parameter set |  |
-[mfxExtFeiPPS](#_mfxExtFeiPPS) | Picture parameter set |  |
-[mfxExtFeiSliceHeader](#_mfxExtFeiSliceHeader) | Slice parameters |  |
+[mfxENCInput](#mfxENCInput)**::InSurface** | input frame | [mfxExtFeiEncMV](#mfxExtFeiEncMVs) | estimated MVs
+[mfxENCInput](#mfxENCInput)**::L0/1Surface** | reference frames | [mfxExtFeiEncMBStat](#mfxExtFeiEncMBStat) | MB level statistics
+[mfxExtFeiEncFrameCtrl](#mfxExtFeiEncFrameCtrl) | frame level configuration | [mfxExtFeiPakMBCtrl](#mfxExtFeiPakMBCtrl) | estimated MB level configuration
+[mfxExtFeiEncMVPredictors](#mfxExtFeiEncMVPredictors) | MV predictors for each MB |  |
+[mfxExtFeiEncMBCtrl](#mfxExtFeiEncMBCtrl) | MB level configuration |  |
+[mfxExtFeiSPS](#mfxExtFeiSPS) | Sequence parameter set |  |
+[mfxExtFeiPPS](#mfxExtFeiPPS) | Picture parameter set |  |
+[mfxExtFeiSliceHeader](#mfxExtFeiSliceHeader) | Slice parameters |  |
 
 Before using **ENC** the application should properly initialize this component by calling **MFXVideoENC_Init** function. Because **ENC** has different usage models, the application should choose ENC by attaching **mfxExtFeiParam** extension buffer to **mfxVideoParam** structure and setting **Func** variable to **MFX_FEI_FUNCTION_ENC**.
 
@@ -304,12 +363,12 @@ The table below provides summary of input and output parameters for this step.
 
 | Input | Input | Output | Output |
 | --- | --- | --- | --- |
-[mfxPAKInput](#_mfxPAKInput)**::InSurface** | input frame | [mfxPAKOutput](#_mfxPAKOutput)**:: OutSurface** | reconstructed input surface
-[mfxPAKInput](#_mfxPAKInput)**::L0/1Surface** | reconstructed reference frames | [mfxPAKOutput](#_mfxPAKOutput)**::Bs** | coded bitstream
-[mfxExtFeiSPS](#_mfxExtFeiSPS) | Sequence parameter set |  |
-[mfxExtFeiPPS](#_mfxExtFeiPPS) | Picture parameter set |  |
-[mfxExtFeiSliceHeader](#_mfxExtFeiSliceHeader) | Slice parameters |  |
-[mfxExtFeiPakMBCtrl](#_mfxExtFeiPakMBCtrl) | MB level configuration |  |
+[mfxPAKInput](#mfxPAKInput)**::InSurface** | input frame | [mfxPAKOutput](#mfxPAKOutput)**:: OutSurface** | reconstructed input surface
+[mfxPAKInput](#mfxPAKInput)**::L0/1Surface** | reconstructed reference frames | [mfxPAKOutput](#mfxPAKOutput)**::Bs** | coded bitstream
+[mfxExtFeiSPS](#mfxExtFeiSPS) | Sequence parameter set |  |
+[mfxExtFeiPPS](#mfxExtFeiPPS) | Picture parameter set |  |
+[mfxExtFeiSliceHeader](#mfxExtFeiSliceHeader) | Slice parameters |  |
+[mfxExtFeiPakMBCtrl](#mfxExtFeiPakMBCtrl) | MB level configuration |  |
 [mfxExtFeiEncMV](#_mfxExtFeiEnvMV) | motion vectors |  |
 
 For AVC, PAK does not generate SEI internally. All SEI inserted into bitstream should be provided by application as payload. The table below shows the payload types supported in PAK:
@@ -323,7 +382,7 @@ Before using **PAK** the application should properly initialize this component b
 After successful initialization, the application can call **MFXVideoPAK_ProcessFrameAsync** function for each encoded frame. Each call of this function is independent from the others, i.e. no internal states are changed during the call, so application can call this function several times for the same frame.
 
 
-##DSO
+## DSO
 
 This is the first step of “DSO followed by PAK” usage model. The application uses **MFXVideoDECODE** class of functions to generate MB level parameters as called “decode stream out” (DSO) in **mfxExtFeiDecStreamOut** structure. Then application repacks the DSO into a PAK object which, along with output raw YUV frames and MVs, is fed to PAK.
 
@@ -332,6 +391,7 @@ This is the first step of “DSO followed by PAK” usage model. The application
 The repacking of DSO to PAK object is necessary. The MVs from DSO are for 8x8 blocks, but not for 4x4 blocks. And DirectMB and skip conditions have to be re-computed as MV are changed. All CBP (Coding Block Patterns) and related vars are set, to let PAK decide on CBP. And after MV elimination some splits can be enlarged. More details about the repacking, please refer to the sample source code in FEI sample (sample_fei). 
 
 <div STYLE="page-break-after: always;"></div>
+
 # Function Reference
 
 This section describes SDK functions and their operations.
@@ -355,7 +415,7 @@ mfxStatus MFXVideoENC_Init(mfxSession session, mfxVideoParam *par);
 
 **Description**
 
-This function initializes **ENC** class of functions. [mfxFeiFunction](#_mfxFeiFunction) should be attached to the **mfxVideoParam** to select required usage model – PreENC or ENC.
+This function initializes **ENC** class of functions. [mfxFeiFunction](#mfxFeiFunction) should be attached to the **mfxVideoParam** to select required usage model – PreENC or ENC.
 
 **Return Status**
 
@@ -424,12 +484,12 @@ This function closes **ENC** class of functions.
 
 This function is available since SDK API 1.9.
 
-## <a id='_MFXVideoENC_ProcessFrameAsync'>MFXVideoENC_ProcessFrameAsync</a>
+## <a id='MFXVideoENC_ProcessFrameAsync'>MFXVideoENC_ProcessFrameAsync</a>
 
 **Syntax**
 
 
-`mfxStatus MFXVideoENC_ProcessFrameAsync(mfxSession session,`[mfxENCInput](#_mfxENCInput) `*in,`[mfxENCOutput](#_mfxENCOutput) `*out, mfxSyncPoint *syncp);`
+`mfxStatus MFXVideoENC_ProcessFrameAsync(mfxSession session,`[mfxENCInput](#mfxENCInput) `*in,`[mfxENCOutput](#mfxENCOutput) `*out, mfxSyncPoint *syncp);`
 
 **Parameters**
 
@@ -460,7 +520,7 @@ The function is asynchronous.
 
 This function is available since SDK API 1.9.
 
-## <a id='_MFXVideoPAK_QueryIOSurf'>MFXVideoPAK_QueryIOSurf</a>
+## <a id='MFXVideoPAK_QueryIOSurf'>MFXVideoPAK_QueryIOSurf</a>
 
 **Syntax**
 
@@ -510,7 +570,7 @@ mfxStatus MFXVideoPAK_Init(mfxSession session, mfxVideoParam *par);
 
 **Description**
 
-The function initializes **PAK** class of functions. [mfxFeiFunction](#_mfxFeiFunction) should be attached to the **mfxVideoParam** to select **PAK** usage model.
+The function initializes **PAK** class of functions. [mfxFeiFunction](#mfxFeiFunction) should be attached to the **mfxVideoParam** to select **PAK** usage model.
 
 **Return Status**
 
@@ -583,11 +643,11 @@ The function closes **PAK** class of functions.
 
 This function is available since SDK API 1.9.
 
-## <a id='_MFXVideoPAK_ProcessFrameAsync'>MFXVideoPAK_ProcessFrameAsync</a>
+## <a id='MFXVideoPAK_ProcessFrameAsync'>MFXVideoPAK_ProcessFrameAsync</a>
 
 **Syntax**
 
-`mfxStatus MFXVideoPAK_ProcessFrameAsync(mfxSession session,` [mfxPAKInput](#_mfxPAKInput) `*in,` [mfxPAKOutput](#_mfxPAKOutput) `*out, mfxSyncPoint *syncp);`
+`mfxStatus MFXVideoPAK_ProcessFrameAsync(mfxSession session,` [mfxPAKInput](#mfxPAKInput) `*in,` [mfxPAKOutput](#mfxPAKOutput) `*out, mfxSyncPoint *syncp);`
 
 **Parameters**
 
@@ -615,11 +675,12 @@ The function is asynchronous.
 This function is available since SDK API 1.9.
 
 <div STYLE="page-break-after: always;"></div>
+
 # Structure Reference
 
 In the following structures all reserved fields must be zero.
 
-## <a id='_mfxExtFeiPreEncCtrl'>mfxExtFeiPreEncCtrl</a>
+## <a id='mfxExtFeiPreEncCtrl'>mfxExtFeiPreEncCtrl</a>
 
 **Definition**
 
@@ -657,7 +718,7 @@ typedef struct {
 
 **Description**
 
-This extension buffer specifies frame level control for PreENC usage model. It is used during runtime and should be attached to the [mfxENCInput](#_mfxENCInput) structure.
+This extension buffer specifies frame level control for PreENC usage model. It is used during runtime and should be attached to the [mfxENCInput](#mfxENCInput) structure.
 
 <img src="./pic/searchunit.png" width="200" height="200" align=left />To better utilize HW capability, motion estimation is performed on group of search locations, so called search unit (SU). The number of locations in one SU depends on the block size. For example, for 16x16 macroblock, SU consists of 4x4 locations, i.e. 16 motion vectors are estimated at once, in one SU. See the figure on the left.
 
@@ -671,7 +732,7 @@ Note, that though search window size is rather small, just 48 by 40 pixels, actu
 
 | | |
 --- | ---
-`Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEI_PREENC_CTRL**.
+`Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEIPREENC_CTRL**.
 `Qp` | Frame level QP. It is used only if forward transform calculation is enabled and MB level QPs are not provided. See **FTEnable** and **MBQp** below.
 `LenSP` | reserved and must be zero<br><br>This value defines number of search units in search path. If adaptive search is enabled it starts after this number has been reached. Valid range [1,63].
 `SearchPath` | reserved and must be zero<br><br>This value specifies search path.<br><br>0 - exhaustive aka full search<br>1 - diamond search
@@ -679,15 +740,15 @@ Note, that though search window size is rather small, just 48 by 40 pixels, actu
 `SubPelMode` | This value specifies sub pixel precision for motion estimation.<br><br>0x00 - integer motion estimation<br>0x01 - half-pixel motion estimation<br>0x03 - quarter-pixel motion estimation<br>
 `InterSAD IntraSAD` | These values specify intra and inter distortions adjustment.<br><br>0x00 - none<br>0x02 - Haar transform<br>
 `AdaptiveSearch` | If set, adaptive search is enabled.
-`MVPredictor` | This value specifies what predictors should be used during motion estimation.<br><br>0x00 – disables usage of predictors<br>0x01 – enable predictors for L0 (past) reference<br>0x02 – enable predictors for L1 (future) reference<br>0x03 – enable both, past and future predictors<br><br>If this value is not zero, then [mfxExtFeiPreEncMVPredictors](#_mfxExtFeiPreEncMVPredictors) structure should be attached to the [mfxENCInput](#_mfxENCInput) structure.
-`MBQp` | Non-zero value enables MB level QP. It is used only if forward transform calculation is enabled. See **FTEnable** below.<br><br>If this value is not zero, then[mfxExtFeiPreEncQP](#_mfxExtFeiPreEncQPs) structure should be attached to the [mfxENCInput](#_mfxENCInput) structure.
-`FTEnable` | If set, forward transform calculation is enabled and number of non-zero coefficients and sum of coefficients are estimated and reported in [mfxExtFeiPreEncMBStat](#_mfxExtFeiPreEncMBStat). Frame or MB level QP should be specified for proper calculation.
+`MVPredictor` | This value specifies what predictors should be used during motion estimation.<br><br>0x00 – disables usage of predictors<br>0x01 – enable predictors for L0 (past) reference<br>0x02 – enable predictors for L1 (future) reference<br>0x03 – enable both, past and future predictors<br><br>If this value is not zero, then [mfxExtFeiPreEncMVPredictors](#mfxExtFeiPreEncMVPredictors) structure should be attached to the [mfxENCInput](#mfxENCInput) structure.
+`MBQp` | Non-zero value enables MB level QP. It is used only if forward transform calculation is enabled. See **FTEnable** below.<br><br>If this value is not zero, then[mfxExtFeiPreEncQP](#_mfxExtFeiPreEncQPs) structure should be attached to the [mfxENCInput](#mfxENCInput) structure.
+`FTEnable` | If set, forward transform calculation is enabled and number of non-zero coefficients and sum of coefficients are estimated and reported in [mfxExtFeiPreEncMBStat](#mfxExtFeiPreEncMBStat). Frame or MB level QP should be specified for proper calculation.
 `IntraPartMask` | This value specifies what block and sub-block partitions are enabled for intra MBs.<br><br>0x01 - 16x16 is disabled<br>0x02 - 8x8 is disabled<br>0x04 - 4x4 is disabled<br><br>For example, 0x00 – enables all partitions, 0x07 disables all and should not be used.
 `RefWidth, RefHeight` | reserved and must be zero<br><br>These values specify width and height of search region in pixels. They should be multiple of 4. Maximum allowed region is 64x32 for one direction and 32x32 for bidirectional search.
 `SearchWindow` | This value specifies one of the predefined search path and window size:<br><br>1  - Tiny Diamond – 4 SUs 24x24 window<br>2  - Small Diamond – 9 SUs 28x28 window<br>3  - Diamond – 16 SUs 48x40 window<br>4  - Large Diamond – 32 SUs 48x40 window<br>5  - Exhaustive – 48 SUs 48x40 window<br>6  - Horizontal Diamond – 16 SUs 64x32 window<br>7  - Horizontal Large Diamond– 32 SUs 64x32 window<br>8  - Horizontal Exhaustive – 48 SUs 64x32 window
-`DisableMVOutput` | If set, MV output is disabled. See [mfxExtFeiPreEncMV](#_mfxExtFeiPreEncMV) structure for more details.
-`DisableStatisticsOutput` | If set, statistics output is disabled. See [mfxExtFeiPreEncMBStat](#_mfxExtFeiPreEncMBStat) structure for more details.
-`Enable8x8Stat` | This value controls block size for statistic report. If it is set, then statistic is gathered for 8x8 and 16x16 blocks, if not set only for 16x16 macroblock. This value affects **Variance** and **PixelAverage** fields in the [mfxExtFeiPreEncMBStat](#_mfxExtFeiPreEncMBStat) structure.
+`DisableMVOutput` | If set, MV output is disabled. See [mfxExtFeiPreEncMV](#mfxExtFeiPreEncMV) structure for more details.
+`DisableStatisticsOutput` | If set, statistics output is disabled. See [mfxExtFeiPreEncMBStat](#mfxExtFeiPreEncMBStat) structure for more details.
+`Enable8x8Stat` | This value controls block size for statistic report. If it is set, then statistic is gathered for 8x8 and 16x16 blocks, if not set only for 16x16 macroblock. This value affects **Variance** and **PixelAverage** fields in the [mfxExtFeiPreEncMBStat](#mfxExtFeiPreEncMBStat) structure.
 `PictureType` | This value specifies input picture type:<br><br>**MFX_PICTYPE_FRAME** – progressive frame,<br>**MFX_PICTYPE_TOPFIELD** - top field,<br>**MFX_PICTYPE_BOTTOMFIELD** – bottom field.
 `DownsampleInput` | This flag indicates should SDK perform downsampling of input surface or not. If it is set to **MFX_CODINGOPTION_ON**, SDK downsamples input surface. This is default mode. If it is set to **MFX_CODINGOPTION_OFF**, then downsampling stage is skipped.
 `RefPictureType[2]` | This value specifies reference picture type:<br><br>**MFX_PICTYPE_FRAME** – progressive frame,<br>**MFX_PICTYPE_TOPFIELD** - top field,<br>**MFX_PICTYPE_BOTTOMFIELD** – bottom field.<br>0 is for L0 (past) reference and 1 for L1 (future) reference.
@@ -698,7 +759,7 @@ Note, that though search window size is rather small, just 48 by 40 pixels, actu
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxExtFeiPreEncMVPredictors'>mfxExtFeiPreEncMVPredictors</a>
+## <a id='mfxExtFeiPreEncMVPredictors'>mfxExtFeiPreEncMVPredictors</a>
 
 **Definition**
 
@@ -717,15 +778,15 @@ typedef struct {
 
 **Description**
 
-This extension buffer specifies motion vector predictors for PreENC usage model. To enable usage of MV predictors, **MVPredictor** value should be set in the [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) structure.
+This extension buffer specifies motion vector predictors for PreENC usage model. To enable usage of MV predictors, **MVPredictor** value should be set in the [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) structure.
 
-This structure is used during runtime and should be attached to the [mfxENCInput](#_mfxENCInput) structure.
+This structure is used during runtime and should be attached to the [mfxENCInput](#mfxENCInput) structure.
 
 **Members**
 
 | | |
 --- | ---
-`Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEI_PREENC_MV_PRED**.
+`Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEIPREENC_MV_PRED**.
 `NumMBAlloc` | Number of allocated **mfxExtFeiPreEncMVPredictorsMB** structures in the **MB** array. It should be greater or equal to the number of MBs in the processed frame.
 `MB` | Array of MV predictors for each MB in raster scan order.
 `MV[0]` | MV predictor for L0 (past) reference.
@@ -735,7 +796,7 @@ This structure is used during runtime and should be attached to the [mfxENCInput
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxExtFeiEncQP'>mfxExtFeiEncQP</a>
+## <a id='mfxExtFeiEncQP'>mfxExtFeiEncQP</a>
 
 **Definition**
 
@@ -754,7 +815,7 @@ typedef struct {
 
 This extension buffer specifies per MB QP values for PreENC, ENCODE and ENC usage models. To enable its usage for PreENC, set **mfxExtFeiPreEncCtrl**::**MBQp** value, for ENCODE and ENC set **mfxExtFeiEncFrameCtrl::PerMBQp** value.
 
-This structure is used during runtime and should be attached to the [mfxENCInput](#_mfxENCInput) or **mfxEncodeCtrl** structure.
+This structure is used during runtime and should be attached to the [mfxENCInput](#mfxENCInput) or **mfxEncodeCtrl** structure.
 
 **Members**
 
@@ -770,7 +831,7 @@ This structure is available since SDK API 1.9.
 
 SDK API 1.23 renames `NumQPAlloc` and `QP` fields to `NumMBAlloc` and `MB` respectively.
 
-## <a id='_mfxExtFeiPreEncMV'>mfxExtFeiPreEncMV</a>
+## <a id='mfxExtFeiPreEncMV'>mfxExtFeiPreEncMV</a>
 
 **Definition**
 
@@ -789,15 +850,15 @@ typedef struct {
 
 **Description**
 
-This extension buffer specifies output MV values for PreENC usage model. To enable this buffer **DisableMVOutput** value in the [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) structure should be set to zero.
+This extension buffer specifies output MV values for PreENC usage model. To enable this buffer **DisableMVOutput** value in the [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) structure should be set to zero.
 
-This structure is used during runtime and should be attached to the [mfxENCOutput](#_mfxENCOutput) structure.
+This structure is used during runtime and should be attached to the [mfxENCOutput](#mfxENCOutput) structure.
 
 **Members**
 
 | | |
 --- | ---
-`Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEI_PREENC_MV**.
+`Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEIPREENC_MV**.
 `NumMBAlloc` | Number of allocated **mfxExtFeiPreEncMVMB** structures in the **MB** array. It should be greater or equal to the number of MBs in the processed frame.
 `MB` | Array of MVs for each MB in raster scan order.
 `MV[16][2]` | 32 MVs per MB. First index is sub-block (4x4 pixels) number, second one is 0 for L0 (past) reference and 1 for L1 (future) reference. MVs for each sub-block are located in zigzag scan order.<br><br><table> <tr><td>00</td> <td>01</td> <td>04</td> <td>05</td></tr> <tr><td>02</td> <td>03</td> <td>06</td> <td>07</td></tr> <tr><td>08</td> <td>09</td> <td>12</td> <td>13</td></tr> <tr><td>10</td> <td>11</td> <td>14</td> <td>15</td></tr> </table><br>For example, MV for right top 4x4 sub-block is stored in 5-th element of the array.<br><br>For bigger than 4x4 partitions MVs are replicated to all correspondent sub-block.
@@ -806,7 +867,7 @@ This structure is used during runtime and should be attached to the [mfxENCOutpu
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxExtFeiPreEncMBStat'>mfxExtFeiPreEncMBStat</a>
+## <a id='mfxExtFeiPreEncMBStat'>mfxExtFeiPreEncMBStat</a>
 **Definition**
 
 ```C
@@ -841,15 +902,15 @@ typedef struct {
 
 **Description**
 
-This extension buffer specifies output statistics for PreENC usage model. To enable this buffer **DisableStatisticsOutput** value in the [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) structure should be set to zero.
+This extension buffer specifies output statistics for PreENC usage model. To enable this buffer **DisableStatisticsOutput** value in the [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) structure should be set to zero.
 
-This structure is used during runtime and should be attached to the [mfxENCOutput](#_mfxENCOutput) structure.
+This structure is used during runtime and should be attached to the [mfxENCOutput](#mfxENCOutput) structure.
 
 **Members**
 
 | | |
 --- | ---
-`Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEI_PREENC_MB**.
+`Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEIPREENC_MB**.
 `NumMBAlloc` | Number of allocated **mfxExtFeiPreEncMBStatMB**structures in the **MB** array. It should be greater or equal to the number of MBs in the processed frame.
 `MB` | Array of MB statistics for each MB in raster scan order.
 `Inter[2]` | Inter modes and distortions. 0 is for L0 (past) reference and 1 for L1 (future) reference.
@@ -857,15 +918,15 @@ This structure is used during runtime and should be attached to the [mfxENCOutpu
 `Mode` | This is the best found inter MB type.<br><br><table> <tr><td></td> <td> `L0 (past)` </td> <td> `L1 (future)` </td></tr> <tr><td> `16x16` </td> <td> `1` </td> <td> `2` </td></tr> <tr><td> `16x8` </td> <td> `4` </td> <td> `6` </td></tr> <tr><td> `8x16` </td> <td> `5` </td> <td> `7` </td></tr> <tr><td> `8x8` </td> <td> `block modes` </td> <td> </td></tr> </table><br>For 8x8 case **Mode** is calculated as combination of four block types:<br><br><table> <tr><td>**(type3<<12)**</td> <td>**(type2<<8)**</td> <td>**(type1<<4)**</td> <td>**(type0)**</td></tr> </table><br>where **type3, type2, type1** and **type0** are modes of the correspondent  block from the table below:<br><br><table> <tr><td> </td> <td> `L0 (past)` </td> <td> `L1 (future)` </td></tr> <tr><td> `8x8` </td> <td> `0x1` </td> <td> `0x5` </td></tr> <tr><td> `8x4` </td> <td> `0x2` </td> <td> `0x7` </td></tr> <tr> <td> `4x8` </td> <td> `0x3` </td> <td> `0x8` </td></tr> <tr><td> `4x4` </td> <td> `0x4` </td> <td> `0xB` </td></tr> </table>
 `BestIntraDistortion` | This is distortion for the best found intra mode. It is calculated as sum of absolute differences between original pixels from input frame and best found intra prediction. This distortion is adjusted by cost of intra prediction mode, i.e. cost is added to the pure distortion.
 `IntraMode` | This is the best found intra MB type. It may be one of the next values defined in Table 7-11 of ISO*/IEC* 14496-10 specification.<br><br><table> <tr><td> `I_16x16_0_0_0` </td><td> `1` </td> <td> `I_16x16_1_0_1` </td> <td> `14` </td></tr> <tr><td> `I_16x16_1_0_0` </td> <td> `2` </td> <td> `I_16x16_2_0_1` </td> <td> `15` </td></tr> <tr><td> `I_16x16_2_0_0` </td> <td> `3` </td> <td> `I_16x16_3_0_1` </td> <td> `16` </td></tr> <tr><td> `I_16x16_3_0_0` </td> <td> `4` </td> <td> `I_16x16_0_1_1` </td> <td> `17` </td></tr> <tr><td> `I_16x16_0_1_0` </td> <td> `5` </td> <td> `I_16x16_1_1_1` </td> <td> `18` </td></tr> <tr><td> `I_16x16_1_1_0` </td> <td> `6` </td> <td> `I_16x16_2_1_1` </td> <td> `19` </td></tr> <tr><td> `I_16x16_2_1_0` </td> <td> `7` </td> <td> `I_16x16_3_1_1` </td> <td> `20` </td></tr> <tr><td> `I_16x16_3_1_0` </td> <td> `8` </td> <td> `I_16x16_0_2_1` </td> <td> `21` </td></tr> <tr><td> `I_16x16_0_2_0` </td> <td> `9` </td> <td> `I_16x16_1_2_1` </td> <td> `22` </td></tr> <tr><td> `I_16x16_1_2_0` </td> <td> `10` </td> <td> `I_16x16_2_2_1` </td> <td> `23` </td></tr> <tr><td> `I_16x16_2_2_0` </td> <td> `11` </td> <td> `I_16x16_3_2_1` </td> <td> `24` </td></tr> <tr><td> `I_16x16_3_2_0` </td> <td> `12` </td> <td> `I_8x8` </td> <td> `129` </td></tr> <tr><td> `I_16x16_0_0_1` </td> <td> `13` </td> <td> `I_4x4` </td> <td> `130` </td></tr> </table><br>Actual intra prediction mode for 16x16 cases can be deduced from MB type. Prediction modes for 8x8 and 4x4 cases are not reported.
-`NumOfNonZeroCoef SumOfCoef` | Number of none zero coefficients and sum of coefficients after forward transform. **FTEnable** in the [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) structure enables this calculation.<br><br>These values are calculated using next algorithm. Firstly, difference between current MB from input frame and correspondent MB from L0 reference frame is calculated. There is no offset on this step, i.e. zero MV is used. Then residual data computed on first step are transformed using 4x4 Haar transform. Then transformed data are compared against threshold and number of coefficients above threshold are counted and summed. Threshold in this algorithm is calculated based on QP value.<br><br>L1 reference and non-zero MVs are not supported.
-`Variance16x16`, `Variance8x8[4]`, `PixelAverage16x16`, `PixelAverage8x8[4]` | These arrays hold variance and average values of luma samples for 16x16 macroblock and four 8x8 blocks. If **Enable8x8Stat** is set in the [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) structure, then statistic for 8x8 blocks is calculated. If not set, then statistic is calculated for 16x16 macroblock only.
+`NumOfNonZeroCoef SumOfCoef` | Number of none zero coefficients and sum of coefficients after forward transform. **FTEnable** in the [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) structure enables this calculation.<br><br>These values are calculated using next algorithm. Firstly, difference between current MB from input frame and correspondent MB from L0 reference frame is calculated. There is no offset on this step, i.e. zero MV is used. Then residual data computed on first step are transformed using 4x4 Haar transform. Then transformed data are compared against threshold and number of coefficients above threshold are counted and summed. Threshold in this algorithm is calculated based on QP value.<br><br>L1 reference and non-zero MVs are not supported.
+`Variance16x16`, `Variance8x8[4]`, `PixelAverage16x16`, `PixelAverage8x8[4]` | These arrays hold variance and average values of luma samples for 16x16 macroblock and four 8x8 blocks. If **Enable8x8Stat** is set in the [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) structure, then statistic for 8x8 blocks is calculated. If not set, then statistic is calculated for 16x16 macroblock only.
 
 
 **Change History**
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxExtFeiEncFrameCtrl'>mfxExtFeiEncFrameCtrl</a>
+## <a id='mfxExtFeiEncFrameCtrl'>mfxExtFeiEncFrameCtrl</a>
 
 **Definition**
 
@@ -902,39 +963,39 @@ typedef struct {
 
 This extension buffer specifies frame level control for ENCODE and ENC usage models. It is used during runtime and should be attached to the **mfxEncodeCtrl** structure for ENCODE usage model and to the **mfxENCInput** for ENC.
 
-This buffer is similar to the [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) and only additional fields are described here.
+This buffer is similar to the [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) and only additional fields are described here.
 
 **Members**
 
 | | |
 --- | ---
 `Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEI_ENC_CTRL**.
-`SearchPath` | See [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) for description of this field.
-`LenSP` | See [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) for description of this field.
-`SubMBPartMask` | See [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) for description of this field.
-`IntraPartMask` | See [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) for description of this field.
+`SearchPath` | See [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) for description of this field.
+`LenSP` | See [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) for description of this field.
+`SubMBPartMask` | See [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) for description of this field.
+`IntraPartMask` | See [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) for description of this field.
 `MultiPredL0, MultiPredL1` | If this value is not equal to zero, then MVs from neighbor MBs will be used as predictors.
-`SubPelMode` | See [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) for description of this field.
-`InterSAD` | See [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) for description of this field.
-`IntraSAD` | See [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) for description of this field.
+`SubPelMode` | See [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) for description of this field.
+`InterSAD` | See [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) for description of this field.
+`IntraSAD` | See [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) for description of this field.
 `DistortionType` | This parameter is ignored. Distortion with additional cost is reported.<br>This value specifies distortion type. If it is zero, then pure distortion is reported, without any additional correction. If it is equal to one, then additional costs (like MVs, reference list indexes and so on) are added.
 `RepartitionCheckEnable` | If this value is not equal to zero, then additional sub pixel and bidirectional refinements are enabled.
-`AdaptiveSearch` | See [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) for description of this field.
-`MVPredictor` | If this value is not equal to zero, then usage of MV predictors is enabled and the application should attach [mfxExtFeiEncMVPredictors](#_mfxExtFeiEncMVPredictors) structure to the **mfxEncodeCtrl** structure at runtime.
+`AdaptiveSearch` | See [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) for description of this field.
+`MVPredictor` | If this value is not equal to zero, then usage of MV predictors is enabled and the application should attach [mfxExtFeiEncMVPredictors](#mfxExtFeiEncMVPredictors) structure to the **mfxEncodeCtrl** structure at runtime.
 `NumMVPredictors[2]` | Number of provided by the application MV predictors: 0 –L0 predictors, 1 – L1 predictors. Up to four predictors are supported.
 `PerMBQp` | If this value is not equal to zero, then MB level QPs are used during encoding and [mfxExtFeiEncQP](#_mfxExtFeiPreEncQP) structure should be attached to the **mfxEncodeCtrl** structure at runtime.
-`PerMBInput` | If this value is not equal to zero, then MB level control is enabled and [mfxExtFeiEncMBCtrl](#_mfxExtFeiEncMBCtrl) structure should be attached to the **mfxEncodeCtrl** structure at runtime.
-`MBSizeCtrl` | reserved and must be zero<br><br>If this value is not equal to zero, then MB size control is enabled. See **MaxSizeInWord** and **TargetSizeInWord**values in the [mfxExtFeiEncMBCtrl](#_mfxExtFeiEncMBCtrl)  structure.
-`RefWidth` | See [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) for description of this field.
-`RefHeight` | See [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) for description of this field.
-`SearchWindow` | See [mfxExtFeiPreEncCtrl](#_mfxExtFeiPreEncCtrl) for description of this field.
-`ColocatedMbDistortion` | reserved and must be zero<br><br>If set, this field enables calculation of **ColocatedMbDistortion** value in the [mfxExtFeiEncMBStat](#_mfxExtFeiEncMBStat) structure.
+`PerMBInput` | If this value is not equal to zero, then MB level control is enabled and [mfxExtFeiEncMBCtrl](#mfxExtFeiEncMBCtrl) structure should be attached to the **mfxEncodeCtrl** structure at runtime.
+`MBSizeCtrl` | reserved and must be zero<br><br>If this value is not equal to zero, then MB size control is enabled. See **MaxSizeInWord** and **TargetSizeInWord**values in the [mfxExtFeiEncMBCtrl](#mfxExtFeiEncMBCtrl)  structure.
+`RefWidth` | See [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) for description of this field.
+`RefHeight` | See [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) for description of this field.
+`SearchWindow` | See [mfxExtFeiPreEncCtrl](#mfxExtFeiPreEncCtrl) for description of this field.
+`ColocatedMbDistortion` | reserved and must be zero<br><br>If set, this field enables calculation of **ColocatedMbDistortion** value in the [mfxExtFeiEncMBStat](#mfxExtFeiEncMBStat) structure.
 
 **Change History**
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxExtFeiEncMVPredictors'>mfxExtFeiEncMVPredictors</a>
+## <a id='mfxExtFeiEncMVPredictors'>mfxExtFeiEncMVPredictors</a>
 
 **Definition**
 
@@ -958,7 +1019,7 @@ typedef struct {
 
 **Description**
 
-This extension buffer specifies MV predictors for ENCODE and ENC usage models. To enable usage of this buffer the application should set **MVPredictor** field in the [mfxExtFeiEncFrameCtrl](#_mfxExtFeiEncFrameCtrl) structure to none zero value.
+This extension buffer specifies MV predictors for ENCODE and ENC usage models. To enable usage of this buffer the application should set **MVPredictor** field in the [mfxExtFeiEncFrameCtrl](#mfxExtFeiEncFrameCtrl) structure to none zero value.
 
 This structure is used during runtime and should be attached to the **mfxEncodeCtrl** structure for ENCODE usage model and to the **mfxENCInput** for ENC.
 
@@ -971,13 +1032,13 @@ This structure is used during runtime and should be attached to the **mfxEncodeC
 `MB` | Array of MV predictors for each MB in raster scan order.
 `RefIdx[4]` | Array of reference indexes for each MV predictor.
 `RefL0 RefL1` | **L0** and **L1** reference indexes.
-`MV[4][2]` | Up to 4 MV predictors per MB. First index is predictor number, second is 0 for L0 (past) reference and 1 for L1 (future) reference.<br><br>**0x8000** value should be used for intra MBs.<br><br>Number of actual predictors is defined by **NumMVPredictors[]** value in the [mfxExtFeiEncFrameCtrl](#_mfxExtFeiEncFrameCtrl) structure.<br><br>MV predictor is for the whole 16x16 MB.
+`MV[4][2]` | Up to 4 MV predictors per MB. First index is predictor number, second is 0 for L0 (past) reference and 1 for L1 (future) reference.<br><br>**0x8000** value should be used for intra MBs.<br><br>Number of actual predictors is defined by **NumMVPredictors[]** value in the [mfxExtFeiEncFrameCtrl](#mfxExtFeiEncFrameCtrl) structure.<br><br>MV predictor is for the whole 16x16 MB.
 
 **Change History**
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxExtFeiEncMBCtrl'>mfxExtFeiEncMBCtrl</a>
+## <a id='mfxExtFeiEncMBCtrl'>mfxExtFeiEncMBCtrl</a>
 
 **Definition**
 
@@ -1009,7 +1070,7 @@ typedef struct {
 
 **Description**
 
-This extension buffer specifies MB level parameters for ENCODE and ENC usage models. To enable usage of this buffer the application should set **PerMBInput** field in the [mfxExtFeiEncFrameCtrl](#_mfxExtFeiEncFrameCtrl) structure to none zero value.
+This extension buffer specifies MB level parameters for ENCODE and ENC usage models. To enable usage of this buffer the application should set **PerMBInput** field in the [mfxExtFeiEncFrameCtrl](#mfxExtFeiEncFrameCtrl) structure to none zero value.
 
 This structure is used during runtime and should be attached to the **mfxEncodeCtrl** structure for ENCODE usage model and to the **mfxENCInput** for ENC.
 
@@ -1026,15 +1087,15 @@ This structure is used during runtime and should be attached to the **mfxEncodeC
 `DirectBiasAdjustment` | If this value is set to ‘1’, then enable the ENC mode decision algorithm to bias to fewer B Direct/Skip types. Applies only to B frames, all other frames will ignore this setting.
 `GlobalMotionBiasAdjustment` | If this value is set to ‘1’, then enable external motion bias.
 `MVCostScalingFactor` | Specifies MV cost scaling factor to external motion. It takes effect only when GlobalMotionBiasAdjustment=1, and it controls how much we bias to the external MV predictors. Values are:<br><br>0: set MV cost to be 0 <br>1: scale MV cost to be 1/2 of the default value<br>2: scale MV cost to be 1/4 of the default value<br>3: scale MV cost to be 1/8 of the default value<br>4: scale MV cost to be 3/4 of the default value<br>5: scale MV cost to be 7/8 of the default value
-`TargetSizeInWord` | reserved and must be zero<br>This value specifies target MB size in words. Encoder may increase compression ratio to keep MB size in specified boundary.<br>This value is ignored, i.e. there is no target size, if **MBSizeCtrl** value in [mfxExtFeiEncFrameCtrl](#_mfxExtFeiEncFrameCtrl) structure is set to zero.
-`MaxSizeInWord` | reserved and must be zero<br><br>This value specifies maximum MB size in words. If MB size comes close to this limit, “panic” mode is triggered and encoder begins drastically increase compression ratio.<br><br>This value is ignored, i.e. there is no limit, if **MBSizeCtrl** value in [mfxExtFeiEncFrameCtrl](#_mfxExtFeiEncFrameCtrl) structure is set to zero.
+`TargetSizeInWord` | reserved and must be zero<br>This value specifies target MB size in words. Encoder may increase compression ratio to keep MB size in specified boundary.<br>This value is ignored, i.e. there is no target size, if **MBSizeCtrl** value in [mfxExtFeiEncFrameCtrl](#mfxExtFeiEncFrameCtrl) structure is set to zero.
+`MaxSizeInWord` | reserved and must be zero<br><br>This value specifies maximum MB size in words. If MB size comes close to this limit, “panic” mode is triggered and encoder begins drastically increase compression ratio.<br><br>This value is ignored, i.e. there is no limit, if **MBSizeCtrl** value in [mfxExtFeiEncFrameCtrl](#mfxExtFeiEncFrameCtrl) structure is set to zero.
 
 **Change History**
 
 This structure is available since SDK API 1.9.
 SDK API 1.23 adds `DirectBiasAdjustment, GlobalMotionBiasAdjustment` and `MVCostScalingFactor` fields.
 
-## <a id='_mfxExtFeiEncMV'>mfxExtFeiEncMV</a>
+## <a id='mfxExtFeiEncMV'>mfxExtFeiEncMV</a>
 
 **Definition**
 
@@ -1062,13 +1123,13 @@ This extension buffer holds output MVs for ENCODE and ENC usage models and input
 `Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEI_ENC_MV**.
 `NumMBAlloc` | Number of allocated **mfxExtFeiEncMVMB** structures in the **MB** array. It should be greater or equal to the number of MBs in the processed frame.
 `MB` | Array of MVs for each MB in raster scan order.
-`MV[16][2]` | Output MVs. Layout is the same as in [mfxExtFeiPreEncMV](#_mfxExtFeiPreEncMV) structure. For intra MBs, MVs are set to **0x8000**.
+`MV[16][2]` | Output MVs. Layout is the same as in [mfxExtFeiPreEncMV](#mfxExtFeiPreEncMV) structure. For intra MBs, MVs are set to **0x8000**.
 
 **Change History**
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxExtFeiEncMBStat'>mfxExtFeiEncMBStat</a>
+## <a id='mfxExtFeiEncMBStat'>mfxExtFeiEncMBStat</a>
 
 **Definition**
 
@@ -1101,16 +1162,16 @@ This extension buffer holds output MB statistics for ENCODE and ENC usage models
 `Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEI_ENC_MB_STAT**.
 `NumMBAlloc` | Number of allocated **mfxExtFeiEncMBStatMB** structures in the **MB** array. It should be greater or equal to the number of MBs in the processed frame.
 `MB` | Array of per MB statistic in raster scan order.
-`InterDistortion[16]` | Inter distortion for correspondent sub-block partitioning. Layout is the same as in [mfxExtFeiPreEncMV](#_mfxExtFeiPreEncMV) structure. Only one distortion value for block or subblock is reported, the rest values are set to zero.<br><br>For example, for 16x16 MB only **InterDistortion[0]** is used, for 16x8 **InterDistortion[0]** and **InterDistortion[8]**, for 8x8, 8x4, 4x8, 4x4  - 0, 4, 6, 8, 9, 12, 13, 14, 15, see example below, where X means used value, 0 – unused.<br><br><img src="./pic/interdistortion.png" width="150" height="200" align=left /><br>
+`InterDistortion[16]` | Inter distortion for correspondent sub-block partitioning. Layout is the same as in [mfxExtFeiPreEncMV](#mfxExtFeiPreEncMV) structure. Only one distortion value for block or subblock is reported, the rest values are set to zero.<br><br>For example, for 16x16 MB only **InterDistortion[0]** is used, for 16x8 **InterDistortion[0]** and **InterDistortion[8]**, for 8x8, 8x4, 4x8, 4x4  - 0, 4, 6, 8, 9, 12, 13, 14, 15, see example below, where X means used value, 0 – unused.<br><br><img src="./pic/interdistortion.png" width="150" height="200" align=left /><br>
 `BestInterDistortion` | The best inter distortion for the whole MB.
 `BestIntraDistortion` | The best intra distortion for the whole MB.
-`ColocatedMbDistortion` | reservedrbr><br>This is the difference between colocated MB in the reference frame and current MB. This value is calculated only if **ColocatedMbDistortion** field in the [mfxExtFeiEncFrameCtrl](#_mfxExtFeiEncFrameCtrl) structure is set.
+`ColocatedMbDistortion` | reservedrbr><br>This is the difference between colocated MB in the reference frame and current MB. This value is calculated only if **ColocatedMbDistortion** field in the [mfxExtFeiEncFrameCtrl](#mfxExtFeiEncFrameCtrl) structure is set.
 
 **Change History**
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxExtFeiPakMBCtrl'>mfxExtFeiPakMBCtrl</a>
+## <a id='mfxExtFeiPakMBCtrl'>mfxExtFeiPakMBCtrl</a>
 
 **Definition**
 
@@ -1238,14 +1299,14 @@ For ENCODE usage model it should be attached to the **mfxBitstream** during runt
 `SubMbShapes` | This field specifies subblock shapes for the current MB. Each block is described by 2 bits starting from lower bits for block 0.<br><br>0　　　　8x8<br>1　　　　8x4<br>2　　　　4x8<br>3　　　　4x4<br>
 `SubMbPredModes` | This field specifies prediction modes for the current MB partition blocks. Each block is described by 2 bits starting from lower bits for block 0.<br><br>0　　　　Pred_L0<br>1　　　　Pred_L1<br>2　　　　BiPred<br>3　　　　reserved<br><br>Only one prediction value for partition is reported, the rest values are set to zero. For example:<br><br><table> <tr><td> 16x16 Pred_L1 </td> <td> 0x01<br>only 2 lower bits are used </td></tr> <tr><td> 16x8 Pred_L1 / BiPred </td> <td> 0x09 (1001b) </td></tr> <tr><td> 8x16 BiPred / BiPred </td> <td> 0x0a (1010b) </td></tr> </table><br>It is used by PAK only for BP_8x8 MB and ignored for other partitions. For P MBs this value is always zero.
 `RefIdx` | This array specifies reference picture indexes for each of the blocks in the current MB. First index is 0 for L0 reference list and 1 for L1 reference list, second is 8x8 block number.<br><br>Unused reference indexes in B slices must be set to 0xff value, and all L1 indexes for P slices must be set to 0.
-`TargetSizeInWord` | reserved and must be zero<br><br>See [mfxExtFeiEncMBCtrl](#_mfxExtFeiEncMBCtrl) for description of this field.
-`MaxSizeInWord` | reserved and must be zero<br><br>See [mfxExtFeiEncMBCtrl](#_mfxExtFeiEncMBCtrl) for description of this field.
+`TargetSizeInWord` | reserved and must be zero<br><br>See [mfxExtFeiEncMBCtrl](#mfxExtFeiEncMBCtrl) for description of this field.
+`MaxSizeInWord` | reserved and must be zero<br><br>See [mfxExtFeiEncMBCtrl](#mfxExtFeiEncMBCtrl) for description of this field.
 
 **Change History**
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxExtFeiSPS'>mfxExtFeiSPS</a>
+## <a id='mfxExtFeiSPS'>mfxExtFeiSPS</a>
 
 **Definition**
 
@@ -1280,7 +1341,7 @@ See the ISO*/IEC* 14496-10 specification for more information on SPS parameters 
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxExtFeiPPS'>mfxExtFeiPPS</a>
+## <a id='mfxExtFeiPPS'>mfxExtFeiPPS</a>
 
 **Definition**
 
@@ -1345,7 +1406,7 @@ This structure is available since SDK API 1.9.
 
 The SDK API 1.23 adds `FrameType`,`DpbBefore`,`DpbAfter` fields and removes `ReferenceFrames` field.
 
-## <a id='_mfxExtFeiSliceHeader'>mfxExtFeiSliceHeader</a>
+## <a id='mfxExtFeiSliceHeader'>mfxExtFeiSliceHeader</a>
 
 **Definition**
 
@@ -1441,21 +1502,21 @@ This extension buffer specifies usage model for **ENCODE**, **ENC** and **PAK** 
 | | |
 --- | ---
 `Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEI_PARAM**.
-`Func` | One of the FEI usage models. See [mfxFeiFunction](#_mfxFeiFunction) for more details.
+`Func` | One of the FEI usage models. See [mfxFeiFunction](#mfxFeiFunction) for more details.
 `SingleFieldProcessing` | This flag indicates single field processing mode. If it is set to **MFX_CODINGOPTION_ON**, SDK processes fields one by one, one field in one function call. If it is set to **MFX_CODINGOPTION_OFF**, then both fields are processed in one function call. This is default mode equal to the general SDK encoder.
 
 **Change History**
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxENCInput'>mfxENCInput</a>
+## <a id='mfxENCInput'>mfxENCInput</a>
 
 **Definition**
 
 ```C
-typedef struct _mfxENCInput mfxENCInput;
+typedef struct mfxENCInput mfxENCInput;
 
-struct _mfxENCInput{
+struct mfxENCInput{
     mfxU32  reserved[32];
 
     mfxFrameSurface1 *InSurface;
@@ -1472,7 +1533,7 @@ struct _mfxENCInput{
 
 **Description**
 
-This structure specifies input parameters for [MFXVideoENC_ProcessFrameAsync](#_MFXVideoENC_ProcessFrameAsync) function.
+This structure specifies input parameters for [MFXVideoENC_ProcessFrameAsync](#MFXVideoENC_ProcessFrameAsync) function.
 
 **Members**
 
@@ -1488,14 +1549,14 @@ This structure specifies input parameters for [MFXVideoENC_ProcessFrameAsync](#_
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxENCOutput'>mfxENCOutput</a>
+## <a id='mfxENCOutput'>mfxENCOutput</a>
 
 **Definition**
 
 ```C
-typedef struct _mfxENCOutput mfxENCOutput;
+typedef struct mfxENCOutput mfxENCOutput;
 
-struct _mfxENCOutput{
+struct mfxENCOutput{
     mfxU32  reserved[32];
 
     mfxFrameSurface1 *OutSurface;
@@ -1507,7 +1568,7 @@ struct _mfxENCOutput{
 
 **Description**
 
-This structure specifies output parameters for [MFXVideoENC_ProcessFrameAsync](#_MFXVideoENC_ProcessFrameAsync) function.
+This structure specifies output parameters for [MFXVideoENC_ProcessFrameAsync](#MFXVideoENC_ProcessFrameAsync) function.
 
 **Members**
 
@@ -1521,7 +1582,7 @@ This structure specifies output parameters for [MFXVideoENC_ProcessFrameAsync](#
 
 This structure is available since SDK API 1.9.
 
-## <a id='_mfxPAKInput'>mfxPAKInput</a>
+## <a id='mfxPAKInput'>mfxPAKInput</a>
 
 **Definition**
 
@@ -1546,7 +1607,7 @@ typedef struct {
 
 **Description**
 
-This structure specifies input parameters for [MFXVideoENC_ProcessFrameAsync](#_MFXVideoENC_ProcessFrameAsync) function.
+This structure specifies input parameters for [MFXVideoENC_ProcessFrameAsync](#MFXVideoENC_ProcessFrameAsync) function.
 
 **Members**
 
@@ -1565,7 +1626,7 @@ This structure specifies input parameters for [MFXVideoENC_ProcessFrameAsync](#_
 This structure is available since SDK API 1.9.
 SDK API 1.23 adds `NumPayload` and `Payload` fields.
 
-## <a id='_mfxPAKOutput'>mfxPAKOutput</a>
+## <a id='mfxPAKOutput'>mfxPAKOutput</a>
 
 **Definition**
 
@@ -1583,7 +1644,7 @@ typedef struct {
 
 **Description**
 
-This structure specifies output parameters for [MFXVideoPAK_ProcessFrameAsync](#_MFXVideoPAK_ProcessFrameAsync) function.
+This structure specifies output parameters for [MFXVideoPAK_ProcessFrameAsync](#MFXVideoPAK_ProcessFrameAsync) function.
 
 **Members**
 
@@ -1785,9 +1846,10 @@ This buffer should be attached to the **mfxFrameSurface1::mfxFrameData** during 
 This structure is available since SDK API 1.19.
 
 <div style="page-break-before:always" />
+
 # Enumerator Reference
 
-## <a id='_mfxFeiFunction'>mfxFeiFunction</a>
+## <a id='mfxFeiFunction'>mfxFeiFunction</a>
 
 **Description**
 
@@ -1797,11 +1859,11 @@ The `mfxFeiFunction` enumerator specifies FEI usage models of **ENCODE**, **ENC*
 
 | | |
 --- | ---
-`MFX_FEI_FUNCTION_PREENC` | PreENC usage models. It performs preliminary motion estimation and mode decision, as described in “[PreENC](#_PreENC)” chapter.
-`MFX_FEI_FUNCTION_ENCODE` | ENOCDE usage model. It performs conventional encoding process with additional configuration parameters, as described in “[ENCODE](#_ENCODE)” chapter.
-`MFX_FEI_FUNCTION_ENC` | ENC usage model. It performs motion estimation and mode decision, as described in “[ENC followed by PAK](#_ENC followed by PAK)” chapter.
-`MFX_FEI_FUNCTION_PAK` | PAK usage model. It performs packing of MB control data to the encoded bitstream, as described in “[ENC followed by PAK](#_ENC followed by PAK)” chapter.
-`MFX_FEI_FUNCTION_DEC` | DSO usage model. It performs output of MB level parameters and MVs from source bitstream, as described in “[DSO followed by PAK](#_DSO followed by PAK)” chapter.
+`MFX_FEI_FUNCTIONPREENC` | PreENC usage models. It performs preliminary motion estimation and mode decision, as described in “[PreENC](#PreENC)” chapter.
+`MFX_FEI_FUNCTIONENCODE` | ENOCDE usage model. It performs conventional encoding process with additional configuration parameters, as described in “[ENCODE](#ENCODE)” chapter.
+`MFX_FEI_FUNCTION_ENC` | ENC usage model. It performs motion estimation and mode decision, as described in “[ENC followed by PAK](#ENC_followed_by_PAK)” chapter.
+`MFX_FEI_FUNCTION_PAK` | PAK usage model. It performs packing of MB control data to the encoded bitstream, as described in “[ENC followed by PAK](#ENC_followed_by_PAK)” chapter.
+`MFX_FEI_FUNCTION_DEC` | DSO usage model. It performs output of MB level parameters and MVs from source bitstream, as described in “[DSO followed by PAK](#DSO_followed_by_PAK)” chapter.
 
 **Change History**
 

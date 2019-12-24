@@ -1,8 +1,77 @@
+![](./pic/intel_logo.png)
+<br><br><br>
+# **SDK Developer Reference Extensions for User-Defined Functions**
+## Media SDK API Version 1.30
+
+<div style="page-break-before:always" />
+
+[**LEGAL DISCLAIMER**](./header-template.md#legal-disclaimer)
+
+[**Optimization Notice**](./header-template.md#optimization-notice)
+
+<div style="page-break-before:always" />
+
+- [Overview](#overview)
+  * [Document Conventions](#document-conventions)
+  * [Acronyms and Abbreviations](#acronyms-and-abbreviations)
+- [Architecture](#architecture)
+  * [Using General Plug-in](#using-general-plug-in)
+  * [Using Codec Plug-in](#using-codec-plug-in)
+  * [Writing Plug-in](#writing-plug-in)
+    + [Task Submission](#task-submission)
+    + [Task Execution](#task_execution)
+    + [Mandatory functions](#mandatory-functions)
+  * [Working with Opaque Surfaces](#working-with-opaque-surfaces)
+    + [Mapping and Un-mapping Opaque Surfaces](#mapping-and-un-mapping-opaque-surfaces)
+    + [Accessing Opaque Surfaces](#accessing-opaque-surfaces)
+  * [Plug-in Distribution](#plugin_distribution)
+    + [Dynamic Link Library](#dynamic-link-library)
+    + [Loading](#loading)
+    + [System Wide Installation](#system-wide-installation)
+    + [Application Folder Installation](#application-folder-installation)
+- [Function Reference](#function-reference)
+  * [MFXVideoUSER](#mfxvideouser)
+    + [MFXVideoUSER_ProcessFrameAsync](#MFXVideoUSER_ProcessFrameAsync)
+    + [MFXVideoUSER_Register](#MFXVideoUSER_Register)
+    + [MFXVideoUSER_Unregister](#MFXVideoUSER_Unregister)
+    + [MFXVideoUSER_Load](#MFXVideoUSER_Load)
+    + [MFXVideoUSER_LoadByPath](#MFXVideoUSER_LoadByPath)
+    + [MFXVideoUSER_UnLoad](#MFXVideoUSER_UnLoad)
+    + [MFXVideoUSER_GetPlugin](#MFXVideoUSER_GetPlugin)
+- [Structure Reference](#structure-reference)
+  * [mfxCoreInterface](#mfxCoreInterface)
+    + [CopyBuffer](#CopyBuffer)
+    + [CopyFrame](#CopyFrame)
+    + [DecreaseReference](#DecreaseReference)
+    + [GetCoreParam](#GetCoreParam)
+    + [GetHandle](#GetHandle)
+    + [IncreaseReference](#IncreaseReference)
+    + [MapOpaqueSurface](#MapOpaqueSurface)
+    + [UnmapOpaqueSurface](#UnmapOpaqueSurface)
+    + [GetRealSurface](#GetRealSurface)
+    + [GetOpaqueSurface](#GetOpaqueSurface)
+    + [GetFrameHandle](#GetFrameHandle)
+    + [QueryPlatform](#QueryPlatform)
+  * [mfxPlugin](#mfxPlugin)
+    + [Execute](#Execute)
+    + [FreeResources](#FreeResources)
+    + [GetPluginParam](#GetPluginParam)
+    + [PluginClose](#PluginClose)
+    + [PluginInit](#PluginInit)
+    + [Submit](#Submit)
+  * [mfxVideoCodecPlugin](#mfxvideocodecplugin)
+  * [mfxCoreParam](#mfxCoreParam)
+  * [mfxPluginParam](#mfxPluginParam)
+- [Enumerator Reference](#enumerator-reference)
+  * [mfxThreadPolicy](#mfxThreadPolicy)
+  * [mfxPluginType](#mfxPluginType)
+  * [mfxStatus](#mfxStatus)
+
 # Overview
 
 Intel® Media Software Development Kit – SDK is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video preprocessing. The API library covers a wide range of Intel platforms.
 
-This document describes an API extension that allows user-defined functions into the transcoding pipeline. Please refer to the *SDK Developer Reference* for a complete description of the API.
+This document describes an API extension that allows user-defined functions into the transcoding pipeline. Please refer to the [*SDK API Reference Manual*](./mediasdk-man.md) for a complete description of the API.
 
 ## Document Conventions
 
@@ -50,9 +119,8 @@ Include these files:
 #include “mfxvideo++.h”     /* optional for C++ development */
 #include “mfxplugin.h”      /* plugin development */
 Link these libraries:
-    libmfx.lib              /* The SDK static dispatcher library */
-or
-    libmfx.a                /* The SDK static dispatcher library */
+    libmfx.so              /* The SDK dispatcher library */
+
 ```
 
 The following sections describe the **USER** class of functions including rules that application developers must follow when programming with **USER** functions.
@@ -69,7 +137,7 @@ Follow the procedure provided below to insert the general plug-in into the SDK p
 
 When comparing **USER** with **DECODE**, **VPP**, and **ENCODE,** notice that the **USER** class of functions does not support `Init`, `Close`, `Query`, `QueryIOSurf`, or `GetVideoParam`. This simplification is possible because SDK does not participate in any of these operations. If required, the application can define its own form of initialization, capability query, or status retrieval of the user-defined functions.
 
-The function [MFXVideoUSER_ProcessFrameAsync](#MFXVideoUSER_ProcessFrameAsync) can take any number of inputs and generate any number of outputs. The interpretation of the I/O parameters is subject to the callback functions registered at the **USER** initialization stage. As per SDK convention on asynchronous operations, the application must consider the inputs “used” and the outputs unavailable until the application performs an explicit synchronization. However, the application can pass the output results to any downstream SDK component such as **VPP** and **ENCODE** *without* synchronization. See the Asynchronous Operation chapter in the SDK Developer Reference for more details on asynchronous operations.
+The function [MFXVideoUSER_ProcessFrameAsync](#MFXVideoUSER_ProcessFrameAsync) can take any number of inputs and generate any number of outputs. The interpretation of the I/O parameters is subject to the callback functions registered at the **USER** initialization stage. As per SDK convention on asynchronous operations, the application must consider the inputs “used” and the outputs unavailable until the application performs an explicit synchronization. However, the application can pass the output results to any downstream SDK component such as **VPP** and **ENCODE** *without* synchronization. See the Asynchronous Operation chapter in the [*SDK API Reference Manual*](./mediasdk-man.md) for more details on asynchronous operations.
 
 Example 1 shows the pseudo code for transcoding with **USER** operations. The application passes data from **DECODE** to **VPP**, **VPP** to **USER** and **USER** to **ENCODE**. Finally, the application synchronizes the processing results and writes them to a file.
 
@@ -221,7 +289,7 @@ Each type of plug-in has different set of mandatory functions. See table below f
 
 ## Working with Opaque Surfaces
 
-This chapter describes how to handle opaque surfaces in the **USER** module. The opaque surface concept is introduced in the SDK API 1.3. Please see the SDK Developer Reference for details about opaque surface.
+This chapter describes how to handle opaque surfaces in the **USER** module. The opaque surface concept is introduced in the SDK API 1.3. Please see the [*SDK API Reference Manual*](./mediasdk-man.md) for details about opaque surface.
 
 ### Mapping and Un-mapping Opaque Surfaces
 
@@ -364,7 +432,7 @@ Default       = 0
 
 This section describes the SDK plug-in functions and their operations.
 
-Each description documents only commonly used status codes. The function may return additional status codes, such as `MFX_ERR_INVALID_HANDLE` or `MFX_ERR_NULL_PTR`, for example. See the SDK Developer Reference for details on all status codes.
+Each description documents only commonly used status codes. The function may return additional status codes, such as `MFX_ERR_INVALID_HANDLE` or `MFX_ERR_NULL_PTR`, for example. See the [*SDK API Reference Manual*](./mediasdk-man.md) for details on all status codes.
 
 ## MFXVideoUSER
 
@@ -664,7 +732,7 @@ The `mfxCoreInterface` structure provides additional functions to assist in the 
 | | |
 --- | ---
 `pthis` | The class pointer points to the SDK internal implementation. When the plug-in uses any function defined in the `mfxCoreInterface` structure, pass this `pthis` value to the first argument of the function.
-`FrameAllocator` | Frame allocator of the current session. It should be used to allocate surfaces in plug-in and to get access to surface data (use `Lock` and `GetHDL` functions).<br><br>See the *SDK Developer Reference* for the definition of the `FrameAllocator` structure.
+`FrameAllocator` | Frame allocator of the current session. It should be used to allocate surfaces in plug-in and to get access to surface data (use `Lock` and `GetHDL` functions).<br><br>See the [*SDK API Reference Manual*](./mediasdk-man.md) for the definition of the `FrameAllocator` structure.
 [GetCoreParam](#GetCoreParam)               | Obtain information about the current session.
 [GetHandle](#GetHandle)                     | Obtain system handle from the current session.
 [IncreaseReference](#IncreaseReference)     | Atomically increase the frame lock counter.
@@ -1459,7 +1527,7 @@ This enumerator is available since SDK API 1.8.
 
 **Description**
 
-The `mfxStatus` enumerator itemizes status codes returned by SDK functions. See the SDK Developer Reference for the rest of `mfxStatus` values.
+The `mfxStatus` enumerator itemizes status codes returned by SDK functions. See the [*SDK API Reference Manual*](./mediasdk-man.md) for the rest of `mfxStatus` values.
 
 **Name/Description**
 
