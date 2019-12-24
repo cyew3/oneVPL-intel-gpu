@@ -20,7 +20,6 @@
 
 #include "assert.h"
 #include "immintrin.h"
-#include "ipps.h"
 #include "mfx_av1_opts_intrin.h"
 #include <stdint.h>
 

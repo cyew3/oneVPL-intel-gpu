@@ -27,8 +27,16 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #include <cm/cm.h>
 #include <cm/cmtl.h>
-#include <cm/genx_vme.h>
 
+#define MEPU8 1
+#define NEWMVPRED 0
+
+typedef char  int1;
+typedef short int2;
+typedef int   int4;
+typedef unsigned char  uint1;
+typedef unsigned short uint2;
+typedef unsigned int   uint4;
 
 const int1 COEFS_AV1[4][4] = {
     { /*0, 0,*/  0, 64,  0,  0, /*0, 0*/ },
@@ -43,6 +51,12 @@ static const uint1 MV_DELTA[8] = {
     8,  9, 10
 };
 
+enum {
+    SINGLE_REF,
+    TWO_REFS,
+    COMPOUND
+};
+
 _GENX_ matrix<uint1,8,8>   g_pred8;
 _GENX_ matrix<uint1,16,16> g_pred16;
 
@@ -51,15 +65,42 @@ enum { X, Y };
 
 _GENX_ inline vector<uint2,16> sad8x8(matrix_ref<uint1,8,8> src, matrix_ref<uint1,8,8> ref)
 {
+#if defined(target_gen12) || defined(target_gen12lp)
+    vector<uint2, 16> sad = cm_abs<uint2>(src.select<2, 1, 8, 1>(0, 0) - ref.select<2, 1, 8, 1>(0, 0));
+    sad = cm_abs<uint2>(src.select<2, 1, 8, 1>(2, 0) - ref.select<2, 1, 8, 1>(2, 0)) + sad;
+    sad = cm_abs<uint2>(src.select<2, 1, 8, 1>(4, 0) - ref.select<2, 1, 8, 1>(4, 0)) + sad;
+    sad = cm_abs<uint2>(src.select<2, 1, 8, 1>(6, 0) - ref.select<2, 1, 8, 1>(6, 0)) + sad;
+    sad.select<8, 2>(0) += sad.select<8, 2>(1);
+#else // target_gen12
     vector<uint2,16> sad = cm_sad2<uint2>(src.select<2,1,8,1>(0,0), ref.select<2,1,8,1>(0,0));
     sad = cm_sada2<uint2>(src.select<2,1,8,1>(2,0), ref.select<2,1,8,1>(2,0), sad);
     sad = cm_sada2<uint2>(src.select<2,1,8,1>(4,0), ref.select<2,1,8,1>(4,0), sad);
     sad = cm_sada2<uint2>(src.select<2,1,8,1>(6,0), ref.select<2,1,8,1>(6,0), sad);
+#endif // target_gen12
     return sad;
 }
 
 _GENX_ inline vector<uint2,16> sad16x16(matrix_ref<uint1,16,16> m1, matrix_ref<uint1,16,16> m2)
 {
+#if defined(target_gen12) || defined(target_gen12lp)
+    vector<uint2, 16> sad = cm_abs<uint2>(m1.row(0) - m2.row(0));
+    sad = cm_abs<uint2>(m1.row(1) - m2.row(1)) + sad;
+    sad = cm_abs<uint2>(m1.row(2) - m2.row(2)) + sad;
+    sad = cm_abs<uint2>(m1.row(3) - m2.row(3)) + sad;
+    sad = cm_abs<uint2>(m1.row(4) - m2.row(4)) + sad;
+    sad = cm_abs<uint2>(m1.row(5) - m2.row(5)) + sad;
+    sad = cm_abs<uint2>(m1.row(6) - m2.row(6)) + sad;
+    sad = cm_abs<uint2>(m1.row(7) - m2.row(7)) + sad;
+    sad = cm_abs<uint2>(m1.row(8) - m2.row(8)) + sad;
+    sad = cm_abs<uint2>(m1.row(9) - m2.row(9)) + sad;
+    sad = cm_abs<uint2>(m1.row(10) - m2.row(10)) + sad;
+    sad = cm_abs<uint2>(m1.row(11) - m2.row(11)) + sad;
+    sad = cm_abs<uint2>(m1.row(12) - m2.row(12)) + sad;
+    sad = cm_abs<uint2>(m1.row(13) - m2.row(13)) + sad;
+    sad = cm_abs<uint2>(m1.row(14) - m2.row(14)) + sad;
+    sad = cm_abs<uint2>(m1.row(15) - m2.row(15)) + sad;
+    sad.select<8, 2>(0) += sad.select<8, 2>(1);
+#else // target_gen12
     vector<uint2,16> sad = cm_sad2<uint2>(m1.row(0), m2.row(0));
     sad = cm_sada2<uint2>(m1.row(1),  m2.row(1),  sad);
     sad = cm_sada2<uint2>(m1.row(2),  m2.row(2),  sad);
@@ -76,6 +117,7 @@ _GENX_ inline vector<uint2,16> sad16x16(matrix_ref<uint1,16,16> m1, matrix_ref<u
     sad = cm_sada2<uint2>(m1.row(13), m2.row(13), sad);
     sad = cm_sada2<uint2>(m1.row(14), m2.row(14), sad);
     sad = cm_sada2<uint2>(m1.row(15), m2.row(15), sad);
+#endif // target_gen12
     return sad;
 }
 
@@ -194,7 +236,7 @@ inline _GENX_ void Interpolate16(SurfaceIndex REF, vector_ref<int2,2> pos, matri
 extern "C" _GENX_MAIN_
 void MePuGacc8x8And16x16(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1,
                          SurfaceIndex MEDATA8_0, SurfaceIndex MEDATA8_1, SurfaceIndex MEDATA16_0, SurfaceIndex MEDATA16_1,
-                         SurfaceIndex OUT_PRED8, SurfaceIndex OUT_PRED16, uint4 compoundAllowed)
+                         SurfaceIndex OUT_PRED8, SurfaceIndex OUT_PRED16, uint4 refConfig)
 {
     vector<int2,2> origin;
     origin(X) = get_thread_origin_x();
@@ -235,17 +277,18 @@ void MePuGacc8x8And16x16(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1,
     sads.row(0) = sad16x16(src16x16, g_pred16);
     pred0 = g_pred16;
 
-    // ref1
-    matrix<uint1,16,16> pred1;
-    Interpolate16(REF1, pos.select<2,1>(2), filt.select<2,1,4,1>(2));
-    sads.row(1) = sad16x16(src16x16, g_pred16);
-    pred1 = g_pred16;
+    matrix<uint1,16,16> pred1, pred2;
+    if (refConfig != SINGLE_REF) {
+        // ref1
+        Interpolate16(REF1, pos.select<2, 1>(2), filt.select<2, 1, 4, 1>(2));
+        sads.row(1) = sad16x16(src16x16, g_pred16);
+        pred1 = g_pred16;
 
-    // Compound
-    matrix<uint1,16,16> pred2;
-    if (compoundAllowed) {
-        pred2 = cm_avg<uint1>(pred0, pred1);
-        sads.row(2) = sad16x16(src16x16, pred2);
+        // Compound
+        if (refConfig == COMPOUND) {
+            pred2 = cm_avg<uint1>(pred0, pred1);
+            sads.row(2) = sad16x16(src16x16, pred2);
+        }
     }
 
     // accumulate SADs
@@ -257,9 +300,12 @@ void MePuGacc8x8And16x16(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1,
     costs <<= 2;
     costs(1) += 1;
     costs(2) += 2;
-    costs(0) = cm_min<uint4>(costs(0), costs(1));
-    if (compoundAllowed)
-        costs(0) = cm_min<uint4>(costs(0), costs(2));
+    if (refConfig != SINGLE_REF) {
+        costs(0) = cm_min<uint4>(costs(0), costs(1));
+        if (refConfig == COMPOUND)
+            costs(0) = cm_min<uint4>(costs(0), costs(2));
+    }
+
     uint4 idx = costs(0) & 3;
 
     // best candidate report (refIdx & predictor)
@@ -267,13 +313,13 @@ void MePuGacc8x8And16x16(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1,
         pred0 = pred1;
     else if (idx == 2)
         pred0 = pred2;
-
+#if NEWMVPRED
     write(OUT_PRED16, pel(X), pel(Y), pred0);
-
+#endif
     medata.row(0).format<int4>()[1] = costs(0);
     write(MEDATA16_0, origxy(X), origxy(Y), medata.select<1,1,4,1>());
 
-
+#if MEPU8
     // 8x8 4 times
     origxy *= 2;
     matrix<uint1,4,16> medata8;
@@ -312,17 +358,18 @@ void MePuGacc8x8And16x16(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1,
             sads.row(0) = sad8x8(src, g_pred8);
             pred0 = g_pred8;
 
-            // ref1 interpolation
-            matrix<uint1,8,8> pred1;
-            Interpolate8(REF1, pos1, filt1);
-            sads.row(1) = sad8x8(src, g_pred8);
-            pred1 = g_pred8;
+            matrix<uint1,8,8> pred1, pred2;
+            if (refConfig != SINGLE_REF) {
+                // ref1 interpolation
+                Interpolate8(REF1, pos1, filt1);
+                sads.row(1) = sad8x8(src, g_pred8);
+                pred1 = g_pred8;
 
-            // Compound
-            matrix<uint1,8,8> pred2;
-            if (compoundAllowed) {
-                pred2 = cm_avg<uint1>(pred0, pred1);
-                sads.row(2) = sad8x8(src, pred2);
+                // Compound
+                if (refConfig == COMPOUND) {
+                    pred2 = cm_avg<uint1>(pred0, pred1);
+                    sads.row(2) = sad8x8(src, pred2);
+                }
             }
 
             // accumulate SADs
@@ -334,9 +381,12 @@ void MePuGacc8x8And16x16(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1,
             costs <<= 2;
             costs(1) += 1;
             costs(2) += 2;
-            costs(0) = cm_min<uint2>(costs(0), costs(1));
-            if (compoundAllowed)
-                costs(0) = cm_min<uint2>(costs(0), costs(2));
+            if (refConfig != SINGLE_REF) {
+                costs(0) = cm_min<uint2>(costs(0), costs(1));
+                if (refConfig == COMPOUND)
+                    costs(0) = cm_min<uint2>(costs(0), costs(2));
+            }
+#if NEWMVPRED
             uint2 idx = costs(0) & 3;
 
             if (idx == 1)
@@ -345,15 +395,17 @@ void MePuGacc8x8And16x16(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1,
                 pred0 = pred2;
 
             write(OUT_PRED8, pel8(i,2*j+X), pel8(i,2*j+Y), pred0);
-
+#endif
             medata8.format<uint4>()[1 + 4 * i + 2 * j] = costs(0);
         }
     }
     write(MEDATA8_0, origxy(X), origxy(Y), medata8.select<2,1,16,1>());
+#endif
 }
 
 extern "C" _GENX_MAIN_
-void MePuGacc32x32(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1, SurfaceIndex MEDATA0, SurfaceIndex MEDATA1, SurfaceIndex OUT_PRED, uint4 compoundAllowed)
+void MePuGacc32x32(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1, SurfaceIndex MEDATA0, SurfaceIndex MEDATA1,
+                   SurfaceIndex OUT_PRED, uint4 refConfig)
 {
     vector<int2,2> origin;
     origin(X) = get_thread_origin_x();
@@ -376,7 +428,8 @@ void MePuGacc32x32(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1, Surfa
     read(MEDATA1, origxy(X) + 8, origxy(Y), medataDist8.select<8,1>(8));
     vector<uint4,2> medataDist0 = medata.format<uint4>().select<2,2>(1) << 4;
     medataDist8 <<= 4;
-    medataDist8 += vector<uint2,8>(MV_DELTA).replicate<2>();
+    vector<uint2,8> mv_delta(MV_DELTA);
+    medataDist8 += mv_delta.replicate<2>();
 
     vector<uint4,8> tmp8 = cm_min<uint4>(medataDist8.select<8,2>(0), medataDist8.select<8,2>(1));
     vector<uint4,4> tmp4 = cm_min<uint4>(tmp8.select<4,2>(0), tmp8.select<4,2>(1));
@@ -393,7 +446,8 @@ void MePuGacc32x32(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1, Surfa
     vector<uint2,4> dmv = mv & 3;
 
     matrix<int1,4,4> filt;
-    filt.format<uint4>() = matrix<int1,4,4>(COEFS_AV1).format<uint4>().iselect(dmv);
+    matrix<int1,4,4> coefs_av1(COEFS_AV1);
+    filt.format<uint4>() = coefs_av1.format<uint4>().iselect(dmv);
 
     vector<int2,4> pos = pel_minus2.replicate<2>() + cm_shr<int2>(mv, 2);
 
@@ -416,16 +470,19 @@ void MePuGacc32x32(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1, Surfa
             Interpolate16(REF0, pos_blk.select<2,1>(0), filt.select<2,1,4,1>(0));
             sadAcc.row(0) += sad16x16(src, g_pred16);
             first = g_pred16;
+#if NEWMVPRED
             write(OUT_PRED, pel_blk(X), pel_blk(Y), first);
+#endif
+            if (refConfig != SINGLE_REF) {
+                Interpolate16(REF1, pos_blk.select<2, 1>(2), filt.select<2, 1, 4, 1>(2));
+                sadAcc.row(1) += sad16x16(src, g_pred16);
+                second.row(i) = g_pred16.format<uint4>();
 
-            Interpolate16(REF1, pos_blk.select<2,1>(2), filt.select<2,1,4,1>(2));
-            sadAcc.row(1) += sad16x16(src, g_pred16);
-            second.row(i) = g_pred16.format<uint4>();
-
-            if (compoundAllowed) {
-                g_pred16 = cm_avg<uint1>(first, g_pred16);
-                sadAcc.row(2) += sad16x16(src, g_pred16);
-                comp.row(i) = g_pred16.format<uint4>();
+                if (refConfig == COMPOUND) {
+                    g_pred16 = cm_avg<uint1>(first, g_pred16);
+                    sadAcc.row(2) += sad16x16(src, g_pred16);
+                    comp.row(i) = g_pred16.format<uint4>();
+                }
             }
         }
     }
@@ -438,21 +495,25 @@ void MePuGacc32x32(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1, Surfa
     cost <<= 2;
     cost(1) += 1;
     cost(2) += 2;
-    cost(0) = cm_min<uint4>(cost(0), cost(1));
-    if (compoundAllowed)
-        cost(0) = cm_min<uint4>(cost(0), cost(2));
-
+    if (refConfig != SINGLE_REF) {
+        cost(0) = cm_min<uint4>(cost(0), cost(1));
+        if (refConfig == COMPOUND)
+            cost(0) = cm_min<uint4>(cost(0), cost(2));
+    }
+#if NEWMVPRED
     uint4 idx = cost(0) & 3;
 
     // best candidate report (refIdx & predictor)
     if (idx > 0) {
         if (idx == 2) // BiPred - rewrite
             second = comp;
+
         write(OUT_PRED, pel(X) +  0, pel(Y) +  0, second.row(0).format<uint1,16,16>());
         write(OUT_PRED, pel(X) + 16, pel(Y) +  0, second.row(1).format<uint1,16,16>());
         write(OUT_PRED, pel(X) +  0, pel(Y) + 16, second.row(2).format<uint1,16,16>());
         write(OUT_PRED, pel(X) + 16, pel(Y) + 16, second.row(3).format<uint1,16,16>());
     }
+#endif
 
     medata.format<int2,2,4>().select<2,1,2,1>() = mv;
     medata.format<int4>()(1) = cost(0);
@@ -462,8 +523,8 @@ void MePuGacc32x32(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1, Surfa
 
 
 extern "C" _GENX_MAIN_
-    void MePuGacc64x64(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1, SurfaceIndex MEDATA0, SurfaceIndex MEDATA1, SurfaceIndex OUT_PRED,
-                       uint4 compoundAllowed, SurfaceIndex SCRATCHPAD)
+    void MePuGacc64x64(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1, SurfaceIndex MEDATA0,
+                       SurfaceIndex MEDATA1, SurfaceIndex OUT_PRED, uint4 refConfig, SurfaceIndex SCRATCHPAD)
 {
     vector<int2,2> origin;
     origin(X) = get_thread_origin_x();
@@ -488,7 +549,8 @@ extern "C" _GENX_MAIN_
 
     vector<uint4,2> medataDist0 = medata.format<uint4>().select<2,2>(1) << 4;
     medataDist8 <<= 4;
-    medataDist8 += vector<uint2,8>(MV_DELTA).replicate<2>();
+    vector<uint2,8> mv_delta(MV_DELTA);
+    medataDist8 += mv_delta.replicate<2>();
 
     vector<uint4,8> tmp8 = cm_min<uint4>(medataDist8.select<8,2>(0), medataDist8.select<8,2>(1));
     vector<uint4,4> tmp4 = cm_min<uint4>(tmp8.select<4,2>(0), tmp8.select<4,2>(1));
@@ -507,7 +569,8 @@ extern "C" _GENX_MAIN_
     vector<int2,4> pos = pel_minus2.replicate<2>() + cm_shr<int2>(mv, 2);
 
     matrix<int1,4,4> filt;
-    filt.format<uint4>() = matrix<int1,4,4>(COEFS_AV1).format<uint4>().iselect(dmv);
+    matrix<int1,4,4> coefs_av1(COEFS_AV1);
+    filt.format<uint4>() = coefs_av1.format<uint4>().iselect(dmv);
 
     matrix<uint2,4,16> sads(0);
 
@@ -532,14 +595,18 @@ extern "C" _GENX_MAIN_
             write(SCRATCHPAD, write_loc_(X), write_loc_(Y) + 0, g_pred16);
             pred0 = g_pred16;
 
-            Interpolate16(REF1, pos_.select<2,1>(2), filt.select<2,1,4,1>(2));
-            sads.row(1) += sad16x16(src, g_pred16);
-            write(SCRATCHPAD, write_loc_(X), write_loc_(Y) + 64, g_pred16);
+            if (refConfig != SINGLE_REF) {
+                Interpolate16(REF1, pos_.select<2, 1>(2), filt.select<2, 1, 4, 1>(2));
+                sads.row(1) += sad16x16(src, g_pred16);
+                write(SCRATCHPAD, write_loc_(X), write_loc_(Y) + 64, g_pred16);
 
-            if (compoundAllowed) {
-                g_pred16 = cm_avg<uint1>(pred0, g_pred16);
-                sads.row(2) += sad16x16(src, g_pred16);
-                write(OUT_PRED, pel_(X), pel_(Y), g_pred16);
+                if (refConfig == COMPOUND) {
+                    g_pred16 = cm_avg<uint1>(pred0, g_pred16);
+                    sads.row(2) += sad16x16(src, g_pred16);
+#if NEWMVPRED
+                    write(OUT_PRED, pel_(X), pel_(Y), g_pred16);
+#endif
+                }
             }
         }
     }
@@ -552,9 +619,11 @@ extern "C" _GENX_MAIN_
     costs <<= 2;
     costs(1) += 1;
     costs(2) += 2;
-    costs(0) = cm_min<uint4>(costs(0), costs(1));
-    if (compoundAllowed)
-        costs(0) = cm_min<uint4>(costs(0), costs(2));
+    if (refConfig != SINGLE_REF) {
+        costs(0) = cm_min<uint4>(costs(0), costs(1));
+        if (refConfig == COMPOUND)
+            costs(0) = cm_min<uint4>(costs(0), costs(2));
+    }
 
     uint4 idx = costs(0) & 3;
 
@@ -566,10 +635,13 @@ extern "C" _GENX_MAIN_
             matrix<uint1,8,32> pred;
 
             read(MODIFIED(SCRATCHPAD), scratch_loc(X) + 0,  scratch_loc(Y) + row, pred);
+#if NEWMVPRED
             write(OUT_PRED, pel(X) + 0,  pel(Y) + row, pred);
-
+#endif
             read(MODIFIED(SCRATCHPAD), scratch_loc(X) + 32, scratch_loc(Y) + row, pred);
+#if NEWMVPRED
             write(OUT_PRED, pel(X) + 32, pel(Y) + row, pred);
+#endif
         }
     }
 

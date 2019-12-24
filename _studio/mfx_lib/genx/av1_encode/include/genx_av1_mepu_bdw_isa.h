@@ -17,8 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
+//
 #ifndef __genx_av1_mepu_bdw__
 #define __genx_av1_mepu_bdw__
-extern const unsigned char genx_av1_mepu_bdw[200254];
+extern const unsigned char genx_av1_mepu_bdw[195430];
 #endif

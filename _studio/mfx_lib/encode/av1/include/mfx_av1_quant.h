@@ -26,12 +26,15 @@
 
 namespace AV1Enc {
     int16_t vp9_dc_quant(int qindex, int delta, int32_t bit_depth);
+    int32_t vp9_dc_qindex(int qdc);
+    int32_t vp9_ac_qindex(int qac);
     int16_t vp9_ac_quant(int qindex, int delta, int32_t bit_depth);
     struct AV1VideoParam;
     void InitQuantizer(AV1VideoParam &par);
+    void InitQuantizer10bit(AV1VideoParam &par);
 #ifdef ADAPTIVE_DEADZONE
     void adaptDzQuant(const int16_t *coeff_ptr, const int16_t fqpar[10], int32_t txSize, float *roundFAdj);
-    void adaptDz(const int16_t *coeff_ptr, const int16_t *reccoeff_ptr, const int16_t fqpar[10], int32_t txSize, float *roundFAdj, int32_t eob);
+    template<typename TCoeffType> void adaptDz(const TCoeffType *coeff_ptr, const TCoeffType *reccoeff_ptr, const QuantParam &qpar, int32_t txSize, float *roundFAdj, int32_t eob);
 #endif
 }
 

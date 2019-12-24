@@ -20,7 +20,6 @@
 
 #include "assert.h"
 #include "string.h"
-#include "ipps.h"
 #include "stdint.h"
 
     /* Shift down with rounding */

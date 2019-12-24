@@ -1724,7 +1724,7 @@ void RunGpu(const H265VideoParam& par, const uint8_t *src, const uint8_t *ref0Lu
             frameCuData +  + i * par.miPitch,
             par.sb64Cols * 8 * sizeof(ModeInfo));
 
-    vector<SurfaceIndex,7> ref_ids;
+    vector<SurfaceIndex,8> ref_ids;
     ref_ids[0] = *get_index(inRef0);
     ref_ids[1] = *get_index(inRef1);
     ref_ids[2] = *get_index(inRef1);
@@ -1745,6 +1745,7 @@ void RunGpu(const H265VideoParam& par, const uint8_t *src, const uint8_t *ref0Lu
 
     int pred_padding = 0;
     int argIdx = 0;
+    const uint32_t yoff = 0;
     THROW_CM_ERR(kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), get_index(param)));
     THROW_CM_ERR(kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), get_index(inSrc)));
     THROW_CM_ERR(kernel->SetKernelArg(argIdx++, ref_ids.get_size_data(), ref_ids.get_addr_data()));
@@ -1752,6 +1753,7 @@ void RunGpu(const H265VideoParam& par, const uint8_t *src, const uint8_t *ref0Lu
     THROW_CM_ERR(kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), get_index(outLumaCm)));
     THROW_CM_ERR(kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), get_index(outChromaCm)));
     THROW_CM_ERR(kernel->SetKernelArg(argIdx++, sizeof(pred_padding), &pred_padding));
+    THROW_CM_ERR(kernel->SetKernelArg(argIdx++, sizeof(yoff), &yoff));
 
     CmTask * task = 0;
     THROW_CM_ERR(device->CreateTask(task));

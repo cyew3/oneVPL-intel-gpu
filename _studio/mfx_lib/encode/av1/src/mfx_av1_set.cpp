@@ -120,6 +120,9 @@ namespace {
 
     enum { AV1_MIN_TILE_SIZE_BYTES = 1 };
 
+    void WriteMvAV1_Intrabc(BoolCoder &bc, AV1MV mv, AV1MV mvd, int32_t allowHighPrecisionMv, EntropyContexts &ctx, int32_t c);
+
+
     void Put8(uint8_t *buf, int32_t val) { *buf = (uint8_t)val; }
     void Put16LE(uint8_t *buf, int32_t val) { Put8(buf, val & 0xFF); Put8(buf+1, val >> 8); }
     void Put16BE(uint8_t *buf, int32_t val) { Put8(buf, val >> 8); Put8(buf+1, val & 0xFF); }
@@ -134,11 +137,11 @@ namespace {
         int32_t byteOff = off >> 3;
         int32_t bitOff = off & 7;
         if (bitOff == 0) {
-            buf[byteOff] = bit << 7;
+            buf[byteOff] = uint8_t(bit << 7);
         } else {
             int32_t shift = 7 - bitOff;
             int32_t mask = ~(1 << shift);
-            buf[byteOff] = (buf[byteOff] & mask) | (bit << shift);
+            buf[byteOff] = uint8_t((buf[byteOff] & mask) | (bit << shift));
         }
         ++off;
     }
@@ -333,42 +336,32 @@ namespace {
         }
     }
 
-    void WriteTileInfoAv1(uint8_t *buf, int32_t &off, const AV1VideoParam &par) {
+    void WriteTileInfoAv1(uint8_t *buf, int32_t &off, const Frame &frame) {
         const int32_t loop_filter_across_tiles_enabled = 1;
         const int32_t tile_size_bytes = 4;
 
-        PutBit(buf, off, par.tileParam.uniformSpacing);
+        PutBit(buf, off, frame.m_tileParam.uniformSpacing);
 
-        if (par.tileParam.uniformSpacing) {
-            for (int32_t i = par.tileParam.minLog2Cols; i < par.tileParam.log2Cols; i++)
+        if (frame.m_tileParam.uniformSpacing) {
+            for (int32_t i = frame.m_tileParam.minLog2Cols; i < frame.m_tileParam.log2Cols; i++)
                 PutBit(buf, off, 1);
-            if (par.tileParam.log2Cols < par.tileParam.maxLog2Cols)
+            if (frame.m_tileParam.log2Cols < frame.m_tileParam.maxLog2Cols)
                 PutBit(buf, off, 0);
 
-            for (int32_t i = par.tileParam.minLog2Rows; i < par.tileParam.log2Rows; i++)
+            for (int32_t i = frame.m_tileParam.minLog2Rows; i < frame.m_tileParam.log2Rows; i++)
                 PutBit(buf, off, 1);
-            if (par.tileParam.log2Rows < par.tileParam.maxLog2Rows)
+            if (frame.m_tileParam.log2Rows < frame.m_tileParam.maxLog2Rows)
                 PutBit(buf, off, 0);
         } else {
             assert(0);
         }
 
-        if (par.tileParam.log2Cols + par.tileParam.log2Rows > 0) {
+        if (frame.m_tileParam.log2Cols + frame.m_tileParam.log2Rows > 0) {
             // tile id used for cdf update
-            PutBits(buf, off, 0, par.tileParam.log2Cols + par.tileParam.log2Rows);
+            PutBits(buf, off, 0, frame.m_tileParam.log2Cols + frame.m_tileParam.log2Rows);
             // Number of bytes in tile size - 1
             PutBits(buf, off, tile_size_bytes - 1, 2);
         }
-    }
-
-    void WriteTileInfoVp9(uint8_t *buf, int32_t &off, const AV1VideoParam &par) {
-        for (int32_t i = par.tileParam.minLog2Cols; i < par.tileParam.log2Cols; i++)
-            PutBit(buf, off, 1);
-        if (par.tileParam.log2Cols < par.tileParam.maxLog2Cols)
-            PutBit(buf, off, 0);
-        PutBit(buf, off, par.tileParam.log2Rows != 0);
-        if (par.tileParam.log2Rows != 0)
-            PutBit(buf, off, par.tileParam.log2Rows != 1);
     }
 
     void WriteIvfFrameHeader(uint8_t *buf, int32_t &bitoff, int32_t frameSize, int32_t timeStamp)
@@ -397,7 +390,7 @@ namespace {
         // superframe index
         for (int32_t i = 0; i < numHiddenFrames; i++) {
             int32_t frameSize = frame.m_hiddenFrames[i]->frameSizeInBytes-1;
-            for (int32_t i = 0; i < szBytes; i++, frameSize >>= 8)
+            for (int32_t j = 0; j < szBytes; j++, frameSize >>= 8)
                 PutBits(buf, off, frameSize, 8);
         }
         // superframe header
@@ -407,12 +400,12 @@ namespace {
     }
 
     void CopyProbs(const void *src, void *dst, size_t size) {
-        _ippsCopy((const uint8_t *)src, (uint8_t *)dst, size);
+        _ippsCopy((const uint8_t *)src, (uint8_t *)dst, (int32_t)size);
     }
 
     void build_tail_cdfs(aom_cdf_prob cdf_tail[CDF_SIZE(ENTROPY_TOKENS)], aom_cdf_prob cdf_head[CDF_SIZE(ENTROPY_TOKENS)], int band_zero) {
         int probNZ, prob1, prob_idx, i;
-        int phead[HEAD_TOKENS + 1], sum, p;
+        int phead[HEAD_TOKENS + 1], sum;
         const int is_dc = !!band_zero;
         aom_cdf_prob prev_cdf = 0;
         for (i = 0; i < HEAD_TOKENS + is_dc; ++i) {
@@ -427,143 +420,203 @@ namespace {
         sum = 0;
         for (i = 0; i < TAIL_TOKENS; ++i) {
             sum += av1_pareto8_tail_probs[prob_idx][i];
-            cdf_tail[i] = AOM_ICDF(sum);
+            cdf_tail[i] = (aom_cdf_prob)AOM_ICDF(sum);
         }
-    }
-
-    typedef aom_cdf_prob coeff_cdf_table[TX_SIZES][PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS][CDF_SIZE(ENTROPY_TOKENS)];
-    static const coeff_cdf_table *default_qctx_coef_cdfs[TOKEN_CDF_Q_CTXS] = {
-        &default_coef_head_cdf_q0, &default_coef_head_cdf_q1,
-        &default_coef_head_cdf_q2, &default_coef_head_cdf_q3
-    };
-
-    void SetDefaultCoefProbs(Frame *frame)
-    {
-        const int32_t index = get_q_ctx(frame->m_sliceQpY);
-        for (size_t i = 0; i < frame->m_tileContexts.size(); i++) {
-            EntropyContexts &ectx = frame->m_tileContexts[i].ectx;
-            CopyProbs(default_txb_skip_cdfs[index],       ectx.txb_skip_cdf,       sizeof(ectx.txb_skip_cdf));
-            CopyProbs(default_eob_extra_cdfs[index],      ectx.eob_extra_cdf,      sizeof(ectx.eob_extra_cdf));
-            CopyProbs(default_dc_sign_cdfs[index],        ectx.dc_sign_cdf,        sizeof(ectx.dc_sign_cdf));
-            CopyProbs(default_eob_multi16_cdfs[index],    ectx.eob_flag_cdf16,     sizeof(ectx.eob_flag_cdf16));
-            CopyProbs(default_eob_multi32_cdfs[index],    ectx.eob_flag_cdf32,     sizeof(ectx.eob_flag_cdf32));
-            CopyProbs(default_eob_multi64_cdfs[index],    ectx.eob_flag_cdf64,     sizeof(ectx.eob_flag_cdf64));
-            CopyProbs(default_eob_multi128_cdfs[index],   ectx.eob_flag_cdf128,    sizeof(ectx.eob_flag_cdf128));
-            CopyProbs(default_eob_multi256_cdfs[index],   ectx.eob_flag_cdf256,    sizeof(ectx.eob_flag_cdf256));
-            CopyProbs(default_eob_multi512_cdfs[index],   ectx.eob_flag_cdf512,    sizeof(ectx.eob_flag_cdf512));
-            CopyProbs(default_eob_multi1024_cdfs[index],  ectx.eob_flag_cdf1024,   sizeof(ectx.eob_flag_cdf1024));
-            CopyProbs(default_coeff_base_eob_cdfs[index], ectx.coeff_base_eob_cdf, sizeof(ectx.coeff_base_eob_cdf));
-            CopyProbs(default_coeff_base_cdfs[index],     ectx.coeff_base_cdf,     sizeof(ectx.coeff_base_cdf));
-            CopyProbs(default_coeff_lps_cdfs[index],      ectx.coeff_br_cdf,       sizeof(ectx.coeff_br_cdf));
-        }
-    }
-
-    void SetupPastIndependence(Frame *frame, int32_t isVp9) {
-
-        if (isVp9) {
-            FrameContexts &fctx = frame->m_contexts;
-            CopyProbs(default_partition_probs,      fctx.partition,      sizeof(fctx.partition));
-            CopyProbs(default_skip_prob,            fctx.skip,           sizeof(fctx.skip));
-            CopyProbs(default_is_inter_prob,        fctx.is_inter,       sizeof(fctx.is_inter));
-            CopyProbs(default_tx_probs,             fctx.tx,             sizeof(fctx.tx));
-            CopyProbs(vp9_default_y_mode_probs,     fctx.vp9_y_mode,     sizeof(fctx.vp9_y_mode));
-            CopyProbs(vp9_default_uv_mode_probs,    fctx.vp9_uv_mode,    sizeof(fctx.vp9_uv_mode));
-            CopyProbs(default_coef_probs,           fctx.coef,           sizeof(fctx.coef));
-            CopyProbs(vp9_default_single_ref_prob,  fctx.vp9_single_ref, sizeof(fctx.vp9_single_ref));
-            CopyProbs(default_inter_mode_probs,     fctx.inter_mode,     sizeof(fctx.inter_mode));
-            CopyProbs(default_interp_filter_probs_av1,  fctx.interp_filter,  sizeof(fctx.interp_filter));
-            CopyProbs(default_comp_mode_probs,      fctx.comp_mode,      sizeof(fctx.comp_mode));
-            CopyProbs(default_comp_ref_type_probs,  fctx.comp_ref_type,  sizeof(fctx.comp_ref_type));
-            CopyProbs(vp9_default_comp_ref_probs,   fctx.vp9_comp_ref,   sizeof(fctx.vp9_comp_ref));
-            CopyProbs(&vp9_default_nmv_context,     &fctx.mv_contexts,   sizeof(fctx.mv_contexts));
-        }
-
-        for (size_t i = 0; i < frame->m_tileContexts.size(); i++) {
-            EntropyContexts &ectx = frame->m_tileContexts[i].ectx;
-            CopyProbs(default_skip_cdf,                ectx.skip_cdf,                 sizeof(ectx.skip_cdf));
-            CopyProbs(default_intra_inter_cdf,         ectx.intra_inter_cdf,          sizeof(ectx.intra_inter_cdf));
-            CopyProbs(default_comp_inter_cdf,          ectx.comp_inter_cdf,           sizeof(ectx.comp_inter_cdf));
-            CopyProbs(default_single_ref_cdf,          ectx.single_ref_cdf,           sizeof(ectx.single_ref_cdf));
-            CopyProbs(default_comp_ref_type_cdf,       ectx.comp_ref_type_cdf,        sizeof(ectx.comp_ref_type_cdf));
-            CopyProbs(default_comp_ref_cdf,            ectx.comp_ref_cdf,             sizeof(ectx.comp_ref_cdf));
-            CopyProbs(default_comp_bwdref_cdf,         ectx.comp_bwdref_cdf,          sizeof(ectx.comp_bwdref_cdf));
-            CopyProbs(default_newmv_cdf,               ectx.newmv_cdf,                sizeof(ectx.newmv_cdf));
-            CopyProbs(default_zeromv_cdf,              ectx.zeromv_cdf,               sizeof(ectx.zeromv_cdf));
-            CopyProbs(default_refmv_cdf,               ectx.refmv_cdf,                sizeof(ectx.refmv_cdf));
-            CopyProbs(default_drl_cdf,                 ectx.drl_cdf,                  sizeof(ectx.drl_cdf));
-            CopyProbs(default_av1_kf_y_mode_cdf,       ectx.kf_y_cdf,                 sizeof(ectx.kf_y_cdf));
-            CopyProbs(default_if_y_mode_cdf,           ectx.y_mode_cdf,               sizeof(ectx.y_mode_cdf));
-            CopyProbs(default_uv_mode_cdf,             ectx.uv_mode_cdf,              sizeof(ectx.uv_mode_cdf));
-            CopyProbs(default_angle_delta_cdf,         ectx.angle_delta_cdf,          sizeof(ectx.angle_delta_cdf));
-            CopyProbs(default_filter_intra_cdfs,       ectx.filter_intra_cdfs,        sizeof(ectx.filter_intra_cdfs));
-            CopyProbs(default_switchable_interp_cdf,   ectx.switchable_interp_cdf,    sizeof(ectx.switchable_interp_cdf));
-            CopyProbs(default_partition_cdf,           ectx.partition_cdf,            sizeof(ectx.partition_cdf));
-            CopyProbs(default_inter_mode_cdf,          ectx.inter_mode_cdf,           sizeof(ectx.inter_mode_cdf));
-            CopyProbs(default_inter_compound_mode_cdf, ectx.inter_compound_mode_cdf,  sizeof(ectx.inter_compound_mode_cdf));
-            CopyProbs(default_intra_ext_tx_cdf,        ectx.intra_ext_tx_cdf,         sizeof(ectx.intra_ext_tx_cdf));
-            CopyProbs(default_inter_ext_tx_cdf,        ectx.inter_ext_tx_cdf,         sizeof(ectx.inter_ext_tx_cdf));
-            CopyProbs(default_tx_size_cdf,             ectx.tx_size_cdf,              sizeof(ectx.tx_size_cdf));
-            CopyProbs(default_motion_mode_cdf,         ectx.motion_mode_cdf,          sizeof(ectx.motion_mode_cdf));
-            CopyProbs(default_obmc_cdf,                ectx.obmc_cdf,                 sizeof(ectx.obmc_cdf));
-            CopyProbs(default_txfm_partition_cdf,      ectx.txfm_partition_cdf,       sizeof(ectx.txfm_partition_cdf));
-            CopyProbs(&av1_default_nmv_context,        &ectx.mv_contexts,             sizeof(ectx.mv_contexts));
-        }
-        SetDefaultCoefProbs(frame);
     }
 
     void SetupPastIndependenceAv1(Frame *frame, int32_t tile)
     {
-        //for (size_t i = 0; i < frame->m_tileContexts.size(); i++)
-        const size_t i = tile;
-        {
-            EntropyContexts &ectx = frame->m_tileContexts[i].ectx;
-            CopyProbs(default_skip_cdf,                ectx.skip_cdf,                 sizeof(ectx.skip_cdf));
-            CopyProbs(default_intra_inter_cdf,         ectx.intra_inter_cdf,          sizeof(ectx.intra_inter_cdf));
-            CopyProbs(default_comp_inter_cdf,          ectx.comp_inter_cdf,           sizeof(ectx.comp_inter_cdf));
-            CopyProbs(default_single_ref_cdf,          ectx.single_ref_cdf,           sizeof(ectx.single_ref_cdf));
-            CopyProbs(default_comp_ref_type_cdf,       ectx.comp_ref_type_cdf,        sizeof(ectx.comp_ref_type_cdf));
-            CopyProbs(default_comp_ref_cdf,            ectx.comp_ref_cdf,             sizeof(ectx.comp_ref_cdf));
-            CopyProbs(default_comp_bwdref_cdf,         ectx.comp_bwdref_cdf,          sizeof(ectx.comp_bwdref_cdf));
-            CopyProbs(default_newmv_cdf,               ectx.newmv_cdf,                sizeof(ectx.newmv_cdf));
-            CopyProbs(default_zeromv_cdf,              ectx.zeromv_cdf,               sizeof(ectx.zeromv_cdf));
-            CopyProbs(default_refmv_cdf,               ectx.refmv_cdf,                sizeof(ectx.refmv_cdf));
-            CopyProbs(default_drl_cdf,                 ectx.drl_cdf,                  sizeof(ectx.drl_cdf));
-            CopyProbs(default_av1_kf_y_mode_cdf,       ectx.kf_y_cdf,                 sizeof(ectx.kf_y_cdf));
-            CopyProbs(default_if_y_mode_cdf,           ectx.y_mode_cdf,               sizeof(ectx.y_mode_cdf));
-            CopyProbs(default_uv_mode_cdf,             ectx.uv_mode_cdf,              sizeof(ectx.uv_mode_cdf));
-            CopyProbs(default_angle_delta_cdf,         ectx.angle_delta_cdf,          sizeof(ectx.angle_delta_cdf));
-            CopyProbs(default_filter_intra_cdfs,       ectx.filter_intra_cdfs,        sizeof(ectx.filter_intra_cdfs));
-            CopyProbs(default_switchable_interp_cdf,   ectx.switchable_interp_cdf,    sizeof(ectx.switchable_interp_cdf));
-            CopyProbs(default_partition_cdf,           ectx.partition_cdf,            sizeof(ectx.partition_cdf));
-            CopyProbs(default_inter_mode_cdf,          ectx.inter_mode_cdf,           sizeof(ectx.inter_mode_cdf));
-            CopyProbs(default_inter_compound_mode_cdf, ectx.inter_compound_mode_cdf,  sizeof(ectx.inter_compound_mode_cdf));
-            CopyProbs(default_intra_ext_tx_cdf,        ectx.intra_ext_tx_cdf,         sizeof(ectx.intra_ext_tx_cdf));
-            CopyProbs(default_inter_ext_tx_cdf,        ectx.inter_ext_tx_cdf,         sizeof(ectx.inter_ext_tx_cdf));
-            CopyProbs(default_tx_size_cdf,             ectx.tx_size_cdf,              sizeof(ectx.tx_size_cdf));
-            CopyProbs(default_motion_mode_cdf,         ectx.motion_mode_cdf,          sizeof(ectx.motion_mode_cdf));
-            CopyProbs(default_obmc_cdf,                ectx.obmc_cdf,                 sizeof(ectx.obmc_cdf));
-            CopyProbs(default_txfm_partition_cdf,      ectx.txfm_partition_cdf,       sizeof(ectx.txfm_partition_cdf));
-            CopyProbs(&av1_default_nmv_context,        &ectx.mv_contexts,             sizeof(ectx.mv_contexts));
+        const int32_t index = get_q_ctx(frame->m_sliceQpY);
+        EntropyContexts &ectx = frame->m_fenc->m_entropyContexts[tile];
+
+        CopyProbs(default_skip_cdf,                ectx.skip_cdf,                 sizeof(ectx.skip_cdf));
+        CopyProbs(default_intra_inter_cdf,         ectx.intra_inter_cdf,          sizeof(ectx.intra_inter_cdf));
+        CopyProbs(default_comp_inter_cdf,          ectx.comp_inter_cdf,           sizeof(ectx.comp_inter_cdf));
+        CopyProbs(default_single_ref_cdf,          ectx.single_ref_cdf,           sizeof(ectx.single_ref_cdf));
+        CopyProbs(default_comp_ref_type_cdf,       ectx.comp_ref_type_cdf,        sizeof(ectx.comp_ref_type_cdf));
+        CopyProbs(default_comp_ref_cdf,            ectx.comp_ref_cdf,             sizeof(ectx.comp_ref_cdf));
+        CopyProbs(default_comp_bwdref_cdf,         ectx.comp_bwdref_cdf,          sizeof(ectx.comp_bwdref_cdf));
+        CopyProbs(default_newmv_cdf,               ectx.newmv_cdf,                sizeof(ectx.newmv_cdf));
+        CopyProbs(default_zeromv_cdf,              ectx.zeromv_cdf,               sizeof(ectx.zeromv_cdf));
+        CopyProbs(default_refmv_cdf,               ectx.refmv_cdf,                sizeof(ectx.refmv_cdf));
+        CopyProbs(default_drl_cdf,                 ectx.drl_cdf,                  sizeof(ectx.drl_cdf));
+        CopyProbs(default_av1_kf_y_mode_cdf,       ectx.kf_y_cdf,                 sizeof(ectx.kf_y_cdf));
+        CopyProbs(default_av1_y_haspalette_cdf,    ectx.y_haspalette_cdf,         sizeof(ectx.y_haspalette_cdf));
+        CopyProbs(default_av1_uv_haspalette_cdf,   ectx.uv_haspalette_cdf,        sizeof(ectx.uv_haspalette_cdf));
+        CopyProbs(default_av1_y_palettesize_cdf,   ectx.y_palettesize_cdf,        sizeof(ectx.y_palettesize_cdf));
+        CopyProbs(default_av1_uv_palettesize_cdf,  ectx.uv_palettesize_cdf,       sizeof(ectx.uv_palettesize_cdf));
+        CopyProbs(default_av1_y_palettecoloridx_cdf, ectx.y_palettecoloridx_cdf,  sizeof(ectx.y_palettecoloridx_cdf));
+        CopyProbs(default_av1_uv_palette_color_index_cdf, ectx.uv_palette_color_index_cdf, sizeof(ectx.uv_palette_color_index_cdf));
+        CopyProbs(default_if_y_mode_cdf,           ectx.y_mode_cdf,               sizeof(ectx.y_mode_cdf));
+        CopyProbs(default_uv_mode_cdf,             ectx.uv_mode_cdf,              sizeof(ectx.uv_mode_cdf));
+        CopyProbs(default_angle_delta_cdf,         ectx.angle_delta_cdf,          sizeof(ectx.angle_delta_cdf));
+        CopyProbs(default_filter_intra_cdfs,       ectx.filter_intra_cdfs,        sizeof(ectx.filter_intra_cdfs));
+        CopyProbs(default_switchable_interp_cdf,   ectx.switchable_interp_cdf,    sizeof(ectx.switchable_interp_cdf));
+        CopyProbs(default_partition_cdf,           ectx.partition_cdf,            sizeof(ectx.partition_cdf));
+        CopyProbs(default_inter_mode_cdf,          ectx.inter_mode_cdf,           sizeof(ectx.inter_mode_cdf));
+        CopyProbs(default_inter_compound_mode_cdf, ectx.inter_compound_mode_cdf,  sizeof(ectx.inter_compound_mode_cdf));
+        CopyProbs(default_intra_ext_tx_cdf,        ectx.intra_ext_tx_cdf,         sizeof(ectx.intra_ext_tx_cdf));
+        CopyProbs(default_inter_ext_tx_cdf,        ectx.inter_ext_tx_cdf,         sizeof(ectx.inter_ext_tx_cdf));
+        CopyProbs(default_tx_size_cdf,             ectx.tx_size_cdf,              sizeof(ectx.tx_size_cdf));
+        CopyProbs(default_motion_mode_cdf,         ectx.motion_mode_cdf,          sizeof(ectx.motion_mode_cdf));
+        CopyProbs(default_obmc_cdf,                ectx.obmc_cdf,                 sizeof(ectx.obmc_cdf));
+        CopyProbs(default_txfm_partition_cdf,      ectx.txfm_partition_cdf,       sizeof(ectx.txfm_partition_cdf));
+        CopyProbs(&av1_default_nmv_context,        &ectx.mv_contexts,             sizeof(ectx.mv_contexts));
+        CopyProbs(&av1_default_nmv_context,        &ectx.dv_contexts,             sizeof(ectx.dv_contexts));
+        CopyProbs(default_cfl_sign_cdf,            ectx.cfl_sign_cdf,             sizeof(ectx.cfl_sign_cdf));
+        CopyProbs(default_cfl_alpha_cdf,           ectx.cfl_alpha_cdf,            sizeof(ectx.cfl_alpha_cdf));
+        CopyProbs(av1_default_intrabc_cdf,         ectx.intrabc_cdf,              sizeof(ectx.intrabc_cdf));
+        CopyProbs(av1_default_delta_q_abs_cdf,     ectx.delta_q_abs_cdf,          sizeof(ectx.delta_q_abs_cdf));
+
+        CopyProbs(default_txb_skip_cdfs[index],       ectx.txb_skip_cdf,       sizeof(ectx.txb_skip_cdf));
+        CopyProbs(default_eob_extra_cdfs[index],      ectx.eob_extra_cdf,      sizeof(ectx.eob_extra_cdf));
+        CopyProbs(default_dc_sign_cdfs[index],        ectx.dc_sign_cdf,        sizeof(ectx.dc_sign_cdf));
+        CopyProbs(default_eob_multi16_cdfs[index],    ectx.eob_flag_cdf16,     sizeof(ectx.eob_flag_cdf16));
+        CopyProbs(default_eob_multi32_cdfs[index],    ectx.eob_flag_cdf32,     sizeof(ectx.eob_flag_cdf32));
+        CopyProbs(default_eob_multi64_cdfs[index],    ectx.eob_flag_cdf64,     sizeof(ectx.eob_flag_cdf64));
+        CopyProbs(default_eob_multi128_cdfs[index],   ectx.eob_flag_cdf128,    sizeof(ectx.eob_flag_cdf128));
+        CopyProbs(default_eob_multi256_cdfs[index],   ectx.eob_flag_cdf256,    sizeof(ectx.eob_flag_cdf256));
+        CopyProbs(default_eob_multi512_cdfs[index],   ectx.eob_flag_cdf512,    sizeof(ectx.eob_flag_cdf512));
+        CopyProbs(default_eob_multi1024_cdfs[index],  ectx.eob_flag_cdf1024,   sizeof(ectx.eob_flag_cdf1024));
+        CopyProbs(default_coeff_base_eob_cdfs[index], ectx.coeff_base_eob_cdf, sizeof(ectx.coeff_base_eob_cdf));
+        CopyProbs(default_coeff_base_cdfs[index],     ectx.coeff_base_cdf,     sizeof(ectx.coeff_base_cdf));
+        CopyProbs(default_coeff_lps_cdfs[index],      ectx.coeff_br_cdf,       sizeof(ectx.coeff_br_cdf));
+    }
+
+    //void CopyCdfAndResetCounter(const aom_cdf_prob *src, aom_cdf_prob *dst, int nsymbs)
+    //{
+    //    for (size_t i = 0; i < nsymbs; i++)
+    //        dst[i] = src[i];
+    //    dst[nsymbs] = 0;
+    //}
+
+    template <typename T>
+    void CopyCdfAndResetCounter(const T &src, T &dst, int nsymbs, int stride)
+    {
+        assert(CDF_SIZE(nsymbs) <= stride);
+        assert(sizeof(src) % sizeof(aom_cdf_prob) == 0);
+        assert(sizeof(src) % stride == 0);
+
+        const int size = sizeof(src) / sizeof(aom_cdf_prob);
+        for (int i = 0; i < size; i += stride) {
+            for (int j = 0; j < nsymbs; j++)
+                ((aom_cdf_prob *)dst)[i + j] = ((const aom_cdf_prob *)src)[i + j];
+            ((aom_cdf_prob *)dst)[i + nsymbs] = 0; // zero updated counter
+        }
+    }
+
+    template <typename T>
+    void CopyCdfAndResetCounter(const T &src, T &dst, int nsymbs)
+    {
+        CopyCdfAndResetCounter(src, dst, nsymbs, CDF_SIZE(nsymbs));
+    }
+
+    //template <size_t D0>
+    //void CopyCdfAndResetCounter(const aom_cdf_prob (&src)[D0], aom_cdf_prob (&dst)[D0])
+    //{
+    //    for (size_t i = 0; i < D0 - 1; i++)
+    //        dst[i] = src[i];
+    //    dst[D0 - 1] = 0;
+    //}
+
+    //template <size_t D0, size_t D1> void CopyCdfAndResetCounter(const aom_cdf_prob (&src)[D0][D1], aom_cdf_prob (&dst)[D0][D1]) {
+    //    for (size_t i = 0; i < D0; i++)
+    //        CopyCdfAndResetCounter(src[i], dst[i]);
+    //}
+
+    //template <size_t D0, size_t D1, size_t D2> void CopyCdfAndResetCounter(const aom_cdf_prob (&src)[D0][D1][D2], aom_cdf_prob (&dst)[D0][D1][D2]) {
+    //    for (size_t i = 0; i < D0; i++)
+    //        CopyCdfAndResetCounter(src[i], dst[i]);
+    //}
+
+    //template <size_t D0, size_t D1, size_t D2, size_t D3> void CopyCdfAndResetCounter(const aom_cdf_prob (&src)[D0][D1][D2][D3], aom_cdf_prob (&dst)[D0][D1][D2][D3]) {
+    //    for (size_t i = 0; i < D0; i++)
+    //        CopyCdfAndResetCounter(src[i], dst[i]);
+    //}
+
+    void CopyMvCdfAndResetCounters(const MvContextsAv1 &src, MvContextsAv1 *dst)
+    {
+        CopyCdfAndResetCounter(src.joint_cdf, dst->joint_cdf, MV_JOINTS);
+        for (int i = 0; i < 2; i++) {
+            CopyCdfAndResetCounter(src.comps[i].bits_cdf, dst->comps[i].bits_cdf, 2);
+            CopyCdfAndResetCounter(src.comps[i].classes_cdf, dst->comps[i].classes_cdf, AV1_MV_CLASSES);
+            CopyCdfAndResetCounter(src.comps[i].class0_fp_cdf, dst->comps[i].class0_fp_cdf, MV_FP_SIZE);
+            CopyCdfAndResetCounter(src.comps[i].fp_cdf, dst->comps[i].fp_cdf, MV_FP_SIZE);
+            CopyCdfAndResetCounter(src.comps[i].sign_cdf, dst->comps[i].sign_cdf, 2);
+            CopyCdfAndResetCounter(src.comps[i].class0_hp_cdf, dst->comps[i].class0_hp_cdf, 2);
+            CopyCdfAndResetCounter(src.comps[i].hp_cdf, dst->comps[i].hp_cdf, 2);
+            CopyCdfAndResetCounter(src.comps[i].class0_cdf, dst->comps[i].class0_cdf, CLASS0_SIZE);
+            CopyCdfAndResetCounter(src.comps[i].bits_cdf, dst->comps[i].bits_cdf, 2);
+        }
+    }
+
+    void CopyCdfAndResetCounters(const EntropyContexts &src, EntropyContexts *dst)
+    {
+        CopyCdfAndResetCounter(src.skip_cdf, dst->skip_cdf, 2);
+        CopyCdfAndResetCounter(src.intra_inter_cdf, dst->intra_inter_cdf, 2);
+        CopyCdfAndResetCounter(src.comp_inter_cdf, dst->comp_inter_cdf, 2);
+        CopyCdfAndResetCounter(src.single_ref_cdf, dst->single_ref_cdf, 2);
+        CopyCdfAndResetCounter(src.comp_ref_type_cdf, dst->comp_ref_type_cdf, 2);
+        CopyCdfAndResetCounter(src.comp_ref_cdf, dst->comp_ref_cdf, 2);
+        CopyCdfAndResetCounter(src.comp_bwdref_cdf, dst->comp_bwdref_cdf, 2);
+        CopyCdfAndResetCounter(src.newmv_cdf, dst->newmv_cdf, 2);
+        CopyCdfAndResetCounter(src.zeromv_cdf, dst->zeromv_cdf, 2);
+        CopyCdfAndResetCounter(src.refmv_cdf, dst->refmv_cdf, 2);
+        CopyCdfAndResetCounter(src.drl_cdf, dst->drl_cdf, 2);
+        CopyCdfAndResetCounter(src.kf_y_cdf, dst->kf_y_cdf, AV1_INTRA_MODES);
+        CopyCdfAndResetCounter(src.y_haspalette_cdf, dst->y_haspalette_cdf, 2);
+        CopyCdfAndResetCounter(src.uv_haspalette_cdf, dst->uv_haspalette_cdf, 2);
+        CopyCdfAndResetCounter(src.y_palettesize_cdf, dst->y_palettesize_cdf, PALETTE_SIZES);
+        CopyCdfAndResetCounter(src.uv_palettesize_cdf, dst->uv_palettesize_cdf, PALETTE_SIZES);
+        for (int i = 0; i < PALETTE_SIZES; i++) {
+            CopyCdfAndResetCounter(src.y_palettecoloridx_cdf[i], dst->y_palettecoloridx_cdf[i], i + 2, CDF_SIZE(MAX_PALETTE));
+            CopyCdfAndResetCounter(src.uv_palette_color_index_cdf[i], dst->uv_palette_color_index_cdf[i], i + 2, CDF_SIZE(MAX_PALETTE));
         }
 
-        const int32_t index = get_q_ctx(frame->m_sliceQpY);
-        //for (size_t i = 0; i < frame->m_tileContexts.size(); i++)
-        {
-            EntropyContexts &ectx = frame->m_tileContexts[i].ectx;
-            CopyProbs(default_txb_skip_cdfs[index],       ectx.txb_skip_cdf,       sizeof(ectx.txb_skip_cdf));
-            CopyProbs(default_eob_extra_cdfs[index],      ectx.eob_extra_cdf,      sizeof(ectx.eob_extra_cdf));
-            CopyProbs(default_dc_sign_cdfs[index],        ectx.dc_sign_cdf,        sizeof(ectx.dc_sign_cdf));
-            CopyProbs(default_eob_multi16_cdfs[index],    ectx.eob_flag_cdf16,     sizeof(ectx.eob_flag_cdf16));
-            CopyProbs(default_eob_multi32_cdfs[index],    ectx.eob_flag_cdf32,     sizeof(ectx.eob_flag_cdf32));
-            CopyProbs(default_eob_multi64_cdfs[index],    ectx.eob_flag_cdf64,     sizeof(ectx.eob_flag_cdf64));
-            CopyProbs(default_eob_multi128_cdfs[index],   ectx.eob_flag_cdf128,    sizeof(ectx.eob_flag_cdf128));
-            CopyProbs(default_eob_multi256_cdfs[index],   ectx.eob_flag_cdf256,    sizeof(ectx.eob_flag_cdf256));
-            CopyProbs(default_eob_multi512_cdfs[index],   ectx.eob_flag_cdf512,    sizeof(ectx.eob_flag_cdf512));
-            CopyProbs(default_eob_multi1024_cdfs[index],  ectx.eob_flag_cdf1024,   sizeof(ectx.eob_flag_cdf1024));
-            CopyProbs(default_coeff_base_eob_cdfs[index], ectx.coeff_base_eob_cdf, sizeof(ectx.coeff_base_eob_cdf));
-            CopyProbs(default_coeff_base_cdfs[index],     ectx.coeff_base_cdf,     sizeof(ectx.coeff_base_cdf));
-            CopyProbs(default_coeff_lps_cdfs[index],      ectx.coeff_br_cdf,       sizeof(ectx.coeff_br_cdf));
-        }
+        CopyCdfAndResetCounter(src.y_mode_cdf, dst->y_mode_cdf, AV1_INTRA_MODES);
+        CopyCdfAndResetCounter(src.uv_mode_cdf[0], dst->uv_mode_cdf[0], AV1_UV_INTRA_MODES - 1, CDF_SIZE(AV1_UV_INTRA_MODES));
+        CopyCdfAndResetCounter(src.uv_mode_cdf[1], dst->uv_mode_cdf[1], AV1_UV_INTRA_MODES);
+        CopyCdfAndResetCounter(src.angle_delta_cdf, dst->angle_delta_cdf, 2 * MAX_ANGLE_DELTA + 1);
+        CopyCdfAndResetCounter(src.filter_intra_cdfs, dst->filter_intra_cdfs, 2);
+        CopyCdfAndResetCounter(src.switchable_interp_cdf, dst->switchable_interp_cdf, SWITCHABLE_FILTERS);
+        for (int i = 0; i < 4; i++)
+            CopyCdfAndResetCounter(src.partition_cdf[i], dst->partition_cdf[i], 4, CDF_SIZE(EXT_PARTITION_TYPES));
+        for (int i = 4; i < 16; i++)
+            CopyCdfAndResetCounter(src.partition_cdf[i], dst->partition_cdf[i], EXT_PARTITION_TYPES);
+        for (int i = 16; i < AV1_PARTITION_CONTEXTS; i++)
+            CopyCdfAndResetCounter(src.partition_cdf[i], dst->partition_cdf[i], 8, CDF_SIZE(EXT_PARTITION_TYPES));
+        CopyCdfAndResetCounter(src.inter_mode_cdf, dst->inter_mode_cdf, INTER_MODES);
+        CopyCdfAndResetCounter(src.inter_compound_mode_cdf, dst->inter_compound_mode_cdf, AV1_INTER_COMPOUND_MODES);
+        CopyCdfAndResetCounter(src.intra_ext_tx_cdf[1], dst->intra_ext_tx_cdf[1], 7, CDF_SIZE(TX_TYPES));
+        CopyCdfAndResetCounter(src.intra_ext_tx_cdf[2], dst->intra_ext_tx_cdf[2], 5, CDF_SIZE(TX_TYPES));
+        CopyCdfAndResetCounter(src.inter_ext_tx_cdf[1], dst->inter_ext_tx_cdf[1], 16, CDF_SIZE(TX_TYPES));
+        CopyCdfAndResetCounter(src.inter_ext_tx_cdf[2], dst->inter_ext_tx_cdf[2], 12, CDF_SIZE(TX_TYPES));
+        CopyCdfAndResetCounter(src.inter_ext_tx_cdf[3], dst->inter_ext_tx_cdf[3], 2, CDF_SIZE(TX_TYPES));
+        CopyCdfAndResetCounter(src.tx_size_cdf[0], dst->tx_size_cdf[0], MAX_TX_DEPTH, CDF_SIZE(MAX_TX_DEPTH + 1));
+        for (int i = 1; i < 4; i++)
+            CopyCdfAndResetCounter(src.tx_size_cdf[i], dst->tx_size_cdf[i], MAX_TX_DEPTH + 1);
+        CopyCdfAndResetCounter(src.motion_mode_cdf, dst->motion_mode_cdf, MOTION_MODES);
+        CopyCdfAndResetCounter(src.obmc_cdf, dst->obmc_cdf, 2);
+        CopyCdfAndResetCounter(src.txfm_partition_cdf, dst->txfm_partition_cdf, 2);
+        CopyMvCdfAndResetCounters(src.mv_contexts, &dst->mv_contexts);
+        CopyMvCdfAndResetCounters(src.dv_contexts, &dst->dv_contexts);
+        CopyCdfAndResetCounter(src.cfl_sign_cdf, dst->cfl_sign_cdf, CFL_JOINT_SIGNS);
+        CopyCdfAndResetCounter(src.cfl_alpha_cdf, dst->cfl_alpha_cdf, CFL_ALPHABET_SIZE);
+        CopyCdfAndResetCounter(src.intrabc_cdf, dst->intrabc_cdf, 2);
+        CopyCdfAndResetCounter(src.delta_q_abs_cdf, dst->delta_q_abs_cdf, DELTA_Q_SMALL+1);
+        CopyCdfAndResetCounter(src.txb_skip_cdf, dst->txb_skip_cdf, 2);
+        CopyCdfAndResetCounter(src.eob_extra_cdf, dst->eob_extra_cdf, 2);
+        CopyCdfAndResetCounter(src.dc_sign_cdf, dst->dc_sign_cdf, 2);
+        CopyCdfAndResetCounter(src.eob_flag_cdf16, dst->eob_flag_cdf16, 5);
+        CopyCdfAndResetCounter(src.eob_flag_cdf32, dst->eob_flag_cdf32, 6);
+        CopyCdfAndResetCounter(src.eob_flag_cdf64, dst->eob_flag_cdf64, 7);
+        CopyCdfAndResetCounter(src.eob_flag_cdf128, dst->eob_flag_cdf128, 8);
+        CopyCdfAndResetCounter(src.eob_flag_cdf256, dst->eob_flag_cdf256, 9);
+        CopyCdfAndResetCounter(src.eob_flag_cdf512, dst->eob_flag_cdf512, 10);
+        CopyCdfAndResetCounter(src.eob_flag_cdf1024, dst->eob_flag_cdf1024, 11);
+        CopyCdfAndResetCounter(src.coeff_base_eob_cdf, dst->coeff_base_eob_cdf, 3);
+        CopyCdfAndResetCounter(src.coeff_base_cdf, dst->coeff_base_cdf, 4);
+        CopyCdfAndResetCounter(src.coeff_br_cdf, dst->coeff_br_cdf, BR_CDF_SIZE);
     }
 
     void SaveProbs(const FrameContexts &from, FrameContexts *to) {
@@ -575,20 +628,22 @@ namespace {
     }
 
 
-    int32_t WriteObuHeader(uint8_t *buf, int32_t &off, int32_t type)
+    int32_t WriteObuHeader(uint8_t *buf, int32_t &off, int32_t type, int32_t temporalId)
     {
         assert(type == OBU_SEQUENCE_HEADER || type == OBU_TD || type == OBU_FRAME_HEADER ||
                type == OBU_TILE_GROUP || type == OBU_FRAME || type == OBU_METADATA || type == OBU_PADDING);
-        const int32_t obu_extension_flag = 0;
-        const int32_t obu_extension = 0;
+        const int32_t obu_extension_flag = type == OBU_TD ? 0 : 1;
         int32_t startOff = off;
         PutBit(buf, off, OBU_FORBIDDEN_BIT);
         PutBits(buf, off, type, 4);
-        PutBit(buf, off, obu_extension_flag ? 1 : 0);
+        PutBit(buf, off, obu_extension_flag);
         PutBit(buf, off, 1);//obu_has_payload_length_field
         PutBit(buf, off, 0);//reserved
         if (obu_extension_flag) {
-            PutBits(buf, off, obu_extension & 0xFF, 8);
+            int32_t spatialId = 0;
+            PutBits(buf, off, temporalId, 3);
+            PutBits(buf, off, spatialId, 2);
+            PutBits(buf, off, 0, 3); // reserved
         }
         int32_t bit_offset = (off - startOff);
         return  (bit_offset / CHAR_BIT + (bit_offset % CHAR_BIT > 0));
@@ -615,10 +670,10 @@ namespace {
     void WriteObuSize(uint8_t *buf, int32_t obuStartOff, int32_t &obuEndOff) {
         assert(obuStartOff % 8 == 0);
         assert(obuEndOff % 8 == 0);
-        assert(obuEndOff - obuStartOff >= 8);
+        //assert(obuEndOff - obuStartOff >= 8);
         const int32_t size = (obuEndOff - obuStartOff) >> 3;
 
-        const int32_t bytesPerSize = 1 + BSR(size) / 7;
+        const int32_t bytesPerSize = size ? (1 + BSR(size) / 7) : 1;
 
         memmove(buf + (obuStartOff >> 3) + bytesPerSize, buf + (obuStartOff >> 3), size);
 
@@ -637,29 +692,76 @@ namespace {
         if (!par.seqParams.enableOrderHint || par.errorResilientMode ||
             frame.IsIntra() || frame.referenceMode == SINGLE_REFERENCE)
             return 0;
-        return 1;
+        // Not always allowed
+        int best_ref_offset[2] = { -1, INT_MAX };
+        int best_ref_idx[2] = { -1, -1 };
+        for (int32_t j = AV1_LAST_FRAME; j <= AV1_ALTREF_FRAME; j++) {
+            const int i = av1_to_vp9_ref_frame_mapping[j];
+            if (frame.refFrameIdx[i] >= 0) {
+                if (GetRelativeDist(par.seqParams.orderHintBits, frame.refFramesAv1[j]->curFrameOffset, frame.curFrameOffset) < 0) {
+                    if (best_ref_offset[0] == -1 || GetRelativeDist(par.seqParams.orderHintBits, frame.refFramesAv1[j]->curFrameOffset, best_ref_offset[0]) > 0) {
+                        best_ref_offset[0] = frame.refFramesAv1[j]->curFrameOffset;
+                        best_ref_idx[0] = j;
+                    }
+                }
+                else if (GetRelativeDist(par.seqParams.orderHintBits, frame.refFramesAv1[j]->curFrameOffset, frame.curFrameOffset) > 0) {
+                    if (best_ref_offset[1] == INT_MAX || GetRelativeDist(par.seqParams.orderHintBits, frame.refFramesAv1[j]->curFrameOffset, best_ref_offset[0]) < 0) {
+                        best_ref_offset[1] = frame.refFramesAv1[j]->curFrameOffset;
+                        best_ref_idx[1] = j;
+                    }
+                }
+            }
+        }
+        if (best_ref_idx[0] != -1 && best_ref_idx[1] != -1) {
+            return 1;
+        }
+        else if(best_ref_idx[0] != -1 && best_ref_idx[1] == -1){
+            best_ref_offset[1] = -1;
+            for (int32_t j = AV1_LAST_FRAME; j <= AV1_ALTREF_FRAME; j++) {
+                const int i = av1_to_vp9_ref_frame_mapping[j];
+                if (frame.refFrameIdx[i] >= 0) {
+                    if (best_ref_offset[0] != -1 && GetRelativeDist(par.seqParams.orderHintBits, frame.refFramesAv1[j]->curFrameOffset, best_ref_offset[0]) < 0) {
+                        if (best_ref_offset[1] == -1 || GetRelativeDist(par.seqParams.orderHintBits, frame.refFramesAv1[j]->curFrameOffset, best_ref_offset[1]) > 0) {
+                            best_ref_offset[1] = frame.refFramesAv1[j]->curFrameOffset;
+                            best_ref_idx[1] = j;
+                        }
+                    }
+                }
+            }
+            if (best_ref_idx[0] != -1 && best_ref_idx[1] != -1) {
+                return 1;
+            }
+        }
+        return 0;
     }
 
-    void WriteFrameSizeAv1(uint8_t *buf, int32_t &off) {
+    void WriteFrameSizeAv1(uint8_t *buf, int32_t &off, int32_t enable_superres/*seq*/, int32_t use_superres/*frame*/, int32_t superres_denom)
+    {
         const int32_t frame_size_override_flag = 0;
-        const int32_t use_superres = 0;
         const int32_t render_and_frame_size_different = 0;
 
         if (frame_size_override_flag) {
             assert(0);
         }
-        if (use_superres) {
+
+        // superres_params()
+        if (enable_superres) {
             PutBit(buf, off, use_superres);
             if (use_superres) {
-                assert(0);
+                assert(superres_denom >= SUPERRES_SCALE_DENOMINATOR_MIN);
+                assert(superres_denom < SUPERRES_SCALE_DENOMINATOR_MIN + (1 << SUPERRES_SCALE_BITS));
+                PutBits(buf, off, superres_denom - SUPERRES_SCALE_DENOMINATOR_MIN, SUPERRES_SCALE_BITS);
             }
         }
+
         PutBit(buf, off, render_and_frame_size_different);
         if (render_and_frame_size_different) {
             assert(0);
         }
     }
 
+    const int SELECT_SCREEN_CONTENT_TOOLS = 2;
+    const int SELECT_INTEGER_MV = 2;
     void WriteSequenceHeaderObu(uint8_t *buf, int32_t &off, const AV1VideoParam &par, Frame &frame, int32_t showExistingFrame, int32_t showFrame)
     {
         const int32_t level = 0;
@@ -668,13 +770,13 @@ namespace {
         const int32_t max_enhancement_layers_cnt = 0;
         const int32_t use_128x128_superblock = 0;
         const int32_t enable_jnt_comp = 0;
-        const int32_t seq_choose_screen_content_tools = 0;
-        const int32_t seq_force_screen_content_tools = 0;
-        const int32_t seq_choose_integer_mv = 0;
-        const int32_t seq_force_integer_mv = 0;
+        const int32_t seq_choose_screen_content_tools = (par.screenMode ? 1 : 0);
+        const int32_t seq_force_screen_content_tools = seq_choose_screen_content_tools ? SELECT_SCREEN_CONTENT_TOOLS : 0;
+        const int32_t seq_choose_integer_mv = seq_choose_screen_content_tools? 1 : 0;
+        const int32_t seq_force_integer_mv = seq_choose_integer_mv ? SELECT_INTEGER_MV : 0;
+
         const int32_t timing_info_present_flag = 0;
         const int32_t film_grain_params_present = 0;
-        const int32_t enable_superres = 0;
         const int32_t enable_ref_frame_mvs = 1;
         const int32_t enable_interintra_compound = 0;
         const int32_t enable_masked_compound = 0;
@@ -688,8 +790,8 @@ namespace {
 #endif
         const int32_t enable_cdef = par.cdefFlag ? 1 : 0;
         const int32_t enable_restoration = par.lrFlag ? 1 : 0;
+        const int32_t enable_superres = par.superResFlag ? 1 : 0;
 
-        //---------------
         const int32_t still_picture = 0;
         const int32_t reduced_still_picture_hdr = 0;
         const int32_t display_model_info_present_flag = 0;
@@ -697,7 +799,7 @@ namespace {
 
         if (frame.IsIntra()) {
             int32_t obuStartOff = off;
-            int32_t obuHeaderSize = WriteObuHeader(buf, off, OBU_SEQUENCE_HEADER);
+            int32_t obuHeaderSize = WriteObuHeader(buf, off, OBU_SEQUENCE_HEADER, 0);
 
             PutBits(buf, off, par.Profile, 3);
             PutBit(buf, off, still_picture);
@@ -716,12 +818,13 @@ namespace {
                 //PutBits(buf, off, 0, 1);   // decoder_rate_model_present_flag[i]
             }
 
-            const int32_t num_bits_width  = get_msb(par.Width - 1) + 1;
+            const int32_t width = par.superResFlag ? par.sourceWidth : par.Width;
+            const int32_t num_bits_width  = get_msb(width - 1) + 1;
             const int32_t num_bits_height = get_msb(par.Height - 1) + 1;
 
             PutBits(buf, off, num_bits_width - 1, 4);
             PutBits(buf, off, num_bits_height - 1, 4);
-            PutBits(buf, off, par.Width - 1, num_bits_width);
+            PutBits(buf, off, width - 1, num_bits_width);
             PutBits(buf, off, par.Height - 1, num_bits_height);
 
             if (!reduced_still_picture_hdr) {
@@ -749,14 +852,12 @@ namespace {
                     PutBit(buf, off, enable_jnt_comp);
                     PutBit(buf, off, enable_ref_frame_mvs);
                 }
-                //---
                 PutBit(buf, off, seq_choose_screen_content_tools);
                 if (seq_choose_screen_content_tools) {
-                    assert(0);
+                    //assert(0);
                 } else {
                     PutBit(buf, off, seq_force_screen_content_tools);
                 }
-                //---
                 if (seq_force_screen_content_tools > 0) {
                     PutBit(buf, off, seq_choose_integer_mv);
                     if (!seq_choose_integer_mv)
@@ -789,10 +890,18 @@ namespace {
         const int32_t use_128x128_superblock = 0;
         const int32_t enable_dual_filter = 1;
         const int32_t enable_jnt_comp = 0;
-        const int32_t seq_choose_screen_content_tools = 0;
-        const int32_t seq_force_screen_content_tools = 0;
-        const int32_t seq_choose_integer_mv = 0;
-        const int32_t seq_force_integer_mv = 0;
+        const int32_t seq_choose_screen_content_tools = (par.screenMode ? 1 : 0);
+        const int32_t seq_force_screen_content_tools = seq_choose_screen_content_tools ? SELECT_SCREEN_CONTENT_TOOLS : 0;
+        const int32_t seq_choose_integer_mv = seq_choose_screen_content_tools ? 1 : 0;
+        const int32_t seq_force_integer_mv = seq_choose_integer_mv ? SELECT_INTEGER_MV : 0;
+
+        //frame based control
+        const int32_t isIntra = (frame.m_picCodeType == MFX_FRAMETYPE_I ? 1 : 0);
+        const int32_t allow_screen_content_tools = seq_choose_screen_content_tools;
+        const int32_t force_integer_mv = isIntra && allow_screen_content_tools;
+        //const int32_t allow_intrabc = isIntra && allow_screen_content_tools && (par.screenMode & 0x1);
+        //assert(allow_intrabc == frame.m_allowIntraBc);
+        const int32_t allow_intrabc = frame.m_allowIntraBc;
         const int32_t timing_info_present_flag = 0;
         const int32_t film_grain_params_present = 0;
 
@@ -800,17 +909,16 @@ namespace {
         const int32_t frame_type = (frame.m_picCodeType == MFX_FRAMETYPE_I ? KEY_FRAME : NON_KEY_FRAME);
         const int32_t allow_filter_intra = 0;
         const int32_t disable_cdf_update = 0;
-        const int32_t allow_screen_content_tools = 0;
-        const int32_t refresh_frame_context = 1;
-        const int32_t frame_context_idx = 0;
-        const int32_t delta_q_present_flag = 0;
+        const int32_t primary_ref_frame = (par.errorResilientMode || frame.IsIntra() || par.disableFrameEndUpdateCdf) ? PRIMARY_REF_NONE : LAST_FRAME;
+
+        const int32_t delta_q_present_flag = par.UseDQP;
+        const int32_t delta_lf_present_flag = 0;
         const int32_t allow_interintra_compound = 0;
         const int32_t allow_masked_compound = 0;
         const int32_t skip_mode_flag = 0;
-        const int32_t allow_intrabc = 0;
         const int32_t av1_superres_unscaled = 1;
         const int32_t frame_refs_short_signaling = 0;
-        const int32_t force_integer_mv = 0;
+
         const int32_t switchable_motion_mode = 0;
         const int32_t error_resilient_mode = 0;
         const int32_t allow_warped_motion = 0;
@@ -821,9 +929,8 @@ namespace {
         const int32_t reduced_tx_set_used = 0;
 #endif
         const int32_t enable_cdef = par.cdefFlag ? 1 : 0;
-
-        int32_t obuStartOff = off;
-        //int32_t obuHeaderSize = WriteObuHeader(buf, off, OBU_FRAME_HEADER);
+        const int32_t enable_superres = par.superResFlag ? 1 : 0;
+        auto superres = frame.m_superResParam;
 
         PutBit(buf, off, showExistingFrame);
 
@@ -841,31 +948,33 @@ namespace {
         if (seq_choose_screen_content_tools)
             PutBit(buf, off, allow_screen_content_tools);
 
-        if (allow_screen_content_tools && seq_force_integer_mv)
+        if (allow_screen_content_tools && seq_force_integer_mv == SELECT_INTEGER_MV)
             PutBit(buf, off, force_integer_mv);
 
         if (par.seqParams.frameIdNumbersPresentFlag)
             PutBits(buf, off, frame.m_encOrder, par.seqParams.idLen);
 
+        // aya: check if we need fix for SuperResolution
+        // if frame.{with, height} != sequence.{with, height} => frame_size_override_flag = 1
         PutBit(buf, off, frame_size_override_flag);
 
         PutBits(buf, off, frame.curFrameOffset, par.seqParams.orderHintBits);
 
         if (!par.errorResilientMode && !frame.IsIntra()) {
-            PutBits(buf, off, PRIMARY_REF_NONE, 3);
+            PutBits(buf, off, primary_ref_frame, 3);
         }
 
         if (frame_type == KEY_FRAME) {
             if (!showFrame)
                 PutBits(buf, off, frame.refreshFrameFlags, 8);
-            WriteFrameSizeAv1(buf, off);
+            WriteFrameSizeAv1(buf, off, enable_superres, superres.use, superres.denom);
             if (allow_screen_content_tools && av1_superres_unscaled)
                 PutBit(buf, off, allow_intrabc);
 
         } else {
             if (frame.intraOnly) {
                 PutBits(buf, off, frame.refreshFrameFlags, 8);
-                WriteFrameSizeAv1(buf, off);
+                WriteFrameSizeAv1(buf, off, enable_superres, superres.use, superres.denom);
                 if (allow_screen_content_tools && av1_superres_unscaled)
                     PutBit(buf, off, allow_intrabc);
 
@@ -894,7 +1003,7 @@ namespace {
                 if (par.errorResilientMode == 0 && frame_size_override_flag) {
                     assert(0);
                 } else {
-                    WriteFrameSizeAv1(buf, off);
+                    WriteFrameSizeAv1(buf, off, enable_superres, superres.use, superres.denom);
                 }
 
                 if (!force_integer_mv)
@@ -914,20 +1023,33 @@ namespace {
         }
 
         const int32_t reduced_still_picture_hdr = 0;
-        if (!(reduced_still_picture_hdr)&& !(disable_cdf_update))
-            PutBit(buf, off, refresh_frame_context);
+        if (!reduced_still_picture_hdr && !disable_cdf_update)
+            PutBit(buf, off, par.disableFrameEndUpdateCdf);
 
-        WriteTileInfoAv1(buf, off, par);
+        WriteTileInfoAv1(buf, off, frame);
 
         WriteQuantizationParamsAv1(buf, off, par, frame);
         WriteSegmentationParams(buf, off, frame);
 
         const int32_t delta_q_allowed = 1;
-        if (delta_q_allowed == 1 && frame.m_sliceQpY > 0)
+        if (delta_q_allowed == 1 && frame.m_sliceQpY > 0) {
             PutBit(buf, off, delta_q_present_flag);
+            if (delta_q_present_flag) {
+                PutBits(buf, off, DEFAULT_DELTA_Q_RES_SHIFT, 2);
+            }
+            if (delta_q_present_flag) {
+                if (!allow_intrabc) {
+                    PutBit(buf, off, delta_lf_present_flag);
+                    if (delta_lf_present_flag) {
+                        assert(0);
+                    }
+                }
+            }
+        }
 
-        WriteLoopFilterParamsAv1(buf, off, frame);
-        if (enable_cdef)
+        if (allow_intrabc == 0)
+            WriteLoopFilterParamsAv1(buf, off, frame);
+        if (enable_cdef && allow_intrabc == 0)
             WriteCdef(buf, off, frame);
         if (enable_restoration)
             WriteRestorationMode(buf, off, frame);
@@ -945,11 +1067,8 @@ namespace {
         PutBit(buf, off, reduced_tx_set_used);
 
         if (!frame.IsIntra())
-            for (int frame = AV1_LAST_FRAME; frame <= AV1_ALTREF_FRAME; ++frame)
+            for (int ref = AV1_LAST_FRAME; ref <= AV1_ALTREF_FRAME; ++ref)
                 PutBit(buf, off, 0); // global motion type = IDENTITY
-
-        //WriteTrailingBits(buf, off);
-        //WriteObuSize(buf, obuStartOff + 8*obuHeaderSize, off);
     }
 
     template <EnumCodecType CodecType>
@@ -963,6 +1082,8 @@ namespace {
         WriteBool<CodecType>(bc, 0, DIFF_UPDATE_PROB); // update_probs
         return prob;
     }
+
+    typedef struct tree_node tree_node;
 
     struct tree_node {
         vpx_tree_index index;
@@ -1058,17 +1179,18 @@ namespace {
     template <EnumCodecType CodecType>
     void WriteSkip(BoolCoder &bc, SuperBlock &sb, const ModeInfo *mi) {
 #ifdef AV1_DEBUG_CONTEXT_MEMOIZATION
-        const int32_t miRow = (mi - sb.frame->m_modeInfo) / sb.par->miPitch;
-        const int32_t miCol = (mi - sb.frame->m_modeInfo) % sb.par->miPitch;
-        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.par->tileParam.miRowStart[sb.tileRow]);
-        const ModeInfo *left = GetLeft(mi, miCol, sb.par->tileParam.miColStart[sb.tileCol]);
+        const int32_t miRow = int32_t((mi - sb.frame->m_modeInfo) / sb.par->miPitch);
+        const int32_t miCol = int32_t((mi - sb.frame->m_modeInfo) % sb.par->miPitch);
+        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.frame->m_tileParam.miRowStart[sb.tileRow]);
+        const ModeInfo *left = GetLeft(mi, miCol, sb.frame->m_tileParam.miColStart[sb.tileCol]);
         int32_t testctx = GetCtxSkip(above, left);
-        assert(testctx == mi->memCtx.skip);
+        assert(testctx == (int32_t)mi->memCtx.skip);
 #endif // AV1_DEBUG_CONTEXT_MEMOIZATION
 
         const int32_t ctx = mi->memCtx.skip;
         const int32_t skip = mi->skip;
-        WriteSymbol(bc, skip, sb.frame->m_tileContexts[sb.tileIndex].ectx.skip_cdf[ctx], 2);
+
+        WriteSymbol(bc, skip, sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].skip_cdf[ctx], 2);
     }
 
      void txfm_partition_update(uint8_t *above_ctx, uint8_t *left_ctx, TxSize tx_size, TxSize txb_size) {
@@ -1088,26 +1210,27 @@ namespace {
         uint8_t txh = tx_size_high[mi->txSize];
         uint8_t bw4 = block_size_wide_4x4[mi->sbType];
         uint8_t bh4 = block_size_high_4x4[mi->sbType];
-        if (mi->skip && mi->mode >= AV1_INTRA_MODES) {
+        if (mi->skip && (mi->mode >= AV1_INTRA_MODES || is_intrabc_block(mi))) {
             txw = bw4 << 2;
             txh = bh4 << 2;
         }
-        const int32_t miColTileStart = sb.par->tileParam.miColStart[sb.tileCol];
-        const int32_t miRowTileStart = sb.par->tileParam.miRowStart[sb.tileRow];
-        uint8_t *aboveTxfm = sb.frame->m_tileContexts[sb.tileIndex].aboveTxfm + ((miCol - miColTileStart) << 1);
-        uint8_t *leftTxfm  = sb.frame->m_tileContexts[sb.tileIndex].leftTxfm  + ((miRow - miRowTileStart) << 1);
+        const int32_t miColTileStart = sb.frame->m_tileParam.miColStart[sb.tileCol];
+        const int32_t miRowTileStart = sb.frame->m_tileParam.miRowStart[sb.tileRow];
+        uint8_t *aboveTxfm = sb.frame->m_fenc->m_tileContexts[sb.tileIndex].aboveTxfm + ((miCol - miColTileStart) << 1);
+        uint8_t *leftTxfm  = sb.frame->m_fenc->m_tileContexts[sb.tileIndex].leftTxfm  + ((miRow - miRowTileStart) << 1);
         memset(aboveTxfm, txw, bw4);
         memset(leftTxfm,  txh, bh4);
     }
 
     void WriteTxSizeVarTx(BoolCoder &bc, SuperBlock &sb, const ModeInfo *mi, TxSize txSize, int32_t depth, int32_t x4, int32_t y4) {
-        const int32_t txRow = y4 - (sb.par->tileParam.miRowStart[sb.tileRow] << 1);
-        const int32_t txCol = x4 - (sb.par->tileParam.miColStart[sb.tileCol] << 1);
-        TileContexts &tctx = sb.frame->m_tileContexts[sb.tileIndex];
+        const int32_t txRow = y4 - (sb.frame->m_tileParam.miRowStart[sb.tileRow] << 1);
+        const int32_t txCol = x4 - (sb.frame->m_tileParam.miColStart[sb.tileCol] << 1);
+        TileContexts &tctx = sb.frame->m_fenc->m_tileContexts[sb.tileIndex];
+        EntropyContexts &ectx = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex];
         uint8_t *aboveTxfm = tctx.aboveTxfm + txCol;
         uint8_t *leftTxfm  = tctx.leftTxfm + txRow;
         const int32_t ctx = GetCtxTxfm(aboveTxfm, leftTxfm, mi->sbType, txSize);
-        aom_cdf_prob *cdf = tctx.ectx.txfm_partition_cdf[ctx];
+        aom_cdf_prob *cdf = ectx.txfm_partition_cdf[ctx];
         if (depth == MAX_VARTX_DEPTH) {
             txfm_partition_update(aboveTxfm, leftTxfm, txSize, txSize);
             return;
@@ -1167,8 +1290,9 @@ namespace {
 
     void WriteTxSizeAV1(int32_t allowSelect, BoolCoder &bc, SuperBlock &sb, const ModeInfo *mi, int32_t miRow, int32_t miCol) {
         const BlockSize bsize = mi->sbType;
-        const int32_t isInter = (mi->mode >= AV1_INTRA_MODES);
-        if (sb.par->txMode == TX_MODE_SELECT && bsize > BLOCK_4X4 && !mi->skip && isInter) {
+        const int32_t isInter = (mi->mode >= AV1_INTRA_MODES) || is_intrabc_block(mi);
+        if (sb.par->txMode == TX_MODE_SELECT && bsize > BLOCK_4X4 && !(mi->skip && isInter)) {
+            if (isInter) {
             const TxSize maxTxSize = max_txsize_rect_lookup[bsize];
             const int32_t bh = tx_size_high_unit[maxTxSize];
             const int32_t bw = tx_size_wide_unit[maxTxSize];
@@ -1181,23 +1305,25 @@ namespace {
                 for (int32_t idx = 0; idx < width; idx += bw)
                     WriteTxSizeVarTx(bc, sb, mi, maxTxSize, width != height, x4+idx, y4+idy);
         } else {
-            if (allowSelect && sb.par->txMode == TX_MODE_SELECT && bsize >= BLOCK_8X8) {
-                const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.par->tileParam.miRowStart[sb.tileRow]);
-                const ModeInfo *left = GetLeft(mi, miCol, sb.par->tileParam.miColStart[sb.tileCol]);
-                const int32_t txRow = (miRow - sb.par->tileParam.miRowStart[sb.tileRow]) << 1;
-                const int32_t txCol = (miCol - sb.par->tileParam.miColStart[sb.tileCol]) << 1;
-                const TileContexts &tctx = sb.frame->m_tileContexts[sb.tileIndex];
+
+                const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.frame->m_tileParam.miRowStart[sb.tileRow]);
+                const ModeInfo *left = GetLeft(mi, miCol, sb.frame->m_tileParam.miColStart[sb.tileCol]);
+                const int32_t txRow = (miRow - sb.frame->m_tileParam.miRowStart[sb.tileRow]) << 1;
+                const int32_t txCol = (miCol - sb.frame->m_tileParam.miColStart[sb.tileCol]) << 1;
+                const TileContexts &tctx = sb.frame->m_fenc->m_tileContexts[sb.tileIndex];
                 const uint8_t *aboveTxfm = tctx.aboveTxfm + txCol;
                 const uint8_t *leftTxfm  = tctx.leftTxfm + txRow;
-                const int32_t max_tx_size = max_txsize_rect_lookup[bsize];
+                const TxSize max_tx_size = max_txsize_rect_lookup[bsize];
                 const int32_t tx_size_ctx = GetCtxTxSizeAV1(above, left, *aboveTxfm, *leftTxfm, max_tx_size);
                 const int32_t depth = tx_size_to_depth(mi->txSize, bsize, 0);
                 const int32_t max_depths = bsize_to_max_depth(bsize, 0);
                 const int32_t tx_size_cat = bsize_to_tx_size_cat(bsize, 0);
 
-                aom_cdf_prob *cdf = sb.frame->m_tileContexts[sb.tileIndex].ectx.tx_size_cdf[tx_size_cat][tx_size_ctx];
+                aom_cdf_prob *cdf = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].tx_size_cdf[tx_size_cat][tx_size_ctx];
                 WriteSymbol(bc, depth, cdf, max_depths + 1);
+                set_txfm_ctxs(sb, mi, miRow, miCol);
             }
+        } else {
             set_txfm_ctxs(sb, mi, miRow, miCol);
         }
     }
@@ -1205,21 +1331,322 @@ namespace {
     template <EnumCodecType CodecType>
     void WriteKeyFrameIntraMode(BoolCoder &bc, SuperBlock &sb, int32_t miRow, int32_t miCol) {
         const ModeInfo *mi = sb.mi + (miCol & 7) + (miRow & 7) * sb.par->miPitch;
-        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.par->tileParam.miRowStart[sb.tileRow]);
-        const ModeInfo *left = GetLeft(mi, miCol, sb.par->tileParam.miColStart[sb.tileCol]);
+        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.frame->m_tileParam.miRowStart[sb.tileRow]);
+        const ModeInfo *left = GetLeft(mi, miCol, sb.frame->m_tileParam.miColStart[sb.tileCol]);
         const int32_t modeU = (above ? above->mode : DC_PRED);
         const int32_t modeL = (left  ? left->mode  : DC_PRED);
         const int32_t ctxU = intra_mode_context[modeU];
         const int32_t ctxL = intra_mode_context[modeL];
-        aom_cdf_prob *cdf = sb.frame->m_tileContexts[sb.tileIndex].ectx.kf_y_cdf[ctxU][ctxL];
+        aom_cdf_prob *cdf = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].kf_y_cdf[ctxU][ctxL];
         WriteSymbol(bc, mi->mode, cdf, AV1_INTRA_MODES);
     }
+
+    uint32_t GetPaletteCache(SuperBlock &sb, bool isLuma, uint32_t miRow, uint32_t miCol, uint16_t *cache)
+    {
+        PaletteInfo *abovePalette = NULL;
+        PaletteInfo *leftPalette = NULL;
+        const ModeInfo *mi = sb.mi + (miCol & 7) + (miRow & 7) * sb.par->miPitch;
+        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.frame->m_tileParam.miRowStart[sb.tileRow]);
+        const ModeInfo *left = GetLeft(mi, miCol, sb.frame->m_tileParam.miColStart[sb.tileCol]);
+        int32_t aiz = 0;
+        int32_t liz = 0;
+        uint8_t* a_palette{nullptr};
+        uint8_t* l_palette{ nullptr };
+        if (above && (miRow % 8)) {
+            abovePalette = &sb.frame->m_fenc->m_Palette8x8[(miRow - 1)*sb.par->miPitch + miCol];
+            if (isLuma) {
+                aiz = abovePalette->palette_size_y;
+                a_palette = abovePalette->palette_y;
+            }
+            else {
+                aiz = abovePalette->palette_size_uv;
+                a_palette = abovePalette->palette_u; //different for v
+            }
+        }
+        if (left) {
+            leftPalette = &sb.frame->m_fenc->m_Palette8x8[miRow*sb.par->miPitch + miCol - 1];
+            if (isLuma) {
+                liz = leftPalette->palette_size_y;
+                l_palette = leftPalette->palette_y;
+            }
+            else {
+                liz = leftPalette->palette_size_uv;
+                l_palette = leftPalette->palette_u; //different for v
+            }
+        }
+        if (aiz == 0 && liz == 0) return 0;
+
+        int32_t ai = 0;
+        int32_t li = 0;
+        uint32_t colors_found = 0;
+        while (ai < aiz  && li < liz) {
+            uint16_t aboveColor = a_palette[ai];
+            uint16_t leftColor = l_palette[li];
+            if (leftColor < aboveColor) {
+                if (colors_found == 0 || leftColor != cache[colors_found - 1]) {
+                    cache[colors_found++] = leftColor;
+                }
+                li++;
+            }
+            else {
+                if (colors_found == 0 || aboveColor != cache[colors_found - 1]) {
+                    cache[colors_found++] = aboveColor;
+                }
+                ai++;
+                if (leftColor == aboveColor) li++;
+            }
+        }
+        while (ai < aiz) {
+            uint16_t aboveColor = a_palette[ai++];
+            if (colors_found == 0 || aboveColor != cache[colors_found - 1]) {
+                cache[colors_found++] = aboveColor;
+            }
+        }
+        while (li < liz) {
+            uint16_t leftColor = l_palette[li++];
+            if (colors_found == 0 || leftColor != cache[colors_found - 1]) {
+                cache[colors_found++] = leftColor;
+            }
+        }
+        assert(colors_found <= 2 * MAX_PALETTE);
+        return colors_found;
+    }
+
+    uint32_t WritePaletteCacheIndices(BoolCoder &bc, const uint8_t *palette, uint32_t palette_size, uint16_t* cache, uint16_t cache_size, uint16_t *colors_xmit)
+    {
+        if (cache_size == 0) {
+            for (uint32_t i = 0; i < palette_size; ++i) colors_xmit[i] = palette[i];
+            return palette_size;
+        }
+        uint32_t colors_found = 0;
+        uint8_t palette_found[MAX_PALETTE] = { 0 };
+        for (int32_t index = 0; index < cache_size && colors_found < palette_size; index++) {
+            uint32_t k;
+            for (k = 0; k < palette_size; k++) {
+                if (cache[index] == palette[k]) {
+                    colors_found++;
+                    palette_found[k] = 1;
+                    od_ec_encode_bool_q15_128(&bc.ec, 1);
+                    //printf("\n 1");
+                    break;
+                }
+            }
+            if (k >= palette_size) {
+                // not found
+                od_ec_encode_bool_q15_128(&bc.ec, 0);
+                //printf("\n 0");
+            }
+        }
+        uint32_t i = 0;
+        for (uint32_t k = 0; k < palette_size; k++) {
+            if (!palette_found[k]) colors_xmit[i++] = palette[k];
+        }
+        assert(i == palette_size - colors_found);
+        return i;
+    }
+
+    void WriteSymbolUniform(BoolCoder &bc, int32_t n, int32_t v)
+    {
+        const int32_t l = n ? BSR(n) + 1 : 0;
+        const int32_t m = (1 << l) - n;
+        if (l == 0)
+            return;
+        if (v < m) {
+            WriteLiteral<CODEC_AV1>(bc, v, l - 1);
+        }
+        else {
+            WriteLiteral<CODEC_AV1>(bc, m + ((v - m) >> 1), l - 1);
+            WriteLiteral<CODEC_AV1>(bc, (v - m) & 1, 1);
+        }
+    }
+
+    void WritePaletteDelta(BoolCoder &bc, uint16_t *colors_xmit, uint32_t colors_xmit_size, uint32_t bitdepth, uint32_t min_delta)
+    {
+        uint32_t index = 0;
+        int32_t delta_bits = bitdepth - 3;
+        uint32_t max_delta_bits = delta_bits;
+        if (colors_xmit_size) {
+            WriteLiteral<CODEC_AV1>(bc, colors_xmit[0], bitdepth);
+            //printf("\n %d", colors_xmit[0]);
+            index++;
+        }
+        if (index < colors_xmit_size) {
+
+            int32_t max_delta = 0;
+            for (uint32_t i = 1; i < colors_xmit_size; i++) {
+                int32_t delta = abs((int)colors_xmit[i] - (int)colors_xmit[i - 1]);
+                if (delta > max_delta) max_delta = delta;
+            }
+            assert(max_delta >= (int32_t)min_delta);
+            int32_t max_val = (max_delta - min_delta);
+            max_delta_bits = (max_val ? BSR(max_val) + 1 : 0);
+            max_delta_bits = MAX((uint32_t)delta_bits, max_delta_bits);
+            WriteLiteral<CODEC_AV1>(bc, max_delta_bits - delta_bits, 2);
+            //printf("\n %d", max_delta_bits - delta_bits);
+            for (uint32_t i = 1; i < colors_xmit_size; ++i) {
+                WriteLiteral<CODEC_AV1>(bc, (int)colors_xmit[i] -(int)colors_xmit[i-1] - min_delta, max_delta_bits);
+                //printf("\n %d %d", (int)colors_xmit[i] - (int)colors_xmit[i - 1] - min_delta, max_delta_bits);
+                int32_t range = (1 << bitdepth) -1 - colors_xmit[i] - min_delta;
+                uint32_t range_bits = (range ? BSR(range) + 1 : 0);
+                max_delta_bits = MIN(range_bits, max_delta_bits);
+            }
+        }
+    }
+
+
+    void WritePaletteModeInfo(BoolCoder &bc, SuperBlock &sb, int32_t miRow, int32_t miCol) {
+        const ModeInfo *mi = sb.mi + (miCol & 7) + (miRow & 7) * sb.par->miPitch;
+        const int32_t ctxB = block_size_wide_4x4_log2[mi->sbType] + block_size_high_4x4_log2[mi->sbType] - 2;
+        if (mi->mode == DC_PRED) {
+            int32_t palette_size_y = sb.frame->m_fenc->m_Palette8x8[miCol + miRow * sb.par->miPitch].palette_size_y;
+            const int32_t haspalette_y = sb.frame->m_fenc->m_Palette8x8[miCol + miRow * sb.par->miPitch].palette_size_y ? 1 : 0;
+            const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.frame->m_tileParam.miRowStart[sb.tileRow]);
+            const ModeInfo *left = GetLeft(mi, miCol, sb.frame->m_tileParam.miColStart[sb.tileCol]);
+            const int32_t sizeU = (above ? sb.frame->m_fenc->m_Palette8x8[miCol + (miRow - 1) * sb.par->miPitch].palette_size_y : 0);
+            const int32_t sizeL = (left ? sb.frame->m_fenc->m_Palette8x8[(miCol-1) + miRow * sb.par->miPitch].palette_size_y : 0);
+            const int32_t ctxC = 0 + (sizeU ? 1 : 0) + (sizeL ? 1 : 0);
+            aom_cdf_prob *cdf = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].y_haspalette_cdf[ctxB][ctxC];
+            WriteSymbol(bc, haspalette_y, cdf, 2);
+            if (haspalette_y) {
+                cdf = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].y_palettesize_cdf[ctxB];
+                WriteSymbol(bc, palette_size_y-2, cdf, PALETTE_SIZES);
+                uint16_t cache[2 * MAX_PALETTE];
+                uint16_t colors_xmit[MAX_PALETTE];
+                uint32_t cache_size = GetPaletteCache(sb, true, miRow, miCol, cache);
+                uint8_t *palette_y = sb.frame->m_fenc->m_Palette8x8[miCol + miRow * sb.par->miPitch].palette_y;
+                uint32_t colors_xmit_size = WritePaletteCacheIndices(bc, palette_y, palette_size_y, cache, (uint16_t)cache_size, colors_xmit);
+                WritePaletteDelta(bc, colors_xmit, colors_xmit_size, sb.par->bitDepthLuma, 1);
+            }
+        }
+        if (mi->modeUV == DC_PRED) {
+            const PaletteInfo& blockPalette = sb.frame->m_fenc->m_Palette8x8[miCol + miRow * sb.par->miPitch];
+            const int32_t palette_size_uv = blockPalette.palette_size_uv;
+
+            const int32_t haspalette_uv = palette_size_uv ? 1 : 0;
+            const int32_t ctx = blockPalette.palette_size_y ? 1 : 0;
+
+            aom_cdf_prob *cdf = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].uv_haspalette_cdf[ctx];
+            WriteSymbol(bc, haspalette_uv, cdf, 2);
+            if (haspalette_uv) {
+                cdf = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].uv_palettesize_cdf[ctxB];
+                WriteSymbol(bc, palette_size_uv-2, cdf, PALETTE_SIZES);
+
+                const int bitDepth = sb.par->bitDepthChroma;
+                //U encoded like luma
+                uint16_t cache[2 * MAX_PALETTE];
+                uint16_t colors_xmit[MAX_PALETTE];
+                uint32_t cache_size = GetPaletteCache(sb, false, miRow, miCol, cache);
+
+                const uint8_t *palette_u = blockPalette.palette_u;
+                const uint8_t *palette_v = blockPalette.palette_v;
+                uint32_t colors_xmit_size = WritePaletteCacheIndices(bc, palette_u, palette_size_uv, cache, (uint16_t)cache_size, colors_xmit);
+                WritePaletteDelta(bc, colors_xmit, colors_xmit_size, bitDepth, 0);
+
+                //For v channel, either use delta encoding or transmit raw values directly, whichever costs less
+                //V channel colors. Don't use color cache as the colors are not sorted.
+                const int maxVal = 1 << bitDepth;
+                int zeroCount = 0, minBits = 0;
+                int bits = GetPaletteDeltaBitsV(blockPalette.palette_v, blockPalette.palette_size_uv, bitDepth, &zeroCount, &minBits);
+                const int rateDelta = 2 + bitDepth + (bits + 1) * (palette_size_uv - 1) - zeroCount;
+                const int rateRaw = bitDepth * palette_size_uv;
+                if (rateDelta < rateRaw) {  // delta encoding
+                    assert(palette_v[0] < (1 << bitDepth));
+                    //aom_write_bit(w, 1);
+                    od_ec_encode_bool_q15_128(&bc.ec, 1);
+
+                    WriteLiteral<CODEC_AV1>(bc, bits - minBits, 2);
+                    WriteLiteral<CODEC_AV1>(bc, palette_v[0], bitDepth);
+                    for (int i = 1; i < palette_size_uv; ++i) {
+                        assert(palette_v[i] < (1 << bitDepth));
+                        if (palette_v[i] == palette_v[i - 1]) {  // No need to signal sign bit.
+                            WriteLiteral<CODEC_AV1>(bc, 0, bits);
+                            continue;
+                        }
+                        const int delta = abs((int)palette_v[i] - palette_v[i - 1]);
+                        const int signBit = palette_v[i] < palette_v[i - 1];
+                        if (delta <= maxVal - delta) {
+                            WriteLiteral<CODEC_AV1>(bc, delta, bits);
+                            od_ec_encode_bool_q15_128(&bc.ec, signBit);
+                        }
+                        else {
+                            WriteLiteral<CODEC_AV1>(bc, maxVal - delta, bits);
+                            od_ec_encode_bool_q15_128(&bc.ec, !signBit);
+                        }
+                    }
+                }
+                else {  // Transmit raw values.
+                    od_ec_encode_bool_q15_128(&bc.ec, 0);
+                    for (int i = 0; i < palette_size_uv; ++i) {
+                        assert(palette_v[i] < (1 << bitDepth));
+                        WriteLiteral<CODEC_AV1>(bc, palette_v[i], bitDepth);
+                    }
+                }
+
+            }
+        }
+    }
+
+    void WritePaletteTokens(BoolCoder &bc, SuperBlock &sb, int32_t miRow, int32_t miCol)
+    {
+        const ModeInfo *mi = sb.mi + (miCol & 7) + (miRow & 7) * sb.par->miPitch;
+        if (mi->mode == DC_PRED) {
+            int32_t palette_size_y = sb.frame->m_fenc->m_Palette8x8[miCol + miRow * sb.par->miPitch].palette_size_y;
+            const int32_t haspalette_y = sb.frame->m_fenc->m_Palette8x8[miCol + miRow * sb.par->miPitch].palette_size_y ? 1 : 0;
+            if (haspalette_y) {
+                const int32_t y = miRow << 3;
+                const int32_t x = miCol << 3;
+                const int32_t colorMapPitch = sb.frame->m_fenc->m_ColorMapYPitch;
+                const uint8_t *colorMap = &sb.frame->m_fenc->m_ColorMapY[y * sb.frame->m_fenc->m_ColorMapYPitch + x];
+                WriteSymbolUniform(bc, palette_size_y, colorMap[0]);
+                int32_t height = block_size_high[mi->sbType];
+                int32_t width = block_size_wide[mi->sbType];
+                auto &cdf = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].y_palettecoloridx_cdf[palette_size_y - 2];
+                for (int32_t k = 1; k < height + width - 1; k++) {
+                    // wavefront
+                    const int32_t lastj = MAX(0, k - height + 1);
+                    for (int32_t j = MIN(k, width - 1); j >= lastj; j--) {
+                        int32_t new_color_idx = colorMap[(k - j) * colorMapPitch + j];
+                        int32_t ctx = GetPaletteColorContext(colorMap, colorMapPitch, (k - j), j, new_color_idx);
+                        WriteSymbol(bc, new_color_idx, cdf[ctx], palette_size_y);
+                    }
+                }
+            }
+        }
+
+        if (mi->modeUV == DC_PRED) {
+            const int32_t palette_size_uv = sb.frame->m_fenc->m_Palette8x8[miCol + miRow * sb.par->miPitch].palette_size_uv;
+            const int32_t haspalette_uv = palette_size_uv ? 1 : 0;
+            if (haspalette_uv) {
+                const int32_t y = miRow << 3;
+                const int32_t x = miCol << 3;
+
+                const int32_t xc = x >> sb.frame->m_par->subsamplingX;
+                const int32_t yc = y >> sb.frame->m_par->subsamplingY;
+
+                uint8_t *color_map = &sb.frame->m_fenc->m_ColorMapUV[yc * sb.frame->m_fenc->m_ColorMapUVPitch + xc];
+                WriteSymbolUniform(bc, palette_size_uv, color_map[0]);
+                int32_t height = block_size_high[mi->sbType] >> sb.frame->m_par->subsamplingX;
+                int32_t width = block_size_wide[mi->sbType] >> sb.frame->m_par->subsamplingY;
+                for (int32_t k = 1; k < height + width - 1; k++) {
+                    // wavefront
+                    for (int32_t j = MIN(k, width - 1); j >= MAX(0, k - height + 1); j--) {
+                        int32_t new_color_idx = color_map[(k - j)*sb.frame->m_fenc->m_ColorMapUVPitch + j];
+                        int32_t ctx = GetPaletteColorContext(color_map, sb.frame->m_fenc->m_ColorMapUVPitch, (k - j), j, new_color_idx);
+                        aom_cdf_prob *cdf = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].uv_palette_color_index_cdf[palette_size_uv - 2][ctx];
+                        WriteSymbol(bc, new_color_idx, cdf, palette_size_uv);
+                        //printf("\n %d %d %d %d", ctx, cdf0, new_color_idx, color_map[(k - j)*sb.par->Width + j]);
+                    }
+                }
+            }
+        }
+    }
+
 
     void WriteTxType(BoolCoder &bc, SuperBlock &sb, int32_t blkRow, int32_t blkCol)
     {
         const ModeInfo *mi = sb.frame->m_modeInfo + (blkRow >> 1) * sb.par->miPitch + (blkCol >> 1);
-        const int32_t isInter = (mi->mode >= AV1_INTRA_MODES);
-        EntropyContexts &ectx = sb.frame->m_tileContexts[sb.tileIndex].ectx;
+        const int32_t isInter = (mi->mode >= AV1_INTRA_MODES) || is_intrabc_block(mi);
+        EntropyContexts &ectx = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex];
 
 #if USE_HWPAK_RESTRICT
         const int32_t reduced_tx_set_used = 1;
@@ -1227,7 +1654,6 @@ namespace {
         const int32_t reduced_tx_set_used = 0;
 #endif
         const TxSize txSize = mi->txSize;
-        const TxType txType = mi->txType;
         const TxSize squareTxSize = txsize_sqr_map[mi->txSize];
         const BlockSize bsize = mi->sbType;
 
@@ -1235,7 +1661,7 @@ namespace {
             const TxSetType txSetType = get_ext_tx_set_type(txSize, bsize, isInter, reduced_tx_set_used);
             const int32_t eset = get_ext_tx_set(txSize, bsize, isInter, reduced_tx_set_used);
             int32_t index = (blkRow & 15) * 16 + (blkCol & 15);
-            const int32_t txType = sb.frame->m_txkTypes4x4[sb.sbIndex * 256 + index] & 3;
+            const int32_t txType = sb.frame->m_fenc->m_txkTypes4x4[sb.sbIndex * 256 + index] & 0xf;
             assert(txType >= 0);
             // eset == 0 should correspond to a set with only DCT_DCT and there
             // is no need to send the tx_type
@@ -1255,18 +1681,83 @@ namespace {
     void WriteIntraAngleInfo(BoolCoder &bc, SuperBlock &sb, BlockSize bsize, PredMode mode, int32_t angle_delta)
     {
         if (bsize >= BLOCK_8X8 && av1_is_directional_mode(mode)) {
-            aom_cdf_prob *cdf = sb.frame->m_tileContexts[sb.tileIndex].ectx.angle_delta_cdf[mode - V_PRED];
+            aom_cdf_prob *cdf = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].angle_delta_cdf[mode - V_PRED];
             WriteSymbol(bc, angle_delta, cdf, 2 * MAX_ANGLE_DELTA + 1);
         }
     }
 
     void WriteFilterIntraMode(BoolCoder &bc, SuperBlock &sb, const ModeInfo *mi)
     {
-        const int32_t allow_filter_intra = 0;
+        const int32_t allow_filter_intra = 0;   // also depends on palette size
         if (allow_filter_intra && block_size_wide[mi->sbType] <= 32 && block_size_wide[mi->sbType] <= 32 && mi->mode == DC_PRED) {
-            aom_cdf_prob *cdf = sb.frame->m_tileContexts[sb.tileIndex].ectx.filter_intra_cdfs[mi->txSize];
+            aom_cdf_prob *cdf = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].filter_intra_cdfs[mi->txSize];
             WriteSymbol(bc, 0, cdf, 2);
         }
+    }
+
+    static int av1_get_mv_joint(const AV1MV *mv)
+    {
+        if (mv->mvy == 0) {
+            return mv->mvx == 0 ? MV_JOINT_ZERO : MV_JOINT_HNZVZ;
+        }
+        else {
+            return mv->mvx == 0 ? MV_JOINT_HZVNZ : MV_JOINT_HNZVNZ;
+        }
+    }
+
+    void WriteCFLAlphas(BoolCoder &bc, SuperBlock &sb, const ModeInfo *mi, int miRow, int miCol) {
+
+        CFL_params* cfl = sb.frame->m_fenc->m_cfl + miCol + miRow * (sb.par->PicWidthInCtbs<<3);
+        const int joint_sign = cfl->joint_sign;
+        const int idx = (cfl->alpha_u << CFL_ALPHABET_SIZE_LOG2) + cfl->alpha_v;
+
+        EntropyContexts& probs = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex];
+        WriteSymbol(bc, joint_sign, probs.cfl_sign_cdf, CFL_JOINT_SIGNS);
+        // Magnitudes are only signaled for nonzero codes.
+        if (CFL_SIGN_U(joint_sign) != CFL_SIGN_ZERO) {
+            WriteSymbol(bc, CFL_IDX_U(idx), probs.cfl_alpha_cdf[CFL_CONTEXT_U(joint_sign)], CFL_ALPHABET_SIZE);
+        }
+        if (CFL_SIGN_V(joint_sign) != CFL_SIGN_ZERO) {
+            WriteSymbol(bc, CFL_IDX_V(idx), probs.cfl_alpha_cdf[CFL_CONTEXT_V(joint_sign)], CFL_ALPHABET_SIZE);
+        }
+    }
+
+    void WriteDeltaQIndex(BoolCoder &bc, SuperBlock &sb, const ModeInfo *mi, int miRow, int miCol) {
+        int32_t prev_qindex  = sb.frame->m_sliceQpY;
+        if (sb.sbRow == sb.frame->m_tileParam.rowStart[sb.tileRow] && sb.sbCol == sb.frame->m_tileParam.colStart[sb.tileCol])
+            prev_qindex = sb.frame->m_sliceQpY;
+        else if (sb.sbCol != sb.frame->m_tileParam.colStart[sb.tileCol])
+            prev_qindex = sb.frame->m_lcuQps[sb.sbRow*sb.par->PicWidthInCtbs + sb.sbCol - 1];
+        else
+            prev_qindex = sb.frame->m_lcuQps[(sb.sbRow - 1)*sb.par->PicWidthInCtbs + sb.frame->m_tileParam.colEnd[sb.tileCol] - 1];
+
+        if (mi->sbType >= BLOCK_64X64 && mi->skip) {
+            sb.frame->m_lcuQps[sb.sbRow*sb.par->PicWidthInCtbs + sb.sbCol] = prev_qindex;
+            return;
+        }
+        if (sb.code_delta) {
+            int32_t curr_qindex = sb.frame->m_lcuQps[sb.sbIndex];
+            int32_t dq_abs = abs(curr_qindex - prev_qindex);
+            assert((dq_abs & DEFAULT_DELTA_Q_RES_SHIFT) == 0);
+            dq_abs >>= DEFAULT_DELTA_Q_RES_SHIFT;
+            int32_t sign = curr_qindex < prev_qindex ? 1 : 0;
+
+            aom_cdf_prob *cdf = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].delta_q_abs_cdf;
+            WriteSymbol(bc, MIN(dq_abs, DELTA_Q_SMALL), cdf, DELTA_Q_SMALL+1);
+            if (dq_abs >= DELTA_Q_SMALL) {
+                // Big
+                int32_t dq_rem_bits = BSR(dq_abs - 1);
+                WriteLiteral<CODEC_AV1>(bc, dq_rem_bits - 1, 3);
+                WriteLiteral<CODEC_AV1>(bc, dq_abs - (1 << dq_rem_bits) -1, dq_rem_bits);
+            }
+            if (dq_abs) {
+                // Sign
+                od_ec_encode_bool_q15_128(&bc.ec, sign);
+            }
+
+            sb.code_delta = 0;
+        }
+
     }
 
     template <EnumCodecType CodecType>
@@ -1276,9 +1767,24 @@ namespace {
         WriteIntraSegmentId(frame);
         WriteSkip<CodecType>(bc, sb, mi);
 
-        if (sb.cdefPreset == -1 && !mi->skip &&  sb.par->cdefFlag) {
-            WriteLiteral<CODEC_AV1>(bc, frame.m_cdefStrenths[sb.sbIndex], frame.m_cdefParam.cdef_bits);
-            sb.cdefPreset = frame.m_cdefStrenths[sb.sbIndex];
+        if (sb.cdefPreset == -1 && !mi->skip &&  sb.par->cdefFlag && !frame.m_allowIntraBc) {
+            WriteLiteral<CODEC_AV1>(bc, frame.m_fenc->m_cdefStrenths[sb.sbIndex], frame.m_cdefParam.cdef_bits);
+            sb.cdefPreset = frame.m_fenc->m_cdefStrenths[sb.sbIndex];
+        }
+        if (sb.par->UseDQP && sb.code_delta)
+            WriteDeltaQIndex(bc, sb, mi, miRow, miCol);
+
+        if (frame.m_allowIntraBc) {
+            int use_intrabc = is_intrabc_block(mi);
+            aom_cdf_prob *probs = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].intrabc_cdf;
+            WriteSymbol(bc, use_intrabc, probs, 2);
+            if (use_intrabc) {
+                AV1MV diff = mi->mvd[0];
+                EntropyContexts &ectx = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex];
+                WriteMvAV1_Intrabc(bc, diff, diff, 0, ectx, 0);
+                WriteTxSizeAV1(1, bc, sb, mi, miRow, miCol);
+                return;
+            }
         }
 
         if (mi->sbType >= BLOCK_8X8) {
@@ -1297,22 +1803,48 @@ namespace {
         }
 
         WriteIntraAngleInfo(bc, sb, mi->sbType, mi->mode, mi->angle_delta_y);
-        aom_cdf_prob *probs = sb.frame->m_tileContexts[sb.tileIndex].ectx.uv_mode_cdf[mi->mode];
-        WriteSymbol(bc, mi->modeUV, probs, AV1_UV_INTRA_MODES);
+
+        // In lossless, CfL is available when the partition size is equal to the
+        // transform size.
+        // Non lossless: CfL is available to luma partitions lesser than or equal to 32x32
+        bool cfl_allowed = block_size_wide[mi->sbType] <= 32 && block_size_high[mi->sbType] <= 32;
+        aom_cdf_prob *probs = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].uv_mode_cdf[cfl_allowed][mi->mode];
+
+        WriteSymbol(bc, mi->modeUV, probs, AV1_UV_INTRA_MODES - !cfl_allowed);
+        if (mi->modeUV == UV_CFL_PRED) {
+            //fprintf(stderr,"mi (%d,%d) sb(%d,%d)  xy(%d,%d)\n", miRow, miCol, sb.sbRow, sb.sbCol, sb.pelX, sb.pelY);
+            WriteCFLAlphas(bc, sb, mi, miRow, miCol);
+        }
         WriteIntraAngleInfo(bc, sb, mi->sbType, mi->modeUV, mi->angle_delta_uv);
+
+        const int32_t allow_screen_content_tools = (sb.par->screenMode ? 1 : 0); // TBD Make adaptive
+
+        if (mi->sbType >= BLOCK_8X8
+            && block_size_wide[mi->sbType] <= 64
+            && block_size_high[mi->sbType] <= 64
+            && allow_screen_content_tools) {
+            WritePaletteModeInfo(bc, sb, miRow, miCol);
+        }
         WriteFilterIntraMode(bc, sb, mi);
+
+        if (mi->sbType >= BLOCK_8X8
+            && block_size_wide[mi->sbType] <= 64
+            && block_size_high[mi->sbType] <= 64
+            && allow_screen_content_tools) {
+            WritePaletteTokens(bc, sb, miRow, miCol);
+        }
         WriteTxSizeAV1(1, bc, sb, mi, miRow, miCol);
     }
 
     template <EnumCodecType CodecType>
     void WriteNonKeyFrameIntraMode(BoolCoder &bc, SuperBlock &sb, const ModeInfo *mi) {
         int32_t ctx = size_group_lookup[mi->sbType];
-        aom_cdf_prob *probs = sb.frame->m_tileContexts[sb.tileIndex].ectx.y_mode_cdf[ctx];
+        aom_cdf_prob *probs = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].y_mode_cdf[ctx];
         WriteSymbol(bc, mi->mode, probs, AV1_INTRA_MODES);
     }
 
     template <EnumCodecType CodecType>
-    void WriteIntraBlockModeInfo(BoolCoder &bc, SuperBlock &sb, const ModeInfo *mi) {
+    void WriteIntraBlockModeInfo(BoolCoder &bc, SuperBlock &sb, const ModeInfo *mi, int32_t miRow, int32_t miCol) {
         if (mi->sbType >= BLOCK_8X8) {
             WriteNonKeyFrameIntraMode<CodecType>(bc, sb, mi);
         } else if (mi->sbType == BLOCK_4X8) {
@@ -1328,17 +1860,41 @@ namespace {
         WriteNonKeyFrameIntraMode<CodecType>(bc, sb, mi);
         }
         WriteIntraAngleInfo(bc, sb, mi->sbType, mi->mode, mi->angle_delta_y);
-        aom_cdf_prob *probs = sb.frame->m_tileContexts[sb.tileIndex].ectx.uv_mode_cdf[mi->mode];
-        WriteSymbol(bc, mi->modeUV, probs, AV1_UV_INTRA_MODES);
+
+        // In lossless, CfL is available when the partition size is equal to the
+        // transform size.
+        // Non lossless: CfL is available to luma partitions lesser than or equal to 32x32
+        int is_cfl_allowed = (block_size_wide[mi->sbType] <= 32) && (block_size_high[mi->sbType] <= 32);
+
+        aom_cdf_prob *probs = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex].uv_mode_cdf[is_cfl_allowed][mi->mode];
+        WriteSymbol(bc, mi->modeUV, probs, AV1_UV_INTRA_MODES - !is_cfl_allowed);
+        if (mi->modeUV == UV_CFL_PRED) {
+            WriteCFLAlphas(bc, sb, mi, miRow, miCol);
+        }
         WriteIntraAngleInfo(bc, sb, mi->sbType, mi->modeUV, mi->angle_delta_uv);
+
+        const int32_t allow_screen_content_tools = (sb.par->screenMode ? 1 : 0); // TBD Make adaptive
+
+        if (mi->sbType >= BLOCK_8X8
+            && block_size_wide[mi->sbType] <= 64
+            && block_size_high[mi->sbType] <= 64
+            && allow_screen_content_tools) {
+            WritePaletteModeInfo(bc, sb, miRow, miCol);
+        }
         WriteFilterIntraMode(bc, sb, mi);
+
+        if (mi->sbType >= BLOCK_8X8
+            && block_size_wide[mi->sbType] <= 64
+            && block_size_high[mi->sbType] <= 64
+            && allow_screen_content_tools) {
+            WritePaletteTokens(bc, sb, miRow, miCol);
+        }
     }
 
     template <EnumCodecType CodecType>
     void WriteRefFrames(BoolCoder &bc, const SuperBlock &sb, const ModeInfo &mi, const ModeInfo *above, const ModeInfo *left) {
         Frame &frame = *sb.frame;
-        EntropyContexts &ectx = frame.m_tileContexts[sb.tileIndex].ectx;
-        const FrameContexts &fc = frame.m_contexts;
+        EntropyContexts &ectx = frame.m_fenc->m_entropyContexts[sb.tileIndex];
         const int32_t compMode = (mi.refIdx[1] != NONE_FRAME);
         if (frame.referenceMode == REFERENCE_MODE_SELECT) {
             WriteSymbol(bc, compMode, ectx.comp_inter_cdf[mi.memCtx.compMode], 2);
@@ -1445,7 +2001,7 @@ namespace {
         assert(useHp || (diffmv & 1) == 0);
         assert(diffmv != 0);
         WriteSymbol(bc, (diffmv < 0), ctx.sign_cdf, 2);
-        diffmv = abs(diffmv)-1;
+        diffmv = int16_t(abs(diffmv) - 1);
         if (diffmv < 16) {
             WriteSymbol(bc, 0, ctx.classes_cdf, AV1_MV_CLASSES);
             int32_t mv_class0_bit = diffmv >> 3;
@@ -1484,6 +2040,39 @@ namespace {
             WriteMvComponentAV1(bc, mvd.mvx, useHp, ctx.mv_contexts.comps[MV_COMP_HOR]);
     }
 
+    void WriteMvComponentAV1_Intrabc(BoolCoder &bc, int16_t diffmv, int32_t useHp, MvCompContextsAv1 &ctx)
+    {
+        assert(useHp || (diffmv & 1) == 0);
+        assert(diffmv != 0);
+
+        WriteSymbol(bc, (diffmv < 0), ctx.sign_cdf, 2);
+        diffmv = int16_t(abs(diffmv) - 1);
+
+        if (diffmv < 16) {
+            WriteSymbol(bc, 0, ctx.classes_cdf, AV1_MV_CLASSES);
+            int32_t mv_class0_bit = diffmv >> 3;
+            WriteSymbol(bc, mv_class0_bit, ctx.class0_cdf, CLASS0_SIZE);
+        } else {
+            int32_t mvClass = MIN(MV_CLASS_10, BSR(diffmv >> 3));
+            WriteSymbol(bc, mvClass, ctx.classes_cdf, AV1_MV_CLASSES);
+            diffmv -= CLASS0_SIZE << (mvClass + 2);
+            int32_t intdiff = diffmv >> 3;
+            for (int32_t i = 0; i < mvClass; i++, intdiff >>= 1)
+                WriteSymbol(bc, intdiff & 1, ctx.bits_cdf[i], 2);
+        }
+    }
+    void WriteMvAV1_Intrabc(BoolCoder &bc, AV1MV mv, AV1MV mvd, int32_t allowHighPrecisionMv, EntropyContexts &ctx, int32_t c)
+    {
+
+        int32_t mvJoint = (mvd.mvx == 0) ? MV_JOINT_ZERO : MV_JOINT_HNZVZ;
+        if (mvd.mvy != 0) mvJoint |= MV_JOINT_HZVNZ;
+        WriteMvJointAV1(bc, mvJoint, ctx.dv_contexts);
+
+        if (mvJoint & MV_JOINT_HZVNZ)
+            WriteMvComponentAV1_Intrabc(bc, mvd.mvy, /*useHp*/0, ctx.dv_contexts.comps[MV_COMP_VER]);
+        if (mvJoint & MV_JOINT_HNZVZ)
+            WriteMvComponentAV1_Intrabc(bc, mvd.mvx, /*useHp*/0, ctx.dv_contexts.comps[MV_COMP_HOR]);
+    }
 #define FWD_RF_OFFSET(ref) (ref - LAST_FRAME)
 #define BWD_RF_OFFSET(ref) (ref - ALTREF_FRAME)
     static inline int8_t RefFrameTypeAV1(const int8_t *const rf) {
@@ -1495,9 +2084,8 @@ namespace {
         return rf[0];
     }
 
-    inline void WriteDrlIdx(BoolCoder &bc, EntropyContexts &ectx, const ModeInfo &mi) {
-        uint8_t refFrameType = RefFrameTypeAV1(mi.refIdx);
-
+    inline void WriteDrlIdx(BoolCoder &bc, EntropyContexts &ectx, const ModeInfo &mi)
+    {
         assert(mi.refMvIdx < 3);
 
         if (mi.mode == AV1_NEWMV) {
@@ -1542,8 +2130,8 @@ namespace {
     }
 
     int32_t FindSamples(SuperBlock &sb, const ModeInfo *mi, int32_t miRow, int32_t miCol, int32_t *pts, int32_t *pts_inref, int32_t *pts_mv) {
-        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.par->tileParam.miRowStart[sb.tileRow]);
-        const ModeInfo *left = GetLeft(mi, miCol, sb.par->tileParam.miColStart[sb.tileCol]);
+        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.frame->m_tileParam.miRowStart[sb.tileRow]);
+        const ModeInfo *left = GetLeft(mi, miCol, sb.frame->m_tileParam.miColStart[sb.tileCol]);
         const uint8_t currW = block_size_wide_8x8[mi->sbType];
         const uint8_t currH = block_size_high_8x8[mi->sbType];
         const int32_t global_offset_c = miCol * MI_SIZE;
@@ -1637,9 +2225,6 @@ namespace {
 
         // Top-left block
         if (do_tl && left && above) {
-            int mi_row_offset = -1;
-            int mi_col_offset = -1;
-
             const ModeInfo *topLeftMi = mi - 1 - sb.par->miPitch;
 
             if (topLeftMi->refIdx[0] == ref_frame && topLeftMi->refIdx[1] == NONE_FRAME) {
@@ -1654,7 +2239,7 @@ namespace {
 
         // Top-right block
         if (do_tr && hasTopRight[miRow & 7][(miCol & 7) + currW - 1]) {
-            if (IsInside(GetTileBordersMi(sb.par->tileParam, miRow, miCol), miRow - 1, miCol + currW)) {
+            if (IsInside(GetTileBordersMi(sb.frame->m_tileParam, miRow, miCol), miRow - 1, miCol + currW)) {
                 int mi_row_offset = -1;
                 int mi_col_offset = currW;
 
@@ -1675,8 +2260,8 @@ namespace {
         if (std::min(block_size_wide[mi->sbType], block_size_high[mi->sbType]) < 8)
             return overlappable_neighbors;
 
-        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.par->tileParam.miRowStart[sb.tileRow]);
-        const ModeInfo *left = GetLeft(mi, miCol, sb.par->tileParam.miColStart[sb.tileCol]);
+        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.frame->m_tileParam.miRowStart[sb.tileRow]);
+        const ModeInfo *left = GetLeft(mi, miCol, sb.frame->m_tileParam.miColStart[sb.tileCol]);
         const int32_t sbw8 = block_size_wide_8x8[mi->sbType];
         const int32_t sbh8 = block_size_high_8x8[mi->sbType];
 
@@ -1761,7 +2346,7 @@ namespace {
     void WriteMotionMode(BoolCoder &bc, SuperBlock &sb, const ModeInfo *mi, int32_t numProjRef, std::pair<int32_t, int32_t> numOverlappableNeighbors) {
         const MotionMode lastMotionModeAllowed = MotionModeAllowed(mi, IDENTITY, numProjRef, numOverlappableNeighbors);
         if (lastMotionModeAllowed != SIMPLE_TRANSLATION) {
-            EntropyContexts &ectx = sb.frame->m_tileContexts[sb.tileIndex].ectx;
+            EntropyContexts &ectx = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex];
             if (lastMotionModeAllowed == OBMC_CAUSAL)
                 WriteSymbol(bc, 0, ectx.obmc_cdf[mi->sbType], 2);  // SIMPLE_TRANSLATION
             else
@@ -1773,9 +2358,9 @@ namespace {
     void WriteInterBlockModeInfo(BoolCoder &bc, SuperBlock &sb, const ModeInfo *mi, int32_t miRow, int32_t miCol) {
         const AV1VideoParam &par = *sb.par;
         const Frame &frame = *sb.frame;
-        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.par->tileParam.miRowStart[sb.tileRow]);
-        const ModeInfo *left = GetLeft(mi, miCol, sb.par->tileParam.miColStart[sb.tileCol]);
-        EntropyContexts &ectx = sb.frame->m_tileContexts[sb.tileIndex].ectx;
+        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.frame->m_tileParam.miRowStart[sb.tileRow]);
+        const ModeInfo *left = GetLeft(mi, miCol, sb.frame->m_tileParam.miColStart[sb.tileCol]);
+        EntropyContexts &ectx = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex];
 
         //if (CodecType == CODEC_AV1) {
         //    const int32_t sbw8 = block_size_wide_8x8[mi->sbType];
@@ -1852,23 +2437,25 @@ namespace {
         WriteInterSegmentId(*sb.frame);
 
 #ifdef AV1_DEBUG_CONTEXT_MEMOIZATION
-        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.par->tileParam.miRowStart[sb.tileRow]);
-        const ModeInfo *left = GetLeft(mi, miCol, sb.par->tileParam.miColStart[sb.tileCol]);
+        const ModeInfo *above = GetAbove(mi, sb.par->miPitch, miRow, sb.frame->m_tileParam.miRowStart[sb.tileRow]);
+        const ModeInfo *left = GetLeft(mi, miCol, sb.frame->m_tileParam.miColStart[sb.tileCol]);
         const int32_t testctxSkip = GetCtxSkip(above, left);
-        assert(testctxSkip == mi->memCtx.skip);
+        assert(testctxSkip == (int32_t)mi->memCtx.skip);
         const int32_t testctxIsInter = GetCtxIsInter(above, left);
-        assert(testctxIsInter == mi->memCtx.isInter);
+        assert(testctxIsInter == (int32_t)mi->memCtx.isInter);
 #endif // AV1_DEBUG_CONTEXT_MEMOIZATION
 
-        EntropyContexts &ectx = sb.frame->m_tileContexts[sb.tileIndex].ectx;
+        EntropyContexts &ectx = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex];
 
         const int32_t skip = mi->skip;
         WriteSymbol(bc, skip, ectx.skip_cdf[mi->memCtx.skip], 2);
 
         if (sb.cdefPreset == -1 && !mi->skip && sb.par->cdefFlag) {
-            WriteLiteral<CODEC_AV1>(bc, sb.frame->m_cdefStrenths[sb.sbIndex], sb.frame->m_cdefParam.cdef_bits);
-            sb.cdefPreset = sb.frame->m_cdefStrenths[sb.sbIndex];
+            WriteLiteral<CODEC_AV1>(bc, sb.frame->m_fenc->m_cdefStrenths[sb.sbIndex], sb.frame->m_cdefParam.cdef_bits);
+            sb.cdefPreset = sb.frame->m_fenc->m_cdefStrenths[sb.sbIndex];
         }
+        if (sb.par->UseDQP && sb.code_delta)
+            WriteDeltaQIndex(bc, sb, mi, miRow, miCol);
 
         const int32_t isInter = (mi->refIdx[0] != INTRA_FRAME);
         WriteSymbol(bc, isInter, ectx.intra_inter_cdf[mi->memCtx.isInter], 2);
@@ -1876,7 +2463,7 @@ namespace {
         if (isInter)
             WriteInterBlockModeInfo<CodecType>(bc, sb, mi, miRow, miCol);
         else
-            WriteIntraBlockModeInfo<CodecType>(bc, sb, mi);
+            WriteIntraBlockModeInfo<CodecType>(bc, sb, mi, miRow, miCol);
 
         WriteTxSizeAV1((!skip || !isInter), bc, sb, mi, miRow, miCol);
     }
@@ -2099,12 +2686,80 @@ namespace {
         return (TxSize)((txsize_sqr_map[txSize] + txsize_sqr_up_map[txSize] + 1) >> 1);
     }
 
-    int32_t GetEob(const int16_t *coeffs, const int16_t *scan, int32_t maxEob) {
+    int32_t GetEob(const int16_t *coeffs, const int16_t *scan, TxSize txSize) {
+#if 0
+        int maxEob = max_eob[txSize];
         int32_t lastNz = maxEob - 1;
         for (; lastNz >= 0; lastNz--)
             if (coeffs[scan[lastNz]])
                 break;
         return lastNz + 1;
+
+#else
+#if 0
+        int maxEob = max_eob[txSize];
+        int32_t lastNz = maxEob - 1;
+        for (; lastNz >= 0; lastNz--)
+            if (coeffs[scan[lastNz]])
+                break;
+        int eob = lastNz + 1;
+#endif
+
+        alignas(64) static const int numCycles[19] = { 1, 4, 16, 64, 256, 2, 2, 8, 8, 32, 32, 128, 128, 4, 4, 16, 16, 64,  64 };
+        alignas(64) static  const int maxInLine[19][256] = {
+           { 15, },
+           { 42, 53, 60, 63, },
+           { 120, 150, 151, 177, 178, 200, 201, 219, 220, 234, 235, 245, 246, 252, 253, 255, },
+           { 120, 496, 151, 558, 155, 559, 186, 617, 194, 618, 225, 672, 237, 673, 268, 723, 284, 724, 315, 770, 335, 771, 366, 813, 390, 814, 421, 852, 449, 853, 480, 887, 512, 888, 542, 918, 575, 919, 601, 945, 634, 946, 656, 968, 689, 969, 707, 987, 740, 988, 754, 1002, 787, 1003, 797, 1013, 830, 1014, 836, 1020, 869, 1021, 871, 1023, },
+           { 120, 496, 151, 558, 155, 559, 186, 617, 194, 618, 225, 672, 237, 673, 268, 723, 284, 724, 315, 770, 335, 771, 366, 813, 390, 814, 421, 852, 449, 853, 480, 887, 512, 888, 542, 918, 575, 919, 601, 945, 634, 946, 656, 968, 689, 969, 707, 987, 740, 988, 754, 1002, 787, 1003, 797, 1013, 830, 1014, 836, 1020, 869, 1021, 871, 1023, 18, 31, 28, 31, 36, 52, 68, 84, 100, 113, 122, 127, 99, 106, 112, 117, 121, 124, 126, 127, 120, 136, 152, 168, 184, 200, 216, 232, 248, 264, 280, 296, 312, 328, 344, 360, 376, 392, 407, 421, 434, 446, 457, 467, 476, 484, 491, 497, 502, 506, 509, 511, 135, 391, 150, 406, 165, 420, 180, 433, 195, 445, 210, 456, 225, 466, 240, 475, 255, 483, 270, 490, 285, 496, 300, 501, 315, 505, 330, 508, 345, 510, 360, 511, 18, 34, 50, 63, 57, 60, 62, 63, 36, 52, 68, 84, 100, 116, 132, 148, 164, 180, 196, 212, 228, 241, 250, 255, 99, 227, 106, 234, 113, 240, 120, 245, 127, 249, 134, 252, 141, 254, 148, 255, 256, 128, 11389, 32758, 119, 115, 119, 121, 114, 120, 27756, 30060, 29801, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 32758, 27745, 29811, 29811, 30579, 30579, 29811, 30565, 23899, 29793, 15917, 31868, 15934, 30304, 30304, 30055, 30304, 30304, 30067, 29541, 30304, 30304, 30304, 30304, 30066, 29795, 30240, 30066, 30048, 30240, },
+           { 18, 31, },
+           { 28, 31, },
+           { 36, 52, 68, 84, 100, 113, 122, 127, },
+           { 99, 106, 112, 117, 121, 124, 126, 127, },
+           { 120, 136, 152, 168, 184, 200, 216, 232, 248, 264, 280, 296, 312, 328, 344, 360, 376, 392, 407, 421, 434, 446, 457, 467, 476, 484, 491, 497, 502, 506, 509, 511, },
+           { 135, 391, 150, 406, 165, 420, 180, 433, 195, 445, 210, 456, 225, 466, 240, 475, 255, 483, 270, 490, 285, 496, 300, 501, 315, 505, 330, 508, 345, 510, 360, 511, },
+           { 120, 496, 151, 558, 155, 559, 186, 617, 194, 618, 225, 672, 237, 673, 268, 723, 284, 724, 315, 770, 335, 771, 366, 813, 390, 814, 421, 852, 449, 853, 480, 887, 512, 888, 542, 918, 575, 919, 601, 945, 634, 946, 656, 968, 689, 969, 707, 987, 740, 988, 754, 1002, 787, 1003, 797, 1013, 830, 1014, 836, 1020, 869, 1021, 871, 1023, 18, 31, 28, 31, 36, 52, 68, 84, 100, 113, 122, 127, 99, 106, 112, 117, 121, 124, 126, 127, 120, 136, 152, 168, 184, 200, 216, 232, 248, 264, 280, 296, 312, 328, 344, 360, 376, 392, 407, 421, 434, 446, 457, 467, 476, 484, 491, 497, 502, 506, 509, 511, 135, 391, 150, 406, 165, 420, 180, 433, 195, 445, 210, 456, },
+           { 120, 496, 151, 558, 155, 559, 186, 617, 194, 618, 225, 672, 237, 673, 268, 723, 284, 724, 315, 770, 335, 771, 366, 813, 390, 814, 421, 852, 449, 853, 480, 887, 512, 888, 542, 918, 575, 919, 601, 945, 634, 946, 656, 968, 689, 969, 707, 987, 740, 988, 754, 1002, 787, 1003, 797, 1013, 830, 1014, 836, 1020, 869, 1021, 871, 1023, 18, 31, 28, 31, 36, 52, 68, 84, 100, 113, 122, 127, 99, 106, 112, 117, 121, 124, 126, 127, 120, 136, 152, 168, 184, 200, 216, 232, 248, 264, 280, 296, 312, 328, 344, 360, 376, 392, 407, 421, 434, 446, 457, 467, 476, 484, 491, 497, 502, 506, 509, 511, 135, 391, 150, 406, 165, 420, 180, 433, 195, 445, 210, 456, },
+           { 18, 34, 50, 63, },
+           { 57, 60, 62, 63, },
+           { 36, 52, 68, 84, 100, 116, 132, 148, 164, 180, 196, 212, 228, 241, 250, 255, },
+           { 99, 227, 106, 234, 113, 240, 120, 245, 127, 249, 134, 252, 141, 254, 148, 255, },
+           { 120, 136, 152, 168, 184, 200, 216, 232, 248, 264, 280, 296, 312, 328, 344, 360, 376, 392, 407, 421, 434, 446, 457, 467, 476, 484, 491, 497, 502, 506, 509, 511, 135, 391, 150, 406, 165, 420, 180, 433, 195, 445, 210, 456, 225, 466, 240, 475, 255, 483, 270, 490, 285, 496, 300, 501, 315, 505, 330, 508, 345, 510, 360, 511, },
+           { 135, 391, 150, 406, 165, 420, 180, 433, 195, 445, 210, 456, 225, 466, 240, 475, 255, 483, 270, 490, 285, 496, 300, 501, 315, 505, 330, 508, 345, 510, 360, 511, 18, 34, 50, 63, 57, 60, 62, 63, 36, 52, 68, 84, 100, 116, 132, 148, 164, 180, 196, 212, 228, 241, 250, 255, 99, 227, 106, 234, 113, 240, 120, 245, },
+        };
+
+        const int num = numCycles[txSize];
+        const __m256i yff = _mm256_set1_epi16(int16_t(-1));
+        const __m256i zero = _mm256_setzero_si256();
+
+        const int16_t* scn = av1_default_scan_r[txSize];
+        __m256i max_scan = yff; // _mm256_setzero_si256();
+        const int* mInLine = &maxInLine[txSize][0];
+        for (int i = num-1; i >=0; i--) { //reverse scan
+            if (_mm256_testz_si256(_mm256_cmpgt_epi16(_mm256_broadcastw_epi16(_mm_cvtsi32_si128(mInLine[i])), max_scan), yff)) continue;
+            const __m256i cf = _mm256_load_si256((__m256i*)(coeffs + (i << 4)));
+            //test for zeros
+            if (_mm256_testz_si256(cf, yff)) continue;
+            const __m256i mask = _mm256_xor_si256(yff, _mm256_cmpeq_epi16(cf, zero)); //invert
+
+            const __m256i sc = _mm256_load_si256((__m256i*)(scn + (i << 4)));
+            max_scan = _mm256_max_epi16(max_scan, _mm256_and_si256(sc, mask));
+        }
+
+        if (_mm256_testz_si256(_mm256_xor_si256(yff, max_scan), yff)) {
+            //if(eob) fprintf(stderr,"eob non zero! eob=%d\n", eob);
+            return 0; //no coefficients
+        }
+
+        __m128i max128 = _mm_max_epi16(si128_lo(max_scan), si128_hi(max_scan));
+        max128 = _mm_xor_si128(max128, _mm_set1_epi32(-1));
+        max128 = _mm_minpos_epu16(max128);
+        max128 = _mm_andnot_si128(max128, _mm_setr_epi16(int16_t(-1), 0, 0, 0, 0, 0, 0, 0));
+        const int v = _mm_cvtsi128_si32(max128);
+        //if(v+1 != eob)             fprintf(stderr, "eob=%d v=%d tx=%d\n", eob, v , txSize);
+
+        return v + 1;
+#endif
     }
 
     const int8_t eob_to_pos_small[33] = {
@@ -2668,7 +3323,7 @@ namespace {
         const int32_t height = get_txb_high(tx_size);
         for (int32_t i = 0; i < eob; ++i) {
             const int32_t pos = scan[i];
-            coeff_contexts[pos] = get_nz_map_ctx(levels, pos, bwl, height, i, i == eob - 1, tx_size, txClass);
+            coeff_contexts[pos] = (int8_t)get_nz_map_ctx(levels, pos, bwl, height, i, i == eob - 1, tx_size, txClass);
         }
     }
 
@@ -2747,29 +3402,29 @@ namespace {
         const int32_t ssx = planeType;
         const int32_t ssy = planeType;
         const int32_t index = (blkRow & 15) * 16 + (blkCol & 15);
-        const int32_t txType = sb.frame->m_txkTypes4x4[sb.sbIndex * 256 + index] & 3;
+        const int32_t txType = sb.frame->m_fenc->m_txkTypes4x4[sb.sbIndex * 256 + index] & 0xf;
         //const ScanOrder &so = av1_scans[txSize][txType];
         const int16_t *scan = av1_scans[txSize][txType].scan;
         const int32_t blockIdx = h265_scan_r2z4[(blkRow & 15) * 16 + (blkCol & 15)];
         const CoeffsType *coeffs = sb.coeffs[plane] + (blockIdx << 4 >> (ssx + ssy));
-        const int32_t eob = GetEob(coeffs, scan, max_eob[txSize]);
+        const int32_t eob = GetEob(coeffs, scan, txSize);
 
-        TileContexts &tileCtx = sb.frame->m_tileContexts[sb.tileIndex];
-        EntropyContexts &ectx = tileCtx.ectx;
-        uint8_t *actx = tileCtx.aboveNonzero[plane] + ((blkCol - (sb.par->tileParam.miColStart[sb.tileCol] << 1)) >> planeType);
-        uint8_t *lctx = tileCtx.leftNonzero [plane] + ((blkRow - (sb.par->tileParam.miRowStart[sb.tileRow] << 1)) >> planeType);
+        TileContexts &tileCtx = sb.frame->m_fenc->m_tileContexts[sb.tileIndex];
+        EntropyContexts &ectx = sb.frame->m_fenc->m_entropyContexts[sb.tileIndex];
+        uint8_t *actx = tileCtx.aboveNonzero[plane] + ((blkCol - (sb.frame->m_tileParam.miColStart[sb.tileCol] << 1)) >> planeType);
+        uint8_t *lctx = tileCtx.leftNonzero [plane] + ((blkRow - (sb.frame->m_tileParam.miRowStart[sb.tileRow] << 1)) >> planeType);
         int32_t txbSkipCtx;
         int32_t dcSignCtx;
         GetTxbCtx(planeBsize, txSize, plane, actx, lctx, &txbSkipCtx, &dcSignCtx);
         const TxSize txSizeCtx = get_txsize_entropy_ctx(txSize);
 
         if (eob == 0) {
-            WriteSymbol(bc, 1, tileCtx.ectx.txb_skip_cdf[txSizeCtx][txbSkipCtx], 2);
+            WriteSymbol(bc, 1, ectx.txb_skip_cdf[txSizeCtx][txbSkipCtx], 2);
             SetCulLevel(actx, lctx, 0, txSize);
             return;
         }
 
-        WriteSymbol(bc, 0, tileCtx.ectx.txb_skip_cdf[txSizeCtx][txbSkipCtx], 2);
+        WriteSymbol(bc, 0, ectx.txb_skip_cdf[txSizeCtx][txbSkipCtx], 2);
         if (plane == 0)
             WriteTxType(bc, sb, blkRow, blkCol);
 
@@ -2813,28 +3468,31 @@ namespace {
         alignas(16) int8_t coeff_contexts[32 * 32];
         alignas(16) int8_t br_contexts[32 * 32];
 
-        const int32_t culLevel = av1_get_nz_map_contexts_sse(coeffs, scan, eob, txSize, txClass, coeff_contexts, br_contexts);
-        SetCulLevel(actx, lctx, culLevel, txSize);
+        const int32_t culLevel = av1_get_nz_map_contexts_sse(coeffs, scan, (uint16_t)eob, txSize, txClass, coeff_contexts, br_contexts);
+        SetCulLevel(actx, lctx, (uint8_t)culLevel, txSize);
 
-        const int32_t pos = scan[eob - 1];
-        const int32_t coeffCtx = coeff_contexts[pos];
-        const int32_t level = abs(coeffs[pos]);
-        if (level <= NUM_BASE_LEVELS) {
-            WriteSymbol(bc, level - 1, ectx.coeff_base_eob_cdf[txSizeCtx][planeType][coeffCtx], 3);
-        } else {
-            WriteSymbol(bc, 2, ectx.coeff_base_eob_cdf[txSizeCtx][planeType][coeffCtx], 3);
-            int32_t baseRange = std::min(COEFF_BASE_RANGE, level - 1 - NUM_BASE_LEVELS);
-            const int32_t brCtx = br_contexts[pos];
+        { // eob coef first
+            const int32_t pos = scan[eob - 1];
+            const int32_t coeffCtx = coeff_contexts[pos];
+            const int32_t level = abs(coeffs[pos]);
+            if (level <= NUM_BASE_LEVELS) {
+                WriteSymbol(bc, level - 1, ectx.coeff_base_eob_cdf[txSizeCtx][planeType][coeffCtx], 3);
+            }
+            else {
+                WriteSymbol(bc, 2, ectx.coeff_base_eob_cdf[txSizeCtx][planeType][coeffCtx], 3);
+                int32_t baseRange = std::min(COEFF_BASE_RANGE, level - 1 - NUM_BASE_LEVELS);
+                const int32_t brCtx = br_contexts[pos];
 
-            // Expression x * 10 + 6 >> 5 is an approximation for x / 3:
-            //   0..2  -> 0
-            //   3..5  -> 1
-            //   6..8  -> 2
-            //   9..12 -> 3
-            const int32_t num3 = (baseRange * 10 + 6) >> 5;
-            for (int32_t i = 0; i < num3; i++, baseRange -= 3)
-                WriteSymbol4(bc, 3, ectx.coeff_br_cdf[txSizeCtx][planeType][brCtx]);
-            WriteSymbol4(bc, baseRange, ectx.coeff_br_cdf[txSizeCtx][planeType][brCtx]);
+                // Expression x * 10 + 6 >> 5 is an approximation for x / 3:
+                //   0..2  -> 0
+                //   3..5  -> 1
+                //   6..8  -> 2
+                //   9..12 -> 3
+                const int32_t num3 = (baseRange * 10 + 6) >> 5;
+                for (int32_t i = 0; i < num3; i++, baseRange -= 3)
+                    WriteSymbol4(bc, 3, ectx.coeff_br_cdf[txSizeCtx][planeType][brCtx]);
+                WriteSymbol4(bc, (uint16_t)baseRange, ectx.coeff_br_cdf[txSizeCtx][planeType][brCtx]);
+            }
         }
 
         int32_t prevCtx = 0, prevBrCtx = 0;
@@ -2844,39 +3502,41 @@ namespace {
             const int32_t pos = scan[c];
             const int32_t coeffCtx = coeff_contexts[pos];
             const int32_t level = abs(coeffs[pos]);
-            const int l = level - 1 - NUM_BASE_LEVELS;
-            const int d = (coeffCtx - prevCtx);
+            const int32_t l = level - 1 - NUM_BASE_LEVELS;
+            int32_t d = (coeffCtx - prevCtx);
             bcdf += (d<<2) + d;
             prevCtx = coeffCtx;
-            WriteSymbol4(bc, l >= 0 ? 3 : level, bcdf);
+            WriteSymbol4(bc, uint16_t(l >= 0 ? 3 : level), bcdf);
             if (l >= 0) {
                 int32_t baseRange = std::min(COEFF_BASE_RANGE, l);
                 const int32_t brCtx = br_contexts[pos];
-                const int d = (brCtx - prevBrCtx);
+                d = (brCtx - prevBrCtx);
                 brcdf += (d << 2) + d;
                 prevBrCtx = brCtx;
 
                 const int32_t num3 = (baseRange * 10 + 6) >> 5;
                 for (int32_t i = 0; i < num3; i++, baseRange -= 3)
                     WriteSymbol4(bc, 3, brcdf);
-                WriteSymbol4(bc, baseRange, brcdf);
+                WriteSymbol4(bc, (uint16_t)baseRange, brcdf);
             }
         }
 
-        // Loop to code all signs in the transform block,
-        // starting with the sign of DC (if applicable)
-        const int16_t v = coeffs[0];
-        if (v) {
-            const uint16_t level = abs(v);
-            WriteSymbol(bc, uint16_t(v) >> 15, ectx.dc_sign_cdf[planeType][dcSignCtx], 2);
-            if (level > COEFF_BASE_RANGE + NUM_BASE_LEVELS)
-                WriteGolomb(bc, level - COEFF_BASE_RANGE - 1 - NUM_BASE_LEVELS);
+        {
+            // Loop to code all signs in the transform block,
+            // starting with the sign of DC (if applicable)
+            const int16_t v = coeffs[0];
+            if (v) {
+                const uint16_t level = (uint16_t)abs(v);
+                WriteSymbol(bc, uint16_t(v) >> 15, ectx.dc_sign_cdf[planeType][dcSignCtx], 2);
+                if (level > COEFF_BASE_RANGE + NUM_BASE_LEVELS)
+                    WriteGolomb(bc, level - COEFF_BASE_RANGE - 1 - NUM_BASE_LEVELS);
+            }
         }
 
         for (int32_t c = 1; c < eob; ++c) {
             const int16_t v = coeffs[scan[c]];
             if (v) {
-                const uint16_t level = abs(v);
+                const uint16_t level = (uint16_t)abs(v);
                 od_ec_encode_bool_q15_128(&bc.ec, uint16_t(v) >> 15 /* sign */); //  WriteBool128<CODEC_AV1>(bc, uint16_t(v) >> 15);
                 if (level > COEFF_BASE_RANGE + NUM_BASE_LEVELS)
                     WriteGolomb(bc, level - COEFF_BASE_RANGE - 1 - NUM_BASE_LEVELS);
@@ -2909,13 +3569,11 @@ namespace {
         const ModeInfo *mi = sb.frame->m_modeInfo + miCol + miRow * sb.par->miPitch;
 
         if (mi->skip) {
-            TileContexts &tileCtx = sb.frame->m_tileContexts[sb.tileIndex];
+            TileContexts &tileCtx = sb.frame->m_fenc->m_tileContexts[sb.tileIndex];
             const int32_t block_wide = block_size_wide_4x4[mi->sbType];
             const int32_t block_high = block_size_high_4x4[mi->sbType];
-            const int32_t miBlocksToLeft = miCol - sb.par->tileParam.miColStart[sb.tileCol];
-            const int32_t miBlocksToTop  = miRow - sb.par->tileParam.miRowStart[sb.tileRow];
-            uint8_t *actx = tileCtx.aboveNonzero[0] + miBlocksToLeft;
-            uint8_t *lctx = tileCtx.leftNonzero [0] + miBlocksToTop;
+            const int32_t miBlocksToLeft = miCol - sb.frame->m_tileParam.miColStart[sb.tileCol];
+            const int32_t miBlocksToTop  = miRow - sb.frame->m_tileParam.miRowStart[sb.tileRow];
             memset(tileCtx.aboveNonzero[0] + (miBlocksToLeft << 1), 0, block_wide);
             memset(tileCtx.leftNonzero [0] + (miBlocksToTop  << 1), 0, block_high);
             memset(tileCtx.aboveNonzero[1] + miBlocksToLeft, 0, block_wide >> 1);
@@ -2928,7 +3586,7 @@ namespace {
         const int32_t max_blocks_wide = block_size_wide_4x4[mi->sbType];
         const int32_t max_blocks_high = block_size_high_4x4[mi->sbType];
 
-        if (mi->mode < AV1_INTRA_MODES) {
+        if (mi->mode < AV1_INTRA_MODES && !is_intrabc_block(mi)) {
             for (int32_t plane = 0; plane < 3; ++plane) {
                 const int32_t planeType = !!plane;
                 const BlockSize plane_bsize = (plane ? ss_size_lookup[mi->sbType][1][1] : mi->sbType);
@@ -2975,6 +3633,7 @@ namespace {
 
     template <EnumCodecType CodecType>
     void WriteModes(BoolCoder &bc, SuperBlock &sb, int32_t miRow, int32_t miCol) {
+        fprintf_trace_cabac(stderr, "\nmodes(frame=%d, mi_row=%d, mi_col=%d)\n\n", sb.frame->m_frameOrder, miRow * 2, miCol * 2);
         if (sb.frame->IsIntra())
             WriteIntraFrameModeInfo<CodecType>(bc, sb, miRow, miCol);
         else
@@ -3061,18 +3720,18 @@ namespace {
 
     template <EnumCodecType CodecType>
     void WritePartition(BoolCoder &bc, SuperBlock &sb, int32_t miRow, int32_t miCol, int32_t log2SbSize) {
-        fprintf_trace_cabac(stderr, "\n Partition at poc=%d sbIndex=%d miRow=%d miCol=%d SB%dx%d\n", sb.frame->m_frameOrder, sb.sbIndex, miRow, miCol, 1<<log2SbSize, 1<<log2SbSize);
-        const Frame &frame = *sb.frame;
-        Frame &frameMutable = *sb.frame;
-        TileContexts &tileCtx = frameMutable.m_tileContexts[sb.tileIndex];
-        const int32_t miColTileStart = sb.par->tileParam.miColStart[sb.tileCol];
-        const int32_t miRowTileStart = sb.par->tileParam.miRowStart[sb.tileRow];
         if (miRow >= sb.par->miRows || miCol >= sb.par->miCols)
             return;
-
+        const Frame &frame = *sb.frame;
         const ModeInfo *mi = frame.m_modeInfo + miCol + miRow * sb.par->miPitch;
+        fprintf_trace_cabac(stderr, "\npartition(frame=%d, mi_row=%d, mi_col=%d, bsize=%d)\n\n", sb.frame->m_frameOrder, miRow * 2, miCol * 2, 3 * (log2SbSize - 2));
+        Frame &frameMutable = *sb.frame;
+        TileContexts &tileCtx = frameMutable.m_fenc->m_tileContexts[sb.tileIndex];
+        const int32_t miColTileStart = sb.frame->m_tileParam.miColStart[sb.tileCol];
+        const int32_t miRowTileStart = sb.frame->m_tileParam.miRowStart[sb.tileRow];
+
         assert(mi->sbType < BLOCK_SIZES);
-        const BlockSize bsize = 3 * (log2SbSize - 2);
+        const BlockSize bsize = BlockSize(3 * (log2SbSize - 2));
         const PartitionType partition = GetPartition(bsize, mi->sbType);
 
         assert(log2SbSize <= 6 && log2SbSize >= 3);
@@ -3087,7 +3746,7 @@ namespace {
         int32_t ctx = bsl * 4 + left * 2 + above;
 
         aom_cdf_prob tmp[2];
-        aom_cdf_prob *cdf = frameMutable.m_tileContexts[sb.tileIndex].ectx.partition_cdf[ctx];
+        aom_cdf_prob *cdf = frameMutable.m_fenc->m_entropyContexts[sb.tileIndex].partition_cdf[ctx];
 
         if (hasRows && hasCols) {
             WriteSymbol(bc, partition, cdf, GetPartitionCdfLength(bsize));
@@ -3125,22 +3784,21 @@ namespace {
     }
 
     template <EnumCodecType CodecType>
-    int32_t WriteTile(const AV1VideoParam &par, Frame *frame, const CoeffsType *coefs, const void *tokens, uint8_t *buf, int32_t &off,
+    int32_t WriteTile(const AV1VideoParam &par, Frame *frame, const CoeffsType *coefs, uint8_t *buf, int32_t &off,
                      uint8_t *entBuf, int32_t entBufSize, int32_t tileRow, int32_t tileCol) {
-        int32_t sbRowStart = par.tileParam.rowStart[tileRow];
-        int32_t sbColStart = par.tileParam.colStart[tileCol];
-        int32_t sbRowEnd = par.tileParam.rowEnd[tileRow];
-        int32_t sbColEnd = par.tileParam.colEnd[tileCol];
+        int32_t sbRowStart = frame->m_tileParam.rowStart[tileRow];
+        int32_t sbColStart = frame->m_tileParam.colStart[tileCol];
+        int32_t sbRowEnd = frame->m_tileParam.rowEnd[tileRow];
+        int32_t sbColEnd = frame->m_tileParam.colEnd[tileCol];
         SuperBlock sb;
 
-        frame->m_tileContexts[tileRow * par.tileParam.cols + tileCol].Clear();
+        frame->m_fenc->m_tileContexts[tileRow * frame->m_tileParam.cols + tileCol].Clear();
 
         BoolCoder bc;
         InitBool<CodecType>(bc, buf + (off >> 3), entBuf, entBufSize/3);
         for (int32_t r = sbRowStart; r < sbRowEnd; r++) {
             for (int32_t c = sbColStart; c < sbColEnd; c++) {
-                InitSuperBlock(&sb, r, c, par, frame, coefs, const_cast<void *>(tokens));
-                fprintf_trace_cabac(stderr, "\n ====== SB %d ======\n", sb.sbIndex);
+                InitSuperBlock(&sb, r, c, par, frame, coefs);
                 WritePartition<CodecType>(bc, sb, r<<3, c<<3, 6);
             }
         }
@@ -3148,30 +3806,6 @@ namespace {
 
         off += bc.pos<<3;
         return bc.pos;
-    }
-
-    void WriteTiles(const AV1VideoParam &par, Frame *frame, const CoeffsType *coefs, const void *tokens, uint8_t *buf, int32_t &off,
-                    uint8_t *entBuf, int32_t entBufSize)
-    {
-        const int32_t tileCols = par.tileParam.cols;
-        const int32_t tileRows = par.tileParam.rows;
-
-        for (int32_t tileRow = 0; tileRow < tileRows; tileRow++) {
-            for (int32_t tileCol = 0; tileCol < tileCols; tileCol++) {
-                bool lastTile = (tileRow == tileRows - 1) && (tileCol == tileCols - 1);
-                uint8_t *ptrTileSize = NULL;
-                if (!lastTile) {
-                    ptrTileSize = buf + (off >> 3);
-                    Put32BE(ptrTileSize, 0);
-                    off += 32;
-                }
-
-                const int32_t tileSize = WriteTile<CODEC_AV1>(par, frame, coefs, tokens, buf, off, entBuf, entBufSize, tileRow, tileCol);
-
-                if (!lastTile)
-                    Put32BE(ptrTileSize, tileSize);
-            }
-        }
     }
 };
 
@@ -3190,9 +3824,12 @@ TxSetType AV1Enc::get_ext_tx_set_type(TxSize tx_size, BlockSize bs, int32_t is_i
         return (tx_size_sqr == TX_16X16 ? EXT_TX_SET_DTT4_IDTX : EXT_TX_SET_DTT4_IDTX_1DDCT);
 }
 
-const int32_t ext_tx_set_index[2][EXT_TX_SET_TYPES] = {
-  { 0, -1,  2, -1,  1, -1, -1, -1, -16 }, // Intra
-  { 0,  3, -1, -1, -1, -1,  2, -1,   1 }, // Inter
+// Maps tx set types to the indices.
+const int ext_tx_set_index[2][EXT_TX_SET_TYPES] = {
+    { // Intra
+        0, -1, 2, 1, -1, -1 },
+    { // Inter
+        0, 3, -1, -1, 2, 1 },
 };
 
 int32_t AV1Enc::get_ext_tx_set(TxSize tx_size, BlockSize bs, int32_t is_inter, int32_t use_reduced_set) {
@@ -3202,7 +3839,7 @@ int32_t AV1Enc::get_ext_tx_set(TxSize tx_size, BlockSize bs, int32_t is_inter, i
 
 int32_t AV1Enc::get_ext_tx_types(TxSize tx_size, BlockSize bs, int32_t is_inter, int32_t use_reduced_set) {
     const int set_type = get_ext_tx_set_type(tx_size, bs, is_inter, use_reduced_set);
-    return num_ext_tx_set[set_type];
+    return av1_num_ext_tx_set[set_type];
 }
 
 int32_t AV1Enc::UseMvHp(const AV1Enc::AV1MV &deltaMv) {
@@ -3297,14 +3934,19 @@ void AV1Enc::WriteRepeatedFrame(const AV1VideoParam &par, const Frame &frame, mf
 {
     assert(frame.showExistingFrame == 1);
     uint8_t buf[128];
-    Put32LE(buf+0, 0); // frame.frameSize
-    Put64LE(buf+4, static_cast<int32_t>(frame.m_timeStamp/90.f));
-    int32_t written = IVF_FRAME_HEADER_SIZE;
-
+    int32_t written = 0;
+    if (par.writeIVFHeaders) {
+        Put32LE(buf + 0, 0); // frame.frameSize
+        Put64LE(buf + 4, static_cast<int32_t>(frame.m_timeStamp / 90.f));
+        written = IVF_FRAME_HEADER_SIZE;
+    }
     int32_t frameStart = written;
-
+    {
+        int32_t obuHeaderSize = WriteObuHeader(buf, written, OBU_TD, frame.m_temporalId);
+        WriteObuSize(buf, frameStart + 8 * obuHeaderSize, written);
+    }
     int32_t obuSizeOff = written;
-    int32_t obuHeaderSize = WriteObuHeader(buf, written, OBU_FRAME_HEADER);
+    int32_t obuHeaderSize = WriteObuHeader(buf, written, OBU_FRAME_HEADER, frame.m_temporalId);
     PutBit(buf, written, 1); // showExistingFrame
     PutBits(buf, written, frame.frameToShowMapIdx, 3);
 
@@ -3324,7 +3966,9 @@ void AV1Enc::WriteRepeatedFrame(const AV1VideoParam &par, const Frame &frame, mf
         vp9FrameSizeInBytes -= cut;
         totalFrameSizeInBytes -= cut;
     }
-    Put32LE(buf+0, vp9FrameSizeInBytes);
+    if (par.writeIVFHeaders) {
+        Put32LE(buf + 0, vp9FrameSizeInBytes);
+    }
 
     memcpy(mfxBS.Data + mfxBS.DataOffset + mfxBS.DataLength, buf, totalFrameSizeInBytes);
     mfxBS.DataLength += totalFrameSizeInBytes;
@@ -3338,23 +3982,94 @@ void AV1Enc::WriteRepeatedFrame(const AV1VideoParam &par, const Frame &frame, mf
 
 void AV1FrameEncoder::PackTile(int32_t tile)
 {
-    fprintf_trace_cabac(stderr, "\n ====== Pack tile %d (poc=%d) ======\n\n", tile, m_frame->m_frameOrder);
-
 #if USE_CMODEL_PAK
     PackTile_viaCmodel(tile);
     return;
 #endif
-    assert(tile < m_numTiles);
+    const int32_t numTiles = m_frame->m_tileParam.numTiles;
+    assert(tile < numTiles);
 
-    SetupPastIndependenceAv1(m_frame, tile);
+    const int32_t primaryRefFrame = (m_videoParam.errorResilientMode || m_frame->IsIntra() || m_videoParam.disableFrameEndUpdateCdf) ? PRIMARY_REF_NONE : LAST_FRAME;
 
-    const int32_t tileRow = tile / m_videoParam.tileParam.cols;
-    const int32_t tileCol = tile % m_videoParam.tileParam.cols;
-    CompressedBuf &compTile = m_compressedTiles[tile];
-    uint8_t *dst = compTile.buf;
+    if (primaryRefFrame == PRIMARY_REF_NONE) {
+        SetupPastIndependenceAv1(m_frame, tile);
+    } else {
+        m_frame->m_fenc->m_entropyContexts[tile] = m_frame->refFramesAv1[primaryRefFrame]->m_frameEntropyContexts;
+    }
+
+    if (tile == 0 && m_videoParam.disableFrameEndUpdateCdf)
+        m_frame->m_frameEntropyContexts = m_frame->m_fenc->m_entropyContexts[tile];
+
+    const uint32_t totalBufSize = (uint32_t)m_totalBitstreamBuffer.size();
+    const uint32_t tileBufSize = totalBufSize / numTiles;
+    const uint32_t dstCapacity = tileBufSize / 3;
+    const uint32_t tmpCapacity = dstCapacity * 2;
+    uint8_t *dst = m_totalBitstreamBuffer.data() + tileBufSize * tile;
+    uint8_t *tmp = dst + dstCapacity;
+
+    const int32_t tileRow = tile / m_frame->m_tileParam.cols;
+    const int32_t tileCol = tile % m_frame->m_tileParam.cols;
     int32_t written = 0;
-    compTile.size = WriteTile<CODEC_AV1>(m_videoParam, m_frame, m_coeffWork, m_tokens, dst, written, compTile.entBuf, compTile.entBufCapacity, tileRow, tileCol);
-    assert(compTile.size <= compTile.capacity);
+    m_tilePtrs[tile] = dst;
+    m_tileSizes[tile] = WriteTile<CODEC_AV1>(m_videoParam, m_frame, m_coeffWork, dst, written, tmp, tmpCapacity, tileRow, tileCol);
+    assert(m_tileSizes[tile] <= dstCapacity);
+
+    if (tile == 0 && !m_videoParam.disableFrameEndUpdateCdf)
+        CopyCdfAndResetCounters(m_frame->m_fenc->m_entropyContexts[tile], &m_frame->m_frameEntropyContexts);
+}
+
+void AV1FrameEncoder::PackRow(const ThreadingTask &task)
+{
+    const int32_t tile = task.tileRow * m_frame->m_tileParam.cols + task.tileCol;
+
+    if (task.sbRow == 0) {
+        const int32_t primaryRefFrame = (m_videoParam.errorResilientMode || m_frame->IsIntra() || m_videoParam.disableFrameEndUpdateCdf) ? PRIMARY_REF_NONE : LAST_FRAME;
+
+        if (primaryRefFrame == PRIMARY_REF_NONE)
+            SetupPastIndependenceAv1(m_frame, tile);
+        else
+            m_frame->m_fenc->m_entropyContexts[tile] = m_frame->refFramesAv1[primaryRefFrame]->m_frameEntropyContexts;
+
+        if (tile == 0 && m_videoParam.disableFrameEndUpdateCdf)
+            m_frame->m_frameEntropyContexts = m_frame->m_fenc->m_entropyContexts[tile];
+
+        const int32_t numTiles = m_frame->m_tileParam.numTiles;
+        const uint32_t totalBufSize = (uint32_t)m_totalBitstreamBuffer.size();
+        const uint32_t tileBufSize = totalBufSize / numTiles;
+        uint8_t *dst = m_totalBitstreamBuffer.data() + tileBufSize * tile;
+#if ENABLE_PRECARRY_BUF
+        const uint32_t dstCapacity = tileBufSize / 3;
+        const uint32_t tmpCapacity = dstCapacity * 2;
+        uint8_t *tmp = dst + dstCapacity;
+#else
+        const uint32_t dstCapacity = tileBufSize;
+        const uint32_t tmpCapacity = 0;
+        uint8_t *tmp = dst;
+#endif
+
+        m_tilePtrs[tile] = dst;
+        m_frame->m_fenc->m_tileContexts[tile].Clear();
+        InitBool<CODEC_AV1>(m_tileBc[tile], dst, tmp, tmpCapacity / 3);
+    }
+
+    const int32_t sbRowStart = m_frame->m_tileParam.rowStart[task.tileRow];
+    const int32_t sbColStart = m_frame->m_tileParam.colStart[task.tileCol];
+    const int32_t sbColEnd = m_frame->m_tileParam.colEnd[task.tileCol];
+    SuperBlock sb;
+
+    for (int32_t c = sbColStart; c < sbColEnd; c++) {
+        const int32_t r = sbRowStart + task.sbRow;
+        InitSuperBlock(&sb, r, c, m_videoParam, m_frame, m_coeffWork);
+        WritePartition<CODEC_AV1>(m_tileBc[tile], sb, r << 3, c << 3, 6);
+    }
+
+    if (task.sbRow == m_frame->m_tileParam.rowHeight[task.tileRow] - 1) {
+        ExitBool<CODEC_AV1>(m_tileBc[tile]);
+        m_tileSizes[tile] = m_tileBc[tile].pos;
+
+        if (tile == 0 && !m_videoParam.disableFrameEndUpdateCdf)
+            CopyCdfAndResetCounters(m_frame->m_fenc->m_entropyContexts[tile], &m_frame->m_frameEntropyContexts);
+    }
 }
 
 namespace {
@@ -3366,6 +4081,21 @@ namespace {
     }
 };
 
+#if ENABLE_BITSTREAM_MEM_REDUCTION
+void AV1FrameEncoder::SetBitsreamPtr(mfxBitstream &mfxBS)
+{
+    uint8_t *dst = mfxBS.Data + mfxBS.DataOffset + mfxBS.DataLength;
+    size_t size = (size_t)(mfxBS.MaxLength - mfxBS.DataOffset - mfxBS.DataLength);
+
+    // keep max place for all type of headers for now but can reduce it by more accurate estimation
+    size_t sizeOfHeaders = size / 4;
+    dst  += sizeOfHeaders;
+    size -= sizeOfHeaders;
+
+    m_totalBitstreamBuffer.init(dst, size);
+}
+#endif
+
 int32_t AV1FrameEncoder::GetOutputData(mfxBitstream &mfxBS)
 {
     assert(m_frame->showExistingFrame == 0);
@@ -3373,17 +4103,20 @@ int32_t AV1FrameEncoder::GetOutputData(mfxBitstream &mfxBS)
     const AV1VideoParam &par = m_topEnc.m_videoParam;
     uint8_t *dst = mfxBS.Data + mfxBS.DataOffset + mfxBS.DataLength;
     int32_t written = 0;
-
-    if (m_frame->m_encOrder == 0) {
+    static int ivfhdrwritten = 0;
+    if (par.writeIVFHeaders && !ivfhdrwritten) {
         WriteIvfHeader(dst, written, par);
         mfxBS.DataLength += IVF_HEADER_SIZE >> 3;
+        ivfhdrwritten++;
     }
 
     int32_t pos_frame_size = written;
     const int32_t frameSize = 0; // unknown at this point
     const uint64_t timeStamp = static_cast<uint64_t>(m_frame->m_timeStamp / 90.f);
-    WriteIvfFrameHeader(dst, written, frameSize, timeStamp);
-    mfxBS.DataLength += IVF_FRAME_HEADER_SIZE >> 3;
+    if (par.writeIVFHeaders) {
+        WriteIvfFrameHeader(dst, written, frameSize, (int32_t)timeStamp);
+        mfxBS.DataLength += IVF_FRAME_HEADER_SIZE >> 3;
+    }
 
     //int32_t superFrameIndexPos = written;
     //if (m_videoParam.codecType == CODEC_AV1) {
@@ -3399,41 +4132,49 @@ int32_t AV1FrameEncoder::GetOutputData(mfxBitstream &mfxBS)
         Frame *frame = (i == m_frame->m_hiddenFrames.size()) ? m_frame : m_frame->m_hiddenFrames[i];
         int32_t showFrame = (frame == m_frame);
         AV1FrameEncoder &fenc = *frame->m_fenc;
-
         int32_t startFramePos = written;
+        if (!i) {
+            int32_t obuHeaderSize = WriteObuHeader(dst, written, OBU_TD, frame->m_temporalId);
+            WriteObuSize(dst, startFramePos + 8 * obuHeaderSize, written);
+            mfxBS.DataLength += (written - startFramePos) >> 3;
+        }
+        int32_t tdFramePos = written;
         WriteSequenceHeaderObu(dst, written, par, *frame, 0, showFrame);
-        mfxBS.DataLength += (written - startFramePos) >> 3;
+        mfxBS.DataLength += (written - tdFramePos) >> 3;
 
         int32_t obuTileGroupSizeOff = written;
         int32_t obuHeaderSize = 0;
-        obuHeaderSize = WriteObuHeader(dst, written, OBU_FRAME);
+        obuHeaderSize = WriteObuHeader(dst, written, OBU_FRAME, frame->m_temporalId);
 
         WriteFrameHeaderObu(dst, written, par, *frame, 0, showFrame);
         WritePaddingBits(dst, written);
+
+        const int32_t numTiles = frame->m_tileParam.numTiles;
+
         // write_tile_group_header()
         {
-            const int32_t tiles_log2 = par.tileParam.log2Cols + par.tileParam.log2Rows;
+            const int32_t tiles_log2 = frame->m_tileParam.log2Cols + frame->m_tileParam.log2Rows;
             const int32_t tile_start_and_end_present_flag = 0;//1; spec requirement for OBU_FRAME
 
             if (tiles_log2) {
                 PutBit(dst, written, tile_start_and_end_present_flag);
                 if (tile_start_and_end_present_flag) {
-                    PutBits(dst, written, 0, par.tileParam.log2Cols + par.tileParam.log2Rows);
-                    PutBits(dst, written, fenc.m_numTiles - 1, par.tileParam.log2Cols + par.tileParam.log2Rows);
+                    PutBits(dst, written, 0, frame->m_tileParam.log2Cols + frame->m_tileParam.log2Rows);
+                    PutBits(dst, written, numTiles - 1, frame->m_tileParam.log2Cols + frame->m_tileParam.log2Rows);
                 }
             }
             WritePaddingBits(dst, written);
         }
         mfxBS.DataLength += (written - obuTileGroupSizeOff) >> 3;
 
-        for (int32_t tile = 0; tile < fenc.m_numTiles; tile++) {
-            if (tile + 1 != fenc.m_numTiles) {
-                Put32LE(dst + (written >> 3), fenc.m_compressedTiles[tile].size - AV1_MIN_TILE_SIZE_BYTES);
+        for (int32_t tile = 0; tile < numTiles; tile++) {
+            if (tile + 1 != numTiles) {
+                Put32LE(dst + (written >> 3), fenc.m_tileSizes[tile] - AV1_MIN_TILE_SIZE_BYTES);
                 written += 4 << 3;
                 mfxBS.DataLength += 4;
             }
-            SafeCopyToExternalBitstream(&mfxBS, fenc.m_compressedTiles[tile].buf, fenc.m_compressedTiles[tile].size);
-            written += fenc.m_compressedTiles[tile].size << 3;
+            SafeCopyToExternalBitstream(&mfxBS, fenc.m_tilePtrs[tile], fenc.m_tileSizes[tile]);
+            written += fenc.m_tileSizes[tile] << 3;
         }
         frame->frameSizeInBytes = (written - startFramePos) >> 3;
         const int32_t oldOffset = written;
@@ -3441,10 +4182,10 @@ int32_t AV1FrameEncoder::GetOutputData(mfxBitstream &mfxBS)
         mfxBS.DataLength += (written - oldOffset) >> 3;
     }
     assert(mfxBS.DataOffset + mfxBS.DataLength <= mfxBS.MaxLength);
-
-    uint32_t vp9FrameSizeInBytes = (written - pos_frame_size - IVF_FRAME_HEADER_SIZE) >> 3;
-    Put32LE(dst + (pos_frame_size >> 3), vp9FrameSizeInBytes); // patch frame size in IVF frame header
-
+    if (par.writeIVFHeaders) {
+        uint32_t vp9FrameSizeInBytes = (written - pos_frame_size - IVF_FRAME_HEADER_SIZE) >> 3;
+        Put32LE(dst + (pos_frame_size >> 3), vp9FrameSizeInBytes); // patch frame size in IVF frame header
+    }
     // fill bitstream params
     mfxI32 dpbOutputDelay = m_videoParam.maxNumReorderPics + m_frame->m_frameOrder - m_frame->m_encOrder;
     mfxBS.TimeStamp = m_frame->m_timeStamp;

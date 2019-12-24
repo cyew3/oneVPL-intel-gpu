@@ -44,7 +44,6 @@ namespace AV1Enc {
     static const __m128i XL8 = _mm_set1_epi16(CDEF_VERY_LARGE);
 
 
-    static int32_t priconv[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 
     /* Compute the primary filter strength for an 8x8 block based on the
     directional variance difference. A high variance difference means
@@ -59,56 +58,48 @@ namespace AV1Enc {
         return var ? (strength * (4 + i) + 8) >> 4 : 0;
     }
 
-    int32_t sb_compute_cdef_list(const AV1VideoParam &par, int32_t mi_row, int32_t mi_col, cdef_list *dlist, const ModeInfo *mi)
-    {
-        const int32_t maxc = std::min(MAX_MIB_SIZE, par.miCols - mi_col);
-        const int32_t maxr = std::min(MAX_MIB_SIZE, par.miRows - mi_row);
-        mi += mi_row * par.miPitch + mi_col;
-
-        int32_t count = 0;
-        for (int32_t r = 0; r < maxr; r++, mi += par.miPitch) {
-            for (int32_t c = 0; c < maxc; c++) {
-                if (!mi[c].skip) {
-                    dlist[count].by = r;
-                    dlist[count].bx = c;
-                    count++;
-                }
-            }
-        }
-        return count;
-    }
-
-
-    CdefLineBuffers::CdefLineBuffers()
+    template <typename PixType>
+    CdefLineBuffers<PixType>::CdefLineBuffers()
     {
     }
+    template CdefLineBuffers<uint8_t>::CdefLineBuffers();
+    template CdefLineBuffers<uint16_t>::CdefLineBuffers();
 
-    CdefLineBuffers::~CdefLineBuffers()
+    template <typename PixType>
+    CdefLineBuffers<PixType>::~CdefLineBuffers()
     {
         Free();
     }
+    template CdefLineBuffers<uint8_t>::~CdefLineBuffers();
+    template CdefLineBuffers<uint16_t>::~CdefLineBuffers();
 
-    void CdefLineBuffers::Alloc(const AV1VideoParam &par)
+    template <typename PixType>
+    void CdefLineBuffers<PixType>::Alloc(const AV1VideoParam &par)
     {
         int32_t frameWidth = par.Width;
         pitchAbove = ((frameWidth + 63) & ~63) + 2 * CDEF_HBORDER;
 
-        aboveBorder = (uint8_t *)AV1_Malloc(2*pitchAbove * sizeof(uint8_t) * par.sb64Rows*2);// both Y&UV
+        aboveBorder = (PixType *)AV1_Malloc(2*pitchAbove * sizeof(PixType) * par.sb64Rows*2);// both Y&UV
         ThrowIf(!aboveBorder, std::bad_alloc());
         aboveBorderY = aboveBorder + CDEF_HBORDER;
         aboveBorderUv = aboveBorderY + pitchAbove * par.sb64Rows*2;
 
         pitchLeft = 128 * par.sb64Cols;
-        leftBorder = (uint8_t *)AV1_Malloc(sizeof(uint8_t) * par.sb64Rows * par.sb64Cols * 64 * 2 * 2);
+        leftBorder = (PixType *)AV1_Malloc(sizeof(PixType) * par.sb64Rows * par.sb64Cols * 64 * 2 * 2);
         ThrowIf(!leftBorder, std::bad_alloc());
         leftBorderUv = leftBorder + par.sb64Rows * pitchLeft;
     }
+    template void CdefLineBuffers<uint8_t>::Alloc(const AV1VideoParam &par);
+    template void CdefLineBuffers<uint16_t>::Alloc(const AV1VideoParam &par);
 
-    void CdefLineBuffers::Free()
+    template <typename PixType>
+    void CdefLineBuffers<PixType>::Free()
     {
         AV1_SafeFree(aboveBorder);
         AV1_SafeFree(leftBorder);
     }
+    template void CdefLineBuffers<uint8_t>::Free();
+    template void CdefLineBuffers<uint16_t>::Free();
 
     template <typename T>
     void SetBorder(T *p, int32_t pitch, T value, int32_t w, int32_t h)
@@ -124,9 +115,19 @@ namespace AV1Enc {
         }
     }
 
+    static inline void Convert(const uint16_t *src, uint16_t *dst, int len)
+    {
+        for (int i = 0; i < len; i++)
+            dst[i] = src[i];
+    }
+
     static inline void Convert4(const uint8_t *src, uint16_t *dst)
     {
         storel_epi64(dst, _mm_unpacklo_epi8(loadu_si32(src), _mm_setzero_si128()));
+    }
+    static inline void Convert4(const uint16_t *src, uint16_t *dst)
+    {
+        Convert(src, dst, 4);
     }
 
     static inline void Convert16(const uint8_t *src, uint16_t *dst)
@@ -134,6 +135,10 @@ namespace AV1Enc {
         __m128i s0 = loada_si128(src);
         storea_si128(dst + 0, _mm_unpacklo_epi8(s0, _mm_setzero_si128()));
         storea_si128(dst + 8, _mm_unpackhi_epi8(s0, _mm_setzero_si128()));
+    }
+    static inline void Convert16(const uint16_t *src, uint16_t *dst)
+    {
+        Convert(src, dst, 16);
     }
 
     static inline void Convert64(const uint8_t *src, uint16_t *dst)
@@ -143,12 +148,20 @@ namespace AV1Enc {
         Convert16(src + 32, dst + 32);
         Convert16(src + 48, dst + 48);
     }
+    static inline void Convert64(const uint16_t *src, uint16_t *dst)
+    {
+        Convert(src, dst, 64);
+    }
 
     static inline void Convert16Unaligned(const uint8_t *src, uint16_t *dst)
     {
         __m128i s0 = loadu_si128(src);
         storeu_si128(dst + 0, _mm_unpacklo_epi8(s0, _mm_setzero_si128()));
         storeu_si128(dst + 8, _mm_unpackhi_epi8(s0, _mm_setzero_si128()));
+    }
+    static inline void Convert16Unaligned(const uint16_t *src, uint16_t *dst)
+    {
+        Convert(src, dst, 16);
     }
 
     static inline void Convert64Unaligned(const uint8_t *src, uint16_t *dst)
@@ -158,8 +171,13 @@ namespace AV1Enc {
         Convert16Unaligned(src + 32, dst + 32);
         Convert16Unaligned(src + 48, dst + 48);
     }
+    static inline void Convert64Unaligned(const uint16_t *src, uint16_t *dst)
+    {
+        Convert(src, dst, 64);
+    }
 
-    const uint16_t *CdefLineBuffers::PrepareSb(const int sbr, const int sbc, FrameData& frame, uint16_t* in0, uint16_t* in1)
+    template <typename PixType>
+    const uint16_t *CdefLineBuffers<PixType>::PrepareSb(const int sbr, const int sbc, FrameData& frame, uint16_t* in0, uint16_t* in1)
     {
         const int32_t frameWidth  = frame.width;
         const int32_t frameHeight = frame.height;
@@ -170,8 +188,8 @@ namespace AV1Enc {
             uint16_t *dst0 = in0 + BORDERS_OFFSET - (CDEF_VBORDER * CDEF_BSTRIDE);
             uint16_t *dst1 = in1 + BORDERS_OFFSET - (CDEF_VBORDER * CDEF_BSTRIDE);
 
-            const uint8_t* above0 = aboveBorderY  + pitchAbove*(sbr)*2 + (sbc)*64;
-            const uint8_t* above1 = aboveBorderUv + pitchAbove*(sbr)*2 + (sbc)*64;
+            const PixType* above0 = aboveBorderY  + pitchAbove*(sbr)*2 + (sbc)*64;
+            const PixType* above1 = aboveBorderUv + pitchAbove*(sbr)*2 + (sbc)*64;
 
             for (int32_t i = 0; i < 2; i++) {
                 if (sbc > 0) {
@@ -228,7 +246,7 @@ namespace AV1Enc {
             uint16_t *dst1 = in1 + BORDERS_OFFSET - CDEF_BORDER * 2;
 
             const int32_t pitchDstR0 = pitchLeft;
-            const uint8_t* srcR0 = leftBorder + sbr*pitchDstR0 + (sbc)*128;
+            const PixType* srcR0 = leftBorder + sbr*pitchDstR0 + (sbc)*128;
             for (int32_t i = 0; i < CDEF_BLOCKSIZE; i++, dst0 += CDEF_BSTRIDE, srcR0 += 2) {
                 dst0[0] = (uint16_t)srcR0[0];
                 dst0[1] = (uint16_t)srcR0[1];
@@ -236,7 +254,7 @@ namespace AV1Enc {
             }
 
             const int32_t pitchDstR1 = pitchLeft;
-            const uint8_t* srcR1 = leftBorderUv + sbr*pitchDstR1 + (sbc)*128;
+            const PixType* srcR1 = leftBorderUv + sbr*pitchDstR1 + (sbc)*128;
             for (int32_t i = 0; i < CDEF_BLOCKSIZE / 2; i++, dst1 += CDEF_BSTRIDE, srcR1 += 4) {
                 /*dst1[0] = (uint16_t)srcR1[0];
                 dst1[1] = (uint16_t)srcR1[1];
@@ -287,8 +305,8 @@ namespace AV1Enc {
         {
             const int32_t pitchOrig0 = frame.pitch_luma_pix;
             const int32_t pitchOrig1 = frame.pitch_chroma_pix;
-            const uint8_t* src0 = frame.y  + pitchOrig0*sbr*64 + sbc * 64;
-            const uint8_t* src1 = frame.uv + pitchOrig1*sbr*32 + sbc * 64;
+            const PixType* src0 = (PixType*)frame.y  + pitchOrig0*sbr*64 + sbc * 64;
+            const PixType* src1 = (PixType*)frame.uv + pitchOrig1*sbr*32 + sbc * 64;
             uint16_t *dst0 = in0 + BORDERS_OFFSET;
             uint16_t *dst1 = in1 + BORDERS_OFFSET;
 
@@ -330,82 +348,6 @@ namespace AV1Enc {
         return in0 + BORDERS_OFFSET;
     }
 
-
-    int32_t cdef_estimate(const AV1VideoParam &par, const ModeInfo *mi, int32_t sbr, int32_t sbc,
-                         const uint8_t *org_[2], const int32_t ostride_[2], const uint8_t *rec8_[2], const int32_t rec8stride_[2],
-                         const uint16_t *in_[2], int32_t pri_damping, int8_t (&dirs)[8][8], int32_t (&vars)[8][8])
-    {
-        const int32_t miCol = sbc * MAX_MIB_SIZE;
-        const int32_t miRow = sbr * MAX_MIB_SIZE;
-        const int32_t maxc = std::min(MAX_MIB_SIZE, par.miCols - miCol);
-        const int32_t maxr = std::min(MAX_MIB_SIZE, par.miRows - miRow);
-        mi += miRow * par.miPitch + miCol;
-
-        alignas(16) int32_t totsse[2][16] = {};
-
-        const uint8_t pri_strengths_y[]  = { 0, 2, 4, 6, 8};
-        const uint8_t pri_strengths_uv[] = { 0, 2, 4, 8 };
-        const uint8_t pri_strength_comb[8][2] = { {0, 0}, {2, 0}, {4, 0}, {4, 2}, {6, 2}, {6, 4}, {8, 4}, {8, 8} };
-
-        const uint8_t *org;
-        const uint16_t *in;
-        int32_t ostride;
-
-        for (int32_t r = 0; r < maxr; r++, mi += par.miPitch) {
-            for (int32_t c = 0; c < maxc; c++) {
-                if (mi[c].skip) {
-                    dirs[r][c] = -1;
-                    continue;
-                }
-
-                int32_t y = r << 3;
-                int32_t x = c << 3;
-
-                ostride = ostride_[0];
-                org = org_[0] + y * ostride + x;
-                in = in_[0] + y * CDEF_BSTRIDE + x;
-
-                int32_t var;
-                const int32_t dir = AV1PP::cdef_find_dir(in, CDEF_BSTRIDE, &var, 0);
-                vars[r][c] = var;
-                dirs[r][c] = dir;
-
-                totsse[0][0] += AV1PP::sse(org, ostride, rec8_[0] + y * rec8stride_[0] + x, rec8stride_[0], 1, 1);
-                for (uint32_t i = 1; i < sizeof(pri_strengths_y); i++) {
-                    const int32_t pri = pri_strengths_y[i];
-                    const int32_t adj_pri = adjust_strength(pri, var);
-                    int32_t sse = 0;
-                    //AV1PP::cdef_estimate_block_sec0(org, ostride, in, adj_pri, dir, pri_damping, &sse, 0);
-                    totsse[0][pri] += sse;
-                }
-
-                y >>= 1;
-                ostride = ostride_[1];
-                org = org_[1] + y * ostride + x;
-                in = in_[1] + y * CDEF_BSTRIDE + x;
-
-                totsse[1][0] += AV1PP::sse(org, ostride, rec8_[1] + y * rec8stride_[1] + x, rec8stride_[1], 1, 0);
-                for (uint32_t i = 1; i < sizeof(pri_strengths_uv); i++) {
-                    const int32_t pri = pri_strengths_uv[i];
-                    int32_t sse = 0;
-                    //AV1PP::cdef_estimate_block_sec0(org, ostride, in, pri, dir, pri_damping - 1, &sse, 1);
-                    totsse[1][pri] += sse;
-                }
-            }
-        }
-
-        int32_t bestStrengthId = 0;
-        int32_t bestYuvSse = totsse[0][0] + totsse[1][0];
-        for (uint32_t i = 1; i < sizeof(pri_strength_comb) / sizeof(pri_strength_comb[0]); i++) {
-            const int32_t yuvSse = totsse[0][pri_strength_comb[i][0]] + totsse[1][pri_strength_comb[i][1]];
-            if (bestYuvSse > yuvSse) {
-                bestYuvSse = yuvSse;
-                bestStrengthId = i;
-            }
-        }
-        return bestStrengthId;
-    }
-
     void CdefParamInit(CdefParam &param)
     {
         param.cdef_bits = 0;
@@ -414,334 +356,6 @@ namespace AV1Enc {
             param.cdef_strengths[i] = 0;
             param.cdef_uv_strengths[i] = 0;
         }
-    }
-
-    void CdefApplySb(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc, uint16_t *in0, uint16_t *in1)
-    {
-        CdefLineBuffers &lineBufs = frame->m_cdefLineBufs;
-
-        int32_t pri_damp = 3 + (frame->m_sliceQpY >> 6);
-        int32_t sec_damp = 3 + (frame->m_sliceQpY >> 6);
-        //alignas(16) uint16_t in0[CDEF_INBUF_SIZE];
-        //alignas(16) uint16_t in1[CDEF_INBUF_SIZE];
-
-        //for (int32_t sbr = 0; sbr < par.sb64Rows; sbr++)
-        {
-            //for (int32_t sbc = 0; sbc < par.sb64Cols; sbc++)
-            {
-                //lineBufs.PrepareSb(sbr, sbc, *frame->m_recon, in0, in1);
-                const uint16_t *src16Y  = in0 + BORDERS_OFFSET;
-                const uint16_t *src16Uv = in1 + BORDERS_OFFSET;
-
-                const int8_t cdefStrengthId = frame->m_cdefStrenths[sbr * par.sb64Cols + sbc];
-                if (cdefStrengthId < 0) {
-                    //continue;
-                    return;
-                }
-                assert(cdefStrengthId >= 0 && cdefStrengthId < 8);
-                const int32_t str = frame->m_cdefParam.cdef_strengths[cdefStrengthId];
-                const int32_t uvStr = frame->m_cdefParam.cdef_uv_strengths[cdefStrengthId];
-                if ((str | uvStr) == 0) {
-                    //continue;
-                    return;
-                }
-
-                int32_t pri = str >> 2;
-                int32_t sec = str & 3;
-                sec += (sec == 3);
-
-                int32_t uvPri = uvStr >> 2;
-                int32_t uvSec = uvStr & 3;
-                uvSec += (uvSec == 3);
-
-                const int32_t miRows = std::min(8, par.miRows - sbr * 8);
-                const int32_t miCols = std::min(8, par.miCols - sbc * 8);
-                const ModeInfo *mi = frame->m_modeInfo + sbr * 8 * par.miPitch + sbc * 8;
-
-                const int8_t  (&dirs)[8][8] = frame->m_cdefDirs[sbr * par.sb64Cols + sbc];
-                const int32_t (&vars)[8][8] = frame->m_cdefVars[sbr * par.sb64Cols + sbc];
-
-                for (int32_t miRow = 0; miRow < miRows; miRow++, mi += par.miPitch) {
-                    for (int32_t miCol = 0; miCol < miCols; miCol++) {
-                        int8_t dir = dirs[miRow][miCol];
-                        if (dir < 0) // skip
-                            continue;
-
-                        int32_t x = miCol << 3;
-                        int32_t y = miRow << 3;
-
-                        const uint16_t *src = src16Y + y * CDEF_BSTRIDE + x;
-
-                        if (str) {
-                            const int32_t adj_pri = adjust_strength(pri, vars[miRow][miCol]);
-                            const int32_t d = pri ? dir : 0;
-                            int32_t pitchDst = frame->m_recon->pitch_luma_pix;
-                            uint8_t *dst = frame->m_recon->y + (sbr * 64 + y) * pitchDst + (sbc * 64 + x);
-                            AV1PP::cdef_filter_block(dst, pitchDst, src, adj_pri, sec, d, pri_damp, sec_damp, 0);
-                        }
-
-                        if (uvStr) {
-                            const int32_t d = uvPri ? dir : 0;
-                            y = miRow << 2;
-                            src = src16Uv + y * CDEF_BSTRIDE + x;
-                            int32_t pitchDst = frame->m_recon->pitch_chroma_pix;
-                            uint8_t *dst = frame->m_recon->uv + (sbr * 32 + y) * pitchDst + (sbc * 64 + x);
-                            AV1PP::cdef_filter_block(dst, pitchDst, src, uvPri, uvSec, d, pri_damp - 1, sec_damp - 1, 1);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    void CdefApplyFrame(const AV1VideoParam &par, Frame *frame)
-    {
-        return;
-    }
-
-    void CdefApplyFrameOld(const AV1VideoParam &par, Frame *frame)
-    {
-        CdefLineBuffers &lineBufs = frame->m_cdefLineBufs;
-
-#if 1
-        const int LPFOFFSET = 8;
-        // sim of deblocking copy border pixs
-        for (int32_t sbr = 0; sbr < par.sb64Rows; sbr++) {
-            for (int32_t sbc = 0; sbc < par.sb64Cols; sbc++) {
-
-                // [1] luma part
-                const int32_t pitchSrc0 = frame->m_recon->pitch_luma_pix;
-                uint8_t* src0 = frame->m_recon->y + sbr*64 * pitchSrc0 + sbc*64;
-                const int32_t pitchDst0 = frame->m_cdefLineBufs.pitchAbove;
-                uint8_t* dst0 = frame->m_cdefLineBufs.aboveBorderY + sbr * 2 * pitchDst0 + sbc*64;
-
-#if 0
-                // above
-                {
-                    int32_t len = (sbc + 1 == par.sb64Cols) ? CDEF_BLOCKSIZE + LPFOFFSET : CDEF_BLOCKSIZE;
-                    small_memcpy(dst0 - LPFOFFSET,             src0 - 2 * pitchSrc0 - LPFOFFSET, len);
-                    small_memcpy(dst0 - LPFOFFSET + pitchDst0, src0 - 1 * pitchSrc0 - LPFOFFSET, len);
-                }
-#endif
-
-#if 0
-                // left
-                {
-                    const int32_t pitchDstL0 = frame->m_cdefLineBufs.pitchLeft;
-                    uint8_t* dstL0 = frame->m_cdefLineBufs.leftBorder + sbr*pitchDstL0 + sbc*128;
-                    int32_t len = (sbr + 1 == par.sb64Rows) ? CDEF_BLOCKSIZE : CDEF_BLOCKSIZE - 2* LPFOFFSET;
-
-                    // addon for above
-                    if (sbr > 0) {
-                        uint8_t* src0  = frame->m_recon->y + (sbr)*64 * pitchSrc0 + sbc*64 - 2 * LPFOFFSET * pitchSrc0;
-                        uint8_t* dstL0 = frame->m_cdefLineBufs.leftBorder + (sbr-1)*pitchDstL0 + sbc*128 + (128-4*LPFOFFSET);
-
-                        for (int i = 0; i < 2* LPFOFFSET; i++) {
-                            dstL0[0] = src0[-2];
-                            dstL0[1] = src0[-1];
-                            dstL0 += 2;
-                            src0 += pitchSrc0;
-                        }
-                    }
-                }
-#endif
-
-                // [2] chrome
-                const int32_t pitchSrc1 = frame->m_recon->pitch_chroma_pix;
-                const uint8_t* src1 = frame->m_recon->uv + sbr*32 * pitchSrc1 + sbc*64;
-                const int32_t pitchDst1 = frame->m_cdefLineBufs.pitchAbove;
-                uint8_t* dst1 = frame->m_cdefLineBufs.aboveBorderUv + sbr * 2 * pitchDst1 + sbc*64;
-#if 0
-                // above
-                {
-                    int32_t len = (sbc + 1 == par.sb64Cols) ? CDEF_BLOCKSIZE + LPFOFFSET : CDEF_BLOCKSIZE;
-                    small_memcpy(dst1 - LPFOFFSET,             src1 - 2 * pitchSrc1 - LPFOFFSET, len);
-                    small_memcpy(dst1 - LPFOFFSET + pitchDst1, src1 - 1 * pitchSrc1 - LPFOFFSET, len);
-                }
-#endif
-
-                // left
-                {
-#if 0
-                    const int32_t pitchDstR1 = frame->m_cdefLineBufs.pitchLeft;
-                    uint8_t* dstR1 = frame->m_cdefLineBufs.leftBorderUv + sbr*pitchDstR1 + sbc*128;
-                    int32_t len = (sbr + 1 == par.sb64Rows) ? CDEF_BLOCKSIZE / 2 : CDEF_BLOCKSIZE / 2 - 2* LPFOFFSET / 2;
-
-                    for (int i = 0; i < len; i++) {
-                        dstR1[0] = src1[-4];
-                        dstR1[1] = src1[-3];
-                        dstR1[2] = src1[-2];
-                        dstR1[3] = src1[-1];
-
-                        dstR1 += 4;
-                        src1 += pitchSrc1;
-                    }
-#endif
-
-#if 0
-                    // addon for above
-                    if (sbr > 0) {
-                        const uint8_t* src1 = frame->m_recon->uv + sbr*32 * pitchSrc1 + sbc*64 - LPFOFFSET * pitchSrc1;
-                        const int32_t pitchDstL1 = frame->m_cdefLineBufs.pitchLeft;
-                        uint8_t* dstL1 = frame->m_cdefLineBufs.leftBorderUv + (sbr - 1) * pitchDstL1 + sbc*128 + (128 - 16);
-
-                        for (int i = 0; i < LPFOFFSET; i++) {
-                            dstL1[0] = src1[-4];
-                            dstL1[1] = src1[-3];
-                            dstL1[2] = src1[-2];
-                            dstL1[3] = src1[-1];
-
-                            dstL1 += 4;
-                            src1 += pitchSrc1;
-                        }
-                    }
-#endif
-                }
-            }
-        }
-        //
-#endif
-
-        int32_t pri_damp = 3 + (frame->m_sliceQpY >> 6);
-        int32_t sec_damp = 3 + (frame->m_sliceQpY >> 6);
-        alignas(16) uint16_t in0[CDEF_INBUF_SIZE];
-        alignas(16) uint16_t in1[CDEF_INBUF_SIZE_CHROMA];
-
-        for (int32_t sbr = 0; sbr < par.sb64Rows; sbr++) {
-            for (int32_t sbc = 0; sbc < par.sb64Cols; sbc++) {
-                const uint16_t *src16Y  = lineBufs.PrepareSb(sbr, sbc, *frame->m_recon, in0, in1);
-                const uint16_t *src16Uv = src16Y + CDEF_INBUF_SIZE;
-
-                const int8_t cdefStrengthId = frame->m_cdefStrenths[sbr * par.sb64Cols + sbc];
-                if (cdefStrengthId < 0) {
-                    continue;
-                }
-                assert(cdefStrengthId >= 0 && cdefStrengthId < 8);
-                const int32_t str = frame->m_cdefParam.cdef_strengths[cdefStrengthId];
-                const int32_t uvStr = frame->m_cdefParam.cdef_uv_strengths[cdefStrengthId];
-                if ((str | uvStr) == 0) {
-                    continue;
-                }
-
-                int32_t pri = str >> 2;
-                int32_t sec = str & 3;
-                sec += (sec == 3);
-
-                int32_t uvPri = uvStr >> 2;
-                int32_t uvSec = uvStr & 3;
-                uvSec += (uvSec == 3);
-
-                const int32_t miRows = std::min(8, par.miRows - sbr * 8);
-                const int32_t miCols = std::min(8, par.miCols - sbc * 8);
-                const ModeInfo *mi = frame->m_modeInfo + sbr * 8 * par.miPitch + sbc * 8;
-
-                const int8_t  (&dirs)[8][8] = frame->m_cdefDirs[sbr * par.sb64Cols + sbc];
-                const int32_t (&vars)[8][8] = frame->m_cdefVars[sbr * par.sb64Cols + sbc];
-
-                for (int32_t miRow = 0; miRow < miRows; miRow++, mi += par.miPitch) {
-                    for (int32_t miCol = 0; miCol < miCols; miCol++) {
-                        int8_t dir = dirs[miRow][miCol];
-                        if (dir < 0) // skip
-                            continue;
-
-                        int32_t x = miCol << 3;
-                        int32_t y = miRow << 3;
-
-                        const uint16_t *src = src16Y + y * CDEF_BSTRIDE + x;
-
-                        if (str) {
-                            const int32_t adj_pri = adjust_strength(pri, vars[miRow][miCol]);
-                            const int32_t d = pri ? dir : 0;
-                            int32_t pitchDst = frame->m_recon->pitch_luma_pix;
-                            uint8_t *dst = frame->m_recon->y + (sbr * 64 + y) * pitchDst + (sbc * 64 + x);
-                            AV1PP::cdef_filter_block(dst, pitchDst, src, adj_pri, sec, d, pri_damp, sec_damp, 0);
-                        }
-
-                        if (uvStr) {
-                            const int32_t d = uvPri ? dir : 0;
-                            y = miRow << 2;
-                            src = src16Uv + y * CDEF_BSTRIDE + x;
-                            int32_t pitchDst = frame->m_recon->pitch_chroma_pix;
-                            uint8_t *dst = frame->m_recon->uv + (sbr * 32 + y) * pitchDst + (sbc * 64 + x);
-                            AV1PP::cdef_filter_block(dst, pitchDst, src, uvPri, uvSec, d, pri_damp - 1, sec_damp - 1, 1);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    static uint64_t search_one_dual(int32_t *lev0, int32_t *lev1, int32_t nb_strengths, int32_t (**mse)[STRENGTH_COUNT_FAST], int32_t sb_count)
-    {
-        //int32_t strengthCount = STRENGTH_COUNT_FAST;
-        uint64_t tot_mse[STRENGTH_COUNT_FAST][STRENGTH_COUNT_FAST];
-        int32_t i, j;
-        uint64_t best_tot_mse = (uint64_t)1 << 63;
-        int32_t best_id0 = 0;
-        int32_t best_id1 = 0;
-        memset(tot_mse, 0, sizeof(tot_mse));
-        for (i = 0; i < sb_count; i++) {
-            int32_t gi;
-            uint64_t best_mse = (uint64_t)1 << 63;
-            /* Find best mse among already selected options. */
-            for (gi = 0; gi < nb_strengths; gi++) {
-                uint64_t curr = mse[0][i][lev0[gi]];
-                curr += mse[1][i][lev1[gi]];
-                if (curr < best_mse) {
-                    best_mse = curr;
-                }
-            }
-            /* Find best mse when adding each possible new option. */
-            for (j = 0; j < STRENGTH_COUNT_FAST; j++) {
-                int32_t k;
-                for (k = 0; k < STRENGTH_COUNT_FAST; k++) {
-                    uint64_t best = best_mse;
-                    uint64_t curr = mse[0][i][j];
-                    curr += mse[1][i][k];
-                    if (curr < best) best = curr;
-                    tot_mse[j][k] += best;
-                }
-            }
-        }
-        for (j = 0; j < STRENGTH_COUNT_FAST; j++) {
-            int32_t k;
-            for (k = 0; k < STRENGTH_COUNT_FAST; k++) {
-                if (tot_mse[j][k] < best_tot_mse) {
-                    best_tot_mse = tot_mse[j][k];
-                    best_id0 = j;
-                    best_id1 = k;
-                }
-            }
-        }
-        lev0[nb_strengths] = best_id0;
-        lev1[nb_strengths] = best_id1;
-        return best_tot_mse;
-    }
-
-    /* Search for the set of luma+chroma strengths that minimizes mse. */
-    static uint64_t joint_strength_search_dual(int32_t *best_lev0, int32_t *best_lev1, int32_t nb_strengths, int32_t (**mse)[STRENGTH_COUNT_FAST], int32_t sb_count)
-    {
-        uint64_t best_tot_mse;
-        int32_t i;
-        best_tot_mse = (uint64_t)1 << 63;
-        /* Greedy search: add one strength options at a time. */
-        for (i = 0; i < nb_strengths; i++) {
-            best_tot_mse = search_one_dual(best_lev0, best_lev1, i, mse, sb_count);
-        }
-
-#if 0
-        /* Trying to refine the greedy search by reconsidering each
-        already-selected option. */
-        for (i = 0; i < 4 * nb_strengths; i++) {
-            int32_t j;
-            for (j = 0; j < nb_strengths - 1; j++) {
-                best_lev0[j] = best_lev0[j + 1];
-                best_lev1[j] = best_lev1[j + 1];
-            }
-            best_tot_mse = search_one_dual(best_lev0, best_lev1, nb_strengths - 1, mse, sb_count);
-        }
-#endif
-        return best_tot_mse;
     }
 
     static int32_t sb_all_skip(int32_t mi_row, int32_t mi_col, const AV1VideoParam &par, const ModeInfo *mi)
@@ -756,14 +370,14 @@ namespace AV1Enc {
         return true;
     }
 
-    void CdefStoreBorderSb(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc)
+    void CdefStoreBorderSb_8bit(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc)
     {
         const int LPFOFFSET = 8;
 
         const int32_t pitchSrc0 = frame->m_recon->pitch_luma_pix;
         uint8_t* src0 = frame->m_recon->y + sbr*64 * pitchSrc0 + sbc*64;
-        const int32_t pitchDst0 = frame->m_cdefLineBufs.pitchAbove;
-        uint8_t* dst0 = frame->m_cdefLineBufs.aboveBorderY + sbr * 2 * pitchDst0 + sbc*64;
+        const int32_t pitchDst0 = frame->m_fenc->m_cdefLineBufs.pitchAbove;
+        uint8_t* dst0 = frame->m_fenc->m_cdefLineBufs.aboveBorderY + sbr * 2 * pitchDst0 + sbc*64;
 
         // above
         int32_t len = (sbc + 1 == par.sb64Cols) ? CDEF_BLOCKSIZE + LPFOFFSET : CDEF_BLOCKSIZE;
@@ -771,8 +385,8 @@ namespace AV1Enc {
         small_memcpy(dst0 - LPFOFFSET + pitchDst0, src0 - 1 * pitchSrc0 - LPFOFFSET, len);
 
         // left
-        const int32_t pitchDstL0 = frame->m_cdefLineBufs.pitchLeft;
-        uint8_t* dstL0 = frame->m_cdefLineBufs.leftBorder + sbr*pitchDstL0 + sbc*128;
+        const int32_t pitchDstL0 = frame->m_fenc->m_cdefLineBufs.pitchLeft;
+        uint8_t* dstL0 = frame->m_fenc->m_cdefLineBufs.leftBorder + sbr*pitchDstL0 + sbc*128;
         len = (sbr + 1 == par.sb64Rows) ? CDEF_BLOCKSIZE : CDEF_BLOCKSIZE - 2* LPFOFFSET;
 
         for (int i = 0; i < len; i++) {
@@ -783,8 +397,8 @@ namespace AV1Enc {
 
         // addon for above
         if (sbr > 0) {
-            uint8_t* src0  = frame->m_recon->y + (sbr)*64 * pitchSrc0 + sbc*64 - 2 * LPFOFFSET * pitchSrc0;
-            uint8_t* dstL0 = frame->m_cdefLineBufs.leftBorder + (sbr-1)*pitchDstL0 + sbc*128 + (128-4*LPFOFFSET);
+            src0  = frame->m_recon->y + (sbr)*64 * pitchSrc0 + sbc*64 - 2 * LPFOFFSET * pitchSrc0;
+            dstL0 = frame->m_fenc->m_cdefLineBufs.leftBorder + (sbr-1)*pitchDstL0 + sbc*128 + (128-4*LPFOFFSET);
 
             for (int i = 0; i < 2* LPFOFFSET; i++) {
                 *reinterpret_cast<uint16_t*>(dstL0) = *reinterpret_cast<const uint16_t*>(src0 - 2);
@@ -796,8 +410,8 @@ namespace AV1Enc {
         // chrome
         const int32_t pitchSrc1 = frame->m_recon->pitch_chroma_pix;
         const uint8_t* src1 = frame->m_recon->uv + sbr*32 * pitchSrc1 + sbc*64;
-        const int32_t pitchDst1 = frame->m_cdefLineBufs.pitchAbove;
-        uint8_t* dst1 = frame->m_cdefLineBufs.aboveBorderUv + sbr * 2 * pitchDst1 + sbc*64;
+        const int32_t pitchDst1 = frame->m_fenc->m_cdefLineBufs.pitchAbove;
+        uint8_t* dst1 = frame->m_fenc->m_cdefLineBufs.aboveBorderUv + sbr * 2 * pitchDst1 + sbc*64;
 
         // above
         len = (sbc + 1 == par.sb64Cols) ? CDEF_BLOCKSIZE + LPFOFFSET : CDEF_BLOCKSIZE;
@@ -805,8 +419,8 @@ namespace AV1Enc {
         small_memcpy(dst1 - LPFOFFSET + pitchDst1, src1 - 1 * pitchSrc1 - LPFOFFSET, len);
 
         // left
-        int32_t pitchDstL1 = frame->m_cdefLineBufs.pitchLeft;
-        uint8_t* dstL1 = frame->m_cdefLineBufs.leftBorderUv + sbr*pitchDstL1 + sbc*128;
+        int32_t pitchDstL1 = frame->m_fenc->m_cdefLineBufs.pitchLeft;
+        uint8_t* dstL1 = frame->m_fenc->m_cdefLineBufs.leftBorderUv + sbr*pitchDstL1 + sbc*128;
         len = (sbr + 1 == par.sb64Rows) ? CDEF_BLOCKSIZE / 2 : CDEF_BLOCKSIZE / 2 - 2* LPFOFFSET / 2;
 
         for (int i = 0; i < len; i++) {
@@ -817,9 +431,8 @@ namespace AV1Enc {
 
         // addon for above
         if (sbr > 0) {
-            const uint8_t* src1 = frame->m_recon->uv + sbr*32 * pitchSrc1 + sbc*64 - LPFOFFSET * pitchSrc1;
-            const int32_t pitchDstL1 = frame->m_cdefLineBufs.pitchLeft;
-            uint8_t* dstL1 = frame->m_cdefLineBufs.leftBorderUv + (sbr - 1) * pitchDstL1 + sbc*128 + (128 - 32);
+            src1 = frame->m_recon->uv + sbr*32 * pitchSrc1 + sbc*64 - LPFOFFSET * pitchSrc1;
+            dstL1 = frame->m_fenc->m_cdefLineBufs.leftBorderUv + (sbr - 1) * pitchDstL1 + sbc*128 + (128 - 32);
 
             for (int i = 0; i < LPFOFFSET; i++) {
                 Copy32(src1 - 4, dstL1);
@@ -829,121 +442,135 @@ namespace AV1Enc {
         }
     }
 
-    void CdefSearchSb(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc, uint16_t* in0, uint16_t* in1)
+    void CdefStoreBorderSb_10bit(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc)
     {
-        ModeInfo *mi = frame->m_modeInfo;
-        int32_t *sb_index = frame->m_sbIndex.data();
-        const int32_t nvsb = par.sb64Rows;
-        const int32_t nhsb = par.sb64Cols;
-        const int32_t sec_damping = 3 + (frame->m_sliceQpY >> 6);
-        const int32_t pri_damping = 3 + (frame->m_sliceQpY >> 6);
-        const int32_t coeff_shift = 0;
-        cdef_list dlist[64];
+        const int LPFOFFSET = 8;
 
-        uint16_t *reconY  = in0;
-        uint16_t *reconUv = in1;
-        uint16_t *recon[2] = { reconY, reconUv };
-        int32_t strideRecon = CDEF_BSTRIDE;
+        const int32_t pitchSrc0 = frame->m_recon10->pitch_luma_pix;
+        uint16_t* src0 = (uint16_t*)frame->m_recon10->y + sbr*64 * pitchSrc0 + sbc*64;
+        const int32_t pitchDst0 = frame->m_fenc->m_cdefLineBufs10.pitchAbove;
+        uint16_t* dst0 = (uint16_t*)frame->m_fenc->m_cdefLineBufs10.aboveBorderY + sbr * 2 * pitchDst0 + sbc*64;
 
-        if (sb_all_skip(sbr * MAX_MIB_SIZE, sbc * MAX_MIB_SIZE, par, mi)) {
-            frame->m_cdefStrenths[sbr * par.sb64Cols + sbc] = -1;
-            return;
+        // above
+        int32_t len = (sbc + 1 == par.sb64Cols) ? CDEF_BLOCKSIZE + LPFOFFSET : CDEF_BLOCKSIZE;
+        small_memcpy(dst0 - LPFOFFSET,             src0 - 2 * pitchSrc0 - LPFOFFSET, len*sizeof(uint16_t));
+        small_memcpy(dst0 - LPFOFFSET + pitchDst0, src0 - 1 * pitchSrc0 - LPFOFFSET, len*sizeof(uint16_t));
+
+        // left
+        const int32_t pitchDstL0 = frame->m_fenc->m_cdefLineBufs10.pitchLeft;
+        uint16_t* dstL0 = (uint16_t*)frame->m_fenc->m_cdefLineBufs10.leftBorder + sbr*pitchDstL0 + sbc*128;
+        len = (sbr + 1 == par.sb64Rows) ? CDEF_BLOCKSIZE : CDEF_BLOCKSIZE - 2* LPFOFFSET;
+
+        for (int i = 0; i < len; i++) {
+            *reinterpret_cast<uint32_t*>(dstL0) = *reinterpret_cast<const uint32_t*>(src0 - 2);
+            dstL0 += 2;
+            src0 += pitchSrc0;
         }
 
-        const int32_t posx = sbc << 6;
-        const int32_t posy = sbr << 6;
-        const int32_t toff = CDEF_VBORDER * (sbr != 0);
-        const int32_t boff = CDEF_VBORDER * (sbr != nvsb - 1);
-        const int32_t loff = CDEF_HBORDER * (sbc != 0);
-        const int32_t roff = CDEF_HBORDER * (sbc != nhsb - 1);
-        const int32_t width = MIN(8, par.miCols - 8 * sbc) << 3;
-        const int32_t heightY = MIN(8, par.miRows - 8 * sbr) << 3;
-        const int32_t heightUv = heightY >> 1;
-        const int32_t widthWithBorder = width + loff + roff;
-        const int32_t heightWithBorderY = heightY + toff + boff;
-        const int32_t heightWithBorderUv = heightUv + toff + boff;
+        // addon for above
+        if (sbr > 0) {
+            src0  = (uint16_t*)frame->m_recon10->y + (sbr)*64 * pitchSrc0 + sbc*64 - 2 * LPFOFFSET * pitchSrc0;
+            dstL0 = (uint16_t*)frame->m_fenc->m_cdefLineBufs10.leftBorder + (sbr-1)*pitchDstL0 + sbc*128 + (128-4*LPFOFFSET);
 
-        for (int32_t i = 0; i < CDEF_INBUF_SIZE; i++)
-            recon[0][i] = CDEF_VERY_LARGE;
-        for (int32_t i = 0; i < CDEF_INBUF_SIZE; i++)
-            recon[1][i] = CDEF_VERY_LARGE;
+            for (int i = 0; i < 2* LPFOFFSET; i++) {
+                *reinterpret_cast<uint32_t*>(dstL0) = *reinterpret_cast<const uint32_t*>(src0 - 2);
+                dstL0 += 2;
+                src0 += pitchSrc0;
+            }
+        }
 
-        const uint16_t *in[2] = {
-            recon[0] + CDEF_VBORDER * CDEF_BSTRIDE + CDEF_HBORDER,
-            recon[1] + CDEF_VBORDER * CDEF_BSTRIDE + CDEF_HBORDER
-        };
+        // chrome
+        const int32_t pitchSrc1 = frame->m_recon10->pitch_chroma_pix;
+        const uint16_t* src1 = (uint16_t*)frame->m_recon10->uv + sbr*32 * pitchSrc1 + sbc*64;
+        const int32_t pitchDst1 = frame->m_fenc->m_cdefLineBufs10.pitchAbove;
+        uint16_t* dst1 = frame->m_fenc->m_cdefLineBufs10.aboveBorderUv + sbr * 2 * pitchDst1 + sbc*64;
 
-        frame->m_cdefLineBufs.PrepareSb(sbr, sbc, *frame->m_recon, recon[0], recon[1]);
+        // above
+        len = (sbc + 1 == par.sb64Cols) ? CDEF_BLOCKSIZE + LPFOFFSET : CDEF_BLOCKSIZE;
+        small_memcpy(dst1 - LPFOFFSET,             src1 - 2 * pitchSrc1 - LPFOFFSET, len*sizeof(uint16_t));
+        small_memcpy(dst1 - LPFOFFSET + pitchDst1, src1 - 1 * pitchSrc1 - LPFOFFSET, len*sizeof(uint16_t));
 
-        const uint8_t *recon8[2] = { frame->m_recon->y, frame->m_recon->uv };
-        const uint8_t *origin[2] = { frame->m_origin->y, frame->m_origin->uv };
-        int32_t strideRecon8[2] = { frame->m_recon->pitch_luma_pix, frame->m_recon->pitch_chroma_pix };
-        int32_t strideOrigin[2] = { frame->m_origin->pitch_luma_pix, frame->m_origin->pitch_chroma_pix };
-        origin[0] = frame->m_origin->y  + posx + frame->m_origin->pitch_luma_pix * posy;
-        origin[1] = frame->m_origin->uv + posx + frame->m_origin->pitch_chroma_pix * (posy >> 1);
-        recon8[0] = frame->m_recon->y  + posx + frame->m_recon->pitch_luma_pix * posy;
-        recon8[1] = frame->m_recon->uv + posx + frame->m_recon->pitch_chroma_pix * (posy >> 1);
+        // left
+        int32_t pitchDstL1 = frame->m_fenc->m_cdefLineBufs10.pitchLeft;
+        uint16_t* dstL1 = frame->m_fenc->m_cdefLineBufs10.leftBorderUv + sbr*pitchDstL1 + sbc*128;
+        len = (sbr + 1 == par.sb64Rows) ? CDEF_BLOCKSIZE / 2 : CDEF_BLOCKSIZE / 2 - 2* LPFOFFSET / 2;
 
-        const uint32_t sb_count = vm_interlocked_inc32(&frame->m_sbCount) - 1;
-        sb_index[sb_count] = sbr * par.sb64Cols + sbc;
+        for (int i = 0; i < len; i++) {
+            //Copy32(src1 - 4, dstL1);//!!! AYA
+            dstL1[0] = src1[-4];
+            dstL1[0+1] = src1[-4+1];
+            dstL1[0+2] = src1[-4+2];
+            dstL1[0+3] = src1[-4+3];
 
-        int8_t  (&dirs)[8][8] = frame->m_cdefDirs[sbr * par.sb64Cols + sbc];
-        int32_t (&vars)[8][8] = frame->m_cdefVars[sbr * par.sb64Cols + sbc];
-        int32_t strId = cdef_estimate(par, mi, sbr, sbc, origin, strideOrigin, recon8, strideRecon8, in, pri_damping, dirs, vars);
+            dstL1 += 4;
+            src1 += pitchSrc1;
+        }
 
-        int8_t *cdef_strength = frame->m_cdefStrenths;
-        cdef_strength[sb_index[sb_count]] = strId;
+        // addon for above
+        if (sbr > 0) {
+            src1 = (uint16_t*)frame->m_recon10->uv + sbr*32 * pitchSrc1 + sbc*64 - LPFOFFSET * pitchSrc1;
+            dstL1 = frame->m_fenc->m_cdefLineBufs10.leftBorderUv + (sbr - 1) * pitchDstL1 + sbc*128 + (128 - 32);
 
+            for (int i = 0; i < LPFOFFSET; i++) {
+                //Copy32(src1 - 4, dstL1);//AYA!!!
+                dstL1[0] = src1[-4];
+                dstL1[0 + 1] = src1[-4 + 1];
+                dstL1[0 + 2] = src1[-4 + 2];
+                dstL1[0 + 3] = src1[-4 + 3];
+
+                dstL1 += 4;
+                src1 += pitchSrc1;
+            }
+        }
     }
 
-    void CdefOnePassSb(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc)
+    void CdefStoreBorderSb(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc)
     {
-        if (sb_all_skip(sbr * MAX_MIB_SIZE, sbc * MAX_MIB_SIZE, par, frame->m_modeInfo)) {
-            frame->m_cdefStrenths[sbr * par.sb64Cols + sbc] = -1;
-            return;
-        }
+        if (par.src10Enable)
+            CdefStoreBorderSb_10bit(par, frame, sbr, sbc);
+        else
+            CdefStoreBorderSb_8bit(par, frame, sbr, sbc);
+    }
 
-        alignas(32) uint8_t dst_intermediaY[4][64*64];
-        alignas(32) uint8_t dst_intermediaUv[3][32*64];
+    template <typename PixType> void CdefOnePassSb_predict(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc, int32_t strengthId)
+    {
 
+        alignas(32) PixType dst_intermediaY[64 * 64];
+        alignas(32) PixType dst_intermediaUv[32 * 64];
         alignas(32) uint16_t in0[CDEF_INBUF_SIZE];
         alignas(32) uint16_t in1[CDEF_INBUF_SIZE_CHROMA];
-        uint16_t *recon[2] = {in0, in1};
-        int32_t strideRecon = CDEF_BSTRIDE;
-        const uint16_t *input[2] = {recon[0] + BORDERS_OFFSET, recon[1] + BORDERS_OFFSET};
+        const uint16_t *input[2] = { in0 + BORDERS_OFFSET, in1 + BORDERS_OFFSET };
 
-        frame->m_cdefLineBufs.PrepareSb(sbr, sbc, *frame->m_recon, recon[0], recon[1]);
+        if (sizeof(PixType) == 1)
+            frame->m_fenc->m_cdefLineBufs.PrepareSb(sbr, sbc, *frame->m_recon, in0, in1);
+        else
+            frame->m_fenc->m_cdefLineBufs10.PrepareSb(sbr, sbc, *frame->m_recon10, in0, in1);
 
         const int32_t sec_damping = 3 + (frame->m_sliceQpY >> 6);
         const int32_t pri_damping = 3 + (frame->m_sliceQpY >> 6);
-
         const int32_t posx = sbc << 6;
         const int32_t posy = sbr << 6;
-        const uint8_t *recon8[2] = { frame->m_recon->y, frame->m_recon->uv };
-        const uint8_t *origin[2] = { frame->m_origin->y, frame->m_origin->uv };
-        const int32_t strideRecon8[2] = { frame->m_recon->pitch_luma_pix, frame->m_recon->pitch_chroma_pix };
-        const int32_t strideOrigin[2] = { frame->m_origin->pitch_luma_pix, frame->m_origin->pitch_chroma_pix };
-        origin[0] = frame->m_origin->y  + posx + frame->m_origin->pitch_luma_pix * posy;
-        origin[1] = frame->m_origin->uv + posx + frame->m_origin->pitch_chroma_pix * (posy >> 1);
-        recon8[0] = frame->m_recon->y  + posx + frame->m_recon->pitch_luma_pix * posy;
-        recon8[1] = frame->m_recon->uv + posx + frame->m_recon->pitch_chroma_pix * (posy >> 1);
 
-        const uint32_t sb_count = vm_interlocked_inc32(&frame->m_sbCount) - 1;
-        int32_t *sb_index = frame->m_sbIndex.data();
-        sb_index[sb_count] = sbr * par.sb64Cols + sbc;
+        FrameData* reconFrame  = sizeof(PixType) == 1 ? frame->m_recon  : frame->m_recon10;
+        FrameData* originFrame = sizeof(PixType) == 1 ? frame->m_origin : frame->m_origin10;
 
-        int8_t  (&dirs)[8][8] = frame->m_cdefDirs[sbr * par.sb64Cols + sbc];
-        int32_t (&vars)[8][8] = frame->m_cdefVars[sbr * par.sb64Cols + sbc];
+        const PixType *recon8[2] = { (PixType*)reconFrame->y, (PixType*)reconFrame->uv };
+        const PixType *origin[2] = { (PixType*)originFrame->y, (PixType*)originFrame->uv };
+
+        const int32_t strideRecon8[2] = { reconFrame->pitch_luma_pix, reconFrame->pitch_chroma_pix };
+        const int32_t strideOrigin[2] = { originFrame->pitch_luma_pix, originFrame->pitch_chroma_pix };
+        origin[0] = (PixType*)originFrame->y  + posx + originFrame->pitch_luma_pix   * posy;
+        origin[1] = (PixType*)originFrame->uv + posx + originFrame->pitch_chroma_pix * (posy >> 1);
+        recon8[0] = (PixType*)reconFrame->y  + posx + reconFrame->pitch_luma_pix * posy;
+        recon8[1] = (PixType*)reconFrame->uv + posx + reconFrame->pitch_chroma_pix * (posy >> 1);
 
         const int32_t maxc = std::min(MAX_MIB_SIZE, par.miCols - sbc * MAX_MIB_SIZE);
         const int32_t maxr = std::min(MAX_MIB_SIZE, par.miRows - sbr * MAX_MIB_SIZE);
-        const uint8_t pri_strengths_y[]  = { 0, 2, 4, 6, 8};
-        const uint8_t pri_strengths_uv[] = { 0, 2, 4, 8 };
-        const uint8_t pri_strength_comb[8][2] = { {0, 0}, {2, 0}, {4, 0}, {4, 2}, {6, 2}, {6, 4}, {8, 4}, {8, 8} };
 
         ModeInfo *mi = frame->m_modeInfo + (sbr * MAX_MIB_SIZE) * par.miPitch + (sbc * MAX_MIB_SIZE);
 
-        alignas(16) int32_t totsse[2][16] = {};
+        alignas(16) int32_t totsse[2][2] = { 0 };
+        int8_t  dirs[8][8];
         for (int32_t r = 0; r < maxr; r++, mi += par.miPitch) {
             for (int32_t c = 0; c < maxc; c++) {
                 if (mi[c].skip) {
@@ -955,65 +582,69 @@ namespace AV1Enc {
                 int32_t x = c << 3;
 
                 int32_t ostride = strideOrigin[0];
-                const uint8_t *org = origin[0] + y * ostride + x;
+                const PixType *org = origin[0] + y * ostride + x;
                 const uint16_t* in = input[0] + y * CDEF_BSTRIDE + x;
 
                 int32_t var;
                 const int32_t dir = AV1PP::cdef_find_dir(in, CDEF_BSTRIDE, &var, 0);
-                vars[r][c] = var;
-                dirs[r][c] = dir;
+                dirs[r][c] = (int8_t)dir;
 
                 totsse[0][0] += AV1PP::sse(org, ostride, recon8[0] + y * strideRecon8[0] + x, strideRecon8[0], 1, 1);
-                for (uint32_t i = 1; i < sizeof(pri_strengths_y); i++) {
-                    const int32_t pri = pri_strengths_y[i];
+                {
+                    uint32_t i = strengthId;
+                    //const int32_t pri = pri_strengths_y[i];
+                    int str = frame->m_cdefParam.cdef_strengths[i];
+                    const int32_t pri = str >> 2;
+                    const int32_t sec = str & 0x3;
                     const int32_t adj_pri = adjust_strength(pri, var);
                     int32_t pitchDst = 64;
-                    uint8_t *dst = dst_intermediaY[i-1] + y * pitchDst + x;
+                    PixType *dst = dst_intermediaY + y * pitchDst + x;
                     int32_t sse;
-                    AV1PP::cdef_estimate_block_sec0(org, ostride, in, adj_pri, dir, pri_damping, &sse, 0, dst, pitchDst);
-                    totsse[0][pri] += sse;
+                    if (sec) {
+                        AV1PP::cdef_estimate_block(org, ostride, in, adj_pri, sec + (sec == 3), dir, pri_damping, sec_damping, &sse, 0, dst, pitchDst);
+                    } else {
+                        AV1PP::cdef_estimate_block_sec0(org, ostride, in, adj_pri, dir, pri_damping, &sse, 0, dst, pitchDst);
+                    }
+                    totsse[0][1] += sse;
                 }
 
                 y >>= 1;
                 ostride = strideOrigin[1];
                 org = origin[1] + y * ostride + x;
-                in  = input[1] + y * CDEF_BSTRIDE + x;
+                in = input[1] + y * CDEF_BSTRIDE + x;
 
                 totsse[1][0] += AV1PP::sse(org, ostride, recon8[1] + y * strideRecon8[1] + x, strideRecon8[1], 1, 0);
-                for (uint32_t i = 1; i < sizeof(pri_strengths_uv); i++) {
-                    const int32_t pri = pri_strengths_uv[i];
+                {
+                    uint32_t i = strengthId;
+                    //const int32_t pri = pri_strengths_uv[i];
+                    int str = frame->m_cdefParam.cdef_uv_strengths[i];
+                    const int32_t pri = str >> 2;
+                    const int32_t sec = str & 0x3;
                     int32_t pitchDst = 64;
-                    uint8_t *dst = dst_intermediaUv[i-1] + y * pitchDst + x;
+                    PixType *dst = dst_intermediaUv + y * pitchDst + x;
                     int32_t sse;
-                    AV1PP::cdef_estimate_block_sec0(org, ostride, in, pri, dir, pri_damping - 1, &sse, 1, dst, pitchDst);
-                    totsse[1][pri] += sse;
+                    if (sec) {
+                        AV1PP::cdef_estimate_block(org, ostride, in, pri, sec + (sec == 3), dir, pri_damping - 1, sec_damping - 1, &sse, 1, dst, pitchDst);
+                    } else {
+                        AV1PP::cdef_estimate_block_sec0(org, ostride, in, pri, dir, pri_damping - 1, &sse, 1, dst, pitchDst);
+                    }
+                    totsse[1][1] += sse;
                 }
             }
         }
 
-        int32_t bestStrengthId = 0;
-        int32_t bestYuvSse = totsse[0][0] + totsse[1][0];
-        for (uint32_t i = 1; i < sizeof(pri_strength_comb) / sizeof(pri_strength_comb[0]); i++) {
-            const int32_t yuvSse = totsse[0][pri_strength_comb[i][0]] + totsse[1][pri_strength_comb[i][1]];
-            if (bestYuvSse > yuvSse) {
-                bestYuvSse = yuvSse;
-                bestStrengthId = i;
-            }
-        }
 
-        frame->m_cdefStrenths[sb_index[sb_count]] = bestStrengthId;
+        int32_t sseNoFilter = totsse[0][0] + totsse[1][0];
+        int32_t sseFilter   = totsse[0][1] + totsse[1][1];
+        int32_t bestStrengthId = sseNoFilter < sseFilter ? 0 : strengthId;
+
+        frame->m_fenc->m_cdefStrenths[sbr * par.sb64Cols + sbc] = (int8_t)bestStrengthId;
 
         // test: if apply needed?
-        if (!frame->m_isRef && !par.doDumpRecon) return;
-        if (bestStrengthId < 0) return;
-        const int32_t str = frame->m_cdefParam.cdef_strengths[bestStrengthId];
-        const int32_t uvStr = frame->m_cdefParam.cdef_uv_strengths[bestStrengthId];
-        if ((str | uvStr) == 0) return;
+        if (bestStrengthId == 0) return;
 
 
         // apply: just copy on demand
-        uint32_t idxY  = pri_strength_comb[bestStrengthId][0];
-        int32_t idxUv = pri_strength_comb[bestStrengthId][1];
 
         for (int32_t r = 0; r < maxr; r++) {
             for (int32_t c = 0; c < maxc; c++) {
@@ -1024,114 +655,260 @@ namespace AV1Enc {
                 int32_t x = c << 3;
                 int32_t y = r << 3;
 
-                if (idxY) {
-                    int32_t pitchDst = frame->m_recon->pitch_luma_pix;
-                    uint8_t *dst = frame->m_recon->y + (sbr * 64 + y) * pitchDst + (sbc * 64 + x);
+                //if (idxY)
+                {
+                    int32_t pitchDst = reconFrame->pitch_luma_pix;
+                    PixType *dst = (PixType*)reconFrame->y + (sbr * 64 + y) * pitchDst + (sbc * 64 + x);
                     int32_t pitchSrc = 64;
-                    uint8_t* src = dst_intermediaY[idxY/2-1] + y * pitchSrc + x;
+                    PixType* src = dst_intermediaY + y * pitchSrc + x;
                     CopyNxN(src, 64, dst, pitchDst, 8);
                 }
-                if (idxUv) {
+                //if (idxUv)
+                {
                     y = r << 2;
-                    int32_t pitchDst = frame->m_recon->pitch_chroma_pix;
-                    uint8_t *dst = frame->m_recon->uv + (sbr * 32 + y) * pitchDst + (sbc * 64 + x);
+                    int32_t pitchDst = reconFrame->pitch_chroma_pix;
+                    PixType *dst = (PixType*)reconFrame->uv + (sbr * 32 + y) * pitchDst + (sbc * 64 + x);
                     int32_t pitchSrc = 64;
-                    uint8_t* src = dst_intermediaUv[idxUv/4] + y * pitchSrc + x;
+                    PixType* src = dst_intermediaUv + y * pitchSrc + x;
+                    CopyNxM(src, 64, dst, pitchDst, 8, 4);
+                }
+            }
+        }
+    }
+    template void CdefOnePassSb_predict<uint8_t>(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc, int32_t strengthId);
+    template void CdefOnePassSb_predict<uint16_t>(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc, int32_t strengthId);
+
+    template <typename PixType> void CdefOnePassSb_func(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc)
+    {
+        if (sb_all_skip(sbr * MAX_MIB_SIZE, sbc * MAX_MIB_SIZE, par, frame->m_modeInfo)) {
+            frame->m_fenc->m_cdefStrenths[sbr * par.sb64Cols + sbc] = -1;
+            return;
+        }
+
+        int predMode = ((sbr + sbc) & 0x1) && (frame->m_picCodeType != MFX_FRAMETYPE_I);
+        int predL = sbr * par.sb64Cols + sbc - 1;
+        int predA = (sbr - 1) * par.sb64Cols + sbc;
+        if (!par.src10Enable && predMode) {
+            if (sbc > 0 && frame->m_fenc->m_cdefStrenths[predL] > 0) {
+                int predictor = frame->m_fenc->m_cdefStrenths[predL];
+                return CdefOnePassSb_predict<uint8_t>(par, frame, sbr, sbc, predictor);
+            }
+            else if (sbr > 0 && frame->m_fenc->m_cdefStrenths[predA] > 0) {
+                int predictor = frame->m_fenc->m_cdefStrenths[predA];
+                return CdefOnePassSb_predict<uint8_t>(par, frame, sbr, sbc, predictor);
+            }
+
+            // no predictor but we set default for speed
+            return;
+        }
+
+        alignas(32) PixType dst_intermediaY[3][64 * 64];
+        alignas(32) PixType dst_intermediaUv[3][32*64];
+        alignas(32) uint16_t in0[CDEF_INBUF_SIZE];
+        alignas(32) uint16_t in1[CDEF_INBUF_SIZE_CHROMA];
+        const uint16_t *input[2] = {in0 + BORDERS_OFFSET, in1 + BORDERS_OFFSET};
+
+        if (sizeof(PixType) == 1) {
+            frame->m_fenc->m_cdefLineBufs.PrepareSb(sbr, sbc, *frame->m_recon, in0, in1);
+        } else {
+            frame->m_fenc->m_cdefLineBufs10.PrepareSb(sbr, sbc, *frame->m_recon10, in0, in1);
+        }
+
+        const int32_t sec_damping = 3 + (frame->m_sliceQpY >> 6);
+        const int32_t pri_damping = 3 + (frame->m_sliceQpY >> 6);
+
+        const int32_t posx = sbc << 6;
+        const int32_t posy = sbr << 6;
+
+        const int32_t bit_depth = sizeof(PixType) == 1 ? 8 : 10;
+        const int32_t coeff_shift = std::max(bit_depth - 8, 0);
+
+        FrameData* reconFrame  = sizeof(PixType) == 1 ? frame->m_recon  : frame->m_recon10;
+        FrameData* originFrame = sizeof(PixType) == 1 ? frame->m_origin : frame->m_origin10;
+        const PixType *recon8[2] = { (PixType*)reconFrame->y,  (PixType*)reconFrame->uv };
+        const PixType *origin[2] = { (PixType*)originFrame->y, (PixType*)originFrame->uv };
+        const int32_t strideRecon8[2] = { reconFrame->pitch_luma_pix,  reconFrame->pitch_chroma_pix };
+        const int32_t strideOrigin[2] = { originFrame->pitch_luma_pix, originFrame->pitch_chroma_pix };
+
+        origin[0] = (PixType*)originFrame->y  + posx + originFrame->pitch_luma_pix * posy;
+        origin[1] = (PixType*)originFrame->uv + posx + originFrame->pitch_chroma_pix * (posy >> 1);
+        recon8[0] = (PixType*)reconFrame->y  + posx + reconFrame->pitch_luma_pix * posy;
+        recon8[1] = (PixType*)reconFrame->uv + posx + reconFrame->pitch_chroma_pix * (posy >> 1);
+
+        const int32_t maxc = std::min(MAX_MIB_SIZE, par.miCols - sbc * MAX_MIB_SIZE);
+        const int32_t maxr = std::min(MAX_MIB_SIZE, par.miRows - sbr * MAX_MIB_SIZE);
+
+        ModeInfo *mi = frame->m_modeInfo + (sbr * MAX_MIB_SIZE) * par.miPitch + (sbc * MAX_MIB_SIZE);
+
+        alignas(16) int32_t totsse[2][4] = { 0 };
+        int8_t  dirs[8][8];
+        for (int32_t r = 0; r < maxr; r++, mi += par.miPitch) {
+            for (int32_t c = 0; c < maxc; c++) {
+                if (mi[c].skip) {
+                    dirs[r][c] = -1;
+                    continue;
+                }
+
+                int32_t y = r << 3;
+                int32_t x = c << 3;
+
+                int32_t ostride = strideOrigin[0];
+                const PixType *org = origin[0] + y * ostride + x;
+                const uint16_t* in = input[0] + y * CDEF_BSTRIDE + x;
+
+                int32_t var;
+                const int32_t dir = AV1PP::cdef_find_dir(in, CDEF_BSTRIDE, &var, coeff_shift);
+                dirs[r][c] = (int8_t)dir;
+
+                totsse[0][0] += AV1PP::sse(org, ostride, recon8[0] + y * strideRecon8[0] + x, strideRecon8[0], 1, 1);
+                if (frame->m_cdefParam.mode == CDEF_456) {
+                    const int32_t pri = 1;
+                    const int32_t adj_pri = adjust_strength(pri << coeff_shift, var);
+                    int32_t pitchDst = 64;
+                    PixType *dst[4] = { dst_intermediaY[0] + y * pitchDst + x,
+                    dst_intermediaY[1] + y * pitchDst + x,
+                    dst_intermediaY[2] + y * pitchDst + x,
+                    nullptr };
+                    int sse[4] = { 0 };
+
+                    AV1PP::cdef_estimate_block_all_sec(org, ostride, in, adj_pri, dir, pri_damping + coeff_shift, sec_damping + coeff_shift, sse, 0, dst, pitchDst);
+
+                    totsse[0][1] += sse[0];
+                    totsse[0][2] += sse[1];
+                    totsse[0][3] += sse[2];
+                } else {
+                    for (int32_t i = 1; i < frame->m_cdefParam.nb_cdef_strengths; i++) {
+                        int str = frame->m_cdefParam.cdef_strengths[i];
+                        const int32_t pri = str >> 2;
+                        const int32_t sec = str & 0x3;
+                        const int32_t adj_pri = adjust_strength(pri << coeff_shift, var);
+                        int32_t pitchDst = 64;
+                        PixType *dst = dst_intermediaY[i - 1] + y * pitchDst + x;
+                        int32_t sse;
+                        if (sec) {
+                            AV1PP::cdef_estimate_block(org, ostride, in, adj_pri, (sec + (sec == 3)) << coeff_shift, dir, pri_damping + coeff_shift, sec_damping + coeff_shift, &sse, 0, dst, pitchDst);
+                        } else {
+                            AV1PP::cdef_estimate_block_sec0(org, ostride, in, adj_pri, dir, pri_damping + coeff_shift, &sse, 0, dst, pitchDst);
+                        }
+                        totsse[0][i] += sse;
+                    }
+                }
+
+                y >>= 1;
+                ostride = strideOrigin[1];
+                org = origin[1] + y * ostride + x;
+                in = input[1] + y * CDEF_BSTRIDE + x;
+
+                totsse[1][0] += AV1PP::sse(org, ostride, recon8[1] + y * strideRecon8[1] + x, strideRecon8[1], 1, 0);
+                if (frame->m_cdefParam.mode == CDEF_456) {
+                    const int32_t pri = 1;
+                    int32_t pitchDst = 64;
+                    PixType *dst[4] = { dst_intermediaUv[0] + y * pitchDst + x,
+                                        dst_intermediaUv[1] + y * pitchDst + x,
+                                        dst_intermediaUv[2] + y * pitchDst + x,
+                                        nullptr
+                    };
+                    int32_t sse[4] = { 0 };
+                    AV1PP::cdef_estimate_block_all_sec(org, ostride, in, pri << coeff_shift, dir, pri_damping - 1 + coeff_shift, sec_damping - 1 + coeff_shift, sse, 1, dst, pitchDst);
+                    totsse[1][1] += sse[0];
+                    totsse[1][2] += sse[1];
+                    totsse[1][3] += sse[2];
+                }
+                else {
+                    for (int32_t i = 1; i < frame->m_cdefParam.nb_cdef_strengths; i++) {
+                        int str = frame->m_cdefParam.cdef_uv_strengths[i];
+                        const int32_t pri = str >> 2;
+                        const int32_t sec = str & 0x3;
+                        int32_t pitchDst = 64;
+                        PixType *dst = dst_intermediaUv[i - 1] + y * pitchDst + x;
+                        int32_t sse;
+                        if (sec) {
+                            AV1PP::cdef_estimate_block(org, ostride, in, pri << coeff_shift, (sec + (sec == 3)) << coeff_shift, dir, pri_damping - 1 + coeff_shift, sec_damping - 1 + coeff_shift, &sse, 1, dst, pitchDst);
+                        } else {
+                            AV1PP::cdef_estimate_block_sec0(org, ostride, in, pri << coeff_shift, dir, pri_damping - 1 + coeff_shift, &sse, 1, dst, pitchDst);
+                        }
+                        totsse[1][i] += sse;
+                    }
+                }
+            }
+        }
+
+        int32_t bestStrengthId = 0;
+        int32_t bestYuvSse = totsse[0][0] + totsse[1][0];
+        for (int32_t i = 1; i < frame->m_cdefParam.nb_cdef_strengths; i++) {
+            const int32_t yuvSse = totsse[0][i] + totsse[1][i];
+            if (bestYuvSse > yuvSse) {
+                bestYuvSse = yuvSse;
+                bestStrengthId = i;
+            }
+        }
+        frame->m_fenc->m_cdefStrenths[sbr * par.sb64Cols + sbc] = (int8_t)bestStrengthId;
+
+#if 0
+        // statistics
+        {
+            int log2BlkSize = 6;
+            int width = 64;
+            int height = 64;
+            int32_t pitchRsCs = frame->m_stats[0]->m_pitchRsCs4[log2BlkSize - 2];
+            int32_t idx = ((sbr * 64) >> log2BlkSize)*pitchRsCs + ((sbc * 64) >> log2BlkSize);
+            int32_t Rs2 = frame->m_stats[0]->m_rs[log2BlkSize - 2][idx];
+            int32_t Cs2 = frame->m_stats[0]->m_cs[log2BlkSize - 2][idx];
+            int32_t RsCs2 = Rs2 + Cs2;
+            float SCpp = RsCs2 * h265_reci_1to116[(width >> 2) - 1] * h265_reci_1to116[(height >> 2) - 1];
+
+            int target = (bestStrengthId == 0) ? 0 : 1;
+            {
+                std::lock_guard<std::mutex> guard(g_dumpGuard);
+                FILE* fp = fopen("cdef_stats.csv", "a+");
+                fprintf(fp, "%i; %i; %i; %15.3f; %i\n", Rs2, Cs2, RsCs2, SCpp, target);
+                fclose(fp);
+            }
+        }
+#endif
+
+        // test: if apply needed?
+        if (bestStrengthId == 0) return;
+
+        for (int32_t r = 0; r < maxr; r++) {
+            for (int32_t c = 0; c < maxc; c++) {
+                int8_t dir = dirs[r][c];
+                if (dir < 0) // skip
+                    continue;
+
+                int32_t x = c << 3;
+                int32_t y = r << 3;
+
+                //if (str)
+                {
+                    int32_t pitchDst = reconFrame->pitch_luma_pix;
+                    PixType *dst = (PixType*)reconFrame->y + (sbr * 64 + y) * pitchDst + (sbc * 64 + x);
+                    int32_t pitchSrc = 64;
+                    PixType* src = dst_intermediaY[bestStrengthId - 1] + y * pitchSrc + x;
+                    CopyNxN(src, 64, dst, pitchDst, 8);
+                }
+                //if (uvStr)
+                {
+                    y = r << 2;
+                    int32_t pitchDst = reconFrame->pitch_chroma_pix;
+                    PixType *dst = (PixType*)reconFrame->uv + (sbr * 32 + y) * pitchDst + (sbc * 64 + x);
+                    int32_t pitchSrc = 64;
+                    PixType* src = dst_intermediaUv[bestStrengthId - 1] + y * pitchSrc + x;
                     CopyNxM(src, 64, dst, pitchDst, 8, 4);
                 }
             }
         }
     }
 
-    void CdefSearchRow(const AV1VideoParam &par, Frame *frame, int32_t row)
+    template void CdefOnePassSb_func<uint8_t>(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc);
+    template void CdefOnePassSb_func<uint16_t>(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc);
+
+    void CdefOnePassSb(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc)
     {
-        assert(!"not implemented");
-        /*for (int32_t sbc = 0; sbc < par.sb64Cols; sbc++)
-            CdefSearchSb(par, frame, row, sbc);*/
-    }
-
-    void CdefSearchFrame(const AV1VideoParam &par, Frame *frame)
-    {
-        for (int32_t sbr = 0; sbr < par.sb64Rows; sbr++)
-            CdefSearchRow(par, frame, sbr);
-    }
-
-    void CdefSearchSync(const AV1VideoParam &par, Frame *frame)
-    {
-#if 0
-        int8_t *cdef_strength = frame->m_cdefStrenths;
-        int32_t *sb_index = frame->m_sbIndex.data();
-        uint32_t sb_count = frame->m_sbCount;
-        int32_t clpf_damping = 3 + (frame->m_sliceQpY >> 6);
-        int32_t nplanes = 3;
-
-        float lambda = frame->m_lambda * 512;
-
-        int32_t (*mse[2])[STRENGTH_COUNT_FAST] = { frame->m_mse[0], frame->m_mse[1] };
-#endif
-
-#if 0
-        int32_t nb_strength_bits = 0;
-        uint64_t best_tot_mse = (uint64_t)1 << 63;
-        /* Search for different number of signalling bits. */
-        for (int32_t i = 0; i <= 3; i++) {
-            int32_t best_lev0[CDEF_MAX_STRENGTHS] = { 0 };
-            int32_t best_lev1[CDEF_MAX_STRENGTHS] = { 0 };
-
-            int32_t nb_strengths = 1 << i;
-            //uint64_t tot_mse = joint_strength_search(best_lev, nb_strengths, mse[0], sb_count);
-            uint64_t tot_mse = joint_strength_search_dual(best_lev0, best_lev1, nb_strengths, mse, sb_count);
-            /* Count superblock signalling cost. */
-            tot_mse += (uint64_t)(sb_count * lambda * i);
-            /* Count header signalling cost. */
-            tot_mse += (uint64_t)(nb_strengths * lambda * CDEF_STRENGTH_BITS);
-            if (tot_mse < best_tot_mse) {
-                best_tot_mse = tot_mse;
-                nb_strength_bits = i;
-                for (int32_t j = 0; j < 1 << nb_strength_bits; j++) {
-                    frame->m_cdefParam.cdef_strengths[j] = best_lev0[j];
-                    frame->m_cdefParam.cdef_uv_strengths[j] = best_lev1[j];
-                }
-            }
-        }
-#else // 0
-
-#if 0
-        int32_t nb_strength_bits = 3;
-        int32_t predefined_strengths[2][8] = {
-            { 0, 2, 4, 4, 6, 6, 8, 8 },
-            { 0, 0, 0, 2, 2, 4, 4, 8 }
-        };
-        frame->m_cdefParam.cdef_bits = 3;
-        frame->m_cdefParam.nb_cdef_strengths = 1 << nb_strength_bits;
-        for (int i = 0; i < 8; i++) {
-            frame->m_cdefParam.cdef_strengths[i]    = 4 * predefined_strengths[0][i];
-            frame->m_cdefParam.cdef_uv_strengths[i] = 4 * predefined_strengths[1][i];
-        }
-#endif
-
-#endif // 0
-
-        //frame->m_cdefParam.cdef_bits = nb_strength_bits;
-        //frame->m_cdefParam.nb_cdef_strengths = 1 << nb_strength_bits;
-        //for (uint32_t i = 0; i < sb_count; i++) {
-        //    int32_t best_gi = 0;
-        //    uint64_t best_mse = (uint64_t)1 << 63;
-        //    for (int32_t gi = 0; gi < frame->m_cdefParam.nb_cdef_strengths; gi++) {
-        //        uint64_t curr = mse[0][i][frame->m_cdefParam.cdef_strengths[gi]];
-        //        curr += mse[1][i][frame->m_cdefParam.cdef_uv_strengths[gi]];
-        //        if (curr < best_mse) {
-        //            best_gi = gi;
-        //            best_mse = curr;
-        //        }
-        //    }
-        //    cdef_strength[sb_index[i]] = best_gi;
-        //}
-
-        //for (int32_t j = 0; j < frame->m_cdefParam.nb_cdef_strengths; j++) {
-        //    frame->m_cdefParam.cdef_strengths[j] = frame->m_cdefParam.cdef_strengths[j] * 4;
-        //    frame->m_cdefParam.cdef_uv_strengths[j] = frame->m_cdefParam.cdef_uv_strengths[j] * 4;
-        //}
+        if (par.src10Enable)
+            return CdefOnePassSb_func<uint16_t>(par, frame, sbr, sbc);
+        else
+            return CdefOnePassSb_func<uint8_t>(par, frame, sbr, sbc);
     }
 }
 

@@ -263,7 +263,7 @@ namespace H265Enc {
     {
         const int16_t *scales = fqpar + 8;
 
-        const int n_coeffs = 16 << (txSize << 1);
+        const int n_coeffs = MIN(32, 16 << (txSize << 1));
 
         int32_t nnz = (eob <= 0) ? n_coeffs : eob;
         // call with eob equals 0 if num non zero unknown
@@ -281,7 +281,7 @@ namespace H265Enc {
             }
         }
         // Fast convergence with fewer coeffs
-        nnz = IPP_MIN(nnz, 6);
+        //nnz = IPP_MIN(nnz, 6);
         const float inv_scale = 0.016f / (float)scales[1];
         const int16_t *scan = av1_default_scan[txSize];
         for (int i = 1; i < n_coeffs; i++) {

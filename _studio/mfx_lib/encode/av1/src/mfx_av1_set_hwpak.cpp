@@ -242,7 +242,7 @@ void SetPakTileState(const AV1VideoParam &par, CmodelAv1::Av1PakHWTileState &m_p
     int32_t tileWidth = lastTileCol ? (par.Width - (sbColStart << 6)) : par.tileParam.colWidth[tileCol] * 64;//lastTileCol ? m_frames[AV1_ORIGINAL_FRAME].frameCodedSize.width - (tileStartSbX << 6) : (tileWidthInSb << 6);
     int32_t tileHeight = lastTileRow ? (par.Height - (sbRowStart << 6)) : par.tileParam.rowHeight[tileRow] * 64;//lastTileRow ? m_frames[AV1_ORIGINAL_FRAME].frameCodedSize.height - (tileStartSbY << 6) : (tileHeightInSb << 6);
 
-    int32_t totalTilesInGroup = par.tileParam.cols * par.tileParam.rows;// aya:: fixme
+    int32_t totalTilesInGroup = par.tileParam.numTiles;// aya:: fixme
     m_pak_tile_state.FrameTileID = tile;//tileId;
     m_pak_tile_state.TGTileNum = totalTilesInGroup - 1;
     m_pak_tile_state.TileGroupID = 0;//tileGroupId;
@@ -797,7 +797,7 @@ void Init_Coef_costs_more(CmodelAv1::Av1Prob *coeff_probs_l, unsigned int *coeff
 
 void AV1FrameEncoder::PackTile_viaCmodel(int32_t tile)
 {
-    int numTiles = m_videoParam.tileParam.cols * m_videoParam.tileParam.rows;
+    int numTiles = m_videoParam.tileParam.numTiles;
     int numFinishedTilesUpdated = vm_interlocked_inc32(&(m_frame->m_numFinishedTiles));
     if (numFinishedTilesUpdated < numTiles) {
         return;
@@ -900,7 +900,7 @@ void AV1FrameEncoder::PackTile_viaCmodel(int32_t tile)
                     CmodelAv1::HWSbCodeAv1 *curSB = &m_frame->av1frameOrigin.m_FrameLSBData.LSBData[sby * /*picWidthInSb*/m_videoParam.PicWidthInCtbs + sbx];
 
                     int32_t ctbAddr = sby * m_videoParam.PicWidthInCtbs + sbx;
-                    Ipp16u *txkTypes = m_frame->m_txkTypes4x4 + (ctbAddr * 256);
+                    Ipp16u *txkTypes = m_frame->m_fenc->m_txkTypes4x4 + (ctbAddr * 256);
 
                     //int32_t round0 = (m_videoParam.qparamY[m_frame->m_sliceQpY].round[0] + m_videoParam.qparamY[m_frame->m_sliceQpY].round[1]) >> 1;
                     //int32_t round0 = m_videoParam.qparamY[m_frame->m_sliceQpY].round[1];

@@ -363,7 +363,7 @@ typedef struct {
     mfxU16      NumRefLayers;       // 0-1-default, 2+ use given
     mfxU16      ConstQpOffset;      // allows setting negative QPs for 10bit: finalQP[IPB] = mfx.QP[IPB] - ConstQpOffset
     mfxU16      SplitThresholdMultiplier; //0-10-default: multipler = SplitThresholdMultiplier / 10.0
-    mfxU16      EnableCmBiref;      // 0-default 1-enables Interpolation and GpuBiref
+    mfxU16      EnableCmInterp;      // 0-default 1-enables Interpolation and GpuBiref
     mfxU16      RepackForMaxFrameSize;
     mfxU16      AutoScaleToCoresUsingTiles; // Automatically Scale to detected cores using tiles if needed.
     mfxU16      MaxTaskChainEnc;
@@ -385,8 +385,15 @@ typedef struct {
     mfxU16      IntraInterRDO;          // on/off Inter mode decision by RDO
     mfxU16      CodecTypeExt;           // Codec type: 0-default; 1-VP9; 2-AV1
     mfxU16      CDEF;                   // tri-state
-        mfxU16      LRMode;                 // tri-state
-    mfxU16      reserved[15];           // 256 bytes total} mfxExtCodingOptionHEVC;
+    mfxU16      LRMode;                 // loop restoration tri-state
+    mfxU16      SRMode;                 // super resolution tri-state
+    mfxU16      CFLMode;                // super resolution tri-state
+    mfxU16      ScreenMode;             // screen content tools: 0-off, 1-intrabc, 2-palette, 3-both, 4-auto
+    mfxU16      DisableFrameEndUpdateCdf; // 0,1-on, 2-off
+    mfxU16      NumTileColumnsKeyFrame;   // 0-default, 1..N-num tile columns
+    mfxU16      NumTileColumnsInterFrame; // 0-default, 1..N-num tile columns
+    mfxU16      NumGpuSlices;
+    mfxU16      reserved[7];           // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionAV1E;
 
 

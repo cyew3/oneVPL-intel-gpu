@@ -29,14 +29,38 @@
 #include "mfx_av1_defs.h"
 
 namespace AV1PP {
-    inline void predict_intra_vp9(const uint8_t *refPel, uint8_t *dst, int pitch, int txSize, int haveLeft, int haveAbove, int mode) {
+
+    inline void predict_intra_palette(uint8_t *dst, int32_t pitch, int32_t txSize, const uint8_t *palette, const uint8_t *color_map) {
         assert(txSize >= 0 && txSize <= 3);
-        assert(haveLeft == 0 || haveLeft == 1);
-        assert(haveAbove == 0 || haveAbove == 1);
-        assert(mode >= 0 || mode <= 9);
-        predict_intra_vp9_fptr_arr[txSize][haveLeft][haveAbove][mode](refPel, dst, pitch);
+        assert(dst != nullptr);
+        assert(palette != nullptr);
+        assert(color_map != nullptr);
+        assert(predict_intra_palette_fptr_arr[txSize] != nullptr);
+        predict_intra_palette_fptr_arr[txSize](dst, pitch, palette, color_map);
     }
-    inline void predict_intra_vp9(const uint16_t *refPel, uint16_t *dst, int pitch, int txSize, int haveLeft, int haveAbove, int mode) {
+
+    inline void predict_intra_palette(uint16_t *dst, int32_t pitch, int32_t txSize, const uint8_t *palette, const uint8_t *color_map) {
+        assert(!"not implemented");
+    }
+
+    inline void map_intra_palette(const uint8_t *src, uint8_t *dst, int pitch, int width, uint16_t *palette, uint8_t palette_size) {
+        for (int32_t i = 0; i < width; i++) {
+            for (int32_t j = 0; j < width; j++) {
+                uint32_t best_color_idx = 0;
+                uint32_t min_sad = 4096;
+                for (uint32_t k = 0; k < palette_size; k++) {
+                    uint32_t sad = abs((int)src[i * 64 + j] - (int)palette[k]);
+                    if (sad < min_sad) {
+                        min_sad = sad;
+                        best_color_idx = k;
+                    }
+                }
+                dst[i * pitch + j] = (uint8_t) best_color_idx;
+            }
+        }
+    }
+
+    inline void map_intra_palette(const uint16_t *src, uint8_t *dst, int pitch, int width, uint16_t *palette, uint8_t palette_size) {
         assert(!"not implemented");
     }
 
@@ -52,18 +76,14 @@ namespace AV1PP {
     }
     inline void predict_intra_av1(const uint16_t *topPels, const uint16_t *leftPels, uint16_t *dst, int pitch, int txSize,
                                   int haveLeft, int haveAbove, int mode, int delta, int upTop, int upLeft) {
-        assert(!"not implemented");
-    }
-
-    inline void predict_intra_nv12_vp9(const uint8_t *refPel, uint8_t *dst, int pitch, int txSize, int haveLeft, int haveAbove, int mode) {
+        //assert(!"not implemented");
         assert(txSize >= 0 && txSize <= 3);
         assert(haveLeft == 0 || haveLeft == 1);
         assert(haveAbove == 0 || haveAbove == 1);
-        assert(mode >= 0 || mode <= 9);
-        predict_intra_nv12_vp9_fptr_arr[txSize][haveLeft][haveAbove][mode](refPel, dst, pitch);
-    }
-    inline void predict_intra_nv12_vp9(const uint16_t *refPel, uint16_t *dst, int pitch, int txSize, int haveLeft, int haveAbove, int mode) {
-        assert(!"not implemented");
+        assert(mode >= 0 && mode <= 12);
+        assert(delta >= -3 && delta <= 3);
+        assert(predict_intra_av1_fptr_arr[txSize][haveLeft][haveAbove][mode] != NULL);
+        predict_intra_av1_hbd_fptr_arr[txSize][haveLeft][haveAbove][mode](topPels, leftPels, dst, pitch, delta, upTop, upLeft);
     }
 
     inline void predict_intra_nv12_av1(const uint8_t *topPels, const uint8_t *leftPels, uint8_t *dst, int pitch, int txSize,
@@ -80,7 +100,14 @@ namespace AV1PP {
 
     inline void predict_intra_nv12_av1(const uint16_t *topPels, const uint16_t *leftPels, uint16_t *dst, int pitch, int txSize,
                                        int haveLeft, int haveAbove, int mode, int delta, int upTop, int upLeft)  {
-        assert(!"not implemented");
+        //assert(!"not implemented");
+        assert(txSize >= 0 && txSize <= 3);
+        assert(haveLeft == 0 || haveLeft == 1);
+        assert(haveAbove == 0 || haveAbove == 1);
+        assert(mode >= 0 && mode <= 12);
+        assert(delta >= -3 && delta <= 3);
+        assert(predict_intra_nv12_av1_fptr_arr[txSize][haveLeft][haveAbove][mode]);
+        predict_intra_nv12_av1_hbd_fptr_arr[txSize][haveLeft][haveAbove][mode](topPels, leftPels, dst, pitch, delta, upTop, upLeft);
     }
 
     inline void predict_intra_all(const uint8_t* rec, int pitchRec, uint8_t *dst, int txSize, int haveLeft, int haveAbove) {
@@ -93,17 +120,6 @@ namespace AV1PP {
         assert(!"not implemented");
     }
 
-    inline int pick_intra_nv12(const uint8_t *rec, int pitchRec, const uint8_t *src, float lambda, const uint16_t *modeBits, int txSize, int haveLeft, int haveAbove) {
-        assert(txSize >= 0 && txSize <= 3);
-        assert(haveLeft == 0 || haveLeft == 1);
-        assert(haveAbove == 0 || haveAbove == 1);
-        return pick_intra_nv12_fptr_arr[txSize][haveLeft][haveAbove](rec, pitchRec, src, lambda, modeBits);
-    }
-    inline int pick_intra_nv12(const uint16_t* rec, int pitchRec, const uint16_t *src, float lambda, const uint16_t *modeBits, int txSize, int haveLeft, int haveAbove) {
-        assert(!"not implemented");
-        return 0;
-    }
-
     inline void ftransform_vp9(const int16_t *src, int16_t *dst, int pitchSrc, int size, int type) {
         assert(size >= 0 && size <= 10);
         assert(type >= 0 && type <= 3);
@@ -112,20 +128,24 @@ namespace AV1PP {
 
     inline void ftransform_av1(const int16_t *src, int16_t *dst, int pitchSrc, int size, int type) {
         assert(size >= 0 && size <= 10);
-        assert(type >= 0 && type <= 3);
+        assert(type >= 0 && type <= 3 || type == 9);
         ftransform_av1_fptr_arr[size][type](src, dst, pitchSrc);
     }
-
-    inline void itransform_vp9(const int16_t *src, int16_t *dst, int pitchSrc, int size, int type) {
+    inline void ftransform_av1(const int16_t *src, int32_t *dst, int pitchSrc, int size, int type) {
+        assert(size >= 0 && size <= 10);
+        assert(type >= 0 && type <= 3 || type == 9);
+        ftransform_av1_hbd_fptr_arr[size][type](src, dst, pitchSrc);
+    }
+    /*inline void itransform_vp9(const int16_t *src, int16_t *dst, int pitchSrc, int size, int type) {
         assert(size >= 0 && size <= 3);
         assert(type >= 0 && type <= 3);
         itransform_vp9_fptr_arr[size][type](src, dst, pitchSrc);
-    }
+    }*/
 
-    inline void itransform_av1(const int16_t *src, int16_t *dst, int pitchSrc, int size, int type) {
+    inline void itransform_av1(const int16_t *src, int16_t *dst, int pitchSrc, int size, int type, int bd) {
         assert(size >= 0 && size <= 3);
-        assert(type >= 0 && type <= 3);
-        itransform_av1_fptr_arr[size][type](src, dst, pitchSrc);
+        assert(type >= 0 && type <= 3 || type == 9);
+        itransform_av1_fptr_arr[size][type](src, dst, pitchSrc, bd);
     }
 
     inline void itransform_add_vp9(const int16_t *src, uint8_t *dst, int pitchSrc, int size, int type) {
@@ -139,11 +159,16 @@ namespace AV1PP {
 
     inline void itransform_add_av1(const int16_t *src, uint8_t *dst, int pitchSrc, int size, int type) {
         assert(size >= 0 && size <= 3);
-        assert(type >= 0 && type <= 3);
+        assert(type >= 0 && type <= 3 || type == 9);
         itransform_add_av1_fptr_arr[size][type](src, dst, pitchSrc);
     }
     inline void itransform_add_av1(const int16_t *src, uint16_t *dst, int pitchSrc, int size, int type) {
-        assert(!"not implemented");
+        ///assert(!"not implemented");
+        itransform_add_av1_hbd_fptr_arr[size][type](src, dst, pitchSrc);
+    }
+    inline void itransform_add_av1(const int32_t *src, uint16_t *dst, int pitchSrc, int size, int type) {
+        //assert(!"not implemented");
+        itransform_add_av1_hbd_hbd_fptr_arr[size][type](src, dst, pitchSrc);
     }
 
     inline int quant(const int16_t *src, int16_t *dst, const AV1Enc::QuantParam &qpar, int txSize) {
@@ -151,9 +176,19 @@ namespace AV1PP {
         return quant_fptr_arr[txSize](src, dst, reinterpret_cast<const int16_t *>(&qpar));
     }
 
-    inline void dequant(const int16_t *src, int16_t *dst, const AV1Enc::QuantParam &qpar, int txSize) {
+    inline int quant(const int32_t *src, int16_t *dst, const AV1Enc::QuantParam &qpar, int txSize) {
         assert(txSize >= 0 && txSize <= 3);
-        dequant_fptr_arr[txSize](src, dst, qpar.dequant);
+        return quant_hbd_fptr_arr[txSize](src, dst, reinterpret_cast<const int16_t *>(&qpar));
+    }
+
+    inline void dequant(const int16_t *src, int16_t *dst, const AV1Enc::QuantParam &qpar, int txSize, int bd) {
+        assert(txSize >= 0 && txSize <= 3);
+        dequant_fptr_arr[txSize](src, dst, qpar.dequant, bd);
+    }
+
+    inline void dequant(const int16_t *src, int32_t *dst, const AV1Enc::QuantParam &qpar, int txSize, int bd) {
+        assert(txSize >= 0 && txSize <= 3);
+        dequant_hbd_fptr_arr[txSize](src, dst, qpar.dequant, bd);
     }
 
     inline int quant_dequant(int16_t *srcdst, int16_t *dst, const AV1Enc::QuantParam &qpar, int txSize) {
@@ -233,7 +268,16 @@ namespace AV1PP {
         interp_pitch64_av1_single_ref_fptr_arr[log2w][dx!=0][dy!=0](src, pitchSrc, dst, kernel_x[dx], kernel_y[dy], h);
     }
     inline void interp_av1(const uint16_t *src, int pitchSrc, uint16_t *dst, int dx, int dy, int h, int log2w, int filterType) {
-        assert(!"not implemented");
+        assert(log2w >= 0 && log2w <= 4);
+        assert(dx >= 0 && dx <= 15);
+        assert(dy >= 0 && dy <= 15);
+        int interp0 = filterType & 0x3;
+        int interp1 = (filterType >> 4) & 0x3;
+        assert(interp0 >= 0 && interp0 <= 3);
+        assert(interp1 >= 0 && interp1 <= 3);
+        const AV1Enc::InterpKernel *kernel_y = AV1Enc::av1_filter_kernels[interp0];
+        const AV1Enc::InterpKernel *kernel_x = AV1Enc::av1_filter_kernels[interp1];
+        interp_pitch64_av1_single_ref_hbd_fptr_arr[log2w][dx != 0][dy != 0](src, pitchSrc, dst, kernel_x[dx], kernel_y[dy], h);
     }
 
     inline void interp_av1(const uint8_t *src, int pitchSrc, int16_t *dst, int dx, int dy, int h, int log2w, int filterType) {
@@ -250,7 +294,16 @@ namespace AV1PP {
     }
 
     inline void interp_av1(const uint16_t *src, int pitchSrc, int16_t *dst, int dx, int dy, int h, int log2w, int filterType) {
-        assert(!"not implemented");
+        assert(log2w >= 0 && log2w <= 4);
+        assert(dx >= 0 && dx <= 15);
+        assert(dy >= 0 && dy <= 15);
+        int interp0 = filterType & 0x3;
+        int interp1 = (filterType >> 4) & 0x3;
+        assert(interp0 >= 0 && interp0 <= 3);
+        assert(interp1 >= 0 && interp1 <= 3);
+        const AV1Enc::InterpKernel *kernel_y = AV1Enc::av1_filter_kernels[interp0];
+        const AV1Enc::InterpKernel *kernel_x = AV1Enc::av1_filter_kernels[interp1];
+        interp_pitch64_av1_first_ref_hbd_fptr_arr[log2w][dx!=0][dy!=0](src, pitchSrc, dst, kernel_x[dx], kernel_y[dy], h);
     }
 
     inline void interp_av1(const uint8_t *src, int pitchSrc, const int16_t *ref0, uint8_t *dst, int dx, int dy, int h, int log2w, int filterType) {
@@ -267,7 +320,16 @@ namespace AV1PP {
     }
 
     inline void interp_av1(const uint16_t *src, int pitchSrc, const int16_t *ref0, uint16_t *dst, int dx, int dy, int h, int log2w, int filterType) {
-        assert(!"not implemented");
+        assert(log2w >= 0 && log2w <= 4);
+        assert(dx >= 0 && dx <= 15);
+        assert(dy >= 0 && dy <= 15);
+        int interp0 = filterType & 0x3;
+        int interp1 = (filterType >> 4) & 0x3;
+        assert(interp0 >= 0 && interp0 <= 3);
+        assert(interp1 >= 0 && interp1 <= 3);
+        const AV1Enc::InterpKernel *kernel_y = AV1Enc::av1_filter_kernels[interp0];
+        const AV1Enc::InterpKernel *kernel_x = AV1Enc::av1_filter_kernels[interp1];
+        interp_pitch64_av1_second_ref_hbd_fptr_arr[log2w][dx!=0][dy!=0](src, pitchSrc, ref0, dst, kernel_x[dx], kernel_y[dy], h);
     }
 
     inline void interp_nv12_vp9(const uint8_t *src, int pitchSrc, uint8_t *dst, int pitchDst, int dx, int dy, int h, int log2w, int avg, int filterType) {
@@ -322,7 +384,19 @@ namespace AV1PP {
         interp_nv12_pitch64_av1_single_ref_fptr_arr[log2w][dx!=0][dy!=0](src, pitchSrc, dst, kernel_x[dx], kernel_y[dy], h);
     }
     inline void interp_nv12_av1(const uint16_t *src, int pitchSrc, uint16_t *dst, int dx, int dy, int h, int log2w, int filterType) {
-        assert(!"not implemented");
+        //assert(!"not implemented");
+        assert(log2w >= 0 && log2w <= 3);
+        assert(dx >= 0 && dx <= 15);
+        assert(dy >= 0 && dy <= 15);
+        int interp0 = filterType & 0x3;
+        int interp1 = (filterType >> 4) & 0x3;
+        assert(interp0 >= 0 && interp0 <= 3);
+        assert(interp1 >= 0 && interp1 <= 3);
+        const AV1Enc::InterpKernel *kernel_y =
+            (h <= 4 ? AV1Enc::av1_short_filter_kernels : AV1Enc::av1_filter_kernels)[interp0];
+        const AV1Enc::InterpKernel *kernel_x =
+            (log2w == 0 ? AV1Enc::av1_short_filter_kernels : AV1Enc::av1_filter_kernels)[interp1];
+        interp_nv12_pitch64_av1_single_ref_hbd_fptr_arr[log2w][dx != 0][dy != 0](src, pitchSrc, dst, kernel_x[dx], kernel_y[dy], h);
     }
 
     inline void interp_nv12_av1(const uint8_t *src, int pitchSrc, int16_t *dst, int dx, int dy, int h, int log2w, int filterType) {
@@ -340,7 +414,19 @@ namespace AV1PP {
         interp_nv12_pitch64_av1_first_ref_fptr_arr[log2w][dx!=0][dy!=0](src, pitchSrc, dst, kernel_x[dx], kernel_y[dy], h);
     }
     inline void interp_nv12_av1(const uint16_t *src, int pitchSrc, int16_t *dst, int dx, int dy, int h, int log2w, int filterType) {
-        assert(!"not implemented");
+        //assert(!"not implemented");
+        assert(log2w >= 0 && log2w <= 3);
+        assert(dx >= 0 && dx <= 15);
+        assert(dy >= 0 && dy <= 15);
+        int interp0 = filterType & 0x3;
+        int interp1 = (filterType >> 4) & 0x3;
+        assert(interp0 >= 0 && interp0 <= 3);
+        assert(interp1 >= 0 && interp1 <= 3);
+        const AV1Enc::InterpKernel *kernel_y =
+            (h <= 4 ? AV1Enc::av1_short_filter_kernels : AV1Enc::av1_filter_kernels)[interp0];
+        const AV1Enc::InterpKernel *kernel_x =
+            (log2w == 0 ? AV1Enc::av1_short_filter_kernels : AV1Enc::av1_filter_kernels)[interp1];
+        interp_nv12_pitch64_av1_first_ref_hbd_fptr_arr[log2w][dx!=0][dy!=0](src, pitchSrc, dst, kernel_x[dx], kernel_y[dy], h);
     }
 
     inline void interp_nv12_av1(const uint8_t *src, int pitchSrc, const int16_t *ref0, uint8_t *dst, int dx, int dy, int h, int log2w, int filterType) {
@@ -359,7 +445,20 @@ namespace AV1PP {
         interp_nv12_pitch64_av1_second_ref_fptr_arr[log2w][dx!=0][dy!=0](src, pitchSrc, ref0, dst, kernel_x[dx], kernel_y[dy], h);
     }
     inline void interp_nv12_av1(const uint16_t *src, int pitchSrc, const int16_t *ref0, uint16_t *dst, int dx, int dy, int h, int log2w, int filterType) {
-        assert(!"not implemented");
+        //assert(!"not implemented");
+        assert(log2w >= 0 && log2w <= 3);
+        assert(dx >= 0 && dx <= 15);
+        assert(dy >= 0 && dy <= 15);
+        int interp0 = filterType & 0x3;
+        int interp1 = (filterType >> 4) & 0x3;
+        assert(interp0 >= 0 && interp0 <= 3);
+        assert(interp1 >= 0 && interp1 <= 3);
+        const AV1Enc::InterpKernel *kernel_y =
+            (h <= 4 ? AV1Enc::av1_short_filter_kernels : AV1Enc::av1_filter_kernels)[interp0];
+        const AV1Enc::InterpKernel *kernel_x =
+            (log2w == 0 ? AV1Enc::av1_short_filter_kernels : AV1Enc::av1_filter_kernels)[interp1];
+
+        interp_nv12_pitch64_av1_second_ref_hbd_fptr_arr[log2w][dx!=0][dy!=0](src, pitchSrc, ref0, dst, kernel_x[dx], kernel_y[dy], h);
     }
 
     //
@@ -403,7 +502,8 @@ namespace AV1PP {
         diff_nxn_fptr_arr[log2w](src1, pitchSrc1, src2, pitchSrc2, dst, pitchDst);
     }
     inline void diff_nxn(const uint16_t *src1, int pitchSrc1, const uint16_t *src2, int pitchSrc2, int16_t *dst, int pitchDst, int log2w) {
-        assert(!"not implemented");
+        //assert(!"not implemented");
+        diff_nxn_hbd_fptr_arr[log2w](src1, pitchSrc1, src2, pitchSrc2, dst, pitchDst);
     }
 
     inline void diff_nxn(const uint8_t *src1, const uint8_t *src2, int16_t *dst, int log2w) {
@@ -411,7 +511,8 @@ namespace AV1PP {
         diff_nxn_p64_p64_pw_fptr_arr[log2w](src1, src2, dst);
     }
     inline void diff_nxn(const uint16_t *src1, const uint16_t *src2, int16_t *dst, int log2w) {
-        assert(!"not implemented");
+        assert(log2w >= 0 && log2w <= 4);
+        diff_nxn_p64_p64_pw_hbd_fptr_arr[log2w](src1, src2, dst);
     }
 
     inline void diff_nxm(const uint8_t *src1, int pitchSrc1, const uint8_t *src2, int pitchSrc2, int16_t *dst, int pitchDst, int h, int log2w) {
@@ -435,7 +536,8 @@ namespace AV1PP {
         diff_nv12_fptr_arr[log2w](src1, pitchSrc1, src2, pitchSrc2, dstU, dstV, pitchDst, height);
     }
     inline void diff_nv12(const uint16_t *src1, int pitchSrc1, const uint16_t *src2, int pitchSrc2, int16_t *dstU, int16_t *dstV, int pitchDst, int height, int log2w) {
-        assert(!"not implemented");
+        assert(log2w >= 0 && log2w <= 3);
+        diff_nv12_hbd_fptr_arr[log2w](src1, pitchSrc1, src2, pitchSrc2, dstU, dstV, pitchDst, height);
     }
 
     inline void diff_nv12(const uint8_t *src1, const uint8_t *src2, int16_t *dstU, int16_t *dstV, int height, int log2w) {
@@ -443,7 +545,9 @@ namespace AV1PP {
         diff_nv12_p64_p64_pw_fptr_arr[log2w](src1, src2, dstU, dstV, height);
     }
     inline void diff_nv12(const uint16_t *src1, const uint16_t *src2, int16_t *dstU, int16_t *dstV, int height, int log2w) {
-        assert(!"not implemented");
+        //assert(!"not implemented");
+        assert(log2w >= 0 && log2w <= 3);
+        diff_nv12_p64_p64_pw_hbd_fptr_arr[log2w](src1, src2, dstU, dstV, height);
     }
 
     inline int satd_4x4(const uint8_t* src1, int pitch1, const uint8_t* src2, int pitch2) {
@@ -572,6 +676,17 @@ namespace AV1PP {
         return 0;
     }
 
+    inline int satd_with_const(const uint8_t* src1, const uint8_t src2, int log2w, int log2h) {
+        assert(log2w >= 0 && log2w <= 4);
+        assert(log2h >= 0 && log2h <= 4);
+        assert(satd_with_const_pitch64_fptr_arr[log2w][log2h] != NULL);
+        return satd_with_const_pitch64_fptr_arr[log2w][log2h](src1, src2);
+    }
+    inline int satd_with_const(const uint16_t* src1, const uint16_t src2, int log2w, int log2h) {
+        assert(!"not implemented");
+        return 0;
+    }
+
     inline int satd(const uint8_t* src1, const uint8_t* src2, int log2w, int log2h) {
         assert(log2w >= 0 && log2w <= 4);
         assert(log2h >= 0 && log2h <= 4);
@@ -579,7 +694,7 @@ namespace AV1PP {
         return satd_pitch64_both_fptr_arr[log2w][log2h](src1, src2);
     }
     inline int satd(const uint16_t* src1, const uint16_t* src2, int log2w, int log2h) {
-        assert(!"not implemented");
+        //assert(!"not implemented");
         return 0;
     }
 
@@ -590,8 +705,11 @@ namespace AV1PP {
         return sse_fptr_arr[log2w][log2h](src1, pitch1, src2, pitch2);
     }
     inline int sse(const uint16_t *src1, int pitch1, const uint16_t *src2, int pitch2, int log2w, int log2h) {
-        assert(!"not implemented");
-        return 0;
+        //assert(!"not implemented");
+        assert(log2w >= 0 && log2w <= 4);
+        assert(log2h >= 0 && log2h <= 4);
+        assert(sse_hbd_fptr_arr[log2w][log2h] != NULL);
+        return sse_hbd_fptr_arr[log2w][log2h](src1, pitch1, src2, pitch2);
     }
 
     inline int sse_p64_pw(const uint8_t *src1, const uint8_t *src2, int log2w, int log2h) {
@@ -605,6 +723,17 @@ namespace AV1PP {
         return 0;
     }
 
+    inline void sse_p64_pw_uv(const uint8_t *src1, const uint8_t *src2, int log2w, int log2h, int& costU, int& costV) {
+        assert(log2w >= 0 && log2w <= 4);
+        assert(log2h >= 0 && log2h <= 4);
+        assert(sse_p64_pw_uv_fptr_arr[log2w][log2h] != NULL);
+        sse_p64_pw_uv_fptr_arr[log2w][log2h](src1, src2, costU, costV);
+    }
+    inline void sse_p64_pw_uv(const uint16_t *src1, const uint16_t *src2, int log2w, int log2h, int& costU, int& costV) {
+        assert(!"not implemented");
+    }
+
+
     inline int sse_p64_p64(const uint8_t *src1, const uint8_t *src2, int log2w, int log2h) {
         assert(log2w >= 0 && log2w <= 4);
         assert(log2h >= 0 && log2h <= 4);
@@ -612,8 +741,10 @@ namespace AV1PP {
         return sse_p64_p64_fptr_arr[log2w][log2h](src1, src2);
     }
     inline int sse_p64_p64(const uint16_t *src1, const uint16_t *src2, int log2w, int log2h) {
-        assert(!"not implemented");
-        return 0;
+        assert(log2w >= 0 && log2w <= 4);
+        assert(log2h >= 0 && log2h <= 4);
+        assert(sse_p64_p64_hbd_fptr_arr[log2w][log2h] != NULL);
+        return sse_p64_p64_hbd_fptr_arr[log2w][log2h](src1, src2);
     }
 
     inline int sse_flexh(const uint8_t *src1, int pitch1, const uint8_t *src2, int pitch2, int h, int log2w) {
@@ -666,58 +797,16 @@ namespace AV1PP {
         return 0;
     }
 
-    inline void lpf_horizontal_4(uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh) {
-        lpf_horizontal_4_fptr(s, pitch, blimit, limit, thresh);
-    }
-
-    inline void lpf_horizontal_4_dual(uint8_t *s, int pitch, const uint8_t *blimit0, const uint8_t *limit0, const uint8_t *thresh0, const uint8_t *blimit1, const uint8_t *limit1, const uint8_t *thresh1) {
-        lpf_horizontal_4_dual_fptr(s, pitch, blimit0, limit0, thresh0, blimit1, limit1, thresh1);
-    }
-
-    inline void lpf_horizontal_8(uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh) {
-        lpf_horizontal_8_fptr(s, pitch, blimit, limit, thresh);
-    }
-
-    inline void lpf_horizontal_8_dual(uint8_t *s, int pitch, const uint8_t *blimit0, const uint8_t *limit0, const uint8_t *thresh0, const uint8_t *blimit1, const uint8_t *limit1, const uint8_t *thresh1) {
-        lpf_horizontal_8_dual_fptr(s, pitch, blimit0, limit0, thresh0, blimit1, limit1, thresh1);
-    }
-
-    inline void lpf_horizontal_edge_16(uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh) {
-        lpf_horizontal_edge_16_fptr(s, pitch, blimit, limit, thresh);
-    }
-
-    inline void lpf_horizontal_edge_8(uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh) {
-        lpf_horizontal_edge_8_fptr(s, pitch, blimit, limit, thresh);
-    }
-
-    inline void lpf_vertical_16(uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh) {
-        lpf_vertical_16_fptr(s, pitch, blimit, limit, thresh);
-    }
-
-    inline void lpf_vertical_16_dual(uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh) {
-        lpf_vertical_16_dual_fptr(s, pitch, blimit, limit, thresh);
-    }
-
-    inline void lpf_vertical_4(uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh) {
-        lpf_vertical_4_fptr(s, pitch, blimit, limit, thresh);
-    }
-
-    inline void lpf_vertical_4_dual(uint8_t *s, int pitch, const uint8_t *blimit0, const uint8_t *limit0, const uint8_t *thresh0, const uint8_t *blimit1, const uint8_t *limit1, const uint8_t *thresh1) {
-        lpf_vertical_4_dual_fptr(s, pitch, blimit0, limit0, thresh0, blimit1, limit1, thresh1);
-    }
-
-    inline void lpf_vertical_8(uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh) {
-        lpf_vertical_8_fptr(s, pitch, blimit, limit, thresh);
-    }
-
-    inline void lpf_vertical_8_dual(uint8_t *s, int pitch, const uint8_t *blimit0, const uint8_t *limit0, const uint8_t *thresh0, const uint8_t *blimit1, const uint8_t *limit1, const uint8_t *thresh1) {
-        lpf_vertical_8_dual_fptr(s, pitch, blimit0, limit0, thresh0, blimit1, limit1, thresh1);
-    }
-
     inline void loopfilter(uint8_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh, AV1Enc::EdgeDir dir, int filterLenIdx) {
         assert(dir == AV1Enc::VERT_EDGE || dir == AV1Enc::HORZ_EDGE);
         assert(filterLenIdx < 4);
         lpf_fptr_arr[dir][filterLenIdx](s, pitch, blimit, limit, thresh);
+    }
+
+    inline void loopfilter(uint16_t *s, int pitch, const uint8_t *blimit, const uint8_t *limit, const uint8_t *thresh, AV1Enc::EdgeDir dir, int filterLenIdx) {
+        assert(dir == AV1Enc::VERT_EDGE || dir == AV1Enc::HORZ_EDGE);
+        assert(filterLenIdx < 4);
+        lpf_hbd_fptr_arr[dir][filterLenIdx](s, pitch, blimit, limit, thresh);
     }
 
     inline int diff_dc(const uint8_t *src1, int pitch1, const uint8_t *src2, int pitch2, int size) {
@@ -732,7 +821,8 @@ namespace AV1PP {
         adds_nv12_fptr(dst, pitchDst, src1, pitchSrc1, src2u, src2v, pitchSrc2, size);
     }
     inline void adds_nv12(uint16_t *dst, int pitchDst, const uint16_t *src1, int pitchSrc1, const int16_t *src2u, const int16_t *src2v, int pitchSrc2, int size) {
-        assert(!"not implemented");
+        //assert(!"not implemented");
+        adds_nv12_hbd_fptr(dst, pitchDst, src1, pitchSrc1, src2u, src2v, pitchSrc2, size);
     }
 
     inline void compute_rscs(const uint8_t *src, int pitchSrc, int *lcuRs, int *lcuCs, int pitchRsCs, int width, int height) {
@@ -772,9 +862,15 @@ namespace AV1PP {
         return cdef_filter_block_u16_fptr_arr[isUv](dst, dstride, src, pri_strength, sec_strength, dir, pri_damping, sec_damping);
     }
 
-    inline void cdef_estimate_block(const uint8_t *org, int ostride, const uint16_t *src, int pri_strength, int sec_strength, int dir, int pri_damping, int sec_damping, int *sse, int isUv) {
+    inline void cdef_estimate_block(const uint8_t *org, int ostride, const uint16_t *src, int pri_strength, int sec_strength, int dir, int pri_damping, int sec_damping, int *sse, int isUv, uint8_t *dst, int dstride) {
         assert(isUv == 0 || isUv == 1); // 4x4 or 8x8
-        return cdef_estimate_block_fptr_arr[isUv](org, ostride, src, pri_strength, sec_strength, dir, pri_damping, sec_damping, sse);
+        return cdef_estimate_block_fptr_arr[isUv](org, ostride, src, pri_strength, sec_strength, dir, pri_damping, sec_damping, sse, dst, dstride);
+    }
+
+    inline void cdef_estimate_block(const uint16_t *org, int ostride, const uint16_t *src, int pri_strength, int sec_strength, int dir, int pri_damping, int sec_damping, int *sse, int isUv, uint16_t *dst, int dstride) {
+        assert(isUv == 0 || isUv == 1); // 4x4 or 8x8
+        //assert(!"not implemented");
+        return cdef_estimate_block_hbd_fptr_arr[isUv](org, ostride, src, pri_strength, sec_strength, dir, pri_damping, sec_damping, sse, dst, dstride);
     }
 
     inline void cdef_estimate_block_sec0(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength, int dir, int pri_damping, int *sse, int isUv, uint8_t *dst, int dstride) {
@@ -782,14 +878,26 @@ namespace AV1PP {
         return cdef_estimate_block_sec0_fptr_arr[isUv](org, ostride, in, pri_strength, dir, pri_damping, sse, dst, dstride);
     }
 
+    inline void cdef_estimate_block_sec0(const uint16_t *org, int ostride, const uint16_t *in, int pri_strength, int dir, int pri_damping, int *sse, int isUv, uint16_t *dst, int dstride) {
+        assert(isUv == 0 || isUv == 1); // 4x4 or 8x8
+        //assert(!"not implemented");
+        return cdef_estimate_block_sec0_hbd_fptr_arr[isUv](org, ostride, in, pri_strength, dir, pri_damping, sse, dst, dstride);
+    }
+
     inline void cdef_estimate_block_pri0(const uint8_t *org, int ostride, const uint16_t *in, int sec_damping, int *sse, int isUv) {
         assert(isUv == 0 || isUv == 1); // 4x4 or 8x8
         return cdef_estimate_block_pri0_fptr_arr[isUv](org, ostride, in, sec_damping, sse);
     }
 
-    inline void cdef_estimate_block_all_sec(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength, int dir, int pri_damping, int sec_damping, int *sse, int isUv) {
+    inline void cdef_estimate_block_all_sec(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength, int dir, int pri_damping, int sec_damping, int *sse, int isUv, uint8_t **dst, int dstride) {
         assert(isUv == 0 || isUv == 1); // 4x4 or 8x8
-        return cdef_estimate_block_all_sec_fptr_arr[isUv](org, ostride, in, pri_strength, dir, pri_damping, sec_damping, sse);
+        return cdef_estimate_block_all_sec_fptr_arr[isUv](org, ostride, in, pri_strength, dir, pri_damping, sec_damping, sse, dst, dstride);
+    }
+    inline void cdef_estimate_block_all_sec(const uint16_t *org, int ostride, const uint16_t *in, int pri_strength, int dir, int pri_damping, int sec_damping, int *sse, int isUv, uint16_t **dst, int dstride) {
+        assert(isUv == 0 || isUv == 1); // 4x4 or 8x8
+        //assert(!"not implemented");
+
+        return cdef_estimate_block_all_sec_hbd_fptr_arr[isUv](org, ostride, in, pri_strength, dir, pri_damping, sec_damping, sse, dst, dstride);
     }
 
     inline void cdef_estimate_block_2pri(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength0, int pri_strength1, int dir, int pri_damping, int sec_damping, int *sse, int isUv) {

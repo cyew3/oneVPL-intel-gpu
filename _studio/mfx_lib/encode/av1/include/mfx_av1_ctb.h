@@ -27,12 +27,20 @@
 #include <limits.h> /* for INT_MAX on Linux/Android */
 #include "mfx_av1_defs.h"
 
+#include <algorithm>
+
 namespace AV1Enc {
 
     struct AV1VideoParam;
     struct FrameData;
     class Frame;
 
+    struct MvLimits {
+        int col_min;
+        int col_max;
+        int row_min;
+        int row_max;
+    };
 #ifdef MEMOIZE_NUMCAND
     template <typename PixType> struct MemCand {
         int32_t   count;
@@ -144,6 +152,22 @@ namespace AV1Enc {
         CostType bitCost;   // numBits * lambda
     };
 
+    struct PaletteInfo
+    {
+        uint8_t *color_map;
+        uint8_t *color_map_uv;
+        alignas(8) uint8_t palette_y[8];
+        alignas(8) uint8_t palette_u[8];
+        alignas(8) uint8_t palette_v[8];
+        uint32_t palette_bits;
+        uint32_t sse;
+        uint32_t sseUV;
+        uint8_t palette_size_y;
+        uint8_t palette_size_uv;
+        uint8_t true_colors_y;
+        uint8_t true_colors_uv;
+    };
+
     struct ModeInfo
     {
     public:
@@ -220,15 +244,11 @@ namespace AV1Enc {
         int32_t tileIndex;
         ModeInfo *mi;
         const CoeffsType *coeffs[3];
-        union {
-            void     *tokens;
-            TokenVP9 *tokensVP9;
-            TokenAV1 *tokensAV1;
-        };
         Contexts ctx;
         int32_t cdefPreset;
+        int32_t code_delta;
     };
-    void InitSuperBlock(SuperBlock *sb, int32_t sbRow, int32_t sbCol, const AV1VideoParam &par, Frame *frame, const CoeffsType *coefs, void *tokens);
+    void InitSuperBlock(SuperBlock *sb, int32_t sbRow, int32_t sbCol, const AV1VideoParam &par, Frame *frame, const CoeffsType *coefs);
 
     struct AV1MEInfo
     {
@@ -245,86 +265,74 @@ namespace AV1Enc {
 
 #define CHROMA_SIZE_DIV 2  // 4 - 4:2:0 ; 2 - 4:2:2,4:2:0 ; 1 - 4:4:4,4:2:2,4:2:0
 
-    template <class PixType> struct GetHistogramType;
-    template <> struct GetHistogramType<uint8_t> { typedef uint16_t type; };
-    template <> struct GetHistogramType<uint16_t> { typedef uint32_t type; };
-
     struct RdCost {
         int32_t ssz;
         int32_t sse;
         uint32_t modeBits;
         uint32_t coefBits;
         int32_t eob;
+
+        RdCost & operator +=(const RdCost &o) {
+            ssz += o.ssz;
+            sse += o.sse;
+            modeBits += o.modeBits;
+            coefBits += o.coefBits;
+            eob += o.eob;
+            return *this;
+        }
+    };
+
+    struct VarTxCoefs {
+        int16_t coef[32 * 32];
+        int16_t qcoef[32 * 32];
+        int16_t dqcoef[32 * 32];
+#if ENABLE_HIBIT_COEFS
+        int32_t coef_hbd[32 * 32];
+        int32_t dqcoef_hbd[32 * 32];
+#endif
     };
 
     template <typename PixType>
     class AV1CU
     {
     public:
-        typedef typename GetHistogramType<PixType>::type HistType;
-
         const AV1VideoParam *m_par;
 
-        uint8_t  m_sliceQpY;
-        const int8_t *m_lcuQps;
+        const uint8_t *m_lcuQps;
+        const Frame  *m_currFrame;
+        int32_t       m_ctbAddr;           ///< CU address in a slice
+        int32_t       m_ctbPelX;           ///< CU position in a pixel (X)
+        int32_t       m_ctbPelY;           ///< CU position in a pixel (Y)
+        TileBorders   m_tileBorders;
+        uint32_t      m_numPartition;     ///< total number of minimum partitions in a CU
 
-        const Frame    *m_currFrame;
-        int32_t          m_ctbAddr;           ///< CU address in a slice
-        int32_t          m_ctbPelX;           ///< CU position in a pixel (X)
-        int32_t          m_ctbPelY;           ///< CU position in a pixel (Y)
-        TileBorders     m_tileBorders;
-        uint32_t          m_numPartition;     ///< total number of minimum partitions in a CU
-        alignas(64) CoeffsType    m_residualsY[MAX_CU_SIZE * MAX_CU_SIZE];
-        alignas(64) CoeffsType    m_residualsU[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
-        alignas(64) CoeffsType    m_residualsV[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
-        alignas(64) PixType       m_predIntraAll[((AV1_INTRA_MODES + 1) & ~1) * 32 * 32 * 2];
-        alignas(64) PixType       m_srcTr[32*32];  // transposed src block
+        alignas(64) PixType m_predIntraAll[((AV1_INTRA_MODES + 1 + 1) & ~1) * 32 * 32 * 2]; // +1 for Palette
+        alignas(64) uint16_t m_predIntraAll10bit[((AV1_INTRA_MODES + 1 + 1) & ~1) * 32 * 32 * 2]; // +1 for Palette
 
         // working/final coeffs
         CoeffsType    *m_coeffWorkY;
         CoeffsType    *m_coeffWorkU;
         CoeffsType    *m_coeffWorkV;
         // temporarily best coeffs for lower depths
-        alignas(64) CoeffsType    m_coeffStoredY[5+1][MAX_CU_SIZE * MAX_CU_SIZE];  // (+1 for Intra_NxN)
-        alignas(64) CoeffsType    m_coeffStoredU[5+1][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
-        alignas(64) CoeffsType    m_coeffStoredV[5+1][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+        alignas(64) CoeffsType    m_coeffStoredY[4][MAX_CU_SIZE * MAX_CU_SIZE];
+        alignas(64) CoeffsType    m_coeffStoredU[4][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+        alignas(64) CoeffsType    m_coeffStoredV[4][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
         // inter reconstruct pixels
-        alignas(64) PixType       m_recStoredY[5+1][MAX_CU_SIZE * MAX_CU_SIZE];  // (+1 for Intra_NxN)
-        alignas(64) PixType       m_recStoredC[5+1][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV * 2];
+        alignas(64) PixType       m_recStoredY[4][MAX_CU_SIZE * MAX_CU_SIZE];
+        alignas(64) PixType       m_recStoredC[4][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV * 2];
 
-        // inter prediction pixels
-        alignas(64) PixType       m_interPredBufsY[5][2][MAX_CU_SIZE * MAX_CU_SIZE];
-        alignas(64) PixType       m_interPredBufsC[5][2][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV * 2];
-        // inter residual
-        alignas(64) CoeffsType    m_interResidBufsY[5][2][MAX_CU_SIZE * MAX_CU_SIZE];
-        alignas(64) CoeffsType    m_interResidBufsU[5][2][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
-        alignas(64) CoeffsType    m_interResidBufsV[5][2][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
-
-
-        PixType    *m_interPredY;
-        PixType    *m_interPredC;
-        CoeffsType *m_interResidY;
-        CoeffsType *m_interResidU;
-        CoeffsType *m_interResidV;
-
-        PixType    *m_interPredSavedY[5][MAX_NUM_PARTITIONS];
-        PixType    *m_interPredSavedC[5][MAX_NUM_PARTITIONS];
-        CoeffsType *m_interResidSavedY[5][MAX_NUM_PARTITIONS];
-        CoeffsType *m_interResidSavedU[5][MAX_NUM_PARTITIONS];
-        CoeffsType *m_interResidSavedV[5][MAX_NUM_PARTITIONS];
-
-        PixType    *m_interPredBestY;
-        PixType    *m_interPredBestC;
-        CoeffsType *m_interResidBestY;
-        CoeffsType *m_interResidBestU;
-        CoeffsType *m_interResidBestV;
+        // Palette tokens
+        alignas(64) uint8_t       m_paletteMapY[4][MAX_CU_SIZE * MAX_CU_SIZE];
+        alignas(64) PaletteInfo   m_paletteStoredY[4][(MAX_CU_SIZE / MI_SIZE) * (MAX_CU_SIZE / MI_SIZE)];
+        alignas(64) uint8_t       m_paletteMapUV[4][MAX_CU_SIZE * MAX_CU_SIZE];
+        alignas(64) PaletteInfo   m_paletteStoredUV[4][(MAX_CU_SIZE / MI_SIZE) * (MAX_CU_SIZE / MI_SIZE)];
 
         Contexts m_contextsInitSb;  // contexts at SB start
         Contexts m_contexts;
         Contexts m_contextsStored[5];
 
-        CostType m_costStored[5+1];  // stored RD costs (+1 for Intra_NxN)
-        CostType m_costCurr;         // current RD cost
+        CostType m_costStored[4];  // stored RD costs
+        CostType m_costCurr;       // current RD cost
 
         union {
             struct {
@@ -341,18 +349,19 @@ namespace AV1Enc {
 
         alignas(64) PixType m_ySrc[64*64];
         alignas(64) PixType m_uvSrc[64*32];
+        alignas(64) uint16_t m_ySrc10[64 * 64];
+        alignas(64) uint16_t m_uvSrc10[64 * 32];
         PixType *m_yRec;
         PixType *m_uvRec;
         int32_t m_pitchRecLuma;
         int32_t m_pitchRecChroma;
+        uint16_t *m_yRec10;
+        uint16_t *m_uvRec10;
+        int32_t m_pitchRecLuma10;
+        int32_t m_pitchRecChroma10;
 
-        static const int32_t NUM_DATA_STORED_LAYERS = 5 + 1;
         ModeInfo *m_data;         // 1 layer,
         ModeInfo *m_dataStored;   // depth array, current best for CU
-
-        alignas(32) HistType m_hist4[40 * MAX_CU_SIZE / 4 * MAX_CU_SIZE / 4];
-        alignas(32) HistType m_hist8[40 * MAX_CU_SIZE / 8 * MAX_CU_SIZE / 8];
-        bool m_isHistBuilt;
 
         CostType m_rdLambda;
         CostType m_rdLambdaChroma;
@@ -393,11 +402,6 @@ namespace AV1Enc {
                 uint8_t antialiasing0;
 
                 struct {
-                    alignas(64) int16_t tmpBuf[64*72];
-                    alignas(64) int16_t interpBuf[64*64];  // buffer contains the result of 1-ref interpolation between 2 PredInterUni calls
-                } predInterUni;
-
-                struct {
                     alignas(64) PixType predBuf[64*64];
                     uint8_t antialiasing1;
                 } matchingMetric;
@@ -406,7 +410,7 @@ namespace AV1Enc {
 
             uint8_t antialiasing2;
         } m_scratchPad;
-
+#if 0
         alignas(64) int16_t  m_predBufHi3[MAX_NUM_REF_IDX][4][4][(MAX_CU_SIZE+32) * (MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_H)];
         alignas(64) PixType m_predBuf3  [MAX_NUM_REF_IDX][4][4][(MAX_CU_SIZE+32) * (MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_H)];
         alignas(64) int16_t  m_predBufHi2[MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>1)+32) * ((MAX_CU_SIZE>>1)+MEMOIZE_SUBPEL_EXT_H)];
@@ -415,14 +419,16 @@ namespace AV1Enc {
         alignas(64) PixType m_predBuf1  [MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>2)+16) * ((MAX_CU_SIZE>>2)+MEMOIZE_SUBPEL_EXT_H)];
         alignas(64) int16_t  m_predBufHi0[MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>3)+8) * ((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_H)];
         alignas(64) PixType m_predBuf0  [MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>3)+8) * ((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_H)];
-
         int32_t m_satd8Buf1[MAX_NUM_REF_IDX][4][4][4][((MAX_CU_SIZE>>3)>>2) * ((MAX_CU_SIZE>>3)>>2)];
         int32_t m_satd8Buf2[MAX_NUM_REF_IDX][4][4][4][((MAX_CU_SIZE>>3)>>1) * ((MAX_CU_SIZE>>3)>>1)];
         int32_t m_satd8Buf3[MAX_NUM_REF_IDX][4][4][4][((MAX_CU_SIZE>>3))    * ((MAX_CU_SIZE>>3))];
+#endif
 
+#if 0
         MemPred<PixType>        m_memSubpel[4][MAX_NUM_REF_IDX][4][4];  // [size][Refs][hPh][vPh]
         MemHad                  m_memSubHad[4][MAX_NUM_REF_IDX][4][4];  // [size][Refs][hPh][vPh]
         MemBest                 m_memBestMV[4][MAX_NUM_REF_IDX];
+#endif
 #ifdef MEMOIZE_NUMCAND
         MemCand<PixType>        m_memCandSubHad[4];  // [sizes]
 
@@ -438,13 +444,18 @@ namespace AV1Enc {
 
         struct {
             // 5 refs: L,G,A,V0+F,V1+F; 4 depths; 6 inter modes (NEAREST, NEAR0, ZERO, NEW, NEAR1, NEAR2); 4 new comp modes (NEW_NEAREST, NEAREST_NEW, NEW_NEAR0, NEAR0_NEW)
-            alignas(64) PixType interpBufs[5][4][6+4+4][64*64];
-
+#if ENABLE_SW_ME
+            alignas(64) PixType interpBufs[5][4][6+4+4]    [1];//[64 * 64];
+#endif
             alignas(64) PixType predY[2][64*64];
             alignas(64) PixType predUv[2][64*32];
+            alignas(64) uint16_t predY10[2][64 * 64];
+            alignas(64) uint16_t predUv10[2][64 * 32];
 
             alignas(64) PixType recY[2][64*64];
             alignas(64) PixType recUv[2][64*32];
+            alignas(64) uint16_t recY10[2][64 * 64];
+            alignas(64) uint16_t recUv10[2][64 * 32];
 
             alignas(64) int16_t diffY[64*64];
             alignas(64) int16_t diffU[32*32];
@@ -453,7 +464,9 @@ namespace AV1Enc {
             alignas(64) int16_t coefY[64*64];
             alignas(64) int16_t coefU[32*32];
             alignas(64) int16_t coefV[32*32];
-
+#if ENABLE_HIBIT_COEFS
+            alignas(64) int32_t coefY_hbd[64 * 64];
+#endif
             alignas(64) int16_t qcoefY[2][64*64];
             alignas(64) int16_t qcoefU[2][32*32];
             alignas(64) int16_t qcoefV[2][32*32];
@@ -461,23 +474,28 @@ namespace AV1Enc {
             alignas(64) int16_t dqcoefY[64*64];
             alignas(64) int16_t dqcoefU[32*32];
             alignas(64) int16_t dqcoefV[32*32];
+#if ENABLE_HIBIT_COEFS
+            alignas(64) int32_t dqcoefY_hbd[64 * 64];
+#endif
 
             alignas(64) int16_t compPredIm[64*64];
 
+
             // storage for txk search feature local optimization
-            alignas(64) int16_t coefWork[5*32*32];
+            alignas(64) VarTxCoefs varTxCoefs[MAX_VARTX_DEPTH + 1][ADST_ADST + 2];// one more [[ADST_ADST + 1] for IDTX
 
         } vp9scratchpad;
 
         alignas(64) PixType *m_interp[5][4][6+4+4]; // 5 refs: L,G,A,V0+F,V1+F; 4 depths; 6 MVs, points to actual memory buffers in interpBufs + 4 new comp modes
 
         alignas(64) AV1MVPair m_nonZeroMvp[5][4][6+4+4];  // 5 refs: L,G,A,V0+F,V1+F; 4 depths; 6 MVs (NEAREST, NEAR0, ZERO, NEW, NEAR1, NEAR2)
-        alignas(32) int32_t m_nonZeroMvpSatd[5][4][6+4+4][8 * 8];  // 5 refs; 4 depths; 2 MVs (NEAREST, NEAR0, ZERO, NEW, NEAR1, NEAR2); 64 8x8 blocks
-
+        alignas(32) int32_t m_nonZeroMvpSatd[5][4][6+4+4]     [1];// [8 * 8];  // 5 refs; 4 depths; 2 MVs (NEAREST, NEAR0, ZERO, NEW, NEAR1, NEAR2); 64 8x8 blocks
+#if PROTOTYPE_GPU_MODE_DECISION_SW_PATH
         alignas(16) int32_t m_zeroMvpSatd8[5][8 * 8];  // 5 refs; 64 8x8 blocks
         alignas(16) int32_t m_zeroMvpSatd16[5][4 * 4];  // 5 refs; 16 16x16 blocks, accumulated SATDs (summed up satd for 8x8 blocks)
         alignas(16) int32_t m_zeroMvpSatd32[5][2 * 2];  // 5 refs; 4 32x32 blocks
         alignas(16) int32_t m_zeroMvpSatd64[5][1 * 1];  // 5 refs; 1 64x64 block
+#endif
         int32_t *m_zeroMvpSatd[5][4]; // 5 refs; 4 depth, pointers to m_zeroMvSatd64 - m_zeroMvSatd8
 
         alignas(64) PixType *m_bestInterp[4][8][8];  // [4 depths][miRow][miCol] used by RefineDecision()
@@ -495,6 +513,7 @@ namespace AV1Enc {
         PixType *m_newMvInterp64;
 #endif // PROTOTYPE_GPU_MODE_DECISION_SW_PATH
 
+        AV1MV GetMvRefsAV1TU7I(int32_t sbType, int32_t miRow, int32_t miCol);
         void GetMvRefsAV1TU7P(int32_t sbType, int32_t miRow, int32_t miCol, MvRefs *mvRefs, int32_t pass = 99);
         void GetMvRefsAV1TU7B(int32_t sbType, int32_t miRow, int32_t miCol, MvRefs *mvRefs, int32_t negate, int32_t pass = 99);
 
@@ -517,55 +536,110 @@ namespace AV1Enc {
         bool IsGoodPred(float SCpp, float SADpp, float mvdAvg) const;
         bool IsBadPred(float SCpp, float SADpp_best, float mvdAvg) const;
 
-        void GetMvRefsFasterP(int32_t sbType, int32_t leftx, int32_t topy, int32_t rightx, int32_t bottomy, MvRefs *mvRefs);
-        void GetMvRefsFasterB(int32_t sbType, int32_t leftx, int32_t topy, int32_t rightx, int32_t bottomy, MvRefs *mvRefs);
-        void GetMvRefsOld(int32_t sbType, int32_t miRow, int32_t miCol, MvRefs *mvRefs);
+        //void GetMvRefsFasterP(BlockSize sbType, int32_t leftx, int32_t topy, int32_t rightx, int32_t bottomy, MvRefs *mvRefs);
+        //void GetMvRefsFasterB(BlockSize sbType, int32_t leftx, int32_t topy, int32_t rightx, int32_t bottomy, MvRefs *mvRefs);
+        //void GetMvRefsOld(BlockSize sbType, int32_t miRow, int32_t miCol, MvRefs *mvRefs);
 
-        int32_t ClipMV(AV1MV *rcMv) const;  // returns 1 if changed, otherwise 0
-        inline void ClipMV_NR(AV1MV *rcMv) const
+        inline int ClipMV_NR_shift(const AV1MV& rcMv) const
         {
-            rcMv->mvx = Saturate(HorMin, HorMax, rcMv->mvx);
-            rcMv->mvy = Saturate(VerMin, VerMax, rcMv->mvy);
+            return std::max(HorMin, std::min(HorMax, int16_t(rcMv.mvx << 1))) | (std::max(VerMin, std::min(VerMax, int16_t(rcMv.mvy << 1)))<<1);
         }
-
-        template <int32_t PLANE_TYPE>
-        void PredInterUni(int32_t puX, int32_t puY, int32_t puW, int32_t puH, int32_t listIdx,
-            const int8_t refIdx[2], const AV1MV mvs[2], PixType *dst, int32_t dstPitch,
-            int32_t isBiPred, int32_t averageMode);
-
-        void GetAngModesFromHistogram(int32_t xPu, int32_t yPu, int32_t puSize, int8_t *modes, int32_t numModes);
 
         bool CheckFrameThreadingSearchRange(const AV1MEInfo *meInfo, const AV1MV *mv) const;
 
-        void MeCu(int32_t absPartIdx, uint8_t depth, PartitionType partition);
-
-        template <int32_t depth> void MeCuNonRdVP9(int32_t miRow, int32_t miCol);
-        template <int32_t depth> void MeCuNonRdAV1(int32_t miRow, int32_t miCol);
 
         void RefineDecisionAV1();
+        void MakeRecon10bitAV1();  // 10bit for INTER frames
         void RefineDecisionIAV1(); // for INTRA frames
-        void TokenizeAndCount(const CoeffsType *coefs, void *tokens, FrameCounts *counts);
+        void MakeRecon10bitIAV1(); // 10bit for INTRA frames
 
+        bool JoinRefined32x32MI(ModeInfo mi64, bool check);
         void JoinMI();
         bool Split64();
 
-        void CheckIntra(int32_t absPartIdx, int32_t depth, PartitionType partition);
-        RdCost CheckIntraLuma(int32_t absPartIdx, int32_t depth, PartitionType partition);
-        RdCost CheckIntraLumaNonRdVp9(int32_t absPartIdx, int32_t depth, PartitionType partition);
+        int32_t CheckIntra(int32_t absPartIdx, int32_t depth, PartitionType partition, uint32_t &ret_bits);
+        uint64_t CheckIntra64x64(PredMode *bestIntraMode);
         RdCost CheckIntraLumaNonRdAv1(int32_t absPartIdx, int32_t depth, PartitionType partition);
-        RdCost CheckIntraChroma(int32_t absPartIdx, int32_t depth, PartitionType partition);
-        RdCost CheckIntraChromaNonRdVp9(int32_t absPartIdx, int32_t depth, PartitionType partition);
-        RdCost CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t depth, PartitionType partition);
-        void CheckIntra8x4(int32_t absPartIdx);
-        void CheckIntra4x8(int32_t absPartIdx);
-        void CheckIntra4x4(int32_t absPartIdx);
 
+        RdCost CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t depth, PartitionType partition, const PixType* bestLuma, int lumaStride);
+        RdCost CheckIntraChromaNonRdAv1_10bit(int32_t absPartIdx, int32_t depth, PartitionType partition, const uint16_t* bestLuma, int lumaStride);
+
+
+        int32_t CheckIntraBlockCopy(int32_t absPartIdx, int16_t *qcoef, RdCost& rd, uint16_t* varTxInfo, bool search, CostType bestCost);
+        int32_t TransformInterChroma(int32_t absPartIdx, uint16_t* varTxInfo);
+
+        uint32_t GetPaletteCache(uint32_t miRow, bool isLuma, uint32_t miCol, uint8_t *cache);
+
+        void InitCu(const AV1VideoParam &_par, ModeInfo *_data, ModeInfo *_dataTemp, int32_t ctbRow,
+                    int32_t ctbCol, const Frame &frame, CoeffsType *m_coeffWork, uint8_t* lcuRound);
+
+        void GetSpatialComplexity(int32_t absPartIdx, int32_t depth, int32_t partAddr, int32_t partDepth);
+        int32_t GetSpatialComplexity(int32_t absPartIdx, int32_t depth, int32_t partAddr, int32_t partDepth, float *SCpp) const;
+        int32_t GetSpatialComplexity(int32_t posx, int32_t posy, int32_t log2w, float *SCpp) const;
+
+        int32_t GetSpatioTemporalComplexity(int32_t absPartIdx, int32_t depth, int32_t partAddr, int32_t partDepth);
+        int32_t GetSpatioTemporalComplexity(int32_t absPartIdx, int32_t depth, int32_t partAddr, int32_t partDepth, int32_t *scVal);
+        int32_t GetSpatioTemporalComplexityColocated(int32_t absPartIdx, int32_t depth, int32_t partAddr, int32_t partDepth, FrameData *ref);
+        bool TuMaxSplitInterHasNonZeroCoeff(uint32_t absPartIdx, uint8_t trIdxMax);
+        bool tryIntraICRA(int32_t absPartIdx, int32_t depth);
+        ModeInfo *GetCuDataXY(int32_t x, int32_t y, Frame *ref);
+        void GetProjectedDepth(int32_t absPartIdx, int32_t depth, uint8_t allowSplit);
+        int32_t GetNumIntraRDModes(int32_t absPartIdx, int32_t depth, int32_t trDepth, IntraLumaMode *modes, int32_t numModes);
+        void ModeDecision(int32_t absPartIdx, int32_t depth);
+
+        bool IsTuSplitIntra() const;
+
+        ModeInfo *StoredCuData(int32_t depth) const;
+
+        void SaveFinalCuDecision(int32_t absPartIdx, int32_t depth, PartitionType partition, int32_t storageIndex, int32_t chroma);
+        void LoadFinalCuDecision(int32_t absPartIdx, int32_t depth, PartitionType partition, int32_t storageIndex, int32_t chroma);
+        const ModeInfo *GetBestCuDecision(int32_t absPartIdx, int32_t depth) const;
+
+        uint8_t GetAdaptiveIntraMinDepth(int32_t absPartIdx, int32_t depth, int32_t *maxSC);
+
+        void GetAdaptiveMinDepth(int32_t absPartIdx, int32_t depth);
+
+        bool JoinCU(int32_t absPartIdx, int32_t depth);
+
+#if PROTOTYPE_GPU_MODE_DECISION_SW_PATH
+        template <int32_t depth> void MePuGacc_SwPath(AV1MEInfo *meInfo);
+        void InitCu_SwPath(const AV1VideoParam &_par, ModeInfo *_data, ModeInfo *_dataTemp, int32_t ctbRow,
+            int32_t ctbCol, const Frame &frame, CoeffsType *m_coeffWork);
+        void CalculateZeroMvPredAndSatd();
+#endif // PROTOTYPE_GPU_MODE_DECISION_SW_PATH
+
+        AV1MV m_cachedBestMv8x8;
+        int32_t m_cachedBestSad8x8Raw[2][2];
+        int32_t m_cachedBestSad8x8Rec[2][2];
+        int32_t m_isSCC[4];
+#if ENABLE_SW_ME
+        void   MemoizeInit();
+        void   MemoizeClear(int32_t depth);
+
+        int32_t tuHadSave(const PixType* src, int32_t pitchSrc, const PixType* rec, int32_t pitchRec, int32_t width, int32_t height, int32_t *satd, int32_t memPitch);
+        int32_t tuHadUse(int32_t width, int32_t height, int32_t *satd8, int32_t memPitch) const;
+        int32_t tuHad(const PixType* src, int32_t pitchSrc, const PixType* rec, int32_t pitchRec, int32_t width, int32_t height);
+
+        bool MemHadFirst(int32_t size, const AV1MEInfo *meInfo, int32_t refIdxMem);
+        bool MemHadUse(int32_t size, int32_t hPh, int32_t vPh, const AV1MEInfo* meInfo, int32_t refIdxMem, const AV1MV *mv, int32_t& satd, int32_t& foundSize);
+        bool MemHadSave(int32_t size, int32_t hPh, int32_t vPh, const AV1MEInfo* meInfo, int32_t refIdxMem, const AV1MV *mv, int32_t*& satd8, int32_t& memPitch);
+        void MemHadGetBuf(int32_t size, int32_t hPh, int32_t vPh, int32_t refIdxMem, const AV1MV *mv, int32_t **satd8);
+        bool MemBestMV(int32_t size, int32_t refIdxMem, AV1MV *mv);
+        void SetMemBestMV(int32_t size, const AV1MEInfo* meInfo, int32_t refIdxMem, AV1MV mv);
+
+        bool MemSubpelUse(int32_t size, int32_t hPh, int32_t vPh, const AV1MEInfo* meInfo, int32_t refIdxMem, const AV1MV *mv, const PixType*& predBuf, int32_t& memPitch);
+        bool MemSubpelSave(int32_t size, int32_t hPh, int32_t vPh, const AV1MEInfo* meInfo, int32_t refIdxMem, const AV1MV *mv, PixType*& predBuf, int32_t& memPitch);
+        bool MemSubpelInRange(int32_t size, const AV1MEInfo *meInfo, int32_t refIdxMem, const AV1MV *mv);
+        void MemSubpelGetBufSetMv(int32_t size, AV1MV *mv, int32_t refIdxMem, PixType **predBuf, int16_t **predBufHi);
+        void MemSubpelGetBufSetMv(int32_t size, AV1MV *mv, int32_t refIdxMem, PixType **predBuf);
+
+        void MeCu(int32_t absPartIdx, int32_t depth, PartitionType partition);
+        template <int32_t depth> void MeCuNonRdAV1(int32_t miRow, int32_t miCol);
+        template <int32_t codecType, int32_t depth> void ModeDecisionInterTu7(int32_t miRow, int32_t miCol);
+        void ModeDecisionInterTu7_SecondPass(int32_t miRow, int32_t miCol);
         void MePu(AV1MEInfo *meInfo);
         void MePuGacc(AV1MEInfo *meInfo);
         template <int32_t depth> void MePuGacc(AV1MEInfo *meInfo);
-#if PROTOTYPE_GPU_MODE_DECISION_SW_PATH
-        template <int32_t depth> void MePuGacc_SwPath(AV1MEInfo *meInfo);
-#endif // PROTOTYPE_GPU_MODE_DECISION_SW_PATH
 
         void MeIntPel(const AV1MEInfo *meInfo, const AV1MV &mvp, const FrameData *ref,
             AV1MV *mv, int32_t *cost, int32_t *mvCost, int32_t meStepRange = INT_MAX);
@@ -573,8 +647,7 @@ namespace AV1Enc {
             int32_t refIdx, AV1MV mvRefBest0, AV1MV mvRefBest00,
             AV1MV *mvBest, int32_t *costBest, int32_t *mvCostBest, AV1MV *mvBestSub);
 
-        void MeIntPelFullSearch(const AV1MEInfo *meInfo, const AV1MV &mvp,
-            const FrameData *ref, AV1MV *mv, int32_t *cost, int32_t *mvCost);
+        void MeIntPelFullSearch(const AV1MEInfo *meInfo, const AV1MV &mvp, const FrameData *ref, AV1MV *mv, int32_t *cost, int32_t *mvCost, MvLimits& limits);
 
         void MeIntPelLog(const AV1MEInfo *meInfo, const AV1MV &mvp, const FrameData *ref,
             AV1MV *mv, int32_t *cost, int32_t *mvCost, int32_t meStepRange);
@@ -606,77 +679,7 @@ namespace AV1Enc {
         int32_t MatchingMetricPuMem(const PixType *src, const AV1MEInfo *meInfo, const AV1MV *mv,
             const FrameData *refPic, int32_t useHadamard, int32_t refIdxMem, int32_t size,
             int32_t& hadFoundSize);
-
-        void   MemoizeInit();
-        void   MemoizeClear(uint8_t depth);
-
-        int32_t tuHadSave(const PixType* src, int32_t pitchSrc, const PixType* rec, int32_t pitchRec, int32_t width, int32_t height, int32_t *satd, int32_t memPitch);
-
-        int32_t tuHadUse(int32_t width, int32_t height, int32_t *satd8, int32_t memPitch) const;
-
-        int32_t tuHad(const PixType* src, int32_t pitchSrc, const PixType* rec, int32_t pitchRec, int32_t width, int32_t height);
-
-        bool MemHadFirst(int32_t size, const AV1MEInfo *meInfo, int32_t refIdxMem);
-
-        bool MemHadUse(int32_t size, int32_t hPh, int32_t vPh, const AV1MEInfo* meInfo, int32_t refIdxMem, const AV1MV *mv, int32_t& satd, int32_t& foundSize);
-
-        bool MemHadSave(int32_t size, int32_t hPh, int32_t vPh, const AV1MEInfo* meInfo, int32_t refIdxMem, const AV1MV *mv, int32_t*& satd8, int32_t& memPitch);
-
-        void MemHadGetBuf(int32_t size, int32_t hPh, int32_t vPh, int32_t refIdxMem, const AV1MV *mv, int32_t **satd8);
-
-        bool MemBestMV(int32_t size, int32_t refIdxMem, AV1MV *mv);
-        void SetMemBestMV(int32_t size, const AV1MEInfo* meInfo, int32_t refIdxMem, AV1MV mv);
-
-        bool MemSubpelUse(int32_t size, int32_t hPh, int32_t vPh, const AV1MEInfo* meInfo, int32_t refIdxMem, const AV1MV *mv, const PixType*& predBuf, int32_t& memPitch);
-
-        bool MemSubpelSave(int32_t size, int32_t hPh, int32_t vPh, const AV1MEInfo* meInfo, int32_t refIdxMem, const AV1MV *mv, PixType*& predBuf, int32_t& memPitch);
-
-        bool MemSubpelInRange(int32_t size, const AV1MEInfo *meInfo, int32_t refIdxMem, const AV1MV *mv);
-
-        void MemSubpelGetBufSetMv(int32_t size, AV1MV *mv, int32_t refIdxMem, PixType **predBuf, int16_t **predBufHi);
-        void MemSubpelGetBufSetMv(int32_t size, AV1MV *mv, int32_t refIdxMem, PixType **predBuf);
-
-
-        void InitCu(const AV1VideoParam &_par, ModeInfo *_data, ModeInfo *_dataTemp, int32_t ctbRow,
-                    int32_t ctbCol, const Frame &frame, CoeffsType *m_coeffWork, uint8_t* lcuRound);
-        void InitCu_SwPath(const AV1VideoParam &_par, ModeInfo *_data, ModeInfo *_dataTemp, int32_t ctbRow,
-                           int32_t ctbCol, const Frame &frame, CoeffsType *m_coeffWork);
-
-        void GetSpatialComplexity(int32_t absPartIdx, int32_t depth, int32_t partAddr, int32_t partDepth);
-        int32_t GetSpatialComplexity(int32_t absPartIdx, int32_t depth, int32_t partAddr, int32_t partDepth, float *SCpp) const;
-        int32_t GetSpatialComplexity(int32_t posx, int32_t posy, int32_t log2w, float *SCpp) const;
-
-        int32_t GetSpatioTemporalComplexity(int32_t absPartIdx, int32_t depth, int32_t partAddr, int32_t partDepth);
-        int32_t GetSpatioTemporalComplexity(int32_t absPartIdx, int32_t depth, int32_t partAddr, int32_t partDepth, int32_t *scVal);
-        int32_t GetSpatioTemporalComplexityColocated(int32_t absPartIdx, int32_t depth, int32_t partAddr, int32_t partDepth, FrameData *ref);
-        bool TuMaxSplitInterHasNonZeroCoeff(uint32_t absPartIdx, uint8_t trIdxMax);
-        bool tryIntraICRA(int32_t absPartIdx, int32_t depth);
-        bool tryIntraRD(int32_t absPartIdx, int32_t depth, IntraLumaMode *modes);
-        ModeInfo *GetCuDataXY(int32_t x, int32_t y, Frame *ref);
-        void GetProjectedDepth(int32_t absPartIdx, int32_t depth, uint8_t allowSplit);
-        int32_t GetNumIntraRDModes(int32_t absPartIdx, int32_t depth, int32_t trDepth, IntraLumaMode *modes, int32_t numModes);
-        void ModeDecision(int32_t absPartIdx, int32_t depth);
-
-        template <int32_t codecType, int32_t depth> void ModeDecisionInterTu7(int32_t miRow, int32_t miCol);
-        void ModeDecisionInterTu7_SecondPass(int32_t miRow, int32_t miCol);
-
-        bool IsTuSplitIntra() const;
-
-        ModeInfo *StoredCuData(int32_t depth) const;
-
-        void SaveFinalCuDecision(int32_t absPartIdx, int32_t depth, PartitionType partition, int32_t storageIndex, int32_t chroma);
-        void LoadFinalCuDecision(int32_t absPartIdx, int32_t depth, PartitionType partition, int32_t storageIndex, int32_t chroma);
-        const ModeInfo *GetBestCuDecision(int32_t absPartIdx, int32_t depth) const;
-
-        uint8_t GetAdaptiveIntraMinDepth(int32_t absPartIdx, int32_t depth, int32_t *maxSC);
-
-        void GetAdaptiveMinDepth(int32_t absPartIdx, int32_t depth);
-
-        bool JoinCU(int32_t absPartIdx, int32_t depth);
-
-#if PROTOTYPE_GPU_MODE_DECISION_SW_PATH
-        void CalculateZeroMvPredAndSatd();
-#endif // PROTOTYPE_GPU_MODE_DECISION_SW_PATH
+#endif
     };
 
     int32_t GetLumaOffset(const AV1VideoParam *par, int32_t absPartIdx, int32_t pitch);
@@ -684,6 +687,20 @@ namespace AV1Enc {
     int32_t GetChromaOffset(const AV1VideoParam *par, int32_t absPartIdx, int32_t pitch);
 
     void PropagateSubPart(ModeInfo *mi, int32_t miPitch, int32_t miWidth, int32_t miHeight);
+
+    void PropagatePaletteInfo(PaletteInfo *pi, int32_t miRow, int32_t miCol, int32_t miPitch, int32_t miWidth, int32_t miHeight);
+
+    struct BitCounts;
+
+    template <typename PixType>
+    uint8_t GetColorCount(PixType* srcSb, uint32_t width, uint32_t height, uint8_t *palette, uint32_t bitdepth, CostType rdLambda, PaletteInfo *pi, uint8_t *color_map, uint32_t &bits, bool optimize=true);
+    template <typename PixType>
+    uint8_t GetColorCountUV(PixType srcSb, uint32_t width, uint32_t height, uint8_t *ret_palette, uint32_t bitdepth, CostType rdLambda, PaletteInfo *pi, uint8_t *color_map, uint32_t &bits);
+
+    uint32_t GetPaletteCacheIndicesCost(uint8_t *palette, uint32_t palette_size, uint8_t *cache, uint32_t cache_size, uint8_t *colors_xmit, uint32_t &index_bits);
+    uint32_t GetPaletteDeltaCost(uint8_t *colors_xmit, uint32_t colors_xmit_size, uint32_t bitdepth, uint32_t min_delta);
+    template <typename PixType>
+    uint32_t GetPaletteTokensCost(const BitCounts &bc, PixType *src, int32_t width, int32_t height, uint8_t *palette, uint32_t palette_size, uint8_t *color_map);
 
     BlockSize GetPlaneBlockSize(BlockSize subsize, int32_t plane, const AV1VideoParam &par);
     TxSize GetUvTxSize(int32_t miSize, TxSize txSize, const AV1VideoParam &par);
@@ -696,32 +713,26 @@ namespace AV1Enc {
 
     int32_t GetTxbSkipCtx(BlockSize planeBsize, TxSize txSize, int32_t plane, const uint8_t *aboveCtx, const uint8_t *leftCtx);
 
-    struct BitCounts;
-    template <typename PixType>
-    RdCost TransformIntraYSbVp9(int32_t bsz, int32_t mode, int32_t haveAbove, int32_t haveLeft, int32_t notOnRight4x4,
-                                TxSize txSize, uint8_t *aboveNzCtx, uint8_t *leftNzCtx, const PixType* src_, PixType *rec_,
-                                int32_t pitchRec, int16_t *diff, int16_t *coeff_, int16_t *qcoeff_, const QuantParam &qpar,
-                                const BitCounts &bc, int32_t fastCoeffCost, CostType lambda, int32_t miRow, int32_t miCol,
-                                int32_t miColEnd, int32_t miRows, int32_t miCols);
-
-    template <typename PixType>
-    RdCost TransformIntraYSbAv1(int32_t bsz, int32_t mode, int32_t haveTop, int32_t haveLeft, TxSize txSize, TxType txType,
+    template <typename PixType, typename TCoeffType>
+    RdCost TransformIntraYSbAv1(BlockSize bsz, int32_t mode, int32_t haveTop, int32_t haveLeft, TxSize txSize, TxType txType,
                                 uint8_t *aboveNzCtx, uint8_t *leftNzCtx, const PixType* src_, PixType *rec_, int32_t pitchRec,
-                                int16_t *diff, int16_t *coeff_, int16_t *qcoeff_, int16_t *coefWork, const int32_t qp, const BitCounts &bc,
+                                int16_t *diff, TCoeffType *coeff_, int16_t *qcoeff_, TCoeffType *coefWork, const int32_t qp, const BitCounts &bc,
                                 CostType lambda, int32_t miRow, int32_t miCol, int32_t miColEnd, int32_t deltaAngle, int32_t filtType,
-                                const AV1VideoParam &par, const QuantParam &qpar, float *roundFAdj);
+                                const AV1VideoParam &par, const QuantParam &qpar, float *roundFAdj, PaletteInfo *pi, int16_t *retEob);
 
     template<typename PixType>
-    RdCost TransformIntraYSbAv1_viaTxkSearch(int32_t bsz, int32_t mode, int32_t haveTop, int32_t haveLeft, TxSize txSize,
-                                uint8_t *aboveNzCtx, uint8_t *leftNzCtx, const PixType* src_, PixType *rec_, int32_t pitchRec,
-                                int16_t *diff, int16_t *coeff_, int16_t *qcoeff_, int32_t qp, const BitCounts &bc,
-                                int32_t fastCoeffCost, CostType lambda, int32_t miRow, int32_t miCol, int32_t miColEnd,
-                                int32_t miRows, int32_t miCols, int32_t deltaAngle, int32_t filtType, uint16_t* txkTypes,
-                                const AV1VideoParam &par, int16_t* coeffWork_, const QuantParam &qpar, float *roundFAdj);
-    template<typename PixType>
-    void InterpolateVp9Luma(const PixType *refColoc, int32_t refPitch, PixType *dst, AV1MV mv, int32_t h, int32_t log2w, int32_t avg, int32_t interp);
-    template<typename PixType>
-    void InterpolateVp9Chroma(const PixType *refColoc, int32_t refPitch, PixType *dst, AV1MV mv, int32_t h, int32_t log2w, int32_t avg, int32_t interp);
+    RdCost TransformInterYSbVarTxByRdo(
+        BlockSize bsz, uint8_t *aboveNzCtx, uint8_t *leftNzCtx, const PixType* src, PixType *rec,
+        const int16_t *diff, int16_t *qcoef, int32_t qp, const BitCounts &bc, CostType lambda,
+        uint8_t *aboveTxfmCtx, uint8_t *leftTxfmCtx, uint16_t *vartxInfo, const QuantParam &qpar,
+        float *roundFAdj, VarTxCoefs varTxCoefs[MAX_VARTX_DEPTH + 1][ADST_ADST + 2], int32_t max_vartx_depth, uint32_t max_tx_ids);
+
+    template <typename PixType>
+    int32_t TransformInterUvSbTxType(BlockSize bsz, TxSize txSize, TxType txType_, uint8_t *aboveU, uint8_t *aboveV,
+        uint8_t *leftU, uint8_t *leftV, const PixType* src_, PixType *rec_,
+        int32_t pitchRec, const int16_t *diffU_, const int16_t *diffV_, int16_t *coeffU_,
+        int16_t *coeffV_, int16_t *qcoeffU_, int16_t *qcoeffV_, int16_t *coefWork, const AV1VideoParam &par,
+        const BitCounts &bc, int32_t qp, const uint16_t* txk_types, const QuantParam(&qpar)[2], float **roundFAdj, CostType lambda, int32_t trySkip);
 
     template<typename PixType>
     void InterpolateAv1SingleRefLuma(const PixType *refColoc, int32_t refPitch, PixType *dst, AV1MV mv, int32_t h, int32_t log2w, int32_t interp);
@@ -748,8 +759,8 @@ namespace AV1Enc {
         return (d << 11) + lambda * r;
     }
 
-    int32_t HaveTopRight  (BlockSize bsize, int32_t miRow, int32_t miCol, int32_t haveTop,  int32_t haveRight,  int32_t txsz, int32_t y, int32_t x, int32_t ss_x);
-    int32_t HaveBottomLeft(BlockSize bsize, int32_t miRow, int32_t miCol, int32_t haveLeft, int32_t haveBottom, int32_t txsz, int32_t y, int32_t x, int32_t ss_y);
+    int32_t HaveTopRight  (int32_t log2BlockWidth, int32_t miRow, int32_t miCol, int32_t txSize, int32_t y, int32_t x);
+    int32_t HaveBottomLeft(int32_t log2BlockWidth, int32_t miRow, int32_t miCol, int32_t txSize, int32_t y, int32_t x);
 
     AV1_FORCEINLINE int32_t av1_is_directional_mode(PredMode mode) {return mode >= V_PRED && mode <= D63_PRED;}
     int32_t get_filt_type(const ModeInfo *above, const ModeInfo *left, int32_t plane);
@@ -769,6 +780,19 @@ namespace AV1Enc {
 
     int16_t GetModeContext(int32_t nearestMatchCount, int32_t refMatchCount, int32_t newMvCount, int32_t colBlkAvail);
 
+    inline int32_t is_intrabc_block(const ModeInfo *mi) {
+        return mi->mode == DC_PRED && mi->interp;
+    }
+
+    void CopyVarTxInfo(const uint16_t *src, uint16_t *dst, int32_t w);
+    void CopyTxSizeInfo(const uint16_t *varTxInfo, ModeInfo *mi, int32_t miPitch, int32_t w);
+
+    int32_t MvCost1RefLog(AV1MV mv, const AV1MV &mvp, CostType lambda);
+    int32_t ClipMV_special(AV1MV *rcMv, MvLimits& limits);
+    int32_t MvCost(AV1MV mv, AV1MV mvp, int32_t useMvHp);
+
+    int32_t GetPaletteDeltaBitsV(const uint8_t* palette_v, int32_t palette_size_uv, int32_t bitDepth, int32_t *zeroCount, int32_t *minBits);
+    uint32_t GetPaletteColorContext(const uint8_t *colorMap, int32_t pitch, int32_t row, int32_t col, int32_t &new_color_idx);
 }  // namespace AV1Enc
 
 #endif  // MFX_ENABLE_AV1_VIDEO_ENCODE

@@ -21,7 +21,6 @@
 #pragma once
 
 #include "assert.h"
-//#include "ippdefs.h"
 #include "immintrin.h"
 #include "mfx_av1_opts_common.h"
 

@@ -19,23 +19,23 @@
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>genx_av1e_mode_decision_pass2</ProjectName>
-    <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <PlatformToolset>Intel C++ Compiler 19.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <PlatformToolset>Intel C++ Compiler 19.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <PlatformToolset>Intel C++ Compiler 19.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -79,7 +79,7 @@
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MDGPU_PASS2;WIN64;_CRT_SECURE_NO_WARNINGS;_DEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CM_DX11;MDGPU_PASS2;WIN64;_CRT_SECURE_NO_WARNINGS;_DEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -95,7 +95,7 @@
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <Link>
-      <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>
+      <AdditionalDependencies>igfx11cmrt64.lib;</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
@@ -181,6 +181,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_icllp_isa.cpp" />
     <ClCompile Include="src\mode_decision\mfx_av1_bit_count_9.cpp" />
     <ClCompile Include="src\mode_decision\mfx_av1_copy.cpp" />
     <ClCompile Include="src\mode_decision\mfx_av1_ctb.cpp" />
@@ -212,11 +213,16 @@
     <CustomBuild Include="src\genx_av1_mode_decision_pass2.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">build_codec_kernel.cmd av1 mode_decision_pass2 hsw</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">build_codec_kernel_all_targets.cmd av1 mode_decision_pass2 /Qxcm_release</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/genx_av1_mode_decision_pass2_hsw_isa.cpp;src/genx_av1_mode_decision_pass2_bdw_isa.cpp;src/genx_av1_mode_decision_pass2_skl_isa.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/genx_av1_mode_decision_pass2_hsw_isa.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">build_codec_kernel.cmd av1 mode_decision_pass2 skl /Qxcm_release &amp;&amp;^
+build_codec_kernel_cmc.cmd av1 mode_decision_pass2 icllp /Qxcm_release</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">build_codec_kernel.cmd av1 mode_decision_pass2 bdw /Qxcm_release &amp;&amp; ^
+build_codec_kernel.cmd av1 mode_decision_pass2 skl /Qxcm_release &amp;&amp; ^
+build_codec_kernel.cmd av1 mode_decision_pass2 cnl /Qxcm_release &amp;&amp; ^
+build_codec_kernel.cmd av1 mode_decision_pass2 icl /Qxcm_release</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src/genx_av1_mode_decision_pass2_bdw_isa.cpp;src/genx_av1_mode_decision_pass2_skl_isa.cpp;src/genx_av1_mode_decision_pass2_cnl_isa.cpp;src/genx_av1_mode_decision_pass2_icl_isa.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src/genx_av1_mode_decision_pass2_skl_isa.cpp;src/genx_av1_mode_decision_pass2_icllp_isa.cpp</Outputs>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
     </CustomBuild>
     <ClCompile Include="src\genx_av1_mode_decision_pass2_bdw_isa.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>

@@ -82,15 +82,12 @@ namespace H265Enc {
         // gathered here for gpu
         uint16_t miCols;                      // off=0    size=2
         uint16_t miRows;                      // off=2    size=2
-        float lambda;                      // off=4    size=4
-        QuantParam qparam;                  // off=8    size=20
+        float lambda;                         // off=4    size=4
+        QuantParam qparam;                    // off=8    size=20
         uint16_t lambdaInt;                   // off=28   size=2
         uint8_t compound_allowed;             // off=30   size=1
-#ifdef SINGLE_SIDED_COMPOUND
-        uint8_t bidir_compound;               // off=31   size=1 (single_ref = !compound_allowed)
-#else
-        uint8_t single_ref;                   // off=31   size=1
-#endif
+        uint8_t bidir_compound_or_single_ref; // off=31   size=1 (single_ref = !compound_allowed && bidir_compound_or_single_ref)
+
         struct LutBitCost {
             uint16_t eobMulti[7];             // off=32   size=2*7
             uint16_t coeffEobDc[16];          // off=46   size=2*16
@@ -102,8 +99,31 @@ namespace H265Enc {
             uint16_t refFrames[6][6][4];      // off=924  size=2*144
             uint16_t singleModes[3][3][2][4]; // off=1212 size=2*72
             uint16_t compModes[3][3][2][4];   // off=1356 size=2*72
-                                            // off=1500
+                                              // off=1500
         } bc;
+
+#if GPU_VARTX
+        struct LutCoefBitCost {
+            uint16_t eobMulti[11];          // off=1500 size=2*11
+            uint16_t coeffEobDc[16];        // off=1522 size=2*16
+            uint16_t coeffBaseEobAc[3];     // off=1554 size=2*3
+            uint16_t txbSkip[7][2];         // off=1560 size=2*14
+            uint16_t coeffBase[16][4];      // off=1588 size=2*64
+            uint16_t coeffBrAcc[21][16];    // off=1716 size=2*336
+                                            // off=2388
+        } txb[4];
+
+        uint16_t initDz[2];                   // off=5052 size=2*2
+        uint16_t high_freq_coeff_curve[4][2]; // off=5056 size=2*4*2
+#endif // GPU_VARTX
+
+        int8_t fastMode;
+        int8_t reserved[3];
+
+        struct LutIEF {                     // off=1504 size=4*8*4*4
+            struct Split { float mt, st, a, b, m; } split;
+            struct Leaf { float a, b, m; } leaf;
+        } lutIef[4][4]; // [qIdx][qpLayer]
 
         // preset
         int32_t Log2MaxCUSize;

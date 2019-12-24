@@ -372,14 +372,16 @@ namespace AV1PP
         *sse = err;
     }
 
-    void cdef_estimate_block_4x4_nv12_px(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
-                                         int sec_strength, int dir, int pri_damping, int sec_damping, int *sse)
+    template <typename PixType> void cdef_estimate_block_4x4_nv12_px(const PixType *org, int ostride, const uint16_t *in, int pri_strength,
+                                         int sec_strength, int dir, int pri_damping, int sec_damping, int *sse, PixType *dst, int dstride)
     {
+        dst; dstride;
+        const int coeff_shift = sizeof(PixType) == 1 ? 0 : 2;
         int i, j, k, p;
         int err = 0;
         const int s = CDEF_BSTRIDE;
-        const int *pri_taps = cdef_pri_taps[pri_strength & 1];
-        const int *sec_taps = cdef_sec_taps[pri_strength & 1];
+        const int *pri_taps = cdef_pri_taps[(pri_strength >> coeff_shift) & 1];
+        const int *sec_taps = cdef_sec_taps[(pri_strength >> coeff_shift) & 1];
         for (i = 0; i < 4; i++) {
             for (p = 0; p < 2; p++) {
                 for (j = p; j < 8; j += 2) {
@@ -419,29 +421,44 @@ namespace AV1PP
 
                     int16_t diff = org[i * ostride + j] - y;
                     err += diff * diff;
+                    if (dst)
+                        dst[i * dstride + j] = (PixType)y;
                 }
             }
         }
 
         *sse = err;
     }
+    template void cdef_estimate_block_4x4_nv12_px<uint8_t>(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int sec_strength, int dir, int pri_damping, int sec_damping, int *sse, uint8_t *dst, int dstride);
+    template void cdef_estimate_block_4x4_nv12_px<uint16_t>(const uint16_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int sec_strength, int dir, int pri_damping, int sec_damping, int *sse, uint16_t *dst, int dstride);
 
-    void cdef_estimate_block_4x4_nv12_sec0_px(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
-                                              int dir, int pri_damping, int *sse, uint8_t *dst, int dstride)
+
+    template <typename PixType> void cdef_estimate_block_4x4_nv12_sec0_px(const PixType *org, int ostride, const uint16_t *in, int pri_strength,
+                                              int dir, int pri_damping, int *sse, PixType *dst, int dstride)
     {
         dst;
         dstride;
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 0, dir, pri_damping, 3, sse);
+        const int coeff_shift = sizeof(PixType) == 1 ? 0 : 2;
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 0, dir, pri_damping, 3 + coeff_shift, sse, dst, dstride);
     }
+    template void cdef_estimate_block_4x4_nv12_sec0_px<uint8_t>(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int dir, int pri_damping, int *sse, uint8_t *dst, int dstride);
+    template void cdef_estimate_block_4x4_nv12_sec0_px<uint16_t>(const uint16_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int dir, int pri_damping, int *sse, uint16_t *dst, int dstride);
 
-    void cdef_estimate_block_8x8_px(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
-                                    int sec_strength, int dir, int pri_damping, int sec_damping, int *sse)
+    template <typename PixType>
+    void cdef_estimate_block_8x8_px(const PixType *org, int ostride, const uint16_t *in, int pri_strength,
+                                    int sec_strength, int dir, int pri_damping, int sec_damping, int *sse, PixType* dst, int32_t dstride)
     {
+        //dst; dstride;
         int i, j, k;
         int err = 0;
+        const int coeff_shift = sizeof(PixType) == 1 ? 0 : 2;
         const int s = CDEF_BSTRIDE;
-        const int *pri_taps = cdef_pri_taps[pri_strength & 1];
-        const int *sec_taps = cdef_sec_taps[pri_strength & 1];
+        const int *pri_taps = cdef_pri_taps[(pri_strength >> coeff_shift) & 1];
+        const int *sec_taps = cdef_sec_taps[(pri_strength >> coeff_shift) & 1];
         for (i = 0; i < 8; i++) {
             for (j = 0; j < 8; j++) {
                 short sum = 0;
@@ -480,18 +497,29 @@ namespace AV1PP
 
                 int16_t diff = org[i * ostride + j] - y;
                 err += diff * diff;
+
+                if (dst)
+                    dst[i * dstride + j] = (PixType)y;
             }
         }
-
         *sse = err;
     }
+    template void cdef_estimate_block_8x8_px<uint8_t>(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int sec_strength, int dir, int pri_damping, int sec_damping, int *sse, uint8_t* dst, int32_t dstride);
+    template void cdef_estimate_block_8x8_px<uint16_t>(const uint16_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int sec_strength, int dir, int pri_damping, int sec_damping, int *sse, uint16_t* dst, int32_t dstride);
 
-    void cdef_estimate_block_8x8_sec0_px(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
-                                         int dir, int pri_damping, int *sse, uint8_t *dst, int dstride)
+    template <typename PixType> void cdef_estimate_block_8x8_sec0_px(const PixType *org, int ostride, const uint16_t *in, int pri_strength,
+                                         int dir, int pri_damping, int *sse, PixType *dst, int dstride)
     {
         dst; dstride;
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 0, dir, pri_damping, 3, sse);
+        int coeff_shift = sizeof(PixType) == 1 ? 0 : 2;
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 0, dir, pri_damping, 3 + coeff_shift, sse, dst, dstride);
     }
+    template void cdef_estimate_block_8x8_sec0_px<uint8_t>(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int dir, int pri_damping, int *sse, uint8_t *dst, int dstride);
+    template void cdef_estimate_block_8x8_sec0_px<uint16_t>(const uint16_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int dir, int pri_damping, int *sse, uint16_t *dst, int dstride);
 
     void cdef_estimate_block_4x4_pri0_px(const uint8_t *org, int ostride, const uint16_t *in, int sec_damping, int *sse)
     {
@@ -508,9 +536,11 @@ namespace AV1PP
         const int pri_strength = 0;
         const int pri_damping = 3; // not used
         const int dir = 0; // not used
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 1, dir, pri_damping, sec_damping, sse + 0);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 2, dir, pri_damping, sec_damping, sse + 1);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 4, dir, pri_damping, sec_damping, sse + 2);
+        uint8_t *dst = nullptr;// not used
+        int dstride = 0;// not used
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 1, dir, pri_damping, sec_damping, sse + 0, dst, dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 2, dir, pri_damping, sec_damping, sse + 1, dst, dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 4, dir, pri_damping, sec_damping, sse + 2, dst, dstride);
     }
 
     void cdef_estimate_block_8x8_pri0_px(const uint8_t *org, int ostride, const uint16_t *in, int sec_damping, int *sse)
@@ -518,9 +548,11 @@ namespace AV1PP
         const int pri_strength = 0;
         const int pri_damping = 3; // not used
         const int dir = 0; // not used
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 1, dir, pri_damping, sec_damping, sse + 0);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 2, dir, pri_damping, sec_damping, sse + 1);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 4, dir, pri_damping, sec_damping, sse + 2);
+        uint8_t *dst = nullptr;// not used
+        int dstride = 0;// not used
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 2, dir, pri_damping, sec_damping, sse + 1, dst, dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 1, dir, pri_damping, sec_damping, sse + 0, dst, dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 4, dir, pri_damping, sec_damping, sse + 2, dst, dstride);
     }
 
     void cdef_estimate_block_4x4_all_sec_px(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
@@ -532,23 +564,33 @@ namespace AV1PP
         cdef_estimate_block_4x4_px(org, ostride, in, pri_strength, 4, dir, pri_damping, sec_damping, sse + 3);
     }
 
-    void cdef_estimate_block_4x4_nv12_all_sec_px(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
-                                                 int dir, int pri_damping, int sec_damping, int *sse)
+    template <typename PixType> void cdef_estimate_block_4x4_nv12_all_sec_px(const PixType *org, int ostride, const uint16_t *in, int pri_strength,
+                                                 int dir, int pri_damping, int sec_damping, int *sse, PixType **dst, int dstride)
     {
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 0, dir, pri_damping, sec_damping, sse + 0);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 1, dir, pri_damping, sec_damping, sse + 1);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 2, dir, pri_damping, sec_damping, sse + 2);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 4, dir, pri_damping, sec_damping, sse + 3);
+        const int shift = sizeof(PixType) == 1 ? 0 : 2;
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 0 << shift, dir, pri_damping, sec_damping, sse + 0, dst[0], dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 1 << shift, dir, pri_damping, sec_damping, sse + 1, dst[1], dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 2 << shift, dir, pri_damping, sec_damping, sse + 2, dst[2], dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength, 4 << shift, dir, pri_damping, sec_damping, sse + 3, dst[3], dstride);
     }
+    template void cdef_estimate_block_4x4_nv12_all_sec_px<uint8_t>(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int dir, int pri_damping, int sec_damping, int *sse, uint8_t **dst, int dstride);
+    template void cdef_estimate_block_4x4_nv12_all_sec_px<uint16_t>(const uint16_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int dir, int pri_damping, int sec_damping, int *sse, uint16_t **dst, int dstride);
 
-    void cdef_estimate_block_8x8_all_sec_px(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
-                                            int dir, int pri_damping, int sec_damping, int *sse)
+    template <typename PixType> void cdef_estimate_block_8x8_all_sec_px(const PixType *org, int ostride, const uint16_t *in, int pri_strength,
+                                            int dir, int pri_damping, int sec_damping, int *sse, PixType **dst, int dstride)
     {
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 0, dir, pri_damping, sec_damping, sse + 0);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 1, dir, pri_damping, sec_damping, sse + 1);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 2, dir, pri_damping, sec_damping, sse + 2);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 4, dir, pri_damping, sec_damping, sse + 3);
+        const int shift = sizeof(PixType) == 1 ? 0 : 2;
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 0 << shift, dir, pri_damping, sec_damping, sse + 0, dst[0], dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 1 << shift, dir, pri_damping, sec_damping, sse + 1, dst[1], dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 2 << shift, dir, pri_damping, sec_damping, sse + 2, dst[2], dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength, 4 << shift, dir, pri_damping, sec_damping, sse + 3, dst[3], dstride);
     }
+    template void cdef_estimate_block_8x8_all_sec_px<uint8_t>(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int dir, int pri_damping, int sec_damping, int *sse, uint8_t **dst, int dstride);
+    template void cdef_estimate_block_8x8_all_sec_px<uint16_t>(const uint16_t *org, int ostride, const uint16_t *in, int pri_strength,
+        int dir, int pri_damping, int sec_damping, int *sse, uint16_t **dst, int dstride);
 
     void cdef_estimate_block_4x4_2pri_px(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength0, int pri_strength1,
                                          int dir, int pri_damping, int sec_damping, int *sse)
@@ -566,26 +608,30 @@ namespace AV1PP
     void cdef_estimate_block_4x4_nv12_2pri_px(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength0, int pri_strength1,
                                               int dir, int pri_damping, int sec_damping, int *sse)
     {
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength0, 0, dir, pri_damping, sec_damping, sse + 0);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength0, 1, dir, pri_damping, sec_damping, sse + 1);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength0, 2, dir, pri_damping, sec_damping, sse + 2);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength0, 4, dir, pri_damping, sec_damping, sse + 3);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength1, 0, dir, pri_damping, sec_damping, sse + 4);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength1, 1, dir, pri_damping, sec_damping, sse + 5);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength1, 2, dir, pri_damping, sec_damping, sse + 6);
-        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength1, 4, dir, pri_damping, sec_damping, sse + 7);
+        uint8_t *dst = nullptr;// not used
+        int dstride = 0;// not used
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength0, 0, dir, pri_damping, sec_damping, sse + 0, dst, dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength0, 1, dir, pri_damping, sec_damping, sse + 1, dst, dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength0, 2, dir, pri_damping, sec_damping, sse + 2, dst, dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength0, 4, dir, pri_damping, sec_damping, sse + 3, dst, dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength1, 0, dir, pri_damping, sec_damping, sse + 4, dst, dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength1, 1, dir, pri_damping, sec_damping, sse + 5, dst, dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength1, 2, dir, pri_damping, sec_damping, sse + 6, dst, dstride);
+        cdef_estimate_block_4x4_nv12_px(org, ostride, in, pri_strength1, 4, dir, pri_damping, sec_damping, sse + 7, dst, dstride);
     }
 
     void cdef_estimate_block_8x8_2pri_px(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength0, int pri_strength1,
                                          int dir, int pri_damping, int sec_damping, int *sse)
     {
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength0, 0, dir, pri_damping, sec_damping, sse + 0);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength0, 1, dir, pri_damping, sec_damping, sse + 1);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength0, 2, dir, pri_damping, sec_damping, sse + 2);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength0, 4, dir, pri_damping, sec_damping, sse + 3);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength1, 0, dir, pri_damping, sec_damping, sse + 4);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength1, 1, dir, pri_damping, sec_damping, sse + 5);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength1, 2, dir, pri_damping, sec_damping, sse + 6);
-        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength1, 4, dir, pri_damping, sec_damping, sse + 7);
+        uint8_t *dst = nullptr;// not used
+        int dstride = 0;// not used
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength0, 0, dir, pri_damping, sec_damping, sse + 0, dst, dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength0, 1, dir, pri_damping, sec_damping, sse + 1, dst, dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength0, 2, dir, pri_damping, sec_damping, sse + 2, dst, dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength0, 4, dir, pri_damping, sec_damping, sse + 3, dst, dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength1, 0, dir, pri_damping, sec_damping, sse + 4, dst, dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength1, 1, dir, pri_damping, sec_damping, sse + 5, dst, dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength1, 2, dir, pri_damping, sec_damping, sse + 6, dst, dstride);
+        cdef_estimate_block_8x8_px(org, ostride, in, pri_strength1, 4, dir, pri_damping, sec_damping, sse + 7, dst, dstride);
     }
 };

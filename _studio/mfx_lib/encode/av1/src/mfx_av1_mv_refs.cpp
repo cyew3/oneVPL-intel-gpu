@@ -50,7 +50,7 @@ namespace AV1Enc {
 
     int16_t GetModeContext(int32_t nearestMatchCount, int32_t refMatchCount, int32_t newMvCount, int32_t colBlkAvail)
     {
-        int32_t modeContext = 0;
+        int16_t modeContext = 0;
         if (colBlkAvail == 0)
             modeContext = (1 << GLOBALMV_OFFSET);
 
@@ -89,7 +89,17 @@ namespace {
 
     enum { L = LAST_FRAME, G = GOLDEN_FRAME, A = ALTREF_FRAME, C = COMP_VAR0 };
 
-
+    struct alignas(8) IbcMvCand {
+        AV1MV mv;
+        int32_t weight;
+    };
+#ifdef _MSC_VER
+#if !defined (_M_X64)
+#define _mm_cvtsi128_si64(a) \
+    ((uint64_t)(uint32_t)_mm_extract_epi32(a, 0)      | \
+     (uint64_t)(uint32_t)_mm_extract_epi32(a, 1) << 32)
+#endif
+#endif
     AV1MVPair ClampedMvPair(const AV1MVPair &mvs, AV1MV minMv, AV1MV maxMv) {
         __m128i minmv = _mm_set1_epi32(minMv.asInt);
         __m128i maxmv = _mm_set1_epi32(maxMv.asInt);
@@ -142,6 +152,23 @@ namespace {
     }
 
     template <bool nearestMv>
+    int32_t AddDistinctMvToStackI(const AV1MV &mv, int32_t weight, IbcMvCand *stack, int32_t *stackSize)
+    {
+        int32_t index = 0;
+        for (; index < *stackSize; ++index)
+            if (stack[index].mv.asInt == mv.asInt)
+                return stack[index].weight += weight, 0;
+
+        if (*stackSize == MAX_REF_MV_STACK_SIZE)
+            return 0;
+
+        stack[index].mv.asInt = mv.asInt;
+        stack[index].weight = weight + (nearestMv ? REF_CAT_LEVEL : 0);
+        ++(*stackSize);
+        return 1;
+    }
+
+    template <bool nearestMv>
     int32_t AddDistinctMvPairToStack(const AV1MVPair &mvs, int32_t weight, AV1MVCand *refMvStack, int32_t *refMvCount)
     {
         int32_t index = 0;
@@ -175,6 +202,12 @@ namespace {
         }
     }
 
+    void AddNearestRefMvCandidateTU7I(const ModeInfo *cand, int32_t *stackSize, IbcMvCand *stack, int32_t weight)
+    {
+        if (cand->interp != 0)
+            AddDistinctMvToStackI<true>(cand->mv[0], weight, stack, stackSize);
+    }
+
     void AddNearestRefMvCandidateTU7B(const ModeInfo *cand, int32_t *refMvCount, int32_t *newMvCount,
                                       int32_t *refMatchCount, AV1MVCand (*refMvStack)[MAX_REF_MV_STACK_SIZE],
                                       int32_t weight)
@@ -196,7 +229,7 @@ namespace {
         } else if (cand->refIdx[0] == A) {
             newMvCount[A] += newMvMode;
             refMatchCount[A]++;
-            AddDistinctMvToStack<true>(cand->mv[0], weight, refMvStack[A], refMvCount + A) & newMvMode;
+            AddDistinctMvToStack<true>(cand->mv[0], weight, refMvStack[A], refMvCount + A);// &newMvMode;
         }
     }
 
@@ -211,6 +244,12 @@ namespace {
             refMatchCount[G]++;
             AddDistinctMvToStack<false>(cand->mv[0], weight, refMvStack[G], refMvCount + G);
         }
+    }
+
+    void AddOuterRefMvCandidateTU7I(const ModeInfo *cand, int32_t *stackSize, IbcMvCand *stack, int32_t weight)
+    {
+        if (cand->interp != 0)
+            AddDistinctMvToStackI<false>(cand->mv[0], weight, stack, stackSize);
     }
 
     void AddOuterRefMvCandidateTU7B(const ModeInfo *cand, int32_t *refMvCount, int32_t *refMatchCount,
@@ -246,12 +285,26 @@ namespace {
         }
     }
 
+    void SortStackI(IbcMvCand *stack, int32_t stackSize)
+    {
+        int32_t len, nrLen;
+        for (len = stackSize; len > 0; len = nrLen) {
+            nrLen = 0;
+            for (int32_t i = 1; i < len; ++i) {
+                if (stack[i - 1].weight < stack[i].weight) {
+                    std::swap(stack[i - 1], stack[i]);
+                    nrLen = i;
+                }
+            }
+        }
+    }
+
     void lower_mv_precision(AV1MV *mv)
     {
         if (mv->mvy & 1) mv->mvy += (mv->mvy > 0 ? -1 : 1);
         if (mv->mvx & 1) mv->mvx += (mv->mvx > 0 ? -1 : 1);
     }
-
+#if ENABLE_TPLMV
     int32_t add_tpl_ref_mv(const TileBorders &tileBorders, const Frame &frame, int32_t orderHintBits, int32_t miPitch,
                           int32_t miRow, int32_t miCol, int32_t ref_frame, int32_t blk_row, int32_t blk_col,
                           int32_t *refMvCount, AV1MVCand (*refMvStack)[MAX_REF_MV_STACK_SIZE],
@@ -265,7 +318,7 @@ namespace {
             miRow + blk_row < tileBorders.rowStart || miRow + blk_row >= tileBorders.rowEnd)
             return 0;
 
-        const TplMvRef *prev_frame_mvs = frame.m_tplMvs + (miRow + blk_row) * miPitch + (miCol + blk_col);
+        const TplMvRef *prev_frame_mvs = frame.m_fenc->m_tplMvs + (miRow + blk_row) * miPitch + (miCol + blk_col);
         const int32_t cur_frame_index = frame.curFrameOffset;
 
         if (ref_frame < C) {
@@ -354,6 +407,7 @@ namespace {
 
         return coll_blk_count;
     }
+#endif
 
     int32_t check_sb_border(const int mi_row, const int mi_col, const int row_offset, const int col_offset)
     {
@@ -545,6 +599,17 @@ namespace {
         *cands = nullptr;
     }
 
+    void ExtendStackI(AV1MV mv, IbcMvCand *stack, int32_t *stackSize)
+    {
+        assert(*stackSize < MAX_MV_REF_CANDIDATES);
+        int32_t count = *stackSize;
+        if (count == 1 && stack[0].mv == mv)
+            return;
+        stack[count].mv = mv;
+        stack[count].weight = 2;
+        *stackSize = count + 1;
+    }
+
     void ExtendStack1(AV1MV mv, AV1MVCand *stack, int32_t *refMvCount)
     {
         assert(*refMvCount < MAX_MV_REF_CANDIDATES);
@@ -568,6 +633,12 @@ namespace {
         *refMvCount = count + 1;
     }
 
+    void ExtendRefMvStackI(const ModeInfo **cands, IbcMvCand *stack, int32_t *stackSize)
+    {
+        for (const ModeInfo *cand = *cands; *stackSize < MAX_MV_REF_CANDIDATES && cand; cand = *++cands)
+            ExtendStackI(cand->mv[0], stack, stackSize);
+    }
+
     void ExtendRefMvStackP(const ModeInfo **cands, int32_t ref_frame, AV1MvRefs *mvRefs)
     {
         AV1MVCand *stack = mvRefs->refMvStack[ref_frame];
@@ -575,6 +646,21 @@ namespace {
 
         for (const ModeInfo *cand = *cands; stackSize < MAX_MV_REF_CANDIDATES && cand; cand = *++cands)
             ExtendStack1(cand->mv[0], stack, &stackSize);
+    }
+
+    void ExtendRefMvStackPN(const ModeInfo **cands, int32_t ref_frame, AV1MvRefs *mvRefs)
+    {
+        AV1MVCand *stack = mvRefs->refMvStack[ref_frame];
+        int32_t &stackSize = mvRefs->refMvCount[ref_frame];
+
+        for (const ModeInfo *cand = *cands; stackSize < MAX_MV_REF_CANDIDATES && cand; cand = *++cands) {
+            AV1MV mv = cand->mv[0];
+            if (cand->refIdx[0] != ref_frame) {
+                mv.mvx = -1 * mv.mvx;
+                mv.mvy = -1 * mv.mvy;
+            }
+            ExtendStack1(mv, stack, &stackSize);
+        }
     }
 
     void ExtendRefMvStackBP(const ModeInfo **cands, int32_t ref_frame, AV1MvRefs *mvRefs)
@@ -807,7 +893,7 @@ namespace {
         mvRefs->nearestMvCount[G] = mvRefs->refMvCount[G];
         mvRefs->nearestMvCount[A] = 0;
         mvRefs->nearestMvCount[C] = 0;
-
+#if ENABLE_TPLMV
         // Scan colocated area
         if (frame.m_prevFrame) {
             const int32_t voffset = size8x8;
@@ -856,7 +942,7 @@ namespace {
                                    blk_col, mvRefs->refMvCount, mvRefs->refMvStack, mode_context);
             }
         }
-
+#endif
         // Scan the outer area
         //////////////////////
 
@@ -949,8 +1035,14 @@ namespace {
         if (pass > 1) {
             const ModeInfo *cands[17];
             BuildExtendCandidateList(cands, mi, miPitch, max_row_offset, max_col_offset, size8x8);
-            ExtendRefMvStackP(cands, L, mvRefs);
-            ExtendRefMvStackP(cands, G, mvRefs);
+
+            if (frame.refFrameSignBiasVp9[L] != frame.refFrameSignBiasVp9[G]) {
+                ExtendRefMvStackPN(cands, L, mvRefs);
+                ExtendRefMvStackPN(cands, G, mvRefs);
+            } else {
+                ExtendRefMvStackP(cands, L, mvRefs);
+                ExtendRefMvStackP(cands, G, mvRefs);
+            }
         }
 
         for (int32_t i = 0; i < mvRefs->refMvCount[L]; i++)
@@ -973,11 +1065,182 @@ namespace {
         mvRefs->interModeCtx[G] = GetModeContext(nearestMatch[G], refMatch[G], newMvCount[G], coll_blk_avail[G]);
     }
 
+    AV1MV SetupRefMVListTU7I(const TileBorders &tileBorders, const ModeInfo *mi, int32_t miPitch,
+                             int32_t miRow, int32_t miCol, int32_t size8x8, AV1MV minMv, AV1MV maxMv)
+    {
+        const int32_t minSize8x8 = (size8x8 >= 8) ? 2 : 1;
+        const int32_t hasTr = hasTopRight[miRow & 7][(miCol & 7) + size8x8 - 1];
+        int32_t len;
+        int processed_rows = 0;
+        int processed_cols = 0;
+
+        int32_t max_row_offset = 0;
+        if (miRow > tileBorders.rowStart)
+            max_row_offset = Saturate(tileBorders.rowStart - miRow, tileBorders.rowEnd - miRow - 1, -3);
+
+        int32_t max_col_offset = 0;
+        if (miCol > tileBorders.colStart)
+            max_col_offset = Saturate(tileBorders.colStart - miCol, tileBorders.colEnd - miCol - 1, -3);
+
+
+        int32_t stackSize = 0;
+        IbcMvCand stack[MAX_REF_MV_STACK_SIZE];
+
+        // Scan nearest area
+        ////////////////////
+
+        // Scan the first above row
+        int32_t weight = 2;
+        if (miRow - 1 >= tileBorders.rowStart) {
+            const ModeInfo *cand = mi - miPitch;
+            for (int32_t i = 0; i < size8x8; i += len, cand += len) {
+                len = MAX(minSize8x8, MIN(size8x8, block_size_wide_8x8[cand->sbType]));
+                weight = 2;
+                int row_offset = -1;
+                if (size8x8 <= block_size_wide_8x8[cand->sbType]) {
+                    int32_t inc = std::min(-(max_row_offset * 2) + row_offset + 1, 2 * block_size_wide_8x8[cand->sbType]);
+                    weight = std::max(weight, inc);
+                    // Update processed rows.
+                    processed_rows = inc - row_offset - 1;
+                }
+                AddNearestRefMvCandidateTU7I(cand, &stackSize, stack, 2 * len * weight);
+            }
+        }
+
+        // Scan the first left column
+        if (miCol - 1 >= tileBorders.colStart) {
+            const ModeInfo *cand = mi - 1;
+            for (int32_t i = 0; i < size8x8; i += len, cand += len * miPitch) {
+                len = MAX(minSize8x8, MIN(size8x8, block_size_wide_8x8[cand->sbType]));
+                weight = 2;
+                int col_offset = -1;
+                if (size8x8 <= block_size_wide_8x8[cand->sbType]) {
+                    int32_t inc = std::min(-(max_col_offset * 2) + col_offset + 1, 2 * block_size_wide_8x8[cand->sbType]);
+                    weight = std::max(weight, inc);
+                    // Update processed cols.
+                    processed_cols = inc - col_offset - 1;
+                }
+                AddNearestRefMvCandidateTU7I(cand, &stackSize, stack, 2 * len * weight);
+            }
+        }
+
+
+        weight = 2;
+        // Above-right
+        if (hasTr && miRow - 1 >= tileBorders.rowStart && miCol + size8x8 < tileBorders.colEnd)
+            AddNearestRefMvCandidateTU7I(mi + size8x8 - miPitch, &stackSize, stack, 2 * weight);
+
+        // Scan the outer area
+        //////////////////////
+
+        // Above-left
+        if (miRow - 1 >= tileBorders.rowStart && miCol - 1 >= tileBorders.colStart)
+            AddOuterRefMvCandidateTU7I(mi - 1 - miPitch, &stackSize, stack, 2 * 2);
+
+        int idx = 2;
+        int row_offset = -(idx << 1) + 1;
+        // Second above row
+        if (miRow - 2 >= tileBorders.rowStart && abs(row_offset) > processed_rows) {
+            const ModeInfo *cand = mi - miPitch * 2;
+            for (int32_t i = 0; i < size8x8; i += len, cand += len) {
+                len = MAX(minSize8x8, MIN(size8x8, block_size_wide_8x8[cand->sbType]));
+                weight = 2;
+                if (size8x8 <= block_size_wide_8x8[cand->sbType]) {
+                    int32_t inc = std::min(-max_row_offset * 2 + row_offset + 1, 2 * block_size_wide_8x8[cand->sbType]);
+                    weight = std::max(weight, inc);
+                    // Update processed rows.
+                    processed_rows = inc - row_offset - 1;
+                }
+                AddOuterRefMvCandidateTU7I(cand, &stackSize, stack, 2 * len * weight);
+            }
+        }
+
+        int col_offset = -(idx << 1) + 1;
+        // Second left column
+        if (miCol - 2 >= tileBorders.colStart && abs(col_offset) > processed_cols) {
+            const ModeInfo *cand = mi - 2;
+            for (int32_t i = 0; i < size8x8; i += len, cand += len * miPitch) {
+                len = MAX(minSize8x8, MIN(size8x8, block_size_wide_8x8[cand->sbType]));
+                weight = 2;
+                if (size8x8 <= block_size_wide_8x8[cand->sbType]) {
+                    int32_t inc = std::min(-max_col_offset * 2 + col_offset + 1, 2 * block_size_wide_8x8[cand->sbType]);
+                    weight = std::max(weight, inc);
+                    // Update processed cols.
+                    processed_cols = inc - col_offset - 1;
+                }
+                AddOuterRefMvCandidateTU7I(cand, &stackSize, stack, 2 * len * weight);
+            }
+        }
+
+        idx = 3;
+        row_offset = -(idx << 1) + 1;
+        // Third above row
+        if (miRow - 3 >= tileBorders.rowStart && abs(row_offset) > processed_rows) {
+            const ModeInfo *cand = mi - miPitch * 3;
+            for (int32_t i = 0; i < size8x8; i += len, cand += len) {
+                len = MAX(minSize8x8, MIN(size8x8, block_size_wide_8x8[cand->sbType]));
+                weight = 2;
+                if (size8x8 <= block_size_wide_8x8[cand->sbType]) {
+                    int32_t inc = std::min(-max_row_offset * 2 + row_offset + 1, 2 * block_size_wide_8x8[cand->sbType]);
+                    weight = std::max(weight, inc);
+                    // Update processed rows.
+                    processed_rows = inc - row_offset - 1;
+                }
+                AddOuterRefMvCandidateTU7I(cand, &stackSize, stack, 2 * len * weight);
+            }
+        }
+
+        // Third left column
+        col_offset = -(idx << 1) + 1;
+        if (miCol - 3 >= tileBorders.colStart && abs(col_offset) > processed_cols) {
+            const ModeInfo *cand = mi - 3;
+            for (int32_t i = 0; i < size8x8; i += len, cand += len * miPitch) {
+                len = MAX(minSize8x8, MIN(size8x8, block_size_wide_8x8[cand->sbType]));
+                weight = 2;
+                if (size8x8 <= block_size_wide_8x8[cand->sbType]) {
+                    int32_t inc = std::min(-max_col_offset * 2 + col_offset + 1, 2 * block_size_wide_8x8[cand->sbType]);
+                    weight = std::max(weight, inc);
+                    // Update processed cols.
+                    processed_cols = inc - col_offset - 1;
+                }
+                AddOuterRefMvCandidateTU7I(cand, &stackSize, stack, 2 * len * weight);
+            }
+        }
+
+        SortStackI(stack, stackSize);
+
+        if (stackSize < 2) {
+            const ModeInfo *cands[17];
+            BuildExtendCandidateList(cands, mi, miPitch, max_row_offset, max_col_offset, size8x8);
+            ExtendRefMvStackI(cands, stack, &stackSize);
+        }
+
+        AV1MV dvRef = {};
+        if (stackSize > 0) {
+            dvRef = ClampedMv(stack[0].mv, minMv, maxMv);
+            if (dvRef.asInt == 0 && stackSize > 1)
+                dvRef = ClampedMv(stack[1].mv, minMv, maxMv);
+        }
+
+        if (dvRef.asInt == 0) {
+            if (miRow - 8 < tileBorders.rowStart) {
+                dvRef.mvy = 0;
+                dvRef.mvx = int16_t(-MI_SIZE * 8 - INTRABC_DELAY_PIXELS) * 8;
+            } else {
+                dvRef.mvy = int16_t(-MI_SIZE * 8) * 8;
+                dvRef.mvx = 0;
+            }
+        }
+
+        return dvRef;
+    }
+
     static const uint16_t compound_mode_ctx_map[3][COMP_NEWMV_CTXS] = {
         { 0, 1, 1, 1, 1 },
         { 1, 2, 3, 4, 4 },
         { 4, 4, 5, 6, 7 },
     };
+
     void SetupRefMVListTU7B(const TileBorders &tileBorders, const ModeInfo *mi, int32_t miPitch, const Frame &frame,
                             int32_t orderHintBits, int32_t miRow, int32_t miCol, int32_t size8x8, AV1MvRefs *mvRefs,
                             AV1MV (*mvRefList)[MAX_MV_REF_CANDIDATES], AV1MV minMv, AV1MV maxMv, int32_t negate, int32_t pass)
@@ -1067,7 +1330,7 @@ namespace {
         mvRefs->nearestMvCount[G] = 0;
         mvRefs->nearestMvCount[A] = mvRefs->refMvCount[A];
         mvRefs->nearestMvCount[C] = mvRefs->refMvCount[C];
-
+#if ENABLE_TPLMV
         // Scan colocated area
         if (frame.m_prevFrame) {
             const int32_t voffset = size8x8;
@@ -1084,7 +1347,7 @@ namespace {
             const int32_t step_h = (size8x8 >= 8) ? 2 : 1;
             const int32_t step_w = (size8x8 >= 8) ? 2 : 1;
 
-            int32_t mode_context[2];
+            //int32_t mode_context[2];
 
             //for (int32_t blk_row = 0; blk_row < blk_row_end; blk_row += step_h) {
             //    for (int32_t blk_col = 0; blk_col < blk_col_end; blk_col += step_w) {
@@ -1125,7 +1388,7 @@ namespace {
             //    }
             //}
         }
-
+#endif
 
         // Scan the outer area
         //////////////////////
@@ -1249,8 +1512,8 @@ namespace {
                 mvRefList[A][1] = mvRefs->refMvStack[A][1].mv[0];
         }
 
-        for (int idx = 0; idx < mvRefs->refMvCount[C]; ++idx)
-            mvRefs->refMvStack[C][idx].mv = ClampedMvPair(mvRefs->refMvStack[C][idx].mv, minMv, maxMv);
+        for (int idxl = 0; idxl < mvRefs->refMvCount[C]; ++idxl)
+            mvRefs->refMvStack[C][idxl].mv = ClampedMvPair(mvRefs->refMvStack[C][idxl].mv, minMv, maxMv);
 
         mvRefs->interModeCtx[L] = GetModeContext(nearestMatch[L], refMatch[L], newMvCount[L], coll_blk_avail[L]);
         mvRefs->interModeCtx[A] = GetModeContext(nearestMatch[A], refMatch[A], newMvCount[A], coll_blk_avail[A]);
@@ -1300,8 +1563,32 @@ void AV1CU<PixType>::GetMvRefsAV1TU7P(int32_t sbType, int32_t miRow, int32_t miC
     mvRefs->useMvHp[2] = 0;
 }
 template void AV1CU<uint8_t>::GetMvRefsAV1TU7P(int32_t sbType, int32_t miRow, int32_t miCol, MvRefs *mvRefs, int32_t pass);
+#if ENABLE_10BIT
 template void AV1CU<uint16_t>::GetMvRefsAV1TU7P(int32_t sbType, int32_t miRow, int32_t miCol, MvRefs *mvRefs, int32_t pass);
+#endif
 
+template <typename PixType>
+AV1MV AV1CU<PixType>::GetMvRefsAV1TU7I(int32_t sbType, int32_t miRow, int32_t miCol)
+{
+    const int32_t width8 = block_size_high_8x8[sbType]; // in 8x8 blocks
+    const int32_t height8 = width8;
+    const AV1MV minMv = {
+        (int16_t)std::max((-(miCol * MI_SIZE * 8) - MV_BORDER_AV1 - width8 * MI_SIZE * 8), int32_t(std::numeric_limits<int16_t>::min())),
+        (int16_t)std::max((-(miRow * MI_SIZE * 8) - MV_BORDER_AV1 - height8 * MI_SIZE * 8), int32_t(std::numeric_limits<int16_t>::min()))
+    };
+    const AV1MV maxMv = {
+        (int16_t)std::min(((m_par->miCols - miCol) * MI_SIZE * 8 + MV_BORDER_AV1), int32_t(std::numeric_limits<int16_t>::max())),
+        (int16_t)std::min(((m_par->miRows - miRow) * MI_SIZE * 8 + MV_BORDER_AV1), int32_t(std::numeric_limits<int16_t>::max()))
+    };
+
+    const ModeInfo *mi = m_currFrame->m_modeInfo + miCol + miRow * m_par->miPitch;
+
+    return SetupRefMVListTU7I(m_tileBorders, mi, m_par->miPitch, miRow, miCol, width8, minMv, maxMv);
+}
+template AV1MV AV1CU<uint8_t>::GetMvRefsAV1TU7I(int32_t sbType, int32_t miRow, int32_t miCol);
+#if ENABLE_10BIT
+template AV1MV AV1CU<uint16_t>::GetMvRefsAV1TU7I(int32_t sbType, int32_t miRow, int32_t miCol);
+#endif
 
 template <typename PixType>
 void AV1CU<PixType>::GetMvRefsAV1TU7B(int32_t sbType, int32_t miRow, int32_t miCol, MvRefs *mvRefs, int32_t negate, int32_t pass)
@@ -1357,9 +1644,12 @@ void AV1CU<PixType>::GetMvRefsAV1TU7B(int32_t sbType, int32_t miRow, int32_t miC
     mvRefs->useMvHp[1] = 0;
     mvRefs->useMvHp[2] = 0;
 }
-template void AV1CU<uint8_t>::GetMvRefsAV1TU7B(int32_t sbType, int32_t miRow, int32_t miCol, MvRefs *mvRefs, int32_t negate, int32_t pass);
-template void AV1CU<uint16_t>::GetMvRefsAV1TU7B(int32_t sbType, int32_t miRow, int32_t miCol, MvRefs *mvRefs, int32_t negate, int32_t pass);
 
+template void AV1CU<uint8_t>::GetMvRefsAV1TU7B(int32_t sbType, int32_t miRow, int32_t miCol, MvRefs *mvRefs, int32_t negate, int32_t pass);
+
+#if ENABLE_10BIT
+template void AV1CU<uint16_t>::GetMvRefsAV1TU7B(int32_t sbType, int32_t miRow, int32_t miCol, MvRefs *mvRefs, int32_t negate, int32_t pass);
+#endif
 
 #endif // MFX_ENABLE_AV1_VIDEO_ENCODE
 

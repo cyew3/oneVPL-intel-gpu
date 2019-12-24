@@ -29,6 +29,7 @@
 namespace AV1Enc {
     extern const uint8_t qindexMinus1[256];
     extern const uint8_t qindexPlus1[256];
+    extern const double h265_lambda[100];
     extern const int8_t h265_log2m2[257];
     extern const uint8_t av1_scan_z2r4[256];
     extern const uint8_t h265_scan_r2z4[256];

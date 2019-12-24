@@ -1173,6 +1173,32 @@ namespace AV1PP
 
         return _mm_cvtsi128_si32( s2);
     }
+    template<> int sad_general_avx2<16, 4>(const uint8_t *image, int img_stride, const uint8_t *block, int block_stride)
+    {
+        SAD_PARAMETERS_LOAD;
+
+        __m128i s1 = load128_unaligned(blk1);
+        __m128i s2 = load128_unaligned(blk1 + lx1);
+        s1 = _mm_sad_epu8(s1, load128_block_data(blk2));
+        s2 = _mm_sad_epu8(s2, load128_block_data(blk2 + block_stride));
+
+        blk1 += 2 * lx1;
+
+        {
+            __m128i tmp1 = load128_unaligned(blk1);
+            __m128i tmp2 = load128_unaligned(blk1 + lx1);
+            tmp1 = _mm_sad_epu8(tmp1, load128_block_data(blk2 + 2 * block_stride));
+            tmp2 = _mm_sad_epu8(tmp2, load128_block_data(blk2 + 3 * block_stride));
+            s1 = _mm_add_epi32(s1, tmp1);
+            s2 = _mm_add_epi32(s2, tmp2);
+        }
+
+        s1 = _mm_add_epi32(s1, s2);
+        s2 = _mm_movehl_epi64(s2, s1);
+        s2 = _mm_add_epi32(s2, s1);
+
+        return _mm_cvtsi128_si32(s2);
+    }
     template<> int sad_general_avx2<16,8>(const uint8_t *image, int img_stride, const uint8_t *block, int block_stride)
     {
         SAD_PARAMETERS_LOAD;

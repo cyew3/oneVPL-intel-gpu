@@ -21,11 +21,12 @@
 #include "assert.h"
 #include "string.h"
 #include "stdlib.h"
-#include "ipps.h"
 
 #include <stdint.h>
 
-#define Saturate(min_val, max_val, val) IPP_MAX((min_val), IPP_MIN((max_val), (val)))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define Saturate(min_val, max_val, val) MAX((min_val), MIN((max_val), (val)))
 
 namespace VP9PP
 {

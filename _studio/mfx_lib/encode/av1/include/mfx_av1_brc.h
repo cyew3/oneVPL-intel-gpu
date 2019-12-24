@@ -26,6 +26,8 @@
 #define __MFX_AV1_BRC_H__
 
 #include "mfx_av1_defs.h"
+
+#if ENABLE_BRC
 #include "mfx_av1_frame.h"
 #include "mfx_av1_enc.h"
 #include "umc_mutex.h"
@@ -51,7 +53,8 @@ enum eMfxBRCStatus
     MFX_BRC_BIG_FRAME               = 0x2,
     MFX_BRC_ERR_SMALL_FRAME         = 0x4,
     MFX_BRC_SMALL_FRAME             = 0x8,
-    MFX_BRC_NOT_ENOUGH_BUFFER       = 0x10
+    MFX_BRC_NOT_ENOUGH_BUFFER       = 0x10,
+    MFX_BRC_ERR_MAX_FRAME           = 0x20
 };
 
 enum eMfxBRCRecode
@@ -226,8 +229,8 @@ class VMEBrc : public BrcIface
 public:
     virtual ~VMEBrc() { Close(); }
 
-    mfxStatus Init(const mfxVideoParam *init, AV1VideoParam &video, int32_t enableRecode = 1);
-    mfxStatus Reset(mfxVideoParam *init, AV1VideoParam &video, int32_t enableRecode = 1)
+    mfxStatus Init(const mfxVideoParam *init, AV1VideoParam &video, int32_t enableRecode = 0);
+    mfxStatus Reset(mfxVideoParam *init, AV1VideoParam &video, int32_t enableRecode = 0)
     {
         return  Init( init,video, enableRecode);
     }
@@ -296,6 +299,88 @@ public:
     {
         mIsInit = 0;
         mLowres = 0;
+        mBitrate = 0;
+        mTotMeanComplx = 0.0;
+        mBitsEncodedTotal = 0;
+        mBitsEncodedPrev = 0;
+        mBitsEncoded = 0;
+        mBitsEncodedP = 0;
+        mTotPrevCmplx = 0.0;
+        mRecodedFrame_encOrder = 0;
+        mSChPoc = 0;
+        mQstepBase = 0.0;
+        mCmplxRate = 0.0;
+        mQuantMax = 0;
+        mMaxBitrate = 0;
+        mLoanLength = 0;
+        mLoanRatio = 0;
+        mBrcLoanRatio = 0;
+        mEncOrderCoded = -1;
+        mRCq = 0;
+        mRCbap = 0;
+        mRCqa = 0.0;
+        mRCqa0 = 0.0;
+        mRCqap = 0;
+        mRCfa = 0;
+        mRCfap = 0;
+        mRCfa_short = 0.0;
+        mQuantOffset = 0;
+        mSceneChange = 0;
+        mSceneNum = 0;
+        mQp = 0;
+        mQPprev = 0;
+        mBitsDesiredTotal = 0;
+        mBitsDesiredFrame = 0;
+        mTotTarget = 0.0;
+        mPrevCmplxIP = 0.0;
+        mPrevBitsIP = 0;
+        mPrevQpIP = 0;
+        mPrevQstepIP = 0;
+        mMinQp = 0;
+        mMaxQp = 999;
+        mQuantMin = 0;
+        mComplxSum = 0.0;
+        mPredBufFulness = 0;
+        mTotAvComplx = 0.0;
+        mTotComplxCnt = 0;
+        mRealPredFullness = 0;
+        mFramerate = 0.0;
+        mQuantI = 0;
+        mQuantP = 0;
+        mQuantB = 0;
+        mQuantPrev = 0;
+        mQuantIprev = 0;
+        mQuantPprev = 0;
+        mQuantBprev = 0;
+        mQuantUpdated = 0;
+        mRecode = 0;
+        mQuantRecoded = 0;
+        mQstepScale = 0.0;
+        mQstepScale0 = 0.0;
+        mTotalDeviation = 0;
+        mLoanBitsPerFrame = 0;
+        mBF = 0;
+        mBFsaved = 0;
+        mPicType = MFX_FRAMETYPE_I;
+        mPoc = 0;
+        mNumLayers = 1;
+        mRCMode = 0;
+        Zero(mHRD);
+        Zero(mParams);
+        mfs = 0;
+#ifdef AMT_MAX_FRAME_SIZE
+        mMaxFrameSizeInBits = 0;
+        mMaxFrameSizeInBitsI = 0;
+        mMinQstepCmplxKInitEncOrder = 0;
+        mMinQstepRateEP = 0;
+        mMinQstepICmplxEP = 0;
+        mMinQstepPCmplxEP = 0;
+#endif
+        // AMT LTR
+        mDynamicInit = 0;
+        LastICmplx = 0;
+        LastIQpAct = 0;
+        LastIFrameSize = 0;
     }
     virtual ~AV1BRC()
     {
@@ -303,11 +388,11 @@ public:
     }
 
     // Initialize with specified parameter(s)
-    mfxStatus Init(const mfxVideoParam *init, AV1VideoParam &video, int32_t enableRecode = 1);
+    mfxStatus Init(const mfxVideoParam *init, AV1VideoParam &video, int32_t enableRecode = 0);
 
     mfxStatus Close();
 
-    mfxStatus Reset(mfxVideoParam *init, AV1VideoParam &video, int32_t enableRecode = 1);
+    mfxStatus Reset(mfxVideoParam *init, AV1VideoParam &video, int32_t enableRecode = 0);
     mfxStatus SetParams(const mfxVideoParam *init, AV1VideoParam &video);
     mfxStatus GetParams(mfxVideoParam *init);
 
@@ -317,7 +402,10 @@ public:
     int32_t PredictFrameSize(AV1VideoParam *video, Frame *frames[], int32_t qp, mfxBRC_FrameData *refFrData);
     void SetMiniGopData(Frame *frames[], int32_t numFrames);
     void UpdateMiniGopData(Frame *frame,  int8_t qp);
-
+    void InitMinQForMaxFrameSize(AV1VideoParam *video);
+    void ResetMinQForMaxFrameSize(AV1VideoParam *video, Frame *f);
+    double GetMinQForMaxFrameSize(uint32_t maxFrameSizeInBits, AV1VideoParam *video, Frame *f, int32_t layer, Frame *maxpoc, int32_t myPos);
+    void UpdateMinQForMaxFrameSize(uint32_t maxFrameSizeInBits, AV1VideoParam *video, Frame *f, int32_t bits, int32_t layer, mfxBRCStatus Sts);
     mfxStatus SetQP(int32_t qp, uint16_t frameType);
 
     mfxStatus GetInitialCPBRemovalDelay(uint32_t *initial_cpb_removal_delay, int32_t recode = 0);
@@ -330,6 +418,8 @@ public:
     }
     bool IsVMEBRC()  {return false;}
 
+    double mLayerRatio;
+    int32_t mMinQp;
 
 protected:
     mfxBRC_Params mParams;
@@ -357,6 +447,7 @@ protected:
     int32_t mPrevBitsLayer[8];
     double mPrevQstepLayer[8];
     int32_t mPrevQpLayer[8];
+    int32_t mPrevQpLayerSet[8];
 
     double mPrevCmplxIP;
     int32_t mPrevBitsIP;
@@ -377,7 +468,23 @@ protected:
     double mQstepScale;
     double mQstepScale0;
     int32_t mLoanLength;
+    float mLoanRatio;
+    float mBrcLoanRatio;
     int32_t mLoanBitsPerFrame;
+    // MinQ for Max Frame Size
+    int32_t mfs;
+#ifdef AMT_MAX_FRAME_SIZE
+    uint32_t mMaxFrameSizeInBitsI;
+    uint32_t mMaxFrameSizeInBits;
+    double mMinQstepCmplxK[5];              // Layers
+    double mMinQstepRateEP;                 // Var based on GopRefDist
+    double mMinQstepICmplxEP;               // Var based on GopRefDist
+    double mMinQstepPCmplxEP;               // Var based on GopRefDist
+    int32_t mMinQstepCmplxKInitEncOrder;     // Avoid mixing scenes
+    int32_t mMinQstepCmplxKUpdt[5];          // Layers
+    double mMinQstepCmplxKUpdtC[5];         // Layers
+    double mMinQstepCmplxKUpdtErr[5];       // Layers
+#endif
 
     //int32_t mLoanLengthP;
     //int32_t mLoanBitsPerFrameP;
@@ -414,12 +521,17 @@ protected:
     uint32_t mMaxBitrate;
     int64_t mBF, mBFsaved;
 
-    int32_t mMinQp;
     int32_t mMaxQp;
+
+    // AMT_LTR
+    uint8_t  mDynamicInit;
+    double LastICmplx;
+    int32_t LastIQpAct;
+    int32_t LastIFrameSize;
 };
 
 } // namespace
 
+#endif
 #endif // __MFX_AV1_BRC_H__
-
 #endif // MFX_ENABLE_AV1_VIDEO_ENCODE

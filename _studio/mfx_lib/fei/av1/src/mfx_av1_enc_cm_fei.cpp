@@ -28,45 +28,82 @@
 #include <map>
 #include <utility>
 
+#include "mfx_av1_enc_cm_fei.h"
+#include "mfx_av1_enc_cm_utils.h"
+
 #include "genx_av1_prepare_src_hsw_isa.h"
 #include "genx_av1_prepare_src_bdw_isa.h"
 #include "genx_av1_prepare_src_skl_isa.h"
+#include "genx_av1_prepare_src_icllp_isa.h"
+#include "genx_av1_prepare_src_tgl_isa.h"
+#include "genx_av1_prepare_src_tgllp_isa.h"
+#if NEWMVPRED
 #include "genx_av1_mepu_hsw_isa.h"
 #include "genx_av1_mepu_bdw_isa.h"
 #include "genx_av1_mepu_skl_isa.h"
+#include "genx_av1_mepu_icllp_isa.h"
+#include "genx_av1_mepu_tgl_isa.h"
+#include "genx_av1_mepu_tgllp_isa.h"
+#endif
 #include "genx_av1_mode_decision_hsw_isa.h"
 #include "genx_av1_mode_decision_bdw_isa.h"
 #include "genx_av1_mode_decision_skl_isa.h"
+#include "genx_av1_mode_decision_icllp_isa.h"
+#include "genx_av1_mode_decision_tgl_isa.h"
+#include "genx_av1_mode_decision_tgllp_isa.h"
 #include "genx_av1_mode_decision_pass2_hsw_isa.h"
 #include "genx_av1_mode_decision_pass2_bdw_isa.h"
 #include "genx_av1_mode_decision_pass2_skl_isa.h"
+#include "genx_av1_mode_decision_pass2_icllp_isa.h"
+#include "genx_av1_mode_decision_pass2_tgl_isa.h"
+#include "genx_av1_mode_decision_pass2_tgllp_isa.h"
 
 #include "genx_av1_interpolate_decision_hsw_isa.h"
 #include "genx_av1_interpolate_decision_bdw_isa.h"
 #include "genx_av1_interpolate_decision_skl_isa.h"
+#include "genx_av1_interpolate_decision_icllp_isa.h"
+#include "genx_av1_interpolate_decision_tgl_isa.h"
+#include "genx_av1_interpolate_decision_tgllp_isa.h"
 #include "genx_av1_interpolate_decision_single_hsw_isa.h"
 #include "genx_av1_interpolate_decision_single_bdw_isa.h"
 #include "genx_av1_interpolate_decision_single_skl_isa.h"
+#include "genx_av1_interpolate_decision_single_icllp_isa.h"
+#include "genx_av1_interpolate_decision_single_tgl_isa.h"
+#include "genx_av1_interpolate_decision_single_tgllp_isa.h"
 
 #include "genx_av1_intra_hsw_isa.h"
 #include "genx_av1_intra_bdw_isa.h"
 #include "genx_av1_intra_skl_isa.h"
+#include "genx_av1_intra_icllp_isa.h"
+#include "genx_av1_intra_tgl_isa.h"
+#include "genx_av1_intra_tgllp_isa.h"
+#if GPU_VARTX
 #include "genx_av1_vartx_decision_hsw_isa.h"
 #include "genx_av1_vartx_decision_bdw_isa.h"
 #include "genx_av1_vartx_decision_skl_isa.h"
+//#include "genx_av1_vartx_decision_icllp_isa.h"
+//#include "genx_av1_vartx_decision_tgl_isa.h"
+//#include "genx_av1_vartx_decision_tgllp_isa.h"
+#endif // GPU_VARTX
 
-#include "genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.h"
-#include "genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.h"
-#include "genx_hevce_me_p16_4mv_and_refine_32x32_skl_isa.h"
-#include "genx_hevce_refine_me_p_64x64_hsw_isa.h"
-#include "genx_hevce_refine_me_p_64x64_bdw_isa.h"
-#include "genx_hevce_refine_me_p_64x64_skl_isa.h"
-#include "genx_hevce_hme_and_me_p32_4mv_hsw_isa.h"
-#include "genx_hevce_hme_and_me_p32_4mv_bdw_isa.h"
-#include "genx_hevce_hme_and_me_p32_4mv_skl_isa.h"
-
-#include "mfx_av1_enc_cm_fei.h"
-#include "mfx_av1_enc_cm_utils.h"
+#include "genx_av1_me_p16_4mv_and_refine_32x32_hsw_isa.h"
+#include "genx_av1_me_p16_4mv_and_refine_32x32_bdw_isa.h"
+#include "genx_av1_me_p16_4mv_and_refine_32x32_skl_isa.h"
+#include "genx_av1_me_p16_4mv_and_refine_32x32_icllp_isa.h"
+#include "genx_av1_me_p16_4mv_and_refine_32x32_tgl_isa.h"
+#include "genx_av1_me_p16_4mv_and_refine_32x32_tgllp_isa.h"
+#include "genx_av1_refine_me_p_64x64_hsw_isa.h"
+#include "genx_av1_refine_me_p_64x64_bdw_isa.h"
+#include "genx_av1_refine_me_p_64x64_skl_isa.h"
+#include "genx_av1_refine_me_p_64x64_icllp_isa.h"
+#include "genx_av1_refine_me_p_64x64_tgl_isa.h"
+#include "genx_av1_refine_me_p_64x64_tgllp_isa.h"
+#include "genx_av1_hme_and_me_p32_4mv_hsw_isa.h"
+#include "genx_av1_hme_and_me_p32_4mv_bdw_isa.h"
+#include "genx_av1_hme_and_me_p32_4mv_skl_isa.h"
+#include "genx_av1_hme_and_me_p32_4mv_icllp_isa.h"
+#include "genx_av1_hme_and_me_p32_4mv_tgl_isa.h"
+#include "genx_av1_hme_and_me_p32_4mv_tgllp_isa.h"
 
 #undef MFX_TRACE_ENABLE
 
@@ -176,14 +213,14 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     mfxU32 height = param->Height;
 
     /* pad and align to 16 pixels */
-    width32  = UMC::align_value<uint32_t>(width, 32);
-    height32 = UMC::align_value<uint32_t>(height, 32);
-    width     = UMC::align_value<uint32_t>(width,  4);
-    height    = UMC::align_value<uint32_t>(height, 4);
-    width2x   = UMC::align_value<uint32_t>((width  + 1) / 2, 4);
-    height2x  = UMC::align_value<uint32_t>((height + 1) / 2, 4);
-    width4x   = UMC::align_value<uint32_t>((width  + 3) / 4, 4);
-    height4x  = UMC::align_value<uint32_t>((height + 3) / 4, 4);
+    width32  = mfx::align2_value<uint32_t>(width, 32);
+    height32 = mfx::align2_value<uint32_t>(height, 32);
+    width     = mfx::align2_value<uint32_t>(width,  4);
+    height    = mfx::align2_value<uint32_t>(height, 4);
+    width2x   = mfx::align2_value<uint32_t>((width  + 1) / 2, 4);
+    height2x  = mfx::align2_value<uint32_t>((height + 1) / 2, 4);
+    width4x   = mfx::align2_value<uint32_t>((width  + 3) / 4, 4);
+    height4x  = mfx::align2_value<uint32_t>((height + 3) / 4, 4);
 
     /* dimensions of output MV grid for each block size (width/height were aligned to multiple of 16) */
     cmMvW[MFX_FEI_H265_BLK_16x16] = (width   + 15) / 16; cmMvH[MFX_FEI_H265_BLK_16x16] = (height   + 15) / 16;
@@ -228,12 +265,12 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     /* source and reconstructed reference frames */
     int32_t bppShift = (param->FourCC == MFX_FOURCC_P010 || param->FourCC == MFX_FOURCC_P210) ? 1 : 0;
     CM_SURFACE_FORMAT format = (param->FourCC == MFX_FOURCC_P010 || param->FourCC == MFX_FOURCC_P210) ? CM_SURFACE_FORMAT_V8U8 : CM_SURFACE_FORMAT_P8;
-    int32_t minPitchInBytes = UMC::align_value<int32_t>(UMC::align_value<int32_t>(param->Padding<<bppShift, 64) + (param->Width<<bppShift) + (param->Padding<<bppShift), 64);
+    int32_t minPitchInBytes = mfx::align2_value<int32_t>(mfx::align2_value<int32_t>(param->Padding<<bppShift, 64) + (param->Width<<bppShift) + (param->Padding<<bppShift), 64);
     if ((minPitchInBytes & (minPitchInBytes - 1)) == 0)
         minPitchInBytes += 64;
     GetDimensionsCmSurface2DUp<uint8_t>(device, minPitchInBytes>>bppShift, param->Height, format, &extAlloc->SrcRefLuma);
 
-    minPitchInBytes = UMC::align_value<int32_t>(UMC::align_value<int32_t>(param->PaddingChroma<<bppShift, 64) + (param->WidthChroma<<bppShift) + (param->PaddingChroma<<bppShift), 64);
+    minPitchInBytes = mfx::align2_value<int32_t>(mfx::align2_value<int32_t>(param->PaddingChroma<<bppShift, 64) + (param->WidthChroma<<bppShift) + (param->PaddingChroma<<bppShift), 64);
     if ((minPitchInBytes & (minPitchInBytes - 1)) == 0)
         minPitchInBytes += 64;
     GetDimensionsCmSurface2DUp<uint8_t>(device, minPitchInBytes>>bppShift, param->HeightChroma, format, &extAlloc->SrcRefChroma);
@@ -258,8 +295,8 @@ void * AV1CmCtx::AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMem
     int32_t minPitchInBytes;
 
     CM_SURFACE_FORMAT format = (fourcc == MFX_FOURCC_P010 || fourcc == MFX_FOURCC_P210) ? CM_SURFACE_FORMAT_V8U8 : CM_SURFACE_FORMAT_P8;
-    mfxU8 *sysMemLu = (mfxU8 *)sysMem1 - UMC::align_value<int32_t>(padding<<bppShift, 64);
-    mfxU8 *sysMemCh = (mfxU8 *)sysMem2 - UMC::align_value<int32_t>(paddingChroma<<bppShift, 64);
+    mfxU8 *sysMemLu = (mfxU8 *)sysMem1 - mfx::align2_value<int32_t>(padding<<bppShift, 64);
+    mfxU8 *sysMemCh = (mfxU8 *)sysMem2 - mfx::align2_value<int32_t>(paddingChroma<<bppShift, 64);
 
     switch (surfaceType) {
     case MFX_FEI_H265_SURFTYPE_INPUT:
@@ -276,6 +313,7 @@ void * AV1CmCtx::AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMem
         s->sIn.mdControl   = CreateBuffer(device, sizeof(MdControl));
         s->sIn.meControlInited = false;
         s->sIn.lambda      = 0.0;
+        s->sIn.global_mvy = 0;
         return s;
 
     case MFX_FEI_H265_SURFTYPE_RECON:
@@ -288,14 +326,12 @@ void * AV1CmCtx::AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMem
         s->sRec.bufDown4x   = CreateSurface(device, width4x, height4x, CM_SURFACE_FORMAT_NV12);
         s->sRec.bufDown8x   = CreateSurface(device,  width8x,  height8x,  CM_SURFACE_FORMAT_NV12);
         s->sRec.bufDown16x  = CreateSurface(device, width16x, height16x, CM_SURFACE_FORMAT_NV12);
-        if (enableInterp)
-            s->sRec.bufInterpMerged = CreateSurface(device, interpWidth * 2, interpHeight * 2, CM_SURFACE_FORMAT_A8);
         return s;
 
     case MFX_FEI_H265_SURFTYPE_UP:
         s = new mfxFEIH265Surface();    // zero-init
         s->surfaceType = MFX_FEI_H265_SURFTYPE_UP;
-        minPitchInBytes = UMC::align_value<int32_t>(UMC::align_value<int32_t>(padding<<bppShift, 64) + (width<<bppShift) + (padding<<bppShift), 64);
+        minPitchInBytes = mfx::align2_value<int32_t>(mfx::align2_value<int32_t>(padding<<bppShift, 64) + (width<<bppShift) + (padding<<bppShift), 64);
         if ((minPitchInBytes & (minPitchInBytes - 1)) == 0)
             minPitchInBytes += 64;
         s->sUp.luma = CreateCmSurface2DUpPreAlloc(device, minPitchInBytes>>bppShift, height, format, sysMemLu);
@@ -343,7 +379,6 @@ mfxStatus AV1CmCtx::FreeSurface(mfxFEIH265Surface *s)
         device->DestroySurface(s->sRec.bufDown4x);
         if (s->sRec.bufDown8x)   device->DestroySurface(s->sRec.bufDown8x);
         if (s->sRec.bufDown16x)  device->DestroySurface(s->sRec.bufDown16x);
-        device->DestroySurface(s->sRec.bufInterpMerged);
         break;
     case MFX_FEI_H265_SURFTYPE_UP:
         device->DestroySurface2DUP(s->sUp.luma);
@@ -371,6 +406,227 @@ mfxStatus AV1CmCtx::FreeSurface(mfxFEIH265Surface *s)
 //    FEI_4x8_US   = 11,
 //};
 
+void AV1CmCtx::LoadPrograms(GPU_PLATFORM hwType)
+{
+    switch (hwType)
+    {
+#if defined (CMRT_EMU)
+    case PLATFORM_INTEL_SNB:
+#endif
+#if ENABLE_HSW
+    case PLATFORM_INTEL_HSW:
+        //case MFX_HW_HSW_ULT:
+        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_hsw, sizeof(genx_av1_prepare_src_hsw));
+        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_hsw, sizeof(genx_av1_hme_and_me_p32_4mv_hsw));
+        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_hsw, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_hsw));
+#if NEWMVPRED
+        programMePu = ReadProgram(device, genx_av1_mepu_hsw, sizeof(genx_av1_mepu_hsw));
+#endif
+        programMd = ReadProgram(device, genx_av1_mode_decision_hsw, sizeof(genx_av1_mode_decision_hsw));
+        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_hsw, sizeof(genx_av1_mode_decision_pass2_hsw));
+
+        if (enableInterp) {
+#if !USE_HWPAK_RESTRICT
+            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_hsw, sizeof(genx_av1_interpolate_decision_hsw));
+#else
+            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_hsw, sizeof(genx_av1_interpolate_decision_single_hsw));
+#endif
+        }
+
+#if GPU_VARTX
+        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_hsw, sizeof(genx_av1_vartx_decision_hsw));
+#endif // GPU_VARTX
+        programAv1Intra = ReadProgram(device, genx_av1_intra_hsw, sizeof(genx_av1_intra_hsw));
+        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_hsw, sizeof(genx_av1_refine_me_p_64x64_hsw));
+        break;
+#endif
+#if ENABLE_BDW
+    case PLATFORM_INTEL_BDW:
+    case PLATFORM_INTEL_CHV:
+        //case MFX_HW_CHV:
+        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_bdw, sizeof(genx_av1_prepare_src_bdw));
+        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_bdw, sizeof(genx_av1_hme_and_me_p32_4mv_bdw));
+        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_bdw, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_bdw));
+#if NEWMVPRED
+        programMePu = ReadProgram(device, genx_av1_mepu_bdw, sizeof(genx_av1_mepu_bdw));
+#endif
+        programMd = ReadProgram(device, genx_av1_mode_decision_bdw, sizeof(genx_av1_mode_decision_bdw));
+        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_bdw, sizeof(genx_av1_mode_decision_pass2_bdw));
+
+        if (enableInterp) {
+#if !USE_HWPAK_RESTRICT
+            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_bdw, sizeof(genx_av1_interpolate_decision_bdw));
+#else
+            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_bdw, sizeof(genx_av1_interpolate_decision_single_bdw));
+#endif
+        }
+
+#if GPU_VARTX
+        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_bdw, sizeof(genx_av1_vartx_decision_bdw));
+#endif // GPU_VARTX
+        programAv1Intra = ReadProgram(device, genx_av1_intra_bdw, sizeof(genx_av1_intra_bdw));
+        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_bdw, sizeof(genx_av1_refine_me_p_64x64_bdw));
+        break;
+#endif
+    case PLATFORM_INTEL_SKL:
+    case PLATFORM_INTEL_KBL:
+    case PLATFORM_INTEL_GLK:
+    case PLATFORM_INTEL_CFL:
+    case PLATFORM_INTEL_BXT:
+        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_skl, sizeof(genx_av1_prepare_src_skl));
+        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_skl, sizeof(genx_av1_hme_and_me_p32_4mv_skl));
+        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_skl, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_skl));
+#if NEWMVPRED
+        programMePu = ReadProgram(device, genx_av1_mepu_skl, sizeof(genx_av1_mepu_skl));
+#endif
+        programMd = ReadProgram(device, genx_av1_mode_decision_skl, sizeof(genx_av1_mode_decision_skl));
+        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_skl, sizeof(genx_av1_mode_decision_pass2_skl));
+
+        if (enableInterp) {
+#if !USE_HWPAK_RESTRICT
+            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_skl, sizeof(genx_av1_interpolate_decision_skl));
+#else
+            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_skl, sizeof(genx_av1_interpolate_decision_single_skl));
+#endif
+        }
+
+#if GPU_VARTX
+        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_skl, sizeof(genx_av1_vartx_decision_skl));
+#endif // GPU_VARTX
+        programAv1Intra = ReadProgram(device, genx_av1_intra_skl, sizeof(genx_av1_intra_skl));
+        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_skl, sizeof(genx_av1_refine_me_p_64x64_skl));
+        break;
+
+#if ENABLE_ICLLP
+    case PLATFORM_INTEL_ICLLP:
+        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_icllp, sizeof(genx_av1_prepare_src_icllp));
+        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_icllp, sizeof(genx_av1_hme_and_me_p32_4mv_icllp));
+        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_icllp, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_icllp));
+#if NEWMVPRED
+        programMePu = ReadProgram(device, genx_av1_mepu_icllp, sizeof(genx_av1_mepu_icllp));
+#endif // NEWMVPRED
+        programMd = ReadProgram(device, genx_av1_mode_decision_icllp, sizeof(genx_av1_mode_decision_icllp));
+        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_icllp, sizeof(genx_av1_mode_decision_pass2_icllp));
+
+        if (enableInterp) {
+#if !USE_HWPAK_RESTRICT
+            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_icllp, sizeof(genx_av1_interpolate_decision_icllp));
+#else
+            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_icllp, sizeof(genx_av1_interpolate_decision_single_icllp));
+#endif
+        }
+
+#if GPU_VARTX
+        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_icllp, sizeof(genx_av1_vartx_decision_icllp));
+#endif // GPU_VARTX
+        programAv1Intra = ReadProgram(device, genx_av1_intra_icllp, sizeof(genx_av1_intra_icllp));
+        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_icllp, sizeof(genx_av1_refine_me_p_64x64_icllp));
+        break;
+#endif // ENABLE_ICLLP
+
+#if ENABLE_TGL
+    case PLATFORM_INTEL_TGL:
+        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_tgl, sizeof(genx_av1_prepare_src_tgl));
+        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_tgl, sizeof(genx_av1_hme_and_me_p32_4mv_tgl));
+        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_tgl, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_tgl));
+#if NEWMVPRED
+        programMePu = ReadProgram(device, genx_av1_mepu_tgl, sizeof(genx_av1_mepu_tgl));
+#endif // NEWMVPRED
+        programMd = ReadProgram(device, genx_av1_mode_decision_tgl, sizeof(genx_av1_mode_decision_tgl));
+        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_tgl, sizeof(genx_av1_mode_decision_pass2_tgl));
+
+        if (enableInterp) {
+#if !USE_HWPAK_RESTRICT
+            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_tgl, sizeof(genx_av1_interpolate_decision_tgl));
+#else
+            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_tgl, sizeof(genx_av1_interpolate_decision_single_tgl));
+#endif
+        }
+
+#if GPU_VARTX
+        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_tgl, sizeof(genx_av1_vartx_decision_tgl));
+#endif // GPU_VARTX
+        programAv1Intra = ReadProgram(device, genx_av1_intra_tgl, sizeof(genx_av1_intra_tgl));
+        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_tgl, sizeof(genx_av1_refine_me_p_64x64_tgl));
+        break;
+#endif // ENABLE_TGL
+
+#if ENABLE_TGLLP
+    case PLATFORM_INTEL_TGLLP:
+        programPrepareSrc = ReadProgram(device, genx_av1_prepare_src_tgllp, sizeof(genx_av1_prepare_src_tgllp));
+        programHmeMe32 = ReadProgram(device, genx_av1_hme_and_me_p32_4mv_tgllp, sizeof(genx_av1_hme_and_me_p32_4mv_tgllp));
+        programMe16Refine32x32 = ReadProgram(device, genx_av1_me_p16_4mv_and_refine_32x32_tgllp, sizeof(genx_av1_me_p16_4mv_and_refine_32x32_tgllp));
+#if NEWMVPRED
+        programMePu = ReadProgram(device, genx_av1_mepu_tgllp, sizeof(genx_av1_mepu_tgllp));
+#endif // NEWMVPRED
+        programMd = ReadProgram(device, genx_av1_mode_decision_tgllp, sizeof(genx_av1_mode_decision_tgllp));
+        programMdPass2 = ReadProgram(device, genx_av1_mode_decision_pass2_tgllp, sizeof(genx_av1_mode_decision_pass2_tgllp));
+        if (enableInterp) {
+#if !USE_HWPAK_RESTRICT
+            programInterpDecision = ReadProgram(device, genx_av1_interpolate_decision_tgllp, sizeof(genx_av1_interpolate_decision_tgllp));
+#else
+            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_tgllp, sizeof(genx_av1_interpolate_decision_single_tgllp));
+#endif
+        }
+#if GPU_VARTX
+        programVarTxDecision = ReadProgram(device, genx_av1_vartx_decision_tgllp, sizeof(genx_av1_vartx_decision_tgllp));
+#endif // GPU_VARTX
+        programAv1Intra = ReadProgram(device, genx_av1_intra_tgllp, sizeof(genx_av1_intra_tgllp));
+        programRefine64x64 = ReadProgram(device, genx_av1_refine_me_p_64x64_tgllp, sizeof(genx_av1_refine_me_p_64x64_tgllp));
+        break;
+#endif // ENABLE_TGLLP
+
+    default:
+        throw CmRuntimeError();
+    }
+}
+
+void AV1CmCtx::SetupKernels()
+{
+    for (int32_t i = 0; i < numSlices; i++) {
+        assert(hmeSliceStart[i] % 256 == 0);
+        assert(mdSliceStart[i] % 64 == 0);
+        assert(mdSliceStart[i] % 16 == 0);
+        assert(md2SliceStart[i] % 128 == 0);
+        assert(md2SliceStart[i] % 32 == 0);
+
+        const int32_t hmeTsH   = (hmeSliceStart[i + 1] - hmeSliceStart[i] + 255) / 256;
+        const int32_t me64TsH  = (mdSliceStart[i + 1] - mdSliceStart[i] + 63) / 64;
+        const int32_t me16TsH  = (mdSliceStart[i + 1] - mdSliceStart[i] + 15) / 16;
+        const int32_t mdTsH    = (mdSliceStart[i + 1] - mdSliceStart[i] + 63) / 64;
+        const int32_t md2TsH   = (md2SliceStart[i + 1] - md2SliceStart[i] + 127) / 128;
+        const int32_t ifTsH    = (md2SliceStart[i + 1] - md2SliceStart[i] + 31) / 32;
+        const int32_t intraTsH = (md2SliceStart[i + 1] - md2SliceStart[i] + 31) / 32;
+
+        if (hmeTsH)
+            kernelMe[i].AddKernel(device, programHmeMe32, "HmeMe32", (sourceWidth + 255) / 256, hmeTsH, CM_NONE_DEPENDENCY, false);
+        if (me64TsH)
+            kernelMe[i].AddKernel(device, programRefine64x64, "RefineMeP64x64", (sourceWidth + 63) / 64, me64TsH, CM_NONE_DEPENDENCY, true);
+        if (me16TsH)
+            kernelMe[i].AddKernel(device, programMe16Refine32x32, "Me16AndRefine32x32", (sourceWidth + 15) / 16, me16TsH, CM_NONE_DEPENDENCY, false);
+
+        if (mdTsH)
+            kernelMd[i].AddKernel(device, programMd, "ModeDecision", (sourceWidth + 127) / 128, mdTsH, CM_NONE_DEPENDENCY, true);
+        if (md2TsH)
+            kernelMd[i].AddKernel(device, programMdPass2, "ModeDecisionPass2", (sourceWidth + 63) / 64, md2TsH, CM_NONE_DEPENDENCY, true);
+        if (enableInterp && ifTsH)
+#if USE_HWPAK_RESTRICT
+            kernelMd[i].AddKernel(device, programInterpDecisionSingle, "InterpolateDecisionSingle", (sourceWidth + 31) / 32, ifTsH, CM_NONE_DEPENDENCY, true);
+#else
+            kernelMd[i].AddKernel(device, programInterpDecision, "InterpolateDecision", (sourceWidth + 31) / 32, ifTsH, CM_NONE_DEPENDENCY, true);
+#endif
+
+#if GPU_INTRA_DECISION
+        if (intraTsH)
+            kernelMd[i].AddKernel(device, programAv1Intra, "CheckIntra", (sourceWidth + 31) / 32, intraTsH, CM_NONE_DEPENDENCY, enableInterp ? false : true);
+#endif
+#if GPU_VARTX
+        if(!i)
+            kernelVarTx.AddKernel(device, programVarTxDecision, "VarTxDecision", (sourceWidth + 63) / 64, (sourceHeight + 63) / 64, CM_NONE_DEPENDENCY, false);
+#endif // GPU_VARTX
+    }
+}
+
 mfxStatus AV1CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "AllocateCmResources");
@@ -389,6 +645,14 @@ mfxStatus AV1CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     targetUsage            = param->TargetUsage;
     enableChromaSao        = param->EnableChromaSao;
     enableInterp           = param->InterpFlag;
+    numSlices              = param->NumSlices;
+
+    memcpy(hmeSliceStart, param->HmeSliceStart, sizeof(param->HmeSliceStart[0]) * param->NumSlices);
+    memcpy(mdSliceStart, param->MdSliceStart, sizeof(param->MdSliceStart[0]) * param->NumSlices);
+    memcpy(md2SliceStart, param->Md2SliceStart, sizeof(param->Md2SliceStart)[0] * param->NumSlices);
+    hmeSliceStart[param->NumSlices] = height;
+    mdSliceStart[param->NumSlices] = height;
+    md2SliceStart[param->NumSlices] = height;
 
     /* basic parameter checking */
     if (param->Height == 0 || param->Width == 0 || param->NumRefFrames > MFX_FEI_H265_MAX_NUM_REF_FRAMES || param->NumIntraModes != 1) {
@@ -411,18 +675,18 @@ mfxStatus AV1CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     sourceHeight = height;
 
     /* pad and align to 16 pixels */
-    width32   = UMC::align_value<uint32_t>(width,  32);
-    height32  = UMC::align_value<uint32_t>(height, 32);
-    width     = UMC::align_value<uint32_t>(width,  4);
-    height    = UMC::align_value<uint32_t>(height, 4);
-    width2x   = UMC::align_value<uint32_t>((width  + 1) / 2, 4);
-    height2x  = UMC::align_value<uint32_t>((height + 1) / 2, 4);
-    width4x   = UMC::align_value<uint32_t>((width  + 3) / 4, 4);
-    height4x  = UMC::align_value<uint32_t>((height + 3) / 4, 4);
-    width8x   = UMC::align_value<uint32_t>((width  + 7) / 8, 4);
-    height8x  = UMC::align_value<uint32_t>((height + 7) / 8, 4);
-    width16x  = UMC::align_value<uint32_t>((width  + 15) / 16, 4);
-    height16x = UMC::align_value<uint32_t>((height + 15) / 16, 4);
+    width32   = mfx::align2_value<uint32_t>(width,  32);
+    height32  = mfx::align2_value<uint32_t>(height, 32);
+    width     = mfx::align2_value<uint32_t>(width,  4);
+    height    = mfx::align2_value<uint32_t>(height, 4);
+    width2x   = mfx::align2_value<uint32_t>((width  + 1) / 2, 4);
+    height2x  = mfx::align2_value<uint32_t>((height + 1) / 2, 4);
+    width4x   = mfx::align2_value<uint32_t>((width  + 3) / 4, 4);
+    height4x  = mfx::align2_value<uint32_t>((height + 3) / 4, 4);
+    width8x   = mfx::align2_value<uint32_t>((width  + 7) / 8, 4);
+    height8x  = mfx::align2_value<uint32_t>((height + 7) / 8, 4);
+    width16x  = mfx::align2_value<uint32_t>((width  + 15) / 16, 4);
+    height16x = mfx::align2_value<uint32_t>((height + 15) / 16, 4);
 
     interpWidth  = width/*  + 2*MFX_FEI_H265_INTERP_BORDER*/;
     interpHeight = height/* + 2*MFX_FEI_H265_INTERP_BORDER*/;
@@ -438,122 +702,25 @@ mfxStatus AV1CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
 
     /* set up Cm operations */
     device = CreateCmDevicePtr((MFXCoreInterface *) core);
-    device->InitPrintBuffer(10*1024*1024);
+    //device->InitPrintBuffer(10*1024*1024);
 
     if (!device) {
         //fprintf(stderr, "Error - unsupported GPU\n");
         return MFX_ERR_UNSUPPORTED;
     }
 
-    device->CreateQueue(queue);
-
     GPU_PLATFORM hwType;
     size_t size = sizeof(mfxU32);
     device->GetCaps(CAP_GPU_PLATFORM, size, &hwType);
 
-        switch (hwType)
-        {
-#if defined (CMRT_EMU)
-        case PLATFORM_INTEL_SNB:
-#endif
-        case PLATFORM_INTEL_HSW:
-            //case MFX_HW_HSW_ULT:
-            programPrepareSrc       = ReadProgram(device, genx_av1_prepare_src_hsw, sizeof(genx_av1_prepare_src_hsw));
-            programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_hsw, sizeof(genx_hevce_hme_and_me_p32_4mv_hsw));
-            programMe16Refine32x32  = ReadProgram(device, genx_hevce_me_p16_4mv_and_refine_32x32_hsw, sizeof(genx_hevce_me_p16_4mv_and_refine_32x32_hsw));
-            programMePu             = ReadProgram(device, genx_av1_mepu_hsw, sizeof(genx_av1_mepu_hsw));
-            programMd               = ReadProgram(device, genx_av1_mode_decision_hsw, sizeof(genx_av1_mode_decision_hsw));
-            programMdPass2          = ReadProgram(device, genx_av1_mode_decision_pass2_hsw, sizeof(genx_av1_mode_decision_pass2_hsw));
-            programInterpDecision   = ReadProgram(device, genx_av1_interpolate_decision_hsw, sizeof(genx_av1_interpolate_decision_hsw));
-            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_hsw, sizeof(genx_av1_interpolate_decision_single_hsw));
-            programVarTxDecision    = ReadProgram(device, genx_av1_vartx_decision_hsw, sizeof(genx_av1_vartx_decision_hsw));
-            programAv1Intra         = ReadProgram(device, genx_av1_intra_hsw, sizeof(genx_av1_intra_hsw));
-            programRefine64x64      = ReadProgram(device, genx_hevce_refine_me_p_64x64_hsw, sizeof(genx_hevce_refine_me_p_64x64_hsw));
-            break;
-        case PLATFORM_INTEL_BDW:
-        case PLATFORM_INTEL_CHV:
-            //case MFX_HW_CHV:
-            programPrepareSrc       = ReadProgram(device, genx_av1_prepare_src_bdw, sizeof(genx_av1_prepare_src_bdw));
-            programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_bdw, sizeof(genx_hevce_hme_and_me_p32_4mv_bdw));
-            programMe16Refine32x32  = ReadProgram(device, genx_hevce_me_p16_4mv_and_refine_32x32_bdw, sizeof(genx_hevce_me_p16_4mv_and_refine_32x32_bdw));
-            programMePu             = ReadProgram(device, genx_av1_mepu_bdw, sizeof(genx_av1_mepu_bdw));
-            programMd               = ReadProgram(device, genx_av1_mode_decision_bdw, sizeof(genx_av1_mode_decision_bdw));
-            programMdPass2          = ReadProgram(device, genx_av1_mode_decision_pass2_bdw, sizeof(genx_av1_mode_decision_pass2_bdw));
-            programInterpDecision   = ReadProgram(device, genx_av1_interpolate_decision_bdw, sizeof(genx_av1_interpolate_decision_bdw));
-            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_bdw, sizeof(genx_av1_interpolate_decision_single_bdw));
-            programVarTxDecision    = ReadProgram(device, genx_av1_vartx_decision_bdw, sizeof(genx_av1_vartx_decision_bdw));
-            programAv1Intra         = ReadProgram(device, genx_av1_intra_bdw, sizeof(genx_av1_intra_bdw));
-            programRefine64x64      = ReadProgram(device, genx_hevce_refine_me_p_64x64_bdw, sizeof(genx_hevce_refine_me_p_64x64_bdw));
-            break;
-        case PLATFORM_INTEL_SKL:
-        case PLATFORM_INTEL_KBL:
-        case PLATFORM_INTEL_GLK:
-        case PLATFORM_INTEL_CFL:
-        case PLATFORM_INTEL_BXT:
-            programPrepareSrc       = ReadProgram(device, genx_av1_prepare_src_skl, sizeof(genx_av1_prepare_src_skl));
-            programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_skl, sizeof(genx_hevce_hme_and_me_p32_4mv_skl));
-            programMe16Refine32x32  = ReadProgram(device, genx_hevce_me_p16_4mv_and_refine_32x32_skl, sizeof(genx_hevce_me_p16_4mv_and_refine_32x32_skl));
-            programMePu             = ReadProgram(device, genx_av1_mepu_skl, sizeof(genx_av1_mepu_skl));
-            programMd               = ReadProgram(device, genx_av1_mode_decision_skl, sizeof(genx_av1_mode_decision_skl));
-            programMdPass2          = ReadProgram(device, genx_av1_mode_decision_pass2_skl, sizeof(genx_av1_mode_decision_pass2_skl));
-            programInterpDecision   = ReadProgram(device, genx_av1_interpolate_decision_skl, sizeof(genx_av1_interpolate_decision_skl));
-            programInterpDecisionSingle = ReadProgram(device, genx_av1_interpolate_decision_single_skl, sizeof(genx_av1_interpolate_decision_single_skl));
-            programVarTxDecision    = ReadProgram(device, genx_av1_vartx_decision_skl, sizeof(genx_av1_vartx_decision_skl));
-            programAv1Intra         = ReadProgram(device, genx_av1_intra_skl, sizeof(genx_av1_intra_skl));
-            programRefine64x64      = ReadProgram(device, genx_hevce_refine_me_p_64x64_skl, sizeof(genx_hevce_refine_me_p_64x64_skl));
-            break;
-        default:
-            return MFX_ERR_UNSUPPORTED;
-        }
+    if (hwType == PLATFORM_INTEL_ICLLP)
+        device->CreateQueueEx(queue, CM_VME_QUEUE_CREATE_OPTION);
+    else
+        device->CreateQueue(queue);
 
+    LoadPrograms(hwType);
 
-    /* create Cm kernels */
-    kernelMe.AddKernel(device, programHmeMe32, "HmeMe32",
-        (width16x + 15) / 16, (height16x + 15) / 16, CM_NONE_DEPENDENCY);
-    kernelMe.AddKernel(device, programRefine64x64, "RefineMeP64x64",
-        (width4x + 15) / 16, (height4x + 15) / 16, CM_NONE_DEPENDENCY, true);
-
-    if ((width + 15) / 16 > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {  // split into 2 parts
-        mfxU32 width0 = ((width / 16) >> 1) & ~1;  // must be even for 32x32 blocks
-        kernelMe.AddKernel(device, programMe16Refine32x32, "Me16AndRefine32x32",
-            width0, height / 16, CM_NONE_DEPENDENCY, false);
-        kernelMe.AddKernel(device, programMe16Refine32x32, "Me16AndRefine32x32",
-            (width / 16) - width0, height / 16, CM_NONE_DEPENDENCY, false);
-    } else {
-        kernelMe.AddKernel(device, programMe16Refine32x32, "Me16AndRefine32x32",
-            (width + 15) / 16, (height + 15) / 16, CM_NONE_DEPENDENCY, false);
-    }
-
-
-    const int32_t tileWidth = 64;
-    const int32_t tileHeight = 64;
-    const int32_t mdTileCols = (sourceWidth + tileWidth - 1) / tileWidth;
-    const int32_t mdTileCols1x2 = (sourceWidth + (tileWidth * 2) - 1) / (tileWidth * 2);
-    const int32_t mdTileRows = (sourceHeight + tileHeight - 1) / tileHeight;
-    const int32_t mdTileRows2x1 = (sourceHeight + (tileHeight * 2) - 1) / (tileHeight * 2);
-    const int32_t ifTileCols = (sourceWidth + 31) / 32;
-    const int32_t ifTileRows = (sourceHeight + 31) / 32;
-    const int32_t vartxTileCols = (sourceWidth + 63) / 64;
-    const int32_t vartxTileRows = (sourceHeight + 63) / 64;
-    kernelMePu.AddKernel(device, programMePu, "MePuGacc8x8And16x16", (width + 15) / 16, (height + 15) / 16, CM_NONE_DEPENDENCY, false);
-    kernelMePu.AddKernel(device, programMePu, "MePuGacc32x32", (width + 31) / 32, (height + 31) / 32, CM_NONE_DEPENDENCY, false);
-    kernelMePu.AddKernel(device, programMePu, "MePuGacc64x64", (width + 63) / 64, (height + 63) / 64, CM_NONE_DEPENDENCY, false);
-    kernelMd.AddKernel(device, programMd, "ModeDecision", mdTileCols1x2, mdTileRows, CM_NONE_DEPENDENCY, true);
-
-    kernelMd.AddKernel(device, programMdPass2, "ModeDecisionPass2", mdTileCols, mdTileRows2x1, CM_NONE_DEPENDENCY, true);
-#if USE_HWPAK_RESTRICT
-    kernelMd.AddKernel(device, programInterpDecisionSingle, "InterpolateDecisionSingle", ifTileCols, ifTileRows, CM_NONE_DEPENDENCY, true);
-#else
-    kernelMd.AddKernel(device, programInterpDecision, "InterpolateDecision", ifTileCols, ifTileRows, CM_NONE_DEPENDENCY, true);
-#endif
-
-
-//#if GPU_INTRA_DECISION
-    const int32_t intraTileCols = (sourceWidth + 31) >> 5;
-    const int32_t intraTileRows = (sourceHeight + 31) >> 5;
-    kernelMd.AddKernel(device, programAv1Intra, "CheckIntra", intraTileCols, intraTileRows, CM_NONE_DEPENDENCY, false);
-//#endif
-    kernelVarTx.AddKernel(device, programVarTxDecision, "VarTxDecision", vartxTileCols, vartxTileRows, CM_NONE_DEPENDENCY, false);
+    SetupKernels();
 
     const char *prepareSrcName = fourcc == MFX_FOURCC_NV12 ? "PrepareSrcNv12" :
                                  fourcc == MFX_FOURCC_NV16 ? "PrepareSrcNv16" :
@@ -562,29 +729,20 @@ mfxStatus AV1CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     kernelPrepareSrc.AddKernel(device, programPrepareSrc,
         prepareSrcName, width16x / 4, height16x, CM_NONE_DEPENDENCY);
 
-    curbe = CreateBuffer(device, sizeof(H265EncCURBEData));
-    H265EncCURBEData curbeData = {};
-    SetCurbeData(curbeData, MFX_FRAMETYPE_P, 26, width, height);
-    curbeData.PictureHeightMinusOne = height / 16 - 1;
-    curbeData.SliceHeightMinusOne   = height / 16 - 1;
-    curbeData.PictureWidth          = width  / 16;
-    curbeData.Log2MvScaleFactor     = 0;
-    curbeData.Log2MbScaleFactor     = 1;
-    curbeData.SubMbPartMask         = 0x7e;
-    curbeData.InterSAD              = 2;
-    curbeData.IntraSAD              = 2;
-    curbe->WriteSurface((mfxU8 *)&curbeData, NULL);
 
     // allocate single surface to store intermedia data in MePuGaccc64x64
     int32_t widthInCtbs  = (width + param->MaxCUSize - 1) / param->MaxCUSize;
     int32_t heightInCtbs = (height+ param->MaxCUSize - 1) / param->MaxCUSize;
     mePuScratchPad = CreateSurface(device, widthInCtbs * 64, heightInCtbs * 64 * 2, CM_SURFACE_FORMAT_A8);
 
+#if NEWMVPRED
     newMvPred[0] = CreateSurface(device, widthInCtbs * 64, heightInCtbs * 64, CM_SURFACE_FORMAT_A8);
     newMvPred[1] = CreateSurface(device, widthInCtbs * 64, heightInCtbs * 64, CM_SURFACE_FORMAT_A8);
     newMvPred[2] = CreateSurface(device, widthInCtbs * 64, heightInCtbs * 64, CM_SURFACE_FORMAT_A8);
     newMvPred[3] = CreateSurface(device, widthInCtbs * 64, heightInCtbs * 64, CM_SURFACE_FORMAT_A8);
-
+#else
+    newMvPred[0] = newMvPred[1] = newMvPred[2] = newMvPred[3] = mePuScratchPad;
+#endif
     return MFX_ERR_NONE;
 }
 
@@ -593,12 +751,13 @@ void AV1CmCtx::FreeCmResources()
 {
     //device->FlushPrintBuffer();
 
-    device->DestroySurface(curbe);
     device->DestroySurface(mePuScratchPad);
+#if NEWMVPRED
     device->DestroySurface(newMvPred[0]);
     device->DestroySurface(newMvPred[1]);
     device->DestroySurface(newMvPred[2]);
     device->DestroySurface(newMvPred[3]);
+#endif
 
     if (lastEventSaved != NULL && lastEventSaved != CM_NO_EVENT)
         queue->DestroyEvent(lastEventSaved);
@@ -610,22 +769,38 @@ void AV1CmCtx::FreeCmResources()
     kernelRefine32x32sad.Destroy();
     kernelInterpolateFrame.Destroy();
 
-    kernelMe.Destroy();
-    kernelMd.Destroy();
+    for (int32_t i = 0; i < numSlices; i++) {
+        kernelMe[i].Destroy();
+        kernelMd[i].Destroy();
+    }
+
+#if GPU_VARTX
     kernelVarTx.Destroy();
+#endif // GPU_VARTX
+#if NEWMVPRED
     kernelMePu.Destroy();
+#endif
     kernelDeblock.Destroy();
     kernelFullPostProc.Destroy();
 
     device->DestroyProgram(programPrepareSrc);
     device->DestroyProgram(programHmeMe32);
     device->DestroyProgram(programMe16Refine32x32);
+#if NEWMVPRED
     device->DestroyProgram(programMePu);
+#endif
     device->DestroyProgram(programMd);
     device->DestroyProgram(programMdPass2);
+
+#if !USE_HWPAK_RESTRICT
     device->DestroyProgram(programInterpDecision);
+#else
     device->DestroyProgram(programInterpDecisionSingle);
+#endif
+
+#if GPU_VARTX
     device->DestroyProgram(programVarTxDecision);
+#endif // GPU_VARTX
     device->DestroyProgram(programAv1Intra);
     device->DestroyProgram(programRefine64x64);
 
@@ -647,8 +822,8 @@ mfxStatus AV1CmCtx::CopyInputFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *in
     CmSurface2D *x16 = surf->bufDown16x;
     mfxU32 copyChroma = in->copyArgs.copyChroma;
 
-    mfxU32 paddingLu = UMC::align_value<uint32_t>(padding<<bppShift,64)>>bppShift;
-    mfxU32 paddingCh = UMC::align_value<uint32_t>(paddingChroma<<bppShift,64)>>bppShift;
+    mfxU32 paddingLu = mfx::align2_value<uint32_t>(padding<<bppShift,64)>>bppShift;
+    mfxU32 paddingCh = mfx::align2_value<uint32_t>(paddingChroma<<bppShift,64)>>bppShift;
 
     SetKernelArg(kernelPrepareSrc.kernel, inLu, inCh, x1, x2, x4, x8, x16, paddingLu, paddingCh, copyChroma);
     kernelPrepareSrc.Enqueue(queue, *lastEvent);
@@ -658,42 +833,19 @@ mfxStatus AV1CmCtx::CopyInputFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *in
 /* copy new recon frame to GPU (original and downsampled if needed) */
 mfxStatus AV1CmCtx::CopyReconFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *in)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "CopyReconAndInterp");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "CopyRecon");
     CmSurface2DUP *inLu = ((mfxFEIH265Surface *)in->copyArgs.surfSys)->sUp.luma;
     CmSurface2DUP *inCh = ((mfxFEIH265Surface *)in->copyArgs.surfSys)->sUp.chroma;
     mfxFEIH265ReconSurface *surf = &((mfxFEIH265Surface *)in->copyArgs.surfVid)->sRec;
     CmSurface2D *dummy = surf->bufOrigNv12;
     if (fourcc == MFX_FOURCC_NV12)
-        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, UMC::align_value<int32_t>(padding<<bppShift,64)>>bppShift, UMC::align_value<int32_t>(paddingChroma<<bppShift,64)>>bppShift, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, mfx::align2_value<int32_t>(padding<<bppShift,64)>>bppShift, mfx::align2_value<int32_t>(paddingChroma<<bppShift,64)>>bppShift, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     else if (fourcc == MFX_FOURCC_NV16)
-        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, UMC::align_value<int32_t>(padding<<bppShift,64)>>bppShift, UMC::align_value<int32_t>(paddingChroma<<bppShift,64)>>bppShift, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, mfx::align2_value<int32_t>(padding<<bppShift,64)>>bppShift, mfx::align2_value<int32_t>(paddingChroma<<bppShift,64)>>bppShift, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     else if (fourcc == MFX_FOURCC_P010)
-        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, UMC::align_value<int32_t>(padding<<bppShift,64)>>bppShift, UMC::align_value<int32_t>(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, mfx::align2_value<int32_t>(padding<<bppShift,64)>>bppShift, mfx::align2_value<int32_t>(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     else if (fourcc == MFX_FOURCC_P210)
-        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, UMC::align_value<int32_t>(padding<<bppShift,64)>>bppShift, UMC::align_value<int32_t>(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
-
-    if (enableInterp) {
-        // coupling of interp
-        if (interpBlocksW > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
-            mfxU32 nW = (interpBlocksW / 2 > CM_MAX_THREADSPACE_WIDTH_FOR_MW) ? 3 : 2;
-            mfxU32 nH = (interpBlocksH > CM_MAX_THREADSPACE_HEIGHT_FOR_MW) ? 2 : 1;
-            mfxU32 wStep = interpBlocksW / nW;
-            mfxU32 hStep = interpBlocksH / nH;
-            mfxU32 iker = 1;
-            for (mfxU32 j = 0; j < nH - 1; j++) {
-                for (mfxU32 i = 0; i < nW - 1; i++) {
-                    SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, i * wStep, j * hStep);
-                }
-                SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, (nW - 1) * wStep, j * hStep);
-            }
-            for (mfxU32 i = 0; i < nW - 1; i++) {
-                    SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, i * wStep, (nH - 1) * hStep);
-            }
-            SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, (nW - 1) * wStep, (nH - 1) * hStep);
-        } else {
-            SetKernelArg(kernelPrepareRef.m_kernel[1], surf->bufOrigNv12, surf->bufInterpMerged, 0, 0);
-        }
-    }
+        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, mfx::align2_value<int32_t>(padding<<bppShift,64)>>bppShift, mfx::align2_value<int32_t>(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
 
     kernelPrepareRef.Enqueue(queue, *lastEvent);
     return MFX_ERR_NONE;
@@ -735,15 +887,6 @@ void * AV1CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         kernelGradient.Enqueue(queue, lastEvent);
     }
 
-    //if ((feiIn->FEIOp & MFX_FEI_H265_OP_INTRA_DIST) && (feiIn->FrameType == MFX_FRAMETYPE_P || feiIn->FrameType == MFX_FRAMETYPE_B)) {
-    //    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "IntraDist");
-    //    mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->meArgs.surfSrc)->sIn;
-    //    SurfaceIndex *refsIntra = CreateVmeSurfaceG75(device, surfIn->bufOrigNv12, 0, 0, 0, 0);
-    //    SetKernelArg(kernelMeIntra.kernel, curbe, *refsIntra, surfIn->bufOrigNv12, GET_OUTSURF(feiOut->SurfIntraDist));
-    //    kernelMeIntra.Enqueue(queue, lastEvent);
-    //    device->DestroyVmeSurfaceG7_5(refsIntra);
-    //}
-
     if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME)) {
         data[MFX_FEI_H265_BLK_64x64] = GET_OUTSURF(feiOut->SurfInterData[MFX_FEI_H265_BLK_64x64]);
         data[MFX_FEI_H265_BLK_32x16] = GET_OUTSURF(feiOut->SurfInterData[rectParts ? MFX_FEI_H265_BLK_32x16 : MFX_FEI_H265_BLK_32x32]);
@@ -770,22 +913,30 @@ void * AV1CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
             meControl->WriteSurface((mfxU8 *)&control, NULL);
             surfIn->meControlInited = true;
             surfIn->lambda = feiIn->meArgs.lambda;
+            surfIn->global_mvy = feiIn->meArgs.global_mvy;
         }
 
-        SetKernelArg(kernelMe.m_kernel[0], meControl, *refs16x, *refs8x, *refs4x, *refs2x,
-            data[MFX_FEI_H265_BLK_64x64], data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16]);
-        SetKernelArg(kernelMe.m_kernel[1], data[MFX_FEI_H265_BLK_64x64], surfIn->bufOrigNv12, surfRef->bufOrigNv12);
-        if (width / 16 > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {  // split into 2 parts
-            SetKernelArg(kernelMe.m_kernel[2], meControl, *refs, data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
-                data[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12, 0, 0);
-            mfxU32 startMbX = ((width / 16) >> 1) & ~1;  // must be even for 32x32 blocks
-            SetKernelArg(kernelMe.m_kernel[3], meControl, *refs, data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
-                data[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12, startMbX, 0);
-        } else {
-            SetKernelArg(kernelMe.m_kernel[2], meControl, *refs, data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
-                data[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12, 0, 0);
-        }
-        kernelMe.Enqueue(queue, lastEvent);
+        const int32_t glob_mvy = feiIn->meArgs.global_mvy;
+        const int32_t sliceIdx = feiIn->meArgs.sliceIdx;
+
+        int32_t kidx = 0;
+
+        if (hmeSliceStart[sliceIdx] < hmeSliceStart[sliceIdx + 1])
+            SetKernelArg(
+                kernelMe[sliceIdx].m_kernel[kidx++], meControl, *refs16x, *refs8x, *refs4x, *refs2x, data[MFX_FEI_H265_BLK_64x64],
+                data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16], glob_mvy, hmeSliceStart[sliceIdx] / 256);
+
+        if (mdSliceStart[sliceIdx] < mdSliceStart[sliceIdx + 1])
+            SetKernelArg(
+                kernelMe[sliceIdx].m_kernel[kidx++], data[MFX_FEI_H265_BLK_64x64], surfIn->bufOrigNv12, surfRef->bufOrigNv12, mdSliceStart[sliceIdx] / 64);
+
+        if (mdSliceStart[sliceIdx] < mdSliceStart[sliceIdx + 1])
+            SetKernelArg(
+                kernelMe[sliceIdx].m_kernel[kidx++], meControl, *refs, data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
+                data[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12, glob_mvy, 0, mdSliceStart[sliceIdx] / 16);
+
+        if (kidx > 0)
+            kernelMe[sliceIdx].Enqueue(queue, lastEvent);
 
         device->DestroyVmeSurfaceG7_5(refs);
         device->DestroyVmeSurfaceG7_5(refs16x);
@@ -802,18 +953,28 @@ void * AV1CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         CmBuffer *mdControl = ((mfxFEIH265Surface *)feiIn->mdArgs.surfSrc)->sIn.mdControl;
         CmSurface2DUP *mi1 = ((mfxFEIH265Surface *)feiIn->mdArgs.modeInfo1)->sOut.bufOut;
         CmSurface2DUP *mi2 = ((mfxFEIH265Surface *)feiIn->mdArgs.modeInfo2)->sOut.bufOut;
-        CmSurface2DUP *Rs8 = ((mfxFEIH265Surface *)feiIn->mdArgs.Rs8)->sOut.bufOut;
-        CmSurface2DUP *Cs8 = ((mfxFEIH265Surface *)feiIn->mdArgs.Cs8)->sOut.bufOut;
-        CmSurface2DUP *Rs16 = ((mfxFEIH265Surface *)feiIn->mdArgs.Rs16)->sOut.bufOut;
-        CmSurface2DUP *Cs16 = ((mfxFEIH265Surface *)feiIn->mdArgs.Cs16)->sOut.bufOut;
-        CmSurface2DUP *Rs32 = ((mfxFEIH265Surface *)feiIn->mdArgs.Rs32)->sOut.bufOut;
-        CmSurface2DUP *Cs32 = ((mfxFEIH265Surface *)feiIn->mdArgs.Cs32)->sOut.bufOut;
-        CmSurface2DUP *Rs64 = ((mfxFEIH265Surface *)feiIn->mdArgs.Rs64)->sOut.bufOut;
-        CmSurface2DUP *Cs64 = ((mfxFEIH265Surface *)feiIn->mdArgs.Cs64)->sOut.bufOut;
+        CmSurface2DUP *Rs8 = ((mfxFEIH265Surface *)feiIn->mdArgs.Rs[0])->sOut.bufOut;
+        CmSurface2DUP *Cs8 = ((mfxFEIH265Surface *)feiIn->mdArgs.Cs[0])->sOut.bufOut;
+        CmSurface2DUP *Rs16 = ((mfxFEIH265Surface *)feiIn->mdArgs.Rs[1])->sOut.bufOut;
+        CmSurface2DUP *Cs16 = ((mfxFEIH265Surface *)feiIn->mdArgs.Cs[1])->sOut.bufOut;
+        CmSurface2DUP *Rs32 = ((mfxFEIH265Surface *)feiIn->mdArgs.Rs[2])->sOut.bufOut;
+        CmSurface2DUP *Cs32 = ((mfxFEIH265Surface *)feiIn->mdArgs.Cs[2])->sOut.bufOut;
+        CmSurface2DUP *Rs64 = ((mfxFEIH265Surface *)feiIn->mdArgs.Rs[3])->sOut.bufOut;
+        CmSurface2DUP *Cs64 = ((mfxFEIH265Surface *)feiIn->mdArgs.Cs[3])->sOut.bufOut;
+
         CmSurface2DUP *recLu = ((mfxFEIH265Surface *)feiIn->mdArgs.surfReconSys)->sUp.luma;
         CmSurface2DUP *recCh = ((mfxFEIH265Surface *)feiIn->mdArgs.surfReconSys)->sUp.chroma;
-        CmBufferUP *varTxInfo = ((mfxFEIH265Surface *)feiIn->mdArgs.varTxInfo)->sBuf.bufOut;
 
+        int32_t paddingAligned = (mfxI32)mfx::align2_value<int32_t>(padding, 64);
+
+#if GPU_VARTX
+        CmBufferUP *varTxInfo = ((mfxFEIH265Surface *)feiIn->mdArgs.varTxInfo)->sBuf.bufOut;
+        CmBufferUP *coefs = ((mfxFEIH265Surface *)feiIn->mdArgs.coefs)->sBuf.bufOut;
+        CmBufferUP *prevAdz = ((mfxFEIH265Surface *)feiIn->mdArgs.prevAdz)->sBuf.bufOut;
+        CmBufferUP *currAdz = ((mfxFEIH265Surface *)feiIn->mdArgs.currAdz)->sBuf.bufOut;
+        CmBufferUP *prevAdzDelta = ((mfxFEIH265Surface *)feiIn->mdArgs.prevAdzDelta)->sBuf.bufOut;
+        CmBufferUP *currAdzDelta = ((mfxFEIH265Surface *)feiIn->mdArgs.currAdzDelta)->sBuf.bufOut;
+#endif // GPU_VARTX
         CmSurface2D *interp8x8   = newMvPred[0];
         CmSurface2D *interp16x16 = newMvPred[1];
         CmSurface2D *interp32x32 = newMvPred[2];
@@ -829,9 +990,15 @@ void * AV1CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         CmSurface2DUP *ref1MeData32x32 = ((mfxFEIH265Surface *)feiIn->mdArgs.surfInterData1[2])->sOut.bufOut;
         CmSurface2DUP *ref1MeData64x64 = ((mfxFEIH265Surface *)feiIn->mdArgs.surfInterData1[3])->sOut.bufOut;
 
-        const mfxU32 compoundAllowed = feiIn->mdArgs.compoundAllowed;
+        const mfxU32 refConfig = feiIn->mdArgs.refConfig;
+        const mfxU32 sliceIdx = feiIn->mdArgs.sliceIdx;
 
-        vector<SurfaceIndex,7> refsAndPreds;
+        const mfxU32 miCols = ((MdControl*)feiIn->mdArgs.param)->miCols;
+        const mfxU32 miRows = ((MdControl*)feiIn->mdArgs.param)->miRows;
+        const mfxU32 lambda = (((MdControl*)feiIn->mdArgs.param)->lambdaInt + 2) >> 2;
+        const mfxU32 intraEarlyExit = (feiIn->IsRef) ? 0 : 1;
+
+        vector<SurfaceIndex,8> refsAndPreds;
         refsAndPreds[0] = GetIndex(ref0);
         refsAndPreds[1] = GetIndex(ref1);
         refsAndPreds[2] = GetIndex(interp8x8);
@@ -839,6 +1006,7 @@ void * AV1CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         refsAndPreds[4] = GetIndex(interp32x32);
         refsAndPreds[5] = GetIndex(interp64x64);
         refsAndPreds[6] = GetIndex(mePuScratchPad);
+        refsAndPreds[7] = refsAndPreds[6];
 
         vector<SurfaceIndex,8> meData;
         meData[0] = GetIndex(ref0MeData8x8);
@@ -863,11 +1031,15 @@ void * AV1CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         RsCs[5] = GetIndex(Cs32);
         RsCs[6] = GetIndex(Rs64);
         RsCs[7] = GetIndex(Cs64);
-        vector<SurfaceIndex, 4> RsCs3264;
-        RsCs3264[0] = GetIndex(Rs32);
-        RsCs3264[1] = GetIndex(Cs32);
-        RsCs3264[2] = GetIndex(Rs64);
-        RsCs3264[3] = GetIndex(Cs64);
+        vector<SurfaceIndex, 8> RsCs163264;
+        RsCs163264[0] = GetIndex(Rs16);
+        RsCs163264[1] = GetIndex(Cs16);
+        RsCs163264[2] = GetIndex(Rs32);
+        RsCs163264[3] = GetIndex(Cs32);
+        RsCs163264[4] = GetIndex(Rs64);
+        RsCs163264[5] = GetIndex(Cs64);
+        RsCs163264[6] = RsCs163264[5];
+        RsCs163264[7] = RsCs163264[5];
 
         mdControl->WriteSurface(feiIn->mdArgs.param, nullptr);
 
@@ -877,79 +1049,67 @@ void * AV1CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
 
         mfxU32 SliceQpY = feiIn->SliceQpY;
         mfxU32 qpLayer = (feiIn->SliceQpY<<2) + feiIn->PyramidLayer;
-        mfxU32 PyramidLayer = feiIn->PyramidLayer;
         mfxU32 TemporalSync = feiIn->TemporalSync;
+        mfxU32 PyramidLayer = feiIn->PyramidLayer;
 
-        SetKernelArg(kernelMePu.m_kernel[0], src, ref0, ref1, ref0MeData8x8, ref1MeData8x8, ref0MeData16x16, ref1MeData16x16, interp8x8, interp16x16, compoundAllowed);
-        SetKernelArg(kernelMePu.m_kernel[1], src, ref0, ref1, ref0MeData32x32, ref1MeData32x32, interp32x32, compoundAllowed);
-        SetKernelArg(kernelMePu.m_kernel[2], src, ref0, ref1, ref0MeData64x64, ref1MeData64x64, interp64x64, compoundAllowed, mePuScratchPad);
+        if (feiIn->FrameType == MFX_FRAMETYPE_P && PyramidLayer > 0 && !feiIn->IsRef)
+            PyramidLayer = 3; // for try intra
+
+#if NEWMVPRED
+        SetKernelArg(kernelMePu.m_kernel[0], src, ref0, ref1, ref0MeData8x8, ref1MeData8x8, ref0MeData16x16, ref1MeData16x16, interp8x8, interp16x16, refConfig);
+        SetKernelArg(kernelMePu.m_kernel[1], src, ref0, ref1, ref0MeData32x32, ref1MeData32x32, interp32x32, refConfig);
+        SetKernelArg(kernelMePu.m_kernel[2], src, ref0, ref1, ref0MeData64x64, ref1MeData64x64, interp64x64, refConfig, mePuScratchPad);
         kernelMePu.Enqueue(queue, CM_NO_EVENT);
-        SetKernelArg(kernelMd.m_kernel[0], mdControl, src, refsAndPreds, meData, mi1, RsCs3264, qpLayer);
-#if 1
-        //TRYINTRA_ORIG
-        SetKernelArg(kernelMd.m_kernel[1], mdControl, src, refsAndPreds, mi, RsCs, SliceQpY, PyramidLayer, TemporalSync, meData);
-#else
-        SetKernelArg(kernelMd.m_kernel[1], mdControl, src, refsAndPreds, mi, RsCs, SliceQpY, PyramidLayer, TemporalSync);
 #endif
-        SetKernelArg(kernelMd.m_kernel[2], mdControl, src, refsAndPreds, mi2, recLu, recCh, (mfxI32)UMC::align_value<int32_t>(padding, 64));
 
-//#if GPU_INTRA_DECISION
-        const mfxU32 miCols = ((MdControl*)feiIn->mdArgs.param)->miCols;
-        const mfxU32 miRows = ((MdControl*)feiIn->mdArgs.param)->miRows;
-        const mfxU32 lambda = (((MdControl*)feiIn->mdArgs.param)->lambdaInt + 2) >> 2;
-        const mfxU32 earlyExit = (feiIn->IsRef) ? 0 : 1;
-        SetKernelArg(kernelMd.m_kernel[3], src, mi2, miCols, miRows, lambda, earlyExit);
-//#endif
-        kernelMd.Enqueue(queue, CM_NO_EVENT);
+        int32_t kidx = 0;
 
-        SetKernelArg(kernelVarTx.m_kernel[0], mdControl, src, recLu, mi2, mePuScratchPad, varTxInfo, (mfxI32)UMC::align_value<int32_t>(padding, 64));
-        kernelVarTx.Enqueue(queue, lastEvent);
+        if (mdSliceStart[sliceIdx] < mdSliceStart[sliceIdx + 1])
+            SetKernelArg(kernelMd[sliceIdx].m_kernel[kidx++], mdControl, src, refsAndPreds, meData, mi1, RsCs163264, qpLayer + ((mdSliceStart[sliceIdx] / 64) << 16));
+
+        if (md2SliceStart[sliceIdx] < md2SliceStart[sliceIdx + 1])
+            SetKernelArg(kernelMd[sliceIdx].m_kernel[kidx++], mdControl, src, refsAndPreds, mi, RsCs, SliceQpY, PyramidLayer, TemporalSync, meData, md2SliceStart[sliceIdx] / 128);
+
+        if (enableInterp && md2SliceStart[sliceIdx] < md2SliceStart[sliceIdx + 1])
+            SetKernelArg(kernelMd[sliceIdx].m_kernel[kidx++], mdControl, src, refsAndPreds, mi2, recLu, recCh, paddingAligned, md2SliceStart[sliceIdx] / 32);
+
+#if GPU_INTRA_DECISION
+        if (md2SliceStart[sliceIdx] < md2SliceStart[sliceIdx + 1])
+            SetKernelArg(kernelMd[sliceIdx].m_kernel[kidx++], src, mi2, miCols, miRows, lambda, intraEarlyExit, md2SliceStart[sliceIdx] / 32);
+#endif
+
+#if GPU_VARTX
+        if (mdSliceStart[sliceIdx + 1] == height) {
+            kernelMd[sliceIdx].Enqueue(queue, CM_NO_EVENT);
+            SetKernelArg(kernelVarTx.m_kernel[0], mdControl, src, recLu, mi2, mePuScratchPad, coefs, varTxInfo,
+                prevAdz, prevAdzDelta, currAdz, currAdzDelta, paddingAligned);
+            kernelVarTx.Enqueue(queue, lastEvent);
+        }
+        else {
+            kernelMd[sliceIdx].Enqueue(queue, lastEvent);
+        }
+#else // GPU_VARTX
+        if (kidx > 0)
+            kernelMd[sliceIdx].Enqueue(queue, lastEvent);
+
+        //if (lastEvent->WaitForTaskFinished() != CM_SUCCESS)
+        //    printf("WaitForTaskFinished failed\n");
+        //uint64_t time = uint64_t(-1);
+        //if (lastEvent->GetExecutionTime(time) == CM_SUCCESS)
+        //    fprintf(stderr, "%u: time=%.3f ms\n", sliceIdx, time / 1000000.0);
 
         //if (lastEvent->WaitForTaskFinished() != CM_SUCCESS)
         //    printf("WaitForTaskFinished failed\n");
         //if (device->FlushPrintBuffer() != CM_SUCCESS)
         //    printf("FlushPrintBuffer failed\n");
-    }
 
-    /* bi-refinement */
-    if (feiIn->FEIOp & MFX_FEI_H265_OP_BIREFINE) {
-
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "  Biref");
-        mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->birefArgs.surfSrc)->sIn;
-        mfxFEIH265ReconSurface *surfRef0 = &((mfxFEIH265Surface *)feiIn->birefArgs.surfRef0)->sRec;
-        mfxFEIH265ReconSurface *surfRef1 = &((mfxFEIH265Surface *)feiIn->birefArgs.surfRef1)->sRec;
-
-        CmSurface2DUP *birefdata[MFX_FEI_H265_BLK_MAX];
-        birefdata[MFX_FEI_H265_BLK_64x64] = GET_OUTSURF(feiOut->SurfBirefData[MFX_FEI_H265_BLK_64x64]);
-        birefdata[MFX_FEI_H265_BLK_32x32] = GET_OUTSURF(feiOut->SurfBirefData[MFX_FEI_H265_BLK_32x32]);
-
-        mfxFEIOptParamsBiref *optParams = (mfxFEIOptParamsBiref *)(feiIn->birefArgs.params);
-        CmSurface2DUP *dataRef0[MFX_FEI_H265_BLK_MAX], *dataRef1[MFX_FEI_H265_BLK_MAX];
-        dataRef0[MFX_FEI_H265_BLK_32x32] = GET_OUTSURF(optParams->InterDataRef0[MFX_FEI_H265_BLK_32x32]);
-        dataRef0[MFX_FEI_H265_BLK_64x64] = GET_OUTSURF(optParams->InterDataRef0[MFX_FEI_H265_BLK_64x64]);
-        dataRef1[MFX_FEI_H265_BLK_32x32] = GET_OUTSURF(optParams->InterDataRef1[MFX_FEI_H265_BLK_32x32]);
-        dataRef1[MFX_FEI_H265_BLK_64x64] = GET_OUTSURF(optParams->InterDataRef1[MFX_FEI_H265_BLK_64x64]);
-
-        vector<SurfaceIndex, 1> surfsRef0;
-        surfsRef0[0] = GetIndex(surfRef0->bufInterpMerged);
-
-        vector<SurfaceIndex, 1> surfsRef1;
-        surfsRef1[0] = GetIndex(surfRef1->bufInterpMerged);
-
-        SetKernelArg(kernelBiRefine.m_kernel[0], birefdata[MFX_FEI_H265_BLK_32x32], surfIn->bufOrigNv12,
-            surfsRef0, surfsRef1, dataRef0[MFX_FEI_H265_BLK_32x32], dataRef1[MFX_FEI_H265_BLK_32x32]);
-
-        SetKernelArg(kernelBiRefine.m_kernel[1], birefdata[MFX_FEI_H265_BLK_64x64], surfIn->bufOrigNv12,
-            surfsRef0, surfsRef1, dataRef0[MFX_FEI_H265_BLK_64x64], dataRef1[MFX_FEI_H265_BLK_64x64]);
-
-        kernelBiRefine.Enqueue(queue, lastEvent);
+#endif // GPU_VARTX
     }
 
     saveSyncPoint = feiIn->SaveSyncPoint;
     if (lastEvent)
         lastEventSaved = lastEvent;
 
-    //fprintf(stderr, "Finish saved = %d, addr = 0x%p\n", saveSyncPoint, lastEventSaved);
     return lastEventSaved;
 }
 

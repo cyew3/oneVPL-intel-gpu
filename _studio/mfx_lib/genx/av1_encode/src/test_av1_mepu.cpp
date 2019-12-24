@@ -33,6 +33,13 @@
 #pragma comment(lib, "advapi32")
 #pragma comment( lib, "ole32.lib" )
 
+#define NEWMVPRED 0
+
+enum {
+    SINGLE_REF,
+    TWO_REFS,
+    COMPOUND
+};
 #ifdef CMRT_EMU
 extern "C"
 void MePuGacc64x64(SurfaceIndex SRC, SurfaceIndex REF0, SurfaceIndex REF1, SurfaceIndex MEDATA0, SurfaceIndex MEDATA1, SurfaceIndex OUT_PRED0,
@@ -302,7 +309,6 @@ void copyROI(uint8_t* src, int srcPitch, uint8_t* dst, int dstPitch, int w, int 
 }
 
     static const int32_t SUBPEL_BITS   = 4;
-    static const int32_t SUBPEL_MASK   = (1 << SUBPEL_BITS) - 1;
     static const int32_t SUBPEL_SHIFTS = 1 << SUBPEL_BITS;
     static const int32_t SUBPEL_TAPS   = 8;
     typedef int16_t InterpKernel[SUBPEL_TAPS];
@@ -793,7 +799,7 @@ void MePuGacc_px(
     uint8_t* medata1,
     uint8_t* ref0, int32_t ref0Pitch,
     uint8_t* ref1, int32_t ref1Pitch,
-    int compoundReferenceAllowed,
+    int refConfig,
     uint8_t* outPred, int32_t predPitch,
     Limits & limits,
     int debug,
@@ -815,7 +821,8 @@ void MePuGacc_px(
 
     uint32_t costs[3] = {0};
     H265MV bestMv_64B[2];
-    for (int32_t refIdx = 0; refIdx < 2; refIdx++) {
+    const int32_t numRefs = (refConfig == SINGLE_REF) ? 1 : 2;
+    for (int32_t refIdx = 0; refIdx < numRefs; refIdx++) {
         H265MV bestMv;
         if (w == 64) {
             const uint32_t *cmData = reinterpret_cast<const uint32_t*>(medata[refIdx]);
@@ -823,7 +830,7 @@ void MePuGacc_px(
             const uint32_t *dists = cmData + 1;
             uint64_t bestCost = ULLONG_MAX;
             for (int32_t i = 0; i < 9; i++) {
-                H265MV mvcand = { mv->mvx + DXDY2[i][0], mv->mvy + DXDY2[i][1] };
+                H265MV mvcand = { int16_t(mv->mvx + DXDY2[i][0]), int16_t(mv->mvy + DXDY2[i][1]) };
                 uint64_t cost = dists[i];
                 if (bestCost > cost) {
                     bestCost = cost;
@@ -837,7 +844,7 @@ void MePuGacc_px(
             const uint32_t *dists = cmData + 1;
             uint64_t bestCost = ULLONG_MAX;
             for (int32_t i = 0; i < 9; i++) {
-                H265MV mvcand = { mv->mvx + DXDY1[i][0], mv->mvy + DXDY1[i][1] };
+                H265MV mvcand = { int16_t(mv->mvx + DXDY1[i][0]), int16_t(mv->mvy + DXDY1[i][1]) };
                 uint64_t cost = dists[i];
                 if (bestCost > cost) {
                     bestCost = cost;
@@ -865,7 +872,7 @@ void MePuGacc_px(
         costs[refIdx] = sad;
     }
 
-    if (compoundReferenceAllowed) {
+    if (refConfig == COMPOUND) {
         average_px(predictions[0], 64, predictions[1], 64, predictions[2], 64, w, h);
         int32_t sad = sad_general_px(src, srcPitch, predictions[2], 64, w, h);
         if (bestSad > sad) {
@@ -913,7 +920,7 @@ int RunCpu(int width, int height, int MaxCUSize,
             uint8_t*ref1, int32_t ref1Pitch,
             uint8_t* medata1, int32_t medata1Pitch,
             uint8_t* outPred, int32_t outPredPitch,
-            int compoundReferenceAllowed,
+            int refConfig,
             int isAV1)
 {
     int blockW = 1 << (3 + blocksize);
@@ -953,7 +960,7 @@ int RunCpu(int width, int height, int MaxCUSize,
                 medata1 + row * medata0Pitch + sizeOfElement*col,
                 ref0 + x + y*ref0Pitch, ref0Pitch,
                 ref1 + x + y*ref1Pitch, ref1Pitch,
-                compoundReferenceAllowed,
+                refConfig,
                 outPred + x + y*outPredPitch,
                 outPredPitch,
                 lim,
@@ -973,7 +980,7 @@ int RunGpu(int width, int height, int MaxCUSize,
             uint8_t*ref1, int32_t ref1Pitch,
             uint8_t* data1, int32_t data1Pitch,
             uint8_t* outPred,
-            int compoundReferenceAllowed,
+            int refConfig,
             mfxSurfInfoENC &medataParam,
             uint32_t isAV1)
 {
@@ -1143,7 +1150,7 @@ int RunGpu(int width, int height, int MaxCUSize,
     CHECK_CM_ERR(res);
     res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxOutPred);
     CHECK_CM_ERR(res);
-    res = kernel->SetKernelArg(argIdx++, sizeof(int), &compoundReferenceAllowed);
+    res = kernel->SetKernelArg(argIdx++, sizeof(uint32_t), &refConfig);
     CHECK_CM_ERR(res);
     if (blocksize == MFX_BLK_64x64) {
         res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxOutPred2);
@@ -1220,7 +1227,7 @@ int RunGpuCombine8x16(int width, int height, int MaxCUSize,
             uint8_t* data16_1, int32_t data16_1Pitch,
             uint8_t* outPred8,
             uint8_t* outPred16,
-            int compoundReferenceAllowed,
+            int refConfig,
             mfxSurfInfoENC &medataParam8,
             mfxSurfInfoENC &medataParam16,
             uint32_t isAV1)
@@ -1408,7 +1415,7 @@ int RunGpuCombine8x16(int width, int height, int MaxCUSize,
     CHECK_CM_ERR(res);
     res = kernel->SetKernelArg(8, sizeof(SurfaceIndex), idxOutPred16);
     CHECK_CM_ERR(res);
-    res = kernel->SetKernelArg(9, sizeof(int), &compoundReferenceAllowed);
+    res = kernel->SetKernelArg(9, sizeof(uint32_t), &refConfig);
     CHECK_CM_ERR(res);
 
     CmTask * task = 0;
@@ -1616,16 +1623,9 @@ int main(int argc, char **argv)
     //for (int32_t codecType = CODEC_VP9; codecType <= CODEC_AV1; codecType++)
     int32_t codecType = CODEC_AV1;
     {
-        uint32_t isAV1 = (codecType == CODEC_AV1);
-        //blksize = (8x8, 16x16, 32x32, 64x64) => (0, 1, 2, 3)
-        for (int32_t blksize = 2; blksize < 4; blksize++)
-            //int32_t blksize = 3;
-        {
-
-
-            for (int32_t compoundReferenceAllowed = 0; compoundReferenceAllowed <= 1; compoundReferenceAllowed++)
-                //int32_t compoundReferenceAllowed = 0;
-            {
+        const uint32_t isAV1 = (codecType == CODEC_AV1);
+        for (int32_t blksize = 2; blksize < 4; blksize++) {
+            for (int32_t refConfig = SINGLE_REF; refConfig <= COMPOUND; refConfig++) {
                 FillRand(localrand, medata[0][blksize].data(), medataParam + blksize, blksize);
                 FillRand(localrand, medata[1][blksize].data(), medataParam + blksize, blksize);
 
@@ -1634,7 +1634,7 @@ int main(int argc, char **argv)
 
                 int32_t dataPitch = medataParam[blksize].pitch;
 
-                printf("Testing %dx%d comp=%d ", 8 << blksize, 8 << blksize, compoundReferenceAllowed);
+                printf("Testing %dx%d refConfig=%d ", 8 << blksize, 8 << blksize, refConfig);
 
                 RunCpu(width, height, MaxCUSize,
                     blksize,
@@ -1644,7 +1644,7 @@ int main(int argc, char **argv)
                     ref1, ref1Pitch,
                     cpuCopyOfMeData1.data(), dataPitch,
                     outputCpu.data(), outputPitch,
-                    compoundReferenceAllowed,
+                    refConfig,
                     isAV1);
 
                 RunGpu(width, height, MaxCUSize,
@@ -1655,13 +1655,13 @@ int main(int argc, char **argv)
                     ref1, ref1Pitch,
                     medata[1][blksize].data(), dataPitch,
                     outputGpu.data(),
-                    compoundReferenceAllowed,
+                    refConfig,
                     medataParam[blksize],
                     isAV1);
-
+#if NEWMVPRED
                 res = Compare(outputGpu.data(), outputCpu.data(), width, height, blksize);
                 CHECK_ERR(res);
-
+#endif
                 res = CompareBestIdx(cpuCopyOfMeData0.data(), dataPitch, medata[0][blksize].data(), dataPitch, width, height, blksize);
                 CHECK_ERR(res);
                 printf("\n");
@@ -1680,18 +1680,16 @@ int main(int argc, char **argv)
     std::vector<uint8_t> outputCpu16(widthInCtbs * 64 * heightInCtbs * 64);
     std::vector<uint8_t> outputGpu8(widthInCtbs * 64 * heightInCtbs * 64);
     std::vector<uint8_t> outputGpu16(widthInCtbs * 64 * heightInCtbs * 64);
-    //for (int32_t codecType = CODEC_VP9; codecType <= CODEC_AV1; codecType++)
     codecType = CODEC_AV1;
     {
         uint32_t isAV1 = (codecType == CODEC_AV1);
-        for (int32_t compoundReferenceAllowed = 0; compoundReferenceAllowed <= 1; compoundReferenceAllowed++) {
-
+        for (int32_t refConfig = SINGLE_REF; refConfig <= COMPOUND; refConfig++) {
             int32_t blksize = MFX_BLK_8x8;
             FillRand(localrand, medata[0][blksize].data(), medataParam + blksize, blksize);
             FillRand(localrand, medata[1][blksize].data(), medataParam + blksize, blksize);
             std::vector<uint8_t> cpuCopyOfMeData8_0(medata[0][blksize]), cpuCopyOfMeData8_1(medata[1][blksize]);
 
-            printf("Testing 8x8 and 16x16 comp=%d ", compoundReferenceAllowed);
+            printf("Testing 8x8 and 16x16 refConfig=%d ", refConfig);
             RunCpu(width, height, MaxCUSize,
                 blksize,
                 src, srcPitch,
@@ -1700,7 +1698,7 @@ int main(int argc, char **argv)
                 ref1, ref1Pitch,
                 cpuCopyOfMeData8_1.data(), medataParam[blksize].pitch,
                 outputCpu8.data(), outputPitch,
-                compoundReferenceAllowed,
+                refConfig,
                 isAV1);
 
             blksize = MFX_BLK_16x16;
@@ -1715,7 +1713,7 @@ int main(int argc, char **argv)
                 ref1, ref1Pitch,
                 cpuCopyOfMeData16_1.data(), medataParam[blksize].pitch,
                 outputCpu16.data(), outputPitch,
-                compoundReferenceAllowed,
+                refConfig,
                 isAV1);
 
 
@@ -1729,7 +1727,7 @@ int main(int argc, char **argv)
                 medata[1][MFX_BLK_16x16].data(), medataParam[MFX_BLK_16x16].pitch,
                 outputGpu8.data(),
                 outputGpu16.data(),
-                compoundReferenceAllowed,
+                refConfig,
                 medataParam[MFX_BLK_8x8],
                 medataParam[MFX_BLK_16x16],
                 isAV1);

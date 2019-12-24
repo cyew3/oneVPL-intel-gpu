@@ -1900,6 +1900,7 @@ static TxfmFunc fwd_txfm_type_to_func(TXFM_TYPE txfm_type) {
     case TXFM_TYPE_DCT4: return av1_fdct4_new;
     case TXFM_TYPE_DCT8: return av1_fdct8_new;
     case TXFM_TYPE_DCT16: return av1_fdct16_new;
+
     case TXFM_TYPE_DCT32: return av1_fdct32_new;
     case TXFM_TYPE_DCT64: return av1_fdct64_new;
     case TXFM_TYPE_ADST4: return av1_fadst4_new;
@@ -2122,22 +2123,23 @@ void av1_fwd_txfm2d_64x32_c(const short *input, int *output, int stride, TxType 
 }
 
 namespace AV1PP {
-    template <int size, int type> void ftransform_av1_px(const short *src, short *dst, int pitchSrc) {
+    template <int size, int type, typename TCoeffType> void ftransform_av1_px(const short *src, TCoeffType *dst, int pitchSrc) {
         int dst32[64*64];
-
-        if      (size == TX_4X4)   av1_fwd_txfm2d_4x4_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_8X8)   av1_fwd_txfm2d_8x8_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_16X16) av1_fwd_txfm2d_16x16_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_32X32) av1_fwd_txfm2d_32x32_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_64X64) av1_fwd_txfm2d_64x64_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_4X8)   av1_fwd_txfm2d_4x8_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_8X4)   av1_fwd_txfm2d_8x4_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_8X16)  av1_fwd_txfm2d_8x16_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_16X8)  av1_fwd_txfm2d_16x8_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_16X32) av1_fwd_txfm2d_16x32_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_32X16) av1_fwd_txfm2d_32x16_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_32X64) av1_fwd_txfm2d_32x64_c(src, dst32, pitchSrc, type, 8);
-        else if (size == TX_64X32) av1_fwd_txfm2d_64x32_c(src, dst32, pitchSrc, type, 8);
+        int bd = 8;
+        if (sizeof(TCoeffType) > 2) bd = 10;
+        if      (size == TX_4X4)   av1_fwd_txfm2d_4x4_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_8X8)   av1_fwd_txfm2d_8x8_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_16X16) av1_fwd_txfm2d_16x16_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_32X32) av1_fwd_txfm2d_32x32_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_64X64) av1_fwd_txfm2d_64x64_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_4X8)   av1_fwd_txfm2d_4x8_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_8X4)   av1_fwd_txfm2d_8x4_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_8X16)  av1_fwd_txfm2d_8x16_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_16X8)  av1_fwd_txfm2d_16x8_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_16X32) av1_fwd_txfm2d_16x32_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_32X16) av1_fwd_txfm2d_32x16_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_32X64) av1_fwd_txfm2d_32x64_c(src, dst32, pitchSrc, type, bd);
+        else if (size == TX_64X32) av1_fwd_txfm2d_64x32_c(src, dst32, pitchSrc, type, bd);
         else {assert(0);}
 
         const int txh = tx_size_high[size];
@@ -2146,39 +2148,84 @@ namespace AV1PP {
             for (int j = 0; j < txw; j++)
                 dst[i * txw + j] = dst32[i * txw + j];
     }
-    template void ftransform_av1_px<TX_4X4,      DCT_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_4X4,     ADST_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_4X4,     DCT_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_4X4,    ADST_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X8,      DCT_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X8,     ADST_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X8,     DCT_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X8,    ADST_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_16X16,    DCT_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_16X16,   ADST_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_16X16,   DCT_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_16X16,  ADST_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_32X32,    DCT_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_64X64,    DCT_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_4X8,      DCT_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_4X8,     ADST_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_4X8,     DCT_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_4X8,    ADST_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X4,      DCT_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X4,     ADST_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X4,     DCT_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X4,    ADST_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X16,     DCT_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X16,    ADST_DCT>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X16,    DCT_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_8X16,   ADST_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_16X8,    DCT_DCT >(const short*,short*,int);
-    template void ftransform_av1_px<TX_16X8,   ADST_DCT >(const short*,short*,int);
-    template void ftransform_av1_px<TX_16X8,    DCT_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_16X8,   ADST_ADST>(const short*,short*,int);
-    template void ftransform_av1_px<TX_16X32,   DCT_DCT >(const short*,short*,int);
-    template void ftransform_av1_px<TX_32X16,   DCT_DCT >(const short*,short*,int);
-    template void ftransform_av1_px<TX_32X64,   DCT_DCT >(const short*,short*,int);
-    template void ftransform_av1_px<TX_64X32,   DCT_DCT >(const short*,short*,int);
+
+    template void ftransform_av1_px<TX_4X4,      DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_4X4,     ADST_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_4X4,     DCT_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_4X4,    ADST_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_4X4,         IDTX, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X8,      DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X8,     ADST_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X8,     DCT_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X8,    ADST_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X8,         IDTX, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_16X16,    DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_16X16,   ADST_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_16X16,   DCT_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_16X16,  ADST_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_16X16,       IDTX, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_32X32,    DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_32X32,       IDTX, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_64X64,    DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_4X8,      DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_4X8,     ADST_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_4X8,     DCT_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_4X8,    ADST_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X4,      DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X4,     ADST_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X4,     DCT_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X4,    ADST_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X16,     DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X16,    ADST_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X16,    DCT_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_8X16,   ADST_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_16X8,     DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_16X8,    ADST_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_16X8,    DCT_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_16X8,   ADST_ADST, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_16X32,    DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_32X16,    DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_32X64,    DCT_DCT, short>(const short*,short*,int);
+    template void ftransform_av1_px<TX_64X32,    DCT_DCT, short>(const short*,short*,int);
+
+    //hbd
+    template void ftransform_av1_px<TX_4X4,     DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_4X4,    ADST_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_4X4,    DCT_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_4X4,   ADST_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_4X4,        IDTX, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X8,     DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X8,    ADST_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X8,    DCT_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X8,   ADST_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X8,        IDTX, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_16X16,   DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_16X16,  ADST_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_16X16,  DCT_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_16X16, ADST_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_16X16,      IDTX, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_32X32,   DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_32X32,      IDTX, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_64X64,   DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_4X8,     DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_4X8,    ADST_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_4X8,    DCT_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_4X8,   ADST_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X4,     DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X4,    ADST_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X4,    DCT_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X4,   ADST_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X16,    DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X16,   ADST_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X16,   DCT_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_8X16,  ADST_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_16X8,    DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_16X8,   ADST_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_16X8,   DCT_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_16X8,  ADST_ADST, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_16X32,   DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_32X16,   DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_32X64,   DCT_DCT, int>(const short*, int*, int);
+    template void ftransform_av1_px<TX_64X32,   DCT_DCT, int>(const short*, int*, int);
 
 }; // namespace AV1PP

@@ -324,7 +324,8 @@ CmDevice * TryCreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version)
         sts = core->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&d3dIface);
         if (sts != MFX_ERR_NONE || !d3dIface)
             return 0;
-        if ((result = ::CreateCmDevice(device, *version, d3dIface,(TASKNUMALLOC<<4)+1)) != CM_SUCCESS)
+        // Remove CSR Allocation, Other low mem options, (1<<22) | (1<< 29) |( 1<< 28)
+        if ((result = ::CreateCmDevice(device, *version, d3dIface,((TASKNUMALLOC<<4)+1) | (1 << 22) | (1 << 29) )) != CM_SUCCESS)
             return 0;
 #endif  // #if defined(_WIN32) || defined(_WIN64)
     }
@@ -335,7 +336,8 @@ CmDevice * TryCreateCmDevicePtr(MFXCoreInterface * core, mfxU32 * version)
         sts = core->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&d3dIface);
         if (sts != MFX_ERR_NONE || !d3dIface)
             return 0;
-        if ((result = ::CreateCmDevice(device, *version, d3dIface,(TASKNUMALLOC<<4)+1)) != CM_SUCCESS)
+        // Remove CSR Allocation, Other low mem options, (1<<22) | (1<< 29) |( 1<< 28)
+        if ((result = ::CreateCmDevice(device, *version, d3dIface,((TASKNUMALLOC<<4)+1) | (1 << 22) | (1 << 29) )) != CM_SUCCESS)
             return 0;
 #endif
     }
@@ -521,58 +523,6 @@ SurfaceIndex * CreateVmeSurfaceG75(
     return index;
 }
 
-mfxU32 SetSearchPath(
-    mfxVMEIMEIn & spath,
-    mfxU32        frameType,
-    mfxU32        meMethod)
-{
-    mfxU32 maxNumSU = SEARCHPATHSIZE + 1;
-
-    if (frameType & MFX_FRAMETYPE_P)
-    {
-        switch (meMethod)
-        {
-        case 2:
-            memcpy(&spath.IMESearchPath0to31[0], &SingleSU[0], 32*sizeof(mfxU8));
-            maxNumSU = 1;
-            break;
-        case 3:
-            memcpy(&spath.IMESearchPath0to31[0], &RasterScan_48x40[0], 32*sizeof(mfxU8));
-            memcpy(&spath.IMESearchPath32to55[0], &RasterScan_48x40[32], 24*sizeof(mfxU8));
-            break;
-        case 4:
-            memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-            memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
-            break;
-        case 5:
-            memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-            memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
-            maxNumSU = 16;
-            break;
-        case 6:
-        default:
-            memcpy(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
-            memcpy(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
-            break;
-        }
-    }
-    else
-    {
-        if (meMethod == 6)
-        {
-            memcpy(&spath.IMESearchPath0to31[0], &Diamond[0], 32*sizeof(mfxU8));
-            memcpy(&spath.IMESearchPath32to55[0], &Diamond[32], 24*sizeof(mfxU8));
-        }
-        else
-        {
-            memcpy(&spath.IMESearchPath0to31[0], &FullSpiral_48x40[0], 32*sizeof(mfxU8));
-            memcpy(&spath.IMESearchPath32to55[0], &FullSpiral_48x40[32], 24*sizeof(mfxU8));
-        }
-    }
-
-    return maxNumSU;
-}
-
 mfxU8 ToU4U4(mfxU16 val) {
     if (val > 4095)
         val = 4095;
@@ -611,9 +561,9 @@ void SetupMeControl(MeControl &ctrl, int width, int height, double lambda)
         0x0F, 0xF0, 0x01, 0x00
     };
 
-    memcpy(ctrl.shortSp, ShortPath, (int)std::min(sizeof(ShortPath), sizeof(ctrl.shortSp)));
-    ctrl.shortSpLenSp = 4;
-    ctrl.shortSpMaxNumSu = 9;
+    memcpy(ctrl.shortSp, myDiamond, (int)std::min(sizeof(myDiamond), sizeof(ctrl.shortSp)));
+    ctrl.shortSpLenSp = 16;
+    ctrl.shortSpMaxNumSu = 57;
 
     ctrl.width = (mfxU16)width;
     ctrl.height = (mfxU16)height;
@@ -659,238 +609,6 @@ void SetupMeControl(MeControl &ctrl, int width, int height, double lambda)
             MvCostHumanFriendly[i][j] = (ctrl.mvCost[i][j] & 0xf) << ((ctrl.mvCost[i][j] >> 4) & 0xf);
 }
 
-void SetCurbeData(
-    H265EncCURBEData & curbeData,
-    mfxU32             PicType,
-    mfxU32             qp,
-    mfxU32             width,
-    mfxU32             height)
-{
-    mfxU32 interSad       = 0; // 0-sad,2-haar
-    mfxU32 intraSad       = 0; // 0-sad,2-haar
-    //mfxU32 ftqBasedSkip   = 0; //3;
-    mfxU32 blockBasedSkip = 0;//1;
-///    mfxU32 qpIdx          = (qp + 1) >> 1;
-///    mfxU32 transformFlag  = 0;//(extOpt->IntraPredBlockSize > 1);
-    mfxU32 meMethod       = 6;
-
-    mfxVMEIMEIn spath;
-    SetSearchPath(spath, PicType, meMethod);
-
-    //init CURBE data based on Image State and Slice State. this CURBE data will be
-    //written to the surface and sent to all kernels.
-    Zero(curbeData);
-
-    //DW0
-    curbeData.SkipModeEn            = 0;//!(PicType & MFX_FRAMETYPE_I);
-    curbeData.AdaptiveEn            = 1;
-    curbeData.BiMixDis              = 0;
-    curbeData.EarlyImeSuccessEn     = 0;
-    curbeData.T8x8FlagForInterEn    = 1;
-    curbeData.EarlyImeStop          = 0;
-    //DW1
-    curbeData.MaxNumMVs             = 0x3F/*(GetMaxMvsPer2Mb(m_video.mfx.CodecLevel) >> 1) & 0x3F*/;
-    curbeData.BiWeight              = /*((task.m_frameType & MFX_FRAMETYPE_B) && extDdi->WeightedBiPredIdc == 2) ? CalcBiWeight(task, 0, 0) :*/ 32;
-    curbeData.UniMixDisable         = 0;
-    //DW2
-    curbeData.MaxNumSU              = 57;
-    curbeData.LenSP                 = 16;
-    //DW3
-    curbeData.SrcSize               = 0;
-    curbeData.MbTypeRemap           = 0;
-    curbeData.SrcAccess             = 0;
-    curbeData.RefAccess             = 0;
-    curbeData.SearchCtrl            = (PicType & MFX_FRAMETYPE_B) ? 7 : 0;
-    curbeData.DualSearchPathOption  = 0;
-    curbeData.SubPelMode            = 0;//3; // all modes
-    curbeData.SkipType              = 0; //!!(task.m_frameType & MFX_FRAMETYPE_B); //for B 0-16x16, 1-8x8
-    curbeData.DisableFieldCacheAllocation = 0;
-    curbeData.InterChromaMode       = 0;
-    curbeData.FTQSkipEnable         = 0;//!(PicType & MFX_FRAMETYPE_I);
-    curbeData.BMEDisableFBR         = !!(PicType & MFX_FRAMETYPE_P);
-    curbeData.BlockBasedSkipEnabled = blockBasedSkip;
-    curbeData.InterSAD              = interSad;
-    curbeData.IntraSAD              = intraSad;
-    curbeData.SubMbPartMask         = (PicType & MFX_FRAMETYPE_I) ? 0 : 0x7e; // only 16x16 for Inter
-    //DW4
-    curbeData.SliceHeightMinusOne   = height / 16 - 1;
-    curbeData.PictureHeightMinusOne = height / 16 - 1;
-    curbeData.PictureWidth          = width / 16;
-    curbeData.Log2MvScaleFactor     = 0;
-    curbeData.Log2MbScaleFactor     = 0;
-    //DW5
-    curbeData.RefWidth              = (PicType & MFX_FRAMETYPE_B) ? 32 : 48;
-    curbeData.RefHeight             = (PicType & MFX_FRAMETYPE_B) ? 32 : 40;
-    //DW6
-    curbeData.BatchBufferEndCommand = BATCHBUFFER_END;
-    //DW7
-    curbeData.IntraPartMask         = 0; // all partitions enabled
-    curbeData.NonSkipZMvAdded       = 0;//!!(PicType & MFX_FRAMETYPE_P);
-    curbeData.NonSkipModeAdded      = 0;//!!(PicType & MFX_FRAMETYPE_P);
-    curbeData.IntraCornerSwap       = 0;
-    curbeData.MVCostScaleFactor     = 0;
-    curbeData.BilinearEnable        = 0;
-    curbeData.SrcFieldPolarity      = 0;
-    curbeData.WeightedSADHAAR       = 0;
-    curbeData.AConlyHAAR            = 0;
-    curbeData.RefIDCostMode         = 0;//!(PicType & MFX_FRAMETYPE_I);
-    curbeData.SkipCenterMask        = !!(PicType & MFX_FRAMETYPE_P);
-    //DW8
-    curbeData.ModeCost_0            = 0;
-    curbeData.ModeCost_1            = 0;
-    curbeData.ModeCost_2            = 0;
-    curbeData.ModeCost_3            = 0;
-    //DW9
-    curbeData.ModeCost_4            = 0;
-    curbeData.ModeCost_5            = 0;
-    curbeData.ModeCost_6            = 0;
-    curbeData.ModeCost_7            = 0;
-    //DW10
-    curbeData.ModeCost_8            = 0;
-    curbeData.ModeCost_9            = 0;
-    curbeData.RefIDCost             = 0;
-    curbeData.ChromaIntraModeCost   = 0;
-    //DW11
-    curbeData.MvCost_0              = 0;
-    curbeData.MvCost_1              = 0;
-    curbeData.MvCost_2              = 0;
-    curbeData.MvCost_3              = 0;
-    //DW12
-    curbeData.MvCost_4              = 0;
-    curbeData.MvCost_5              = 0;
-    curbeData.MvCost_6              = 0;
-    curbeData.MvCost_7              = 0;
-    //DW13
-    curbeData.QpPrimeY              = qp;
-    curbeData.QpPrimeCb             = qp;
-    curbeData.QpPrimeCr             = qp;
-    curbeData.TargetSizeInWord      = 0xff;
-    //DW14
-    curbeData.FTXCoeffThresh_DC               = 0;
-    curbeData.FTXCoeffThresh_1                = 0;
-    curbeData.FTXCoeffThresh_2                = 0;
-    //DW15
-    curbeData.FTXCoeffThresh_3                = 0;
-    curbeData.FTXCoeffThresh_4                = 0;
-    curbeData.FTXCoeffThresh_5                = 0;
-    curbeData.FTXCoeffThresh_6                = 0;
-    //DW16
-    curbeData.IMESearchPath0                  = spath.IMESearchPath0to31[0];
-    curbeData.IMESearchPath1                  = spath.IMESearchPath0to31[1];
-    curbeData.IMESearchPath2                  = spath.IMESearchPath0to31[2];
-    curbeData.IMESearchPath3                  = spath.IMESearchPath0to31[3];
-    //DW17
-    curbeData.IMESearchPath4                  = spath.IMESearchPath0to31[4];
-    curbeData.IMESearchPath5                  = spath.IMESearchPath0to31[5];
-    curbeData.IMESearchPath6                  = spath.IMESearchPath0to31[6];
-    curbeData.IMESearchPath7                  = spath.IMESearchPath0to31[7];
-    //DW18
-    curbeData.IMESearchPath8                  = spath.IMESearchPath0to31[8];
-    curbeData.IMESearchPath9                  = spath.IMESearchPath0to31[9];
-    curbeData.IMESearchPath10                 = spath.IMESearchPath0to31[10];
-    curbeData.IMESearchPath11                 = spath.IMESearchPath0to31[11];
-    //DW19
-    curbeData.IMESearchPath12                 = spath.IMESearchPath0to31[12];
-    curbeData.IMESearchPath13                 = spath.IMESearchPath0to31[13];
-    curbeData.IMESearchPath14                 = spath.IMESearchPath0to31[14];
-    curbeData.IMESearchPath15                 = spath.IMESearchPath0to31[15];
-    //DW20
-    curbeData.IMESearchPath16                 = spath.IMESearchPath0to31[16];
-    curbeData.IMESearchPath17                 = spath.IMESearchPath0to31[17];
-    curbeData.IMESearchPath18                 = spath.IMESearchPath0to31[18];
-    curbeData.IMESearchPath19                 = spath.IMESearchPath0to31[19];
-    //DW21
-    curbeData.IMESearchPath20                 = spath.IMESearchPath0to31[20];
-    curbeData.IMESearchPath21                 = spath.IMESearchPath0to31[21];
-    curbeData.IMESearchPath22                 = spath.IMESearchPath0to31[22];
-    curbeData.IMESearchPath23                 = spath.IMESearchPath0to31[23];
-    //DW22
-    curbeData.IMESearchPath24                 = spath.IMESearchPath0to31[24];
-    curbeData.IMESearchPath25                 = spath.IMESearchPath0to31[25];
-    curbeData.IMESearchPath26                 = spath.IMESearchPath0to31[26];
-    curbeData.IMESearchPath27                 = spath.IMESearchPath0to31[27];
-    //DW23
-    curbeData.IMESearchPath28                 = spath.IMESearchPath0to31[28];
-    curbeData.IMESearchPath29                 = spath.IMESearchPath0to31[29];
-    curbeData.IMESearchPath30                 = spath.IMESearchPath0to31[30];
-    curbeData.IMESearchPath31                 = spath.IMESearchPath0to31[31];
-    //DW24
-    curbeData.IMESearchPath32                 = spath.IMESearchPath32to55[0];
-    curbeData.IMESearchPath33                 = spath.IMESearchPath32to55[1];
-    curbeData.IMESearchPath34                 = spath.IMESearchPath32to55[2];
-    curbeData.IMESearchPath35                 = spath.IMESearchPath32to55[3];
-    //DW25
-    curbeData.IMESearchPath36                 = spath.IMESearchPath32to55[4];
-    curbeData.IMESearchPath37                 = spath.IMESearchPath32to55[5];
-    curbeData.IMESearchPath38                 = spath.IMESearchPath32to55[6];
-    curbeData.IMESearchPath39                 = spath.IMESearchPath32to55[7];
-    //DW26
-    curbeData.IMESearchPath40                 = spath.IMESearchPath32to55[8];
-    curbeData.IMESearchPath41                 = spath.IMESearchPath32to55[9];
-    curbeData.IMESearchPath42                 = spath.IMESearchPath32to55[10];
-    curbeData.IMESearchPath43                 = spath.IMESearchPath32to55[11];
-    //DW27
-    curbeData.IMESearchPath44                 = spath.IMESearchPath32to55[12];
-    curbeData.IMESearchPath45                 = spath.IMESearchPath32to55[13];
-    curbeData.IMESearchPath46                 = spath.IMESearchPath32to55[14];
-    curbeData.IMESearchPath47                 = spath.IMESearchPath32to55[15];
-    //DW28
-    curbeData.IMESearchPath48                 = spath.IMESearchPath32to55[16];
-    curbeData.IMESearchPath49                 = spath.IMESearchPath32to55[17];
-    curbeData.IMESearchPath50                 = spath.IMESearchPath32to55[18];
-    curbeData.IMESearchPath51                 = spath.IMESearchPath32to55[19];
-    //DW29
-    curbeData.IMESearchPath52                 = spath.IMESearchPath32to55[20];
-    curbeData.IMESearchPath53                 = spath.IMESearchPath32to55[21];
-    curbeData.IMESearchPath54                 = spath.IMESearchPath32to55[22];
-    curbeData.IMESearchPath55                 = spath.IMESearchPath32to55[23];
-    //DW30
-    curbeData.Intra4x4ModeMask                = 0;
-    curbeData.Intra8x8ModeMask                = 0;
-    //DW31
-    curbeData.Intra16x16ModeMask              = 0;
-    curbeData.IntraChromaModeMask             = 0;
-    curbeData.IntraComputeType                = 1; // luma only
-    //DW32
-    curbeData.SkipVal                         = 0;//skipVal;
-    curbeData.MultipredictorL0EnableBit       = 0xEF;
-    curbeData.MultipredictorL1EnableBit       = 0xEF;
-    //DW33
-    curbeData.IntraNonDCPenalty16x16          = 0;//36;
-    curbeData.IntraNonDCPenalty8x8            = 0;//12;
-    curbeData.IntraNonDCPenalty4x4            = 0;//4;
-    //DW34
-    //curbeData.MaxVmvR                         = GetMaxMvLenY(m_video.mfx.CodecLevel) * 4;
-    curbeData.MaxVmvR                         = 0x7FFF;
-    //DW35
-    curbeData.PanicModeMBThreshold            = 0xFF;
-    curbeData.SmallMbSizeInWord               = 0xFF;
-    curbeData.LargeMbSizeInWord               = 0xFF;
-    //DW36
-    curbeData.HMECombineOverlap               = 1;  //  0;  !sergo
-    curbeData.HMERefWindowsCombiningThreshold = (PicType & MFX_FRAMETYPE_B) ? 8 : 16; //  0;  !sergo (should be =8 for B frames)
-    curbeData.CheckAllFractionalEnable        = 0;
-    //DW37
-    curbeData.CurLayerDQId                    = 0;
-    curbeData.TemporalId                      = 0;
-    curbeData.NoInterLayerPredictionFlag      = 1;
-    curbeData.AdaptivePredictionFlag          = 0;
-    curbeData.DefaultBaseModeFlag             = 0;
-    curbeData.AdaptiveResidualPredictionFlag  = 0;
-    curbeData.DefaultResidualPredictionFlag   = 0;
-    curbeData.AdaptiveMotionPredictionFlag    = 0;
-    curbeData.DefaultMotionPredictionFlag     = 0;
-    curbeData.TcoeffLevelPredictionFlag       = 0;
-    curbeData.UseRawMePredictor               = 1;
-    curbeData.SpatialResChangeFlag            = 0;
-///    curbeData.isFwdFrameShortTermRef          = task.m_list0[0].Size() > 0 && !task.m_dpb[0][task.m_list0[0][0] & 127].m_longterm;
-    //DW38
-    curbeData.ScaledRefLayerLeftOffset        = 0;
-    curbeData.ScaledRefLayerRightOffset       = 0;
-    //DW39
-    curbeData.ScaledRefLayerTopOffset         = 0;
-    curbeData.ScaledRefLayerBottomOffset      = 0;
-}
 
 Kernel::Kernel() : kernel(m_kernel[0]), m_device(), m_task(), m_numKernels(0) { Zero(m_kernel); Zero(m_ts); }
 

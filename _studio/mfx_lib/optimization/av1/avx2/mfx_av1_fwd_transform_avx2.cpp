@@ -29,6 +29,8 @@
 
 using namespace AV1PP;
 
+//#define TRANSPOSE_IDTX4
+
 static void fdct4x4_sse4_16s(__m128i *in, int bit)
 {
     const int *cospi = cospi_arr(bit);
@@ -712,8 +714,104 @@ template <int rows> static void fadst16x16_avx2_16s(const short *in, int pitch, 
     transpose_16x16_16s(pout, pout, 1);
 }
 
+static inline void load_buffer_16bit_to_16bit_w4(const int16_t *const in, const int stride, __m128i *const out, const int out_size)
+{
+    for (int i = 0; i < out_size; ++i) {
+        out[i] = _mm_loadl_epi64((const __m128i *)(in + i * stride));
+    }
+}
+
+static inline void round_shift_16bit(__m128i *in, int size, int bit)
+{
+    if (bit < 0) {
+        bit = -bit;
+        __m128i rounding = _mm_set1_epi16(1 << (bit - 1));
+        for (int i = 0; i < size; ++i) {
+            in[i] = _mm_adds_epi16(in[i], rounding);
+            in[i] = _mm_srai_epi16(in[i], bit);
+        }
+    }
+    else if (bit > 0) {
+        for (int i = 0; i < size; ++i) {
+            in[i] = _mm_slli_epi16(in[i], bit);
+        }
+    }
+}
+
+#define pair_set_epi16_sse2(a, b) \
+  _mm_set1_epi32((int32_t)(((uint16_t)(a)) | (((uint32_t)(b)) << 16)))
+
+static inline __m128i scale_round_sse2(const __m128i a, const int scale)
+{
+    const __m128i scale_rounding = pair_set_epi16_sse2(scale, 1 << (NewSqrt2Bits - 1));
+    const __m128i b = _mm_madd_epi16(a, scale_rounding);
+    return _mm_srai_epi32(b, NewSqrt2Bits);
+}
+
+
+static inline void fidentity4x4_new_sse2(const __m128i *const input, __m128i *const output)
+{
+    const __m128i one = _mm_set1_epi16(1);
+
+    for (int i = 0; i < 4; ++i) {
+        const __m128i a = _mm_unpacklo_epi16(input[i], one);
+        const __m128i b = scale_round_sse2(a, NewSqrt2);
+        output[i] = _mm_packs_epi32(b, b);
+    }
+}
+
+static inline void transpose_16bit_4x4(const __m128i *const in, __m128i *const out)
+{
+    // Unpack 16 bit elements. Goes from:
+    // in[0]: 00 01 02 03  XX XX XX XX
+    // in[1]: 10 11 12 13  XX XX XX XX
+    // in[2]: 20 21 22 23  XX XX XX XX
+    // in[3]: 30 31 32 33  XX XX XX XX
+    // to:
+    // a0:    00 10 01 11  02 12 03 13
+    // a1:    20 30 21 31  22 32 23 33
+    const __m128i a0 = _mm_unpacklo_epi16(in[0], in[1]);
+    const __m128i a1 = _mm_unpacklo_epi16(in[2], in[3]);
+
+    // Unpack 32 bit elements resulting in:
+    // out[0]: 00 10 20 30
+    // out[1]: 01 11 21 31
+    // out[2]: 02 12 22 32
+    // out[3]: 03 13 23 33
+    out[0] = _mm_unpacklo_epi32(a0, a1);
+    out[1] = _mm_srli_si128(out[0], 8);
+    out[2] = _mm_unpackhi_epi32(a0, a1);
+    out[3] = _mm_srli_si128(out[2], 8);
+}
+
+static void  fidentity4x4_sse4(const short *input, int stride, short *coeff)
+{
+#if EXACT_IDTX4
+    const int height = 4;
+    __m128i buf0[4],buf1[4];
+    const int bit = 2;
+
+    load_buffer_16bit_to_16bit_w4(input, stride, buf0, height);
+    round_shift_16bit(buf0, height, bit);
+
+    fidentity4x4_new_sse2(buf0, buf0);
+    fidentity4x4_new_sse2(buf0, buf0);
+    _mm_storel_epi64((__m128i *)(coeff + 0), buf0[0]);
+    _mm_storel_epi64((__m128i *)(coeff + 4), buf0[1]);
+    _mm_storel_epi64((__m128i *)(coeff + 8), buf0[2]);
+    _mm_storel_epi64((__m128i *)(coeff + 12), buf0[3]);
+#else // EXACT_IDTX4
+    storea_si128(coeff + 0 * 4, _mm_slli_epi16(loadu2_epi64(input + 0 * stride, input + 1 * stride), 3));
+    storea_si128(coeff + 2 * 4, _mm_slli_epi16(loadu2_epi64(input + 2 * stride, input + 3 * stride), 3));
+#endif // EXACT_IDTX4
+
+}
+
 static void ftransform_4x4_sse4(const short *input, short *coeff, int input_stride, TxType tx_type)
 {
+    if (tx_type == IDTX)
+        return fidentity4x4_sse4(input, input_stride, coeff);
+
     const int shift0 = 2;
     const int bit = 13;
 
@@ -746,8 +844,129 @@ static void ftransform_4x4_sse4(const short *input, short *coeff, int input_stri
     }
 }
 
+static inline __m128i load_16bit_to_16bit(const int16_t *a)
+{
+    return _mm_load_si128((const __m128i *)a);
+}
+
+static inline void load_buffer_16bit_to_16bit(const int16_t *in, int stride, __m128i *out, int out_size)
+{
+    for (int i = 0; i < out_size; ++i) {
+        out[i] = load_16bit_to_16bit(in + i * stride);
+    }
+}
+
+static inline void fidentity8x8_new_sse2(const __m128i *input, __m128i *output)
+{
+    output[0] = _mm_adds_epi16(input[0], input[0]);
+    output[1] = _mm_adds_epi16(input[1], input[1]);
+    output[2] = _mm_adds_epi16(input[2], input[2]);
+    output[3] = _mm_adds_epi16(input[3], input[3]);
+    output[4] = _mm_adds_epi16(input[4], input[4]);
+    output[5] = _mm_adds_epi16(input[5], input[5]);
+    output[6] = _mm_adds_epi16(input[6], input[6]);
+    output[7] = _mm_adds_epi16(input[7], input[7]);
+}
+
+static inline void transpose_16bit_8x8(const __m128i *const in, __m128i *const out)
+{
+    // Unpack 16 bit elements. Goes from:
+    // in[0]: 00 01 02 03  04 05 06 07
+    // in[1]: 10 11 12 13  14 15 16 17
+    // in[2]: 20 21 22 23  24 25 26 27
+    // in[3]: 30 31 32 33  34 35 36 37
+    // in[4]: 40 41 42 43  44 45 46 47
+    // in[5]: 50 51 52 53  54 55 56 57
+    // in[6]: 60 61 62 63  64 65 66 67
+    // in[7]: 70 71 72 73  74 75 76 77
+    // to:
+    // a0:    00 10 01 11  02 12 03 13
+    // a1:    20 30 21 31  22 32 23 33
+    // a2:    40 50 41 51  42 52 43 53
+    // a3:    60 70 61 71  62 72 63 73
+    // a4:    04 14 05 15  06 16 07 17
+    // a5:    24 34 25 35  26 36 27 37
+    // a6:    44 54 45 55  46 56 47 57
+    // a7:    64 74 65 75  66 76 67 77
+    const __m128i a0 = _mm_unpacklo_epi16(in[0], in[1]);
+    const __m128i a1 = _mm_unpacklo_epi16(in[2], in[3]);
+    const __m128i a2 = _mm_unpacklo_epi16(in[4], in[5]);
+    const __m128i a3 = _mm_unpacklo_epi16(in[6], in[7]);
+    const __m128i a4 = _mm_unpackhi_epi16(in[0], in[1]);
+    const __m128i a5 = _mm_unpackhi_epi16(in[2], in[3]);
+    const __m128i a6 = _mm_unpackhi_epi16(in[4], in[5]);
+    const __m128i a7 = _mm_unpackhi_epi16(in[6], in[7]);
+
+    // Unpack 32 bit elements resulting in:
+    // b0: 00 10 20 30  01 11 21 31
+    // b1: 40 50 60 70  41 51 61 71
+    // b2: 04 14 24 34  05 15 25 35
+    // b3: 44 54 64 74  45 55 65 75
+    // b4: 02 12 22 32  03 13 23 33
+    // b5: 42 52 62 72  43 53 63 73
+    // b6: 06 16 26 36  07 17 27 37
+    // b7: 46 56 66 76  47 57 67 77
+    const __m128i b0 = _mm_unpacklo_epi32(a0, a1);
+    const __m128i b1 = _mm_unpacklo_epi32(a2, a3);
+    const __m128i b2 = _mm_unpacklo_epi32(a4, a5);
+    const __m128i b3 = _mm_unpacklo_epi32(a6, a7);
+    const __m128i b4 = _mm_unpackhi_epi32(a0, a1);
+    const __m128i b5 = _mm_unpackhi_epi32(a2, a3);
+    const __m128i b6 = _mm_unpackhi_epi32(a4, a5);
+    const __m128i b7 = _mm_unpackhi_epi32(a6, a7);
+
+    // Unpack 64 bit elements resulting in:
+    // out[0]: 00 10 20 30  40 50 60 70
+    // out[1]: 01 11 21 31  41 51 61 71
+    // out[2]: 02 12 22 32  42 52 62 72
+    // out[3]: 03 13 23 33  43 53 63 73
+    // out[4]: 04 14 24 34  44 54 64 74
+    // out[5]: 05 15 25 35  45 55 65 75
+    // out[6]: 06 16 26 36  46 56 66 76
+    // out[7]: 07 17 27 37  47 57 67 77
+    out[0] = _mm_unpacklo_epi64(b0, b1);
+    out[1] = _mm_unpackhi_epi64(b0, b1);
+    out[2] = _mm_unpacklo_epi64(b4, b5);
+    out[3] = _mm_unpackhi_epi64(b4, b5);
+    out[4] = _mm_unpacklo_epi64(b2, b3);
+    out[5] = _mm_unpackhi_epi64(b2, b3);
+    out[6] = _mm_unpacklo_epi64(b6, b7);
+    out[7] = _mm_unpackhi_epi64(b6, b7);
+}
+
+static inline void store_buffer_16bit_to_16bit_8x8(const __m128i *in, uint16_t *out, const int stride)
+{
+    for (int i = 0; i < 8; ++i) {
+        _mm_store_si128((__m128i *)(out + i * stride), in[i]);
+    }
+}
+
+
+static void fidentity8x8_avx2(const short *input, int stride, short *coeff)
+{
+#if EXACT_IDTX8
+    __m128i buf0[8], buf1[8];
+    const int width = 8;
+    const int height = 8;
+    load_buffer_16bit_to_16bit(input, stride, buf0, height);
+    round_shift_16bit(buf0, height, 2);
+    fidentity8x8_new_sse2(buf0, buf0);
+    round_shift_16bit(buf0, height, -1);
+    fidentity8x8_new_sse2(buf0, buf0);
+    store_buffer_16bit_to_16bit_8x8(buf0, (uint16_t*)coeff, width);
+#else // EXACT_IDTX8
+    storea_si256(coeff + 0 * 8, _mm256_slli_epi16(loada2_m128i(input + 0 * stride, input + 1 * stride), 3));
+    storea_si256(coeff + 2 * 8, _mm256_slli_epi16(loada2_m128i(input + 2 * stride, input + 3 * stride), 3));
+    storea_si256(coeff + 4 * 8, _mm256_slli_epi16(loada2_m128i(input + 4 * stride, input + 5 * stride), 3));
+    storea_si256(coeff + 6 * 8, _mm256_slli_epi16(loada2_m128i(input + 6 * stride, input + 7 * stride), 3));
+#endif // EXACT_IDTX8
+}
+
 static void ftransform_8x8_avx2(const short *input, short *coeff, int stride, TxType tx_type)
 {
+    if (tx_type == IDTX)
+        return fidentity8x8_avx2(input, stride, coeff);
+
     assert((size_t(input) & 15) == 0);
     assert((size_t(coeff) & 31) == 0);
     assert(fwd_txfm_shift_ls[TX_8X8][0] == 2);
@@ -773,8 +992,196 @@ static void ftransform_8x8_avx2(const short *input, short *coeff, int stride, Tx
     }
 }
 
+static inline __m256i load_16bit_to_16bit_avx2(const int16_t *a)
+{
+    return _mm256_load_si256((const __m256i *)a);
+}
+
+static inline void load_buffer_16bit_to_16bit_avx2(const int16_t *in, int stride, __m256i *out, int out_size)
+{
+    for (int i = 0; i < out_size; ++i) {
+        out[i] = load_16bit_to_16bit_avx2(in + i * stride);
+    }
+}
+
+static inline __m256i pair_set_w16_epi16(int16_t a, int16_t b) {
+    return _mm256_set1_epi32(
+        (int32_t)(((uint16_t)(a)) | (((uint32_t)(b)) << 16)));
+}
+
+static inline __m256i scale_round_avx2(const __m256i a, const int scale)
+{
+    const __m256i scale_rounding = pair_set_w16_epi16(scale, 1 << (NewSqrt2Bits - 1));
+    const __m256i b = _mm256_madd_epi16(a, scale_rounding);
+    return _mm256_srai_epi32(b, NewSqrt2Bits);
+}
+
+static inline void fidentity16x16_new_avx2(const __m256i *input, __m256i *output)
+{
+    const __m256i one = _mm256_set1_epi16(1);
+
+    for (int i = 0; i < 16; ++i) {
+        const __m256i a_lo = _mm256_unpacklo_epi16(input[i], one);
+        const __m256i a_hi = _mm256_unpackhi_epi16(input[i], one);
+        const __m256i b_lo = scale_round_avx2(a_lo, 2 * NewSqrt2);
+        const __m256i b_hi = scale_round_avx2(a_hi, 2 * NewSqrt2);
+        output[i] = _mm256_packs_epi32(b_lo, b_hi);
+    }
+}
+
+static inline void transpose_16bit_16x16_avx2(const __m256i *const in, __m256i *const out)
+{
+    // Unpack 16 bit elements. Goes from:
+    // in[0]: 00 01 02 03  08 09 0a 0b  04 05 06 07  0c 0d 0e 0f
+    // in[1]: 10 11 12 13  18 19 1a 1b  14 15 16 17  1c 1d 1e 1f
+    // in[2]: 20 21 22 23  28 29 2a 2b  24 25 26 27  2c 2d 2e 2f
+    // in[3]: 30 31 32 33  38 39 3a 3b  34 35 36 37  3c 3d 3e 3f
+    // in[4]: 40 41 42 43  48 49 4a 4b  44 45 46 47  4c 4d 4e 4f
+    // in[5]: 50 51 52 53  58 59 5a 5b  54 55 56 57  5c 5d 5e 5f
+    // in[6]: 60 61 62 63  68 69 6a 6b  64 65 66 67  6c 6d 6e 6f
+    // in[7]: 70 71 72 73  78 79 7a 7b  74 75 76 77  7c 7d 7e 7f
+    // in[8]: 80 81 82 83  88 89 8a 8b  84 85 86 87  8c 8d 8e 8f
+    // to:
+    // a0:    00 10 01 11  02 12 03 13  04 14 05 15  06 16 07 17
+    // a1:    20 30 21 31  22 32 23 33  24 34 25 35  26 36 27 37
+    // a2:    40 50 41 51  42 52 43 53  44 54 45 55  46 56 47 57
+    // a3:    60 70 61 71  62 72 63 73  64 74 65 75  66 76 67 77
+    // ...
+    __m256i a[16];
+    for (int i = 0; i < 16; i += 2) {
+        a[i / 2 + 0] = _mm256_unpacklo_epi16(in[i], in[i + 1]);
+        a[i / 2 + 8] = _mm256_unpackhi_epi16(in[i], in[i + 1]);
+    }
+    __m256i b[16];
+    for (int i = 0; i < 16; i += 2) {
+        b[i / 2 + 0] = _mm256_unpacklo_epi32(a[i], a[i + 1]);
+        b[i / 2 + 8] = _mm256_unpackhi_epi32(a[i], a[i + 1]);
+    }
+    __m256i c[16];
+    for (int i = 0; i < 16; i += 2) {
+        c[i / 2 + 0] = _mm256_unpacklo_epi64(b[i], b[i + 1]);
+        c[i / 2 + 8] = _mm256_unpackhi_epi64(b[i], b[i + 1]);
+    }
+    out[0 + 0] = _mm256_permute2x128_si256(c[0], c[1], 0x20);
+    out[1 + 0] = _mm256_permute2x128_si256(c[8], c[9], 0x20);
+    out[2 + 0] = _mm256_permute2x128_si256(c[4], c[5], 0x20);
+    out[3 + 0] = _mm256_permute2x128_si256(c[12], c[13], 0x20);
+
+    out[0 + 8] = _mm256_permute2x128_si256(c[0], c[1], 0x31);
+    out[1 + 8] = _mm256_permute2x128_si256(c[8], c[9], 0x31);
+    out[2 + 8] = _mm256_permute2x128_si256(c[4], c[5], 0x31);
+    out[3 + 8] = _mm256_permute2x128_si256(c[12], c[13], 0x31);
+
+    out[4 + 0] = _mm256_permute2x128_si256(c[0 + 2], c[1 + 2], 0x20);
+    out[5 + 0] = _mm256_permute2x128_si256(c[8 + 2], c[9 + 2], 0x20);
+    out[6 + 0] = _mm256_permute2x128_si256(c[4 + 2], c[5 + 2], 0x20);
+    out[7 + 0] = _mm256_permute2x128_si256(c[12 + 2], c[13 + 2], 0x20);
+
+    out[4 + 8] = _mm256_permute2x128_si256(c[0 + 2], c[1 + 2], 0x31);
+    out[5 + 8] = _mm256_permute2x128_si256(c[8 + 2], c[9 + 2], 0x31);
+    out[6 + 8] = _mm256_permute2x128_si256(c[4 + 2], c[5 + 2], 0x31);
+    out[7 + 8] = _mm256_permute2x128_si256(c[12 + 2], c[13 + 2], 0x31);
+}
+
+static inline void round_shift_16bit_w16_avx2(__m256i *in, int size, int bit)
+{
+    if (bit < 0) {
+        bit = -bit;
+        __m256i round = _mm256_set1_epi16(1 << (bit - 1));
+        for (int i = 0; i < size; ++i) {
+            in[i] = _mm256_adds_epi16(in[i], round);
+            in[i] = _mm256_srai_epi16(in[i], bit);
+        }
+    }
+    else if (bit > 0) {
+        for (int i = 0; i < size; ++i) {
+            in[i] = _mm256_slli_epi16(in[i], bit);
+        }
+    }
+}
+
+static void fidentity16x16_avx2(const short *input, int stride, short *coeff)
+{
+#if EXACT_IDTX16
+    __m256i buf0[16], buf1[16];
+    const int height = 16;
+
+    load_buffer_16bit_to_16bit_avx2(input, stride, buf0, height);
+    round_shift_16bit_w16_avx2(buf0, height, 2);
+    fidentity16x16_new_avx2(buf0, buf0);
+    round_shift_16bit_w16_avx2(buf0, height, -2);
+    fidentity16x16_new_avx2(buf0, buf0);
+    for (int i = 0; i < 16; i++)
+        _mm256_store_si256((__m256i*)(coeff + 16 * i), buf0[i]);
+#else // EXACT_IDTX16
+    // unsigned shift will preserve sign since input is signed 9 bit
+    storea_si256(coeff + 0 * 16, _mm256_slli_epi16(loada_si256(input + 0 * stride), 3));
+    storea_si256(coeff + 1 * 16, _mm256_slli_epi16(loada_si256(input + 1 * stride), 3));
+    storea_si256(coeff + 2 * 16, _mm256_slli_epi16(loada_si256(input + 2 * stride), 3));
+    storea_si256(coeff + 3 * 16, _mm256_slli_epi16(loada_si256(input + 3 * stride), 3));
+    storea_si256(coeff + 4 * 16, _mm256_slli_epi16(loada_si256(input + 4 * stride), 3));
+    storea_si256(coeff + 5 * 16, _mm256_slli_epi16(loada_si256(input + 5 * stride), 3));
+    storea_si256(coeff + 6 * 16, _mm256_slli_epi16(loada_si256(input + 6 * stride), 3));
+    storea_si256(coeff + 7 * 16, _mm256_slli_epi16(loada_si256(input + 7 * stride), 3));
+    storea_si256(coeff + 8 * 16, _mm256_slli_epi16(loada_si256(input + 8 * stride), 3));
+    storea_si256(coeff + 9 * 16, _mm256_slli_epi16(loada_si256(input + 9 * stride), 3));
+    storea_si256(coeff + 10 * 16, _mm256_slli_epi16(loada_si256(input + 10 * stride), 3));
+    storea_si256(coeff + 11 * 16, _mm256_slli_epi16(loada_si256(input + 11 * stride), 3));
+    storea_si256(coeff + 12 * 16, _mm256_slli_epi16(loada_si256(input + 12 * stride), 3));
+    storea_si256(coeff + 13 * 16, _mm256_slli_epi16(loada_si256(input + 13 * stride), 3));
+    storea_si256(coeff + 14 * 16, _mm256_slli_epi16(loada_si256(input + 14 * stride), 3));
+    storea_si256(coeff + 15 * 16, _mm256_slli_epi16(loada_si256(input + 15 * stride), 3));
+#endif // EXACT_IDTX16
+}
+
+static inline void fidentity16x32_new_avx2(const __m256i *input, __m256i *output)
+{
+    for (int i = 0; i < 32; ++i) {
+        output[i] = _mm256_slli_epi16(input[i], 2);
+    }
+}
+
+
+static void fidentity32x32_avx2(const short *input, short *coeff, int stride)
+{
+#if EXACT_IDTX32
+    __m256i buf0[32], buf1[128];
+    const int height = 32;
+    const int width  = 32;
+
+    for (int i = 0; i < 2; i++) {
+        load_buffer_16bit_to_16bit_avx2(input + 16 * i, stride, buf0, height);
+        round_shift_16bit_w16_avx2(buf0, height, 2);
+        fidentity16x32_new_avx2(buf0, buf0);
+        round_shift_16bit_w16_avx2(buf0, height, -4);
+        transpose_16bit_16x16_avx2(buf0 + 0 * 16, buf1 + 0 * width + 16 * i);
+        transpose_16bit_16x16_avx2(buf0 + 1 * 16, buf1 + 1 * width + 16 * i);
+    }
+
+    for (int i = 0; i < 2; i++) {
+        __m256i *buf = buf1 + width * i;
+
+        fidentity16x32_new_avx2(buf, buf);
+        transpose_16bit_16x16_avx2(buf, buf);
+        { for (int k = 0; k < 16; k++) _mm256_store_si256((__m256i*)(coeff + 16 * width * i + 32*k), buf[k]); }
+
+        transpose_16bit_16x16_avx2(buf + 16, buf + 16);
+        { for (int k = 0; k < 16; k++) _mm256_store_si256((__m256i*)(coeff + 16 * width * i + 16 + 32 * k), (buf+16)[k]); }
+    }
+#else // EXACT_IDTX32
+    for (int32_t i = 0; i < 32; i++) {
+        // unsigned shift will preserve sign since input is signed 9 bit
+        storea_si256(coeff + i * 32 + 0, _mm256_slli_epi16(loada_si256(input + i * stride + 0), 2));
+        storea_si256(coeff + i * 32 + 16, _mm256_slli_epi16(loada_si256(input + i * stride + 16), 2));
+    }
+#endif // EXACT_IDTX32
+}
+
 static void ftransform_16x16_avx2(const short *input, short *coeff, int stride, TxType tx_type)
 {
+    if (tx_type == IDTX)
+        return fidentity16x16_avx2(input, stride, coeff);
+
     assert((size_t(input) & 31) == 0);
     assert((size_t(coeff) & 31) == 0);
     assert(fwd_txfm_shift_ls[TX_16X16][0] == 2);
@@ -932,38 +1339,38 @@ static void ftransform_32x32_avx2(const short *input, short *coeff, int pitch)
             // stage 0
             if (rows) {
                 const __m256i eight = _mm256_set1_epi16(8);
-                a[ 0] = _mm256_srai_epi16(_mm256_add_epi16(pin[ 0 * 2], eight), 4);
-                a[ 1] = _mm256_srai_epi16(_mm256_add_epi16(pin[ 1 * 2], eight), 4);
-                a[ 2] = _mm256_srai_epi16(_mm256_add_epi16(pin[ 2 * 2], eight), 4);
-                a[ 3] = _mm256_srai_epi16(_mm256_add_epi16(pin[ 3 * 2], eight), 4);
-                a[ 4] = _mm256_srai_epi16(_mm256_add_epi16(pin[ 4 * 2], eight), 4);
-                a[ 5] = _mm256_srai_epi16(_mm256_add_epi16(pin[ 5 * 2], eight), 4);
-                a[ 6] = _mm256_srai_epi16(_mm256_add_epi16(pin[ 6 * 2], eight), 4);
-                a[ 7] = _mm256_srai_epi16(_mm256_add_epi16(pin[ 7 * 2], eight), 4);
-                a[ 8] = _mm256_srai_epi16(_mm256_add_epi16(pin[ 8 * 2], eight), 4);
-                a[ 9] = _mm256_srai_epi16(_mm256_add_epi16(pin[ 9 * 2], eight), 4);
-                a[10] = _mm256_srai_epi16(_mm256_add_epi16(pin[10 * 2], eight), 4);
-                a[11] = _mm256_srai_epi16(_mm256_add_epi16(pin[11 * 2], eight), 4);
-                a[12] = _mm256_srai_epi16(_mm256_add_epi16(pin[12 * 2], eight), 4);
-                a[13] = _mm256_srai_epi16(_mm256_add_epi16(pin[13 * 2], eight), 4);
-                a[14] = _mm256_srai_epi16(_mm256_add_epi16(pin[14 * 2], eight), 4);
-                a[15] = _mm256_srai_epi16(_mm256_add_epi16(pin[15 * 2], eight), 4);
-                a[16] = _mm256_srai_epi16(_mm256_add_epi16(pin[16 * 2], eight), 4);
-                a[17] = _mm256_srai_epi16(_mm256_add_epi16(pin[17 * 2], eight), 4);
-                a[18] = _mm256_srai_epi16(_mm256_add_epi16(pin[18 * 2], eight), 4);
-                a[19] = _mm256_srai_epi16(_mm256_add_epi16(pin[19 * 2], eight), 4);
-                a[20] = _mm256_srai_epi16(_mm256_add_epi16(pin[20 * 2], eight), 4);
-                a[21] = _mm256_srai_epi16(_mm256_add_epi16(pin[21 * 2], eight), 4);
-                a[22] = _mm256_srai_epi16(_mm256_add_epi16(pin[22 * 2], eight), 4);
-                a[23] = _mm256_srai_epi16(_mm256_add_epi16(pin[23 * 2], eight), 4);
-                a[24] = _mm256_srai_epi16(_mm256_add_epi16(pin[24 * 2], eight), 4);
-                a[25] = _mm256_srai_epi16(_mm256_add_epi16(pin[25 * 2], eight), 4);
-                a[26] = _mm256_srai_epi16(_mm256_add_epi16(pin[26 * 2], eight), 4);
-                a[27] = _mm256_srai_epi16(_mm256_add_epi16(pin[27 * 2], eight), 4);
-                a[28] = _mm256_srai_epi16(_mm256_add_epi16(pin[28 * 2], eight), 4);
-                a[29] = _mm256_srai_epi16(_mm256_add_epi16(pin[29 * 2], eight), 4);
-                a[30] = _mm256_srai_epi16(_mm256_add_epi16(pin[30 * 2], eight), 4);
-                a[31] = _mm256_srai_epi16(_mm256_add_epi16(pin[31 * 2], eight), 4);
+                a[ 0] = _mm256_srai_epi16(_mm256_adds_epi16(pin[ 0 * 2], eight), 4);
+                a[ 1] = _mm256_srai_epi16(_mm256_adds_epi16(pin[ 1 * 2], eight), 4);
+                a[ 2] = _mm256_srai_epi16(_mm256_adds_epi16(pin[ 2 * 2], eight), 4);
+                a[ 3] = _mm256_srai_epi16(_mm256_adds_epi16(pin[ 3 * 2], eight), 4);
+                a[ 4] = _mm256_srai_epi16(_mm256_adds_epi16(pin[ 4 * 2], eight), 4);
+                a[ 5] = _mm256_srai_epi16(_mm256_adds_epi16(pin[ 5 * 2], eight), 4);
+                a[ 6] = _mm256_srai_epi16(_mm256_adds_epi16(pin[ 6 * 2], eight), 4);
+                a[ 7] = _mm256_srai_epi16(_mm256_adds_epi16(pin[ 7 * 2], eight), 4);
+                a[ 8] = _mm256_srai_epi16(_mm256_adds_epi16(pin[ 8 * 2], eight), 4);
+                a[ 9] = _mm256_srai_epi16(_mm256_adds_epi16(pin[ 9 * 2], eight), 4);
+                a[10] = _mm256_srai_epi16(_mm256_adds_epi16(pin[10 * 2], eight), 4);
+                a[11] = _mm256_srai_epi16(_mm256_adds_epi16(pin[11 * 2], eight), 4);
+                a[12] = _mm256_srai_epi16(_mm256_adds_epi16(pin[12 * 2], eight), 4);
+                a[13] = _mm256_srai_epi16(_mm256_adds_epi16(pin[13 * 2], eight), 4);
+                a[14] = _mm256_srai_epi16(_mm256_adds_epi16(pin[14 * 2], eight), 4);
+                a[15] = _mm256_srai_epi16(_mm256_adds_epi16(pin[15 * 2], eight), 4);
+                a[16] = _mm256_srai_epi16(_mm256_adds_epi16(pin[16 * 2], eight), 4);
+                a[17] = _mm256_srai_epi16(_mm256_adds_epi16(pin[17 * 2], eight), 4);
+                a[18] = _mm256_srai_epi16(_mm256_adds_epi16(pin[18 * 2], eight), 4);
+                a[19] = _mm256_srai_epi16(_mm256_adds_epi16(pin[19 * 2], eight), 4);
+                a[20] = _mm256_srai_epi16(_mm256_adds_epi16(pin[20 * 2], eight), 4);
+                a[21] = _mm256_srai_epi16(_mm256_adds_epi16(pin[21 * 2], eight), 4);
+                a[22] = _mm256_srai_epi16(_mm256_adds_epi16(pin[22 * 2], eight), 4);
+                a[23] = _mm256_srai_epi16(_mm256_adds_epi16(pin[23 * 2], eight), 4);
+                a[24] = _mm256_srai_epi16(_mm256_adds_epi16(pin[24 * 2], eight), 4);
+                a[25] = _mm256_srai_epi16(_mm256_adds_epi16(pin[25 * 2], eight), 4);
+                a[26] = _mm256_srai_epi16(_mm256_adds_epi16(pin[26 * 2], eight), 4);
+                a[27] = _mm256_srai_epi16(_mm256_adds_epi16(pin[27 * 2], eight), 4);
+                a[28] = _mm256_srai_epi16(_mm256_adds_epi16(pin[28 * 2], eight), 4);
+                a[29] = _mm256_srai_epi16(_mm256_adds_epi16(pin[29 * 2], eight), 4);
+                a[30] = _mm256_srai_epi16(_mm256_adds_epi16(pin[30 * 2], eight), 4);
+                a[31] = _mm256_srai_epi16(_mm256_adds_epi16(pin[31 * 2], eight), 4);
             } else {
                 a[ 0] = _mm256_slli_epi16(pin[ 0 * pitch], 2);
                 a[ 1] = _mm256_slli_epi16(pin[ 1 * pitch], 2);
@@ -2881,7 +3288,8 @@ namespace AV1PP {
         if      (size == TX_4X4)   return ftransform_4x4_sse4(src, dst, pitchSrc, type);
         else if (size == TX_8X8)   return ftransform_8x8_avx2(src, dst, pitchSrc, type);
         else if (size == TX_16X16) return ftransform_16x16_avx2(src, dst, pitchSrc, type);
-        else if (size == TX_32X32) return ftransform_32x32_avx2(src, dst, pitchSrc);
+        else if (size == TX_32X32) return (type == DCT_DCT) ? ftransform_32x32_avx2(src, dst, pitchSrc) : fidentity32x32_avx2(src, dst, pitchSrc);
+
         else if (size == TX_64X64) av1_fwd_txfm2d_64x64_c(src, dst32, pitchSrc, type, 8);
         else if (size == TX_4X8)   return ftransform_4x8_avx2(src, dst, pitchSrc, type);
         else if (size == TX_8X4)   return ftransform_8x4_avx2(src, dst, pitchSrc, type);
@@ -2903,15 +3311,19 @@ namespace AV1PP {
     template void ftransform_av1_avx2<TX_4X4,     ADST_DCT>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_4X4,     DCT_ADST>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_4X4,    ADST_ADST>(const short*,short*,int);
+    template void ftransform_av1_avx2<TX_4X4,         IDTX>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_8X8,      DCT_DCT>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_8X8,     ADST_DCT>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_8X8,     DCT_ADST>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_8X8,    ADST_ADST>(const short*,short*,int);
+    template void ftransform_av1_avx2<TX_8X8,         IDTX>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_16X16,    DCT_DCT>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_16X16,   ADST_DCT>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_16X16,   DCT_ADST>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_16X16,  ADST_ADST>(const short*,short*,int);
+    template void ftransform_av1_avx2<TX_16X16,       IDTX>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_32X32,    DCT_DCT>(const short*,short*,int);
+    template void ftransform_av1_avx2<TX_32X32,       IDTX>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_64X64,    DCT_DCT>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_4X8,      DCT_DCT>(const short*,short*,int);
     template void ftransform_av1_avx2<TX_4X8,     ADST_DCT>(const short*,short*,int);

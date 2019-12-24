@@ -19,23 +19,23 @@
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>genx_av1_mepu</ProjectName>
-    <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -58,7 +58,7 @@
     <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>$(ProjectName)_d</TargetName>
-    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -100,7 +100,8 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>build_kernel.cmd av1 mepu hsw</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>for /L %%i in (0,1,0) do $(TargetPath)</Command>
@@ -129,7 +130,8 @@
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <PreBuildEvent>
-      <Command>build_kernel_all_targets.cmd av1 mepu /Qxcm_release</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <Link>
       <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>
@@ -176,8 +178,17 @@
   <ItemGroup>
     <CustomBuild Include="src\genx_av1_mepu.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">build_codec_kernel.cmd av1 mepu hsw</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">src\genx_av1_mepu_hsw_isa.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">build_codec_kernel.cmd av1 mepu bdw /Qxcm_release &amp;&amp; ^
+build_codec_kernel.cmd av1 mepu skl /Qxcm_release &amp;&amp; ^
+build_codec_kernel.cmd av1 mepu cnl /Qxcm_release &amp;&amp; ^
+build_codec_kernel.cmd av1 mepu icl /Qxcm_release
+</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">src\genx_av1_mepu_bdw_isa.cpp;src\genx_av1_mepu_skl_isa.cpp;src\genx_av1_mepu_cnl_isa.cpp;src\genx_av1_mepu_icl_isa.cpp;%(Outputs)</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
     </CustomBuild>
     <ClCompile Include="src\genx_av1_mepu_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_mepu_emu.cpp">

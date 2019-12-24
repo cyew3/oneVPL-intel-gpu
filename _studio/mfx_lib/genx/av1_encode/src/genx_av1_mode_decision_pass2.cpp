@@ -35,14 +35,21 @@
 
 #define TRYINTRA_ORIG
 #define JOIN_MI
+//#define COMPOUND_OPT2
 
-#define SINGLE_SIDED_COMPOUND
 #define ENABLE_DEBUG_PRINTF 0
 #if ENABLE_DEBUG_PRINTF
   #define debug_printf printf
 #else
   #define debug_printf(...) (void)0
 #endif
+
+typedef char  int1;
+typedef short int2;
+typedef int   int4;
+typedef unsigned char  uint1;
+typedef unsigned short uint2;
+typedef unsigned int   uint4;
 
 #ifdef TRYINTRA_ORIG
 enum {
@@ -129,12 +136,15 @@ static const uint1 HAS_TOP_RIGHT[8] = {
 
 static const uint1 SEQUENCE_7_TO_0[8] = { 7, 6, 5, 4, 3, 2, 1, 0 };
 
-static const int1 INTERP_FILTERS_0Q[4]   = { /*0, 0,*/  0, 64,  0,  0, /*0, 0*/ };
-static const int1 INTERP_FILTERS_1Q[4]   = { /*0, 1,*/ -7, 55, 19, -5, /*1, 0*/ };
-static const int1 INTERP_FILTERS_2Q[4]   = { /*0, 1,*/ -7, 38, 38, -7, /*1, 0*/ };
-static const int1 INTERP_FILTERS_3Q[4]   = { /*0, 1,*/ -5, 19, 55, -7, /*1, 0*/ };
+static const int1 INTERP_FILTERS[4][4] = {
+    { /*0, 0,*/  0, 64,  0,  0, /*0, 0*/ },
+    { /*0, 1,*/ -7, 55, 19, -5, /*1, 0*/ },
+    { /*0, 1,*/ -7, 38, 38, -7, /*1, 0*/ },
+    { /*0, 1,*/ -5, 19, 55, -7, /*1, 0*/ },
+};
 
 _GENX_ vector<uint1,128>  g_params;
+_GENX_ uint1              g_fastMode;
 _GENX_ uint2              g_kernel_mi_row_start;
 _GENX_ uint2              g_kernel_mi_col_start;
 _GENX_ matrix<int1,4,4>   g_interp_filters;
@@ -169,12 +179,9 @@ _GENX_ inline uint2           get_height    () { return g_params.format<uint2>()
 _GENX_ inline vector<uint2,2> get_wh        () { return g_params.format<uint2>().select<2,1>(0); }
 _GENX_ inline uint2           get_lambda_int() { return g_params.format<uint2>()[28/2]; }
 _GENX_ inline uint1           get_comp_flag () { return g_params.format<uint1>()[30]; }
-#ifdef SINGLE_SIDED_COMPOUND
-_GENX_ inline uint1           get_single_ref_flag() { return !g_params.format<uint1>()[30]; }
-_GENX_ inline uint1           get_bidir_comp_flag() { return g_params.format<uint1>()[31]; }
-#else
-_GENX_ inline uint1           get_single_ref_flag() { return g_params.format<uint1>()[31]; }
-#endif
+
+_GENX_ inline uint1           get_single_ref_flag() { return !g_params.format<uint1>()[30] && g_params.format<uint1>()[31]; }
+_GENX_ inline uint1           get_bidir_comp_flag() { return  g_params.format<uint1>()[30] && g_params.format<uint1>()[31]; }
 
 _GENX_ inline vector<int2,2>  get_mv0       (mode_info_ref mi) { return mi.format<uint2>().select<2,1>(0); }
 _GENX_ inline vector<int2,2>  get_mv1       (mode_info_ref mi) { return mi.format<uint2>().select<2,1>(2); }
@@ -218,10 +225,15 @@ _GENX_ inline uint4 is_outsize(vector<uint2, 2> mi)
     return (mi >= get_wh()).any();
 }
 
+static const uint OFFSET_LUT_IEF = 1504; // 5072;
+
 _GENX_ inline void read_param(SurfaceIndex PARAM)
 {
     assert_emu(g_params.SZ <= 128);
     read(PARAM, 0, g_params);
+    vector<uint1, 16> tmp;
+    read(PARAM, OFFSET_LUT_IEF - 16, tmp);
+    g_fastMode = tmp(12);
 }
 
 _GENX_ inline void get_cost_ref_frames(SurfaceIndex PARAM, uint1 ctx)
@@ -260,7 +272,7 @@ _GENX_ void add_distinct_mv_to_stack(uint4 mv_cand, uint2 weight)
     uint2 stack_size = g_stack_size[ref];
     uint2 ref_offset = 8 * ref;
 
-    uint2 mask = cm_pack_mask<uint2>(g_stack.format<uint4>().select<8,1>(ref_offset) == mv_cand);
+    uint2 mask = cm_pack_mask(g_stack.format<uint4>().select<8,1>(ref_offset) == mv_cand);
     uint4 idx = cm_fbl<uint>(mask);
 
     if (idx < stack_size) {
@@ -296,7 +308,7 @@ _GENX_ void add_distinct_mvpair_to_stack(uint2 weight)
     vector<uint2,8> predicate =
         (g_stack.format<uint4>().select<8,2>(16) == get_mv0_as_int(g_cand)) &
         (g_stack.format<uint4>().select<8,2>(17) == get_mv1_as_int(g_cand));
-    uint2 mask = cm_pack_mask<uint2>(predicate);
+    uint2 mask = cm_pack_mask(predicate);
     uint4 idx = cm_fbl<uint>(mask);
 
     if (idx < g_stack_size[2]) {
@@ -735,25 +747,21 @@ _GENX_ void get_mvrefs(SurfaceIndex PARAM, vector<SurfaceIndex,2> MODE_INFO, uin
         vector<int2,32> ext_mvs_for_ref0;
         vector<int2,32> ext_mvs_for_ref1;
         vector_ref<int2,32> ext_mvs = g_ext_mvs.select<32,1>();
-#ifdef SINGLE_SIDED_COMPOUND
+
         if (!get_bidir_comp_flag()) {
             ext_mvs_for_ref0 = ext_mvs;
             ext_mvs_for_ref1 = ext_mvs_for_ref0;
-        } else
-#endif
-        {
+        } else {
             ext_mvs_for_ref0.merge(-ext_mvs, ext_mvs, g_ext_ref.select<32, 1>() == (uint1)ALTR);
             ext_mvs_for_ref1.merge(-ext_mvs_for_ref0, ext_mvs_for_ref0, -(int4)get_comp_flag());
         }
 
         extend_single_ref_stack(0, ext_mvs_for_ref0);
         extend_single_ref_stack(1, ext_mvs_for_ref1);
-#ifdef SINGLE_SIDED_COMPOUND
+
         if (!get_bidir_comp_flag()) {
             extend_comp_ref_stack_uni(ext_mvs_for_ref0);
-        } else
-#endif
-        {
+        } else {
             extend_comp_ref_stack(ext_mvs_for_ref0);
         }
     } else {
@@ -789,7 +797,8 @@ _GENX_ void get_mvrefs(SurfaceIndex PARAM, vector<SurfaceIndex,2> MODE_INFO, uin
 
     // sort weights
     matrix<uint2,4,4> indices;
-    g_weights += vector<uint1,8>(SEQUENCE_7_TO_0).replicate<4>();
+    vector<uint1, 8> sequence_7_to_0(SEQUENCE_7_TO_0);
+    g_weights += sequence_7_to_0.replicate<4>();
     #pragma unroll
     for (int i = 0; i < 4; i++) {
         matrix<uint2,4,4> tmp4 = cm_max<uint2>(g_weights.select<4,1,4,2>(0,0), g_weights.select<4,1,4,2>(0,1));
@@ -863,7 +872,7 @@ _GENX_ inline uint4 get_min_newmv_cost(uint ref)
     vector<uint4,8> mv_bits = cm_abs<uint4>(mv - ref_mvs);
     mv_bits >>= 1;
     mv_bits += 1;
-    mv_bits = (31 << 10) + 800 - (cm_lzd(mv_bits) << 10);
+    mv_bits = (31 << 10) + 800 - (cm_lzd<uint4>(mv_bits) << 10);
     vector<uint4,4> bits = mv_bits.select<4,2>(0) + mv_bits.select<4,2>(1);
     bits += mode_bits;
 
@@ -888,7 +897,7 @@ _GENX_ inline uint4 get_min_newmv_cost_comp()
     vector<uint4,16> mv_bits = cm_abs<uint4>(mv - ref_mvs);
     mv_bits >>= 1;
     mv_bits += 1;
-    mv_bits = (31 << 10) + 800 - (cm_lzd(mv_bits) << 10);
+    mv_bits = (31 << 10) + 800 - (cm_lzd<uint4>(mv_bits) << 10);
     mv_bits.select<8,1>() = mv_bits.select<8,2>(0) + mv_bits.select<8,2>(1);
     vector<uint4,4> bits = mv_bits.select<4,2>(0) + mv_bits.select<4,2>(1);
     bits += mode_bits;
@@ -1032,43 +1041,50 @@ _GENX_ void interpolate16(SurfaceIndex REF, vector<int2,2> pos, matrix<int1,2,4>
     }
 }
 
-_GENX_ inline uint2 sad8(matrix_ref<uint1,8,8> m0, matrix_ref<uint1,8,8> m1)
-{
-    vector<uint2,16> sad;
-    sad = cm_sad2<uint2> (m0.select<2,1,8,1>(0), m1.select<2,1,8,1>(0));
-    sad = cm_sada2<uint2>(m0.select<2,1,8,1>(2), m1.select<2,1,8,1>(2), sad);
-    sad = cm_sada2<uint2>(m0.select<2,1,8,1>(4), m1.select<2,1,8,1>(4), sad);
-    sad = cm_sada2<uint2>(m0.select<2,1,8,1>(6), m1.select<2,1,8,1>(6), sad);
-    return cm_sum<uint2>(sad);
-}
-
 _GENX_ inline vector<uint2,16> sad8_acc()
 {
     vector<uint2,16> sad;
+#if defined(target_gen12) || defined(target_gen12lp)
+    sad = cm_abs<uint2>(cm_add<int2>(g_src8.select<2,1,8,1>(0), -g_pred8.select<2,1,8,1>(0)));
+    sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(g_src8.select<2,1,8,1>(2), -g_pred8.select<2,1,8,1>(2))));
+    sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(g_src8.select<2,1,8,1>(4), -g_pred8.select<2,1,8,1>(4))));
+    sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(g_src8.select<2,1,8,1>(6), -g_pred8.select<2,1,8,1>(6))));
+    sad.select<8, 2>(0) += sad.select<8, 2>(1);
+#elif defined(target_gen11) || defined(target_gen11lp)
+    sad = 0;
+    sad = cm_sada2<uint2>(g_src8.select<2, 1, 8, 1>(0), g_pred8.select<2, 1, 8, 1>(0), sad);
+    sad = cm_sada2<uint2>(g_src8.select<2, 1, 8, 1>(2), g_pred8.select<2, 1, 8, 1>(2), sad);
+    sad = cm_sada2<uint2>(g_src8.select<2, 1, 8, 1>(4), g_pred8.select<2, 1, 8, 1>(4), sad);
+    sad = cm_sada2<uint2>(g_src8.select<2, 1, 8, 1>(6), g_pred8.select<2, 1, 8, 1>(6), sad);
+#else // target_gen12
     sad = cm_sad2<uint2> (g_src8.select<2,1,8,1>(0), g_pred8.select<2,1,8,1>(0));
     sad = cm_sada2<uint2>(g_src8.select<2,1,8,1>(2), g_pred8.select<2,1,8,1>(2), sad);
     sad = cm_sada2<uint2>(g_src8.select<2,1,8,1>(4), g_pred8.select<2,1,8,1>(4), sad);
     sad = cm_sada2<uint2>(g_src8.select<2,1,8,1>(6), g_pred8.select<2,1,8,1>(6), sad);
+#endif // target_gen12
     return sad;
-}
-
-_GENX_ inline uint2 sad16(matrix_ref<uint1,16,16> m0, matrix_ref<uint1,16,16> m1)
-{
-    vector<uint2,16> sad;
-    sad = cm_sad2<uint2> (m0.select<1,1,16,1>(0), m1.select<1,1,16,1>(0));
-    #pragma unroll
-    for (int i = 1; i < 16; i++)
-        sad = cm_sada2<uint2>(m0.select<1,1,16,1>(i), m1.select<1,1,16,1>(i), sad);
-    return cm_sum<uint2>(sad);
 }
 
 _GENX_ inline vector<uint2,16> sad16_acc()
 {
     vector<uint2,16> sad;
+#if defined(target_gen12) || defined(target_gen12lp)
+    sad = cm_abs<uint2>(cm_add<int2>(g_src16.row(0), -g_pred16.row(0)));
+    #pragma unroll
+    for (int i = 1; i < 16; i++)
+        sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(g_src16.row(i), -g_pred16.row(i))));
+    sad.select<8, 2>(0) += sad.select<8, 2>(1);
+#elif defined(target_gen11) || defined(target_gen11lp)
+    sad = 0;
+    #pragma unroll
+    for (int i = 0; i < 16; i++)
+        sad = cm_sada2<uint2>(g_src16.select<1,1,16,1>(i), g_pred16.select<1,1,16,1>(i), sad);
+#else // target_gen12
     sad = cm_sad2<uint2> (g_src16.select<1,1,16,1>(0), g_pred16.select<1,1,16,1>(0));
     #pragma unroll
     for (int i = 1; i < 16; i++)
         sad = cm_sada2<uint2>(g_src16.select<1,1,16,1>(i), g_pred16.select<1,1,16,1>(i), sad);
+#endif // target_gen12
     return sad;
 }
 
@@ -1078,7 +1094,7 @@ _GENX_ inline vector<uint4,2> get_cache_idx(vector_ref<uint4,8> refmvs0, vector_
     mask(0) = cm_pack_mask(refmvs0 == mvs.replicate<2,1,4,0>());
     mask(1) = mask(0) >> 4;
     checked_mv |= mask;
-    return cm_fbl<uint4>(vector<uint4,2>(mask | 0x80)); // 0x80 is a guard bit, to ensure that returned index is less than 8
+    return cm_fbl(vector<uint4,2>(mask | 0x80)); // 0x80 is a guard bit, to ensure that returned index is less than 8
 }
 
 #ifdef JOIN_MI
@@ -1238,12 +1254,14 @@ inline bool IsGoodPred(float SCpp, float SADpp, uint2 mvdAvg, uint1 l, uint1 qid
     return goodPred;
 }
 
+#define INIT_HELPER(V,I) { decltype(V) tmp(I); V = tmp; }
+
 #ifdef TRYINTRA_ORIG
 _GENX_ void
-ModeDecisionPass2SB(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 7> REF, vector<SurfaceIndex, 2> MODE_INFO, vector<SurfaceIndex, 8> RSCS, vector<uint2, 2> omi, uint sliceQpY, uint pyramidLayer, uint temporalSync, vector<SurfaceIndex, 8> MV)
+ModeDecisionPass2SB(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 8> REF, vector<SurfaceIndex, 2> MODE_INFO, vector<SurfaceIndex, 8> RSCS, vector<uint2, 2> omi, uint sliceQpY, uint pyramidLayer, uint temporalSync, vector<SurfaceIndex, 8> MV)
 #else
 _GENX_ void
-ModeDecisionPass2SB(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 7> REF, vector<SurfaceIndex, 2> MODE_INFO, vector<SurfaceIndex, 8> RSCS, vector<uint2, 2> omi, uint sliceQpY, uint pyramidLayer, uint temporalSync)
+ModeDecisionPass2SB(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 8> REF, vector<SurfaceIndex, 2> MODE_INFO, vector<SurfaceIndex, 8> RSCS, vector<uint2, 2> omi, uint sliceQpY, uint pyramidLayer, uint temporalSync)
 #endif
 {
     vector<uint1,8*8*2*4> cache;
@@ -1251,12 +1269,8 @@ ModeDecisionPass2SB(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 7
     //read_param(PARAM);
 
     vector<uint1,64> scan_z2r(ZIGZAG_SCAN);
-    g_has_top_right = vector<uint1,8>(HAS_TOP_RIGHT);
-
-    g_interp_filters.row(0) = vector<int1,4>(INTERP_FILTERS_0Q);
-    g_interp_filters.row(1) = vector<int1,4>(INTERP_FILTERS_1Q);
-    g_interp_filters.row(2) = vector<int1,4>(INTERP_FILTERS_2Q);
-    g_interp_filters.row(3) = vector<int1,4>(INTERP_FILTERS_3Q);
+    INIT_HELPER(g_has_top_right, HAS_TOP_RIGHT);
+    INIT_HELPER(g_interp_filters, INTERP_FILTERS);
 
     //vector<uint2,2> omi;
     //omi(X) = get_thread_origin_x();
@@ -1318,126 +1332,128 @@ ModeDecisionPass2SB(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 7
         else if (sbtype == BLOCK_16X16)
             read(SRC, pel(X), pel(Y), g_src16);
 
+        if (!g_fastMode || ref_1pass == 2)
+        {
+            for (uint2 m = 0; m < g_stack_size(2); m++) {
+                vector_ref<int2, 4> mv = g_refmv.select<4, 1>(16);
+                uint4 bits = g_bits_mode(2, 0);
 
-        for (uint2 m = 0; m < g_stack_size(2); m++) {
-            vector_ref<int2,4> mv = g_refmv.select<4,1>(16);
-            uint4 bits = g_bits_mode(2,0);
+                vector<uint4, 2> cache_idx = get_cache_idx(g_refmv.format<uint4>().select<8, 1>(), mv.format<uint4>(), checked_mv);
 
-            vector<uint4,2> cache_idx = get_cache_idx(g_refmv.format<uint4>().select<8,1>(), mv.format<uint4>(), checked_mv);
+                vector<uint2, 16> sad_comp_acc = 0;
+                vector<uint2, 16> sad_ref0_acc = 0;
+                vector<uint2, 16> sad_ref1_acc = 0;
 
-            vector<uint2,16> sad_comp_acc = 0;
-            vector<uint2,16> sad_ref0_acc = 0;
-            vector<uint2,16> sad_ref1_acc = 0;
+                matrix<int1, 4, 4> filt;
+                vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+                filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
 
-            matrix<int1,4,4> filt;
-            vector<uint2,4> dmv = cm_asr<uint2>(mv, 1) & 3;
-            filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+                vector<int2, 4> pos = pel.replicate<2>() + cm_asr<int2>(mv, 3);
+                pos -= 2;
 
-            vector<int2,4> pos = pel.replicate<2>() + cm_asr<int2>(mv, 3);
-            pos -= 2;
+                if (sbtype == BLOCK_8X8) {
+                    interpolate8(REF(0), pos.select<2, 1>(0), filt.select<2, 1, 4, 1>(0));
 
-            if (sbtype == BLOCK_8X8) {
-                interpolate8(REF(0), pos.select<2,1>(0), filt.select<2,1,4,1>(0));
+                    if (cache_idx(0) < g_stack_size(0))
+                        sad_ref0_acc = sad8_acc();
 
-                if (cache_idx(0) < g_stack_size(0))
-                    sad_ref0_acc = sad8_acc();
+                    matrix<uint1, 8, 8> pred0 = g_pred8;
+                    interpolate8(REF(1), pos.select<2, 1>(2), filt.select<2, 1, 4, 1>(2));
 
-                matrix<uint1,8,8> pred0 = g_pred8;
-                interpolate8(REF(1), pos.select<2,1>(2), filt.select<2,1,4,1>(2));
+                    if (cache_idx(1) < g_stack_size(1))
+                        sad_ref1_acc = sad8_acc();
 
-                if (cache_idx(1) < g_stack_size(1))
-                    sad_ref1_acc = sad8_acc();
-
-                g_pred8 = cm_avg<uint1>(g_pred8, pred0);
-                sad_comp_acc = sad8_acc();
-            } else {
-                vector<uint2,2> blk;
-                blk(Y) = 0;
-                do {
-
-                    blk(X) = 0;
+                    g_pred8 = cm_avg<uint1>(g_pred8, pred0);
+                    sad_comp_acc = sad8_acc();
+                }
+                else {
+                    vector<uint2, 2> blk;
+                    blk(Y) = 0;
                     do {
-                        if (sbtype > BLOCK_16X16)
-                            read(SRC, pel(X) + blk(X), pel(Y) + blk(Y), g_src16);
 
-                        interpolate16(REF(0), pos.select<2,1>(0) + blk, filt.select<2,1,4,1>(0));
+                        blk(X) = 0;
+                        do {
+                            if (sbtype > BLOCK_16X16)
+                                read(SRC, pel(X) + blk(X), pel(Y) + blk(Y), g_src16);
 
-                        if (cache_idx(0) < g_stack_size(0))
-                            sad_ref0_acc = cm_add<uint2>(sad16_acc(), sad_ref0_acc, SAT);
+                            interpolate16(REF(0), pos.select<2, 1>(0) + blk, filt.select<2, 1, 4, 1>(0));
 
-                        matrix<uint1,16,16> pred0 = g_pred16;
-                        interpolate16(REF(1), pos.select<2,1>(2) + blk, filt.select<2,1,4,1>(2));
+                            if (cache_idx(0) < g_stack_size(0))
+                                sad_ref0_acc = cm_add<uint2>(sad16_acc(), sad_ref0_acc, SAT);
 
-                        if (cache_idx(1) < g_stack_size(1))
-                            sad_ref1_acc = cm_add<uint2>(sad16_acc(), sad_ref1_acc, SAT);
+                            matrix<uint1, 16, 16> pred0 = g_pred16;
+                            interpolate16(REF(1), pos.select<2, 1>(2) + blk, filt.select<2, 1, 4, 1>(2));
 
-                        g_pred16 = cm_avg<uint1>(pred0, g_pred16);
+                            if (cache_idx(1) < g_stack_size(1))
+                                sad_ref1_acc = cm_add<uint2>(sad16_acc(), sad_ref1_acc, SAT);
 
-                        sad_comp_acc = cm_add<uint2>(sad16_acc(), sad_comp_acc, SAT);
+                            g_pred16 = cm_avg<uint1>(pred0, g_pred16);
 
-                        blk(X) += 16;
-                    } while (blk(X) < blk_size);
+                            sad_comp_acc = cm_add<uint2>(sad16_acc(), sad_comp_acc, SAT);
 
-                    blk(Y) += 16;
-                } while (blk(Y) < blk_size);
+                            blk(X) += 16;
+                        } while (blk(X) < blk_size);
 
-            }
-            uint sad = cm_sum<uint>(sad_comp_acc.select<8,2>());
-            uint cost = sad << 11;
-            cost += bits * get_lambda_int();
+                        blk(Y) += 16;
+                    } while (blk(Y) < blk_size);
 
-            if (get_comp_flag()) debug_printf("[MD2] (%d,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d),(%d,%d) cost=%u sad=%u bits=%u\n",
-                3 - log2_num8x8, mi(Y), mi(X), 2, m, mv(0), mv(1), mv(2), mv(3), cost, sad, bits);
+                }
+                uint sad = cm_sum<uint>(sad_comp_acc.select<8, 2>());
+                uint cost = sad << 11;
+                cost += bits * get_lambda_int();
 
-            if (best_cost > cost) {
-                best_cost = cost;
-                best_sad = sad;
-                set_mv_pair(g_mode_info, mv);
-                set_ref_bidir(g_mode_info);
-                set_mode(g_mode_info, NEARESTMV);
-            }
-
-            if (cache_idx(0) < g_stack_size(0)) {
-                sad = cm_sum<uint>(sad_ref0_acc.select<8,2>());
-                cost = sad << 11;
-                cost += g_bits_mode(0, cache_idx(0)) * get_lambda_int();
-
-                if (get_comp_flag()) debug_printf("[MD2] (%d,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u sad=%u bits=%u\n",
-                    3 - log2_num8x8, mi(Y), mi(X), 0, cache_idx(0), mv(0), mv(1), cost, sad, g_bits_mode(0, cache_idx(0)));
+                if (get_comp_flag()) debug_printf("[MD2] (%d,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d),(%d,%d) cost=%u sad=%u bits=%u\n",
+                    3 - log2_num8x8, mi(Y), mi(X), 2, m, mv(0), mv(1), mv(2), mv(3), cost, sad, bits);
 
                 if (best_cost > cost) {
                     best_cost = cost;
                     best_sad = sad;
-                    set_mv0(g_mode_info, mv.select<2,1>(0));
-                    set_mv1(g_mode_info, 0);
-                    set_ref_single(g_mode_info, LAST);
+                    set_mv_pair(g_mode_info, mv);
+                    set_ref_bidir(g_mode_info);
                     set_mode(g_mode_info, NEARESTMV);
                 }
-            }
 
-            if (cache_idx(1) < g_stack_size(1)) {
-                sad = cm_sum<uint>(sad_ref1_acc.select<8,2>());
-                cost = sad << 11;
-                cost += g_bits_mode(1, cache_idx(1)) * get_lambda_int();
+                if (cache_idx(0) < g_stack_size(0)) {
+                    sad = cm_sum<uint>(sad_ref0_acc.select<8, 2>());
+                    cost = sad << 11;
+                    cost += g_bits_mode(0, cache_idx(0)) * get_lambda_int();
 
-                if (get_comp_flag()) debug_printf("[MD2] (%d,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u sad=%u bits=%u\n",
-                    3 - log2_num8x8, mi(Y), mi(X), 1, cache_idx(1), mv(2), mv(3), cost, sad, g_bits_mode(1, cache_idx(1)));
+                    if (get_comp_flag()) debug_printf("[MD2] (%d,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u sad=%u bits=%u\n",
+                        3 - log2_num8x8, mi(Y), mi(X), 0, cache_idx(0), mv(0), mv(1), cost, sad, g_bits_mode(0, cache_idx(0)));
 
-                if (best_cost > cost) {
-                    best_cost = cost;
-                    best_sad = sad;
-                    set_mv0(g_mode_info, mv.select<2,1>(2));
-                    set_mv1(g_mode_info, 0);
-                    set_ref_single(g_mode_info, ALTR);
-                    set_mode(g_mode_info, NEARESTMV);
+                    if (best_cost > cost) {
+                        best_cost = cost;
+                        best_sad = sad;
+                        set_mv0(g_mode_info, mv.select<2, 1>(0));
+                        set_mv1(g_mode_info, 0);
+                        set_ref_single(g_mode_info, LAST);
+                        set_mode(g_mode_info, NEARESTMV);
+                    }
                 }
-            }
 
-            g_refmv.select<8,1>(16) = g_refmv.select<8,1>(20);
-            g_refmv.select<8,1>(24) = g_refmv.select<8,1>(28);
-            g_bits_mode.row(2).select<4,1>(0) = g_bits_mode.row(2).select<4,1>(1);
+                if (cache_idx(1) < g_stack_size(1)) {
+                    sad = cm_sum<uint>(sad_ref1_acc.select<8, 2>());
+                    cost = sad << 11;
+                    cost += g_bits_mode(1, cache_idx(1)) * get_lambda_int();
+
+                    if (get_comp_flag()) debug_printf("[MD2] (%d,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u sad=%u bits=%u\n",
+                        3 - log2_num8x8, mi(Y), mi(X), 1, cache_idx(1), mv(2), mv(3), cost, sad, g_bits_mode(1, cache_idx(1)));
+
+                    if (best_cost > cost) {
+                        best_cost = cost;
+                        best_sad = sad;
+                        set_mv0(g_mode_info, mv.select<2, 1>(2));
+                        set_mv1(g_mode_info, 0);
+                        set_ref_single(g_mode_info, ALTR);
+                        set_mode(g_mode_info, NEARESTMV);
+                    }
+                }
+
+                g_refmv.select<8, 1>(16) = g_refmv.select<8, 1>(20);
+                g_refmv.select<8, 1>(24) = g_refmv.select<8, 1>(28);
+                g_bits_mode.row(2).select<4, 1>(0) = g_bits_mode.row(2).select<4, 1>(1);
+            }
         }
-
 
         uint2 cur_refmv_count = g_stack_size(0);
         for (uint2 r = 0; r < 2; r++) {
@@ -1564,14 +1580,14 @@ ModeDecisionPass2SB(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 7
 
 #if 1
     // Split
-    m_mtfi = matrix<int, 3, 4>(mtfi);
-    m_stfi = matrix<int, 3, 4>(stfi);
-    m_afi = matrix<int, 3, 4>(afi);
-    m_bfi = matrix<int, 3, 4>(bfi);
-    m_mfi = matrix<int, 3, 4>(mfi);
-    m_bti = matrix<int, 4, 4>(bti);
-    m_ati = matrix<int, 4, 4>(ati);
-    m_mti = matrix<int, 4, 4>(mti);
+    INIT_HELPER(m_mtfi, mtfi);
+    INIT_HELPER(m_stfi, stfi);
+    INIT_HELPER(m_afi, afi);
+    INIT_HELPER(m_bfi, bfi);
+    INIT_HELPER(m_mfi, mfi);
+    INIT_HELPER(m_bti, bti);
+    INIT_HELPER(m_ati, ati);
+    INIT_HELPER(m_mti, mti);
     vector<float, 4> divbypix;
     divbypix(0) = 0.015625000000f;
     divbypix(1) = 0.003906250000f;
@@ -1596,19 +1612,17 @@ ModeDecisionPass2SB(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 7
     if (sbtype == BLOCK_64X64) {
         split64 = 1;
         if (temporalSync) {
+            vector<int, 1> Rs = 0;
+            vector<int, 1> Cs = 0;
+            read(RSCS(6), (omi(X) >> 3) * 4, omi(Y) >> 3, Rs);
+            read(RSCS(7), (omi(X) >> 3) * 4, omi(Y) >> 3, Cs);
+            float scpp = Rs(0) + Cs(0);
+            scpp *= divbyblk4(3);
             if (pyramidLayer > 2) {
                 split64 = 0;
-            } else {
+            }
+            else if(get_skip(g_mode_info) || scpp<20){
                 uint2 mvd = 0;
-
-                vector<int, 1> Rs = 0;
-                vector<int, 1> Cs = 0;
-                read(RSCS(6), (omi(X) >> 3) * 4, omi(Y) >> 3, Rs);
-                read(RSCS(7), (omi(X) >> 3) * 4, omi(Y) >> 3, Cs);
-                float scpp = Rs(0) + Cs(0);
-                scpp *= divbyblk4(3);
-                //scpp *= 0.0625f;
-                //scpp *= 0.0625f;
 
 #ifdef TRYINTRA_ORIG
                 matrix<uint4, 2, 2>   g_new_mv_data;
@@ -1676,7 +1690,7 @@ ModeDecisionPass2SB(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 7
 
         read(MODIFIED(MODE_INFO(1)), mi(X) * SIZEOF_MODE_INFO, mi(Y), g_mode_info);
 
-        uint1 sbtype = get_sb_type(g_mode_info);
+        sbtype = get_sb_type(g_mode_info);
         uint2 log2_num8x8 = sbtype >> 2;
         uint2 blk_size = 8 << log2_num8x8;
         num8x8 = 1 << (log2_num8x8 << 1);
@@ -1759,6 +1773,7 @@ ModeDecisionPass2SB(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 7
         if (tryIntra && mode != NEARESTMV && skip) {
             tryIntra = (IsBadPred(scpp, sadpp, mvd, pyramidLayer, qidx)) ? 1 : 0;
         }
+
         if (tryIntra) set_sad(g_mode_info, 0);
         else          set_sad(g_mode_info, 13);
         write_mode_info(MODE_INFO(1), mi, log2_num8x8);
@@ -1770,14 +1785,14 @@ ModeDecisionPass2SB(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 7
 
 #ifdef TRYINTRA_ORIG
 extern "C" _GENX_MAIN_ void
-ModeDecisionPass2(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 7> REF, vector<SurfaceIndex, 2> MODE_INFO, vector<SurfaceIndex, 8> RSCS, uint SliceQpY, uint PyramidLayer, uint TemporalSync, vector<SurfaceIndex, 8> MV)
+ModeDecisionPass2(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 8> REF, vector<SurfaceIndex, 2> MODE_INFO, vector<SurfaceIndex, 8> RSCS, uint SliceQpY, uint PyramidLayer, uint TemporalSync, vector<SurfaceIndex, 8> MV, uint yoff)
 #else
 extern "C" _GENX_MAIN_ void
-ModeDecisionPass2(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 7> REF, vector<SurfaceIndex, 2> MODE_INFO, vector<SurfaceIndex, 8> RSCS, uint SliceQpY, uint PyramidLayer, uint TemporalSync)
+ModeDecisionPass2(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 8> REF, vector<SurfaceIndex, 2> MODE_INFO, vector<SurfaceIndex, 8> RSCS, uint SliceQpY, uint PyramidLayer, uint TemporalSync, uint yoff)
 #endif
 {
     read_param(PARAM);
-    g_kernel_mi_row_start = get_thread_origin_y() * KERNEL_HEIGHT_MI;
+    g_kernel_mi_row_start = (get_thread_origin_y() + (uint2)yoff) * KERNEL_HEIGHT_MI;
     g_kernel_mi_col_start = get_thread_origin_x() * KERNEL_WIDTH_MI;
     vector<uint2, 2> mi;
     mi(Y) = g_kernel_mi_row_start;

@@ -21,7 +21,6 @@
 #pragma once
 
 #include "assert.h"
-#include "ippdefs.h"
 
 #if defined(_WIN32) || defined(_WIN64)
   #define H265_FORCEINLINE __forceinline

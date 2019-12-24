@@ -105,12 +105,28 @@ namespace AV1Enc {
         uint16_t mvClass0[2][2][16];
 
         uint16_t intraExtTx[TX_SIZES][TX_TYPES][TX_TYPES];
+        uint16_t intra_tx_type_costs[EXT_TX_SETS_INTRA][EXT_TX_SIZES][INTRA_MODES][TX_TYPES];
         uint16_t interExtTx[TX_SIZES][TX_TYPES];
+        uint16_t inter_tx_type_costs[EXT_TX_SETS_INTER][EXT_TX_SIZES][TX_TYPES];
         uint16_t kfIntraModeAV1[KF_MODE_CONTEXTS][KF_MODE_CONTEXTS][AV1_INTRA_MODES];
         uint16_t intraModeAV1[BLOCK_SIZE_GROUPS][AV1_INTRA_MODES];
-        uint16_t intraModeUvAV1[AV1_INTRA_MODES][AV1_UV_INTRA_MODES];
+        uint16_t intraModeUvAV1[CFL_ALLOWED_TYPES][AV1_INTRA_MODES][AV1_UV_INTRA_MODES];
+
+        uint16_t cflCost[CFL_JOINT_SIGNS][CFL_PRED_PLANES][CFL_ALPHABET_SIZE];
+
+        uint16_t HasPaletteY[PALETTE_BLOCK_SIZE_CONTEXTS][3][2];
+        uint16_t HasPaletteUV[2][2];
+        uint16_t PaletteSizeY[PALETTE_BLOCK_SIZE_CONTEXTS][PALETTE_SIZES];
+        uint16_t PaletteSizeUV[PALETTE_BLOCK_SIZE_CONTEXTS][PALETTE_SIZES];
+        uint16_t PaletteColorIdxY[PALETTE_SIZES][5][MAX_PALETTE]; // bigger than needed
+        uint16_t PaletteColorIdxUV[PALETTE_SIZES][5][MAX_PALETTE]; // bigger than needed
 
         TxbBitCounts txb[TOKEN_CDF_Q_CTXS][TX_32X32 + 1][PLANE_TYPES];
+        // Intra Block Copy
+        int dv_cost[2][MV_VALS];
+        int dv_joint_cost[MV_JOINTS];
+        int intrabc_cost[2];
+        int delta_q_abs_cost[DELTA_Q_SMALL + 1];
     };
 
     struct RefFrameContextsAv1 {
@@ -126,7 +142,7 @@ namespace AV1Enc {
         uint8_t compBwdRefP0;
     };
 
-    void EstimateBits(BitCounts &bits, int32_t intraOnly, EnumCodecType codecType);
+    void EstimateBits(BitCounts &bits);
     void GetRefFrameContextsAv1(Frame *frame);
 
     uint32_t EstimateCoefsFastest(const CoefBitCounts &bits, const CoeffsType *coefs, const int16_t *scan, int32_t eob, int32_t dcCtx);

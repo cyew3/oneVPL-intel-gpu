@@ -632,11 +632,11 @@ int32_t AV1Enc::GetCtxTxSizeAV1(const ModeInfo *above, const ModeInfo *left, uin
     int l = leftTxfm >= max_tx_high;
 
     if (above)
-        if (is_inter_block(above))
+        if (is_inter_block(above) || is_intrabc_block(above))
             a = block_size_wide[above->sbType] >= max_tx_wide;
 
     if (left)
-        if (is_inter_block(left))
+        if (is_inter_block(left) || is_intrabc_block(left))
             l = block_size_high[left->sbType] >= max_tx_high;
 
     if (above && left) return a + l;
@@ -675,9 +675,9 @@ int32_t AV1Enc::GetCtxDrlIdx(int32_t nearestMvCount, int32_t idx) {
     return LUT_CTX_DLR_IDX[ MIN(nearestMvCount, 4) ][idx];
 }
 
-int32_t AV1Enc::GetCtxNmv(const uint8_t refMvCount, const AV1MVCand *refMvStack, int32_t ref, int32_t refMvIdx) {
+uint8_t AV1Enc::GetCtxNmv(int32_t refMvCount, const AV1MVCand *refMvStack, int32_t ref, int32_t refMvIdx) {
     if (refMvStack[refMvIdx].weight >= REF_CAT_LEVEL && refMvIdx < refMvCount)
-        return refMvStack[refMvIdx].predDiff[ref];
+        return (uint8_t)refMvStack[refMvIdx].predDiff[ref];
     return 0;
 }
 

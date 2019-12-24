@@ -575,7 +575,7 @@ namespace VP9PP {
 
         // forward transform [txType] [txSize]
         ftransform_fptr_arr[TX_4X4  ][DCT_DCT  ] = ftransform_sse2<TX_4X4, DCT_DCT>;
-        ftransform_fptr_arr[TX_8X8  ][DCT_DCT  ] = ftransform_px<TX_8X8, DCT_DCT>;
+        ftransform_fptr_arr[TX_8X8  ][DCT_DCT  ] = ftransform_avx2<TX_8X8, DCT_DCT>;
         ftransform_fptr_arr[TX_16X16][DCT_DCT  ] = ftransform_avx2<TX_16X16, DCT_DCT>;
         ftransform_fptr_arr[TX_32X32][DCT_DCT  ] = ftransform_avx2<TX_32X32, DCT_DCT>;
         ftransform_fptr_arr[TX_4X4  ][ADST_DCT ] = ftransform_sse2<TX_4X4, ADST_DCT>;

@@ -23,6 +23,7 @@
 
 #include "vector"
 #include "mfx_av1_defs.h"
+#if PROTOTYPE_GPU_MODE_DECISION_SW_PATH
 #include "mfx_av1_frame.h"
 #include "mfx_av1_enc.h"
 #include "mfx_av1_ctb.h"
@@ -36,12 +37,12 @@ void PrototypeGpuModeDecision(Frame *frame)
 
     AV1VideoParam par = frame->m_fenc->m_videoParam;
 
-    SetupTileParamAv1(&par, (par.sb64Rows + 0) / 1, (par.sb64Cols + 0) / 1, 0);
+    SetupTileParamAv1(&par, &par.tileParam_, (par.sb64Rows + 0) / 1, (par.sb64Cols + 0) / 1, 0);
 
-    std::vector<TileContexts> tctx(par.tileParam.rows * par.tileParam.cols);
-    for (int32_t tr = 0, ti = 0; tr < par.tileParam.rows; tr++) {
-        for (int32_t tc = 0; tc < par.tileParam.cols; tc++, ti++) {
-            tctx[ti].Alloc(par.tileParam.colWidth[tc], par.tileParam.rowHeight[tr]);
+    std::vector<TileContexts> tctx(frame->m_tileParam.numTiles);
+    for (int32_t tr = 0, ti = 0; tr < frame->m_tileParam.rows; tr++) {
+        for (int32_t tc = 0; tc < frame->m_tileParam.cols; tc++, ti++) {
+            tctx[ti].Alloc(frame->m_tileParam.colWidth[tc], frame->m_tileParam.rowHeight[tr]);
             tctx[ti].Clear();
         }
     }
@@ -65,7 +66,7 @@ void PrototypeGpuModeDecision(Frame *frame)
 
             const int32_t ctbColWithinTile = col - (cu->m_tileBorders.colStart >> 3);
             const int32_t ctbRowWithinTile = row - (cu->m_tileBorders.rowStart >> 3);
-            const TileContexts &tileCtx = fenc->m_frame->m_tileContexts[ GetTileIndex(par.tileParam, row, col) ];
+            const TileContexts &tileCtx = fenc->m_frame->m_tileContexts[ GetTileIndex(fenc->m_frame->m_tileParam, row, col) ];
             As16B(tileCtx.aboveNonzero[0] + (ctbColWithinTile << 4)) = As16B(cu->m_contexts.aboveNonzero[0]);
             As8B(tileCtx.aboveNonzero[1]  + (ctbColWithinTile << 3)) = As8B (cu->m_contexts.aboveNonzero[1]);
             As8B(tileCtx.aboveNonzero[2]  + (ctbColWithinTile << 3)) = As8B (cu->m_contexts.aboveNonzero[2]);
@@ -91,7 +92,6 @@ void PrototypeGpuModeDecision(Frame *frame)
     AV1_Free(cu);
     AV1_Free(tempModeInfo);
 }
-
 };  // namespace AV1Enc
-
+#endif
 #endif // MFX_ENABLE_AV1_VIDEO_ENCODE

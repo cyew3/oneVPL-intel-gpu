@@ -23,9 +23,14 @@
 
 #if defined (MFX_ENABLE_AV1_VIDEO_ENCODE)
 
+#include "mfx_av1_defs.h"
+
+#if ENABLE_BRC
+
 #include <math.h>
 #include <algorithm>
 #include "mfx_av1_brc.h"
+#include "mfx_av1_quant.h"
 
 namespace {
 
@@ -75,7 +80,10 @@ static int brc_fprintf(char *fmt, ...)
 #define brc_fprintf
 #endif
 
-#define BRC_QSTEP_SCALE_EXPONENT 0.7
+#define BRC_MAX_LOAN_LENGTH 75
+#define BRC_LOAN_RATIO 0.075f
+
+#define BRC_QSTEP_SCALE_EXPONENT 0.66
 #define BRC_RATE_CMPLX_EXPONENT 0.5
 
 mfxStatus AV1BRC::Close()
@@ -103,7 +111,7 @@ mfxStatus AV1BRC::InitHRD()
     mHRD.inputBitsPerFrame = mHRD.maxBitrate / mFramerate;
 
     if (mHRD.maxBitrate < mBitrate)
-        mBitrate = mHRD.maxBitrate;
+        mBitrate = uint32_t(mHRD.maxBitrate);
 
     int32_t bitsPerFrame = (int32_t)(mBitrate / mFramerate);
 
@@ -143,7 +151,7 @@ int32_t AV1BRC::GetInitQP()
   fs = fs * mParams.bitDepthLuma / 8;
 
   double qstep = pow(1.5 * fs * mFramerate / mBitrate, 0.8);
-  int32_t q = Qstep2QP(qstep, mQuantOffset) + mQuantOffset;
+  int32_t q = Qstep2QP(qstep, uint8_t(mQuantOffset)) + mQuantOffset;
 
   BRC_CLIP(q, 1, mQuantMax);
 
@@ -218,8 +226,8 @@ mfxStatus AV1BRC::Init(const mfxVideoParam *params,  AV1VideoParam &video, int32
         mBF = (mfxI64)mParams.HRDInitialDelayBytes * mParams.frameRateExtN;
         mBFsaved = mBF;
 
-        mPredBufFulness = mHRD.bufFullness;
-        mRealPredFullness = mHRD.bufFullness;
+        mPredBufFulness = int(mHRD.bufFullness);
+        mRealPredFullness = int(mHRD.bufFullness);
     }
 
     mBitsDesiredFrame = (int32_t)(mBitrate / mFramerate);
@@ -232,7 +240,7 @@ mfxStatus AV1BRC::Init(const mfxVideoParam *params,  AV1VideoParam &video, int32
     mQuantMin = 1;
     mMinQp = mQuantMin;
 
-
+    mBrcLoanRatio = BRC_LOAN_RATIO;
     mBitsDesiredTotal = 0;
     mBitsEncodedTotal = 0;
 
@@ -240,10 +248,36 @@ mfxStatus AV1BRC::Init(const mfxVideoParam *params,  AV1VideoParam &video, int32
     mRecodedFrame_encOrder = -1;
 
     if (video.AnalyzeCmplx) {
+#ifdef AMT_MAX_FRAME_SIZE
+        if (video.MaxFrameSizeInBits) {
+            if (params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) {
+                mMaxFrameSizeInBitsI = mMaxFrameSizeInBits = video.MaxFrameSizeInBits;
+            }
+            else {
+                mMaxFrameSizeInBitsI = mMaxFrameSizeInBits = video.MaxFrameSizeInBits/2;
+            }
+        }
+#ifdef LOW_COMPLX_PAQ
+        else if ((video.DeltaQpMode&AMT_DQP_PAQ) && video.FullresMetrics == 1
+            //&& mParams.bitDepthLuma == 8 // now 10bit
+            && params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE && mRCMode != MFX_RATECONTROL_AVBR) {
+            // Dynamic Safe Init/Scene change
+            mMaxFrameSizeInBitsI = (uint32_t)((BRC_MAX_LOAN_LENGTH * BRC_LOAN_RATIO * 2.0f + 1.5f) * mBitsDesiredFrame);
+        }
+#endif
+        else if(video.FullresMetrics == 1
+            && params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE && mRCMode == MFX_RATECONTROL_CBR) {
+            mMaxFrameSizeInBitsI = mMaxFrameSizeInBits = MAX(mBitsDesiredFrame*2, mParams.HRDBufferSizeBytes << 2);
+        } else if (video.FullresMetrics == 1
+            && params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE && mRCMode == MFX_RATECONTROL_VBR) {
+            mMaxFrameSizeInBitsI = mMaxFrameSizeInBits = MAX(mBitsDesiredFrame*2, MIN(mParams.maxBitrate, mParams.HRDBufferSizeBytes << 3));
+        }
+        InitMinQForMaxFrameSize(&video);
+#endif
 
         mTotalDeviation = 0;
 
-        mNumLayers = video.PGopPicSize > 1 ?  2 : video.BiPyramidLayers + 1;
+        mNumLayers = video.PGopPicSize > 1 ?  4 : video.BiPyramidLayers + 1;
         if (video.GopRefDist > 1 && video.BiPyramidLayers == 1)
             mNumLayers = 3; // in case of BiPyramid is off there are 3 layers for BRC: I, P, and other Bs
 
@@ -258,6 +292,7 @@ mfxStatus AV1BRC::Init(const mfxVideoParam *params,  AV1VideoParam &video, int32
         mTotMeanComplx = 0;
         mTotTarget = mBitsDesiredFrame;
         mLoanLength = 0;
+        mLoanRatio = 0;
         mLoanBitsPerFrame = 0;
 
         //mLoanLengthP = 0;
@@ -271,6 +306,7 @@ mfxStatus AV1BRC::Init(const mfxVideoParam *params,  AV1VideoParam &video, int32
             Zero(mPrevBitsLayer);
         }
         Zero(mPrevQpLayer);
+        Zero(mPrevQpLayerSet);
 
         mPrevBitsIP = -1;
         mPrevCmplxIP = -1;
@@ -287,27 +323,42 @@ mfxStatus AV1BRC::Init(const mfxVideoParam *params,  AV1VideoParam &video, int32
             fs += fs;
         else if (mParams.chromaFormat == MFX_CHROMAFORMAT_YUV444)
             fs += fs * 2;
+        mfs = fs;
 
-        mCmplxRate = 20.*pow((double)fs, 0.8); // adjustment for subpel
+        mCmplxRate = 12.*pow((double)fs, 0.8); // adjustment for subpel
         if (mQuantOffset)
             mCmplxRate *= (1 << mQuantOffset / 6) * 0.9;
         mQstepScale0 = mQstepScale = pow(mCmplxRate / mTotTarget, BRC_QSTEP_SCALE_EXPONENT);// * (1 << mQuantOffset / 6);
 
         double sum = 1;
-        double layerRatio = 0.3; // tmp ???
-        double layerShare = layerRatio;
+        mLayerRatio = 0.3;
+        double layerShare = mLayerRatio;
         for (int32_t i = 2; i < mNumLayers; i++) {
             sum += layerShare;
-            layerShare *= 2*layerRatio;
+            layerShare *= 2*mLayerRatio;
         }
         Zero(mLayerTarget);
-        double targetMiniGop = mBitsDesiredFrame * video.GopRefDist;
+        double targetMiniGop = mBitsDesiredFrame * (video.PGopPicSize>1 ? video.PGopPicSize : video.GopRefDist);
         mLayerTarget[1] = targetMiniGop / sum;
+
+        if (mMaxFrameSizeInBits && (mMaxFrameSizeInBits*0.9175)<mLayerTarget[1] && mNumLayers == 4) {
+            mLayerRatio = (sqrt(8.0 * (targetMiniGop / (mMaxFrameSizeInBits*0.9175)) - 7.0) - 1.0)/4.0;
+            sum = 1;
+            layerShare = mLayerRatio;
+            for (int32_t i = 2; i < mNumLayers; i++) {
+                sum += layerShare;
+                layerShare *= 2 * mLayerRatio;
+            }
+            mLayerTarget[1] = targetMiniGop / sum;
+        }
+
         mLayerTarget[0] = mLayerTarget[1] * 3;
+        if (mMaxFrameSizeInBitsI)
+            mLayerTarget[0] = MIN(mMaxFrameSizeInBitsI, mLayerTarget[0]);
 
         brc_fprintf("layer Targets: %d %d ", (int)mLayerTarget[0], (int)mLayerTarget[1]);
         for (int32_t i = 2; i < mNumLayers; i++) {
-            mLayerTarget[i] = mLayerTarget[i-1]*layerRatio;
+            mLayerTarget[i] = mLayerTarget[i-1]*mLayerRatio;
             brc_fprintf(" %d", (int)mLayerTarget[i]);
         }
         brc_fprintf("\n");
@@ -317,6 +368,16 @@ mfxStatus AV1BRC::Init(const mfxVideoParam *params,  AV1VideoParam &video, int32
                 mEstCoeff[i] = mLayerTarget[i] * 10.;
                 mEstCnt[i] = 1.;
             }
+        }
+
+        {
+            uint32_t loan_len = BRC_MAX_LOAN_LENGTH;
+            if (video.GopPicSize && video.GopPicSize < BRC_MAX_LOAN_LENGTH)
+                loan_len = video.GopPicSize;
+            float keySize = (BRC_MAX_LOAN_LENGTH* BRC_LOAN_RATIO) + 1;
+            if (mLayerTarget[0] < keySize*mBitsDesiredFrame)
+                keySize = (float)(mLayerTarget[0] / mBitsDesiredFrame);
+            mBrcLoanRatio = (keySize -1) / loan_len;
         }
 
     } else {
@@ -352,8 +413,11 @@ mfxStatus AV1BRC::Init(const mfxVideoParam *params,  AV1VideoParam &video, int32
         mMinQp = -1;
     }
 
+    mDynamicInit = 0;  // AMT_LTR
+
     mPicType = MFX_FRAMETYPE_I;
     mSceneNum = 0;
+    mMiniGopFrames.clear();
     mIsInit = true;
 
     return status;
@@ -501,6 +565,33 @@ mfxStatus AV1BRC::Reset(mfxVideoParam *params, AV1VideoParam &video, int32_t ena
 
     mMaxQp = 999;
     mMinQp = -1;
+#ifdef AMT_MAX_FRAME_SIZE
+    if (video.MaxFrameSizeInBits) {
+        if (params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) {
+            mMaxFrameSizeInBitsI = mMaxFrameSizeInBits = video.MaxFrameSizeInBits;
+        }
+        else {
+            mMaxFrameSizeInBitsI = mMaxFrameSizeInBits = video.MaxFrameSizeInBits / 2;
+        }
+    }
+#ifdef LOW_COMPLX_PAQ
+    else if ((video.DeltaQpMode&AMT_DQP_PAQ) && video.FullresMetrics == 1
+        //&& mParams.bitDepthLuma == 8 // now 10bit
+        && params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE && mRCMode != MFX_RATECONTROL_AVBR) {
+        // Dynamic Safe Init/Scene change
+        mMaxFrameSizeInBitsI = (uint32_t)((BRC_MAX_LOAN_LENGTH * BRC_LOAN_RATIO * 2.0f + 1.5f) * mBitsDesiredFrame);
+    }
+#endif
+    else if (video.FullresMetrics == 1
+        && params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE && mRCMode == MFX_RATECONTROL_CBR) {
+        mMaxFrameSizeInBitsI = mMaxFrameSizeInBits = mParams.HRDBufferSizeBytes << 4;
+    }
+    else if (video.FullresMetrics == 1
+        && params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE && mRCMode == MFX_RATECONTROL_VBR) {
+        mMaxFrameSizeInBitsI = mMaxFrameSizeInBits = MIN(mParams.maxBitrate, mParams.HRDBufferSizeBytes << 8);
+    }
+#endif
+    InitMinQForMaxFrameSize(&video);
 
     return MFX_ERR_NONE;
 }
@@ -523,6 +614,8 @@ int32_t AV1BRC::PredictFrameSize(AV1VideoParam *video, Frame *frames[], int32_t 
     int32_t i;
     double cmplx = frames[0]->m_stats[mLowres]->m_avgBestSatd;
     int32_t layer = (frames[0]->m_picCodeType == MFX_FRAMETYPE_I ? 0 : (frames[0]->m_picCodeType == MFX_FRAMETYPE_P ? 1 : 1 + std::max(1, frames[0]->m_pyramidLayer)));
+    if (frames[0]->m_picCodeType == MFX_FRAMETYPE_P && video->PGopPicSize > 1)
+        layer = 1 + frames[0]->m_pyramidLayer;
     int32_t predBitsLayer = -1, predBits = -1;
     double q = QP2Qstep(qp, mQuantOffset);
     int32_t refQp = -1, refEncOrder = -1, refDispOrder = -1;
@@ -541,18 +634,18 @@ int32_t AV1BRC::PredictFrameSize(AV1VideoParam *video, Frame *frames[], int32_t 
             if (w > 1)
                 w = 1;
             if (mPrevCmplxLayer[0] > BRC_MIN_CMPLX_LAYER_I)
-                predBits = cmplx / mPrevCmplxLayer[0] * mPrevQstepLayer[0] / q * mPrevBitsLayer[0];
+                predBits = int(cmplx / mPrevCmplxLayer[0] * mPrevQstepLayer[0] / q * mPrevBitsLayer[0]);
             else
-                predBits = cmplx / BRC_MIN_CMPLX_LAYER_I * mPrevQstepLayer[0] / q * mPrevBitsLayer[0];
+                predBits = int(cmplx / BRC_MIN_CMPLX_LAYER_I * mPrevQstepLayer[0] / q * mPrevBitsLayer[0]);
 
             double predBits1 = predBits;
             predBits = (int32_t)(w*predBits0  + (1 - w)*predBits);
             if (mPrevCmplxLayer[0] > 0.1 && cmplx > mPrevCmplxLayer[0]) {
-                predBits  = std::max(predBits1, (double)predBits);
+                predBits  = int(std::max(predBits1, (double)predBits));
             }
 
         } else // can never happen
-            predBits = predBits0;
+            predBits = int(predBits0);
 
         brc_fprintf("%f %f %f %f %d | %d \n", cmplx , mPrevCmplxLayer[0] , mPrevQstepLayer[0] , q , mPrevBitsLayer[0], predBits);
 
@@ -567,7 +660,7 @@ int32_t AV1BRC::PredictFrameSize(AV1VideoParam *video, Frame *frames[], int32_t 
         refEncOrder = refFrame->m_encOrder;
         refDispOrder = refFrame->m_frameOrder;
 
-        int32_t size = mMiniGopFrames.size();
+        int32_t size = int(mMiniGopFrames.size());
         for (i = 0; i < size; i++) {
             if (mMiniGopFrames[i].encOrder == refEncOrder) {
                 refQstep = mMiniGopFrames[i].qstep;
@@ -599,10 +692,10 @@ int32_t AV1BRC::PredictFrameSize(AV1VideoParam *video, Frame *frames[], int32_t 
         refFrData->cmplx = cmplx;
 
         if (mPrevCmplxLayer[layer] > BRC_MIN_CMPLX_LAYER)
-            predBitsLayer = cmplx / mPrevCmplxLayer[layer] * mPrevQstepLayer[layer] / q * mPrevBitsLayer[layer];
+            predBitsLayer = int(cmplx / mPrevCmplxLayer[layer] * mPrevQstepLayer[layer] / q * mPrevBitsLayer[layer]);
 
         if (mPrevCmplxLayer[layer - 1] > BRC_MIN_CMPLX)
-            predBits = cmplx / mPrevCmplxLayer[layer-1] * mPrevQstepLayer[layer-1] / q * mPrevBitsLayer[layer-1];
+            predBits = int(cmplx / mPrevCmplxLayer[layer-1] * mPrevQstepLayer[layer-1] / q * mPrevBitsLayer[layer-1]);
 
         brc_fprintf(" -- %d %d -- ", qp, refQp);
 
@@ -618,12 +711,12 @@ int32_t AV1BRC::PredictFrameSize(AV1VideoParam *video, Frame *frames[], int32_t 
 
             if (mPrevCmplxIP >= 0 && frames[0]->m_sceneOrder == mSceneNum) {
                 if (mPrevCmplxIP > BRC_MIN_CMPLX) {
-                    predBits = intraCmplx / mPrevCmplxIP * mPrevQstepIP / q * mPrevBitsIP;
+                    predBits = int(intraCmplx / mPrevCmplxIP * mPrevQstepIP / q * mPrevBitsIP);
                     if (predBits > predBitsLayer)
                         predBitsLayer = predBits;
                 }
             } else if (mPrevCmplxLayer[0] > BRC_MIN_CMPLX) {
-                predBits = intraCmplx / mPrevCmplxLayer[0] * mPrevQstepLayer[0] / q * mPrevBitsLayer[0];
+                predBits = int(intraCmplx / mPrevCmplxLayer[0] * mPrevQstepLayer[0] / q * mPrevBitsLayer[0]);
                 if (predBits > predBitsLayer)
                     predBitsLayer = predBits;
             }
@@ -639,7 +732,7 @@ int32_t AV1BRC::PredictFrameSize(AV1VideoParam *video, Frame *frames[], int32_t 
         refDispOrder = refFrame0->m_frameOrder;
 
 
-        int32_t size = mMiniGopFrames.size();
+        int size = int(mMiniGopFrames.size());
         for (i = 0; i < size; i++) {
             if (mMiniGopFrames[i].encOrder == refEncOrder) {
                 refQstep = mMiniGopFrames[i].qstep;
@@ -756,17 +849,17 @@ int32_t AV1BRC::PredictFrameSize(AV1VideoParam *video, Frame *frames[], int32_t 
         refFrData->cmplx = cmplx;
 
         if (mPrevCmplxLayer[layer] > BRC_MIN_CMPLX_LAYER)
-            predBitsLayer = cmplx / mPrevCmplxLayer[layer] * mPrevQstepLayer[layer] / q * mPrevBitsLayer[layer];
+            predBitsLayer = int(cmplx / mPrevCmplxLayer[layer] * mPrevQstepLayer[layer] / q * mPrevBitsLayer[layer]);
 
         if (mPrevCmplxLayer[layer - 1] > BRC_MIN_CMPLX)
-            predBits = cmplx / mPrevCmplxLayer[layer-1] * mPrevQstepLayer[layer-1] / q * mPrevBitsLayer[layer-1];
+            predBits = int(cmplx / mPrevCmplxLayer[layer-1] * mPrevQstepLayer[layer-1] / q * mPrevBitsLayer[layer-1]);
 
     }
 
     if (predBits < 0 && predBitsLayer < 0) {
-        predBitsLayer = cmplx / BRC_MIN_CMPLX_LAYER * mPrevQstepLayer[layer] / q * mPrevBitsLayer[layer];
+        predBitsLayer = int(cmplx / BRC_MIN_CMPLX_LAYER * mPrevQstepLayer[layer] / q * mPrevBitsLayer[layer]);
         if (layer > 0)
-            predBits = cmplx / BRC_MIN_CMPLX * mPrevQstepLayer[layer-1] / q * mPrevBitsLayer[layer-1];
+            predBits = int(cmplx / BRC_MIN_CMPLX * mPrevQstepLayer[layer-1] / q * mPrevBitsLayer[layer-1]);
     }
 
     if (predBitsLayer >= 0 && predBits >= 0) {
@@ -796,7 +889,6 @@ int32_t AV1BRC::PredictFrameSize(AV1VideoParam *video, Frame *frames[], int32_t 
 
 void AV1BRC::SetMiniGopData(Frame *frames[], int32_t numFrames)
 {
-    int32_t frcnt = 0, i;
     int32_t size;
     int32_t start = 0;
     int32_t toerase = 0;
@@ -808,7 +900,7 @@ void AV1BRC::SetMiniGopData(Frame *frames[], int32_t numFrames)
         if (mMiniGopFrames.back().encOrder <= mEncOrderCoded)
             mMiniGopFrames.clear();
         else {
-            for (i = (int32_t)mMiniGopFrames.size() - 1; i > 0; i--) {
+            for (int i = (int32_t)mMiniGopFrames.size() - 1; i > 0; i--) {
                 if (mMiniGopFrames[i].layer <= 1) {
                     if (mMiniGopFrames[i - 1].encOrder <= mEncOrderCoded) {
                         toerase = i;
@@ -817,7 +909,7 @@ void AV1BRC::SetMiniGopData(Frame *frames[], int32_t numFrames)
                 }
             }
             if (toerase > 0) {
-                for (i = toerase - 1; i >= 0; i--) {
+                for (int i = toerase - 1; i >= 0; i--) {
                     if (mMiniGopFrames[i].layer <= 1) { // need to keep prev P for not yet coded B's
                         if (i > 0)
                             mMiniGopFrames.erase(mMiniGopFrames.begin(), mMiniGopFrames.begin() + i);
@@ -828,7 +920,7 @@ void AV1BRC::SetMiniGopData(Frame *frames[], int32_t numFrames)
             }
         }
 
-        for (i = (int32_t)mMiniGopFrames.size() - 1; i >= 0; i--) {
+        for (int i = (int32_t)mMiniGopFrames.size() - 1; i >= 0; i--) {
             if (frames[0]->m_encOrder >  mMiniGopFrames[i].encOrder) {
                 start = i + 1;
                 break;
@@ -839,7 +931,7 @@ void AV1BRC::SetMiniGopData(Frame *frames[], int32_t numFrames)
     size = numFrames + start;
     mMiniGopFrames.resize(size);
 
-    for (i = 0; i < numFrames; i++) {
+    for (int i = 0; i < numFrames; i++) {
         mMiniGopFrames[i + start].cmplx = frames[i]->m_stats[mLowres]->m_avgBestSatd;
         mMiniGopFrames[i + start].cmplxInter = frames[i]->m_stats[mLowres]->m_avgInterSatd;
         mMiniGopFrames[i + start].encOrder = frames[i]->m_encOrder;
@@ -860,23 +952,749 @@ void AV1BRC::UpdateMiniGopData(Frame *frame, int8_t qp)
     }
 }
 
+
+#define BRC_MIN_CMPLX_FACTOR 0.1
+
+#define BRC_CONST_MUL_B1 1.836646650
+#define BRC_CONST_MUL_B2 2.151466181
+#define BRC_CONST_MUL_B3 1.882509199
+
+#define BRC_CONST_EXP_R_B1 0.464067453
+#define BRC_CONST_EXP_R_B2 0.42717007
+#define BRC_CONST_EXP_R_B3 0.403810703
+
+#define BRC_CONST_EXP_CP_B1 0.435985838
+#define BRC_CONST_EXP_CI_B1 0.293863142
+#define BRC_CONST_EXP_CP_B2 0.349251646
+#define BRC_CONST_EXP_CI_B2 0.270572445
+#define BRC_CONST_EXP_CP_B3 0.260676727
+#define BRC_CONST_EXP_CI_B3 0.262438217
+
+#define BRC_CONST_MUL_I8 1.207685293
+#define BRC_CONST_EXP_R_I8 0.743703955
+#define BRC_CONST_EXP_C_I8 0.867665105
+
+#define BRC_CONST_MUL_P1 2.014391968
+#define BRC_CONST_EXP_R_P1 0.474328692
+#define BRC_CONST_EXP_CI_P1 0.306698776
+#define BRC_CONST_EXP_CP_P1 0.398015286
+
+#define BRC_CONST_MUL_P2 1.799534763
+#define BRC_CONST_EXP_R_P2 0.4912499995
+#define BRC_CONST_EXP_CI_P2 0.3652363425
+#define BRC_CONST_EXP_CP_P2 0.445514609
+
+#define BRC_CONST_MUL_P3 1.584677558
+#define BRC_CONST_EXP_R_P3 0.508171307
+#define BRC_CONST_EXP_CI_P3 0.423773909
+#define BRC_CONST_EXP_CP_P3 0.493013932
+
+#define BRC_CONST_MUL_P8 1.321864816
+#define BRC_CONST_EXP_R_P8 0.604323959
+#define BRC_CONST_EXP_CI_P8 0.617129289
+#define BRC_CONST_EXP_CP_P8 0.300691
+
+
+void AV1BRC::InitMinQForMaxFrameSize(AV1VideoParam *video)
+{
+#ifndef AMT_MAX_FRAME_SIZE
+    return;
+#else
+    //Init
+    mMinQstepCmplxKInitEncOrder = 0;
+    // Vars for Update
+    for (int32_t l = 0; l < 5; l++) {
+        mMinQstepCmplxKUpdtC[l] = 0;
+        mMinQstepCmplxKUpdt[l] = 0;
+        mMinQstepCmplxKUpdtErr[l] = 0.16;
+    }
+
+    mMinQstepCmplxK[0] = BRC_CONST_MUL_I8;
+    mMinQstepCmplxK[2] = BRC_CONST_MUL_B1;
+    mMinQstepCmplxK[3] = BRC_CONST_MUL_B2;
+    mMinQstepCmplxK[4] = BRC_CONST_MUL_B3;
+
+    // P is based on GopRefDist
+    if(video->GopRefDist>4) {
+        mMinQstepCmplxK[1] = BRC_CONST_MUL_P8;
+        mMinQstepRateEP = BRC_CONST_EXP_R_P8;
+        mMinQstepPCmplxEP = BRC_CONST_EXP_CP_P8;
+        mMinQstepICmplxEP = BRC_CONST_EXP_CI_P8;
+    } else if(video->GopRefDist>1) {
+        mMinQstepCmplxK[1] = BRC_CONST_MUL_P3;
+        mMinQstepRateEP = BRC_CONST_EXP_R_P3;
+        mMinQstepPCmplxEP = BRC_CONST_EXP_CP_P3;
+        mMinQstepICmplxEP = BRC_CONST_EXP_CI_P3;
+    } else if(video->picStruct == MFX_PICSTRUCT_PROGRESSIVE) {
+        mMinQstepCmplxK[1] = BRC_CONST_MUL_P1;
+        mMinQstepRateEP = BRC_CONST_EXP_R_P1;
+        mMinQstepPCmplxEP = BRC_CONST_EXP_CP_P1;
+        mMinQstepICmplxEP = BRC_CONST_EXP_CI_P1;
+    } else {
+        mMinQstepCmplxK[1] = BRC_CONST_MUL_P2;
+        mMinQstepRateEP = BRC_CONST_EXP_R_P2;
+        mMinQstepPCmplxEP = BRC_CONST_EXP_CP_P2;
+        mMinQstepICmplxEP = BRC_CONST_EXP_CI_P2;
+    }
+#endif
+}
+
+#ifdef AMT_MAX_FRAME_SIZE
+void AV1BRC::ResetMinQForMaxFrameSize(AV1VideoParam *video, Frame *f)
+{
+    //Reset
+    mMinQstepCmplxKInitEncOrder = f->m_encOrder;
+
+    for (int32_t l = 1; l < 5; l++) {
+        mMinQstepCmplxKUpdtC[l] = 0;
+        mMinQstepCmplxKUpdt[l] = 0;
+        mMinQstepCmplxKUpdtErr[l] = 0.16;
+    }
+
+    mMinQstepCmplxK[2] = BRC_CONST_MUL_B1;
+    mMinQstepCmplxK[3] = BRC_CONST_MUL_B2;
+    mMinQstepCmplxK[4] = BRC_CONST_MUL_B3;
+
+    // P is based on GopRefDist
+    if(video->GopRefDist>4) {
+        mMinQstepCmplxK[1] = BRC_CONST_MUL_P8;
+        mMinQstepRateEP = BRC_CONST_EXP_R_P8;
+    } else if(video->GopRefDist>1) {
+        mMinQstepCmplxK[1] = BRC_CONST_MUL_P3;
+        mMinQstepRateEP = BRC_CONST_EXP_R_P3;
+    } else if (video->picStruct == MFX_PICSTRUCT_PROGRESSIVE) {
+        mMinQstepCmplxK[1] = BRC_CONST_MUL_P1;
+        mMinQstepRateEP = BRC_CONST_EXP_R_P1;
+    } else {
+        mMinQstepCmplxK[1] = BRC_CONST_MUL_P2;
+        mMinQstepRateEP = BRC_CONST_EXP_R_P2;
+    }
+}
+
+void AV1BRC::UpdateMinQForMaxFrameSize(uint32_t maxFrameSizeInBits, AV1VideoParam *video, Frame *f, int32_t bits, int32_t layer, mfxBRCStatus Sts)
+{
+    if(!maxFrameSizeInBits) return;
+    if(!bits) bits = 8;
+    if(layer == 0) {
+
+        double fzCmplx = f->m_fzCmplx;
+        double MinQstepCmplxK = f->m_fzCmplxK;
+
+        double R = mfs / (double) bits;
+        double C = MAX(BRC_MIN_CMPLX_FACTOR, fzCmplx);
+        double rateQstep = pow(R, BRC_CONST_EXP_R_I8);
+        double cmplxExp = pow(C,  BRC_CONST_EXP_C_I8);
+        double cmplxQstep = MinQstepCmplxK * cmplxExp;
+        double QstepScaleComputed = rateQstep * cmplxQstep;
+
+        double QstepScaleReal = QP2Qstep(f->m_sliceQpBrc, mQuantOffset);
+        double dS = log(QstepScaleReal) - log(QstepScaleComputed);
+        double upDlt = MIN(0.5, MAX(0.0125, 1.3042 * pow(R,-0.922)));
+        if(Sts & MFX_BRC_ERR_MAX_FRAME) upDlt  = 0.9;
+
+        // abs envelope + iirmavg4
+        mMinQstepCmplxKUpdtErr[0] = MAX((mMinQstepCmplxKUpdtErr[0] + abs(dS)/MinQstepCmplxK)/2, abs(dS)/MinQstepCmplxK);
+        dS = BRC_CLIP(dS, -0.5, 1.0);
+
+        mMinQstepCmplxK[0] = MinQstepCmplxK * (1.0 + upDlt*dS);
+        mMinQstepCmplxKUpdt[0]++;
+        mMinQstepCmplxKUpdtC[0] = C;
+
+        // Sanity Check
+        if(Sts & MFX_BRC_ERR_MAX_FRAME) {
+            int32_t qp_prev = f->m_sliceQpBrc; //Qstep2QP(QstepScaleComputed, mQuantOffset);
+            if(qp_prev < 51 + mQuantOffset) {
+                double rateQstepNew = pow( (double) mfs / (double) maxFrameSizeInBits, BRC_CONST_EXP_R_I8);
+                double QstepScaleUpdtComputed = rateQstepNew * mMinQstepCmplxK[0] * cmplxExp;
+                int32_t qp_now = Qstep2QP(QstepScaleUpdtComputed, (uint8_t)mQuantOffset);
+                int32_t off = (int32_t)MAX(1, ((float)(bits - maxFrameSizeInBits)/((float)bits*0.16f) + 0.5f));
+                if(qp_prev + off > qp_now) {
+                    qp_now = MIN(51, qp_prev + off);
+                    QstepScaleUpdtComputed = QP2Qstep(qp_now);
+                    mMinQstepCmplxK[0] = QstepScaleUpdtComputed / (rateQstepNew * cmplxExp);
+                    mMinQstepCmplxKUpdtErr[0] = 0.16;
+                }
+            }
+        }
+
+    } else if(layer == 1) {
+
+        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (int32_t) maxFrameSizeInBits) return;
+
+        double iCmplx = MAX(BRC_MIN_CMPLX_FACTOR, f->m_stats[mLowres]->m_avgIntraSatd);
+        double fzCmplx = f->m_fzCmplx;
+        double MinQstepCmplxK = f->m_fzCmplxK;
+        double MinQstepRateEP = f->m_fzRateE;
+
+        double R = (double) mfs / (double) bits;
+        double C = MAX(BRC_MIN_CMPLX_FACTOR, fzCmplx);
+        double rateQstep = pow(R, MinQstepRateEP);
+        double cmplxExp = pow(C,  mMinQstepPCmplxEP) * pow(iCmplx, mMinQstepICmplxEP);
+        double cmplxQstep = MinQstepCmplxK * cmplxExp;
+        double QstepScaleComputed = rateQstep * cmplxQstep;
+        double QstepScaleReal = QP2Qstep(f->m_sliceQpBrc, mQuantOffset);
+        double dS = log(QstepScaleReal) - log(QstepScaleComputed);
+        double upDlt = MIN(0.5, MAX(0.0125, 1.3042 * pow(R,-0.922)));
+        if(Sts & MFX_BRC_ERR_MAX_FRAME) upDlt = 0.5;
+
+        // abs envelope + iirmavg4
+        mMinQstepCmplxKUpdtErr[1] = MAX((mMinQstepCmplxKUpdtErr[1] + abs(dS)/MinQstepCmplxK)/2, abs(dS)/MinQstepCmplxK);
+        dS = BRC_CLIP(dS, -0.5, 1.0);
+
+        mMinQstepCmplxK[1] = MinQstepCmplxK*(1.0 + upDlt*dS);
+        mMinQstepCmplxKUpdt[1]++;
+        mMinQstepCmplxKUpdtC[1] = iCmplx;
+
+        mMinQstepRateEP = MIN(1.0, MAX(0.125, MinQstepRateEP + MAX(-0.1, MIN(0.2, 0.01 * (log(QstepScaleReal) - log(QstepScaleComputed))*log(R)))));
+
+        // Sanity Check
+        if(Sts & MFX_BRC_ERR_MAX_FRAME) {
+            int32_t qp_prev = f->m_sliceQpBrc; // Qstep2QP(QstepScaleComputed, mQuantOffset));
+
+            if(qp_prev < 51 + mQuantOffset) {
+                double rateQstepNew = pow( (double) mfs / (double) maxFrameSizeInBits, mMinQstepRateEP);
+                double QstepScaleUpdtComputed = rateQstepNew * mMinQstepCmplxK[1] * cmplxExp;
+                int32_t qp_now = Qstep2QP(QstepScaleUpdtComputed, (uint8_t)mQuantOffset);
+                int32_t off = (int32_t)MAX(1, ((float)(bits - maxFrameSizeInBits)/((float)bits*0.16f) + 0.5f));
+                if(qp_prev + off > qp_now) {
+                    qp_now = MIN(51, qp_prev + off);
+                    QstepScaleUpdtComputed = QP2Qstep(qp_now);
+                    mMinQstepCmplxK[1] = QstepScaleUpdtComputed / (rateQstepNew * cmplxExp);
+                    mMinQstepCmplxKUpdtErr[1] = 0.16;
+                }
+            }
+        }
+
+    } else if(layer == 2) {
+
+        // update only if enough bits (coeffs coded most probably not just overhead)
+        if(bits < (float)mBitsDesiredFrame*0.30f) return;
+        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (int32_t) maxFrameSizeInBits) return;
+
+        double iCmplx = MAX(BRC_MIN_CMPLX_FACTOR, f->m_stats[mLowres]->m_avgIntraSatd);
+        double fzCmplx = f->m_fzCmplx;
+        double MinQstepCmplxK = f->m_fzCmplxK;
+
+        double R = mfs / (double) bits;
+        double C = MAX(BRC_MIN_CMPLX_FACTOR, fzCmplx);
+        double rateQstep = pow(R, BRC_CONST_EXP_R_B1);
+        double cmplxExp = pow(C,  BRC_CONST_EXP_CP_B1) * pow(iCmplx,  BRC_CONST_EXP_CI_B1);
+        double cmplxQstep = MinQstepCmplxK * cmplxExp;
+        double QstepScaleComputed = rateQstep * cmplxQstep;
+        double QstepScaleReal = QP2Qstep(f->m_sliceQpBrc, mQuantOffset);
+        double dS = log(QstepScaleReal) - log(QstepScaleComputed);
+        double upDlt = 0.5;
+        if(Sts & MFX_BRC_ERR_MAX_FRAME) upDlt = 1.0;
+        // abs envelope + iirmavg4
+        mMinQstepCmplxKUpdtErr[layer] = MAX((mMinQstepCmplxKUpdtErr[layer] + abs(dS)/MinQstepCmplxK)/2, abs(dS)/MinQstepCmplxK);
+        dS = BRC_CLIP(dS, -0.5, 1.0);
+
+        mMinQstepCmplxK[layer] = MinQstepCmplxK * (1.0 + upDlt*dS);
+        mMinQstepCmplxKUpdt[layer]++;
+        mMinQstepCmplxKUpdtC[2] = iCmplx;
+
+        // Sanity Check
+        if(Sts & MFX_BRC_ERR_MAX_FRAME) {
+            int32_t qp_prev = f->m_sliceQpBrc; // Qstep2QP(QstepScaleComputed, mQuantOffset);
+            if(qp_prev < 51 + mQuantOffset) {
+                double rateQstepNew = pow( (double) mfs / (double) maxFrameSizeInBits, BRC_CONST_EXP_R_B1);
+                double QstepScaleUpdtComputed = rateQstepNew * mMinQstepCmplxK[layer] * cmplxExp;
+                int32_t qp_now = Qstep2QP(QstepScaleUpdtComputed, (uint8_t)mQuantOffset);
+                int32_t off = (int32_t)MAX(1, ((float)(bits - maxFrameSizeInBits)/((float)bits*0.16f) + 0.5f));
+                if(qp_prev + off > qp_now) {
+                    qp_now = MIN(51, qp_prev + off);
+                    QstepScaleUpdtComputed = QP2Qstep(qp_now);
+                    mMinQstepCmplxK[layer] = QstepScaleUpdtComputed / (rateQstepNew * cmplxExp);
+                    mMinQstepCmplxKUpdtErr[layer] = 0.16;
+                }
+            }
+        }
+    } else if(layer == 3) {
+
+        // update only if enough bits (coeffs coded most probably not just overhead)
+        if(bits < (float)mBitsDesiredFrame*0.09f) return;
+        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (int32_t) maxFrameSizeInBits) return;
+
+        double iCmplx = MAX(BRC_MIN_CMPLX_FACTOR, f->m_stats[mLowres]->m_avgIntraSatd);
+        double fzCmplx = f->m_fzCmplx;
+        double MinQstepCmplxK = f->m_fzCmplxK;
+
+        double R = mfs / (double) bits;
+        double C = MAX(BRC_MIN_CMPLX_FACTOR, fzCmplx);
+        double rateQstep = pow(R, BRC_CONST_EXP_R_B2);
+        double cmplxExp = pow(C,  BRC_CONST_EXP_CP_B2) * pow(iCmplx,  BRC_CONST_EXP_CI_B2);
+        double cmplxQstep = MinQstepCmplxK * cmplxExp;
+        double QstepScaleComputed = rateQstep * cmplxQstep;
+        double QstepScaleReal = QP2Qstep(f->m_sliceQpBrc, mQuantOffset);
+        double dS = log(QstepScaleReal) - log(QstepScaleComputed);
+        double upDlt = 0.5;
+        if(Sts & MFX_BRC_ERR_MAX_FRAME) upDlt = 1.0;
+        // abs envelope + iirmavg4
+        mMinQstepCmplxKUpdtErr[layer] = MAX((mMinQstepCmplxKUpdtErr[layer] + abs(dS)/MinQstepCmplxK)/2, abs(dS)/MinQstepCmplxK);
+        dS = BRC_CLIP(dS, -0.5, 1.0);
+
+        mMinQstepCmplxK[layer] = MinQstepCmplxK * (1.0 + upDlt*dS);
+        mMinQstepCmplxKUpdt[layer]++;
+        mMinQstepCmplxKUpdtC[3] = iCmplx;
+
+        // Sanity Check
+        if(Sts & MFX_BRC_ERR_MAX_FRAME) {
+            int32_t qp_prev = f->m_sliceQpBrc; // Qstep2QP(QstepScaleComputed, mQuantOffset);
+            if(qp_prev < 51 + mQuantOffset) {
+                double rateQstepNew = pow( (double) mfs / (double) maxFrameSizeInBits, BRC_CONST_EXP_R_B2);
+                double QstepScaleUpdtComputed = rateQstepNew * mMinQstepCmplxK[layer] * cmplxExp;
+                int32_t qp_now = Qstep2QP(QstepScaleUpdtComputed, (uint8_t)mQuantOffset);
+                int32_t off = (int32_t)MAX(1, ((float)(bits - maxFrameSizeInBits)/((float)bits*0.16f) + 0.5f));
+                if(qp_prev + off > qp_now) {
+                    qp_now = MIN(51, qp_prev + off);
+                    QstepScaleUpdtComputed = QP2Qstep(qp_now);
+                    mMinQstepCmplxK[layer] = QstepScaleUpdtComputed / (rateQstepNew * cmplxExp);
+                    mMinQstepCmplxKUpdtErr[layer] = 0.16;
+                }
+            }
+        }
+    } else if(layer == 4) {
+
+        // update only if enough bits (coeffs coded most probably not just overhead)
+        if(bits < (float)mBitsDesiredFrame*0.027f) return;
+        if(f->m_encOrder < mMinQstepCmplxKInitEncOrder && bits < (int32_t) maxFrameSizeInBits) return;
+
+        double iCmplx = MAX(BRC_MIN_CMPLX_FACTOR, f->m_stats[mLowres]->m_avgIntraSatd);
+        double fzCmplx = f->m_fzCmplx;
+        double MinQstepCmplxK = f->m_fzCmplxK;
+
+        double R = mfs / (double) bits;
+        double C = MAX(BRC_MIN_CMPLX_FACTOR, fzCmplx);
+        double rateQstep = pow(R, BRC_CONST_EXP_R_B3);
+        double cmplxExp = pow(C,  BRC_CONST_EXP_CP_B3) * pow(iCmplx,  BRC_CONST_EXP_CI_B3);
+        double cmplxQstep = MinQstepCmplxK * cmplxExp;
+        double QstepScaleComputed = rateQstep * cmplxQstep;
+        double QstepScaleReal = QP2Qstep(f->m_sliceQpBrc, mQuantOffset);
+        double dS = log(QstepScaleReal) - log(QstepScaleComputed);
+        double upDlt = 0.5;
+        if(Sts & MFX_BRC_ERR_MAX_FRAME) upDlt = 1.0;
+
+        // abs envelope + iirmavg4
+        mMinQstepCmplxKUpdtErr[layer] = MAX((mMinQstepCmplxKUpdtErr[layer] + abs(dS)/MinQstepCmplxK)/2, abs(dS)/MinQstepCmplxK);
+        dS = BRC_CLIP(dS, -0.5, 1.0);
+
+        mMinQstepCmplxK[layer] = MinQstepCmplxK * (1.0 + upDlt*dS);
+        mMinQstepCmplxKUpdt[layer]++;
+        mMinQstepCmplxKUpdtC[4] = iCmplx;
+
+        // Sanity Check
+        if(Sts & MFX_BRC_ERR_MAX_FRAME) {
+            int32_t qp_prev = f->m_sliceQpBrc; // Qstep2QP(QstepScaleComputed, mQuantOffset);
+            if(qp_prev < 51 + mQuantOffset) {
+                double rateQstepNew = pow( (double) mfs / (double) maxFrameSizeInBits, BRC_CONST_EXP_R_B3);
+                double QstepScaleUpdtComputed = rateQstepNew * mMinQstepCmplxK[layer] * cmplxExp;
+                int32_t qp_now = Qstep2QP(QstepScaleUpdtComputed, (uint8_t)mQuantOffset);
+                int32_t off = (int32_t)MAX(1, ((float)(bits - maxFrameSizeInBits)/((float)bits*0.16f) + 0.5f));
+                if(qp_prev + off > qp_now) {
+                    qp_now = MIN(51, qp_prev + off);
+                    QstepScaleUpdtComputed = QP2Qstep(qp_now);
+                    mMinQstepCmplxK[layer] = QstepScaleUpdtComputed / (rateQstepNew * cmplxExp);
+                    mMinQstepCmplxKUpdtErr[layer] = 0.16;
+                }
+            }
+        }
+    }
+}
+#endif
+
+double AV1BRC::GetMinQForMaxFrameSize(uint32_t maxFrameSizeInBits, AV1VideoParam *video, Frame *f, int32_t layer, Frame *maxpoc, int32_t myPos)
+{
+    f->m_maxFrameSizeInBitsSet = maxFrameSizeInBits;
+#ifndef AMT_MAX_FRAME_SIZE
+    return 0;
+#else
+    if (!maxFrameSizeInBits) {
+        return 0;
+    }
+
+    if (f->m_picCodeType == MFX_FRAMETYPE_I) {
+        double fzCmplx = f->m_stats[mLowres]->m_avgIntraSatd;
+        f->m_fzCmplx = fzCmplx;
+        double C = MAX(BRC_MIN_CMPLX_FACTOR, fzCmplx);
+
+        // complexity based conditional use of intra update
+        double irat = mMinQstepCmplxKUpdtC[0]/C;
+        //if(mMinQstepCmplxKUpdt[0] && (irat > 1.16 || irat < 0.84)) {
+        if(mMinQstepCmplxKUpdt[0] && (irat > 1.4 || irat < 0.7 || f->m_stats[mLowres]->m_sceneCut>0)) {
+            // reset intra
+            mMinQstepCmplxK[0] = BRC_CONST_MUL_I8;
+            mMinQstepCmplxKUpdt[0] = 0;
+            mMinQstepCmplxKUpdtC[0] = C;
+            mMinQstepCmplxKUpdtErr[0] = 0.16;
+        }
+        f->m_fzCmplxK = mMinQstepCmplxK[0];
+
+        double BitsDesiredFrame = (double) maxFrameSizeInBits;
+        if (mMinQstepCmplxKUpdt[0]) {
+            BitsDesiredFrame *= (1.0 - 0.165 - MIN(0.115, mMinQstepCmplxKUpdtErr[0]));
+        }
+
+        double R = mfs / (double) BitsDesiredFrame;
+
+        double QstepScale = pow(R, BRC_CONST_EXP_R_I8);
+        double cmplxQstep = mMinQstepCmplxK[0] * pow(C, BRC_CONST_EXP_C_I8);
+        QstepScale *= cmplxQstep;
+
+        if (!mMinQstepCmplxKUpdt[0]) {
+            QstepScale = MIN(128, QstepScale);
+        }
+        // reset SOP
+        ResetMinQForMaxFrameSize(video, f);
+
+        return QstepScale;
+    } else  if (f->m_picCodeType == MFX_FRAMETYPE_P) {
+        Frame *rf = f->m_refPicList[0].m_refFrames[0];
+        float qp_prev = rf->m_sliceQpBrc;
+        if (f->m_refPicList[0].m_refFramesCount > 1) {
+            Frame *rf1 = f->m_refPicList[0].m_refFrames[1];
+            qp_prev = MIN(rf1->m_sliceQpBrc, qp_prev);
+        }
+
+        double minQI = 0.0;
+        // For All
+        double BitsDesiredI = (double) maxFrameSizeInBits;
+
+        if (mMinQstepCmplxKUpdt[0]) {
+            BitsDesiredI *= (1.0 - 0.165 - MIN(0.115, mMinQstepCmplxKUpdtErr[0]));
+        }
+
+        double iCmplx = MAX(BRC_MIN_CMPLX_FACTOR, f->m_stats[mLowres]->m_avgIntraSatd);
+
+        double RI = mfs / (double) BitsDesiredI;
+        minQI = pow(RI, BRC_CONST_EXP_R_I8);
+        double cmplxQstepI = mMinQstepCmplxK[0] * pow(iCmplx, BRC_CONST_EXP_C_I8);
+        minQI *= cmplxQstepI;
+        if (!mMinQstepCmplxKUpdt[0]) {
+            minQI = MIN(128, minQI);
+        }
+
+        // BRC seems to be unware of GOPIndex Layer! -N
+        //double fzCmplx = f->m_avCmplx;
+        double avc = 0;
+        double cp[8] = {0};
+        int32_t rdist = MIN(myPos, MAX(0, MIN(7, f->m_poc - rf->m_poc - 1)));
+        if (video->ZeroDelay) rdist = 0;
+        switch(rdist) {
+        default:
+        case 7: cp[7] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos-7]; avc += cp[7];
+        case 6: cp[6] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos-6]; avc += cp[6];
+        case 5: cp[5] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos-5]; avc += cp[5];
+        case 4: cp[4] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos-4]; avc += cp[4];
+        case 3: cp[3] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos-3]; avc += cp[3];
+        case 2: cp[2] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos-2]; avc += cp[2];
+        case 1: cp[1] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos-1]; avc += cp[1]>0?cp[1]:0;
+        case 0: cp[0] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos];   avc += cp[0];
+        };
+        avc /= (rdist+1);
+        double fzCmplx = avc;
+        double cpm = MAX(MAX(MAX(cp[3],cp[2]),MAX(cp[0],cp[1])), MAX(MAX(cp[6],cp[7]),MAX(cp[4],cp[5])));
+        int32_t cpmc = 0;
+        for (int32_t k = 0; k <= rdist; k++) {
+            if (cp[k] > fzCmplx) cpmc++;
+        }
+        // single peak
+        if(rdist > 1 && cpmc == 1) fzCmplx = cpm;
+
+        f->m_fzCmplx = fzCmplx;
+
+        // complexity based conditional use of update
+        double irat = mMinQstepCmplxKUpdtC[layer]/iCmplx;
+        //if(mMinQstepCmplxKUpdt[0] && (irat > 1.16 || irat < 0.84)) {
+        if(layer == 1 && mMinQstepCmplxKUpdt[layer] && (irat > 1.4 || irat < 0.7)) {
+            // reset
+            if(video->GopRefDist>4)      {
+                mMinQstepCmplxK[1] = BRC_CONST_MUL_P8;
+                mMinQstepRateEP = BRC_CONST_EXP_R_P8;
+            } else if(video->GopRefDist>1) {
+                mMinQstepCmplxK[1] = BRC_CONST_MUL_P3;
+                mMinQstepRateEP = BRC_CONST_EXP_R_P3;
+            } else if (video->picStruct == MFX_PICSTRUCT_PROGRESSIVE) {
+                mMinQstepCmplxK[1] = BRC_CONST_MUL_P1;
+                mMinQstepRateEP = BRC_CONST_EXP_R_P1;
+            } else {
+                mMinQstepCmplxK[1] = BRC_CONST_MUL_P2;
+                mMinQstepRateEP = BRC_CONST_EXP_R_P2;
+            }
+
+            mMinQstepCmplxKUpdt[1] = 0;
+            mMinQstepCmplxKUpdtC[1] = iCmplx;
+            mMinQstepCmplxKUpdtErr[1] = 0.16;
+        }
+
+        f->m_fzCmplxK = mMinQstepCmplxK[layer];
+        f->m_fzRateE = mMinQstepRateEP;
+        double BitsDesiredFrame = (double) maxFrameSizeInBits;
+        if (mMinQstepCmplxKUpdt[layer]) {
+            BitsDesiredFrame *= (1.0 - 0.0825 - MIN(0.115, mMinQstepCmplxKUpdtErr[layer]));
+        }
+
+        double R = mfs / (double) BitsDesiredFrame;
+        double C = MAX(BRC_MIN_CMPLX_FACTOR, fzCmplx);
+        double QstepScale;
+        double cmplxQstep;
+        switch (layer) {
+        default:
+        case 1:
+            QstepScale = pow(R, mMinQstepRateEP);
+            cmplxQstep = mMinQstepCmplxK[layer] * pow(C, mMinQstepPCmplxEP) * pow(iCmplx, mMinQstepICmplxEP);
+            break;
+        case 2:
+            QstepScale = pow(R, BRC_CONST_EXP_R_B1);
+            cmplxQstep = mMinQstepCmplxK[layer] * pow(C, BRC_CONST_EXP_CP_B1) * pow(iCmplx, BRC_CONST_EXP_CI_B1);
+            break;
+        case 3:
+            QstepScale = pow(R, BRC_CONST_EXP_R_B2);
+            cmplxQstep = mMinQstepCmplxK[layer] * pow(C, BRC_CONST_EXP_CP_B2) * pow(iCmplx, BRC_CONST_EXP_CI_B2);
+            break;
+        }
+
+        QstepScale *= cmplxQstep;
+        if (!mMinQstepCmplxKUpdt[layer]) {
+            QstepScale = MIN(128, QstepScale);
+        }
+
+        if (QstepScale < minQI) {
+            float qp_cur = Qstep2QP(QstepScale, (uint8_t)mQuantOffset);
+            //Ipp32f qp0 =  qp_cur;
+            if (f->m_picStruct != MFX_PICSTRUCT_PROGRESSIVE && video->GopRefDist == 1 && video->MaxRefIdxP[0] > 1 && f->m_refPicList[0].m_refFrames[1]) { 
+                // Assuming IPP coding (not interlace Low delay Pyramid)
+                // Pick qp from same field parity
+                qp_prev = f->m_refPicList[0].m_refFrames[1]->m_sliceQpBrc;
+            }
+
+            float besta = -1;
+            double bestQ = QstepScale;
+            double bestQp = qp_cur;
+            // ref quality determines intra
+            float a = MIN(5, MAX(qp_prev - qp_cur -1, 0));
+            float b = 6 - a;
+            double minQN = (b*QstepScale + a*minQI)/6.0;
+            if (a > 0) {
+                besta = a;
+                float qp_i = Qstep2QP(minQI, (uint8_t)mQuantOffset);
+                if( qp_prev - qp_i - 1 > 5) {
+                    // even min Intra q is lower than prev_qp - 6
+                    minQN = minQI; bestQ = minQI; bestQp = qp_i;
+                } else {
+                    for(double rq = QstepScale; rq < minQI; ) {
+                        qp_cur = Qstep2QP(rq, (uint8_t)mQuantOffset);
+                        a = MIN(5, MAX(qp_prev - qp_cur -1, 0));
+                        b = 6 - a;
+                        double tQN = (b*rq + a*minQI)/6.0;
+                        if(tQN < minQN || a==5) { minQN = tQN; besta= a; bestQ = rq; bestQp = qp_cur;}
+                        if(a <= 0) break;
+                        rq += (QP2Qstep((uint32_t)qp_cur+1, (uint8_t)mQuantOffset) - QP2Qstep((uint32_t)qp_cur, (uint8_t)mQuantOffset));
+                    }
+                }
+            }
+            QstepScale = bestQ;
+        }
+        return QstepScale;
+
+    } else if(layer == 2) {
+
+        double BitsDesiredFrame = (double) maxFrameSizeInBits;
+        if (mMinQstepCmplxKUpdt[layer]) {
+            BitsDesiredFrame *= (1.0 - 0.16 - MIN(0.10, mMinQstepCmplxKUpdtErr[layer]));
+        }
+
+        double iCmplx = f->m_stats[mLowres]->m_avgIntraSatd;
+        Frame *rff = f->m_refPicList[1].m_refFrames[0];
+        int32_t rdistf = MAX(0, MIN(4, rff->m_poc - f->m_poc - 1));
+        double cn[4]={-1,-1,-1,-1};
+        switch(rdistf) {
+        default:
+        case 3: cn[3] = (myPos+4>32)?-1:maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos+4];
+        case 2: cn[2] = (myPos+3>32)?-1:maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos+3];
+        case 1: cn[1] = (myPos+2>32)?-1:maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos+2];
+        case 0:
+            {
+                cn[0] = (myPos+1>32)?-1:maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos+1];
+                if(cn[0]>-1 && maxpoc->m_stats[mLowres]->m_intraSatdHist[myPos+1] < iCmplx)  cn[0] *= (double)iCmplx/(double)maxpoc->m_stats[mLowres]->m_intraSatdHist[myPos+1];
+            }
+        };
+        Frame *rfp = f->m_refPicList[0].m_refFrames[0];
+        int32_t rdistp = MIN(myPos, MAX(0, MIN(4, f->m_poc - rfp->m_poc - 1)));
+        double cp[4]={0};
+        switch(rdistp) {
+        default:
+        case 3: cp[3] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos-3];
+        case 2: cp[2] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos-2];
+        case 1: cp[1] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos-1];
+        case 0: cp[0] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos];
+        };
+        double mcp = MAX(MAX(cp[3],cp[2]),MAX(cp[1],cp[0]));
+        double mcn = MAX(MAX(cn[3],cn[2]),MAX(cn[1],cn[0]));
+
+        double fzCmplx = (mcn>-1)?MIN(mcp, mcn):mcp;
+        f->m_fzCmplx = fzCmplx;
+        f->m_fzCmplxK = mMinQstepCmplxK[layer];
+
+        double R = mfs / (double) BitsDesiredFrame;
+        double C = MAX(BRC_MIN_CMPLX_FACTOR, fzCmplx);
+        double QstepScale = pow(R, BRC_CONST_EXP_R_B1);
+        double cmplxQstep = mMinQstepCmplxK[layer] * pow(C,  BRC_CONST_EXP_CP_B1) * pow(iCmplx,  BRC_CONST_EXP_CI_B1);
+        QstepScale *= cmplxQstep;
+
+        if (!mMinQstepCmplxKUpdt[layer]) {
+            QstepScale = MIN(128, QstepScale);
+        }
+        return QstepScale;
+
+    } else if(layer == 3) {
+
+        double BitsDesiredFrame = (double) maxFrameSizeInBits;
+        if (mMinQstepCmplxKUpdt[layer]) {
+            BitsDesiredFrame *= (1.0 - 0.16 - MIN(0.10, mMinQstepCmplxKUpdtErr[layer]));
+        }
+        double iCmplx = f->m_stats[mLowres]->m_avgIntraSatd;
+        Frame *rff = f->m_refPicList[1].m_refFrames[0];
+        int32_t rdistf = MAX(0, MIN(2, rff->m_poc - f->m_poc - 1));
+        double cn[2]={-1, -1};
+        switch(rdistf) {
+        default:
+        case 1: cn[1] = (myPos+2>32)?-1:maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos+2];
+        case 0:
+            {
+                cn[0] = (myPos+1>32)?-1:maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos+1];
+                if(cn[0]>-1 && maxpoc->m_stats[mLowres]->m_intraSatdHist[myPos+1] < iCmplx)  cn[0] *= (double)iCmplx/(double)maxpoc->m_stats[mLowres]->m_intraSatdHist[myPos+1];
+            }
+        };
+        Frame *rfp = f->m_refPicList[0].m_refFrames[0];
+        int32_t rdistp = MIN(myPos, MAX(0, MIN(2, f->m_poc - rfp->m_poc - 1)));
+        double cp[2]={0};
+        switch(rdistp) {
+        default:
+        case 1: cp[1] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos-1];
+        case 0: cp[0] = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos];
+        }
+        double mcp = MAX(cp[0],cp[1]);
+        double mcn = MAX(cn[0],cn[1]);
+
+        double fzCmplx = (mcn>-1)?MIN(mcp, mcn):mcp;
+        f->m_fzCmplx = fzCmplx;
+        f->m_fzCmplxK = mMinQstepCmplxK[layer];
+
+        double R = mfs / (double) BitsDesiredFrame;
+        double C = MAX(BRC_MIN_CMPLX_FACTOR, fzCmplx);
+        double QstepScale = pow(R, BRC_CONST_EXP_R_B2);
+        double cmplxQstep = mMinQstepCmplxK[layer] * pow(C,  BRC_CONST_EXP_CP_B2) * pow(iCmplx,  BRC_CONST_EXP_CI_B2);
+        QstepScale *= cmplxQstep;
+
+        if (!mMinQstepCmplxKUpdt[layer]) {
+            QstepScale = MIN(128, QstepScale);
+        }
+        return QstepScale;
+
+    } else if(layer == 4) {
+
+        double BitsDesiredFrame = (double) maxFrameSizeInBits;
+        if (mMinQstepCmplxKUpdt[layer]) {
+            BitsDesiredFrame *= (1.0 - 0.16 - MIN(0.10, mMinQstepCmplxKUpdtErr[layer]));
+        }
+        double iCmplx = f->m_stats[mLowres]->m_avgIntraSatd;
+        double cn = (myPos+1>32)?-1:maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos+1];
+        // Custom Adaptation for next frame
+        if(cn>-1 && maxpoc->m_stats[mLowres]->m_intraSatdHist[myPos+1] < iCmplx)  cn *= (double)iCmplx/(double)maxpoc->m_stats[mLowres]->m_intraSatdHist[myPos+1];
+
+        double cp = maxpoc->m_stats[mLowres]->m_bestSatdHist[myPos];
+
+        double fzCmplx = (cn>-1)?MIN(cp, cn):cp;
+        f->m_fzCmplx = fzCmplx;
+        f->m_fzCmplxK = mMinQstepCmplxK[layer];
+
+        double R = mfs / (double) BitsDesiredFrame;
+        double C = MAX(BRC_MIN_CMPLX_FACTOR, fzCmplx);
+        double QstepScale = pow(R, BRC_CONST_EXP_R_B3);
+        double cmplxQstep = mMinQstepCmplxK[layer] * pow(C,  BRC_CONST_EXP_CP_B3) * pow(iCmplx,  BRC_CONST_EXP_CI_B3);
+        QstepScale *= cmplxQstep;
+
+        if (!mMinQstepCmplxKUpdt[layer]) {
+            QstepScale = MIN(128, QstepScale);
+        }
+        return QstepScale;
+
+    } else {
+        return 0;
+    }
+#endif
+}
+
+
+// AMT_LTR
+
+int32_t estimateNewIntraQP(int32_t GopRefDist, int32_t ltrConfidenceLevel, int32_t minDQP, int32_t QP0)
+{
+    if (minDQP >= 0)
+        return QP0;
+
+    int32_t qp = QP0;
+    int32_t dqp = 0;
+
+    if (ltrConfidenceLevel > 0)
+    {
+        if (GopRefDist == 1) {
+            if (minDQP < (-6))
+                minDQP = -6;
+            if (minDQP < 0) {
+                if (ltrConfidenceLevel < 1) {
+                    dqp -= 2;
+                }
+                else if (ltrConfidenceLevel < 2) {
+                    dqp -= 3;
+                }
+                else if (ltrConfidenceLevel < 3) {
+                    dqp -= 5;
+                }
+                else {
+                    dqp -= 6;
+                }
+                if (dqp < minDQP)
+                    dqp = minDQP;
+            }
+        }
+        else if (GopRefDist == 8) {
+            if (minDQP < (-4))
+                minDQP = -4;
+            if (minDQP < 0) {
+                if (ltrConfidenceLevel < 2) {
+                    dqp -= 2;
+                }
+                else {
+                    dqp -= 4;
+                }
+                if (dqp < minDQP)
+                    dqp = minDQP;
+            }
+        }
+    }
+
+    qp = QP0 + dqp;
+    return qp;
+}
+
 int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
 {
-    Frame *frame;
-    int32_t i, j;
+    int32_t i;
     int32_t qp;
 
     if (video->AnalyzeCmplx) {
 
         if (!frames || numFrames <= 0) {
             if (mQstepBase > 0)
-                return Qstep2QP(mQstepBase, mQuantOffset) - mQuantOffset;
+                return Qstep2QP(mQstepBase, int8_t(mQuantOffset)) - mQuantOffset;
             else
                 return GetInitQP() - mQuantOffset;
         }
 
         // limit ourselves to miniGOP+1 for the time being
-        int32_t lalenlim = (video->picStruct == MFX_PICSTRUCT_PROGRESSIVE ? video->GopRefDist + 1 : video->GopRefDist*2 /* + 2*/);
+        int32_t lalenlim = (video->picStruct == MFX_PICSTRUCT_PROGRESSIVE ? video->GopRefDist + 1 : video->GopRefDist * 2 /* + 2*/);
+        lalenlim = MAX(3, lalenlim);
         if (numFrames > lalenlim)
             numFrames = lalenlim;
 
@@ -893,7 +1711,7 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
 #endif
 
         double scCmplx = -1;
-        int32_t rfo = -1, reo = -1, ri = -1, rso;
+        int32_t rfo = -1, reo = -1, ri = -1;
         int32_t eso = -1, ei = -1;
         for (i = 0; i < len; i++) {
             if (frames[i] && (frames[i]->m_stats[mLowres]->m_sceneCut > 0)) { // enc order scene cut frame
@@ -922,7 +1740,7 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
             }
 
             if (scCmplx < frames[ri]->m_stats[mLowres]->m_avgBestSatd)
-                frames[ri]->m_stats[mLowres]->m_avgBestSatd = scCmplx;
+                frames[ri]->m_stats[mLowres]->m_avgBestSatd = float(scCmplx);
 
             frames[ri]->m_stats[mLowres]->m_sceneCut = 0; // we estimate the cmplx the first time we see the scene cut frame, and don't update it later - shuold be good enough for our needs
         }
@@ -944,10 +1762,18 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
                 avCmplx += frames[i]->m_stats[mLowres]->m_avgBestSatd;
             avCmplx /= len;
         }
+        if (frames[0]->m_picCodeType == MFX_FRAMETYPE_I && (frames[0]->m_encOrder == 0 || frames[0]->m_stats[mLowres]->m_sceneCut>0) && len == 1) {
+            if (frames[0]->m_isLtrFrame) {
+                avCmplx = video->LTRConfidenceLevel == 3 ? (avCmplx * 18.0 / 90.0) : (avCmplx * 34.0 / 90.0); // No Temporal complexity (assume complexity)
+            } else {
+                avCmplx = avCmplx * 60.0 / 90.0;
+            }
+        }
+
         frames[0]->m_avCmplx = avCmplx;
 
         frames[0]->m_totAvComplx = mTotAvComplx;
-        frames[0]->m_totComplxCnt = mTotComplxCnt;
+        frames[0]->m_totComplxCnt = int32_t(mTotComplxCnt);
         frames[0]->m_complxSum = mComplxSum;
 
         double w = 0, qScale, r, prCmplx = mTotPrevCmplx;
@@ -970,6 +1796,7 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
         frames[0]->m_CmplxQstep = pow(complx, expnt);
 
         int32_t layer = (frames[0]->m_picCodeType == MFX_FRAMETYPE_I ? 0 : (frames[0]->m_picCodeType == MFX_FRAMETYPE_P ? 1 : 1 + std::max(1, frames[0]->m_pyramidLayer)));
+        int32_t player = (frames[0]->m_picCodeType == MFX_FRAMETYPE_P && video->PGopPicSize > 1) ? 1 + frames[0]->m_pyramidLayer : layer;
 
         //commented out since it affected certain clips (eg. bbc)
         //if (frames[0]->m_encOrder == 0) {
@@ -993,6 +1820,27 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
                 }
             }
         }
+        int32_t maxpoc = frames[0]->m_poc;
+        int32_t maxpocpos = 0;
+        for (int32_t ki = 0; ki < len; ki++) {
+            if (frames[ki]->m_poc >= maxpoc) {
+                maxpoc = frames[ki]->m_poc;
+                maxpocpos = ki;
+            }
+        }
+
+        // Get Min mQStepScale based on Cmplx Rate Model based Prediction
+#ifdef AMT_MAX_FRAME_SIZE
+        int32_t histsize = (int)frames[maxpocpos]->m_stats[mLowres]->m_bestSatdHist.size() - 1;
+        int32_t mypos = histsize - MIN(histsize, MAX(0, (maxpoc - frames[0]->m_poc)));
+        int32_t maxFrameSizeInBits = frames[0]->m_picCodeType == MFX_FRAMETYPE_I ? mMaxFrameSizeInBitsI : mMaxFrameSizeInBits;
+        double minQ = GetMinQForMaxFrameSize(maxFrameSizeInBits, video, frames[0], player, frames[maxpocpos], mypos);
+        frames[0]->m_qsMinForMaxFrameSize = minQ;
+        frames[0]->m_qpMinForMaxFrameSize = Qstep2QP(minQ, int8_t(mQuantOffset));
+#else
+        int32_t maxFrameSizeInBits = 0;
+        double minQ = 1;
+#endif
 
         double q = frames[0]->m_CmplxQstep * mQstepScale;
 
@@ -1002,6 +1850,7 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
         double targetBits = 0;
         for (i = 0; i < len; i++) {
             int32_t lr = (frames[i]->m_picCodeType == MFX_FRAMETYPE_I ? 0 : (frames[i]->m_picCodeType == MFX_FRAMETYPE_P ? 1 : 1 + std::max(1, frames[i]->m_pyramidLayer)));
+            if (frames[i]->m_picCodeType == MFX_FRAMETYPE_P && video->PGopPicSize > 1) lr = 1 + frames[i]->m_pyramidLayer;
             targetBits += mLayerTarget[lr];
         }
 
@@ -1009,7 +1858,7 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
         {
             int32_t predbits;
             mfxBRC_FrameData refFrameData;
-            int32_t qpbase = Qstep2QP(q, mQuantOffset);
+            int32_t qpbase = Qstep2QP(q, int8_t(mQuantOffset));
             int32_t qpmin = 0, qp_, qp0;
 
             if (frames[0]->m_picCodeType == MFX_FRAMETYPE_I || frames[0]->m_picCodeType == MFX_FRAMETYPE_P)
@@ -1026,9 +1875,10 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
 
             for (;;) {
 
-                if (mPrevQstepLayer[layer] <= 0  && frames[0]->m_encOrder == 0) {
+                //if (mPrevQstepLayer[layer] <= 0  && frames[0]->m_encOrder == 0) {
+                if (mPrevQstepLayer[player] <= 0) {
                     double qi = QP2Qstep(qp, mQuantOffset);
-                    predbits = frames[0]->m_stats[mLowres]->m_avgBestSatd * predCoef * mParams.width * mParams.height / qi;
+                    predbits = int32_t(frames[0]->m_stats[mLowres]->m_avgBestSatd * predCoef * mParams.width * mParams.height / qi);
                     if (mQuantOffset)
                         predbits =  (int32_t)((predbits << mQuantOffset/6) * 0.9);
                     refFrameData.qp = qp;
@@ -1040,17 +1890,18 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
                 }
 
 
-                if (mPrevQpLayer[layer] <= 0) {
-                    mPrevCmplxLayer[layer] = refFrameData.cmplx;
-                    mPrevQpLayer[layer] = qp;
-                    mPrevQstepLayer[layer] = QP2Qstep(qp, mQuantOffset);
-                    mPrevBitsLayer[layer] = predbits;
+                if (mPrevQpLayer[player] <= 0) {
+                    mPrevCmplxLayer[player] = refFrameData.cmplx;
+                    mPrevQpLayer[player] = qp;
+                    mPrevQstepLayer[player] = QP2Qstep(qp, mQuantOffset);
+                    mPrevBitsLayer[player] = predbits;
                 }
                 brc_fprintf(" %d %d \n", qp, predbits);
 
-                maxbits = mPredBufFulness >> 1;
+                maxbits = mPredBufFulness;
+                if(maxFrameSizeInBits) maxbits = MIN(maxFrameSizeInBits, maxbits);
 
-                if ((layer > 1) || qp >= refFrameData.qp)
+                if (mRCMode == MFX_RATECONTROL_CBR && layer > 1)
                     if (maxbits > mHRD.bufSize >> 2)
                         maxbits = mHRD.bufSize >> 2;
 
@@ -1074,7 +1925,7 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
                 }
             }
 
-            UpdateMiniGopData(frames[0], qp);
+            UpdateMiniGopData(frames[0], int8_t(qp));
 
             int32_t predbufFul;
             qpbase = qp + 1 - layer;
@@ -1090,7 +1941,7 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
                 for (i = 1; i < len; i++) {
                     int32_t lri = (frames[i]->m_picCodeType == MFX_FRAMETYPE_I ? 0 : (frames[i]->m_picCodeType == MFX_FRAMETYPE_P ? 1 : 1 + std::max(1, frames[i]->m_pyramidLayer)));
                     int32_t qpi = qpbase + lri - 1;
-                    UpdateMiniGopData(frames[i], qpi);
+                    UpdateMiniGopData(frames[i], int8_t(qpi));
                     int32_t bits = PredictFrameSize(video, &frames[i], qpi, &refFrameData);
                     if (frames[i]->m_picCodeType == MFX_FRAMETYPE_P) {
                         refqp = refFrameData.qp;  // currently there can be only one p-frame (2 p-fields with the same refqp) in frames[]
@@ -1116,7 +1967,7 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
 
                 int32_t targetfullness = std::max(mParams.HRDInitialDelayBytes << 3, (int32_t)mHRD.bufSize >> 1);
                 int32_t curdev = targetfullness - mPredBufFulness;
-                int64_t estdev = curdev + forecastBits - targetBits;
+                int64_t estdev = int64_t(curdev + forecastBits - targetBits);
 
     //            int32_t maxdevSoft = std::min((int32_t)(mHRD.bufSize >> 3), mPredBufFulness >> 1);
                 int32_t maxdevSoft = std::max((int32_t)(curdev >> 1), mPredBufFulness >> 1);
@@ -1129,7 +1980,7 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
                 brc_fprintf("dev %d %d %d %d \n", (int)estdev, forecastBits, (int)targetBits, len*(int)mHRD.inputBitsPerFrame);
 
                 double qf1 = 0;
-                int32_t laLim = std::min(mPredBufFulness * 3 >> 2, (int32_t)mHRD.bufSize * 3 >> 3);
+                int32_t laLim = (std::min(mPredBufFulness, (int32_t)mHRD.bufSize >> 1));
                 if (forecastBits - (len - 1)*(int32_t)mHRD.inputBitsPerFrame > laLim) {
                     targ = (len - 1)*(int32_t)mHRD.inputBitsPerFrame + laLim;
                     if (targ < forecastBits >> 1)
@@ -1137,13 +1988,13 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
                     qf1 = (double)forecastBits / targ;
                 }
                 if (estdev > maxdevSoft) {
-                    targ = targetBits + maxdevSoft - curdev;
+                    targ = int32_t(targetBits + maxdevSoft - curdev);
                     if (targ < (forecastBits >> 1) + 1)
                         targ = (forecastBits >> 1) + 1;
                     if (targ < forecastBits)
                         qf = sqrt((double)forecastBits / targ);
                 } else if (estdev < -mindevSoft) { // && mRCMode != MFX_RATECONTROL_VBR) {
-                    targ = targetBits - mindevSoft - curdev;
+                    targ = int32_t(targetBits - mindevSoft - curdev);
                     brc_fprintf("%d %d %d \n", mindevSoft, curdev, targ);
                     if (targ > (forecastBits * 3 >> 1) + 1)
                         targ = (forecastBits * 3 >> 1) + 1;
@@ -1155,7 +2006,7 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
 
                 q *= qf;
                 mQstepBase = q;
-                qpbase = Qstep2QP(q, mQuantOffset);
+                qpbase = Qstep2QP(q, int8_t(mQuantOffset));
 
                 if (qpbase > qpp) {
                     if (qpbase > refqp && qpp < refqp) {
@@ -1183,9 +2034,10 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
                         predbits = PredictFrameSize(video, frames, qp, &refFrameData);
                         brc_fprintf(" %d %d \n", qp, predbits);
 
-                        maxbits = mPredBufFulness >> 1;
+                        maxbits = mPredBufFulness;
+                        if (maxFrameSizeInBits) maxbits = MIN(maxFrameSizeInBits, maxbits);
 
-                        if ((layer > 1) || qp >= refFrameData.qp)
+                        if (mRCMode == MFX_RATECONTROL_CBR && layer > 1)
                             if (maxbits > mHRD.bufSize >> 2)
                                 maxbits = mHRD.bufSize >> 2;
 
@@ -1209,16 +2061,42 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
 
 
             if (layer > 1) {
+#ifdef AMT_MAX_FRAME_SIZE
+                int32_t qpLayer_1 = mPrevQpLayerSet[layer - 1];
+#else
                 int32_t qpLayer_1 = mPrevQpLayer[layer - 1];
+#endif
                 if (qp < qpLayer_1)
                     qp  = qpLayer_1;
             } else
-                BRC_CLIP(qp, qp0 - 2, qp);
+                BRC_CLIP(qp, qp0 - 3, qp);
 
+            int32_t QP0 = qp;
+            if (frames[0]->m_isLtrFrame) {
+                mfxI32 qpMin = 4;
+
+                if (frames[0]->m_ltrConfidenceLevel > 0) {
+                    //minQ = QP2Qstep(qpMin, 0);
+                    int32_t minDQP = qpMin - qp;
+                    qp = estimateNewIntraQP(video->GopRefDist, frames[0]->m_ltrConfidenceLevel, minDQP, QP0);
+                    frames[0]->m_ltrDQ = (qp - QP0);
+                }
+            }
+            else if (frames[0]->m_picCodeType == MFX_FRAMETYPE_P && video->PGopPicSize > 1) {
+                if (frames[0]->m_pyramidLayer > 1 && mLayerRatio <= 0.3)
+                    qp += 1;
+                if(!frames[0]->m_isRef && mLayerRatio <= 0.3)
+                    qp += 1;
+            }
+
+            qp = MAX(qp, Qstep2QP(minQ, (uint8_t)mQuantOffset));
+            if (frames[0]->m_isLtrFrame) {
+                frames[0]->m_ltrDQ = MIN(0, (qp - QP0));
+            }
             BRC_CLIP(qp, mMinQp, mQuantMax);
             mMinQp = mQuantMin;
 
-            UpdateMiniGopData(frames[0], qp);
+            UpdateMiniGopData(frames[0], int8_t(qp));
 
             int32_t predbits_new = PredictFrameSize(video, frames, qp, &refFrameData);
 
@@ -1226,11 +2104,15 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
 
             mPredBufFulness = predbufFul;
 
-            mRealPredFullness -= predbits_new - mHRD.inputBitsPerFrame;
+            mRealPredFullness -= int32_t(predbits_new - mHRD.inputBitsPerFrame);
             mPredBufFulness -= predbits_new - mBitsDesiredFrame;
             frames[0]->m_predBits = predbits_new;
+#ifdef AMT_MAX_FRAME_SIZE
+            if (mPrevQpLayer[layer] <= 0)
+#endif
+                mPrevQpLayer[layer] = qp;
 
-            mPrevQpLayer[layer] = qp;
+            mPrevQpLayerSet[layer] = qp;
 
             brc_fprintf("\n # %d %d %d %d %f %d f %d\n", frames[0]->m_encOrder, predbits, predbits_new, mPredBufFulness, frames[0]->m_cmplx, qp, frames[0]->m_secondFieldFlag ? 1 : 0);
 
@@ -1253,20 +2135,20 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
             double cmpl = pow(avCmplx, BRC_RATE_CMPLX_EXPONENT); // use frames[0]->m_CmplxQstep (^0.4) ???
 
             for (i = 0; i < len; i++) {
-                int32_t layer = (frames[i]->m_picCodeType == MFX_FRAMETYPE_I ? 0 : (frames[i]->m_picCodeType == MFX_FRAMETYPE_P ? 1 : 1 + std::max(1, frames[i]->m_pyramidLayer)));
-                double qstep = q * brc_qstep_factor[layer];
+                int32_t layer_l = (frames[i]->m_picCodeType == MFX_FRAMETYPE_I ? 0 : (frames[i]->m_picCodeType == MFX_FRAMETYPE_P ? 1 : 1 + std::max(1, frames[i]->m_pyramidLayer)));
+                double qstep = q * brc_qstep_factor[layer_l];
                 BRC_CLIP(qstep, minQstep, maxQstep);
-                if (layer == 0)
-                    layer = 1;
-                estBits += mEstCoeff[layer] * cmpl / (mEstCnt[layer] * qstep);
+                if (layer_l == 0)
+                    layer_l = 1;
+                estBits += mEstCoeff[layer_l] * cmpl / (mEstCnt[layer_l] * qstep);
             }
 
             brc_fprintf("%d: l-%d %d q %.3f %.3f %.3f %.3f \n", frames[0]->m_encOrder, layer, len, q, cmpl, frames[0]->m_stats[mLowres]->m_avgBestSatd, frames[0]->m_stats[mLowres]->m_avgIntraSatd);
 
             if (frames[0]->m_encOrder <= video->GopRefDist)
-                totdev = mTotalDeviation + 0.1*(estBits - targetBits);
+                totdev = int64_t(mTotalDeviation + 0.1*(estBits - targetBits));
             else
-                totdev = mTotalDeviation + 0.5*(estBits - targetBits);
+                totdev = int64_t(mTotalDeviation + 0.5*(estBits - targetBits));
 
             //double devtopLim = bufsize*0.1;
             //if (devtopLim < mTotalDeviation - targetBits*0.5)
@@ -1334,13 +2216,13 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
                 brc_fprintf("%d %.3f ", frames[0]->m_encOrder, qf);
 
                 if (qf > 1 && q > qc) {
-                    double w = (4 * qc - q) / (4 * qc);
-                    if (w > 0)
-                        qf = qf * w + 1 - w;
+                    double ww = (4 * qc - q) / (4 * qc);
+                    if (ww > 0)
+                        qf = qf * ww + 1 - ww;
                 } else if (qf < 1 && q < qc) {
-                    double w = (q - qc * 0.25) / q;
-                    if (w > 0)
-                        qf = qf * w + 1 - w;
+                    double ww = (q - qc * 0.25) / q;
+                    if (ww > 0)
+                        qf = qf * ww + 1 - ww;
                 }
                 q *= qf;
                 brc_fprintf("%.3f %.3f %.3f %.3f \n", q, qc, qf, mQstepBase);
@@ -1359,10 +2241,16 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
             int32_t l = (frames[0]->m_picCodeType == MFX_FRAMETYPE_I ? 0 : (frames[0]->m_picCodeType == MFX_FRAMETYPE_P ? 1 : 1 + std::max(1, frames[0]->m_pyramidLayer)));
             q *= brc_qstep_factor[l];
 
-            qp = Qstep2QP(q, mQuantOffset);
+            q = MAX(minQ, q);
+
+            qp = Qstep2QP(q, int8_t(mQuantOffset));
 
             if (l > 1) {
+#ifdef AMT_MAX_FRAME_SIZE
+                int32_t qpLayer_1 = mPrevQpLayerSet[l - 1];
+#else
                 int32_t qpLayer_1 = mPrevQpLayer[l - 1];
+#endif
                 if (qp < qpLayer_1) {
                     qp  = qpLayer_1;
                     //mQstepBase = QP2Qstep(qp, mQuantOffset);
@@ -1370,18 +2258,35 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
             }
             brc_fprintf("%d %.3f %.3f %d \n", frames[0]->m_encOrder, q, qf, qp);
 
+            if (frames[0]->m_isLtrFrame) {
+                int32_t QP0 = qp;
+
+                mfxI32 qpMin = 4;
+
+                if (frames[0]->m_ltrConfidenceLevel > 0) {
+                    //minQ = QP2Qstep(qpMin, 0);
+                    int32_t minDQP = qpMin - qp;
+                    qp = estimateNewIntraQP(video->GopRefDist, frames[0]->m_ltrConfidenceLevel, minDQP, QP0);
+                    frames[0]->m_ltrDQ = (qp - QP0);
+                }
+            }
+            else if (frames[0]->m_picCodeType == MFX_FRAMETYPE_P && video->PGopPicSize > 1 && !frames[0]->m_isRef) {
+                qp += 1; // LQ for PyrLayer 1 & 2, Q+1 for PyrLayer 2
+            }
+
             BRC_CLIP(qp, mQuantMin, mQuantMax);
 
             if (mPrevQpLayer[l] <= 0)
                 mPrevQpLayer[l] = qp;
 
+            mPrevQpLayerSet[l] = qp;
         }
 
         return qp - mQuantOffset;
 
     } else {
 
-        int32_t qp = mQuantB;
+        int32_t qqp = mQuantB;
         Frame* pFrame = NULL;
 
         if (frames && numFrames > 0)
@@ -1390,24 +2295,24 @@ int32_t AV1BRC::GetQP(AV1VideoParam *video, Frame *frames[], int32_t numFrames)
         if (pFrame) {
 
             if (pFrame->m_encOrder == mRecodedFrame_encOrder)
-                qp = mQuantRecoded;
+                qqp = mQuantRecoded;
             else {
 
                 if (pFrame->m_picCodeType == MFX_FRAMETYPE_I)
-                    qp = mQuantI;
+                    qqp = mQuantI;
                 else if (pFrame->m_picCodeType == MFX_FRAMETYPE_P)
-                    qp = mQuantP;
+                    qqp = mQuantP;
                 else {
                     if (video->BiPyramidLayers > 1) {
-                        qp = mQuantB + pFrame->m_pyramidLayer - 1;
-                        BRC_CLIP(qp, 1, mQuantMax);
+                        qqp = mQuantB + pFrame->m_pyramidLayer - 1;
+                        BRC_CLIP(qqp, 1, mQuantMax);
                     } else
-                        qp = mQuantB;
+                        qqp = mQuantB;
                 }
             }
         }
 
-        return qp - mQuantOffset;
+        return qqp - mQuantOffset;
     }
 
 }
@@ -1455,11 +2360,13 @@ mfxBRCStatus AV1BRC::UpdateAndCheckHRD(int32_t frameBits, double inputBitsPerFra
         bufFullness += inputBitsPerFrame;
         if (bufFullness > (double)mHRD.bufSize - 1) {
             bufFullness = (double)mHRD.bufSize - 1;
+#if 0
             if (mRCMode == MFX_RATECONTROL_CBR)
                 ret = MFX_BRC_ERR_SMALL_FRAME;
+#endif
         }
     }
-    if (MFX_ERR_NONE == ret)
+    if (MFX_ERR_NONE == ret || !mRecode)
         mHRD.frameNum++;
     else if ((recode & MFX_BRC_EXT_FRAMESKIP) || MFX_BRC_RECODE_EXT_PANIC == recode || MFX_BRC_RECODE_PANIC == recode) // no use in changing QP
         ret |= MFX_BRC_NOT_ENOUGH_BUFFER;
@@ -1477,9 +2384,31 @@ mfxBRCStatus AV1BRC::UpdateAndCheckHRD(int32_t frameBits, double inputBitsPerFra
 #define P_WEIGHT 0.25
 #define B_WEIGHT 0.2
 
-#define BRC_MAX_LOAN_LENGTH 75
-#define BRC_LOAN_RATIO 0.075
-
+#ifdef LOW_COMPLX_PAQ
+#define BRC_BIT_LOAN \
+{ \
+    if (picType == MFX_FRAMETYPE_I && video->GopPicSize!=1) { \
+        if (video->DeltaQpMode & AMT_DQP_PAQ) { \
+            mLoanRatio = mBrcLoanRatio * pow(2.0f, -1.0f * pFrame->m_stats[0]->m_avgDPAQ / 6.0f); \
+        } else if (pFrame->m_isLtrFrame) { \
+            mLoanRatio = mBrcLoanRatio * pow(2.0f, -1.0f * pFrame->m_ltrDQ / 6.0f); \
+        } else { \
+            mLoanRatio = mBrcLoanRatio; \
+        } \
+        if (mLoanLength) \
+            bitsEncoded += mLoanLength * mLoanBitsPerFrame; \
+        mLoanLength = video->GopPicSize; \
+        if (mLoanLength > BRC_MAX_LOAN_LENGTH || mLoanLength == 0) \
+            mLoanLength = BRC_MAX_LOAN_LENGTH; \
+        int32_t bitsEncodedI = (int32_t)((double)bitsEncoded  / (mLoanLength * mLoanRatio + 1)); \
+        mLoanBitsPerFrame = (bitsEncoded - bitsEncodedI) / mLoanLength; \
+        bitsEncoded = bitsEncodedI; \
+    } else if (mLoanLength) { \
+        bitsEncoded += mLoanBitsPerFrame; \
+        mLoanLength--; \
+    } \
+}
+#else
 #define BRC_BIT_LOAN \
 { \
     if (picType == MFX_FRAMETYPE_I) { \
@@ -1496,47 +2425,39 @@ mfxBRCStatus AV1BRC::UpdateAndCheckHRD(int32_t frameBits, double inputBitsPerFra
         mLoanLength--; \
     } \
 }
-
-#if 0
-#define BRC_BIT_LOAN_P \
-{ \
-    if (picType == MFX_FRAMETYPE_P) { \
-        if (mLoanLengthP) \
-            bitsEncoded += mLoanLengthP * mLoanBitsPerFrameP; \
-        mLoanLengthP = video->GopRefDist; \
-        if (mLoanLength > 16 || mLoanLength == 0) \
-            mLoanLength = 16; \
-        int32_t bitsEncodedP = (int32_t)((double)bitsEncoded  / (mLoanLengthP * 0.25 + 1)); \
-        mLoanBitsPerFrameP = (bitsEncoded - bitsEncodedP) / mLoanLengthP; \
-        bitsEncoded = bitsEncodedP; \
-    } else if (mLoanLengthP && picType != MFX_FRAMETYPE_I) { \
-        bitsEncoded += mLoanBitsPerFrameP; \
-        mLoanLengthP--; \
-    } \
-}
 #endif
 
 
-mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame *pFrame, int32_t totalFrameBits, int32_t overheadBits, int32_t repack)
+mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame *pFrame, int32_t totalFrameBits, int32_t overheadBits, int32_t repack_num)
 {
+    int32_t repack = repack_num ? 1 : 0;
     mfxBRCStatus Sts = MFX_ERR_NONE;
     if (mBitrate == 0)
         return Sts;
     if (!pFrame)
         return MFX_ERR_NULL_PTR;
+    //float qc = vp9_dc_quant(sliceQiY, 0, video->bitDepthLuma) / 8.0f;
+    //uint8_t sliceQpY = (uint8_t)MAX(1,MIN(51,(log2f(qc) * 6.0f + 4.0f)));
 
     int32_t bitsEncoded = totalFrameBits - overheadBits;
     double e2pe;
-    int32_t qp, qpprev;
+    int32_t qpprev;
     uint32_t prevFrameType = mPicType;
     uint32_t picType = pFrame->m_picCodeType;
 
     mPoc = pFrame->m_poc;
 
-    sliceQpY += mQuantOffset;
+    sliceQpY = uint8_t(sliceQpY + mQuantOffset);
 
     int32_t layer = (picType == MFX_FRAMETYPE_I ? 0 : (picType == MFX_FRAMETYPE_P ?  1 : 1 + std::max(1, pFrame->m_pyramidLayer))); // should be 0 for I, 1 for P, etc. !!!
+    int32_t player = (video->PGopPicSize > 1 && layer == 1) ? 1 + pFrame->m_pyramidLayer : layer;
     double qstep = QP2Qstep(sliceQpY, mQuantOffset);
+    // AMT_LTR
+    if (picType == MFX_FRAMETYPE_I) {
+        LastIFrameSize = totalFrameBits;
+        LastICmplx = pFrame->m_stats[0]->nSC;
+        LastIQpAct = sliceQpY;
+    }
 
     if (video && video->AnalyzeCmplx) {
 
@@ -1546,7 +2467,7 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
 
             // stuff bits right away in case of overflow
             // PostPackFrame is supposed to be called again after bit stuffing, hence don't update any stats here
-            if (Sts & MFX_BRC_ERR_SMALL_FRAME) {
+            if ((Sts & MFX_BRC_ERR_SMALL_FRAME) && mRecode) {
 
                 brc_fprintf("OVER %d %d %d \n", pFrame->m_encOrder, totalFrameBits, (int)mHRD.prevBufFullness);
 
@@ -1560,7 +2481,7 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
             if (layer == 1) { // 08/04/16
                 int32_t refQp = -1;
                 if (pFrame->m_refPicList[0].m_refFramesCount > 0)
-                    refQp = pFrame->m_refPicList[0].m_refFrames[0]->m_sliceQpY;
+                    refQp = pFrame->m_refPicList[0].m_refFrames[0]->m_sliceQpBrc;
                 if (sliceQpY < refQp) {
                     mPrevCmplxIP = pFrame->m_stats[mLowres]->m_avgIntraSatd;
                     mPrevQstepIP = qstep;
@@ -1569,13 +2490,14 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
                     mSceneNum = pFrame->m_sceneOrder;
                 }
             }
+            {
+                mPrevCmplxLayer[player] = pFrame->m_cmplx;
+                mPrevQstepLayer[player] = qstep;
+                mPrevBitsLayer[player] = bitsEncoded;
+                mPrevQpLayer[player] = sliceQpY;
+            }
 
-            mPrevCmplxLayer[layer] = pFrame->m_cmplx;
-            mPrevQstepLayer[layer] = qstep;
-            mPrevBitsLayer[layer] = bitsEncoded;
-            mPrevQpLayer[layer] = sliceQpY;
-
-            if (Sts & MFX_BRC_ERR_BIG_FRAME) { // assume the recode request will not be ignored
+            if ((Sts & MFX_BRC_ERR_BIG_FRAME) && mRecode) { // assume the recode request will not be ignored
                 mHRD.bufFullness = mHRD.prevBufFullness;
 
                 mTotAvComplx  = pFrame->m_totAvComplx;
@@ -1583,7 +2505,7 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
                 mComplxSum  = pFrame->m_complxSum;
 
                 brc_fprintf("UNDR %d %d %.1f %.1f %.3f -> ", sliceQpY , pFrame->m_qpBase, mCmplxRate, mTotTarget, mQstepScale);
-
+                BRC_BIT_LOAN;
                 if (sliceQpY != pFrame->m_qpBase) {
                     double qbase = QP2Qstep(pFrame->m_qpBase, mQuantOffset);
                     double w = sliceQpY > pFrame->m_qpBase ? qstep / qbase : (qbase / qstep - 1) * 0.3 + 1;
@@ -1594,25 +2516,36 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
                     mTotTarget += mBitsDesiredFrame;
                 }
                 mQstepScale = pow(mCmplxRate / mTotTarget, BRC_QSTEP_SCALE_EXPONENT);
-                mQstepScale *= bitsEncoded / (mHRD.bufFullness / 2); // ???
+                //mQstepScale *= bitsEncoded / (mHRD.bufFullness / 2); // ???
                 brc_fprintf(" %.1f %.1f %.3f \n", mCmplxRate, mTotTarget, mQstepScale);
 
                 mPredBufFulness = (int)mHRD.prevBufFullness;
                 mRealPredFullness = (int)mHRD.prevBufFullness;
 
                 double minqstep = pFrame->m_CmplxQstep * mQstepScale;
-                mMinQp = Qstep2QP(minqstep, mQuantOffset);
+                mMinQp = Qstep2QP(minqstep, (uint8_t)mQuantOffset);
 
-                if (mMinQp < sliceQpY + 1)
-                    mMinQp = sliceQpY + 1;
+                if (mMinQp < sliceQpY + 1 + repack_num)
+                    mMinQp = sliceQpY + 1 + repack_num;
 
                 if (mMinQp > mQuantMax)
                     mMinQp = mQuantMax;
+
+                if (pFrame->m_isLtrFrame && pFrame->m_ltrConfidenceLevel>1)
+                    pFrame->m_ltrConfidenceLevel--;
+
+                UpdateMinQForMaxFrameSize(pFrame->m_maxFrameSizeInBitsSet, video, pFrame, totalFrameBits, player, Sts);
 
                 brc_fprintf("UNDER %d %d %d %d %d %.3f %d \n", pFrame->m_encOrder, totalFrameBits, pFrame->m_predBits, (int)mHRD.prevBufFullness, mPredBufFulness, mQstepScale, mMinQp);
 
                 return Sts;
             }
+#ifdef AMT_MAX_FRAME_SIZE
+            if(video->RepackForMaxFrameSize && mRecode && video->MaxFrameSizeInBits && mMaxFrameSizeInBits && totalFrameBits > (int32_t) pFrame->m_maxFrameSizeInBitsSet && pFrame->m_sliceQpBrc < 51)
+                Sts = MFX_BRC_ERR_MAX_FRAME;
+            UpdateMinQForMaxFrameSize(pFrame->m_maxFrameSizeInBitsSet, video, pFrame, totalFrameBits, player, Sts);
+            if (Sts & MFX_BRC_ERR_MAX_FRAME) return Sts;
+#endif
 
             mPredBufFulness += pFrame->m_predBits - totalFrameBits;
             mRealPredFullness += pFrame->m_predBits - totalFrameBits;
@@ -1632,6 +2565,7 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
             }
 
             double decay = 1 - 0.1*(double)mBitsDesiredFrame / mHRD.bufSize;
+            if (pFrame->m_stats[0]->m_sceneChange && pFrame->m_encOrder>100) decay = 0.5;
             mCmplxRate *= decay;
             mTotTarget *= decay;
 
@@ -1665,6 +2599,12 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
             UpdateMiniGopData(pFrame, sliceQpY);
 
         } else { // AVBR
+#ifdef AMT_MAX_FRAME_SIZE
+            if(video->RepackForMaxFrameSize && mRecode && video->MaxFrameSizeInBits && mMaxFrameSizeInBits && totalFrameBits > (int32_t)pFrame->m_maxFrameSizeInBitsSet && pFrame->m_sliceQpBrc < 51)
+                Sts = MFX_BRC_ERR_MAX_FRAME;
+            UpdateMinQForMaxFrameSize(pFrame->m_maxFrameSizeInBitsSet, video, pFrame, totalFrameBits, layer, Sts);
+            if (Sts & MFX_BRC_ERR_MAX_FRAME) return Sts;
+#endif
 
             mPrevQpLayer[layer] = sliceQpY;
 
@@ -1712,10 +2652,10 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
 
         }
 
-        return Sts;
+        return MFX_ERR_NONE;
     }
 
-    if (!repack && mQuantUpdated <= 0) { // BRC reported buffer over/underflow but the application ignored it
+    if (mRecode && !repack && mQuantUpdated <= 0) { // BRC reported buffer over/underflow but the application ignored it
         mQuantI = mQuantIprev;
         mQuantP = mQuantPprev;
         mQuantB = mQuantBprev;
@@ -1740,6 +2680,7 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
         Sts = UpdateAndCheckHRD(totalFrameBits, mHRD.inputBitsPerFrame, repack);
     }
 
+    int32_t qp;
     qpprev = qp = mQp = sliceQpY;
 
     double fa_short0 = mRCfa_short;
@@ -1769,7 +2710,7 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
         if (bitsEncoded >  maxFrameSize && qp < maxqp) {
             double targetSizeScaled = maxFrameSize * 0.8;
             double qstepnew = qstep * pow(bitsEncoded / targetSizeScaled, 0.9);
-            int32_t qpnew = Qstep2QP(qstepnew, mQuantOffset);
+            int32_t qpnew = Qstep2QP(qstepnew, (uint8_t)mQuantOffset);
             if (qpnew == qp)
               qpnew++;
             BRC_CLIP(qpnew, 1, maxqp);
@@ -1810,7 +2751,7 @@ mfxBRCStatus AV1BRC::PostPackFrame(AV1VideoParam *video, uint8_t sliceQpY, Frame
         if (mRCfa_short > famax && (!repack) && qp < maxqp) {
 
             double qstepnew = qstep * mRCfa_short / (famax * 0.8);
-            int32_t qpnew = Qstep2QP(qstepnew, mQuantOffset);
+            int32_t qpnew = Qstep2QP(qstepnew, (uint8_t)mQuantOffset);
             if (qpnew == qp)
                 qpnew++;
             BRC_CLIP(qpnew, 1, maxqp);
@@ -1983,7 +2924,7 @@ mfxBRCStatus AV1BRC::UpdateQuant(int32_t bEncoded, int32_t totalPicBits, int32_t
 
         if (qs > 1.0) {
             qstep *= qs;
-            quant = Qstep2QP(qstep, mQuantOffset);
+            quant = Qstep2QP(qstep, (uint8_t)mQuantOffset);
             if (mRCq == quant)
                 quant++;
 
@@ -2023,7 +2964,7 @@ mfxBRCStatus AV1BRC::UpdateQuantHRD(int32_t totalFrameBits, mfxBRCStatus sts, in
     qstep = QP2Qstep(quant, mQuantOffset);
     qstep_new = qstep * sqrt((double)bEncoded / wantedBits);
 //    qstep_new = qstep * sqrt(sqrt((double)bEncoded / wantedBits));
-    quant = Qstep2QP(qstep_new, mQuantOffset);
+    quant = Qstep2QP(qstep_new, (uint8_t)mQuantOffset);
     BRC_CLIP(quant, 1, mQuantMax);
 
     if (sts & MFX_BRC_ERR_SMALL_FRAME) // overflow
@@ -2383,7 +3324,7 @@ mfxI32 VMEBrc::GetQP(AV1VideoParam &video, Frame *pFrame, mfxI32 *chromaQP )
     std::list<LaFrameData>::iterator start = m_laData.begin();
     while (start != m_laData.end())
     {
-        if ((*start).encOrder == pFrame->m_encOrder)
+        if ((*start).encOrder == (uint32_t)pFrame->m_encOrder)
             break;
         ++start;
     }
@@ -2487,4 +3428,5 @@ BrcIface * CreateBrc(mfxVideoParam const * video)
 }
 } // namespace
 
+#endif
 #endif

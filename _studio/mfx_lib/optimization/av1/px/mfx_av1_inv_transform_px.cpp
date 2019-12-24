@@ -1171,9 +1171,42 @@ static void av1_iadst16_new(const int *input, int *output, char cos_bit, const c
     bf1[15] = -bf0[1];
 }
 
+static void av1_iidentity4_c(const int *input, int *output, char cos_bit, const char *stage_range)
+{
+    (void)cos_bit;
+    (void)stage_range;
+    for (int i = 0; i < 4; ++i) {
+        output[i] = round_shift((int64_t)NewSqrt2 * input[i], NewSqrt2Bits);
+    }
+    assert(stage_range[0] + NewSqrt2Bits <= 32);
+}
+
+static void av1_iidentity8_c(const int *input, int *output, char cos_bit, const char *stage_range)
+{
+    (void)cos_bit;
+    (void)stage_range;
+    for (int i = 0; i < 8; ++i) output[i] = (int32_t)((int64_t)input[i] * 2);
+}
+
+static void av1_iidentity16_c(const int *input, int *output, char cos_bit, const char *stage_range)
+{
+    (void)cos_bit;
+    (void)stage_range;
+    for (int i = 0; i < 16; ++i)
+        output[i] = round_shift((int64_t)NewSqrt2 * 2 * input[i], NewSqrt2Bits);
+    assert(stage_range[0] + NewSqrt2Bits <= 32);
+}
+
+void av1_iidentity32_c(const int *input, int *output, char cos_bit, const char *stage_range) {
+    (void)cos_bit;
+    (void)stage_range;
+    for (int i = 0; i < 32; ++i) output[i] = (int32_t)((int64_t)input[i] * 4);
+}
+
 static inline TxfmFunc inv_txfm_type_to_func(TXFM_TYPE txfm_type)
 {
     switch (txfm_type) {
+//#if ENABLE_PX_CODE
     case TXFM_TYPE_DCT4: return av1_idct4_new;
     case TXFM_TYPE_DCT8: return av1_idct8_new;
     case TXFM_TYPE_DCT16: return av1_idct16_new;
@@ -1182,10 +1215,11 @@ static inline TxfmFunc inv_txfm_type_to_func(TXFM_TYPE txfm_type)
     case TXFM_TYPE_ADST4: return av1_iadst4_new;
     case TXFM_TYPE_ADST8: return av1_iadst8_new;
     case TXFM_TYPE_ADST16: return av1_iadst16_new;
-    //case TXFM_TYPE_IDENTITY4: return av1_iidentity4_c;
-    //case TXFM_TYPE_IDENTITY8: return av1_iidentity8_c;
-    //case TXFM_TYPE_IDENTITY16: return av1_iidentity16_c;
-    //case TXFM_TYPE_IDENTITY32: return av1_iidentity32_c;
+//#endif
+    case TXFM_TYPE_IDENTITY4: return av1_iidentity4_c;
+    case TXFM_TYPE_IDENTITY8: return av1_iidentity8_c;
+    case TXFM_TYPE_IDENTITY16: return av1_iidentity16_c;
+    case TXFM_TYPE_IDENTITY32: return av1_iidentity32_c;
     default: assert(0); return NULL;
     }
 }
@@ -1306,16 +1340,28 @@ static inline void inv_txfm2d_add_c(const int *input, uint16_t *output, int stri
         av1_round_shift_array_c(temp_out, txfm_size_row, -shift[1]);
         if (cfg->ud_flip == 0) {
             for (r = 0; r < txfm_size_row; ++r) {
-                if (useAdd)
-                    ((uint8_t*)output)[r * stride + c] = highbd_clip_pixel_add(((uint8_t*)output)[r * stride + c], temp_out[r], bd);
-                else
+                if (useAdd) {
+                    if (bd == 8)
+                        ((uint8_t*)output)[r * stride + c] = highbd_clip_pixel_add(((uint8_t*)output)[r * stride + c], temp_out[r], bd);
+                    else if (bd == 10)
+                        output[r * stride + c] = highbd_clip_pixel_add(output[r * stride + c], temp_out[r], bd);
+                    else
+                        assert(!"invalid bit depth");
+                } else {
                     output[r * stride + c] = temp_out[r];
+                }
             }
         } else {
             // flip upside down
             for (r = 0; r < txfm_size_row; ++r) {
                 if (useAdd)
-                    ((uint8_t*)output)[r * stride + c] = highbd_clip_pixel_add(((uint8_t*)output)[r * stride + c], temp_out[txfm_size_row - r - 1], bd);
+                    if (bd == 8)
+                        ((uint8_t*)output)[r * stride + c] = highbd_clip_pixel_add(((uint8_t*)output)[r * stride + c], temp_out[txfm_size_row - r - 1], bd);
+                    else if (bd == 10)
+                        output[r * stride + c] = highbd_clip_pixel_add(output[r * stride + c], temp_out[txfm_size_row - r - 1], bd);
+                    else
+                        assert(!"invalid bit depth");
+
                 else
                     output[r * stride + c] = temp_out[txfm_size_row - r - 1];
             }
@@ -1376,17 +1422,21 @@ namespace AV1PP {
     template void itransform_add_av1_px<0, 1>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_px<0, 2>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_px<0, 3>(const int16_t*,uint8_t*,int);
+    template void itransform_add_av1_px<0, 9>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_px<1, 0>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_px<1, 1>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_px<1, 2>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_px<1, 3>(const int16_t*,uint8_t*,int);
+    template void itransform_add_av1_px<1, 9>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_px<2, 0>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_px<2, 1>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_px<2, 2>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_px<2, 3>(const int16_t*,uint8_t*,int);
+    template void itransform_add_av1_px<2, 9>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_px<3, 0>(const int16_t*,uint8_t*,int);
+    template void itransform_add_av1_px<3, 9>(const int16_t*,uint8_t*,int);
 
-    template <int size, int type> void itransform_av1_px(const int16_t *src, int16_t *dst, int pitchDst) {
+    template <int size, int type> void itransform_av1_px(const int16_t *src, int16_t *dst, int pitchDst, int bd) {
 
         int src32s[32*32];
         int width = 4 << size;
@@ -1394,24 +1444,80 @@ namespace AV1PP {
             src32s[pos] = (src)[pos];
         }
 
-        if (size == 0)      av1_inv_txfm2d_add_4x4_px(src32s, (uint16_t*)dst, pitchDst, type, 8, 0);
-        else if (size == 1) av1_inv_txfm2d_add_8x8_px(src32s, (uint16_t*)dst, pitchDst, type, 8, 0);
-        else if (size == 2) av1_inv_txfm2d_add_16x16_px(src32s, (uint16_t*)dst, pitchDst, type, 8, 0);
-        else if (size == 3) av1_inv_txfm2d_add_32x32_px(src32s, (uint16_t*)dst, pitchDst, type, 8, 0);
+        if (size == 0)      av1_inv_txfm2d_add_4x4_px(src32s, (uint16_t*)dst, pitchDst, type, bd, 0);
+        else if (size == 1) av1_inv_txfm2d_add_8x8_px(src32s, (uint16_t*)dst, pitchDst, type, bd, 0);
+        else if (size == 2) av1_inv_txfm2d_add_16x16_px(src32s, (uint16_t*)dst, pitchDst, type, bd, 0);
+        else if (size == 3) av1_inv_txfm2d_add_32x32_px(src32s, (uint16_t*)dst, pitchDst, type, bd, 0);
         else {assert(0);}
     }
 
-    template void itransform_av1_px<0, 0>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<0, 1>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<0, 2>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<0, 3>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<1, 0>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<1, 1>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<1, 2>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<1, 3>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<2, 0>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<2, 1>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<2, 2>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<2, 3>(const int16_t*,int16_t*,int);
-    template void itransform_av1_px<3, 0>(const int16_t*,int16_t*,int);
+    template void itransform_av1_px<0, 0>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<0, 1>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<0, 2>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<0, 3>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<0, 9>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<1, 0>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<1, 1>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<1, 2>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<1, 3>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<1, 9>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<2, 0>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<2, 1>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<2, 2>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<2, 3>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<2, 9>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<3, 0>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_px<3, 9>(const int16_t*,int16_t*,int, int);
+
+
+    template <int size, int type, typename TCoeffType> void itransform_add_av1_hbd_px(const TCoeffType *src, uint16_t *dst, int pitchDst) {
+
+        int src32s[32 * 32];
+        int width = 4 << size;
+        for (int pos = 0; pos < width*width; pos++) {
+            src32s[pos] = (src)[pos];
+        }
+
+        if (size == 0)      av1_inv_txfm2d_add_4x4_px(src32s, (uint16_t*)dst, pitchDst, type, 10, 1);
+        else if (size == 1) av1_inv_txfm2d_add_8x8_px(src32s, (uint16_t*)dst, pitchDst, type, 10, 1);
+        else if (size == 2) av1_inv_txfm2d_add_16x16_px(src32s, (uint16_t*)dst, pitchDst, type, 10, 1);
+        else if (size == 3) av1_inv_txfm2d_add_32x32_px(src32s, (uint16_t*)dst, pitchDst, type, 10, 1);
+        else { assert(0); }
+    }
+
+    template void itransform_add_av1_hbd_px<0, 0, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<0, 1, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<0, 2, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<0, 3, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<0, 9, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<1, 0, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<1, 1, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<1, 2, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<1, 3, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<1, 9, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<2, 0, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<2, 1, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<2, 2, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<2, 3, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<2, 9, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<3, 0, int16_t>(const int16_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<3, 9, int16_t>(const int16_t*, uint16_t*, int);
+
+    template void itransform_add_av1_hbd_px<0, 0, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<0, 1, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<0, 2, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<0, 3, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<0, 9, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<1, 0, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<1, 1, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<1, 2, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<1, 3, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<1, 9, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<2, 0, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<2, 1, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<2, 2, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<2, 3, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<2, 9, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<3, 0, int32_t>(const int32_t*, uint16_t*, int);
+    template void itransform_add_av1_hbd_px<3, 9, int32_t>(const int32_t*, uint16_t*, int);
 }; // namespace AV1PP

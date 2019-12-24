@@ -90,9 +90,16 @@ namespace AV1Enc {
         one byte + one carry bit.*/
         enc->cnt = -9;
         enc->error = 0;
+
+        // no precarry buf
+        enc->numBufferedBytes = 0;
+        enc->bufferedByte = 0xff;
+        enc->bytepos = 0;
+        enc->offset = 0;
     }
 
-    void od_ec_enc_init(od_ec_enc *enc, uint8_t *buf, uint16_t *precarry_buf, int32_t size) {
+    void od_ec_enc_init(od_ec_enc *enc, uint8_t *buf, uint16_t *precarry_buf, int32_t size)
+    {
         od_ec_enc_reset(enc);
         enc->buf = buf;// (unsigned char *)malloc(sizeof(*enc->buf) * size);
         enc->storage = size;
@@ -100,12 +107,17 @@ namespace AV1Enc {
             enc->storage = 0;
             enc->error = -1;
         }
+
+#if ENABLE_PRECARRY_BUF
         enc->precarry_buf = precarry_buf;//  (uint16_t *)malloc(sizeof(*enc->precarry_buf) * size);
         enc->precarry_storage = size;
         if (size > 0 && enc->precarry_buf == NULL) {
             enc->precarry_storage = 0;
             enc->error = -1;
         }
+#endif
+        // new no precarry buf
+        enc->outBuf = buf;
     }
 
     unsigned char *od_ec_enc_done(od_ec_enc *enc, uint32_t *nbytes) {
@@ -114,7 +126,6 @@ namespace AV1Enc {
         uint16_t *buf;
         uint32_t offs;
         uint32_t end_offs;
-        int nend_bits;
         od_ec_window m;
         od_ec_window e;
         od_ec_window l;
@@ -132,6 +143,7 @@ namespace AV1Enc {
         m = 0x3FFF;
         e = ((l + m) & ~m) | (m + 1);
         s += c;
+#if ENABLE_PRECARRY_BUF
         offs = enc->offs;
         buf = enc->precarry_buf;
 
@@ -216,6 +228,63 @@ namespace AV1Enc {
         However, this function is O(N) where N is the amount of data coded so far,
         so calling it more than once for a given packet is a bad idea.*/
         return out;
+#else
+		// NEW CODE
+        if (s > 0)
+        {
+            unsigned n = (1 << (c + 16)) - 1;
+
+            do
+            {
+                int leadByte = (e >> (c + 16));
+
+                if (leadByte == 0xff)
+                {
+                    enc->numBufferedBytes++;
+                }
+                else
+                {
+                    if (enc->numBufferedBytes > 0)
+                    {
+                        int carry = leadByte >> 8;
+                        int byte = enc->bufferedByte + carry;
+                        enc->bufferedByte = leadByte & 0xff;
+                        enc->outBuf[enc->bytepos++] = (uint8_t)byte;
+
+                        byte = (0xff + carry) & 0xff;
+                        while (enc->numBufferedBytes > 1)
+                        {
+                            enc->outBuf[enc->bytepos++] = (uint8_t)byte;
+                            enc->numBufferedBytes--;
+                        }
+                    }
+                    else
+                    {
+                        enc->numBufferedBytes = 1;
+                        enc->bufferedByte = leadByte;
+                    }
+                }
+
+                e &= n;
+                s -= 8;
+                c -= 8;
+                n >>= 8;
+            } while (s > 0);
+        }
+
+        if (enc->numBufferedBytes > 0)
+        {
+            enc->outBuf[enc->bytepos++] = (uint8_t)enc->bufferedByte;
+        }
+        while (enc->numBufferedBytes > 1)
+        {
+            enc->outBuf[enc->bytepos++] = 0xff;
+            enc->numBufferedBytes--;
+        }
+
+        *nbytes = enc->bytepos;
+        return enc->outBuf;
+#endif
     }
     /*Frees the buffers used by the encoder.*/
     //void od_ec_enc_clear(od_ec_enc *enc) {
@@ -226,53 +295,32 @@ namespace AV1Enc {
 
     void od_ec_encode_q15_0(od_ec_enc *enc,  unsigned fh) {
         od_ec_window l = enc->low;
-        unsigned r = enc->rng;
+        unsigned int r = enc->rng;
+        uint32_t offs = enc->offs;
+        const uint16_t *buf = enc->precarry_buf;
         assert(32768U <= r);
         assert(7 - EC_PROB_SHIFT - CDF_SHIFT >= 0);
-        const unsigned ad = (3) << 2;
-        const unsigned rs = r >> 8;
-        const unsigned  v = (rs * (unsigned)(fh >> EC_PROB_SHIFT) >>
+        const unsigned int ad = (3) << 2;
+        const unsigned int rs = r >> 8;
+        const unsigned int v = (rs * (unsigned)(fh >> EC_PROB_SHIFT) >>
             (7 - EC_PROB_SHIFT - CDF_SHIFT)) + ad;
         r -= v;
 
-        //normalize
         int c = enc->cnt;
-        assert(r <= 65535U);
-        int d = 15 - BSR(r);
-        int s = c + d;
-        /*TODO: Right now we flush every time we have at least one byte available.
-        Instead we should use an od_ec_window and flush right before we're about to
-        shift bits off the end of the window.
-        For a 32-bit window this is about the same amount of work, but for a 64-bit
-        window it should be a fair win.*/
-        if (s >= 0) {
-            uint32_t offs = enc->offs;
-            const uint16_t *buf = enc->precarry_buf + offs;
-            assert(enc->offs + 2 <= enc->precarry_storage);
-            c += 16;
-            unsigned m = (1 << c) - 1;
-            uint32_t value = (uint32_t)(l >> c);
-            l &= m;
-            if (s >= 8) {
-                c -= 8;
-                m >>= 8;
-                value |= ((uint32_t)(l >> c) << 16);
-                l &= m;
-                offs++;
-            }
-            *(uint32_t*)buf = value;
-            s = c + d - 24;
-            enc->offs = offs + 1;
-        }
-        enc->low = l << d;
-        enc->rng = r << d;
-        enc->cnt = s;
+        od_ec_renormalize(enc, r, l, c, offs, buf);
 
+        enc->low = l;
+        enc->rng = int16_t(r);
+        enc->cnt = int16_t(c);
+        enc->offs = offs;
     }
 
     void od_ec_encode_q15(od_ec_enc *enc, unsigned fl, unsigned fh, int s, int nsyms) {
         od_ec_window l = enc->low;
         unsigned r = enc->rng;
+        uint32_t offs = enc->offs;
+        const uint16_t *buf = enc->precarry_buf;
+        int c = enc->cnt;
         assert(32768U <= r);
         assert(fh <= fl);
         assert(fl <= 32768U);
@@ -292,24 +340,93 @@ namespace AV1Enc {
             r -= v;
         }
 
-        //normalize
-        int c = enc->cnt;
+        od_ec_renormalize(enc, r, l, c, offs, buf);
+
+        enc->low = l;
+        enc->rng = int16_t(r);
+        enc->cnt = int16_t(c);
+        enc->offs = offs;
+    }
+
+    void od_ec_renormalize_new(od_ec_enc *enc, unsigned &r, od_ec_window &l, int &c)
+    {
+        int d = 15 - get_msb(r);
+        int s = c + d;
+        od_ec_window &low = l;
+
+        if (s >= 0)
+        {
+            unsigned m;
+
+            c += 24;
+            m = (1 << c) - 1;
+
+            /* max 2 times */
+            while (s >= 0)
+            {
+                int leadByte;
+
+                s -= 8;
+                c -= 8;
+                m >>= 8;
+                leadByte = (low >> c);
+
+                low &= m;
+
+                if (leadByte == 0xff)
+                {
+                    enc->numBufferedBytes++;
+                }
+                else
+                {
+                    if (enc->numBufferedBytes > 0)
+                    {
+                        int carry = leadByte >> 8;
+                        int byte = enc->bufferedByte + carry;
+                        enc->bufferedByte = leadByte & 0xff;
+                        enc->outBuf[enc->bytepos++] = (uint8_t)byte;
+
+                        byte = (0xff + carry) & 0xff;
+                        while (enc->numBufferedBytes > 1)
+                        {
+                            enc->outBuf[enc->bytepos++] = (uint8_t)byte;
+                            enc->numBufferedBytes--;
+                        }
+                    }
+                    else
+                    {
+                        enc->numBufferedBytes = 1;
+                        enc->bufferedByte = leadByte;
+                    }
+                }
+            }
+
+            s = c + d - 24;
+        }
+
+        l <<= d;
+        r <<= d;
+        c = s;
+    }
+
+    void od_ec_renormalize(od_ec_enc *enc, unsigned &r, od_ec_window &l, int &c, uint32_t &offs, const uint16_t *buf)
+    {
+#if ENABLE_PRECARRY_BUF
         assert(r <= 65535U);
         int d = 15 - BSR(r);
-        s = c + d;
+        int s = c + d;
         /*TODO: Right now we flush every time we have at least one byte available.
         Instead we should use an od_ec_window and flush right before we're about to
         shift bits off the end of the window.
         For a 32-bit window this is about the same amount of work, but for a 64-bit
         window it should be a fair win.*/
         if (s >= 0) {
-            uint32_t offs = enc->offs;
-            const uint16_t *buf = enc->precarry_buf + offs;
-            assert(enc->offs + 2 <= enc->precarry_storage);
+            //assert(enc->offs + 2 <= enc->precarry_storage);
             c += 16;
             unsigned m = (1 << c) - 1;
             uint32_t value = (uint32_t)(l >> c);
             l &= m;
+            const uint16_t *bf = buf + offs;
             if (s >= 8) {
                 c -= 8;
                 m >>= 8;
@@ -317,19 +434,19 @@ namespace AV1Enc {
                 l &= m;
                 offs++;
             }
-            *(uint32_t*)buf = value;
+            *(uint32_t*)(bf) = value;
             s = c + d - 24;
-            enc->offs = offs + 1;
+            offs++;
         }
-        enc->low = l << d;
-        enc->rng = r << d;
-        enc->cnt = s;
-
+        l <<= d;
+        r <<= d;
+        c = s;
+#else
+    return od_ec_renormalize_new(enc, r, l, c);
+#endif
     }
 
-
     void od_ec_encode_bool_q15_128_x_num(od_ec_enc *enc, int32_t x, int num) {
-        //trace_bool(val, f, enc->rng);
         od_ec_window l = enc->low;
         unsigned r = enc->rng;
         uint32_t offs = enc->offs;
@@ -341,49 +458,20 @@ namespace AV1Enc {
             unsigned v = (r >> 8) << 7;
             v += EC_MIN_PROB;
             const int32_t val = (x >> i) & 1;
+            trace_bool(val, 128, r);
             if (val) l += r - v;
             r = val ? v : r - v;
 
-            //normalize
-            assert(r <= 65535U);
-            int d = 15 - BSR(r);
-            int s = c + d;
-            /*TODO: Right now we flush every time we have at least one byte available.
-            Instead we should use an od_ec_window and flush right before we're about to
-            shift bits off the end of the window.
-            For a 32-bit window this is about the same amount of work, but for a 64-bit
-            window it should be a fair win.*/
-            if (s >= 0) {
-                assert(enc->offs + 2 <= enc->precarry_storage);
-                c += 16;
-                unsigned m = (1 << c) - 1;
-                uint32_t value = (uint32_t)(l >> c);
-                l &= m;
-                const uint16_t *bf = buf + offs;
-                if (s >= 8) {
-                    c -= 8;
-                    m >>= 8;
-                    value |= ((uint32_t)(l >> c) << 16);
-                    l &= m;
-                    offs++;
-                }
-                *(uint32_t*)(bf) = value;
-                s = c + d - 24;
-                offs++;
-            }
-            l <<= d;
-            r <<= d;
-            c = s;
+            od_ec_renormalize(enc, r, l, c, offs, buf);
         }
         enc->low = l;
-        enc->rng = r;
-        enc->cnt = c;
+        enc->rng = int16_t(r);
+        enc->cnt = int16_t(c);
         enc->offs = offs;
     }
 
 
     void od_ec_encode_bool_q15_128_0_num(od_ec_enc *enc, int num) {
-        //trace_bool(val, f, enc->rng);
         od_ec_window l = enc->low;
         unsigned r = enc->rng;
         uint32_t offs = enc->offs;
@@ -392,50 +480,22 @@ namespace AV1Enc {
         assert(32768U <= r);
 
         for (int i = 0; i < num; i++) {
+            trace_bool(0, 128, r);
             unsigned v = (r >> 8) << 7;
             v += EC_MIN_PROB;
             r -= v;
 
-            //normalize
-            assert(r <= 65535U);
-            int d = 15 - BSR(r);
-            int s = c + d;
-            /*TODO: Right now we flush every time we have at least one byte available.
-            Instead we should use an od_ec_window and flush right before we're about to
-            shift bits off the end of the window.
-            For a 32-bit window this is about the same amount of work, but for a 64-bit
-            window it should be a fair win.*/
-            if (s >= 0) {
-                assert(enc->offs + 2 <= enc->precarry_storage);
-                c += 16;
-                unsigned m = (1 << c) - 1;
-                uint32_t value = (uint32_t)(l >> c);
-                l &= m;
-                const uint16_t *bf = buf + offs;
-                if (s >= 8) {
-                    c -= 8;
-                    m >>= 8;
-                    value |= ((uint32_t)(l >> c) << 16);
-                    l &= m;
-                    offs++;
-                }
-                *(uint32_t*)(bf) = value;
-                s = c + d - 24;
-                offs++;
-            }
-            l <<= d;
-            r <<= d;
-            c = s;
+            od_ec_renormalize(enc, r, l, c, offs, buf);
         }
         enc->low = l;
-        enc->rng = r;
-        enc->cnt = c;
+        enc->rng = int16_t(r);
+        enc->cnt = int16_t(c);
         enc->offs = offs;
     }
 
 
-    void od_ec_encode_bool_q15_128_num(od_ec_enc *enc, int val, int num) {
-        //trace_bool(val, f, enc->rng);
+    void od_ec_encode_bool_q15_128_num(od_ec_enc *enc, int val, int num)
+    {
         od_ec_window l = enc->low;
         unsigned r = enc->rng;
         uint32_t offs = enc->offs;
@@ -444,99 +504,49 @@ namespace AV1Enc {
         assert(32768U <= r);
 
         for (int i = 0; i < num; i++) {
+            trace_bool(val, 128, r);
             unsigned v = (r >> 8) << 7;
             v += EC_MIN_PROB;
             if (val) l += r - v;
             r = val ? v : r - v;
 
-            //normalize
-            assert(r <= 65535U);
-            int d = 15 - BSR(r);
-            int s = c + d;
-            /*TODO: Right now we flush every time we have at least one byte available.
-            Instead we should use an od_ec_window and flush right before we're about to
-            shift bits off the end of the window.
-            For a 32-bit window this is about the same amount of work, but for a 64-bit
-            window it should be a fair win.*/
-            if (s >= 0) {
-                assert(enc->offs + 2 <= enc->precarry_storage);
-                c += 16;
-                unsigned m = (1 << c) - 1;
-                uint32_t value = (uint32_t)(l >> c);
-                l &= m;
-                const uint16_t *bf = buf + offs;
-                if (s >= 8) {
-                    c -= 8;
-                    m >>= 8;
-                    value |= ((uint32_t)(l >> c) << 16);
-                    l &= m;
-                    offs++;
-                }
-                *(uint32_t*)(bf) = value;
-                s = c + d - 24;
-                offs++;
-            }
-            l <<= d;
-            r <<= d;
-            c = s;
+            od_ec_renormalize(enc, r, l, c, offs, buf);
         }
         enc->low = l;
-        enc->rng = r;
-        enc->cnt = c;
+        enc->rng = int16_t(r);
+        enc->cnt = int16_t(c);
         enc->offs = offs;
     }
 
 
     void od_ec_encode_bool_q15_128(od_ec_enc *enc, int val) {
-        //trace_bool(val, f, enc->rng);
+        trace_bool(val, 128, enc->rng);
         od_ec_window l = enc->low;
         unsigned r = enc->rng;
+        uint32_t offs = enc->offs;
+        const uint16_t *buf = enc->precarry_buf;
         assert(32768U <= r);
         unsigned v = (r >> 8)<<7;
         v += EC_MIN_PROB;
         if (val) l += r - v;
         r = val ? v : r - v;
 
-        //normalize
         int c = enc->cnt;
-        assert(r <= 65535U);
-        int d = 15 - BSR(r);
-        int s = c + d;
-        /*TODO: Right now we flush every time we have at least one byte available.
-        Instead we should use an od_ec_window and flush right before we're about to
-        shift bits off the end of the window.
-        For a 32-bit window this is about the same amount of work, but for a 64-bit
-        window it should be a fair win.*/
-        if (s >= 0) {
-            uint32_t offs = enc->offs;
-            const uint16_t *buf = enc->precarry_buf + offs;
-            assert(enc->offs + 2 <= enc->precarry_storage);
-            c += 16;
-            unsigned m = (1 << c) - 1;
-            uint32_t value = (uint32_t)(l >> c);
-            l &= m;
-            if (s >= 8) {
-                c -= 8;
-                m >>= 8;
-                value |= ((uint32_t)(l >> c)<<16);
-                l &= m;
-                offs++;
-            }
-            *(uint32_t*)buf = value;
-            s = c + d - 24;
-            enc->offs = offs + 1;
-        }
-        enc->low = l << d;
-        enc->rng = r << d;
-        enc->cnt = s;
+        od_ec_renormalize(enc, r, l, c, offs, buf);
 
+        enc->low = l;
+        enc->rng = int16_t(r);
+        enc->cnt = int16_t(c);
+        enc->offs = offs;
     }
 
 
     void od_ec_encode_bool_q15(od_ec_enc *enc, int val, unsigned f) {
-        trace_bool(val, f, enc->rng);
+        //trace_bool(val, f, enc->rng);
         od_ec_window l;
         unsigned r;
+        uint32_t offs = enc->offs;
+        const uint16_t *buf = enc->precarry_buf;
         unsigned v;
         assert(0 < f);
         assert(f < 32768U);
@@ -548,61 +558,39 @@ namespace AV1Enc {
         if (val) l += r - v;
         r = val ? v : r - v;
 
-        //normalize
         int c = enc->cnt;
-        assert(r <= 65535U);
-        int d = 15 - BSR(r);
-        int s = c + d;
-        /*TODO: Right now we flush every time we have at least one byte available.
-        Instead we should use an od_ec_window and flush right before we're about to
-        shift bits off the end of the window.
-        For a 32-bit window this is about the same amount of work, but for a 64-bit
-        window it should be a fair win.*/
-        if (s >= 0) {
-            uint32_t offs = enc->offs;
-            const uint16_t *buf = enc->precarry_buf + offs;
-            assert(enc->offs + 2 <= enc->precarry_storage);
-            c += 16;
-            unsigned m = (1 << c) - 1;
-            uint32_t value = (uint32_t)(l >> c);
-            l &= m;
-            if (s >= 8) {
-                c -= 8;
-                m >>= 8;
-                value |= ((uint32_t)(l >> c) << 16);
-                l &= m;
-                offs++;
-            }
-            *(uint32_t*)buf = value;
-            s = c + d - 24;
-            enc->offs = offs + 1;
-        }
-        enc->low = l << d;
-        enc->rng = r << d;
-        enc->cnt = s;
+        od_ec_renormalize(enc, r, l, c, offs, buf);
 
+        enc->low = l;
+        enc->rng = int16_t(r);
+        enc->cnt = int16_t(c);
+        enc->offs = offs;
     }
 
     static const int nsymbs2speed[17] = { 3, 3, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 };
 
     void update_cdf(aom_cdf_prob *cdf, int val, int nsymbs) {
+        const aom_cdf_prob *pcdf = cdf;
         const aom_cdf_prob last_cdf = cdf[nsymbs];
         const int rate = ( last_cdf >> 4) + nsymbs2speed[nsymbs];
-
-        #pragma novector
-        #pragma nounroll
+#if defined(__ICL)
+#pragma novector
+#pragma nounroll
+#endif
 
         for (int i = 0; i < val; i++, cdf++)
             *cdf += (CDF_PROB_TOP - *cdf) >> rate;
 
-        #pragma novector
-        #pragma nounroll
+#if defined(__ICL)
+#pragma novector
+#pragma nounroll
+#endif
         for (int i = val; i < nsymbs - 1; ++i, cdf++)
             *cdf -= *cdf >> rate;
         *(cdf+1) += 1 - (last_cdf >> 5);
 
 
-        trace_cdf_update(cdf, nsymbs);
+        trace_cdf_update(pcdf, nsymbs);
     }
 
     /*Encodes a symbol given a cumulative distribution function (CDF) table in Q15.
@@ -626,7 +614,7 @@ namespace AV1Enc {
         od_ec_encode_q15(enc, s > 0 ? cdf[s - 1] : AOM_ICDF(0), cdf[s], s, nsyms);
         update_cdf(cdf, s, nsyms);
     }
-
+#if 0
     /*Encodes a sequence of raw bits in the stream.
     fl: The bits to encode.
     ftb: The number of bits to encode.
@@ -678,6 +666,7 @@ namespace AV1Enc {
         enc->end_window = end_window;
         enc->nend_bits = nend_bits;
     }
+#endif
 }
 
 #endif // MFX_ENABLE_AV1_VIDEO_ENCODE

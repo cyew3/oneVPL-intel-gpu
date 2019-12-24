@@ -21,7 +21,6 @@
 #pragma once
 
 #include "assert.h"
-//#include "ippdefs.h"
 
 #if defined(_WIN32) || defined(_WIN64)
   #define H265_FORCEINLINE __forceinline
@@ -46,3 +45,7 @@
 #else
 # define H265_RESTRICT
 #endif
+
+#define IPP_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
+#define IPP_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
+#define Saturate(min_val, max_val, val) IPP_MAX((min_val), IPP_MIN((max_val), (val)))

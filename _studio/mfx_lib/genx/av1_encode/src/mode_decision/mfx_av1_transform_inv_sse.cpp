@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 #include "assert.h"
-#include "ipps.h"
 #include <emmintrin.h>  // SSE2
 #include "txfm_common.h"
 #include "inv_txfm_sse2.h"

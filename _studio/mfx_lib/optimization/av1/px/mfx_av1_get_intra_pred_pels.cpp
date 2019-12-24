@@ -96,15 +96,15 @@ void GetPredPelsAV1(const PixType *rec, int pitch, PixType *topPels, PixType *le
 
     const PixType baseTopLeft = (plane == PLANE_Y)
         ? (sizeof(PixType) == 1 ? 0x80   : PixType(0x80   << 2))
-        : (sizeof(PixType) == 2 ? 0x8080 : PixType(0x8080 << 2));
+        : (sizeof(PixType) == 2 ? 0x8080 : PixType(PixType(0x80 << 2) + (PixType(0x80 << 2)<<16))); //PixType(0x8080 << 2));
 
     const PixType baseTop = (plane == PLANE_Y)
-        ? (sizeof(PixType) == 1 ? 0x7f   : PixType(0x7f   << 2))
-        : (sizeof(PixType) == 2 ? 0x7f7f : PixType(0x7f7f << 2));
+        ? (sizeof(PixType) == 1 ? 0x7f   : PixType((0x80 << 2)-1)) //PixType(0x7f   << 2))
+        : (sizeof(PixType) == 2 ? 0x7f7f : PixType(PixType((0x80 << 2)-1) + (PixType((0x80 << 2)-1) << 16)));//PixType(0x7f7f << 2));
 
     const PixType baseLeft = (plane == PLANE_Y)
-        ? (sizeof(PixType) == 1 ? 0x81   : PixType(0x81   << 2))
-        : (sizeof(PixType) == 2 ? 0x8181 : PixType(0x8181 << 2));
+        ? (sizeof(PixType) == 1 ? 0x81   : PixType((0x80 << 2) + 1))//PixType(0x81   << 2))
+        : (sizeof(PixType) == 2 ? 0x8181 : PixType(PixType((0x80 << 2)+1) + (PixType((0x80 << 2)+1) << 16)));//PixType(0x8181 << 2));
 
     if (haveTop && haveLeft)
         topPels[-1] = *(rec - pitch - 1);

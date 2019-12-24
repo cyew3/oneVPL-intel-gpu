@@ -31,6 +31,19 @@
 #include "mfxdefs.h"
 #include "mfxstructures.h"
 
+#define GPU_VARTX 0 // duplicate, since mfx_av1_defs.h is not included here
+
+#define GPU_INTRA_DECISION 1 // duplicate, since mfx_av1_defs.h is not included here
+
+#define USE_HWPAK_RESTRICT 1 // duplicate, since mfx_av1_defs.h is not included here
+
+#define NEWMVPRED 0
+#define ENABLE_HSW 0
+#define ENABLE_BDW 0
+#define ENABLE_ICLLP 1
+#define ENABLE_TGL 0
+#define ENABLE_TGLLP 1
+
     //============================== begin of patch for mfxstructures.h ==============================
     /* required buffer sizes - returned from call to Query() */
     struct mfxSurfInfoENC
@@ -210,6 +223,10 @@ struct mfxFEIH265Param
     mfxU32 EnableChromaSao;
     mfxU32 InterpFlag;
     mfxU32 IsAv1;
+    mfxU32 NumSlices;
+    mfxI32 HmeSliceStart[8];
+    mfxI32 MdSliceStart[8];
+    mfxI32 Md2SliceStart[8];
 };
 
 /* basic info for current and reference frames */
@@ -235,8 +252,6 @@ struct mfxFEIOptParamsBiref
     mfxHDL          InterDataRef1[12];
 };
 
-#define SINGLE_SIDED_COMPOUND
-
 struct MdControl
 {
     uint16_t miCols;                      // off=0    size=2
@@ -251,11 +266,8 @@ struct MdControl
     } qparam;                             // off=8    size=20
     uint16_t lambdaInt;                   // off=28   size=2
     uint8_t compound_allowed;             // off=30   size=1
-#ifdef SINGLE_SIDED_COMPOUND
-    uint8_t bidir_compund;                // off=31   size=1
-#else
-    uint8_t single_ref;                   // off=31   size=1
-#endif
+    uint8_t bidir_compound_or_single_ref;  // off=31   size=1
+
     struct LutBitCost {
         uint16_t eobMulti[7];             // off=32   size=2*7
         uint16_t coeffEobDc[16];          // off=46   size=2*16
@@ -270,18 +282,28 @@ struct MdControl
                                           // off=1500
     } bc;
 
+#if GPU_VARTX
     struct LutCoefBitCost {
-        Ipp16u eobMulti[11];            // off=1500 size=2*11
-        Ipp16u coeffEobDc[16];          // off=1522 size=2*16
-        Ipp16u coeffBaseEobAc[3];       // off=1554 size=2*3
-        Ipp16u txbSkip[7][2];           // off=1560 size=2*14
-        Ipp16u coeffBase[16][4];        // off=1588 size=2*64
-        Ipp16u coeffBrAcc[21][16];      // off=1716 size=2*336
+        uint16_t eobMulti[11];          // off=1500 size=2*11
+        uint16_t coeffEobDc[16];        // off=1522 size=2*16
+        uint16_t coeffBaseEobAc[3];     // off=1554 size=2*3
+        uint16_t txbSkip[7][2];         // off=1560 size=2*14
+        uint16_t coeffBase[16][4];      // off=1588 size=2*64
+        uint16_t coeffBrAcc[21][16];    // off=1716 size=2*336
                                         // off=2388
     } txb[4];
 
-    Ipp16u reserved[2];                 // off=5052 size=2*2
-    Ipp16u high_freq_coeff_curve[4][2]; // off=5056 size=2*4*2
+    uint16_t initDz[2];                   // off=5052 size=2*2
+    uint16_t high_freq_coeff_curve[4][2]; // off=5056 size=2*4*2
+#endif // GPU_VARTX
+
+    int8_t fastMode;
+    int8_t reserved[3];
+
+    struct LutIEF {                     // off=1504 size=4*8*4*4
+        struct Split { float mt, st, a, b, m; } split;
+        struct Leaf { float a, b, m; } leaf;
+    } lutIef[4][4]; // [qIdx][qpLayer]
 };
 
 /* FEI input - update before each call to ProcessFrameAsync */
@@ -303,6 +325,8 @@ struct mfxFEIH265Input
             mfxHDL surfSrc;
             mfxHDL surfRef;
             double lambda;
+            int16_t global_mvy;
+            int16_t sliceIdx;
         } meArgs;
 
         struct {
@@ -314,17 +338,20 @@ struct mfxFEIH265Input
             mfxHDL surfInterData1[4]; // 64x64 -> 8x8
             mfxHDL modeInfo1;
             mfxHDL modeInfo2;
+            int16_t global_mvy;
+#if GPU_VARTX
+            mfxHDL prevAdz;
+            mfxHDL prevAdzDelta;
+            mfxHDL currAdz;
+            mfxHDL currAdzDelta;
             mfxHDL varTxInfo;
-            mfxHDL Rs8;
-            mfxHDL Cs8;
-            mfxHDL Rs16;
-            mfxHDL Cs16;
-            mfxHDL Rs32;
-            mfxHDL Cs32;
-            mfxHDL Rs64;
-            mfxHDL Cs64;
-            mfxU8 *param;           // mode decision param
-            mfxU32 compoundAllowed; // for mepu
+            mfxHDL coefs;
+#endif // GPU_VARTX
+            mfxHDL Rs[4];
+            mfxHDL Cs[4];
+            mfxU8 *param;      // mode decision param
+            mfxU32 refConfig;  // 0=single_ref, 1=two_refs, 2=compound
+            mfxU32 sliceIdx; // number of slice to process
         } mdArgs;
 
         struct {
@@ -419,6 +446,7 @@ struct mfxFEIH265InputSurface
     CmBuffer      *mdControl;
     double         lambda;
     bool           meControlInited;
+    int16_t        global_mvy;
 };
 
 struct mfxFEIH265ReconSurface
@@ -430,7 +458,6 @@ struct mfxFEIH265ReconSurface
     CmSurface2D   *bufDown4x;
     CmSurface2D   *bufDown8x;
     CmSurface2D   *bufDown16x;
-    CmSurface2D   *bufInterpMerged;
 };
 
 struct mfxFEIH265SurfaceUp

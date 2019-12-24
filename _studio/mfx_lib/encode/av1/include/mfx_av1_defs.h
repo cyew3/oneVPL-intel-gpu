@@ -39,6 +39,8 @@
 #include "mfxla.h"
 #include "mfx_ext_buffers.h"
 
+#include <atomic>
+
 
 #if defined(_WIN32) || defined(_WIN64)
 #define AV1_FORCEINLINE __forceinline
@@ -57,12 +59,38 @@
 #define AV1_Free    ippFree
 #define AV1_SafeFree(p) if (p) AV1_Free(p); p = NULL
 
-#define SINGLE_SIDED_COMPOUND
-#define LOW_COMPLX_PAQ
-#define ADAPTIVE_DEADZONE
-#ifdef  ADAPTIVE_DEADZONE
-#define ADAPTIVE_DEADZONE_TEMPORAL_ONLY
+#define PARALLEL_LOW_DELAY 1
+#if PARALLEL_LOW_DELAY
+#define PARALLEL_LOW_DELAY_FAST
 #endif
+
+#define LOW_COMPLX_PAQ
+#define AMT_HROI_PSY_AQ
+#define ZERO_DELAY_ANALYZE_CMPLX
+#define ADAPTIVE_DEADZONE
+#define AMT_MAX_FRAME_SIZE
+#define ENABLE_AV1_ALTR 1
+#define ENABLE_AV1_ALTR_AUTOQ 0
+#define ENABLE_AV1_ALTR_APQ0 1
+#define ENABLE_10BIT    0
+#define ENABLE_10BIT_SIMPLE    1
+#define ENABLE_HIBIT_COEFS 1
+#define ENABLE_SW_ME    0
+#define ENABLE_PX_CODE  0
+#define ENABLE_QPMAP    0
+#define ENABLE_BRC      1
+#define ENABLE_PRECARRY_BUF 0
+#define ENABLE_BITSTREAM_MEM_REDUCTION 1
+#define ENABLE_ONLY_HASH8   1
+#if ENABLE_ONLY_HASH8
+#define ENABLE_HASH_MEM_REDUCTION 1
+#define HASH_WORK_LINES 64
+#else
+#define ENABLE_HASH_MEM_REDUCTION 0
+#endif
+#define ENABLE_TPLMV 0
+// Use MePu8/16 kernel, and common pred buf for MePu & Md
+#define NEWMVPRED 0
 
 //#define REINTERP_MEPU
 //#define USE_SAD_ONLY
@@ -83,13 +111,24 @@
 
 #define PROTOTYPE_GPU_MODE_DECISION 1
 #define PROTOTYPE_GPU_MODE_DECISION_SW_PATH 0
-#define GPU_FILTER_DECISION 1
+
 #define GPU_INTRA_DECISION 1
+#define GPU_VARTX 0 // duplicated in mfx_av1_fei.h
+
+#if GPU_VARTX
+#define ADAPTIVE_DEADZONE_TEMPORAL_ONLY
+#endif
 
 // HWPAK CONFIG
-#define USE_HWPAK_RESTRICT 0
 #define USE_CMODEL_PAK 0
 #define USE_SRC10ENC8PAK10 1
+#if USE_CMODEL_PAK || defined(PARALLEL_LOW_DELAY_FAST)
+#define USE_HWPAK_RESTRICT 1
+#else
+#define USE_HWPAK_RESTRICT 0
+#endif
+
+#define PACK_BY_TILES 0
 
 //#define DUMP_COSTS_CU
 //#define DUMP_COSTS_TU
@@ -168,37 +207,34 @@ namespace AV1Enc {
     }
 
     static inline IppStatus _ippsSet(uint8_t val, uint8_t* pDst, int len) {
-        return ippsSet_8u(val, pDst, len);
+        //return ippsSet_8u(val, pDst, len);
+		return std::fill(pDst, pDst + len, val), ippStsNoErr;
     }
     static inline IppStatus _ippsSet(uint16_t val, uint16_t* pDst, int len) {
-        return ippsSet_16s(val, (int16_t*)pDst, len);
+        //return ippsSet_16s(val, (int16_t*)pDst, len);
+		return std::fill(pDst, pDst + len, val), ippStsNoErr;
     }
     static inline IppStatus _ippsSet(uint32_t val, uint32_t* pDst, int len) {
-        return ippsSet_32s(val, (int32_t*)pDst, len);
+        //return ippsSet_32s(val, (int32_t*)pDst, len);
+		return std::fill(pDst, pDst + len, val), ippStsNoErr;
     }
+
     static inline IppStatus _ippsCopy(const uint8_t* pSrc, uint8_t* pDst, int len) {
-        return ippsCopy_8u(pSrc, pDst, len);
+        //return ippsCopy_8u(pSrc, pDst, len);
+		return std::copy(pSrc, pSrc + len, pDst), ippStsNoErr;
     }
     static inline IppStatus _ippsCopy(const uint16_t* pSrc, uint16_t* pDst, int len) {
-        return ippsCopy_16s((int16_t*)pSrc, (int16_t*)pDst, len);
+        //return ippsCopy_16s((int16_t*)pSrc, (int16_t*)pDst, len);
+		return std::copy(pSrc, pSrc + len, pDst), ippStsNoErr;
     }
+	static inline IppStatus _ippsCopy(const uint32_t* pSrc, uint32_t* pDst, int len) {
+		//return ippsCopy_32s((int32_t*)pSrc, (int32_t*)pDst, len);
+		return std::copy(pSrc, pSrc + len, pDst), ippStsNoErr;
+	}
+
     static inline IppStatus _ippsCopy(const int16_t* pSrc, int16_t* pDst, int len) {
-        return ippsCopy_16s(pSrc, pDst, len);
-    }
-    static inline IppStatus _ippsCopy(const uint32_t* pSrc, uint32_t* pDst, int len) {
-        return ippsCopy_32s((int32_t*)pSrc, (int32_t*)pDst, len);
-    }
-    static inline IppStatus _ippiCopy_C1R(const uint8_t *pSrc, int32_t srcStepPix, uint8_t *pDst, int32_t dstStepPix, IppiSize roiSize) {
-        return ippiCopy_8u_C1R(pSrc, srcStepPix, pDst, dstStepPix, roiSize);
-    }
-    static inline IppStatus _ippiCopy_C1R(const uint16_t *pSrc, int32_t srcStepPix, uint16_t *pDst, int32_t dstStepPix, IppiSize roiSize) {
-        return ippiCopy_16u_C1R(pSrc, srcStepPix*2, pDst, dstStepPix*2, roiSize);
-    }
-    static inline IppStatus _ippiTranspose_C1R(uint8_t *pSrc, int32_t srcStepPix, uint8_t *pDst, int32_t dstStepPix, IppiSize roiSize) {
-        return ippiTranspose_8u_C1R(pSrc, srcStepPix, pDst, dstStepPix, roiSize);
-    }
-    static inline IppStatus _ippiTranspose_C1R(uint16_t *pSrc, int32_t srcStepPix, uint16_t *pDst, int32_t dstStepPix, IppiSize roiSize) {
-        return ippiTranspose_16u_C1R(pSrc, srcStepPix*2, pDst, dstStepPix*2, roiSize);
+        //return ippsCopy_16s(pSrc, pDst, len);
+		return std::copy(pSrc, pSrc + len, pDst), ippStsNoErr;
     }
 
     enum {
@@ -285,8 +321,12 @@ namespace AV1Enc {
     enum {
         AMT_DQP_CAQ = 0x1,
         AMT_DQP_CAL = 0x2,
-        AMT_DQP_PAQ = 0x4
+        AMT_DQP_PAQ = 0x4,
+        AMT_DQP_PSY = 0x8,
+        AMT_DQP_HROI = 0x10
     };
+
+#define AMT_DQP_PSY_HROI (AMT_DQP_PSY|AMT_DQP_HROI)
 
     class Frame;
 
@@ -319,6 +359,10 @@ namespace AV1Enc {
         TT_REPEAT_FRAME,
         TT_PACK_HEADER,
         TT_PACK_TILE,
+        TT_PACK_ROW,
+        TT_DETECT_SCROLL_START,
+        TT_DETECT_SCROLL_ROUTINE,
+        TT_DETECT_SCROLL_END,
         TT_COUNT
     } ThreadingTaskSpecifier;
 
@@ -328,19 +372,37 @@ namespace AV1Enc {
 
     struct ThreadingTask
     {
-        ThreadingTaskSpecifier action;
-        volatile uint32_t finished;
+        ThreadingTask()
+        {
+            action = TT_COUNT;
+            numUpstreamDependencies = 0;
+            numDownstreamDependencies = 0;
+            finished = 0;
+        }
+
+        ThreadingTaskSpecifier action = TT_COUNT;
+        std::atomic<uint32_t> finished{ 0 };
 
         union {
             struct {
-                int32_t col;             // for encode, postproc, lookahead
-                int32_t row;             // for encode, postproc, lookahead
+                int32_t col;            // for encode, postproc, lookahead
+                int32_t row;            // for encode, postproc, lookahead
             };
             struct {
-                int32_t feiOp;           // for gpu-submit/gpu-wait
-                int32_t refIdx;          // for gpu-submit/gpu-wait
+                int32_t feiOp;          // for gpu-submit/gpu-wait
+                int16_t refIdx;         // for gpu-submit/gpu-wait
+                int16_t sliceIdx;       // for gpu-submit/gpu-wait
             };
-            int32_t tile;                // for pack-tile
+            struct {
+                int16_t tileRow;        // for pack-row
+                int16_t tileCol;        // for pack-row
+                int32_t sbRow;          // for pack-row
+            };
+            struct {
+                int32_t startX;          // for detect-scroll
+                int32_t endX;            // for detect-scroll
+            };
+            int32_t tile;               // for pack-tile
             mfxFrameSurface1 *indata;   // for init-new-frame
 
             void *ptr1;                 // reserved for zeroing
@@ -348,16 +410,16 @@ namespace AV1Enc {
 
         union {
             Lookahead *la;              // for lookahead
-            Frame *frame;               // for gpu-submit/init-new-frame/enc-complete
+            Frame *frame;               // for gpu-submit/init-new-frame/enc-complete/detect-scroll
             void *syncpoint;            // for gpu-wait
             void *ptr0;                 // reserved for zeroing
         };
         int32_t poc;                     // for all tasks, useful in debug
 
 
-        volatile unsigned int numUpstreamDependencies;
-        int numDownstreamDependencies;
-        ThreadingTask *downstreamDependencies[MAX_NUM_DEPENDENCIES];
+        std::atomic<unsigned int> numUpstreamDependencies{ 0 };
+        std::atomic<int> numDownstreamDependencies{ 0 };
+        ThreadingTask * downstreamDependencies[MAX_NUM_DEPENDENCIES] = { nullptr };
 
 
         // very useful for debug
@@ -389,6 +451,7 @@ namespace AV1Enc {
             feiOp = feiOp_;
             poc = poc_;
             refIdx = 0;
+            sliceIdx = 0;
         }
 
         void InitGpuWait(int32_t feiOp_, int32_t poc_) {
@@ -396,6 +459,7 @@ namespace AV1Enc {
             feiOp = feiOp_;
             poc = poc_;
             refIdx = 0;
+            sliceIdx = 0;
             syncpoint = NULL;
         }
 
@@ -490,7 +554,7 @@ namespace AV1Enc {
 
         enum { CBR=MFX_RATECONTROL_CBR, VBR=MFX_RATECONTROL_VBR, AVBR=MFX_RATECONTROL_AVBR, CQP=MFX_RATECONTROL_CQP, LA_EXT=MFX_RATECONTROL_LA_EXT };
 
-        enum { ON=MFX_CODINGOPTION_ON, OFF=MFX_CODINGOPTION_OFF, UNK=MFX_CODINGOPTION_UNKNOWN };
+        enum { ON=MFX_CODINGOPTION_ON, OFF=MFX_CODINGOPTION_OFF, UNK=MFX_CODINGOPTION_UNKNOWN, ADAPT=MFX_CODINGOPTION_ADAPTIVE};
 
         enum { SYSMEM=MFX_IOPATTERN_IN_SYSTEM_MEMORY, VIDMEM=MFX_IOPATTERN_IN_VIDEO_MEMORY, OPAQMEM=MFX_IOPATTERN_IN_OPAQUE_MEMORY };
 
@@ -513,7 +577,7 @@ namespace AV1Enc {
         const int32_t SUP_ENABLE_CM[]  = { OFF };
 #endif
 
-        const int32_t MIN_TARGET_USAGE       = 1;
+        const int32_t MIN_TARGET_USAGE       = 7;
         const int32_t MAX_TARGET_USAGE       = 7;
         const int32_t MAX_WIDTH              = 8192;
         const int32_t MAX_HEIGHT             = 4320;
@@ -528,7 +592,7 @@ namespace AV1Enc {
         const int32_t SUP_PROFILE[]          = { MAIN, MAIN10, REXT };
         const int32_t SUP_LEVEL[]            = { M10, M20, M21, M30, M31, M40, M41, M50, M51, M52, M60, M61, M62, H40, H41, H50, H51, H52, H60, H61, H62 };
         const int32_t SUP_RC_METHOD[]        = { CBR, VBR, AVBR, LA_EXT, CQP};
-        const int32_t SUP_FOURCC[]           = { NV12, NV16, P010, P210 };
+        const uint32_t SUP_FOURCC[]          = { NV12, NV16, P010, P210 };
         const int32_t SUP_CHROMA_FORMAT[]    = { YUV420, YUV422 };
         const int32_t SUP_PIC_STRUCT[]       = { PROGR, TFF, BFF };
         const int32_t SUP_INTRA_ANG_MODE_I[] = { 1, 2, 3, 99 };
@@ -541,7 +605,7 @@ namespace AV1Enc {
 
     template<class T> struct Type2Id;
     template<> struct Type2Id<mfxExtOpaqueSurfaceAlloc> { enum { id = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION }; };
-    template<> struct Type2Id<mfxExtCodingOptionAV1E>    { enum { id = MFX_EXTBUFF_AV1ENC }; };
+    template<> struct Type2Id<mfxExtCodingOptionAV1E>   { enum { id = MFX_EXTBUFF_AV1ENC }; };
     template<> struct Type2Id<mfxExtDumpFiles>          { enum { id = MFX_EXTBUFF_DUMP }; };
     template<> struct Type2Id<mfxExtHEVCTiles>          { enum { id = MFX_EXTBUFF_HEVC_TILES }; };
     template<> struct Type2Id<mfxExtHEVCRegion>         { enum { id = MFX_EXTBUFF_HEVC_REGION }; };
@@ -553,6 +617,13 @@ namespace AV1Enc {
     template<> struct Type2Id<mfxExtCodingOptionVPS>    { enum { id = MFX_EXTBUFF_CODING_OPTION_VPS }; };
     template<> struct Type2Id<mfxExtLAFrameStatistics>  { enum { id = MFX_EXTBUFF_LOOKAHEAD_STAT}; };
     template<> struct Type2Id<mfxExtEncoderROI>         { enum { id = MFX_EXTBUFF_ENCODER_ROI}; };
+    template<> struct Type2Id<mfxExtAVCRefListCtrl>     { enum { id = MFX_EXTBUFF_AVC_REFLIST_CTRL}; };
+    template<> struct Type2Id<mfxExtAvcTemporalLayers>  { enum { id = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS }; };
+    template<> struct Type2Id<mfxExtEncoderCapability>  { enum { id = MFX_EXTBUFF_ENCODER_CAPABILITY }; };
+    template<> struct Type2Id<mfxExtVP9Param>           { enum { id = MFX_EXTBUFF_VP9_PARAM }; };
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    template<> struct Type2Id<mfxExtAV1Param>           { enum { id = MFX_EXTBUFF_AV1_PARAM }; };
+#endif
 
     template <class T> struct RemoveConst          { typedef T type; };
     template <class T> struct RemoveConst<const T> { typedef T type; };
@@ -627,12 +698,16 @@ namespace AV1Enc {
 
 #define DEF_FILTER EIGHTTAP
 #define DEF_FILTER_DUAL (DEF_FILTER+(DEF_FILTER<<4))
+#define IBC_FILTER_DUAL (BILINEAR+(BILINEAR<<4))
 
     // VP9 specific
     const int32_t REFS_PER_FRAME         = 3;   // Each inter frame can use up to 3 frames for reference
     const int32_t MV_FP_SIZE             = 4;   // Number of values that can be decoded for mv_fr
     const int32_t MVREF_NEIGHBOURS       = 8;   // Number of positions to search in motion vector prediction
     const int32_t BLOCK_SIZE_GROUPS      = 4;   // Number of contexts when decoding intra_mode
+    const int32_t PALETTE_BLOCK_SIZE_CONTEXTS = 7; // Screen Coding Tools
+
+    const int32_t MAX_PALETTE            = 8;
     //const int32_t BLOCK_SIZES            = 13;  // Number of different block sizes used
     //const int32_t BLOCK_INVALID          = 14;  // Sentinel value to mark partition choices that are illegal
     const int32_t VP9_PARTITION_CONTEXTS = 16;  // Number of contexts when decoding partition
@@ -761,8 +836,8 @@ namespace AV1Enc {
 
     const int32_t MAX_TILE_WIDTH         = 4096;  // Max Tile width in pixels
     const int32_t MAX_TILE_AREA          = 4096 * 2304;  // Maximum tile area in pixels
-    const int32_t MAX_TILE_ROWS          = 64;
-    const int32_t MAX_TILE_COLS          = 64;
+    const uint16_t MAX_TILE_ROWS          = 64;
+    const uint16_t MAX_TILE_COLS          = 64;
 
     const int32_t SIG_COEF_CONTEXTS_EOB  = 4;
     const int32_t SIG_COEF_CONTEXTS_2D   = 26;
@@ -788,12 +863,27 @@ namespace AV1Enc {
 
     const int32_t DELTA_Q_SMALL = 3;
     const int32_t DELTA_Q_CONTEXTS = (DELTA_Q_SMALL);
-    const int32_t DEFAULT_DELTA_Q_RES = 4;
+    const int32_t DEFAULT_DELTA_Q_RES_SHIFT = 2;
+    const int32_t DEFAULT_DELTA_Q_RES = (1 << DEFAULT_DELTA_Q_RES_SHIFT);
 
     const int32_t COEFF_PROB_MODELS = 255;
 
     const int32_t FRAME_OFFSET_BITS = 7;
     const int32_t MAX_FRAME_DISTANCE = (1 << FRAME_OFFSET_BITS) - 1;
+
+    const int32_t SUPERRES_SCALE_BITS = 3;
+    const int32_t SCALE_NUMERATOR = 8;
+    const int32_t SUPERRES_SCALE_DENOMINATOR_MIN = (SCALE_NUMERATOR + 1);
+    const int32_t SUPERRES_SCALE_DENOMINATOR_DEFAULT = SUPERRES_SCALE_DENOMINATOR_MIN + (1 << SUPERRES_SCALE_BITS) - 1;
+    const int32_t RS_SCALE_SUBPEL_BITS = 14;
+
+    const int32_t RS_SUBPEL_BITS = 6;
+    const int32_t RS_SCALE_EXTRA_BITS = (RS_SCALE_SUBPEL_BITS - RS_SUBPEL_BITS);
+    const int32_t RS_SCALE_EXTRA_OFF = (1 << (RS_SCALE_EXTRA_BITS - 1));
+    const int32_t RS_SCALE_SUBPEL_MASK = ((1 << RS_SCALE_SUBPEL_BITS) - 1);
+
+    static const int INTRABC_DELAY_PIXELS = 256;  //  Delay of 256 pixels
+    static const int INTRABC_DELAY_SB64 = (INTRABC_DELAY_PIXELS / 64);
 
     enum { KEY_FRAME=0, NON_KEY_FRAME=1 };
 
@@ -882,17 +972,9 @@ namespace AV1Enc {
         // Discrete Trig transforms w/o flip (4) + Identity (1)
         EXT_TX_SET_DTT4_IDTX,
         // Discrete Trig transforms w/o flip (4) + Identity (1) + 1D Hor/vert DCT (2)
-        // for 16x16 only
-        EXT_TX_SET_DTT4_IDTX_1DDCT_16X16,
-        // Discrete Trig transforms w/o flip (4) + Identity (1) + 1D Hor/vert DCT (2)
         EXT_TX_SET_DTT4_IDTX_1DDCT,
-        // Discrete Trig transforms w/ flip (9) + Identity (1)
-        EXT_TX_SET_DTT9_IDTX,
         // Discrete Trig transforms w/ flip (9) + Identity (1) + 1D Hor/Ver DCT (2)
         EXT_TX_SET_DTT9_IDTX_1DDCT,
-        // Discrete Trig transforms w/ flip (9) + Identity (1) + 1D Hor/Ver (6)
-        // for 16x16 only
-        EXT_TX_SET_ALL16_16X16,
         // Discrete Trig transforms w/ flip (9) + Identity (1) + 1D Hor/Ver (6)
         EXT_TX_SET_ALL16,
         EXT_TX_SET_TYPES
@@ -999,7 +1081,7 @@ namespace AV1Enc {
         AV1_INTER_COMPOUND_MODES=NEW_NEWMV-NEAREST_NEARESTMV+1,
     };
 
-    enum { INTRA_FRAME=-1, NONE_FRAME=-1, LAST_FRAME=0, GOLDEN_FRAME=1, ALTREF_FRAME=2, COMP_VAR0=3, COMP_VAR1=4 };
+    enum : int8_t { INTRA_FRAME=-1, NONE_FRAME=-1, LAST_FRAME=0, GOLDEN_FRAME=1, ALTREF_FRAME=2, COMP_VAR0=3, COMP_VAR1=4 };
 
     enum { AV1_LAST_FRAME=0, AV1_LAST2_FRAME=1, AV1_LAST3_FRAME=2, AV1_GOLDEN_FRAME=3, AV1_BWDREF_FRAME=4, AV1_ALTREF2_FRAME=5, AV1_ALTREF_FRAME=6 };
     const int32_t FWD_REFS    = AV1_GOLDEN_FRAME - AV1_LAST_FRAME + 1;
@@ -1010,10 +1092,10 @@ namespace AV1Enc {
     const int32_t INTER_REFS_PER_FRAME = AV1_ALTREF_FRAME - AV1_LAST_FRAME + 1;
     const int32_t TOTAL_REFS_PER_FRAME = AV1_ALTREF_FRAME - INTRA_FRAME + 1;
 
-    const int av1_to_vp9_ref_frame_mapping[INTER_REFS_PER_FRAME] = {
+    const RefIdx av1_to_vp9_ref_frame_mapping[INTER_REFS_PER_FRAME] = {
         LAST_FRAME, LAST_FRAME, LAST_FRAME, GOLDEN_FRAME, ALTREF_FRAME, ALTREF_FRAME, ALTREF_FRAME
     };
-    const int vp9_to_av1_ref_frame_mapping[3] = {
+    const RefIdx vp9_to_av1_ref_frame_mapping[3] = {
         AV1_LAST_FRAME, AV1_GOLDEN_FRAME, AV1_ALTREF_FRAME
     };
 
@@ -1025,10 +1107,52 @@ namespace AV1Enc {
         UNIDIR_COMP_REFS
     };
 
+    constexpr int CFL_ALPHABET_SIZE_LOG2 = 4;
+    constexpr int CFL_ALPHABET_SIZE = (1 << CFL_ALPHABET_SIZE_LOG2);
+    constexpr int CFL_MAGS_SIZE = ((2 << CFL_ALPHABET_SIZE_LOG2) + 1);
+    constexpr int CFL_IDX_U(int idx) { return idx >> CFL_ALPHABET_SIZE_LOG2; }
+    constexpr int CFL_IDX_V(int idx) { return idx & (CFL_ALPHABET_SIZE - 1); }
+
+    enum CFL_PRED_TYPE : uint8_t { CFL_PRED_U, CFL_PRED_V, CFL_PRED_PLANES };
+
+    enum CFL_SIGN_TYPE  : uint8_t {
+        CFL_SIGN_ZERO,
+        CFL_SIGN_NEG,
+        CFL_SIGN_POS,
+        CFL_SIGNS
+    };
+
+    enum CFL_ALLOWED_TYPE  : uint8_t {
+        CFL_DISALLOWED,
+        CFL_ALLOWED,
+        CFL_ALLOWED_TYPES
+    };
+
+    // CFL_SIGN_ZERO,CFL_SIGN_ZERO is invalid
+    constexpr int CFL_JOINT_SIGNS = (CFL_SIGNS * CFL_SIGNS - 1);
+    // CFL_SIGN_U is equivalent to (js + 1) / 3 for js in 0 to 8
+    constexpr int CFL_SIGN_U(int js) { return ((js + 1) * 11) >> 5; }
+    // CFL_SIGN_V is equivalent to (js + 1) % 3 for js in 0 to 8
+    constexpr int CFL_SIGN_V(int js) {
+        return (js + 1) - CFL_SIGNS * CFL_SIGN_U(js);
+    }
+
+    // There is no context when the alpha for a given plane is zero.
+    // So there are 2 fewer contexts than joint signs.
+    constexpr int CFL_ALPHA_CONTEXTS = (CFL_JOINT_SIGNS + 1 - CFL_SIGNS);
+    constexpr int CFL_CONTEXT_U(int js) {
+        return js + 1 - CFL_SIGNS;
+    }
+    // Also, the contexts are symmetric under swapping the planes.
+    constexpr int CFL_CONTEXT_V(int js) {
+        return CFL_SIGN_V(js) * CFL_SIGNS + CFL_SIGN_U(js) - CFL_SIGNS;
+    }
+
     enum { SINGLE_REFERENCE=0, COMPOUND_REFERENCE=1, REFERENCE_MODE_SELECT=2 };
 
     enum { UNIDIR_COMP_REFERENCE=0, BIDIR_COMP_REFERENCE=1, COMP_REFERENCE_TYPES=2 };
 
+    enum { MV_VALS = 32765, MV_MAX = 16383 };
     enum { MV_JOINT_ZERO=0, MV_JOINT_HNZVZ=1, MV_JOINT_HZVNZ=2, MV_JOINT_HNZVNZ=3, MV_JOINTS=4 };
 
     enum {
@@ -1838,6 +1962,37 @@ namespace AV1Enc {
         -ADST_DCT, -DCT_ADST
     };
 
+    const int av1_ext_tx_inv[EXT_TX_SET_TYPES][TX_TYPES] = {
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 9, 0, 3, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 9, 0, 10, 11, 3, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 9, 10, 11, 0, 1, 2, 4, 5, 3, 6, 7, 8, 0, 0, 0, 0 },
+            { 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 4, 5, 3, 6, 7, 8 },
+    };
+
+    const int av1_ext_tx_set_idx_to_type[2][4] = {
+      {
+            // Intra
+            EXT_TX_SET_DCTONLY,
+            EXT_TX_SET_DTT4_IDTX_1DDCT,
+            EXT_TX_SET_DTT4_IDTX,
+        },
+        {
+            // Inter
+            EXT_TX_SET_DCTONLY,
+            EXT_TX_SET_ALL16,
+            EXT_TX_SET_DTT9_IDTX_1DDCT,
+            EXT_TX_SET_DCT_IDTX,
+        },
+    };
+
+    const int use_intra_ext_tx_for_txsize[EXT_TX_SETS_INTRA][EXT_TX_SIZES] = {
+      { 1, 1, 1, 1 },  // unused
+      { 1, 1, 0, 0 },
+      { 0, 0, 1, 0 },
+    };
+
     const uint8_t energy_class[12] = {0, 1, 2, 3, 3, 4, 4, 5, 5, 5, 5, 5};
 
     enum { CAT1_MIN_VAL=5, CAT2_MIN_VAL=7, CAT3_MIN_VAL=11, CAT4_MIN_VAL=19, CAT5_MIN_VAL=35, CAT6_MIN_VAL=67 };
@@ -1909,6 +2064,7 @@ namespace AV1Enc {
     struct ADzCtx {
         float aqroundFactorY[2];      // [DC/AC]
         float aqroundFactorUv[2][2];  // [U/v][DC/AC]
+        float reserved[2];            // alignment
         void Add(float *dy, float duv[][2])
         {
             this->aqroundFactorY[0]     += dy[0];
@@ -1961,6 +2117,44 @@ namespace AV1Enc {
         }
     };
 
+    enum {
+        TWO_COLORS,
+        THREE_COLORS,
+        FOUR_COLORS,
+        FIVE_COLORS,
+        SIX_COLORS,
+        SEVEN_COLORS,
+        EIGHT_COLORS,
+        PALETTE_SIZES
+    }/* UENUM1BYTE(PALETTE_SIZE)*/;
+
+    // Number of possible contexts for a color index.
+// As can be seen from av1_get_palette_color_index_context(), the possible
+// contexts are (2,0,0), (2,2,1), (3,2,0), (4,1,0), (5,0,0). These are mapped to
+// a value from 0 to 4 using 'palette_color_index_context_lookup' table.
+#define PALETTE_COLOR_INDEX_CONTEXTS 5
+
+// Palette Y mode context for a block is determined by number of neighboring
+// blocks (top and/or left) using a palette for Y plane. So, possible Y mode'
+// context values are:
+// 0 if neither left nor top block uses palette for Y plane,
+// 1 if exactly one of left or top block uses palette for Y plane, and
+// 2 if both left and top blocks use palette for Y plane.
+#define PALETTE_Y_MODE_CONTEXTS 3
+
+// Palette UV mode context for a block is determined by whether this block uses
+// palette for the Y plane. So, possible values are:
+// 0 if this block doesn't use palette for Y plane.
+// 1 if this block uses palette for Y plane (i.e. Y palette size > 0).
+#define PALETTE_UV_MODE_CONTEXTS 2
+
+// Map the number of pixels in a block size to a context
+//   64(BLOCK_8X8, BLOCK_4x16, BLOCK_16X4)  -> 0
+//  128(BLOCK_8X16, BLOCK_16x8)             -> 1
+//   ...
+// 4096(BLOCK_64X64)                        -> 6
+#define PALATTE_BSIZE_CTXS 7
+
     struct EntropyContexts {
         aom_cdf_prob skip_cdf[SKIP_CONTEXTS][CDF_SIZE(2)];
         aom_cdf_prob intra_inter_cdf[INTRA_INTER_CONTEXTS][CDF_SIZE(2)];
@@ -1987,7 +2181,7 @@ namespace AV1Enc {
         aom_cdf_prob coeff_base_cdf[TX_SIZES][PLANE_TYPES][SIG_COEF_CONTEXTS][CDF_SIZE(4)];
         aom_cdf_prob coeff_br_cdf[TX_SIZES][PLANE_TYPES][LEVEL_CONTEXTS][CDF_SIZE(BR_CDF_SIZE)];
         aom_cdf_prob y_mode_cdf[BLOCK_SIZE_GROUPS][CDF_SIZE(AV1_INTRA_MODES)];
-        aom_cdf_prob uv_mode_cdf[AV1_INTRA_MODES][CDF_SIZE(AV1_UV_INTRA_MODES)];
+        aom_cdf_prob uv_mode_cdf[CFL_ALLOWED_TYPES][AV1_INTRA_MODES][CDF_SIZE(AV1_UV_INTRA_MODES)];
         aom_cdf_prob angle_delta_cdf[DIRECTIONAL_MODES][CDF_SIZE(2 * MAX_ANGLE_DELTA + 1)];
         aom_cdf_prob filter_intra_cdfs[TX_SIZES_ALL][CDF_SIZE(2)];
         aom_cdf_prob partition_cdf[AV1_PARTITION_CONTEXTS][CDF_SIZE(EXT_PARTITION_TYPES)];
@@ -1996,54 +2190,23 @@ namespace AV1Enc {
         aom_cdf_prob inter_mode_cdf[INTER_MODE_CONTEXTS][CDF_SIZE(INTER_MODES)];
         aom_cdf_prob inter_compound_mode_cdf[INTER_MODE_CONTEXTS][CDF_SIZE(AV1_INTER_COMPOUND_MODES)];
         aom_cdf_prob kf_y_cdf[KF_MODE_CONTEXTS][KF_MODE_CONTEXTS][CDF_SIZE(AV1_INTRA_MODES)];
+        aom_cdf_prob y_haspalette_cdf[PALETTE_BLOCK_SIZE_CONTEXTS][3][CDF_SIZE(2)];
+        aom_cdf_prob y_palettesize_cdf[PALETTE_BLOCK_SIZE_CONTEXTS][CDF_SIZE(PALETTE_SIZES)];
+        aom_cdf_prob uv_haspalette_cdf[2][CDF_SIZE(2)];
+        aom_cdf_prob uv_palettesize_cdf[PALETTE_BLOCK_SIZE_CONTEXTS][CDF_SIZE(PALETTE_SIZES)];
+        aom_cdf_prob y_palettecoloridx_cdf[PALETTE_SIZES][5][CDF_SIZE(MAX_PALETTE)];
+        aom_cdf_prob uv_palette_color_index_cdf[PALETTE_SIZES][PALETTE_COLOR_INDEX_CONTEXTS][CDF_SIZE(MAX_PALETTE)];
         aom_cdf_prob intra_ext_tx_cdf[EXT_TX_SETS_INTRA][EXT_TX_SIZES][AV1_INTRA_MODES][CDF_SIZE(TX_TYPES)];
         aom_cdf_prob inter_ext_tx_cdf[EXT_TX_SETS_INTER][EXT_TX_SIZES][CDF_SIZE(TX_TYPES)];
         aom_cdf_prob motion_mode_cdf[BLOCK_SIZES_ALL][CDF_SIZE(MOTION_MODES)];
         aom_cdf_prob obmc_cdf[BLOCK_SIZES_ALL][CDF_SIZE(2)];
         aom_cdf_prob txfm_partition_cdf[TXFM_PARTITION_CONTEXTS][CDF_SIZE(2)];
+        aom_cdf_prob cfl_sign_cdf[CDF_SIZE(CFL_JOINT_SIGNS)];
+        aom_cdf_prob cfl_alpha_cdf[CFL_ALPHA_CONTEXTS][CDF_SIZE(CFL_ALPHABET_SIZE)];
+        aom_cdf_prob intrabc_cdf[CDF_SIZE(2)];
+        aom_cdf_prob delta_q_abs_cdf[CDF_SIZE(DELTA_Q_SMALL + 1)];
         MvContextsAv1 mv_contexts;
-    };
-
-    struct alignas(16) FrameCounts {
-        uint32_t y_mode[BLOCK_SIZE_GROUPS][INTRA_MODES];
-        uint32_t uv_mode[INTRA_MODES][INTRA_MODES];
-        uint32_t partition[VP9_PARTITION_CONTEXTS][PARTITION_TYPES];
-        uint32_t more_coef[TX_SIZES][PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS][2];
-        uint32_t token[TX_SIZES][PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS][NUM_TOKENS];
-        uint32_t interp_filter[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
-        uint32_t inter_mode[INTER_MODE_CONTEXTS][INTER_MODES];
-        uint32_t is_inter[INTRA_INTER_CONTEXTS][2];
-        uint32_t comp_mode[COMP_INTER_CONTEXTS][2];
-        uint32_t single_ref[VP9_REF_CONTEXTS][2][2];
-        uint32_t vp9_comp_ref[VP9_REF_CONTEXTS][2];
-        uint32_t tx[TX_SIZES][TX_SIZE_CONTEXTS][TX_SIZES];
-        uint32_t skip[SKIP_CONTEXTS][2];
-        uint32_t mv_joint[MV_JOINTS];
-        uint32_t mv_sign[2][2];
-        uint32_t mv_class[2][AV1_MV_CLASSES];
-        uint32_t mv_class0_bit[2][CLASS0_SIZE];
-        uint32_t mv_class0_fr[2][CLASS0_SIZE][MV_FP_SIZE];
-        uint32_t mv_class0_hp[2][2];
-        uint32_t mv_bits[2][MV_OFFSET_BITS][2];
-        uint32_t mv_fr[2][MV_FP_SIZE];
-        uint32_t mv_hp[2][2];
-        uint8_t padding[52];
-    };
-
-    struct alignas(8) TokenVP9 {
-        int16_t ctx;
-        int16_t token;
-        int16_t sign;
-        int16_t extra;
-    };
-
-    struct alignas(8) TokenAV1 {
-        uint8_t  token;
-        uint8_t  eob_val;
-        int16_t cdf;
-        int8_t  comb_symb;
-        uint8_t  num_extra_bits;  // excluding sign
-        int16_t extra;           // including sign
+        MvContextsAv1 dv_contexts;
     };
 
 
@@ -2090,8 +2253,8 @@ namespace AV1Enc {
     };
     inline bool operator==(const AV1MV &l, const AV1MV &r) { return l.asInt == r.asInt; }
     inline bool operator!=(const AV1MV &l, const AV1MV &r) { return l.asInt != r.asInt; }
-    const AV1MV MV_ZERO = {};
-    const AV1MV INVALID_MV = { 0x8000, 0x8000 };
+    constexpr AV1MV MV_ZERO = {};
+    constexpr AV1MV INVALID_MV = { uint16_t(0x8000), uint16_t(0x8000) };
 
     struct alignas(8) AV1MVPair {
         AV1MV &operator[](int32_t i) { assert(i==0 || i==1); return mv[i]; }
@@ -2133,8 +2296,12 @@ namespace AV1Enc {
     };
 
     inline BlockSize GetSbType(int32_t depth, PartitionType partition) {
-        return 3 * (4 - depth) - partition;
+        return BlockSize(3 * (4 - depth) - partition);
     }
+
+#define permute4x64(r, m0, m1, m2, m3) _mm256_permute4x64_epi64(r, (m0) + ((m1) << 2) + ((m2) << 4) + ((m3) << 6))
+#define permute2x128(r0, r1, m0, m1) _mm256_permute2x128_si256(r0, r1, (m0) + ((m1) << 4))
+#define shuffle32(r, m0, m1, m2, m3) _mm256_shuffle_epi32(r, (m0) + ((m1) << 2) + ((m2) << 4) + ((m3) << 6));
 
     inline __m128i loada_si128(const void *p) {
         assert(!(size_t(p)&15));
@@ -2142,12 +2309,25 @@ namespace AV1Enc {
     }
 
     inline __m256i loada_si256(const void *p) {
-        assert(!(size_t(p)&31));
+        assert(!(size_t(p) & 31));
         return _mm256_load_si256(reinterpret_cast<const __m256i *>(p));
+    }
+
+    inline __m256i si256(__m128i r) { return _mm256_castsi128_si256(r); }
+    inline __m128i si128(__m256i r) { return _mm256_castsi256_si128(r); }
+    inline __m128i si128_lo(__m256i r) { return si128(r); }
+    inline __m128i si128_hi(__m256i r) { return _mm256_extracti128_si256(r, 1); }
+
+    inline __m256i loada2_m128i(const void *lo, const void *hi) {
+        return _mm256_insertf128_si256(si256(loada_si128(lo)), loada_si128(hi), 1);
     }
 
     inline __m128i loadu_si128(const void *p) {
         return _mm_loadu_si128(reinterpret_cast<const __m128i *>(p));
+    }
+
+    inline __m256i loadu_si256(const void *p) {
+        return _mm256_loadu_si256(reinterpret_cast<const __m256i *>(p));
     }
 
     inline void storea_si128(void *p, __m128i r) {
@@ -2156,8 +2336,16 @@ namespace AV1Enc {
     }
 
     inline void storea_si256(void *p, __m256i r) {
-        assert(!(size_t(p)&31));
+        assert(!(size_t(p) & 31));
         return _mm256_store_si256(reinterpret_cast<__m256i *>(p), r);
+    }
+
+    inline void storeu_si256(void *p, __m256i r) {
+        return _mm256_storeu_si256(reinterpret_cast<__m256i *>(p), r);
+    }
+
+    inline void storea2_m128i(void *lo, void *hi, __m256i r) {
+        storea_si128(lo, si128(r)); storea_si128(hi, _mm256_extracti128_si256(r, 1));
     }
 
     inline void storeu_si128(void *p, __m128i r) {
@@ -2174,6 +2362,14 @@ namespace AV1Enc {
 
     inline __m128i loadh_epi64(const void *p) {
         return loadh_epi64(_mm_setzero_si128(), p);
+    }
+
+    inline __m256i loadu2_m128i(const void *lo, const void *hi) {
+        return _mm256_loadu2_m128i((const __m128i *)hi, (const __m128i *)lo);
+    }
+
+    inline void storeu2_m128i(void *lo, void *hi, __m256i r) {
+        _mm256_storeu2_m128i((__m128i *)hi, (__m128i *)lo, r);
     }
 
     inline __m128i loadu2_epi64(const void *lo, const void *hi) {
@@ -2351,6 +2547,12 @@ namespace AV1Enc {
         uint8_t ref_frame_offset[MFMV_STACK_SIZE];
     };
 
+    struct CFL_params {
+        uint8_t alpha_u : 4;
+        uint8_t alpha_v : 4;
+        uint8_t joint_sign : 3;
+    };
+
     inline int32_t GetRelativeDist(int32_t bits, int32_t a, int32_t b)
     {
         if (bits == 0)
@@ -2362,6 +2564,41 @@ namespace AV1Enc {
         const int32_t diff = a - b;
         return (diff & (m - 1)) - (diff & m);
     }
+
+    struct TileParam {
+        int32_t uniformSpacing;
+        int32_t rows;
+        int32_t cols;
+        int32_t numTiles;
+        int32_t log2Rows;
+        int32_t log2Cols;
+        int32_t minLog2Cols;
+        int32_t minLog2Rows;
+        int32_t maxLog2Cols;
+        int32_t maxLog2Rows;
+        int32_t minLog2Tiles;
+        int32_t maxTileWidthSb;
+        int32_t maxTileHeightSb;
+
+        uint32_t mapSb2TileRow[(CodecLimits::MAX_HEIGHT + 63) / 64];
+        uint32_t mapSb2TileCol[(CodecLimits::MAX_WIDTH + 63) / 64];
+
+        uint16_t colStart[CodecLimits::AV1_MAX_NUM_TILE_COLS];
+        uint16_t colEnd[CodecLimits::AV1_MAX_NUM_TILE_COLS];
+        uint16_t colWidth[CodecLimits::AV1_MAX_NUM_TILE_COLS];
+        uint16_t rowStart[CodecLimits::AV1_MAX_NUM_TILE_ROWS];
+        uint16_t rowEnd[CodecLimits::AV1_MAX_NUM_TILE_ROWS];
+        uint16_t rowHeight[CodecLimits::AV1_MAX_NUM_TILE_ROWS];
+        uint16_t miColStart[CodecLimits::AV1_MAX_NUM_TILE_COLS];
+        uint16_t miColEnd[CodecLimits::AV1_MAX_NUM_TILE_COLS];
+        uint16_t miColWidth[CodecLimits::AV1_MAX_NUM_TILE_COLS];
+        uint16_t miRowStart[CodecLimits::AV1_MAX_NUM_TILE_ROWS];
+        uint16_t miRowEnd[CodecLimits::AV1_MAX_NUM_TILE_ROWS];
+        uint16_t miRowHeight[CodecLimits::AV1_MAX_NUM_TILE_ROWS];
+    };
+
+    inline int32_t DivUp(int32_t n, int32_t d) { return (n + d - 1) / d; }
+    const int32_t MAX_NUM_GPU_SLICES = 8;
 };
 
 #endif // __MFX_AV1_DEFS_H__

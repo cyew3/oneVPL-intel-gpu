@@ -21,7 +21,6 @@
 #pragma once
 
 #include <emmintrin.h>  // SSE2
-#include "ipps.h"
 #include <stdint.h>
 
 // perform 8x8 transpose

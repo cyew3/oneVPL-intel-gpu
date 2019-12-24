@@ -155,6 +155,41 @@ namespace {
         }
     }
 
+    int32_t CheckParamHasOnlyTemporalLayerChange(const mfxVideoParam &src, const mfxVideoParam &ref)
+    {
+        mfxVideoParam       mfxParam;
+        AV1Enc::ExtBuffers extBuffers;
+        Zero(mfxParam);
+        extBuffers.CleanUp();
+        mfxParam.NumExtParam = sizeof(extBuffers.extParamAll) / sizeof(extBuffers.extParamAll[0]);
+        mfxParam.ExtParam = extBuffers.extParamAll;
+        CopyParam(mfxParam, src);
+        bool noChange = memcmp(&mfxParam.mfx, &ref.mfx, sizeof(mfxInfoMFX)) == 0;
+        if (noChange && src.NumExtParam) {
+            // Check others
+            if (src.NumExtParam > ref.NumExtParam) noChange = 0;    // something more
+            for (uint32_t i = 0; i < ref.NumExtParam && noChange; i++) {
+                mfxExtBuffer *d = GetExtBufferById(src.ExtParam, src.NumExtParam, ref.ExtParam[i]->BufferId);
+                if (d && d->BufferSz == ref.ExtParam[i]->BufferSz) {
+                    if (d->BufferId == MFX_EXTBUFF_HEVC_TEMPORAL_LAYERS) {
+                        // Allows Temporal Layers to change
+                        mfxExtBuffer *c = GetExtBufferById(mfxParam.ExtParam, mfxParam.NumExtParam, ref.ExtParam[i]->BufferId);
+                        mfxExtAvcTemporalLayers *tlayers = (mfxExtAvcTemporalLayers*)c;
+                        mfxExtAvcTemporalLayers *tlayersref = (mfxExtAvcTemporalLayers*)ref.ExtParam[i];
+                        if (tlayersref->Layer[0].Scale == 1 && tlayers->Layer[0].Scale == 1)
+                            noChange = 1; // Both Setup
+                        else
+                            noChange = 0; // Not Setup
+                    }
+                    else {
+                        noChange = memcmp(d, ref.ExtParam[i], d->BufferSz) == 0;
+                    }
+                }
+            }
+        }
+        return noChange;
+    }
+
     const struct LevelLimits {
         int32_t levelId;
         int32_t maxLumaPs;
@@ -222,7 +257,7 @@ namespace {
     {
         for (int32_t i = 0; i < NUM_LEVELS; i++)
             if (tab_levelLimits[i].maxLumaPs >= lumaPs)
-                return tab_levelLimits[i].levelId;
+                return (uint16_t)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
@@ -230,15 +265,15 @@ namespace {
     {
         for (int32_t i = 0; i < NUM_LEVELS; i++)
             if (tab_levelLimits[i].maxLumaSr * (uint64_t)frDenom >= lumaPs * (uint64_t)frNom)
-                return tab_levelLimits[i].levelId;
+                return (uint16_t)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
     uint16_t GetLevelIdx(uint32_t codecLevel)
     {
         for (int32_t i = 0; i < NUM_LEVELS; i++)
-            if (tab_levelLimits[i].levelId == (codecLevel & 0xff))
-                return i;
+            if (tab_levelLimits[i].levelId == int32_t(codecLevel & 0xff))
+                return (uint16_t)i;
         return NUM_LEVELS;
     }
 
@@ -256,7 +291,7 @@ namespace {
     {
         for (int32_t i = 0; i < NUM_LEVELS; i++)
             if (numRefFrame <= GetMaxDpbSize(lumaPs, i))
-                return tab_levelLimits[i].levelId;
+                return (uint16_t)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
@@ -264,7 +299,7 @@ namespace {
     {
         for (int32_t i = 0; i < NUM_LEVELS; i++)
             if (tab_levelLimits[i].maxSliceSegmentsPerPicture >= numSlice)
-                return tab_levelLimits[i].levelId;
+                return (uint16_t)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
@@ -272,7 +307,7 @@ namespace {
     {
         for (int32_t i = 0; i < NUM_LEVELS; i++)
             if (tab_levelLimits[i].maxTileRows >= numTileRows)
-                return tab_levelLimits[i].levelId;
+                return (uint16_t)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
@@ -280,7 +315,7 @@ namespace {
     {
         for (int32_t i = 0; i < NUM_LEVELS; i++)
             if (tab_levelLimits[i].maxTileCols >= numTileCols)
-                return tab_levelLimits[i].levelId;
+                return (uint16_t)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
@@ -303,7 +338,7 @@ namespace {
         for (int32_t i = 0; i < NUM_LEVELS; i++)
             for (int32_t t = 0; t <= 1; t++)
                 if (uint32_t(tab_levelLimits[i].maxBr[t] * BrNalFactor / 1000) >= bitrate)
-                    return tab_levelLimits[i].levelId | (t << 8);
+                    return (uint16_t)(tab_levelLimits[i].levelId | (t << 8));
         return 0xff;
     }
 
@@ -322,17 +357,18 @@ namespace {
         for (int32_t i = 0; i < NUM_LEVELS; i++)
             for (int32_t t = 0; t <= 1; t++)
                 if (uint32_t(tab_levelLimits[i].maxCPB[t] * CpbNalFactor / 8000) >= bufferSizeInKB)
-                    return tab_levelLimits[i].levelId | (t << 8);
+                    return (uint16_t)(tab_levelLimits[i].levelId | (t << 8));
         return 0xff;
     }
 
-    template <class T, class U> bool CheckEq(T &v, U to)       { return (v && v != static_cast<T>(to))  ? (v = 0,    false) : true; }
+    template <class T, class U> bool CheckEq(T &v, U to)         { return (v && v != static_cast<T>(to))  ? (v = 0,                    false) : true; }
     template <class T>          bool CheckEq(T &v, uint32_t to)  { return CheckEq<T, uint32_t>(v, to); }
-    template <class T>          bool CheckTriState(T &v)       { return (v && v != ON && v != OFF)      ? (v = 0,    false) : true; }
-    template <class T, class U> bool CheckMin(T &v, U minv)    { return (v && v < static_cast<T>(minv)) ? (v = 0,    false) : true; }
-    template <class T, class U> bool CheckMinSat(T &v, U minv) { return (v && v < static_cast<T>(minv)) ? (v = minv, false) : true; }
-    template <class T, class U> bool CheckMax(T &v, U maxv)    { return (v > static_cast<T>(maxv))      ? (v = 0,    false) : true; }
-    template <class T, class U> bool CheckMaxSat(T &v, U maxv) { return (v > static_cast<T>(maxv))      ? (v = maxv, false) : true; }
+    template <class T>          bool CheckTriState(T &v)         { return (v && v != ON && v != OFF)      ? (v = 0,                    false) : true; }
+    template <class T>          bool CheckTriStateAdaptive(T &v) { return (v && v != ON && v != OFF && v != ADAPT) ? (v = 0,           false) : true; }
+    template <class T, class U> bool CheckMin(T &v, U minv)      { return (v && v < static_cast<T>(minv)) ? (v = 0,                    false) : true; }
+    template <class T, class U> bool CheckMinSat(T &v, U minv)   { return (v && v < static_cast<T>(minv)) ? (v = static_cast<T>(minv), false) : true; }
+    template <class T, class U> bool CheckMax(T &v, U maxv)      { return (v > static_cast<T>(maxv))      ? (v = 0,                    false) : true; }
+    template <class T, class U> bool CheckMaxSat(T &v, U maxv)   { return (v > static_cast<T>(maxv))      ? (v = static_cast<T>(maxv), false) : true; }
 
     template <class T, class U> bool CheckRange(T &v, U minv, U maxv)    { assert(minv <= maxv); return CheckMax(v, maxv)    && CheckMin(v, minv); }
     template <class T, class U> bool CheckRangeSat(T &v, U minv, U maxv) { assert(minv <= maxv); return CheckMaxSat(v, maxv) && CheckMinSat(v, minv); }
@@ -341,13 +377,14 @@ namespace {
     template <class T, class U, size_t N> bool CheckSet(T &v, U (&setv)[N])   { return (v && !IsIn(setv, v)) ? (v = 0, false) : true; }
 
     uint16_t CheckMinLevel(uint16_t &tierLevel, uint16_t minLevel) {
-        if (Level(tierLevel) < minLevel) return tierLevel = (Tier(tierLevel) | minLevel), false; // bad, increased
+        if (Level(tierLevel) < minLevel)
+            return tierLevel = (uint16_t)(Tier(tierLevel) | minLevel), false; // bad, increased
         return true; // good
     }
 
     uint16_t CheckMinTierLevel(uint16_t &tierLevel, uint16_t minTierLevel) {
         uint16_t oldTierLevel = tierLevel;
-        tierLevel = MAX(Level(tierLevel), Level(minTierLevel)) | MAX(Tier(tierLevel), Tier(minTierLevel));
+        tierLevel = (uint16_t)(MAX(Level(tierLevel), Level(minTierLevel)) | MAX(Tier(tierLevel), Tier(minTierLevel)));
         return oldTierLevel == tierLevel;
     }
 
@@ -452,7 +489,7 @@ namespace {
             ext->CUSplit = 1;
             ext->IntraAngModes = 1;
             ext->EnableCm = 0;
-            ext->EnableCmBiref = 0;
+            ext->EnableCmInterp = 1;
             ext->BPyramid = 1;
             ext->FastPUDecision = 1;
             ext->HadamardMe = 1;
@@ -506,6 +543,11 @@ namespace {
             ext->RepackProb = 1;
             ext->NumRefLayers = 1;
             ext->ConstQpOffset = 1;
+#ifdef AMT_MAX_FRAME_SIZE
+            ext->RepackForMaxFrameSize = 1;
+#else
+            ext->RepackForMaxFrameSize = 0;
+#endif
             ext->FwdProbUpdateCoef = 1;
             ext->FwdProbUpdateSyntax = 1;
             ext->DeblockingLevelMethod = 1;
@@ -523,6 +565,10 @@ namespace {
             ext->CodecTypeExt = 1;
             ext->CDEF = 1;
             ext->LRMode = 1;
+            ext->SRMode = 1;
+            ext->CFLMode = 1;
+            ext->ScreenMode = 1;
+            ext->DisableFrameEndUpdateCdf = 1;
         }
 
         if (mfxExtCodingOption *ext = GetExtBuffer(*out)) {
@@ -559,7 +605,7 @@ namespace {
             ext->IntRefType = 0;
             ext->IntRefCycleSize = 0;
             ext->IntRefQPDelta = 0;
-            ext->MaxFrameSize = 0;
+            ext->MaxFrameSize = 1;
             ext->MaxSliceSize = 0;
             ext->BitrateLimit = 0;
             ext->MBBRC = 1;
@@ -595,7 +641,7 @@ namespace {
             ext->WinBRCMaxAvgKbps = 0;
             ext->WinBRCSize = 0;
             ext->QVBRQuality = 0;
-            ext->EnableMBQP = 0;
+            ext->EnableMBQP = 1;
             ext->IntRefCycleDist = 0;
             ext->DirectBiasAdjustment = 0;
             ext->GlobalMotionBiasAdjustment = 0;
@@ -610,15 +656,12 @@ namespace {
             ext->BitstreamRestriction = 0;
             ext->LowDelayHrd = 0;
             ext->MotionVectorsOverPicBoundaries = 0;
-            ext->Log2MaxMvLengthHorizontal = 0;
-            ext->Log2MaxMvLengthVertical = 0;
-            ext->ScenarioInfo = 0;
+            ext->ScenarioInfo = 1;
             ext->ContentInfo = 0;
-            ext->PRefType = 0;
+            ext->PRefType = 1;
             ext->FadeDetection = 0;
-            ext->DeblockingAlphaTcOffset = 0;
-            ext->DeblockingBetaOffset = 0;
             ext->GPB = 1;
+            ext->ExtBrcAdaptiveLTR = 1;
         }
 
         if (mfxExtEncoderROI *ext = GetExtBuffer(*out)) {
@@ -628,6 +671,59 @@ namespace {
                 ext->ROI[i].Left = ext->ROI[i].Right = ext->ROI[i].Top = ext->ROI[i].Bottom = 1;
                 ext->ROI[i].Priority = 1;
             }
+        }
+
+        if (mfxExtAVCRefListCtrl * ctrl = GetExtBuffer(*out))
+        {
+            mfxExtBuffer tmp = ctrl->Header;
+            Zero(*ctrl);
+            ctrl->Header = tmp;
+
+            ctrl->NumRefIdxL0Active = 1;
+            ctrl->NumRefIdxL1Active = 0;
+            ctrl->ApplyLongTermIdx = 0;
+
+            ctrl->LongTermRefList[0].FrameOrder = 1;
+            ctrl->LongTermRefList[0].LongTermIdx = 0;
+            ctrl->PreferredRefList[0].FrameOrder = 1;
+            ctrl->RejectedRefList[0].FrameOrder = 1;
+        }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        if (mfxExtAV1Param * ctrl = GetExtBuffer(*out))
+        {
+            mfxExtBuffer tmp = ctrl->Header;
+            Zero(*ctrl);
+            ctrl->Header = tmp;
+
+            ctrl->FrameHeight = 0;
+            ctrl->FrameWidth = 0;
+            ctrl->NumTileColumns = 0;
+            ctrl->NumTileRows = 0;
+            ctrl->WriteIVFHeaders = 1;
+            ctrl->DisableCdfUpdate = 1;
+            ctrl->DisableFrameEndUpdateCdf = 1;
+            ctrl->EnableCdef = 1;
+            ctrl->EnableRestoration = 1;
+            ctrl->EnableSuperres = 1;
+            ctrl->InsertTemporalDelimiter = 0;
+            ctrl->InterpFilter = 1;
+            ctrl->LoopFilterSharpness = 0;
+            ctrl->NumTileGroups = 0;
+            ctrl->PackOBUFrame = 0;
+            ctrl->SegmentationMode = 0;
+            ctrl->StillPictureMode = 0;
+            ctrl->SuperresScaleDenominator = 0;
+            ctrl->SwitchInterval = 0;
+            ctrl->UseAnnexB = 0;
+        }
+#endif
+        if (mfxExtVP9Param * ctrl = GetExtBuffer(*out))
+        {
+            mfxExtBuffer tmp = ctrl->Header;
+            Zero(*ctrl);
+            ctrl->Header = tmp;
+
+            ctrl->WriteIVFHeaders = 1;
         }
     }
 
@@ -653,13 +749,17 @@ namespace {
         mfxFrameInfo &fi = mfx.FrameInfo;
         mfxExtCodingOptionAV1E *optHevc = GetExtBuffer(par);
         mfxExtHEVCRegion *region = GetExtBuffer(par);
-        mfxExtHEVCTiles *tiles = GetExtBuffer(par);
+        //mfxExtHEVCTiles *tiles = GetExtBuffer(par);
         mfxExtHEVCParam *hevcParam = GetExtBuffer(par);
         mfxExtCodingOption *opt = GetExtBuffer(par);
         mfxExtCodingOption2 *opt2 = GetExtBuffer(par);
         mfxExtCodingOption3 *opt3 = GetExtBuffer(par);
         mfxExtDumpFiles *dumpFiles = GetExtBuffer(par);
         mfxExtEncoderROI *roi = GetExtBuffer(par);
+        mfxExtAvcTemporalLayers *tlayers = GetExtBuffer(par);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        mfxExtAV1Param *av1param = GetExtBuffer(par);
+#endif
 
         // check pairs (error is expected behavior)
         if (!fi.FrameRateExtN != !fi.FrameRateExtD)
@@ -694,7 +794,8 @@ namespace {
         wrnIncompatible = !CheckSet(mfx.CodecLevel, CodecLimits::SUP_LEVEL);
         wrnIncompatible = !CheckRangeSat(mfx.TargetUsage, CodecLimits::MIN_TARGET_USAGE, CodecLimits::MAX_TARGET_USAGE);
         wrnIncompatible = !CheckMaxSat(mfx.GopRefDist, CodecLimits::MAX_GOP_REF_DIST);
-        wrnIncompatible = !CheckMaxSat(mfx.NumRefFrame, 16);
+        wrnIncompatible = !CheckMaxSat(mfx.NumRefFrame, 8);
+        wrnIncompatible = !CheckMinSat(mfx.NumRefFrame, 2);
 
         if (mfx.RateControlMethod == CQP) {
             wrnIncompatible = !CheckMaxSat(mfx.QPI, 255);
@@ -726,12 +827,12 @@ namespace {
                 par.IOPattern = 0, errInvalidParam = true;
         }
 
-        if (tiles) {
-            if (optHevc) {
-                wrnIncompatible = !CheckMaxSat(tiles->NumTileRows, CodecLimits::AV1_MAX_NUM_TILE_ROWS);
-                wrnIncompatible = !CheckMaxSat(tiles->NumTileColumns, CodecLimits::AV1_MAX_NUM_TILE_COLS);
-            }
-        }
+        //if (tiles) {
+        //    if (optHevc) {
+        //        wrnIncompatible = !CheckMaxSat(tiles->NumTileRows, CodecLimits::AV1_MAX_NUM_TILE_ROWS);
+        //        wrnIncompatible = !CheckMaxSat(tiles->NumTileColumns, CodecLimits::AV1_MAX_NUM_TILE_COLS);
+        //    }
+        //}
 
         if (region) {
             if (region->RegionEncoding != MFX_HEVC_REGION_ENCODING_ON && region->RegionEncoding != MFX_HEVC_REGION_ENCODING_OFF)
@@ -751,7 +852,15 @@ namespace {
             if (hevcParam->PicHeightInLumaSamples & 7)
                 hevcParam->PicHeightInLumaSamples = 0, errInvalidParam = true;
         }
-
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        if (av1param) {
+            wrnIncompatible = !CheckTriState(av1param->EnableCdef);
+            wrnIncompatible = !CheckTriState(av1param->EnableRestoration);
+            wrnIncompatible = !CheckTriState(av1param->DisableFrameEndUpdateCdf);
+            wrnIncompatible = !CheckTriState(av1param->EnableSuperres);
+            wrnIncompatible = !CheckMax(av1param->InterpFilter, MFX_AV1_INTERP_SWITCHABLE);
+        }
+#endif
         if (optHevc) {
             wrnIncompatible = !CheckRange(optHevc->Log2MaxCUSize, 5, 6);
             wrnIncompatible = !CheckRange(optHevc->QuadtreeTULog2MaxSize, 2, 5);
@@ -792,7 +901,11 @@ namespace {
             wrnIncompatible = !CheckMax(optHevc->FastAMPRD, 2);
             wrnIncompatible = !CheckMax(optHevc->SkipMotionPartition, 2);
             wrnIncompatible = !CheckMax(optHevc->PatternSubPel, 6);
+#ifdef AMT_HROI_PSY_AQ
+            wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 32);
+#else
             wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 8);
+#endif
             wrnIncompatible = !CheckMax(optHevc->NumRefFrameB, 16);
             wrnIncompatible = !CheckMax(optHevc->NumRefLayers, 4);
             wrnIncompatible = !CheckMax(optHevc->AnalyzeCmplx, 2);
@@ -838,6 +951,8 @@ namespace {
             wrnIncompatible = !CheckTriState(optHevc->IntraInterRDO);
             wrnIncompatible = !CheckTriState(optHevc->CDEF);
             wrnIncompatible = !CheckTriState(optHevc->LRMode);
+            wrnIncompatible = !CheckTriState(optHevc->SRMode);
+            wrnIncompatible = !CheckTriState(optHevc->CFLMode);
 
             wrnIncompatible = !CheckSet(optHevc->IntraAngModes, CodecLimits::SUP_INTRA_ANG_MODE_I);
             wrnIncompatible = !CheckSet(optHevc->EnableCm, CodecLimits::SUP_ENABLE_CM);
@@ -845,6 +960,8 @@ namespace {
             wrnIncompatible = !CheckSet(optHevc->IntraAngModesP, CodecLimits::SUP_INTRA_ANG_MODE);
             wrnIncompatible = !CheckSet(optHevc->IntraAngModesBRef, CodecLimits::SUP_INTRA_ANG_MODE);
             wrnIncompatible = !CheckSet(optHevc->IntraAngModesBnonRef, CodecLimits::SUP_INTRA_ANG_MODE);
+
+            wrnIncompatible = !CheckTriState(optHevc->RepackForMaxFrameSize);
         }
 
         if (opt) {
@@ -859,6 +976,8 @@ namespace {
 
         if (opt3) {
             wrnIncompatible = !CheckTriState(opt3->GPB);
+            wrnIncompatible = !CheckTriStateAdaptive(opt3->EnableMBQP);
+            wrnIncompatible = !CheckTriState(opt3->ExtBrcAdaptiveLTR);
         }
 
         // check combinations
@@ -870,7 +989,7 @@ namespace {
         if (fi.ChromaFormat && fi.FourCC) // FourCC & ChromaFormat
             if (fi.ChromaFormat == YUV420 && fi.FourCC != NV12 && fi.FourCC != P010 ||
                 fi.ChromaFormat == YUV422 && fi.FourCC != NV16 && fi.FourCC != P210)
-                fi.ChromaFormat = fi.FourCC = 0, errUnsupported = true;
+                fi.ChromaFormat = 0, fi.FourCC = 0, errUnsupported = true;
 
         if (hevcParam && fi.Width) // PicWidthInLumaSamples <= Width
             errInvalidParam = !CheckMax(hevcParam->PicWidthInLumaSamples, fi.Width);
@@ -935,14 +1054,14 @@ namespace {
 
                  if (mfx.RateControlMethod == CQP) {
                      if (fi.FourCC) {
-                         int32_t maxdqp = 51;
-                         if (fi.FourCC == P010 || fi.FourCC == P210)
-                             maxdqp = 63;
+                         int32_t maxdqp = 255;
+                         //if (fi.FourCC == P010 || fi.FourCC == P210)
+                         //    maxdqp = 255;
                          wrnIncompatible = !CheckRangeSat(roi->ROI[i].Priority, -maxdqp, maxdqp);
                      }
                  }
                  else
-                     wrnIncompatible = !CheckRangeSat(roi->ROI[i].Priority, -3, 3);
+                     wrnIncompatible = !CheckRangeSat(roi->ROI[i].Priority, -3 * DEFAULT_DELTA_Q_RES, 3 * DEFAULT_DELTA_Q_RES);
              }
              if (optHevc)
                 wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
@@ -980,7 +1099,7 @@ namespace {
 
         if (picWidth && picHeight && fi.FrameRateExtN && fi.FrameRateExtD) // W * H * FR <= MaxLumaSr[High6.2]
             if (picWidth * picHeight * (uint64_t)fi.FrameRateExtN > (uint64_t)fi.FrameRateExtD * tab_levelLimits[NUM_LEVELS-1].maxLumaSr)
-                picWidth = picHeight = fi.FrameRateExtN = fi.FrameRateExtD = 0, errUnsupported = true;
+                picWidth = picHeight = 0, fi.FrameRateExtN = fi.FrameRateExtD = 0, errUnsupported = true;
 
         if (picWidth && picHeight && fi.FrameRateExtN && fi.FrameRateExtD && mfx.CodecLevel) // W * H * FR <= MaxLumaSr[Level]
             wrnIncompatible = !CheckMinLevel(mfx.CodecLevel, GetMinLevelForLumaSr(picWidth * picHeight, fi.FrameRateExtN, fi.FrameRateExtD));
@@ -994,8 +1113,8 @@ namespace {
         if (mfx.NumRefFrame && optHevc && optHevc->NumRefFrameB) // NumRefFrameB <= NumRefFrame
             wrnIncompatible = !CheckMax(optHevc->NumRefFrameB, mfx.NumRefFrame);
 
-        if (mfx.NumSlice > 1 && tiles && (tiles->NumTileColumns > 1 || tiles->NumTileRows > 1)) // multi-slice or multi-tile
-            mfx.NumSlice = 1, wrnIncompatible = true;
+        //if (mfx.NumSlice > 1 && tiles && (tiles->NumTileColumns > 1 || tiles->NumTileRows > 1)) // multi-slice or multi-tile
+        //    mfx.NumSlice = 1, wrnIncompatible = true;
 
         if (mfx.NumSlice > 1 && (fi.PicStruct == TFF || fi.PicStruct == BFF)) // multi-slice is unsupported for interlace
             mfx.NumSlice = 1, wrnIncompatible = true;
@@ -1009,27 +1128,27 @@ namespace {
         if (mfx.NumSlice && mfx.CodecLevel) // NumSlice <= MaxNumSlice[level]
             wrnIncompatible = !CheckMinLevel(mfx.CodecLevel, GetMinLevelForNumSlice(mfx.NumSlice));
 
-        if (tiles && (tiles->NumTileColumns > 1 || tiles->NumTileRows > 1) && (fi.PicStruct == TFF || fi.PicStruct == BFF)) // multi-tile is unsupported for interlace
-            tiles->NumTileColumns = tiles->NumTileRows = 1, wrnIncompatible = true;
+        //if (tiles && (tiles->NumTileColumns > 1 || tiles->NumTileRows > 1) && (fi.PicStruct == TFF || fi.PicStruct == BFF)) // multi-tile is unsupported for interlace
+        //    tiles->NumTileColumns = tiles->NumTileRows = 1, wrnIncompatible = true;
 
-        if (picWidth && tiles && tiles->NumTileColumns > 1) // ColumnWidthInLumaSamples[i] < 256
-            wrnIncompatible = !CheckMaxSat(tiles->NumTileColumns, MAX(1, picWidth / CodecLimits::MIN_TILE_WIDTH));
+        //if (picWidth && tiles && tiles->NumTileColumns > 1) // ColumnWidthInLumaSamples[i] < 256
+        //    wrnIncompatible = !CheckMaxSat(tiles->NumTileColumns, MAX(1, picWidth / CodecLimits::MIN_TILE_WIDTH));
 
-        if (picHeight && tiles && tiles->NumTileRows > 1) // RowHeightInLumaSamples[i] < 64
-            wrnIncompatible = !CheckMaxSat(tiles->NumTileRows, MAX(1, picHeight / CodecLimits::MIN_TILE_HEIGHT));
+        //if (picHeight && tiles && tiles->NumTileRows > 1) // RowHeightInLumaSamples[i] < 64
+        //    wrnIncompatible = !CheckMaxSat(tiles->NumTileRows, MAX(1, picHeight / CodecLimits::MIN_TILE_HEIGHT));
 
-        if (tiles && tiles->NumTileRows > 1 && mfx.CodecLevel) // NumTileRows <= MaxNumTileRows[level]
-            wrnIncompatible = !CheckMinLevel(mfx.CodecLevel, GetMinLevelForNumTileRows(tiles->NumTileRows));
+        //if (tiles && tiles->NumTileRows > 1 && mfx.CodecLevel) // NumTileRows <= MaxNumTileRows[level]
+        //    wrnIncompatible = !CheckMinLevel(mfx.CodecLevel, GetMinLevelForNumTileRows(tiles->NumTileRows));
 
-        if (tiles && tiles->NumTileColumns > 1 && mfx.CodecLevel) // NumTileColumns <= MaxNumTileCols[level]
-            wrnIncompatible = !CheckMinLevel(mfx.CodecLevel, GetMinLevelForNumTileRows(tiles->NumTileColumns));
+        //if (tiles && tiles->NumTileColumns > 1 && mfx.CodecLevel) // NumTileColumns <= MaxNumTileCols[level]
+        //    wrnIncompatible = !CheckMinLevel(mfx.CodecLevel, GetMinLevelForNumTileRows(tiles->NumTileColumns));
 
         // check BRC params
         uint32_t targetKbps       = MAX(1, mfx.BRCParamMultiplier) * mfx.TargetKbps;
         uint32_t maxKbps          = MAX(1, mfx.BRCParamMultiplier) * mfx.MaxKbps;
         uint32_t bufferSizeInKB   = MAX(1, mfx.BRCParamMultiplier) * mfx.BufferSizeInKB;
         uint32_t initialDelayInKB = MAX(1, mfx.BRCParamMultiplier) * mfx.InitialDelayInKB;
-        const uint16_t profile = mfx.CodecProfile ? mfx.CodecProfile : fi.FourCC ? GetProfile(fi.FourCC) : 0;
+        const uint16_t profile = mfx.CodecProfile ? mfx.CodecProfile : fi.FourCC ? (uint16_t)GetProfile(fi.FourCC) : 0;
 
         // check targetKbps <= raw data rate
         if (mfx.RateControlMethod != CQP && picWidth && picHeight && fi.FourCC && fi.FrameRateExtN && fi.FrameRateExtD && targetKbps) {
@@ -1061,7 +1180,17 @@ namespace {
             if (initialDelayInKB) // initialDelayInKB >= 1 average compressed frames
                 wrnIncompatible = !CheckMinSat(initialDelayInKB, avgFrameInKB);
         }
-
+        if (opt2 && opt2->MaxFrameSize && mfx.RateControlMethod != CQP
+            && fi.FrameRateExtN && fi.FrameRateExtD && fi.FourCC != P010 && fi.FourCC != P210
+            && (fi.PicStruct == PROGR || (fi.PicStruct != PROGR && mfx.GopRefDist == 1))) {
+            uint32_t MaxFrameSize = opt2->MaxFrameSize;
+            const uint32_t avgFrameInBytes = (uint32_t)MIN(MAX_UINT / 2, (double)targetKbps * 1000 * fi.FrameRateExtD / fi.FrameRateExtN / 8) + 1;
+            wrnIncompatible = !CheckMinSat(MaxFrameSize, avgFrameInBytes);
+            opt2->MaxFrameSize = MaxFrameSize;
+        }
+        else if (opt2 && opt2->MaxFrameSize) {
+            opt2->MaxFrameSize = 0, wrnIncompatible = true;
+        }
         if (IsCbrOrVbr(mfx.RateControlMethod) && profile && bufferSizeInKB) // bufferSizeInKB <= MaxCPB[High6.2]
             wrnIncompatible = !CheckMaxSat(bufferSizeInKB, GetMaxCpbForLevel(profile, H62) / 8000);
 
@@ -1081,10 +1210,10 @@ namespace {
 
         // if any of brc parameters changed, find new BRCParamMultiplier (min possible)
         bool recalibrateBrcParamMultiplier =
-            (targetKbps       != MAX(1, mfx.BRCParamMultiplier) * mfx.TargetKbps)     ||
-            (maxKbps          != MAX(1, mfx.BRCParamMultiplier) * mfx.MaxKbps)        ||
-            (bufferSizeInKB   != MAX(1, mfx.BRCParamMultiplier) * mfx.BufferSizeInKB) ||
-            (initialDelayInKB != MAX(1, mfx.BRCParamMultiplier) * mfx.InitialDelayInKB);
+            (targetKbps       != (uint32_t)(MAX(1, mfx.BRCParamMultiplier) * mfx.TargetKbps))     ||
+            (maxKbps          != (uint32_t)(MAX(1, mfx.BRCParamMultiplier) * mfx.MaxKbps))        ||
+            (bufferSizeInKB   != (uint32_t)(MAX(1, mfx.BRCParamMultiplier) * mfx.BufferSizeInKB)) ||
+            (initialDelayInKB != (uint32_t)(MAX(1, mfx.BRCParamMultiplier) * mfx.InitialDelayInKB));
         if (recalibrateBrcParamMultiplier) {
             assert(mfx.RateControlMethod != CQP);
             uint32_t maxBrcValue = targetKbps;
@@ -1094,14 +1223,14 @@ namespace {
                 maxBrcValue = MAX(maxBrcValue, MAX(initialDelayInKB, bufferSizeInKB));
             mfx.BRCParamMultiplier = uint16_t((maxBrcValue + 0x10000) / 0x10000);
             if (mfx.TargetKbps)
-                mfx.TargetKbps = targetKbps / mfx.BRCParamMultiplier;
+                mfx.TargetKbps = uint16_t(targetKbps / mfx.BRCParamMultiplier);
             if (mfx.RateControlMethod == VBR && mfx.MaxKbps)
-                mfx.MaxKbps = maxKbps / mfx.BRCParamMultiplier;
+                mfx.MaxKbps = uint16_t(maxKbps / mfx.BRCParamMultiplier);
             if (IsCbrOrVbr(mfx.RateControlMethod)) {
                 if (mfx.BufferSizeInKB)
-                    mfx.BufferSizeInKB = bufferSizeInKB / mfx.BRCParamMultiplier;
+                    mfx.BufferSizeInKB = uint16_t(bufferSizeInKB / mfx.BRCParamMultiplier);
                 if (mfx.InitialDelayInKB)
-                    mfx.InitialDelayInKB = initialDelayInKB / mfx.BRCParamMultiplier;
+                    mfx.InitialDelayInKB = uint16_t(initialDelayInKB / mfx.BRCParamMultiplier);
             }
         }
 
@@ -1111,8 +1240,8 @@ namespace {
         if (mfx.NumSlice > 1 && optHevc && optHevc->FramesInParallel > 1) // either multi-slice or frame-threading
             optHevc->FramesInParallel = 1, wrnIncompatible = true;
 
-        if (tiles && (tiles->NumTileRows > 1 || tiles->NumTileColumns > 1) && optHevc && optHevc->FramesInParallel > 1) // either multi-tile or frame-threading
-            optHevc->FramesInParallel = 1, wrnIncompatible = true;
+        //if (tiles && (tiles->NumTileRows > 1 || tiles->NumTileColumns > 1) && optHevc && optHevc->FramesInParallel > 1) // either multi-tile or frame-threading
+        //    optHevc->FramesInParallel = 1, wrnIncompatible = true;
 
         if (optHevc && optHevc->EnableCm == ON && optHevc->FramesInParallel > 8) // no more than 8 parallel frames in gacc
             optHevc->FramesInParallel = 8, wrnIncompatible = true;
@@ -1147,13 +1276,14 @@ namespace {
             wrnIncompatible = !CheckEq(mfx.NumThread, optHevc->ForceNumThread);
 
         if (optHevc && optHevc->DeltaQpMode) {
-            //if (fi.FourCC == P010 || fi.FourCC == P210 || optHevc->EnableCm == ON) { // only CAQ alllowed for GACC or 10 bits
             if (fi.FourCC == P010 || fi.FourCC == P210) { // only CAQ alllowed for 10 bit
                 if ((optHevc->DeltaQpMode - 1) & (AMT_DQP_CAL | AMT_DQP_PAQ))
                     optHevc->DeltaQpMode = 1 + ((optHevc->DeltaQpMode - 1) & AMT_DQP_CAQ), wrnIncompatible = true;
             }
-            if (optHevc->BPyramid == OFF || mfx.GopRefDist == 1) // no CALQ, no PAQ if Bpyramid disabled
-                wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
+            if (optHevc->BPyramid == OFF || mfx.GopRefDist == 1) { // no CAL/PAQ if Bpyramid disabled
+                if ((optHevc->DeltaQpMode - 1) & (AMT_DQP_CAL | AMT_DQP_PAQ))
+                    optHevc->DeltaQpMode = 1 + ((optHevc->DeltaQpMode - 1) & AMT_DQP_CAQ), wrnIncompatible = true;
+            }
         }
 
         // conflict MBBRC vs GopRefDist
@@ -1162,6 +1292,34 @@ namespace {
 
         if ((mfx.GopOptFlag & MFX_GOP_STRICT) && opt2 && opt2->AdaptiveI)
             wrnIncompatible = !CheckEq(opt2->AdaptiveI, OFF);
+
+        if (tlayers) {
+            if (tlayers->Layer[0].Scale && tlayers->Layer[0].Scale != 1) {
+                tlayers->Layer[0].Scale = 1;
+                wrnIncompatible = true;
+            }
+
+            for (int32_t i = 3; i < 8; i++) {
+                if (tlayers->Layer[i].Scale) {
+                    tlayers->Layer[i].Scale = 0;
+                    wrnIncompatible = true;
+                }
+            }
+            if ((tlayers->Layer[1].Scale || tlayers->Layer[2].Scale) && (mfx.GopRefDist!=1 || mfx.EncodedOrder || (opt3 && opt3->PRefType==1))) {
+                tlayers->Layer[1].Scale = 0;
+                tlayers->Layer[2].Scale = 0;
+                wrnIncompatible = true;
+            }
+            if (tlayers->Layer[1].Scale && tlayers->Layer[1].Scale!=2) {
+                tlayers->Layer[1].Scale = 0;
+                tlayers->Layer[2].Scale = 0;
+                wrnIncompatible = true;
+            }
+            if (tlayers->Layer[2].Scale && tlayers->Layer[2].Scale != 4) {
+                tlayers->Layer[2].Scale = 0;
+                wrnIncompatible = true;
+            }
+        }
 
         if (dumpFiles) {
             size_t MAXLEN = sizeof(dumpFiles->ReconFilename) / sizeof(dumpFiles->ReconFilename[0]);
@@ -1184,8 +1342,6 @@ namespace {
 
     void SetDefaultValues(mfxVideoParam &par)
     {
-        int32_t corrected = 0; // some fields may be corrected
-
         mfxInfoMFX &mfx = par.mfx;
         mfxFrameInfo &fi = par.mfx.FrameInfo;
         mfxExtHEVCTiles &tiles = GetExtBuffer(par);
@@ -1196,6 +1352,10 @@ namespace {
         mfxExtCodingOption3 &opt3 = GetExtBuffer(par);
         mfxExtHEVCRegion &region = GetExtBuffer(par);
         mfxExtEncoderROI &roi = GetExtBuffer(par);
+        mfxExtAvcTemporalLayers &tlayers = GetExtBuffer(par);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        mfxExtAV1Param &av1param = GetExtBuffer(par);
+#endif
 
         if (hevcParam.PicWidthInLumaSamples == 0)
             hevcParam.PicWidthInLumaSamples = fi.Width;
@@ -1209,10 +1369,10 @@ namespace {
         if (mfx.BRCParamMultiplier == 0)
             mfx.BRCParamMultiplier = 1;
         if (mfx.CodecProfile == 0)
-            mfx.CodecProfile = GetProfile(fi.FourCC);
+            mfx.CodecProfile = uint16_t(GetProfile(fi.FourCC));
 #if USE_SRC10ENC8PAK10
         if (fi.FourCC == MFX_FOURCC_P010) {
-            mfx.CodecProfile = GetProfile(MFX_FOURCC_NV12);
+            mfx.CodecProfile = uint16_t(GetProfile(MFX_FOURCC_NV12));
         }
 #endif
         if (hevcParam.GeneralConstraintFlags == 0 && mfx.CodecProfile == REXT)
@@ -1229,14 +1389,9 @@ namespace {
             fi.CropH = hevcParam.PicHeightInLumaSamples;
         if (fi.PicStruct == 0)
             fi.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-        if (tiles.NumTileRows == 0)
-            tiles.NumTileRows = 1;
-        if (tiles.NumTileColumns == 0) {
-            tiles.NumTileColumns = 1 << BSR(std::max((int32_t)1, fi.Width / CodecLimits::MIN_TILE_WIDTH));
-            tiles.NumTileColumns = std::min((uint16_t)2, tiles.NumTileColumns);    // dont need many tiles with wpp execution of mode decision
-        }
+
         if (optHevc.ForceNumThread == 0)
-            optHevc.ForceNumThread = mfx.NumThread ? mfx.NumThread : vm_sys_info_get_cpu_num();
+            optHevc.ForceNumThread = mfx.NumThread ? mfx.NumThread : (uint16_t)vm_sys_info_get_cpu_num();
         if (mfx.NumThread == 0)
             mfx.NumThread = optHevc.ForceNumThread;
         if (optHevc.EnableCm == 0)
@@ -1245,10 +1400,54 @@ namespace {
             mfx.GopRefDist = mfx.GopPicSize ? MIN(mfx.GopPicSize, 8) : 8;
 
         const mfxExtCodingOptionAV1E &defaultOptHevc = (optHevc.EnableCm == OFF ? tab_defaultOptHevcSw : tab_defaultOptHevcGacc)[mfx.TargetUsage];
-        const int32_t numTile = tiles.NumTileRows * tiles.NumTileColumns;
 
-        if (optHevc.NumRefLayers == 0)
-            optHevc.NumRefLayers = defaultOptHevc.NumRefLayers;
+        if (optHevc.ScreenMode == 0)
+            optHevc.ScreenMode = defaultOptHevc.ScreenMode;
+
+        //if (tiles.NumTileRows == 0)
+        //    tiles.NumTileRows = 1;
+        //if (tiles.NumTileColumns == 0) {
+        //    tiles.NumTileColumns = 1 << BSR(std::max((int32_t)1, fi.Width / CodecLimits::MIN_TILE_WIDTH));
+        //    tiles.NumTileColumns = std::min((uint16_t)2, tiles.NumTileColumns);    // dont need many tiles with wpp execution of mode decision
+        //}
+        //const int32_t numTile = tiles.NumTileRows * tiles.NumTileColumns;
+        if (optHevc.NumTileColumnsKeyFrame == 0) {
+            //optHevc.NumTileColumnsKeyFrame = 1 << BSR(std::max((int32_t)1, fi.Width / CodecLimits::MIN_TILE_WIDTH));
+            //optHevc.NumTileColumnsKeyFrame = std::min((uint16_t)2, optHevc.NumTileColumnsKeyFrame);    // dont need many tiles with wpp execution of mode decision
+            optHevc.NumTileColumnsKeyFrame = (par.AsyncDepth == 1) ? 2 : 1;
+        }
+        if (optHevc.NumTileColumnsInterFrame == 0) {
+            int32_t size = defaultOptHevc.Log2MaxCUSize;
+            float wppEff = MIN((mfx.FrameInfo.Height + (1 << size) - 1) >> size,
+                                (mfx.FrameInfo.Width + (1 << size) - 1) >> (size + 1)) / 2.75f;
+            optHevc.NumTileColumnsInterFrame = (par.AsyncDepth == 1 && mfx.GopRefDist == 1 && wppEff < mfx.NumThread) ? 2 : 1;
+        }
+
+
+        if (optHevc.NumRefLayers == 0) {
+            if (mfx.GopRefDist == 1) {
+                optHevc.NumRefLayers = 1;
+            } else {
+                optHevc.NumRefLayers = defaultOptHevc.NumRefLayers;
+            }
+        }
+
+        if (tlayers.Layer[0].Scale == 0) {
+            tlayers.Layer[0].Scale = 1;
+            tlayers.Layer[1].Scale = 0;
+            if (mfx.GopRefDist == 1 && mfx.NumRefFrame != 1 && opt3.PRefType != 1) {
+                if (optHevc.NumRefLayers == 2)
+                    tlayers.Layer[1].Scale = 2;
+                else if (optHevc.NumRefLayers >= 3) {
+                    tlayers.Layer[1].Scale = 2;
+                    tlayers.Layer[2].Scale = 4;
+                }
+            }
+        }
+
+        if (opt3.ExtBrcAdaptiveLTR == 0 && mfx.GopRefDist == 1)
+            opt3.ExtBrcAdaptiveLTR = ON;
+
         if (optHevc.BPyramid == 0)
             optHevc.BPyramid = defaultOptHevc.BPyramid;
 
@@ -1259,9 +1458,16 @@ namespace {
         if (optHevc.FramesInParallel == 0) {
             if (par.AsyncDepth == 1)
                 optHevc.FramesInParallel = (fi.PicStruct == TFF || fi.PicStruct == BFF) ? 2 : 1; // at least 2 for Interlace
-            else if (optHevc.EnableCm == ON)
-                optHevc.FramesInParallel = 7; // need 7 frames for the best CPU/GPU parallelism
-            else {
+            else if (optHevc.EnableCm == ON) {
+                if (mfx.GopPicSize == 1) {
+                    // All Intra
+                    optHevc.FramesInParallel = MIN(par.AsyncDepth, 4);
+                } else {
+                    const mfxU16 MIN_FRAMES_IN_PARALLEL = 2;
+                    const mfxU16 MAX_FRAMES_IN_PARALLEL = 7;
+                    optHevc.FramesInParallel = std::max(MIN_FRAMES_IN_PARALLEL, std::min(MAX_FRAMES_IN_PARALLEL, mfx.GopRefDist));
+                }
+            } else {
                 if      (mfx.NumThread >= 48) optHevc.FramesInParallel = 8;
                 else if (mfx.NumThread >= 32) optHevc.FramesInParallel = 7;
                 else if (mfx.NumThread >= 16) optHevc.FramesInParallel = 5;
@@ -1271,17 +1477,17 @@ namespace {
 
                 int32_t size = defaultOptHevc.Log2MaxCUSize;
                 float wppEff = MIN((mfx.FrameInfo.Height + (1 << size) - 1) >> size,
-                                    (mfx.FrameInfo.Width  + (1 << size) - 1) >> (size + 1) ) / 2.75;
+                                    (mfx.FrameInfo.Width  + (1 << size) - 1) >> (size + 1) ) / 2.75f;
                 //float wppEff = MIN((mfx.FrameInfo.Height + (1 << size) - 1) >> size,
-                //                    (mfx.FrameInfo.Width  + (1 << size) - 1) >> size ) / 2.75;
-                float frameMult = MAX(1.0, MIN((float)mfx.NumThread / (float)wppEff, 4.0));
+                //                    (mfx.FrameInfo.Width  + (1 << size) - 1) >> size ) / 2.75f;
+                float frameMult = MAX(1.0f, MIN((float)mfx.NumThread / (float)wppEff, 4.0f));
                 if (mfx.NumThread >= 4)
-                    optHevc.FramesInParallel = MIN((optHevc.FramesInParallel * frameMult + 0.5), 16);
+                    optHevc.FramesInParallel = MIN(uint16_t(optHevc.FramesInParallel * frameMult + 0.5f), 16);
             }
         }
 
-        if (optHevc.WPP == 0)
-            optHevc.WPP = (numTile > 1 || mfx.NumThread == 1) ? OFF : ON;
+        //if (optHevc.WPP == 0)
+        //    optHevc.WPP = uint16_t((numTile > 1 || mfx.NumThread == 1) ? OFF : ON);
 
         if (mfx.NumRefFrame == 0) {
             uint16_t level = mfx.CodecLevel ? mfx.CodecLevel : MFX_LEVEL_HEVC_62;
@@ -1292,28 +1498,40 @@ namespace {
             if (mfx.BufferSizeInKB == 0) {
                 uint16_t level = mfx.CodecLevel ? mfx.CodecLevel : MFX_LEVEL_HEVC_62;
                 int32_t maxCpbInKB = MIN(0xffff, GetMaxCpbForLevel(mfx.CodecProfile, level) / 8000 / mfx.BRCParamMultiplier);
-                mfx.BufferSizeInKB = Saturate(1, maxCpbInKB, mfx.TargetKbps / 4); // 2 second buffer
+                mfx.BufferSizeInKB = (uint16_t)Saturate(1, maxCpbInKB, mfx.TargetKbps / 4); // 2 second buffer
                 if (mfx.BufferSizeInKB < mfx.InitialDelayInKB)
                     mfx.BufferSizeInKB = mfx.InitialDelayInKB;
             }
 
-            if (mfx.InitialDelayInKB == 0)
-                mfx.InitialDelayInKB = MAX(1, mfx.BufferSizeInKB * 3 / 4); // 75% fullness
+            if (mfx.InitialDelayInKB == 0) {
+                if (opt2.MaxFrameSize)
+                    mfx.InitialDelayInKB = opt2.MaxFrameSize / 1000 / mfx.BRCParamMultiplier;
+                else
+                    mfx.InitialDelayInKB = MAX(1, mfx.BufferSizeInKB * 3 / 4); // 75% fullness
+            }
 
             if (mfx.RateControlMethod == VBR && mfx.MaxKbps == 0) {
                 uint16_t level = mfx.CodecLevel ? mfx.CodecLevel : MFX_LEVEL_HEVC_62;
                 int32_t maxBrInKB = MIN(0xffff, GetMaxBrForLevel(mfx.CodecProfile, level) / 1000 / mfx.BRCParamMultiplier);
-                mfx.MaxKbps = MIN(maxBrInKB, mfx.TargetKbps * 3 / 2); // 150% of target rate
+                mfx.MaxKbps = (uint16_t)MIN(maxBrInKB, mfx.TargetKbps * 3 / 2); // 150% of target rate
             }
         } else {
-            if (mfx.BufferSizeInKB == 0)
-                mfx.BufferSizeInKB = Saturate(1, 0xffff, 10 * lumaPs * GetBpp(fi.FourCC) / 8000 / mfx.BRCParamMultiplier);
+            if (mfx.BufferSizeInKB == 0) {
+                // for dynamic resolution up to 1080p
+                int maxDynLumaPs = MAX(lumaPs, 1920*1080);
+                const int numFrames = mfx.GopRefDist == 1 ? 1 : 4;
+                mfx.BufferSizeInKB = (uint16_t)Saturate(1, 0xffff, numFrames * maxDynLumaPs * GetBpp(fi.FourCC) / 8000 / mfx.BRCParamMultiplier);
+            }
             if (mfx.RateControlMethod == CQP) {
                 if (mfx.GopRefDist == 1) {
                     if (mfx.QPI == 0)
-                        mfx.QPI = Saturate(MINQ, MAXQ, mfx.QPP ? (mfx.QPP - 20) : mfx.QPB ? (mfx.QPB - 20) : 128);
+                        mfx.QPI = (uint16_t)Saturate(MINQ, MAXQ, mfx.QPP ? (mfx.QPP - 20) : mfx.QPB ? (mfx.QPB - 20) : 128);
                     if (mfx.QPP == 0)
+#ifdef USE_OLD_IPB_QINDEX
                         mfx.QPP = MIN(MAXQ, mfx.QPI + 20);
+#else
+                        mfx.QPP = MIN(MAXQ, qindexPlus1[MIN(MAXQ, qindexPlus1[mfx.QPI])]);
+#endif
                     if (mfx.QPB == 0)
                         mfx.QPB = MIN(MAXQ, mfx.QPI + 20);
                 } else {
@@ -1448,8 +1666,8 @@ namespace {
             optHevc.IntraAngModes = defaultOptHevc.IntraAngModes;
         if (optHevc.EnableCm == 0)
             optHevc.EnableCm = defaultOptHevc.EnableCm;
-        if (optHevc.EnableCmBiref == 0)
-            optHevc.EnableCmBiref = defaultOptHevc.EnableCmBiref;
+        if (optHevc.EnableCmInterp == 0)
+            optHevc.EnableCmInterp = defaultOptHevc.EnableCmInterp;
         if (optHevc.FastPUDecision == 0)
             optHevc.FastPUDecision = defaultOptHevc.FastPUDecision;
         if (optHevc.HadamardMe == 0)
@@ -1495,8 +1713,8 @@ namespace {
             optHevc.DeltaQpMode = defaultOptHevc.DeltaQpMode;
             if (optHevc.DeltaQpMode > 2 && (fi.FourCC == P010 || fi.FourCC == P210))
                 optHevc.DeltaQpMode = 2; // CAQ only
-            if (mfx.GopRefDist == 1 || optHevc.BPyramid == OFF)
-                optHevc.DeltaQpMode = 1; // off
+            if (optHevc.DeltaQpMode > 2 && (mfx.GopRefDist == 1 || optHevc.BPyramid == OFF))
+                optHevc.DeltaQpMode = 1 + ((optHevc.DeltaQpMode - 1) & (AMT_DQP_CAQ | AMT_DQP_PSY | AMT_DQP_HROI)); // CAQ, PSY, HROI only
             if (roi.NumROI)
                 optHevc.DeltaQpMode = 1; // off
         }
@@ -1550,13 +1768,18 @@ namespace {
             optHevc.AnalyzeCmplx = IsCbrOrVbrOrAvbr(mfx.RateControlMethod) ? 2 : 1;
         if (optHevc.RateControlDepth == 0)
             if (optHevc.AnalyzeCmplx == 2)
-                optHevc.RateControlDepth = mfx.GopRefDist + 1;
+                if ((mfx.GopPicSize == 1 || mfx.GopRefDist == 1) && par.AsyncDepth == 1)
+                    optHevc.RateControlDepth = 0;
+                else
+                    optHevc.RateControlDepth = MAX(3,mfx.GopRefDist + 1);
         if (optHevc.LowresFactor == 0)
             optHevc.LowresFactor = defaultOptHevc.LowresFactor;
         if (optHevc.DeblockBorders == 0 && region.RegionEncoding == MFX_HEVC_REGION_ENCODING_OFF)
             optHevc.DeblockBorders = defaultOptHevc.DeblockBorders;
         if (optHevc.SAOChroma == 0)
             optHevc.SAOChroma = defaultOptHevc.SAOChroma;
+        if (optHevc.RepackForMaxFrameSize == 0)
+            optHevc.RepackForMaxFrameSize = defaultOptHevc.RepackForMaxFrameSize;
         if (optHevc.DeblockingLevelMethod == 0)
             optHevc.DeblockingLevelMethod = defaultOptHevc.DeblockingLevelMethod;
         if (optHevc.AllowHpMv == 0)
@@ -1587,6 +1810,26 @@ namespace {
             optHevc.CDEF = defaultOptHevc.CDEF;
         if (optHevc.LRMode == 0)
             optHevc.LRMode = defaultOptHevc.LRMode;
+        if (optHevc.SRMode == 0)
+            optHevc.SRMode = defaultOptHevc.SRMode;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        if (av1param.EnableCdef == 0)
+            av1param.EnableCdef = defaultOptHevc.CDEF;
+        if (av1param.EnableRestoration == 0)
+            av1param.EnableRestoration = defaultOptHevc.LRMode;
+        if (av1param.EnableSuperres == 0)
+            av1param.EnableSuperres = defaultOptHevc.SRMode;
+        if (av1param.InterpFilter == 0)
+            av1param.InterpFilter = (defaultOptHevc.InterpFilter == ON) ? MFX_AV1_INTERP_SWITCHABLE : 0;
+        if (av1param.DisableFrameEndUpdateCdf == 0)
+            av1param.DisableFrameEndUpdateCdf = defaultOptHevc.DisableFrameEndUpdateCdf;
+#endif
+        if (optHevc.CFLMode == 0)
+            optHevc.CFLMode = defaultOptHevc.CFLMode;
+        if (optHevc.DisableFrameEndUpdateCdf == 0)
+            optHevc.DisableFrameEndUpdateCdf = defaultOptHevc.DisableFrameEndUpdateCdf;
+        if (optHevc.NumGpuSlices == 0)
+            optHevc.NumGpuSlices = (fi.Width * fi.Height < 3840 * 2160) ? 1 : 2;
     }
 
     mfxStatus CheckIoPattern(MFXCoreInterface1 &core, const mfxVideoParam &param)
@@ -1611,8 +1854,11 @@ namespace {
 
     mfxFrameSurface1 *GetNativeSurface(MFXCoreInterface1 &core, mfxFrameSurface1 *input)
     {
-        mfxFrameSurface1 *native = NULL;
+        mfxFrameSurface1 *native = nullptr;
         mfxStatus sts = core.GetRealSurface(input, &native);
+        if (sts != MFX_ERR_NONE)
+            return nullptr;
+
         if (native && input && native != input) { // input surface is opaque surface
             native->Data.FrameOrder = input->Data.FrameOrder;
             native->Data.TimeStamp = input->Data.TimeStamp;
@@ -1705,6 +1951,15 @@ mfxStatus MFXVideoENCODEAV1::Query(MFXCoreInterface1 *core, mfxVideoParam *in, m
     if (out == NULL)
         return MFX_ERR_NULL_PTR;
 
+    if (const mfxExtEncoderCapability *inCaps = GetExtBuffer(*in)) {
+        // special case: called from MFT
+        mfxExtEncoderCapability *outCaps = GetExtBuffer(*out);
+        if (outCaps == nullptr)
+            return MFX_ERR_UNSUPPORTED;
+        outCaps->MBPerSec = 33 * (1920 * 1088 >> 12);
+        return MFX_ERR_NONE;
+    }
+
     st = CheckExtBuffers(out->ExtParam, out->NumExtParam);
     if (st != MFX_ERR_NONE)
         return st;
@@ -1779,6 +2034,48 @@ mfxStatus MFXVideoENCODEAV1::Reset(mfxVideoParam *par)
 {
     if (m_impl.get() == 0)
         return MFX_ERR_NOT_INITIALIZED;
+
+    // Check that only TemporalLayer Params have changed
+    if (par && CheckParamHasOnlyTemporalLayerChange(*par, m_mfxParam)) {
+        // Check new Params
+        ErrorFlag wrnIncompatible = false;
+        CopyParam(m_mfxParam, *par);    // safe to copy since everything is the same as before (memcmp based check, no recheck of params)
+        mfxExtAvcTemporalLayers *tlayers = GetExtBuffer(m_mfxParam);
+        mfxExtCodingOption3 *opt3 = GetExtBuffer(m_mfxParam);
+        if (tlayers) {
+            if (tlayers->Layer[0].Scale && tlayers->Layer[0].Scale != 1) {
+                tlayers->Layer[0].Scale = 1;
+                wrnIncompatible = true;
+            }
+
+            for (int32_t i = 3; i < 8; i++) {
+                if (tlayers->Layer[i].Scale) {
+                    tlayers->Layer[i].Scale = 0;
+                    wrnIncompatible = true;
+                }
+            }
+            if ((tlayers->Layer[1].Scale || tlayers->Layer[2].Scale) && (m_mfxParam.mfx.GopRefDist != 1 || m_mfxParam.mfx.EncodedOrder || (opt3 && opt3->PRefType == 1))) {
+                tlayers->Layer[1].Scale = 0;
+                tlayers->Layer[2].Scale = 0;
+                wrnIncompatible = true;
+            }
+            if (tlayers->Layer[1].Scale && tlayers->Layer[1].Scale != 2) {
+                tlayers->Layer[1].Scale = 0;
+                tlayers->Layer[2].Scale = 0;
+                wrnIncompatible = true;
+            }
+            if (tlayers->Layer[2].Scale && tlayers->Layer[2].Scale != 4) {
+                tlayers->Layer[2].Scale = 0;
+                wrnIncompatible = true;
+            }
+        }
+        // Reinit NumRefLayers
+        mfxStatus sts = m_impl->ResetTemporalLayers(m_mfxParam);
+
+        if (sts != MFX_ERR_NONE) return sts;
+        if (wrnIncompatible) return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        return MFX_ERR_NONE;
+    }
     Close();
     return Init(par);
 }
@@ -1845,9 +2142,9 @@ mfxStatus MFXVideoENCODEAV1::EncodeFrameCheck(
     if (surface) { // check frame parameters
         if (surface->Info.ChromaFormat != m_mfxParam.mfx.FrameInfo.ChromaFormat)
             return MFX_ERR_INVALID_VIDEO_PARAM;
-        if (surface->Info.Width != m_mfxParam.mfx.FrameInfo.Width)
+        if (surface->Info.Width < m_mfxParam.mfx.FrameInfo.Width)
             return MFX_ERR_INVALID_VIDEO_PARAM;
-        if (surface->Info.Height != m_mfxParam.mfx.FrameInfo.Height)
+        if (surface->Info.Height < m_mfxParam.mfx.FrameInfo.Height)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         if (surface->Data.Y) {
@@ -1945,6 +2242,11 @@ ExtBuffers::ExtBuffers()
     extParamAll[count++] = &extSpsPps.Header;
     extParamAll[count++] = &extVps.Header;
     extParamAll[count++] = &extRoi.Header;
+    extParamAll[count++] = &extTlayers.Header;
+    extParamAll[count++] = &extVP9Param.Header;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    extParamAll[count++] = &extAV1Param.Header;
+#endif
     assert(NUM_EXT_PARAM == count);
 }
 
@@ -1962,6 +2264,11 @@ void ExtBuffers::CleanUp()
     InitExtBuffer(extSpsPps);
     InitExtBuffer(extVps);
     InitExtBuffer(extRoi);
+    InitExtBuffer(extTlayers);
+    InitExtBuffer(extVP9Param);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    InitExtBuffer(extAV1Param);
+#endif
 }
 
 #endif // MFX_ENABLE_AV1_VIDEO_ENCODE

@@ -51,25 +51,34 @@ namespace AV1Enc {
         }
     }
 
+    inline void trace_cdf_no_update(int s, const unsigned short *cdf, int nsyms, int range) {
+        if (traceCabac) {
+            fprintf_trace_cabac(stderr, "%d: symb=%d rng=%d cdf=[ ", symbCounter++, s, range);
+            for (int i = 0; i < nsyms; i++)
+                fprintf_trace_cabac(stderr, "%d ", cdf[i]);
+            fprintf_trace_cabac(stderr, "]\n");
+        }
+    }
+
     inline void trace_cdf(int s, const unsigned short *cdf, int nsyms, int range) {
-        //if (472846 == symbCounter)
-            int z = 0;
-        fprintf_trace_cabac(stderr, "%d: symb=%d rng=%d cdf=[ ", symbCounter++, s, range);
-        for (int i = 0; i < nsyms; i++)
-            fprintf_trace_cabac(stderr, "%d ", cdf[i]);
-        fprintf_trace_cabac(stderr, "]\n");
+        if (traceCabac) {
+            fprintf_trace_cabac(stderr, "%d: symb=%d rng=%d cdf=[ ", symbCounter++, s, range);
+            for (int i = 0; i < nsyms + 1; i++)
+                fprintf_trace_cabac(stderr, "%d ", cdf[i]);
+            fprintf_trace_cabac(stderr, "] ");
+        }
     }
 
     inline void trace_cdf_update(const unsigned short *cdf, int nsyms) {
-        fprintf_trace_cabac(stderr, "    updated to [ ");
-        for (int i = 0; i < nsyms; i++)
+        fprintf_trace_cabac(stderr, "upd=[ ");
+        for (int i = 0; i < nsyms + 1; i++)
             fprintf_trace_cabac(stderr, "%d ", cdf[i]);
         fprintf_trace_cabac(stderr, "]\n");
     }
 
     inline void trace_bool(int bit, int p, int range) {
-
-        fprintf_trace_cabac(stderr, "%d: bool=%d rng=%d prob=%d\n", symbCounter++, bit, range, p);
+        if (traceCabac)
+            fprintf_trace_cabac(stderr, "%d: bool=%d rng=%d prob=%d\n", symbCounter++, bit, range, p);
     }
 
     inline void trace_putbit(int bit) {
@@ -82,6 +91,7 @@ namespace AV1Enc {
 
 #else // AV1_TRACE_CABAC
     inline void fprintf_trace_cabac(FILE *, const char *, ...) {}
+    inline void trace_cdf_no_update(int s, const unsigned short *, int, int) {}
     inline void trace_cdf(int, const unsigned short *, int, int) {}
     inline void trace_cdf_update(const unsigned short *, int) {}
     inline void trace_bool(int, int, int) {}

@@ -29,6 +29,7 @@
 namespace AV1Enc {
     struct ModeInfo;
     void CopyCuData(const ModeInfo *src_, int32_t srcMiCols, ModeInfo *dst_, int32_t dstMiCols, int32_t miWidth, int32_t miHeight);
+    void CopyPaletteInfo(const PaletteInfo *src, int32_t srcPitch, PaletteInfo *dst, int32_t dstPitch, int32_t miWidth, int32_t miHeight);
     void CopyCoeffs(const int16_t *src_, int16_t *dst_, int32_t numCoeff);
     void ZeroCoeffs(int16_t *dst_, int32_t numCoeff);
 
@@ -47,10 +48,11 @@ namespace AV1Enc {
     void CopyNxM_unaligned_src(const uint8_t *src, int32_t pitchSrc, uint8_t *dst, int32_t pitchDst, int32_t N, int32_t M);
     void CopyNxM_unaligned_src(const uint16_t *src, int32_t pitchSrc, uint16_t *dst, int32_t pitchDst, int32_t N, int32_t M);
 
-    // for CDEF
-    void Copy16to16(const uint16_t *src, int32_t pitchSrc, uint16_t *dst, int32_t pitchDst, int32_t width, int32_t height);
-    void Copy8To16(const uint8_t *src, int32_t pitchSrc, uint16_t *dst, int32_t pitchDst, int32_t width, int32_t height);
-    void Copy8To16_unaligned(const uint8_t *src, int32_t pitchSrc, uint16_t *dst, int32_t pitchDst, int32_t width, int32_t height);
+    void CopyNxM_unaligned(const uint8_t *src, int32_t pitchSrc, uint8_t *dst, int32_t pitchDst, int32_t N, int32_t M);
+    void CopyNxM_unaligned(const uint16_t *src, int32_t pitchSrc, uint16_t *dst, int32_t pitchDst, int32_t N, int32_t M);
+
+    template <typename PixType>
+    void CopyFromUnalignedNxN(const PixType *src, int pitchSrc, PixType* dst, int pitchDst, int width);
 }  // namespace AV1Enc
 
 #endif  // MFX_ENABLE_AV1_VIDEO_ENCODE

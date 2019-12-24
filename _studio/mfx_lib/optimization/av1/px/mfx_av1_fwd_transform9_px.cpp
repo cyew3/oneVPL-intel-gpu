@@ -1253,13 +1253,16 @@ namespace AV1PP {
     template void ftransform_vp9_px<0, 1>(const int16_t*,int16_t*,int);
     template void ftransform_vp9_px<0, 2>(const int16_t*,int16_t*,int);
     template void ftransform_vp9_px<0, 3>(const int16_t*,int16_t*,int);
+    template void ftransform_vp9_px<0, 9>(const int16_t*, int16_t*, int);
     template void ftransform_vp9_px<1, 0>(const int16_t*,int16_t*,int);
     template void ftransform_vp9_px<1, 1>(const int16_t*,int16_t*,int);
     template void ftransform_vp9_px<1, 2>(const int16_t*,int16_t*,int);
     template void ftransform_vp9_px<1, 3>(const int16_t*,int16_t*,int);
+    template void ftransform_vp9_px<1, 9>(const int16_t*, int16_t*, int);
     template void ftransform_vp9_px<2, 0>(const int16_t*,int16_t*,int);
     template void ftransform_vp9_px<2, 1>(const int16_t*,int16_t*,int);
     template void ftransform_vp9_px<2, 2>(const int16_t*,int16_t*,int);
     template void ftransform_vp9_px<2, 3>(const int16_t*,int16_t*,int);
+    template void ftransform_vp9_px<2, 9>(const int16_t*, int16_t*, int);
     template void ftransform_vp9_px<3, 0>(const int16_t*,int16_t*,int);
 }; // namespace AV1PP

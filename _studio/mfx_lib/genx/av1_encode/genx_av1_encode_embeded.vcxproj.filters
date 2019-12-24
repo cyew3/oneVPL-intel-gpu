@@ -1,12 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="src\genx_hevce_hme_and_me_p32_4mv_bdw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_hme_and_me_p32_4mv_hsw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_hme_and_me_p32_4mv_skl_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_bdw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_hsw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_skl_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_hsw_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_skl_isa.cpp" />
@@ -25,14 +19,50 @@
     <ClCompile Include="src\genx_av1_intra_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_intra_hsw_isa.cpp" />
     <ClCompile Include="src\genx_av1_intra_skl_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_skl_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_single_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_single_hsw_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_single_skl_isa.cpp" />
     <ClCompile Include="src\genx_av1_vartx_decision_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_vartx_decision_hsw_isa.cpp" />
     <ClCompile Include="src\genx_av1_vartx_decision_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mepu_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_single_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_single_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mepu_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mepu_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_single_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_tgllp_isa.cpp" />
   </ItemGroup>
 </Project>

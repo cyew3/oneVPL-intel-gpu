@@ -68,11 +68,11 @@ namespace AV1Enc {
     void LoopFilterInitThresh(LoopFilterThresh (*lfts)[MAX_LOOP_FILTER + 1]);
     void LoopFilterResetParams(LoopFilterFrameParam *par);
     void LoopFilterAdjustMask(const int32_t mi_row, const int32_t mi_col, int32_t mi_rows, int32_t mi_cols, LoopFilterMask *lfm);
-    void LoopFilterSetupMask(const int32_t mi_row, const int32_t mi_col, int32_t mi_rows, int32_t mi_cols, ModeInfo *mi, int32_t miPitch, LoopFilterMask *lfm, AV1VideoParam &par);
     void LoopFilterFrame(Frame *frame, const AV1VideoParam *par, uint8_t *last_level);
     void LoopFilterRow(Frame *frame, int32_t sbRow, const AV1VideoParam *par);
 
     //AV1
+    template <typename PixType>
     void LoopFilterSbAV1(Frame *frame, int32_t sbRow, int32_t sbCol, const AV1VideoParam &par);
     int32_t FilterLevelFromQp(int32_t base_qindex, uint8_t isKeyFrame);
 };

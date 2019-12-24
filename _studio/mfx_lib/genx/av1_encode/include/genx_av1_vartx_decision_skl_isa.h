@@ -20,5 +20,5 @@
 
 #ifndef __genx_av1_vartx_decision_skl__
 #define __genx_av1_vartx_decision_skl__
-extern const unsigned char genx_av1_vartx_decision_skl[160030];
+extern const unsigned char genx_av1_vartx_decision_skl[174862];
 #endif

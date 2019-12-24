@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.421
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "genx_av1_me_p16_4mv_and_refine_32x32", "genx_av1_me_p16_4mv_and_refine_32x32.vcxproj", "{74F20898-2EB4-42E4-ACC6-EA2D8F7E8507}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_HSW_Emu|x64 = Debug_HSW_Emu|x64
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{74F20898-2EB4-42E4-ACC6-EA2D8F7E8507}.Debug_HSW_Emu|x64.ActiveCfg = Debug_HSW_Emu|x64
+		{74F20898-2EB4-42E4-ACC6-EA2D8F7E8507}.Debug_HSW_Emu|x64.Build.0 = Debug_HSW_Emu|x64
+		{74F20898-2EB4-42E4-ACC6-EA2D8F7E8507}.Debug|x64.ActiveCfg = Debug|x64
+		{74F20898-2EB4-42E4-ACC6-EA2D8F7E8507}.Debug|x64.Build.0 = Debug|x64
+		{74F20898-2EB4-42E4-ACC6-EA2D8F7E8507}.Release|x64.ActiveCfg = Release|x64
+		{74F20898-2EB4-42E4-ACC6-EA2D8F7E8507}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6B6AF5D4-B282-4F46-BB59-9B71B5F758C5}
+	EndGlobalSection
+EndGlobal

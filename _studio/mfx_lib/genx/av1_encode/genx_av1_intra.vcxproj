@@ -19,23 +19,23 @@
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>genx_av1e_intra</ProjectName>
-    <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <PlatformToolset>Intel C++ Compiler 19.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+    <PlatformToolset>Intel C++ Compiler 19.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -79,7 +79,7 @@
       <AdditionalOptions>$(CPPFLAGS) %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>include;$(MEDIASDK_ROOT)/CMRT/compiler/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;$(MEDIASDK_ROOT)/CMRT/runtime/include;..\..\..\..\..\mdp_msdk-api\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN64;_CRT_SECURE_NO_WARNINGS;_DEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CM_DX11;WIN64;_CRT_SECURE_NO_WARNINGS;_DEBUG;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -95,7 +95,7 @@
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <Link>
-      <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>
+      <AdditionalDependencies>igfx11cmrt64.lib;Ole32.lib;Advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
@@ -141,7 +141,7 @@
       </Command>
     </PreBuildEvent>
     <Link>
-      <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>
+      <AdditionalDependencies>igfxcmrt64.lib;Ole32.lib;Advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -175,7 +175,7 @@
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcm.lib;igfxcmrt64_emu.lib;Advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcm.lib;igfxcmrt64_emu.lib;Ole32.lib;Advapi32.lib</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
     </Link>
@@ -192,11 +192,18 @@
     <CustomBuild Include="src\genx_av1_intra.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">build_codec_kernel.cmd av1 intra hsw</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\src\genx_av1_intra_hsw_isa.cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\src\genx_av1_intra_hsw_isa.cpp;$(ProjectDir)\src\genx_av1_intra_skl_isa.cpp;$(ProjectDir)\src\genx_av1_intra_bdw_isa.cpp</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">build_codec_kernel_all_targets.cmd av1 intra /Qxcm_release</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">build_codec_kernel.cmd av1 intra skl /Qxcm_release &amp;&amp;^
+build_codec_kernel_cmc.cmd av1 intra icllp /Qxcm_release</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\src\genx_av1_intra_skl_isa.cpp;$(ProjectDir)\src\genx_av1_intra_icllp_isa.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\src\genx_av1_intra_bdw_isa.cpp;$(ProjectDir)\src\genx_av1_intra_skl_isa.cpp;$(ProjectDir)\src\genx_av1_intra_cnl_isa.cpp;$(ProjectDir)\src\genx_av1_intra_icl_isa.cpp</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">build_codec_kernel.cmd av1 intra bdw /Qxcm_release &amp;&amp; ^
+build_codec_kernel.cmd av1 intra skl /Qxcm_release &amp;&amp; ^
+build_codec_kernel.cmd av1 intra cnl /Qxcm_release &amp;&amp; ^
+build_codec_kernel.cmd av1 intra icl /Qxcm_release
+</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
     </CustomBuild>
     <ClCompile Include="src\av1_intra\mfx_av1_get_intra_pred_pels.cpp" />
     <ClCompile Include="src\av1_intra\mfx_av1_intrapred.cpp" />
@@ -216,6 +223,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\genx_av1_intra_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_icllp_isa.cpp" />
     <ClCompile Include="src\genx_av1_intra_skl_isa.cpp" />
     <ClCompile Include="src\test_av1_intra.cpp" />
   </ItemGroup>

@@ -74,7 +74,7 @@ namespace AV1Enc {
     extern const MvContextsVp9 vp9_default_nmv_context;
     extern const MvContextsAv1 av1_default_nmv_context;
     extern const aom_cdf_prob default_if_y_mode_cdf[BLOCK_SIZE_GROUPS][CDF_SIZE(AV1_INTRA_MODES)];
-    extern const aom_cdf_prob default_uv_mode_cdf[AV1_INTRA_MODES][CDF_SIZE(AV1_UV_INTRA_MODES)];
+    extern const aom_cdf_prob default_uv_mode_cdf[CFL_ALLOWED_TYPES][AV1_INTRA_MODES][CDF_SIZE(AV1_UV_INTRA_MODES)];
     extern const aom_cdf_prob default_angle_delta_cdf[DIRECTIONAL_MODES][CDF_SIZE(2 * MAX_ANGLE_DELTA + 1)];
     extern const aom_cdf_prob default_filter_intra_cdfs[TX_SIZES_ALL][CDF_SIZE(2)];
     extern const aom_cdf_prob default_switchable_interp_cdf[SWITCHABLE_FILTER_CONTEXTS][CDF_SIZE(SWITCHABLE_FILTERS)];
@@ -111,11 +111,21 @@ namespace AV1Enc {
     extern const aom_cdf_prob default_refmv_cdf[REFMV_MODE_CONTEXTS][CDF_SIZE(2)];
     extern const aom_cdf_prob default_drl_cdf[DRL_MODE_CONTEXTS][CDF_SIZE(2)];
     extern const aom_cdf_prob default_av1_kf_y_mode_cdf[KF_MODE_CONTEXTS][KF_MODE_CONTEXTS][CDF_SIZE(AV1_INTRA_MODES)];
+    extern const aom_cdf_prob default_av1_y_haspalette_cdf[PALETTE_BLOCK_SIZE_CONTEXTS][3][CDF_SIZE(2)];
+    extern const aom_cdf_prob default_av1_y_palettesize_cdf[PALETTE_BLOCK_SIZE_CONTEXTS][CDF_SIZE(PALETTE_SIZES)];
+    extern const aom_cdf_prob default_av1_uv_haspalette_cdf[2][CDF_SIZE(2)];
+    extern const aom_cdf_prob default_av1_uv_palettesize_cdf[PALETTE_BLOCK_SIZE_CONTEXTS][CDF_SIZE(PALETTE_SIZES)];
+    extern const aom_cdf_prob default_av1_y_palettecoloridx_cdf[PALETTE_SIZES][5][CDF_SIZE(MAX_PALETTE)];
+    extern const aom_cdf_prob default_av1_uv_palette_color_index_cdf[PALETTE_SIZES][PALETTE_COLOR_INDEX_CONTEXTS][CDF_SIZE(MAX_PALETTE)];
     extern const aom_cdf_prob default_coef_head_cdf_q0[TX_SIZES][PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS][CDF_SIZE(ENTROPY_TOKENS)];
     extern const aom_cdf_prob default_coef_head_cdf_q1[TX_SIZES][PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS][CDF_SIZE(ENTROPY_TOKENS)];
     extern const aom_cdf_prob default_coef_head_cdf_q2[TX_SIZES][PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS][CDF_SIZE(ENTROPY_TOKENS)];
     extern const aom_cdf_prob default_coef_head_cdf_q3[TX_SIZES][PLANE_TYPES][REF_TYPES][COEF_BANDS][COEFF_CONTEXTS][CDF_SIZE(ENTROPY_TOKENS)];
     extern const aom_cdf_prob default_inter_compound_mode_cdf[INTER_MODE_CONTEXTS][CDF_SIZE(AV1_INTER_COMPOUND_MODES)];
+    extern const aom_cdf_prob default_cfl_sign_cdf[CDF_SIZE(CFL_JOINT_SIGNS)];
+    extern const aom_cdf_prob default_cfl_alpha_cdf[CFL_ALPHA_CONTEXTS][CDF_SIZE(CFL_ALPHABET_SIZE)];
+    extern const aom_cdf_prob av1_default_intrabc_cdf[CDF_SIZE(2)];
+    extern const aom_cdf_prob av1_default_delta_q_abs_cdf[CDF_SIZE(DELTA_Q_SMALL+1)];
 
     inline int32_t pareto(int32_t node, int32_t prob) {
         assert(node >= 2);

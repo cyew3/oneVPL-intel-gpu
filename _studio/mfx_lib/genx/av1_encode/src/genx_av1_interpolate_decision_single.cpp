@@ -27,7 +27,13 @@
 
 #include <cm/cm.h>
 #include <cm/cmtl.h>
-#include <cm/genx_vme.h>
+
+typedef char  int1;
+typedef short int2;
+typedef int   int4;
+typedef unsigned char  uint1;
+typedef unsigned short uint2;
+typedef unsigned int   uint4;
 
 static const uint2 SIZEOF_MODE_INFO = 32;
 typedef matrix    <uint1,1,SIZEOF_MODE_INFO> mode_info;
@@ -215,7 +221,8 @@ static uint1 ZIGZAG_SCAN_16[16] = {
 
 
 template<uint W, uint H>
-void _GENX_ inline transpose8Lines(matrix<short, H, W>& a)
+//void _GENX_ inline transpose8Lines(matrix<short, H, W>& a)
+inline matrix<short, W, H> _GENX_ transpose8Lines(matrix<short, H, W> a)
 {
     matrix<short, 4, 4> b;
 #pragma unroll
@@ -249,6 +256,7 @@ void _GENX_ inline transpose8Lines(matrix<short, H, W>& a)
         a.template select<2, 2, W/2, 2>(i*4, 1) = a.template select<2, 2, W/2, 2>(i*4+1, 0);
         a.template select<2, 2, W/2, 2>(i*4+1, 0) = c;
     }
+    return a;
 }
 
 template<uint BLOCKH, uint BLOCKW>
@@ -283,7 +291,9 @@ uint satdBy8x8(matrix_ref<uint1,BLOCKH,BLOCKW> src, matrix_ref<uint1,BLOCKH,BLOC
         diff.row(7 + i*WIDTH) = s.row(6) - s.row(7);
     }
 
-    transpose8Lines(diff);
+    //transpose8Lines(diff);
+    diff = transpose8Lines(diff);
+
 #pragma unroll
     for (int i=0; i<BLOCKH/WIDTH; i++)
     {
@@ -1318,9 +1328,11 @@ _GENX_ inline void check_is_joinable(SurfaceIndex MODE_INFO, mode_info_ref mi_da
 }
 #endif
 
+#define INIT_HELPER(V,I) { decltype(V) tmp(I); V = tmp; }
+
 extern "C" _GENX_MAIN_
-    void InterpolateDecisionSingle(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex,7> REF, SurfaceIndex MODE_INFO,
-                             SurfaceIndex PRED_LUMA, SurfaceIndex PRED_CHROMA, int pred_padding)
+    void InterpolateDecisionSingle(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex,8> REF, SurfaceIndex MODE_INFO,
+                                   SurfaceIndex PRED_LUMA, SurfaceIndex PRED_CHROMA, int pred_padding, uint4 yoff)
 {
     read(PARAM, 0, g_params);
     float lambda = get_lambda();
@@ -1328,16 +1340,17 @@ extern "C" _GENX_MAIN_
 
     vector<int2,2> origin;
     origin(0) = get_thread_origin_x();
-    origin(1) = get_thread_origin_y();
+    origin(1) = get_thread_origin_y() + (int2)yoff;
 
     vector<int2,2> origxy = origin * 32;
 
-    g_coefs   = vector<int1,192>(COEFS);
-    g_coefs_4 = vector<int1,64>(COEFS_4);
+    INIT_HELPER(g_coefs, COEFS);
+    INIT_HELPER(g_coefs_4, COEFS_4);
     vector<uint1,16> scan_z2r(ZIGZAG_SCAN_16);
 
     vector<uint2,24> interp_bits;
-    interp_bits.select<18,1>() = vector<uint2,18>(INTERP_PROB_BITS);
+    vector<uint2, 18> tmp(INTERP_PROB_BITS);
+    interp_bits.select<18, 1>() = tmp;
 
     g_interp_bitcost_all.row(0) = lambda_int * interp_bits;
     g_interp_bitcost_all.row(1) = vector<uint4,24>(lambda * interp_bits + 0.5f);

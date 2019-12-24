@@ -45,7 +45,14 @@ namespace AV1Enc {
         mfxExtCodingOptionSPSPPS extSpsPps;
         mfxExtCodingOptionVPS    extVps;
         mfxExtEncoderROI         extRoi;
-        mfxExtBuffer            *extParamAll[12];
+        mfxExtAvcTemporalLayers  extTlayers;
+        mfxExtVP9Param           extVP9Param;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        mfxExtAV1Param           extAV1Param;
+        mfxExtBuffer            *extParamAll[15];
+#else
+        mfxExtBuffer            *extParamAll[14];
+#endif
 
         static const size_t NUM_EXT_PARAM;
     };

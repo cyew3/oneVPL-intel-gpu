@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,11 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 /********************************************************************************
- * 
+ *
  * File: Video.c
  *
  * Structures and routines for basic video processing
- * 
+ *
  ********************************************************************************/
 #include <assert.h>
 #include "Video.h"
@@ -70,8 +70,8 @@ static void ConvertColorSpaces444_C(const BYTE* pYUV, BYTE* pSkinColorSpace, con
             int v = pv0[i*pitch + j];
 
             // store Y to Yrg
-            py[i*pitch + j] = y;
-            
+            py[i*pitch + j] = (BYTE) y;
+
             u -= 128;
             v -= 128;
 
@@ -128,7 +128,7 @@ static void ConvertColorSpaces444_slice_C(const BYTE* pYUV, BYTE* pSkinColorSpac
 
             // store Y to Yrg
             py[i*pitch + j] = y;
-            
+
             u -= 128;
             v -= 128;
 
@@ -250,7 +250,7 @@ static void ConvertColorSpaces444_SSE4(const BYTE* pYUV, BYTE* pSkinColorSpace, 
 
             // store Y to Yrg
             py[i*pitch + j] = y;
-            
+
             u -= 128;
             v -= 128;
 
@@ -372,7 +372,7 @@ static void ConvertColorSpaces444_slice_SSE4(const BYTE* pYUV, BYTE* pSkinColorS
 
             // store Y to Yrg
             py[i*pitch + j] = y;
-            
+
             u -= 128;
             v -= 128;
 
@@ -496,7 +496,7 @@ static void ConvertColorSpaces444_AVX2(const BYTE* pYUV, BYTE* pSkinColorSpace, 
 
             // store Y to Yrg
             py[i*pitch + j] = y;
-            
+
             u -= 128;
             v -= 128;
 
@@ -620,7 +620,7 @@ static void ConvertColorSpaces444_slice_AVX2(const BYTE* pYUV, BYTE* pSkinColorS
 
             // store Y to Yrg
             py[i*pitch + j] = y;
-            
+
             u -= 128;
             v -= 128;
 

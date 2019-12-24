@@ -121,7 +121,8 @@ namespace AV1PP
     template int quant_avx2<TX_32X32>(const short *,short *,const short *);
 
 
-    template <int txSize> void dequant_avx2(const int16_t *src, int16_t *dst, const int16_t *scales) {
+    template <int txSize> void dequant_avx2(const int16_t *src, int16_t *dst, const int16_t *scales, int bd) {
+        bd;
         __m128i dqparam_ = loadu_si32(scales);
         __m256i dqparam  = _mm256_inserti128_si256(si256(dqparam_), dqparam_, 1);
         __m256i scale = _mm256_shuffle_epi8(dqparam, loada_si256(details::shuftab_dc_ac));   // 16w: dqscale[dc] dqscale[ac] dqscale[ac] ...
@@ -146,16 +147,17 @@ namespace AV1PP
             }
         }
     }
-    template void dequant_avx2<TX_4X4>(const int16_t *src_, int16_t *dst_, const int16_t *scales);
-    template void dequant_avx2<TX_8X8>(const int16_t *src_, int16_t *dst_, const int16_t *scales);
-    template void dequant_avx2<TX_16X16>(const int16_t *src_, int16_t *dst_, const int16_t *scales);
-    template void dequant_avx2<TX_32X32>(const int16_t *src_, int16_t *dst_, const int16_t *scales);
+    template void dequant_avx2<TX_4X4>(const int16_t *src_, int16_t *dst_, const int16_t *scales, int bd);
+    template void dequant_avx2<TX_8X8>(const int16_t *src_, int16_t *dst_, const int16_t *scales, int bd);
+    template void dequant_avx2<TX_16X16>(const int16_t *src_, int16_t *dst_, const int16_t *scales, int bd);
+    template void dequant_avx2<TX_32X32>(const int16_t *src_, int16_t *dst_, const int16_t *scales, int bd);
 
 
     template <int txSize> int quant_dequant_avx2(int16_t *coef_ptr, int16_t *qcoef_ptr, const int16_t qpar[10]) {
+        const int bd = 8; // hardcoded for now, not tesetd for 10 bit yest
         int32_t eob = quant_avx2<txSize>(coef_ptr, qcoef_ptr, qpar);
         if (eob)
-            dequant_avx2<txSize>(qcoef_ptr, coef_ptr, qpar + 8);
+            dequant_avx2<txSize>(qcoef_ptr, coef_ptr, qpar + 8, bd);
         return eob;
     }
     template int quant_dequant_avx2<0>(int16_t*,int16_t*,const int16_t*);

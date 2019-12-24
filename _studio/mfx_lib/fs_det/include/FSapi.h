@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,11 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 /********************************************************************************
- * 
+ *
  * File: FSApi.h
  *
  * Face Skin Top Level API
- * 
+ *
  ********************************************************************************/
 #ifndef _FSAPI_H_
 #define _FSAPI_H_
@@ -45,6 +45,7 @@ typedef struct struct_FS FS;
 typedef FS* FSP;
 
 int FS_Init(FSP *fsp, int w_orig, int h_orig, int mode, int use_nv12, unsigned short cpu_feature);
+int FS_Init(FSP *fsp, int w_orig, int h_orig, int mode, int use_nv12, unsigned short cpu_feature, int numFr);
 
 void FS_set_POC(FS *fs, int POC);
 void FS_set_SChg(FS *fs, int SChg);

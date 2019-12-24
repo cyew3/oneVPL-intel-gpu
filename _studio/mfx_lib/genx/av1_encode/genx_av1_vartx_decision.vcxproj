@@ -104,7 +104,7 @@
       </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>for /L %%i in (0,1,0) do $(TargetPath)</Command>
+      <Command>for /L %%i in (0,1,1) do $(TargetPath)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

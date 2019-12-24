@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,11 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 /********************************************************************************
- * 
+ *
  * File: FSApi.cpp
  *
  * Face & Skin Tone detection Api
- * 
+ *
  ********************************************************************************/
 #include "FSapi.h"
 #include "Def.h"
@@ -74,13 +74,16 @@ void FS_set_SChg(FS *fs, int SChg)
     fs->sd_struct.bSceneChange = SChg;
 }
 
-int FS_get_NumSlice(FS *fs) 
+int FS_get_NumSlice(FS *fs)
 {
     return fs->numSlice;
 }
 
+int FS_Init(FSP *fsp, int w_orig, int h_orig, int mode, int use_nv12, unsigned short cpu_feature) {
+    return FS_Init(fsp, w_orig, h_orig, mode, use_nv12, cpu_feature, 9);
+}
 
-int FS_Init(FSP *fsp, int w_orig, int h_orig, int mode, int use_nv12, unsigned short cpu_feature) 
+int FS_Init(FSP *fsp, int w_orig, int h_orig, int mode, int use_nv12, unsigned short cpu_feature, int numFr)
 {
     int failed = 0;
     *fsp = (FS*) malloc(sizeof(struct_FS));
@@ -105,9 +108,9 @@ int FS_Init(FSP *fsp, int w_orig, int h_orig, int mode, int use_nv12, unsigned s
 
     GetBufferSizes(&fs->sz, fs->w, fs->h,  BLOCKSIZE);
     fs->bsf = get_bsz_fd(fs->w, fs->h);
-    
+
     SetDefaultParameters(&fs->sd_par);
-    
+    fs->sd_par.numFr = numFr;
     // Buffers
     failed = AllocateBuffers(&fs->sd_buf, &fs->sz);
     if(failed) return failed;
@@ -162,7 +165,7 @@ void FS_Free(FSP *fsp)
     *fsp = NULL;
 }
 
-void FS_set_Slice(FS *fs, int width, int height, int pitch, int pitchC, int numSlice) 
+void FS_set_Slice(FS *fs, int width, int height, int pitch, int pitchC, int numSlice)
 {
     int blkSize = BLOCKSIZE;
     int i, wb, hb, n, r;
@@ -194,7 +197,7 @@ void FS_set_Slice(FS *fs, int width, int height, int pitch, int pitchC, int numS
     }
 }
 
-void CopyFrameBuffPtr(FrameBuffElement *src, FrameBuffElementPtr *dst) 
+void CopyFrameBuffPtr(FrameBuffElement *src, FrameBuffElementPtr *dst)
 {
     dst->frameY = src->frameY;
     dst->frameU = src->frameU;
@@ -227,7 +230,7 @@ void FS_ProcessMode1_Slice_start(FS *fs, FrameBuffElement *in, BYTE *pOutY)
         //convert to different color spaces
         ConvertColorSpaces444(fs->sd_buf.pInYUV, fs->sd_buf.pYCbCr, fs->wb, fs->hb, fs->wb);
 
-        // some non-slice processes 
+        // some non-slice processes
         SkinDetectionMode1_NV12_slice_start(&fs->sd_struct, &fs->fd, fs->fbpT, fs->sd_buf.pInYUV, fs->sd_buf.pYCbCr, pOutY);
     }
 }
@@ -240,6 +243,7 @@ void FS_ProcessMode1_Slice_main(FS *fs, int sliceId)
 
 void FS_ProcessMode1_Slice_end(FS *fs, BYTE *pOutY, BYTE *pOutLum, int outLumSize)
 {
+    outLumSize;
     std::copy(fs->sd_buf.pInYUV, fs->sd_buf.pInYUV + fs->wb * fs->hb, pOutLum);
     // core slice-based processes
     SkinDetectionMode1_NV12_slice_end(&fs->sd_struct, &fs->fd, fs->fbpT, fs->sd_buf.pInYUV, fs->sd_buf.pYCbCr, pOutY);

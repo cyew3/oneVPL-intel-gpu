@@ -108,6 +108,7 @@
     <ClCompile Include="src\mode_decision\mfx_av1_bit_count_9.cpp">
       <Filter>av1e_files</Filter>
     </ClCompile>
+    <ClCompile Include="src\genx_av1_mode_decision_icllp_isa.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_common.h" />

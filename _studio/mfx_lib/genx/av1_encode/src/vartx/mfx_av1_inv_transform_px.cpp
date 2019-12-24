@@ -21,7 +21,6 @@
 #include "assert.h"
 #include "stdlib.h"
 #include "string.h"
-#include "ipps.h"
 
 #include "mfx_av1_transform_common.h"
 #include "mfx_av1_inv_transform_common.h"

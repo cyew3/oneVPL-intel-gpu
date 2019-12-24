@@ -52,7 +52,7 @@ namespace AV1Enc {
     int32_t GetCtxTxSizeAV1(const ModeInfo *above, const ModeInfo *left, uint8_t aboveTxfm, uint8_t leftTxfm, TxSize maxTxSize);
     int32_t GetCtxDrlIdx(const AV1MVCand *refMvStack, int32_t idx);
     int32_t GetCtxDrlIdx(int32_t nearestMvCount, int32_t idx);
-    int32_t GetCtxNmv(const uint8_t refMvCount, const AV1MVCand *refMvStack, int32_t ref, int32_t refMvIdx);
+    uint8_t GetCtxNmv(int32_t refMvCount, const AV1MVCand *refMvStack, int32_t ref, int32_t refMvIdx);
     int32_t GetCtxTxfm(const uint8_t *aboveTxfm, const uint8_t *leftTxfm, BlockSize bsize, TxSize txSize);
 
     int32_t GetCtxSingleRefP1Av1(const uint8_t *counts);

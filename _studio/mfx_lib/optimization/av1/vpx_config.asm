@@ -1,7 +1,12 @@
 ARCH_ARM equ 0
 ARCH_MIPS equ 0
-ARCH_X86 equ 0
-ARCH_X86_64 equ 1
+%ifidn __OUTPUT_FORMAT__,win32
+    ARCH_X86 equ 1
+    ARCH_X86_64 equ 0
+%else
+    ARCH_X86 equ 0
+    ARCH_X86_64 equ 1
+%endif
 HAVE_NEON equ 0
 HAVE_NEON_ASM equ 0
 HAVE_MIPS32 equ 0

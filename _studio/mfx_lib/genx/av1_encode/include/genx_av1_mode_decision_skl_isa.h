@@ -17,8 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
+//
 #ifndef __genx_av1_mode_decision_skl__
 #define __genx_av1_mode_decision_skl__
-extern const unsigned char genx_av1_mode_decision_skl[207815];
+extern const unsigned char genx_av1_mode_decision_skl[235035];
 #endif

@@ -134,7 +134,7 @@ struct GpuParam {
                                         // off=2388
     } txb[4];
 
-    uint16_t reserved[2];                 // off=5052 size=2*2
+    uint16_t initDz[2];                   // off=5052 size=2*2
     uint16_t high_freq_coeff_curve[4][2]; // off=5056 size=2*4*2
 };
 
@@ -215,9 +215,69 @@ void RandomizeModeInfo(const GpuParam &par, ModeInfo *mi, int pitchMi)
         stat_skip[1] / sum_stat_skip, stat_skip[0] / sum_stat_skip);
 }
 
+void SetupAdz(const ADzCtx *prevAdzCtx, const ADzCtx *prevAdzCtxDelta, ADzCtx *currAdzCtx,
+              QuantParam *qpar, float roundFAdjY[2], int sbr, int sbc, int sbCols,
+              int sbRows, int bframe, int sceneCut, float initDz0, float initDz1)
+{
+    const int sbIdx = sbc + sbr * sbCols;
+    const ADzCtx *prev = prevAdzCtx + sbIdx;
+    const ADzCtx *delta = prevAdzCtxDelta + sbIdx;
+    ADzCtx *curr = currAdzCtx + sbIdx;
+    *curr = *prev;
+    //if (!bframe) {
+    //    float varDz = sceneCut ? 10.0f : 8.0f; // only temporal
+    //    *curr = *prev;
+    //    if (sbc) {
+    //        const ADzCtx *PDz = prev - 1;
+    //        const ADzCtx *DDz = delta - 1;
+    //        curr->AddWeighted(DDz->aqroundFactorY, DDz->aqroundFactorUv, PDz->aqroundFactorY, PDz->aqroundFactorUv);
+    //    }
+    //    if (sbr) {
+    //        const ADzCtx *PDz = prev - sbCols;
+    //        const ADzCtx *DDz = delta - sbCols;
+    //        curr->AddWeighted(DDz->aqroundFactorY, DDz->aqroundFactorUv, PDz->aqroundFactorY, PDz->aqroundFactorUv);
+    //    }
+    //    if (sbc + 1 < sbCols && sbr) {
+    //        const ADzCtx *PDz = prev + 1 - sbCols;
+    //        const ADzCtx *DDz = delta + 1 - sbCols;
+    //        curr->AddWeighted(DDz->aqroundFactorY, DDz->aqroundFactorUv, PDz->aqroundFactorY, PDz->aqroundFactorUv);
+    //    }
+    //    if (sbc + 1 < sbCols && sbr + 1 < sbRows) {
+    //        const ADzCtx *PDz = prev + 1 + sbCols;
+    //        const ADzCtx *DDz = delta + 1 + sbCols;
+    //        curr->AddWeighted(DDz->aqroundFactorY, DDz->aqroundFactorUv, PDz->aqroundFactorY, PDz->aqroundFactorUv);
+    //    }
+    //    curr->SaturateAcDc(initDz0, initDz1, varDz); // Saturate
+    //} else {
+    //    float varDz = 4.0f;
+    //    curr->SetDcAc(initDz0, initDz1); // Set
+    //    curr->SetMin(prev->aqroundFactorY, prev->aqroundFactorUv); // Use min
+    //    curr->SaturateAcDc(initDz0, initDz1, varDz); // Saturate
+    //}
+
+    qpar->round[0] = ((int32_t)(curr->aqroundFactorY[0] + 0.5) * qpar->dequant[0]) >> 7;
+    qpar->round[1] = ((int32_t)(curr->aqroundFactorY[1] + 0.5) * qpar->dequant[1]) >> 7;
+
+    roundFAdjY[0] = (curr->aqroundFactorY[0] * (float)qpar->dequant[0]) / 128.0f;
+    roundFAdjY[1] = (curr->aqroundFactorY[1] * (float)qpar->dequant[1]) / 128.0f;
+}
+
+void UpdateAdz(const QuantParam &qpar, const float roundFAdjY[2], ADzCtx *currAdzCtx, ADzCtx *currAdzCtxDelta)
+{
+    ADzCtx initAdzCtx = *currAdzCtx;
+
+    currAdzCtx->aqroundFactorY[0] = roundFAdjY[0] * 128.0f / (float)qpar.dequant[0];
+    currAdzCtx->aqroundFactorY[1] = roundFAdjY[1] * 128.0f / (float)qpar.dequant[1];
+
+    currAdzCtxDelta->aqroundFactorY[0] = currAdzCtx->aqroundFactorY[0] - initAdzCtx.aqroundFactorY[0];
+    currAdzCtxDelta->aqroundFactorY[1] = currAdzCtx->aqroundFactorY[1] - initAdzCtx.aqroundFactorY[1];
+}
+
 std::unique_ptr<uint16_t, cm_aligned_deleter>
     RunCpu(const GpuParam &par, const uint8_t *srcFrame, int pitchSrc, const uint8_t *predFrame,
-           int pitchPred, int qp, const ModeInfo *modeInfo, int pitchMi)
+           int pitchPred, int qp, const ModeInfo *modeInfo, int pitchMi, int16_t *coef,
+           const ADzCtx *prevAdzCtx, const ADzCtx *prevAdzCtxDelta, ADzCtx *currAdzCtx,
+           ADzCtx *currAdzCtxDelta)
 {
     const int sbRows = (par.miRows + 7) / 8;
     const int sbCols = (par.miCols + 7) / 8;
@@ -246,6 +306,11 @@ std::unique_ptr<uint16_t, cm_aligned_deleter>
         for (int sbc = 0; sbc < sbCols; sbc++, sbIdx++) {
 
             Contexts contexts = {}; // zero contexts in the beginning of each SB
+
+            const int sceneCut = 0;
+            float roundFAdjY[2];
+            SetupAdz(prevAdzCtx, prevAdzCtxDelta, currAdzCtx, &qpar, roundFAdjY, sbr, sbc,
+                     sbCols, sbRows, !par.bidir_compound, sceneCut, par.initDz[0], par.initDz[1]);
 
             uint16_t *sbVarTxInfo = varTxInfo.get() + sbIdx * 16 * 16;
 
@@ -283,10 +348,9 @@ std::unique_ptr<uint16_t, cm_aligned_deleter>
                 } else {
                     ALIGNED(32) uint8_t rec[64 * 64];
                     ALIGNED(32) int16_t diff[64 * 64];
-                    ALIGNED(32) int16_t coef[64 * 64];
                     ALIGNED(32) int16_t qcoef[64 * 64];
                     ALIGNED(32) int16_t coefWork[32 * 32 * 6];
-                    float roundFAdj[2] = {};
+                    int16_t *coefMi = coef + sbIdx * 64 * 64 + i * 16;
 
                     const uint8_t *src = srcFrame + miRow * 8 * pitchSrc + miCol * 8;
                     const uint8_t *pred = predFrame + miRow * 8 * pitchPred + miCol * 8;
@@ -295,8 +359,8 @@ std::unique_ptr<uint16_t, cm_aligned_deleter>
                     VP9PP::diff_nxn(src, pitchSrc, pred, pitchPred, diff, sbw, log2w);
 
                     RdCost rd = TransformInterYSbVarTxByRdo(
-                        mi->sbType, maxTxSize, anz, lnz, src, rec, diff, coef, qcoef, qp, bc, videoPar,
-                        NULL, par.lambda, coefWork, atxfm, ltxfm, miVarTxInfo, qpar, roundFAdj, miRow, miCol);
+                        mi->sbType, maxTxSize, anz, lnz, src, rec, diff, coefMi, qcoef, qp, bc, videoPar,
+                        NULL, par.lambda, coefWork, atxfm, ltxfm, miVarTxInfo, qpar, roundFAdjY, miRow, miCol);
                     int sseSkip = VP9PP::sse(src, pitchSrc, pred, pitchPred, log2w, log2w);
 
                     uint32_t modeBits = 0;
@@ -307,6 +371,8 @@ std::unique_ptr<uint16_t, cm_aligned_deleter>
                         SetVarTxInfo(miVarTxInfo, DCT_DCT + (maxTxSize << 2), num4x4w);
                 }
             }
+
+            UpdateAdz(qpar, roundFAdjY, &currAdzCtx[sbIdx], &currAdzCtxDelta[sbIdx]);
         }
     }
 
@@ -321,8 +387,10 @@ template <typename T> SurfaceIndex *get_index(T *cm_resource) {
 }
 
 std::unique_ptr<uint16_t, cm_aligned_deleter>
-    RunGpu(const GpuParam &par, const uint8_t *srcFrame, int pitchSrc, const uint8_t *predFrame, int pitchPred,
-           int qp, const ModeInfo *modeInfo, int pitchMi)
+    RunGpu(const GpuParam &par, const uint8_t *srcFrame, int pitchSrc, const uint8_t *predFrame,
+           int pitchPred, int qp, const ModeInfo *modeInfo, int pitchMi, int16_t *qcoefs,
+           const ADzCtx *prevAdzCtx, const ADzCtx *prevAdzCtxDelta, ADzCtx *currAdzCtx,
+           ADzCtx *currAdzCtxDelta)
 {
     qp;
     const int pred_padding = 128;
@@ -351,6 +419,11 @@ std::unique_ptr<uint16_t, cm_aligned_deleter>
     CmSurface2D *mi = nullptr;
     CmSurface2D *scratchbuf = nullptr;
     CmBufferUP *vartxinfo = nullptr;
+    CmBufferUP *prevAdz = nullptr;
+    CmBufferUP *currAdz = nullptr;
+    CmBufferUP *prevAdzDelta = nullptr;
+    CmBufferUP *currAdzDelta = nullptr;
+    CmBufferUP *qcoefs_cm = nullptr;
 
     GPU_PLATFORM hw_type;
     size_t size = sizeof(mfxU32);
@@ -390,7 +463,13 @@ std::unique_ptr<uint16_t, cm_aligned_deleter>
     THROW_CM_ERR(device->CreateSurface2DUP(pitchPredSys, height, CM_SURFACE_FORMAT_P8, predSys, pred));
     THROW_CM_ERR(device->CreateSurface2D(sbCols * 8 * sizeof(ModeInfo), sbRows * 8, CM_SURFACE_FORMAT_P8, mi));
     THROW_CM_ERR(device->CreateBufferUP(numSb * 16 * 16 * sizeof(uint16_t), varTxInfoSys.get(), vartxinfo));
-    THROW_CM_ERR(device->CreateSurface2D(width, height, CM_SURFACE_FORMAT_P8, scratchbuf));
+    THROW_CM_ERR(device->CreateBufferUP(numSb * sizeof(ADzCtx), const_cast<ADzCtx *>(prevAdzCtx), prevAdz));
+    THROW_CM_ERR(device->CreateBufferUP(numSb * sizeof(ADzCtx), const_cast<ADzCtx *>(prevAdzCtxDelta), prevAdzDelta));
+    THROW_CM_ERR(device->CreateBufferUP(numSb * sizeof(ADzCtx), currAdzCtx, currAdz));
+    memcpy(currAdzCtx, prevAdzCtx, numSb * sizeof(ADzCtx));
+    THROW_CM_ERR(device->CreateBufferUP(numSb * sizeof(ADzCtx), currAdzCtxDelta, currAdzDelta));
+    THROW_CM_ERR(device->CreateBufferUP(numSb * 4096 * sizeof(int16_t), qcoefs, qcoefs_cm));
+    THROW_CM_ERR(device->CreateSurface2D(sbCols * 64, sbRows * 64, CM_SURFACE_FORMAT_P8, scratchbuf));
     THROW_CM_ERR(src->WriteSurfaceStride(srcFrame, nullptr, pitchSrc));
     //THROW_CM_ERR(pred->WriteSurfaceStride(predFrame, nullptr, pitchPred));
     for (int i = 0; i < height; i++) {
@@ -399,13 +478,19 @@ std::unique_ptr<uint16_t, cm_aligned_deleter>
         memset(predSys + i * pitchPredSys + pred_padding + width, *(predFrame + i * pitchPred + width - 1), pred_padding);
     }
     THROW_CM_ERR(mi->WriteSurfaceStride((const uint8_t *)modeInfo, nullptr, pitchMi * sizeof(ModeInfo)));
-    THROW_CM_ERR(kernel->SetKernelArg(0, sizeof(SurfaceIndex), get_index(param)));
-    THROW_CM_ERR(kernel->SetKernelArg(1, sizeof(SurfaceIndex), get_index(src)));
-    THROW_CM_ERR(kernel->SetKernelArg(2, sizeof(SurfaceIndex), get_index(pred)));
-    THROW_CM_ERR(kernel->SetKernelArg(3, sizeof(SurfaceIndex), get_index(mi)));
-    THROW_CM_ERR(kernel->SetKernelArg(4, sizeof(SurfaceIndex), get_index(scratchbuf)));
-    THROW_CM_ERR(kernel->SetKernelArg(5, sizeof(SurfaceIndex), get_index(vartxinfo)));
-    THROW_CM_ERR(kernel->SetKernelArg(6, sizeof(int), &pred_padding));
+    int idx = 0;
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(SurfaceIndex), get_index(param)));
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(SurfaceIndex), get_index(src)));
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(SurfaceIndex), get_index(pred)));
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(SurfaceIndex), get_index(mi)));
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(SurfaceIndex), get_index(scratchbuf)));
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(SurfaceIndex), get_index(qcoefs_cm)));
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(SurfaceIndex), get_index(vartxinfo)));
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(SurfaceIndex), get_index(prevAdz)));
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(SurfaceIndex), get_index(prevAdzDelta)));
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(SurfaceIndex), get_index(currAdz)));
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(SurfaceIndex), get_index(currAdzDelta)));
+    THROW_CM_ERR(kernel->SetKernelArg(idx++, sizeof(int), &pred_padding));
     THROW_CM_ERR(task->AddKernel(kernel));
     THROW_CM_ERR(kernel->SetThreadCount(tsw * tsh));
     THROW_CM_ERR(device->CreateThreadSpace(tsw, tsh, ts));
@@ -453,7 +538,41 @@ void report_var_tx_info_difference(int sbr, int sbc, int y4, int x4, const ModeI
     printf("%-10s %6d %6d\n", "eob",    cpu >> 4, gpu >> 4);
 }
 
-int Compare(const GpuParam &par, const ModeInfo *modeInfo, int pitchMi, const uint16_t *cpuVarTxInfo, const uint16_t *gpuVarTxInfo)
+void report_adz_difference(int sbr, int sbc, const ADzCtx &cpu, const ADzCtx &gpu, const ADzCtx &cpuDelta, const ADzCtx &gpuDelta)
+{
+    printf("\n");
+    printf("ADZ at (sb_row=%d, sb_col=%d)\n", sbr, sbc);
+    printf("%21s %8s %8s\n", "", "cpu", "gpu");
+    printf("%-21s %8.5f %8.5f\n", "aqroundFactorY[0]", cpu.aqroundFactorY[0], gpu.aqroundFactorY[0]);
+    printf("%-21s %8.5f %8.5f\n", "aqroundFactorY[1]", cpu.aqroundFactorY[1], gpu.aqroundFactorY[1]);
+    //printf("%-21s %8.5f %8.5f\n", "aqroundFactorUv[0][0]", cpu.aqroundFactorUv[0][0], gpu.aqroundFactorUv[0][0]);
+    //printf("%-21s %8.5f %8.5f\n", "aqroundFactorUv[0][1]", cpu.aqroundFactorUv[0][1], gpu.aqroundFactorUv[0][1]);
+    //printf("%-21s %8.5f %8.5f\n", "aqroundFactorUv[1][0]", cpu.aqroundFactorUv[1][0], gpu.aqroundFactorUv[1][0]);
+    //printf("%-21s %8.5f %8.5f\n", "aqroundFactorUv[1][1]", cpu.aqroundFactorUv[1][1], gpu.aqroundFactorUv[1][1]);
+    printf("\n");
+    printf("ADZ delta at (sb_row=%d, sb_col=%d)\n", sbr, sbc);
+    printf("%-21s %8.5f %8.5f\n", "aqroundFactorY[0]", cpuDelta.aqroundFactorY[0], gpuDelta.aqroundFactorY[0]);
+    printf("%-21s %8.5f %8.5f\n", "aqroundFactorY[1]", cpuDelta.aqroundFactorY[1], gpuDelta.aqroundFactorY[1]);
+    //printf("%-21s %8.5f %8.5f\n", "aqroundFactorUv[0][0]", cpuDelta.aqroundFactorUv[0][0], gpuDelta.aqroundFactorUv[0][0]);
+    //printf("%-21s %8.5f %8.5f\n", "aqroundFactorUv[0][1]", cpuDelta.aqroundFactorUv[0][1], gpuDelta.aqroundFactorUv[0][1]);
+    //printf("%-21s %8.5f %8.5f\n", "aqroundFactorUv[1][0]", cpuDelta.aqroundFactorUv[1][0], gpuDelta.aqroundFactorUv[1][0]);
+    //printf("%-21s %8.5f %8.5f\n", "aqroundFactorUv[1][1]", cpuDelta.aqroundFactorUv[1][1], gpuDelta.aqroundFactorUv[1][1]);
+}
+
+bool equal(float a, float b)
+{
+    const float eps = 0.001f;
+    if (fabs(a) < 1.0f) {
+        return fabs(a - b) < eps;
+    } else {
+        return fabs((a - b) / a) < eps;
+    }
+}
+
+int Compare(const GpuParam &par, const ModeInfo *modeInfo, int pitchMi, const uint16_t *cpuVarTxInfo,
+            const uint16_t *gpuVarTxInfo, const int16_t *qcoefCpu, const int16_t *qcoefGpu,
+            const ADzCtx *adzCtxCpu, const ADzCtx *adzCtxDeltaCpu, const ADzCtx *adzCtxGpu,
+            const ADzCtx *adzCtxDeltaGpu)
 {
     const int sbRows = (par.miRows + 7) / 8;
     const int sbCols = (par.miCols + 7) / 8;
@@ -466,8 +585,20 @@ int Compare(const GpuParam &par, const ModeInfo *modeInfo, int pitchMi, const ui
 
             for (int y = 0; y < 16; y++) {
                 for (int x = 0; x < 16; x++) {
-                    const uint16_t cpu = sbCpuVarTxInfo[y * 16 + x];
-                    const uint16_t gpu = sbGpuVarTxInfo[y * 16 + x];
+                    uint16_t cpu = sbCpuVarTxInfo[y * 16 + x];
+                    uint16_t gpu = sbGpuVarTxInfo[y * 16 + x];
+                    const int tx_size = (cpu >> 2) & 3;
+                    if (tx_size == TX_4X4) {
+                        // gpu vartx data was compressed
+                        // so for 4x4 blocks it has sum of eobs for 4 4x4 blocks
+                        const uint16_t sumEob =
+                            sbCpuVarTxInfo[(y & ~1) * 16 + (x & ~1)] +
+                            sbCpuVarTxInfo[(y & ~1) * 16 + (x | 1)] +
+                            sbCpuVarTxInfo[(y | 1) * 16 + (x & ~1)] +
+                            sbCpuVarTxInfo[(y | 1) * 16 + (x | 1)];
+                        cpu = DCT_DCT + (TX_4X4 << 2) + sumEob;
+                    }
+
                     if (cpu != gpu) {
                         const int miRow = sbr * 8 + y / 2;
                         const int miCol = sbc * 8 + x / 2;
@@ -475,11 +606,80 @@ int Compare(const GpuParam &par, const ModeInfo *modeInfo, int pitchMi, const ui
                         report_var_tx_info_difference(sbr, sbc, y, x, mi, cpu, gpu);
                         return FAILED;
                     }
-
                 }
             }
         }
     }
+
+    for (int sbr = 0, sbIdx = 0; sbr < sbRows; sbr++) {
+        for (int sbc = 0; sbc < sbCols; sbc++, sbIdx++) {
+            int num4x4;
+            for (int i = 0; i < 256; i += num4x4) {
+                int raster = h265_scan_z2r4[i];
+                int x4 = raster & 15;
+                int y4 = raster >> 4;
+                int tx_size = (cpuVarTxInfo[sbIdx * 16 * 16 + y4 * 16 + x4] >> 2) & 3;
+                int eob = cpuVarTxInfo[sbIdx * 16 * 16 + y4 * 16 + x4] >> 4;
+                int size = 4 << tx_size;
+                num4x4 = 1 << (tx_size << 1);
+                const int16_t *qcCpu = qcoefCpu + sbIdx * 4096 + i * 16;
+                const int16_t *qcGpu = qcoefGpu + sbIdx * 4096 + i * 16;
+                if (eob) {
+                    for (int y = 0; y < size; y++) {
+                        for (int x = 0; x < size; x++) {
+                            if (qcCpu[y * size + x] != qcGpu[x * size + y]) {
+                                const int miRow = sbr * 8 + y4 / 2;
+                                const int miCol = sbc * 8 + x4 / 2;
+                                const ModeInfo &mi = modeInfo[miRow * pitchMi + miCol];
+                                printf("Different coefs at\n");
+                                printf("  miRow=%d miCol=%d bsz=%d\n", miRow, miCol, mi.sbType);
+                                printf("  y4=%d x4=%d txSize=%d\n", y4, x4, tx_size);
+                                printf("  y=%d, x=%d\n", y, x);
+                                printf("\nCPU coefs:\n");
+                                for (int y = 0; y < size; y++) {
+                                    for (int x = 0; x < size; x++)
+                                        printf("%d ", qcCpu[y * size + x]);
+                                    printf("\n");
+                                }
+                                printf("\nGPU coefs:\n");
+                                for (int y = 0; y < size; y++) {
+                                    for (int x = 0; x < size; x++)
+                                        printf("%d ", qcGpu[x * size + y]);
+                                    printf("\n");
+                                }
+                                return FAILED;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+#if 0
+    for (int sbr = 0, sbIdx = 0; sbr < sbRows; sbr++) {
+        for (int sbc = 0; sbc < sbCols; sbc++, sbIdx++) {
+            if (!equal(adzCtxCpu[sbIdx].aqroundFactorY[0], adzCtxGpu[sbIdx].aqroundFactorY[0]) ||
+                !equal(adzCtxCpu[sbIdx].aqroundFactorY[1], adzCtxGpu[sbIdx].aqroundFactorY[1]) /*||
+                !equal(adzCtxCpu[sbIdx].aqroundFactorUv[0][0], adzCtxGpu[sbIdx].aqroundFactorUv[0][0]) ||
+                !equal(adzCtxCpu[sbIdx].aqroundFactorUv[0][1], adzCtxGpu[sbIdx].aqroundFactorUv[0][1]) ||
+                !equal(adzCtxCpu[sbIdx].aqroundFactorUv[1][0], adzCtxGpu[sbIdx].aqroundFactorUv[1][0]) ||
+                !equal(adzCtxCpu[sbIdx].aqroundFactorUv[1][1], adzCtxGpu[sbIdx].aqroundFactorUv[1][1])*/ ||
+                !equal(adzCtxDeltaCpu[sbIdx].aqroundFactorY[0], adzCtxDeltaGpu[sbIdx].aqroundFactorY[0]) ||
+                !equal(adzCtxDeltaCpu[sbIdx].aqroundFactorY[1], adzCtxDeltaGpu[sbIdx].aqroundFactorY[1]) /*||
+                !equal(adzCtxDeltaCpu[sbIdx].aqroundFactorUv[0][0], adzCtxDeltaGpu[sbIdx].aqroundFactorUv[0][0]) ||
+                !equal(adzCtxDeltaCpu[sbIdx].aqroundFactorUv[0][1], adzCtxDeltaGpu[sbIdx].aqroundFactorUv[0][1]) ||
+                !equal(adzCtxDeltaCpu[sbIdx].aqroundFactorUv[1][0], adzCtxDeltaGpu[sbIdx].aqroundFactorUv[1][0]) ||
+                !equal(adzCtxDeltaCpu[sbIdx].aqroundFactorUv[1][1], adzCtxDeltaGpu[sbIdx].aqroundFactorUv[1][1])*/)
+            {
+                report_adz_difference(sbr, sbc, adzCtxCpu[sbIdx], adzCtxGpu[sbIdx], adzCtxDeltaCpu[sbIdx], adzCtxDeltaGpu[sbIdx]);
+                return FAILED;
+            }
+        }
+    }
+#else
+    adzCtxCpu, adzCtxGpu, adzCtxDeltaCpu, adzCtxDeltaGpu;
+#endif // 0
 
     return PASSED;
 }
@@ -532,6 +732,7 @@ namespace global_test_params {
     int32_t width  = 1920;
     int32_t height = 1080;
     int32_t qp     = 140;
+    int32_t pfromp = 0;
 };
 
 void parse_cmd(int argc, char **argv) {
@@ -544,24 +745,26 @@ void parse_cmd(int argc, char **argv) {
             char exe_name[256], exe_ext[256];
             _splitpath_s(argv[0], nullptr, 0, nullptr, 0, exe_name, 256, exe_ext, 256);
             printf("Usage examples:\n\n");
-            printf("  1) Run with default parameters (yuv=%s width=%d height=%d qp=%d)\n",
-                global_test_params::yuv, global_test_params::width, global_test_params::height, global_test_params::qp);
+            printf("  1) Run with default parameters (yuv=%s width=%d height=%d qp=%d pfromp=%d)\n",
+                global_test_params::yuv, global_test_params::width, global_test_params::height,
+                global_test_params::qp, global_test_params::pfromp);
             printf("    %s%s\n\n", exe_name, exe_ext);
             printf("  2) Run with custom parameters\n");
-            printf("    %s%s <yuvname> <width> <height> <qp>\n", exe_name, exe_ext);
+            printf("    %s%s <yuvname> <width> <height> <qp> <pfromp>\n", exe_name, exe_ext);
             exit(0);
         }
     }
 
-    if (argc == 5) {
+    if (argc == 6) {
         global_test_params::yuv    = argv[1];
         global_test_params::width  = atoi(argv[2]);
         global_test_params::height = atoi(argv[3]);
         global_test_params::qp     = atoi(argv[4]);
+        global_test_params::pfromp = !!atoi(argv[5]);
     }
 }
 
-void setup_gpu_param(GpuParam *par, int qp)
+void setup_gpu_param(GpuParam *par, int qp, int pfromp)
 {
     const int q = vp9_dc_quant(qp, 0, 8);
 
@@ -574,6 +777,8 @@ void setup_gpu_param(GpuParam *par, int qp)
     par->miCols = (global_test_params::width + 7) / 8;
     par->miRows = (global_test_params::height + 7) / 8;
     par->lambda = 88 * q * q / 24.f / 512 / 16 / 128;
+    par->initDz[0] = 44;
+    par->initDz[1] = 40;
     par->qparam.zbin[0] = videoPar.qparamY[qp].zbin[0];
     par->qparam.zbin[1] = videoPar.qparamY[qp].zbin[1];
     par->qparam.round[0] = videoPar.qparamY[qp].round[0];
@@ -586,7 +791,7 @@ void setup_gpu_param(GpuParam *par, int qp)
     par->qparam.dequant[1] = videoPar.qparamY[qp].dequant[1];
     par->lambdaInt = 0;
     par->compound_allowed = 1;
-    par->bidir_compound = 1;
+    par->bidir_compound = !pfromp;
     const int qctx = get_q_ctx(qp);
 
     for (int ctx_skip = 0; ctx_skip < 3; ctx_skip++) {
@@ -673,6 +878,24 @@ void make_pred_frame(const uint8_t *src, int pitchSrc, uint8_t *pred, int pitchP
     }
 }
 
+void make_curr_adzctx(ADzCtx *currAdzCtxCpu, ADzCtx *currAdzCtxDeltaCpu, int numSb)
+{
+    for (int i = 0; i < numSb; i++) {
+        currAdzCtxCpu[i].aqroundFactorY[0] = (rand() / (float)RAND_MAX) * 20.0f + 35.0f;  // [35f .. 55f]
+        currAdzCtxCpu[i].aqroundFactorY[1] = (rand() / (float)RAND_MAX) * 20.0f + 35.0f;  // [35f .. 55f]
+        currAdzCtxCpu[i].aqroundFactorUv[0][0] = (rand() / (float)RAND_MAX) * 20.0f + 35.0f;  // [35f .. 55f]
+        currAdzCtxCpu[i].aqroundFactorUv[0][1] = (rand() / (float)RAND_MAX) * 20.0f + 35.0f;  // [35f .. 55f]
+        currAdzCtxCpu[i].aqroundFactorUv[1][0] = (rand() / (float)RAND_MAX) * 20.0f + 35.0f;  // [35f .. 55f]
+        currAdzCtxCpu[i].aqroundFactorUv[1][1] = (rand() / (float)RAND_MAX) * 20.0f + 35.0f;  // [35f .. 55f]
+        currAdzCtxDeltaCpu[i].aqroundFactorY[0] = (rand() / (float)RAND_MAX) * 20.0f - 10.0f;  // [-10f .. 10f]
+        currAdzCtxDeltaCpu[i].aqroundFactorY[1] = (rand() / (float)RAND_MAX) * 20.0f - 10.0f;  // [-10f .. 10f]
+        currAdzCtxDeltaCpu[i].aqroundFactorUv[0][0] = (rand() / (float)RAND_MAX) * 20.0f - 10.0f;  // [-10f .. 10f]
+        currAdzCtxDeltaCpu[i].aqroundFactorUv[0][1] = (rand() / (float)RAND_MAX) * 20.0f - 10.0f;  // [-10f .. 10f]
+        currAdzCtxDeltaCpu[i].aqroundFactorUv[1][0] = (rand() / (float)RAND_MAX) * 20.0f - 10.0f;  // [-10f .. 10f]
+        currAdzCtxDeltaCpu[i].aqroundFactorUv[1][1] = (rand() / (float)RAND_MAX) * 20.0f - 10.0f;  // [-10f .. 10f]
+    }
+}
+
 int main(int argc, char **argv)
 {
     try {
@@ -682,19 +905,29 @@ int main(int argc, char **argv)
         const int qp = global_test_params::qp;
         const int width = global_test_params::width;
         const int height = global_test_params::height;
+        const int pfromp = global_test_params::pfromp;
 
-        printf("Running with %s %dx%d qp=%d\n", global_test_params::yuv, width, height, qp);
+        printf("Running with %s %dx%d qp=%d bidir=%d\n", global_test_params::yuv, width, height, qp, pfromp);
 
         GpuParam param = {};
-        setup_gpu_param(&param, qp);
+        setup_gpu_param(&param, qp, pfromp);
 
         const int pitchMi = ((param.miCols + 7) & ~7);
         const int numMi = ((param.miRows + 7) & ~7) * pitchMi;
+        const int numSb = ((param.miRows + 7) >> 3) * ((param.miCols + 7) >> 3);
 
         const int pitchFrame = AlignValue(width, 64);
         const int frameSize = height * pitchFrame;
         auto srcFrameBuf = make_aligned_ptr<uint8_t>(frameSize, 64);
         auto predFrameBuf = make_aligned_ptr<uint8_t>(frameSize, 64);
+        auto qcoefCpu = make_aligned_ptr<int16_t>(numSb * 64 * 64, 4096);
+        auto qcoefGpu = make_aligned_ptr<int16_t>(numSb * 64 * 64, 4096);
+        auto prevAdzCtx = make_aligned_ptr<ADzCtx>(numSb, 4096);
+        auto currAdzCtxCpu = make_aligned_ptr<ADzCtx>(numSb, 4096);
+        auto currAdzCtxGpu = make_aligned_ptr<ADzCtx>(numSb, 4096);
+        auto prevAdzCtxDelta = make_aligned_ptr<ADzCtx>(numSb, 4096);
+        auto currAdzCtxDeltaCpu = make_aligned_ptr<ADzCtx>(numSb, 4096);
+        auto currAdzCtxDeltaGpu = make_aligned_ptr<ADzCtx>(numSb, 4096);
 
         uint8_t *srcFrame = srcFrameBuf.get();
         uint8_t *predFrame = predFrameBuf.get();
@@ -706,6 +939,7 @@ int main(int argc, char **argv)
         fclose(f);
 
         make_pred_frame(srcFrame, pitchFrame, predFrame, pitchFrame, width, height);
+        make_curr_adzctx(prevAdzCtx.get(), prevAdzCtxDelta.get(), numSb);
 
         auto mi = make_aligned_ptr<ModeInfo>(numMi, 0x1000);
         memset(mi.get(), 0, sizeof(ModeInfo) * numMi);
@@ -713,10 +947,15 @@ int main(int argc, char **argv)
         VP9PP::initDispatcher(VP9PP::CPU_FEAT_AVX2, 1);
 
         RandomizeModeInfo(param, mi.get(), pitchMi);
-        auto cpuVarTxInfo = RunCpu(param, srcFrame, pitchFrame, predFrame, pitchFrame, qp, mi.get(), pitchMi);
-        auto gpuVarTxInfo = RunGpu(param, srcFrame, pitchFrame, predFrame, pitchFrame, qp, mi.get(), pitchMi);
+        auto cpuVarTxInfo = RunCpu(param, srcFrame, pitchFrame, predFrame, pitchFrame, qp, mi.get(), pitchMi, qcoefCpu.get(),
+                                   prevAdzCtx.get(), prevAdzCtxDelta.get(), currAdzCtxCpu.get(), currAdzCtxDeltaCpu.get());
+        auto gpuVarTxInfo = RunGpu(param, srcFrame, pitchFrame, predFrame, pitchFrame, qp, mi.get(), pitchMi, qcoefGpu.get(),
+                                   prevAdzCtx.get(), prevAdzCtxDelta.get(), currAdzCtxGpu.get(), currAdzCtxDeltaGpu.get());
         PrintVarTxStat(param, cpuVarTxInfo.get());
-        if (Compare(param, mi.get(), pitchMi, cpuVarTxInfo.get(), gpuVarTxInfo.get()) != PASSED)
+        if (Compare(param, mi.get(), pitchMi, cpuVarTxInfo.get(), gpuVarTxInfo.get(),
+                    qcoefCpu.get(), qcoefGpu.get(),
+                    currAdzCtxCpu.get(), currAdzCtxDeltaCpu.get(),
+                    currAdzCtxGpu.get(), currAdzCtxDeltaGpu.get()) != PASSED)
             return printf("FAILED\n"), FAILED;
 
     } catch (cm_error &e) {

@@ -27,8 +27,16 @@
 #include <cm/cmtl.h>
 //#include <cm/genx_vme.h>
 
+//#define FAST_MODE
+//#define COMPOUND_OPT1 // based on fast mode
 #define JOIN_MI_INLOOP
-#define SINGLE_SIDED_COMPOUND
+//#define SINGLE_SIDED_COMPOUND
+#define MEPU8 0
+#define MEPU16 0
+#define MEPU32 0
+#define MEPU64 0
+#define NEWMVPRED 0
+// Turn on above for unit testing (test does not support mepu8/16 0)
 
 #define MVPRED_FAR (0)
 #define READ_COST_COEFF_BR_ACC 1
@@ -47,6 +55,16 @@
   #define assert_emu(...) (void)0
 #endif
 
+typedef char  int1;
+typedef short int2;
+typedef int   int4;
+typedef unsigned char  uint1;
+typedef unsigned short uint2;
+typedef unsigned int   uint4;
+
+#ifndef INT_MAX
+static const int4 INT_MAX = 2147483647;
+#endif // INT_MAX
 
 static const uint2 SB_SIZE = 64;
 static const uint2 MI_SIZE = 8;
@@ -144,6 +162,12 @@ enum {
     SCAN_COL = 2
 };
 
+static const uint1 MV_DELTA[8] = {
+    1,  2,
+    4,  5,  6,
+    8,  9, 10
+};
+
 static const uint2 BITS_IS_INTER = 18;
 
 static const uint2 COEFF_CONTEXT_MASK = 63;
@@ -171,6 +195,17 @@ static const uint1 SCAN[64] = {
     53, 60, 61, 54, 47, 55, 62, 63
 };
 
+static const uint1 SCAN_T[64] = {
+    0,  8,  1,  2,  9, 16, 24, 17,
+    10,  3,  4, 11, 18, 25, 32, 40,
+    33, 26, 19, 12,  5,  6, 13, 20,
+    27, 34, 41, 48, 56, 49, 42, 35,
+    28, 21, 14,  7, 15, 22, 29, 36,
+    43, 50, 57, 58, 51, 44, 37, 30,
+    23, 31, 38, 45, 52, 59, 60, 53,
+    46, 39, 47, 54, 61, 62, 55, 63
+};
+
 static const uint1 BASE_CTX_OFFSET_00_31[32] = {
      0,  1,  6,  6, 11, 11, 11, 11,
      1,  6,  6, 11, 11, 11, 11, 11,
@@ -183,10 +218,12 @@ static const uint1 BR_CTX_OFFSET_00_15[16] = {
       7,  7, 14, 14, 14, 14, 14, 14
 };
 
-static const int1 INTERP_FILTERS_0Q[4] = { /*0, 0,*/  0, 64,  0,  0, /*0, 0*/ };
-static const int1 INTERP_FILTERS_1Q[4] = { /*0, 1,*/ -7, 55, 19, -5, /*1, 0*/ };
-static const int1 INTERP_FILTERS_2Q[4] = { /*0, 1,*/ -7, 38, 38, -7, /*1, 0*/ };
-static const int1 INTERP_FILTERS_3Q[4] = { /*0, 1,*/ -5, 19, 55, -7, /*1, 0*/ };
+static const int1 INTERP_FILTERS[4][4] = {
+    { /*0, 0,*/  0, 64,  0,  0, /*0, 0*/ },
+    { /*0, 1,*/ -7, 55, 19, -5, /*1, 0*/ },
+    { /*0, 1,*/ -7, 38, 38, -7, /*1, 0*/ },
+    { /*0, 1,*/ -5, 19, 55, -7, /*1, 0*/ },
+};
 
 static const uint1 LUT_TXB_SKIP_CTX[32] = {
     1, 2, 2, 2, 3,
@@ -216,15 +253,17 @@ _GENX_ mode_info           g_mi_saved16;
 _GENX_ mode_info           g_mi_saved32;
 _GENX_ mode_info           g_mi_saved64;
 _GENX_ vector<uint1,128>   g_params;
+_GENX_ uint1               g_fastMode;
 _GENX_ matrix<uint4,2,2>   g_new_mv_data;
 _GENX_ uint2               g_tile_mi_row_start;
 _GENX_ uint2               g_tile_mi_col_start;
-_GENX_ uint2               g_tile_mi_row_end;
+//_GENX_ uint2               g_tile_mi_row_end;
 _GENX_ uint2               g_tile_mi_col_end;
+
 _GENX_ vector<int2,64>     g_qcoef;
-_GENX_ vector<uint1,16>    g_br_ctx_offset_00_15;
+_GENX_ vector<uint1,32>    g_br_ctx_offset_00_31;
 _GENX_ vector<uint1,32>    g_base_ctx_offset_00_31;
-_GENX_ vector<uint1,64>    g_scan;
+_GENX_ vector<uint1,64>    g_scan_t;
 _GENX_ matrix<uint2,8,8>   g_zeromv_sad_8;
 _GENX_ matrix<uint4,4,4>   g_zeromv_sad_16;
 _GENX_ matrix<uint4,2,2>   g_zeromv_sad_32;
@@ -250,14 +289,17 @@ _GENX_ vector<uint1,32>    g_lut_txb_skip_ctx;
 _GENX_ vector<uint1,8>     g_has_top_right;
 _GENX_ matrix<uint1,8,8>   g_pred8;
 _GENX_ matrix<uint1,16,16> g_pred16;
+_GENX_ vector<float, 8>    g_ief;
+_GENX_ uint g_mvd32;
+_GENX_ uint g_mvd64;
+
+enum {
+    SINGLE_REF,
+    TWO_REFS,
+    COMPOUND
+};
 
 #define swap_idx(A, B) { uint t = A; A = B; B = t; }
-
-_GENX_ inline void read_param(SurfaceIndex PARAM)
-{
-    assert_emu(g_params.SZ <= 128);
-    read(PARAM, 0, g_params);
-}
 
 _GENX_ inline void set_mv0     (mode_info_ref mi, vector<int2,2> mv) { mi.format<int2>().select<2,1>(0) = mv; }
 _GENX_ inline void set_mv1     (mode_info_ref mi, vector<int2,2> mv) { mi.format<int2>().select<2,1>(2) = mv; }
@@ -297,12 +339,8 @@ _GENX_ inline float           get_lambda    () { return g_params.format<float>()
 _GENX_ inline vector<int2,10> get_qparam    () { return g_params.format<int2>().select<10,1>(8/2); }
 _GENX_ inline uint2           get_lambda_int() { return g_params.format<uint2>()[28/2]; }
 _GENX_ inline uint1           get_comp_flag () { return g_params.format<uint1>()[30]; }
-#ifdef SINGLE_SIDED_COMPOUND
-_GENX_ inline uint1           get_single_ref_flag() { return !g_params.format<uint1>()[30]; }
-#else
-_GENX_ inline uint1           get_single_ref_flag() { return g_params.format<uint1>()[31]; }
-#endif
-
+_GENX_ inline uint1           get_single_ref_flag() { return !g_params.format<uint1>()[30] && g_params.format<uint1>()[31]; }
+_GENX_ inline uint1           get_bidir_comp_flag() { return  g_params.format<uint1>()[30] && g_params.format<uint1>()[31]; }
 
 #define BLOCK0(mi, off) (mi)
 #define BLOCK1(mi, off) (mi.format<uint4>() + (off <<  0)).format<uint2>()
@@ -326,6 +364,34 @@ static const uint OFFSET_COEFF_BR_ACC      = OFFSET_COEFF_BASE        + 2 * 64;
 static const uint OFFSET_REF_FRAMES        = OFFSET_COEFF_BR_ACC      + 2 * 336;
 static const uint OFFSET_SINGLE_MODES      = OFFSET_REF_FRAMES        + 2 * 144;
 static const uint OFFSET_COMP_MODES        = OFFSET_SINGLE_MODES      + 2 * 72;
+
+static const uint OFFSET_LUT_IEF = 1504; // 5072;
+static const uint NUM_IEF_PARAMS = 5 + 3; // 5 for split (mt, st, a, b, m) and 3 for leaf (a, b, m)
+static const uint NUM_QP_LAYERS = 4;
+enum {
+    IEF_SPLIT_MT, IEF_SPLIT_ST, IEF_SPLIT_A, IEF_SPLIT_B, IEF_SPLIT_M,
+    IEF_LEAF_A, IEF_LEAF_B, IEF_LEAF_M
+};
+
+_GENX_ inline void read_param(SurfaceIndex PARAM, uint2 qpLayer)
+{
+    assert_emu(g_params.SZ <= 128);
+    read(PARAM, 0, g_params);
+
+    int2 l = (qpLayer & 0x3);
+    int2 qp = (qpLayer >> 2);
+    int2 Q = qp - ((l + 1) * 8);
+    vector<uint1, 1> qidx_tmp = 3;
+    qidx_tmp.merge(2, Q < 163);
+    qidx_tmp.merge(1, Q < 123);
+    qidx_tmp.merge(0, Q < 75);
+    uint1 qidx = qidx_tmp(0);
+    vector<uint1, 16> tmp;
+    read(PARAM, OFFSET_LUT_IEF - 16, tmp);
+    g_fastMode = tmp(12);
+    uint offset = OFFSET_LUT_IEF + qidx * NUM_QP_LAYERS * NUM_IEF_PARAMS * sizeof(float) + l * NUM_IEF_PARAMS * sizeof(float);
+    read(DWALIGNED(PARAM), offset, g_ief);
+}
 
 _GENX_ inline uint2 get_cost_eob_multi(uint2 log2_eob)
 {
@@ -447,16 +513,6 @@ template<typename RT, uint R, uint C> _GENX_ inline matrix<RT,R,C> fdct_round_sh
     return fdct_round_shift<RT>(v.template format<int4>());
 }
 
-template <uint R2, typename T, uint R, uint C>
-_GENX_ inline matrix_ref<T,R2,C> rows(matrix_ref<T,R,C> m, ushort ioff) {
-    return m.template select<R2,1,C,1>(ioff,0);
-}
-
-template <uint R2, typename T, uint R, uint C>
-_GENX_ inline matrix_ref<T,R2,C> rows(matrix<T,R,C> &m, ushort ioff) {
-    return m.template select<R2,1,C,1>(ioff,0);
-}
-
 _GENX_ inline void fdct8()
 {
     matrix_ref<int2,8,8> diff = g_qcoef.format<int2,8,8>();
@@ -475,11 +531,11 @@ _GENX_ inline void fdct8()
     s.row(7) = diff.row(0) - diff.row(7);
 
     // fdct4(step, step);
-    rows<2>(x,0) = rows<2>(s,0) + rows<2>(s,2);
-    rows<2>(x,2) = rows<2>(s,0) - rows<2>(s,2);
+    x.select<2, 1, 8, 1>(0) = s.select<2, 1, 8, 1>(0) + s.select<2, 1, 8, 1>(2);
+    x.select<2, 1, 8, 1>(2) = s.select<2, 1, 8, 1>(0) - s.select<2, 1, 8, 1>(2);
     t.row(0) = x.row(0) + x.row(1);
     t.row(1) = x.row(0) - x.row(1);
-    rows<2>(t,0) *= cospi_16_64;
+    t.select<2, 1, 8, 1>(0) *= cospi_16_64;
     t.row(2) = x.row(3) * cospi_24_64 + x.row(2) * cospi_8_64;
     t.row(3) = x.row(2) * cospi_24_64 - x.row(3) * cospi_8_64;
     t = fdct_round_shift<int4>(t.select_all());
@@ -491,8 +547,8 @@ _GENX_ inline void fdct8()
     // Stage 2
     t.row(0) = s.row(6) - s.row(5);
     t.row(1) = s.row(6) + s.row(5);
-    rows<2>(t,0) *= cospi_16_64;
-    rows<2>(t,2) = fdct_round_shift<int4>(rows<2>(t,0));
+    t.select<2, 1, 8, 1>(0) *= cospi_16_64;
+    t.select<2, 1, 8, 1>(2) = fdct_round_shift<int4>(t.select<2, 1, 8, 1>(0));
 
     // Stage 3
     t.row(0) = s.row(4) + t.row(2);
@@ -547,7 +603,7 @@ _GENX_ inline uint4 quant_dequant()
         g_qcoef.select<16,1>(i) += (g_qcoef.select<16,1>(i) * quant).format<uint2>().select<16,2>(1);
         g_qcoef.select<16,1>(i) = (g_qcoef.select<16,1>(i) * shift).format<uint2>().select<16,2>(1);
         g_qcoef.select<16,1>(i).merge(0, deadzoned);
-        diff = coef - cm_mul<int2>(g_qcoef.select<16,1>(i) * scale, SAT);
+        diff = coef - cm_mul<int2>(g_qcoef.select<16,1>(i), scale, SAT);
         acc += cm_abs<uint2>(diff) * cm_abs<uint2>(diff);
     }
 
@@ -563,49 +619,11 @@ _GENX_ inline uint4 quant_dequant()
     g_qcoef.select<16,1>(0) += (g_qcoef.select<16,1>(0) * quant).format<uint2>().select<16,2>(1);
     g_qcoef.select<16,1>(0) = (g_qcoef.select<16,1>(0) * shift).format<uint2>().select<16,2>(1);
     g_qcoef.select<16,1>(0).merge(0, deadzoned);
-    diff = coef - cm_mul<int2>(g_qcoef.select<16,1>(0) * scale, SAT);
+    diff = coef - cm_mul<int2>(g_qcoef.select<16,1>(0), scale, SAT);
     acc += cm_abs<uint2>(diff) * cm_abs<uint2>(diff);
 
     uint4 sse = cm_sum<uint4>(acc);
     return sse >> COEF_SSE_SHIFT;
-}
-
-template <size_t N> _GENX_ inline vector<uint2,N>
-    compute_br_ctx(vector<uint1,N> a, vector<uint1,N> b, vector<uint1,N> c)
-{
-    vector<uint4,N/4> acc = a.template format<uint4>() + b.template format<uint4>();
-    acc += c.template format<uint4>();
-    vector<uint2,N> br_ctx = cm_avg<uint2>(acc.template format<uint1>(), 0);
-    br_ctx.merge(6, br_ctx > 6);
-    return br_ctx;
-}
-
-template <size_t N> _GENX_ inline vector<uint2,N>
-    compute_base_ctx(vector<uint1,N> a, vector<uint1,N> b, vector<uint1,N> c, vector<uint1,N> d, vector<uint1,N> e)
-{
-    vector<uint4,N/4> acc = a.template format<uint4>() + b.template format<uint4>();
-    acc += c.template format<uint4>();
-    acc += d.template format<uint4>();
-    acc += e.template format<uint4>();
-    vector<uint2,N> base_ctx = cm_avg<uint2>(acc.template format<uint1>(), 0);
-    base_ctx.merge(4, base_ctx > 4);
-    return base_ctx;
-}
-
-template <typename T, size_t N> _GENX_ inline vector<uint1,N> my_min(vector<T,N> x, uint1 v)
-{
-    vector_ref<uint1,N> x_ = cm_add<uint1>(x, 0xff - v, SAT);
-    uint4 v4 = v | (v << 8) | (v << 16) | (v << 24);
-    vector_ref<uint4,N/4> x4 = x_.template format<uint4>();
-    return (x4 & v4).template format<uint1>();
-}
-
-template <typename T, size_t N> _GENX_ inline vector<uint1,N> my_min(vector_ref<T,N> x, uint1 v)
-{
-    vector_ref<uint1,N> x_ = cm_add<uint1>(x, 0xff - v, SAT);
-    uint4 v4 = v | (v << 8) | (v << 16) | (v << 24);
-    vector_ref<uint4,N/4> x4 = x_.template format<uint4>();
-    return (x4 & v4).template format<uint1>();
 }
 
 _GENX_ inline uint2 count_non_zero_coefs()
@@ -617,46 +635,80 @@ _GENX_ inline uint2 count_non_zero_coefs()
     return nzc;
 }
 
-_GENX_ inline void compute_contexts(vector<uint1,80> &levels, vector_ref<uint4,64> contexts)
+template <uint N> _GENX_ inline vector<uint1, N> min4(vector_ref<uint1, N> x)
 {
-    vector<uint1,64> x1, x2, xy, y1, y2, l;
-    vector<uint2,64> base_ctx, br_ctx;
-
-    x1 = levels.select<64,1>(1);
-    x2 = levels.select<64,1>(2);
-    y1 = levels.select<64,1>(8);
-    xy = levels.select<64,1>(9);
-    y2 = levels.select<64,1>(16);
-
-    xy.format<uint2>().select<8,4>(3) &= 0xff;  // zero 7th pixel in each of 4 rows
-    x1.format<uint2>().select<8,4>(3) &= 0xff;  // zero 7th pixel in each of 4 rows
-    x2.format<uint2>().select<8,4>(3) = 0;      // zero 6th and 7th pixels in each of 4 rows
-
-    br_ctx = compute_br_ctx(x1, y1, xy);
-    br_ctx.select<16,1>(0)  += g_br_ctx_offset_00_15;
-    br_ctx.select<48,1>(16) += 14;
-    br_ctx *= 16;
-    br_ctx += levels.select<64,1>(0);
-
-    x1 = my_min(x1, 3);
-    x2 = my_min(x2, 3);
-    y1 = my_min(y1, 3);
-    y2 = my_min(y2, 3);
-    xy = my_min(xy, 3);
-    l.merge(3, levels.select<64,1>(0), levels.select<64,1>(0) > 3);
-
-    base_ctx = compute_base_ctx(x1, y1, x2, y2, xy);
-    base_ctx.select<32,1>(0)  += g_base_ctx_offset_00_31;
-    base_ctx.select<32,1>(32) += 11;
-    base_ctx[0] = 0;
-    base_ctx *= 4;
-    base_ctx += l;
-
-    contexts.format<uint2>().select<64,2>(0) = base_ctx;
-    contexts.format<uint2>().select<64,2>(1) = br_ctx;
+    vector<uint1, N> x_ = cm_add<uint1>(x, 255 - 4, SAT);
+    //x_.template format<uint4>() = x_.template format<uint4>() + 0x04040404; // could be this but compiler goes crazy
+    x_.template format<uint4>() &= 0x07070707;
+    x_.template format<uint4>() -= 0x03030303;
+    return x_;
 }
 
-_GENX_ inline uint get_bits(SurfaceIndex PARAM, uint2 txb_skip_ctx, uint2 num_nz, vector_ref<uint1,1> cul_level)
+template <uint N> _GENX_ inline vector<uint1, N> min6(vector_ref<uint1, N> x)
+{
+    vector<uint1, N> x_ = cm_add<uint1>(x, 255 - 6, SAT);
+    //x_.template format<uint4>() = x_.template format<uint4>() + 0x06060606; // could be this but compiler goes crazy
+    x_.template format<uint4>() &= 0x07070707;
+    x_.template format<uint4>() -= 0x01010101;
+    return x_;
+}
+
+_GENX_ inline void compute_contexts(vector_ref<uint1, 64> base_contexts, vector_ref<uint2, 64> br_contexts)
+{
+    vector<uint4, 80 / 4> levels_x0;
+    vector<uint4, 72 / 4> levels_x1;
+    vector<uint4, 64 / 4> levels_x2;
+
+    // pack to unsigned byte [0..15]: (uint1)min(abs(coef), 15)
+    vector<uint2, 64> coefs_uint2 = cm_add<uint2>(cm_abs<uint2>(g_qcoef), 0xffff - 15, SAT);
+    coefs_uint2.format<uint4>() = coefs_uint2.format<uint4>() & 0x000f000f;
+    levels_x0.select<16, 1>().format<uint1>() = coefs_uint2;
+    levels_x0.select<4, 1>(16) = 0;
+
+    // shift by 1 byte
+    levels_x1.select<16, 1>(0) = levels_x0.select<16, 1>(0) >> 8;
+    levels_x1.select<8, 2>(0) += levels_x0.select<8, 2>(1) << 24;
+    levels_x1.select<2, 1>(16) = 0;
+
+    vector_ref<uint4, 16> y1 = levels_x0.select<16, 1>(2);
+    vector_ref<uint4, 16> y2 = levels_x0.select<16, 1>(4);
+    vector_ref<uint4, 16> x1 = levels_x1.select<16, 1>();
+    vector_ref<uint4, 16> xy = levels_x1.select<16, 1>(2);
+    vector_ref<uint4, 16> x2 = levels_x2.select<16, 1>();
+
+    // compute contexts for levels' increments
+    vector<uint4, 16> y1_plus_xy = y1 + xy;
+    vector<uint4, 16> tmp = x1 + y1_plus_xy;
+    tmp = (tmp + (tmp & 0x01010101)) >> 1;
+    tmp.format<uint1>() = min6(tmp.format<uint1>());
+    tmp.format<uint4>().select<8, 1>(0) += g_br_ctx_offset_00_31.format<uint4>();
+    tmp.format<uint4>().select<8, 1>(8) += 0x0E0E0E0E;
+    br_contexts = tmp.format<uint1>() << 4; // leaving byte range here
+    br_contexts.format<uint4>() += coefs_uint2.format<uint4>();
+
+    // pack to [0..3]
+    levels_x0.select<16, 1>().format<uint1>() = cm_add<uint1>(levels_x0.select<16, 1>().format<uint1>(), 0xff - 3, SAT);
+    levels_x0.select<16, 1>().format<uint4>() &= 0x03030303;
+    levels_x1.select<16, 1>(0) = levels_x0.select<16, 1>(0) >> 8;
+    levels_x1.select<8, 2>(0) += levels_x0.select<8, 2>(1) << 24;
+
+    // shift by 2 bytes
+    levels_x2.select<16, 1>(0) = levels_x0.select<16, 1>(0) >> 16;
+    levels_x2.select<8, 2>(0) += levels_x0.select<8, 2>(1) << 16;
+
+    // compute contexts for base levels
+    y1_plus_xy = y1 + xy;
+    tmp = x1 + x2 + y1_plus_xy + y2;
+    tmp = (tmp + (tmp & 0x01010101)) >> 1;
+    tmp.format<uint1>() = min4(tmp.format<uint1>());
+    tmp.format<uint4>().select<8, 1>(0) += g_base_ctx_offset_00_31.format<uint4>();
+    tmp.format<uint4>().select<8, 1>(8) += 0x0B0B0B0B;
+    tmp.format<uint1>()(0) = 0;
+    base_contexts.format<uint4>() = tmp.format<uint4>() << 2; // still within byte range
+    base_contexts.format<uint4>() += levels_x0.select<16, 1>();
+}
+
+_GENX_ inline uint get_bits(SurfaceIndex PARAM, uint2 txb_skip_ctx, uint2 num_nz, vector_ref<uint1, 1> cul_level)
 {
     if (num_nz == 0) {
         cul_level = 0;
@@ -675,37 +727,32 @@ _GENX_ inline uint get_bits(SurfaceIndex PARAM, uint2 txb_skip_ctx, uint2 num_nz
         return bits;
     }
 
-    vector<uint1,80> levels;
-    levels.select<64,1>() = my_min(g_qcoef.format<uint2>(), 15);
-    levels.select<16,1>(64) = 0;
-
     cul_level = cm_min<uint1>(COEFF_CONTEXT_MASK, cm_sum<uint2>(g_qcoef, SAT));
 
-    vector<uint4,64> contexts;
-    compute_contexts(levels, contexts);
+    vector<uint1, 64> base_contexts;
+    vector<uint2, 64> br_contexts;
+    compute_contexts(base_contexts, br_contexts);
 
-    vector<uint4,16> ctx;
-    vector<uint2,16> br_ctx, base_ctx, blevel;
+    vector<uint2, 16> br_ctx, base_ctx, blevel;
     uint4 lz, i;
 
-    vector<uint2,16> bits_acc = 0;
+    vector<uint2, 16> bits_acc = 0;
     //#pragma unroll(4)
     for (i = 0; i < 64; i += 16) {
-        vector<uint2, 16> s = g_scan.select<16,1>(i);
-        ctx = contexts.iselect(s);
-        br_ctx = ctx.format<uint2>().select<16,2>(1);
-        base_ctx = ctx.format<uint2>().select<16,2>(0);
+        vector<uint2, 16> s = g_scan_t.select<16, 1>(i);
+        base_ctx = base_contexts.iselect(s);
+        br_ctx = br_contexts.iselect(s);
         blevel = base_ctx & 3;
 
         uint2 nz_mask = cm_pack_mask(blevel > 0);
         num_nz -= cm_cbit(nz_mask);
-        lz = cm_lzd(uint4(nz_mask));
-        vector<uint2,1> mask_br = uint2(0xffffffff >> lz);
-        vector<uint2,1> mask_bz = mask_br >> 1;
+        lz = cm_lzd<uint4>(uint4(nz_mask));
+        vector<uint2, 1> mask_br = uint2(0xffffffff >> lz);
+        vector<uint2, 1> mask_bz = mask_br >> 1;
         mask_br.merge(0xffff, num_nz > 0);
         mask_bz.merge(0xffff, num_nz > 0);
-        vector<uint2,16> cost_br = get_cost_coeff_br(PARAM, br_ctx);
-        vector<uint2,16> cost_bz = get_cost_coeff_base(PARAM, base_ctx);
+        vector<uint2, 16> cost_br = get_cost_coeff_br(PARAM, br_ctx);
+        vector<uint2, 16> cost_bz = get_cost_coeff_base(PARAM, base_ctx);
         cost_br.merge(cost_br, 0, mask_br[0]);
         cost_bz.merge(cost_bz, 0, mask_bz[0]);
         bits_acc += cost_br;
@@ -719,7 +766,7 @@ _GENX_ inline uint get_bits(SurfaceIndex PARAM, uint2 txb_skip_ctx, uint2 num_nz
     const uint4 eob = i + msb;
     bits += cm_sum<uint>(bits_acc);
     bits += get_cost_coeff_eob_ac(blevel[msb] - 1); // last coef
-    bits += get_cost_eob_multi(31 - cm_lzd(eob) + 1); // eob
+    bits += get_cost_eob_multi(31 - cm_lzd<uint4>(eob) + 1); // eob
     return bits;
 }
 
@@ -749,7 +796,7 @@ _GENX_ void get_rd_cost_8(SurfaceIndex PARAM, uint2 is8x8, vector<uint2,2> mi)
     fdct8();
     transpose_qcoef_inplace();
     fdct8();
-    transpose_qcoef_inplace();
+    //transpose_qcoef_inplace(); // do not do last transpose, get_bits() will work with transposed block
     g_qcoef = cm_abs<uint2>(g_qcoef) >> 1;
     g_rd_cost[0] += quant_dequant();
     const uint2 num_nz = count_non_zero_coefs();
@@ -766,7 +813,7 @@ _GENX_ void add_distinct_mv_to_stack(uint4 mv_cand, uint2 weight)
     uint2 stack_size = g_stack_size[ref];
     uint2 ref_offset = 8 * ref;
 
-    uint2 mask = cm_pack_mask<uint2>(g_stack.format<uint4>().select<8,1>(ref_offset) == mv_cand);
+    uint2 mask = cm_pack_mask(g_stack.format<uint4>().select<8,1>(ref_offset) == mv_cand);
     uint2 idx = cm_fbl<uint>(mask);
 
     if (idx < stack_size) {
@@ -802,7 +849,7 @@ _GENX_ void add_distinct_mvpair_to_stack(uint2 weight)
     vector<uint2,8> predicate =
         (g_stack.format<uint4>().select<8,2>(16) == get_mv0_as_int(g_cand)) &
         (g_stack.format<uint4>().select<8,2>(17) == get_mv1_as_int(g_cand));
-    uint2 mask = cm_pack_mask<uint2>(predicate);
+    uint2 mask = cm_pack_mask(predicate);
     uint2 idx = cm_fbl<uint>(mask);
 
     if (idx < g_stack_size[2]) {
@@ -1081,7 +1128,8 @@ _GENX_ void get_mvrefs(SurfaceIndex PARAM, SurfaceIndex MODE_INFO, uint1 log2_si
 
     // sort weights
     matrix<uint2,4,4> indices;
-    g_weights += vector<uint1,8>(SEQUENCE_7_TO_0).replicate<4>();
+    vector<uint1, 8> sequence_7_to_0(SEQUENCE_7_TO_0);
+    g_weights += sequence_7_to_0.replicate<4>();
     #pragma unroll
     for (int i = 0; i < 4; i++) {
         matrix<uint2,4,4> tmp4 = cm_max<uint2>(g_weights.select<4,1,4,2>(0,0), g_weights.select<4,1,4,2>(0,1));
@@ -1260,31 +1308,76 @@ _GENX_ void interpolate16(SurfaceIndex REF, vector<int2,2> pos, matrix<int1,2,4>
 inline _GENX_ uint2 sad8(matrix_ref<uint1,8,8> m0, matrix_ref<uint1,8,8> m1)
 {
     vector<uint2,16> sad;
+#if defined(target_gen12) || defined(target_gen12lp)
+    sad = cm_abs<uint2>(cm_add<int2>(m0.select<2, 1, 8, 1>(0), -m1.select<2, 1, 8, 1>(0)));
+    sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(m0.select<2, 1, 8, 1>(2), -m1.select<2, 1, 8, 1>(2))));
+    sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(m0.select<2, 1, 8, 1>(4), -m1.select<2, 1, 8, 1>(4))));
+    sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(m0.select<2, 1, 8, 1>(6), -m1.select<2, 1, 8, 1>(6))));
+    return cm_sum<uint2>(sad);
+#elif defined(target_gen11) || defined(target_gen11lp)
+    sad = 0;
+    sad = cm_sada2<uint2>(m0.select<2, 1, 8, 1>(0), m1.select<2, 1, 8, 1>(0), sad);
+    sad = cm_sada2<uint2>(m0.select<2, 1, 8, 1>(2), m1.select<2, 1, 8, 1>(2), sad);
+    sad = cm_sada2<uint2>(m0.select<2, 1, 8, 1>(4), m1.select<2, 1, 8, 1>(4), sad);
+    sad = cm_sada2<uint2>(m0.select<2, 1, 8, 1>(6), m1.select<2, 1, 8, 1>(6), sad);
+    return cm_sum<uint2>(sad.select<8, 2>());
+#else // target_gen12
     sad = cm_sad2<uint2> (m0.select<2,1,8,1>(0), m1.select<2,1,8,1>(0));
     sad = cm_sada2<uint2>(m0.select<2,1,8,1>(2), m1.select<2,1,8,1>(2), sad);
     sad = cm_sada2<uint2>(m0.select<2,1,8,1>(4), m1.select<2,1,8,1>(4), sad);
     sad = cm_sada2<uint2>(m0.select<2,1,8,1>(6), m1.select<2,1,8,1>(6), sad);
-    return cm_sum<uint2>(sad.select<8,2>());
+    return cm_sum<uint2>(sad.select<8, 2>());
+#endif // target_gen12
 }
 
 inline _GENX_ uint2 sad16(matrix_ref<uint1,16,16> m0, matrix_ref<uint1,16,16> m1)
 {
     vector<uint2,16> sad;
+
+#if defined(target_gen12) || defined(target_gen12lp)
+    sad = cm_abs<uint2>(cm_add<int2>(m0.row(0), -m1.row(0)));
+    #pragma unroll
+    for (int i = 1; i < 16; i++)
+        sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(m0.row(i), -m1.row(i))));
+    return cm_sum<uint2>(sad);
+#elif defined(target_gen11) || defined(target_gen11lp)
+    sad = 0;
+    #pragma unroll
+    for (int i = 0; i < 16; i++)
+        sad = cm_sada2<uint2>(m0.select<1, 1, 16, 1>(i), m1.select<1, 1, 16, 1>(i), sad);
+    return cm_sum<uint2>(sad.select<8, 2>());
+#else // target_gen12
     sad = cm_sad2<uint2> (m0.select<1,1,16,1>(0), m1.select<1,1,16,1>(0));
     #pragma unroll
     for (int i = 1; i < 16; i++)
-        sad = cm_sada2<uint2>(m0.select<1,1,16,1>(i), m1.select<1,1,16,1>(i), sad);
-    return cm_sum<uint2>(sad.select<8,2>());
+        sad = cm_sada2<uint2>(m0.select<1, 1, 16, 1>(i), m1.select<1, 1, 16, 1>(i), sad);
+    return cm_sum<uint2>(sad.select<8, 2>());
+#endif // target_gen12
 }
 
 _GENX_ inline vector<uint2,16> sad16_acc(matrix_ref<uint1,16,16> m0, matrix_ref<uint1,16,16> m1)
 {
     vector<uint2,16> sad;
+#if defined(target_gen12) || defined(target_gen12lp)
+    sad = cm_abs<uint2>(cm_add<int2>(m0.row(0), -m1.row(0)));
+    #pragma unroll
+    for (int i = 1; i < 16; i++)
+        sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(m0.row(i), -m1.row(i))));
+    sad.select<8, 2>(0) += sad.select<8, 2>(1);
+    return sad;
+#elif defined(target_gen11) || defined(target_gen11lp)
+    sad = 0;
+    #pragma unroll
+    for (int i = 0; i < 16; i++)
+        sad = cm_sada2<uint2>(m0.select<1, 1, 16, 1>(i), m1.select<1, 1, 16, 1>(i), sad);
+    return sad;
+#else // target_gen12
     sad = cm_sad2<uint2> (m0.select<1,1,16,1>(0), m1.select<1,1,16,1>(0));
     #pragma unroll
     for (int i = 1; i < 16; i++)
-        sad = cm_sada2<uint2>(m0.select<1,1,16,1>(i), m1.select<1,1,16,1>(i), sad);
+        sad = cm_sada2<uint2>(m0.select<1, 1, 16, 1>(i), m1.select<1, 1, 16, 1>(i), sad);
     return sad;
+#endif // target_gen12
 }
 
 template <int N>
@@ -1293,7 +1386,7 @@ _GENX_ inline uint4 get_mv_cost(vector_ref<int2,N> mv, vector_ref<int2,N> ref_mv
     vector<uint4,N> bits = cm_abs<uint4>(mv - ref_mv);
     bits >>= 1;
     bits += 1;
-    bits = (31 << 10) + 800 - (cm_lzd(bits) << 10);
+    bits = (31 << 10) + 800 - (cm_lzd<uint4>(bits) << 10);
     return cm_sum<uint4>(bits);
 }
 
@@ -1307,7 +1400,7 @@ _GENX_ /*inline */uint4 get_min_newmv_cost(uint ref)
     vector<uint4,8> mv_bits = cm_abs<uint4>(mv - ref_mvs);
     mv_bits >>= 1;
     mv_bits += 1;
-    mv_bits = (31 << 10) + 800 - (cm_lzd(mv_bits) << 10);
+    mv_bits = (31 << 10) + 800 - (cm_lzd<uint4>(mv_bits) << 10);
     vector<uint4,4> bits = mv_bits.select<4,2>(0) + mv_bits.select<4,2>(1);
     bits += mode_bits;
 
@@ -1332,7 +1425,7 @@ _GENX_ /*inline*/ uint4 get_min_newmv_cost_comp()
     vector<uint4,16> mv_bits = cm_abs<uint4>(mv - ref_mvs);
     mv_bits >>= 1;
     mv_bits += 1;
-    mv_bits = (31 << 10) + 800 - (cm_lzd(mv_bits) << 10);
+    mv_bits = (31 << 10) + 800 - (cm_lzd<uint4>(mv_bits) << 10);
     mv_bits.select<8,1>() = mv_bits.select<8,2>(0) + mv_bits.select<8,2>(1);
     vector<uint4,4> bits = mv_bits.select<4,2>(0) + mv_bits.select<4,2>(1);
     bits += mode_bits;
@@ -1358,25 +1451,28 @@ _GENX_ inline uint2 get_interp_filter_bits()
     return g_bits_interp_filter[ctx];
 }
 
-_GENX_ inline void get_newmv_cost_and_bits(uint &cost, uint &bits)
+_GENX_ inline vector<uint4, 2> get_newmv_cost_and_bits()
 {
     uint newmv_ref = g_new_mv_data(0,1) & 3;
     uint sad = g_new_mv_data(0,1) >> 2;
 
+    vector<uint4, 2> cost_and_bits;
+
     if (newmv_ref == 2) {
         set_mv_pair(g_mi, g_new_mv_data.format<int2,2,4>().select<2,1,2,1>() << 1);
         set_ref_bidir(g_mi);
-        bits = get_min_newmv_cost_comp();
+        cost_and_bits[1] = get_min_newmv_cost_comp();
     } else {
         set_mv0(g_mi, g_new_mv_data.row(newmv_ref & 1).format<int2>().select<2,1>() << 1);
         set_ref_single(g_mi, (newmv_ref & 1) << get_comp_flag());
-        bits = get_min_newmv_cost(newmv_ref);
+        cost_and_bits[1] = get_min_newmv_cost(newmv_ref);
     }
 
     sad <<= 11;
     set_sad(g_mi, sad);
-    cost = bits * get_lambda_int();
-    cost += sad;
+    cost_and_bits[0] = cost_and_bits[1] * get_lambda_int();
+    cost_and_bits[0] += sad;
+    return cost_and_bits;
 }
 
 _GENX_ inline vector<uint4,2> get_cache_idx(vector_ref<uint4,8> refmvs0, vector_ref<uint4,2> mvs, vector_ref<uint2,2> checked_mv)
@@ -1385,12 +1481,12 @@ _GENX_ inline vector<uint4,2> get_cache_idx(vector_ref<uint4,8> refmvs0, vector_
     mask(0) = cm_pack_mask(refmvs0 == mvs.replicate<2,1,4,0>());
     mask(1) = mask(0) >> 4;
     checked_mv |= mask;
-    return cm_fbl<uint4>(vector<uint4,2>(mask | 0x80)); // 0x80 is a guard bit, to ensure that returned index is less than 8
+    return cm_fbl(vector<uint4,2>(mask | 0x80)); // 0x80 is a guard bit, to ensure that returned index is less than 8
 }
 
 
 _GENX_ uint
-    decide8(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex,7> REF, vector<SurfaceIndex,8> MV,
+    decide8(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex,8> REF, vector<SurfaceIndex,8> MV,
             SurfaceIndex MODE_INFO, vector<uint2,2> mi)
 {
     g_mi = 0;
@@ -1410,102 +1506,165 @@ _GENX_ uint
 
     get_mvrefs(PARAM, MODE_INFO, SIZE8, mi);
 
+    vector<int4, 2> pel = mi * MI_SIZE;
+    vector<int2, 2> pel_minus2 = pel - 2;
+    matrix<uint1, 8, 8> src;
+    read(SRC, pel(X), pel(Y), src);
+
     read(MV(SIZE8 + 0), mi(X) * NEW_MV_DATA_SMALL_SIZE, mi(Y), g_new_mv_data.select<1,1,2,1>(0));
     read(MV(SIZE8 + 4), mi(X) * NEW_MV_DATA_SMALL_SIZE, mi(Y), g_new_mv_data.select<1,1,2,1>(1));
+#if !MEPU8
+    {
+        vector<int2, 4> mv = g_new_mv_data.format<int2, 2, 4>().select<2, 1, 2, 1>() << 1;
+        vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+        matrix<int1, 4, 4> filt;
+        vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+        filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+        interpolate8(REF(0), pos.select<2, 1>(0), filt.select<2, 1, 4, 1>(0));
+        pred = g_pred8;
+        uint4 sad_ref = sad8(src, g_pred8) << 2;
+        uint4 sad_best = sad_ref;
+        if (!get_single_ref_flag())
+        {
+            interpolate8(REF(1), pos.select<2, 1>(2), filt.select<2, 1, 4, 1>(2));
+            matrix<uint1, 8, 8> pred1 = g_pred8;
+            sad_ref = (sad8(src, g_pred8) << 2) + 1;
+            if (sad_ref < sad_best) {
+                sad_best = sad_ref;
+            }
+            if (get_comp_flag())
+            {
+                g_pred8 = cm_avg<uint1>(pred, pred1);
+                sad_ref = (sad8(src, g_pred8) << 2) + 2;
+                if (sad_ref < sad_best) {
+                    sad_best = sad_ref;
+                }
+            }
+            int idx = (sad_best & 3);
+            if (idx == 1)
+                pred = pred1;
+            else if (idx == 2)
+                pred = g_pred8;
+        }
+        g_new_mv_data(0, 1) = sad_best;
+        write(MV(SIZE8 + 0), mi(X) * NEW_MV_DATA_SMALL_SIZE, mi(Y), g_new_mv_data.select<1, 1, 2, 1>(0));
+        //write(MV(SIZE8 + 4), mi(X) * NEW_MV_DATA_SMALL_SIZE, mi(Y), g_new_mv_data.select<1, 1, 2, 1>(1));
+    }
+#endif
 
-    get_newmv_cost_and_bits(cost_non_split, bits_non_split);
+    vector<uint4, 2> cost_and_bits = get_newmv_cost_and_bits();
+    cost_non_split = cost_and_bits[0];
+    bits_non_split = cost_and_bits[1];
+
     //if (get_comp_flag()) debug_printf("(3,%2d,%2d) NEWMV ref=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), get_ref_comb(g_mi),
     //    get_mv_pair(g_mi)(0), get_mv_pair(g_mi)(1), get_mv_pair(g_mi)(2), get_mv_pair(g_mi)(3), cost_non_split, bits_non_split);
 
-    vector<int4,2> pel = mi * MI_SIZE;
-    vector<int2,2> pel_minus2 = pel - 2;
-
     vector<uint2,2> checked_mv = 0;
 
-    matrix<uint1,8,8> src;
-    read(SRC,          pel(X), pel(Y), src);
+    uint newmv_ref = g_new_mv_data(0, 1) & 3;
+#if NEWMVPRED
     read(REF(2+SIZE8), pel(X), pel(Y), pred);
+#elif MEPU8
+    vector_ref<int2, 4> mv = get_mv_pair(g_mi);
+    vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+    matrix<int1, 4, 4> filt;
+    vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+    filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
 
-    for (uint2 i = 0; i < g_stack_size(2); i++) {
-        vector_ref<int2,4> mv = g_refmv.select<4,1>(16);
-        if ((mv != 0).any()) {
+    interpolate8(REF(newmv_ref & 1), pos.select<2, 1>((newmv_ref & 1)*2), filt.select<2, 1, 4, 1>((newmv_ref & 1)*2));
+    if (newmv_ref == 2) {
+        matrix<uint1, 8, 8> pred0 = g_pred8;
+        interpolate8(REF(1), pos.select<2, 1>(2), filt.select<2, 1, 4, 1>(2));
+        pred = cm_avg<uint1>(pred0, g_pred8);
+    }
+    else {
+        pred = g_pred8;
+    }
+#endif
 
-            vector<uint4,2> cache_idx = get_cache_idx(g_refmv.format<uint4>().select<8,1>(), mv.format<uint4>(), checked_mv);
+    if (!g_fastMode || newmv_ref == 2)
+    {
+        for (uint2 i = 0; i < g_stack_size(2); i++) {
+            vector_ref<int2, 4> mv = g_refmv.select<4, 1>(16);
+            if ((mv != 0).any()) {
 
-            vector<int2,4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
-            matrix<int1,4,4> filt;
-            vector<uint2,4> dmv = cm_asr<uint2>(mv, 1) & 3;
-            filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+                vector<uint4, 2> cache_idx = get_cache_idx(g_refmv.format<uint4>().select<8, 1>(), mv.format<uint4>(), checked_mv);
 
-            uint4 cost_ref0 = uint4(-1);
-            uint4 cost_ref1 = uint4(-1);
-            uint4 sad_ref0;
-            uint4 sad_ref1;
-            uint4 bits_ref0;
-            uint4 bits_ref1;
+                vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+                matrix<int1, 4, 4> filt;
+                vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+                filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
 
-            interpolate8(REF(0), pos.select<2,1>(0), filt.select<2,1,4,1>(0));
-            matrix<uint1,8,8> pred0 = g_pred8;
-            if (cache_idx(0) < g_stack_size(0)) {
-                sad_ref0  = sad8(src, g_pred8) << 11;
-                bits_ref0 = g_bits_mode(0, cache_idx(0));
-                cost_ref0 = bits_ref0 * get_lambda_int();
-                cost_ref0 += sad_ref0;
-                //if (get_comp_flag()) debug_printf("(3,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), 0, cache_idx(0), mv(0), mv(1), cost_ref0, bits_ref0);
+                uint4 cost_ref0 = uint4(-1);
+                uint4 cost_ref1 = uint4(-1);
+                uint4 sad_ref0;
+                uint4 sad_ref1;
+                uint4 bits_ref0;
+                uint4 bits_ref1;
+
+                interpolate8(REF(0), pos.select<2, 1>(0), filt.select<2, 1, 4, 1>(0));
+                matrix<uint1, 8, 8> pred0 = g_pred8;
+                if (cache_idx(0) < g_stack_size(0)) {
+                    sad_ref0 = sad8(src, g_pred8) << 11;
+                    bits_ref0 = g_bits_mode(0, cache_idx(0));
+                    cost_ref0 = bits_ref0 * get_lambda_int();
+                    cost_ref0 += sad_ref0;
+                    //if (get_comp_flag()) debug_printf("(3,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), 0, cache_idx(0), mv(0), mv(1), cost_ref0, bits_ref0);
+                }
+
+                interpolate8(REF(1), pos.select<2, 1>(2), filt.select<2, 1, 4, 1>(2));
+                matrix<uint1, 8, 8> pred1 = g_pred8;
+                if (cache_idx(1) < g_stack_size(1)) {
+                    sad_ref1 = sad8(src, g_pred8) << 11;
+                    bits_ref1 = g_bits_mode(1, cache_idx(1));
+                    cost_ref1 = bits_ref1 * get_lambda_int();
+                    cost_ref1 += sad_ref1;
+                    //if (get_comp_flag()) debug_printf("(3,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), 1, cache_idx(1), mv(2), mv(3), cost_ref1, bits_ref1);
+                }
+
+                g_pred8 = cm_avg<uint1>(pred0, g_pred8);
+
+                uint4 sad = sad8(src, g_pred8) << 11;
+                uint2 bits = g_bits_mode(2, 0);
+                uint4 cost = sad + bits * get_lambda_int();
+                //if (get_comp_flag()) debug_printf("(3,%2d,%2d) REFMV ref=2 mode=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), i, mv(0), mv(1), mv(2), mv(3), cost, bits);
+
+                if (cost_non_split > cost) {
+                    cost_non_split = cost;
+                    bits_non_split = bits;
+                    set_mv_pair(g_mi, mv);
+                    set_ref_bidir(g_mi);
+                    set_mode(g_mi, NEARESTMV);
+                    set_sad(g_mi, sad);
+                    pred = g_pred8;
+                }
+
+                if (cost_non_split > cost_ref0) {
+                    cost_non_split = cost_ref0;
+                    bits_non_split = bits_ref0;
+                    set_mv0(g_mi, mv.select<2, 1>(0));
+                    set_mv1(g_mi, 0);
+                    set_ref_single(g_mi, LAST);
+                    set_mode(g_mi, NEARESTMV);
+                    set_sad(g_mi, sad_ref0);
+                    pred = pred0;
+                }
+
+                if (cost_non_split > cost_ref1) {
+                    cost_non_split = cost_ref1;
+                    bits_non_split = bits_ref1;
+                    set_mv0(g_mi, mv.select<2, 1>(2));
+                    set_mv1(g_mi, 0);
+                    set_ref_single(g_mi, ALTR);
+                    set_mode(g_mi, NEARESTMV);
+                    set_sad(g_mi, sad_ref1);
+                    pred = pred1;
+                }
             }
-
-            interpolate8(REF(1), pos.select<2,1>(2), filt.select<2,1,4,1>(2));
-            matrix<uint1,8,8> pred1 = g_pred8;
-            if (cache_idx(1) < g_stack_size(1)) {
-                sad_ref1  = sad8(src, g_pred8) << 11;
-                bits_ref1 = g_bits_mode(1, cache_idx(1));
-                cost_ref1 = bits_ref1 * get_lambda_int();
-                cost_ref1 += sad_ref1;
-                //if (get_comp_flag()) debug_printf("(3,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), 1, cache_idx(1), mv(2), mv(3), cost_ref1, bits_ref1);
-            }
-
-            g_pred8 = cm_avg<uint1>(pred0, g_pred8);
-
-            uint4 sad = sad8(src, g_pred8) << 11;
-            uint2 bits = g_bits_mode(2,0);
-            uint4 cost = sad + bits * get_lambda_int();
-            //if (get_comp_flag()) debug_printf("(3,%2d,%2d) REFMV ref=2 mode=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), i, mv(0), mv(1), mv(2), mv(3), cost, bits);
-
-            if (cost_non_split > cost) {
-                cost_non_split = cost;
-                bits_non_split = bits;
-                set_mv_pair(g_mi, mv);
-                set_ref_bidir(g_mi);
-                set_mode(g_mi, NEARESTMV);
-                set_sad(g_mi, sad);
-                pred = g_pred8;
-            }
-
-            if (cost_non_split > cost_ref0) {
-                cost_non_split = cost_ref0;
-                bits_non_split = bits_ref0;
-                set_mv0(g_mi, mv.select<2,1>(0));
-                set_mv1(g_mi, 0);
-                set_ref_single(g_mi, LAST);
-                set_mode(g_mi, NEARESTMV);
-                set_sad(g_mi, sad_ref0);
-                pred = pred0;
-            }
-
-            if (cost_non_split > cost_ref1) {
-                cost_non_split = cost_ref1;
-                bits_non_split = bits_ref1;
-                set_mv0(g_mi, mv.select<2,1>(2));
-                set_mv1(g_mi, 0);
-                set_ref_single(g_mi, ALTR);
-                set_mode(g_mi, NEARESTMV);
-                set_sad(g_mi, sad_ref1);
-                pred = pred1;
-            }
+            g_refmv.select<8, 1>(16) = g_refmv.select<8, 1>(20);
+            g_refmv.select<8, 1>(24) = g_refmv.select<8, 1>(28);
+            g_bits_mode.row(2).select<4, 1>(0) = g_bits_mode.row(2).select<4, 1>(1);
         }
-        g_refmv.select<8,1>(16) = g_refmv.select<8,1>(20);
-        g_refmv.select<8,1>(24) = g_refmv.select<8,1>(28);
-        g_bits_mode.row(2).select<4,1>(0) = g_bits_mode.row(2).select<4,1>(1);
     }
 
     uint2 cur_refmv_count = g_stack_size(0);
@@ -1614,9 +1773,90 @@ _GENX_ inline uint2 not_joinable(mode_info_ref mi1, mode_info_ref mi2)
     return mask;
 }
 
+
+_GENX_ uint1 SplitIEF(vector<SurfaceIndex, 8> MV, vector<uint2, 2> mi, int qpLayer, int is64, int rscs, uint2 mvd)
+{
+    int2 l = (qpLayer & 0x3);
+    int2 qp = (qpLayer >> 2);
+    if (qp < 40)      return SPLIT_TRY_NE;
+    if (qp > 225)     return SPLIT_TRY_EE;
+    if (!g_fastMode) {
+        if (l > (1 + is64)) return SPLIT_TRY_EE;
+    } else {
+        if (l > 2) return SPLIT_TRY_EE;
+    }
+    float scpp = rscs;
+    scpp *= (is64 ? 0.003906250f : 0.015625000f);
+    if (scpp <=  20.00f) return SPLIT_TRY_EE;
+    if (mvd <= 2) return SPLIT_TRY_NE;
+
+    // Split
+    int2 Q = qp - ((l + 1) * 8);
+    uint1 qidx = 0;
+    if (Q < 75)       qidx = 0;
+    else if (Q < 123) qidx = 1;
+    else if (Q < 163) qidx = 2;
+    else              qidx = 3;
+
+    uint bsad = g_new_mv_data(0, 1) >> 2;
+    uint ssad = bsad;
+    float sadpp = bsad;
+    sadpp *= (is64 ? 0.000244140625f : 0.000976562500f);
+    if (sadpp <= 1.00f) return SPLIT_TRY_NE;
+#if MEPU16
+    if (!is64 && !g_fastMode) {
+        uint sad_min = 1;
+        uint sad_max = 1;
+        matrix<uint4, 2, 4> new_mv_data;
+        read(MV(SIZE16), mi(X) * NEW_MV_DATA_SMALL_SIZE >> 1, mi(Y) >> 1, new_mv_data);
+        matrix<uint4, 2, 2> sad = new_mv_data.select<2, 1, 2, 2>(0, 1) >> 2;
+        sad_min = cm_reduced_min<uint>(sad);
+        sad_max = cm_reduced_max<uint>(sad);
+        ssad = cm_sum<uint>(sad);
+
+        float svar = (float)sad_min / (float)sad_max;
+        const float SVT = 0.5f;
+        if (svar > SVT) return SPLIT_TRY_EE;
+        float sr = (float)ssad / (float)bsad;
+        float SRT = (qidx < 3) ? 0.65f : 0.55f;
+        if (sr > SRT) return SPLIT_TRY_EE;
+    }
+#endif
+
+    uint2 badPred = 0;
+    if (scpp > g_ief[IEF_SPLIT_ST] && mvd > g_ief[IEF_SPLIT_MT]) {
+        float SADT = g_ief[IEF_SPLIT_B] + cm_log(scpp) * g_ief[IEF_SPLIT_A] * 0.69314718f;
+        float msad = cm_log(sadpp + g_ief[IEF_SPLIT_M] * cm_min<uint2>(64, mvd)) * 0.69314718f;
+        badPred = (msad > SADT);
+    }
+
+    return badPred ? SPLIT_MUST : SPLIT_TRY_NE;
+}
+
+_GENX_ uint1 LeafIEF(vector<uint2, 2> mi, int qpLayer, int is32, int rscs, uint2 mvd)
+{
+    int2 l = (qpLayer & 0x3);
+    int2 qp = (qpLayer >> 2);
+    if (qp < 40)      return SPLIT_TRY_NE;
+
+    float scpp = rscs;
+    scpp *= (is32 ? 0.015625f : 0.0625f);
+
+    uint bsad = g_new_mv_data(0, 1) >> 2;
+    uint ssad = bsad;
+    float sadpp = bsad;
+    sadpp *= (is32 ? 0.0009765625f : 0.00390625f);
+    if (sadpp <= 1.00f) return SPLIT_NONE;
+    float SADT = g_ief[IEF_LEAF_B] + cm_log(scpp) * g_ief[IEF_LEAF_A] * 0.69314718f;
+    float msad = cm_log(sadpp + g_ief[IEF_LEAF_M] * mvd) * 0.69314718f;
+    uint2 goodPred = (msad < SADT);
+    return goodPred ? SPLIT_NONE : SPLIT_TRY_NE;
+}
+
+
 _GENX_ uint
-    decide16(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex,7> REF, vector<SurfaceIndex,8> MV,
-             SurfaceIndex MODE_INFO, vector<uint2,2> mi, uint skipee)
+decide16(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex, 8> REF, vector<SurfaceIndex, 8> MV,
+    SurfaceIndex MODE_INFO, vector<uint2, 2> mi, vector<SurfaceIndex, 8> RSCS, uint qpLayer, uint skipee)
 {
     if (is_outsize(mi)) {
         g_mi = 0;
@@ -1636,122 +1876,213 @@ _GENX_ uint
         set_mode(g_mi, NEWMV);
 
         uint pred_idx = 2 + SIZE16;
-
+        matrix<uint1, 16, 16> pred;
         uint bits_non_split;
 
         get_mvrefs(PARAM, MODE_INFO, SIZE16, mi);
 
-        read(MV(SIZE16 + 0), mi(X) * NEW_MV_DATA_SMALL_SIZE >> 1, mi(Y) >> 1, g_new_mv_data.select<1,1,2,1>(0));
-        read(MV(SIZE16 + 4), mi(X) * NEW_MV_DATA_SMALL_SIZE >> 1, mi(Y) >> 1, g_new_mv_data.select<1,1,2,1>(1));
-
-        get_newmv_cost_and_bits(cost_non_split, bits_non_split);
-        //if (get_comp_flag()) debug_printf("(2,%2d,%2d) NEWMV ref=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), get_ref_comb(g_mi),
-        //    get_mv_pair(g_mi)(0), get_mv_pair(g_mi)(1), get_mv_pair(g_mi)(2), get_mv_pair(g_mi)(3), cost_non_split, bits_non_split);
-
-        vector<int4,2> pel = mi * MI_SIZE;
-        vector<int2,2> pel_minus2 = pel - 2;
-
-        uint2 cur_refmv_count = g_stack_size(0);
-        matrix<uint1,16,16> src;
+        vector<int4, 2> pel = mi * MI_SIZE;
+        vector<int2, 2> pel_minus2 = pel - 2;
+        matrix<uint1, 16, 16> src;
         read(SRC, pel(X), pel(Y), src);
 
-        vector<uint2,2> checked_mv = 0;
+        read(MV(SIZE16 + 0), mi(X) * NEW_MV_DATA_SMALL_SIZE >> 1, mi(Y) >> 1, g_new_mv_data.select<1, 1, 2, 1>(0));
+        read(MV(SIZE16 + 4), mi(X) * NEW_MV_DATA_SMALL_SIZE >> 1, mi(Y) >> 1, g_new_mv_data.select<1, 1, 2, 1>(1));
 
-        for (uint2 i = 0; i < g_stack_size(2); i++) {
-            vector_ref<int2,4> mv = g_refmv.select<4,1>(16);
-            if ((mv != 0).any()) {
-
-                vector<uint4,2> cache_idx = get_cache_idx(g_refmv.format<uint4>().select<8,1>(), mv.format<uint4>(), checked_mv);
-
-                vector<int2,4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
-                matrix<int1,4,4> filt;
-                vector<uint2,4> dmv = cm_asr<uint2>(mv, 1) & 3;
-                filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
-
-                uint4 cost_ref0 = uint4(-1);
-                uint4 cost_ref1 = uint4(-1);
-                uint4 sad_ref0;
-                uint4 sad_ref1;
-                uint4 bits_ref0;
-                uint4 bits_ref1;
-
-                interpolate16(REF(0), pos.select<2,1>(0), filt.select<2,1,4,1>(0));
-                matrix<uint1,16,16> pred0 = g_pred16;
-                if (cache_idx(0) < g_stack_size(0)) {
-                    sad_ref0  = sad16(src, g_pred16) << 11;
-                    bits_ref0 = g_bits_mode(0, cache_idx(0));
-                    cost_ref0 = bits_ref0 * get_lambda_int();
-                    cost_ref0 += sad_ref0;
-                    //if (get_comp_flag()) debug_printf("(2,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), 0, cache_idx(0), mv(0), mv(1), cost_ref0, bits_ref0);
+#if !MEPU16
+        {
+            vector<int2, 4> mv = g_new_mv_data.format<int2, 2, 4>().select<2, 1, 2, 1>() << 1;
+            vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+            matrix<int1, 4, 4> filt;
+            vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+            filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+            interpolate16(REF(0), pos.select<2, 1>(0), filt.select<2, 1, 4, 1>(0));
+            pred = g_pred16;
+            uint4 sad_ref = sad16(src, g_pred16) << 2;
+            uint4 sad_best = sad_ref;
+            if (!get_single_ref_flag())
+            {
+                interpolate16(REF(1), pos.select<2, 1>(2), filt.select<2, 1, 4, 1>(2));
+                matrix<uint1, 16, 16> pred1 = g_pred16;
+                sad_ref = (sad16(src, g_pred16) << 2) + 1;
+                if (sad_ref < sad_best) {
+                    sad_best = sad_ref;
                 }
-
-                interpolate16(REF(1), pos.select<2,1>(2), filt.select<2,1,4,1>(2));
-                matrix<uint1,16,16> pred1 = g_pred16;
-                if (cache_idx(1) < g_stack_size(1)) {
-                    sad_ref1  = sad16(src, g_pred16) << 11;
-                    bits_ref1 = g_bits_mode(1, cache_idx(1));
-                    cost_ref1 = bits_ref1 * get_lambda_int();
-                    cost_ref1 += sad_ref1;
-                    //if (get_comp_flag()) debug_printf("(2,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), 1, cache_idx(1), mv(2), mv(3), cost_ref1, bits_ref1);
+                if (get_comp_flag())
+                {
+                    g_pred16 = cm_avg<uint1>(pred, pred1);
+                    sad_ref = (sad16(src, g_pred16) << 2) + 2;
+                    if (sad_ref < sad_best) {
+                        sad_best = sad_ref;
+                    }
                 }
-
-                g_pred16 = cm_avg<uint1>(pred0, g_pred16);
-                uint4 sad = sad16(src, g_pred16) << 11;
-                uint2 bits = g_bits_mode(2,0);
-                uint4 cost = sad + bits * get_lambda_int();
-                //if (get_comp_flag()) debug_printf("(2,%2d,%2d) REFMV ref=2 mode=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), i, mv(0), mv(1), mv(2), mv(3), cost, bits);
-
-                if (cost_non_split > cost) {
-                    cost_non_split = cost;
-                    bits_non_split = bits;
-                    set_mv_pair(g_mi, mv);
-                    set_ref_bidir(g_mi);
-                    set_mode(g_mi, NEARESTMV);
-                    set_sad(g_mi, sad);
-                    write(REF(pred_idx), pel(X), pel(Y), g_pred16);
-                }
-
-                if (cost_non_split > cost_ref0) {
-                    cost_non_split = cost_ref0;
-                    bits_non_split = bits_ref0;
-                    set_mv0(g_mi, mv.select<2,1>(0));
-                    set_mv1(g_mi, 0);
-                    set_ref_single(g_mi, LAST);
-                    set_mode(g_mi, NEARESTMV);
-                    set_sad(g_mi, sad_ref0);
-                    write(REF(pred_idx), pel(X), pel(Y), pred0);
-                }
-
-                if (cost_non_split > cost_ref1) {
-                    cost_non_split = cost_ref1;
-                    bits_non_split = bits_ref1;
-                    set_mv0(g_mi, mv.select<2,1>(2));
-                    set_mv1(g_mi, 0);
-                    set_ref_single(g_mi, ALTR);
-                    set_mode(g_mi, NEARESTMV);
-                    set_sad(g_mi, sad_ref1);
-                    write(REF(pred_idx), pel(X), pel(Y), pred1);
-                }
+                int idx = (sad_best & 3);
+                if (idx == 1)
+                    pred = pred1;
+                else if (idx == 2)
+                    pred = g_pred16;
             }
-            g_refmv.select<8,1>(16) = g_refmv.select<8,1>(20);
-            g_refmv.select<8,1>(24) = g_refmv.select<8,1>(28);
-            g_bits_mode.row(2).select<4,1>(0) = g_bits_mode.row(2).select<4,1>(1);
+            g_new_mv_data(0, 1) = sad_best;
+            write(MV(SIZE16 + 0), mi(X) * NEW_MV_DATA_SMALL_SIZE >> 1, mi(Y) >> 1, g_new_mv_data.select<1, 1, 2, 1>(0));
+        }
+#endif
+
+        uint newmv_ref = g_new_mv_data(0, 1) & 3;
+        uint2 mvd;
+        if (newmv_ref == 2) {
+            vector<int2, 4> mv = g_new_mv_data.format<int2, 2, 4>().select<2, 1, 2, 1>() << 1;
+            vector<int2, 4> delta = mv - g_refmv.select<4, 1>(16);
+            delta.select<2, 1>(0) = cm_abs<uint2>(delta.select<2, 2>(0)) + cm_abs<uint2>(delta.select<2, 2>(1));
+            mvd = cm_min<uint2>(delta[0], delta[1]);
+        }
+        else {
+            vector<int2, 2> mv = g_new_mv_data.row(newmv_ref).format<int2>().select<2, 1>() << 1;
+            vector<int2, 2> pmv = g_refmv.select<2, 1>(0);
+            if (newmv_ref == 1)
+                pmv = g_refmv.select<2, 1>(8);
+            vector<int2, 2> delta = mv - pmv;
+            mvd = cm_abs<uint2>(delta[0]) + cm_abs<uint2>(delta[1]);
+        }
+
+        vector<int, 1> Rs = 0;
+        vector<int, 1> Cs = 0;
+
+        read(RSCS(0 + 0), (mi(X) >> 1) * 4, mi(Y) >> 1, Rs);
+        read(RSCS(0 + 1), (mi(X) >> 1) * 4, mi(Y) >> 1, Cs);
+        int rscs = Rs(0) + Cs(0);
+
+        vector<uint4, 2> cost_and_bits = get_newmv_cost_and_bits();
+        cost_non_split = cost_and_bits[0];
+        bits_non_split = cost_and_bits[1];
+        //if (get_comp_flag()) debug_printf("(2,%2d,%2d) NEWMV ref=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), get_ref_comb(g_mi),
+        //    get_mv_pair(g_mi)(0), get_mv_pair(g_mi)(1), get_mv_pair(g_mi)(2), get_mv_pair(g_mi)(3), cost_non_split, bits_non_split);
+#if MEPU16
+#if NEWMVPRED
+        read(REF(pred_idx), pel(X), pel(Y), pred);
+#else
+        vector_ref<int2, 4> mv = get_mv_pair(g_mi);
+        vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+        matrix<int1, 4, 4> filt;
+        vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+        filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+        interpolate16(REF(newmv_ref & 1), pos.select<2, 1>((newmv_ref & 1)*2), filt.select<2, 1, 4, 1>((newmv_ref & 1)*2));
+        if (newmv_ref == 2) {
+            matrix<uint1, 16, 16> pred0 = g_pred16;
+            interpolate16(REF(1), pos.select<2, 1>(2), filt.select<2, 1, 4, 1>(2));
+            pred = cm_avg<uint1>(pred0, g_pred16);
+        }
+        else {
+            pred = g_pred16;
+        }
+#endif
+#endif
+
+        uint2 cur_refmv_count = g_stack_size(0);
+
+
+        vector<uint2, 2> checked_mv = 0;
+
+        if (!g_fastMode || newmv_ref == 2)
+        {
+            for (uint2 i = 0; i < g_stack_size(2); i++) {
+                vector_ref<int2, 4> mv = g_refmv.select<4, 1>(16);
+                if ((mv != 0).any()) {
+
+                    vector<uint4, 2> cache_idx = get_cache_idx(g_refmv.format<uint4>().select<8, 1>(), mv.format<uint4>(), checked_mv);
+
+                    vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+                    matrix<int1, 4, 4> filt;
+                    vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+                    filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+
+                    uint4 cost_ref0 = uint4(-1);
+                    uint4 cost_ref1 = uint4(-1);
+                    uint4 sad_ref0;
+                    uint4 sad_ref1;
+                    uint4 bits_ref0;
+                    uint4 bits_ref1;
+
+                    interpolate16(REF(0), pos.select<2, 1>(0), filt.select<2, 1, 4, 1>(0));
+                    matrix<uint1, 16, 16> pred0 = g_pred16;
+                    if (cache_idx(0) < g_stack_size(0)) {
+                        sad_ref0 = sad16(src, g_pred16) << 11;
+                        bits_ref0 = g_bits_mode(0, cache_idx(0));
+                        cost_ref0 = bits_ref0 * get_lambda_int();
+                        cost_ref0 += sad_ref0;
+                        //if (get_comp_flag()) debug_printf("(2,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), 0, cache_idx(0), mv(0), mv(1), cost_ref0, bits_ref0);
+                    }
+
+                    interpolate16(REF(1), pos.select<2, 1>(2), filt.select<2, 1, 4, 1>(2));
+                    matrix<uint1, 16, 16> pred1 = g_pred16;
+                    if (cache_idx(1) < g_stack_size(1)) {
+                        sad_ref1 = sad16(src, g_pred16) << 11;
+                        bits_ref1 = g_bits_mode(1, cache_idx(1));
+                        cost_ref1 = bits_ref1 * get_lambda_int();
+                        cost_ref1 += sad_ref1;
+                        //if (get_comp_flag()) debug_printf("(2,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), 1, cache_idx(1), mv(2), mv(3), cost_ref1, bits_ref1);
+                    }
+
+                    g_pred16 = cm_avg<uint1>(pred0, g_pred16);
+                    uint4 sad = sad16(src, g_pred16) << 11;
+                    uint2 bits = g_bits_mode(2, 0);
+                    uint4 cost = sad + bits * get_lambda_int();
+                    //if (get_comp_flag()) debug_printf("(2,%2d,%2d) REFMV ref=2 mode=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), i, mv(0), mv(1), mv(2), mv(3), cost, bits);
+
+                    if (cost_non_split > cost) {
+                        cost_non_split = cost;
+                        bits_non_split = bits;
+                        set_mv_pair(g_mi, mv);
+                        set_ref_bidir(g_mi);
+                        set_mode(g_mi, NEARESTMV);
+                        set_sad(g_mi, sad);
+                        //write(REF(pred_idx), pel(X), pel(Y), g_pred16);
+                        pred = g_pred16;
+                    }
+
+                    if (cost_non_split > cost_ref0) {
+                        cost_non_split = cost_ref0;
+                        bits_non_split = bits_ref0;
+                        set_mv0(g_mi, mv.select<2, 1>(0));
+                        set_mv1(g_mi, 0);
+                        set_ref_single(g_mi, LAST);
+                        set_mode(g_mi, NEARESTMV);
+                        set_sad(g_mi, sad_ref0);
+                        //write(REF(pred_idx), pel(X), pel(Y), pred0);
+                        pred = pred0;
+                    }
+
+                    if (cost_non_split > cost_ref1) {
+                        cost_non_split = cost_ref1;
+                        bits_non_split = bits_ref1;
+                        set_mv0(g_mi, mv.select<2, 1>(2));
+                        set_mv1(g_mi, 0);
+                        set_ref_single(g_mi, ALTR);
+                        set_mode(g_mi, NEARESTMV);
+                        set_sad(g_mi, sad_ref1);
+                        //write(REF(pred_idx), pel(X), pel(Y), pred1);
+                        pred = pred1;
+                    }
+                }
+                g_refmv.select<8, 1>(16) = g_refmv.select<8, 1>(20);
+                g_refmv.select<8, 1>(24) = g_refmv.select<8, 1>(28);
+                g_bits_mode.row(2).select<4, 1>(0) = g_bits_mode.row(2).select<4, 1>(1);
+            }
         }
 
         for (uint2 ref = 0; ref < 2; ref++) {
             for (uint2 i = 0; i < cur_refmv_count; i++) {
-                vector_ref<int2,2> mv = g_refmv.select<2,1>();
+                vector_ref<int2, 2> mv = g_refmv.select<2, 1>();
                 if (mv.format<uint4>()(0) != 0 && (checked_mv(0) & 1) == 0) {
 
-                    vector<int2,2> pos = pel_minus2 + cm_asr<int2>(mv, 3);
-                    matrix<int1,2,4> filt;
-                    vector<uint2,2> dmv = cm_asr<uint2>(mv, 1) & 3;
+                    vector<int2, 2> pos = pel_minus2 + cm_asr<int2>(mv, 3);
+                    matrix<int1, 2, 4> filt;
+                    vector<uint2, 2> dmv = cm_asr<uint2>(mv, 1) & 3;
                     filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
 
                     interpolate16(REF(ref), pos, filt);
 
                     uint4 sad = sad16(src, g_pred16) << 11;
-                    uint2 bits = g_bits_mode(0,0);
+                    uint2 bits = g_bits_mode(0, 0);
                     uint4 cost = sad + bits * get_lambda_int();
                     //if (get_comp_flag()) debug_printf("(2,%2d,%2d) REFMV ref=%d mode=%d mv=(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), ref, i, mv(0), mv(1), cost, bits);
 
@@ -1763,24 +2094,23 @@ _GENX_ uint
                         set_ref_single(g_mi, ref << get_comp_flag());
                         set_mode(g_mi, NEARESTMV);
                         set_sad(g_mi, sad);
-                        write(REF(pred_idx), pel(X), pel(Y), g_pred16);
+                        //write(REF(pred_idx), pel(X), pel(Y), g_pred16);
+                        pred = g_pred16;
                     }
                 }
 
                 checked_mv(0) >>= 1;
-                g_refmv.select<8,1>(0) = g_refmv.select<8,1>(2);
-                g_bits_mode.row(0).select<4,1>(0) = g_bits_mode.row(0).select<4,1>(1);
+                g_refmv.select<8, 1>(0) = g_refmv.select<8, 1>(2);
+                g_bits_mode.row(0).select<4, 1>(0) = g_bits_mode.row(0).select<4, 1>(1);
             }
 
             checked_mv(0) = checked_mv(1);
             cur_refmv_count = g_stack_size(1);
-            g_refmv.select<8,1>(0) = g_refmv.select<8,1>(8);
-            g_bits_mode.row(0).select<4,1>(0) = g_bits_mode.row(1).select<4,1>(0);
+            g_refmv.select<8, 1>(0) = g_refmv.select<8, 1>(8);
+            g_bits_mode.row(0).select<4, 1>(0) = g_bits_mode.row(1).select<4, 1>(0);
         }
 
-        matrix<uint1,16,16> ref0, ref1;
-
-        vector<uint2,2> loc = mi >> 1; loc &= 3;
+        vector<uint2, 2> loc = mi >> 1; loc &= 3;
         uint4 zeromv_data = g_zeromv_sad_16(loc(Y), loc(X));
         uint4 zeromv_sad = (zeromv_data >> 2) << 11;
         uint1 zeromv_ref = zeromv_data & 3;
@@ -1797,14 +2127,17 @@ _GENX_ uint
             set_sad(g_mi, zeromv_sad);
 
             if (zeromv_ref == 2) {
+                matrix<uint1, 16, 16> ref0, ref1;
                 set_ref1(g_mi, ALTR);
                 set_ref_comb(g_mi, COMP);
                 read(REF(0), pel(X), pel(Y), ref0);
                 read(REF(1), pel(X), pel(Y), ref1);
-                ref0 = cm_avg<uint1>(ref0, ref1);
-                write(REF(pred_idx), pel(X), pel(Y), ref0);
-            } else {
-                pred_idx = zeromv_ref;
+                pred = cm_avg<uint1>(ref0, ref1);
+                //write(REF(pred_idx), pel(X), pel(Y), ref0);
+            }
+            else {
+                //pred_idx = zeromv_ref;
+                read(MODIFIED(REF(zeromv_ref)), pel(X), pel(Y), pred);
             }
         }
 
@@ -1813,23 +2146,22 @@ _GENX_ uint
 
         g_coef_ctx = coef_ctx_orig;
 
-        matrix<uint1,16,16> pred;
-        read(MODIFIED(REF(pred_idx)), pel(X), pel(Y), pred);
+        //read(MODIFIED(REF(pred_idx)), pel(X), pel(Y), pred);
 
         g_rd_cost[0] = 0;
         g_rd_cost[1] = 0;
         //g_rd_cost[1] = bits_non_split + g_bits_skip[0] + g_bits_tx_size_and_type[SIZE16];
         g_skip_cost = uint(get_lambda() * (bits_non_split + g_bits_skip[1]) + 0.5f);
-        g_qcoef = src.select<8,1,8,1>(0,0) - pred.select<8,1,8,1>(0,0);
+        g_qcoef = src.select<8, 1, 8, 1>(0, 0) - pred.select<8, 1, 8, 1>(0, 0);
         get_rd_cost_8(PARAM, 0, BLOCK0(mi, 1));
-        g_qcoef = src.select<8,1,8,1>(0,8) - pred.select<8,1,8,1>(0,8);
+        g_qcoef = src.select<8, 1, 8, 1>(0, 8) - pred.select<8, 1, 8, 1>(0, 8);
         get_rd_cost_8(PARAM, 0, BLOCK1(mi, 1));
-        g_qcoef = src.select<8,1,8,1>(8,0) - pred.select<8,1,8,1>(8,0);
+        g_qcoef = src.select<8, 1, 8, 1>(8, 0) - pred.select<8, 1, 8, 1>(8, 0);
         get_rd_cost_8(PARAM, 0, BLOCK2(mi, 1));
-        g_qcoef = src.select<8,1,8,1>(8,8) - pred.select<8,1,8,1>(8,8);
+        g_qcoef = src.select<8, 1, 8, 1>(8, 8) - pred.select<8, 1, 8, 1>(8, 8);
         get_rd_cost_8(PARAM, 0, BLOCK3(mi, 1));
         //cost_non_split = g_rd_cost[0] + uint(get_lambda() * g_rd_cost[1] + 0.5f);
-        cost_non_split = g_rd_cost[0] + uint(get_lambda() * (bits_non_split + g_bits_skip[0] + g_bits_tx_size_and_type[SIZE16] + ((g_rd_cost[1]*3)>>2)) + 0.5f);
+        cost_non_split = g_rd_cost[0] + uint(get_lambda() * (bits_non_split + g_bits_skip[0] + g_bits_tx_size_and_type[SIZE16] + ((g_rd_cost[1] * 3) >> 2)) + 0.5f);
 
         //if (get_comp_flag()) debug_printf("(2,%2d,%2d) skip_cost=%u skip_bits=%u\n", mi(Y), mi(X), g_skip_cost, bits_non_split + g_bits_skip[1]);
         //if (get_comp_flag()) debug_printf("(2,%2d,%2d) non_skip_cost=%u non_skip_bits=%u\n", mi(Y), mi(X), cost_non_split, g_rd_cost[1]);
@@ -1845,8 +2177,17 @@ _GENX_ uint
                 return cost_non_split;
             }
 
-        } else {
+        }
+        else {
             cost_non_split = g_rd_cost[0] + uint(get_lambda() * (bits_non_split + g_bits_skip[0] + g_bits_tx_size_and_type[SIZE16] + g_rd_cost[1]) + 0.5f);
+            if (g_fastMode) {
+                int leaf16 = LeafIEF(mi, qpLayer, 0, rscs, mvd);
+                if (leaf16 == SPLIT_NONE) {
+                    write_mode_info_16(MODE_INFO, mi);
+                    //debug_printf("2,%d,%d cost=%u\n", mi(Y), mi(X), cost_non_split);
+                    return cost_non_split;
+                }
+            }
         }
         //debug_printf("2,%d,%d cost=%u\n", mi(Y), mi(X), cost_non_split);
     }
@@ -1908,217 +2249,9 @@ _GENX_ uint
     return cost_non_split;
 }
 
-
-_GENX_
-inline bool IsBadPred0(float SCpp, float SADpp_best, uint2 mvdAvg, uint1 l)
-{
-    bool badPred = false;
-    const float mt = (l == 0) ? 2.58784f : ((l == 1) ? 7.278976f : 10.856256f);
-    const float st = (l == 0) ? 20.f : ((l == 1) ? 77.15f : 142.184f);
-
-    if (SCpp > st && mvdAvg > mt) {
-        const float a = (l == 0) ? 0.303627f : ((l == 1) ? 0.423133f : 0.397384f);
-        const float b = (l == 0) ? 0.547588f : ((l == 1) ? 0.022428f : 0.473092f);
-        const float m = (l == 0) ? 0.003458f : 0.013396f;
-        float SADT = b + cm_log(SCpp)*a*0.693147f;
-        float msad = cm_log(SADpp_best + m * cm_min<uint2>(64, mvdAvg))*0.693147f;
-
-        if (msad > SADT)       badPred = true;
-    }
-    return badPred;
-}
-
-_GENX_
-inline bool IsBadPred1(float SCpp, float SADpp_best, uint2 mvdAvg, uint1 l)
-{
-    bool badPred = false;
-    const float mt = (l == 0) ? 6.87232f : ((l == 1) ? 7.278976f : 10.856256f);
-    const float st = (l == 0) ? 20.f : ((l == 1) ? 89.805f : 142.184f);
-
-    if (SCpp > st && mvdAvg > mt) {
-        const float a = (l == 0) ? 0.315012f : ((l == 1) ? 0.435791f : 0.397396f);
-        const float b = (l == 0) ? 0.572353f : ((l == 1) ? 0.041593f : 0.527727f);
-        const float m = (l == 0) ? 0.006642f : 0.013410f;
-        float SADT = b + cm_log(SCpp)*a*0.693147f;
-        float msad = cm_log(SADpp_best + m * cm_min<uint2>(64, mvdAvg))*0.693147f;
-
-        if (msad > SADT)       badPred = true;
-    }
-    return badPred;
-}
-
-_GENX_
-inline bool IsBadPred2(float SCpp, float SADpp_best, uint2 mvdAvg, uint1 l)
-{
-    bool badPred = false;
-    const float mt = (l == 0) ? 7.239296f : ((l == 1) ? 7.278976f : 10.856256f);
-    const float st = (l == 0) ? 20.f : ((l == 1) ? 89.805f : 249.454f);
-
-    if (SCpp > st && mvdAvg > mt) {
-        const float a = (l == 0) ? 0.315445f : ((l == 1) ? 0.443448f : 0.500000f);
-        const float b = (l == 0) ? 0.677961f : ((l == 1) ? 0.203189f : 0.000000f);
-        const float m = (l == 0) ? 0.006441f : 0.013410f;
-        float SADT = b + cm_log(SCpp)*a*0.693147f;
-        float msad = cm_log(SADpp_best + m * cm_min<uint2>(64, mvdAvg))*0.693147f;
-
-        if (msad > SADT)       badPred = true;
-    }
-    return badPred;
-}
-
-_GENX_
-inline bool IsBadPred3(float SCpp, float SADpp_best, uint2 mvdAvg, uint1 l)
-{
-    bool badPred = false;
-    const float mt = (l == 0) ? 7.646336f : ((l == 1) ? 9.9616f : 10.856256f);
-    const float st = (l == 0) ? 20.f : 249.454f;
-
-    if (SCpp > st && mvdAvg > mt) {
-        const float a = (l == 0) ? 0.314350f : ((l == 1) ? 0.456550f : 0.500000f);
-        const float b = (l == 0) ? 0.794845f : ((l == 1) ? 0.228990f : 0.000000f);
-        const float m = (l == 0) ? 0.010107f : 0.137010f;
-        float SADT = b + cm_log(SCpp)*a*0.693147f;
-        float msad = cm_log(SADpp_best + m * cm_min<uint2>(64, mvdAvg))*0.693147f;
-
-        if (msad > SADT)       badPred = true;
-    }
-    return badPred;
-}
-
-_GENX_ uint1 SplitIEF(vector<SurfaceIndex, 8> MV, vector<SurfaceIndex, 4> RSCS, vector<uint2, 2> mi, int qpLayer, int is64)
-{
-    int2 l = (qpLayer & 0x3);
-    int2 qp = (qpLayer >> 2);
-    if (qp < 40)      return SPLIT_TRY_NE;
-    if (qp > 225)     return SPLIT_TRY_EE;
-    if (l > 1 + is64) return SPLIT_TRY_EE;
-
-    vector<int, 1> Rs = 0;
-    vector<int, 1> Cs = 0;
-    read(RSCS(is64 * 2 + 0), (mi(X) >> (2 + is64)) * 4, mi(Y) >> (2 + is64), Rs);
-    read(RSCS(is64 * 2 + 1), (mi(X) >> (2 + is64)) * 4, mi(Y) >> (2 + is64), Cs);
-    float scpp = Rs(0) + Cs(0);
-    scpp *= (is64 ? 0.003906250f : 0.015625000f);
-    if (scpp <=  20.00f) return SPLIT_TRY_EE;
-
-    uint newmv_ref = g_new_mv_data(0, 1) & 3;
-    uint mvd = 0;
-    if (newmv_ref == 2) {
-        vector<int2, 4> mv = g_new_mv_data.format<int2, 2, 4>().select<2, 1, 2, 1>() << 1;
-        vector<int2, 4> dmv = mv - g_refmv.select<4, 1>(16);
-        dmv = cm_abs<int2>(dmv);
-        mvd = dmv(0) + dmv(1);
-        uint2 mvd1 = dmv(2) + dmv(3);
-        mvd = cm_min<uint2>(mvd, mvd1);
-    } else {
-        vector<int2, 2> mv = g_new_mv_data.row(newmv_ref & 1).format<int2>().select<2, 1>() << 1;
-        vector<int2, 2> pmv = ((newmv_ref == 1) ? g_refmv.select<2, 1>(8) : g_refmv.select<2, 1>(0));
-        vector<int2, 2> dmv = mv - pmv;
-        dmv = cm_abs<int2>(dmv);
-        mvd = dmv(0) + dmv(1);
-    }
-    if (mvd <= 2) return SPLIT_TRY_NE;
-
-    // Split
-    int2 Q = qp - ((l + 1) * 8);
-    uint1 qidx = 0;
-    if (Q < 75)       qidx = 0;
-    else if (Q < 123) qidx = 1;
-    else if (Q < 163) qidx = 2;
-    else              qidx = 3;
-
-    uint bsad = g_new_mv_data(0, 1) >> 2;
-    uint ssad = bsad;
-    float sadpp = bsad;
-    sadpp *= (is64 ? 0.000244140625f : 0.000976562500f);
-    if (sadpp <= 1.00f) return SPLIT_TRY_NE;
-
-    uint sad_min = 1;
-    uint sad_max = 1;
-
-    if (is64) {
-        /*matrix<uint4, 1, 2>   new_mv_data;
-        read(MV(SIZE32 + 0), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 2, mi(Y) >> 2, new_mv_data);
-        uint sad = new_mv_data(0, 1) >> 2;
-        sad_min = sad;
-        sad_max = sad;
-        ssad = sad;
-        read(MV(SIZE32 + 0), (mi(X) + 4) * NEW_MV_DATA_LARGE_SIZE >> 2, mi(Y) >> 2, new_mv_data);
-        sad = new_mv_data(0, 1) >> 2;
-        sad_min = cm_min<uint>(sad_min, sad);
-        sad_max = cm_max<uint>(sad_max, sad);
-        ssad += sad;
-        read(MV(SIZE32 + 0), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 2, (mi(Y) + 4) >> 2, new_mv_data);
-        sad = new_mv_data(0, 1) >> 2;
-        sad_min = cm_min<uint>(sad_min, sad);
-        sad_max = cm_max<uint>(sad_max, sad);
-        ssad += sad;
-        read(MV(SIZE32 + 0), (mi(X) + 4) * NEW_MV_DATA_LARGE_SIZE >> 2, (mi(Y) + 4) >> 2, new_mv_data);
-        sad = new_mv_data(0, 1) >> 2;
-        sad_min = cm_min<uint>(sad_min, sad);
-        sad_max = cm_max<uint>(sad_max, sad);
-        ssad += sad;
-
-        float svar = (float)sad_min / (float)sad_max;
-        const float SVT = 0.67f;
-        if (svar > SVT) return SPLIT_TRY_EE;
-        float sr = (float)ssad / (float)bsad;
-        float SRT = (qidx < 3) ? 0.65f : 0.55f;
-        if (sr > SRT) return SPLIT_TRY_EE;*/
-    } else {
-        matrix<uint4, 1, 2>   new_mv_data;
-        read(MV(SIZE16 + 0), mi(X) * NEW_MV_DATA_SMALL_SIZE >> 1, mi(Y) >> 1, new_mv_data);
-        uint sad = new_mv_data(0, 1) >> 2;
-        sad_min = sad;
-        sad_max = sad;
-        ssad = sad;
-        read(MV(SIZE16 + 0), (mi(X) + 2) * NEW_MV_DATA_SMALL_SIZE >> 1, mi(Y) >> 1, new_mv_data);
-        sad = new_mv_data(0, 1) >> 2;
-        sad_min = cm_min<uint>(sad_min, sad);
-        sad_max = cm_max<uint>(sad_max, sad);
-        ssad += sad;
-        read(MV(SIZE16 + 0), mi(X) * NEW_MV_DATA_SMALL_SIZE >> 1, (mi(Y) + 2) >> 1, new_mv_data);
-        sad = new_mv_data(0, 1) >> 2;
-        sad_min = cm_min<uint>(sad_min, sad);
-        sad_max = cm_max<uint>(sad_max, sad);
-        ssad += sad;
-        read(MV(SIZE16 + 0), (mi(X) + 2) * NEW_MV_DATA_SMALL_SIZE >> 1, (mi(Y) + 2) >> 1, new_mv_data);
-        sad = new_mv_data(0, 1) >> 2;
-        sad_min = cm_min<uint>(sad_min, sad);
-        sad_max = cm_max<uint>(sad_max, sad);
-        ssad += sad;
-
-        float svar = (float)sad_min / (float)sad_max;
-        const float SVT = 0.5f;
-        if (svar > SVT) return SPLIT_TRY_EE;
-        float sr = (float)ssad / (float)bsad;
-        float SRT = (qidx < 3) ? 0.65f : 0.55f;
-        if (sr > SRT) return SPLIT_TRY_EE;
-    }
-
-    switch (qidx) {
-    case 0:
-        return (IsBadPred0(scpp, sadpp, mvd, l)) ? SPLIT_MUST : SPLIT_TRY_NE;
-        break;
-    case 1:
-        return (IsBadPred1(scpp, sadpp, mvd, l)) ? SPLIT_MUST : SPLIT_TRY_NE;
-        break;
-    case 2:
-        return (IsBadPred2(scpp, sadpp, mvd, l)) ? SPLIT_MUST : SPLIT_TRY_NE;
-        break;
-    case 3:
-        return (IsBadPred3(scpp, sadpp, mvd, l)) ? SPLIT_MUST : SPLIT_TRY_NE;
-        break;
-    default:
-        return SPLIT_TRY_NE;
-        break;
-    }
-    return SPLIT_TRY_NE;
-}
-
 _GENX_ uint
-    decide32(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex,7> REF, vector<SurfaceIndex,8> MV,
-             SurfaceIndex MODE_INFO, vector<uint2,2> mi, vector<SurfaceIndex, 4> RSCS, uint qpLayer, uint1 split64)
+    decide32(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex,8> REF, vector<SurfaceIndex,8> MV,
+             SurfaceIndex MODE_INFO, vector<uint2,2> mi, vector<SurfaceIndex, 8> RSCS, uint qpLayer, uint1 split64)
 {
     if (is_outsize(mi)) {
         g_mi = 0;
@@ -2133,6 +2266,7 @@ _GENX_ uint
     uint1 split32 = SPLIT_TRY_NE;
     uint cost_non_split = INT_MAX;
     uint1 skipee = (qpLayer & 0x3) > 1 ? 1 : 0;
+    //if (g_fastMode) skipee = 1;
 
     if (!is_outsize(mi + 3)) {
         g_mi = 0;
@@ -2141,25 +2275,178 @@ _GENX_ uint
 
         get_mvrefs(PARAM, MODE_INFO, SIZE32, mi);
 
+        vector<int4, 2> pel = mi * MI_SIZE;
+        vector<int2, 2> pel_minus2 = pel - 2;
+
+        uint pred_idx = 2 + SIZE32;
+        uint pred_off = 0;
+        uint scratch_off = 32;
+
+#if MEPU32
         read(MV(SIZE32 + 0), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 2, mi(Y) >> 2, g_new_mv_data.select<1, 1, 2, 1>(0));
         read(MV(SIZE32 + 4), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 2, mi(Y) >> 2, g_new_mv_data.select<1, 1, 2, 1>(1));
+#else
+        {
+            matrix<uint1, 2, 8> medata;        // mv & dist0
+            vector<uint4, 16>  medataDist8;  // 8 more dists
 
-        if(split64 == SPLIT_MUST)
-            split32 = SplitIEF(MV, RSCS, mi, qpLayer, 0);
+            // read motion vectors and prepare filters
+            read(MV(SIZE32 + 0), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 2, mi(Y) >> 2, medata.row(0));
+            read(MV(SIZE32 + 4), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 2, mi(Y) >> 2, medata.row(1));
+            read(MV(SIZE32 + 0), (mi(X) * NEW_MV_DATA_LARGE_SIZE >> 2) + 8, mi(Y) >> 2, medataDist8.select<8, 1>(0));
+            read(MV(SIZE32 + 4), (mi(X) * NEW_MV_DATA_LARGE_SIZE >> 2) + 8, mi(Y) >> 2, medataDist8.select<8, 1>(8));
+            vector<uint4, 2> medataDist0 = medata.format<uint4>().select<2, 2>(1) << 4;
+            medataDist8 <<= 4;
+            vector<uint2, 8> mvDelta(MV_DELTA);
+            medataDist8 += mvDelta.replicate<2>();
+
+            vector<uint4, 8> tmp8 = cm_min<uint4>(medataDist8.select<8, 2>(0), medataDist8.select<8, 2>(1));
+            vector<uint4, 4> tmp4 = cm_min<uint4>(tmp8.select<4, 2>(0), tmp8.select<4, 2>(1));
+            vector<uint4, 2> minCosts = cm_min<uint4>(tmp4.select<2, 2>(0), tmp4.select<2, 2>(1));
+            minCosts = cm_min<uint4>(minCosts, medataDist0);
+
+            vector<uint4, 2> bestIdx = minCosts & 15;
+            vector<int2, 4> dxdy;
+            dxdy.select<2, 2>(X) = bestIdx & 3;
+            dxdy.select<2, 2>(Y) = bestIdx >> 2;
+            dxdy -= 1;
+
+            vector<int2, 4> mv = medata.format<int2, 2, 4>().select<2, 1, 2, 1>() + dxdy;
+
+            g_new_mv_data.format<int2, 2, 4>().select<2, 1, 2, 1>() = mv;
+            mv <<= 1;
+
+            pred_idx = SCRATCH;
+
+            vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+            matrix<int1, 4, 4> filt;
+            vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+            filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+            vector<uint2, 2> blk;
+            matrix<uint1, 16, 16> src;
+            vector<uint2, 16> sad_acc = 0;
+            for (blk(Y) = 0; blk(Y) < 32; blk(Y) += 16) {
+                for (blk(X) = 0; blk(X) < 32; blk(X) += 16) {
+                    interpolate16(REF(0), pos.select<2, 1>(0) + blk, filt.select<2, 1, 4, 1>(0));
+                    read(SRC, pel(X) + blk(X), pel(Y) + blk(Y), src);
+                    sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
+                    write(REF(SCRATCH), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + pred_off, g_pred16);
+                }
+            }
+            uint4 sad_ref = cm_sum<uint>(sad_acc.select<8, 2>()) << 2;
+            uint4 sad_best = sad_ref;
+            if (!get_single_ref_flag())
+            {
+                sad_acc = 0;
+                for (blk(Y) = 0; blk(Y) < 32; blk(Y) += 16) {
+                    for (blk(X) = 0; blk(X) < 32; blk(X) += 16) {
+                        interpolate16(REF(1), pos.select<2, 1>(2) + blk, filt.select<2, 1, 4, 1>(2));
+                        read(SRC, pel(X) + blk(X), pel(Y) + blk(Y), src);
+                        sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
+                        write(REF(SCRATCH), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + scratch_off, g_pred16);
+                    }
+                }
+                sad_ref = (cm_sum<uint>(sad_acc.select<8, 2>()) << 2) + 1;
+                if (sad_ref < sad_best) {
+                    sad_best = sad_ref;
+                    swap_idx(pred_off, scratch_off);
+                }
+                if (get_comp_flag())
+                {
+                    sad_acc = 0;
+                    for (blk(Y) = 0; blk(Y) < 32; blk(Y) += 16) {
+                        for (blk(X) = 0; blk(X) < 32; blk(X) += 16) {
+                            matrix<uint1, 16, 16> pred0;
+                            read(MODIFIED(REF(SCRATCH)), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + 0, pred0);
+                            read(MODIFIED(REF(SCRATCH)), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + 32, g_pred16);
+                            g_pred16 = cm_avg<uint1>(pred0, g_pred16);
+                            write(REF(SCRATCH), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + scratch_off, g_pred16);
+                            read(SRC, pel(X) + blk(X), pel(Y) + blk(Y), src);
+                            sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
+                        }
+                    }
+                    sad_ref = (cm_sum<uint>(sad_acc.select<8, 2>()) << 2) + 2;
+                    if (sad_ref < sad_best) {
+                        sad_best = sad_ref;
+                        swap_idx(pred_off, scratch_off);
+                    }
+                }
+            }
+            g_new_mv_data(0, 1) = sad_best;
+            write(MV(SIZE32 + 4), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 2, mi(Y) >> 2, g_new_mv_data.select<1, 1, 2, 1>(1));
+            write(MV(SIZE32 + 0), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 2, mi(Y) >> 2, g_new_mv_data.select<1, 1, 2, 1>(0));
+        }
+#endif
+
+        uint newmv_ref = g_new_mv_data(0, 1) & 3;
+#if MEPU32
+#if !NEWMVPRED
+        {
+            vector<int2, 4> mv = g_new_mv_data.format<int2, 2, 4>().select<2, 1, 2, 1>() << 1;
+            vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+            matrix<int1, 4, 4> filt;
+            vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+            filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+            pred_idx = SCRATCH;
+            if (newmv_ref == 2) {
+                vector<uint2, 2> blk;
+                for (blk(Y) = 0; blk(Y) < 32; blk(Y) += 16) {
+                    for (blk(X) = 0; blk(X) < 32; blk(X) += 16) {
+                        matrix<uint1, 16, 16> pred0;
+                        interpolate16(REF(0), pos.select<2, 1>(0) + blk, filt.select<2, 1, 4, 1>(0));
+                        pred0 = g_pred16;
+                        interpolate16(REF(1), pos.select<2, 1>(2) + blk, filt.select<2, 1, 4, 1>(2));
+                        g_pred16 = cm_avg<uint1>(pred0, g_pred16);
+                        write(REF(SCRATCH), pel(X) + blk(X), pel(Y)*2 + blk(Y) + pred_off, g_pred16);
+                    }
+                }
+            }
+            else {
+                vector<uint2, 2> blk;
+                for (blk(Y) = 0; blk(Y) < 32; blk(Y) += 16) {
+                    for (blk(X) = 0; blk(X) < 32; blk(X) += 16) {
+                        interpolate16(REF(newmv_ref & 1), pos.select<2, 1>((newmv_ref & 1)*2) + blk, filt.select<2, 1, 4, 1>((newmv_ref & 1) * 2));
+                        write(REF(SCRATCH), pel(X) + blk(X), pel(Y)*2 + blk(Y) + pred_off, g_pred16);
+                    }
+                }
+            }
+        }
+#endif
+#endif
+        uint2 mvd;
+        if (newmv_ref == 2) {
+            vector<int2, 4> mv = g_new_mv_data.format<int2, 2, 4>().select<2, 1, 2, 1>() << 1;
+            vector<int2, 4> delta = mv - g_refmv.select<4, 1>(16);
+            delta.select<2, 1>(0) = cm_abs<uint2>(delta.select<2, 2>(0)) + cm_abs<uint2>(delta.select<2, 2>(1));
+            mvd = cm_min<uint2>(delta[0], delta[1]);
+        } else {
+            vector<int2, 2> mv = g_new_mv_data.row(newmv_ref).format<int2>().select<2, 1>() << 1;
+            vector<int2, 2> pmv = g_refmv.select<2, 1>(0);
+            if (newmv_ref == 1)
+                pmv = g_refmv.select<2, 1>(8);
+            vector<int2, 2> delta = mv - pmv;
+            mvd = cm_abs<uint2>(delta[0]) + cm_abs<uint2>(delta[1]);
+        }
+
+        vector<int, 1> Rs = 0;
+        vector<int, 1> Cs = 0;
+
+        read(RSCS(2 + 0), (mi(X) >> 2) * 4, mi(Y) >> 2, Rs);
+        read(RSCS(2 + 1), (mi(X) >> 2) * 4, mi(Y) >> 2, Cs);
+        int rscs = Rs(0) + Cs(0);
+
+        if (split64 == SPLIT_MUST || g_fastMode)
+            split32 = SplitIEF(MV, mi, qpLayer, 0, rscs, mvd);
 
         if (split32 != SPLIT_MUST) {
 
-            uint pred_idx = 2 + SIZE32;
-            uint scratch_idx = SCRATCH;
-
             uint bits_non_split;
 
-            get_newmv_cost_and_bits(cost_non_split, bits_non_split);
+            vector<uint4, 2> cost_and_bits = get_newmv_cost_and_bits();
+            cost_non_split = cost_and_bits[0];
+            bits_non_split = cost_and_bits[1];
             //if (get_comp_flag()) debug_printf("(1,%2d,%2d) NEWMV ref=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), get_ref_comb(g_mi),
             //    get_mv_pair(g_mi)(0), get_mv_pair(g_mi)(1), get_mv_pair(g_mi)(2), get_mv_pair(g_mi)(3), cost_non_split, bits_non_split);
-
-            vector<int4,2> pel = mi * MI_SIZE;
-            vector<int2,2> pel_minus2 = pel - 2;
 
             uint2 cur_refmv_count = g_stack_size(0);
             for (uint2 ref = 0; ref < 2; ref++) {
@@ -2179,7 +2466,7 @@ _GENX_ uint
                         for (blk(Y) = 0; blk(Y) < 32; blk(Y) += 16) {
                             for (blk(X) = 0; blk(X) < 32; blk(X) += 16) {
                                 interpolate16(REF(ref), pos + blk, filt);
-                                write(REF(scratch_idx), pel(X) + blk(X), pel(Y) + blk(Y), g_pred16);
+                                write(REF(SCRATCH), pel(X) + blk(X), pel(Y)*2 + blk(Y) + scratch_off, g_pred16);
                                 read (SRC,              pel(X) + blk(X), pel(Y) + blk(Y), src);
                                 sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
                             }
@@ -2197,7 +2484,8 @@ _GENX_ uint
                             set_ref_single(g_mi, ref << get_comp_flag());
                             set_mode(g_mi, NEARESTMV);
                             set_sad(g_mi, sad);
-                            swap_idx(pred_idx, scratch_idx);
+                            swap_idx(pred_off, scratch_off);
+                            pred_idx = SCRATCH;
                         }
                     }
                     g_refmv.select<8,1>(0) = g_refmv.select<8,1>(2);
@@ -2208,50 +2496,53 @@ _GENX_ uint
                 g_bits_mode.row(0).select<4,1>(0) = g_bits_mode.row(1).select<4,1>(0);
             }
 
-            for (uint2 i = 0; i < g_stack_size(2); i++) {
-                vector_ref<int2,4> mv = g_refmv.select<4,1>(16);
-                if ((mv != 0).any()) {
+            if (!g_fastMode || newmv_ref == 2)
+            {
+                for (uint2 i = 0; i < g_stack_size(2); i++) {
+                    vector_ref<int2, 4> mv = g_refmv.select<4, 1>(16);
+                    if ((mv != 0).any()) {
 
-                    vector<uint2,16> sad_acc = 0;
+                        vector<uint2, 16> sad_acc = 0;
 
-                    vector<int2,4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
-                    matrix<int1,4,4> filt;
-                    vector<uint2,4> dmv = cm_asr<uint2>(mv, 1) & 3;
-                    filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+                        vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+                        matrix<int1, 4, 4> filt;
+                        vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+                        filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
 
-                    vector<uint2,2> blk;
-                    for (blk(Y) = 0; blk(Y) < 32; blk(Y) += 16) {
-                        for (blk(X) = 0; blk(X) < 32; blk(X) += 16) {
-                            matrix<uint1,16,16> src, pred0;
-                            interpolate16(REF(0), pos.select<2,1>(0) + blk, filt.select<2,1,4,1>(0));
-                            pred0 = g_pred16;
-                            interpolate16(REF(1), pos.select<2,1>(2) + blk, filt.select<2,1,4,1>(2));
-                            g_pred16 = cm_avg<uint1>(pred0, g_pred16);
-                            write(REF(scratch_idx), pel(X) + blk(X), pel(Y) + blk(Y), g_pred16);
-                            read (SRC,              pel(X) + blk(X), pel(Y) + blk(Y), src);
-                            sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
+                        vector<uint2, 2> blk;
+                        for (blk(Y) = 0; blk(Y) < 32; blk(Y) += 16) {
+                            for (blk(X) = 0; blk(X) < 32; blk(X) += 16) {
+                                matrix<uint1, 16, 16> src, pred0;
+                                interpolate16(REF(0), pos.select<2, 1>(0) + blk, filt.select<2, 1, 4, 1>(0));
+                                pred0 = g_pred16;
+                                interpolate16(REF(1), pos.select<2, 1>(2) + blk, filt.select<2, 1, 4, 1>(2));
+                                g_pred16 = cm_avg<uint1>(pred0, g_pred16);
+                                write(REF(SCRATCH), pel(X) + blk(X), pel(Y)*2 + blk(Y) + scratch_off, g_pred16);
+                                read(SRC, pel(X) + blk(X), pel(Y) + blk(Y), src);
+                                sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
+                            }
+                        }
+                        uint4 sad = cm_sum<uint>(sad_acc.select<8, 2>()) << 11;
+                        uint2 bits = g_bits_mode(2, 0);
+                        uint4 cost = sad + bits * get_lambda_int();
+                        //if (get_comp_flag()) debug_printf("(1,%2d,%2d) REFMV ref=2 mode=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), i, mv(0), mv(1), mv(2), mv(3), cost, bits);
+
+                        if (cost_non_split > cost) {
+                            cost_non_split = cost;
+                            bits_non_split = bits;
+                            set_mv_pair(g_mi, mv);
+                            set_ref_bidir(g_mi);
+                            set_mode(g_mi, NEARESTMV);
+                            set_sad(g_mi, sad);
+                            swap_idx(pred_off, scratch_off);
+                            pred_idx = SCRATCH;
                         }
                     }
-                    uint4 sad = cm_sum<uint>(sad_acc.select<8,2>()) << 11;
-                    uint2 bits = g_bits_mode(2,0);
-                    uint4 cost = sad + bits * get_lambda_int();
-                    //if (get_comp_flag()) debug_printf("(1,%2d,%2d) REFMV ref=2 mode=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), i, mv(0), mv(1), mv(2), mv(3), cost, bits);
-
-                    if (cost_non_split > cost) {
-                        cost_non_split = cost;
-                        bits_non_split = bits;
-                        set_mv_pair(g_mi, mv);
-                        set_ref_bidir(g_mi);
-                        set_mode(g_mi, NEARESTMV);
-                        set_sad(g_mi, sad);
-                        swap_idx(pred_idx, scratch_idx);
-                    }
+                    g_refmv.select<8, 1>(16) = g_refmv.select<8, 1>(20);
+                    g_refmv.select<8, 1>(24) = g_refmv.select<8, 1>(28);
+                    g_bits_mode.row(2).select<4, 1>(0) = g_bits_mode.row(2).select<4, 1>(1);
                 }
-                g_refmv.select<8,1>(16) = g_refmv.select<8,1>(20);
-                g_refmv.select<8,1>(24) = g_refmv.select<8,1>(28);
-                g_bits_mode.row(2).select<4,1>(0) = g_bits_mode.row(2).select<4,1>(1);
             }
-
 
             vector<uint2,2> loc = mi >> 2; loc &= 1;
             uint4 zeromv_data = g_zeromv_sad_32(loc(Y), loc(X));
@@ -2276,7 +2567,8 @@ _GENX_ uint
                     for (int i = 0; i < 32; i += 8) {
                         read (REF(0),        pel(X), pel(Y) + i, ref0);
                         read (REF(1),        pel(X), pel(Y) + i, ref1);
-                        write(REF(pred_idx), pel(X), pel(Y) + i, matrix<uint1,8,32>(cm_avg<uint1>(ref0, ref1)));
+                        write(REF(SCRATCH), pel(X), pel(Y)*2 + i + pred_off, matrix<uint1,8,32>(cm_avg<uint1>(ref0, ref1)));
+                        pred_idx = SCRATCH;
                     }
                 } else
                     pred_idx = zeromv_ref;
@@ -2296,7 +2588,7 @@ _GENX_ uint
                 for (blk(X) = 0; blk(X) < 4; blk(X)++) {
                     matrix<uint1,8,8> src, pred;
                     read(SRC,                     pel(X) + blk(X) * 8, pel(Y) + blk(Y) * 8, src);
-                    read(MODIFIED(REF(pred_idx)), pel(X) + blk(X) * 8, pel(Y) + blk(Y) * 8, pred);
+                    read(MODIFIED(REF(pred_idx)), pel(X) + blk(X) * 8, pel(Y)*((pred_idx == SCRATCH) ? 2 : 1) + blk(Y) * 8 + ((pred_idx == SCRATCH) ? pred_off : 0), pred);
                     g_qcoef = src - pred;
                     get_rd_cost_8(PARAM, 0, mi + blk);
                 }
@@ -2320,6 +2612,14 @@ _GENX_ uint
 
             } else {
                 cost_non_split = g_rd_cost[0] + uint(get_lambda() * (bits_non_split + g_bits_skip[0] + g_bits_tx_size_and_type[SIZE32] + g_rd_cost[1]) + 0.5f);
+                /*if (g_fastMode) {
+                    int leaf32 = LeafIEF(mi, qpLayer, 1, rscs, mvd);
+                    if (leaf32 == SPLIT_NONE) {
+                        write_mode_info_32(MODE_INFO, mi);
+                        debug_printf("1,%d,%d cost=%u\n", mi(Y), mi(X), cost_non_split);
+                        return cost_non_split;
+                    }
+                }*/
             }
 
             debug_printf("1,%d,%d cost=%u\n", mi(Y), mi(X), cost_non_split);
@@ -2335,15 +2635,19 @@ _GENX_ uint
 
     {
         g_coef_ctx = coef_ctx_orig;
-
-        cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK0(mi, 2), (qpLayer & 0x3) || (split64 != SPLIT_MUST));
-        miq0 = g_mi;
-        cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK1(mi, 2), (qpLayer & 0x3) || (split64 != SPLIT_MUST));
-        miq1 = g_mi;
-        cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK2(mi, 2), (qpLayer & 0x3) || (split64 != SPLIT_MUST));
-        miq2 = g_mi;
-        cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK3(mi, 2), (qpLayer & 0x3) || (split64 != SPLIT_MUST));
-        miq3 = g_mi;
+        if (g_fastMode) {
+            cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK0(mi, 2), RSCS, qpLayer, 1); miq0 = g_mi;
+            cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK1(mi, 2), RSCS, qpLayer, 1); miq1 = g_mi;
+            cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK2(mi, 2), RSCS, qpLayer, 1); miq2 = g_mi;
+            cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK3(mi, 2), RSCS, qpLayer, 1); miq3 = g_mi;
+        }
+        else {
+            uint skipee16 = (qpLayer & 0x3) || (split64 != SPLIT_MUST);
+            cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK0(mi, 2), RSCS, qpLayer, skipee16); miq0 = g_mi;
+            cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK1(mi, 2), RSCS, qpLayer, skipee16); miq1 = g_mi;
+            cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK2(mi, 2), RSCS, qpLayer, skipee16); miq2 = g_mi;
+            cost_split += decide16(PARAM, SRC, REF, MV, MODE_INFO, BLOCK3(mi, 2), RSCS, qpLayer, skipee16); miq3 = g_mi;
+        }
     }
 
     if (cost_split < cost_non_split) {
@@ -2385,8 +2689,8 @@ _GENX_ uint
 }
 
 _GENX_ inline void
-    decide64(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex,7> REF, vector<SurfaceIndex,8> MV,
-             SurfaceIndex MODE_INFO, vector<uint2,2> mi, vector<SurfaceIndex, 4> RSCS, uint qpLayer)
+    decide64(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex,8> REF, vector<SurfaceIndex,8> MV,
+             SurfaceIndex MODE_INFO, vector<uint2,2> mi, vector<SurfaceIndex, 8> RSCS, uint qpLayer)
 {
     if (is_outsize(mi)) {
         g_mi = 0;
@@ -2406,23 +2710,184 @@ _GENX_ inline void
 
         get_mvrefs(PARAM, MODE_INFO, SIZE64, mi);
 
+        vector<int4, 2> pel = mi * MI_SIZE;
+        vector<int2, 2> pel_minus2 = pel - 2;
+
+        uint pred_idx = 2 + SIZE64;
+        uint pred_off = 0;
+        uint scratch_off = 64;
+
+#if MEPU64
         read(MV(SIZE64 + 0), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 3, mi(Y) >> 3, g_new_mv_data.select<1, 1, 2, 1>(0));
         read(MV(SIZE64 + 4), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 3, mi(Y) >> 3, g_new_mv_data.select<1, 1, 2, 1>(1));
+#else
+        {
+            matrix<uint1, 2, 8> medata;        // mv & dist0
+            vector<uint4, 16>  medataDist8;  // 8 more dists
 
-        split64 = SplitIEF(MV, RSCS, mi, qpLayer, 1);
+                                             // read motion vectors and prepare filters
+            read(MV(SIZE64 + 0), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 3, mi(Y) >> 3, medata.row(0));
+            read(MV(SIZE64 + 4), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 3, mi(Y) >> 3, medata.row(1));
+            read(MV(SIZE64 + 0), (mi(X) * NEW_MV_DATA_LARGE_SIZE >> 3) + 8, mi(Y) >> 3, medataDist8.select<8, 1>(0));
+            read(MV(SIZE64 + 4), (mi(X) * NEW_MV_DATA_LARGE_SIZE >> 3) + 8, mi(Y) >> 3, medataDist8.select<8, 1>(8));
+            vector<uint4, 2> medataDist0 = medata.format<uint4>().select<2, 2>(1) << 4;
+            medataDist8 <<= 4;
+            vector<uint2, 8> mvDelta(MV_DELTA);
+            medataDist8 += mvDelta.replicate<2>();
+
+            vector<uint4, 8> tmp8 = cm_min<uint4>(medataDist8.select<8, 2>(0), medataDist8.select<8, 2>(1));
+            vector<uint4, 4> tmp4 = cm_min<uint4>(tmp8.select<4, 2>(0), tmp8.select<4, 2>(1));
+            vector<uint4, 2> minCosts = cm_min<uint4>(tmp4.select<2, 2>(0), tmp4.select<2, 2>(1));
+            minCosts = cm_min<uint4>(minCosts, medataDist0);
+
+            vector<uint4, 2> bestIdx = minCosts & 15;
+            vector<int2, 4> dxdy;
+            dxdy.select<2, 2>(X) = bestIdx & 3;
+            dxdy.select<2, 2>(Y) = bestIdx >> 2;
+            dxdy -= 1;
+            dxdy *= 2;
+
+            vector<int2, 4> mv = medata.format<int2, 2, 4>().select<2, 1, 2, 1>() + dxdy;
+
+            g_new_mv_data.format<int2, 2, 4>().select<2, 1, 2, 1>() = mv;
+            mv <<= 1;
+
+            pred_idx = SCRATCH;
+
+            vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+            matrix<int1, 4, 4> filt;
+            vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+            filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+            vector<uint2, 2> blk;
+            matrix<uint1, 16, 16> src;
+            vector<uint2, 16> sad_acc = 0;
+            for (blk(Y) = 0; blk(Y) < 64; blk(Y) += 16) {
+                for (blk(X) = 0; blk(X) < 64; blk(X) += 16) {
+                    interpolate16(REF(0), pos.select<2, 1>(0) + blk, filt.select<2, 1, 4, 1>(0));
+                    read(SRC, pel(X) + blk(X), pel(Y) + blk(Y), src);
+                    sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
+                    write(REF(SCRATCH), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + pred_off, g_pred16);
+                }
+            }
+            uint4 sad_ref = cm_sum<uint>(sad_acc.select<8, 2>()) << 2;
+            uint4 sad_best = sad_ref;
+            if (!get_single_ref_flag())
+            {
+                sad_acc = 0;
+                for (blk(Y) = 0; blk(Y) < 64; blk(Y) += 16) {
+                    for (blk(X) = 0; blk(X) < 64; blk(X) += 16) {
+                        interpolate16(REF(1), pos.select<2, 1>(2) + blk, filt.select<2, 1, 4, 1>(2));
+                        read(SRC, pel(X) + blk(X), pel(Y) + blk(Y), src);
+                        sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
+                        write(REF(SCRATCH), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + scratch_off, g_pred16);
+                    }
+                }
+                sad_ref = (cm_sum<uint>(sad_acc.select<8, 2>()) << 2) + 1;
+                if (sad_ref < sad_best) {
+                    sad_best = sad_ref;
+                    swap_idx(pred_off, scratch_off);
+                }
+                if (get_comp_flag())
+                {
+                    sad_acc = 0;
+                    for (blk(Y) = 0; blk(Y) < 64; blk(Y) += 16) {
+                        for (blk(X) = 0; blk(X) < 64; blk(X) += 16) {
+                            matrix<uint1, 16, 16> pred0;
+                            read(MODIFIED(REF(SCRATCH)), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + 0, pred0);
+                            read(MODIFIED(REF(SCRATCH)), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + 64, g_pred16);
+                            g_pred16 = cm_avg<uint1>(pred0, g_pred16);
+                            write(REF(SCRATCH), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + scratch_off, g_pred16);
+                            read(SRC, pel(X) + blk(X), pel(Y) + blk(Y), src);
+                            sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
+                        }
+                    }
+                    sad_ref = (cm_sum<uint>(sad_acc.select<8, 2>()) << 2) + 2;
+                    if (sad_ref < sad_best) {
+                        sad_best = sad_ref;
+                        swap_idx(pred_off, scratch_off);
+                    }
+                }
+            }
+            g_new_mv_data(0, 1) = sad_best;
+            write(MV(SIZE64 + 4), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 3, mi(Y) >> 3, g_new_mv_data.select<1, 1, 2, 1>(1)); // mv neded only, write first, can be same surf as ref0
+            write(MV(SIZE64 + 0), mi(X) * NEW_MV_DATA_LARGE_SIZE >> 3, mi(Y) >> 3, g_new_mv_data.select<1, 1, 2, 1>(0)); // mv and sad, write last
+        }
+#endif
+        uint newmv_ref = g_new_mv_data(0, 1) & 3;
+
+#if MEPU64
+#if !NEWMVPRED
+        {
+            vector<int2, 4> mv = g_new_mv_data.format<int2, 2, 4>().select<2, 1, 2, 1>() << 1;
+            vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+            matrix<int1, 4, 4> filt;
+            vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+            filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+            pred_idx = SCRATCH;
+            if (newmv_ref == 2) {
+                vector<uint2, 2> blk;
+                for (blk(Y) = 0; blk(Y) < 64; blk(Y) += 16) {
+                    for (blk(X) = 0; blk(X) < 64; blk(X) += 16) {
+                        matrix<uint1, 16, 16> pred0;
+                        interpolate16(REF(0), pos.select<2, 1>(0) + blk, filt.select<2, 1, 4, 1>(0));
+                        pred0 = g_pred16;
+                        interpolate16(REF(1), pos.select<2, 1>(2) + blk, filt.select<2, 1, 4, 1>(2));
+                        g_pred16 = cm_avg<uint1>(pred0, g_pred16);
+                        write(REF(SCRATCH), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + pred_off, g_pred16);
+                    }
+                }
+            }
+            else {
+                vector<uint2, 2> blk;
+                for (blk(Y) = 0; blk(Y) < 64; blk(Y) += 16) {
+                    for (blk(X) = 0; blk(X) < 64; blk(X) += 16) {
+                        interpolate16(REF(newmv_ref & 1), pos.select<2, 1>((newmv_ref & 1) * 2) + blk, filt.select<2, 1, 4, 1>((newmv_ref & 1) * 2));
+                        write(REF(SCRATCH), pel(X) + blk(X), pel(Y) * 2 + blk(Y) + pred_off, g_pred16);
+                    }
+                }
+            }
+        }
+#endif
+#endif
+
+        uint2 mvd;
+        if (newmv_ref == 2) {
+            vector<int2, 4> mv = g_new_mv_data.format<int2, 2, 4>().select<2, 1, 2, 1>() << 1;
+            vector<int2, 4> delta = mv - g_refmv.select<4, 1>(16);
+            delta.select<2, 1>(0) = cm_abs<uint2>(delta.select<2, 2>(0)) + cm_abs<uint2>(delta.select<2, 2>(1));
+            mvd = cm_min<uint2>(delta[0], delta[1]);
+        }
+        else {
+            vector<int2, 2> mv = g_new_mv_data.row(newmv_ref).format<int2>().select<2, 1>() << 1;
+            vector<int2, 2> pmv = g_refmv.select<2, 1>(0);
+            if (newmv_ref == 1)
+                pmv = g_refmv.select<2, 1>(8);
+            vector<int2, 2> delta = mv - pmv;
+            mvd = cm_abs<uint2>(delta[0]) + cm_abs<uint2>(delta[1]);
+        }
+        //g_mvd64 = mvd;
+
+        vector<int, 1> Rs = 0;
+        vector<int, 1> Cs = 0;
+
+        read(RSCS(4 + 0), (mi(X) >> 3) * 4, mi(Y) >> 3, Rs);
+        read(RSCS(4 + 1), (mi(X) >> 3) * 4, mi(Y) >> 3, Cs);
+        int rscs = Rs(0) + Cs(0);
+
+        split64 = SplitIEF(MV, mi, qpLayer, 1, rscs, mvd);
 
         if (split64 != SPLIT_MUST) {
-            uint pred_idx = 2 + SIZE64;
-            uint scratch_idx = SCRATCH;
+            //uint pred_idx = 2 + SIZE64;
+            //uint scratch_idx = SCRATCH;
 
             uint bits_non_split;
 
-            get_newmv_cost_and_bits(cost_non_split, bits_non_split);
+            vector<uint4, 2> cost_and_bits = get_newmv_cost_and_bits();
+            cost_non_split = cost_and_bits[0];
+            bits_non_split = cost_and_bits[1];
             //if (get_comp_flag()) debug_printf("(0,%2d,%2d) NEWMV ref=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), get_ref_comb(g_mi),
             //    get_mv_pair(g_mi)(0), get_mv_pair(g_mi)(1), get_mv_pair(g_mi)(2), get_mv_pair(g_mi)(3), cost_non_split, bits_non_split);
 
-            vector<int4,2> pel = mi * MI_SIZE;
-            vector<int2,2> pel_minus2 = pel - 2;
 
             uint2 cur_refmv_count = g_stack_size(0);
             for (uint2 ref = 0; ref < 2; ref++) {
@@ -2442,7 +2907,7 @@ _GENX_ inline void
                         for (blk(Y) = 0; blk(Y) < 64; blk(Y) += 16) {
                             for (blk(X) = 0; blk(X) < 64; blk(X) += 16) {
                                 interpolate16(REF(ref), pos + blk, filt);
-                                write(REF(scratch_idx), pel(X) + blk(X), pel(Y) + blk(Y), g_pred16);
+                                write(REF(SCRATCH), pel(X) + blk(X), pel(Y)*2 + blk(Y) + scratch_off, g_pred16);
                                 read (SRC,              pel(X) + blk(X), pel(Y) + blk(Y), src);
                                 sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
                             }
@@ -2460,7 +2925,8 @@ _GENX_ inline void
                             set_ref_single(g_mi, ref << get_comp_flag());
                             set_mode(g_mi, NEARESTMV);
                             set_sad(g_mi, sad);
-                            swap_idx(pred_idx, scratch_idx);
+                            swap_idx(pred_off, scratch_off);
+                            pred_idx = SCRATCH;
                         }
                     }
                     g_refmv.select<8,1>(0) = g_refmv.select<8,1>(2);
@@ -2471,50 +2937,53 @@ _GENX_ inline void
                 g_bits_mode.row(0).select<4,1>(0) = g_bits_mode.row(1).select<4,1>(0);
             }
 
-            for (uint2 i = 0; i < g_stack_size(2); i++) {
-                vector_ref<int2,4> mv = g_refmv.select<4,1>(16);
-                if ((mv != 0).any()) {
+            if (!g_fastMode || newmv_ref == 2)
+            {
+                for (uint2 i = 0; i < g_stack_size(2); i++) {
+                    vector_ref<int2, 4> mv = g_refmv.select<4, 1>(16);
+                    if ((mv != 0).any()) {
 
-                    vector<uint2,16> sad_acc = 0;
+                        vector<uint2, 16> sad_acc = 0;
 
-                    vector<int2,4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
-                    matrix<int1,4,4> filt;
-                    vector<uint2,4> dmv = cm_asr<uint2>(mv, 1) & 3;
-                    filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
+                        vector<int2, 4> pos = pel_minus2.replicate<2>() + cm_asr<int2>(mv, 3);
+                        matrix<int1, 4, 4> filt;
+                        vector<uint2, 4> dmv = cm_asr<uint2>(mv, 1) & 3;
+                        filt.format<uint4>() = g_interp_filters.format<uint4>().iselect(dmv);
 
-                    vector<uint2,2> blk;
-                    for (blk(Y) = 0; blk(Y) < 64; blk(Y) += 16) {
-                        for (blk(X) = 0; blk(X) < 64; blk(X) += 16) {
-                            matrix<uint1,16,16> src, pred0;
-                            interpolate16(REF(0), pos.select<2,1>(0) + blk, filt.select<2,1,4,1>(0));
-                            pred0 = g_pred16;
-                            interpolate16(REF(1), pos.select<2,1>(2) + blk, filt.select<2,1,4,1>(2));
-                            g_pred16 = cm_avg<uint1>(pred0, g_pred16);
-                            write(REF(scratch_idx), pel(X) + blk(X), pel(Y) + blk(Y), g_pred16);
-                            read (SRC,              pel(X) + blk(X), pel(Y) + blk(Y), src);
-                            sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
+                        vector<uint2, 2> blk;
+                        for (blk(Y) = 0; blk(Y) < 64; blk(Y) += 16) {
+                            for (blk(X) = 0; blk(X) < 64; blk(X) += 16) {
+                                matrix<uint1, 16, 16> src, pred0;
+                                interpolate16(REF(0), pos.select<2, 1>(0) + blk, filt.select<2, 1, 4, 1>(0));
+                                pred0 = g_pred16;
+                                interpolate16(REF(1), pos.select<2, 1>(2) + blk, filt.select<2, 1, 4, 1>(2));
+                                g_pred16 = cm_avg<uint1>(pred0, g_pred16);
+                                write(REF(SCRATCH), pel(X) + blk(X), pel(Y)*2 + blk(Y) + scratch_off, g_pred16);
+                                read(SRC, pel(X) + blk(X), pel(Y) + blk(Y), src);
+                                sad_acc = cm_add<uint2>(sad16_acc(src, g_pred16), sad_acc, SAT);
+                            }
+                        }
+                        uint4 sad = cm_sum<uint>(sad_acc.select<8, 2>()) << 11;
+                        uint2 bits = g_bits_mode(2, 0);
+                        uint4 cost = sad + bits * get_lambda_int();
+                        //if (get_comp_flag()) debug_printf("(0,%2d,%2d) REFMV ref=2 mode=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), i, mv(0), mv(1), mv(2), mv(3), cost, bits);
+
+                        if (cost_non_split > cost) {
+                            cost_non_split = cost;
+                            bits_non_split = bits;
+                            set_mv_pair(g_mi, mv);
+                            set_ref_bidir(g_mi);
+                            set_mode(g_mi, NEARESTMV);
+                            set_sad(g_mi, sad);
+                            swap_idx(pred_off, scratch_off);
+                            pred_idx = SCRATCH;
                         }
                     }
-                    uint4 sad = cm_sum<uint>(sad_acc.select<8,2>()) << 11;
-                    uint2 bits = g_bits_mode(2,0);
-                    uint4 cost = sad + bits * get_lambda_int();
-                    //if (get_comp_flag()) debug_printf("(0,%2d,%2d) REFMV ref=2 mode=%d mv=(%d,%d),(%d,%d) cost=%u bits=%u\n", mi(Y), mi(X), i, mv(0), mv(1), mv(2), mv(3), cost, bits);
-
-                    if (cost_non_split > cost) {
-                        cost_non_split = cost;
-                        bits_non_split = bits;
-                        set_mv_pair(g_mi, mv);
-                        set_ref_bidir(g_mi);
-                        set_mode(g_mi, NEARESTMV);
-                        set_sad(g_mi, sad);
-                        swap_idx(pred_idx, scratch_idx);
-                    }
+                    g_refmv.select<8, 1>(16) = g_refmv.select<8, 1>(20);
+                    g_refmv.select<8, 1>(24) = g_refmv.select<8, 1>(28);
+                    g_bits_mode.row(2).select<4, 1>(0) = g_bits_mode.row(2).select<4, 1>(1);
                 }
-                g_refmv.select<8,1>(16) = g_refmv.select<8,1>(20);
-                g_refmv.select<8,1>(24) = g_refmv.select<8,1>(28);
-                g_bits_mode.row(2).select<4,1>(0) = g_bits_mode.row(2).select<4,1>(1);
             }
-
 
             uint4 zeromv_sad  = (g_zeromv_sad_64 >> 2) << 11;
             uint1 zeromv_ref  = g_zeromv_sad_64 & 3;
@@ -2538,7 +3007,8 @@ _GENX_ inline void
                         for (int j = 0; j < 64; j += 32) {
                             read (REF(0),        pel(X) + j, pel(Y) + i, ref0);
                             read (REF(1),        pel(X) + j, pel(Y) + i, ref1);
-                            write(REF(pred_idx), pel(X) + j, pel(Y) + i, matrix<uint1,8,32>(cm_avg<uint1>(ref0, ref1)));
+                            write(REF(SCRATCH), pel(X) + j, pel(Y)*2 + i + pred_off, matrix<uint1,8,32>(cm_avg<uint1>(ref0, ref1)));
+                            pred_idx = SCRATCH;
                         }
                     }
                 } else
@@ -2559,7 +3029,7 @@ _GENX_ inline void
                 for (blk(X) = 0; blk(X) < 8; blk(X)++) {
                     matrix<uint1,8,8> src, ref0;
                     read(SRC,                     pel(X) + blk(X) * 8, pel(Y) + blk(Y) * 8, src);
-                    read(MODIFIED(REF(pred_idx)), pel(X) + blk(X) * 8, pel(Y) + blk(Y) * 8, ref0);
+                    read(MODIFIED(REF(pred_idx)), pel(X) + blk(X) * 8, pel(Y)*((pred_idx == SCRATCH) ? 2 : 1) + blk(Y) * 8 + ((pred_idx == SCRATCH) ? pred_off : 0), ref0);
                     g_qcoef = src - ref0;
                     get_rd_cost_8(PARAM, 0, mi + blk);
                 }
@@ -2574,6 +3044,13 @@ _GENX_ inline void
                 cost_non_split = g_skip_cost;
                 set_skip(g_mi, 1);
                 set_coef_ctx<8>(mi, 0);
+                /*if (g_fastMode) {
+                    if ((qpLayer & 0x3) > 0) {
+                        write_mode_info_64(MODE_INFO, mi);
+                        debug_printf("1,%d,%d cost=%u\n", mi(Y), mi(X), cost_non_split);
+                        return; // cost_non_split;
+                    }
+                }*/
             } else {
                 cost_non_split = g_rd_cost[0] + uint(get_lambda() * (bits_non_split + g_bits_skip[0] + g_bits_tx_size_and_type[SIZE64] + g_rd_cost[1]) + 0.5f);
             }
@@ -2641,20 +3118,50 @@ _GENX_ inline void
 
 _GENX_ inline vector<uint2,16> zeromv_sad(matrix_ref<uint1,8,16> src, matrix_ref<uint1,8,16> ref)
 {
+#if defined(target_gen12) || defined(target_gen12lp)
+    vector<uint2,16> sad = cm_abs<uint2>(cm_add<int2>(src.row(0), -ref.row(0)));
+    #pragma unroll
+    for (int k = 1; k < 8; k++)
+        sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(src.row(k), -ref.row(k))));
+    sad.select<8, 2>(0) += sad.select<8, 2>(1);
+    return sad;
+#elif defined(target_gen11) || defined(target_gen11lp)
+    vector<uint2, 16> sad = 0;
+    #pragma unroll
+    for (int k = 0; k < 8; k++)
+        sad = cm_sada2<uint2>(src.row(k), ref.row(k), sad);
+    return sad;
+#else // target_gen12
     vector<uint2,16> sad = cm_sad2<uint2>(src.row(0), ref.row(0));
     #pragma unroll
     for (int k = 1; k < 8; k++)
         sad = cm_sada2<uint2>(src.row(k), ref.row(k), sad);
     return sad;
+#endif // target_gen12
 }
 
 _GENX_ inline vector<uint2,16> zeromv_sad(matrix_ref<uint1,8,16> src, matrix_ref<uint1,8,16> ref0, matrix_ref<uint1,8,16> ref1)
 {
+#if defined(target_gen12) || defined(target_gen12lp)
+    vector<uint2,16> sad = cm_abs<uint2>(cm_add<int2>(src.row(0), -cm_avg<uint1>(ref0.row(0), ref1.row(0))));
+    #pragma unroll
+    for (int k = 1; k < 8; k++)
+        sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(src.row(k), -cm_avg<uint1>(ref0.row(k), ref1.row(k)))));
+    sad.select<8, 2>(0) += sad.select<8, 2>(1);
+    return sad;
+#elif defined(target_gen11) || defined(target_gen11lp)
+    vector<uint2, 16> sad = 0;
+    #pragma unroll
+    for (int k = 0; k < 8; k++)
+        sad = cm_sada2<uint2>(src.row(k), cm_avg<uint1>(ref0.row(k), ref1.row(k)), sad);
+    return sad;
+#else // target_gen12
     vector<uint2,16> sad = cm_sad2<uint2>(src.row(0), cm_avg<uint1>(ref0.row(0), ref1.row(0)));
     #pragma unroll
     for (int k = 1; k < 8; k++)
         sad = cm_sada2<uint2>(src.row(k), cm_avg<uint1>(ref0.row(k), ref1.row(k)), sad);
     return sad;
+#endif // target_gen12
 }
 
 template <typename RT, typename T, uint R, uint C> _GENX_ inline matrix<RT,R/2,C/2> add_2x2(matrix_ref<T,R,C> m)
@@ -2664,7 +3171,7 @@ template <typename RT, typename T, uint R, uint C> _GENX_ inline matrix<RT,R/2,C
     return tmp.template select<R/2,2,C/2,1>(0,0) + tmp.template select<R/2,2,C/2,1>(1,0);
 }
 
-_GENX_ inline void calculate_zeromv_sad(SurfaceIndex SRC, vector<SurfaceIndex,7> REF, vector<uint2,2> mi)
+_GENX_ inline void calculate_zeromv_sad(SurfaceIndex SRC, vector<SurfaceIndex,8> REF, vector<uint2,2> mi)
 {
     vector<int4,2> pel = mi * MI_SIZE;
     matrix<uint1,8,32> src, ref0, ref1;
@@ -2728,23 +3235,30 @@ _GENX_ inline void calculate_zeromv_sad(SurfaceIndex SRC, vector<SurfaceIndex,7>
     g_zeromv_sad_64            = cm_min<uint4>(sad64.select<1,1,1,1>(0,0), sad64.select<1,1,1,1>(2,0))(0);
 }
 
+#define INIT_HELPER(V,I) { decltype(V) tmp(I); V = tmp; }
+
 extern "C" _GENX_MAIN_ void
-    ModeDecision(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex,7> REF, vector<SurfaceIndex,8> MV,
-                 SurfaceIndex MODE_INFO, vector<SurfaceIndex, 4> RSCS, uint qpLayer)
+    ModeDecision(SurfaceIndex PARAM, SurfaceIndex SRC, vector<SurfaceIndex,8> REF, vector<SurfaceIndex,8> MV,
+                 SurfaceIndex MODE_INFO, vector<SurfaceIndex, 8> RSCS, uint qpLayer_YOff)
 {
-    read_param(PARAM);
+    const uint2 qpLayer = qpLayer_YOff & 0xffff;
+    read_param(PARAM, qpLayer);
 
-    g_br_ctx_offset_00_15   = vector<uint1,16>(BR_CTX_OFFSET_00_15);
-    g_base_ctx_offset_00_31 = vector<uint1,32>(BASE_CTX_OFFSET_00_31);
+    g_br_ctx_offset_00_31.format<uint4>() = 0x0E0E0E0E;
+    g_br_ctx_offset_00_31.format<uint2>()[0] = 0x0700;
+    g_br_ctx_offset_00_31.format<uint2>()[4] = 0x0707;
 
-    g_scan = vector<uint1,64>(SCAN);
+    g_base_ctx_offset_00_31.format<uint4>() = 0x0B0B0B0B;
+    g_base_ctx_offset_00_31.format<uint4>()[0] = 0x06060100;
+    g_base_ctx_offset_00_31.format<uint4>()[2] = 0x0B060601;
+    g_base_ctx_offset_00_31.format<uint4>()[4] = 0x0B0B0606;
+    g_base_ctx_offset_00_31.format<uint4>()[6] = 0x0B0B0B06;
 
-    g_lut_txb_skip_ctx = vector<uint1,32>(LUT_TXB_SKIP_CTX);
+    INIT_HELPER(g_scan_t, SCAN_T);
 
-    g_interp_filters.row(0) = vector<int1,4>(INTERP_FILTERS_0Q);
-    g_interp_filters.row(1) = vector<int1,4>(INTERP_FILTERS_1Q);
-    g_interp_filters.row(2) = vector<int1,4>(INTERP_FILTERS_2Q);
-    g_interp_filters.row(3) = vector<int1,4>(INTERP_FILTERS_3Q);
+    INIT_HELPER(g_lut_txb_skip_ctx, LUT_TXB_SKIP_CTX);
+
+    INIT_HELPER(g_interp_filters, INTERP_FILTERS);
 
     g_bits_interp_filter[0] = 12 + 18;    // single ref, one of neighbors have same ref
     g_bits_interp_filter[1] = 54 + 92;    // single ref, neighbors have different refs
@@ -2756,11 +3270,12 @@ extern "C" _GENX_MAIN_ void
     g_bits_tx_size_and_type[SIZE32] = 221 + 0;
     g_bits_tx_size_and_type[SIZE64] = 221 + 0;
 
-    g_has_top_right = vector<uint1,8>(HAS_TOP_RIGHT);
+    INIT_HELPER(g_has_top_right, HAS_TOP_RIGHT);
 
-    g_tile_mi_row_start = get_thread_origin_y() * TILE_HEIGHT_MI;
+    const uint2 yoff = qpLayer_YOff >> 16;
+    g_tile_mi_row_start = (get_thread_origin_y() + yoff) * TILE_HEIGHT_MI;
     g_tile_mi_col_start = get_thread_origin_x() * TILE_WIDTH_MI;
-    g_tile_mi_row_end   = cm_min<uint2>(g_tile_mi_row_start + TILE_HEIGHT_MI, get_height());
+    //g_tile_mi_row_end   = cm_min<uint2>(g_tile_mi_row_start + TILE_HEIGHT_MI, get_height());
     g_tile_mi_col_end   = cm_min<uint2>(g_tile_mi_col_start + TILE_WIDTH_MI,  get_width());
 
     vector<uint2,2> mi;

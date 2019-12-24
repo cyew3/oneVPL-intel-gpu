@@ -20,7 +20,7 @@
     <MfxDefinitions>AS_AV1E_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;UNICODE;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>
-    <MfxPlatformToolset>$(MfxIntelPlatformToolset)</MfxPlatformToolset>
+<!--    <MfxPlatformToolset>$(MfxIntelPlatformToolset)</MfxPlatformToolset> -->
   </PropertyGroup>
 <!-- End of h265_enc_hw.vcxproj specific settings -->
 </Project>

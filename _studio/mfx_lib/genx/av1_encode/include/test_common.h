@@ -311,13 +311,7 @@ inline const char *to_cstring(GPU_GT_PLATFORM gt_platform)
     case PLATFORM_INTEL_GT2:        return "GT2";
     case PLATFORM_INTEL_GT3:        return "GT3";
     case PLATFORM_INTEL_GT4:        return "GT4";
-    case PLATFORM_INTEL_GTVLV:      return "GTVLV";
-    case PLATFORM_INTEL_GTVLVPLUS:  return "GTVLVPLUS";
-    case PLATFORM_INTEL_GTCHV:      return "GTCHV";
-    case PLATFORM_INTEL_GTA:        return "GTA";
-    case PLATFORM_INTEL_GTC:        return "GTC";
     case PLATFORM_INTEL_GT1_5:      return "GT1_5";
-    case PLATFORM_INTEL_GTX:        return "GTX";
     }
 }
 

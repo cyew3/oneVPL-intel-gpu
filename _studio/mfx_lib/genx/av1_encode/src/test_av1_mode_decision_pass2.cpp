@@ -83,6 +83,7 @@ const char genx_av1_mode_decision_pass2_skl[1] = {};
 #include "../include/genx_av1_mode_decision_pass2_hsw_isa.h"
 #include "../include/genx_av1_mode_decision_pass2_bdw_isa.h"
 #include "../include/genx_av1_mode_decision_pass2_skl_isa.h"
+#include "../include/genx_av1_mode_decision_pass2_icllp_isa.h"
 #endif //CMRT_EMU
 
 typedef decltype(&CM_ALIGNED_FREE) cm_aligned_deleter;
@@ -589,7 +590,7 @@ void setup_param_for_gpu(const H265VideoParam &par, const Frame &frame, H265Vide
 
 #ifdef SINGLE_SIDED_COMPOUND
     param_sys->compound_allowed = 1;
-    param_sys->bidir_compound = (frame.m_picCodeType == MFX_FRAMETYPE_B);
+    param_sys->bidir_compound_or_single_ref = (frame.m_picCodeType == MFX_FRAMETYPE_B);
 #else
     param_sys->compound_allowed = frame.compoundReferenceAllowed;
     param_sys->single_ref = 0;
@@ -646,6 +647,11 @@ void setup_param_for_gpu(const H265VideoParam &par, const Frame &frame, H265Vide
             }
         }
     }
+#ifdef FAST_MODE
+    param_sys->fastMode = 1;
+#else
+    param_sys->fastMode = 0;
+#endif
 }
 
 mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame &frame_ref0, const Frame &frame_ref1,
@@ -703,6 +709,9 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     case PLATFORM_INTEL_KBL:
         THROW_CM_ERR(device->LoadProgram((void *)genx_av1_mode_decision_pass2_skl, sizeof(genx_av1_mode_decision_pass2_skl), program, "nojitter"));
         break;
+    case PLATFORM_INTEL_ICLLP:
+        THROW_CM_ERR(device->LoadProgram((void *)genx_av1_mode_decision_pass2_icllp, sizeof(genx_av1_mode_decision_pass2_icllp), program, "nojitter"));
+        break;
     default:
         throw cm_error(CM_FAILURE, __FILE__, __LINE__, "Unknown HW type");
     }
@@ -726,7 +735,7 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
             const int width_in_blk = par.sb64Cols << (3 - sz);
             const int height_in_blk = par.sb64Rows << (3 - sz);
             const FeiOutData *data = frame_curr.m_feiInterData[refs[r]][sz];
-            THROW_CM_ERR(device->CreateSurface2D(width_in_blk * data_size, height_in_blk, CM_SURFACE_FORMAT_P8, newmv[r][sz]));
+            THROW_CM_ERR(device->CreateSurface2D(width_in_blk * data_size, height_in_blk, CM_SURFACE_FORMAT_A8, newmv[r][sz]));
             THROW_CM_ERR(newmv[r][sz]->WriteSurfaceStride(data->m_sysmem, nullptr, data->m_pitch));
         }
     }
@@ -734,12 +743,12 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     const uint32_t width_mi = par.sb64Cols * 8;
     const uint32_t height_mi = par.sb64Rows * 8;
 
-    THROW_CM_ERR(device->CreateSurface2D(width_mi * sizeof(ModeInfo), height_mi, CM_SURFACE_FORMAT_P8, mi1));
-    THROW_CM_ERR(device->CreateSurface2D(width_mi * sizeof(ModeInfo), height_mi, CM_SURFACE_FORMAT_P8, mi2));
+    THROW_CM_ERR(device->CreateSurface2D(width_mi * sizeof(ModeInfo), height_mi, CM_SURFACE_FORMAT_A8, mi1));
+    THROW_CM_ERR(device->CreateSurface2D(width_mi * sizeof(ModeInfo), height_mi, CM_SURFACE_FORMAT_A8, mi2));
     THROW_CM_ERR(mi1->WriteSurfaceStride((const unsigned char *)mi_1st_pass, nullptr, par.miPitch * sizeof(ModeInfo)));
 
-    THROW_CM_ERR(device->CreateSurface2D(8 * par.sb64Cols * sizeof(int), 8 * par.sb64Rows, CM_SURFACE_FORMAT_P8, Rs8));
-    THROW_CM_ERR(device->CreateSurface2D(8 * par.sb64Cols * sizeof(int), 8 * par.sb64Rows, CM_SURFACE_FORMAT_P8, Cs8));
+    THROW_CM_ERR(device->CreateSurface2D(8 * par.sb64Cols * sizeof(int), 8 * par.sb64Rows, CM_SURFACE_FORMAT_A8, Rs8));
+    THROW_CM_ERR(device->CreateSurface2D(8 * par.sb64Cols * sizeof(int), 8 * par.sb64Rows, CM_SURFACE_FORMAT_A8, Cs8));
     int32_t* rscsk8 = (int32_t*)malloc(8 * par.sb64Cols * 8 * par.sb64Rows * sizeof(int));
     for (int j = 0; j < 8 * par.sb64Rows; j++)
         for (int k = 0; k < 8 * par.sb64Cols; k++)
@@ -747,8 +756,8 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     THROW_CM_ERR(Rs8->WriteSurfaceStride((const unsigned char *)rscsk8, nullptr, 8 * par.sb64Cols * sizeof(int)));
     THROW_CM_ERR(Cs8->WriteSurfaceStride((const unsigned char *)rscsk8, nullptr, 8 * par.sb64Cols * sizeof(int)));
     free(rscsk8);
-    THROW_CM_ERR(device->CreateSurface2D(4 * par.sb64Cols * sizeof(int), 4 * par.sb64Rows, CM_SURFACE_FORMAT_P8, Rs16));
-    THROW_CM_ERR(device->CreateSurface2D(4 * par.sb64Cols * sizeof(int), 4 * par.sb64Rows, CM_SURFACE_FORMAT_P8, Cs16));
+    THROW_CM_ERR(device->CreateSurface2D(4 * par.sb64Cols * sizeof(int), 4 * par.sb64Rows, CM_SURFACE_FORMAT_A8, Rs16));
+    THROW_CM_ERR(device->CreateSurface2D(4 * par.sb64Cols * sizeof(int), 4 * par.sb64Rows, CM_SURFACE_FORMAT_A8, Cs16));
     int32_t* rscsk16 = (int32_t*)malloc(4 * par.sb64Cols * 4 * par.sb64Rows * sizeof(int));
     for (int j = 0; j < 4 * par.sb64Rows; j++)
         for (int k = 0; k < 4 * par.sb64Cols; k++)
@@ -756,8 +765,8 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     THROW_CM_ERR(Rs16->WriteSurfaceStride((const unsigned char *)rscsk16, nullptr, 4 * par.sb64Cols * sizeof(int)));
     THROW_CM_ERR(Cs16->WriteSurfaceStride((const unsigned char *)rscsk16, nullptr, 4 * par.sb64Cols * sizeof(int)));
     free(rscsk16);
-    THROW_CM_ERR(device->CreateSurface2D(2*par.sb64Cols * sizeof(int), 2*par.sb64Rows, CM_SURFACE_FORMAT_P8, Rs32));
-    THROW_CM_ERR(device->CreateSurface2D(2*par.sb64Cols * sizeof(int), 2*par.sb64Rows, CM_SURFACE_FORMAT_P8, Cs32));
+    THROW_CM_ERR(device->CreateSurface2D(2*par.sb64Cols * sizeof(int), 2*par.sb64Rows, CM_SURFACE_FORMAT_A8, Rs32));
+    THROW_CM_ERR(device->CreateSurface2D(2*par.sb64Cols * sizeof(int), 2*par.sb64Rows, CM_SURFACE_FORMAT_A8, Cs32));
     int32_t* rscsk32 = (int32_t*)malloc(2*par.sb64Cols*2*par.sb64Rows * sizeof(int));
     for (int j = 0; j < 2 * par.sb64Rows; j++)
         for (int k = 0; k < 2 * par.sb64Cols; k++)
@@ -765,15 +774,15 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     THROW_CM_ERR(Rs32->WriteSurfaceStride((const unsigned char *)rscsk32, nullptr, 2*par.sb64Cols * sizeof(int)));
     THROW_CM_ERR(Cs32->WriteSurfaceStride((const unsigned char *)rscsk32, nullptr, 2*par.sb64Cols * sizeof(int)));
     free(rscsk32);
-    THROW_CM_ERR(device->CreateSurface2D(par.sb64Cols * sizeof(int), par.sb64Rows, CM_SURFACE_FORMAT_P8, Rs64));
-    THROW_CM_ERR(device->CreateSurface2D(par.sb64Cols * sizeof(int), par.sb64Rows, CM_SURFACE_FORMAT_P8, Cs64));
+    THROW_CM_ERR(device->CreateSurface2D(par.sb64Cols * sizeof(int), par.sb64Rows, CM_SURFACE_FORMAT_A8, Rs64));
+    THROW_CM_ERR(device->CreateSurface2D(par.sb64Cols * sizeof(int), par.sb64Rows, CM_SURFACE_FORMAT_A8, Cs64));
     int32_t* rscsk64 = (int32_t*) malloc(par.sb64Cols*par.sb64Rows * sizeof(int));
     for (int k = 0; k < par.sb64Cols*par.sb64Rows; k++)
         rscsk64[k] = 10240;
     THROW_CM_ERR(Rs64->WriteSurfaceStride((const unsigned char *)rscsk64, nullptr, par.sb64Cols * sizeof(int)));
     THROW_CM_ERR(Cs64->WriteSurfaceStride((const unsigned char *)rscsk64, nullptr, par.sb64Cols * sizeof(int)));
     free(rscsk64);
-    vector<SurfaceIndex,7> ref_ids;
+    vector<SurfaceIndex,8> ref_ids;
     vector<SurfaceIndex,2> mi_ids;
     vector<SurfaceIndex, 8> rscs_ids;
     ref_ids[0] = *get_index(ref0);
@@ -802,17 +811,20 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     uint32_t SliceQpY = frame_curr.m_sliceQpY;
     uint32_t PyramidLayer = frame_curr.m_pyramidLayer;
     uint32_t TemporalSync = 1;
-    THROW_CM_ERR(kernel->SetKernelArg(0, sizeof(SurfaceIndex), get_index(param)));
-    THROW_CM_ERR(kernel->SetKernelArg(1, sizeof(SurfaceIndex), get_index(src)));
-    THROW_CM_ERR(kernel->SetKernelArg(2, ref_ids.get_size_data(), ref_ids.get_addr_data()));
-    THROW_CM_ERR(kernel->SetKernelArg(3, mi_ids.get_size_data(), mi_ids.get_addr_data()));
-    THROW_CM_ERR(kernel->SetKernelArg(4, rscs_ids.get_size_data(), rscs_ids.get_addr_data()));
-    THROW_CM_ERR(kernel->SetKernelArg(5, sizeof(int), &SliceQpY));
-    THROW_CM_ERR(kernel->SetKernelArg(6, sizeof(int), &PyramidLayer));
-    THROW_CM_ERR(kernel->SetKernelArg(7, sizeof(int), &TemporalSync));
+    const uint32_t yoff = 0;
+    int kernelIdx = 0;
+    THROW_CM_ERR(kernel->SetKernelArg(kernelIdx++, sizeof(SurfaceIndex), get_index(param)));
+    THROW_CM_ERR(kernel->SetKernelArg(kernelIdx++, sizeof(SurfaceIndex), get_index(src)));
+    THROW_CM_ERR(kernel->SetKernelArg(kernelIdx++, ref_ids.get_size_data(), ref_ids.get_addr_data()));
+    THROW_CM_ERR(kernel->SetKernelArg(kernelIdx++, mi_ids.get_size_data(), mi_ids.get_addr_data()));
+    THROW_CM_ERR(kernel->SetKernelArg(kernelIdx++, rscs_ids.get_size_data(), rscs_ids.get_addr_data()));
+    THROW_CM_ERR(kernel->SetKernelArg(kernelIdx++, sizeof(int), &SliceQpY));
+    THROW_CM_ERR(kernel->SetKernelArg(kernelIdx++, sizeof(int), &PyramidLayer));
+    THROW_CM_ERR(kernel->SetKernelArg(kernelIdx++, sizeof(int), &TemporalSync));
 #ifdef TRYINTRA_ORIG
-    THROW_CM_ERR(kernel->SetKernelArg(8, newmv_ids.get_size_data(), newmv_ids.get_addr_data()));
+    THROW_CM_ERR(kernel->SetKernelArg(kernelIdx++, newmv_ids.get_size_data(), newmv_ids.get_addr_data()));
 #endif
+    THROW_CM_ERR(kernel->SetKernelArg(kernelIdx++, sizeof(yoff), &yoff));
     THROW_CM_ERR(task->AddKernel(kernel));
     THROW_CM_ERR(kernel->SetThreadCount(tsw * tsh));
     THROW_CM_ERR(device->CreateThreadSpace(tsw, tsh, ts));

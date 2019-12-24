@@ -81,6 +81,7 @@ const char genx_av1_mode_decision_skl[1] = {};
 #include "../include/genx_av1_mode_decision_hsw_isa.h"
 #include "../include/genx_av1_mode_decision_bdw_isa.h"
 #include "../include/genx_av1_mode_decision_skl_isa.h"
+#include "../include/genx_av1_mode_decision_icllp_isa.h"
 #endif //CMRT_EMU
 
 typedef decltype(&CM_ALIGNED_FREE) cm_aligned_deleter;
@@ -106,43 +107,77 @@ struct new_mv_data_large : public new_mv_data_small {
 typedef std::unique_ptr<ModeInfo, cm_aligned_deleter> mode_info_ptr;
 
 mode_info_ptr run_cpu(const H265VideoParam &par, Frame &curr, const Frame &ref0, const Frame &ref1);
-mode_info_ptr run_gpu(const H265VideoParam &par, Frame &curr, const Frame &ref0, const Frame &ref1);
-bool compare(const ModeInfo *mi_cpu, const ModeInfo *mi_gpu);
+mode_info_ptr run_gpu(const H265VideoParam &par, Frame &curr, const Frame &ref0, const Frame &ref1, bool print_time);
+bool compare(const ModeInfo *mi_cpu, const ModeInfo *mi_gpu, bool print_error);
 
-namespace global_test_params {
-    char *yuv = "C:/yuv/1080p/park_joy_1920x1080_500_50.yuv";
-    int32_t width  = 1920;
-    int32_t height = 1080;
-    int32_t compound_allowed = 1;
-};
+struct global_test_params_t {
+    const char *yuv;
+    int32_t width;
+    int32_t height;
+    int32_t compound_allowed;
+    int32_t qp;
+    int32_t layer;
+    int32_t fast_test;
+
+    global_test_params_t()
+        : yuv("C:/yuv/1080p/park_joy_1920x1080_500_50.yuv")
+        , width(1920)
+        , height(1080)
+        , compound_allowed(1)
+        , qp(120)
+        , layer(0)
+        , fast_test(0)
+    {}
+
+    static void print_help(const char **argv)
+    {
+        char exe_name[256], exe_ext[256];
+        _splitpath_s(argv[0], nullptr, 0, nullptr, 0, exe_name, 256, exe_ext, 256);
+        printf("Usage examples:\n\n");
+        printf("  1) To run with default parameters ("); global_test_params_t().print_params(); printf(")\n");
+        printf("    %s%s\n\n", exe_name, exe_ext);
+        printf("  2) Run with custom parameters\n");
+        printf("    %s%s <yuvname> <width> <height> <compound_allowed> <qp> <layer> <fast_test>\n", exe_name, exe_ext);
+    }
+
+    void print_params() const
+    {
+        printf("%s %dx%d compound_allowed=%d qp=%d layer=%d fast=%d", yuv, width, height, compound_allowed, qp, layer, fast_test);
+    }
+
+    bool try_parse_params(int32_t argc, const char **argv)
+    {
+        if (argc == 8) {
+            yuv = argv[1];
+            width = atoi(argv[2]);
+            height = atoi(argv[3]);
+            compound_allowed = !!atoi(argv[4]);
+            qp = atoi(argv[5]);
+            layer = atoi(argv[6]);
+            fast_test = atoi(argv[7]);
+            return true;
+        }
+        else
+            return false;
+    }
+
+} global_test_params;
 
 const size_t ALIGNMENT = 32;
 
-void parse_cmd(int argc, char **argv) {
+void parse_cmd(int argc, const char **argv)
+{
     if (argc == 2) {
         if (_stricmp(argv[1], "--help") == 0 ||
             _stricmp(argv[1], "-h") == 0 ||
             _stricmp(argv[1], "-?") == 0)
         {
-
-            char exe_name[256], exe_ext[256];
-            _splitpath_s(argv[0], nullptr, 0, nullptr, 0, exe_name, 256, exe_ext, 256);
-            printf("Usage examples:\n\n");
-            printf("  1) Run with default parameters (yuv=%s width=%d height=%d compound_allowed=1)\n",
-                global_test_params::yuv, global_test_params::width, global_test_params::height);
-            printf("    %s%s\n\n", exe_name, exe_ext);
-            printf("  2) Run with custom parameters\n");
-            printf("    %s%s <yuvname> <width> <height> <compound_allowed>\n", exe_name, exe_ext);
+            global_test_params_t::print_help(argv);
             exit(0);
         }
     }
 
-    if (argc == 5) {
-        global_test_params::yuv    = argv[1];
-        global_test_params::width  = atoi(argv[2]);
-        global_test_params::height = atoi(argv[3]);
-        global_test_params::compound_allowed = !!atoi(argv[4]);
-    }
+    global_test_params.try_parse_params(argc, argv);
 }
 
 void load_frame(std::fstream &f, const FrameData *frame)
@@ -158,8 +193,8 @@ void load_frame(std::fstream &f, const FrameData *frame)
 
 void setup_video_params(H265VideoParam *par)
 {
-    par->Width = global_test_params::width;
-    par->Height = global_test_params::height;
+    par->Width = global_test_params.width;
+    par->Height = global_test_params.height;
     par->miRows = (par->Height + 7) >> 3;
     par->miCols = (par->Width + 7) >> 3;
     par->sb64Rows = (par->miRows + 7) >> 3;
@@ -226,7 +261,51 @@ void randomize_mv_data(const H265VideoParam &par, int sz, int row, int col, Fram
     CopyNxN(tmp_pred, 64, pred, cur->m_feiInterp[sz]->m_pitch, 8 << sz);
 }
 
-void setup_frames(const H265VideoParam &par, Frame *curr, Frame *ref0, Frame *ref1, std::fstream &f)
+void set_compound_qp_and_layer(const H265VideoParam &par, Frame *curr, Frame *ref0, Frame *ref1,
+                               int32_t compound_allowed, int32_t qp, int32_t pyramidLayer)
+{
+    curr->m_sliceQpY = qp;
+    int16_t q = vp9_dc_quant(qp, 0, par.bitDepthLuma);
+    curr->m_lambda = 88 * q * q / 24.f / 512 / 16 / 128;
+    curr->m_lambdaSatd = sqrt(curr->m_lambda * 512) / 512;
+    curr->m_lambdaSatdInt = q * 1386; // == int(curr->m_lambdaSatd * (1<<24))
+    curr->m_pyramidLayer = pyramidLayer;
+
+    Zero(curr->isUniq);
+#ifdef SINGLE_SIDED_COMPOUND
+    curr->compoundReferenceAllowed = 1;
+    curr->m_picCodeType = compound_allowed ? MFX_FRAMETYPE_B : MFX_FRAMETYPE_P;
+    curr->refFramesVp9[0] = ref0;
+    curr->refFramesVp9[1] = ref0;
+    curr->refFramesVp9[2] = ref1;
+    curr->isUniq[LAST_FRAME] = 1;
+    curr->isUniq[GOLDEN_FRAME] = 0;
+    curr->isUniq[ALTREF_FRAME] = 1;
+#else
+    curr->compoundReferenceAllowed = compound_allowed;
+    if (curr->compoundReferenceAllowed) {
+        curr->m_picCodeType = MFX_FRAMETYPE_B;
+        curr->refFramesVp9[0] = ref0;
+        curr->refFramesVp9[1] = ref0;
+        curr->refFramesVp9[2] = ref1;
+        curr->isUniq[LAST_FRAME] = 1;
+        curr->isUniq[GOLDEN_FRAME] = 0;
+        curr->isUniq[ALTREF_FRAME] = 1;
+    }
+    else {
+        curr->m_picCodeType = MFX_FRAMETYPE_P;
+        curr->refFramesVp9[0] = ref0;
+        curr->refFramesVp9[1] = ref1;
+        curr->refFramesVp9[2] = ref0;
+        curr->isUniq[LAST_FRAME] = 1;
+        curr->isUniq[GOLDEN_FRAME] = 1;
+        curr->isUniq[ALTREF_FRAME] = 0;
+    }
+#endif
+}
+
+void setup_frames(const H265VideoParam &par, Frame *curr, Frame *ref0, Frame *ref1, std::fstream &f,
+                  int32_t compound_allowed, int32_t qp, int32_t layer)
 {
     curr->Create(&par);
     ref0->Create(&par);
@@ -234,12 +313,7 @@ void setup_frames(const H265VideoParam &par, Frame *curr, Frame *ref0, Frame *re
 
     curr->ResetEncInfo();
 
-    curr->m_sliceQpY = 120;
-    int16_t q = vp9_dc_quant(curr->m_sliceQpY, 0, par.bitDepthLuma);
-    curr->m_lambda = 88 * q * q / 24.f / 512 / 16 / 128;
-    curr->m_lambdaSatd = sqrt(curr->m_lambda * 512) / 512;
-    curr->m_lambdaSatdInt = q * 1386; // == int(frame->m_lambdaSatd * (1<<24))
-    curr->m_pyramidLayer = 0;
+    set_compound_qp_and_layer(par, curr, ref0, ref1, compound_allowed, qp, layer);
 
     curr->m_origin = new FrameData;
     ref0->m_recon = new FrameData;
@@ -251,36 +325,6 @@ void setup_frames(const H265VideoParam &par, Frame *curr, Frame *ref0, Frame *re
     ref0->m_recon->Create(allocInfo);
     ref1->m_recon->Create(allocInfo);
 
-    Zero(curr->isUniq);
-#ifdef SINGLE_SIDED_COMPOUND
-    curr->compoundReferenceAllowed = 1;
-    curr->m_picCodeType = global_test_params::compound_allowed ? MFX_FRAMETYPE_B : MFX_FRAMETYPE_P;
-    curr->refFramesVp9[0] = ref0;
-    curr->refFramesVp9[1] = ref0;
-    curr->refFramesVp9[2] = ref1;
-    curr->isUniq[LAST_FRAME] = 1;
-    curr->isUniq[GOLDEN_FRAME] = 0;
-    curr->isUniq[ALTREF_FRAME] = 1;
-#else
-    curr->compoundReferenceAllowed = global_test_params::compound_allowed;
-    if (curr->compoundReferenceAllowed) {
-        curr->m_picCodeType = MFX_FRAMETYPE_B;
-        curr->refFramesVp9[0] = ref0;
-        curr->refFramesVp9[1] = ref0;
-        curr->refFramesVp9[2] = ref1;
-        curr->isUniq[LAST_FRAME] = 1;
-        curr->isUniq[GOLDEN_FRAME] = 0;
-        curr->isUniq[ALTREF_FRAME] = 1;
-    } else {
-        curr->m_picCodeType = MFX_FRAMETYPE_P;
-        curr->refFramesVp9[0] = ref0;
-        curr->refFramesVp9[1] = ref1;
-        curr->refFramesVp9[2] = ref0;
-        curr->isUniq[LAST_FRAME] = 1;
-        curr->isUniq[GOLDEN_FRAME] = 1;
-        curr->isUniq[ALTREF_FRAME] = 0;
-    }
-#endif
     curr->compFixedRef = ALTREF_FRAME;
     curr->compVarRef[0] = LAST_FRAME;
     curr->compVarRef[1] = GOLDEN_FRAME;
@@ -309,20 +353,24 @@ void clear_tile_contexts(Frame *frame) {
         frame->m_tileContexts[i].Clear();
 }
 
-int main(int argc, char **argv)
+int main(int argc, const char **argv)
 {
     try {
         parse_cmd(argc, argv);
         print_hw_caps();
 
-        printf("Running with %s %dx%d compound_allowed=%d\n", global_test_params::yuv,
-            global_test_params::width, global_test_params::height, global_test_params::compound_allowed);
+        printf("Running with ");
+        global_test_params.print_params();
+        printf("\n");
 
-        const int32_t width = global_test_params::width;
-        const int32_t height = global_test_params::height;
+        const int32_t width = global_test_params.width;
+        const int32_t height = global_test_params.height;
+        const int32_t compound = global_test_params.compound_allowed;
+        const int32_t layer = global_test_params.layer;
+        const int32_t qp = global_test_params.qp;
         const int32_t frame_size = height * width;
 
-        std::fstream f(global_test_params::yuv, std::ios_base::in | std::ios_base::binary);
+        std::fstream f(global_test_params.yuv, std::ios_base::in | std::ios_base::binary);
         if (!f)
             throw std::runtime_error("Failed to open yuv file");
 
@@ -335,22 +383,50 @@ int main(int argc, char **argv)
         Frame ref1;
 
         setup_video_params(&par);
-        setup_frames(par, &curr, &ref0, &ref1, f);
+        setup_frames(par, &curr, &ref0, &ref1, f, compound, qp, layer);
 
+        int status = PASSED;
+
+        printf("Running performance test with compound=%d qp=%3d layer=%d\n", global_test_params.compound_allowed, global_test_params.qp, global_test_params.layer);
+        set_compound_qp_and_layer(par, &curr, &ref0, &ref1, global_test_params.compound_allowed, global_test_params.qp, global_test_params.layer);
+        auto mi_gpu = run_gpu(par, curr, ref0, ref1, true);
         auto mi_cpu = run_cpu(par, curr, ref0, ref1);
-        auto mi_gpu = run_gpu(par, curr, ref0, ref1);
+        if (!compare(mi_cpu.get(), mi_gpu.get(), true)) {
+            status = FAILED;
+            printf("failed\n");
+        }
+        else {
+            printf("passed\n");
+        }
+
+        if (!global_test_params.fast_test) {
+            for (int32_t compound = 0; compound < 2; compound++) {
+                for (int32_t qp = 30; qp < 255; qp += 50) {
+                    for (int32_t layer = 0; layer < 4; layer++) {
+                        printf("Testing compound=%d qp=%3d layer=%d: ", compound, qp, layer);
+                        set_compound_qp_and_layer(par, &curr, &ref0, &ref1, compound, qp, layer);
+
+                        auto mi_cpu = run_cpu(par, curr, ref0, ref1);
+                        auto mi_gpu = run_gpu(par, curr, ref0, ref1, false);
+
+                        if (!compare(mi_cpu.get(), mi_gpu.get(), false)) {
+                            status = FAILED;
+                            printf("failed\n");
+                        }
+                        else {
+                            printf("passed\n");
+                        }
+                    }
+                }
+            }
+        }
 
         delete curr.m_origin;
         delete ref0.m_recon;
         delete ref1.m_recon;
 
-        if (!compare(mi_cpu.get(), mi_gpu.get())) {
-            printf("FAILED\n");
-            return 1;
-        }
-
-        printf("PASSED\n");
-        return 0;
+        printf(status == PASSED ? "PASSED\n" : "FAILED\n");
+        return status;
 
     } catch (cm_error &e) {
         printf("CM_ERROR:\n");
@@ -359,9 +435,10 @@ int main(int argc, char **argv)
         printf("  line: %d\n", e.line());
         if (const char *msg = e.what())
             printf("  message: %s\n", msg);
+        return FAILED;
     } catch (std::exception &e) {
         printf("ERROR: %s\n", e.what());
-        return 1;
+        return FAILED;
     }
 }
 
@@ -390,13 +467,13 @@ mode_info_ptr run_cpu(const H265VideoParam &par, Frame &curr, const Frame &ref0,
             const int32_t ctbRowWithinTile = row - (cu->m_tileBorders.rowStart >> 3);
             const TileContexts &tileCtx = curr.m_tileContexts[ GetTileIndex(par.tileParam, row, col) ];
             As16B(tileCtx.aboveNonzero[0] + (ctbColWithinTile << 4)) = As16B(cu->m_contexts.aboveNonzero[0]);
-            As8B(tileCtx.aboveNonzero[1]  + (ctbColWithinTile << 3)) = As8B (cu->m_contexts.aboveNonzero[1]);
-            As8B(tileCtx.aboveNonzero[2]  + (ctbColWithinTile << 3)) = As8B (cu->m_contexts.aboveNonzero[2]);
+            As8B (tileCtx.aboveNonzero[1] + (ctbColWithinTile << 3)) = As8B (cu->m_contexts.aboveNonzero[1]);
+            As8B (tileCtx.aboveNonzero[2] + (ctbColWithinTile << 3)) = As8B (cu->m_contexts.aboveNonzero[2]);
             As16B(tileCtx.leftNonzero[0]  + (ctbRowWithinTile << 4)) = As16B(cu->m_contexts.leftNonzero[0]);
-            As8B(tileCtx.leftNonzero[1]   + (ctbRowWithinTile << 3)) = As8B (cu->m_contexts.leftNonzero[1]);
-            As8B(tileCtx.leftNonzero[2]   + (ctbRowWithinTile << 3)) = As8B (cu->m_contexts.leftNonzero[2]);
-            As8B(tileCtx.abovePartition   + (ctbColWithinTile << 3)) = As8B (cu->m_contexts.abovePartition);
-            As8B(tileCtx.leftPartition    + (ctbRowWithinTile << 3)) = As8B (cu->m_contexts.leftPartition);
+            As8B (tileCtx.leftNonzero[1]  + (ctbRowWithinTile << 3)) = As8B (cu->m_contexts.leftNonzero[1]);
+            As8B (tileCtx.leftNonzero[2]  + (ctbRowWithinTile << 3)) = As8B (cu->m_contexts.leftNonzero[2]);
+            As8B (tileCtx.abovePartition  + (ctbColWithinTile << 3)) = As8B (cu->m_contexts.abovePartition);
+            As8B (tileCtx.leftPartition   + (ctbRowWithinTile << 3)) = As8B (cu->m_contexts.leftPartition);
         }
     }
 
@@ -453,11 +530,11 @@ void setup_param_for_gpu(const H265VideoParam &par, const Frame &frame, H265Vide
     param_sys->lambda = frame.m_lambda;
     param_sys->lambdaInt = uint32_t(frame.m_lambdaSatd * 2048 + 0.5);
     param_sys->compound_allowed = frame.compoundReferenceAllowed;
-#ifdef SINGLE_SIDED_COMPOUND
-    param_sys->bidir_compound = (frame.m_picCodeType == MFX_FRAMETYPE_B);
-#else
-    param_sys->single_ref = 0;
-#endif
+    if (frame.compoundReferenceAllowed) {
+        param_sys->bidir_compound_or_single_ref = (frame.m_picCodeType == MFX_FRAMETYPE_B);
+    } else {
+        param_sys->bidir_compound_or_single_ref = 0;
+    }
     const int qctx = get_q_ctx(frame.m_sliceQpY);
     const TxbBitCounts &tbc = frame.bitCount.txb[qctx][TX_8X8][PLANE_TYPE_Y];
     for (int i = 0; i < 7; i++)
@@ -510,9 +587,83 @@ void setup_param_for_gpu(const H265VideoParam &par, const Frame &frame, H265Vide
             }
         }
     }
+
+    const float LUT_IEF_SPLIT_MT[4][4] = {
+        { 2.587840f, 7.278976f, 10.856256f, 10.856256f },
+        { 6.872320f, 7.278976f, 10.856256f, 10.856256f },
+        { 7.239296f, 7.278976f, 10.856256f, 10.856256f },
+        { 7.646336f, 9.961600f, 10.856256f, 10.856256f },
+    };
+
+    const float LUT_IEF_SPLIT_ST[4][4] = {
+        { 20.f,  77.150f, 142.184f, 142.184f },
+        { 20.f,  89.805f, 142.184f, 142.184f },
+        { 20.f,  89.805f, 249.454f, 249.454f },
+        { 20.f, 249.454f, 249.454f, 249.454f },
+    };
+
+    const float LUT_IEF_SPLIT_A[4][4] = {
+        { 0.303627f, 0.423133f, 0.397384f, 0.397384f },
+        { 0.315012f, 0.435791f, 0.397396f, 0.397396f },
+        { 0.315445f, 0.443448f, 0.500000f, 0.500000f },
+        { 0.314350f, 0.456550f, 0.500000f, 0.500000f },
+    };
+
+    const float LUT_IEF_SPLIT_B[4][4] = {
+        { 0.547588f, 0.022428f, 0.473092f, 0.473092f },
+        { 0.572353f, 0.041593f, 0.527727f, 0.527727f },
+        { 0.677961f, 0.203189f, 0.000000f, 0.000000f },
+        { 0.794845f, 0.228990f, 0.000000f, 0.000000f },
+    };
+
+    const float LUT_IEF_SPLIT_M[4][4] = {
+        { 0.003458f, 0.013396f, 0.013396f, 0.013396f },
+        { 0.006642f, 0.013410f, 0.013410f, 0.013410f },
+        { 0.006441f, 0.013410f, 0.013410f, 0.013410f },
+        { 0.010107f, 0.137010f, 0.137010f, 0.137010f },
+    };
+
+    const float LUT_IEF_LEAF_A[4][4] = {
+        { 0.224285f, 0.233921f, 0.242109f, 0.265764f },
+        { 0.225157f, 0.281690f, 0.286192f, 0.279662f },
+        { 0.228965f, 0.276006f, 0.302635f, 0.336254f },
+        { 0.244477f, 0.308719f, 0.324380f, 0.378376f },
+    };
+
+    const float LUT_IEF_LEAF_B[4][4] = {
+        { 0.278397f, 0.413391f, 0.424680f, 0.517953f },
+        { 0.437689f, 0.314939f, 0.365299f, 0.622422f },
+        { 0.628257f, 0.525718f, 0.548104f, 0.617987f },
+        { 0.688823f, 0.626691f, 0.605718f, 0.553362f },
+    };
+
+    const float LUT_IEF_LEAF_M[4][4] = {
+        { 0.295610f, 0.218830f, 0.089055f, 0.049053f },
+        { 0.201050f, 0.177870f, 0.028076f, 0.025316f },
+        { 0.177870f, 0.146770f, 0.028076f, 0.023686f },
+        { 0.146770f, 0.063581f, 0.028076f, 0.012673f },
+    };
+#ifdef FAST_MODE
+    param_sys->fastMode = 1;
+#else
+    param_sys->fastMode = 0;
+#endif
+    for (int qIdx = 0; qIdx < 4; qIdx++) {
+        for (int qpLayer = 0; qpLayer < 4; qpLayer++) {
+            param_sys->lutIef[qIdx][qpLayer].split.mt = LUT_IEF_SPLIT_MT[qIdx][qpLayer];
+            param_sys->lutIef[qIdx][qpLayer].split.st = LUT_IEF_SPLIT_ST[qIdx][qpLayer];
+            param_sys->lutIef[qIdx][qpLayer].split.a  = LUT_IEF_SPLIT_A[qIdx][qpLayer];
+            param_sys->lutIef[qIdx][qpLayer].split.b  = LUT_IEF_SPLIT_B[qIdx][qpLayer];
+            param_sys->lutIef[qIdx][qpLayer].split.m  = LUT_IEF_SPLIT_M[qIdx][qpLayer];
+
+            param_sys->lutIef[qIdx][qpLayer].leaf.a = LUT_IEF_LEAF_A[qIdx][qpLayer];
+            param_sys->lutIef[qIdx][qpLayer].leaf.b = LUT_IEF_LEAF_B[qIdx][qpLayer];
+            param_sys->lutIef[qIdx][qpLayer].leaf.m = LUT_IEF_LEAF_M[qIdx][qpLayer];
+        }
+    }
 }
 
-mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame &frame_ref0, const Frame &frame_ref1)
+mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame &frame_ref0, const Frame &frame_ref1, bool print_time)
 {
     using namespace H265Enc;
 
@@ -530,6 +681,8 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     CmSurface2D *ref1 = nullptr;
     CmSurface2D *newmv[2][4] = {};
     CmSurface2D *newmv_pred[4] = {};
+    CmSurface2D *Rs16 = nullptr;
+    CmSurface2D *Cs16 = nullptr;
     CmSurface2D *Rs32 = nullptr;
     CmSurface2D *Cs32 = nullptr;
     CmSurface2D *Rs64 = nullptr;
@@ -545,8 +698,8 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
 
     THROW_CM_ERR(CreateCmDevice(device, version));
     THROW_CM_ERR(device->InitPrintBuffer());
-    THROW_CM_ERR(device->CreateQueue(queue));
     THROW_CM_ERR(device->GetCaps(CAP_GPU_PLATFORM, size, &hw_type));
+    THROW_CM_ERR(device->CreateQueue(queue));
 #ifdef CMRT_EMU
     hw_type = PLATFORM_INTEL_HSW;
 #endif // CMRT_EMU
@@ -559,8 +712,11 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
         THROW_CM_ERR(device->LoadProgram((void *)genx_av1_mode_decision_bdw, sizeof(genx_av1_mode_decision_bdw), program, "nojitter"));
         break;
     case PLATFORM_INTEL_SKL:
-    case PLATFORM_INTEL_KBL:
+        //case PLATFORM_INTEL_KBL:
         THROW_CM_ERR(device->LoadProgram((void *)genx_av1_mode_decision_skl, sizeof(genx_av1_mode_decision_skl), program, "nojitter"));
+        break;
+    case PLATFORM_INTEL_ICLLP:
+        THROW_CM_ERR(device->LoadProgram((void *)genx_av1_mode_decision_icllp, sizeof(genx_av1_mode_decision_icllp), program, "nojitter"));
         break;
     default:
         throw cm_error(CM_FAILURE, __FILE__, __LINE__, "Unknown HW type");
@@ -570,7 +726,7 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     THROW_CM_ERR(device->CreateBufferUP(sizeof(H265VideoParam), param_sys.get(), param));
     setup_param_for_gpu(par, frame_curr, param_sys.get());
 
-    THROW_CM_ERR(device->CreateSurface2D(par.Width, par.Height, CM_SURFACE_FORMAT_P8, scratchbuf));
+    THROW_CM_ERR(device->CreateSurface2D(par.Width, par.Height*2, CM_SURFACE_FORMAT_A8, scratchbuf));
     THROW_CM_ERR(device->CreateSurface2D(par.Width, par.Height, CM_SURFACE_FORMAT_NV12, src));
     THROW_CM_ERR(device->CreateSurface2D(par.Width, par.Height, CM_SURFACE_FORMAT_NV12, ref0));
     THROW_CM_ERR(device->CreateSurface2D(par.Width, par.Height, CM_SURFACE_FORMAT_NV12, ref1));
@@ -585,7 +741,7 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
             const int width_in_blk  = par.sb64Cols << (3 - sz);
             const int height_in_blk = par.sb64Rows << (3 - sz);
             const FeiOutData *data = frame_curr.m_feiInterData[refs[r]][sz];
-            THROW_CM_ERR(device->CreateSurface2D(width_in_blk * data_size, height_in_blk, CM_SURFACE_FORMAT_P8, newmv[r][sz]));
+            THROW_CM_ERR(device->CreateSurface2D(width_in_blk * data_size, height_in_blk, CM_SURFACE_FORMAT_A8, newmv[r][sz]));
             THROW_CM_ERR(newmv[r][sz]->WriteSurfaceStride(data->m_sysmem, nullptr, data->m_pitch));
         }
     }
@@ -593,7 +749,7 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     for (int sz = 0; sz < 4; sz++) {
         const int size = par.sb64Cols * par.sb64Rows * 64 * 64;
         const FeiOutData *data = frame_curr.m_feiInterp[sz];
-        THROW_CM_ERR(device->CreateSurface2D(par.sb64Cols * 64, par.sb64Rows * 64, CM_SURFACE_FORMAT_P8, newmv_pred[sz]));
+        THROW_CM_ERR(device->CreateSurface2D(par.sb64Cols * 64, par.sb64Rows * 64, CM_SURFACE_FORMAT_A8, newmv_pred[sz]));
         THROW_CM_ERR(newmv_pred[sz]->WriteSurfaceStride(data->m_sysmem, nullptr, data->m_pitch));
 
     }
@@ -602,13 +758,23 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     const uint32_t height_mi = par.sb64Rows * 8;
     uint32_t pitch_mi;
     uint32_t size_mi;
-    THROW_CM_ERR(device->GetSurface2DInfo(width_mi * sizeof(ModeInfo), height_mi, CM_SURFACE_FORMAT_P8, pitch_mi, size_mi));
+    THROW_CM_ERR(device->GetSurface2DInfo(width_mi * sizeof(ModeInfo), height_mi, CM_SURFACE_FORMAT_A8, pitch_mi, size_mi));
     mode_info_ptr mi_sys = make_aligned_ptr<ModeInfo>(size_mi, 0x1000);
     memset(mi_sys.get(), 0, sizeof(ModeInfo) * size_mi);
-    THROW_CM_ERR(device->CreateSurface2DUP(width_mi * sizeof(ModeInfo), height_mi, CM_SURFACE_FORMAT_P8, mi_sys.get(), mi));
+    THROW_CM_ERR(device->CreateSurface2DUP(width_mi * sizeof(ModeInfo), height_mi, CM_SURFACE_FORMAT_A8, mi_sys.get(), mi));
 
-    THROW_CM_ERR(device->CreateSurface2D(2 * par.sb64Cols * sizeof(int), 2 * par.sb64Rows, CM_SURFACE_FORMAT_P8, Rs32));
-    THROW_CM_ERR(device->CreateSurface2D(2 * par.sb64Cols * sizeof(int), 2 * par.sb64Rows, CM_SURFACE_FORMAT_P8, Cs32));
+    THROW_CM_ERR(device->CreateSurface2D(4 * par.sb64Cols * sizeof(int), 4 * par.sb64Rows, CM_SURFACE_FORMAT_A8, Rs16));
+    THROW_CM_ERR(device->CreateSurface2D(4 * par.sb64Cols * sizeof(int), 4 * par.sb64Rows, CM_SURFACE_FORMAT_A8, Cs16));
+    int32_t* rscsk16 = (int32_t*)malloc(4 * par.sb64Cols * 4 * par.sb64Rows * sizeof(int));
+    for (int j = 0; j < 4 * par.sb64Rows; j++)
+        for (int k = 0; k < 4 * par.sb64Cols; k++)
+            rscsk16[(j * 4 * par.sb64Cols) + k] = 2560;// +k + j;
+    THROW_CM_ERR(Rs16->WriteSurfaceStride((const unsigned char *)rscsk16, nullptr, 4 * par.sb64Cols * sizeof(int)));
+    THROW_CM_ERR(Cs16->WriteSurfaceStride((const unsigned char *)rscsk16, nullptr, 4 * par.sb64Cols * sizeof(int)));
+    free(rscsk16);
+
+    THROW_CM_ERR(device->CreateSurface2D(2 * par.sb64Cols * sizeof(int), 2 * par.sb64Rows, CM_SURFACE_FORMAT_A8, Rs32));
+    THROW_CM_ERR(device->CreateSurface2D(2 * par.sb64Cols * sizeof(int), 2 * par.sb64Rows, CM_SURFACE_FORMAT_A8, Cs32));
     int32_t* rscsk32 = (int32_t*)malloc(2 * par.sb64Cols * 2 * par.sb64Rows * sizeof(int));
     for (int j = 0; j < 2 * par.sb64Rows; j++)
         for (int k = 0; k < 2 * par.sb64Cols; k++)
@@ -617,8 +783,8 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     THROW_CM_ERR(Cs32->WriteSurfaceStride((const unsigned char *)rscsk32, nullptr, 2 * par.sb64Cols * sizeof(int)));
     free(rscsk32);
 
-    THROW_CM_ERR(device->CreateSurface2D(par.sb64Cols * sizeof(int), par.sb64Rows, CM_SURFACE_FORMAT_P8, Rs64));
-    THROW_CM_ERR(device->CreateSurface2D(par.sb64Cols * sizeof(int), par.sb64Rows, CM_SURFACE_FORMAT_P8, Cs64));
+    THROW_CM_ERR(device->CreateSurface2D(par.sb64Cols * sizeof(int), par.sb64Rows, CM_SURFACE_FORMAT_A8, Rs64));
+    THROW_CM_ERR(device->CreateSurface2D(par.sb64Cols * sizeof(int), par.sb64Rows, CM_SURFACE_FORMAT_A8, Cs64));
     int32_t* rscsk64 = (int32_t*)malloc(par.sb64Cols*par.sb64Rows * sizeof(int));
     for (int k = 0; k < par.sb64Cols*par.sb64Rows; k++)
         rscsk64[k] = 20480;
@@ -626,13 +792,15 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     THROW_CM_ERR(Cs64->WriteSurfaceStride((const unsigned char *)rscsk64, nullptr, par.sb64Cols * sizeof(int)));
     free(rscsk64);
 
-    vector<SurfaceIndex,8> newmv_ids;
-    vector<SurfaceIndex,7> ref_ids;
-    vector<SurfaceIndex, 4> rscs_ids;
-    rscs_ids[0] = *get_index(Rs32);
-    rscs_ids[1] = *get_index(Cs32);
-    rscs_ids[2] = *get_index(Rs64);
-    rscs_ids[3] = *get_index(Cs64);
+    vector<SurfaceIndex, 8> newmv_ids;
+    vector<SurfaceIndex, 8> ref_ids;
+    vector<SurfaceIndex, 8> rscs_ids;
+    rscs_ids[0] = *get_index(Rs16);
+    rscs_ids[1] = *get_index(Cs16);
+    rscs_ids[2] = *get_index(Rs32);
+    rscs_ids[3] = *get_index(Cs32);
+    rscs_ids[4] = *get_index(Rs64);
+    rscs_ids[5] = *get_index(Cs64);
 
     newmv_ids[0] = *get_index(newmv[0][0]);
     newmv_ids[1] = *get_index(newmv[0][1]);
@@ -658,7 +826,7 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     THROW_CM_ERR(kernel->SetKernelArg(3, newmv_ids.get_size_data(), newmv_ids.get_addr_data()));
     THROW_CM_ERR(kernel->SetKernelArg(4, sizeof(SurfaceIndex), get_index(mi)));
     THROW_CM_ERR(kernel->SetKernelArg(5, rscs_ids.get_size_data(), rscs_ids.get_addr_data()));
-    THROW_CM_ERR(kernel->SetKernelArg(6, sizeof(int), &qpLayer));
+    THROW_CM_ERR(kernel->SetKernelArg(6, sizeof(qpLayer), &qpLayer));
     THROW_CM_ERR(task->AddKernel(kernel));
     THROW_CM_ERR(kernel->SetThreadCount(tsw * tsh));
     THROW_CM_ERR(device->CreateThreadSpace(tsw, tsh, ts));
@@ -670,7 +838,8 @@ mode_info_ptr run_gpu(const H265VideoParam &par, Frame &frame_curr, const Frame 
     THROW_CM_ERR(device->FlushPrintBuffer());
 
 #ifndef CMRT_EMU
-    printf("TIME = %.3f ms\n", GetAccurateGpuTime(queue, task, ts) / 1000000.);
+    if (print_time)
+        printf("TIME = %.3f ms\n", GetAccurateGpuTime(queue, task, ts) / 1000000.);
 #endif //CMRT_EMU
 
     queue->DestroyEvent(e);
@@ -725,7 +894,7 @@ void report_mode_info_difference(int32_t mi_row, int32_t mi_col, const ModeInfo 
     printf("\n");
 }
 
-bool compare(const ModeInfo *mi_cpu, const ModeInfo *mi_gpu)
+bool compare(const ModeInfo *mi_cpu, const ModeInfo *mi_gpu, bool print_error)
 {
     H265VideoParam par = {};
     setup_video_params(&par);
@@ -743,7 +912,8 @@ bool compare(const ModeInfo *mi_cpu, const ModeInfo *mi_gpu)
                 (cpu.skip & 1) != (gpu.skip & 1) ||
                 cpu.sad        != gpu.sad)
             {
-                report_mode_info_difference(i, j, cpu, gpu);
+                if (print_error)
+                    report_mode_info_difference(i, j, cpu, gpu);
                 return false;
             }
         }

@@ -22,7 +22,6 @@
 #include "string.h"
 #include "utility"
 #include "type_traits"
-#include "ipps.h"
 #include "stdint.h"
 #include "immintrin.h"
 #include "mfx_av1_opts_intrin.h"
@@ -1767,7 +1766,7 @@ namespace {
         __m256i shuftab2 = loada_si256(shuftab_nv12_horz2);
 
         const int pitchTmp = 2 * w16;
-        const int max_height = IPP_MIN(MAX_BLOCK_SIZE, 2 * w16);
+        const int max_height = MIN(MAX_BLOCK_SIZE, 2 * w16);
         ALIGN_DECL(32) uint16_t tmpBuf[2 * w16 * (max_height + 7)]; // max height is 2 * width + 7 pixels
         uint16_t *tmp = tmpBuf;
         src -= pitchSrc * 3 + 6;

@@ -52,10 +52,13 @@ typedef long long           int8;   // qword
 #endif
 
 static const uint2 SIZEOF_MODE_INFO = 32;
+static const uint2 SIZEOF_ADZ_CTX = 32;
+
 typedef matrix    <uint1,1,SIZEOF_MODE_INFO> mode_info;
 typedef matrix_ref<uint1,1,SIZEOF_MODE_INFO> mode_info_ref;
 
-typedef vector <int2, 16> qparam_t;
+typedef vector<int2, 10>     qparam_t;
+typedef vector_ref<int2, 10> qparam_ref;
 
 enum { REF0 = 0, REF1 = 1 };
 enum { X = 0, Y = 1 };
@@ -66,8 +69,9 @@ enum { DCT_DCT, ADST_DCT, DCT_ADST, ADST_ADST };
 enum { COEF_SSE_SHIFT = 6 };
 enum { COEF_SSE_SHIFT_32 = 4 };
 
-static const uint OFFSET_SKIP      = 112;
-static const uint OFFSET_FIT_CURVE = 5056;
+static const uint OFFSET_SKIP         = 112;
+static const uint OFFSET_INIT_DZ      = 5052;
+static const uint OFFSET_FIT_CURVE    = 5056;
 static const uint OFFSET_TX_SIZE_STEP = 888;
 
 static const uint OFFSET_EOB_MULTI_4         = 1500;
@@ -193,20 +197,25 @@ static const int2 COSPI_13[8] = {
 
 _GENX_ vector<uint4, 8>      g_zeroes;
 _GENX_ vector<uint2, 32>     g_sequence_0_to_31;
-_GENX_ vector<uint1, 64>     g_params;
+_GENX_ vector<uint1, 32>     g_params;
 _GENX_ vector<uint1, 32>     g_scan_8x8_t; // transposed
 _GENX_ vector<uint1, 16>     g_scan_4x4_t; // transposed
-_GENX_ vector<uint1, 64>     g_br_ctx_offset_00_63;
-_GENX_ vector<uint1, 64>     g_base_ctx_offset_00_63;
+_GENX_ vector<uint1, 32>     g_br_ctx_offset_00_31;
+_GENX_ vector<uint1, 32>     g_base_ctx_offset_00_31;
 _GENX_ vector<uint1, 16>     g_br_ctx_offset_4;
 _GENX_ vector<uint1, 16>     g_base_ctx_offset_4;
 _GENX_ vector<uint4, 16>     g_high_freq_sum;
-_GENX_ matrix<uint2, 16, 16> g_vartx_info;
+_GENX_ matrix<uint2, 8, 8>   g_vartx_info;
 _GENX_ matrix<int2, 16, 16>  g_coef_16_lo;
+_GENX_ matrix<int2, 16, 16>  g_coef_16_orig;
 _GENX_ matrix<int2, 16, 16>  g_coef_16_hi;
 _GENX_ matrix<int2, 8, 8>    g_coef_8;
+_GENX_ matrix<int2, 8, 8>    g_coef_8_orig;
 _GENX_ matrix<int2, 4, 16>   g_coef_4;
+_GENX_ matrix<int2, 4, 16>   g_coef_4_orig;
 _GENX_ matrix<int2, 8, 8>    g_diff_8;
+_GENX_ matrix<int2, 8, 8>    g_err_8;
+_GENX_ matrix<int2, 4, 16>   g_err_4;
 _GENX_ matrix<uint2, 4, 2>   g_high_freq_coef_fit_curve;
 _GENX_ uint2                 g_txb_skip_ctx;
 _GENX_ qparam_t              g_qparam;
@@ -214,16 +223,23 @@ _GENX_ uint2                 g_num_nz;
 _GENX_ int2                  g_last_diag;
 _GENX_ int                   g_pred_padding;
 
-typedef vector<uint4, 4> rd_cost;
-enum { SSE, BIT, NZC };
+_GENX_ vector<float, 2>      g_curr_adz;
+_GENX_ vector<float, 2>      g_round_adj;
+
+typedef vector<uint4, 6> rd_cost;
+enum { SSE=0, BIT=1, NZC=2, DZ0=4, DZ1=5 };
 _GENX_ rd_cost               g_rd_cost4;
 _GENX_ rd_cost               g_rd_cost8;
 _GENX_ rd_cost               g_rd_cost16;
 _GENX_ rd_cost               g_rd_cost32;
 
-_GENX_ inline uint2    get_width()  { return g_params.format<uint2>()[0 / 2]; }
-_GENX_ inline float    get_lambda() { return g_params.format<float>()[4 / 4]; }
-_GENX_ inline qparam_t get_qparam() { return g_params.format<int2>().select<16, 1>(8 / 2); }
+_GENX_ inline uint2      get_width()      { return g_params.format<uint2>()[0 / 2]; }
+_GENX_ inline uint2      get_height()     { return g_params.format<uint2>()[2 / 2]; }
+_GENX_ inline float      get_lambda()     { return g_params.format<float>()[4 / 4]; }
+_GENX_ inline qparam_t   get_qparam()     { return g_params.format<int2>().select<10, 1>(8 / 2); }
+_GENX_ inline qparam_ref get_qparam_ref() { return g_params.format<int2>().select<10, 1>(8 / 2); }
+_GENX_ inline uint1      get_comp_flag()  { return g_params.format<uint1>()[30]; }
+_GENX_ inline uint1      get_bidir_flag() { return !g_params.format<uint1>()[31]; }
 
 _GENX_ inline uint1 get_sb_type(mode_info_ref mi) { return mi.format<uint1>()[19]; }
 _GENX_ inline uint1 get_mode   (mode_info_ref mi) { return mi.format<uint1>()[20]; }
@@ -761,9 +777,9 @@ _GENX_ inline uint4 quant_dequant_4x4x4()
         g_coef_4.row(i) = (g_coef_4.row(i) * shift).format<uint2>().select<16, 2>(1);
         g_coef_4.row(i).merge(0, cm_abs<uint2>(coef) < zbin); // deadzoned
         dqcoef = cm_mul<int2>(g_coef_4.row(i), scale, SAT);
-        //g_coef_4.row(i).merge(-g_coef_4.row(i), coef < 0);
-        diff = cm_abs<uint2>(coef) - dqcoef;
-        acc += cm_abs<uint2>(diff) * cm_abs<uint2>(diff);
+        g_coef_4.row(i).merge(-g_coef_4.row(i), coef < 0);
+        g_err_4.row(i) = cm_abs<uint2>(coef) - dqcoef;
+        acc += cm_abs<uint2>(g_err_4.row(i)) * cm_abs<uint2>(g_err_4.row(i));
     }
 
     zbin.select<4, 4>() = g_qparam[0];
@@ -778,9 +794,9 @@ _GENX_ inline uint4 quant_dequant_4x4x4()
     g_coef_4.row(0) = (g_coef_4.row(0) * shift).format<uint2>().select<16, 2>(1);
     g_coef_4.row(0).merge(0, cm_abs<uint2>(coef) < zbin); // deadzoned
     dqcoef = cm_mul<int2>(g_coef_4.row(0), scale, SAT);
-    //g_coef_4.row(0).merge(-g_coef_4.row(0), coef < 0);
-    diff = cm_abs<uint2>(coef) - dqcoef;
-    acc += cm_abs<uint2>(diff) * cm_abs<uint2>(diff);
+    g_coef_4.row(0).merge(-g_coef_4.row(0), coef < 0);
+    g_err_4.row(0) = cm_abs<uint2>(coef) - dqcoef;
+    acc += cm_abs<uint2>(g_err_4.row(0)) * cm_abs<uint2>(g_err_4.row(0));
 
     acc.select<8, 1>() = acc.select<8, 2>(0) + acc.select<8, 2>(1);
     acc.select<4, 1>() = acc.select<4, 2>(0) + acc.select<4, 2>(1);
@@ -800,6 +816,7 @@ _GENX_ uint4 quant_dequant_8()
     vector<uint4, 16> acc = 0;
 
     vector_ref<int2, 64> coef8 = g_coef_8.format<int2>();
+    vector_ref<int2, 64> err8 = g_err_8.format<int2>();
 
     #pragma unroll
     for (int i = 16; i < 64; i += 16) {
@@ -809,9 +826,9 @@ _GENX_ uint4 quant_dequant_8()
         coef8.select<16, 1>(i) = (coef8.select<16, 1>(i) * shift).format<uint2>().select<16, 2>(1);
         coef8.select<16, 1>(i).merge(0, cm_abs<uint2>(coef) < zbin); // deadzoned
         dqcoef = cm_mul<int2>(coef8.select<16, 1>(i), scale, SAT);
-        //coef8.select<16, 1>(i).merge(-coef8.select<16, 1>(i), coef < 0);
-        diff = cm_abs<uint2>(coef) - dqcoef;
-        acc += cm_abs<uint2>(diff) * cm_abs<uint2>(diff);
+        coef8.select<16, 1>(i).merge(-coef8.select<16, 1>(i), coef < 0);
+        err8.select<16, 1>(i) = cm_abs<uint2>(coef) - dqcoef;
+        acc += cm_abs<uint2>(err8.select<16, 1>(i)) * cm_abs<uint2>(err8.select<16, 1>(i));
     }
 
     zbin[0] = g_qparam[0];
@@ -826,9 +843,9 @@ _GENX_ uint4 quant_dequant_8()
     coef8.select<16, 1>(0) = (coef8.select<16, 1>(0) * shift).format<uint2>().select<16, 2>(1);
     coef8.select<16, 1>(0).merge(0, cm_abs<uint2>(coef) < zbin); // deadzoned
     dqcoef = cm_mul<int2>(coef8.select<16, 1>(0), scale, SAT);
-    //coef8.select<16, 1>(0).merge(-coef8.select<16, 1>(0), coef < 0);
-    diff = cm_abs<uint2>(coef) - dqcoef;
-    acc += cm_abs<uint2>(diff) * cm_abs<uint2>(diff);
+    coef8.select<16, 1>(0).merge(-coef8.select<16, 1>(0), coef < 0);
+    err8.select<16, 1>(0)= cm_abs<uint2>(coef) - dqcoef;
+    acc += cm_abs<uint2>(err8.select<16, 1>(0)) * cm_abs<uint2>(err8.select<16, 1>(0));
 
     uint4 sse = cm_sum<uint4>(acc);
     return sse;
@@ -854,10 +871,12 @@ _GENX_ uint4 quant_dequant_16(uint2 is32x32)
         g_coef_16_lo.row(i) = (g_coef_16_lo.row(i) * shift).format<uint2>().select<16, 2>(1);
         g_coef_16_lo.row(i).merge(0, cm_abs<uint2>(coef) < zbin); // deadzoned
         dqcoef = cm_mul<int2>(g_coef_16_lo.row(i), scale, SAT);
-        //g_coef_16_lo.row(i).merge(-g_coef_16_lo.row(i), coef < 0);
+        g_coef_16_lo.row(i).merge(-g_coef_16_lo.row(i), coef < 0);
         dqcoef >>= is32x32;
         diff = cm_abs<uint2>(coef) - dqcoef;
         acc += cm_abs<uint2>(diff) * cm_abs<uint2>(diff);
+        if (i < 8)
+            g_err_8.row(i) = diff.select<8, 1>();
     }
 
     zbin[0] = g_qparam[0];
@@ -872,10 +891,11 @@ _GENX_ uint4 quant_dequant_16(uint2 is32x32)
     g_coef_16_lo.row(0) = (g_coef_16_lo.row(0) * shift).format<uint2>().select<16, 2>(1);
     g_coef_16_lo.row(0).merge(0, cm_abs<uint2>(coef) < zbin); // deadzoned
     dqcoef = cm_mul<int2>(g_coef_16_lo.row(0), scale, SAT);
-    //g_coef_16_lo.row(0).merge(-g_coef_16_lo.row(0), coef < 0);
+    g_coef_16_lo.row(0).merge(-g_coef_16_lo.row(0), coef < 0);
     dqcoef >>= is32x32;
     diff = cm_abs<uint2>(coef) - dqcoef;
     acc += cm_abs<uint2>(diff) * cm_abs<uint2>(diff);
+    g_err_8.row(0) = diff.select<8, 1>();
 
     uint4 sse = cm_sum<uint4>(acc);
     return sse;
@@ -901,7 +921,7 @@ _GENX_ uint4 quant_dequant_16_2()
         g_coef_16_hi.row(i) = (g_coef_16_hi.row(i) * shift).format<uint2>().select<16, 2>(1);
         g_coef_16_hi.row(i).merge(0, cm_abs<uint2>(coef) < zbin);
         dqcoef = cm_mul<int2>(g_coef_16_hi.row(i), scale, SAT);
-        //g_coef_16_hi.row(i).merge(-g_coef_16_hi.row(i), coef < 0);
+        g_coef_16_hi.row(i).merge(-g_coef_16_hi.row(i), coef < 0);
         dqcoef >>= 1; // 32x32
         diff = cm_abs<uint2>(coef) - dqcoef;
         acc += cm_abs<uint2>(diff) * cm_abs<uint2>(diff);
@@ -1088,7 +1108,8 @@ _GENX_ inline void compute_contexts(matrix_ref<int2, 8, 8> coefs, vector_ref<uin
     vector<uint4, 16> tmp = x1 + y1_plus_xy;
     tmp = (tmp + (tmp & 0x01010101)) >> 1;
     tmp.format<uint1>() = min6(tmp.format<uint1>());
-    tmp.format<uint4>() += g_br_ctx_offset_00_63.format<uint4>();
+    tmp.format<uint4>().select<8, 1>(0) += g_br_ctx_offset_00_31.format<uint4>();
+    tmp.format<uint4>().select<8, 1>(8) += 0x0E0E0E0E;
     br_contexts = tmp.format<uint1>() << 4; // leaving byte range here
     br_contexts.format<uint4>() += coefs_uint2.format<uint4>();
 
@@ -1107,7 +1128,8 @@ _GENX_ inline void compute_contexts(matrix_ref<int2, 8, 8> coefs, vector_ref<uin
     tmp = x1 + x2 + y1_plus_xy + y2;
     tmp = (tmp + (tmp & 0x01010101)) >> 1;
     tmp.format<uint1>() = min4(tmp.format<uint1>());
-    tmp.format<uint4>() += g_base_ctx_offset_00_63.format<uint4>();
+    tmp.format<uint4>().select<8, 1>(0) += g_base_ctx_offset_00_31.format<uint4>();
+    tmp.format<uint4>().select<8, 1>(8) += 0x0B0B0B0B;
     tmp.format<uint1>()(0) = 0;
     base_contexts.format<uint4>() = tmp.format<uint4>() << 2; // still within byte range
     base_contexts.format<uint4>() += levels_x0.select<16, 1>();
@@ -1132,6 +1154,11 @@ _GENX_ uint get_bits_4(SurfaceIndex PARAM)
     bits += get_cost_txb_skip(PARAM, TX_4X4, 0); // non skip
     bits += 512 * g_num_nz; // signs
 
+    float rcp_scale0 = 0.016f / g_qparam[8];
+    float rcp_scale1 = 0.016f / g_qparam[9];
+    //g_err_4.row(0).merge(0, coef4 == 0);
+    //g_rd_cost4.format<float>()[DZ0] += g_err_4(0, 0) * rcp_scale0;
+
     if (msb == 0) { // dc is the only non-zero coef
         const uint2 dc = cm_abs<uint2>(coef4(0, 0));
         bits += get_cost_eob_multi(PARAM, TX_4X4, 0);
@@ -1139,6 +1166,9 @@ _GENX_ uint get_bits_4(SurfaceIndex PARAM)
         bits = (bits * 118) >> 7;
         return bits;
     }
+
+    //g_err_4(0, 0) = 0;
+    //g_rd_cost4.format<float>()[DZ1] += cm_sum<int4>(g_err_4.row(0)) * rcp_scale1;
 
     vector<uint2, 16> base_contexts, br_contexts;
     compute_contexts_4(coef4, base_contexts, br_contexts);
@@ -1162,6 +1192,7 @@ _GENX_ uint get_bits_4(SurfaceIndex PARAM)
     bits += get_cost_coeff_eob_ac(PARAM, TX_4X4, blevel[31 - lz] - 1); // last coef
     bits += get_cost_eob_multi(PARAM, TX_4X4, 32 - cm_lzd<uint4>(msb)); // eob
     bits = (bits * 118) >> 7;
+
     return bits;
 }
 
@@ -1177,6 +1208,7 @@ _GENX_ inline uint get_bits_8(SurfaceIndex PARAM)
 
     if (g_num_nz == 0) {
         g_last_diag = 0;
+        //g_rd_cost8.format<float>().select<2, 1>(DZ0) = 0.0f;
         return get_cost_txb_skip(PARAM, TX_8X8, 1); // skip
     }
 
@@ -1188,10 +1220,16 @@ _GENX_ inline uint get_bits_8(SurfaceIndex PARAM)
     uint bits = 0;
     bits += get_cost_txb_skip(PARAM, TX_8X8, 0); // non skip
 
+    //float rcp_scale0 = 0.016f / g_qparam[8];
+    //float rcp_scale1 = 0.016f / g_qparam[9];
+    //g_err_8.select<1, 1, 1, 1>().merge(0, g_coef_8(0, 0) == 0);
+    //g_rd_cost8.format<float>()[DZ0] = g_err_8(0, 0) * rcp_scale0;
+
     if (g_last_diag == 0) { // dc is the only non-zero coef
         const uint2 dc = cm_abs<uint2>(g_coef_8(0, 0));
         //bits += get_cost_eob_multi(PARAM, TX_8X8, 0);
         bits += get_cost_coeff_eob_dc(PARAM, TX_8X8, cm_min<uint2>(15, dc));
+        //g_rd_cost8.format<float>()[DZ1] = 0.0f;
         return bits;
     }
 
@@ -1202,12 +1240,16 @@ _GENX_ inline uint get_bits_8(SurfaceIndex PARAM)
     vector<uint2, 16> bits_acc = 0;
     uint4 num_nz = g_num_nz;
 
+    //vector<int2, 16> err_ac = 0;
+    //g_err_8(0, 0) = 0;
+
     #pragma unroll
     for (int i = 0; i < 32; i += 16) {
         vector<uint2, 16> s = g_scan_8x8_t.select<16, 1>(i);
         vector<uint2, 16> base_ctx = base_contexts.iselect(s);
         vector<uint2, 16> br_ctx = br_contexts.iselect(s);
         vector<uint2, 16> blevel = base_ctx & 3;
+        //vector<int2, 16>  err = g_err_8.format<int2>().iselect(s);
 
         uint2 nz_mask = cm_pack_mask(blevel > 0);
         num_nz -= cm_cbit(nz_mask);
@@ -1223,6 +1265,9 @@ _GENX_ inline uint get_bits_8(SurfaceIndex PARAM)
         bits_acc += cost_br;
         bits_acc += cost_bz;
 
+        //err.merge(0, ~nz_mask);
+        //err_ac += err;
+
         if (num_nz == 0) {
             bits += get_cost_coeff_eob_ac(PARAM, TX_8X8, blevel[31 - lz] - 1); // last coef
             break;
@@ -1231,15 +1276,15 @@ _GENX_ inline uint get_bits_8(SurfaceIndex PARAM)
 
     bits += cm_sum<uint>(bits_acc);
 
-    g_coef_8.select<2, 1, 8, 1>(0).merge(0, 0x3f7f); // zero already processed coefs
-    g_coef_8.select<2, 1, 8, 1>(2).merge(0, 0x0f1f); // zero already processed coefs
-    g_coef_8.select<2, 1, 8, 1>(4).merge(0, 0x070f); // zero already processed coefs
-    g_coef_8.select<2, 1, 8, 1>(6).merge(0, 0x0103); // zero already processed coefs
+    //g_rd_cost8.format<float>()[DZ1] = cm_sum<int4>(err_ac) * rcp_scale1;
+
+    vector<uint4, 16> lzd;
     g_high_freq_sum = 31 * 4;
-    g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_8.select<2, 1, 8, 1>(0)), 1));
-    g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_8.select<2, 1, 8, 1>(2)), 1));
-    g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_8.select<2, 1, 8, 1>(4)), 1));
-    g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_8.select<2, 1, 8, 1>(6)), 1));
+    // zero already processed coefs
+    lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_8.select<2, 1, 8, 1>(0)), 1)); lzd.merge(31, 0x3f7f); g_high_freq_sum -= lzd;
+    lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_8.select<2, 1, 8, 1>(2)), 1)); lzd.merge(31, 0x0f1f); g_high_freq_sum -= lzd;
+    lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_8.select<2, 1, 8, 1>(4)), 1)); lzd.merge(31, 0x070f); g_high_freq_sum -= lzd;
+    lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_8.select<2, 1, 8, 1>(6)), 1)); lzd.merge(31, 0x0103); g_high_freq_sum -= lzd;
     g_high_freq_sum.select<8, 1>() += g_high_freq_sum.select<8, 1>(8);
 
     return bits;
@@ -1249,16 +1294,24 @@ _GENX_ uint get_bits_16(SurfaceIndex PARAM, uint2 tx_size)
 {
     assert_emu(tx_size == TX_16X16 || tx_size == TX_32X32);
 
-    if (g_num_nz == 0)
+    if (g_num_nz == 0) {
+        //g_rd_cost16.format<float>().select<2, 1>(DZ0) = 0.0f;
         return get_cost_txb_skip(PARAM, tx_size, 1); // skip
+    }
 
     uint bits = 0;
     bits += get_cost_txb_skip(PARAM, tx_size, 0); // non skip
+
+    float rcp_scale0 = 0.016f / g_qparam[8];
+    float rcp_scale1 = 0.016f / g_qparam[9];
+    //g_err_8.select<1, 1, 1, 1>().merge(0, g_coef_16_lo(0, 0) == 0);
+    //g_rd_cost16.format<float>()[DZ0] = g_err_8(0, 0) * rcp_scale0;
 
     if (g_last_diag == 0) { // dc is the only non-zero coef
         const uint2 dc = cm_abs<uint2>(g_coef_16_lo(0, 0));
         //bits += get_cost_eob_multi(PARAM, tx_size, 0);
         bits += get_cost_coeff_eob_dc(PARAM, tx_size, cm_min<uint2>(15, dc));
+        //g_rd_cost16.format<float>()[DZ1] = 0.0f;
         return bits;
     }
 
@@ -1269,8 +1322,12 @@ _GENX_ uint get_bits_16(SurfaceIndex PARAM, uint2 tx_size)
     vector<uint1, 16> base_ctx, blevel;
     vector<uint2, 16> br_ctx;
     vector<uint2, 16> bits_acc = 0;
+    vector<int2, 16> err;
 
     uint4 num_nz = g_num_nz;
+
+    //vector<int2, 16> err_ac = 0;
+    //g_err_8(0, 0) = 0;
 
     #pragma unroll
     for (int i = 0; i < 32; i += 16) {
@@ -1278,6 +1335,7 @@ _GENX_ uint get_bits_16(SurfaceIndex PARAM, uint2 tx_size)
         base_ctx = base_contexts.iselect(s);
         br_ctx = br_contexts.iselect(s);
         blevel = base_ctx & 3;
+        //err = g_err_8.format<int2>().iselect(s);
 
         uint2 nz_mask = cm_pack_mask(blevel > 0);
         num_nz -= cm_cbit(nz_mask);
@@ -1293,6 +1351,9 @@ _GENX_ uint get_bits_16(SurfaceIndex PARAM, uint2 tx_size)
         bits_acc += cost_br;
         bits_acc += cost_bz;
 
+        //err.merge(0, ~nz_mask);
+        //err_ac += err;
+
         if (num_nz == 0) {
             bits += get_cost_coeff_eob_ac(PARAM, tx_size, blevel[31 - lz] - 1); // last coef
             break;
@@ -1300,7 +1361,40 @@ _GENX_ uint get_bits_16(SurfaceIndex PARAM, uint2 tx_size)
     }
 
     bits += cm_sum<uint>(bits_acc);
+
+    //g_rd_cost16.format<float>()[DZ1] = cm_sum<int4>(err_ac) * rcp_scale1;
+
     return bits;
+}
+
+_GENX_ inline void write_coefs_4x4x4(SurfaceIndex QCOEFS, vector<uint2, 2> mi, uint2 zz)
+{
+    vector<uint2, 2> sb = mi >> 3;
+    uint2 sb_cols = (get_width() + 7) >> 3;
+    uint2 sb_addr = sb[X] + sb[Y] * sb_cols;
+    uint4 coef_offset = sb_addr * 4096 * sizeof(int2) + zz * 64 * sizeof(int2);
+    write(QCOEFS, coef_offset + 0, g_coef_4_orig.format<int2>().select<32, 1>(0));
+    write(QCOEFS, coef_offset + 64, g_coef_4_orig.format<int2>().select<32, 1>(32));
+}
+
+_GENX_ inline void write_coefs_8(SurfaceIndex QCOEFS, vector<uint2, 2> mi, uint2 zz)
+{
+    vector<uint2, 2> sb = mi >> 3;
+    uint2 sb_cols = (get_width() + 7) >> 3;
+    uint2 sb_addr = sb[X] + sb[Y] * sb_cols;
+    uint4 coef_offset = sb_addr * 4096 * sizeof(int2) + zz * 64 * sizeof(int2);
+    write(QCOEFS, coef_offset + 0, g_coef_8_orig.format<int2>().select<32, 1>(0));
+    write(QCOEFS, coef_offset + 64, g_coef_8_orig.format<int2>().select<32, 1>(32));
+}
+
+_GENX_ inline void write_coefs_16(SurfaceIndex QCOEFS, vector<uint2, 2> mi, uint2 zz)
+{
+    vector<uint2, 2> sb = mi >> 3;
+    uint2 sb_cols = (get_width() + 7) >> 3;
+    uint2 sb_addr = sb[X] + sb[Y] * sb_cols;
+    uint4 coef_offset = sb_addr * 4096 * sizeof(int2) + zz * 64 * sizeof(int2);
+    for (uint2 i = 0; i < 16; i += 2, coef_offset += 64)
+        write(QCOEFS, coef_offset, g_coef_16_orig.select<2, 1, 16, 1>(i).format<int2>());
 }
 
 #define BLOCK0(mi, off) (mi)
@@ -1310,59 +1404,71 @@ _GENX_ uint get_bits_16(SurfaceIndex PARAM, uint2 tx_size)
 
 _GENX_ inline void decide4x4x4(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, vector<uint2, 2> mi)
 {
-    matrix_ref<int2, 4, 16> coef4x4x4 = g_coef_4;
-    vector<uint2, 2> blk4 = mi * 2; blk4 &= 15;
     uint4 sse;
     uint4 bits;
-    matrix<uint2, 2, 2> vartx_info;
+    uint2 vartx_info;
 
     g_diff_8 <<= 2;
     matrix<int2, 8, 8> diff = g_diff_8;
 
-    coef4x4x4.row(0) = g_diff_8.select<2, 4, 8, 1>(0);
-    coef4x4x4.row(1) = g_diff_8.select<2, 4, 8, 1>(1);
-    coef4x4x4.row(2) = g_diff_8.select<2, 4, 8, 1>(2);
-    coef4x4x4.row(3) = g_diff_8.select<2, 4, 8, 1>(3);
+    g_coef_4.row(0) = g_diff_8.select<2, 4, 8, 1>(0);
+    g_coef_4.row(1) = g_diff_8.select<2, 4, 8, 1>(1);
+    g_coef_4.row(2) = g_diff_8.select<2, 4, 8, 1>(2);
+    g_coef_4.row(3) = g_diff_8.select<2, 4, 8, 1>(3);
     dct_4x4x4();
     transpose_4x4x4();
     dct_4x4x4();
+    g_coef_4_orig.row(0) = g_coef_4.select<4, 1, 4, 1>(0, 0);
+    g_coef_4_orig.row(1) = g_coef_4.select<4, 1, 4, 1>(0, 4);
+    g_coef_4_orig.row(2) = g_coef_4.select<4, 1, 4, 1>(0, 8);
+    g_coef_4_orig.row(3) = g_coef_4.select<4, 1, 4, 1>(0, 12);
 
     g_qparam = get_qparam();
     sse = quant_dequant_4x4x4();
-    matrix<int2, 4, 16> coef4x4x4_ = coef4x4x4;
+    matrix<int2, 4, 16> coef4x4x4_ = g_coef_4;
+    //matrix<int2, 4, 16> err4x4x4_ = g_err_4;
 
     g_txb_skip_ctx = 1;
-
-    g_coef_4.row(0) = coef4x4x4_.select<4, 1, 4, 1>(0, 0);
-    bits = get_bits_4(PARAM);
-    vartx_info(0, 0) = g_num_nz;
-
-    g_coef_4.row(0) = coef4x4x4_.select<4, 1, 4, 1>(0, 4);
-    bits += get_bits_4(PARAM);
-    vartx_info(0, 1) = g_num_nz;
-
-    g_coef_4.row(0) = coef4x4x4_.select<4, 1, 4, 1>(0, 8);
-    bits += get_bits_4(PARAM);
-    vartx_info(1, 0) = g_num_nz;
+    //g_rd_cost4.format<float>().select<2, 1>(DZ0) = 0.0f;
 
     g_coef_4.row(0) = coef4x4x4_.select<4, 1, 4, 1>(0, 12);
+    //g_err_4.row(0) = err4x4x4_.select<4, 1, 4, 1>(0, 12);
+    bits = get_bits_4(PARAM);
+    vartx_info = g_num_nz;
+    g_coef_4.row(3) = g_coef_4.row(0);
+
+    g_coef_4.row(0) = coef4x4x4_.select<4, 1, 4, 1>(0, 8);
+    //g_err_4.row(0) = err4x4x4_.select<4, 1, 4, 1>(0, 8);
     bits += get_bits_4(PARAM);
-    vartx_info(1, 1) = g_num_nz;
+    vartx_info += g_num_nz;
+    g_coef_4.row(2) = g_coef_4.row(0);
+
+    g_coef_4.row(0) = coef4x4x4_.select<4, 1, 4, 1>(0, 4);
+    //g_err_4.row(0) = err4x4x4_.select<4, 1, 4, 1>(0, 4);
+    bits += get_bits_4(PARAM);
+    vartx_info += g_num_nz;
+    g_coef_4.row(1) = g_coef_4.row(0);
+
+    g_coef_4.row(0) = coef4x4x4_.select<4, 1, 4, 1>(0, 0);
+    //g_err_4.row(0) = err4x4x4_.select<4, 1, 4, 1>(0, 0);
+    bits += get_bits_4(PARAM);
+    vartx_info += g_num_nz;
 
     g_rd_cost4[SSE] = sse;
     g_rd_cost4[BIT] = bits;
-    g_rd_cost4[NZC] = cm_sum<uint4>(vartx_info);
+    g_rd_cost4[NZC] = vartx_info;
 
     vartx_info <<= 4;
     vartx_info += DCT_DCT + (TX_4X4 << 2);
 
-    g_vartx_info.select<2, 1, 2, 1>(blk4(Y), blk4(X)) = vartx_info;
+    vector<uint2, 2> blk = mi & 7;
+    g_vartx_info(blk[Y], blk[X]) = vartx_info;
 }
 
-_GENX_ void decide8(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, vector<uint2, 2> mi, uint2 depth)
+_GENX_ void decide8(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, SurfaceIndex QCOEFS,
+                    vector<uint2, 2> mi, uint2 zz, uint2 depth)
 {
     matrix<uint1, 8, 8> src, pred;
-    matrix_ref<int2, 8, 8> coef8 = g_coef_8;
 
     vector<int4, 2> pos = mi * 8;
 
@@ -1370,18 +1476,41 @@ _GENX_ void decide8(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, vec
     read(PRED, pos(X) + g_pred_padding, pos(Y), pred);
     g_diff_8 = src - pred;
 
-    coef8 = g_diff_8 << 2;
+    g_coef_8 = g_diff_8 << 2;
     dct_8x8();
 
     // transpose also does y = (x + 1) >> 1
     transpose_8x8();
     dct_8x8();
+    g_coef_8_orig = g_coef_8;
 
     uint4 sse;
     uint4 bits;
     g_qparam = get_qparam();
     sse = quant_dequant_8();
     sse >>= COEF_SSE_SHIFT;
+
+    //if (mi[Y] == 120+1 && mi[X] == 8+1) {
+    //    printf("coef:\n");
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8_orig(0, 0), g_coef_8_orig(0, 1), g_coef_8_orig(0, 2), g_coef_8_orig(0, 3), g_coef_8_orig(0, 4), g_coef_8_orig(0, 5), g_coef_8_orig(0, 6), g_coef_8_orig(0, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8_orig(1, 0), g_coef_8_orig(1, 1), g_coef_8_orig(1, 2), g_coef_8_orig(1, 3), g_coef_8_orig(1, 4), g_coef_8_orig(1, 5), g_coef_8_orig(1, 6), g_coef_8_orig(1, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8_orig(2, 0), g_coef_8_orig(2, 1), g_coef_8_orig(2, 2), g_coef_8_orig(2, 3), g_coef_8_orig(2, 4), g_coef_8_orig(2, 5), g_coef_8_orig(2, 6), g_coef_8_orig(2, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8_orig(3, 0), g_coef_8_orig(3, 1), g_coef_8_orig(3, 2), g_coef_8_orig(3, 3), g_coef_8_orig(3, 4), g_coef_8_orig(3, 5), g_coef_8_orig(3, 6), g_coef_8_orig(3, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8_orig(4, 0), g_coef_8_orig(4, 1), g_coef_8_orig(4, 2), g_coef_8_orig(4, 3), g_coef_8_orig(4, 4), g_coef_8_orig(4, 5), g_coef_8_orig(4, 6), g_coef_8_orig(4, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8_orig(5, 0), g_coef_8_orig(5, 1), g_coef_8_orig(5, 2), g_coef_8_orig(5, 3), g_coef_8_orig(5, 4), g_coef_8_orig(5, 5), g_coef_8_orig(5, 6), g_coef_8_orig(5, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8_orig(6, 0), g_coef_8_orig(6, 1), g_coef_8_orig(6, 2), g_coef_8_orig(6, 3), g_coef_8_orig(6, 4), g_coef_8_orig(6, 5), g_coef_8_orig(6, 6), g_coef_8_orig(6, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8_orig(7, 0), g_coef_8_orig(7, 1), g_coef_8_orig(7, 2), g_coef_8_orig(7, 3), g_coef_8_orig(7, 4), g_coef_8_orig(7, 5), g_coef_8_orig(7, 6), g_coef_8_orig(7, 7));
+
+    //    printf("qcoef:\n");
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8(0, 0), g_coef_8(0, 1), g_coef_8(0, 2), g_coef_8(0, 3), g_coef_8(0, 4), g_coef_8(0, 5), g_coef_8(0, 6), g_coef_8(0, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8(1, 0), g_coef_8(1, 1), g_coef_8(1, 2), g_coef_8(1, 3), g_coef_8(1, 4), g_coef_8(1, 5), g_coef_8(1, 6), g_coef_8(1, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8(2, 0), g_coef_8(2, 1), g_coef_8(2, 2), g_coef_8(2, 3), g_coef_8(2, 4), g_coef_8(2, 5), g_coef_8(2, 6), g_coef_8(2, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8(3, 0), g_coef_8(3, 1), g_coef_8(3, 2), g_coef_8(3, 3), g_coef_8(3, 4), g_coef_8(3, 5), g_coef_8(3, 6), g_coef_8(3, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8(4, 0), g_coef_8(4, 1), g_coef_8(4, 2), g_coef_8(4, 3), g_coef_8(4, 4), g_coef_8(4, 5), g_coef_8(4, 6), g_coef_8(4, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8(5, 0), g_coef_8(5, 1), g_coef_8(5, 2), g_coef_8(5, 3), g_coef_8(5, 4), g_coef_8(5, 5), g_coef_8(5, 6), g_coef_8(5, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8(6, 0), g_coef_8(6, 1), g_coef_8(6, 2), g_coef_8(6, 3), g_coef_8(6, 4), g_coef_8(6, 5), g_coef_8(6, 6), g_coef_8(6, 7));
+    //    printf("%d %d %d %d %d %d %d %d\n", g_coef_8(7, 0), g_coef_8(7, 1), g_coef_8(7, 2), g_coef_8(7, 3), g_coef_8(7, 4), g_coef_8(7, 5), g_coef_8(7, 6), g_coef_8(7, 7));
+    //}
 
     g_txb_skip_ctx = depth > 0;
     g_high_freq_sum = 0;
@@ -1424,15 +1553,19 @@ _GENX_ void decide8(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, vec
     }
 
     int2 split = cost4 <= cost8;
-    if (split)
+    if (split) {
         g_rd_cost8 = g_rd_cost4;
-    else {
-        vector<uint2, 2> blk4 = mi & 7; blk4 <<= 1;
-        g_vartx_info.select<2, 1, 2, 1>(blk4(Y), blk4(X)) = vartx_data;
+        if (g_rd_cost8[NZC] > 0)
+            write_coefs_4x4x4(QCOEFS, mi, zz);
+    } else {
+        vector<uint2, 2> blk = mi & 7;
+        g_vartx_info(blk[Y], blk[X]) = vartx_data;
+        if (g_rd_cost8[NZC] > 0)
+            write_coefs_8(QCOEFS, mi, zz);
     }
 }
 
-_GENX_ void decide16(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, vector<uint2, 2> mi, uint2 depth)
+_GENX_ void decide16(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, SurfaceIndex QCOEFS, vector<uint2, 2> mi, uint2 zz, uint2 depth)
 {
     matrix<uint1, 16, 16> src, pred;
 
@@ -1452,6 +1585,7 @@ _GENX_ void decide16(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, ve
     transpose_16x16();
 
     dct_16x16();
+    g_coef_16_orig = g_coef_16_lo;
 
     uint4 sse;
     uint4 bits;
@@ -1475,23 +1609,15 @@ _GENX_ void decide16(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, ve
     g_high_freq_sum = 0;
     if (g_num_nz) {
         // zero already processed coefs
-        g_coef_16_lo.row(0).merge(0, 0x007f);
-        g_coef_16_lo.row(1).merge(0, 0x003f);
-        g_coef_16_lo.row(2).merge(0, 0x001f);
-        g_coef_16_lo.row(3).select<4, 1>() = 0;
-        g_coef_16_lo.row(4).select<4, 1>() = 0;
-        g_coef_16_lo.row(5).merge(0, 0x0007);
-        g_coef_16_lo.row(6).select<2, 1>() = 0;
-        g_coef_16_lo.row(7).select<1, 1>() = 0;
-        g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(0)), 1));
-        g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(1)), 1));
-        g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(2)), 1));
-        g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(3)), 1));
-        g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(4)), 1));
-        g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(5)), 1));
-        g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(6)), 1));
-        g_high_freq_sum -= cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(7)), 1));
-
+        vector<uint4, 16> lzd;
+        lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(0)), 1)); lzd.merge(31, 0x007f); g_high_freq_sum -= lzd;
+        lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(1)), 1)); lzd.merge(31, 0x003f); g_high_freq_sum -= lzd;
+        lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(2)), 1)); lzd.merge(31, 0x001f); g_high_freq_sum -= lzd;
+        lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(3)), 1)); lzd.merge(31, 0x000f); g_high_freq_sum -= lzd;
+        lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(4)), 1)); lzd.merge(31, 0x000f); g_high_freq_sum -= lzd;
+        lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(5)), 1)); lzd.merge(31, 0x0007); g_high_freq_sum -= lzd;
+        lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(6)), 1)); lzd.merge(31, 0x0003); g_high_freq_sum -= lzd;
+        lzd = cm_lzd<uint4>(cm_add<uint4>(cm_abs<uint2>(g_coef_16_lo.row(7)), 1)); lzd.merge(31, 0x0001); g_high_freq_sum -= lzd;
         #pragma unroll
         for (int i = 8; i < 16; i++)
             g_high_freq_sum -= cm_lzd<uint4>(cm_abs<uint4>(g_coef_16_lo.row(i)) + 1);
@@ -1531,10 +1657,21 @@ _GENX_ void decide16(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, ve
 
     if (g_num_nz && depth < 2) {
         rd_cost rd_cost8;
-        decide8(PARAM, SRC, PRED, BLOCK0(mi, 1), depth + 1); rd_cost8  = g_rd_cost8;
-        decide8(PARAM, SRC, PRED, BLOCK1(mi, 1), depth + 1); rd_cost8 += g_rd_cost8;
-        decide8(PARAM, SRC, PRED, BLOCK2(mi, 1), depth + 1); rd_cost8 += g_rd_cost8;
-        decide8(PARAM, SRC, PRED, BLOCK3(mi, 1), depth + 1); rd_cost8 += g_rd_cost8;
+        decide8(PARAM, SRC, PRED, QCOEFS, BLOCK0(mi, 1), zz + 0, depth + 1);
+        rd_cost8  = g_rd_cost8;
+
+        decide8(PARAM, SRC, PRED, QCOEFS, BLOCK1(mi, 1), zz + 1, depth + 1);
+        rd_cost8.select<4, 1>(SSE) += g_rd_cost8.select<4, 1>(SSE);
+        //rd_cost8.select<2, 1>(DZ0).format<float>() += g_rd_cost8.select<2, 1>(DZ0).format<float>();
+
+        decide8(PARAM, SRC, PRED, QCOEFS, BLOCK2(mi, 1), zz + 2, depth + 1);
+        rd_cost8.select<4, 1>(SSE) += g_rd_cost8.select<4, 1>(SSE);
+        //rd_cost8.select<2, 1>(DZ0).format<float>() += g_rd_cost8.select<2, 1>(DZ0).format<float>();
+
+        decide8(PARAM, SRC, PRED, QCOEFS, BLOCK3(mi, 1), zz + 3, depth + 1);
+        rd_cost8.select<4, 1>(SSE) += g_rd_cost8.select<4, 1>(SSE);
+        //rd_cost8.select<2, 1>(DZ0).format<float>() += g_rd_cost8.select<2, 1>(DZ0).format<float>();
+
         g_rd_cost8 = rd_cost8;
         cost8 = g_rd_cost8[SSE] + get_lambda() * g_rd_cost8[BIT];
     }
@@ -1543,12 +1680,15 @@ _GENX_ void decide16(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, ve
     if (split)
         g_rd_cost16 = g_rd_cost8;
     else {
-        vector<uint2, 2> blk4 = mi & 7; blk4 <<= 1;
-        g_vartx_info.select<4, 1, 4, 1>(blk4(Y), blk4(X)) = vartx_data;
+        vector<uint2, 2> blk = mi & 7;
+        g_vartx_info.select<2, 1, 2, 1>(blk[Y], blk[X]) = vartx_data;
+        if (g_rd_cost16[NZC] > 0)
+            write_coefs_16(QCOEFS, mi, zz);
     }
 }
 
-_GENX_ void decide32(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, SurfaceIndex SCRATCHBUF, vector<uint2, 2> mi, uint2 depth)
+_GENX_ void decide32(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, SurfaceIndex QCOEFS,
+                     SurfaceIndex SCRATCHBUF, vector<uint2, 2> mi, uint2 zz, uint2 depth)
 {
     matrix<uint1, 16, 16> src, pred;
 
@@ -1607,13 +1747,19 @@ _GENX_ void decide32(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, Su
     dct_32x16();
     //transpose_32x16();
 
+    // quadrants 2 and 3
+    write(SCRATCHBUF, scratchbuf_pos(X) + 32, scratchbuf_pos(Y) + 0, g_coef_16_lo.select<8, 1, 16, 1>(0, 0));
+    write(SCRATCHBUF, scratchbuf_pos(X) + 32, scratchbuf_pos(Y) + 8, g_coef_16_lo.select<8, 1, 16, 1>(8, 0));
+    write(SCRATCHBUF, scratchbuf_pos(X) + 32, scratchbuf_pos(Y) + 16, g_coef_16_hi.select<8, 1, 16, 1>(0, 0));
+    write(SCRATCHBUF, scratchbuf_pos(X) + 32, scratchbuf_pos(Y) + 24, g_coef_16_hi.select<8, 1, 16, 1>(8, 0));
+
     // quant
     qparam_t qparam_0 = get_qparam();
     // scale quant params for 32x32
     qparam_0.select<4, 1>(0) = cm_avg<int2>(qparam_0.select<4, 1>(0), 0);
     qparam_0.select<2, 1>(6) <<= 1;
     g_qparam = qparam_0;
-    g_qparam.select<8, 2>(0) = g_qparam.select<8, 2>(1);
+    g_qparam.select<5, 2>(0) = g_qparam.select<5, 2>(1);
     uint4 sse;
     sse  = quant_dequant_16(1);
     sse += quant_dequant_16_2();
@@ -1657,6 +1803,12 @@ _GENX_ void decide32(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, Su
     dct_32x16();
     //transpose_32x16();
 
+    // quadrants 0 and 1
+    write(SCRATCHBUF, scratchbuf_pos(X) + 0, scratchbuf_pos(Y) + 0, g_coef_16_lo.select<8, 1, 16, 1>(0, 0));
+    write(SCRATCHBUF, scratchbuf_pos(X) + 0, scratchbuf_pos(Y) + 8, g_coef_16_lo.select<8, 1, 16, 1>(8, 0));
+    write(SCRATCHBUF, scratchbuf_pos(X) + 0, scratchbuf_pos(Y) + 16, g_coef_16_hi.select<8, 1, 16, 1>(0, 0));
+    write(SCRATCHBUF, scratchbuf_pos(X) + 0, scratchbuf_pos(Y) + 24, g_coef_16_hi.select<8, 1, 16, 1>(8, 0));
+
     // quant
     sse += quant_dequant_16_2();
     g_qparam = qparam_0;
@@ -1680,6 +1832,7 @@ _GENX_ void decide32(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, Su
 
     g_txb_skip_ctx = depth > 0;
     uint4 bits = get_bits_16(PARAM, TX_32X32);
+    //g_rd_cost32.format<float>().select<2, 1>(DZ0) = g_rd_cost16.format<float>().select<2, 1>(DZ0);
 
     if (num_nz0) {
         g_coef_16_lo.row(0).merge(0, 0x007f);
@@ -1747,10 +1900,18 @@ _GENX_ void decide32(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, Su
 
     if (g_num_nz) {
         rd_cost rd_cost16;
-        decide16(PARAM, SRC, PRED, BLOCK0(mi, 2), depth + 1); rd_cost16  = g_rd_cost16;
-        decide16(PARAM, SRC, PRED, BLOCK1(mi, 2), depth + 1); rd_cost16 += g_rd_cost16;
-        decide16(PARAM, SRC, PRED, BLOCK2(mi, 2), depth + 1); rd_cost16 += g_rd_cost16;
-        decide16(PARAM, SRC, PRED, BLOCK3(mi, 2), depth + 1); rd_cost16 += g_rd_cost16;
+        decide16(PARAM, SRC, PRED, QCOEFS, BLOCK0(mi, 2), zz + 0, depth + 1);
+        rd_cost16  = g_rd_cost16;
+        decide16(PARAM, SRC, PRED, QCOEFS, BLOCK1(mi, 2), zz + 4, depth + 1);
+        rd_cost16.select<4, 1>(SSE) += g_rd_cost16.select<4, 1>(SSE);
+        //rd_cost16.select<2, 1>(DZ0).format<float>() += g_rd_cost16.select<2, 1>(DZ0).format<float>();
+        decide16(PARAM, SRC, PRED, QCOEFS, BLOCK2(mi, 2), zz + 8, depth + 1);
+        rd_cost16.select<4, 1>(SSE) += g_rd_cost16.select<4, 1>(SSE);
+        //rd_cost16.select<2, 1>(DZ0).format<float>() += g_rd_cost16.select<2, 1>(DZ0).format<float>();
+        decide16(PARAM, SRC, PRED, QCOEFS, BLOCK3(mi, 2), zz + 12, depth + 1);
+        rd_cost16.select<4, 1>(SSE) += g_rd_cost16.select<4, 1>(SSE);
+        //rd_cost16.select<2, 1>(DZ0).format<float>() += g_rd_cost16.select<2, 1>(DZ0).format<float>();
+
         g_rd_cost16 = rd_cost16;
         cost16 = g_rd_cost16[SSE] + get_lambda() * g_rd_cost16[BIT];
     }
@@ -1758,43 +1919,171 @@ _GENX_ void decide32(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, Su
     if (cost16 <= cost32)
         g_rd_cost32 = g_rd_cost16;
     else {
-        vector<uint2, 2> blk4 = mi & 7; blk4 <<= 1;
-        g_vartx_info.select<8, 1, 8, 1>(blk4(Y), blk4(X)) = vartx_data;
+        vector<uint2, 2> blk = mi & 7;
+        g_vartx_info.select<4, 1, 4, 1>(blk[Y], blk[X]) = vartx_data;
+
+        if (g_rd_cost32[NZC] > 0) {
+            vector<uint2, 2> sb = mi >> 3;
+            uint2 sb_cols = (get_width() + 7) >> 3;
+            uint2 sb_addr = sb[X] + sb[Y] * sb_cols;
+            uint4 coef_offset = sb_addr * 4096 * sizeof(int2) + zz * 64 * sizeof(int2);
+
+            matrix<int2, 8, 16> m0, m1;
+            for (uint2 i = 0; i < 32; i += 8) {
+                read(MODIFIED(SCRATCHBUF), scratchbuf_pos(X) + 0, scratchbuf_pos(Y) + i, m0);
+                read(MODIFIED(SCRATCHBUF), scratchbuf_pos(X) + 32, scratchbuf_pos(Y) + i, m1);
+#pragma unroll
+                for (uint2 j = 0; j < 8; j++, coef_offset += 64) {
+                    write(QCOEFS, coef_offset + 0, m0.row(j));
+                    write(QCOEFS, coef_offset + 32, m1.row(j));
+                }
+            }
+        }
     }
+}
+
+_GENX_ inline vector<float, 2> add_weighted(vector<float, 2> curr_adz, vector<float, 2> prev_adz, vector<float, 2> prev_adz_delta)
+{
+    vector<float, 8> weights;
+    weights[0] = 1.000000000f;
+    weights[1] = 0.984496437f;
+    weights[2] = 0.939413063f;
+    weights[3] = 0.868815056f;
+    weights[4] = 0.778800783f;
+    weights[5] = 0.676633846f;
+    weights[6] = 0.569782825f;
+    weights[7] = 0.465043188f;
+
+    vector<float, 2> diff = curr_adz - prev_adz;
+    vector<uint2, 2> idx = diff * diff * 8 + 0.5;
+    idx = cm_min<uint2>(idx, 7);
+    curr_adz += prev_adz_delta * weights.iselect(idx);
+    return curr_adz;
+}
+
+_GENX_ inline void setup_adaptive_dead_zone(SurfaceIndex PARAM, SurfaceIndex PREV_ADZ, SurfaceIndex PREV_ADZ_DELTA, vector<uint2, 2> sb)
+{
+    const uint2 scene_cut = 0;
+
+    const uint2 sb_cols = (get_width() + 7) >> 3;
+    const uint2 sb_rows = (get_height() + 7) >> 3;
+    const uint2 sb_addr = sb[X] + sb[Y] * sb_cols;
+
+    vector<uint2, 2> initDz_;
+    read(DWALIGNED(PARAM), OFFSET_INIT_DZ, initDz_);
+    vector<float, 2> initDz = initDz_;
+
+    float varDz;
+
+    read(DWALIGNED(PREV_ADZ), sb_addr * SIZEOF_ADZ_CTX, g_curr_adz);
+
+    //if (get_comp_flag() && !get_bidir_flag()) {
+    //    vector<float, 2> prev_adz, prev_adz_delta;
+
+    //    varDz = scene_cut ? 10.0f : 8.0f;
+
+    //    if (sb[X] > 0) {
+    //        read(DWALIGNED(PREV_ADZ), sb_addr * SIZEOF_ADZ_CTX - SIZEOF_ADZ_CTX, prev_adz);
+    //        read(DWALIGNED(PREV_ADZ_DELTA), sb_addr * SIZEOF_ADZ_CTX - SIZEOF_ADZ_CTX, prev_adz_delta);
+    //        g_curr_adz = add_weighted(g_curr_adz, prev_adz, prev_adz_delta);
+    //    }
+    //    if (sb[Y] > 0) {
+    //        read(DWALIGNED(PREV_ADZ), (sb_addr - sb_cols) * SIZEOF_ADZ_CTX, prev_adz);
+    //        read(DWALIGNED(PREV_ADZ_DELTA), (sb_addr - sb_cols) * SIZEOF_ADZ_CTX, prev_adz_delta);
+    //        g_curr_adz = add_weighted(g_curr_adz, prev_adz, prev_adz_delta);
+    //    }
+    //    if (sb[X] + 1 < sb_cols && sb[Y] > 0) {
+    //        read(DWALIGNED(PREV_ADZ), (sb_addr - sb_cols + 1) * SIZEOF_ADZ_CTX, prev_adz);
+    //        read(DWALIGNED(PREV_ADZ_DELTA), (sb_addr - sb_cols + 1) * SIZEOF_ADZ_CTX, prev_adz_delta);
+    //        g_curr_adz = add_weighted(g_curr_adz, prev_adz, prev_adz_delta);
+    //    }
+    //    if (sb[X] + 1 < sb_cols && sb[Y] + 1 < sb_rows) {
+    //        read(DWALIGNED(PREV_ADZ), (sb_addr + sb_cols + 1) * SIZEOF_ADZ_CTX, prev_adz);
+    //        read(DWALIGNED(PREV_ADZ_DELTA), (sb_addr + sb_cols + 1) * SIZEOF_ADZ_CTX, prev_adz_delta);
+    //        g_curr_adz = add_weighted(g_curr_adz, prev_adz, prev_adz_delta);
+    //    }
+    //} else {
+    //    varDz = 4.0f;
+    //    // Use min
+    //    g_curr_adz = cm_min<float>(g_curr_adz, initDz);
+    //}
+
+    //// Saturate
+    //vector<float, 2> minDz = initDz - varDz;
+    //vector<float, 2> maxDz = initDz + varDz;
+    //g_curr_adz = cm_min<float>(g_curr_adz, maxDz);
+    //g_curr_adz = cm_max<float>(g_curr_adz, minDz);
+
+    // set rounding params for quantization
+    vector<uint4, 2> round;
+    round = g_curr_adz + 0.5f;
+    round *= get_qparam().select<2, 1>(8);
+    get_qparam_ref().select<2, 1>(2) = round >> 7;
+    //if (sb[Y] == 120/8 && sb[X] == 8/8)
+    //    printf("sb = %d %d, g_curr_adz = %.3f %.3f, new round = %d %d\n", sb[Y], sb[X], g_curr_adz[0], g_curr_adz[1], get_qparam()[2], get_qparam()[3]);
+
+    // set initial rounding params for accumulation
+    //g_round_adj = g_curr_adz * get_qparam().select<2, 1>(8) * (1.0f / 128.0f);
+}
+
+_GENX_ inline void update_adaptive_dead_zone(SurfaceIndex CURR_ADZ, SurfaceIndex CURR_ADZ_DELTA, vector<uint2, 2> sb)
+{
+    vector<float, 2> init_adz = g_curr_adz;
+    vector<float, 2> curr_adz_delta;
+
+    g_curr_adz = g_round_adj * 128.0f / get_qparam().select<2, 1>(8);
+    curr_adz_delta = g_curr_adz - init_adz;
+
+    const uint2 sb_cols = (get_width() + 7) >> 3;
+    const uint2 sb_rows = (get_height() + 7) >> 3;
+    const uint2 sb_addr = sb[X] + sb[Y] * sb_cols;
+
+    vector<float, 8> tmp = 0;
+    tmp.select<2, 1>() = g_curr_adz; // tmp work-around for dataport minimum block size, until adz and adz_delta are combined
+    write(CURR_ADZ, sb_addr * SIZEOF_ADZ_CTX, tmp);
+
+    tmp.select<2, 1>() = curr_adz_delta;
+    write(CURR_ADZ_DELTA, sb_addr * SIZEOF_ADZ_CTX, tmp);
 }
 
 extern "C" _GENX_MAIN_
     void VarTxDecision(SurfaceIndex PARAM, SurfaceIndex SRC, SurfaceIndex PRED, SurfaceIndex MODE_INFO,
-                       SurfaceIndex SCRATCHBUF, SurfaceIndex VAR_TX_INFO, int pred_padding)
+                       SurfaceIndex SCRATCHBUF, SurfaceIndex QCOEFS, SurfaceIndex VAR_TX_INFO,
+                       SurfaceIndex PREV_ADZ, SurfaceIndex PREV_ADZ_DELTA, SurfaceIndex CURR_ADZ,
+                       SurfaceIndex CURR_ADZ_DELTA, int pred_padding)
 {
     g_pred_padding = pred_padding;
 
-    read(PARAM, 0, g_params.select<64, 1>(0));
+    read(PARAM, 0, g_params);
     read(PARAM, OFFSET_FIT_CURVE, g_high_freq_coef_fit_curve.format<uint2>());
 
     vector<uint2, 2> sb;
     sb(X) = get_thread_origin_x();
     sb(Y) = get_thread_origin_y();
-    vector<uint2, 2> omi = sb * 8;
 
     uint2 sb_cols = (get_width() + 7) >> 3;
-    uint2 sb_addr = sb(X) + sb(Y) * sb_cols;
+    uint2 sb_addr = sb[X] + sb[Y] * sb_cols;
+
+    //setup_adaptive_dead_zone(PARAM, PREV_ADZ, PREV_ADZ_DELTA, sb);
+    setup_adaptive_dead_zone(PARAM, CURR_ADZ, CURR_ADZ_DELTA, sb);
+
+    vector<uint2, 2> omi = sb * 8;
 
     g_scan_8x8_t = vector<uint1, 32>(SCAN_8X8_TRANSPOSED);
     g_scan_4x4_t = vector<uint1, 16>(SCAN_4X4_TRANSPOSED);
 
-    g_br_ctx_offset_00_63.format<uint4>() = 0x0E0E0E0E;
-    g_br_ctx_offset_00_63.format<uint2>()[0] = 0x0700;
-    g_br_ctx_offset_00_63.format<uint2>()[4] = 0x0707;
+    g_br_ctx_offset_00_31.format<uint4>() = 0x0E0E0E0E;
+    g_br_ctx_offset_00_31.format<uint2>()[0] = 0x0700;
+    g_br_ctx_offset_00_31.format<uint2>()[4] = 0x0707;
 
-    g_base_ctx_offset_00_63.format<uint4>() = 0x0B0B0B0B;
-    g_base_ctx_offset_00_63.format<uint4>()[0] = 0x06060100;
-    g_base_ctx_offset_00_63.format<uint4>()[2] = 0x0B060601;
-    g_base_ctx_offset_00_63.format<uint4>()[4] = 0x0B0B0606;
-    g_base_ctx_offset_00_63.format<uint4>()[6] = 0x0B0B0B06;
+    g_base_ctx_offset_00_31.format<uint4>() = 0x0B0B0B0B;
+    g_base_ctx_offset_00_31.format<uint4>()[0] = 0x06060100;
+    g_base_ctx_offset_00_31.format<uint4>()[2] = 0x0B060601;
+    g_base_ctx_offset_00_31.format<uint4>()[4] = 0x0B0B0606;
+    g_base_ctx_offset_00_31.format<uint4>()[6] = 0x0B0B0B06;
 
-    g_br_ctx_offset_4.format<uint4>() = g_br_ctx_offset_00_63.format<uint4>().select<4, 2>(0);
-    g_base_ctx_offset_4.format<uint4>() = g_base_ctx_offset_00_63.format<uint4>().select<4, 2>(0);
+    g_br_ctx_offset_4.format<uint4>() = g_br_ctx_offset_00_31.format<uint4>().select<4, 2>(0);
+    g_base_ctx_offset_4.format<uint4>() = g_base_ctx_offset_00_31.format<uint4>().select<4, 2>(0);
 
     cmtl::cm_vector_assign<uint2, 8>(g_sequence_0_to_31.select<8, 1>(), 0, 1);
     g_sequence_0_to_31.select<8, 1>(8) = g_sequence_0_to_31.select<8, 1>(0) + 8;
@@ -1814,11 +2103,10 @@ extern "C" _GENX_MAIN_
     for (uint2 i = 0; i < 64; i += num8x8) {
         uint1 raster = scan_z2r[i];
 
-        vector<uint2, 2> loc_mi;
-        loc_mi(X) = uint2(raster & 7);
-        loc_mi(Y) = uint2(raster >> 3);
-        vector<uint2, 2> mi = cm_add<uint2>(omi, loc_mi);
-        vector<uint2, 2> blk4 = loc_mi * 2;
+        vector<uint2, 2> blk;
+        blk(X) = uint2(raster & 7);
+        blk(Y) = uint2(raster >> 3);
+        vector<uint2, 2> mi = cm_add<uint2>(omi, blk);
 
         mode_info mode_info;
         read(MODE_INFO, mi(X) * SIZEOF_MODE_INFO, mi(Y), mode_info);
@@ -1832,16 +2120,26 @@ extern "C" _GENX_MAIN_
         if (get_skip(mode_info) == 0) {
             rd_cost rd;
             if (log2_num8x8 == 0) {
-                decide8(PARAM, SRC, PRED, mi, 0); rd = g_rd_cost8;
+                decide8(PARAM, SRC, PRED, QCOEFS, mi, i, 0); rd = g_rd_cost8;
             } else if (log2_num8x8 == 1) {
-                decide16(PARAM, SRC, PRED, mi, 0); rd = g_rd_cost16;
+                decide16(PARAM, SRC, PRED, QCOEFS, mi, i, 0); rd = g_rd_cost16;
             } else if (log2_num8x8 == 2) {
-                decide32(PARAM, SRC, PRED, SCRATCHBUF, mi, 0); rd = g_rd_cost32;
+                decide32(PARAM, SRC, PRED, QCOEFS, SCRATCHBUF, mi, i, 0); rd = g_rd_cost32;
             } else if (log2_num8x8 == 3) {
-                decide32(PARAM, SRC, PRED, SCRATCHBUF, BLOCK0(mi, 4), 1); rd  = g_rd_cost32;
-                decide32(PARAM, SRC, PRED, SCRATCHBUF, BLOCK1(mi, 4), 1); rd += g_rd_cost32;
-                decide32(PARAM, SRC, PRED, SCRATCHBUF, BLOCK2(mi, 4), 1); rd += g_rd_cost32;
-                decide32(PARAM, SRC, PRED, SCRATCHBUF, BLOCK3(mi, 4), 1); rd += g_rd_cost32;
+                decide32(PARAM, SRC, PRED, QCOEFS, SCRATCHBUF, BLOCK0(mi, 4), i + 0, 1);
+                rd = g_rd_cost32;
+
+                decide32(PARAM, SRC, PRED, QCOEFS, SCRATCHBUF, BLOCK1(mi, 4), i + 16, 1);
+                rd.select<4, 1>(SSE) += g_rd_cost32.select<4, 1>(SSE);
+                //rd.select<2, 1>(DZ0).format<float>() += g_rd_cost32.select<2, 1>(DZ0).format<float>();
+
+                decide32(PARAM, SRC, PRED, QCOEFS, SCRATCHBUF, BLOCK2(mi, 4), i + 32, 1);
+                rd.select<4, 1>(SSE) += g_rd_cost32.select<4, 1>(SSE);
+                //rd.select<2, 1>(DZ0).format<float>() += g_rd_cost32.select<2, 1>(DZ0).format<float>();
+
+                decide32(PARAM, SRC, PRED, QCOEFS, SCRATCHBUF, BLOCK3(mi, 4), i + 48, 1);
+                rd.select<4, 1>(SSE) += g_rd_cost32.select<4, 1>(SSE);
+                //rd.select<2, 1>(DZ0).format<float>() += g_rd_cost32.select<2, 1>(DZ0).format<float>();
             }
 
             set_skip1(mode_info);
@@ -1868,24 +2166,32 @@ extern "C" _GENX_MAIN_
 
                 float best_cost_adjusted = rd[SSE] + get_lambda() * ((rd[BIT] * 3) >> 2);
                 float cost_skip = cm_sum<uint4>(g_sse);
-                if (cost_skip > best_cost_adjusted)
+                if (cost_skip > best_cost_adjusted) {
                     set_skip0(mode_info);
+                    //g_round_adj += rd.format<float>().select<2, 1>(DZ0);
+                }
             }
         }
 
         if (get_skip(mode_info)) {
             if (log2_num8x8 == 0)
-                g_vartx_info.select<2, 1, 2, 1>(blk4(Y), blk4(X)) = DCT_DCT + (TX_8X8 << 2);
+                g_vartx_info(blk[Y], blk[X]) = DCT_DCT + (TX_8X8 << 2);
             else if (log2_num8x8 == 1)
-                g_vartx_info.select<4, 1, 4, 1>(blk4(Y), blk4(X)) = DCT_DCT + (TX_16X16 << 2);
+                g_vartx_info.select<2, 1, 2, 1>(blk[Y], blk[X]) = DCT_DCT + (TX_16X16 << 2);
             else if (log2_num8x8 == 2)
-                g_vartx_info.select<8, 1, 8, 1>(blk4(Y), blk4(X)) = DCT_DCT + (TX_32X32 << 2);
+                g_vartx_info.select<4, 1, 4, 1>(blk[Y], blk[X]) = DCT_DCT + (TX_32X32 << 2);
             else
                 g_vartx_info = DCT_DCT + (TX_32X32 << 2);
         }
+
+        write(MODE_INFO, mi(X) * SIZEOF_MODE_INFO, mi(Y), mode_info);
     }
 
+    //update_adaptive_dead_zone(CURR_ADZ, CURR_ADZ_DELTA, sb);
+
     uint4 vartx_info_global_offset = sb_addr * 16 * 16 * sizeof(uint2);
-    for (int i = 0; i < 8; i++, vartx_info_global_offset += 64)
-        write(VAR_TX_INFO, vartx_info_global_offset, g_vartx_info.format<uint4>().select<16, 1>(16 * i));
+    for (int i = 0; i < 8; i++, vartx_info_global_offset += 64) {
+        vector<uint2, 16> row = g_vartx_info.row(i).replicate<8, 1, 2, 0>();
+        write(VAR_TX_INFO, vartx_info_global_offset, row.replicate<2>());
+    }
 }

@@ -46,11 +46,28 @@ namespace AV1Enc {
         const int32_t dstPitch = dstMiCols * sizeof(ModeInfo);
         const uint8_t *src = reinterpret_cast<const uint8_t *>(src_);
         uint8_t *dst = reinterpret_cast<uint8_t *>(dst_);
+        if ((size_t(dst) & 31) == 0 && (size_t(src) & 31) == 0) {
+            for (int32_t y = 0; y < miHeight; y++, src += srcPitch, dst += dstPitch) {
+                for (int32_t x = 0; x < miWidth; x++) {
+                    storea_si256(dst + 32 * x + 0, loada_si256(src + 0));
+                }
+            }
+        }
+        else {
+            for (int32_t y = 0; y < miHeight; y++, src += srcPitch, dst += dstPitch) {
+                for (int32_t x = 0; x < miWidth; x++) {
+                    storea_si128(dst + 32 * x + 0, loada_si128(src + 0));
+                    storea_si128(dst + 32 * x + 16, loada_si128(src + 16));
+                }
+            }
+        }
+    }
 
-        for (int32_t y = 0; y < miHeight; y++, src += srcPitch, dst += dstPitch) {
+    void CopyPaletteInfo(const PaletteInfo *src, int32_t srcPitch, PaletteInfo *dst, int32_t dstPitch, int32_t miWidth, int32_t miHeight)
+    {
+        for (int32_t y = 0; y < miHeight; y++) {
             for (int32_t x = 0; x < miWidth; x++) {
-                storea_si128(dst + 32 * x + 0,  loada_si128(src + 0));
-                storea_si128(dst + 32 * x + 16, loada_si128(src + 16));
+                dst[y*dstPitch + x] = src[y*srcPitch + x];
             }
         }
     }
@@ -427,6 +444,80 @@ namespace AV1Enc {
         assert(!"not implemented");
     }
 
+    void CopyNxM_unaligned(const uint8_t *src, int32_t pitchSrc, uint8_t *dst, int32_t pitchDst, int32_t N, int32_t M)
+    {
+        assert(pitchSrc >= N);
+        assert(pitchDst >= N);
+        assert(N == 4 || N == 8 || N == 16 || N == 32 || N == 64);
+        assert(M == 4 || M == 8 || M == 16 || M == 32 || M == 64);
+
+        switch (N) {
+        case 4:
+            assert((M & 3) == 0);
+            for (int y = 0; y < M; y += 4) {
+                *(uint32_t *)(dst + 0 * pitchDst) = *(const uint32_t *)(src + 0 * pitchSrc);
+                *(uint32_t *)(dst + 1 * pitchDst) = *(const uint32_t *)(src + 1 * pitchSrc);
+                *(uint32_t *)(dst + 2 * pitchDst) = *(const uint32_t *)(src + 2 * pitchSrc);
+                *(uint32_t *)(dst + 3 * pitchDst) = *(const uint32_t *)(src + 3 * pitchSrc);
+                src += 4 * pitchSrc;
+                dst += 4 * pitchDst;
+            }
+            break;
+        case 8:
+            assert((M & 3) == 0);
+            for (int y = 0; y < M; y += 4) {
+                *(uint64_t *)(dst + 0 * pitchDst) = *(const uint64_t *)(src + 0 * pitchSrc);
+                *(uint64_t *)(dst + 1 * pitchDst) = *(const uint64_t *)(src + 1 * pitchSrc);
+                *(uint64_t *)(dst + 2 * pitchDst) = *(const uint64_t *)(src + 2 * pitchSrc);
+                *(uint64_t *)(dst + 3 * pitchDst) = *(const uint64_t *)(src + 3 * pitchSrc);
+                src += 4 * pitchSrc;
+                dst += 4 * pitchDst;
+            }
+            break;
+        case 16:
+            assert((M & 3) == 0);
+            for (int32_t i = 0; i < M; i += 4, src += pitchSrc * 4, dst += pitchDst * 4) {
+                storeu_si128(dst + pitchDst * 0, loadu_si128(src + pitchSrc * 0));
+                storeu_si128(dst + pitchDst * 1, loadu_si128(src + pitchSrc * 1));
+                storeu_si128(dst + pitchDst * 2, loadu_si128(src + pitchSrc * 2));
+                storeu_si128(dst + pitchDst * 3, loadu_si128(src + pitchSrc * 3));
+            }
+            break;
+        case 32:
+            assert((M & 3) == 0);
+            for (int32_t i = 0; i < M; i += 4, src += pitchSrc * 4, dst += pitchDst * 4) {
+                storeu_si128(dst + pitchDst * 0, loadu_si128(src + pitchSrc * 0));
+                storeu_si128(dst + pitchDst * 0 + 16, loadu_si128(src + pitchSrc * 0 + 16));
+                storeu_si128(dst + pitchDst * 1, loadu_si128(src + pitchSrc * 1));
+                storeu_si128(dst + pitchDst * 1 + 16, loadu_si128(src + pitchSrc * 1 + 16));
+                storeu_si128(dst + pitchDst * 2, loadu_si128(src + pitchSrc * 2));
+                storeu_si128(dst + pitchDst * 2 + 16, loadu_si128(src + pitchSrc * 2 + 16));
+                storeu_si128(dst + pitchDst * 3, loadu_si128(src + pitchSrc * 3));
+                storeu_si128(dst + pitchDst * 3 + 16, loadu_si128(src + pitchSrc * 3 + 16));
+            }
+            break;
+        case 64:
+            assert((M & 1) == 0);
+            for (int32_t i = 0; i < M; i += 2, src += pitchSrc * 2, dst += pitchDst * 2) {
+                storeu_si128(dst + pitchDst * 0, loadu_si128(src + pitchSrc * 0));
+                storeu_si128(dst + pitchDst * 0 + 16, loadu_si128(src + pitchSrc * 0 + 16));
+                storeu_si128(dst + pitchDst * 0 + 32, loadu_si128(src + pitchSrc * 0 + 32));
+                storeu_si128(dst + pitchDst * 0 + 48, loadu_si128(src + pitchSrc * 0 + 48));
+                storeu_si128(dst + pitchDst * 1, loadu_si128(src + pitchSrc * 1));
+                storeu_si128(dst + pitchDst * 1 + 16, loadu_si128(src + pitchSrc * 1 + 16));
+                storeu_si128(dst + pitchDst * 1 + 32, loadu_si128(src + pitchSrc * 1 + 32));
+                storeu_si128(dst + pitchDst * 1 + 48, loadu_si128(src + pitchSrc * 1 + 48));
+            }
+            break;
+        default:
+            assert(!"invalid width");
+        }
+    }
+
+    void CopyNxM_unaligned(const uint16_t *src, int32_t pitchSrc, uint16_t *dst, int32_t pitchDst, int32_t N, int32_t M) {
+        assert(!"not implemented");
+    }
+
     void CopyNxM(const uint16_t *src_, int32_t pitchSrc, uint16_t *dst_, int32_t pitchDst, int32_t N, int32_t M)
     {
         const int32_t W = N * sizeof(uint16_t);
@@ -568,7 +659,7 @@ namespace AV1Enc {
 
 
     void CopyNxN(const int16_t *src_, int32_t pitchSrc, int16_t *dst_, int32_t pitchDst, int32_t N) {
-        CopyNxN(reinterpret_cast<const int16_t*>(src_), pitchSrc, reinterpret_cast<int16_t*>(dst_), pitchDst, N);
+        CopyNxN(reinterpret_cast<const uint16_t*>(src_), pitchSrc, reinterpret_cast<uint16_t*>(dst_), pitchDst, N);
     }
 
 
@@ -586,93 +677,20 @@ namespace AV1Enc {
         }
     }
 
-
-    namespace details {
-        template <int N> AV1_FORCEINLINE void Unpack16(const uint8_t *src, uint16_t *dst) {
-            for (int i = 0; i < N; i++, src += 16, dst += 16) {
-                __m128i s = loada_si128(src);
-                storea_si128(dst + 0, _mm_unpacklo_epi8(s, _mm_setzero_si128()));
-                storea_si128(dst + 8, _mm_unpackhi_epi8(s, _mm_setzero_si128()));
-            }
-        }
-    };  // namespace details
-
-    void Copy8To16(const uint8_t *src, int32_t pitchSrc, uint16_t *dst, int32_t pitchDst, int32_t width, int32_t height) {
-        assert(size_t(src) % 8 == 0);
-        assert(size_t(dst) % 16 == 0);
-        assert(width <= 80);
-        assert(width % 8 == 0); // Luma width is 8 byte aligned
+    template <typename PixType>
+    void CopyFromUnalignedNxN(const PixType *src, int32_t pitchSrc, PixType* dst, int32_t pitchDst, int32_t width)
+    {
+        int32_t height = width;
         for (int32_t y = 0; y < height; y++) {
-            int w = width;
-            if (size_t(src) & 8) {
-                storea_si128(dst, _mm_unpacklo_epi8(loadl_epi64(src), _mm_setzero_si128()));
-                src += 8;
-                dst += 8;
-                w -= 8;
-            }
-            if (w & 64) {
-                details::Unpack16<4>(src, dst);
-                src += 64;
-                dst += 64;
-            }
-            if (w & 32) {
-                details::Unpack16<2>(src, dst);
-                src += 32;
-                dst += 32;
-            }
-            if (w & 16) {
-                details::Unpack16<1>(src, dst);
-                src += 16;
-                dst += 16;
-            }
-            if (w & 8) {
-                __m128i s = loadl_epi64(src);
-                storea_si128(dst, _mm_unpacklo_epi8(s, _mm_setzero_si128()));
-                src += 8;
-                dst += 8;
-            }
-            src += pitchSrc - width;
-            dst += pitchDst - width;
-        }
-    }
-
-    void Copy8To16_unaligned(const uint8_t *src, int32_t pitchSrc, uint16_t *dst, int32_t pitchDst, int32_t width, int32_t height) {
-        assert(size_t(src) % 8 == 0);
-        assert(size_t(dst) % 8 == 0);
-        assert(width % 4 == 0);
-        int32_t width16 = width & ~15;
-        if ((size_t(src) & 15) | (pitchSrc & 15)) {
-            for (int32_t y = 0; y < height; y++) {
-                for (int32_t i = 0; i < width16; i += 16, src += 16, dst += 16) {
-                    __m128i s = loadu_si128(src);
-                    storea_si128(dst + 0, _mm_unpacklo_epi8(s, _mm_setzero_si128()));
-                    storea_si128(dst + 8, _mm_unpackhi_epi8(s, _mm_setzero_si128()));
-                }
-                if (width & 8) {
-                    __m128i s = loadl_epi64(src);
-                    storea_si128(dst, _mm_unpacklo_epi8(s, _mm_setzero_si128()));
-                    src += 8;
-                    dst += 8;
-                }
-                src += pitchSrc - width;
-                dst += pitchDst - width;
-            }
-        } else {
-            for (int32_t y = 0; y < height; y++) {
-                for (int32_t i = 0; i < width16; i += 16, src += 16, dst += 16)
-                    details::Unpack16<1>(src, dst);
-                if (width & 8) {
-                    __m128i s = loadl_epi64(src);
-                    storea_si128(dst, _mm_unpacklo_epi8(s, _mm_setzero_si128()));
-                    src += 8;
-                    dst += 8;
-                }
-                src += pitchSrc - width;
-                dst += pitchDst - width;
+            for (int32_t x = 0; x < width; x++) {
+                dst[y*pitchDst + x] = src[y*pitchSrc + x];
             }
         }
     }
-
+    template void CopyFromUnalignedNxN<uint8_t>(const uint8_t *src, int32_t pitchSrc, uint8_t* dst, int32_t pitchDst, int32_t width);
+//#if ENABLE_10BIT
+    template void CopyFromUnalignedNxN<uint16_t>(const uint16_t *src, int32_t pitchSrc, uint16_t* dst, int32_t pitchDst, int32_t width);
+//#endif
 }  // namespace AV1Enc
 
 #endif  // MFX_ENABLE_AV1_VIDEO_ENCODE

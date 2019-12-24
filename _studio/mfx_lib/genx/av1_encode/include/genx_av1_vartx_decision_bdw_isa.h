@@ -20,5 +20,5 @@
 
 #ifndef __genx_av1_vartx_decision_bdw__
 #define __genx_av1_vartx_decision_bdw__
-extern const unsigned char genx_av1_vartx_decision_bdw[160118];
+extern const unsigned char genx_av1_vartx_decision_bdw[175022];
 #endif

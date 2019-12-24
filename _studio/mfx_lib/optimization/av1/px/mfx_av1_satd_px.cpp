@@ -521,6 +521,158 @@ namespace AV1PP {
     template int satd_pitch64_px<64,32>(const unsigned char*,const unsigned char*,int);
     template int satd_pitch64_px<64,64>(const unsigned char*,const unsigned char*,int);
 
+    int satd_with_const_8x8_px(const unsigned char* src1, int pitch1, const unsigned char src2)
+    {
+        int i, j;
+        unsigned int satd = 0;
+        short diff[8][8];
+
+        //ippiSub8x8_8u16s_C1R(src1, pitch1, src2, pitch2, &diff[0][0], 16);
+        for (i = 0; i < 8; i++) {
+            for (j = 0; j < 8; j++)
+                diff[i][j] = (short)(src1[j] - src2);
+            src1 += pitch1;
+        }
+
+        for (i = 0; i < 8; i++) {
+            int t0 = diff[i][0] + diff[i][4];
+            int t4 = diff[i][0] - diff[i][4];
+            int t1 = diff[i][1] + diff[i][5];
+            int t5 = diff[i][1] - diff[i][5];
+            int t2 = diff[i][2] + diff[i][6];
+            int t6 = diff[i][2] - diff[i][6];
+            int t3 = diff[i][3] + diff[i][7];
+            int t7 = diff[i][3] - diff[i][7];
+            int s0 = t0 + t2;
+            int s2 = t0 - t2;
+            int s1 = t1 + t3;
+            int s3 = t1 - t3;
+            int s4 = t4 + t6;
+            int s6 = t4 - t6;
+            int s5 = t5 + t7;
+            int s7 = t5 - t7;
+            diff[i][0] = s0 + s1;
+            diff[i][1] = s0 - s1;
+            diff[i][2] = s2 + s3;
+            diff[i][3] = s2 - s3;
+            diff[i][4] = s4 + s5;
+            diff[i][5] = s4 - s5;
+            diff[i][6] = s6 + s7;
+            diff[i][7] = s6 - s7;
+        }
+        for (i = 0; i < 8; i++) {
+            int t0 = diff[0][i] + diff[4][i];
+            int t4 = diff[0][i] - diff[4][i];
+            int t1 = diff[1][i] + diff[5][i];
+            int t5 = diff[1][i] - diff[5][i];
+            int t2 = diff[2][i] + diff[6][i];
+            int t6 = diff[2][i] - diff[6][i];
+            int t3 = diff[3][i] + diff[7][i];
+            int t7 = diff[3][i] - diff[7][i];
+            int s0 = t0 + t2;
+            int s2 = t0 - t2;
+            int s1 = t1 + t3;
+            int s3 = t1 - t3;
+            int s4 = t4 + t6;
+            int s6 = t4 - t6;
+            int s5 = t5 + t7;
+            int s7 = t5 - t7;
+            satd += ABS(s0 + s1);
+            satd += ABS(s0 - s1);
+            satd += ABS(s2 + s3);
+            satd += ABS(s2 - s3);
+            satd += ABS(s4 + s5);
+            satd += ABS(s4 - s5);
+            satd += ABS(s6 + s7);
+            satd += ABS(s6 - s7);
+        }
+
+        return satd;
+    }
+
+    void satd_with_const_8x8_pair_px(const unsigned char* src1, int pitch1, const unsigned char src2, int* satdPair)
+    {
+        satdPair[0] = satd_with_const_8x8_px(src1 + 0, pitch1, src2);
+        satdPair[1] = satd_with_const_8x8_px(src1 + 8, pitch1, src2);
+    }
+
+    void satd_with_const_8x8_pair_pitch64_px(const unsigned char* src1, const unsigned char src2, int *satdPair) {
+        return satd_with_const_8x8_pair_px(src1, 64, src2, satdPair);
+    }
+
+    template <int w, int h> int satd_with_const_pitch64_px(const unsigned char* src1, const unsigned char src2) {
+        // assume height and width are multiple of 4
+        assert(!(w & 0x03));
+        assert(!(h & 0x03));
+
+        int satdTotal = 0;
+        int satd[2] = { 0, 0 };
+
+        if (w == 4 && h == 4) {
+            assert(0);
+            return 0;
+            //return (satd_4x4_pitch64_px(src1, src2, pitch2) + 1) >> 1;
+        }
+        else if ((h | w) & 0x07) {
+            // multiple 4x4 blocks - do as many pairs as possible
+            assert(0);
+            return 0;
+            //int widthPair = w & ~0x07;
+            //int widthRem = w - widthPair;
+            //for (int j = 0; j < h; j += 4, src1 += 64 * 4, src2 += pitch2 * 4) {
+            //    int i = 0;
+            //    for (; i < widthPair; i += 4 * 2) {
+            //        satd_4x4_pair_pitch64_px(src1 + i, src2 + i, pitch2, satd);
+            //        satdTotal += ((satd[0] + 1) >> 1) + ((satd[1] + 1) >> 1);
+            //    }
+
+            //    if (widthRem) {
+            //        satd[0] = satd_4x4_pitch64_px(src1 + i, src2 + i, pitch2);
+            //        satdTotal += (satd[0] + 1) >> 1;
+            //    }
+            //}
+        }
+        else if (w == 8 && h == 8) {
+            /* single 8x8 block */
+            assert(0);
+            return 0;
+            //satd[0] = satd_8x8_pitch64_px(src1, src2, pitch2);
+            //satdTotal += (satd[0] + 2) >> 2;
+        }
+        else {
+            /* multiple 8x8 blocks - do as many pairs as possible */
+            int widthPair = w & ~0x0f;
+            int widthRem = w - widthPair;
+            for (int j = 0; j < h; j += 8, src1 += 64 * 8) {
+                int i = 0;
+                for (; i < widthPair; i += 8 * 2) {
+                    satd_with_const_8x8_pair_pitch64_px(src1 + i, src2, satd);
+                    satdTotal += ((satd[0] + 2) >> 2) + ((satd[1] + 2) >> 2);
+                }
+                if (widthRem) {
+                    assert(0);
+                    //satd[0] = satd_8x8_pitch64_px(src1 + i, src2 + i, pitch2);
+                    //satdTotal += (satd[0] + 2) >> 2;
+                }
+            }
+        }
+
+        return satdTotal;
+    }
+    template int satd_with_const_pitch64_px< 4, 4>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px< 4, 8>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px< 8, 4>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px< 8, 8>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px< 8, 16>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px<16, 8>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px<16, 16>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px<16, 32>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px<32, 16>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px<32, 32>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px<32, 64>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px<64, 32>(const unsigned char*, const unsigned char);
+    template int satd_with_const_pitch64_px<64, 64>(const unsigned char*, const unsigned char);
+
     template <int w, int h> int satd_pitch64_both_px(const unsigned char* src1, const unsigned char* src2) {
         // assume height and width are multiple of 4
         assert(!(w & 0x03));

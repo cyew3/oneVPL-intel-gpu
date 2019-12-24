@@ -3,6 +3,72 @@
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Header.props" />
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Header.props" />
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_Intel|Win32">
+      <Configuration>Debug_Intel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_Intel|x64">
+      <Configuration>Debug_Intel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_HSW_Emu|Win32">
+      <Configuration>Debug_HSW_Emu</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_HSW_Emu|x64">
+      <Configuration>Debug_HSW_Emu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_THM|Win32">
+      <Configuration>Debug_THM</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_THM|x64">
+      <Configuration>Debug_THM</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel|Win32">
+      <Configuration>Release_Intel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel|x64">
+      <Configuration>Release_Intel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_THM|Win32">
+      <Configuration>Release_THM</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_THM|x64">
+      <Configuration>Release_THM</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_VTUNE|Win32">
+      <Configuration>Release_VTUNE</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_VTUNE|x64">
+      <Configuration>Release_VTUNE</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{821C734C-1927-4C6F-80F7-37088A80D9E4}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
@@ -15,46 +81,79 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Default.props" />
   <PropertyGroup Label="Configuration">
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>Intel C++ Compiler 18.0</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
+    <ConfigurationType>$(MfxConfigurationType)</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props" />
   <ItemGroup>
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_hme_and_me_p32_4mv_tgl_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_icllp_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_single_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_single_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_single_icllp_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_single_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_single_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_single_tgl_isa.cpp" />
     <ClCompile Include="src\genx_av1_interpolate_decision_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_interpolate_decision_tgl_isa.cpp" />
     <ClCompile Include="src\genx_av1_intra_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_intra_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_icllp_isa.cpp" />
     <ClCompile Include="src\genx_av1_intra_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_intra_tgl_isa.cpp" />
     <ClCompile Include="src\genx_av1_mepu_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_mepu_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mepu_icllp_isa.cpp" />
     <ClCompile Include="src\genx_av1_mepu_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mepu_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mepu_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_me_p16_4mv_and_refine_32x32_tgl_isa.cpp" />
     <ClCompile Include="src\genx_av1_mode_decision_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_mode_decision_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_icllp_isa.cpp" />
     <ClCompile Include="src\genx_av1_mode_decision_pass2_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_mode_decision_pass2_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_icllp_isa.cpp" />
     <ClCompile Include="src\genx_av1_mode_decision_pass2_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_pass2_tgl_isa.cpp" />
     <ClCompile Include="src\genx_av1_mode_decision_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_mode_decision_tgl_isa.cpp" />
     <ClCompile Include="src\genx_av1_prepare_src_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_prepare_src_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_icllp_isa.cpp" />
     <ClCompile Include="src\genx_av1_prepare_src_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_prepare_src_tgl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_skl_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_av1_refine_me_p_64x64_tgl_isa.cpp" />
     <ClCompile Include="src\genx_av1_vartx_decision_bdw_isa.cpp" />
     <ClCompile Include="src\genx_av1_vartx_decision_hsw_isa.cpp" />
     <ClCompile Include="src\genx_av1_vartx_decision_skl_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_skl_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_hme_and_me_p32_4mv_bdw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_hme_and_me_p32_4mv_hsw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_hme_and_me_p32_4mv_skl_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_bdw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_hsw_isa.cpp" />
-    <ClCompile Include="src\genx_hevce_refine_me_p_64x64_skl_isa.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />

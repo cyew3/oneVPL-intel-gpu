@@ -11,9 +11,10 @@ set OPTIONS=%~4
 
 set JIT_TARGET=
 if "%3"=="hsw" set JIT_TARGET=gen7_5 & set PLATFORM_NAME=hsw
-if "%3"=="bdw" set JIT_TARGET=gen8 & set PLATFORM_NAME=bdw
-if "%3"=="skl" set JIT_TARGET=gen9 & set PLATFORM_NAME=skl
-if "%3"=="cnl" set JIT_TARGET=gen9 & set PLATFORM_NAME=cnl
+if "%3"=="bdw" set JIT_TARGET=gen8   & set PLATFORM_NAME=bdw
+if "%3"=="skl" set JIT_TARGET=gen9   & set PLATFORM_NAME=skl
+if "%3"=="cnl" set JIT_TARGET=gen9   & set PLATFORM_NAME=cnl
+if "%3"=="icl" set JIT_TARGET=gen9   & set PLATFORM_NAME=icl
 if "%JIT_TARGET%"=="" goto HELP
 
 set CURDIR=%cd%
@@ -60,9 +61,9 @@ if not ERRORLEVEL 0 goto :EMBED_ISA_FAILED
 
 echo === Copy embedded ISA ===
 
-copy /Y %ISA_FILENAME_FINAL%.cpp %CURDIR%\src\%ISA_FILENAME_FINAL%_isa.cpp
+copy /Y %ISA_FILENAME_FINAL%_isa.cpp %CURDIR%\src\%ISA_FILENAME_FINAL%_isa.cpp
 if not ERRORLEVEL 0 goto :COPY_ISA_FAILED
-copy /Y %ISA_FILENAME_FINAL%.h %CURDIR%\include\%ISA_FILENAME_FINAL%_isa.h
+copy /Y %ISA_FILENAME_FINAL%_isa.h %CURDIR%\include\%ISA_FILENAME_FINAL%_isa.h
 if not ERRORLEVEL 0 goto :COPY_ISA_FAILED
 
 cd %CURDIR%

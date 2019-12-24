@@ -28,7 +28,7 @@
 
 namespace AV1Enc {
 
-    const int32_t mode2txfm_map[MB_MODE_COUNT] = {
+    const TxType mode2txfm_map[MB_MODE_COUNT] = {
         DCT_DCT,    // DC
         ADST_DCT,   // V
         DCT_ADST,   // H
@@ -45,11 +45,7 @@ namespace AV1Enc {
         DCT_DCT     // NEWMV
     };
 
-    extern const int16_t *vp9_default_scan[4];
-
-    extern const ScanOrder vp9_scans[TX_SIZES][VP9_TX_TYPES];
-
-    inline int32_t GetTxType(int32_t plane, int32_t width, int32_t mode) {
+    inline TxType GetTxType(int32_t plane, int32_t width, int32_t mode) {
         const int32_t lossless = 0;
         const int32_t isInter = mode >= INTRA_MODES;
         if (plane > 0 || width == 32 ) {
@@ -63,12 +59,12 @@ namespace AV1Enc {
             return mode2txfm_map[mode];
         }
     }
-    inline int32_t GetTxType(int32_t plane, TxSize txSz, int32_t mode) {
+    inline TxType GetTxType(int32_t plane, TxSize txSz, int32_t mode) {
         return GetTxType(plane, 4<<txSz, mode);
     }
 
 
-    const int32_t intra_mode_to_tx_type_context[AV1_INTRA_MODES] = {
+    const TxType intra_mode_to_tx_type_context[AV1_INTRA_MODES] = {
         DCT_DCT,    // DC
         ADST_DCT,   // V
         DCT_ADST,   // H
@@ -85,9 +81,10 @@ namespace AV1Enc {
     };
 
     extern const int16_t *av1_default_scan[TX_SIZES_ALL];
+    extern const int16_t *av1_default_scan_r[TX_SIZES_ALL];
     extern const ScanOrder av1_scans[TX_SIZES_ALL][TX_TYPES];
 
-    inline int32_t GetTxTypeAV1(int32_t plane, TxSize txSz, int32_t mode, int32_t txType) {
+    inline TxType GetTxTypeAV1(int32_t plane, TxSize txSz, int32_t mode, TxType txType) {
         const int32_t lossless = 0;
         const int32_t isInter = mode >= AV1_INTRA_MODES;
 

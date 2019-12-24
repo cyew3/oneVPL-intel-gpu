@@ -938,6 +938,203 @@ namespace AV1PP
             s = _mm_cvtsi128_si32(mm128(ymm1));
             satdPair[1] = (s << 1);
         }
+
+        inline AV1_FORCEINLINE void satd_with_const_8x8_pair_avx2(const uint8_t *src1, int pitch1, const uint8_t src2, int32_t* satdPair) {
+            const uint8_t *pS1;
+            int32_t  s;
+
+            __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5, ymm6, ymm7;
+            __m256i ymm_s0, ymm_s1, ymm_s2, ymm_one;
+
+            uint64_t s2x4_ = src2 + (src2 << 16); s2x4_ += (s2x4_ << 32);
+            __m256i s2x4 = _mm256_setr_epi64x((s2x4_ << 1), 0, (s2x4_ << 1), 0);
+
+            static ALIGN_DECL(32) int8_t ymm_const11nb[32] = { 1,1,1,1,1,1,1,1,1,-1,1,-1,1,-1,1,-1,   1,1,1,1,1,1,1,1,1,-1,1,-1,1,-1,1,-1 };
+
+            _mm256_zeroupper();
+
+            pS1 = src1;
+
+            ymm7 = _mm256_load_si256((__m256i*)&(ymm_const11nb[0]));
+            ymm_one = _mm256_set1_epi16(1);
+
+            ymm0 = _mm256_permute4x64_epi64(mm256(_mm_load_si128((__m128i*)(pS1))), 0x50);
+            ymm1 = _mm256_permute4x64_epi64(mm256(_mm_load_si128((__m128i*)(pS1 + pitch1))), 0x50);
+            pS1 += 2 * pitch1;
+            ymm0 = _mm256_maddubs_epi16(ymm0, ymm7);
+            ymm1 = _mm256_maddubs_epi16(ymm1, ymm7);
+            ymm0 = _mm256_subs_epi16(ymm0, s2x4);
+            ymm1 = _mm256_subs_epi16(ymm1, s2x4);
+
+            ymm2 = _mm256_permute4x64_epi64(mm256(_mm_load_si128((__m128i*)(pS1))), 0x50);
+            ymm3 = _mm256_permute4x64_epi64(mm256(_mm_load_si128((__m128i*)(pS1 + pitch1))), 0x50);
+            pS1 += 2 * pitch1;
+            ymm2 = _mm256_maddubs_epi16(ymm2, ymm7);
+            ymm3 = _mm256_maddubs_epi16(ymm3, ymm7);
+            ymm2 = _mm256_subs_epi16(ymm2, s2x4);
+            ymm3 = _mm256_subs_epi16(ymm3, s2x4);
+
+            ymm_s0 = ymm2;
+            ymm_s1 = ymm3;
+            ymm_s2 = ymm1;
+
+            ymm4 = _mm256_permute4x64_epi64(mm256(_mm_load_si128((__m128i*)(pS1))), 0x50);
+            ymm5 = _mm256_permute4x64_epi64(mm256(_mm_load_si128((__m128i*)(pS1 + pitch1))), 0x50);
+            pS1 += 2 * pitch1;
+            ymm4 = _mm256_maddubs_epi16(ymm4, ymm7);
+            ymm5 = _mm256_maddubs_epi16(ymm5, ymm7);
+            ymm4 = _mm256_subs_epi16(ymm4, s2x4);
+            ymm5 = _mm256_subs_epi16(ymm5, s2x4);
+
+            ymm6 = _mm256_permute4x64_epi64(mm256(_mm_load_si128((__m128i*)(pS1))), 0x50);
+            ymm1 = _mm256_permute4x64_epi64(mm256(_mm_load_si128((__m128i*)(pS1 + pitch1))), 0x50);
+            pS1 += 2 * pitch1;
+            ymm6 = _mm256_maddubs_epi16(ymm6, ymm7);
+            ymm1 = _mm256_maddubs_epi16(ymm1, ymm7);
+            ymm6 = _mm256_subs_epi16(ymm6, s2x4);
+            ymm1 = _mm256_subs_epi16(ymm1, s2x4);
+            ymm2 = ymm4;
+
+            ymm7 = ymm_s2;
+
+            ymm4 = _mm256_adds_epi16(ymm4, ymm5);
+            ymm3 = ymm6;
+            ymm5 = _mm256_subs_epi16(ymm5, ymm2);
+            ymm6 = _mm256_adds_epi16(ymm6, ymm1);
+            ymm2 = ymm4;
+            ymm1 = _mm256_subs_epi16(ymm1, ymm3);
+            ymm4 = _mm256_adds_epi16(ymm4, ymm6);
+            ymm3 = ymm5;
+            ymm6 = _mm256_subs_epi16(ymm6, ymm2);
+            ymm2 = ymm_s0;
+            ymm5 = _mm256_adds_epi16(ymm5, ymm1);
+            ymm1 = _mm256_subs_epi16(ymm1, ymm3);
+            ymm3 = ymm_s1;
+            ymm_s1 = ymm1;
+            ymm_s0 = ymm6;
+            ymm_s2 = ymm5;
+
+            ymm1 = ymm0;
+            ymm5 = ymm2;
+            ymm0 = _mm256_adds_epi16(ymm0, ymm7);
+            ymm7 = _mm256_subs_epi16(ymm7, ymm1);
+            ymm2 = _mm256_adds_epi16(ymm2, ymm3);
+            ymm3 = _mm256_subs_epi16(ymm3, ymm5);
+            ymm1 = ymm0;
+            ymm5 = ymm7;
+            ymm0 = _mm256_adds_epi16(ymm0, ymm2);
+            ymm2 = _mm256_subs_epi16(ymm2, ymm1);
+            ymm1 = ymm0;
+            ymm7 = _mm256_adds_epi16(ymm7, ymm3);
+            ymm3 = _mm256_subs_epi16(ymm3, ymm5);
+            ymm0 = _mm256_adds_epi16(ymm0, ymm4);
+            ymm4 = _mm256_subs_epi16(ymm4, ymm1);
+            ymm5 = ymm_s2;
+            ymm1 = ymm7;
+
+            ymm7 = _mm256_adds_epi16(ymm7, ymm5);
+            ymm5 = _mm256_subs_epi16(ymm5, ymm1);
+
+            ymm6 = ymm0;
+            ymm0 = _mm256_blend_epi16(ymm0, ymm4, 204);
+            ymm4 = _mm256_slli_epi64(ymm4, 32);
+            ymm6 = _mm256_srli_epi64(ymm6, 32);
+            ymm4 = _mm256_or_si256(ymm4, ymm6);
+            ymm1 = ymm0;
+            ymm0 = _mm256_adds_epi16(ymm0, ymm4);
+            ymm4 = _mm256_subs_epi16(ymm4, ymm1);
+
+            ymm1 = ymm7;
+            ymm7 = _mm256_blend_epi16(ymm7, ymm5, 204);
+            ymm5 = _mm256_slli_epi64(ymm5, 32);
+            ymm1 = _mm256_srli_epi64(ymm1, 32);
+            ymm5 = _mm256_or_si256(ymm5, ymm1);
+
+            ymm1 = ymm7;
+            ymm7 = _mm256_adds_epi16(ymm7, ymm5);
+            ymm5 = _mm256_subs_epi16(ymm5, ymm1);
+
+            ymm1 = ymm0;
+            ymm0 = _mm256_blend_epi16(ymm0, ymm4, 170);
+            ymm4 = _mm256_slli_epi32(ymm4, 16);
+            ymm1 = _mm256_srli_epi32(ymm1, 16);
+            ymm4 = _mm256_or_si256(ymm4, ymm1);
+
+            ymm4 = _mm256_abs_epi16(ymm4);
+            ymm0 = _mm256_abs_epi16(ymm0);
+            ymm0 = _mm256_max_epi16(ymm0, ymm4);
+
+            ymm1 = ymm7;
+            ymm7 = _mm256_blend_epi16(ymm7, ymm5, 170);
+            ymm5 = _mm256_slli_epi32(ymm5, 16);
+            ymm1 = _mm256_srli_epi32(ymm1, 16);
+            ymm5 = _mm256_or_si256(ymm5, ymm1);
+
+            ymm6 = ymm_s0;
+            ymm5 = _mm256_abs_epi16(ymm5);
+            ymm7 = _mm256_abs_epi16(ymm7);
+            ymm4 = ymm2;
+            ymm7 = _mm256_max_epi16(ymm7, ymm5);
+            ymm1 = ymm_s1;
+            ymm0 = _mm256_adds_epi16(ymm0, ymm7);
+            ymm2 = _mm256_adds_epi16(ymm2, ymm6);
+            ymm6 = _mm256_subs_epi16(ymm6, ymm4);
+            ymm4 = ymm3;
+            ymm3 = _mm256_adds_epi16(ymm3, ymm1);
+            ymm1 = _mm256_subs_epi16(ymm1, ymm4);
+
+            ymm4 = ymm2;
+            ymm2 = _mm256_blend_epi16(ymm2, ymm6, 204);
+            ymm6 = _mm256_slli_epi64(ymm6, 32);
+            ymm4 = _mm256_srli_epi64(ymm4, 32);
+            ymm6 = _mm256_or_si256(ymm6, ymm4);
+            ymm4 = ymm2;
+            ymm2 = _mm256_adds_epi16(ymm2, ymm6);
+            ymm6 = _mm256_subs_epi16(ymm6, ymm4);
+
+            ymm4 = ymm3;
+            ymm3 = _mm256_blend_epi16(ymm3, ymm1, 204);
+            ymm1 = _mm256_slli_epi64(ymm1, 32);
+            ymm4 = _mm256_srli_epi64(ymm4, 32);
+            ymm1 = _mm256_or_si256(ymm1, ymm4);
+            ymm4 = ymm3;
+            ymm3 = _mm256_adds_epi16(ymm3, ymm1);
+            ymm1 = _mm256_subs_epi16(ymm1, ymm4);
+
+            ymm4 = ymm2;
+            ymm2 = _mm256_blend_epi16(ymm2, ymm6, 170);
+            ymm6 = _mm256_slli_epi32(ymm6, 16);
+            ymm4 = _mm256_srli_epi32(ymm4, 16);
+            ymm6 = _mm256_or_si256(ymm6, ymm4);
+
+            ymm4 = ymm3;
+            ymm3 = _mm256_blend_epi16(ymm3, ymm1, 170);
+            ymm1 = _mm256_slli_epi32(ymm1, 16);
+            ymm4 = _mm256_srli_epi32(ymm4, 16);
+            ymm1 = _mm256_or_si256(ymm1, ymm4);
+
+            ymm6 = _mm256_abs_epi16(ymm6);
+            ymm2 = _mm256_abs_epi16(ymm2);
+            ymm2 = _mm256_max_epi16(ymm2, ymm6);
+            ymm0 = _mm256_add_epi32(ymm0, ymm2);
+            ymm3 = _mm256_abs_epi16(ymm3);
+            ymm1 = _mm256_abs_epi16(ymm1);
+            ymm3 = _mm256_max_epi16(ymm3, ymm1);
+            ymm0 = _mm256_add_epi32(ymm0, ymm3);
+
+            ymm0 = _mm256_madd_epi16(ymm0, ymm_one);
+            ymm1 = _mm256_shuffle_epi32(ymm0, 14);
+            ymm0 = _mm256_add_epi32(ymm0, ymm1);
+            ymm1 = _mm256_shufflelo_epi16(ymm0, 14);
+            ymm0 = _mm256_add_epi32(ymm0, ymm1);
+            ymm1 = _mm256_permute2x128_si256(ymm0, ymm0, 0x01);
+
+            s = _mm_cvtsi128_si32(mm128(ymm0));
+            satdPair[0] = (s << 1);
+
+            s = _mm_cvtsi128_si32(mm128(ymm1));
+            satdPair[1] = (s << 1);
+        }
     };
 
     int32_t satd_4x4_avx2(const uint8_t* src1, int pitch1, const uint8_t* src2, int pitch2) {
@@ -1113,6 +1310,7 @@ namespace AV1PP
     template int satd_pitch64_avx2<32,64>(const uint8_t*,const uint8_t*,int);
     template int satd_pitch64_avx2<64,32>(const uint8_t*,const uint8_t*,int);
     template int satd_pitch64_avx2<64,64>(const uint8_t*,const uint8_t*,int);
+
     template <int w, int h> int satd_pitch64_both_avx2(const uint8_t *src1, const uint8_t *src2) {
         // assume height and width are multiple of 4
         assert(!(w & 0x03));
@@ -1176,4 +1374,82 @@ namespace AV1PP
     template int satd_pitch64_both_avx2<32,64>(const uint8_t*,const uint8_t*);
     template int satd_pitch64_both_avx2<64,32>(const uint8_t*,const uint8_t*);
     template int satd_pitch64_both_avx2<64,64>(const uint8_t*,const uint8_t*);
+
+
+    void satd_with_const_8x8_pitch64_avx2(const uint8_t* src1, const uint8_t src2, int32_t* satdPair) {
+        return details::satd_with_const_8x8_pair_avx2(src1, 64, src2, satdPair);
+    }
+
+    template <int w, int h> int satd_with_const_pitch64_avx2(const uint8_t *src1, const uint8_t src2) {
+        // assume height and width are multiple of 4
+        assert(!(w & 0x03));
+        assert(!(h & 0x03));
+
+        int satdTotal = 0;
+        int satd[2] = { 0, 0 };
+
+        if (w == 4 && h == 4) {
+            assert(0);
+            return 0;
+            //return (satd_4x4_pitch64_both_avx2(src1, src2) + 1) >> 1;
+        }
+        else if ((h | w) & 0x07) {
+            // multiple 4x4 blocks - do as many pairs as possible
+            assert(0);
+            return 0;
+            //int widthPair = w & ~0x07;
+            //int widthRem = w - widthPair;
+            //for (int j = 0; j < h; j += 4, src1 += 64 * 4, src2 += 64 * 4) {
+            //    int i = 0;
+            //    for (; i < widthPair; i += 4 * 2) {
+            //        satd_4x4_pair_pitch64_both_avx2(src1 + i, src2 + i, satd);
+            //        satdTotal += ((satd[0] + 1) >> 1) + ((satd[1] + 1) >> 1);
+            //    }
+
+            //    if (widthRem) {
+            //        satd[0] = satd_4x4_pitch64_both_avx2(src1 + i, src2 + i);
+            //        satdTotal += (satd[0] + 1) >> 1;
+            //    }
+            //}
+        }
+        else if (w == 8 && h == 8) {
+            /* single 8x8 block */
+            assert(0);
+            return 0;
+            //satd[0] = satd_8x8_pitch64_both_avx2(src1, src2);
+            //satdTotal += (satd[0] + 2) >> 2;
+        }
+        else {
+            /* multiple 8x8 blocks - do as many pairs as possible */
+            int widthPair = w & ~0x0f;
+            int widthRem = w - widthPair;
+            for (int j = 0; j < h; j += 8, src1 += 64 * 8) {
+                int i = 0;
+                for (; i < widthPair; i += 8 * 2) {
+                    satd_with_const_8x8_pitch64_avx2(src1 + i, src2, satd);
+                    satdTotal += ((satd[0] + 2) >> 2) + ((satd[1] + 2) >> 2);
+                }
+                if (widthRem) {
+                    assert(0);
+                    //satd[0] = satd_8x8_pitch64_both_avx2(src1 + i, src2 + i);
+                    //satdTotal += (satd[0] + 2) >> 2;
+                }
+            }
+        }
+
+        return satdTotal;
+    }
+    template int satd_with_const_pitch64_avx2< 4, 4>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2< 4, 8>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2< 8, 4>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2< 8, 8>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2< 8, 16>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2<16, 8>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2<16, 16>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2<16, 32>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2<32, 16>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2<32, 32>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2<32, 64>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2<64, 32>(const uint8_t*, const uint8_t);
+    template int satd_with_const_pitch64_avx2<64, 64>(const uint8_t*, const uint8_t);
 }

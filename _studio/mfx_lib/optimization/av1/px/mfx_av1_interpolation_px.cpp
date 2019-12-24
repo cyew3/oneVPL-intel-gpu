@@ -45,6 +45,7 @@ enum { no_vert = 0, do_vert = 1 };
 
 int round_power_of_two(int value, int n) { return (value + ((1 << n) >> 1)) >> n; };
 uint8_t clip_pixel(int val) { return (val > 255) ? 255 : (val < 0) ? 0 : val; }
+uint16_t clip_pixel10(int val) { return (val > 1023) ? 1023 : (val < 0) ? 0 : val; }
 
 
 namespace details {
@@ -706,8 +707,39 @@ namespace AV1PP
     template void interp_flex_px<1, 1, 0>(const uint8_t *src, int pitchSrc, uint8_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int w, int h);
     template void interp_flex_px<1, 1, 1>(const uint8_t *src, int pitchSrc, uint8_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int w, int h);
 
+    //========================================================================================================================================================
 
     void interp(const uint8_t *src, int pitchSrc, int16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int w, int h, int round1)
+    {
+        assert(w <= MAX_BLOCK_SIZE && h <= MAX_BLOCK_SIZE);
+        const int pitchTmp = w;
+        int32_t tmpBuf[MAX_BLOCK_SIZE * (MAX_BLOCK_SIZE + SUBPEL_TAPS - 1)];
+        int32_t *tmp = tmpBuf;
+
+        const int im_height = h + SUBPEL_TAPS - 1;
+        src -= (SUBPEL_TAPS / 2 - 1) * pitchSrc + (SUBPEL_TAPS / 2 - 1);
+
+        for (int y = 0; y < im_height; y++) {
+            for (int x = 0; x < w; x++) {
+                int sum = 0;
+                for (int k = 0; k < SUBPEL_TAPS; ++k)
+                    sum += fx[k] * src[y * pitchSrc + x + k];
+                tmp[y * pitchTmp + x] = round_power_of_two(sum, ROUND_STAGE0);
+            }
+        }
+
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int sum = 0;
+                for (int k = 0; k < SUBPEL_TAPS; ++k)
+                    sum += fy[k] * tmp[(y + k) * pitchTmp + x];
+                int res = round_power_of_two(sum, round1);
+                dst[y * pitchDst + x] = res;
+            }
+        }
+    }
+
+    void interp(const uint16_t *src, int pitchSrc, int16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int w, int h, int round1)
     {
         assert(w <= MAX_BLOCK_SIZE && h <= MAX_BLOCK_SIZE);
         const int pitchTmp = w;
@@ -750,6 +782,18 @@ namespace AV1PP
                 dst[y * pitchDst + x] = clip_pixel(tmp[y * pitchTmp + x]);
     }
 
+    void interp(const uint16_t *src, int pitchSrc, uint16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int w, int h)
+    {
+        const int pitchTmp = w;
+        int16_t tmp[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+
+        interp(src, pitchSrc, tmp, w, fx, fy, w, h, ROUND_STAGE1);
+
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                dst[y * pitchDst + x] = clip_pixel10(tmp[y * pitchTmp + x]);
+    }
+
 
     void interp(const uint8_t *src, int pitchSrc, const int16_t *ref0, int pitchRef0, uint8_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int w, int h)
     {
@@ -763,6 +807,17 @@ namespace AV1PP
                 dst[y * pitchDst + x] = clip_pixel(round_power_of_two(ref0[y * pitchRef0 + x] + tmp[y * pitchTmp + x], OFFSET_BITS + 1));
     }
 
+    void interp(const uint16_t *src, int pitchSrc, const int16_t *ref0, int pitchRef0, uint16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int w, int h)
+    {
+        const int pitchTmp = w;
+        int16_t tmp[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+
+        interp(src, pitchSrc, tmp, w, fx, fy, w, h, COMPOUND_ROUND1_BITS);
+
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                dst[y * pitchDst + x] = clip_pixel10(round_power_of_two(ref0[y * pitchRef0 + x] + tmp[y * pitchTmp + x], OFFSET_BITS + 1));
+    }
 
     template <typename T>
     void nv12_to_yv12(const T *src, int pitchSrc, T *dstU, int pitchDstU, T *dstV, int pitchDstV, int w, int h)
@@ -792,7 +847,13 @@ namespace AV1PP
 {
     // single ref, luma
     template <int w, int horz, int vert>
-    void interp_av1_px(const uint8_t *src, int pitchSrc, uint8_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
+    void interp_av1_px(const uint8_t *src, int pitchSrc, uint8_t*dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        interp(src, pitchSrc, dst, pitchDst, fx, fy, w, h);
+    }
+
+    template <int w, int horz, int vert>
+    void interp_av1_px(const uint16_t *src, int pitchSrc, uint16_t*dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
     {
         interp(src, pitchSrc, dst, pitchDst, fx, fy, w, h);
     }
@@ -804,6 +865,12 @@ namespace AV1PP
         interp(src, pitchSrc, dst, pitchDst, fx, fy, w, h, COMPOUND_ROUND1_BITS);
     }
 
+    template <int w, int horz, int vert>
+    void interp_av1_px(const uint16_t *src, int pitchSrc, int16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        interp(src, pitchSrc, dst, pitchDst, fx, fy, w, h, COMPOUND_ROUND1_BITS);
+    }
+
     // second ref (compound), luma
     template <int w, int horz, int vert>
     void interp_av1_px(const uint8_t *src, int pitchSrc, const int16_t *ref0, int pitchRef0, uint8_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
@@ -811,9 +878,22 @@ namespace AV1PP
         interp(src, pitchSrc, ref0, pitchRef0, dst, pitchDst, fx, fy, w, h);
     }
 
+    template <int w, int horz, int vert>
+    void interp_av1_px(const uint16_t *src, int pitchSrc, const int16_t *ref0, int pitchRef0, uint16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        interp(src, pitchSrc, ref0, pitchRef0, dst, pitchDst, fx, fy, w, h);
+    }
+
+
+
     // single ref, luma, dst pitch hardcoded to 64
     template <int w, int horz, int vert>
     void interp_pitch64_av1_px(const uint8_t *src, int pitchSrc, uint8_t *dst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        interp_av1_px<w, horz, vert>(src, pitchSrc, dst, IMPLIED_PITCH, fx, fy, h);
+    }
+    template <int w, int horz, int vert>
+    void interp_pitch64_av1_px(const uint16_t *src, int pitchSrc, uint16_t *dst, const int16_t *fx, const int16_t *fy, int h)
     {
         interp_av1_px<w, horz, vert>(src, pitchSrc, dst, IMPLIED_PITCH, fx, fy, h);
     }
@@ -825,6 +905,12 @@ namespace AV1PP
         interp_av1_px<w, horz, vert>(src, pitchSrc, dst, IMPLIED_PITCH, fx, fy, h);
     }
 
+    template <int w, int horz, int vert>
+    void interp_pitch64_av1_px(const uint16_t *src, int pitchSrc, int16_t *dst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        interp_av1_px<w, horz, vert>(src, pitchSrc, dst, IMPLIED_PITCH, fx, fy, h);
+    }
+
     // second ref (compound), luma, dst pitch hardcoded to 64
     template <int w, int horz, int vert>
     void interp_pitch64_av1_px(const uint8_t *src, int pitchSrc, const int16_t *ref0, uint8_t *dst, const int16_t *fx, const int16_t *fy, int h)
@@ -832,14 +918,20 @@ namespace AV1PP
         interp_av1_px<w, horz, vert>(src, pitchSrc, ref0, IMPLIED_PITCH, dst, IMPLIED_PITCH, fx, fy, h);
     }
 
-    // single ref, chroma
     template <int w, int horz, int vert>
-    void interp_nv12_av1_px(const uint8_t *src, int pitchSrc, uint8_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
+    void interp_pitch64_av1_px(const uint16_t *src, int pitchSrc, const int16_t *ref0, uint16_t *dst, const int16_t *fx, const int16_t *fy, int h)
     {
-        uint8_t bufSrcU[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
-        uint8_t bufSrcV[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
-        uint8_t dstU[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
-        uint8_t dstV[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+        interp_av1_px<w, horz, vert>(src, pitchSrc, ref0, IMPLIED_PITCH, dst, IMPLIED_PITCH, fx, fy, h);
+    }
+
+    // single ref, chroma
+    template <int w, int horz, int vert, typename PixType>
+    void interp_nv12_av1_px(const PixType *src, int pitchSrc, PixType *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        PixType bufSrcU[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
+        PixType bufSrcV[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
+        PixType dstU[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+        PixType dstV[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
 
         const int32_t pitchSrcYv12 = MAX_BLOCK_SIZE;
         const int32_t extW = w + SUBPEL_TAPS - 1;
@@ -847,8 +939,8 @@ namespace AV1PP
         const int32_t shiftW = SUBPEL_TAPS / 2 - 1;
         const int32_t shiftH = SUBPEL_TAPS / 2 - 1;
 
-        uint8_t *srcU = bufSrcU;
-        uint8_t *srcV = bufSrcV;
+        PixType *srcU = bufSrcU;
+        PixType *srcV = bufSrcV;
         src -= shiftH * pitchSrc + shiftW * 2;
         nv12_to_yv12(src, pitchSrc, srcU, pitchSrcYv12, srcV, pitchSrcYv12, extW, extH);
 
@@ -888,6 +980,61 @@ namespace AV1PP
         yv12_to_nv12(dstU, w, dstV, w, dst, pitchDst, w, h);
     }
 
+    template <int w, int horz, int vert>
+    void interp_nv12_av1_px(const uint16_t *src, int pitchSrc, int16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        uint16_t bufSrcU[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
+        uint16_t bufSrcV[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
+        int16_t dstU[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+        int16_t dstV[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+
+        const int32_t pitchSrcYv12 = MAX_BLOCK_SIZE;
+        const int32_t extW = w + SUBPEL_TAPS - 1;
+        const int32_t extH = h + SUBPEL_TAPS - 1;
+        const int32_t shiftW = SUBPEL_TAPS / 2 - 1;
+        const int32_t shiftH = SUBPEL_TAPS / 2 - 1;
+
+        uint16_t *srcU = bufSrcU;
+        uint16_t *srcV = bufSrcV;
+        src -= shiftH * pitchSrc + shiftW * 2;
+        nv12_to_yv12(src, pitchSrc, srcU, pitchSrcYv12, srcV, pitchSrcYv12, extW, extH);
+
+        srcU += shiftH * pitchSrcYv12 + shiftW;
+        srcV += shiftH * pitchSrcYv12 + shiftW;
+        interp_av1_px<w, horz, vert>(srcU, pitchSrcYv12, dstU, w, fx, fy, h);
+        interp_av1_px<w, horz, vert>(srcV, pitchSrcYv12, dstV, w, fx, fy, h);
+
+        yv12_to_nv12(dstU, w, dstV, w, dst, pitchDst, w, h);
+    }
+
+        // first ref (compound), chroma
+    /*template <int w, int horz, int vert>
+    void interp_nv12_av1_px(const uint16_t *src, int pitchSrc, int16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        uint16_t bufSrcU[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
+        uint16_t bufSrcV[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
+        int16_t dstU[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+        int16_t dstV[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+
+        const int32_t pitchSrcYv12 = MAX_BLOCK_SIZE;
+        const int32_t extW = w + SUBPEL_TAPS - 1;
+        const int32_t extH = h + SUBPEL_TAPS - 1;
+        const int32_t shiftW = SUBPEL_TAPS / 2 - 1;
+        const int32_t shiftH = SUBPEL_TAPS / 2 - 1;
+
+        uint16_t *srcU = bufSrcU;
+        uint16_t *srcV = bufSrcV;
+        src -= shiftH * pitchSrc + shiftW * 2;
+        nv12_to_yv12(src, pitchSrc, srcU, pitchSrcYv12, srcV, pitchSrcYv12, extW, extH);
+
+        srcU += shiftH * pitchSrcYv12 + shiftW;
+        srcV += shiftH * pitchSrcYv12 + shiftW;
+        interp_av1_px<w, horz, vert>(srcU, pitchSrcYv12, dstU, w, fx, fy, h);
+        interp_av1_px<w, horz, vert>(srcV, pitchSrcYv12, dstV, w, fx, fy, h);
+
+        yv12_to_nv12(dstU, w, dstV, w, dst, pitchDst, w, h);
+    }*/
+
     // second ref (compound), chroma
     template <int w, int horz, int vert>
     void interp_nv12_av1_px(const uint8_t *src, int pitchSrc, const int16_t *ref0, int pitchRef0, uint8_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
@@ -919,9 +1066,77 @@ namespace AV1PP
         yv12_to_nv12(dstU, w, dstV, w, dst, pitchDst, w, h);
     }
 
+    template <int w, int horz, int vert>
+    void interp_nv12_av1_px(const uint16_t *src, int pitchSrc, const int16_t *ref0, int pitchRef0, uint16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        uint16_t bufSrcU[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
+        uint16_t bufSrcV[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
+        int16_t ref0U[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+        int16_t ref0V[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+        uint16_t dstU[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+        uint16_t dstV[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+
+        const int32_t pitchSrcYv12 = MAX_BLOCK_SIZE;
+        const int32_t extW = w + SUBPEL_TAPS - 1;
+        const int32_t extH = h + SUBPEL_TAPS - 1;
+        const int32_t shiftW = SUBPEL_TAPS / 2 - 1;
+        const int32_t shiftH = SUBPEL_TAPS / 2 - 1;
+
+        uint16_t *srcU = bufSrcU;
+        uint16_t *srcV = bufSrcV;
+        src -= shiftH * pitchSrc + shiftW * 2;
+        nv12_to_yv12(src, pitchSrc, srcU, pitchSrcYv12, srcV, pitchSrcYv12, extW, extH);
+        nv12_to_yv12(ref0, pitchRef0, ref0U, w, ref0V, w, w, h);
+
+        srcU += shiftH * pitchSrcYv12 + shiftW;
+        srcV += shiftH * pitchSrcYv12 + shiftW;
+        interp_av1_px<w, horz, vert>(srcU, pitchSrcYv12, ref0U, w, dstU, w, fx, fy, h);
+        interp_av1_px<w, horz, vert>(srcV, pitchSrcYv12, ref0V, w, dstV, w, fx, fy, h);
+
+        yv12_to_nv12(dstU, w, dstV, w, dst, pitchDst, w, h);
+    }
+
+    // second ref (compound), chroma
+    /*template <int w, int horz, int vert>
+    void interp_nv12_av1_px(const uint16_t *src, int pitchSrc, const int16_t *ref0, int pitchRef0, uint16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        uint16_t bufSrcU[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
+        uint16_t bufSrcV[(MAX_BLOCK_SIZE + SUBPEL_TAPS) * (MAX_BLOCK_SIZE + SUBPEL_TAPS)];
+        int16_t ref0U[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+        int16_t ref0V[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+        uint8_t dstU[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+        uint8_t dstV[MAX_BLOCK_SIZE * MAX_BLOCK_SIZE];
+
+        const int32_t pitchSrcYv12 = MAX_BLOCK_SIZE;
+        const int32_t extW = w + SUBPEL_TAPS - 1;
+        const int32_t extH = h + SUBPEL_TAPS - 1;
+        const int32_t shiftW = SUBPEL_TAPS / 2 - 1;
+        const int32_t shiftH = SUBPEL_TAPS / 2 - 1;
+
+        uint16_t *srcU = bufSrcU;
+        uint16_t *srcV = bufSrcV;
+        src -= shiftH * pitchSrc + shiftW * 2;
+        nv12_to_yv12(src, pitchSrc, srcU, pitchSrcYv12, srcV, pitchSrcYv12, extW, extH);
+        nv12_to_yv12(ref0, pitchRef0, ref0U, w, ref0V, w, w, h);
+
+        srcU += shiftH * pitchSrcYv12 + shiftW;
+        srcV += shiftH * pitchSrcYv12 + shiftW;
+        interp_av1_px<w, horz, vert>(srcU, pitchSrcYv12, ref0U, w, dstU, w, fx, fy, h);
+        interp_av1_px<w, horz, vert>(srcV, pitchSrcYv12, ref0V, w, dstV, w, fx, fy, h);
+
+        yv12_to_nv12(dstU, w, dstV, w, dst, pitchDst, w, h);
+    }*/
+
     // single ref, chroma, dst pitch hardcoded to 64
     template <int w, int horz, int vert>
     void interp_nv12_pitch64_av1_px(const uint8_t *src, int pitchSrc, uint8_t *dst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        const int pitchDstImplied = 64;
+        interp_nv12_av1_px<w, horz, vert>(src, pitchSrc, dst, pitchDstImplied, fx, fy, h);
+    }
+
+    template <int w, int horz, int vert>
+    void interp_nv12_pitch64_av1_px(const uint16_t *src, int pitchSrc, uint16_t *dst, const int16_t *fx, const int16_t *fy, int h)
     {
         const int pitchDstImplied = 64;
         interp_nv12_av1_px<w, horz, vert>(src, pitchSrc, dst, pitchDstImplied, fx, fy, h);
@@ -935,6 +1150,20 @@ namespace AV1PP
         interp_nv12_av1_px<w, horz, vert>(src, pitchSrc, dst, pitchDstImplied, fx, fy, h);
     }
 
+    template <int w, int horz, int vert>
+    void interp_nv12_pitch64_av1_px(const uint16_t *src, int pitchSrc, int16_t *dst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        const int pitchDstImplied = 64;
+        interp_nv12_av1_px<w, horz, vert>(src, pitchSrc, dst, pitchDstImplied, fx, fy, h);
+    }
+
+    //template <int w, int horz, int vert>
+    //void interp_nv12_pitch64_av1_px(const uint16_t *src, int pitchSrc, int16_t *dst, const int16_t *fx, const int16_t *fy, int h)
+    //{
+    //    const int pitchDstImplied = 64;
+    //    interp_nv12_av1_px<w, horz, vert>(src, pitchSrc, dst, pitchDstImplied, fx, fy, h);
+    //}
+
     // second ref (compound), chroma, dst pitch hardcoded to 64
     template <int w, int horz, int vert>
     void interp_nv12_pitch64_av1_px(const uint8_t *src, int pitchSrc, const int16_t *ref0, uint8_t *dst, const int16_t *fx, const int16_t *fy, int h)
@@ -944,6 +1173,13 @@ namespace AV1PP
         interp_nv12_av1_px<w, horz, vert>(src, pitchSrc, ref0, pitchRef0Implied, dst, pitchDstImplied, fx, fy, h);
     }
 
+    template <int w, int horz, int vert>
+    void interp_nv12_pitch64_av1_px(const uint16_t *src, int pitchSrc, const int16_t *ref0, uint16_t *dst, const int16_t *fx, const int16_t *fy, int h)
+    {
+        const int pitchRef0Implied = 64;
+        const int pitchDstImplied = 64;
+        interp_nv12_av1_px<w, horz, vert>(src, pitchSrc, ref0, pitchRef0Implied, dst, pitchDstImplied, fx, fy, h);
+    }
 
     // Instatiate interp functions for:
     //   single ref / first ref of compound / second ref of compound
@@ -956,9 +1192,18 @@ namespace AV1PP
     typedef void (* interp_av1_single_ref_fptr_t)(const uint8_t *src, int pitchSrc, uint8_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h);
     typedef void (* interp_av1_first_ref_fptr_t)(const uint8_t *src, int pitchSrc, int16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h);
     typedef void (* interp_av1_second_ref_fptr_t)(const uint8_t *src, int pitchSrc, const int16_t *ref0, int pitchRef0, uint8_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h);
+
+    typedef void(*interp_av1_single_ref_hbd_fptr_t)(const uint16_t *src, int pitchSrc, uint16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h);
+    typedef void(*interp_av1_first_ref_hbd_fptr_t)(const uint16_t *src, int pitchSrc, int16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h);
+    typedef void(*interp_av1_second_ref_hbd_fptr_t)(const uint16_t *src, int pitchSrc, const int16_t *ref0, int pitchRef0, uint16_t *dst, int pitchDst, const int16_t *fx, const int16_t *fy, int h);
+
     typedef void (* interp_pitch64_av1_single_ref_fptr_t)(const uint8_t *src, int pitchSrc, uint8_t *dst, const int16_t *fx, const int16_t *fy, int h);
     typedef void (* interp_pitch64_av1_first_ref_fptr_t)(const uint8_t *src, int pitchSrc, int16_t *dst, const int16_t *fx, const int16_t *fy, int h);
     typedef void (* interp_pitch64_av1_second_ref_fptr_t)(const uint8_t *src, int pitchSrc, const int16_t *ref0, uint8_t *dst, const int16_t *fx, const int16_t *fy, int h);
+
+    typedef void(*interp_pitch64_av1_single_ref_hbd_fptr_t)(const uint16_t *src, int pitchSrc, uint16_t *dst, const int16_t *fx, const int16_t *fy, int h);
+    typedef void(*interp_pitch64_av1_first_ref_hbd_fptr_t)(const uint16_t *src, int pitchSrc, int16_t *dst, const int16_t *fx, const int16_t *fy, int h);
+    typedef void(*interp_pitch64_av1_second_ref_hbd_fptr_t)(const uint16_t *src, int pitchSrc, const int16_t *ref0, uint16_t *dst, const int16_t *fx, const int16_t *fy, int h);
 
 #define INSTATIATE(FUNC_NAME)                                                                         \
     { { FUNC_NAME< 4, 0, 0>, FUNC_NAME< 4, 0, 1> }, { FUNC_NAME< 4, 1, 0>, FUNC_NAME< 4, 1, 1> } },   \
@@ -967,6 +1212,15 @@ namespace AV1PP
     { { FUNC_NAME<32, 0, 0>, FUNC_NAME<32, 0, 1> }, { FUNC_NAME<32, 1, 0>, FUNC_NAME<32, 1, 1> } },   \
     { { FUNC_NAME<64, 0, 0>, FUNC_NAME<64, 0, 1> }, { FUNC_NAME<64, 1, 0>, FUNC_NAME<64, 1, 1> } }
 
+
+ #define INSTATIATE_16(FUNC_NAME)                                                                        \
+    { { FUNC_NAME< 4, 0, 0, uint16_t>, FUNC_NAME< 4, 0, 1, uint16_t> }, { FUNC_NAME< 4, 1, 0, uint16_t>, FUNC_NAME< 4, 1, 1, uint16_t> } },   \
+    { { FUNC_NAME< 8, 0, 0, uint16_t>, FUNC_NAME< 8, 0, 1, uint16_t> }, { FUNC_NAME< 8, 1, 0, uint16_t>, FUNC_NAME< 8, 1, 1, uint16_t> } },   \
+    { { FUNC_NAME<16, 0, 0, uint16_t>, FUNC_NAME<16, 0, 1, uint16_t> }, { FUNC_NAME<16, 1, 0, uint16_t>, FUNC_NAME<16, 1, 1, uint16_t> } },   \
+    { { FUNC_NAME<32, 0, 0, uint16_t>, FUNC_NAME<32, 0, 1, uint16_t> }, { FUNC_NAME<32, 1, 0, uint16_t>, FUNC_NAME<32, 1, 1, uint16_t> } },   \
+    { { FUNC_NAME<64, 0, 0, uint16_t>, FUNC_NAME<64, 0, 1, uint16_t> }, { FUNC_NAME<64, 1, 0, uint16_t>, FUNC_NAME<64, 1, 1, uint16_t> } }
+
+
 #define INSTATIATE6(FUNC_NAME)                                                                     \
     INSTATIATE(FUNC_NAME),                                                                         \
     { { FUNC_NAME<96, 0, 0>, FUNC_NAME<96, 0, 1> }, { FUNC_NAME<96, 1, 0>, FUNC_NAME<96, 1, 1> } }
@@ -974,6 +1228,10 @@ namespace AV1PP
     interp_av1_single_ref_fptr_t interp_av1_single_ref_fptr_arr_px[6][2][2] = { INSTATIATE6(interp_av1_px) };
     interp_av1_first_ref_fptr_t  interp_av1_first_ref_fptr_arr_px[5][2][2]  = { INSTATIATE(interp_av1_px) };
     interp_av1_second_ref_fptr_t interp_av1_second_ref_fptr_arr_px[5][2][2] = { INSTATIATE(interp_av1_px) };
+    // hbd
+    interp_av1_single_ref_hbd_fptr_t interp_av1_single_ref_hbd_fptr_arr_px[6][2][2] = { INSTATIATE6(interp_av1_px) };
+    interp_av1_first_ref_hbd_fptr_t  interp_av1_first_ref_hbd_fptr_arr_px[5][2][2] = { INSTATIATE(interp_av1_px) };
+    interp_av1_second_ref_hbd_fptr_t interp_av1_second_ref_hbd_fptr_arr_px[5][2][2] = { INSTATIATE(interp_av1_px) };
 
     interp_av1_single_ref_fptr_t interp_nv12_av1_single_ref_fptr_arr_px[5][2][2] = { INSTATIATE(interp_nv12_av1_px) };
     interp_av1_first_ref_fptr_t  interp_nv12_av1_first_ref_fptr_arr_px[5][2][2]  = { INSTATIATE(interp_nv12_av1_px) };
@@ -982,9 +1240,17 @@ namespace AV1PP
     interp_pitch64_av1_single_ref_fptr_t interp_pitch64_av1_single_ref_fptr_arr_px[5][2][2] = { INSTATIATE(interp_pitch64_av1_px) };
     interp_pitch64_av1_first_ref_fptr_t  interp_pitch64_av1_first_ref_fptr_arr_px[5][2][2]  = { INSTATIATE(interp_pitch64_av1_px) };
     interp_pitch64_av1_second_ref_fptr_t interp_pitch64_av1_second_ref_fptr_arr_px[5][2][2] = { INSTATIATE(interp_pitch64_av1_px) };
+    // hbd
+    interp_pitch64_av1_single_ref_hbd_fptr_t interp_pitch64_av1_single_ref_hbd_fptr_arr_px[5][2][2] = { INSTATIATE(interp_pitch64_av1_px) };
+    interp_pitch64_av1_first_ref_hbd_fptr_t  interp_pitch64_av1_first_ref_hbd_fptr_arr_px[5][2][2] = { INSTATIATE(interp_pitch64_av1_px) };
+    interp_pitch64_av1_second_ref_hbd_fptr_t interp_pitch64_av1_second_ref_hbd_fptr_arr_px[5][2][2] = { INSTATIATE(interp_pitch64_av1_px) };
 
     interp_pitch64_av1_single_ref_fptr_t interp_nv12_pitch64_av1_single_ref_fptr_arr_px[5][2][2] = { INSTATIATE(interp_nv12_pitch64_av1_px) };
     interp_pitch64_av1_first_ref_fptr_t  interp_nv12_pitch64_av1_first_ref_fptr_arr_px[5][2][2]  = { INSTATIATE(interp_nv12_pitch64_av1_px) };
     interp_pitch64_av1_second_ref_fptr_t interp_nv12_pitch64_av1_second_ref_fptr_arr_px[5][2][2] = { INSTATIATE(interp_nv12_pitch64_av1_px) };
+    // hbd
+    interp_pitch64_av1_single_ref_hbd_fptr_t interp_nv12_pitch64_av1_single_ref_hbd_fptr_arr_px[5][2][2] = { INSTATIATE(interp_nv12_pitch64_av1_px) };
+    interp_pitch64_av1_first_ref_hbd_fptr_t  interp_nv12_pitch64_av1_first_ref_hbd_fptr_arr_px[5][2][2]  = { INSTATIATE(interp_nv12_pitch64_av1_px) };
+    interp_pitch64_av1_second_ref_hbd_fptr_t interp_nv12_pitch64_av1_second_ref_hbd_fptr_arr_px[5][2][2] = { INSTATIATE(interp_nv12_pitch64_av1_px) };
 
 }; // namespace AV1PP

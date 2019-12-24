@@ -22,12 +22,14 @@
 
 #if defined (MFX_ENABLE_AV1_VIDEO_ENCODE)
 
-#include "vm_file.h"
+#include <fstream>
+
 #include "mfx_av1_ctb.h"
 #include "mfx_av1_frame.h"
 #include "mfx_av1_enc.h"
 #include "mfx_av1_lookahead.h"
 #include "mfx_av1_deblocking.h"
+#include "mfx_av1_superres.h"
 
 #ifndef MFX_VA
 #define H265FEI_AllocateSurfaceUp(...) (MFX_ERR_NONE)
@@ -102,48 +104,73 @@ namespace AV1Enc {
         int32_t numBlk = PicWidthInBlk * PicHeightInBlk;
 
         // for BRC
-        m_intraSatd.resize(numBlk);
-        m_interSatd.resize(numBlk);
+        if (allocInfo.analyzeCmplx) {
+            m_intraSatd.resize(numBlk);
+            m_interSatd.resize(numBlk);
+            m_intraSatdHist.resize(33, -1);
+            m_bestSatdHist.resize(33, -1);
+        }
 
         // for content analysis (paq/calq)
-        m_interSad.resize(numBlk);
+        if (allocInfo.analyzeCmplx || (allocInfo.deltaQpMode & (AMT_DQP_PAQ | AMT_DQP_CAL))) {
+            m_interSad.resize(numBlk);
+            m_interSad_pdist_past.resize(numBlk);
+            m_interSad_pdist_future.resize(numBlk);
 
-        m_interSad_pdist_past.resize(numBlk);
-        m_interSad_pdist_future.resize(numBlk);
+            AV1MV initMv = { 0,0 };
+            m_mv.resize(numBlk, initMv);
+            m_mv_pdist_past.resize(numBlk, initMv);
+            m_mv_pdist_future.resize(numBlk, initMv);
+        }
 
-        AV1MV initMv = { 0,0 };
-        m_mv.resize(numBlk, initMv);
-        m_mv_pdist_past.resize(numBlk, initMv);
-        m_mv_pdist_future.resize(numBlk, initMv);
+        const int32_t alignedWidth = ((width + 63) & ~63);
+        const int32_t alignedHeight = ((height + 63) & ~63);
 
-        int32_t alignedWidth = ((width + 63)&~63);
-        int32_t alignedFrameSize = alignedWidth * ((height + 63)&~63);
-        m_pitchRsCs4 = alignedWidth >> 2;
         for (int32_t log2BlkSize = 2; log2BlkSize <= 6; log2BlkSize++) {
-            m_rcscSize[log2BlkSize - 2] = alignedFrameSize >> (log2BlkSize << 1);
+            const int32_t widthInBlk = alignedWidth >> log2BlkSize;
+            const int32_t heightInBlk = alignedHeight >> log2BlkSize;
+            m_pitchRsCs[log2BlkSize - 2] = (widthInBlk + 7) & ~7; // 32byte aligned
+            m_rcscSize[log2BlkSize - 2] = m_pitchRsCs[log2BlkSize - 2] * heightInBlk;
             m_rs[log2BlkSize - 2] = (int32_t *)AV1_Malloc(sizeof(int32_t) * m_rcscSize[log2BlkSize - 2]); // ippMalloc is 64-bytes aligned
             m_cs[log2BlkSize - 2] = (int32_t *)AV1_Malloc(sizeof(int32_t) * m_rcscSize[log2BlkSize - 2]);
             memset(m_rs[log2BlkSize - 2], 0, sizeof(int32_t) * m_rcscSize[log2BlkSize - 2]);
             memset(m_cs[log2BlkSize - 2], 0, sizeof(int32_t) * m_rcscSize[log2BlkSize - 2]);
         }
 
-        rscs_ctb.resize(numBlk, 0);
-        sc_mask.resize(numBlk, 0);
+        m_pitchColorCount16x16 = (width >> 4);
+        m_colorCount16x16 = (uint8_t *)AV1_Malloc(sizeof(uint8_t) * m_pitchColorCount16x16 * (height >> 4));
+        memset(m_colorCount16x16, 32, sizeof(uint8_t)* m_pitchColorCount16x16 * (height >> 4));
+        //rscs_ctb.resize(numBlk, 0);
+        //sc_mask.resize(numBlk, 0);
         int32_t numCtbs = ((width + 63) >> 6) * ((height + 63) >> 6);
         qp_mask.resize(numCtbs, 0);
         coloc_futr.resize(numCtbs, 0);
         coloc_past.resize(numCtbs, 0);
-
+#ifdef AMT_HROI_PSY_AQ
+        if (allocInfo.deltaQpMode & AMT_DQP_PSY_HROI) {
+            // Inside HROI aligned by 16
+            int32_t roiPitch = (width + 15)&~15;
+            int32_t roiHeight = (height + 15)&~15;
+            m_RoiPitch = roiPitch >> 3;
+            int32_t numBlkRoi = m_RoiPitch * (roiHeight >> 3);
+            roi_map_8x8.resize(3 * numBlkRoi, 0);
+            lum_avg_8x8.resize(numBlkRoi, 0);
+            ctbStats = (CtbRoiStats *)AV1_Malloc(sizeof(CtbRoiStats) * numBlkRoi);
+            if (ctbStats == NULL) throw std::exception();
+            memset(ctbStats, 0, sizeof(CtbRoiStats) * numBlkRoi);
+        }
+#endif
         ResetAvgMetrics();
     }
 
     void Statistics::Destroy()
     {
         int32_t numBlk = 0;
-        int32_t len = 0;
         m_intraSatd.resize(numBlk);
         m_interSatd.resize(numBlk);
         m_interSad.resize(numBlk);
+        m_intraSatdHist.resize(0);
+        m_bestSatdHist.resize(0);
         m_interSad_pdist_past.resize(numBlk);
         m_interSad_pdist_future.resize(numBlk);
         m_mv.resize(numBlk);
@@ -153,11 +180,17 @@ namespace AV1Enc {
             if (m_rs[log2BlkSize - 2]) { AV1_Free(m_rs[log2BlkSize - 2]); m_rs[log2BlkSize - 2] = NULL; }
             if (m_cs[log2BlkSize - 2]) { AV1_Free(m_cs[log2BlkSize - 2]); m_cs[log2BlkSize - 2] = NULL; }
         }
-        rscs_ctb.resize(numBlk);
-        sc_mask.resize(numBlk);
+        if (m_colorCount16x16) AV1_Free(m_colorCount16x16);
+        //rscs_ctb.resize(numBlk);
+        //sc_mask.resize(numBlk);
         qp_mask.resize(numBlk);
         coloc_futr.resize(numBlk);
         coloc_past.resize(numBlk);
+#ifdef AMT_HROI_PSY_AQ
+        roi_map_8x8.resize(0);
+        lum_avg_8x8.resize(0);
+        if (ctbStats) AV1_Free(ctbStats);   ctbStats = NULL;
+#endif
     }
 
 
@@ -174,7 +207,7 @@ namespace AV1Enc {
         if (m_fei && m_handle) {
             H265FEI_FreeSurface(m_fei, m_handle);
             m_fei = NULL;
-            m_handle == NULL;
+            m_handle = NULL;
         }
     }
 
@@ -192,7 +225,7 @@ namespace AV1Enc {
         if (m_fei && m_handle) {
             H265FEI_FreeSurface(m_fei, m_handle);
             m_fei = NULL;
-            m_handle == NULL;
+            m_handle = NULL;
         }
     }
 
@@ -297,8 +330,6 @@ namespace AV1Enc {
         m_bdChromaFlag = par->bitDepthChroma > 8;
         m_chromaFormatIdc = par->chromaFormatIdc;
 
-        int32_t numCtbs_parts = numCtbs << par->Log2NumPartInCU;
-        int32_t len = sizeof(ThreadingTask) * 2 * numCtbs + 32/*ALIGN_VALUE*/;
 
         m_ttEncode = (ThreadingTask *)AV1_Malloc(numCtbs * sizeof(ThreadingTask));
         if (!m_ttEncode)
@@ -308,38 +339,66 @@ namespace AV1Enc {
         if (!m_ttDeblockAndCdef)
             throw std::exception();
 
-        const int32_t numTiles = par->tileParam.cols * par->tileParam.rows;
-        m_ttPackTile.resize(numTiles);
+        const int32_t numTiles = std::max(par->tileParamKeyFrame.numTiles, par->tileParamInterFrame.numTiles);
+
+        if (PACK_BY_TILES) {
+            m_ttPackTile = (ThreadingTask *)AV1_Malloc(numTiles * sizeof(ThreadingTask));
+            if (!m_ttPackTile)
+                throw std::exception();
+        } else {
+            const int32_t numTileCols = std::max(par->tileParamKeyFrame.cols, par->tileParamInterFrame.cols);
+            m_ttPackRow = (ThreadingTask *)AV1_Malloc(numTileCols * par->sb64Rows * sizeof(ThreadingTask));
+            if (!m_ttPackRow)
+                throw std::exception();
+        }
+
+        m_widthLowRes4x = (par->Width >> 2) & ~0x1f; // 32 bytes aligned
+        m_heightLowRes4x = (par->Height >> 2) & ~0xf; // 16 bytes aligned
+        m_lowres4x = (uint8_t *)AV1_Malloc(m_widthLowRes4x * m_heightLowRes4x);
+        if (!m_lowres4x)
+            throw std::exception();
+        m_vertMvHist.resize(2 * m_heightLowRes4x);
+
+        m_numDetectScrollRegions = std::min(MAX_NUM_DEPENDENCIES, (int32_t)m_par->num_threads);
+        m_detectScrollRegionWidth = DivUp(m_widthLowRes4x >> 5, m_numDetectScrollRegions) << 5;
+        m_numDetectScrollRegions = DivUp(m_widthLowRes4x, m_detectScrollRegionWidth);
+
+        m_ttDetectScrollStart.frame = this;
+        m_ttDetectScrollEnd.frame = this;
+        for (int32_t i = 0; i < m_numDetectScrollRegions; i++) {
+            m_ttDetectScrollRoutine[i].frame = this;
+            m_ttDetectScrollRoutine[i].startX = std::min(m_widthLowRes4x, i * m_detectScrollRegionWidth);
+            m_ttDetectScrollRoutine[i].endX = std::min(m_widthLowRes4x, (i + 1) * m_detectScrollRegionWidth);
+        }
 
         // if lookahead
         int32_t numTasks, regionCount, lowresRowsInRegion, originRowsInRegion;
         GetLookaheadGranularity(*par, regionCount, lowresRowsInRegion, originRowsInRegion, numTasks);
 
-        m_ttLookahead.resize(numTasks);
+        m_numLaTasks = numTasks;
+        m_ttLookahead = (ThreadingTask *)AV1_Malloc(numTasks * sizeof(ThreadingTask));
+        if (!m_ttLookahead)
+            throw std::exception();
+
+        for (int32_t i = LAST_FRAME; i <= ALTREF_FRAME; i++) {
+            m_ttSubmitGpuMe[i] = (ThreadingTask *)AV1_Malloc(par->numGpuSlices * sizeof(ThreadingTask));
+            if (!m_ttSubmitGpuMe[i])
+                throw std::exception();
+        }
+
+        m_ttSubmitGpuMd = (ThreadingTask *)AV1_Malloc(par->numGpuSlices * sizeof(ThreadingTask));
+        if (!m_ttSubmitGpuMd)
+            throw std::exception();
+
+        m_ttWaitGpuMd = (ThreadingTask *)AV1_Malloc(par->numGpuSlices * sizeof(ThreadingTask));
+        if (!m_ttWaitGpuMd)
+            throw std::exception();
 
         // VP9 specific
         m_tileContexts.resize(numTiles);
-        for (int32_t tr = 0, ti = 0; tr < par->tileParam.rows; tr++)
-            for (int32_t tc = 0; tc < par->tileParam.cols; tc++, ti++)
-                m_tileContexts[ti].Alloc(par->tileParam.colWidth[tc], par->tileParam.rowHeight[tr]);
+        for (int32_t i = 0; i < numTiles; i++)
+            m_tileContexts[i].Alloc(par->sb64Cols, par->sb64Rows); // allocate for entire frame to be ready to switch to single tile encoding
 
-        m_lfm = (LoopFilterMask *)AV1_Malloc(par->sb64Rows * par->sb64Cols * sizeof(*m_lfm)); // ippMalloc is 64-bytes aligned
-        m_cdefStrenths = (int8_t *)AV1_Malloc(par->sb64Rows * par->sb64Cols * sizeof(*m_cdefStrenths)); // ippMalloc is 64-bytes aligned
-        m_cdefDirs = (int8_t(*)[8][8])AV1_Malloc(par->sb64Rows * par->sb64Cols * sizeof(*m_cdefDirs));
-        m_cdefVars = (int32_t(*)[8][8])AV1_Malloc(par->sb64Rows * par->sb64Cols * sizeof(*m_cdefVars));
-        m_sbIndex.resize(par->sb64Rows * par->sb64Cols);
-
-        m_cdefLineBufs.Alloc(*par);
-
-        m_mse[0] = (int32_t(*)[STRENGTH_COUNT_FAST])AV1_Malloc(sizeof(**m_mse) * par->sb64Rows * par->sb64Cols);
-        m_mse[1] = (int32_t(*)[STRENGTH_COUNT_FAST])AV1_Malloc(sizeof(**m_mse) * par->sb64Rows * par->sb64Cols);
-
-        m_tplMvs = (TplMvRef *)AV1_Malloc((par->miRows + 8) * par->miPitch * sizeof(*m_tplMvs));
-        if (!m_tplMvs)
-            throw std::exception();
-        m_txkTypes4x4 = (uint16_t *)AV1_Malloc(par->sb64Rows * par->sb64Cols * sizeof(uint16_t) * 256);
-        if (!m_txkTypes4x4)
-            throw std::exception();
 #if USE_CMODEL_PAK
         av1frameOrigin.InitAlloc(par->Width, par->Height, CmodelAv1::YUV420, 8);
         av1frameRecon.InitAlloc(par->Width, par->Height, CmodelAv1::YUV420, 8);
@@ -373,6 +432,7 @@ namespace AV1Enc {
         case 0:
             ippiCopy_8u_C1R(inDataY, inPitch, out->y, out->pitch_luma_bytes, roi);
             break;
+#if ENABLE_10BIT
         case 1:
             ippiConvert_16u8u_C1R((uint16_t*)inDataY, inPitch, out->y, out->pitch_luma_bytes, roi);
             break;
@@ -383,17 +443,19 @@ namespace AV1Enc {
         case 3:
             ippiCopy_16u_C1R((uint16_t*)inDataY, inPitch, (uint16_t*)out->y, out->pitch_luma_bytes, roi);
             break;
+#endif
         default:
             assert(0);
         }
 
-        roi.width <<= (m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV444);
-        roi.height >>= (m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420);
+        roi.width <<= int(m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV444);
+        roi.height >>= int(m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420);
 
         switch ((m_bdChromaFlag << 1) | (InputBitDepthChroma > 8)) {
         case 0:
             ippiCopy_8u_C1R(inDataUV, inPitch, out->uv, out->pitch_chroma_bytes, roi);
             break;
+#if ENABLE_10BIT
         case 1:
             ippiConvert_16u8u_C1R((uint16_t*)inDataUV, inPitch, out->uv, out->pitch_chroma_bytes, roi);
             break;
@@ -404,18 +466,11 @@ namespace AV1Enc {
         case 3:
             ippiCopy_16u_C1R((uint16_t*)inDataUV, inPitch, (uint16_t*)out->uv, out->pitch_chroma_bytes, roi);
             break;
+#endif
         default:
             assert(0);
         }
     }
-
-
-    void ippsCopy(const uint8_t *src, uint8_t *dst, int32_t len) { (void)ippsCopy_8u(src, dst, len); }
-    void ippsCopy(const uint16_t *src, uint16_t *dst, int32_t len) { (void)ippsCopy_16s((const int16_t *)src, (int16_t *)dst, len); }
-    void ippsCopy(const uint32_t *src, uint32_t *dst, int32_t len) { (void)ippsCopy_32s((const int32_t *)src, (int32_t *)dst, len); }
-    void ippsSet(uint8_t  value, uint8_t  *dst, int32_t len) { (void)ippsSet_8u(value, dst, len); };
-    void ippsSet(uint16_t value, uint16_t *dst, int32_t len) { (void)ippsSet_16s((int16_t)value, (int16_t*)dst, len); };
-    void ippsSet(uint32_t value, uint32_t *dst, int32_t len) { (void)ippsSet_32s((int32_t)value, (int32_t*)dst, len); };
 
     template <class T> void PadRect(T *plane, int32_t pitch, int32_t width, int32_t height, int32_t rectx, int32_t recty, int32_t rectw, int32_t recth, int32_t padL, int32_t padR, int32_t padh)
     {
@@ -428,19 +483,19 @@ namespace AV1Enc {
             rectx -= padL;
             rectw += padL;
             for (int32_t y = recty; y < recty + recth; y++)
-                ippsSet(plane[y * pitch], plane + y * pitch - padL, padL);
+                _ippsSet(plane[y * pitch], plane + y * pitch - padL, padL);
         }
         if (rectx + rectw == width) {
             rectw += padR;
             for (int32_t y = recty; y < recty + recth; y++)
-                ippsSet(plane[y * pitch + width - 1], plane + y * pitch + width, padR);
+                _ippsSet(plane[y * pitch + width - 1], plane + y * pitch + width, padR);
         }
         if (recty == 0)
             for (int32_t j = 1; j <= padh; j++)
-                ippsCopy(plane + rectx, plane + rectx - j * pitch, rectw);
+                _ippsCopy(plane + rectx, plane + rectx - j * pitch, rectw);
         if (recty + recth == height)
             for (int32_t j = 1; j <= padh; j++)
-                ippsCopy(plane + (height - 1) * pitch + rectx, plane + (height - 1 + j) * pitch + rectx, rectw);
+                _ippsCopy(plane + (height - 1) * pitch + rectx, plane + (height - 1 + j) * pitch + rectx, rectw);
     }
     template void PadRect<uint8_t>(uint8_t *plane, int32_t pitch, int32_t width, int32_t height, int32_t rectx, int32_t recty, int32_t rectw, int32_t recth, int32_t padL, int32_t padR, int32_t padh);
     template void PadRect<uint16_t>(uint16_t *plane, int32_t pitch, int32_t width, int32_t height, int32_t rectx, int32_t recty, int32_t rectw, int32_t recth, int32_t padL, int32_t padR, int32_t padh);
@@ -454,8 +509,8 @@ namespace AV1Enc {
         int32_t paddingR = fdata.padding;
         int32_t bppShift = ((fourcc == P010) || (fourcc == P210)) ? 1 : 0;
         if (fdata.m_handle) {
-            paddingR = fdata.pitch_luma_pix - fdata.width - (UMC::align_value<int32_t>(fdata.padding << bppShift, 64) >> bppShift);
-            paddingL = UMC::align_value<int32_t>(fdata.padding << bppShift, 64) >> bppShift;
+            paddingR = fdata.pitch_luma_pix - fdata.width - (mfx::align2_value<int32_t>(fdata.padding << bppShift, 64) >> bppShift);
+            paddingL = mfx::align2_value<int32_t>(fdata.padding << bppShift, 64) >> bppShift;
         }
 
         (fourcc == NV12 || fourcc == NV16)
@@ -477,6 +532,24 @@ namespace AV1Enc {
         PadRectChroma(fdata, fourcc, rectx, recty, rectw, recth);
     }
 
+    static void convert8bTo16b(Frame* frame)
+    {
+        uint16_t *data_y16b = (uint16_t *)frame->m_recon10->y;
+        for (int32_t y = 0; y < frame->m_par->Height; y++) {
+            for (int32_t x = 0; x < frame->m_par->Width; x++) {
+                data_y16b[y * frame->m_recon10->pitch_luma_pix + x] = (uint16_t)frame->m_recon->y[y * frame->m_recon->pitch_luma_pix + x] << 2;
+            }
+        }
+
+        uint16_t *data_uv16b = (uint16_t *)frame->m_recon10->uv;
+        for (int32_t y = 0; y < frame->m_par->Height / 2; y++) {
+            for (int32_t x = 0; x < frame->m_par->Width / 2; x++) {
+                data_uv16b[y * frame->m_recon10->pitch_chroma_pix + 2 * x] = (uint16_t)frame->m_recon->uv[y * frame->m_recon->pitch_chroma_pix + 2 * x] << 2;
+                data_uv16b[y * frame->m_recon10->pitch_chroma_pix + 2 * x + 1] = (uint16_t)frame->m_recon->uv[y * frame->m_recon->pitch_chroma_pix + 2 * x + 1] << 2;
+                //frame->av1frameOrigin.data_v16b[y * frame->av1frameOrigin.pitch + x] = frame->m_recon->uv[y * frame->m_recon->pitch_chroma_pix + 2 * x + 1];
+            }
+        }
+    }
     void Dump_src10enc8pak10(AV1VideoParam *par, Frame* frame, FrameList & dpb)
     {
 #if USE_CMODEL_PAK
@@ -490,20 +563,23 @@ namespace AV1Enc {
         int32_t shift = 2 - shift_w - shift_h;
         int32_t plane_size = (W*H << bd_shift_luma) + (((W*H / 2) << shift) << bd_shift_chroma);
 
-        vm_file *f = vm_file_fopen(par->reconDumpFileName, frame->m_frameOrder ? VM_STRING("r+b") : VM_STRING("w+b"));
-        if (f == NULL)
-            return;
+        std::fstream file;
+        std::ios_base::openmode mode(std::ios_base::in | std::ios_base::binary);
+        if (frame->m_frameOrder == 0)
+            mode = std::ios_base::binary | std::ios_base::out;
+        file.open(par->reconDumpFileName, mode);
+        if (!file.is_open()) return;
 
         uint64_t seekPos = (par->picStruct == PROGR)
             ? uint64_t(frame->m_frameOrder)   * (plane_size)
             : uint64_t(frame->m_frameOrder / 2) * (plane_size * 2);
-        vm_file_fseek(f, seekPos, VM_FILE_SEEK_SET);
+        file.seekp(seekPos, std::ios_base::beg)
 
         CmodelAv1::Av1EncoderFrame* recon = &frame->av1frameRecon;
         mfxU16 *p = recon->data_y16b + (par->CropLeft + par->CropTop * recon->pitch);
 
         for (int32_t i = 0; i < H; i++) {
-            vm_file_fwrite(p, 1 << bd_shift_luma, W, f);
+            file.write((const char*)p, (1 << bd_shift_luma)* W);
             p += recon->pitch;
         }
 
@@ -512,30 +588,110 @@ namespace AV1Enc {
         if (W <= 4096 * 2) { // else invalid dump
                 mfxU16 *p = recon->data_u16b;
                 for (int32_t i = 0; i < H/2; i++) {
-                    vm_file_fwrite(p, 1 << bd_shift_chroma, W/2, f);
+                    file.write((const char*)p, (1 << bd_shift_chroma)*W / 2);
                     p += recon->pitch;
                 }
                 /*mfxU16 **/p = recon->data_v16b;
                 for (int32_t i = 0; i < H / 2; i++) {
-                    vm_file_fwrite(p, 1 << bd_shift_chroma, W / 2, f);
+                    file.write((const char*)p, (1 << bd_shift_chroma)*W / 2);
                     p += recon->pitch;
                 }
         }
 
-        vm_file_fclose(f);
-#endif // USE_CMODEL_PAK
+        file.close();
+#else
+
+        //convert8bTo16b(frame);
+
+       // mfxU8* fbuf = NULL;
+        int32_t W = par->Width - par->CropLeft - par->CropRight;
+        int32_t H = par->Height - par->CropTop - par->CropBottom;
+        int32_t bd_shift_luma = /*par->bitDepthLuma*/10 > 8;
+        int32_t bd_shift_chroma = /*par->bitDepthChroma*/10 > 8;
+        int32_t shift_w = frame->m_chromaFormatIdc != MFX_CHROMAFORMAT_YUV444 ? 1 : 0;
+        int32_t shift_h = frame->m_chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? 1 : 0;
+        int32_t shift = 2 - shift_w - shift_h;
+        int32_t plane_size = (W*H << bd_shift_luma) + (((W*H / 2) << shift) << bd_shift_chroma);
+
+        std::fstream file;
+        std::ios_base::openmode mode(std::ios_base::in | std::ios_base::out | std::ios_base::binary);
+        if (frame->m_frameOrder == 0)
+            mode = std::ios_base::binary | std::ios_base::out;
+        file.open(par->reconDumpFileName, mode);
+        if (!file.is_open()) return;
+
+        uint64_t seekPos = (par->picStruct == PROGR)
+            ? uint64_t(frame->m_frameOrder)   * (plane_size)
+            : uint64_t(frame->m_frameOrder / 2) * (plane_size * 2);
+        file.seekp(seekPos, std::ios_base::beg);
+
+        //CmodelAv1::Av1EncoderFrame* recon = &frame->av1frameRecon;
+        uint16_t *data_y16b = (uint16_t *)frame->m_recon10->y;
+        mfxU16 *p = data_y16b + (par->CropLeft + par->CropTop * frame->m_recon10->pitch_luma_pix);
+
+        for (int32_t i = 0; i < H; i++) {
+            file.write((const char*)p, (1 << bd_shift_luma)* W);
+            p += frame->m_recon10->pitch_luma_pix;
+        }
+
+        // options: P010 or I010???
+#if 0
+        // P010
+        if (W <= 4096 * 2) { // else invalid dump
+            mfxU16 *p = (uint16_t *)frame->m_recon10->uv;
+            for (int32_t i = 0; i < H / 2; i++) {
+                file.write((const char*)p, (1 << bd_shift_chroma)*W);
+                p += frame->m_recon10->pitch_chroma_pix;
+            }
+        }
+#else
+        // writing nv12 to yuv420 (i010)
+        // maxlinesize = 8192
+        std::vector<uint16_t> data_u16b(W/2*H/2);
+        std::vector<uint16_t> data_v16b(W/2*H/2);
+        uint16_t *src_uv16b = (uint16_t *)frame->m_recon10->uv;
+        int pitchU = W / 2;
+        for (int32_t y = 0; y < H / 2; y++) {
+            for (int32_t x = 0; x < W / 2; x++) {
+                data_u16b[y*pitchU + x] = src_uv16b[y * frame->m_recon10->pitch_chroma_pix + 2 * x];
+                data_v16b[y*pitchU + x] = src_uv16b[y * frame->m_recon10->pitch_chroma_pix + 2 * x + 1];
+            }
+        }
+
+
+        if (W <= 4096 * 2) { // else invalid dump
+            p = (mfxU16 *)data_u16b.data();
+            for (int32_t i = 0; i < H / 2; i++) {
+                file.write((const char*)p, (1 << bd_shift_chroma)*W/2);
+                p += pitchU;
+            }
+            p = data_v16b.data();
+            for (int32_t i = 0; i < H / 2; i++) {
+                file.write((const char*)p, (1 << bd_shift_chroma)*W / 2);
+                p += pitchU;
+            }
+        }
+
+        file.close();
+#endif
+#endif
     }
 
-    void Dump(AV1VideoParam *par, Frame* frame, FrameList & dpb)
+    void Dump(AV1VideoParam *par_, Frame* frame, FrameList & dpb)
     {
-        if (!par->doDumpRecon)
+        if (!par_->doDumpRecon)
             return;
-        if (par->src10Enable) {
-            Dump_src10enc8pak10(par, frame, dpb);
+
+        if (par_->src10Enable) {
+            Dump_src10enc8pak10(par_, frame, dpb);
             return;
         }
 
-        mfxU8* fbuf = NULL;
+        AV1VideoParam param = *par_;
+        AV1VideoParam *par = &param;
+        if (par_->superResFlag)
+            param.Width = param.sourceWidth;
+
         int32_t W = par->Width - par->CropLeft - par->CropRight;
         int32_t H = par->Height - par->CropTop - par->CropBottom;
         int32_t bd_shift_luma = par->bitDepthLuma > 8;
@@ -545,26 +701,29 @@ namespace AV1Enc {
         int32_t shift = 2 - shift_w - shift_h;
         int32_t plane_size = (W*H << bd_shift_luma) + (((W*H / 2) << shift) << bd_shift_chroma);
 
-        vm_file *f = vm_file_fopen(par->reconDumpFileName, frame->m_frameOrder ? VM_STRING("r+b") : VM_STRING("w+b"));
-        if (f == NULL)
-            return;
+        std::fstream file;
+        std::ios_base::openmode mode(std::ios_base::in | std::ios_base::out | std::ios_base::binary);
+        if (frame->m_frameOrder == 0)
+            mode = std::ios_base::binary | std::ios_base::out;
+        file.open(par->reconDumpFileName, mode);
+        if (!file.is_open()) return;
 
         uint64_t seekPos = (par->picStruct == PROGR)
             ? uint64_t(frame->m_frameOrder)   * (plane_size)
             : uint64_t(frame->m_frameOrder / 2) * (plane_size * 2);
-        vm_file_fseek(f, seekPos, VM_FILE_SEEK_SET);
+        file.seekp(seekPos, std::ios_base::beg);
 
-        FrameData* recon = frame->m_recon;
+        FrameData* recon = par_->superResFlag ? frame->m_reconUpscale : frame->m_recon;
         mfxU8 *p = recon->y + ((par->CropLeft + par->CropTop * recon->pitch_luma_pix) << bd_shift_luma);
         for (int32_t i = 0; i < H; i++) {
             if (par->picStruct != PROGR && frame->m_bottomFieldFlag)
-                vm_file_seek(f, W << bd_shift_luma, VM_FILE_SEEK_CUR);
+                file.seekp(W << bd_shift_luma, std::ios_base::cur);
 
-            vm_file_fwrite(p, 1 << bd_shift_luma, W, f);
+            file.write((const char*)p, (1 << bd_shift_luma)*W);
             p += recon->pitch_luma_bytes;
 
             if (par->picStruct != PROGR && !frame->m_bottomFieldFlag)
-                vm_file_seek(f, W << bd_shift_luma, VM_FILE_SEEK_CUR);
+                file.seekp(W << bd_shift_luma, std::ios_base::cur);
         }
 
         // writing nv12 to yuv420
@@ -572,18 +731,17 @@ namespace AV1Enc {
         if (W <= 4096 * 2) { // else invalid dump
             if (bd_shift_chroma) {
                 mfxU16 uvbuf[4096];
-                mfxU16 *p;
                 for (int part = 0; part <= 1; part++) {
-                    p = (uint16_t*)recon->uv + part + (par->CropLeft >> shift_w << 1) + (par->CropTop >> shift_h) * recon->pitch_chroma_pix;
+                    uint16_t *puv = (uint16_t*)recon->uv + part + (par->CropLeft >> shift_w << 1) + (par->CropTop >> shift_h) * recon->pitch_chroma_pix;
                     for (int32_t i = 0; i < H >> shift_h; i++) {
                         for (int j = 0; j < W >> shift_w; j++)
-                            uvbuf[j] = p[2 * j];
+                            uvbuf[j] = puv[2 * j];
                         if (par->picStruct != PROGR && frame->m_bottomFieldFlag)
-                            vm_file_seek(f, W << bd_shift_chroma >> shift_w, VM_FILE_SEEK_CUR);
-                        vm_file_fwrite(uvbuf, 2, W >> shift_w, f);
-                        p += recon->pitch_chroma_pix;
+                            file.seekp(W << bd_shift_chroma >> shift_w, std::ios_base::cur);
+                        file.write((const char*)uvbuf, 2 * (W >> shift_w));
+                        puv += recon->pitch_chroma_pix;
                         if (par->picStruct != PROGR && !frame->m_bottomFieldFlag)
-                            vm_file_seek(f, W << bd_shift_chroma >> shift_w, VM_FILE_SEEK_CUR);
+                            file.seekp(W << bd_shift_chroma >> shift_w, std::ios_base::cur);
                     }
                 }
             }
@@ -595,17 +753,17 @@ namespace AV1Enc {
                         for (int j = 0; j < W >> shift_w; j++)
                             uvbuf[j] = p[2 * j];
                         if (par->picStruct != PROGR && frame->m_bottomFieldFlag)
-                            vm_file_seek(f, W << bd_shift_chroma >> shift_w, VM_FILE_SEEK_CUR);
-                        vm_file_fwrite(uvbuf, 1, W >> shift_w, f);
+                            file.seekp(W << bd_shift_chroma >> shift_w, std::ios_base::cur);
+                        file.write((const char*)uvbuf, (W >> shift_w));
                         p += recon->pitch_chroma_pix;
                         if (par->picStruct != PROGR && !frame->m_bottomFieldFlag)
-                            vm_file_seek(f, W << bd_shift_chroma >> shift_w, VM_FILE_SEEK_CUR);
+                            file.seekp(W << bd_shift_chroma >> shift_w, std::ios_base::cur);
                     }
                 }
             }
         }
 
-        vm_file_fclose(f);
+        file.close();
     }
 
     TileContexts::TileContexts() {
@@ -734,16 +892,16 @@ namespace AV1Enc {
     {
         m_par = NULL;
         AV1_SafeFree(m_ttEncode);
+        AV1_SafeFree(m_ttPackTile);
+        AV1_SafeFree(m_ttPackRow);
         AV1_SafeFree(m_ttDeblockAndCdef);
-        AV1_SafeFree(m_lfm);
-        AV1_SafeFree(m_cdefStrenths);
-        AV1_SafeFree(m_cdefDirs);
-        AV1_SafeFree(m_cdefVars);
-        AV1_SafeFree(m_mse[0]);
-        AV1_SafeFree(m_mse[1]);
-        AV1_SafeFree(m_tplMvs);
-        AV1_SafeFree(m_txkTypes4x4);
-        m_cdefLineBufs.Free();
+        AV1_SafeFree(m_ttLookahead);
+        AV1_SafeFree(m_lowres4x);
+        AV1_SafeFree(m_ttSubmitGpuMe[LAST_FRAME]);
+        AV1_SafeFree(m_ttSubmitGpuMe[GOLDEN_FRAME]);
+        AV1_SafeFree(m_ttSubmitGpuMe[ALTREF_FRAME]);
+        AV1_SafeFree(m_ttSubmitGpuMd);
+        AV1_SafeFree(m_ttWaitGpuMd);
         m_lcuQps.resize(0);
         m_lcuRound.resize(0);
 #if USE_CMODEL_PAK
@@ -754,30 +912,33 @@ namespace AV1Enc {
 
     void Frame::ResetMemInfo()
     {
-        m_par = NULL;
-        m_lf = NULL;
-        m_origin = NULL;
-        m_origin10 = NULL;
-        m_recon = NULL;
-        m_lowres = NULL;
-        m_modeInfo = NULL;
-        m_lfm = NULL;
-        m_stats[0] = m_stats[1] = NULL;
-        m_sceneStats = NULL;
-        m_ttEncode = NULL;
-        m_ttDeblockAndCdef = NULL;
-        m_cdefStrenths = NULL;
-        m_cdefDirs = NULL;
-        m_cdefVars = NULL;
-        m_sbIndex.resize(0);
-        m_mse[0] = m_mse[1] = NULL;
-        m_tplMvs = NULL;
-        m_txkTypes4x4 = NULL;
+        m_par = nullptr;
+        m_origin = nullptr;
+        m_origin10 = nullptr;
+        m_recon = nullptr;
+        m_reconUpscale = nullptr;
+        m_recon10 = nullptr;
+        m_lowres = nullptr;
+        m_modeInfo = nullptr;
+        m_stats[0] = m_stats[1] = nullptr;
+        m_sceneStats = nullptr;
+
+        m_ttEncode = nullptr;
+        m_ttDeblockAndCdef = nullptr;
+        m_ttPackTile = nullptr;
+        m_ttPackRow = nullptr;
+        m_ttLookahead = nullptr;
+        m_lowres4x = nullptr;
+        m_ttSubmitGpuMe[LAST_FRAME] = nullptr;
+        m_ttSubmitGpuMe[GOLDEN_FRAME] = nullptr;
+        m_ttSubmitGpuMe[ALTREF_FRAME] = nullptr;
+        m_ttSubmitGpuMd = nullptr;
+        m_ttWaitGpuMd = nullptr;
     }
 
     void Frame::ResetEncInfo()
     {
-        m_fenc = NULL;
+        m_fenc = nullptr;
         m_timeStamp = 0;
         m_picCodeType = 0;
         m_RPSIndex = 0;
@@ -789,22 +950,32 @@ namespace AV1Enc {
         m_secondFieldFlag = 0;
         m_bottomFieldFlag = 0;
         m_pyramidLayer = 0;
+        m_temporalId = 0;
         m_miniGopCount = 0;
         m_biFramesInMiniGop = 0;
         m_frameOrder = 0;
         m_frameOrderOfLastIdr = 0;
         m_frameOrderOfLastIntra = 0;
+        m_frameOrderOfLastBaseTemporalLayer = 0;
         m_frameOrderOfLastIntraInEncOrder = 0;
         m_frameOrderOfLastAnchor = 0;
+        m_frameOrderOfLastExternalLTR = MFX_FRAMEORDER_UNKNOWN;
+
         m_poc = 0;
         m_encOrder = 0;
         m_isShortTermRef = 0;
         m_isIdrPic = 0;
         m_isRef = 0;
         memset(m_refPicList, 0, sizeof(m_refPicList));
+        memset(&refctrl, 0, sizeof(mfxExtAVCRefListCtrl));
+        m_hasRefCtrl = 0;
+        m_isErrorResilienceFrame = 0;
 
         m_origin = NULL;
+        m_origin10= NULL;
         m_recon  = NULL;
+        m_recon10= NULL;
+        m_reconUpscale = NULL;
         m_lowres = NULL;
         m_encOrder    = uint32_t(-1);
         m_frameOrder  = uint32_t(-1);
@@ -812,12 +983,22 @@ namespace AV1Enc {
         m_dpbSize     = 0;
         m_sceneOrder  = 0;
         m_temporalSync = 0;
+        m_temporalActv = 0;
         m_forceTryIntra = 0;
         m_sliceQpY    = 0;
+        m_sliceQpBrc = 0;
+        m_hasMbqpCtrl = 0;
+        memset(&mbqpctrl, 0, sizeof(mfxExtMBQP));
 
+        m_maxFrameSizeInBitsSet = 0;
+        m_fzCmplx = 0.0;
+        m_fzCmplxK = 0.0;
+        m_fzRateE = 0.0;
         m_avCmplx      = 0.0;
         m_CmplxQstep   = 0.0;
         m_qpBase       = 0;
+        m_qsMinForMaxFrameSize = 0.0;
+        m_qpMinForMaxFrameSize = 0;
         m_totAvComplx  = 0.0;
         m_totComplxCnt = 0;
         m_complxSum    = 0.0;
@@ -834,21 +1015,22 @@ namespace AV1Enc {
 
         m_futureFrames.resize(0);
 
-        Zero(m_feiIntraAngModes);
         Zero(m_feiInterData);
-        m_feiModeInfo1 = NULL;
-        m_feiModeInfo2 = NULL;
-        m_feiVarTxInfo = NULL;
-        m_feiRs8 = NULL;
-        m_feiCs8 = NULL;
-        m_feiRs16 = NULL;
-        m_feiCs16 = NULL;
-        m_feiRs32 = NULL;
-        m_feiCs32 = NULL;
-        m_feiRs64 = NULL;
-        m_feiCs64 = NULL;
-        m_feiOrigin = NULL;
-        m_feiRecon = NULL;
+        m_feiModeInfo1 = nullptr;
+        m_feiModeInfo2 = nullptr;
+#if GPU_VARTX
+        m_feiAdz = nullptr;
+        m_feiAdzDelta = nullptr;
+        m_feiVarTxInfo = nullptr;
+        m_feiCoefs = nullptr;
+#endif // GPU_VARTX
+        for (int32_t i = 0; i < 4; i++) {
+            m_feiRs[i] = nullptr;
+            m_feiCs[i] = nullptr;
+        }
+
+        m_feiOrigin = nullptr;
+        m_feiRecon = nullptr;
 
         m_userSeiMessages.resize(0);
         m_userSeiMessagesData.resize(0);
@@ -860,19 +1042,6 @@ namespace AV1Enc {
 
         m_ttSubmitGpuCopyRec.InitGpuSubmit(this, MFX_FEI_H265_OP_GPU_COPY_REF, 0);
         m_ttWaitGpuCopyRec.InitGpuWait(MFX_FEI_H265_OP_GPU_COPY_REF, 0);
-
-        m_ttSubmitGpuIntra.InitGpuSubmit(this, MFX_FEI_H265_OP_INTRA_MODE, 0);
-        m_ttWaitGpuIntra.InitGpuWait(MFX_FEI_H265_OP_INTRA_MODE, 0);
-
-        for (int32_t i = LAST_FRAME; i <= ALTREF_FRAME; i++)
-            m_ttSubmitGpuMe[i].InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_ME, 0);
-
-#if PROTOTYPE_GPU_MODE_DECISION
-        m_ttSubmitGpuMd.InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_MD, 0);
-        m_ttWaitGpuMd.InitGpuWait(MFX_FEI_H265_OP_INTER_MD, 0);
-#else // PROTOTYPE_GPU_MODE_DECISION
-        m_ttWaitGpuMePu.InitGpuWait(MFX_FEI_H265_OP_INTER_MEPU, 0);
-#endif // PROTOTYPE_GPU_MODE_DECISION
 
         m_ttFrameRepetition.InitRepeatFrame(this, 0);
 
@@ -900,6 +1069,12 @@ namespace AV1Enc {
         m_prevFrame = NULL;
         m_prevFrameIsOneOfRefs = false;
         Zero(m_loopFilterParam);
+        m_isLtrFrame = 0;
+        m_isExternalLTR = 0;
+        m_shortTermRefFlag = 0;
+        m_ltrConfidenceLevel = 0;
+        m_ltrDQ = 0;
+        showExistingFrame = 0;
 
         for (size_t i = 0; i < m_tileContexts.size(); i++)
             m_tileContexts[i].Clear();

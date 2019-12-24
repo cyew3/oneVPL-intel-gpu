@@ -38,6 +38,12 @@
 #include "mfx_av1_dispatcher_wrappers.h"
 #include <tmmintrin.h>
 
+#ifdef AMT_HROI_PSY_AQ
+#include "FSapi.h"
+#include <vector>
+#endif
+#include "mfx_av1_get_intra_pred_pels.h"
+
 using namespace AV1Enc;
 
 //#define PAQ_LOGGING
@@ -144,39 +150,28 @@ template <typename PixType>
 void MeInterpolate(const AV1MEInfo* me_info, const AV1MV *MV, PixType *src,
                    int32_t srcPitch, PixType *dst, int32_t dstPitch, int32_t pelX, int32_t pelY)
 {
-    alignas(64) int16_t preAvgTmpBuf[72*64];
     int32_t w = me_info->width;
     int32_t h = me_info->height;
-    int32_t dx = MV->mvx & 3;
-    int32_t dy = MV->mvy & 3;
-    int32_t bitDepth = sizeof(PixType) == 1 ? 8 : 10;
+    int32_t dx = (MV->mvx << 1) & 15;
+    int32_t dy = (MV->mvy << 1) & 15;
+    int32_t log2w = BSR(w >> 2);
 
     int32_t m_ctbPelX = pelX;
     int32_t m_ctbPelY = pelY;
 
-    int32_t refOffset = m_ctbPelX + me_info->posx + (MV->mvx >> 2) + (m_ctbPelY + me_info->posy + (MV->mvy >> 2)) * srcPitch;
+    int32_t refOffset = m_ctbPelX + me_info->posx + (MV->mvx >> 3) + (m_ctbPelY + me_info->posy + (MV->mvy >> 3)) * srcPitch;
     src += refOffset;
 
     assert (!(dx == 0 && dy == 0));
-    if (dy == 0) {
-        //InterpolateEncFast<UMC_HEVC_DECODER::TEXT_LUMA, PixType, PixType>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, 6, 32, bitDepth, preAvgTmpBuf);
-    } else if (dx == 0) {
-        //InterpolateEncFast<UMC_HEVC_DECODER::TEXT_LUMA, PixType, PixType>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, 6, 32, bitDepth, preAvgTmpBuf);
-    } else {
-        int16_t tmpBuf[80 * 80];
-        int16_t *tmp = tmpBuf + 80 * 8 + 8;
-        int32_t tmpPitch = 80;
-
-        //InterpolateEncFast<UMC_HEVC_DECODER::TEXT_LUMA, PixType, int16_t>( INTERP_HOR, src - 1 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 3, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
-
-        int32_t shift  = 20 - bitDepth;
-        int16_t offset = 1 << (shift - 1);
-
-        //InterpolateEncFast<UMC_HEVC_DECODER::TEXT_LUMA, int16_t, PixType>( INTERP_VER,  tmp + 1 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
-    }
+    if (dy == 0)
+        AV1PP::interp_av1(src, srcPitch, dst, dstPitch, dx, dy, h, log2w, 0, DEF_FILTER_DUAL);
+    else if (dx == 0)
+        AV1PP::interp_av1(src, srcPitch, dst, dstPitch, dx, dy, h, log2w, 0, DEF_FILTER_DUAL);
+    else
+        AV1PP::interp_av1(src, srcPitch, dst, dstPitch, dx, dy, h, log2w, 0, DEF_FILTER_DUAL);
 
     return;
-} //
+}
 
 
 template <typename PixType>
@@ -205,50 +200,41 @@ int32_t MatchingMetricPu(const PixType *src, int32_t srcPitch, FrameData *refPic
     }
 }
 
-template
-    int32_t MatchingMetricPu<uint8_t>(const uint8_t *src, int32_t srcPitch, FrameData *refPic, const AV1MEInfo *meInfo, const AV1MV *mv, int32_t useHadamard, int32_t pelX, int32_t pelY);
+//template int32_t MatchingMetricPu<uint8_t>(const uint8_t *src, int32_t srcPitch, FrameData *refPic, const AV1MEInfo *meInfo, const AV1MV *mv, int32_t useHadamard, int32_t pelX, int32_t pelY);
 
 template <typename PixType>
 int32_t IntraPredSATD(PixType *pSrc, int32_t srcPitch, int32_t x, int32_t y, IppiSize roi, int32_t width, uint8_t bitDepthLuma, int32_t modes)
 {
-    typedef typename GetHistogramType<PixType>::type HistType;
-    PixType PredPel[4*2*64+1];
+    //PixType PredPel[4*2*64+1];
     alignas(32) PixType recPel[MAX_CU_SIZE * MAX_CU_SIZE];
-    alignas(32) HistType hist8[40 * MAX_CU_SIZE / 4 * MAX_CU_SIZE / 4];
 
     pSrc += y*srcPitch + x;
-    int32_t numblks = width >> 3;
 
-    GetPredPelsLuma(pSrc, srcPitch, x, y, roi, PredPel, width, bitDepthLuma);
-
+    //GetPredPelsLuma(pSrc, srcPitch, x, y, roi, PredPel, width, bitDepthLuma);
+    AV1PP::IntraPredPels<PixType> predPels;
+    const int32_t haveTop = (y > 0);
+    const int32_t haveLeft = (x > 0);
+    AV1PP::GetPredPelsAV1<PLANE_TYPE_Y>(pSrc, srcPitch, predPels.top, predPels.left, width, haveTop, haveLeft, 0, 0);
+    int32_t txSize = BSR(width) -2;
     //h265_PredictIntra_DC(PredPel, recPel, width, width, 1);
+    AV1PP::predict_intra_av1(predPels.top, predPels.left, recPel, width, txSize, haveLeft, haveTop, DC_PRED, 0, 0, 0);
     int32_t bestSATD = H265_Calc_SATD(pSrc, srcPitch, recPel, width);
     if(!modes) return bestSATD;
 
     //h265_PredictIntra_Ver(PredPel, recPel, width, width, bitDepthLuma, 1);
+    AV1PP::predict_intra_av1(predPels.top, predPels.left, recPel, width, txSize, haveLeft, haveTop, V_PRED, 0, 0, 0);
     int32_t satd = H265_Calc_SATD(pSrc, srcPitch, recPel, width);
     if (satd < bestSATD)
         bestSATD = satd;
 
     //h265_PredictIntra_Hor(PredPel, recPel, width, width, bitDepthLuma, 1);
+    AV1PP::predict_intra_av1(predPels.top, predPels.left, recPel, width, txSize, haveLeft, haveTop, H_PRED, 0, 0, 0);
     satd = H265_Calc_SATD(pSrc, srcPitch, recPel, width);
     if (satd < bestSATD)
         bestSATD = satd;
 
-    //h265_AnalyzeGradient(pSrc, srcPitch, hist8, hist8, width, width);
-    if (numblks > 1) {
-        int32_t pitch = 40 * numblks;
-        const HistType *histBlock = hist8;
-        for (int32_t py = 0; py < numblks; py++, histBlock += pitch)
-            for (int32_t px = 0; px < numblks; px++)
-                if (px | py) {
-                    for (int32_t i = 0; i < 35; i++)
-                        hist8[i] += histBlock[40 * px + i];
-                }
-    }
-    int32_t angmode = (int32_t)(std::max_element(hist8 + 2, hist8 + 35) - hist8);
-
     //h265_PredictIntra_Planar(PredPel, recPel, width, width);
+    AV1PP::predict_intra_av1(predPels.top, predPels.left, recPel, width, txSize, haveLeft, haveTop, PAETH_PRED, 0, 0, 0);
     satd = H265_Calc_SATD(pSrc, srcPitch, recPel, width);
     if (satd < bestSATD)
         bestSATD = satd;
@@ -256,8 +242,8 @@ int32_t IntraPredSATD(PixType *pSrc, int32_t srcPitch, int32_t x, int32_t y, Ipp
     return bestSATD;
 }
 
-template int32_t IntraPredSATD<uint8_t>(uint8_t *pSrc, int32_t srcPitch, int32_t x, int32_t y, IppiSize roi, int32_t width, uint8_t bitDepthLuma, int32_t modes);
-
+//template int32_t IntraPredSATD<uint8_t>(uint8_t *pSrc, int32_t srcPitch, int32_t x, int32_t y, IppiSize roi, int32_t width, uint8_t bitDepthLuma, int32_t modes);
+/*
 template <typename PixType>
 void DoIntraAnalysis(FrameData* frame, int32_t* intraCost)
 {
@@ -282,7 +268,7 @@ void DoIntraAnalysis(FrameData* frame, int32_t* intraCost)
             intraCost[fPos] = IntraPredSATD(luma, pitch_luma_pix, x, y, frmSize, sizeBlk, bitDepthLuma);
         }
     }
-}
+}*/
 
 template <typename PixType>
 void DoIntraAnalysis_OneRow(FrameData* frame, int32_t* intraCost, int32_t row, int32_t sizeBlk, int32_t modes)
@@ -351,14 +337,14 @@ const struct TransitionTable {
 };
 
 template <typename PixType, typename Frame>
-void MeIntPelLog(Frame *curr, Frame *ref, int32_t pelX, int32_t pelY, int32_t posx, int32_t posy, AV1MV *mv, int32_t *cost, int32_t *cost_satd, int32_t *mvCost)
+void MeIntPelLog(Frame *curr, Frame *ref, int32_t pelX, int32_t pelY, int32_t posx, int32_t posy, AV1MV *outMv, int32_t *outCost, int32_t *cost_satd, int32_t *outMvCost)
 {
     int16_t meStepBest = 2;
     int16_t meStepMax = MAX(MIN(8, 8), 16) * 4;
     // regulation from outside
-    AV1MV mvBest = *mv;
-    int32_t costBest = *cost;
-    int32_t mvCostBest = *mvCost;
+    AV1MV mvBest = *outMv;
+    int32_t costBest = *outCost;
+    int32_t mvCostBest = *outMvCost;
 
     PixType *m_ySrc = (PixType*)curr->y + pelX + pelY * curr->pitch_luma_pix;
     PixType *src = m_ySrc + posx + posy * curr->pitch_luma_pix;
@@ -458,9 +444,9 @@ void MeIntPelLog(Frame *curr, Frame *ref, int32_t pelX, int32_t pelY, int32_t po
         transPos = bestPos;
     }
 
-    *mv = mvBest;
-    *cost = costBest;
-    *mvCost = mvCostBest;
+    *outMv = mvBest;
+    *outCost = costBest;
+    *outMvCost = mvCostBest;
 
     if(cost_satd) {
         // recalc hadamar
@@ -468,13 +454,12 @@ void MeIntPelLog(Frame *curr, Frame *ref, int32_t pelX, int32_t pelY, int32_t po
         meInfo.posx = (uint8_t)posx;
         meInfo.posy = (uint8_t)posy;
         useHadamard = 1;
-        *cost_satd = MatchingMetricPu(src, curr->pitch_luma_pix, ref, &meInfo, mv, useHadamard, pelX, pelY);
+        *cost_satd = MatchingMetricPu(src, curr->pitch_luma_pix, ref, &meInfo, outMv, useHadamard, pelX, pelY);
     }
 } //
 
-
 template <typename PixType>
-void MeIntPelLog_Refine(FrameData *curr, FrameData *ref, int32_t pelX, int32_t pelY, AV1MV *mv, int32_t *cost, int32_t *cost_satd, int32_t *mvCost, int32_t blkSize)
+void MeIntPelLog_Refine(FrameData *curr, FrameData *ref, int32_t pelX, int32_t pelY, AV1MV *outMv, int32_t *outCost, int32_t *cost_satd, int32_t *outMvCost, int32_t blkSize)
 {
     int16_t meStepBest = 2;
     int16_t meStepMax = 8;
@@ -482,13 +467,12 @@ void MeIntPelLog_Refine(FrameData *curr, FrameData *ref, int32_t pelX, int32_t p
     int32_t log2w = BSR(blkSize >> 2);
 
     // regulation from outside
-    AV1MV mvBest = *mv;
-    int32_t costBest = *cost;
-    int32_t mvCostBest = *mvCost;
+    AV1MV mvBest = *outMv;
+    int32_t costBest = *outCost;
+    int32_t mvCostBest = *outMvCost;
 
     PixType *src = (PixType*)curr->y + pelX + pelY * curr->pitch_luma_pix;
     int32_t srcPitch = curr->pitch_luma_pix;
-    int32_t useHadamard = 0;
     int16_t mePosBest = 0;
 
     // limits to clip MV allover the CU
@@ -527,12 +511,12 @@ void MeIntPelLog_Refine(FrameData *curr, FrameData *ref, int32_t pelX, int32_t p
             }
         }
     }
-    *mv = mvBest;
-    *cost = costBest;
-    *mvCost = mvCostBest;
+    *outMv = mvBest;
+    *outCost = costBest;
+    *outMvCost = mvCostBest;
     if (cost_satd) {
         // recalc hadamar
-        int32_t refOffset = pelX + (mv->mvx >> 2) + (pelY + (mv->mvy >> 2)) * ref->pitch_luma_pix;
+        int32_t refOffset = pelX + (outMv->mvx >> 2) + (pelY + (outMv->mvy >> 2)) * ref->pitch_luma_pix;
         const PixType *rec = (PixType*)ref->y + refOffset;
         *cost_satd = AV1PP::satd(src, srcPitch, rec, ref->pitch_luma_pix, log2w, log2w);
     }
@@ -563,7 +547,7 @@ void AddMvCost(int32_t log2Step, const int32_t *dists,
         }
     }
 }
-
+/*
 template <typename TSrc, typename TDst>
 void InterpHor(const TSrc *src, int32_t pitchSrc, TDst *dst, int32_t pitchDst, int32_t dx,
                int32_t width, int32_t height, uint32_t shift, int16_t offset, uint32_t bitDepth, int16_t *tmpBuf)
@@ -577,7 +561,7 @@ void InterpVer(const TSrc *src, int32_t pitchSrc, TDst *dst, int32_t pitchDst, i
 {
     //InterpolateEncFast<LUMA, TSrc, TDst>(INTERP_VER, src, pitchSrc, dst, pitchDst, dy, width, height, shift, offset, bitDepth, tmpBuf);//isFast
 }
-
+*/
 template <typename PixType>
 void MeSubPelBatchedBox(const AV1MEInfo *meInfo,
                         FrameData *curr, FrameData *ref, int32_t pelX, int32_t pelY, AV1MV *mv, int32_t *cost, int32_t *mvCost, int32_t *cost_satd, bool bQPel)
@@ -588,21 +572,12 @@ void MeSubPelBatchedBox(const AV1MEInfo *meInfo,
     PixType *m_ySrc = (PixType*)curr->y + pelX + pelY * curr->pitch_luma_pix;
 
     int32_t patternSubPel = SUBPEL_BOX;
-    int32_t bitDepthLuma = sizeof(PixType) == 1 ? 8 : 10;
-    int32_t bitDepthLumaShift = bitDepthLuma - 8;
-    int32_t hadamardMe = 0;
-
-    assert(patternSubPel == SUBPEL_BOX);
-
     int32_t w = meInfo->width;
     int32_t h = meInfo->height;
-    int32_t log2w = BSR(w>>2);
-    int32_t log2h = BSR(h>>2);
-    int32_t bitDepth = bitDepthLuma;
-    int32_t costShift = bitDepthLumaShift;
-    int32_t shift = 20 - bitDepth;
-    int32_t offset = 1 << (19 - bitDepth);
-    int32_t useHadamard = (hadamardMe >= 2);
+    int32_t costShift = 0;
+    const int32_t log2w = BSR(w) - 2;
+    const int32_t log2h = BSR(h) - 2;
+    int32_t hadamardMe = 0;
 
     int32_t pitchSrc = m_pitchSrcLuma;
     PixType *src = m_ySrc + meInfo->posx + meInfo->posy * pitchSrc;
@@ -614,25 +589,27 @@ void MeSubPelBatchedBox(const AV1MEInfo *meInfo,
     int32_t (*costFunc)(const PixType*, int32_t, const PixType*, int32_t, int32_t, int32_t);
     costFunc = AV1PP::sad_general;
 
-    /*int32_t costs[8];
+    int32_t costs[8];
 
     int32_t pitchTmp2 = (w + 1 + 15) & ~15;
     int32_t pitchHpel = (w + 1 + 15) & ~15;
-    alignas(32) int16_t tmpPels[(MAX_CU_SIZE + 16) * (MAX_CU_SIZE + 8)];
+    alignas(32) PixType tmpPels[(MAX_CU_SIZE + 16) * (MAX_CU_SIZE + 8)];
     alignas(32) PixType subpel[(MAX_CU_SIZE + 16) * (MAX_CU_SIZE + 2)];
-    alignas(64) int16_t preAvgTmpBuf[72*64];
+    //alignas(64) int16_t preAvgTmpBuf[72*64];
 
     // intermediate halfpels
-    InterpHor(refY - 1 - 4 * pitchRef, pitchRef, tmpPels, pitchTmp2, 2, (w + 8) & ~7, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf); // (intermediate)
-    int16_t *tmpHor2 = tmpPels + 3 * pitchTmp2;
+    //InterpHor(refY - 1 - 4 * pitchRef, pitchRef, tmpPels, pitchTmp2, 2, (w + 8) & ~7, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf); // (intermediate)
+    AV1PP::interp_flex(refY - 1 - 4 * pitchRef, pitchRef, tmpPels, pitchTmp2, 4, 0, (w + 8)&~7, h + 8, 0, DEF_FILTER, 1);
+    PixType *tmpHor2 = tmpPels + 3 * pitchTmp2;
 
     // interpolate horizontal halfpels
     //h265_InterpLumaPack(tmpHor2 + pitchTmp2, pitchTmp2, subpel, pitchHpel, w + 1, h, bitDepth);
-    costs[3] = costFunc(src, pitchSrc, subpel + 1, pitchHpel, log2w, log2h) >> costShift;
-    costs[7] = costFunc(src, pitchSrc, subpel,     pitchHpel, log2w, log2h) >> costShift;
+    costs[3] = costFunc(src, pitchSrc, tmpHor2 + pitchTmp2 + 1, pitchTmp2, log2w, log2h) >> costShift;
+    costs[7] = costFunc(src, pitchSrc, tmpHor2 + pitchTmp2,     pitchTmp2, log2w, log2h) >> costShift;
 
     // interpolate diagonal halfpels
-    InterpVer(tmpHor2, pitchTmp2, subpel, pitchHpel, 2, (w + 8) & ~7, h + 2, shift, offset, bitDepth, preAvgTmpBuf);
+    //InterpVer(tmpHor2, pitchTmp2, subpel, pitchHpel, 2, (w + 8) & ~7, h + 2, shift, offset, bitDepth, preAvgTmpBuf);
+    AV1PP::interp_flex(tmpHor2, pitchTmp2, subpel, pitchHpel, 0, 4, (w + 8)&~7, h + 2, 0, DEF_FILTER, 1);
     costs[0] = costFunc(src, pitchSrc, subpel,                 pitchHpel, log2w, log2h) >> costShift;
     costs[2] = costFunc(src, pitchSrc, subpel + 1,             pitchHpel, log2w, log2h) >> costShift;
     costs[4] = costFunc(src, pitchSrc, subpel + 1 + pitchHpel, pitchHpel, log2w, log2h) >> costShift;
@@ -640,14 +617,15 @@ void MeSubPelBatchedBox(const AV1MEInfo *meInfo,
 
     // interpolate vertical halfpels
     pitchHpel = (w + 15) & ~15;
-    InterpVer(refY - pitchRef, pitchRef, subpel, pitchHpel, 2, w, h + 2, 6, 32, bitDepth, preAvgTmpBuf);
+    //InterpVer(refY - pitchRef, pitchRef, subpel, pitchHpel, 2, w, h + 2, 6, 32, bitDepth, preAvgTmpBuf);
+    AV1PP::interp_flex(refY - pitchRef, pitchRef, subpel, pitchHpel, 0, 4, w, h + 2, 0, DEF_FILTER, 1);
     costs[1] = costFunc(src, pitchSrc, subpel,             pitchHpel, log2w, log2h) >> costShift;
     costs[5] = costFunc(src, pitchSrc, subpel + pitchHpel, pitchHpel, log2w, log2h) >> costShift;
-    */
+
     AV1MV mvBest = *mv;
     int32_t costBest = *cost;
     int32_t mvCostBest = *mvCost;
-    /*
+
     if (hadamardMe == 2) {
         // when satd is for subpel only need to recalculate cost for intpel motion vector
         costBest = AV1PP::satd(src, pitchSrc, refY, pitchRef, log2w, log2h) >> costShift;
@@ -666,65 +644,80 @@ void MeSubPelBatchedBox(const AV1MEInfo *meInfo,
 
         // interpolate vertical quater-pels
         if (dx == 0) // best halfpel is intpel or ver-halfpel
-            InterpVer(refY + (hpely - 5 >> 2) * pitchRef, pitchRef, subpel, pitchQpel, 3 - dy, w, h, 6, 32, bitDepth, preAvgTmpBuf);                             // hpx+0 hpy-1/4
+            //InterpVer(refY + (hpely - 5 >> 2) * pitchRef, pitchRef, subpel, pitchQpel, 3 - dy, w, h, 6, 32, bitDepth, preAvgTmpBuf);                             // hpx+0 hpy-1/4
+            AV1PP::interp_flex(refY + ((hpely - 5) >> 2) * pitchRef, pitchRef, subpel, pitchQpel, 0,(3-dy)<<1, w, h, 0, DEF_FILTER, 1);
         else // best halfpel is hor-halfpel or diag-halfpel
-            InterpVer(tmpHor2 + (hpelx >> 2) + (hpely - 1 >> 2) * pitchTmp2, pitchTmp2, subpel, pitchQpel, 3 - dy, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx+0 hpy-1/4
+            //InterpVer(tmpHor2 + (hpelx >> 2) + (hpely - 1 >> 2) * pitchTmp2, pitchTmp2, subpel, pitchQpel, 3 - dy, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx+0 hpy-1/4
+            AV1PP::interp_flex(tmpHor2 + (hpelx >> 2) + ((hpely - 1) >> 2) * pitchTmp2, pitchTmp2, subpel, pitchQpel, 0, (3 - dy) << 1, w, h, 0, DEF_FILTER, 1);
         costs[1] = costFunc(src, pitchSrc, subpel, pitchQpel, log2w, log2h) >> costShift;
 
         // interpolate vertical qpels
         if (dx == 0) // best halfpel is intpel or ver-halfpel
-            InterpVer(refY + (hpely - 3 >> 2) * pitchRef, pitchRef, subpel, pitchQpel, dy + 1, w, h, 6, 32, bitDepth, preAvgTmpBuf);                             // hpx+0 hpy+1/4
+            //InterpVer(refY + (hpely - 3 >> 2) * pitchRef, pitchRef, subpel, pitchQpel, dy + 1, w, h, 6, 32, bitDepth, preAvgTmpBuf);                             // hpx+0 hpy+1/4
+            AV1PP::interp_flex(refY + ((hpely - 3) >> 2) * pitchRef, pitchRef, subpel, pitchQpel, 0, (dy + 1) << 1, w, h, 0, DEF_FILTER, 1);
         else // best halfpel is hor-halfpel or diag-halfpel
-            InterpVer(tmpHor2 + (hpelx >> 2) + (hpely + 1 >> 2) * pitchTmp2, pitchTmp2, subpel, pitchQpel, dy + 1, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx+0 hpy+1/4
+            //InterpVer(tmpHor2 + (hpelx >> 2) + (hpely + 1 >> 2) * pitchTmp2, pitchTmp2, subpel, pitchQpel, dy + 1, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx+0 hpy+1/4
+            AV1PP::interp_flex(tmpHor2 + (hpelx >> 2) + ((hpely + 1) >> 2) * pitchTmp2, pitchTmp2, subpel, pitchQpel, 0, (dy + 1) << 1, w, h, 0, DEF_FILTER, 1);
         costs[5] = costFunc(src, pitchSrc, subpel, pitchQpel, log2w, log2h) >> costShift;
 
         // intermediate horizontal quater-pels (left of best half-pel)
         int32_t pitchTmp1 = (w + 15) & ~15;
-        int16_t *tmpHor1 = tmpPels + 3 * pitchTmp1;
-        InterpHor(refY - 4 * pitchRef + (hpelx - 5 >> 2), pitchRef, tmpPels, pitchTmp1, 3 - dx, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);  // hpx-1/4 hpy+0 (intermediate)
+        PixType *tmpHor1 = tmpPels + 3 * pitchTmp1;
+        //InterpHor(refY - 4 * pitchRef + (hpelx - 5 >> 2), pitchRef, tmpPels, pitchTmp1, 3 - dx, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);  // hpx-1/4 hpy+0 (intermediate)
+        AV1PP::interp_flex(refY - 4 * pitchRef + ((hpelx - 5) >> 2), pitchRef, tmpPels, pitchTmp1, (3-dx)<<1, 0, w, h + 8, 0, DEF_FILTER, 1);
 
         // interpolate horizontal quater-pels (left of best half-pel)
-        if (dy == 0) // best halfpel is intpel or hor-halfpel
-        {}//h265_InterpLumaPack(tmpHor1 + pitchTmp1, pitchTmp1, subpel, pitchHpel, w, h, bitDepth); // hpx-1/4 hpy+0
-        else // best halfpel is vert-halfpel or diag-halfpel
-            InterpVer(tmpHor1 + (hpely >> 2) * pitchTmp1, pitchTmp1, subpel, pitchQpel, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx-1/4 hpy+0
-        costs[7] = costFunc(src, pitchSrc, subpel, pitchQpel, log2w, log2h) >> costShift;
+        if (dy == 0) { // best halfpel is intpel or hor-halfpel
+            //h265_InterpLumaPack(tmpHor1 + pitchTmp1, pitchTmp1, subpel, pitchHpel, w, h, bitDepth); // hpx-1/4 hpy+0
+            costs[7] = costFunc(src, pitchSrc, tmpHor1 + pitchTmp1, pitchTmp1, log2w, log2h) >> costShift;
+        }
+        else {// best halfpel is vert-halfpel or diag-halfpel
+            //InterpVer(tmpHor1 + (hpely >> 2) * pitchTmp1, pitchTmp1, subpel, pitchQpel, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx-1/4 hpy+0
+            AV1PP::interp_flex(tmpHor1 + (hpely >> 2) * pitchTmp1, pitchTmp1, subpel, pitchQpel, 0, (dy) << 1, w, h, 0, DEF_FILTER, 1);
+            costs[7] = costFunc(src, pitchSrc, subpel, pitchQpel, log2w, log2h) >> costShift;
+        }
 
         // interpolate 2 diagonal quater-pels (left-top and left-bottom of best half-pel)
-        InterpVer(tmpHor1 + (hpely - 1 >> 2) * pitchTmp1, pitchTmp1, subpel, pitchQpel, 3 - dy, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx-1/4 hpy-1/4
+        //InterpVer(tmpHor1 + (hpely - 1 >> 2) * pitchTmp1, pitchTmp1, subpel, pitchQpel, 3 - dy, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx-1/4 hpy-1/4
+        AV1PP::interp_flex(tmpHor1 + ((hpely - 1) >> 2) * pitchTmp1, pitchTmp1, subpel, pitchQpel, 0, (3-dy) << 1, w, h, 0, DEF_FILTER, 1);
         costs[0] = costFunc(src, pitchSrc, subpel, pitchQpel, log2w, log2h) >> costShift;
-        InterpVer(tmpHor1 + (hpely + 1 >> 2) * pitchTmp1, pitchTmp1, subpel, pitchQpel, dy + 1, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx-1/4 hpy+1/4
+        //InterpVer(tmpHor1 + (hpely + 1 >> 2) * pitchTmp1, pitchTmp1, subpel, pitchQpel, dy + 1, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx-1/4 hpy+1/4
+        AV1PP::interp_flex(tmpHor1 + ((hpely + 1) >> 2) * pitchTmp1, pitchTmp1, subpel, pitchQpel, 0, (dy+1) << 1, w, h, 0, DEF_FILTER, 1);
         costs[6] = costFunc(src, pitchSrc, subpel, pitchQpel, log2w, log2h) >> costShift;
 
         // intermediate horizontal quater-pels (right of best half-pel)
         int32_t pitchTmp3 = (w + 15) & ~15;
-        int16_t *tmpHor3 = tmpPels + 3 * pitchTmp3;
-        InterpHor(refY - 4 * pitchRef + (hpelx - 3 >> 2), pitchRef, tmpPels, pitchTmp3, dx + 1, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);  // hpx+1/4 hpy+0 (intermediate)
+        PixType *tmpHor3 = tmpPels + 3 * pitchTmp3;
+        //InterpHor(refY - 4 * pitchRef + (hpelx - 3 >> 2), pitchRef, tmpPels, pitchTmp3, dx + 1, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);  // hpx+1/4 hpy+0 (intermediate)
+        AV1PP::interp_flex(refY - 4 * pitchRef + ((hpelx - 3) >> 2), pitchRef, tmpPels, pitchTmp3, (dx+1) << 1, 0, w, h + 8, 0, DEF_FILTER, 1);
 
         // interpolate horizontal quater-pels (right of best half-pel)
-        if (dy == 0) // best halfpel is intpel or hor-halfpel
-        {}//h265_InterpLumaPack(tmpHor3 + pitchTmp3, pitchTmp3, subpel, pitchHpel, w, h, bitDepth); // hpx+1/4 hpy+0
-        else // best halfpel is vert-halfpel or diag-halfpel
-            InterpVer(tmpHor3 + (hpely >> 2) * pitchTmp3, pitchTmp3, subpel, pitchQpel, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx+1/4 hpy+0
-        costs[3] = costFunc(src, pitchSrc, subpel, pitchQpel, log2w, log2h) >> costShift;
-
+        if (dy == 0) {// best halfpel is intpel or hor-halfpel
+            //h265_InterpLumaPack(tmpHor3 + pitchTmp3, pitchTmp3, subpel, pitchHpel, w, h, bitDepth); // hpx+1/4 hpy+0
+            costs[3] = costFunc(src, pitchSrc, tmpHor3 + pitchTmp3, pitchTmp3, log2w, log2h) >> costShift;
+        } else {// best halfpel is vert-halfpel or diag-halfpel
+            //InterpVer(tmpHor3 + (hpely >> 2) * pitchTmp3, pitchTmp3, subpel, pitchQpel, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx+1/4 hpy+0
+            AV1PP::interp_flex(tmpHor3 + (hpely >> 2) * pitchTmp3, pitchTmp3, subpel, pitchQpel, 0, (dy) << 1, w, h, 0, DEF_FILTER, 1);
+            costs[3] = costFunc(src, pitchSrc, subpel, pitchQpel, log2w, log2h) >> costShift;
+        }
         // interpolate 2 diagonal quater-pels (right-top and right-bottom of best half-pel)
-        InterpVer(tmpHor3 + (hpely - 1 >> 2) * pitchTmp3, pitchTmp3, subpel, pitchQpel, 3 - dy, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx+1/4 hpy-1/4
+        //InterpVer(tmpHor3 + (hpely - 1 >> 2) * pitchTmp3, pitchTmp3, subpel, pitchQpel, 3 - dy, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx+1/4 hpy-1/4
+        AV1PP::interp_flex(tmpHor3 + ((hpely - 1) >> 2) * pitchTmp3, pitchTmp3, subpel, pitchQpel, 0, (3-dy) << 1, w, h, 0, DEF_FILTER, 1);
         costs[2] = costFunc(src, pitchSrc, subpel, pitchQpel, log2w, log2h) >> costShift;
-        InterpVer(tmpHor3 + (hpely + 1 >> 2) * pitchTmp3, pitchTmp3, subpel, pitchQpel, dy + 1, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx+1/4 hpy+1/4
+        //InterpVer(tmpHor3 + (hpely + 1 >> 2) * pitchTmp3, pitchTmp3, subpel, pitchQpel, dy + 1, w, h, shift, offset, bitDepth, preAvgTmpBuf); // hpx+1/4 hpy+1/4
+        AV1PP::interp_flex(tmpHor3 + ((hpely + 1) >> 2) * pitchTmp3, pitchTmp3, subpel, pitchQpel, 0, (dy+1) << 1, w, h, 0, DEF_FILTER, 1);
         costs[4] = costFunc(src, pitchSrc, subpel, pitchQpel, log2w, log2h) >> costShift;
 
         AddMvCost(0, costs, &mvBest, &costBest, &mvCostBest, patternSubPel);
     }
-    */
+
     *cost = costBest;
     *mvCost = mvCostBest;
     *mv = mvBest;
 
     // second metric
     if (cost_satd) {
-        int32_t useHadamard = 1;
-        *cost_satd = MatchingMetricPu(src, pitchSrc, ref, meInfo, &mvBest, useHadamard, pelX, pelY);
+        *cost_satd = MatchingMetricPu(src, pitchSrc, ref, meInfo, &mvBest, 1, pelX, pelY);
     }
 }
 
@@ -850,7 +843,7 @@ void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* re
 
         AV1MV mv = {0, 0};
         int32_t cost = INT_MAX;
-        int32_t cost_satd = 0;
+        //int32_t cost_satd = 0;
         int32_t mvCost = 0;//INT_MAX;
 
         if (isRefine) {
@@ -894,23 +887,23 @@ void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* re
             }
             //---------
             if (bitDepth8) {
-                MeIntPelLog_Refine<uint8_t>(curr, ref, x, y, &mv, &cost, satd ? (&cost_satd) : NULL, &mvCost, sizeBlk);
-                /*uint8_t *src = curr->y + x + y * curr->pitch_luma_pix;
+                //MeIntPelLog_Refine<uint8_t>(curr, ref, x, y, &mv, &cost, satd ? (&cost_satd) : NULL, &mvCost, sizeBlk);
+                uint8_t *src = curr->y + x + y * curr->pitch_luma_pix;
                 int32_t refOffset = x + (mv.mvx >> 2) + (y + (mv.mvy >> 2)) * ref->pitch_luma_pix;
                 const uint8_t *rec = ref->y + refOffset;
-                int32_t pitchRec = ref->pitch_luma_pix;
+                //int32_t pitchRec = ref->pitch_luma_pix;
                 cost = AV1PP::sad_general(src, curr->pitch_luma_pix, rec, ref->pitch_luma_pix, LOG2_SIZE_BLK_LA, LOG2_SIZE_BLK_LA);
-                mvCost = 0;*/
+                mvCost = 0;
             }
             else
             {
-                MeIntPelLog_Refine<uint16_t>(curr, ref, x, y, &mv, &cost, satd ? (&cost_satd) : NULL, &mvCost, sizeBlk);
-                /*uint16_t *src = (uint16_t *)curr->y + x + y * curr->pitch_luma_pix;
+                //MeIntPelLog_Refine<uint16_t>(curr, ref, x, y, &mv, &cost, satd ? (&cost_satd) : NULL, &mvCost, sizeBlk);
+                uint16_t *src = (uint16_t *)curr->y + x + y * curr->pitch_luma_pix;
                 int32_t refOffset = x + (mv.mvx >> 2) + (y + (mv.mvy >> 2)) * ref->pitch_luma_pix;
                 const uint16_t *rec = (uint16_t *)ref->y + refOffset;
-                int32_t pitchRec = ref->pitch_luma_pix;
+                //int32_t pitchRec = ref->pitch_luma_pix;
                 cost = AV1PP::sad_general(src, curr->pitch_luma_pix, rec, ref->pitch_luma_pix, LOG2_SIZE_BLK_LA, LOG2_SIZE_BLK_LA);
-                mvCost = 0;*/
+                mvCost = 0;
             }
 
         } else {
@@ -1019,7 +1012,6 @@ int64_t Scale(FrameData* in, FrameData* out)
     const PixType *pixIn = (const PixType *)in->y;
     PixType *pixOut = (PixType *)out->y;
     int32_t widthOrig  = in->width;
-    int32_t heightOrig = in->height;
 
     int32_t widthOut  = out->width;
     int32_t heightOut = out->height;
@@ -1133,10 +1125,8 @@ enum {
 
 // CalcRsCs_OneRow()  works with blk_8x8. (SIZE_BLK_LA)
 template <class PixType>
-void CalcRsCs_OneRow(FrameData* data, Statistics* stat, AV1VideoParam& par, int32_t row)
+void CalcRsCs_OneRow(FrameData* data, Statistics* stat, AV1VideoParam& par, int32_t startRow, int32_t numRows)
 {
-    int32_t locx, locy;
-
     const int32_t RsCsSIZE = BLOCK_SIZE*BLOCK_SIZE;
     int32_t hblocks = (int32_t)data->height / BLOCK_SIZE;
     int32_t wblocks = (int32_t)data->width / BLOCK_SIZE;
@@ -1145,10 +1135,10 @@ void CalcRsCs_OneRow(FrameData* data, Statistics* stat, AV1VideoParam& par, int3
     stat->m_frameRs = 0.0;
 
     int32_t pitch = data->pitch_luma_pix;
-    int32_t pitchRsCs4 = stat->m_pitchRsCs4;
+    int32_t pitchRsCs4 = stat->m_pitchRsCs[0];
 
-    int32_t iStart = (/*par.MaxCUSize*/ SIZE_BLK_LA / BLOCK_SIZE) * row;
-    int32_t iEnd  = (/*par.MaxCUSize*/ SIZE_BLK_LA / BLOCK_SIZE) * (row + 1);
+    int32_t iStart = (/*par.MaxCUSize*/ SIZE_BLK_LA / BLOCK_SIZE) * startRow;
+    int32_t iEnd  = (/*par.MaxCUSize*/ SIZE_BLK_LA / BLOCK_SIZE) * (startRow + numRows);
     iEnd = std::min(iEnd, hblocks);
 
     for (int32_t j = 0; j < wblocks; j += 16) {
@@ -1235,213 +1225,7 @@ struct isEqualRefFrame
     }
 };
 
-void AV1Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, AV1VideoParam& videoParam)
-{
-    static const float lmt_sc2[10] = { // lower limit of SFM(Rs,Cs) range for spatial classification
-        4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, static_cast<float>(INT_MAX) };
-    const int32_t futr_qp = MAX_DQP;
-    assert(videoParam.Log2MaxCUSize == 6);
-    Frame* inFrame = *curr;
-    AV1MV candMVs[(64 / 8)*(64 / 8)];
-    int32_t LowresFactor = 0;
-#ifdef LOW_COMPLX_PAQ
-    LowresFactor = videoParam.LowresFactor;
-#endif
-    int32_t lowRes = LowresFactor ? 1 : 0;
-    int32_t log2SubBlk = 3 + LowresFactor;
-    int32_t widthInSubBlks = videoParam.Width >> 3;
-    if (lowRes) {
-        widthInSubBlks = (inFrame->m_lowres->width + SIZE_BLK_LA - 1) / SIZE_BLK_LA;
-    }
-    uint8_t bitDepthLuma = inFrame->m_bitDepthLuma;
 
-    int32_t heightInCtbs = (int32_t)videoParam.PicHeightInCtbs;
-    int32_t widthInCtbs = (int32_t)videoParam.PicWidthInCtbs;
-
-    bool futr_key = false;
-    int32_t REF_DIST = 8;
-
-    FrameIter it1 = ++FrameIter(curr);
-    Frame* futr_frame = inFrame;
-    for (FrameIter it = it1; it != end; it++) {
-        if (*it) {
-            futr_frame = *it;
-            if (futr_frame->m_picCodeType == MFX_FRAMETYPE_I) {
-                futr_key = true;
-            }
-        }
-    }
-    REF_DIST = std::min(8, (inFrame->m_frameOrder - futr_frame->m_frameOrder));
-
-    for (int32_t row = 0; row<heightInCtbs; row++) {
-        for (int32_t col = 0; col<widthInCtbs; col++) {
-            int32_t pelX = col * videoParam.MaxCUSize;
-            int32_t pelY = row * videoParam.MaxCUSize;
-            //int32_t MaxDepth = 0; // std::min((int32_t)videoParam.Log2MaxCUSize - log2SubBlk, videoParam.MaxCuDQPDepth);
-
-            //for (int32_t depth = 0; depth <= MaxDepth; depth++)
-            { // 64x64 -> 8x8
-                int32_t log2BlkSize = videoParam.Log2MaxCUSize;// -depth;
-                int32_t pitchRsCs = inFrame->m_stats[0]->m_pitchRsCs4 >> (log2BlkSize - 2);
-                int32_t blkSize = 1 << log2BlkSize;
-                int32_t width = std::min(64, videoParam.Width - pelX);
-                int32_t height = std::min(64, videoParam.Height - pelY);
-                for (int32_t y = 0; y < height; y += blkSize) {
-                    for (int32_t x = 0; x < width; x += blkSize) {
-                        int32_t idx = ((pelY + y) >> log2BlkSize)*pitchRsCs + ((pelX + x) >> log2BlkSize);
-                        float Rs2 = inFrame->m_stats[0]->m_rs[log2BlkSize - 2][idx];
-                        float Cs2 = inFrame->m_stats[0]->m_cs[log2BlkSize - 2][idx];
-                        int32_t blkW4 = std::min(blkSize, width - x) >> 2;
-                        int32_t blkH4 = std::min(blkSize, height - y) >> 2;
-                        int32_t numSubBlkw = blkW4 >> (log2SubBlk - 2);
-                        int32_t numSubBlkh = blkH4 >> (log2SubBlk - 2);
-#ifdef LOW_COMPLX_PAQ
-                        if (numSubBlkh*(1 << log2SubBlk) < height || numSubBlkw*(1 << log2SubBlk) < width) {
-                            int32_t widthInTiles = widthInCtbs; // << depth;
-                            int32_t off = ((pelY + y)*widthInTiles + (pelX + x)) >> log2BlkSize;
-                            //inFrame->m_stats[0]->coloc_futr[depth][off] = 0;
-                            //inFrame->m_stats[0]->qp_mask[depth][off] = 0;
-                            inFrame->m_stats[0]->coloc_futr[off] = 0;
-                            inFrame->m_stats[0]->qp_mask[off] = 0;
-                            continue;
-                        }
-#endif
-                        Rs2 /= (blkW4*blkH4);
-                        Cs2 /= (blkW4*blkH4);
-                        float SC = sqrt(Rs2 + Cs2);
-                        //float tsc_RTML = 0.6f*sqrt(SC / (1 << (bitDepthLuma - 8)))*(1 << (bitDepthLuma - 8));
-//#ifdef LOW_COMPLX_PAQ
-                        //if (lowRes) tsc_RTML *= 1.1f;
-//#endif
-                        //float tsc_RTMG = std::min(2 * tsc_RTML, SC / 1.414f);
-                        //float tsc_RTS = std::min(3 * tsc_RTML, SC / 1.414f);
-                        int scVal = 0;
-                        for (int32_t i = 0; i < 10; i++) {
-                            if (SC < lmt_sc2[i] * (float)(1 << (bitDepthLuma - 8))) {
-                                scVal = i;
-                                break;
-                            }
-                        }
-
-                        // Modification for integer ME
-                        SC /= 1.414f;
-                        float tsc_RTML = 0.6f*SC;
-                        float tsc_RTMG = SC;
-                        float tsc_RTS = 1.4 * SC;
-
-                        FrameIter itStart = ++FrameIter(curr);
-                        int coloc = 0;
-                        float pdsad_futr = 0.0f;
-                        for (FrameIter it = itStart; it != end; it++) {
-                            Statistics* stat = (*it)->m_stats[lowRes];
-                            int uMVnum = 0;
-                            float psad_futr = 0.0f;
-                            for (int32_t i = 0; i<numSubBlkh; i++) {
-                                for (int32_t j = 0; j<numSubBlkw; j++) {
-                                    int32_t off = (((pelY + y) >> (log2SubBlk)) + i) * widthInSubBlks + ((pelX + x) >> (log2SubBlk)) + j;
-                                    psad_futr += stat->m_interSad[off];
-                                    AddCandidate(&stat->m_mv[off], &uMVnum, candMVs);
-                                }
-                            }
-                            psad_futr /= (blkW4*blkH4) << 4;
-
-                            if (psad_futr < tsc_RTML && uMVnum < 1 + std::max(1, (numSubBlkh*numSubBlkw) / 2))
-                                coloc++;
-                            else
-                                break;
-                        }
-                        pdsad_futr = 0.0f;
-#ifdef LOW_COMPLX_PAQ
-                        if (itStart != end) {
-                            float sadFrm[17] = { 0 };
-                            float sadSum = 0;
-                            float sadMax = 0;
-                            int32_t sadCnt = 0;
-                            for (FrameIter it = itStart; it != end; it++) {
-                                Statistics* stat = (*it)->m_stats[lowRes];
-                                int uMVnum = 0;
-                                float psad_futr = 0.0f;
-                                for (int32_t i = 0; i < numSubBlkh; i++) {
-                                    for (int32_t j = 0; j < numSubBlkw; j++) {
-                                        int32_t off = (((pelY + y) >> (log2SubBlk)) + i) * widthInSubBlks + ((pelX + x) >> (log2SubBlk)) + j;
-                                        psad_futr += stat->m_interSad[off];
-                                    }
-                                }
-                                psad_futr /= (blkW4*blkH4) << 4;
-                                sadFrm[sadCnt] = psad_futr;
-                                sadCnt++;
-                                sadSum += psad_futr;
-                            }
-                            float sadAvg = sadSum / sadCnt;
-                            int32_t numSadHigh = 0;
-                            for (int fri = 0; fri < sadCnt; fri++) {
-                                if (sadFrm[fri] > sadAvg) numSadHigh++;
-                            }
-                            if (numSadHigh == 1) {
-                                pdsad_futr = sadMax;
-                            }
-                            else {
-                                pdsad_futr = sadAvg * 2;
-                            }
-                        }
-#else
-                        for (int32_t i = 0; i<numSubBlkh; i++) {
-                            for (int32_t j = 0; j<numSubBlkw; j++) {
-                                int32_t off = (((pelY + y) >> log2SubBlk) + i) * widthInSubBlks + ((pelX + x) >> log2SubBlk) + j;
-                                pdsad_futr += inFrame->m_stats[lowRes]->m_interSad_pdist_future[off];
-                            }
-                        }
-                        pdsad_futr /= (blkW4*blkH4) << 4;
-#endif
-
-                        if (itStart == end) {
-                            pdsad_futr = tsc_RTS;
-                            coloc = 0;
-                        }
-
-                        int32_t widthInTiles = videoParam.PicWidthInCtbs; // << depth;
-                        int32_t off = ((pelY + y)*widthInTiles + (pelX + x)) >> log2BlkSize;
-                        //inFrame->m_stats[0]->coloc_futr[depth][off] = coloc;
-                        inFrame->m_stats[0]->coloc_futr[off] = coloc;
-
-                        //int32_t &qp_mask = inFrame->m_stats[0]->qp_mask[depth][off];
-                        int32_t &qp_mask = inFrame->m_stats[0]->qp_mask[off];
-                        if (scVal<1 && pdsad_futr<tsc_RTML) {
-                            // Visual Quality (Flat area first, because coloc count doesn't work in flat areas)
-                            coloc = 1;
-                            qp_mask = -1 * coloc;
-                        }
-                        else {
-                            if (futr_key) {
-                                coloc = std::min(REF_DIST / 2, coloc);
-                            }
-                            if (coloc >= 8 && pdsad_futr<tsc_RTML) {
-                                // Stable Motion, Propagation & Motion reuse (long term stable hypothesis, 8+=>inf)
-                                qp_mask = -1 * std::min(futr_qp, (int32_t)(((float)coloc / 8.f)*futr_qp));
-                            }
-                            else if (coloc >= 8 && pdsad_futr<tsc_RTMG) {
-                                // Stable Motion, Propagation possible & Motion reuse
-                                qp_mask = -1 * std::min(futr_qp, (int32_t)(((float)coloc / 8.f)*4.f));
-                            }
-                            else if (coloc>1 && pdsad_futr<tsc_RTMG) {
-                                // Stable Motion & Motion reuse
-                                qp_mask = -1 * std::min(4, (int32_t)(((float)coloc / 8.f)*4.f));
-                            }
-                            else if (scVal >= 6 && pdsad_futr>tsc_RTS) {
-                                // Reduce disproportional cost on high texture and bad motion
-                                qp_mask = 1;
-                            }
-                            else {
-                                // Default
-                                qp_mask = 0;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 /*
 void AV1Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, AV1VideoParam& videoParam)
 {
@@ -1571,281 +1355,7 @@ void AV1Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, AV1VideoParam&
     }
 }*/
 
-void AV1Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter end, AV1VideoParam & videoParam)
-{
-    static const float lmt_sc2[10] = { // lower limit of SFM(Rs,Cs) range for spatial classification
-        4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, static_cast<float>(INT_MAX) };
-    FrameIter itCurr = curr;
-    Frame* inFrame = *curr;
-    Frame* past_frame = *begin;
-    const float futr_qp = MAX_DQP;
-    const int32_t REF_DIST = std::min(8, (inFrame->m_frameOrder - past_frame->m_frameOrder));
-    AV1MV candMVs[(64 / 8)*(64 / 8)];
-    int32_t LowresFactor = 0;
-#ifdef LOW_COMPLX_PAQ
-    LowresFactor = videoParam.LowresFactor;
-#endif
-    int32_t lowRes = LowresFactor ? 1 : 0;
-    int32_t log2SubBlk = 3 + LowresFactor;
-    int32_t widthInSubBlks = videoParam.Width >> 3;
-    if (lowRes) {
-        widthInSubBlks = (inFrame->m_lowres->width + SIZE_BLK_LA - 1) / SIZE_BLK_LA;
-    }
-    uint8_t bitDepthLuma = inFrame->m_bitDepthLuma;
-    int32_t heightInCtbs = (int32_t)videoParam.PicHeightInCtbs;
-    int32_t widthInCtbs = (int32_t)videoParam.PicWidthInCtbs;
 
-    bool futr_key = false;
-    FrameIter it1 = ++FrameIter(curr);
-    for (FrameIter it = it1; it != end; it++) {
-        if (*it && (*it)->m_picCodeType == MFX_FRAMETYPE_I) {
-            futr_key = true;
-            break;
-        }
-    }
-
-    for (int32_t row = 0; row<heightInCtbs; row++) {
-        for (int32_t col = 0; col<widthInCtbs; col++) {
-            int32_t pelX = col * videoParam.MaxCUSize;
-            int32_t pelY = row * videoParam.MaxCUSize;
-            //int32_t MaxDepth = std::min((int32_t)videoParam.Log2MaxCUSize - log2SubBlk, videoParam.MaxCuDQPDepth);
-            //for (int32_t depth = 0; depth <= MaxDepth; depth++)
-            { // 64x64
-                int32_t log2BlkSize = videoParam.Log2MaxCUSize; // -depth;
-                int32_t pitchRsCs = inFrame->m_stats[0]->m_pitchRsCs4 >> (log2BlkSize - 2);
-                int32_t blkSize = 1 << log2BlkSize;
-                int32_t width = std::min(64, videoParam.Width - pelX);
-                int32_t height = std::min(64, videoParam.Height - pelY);
-                for (int32_t y = 0; y < height; y += blkSize) {
-                    for (int32_t x = 0; x < width; x += blkSize) {
-                        int32_t idx = ((pelY + y) >> log2BlkSize)*pitchRsCs + ((pelX + x) >> log2BlkSize);
-                        float Rs2 = inFrame->m_stats[0]->m_rs[log2BlkSize - 2][idx];
-                        float Cs2 = inFrame->m_stats[0]->m_cs[log2BlkSize - 2][idx];
-                        int32_t blkW4 = std::min(blkSize, width - x) >> 2;
-                        int32_t blkH4 = std::min(blkSize, height - y) >> 2;
-
-                        int32_t numSubBlkw = blkW4 >> (log2SubBlk - 2);
-                        int32_t numSubBlkh = blkH4 >> (log2SubBlk - 2);
-#ifdef LOW_COMPLX_PAQ
-                        if (numSubBlkh*(1 << log2SubBlk) < height || numSubBlkw*(1 << log2SubBlk) < width) {
-                            int32_t widthInTiles = widthInCtbs; // << depth;
-                            int32_t off = ((pelY + y)*widthInTiles + (pelX + x)) >> log2BlkSize;
-                            //inFrame->m_stats[0]->coloc_futr[depth][off] = 0;
-                            //inFrame->m_stats[0]->qp_mask[depth][off] = 0;
-                            inFrame->m_stats[0]->coloc_futr[off] = 0;
-                            inFrame->m_stats[0]->qp_mask[off] = 0;
-                            continue;
-                        }
-#endif
-
-                        Rs2 /= (blkW4*blkH4);
-                        Cs2 /= (blkW4*blkH4);
-                        float SC = sqrt(Rs2 + Cs2);
-                        //float tsc_RTML = 0.6f*sqrt(SC / (1 << (bitDepthLuma - 8)))*(1 << (bitDepthLuma - 8));
-//#ifdef LOW_COMPLX_PAQ
-                        //if (lowRes) tsc_RTML *= 1.1f;
-//#endif
-                        //float tsc_RTMG = std::min(2 * tsc_RTML, SC / 1.414f);
-                        //float tsc_RTS = std::min(3 * tsc_RTML, SC / 1.414f);
-                        int scVal = 0;
-                        for (int32_t i = 0; i < 10; i++) {
-                            if (SC < lmt_sc2[i] * (float)(1 << (bitDepthLuma - 8))) {
-                                scVal = i;
-                                break;
-                            }
-                        }
-
-                        SC /= 1.414;
-
-                        float tsc_RTML = 0.6f*SC;
-                        float tsc_RTF = tsc_RTML / 2;
-                        float tsc_RTMG = SC;
-                        float tsc_RTS = 1.4f * SC;
-
-                        // RTF RTS logic for P Frame is based on MC Error
-
-                        float pdsad_past = 0.0f;
-                        float pdsad_futr = 0.0f;
-                        FrameIter itStart = ++FrameIter(itCurr);
-#ifdef LOW_COMPLX_PAQ
-                        if (itStart != end) {
-                            float sadFrm[17] = { 0 };
-                            float sadSum = 0;
-                            float sadMax = 0;
-                            int32_t sadCnt = 0;
-                            for (FrameIter it = itStart; it != end; it++) {
-                                Statistics* stat = (*it)->m_stats[lowRes];
-                                int uMVnum = 0;
-                                float psad_futr = 0.0f;
-                                for (int32_t i = 0; i < numSubBlkh; i++) {
-                                    for (int32_t j = 0; j < numSubBlkw; j++) {
-                                        int32_t off = (((pelY + y) >> (log2SubBlk)) + i) * widthInSubBlks + ((pelX + x) >> (log2SubBlk)) + j;
-                                        psad_futr += stat->m_interSad[off];
-                                    }
-                                }
-                                psad_futr /= (blkW4*blkH4) << 4;
-                                sadFrm[sadCnt] = psad_futr;
-                                sadCnt++;
-                                sadSum += psad_futr;
-                            }
-                            float sadAvg = sadSum / sadCnt;
-                            int32_t numSadHigh = 0;
-                            for (int fri = 0; fri < sadCnt; fri++) {
-                                if (sadFrm[fri] > sadAvg) numSadHigh++;
-                            }
-                            if (numSadHigh == 1) {
-                                pdsad_futr = sadMax;
-                            }
-                            else {
-                                pdsad_futr = sadAvg * 2;
-                            }
-                        }
-                        if (itCurr != begin) {
-                            float sadFrm[17] = { 0 };
-                            float sadSum = 0;
-                            float sadMax = 0;
-                            int32_t sadCnt = 0;
-                            for (FrameIter it = itCurr; it != begin; it--) {
-                                Statistics* stat = (*it)->m_stats[lowRes];
-                                int uMVnum = 0;
-                                float psad_past = 0.0;
-                                for (int32_t i = 0; i < numSubBlkh; i++) {
-                                    for (int32_t j = 0; j < numSubBlkw; j++) {
-                                        int32_t off = (((pelY + y) >> log2SubBlk) + i) * widthInSubBlks + ((pelX + x) >> log2SubBlk) + j;
-                                        psad_past += stat->m_interSad[off];
-                                    }
-                                }
-                                psad_past /= (blkW4*blkH4) << 4;
-                                sadFrm[sadCnt] = psad_past;
-                                sadCnt++;
-                                sadSum += psad_past;
-                            }
-                            float sadAvg = sadSum / sadCnt;
-                            int32_t numSadHigh = 0;
-                            for (int fri = 0; fri < sadCnt; fri++) {
-                                if (sadFrm[fri] > sadAvg) numSadHigh++;
-                            }
-                            if (numSadHigh == 1) {
-                                pdsad_past = sadMax;
-                            }
-                            else {
-                                pdsad_past = sadAvg * 2;
-                            }
-                        }
-#else
-                        for (int32_t i = 0; i<numSubBlkh; i++) {
-                            for (int32_t j = 0; j<numSubBlkw; j++) {
-                                int32_t off = (((pelY + y) >> log2SubBlk) + i) * widthInSubBlks + ((pelX + x) >> log2SubBlk) + j;
-                                pdsad_past += inFrame->m_stats[lowRes]->m_interSad_pdist_past[off];
-                                pdsad_futr += inFrame->m_stats[lowRes]->m_interSad_pdist_future[off];
-                            }
-                        }
-                        pdsad_past /= (blkW4*blkH4) << 4;
-                        pdsad_futr /= (blkW4*blkH4) << 4;
-#endif
-                        // future (forward propagate)
-                        int32_t coloc_futr = 0;
-                        for (FrameIter it = itStart; it != end; it++) {
-                            Statistics* stat = (*it)->m_stats[lowRes];
-                            int32_t uMVnum = 0;
-                            float psad_futr = 0.0f;
-                            for (int32_t i = 0; i<numSubBlkh; i++) {
-                                for (int32_t j = 0; j<numSubBlkw; j++) {
-                                    int32_t off = (((pelY + y) >> log2SubBlk) + i) * widthInSubBlks + ((pelX + x) >> log2SubBlk) + j;
-                                    psad_futr += stat->m_interSad[off];
-                                    AddCandidate(&stat->m_mv[off], &uMVnum, candMVs);
-                                }
-                            }
-                            psad_futr /= (blkW4*blkH4) << 4;
-                            if (psad_futr < tsc_RTML && uMVnum < 1 + std::max(1, (numSubBlkh*numSubBlkw) / 2))
-                                coloc_futr++;
-                            else break;
-                        }
-
-
-                        // past (backward propagate)
-                        int32_t coloc_past = 0;
-                        for (FrameIter it = itCurr; it != begin; it--) {
-                            Statistics* stat = (*it)->m_stats[lowRes];
-                            int uMVnum = 0;
-                            float psad_past = 0.0;
-                            for (int32_t i = 0; i<numSubBlkh; i++) {
-                                for (int32_t j = 0; j<numSubBlkw; j++) {
-                                    int32_t off = (((pelY + y) >> log2SubBlk) + i) * widthInSubBlks + ((pelX + x) >> log2SubBlk) + j;
-                                    psad_past += stat->m_interSad[off];
-                                    AddCandidate(&stat->m_mv[off], &uMVnum, candMVs);
-                                }
-                            }
-                            psad_past /= (blkW4*blkH4) << 4;
-                            if (psad_past < tsc_RTML && uMVnum < 1 + std::max(1, (numSubBlkh*numSubBlkw) / 2))
-                                coloc_past++;
-                            else
-                                break;
-                        }
-
-                        if (itStart == end) {
-                            pdsad_futr = tsc_RTS;
-                            coloc_futr = 0;
-                        }
-                        if (itCurr == begin) {
-                            pdsad_past = tsc_RTS;
-                            coloc_past = 0;
-                        }
-
-                        int32_t widthInTiles = widthInCtbs; // << depth;
-                        int32_t off = ((pelY + y)*widthInTiles + (pelX + x)) >> log2BlkSize;
-                        //inFrame->m_stats[0]->coloc_futr[depth][off] = coloc_futr;
-                        inFrame->m_stats[0]->coloc_futr[off] = coloc_futr;
-                        int32_t coloc = std::max(coloc_past, coloc_futr);
-                        if (futr_key) coloc = coloc_past;
-
-                        //int32_t &qp_mask = inFrame->m_stats[0]->qp_mask[depth][off];
-                        int32_t &qp_mask = inFrame->m_stats[0]->qp_mask[off];
-                        //if (coloc_past >= REF_DIST && past_frame->m_stats[0]->coloc_futr[depth][off] >= REF_DIST) {
-                        if (coloc_past >= REF_DIST && past_frame->m_stats[0]->coloc_futr[off] >= REF_DIST) {
-                            // Stable Motion & P Skip (when GOP is small repeated P QP lowering can change RD Point)
-                            // Avoid quantization noise recoding
-                            //inFrame->qp_mask[off] = std::min(0, past_frame->qp_mask[off]+1);
-                            qp_mask = 0; // Propagate
-                        }
-                        else {
-                            if (futr_key) {
-                                coloc = std::min(REF_DIST / 2, coloc);
-                            }
-                            if (coloc >= 8 && coloc == coloc_futr && pdsad_futr<tsc_RTML) {
-                                // Stable Motion & Motion reuse
-                                qp_mask = -1 * std::min((int)futr_qp, (int)(((float)coloc / 8.0)*futr_qp));
-                            }
-                            else if (coloc >= 8 && coloc == coloc_futr && pdsad_futr<tsc_RTMG) {
-                                // Stable Motion & Motion reuse
-                                qp_mask = -1 * std::min((int)futr_qp, (int)(((float)coloc / 8.0)*4.0));
-                            }
-                            else if (coloc>1 && coloc == coloc_futr && pdsad_futr<tsc_RTMG) {
-                                // Stable Motion & Motion Reuse
-                                qp_mask = -1 * std::min(4, (int)(((float)coloc / 8.0)*4.0));
-                                // Possibly propagation
-                            }
-                            else if (coloc>1 && coloc == coloc_past && pdsad_past<tsc_RTMG) {
-                                // Stable Motion & Motion Reuse
-                                qp_mask = -1 * std::min(4, (int)(((float)coloc / 8.0)*4.0));
-                                // Past Boost probably no propagation since coloc_futr is less than coloc_past
-                            }
-                            else if (scVal >= 6 && pdsad_past>tsc_RTS && coloc == 0) {
-                                // reduce disproportional cost on high texture and bad motion
-                                // use pdsad_past since its coded a in order p frame
-                                qp_mask = 1;
-                            }
-                            else {
-                                // Default
-                                qp_mask = 0;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 /*
 void AV1Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter end, AV1VideoParam & videoParam)
 {
@@ -2073,12 +1583,12 @@ int32_t GetNumActiveRows(int32_t region_row, int32_t rowsInRegion, int32_t picHe
 }
 
 
-Frame* AV1Enc::GetPrevAnchor(FrameIter begin, FrameIter end, const Frame* curr)
+const Frame* AV1Enc::GetPrevAnchor(ConstFrameIter begin, ConstFrameIter end, const Frame* curr)
 {
-    FrameIter itCurr = std::find_if(begin, end, isEqual(curr->m_frameOrder));
+    ConstFrameIter itCurr = std::find_if(begin, end, isEqual(curr->m_frameOrder));
 
-    Frame* prevP = NULL;
-    for (FrameIter it = begin; it != itCurr; it++) {
+    const Frame* prevP = NULL;
+    for (ConstFrameIter it = begin; it != itCurr; it++) {
         if ((*it)->m_picCodeType == MFX_FRAMETYPE_P ||
             (*it)->m_picCodeType == MFX_FRAMETYPE_I) {
                 prevP = (*it);
@@ -2088,10 +1598,10 @@ Frame* AV1Enc::GetPrevAnchor(FrameIter begin, FrameIter end, const Frame* curr)
     return prevP;
 }
 
-Frame* AV1Enc::GetNextAnchor(FrameIter curr, FrameIter end)
+const Frame* AV1Enc::GetNextAnchor(ConstFrameIter curr, ConstFrameIter end)
 {
-    Frame *nextP = NULL;
-    FrameIter it = std::find_if(++curr, end, isEqualRefFrame());
+    const Frame *nextP = NULL;
+    ConstFrameIter it = std::find_if(++curr, end, isEqualRefFrame());
     if (it != end)
         nextP = (*it);
 
@@ -2099,63 +1609,9 @@ Frame* AV1Enc::GetNextAnchor(FrameIter curr, FrameIter end)
 }
 
 
-void AV1Enc::DoPDistInterAnalysis_OneRow(Frame* curr, Frame* prevP, Frame* nextP, int32_t region_row, int32_t lowresRowsInRegion, int32_t originRowsInRegion, uint8_t LowresFactor, uint8_t FullresMetrics)
-{
-    FrameData* currFrame  = LowresFactor ? curr->m_lowres : curr->m_origin;
-    Statistics* stat = curr->m_stats[LowresFactor ? 1 : 0];
-
-    // compute (PDist = miniGopSize) Past ME
-    if (prevP) {
-        FrameData * prevFrame = LowresFactor ? prevP->m_lowres : prevP->m_origin;
-        int32_t rowsInRegion = LowresFactor ? lowresRowsInRegion : originRowsInRegion;
-        int32_t numActiveRows = GetNumActiveRows(region_row, rowsInRegion, prevFrame->height);
-        for (int32_t i = 0; i < numActiveRows; i++) {
-            DoInterAnalysis_OneRow(currFrame, NULL, prevFrame, &stat->m_interSad_pdist_past[0], NULL, &stat->m_mv_pdist_past[0], 0, 2, LowresFactor, curr->m_bitDepthLuma, (region_row * rowsInRegion) + i,
-                FullresMetrics ? curr->m_origin : NULL,
-                FullresMetrics ? prevP->m_origin : NULL);
-        }
-#ifndef LOW_COMPLX_PAQ
-        if (LowresFactor) {
-            FrameData* currFrame  = curr->m_origin;
-            FrameData * prevFrame = prevP->m_origin;
-
-            int32_t rowsInRegion = originRowsInRegion;
-            int32_t numActiveRows = GetNumActiveRows(region_row, rowsInRegion, prevFrame->height);
-            for(int32_t i=0;i<numActiveRows;i++) {
-                DoInterAnalysis_OneRow(currFrame, stat, prevFrame, &curr->m_stats[0]->m_interSad_pdist_past[0], NULL, &curr->m_stats[0]->m_mv_pdist_past[0], 1, 2, LowresFactor, curr->m_bitDepthLuma, (region_row * rowsInRegion)+i); // refine
-            }
-
-        }
-#endif
-    }
-
-    // compute (PDist = miniGopSize) Future ME
-    if (nextP) {
-        FrameData* nextFrame = LowresFactor ? nextP->m_lowres : nextP->m_origin;
-        int32_t rowsInRegion = LowresFactor ? lowresRowsInRegion : originRowsInRegion;
-        int32_t numActiveRows = GetNumActiveRows(region_row, rowsInRegion, nextFrame->height);
-        for (int32_t i = 0; i < numActiveRows; i++) {
-            DoInterAnalysis_OneRow(currFrame, NULL, nextFrame, &stat->m_interSad_pdist_future[0], NULL, &stat->m_mv_pdist_future[0], 0, 1, LowresFactor, curr->m_bitDepthLuma, (region_row * rowsInRegion) + i,
-                FullresMetrics ? curr->m_origin : NULL,
-                FullresMetrics ? nextP->m_origin : NULL);
-        }
-#ifndef LOW_COMPLX_PAQ
-        if (LowresFactor) {
-            FrameData* currFrame = curr->m_origin;
-            FrameData* nextFrame = nextP->m_origin;
-
-            int32_t rowsInRegion = originRowsInRegion;
-            int32_t numActiveRows = GetNumActiveRows(region_row, rowsInRegion, nextFrame->height);
-            for(int32_t i=0;i<numActiveRows;i++) {
-                DoInterAnalysis_OneRow(currFrame, stat, nextFrame, &curr->m_stats[0]->m_interSad_pdist_future[0], NULL, &curr->m_stats[0]->m_mv_pdist_future[0], 1, 1,LowresFactor, curr->m_bitDepthLuma, (region_row * rowsInRegion) + i);//refine
-            }
-        }
-#endif
-    }
-}
 
 
-void AV1Enc::BackPropagateAvgTsc(FrameIter prevRef, FrameIter currRef)
+void AV1Enc::BackPropagateAvgTsc(ConstFrameIter prevRef, ConstFrameIter currRef)
 {
     Frame* input = *currRef;
 
@@ -2169,10 +1625,10 @@ void AV1Enc::BackPropagateAvgTsc(FrameIter prevRef, FrameIter currRef)
     float avgTSC     = 0.0;
     float avgsqrSCpp = 0.0;
 
-    for (FrameIter it = currRef; it != prevRef; it--) {
+    for (ConstFrameIter it = currRef; it != prevRef; it--) {
         Statistics* stat = (*it)->m_stats[0];
-        avgTSC     += stat->TSC;
-        avgsqrSCpp += stat->SC;
+        avgTSC     += (float)stat->TSC;
+        avgsqrSCpp += (float)stat->SC;
         gop_size++;
     }
 
@@ -2185,7 +1641,7 @@ void AV1Enc::BackPropagateAvgTsc(FrameIter prevRef, FrameIter currRef)
     avgsqrSCpp/=sqrt((float)(frameSize));
     avgsqrSCpp = sqrt(avgsqrSCpp);
 
-    for (FrameIter it = currRef; it != prevRef; it--) {
+    for (ConstFrameIter it = currRef; it != prevRef; it--) {
         Statistics* stats = (*it)->m_stats[0];
         stats->avgTSC = avgTSC;
         stats->avgsqrSCpp = avgsqrSCpp;
@@ -2261,14 +1717,14 @@ int Lookahead::ConfigureLookaheadFrame(Frame* in, int32_t fieldNum)
     }
 
     if (fieldNum == 0 && in) {
-        std::vector<ThreadingTask> &tt = in->m_ttLookahead;
+        ThreadingTask* tt = in->m_ttLookahead;
         int32_t poc = in->m_frameOrder;
 
         size_t startIdx = 0;
         tt[startIdx].Init(TT_PREENC_START, 0, 0, poc, 1, 0);
         tt[startIdx].la = this;
 
-        size_t endIdx   = tt.size() - 1;
+        size_t endIdx = in->m_numLaTasks - 1;
         tt[endIdx].Init(TT_PREENC_END, 0, 0, poc, 0, 0);
         tt[endIdx].la = this;
 
@@ -2313,6 +1769,16 @@ void AV1Encoder::OnLookaheadCompletion()
 
 bool MetricIsGreater(const StatItem &l, const StatItem &r) { return (l.met > r.met); }
 
+#if defined(ENABLE_AV1_ALTR)
+int32_t computeCMAvg(int32_t val, int32_t prevAvgVal, int32_t N) {
+    int32_t avgLevel = prevAvgVal;
+    if (prevAvgVal >= 0)
+        avgLevel = prevAvgVal + (val - prevAvgVal) / N;
+    return avgLevel;
+}
+
+#endif
+
 //void WriteCmplx(Frame *frames[], int32_t numFrames)
 //{
 //    {
@@ -2327,16 +1793,20 @@ bool MetricIsGreater(const StatItem &l, const StatItem &r) { return (l.met > r.m
 //    }
 //}
 // ========================================================
-void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
+void Lookahead::AnalyzeSceneCut_AndUpdateState(Frame* in)
 {
     if (in == NULL)
         return;
 
     FrameIter curr = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(in->m_frameOrder));
-    Frame* prev = curr == m_inputQueue.begin() ? NULL : *(--FrameIter(curr));
-    int32_t sceneCut = DetectSceneCut_AMT(in, prev);
-    if (sceneCut && in->m_frameOrder < 2) sceneCut = 0;
+    bool hasPrev = m_frameOrderPrev != MFX_FRAMEORDER_UNKNOWN;
 
+    bool hasLtr = m_enc.getFrameOrderOfLastLtr() != MFX_FRAMEORDER_UNKNOWN;
+    int32_t sceneCut = DetectSceneCut_AMT(in, hasPrev, m_enc.getFrameOrderOfLastLtr() != MFX_FRAMEORDER_UNKNOWN);
+    if (sceneCut && in->m_frameOrder < 2) sceneCut = 0;
+    int32_t sceneChg = sceneCut;
+    if (in->m_stats[1]) in->m_stats[1]->m_sceneChange = sceneChg;
+    if (in->m_stats[0]) in->m_stats[0]->m_sceneChange = sceneChg;
 #if 0
     if (sceneCut) {
         FILE *fp = fopen("sceneReport.txt", "a+");
@@ -2354,7 +1824,20 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
     }
 
     in->m_sceneOrder = m_enc.m_sceneOrder;
-    if (!m_videoParam.AdaptiveI) sceneCut = 0;
+
+    if (!m_videoParam.AdaptiveI) {
+        if (m_videoParam.PGopPicSize > 1 && (m_videoParam.NumRefLayers == 1 || !m_videoParam.GopStrictFlag)) {
+            if ((sceneCut || (in->m_sceneStats->RepeatPattern & 0x7f) == 0x7e)) {
+                in->m_pyramidLayer = 0;
+                in->m_temporalId = 0;
+            } else if ((in->m_sceneStats->RepeatPattern & 0xf) == 0xe && in->m_pyramidLayer > 0) {
+                in->m_pyramidLayer--;
+                in->m_temporalId = 0;
+            }
+        }
+
+        sceneCut = 0;
+    }
     //special case for interlace mode to keep (P | I) pair instead of (I | P)
     int32_t rightAnchor = (m_videoParam.picStruct == MFX_PICSTRUCT_PROGRESSIVE || (m_videoParam.picStruct != MFX_PICSTRUCT_PROGRESSIVE && in->m_secondFieldFlag));
 
@@ -2386,7 +1869,7 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
         m_enc.RestoreGopCountersFromFrame(frame, !!m_videoParam.encodedOrder);
 
         // light configure
-        frame->m_isIdrPic = false;
+        frame->m_isIdrPic = true; // for AV1
         frame->m_picCodeType = MFX_FRAMETYPE_I;
         //frame->m_poc = 0;
 
@@ -2394,6 +1877,7 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
             //const uint8_t PGOP_LAYERS[PGOP_PIC_SIZE] = { 0, 2, 1, 2 };
             frame->m_RPSIndex = 0;
             frame->m_pyramidLayer = 0;//PGOP_LAYERS[frame->m_RPSIndex];
+            frame->m_temporalId = 0;
         }
 
         m_enc.UpdateGopCounters(frame, !!m_videoParam.encodedOrder);
@@ -2423,15 +1907,126 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
             in->m_stats[0]->m_sceneCut = 1;
     }
 
-    if (prev) {
-        prev->m_lookaheadRefCounter--;
+#if defined(ENABLE_AV1_ALTR)
+    //if (m_videoParam.EnableALTR)
+    {
+        int32_t iTSC = 0;
+        int32_t iMV = 0;
+        int32_t iSC = 0;
+        int32_t iTC = 0;
+        int32_t deltaFO = in->m_frameOrder - m_enc.getFrameOrderOfLastLtr();
+        int32_t hasSpace = m_videoParam.MaxDecPicBuffering - m_enc.getNumberOfExternalLtrs() > 1;
+        int32_t ltrAllowed = in->m_picCodeType == MFX_FRAMETYPE_P && (m_videoParam.NumRefLayers == 1 || !m_videoParam.GopStrictFlag || in->m_pyramidLayer == 0);
+        if ((m_videoParam.EnableALTR && hasSpace && (in->m_picCodeType == MFX_FRAMETYPE_I || sceneChg && ltrAllowed && deltaFO >= 32 && m_avgMV0 < 2000))
+            || in->m_isLtrFrame) {
+            m_avgMV0 = 0;
+            m_numFramesAvg = 0;
+            in->m_isLtrFrame = 1;
+            in->m_shortTermRefFlag = 0;
+            in->m_sceneStats->m_ltrMCFD = 0;
+            in->m_ltrConfidenceLevel = m_videoParam.LTRConfidenceLevel;
+            m_sceneTransFlag = 0;
+            //getSubSampleImageLtr(in);
+        }
+        else if (hasLtr && hasPrev) {
+            const int32_t MAX_AVG_INTERVAL = 3;
+            iSC = (int32_t)in->m_sceneStats->SC;
+            if (iSC < 4)  iSC = 4;
+            iTC = (int32_t)in->m_sceneStats->TSC;
+            iTSC = (64 * iTC * iTC) / iSC;
+            if (iTSC < 1)  iTSC = 1;
+            iMV = (int32_t)in->m_sceneStats->MV0;
+
+            int32_t N = m_numFramesAvg + 1;
+            m_numFramesAvg = std::min(MAX_AVG_INTERVAL, N);
+            m_avgMV0 = computeCMAvg(iMV, m_avgMV0, m_numFramesAvg);
+
+            int32_t MV_TH0 = 8192;
+            uint8_t isLtrFrame = 0;
+            uint8_t shortTermRefFlag = 0; //prev->m_shortTermRefFlag;
+            int32_t MIN_LTR_PERIOD = 180;
+            //int32_t dqpLtr = 0;
+
+            if (iTSC > 100 || iMV > MV_TH0) {
+                m_sceneTransFlag = 1;
+                shortTermRefFlag = 1;
+            }
+
+            if (m_videoParam.EnableALTR
+                && ltrAllowed
+                && (m_sceneTransFlag && deltaFO > MIN_LTR_PERIOD && m_avgMV0 < 1024
+                    || (in->m_sceneStats->m_ltrMCFD > 24 && m_avgMV0 < 1024 && deltaFO > 80))) {
+                m_avgMV0 = 0;
+                m_numFramesAvg = 0;
+                in->m_sceneStats->m_ltrMCFD = 0;
+                isLtrFrame = 1;
+                shortTermRefFlag = 0;
+                m_sceneTransFlag = 0;
+                //getSubSampleImageLtr(in);
+            }
+            else {
+                shortTermRefFlag = 0;
+                if (iMV > 2000 || (iMV > 1000 && m_avgMV0 > 2000)) {
+                    shortTermRefFlag = 1;
+                    if ((100 * in->m_sceneStats->m_ltrMCFD) < (150 * iTC))
+                        shortTermRefFlag = 0;
+                }
+            }
+
+            in->m_shortTermRefFlag = shortTermRefFlag;
+            in->m_isLtrFrame = isLtrFrame;
+            in->m_ltrConfidenceLevel = (isLtrFrame)? m_videoParam.LTRConfidenceLevel :0;
+
+            if (in->m_shortTermRefFlag) {
+                int32_t startStrOrder = m_enc.getFrameOrderOfStartStr();
+                if (startStrOrder != MFX_FRAMEORDER_UNKNOWN && in->m_frameOrder - startStrOrder > MIN_LTR_PERIOD/3) {
+                    in->m_shortTermRefFlag = 2; // short Term Ref and disable LTR
+                    m_enc.setFrameOrderOfLastLtr(MFX_FRAMEORDER_UNKNOWN);
+                }
+            }
+
+            // check for transition
+            if (deltaFO >= 32 && (deltaFO % 32) == 0) {
+                int32_t sceneTransition = DetectSceneCut_AMT(in, true, true, true);
+                if (sceneTransition && !in->m_shortTermRefFlag) {
+                    in->m_shortTermRefFlag = 2; // short Term Ref and disable LTR
+                    m_enc.setFrameOrderOfLastLtr(MFX_FRAMEORDER_UNKNOWN);
+                }
+            }
+        }
     }
+#endif
+    if (in->m_isLtrFrame) {
+        if (m_videoParam.PGopPicSize > 1 && (m_videoParam.NumRefLayers == 1 || !m_videoParam.GopStrictFlag)) {
+            in->m_pyramidLayer = 0;
+            in->m_temporalId = 0;
+        }
+        m_enc.setFrameOrderOfLastLtr(in->m_frameOrder);
+    }
+    if (in->m_shortTermRefFlag) {
+        if (m_enc.getFrameOrderOfStartStr() == MFX_FRAMEORDER_UNKNOWN) {
+            m_enc.setFrameOrderOfStartStr(in->m_frameOrder);
+        }
+    } else {
+        m_enc.setFrameOrderOfStartStr(MFX_FRAMEORDER_UNKNOWN);
+    }
+
+    m_sceneStatsPrev->Copy(*in->m_sceneStats);
+    if (in->m_isLtrFrame) {
+        m_sceneStatsLtr->Copy(*in->m_sceneStats);
+    }
+    m_frameOrderPrev = in->m_frameOrder;
 
 } //
 // ========================================================
 void Lookahead::ResetState()
 {
     m_lastAcceptedFrame[0] = m_lastAcceptedFrame[1] = NULL;
+    m_lastAcceptedFrameOrder = MFX_FRAMEORDER_UNKNOWN;
+#ifdef ZERO_DELAY_ANALYZE_CMPLX
+    SafeRelease(m_prev_origin);
+    SafeRelease(m_prev_lowres);
+#endif
 }
 
 void AV1Enc::AverageComplexity(Frame *in, AV1VideoParam& videoParam)
@@ -2497,12 +2092,12 @@ void AV1Enc::AverageComplexity(Frame *in, AV1VideoParam& videoParam)
 
     if (useLowres) {
         uint8_t res = Saturate(0, 1, useLowres-1);
-        float scaleFactor = 1.29;
+        float scaleFactor = 1.29f;
         if (!videoParam.FullresMetrics) {
             float tabCorrFactor[] = {1.5f, 2.f};
             scaleFactor = tabCorrFactor[res];
         }
-        if(videoParam.picStruct != MFX_PICSTRUCT_PROGRESSIVE) scaleFactor *= 1.29;
+        if(videoParam.picStruct != MFX_PICSTRUCT_PROGRESSIVE) scaleFactor *= 1.29f;
         if (in->m_stats[0]) {
             in->m_stats[0]->m_avgBestSatd /= scaleFactor;
             in->m_stats[0]->m_avgIntraSatd /= scaleFactor;
@@ -2514,6 +2109,16 @@ void AV1Enc::AverageComplexity(Frame *in, AV1VideoParam& videoParam)
             in->m_stats[1]->m_avgInterSatd /= scaleFactor;
         }
     }
+    stat->m_bestSatdHist[stat->m_bestSatdHist.size() - 1] = stat->m_avgBestSatd;
+    stat->m_intraSatdHist[stat->m_intraSatdHist.size() - 1] = stat->m_avgIntraSatd;
+    /*if (next) {
+        for (int32_t k = 0; k < (int32_t)stat->m_bestSatdHist.size() - 1; k++) {
+            next->m_stats[useLowres ? 1 : 0]->m_bestSatdHist[k] = stat->m_bestSatdHist[k + 1];
+        }
+        for (int32_t k = 0; k < (int32_t)stat->m_intraSatdHist.size() - 1; k++) {
+            next->m_stats[useLowres ? 1 : 0]->m_intraSatdHist[k] = stat->m_intraSatdHist[k + 1];
+        }
+    }*/
 }
 
 
@@ -2526,6 +2131,8 @@ void AV1Enc::AverageRsCs(Frame *in)
     FrameData* data = in->m_origin;
     stat->m_frameCs = std::accumulate(stat->m_cs[4], stat->m_cs[4] + stat->m_rcscSize[4], 0);
     stat->m_frameRs = std::accumulate(stat->m_rs[4], stat->m_rs[4] + stat->m_rcscSize[4], 0);
+    double cs = stat->m_frameCs;  // Added for _ALTR
+    double rs = stat->m_frameRs;
 
     int32_t hblocks  = (int32_t)data->height / BLOCK_SIZE;
     int32_t wblocks  = (int32_t)data->width / BLOCK_SIZE;
@@ -2534,11 +2141,15 @@ void AV1Enc::AverageRsCs(Frame *in)
     stat->m_frameCs  = sqrt(stat->m_frameCs);
     stat->m_frameRs  = sqrt(stat->m_frameRs);
 
-    float RsGlobal = in->m_stats[0]->m_frameRs;
-    float CsGlobal = in->m_stats[0]->m_frameCs;
+    float RsGlobal = (float)in->m_stats[0]->m_frameRs;
+    float CsGlobal = (float)in->m_stats[0]->m_frameCs;
     int32_t frameSize = in->m_origin->width * in->m_origin->height;
 
     in->m_stats[0]->SC = sqrt(((RsGlobal*RsGlobal) + (CsGlobal*CsGlobal))*frameSize);
+    double dSize = 1.0 / (double)frameSize;
+    rs *= dSize;
+    cs *= dSize;
+    in->m_stats[0]->nSC = sqrt(rs * rs + cs * cs);
     in->m_stats[0]->TSC = std::accumulate(in->m_stats[0]->m_interSad.begin(), in->m_stats[0]->m_interSad.end(), 0);
 }
 
@@ -2553,14 +2164,15 @@ InputIterator h265_findPastRef_OrSetBegin(InputIterator curr, InputIterator begi
     return begin;
 }
 
-int32_t AV1Enc::BuildQpMap(FrameIter begin, FrameIter end, int32_t frameOrderCentral, AV1VideoParam& videoParam, int32_t doUpdateState)
+#if ENABLE_QPMAP
+int32_t AV1Enc::BuildQpMap(ConstFrameIter begin, ConstFrameIter end, int32_t frameOrderCentral, AV1VideoParam& videoParam, int32_t doUpdateState)
 {
     //FrameIter begin = m_inputQueue.begin();
     //FrameIter end   = m_inputQueue.end();
 
     //int32_t frameOrderCentral = in->m_frameOrder - m_bufferingPaq;
     uint8_t isBufferingEnough = (frameOrderCentral >= 0);
-    FrameIter curr = std::find_if(begin, end, isEqual(frameOrderCentral));
+    ConstFrameIter curr = std::find_if(begin, end, isEqual(frameOrderCentral));
 
     // make decision
     if (isBufferingEnough && curr != end) {
@@ -2569,11 +2181,10 @@ int32_t AV1Enc::BuildQpMap(FrameIter begin, FrameIter end, int32_t frameOrderCen
         bool isRef = (frameType == MFX_FRAMETYPE_P || frameType == MFX_FRAMETYPE_I);
 
         if (isRef) {
-            Frame* prevP = GetPrevAnchor(begin, end, *curr);
-            Frame* nextP = GetNextAnchor(curr, end);
-            FrameIter itNextRefPlus1 = nextP ? ++(std::find_if(begin, end, isEqual(nextP->m_frameOrder))) : end;
+            const Frame* prevP = GetPrevAnchor(begin, end, *curr);
+            const Frame* nextP = GetNextAnchor(curr, end);
+            ConstFrameIter itNextRefPlus1 = nextP ? ++(std::find_if(begin, end, isEqual(nextP->m_frameOrder))) : end;
 
-            uint32_t frameType = (*curr)->m_picCodeType;
             if (videoParam.DeltaQpMode & AMT_DQP_PAQ) {
 
                 if (nextP == NULL) {
@@ -2583,12 +2194,12 @@ int32_t AV1Enc::BuildQpMap(FrameIter begin, FrameIter end, int32_t frameOrderCen
                 if (frameType == MFX_FRAMETYPE_I)
                     DetermineQpMap_IFrame(curr, itNextRefPlus1, videoParam);
                 else if (frameType == MFX_FRAMETYPE_P) {
-                    FrameIter itPrevRef  = std::find_if(begin, end, isEqual(prevP->m_frameOrder));
+                    ConstFrameIter itPrevRef  = std::find_if(begin, end, isEqual(prevP->m_frameOrder));
                     DetermineQpMap_PFrame(itPrevRef, curr, itNextRefPlus1, videoParam);
                 }
             }
             if ((videoParam.DeltaQpMode & AMT_DQP_CAL) && (frameType == MFX_FRAMETYPE_P)) {
-                FrameIter itPrevRef = std::find_if(begin, end, isEqual(prevP->m_frameOrder));
+                ConstFrameIter itPrevRef = std::find_if(begin, end, isEqual(prevP->m_frameOrder));
                 BackPropagateAvgTsc(itPrevRef, curr);
             }
         }
@@ -2598,10 +2209,6 @@ int32_t AV1Enc::BuildQpMap(FrameIter begin, FrameIter end, int32_t frameOrderCen
 
     // update state
     if (doUpdateState) {
-        //int32_t frameOrderCentral = in->m_frameOrder - m_bufferingPaq;
-        uint8_t isBufferingEnough = (frameOrderCentral >= 0);
-        FrameIter curr = std::find_if(begin, end, isEqual(frameOrderCentral));
-
         // Release resource counter
         if (isBufferingEnough && curr != end) {
             uint32_t frameType = (*curr)->m_picCodeType;
@@ -2609,13 +2216,13 @@ int32_t AV1Enc::BuildQpMap(FrameIter begin, FrameIter end, int32_t frameOrderCen
             //bool isEos = (m_slideWindowPaq[centralPos + 1] == -1);
 
             if (/*isEos || */isRef) {
-                FrameIter itEnd = /*isEos ? end : */curr; // isEos has more priority
-                FrameIter itStart = begin;
+                ConstFrameIter itEnd = /*isEos ? end : */curr; // isEos has more priority
+                ConstFrameIter itStart = begin;
                 if (curr != begin) {
                     curr--;
                     itStart = h265_findPastRef_OrSetBegin(curr, begin, isEqualRefFrame());
                 }
-                for (FrameIter it = itStart; it != itEnd; it++) {
+                for (ConstFrameIter it = itStart; it != itEnd; it++) {
                     (*it)->m_lookaheadRefCounter--;
                 }
             }
@@ -2623,7 +2230,543 @@ int32_t AV1Enc::BuildQpMap(FrameIter begin, FrameIter end, int32_t frameOrderCen
     }
 
     return 0;
-} //
+}
+
+void AV1Enc::DoPDistInterAnalysis_OneRow(Frame* curr, Frame* prevP, Frame* nextP, int32_t region_row, int32_t lowresRowsInRegion, int32_t originRowsInRegion, uint8_t LowresFactor, uint8_t FullresMetrics)
+{
+    FrameData* currFrame = LowresFactor ? curr->m_lowres : curr->m_origin;
+    Statistics* stat = curr->m_stats[LowresFactor ? 1 : 0];
+
+    // compute (PDist = miniGopSize) Past ME
+    if (prevP) {
+        FrameData * prevFrame = LowresFactor ? prevP->m_lowres : prevP->m_origin;
+        int32_t rowsInRegion = LowresFactor ? lowresRowsInRegion : originRowsInRegion;
+        int32_t numActiveRows = GetNumActiveRows(region_row, rowsInRegion, prevFrame->height);
+        for (int32_t i = 0; i < numActiveRows; i++) {
+            DoInterAnalysis_OneRow(currFrame, NULL, prevFrame, &stat->m_interSad_pdist_past[0], NULL, &stat->m_mv_pdist_past[0], 0, 2, LowresFactor, curr->m_bitDepthLuma, (region_row * rowsInRegion) + i,
+                FullresMetrics ? curr->m_origin : NULL,
+                FullresMetrics ? prevP->m_origin : NULL);
+        }
+#ifndef LOW_COMPLX_PAQ
+        if (LowresFactor) {
+            FrameData* currFrame = curr->m_origin;
+            FrameData * prevFrame = prevP->m_origin;
+
+            int32_t rowsInRegion = originRowsInRegion;
+            int32_t numActiveRows = GetNumActiveRows(region_row, rowsInRegion, prevFrame->height);
+            for (int32_t i = 0; i < numActiveRows; i++) {
+                DoInterAnalysis_OneRow(currFrame, stat, prevFrame, &curr->m_stats[0]->m_interSad_pdist_past[0], NULL, &curr->m_stats[0]->m_mv_pdist_past[0], 1, 2, LowresFactor, curr->m_bitDepthLuma, (region_row * rowsInRegion) + i); // refine
+            }
+
+        }
+#endif
+    }
+
+    // compute (PDist = miniGopSize) Future ME
+    if (nextP) {
+        FrameData* nextFrame = LowresFactor ? nextP->m_lowres : nextP->m_origin;
+        int32_t rowsInRegion = LowresFactor ? lowresRowsInRegion : originRowsInRegion;
+        int32_t numActiveRows = GetNumActiveRows(region_row, rowsInRegion, nextFrame->height);
+        for (int32_t i = 0; i < numActiveRows; i++) {
+            DoInterAnalysis_OneRow(currFrame, NULL, nextFrame, &stat->m_interSad_pdist_future[0], NULL, &stat->m_mv_pdist_future[0], 0, 1, LowresFactor, curr->m_bitDepthLuma, (region_row * rowsInRegion) + i,
+                FullresMetrics ? curr->m_origin : NULL,
+                FullresMetrics ? nextP->m_origin : NULL);
+        }
+#ifndef LOW_COMPLX_PAQ
+        if (LowresFactor) {
+            FrameData* currFrame = curr->m_origin;
+            FrameData* nextFrame = nextP->m_origin;
+
+            int32_t rowsInRegion = originRowsInRegion;
+            int32_t numActiveRows = GetNumActiveRows(region_row, rowsInRegion, nextFrame->height);
+            for (int32_t i = 0; i < numActiveRows; i++) {
+                DoInterAnalysis_OneRow(currFrame, stat, nextFrame, &curr->m_stats[0]->m_interSad_pdist_future[0], NULL, &curr->m_stats[0]->m_mv_pdist_future[0], 1, 1, LowresFactor, curr->m_bitDepthLuma, (region_row * rowsInRegion) + i);//refine
+            }
+        }
+#endif
+    }
+}
+
+void AV1Enc::DetermineQpMap_PFrame(ConstFrameIter begin, ConstFrameIter curr, ConstFrameIter end, AV1VideoParam & videoParam)
+{
+    static const float lmt_sc2[10] = { // lower limit of SFM(Rs,Cs) range for spatial classification
+        4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, static_cast<float>(INT_MAX) };
+    ConstFrameIter itCurr = curr;
+    const Frame *inFrame = *curr;
+    const Frame *past_frame = *begin;
+    const float futr_qp = MAX_DQP;
+    const int32_t REF_DIST = std::min(8, (inFrame->m_frameOrder - past_frame->m_frameOrder));
+    AV1MV candMVs[(64 / 8)*(64 / 8)];
+    int32_t LowresFactor = 0;
+#ifdef LOW_COMPLX_PAQ
+    LowresFactor = videoParam.LowresFactor;
+#endif
+    int32_t lowRes = LowresFactor ? 1 : 0;
+    int32_t log2SubBlk = 3 + LowresFactor;
+    int32_t widthInSubBlks = videoParam.Width >> 3;
+    if (lowRes) {
+        widthInSubBlks = (inFrame->m_lowres->width + SIZE_BLK_LA - 1) / SIZE_BLK_LA;
+    }
+    uint8_t bitDepthLuma = inFrame->m_bitDepthLuma;
+    int32_t heightInCtbs = (int32_t)videoParam.PicHeightInCtbs;
+    int32_t widthInCtbs = (int32_t)videoParam.PicWidthInCtbs;
+
+    bool futr_key = false;
+    ConstFrameIter it1 = ++ConstFrameIter(curr);
+    for (ConstFrameIter it = it1; it != end; it++) {
+        if (*it && (*it)->m_picCodeType == MFX_FRAMETYPE_I) {
+            futr_key = true;
+            break;
+        }
+    }
+
+    for (int32_t row = 0; row < heightInCtbs; row++) {
+        for (int32_t col = 0; col < widthInCtbs; col++) {
+            int32_t pelX = col * videoParam.MaxCUSize;
+            int32_t pelY = row * videoParam.MaxCUSize;
+            //int32_t MaxDepth = std::min((int32_t)videoParam.Log2MaxCUSize - log2SubBlk, videoParam.MaxCuDQPDepth);
+            //for (int32_t depth = 0; depth <= MaxDepth; depth++)
+            { // 64x64
+                int32_t log2BlkSize = videoParam.Log2MaxCUSize; // -depth;
+                int32_t pitchRsCs = inFrame->m_stats[0]->m_pitchRsCs[log2BlkSize - 2];
+                int32_t blkSize = 1 << log2BlkSize;
+                int32_t width = std::min(64, videoParam.Width - pelX);
+                int32_t height = std::min(64, videoParam.Height - pelY);
+                for (int32_t y = 0; y < height; y += blkSize) {
+                    for (int32_t x = 0; x < width; x += blkSize) {
+                        int32_t idx = ((pelY + y) >> log2BlkSize)*pitchRsCs + ((pelX + x) >> log2BlkSize);
+                        float Rs2 = (float)inFrame->m_stats[0]->m_rs[log2BlkSize - 2][idx];
+                        float Cs2 = (float)inFrame->m_stats[0]->m_cs[log2BlkSize - 2][idx];
+                        int32_t blkW4 = std::min(blkSize, width - x) >> 2;
+                        int32_t blkH4 = std::min(blkSize, height - y) >> 2;
+
+                        int32_t numSubBlkw = blkW4 >> (log2SubBlk - 2);
+                        int32_t numSubBlkh = blkH4 >> (log2SubBlk - 2);
+#ifdef LOW_COMPLX_PAQ
+                        if (numSubBlkh*(1 << log2SubBlk) < height || numSubBlkw * (1 << log2SubBlk) < width) {
+                            int32_t widthInTiles = widthInCtbs; // << depth;
+                            int32_t off = ((pelY + y)*widthInTiles + (pelX + x)) >> log2BlkSize;
+                            //inFrame->m_stats[0]->coloc_futr[depth][off] = 0;
+                            //inFrame->m_stats[0]->qp_mask[depth][off] = 0;
+                            inFrame->m_stats[0]->coloc_futr[off] = 0;
+                            inFrame->m_stats[0]->qp_mask[off] = 0;
+                            continue;
+                        }
+#endif
+
+                        Rs2 /= (blkW4*blkH4);
+                        Cs2 /= (blkW4*blkH4);
+                        float SC = sqrt(Rs2 + Cs2);
+                        //float tsc_RTML = 0.6f*sqrt(SC / (1 << (bitDepthLuma - 8)))*(1 << (bitDepthLuma - 8));
+//#ifdef LOW_COMPLX_PAQ
+                        //if (lowRes) tsc_RTML *= 1.1f;
+//#endif
+                        //float tsc_RTMG = std::min(2 * tsc_RTML, SC / 1.414f);
+                        //float tsc_RTS = std::min(3 * tsc_RTML, SC / 1.414f);
+                        int scVal = 0;
+                        for (int32_t i = 0; i < 10; i++) {
+                            if (SC < lmt_sc2[i] * (float)(1 << (bitDepthLuma - 8))) {
+                                scVal = i;
+                                break;
+                            }
+                        }
+
+                        SC /= 1.414f;
+
+                        float tsc_RTML = 0.6f*SC;
+                        float tsc_RTMG = SC;
+                        float tsc_RTS = 1.4f * SC;
+
+                        // RTF RTS logic for P Frame is based on MC Error
+
+                        float pdsad_past = 0.0f;
+                        float pdsad_futr = 0.0f;
+                        ConstFrameIter itStart = ++ConstFrameIter(itCurr);
+#ifdef LOW_COMPLX_PAQ
+                        if (itStart != end) {
+                            float sadFrm[17] = { 0 };
+                            float sadSum = 0;
+                            float sadMax = 0;
+                            int32_t sadCnt = 0;
+                            for (ConstFrameIter it = itStart; it != end; it++) {
+                                Statistics* stat = (*it)->m_stats[lowRes];
+                                float psad_futr = 0.0f;
+                                for (int32_t i = 0; i < numSubBlkh; i++) {
+                                    for (int32_t j = 0; j < numSubBlkw; j++) {
+                                        int32_t off = (((pelY + y) >> (log2SubBlk)) + i) * widthInSubBlks + ((pelX + x) >> (log2SubBlk)) + j;
+                                        psad_futr += stat->m_interSad[off];
+                                    }
+                                }
+                                psad_futr /= (blkW4*blkH4) << 4;
+                                sadFrm[sadCnt] = psad_futr;
+                                sadCnt++;
+                                sadSum += psad_futr;
+                            }
+                            float sadAvg = sadSum / sadCnt;
+                            int32_t numSadHigh = 0;
+                            for (int fri = 0; fri < sadCnt; fri++) {
+                                if (sadFrm[fri] > sadAvg) numSadHigh++;
+                            }
+                            if (numSadHigh == 1) {
+                                pdsad_futr = sadMax;
+                            }
+                            else {
+                                pdsad_futr = sadAvg * 2;
+                            }
+                        }
+                        if (itCurr != begin) {
+                            float sadFrm[17] = { 0 };
+                            float sadSum = 0;
+                            float sadMax = 0;
+                            int32_t sadCnt = 0;
+                            for (ConstFrameIter it = itCurr; it != begin; it--) {
+                                Statistics* stat = (*it)->m_stats[lowRes];
+                                float psad_past = 0.0;
+                                for (int32_t i = 0; i < numSubBlkh; i++) {
+                                    for (int32_t j = 0; j < numSubBlkw; j++) {
+                                        int32_t off = (((pelY + y) >> log2SubBlk) + i) * widthInSubBlks + ((pelX + x) >> log2SubBlk) + j;
+                                        psad_past += stat->m_interSad[off];
+                                    }
+                                }
+                                psad_past /= (blkW4*blkH4) << 4;
+                                sadFrm[sadCnt] = psad_past;
+                                sadCnt++;
+                                sadSum += psad_past;
+                            }
+                            float sadAvg = sadSum / sadCnt;
+                            int32_t numSadHigh = 0;
+                            for (int fri = 0; fri < sadCnt; fri++) {
+                                if (sadFrm[fri] > sadAvg) numSadHigh++;
+                            }
+                            if (numSadHigh == 1) {
+                                pdsad_past = sadMax;
+                            }
+                            else {
+                                pdsad_past = sadAvg * 2;
+                            }
+                        }
+#else
+                        for (int32_t i = 0; i < numSubBlkh; i++) {
+                            for (int32_t j = 0; j < numSubBlkw; j++) {
+                                int32_t off = (((pelY + y) >> log2SubBlk) + i) * widthInSubBlks + ((pelX + x) >> log2SubBlk) + j;
+                                pdsad_past += inFrame->m_stats[lowRes]->m_interSad_pdist_past[off];
+                                pdsad_futr += inFrame->m_stats[lowRes]->m_interSad_pdist_future[off];
+                            }
+                        }
+                        pdsad_past /= (blkW4*blkH4) << 4;
+                        pdsad_futr /= (blkW4*blkH4) << 4;
+#endif
+                        // future (forward propagate)
+                        int32_t coloc_futr = 0;
+                        for (ConstFrameIter it = itStart; it != end; it++) {
+                            Statistics* stat = (*it)->m_stats[lowRes];
+                            int32_t uMVnum = 0;
+                            float psad_futr = 0.0f;
+                            for (int32_t i = 0; i < numSubBlkh; i++) {
+                                for (int32_t j = 0; j < numSubBlkw; j++) {
+                                    int32_t off = (((pelY + y) >> log2SubBlk) + i) * widthInSubBlks + ((pelX + x) >> log2SubBlk) + j;
+                                    psad_futr += stat->m_interSad[off];
+                                    AddCandidate(&stat->m_mv[off], &uMVnum, candMVs);
+                                }
+                            }
+                            psad_futr /= (blkW4*blkH4) << 4;
+                            if (psad_futr < tsc_RTML && uMVnum < 1 + std::max(1, (numSubBlkh*numSubBlkw) / 2))
+                                coloc_futr++;
+                            else break;
+                        }
+
+
+                        // past (backward propagate)
+                        int32_t coloc_past = 0;
+                        for (ConstFrameIter it = itCurr; it != begin; it--) {
+                            Statistics* stat = (*it)->m_stats[lowRes];
+                            int uMVnum = 0;
+                            float psad_past = 0.0;
+                            for (int32_t i = 0; i < numSubBlkh; i++) {
+                                for (int32_t j = 0; j < numSubBlkw; j++) {
+                                    int32_t off = (((pelY + y) >> log2SubBlk) + i) * widthInSubBlks + ((pelX + x) >> log2SubBlk) + j;
+                                    psad_past += stat->m_interSad[off];
+                                    AddCandidate(&stat->m_mv[off], &uMVnum, candMVs);
+                                }
+                            }
+                            psad_past /= (blkW4*blkH4) << 4;
+                            if (psad_past < tsc_RTML && uMVnum < 1 + std::max(1, (numSubBlkh*numSubBlkw) / 2))
+                                coloc_past++;
+                            else
+                                break;
+                        }
+
+                        if (itStart == end) {
+                            pdsad_futr = tsc_RTS;
+                            coloc_futr = 0;
+                        }
+                        if (itCurr == begin) {
+                            pdsad_past = tsc_RTS;
+                            coloc_past = 0;
+                        }
+
+                        int32_t widthInTiles = widthInCtbs; // << depth;
+                        int32_t off = ((pelY + y)*widthInTiles + (pelX + x)) >> log2BlkSize;
+                        //inFrame->m_stats[0]->coloc_futr[depth][off] = coloc_futr;
+                        inFrame->m_stats[0]->coloc_futr[off] = coloc_futr;
+                        int32_t coloc = std::max(coloc_past, coloc_futr);
+                        if (futr_key) coloc = coloc_past;
+
+                        //int32_t &qp_mask = inFrame->m_stats[0]->qp_mask[depth][off];
+                        int32_t &qp_mask = inFrame->m_stats[0]->qp_mask[off];
+                        //if (coloc_past >= REF_DIST && past_frame->m_stats[0]->coloc_futr[depth][off] >= REF_DIST) {
+                        if (coloc_past >= REF_DIST && past_frame->m_stats[0]->coloc_futr[off] >= REF_DIST) {
+                            // Stable Motion & P Skip (when GOP is small repeated P QP lowering can change RD Point)
+                            // Avoid quantization noise recoding
+                            //inFrame->qp_mask[off] = std::min(0, past_frame->qp_mask[off]+1);
+                            qp_mask = 0; // Propagate
+                        }
+                        else {
+                            if (futr_key) {
+                                coloc = std::min(REF_DIST / 2, coloc);
+                            }
+                            if (coloc >= 8 && coloc == coloc_futr && pdsad_futr < tsc_RTML) {
+                                // Stable Motion & Motion reuse
+                                qp_mask = -1 * std::min((int)futr_qp, (int)(((float)coloc / 8.0)*futr_qp));
+                            }
+                            else if (coloc >= 8 && coloc == coloc_futr && pdsad_futr < tsc_RTMG) {
+                                // Stable Motion & Motion reuse
+                                qp_mask = -1 * std::min((int)futr_qp, (int)(((float)coloc / 8.0)*4.0));
+                            }
+                            else if (coloc > 1 && coloc == coloc_futr && pdsad_futr < tsc_RTMG) {
+                                // Stable Motion & Motion Reuse
+                                qp_mask = -1 * std::min(4, (int)(((float)coloc / 8.0)*4.0));
+                                // Possibly propagation
+                            }
+                            else if (coloc > 1 && coloc == coloc_past && pdsad_past < tsc_RTMG) {
+                                // Stable Motion & Motion Reuse
+                                qp_mask = -1 * std::min(4, (int)(((float)coloc / 8.0)*4.0));
+                                // Past Boost probably no propagation since coloc_futr is less than coloc_past
+                            }
+                            else if (scVal >= 6 && pdsad_past > tsc_RTS && coloc == 0) {
+                                // reduce disproportional cost on high texture and bad motion
+                                // use pdsad_past since its coded a in order p frame
+                                qp_mask = 1;
+                            }
+                            else {
+                                // Default
+                                qp_mask = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void AV1Enc::DetermineQpMap_IFrame(ConstFrameIter curr, ConstFrameIter end, AV1VideoParam& videoParam)
+{
+    static const float lmt_sc2[10] = { // lower limit of SFM(Rs,Cs) range for spatial classification
+        4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, static_cast<float>(INT_MAX) };
+    const int32_t futr_qp = MAX_DQP;
+    assert(videoParam.Log2MaxCUSize == 6);
+    Frame* inFrame = *curr;
+    AV1MV candMVs[(64 / 8)*(64 / 8)];
+    int32_t LowresFactor = 0;
+#ifdef LOW_COMPLX_PAQ
+    LowresFactor = videoParam.LowresFactor;
+#endif
+    int32_t lowRes = LowresFactor ? 1 : 0;
+    int32_t log2SubBlk = 3 + LowresFactor;
+    int32_t widthInSubBlks = videoParam.Width >> 3;
+    if (lowRes) {
+        widthInSubBlks = (inFrame->m_lowres->width + SIZE_BLK_LA - 1) / SIZE_BLK_LA;
+    }
+    uint8_t bitDepthLuma = inFrame->m_bitDepthLuma;
+
+    int32_t heightInCtbs = (int32_t)videoParam.PicHeightInCtbs;
+    int32_t widthInCtbs = (int32_t)videoParam.PicWidthInCtbs;
+
+    bool futr_key = false;
+    int32_t REF_DIST = 8;
+
+    ConstFrameIter it1 = ++ConstFrameIter(curr);
+    const Frame* futr_frame = inFrame;
+    for (ConstFrameIter it = it1; it != end; it++) {
+        if (*it) {
+            futr_frame = *it;
+            if (futr_frame->m_picCodeType == MFX_FRAMETYPE_I) {
+                futr_key = true;
+            }
+        }
+    }
+    REF_DIST = std::min(8, (inFrame->m_frameOrder - futr_frame->m_frameOrder));
+
+    for (int32_t row = 0; row < heightInCtbs; row++) {
+        for (int32_t col = 0; col < widthInCtbs; col++) {
+            int32_t pelX = col * videoParam.MaxCUSize;
+            int32_t pelY = row * videoParam.MaxCUSize;
+            //int32_t MaxDepth = 0; // std::min((int32_t)videoParam.Log2MaxCUSize - log2SubBlk, videoParam.MaxCuDQPDepth);
+
+            //for (int32_t depth = 0; depth <= MaxDepth; depth++)
+            { // 64x64 -> 8x8
+                int32_t log2BlkSize = videoParam.Log2MaxCUSize;// -depth;
+                int32_t pitchRsCs = inFrame->m_stats[0]->m_pitchRsCs[log2BlkSize - 2];
+                int32_t blkSize = 1 << log2BlkSize;
+                int32_t width = std::min(64, videoParam.Width - pelX);
+                int32_t height = std::min(64, videoParam.Height - pelY);
+                for (int32_t y = 0; y < height; y += blkSize) {
+                    for (int32_t x = 0; x < width; x += blkSize) {
+                        int32_t idx = ((pelY + y) >> log2BlkSize)*pitchRsCs + ((pelX + x) >> log2BlkSize);
+                        float Rs2 = (float)inFrame->m_stats[0]->m_rs[log2BlkSize - 2][idx];
+                        float Cs2 = (float)inFrame->m_stats[0]->m_cs[log2BlkSize - 2][idx];
+                        int32_t blkW4 = std::min(blkSize, width - x) >> 2;
+                        int32_t blkH4 = std::min(blkSize, height - y) >> 2;
+                        int32_t numSubBlkw = blkW4 >> (log2SubBlk - 2);
+                        int32_t numSubBlkh = blkH4 >> (log2SubBlk - 2);
+#ifdef LOW_COMPLX_PAQ
+                        if (numSubBlkh*(1 << log2SubBlk) < height || numSubBlkw * (1 << log2SubBlk) < width) {
+                            int32_t widthInTiles = widthInCtbs; // << depth;
+                            int32_t off = ((pelY + y)*widthInTiles + (pelX + x)) >> log2BlkSize;
+                            //inFrame->m_stats[0]->coloc_futr[depth][off] = 0;
+                            //inFrame->m_stats[0]->qp_mask[depth][off] = 0;
+                            inFrame->m_stats[0]->coloc_futr[off] = 0;
+                            inFrame->m_stats[0]->qp_mask[off] = 0;
+                            continue;
+                        }
+#endif
+                        Rs2 /= (blkW4*blkH4);
+                        Cs2 /= (blkW4*blkH4);
+                        float SC = sqrt(Rs2 + Cs2);
+                        //float tsc_RTML = 0.6f*sqrt(SC / (1 << (bitDepthLuma - 8)))*(1 << (bitDepthLuma - 8));
+//#ifdef LOW_COMPLX_PAQ
+                        //if (lowRes) tsc_RTML *= 1.1f;
+//#endif
+                        //float tsc_RTMG = std::min(2 * tsc_RTML, SC / 1.414f);
+                        //float tsc_RTS = std::min(3 * tsc_RTML, SC / 1.414f);
+                        int scVal = 0;
+                        for (int32_t i = 0; i < 10; i++) {
+                            if (SC < lmt_sc2[i] * (float)(1 << (bitDepthLuma - 8))) {
+                                scVal = i;
+                                break;
+                            }
+                        }
+
+                        // Modification for integer ME
+                        SC /= 1.414f;
+                        float tsc_RTML = 0.6f*SC;
+                        float tsc_RTMG = SC;
+                        float tsc_RTS = 1.4f * SC;
+
+                        ConstFrameIter itStart = ++ConstFrameIter(curr);
+                        int coloc = 0;
+                        float pdsad_futr = 0.0f;
+                        for (ConstFrameIter it = itStart; it != end; it++) {
+                            Statistics* stat = (*it)->m_stats[lowRes];
+                            int uMVnum = 0;
+                            float psad_futr = 0.0f;
+                            for (int32_t i = 0; i < numSubBlkh; i++) {
+                                for (int32_t j = 0; j < numSubBlkw; j++) {
+                                    int32_t off = (((pelY + y) >> (log2SubBlk)) + i) * widthInSubBlks + ((pelX + x) >> (log2SubBlk)) + j;
+                                    psad_futr += stat->m_interSad[off];
+                                    AddCandidate(&stat->m_mv[off], &uMVnum, candMVs);
+                                }
+                            }
+                            psad_futr /= (blkW4*blkH4) << 4;
+
+                            if (psad_futr < tsc_RTML && uMVnum < 1 + std::max(1, (numSubBlkh*numSubBlkw) / 2))
+                                coloc++;
+                            else
+                                break;
+                        }
+                        pdsad_futr = 0.0f;
+#ifdef LOW_COMPLX_PAQ
+                        if (itStart != end) {
+                            float sadFrm[17] = { 0 };
+                            float sadSum = 0;
+                            float sadMax = 0;
+                            int32_t sadCnt = 0;
+                            for (ConstFrameIter it = itStart; it != end; it++) {
+                                Statistics* stat = (*it)->m_stats[lowRes];
+                                float psad_futr = 0.0f;
+                                for (int32_t i = 0; i < numSubBlkh; i++) {
+                                    for (int32_t j = 0; j < numSubBlkw; j++) {
+                                        int32_t off = (((pelY + y) >> (log2SubBlk)) + i) * widthInSubBlks + ((pelX + x) >> (log2SubBlk)) + j;
+                                        psad_futr += stat->m_interSad[off];
+                                    }
+                                }
+                                psad_futr /= (blkW4*blkH4) << 4;
+                                sadFrm[sadCnt] = psad_futr;
+                                sadCnt++;
+                                sadSum += psad_futr;
+                            }
+                            float sadAvg = sadSum / sadCnt;
+                            int32_t numSadHigh = 0;
+                            for (int fri = 0; fri < sadCnt; fri++) {
+                                if (sadFrm[fri] > sadAvg) numSadHigh++;
+                            }
+                            if (numSadHigh == 1) {
+                                pdsad_futr = sadMax;
+                            }
+                            else {
+                                pdsad_futr = sadAvg * 2;
+                            }
+                        }
+#else
+                        for (int32_t i = 0; i < numSubBlkh; i++) {
+                            for (int32_t j = 0; j < numSubBlkw; j++) {
+                                int32_t off = (((pelY + y) >> log2SubBlk) + i) * widthInSubBlks + ((pelX + x) >> log2SubBlk) + j;
+                                pdsad_futr += inFrame->m_stats[lowRes]->m_interSad_pdist_future[off];
+                            }
+                        }
+                        pdsad_futr /= (blkW4*blkH4) << 4;
+#endif
+
+                        if (itStart == end) {
+                            pdsad_futr = tsc_RTS;
+                            coloc = 0;
+                        }
+
+                        int32_t widthInTiles = videoParam.PicWidthInCtbs; // << depth;
+                        int32_t off = ((pelY + y)*widthInTiles + (pelX + x)) >> log2BlkSize;
+                        //inFrame->m_stats[0]->coloc_futr[depth][off] = coloc;
+                        inFrame->m_stats[0]->coloc_futr[off] = coloc;
+
+                        //int32_t &qp_mask = inFrame->m_stats[0]->qp_mask[depth][off];
+                        int32_t &qp_mask = inFrame->m_stats[0]->qp_mask[off];
+                        if (scVal < 1 && pdsad_futr < tsc_RTML) {
+                            // Visual Quality (Flat area first, because coloc count doesn't work in flat areas)
+                            coloc = 1;
+                            qp_mask = -1 * coloc;
+                        }
+                        else {
+                            if (futr_key) {
+                                coloc = std::min(REF_DIST / 2, coloc);
+                            }
+                            if (coloc >= 8 && pdsad_futr < tsc_RTML) {
+                                // Stable Motion, Propagation & Motion reuse (long term stable hypothesis, 8+=>inf)
+                                qp_mask = -1 * std::min(futr_qp, (int32_t)(((float)coloc / 8.f)*futr_qp));
+                            }
+                            else if (coloc >= 8 && pdsad_futr < tsc_RTMG) {
+                                // Stable Motion, Propagation possible & Motion reuse
+                                qp_mask = -1 * std::min(futr_qp, (int32_t)(((float)coloc / 8.f)*4.f));
+                            }
+                            else if (coloc > 1 && pdsad_futr < tsc_RTMG) {
+                                // Stable Motion & Motion reuse
+                                qp_mask = -1 * std::min(4, (int32_t)(((float)coloc / 8.f)*4.f));
+                            }
+                            else if (scVal >= 6 && pdsad_futr > tsc_RTS) {
+                                // Reduce disproportional cost on high texture and bad motion
+                                qp_mask = 1;
+                            }
+                            else {
+                                // Default
+                                qp_mask = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+#endif
 
 void AV1Enc::GetLookaheadGranularity(const AV1VideoParam& videoParam, int32_t& regionCount, int32_t& lowRowsInRegion, int32_t& originRowsInRegion, int32_t& numTasks)
 {
@@ -2652,12 +2795,32 @@ Lookahead::Lookahead(AV1Encoder & enc)
     , m_pendingSceneCut(0)
 {
     m_bufferingPaq = 0;
+#if defined(ENABLE_AV1_ALTR)
+    //if (m_videoParam.EnableALTR)
+    {
+        m_sceneStatsLtr = (SceneStats*)malloc(sizeof(SceneStats));
+        m_sceneStatsLtr->Create();
+        m_sceneStatsTmp = (SceneStats*)malloc(sizeof(SceneStats));
+        m_sceneStatsTmp->Create();
+        m_avgMV0 = 0;
+        m_numFramesAvg = 0;
+        m_sceneTransFlag = 0;
+    }
+#endif
 
     if (m_videoParam.DeltaQpMode & (AMT_DQP_CAL|AMT_DQP_PAQ))
         m_bufferingPaq = m_videoParam.GopRefDist;
 
     // to prevent multiple PREENC_START per frame
     m_lastAcceptedFrame[0] = m_lastAcceptedFrame[1] = NULL;
+    m_lastAcceptedFrameOrder = MFX_FRAMEORDER_UNKNOWN;
+#ifdef ZERO_DELAY_ANALYZE_CMPLX
+    m_prev_origin = NULL;
+    m_prev_lowres = NULL;
+#endif
+    m_frameOrderPrev = MFX_FRAMEORDER_UNKNOWN;
+    m_sceneStatsPrev = (SceneStats*)malloc(sizeof(SceneStats));
+    m_sceneStatsPrev->Create();
 
     int32_t numTasks;
     GetLookaheadGranularity(m_videoParam, m_regionCount, m_lowresRowsInRegion, m_originRowsInRegion, numTasks);
@@ -2665,128 +2828,21 @@ Lookahead::Lookahead(AV1Encoder & enc)
 
 Lookahead::~Lookahead()
 {
-}
-
-
-const float CU_RSCS_TH[6][4][8] = {
-    {{  4.0,  6.0,  8.0, 11.0, 14.0, 18.0, 26.0,65025.0},{  4.0,  6.0,  8.0, 11.0, 14.0, 18.0, 26.0,65025.0},{  4.0,  6.0,  9.0, 11.0, 14.0, 18.0, 26.0,65025.0},{  4.0,  6.0,  9.0, 11.0, 14.0, 18.0, 26.0,65025.0}},
-    {{  5.0,  6.0,  8.0, 11.0, 14.0, 18.0, 24.0,65025.0},{  5.0,  7.0,  9.0, 11.0, 14.0, 18.0, 25.0,65025.0},{  5.0,  7.0,  9.0, 12.0, 15.0, 19.0, 25.0,65025.0},{  5.0,  7.0,  9.0, 12.0, 14.0, 18.0, 25.0,65025.0}},
-    {{  5.0,  7.0, 10.0, 12.0, 15.0, 19.0, 25.0,65025.0},{  5.0,  8.0, 10.0, 13.0, 15.0, 20.0, 26.0,65025.0},{  5.0,  8.0, 10.0, 12.0, 14.0, 18.0, 24.0,65025.0},{  5.0,  8.0, 10.0, 12.0, 15.0, 18.0, 24.0,65025.0}},
-    {{  6.0,  8.0, 10.0, 13.0, 16.0, 19.0, 25.0,65025.0},{  5.0,  8.0, 10.0, 13.0, 15.0, 19.0, 26.0,65025.0},{  5.0,  8.0, 10.0, 12.0, 15.0, 18.0, 24.0,65025.0},{  6.0,  9.0, 11.0, 13.0, 15.0, 19.0, 24.0,65025.0}},
-    {{  6.0,  9.0, 11.0, 14.0, 17.0, 21.0, 27.0,65025.0},{  6.0,  9.0, 11.0, 13.0, 16.0, 19.0, 25.0,65025.0},{  7.0,  9.0, 12.0, 14.0, 16.0, 19.0, 25.0,65025.0},{  7.0,  9.0, 11.0, 13.0, 16.0, 19.0, 24.0,65025.0}},
-    {{  6.0,  9.0, 11.0, 14.0, 17.0, 21.0, 27.0,65025.0},{  6.0,  9.0, 11.0, 13.0, 16.0, 19.0, 25.0,65025.0},{  7.0,  9.0, 12.0, 14.0, 16.0, 19.0, 25.0,65025.0},{  7.0,  9.0, 11.0, 13.0, 16.0, 19.0, 24.0,65025.0}}
-};
-
-
-const float LQ_M[6][8]   = {
-    {4.2415, 3.9818, 3.9818, 3.9818, 4.0684, 4.0684, 4.0684, 4.0684},   // I
-    {4.5878, 4.5878, 4.5878, 4.5878, 4.5878, 4.2005, 4.2005, 4.2005},   // P
-    {4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255},   // B1
-    {4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052},   // B2
-    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005},   // B3
-    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005}    // B4
-};
-const float LQ_K[6][8] = {
-    {12.8114, 13.8536, 13.8536, 13.8536, 13.8395, 13.8395, 13.8395, 13.8395},   // I
-    {12.3857, 12.3857, 12.3857, 12.3857, 12.3857, 13.7122, 13.7122, 13.7122},   // P
-    {13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286},   // B1
-    {13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463},   // B2
-    {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122},   // B3
-    {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122}    // B4
-};
-const float LQ_M16[6][8]   = {
-    {4.3281, 3.9818, 3.9818, 3.9818, 4.0684, 4.0684, 4.0684, 4.3281},   // I
-    {4.5878, 4.5878, 4.5878, 4.5878, 4.5878, 4.3281, 4.3281, 4.3281},   // P
-    {4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255, 4.3255},   // B1
-    {4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052, 4.4052},   // B2
-    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005},   // B3
-    {4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005, 4.2005}    // B4
-};
-const float LQ_K16[6][8] = {
-    {14.4329, 14.8983, 14.8983, 14.8983, 14.9069, 14.9069, 14.9069, 14.4329},   // I
-    {12.4456, 12.4456, 12.4456, 12.4456, 12.4456, 13.5336, 13.5336, 13.5336},   // P
-    {13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286, 13.7286},   // B1
-    {13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463, 13.1463},   // B2
-    {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122},   // B3
-    {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122}    // B4
-};
-
-
-int GetCalqDeltaQp(Frame* frame, const AV1VideoParam & par, int32_t ctb_addr, float sliceLambda, float sliceQpY)
-{
-    int32_t picClass = 0;
-    if(frame->m_picCodeType == MFX_FRAMETYPE_I) {
-        picClass = 0;   // I
-    } else {
-        picClass = frame->m_pyramidLayer+1;
-    }
-    if (picClass > 4)
-        picClass = 4;
-
-    static int pQPi[5][4] = {{22,27,32,37}, {23,28,33,38}, {24,29,34,39}, {25,30,35,40}, {26,31,36,41}};
-    int32_t qpClass = 0;
-    if(sliceQpY < pQPi[picClass][0])
-        qpClass = 0;
-    else if(sliceQpY > pQPi[picClass][3])
-        qpClass = 3;
-    else
-        qpClass = (int32_t)((sliceQpY - 22 - picClass) / 5);
-
-    int32_t col =  (ctb_addr % par.PicWidthInCtbs);
-    int32_t row =  (ctb_addr / par.PicWidthInCtbs);
-    int32_t pelX = col * par.MaxCUSize;
-    int32_t pelY = row * par.MaxCUSize;
-
-    //TODO: replace by template call here
-    // complex ops in Enqueue frame can cause severe threading eff loss -NG
-    float rscs = 0;
-    if (picClass < 2) {
-        // calulate from 4x4 Rs/Cs
-        int32_t N = (col==par.PicWidthInCtbs-1)?(frame->m_origin->width-(par.PicWidthInCtbs-1)*par.MaxCUSize):par.MaxCUSize;
-        int32_t M = (row==par.PicHeightInCtbs-1)?(frame->m_origin->height-(par.PicHeightInCtbs-1)*par.MaxCUSize):par.MaxCUSize;
-        int32_t m4T = M/4;
-        int32_t n4T = N/4;
-        int32_t X4 = pelX/4;
-        int32_t Y4 = pelY/4;
-        int32_t w4 = frame->m_origin->width/4;
-        int32_t Rs=0,Cs=0;
-        for(int32_t i=0;i<m4T;i++) {
-            for(int32_t j=0;j<n4T;j++) {
-                Rs += frame->m_stats[0]->m_rs[0][(Y4+i)*w4+(X4+j)];
-                Cs += frame->m_stats[0]->m_cs[0][(Y4+i)*w4+(X4+j)];
-            }
-        }
-        Rs/=(m4T*n4T);
-        Cs/=(m4T*n4T);
-        rscs = sqrt(Rs + Cs);
-    }
-
-    int32_t rscsClass = 0;
+#if defined(ENABLE_AV1_ALTR)
+    //if (m_videoParam.EnableALTR)
     {
-        int32_t k = 7;
-        for (int32_t i = 0; i < 8; i++) {
-            if (rscs < CU_RSCS_TH[picClass][qpClass][i]*(float)(1<<(par.bitDepthLumaShift))) {
-                k = i;
-                break;
-            }
-        }
-        rscsClass = k;
+        if (m_sceneStatsLtr)
+            free(m_sceneStatsLtr);
+        m_sceneStatsLtr = NULL;
+        if (m_sceneStatsTmp)
+            free(m_sceneStatsTmp);
+        m_sceneStatsTmp = NULL;
     }
-
-    float dLambda = sliceLambda * 512.f;
-    int32_t gopSize = frame->m_biFramesInMiniGop + 1;
-    float QP = 0.f;
-    if(16 == gopSize) {
-        QP = LQ_M16[picClass][rscsClass]*log( dLambda ) + LQ_K16[picClass][rscsClass];
-    } else if(8 == gopSize){
-        QP = LQ_M[picClass][rscsClass]*log( dLambda ) + LQ_K[picClass][rscsClass];
-    } else { // default case could be modified !!!
-        QP = LQ_M[picClass][rscsClass]*log( dLambda ) + LQ_K[picClass][rscsClass];
-    }
-    QP -= sliceQpY;
-    return (QP>=0.0)?int(QP+0.5):int(QP-0.5);
-} //
-
+#endif
+    if (m_sceneStatsPrev)
+        free(m_sceneStatsPrev);
+    m_sceneStatsPrev = NULL;
+}
 
 void UpdateAllLambda(Frame* frame, const AV1VideoParam& param)
 {
@@ -2795,15 +2851,15 @@ void UpdateAllLambda(Frame* frame, const AV1VideoParam& param)
     bool IsHiCplxGOP = false;
     bool IsMedCplxGOP = false;
     if (param.DeltaQpMode&AMT_DQP_CAL) {
-        float SADpp = stats->avgTSC;
-        float SCpp  = stats->avgsqrSCpp;
+        float SADpp = (float)stats->avgTSC;
+        float SCpp  = (float)stats->avgsqrSCpp;
         if (SCpp > 2.0) {
             float minSADpp = 0;
             if (param.GopRefDist > 8) {
                 minSADpp = 1.3f*SCpp - 2.6f;
                 if (minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP = true;
                 if (!IsHiCplxGOP) {
-                    float minSADpp = 1.1f*SCpp - 2.2f;
+                    minSADpp = 1.1f*SCpp - 2.2f;
                     if(minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP = true;
                 }
             }
@@ -2811,7 +2867,7 @@ void UpdateAllLambda(Frame* frame, const AV1VideoParam& param)
                 minSADpp = 1.1f*SCpp - 1.5f;
                 if (minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP = true;
                 if (!IsHiCplxGOP) {
-                    float minSADpp = 1.0f*SCpp - 2.0f;
+                    minSADpp = 1.0f*SCpp - 2.0f;
                     if (minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP = true;
                 }
             }
@@ -2820,93 +2876,327 @@ void UpdateAllLambda(Frame* frame, const AV1VideoParam& param)
 
 }
 
-void AV1Enc::ApplyDeltaQp(Frame* frame, const AV1VideoParam & par, uint8_t useBrc)
-{
-    int32_t numCtb = par.PicHeightInCtbs * par.PicWidthInCtbs;
-
-    // assign PAQ deltaQp
-    if (par.DeltaQpMode&AMT_DQP_PAQ) {// no pure CALQ
-        for (int32_t ctb = 0; ctb < numCtb; ctb++) {
-            int32_t deltaQp = frame->m_stats[0]->qp_mask[ctb];
-            //deltaQp = Saturate(-MAX_DQP, MAX_DQP, deltaQp);
-
-            int32_t lcuQp = frame->m_lcuQps[ctb] + deltaQp;
-            lcuQp = Saturate(0, 51, lcuQp);
-            frame->m_lcuQps[ctb] = (int8_t)lcuQp;
-        }
-    }
-    // recalc (align) CTB lambdas with CTB Qp
-    for (uint8_t i = 0; i < par.NumSlices; i++)
-        UpdateAllLambda(frame, par);
-
-    // assign CALQ deltaQp
-    if (par.DeltaQpMode&AMT_DQP_CAQ) {
-        float baseQP = frame->m_sliceQpY;
-        float sliceLambda =  frame->m_lambda;
-        for (int32_t ctb_addr = 0; ctb_addr < numCtb; ctb_addr++) {
-            int calq = GetCalqDeltaQp(frame, par, ctb_addr, sliceLambda, baseQP);
-
-            int32_t totalDQP = calq;
-            /*
-            if(useBrc) {
-            if(par.cbrFlag) totalDQP = Saturate(-1, 1, totalDQP);  // CBR
-            else            totalDQP = Saturate(-2, 2, totalDQP);  // VBR
-            }
-            */
-            if (par.DeltaQpMode&AMT_DQP_PAQ) {
-                totalDQP += frame->m_stats[0]->qp_mask[ctb_addr];
-            }
-            //totalDQP = Saturate(-MAX_DQP, MAX_DQP, totalDQP);
-            int32_t lcuQp = frame->m_sliceQpY + totalDQP;
-            lcuQp = Saturate(0, 51, lcuQp);
-            frame->m_lcuQps[ctb_addr] = (int8_t)lcuQp;
-        }
-    }
-
-    // if (BRC) => need correct deltaQp (via QStep) to hack BRC logic
-    /*
-    if (useBrc) {
-    int32_t totalDeltaQp = 0;
-    int32_t corr = 0;
-    float corr0 = pow(2.0, (frame->m_sliceQpY-4)/6.0);
-    float denum = 0.0;
-    for (int32_t ctb = 0; ctb < numCtb; ctb++) {
-    denum += pow(2.0, (frame->m_lcuQps[ctb] -4) / 6.0);
-    }
-    corr = 6.0 * log10( (numCtb * corr0) / denum) / log10(2.0);
-    // final correction
-    for (int32_t ctb = 0; ctb < numCtb; ctb++) {
-    int32_t lcuQp = frame->m_lcuQps[ctb] + corr;
-    lcuQp = Saturate(0, 51, lcuQp);
-    frame->m_lcuQps[ctb] = lcuQp;
-    }
-    }
-    */
-    //WriteDQpMap(frame, par);
-}
-
-#if 0
-int32_t rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
-                    int32_t numRows = rowsInRegion;
-                    if(((int32_t)(region_row * rowsInRegion) + numRows)*SIZE_BLK_LA > frame->height)
-                            numRows = (frame->height - (region_row * rowsInRegion)*SIZE_BLK_LA) / SIZE_BLK_LA;
-#endif
 
 namespace {
-    __m128i LoadAndSum4(int32_t *p, int32_t pitch, int32_t x, int32_t y) {
-        return _mm_hadd_epi32(_mm_add_epi32(_mm_loadu_si128((__m128i *)(p+(x+0)+(y+0)*pitch)),
-                                            _mm_loadu_si128((__m128i *)(p+(x+0)+(y+1)*pitch))),
-                              _mm_add_epi32(_mm_loadu_si128((__m128i *)(p+(x+4)+(y+0)*pitch)),
-                                            _mm_loadu_si128((__m128i *)(p+(x+4)+(y+1)*pitch))));
-    }
+    void AggregateRsCs(int32_t *const *data, const int32_t *pitch, int32_t w, int32_t h)
+    {
+        const int32_t pitchSrc = pitch[0];
+        const int32_t pitchDst1 = pitch[1];
+        const int32_t pitchDst2 = pitch[2];
+        const int32_t *src = data[0];
+        int32_t *dst1 = data[1];
+        int32_t *dst2 = data[2];
 
-    void SumUp(int32_t *out, int32_t pitchOut, const int32_t *in, int32_t pitchIn, uint32_t Width, uint32_t Height, int32_t shift) {
-        for (uint32_t y = 0; y < ((Height+(1<<shift)-1)>>shift); y++) {
-            for (uint32_t x = 0; x < ((Width+(1<<shift)-1)>>shift); x++)
-                out[y*pitchOut+x] = in[(2*y)*pitchIn+(2*x)]+in[(2*y)*pitchIn+(2*x+1)]+in[(2*y+1)*pitchIn+(2*x)]+in[(2*y+1)*pitchIn+(2*x+1)];
+        for (int32_t i = 0; i < h; i++) {
+            for (int32_t j = 0; j < w; j += 2) {
+                __m256i s0 = loada_si256(src + 4 * j + 0 * pitch[0]);
+                __m256i s1 = loada_si256(src + 4 * j + 1 * pitch[0]);
+                __m256i s2 = loada_si256(src + 4 * j + 2 * pitch[0]);
+                __m256i s3 = loada_si256(src + 4 * j + 3 * pitch[0]);
+                __m256i d1 = _mm256_hadd_epi32(_mm256_add_epi32(s0, s1), _mm256_add_epi32(s2, s3));
+                d1 = permute4x64(d1, 0, 2, 1, 3);
+                storea2_m128i(dst1 + 2 * j, dst1 + 2 * j + pitchDst1, d1);
+
+                __m128i d2 = _mm_add_epi32(si128_lo(d1), si128_hi(d1));
+                d2 = _mm_hadd_epi32(d2, d2);
+                storel_epi64(dst2 + j, d2);
+            }
+            src += pitchSrc * 4;
+            dst1 += pitchDst1 * 2;
+            dst2 += pitchDst2 * 1;
         }
     }
 };
+
+static int32_t DetectPalettizedTextContent(Frame* frame, int32_t& hasPal)
+{
+    const Statistics* stat = frame->m_stats[0];
+    const int32_t pitchRsCs = stat->m_pitchRsCs[2];
+    const int32_t pitchColorCount = stat->m_pitchColorCount16x16;
+    hasPal = 0;
+    int32_t blockCount = 0;
+    int32_t palCount = 0;
+    for (int32_t i = 0; i < (frame->m_origin->height >> 4); i++) {
+        for (int32_t j = 0; j < (frame->m_origin->width >> 4); j++) {
+            const int32_t rs = stat->m_rs[2][i * pitchRsCs + j];
+            const int32_t cs = stat->m_cs[2][i * pitchRsCs + j];
+            const int32_t rscs = (rs + cs + 8) >> 4;
+            const int32_t colorCount = stat->m_colorCount16x16[i * pitchColorCount + j];
+            if (colorCount < 8) {
+                int edge = MAX(rs, cs) / MAX(MIN(rs, cs), 2);
+                if (colorCount > 1 && (rs > 35 || cs > 35 || edge>1))
+                    palCount++;
+                if (rscs > 50)
+                    blockCount++;
+            }
+        }
+    }
+
+    int32_t hasText = blockCount * 50 > (frame->m_origin->height >> 4) * (frame->m_origin->width >> 4);
+    int32_t hasSomeText = blockCount * 400 > (frame->m_origin->height >> 4) * (frame->m_origin->width >> 4);
+
+    palCount = MAX(blockCount, palCount);
+
+    if(hasSomeText)
+        hasPal = palCount * 50 > (frame->m_origin->height >> 4) * (frame->m_origin->width >> 4);
+
+    return hasText;
+
+    // OLD IBC detector
+    //
+    //int32_t frameCs = std::accumulate(stat->m_cs[4], stat->m_cs[4] + stat->m_rcscSize[4], 0);
+    //int32_t frameRs = std::accumulate(stat->m_rs[4], stat->m_rs[4] + stat->m_rcscSize[4], 0);
+    //const int32_t BLOCK_SIZE = 4;
+    //int32_t hblocks = (int32_t)frame->m_origin->height / BLOCK_SIZE;
+    //int32_t wblocks = (int32_t)frame->m_origin->width / BLOCK_SIZE;
+    //frameCs /= hblocks * wblocks;
+    //frameRs /= hblocks * wblocks;
+    //frameCs = (int32_t)sqrt(frameCs);
+    //frameRs = (int32_t)sqrt(frameRs);
+
+    //const int32_t GRADIENT_THRESHOLD = 17;
+    ////fprintf(stderr, "frame=%d isText=%d\n", frame->m_frameOrder, (frameCs > GRADIENT_THRESHOLD && frameRs > GRADIENT_THRESHOLD) ? 1 : 0);
+    //return (frameCs > GRADIENT_THRESHOLD && frameRs > GRADIENT_THRESHOLD) ? 1 : 0;
+}
+
+
+#ifdef AMT_HROI_PSY_AQ
+
+static void setCtb_SegMap_Cmplx(Frame *frame, AV1VideoParam *par)
+{
+    //int32_t lumaSize = par->Width * par->Height;
+
+    //int32_t QP = par->QPI + frame->m_pyramidLayer + 1;  // frame->m_sliceQpY;
+
+    int32_t numCtb = par->PicWidthInCtbs * par->PicHeightInCtbs;
+    //int32_t maxCuSize = (par->MaxCUSize * par->MaxCUSize);
+
+    Statistics *stats = frame->m_stats[0];
+    CtbRoiStats *ctbStats = stats->ctbStats;
+
+    int32_t ctbWidthBnd = frame->m_origin->width - (par->PicWidthInCtbs - 1) * par->MaxCUSize;
+    int32_t ctbHeightBnd = frame->m_origin->height - (par->PicHeightInCtbs - 1) * par->MaxCUSize;
+
+    // seg info=====================================================================================
+    uint8_t  *segMap = &(stats->roi_map_8x8[0]);
+    int32_t segBlkPitch = stats->m_RoiPitch;
+    uint8_t  *lum8x8 = &(stats->lum_avg_8x8[0]);
+    int32_t lcuDimInSegBlks = par->MaxCUSize >> 3;
+    int32_t lcuWBndDimInSegBlks = ctbWidthBnd >> 3;
+    int32_t lcuHBndDimInSegBlks = ctbHeightBnd >> 3;
+
+    // complexity info==============================================================================
+    Statistics *statsCmplx = frame->m_stats[par->LowresFactor ? 1 : 0];
+    int32_t cmplxBlkPitch = (frame->m_origin->width + (SIZE_BLK_LA - 1)) / SIZE_BLK_LA;
+    int32_t cmplxBlkW = SIZE_BLK_LA;
+    int32_t cmplxBlkH = SIZE_BLK_LA;
+    if (par->LowresFactor) {
+        cmplxBlkPitch = (frame->m_lowres->width + (SIZE_BLK_LA - 1)) / SIZE_BLK_LA;
+        cmplxBlkW = SIZE_BLK_LA << par->LowresFactor;
+        cmplxBlkH = SIZE_BLK_LA << par->LowresFactor;
+    }
+    int32_t lcuDimInCmplxBlks = par->MaxCUSize / cmplxBlkW;
+    int32_t lcuWBndDimInCmplxBlks = (ctbWidthBnd + (cmplxBlkW - 1)) / cmplxBlkW;
+    int32_t lcuHBndDimInCmplxBlks = (ctbHeightBnd + (cmplxBlkW - 1)) / cmplxBlkW;
+
+    double picCmplx = 0.0;
+
+    // initialize picture stats
+    for (int32_t i = 0; i < NUM_HROI_CLASS; i++)
+    {
+        stats->roi_pic.numCtbRoi[i] = 0;
+        stats->roi_pic.cmplx[i] = 0.0;
+    }
+
+    int32_t luminanceAvg = 0;
+    int32_t numAct = 0;
+    for (int32_t ctb = 0; ctb < numCtb; ctb++)
+    {
+        int32_t ctbCol = (ctb % par->PicWidthInCtbs);
+        int32_t ctbRow = (ctb / par->PicWidthInCtbs);
+
+        int32_t luminance = 0;
+
+        // seg info==================================================================================
+        int32_t hS = (ctbRow == par->PicHeightInCtbs - 1) ? lcuHBndDimInSegBlks : lcuDimInSegBlks;
+        int32_t wS = (ctbCol == par->PicWidthInCtbs - 1) ? lcuWBndDimInSegBlks : lcuDimInSegBlks;
+        int32_t segSum = 0;
+
+        for (int32_t i = 0; i < hS; i++)
+        {
+            for (int32_t j = 0; j < wS; j++)
+            {
+                int32_t offset = (ctbRow * lcuDimInSegBlks + i) * segBlkPitch + ctbCol * lcuDimInSegBlks + j;
+                if (segMap[offset])
+                    segSum++;
+
+                luminance += lum8x8[offset];
+            }
+        }
+
+        ctbStats[ctb].segCount = segSum;
+        int32_t isFullFlag = (segSum > 31) ? 1 : 0;
+
+        // complexity================================================================================
+        int32_t hC = (ctbRow == par->PicHeightInCtbs - 1) ? lcuHBndDimInCmplxBlks : lcuDimInCmplxBlks;
+        int32_t wC = (ctbCol == par->PicWidthInCtbs - 1) ? lcuWBndDimInCmplxBlks : lcuDimInCmplxBlks;
+        float stc = 0.0;
+
+        for (int32_t i = 0; i < hC; i++)
+        {
+            for (int32_t j = 0; j < wC; j++)
+            {
+                int32_t offset = (ctbRow * lcuDimInCmplxBlks + i) * cmplxBlkPitch + ctbCol * lcuDimInCmplxBlks + j;
+                double cmplx = (double)MIN(statsCmplx->m_interSatd[offset], statsCmplx->m_intraSatd[offset]);
+                stc += (float) cmplx;
+            }
+        }
+        stc /= (1 << par->bitDepthLumaShift);
+        //stc /= ctbSizeCmplx;
+        stc /= (hC*wC);  // ?? not needed
+
+        ctbStats[ctb].complexity = stc;
+
+        ctbStats[ctb].luminance = 1 + luminance / (wS*hS);
+
+        if (ctbStats[ctb].luminance >= 32) {
+            luminanceAvg += ctbStats[ctb].luminance;
+            numAct++;
+        }
+
+        picCmplx += stc;
+        int32_t ctbClass = 0;
+
+        if (ctbStats[ctb].segCount) {
+            ctbClass++;
+            if (isFullFlag) {
+                ctbClass++;
+            }
+        }
+
+        ctbStats[ctb].roiLevel = ctbClass;
+
+        stats->roi_pic.numCtbRoi[ctbClass]++;
+
+        stats->roi_pic.cmplx[ctbClass] += stc;
+
+    }
+    //printf("\n Frame %d Pic Cmplx %lf", frame->m_frameOrder, picCmplx);
+    if (numAct) luminanceAvg /= numAct;
+    stats->roi_pic.luminanceAvg = (float) luminanceAvg;
+
+}
+
+static void setCtb_SegMap(Frame *frame, AV1VideoParam *par)
+{
+    //int32_t lumaSize = par->Width * par->Height;
+
+    //int32_t QP = par->QPI + frame->m_pyramidLayer + 1;  // frame->m_sliceQpY;
+
+    int32_t numCtb = par->PicWidthInCtbs * par->PicHeightInCtbs;
+    //int32_t maxCuSize = (par->MaxCUSize * par->MaxCUSize);
+
+    Statistics *stats = frame->m_stats[0];
+    CtbRoiStats *ctbStats = stats->ctbStats;
+
+    int32_t ctbWidthBnd = frame->m_origin->width - (par->PicWidthInCtbs - 1) * par->MaxCUSize;
+    int32_t ctbHeightBnd = frame->m_origin->height - (par->PicHeightInCtbs - 1) * par->MaxCUSize;
+
+    // seg info=====================================================================================
+    uint8_t  *segMap = &(stats->roi_map_8x8[0]);
+    int32_t segBlkPitch = stats->m_RoiPitch;
+    uint8_t  *lum8x8 = &(stats->lum_avg_8x8[0]);
+    int32_t lcuDimInSegBlks = par->MaxCUSize >> 3;
+    int32_t lcuWBndDimInSegBlks = ctbWidthBnd >> 3;
+    int32_t lcuHBndDimInSegBlks = ctbHeightBnd >> 3;
+
+    double picCmplx = 0.0;
+
+    // initialize picture stats
+    for (int32_t i = 0; i < NUM_HROI_CLASS; i++)
+    {
+        stats->roi_pic.numCtbRoi[i] = 0;
+        stats->roi_pic.cmplx[i] = 0.0;
+    }
+
+    int32_t luminanceAvg = 0;
+    int32_t numAct = 0;
+    for (int32_t ctb = 0; ctb < numCtb; ctb++)
+    {
+        int32_t ctbCol = (ctb % par->PicWidthInCtbs);
+        int32_t ctbRow = (ctb / par->PicWidthInCtbs);
+
+        int32_t luminance = 0;
+
+        // seg info==================================================================================
+        int32_t hS = (ctbRow == par->PicHeightInCtbs - 1) ? lcuHBndDimInSegBlks : lcuDimInSegBlks;
+        int32_t wS = (ctbCol == par->PicWidthInCtbs - 1) ? lcuWBndDimInSegBlks : lcuDimInSegBlks;
+        int32_t segSum = 0;
+
+        for (int32_t i = 0; i < hS; i++)
+        {
+            for (int32_t j = 0; j < wS; j++)
+            {
+                int32_t offset = (ctbRow * lcuDimInSegBlks + i) * segBlkPitch + ctbCol * lcuDimInSegBlks + j;
+                if (segMap[offset])
+                    segSum++;
+
+                luminance += lum8x8[offset];
+            }
+        }
+
+        ctbStats[ctb].segCount = segSum;
+        int32_t isFullFlag = (segSum > 31) ? 1 : 0;
+
+        // complexity================================================================================
+        float stc = 0.0;
+
+        ctbStats[ctb].complexity = stc;
+
+        ctbStats[ctb].luminance = 1 + luminance / (wS*hS);
+
+        if (ctbStats[ctb].luminance >= 32) {
+            luminanceAvg += ctbStats[ctb].luminance;
+            numAct++;
+        }
+
+        picCmplx += stc;
+        int32_t ctbClass = 0;
+
+        if (ctbStats[ctb].segCount) {
+            ctbClass++;
+            if (isFullFlag) {
+                ctbClass++;
+            }
+        }
+
+        ctbStats[ctb].roiLevel = ctbClass;
+
+        stats->roi_pic.numCtbRoi[ctbClass]++;
+
+        stats->roi_pic.cmplx[ctbClass] += stc;
+
+    }
+
+    if (numAct) luminanceAvg /= numAct;
+    stats->roi_pic.luminanceAvg = (float) luminanceAvg;
+
+}
+
+void CopyFramePtrInfoToFrameBuffElement(FrameBuffElement &tmp, Frame *frm)
+{
+    tmp.poc = frm->m_frameOrder;
+    tmp.frameY = frm->m_origin->y;
+    tmp.frameU = frm->m_origin->uv;
+    tmp.frameV = frm->m_origin->uv + 1;
+    tmp.h = (frm->m_origin->height + 15)&~15;    // 16
+    tmp.w = (frm->m_origin->width + 15)&~15;    // 16
+    tmp.p = frm->m_origin->pitch_luma_pix;
+    tmp.pc = frm->m_origin->pitch_chroma_pix;
+    tmp.nv12 = 1;
+}
+
+#endif
 
 mfxStatus Lookahead::Execute(ThreadingTask& task)
 {
@@ -2918,19 +3208,7 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
     uint32_t region_row = task.row;
     //uint32_t region_col = task.col;
     FrameIter begin = m_inputQueue.begin();
-    FrameIter end   = m_inputQueue.end();
-
-    // fix for interlace processing to keep old-style (pair)
-    Frame* in[2] = {NULL, NULL};
-    {
-        FrameIter it = std::find_if(begin, end, isEqual(frameOrder));
-        in[0] = (it == end) ? NULL : *it;
-
-        if ((m_videoParam.picStruct != MFX_PICSTRUCT_PROGRESSIVE) && in[0]) {
-            it++;
-            in[1] = (it == end) ? NULL : *it;
-        }
-    }
+    FrameIter end = m_inputQueue.end();
 
     int32_t fieldCount = (m_videoParam.picStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
     uint8_t useLowres = m_videoParam.LowresFactor;
@@ -2938,14 +3216,25 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
     switch (action) {
     case TT_PREENC_START:
         {
+            // fix for interlace processing to keep old-style (pair)
+            Frame* in[2] = { NULL, NULL };
+            {
+                FrameIter it = std::find_if(begin, end, isEqual(frameOrder));
+                in[0] = (it == end) ? NULL : *it;
+
+                if ((m_videoParam.picStruct != MFX_PICSTRUCT_PROGRESSIVE) && in[0]) {
+                    it++;
+                    in[1] = (it == end) ? NULL : *it;
+                }
+            }
             // do this stage only once per frame
-            if ((m_lastAcceptedFrame[0] && in[0]) && (m_lastAcceptedFrame[0]->m_frameOrder == in[0]->m_frameOrder)) {
+            if (in[0] && m_lastAcceptedFrameOrder == in[0]->m_frameOrder) {
                 break;
             }
 
             for (int32_t fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
 
-                if (in[fieldNum] && (useLowres || m_videoParam.SceneCut)) {
+                if (in[fieldNum] && (useLowres && (m_videoParam.AnalyzeCmplx || (m_videoParam.DeltaQpMode & (AMT_DQP_PAQ | AMT_DQP_CAL))))) {
                     if (in[fieldNum]->m_bitDepthLuma == 8)
                         Scale<uint8_t>(in[fieldNum]->m_origin, in[fieldNum]->m_lowres);
                     else
@@ -2955,39 +3244,87 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                         PadRectLuma(*in[fieldNum]->m_lowres, m_videoParam.fourcc, 0, 0, in[fieldNum]->m_lowres->width, in[fieldNum]->m_lowres->height);
                 }
                 if (m_videoParam.SceneCut) {
-                    //int32_t updateGop = 1;
-                    //int32_t updateState = 1;
-                    //DetectSceneCut(begin, end, in[fieldNum], updateGop, updateState);
-                    AnalyzeSceneCut_AndUpdateState_Atul(in[fieldNum]);
+                    AnalyzeSceneCut_AndUpdateState(in[fieldNum]);
                 }
+            }
+#ifdef AMT_HROI_PSY_AQ
+            if (m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) {
+                FrameBuffElement tmp;
+                CopyFramePtrInfoToFrameBuffElement(tmp, in[0]);
+                // Init slicing
+                if (frameOrder == 0) FS_set_Slice(m_enc.m_faceSkinDet, tmp.w, tmp.h, tmp.p, tmp.pc, MIN(8, m_regionCount));
+
+                if (m_videoParam.DeltaQpMode & AMT_DQP_HROI) {
+                    Frame *frm = in[0];
+                    /*if (!m_videoParam.SceneCut) {
+                        int32_t sceneCut = DetectSceneCut_AMT(in[0], (in[0]->m_frameOrder > 0) ? m_lastAcceptedFrame[0] : NULL);
+                        if (frm->m_stats[1]) frm->m_stats[1]->m_sceneChange = sceneCut;
+                        if (frm->m_stats[0]) frm->m_stats[0]->m_sceneChange = sceneCut;
+                    }*/
+
+                    if (in[0]->m_frameOrder == 0) FS_set_SChg(m_enc.m_faceSkinDet, 1);
+                    else if (frm->m_stats[1])    FS_set_SChg(m_enc.m_faceSkinDet, frm->m_stats[1]->m_sceneChange);
+                    else if (frm->m_stats[0])    FS_set_SChg(m_enc.m_faceSkinDet, frm->m_stats[0]->m_sceneChange);
+
+                    FS_ProcessMode1_Slice_start(m_enc.m_faceSkinDet, &tmp, &(in[0]->m_stats[0]->roi_map_8x8[0]));
+                }
+                else {
+                    FS_Luma_Slice_start(m_enc.m_faceSkinDet, &tmp);
+                }
+            }
+#endif
+            for (int32_t fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
                 m_lastAcceptedFrame[fieldNum] = in[fieldNum];
             }
-
+            m_lastAcceptedFrameOrder = in[0]->m_frameOrder;
             break;
         }
 
 
     case TT_PREENC_ROUTINE:
         {
+            Frame* in[2] = { NULL, NULL };
+            in[0] = m_lastAcceptedFrame[0];
+            in[1] = m_lastAcceptedFrame[1];
+
+#ifdef AMT_HROI_PSY_AQ
+            if (m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) {
+                if (m_videoParam.DeltaQpMode & AMT_DQP_HROI) {
+                    if (region_row < (uint32_t)FS_get_NumSlice(m_enc.m_faceSkinDet))
+                        FS_ProcessMode1_Slice_main(m_enc.m_faceSkinDet, region_row);
+                }
+                else if (m_videoParam.DeltaQpMode & AMT_DQP_PSY) {
+                    if (region_row < (uint32_t)FS_get_NumSlice(m_enc.m_faceSkinDet))
+                        FS_Luma_Slice_main(m_enc.m_faceSkinDet, region_row, in[0]->m_bitDepthLuma);
+                }
+            }
+#endif
 
             if (in[0] && in[0]->m_frameOrder > 0 &&
                 (m_videoParam.AnalyzeCmplx || (m_videoParam.DeltaQpMode & (AMT_DQP_PAQ|AMT_DQP_CAL)) )) // PAQ/CAL disable in encOrder
             {
                 for (int32_t fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
                     Frame* curr = in[fieldNum];
+#ifdef ZERO_DELAY_ANALYZE_CMPLX
+                    FrameData* prev_origin = m_prev_origin;
+                    FrameData* prev_lowres = m_prev_lowres;
+#else
                     FrameIter it = std::find_if(begin, end, isEqual(curr->m_frameOrder));
                     if (it == begin || it == end) {
                         it = end;
                     } else {
                         it--;
                     }
+                    FrameData* prev_origin = (*it)->m_origin;
+                    FrameData* prev_lowres = (*it)->m_lowres;
+#endif
 
                     // ME (prev, curr)
-                    if (it != end) {
-                        Frame* prev = (*it);
+                    if (prev_origin!=NULL) {
+
                         FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
                         Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
-                        FrameData* framePrev = useLowres ? prev->m_lowres : prev->m_origin;
+                        FrameData* framePrev = useLowres ? prev_lowres : prev_origin;
 
                         int32_t rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
                         int32_t numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
@@ -2996,7 +3333,7 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                             DoInterAnalysis_OneRow(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0],
                                 &stat->m_mv[0], 0, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, region_row * rowsInRegion + i,
                                 m_videoParam.FullresMetrics ? curr->m_origin : NULL,
-                                m_videoParam.FullresMetrics ? prev->m_origin : NULL);
+                                m_videoParam.FullresMetrics ? prev_origin : NULL);
                         }
 #ifndef LOW_COMPLX_PAQ
                         if ((m_videoParam.DeltaQpMode & (AMT_DQP_PAQ|AMT_DQP_CAL)) && useLowres) { // need refine for _Original_ resolution
@@ -3033,18 +3370,24 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                     }
 #endif
                 } // foreach fieldNum
-            } else {
+            }
+            else if (in[0] && (m_videoParam.AnalyzeCmplx || (m_videoParam.DeltaQpMode & (AMT_DQP_PAQ | AMT_DQP_CAL))))
+            {
                 for (int32_t fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
                     Frame* curr = in[fieldNum];
                     Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
-                    FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
-                    int32_t rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
-                    int32_t numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
-                    int32_t picWidthInBlks = (frame->width + SIZE_BLK_LA - 1) / SIZE_BLK_LA;
-                    int32_t fPos = (region_row * rowsInRegion) * picWidthInBlks; // [fPos, lPos)
-                    int32_t lPos = fPos + numActiveRows*picWidthInBlks;
-                    std::fill(stat->m_interSad.begin()+fPos, stat->m_interSad.begin()+lPos, std::numeric_limits<int32_t>::max());
-                    std::fill(stat->m_interSatd.begin()+fPos, stat->m_interSatd.begin()+lPos, std::numeric_limits<int32_t>::max());
+                    if (stat) {
+                        FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
+                        int32_t rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
+                        int32_t numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
+                        int32_t picWidthInBlks = (frame->width + SIZE_BLK_LA - 1) / SIZE_BLK_LA;
+                        int32_t fPos = (region_row * rowsInRegion) * picWidthInBlks; // [fPos, lPos)
+                        int32_t lPos = fPos + numActiveRows * picWidthInBlks;
+                        if (lPos <= stat->m_interSad.size())
+                            std::fill(stat->m_interSad.begin() + fPos, stat->m_interSad.begin() + lPos, std::numeric_limits<int32_t>::max());
+                        if (lPos <= stat->m_interSatd.size())
+                            std::fill(stat->m_interSatd.begin() + fPos, stat->m_interSatd.begin() + lPos, std::numeric_limits<int32_t>::max());
+                    }
                 }
             }
 
@@ -3078,10 +3421,35 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
 
                 for (int32_t fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
                     Frame* curr = in[fieldNum];
-                    for(int32_t i=0;i<numActiveRows;i++) {
-                        (curr->m_bitDepthLuma == 8)
-                            ? CalcRsCs_OneRow<uint8_t>(curr->m_origin, curr->m_stats[0], m_videoParam, region_row * rowsInRegion + i)
-                            : CalcRsCs_OneRow<uint16_t>(curr->m_origin, curr->m_stats[0], m_videoParam, region_row * rowsInRegion + i);
+                    (curr->m_bitDepthLuma == 8)
+                        ? CalcRsCs_OneRow<uint8_t>(curr->m_origin, curr->m_stats[0], m_videoParam, region_row * rowsInRegion, numActiveRows)
+                        : CalcRsCs_OneRow<uint16_t>(curr->m_origin, curr->m_stats[0], m_videoParam, region_row * rowsInRegion, numActiveRows);
+
+                    //if ((m_videoParam.screenMode & 0x6) && curr->m_picCodeType == MFX_FRAMETYPE_I) {
+                    if (m_videoParam.screenMode & 0x6) {
+                        const int32_t startRowBlk16 = (region_row * rowsInRegion * SIZE_BLK_LA) >> 4;
+                        const int32_t startColBlk16 = 0;
+                        const int32_t endRowBlk16 = std::min(int32_t(region_row + 1) * rowsInRegion * SIZE_BLK_LA, curr->m_origin->height) >> 4;
+                        const int32_t endColBlk16 = curr->m_origin->width >> 4;
+                        const int32_t pitchSrc = curr->m_origin->pitch_luma_pix;
+                        const uint8_t *src = curr->m_origin->y;
+                        const int32_t pitchColorCount = curr->m_stats[0]->m_pitchColorCount16x16;
+                        uint8_t *colorCount = curr->m_stats[0]->m_colorCount16x16;
+                        for (int32_t y = startRowBlk16; y < endRowBlk16; y++) {
+                            for (int32_t x = startColBlk16; x < endColBlk16; x++) {
+                                alignas(32) uint8_t hist[256] = {};
+                                for (int32_t i = 0; i < 16; i++)
+                                    for (int32_t j = 0; j < 16; j++)
+                                        hist[src[(16 * y + i) * pitchSrc + 16 * x + j]] = 1;
+                                // accumulate
+                                __m256i sum = _mm256_sad_epu8(loada_si256(hist), _mm256_setzero_si256());
+                                for (int32_t i = 32; i < 256; i += 32)
+                                    sum = _mm256_add_epi64(sum, _mm256_sad_epu8(loada_si256(hist + i), _mm256_setzero_si256()));
+                                __m128i sum128 = _mm_add_epi64(si128_lo(sum), si128_hi(sum));
+                                const uint8_t count = uint8_t(_mm_cvtsi128_si32(sum128) + _mm_extract_epi32(sum128, 2));
+                                colorCount[y * pitchColorCount + x] = count;
+                            }
+                        }
                     }
                 }
             }
@@ -3091,40 +3459,50 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
 
     case TT_PREENC_END:
         {
-            if (in) {
-                for (int32_t fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
-                    Frame *curr = in[fieldNum];
-                    int32_t width4  = (m_videoParam.Width+63)&~63;
-                    int32_t height4 = (m_videoParam.Height+63)&~63;
-                    int32_t pitchRsCs4  = curr->m_stats[0]->m_pitchRsCs4;
-                    int32_t pitchRsCs8  = curr->m_stats[0]->m_pitchRsCs4>>1;
-                    int32_t pitchRsCs16 = curr->m_stats[0]->m_pitchRsCs4>>2;
-                    int32_t pitchRsCs32 = curr->m_stats[0]->m_pitchRsCs4>>3;
-                    int32_t pitchRsCs64 = curr->m_stats[0]->m_pitchRsCs4>>4;
-                    int32_t *rs4  = curr->m_stats[0]->m_rs[0];
-                    int32_t *rs8  = curr->m_stats[0]->m_rs[1];
-                    int32_t *rs16 = curr->m_stats[0]->m_rs[2];
-                    int32_t *rs32 = curr->m_stats[0]->m_rs[3];
-                    int32_t *rs64 = curr->m_stats[0]->m_rs[4];
-                    int32_t *cs4  = curr->m_stats[0]->m_cs[0];
-                    int32_t *cs8  = curr->m_stats[0]->m_cs[1];
-                    int32_t *cs16 = curr->m_stats[0]->m_cs[2];
-                    int32_t *cs32 = curr->m_stats[0]->m_cs[3];
-                    int32_t *cs64 = curr->m_stats[0]->m_cs[4];
+            Frame* in[2] = { NULL, NULL };
+            in[0] = m_lastAcceptedFrame[0];
+            in[1] = m_lastAcceptedFrame[1];
 
-                    SumUp(rs8,  pitchRsCs8,  rs4,  pitchRsCs4,  m_videoParam.Width, m_videoParam.Height, 3);
-                    SumUp(rs16, pitchRsCs16, rs8,  pitchRsCs8,  m_videoParam.Width, m_videoParam.Height, 4);
-                    SumUp(rs32, pitchRsCs32, rs16, pitchRsCs16, m_videoParam.Width, m_videoParam.Height, 5);
-                    SumUp(rs64, pitchRsCs64, rs32, pitchRsCs32, m_videoParam.Width, m_videoParam.Height, 6);
-                    SumUp(cs8,  pitchRsCs8,  cs4,  pitchRsCs4,  m_videoParam.Width, m_videoParam.Height, 3);
-                    SumUp(cs16, pitchRsCs16, cs8,  pitchRsCs8,  m_videoParam.Width, m_videoParam.Height, 4);
-                    SumUp(cs32, pitchRsCs32, cs16, pitchRsCs16, m_videoParam.Width, m_videoParam.Height, 5);
-                    SumUp(cs64, pitchRsCs64, cs32, pitchRsCs32, m_videoParam.Width, m_videoParam.Height, 6);
+            if (in[0]) {
+                const int32_t alignedHeight = (m_videoParam.Height + 63) & ~63;
+                const int32_t alignedWidth = (m_videoParam.Width + 63) & ~63;
+                for (int32_t fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                    const Statistics *stats = in[fieldNum]->m_stats[0];
+                    AggregateRsCs(stats->m_rs + 0, stats->m_pitchRsCs + 0, alignedWidth >> 4, alignedHeight >> 4); // 4x4 -> 8x8 -> 16x16
+                    AggregateRsCs(stats->m_rs + 2, stats->m_pitchRsCs + 2, alignedWidth >> 6, alignedHeight >> 6); // 16x16 -> 32x32 -> 64x64
+                    AggregateRsCs(stats->m_cs + 0, stats->m_pitchRsCs + 0, alignedWidth >> 4, alignedHeight >> 4);
+                    AggregateRsCs(stats->m_cs + 2, stats->m_pitchRsCs + 2, alignedWidth >> 6, alignedHeight >> 6);
                 }
             }
+
+            if (in[0]) {
+                in[0]->m_allowPalette = 0;
+                if (m_videoParam.screenMode & 0x4) {
+                    in[0]->hasTextContent = DetectPalettizedTextContent(in[0], in[0]->hasPalettizedContent);
+                }
+                else {
+                    in[0]->hasTextContent = (m_videoParam.screenMode & 0x1) ? 1 : 0;
+                    in[0]->hasPalettizedContent = (m_videoParam.screenMode & 0x2) ? 1 : 0;
+                }
+                if (m_videoParam.screenMode & 0x2) {
+                    in[0]->m_allowPalette = 1;
+                    if (m_videoParam.screenMode & 0x4) {
+                        in[0]->m_allowPalette = in[0]->hasPalettizedContent;
+                    }
+                }
+                in[0]->m_allowIntraBc = 0;
+                if (in[0]->m_picCodeType == MFX_FRAMETYPE_I && (m_videoParam.screenMode & 0x1)) {
+                    in[0]->m_allowIntraBc = 1;
+                    if (m_videoParam.screenMode & 0x4) {
+                        in[0]->m_allowIntraBc = in[0]->hasTextContent;
+                    }
+                }
+            }
+
             // syncpoint only (like accumulation & refCounter--), no real hard working here!!!
             for (int32_t fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
                 if (m_videoParam.AnalyzeCmplx) {
+#ifndef ZERO_DELAY_ANALYZE_CMPLX
                     FrameIter it = std::find_if(begin, end, isEqual(in[fieldNum]->m_frameOrder));
                     if (it == begin || it == end) {
                         it = end;
@@ -3132,19 +3510,49 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                         it--;
                     }
                     if (it != end) (*it)->m_lookaheadRefCounter--;
-
+#endif
                 }
                 if (m_videoParam.DeltaQpMode) {
                     AverageRsCs(in[fieldNum]);
                     if (m_videoParam.DeltaQpMode == AMT_DQP_CAQ) {
-                        if (in[fieldNum]) in[fieldNum]->m_lookaheadRefCounter--;
+                        //if (in[fieldNum]) in[fieldNum]->m_lookaheadRefCounter--;
                     } else { // & (PAQ | CAL)
+#if ENABLE_QPMAP
                         int32_t frameOrderCentral = in[fieldNum]->m_frameOrder - m_bufferingPaq;
                         int32_t updateState = 1;
                         BuildQpMap(begin, end, frameOrderCentral, m_videoParam, updateState);
+#endif
                     }
                 }
             }
+#ifdef AMT_HROI_PSY_AQ
+            if (m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) {
+                if ((m_videoParam.DeltaQpMode & AMT_DQP_HROI) == 0) {
+                    FS_Luma_Slice_end(m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->lum_avg_8x8[0]), in[0]->m_stats[0]->lum_avg_8x8.size(), in[0]->m_bitDepthLuma);
+                }
+                else {
+                    FS_ProcessMode1_Slice_end(m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->roi_map_8x8[0]), &(in[0]->m_stats[0]->lum_avg_8x8[0]), in[0]->m_stats[0]->lum_avg_8x8.size());
+                }
+                // set seg map and complexity of ctb
+                if (m_videoParam.AnalyzeCmplx) {
+                    setCtb_SegMap_Cmplx(in[0], &m_videoParam);
+                } else {
+                    setCtb_SegMap(in[0], &m_videoParam);
+                }
+            }
+#endif
+#ifdef ZERO_DELAY_ANALYZE_CMPLX
+            SafeRelease(m_prev_origin);
+            SafeRelease(m_prev_lowres);
+            if (in[0] &&
+                (m_videoParam.AnalyzeCmplx || (m_videoParam.DeltaQpMode & (AMT_DQP_PAQ | AMT_DQP_CAL)))) // PAQ/CAL disable in encOrder
+            {
+                m_prev_origin = in[0]->m_origin;
+                m_prev_lowres = in[0]->m_lowres;
+                m_prev_origin->AddRef();
+                m_prev_lowres->AddRef();
+            }
+#endif
             break;
         }
     case TT_HUB:
@@ -3157,7 +3565,6 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
         }
     };
 
-    //vm_interlocked_inc32(&m_task->m_numFinishedThreadingTasks);
     return MFX_ERR_NONE;
 
 } //
@@ -3199,8 +3606,6 @@ enum {
     void MotionRangeDeliveryF(int32_t xLoc, int32_t yLoc, int32_t *limitXleft, int32_t *limitXright, int32_t *limitYup, int32_t *limitYdown)
     {
         int32_t Extended_Height = LOWRES_H + 2 *PAD_V;
-        int32_t locY = yLoc / ((3 * (16 / BLOCK_H)) / 2);
-        int32_t locX = xLoc / ((3 * (16 / BLOCK_W)) / 2);
         *limitXleft = std::max(-16, -(xLoc * BLOCK_W) - PAD_H);
         *limitXright = std::min(15, LOWRES_PITCH - (((xLoc + 1) * BLOCK_W) + PAD_H));
         *limitYup = std::max(-12, -(yLoc * BLOCK_H) - PAD_V);
@@ -3239,11 +3644,10 @@ enum {
     void MVpropagationCheck(int32_t xLoc, int32_t yLoc, AV1MV *propagatedMV)
     {
         int32_t Extended_Height = LOWRES_H + 2 *PAD_V;
-        int32_t
-            left = (xLoc * BLOCK_W) + PAD_H,
-            right = (LOWRES_PITCH - left - BLOCK_W),
-            up = (yLoc * BLOCK_H) + PAD_V,
-            down = (Extended_Height - up - BLOCK_H);
+        int16_t left = int16_t((xLoc * BLOCK_W) + PAD_H);
+        int16_t right = int16_t(LOWRES_PITCH - left - BLOCK_W);
+        int16_t up = int16_t((yLoc * BLOCK_H) + PAD_V);
+        int16_t down = int16_t(Extended_Height - up - BLOCK_H);
 
         if(propagatedMV->mvx < 0) {
             if(left + propagatedMV->mvx < 0)
@@ -3310,7 +3714,6 @@ enum {
         uint8_t *refFrame = ref + offset;
         AV1MV *current = srcMv;
         outSAD = SAD;
-        int32_t acc = (accuracy == 1) ? 1 : 4;
 
         if (first) {
             MVcalcSAD8x8(ZERO_MV, objFrame, refFrame, &bestSAD, &distance);
@@ -3340,8 +3743,8 @@ enum {
             AV1PP::search_best_block8x8(ps, pr, LOWRES_PITCH, xrange, yrange, &bSAD, &bX, &bY);
             if (bSAD < range.SAD) {
                 range.SAD = bSAD;
-                range.BestMV.mvx = bX + limitXleft;
-                range.BestMV.mvy = bY + limitYup;
+                range.BestMV.mvx = int16_t(bX + limitXleft);
+                range.BestMV.mvy = int16_t(bY + limitYup);
                 range.distance = DistInt(range.BestMV);
             }
         }
@@ -3483,8 +3886,8 @@ enum {
             ttMV = range.BestMV;
             bestSAD = range.SAD;
             SearchLimitsCalc(xLoc, yLoc, &limitXleft, &limitXright, &limitYup, &limitYdown, 1, range.BestMV);
-            for (tMV.mvy = limitYup; tMV.mvy <= limitYdown; tMV.mvy++) {
-                for (tMV.mvx = limitXleft; tMV.mvx <= limitXright; tMV.mvx++) {
+            for (tMV.mvy = (int16_t)limitYup; tMV.mvy <= limitYdown; tMV.mvy++) {
+                for (tMV.mvx = (int16_t)limitXleft; tMV.mvx <= limitXright; tMV.mvx++) {
                     preMV.mvx = tMV.mvx + ttMV.mvx;
                     preMV.mvy = tMV.mvy + ttMV.mvy;
                     foundBetter = MVcalcSAD8x8(preMV, objFrame, refFrame, &bestSAD, &distance);
@@ -3509,9 +3912,9 @@ enum {
         if (!first) {
             SearchLimitsCalc(xLoc, yLoc, &limitXleft, &limitXright, &limitYup, &limitYdown, 16/*32*/, ZERO_MV);
             counter = 0;
-            for (tMV.mvy = limitYup; tMV.mvy <= limitYdown; tMV.mvy += 2) {
+            for (tMV.mvy = (int16_t)limitYup; tMV.mvy <= limitYdown; tMV.mvy += 2) {
                 lineSAD[0] = INT_MAX;
-                for (tMV.mvx = limitXleft + ((counter % 2) * 2); tMV.mvx <= limitXright; tMV.mvx += 4) {
+                for (tMV.mvx = (int16_t)limitXleft + ((counter % 2) * 2); tMV.mvx <= limitXright; tMV.mvx += 4) {
                     ttMV.mvx = tMV.mvx + ZERO_MV.mvx;
                     ttMV.mvy = tMV.mvy + ZERO_MV.mvy;
                     bestSAD = range.SAD;
@@ -3530,8 +3933,8 @@ enum {
         }
         ttMV = range.BestMV;
         SearchLimitsCalc(xLoc, yLoc, &limitXleft, &limitXright, &limitYup, &limitYdown, 1, range.BestMV);
-        for (tMV.mvy = limitYup; tMV.mvy <= limitYdown; tMV.mvy++) {
-            for (tMV.mvx = limitXleft; tMV.mvx <= limitXright; tMV.mvx++) {
+        for (tMV.mvy = (int16_t)limitYup; tMV.mvy <= limitYdown; tMV.mvy++) {
+            for (tMV.mvx = (int16_t)limitXleft; tMV.mvx <= limitXright; tMV.mvx++) {
                 preMV.mvx = tMV.mvx + ttMV.mvx;
                 preMV.mvy = tMV.mvy + ttMV.mvy;
                 foundBetter = MVcalcSAD8x8(preMV, objFrame, refFrame, &bestSAD, &distance);
@@ -3575,12 +3978,45 @@ enum {
 
     void SceneStats::Create(const AllocInfo &allocInfo)
     {
-        for (int32_t idx = 0; idx < 2; idx++) {
-            memset(data, 0, sizeof(data)/sizeof(data[0]));
+        //for (int32_t idx = 0; idx < 2; idx++) {
+            //memset(data, 0, sizeof(data)/sizeof(data[0]));
+            memset(data, 0, sizeof(data));
             int32_t initialPoint = (LOWRES_PITCH * PAD_V) + PAD_H;
             Y = data + initialPoint;
-        }
+        //}
     }
+
+    void SceneStats::Copy(const SceneStats &from)
+    {
+        memcpy(mv, from.mv, sizeof(mv));
+        memcpy(Cs, from.Cs, sizeof(Cs));
+        memcpy(Rs, from.Rs, sizeof(Rs));
+        avgCs = from.avgCs;
+        avgRs = from.avgRs;
+        SC = from.SC;
+        AFD = from.AFD;
+        TSC = from.TSC;
+        RsCsDiff = from.RsCsDiff;
+        MVdiffVal = from.MVdiffVal;
+        RepeatPattern = from.RepeatPattern;
+#if defined(ENABLE_AV1_ALTR)
+        MV0  = from.MV0;
+        m_ltrMCFD = from.m_ltrMCFD;
+#endif
+        memcpy(data, from.data, sizeof(data));
+    }
+
+#if defined(ENABLE_AV1_ALTR)
+    void SceneStats::Create()
+    {
+        //for (int32_t idx = 0; idx < 2; idx++) {
+            //memset(data, 0, sizeof(data) / sizeof(data[0]));
+            memset(data, 0, sizeof(data));
+            int32_t initialPoint = (LOWRES_PITCH * PAD_V) + PAD_H;
+            Y = data + initialPoint;
+        //}
+    }
+#endif
 
     template <class T> void SubSampleImage(const T *pSrc, int32_t srcWidth, int32_t srcHeight, int32_t srcPitch, uint8_t *pDst, int32_t dstWidth, int32_t dstHeight, int32_t dstPitch)
     {
@@ -3596,6 +4032,16 @@ enum {
             }
         }
     }
+
+#if defined(ENABLE_AV1_ALTR)
+    void Lookahead::getSubSampleImageLtr(Frame* in) {
+        uint8_t *origin = in->m_origin->y;
+        int32_t srcWidth = in->m_origin->width;
+        int32_t srcHeight = in->m_origin->height;
+        int32_t srcPitch = in->m_origin->pitch_luma_pix;
+        SubSampleImage(origin, srcWidth, srcHeight, srcPitch, m_sceneStatsLtr->Y, LOWRES_W, LOWRES_H, LOWRES_PITCH);
+    }
+#endif
 
     int32_t TableLookUp(int32_t limit, float *table, float comparisonValue)
     {
@@ -3621,8 +4067,8 @@ enum {
             input.RsCsDiff = (float)sqrt((RsDiff*RsDiff) + (CsDiff*CsDiff));
         }
 
-        float ssDCval  = ssDCint * (1.0 / LOWRES_SIZE);
-        float refDCval = refDCint * (1.0 / LOWRES_SIZE);
+        float ssDCval  = ssDCint * (1.0f / LOWRES_SIZE);
+        float refDCval = refDCint * (1.0f / LOWRES_SIZE);
         float gchDC = NABS(ssDCval - refDCval);
         float posBalance = (float)(histogram[3] + histogram[4]);
         float negBalance = (float)(histogram[0] + histogram[1]);
@@ -3638,18 +4084,20 @@ enum {
         float diffMVdiffVal = input.MVdiffVal - ref.MVdiffVal;
         int32_t TSCindex = TableLookUp(NUM_TSC, lmt_tsc2, input.TSC);
 
-        float SC = (float)sqrt(( input.avgRs * input.avgRs) + (input.avgCs * input.avgCs));
+        float SC = input.SC;
+
         int32_t SCindex  = TableLookUp(NUM_SC, lmt_sc2,  SC);
 
-        int32_t Schg = SCDetectUF1(diffMVdiffVal, input.RsCsDiff, input.MVdiffVal, input.avgRs, input.AFD, CsDiff, diffTSC, input.TSC, gchDC, diffRsCsDiff, posBalance, SC, TSCindex, SCindex, input.avgCs, diffAFD, negBalance, ssDCval, refDCval, RsDiff);
+        int32_t Schg = SCDetectUF1(diffMVdiffVal, input.RsCsDiff, input.MVdiffVal, input.avgRs, input.AFD, CsDiff, diffTSC, input.TSC, gchDC, diffRsCsDiff, posBalance, SC, (float)TSCindex, (float)SCindex, input.avgCs, diffAFD, negBalance, ssDCval, refDCval, RsDiff);
 
         return Schg;
     }
 
-    void MotionAnalysis(uint8_t *src, AV1MV *srcMv, uint8_t *ref, AV1MV *refMv, float *TSC, float *AFD, float *MVdiffVal)
+    void MotionAnalysis(uint8_t *src, AV1MV *srcMv, uint8_t *ref, AV1MV *refMv, float *TSC, float *AFD, float *MVdiffVal, float *mvSum)
     {
         uint32_t valNoM = 0, valb = 0;
         uint32_t SAD[NUM_BLOCKS];
+        uint32_t mv2 = 0;
 
         *MVdiffVal = 0;
         for (int32_t fPos = 0; fPos < NUM_BLOCKS; fPos++) {
@@ -3657,21 +4105,53 @@ enum {
             valb += SAD[fPos];
             *MVdiffVal += (srcMv[fPos].mvx - refMv[fPos].mvx) * (srcMv[fPos].mvx - refMv[fPos].mvx);
             *MVdiffVal += (srcMv[fPos].mvy - refMv[fPos].mvy) * (srcMv[fPos].mvy - refMv[fPos].mvy);
+            mv2 += srcMv[fPos].mvx * srcMv[fPos].mvx + srcMv[fPos].mvy * srcMv[fPos].mvy;
         }
 
         *TSC = (float)valb / (float)LOWRES_SIZE;
         *AFD = (float)valNoM / (float)LOWRES_SIZE;
         *MVdiffVal = (float)((float)*MVdiffVal / (float)NUM_BLOCKS);
+        *mvSum = (float)mv2;
+    }
+#if defined(ENABLE_AV1_ALTR)
+    float Compute_MCFD(uint8_t *src, AV1MV *srcMv, uint8_t *ref)
+    {
+        uint32_t SAD[NUM_BLOCKS];
+        int32_t AFD = 0;
+
+        for (int32_t fPos = 0; fPos < NUM_BLOCKS; fPos++) {
+            HME_Low8x8fast(src, ref, srcMv, fPos, 1, 1, SAD);
+            AFD += SAD[fPos];
+        }
+
+        return ((float)AFD/(float)LOWRES_SIZE);
+    }
+#endif
+
+    void av1Sqrt_32f_len448_I(float* src)
+    {
+        const int LEN = 448;
+        std::transform(src, src + LEN, src, [](float x) { return sqrt(x); });
     }
 
-    int32_t AV1Enc::DetectSceneCut_AMT(Frame* input, Frame* prev)
+    int32_t Lookahead::DetectSceneCut_AMT(Frame* input, bool hasPrev, bool hasLTR, bool detectSceneTransition)
     {
+        SceneStats* stats[2];
+        if (hasLTR && detectSceneTransition) {
+            stats[0] = m_sceneStatsLtr;
+            stats[1] = m_sceneStatsTmp;
+        }
+        else {
+            stats[0] = hasPrev ? m_sceneStatsPrev : input->m_sceneStats;
+            stats[1] = input->m_sceneStats;
+        }
+
         {
             int32_t srcWidth  = input->m_origin->width;
             int32_t srcHeight = input->m_origin->height;
             int32_t srcPitch  = input->m_origin->pitch_luma_pix;
 
-            uint8_t* lowres = input->m_sceneStats->Y;
+            uint8_t* lowres = stats[CUR]->Y;
             int32_t dstWidth  = LOWRES_W;
             int32_t dstHeight = LOWRES_H;
             int32_t dstPitch  = LOWRES_PITCH;
@@ -3685,7 +4165,6 @@ enum {
             }
         }
 
-        SceneStats* stats[2] = {prev ? prev->m_sceneStats : input->m_sceneStats, input->m_sceneStats};
         uint8_t  *src  = stats[CUR]->Y;
         AV1MV *srcMv =  stats[CUR]->mv;
         uint8_t  *ref  = stats[REF]->Y;
@@ -3695,31 +4174,69 @@ enum {
             const int32_t hblocks = LOWRES_H / BLOCK_SIZE;
             const int32_t wblocks = LOWRES_W / BLOCK_SIZE;
             const int32_t len = hblocks * wblocks;
+            assert(len == 448);
             SceneStats* data = stats[CUR];
 
             AV1PP::compute_rscs_4x4(src, LOWRES_PITCH, wblocks, hblocks, data->Rs, data->Cs);
 
-            ippsSum_32f(data->Rs, len, &data->avgRs, ippAlgHintFast);
+            //ippsSum_32f(data->Rs, len, &data->avgRs, ippAlgHintFast);
+            data->avgRs = std::accumulate(data->Rs, data->Rs + 448, 0.f);
             data->avgRs = (float)sqrt(data->avgRs / len);
-            ippsSqrt_32f_I(data->Rs, len);
-            ippsSum_32f(data->Cs, len, &data->avgCs, ippAlgHintFast);
+            //ippsSqrt_32f_I(data->Rs, len);
+
+            av1Sqrt_32f_len448_I(data->Rs);
+            //ippsSum_32f(data->Cs, len, &data->avgCs, ippAlgHintFast);
+            data->avgCs = std::accumulate(data->Cs, data->Cs + 448, 0.f);
             data->avgCs = (float)sqrt(data->avgCs / len);
-            ippsSqrt_32f_I(data->Cs, len);
+            //ippsSqrt_32f_I(data->Cs, len);
+            av1Sqrt_32f_len448_I(data->Cs);
+            data->SC = (float)sqrt((data->avgRs * data->avgRs) + (data->avgCs * data->avgCs));
         }
 
         int32_t Schg = 0;
-        if (prev == NULL) {
+        if (!hasPrev) {
             stats[CUR]->TSC = 0;
             stats[CUR]->AFD = 0;
             stats[CUR]->MVdiffVal = 0;
             stats[CUR]->RsCsDiff = 0;
+            stats[CUR]->RepeatPattern = 0;
+#if defined(ENABLE_AV1_ALTR)
+            stats[CUR]->m_ltrMCFD = 0;
+#endif
         } else {
-            MotionAnalysis(src, srcMv, ref, refMv, &stats[CUR]->TSC, &stats[CUR]->AFD, &stats[CUR]->MVdiffVal);
-
+            mfxF32 mv0 = 0;
+            MotionAnalysis(src, srcMv, ref, refMv, &stats[CUR]->TSC, &stats[CUR]->AFD, &stats[CUR]->MVdiffVal, &mv0);
+            //printf("\nFrame %d Cs %f Rs %f AFD %f TSC %f\n", input->m_poc, stats[CUR]->avgCs, stats[CUR]->avgRs, stats[CUR]->AFD, stats[CUR]->TSC);
+            if (!detectSceneTransition) {
+#if defined(ENABLE_AV1_ALTR)
+                //if (input->m_par->EnableALTR)
+                if (hasLTR) {
+                    stats[CUR]->MV0 = mv0;
+                    //int32_t deltaFO = input->m_frameOrder - m_enc.getFrameOrderOfLastLtr();
+                    if (mv0 > 2500) {
+                        stats[CUR]->m_ltrMCFD = Compute_MCFD(src, srcMv, m_sceneStatsLtr->Y);
+                    }
+                    else {
+                        stats[CUR]->m_ltrMCFD = stats[REF]->m_ltrMCFD;
+                    }
+                }
+#endif
+                if ((stats[CUR]->AFD > 0.5f && stats[CUR]->TSC < 0.92f*stats[CUR]->AFD) || stats[CUR]->TSC > 4.0f)
+                    input->m_temporalActv = 1;
+            }
             long long ssDCint, refDCint;
             int32_t histogram[5];
             AV1PP::image_diff_histogram(src, ref, LOWRES_PITCH, LOWRES_W, LOWRES_H, histogram, &ssDCint, &refDCint);
             Schg = ShotDetect(*stats[CUR], *stats[REF], histogram, ssDCint, refDCint);
+            if (!detectSceneTransition) {
+                if (::abs(stats[CUR]->avgRs - stats[REF]->avgRs) < 0.075
+                    && ::abs(stats[CUR]->avgCs - stats[REF]->avgCs) < 0.075
+                    && stats[CUR]->TSC < 0.075)
+                    stats[CUR]->RepeatPattern = (stats[REF]->RepeatPattern << 1) | 0x1;
+                else
+                    stats[CUR]->RepeatPattern = (stats[REF]->RepeatPattern << 1) | 0x0;
+            }
+            //printf("\nFrame %d Cs %f Rs %f AFD %f TSC %f RP 0x%x TA %d\n", input->m_poc, stats[CUR]->avgCs, stats[CUR]->avgRs, stats[CUR]->AFD, stats[CUR]->TSC, stats[CUR]->RepeatPattern, input->m_temporalActv);
         }
 
         return Schg;

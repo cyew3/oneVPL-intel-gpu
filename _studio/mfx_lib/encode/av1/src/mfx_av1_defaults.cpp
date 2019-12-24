@@ -121,7 +121,7 @@ using namespace AV1Enc::MfxEnumShortAliases;
     tab_##mode##_NumRefLayers[x],\
     tab_##mode##_ConstQpOffset[x],\
     tab_##mode##_SplitThresholdMultiplier[x],\
-    tab_##mode##_EnableCmBiref[x],\
+    tab_##mode##_EnableCmInterp[x],\
     tab_##mode##_RepackForMaxFrameSize[x], \
     tab_##mode##_AutoScaleToCoresUsingTiles[x], \
     tab_##mode##_MaxTaskChainEnc[x], \
@@ -142,6 +142,11 @@ using namespace AV1Enc::MfxEnumShortAliases;
     tab_##mode##_IntraInterRDO[x],\
     tab_##mode##_CodecType[x],\
     tab_##mode##_CDEF[x],\
+    tab_##mode##_LRMode[x],\
+    tab_##mode##_SRMode[x],\
+    tab_##mode##_CFLMode[x],\
+    tab_##mode##_ScreenMode[x],\
+    tab_##mode##_DisableFrameEndUpdateCdf[x],\
     }
 
     // Extended bit depth
@@ -178,10 +183,10 @@ using namespace AV1Enc::MfxEnumShortAliases;
     TU_OPT_GACC(CUSplit,                        1,   1,   1,   1,   1,   1,   1);
     TU_OPT_ALL (PuDecisionSatd,               OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 
-    TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF,  ON,  ON,  ON,  ON,  OFF);
+    TU_OPT_ALL (MinCUDepthAdapt,              OFF, OFF,  ON,  ON,  ON,  OFF, OFF);
 
-    TU_OPT_SW  (MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON,  ON);
-    TU_OPT_GACC(MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  ON,  OFF);
+    TU_OPT_SW  (MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,   ON,  ON);
+    TU_OPT_GACC(MaxCUDepthAdapt,               ON,  ON,  ON,  ON,  ON,  OFF, OFF);
 
     TU_OPT_SW  (CUSplitThreshold,               0,   0,   0,   0,   0,   0,   0);
 
@@ -206,7 +211,7 @@ using namespace AV1Enc::MfxEnumShortAliases;
     TU_OPT_GACC(SplitThresholdMultiplier,      10,  10,  10,  10,  10,  10,  10);
 
     //Chroma analysis
-    TU_OPT_ALL (AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON, OFF);
+    TU_OPT_ALL (AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON, OFF, OFF);
     TU_OPT_SW  (CostChroma,                    ON,  ON,  ON,  ON, OFF, OFF, OFF);
     TU_OPT_GACC(CostChroma,                    ON,  ON,  ON,  ON, OFF, OFF, OFF);
     TU_OPT_ALL (ChromaRDO,                     ON, OFF, OFF, OFF, OFF, OFF, OFF);
@@ -219,14 +224,13 @@ using namespace AV1Enc::MfxEnumShortAliases;
     TU_OPT_ALL (reserved,                       0,   0,   0,   0,   0,   0,   0);
 
     //Filtering
-    TU_OPT_ALL  (SAO,                           ON,  ON,  ON,  ON,  ON,  ON, ON);
-    TU_OPT_ALL  (SAOChroma,                     ON,  ON,  ON,  ON,  OFF,  OFF, OFF);
+    TU_OPT_ALL  (SAO,                           ON,  ON,  ON,  ON,   ON,  ON,  ON);
+    TU_OPT_ALL  (SAOChroma,                     ON,  ON,  ON,  ON,  OFF, OFF, OFF);
 
     TU_OPT_SW  (SaoOpt,                         1,   1,   2,   2,   2,   2,   2);
     TU_OPT_GACC(SaoOpt,                         1,   1,   1,   1,   2,   2,   2);
 
-    //TU_OPT_ALL (SaoSubOpt,                      1,   1,   1,   1,   1,   2,   3);
-    TU_OPT_SW  (SaoSubOpt,                      1,   1,   1,   1,   1,   2,   3);
+    TU_OPT_SW  (SaoSubOpt,                      1,   1,   1,   1,   1,   3,   3);
     TU_OPT_GACC(SaoSubOpt,                      1,   1,   1,   1,   1,   3,   3);
     TU_OPT_ALL (Deblocking,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
     TU_OPT_ALL (DeblockBorders,                ON,  ON,  ON,  ON,  ON,  ON,  ON);
@@ -237,18 +241,18 @@ using namespace AV1Enc::MfxEnumShortAliases;
     TU_OPT_GACC(IntraAngModes,                  1,   1,   1,   1,   1,   1,   1); //I slice Gacc
     TU_OPT_SW  (IntraAngModesP,                 1,   1,   2,   2,   3,   3,   3); //P slice SW
 
-    TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   3,   99); //B Ref slice SW
+    TU_OPT_SW  (IntraAngModesBRef,              1,   1,   2,   2,   3,   99,  99); //B Ref slice SW
 
     TU_OPT_GACC(IntraAngModesP,                 1,   1,   2,   2,   3,   3,   3); //P slice Gacc
 
-    TU_OPT_GACC(IntraAngModesBRef,              1,   1,   2,   2,   3,   3,  99); //B Ref slice Gacc
+    TU_OPT_GACC(IntraAngModesBRef,              1,   1,   2,   2,   3,   99, 99); //B Ref slice Gacc
 
     TU_OPT_SW  (IntraAngModesBnonRef,           1,   1,   2,  99,  99, 100, 100); //B non Ref slice SW
     TU_OPT_GACC(IntraAngModesBnonRef,           1,   1,   2,  99,  99, 100, 100); //B non Ref slice Gacc
 
     //Quantization optimization
-    TU_OPT_SW  (SignBitHiding,                  ON,  ON,  ON,  ON,  ON,  ON, OFF);
-    TU_OPT_GACC(SignBitHiding,                  ON,  ON,  ON,  ON,  ON,  ON, OFF);
+    TU_OPT_SW  (SignBitHiding,                  ON,  ON,  ON,  ON,  ON, OFF, OFF);
+    TU_OPT_GACC(SignBitHiding,                  ON,  ON,  ON,  ON,  ON, OFF, OFF);
     TU_OPT_SW  (RDOQuant,                       ON,  ON,  ON,  ON, OFF, OFF, OFF);
     TU_OPT_ALL (FastCoeffCost,                 OFF,  ON,  ON,  ON,  ON,  ON,  ON);
     TU_OPT_SW  (RDOQuantChroma,                 ON,  ON,  ON, OFF, OFF, OFF, OFF);
@@ -262,7 +266,7 @@ using namespace AV1Enc::MfxEnumShortAliases;
     TU_OPT_GACC(RDOQuantCGZ,                    ON,  ON,  ON,  ON,  ON,  ON,  ON);
 
     TU_OPT_SW  (DeltaQpMode,                    8,   8,   2,   2,   2,   2,   2);
-    TU_OPT_GACC(DeltaQpMode,                    2,   2,   2,   2,   2,   2,   2);
+    TU_OPT_GACC(DeltaQpMode,                    2,   2,   2,   2,   2,   2,   1);
 
 
     //Intra RDO
@@ -304,8 +308,8 @@ using namespace AV1Enc::MfxEnumShortAliases;
     TU_OPT_GACC(EnableCm,                        ON,  ON,  ON,  ON,  ON,  ON,  ON);
     TU_OPT_SW  (CmIntraThreshold,                 0,   0,   0,   0,   0,   0,   0);
     TU_OPT_GACC(CmIntraThreshold,               576, 576, 576, 576, 576, 576, 576);
-    TU_OPT_SW  (EnableCmBiref,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-    TU_OPT_GACC(EnableCmBiref,                   ON,  ON,  ON,  ON,  ON, OFF, OFF);
+    TU_OPT_SW  (EnableCmInterp,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_GACC(EnableCmInterp,                   ON,  ON,  ON,  ON,  ON, ON, ON);
 
     //Multithreading & optimizations
     TU_OPT_ALL (WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK);
@@ -369,12 +373,17 @@ using namespace AV1Enc::MfxEnumShortAliases;
 
     TU_OPT_ALL (CodecType,                      1,   1,   1,   1,   1,   1,   1);
     TU_OPT_ALL (CDEF,                          ON,  ON,  ON,  ON,  ON,  ON,  ON);
+    TU_OPT_ALL(LRMode,                        OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_ALL(SRMode,                        OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_ALL(CFLMode,                        ON,  ON,  ON,  ON,  ON,  ON,  ON);
+    TU_OPT_ALL(ScreenMode,                      4,   4,   4,   4,   4,   4,   4);
+    TU_OPT_ALL(DisableFrameEndUpdateCdf,      OFF, OFF, OFF, OFF, OFF, OFF, OFF);
 
-    TU_OPT_ALL(RepackForMaxFrameSize, ON, ON, ON, ON, ON, ON, ON);
-    TU_OPT_SW(AutoScaleToCoresUsingTiles, OFF, OFF, OFF, OFF, OFF, ON, ON);
-    TU_OPT_GACC(AutoScaleToCoresUsingTiles, OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-    TU_OPT_ALL(MaxTaskChainEnc, 1, 1, 1, 1, 1, 1, 1);
-    TU_OPT_ALL(MaxTaskChainInloop, 1, 1, 1, 1, 1, 1, 1);
+    TU_OPT_ALL(RepackForMaxFrameSize,          ON,  ON,  ON,  ON,  ON,  ON,  ON);
+    TU_OPT_SW(AutoScaleToCoresUsingTiles,     OFF, OFF, OFF, OFF, OFF,  ON,  ON);
+    TU_OPT_GACC(AutoScaleToCoresUsingTiles,   OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_ALL(MaxTaskChainEnc,                 1,   1,   1,   1,   1,   1,   1);
+    TU_OPT_ALL(MaxTaskChainInloop,              1,   1,   1,   1,   1,   1,   1);
 
 namespace AV1Enc {
 

@@ -48,14 +48,17 @@ namespace AV1Enc {
         uint8_t bx;
     };
 
+    enum {CDEF_DEFAULT, CDEF_456, CDEF_489};
     struct CdefParam {
         int32_t cdef_bits;
         int32_t nb_cdef_strengths;
         int32_t cdef_strengths[CDEF_MAX_STRENGTHS];
         int32_t cdef_uv_strengths[CDEF_MAX_STRENGTHS];
+        int32_t mode;
     };
 
     struct FrameData;
+    template <typename PixType>
     class CdefLineBuffers
     {
     public:
@@ -65,26 +68,18 @@ namespace AV1Enc {
         void Free();
         const uint16_t *PrepareSb(const int sbr, const int sbc, FrameData& frame, uint16_t* in0, uint16_t* in1);
 
-        uint8_t* aboveBorder;
-        uint8_t* aboveBorderY;
-        uint8_t* aboveBorderUv;
+        PixType* aboveBorder = nullptr;
+        PixType* aboveBorderY = nullptr;
+        PixType* aboveBorderUv = nullptr;
         int32_t pitchAbove;
 
-        uint8_t* leftBorder;
-        uint8_t* leftBorderUv;
+        PixType* leftBorder = nullptr;
+        PixType* leftBorderUv = nullptr;
         int32_t pitchLeft;
     };
 
     void CdefParamInit(CdefParam &param);
-    void CdefSearchSb(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc, uint16_t* in0, uint16_t* in1);
-    void CdefSearchRow(const AV1VideoParam &par, Frame *frame, int32_t row);
-    void CdefSearchFrame(const AV1VideoParam &par, Frame *frame);
-    void CdefSearchSync(const AV1VideoParam &par, Frame *frame);
     void CdefStoreBorderSb(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc);
-    void CdefApplyFrame(const AV1VideoParam &par, Frame *frame);
-    void CdefApplyFrameOld(const AV1VideoParam &par, Frame *frame);
-    void CdefApplySb(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc, uint16_t* in0, uint16_t* in1);
-
     void CdefOnePassSb(const AV1VideoParam &par, Frame *frame, int32_t sbr, int32_t sbc);
 };
 #endif // MFX_ENABLE_AV1_VIDEO_ENCODE

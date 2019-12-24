@@ -679,7 +679,7 @@ namespace AV1PP
     }
 
     void cdef_estimate_block_4x4_nv12_avx2(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
-                                           int sec_strength, int dir, int pri_damping, int sec_damping, int *sse)
+                                           int sec_strength, int dir, int pri_damping, int sec_damping, int *sse, uint8_t *dst, int dstride)
     {
         const int *pri_taps = cdef_pri_taps[pri_strength & 1];
         const int *pri_dirs = cdef_directions_nv12[dir];
@@ -767,6 +767,12 @@ namespace AV1PP
 
             in += CDEF_BSTRIDE * 2;
             org += ostride * 2;
+            {
+                x = _mm256_packus_epi16(x, x);
+                storel_epi64(dst + 0 * dstride, si128_lo(x));
+                storel_epi64(dst + 1 * dstride, si128_hi(x));
+                dst += dstride * 2;
+            }
         }
         __m128i a = _mm_add_epi32(si128_lo(err), si128_hi(err));
         a = _mm_add_epi32(a, _mm_srli_si128(a, 8));
@@ -840,7 +846,7 @@ namespace AV1PP
     }
 
     void cdef_estimate_block_8x8_avx2(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
-                                      int sec_strength, int dir, int pri_damping, int sec_damping, int *sse)
+                                      int sec_strength, int dir, int pri_damping, int sec_damping, int *sse, uint8_t *dst, int dstride)
     {
         const int *pri_taps = cdef_pri_taps[pri_strength & 1];
         const int *pri_dirs = cdef_directions[dir];
@@ -928,6 +934,12 @@ namespace AV1PP
 
             in += CDEF_BSTRIDE * 2;
             org += ostride * 2;
+            {
+                x = _mm256_packus_epi16(x, x);
+                storel_epi64(dst + 0 * dstride, si128_lo(x));
+                storel_epi64(dst + 1 * dstride, si128_hi(x));
+                dst += dstride * 2;
+            }
         }
         __m128i a = _mm_add_epi32(si128_lo(err), si128_hi(err));
         a = _mm_add_epi32(a, _mm_srli_si128(a, 8));
@@ -1290,7 +1302,7 @@ namespace AV1PP
     }
 
     void cdef_estimate_block_4x4_nv12_all_sec_avx2(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
-                                                   int dir, int pri_damping, int sec_damping, int *sse)
+                                                   int dir, int pri_damping, int sec_damping, int *sse, uint8_t** dst, int dstride)
     {
         const int *pri_taps = cdef_pri_taps[pri_strength & 1];
         const int *pri_dirs = cdef_directions_nv12[dir];
@@ -1360,6 +1372,12 @@ namespace AV1PP
             diff = _mm256_madd_epi16(diff, diff);
             err0 = _mm256_add_epi32(err0, diff);
 
+            {
+                filtx = _mm256_packus_epi16(filtx, filtx);
+                storel_epi64(dst[0] + 0 * dstride, si128_lo(filtx));
+                storel_epi64(dst[0] + 1 * dstride, si128_hi(filtx));
+                dst[0] += dstride * 2;
+            }
             // filter for sec_strength = 1
             __m256i cs0 = constrain(s0, x, 1, sec_damping);
             __m256i cs1 = constrain(s1, x, 1, sec_damping);
@@ -1384,7 +1402,14 @@ namespace AV1PP
             diff = _mm256_madd_epi16(diff, diff);
             err1 = _mm256_add_epi32(err1, diff);
 
+            {
+                __m256i x = _mm256_packus_epi16(filtx, filtx);
+                storel_epi64(dst[1] + 0 * dstride, si128_lo(x));
+                storel_epi64(dst[1] + 1 * dstride, si128_hi(x));
+                dst[1] += dstride * 2;
+            }
             // filter for sec_strength = 2
+            if (dst[2]) {
             cs0 = constrain(s0, x, 2, sec_damping - 1);
             cs1 = constrain(s1, x, 2, sec_damping - 1);
             cs2 = constrain(s2, x, 2, sec_damping - 1);
@@ -1408,7 +1433,15 @@ namespace AV1PP
             diff = _mm256_madd_epi16(diff, diff);
             err2 = _mm256_add_epi32(err2, diff);
 
+                {
+                    __m256i x = _mm256_packus_epi16(filtx, filtx);
+                    storel_epi64(dst[2] + 0 * dstride, si128_lo(x));
+                    storel_epi64(dst[2] + 1 * dstride, si128_hi(x));
+                    dst[2] += dstride * 2;
+                }
+            }
             // filter for sec_strength = 4
+            if (dst[3]) {
             cs0 = constrain(s0, x, 4, sec_damping - 2);
             cs1 = constrain(s1, x, 4, sec_damping - 2);
             cs2 = constrain(s2, x, 4, sec_damping - 2);
@@ -1432,6 +1465,13 @@ namespace AV1PP
             diff = _mm256_madd_epi16(diff, diff);
             err4 = _mm256_add_epi32(err4, diff);
 
+                {
+                    __m256i x = _mm256_packus_epi16(filtx, filtx);
+                    storel_epi64(dst[3] + 0 * dstride, si128_lo(x));
+                    storel_epi64(dst[3] + 1 * dstride, si128_hi(x));
+                    dst[3] += dstride * 2;
+                }
+            }
             in += CDEF_BSTRIDE * 2;
             org += ostride * 2;
         }
@@ -1445,17 +1485,21 @@ namespace AV1PP
         a = _mm_add_epi32(a, _mm_srli_si128(a, 8));
         sse[1] = _mm_cvtsi128_si32(a) + _mm_extract_epi32(a, 1);
 
+        if (dst[2]) {
         a = _mm_add_epi32(si128_lo(err2), si128_hi(err2));
         a = _mm_add_epi32(a, _mm_srli_si128(a, 8));
         sse[2] = _mm_cvtsi128_si32(a) + _mm_extract_epi32(a, 1);
+        }
 
+        if (dst[3]) {
         a = _mm_add_epi32(si128_lo(err4), si128_hi(err4));
         a = _mm_add_epi32(a, _mm_srli_si128(a, 8));
         sse[3] = _mm_cvtsi128_si32(a) + _mm_extract_epi32(a, 1);
+        }
     }
 
     void cdef_estimate_block_8x8_all_sec_avx2(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength,
-                                              int dir, int pri_damping, int sec_damping, int *sse)
+                                              int dir, int pri_damping, int sec_damping, int *sse, uint8_t **dst, int dstride)
     {
         const int *pri_taps = cdef_pri_taps[pri_strength & 1];
         const int *pri_dirs = cdef_directions[dir];
@@ -1525,6 +1569,12 @@ namespace AV1PP
             diff = _mm256_madd_epi16(diff, diff);
             err0 = _mm256_add_epi32(err0, diff);
 
+            {
+                __m256i x = _mm256_packus_epi16(filtx, filtx);
+                storel_epi64(dst[0] + 0 * dstride, si128_lo(x));
+                storel_epi64(dst[0] + 1 * dstride, si128_hi(x));
+                dst[0] += dstride * 2;
+            }
             // filter for sec_strength = 1
             __m256i cs0 = constrain(s0, x, 1, sec_damping);
             __m256i cs1 = constrain(s1, x, 1, sec_damping);
@@ -1549,6 +1599,13 @@ namespace AV1PP
             diff = _mm256_madd_epi16(diff, diff);
             err1 = _mm256_add_epi32(err1, diff);
 
+            {
+                __m256i x = _mm256_packus_epi16(filtx, filtx);
+                storel_epi64(dst[1] + 0 * dstride, si128_lo(x));
+                storel_epi64(dst[1] + 1 * dstride, si128_hi(x));
+                dst[1] += dstride * 2;
+            }
+            if (dst[2]) {
             // filter for sec_strength = 2
             cs0 = constrain(s0, x, 2, sec_damping - 1);
             cs1 = constrain(s1, x, 2, sec_damping - 1);
@@ -1573,6 +1630,14 @@ namespace AV1PP
             diff = _mm256_madd_epi16(diff, diff);
             err2 = _mm256_add_epi32(err2, diff);
 
+                {
+                    __m256i x = _mm256_packus_epi16(filtx, filtx);
+                    storel_epi64(dst[2] + 0 * dstride, si128_lo(x));
+                    storel_epi64(dst[2] + 1 * dstride, si128_hi(x));
+                    dst[2] += dstride * 2;
+                }
+            }
+            if (dst[3]) {
             // filter for sec_strength = 4
             cs0 = constrain(s0, x, 4, sec_damping - 2);
             cs1 = constrain(s1, x, 4, sec_damping - 2);
@@ -1597,6 +1662,13 @@ namespace AV1PP
             diff = _mm256_madd_epi16(diff, diff);
             err4 = _mm256_add_epi32(err4, diff);
 
+                {
+                    __m256i x = _mm256_packus_epi16(filtx, filtx);
+                    storel_epi64(dst[3] + 0 * dstride, si128_lo(x));
+                    storel_epi64(dst[3] + 1 * dstride, si128_hi(x));
+                    dst[3] += dstride * 2;
+                }
+            }
             in += CDEF_BSTRIDE * 2;
             org += ostride * 2;
         }
@@ -1610,13 +1682,17 @@ namespace AV1PP
         a = _mm_add_epi32(a, _mm_srli_si128(a, 8));
         sse[1] = _mm_cvtsi128_si32(a) + _mm_extract_epi32(a, 1);
 
+        if (dst[2]) {
         a = _mm_add_epi32(si128_lo(err2), si128_hi(err2));
         a = _mm_add_epi32(a, _mm_srli_si128(a, 8));
         sse[2] = _mm_cvtsi128_si32(a) + _mm_extract_epi32(a, 1);
+        }
 
+        if (dst[3]) {
         a = _mm_add_epi32(si128_lo(err4), si128_hi(err4));
         a = _mm_add_epi32(a, _mm_srli_si128(a, 8));
         sse[3] = _mm_cvtsi128_si32(a) + _mm_extract_epi32(a, 1);
+        }
     }
 
     void cdef_estimate_block_4x4_2pri_avx2(const uint8_t *org, int ostride, const uint16_t *in, int pri_strength0, int pri_strength1,

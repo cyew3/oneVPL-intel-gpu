@@ -27,6 +27,7 @@
     <ClCompile Include="src\av1_intra\mfx_av1_satd_px.cpp">
       <Filter>av1_intra_files</Filter>
     </ClCompile>
+    <ClCompile Include="src\genx_av1_intra_icllp_isa.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_common.h" />

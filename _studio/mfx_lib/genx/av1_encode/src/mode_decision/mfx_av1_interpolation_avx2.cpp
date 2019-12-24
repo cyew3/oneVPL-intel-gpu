@@ -22,7 +22,6 @@
 #include "string.h"
 #include "utility"
 #include "type_traits"
-#include "ipps.h"
 #include "stdint.h"
 #include "immintrin.h"
 #include "mfx_av1_opts_intrin.h"

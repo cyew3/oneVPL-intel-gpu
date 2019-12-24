@@ -62,36 +62,54 @@ namespace AV1Enc {
         AV1VideoParam &m_videoParam;
         AV1Encoder &m_enc;// scenecut has right to modificate a GopStructure
 
-        void DetectSceneCut(FrameIter begin, FrameIter end, /*FrameIter input*/ Frame* in, int32_t updateGop, int32_t updateState);
+        int  DetectSceneCut_AMT(Frame* input, bool hasPrev, bool hasLTR, bool detectSceneTransition = false);
 
         // frame granularity based on regions, where region consist of rows && row consist of blk_8x8 (Luma)
         int32_t m_regionCount;
         int32_t m_lowresRowsInRegion;
         int32_t m_originRowsInRegion;
 
-        void AnalyzeSceneCut_AndUpdateState_Atul(Frame* in);
+        void AnalyzeSceneCut_AndUpdateState(Frame* in);
         int32_t m_bufferingPaq; // paq need buffering = refDist + M (scenecut buffering)
         Frame* m_lastAcceptedFrame[2];
+        int32_t m_lastAcceptedFrameOrder;
+#ifdef ZERO_DELAY_ANALYZE_CMPLX
+        FrameData *m_prev_origin;
+        FrameData *m_prev_lowres;
+#endif
         uint8_t m_pendingSceneCut;// don't break B-pyramid for the best quality
         ObjectPool<ThreadingTask> m_ttHubPool;       // storage for threading tasks of type TT_HUB
+
+        int32_t m_frameOrderPrev;
+        SceneStats* m_sceneStatsPrev;
+
+#if defined(ENABLE_AV1_ALTR)
+        SceneStats* m_sceneStatsLtr;
+        SceneStats* m_sceneStatsTmp;
+        uint8_t m_sceneTransFlag;
+        int32_t m_numFramesAvg;
+        int32_t m_avgMV0;
+        void getSubSampleImageLtr(Frame* in);
+#endif
     };
 
-    Frame* GetNextAnchor(FrameIter curr, FrameIter end);
-    Frame* GetPrevAnchor(FrameIter begin, FrameIter end, const Frame* curr);
+    const Frame* GetNextAnchor(ConstFrameIter curr, ConstFrameIter end);
+    const Frame* GetPrevAnchor(ConstFrameIter begin, ConstFrameIter end, const Frame* curr);
 
     void GetLookaheadGranularity(const AV1VideoParam& videoParam, int32_t & regionCount, int32_t & lowRowsInRegion, int32_t & originRowsInRegion, int32_t & numTasks);
 
     void AverageComplexity(Frame *in, AV1VideoParam& videoParam);
     void AverageRsCs(Frame *in);
-    void BackPropagateAvgTsc(FrameIter prevRef, FrameIter currRef);
+    void BackPropagateAvgTsc(ConstFrameIter prevRef, ConstFrameIter currRef);
 
-    int32_t BuildQpMap(FrameIter begin, FrameIter end, int32_t frameOrderCentral, AV1VideoParam& videoParam, int32_t doUpdateState);
-    void DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter end, AV1VideoParam & videoParam);
-    void DetermineQpMap_IFrame(FrameIter curr, FrameIter end, AV1VideoParam& videoParam);
+#if ENABLE_QPMAP
+    int32_t BuildQpMap(ConstFrameIter begin, ConstFrameIter end, int32_t frameOrderCentral, AV1VideoParam& videoParam, int32_t doUpdateState);
+    void DetermineQpMap_PFrame(ConstFrameIter begin, ConstFrameIter curr, ConstFrameIter end, AV1VideoParam & videoParam);
+    void DetermineQpMap_IFrame(ConstFrameIter curr, ConstFrameIter end, AV1VideoParam& videoParam);
 
     void DoPDistInterAnalysis_OneRow(Frame* curr, Frame* prevP, Frame* nextP, int32_t region_row, int32_t lowresRowsInRegion, int32_t originRowsInRegion, uint8_t LowresFactor, uint8_t FullresMetrics);
+#endif
 
-    int  DetectSceneCut_AMT(Frame* input, Frame* prev);
 
 } // namespace
 

@@ -219,10 +219,10 @@ namespace H265Enc {
         const uint32_t bitsNz0 = cbc.txbSkip[txbSkipCtx][1];
         /*int32_t*/ bestCulLevel = 0;
 
-        CoeffsType* qcoeffTest =  qcoeffWork + 32*32;
-        CoeffsType* coeffTest  =  coeffWork  + 32*32;
-        CoeffsType* qcoeffBest =  qcoeffWork + 2*32*32;
-        CoeffsType* coeffBest  =  coeffWork  + 2*32*32;
+        CoeffsType* qcoeffTest = qcoeffWork + 32*32;
+        CoeffsType* coeffTest  = coeffWork  + 32*32;
+        CoeffsType* qcoeffBest = qcoeffWork + 2*32*32;
+        CoeffsType* coeffBest  = coeffWork  + 2*32*32;
 
 
         for (TxType txType = DCT_DCT; txType <= endTxType; txType++) {
@@ -415,7 +415,7 @@ namespace H265Enc {
             rd.sse      += loc.sse;
             rd.ssz      += loc.ssz;
 
-            InvTransformVarTx(bsz, txSize,rec_, diff_, coeff_, coeffWork_, y4, x4, vartxInfo, qpar, roundFAdj);
+            InvTransformVarTx(bsz, txSize, rec_, diff_, coeff_, coeffWork_, y4, x4, vartxInfo, qpar, roundFAdj);
         }
         return rd;
     }
@@ -446,16 +446,20 @@ namespace H265Enc {
                 PixType *rec = rec_ + (y4 << 2) * recPitch + (x4 << 2);
                 int32_t blockIdx = h265_scan_r2z4[y4 * 16 + x4];
                 int32_t offset = blockIdx << (LOG2_MIN_TU_SIZE << 1);
-                CoeffsType *coeff  = coeff_ + offset;
+                CoeffsType *coeff = coeff_ + offset;
+                ALIGNED(32) CoeffsType qcoef[32 * 32];
 #ifdef ADAPTIVE_DEADZONE
-                CoeffsType* coeffOrigin = coeffWork_;
+                CoeffsType* dqcoeff = coeffWork_;
                 const int32_t diffPitch = 4 << log2w;
                 const int16_t *diff = diff_ + (y4 << 2) * diffPitch + (x4 << 2);
 
-                VP9PP::ftransform_av1(diff, coeffOrigin, diffPitch, txSize, txTp);
-                adaptDz(coeffOrigin, coeff, reinterpret_cast<const int16_t *>(&qpar), txSize, &roundFAdj[0], eob);
+                VP9PP::ftransform_av1(diff, coeff, diffPitch, txSize, txTp);
+                int eob_ = VP9PP::quant(coeff, qcoef, qpar, txSize);
+                assert(eob == eob_);
+                VP9PP::dequant(qcoef, dqcoeff, qpar, txSize);
+                adaptDz(coeff, dqcoeff, reinterpret_cast<const int16_t *>(&qpar), txSize, &roundFAdj[0], eob);
 #endif
-                VP9PP::itransform_add_av1(coeff, rec, recPitch, txSize, txTp);
+                VP9PP::itransform_add_av1(dqcoeff, rec, recPitch, txSize, txTp);
             }
         } else {
             const TxSize sub_txs = sub_tx_size_map[1][txSize];

@@ -33,6 +33,13 @@
   #define assert_emu(...) (void)0
 #endif
 
+typedef char  int1;
+typedef short int2;
+typedef int   int4;
+typedef unsigned char  uint1;
+typedef unsigned short uint2;
+typedef unsigned int   uint4;
+
 static const uint2 BLOCK_SIZE = 8;
 static const uint2 SIZEOF_MODE_INFO = 32;
 
@@ -240,8 +247,8 @@ _GENX_ inline matrix<uint1,2,96> get_pred_pels_16(uint1 aboveleft_pel, vector_re
         pred_pels.row(TOP).select<32,1>(0).format<uint4>() = pred_pels.row(TOP).select<32,1>(0).format<uint4>()(0);
     }
 
-    pred_pels.select<1,1,4,1>(TOP,0).merge(aboveleft_pel, -g_availability(TOP) & -g_availability(LEFT));
-    pred_pels.select<1,1,32,1>(TOP ,0).format<uint4>() = pred_pels.select<1,1,32,1>(TOP,0).format<uint4>()(0);
+    pred_pels.select<1,1, 4,1>(TOP, 0).merge(aboveleft_pel, -(g_availability(TOP) & g_availability(LEFT)));
+    pred_pels.select<1,1,32,1>(TOP, 0).format<uint4>() = pred_pels.select<1,1,32,1>(TOP,0).format<uint4>()(0);
     pred_pels.select<1,1,32,1>(LEFT,0).format<uint4>() = pred_pels.select<1,1,32,1>(TOP,0).format<uint4>()(0);
 
     return pred_pels;
@@ -277,8 +284,8 @@ _GENX_ inline matrix<uint1,2,128> get_pred_pels_32(uint1 aboveleft_pel, vector_r
         pred_pels.row(TOP).select<32,1>(0).format<uint4>() = pred_pels.row(TOP).select<32,1>(0).format<uint4>()(0);
     }
 
-    pred_pels.select<1,1,4,1>(TOP,0).merge(aboveleft_pel, -g_availability(TOP) & -g_availability(LEFT));
-    pred_pels.select<1,1,32,1>(TOP ,0).format<uint4>() = pred_pels.select<1,1,32,1>(TOP,0).format<uint4>()(0);
+    pred_pels.select<1,1, 4,1>(TOP, 0).merge(aboveleft_pel, -(g_availability(TOP) & g_availability(LEFT)));
+    pred_pels.select<1,1,32,1>(TOP, 0).format<uint4>() = pred_pels.select<1,1,32,1>(TOP,0).format<uint4>()(0);
     pred_pels.select<1,1,32,1>(LEFT,0).format<uint4>() = pred_pels.select<1,1,32,1>(TOP,0).format<uint4>()(0);
 
     return pred_pels;
@@ -287,31 +294,75 @@ _GENX_ inline matrix<uint1,2,128> get_pred_pels_32(uint1 aboveleft_pel, vector_r
 _GENX_ inline uint2 sad8()
 {
     vector<uint2,16> sad;
+
+#if defined(target_gen12) || defined(target_gen12lp)
+    sad = cm_abs<uint2>(cm_add<int2>(g_src8.select<2, 1, 8, 1>(0), -g_pred8.select<2, 1, 8, 1>(0)));
+    sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(g_src8.select<2, 1, 8, 1>(2), -g_pred8.select<2, 1, 8, 1>(2))));
+    sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(g_src8.select<2, 1, 8, 1>(4), -g_pred8.select<2, 1, 8, 1>(4))));
+    sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(g_src8.select<2, 1, 8, 1>(6), -g_pred8.select<2, 1, 8, 1>(6))));
+    return cm_sum<uint2>(sad);
+#elif defined(target_gen11) || defined(target_gen11lp)
+    sad = 0;
+    sad = cm_sada2<uint2>(g_src8.select<2,1,8,1>(0), g_pred8.select<2,1,8,1>(0), sad);
+    sad = cm_sada2<uint2>(g_src8.select<2,1,8,1>(2), g_pred8.select<2,1,8,1>(2), sad);
+    sad = cm_sada2<uint2>(g_src8.select<2,1,8,1>(4), g_pred8.select<2,1,8,1>(4), sad);
+    sad = cm_sada2<uint2>(g_src8.select<2,1,8,1>(6), g_pred8.select<2,1,8,1>(6), sad);
+    return cm_sum<uint2>(sad.select<8,2>());
+#else // before ICL
     sad = cm_sad2<uint2> (g_src8.select<2,1,8,1>(0), g_pred8.select<2,1,8,1>(0));
     sad = cm_sada2<uint2>(g_src8.select<2,1,8,1>(2), g_pred8.select<2,1,8,1>(2), sad);
     sad = cm_sada2<uint2>(g_src8.select<2,1,8,1>(4), g_pred8.select<2,1,8,1>(4), sad);
     sad = cm_sada2<uint2>(g_src8.select<2,1,8,1>(6), g_pred8.select<2,1,8,1>(6), sad);
     return cm_sum<uint2>(sad.select<8,2>());
+#endif
 }
 
 _GENX_ /*inline*/ uint2 sad16()
 {
     vector<uint2,16> sad;
+#if defined(target_gen12) || defined(target_gen12lp)
+    sad = cm_abs<uint2>(cm_add<int2>(g_src16.row(0), -g_pred16.row(0)));
+    #pragma unroll
+    for (int i = 1; i < 16; i++)
+        sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(g_src16.row(i), -g_pred16.row(i))));
+    return cm_sum<uint2>(sad);
+#elif defined(target_gen11) || defined(target_gen11lp)
+    sad = 0;
+    #pragma unroll
+    for (int i = 0; i < 16; i++)
+        sad = cm_sada2<uint2>(g_src16.row(i), g_pred16.row(i), sad);
+    return cm_sum<uint2>(sad.select<8, 2>());
+#else // before ICL
     sad = cm_sad2<uint2> (g_src16.row(0), g_pred16.row(0));
     #pragma unroll
     for (int i = 1; i < 16; i++)
         sad = cm_sada2<uint2>(g_src16.row(i), g_pred16.row(i), sad);
-    return cm_sum<uint2>(sad.select<8,2>());
+    return cm_sum<uint2>(sad.select<8, 2>());
+#endif
 }
 
 _GENX_ /*inline*/ uint4 sad32()
 {
     vector<uint2,16> sad;
+#if defined(target_gen12) || defined(target_gen12lp)
+    sad = cm_abs<uint2>(cm_add<int2>(g_src32.format<uint1, 64, 16>().row(0), -g_pred32.format<uint1, 64, 16>().row(0)));
+    #pragma unroll
+    for (int i = 1; i < 64; i++)
+        sad = cm_add<uint2>(sad, cm_abs<uint2>(cm_add<int2>(g_src32.format<uint1, 64, 16>().row(i), -g_pred32.format<uint1, 64, 16>().row(i))));
+    return cm_sum<uint4>(sad);
+#elif defined(target_gen11) || defined(target_gen11lp)
+    sad = 0;
+    #pragma unroll
+    for (int i = 0; i < 64; i++)
+        sad = cm_sada2<uint2>(g_src32.format<uint1, 64, 16>().row(i), g_pred32.format<uint1, 64, 16>().row(i), sad);
+    return cm_sum<uint4>(sad.select<8, 2>());
+#else // before ICL
     sad = cm_sad2<uint2> (g_src32.format<uint1,64,16>().row(0), g_pred32.format<uint1,64,16>().row(0));
     #pragma unroll
     for (int i = 1; i < 64; i++)
-        sad = cm_sada2<uint2>(g_src32.format<uint1,64,16>().row(i), g_pred32.format<uint1,64,16>().row(i), sad);
-    return cm_sum<uint4>(sad.select<8,2>());
+        sad = cm_sada2<uint2>(g_src32.format<uint1, 64, 16>().row(i), g_pred32.format<uint1, 64, 16>().row(i), sad);
+    return cm_sum<uint4>(sad.select<8, 2>());
+#endif
 }
 
 _GENX_ inline void predict_intra_dc_8(matrix_ref<uint1,2,32> pred_pels)
@@ -790,7 +841,7 @@ _GENX_ inline vector<uint1,32> filter_and_pack_2x16(vector_ref<uint1,16> p0, vec
     return res;
 }
 
-_GENX_ inline vector<uint2,16> filter(vector_ref<uint1,16> p0, vector_ref<uint1,16> p1, vector_ref<uint2,16> c0, vector_ref<uint2,16> c1)
+_GENX_ inline vector<uint2,16> filter(vector<uint1,16> p0, vector<uint1,16> p1, vector<uint2,16> c0, vector<uint2,16> c1)
 {
     return cm_add<uint2>(cm_mul<uint2>(p0, c0), cm_mul<uint2>(p1, c1));
 }
@@ -1668,24 +1719,25 @@ exit:
     return;
 }
 
-extern "C" _GENX_MAIN_ void CheckIntra(SurfaceIndex SRC, SurfaceIndex MODE_INFO, uint mi_cols, uint mi_rows, uint lambda, uint early_exit)
+#define INIT_HELPER(V,I) { decltype(V) tmp(I); V = tmp; }
+
+extern "C" _GENX_MAIN_ void CheckIntra(SurfaceIndex SRC, SurfaceIndex MODE_INFO, uint mi_cols, uint mi_rows, uint lambda, uint early_exit, uint yoff)
 {
     g_early_exit = early_exit;
     g_lambda = lambda << 4;
 
     cmtl::cm_vector_assign<uint1,32>(g_sequence_1_to_32, 1, 1);
-    g_weights_8  = vector<uint1,8>(SMOOTH_WEIGHTS_8);
-    g_weights_16 = vector<uint1,16>(SMOOTH_WEIGHTS_16);
-    g_weights_32 = vector<uint1,32>(SMOOTH_WEIGHTS_32);
+
+    INIT_HELPER(g_weights_8, SMOOTH_WEIGHTS_8);
+    INIT_HELPER(g_weights_16, SMOOTH_WEIGHTS_16);
+    INIT_HELPER(g_weights_32, SMOOTH_WEIGHTS_32);
+
     g_inv_weights_8  = 256 - g_weights_8;
     g_inv_weights_16 = 256 - g_weights_16;
     g_inv_weights_32 = 256 - g_weights_32;
 
-    g_top_right = vector<uint1,8>(HAS_TOP_RIGHT);
-    g_bottom_left = vector<uint1,8>(HAS_BOTTOM_LEFT);
-
-    //g_angle_to_dx = vector<uint2,56>(ANGLE_TO_DX);
-    //g_angle_to_dy = vector<uint2,56>(ANGLE_TO_DY);
+    INIT_HELPER(g_top_right, HAS_TOP_RIGHT);
+    INIT_HELPER(g_bottom_left, HAS_BOTTOM_LEFT);
 
     vector<uint1,16> scan_z2r(SCAN_Z2R);
 
@@ -1695,7 +1747,7 @@ extern "C" _GENX_MAIN_ void CheckIntra(SurfaceIndex SRC, SurfaceIndex MODE_INFO,
 
     vector<uint2,2> omi;
     omi(COL) = get_thread_origin_x();
-    omi(ROW) = get_thread_origin_y();
+    omi(ROW) = get_thread_origin_y() + (uint2)yoff;
     omi *= 4;
 
     uint num8x8;

@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,11 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 /********************************************************************************
-* 
+*
 * File: SkinHisto.c
 *
 * Routines for skin probability estimation.
-* 
+*
 ********************************************************************************/
 #include <assert.h>
 #include "SkinHisto.h"
@@ -70,7 +70,7 @@ void BuildSkinMap_dyn_C(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, uint yTh, 
         s = (s * frac) >> 16;
         s = MIN(s, h);
 
-        skinProb[k] = s;
+        skinProb[k] = (BYTE) s;
     }
 }
 
@@ -114,7 +114,7 @@ void BuildSkinMap_dyn_slice_C(BYTE* skinProb, BYTE* src, Dim *dim, uint bg, uint
             s = (s * frac) >> 16;
             s = MIN(s, h);
 
-            skinProb[ind+k] = s;
+            skinProb[ind+k] = (BYTE) s;
         }
     }
 }
@@ -177,7 +177,7 @@ void BuildSkinMap_dyn_SSE4(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, uint yT
 
     //compute skin probability map
     // if (mode==0) { srcy = src + dim->uOff;  srcx = src + dim->vOff;  len = dim->uOff;  }
-    // else if (mode==1) 
+    // else if (mode==1)
     { srcy = src + dim->ubOff; srcx = src + dim->vbOff; len = dim->ubOff; }
 
     assert((yTh-bg) >= 2);
@@ -245,7 +245,7 @@ void BuildSkinMap_dyn_AVX2(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, uint yT
 
     //compute skin probability map
     // if (mode==0) { srcy = src + dim->uOff;  srcx = src + dim->vOff;  len = dim->uOff;  }
-    // else if (mode==1) 
+    // else if (mode==1)
     { srcy = src + dim->ubOff; srcx = src + dim->vbOff; len = dim->ubOff; }
 
     assert((yTh-bg) >= 2);
@@ -304,7 +304,7 @@ void BuildSkinMap_dyn_slice_AVX2(BYTE* skinProb, BYTE* src, Dim* dim, uint bg, u
 
     //compute skin probability map
     // if      (mode==0) { srcy = src + dim->uOff;  srcx = src + dim->vOff;  }
-    // else if (mode==1) 
+    // else if (mode==1)
     { srcy = src + dim->ubOff; srcx = src + dim->vbOff; }
 
     srcy+= slice_offset;
@@ -399,12 +399,12 @@ static void New_Skin_Map_slice_AVX2(BYTE *skinProb, BYTE *pInYUV, int w, int h, 
             __m256i i0 = _mm256_cvtepu16_epi32(_mm_unpacklo_epi8(x, y));    // i = (y<<8) + x
             __m256i i1 = _mm256_cvtepu16_epi32(_mm_unpackhi_epi8(x, y));
 
-            __m256i h = gather16_AVX2(&hist[0][0], i0, i1);                 // h = hist[i]
+            __m256i hi = gather16_AVX2(&hist[0][0], i0, i1);                 // hi = hist[i]
 
-            h = _mm256_packus_epi16(h, h);
-            h = _mm256_permute4x64_epi64(h, _MM_SHUFFLE(3,1,2,0));
+            hi = _mm256_packus_epi16(hi, hi);
+            hi = _mm256_permute4x64_epi64(hi, _MM_SHUFFLE(3,1,2,0));
 
-            _mm_storeu_si128((__m128i *)&skinProb[ind+k], _mm256_castsi256_si128(h));
+            _mm_storeu_si128((__m128i *)&skinProb[ind+k], _mm256_castsi256_si128(hi));
         }
     }
 }
@@ -423,9 +423,9 @@ static void New_Skin_Map_SSE4(BYTE *skinProb, BYTE *pInYUV, int w, int h, BYTE h
         __m128i i0 = _mm_unpacklo_epi8(x, y);               // i = (y<<8) + x
         __m128i i1 = _mm_unpackhi_epi8(x, y);
 
-        __m128i h = gather16_SSE4(&hist[0][0], i0, i1);     // h = hist[i]
+        __m128i hi = gather16_SSE4(&hist[0][0], i0, i1);     // hi = hist[i]
 
-        _mm_storeu_si128((__m128i *)&skinProb[k], h);
+        _mm_storeu_si128((__m128i *)&skinProb[k], hi);
     }
     for (; k < w*h; k++) {
         skinProb[k] = hist[ srcy[k] ][ srcx[k] ];
@@ -446,12 +446,12 @@ static void New_Skin_Map_AVX2(BYTE *skinProb, BYTE *pInYUV, int w, int h, BYTE h
         __m256i i0 = _mm256_cvtepu16_epi32(_mm_unpacklo_epi8(x, y));    // i = (y<<8) + x
         __m256i i1 = _mm256_cvtepu16_epi32(_mm_unpackhi_epi8(x, y));
 
-        __m256i h = gather16_AVX2(&hist[0][0], i0, i1);                 // h = hist[i]
+        __m256i hi = gather16_AVX2(&hist[0][0], i0, i1);                 // hi = hist[i]
 
-        h = _mm256_packus_epi16(h, h);
-        h = _mm256_permute4x64_epi64(h, _MM_SHUFFLE(3,1,2,0));
+        hi = _mm256_packus_epi16(hi, hi);
+        hi = _mm256_permute4x64_epi64(hi, _MM_SHUFFLE(3,1,2,0));
 
-        _mm_storeu_si128((__m128i *)&skinProb[k], _mm256_castsi256_si128(h));
+        _mm_storeu_si128((__m128i *)&skinProb[k], _mm256_castsi256_si128(hi));
     }
 }
 
@@ -489,7 +489,7 @@ void New_Skin_Map_from_face_slice(BYTE *skinProb, BYTE *pInYUV, int w, int h, BY
 //
 
 //Compute dynamic luma thresholds
-void Compute_dyn_luma_thresh(FrameBuffElementPtr *src, Dim* dim, uint *bg, uint *yTh) 
+void Compute_dyn_luma_thresh(FrameBuffElementPtr *src, Dim* dim, uint *bg, uint *yTh)
 {
     uint yT, yHist[256];
     uint sum=0, th=0, i;
@@ -517,7 +517,7 @@ void Compute_dyn_luma_thresh(FrameBuffElementPtr *src, Dim* dim, uint *bg, uint 
 }
 
 //computes skin mask histogram statistics
-static void get_histogram_statistics(BYTE *frm, int w, int h, int *spread, int *solidity, int mode) 
+static void get_histogram_statistics(BYTE *frm, int w, int h, int *spread, int *solidity, int mode)
 {
     FS_UNREFERENCED_PARAMETER(mode);
     int i, j, ii, jj, x, y, a, n;
@@ -529,7 +529,7 @@ static void get_histogram_statistics(BYTE *frm, int w, int h, int *spread, int *
     //compute 16x16 binary representation of skin objects
     for (i=0; i<h; i+=h16) {
         for (j=0; j<w; j+=w16) {
-            y = i/h16; x = j/w16; 
+            y = i/h16; x = j/w16;
             if (y >= 16) continue;
             if (x >= 16) continue;
 
@@ -543,7 +543,7 @@ static void get_histogram_statistics(BYTE *frm, int w, int h, int *spread, int *
                 }
             }
 
-            blk[y*16 + x] = (n)?(a/n):0;
+            blk[y*16 + x] = (BYTE) ((n)?(a/n):0);
             //binarize
             if (blk[y*16 + x] > 16) blk[y*16 + x] = 255;
             else blk[y*16 + x] = 0;
@@ -564,7 +564,7 @@ static void get_histogram_statistics(BYTE *frm, int w, int h, int *spread, int *
     n = 3;	//3x3 square
     count = 0;
     // if (mode==0) min_count = n * 2;
-    // else if (mode==1) 
+    // else if (mode==1)
     min_count = n;
     for (i=0; i<=16-n; i++) {
         for (j=0; j<=16-n; j++) {
@@ -583,9 +583,9 @@ static void get_histogram_statistics(BYTE *frm, int w, int h, int *spread, int *
 }
 
 //Performs skin probabilities histogram selection
-int SelSkinMap(BYTE *skinProb, BYTE *src, Dim *dim, int EnableHystoDynEnh, int mode) 
+int SelSkinMap(BYTE *skinProb, BYTE *src, Dim *dim, int EnableHystoDynEnh, int mode)
 {
-    uint xS, yS; 
+    uint xS, yS;
     const BYTE *hysto;
     uint yTh, yHist[256];
     uint sum = 0, th  = 0, bg;
@@ -597,7 +597,7 @@ int SelSkinMap(BYTE *skinProb, BYTE *src, Dim *dim, int EnableHystoDynEnh, int m
     int  map_solidity[4] = {0};
 
     // if (mode==0) { uoff = dim->uOff;  voff = dim->vOff;  w = dim->w;  h = dim->h;  }
-    // else if (mode==1) 
+    // else if (mode==1)
     { uoff = dim->ubOff; voff = dim->vbOff; w = dim->wb; h = dim->hb; }
 
     //initialize histogram buffer
@@ -630,7 +630,7 @@ int SelSkinMap(BYTE *skinProb, BYTE *src, Dim *dim, int EnableHystoDynEnh, int m
     xS = voff;
     yS = uoff;
     for (n=0; n<3; n++) {
-        //initialize skin probability map to all 0 
+        //initialize skin probability map to all 0
         memset(skinProb, 0, uoff * sizeof(BYTE));
 
         //set skin probability map
@@ -641,13 +641,13 @@ int SelSkinMap(BYTE *skinProb, BYTE *src, Dim *dim, int EnableHystoDynEnh, int m
         default: hysto = histoYrg;  break;
         }
         for (k=0, x=xS, y=yS; k < (uint) uoff; k++, x++, y++) {
-            pos  = src[y] * 256 + src[x];		
+            pos  = src[y] * 256 + src[x];
             if (EnableHystoDynEnh)	hyst = hysto[pos] * yHist[src[k]] / 256;
             else					hyst = hysto[pos];
 
             //compute histogram score (sum of significant skin pixels)
             if (hyst > 100) {
-                skinProb[k] = hyst;
+                skinProb[k] = (BYTE) hyst;
                 map_score[n]+= hyst;
             }
         }

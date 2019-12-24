@@ -38,6 +38,8 @@
 
 #include <immintrin.h>
 
+#define CHROMA_PALETTE 1
+
 namespace AV1Enc {
 
 template <class PixType> struct ChromaUVPixType;
@@ -56,63 +58,13 @@ void SortLumaModesByCost(IntraLumaMode *modes, int32_t numCandInput, int32_t num
                   modes[int32_t(std::min_element(modes + i, modes + numCandInput) - modes)]);
 }
 
-template <typename PixType>
-void AV1CU<PixType>::GetAngModesFromHistogram(int32_t xPu, int32_t yPu, int32_t puSize, int8_t *modes, int32_t numModes)
-{
-    assert(numModes <= 33);
-    assert(puSize >= 4);
-    assert(puSize <= 64);
-    assert(h265_log2m2[puSize] >= 0);
-    assert(m_ctbPelX + xPu + puSize <= m_par->Width);
-    assert(m_ctbPelY + yPu + puSize <= m_par->Height);
-
-    if (m_par->enableCmFlag) {
-        assert(numModes <= 1);
-        int32_t log2PuSize = h265_log2m2[puSize] + 2;
-        int32_t x = (m_ctbPelX + xPu) >> log2PuSize;
-        int32_t y = (m_ctbPelY + yPu) >> log2PuSize;
-        int32_t pitch = m_currFrame->m_feiIntraAngModes[log2PuSize-2]->m_pitch;
-        uint32_t *feiAngModes = (uint32_t *)(m_currFrame->m_feiIntraAngModes[log2PuSize-2]->m_sysmem + y * pitch) + x;
-        for (int32_t i = 0; i < numModes; i++) {
-            modes[i] = feiAngModes[i];
-            assert(modes[i] >= 2 && modes[i] <= 34);
-        }
-    }
-    else {
-        int32_t histogram[35] = {};
-
-        // all in units of 4x4 blocks
-        if (puSize == 4) {
-            int32_t pitch = 40 * m_par->MaxCUSize / 4;
-            const HistType *histBlock = m_hist4 + (xPu >> 2) * 40 + (yPu >> 2) * pitch;
-            for (int32_t i = 0; i < 35; i++)
-                histogram[i] = histBlock[i];
-        }
-        else {
-            puSize >>= 3;
-            int32_t pitch = 40 * m_par->MaxCUSize / 8;
-            const HistType *histBlock = m_hist8 + (xPu >> 3) * 40 + (yPu >> 3) * pitch;
-            for (int32_t y = 0; y < puSize; y++, histBlock += pitch)
-                for (int32_t x = 0; x < puSize; x++)
-                    for (int32_t i = 0; i < 35; i++)
-                        histogram[i] += histBlock[40 * x + i];
-        }
-
-        for (int32_t i = 0; i < numModes; i++) {
-            int32_t mode = (int32_t)(std::max_element(histogram + 2, histogram + 35) - histogram);
-            modes[i] = mode;
-            histogram[mode] = -1;
-        }
-    }
-}
-
 
 template <typename PixType>
-void AV1CU<PixType>::CheckIntra(int32_t absPartIdx, int32_t depth, PartitionType partition)
+int32_t AV1CU<PixType>::CheckIntra(int32_t absPartIdx, int32_t depth, PartitionType partition, uint32_t &ret_bits)
 {
     if (!m_par->intraRDO && (depth == 0 || partition != PARTITION_NONE)) {
         m_costCurr = COST_MAX; // skip 64x64 and non-square partitions
-        return;
+        return INT_MAX;
     }
 
     const int32_t sbx = (av1_scan_z2r4[absPartIdx] & 15) << 2;
@@ -122,125 +74,25 @@ void AV1CU<PixType>::CheckIntra(int32_t absPartIdx, int32_t depth, PartitionType
     const ModeInfo *mi = m_data + (sbx >> 3) + (sby >> 3) * m_par->miPitch;
     const ModeInfo *above = GetAbove(mi, m_par->miPitch, miRow, m_tileBorders.rowStart);
     const ModeInfo *left  = GetLeft(mi, miCol, m_tileBorders.colStart);
-    const uint16_t *skipBits = m_currFrame->bitCount.skip[ GetCtxSkip(above, left) ];
+    const uint16_t *skipBits = m_currFrame->bitCount->skip[ GetCtxSkip(above, left) ];
 
-    RdCost costY = (m_par->intraRDO)
-        ? CheckIntraLuma(absPartIdx, depth, partition)
-            : CheckIntraLumaNonRdAv1(absPartIdx, depth, partition);
+    RdCost costY = CheckIntraLumaNonRdAv1(absPartIdx, depth, partition);
 
     RdCost costUV = {};
-    if (m_par->chromaRDO)
-        costUV = CheckIntraChroma(absPartIdx, depth, partition);
+    /*if (m_par->chromaRDO)
+        costUV = CheckIntraChroma(absPartIdx, depth, partition);*/
 
     int32_t sse = costY.sse + costUV.sse;
     uint32_t bits = costY.modeBits + costUV.modeBits + skipBits[mi->skip];
     if (!mi->skip)
         bits += costY.coefBits + costUV.coefBits;
     m_costCurr += sse + m_rdLambda * bits;
+    ret_bits = bits;
+    return sse;
 }
-
-/* clang-format off */
-static const uint16_t orders_128x128[1] = { 0 };
-static const uint16_t orders_128x64[2] = { 0, 1 };
-static const uint16_t orders_64x128[2] = { 0, 1 };
-static const uint16_t orders_64x64[4] = {0, 1, 2, 3};
-static const uint16_t orders_64x32[8] = {
-    0, 2, 1, 3, 4, 6, 5, 7,
-};
-static const uint16_t orders_32x64[8] = {
-    0, 1, 2, 3, 4, 5, 6, 7,
-};
-static const uint16_t orders_32x32[16] = {
-    0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15,
-};
-static const uint16_t orders_32x16[32] = {
-    0,  2,  8,  10, 1,  3,  9,  11, 4,  6,  12, 14, 5,  7,  13, 15,
-    16, 18, 24, 26, 17, 19, 25, 27, 20, 22, 28, 30, 21, 23, 29, 31,
-};
-static const uint16_t orders_16x32[32] = {
-    0,  1,  2,  3,  8,  9,  10, 11, 4,  5,  6,  7,  12, 13, 14, 15,
-    16, 17, 18, 19, 24, 25, 26, 27, 20, 21, 22, 23, 28, 29, 30, 31,
-};
-static const uint16_t orders_16x16[64] = {
-    0,  1,  4,  5,  16, 17, 20, 21, 2,  3,  6,  7,  18, 19, 22, 23,
-    8,  9,  12, 13, 24, 25, 28, 29, 10, 11, 14, 15, 26, 27, 30, 31,
-    32, 33, 36, 37, 48, 49, 52, 53, 34, 35, 38, 39, 50, 51, 54, 55,
-    40, 41, 44, 45, 56, 57, 60, 61, 42, 43, 46, 47, 58, 59, 62, 63,
-};
-static const uint16_t orders_16x8[128] = {
-  0,  2,  8,  10, 32,  34,  40,  42,  1,  3,  9,  11, 33,  35,  41,  43,
-  4,  6,  12, 14, 36,  38,  44,  46,  5,  7,  13, 15, 37,  39,  45,  47,
-  16, 18, 24, 26, 48,  50,  56,  58,  17, 19, 25, 27, 49,  51,  57,  59,
-  20, 22, 28, 30, 52,  54,  60,  62,  21, 23, 29, 31, 53,  55,  61,  63,
-  64, 66, 72, 74, 96,  98,  104, 106, 65, 67, 73, 75, 97,  99,  105, 107,
-  68, 70, 76, 78, 100, 102, 108, 110, 69, 71, 77, 79, 101, 103, 109, 111,
-  80, 82, 88, 90, 112, 114, 120, 122, 81, 83, 89, 91, 113, 115, 121, 123,
-  84, 86, 92, 94, 116, 118, 124, 126, 85, 87, 93, 95, 117, 119, 125, 127,
-};
-static const uint16_t orders_8x16[128] = {
-  0,  1,  2,  3,  8,  9,  10, 11, 32,  33,  34,  35,  40,  41,  42,  43,
-  4,  5,  6,  7,  12, 13, 14, 15, 36,  37,  38,  39,  44,  45,  46,  47,
-  16, 17, 18, 19, 24, 25, 26, 27, 48,  49,  50,  51,  56,  57,  58,  59,
-  20, 21, 22, 23, 28, 29, 30, 31, 52,  53,  54,  55,  60,  61,  62,  63,
-  64, 65, 66, 67, 72, 73, 74, 75, 96,  97,  98,  99,  104, 105, 106, 107,
-  68, 69, 70, 71, 76, 77, 78, 79, 100, 101, 102, 103, 108, 109, 110, 111,
-  80, 81, 82, 83, 88, 89, 90, 91, 112, 113, 114, 115, 120, 121, 122, 123,
-  84, 85, 86, 87, 92, 93, 94, 95, 116, 117, 118, 119, 124, 125, 126, 127,
-};
-static const uint16_t orders_8x8[256] = {
-  0,   1,   4,   5,   16,  17,  20,  21,  64,  65,  68,  69,  80,  81,  84,
-  85,  2,   3,   6,   7,   18,  19,  22,  23,  66,  67,  70,  71,  82,  83,
-  86,  87,  8,   9,   12,  13,  24,  25,  28,  29,  72,  73,  76,  77,  88,
-  89,  92,  93,  10,  11,  14,  15,  26,  27,  30,  31,  74,  75,  78,  79,
-  90,  91,  94,  95,  32,  33,  36,  37,  48,  49,  52,  53,  96,  97,  100,
-  101, 112, 113, 116, 117, 34,  35,  38,  39,  50,  51,  54,  55,  98,  99,
-  102, 103, 114, 115, 118, 119, 40,  41,  44,  45,  56,  57,  60,  61,  104,
-  105, 108, 109, 120, 121, 124, 125, 42,  43,  46,  47,  58,  59,  62,  63,
-  106, 107, 110, 111, 122, 123, 126, 127, 128, 129, 132, 133, 144, 145, 148,
-  149, 192, 193, 196, 197, 208, 209, 212, 213, 130, 131, 134, 135, 146, 147,
-  150, 151, 194, 195, 198, 199, 210, 211, 214, 215, 136, 137, 140, 141, 152,
-  153, 156, 157, 200, 201, 204, 205, 216, 217, 220, 221, 138, 139, 142, 143,
-  154, 155, 158, 159, 202, 203, 206, 207, 218, 219, 222, 223, 160, 161, 164,
-  165, 176, 177, 180, 181, 224, 225, 228, 229, 240, 241, 244, 245, 162, 163,
-  166, 167, 178, 179, 182, 183, 226, 227, 230, 231, 242, 243, 246, 247, 168,
-  169, 172, 173, 184, 185, 188, 189, 232, 233, 236, 237, 248, 249, 252, 253,
-  170, 171, 174, 175, 186, 187, 190, 191, 234, 235, 238, 239, 250, 251, 254,
-  255,
-};
-
-static const uint16_t *const orders[BLOCK_SIZES_ALL] = {
-  //                              4X4
-                                  NULL,
-  // 4X8,         8X4,            8X8
-  NULL,           NULL,           orders_8x8,
-  // 8X16,        16X8,           16X16
-  orders_8x16,    orders_16x8,    orders_16x16,
-  // 16X32,       32X16,          32X32
-  orders_16x32,   orders_32x16,   orders_32x32,
-  // 32X64,       64X32,          64X64
-  orders_32x64,   orders_64x32,   orders_64x64,
-  // 64x128,      128x64,         128x128
-  orders_64x128,  orders_128x64,  orders_128x128,
-  // 4x16,        16x4,           8x32
-  NULL,           NULL,           NULL,
-  // 32x8,        16x64,          64x16
-  NULL,           NULL,           NULL,
-  // 32x128,      128x32
-  NULL,           NULL
-};
 
 #define MAX_ANGLE_DELTA 3
 #define ANGLE_STEP 3
-int get_msb(unsigned int n) {
-#ifdef LINUX
-  unsigned int first_set_bit;
-#else
-  unsigned long first_set_bit;
-#endif
-  assert(n != 0);
-  _BitScanReverse(&first_set_bit, n);
-  return first_set_bit;
-}
 
 int get_unsigned_bits(unsigned int num_values) {
   return num_values > 0 ? get_msb(num_values) + 1 : 0;
@@ -259,96 +111,64 @@ int write_uniform_cost(int n, int v)
     return l * av1_cost_bit(128, 0);
 }
 
-int32_t HaveTopRight(BlockSize bsize, int32_t miRow, int32_t miCol, int32_t haveTop, int32_t haveRight, int32_t txsz, int32_t y, int32_t x, int32_t ss_x)
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_8X8_TX_4X4[16] = { 65535, 21845, 30583, 21845, 32639, 21845, 30583, 21845, 32767, 21845, 30583, 21845, 32639, 21845, 30583, 21845, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_8X8_TX_8X8[8] = { 255, 85, 119, 85, 127, 85, 119, 85, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_16X16_TX_4X4[16] = { 65535, 30583, 30583, 30583, 32639, 30583, 30583, 30583, 32767, 30583, 30583, 30583, 32639, 30583, 30583, 30583, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_16X16_TX_8X8[8] = { 255, 85, 119, 85, 127, 85, 119, 85, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_16X16_TX_16X16[4] = { 15, 5, 7, 5, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_32X32_TX_4X4[16] = { 65535, 32639, 32639, 32639, 32639, 32639, 32639, 32639, 32767, 32639, 32639, 32639, 32639, 32639, 32639, 32639, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_32X32_TX_8X8[8] = { 255, 119, 119, 119, 127, 119, 119, 119, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_32X32_TX_16X16[4] = { 15, 5, 7, 5, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_32X32_TX_32X32[2] = { 3, 1, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_64X64_TX_4X4[16] = { 65535, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_64X64_TX_8X8[8] = { 255, 127, 127, 127, 127, 127, 127, 127, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_64X64_TX_16X16[4] = { 15, 7, 7, 7, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_64X64_TX_32X32[2] = { 3, 1, };
+static const uint16_t HAVE_TOP_RIGHT_BLOCK_64X64_TX_64X64[1] = { 1, };
+static const uint16_t *HAVE_TOP_RIGHT[4][5] = {
+    { HAVE_TOP_RIGHT_BLOCK_8X8_TX_4X4,   HAVE_TOP_RIGHT_BLOCK_8X8_TX_8X8,   nullptr,                             nullptr,                             nullptr },
+    { HAVE_TOP_RIGHT_BLOCK_16X16_TX_4X4, HAVE_TOP_RIGHT_BLOCK_16X16_TX_8X8, HAVE_TOP_RIGHT_BLOCK_16X16_TX_16X16, nullptr,                             nullptr },
+    { HAVE_TOP_RIGHT_BLOCK_32X32_TX_4X4, HAVE_TOP_RIGHT_BLOCK_32X32_TX_8X8, HAVE_TOP_RIGHT_BLOCK_32X32_TX_16X16, HAVE_TOP_RIGHT_BLOCK_32X32_TX_32X32, nullptr },
+    { HAVE_TOP_RIGHT_BLOCK_64X64_TX_4X4, HAVE_TOP_RIGHT_BLOCK_64X64_TX_8X8, HAVE_TOP_RIGHT_BLOCK_64X64_TX_16X16, HAVE_TOP_RIGHT_BLOCK_64X64_TX_32X32, HAVE_TOP_RIGHT_BLOCK_64X64_TX_64X64 },
+};
+
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_8X8_TX_4X4[16] = { 21845, 4369, 21845, 257, 21845, 4369, 21845, 1, 21845, 4369, 21845, 257, 21845, 4369, 21845, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_8X8_TX_8X8[8] = { 85, 17, 85, 1, 85, 17, 85, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_16X16_TX_4X4[16] = { 4369, 4369, 4369, 257, 4369, 4369, 4369, 1, 4369, 4369, 4369, 257, 4369, 4369, 4369, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_16X16_TX_8X8[8] = { 85, 17, 85, 1, 85, 17, 85, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_16X16_TX_16X16[4] = { 5, 1, 5, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_32X32_TX_4X4[16] = { 257, 257, 257, 257, 257, 257, 257, 1, 257, 257, 257, 257, 257, 257, 257, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_32X32_TX_8X8[8] = { 17, 17, 17, 1, 17, 17, 17, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_32X32_TX_16X16[4] = { 5, 1, 5, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_32X32_TX_32X32[2] = { 1, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_64X64_TX_4X4[16] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_64X64_TX_8X8[8] = { 1, 1, 1, 1, 1, 1, 1, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_64X64_TX_16X16[4] = { 1, 1, 1, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_64X64_TX_32X32[2] = { 1, 0, };
+static const uint16_t HAVE_BOTTOM_LEFT_BLOCK_64X64_TX_64X64[1] = { 0, };
+static const uint16_t *HAVE_BOTTOM_LEFT[4][5] = {
+    { HAVE_BOTTOM_LEFT_BLOCK_8X8_TX_4X4,   HAVE_BOTTOM_LEFT_BLOCK_8X8_TX_8X8,   nullptr,                               nullptr,                               nullptr                               },
+    { HAVE_BOTTOM_LEFT_BLOCK_16X16_TX_4X4, HAVE_BOTTOM_LEFT_BLOCK_16X16_TX_8X8, HAVE_BOTTOM_LEFT_BLOCK_16X16_TX_16X16, nullptr,                               nullptr                               },
+    { HAVE_BOTTOM_LEFT_BLOCK_32X32_TX_4X4, HAVE_BOTTOM_LEFT_BLOCK_32X32_TX_8X8, HAVE_BOTTOM_LEFT_BLOCK_32X32_TX_16X16, HAVE_BOTTOM_LEFT_BLOCK_32X32_TX_32X32, nullptr                               },
+    { HAVE_BOTTOM_LEFT_BLOCK_64X64_TX_4X4, HAVE_BOTTOM_LEFT_BLOCK_64X64_TX_8X8, HAVE_BOTTOM_LEFT_BLOCK_64X64_TX_16X16, HAVE_BOTTOM_LEFT_BLOCK_64X64_TX_32X32, HAVE_BOTTOM_LEFT_BLOCK_64X64_TX_64X64 },
+};
+
+int32_t HaveTopRight(int32_t log2BlockWidth, int32_t miRow, int32_t miCol, int32_t txSize, int32_t y, int32_t x)
 {
-    if (!haveTop || !haveRight) return 0;
-
-    const int bw_unit = block_size_wide[bsize] >> 2;
-    const int plane_bw_unit = std::max(bw_unit >> ss_x, 1);
-    const int top_right_count_unit = tx_size_wide_unit[txsz];
-
-    if (y > 0) {  // Just need to check if enough pixels on the right.
-        return x + top_right_count_unit < plane_bw_unit;
-    } else {
-        // All top-right pixels are in the block above, which is already available.
-        if (x + top_right_count_unit < plane_bw_unit) return 1;
-
-        const int bw_in_mi_log2 = block_size_wide_4x4_log2[bsize];
-        const int bh_in_mi_log2 = block_size_high_4x4_log2[bsize];
-        const int blk_row_in_sb = (miRow & MAX_MIB_MASK) << 1 >> bh_in_mi_log2;
-        const int blk_col_in_sb = (miCol & MAX_MIB_MASK) << 1 >> bw_in_mi_log2;
-
-        // Top row of superblock: so top-right pixels are in the top and/or
-        // top-right superblocks, both of which are already available.
-        if (blk_row_in_sb == 0) return 1;
-
-        // Rightmost column of superblock (and not the top row): so top-right pixels
-        // fall in the right superblock, which is not available yet.
-        if (((blk_col_in_sb + 1) << bw_in_mi_log2) >= (MAX_MIB_SIZE << 1)) return 0;
-
-        // General case (neither top row nor rightmost column): check if the
-        // top-right block is coded before the current block.
-        const uint16_t *const order = orders[bsize];
-        const int this_blk_index =
-            ((blk_row_in_sb + 0) << (MAX_MIB_SIZE_LOG2 + 2 - bw_in_mi_log2)) +
-            blk_col_in_sb + 0;
-        const uint16_t this_blk_order = order[this_blk_index];
-        const int tr_blk_index =
-            ((blk_row_in_sb - 1) << (MAX_MIB_SIZE_LOG2 + 2 - bw_in_mi_log2)) +
-            blk_col_in_sb + 1;
-        const uint16_t tr_blk_order = order[tr_blk_index];
-        return tr_blk_order < this_blk_order;
-    }
+    assert(log2BlockWidth >= 1 && log2BlockWidth <= 4); // from 8x8 to 64x64
+    assert(txSize >= 0 && txSize <= 4); // from 4x4 to 64x64
+    int32_t idxY = (((miRow & 7) << 1) + y) >> txSize;
+    int32_t idxX = (((miCol & 7) << 1) + x) >> txSize;
+    return (HAVE_TOP_RIGHT[log2BlockWidth - 1][txSize][idxY] >> idxX) & 1;
 }
 
-int HaveBottomLeft(BlockSize bsize, int32_t miRow, int32_t miCol, int32_t haveLeft, int32_t haveBottom, int32_t txsz, int32_t y, int32_t x, int32_t ss_y)
+int32_t HaveBottomLeft(int32_t log2BlockWidth, int32_t miRow, int32_t miCol, int32_t txSize, int32_t y, int32_t x)
 {
-    if (!haveLeft || !haveBottom)
-        return 0;
-
-    const int32_t bh_unit = block_size_high[bsize] >> 2;
-    const int32_t plane_bh_unit = std::max(bh_unit >> ss_y, 1);
-    const int32_t bottom_left_count_unit = tx_size_high_unit[txsz];
-
-    // Bottom-left pixels are in the bottom-left block, which is not available.
-    if (x > 0)
-        return 0;
-
-    // All bottom-left pixels are in the left block, which is already available.
-    if (y + bottom_left_count_unit < plane_bh_unit)
-        return 1;
-
-    const int32_t bw_in_mi_log2 = block_size_wide_4x4_log2[bsize];
-    const int32_t bh_in_mi_log2 = block_size_high_4x4_log2[bsize];
-    const int32_t blk_row_in_sb = (miRow & MAX_MIB_MASK) << 1 >> bh_in_mi_log2;
-    const int32_t blk_col_in_sb = (miCol & MAX_MIB_MASK) << 1 >> bw_in_mi_log2;
-
-    // Leftmost column of superblock: so bottom-left pixels maybe in the left
-    // and/or bottom-left superblocks. But only the left superblock is
-    // available, so check if all required pixels fall in that superblock.
-    if (blk_col_in_sb == 0) {
-        const int32_t blk_start_row_off = blk_row_in_sb << (bh_in_mi_log2 + MI_SIZE_LOG2-1 - 2) >> ss_y;
-        const int32_t row_off_in_sb = blk_start_row_off + y;
-        const int32_t sb_height_unit = MAX_MIB_SIZE << 1 << (MI_SIZE_LOG2-1 - 2) >> ss_y;
-        return row_off_in_sb + bottom_left_count_unit < sb_height_unit;
-    }
-
-    // Bottom row of superblock (and not the leftmost column): so bottom-left
-    // pixels fall in the bottom superblock, which is not available yet.
-    if (((blk_row_in_sb + 1) << bh_in_mi_log2) >= (MAX_MIB_SIZE << 1)) return 0;
-
-    // General case (neither leftmost column nor bottom row): check if the
-    // bottom-left block is coded before the current block.
-    const uint16_t *const order = orders[bsize];
-    const int32_t this_blk_index =
-        ((blk_row_in_sb + 0) << (MAX_MIB_SIZE_LOG2 + 2 - bw_in_mi_log2)) +
-        blk_col_in_sb + 0;
-    const uint16_t this_blk_order = order[this_blk_index];
-    const int32_t bl_blk_index =
-        ((blk_row_in_sb + 1) << (MAX_MIB_SIZE_LOG2 + 2 - bw_in_mi_log2)) +
-        blk_col_in_sb - 1;
-    const uint16_t bl_blk_order = order[bl_blk_index];
-    return bl_blk_order < this_blk_order;
+    assert(log2BlockWidth >= 1 && log2BlockWidth <= 4); // from 8x8 to 64x64
+    assert(txSize >= 0 && txSize <= 4); // from 4x4 to 64x64
+    int32_t idxY = (((miRow & 7) << 1) + y) >> txSize;
+    int32_t idxX = (((miCol & 7) << 1) + x) >> txSize;
+    return (HAVE_BOTTOM_LEFT[log2BlockWidth - 1][txSize][idxY] >> idxX) & 1;
 }
 
 template <typename PixType>
@@ -357,8 +177,8 @@ void av1_filter_intra_edge_corner(PixType *above, PixType *left)
     const int32_t kernel[3] = { 5, 6, 5 };
     int32_t s = (left[0] * kernel[0]) + (above[-1] * kernel[1]) + (above[0] * kernel[2]);
     s = (s + 8) >> 4;
-    above[-1] = s;
-    left[-1] = s;
+    above[-1] = (PixType)s;
+    left[-1] = (PixType)s;
 }
 
 template <typename PixType>
@@ -368,13 +188,13 @@ void av1_filter_intra_edge_corner_nv12(PixType *above, PixType *left)
     // u
     int32_t s = (left[0] * kernel[0]) + (above[-2] * kernel[1]) + (above[0] * kernel[2]);
     s = (s + 8) >> 4;
-    above[-2] = s;
-    left[-2] = s;
+    above[-2] = (PixType)s;
+    left[-2] = (PixType)s;
     // v
     s = (left[1] * kernel[0]) + (above[-1] * kernel[1]) + (above[1] * kernel[2]);
     s = (s + 8) >> 4;
-    above[-1] = s;
-    left[-1] = s;
+    above[-1] = (PixType)s;
+    left[-1] = (PixType)s;
 }
 
 int32_t is_smooth(PredMode mode) {
@@ -458,7 +278,7 @@ void av1_filter_intra_edge_c(uint8_t *p, int32_t sz, int32_t strength)
             s += edge[k] * intra_edge_kernel[filt][j];
         }
         s = (s + 8) >> 4;
-        p[i] = s;
+        p[i] = (uint8_t)s;
     }
 }
 void av1_filter_intra_edge_c(uint16_t *p, int32_t sz, int32_t strength) {
@@ -508,7 +328,7 @@ void av1_upsample_intra_edge_c(uint8_t *p, int32_t sz) {
     for (int i = 0; i < sz; i++) {
         int s = -in[i] + (9 * in[i + 1]) + (9 * in[i + 2]) - in[i + 3];
         s = Saturate(0, 255, (s + 8) >> 4);
-        p[2 * i - 1] = s;
+        p[2 * i - 1] = (uint8_t)s;
         p[2 * i] = in[i + 2];
     }
 }
@@ -541,19 +361,19 @@ void av1_upsample_intra_edge_nv12_c(uint16_t *p, int32_t sz) {
 }
 
 
-template <typename PixType>
-RdCost TransformIntraYSbAv1(int32_t bsz, int32_t mode, int32_t haveTop, int32_t haveLeft_, TxSize txSize,
+template <typename PixType, typename TCoeffType>
+RdCost TransformIntraYSbAv1(BlockSize bsz, int32_t mode, int32_t haveTop, int32_t haveLeft_, TxSize txSize,
                             TxType txType, uint8_t *aboveNzCtx, uint8_t *leftNzCtx, const PixType* src_, PixType *rec_,
-                            int32_t pitchRec, int16_t *diff, int16_t *coeff_, int16_t *qcoeff_, int16_t *coefWork, int32_t qp,
+                            int32_t pitchRec, int16_t *diff, TCoeffType *coeff_, int16_t *qcoeff_, TCoeffType *coefWork, int32_t qp,
                             const BitCounts &bc, CostType lambda, int32_t miRow, int32_t miCol, int32_t miColEnd,
-                            int32_t deltaAngle, int32_t filtType, const AV1VideoParam &par, const QuantParam &qpar, float *roundFAdj)
+                            int32_t deltaAngle, int32_t filtType, const AV1VideoParam &par, const QuantParam &qpar, float *roundFAdj, PaletteInfo *pi, int16_t* retEob)
 {
     AV1PP::IntraPredPels<PixType> predPels;
+    const int bd = sizeof(PixType) == 1 ? 8 : 10;
 
     const TxbBitCounts &cbc = bc.txb[ get_q_ctx(qp) ][txSize][PLANE_TYPE_Y];
     const int32_t num4x4w = block_size_wide_4x4[bsz];
     const int32_t num4x4h = block_size_high_4x4[bsz];
-    const int16_t *scan = av1_scans[txSize][txType].scan;
     int32_t width = 4 << txSize;
     int32_t step = 1 << txSize;
     RdCost rd = {};
@@ -562,82 +382,106 @@ RdCost TransformIntraYSbAv1(int32_t bsz, int32_t mode, int32_t haveTop, int32_t 
     const int32_t txhpx = 4 << txSize;
     const int32_t bh = block_size_high_8x8[bsz];
     const int32_t bw = block_size_wide_8x8[bsz];
+    const int32_t log2w = block_size_wide_4x4_log2[bsz];
     const int32_t distToBottomEdge = (par.miRows - bh - miRow) * 8;
     const int32_t distToRightEdge = (par.miCols - bw - miCol) * 8;
     const int32_t hpx = block_size_high[bsz];
     const int32_t wpx = hpx;//block_size_width[bsz];
-    const int32_t isDirectionalMode = av1_is_directional_mode(mode);
+    const int32_t isDirectionalMode = av1_is_directional_mode((PredMode)mode);
     const int32_t angle = mode_to_angle_map[mode] + deltaAngle * ANGLE_STEP;
-    int16_t *coefOrigin = coefWork;
 
     for (int32_t y = 0; y < num4x4h; y += step) {
         const PixType *src = src_ + (y << 2) * SRC_PITCH;
         PixType *rec = rec_ + (y << 2) * pitchRec;
+        uint8_t *color_map = pi->color_map + (y << 2) * 64;
         int32_t haveLeft = haveLeft_;
-        for (int32_t x = 0; x < num4x4w; x += step, rec += width, src += width, diff += width) {
+        for (int32_t x = 0; x < num4x4w; x += step, rec += width, src += width, diff += width, color_map += width) {
             int32_t blockIdx = h265_scan_r2z4[y * 16 + x];
             int32_t offset = blockIdx << (LOG2_MIN_TU_SIZE << 1);
-            CoeffsType *coeff  = coeff_ + offset;
+            TCoeffType *coeff  = coeff_ + offset;
             CoeffsType *qcoeff = qcoeff_ + offset;
-
-            const int32_t haveRight = (miCol + ((x + txw) >> 1)) < miColEnd;
-            const int32_t haveTopRight = HaveTopRight(bsz, miRow, miCol, haveTop, haveRight, txSize, y, x, 0);
-            // Distance between the right edge of this prediction block to the frame right edge
-            const int32_t xr = distToRightEdge + (wpx - (x<<2) - txwpx);
-            // Distance between the bottom edge of this prediction block to the frame bottom edge
-            const int32_t yd = distToBottomEdge + (hpx - (y<<2) - txhpx);
-            const int32_t haveBottom = yd > 0;
-            const int32_t haveBottomLeft = HaveBottomLeft(bsz, miRow, miCol, haveLeft, haveBottom, txSize, y, x, 0);
-            const int32_t pixTop = haveTop ? std::min(txwpx, xr + txwpx) : 0;
-            const int32_t pixTopRight = haveTopRight ? std::min(txwpx, xr) : 0;
-            const int32_t pixLeft = haveLeft ? std::min(txhpx, yd + txhpx) : 0;
-            const int32_t pixBottomLeft = haveBottomLeft ? std::min(txhpx, yd) : 0;
-            AV1PP::GetPredPelsAV1<PLANE_TYPE_Y>(rec, pitchRec, predPels.top, predPels.left, width, haveTop, haveLeft, pixTopRight, pixBottomLeft);
-
-            int32_t upsampleTop = 0;
-            int32_t upsampleLeft = 0;
-            if (par.enableIntraEdgeFilter && isDirectionalMode) {
-                const int32_t need_top = angle < 180;
-                const int32_t need_left = angle > 90;
-                const int32_t need_right = angle < 90;
-                const int32_t need_bottom = angle > 180;
-                if (angle != 90 && angle != 180) {
-                    if (need_top && need_left && (txwpx + txhpx >= 24))
-                        av1_filter_intra_edge_corner(predPels.top, predPels.left);
-                    if (haveTop) {
-                        const int32_t strength = intra_edge_filter_strength(txwpx, txhpx, angle - 90, filtType);
-                        const int32_t sz = 1 + pixTop + (need_right ? txhpx : 0);
-                        av1_filter_intra_edge_c(predPels.top - 1, sz, strength);
-                    }
-                    if (haveLeft) {
-                        const int32_t strength = intra_edge_filter_strength(txhpx, txhpx, angle - 180, filtType);
-                        const int32_t sz = 1 + pixLeft + (need_bottom ? txwpx : 0);
-                        av1_filter_intra_edge_c(predPels.left - 1, sz, strength);
-                    }
+            TCoeffType *coefOrigin = coefWork + offset;
+            int32_t txSse = 0;
+            // Check haspalette_y
+            if (pi && pi->palette_size_y) {
+                if (pi->palette_size_y == pi->true_colors_y) {
+                    CopyNxM(src, SRC_PITCH, rec, pitchRec, width, width);
                 }
-                upsampleTop = use_intra_edge_upsample(txwpx, txhpx, angle - 90, filtType);
-                if (need_top && upsampleTop) {
-                    const int32_t sz = txwpx + (need_right ? txhpx : 0);
-                    av1_upsample_intra_edge_c(predPels.top, sz);
-                }
-                upsampleLeft = use_intra_edge_upsample(txwpx, txhpx, angle - 180, filtType);
-                if (need_left && upsampleLeft) {
-                    const int32_t sz = txhpx + (need_bottom ? txwpx : 0);
-                    av1_upsample_intra_edge_c(predPels.left, sz);
+                else {
+                    // Palette Prediction
+                    AV1PP::predict_intra_palette(rec, pitchRec, txSize, &pi->palette_y[0], color_map); //use map
+                    txSse = AV1PP::sse(src, SRC_PITCH, rec, pitchRec, txSize, txSize);
+                    AV1PP::diff_nxn(src, SRC_PITCH, rec, pitchRec, diff, width, txSize);
                 }
             }
+            else {
+                const int32_t haveRight = (miCol + ((x + txw) >> 1)) < miColEnd;
+                const int32_t haveTopRight = haveTop && haveRight && HaveTopRight(log2w, miRow, miCol, txSize, y, x);
+                // Distance between the right edge of this prediction block to the frame right edge
+                const int32_t xr = distToRightEdge + (wpx - (x << 2) - txwpx);
+                // Distance between the bottom edge of this prediction block to the frame bottom edge
+                const int32_t yd = distToBottomEdge + (hpx - (y << 2) - txhpx);
+                const int32_t haveBottom = yd > 0;
+                const int32_t haveBottomLeft = haveLeft && haveBottom && HaveBottomLeft(log2w, miRow, miCol, txSize, y, x);
+                const int32_t pixTop = haveTop ? std::min(txwpx, xr + txwpx) : 0;
+                const int32_t pixTopRight = haveTopRight ? std::min(txwpx, xr) : 0;
+                const int32_t pixLeft = haveLeft ? std::min(txhpx, yd + txhpx) : 0;
+                const int32_t pixBottomLeft = haveBottomLeft ? std::min(txhpx, yd) : 0;
+                AV1PP::GetPredPelsAV1<PLANE_TYPE_Y>(rec, pitchRec, predPels.top, predPels.left, width, haveTop, haveLeft, pixTopRight, pixBottomLeft);
 
-            AV1PP::predict_intra_av1(predPels.top, predPels.left, rec, pitchRec, txSize, haveLeft, haveTop,
-                                     mode, deltaAngle, upsampleTop, upsampleLeft);
+                int32_t upsampleTop = 0;
+                int32_t upsampleLeft = 0;
+                if (par.enableIntraEdgeFilter && isDirectionalMode) {
+                    const int32_t need_top = angle < 180;
+                    const int32_t need_left = angle > 90;
+                    const int32_t need_right = angle < 90;
+                    const int32_t need_bottom = angle > 180;
+                    if (angle != 90 && angle != 180) {
+                        if (need_top && need_left && (txwpx + txhpx >= 24))
+                            av1_filter_intra_edge_corner(predPels.top, predPels.left);
+                        if (haveTop) {
+                            const int32_t strength = intra_edge_filter_strength(txwpx, txhpx, angle - 90, filtType);
+                            const int32_t sz = 1 + pixTop + (need_right ? txhpx : 0);
+                            av1_filter_intra_edge_c(predPels.top - 1, sz, strength);
+                        }
+                        if (haveLeft) {
+                            const int32_t strength = intra_edge_filter_strength(txhpx, txhpx, angle - 180, filtType);
+                            const int32_t sz = 1 + pixLeft + (need_bottom ? txwpx : 0);
+                            av1_filter_intra_edge_c(predPels.left - 1, sz, strength);
+                        }
+                    }
+                    upsampleTop = use_intra_edge_upsample(txwpx, txhpx, angle - 90, filtType);
+                    if (need_top && upsampleTop) {
+                        const int32_t sz = txwpx + (need_right ? txhpx : 0);
+                        av1_upsample_intra_edge_c(predPels.top, sz);
+                    }
+                    upsampleLeft = use_intra_edge_upsample(txwpx, txhpx, angle - 180, filtType);
+                    if (need_left && upsampleLeft) {
+                        const int32_t sz = txhpx + (need_bottom ? txwpx : 0);
+                        av1_upsample_intra_edge_c(predPels.left, sz);
+                    }
+                }
 
-            int32_t txSse = AV1PP::sse(src, SRC_PITCH, rec, pitchRec, txSize, txSize);
-            AV1PP::diff_nxn(src, SRC_PITCH, rec, pitchRec, diff, width, txSize);
+                AV1PP::predict_intra_av1(predPels.top, predPels.left, rec, pitchRec, txSize, haveLeft, haveTop,
+                    mode, deltaAngle, upsampleTop, upsampleLeft);
+
+                txSse = AV1PP::sse(src, SRC_PITCH, rec, pitchRec, txSize, txSize);
+                AV1PP::diff_nxn(src, SRC_PITCH, rec, pitchRec, diff, width, txSize);
+            }
 
 #ifdef ADAPTIVE_DEADZONE
-            AV1PP::ftransform_av1(diff, coefOrigin, width, txSize, txType);
-            int32_t eob = AV1PP::quant(coefOrigin, qcoeff, qpar, txSize);
-            if(eob) AV1PP::dequant(qcoeff, coeff, qpar, txSize);
-            if(eob && roundFAdj) adaptDz(coefOrigin, coeff, reinterpret_cast<const int16_t *>(&qpar), txSize, roundFAdj, eob);
+            int32_t eob = 0;
+            if (!txSse) {
+                memset(qcoeff, 0, sizeof(CoeffsType)*width*width);  // happens quite abit with screen content coding
+            } else {
+                AV1PP::ftransform_av1(diff, coefOrigin, width, txSize, txType);
+                eob = AV1PP::quant(coefOrigin, qcoeff, qpar, txSize);
+                if (eob)
+                    AV1PP::dequant(qcoeff, coeff, qpar, txSize, sizeof(PixType) == 1 ? 8 : 10);
+
+                if (eob && roundFAdj)
+                    adaptDz(coefOrigin, coeff, qpar, txSize, roundFAdj, eob);
+            }
 #else
             AV1PP::ftransform_av1(diff, coeff, width, txSize, txType);
             int32_t eob = AV1PP::quant_dequant(coeff, qcoeff, qpar, txSize);
@@ -653,12 +497,13 @@ RdCost TransformIntraYSbAv1(int32_t bsz, int32_t mode, int32_t haveTop, int32_t 
                 uint32_t bitsNz = EstimateCoefsAv1(cbc, txbSkipCtx, eob, qcoeff, &culLevel);
                 txBits = bitsNz;
                 txSse = sseNz;
-                SetCulLevel(aboveNzCtx+x, leftNzCtx+y, culLevel, txSize);
+                SetCulLevel(aboveNzCtx+x, leftNzCtx+y, (uint8_t)culLevel, txSize);
             } else {
                 txBits = cbc.txbSkip[txbSkipCtx][1];
                 SetCulLevel(aboveNzCtx+x, leftNzCtx+y, 0, txSize);
             }
 
+            if(retEob) retEob[y*16+x] = eob;
             rd.eob += eob;
             rd.sse += txSse;
             rd.coefBits += txBits;
@@ -668,22 +513,27 @@ RdCost TransformIntraYSbAv1(int32_t bsz, int32_t mode, int32_t haveTop, int32_t 
     }
     return rd;
 }
-template RdCost TransformIntraYSbAv1<uint8_t> (
-    int32_t,int32_t,int32_t,int32_t,TxSize,TxType,uint8_t*,uint8_t*,const uint8_t*, uint8_t*, int32_t,int16_t*,int16_t*,int16_t*, int16_t*,
-    int32_t,const BitCounts&,CostType,int32_t,int32_t,int32_t,int32_t,int32_t,const AV1VideoParam &par, const QuantParam &qpar, float *roundFAdj);
+template RdCost TransformIntraYSbAv1<uint8_t, short> (
+    BlockSize,int32_t,int32_t,int32_t,TxSize,TxType,uint8_t*,uint8_t*,const uint8_t*, uint8_t*, int32_t,int16_t*,int16_t*,int16_t*, int16_t*,
+    int32_t,const BitCounts&,CostType,int32_t,int32_t,int32_t,int32_t,int32_t,const AV1VideoParam &par, const QuantParam &qpar, float *roundFAdj, PaletteInfo *pi, int16_t *retEob);
 
-template RdCost TransformIntraYSbAv1<uint16_t>(
-    int32_t,int32_t,int32_t,int32_t,TxSize,TxType,uint8_t*,uint8_t*,const uint16_t*,uint16_t*,int32_t,int16_t*,int16_t*,int16_t*, int16_t*,
-    int32_t,const BitCounts&,CostType,int32_t,int32_t,int32_t,int32_t,int32_t,const AV1VideoParam &par, const QuantParam &qpar, float *roundFAdj);
+template RdCost TransformIntraYSbAv1<uint16_t, short>(
+    BlockSize, int32_t, int32_t, int32_t, TxSize, TxType, uint8_t*, uint8_t*, const uint16_t*, uint16_t*, int32_t, int16_t*, int16_t*, int16_t*, int16_t*,
+    int32_t, const BitCounts&, CostType, int32_t, int32_t, int32_t, int32_t, int32_t, const AV1VideoParam &par, const QuantParam &qpar, float *roundFAdj, PaletteInfo *pi, int16_t *retEob);
 
+//#if ENABLE_10BIT
+template RdCost TransformIntraYSbAv1<uint16_t, int>(
+    BlockSize,int32_t,int32_t,int32_t,TxSize,TxType,uint8_t*,uint8_t*,const uint16_t*,uint16_t*,int32_t,int16_t*,int*,int16_t*, int*,
+    int32_t,const BitCounts&,CostType,int32_t,int32_t,int32_t,int32_t,int32_t,const AV1VideoParam &par, const QuantParam &qpar, float *roundFAdj, PaletteInfo *pi, int16_t *retEob);
+//#endif
 
 template <typename PixType>
-RdCost TransformIntraYSbAv1_viaTxkSearch(int32_t bsz, int32_t mode, int32_t haveTop, int32_t haveLeft_, TxSize txSize,
+RdCost TransformIntraYSbAv1_viaTxkSearch(BlockSize bsz, int32_t mode, int32_t haveTop, int32_t haveLeft_, TxSize txSize,
                             uint8_t *aboveNzCtx, uint8_t *leftNzCtx, const PixType* src_, PixType *rec_,
                             int32_t pitchRec, int16_t *diff_, int16_t *coeff_, int16_t *qcoeff_, int32_t qp,
                             const BitCounts &bc, int32_t fastCoeffCost, CostType lambda, int32_t miRow, int32_t miCol,
                             int32_t miColEnd, int32_t miRows, int32_t miCols, int32_t deltaAngle, int32_t filtType, uint16_t* txkTypes,
-                            const AV1VideoParam &par, int16_t *coeffWork_, const QuantParam &qpar, float *roundFAdj)
+                            const AV1VideoParam &par, int16_t *coeffWork_, const QuantParam &qpar, float *roundFAdj, PaletteInfo *pi)
 {
     AV1PP::IntraPredPels<PixType> predPels;
 
@@ -699,11 +549,12 @@ RdCost TransformIntraYSbAv1_viaTxkSearch(int32_t bsz, int32_t mode, int32_t have
     const int32_t txhpx = 4 << txSize;
     const int32_t bh = block_size_high_8x8[bsz];
     const int32_t bw = block_size_wide_8x8[bsz];
+    const int32_t log2w = block_size_wide_4x4_log2[bsz];
     const int32_t distToBottomEdge = (miRows - bh - miRow) * 8;
     const int32_t distToRightEdge = (miCols - bw - miCol) * 8;
     const int32_t hpx = block_size_high[bsz];
     const int32_t wpx = hpx;//block_size_width[bsz];
-    const int32_t isDirectionalMode = av1_is_directional_mode(mode);
+    const int32_t isDirectionalMode = av1_is_directional_mode((PredMode)mode);
     const int32_t angle = mode_to_angle_map[mode] + deltaAngle * ANGLE_STEP;
 
     const int32_t shiftTab[4] = {6, 6, 6, 4};
@@ -719,63 +570,76 @@ RdCost TransformIntraYSbAv1_viaTxkSearch(int32_t bsz, int32_t mode, int32_t have
         PixType *rec = rec_ + (y << 2) * pitchRec;
         int32_t haveLeft = haveLeft_;
         int16_t *diff = diff_ + (y << 2) * wpx;
-        for (int32_t x = 0; x < num4x4w; x += step, rec += width, src += width, diff += width) {
+        uint8_t *color_map = pi->color_map + (y << 2) * 64;
+        for (int32_t x = 0; x < num4x4w; x += step, rec += width, src += width, diff += width, color_map += width) {
             int32_t blockIdx = h265_scan_r2z4[y * 16 + x];
             int32_t offset = blockIdx << (LOG2_MIN_TU_SIZE << 1);
-            CoeffsType *coeff  = coeff_ + offset;
             CoeffsType *qcoeff = qcoeff_ + offset;
-
-            const int32_t haveRight = (miCol + ((x + txw) >> 1)) < miColEnd;
-            const int32_t haveTopRight = HaveTopRight(bsz, miRow, miCol, haveTop, haveRight, txSize, y, x, 0);
-            // Distance between the right edge of this prediction block to the frame right edge
-            const int32_t xr = distToRightEdge + (wpx - (x<<2) - txwpx);
-            // Distance between the bottom edge of this prediction block to the frame bottom edge
-            const int32_t yd = distToBottomEdge + (hpx - (y<<2) - txhpx);
-            const int32_t haveBottom = yd > 0;
-            const int32_t haveBottomLeft = HaveBottomLeft(bsz, miRow, miCol, haveLeft, haveBottom, txSize, y, x, 0);
-            const int32_t pixTop = haveTop ? std::min(txwpx, xr + txwpx) : 0;
-            const int32_t pixTopRight = haveTopRight ? std::min(txwpx, xr) : 0;
-            const int32_t pixLeft = haveLeft ? std::min(txhpx, yd + txhpx) : 0;
-            const int32_t pixBottomLeft = haveBottomLeft ? std::min(txhpx, yd) : 0;
-            AV1PP::GetPredPelsAV1<PLANE_TYPE_Y>(rec, pitchRec, predPels.top, predPels.left, width, haveTop, haveLeft, pixTopRight, pixBottomLeft);
-
-            int32_t upsampleTop = 0;
-            int32_t upsampleLeft = 0;
-            if (par.enableIntraEdgeFilter && isDirectionalMode) {
-                const int32_t need_top = angle < 180;
-                const int32_t need_left = angle > 90;
-                const int32_t need_right = angle < 90;
-                const int32_t need_bottom = angle > 180;
-                if (angle != 90 && angle != 180) {
-                    if (need_top && need_left && (txwpx + txhpx >= 24))
-                        av1_filter_intra_edge_corner(predPels.top, predPels.left);
-                    if (haveTop) {
-                        const int32_t strength = intra_edge_filter_strength(txwpx, txhpx, angle - 90, filtType);
-                        const int32_t sz = 1 + pixTop + (need_right ? txhpx : 0);
-                        av1_filter_intra_edge_c(predPels.top - 1, sz, strength);
-                    }
-                    if (haveLeft) {
-                        const int32_t strength = intra_edge_filter_strength(txhpx, txhpx, angle - 180, filtType);
-                        const int32_t sz = 1 + pixLeft + (need_bottom ? txwpx : 0);
-                        av1_filter_intra_edge_c(predPels.left - 1, sz, strength);
-                    }
+            int32_t initTxSse = 0;
+            // Check haspalette_y
+            if (pi && pi->palette_size_y) {
+                if (pi->palette_size_y == pi->true_colors_y) {
+                    CopyNxM(src, SRC_PITCH, rec, pitchRec, width, width);
                 }
-                upsampleTop = use_intra_edge_upsample(txwpx, txhpx, angle - 90, filtType);
-                if (need_top && upsampleTop) {
-                    const int32_t sz = txwpx + (need_right ? txhpx : 0);
-                    av1_upsample_intra_edge_c(predPels.top, sz);
-                }
-                upsampleLeft = use_intra_edge_upsample(txwpx, txhpx, angle - 180, filtType);
-                if (need_left && upsampleLeft) {
-                    const int32_t sz = txhpx + (need_bottom ? txwpx : 0);
-                    av1_upsample_intra_edge_c(predPels.left, sz);
+                else {
+                    // Palette Prediction
+                    AV1PP::predict_intra_palette(rec, pitchRec, txSize, &pi->palette_y[0], color_map); //use map
+                    initTxSse = AV1PP::sse(src, SRC_PITCH, rec, pitchRec, txSize, txSize);
+                    AV1PP::diff_nxn(src, SRC_PITCH, rec, pitchRec, diff, width, txSize);
                 }
             }
+            else {
+                const int32_t haveRight = (miCol + ((x + txw) >> 1)) < miColEnd;
+                const int32_t haveTopRight = haveTop && haveRight && HaveTopRight(log2w, miRow, miCol, txSize, y, x);
+                // Distance between the right edge of this prediction block to the frame right edge
+                const int32_t xr = distToRightEdge + (wpx - (x << 2) - txwpx);
+                // Distance between the bottom edge of this prediction block to the frame bottom edge
+                const int32_t yd = distToBottomEdge + (hpx - (y << 2) - txhpx);
+                const int32_t haveBottom = yd > 0;
+                const int32_t haveBottomLeft = haveLeft && haveBottom && HaveBottomLeft(log2w, miRow, miCol, txSize, y, x);
+                const int32_t pixTop = haveTop ? std::min(txwpx, xr + txwpx) : 0;
+                const int32_t pixTopRight = haveTopRight ? std::min(txwpx, xr) : 0;
+                const int32_t pixLeft = haveLeft ? std::min(txhpx, yd + txhpx) : 0;
+                const int32_t pixBottomLeft = haveBottomLeft ? std::min(txhpx, yd) : 0;
+                AV1PP::GetPredPelsAV1<PLANE_TYPE_Y>(rec, pitchRec, predPels.top, predPels.left, width, haveTop, haveLeft, pixTopRight, pixBottomLeft);
 
-            AV1PP::predict_intra_av1(predPels.top, predPels.left, rec, pitchRec, txSize, haveLeft, haveTop, mode, deltaAngle, upsampleTop, upsampleLeft);
-            const int32_t initTxSse = AV1PP::sse(src, SRC_PITCH, rec, pitchRec, txSize, txSize);
-            AV1PP::diff_nxn(src, SRC_PITCH, rec, pitchRec, diff, width, txSize);
+                int32_t upsampleTop = 0;
+                int32_t upsampleLeft = 0;
+                if (par.enableIntraEdgeFilter && isDirectionalMode) {
+                    const int32_t need_top = angle < 180;
+                    const int32_t need_left = angle > 90;
+                    const int32_t need_right = angle < 90;
+                    const int32_t need_bottom = angle > 180;
+                    if (angle != 90 && angle != 180) {
+                        if (need_top && need_left && (txwpx + txhpx >= 24))
+                            av1_filter_intra_edge_corner(predPels.top, predPels.left);
+                        if (haveTop) {
+                            const int32_t strength = intra_edge_filter_strength(txwpx, txhpx, angle - 90, filtType);
+                            const int32_t sz = 1 + pixTop + (need_right ? txhpx : 0);
+                            av1_filter_intra_edge_c(predPels.top - 1, sz, strength);
+                        }
+                        if (haveLeft) {
+                            const int32_t strength = intra_edge_filter_strength(txhpx, txhpx, angle - 180, filtType);
+                            const int32_t sz = 1 + pixLeft + (need_bottom ? txwpx : 0);
+                            av1_filter_intra_edge_c(predPels.left - 1, sz, strength);
+                        }
+                    }
+                    upsampleTop = use_intra_edge_upsample(txwpx, txhpx, angle - 90, filtType);
+                    if (need_top && upsampleTop) {
+                        const int32_t sz = txwpx + (need_right ? txhpx : 0);
+                        av1_upsample_intra_edge_c(predPels.top, sz);
+                    }
+                    upsampleLeft = use_intra_edge_upsample(txwpx, txhpx, angle - 180, filtType);
+                    if (need_left && upsampleLeft) {
+                        const int32_t sz = txhpx + (need_bottom ? txwpx : 0);
+                        av1_upsample_intra_edge_c(predPels.left, sz);
+                    }
+                }
 
+                AV1PP::predict_intra_av1(predPels.top, predPels.left, rec, pitchRec, txSize, haveLeft, haveTop, mode, deltaAngle, upsampleTop, upsampleLeft);
+                initTxSse = AV1PP::sse(src, SRC_PITCH, rec, pitchRec, txSize, txSize);
+                AV1PP::diff_nxn(src, SRC_PITCH, rec, pitchRec, diff, width, txSize);
+            }
             const int32_t txbSkipCtx = GetTxbSkipCtx(bsz, txSize, 0, aboveNzCtx+x, leftNzCtx+y);
             int32_t stopTxType = (txSize == TX_32X32) ? DCT_DCT : ADST_ADST;
             CostType bestCost = COST_MAX;
@@ -787,9 +651,8 @@ RdCost TransformIntraYSbAv1_viaTxkSearch(int32_t bsz, int32_t mode, int32_t have
             CoeffsType* coeffBest  = coeffWork  + 32*32;
             CoeffsType* qcoeffBest = qcoeffWork + 32*32;
 
-            for (int32_t testTxType = DCT_DCT; testTxType <= stopTxType; testTxType++) {
+            for (TxType testTxType = DCT_DCT; testTxType <= stopTxType; testTxType++) {
 
-                const int16_t *scan = av1_scans[txSize][testTxType].scan;
                 const TxType txTypeNom = GetTxTypeAV1(PLANE_TYPE_Y, txSize, mode, testTxType);
                 const uint32_t txTypeBits = bc.intraExtTx[txSize][txTypeNom][testTxType];
                 uint32_t txBits;
@@ -803,7 +666,7 @@ RdCost TransformIntraYSbAv1_viaTxkSearch(int32_t bsz, int32_t mode, int32_t have
                 int32_t eob = AV1PP::quant(coeffOrigin, qcoeffTest, qpar, txSize);
                 if (eob) {
                     AV1PP::dequant(qcoeffTest, coeffTest, qpar, txSize);
-                    int32_t sseNz = AV1PP::sse_cont(coeffOrigin, coeffTest, width*width) >> SHIFT_SSE;
+                    int32_t sseNz = int32_t(AV1PP::sse_cont(coeffOrigin, coeffTest, width*width) >> SHIFT_SSE);
                     uint32_t bitsNz = EstimateCoefsAv1(cbc, txbSkipCtx, eob, qcoeffTest, &culLevel);
                     bitsNz += txTypeBits;
                     txBits = bitsNz;
@@ -818,7 +681,7 @@ RdCost TransformIntraYSbAv1_viaTxkSearch(int32_t bsz, int32_t mode, int32_t have
                 if (cost < bestCost) {
 #ifdef ADAPTIVE_DEADZONE
                     if (eob)
-                        adaptDz(coeffOrigin, coeffTest, reinterpret_cast<const int16_t *>(&qpar), txSize, &roundFAdjT[0], eob);
+                        adaptDz(coeffOrigin, coeffTest, qpar, txSize, &roundFAdjT[0], eob);
 #endif
                     bestCost = cost;
                     bestTxType = testTxType;
@@ -832,7 +695,6 @@ RdCost TransformIntraYSbAv1_viaTxkSearch(int32_t bsz, int32_t mode, int32_t have
 
             txkTypes[y * 16 + x] = bestTxType;
 
-            const int16_t *scan = av1_scans[txSize][bestTxType].scan;
             int32_t eob = bestEob;
             int32_t txSse;
             uint32_t txBits;
@@ -847,7 +709,7 @@ RdCost TransformIntraYSbAv1_viaTxkSearch(int32_t bsz, int32_t mode, int32_t have
                 bitsNz += txTypeBits;
                 txBits = bitsNz;
                 txSse = sseNz;
-                SetCulLevel(aboveNzCtx+x, leftNzCtx+y, culLevel, txSize);
+                SetCulLevel(aboveNzCtx+x, leftNzCtx+y, (uint8_t)culLevel, txSize);
             } else {
                 txSse = initTxSse;
                 txBits = cbc.txbSkip[txbSkipCtx][1];
@@ -863,498 +725,104 @@ RdCost TransformIntraYSbAv1_viaTxkSearch(int32_t bsz, int32_t mode, int32_t have
     }
     return rd;
 }
-template RdCost TransformIntraYSbAv1_viaTxkSearch<uint8_t> (
-    int32_t,int32_t,int32_t,int32_t,TxSize,uint8_t*,uint8_t*,const uint8_t*, uint8_t*, int32_t,int16_t*,int16_t*,int16_t*,
-    int32_t,const BitCounts&,int32_t,CostType,int32_t,int32_t,int32_t,int32_t,int32_t,int32_t,int32_t,uint16_t*,
-    const AV1VideoParam &par, int16_t* coeffWork_, const QuantParam &qpar, float *roundFAdj);
 
+#if ENABLE_10BIT
 template RdCost TransformIntraYSbAv1_viaTxkSearch<uint16_t>(
-    int32_t,int32_t,int32_t,int32_t,TxSize,uint8_t*,uint8_t*,const uint16_t*,uint16_t*,int32_t,int16_t*,int16_t*,int16_t*,
+    BlockSize,int32_t,int32_t,int32_t,TxSize,uint8_t*,uint8_t*,const uint16_t*,uint16_t*,int32_t,int16_t*,int16_t*,int16_t*,
     int32_t,const BitCounts&,int32_t,CostType,int32_t,int32_t,int32_t,int32_t,int32_t,int32_t,int32_t,uint16_t*,
-    const AV1VideoParam &par, int16_t* coeffWork_, const QuantParam &qpar, float *roundFAdj);
-//---------------------------------------------------------
-template <typename PixType>
-RdCost TransformIntraYSbVp9(int32_t bsz, int32_t mode, int32_t haveTop, int32_t haveLeft_, int32_t notOnRight4x4,
-                           TxSize txSize, uint8_t *aboveNzCtx, uint8_t *leftNzCtx, const PixType* src_, PixType *rec_,
-                           int32_t pitchRec, int16_t *diff, int16_t *coeff_, int16_t *qcoeff_, const QuantParam &qpar,
-                           const BitCounts &bc, int32_t fastCoeffCost, CostType lambda, int32_t miRow, int32_t miCol,
-                           int32_t miColEnd, int32_t miRows, int32_t miCols)
+    const AV1VideoParam &par, int16_t* coeffWork_, const QuantParam &qpar, float *roundFAdj, PaletteInfo *pi);
+#endif
+
+uint8_t Reconstruct16x16DcOnly(const uint8_t *src, int32_t pitch, uint8_t predPel, const QuantParam &qparam, int16_t *dcQCoef)
 {
-    alignas(32) PixType predPels_[32/sizeof(PixType) + (4<<TX_32X32) * 3 + (4<<TX_32X32)];
-    PixType *predPels = predPels_ + 32/sizeof(PixType) - 1;
+    // ftransform: dc = (sum(src) - sum(pred) + 1) >> 1, all ac = 0
+    __m128i s = _mm_setzero_si128();
+    for (int32_t i = 0; i < 16; i++)
+        s = _mm_add_epi64(s, _mm_sad_epu8(loada_si128(src + i * pitch), _mm_setzero_si128()));
+    int32_t coeff = (_mm_cvtsi128_si32(s) + _mm_extract_epi32(s, 2) - predPel * 16 * 16 + 1) >> 1;
 
-    const int32_t bitDepth = (sizeof(PixType) == 1 ? 8 : 10);
-    const PixType halfRange = 1 << (bitDepth - 1);
-    const PixType halfRangeM1 = halfRange - 1;
-    const PixType halfRangeP1 = halfRange + 1;
-    const CoefBitCounts &cbc = bc.coef[PLANE_TYPE_Y][0][txSize];
-    const int32_t num4x4w = block_size_wide_4x4[bsz];
-    const int32_t num4x4h = block_size_high_4x4[bsz];
-    const int32_t txType = (txSize == TX_32X32) ? DCT_DCT : mode2txfm_map[mode];
-    const int16_t *scan = vp9_scans[txSize][txType].scan;
-    int32_t width = 4 << txSize;
-    int32_t step = 1 << txSize;
-    RdCost rd = {};
-    int32_t txw = tx_size_wide_unit[txSize];
-    const int32_t txwpx = 4 << txSize;
-    const int32_t txhpx = 4 << txSize;
-    const int32_t bh = block_size_high_8x8[bsz];
-    const int32_t bw = block_size_wide_8x8[bsz];
-    const int32_t distToBottomEdge = (miRows - bh - miRow) * 8 ;
-    const int32_t distToRightEdge = (miCols - bw - miCol) * 8;
-    const int32_t hpx = block_size_high[bsz];
-    const int32_t wpx = hpx;//block_size_width[bsz];
-
-    for (int32_t y = 0; y < num4x4h; y += step) {
-        const PixType *src = src_ + (y << 2) * SRC_PITCH;
-        PixType *rec = rec_ + (y << 2) * pitchRec;
-        int32_t haveLeft = haveLeft_;
-        for (int32_t x = 0; x < num4x4w; x += step, rec += width, src += width, diff += width) {
-            int32_t blockIdx = h265_scan_r2z4[y * 16 + x];
-            int32_t offset = blockIdx << (LOG2_MIN_TU_SIZE << 1);
-            CoeffsType *coeff  = coeff_ + offset;
-            CoeffsType *qcoeff = qcoeff_ + offset;
-            int32_t notOnRight = (x + step < num4x4w) || notOnRight4x4;
-
-            AV1PP::GetPredPelsLuma(rec, pitchRec, predPels, width, halfRangeM1, halfRangeP1, haveTop, haveLeft, notOnRight);
-            AV1PP::predict_intra_vp9(predPels, rec, pitchRec, txSize, haveLeft, haveTop, mode);
-
-            int32_t txSse = AV1PP::sse(src, SRC_PITCH, rec, pitchRec, txSize, txSize);
-            AV1PP::diff_nxn(src, SRC_PITCH, rec, pitchRec, diff, width, txSize);
-            AV1PP::ftransform_vp9(diff, coeff, width, txSize, txType);
-            int32_t eob = AV1PP::quant_dequant(coeff, qcoeff, qpar, txSize);
-
-            int32_t dcCtx = GetDcCtx(aboveNzCtx+x, leftNzCtx+y, step);
-            uint32_t txBits = cbc.moreCoef[0][dcCtx][0]; // more_coef=0
-
-            if (eob) {
-                AV1PP::itransform_add_vp9(coeff, rec, pitchRec, txSize, txType);
-                int32_t sseNz = AV1PP::sse(src, SRC_PITCH, rec, pitchRec, txSize, txSize);
-                uint32_t bitsNz = EstimateCoefs(fastCoeffCost, cbc, qcoeff, scan, eob, dcCtx, txType);
-                if (txSse + lambda * txBits < sseNz + lambda * bitsNz) {
-                    eob = 0;
-                    ZeroCoeffs(qcoeff, 16 << (txSize << 1)); // zero coeffs
-                    AV1PP::predict_intra_vp9(predPels, rec, pitchRec, txSize, haveLeft, haveTop, mode); // re-predict intra
-                    small_memset0(aboveNzCtx+x, step);
-                    small_memset0(leftNzCtx+y, step);
-                } else {
-                    txBits = bitsNz;
-                    txSse = sseNz;
-                    small_memset1(aboveNzCtx+x, step);
-                    small_memset1(leftNzCtx+y, step);
-                }
-            } else {
-                small_memset0(aboveNzCtx+x, step);
-                small_memset0(leftNzCtx+y, step);
-            }
-
-            rd.eob += eob;
-            rd.sse += txSse;
-            rd.coefBits += txBits;
-            haveLeft = 1;
-        }
-        haveTop = 1;
+    // quant
+    const int32_t sign = (coeff >> 31);
+    coeff = (coeff ^ sign) - sign;
+    if (coeff >= qparam.zbin[0]) {
+        coeff = std::min((int32_t)INT16_MAX, coeff + qparam.round[0]);
+        coeff = ((((coeff * qparam.quant[0]) >> 16) + coeff) * qparam.quantShift[0]) >> 16;
+        *dcQCoef = (int16_t)coeff;
+        // dequant
+        coeff = ((coeff * qparam.dequant[0]) ^ sign) - sign;
+        coeff = (int16_t)std::min(std::max(coeff, (int32_t)INT16_MIN), (int32_t)INT16_MAX);
+        // itransform_add
+        int32_t resid = (coeff * 2 + 128) >> 8;
+        predPel = (uint8_t)Saturate(0, 255, predPel + resid);
     }
-    return rd;
-}
-template RdCost TransformIntraYSbVp9<uint8_t> (
-    int32_t,int32_t,int32_t,int32_t,int32_t,TxSize,uint8_t*,uint8_t*,const uint8_t*, uint8_t*, int32_t,int16_t*,int16_t*,int16_t*,
-    const QuantParam&,const BitCounts&,int32_t,CostType,int32_t,int32_t,int32_t,int32_t,int32_t);
-
-template RdCost TransformIntraYSbVp9<uint16_t>(
-    int32_t,int32_t,int32_t,int32_t,int32_t,TxSize,uint8_t*,uint8_t*,const uint16_t*,uint16_t*,int32_t,int16_t*,int16_t*,int16_t*,
-    const QuantParam&,const BitCounts&,int32_t,CostType,int32_t,int32_t,int32_t,int32_t,int32_t);
-
-template <typename PixType>
-void AV1CU<PixType>::CheckIntra8x4(int32_t absPartIdx)
-{
-    const int32_t rasterIdx = av1_scan_z2r4[absPartIdx];
-    const int32_t x4 = (rasterIdx & 15);
-    const int32_t y4 = (rasterIdx >> 4);
-    const int32_t miRow = (m_ctbPelY >> 3) + ((av1_scan_z2r4[absPartIdx] >> 4) >> 1);
-    const int32_t miCol = (m_ctbPelX >> 3) + ((av1_scan_z2r4[absPartIdx] & 15) >> 1);
-    const int32_t haveTop = (miRow > m_tileBorders.rowStart);
-    const int32_t haveLeft  = (miCol > m_tileBorders.colStart);
-    const int32_t notOnRight = 0;
-    const PixType halfRange = 1<<(m_par->bitDepthLuma-1);
-    const PixType halfRangeM1 = halfRange-1;
-    const PixType halfRangeP1 = halfRange+1;
-    const QuantParam &qparam = m_aqparamY;
-
-    const int32_t miColEnd = m_tileBorders.colEnd;
-
-    PixType *recSb = m_yRec + ((x4 + y4 * m_pitchRecLuma) << LOG2_MIN_TU_SIZE);
-    PixType *srcSb = m_ySrc + ((x4 + y4 * SRC_PITCH) << LOG2_MIN_TU_SIZE);
-    int16_t *diff = vp9scratchpad.diffY;
-    int16_t *coef = vp9scratchpad.coefY;
-    int16_t *qcoef = vp9scratchpad.qcoefY[0];
-    int16_t *bestQcoef = vp9scratchpad.qcoefY[1];
-
-    alignas(64) PixType bestRec[8*4];
-    Contexts bestCtx;
-    Contexts origCtx;
-
-    const BitCounts &bc = m_currFrame->bitCount;
-    const CoefBitCounts &cbc = bc.coef[PLANE_TYPE_Y][0][TX_4X4];
-    ModeInfo *mi = m_data + (x4 >> 1) + (y4 >> 1) * m_par->miPitch;
-    const ModeInfo *above = GetAbove(mi, m_par->miPitch, miRow, m_tileBorders.rowStart);
-    const ModeInfo *left  = GetLeft(mi, miCol, m_tileBorders.colStart);
-    const int32_t ctxSkip = GetCtxSkip(above, left);
-    const uint16_t *skipBits = bc.skip[ctxSkip];
-    const int32_t leftMode[2] = { left ? left[0].mode : DC_PRED, left ? left[2].mode : DC_PRED };
-    const int32_t ctxIsInter = m_currFrame->IsIntra() ? 0 : GetCtxIsInter(above, left);
-    const uint32_t isInterBits = m_currFrame->IsIntra() ? 0 : bc.isInter[ctxIsInter][0];
-
-    RdCost totalCostY = {0,0,0};
-
-    int32_t aboveMode = (above ? above->mode : DC_PRED);
-    for (int32_t y = 0; y < 2; y++) {
-        PixType *rec = recSb + 4*y*m_pitchRecLuma;
-        PixType *src = srcSb + 4*y*SRC_PITCH;
-        origCtx = m_contexts;
-
-        const uint16_t *intraModeBits = m_currFrame->IsIntra() ? bc.kfIntraMode[aboveMode][ leftMode[y] ] : bc.intraMode[TX_4X4];
-
-        CostType bestCost = COST_MAX;
-        RdCost bestRdCost = {};
-        int32_t bestMode = INTRA_MODES;
-        uint8_t *anz = m_contexts.aboveNonzero[0]+x4;
-        uint8_t *lnz = m_contexts.leftNonzero[0]+y4+y;
-
-        for (int32_t i = DC_PRED; i < INTRA_MODES; i++) {
-            m_contexts = origCtx;
-
-            RdCost rd = TransformIntraYSbVp9(BLOCK_8X4, i, haveTop|y, haveLeft, 0, TX_4X4, anz, lnz, src, rec,
-                                             m_pitchRecLuma, diff, coef, qcoef, qparam, bc, m_par->FastCoeffCost,
-                                             m_rdLambda, miRow, miCol, miColEnd, m_par->miRows, m_par->miCols);
-
-            rd.modeBits = intraModeBits[i];
-            CostType cost = rd.sse + m_rdLambda * (rd.coefBits + rd.modeBits);
-
-            fprintf_trace_cost(stderr, "intra luma: poc=%d ctb=%2d idx=%3d bsz=%d mode=%d tx=%d "
-                "sse=%6d modeBits=%4u eob=%d coefBits=%-6u cost=%.0f\n", m_currFrame->m_frameOrder, m_ctbAddr, absPartIdx, BLOCK_8X4, i, TX_4X4,
-                rd.sse, rd.modeBits, rd.eob, rd.coefBits, cost);
-
-            if (bestCost > cost) {
-                bestCost = cost;
-                bestRdCost = rd;
-                bestMode = i;
-                std::swap(qcoef, bestQcoef);
-                if (bestMode != INTRA_MODES-1) { // best is not last checked
-                    bestCtx = m_contexts;
-                    CopyNxM(recSb + 4*y*m_pitchRecLuma, m_pitchRecLuma, bestRec, 8, 4);
-                }
-            }
-        }
-
-        if (bestMode != INTRA_MODES-1) { // best is not last checked
-            m_contexts = bestCtx;
-            CopyNxM(bestRec, 8, recSb + 4*y*m_pitchRecLuma, m_pitchRecLuma, 8, 4);
-        }
-        CopyCoeffs(bestQcoef, m_coeffWorkY+16*(absPartIdx+2*y), 32);
-
-        Zero(m_data[absPartIdx+2*y]);
-        m_data[absPartIdx+2*y].refIdx[0] = INTRA_FRAME;
-        m_data[absPartIdx+2*y].refIdx[1] = NONE_FRAME;
-        m_data[absPartIdx+2*y].refIdxComb = INTRA_FRAME;
-        m_data[absPartIdx+2*y].sbType = BLOCK_8X4;
-        m_data[absPartIdx+2*y].skip = (bestRdCost.eob==0);
-        m_data[absPartIdx+2*y].txSize = TX_4X4;
-        m_data[absPartIdx+2*y].mode = bestMode;
-        m_data[absPartIdx+2*y].memCtx.skip = ctxSkip;
-        m_data[absPartIdx+2*y].memCtx.isInter = ctxIsInter;
-        m_data[absPartIdx+2*y+1] = m_data[absPartIdx+2*y];
-
-        totalCostY.sse += bestRdCost.sse;
-        totalCostY.modeBits += bestRdCost.modeBits;
-        totalCostY.coefBits += bestRdCost.coefBits;
-
-        aboveMode = bestMode;
-    }
-
-    if (!m_data[absPartIdx].skip || !m_data[absPartIdx+2].skip) {
-        m_data[absPartIdx].skip = 0;
-        m_data[absPartIdx+1].skip = 0;
-        m_data[absPartIdx+2].skip = 0;
-        m_data[absPartIdx+3].skip = 0;
-    }
-
-    RdCost costUV = {};
-    if (m_par->chromaRDO)
-        costUV = CheckIntraChroma(absPartIdx, 3, PARTITION_NONE);
-
-    int32_t sse = totalCostY.sse + costUV.sse;
-    uint32_t bits = totalCostY.modeBits + costUV.modeBits + skipBits[m_data[absPartIdx].skip] + isInterBits;
-    if (!m_data[absPartIdx].skip)
-        bits += totalCostY.coefBits + costUV.coefBits;
-    m_costCurr += sse + m_rdLambda * bits;
+    return predPel;
 }
 
 template <typename PixType>
-void AV1CU<PixType>::CheckIntra4x8(int32_t absPartIdx)
+uint64_t AV1CU<PixType>::CheckIntra64x64(PredMode *bestIntraMode)
 {
-    const int32_t rasterIdx = av1_scan_z2r4[absPartIdx];
-    const int32_t x4 = (rasterIdx & 15);
-    const int32_t y4 = (rasterIdx >> 4);
-    const int32_t miRow = (m_ctbPelY >> 3) + ((av1_scan_z2r4[absPartIdx] >> 4) >> 1);
-    const int32_t miCol = (m_ctbPelX >> 3) + ((av1_scan_z2r4[absPartIdx] & 15) >> 1);
+    alignas(16) uint32_t sumTop[4];
+    __m128i s0 = _mm_shuffle_epi32(_mm_sad_epu8(loada_si128(m_yRec - m_pitchRecLuma + 0), _mm_setzero_si128()),  (0 << 0) + (2 << 2) + (1 << 4) + (3 << 6));
+    __m128i s1 = _mm_shuffle_epi32(_mm_sad_epu8(loada_si128(m_yRec - m_pitchRecLuma + 16), _mm_setzero_si128()), (0 << 0) + (2 << 2) + (1 << 4) + (3 << 6));
+    __m128i s2 = _mm_shuffle_epi32(_mm_sad_epu8(loada_si128(m_yRec - m_pitchRecLuma + 32), _mm_setzero_si128()), (0 << 0) + (2 << 2) + (1 << 4) + (3 << 6));
+    __m128i s3 = _mm_shuffle_epi32(_mm_sad_epu8(loada_si128(m_yRec - m_pitchRecLuma + 48), _mm_setzero_si128()), (0 << 0) + (2 << 2) + (1 << 4) + (3 << 6));
+    s0 = _mm_unpacklo_epi64(s0, s1);
+    s2 = _mm_unpacklo_epi64(s2, s3);
+    s0 = _mm_hadd_epi32(s0, s2);
+    storea_si128(sumTop, s0);
+
+    const int32_t miRow = (m_ctbPelY >> 3);
+    const int32_t miCol = (m_ctbPelX >> 3);
     const int32_t haveTop = (miRow > m_tileBorders.rowStart);
-    const int32_t haveLeft  = (miCol > m_tileBorders.colStart);
-    const int32_t notOnRight = 0;
-    const PixType halfRange = 1<<(m_par->bitDepthLuma-1);
-    const PixType halfRangeM1 = halfRange-1;
-    const PixType halfRangeP1 = halfRange+1;
-    const QuantParam &qparam = m_aqparamY;
-    const int32_t miColEnd = m_tileBorders.colEnd;
+    const int32_t haveLeft = (miCol > m_tileBorders.colStart);
 
-    PixType *recSb = m_yRec + ((x4 + y4 * m_pitchRecLuma) << LOG2_MIN_TU_SIZE);
-    PixType *srcSb = m_ySrc + ((x4 + y4 * SRC_PITCH) << LOG2_MIN_TU_SIZE);
-    int16_t *diff = vp9scratchpad.diffY;
-    int16_t *coef = vp9scratchpad.coefY;
-    int16_t *qcoef = vp9scratchpad.qcoefY[0];
-    int16_t *bestQcoef = vp9scratchpad.qcoefY[1];
+    const uint8_t *src = (const uint8_t *)m_ySrc;
 
-    alignas(64) PixType bestRec[8*4];
-    Contexts bestCtx;
-    Contexts origCtx;
+    int16_t dcQCoef = 0;
+    int32_t satd = 0;
+    for (int32_t y = 0; y < 4; y++) {
 
-    const BitCounts &bc = m_currFrame->bitCount;
-    const CoefBitCounts &cbc = bc.coef[PLANE_TYPE_Y][0][TX_4X4];
-    ModeInfo *mi = m_data + (x4 >> 1) + (y4 >> 1) * m_par->miPitch;
-    const ModeInfo *above = GetAbove(mi, m_par->miPitch, miRow, m_tileBorders.rowStart);
-    const ModeInfo *left  = GetLeft(mi, miCol, m_tileBorders.colStart);
-    const int32_t ctxSkip = GetCtxSkip(above, left);
-    const uint16_t *skipBits = bc.skip[ctxSkip];
-    const int32_t aboveMode[2] = { above ? above[0].mode : DC_PRED, above ? above[1].mode : DC_PRED };
-    const int32_t ctxIsInter = m_currFrame->IsIntra() ? 0 : GetCtxIsInter(above, left);
-    const uint32_t isInterBits = m_currFrame->IsIntra() ? 0 : bc.isInter[ctxIsInter][0];
+        uint32_t sumLeft = 0;
+        if (haveLeft)
+            for (int i = 0; i < 16; i++)
+                sumLeft += m_yRec[(y * 16 + i) * m_pitchRecLuma - 1];
 
-    RdCost totalCostY = {0,0,0};
-
-    int32_t leftMode = { left ? left[0].mode : DC_PRED };
-    for (int32_t x = 0; x < 2; x++) {
-        PixType *rec = recSb + 4*x;
-        PixType *src = srcSb + 4*x;
-        origCtx = m_contexts;
-
-        const uint16_t *intraModeBits = m_currFrame->IsIntra() ? bc.kfIntraMode[ aboveMode[x] ][leftMode] : bc.intraMode[TX_4X4];
-
-        CostType bestCost = COST_MAX;
-        RdCost bestRdCost = {};
-        int32_t bestMode = INTRA_MODES;
-        uint8_t *anz = m_contexts.aboveNonzero[0]+x4+x;
-        uint8_t *lnz = m_contexts.leftNonzero[0]+y4;
-
-        for (int32_t i = DC_PRED; i < INTRA_MODES; i++) {
-            if (x == 0 && (i == D45_PRED || i == D63_PRED)) {
-                // modes D45 and D63 require above-right pixels
-                // which are not available when picking mode for first 4x8
-                continue;
+        for (int32_t x = 0; x < 4; x++) {
+            int32_t sum = 0;
+            int32_t shift = 0;
+            if (haveTop | y) {
+                sum = sumTop[x];
+                shift = 4;
             }
-            m_contexts = origCtx;
-
-            RdCost rd = TransformIntraYSbVp9(BLOCK_4X8, i, haveTop, haveLeft|x, 0, TX_4X4, anz, lnz, src, rec,
-                                             m_pitchRecLuma, diff, coef, qcoef, qparam, bc, m_par->FastCoeffCost,
-                                             m_rdLambda, miRow, miCol, miColEnd, m_par->miRows, m_par->miCols);
-            rd.modeBits = intraModeBits[i];
-            CostType cost = rd.sse + m_rdLambda * (rd.coefBits + rd.modeBits);
-
-            fprintf_trace_cost(stderr, "intra luma: poc=%d ctb=%2d idx=%3d bsz=%d mode=%d tx=%d "
-                "sse=%6d modeBits=%4u eob=%d coefBits=%-6u cost=%.0f\n", m_currFrame->m_frameOrder, m_ctbAddr, absPartIdx, BLOCK_4X8, i, TX_4X4,
-                rd.sse, rd.modeBits, rd.eob, rd.coefBits, cost);
-
-            if (bestCost > cost) {
-                bestCost = cost;
-                bestRdCost = rd;
-                bestMode = i;
-                std::swap(qcoef, bestQcoef);
-                if (bestMode != INTRA_MODES-1) { // best is not last checked
-                    bestCtx = m_contexts;
-                    CopyNxM(recSb + 4*x, m_pitchRecLuma, bestRec, 4, 8);
-                }
+            if (haveLeft | x) {
+                sum += sumLeft;
+                shift = (shift == 0) ? 4 : 5;
             }
-        }
+            uint8_t recPel = shift ? ((sum + ((1 << shift) >> 1)) >> shift) : 128;
 
-        if (bestMode != INTRA_MODES-1) { // best is not last checked
-            m_contexts = bestCtx;
-            CopyNxM(bestRec, 4, recSb + 4*x, m_pitchRecLuma, 4, 8);
-        }
-        CopyCoeffs(bestQcoef,    m_coeffWorkY+16*(absPartIdx+x),   16);
-        CopyCoeffs(bestQcoef+32, m_coeffWorkY+16*(absPartIdx+x+2), 16);
+            // for first 16x16 block: preserve DC coef and zero out AC coefs
+            // for other 16x16 blocks: zero out all coefs
+            if (x == 0 && y == 0)
+                recPel = Reconstruct16x16DcOnly(src, SRC_PITCH, recPel, m_aqparamY, &dcQCoef);
 
-        Zero(m_data[absPartIdx+x]);
-        m_data[absPartIdx+x].refIdx[0] = INTRA_FRAME;
-        m_data[absPartIdx+x].refIdx[1] = NONE_FRAME;
-        m_data[absPartIdx+x].refIdxComb = INTRA_FRAME;
-        m_data[absPartIdx+x].sbType = BLOCK_4X8;
-        m_data[absPartIdx+x].skip = (bestRdCost.eob==0);
-        m_data[absPartIdx+x].txSize = TX_4X4;
-        m_data[absPartIdx+x].mode = bestMode;
-        m_data[absPartIdx+x].memCtx.skip = ctxSkip;
-        m_data[absPartIdx+x].memCtx.isInter = ctxIsInter;
-        m_data[absPartIdx+x+2] = m_data[absPartIdx+x];
+            sumTop[x] = recPel * 16;
+            sumLeft = recPel * 16;
 
-        totalCostY.sse += bestRdCost.sse;
-        totalCostY.modeBits += bestRdCost.modeBits;
-        totalCostY.coefBits += bestRdCost.coefBits;
-
-        leftMode = bestMode;
-    }
-
-    if (!m_data[absPartIdx].skip || !m_data[absPartIdx+1].skip) {
-        m_data[absPartIdx].skip = 0;
-        m_data[absPartIdx+1].skip = 0;
-        m_data[absPartIdx+2].skip = 0;
-        m_data[absPartIdx+3].skip = 0;
-    }
-
-    RdCost costUV = {};
-    if (m_par->chromaRDO)
-        costUV = CheckIntraChroma(absPartIdx, 3, PARTITION_NONE);
-
-    int32_t sse = totalCostY.sse + costUV.sse;
-    uint32_t bits = totalCostY.modeBits + costUV.modeBits + skipBits[m_data[absPartIdx].skip] + isInterBits;
-    if (!m_data[absPartIdx].skip)
-        bits += totalCostY.coefBits + costUV.coefBits;
-    m_costCurr += sse + m_rdLambda * bits;
-}
-
-template <typename PixType>
-void AV1CU<PixType>::CheckIntra4x4(int32_t absPartIdx)
-{
-    const int32_t rasterIdx = av1_scan_z2r4[absPartIdx];
-    const int32_t x4 = (rasterIdx & 15);
-    const int32_t y4 = (rasterIdx >> 4);
-    const int32_t miRow = (m_ctbPelY >> 3) + ((av1_scan_z2r4[absPartIdx] >> 4) >> 1);
-    const int32_t miCol = (m_ctbPelX >> 3) + ((av1_scan_z2r4[absPartIdx] & 15) >> 1);
-    const int32_t haveTop = (miRow > m_tileBorders.rowStart);
-    const int32_t haveLeft  = (miCol > m_tileBorders.colStart);
-    const int32_t notOnRight = 0;
-    const PixType halfRange = 1<<(m_par->bitDepthLuma-1);
-    const PixType halfRangeM1 = halfRange-1;
-    const PixType halfRangeP1 = halfRange+1;
-    const QuantParam &qparam = m_aqparamY;
-    const int32_t miColEnd = m_tileBorders.colEnd;
-
-    PixType *recSb = m_yRec + ((x4 + y4 * m_pitchRecLuma) << LOG2_MIN_TU_SIZE);
-    PixType *srcSb = m_ySrc + ((x4 + y4 * SRC_PITCH) << LOG2_MIN_TU_SIZE);
-    int16_t *diff = vp9scratchpad.diffY;
-    int16_t *coef = vp9scratchpad.coefY;
-    int16_t *qcoef = vp9scratchpad.qcoefY[0];
-    int16_t *bestQcoef = vp9scratchpad.qcoefY[1];
-
-    alignas(64) PixType bestRec[4*4];
-    Contexts bestCtx;
-    Contexts origCtx;
-
-    const BitCounts &bc = m_currFrame->bitCount;
-    const CoefBitCounts &cbc = bc.coef[PLANE_TYPE_Y][0][TX_4X4];
-    ModeInfo *mi = m_data + (x4 >> 1) + (y4 >> 1) * m_par->miPitch;
-    const ModeInfo *above = GetAbove(mi, m_par->miPitch, miRow, m_tileBorders.rowStart);
-    const ModeInfo *left  = GetLeft(mi, miCol, m_tileBorders.colStart);
-    const int32_t ctxSkip = GetCtxSkip(above, left);
-    const uint16_t *skipBits = bc.skip[ctxSkip ];
-    const int32_t ctxIsInter = m_currFrame->IsIntra() ? 0 : GetCtxIsInter(above, left);
-    const uint32_t isInterBits = m_currFrame->IsIntra() ? 0 : bc.isInter[ctxIsInter][0];
-
-    int32_t aboveMode[2] = { DC_PRED, DC_PRED };
-    if (above) {
-        aboveMode[0] = above[0].mode;
-        aboveMode[1] = above[1].mode;
-    }
-
-    int32_t leftMode[2] = { DC_PRED, DC_PRED };
-    if (left) {
-        leftMode[0] = left[0].mode;
-        leftMode[1] = left[2].mode;
-    }
-
-    RdCost totalCostY = {0,0,0};
-
-    for (int32_t y = 0; y < 2; y++) {
-        for (int32_t x = 0; x < 2; x++) {
-            CoeffsType *resid = m_residualsY + ((absPartIdx+2*y+x)<<4);
-            CoeffsType *coeff = m_coeffWorkY + ((absPartIdx+2*y+x)<<4);
-            PixType *rec = recSb + 4*y*m_pitchRecLuma + 4*x;
-            PixType *src = srcSb + 4*y*SRC_PITCH + 4*x;
-
-            const uint16_t *intraModeBits = (m_currFrame->IsIntra()) ? bc.kfIntraMode[ aboveMode[x] ][ leftMode[y] ] : bc.intraMode[TX_4X4];
-
-            origCtx = m_contexts;
-            CostType bestCost = COST_MAX;
-            RdCost bestRdCost = {};
-            int32_t bestMode = INTRA_MODES;
-            uint8_t *anz = m_contexts.aboveNonzero[0]+x4+x;
-            uint8_t *lnz = m_contexts.leftNonzero[0]+y4+y;
-
-            for (int32_t i = DC_PRED; i < INTRA_MODES; i++) {
-                m_contexts = origCtx;
-
-                RdCost rd = TransformIntraYSbVp9(BLOCK_4X4, i, haveTop|y, haveLeft|x, !x, TX_4X4, anz, lnz, src, rec,
-                                                 m_pitchRecLuma, diff, coef, qcoef, qparam, bc, m_par->FastCoeffCost,
-                                                 m_rdLambda, miRow, miCol, miColEnd, m_par->miRows, m_par->miCols);
-
-                rd.modeBits = intraModeBits[i];
-                CostType cost = rd.sse + m_rdLambda * (rd.coefBits + rd.modeBits);
-
-                fprintf_trace_cost(stderr, "intra luma: poc=%d ctb=%2d idx=%3d bsz=%d mode=%d tx=%d "
-                    "sse=%6d modeBits=%4u eob=%d coefBits=%-6u cost=%.0f\n", m_currFrame->m_frameOrder, m_ctbAddr, absPartIdx, BLOCK_4X4, i, TX_4X4,
-                    rd.sse, rd.modeBits, rd.eob, rd.coefBits, cost);
-
-                if (bestCost > cost) {
-                    bestCost = cost;
-                    bestRdCost = rd;
-                    bestMode = i;
-                    std::swap(qcoef, bestQcoef);
-                    if (bestMode != INTRA_MODES-1) { // best is not last checked
-                        bestCtx = m_contexts;
-                        CopyNxN(recSb + 4*y*m_pitchRecLuma + 4*x, m_pitchRecLuma, bestRec, 4);
-                    }
-                }
-            }
-
-            if (bestMode != INTRA_MODES-1) { // best is not last checked
-                m_contexts = bestCtx;
-                CopyNxN(bestRec, 4, recSb + 4*y*m_pitchRecLuma + 4*x, m_pitchRecLuma, 4);
-            }
-            CopyCoeffs(bestQcoef, m_coeffWorkY+16*(absPartIdx+2*y+x), 16);
-
-            Zero(m_data[absPartIdx+2*y+x]);
-            m_data[absPartIdx+2*y+x].refIdx[0] = INTRA_FRAME;
-            m_data[absPartIdx+2*y+x].refIdx[1] = NONE_FRAME;
-            m_data[absPartIdx+2*y+x].refIdxComb = INTRA_FRAME;
-            m_data[absPartIdx+2*y+x].sbType = BLOCK_4X4;
-            m_data[absPartIdx+2*y+x].skip = (bestRdCost.eob==0);
-            m_data[absPartIdx+2*y+x].txSize = TX_4X4;
-            m_data[absPartIdx+2*y+x].mode = bestMode;
-            m_data[absPartIdx+2*y+x].memCtx.skip = ctxSkip;
-            m_data[absPartIdx+2*y+x].memCtx.isInter = ctxIsInter;
-
-            totalCostY.sse += bestRdCost.sse;
-            totalCostY.modeBits += bestRdCost.modeBits;
-            totalCostY.coefBits += bestRdCost.coefBits;
-
-            aboveMode[x] = bestMode;
-            leftMode[y] = bestMode;
+            satd += AV1PP::satd_with_const(src + y * 16 * SRC_PITCH + x * 16, recPel, 2, 2);
         }
     }
 
-    if (!m_data[absPartIdx].skip || !m_data[absPartIdx+1].skip || !m_data[absPartIdx+2].skip || !m_data[absPartIdx+3].skip) {
-        m_data[absPartIdx].skip = 0;
-        m_data[absPartIdx+1].skip = 0;
-        m_data[absPartIdx+2].skip = 0;
-        m_data[absPartIdx+3].skip = 0;
-    }
+    *bestIntraMode = DC_PRED;
 
-    RdCost costUV = {};
-    if (m_par->chromaRDO)
-        costUV = CheckIntraChroma(absPartIdx, 3, PARTITION_NONE);
-
-    int32_t sse = totalCostY.sse + costUV.sse;
-    uint32_t bits = totalCostY.modeBits + costUV.modeBits + skipBits[m_data[absPartIdx].skip] + isInterBits;
-    if (!m_data[absPartIdx].skip)
-        bits += totalCostY.coefBits + costUV.coefBits;
-    m_costCurr += sse + m_rdLambda * bits;
+    const BitCounts &bc = *m_currFrame->bitCount;
+    const TxbBitCounts &cbc = bc.txb[get_q_ctx(m_lumaQp)][TX_16X16][PLANE_TYPE_Y];
+    const uint16_t *intraModeBits = bc.intraModeAV1[TX_16X16];
+    const ModeInfo *above = GetAbove(m_data, m_par->miPitch, miRow, m_tileBorders.rowStart);
+    const ModeInfo *left = GetLeft(m_data, miCol, m_tileBorders.colStart);
+    const uint16_t *isInterBits = bc.isInter[ GetCtxIsInter(above, left) ];
+    const int32_t bits = intraModeBits[DC_PRED] + isInterBits[0] + cbc.txbSkip[0][1] * 15 + (dcQCoef ? (cbc.txbSkip[0][0] + BSR(dcQCoef) * 512) : cbc.txbSkip[0][1]);
+    const uint64_t bestIntraCost = RD(satd, bits, m_rdLambdaSqrtInt);
+    return bestIntraCost;
 }
 
 namespace {
@@ -1424,48 +892,6 @@ namespace {
 
 
 template <typename PixType>
-bool AV1CU<PixType>::tryIntraRD(int32_t absPartIdx, int32_t depth, IntraLumaMode *modes)
-{
-    if ( !m_bIntraCandInBuf ) return true;
-
-    int32_t widthCu = m_par->MaxCUSize >> depth;
-    int32_t InterHad = 0;
-    int32_t IntraHad = 0;
-    int32_t numCand1 = m_par->num_cand_1[m_par->Log2MaxCUSize - depth];
-
-    int32_t offsetLuma = GetLumaOffset(m_par, absPartIdx, SRC_PITCH);
-    PixType *pSrc = m_ySrc + offsetLuma;
-    int32_t offsetPred = GetLumaOffset(m_par, absPartIdx, MAX_CU_SIZE);
-    const PixType *predY = m_interPredY + offsetPred;
-
-    InterHad = AV1PP::satd(pSrc, predY, BSR(widthCu) - 2, BSR(widthCu) - 2) >> m_par->bitDepthLumaShift;
-    InterHad+= ((CostType)m_mvdCost*m_rdLambda*512.f + 0.5f);
-
-    bool skipIntraRD = true;
-    for(int32_t ic=0; ic<numCand1; ic++) {
-        int32_t mode = modes[ic].mode;
-        PixType *pred = m_predIntraAll + mode * widthCu * widthCu;
-        float dc=0;
-        if (mode < 2 || mode >= 18 && mode == 10)
-            dc = AV1PP::diff_dc(pSrc, SRC_PITCH, pred, widthCu, widthCu);
-        else
-            dc = AV1PP::diff_dc(m_srcTr, widthCu, pred, widthCu, widthCu);
-        dc *= h265_reci_1to116[(widthCu>>2)-1] * h265_reci_1to116[(widthCu>>2)-1] * (1.0f / 16);
-        dc=fabsf(dc);
-        IntraHad = modes[ic].satd;
-        IntraHad -= dc*16*(widthCu/8)*(widthCu/8);
-        IntraHad += (ic*m_rdLambda*512.f + 0.5f);
-
-        if(IntraHad<InterHad || dc<1.0) {
-            skipIntraRD = false;
-            break;
-        }
-    }
-    return !skipIntraRD;
-}
-
-
-template <typename PixType>
 int32_t AV1CU<PixType>::GetNumIntraRDModes(int32_t absPartIdx, int32_t depth, int32_t trDepth, IntraLumaMode *modes, int32_t numModes)
 {
     int32_t numCand = numModes;
@@ -1502,111 +928,702 @@ int32_t AV1CU<PixType>::GetNumIntraRDModes(int32_t absPartIdx, int32_t depth, in
     return numCand;
 }
 
-const uint8_t mode_to_angle_map[] = {0, 90, 180, 45, 135, 113, 157, 203, 67, 0,
-                                  0, 0, 0};
+const uint8_t mode_to_angle_map[] = {0, 90, 180, 45, 135, 113, 157, 203, 67, 0, 0, 0, 0};
+
+typedef struct Struct_PaletteNode
+{
+    uint8_t color;
+    uint16_t count;
+    uint32_t bits;
+    uint32_t sum1;
+    uint32_t sum2;
+    Struct_PaletteNode *L;
+    Struct_PaletteNode *R;
+    Struct_PaletteNode *C;
+    uint16_t GetTotalCount()
+    {
+        return count;
+        //uint32_t total_count = 0;
+        //const Struct_PaletteNode *node = this;
+        //do {
+        //    total_count += node->count;
+        //} while (node = node->C);
+        //return total_count;
+    }
+    uint8_t GetMeanColor()
+    {
+        return color;
+        /*float num = (int)count*color;
+        float den = count;
+        Struct_PaletteNode *t = C;
+        while (t) {
+            num += (int)t->color*(int)t->count;
+            den += t->count;
+            t = t->C;
+        }
+        uint8_t mean = (uint8_t)((num / den) + 0.5f);
+        return mean;*/
+    }
+    uint32_t GetTotalSse(uint8_t ref_color)
+    {
+        return sum2 - sum1 * ref_color + count * ref_color * ref_color;
+        //uint32_t total_sse = 0;
+        //const Struct_PaletteNode *node = this;
+        //do {
+        //    total_sse += node->count * ((int)ref_color - (int)node->color) * ((int)ref_color - (int)node->color);
+        //} while (node = node->C);
+        //return total_sse;
+    }
+    void Add(Struct_PaletteNode *p) {
+        Struct_PaletteNode *node = this;
+        while (node->C)
+            node = node->C;
+        node->C = p;
+        count += p->count;
+        sum1 += p->sum1;
+        sum2 += p->sum2;
+    }
+    Struct_PaletteNode * MergeL(Struct_PaletteNode **tail) {
+        if (!this->L) {
+            assert(0);
+            return this;
+        } else {
+            this->L->R = this->R;
+            if (!this->R) {
+                if (tail) *tail = this->L;
+            } else {
+                this->R->L = this->L;
+            }
+            this->L->Add(this);
+            return this->L;
+        }
+    }
+    Struct_PaletteNode * MergeR(Struct_PaletteNode **head) {
+        if (!this->R) {
+            assert(0);
+            return this;
+        } else {
+            this->R->L = this->L;
+            if (!this->L) {
+                if(head) *head = this->R;
+            } else {
+                this->L->R = this->R;
+            }
+            this->R->Add(this);
+            return this->R;
+        }
+    }
+} PaletteNode;
+
+static const int16_t LOG2_MUL_256[32] = {
+       0,  256,  405,  512,  594,  661,  718,  768,  811,  850,  885,  917,  947,  974, 1000, 1024,
+    1046, 1067, 1087, 1106, 1124, 1141, 1158, 1173, 1188, 1203, 1217, 1230, 1243, 1256, 1268, 1280
+};
+
+uint32_t FastLog2Mul256(uint16_t x) {
+    if (x <= 32)
+        return LOG2_MUL_256[x - 1];
+    // linear approximation
+    const int32_t bsr = BSR(x);
+    return (bsr << 8) + (((x - (1 << bsr)) << 8) >> bsr);
+}
+
+uint32_t ColorBits(uint16_t icount, int32_t log2Size)
+{
+    //float p = icount * isz;
+    //float si = (-log2(p));
+    //uint32_t colbits = si * 512;
+    //if (icount > 1) colbits += (uint32_t)(si * (float)(icount - 1) * 256);
+
+    uint32_t entropy = (log2Size << 8) - FastLog2Mul256(icount);
+    uint32_t colbits = entropy * (icount + 1);
+    return colbits;
+}
 
 template <typename PixType>
-RdCost AV1CU<PixType>::CheckIntraLumaNonRdVp9(int32_t absPartIdx, int32_t depth, PartitionType partition)
+uint8_t GetColorCount(PixType* srcSb, uint32_t width, uint32_t height, uint8_t *ret_palette, uint32_t bitdepth, CostType rdLambda, PaletteInfo *pi, uint8_t *color_map, uint32_t &bits, bool optimize)
 {
-    assert(depth > 0);
-    assert(partition == PARTITION_NONE);
+    const int MAX_EXT_PALETTE = 24;
+    int EXT_PALETTE = MAX_EXT_PALETTE;// +((width > 16) ? 16 : ((width > 8) ? 12 : 8));
+    int colors = 0;
+    bits = 0;
 
-    const BlockSize bsz = GetSbType(depth, partition);
-    const int32_t width = MAX_CU_SIZE >> depth;
-    const int32_t size = (MAX_NUM_PARTITIONS << 4) >> (depth << 1);
-    const int32_t rasterIdx = av1_scan_z2r4[absPartIdx];
-    const int32_t x4 = (rasterIdx & 15);
-    const int32_t y4 = (rasterIdx >> 4);
-    const int32_t notOnRight = 0;
-    const PixType halfRange = 1<<(m_par->bitDepthLuma-1);
-    const PixType halfRangeM1 = halfRange-1;
-    const PixType halfRangeP1 = halfRange+1;
-    const int32_t miRow = (m_ctbPelY >> 3) + (y4 >> 1);
-    const int32_t miCol = (m_ctbPelX >> 3) + (x4 >> 1);
-    const int32_t haveTop = (miRow > m_tileBorders.rowStart);
-    const int32_t haveLeft  = (miCol > m_tileBorders.colStart);
-    const int32_t miColEnd = m_tileBorders.colEnd;
-    const int32_t mi_rows = m_tileBorders.rowEnd;
-    PixType *recSb = m_yRec + ((x4 + y4 * m_pitchRecLuma) << LOG2_MIN_TU_SIZE);
-    PixType *srcSb = m_ySrc + ((x4 + y4 * SRC_PITCH) << LOG2_MIN_TU_SIZE);
+    if (bitdepth <= 8) {
+        int16_t color_count[256] = { 0 };
+        PixType plt[MAX_EXT_PALETTE + 1] = { 0 };
+        const PixType* src = srcSb;
+        for (uint32_t i = 0; i < height && colors <= EXT_PALETTE; i++) {
+            for (uint32_t j = 0; j < width; j++) {
+                const PixType v = *src;
+                if (!color_count[v]++) {
+                    plt[colors] = v;
+                    colors++;
+                    if (colors > EXT_PALETTE) break;
+                }
+                src++;
+            }
+            src = srcSb + ((i + 1) << 6);
+        }
 
-    const int32_t sbx = x4 << 2;
-    const int32_t sby = y4 << 2;
+        pi->true_colors_y = (uint8_t)colors;
+        pi->sse = 0;
+        pi->color_map = color_map;
 
-    const TxSize maxTxSize = max_txsize_lookup[bsz];
-    const TxSize txSize = maxTxSize;
-    ModeInfo *mi = m_data + (x4 >> 1) + (y4 >> 1) * m_par->miPitch;
-    const ModeInfo *above = GetAbove(mi, m_par->miPitch, miRow, m_tileBorders.rowStart);
-    const ModeInfo *left  = GetLeft(mi, miCol, m_tileBorders.colStart);
-    const int32_t aboveMode = (above ? above->mode : DC_PRED);
-    const int32_t leftMode  = (left  ? left->mode  : DC_PRED);
-    const BitCounts &bc = m_currFrame->bitCount;
-    const CoefBitCounts &cbc = bc.coef[PLANE_TYPE_Y][0][txSize];
-    const int32_t ctxSkip = GetCtxSkip(above, left);
-    const uint16_t *skipBits = bc.skip[ctxSkip];
-    const uint16_t *intraModeBits = (m_currFrame->IsIntra() ? bc.kfIntraMode[aboveMode][leftMode] : bc.intraMode[maxTxSize]);
-    const uint16_t *txSizeBits = bc.txSize[maxTxSize][ GetCtxTxSizeVP9(above, left, maxTxSize) ];
-    const int32_t ctxIsInter = m_currFrame->IsIntra() ? 0 : GetCtxIsInter(above, left);
-    const uint32_t isInterBits = m_currFrame->IsIntra() ? 0 : bc.isInter[ctxIsInter][0];
+        if (colors > 1 && colors <= EXT_PALETTE) {
+            const int32_t log2Size = BSR(width * height);
+            uint8_t map_enc[256];
+            PaletteNode palette[MAX_EXT_PALETTE] = { 0 };
 
-    alignas(32) PixType predPels_[32/sizeof(PixType) + (4<<TX_32X32) * 3 + (4<<TX_32X32)];
-    PixType *predPels = predPels_ + 32/sizeof(PixType) - 1;
+            int k;
+            std::sort(std::begin(plt), std::begin(plt) + colors);
+            for (k = 0; k < colors; k++) {
+                const int idx = plt[k];
+                map_enc[idx] = k;
+                palette[k].color = idx;
+                palette[k].count = color_count[idx];
+                palette[k].sum1 = color_count[idx] * idx * 2;
+                palette[k].sum2 = color_count[idx] * idx * idx;
+                if (k) {
+                    palette[k].L = &palette[k - 1];
+                    palette[k - 1].R = &palette[k];
+                }
+            }
+            if (!optimize) {
+                if (colors > 1 && colors <= MAX_PALETTE) {
+                    for (uint16_t i = 0; i < colors; i++) {
+                        uint16_t icount = palette[i].count;
+                        ret_palette[i] = palette[i].color;
+                        uint32_t colbits = ColorBits(icount, log2Size);
+                        bits += colbits;
+                    }
+                    for (uint32_t i = 0;i < height;i++) {
+                        for (uint32_t j = 0; j < width; j++) {
+                            const int idx = (i << 6) + j;
+                            color_map[idx] = map_enc[srcSb[idx]];
+                        }
+                    }
+                }
+            }
+            else {
+                PaletteNode *curr = NULL;
+                PaletteNode *head = &palette[0];
+                PaletteNode *tail = &palette[k - 1];
+                int prevk = 0;
+                do {
+                    // RD Opt Palette
+                    curr = head;
+                    prevk = k;
+                    while (curr && k > 1) {
+                        uint16_t icount = curr->GetTotalCount();
+                        uint32_t colbits = ColorBits(icount, log2Size);
+                        curr->bits = colbits;
+                        uint32_t sseL = (curr->L ? curr->GetTotalSse(curr->L->GetMeanColor()) : INT_MAX);
+                        uint32_t sseR = (curr->R ? curr->GetTotalSse(curr->R->GetMeanColor()) : INT_MAX);
 
-    int32_t bestMode = DC_PRED;
-    int32_t bestDelta = 0;
-    AV1PP::GetPredPelsLuma(recSb, m_pitchRecLuma, predPels, width, halfRangeM1, halfRangeP1, haveTop, haveLeft, notOnRight);
-    AV1PP::predict_intra_vp9(predPels, m_predIntraAll + 0 * size, width, maxTxSize, haveLeft, haveTop, DC_PRED);
-    AV1PP::predict_intra_vp9(predPels, m_predIntraAll + 1 * size, width, maxTxSize, 0, 0, V_PRED);
-    AV1PP::predict_intra_vp9(predPels, m_predIntraAll + 2 * size, width, maxTxSize, 0, 0, H_PRED);
-    AV1PP::predict_intra_vp9(predPels, m_predIntraAll + 3 * size, width, maxTxSize, 0, 0, D45_PRED);
-    AV1PP::predict_intra_vp9(predPels, m_predIntraAll + 4 * size, width, maxTxSize, 0, 0, D135_PRED);
-    AV1PP::predict_intra_vp9(predPels, m_predIntraAll + 5 * size, width, maxTxSize, 0, 0, D117_PRED);
-    AV1PP::predict_intra_vp9(predPels, m_predIntraAll + 6 * size, width, maxTxSize, 0, 0, D153_PRED);
-    AV1PP::predict_intra_vp9(predPels, m_predIntraAll + 7 * size, width, maxTxSize, 0, 0, D207_PRED);
-    AV1PP::predict_intra_vp9(predPels, m_predIntraAll + 8 * size, width, maxTxSize, 0, 0, D63_PRED);
-    AV1PP::predict_intra_vp9(predPels, m_predIntraAll + 9 * size, width, maxTxSize, 0, 0, TM_PRED);
+                        if (sseL <= sseR) {
+                            uint16_t icountL = curr->L->GetTotalCount();
+                            CostType colCost = 0;
+                            if (k > 2 && icountL > icount) {
+                                uint32_t ncolbits = ColorBits(icountL + icount, log2Size);
+                                colCost = (curr->L->bits + colbits - ncolbits)* rdLambda;
+                            }
+                            if (icountL > icount && colCost > sseL) {
+                                curr = curr->MergeL(&tail);
+                                k--;
+                            } else {
+                                curr = curr->R;
+                            }
+                        }
+                        else {
+                            uint16_t icountR = curr->R->GetTotalCount();
+                            CostType colCost = 0;
+                            if (k > 2 && icountR >= icount) {
+                                uint32_t rcolbits = ColorBits(icountR, log2Size);
+                                uint32_t ncolbits = ColorBits(icountR + icount, log2Size);
+                                colCost = (rcolbits + colbits - ncolbits)* rdLambda;
+                            }
+                            if (icountR >= icount && colCost > sseR) {
+                                curr = curr->MergeR(&head);
+                                k--;
+                            } else {
+                                curr = curr->R;
+                            }
+                        }
+                    }
+                    // Force reduction
+                    while (k > MAX_PALETTE) {
+                        PaletteNode *curr = head;
+                        uint32_t bestSse = INT_MAX;
+                        PaletteNode *minCand = NULL;
+                        PaletteNode *minMergeL = NULL;
+                        PaletteNode *minMergeR = NULL;
 
-    int32_t bestCost = AV1PP::satd(srcSb, m_predIntraAll, width, txSize, txSize);
-    bestCost += int32_t(m_rdLambdaSqrt * intraModeBits[DC_PRED] + 0.5f);
-    for (int32_t mode = DC_PRED + 1; mode < INTRA_MODES; mode++) {
-        int32_t cost = AV1PP::satd(srcSb, m_predIntraAll + mode * size, width, txSize, txSize);
-        cost += int32_t(m_rdLambdaSqrt * intraModeBits[mode] + 0.5f);
-        if (bestCost > cost) {
-            bestCost = cost;
-            bestMode = mode;
+                        while (curr)
+                        {
+                            uint32_t sseL = (curr->L ? curr->GetTotalSse(curr->L->GetMeanColor()) : INT_MAX);
+                            uint32_t sseR = (curr->R ? curr->GetTotalSse(curr->R->GetMeanColor()) : INT_MAX);
+                            if (sseL <= sseR) {
+                                if (sseL < bestSse) {
+                                    bestSse = sseL;
+                                    minCand = curr;
+                                    minMergeL = curr->L;
+                                    minMergeR = NULL;
+                                }
+                            }
+                            else {
+                                if (sseR < bestSse) {
+                                    bestSse = sseR;
+                                    minCand = curr;
+                                    minMergeL = NULL;
+                                    minMergeR = curr->R;
+                                }
+                            }
+                            curr = curr->R;
+                        }
+                        if (minCand) {
+                            if (minMergeL) {
+                                minCand = minCand->MergeL(&tail);
+                                k--;
+                            }
+                            else if (minMergeR) {
+                                minCand = minCand->MergeR(&head);
+                                k--;
+                            }
+                        }
+                    };
+                } while (k < prevk && k>1);
+
+                colors = k;
+                if (colors > 1 && colors <= MAX_PALETTE) {
+                    PaletteNode *t = head;
+                    uint8_t i = 0;
+                    bits = 0;
+                    while (t) {
+                        ret_palette[i] = t->GetMeanColor();
+                        bits += t->bits;
+                        pi->sse += t->GetTotalSse(t->GetMeanColor());
+
+                        for (PaletteNode *c = t; c; c = c->C)
+                            map_enc[c->color] = i;
+
+                        t = t->R;
+                        i++;
+                    }
+                    assert(i == k);
+                    const __m256i shuftab = _mm256_set1_epi32(0x0C080400);
+                    for (uint32_t i = 0;i < height;i++) {
+                        //for (uint32_t j = 0; j < width; j++) {
+                        //    const int idx = (i << 6) + j;
+                        //    color_map[idx] = map_enc[srcSb[idx]];
+                        //}
+                        for (uint32_t j = 0; j < width; j += 8) {
+                            __m256i c = _mm256_cvtepu8_epi32(loadl_epi64(srcSb + i * SRC_PITCH + j));
+                            __m256i m = _mm256_i32gather_epi32((int32_t *)map_enc, c, 1);
+                            m = _mm256_shuffle_epi8(m, shuftab);
+                            storel_si32(color_map + i * SRC_PITCH + j + 0, si128_lo(m));
+                            storel_si32(color_map + i * SRC_PITCH + j + 4, si128_hi(m));
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        // not implemented
+        assert(0);
+    }
+
+    return (uint8_t) colors;
+}
+
+template <typename PixType>
+uint8_t GetColorCountUV(PixType* srcSb, uint32_t width, uint32_t height, uint8_t *ret_palette, uint32_t bitdepth, CostType rdLambda, PaletteInfo *pi, uint8_t *color_map, uint32_t &bits, bool& is_dist)
+{
+    //Need to create joined palette with one index and separate palettes
+
+    const int EXT_PALETTE = MAX_PALETTE + 8;
+    int colorsU = 0;
+    int colorsV = 0;
+    bits = 0;
+
+    if (bitdepth <= 8) {
+        int color_countU[256] = { 0 };
+        int color_countV[256] = { 0 };
+        int palette_u[MAX_PALETTE] = { -1 };
+        int palette_v[MAX_PALETTE] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+        //joint histogram
+
+        PixType* src = srcSb;
+        for (uint32_t i = 0; i < height; i++) {
+            for (uint32_t j = 0; j < (width << 1); j += 2) {
+                const int u = src[j];
+                const int v = src[j + 1];
+                const int cu = !color_countU[u]++;
+                const int cv = !color_countV[v]++;
+                if (cu) {
+                    palette_u[colorsU&(MAX_PALETTE - 1)] = u;
+                    colorsU += cu;
+                }
+                if (cv) {
+                    colorsV += cv;
+                }
+            }
+            src += 64;
+        }
+
+        int max_colors = std::max(colorsU, colorsV);
+        pi->true_colors_uv = max_colors;
+        pi->sseUV = 0;
+        pi->color_map = color_map;
+
+        //don't optimize colors for now - need to optimize u and v jointly as they share the same index
+        if (colorsU > 1 && colorsV > 1 && colorsV <= colorsU && max_colors <= MAX_PALETTE) {
+            //U palette should be in increasing order
+            std::sort(std::begin(palette_u), std::begin(palette_u) + colorsU);
+            int map_idx[256];
+            for (int i = 0; i < colorsU; i++) {
+                map_idx[palette_u[i]] = i;
+            }
+#if 0
+            int map_idx1[256];
+            for (int i = 0; i < colorsV; i++) {
+                map_idx1[palette_v[i]] = i;
+            }
+#endif
+            for (uint32_t i = 0; i < height; i++) {
+                const int idx = (i << 6);
+                for (uint32_t j = 0; j < width; j++) {
+                    const int off = idx + (j << 1);
+                    const int im = map_idx[srcSb[off]];
+                    color_map[idx + j] = im;
+                    PixType v = srcSb[off + 1];
+                    const int vi = palette_v[im];
+                    if (vi >= 0 && vi != v) {
+                        //choose color with more count
+                        if (color_countV[v] < color_countV[vi]) {
+                            v = vi;
+                        }
+                        is_dist = true;
+                    }
+                    palette_v[im] = v;
+                }
+            }
+
+            float log2_isz = log2(1.0 / (width * height));
+            for (int i = 0; i < max_colors; i++) {
+                const int color = palette_u[i];
+                uint16_t icount = color_countU[color];
+                ret_palette[i] = color;
+                const int color_v = palette_v[i];
+                ret_palette[MAX_PALETTE + i] = color_v == -1 ? ret_palette[MAX_PALETTE + i - 1] : color_v;
+                float si = -(log2(icount) + log2_isz);
+                uint32_t colbits = si * 512;
+                if (icount > 1) colbits += (uint32_t)(si * ((icount - 1) * 256));
+                bits += colbits;
+            }
+
+            //U palette reassign to minimize sse?
+
+            return max_colors;
+        }
+
+        return 0;
+    }
+    else {
+        // not implemented
+        assert(0);
+    }
+
+    return 0;
+}
+
+static const int32_t HashToPaletteColorContext[9] = { -1, -1, 0, -1, -1, 4,  3,  2, 1 };
+
+uint32_t GetPaletteColorContext(const uint8_t *colorMap, int32_t pitch, int32_t row, int32_t col, int32_t &new_color_idx)
+{
+    assert(row || col);
+
+    const uint8_t *pCurColor = colorMap + row * pitch + col;
+    const uint8_t curColor = pCurColor[0];
+    const uint8_t curColorComplement = MAX_PALETTE - curColor; // complemented colors are convenient for sorting
+
+    int32_t numNonZeroScores = 1;
+    uint8_t nonZeroScores[3] = {}; // 4 MSB - score, 4 LSB - color complement
+
+    // set scores for neighboring colors
+    if (row == 0) {
+        // first row then there is only one neighbor (left)
+        nonZeroScores[0] = (2 << 4) | (MAX_PALETTE - pCurColor[-1]);
+    } else if (col == 0) {
+        // first column then there is only one neighbor (top)
+        nonZeroScores[0] = (2 << 4) | (MAX_PALETTE - pCurColor[-pitch]);
+    } else {
+        // there may be from 1 to 3 distinct colors
+        const uint8_t left = MAX_PALETTE - pCurColor[-1];
+        const uint8_t top = MAX_PALETTE - pCurColor[-pitch];
+        const uint8_t topLeft = MAX_PALETTE - pCurColor[-pitch - 1];
+
+        // there are 5 different cases
+        if (left == top) {
+            if (left == topLeft) { // #1 all the same
+                nonZeroScores[0] = (5 << 4) | left;
+                numNonZeroScores = 1;
+            } else { // #2 top-left is distinct
+                nonZeroScores[0] = (4 << 4) | left;
+                nonZeroScores[1] = (1 << 4) | topLeft;
+                numNonZeroScores = 2;
+            }
+        } else {
+            if (left == topLeft) { // #3 top is distinct
+                nonZeroScores[0] = (3 << 4) | left;
+                nonZeroScores[1] = (2 << 4) | top;
+                numNonZeroScores = 2;
+            } else if (top == topLeft) { // #4 left is distinct
+                nonZeroScores[0] = (3 << 4) | top;
+                nonZeroScores[1] = (2 << 4) | left;
+                numNonZeroScores = 2;
+            } else { // #4 all are distinct
+                nonZeroScores[0] = (2 << 4) | std::max(left, top);
+                nonZeroScores[1] = (2 << 4) | std::min(left, top);
+                nonZeroScores[2] = (1 << 4) | topLeft;
+                numNonZeroScores = 3;
+            }
+        }
+    }
+    assert(numNonZeroScores > 0);
+    assert(numNonZeroScores < 2 || nonZeroScores[0] > nonZeroScores[1]);
+    assert(numNonZeroScores < 3 || nonZeroScores[1] > nonZeroScores[2]);
+
+
+    int32_t newColorIdx = curColor;
+
+    // Find new index for current color
+    // It can be one of scored colors
+    //   then its index is index of that color (after sorting)
+    // Or it can be one of unscored colors
+    //   then its index is incremented by number of scored colors
+    //   which changed order relative to current color
+    if (curColorComplement == (nonZeroScores[0] & 0xf)) {
+        newColorIdx = 0;
+    } else if (curColorComplement == (nonZeroScores[1] & 0xf)) {
+        newColorIdx = 1;
+    } else if (curColorComplement == (nonZeroScores[2] & 0xf)) {
+        newColorIdx = 2;
+    } else {
+        if (curColorComplement > (nonZeroScores[0] & 0xf))
+            newColorIdx++;
+        if (numNonZeroScores > 1) {
+            if (curColorComplement > (nonZeroScores[1] & 0xf))
+                newColorIdx++;
+            if (numNonZeroScores > 2 && curColorComplement > (nonZeroScores[2] & 0xf))
+                newColorIdx++;
         }
     }
 
-    const QuantParam &qparam = m_aqparamY;
-    uint8_t *anz = m_contexts.aboveNonzero[0]+x4;
-    uint8_t *lnz = m_contexts.leftNonzero[0]+y4;
-    int16_t *diff = vp9scratchpad.diffY;
-    int16_t *coef = vp9scratchpad.coefY;
-    int16_t *qcoef = m_coeffWorkY + 16 * absPartIdx;
+    const int32_t colorContextHash = (nonZeroScores[0] >> 4) + ((nonZeroScores[1] >> 4) << 1) + ((nonZeroScores[2] >> 4) << 1); // Palette_Color_Hash_Multipliers = {1,2,2}
+    const int32_t colorContext = HashToPaletteColorContext[colorContextHash];
+    assert(colorContext >= 0);
+    assert(colorContext < 5);
 
-
-    RdCost rd = TransformIntraYSbVp9(bsz, bestMode, haveTop, haveLeft, 0, maxTxSize, anz, lnz, srcSb, recSb, m_pitchRecLuma,
-                                     diff, coef, qcoef, qparam, bc, m_par->FastCoeffCost, m_rdLambda, miRow, miCol, miColEnd,
-                                     m_par->miRows, m_par->miCols);
-
-    Zero(*mi);
-    mi->refIdx[0] = INTRA_FRAME;
-    mi->refIdx[1] = NONE_FRAME;
-    mi->refIdxComb = INTRA_FRAME;
-    mi->sbType = bsz;
-    mi->skip = (rd.eob == 0);
-    mi->txSize = txSize;
-    mi->mode = bestMode;
-    mi->memCtx.skip = ctxSkip;
-    mi->memCtx.isInter = ctxIsInter;
-    const int32_t num4x4w = block_size_wide_4x4[bsz];
-    const int32_t num4x4h = block_size_high_4x4[bsz];
-    PropagateSubPart(mi, m_par->miPitch, num4x4w >> 1, num4x4h >> 1);
-
-    rd.modeBits = isInterBits + txSizeBits[txSize] + intraModeBits[bestMode];
-    return rd;
+    new_color_idx = newColorIdx;
+    return colorContext;
 }
 
+template <typename PixType>
+uint32_t GetPaletteTokensCost(const BitCounts &bc, PixType *src, int32_t width, int32_t height, uint8_t *palette, uint32_t palette_size, uint8_t *color_map)
+{
+    uint32_t bitCost = write_uniform_cost(palette_size, color_map[0]);
+
+    const uint16_t(&colorBits)[5][MAX_PALETTE] = bc.PaletteColorIdxY[palette_size - 2];
+
+    // when estimating bits no need to follow wavefront order
+    int32_t j = 1;
+    for (int32_t i = 0; i < height; ++i) {
+        for (; j < width; ++j) {
+            int32_t new_color_idx = color_map[i * MAX_CU_SIZE + j];
+            int32_t ctx = GetPaletteColorContext(color_map, MAX_CU_SIZE, i, j, new_color_idx);
+            bitCost += colorBits[ctx][new_color_idx];
+        }
+        j = 0;
+    }
+
+    return bitCost;
+}
+
+template <typename PixType>
+uint32_t GetPaletteTokensCostUV(const BitCounts &bc, PixType *src, int32_t width, int32_t height, uint8_t *palette, uint32_t palette_size, uint8_t *color_map)
+{
+    uint32_t bitCost = write_uniform_cost(palette_size, color_map[0]);
+
+    const uint16_t(&colorBits)[5][MAX_PALETTE] = bc.PaletteColorIdxUV[palette_size - 2];
+
+    // when estimating bits no need to follow wavefront order
+    int32_t j = 1;
+    for (int32_t i = 0; i < height; ++i) {
+        for (; j < width; ++j) {
+            int32_t new_color_idx = color_map[i * MAX_CU_SIZE + j];
+            int32_t ctx = GetPaletteColorContext(color_map, MAX_CU_SIZE, i, j, new_color_idx);
+            bitCost += colorBits[ctx][new_color_idx];
+        }
+        j = 0;
+    }
+
+    return bitCost;
+}
+
+uint32_t GetPaletteDeltaCost(uint8_t *colors_xmit, uint32_t colors_xmit_size, uint32_t bitdepth, uint32_t min_delta)
+{
+    int32_t index = 0;
+    int32_t bits = 0;
+    int32_t delta_bits = bitdepth - 3;
+    uint32_t max_delta_bits = delta_bits;
+    if (colors_xmit_size) {
+        bits += bitdepth;
+        index++;
+    }
+    if (index < colors_xmit_size) {
+        int32_t max_delta = 0;
+        for (uint32_t i = 1; i < colors_xmit_size; i++) {
+            int32_t delta = abs((int)colors_xmit[i] - (int)colors_xmit[i - 1]);
+            if (delta > max_delta) max_delta = delta;
+        }
+        assert(max_delta >= min_delta);
+        int32_t max_val = (max_delta - min_delta);
+        max_delta_bits = (max_val?BSR(max_val)+1:0);
+        max_delta_bits = MAX(delta_bits, max_delta_bits);
+        bits += 2;  // extra bits
+        for (int i = 1; i < colors_xmit_size; ++i) {
+            bits += max_delta_bits;
+            int32_t range = (1 << bitdepth) -1 - colors_xmit[i] - min_delta;
+            uint32_t range_bits = (range?BSR(range)+1:0);
+            max_delta_bits = MIN(range_bits, max_delta_bits);
+        }
+    }
+    return bits;
+}
+
+static int CeilLog2(int n) {
+    if (n < 2) return 0;
+    int i = 1, p = 2;
+    while (p < n) {
+        i++;
+        p = p << 1;
+    }
+    return i;
+}
+
+int GetPaletteDeltaBitsV(const uint8_t* palette_v, int palette_size_uv, int bitDepth, int *zeroCount, int *minBits) {
+    const int n = palette_size_uv;
+    const int maxVal = 1 << bitDepth;
+    int max_d = 0;
+    *minBits = bitDepth - 4;
+    *zeroCount = 0;
+    for (int i = 1; i < n; ++i) {
+        const int delta = palette_v[i] - palette_v[i - 1];
+        const int v = abs(delta);
+        const int d = std::min(v, maxVal - v);
+        if (d > max_d) max_d = d;
+        if (d == 0) ++(*zeroCount);
+    }
+    return std::max(CeilLog2(max_d + 1), *minBits);
+}
+
+uint32_t GetPaletteCacheIndicesCost(uint8_t *palette, uint32_t palette_size, uint8_t *cache, uint32_t cache_size, uint8_t *colors_xmit, uint32_t &index_bits)
+{
+    index_bits = 0;
+    if (cache_size == 0) {
+        for (int i = 0; i < palette_size; ++i) colors_xmit[i] = palette[i];
+        return palette_size;
+    }
+    uint32_t colors_found = 0;
+    uint8_t palette_found[MAX_PALETTE] = { 0 };
+    for (int32_t index = 0; index < cache_size && colors_found < palette_size; index++) {
+        for (uint32_t k = 0; k < palette_size; k++) {
+            if (cache[index] == palette[k]) {
+                colors_found++;
+                palette_found[k] = 1;
+                break;
+            }
+            index_bits++;
+        }
+    }
+    uint32_t i = 0;
+    for (int32_t k = 0; k < palette_size; k++) {
+        if (!palette_found[k]) colors_xmit[i++] = palette[k];
+    }
+    assert(i == palette_size - colors_found);
+    return i;
+}
+
+template <typename PixType>
+uint32_t AV1CU<PixType>::GetPaletteCache(uint32_t miRow, bool isLuma, uint32_t miCol, uint8_t *cache)
+{
+    PaletteInfo *abovePalette = NULL;
+    PaletteInfo *leftPalette = NULL;
+    const int32_t haveTop = (miRow > m_tileBorders.rowStart);
+    const int32_t haveLeft = (miCol > m_tileBorders.colStart);
+    int32_t aiz = 0;
+    int32_t liz = 0;
+    uint8_t* a_palette{ nullptr };
+    uint8_t* l_palette{ nullptr };
+    if (haveTop && (miRow % 8)) {
+        abovePalette = &m_currFrame->m_fenc->m_Palette8x8[(miRow - 1)*m_par->miPitch + miCol];
+        if (isLuma) {
+            aiz = abovePalette->palette_size_y;
+            a_palette = abovePalette->palette_y;
+        }
+        else {
+            aiz = abovePalette->palette_size_uv;
+            a_palette = abovePalette->palette_u; //different for v
+        }
+    }
+    if (haveLeft) {
+        leftPalette = &m_currFrame->m_fenc->m_Palette8x8[miRow*m_par->miPitch + miCol - 1];
+        if (isLuma) {
+            liz = leftPalette->palette_size_y;
+            l_palette = leftPalette->palette_y;
+        }
+        else {
+            liz = leftPalette->palette_size_uv;
+            l_palette = leftPalette->palette_u; //different for v
+        }
+    }
+
+    if (aiz == 0 && liz == 0) return 0;
+
+    uint32_t ai = 0;
+    uint32_t li = 0;
+    uint32_t colors_found = 0;
+    while (ai < aiz  && li < liz) {
+        uint16_t aboveColor = a_palette[ai];
+        uint16_t leftColor = l_palette[li];
+        if (leftColor < aboveColor) {
+            if (colors_found == 0 || leftColor != cache[colors_found - 1]) {
+                cache[colors_found++] = leftColor;
+            }
+            li++;
+        } else {
+            if (colors_found == 0 || aboveColor != cache[colors_found - 1]) {
+                cache[colors_found++] = aboveColor;
+            }
+            ai++;
+            if (leftColor == aboveColor) li++;
+        }
+    }
+    while (ai < aiz) {
+        uint16_t aboveColor = a_palette[ai++];
+        if (colors_found == 0 || aboveColor != cache[colors_found - 1]) {
+            cache[colors_found++] = aboveColor;
+        }
+    }
+    while (li < liz) {
+        uint16_t leftColor = l_palette[li++];
+        if (colors_found == 0 || leftColor != cache[colors_found - 1]) {
+            cache[colors_found++] = leftColor;
+        }
+    }
+    assert(colors_found <= 2*MAX_PALETTE);
+    return colors_found;
+}
 
 template <typename PixType>
 RdCost AV1CU<PixType>::CheckIntraLumaNonRdAv1(int32_t absPartIdx, int32_t depth, PartitionType partition)
@@ -1645,10 +1662,8 @@ RdCost AV1CU<PixType>::CheckIntraLumaNonRdAv1(int32_t absPartIdx, int32_t depth,
     const int32_t leftMode  = (left  ? left->mode  : DC_PRED);
     const uint8_t aboveTxfm = above ? tx_size_wide[above->txSize] : 0;
     const uint8_t leftTxfm =  left  ? tx_size_high[left->txSize] : 0;
-    const BitCounts &bc = m_currFrame->bitCount;
-    const CoefBitCounts &cbc = bc.coef[PLANE_TYPE_Y][0][txSize];
+    const BitCounts &bc = *m_currFrame->bitCount;
     const int32_t ctxSkip = GetCtxSkip(above, left);
-    const uint16_t *skipBits = bc.skip[ctxSkip];
     const uint16_t *intraModeBits = m_currFrame->IsIntra()
         ? bc.kfIntraModeAV1[ intra_mode_context[aboveMode] ][ intra_mode_context[leftMode] ]
         : bc.intraModeAV1[maxTxSize];
@@ -1656,13 +1671,15 @@ RdCost AV1CU<PixType>::CheckIntraLumaNonRdAv1(int32_t absPartIdx, int32_t depth,
     const int32_t ctxIsInter = m_currFrame->IsIntra() ? 0 : GetCtxIsInter(above, left);
     const uint32_t isInterBits = m_currFrame->IsIntra() ? 0 : bc.isInter[ctxIsInter][0];
 
-    int32_t bestMode = DC_PRED;
+    PredMode bestMode = DC_PRED;
     int32_t bestDelta = 0;
     const int32_t x = 0, y = 0;
     const int32_t txw = tx_size_wide_unit[txSize];
     assert(txw == (width >> 2));
     const int32_t haveRight = (miCol + ((x + txw) >> 1)) < miColEnd;
-    const int32_t haveTopRight = HaveTopRight(bsz, miRow, miCol, haveTop, haveRight, txSize, y, x, 0);
+    const int32_t log2w = block_size_wide_4x4_log2[bsz];
+    const int32_t log2h = block_size_high_4x4_log2[bsz];
+    const int32_t haveTopRight = haveTop && haveRight && HaveTopRight(log2w, miRow, miCol, txSize, y, x);
     const int32_t txwpx = 4 << txSize;
     const int32_t txhpx = 4 << txSize;
     const int32_t bh = block_size_high[bsz] >> 3;
@@ -1670,7 +1687,7 @@ RdCost AV1CU<PixType>::CheckIntraLumaNonRdAv1(int32_t absPartIdx, int32_t depth,
     const int32_t hpx = width;
     const int32_t yd = (mb_to_bottom_edge >> 3) + (hpx - y - txhpx);
     const int32_t haveBottom = yd > 0;
-    const int32_t haveBottomLeft = HaveBottomLeft(bsz, miRow, miCol, haveLeft, haveBottom, txSize, y, x, 0);
+    const int32_t haveBottomLeft = haveLeft && haveBottom && HaveBottomLeft(log2w, miRow, miCol, txSize, y, x);
     const int32_t bw = block_size_wide[bsz] >> 3;
     const int32_t mb_to_right_edge = ((m_par->miCols - bw - miCol) * 8) * 8;
     const int32_t wpx = hpx;
@@ -1688,22 +1705,23 @@ RdCost AV1CU<PixType>::CheckIntraLumaNonRdAv1(int32_t absPartIdx, int32_t depth,
     AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 0 * size, width, maxTxSize, haveLeft, haveTop, DC_PRED, 0, 0, 0);
     AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 1 * size, width, maxTxSize, 0, 0, V_PRED, 0, 0, 0);
     AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 2 * size, width, maxTxSize, 0, 0, H_PRED, 0, 0, 0);
-    AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 3 * size, width, maxTxSize, 0, 0, D45_PRED, 0, 0, 0);
-    AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 4 * size, width, maxTxSize, 0, 0, D135_PRED, 0, 0, 0);
-    AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 5 * size, width, maxTxSize, 0, 0, D117_PRED, 0, 0, 0);
-    AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 6 * size, width, maxTxSize, 0, 0, D153_PRED, 0, 0, 0);
-    AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 7 * size, width, maxTxSize, 0, 0, D207_PRED, 0, 0, 0);
-    AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 8 * size, width, maxTxSize, 0, 0, D63_PRED, 0, 0, 0);
-    AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 9 * size, width, maxTxSize, 0, 0, SMOOTH_PRED, 0, 0, 0);
+    if (depth && !m_isSCC[depth-1]) {
+        AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 3 * size, width, maxTxSize, 0, 0, D45_PRED, 0, 0, 0);
+        AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 4 * size, width, maxTxSize, 0, 0, D135_PRED, 0, 0, 0);
+        AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 5 * size, width, maxTxSize, 0, 0, D117_PRED, 0, 0, 0); // 5
+        AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 6 * size, width, maxTxSize, 0, 0, D153_PRED, 0, 0, 0);
+        AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 7 * size, width, maxTxSize, 0, 0, D207_PRED, 0, 0, 0); // 7
+        AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 8 * size, width, maxTxSize, 0, 0, D63_PRED, 0, 0, 0);
+        AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll + 9 * size, width, maxTxSize, 0, 0, SMOOTH_PRED, 0, 0, 0); // 9
+    }
     AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll +10 * size, width, maxTxSize, 0, 0, SMOOTH_V_PRED, 0, 0, 0);
     AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll +11 * size, width, maxTxSize, 0, 0, SMOOTH_H_PRED, 0, 0, 0);
     AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll +12 * size, width, maxTxSize, 0, 0, PAETH_PRED, 0, 0, 0);
 
     int32_t bestCost = AV1PP::satd(srcSb, m_predIntraAll, width, txSize, txSize);
     bestCost += int32_t(m_rdLambdaSqrt * intraModeBits[DC_PRED] + 0.5f);
-    for (int32_t mode = DC_PRED + 1; mode < AV1_INTRA_MODES; mode++) {
-        //if (mode == SMOOTH_H_PRED || mode == SMOOTH_V_PRED)
-        //    continue;
+    for (PredMode mode = DC_PRED + 1; mode < AV1_INTRA_MODES; mode++) {
+        if (depth && m_isSCC[depth-1] && mode > H_PRED && mode < SMOOTH_V_PRED) continue;
         int32_t cost = AV1PP::satd(srcSb, m_predIntraAll + mode * size, width, txSize, txSize);
         int32_t bitCost = intraModeBits[mode];
 
@@ -1730,7 +1748,7 @@ RdCost AV1CU<PixType>::CheckIntraLumaNonRdAv1(int32_t absPartIdx, int32_t depth,
         //for (int32_t mode = V_PRED; mode <= D63_PRED; mode++)
         if (av1_is_directional_mode(bestMode))
         {
-            int32_t mode = bestMode;
+            PredMode mode = bestMode;
             //if (SkipList[mode]) continue;
             for (int32_t angleDelta = 1; angleDelta <= 3; angleDelta++) {
                 for (int32_t i = 0; i < 2; i++) {
@@ -1757,345 +1775,180 @@ RdCost AV1CU<PixType>::CheckIntraLumaNonRdAv1(int32_t absPartIdx, int32_t depth,
         //    AV1PP::predict_intra_av1(predPels.top, predPels.left, m_predIntraAll, width, maxTxSize, 0, 0, bestMode, bestDelta, 0, 0);
     }
 
+    PaletteInfo *pi = &m_currFrame->m_fenc->m_Palette8x8[miCol + miRow * m_par->miPitch];
+    pi->palette_size_y = 0;
+    pi->color_map = NULL;
+    pi->palette_size_uv = 0;
+    uint32_t palette_bits = 0;
+
+    const Contexts origCtx = m_contexts;
     uint8_t *anz = m_contexts.aboveNonzero[0]+x4;
     uint8_t *lnz = m_contexts.leftNonzero[0]+y4;
     int16_t *diff = vp9scratchpad.diffY;
     int16_t *coef = vp9scratchpad.coefY;
     int16_t *qcoef = m_coeffWorkY + 16 * absPartIdx;
-    int16_t *coefWork = vp9scratchpad.coefWork;
+    int16_t *coefWork = (int16_t *)vp9scratchpad.varTxCoefs;
 
     const int32_t filtType = get_filt_type(above, left, PLANE_TYPE_Y);
 
     RdCost rd = TransformIntraYSbAv1(bsz, bestMode, haveTop, haveLeft, maxTxSize, DCT_DCT, anz, lnz, srcSb,
                                      recSb, m_pitchRecLuma, diff, coef, qcoef, coefWork, m_lumaQp, bc, m_rdLambda, miRow,
-                                     miCol, miColEnd, bestDelta, filtType, *m_par, m_aqparamY, NULL);
+                                     miCol, miColEnd, bestDelta, filtType, *m_par, m_aqparamY, NULL, pi, NULL);
 
-    Zero(*mi);
-    mi->refIdx[0] = INTRA_FRAME;
-    mi->refIdx[1] = NONE_FRAME;
-    mi->refIdxComb = INTRA_FRAME;
-    mi->sbType = bsz;
-    mi->skip = (rd.eob == 0);
-    mi->txSize = txSize;
-    mi->mode = bestMode;
-    mi->memCtx.skip = ctxSkip;
-    mi->memCtx.isInter = ctxIsInter;
-    mi->angle_delta_y = MAX_ANGLE_DELTA + bestDelta;
-    const int32_t num4x4w = block_size_wide_4x4[bsz];
-    const int32_t num4x4h = block_size_high_4x4[bsz];
-    PropagateSubPart(mi, m_par->miPitch, num4x4w >> 1, num4x4h >> 1);
+    if (bsz >= BLOCK_8X8
+        && block_size_wide[bsz] <= 64
+        && block_size_high[bsz] <= 64
+        && m_currFrame->m_allowPalette && rd.eob) {
 
-    rd.modeBits = isInterBits + txSizeBits[txSize] + intraModeBits[bestMode];
+        uint8_t palette[MAX_PALETTE];
+        uint16_t palette_size = 0;
+        uint8_t *color_map = &m_paletteMapY[depth][sby*MAX_CU_SIZE + sbx];
+        uint32_t map_bits_est;
+        // CHECK Palette Mode
+        palette_size = GetColorCount(srcSb, width, width, palette, m_par->bitDepthLuma, m_rdLambda, pi, color_map, map_bits_est);
+        if (palette_size > 1 && palette_size <= MAX_PALETTE) {
+            const uint32_t ctxB = block_size_wide_4x4_log2[bsz] + block_size_high_4x4_log2[bsz] - 2;
+            const int32_t sizeU = (above ? m_currFrame->m_fenc->m_Palette8x8[miCol + (miRow - 1) * m_par->miPitch].palette_size_y : 0);
+            const int32_t sizeL = (left ? m_currFrame->m_fenc->m_Palette8x8[(miCol - 1) + miRow * m_par->miPitch].palette_size_y : 0);
+            const int32_t ctxC = 0 + (sizeU ? 1 : 0) + (sizeL ? 1 : 0);
+            uint8_t cache[2 * MAX_PALETTE];
+            uint8_t colors_xmit[MAX_PALETTE];
+            palette_bits += bc.HasPaletteY[ctxB][ctxC][1];
+            palette_bits += bc.PaletteSizeY[ctxB][palette_size - 2];
+            uint32_t cache_size = GetPaletteCache(miRow, true, miCol, cache);
+            uint32_t index_bits = 0;
+            uint32_t colors_xmit_size = GetPaletteCacheIndicesCost(palette, palette_size, cache, cache_size, colors_xmit, index_bits);
+            palette_bits += index_bits * 512; // cache index used unused bits
+            palette_bits += 512 * GetPaletteDeltaCost(colors_xmit, colors_xmit_size, m_par->bitDepthLuma, 1);
+
+            //uint32_t map_bits = GetPaletteTokensCost(bc, srcSb, width, width, palette, palette_size, color_map);
+            palette_bits += map_bits_est;
+
+            uint32_t bits = intraModeBits[bestMode];
+            if (av1_is_directional_mode(bestMode)) {
+                int32_t max_angle_delta = MAX_ANGLE_DELTA;
+                int32_t delta = bestDelta;
+                bits += write_uniform_cost(2 * max_angle_delta + 1, max_angle_delta + delta);
+            }
+            if (rd.eob)
+                bits += rd.coefBits;
+            CostType cost = rd.sse + m_rdLambda * bits;
+
+            CostType paletteCost = m_rdLambda * (intraModeBits[DC_PRED] + palette_bits) + pi->sse;
+            if (cost > 0.5*paletteCost && cost < 2.0*paletteCost) {
+                // get better estimate
+                palette_bits -= map_bits_est;
+                uint32_t map_bits = GetPaletteTokensCost(bc, srcSb, width, width, palette, palette_size, color_map);
+                palette_bits += map_bits;
+                paletteCost = m_rdLambda * (intraModeBits[DC_PRED] + palette_bits) + pi->sse;
+            }
+            if (cost > paletteCost) {
+                bestCost = cost;
+                bestMode = DC_PRED;
+                pi->palette_size_y = palette_size;
+                pi->palette_bits = palette_bits;
+                for (int k = 0; k < palette_size; k++)
+                    pi->palette_y[k] = palette[k];
+
+                rd = TransformIntraYSbAv1(bsz, bestMode, haveTop, haveLeft, maxTxSize, bsz <= BLOCK_16X16 ? IDTX : DCT_DCT, anz, lnz, srcSb,
+                    recSb, m_pitchRecLuma, diff, coef, qcoef, coefWork, m_lumaQp, bc, m_rdLambda, miRow,
+                    miCol, miColEnd, bestDelta, filtType, *m_par, m_aqparamY, NULL, pi, NULL);
+            }
+        }
+    }
+
+    const int32_t num4x4w = 1 << log2w;
+    const int32_t num4x4h = 1 << log2h;
+    const int32_t num4x4 = num_4x4_blocks_lookup[bsz];
+
+    rd.modeBits = isInterBits + txSizeBits[txSize] + intraModeBits[bestMode] + (pi->palette_size_y ? palette_bits : 0);
     if (av1_is_directional_mode(bestMode)) {
         int32_t max_angle_delta = MAX_ANGLE_DELTA;
         int32_t delta = bestDelta;
         rd.modeBits += write_uniform_cost(2 * max_angle_delta + 1, max_angle_delta + delta);
     }
-    return rd;
-}
-
-
-template <typename PixType>
-RdCost AV1CU<PixType>::CheckIntraLuma(int32_t absPartIdx, int32_t depth, PartitionType partition)
-{
-    // for now: perform exhaustive search
-    // keep satd and txSize=maxTxSize stages for debug and further tuning
-
-    const BlockSize bsz = GetSbType(depth, partition);
-    const TxSize maxTxSize = max_txsize_lookup[bsz];
-    const TxSize minTxSize = std::max((int32_t)TX_4X4, maxTxSize - m_par->maxTxDepthIntra + 1);
-    const int32_t num4x4w = block_size_wide_4x4[bsz];
-    const int32_t num4x4h = block_size_high_4x4[bsz];
-    const int32_t num4x4  = num_4x4_blocks_lookup[bsz];
-    const int32_t rasterIdx = av1_scan_z2r4[absPartIdx];
-    const int32_t x4 = (rasterIdx & 15);
-    const int32_t y4 = (rasterIdx >> 4);
-    const int32_t notOnRight = 0;
-    const PixType halfRange = 1<<(m_par->bitDepthLuma-1);
-    const PixType halfRangeM1 = halfRange-1;
-    const PixType halfRangeP1 = halfRange+1;
-    const QuantParam &qparam = m_aqparamY;
-    const BitCounts &bc = m_currFrame->bitCount;
-    int32_t txType = DCT_DCT;
-
-    PixType *recSb = m_yRec + ((x4 + y4 * m_pitchRecLuma) << LOG2_MIN_TU_SIZE);
-    PixType *srcSb = m_ySrc + ((x4 + y4 * SRC_PITCH) << LOG2_MIN_TU_SIZE);
-    int16_t *diff = vp9scratchpad.diffY;
-    int16_t *coef = vp9scratchpad.coefY;
-    int16_t *qcoef = vp9scratchpad.qcoefY[0];
-    int16_t *bestQcoef = vp9scratchpad.qcoefY[1];
-
-    alignas(64) PixType bestRec[64*64];
-    Contexts origCtx = m_contexts;
-    Contexts bestCtx;
-
-    const int32_t miRow = (m_ctbPelY >> 3) + (y4 >> 1);
-    const int32_t miCol = (m_ctbPelX >> 3) + (x4 >> 1);
-    const int32_t haveTop = (miRow > m_tileBorders.rowStart);
-    const int32_t haveLeft  = (miCol > m_tileBorders.colStart);
-    const int32_t miColEnd = m_tileBorders.colEnd;
-    ModeInfo *mi = m_data + (x4 >> 1) + (y4 >> 1) * m_par->miPitch;
-    const ModeInfo *above = GetAbove(mi, m_par->miPitch, miRow, m_tileBorders.rowStart);
-    const ModeInfo *left  = GetLeft(mi, miCol, m_tileBorders.colStart);
-    const int32_t ctxSkip = GetCtxSkip(above, left);
-    const int32_t ctxTxSize = GetCtxTxSizeVP9(above, left, maxTxSize);
     const uint16_t *skipBits = bc.skip[ctxSkip];
-    const uint16_t *txSizeBits = bc.txSize[maxTxSize][ctxTxSize];
-    const int32_t aboveMode = (above ? above->mode : DC_PRED);
-    const int32_t leftMode  = (left  ? left->mode  : DC_PRED);
-    const uint16_t *intraModeBits = m_currFrame->IsIntra() ? bc.kfIntraMode[aboveMode][leftMode] : bc.intraMode[maxTxSize];
-    const int32_t ctxIsInter = m_currFrame->IsIntra() ? 0 : GetCtxIsInter(above, left);
-    const uint32_t isInterBits = m_currFrame->IsIntra() ? 0 : bc.isInter[ctxIsInter][0];
+    CostType cost = (rd.eob == 0)
+        ? rd.sse + m_rdLambda * (rd.modeBits + skipBits[1])
+        : rd.sse + m_rdLambda * (rd.modeBits + skipBits[0] + rd.coefBits/* + txTypeBits[DCT_DCT]*/);
+    CostType bestCost_ = cost;
 
-    CostType bestCost = COST_MAX;
-    RdCost bestRdCost = {INT_MAX, UINT_MAX, UINT_MAX};
-    int32_t bestMode = INTRA_MODES;
-    int32_t bestTxSize = maxTxSize;
-    uint8_t *anz = m_contexts.aboveNonzero[0]+x4;
-    uint8_t *lnz = m_contexts.leftNonzero[0]+y4;
+    int use_intrabc = 0;
+    alignas(32) uint16_t varTxInfo[16 * 16];
+    if (m_currFrame->m_allowIntraBc && m_par->ibcModeDecision && bsz <= BLOCK_16X16)
+    {
+        alignas(64) PixType bestRec[64 * 64];
+        alignas(64) int16_t bestQcoef[64 * 64];
 
-    for (int32_t i = DC_PRED; i < INTRA_MODES; i++) {
-        for (int32_t txSize = maxTxSize; txSize >= minTxSize; txSize--) {
-            m_contexts = origCtx;
-            RdCost rd = TransformIntraYSbVp9(bsz, i, haveTop, haveLeft, 0, txSize, anz, lnz, srcSb, recSb, m_pitchRecLuma,
-                                             diff, coef, qcoef, qparam, bc, m_par->FastCoeffCost, m_rdLambda, miRow, miCol,
-                                             miColEnd, m_par->miRows, m_par->miCols);
+        int i = absPartIdx;
+        RdCost bestRd = rd;
+        Contexts bestCtx = m_contexts;
+        CopyNxN(recSb, m_pitchRecLuma, bestRec, num4x4w << 2);
+        CopyCoeffs(qcoef, bestQcoef, num4x4 << 4);
 
-            rd.modeBits = isInterBits + txSizeBits[txSize] + intraModeBits[i];
-            CostType cost = (rd.eob == 0) // if luma has no coeffs, assume skip
+        m_contexts = origCtx;
+        mi->sbType = bsz;
+
+        int32_t test = CheckIntraBlockCopy(i, qcoef, rd, varTxInfo, (rd.eob || pi->palette_size_y), bestCost_);
+        if (test) {
+            cost = (rd.eob == 0)
                 ? rd.sse + m_rdLambda * (rd.modeBits + skipBits[1])
                 : rd.sse + m_rdLambda * (rd.modeBits + skipBits[0] + rd.coefBits);
 
-            fprintf_trace_cost(stderr, "intra luma: poc=%d ctb=%2d idx=%3d bsz=%d mode=%d tx=%d "
-                "sse=%6d modeBits=%4u eob=%d coefBits=%-6u cost=%.0f\n", m_currFrame->m_frameOrder, m_ctbAddr, absPartIdx, bsz, i, txSize,
-                rd.sse, rd.modeBits, rd.eob, rd.coefBits, cost);
-
-            if (bestCost > cost) {
-                bestCost = cost;
-                bestRdCost = rd;
-                bestMode = i;
-                bestTxSize = txSize;
-                std::swap(qcoef, bestQcoef);
-                if (!(bestMode == INTRA_MODES-1 && bestTxSize==TX_4X4)) { // best is not last checked
-                    bestCtx = m_contexts;
-                    CopyNxM(recSb, m_pitchRecLuma, bestRec, num4x4w<<2, num4x4h<<2);
-                }
+            if (bestCost_ > cost) {
+                use_intrabc = 1;
+            } else {
+                m_contexts = bestCtx;
+                rd = bestRd;
+                CopyNxN(bestRec, num4x4w << 2, recSb, m_pitchRecLuma, num4x4w << 2);
+                CopyCoeffs(bestQcoef, qcoef, num4x4 << 4);
             }
         }
     }
 
-    if (!(bestMode == INTRA_MODES-1 && bestTxSize==TX_4X4)) { // best is not last checked
-        m_contexts = bestCtx;
-        CopyNxM(bestRec, num4x4w<<2, recSb, m_pitchRecLuma, num4x4w<<2, num4x4h<<2);
+    if (use_intrabc) {
+        mi->refIdx[0] = INTRA_FRAME;
+        mi->refIdx[1] = NONE_FRAME;
+        mi->refIdxComb = INTRA_FRAME;
+        mi->sbType = bsz;
+        mi->skip = (rd.eob == 0);
+        //mi->txSize = txSize;
+        mi->angle_delta_y = 0;
+        mi->mode = DC_PRED;
+        pi->palette_size_y = 0;
+        mi->interp0 = mi->interp1 = BILINEAR;
+        //mi->mv and mvd are set by IBC
+        mi->memCtx.skip = ctxSkip;
+        mi->memCtx.isInter = 0;
+        mi->angle_delta_y = MAX_ANGLE_DELTA + 0;
+
+        PropagateSubPart(mi, m_par->miPitch, num4x4w >> 1, num4x4h >> 1);
+        PropagatePaletteInfo(m_currFrame->m_fenc->m_Palette8x8, miRow, miCol, m_par->miPitch, num4x4w >> 1, num4x4h >> 1);
+
+        CopyVarTxInfo(varTxInfo, m_currFrame->m_fenc->m_txkTypes4x4 + m_ctbAddr * 256 + (miRow & 7) * 32 + (miCol & 7) * 2, num4x4w);
+        CopyTxSizeInfo(varTxInfo, mi, m_par->miPitch, num4x4w);
+
+    } else {
+        Zero(*mi);
+        mi->refIdx[0] = INTRA_FRAME;
+        mi->refIdx[1] = NONE_FRAME;
+        mi->refIdxComb = INTRA_FRAME;
+        mi->sbType = bsz;
+        mi->skip = (rd.eob == 0);
+        mi->txSize = txSize;
+        mi->mode = bestMode;
+        mi->memCtx.skip = ctxSkip;
+        mi->memCtx.isInter = ctxIsInter;
+        mi->angle_delta_y = MAX_ANGLE_DELTA + bestDelta;
+
+        PropagateSubPart(mi, m_par->miPitch, num4x4w >> 1, num4x4h >> 1);
+        PropagatePaletteInfo(m_currFrame->m_fenc->m_Palette8x8, miRow, miCol, m_par->miPitch, num4x4w >> 1, num4x4h >> 1);
     }
-    if (partition == PARTITION_VERT) {
-        int32_t half = num4x4<<3;
-        CopyCoeffs(bestQcoef, m_coeffWorkY+16*absPartIdx, half);
-        CopyCoeffs(bestQcoef+2*half, m_coeffWorkY+16*absPartIdx+2*half, half);
-    } else
-        CopyCoeffs(bestQcoef, m_coeffWorkY+16*absPartIdx, num4x4<<4);
-
-    Zero(*mi);
-    mi->refIdx[0] = INTRA_FRAME;
-    mi->refIdx[1] = NONE_FRAME;
-    mi->refIdxComb = INTRA_FRAME;
-    mi->sbType = bsz;
-    mi->skip = bestRdCost.eob == 0;
-    mi->txSize = bestTxSize;
-    mi->mode = bestMode;
-    mi->memCtx.skip = ctxSkip;
-    mi->memCtx.isInter = ctxIsInter;
-    mi->memCtx.txSize = ctxTxSize;
-    PropagateSubPart(mi, m_par->miPitch, num4x4w >> 1, num4x4h >> 1);
-
-    return bestRdCost;
-}
-
-
-template <typename PixType>
-RdCost AV1CU<PixType>::CheckIntraChromaNonRdVp9(int32_t absPartIdx, int32_t depth, PartitionType partition)
-{
-    typedef typename ChromaUVPixType<PixType>::type ChromaPixType;
-
-    const int32_t rasterIdx = av1_scan_z2r4[absPartIdx];
-    const int32_t x4Luma = (rasterIdx & 15);
-    const int32_t y4Luma = (rasterIdx >> 4);
-    ModeInfo *mi = m_data + (x4Luma >> 1) + (y4Luma >> 1) * m_par->miPitch;
-    const BlockSize sbType = mi->sbType;
-    const BlockSize bsz = ss_size_lookup[sbType][m_par->subsamplingX][m_par->subsamplingX];
-    const int32_t widthSb = (MAX_CU_SIZE >> depth) >> 1;
-    const int32_t size = ((MAX_NUM_PARTITIONS << 4) >> (depth << 1)) >> 2;
-    const int32_t num4x4w = block_size_wide_4x4[bsz];
-    const int32_t num4x4h = block_size_high_4x4[bsz];
-    const int32_t num4x4 = num_4x4_blocks_lookup[bsz];
-    const TxSize txSize = GetUvTxSize(sbType, mi->txSize, *m_par);
-    const int32_t x4 = (rasterIdx & 15) >> m_par->subsamplingX;
-    const int32_t y4 = (rasterIdx >> 4) >> m_par->subsamplingY;
-    const int32_t sseShift = m_par->bitDepthChromaShift<<1;
-
-    PixType *recSb = m_uvRec + ((x4*2 + y4*m_pitchRecChroma) << LOG2_MIN_TU_SIZE);
-    PixType *srcSb = m_uvSrc + ((x4*2 + y4*SRC_PITCH) << LOG2_MIN_TU_SIZE);
-
-    alignas(32) ChromaPixType predPels_[32/sizeof(ChromaPixType) + (4<<TX_32X32) * 3 + (4<<TX_32X32)];
-    PixType *predPels = (PixType*)(predPels_ + 32/sizeof(ChromaPixType) - 1);
-    PixType halfRange = 1<<(m_par->bitDepthChroma-1);
-    int32_t shift = 8*sizeof(PixType);
-    ChromaPixType halfRangeM1 = (halfRange-1) + ((halfRange-1)<<shift);
-    ChromaPixType halfRangeP1 = (halfRange+1) + ((halfRange+1)<<shift);
-
-    const BitCounts &bc = m_currFrame->bitCount;
-    const CoefBitCounts &cbc = bc.coef[PLANE_TYPE_UV][0][txSize];
-    const int32_t miRow = (m_ctbPelY >> 3) + y4;//(y4 >> 1);
-    const int32_t miCol = (m_ctbPelX >> 3) + x4;//(x4 >> 1);
-    const int32_t haveTop_ = (miRow > m_tileBorders.rowStart);
-    const int32_t haveLeft_  = (miCol > m_tileBorders.colStart);
-    const int32_t miColEnd = m_tileBorders.colEnd;
-    const ModeInfo *above = GetAbove(mi, m_par->miPitch, miRow, m_tileBorders.rowStart);
-    const ModeInfo *left  = GetLeft(mi, miCol, m_tileBorders.colStart);
-    const uint16_t *skipBits = bc.skip[ GetCtxSkip(above, left) ];
-    const uint16_t *intraModeUvBits = bc.intraModeUvAV1[mi->mode];
-    const int32_t log2w = 3 - depth;
-
-    const int32_t txw = tx_size_wide_unit[txSize];
-    const int32_t txwpx = 4 << txSize;
-    const int32_t txhpx = 4 << txSize;
-
-    const BlockSize bszLuma = GetSbType(depth, partition);
-    const int32_t bh = block_size_high_8x8[bszLuma];
-    const int32_t bw = block_size_wide_8x8[bszLuma];
-    const int32_t distToBottomEdge = (m_par->miRows - bh - miRow) * 8;
-    const int32_t distToRightEdge = (m_par->miCols - bw - miCol) * 8;
-
-    const int32_t hpx = block_size_high[bsz];
-    const int32_t wpx = hpx;
-
-    int32_t bestMode = DC_PRED;
-    int32_t bestDelta = 0;
-    bestMode = AV1PP::pick_intra_nv12(recSb, m_pitchRecLuma, srcSb, m_rdLambda, intraModeUvBits, log2w, haveLeft_, haveTop_);
-
-    int32_t width = 4<<txSize;
-    int32_t step = 1<<txSize;
-    int32_t sse = 0;
-    int16_t totalEob = 0;
-    const int16_t *scan = vp9_default_scan[txSize];
-    uint32_t coefBits = 0;
-    int32_t haveTop = haveTop_;
-    for (int32_t y = 0; y < num4x4h; y += step) {
-        PixType *rec = recSb + (y<<2) * m_pitchRecLuma;
-        PixType *src = srcSb + (y<<2) * SRC_PITCH;
-        int32_t haveLeft = haveLeft_;
-        for (int32_t x = 0; x < num4x4w; x += step, rec += width<<1, src += width<<1) {
-            assert(rasterIdx + (y<<1) * 16 + (x<<1) < 256);
-            int32_t blockIdx = h265_scan_r2z4[rasterIdx + (y<<1) * 16 + (x<<1)];
-            int32_t offset = blockIdx<<(LOG2_MIN_TU_SIZE<<1);
-            offset >>= 2; // TODO: 4:2:0 only
-            CoeffsType *residU = m_residualsU + offset;
-            CoeffsType *residV = m_residualsV + offset;
-            CoeffsType *coeffU = m_coeffWorkU + offset;
-            CoeffsType *coeffV = m_coeffWorkV + offset;
-            int32_t notOnRight = x + step < num4x4w;
-            AV1PP::GetPredPelsLuma((ChromaPixType*)rec, m_pitchRecChroma>>1, (ChromaPixType*)predPels, width, halfRangeM1, halfRangeP1, haveTop_, haveLeft, notOnRight);
-            AV1PP::predict_intra_nv12_vp9(predPels, rec, m_pitchRecChroma, txSize, haveLeft, haveTop, bestMode);
-            int32_t sseZero = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
-            AV1PP::diff_nv12(src, SRC_PITCH, rec, m_pitchRecChroma, residU, residV, width, width, txSize);
-
-            int32_t txType = GetTxTypeAV1(PLANE_TYPE_UV, txSize, /*mi->modeUV*/bestMode, 0/*fake*/);
-
-            AV1PP::ftransform_vp9(residU, residU, width, txSize, /*DCT_DCT*/txType);
-            AV1PP::ftransform_vp9(residV, residV, width, txSize, /*DCT_DCT*/txType);
-            int32_t eobU = AV1PP::quant_dequant(residU, coeffU, m_aqparamUv[0], txSize);
-            int32_t eobV = AV1PP::quant_dequant(residV, coeffV, m_aqparamUv[1], txSize);
-
-            int32_t dcCtxU = GetDcCtx(m_contexts.aboveNonzero[1]+x4+x, m_contexts.leftNonzero[1]+y4+y, step);
-            int32_t dcCtxV = GetDcCtx(m_contexts.aboveNonzero[2]+x4+x, m_contexts.leftNonzero[2]+y4+y, step);
-
-            uint32_t bitsZeroU = cbc.moreCoef[0][dcCtxU][0];
-            uint32_t bitsZeroV = cbc.moreCoef[0][dcCtxV][0];
-            uint32_t bitsZero = bitsZeroU + bitsZeroV;
-
-            uint32_t txBits = 0;
-            if (eobU) {
-                AV1PP::itransform_vp9(residU, residU, width, txSize, /*DCT_DCT*/txType);
-                txBits += EstimateCoefs(m_par->FastCoeffCost, cbc, coeffU, scan, eobU, dcCtxU, /*DCT_DCT*/txType);
-                small_memset1(m_contexts.aboveNonzero[1]+x4+x, step);
-                small_memset1(m_contexts.leftNonzero[1]+y4+y, step);
-            } else {
-                txBits += bitsZeroU;
-                small_memset0(m_contexts.aboveNonzero[1]+x4+x, step);
-                small_memset0(m_contexts.leftNonzero[1]+y4+y, step);
-            }
-            if (eobV) {
-                AV1PP::itransform_vp9(residV, residV, width, txSize, /*DCT_DCT*/txType);
-                txBits += EstimateCoefs(m_par->FastCoeffCost, cbc, coeffV, scan, eobV, dcCtxV, /*DCT_DCT*/txType);
-                small_memset1(m_contexts.aboveNonzero[2]+x4+x, step);
-                small_memset1(m_contexts.leftNonzero[2]+y4+y, step);
-            } else {
-                txBits += bitsZeroV;
-                small_memset0(m_contexts.aboveNonzero[2]+x4+x, step);
-                small_memset0(m_contexts.leftNonzero[2]+y4+y, step);
-            }
-
-            if (eobU | eobV) {
-                CoeffsType *residU_ = (eobU ? residU : coeffU); // if cbf==0 coeffWork contains zeroes
-                CoeffsType *residV_ = (eobV ? residV : coeffV); // if cbf==0 coeffWork contains zeroes
-                AV1PP::adds_nv12(rec, m_pitchRecChroma, rec, m_pitchRecChroma, residU_, residV_, width, width);
-            }
-            int32_t txSse = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
-
-            if ((eobU || eobV) && sseZero + m_rdLambda * bitsZero < txSse + m_rdLambda * txBits) {
-                eobU = 0;
-                eobV = 0;
-                ZeroCoeffs(coeffU, 16 << (txSize << 1)); // zero coeffs
-                ZeroCoeffs(coeffV, 16 << (txSize << 1)); // zero coeffs
-
-                // re-predict intra
-                AV1PP::predict_intra_nv12_vp9(predPels, rec, m_pitchRecChroma, txSize, haveLeft, haveTop, bestMode);
-                txSse = sseZero;
-                txBits = bitsZero;
-                small_memset0(m_contexts.aboveNonzero[1]+x4+x, step);
-                small_memset0(m_contexts.aboveNonzero[2]+x4+x, step);
-                small_memset0(m_contexts.leftNonzero[1]+y4+y, step);
-                small_memset0(m_contexts.leftNonzero[2]+y4+y, step);
-            }
-
-            totalEob += eobU;
-            totalEob += eobV;
-            coefBits += txBits;
-            sse += txSse;
-            haveLeft = 1;
-        }
-        haveTop = 1;
-    }
-
-    uint32_t modeBits = intraModeUvBits[bestMode];
-
-    CostType cost = (mi->skip && totalEob==0)
-        ? sse + m_rdLambda * (modeBits + skipBits[1])
-        : sse + m_rdLambda * (modeBits + skipBits[0] + coefBits);
-
-    fprintf_trace_cost(stderr, "intra chroma: poc=%d ctb=%2d idx=%3d bsz=%d mode=%d "
-        "sse=%6d modeBits=%4u eob=%d coefBits=%-6u cost=%.0f\n", m_currFrame->m_frameOrder, m_ctbAddr, absPartIdx, bsz, bestMode,
-        sse, modeBits, totalEob, coefBits, cost);
-
-    int32_t skip = mi->skip && totalEob==0;
-
-    mi->modeUV = bestMode;
-    mi->skip = skip;
-    const int32_t num4x4wLuma = block_size_wide_4x4[mi->sbType];
-    const int32_t num4x4hLuma = block_size_high_4x4[mi->sbType];
-    PropagateSubPart(mi, m_par->miPitch, num4x4wLuma >> 1, num4x4hLuma >> 1);
-
-    RdCost rd;
-    rd.sse = sse;
-    rd.eob = totalEob;
-    rd.modeBits = modeBits;
-    rd.coefBits = coefBits;
     return rd;
 }
 
-
 template <typename PixType>
-RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t depth, PartitionType partition)
+RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t depth, PartitionType partition, const PixType* bestLuma, int lumaStride)
 {
     const int32_t rasterIdx = av1_scan_z2r4[absPartIdx];
     const int32_t x4Luma = (rasterIdx & 15);
@@ -2108,9 +1961,9 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
     const int32_t num4x4w = block_size_wide_4x4[bsz];
     const int32_t num4x4h = block_size_high_4x4[bsz];
     const int32_t num4x4 = num_4x4_blocks_lookup[bsz];
-    const TxSize txSize = std::min((int32_t)TX_32X32, 3 - depth);
-    const int32_t x4 = (rasterIdx & 15) >> m_par->subsamplingX;
-    const int32_t y4 = (rasterIdx >> 4) >> m_par->subsamplingY;
+    const TxSize txSize = std::min(TxSize(TX_32X32), TxSize(3 - depth));
+    const int32_t x4 = x4Luma >> m_par->subsamplingX;
+    const int32_t y4 = y4Luma >> m_par->subsamplingY;
     const int32_t sseShift = m_par->bitDepthChromaShift<<1;
 
     PixType *recSb = m_uvRec + ((x4*2 + y4*m_pitchRecChroma) << LOG2_MIN_TU_SIZE);
@@ -2121,7 +1974,7 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
     PixType *pt = (PixType *)predPels.top;
     PixType *pl = (PixType *)predPels.left;
 
-    const BitCounts &bc = m_currFrame->bitCount;
+    const BitCounts &bc = *m_currFrame->bitCount;
     const TxbBitCounts &cbc = bc.txb[ get_q_ctx(m_lumaQp) ][txSize][PLANE_TYPE_UV];
     const int32_t miRow = (m_ctbPelY >> 3) + y4;//(y4 >> 1);
     const int32_t miCol = (m_ctbPelX >> 3) + x4;//(x4 >> 1);
@@ -2131,7 +1984,6 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
     const ModeInfo *above = GetAbove(mi, m_par->miPitch, miRow, m_tileBorders.rowStart);
     const ModeInfo *left  = GetLeft(mi, miCol, m_tileBorders.colStart);
     const uint16_t *skipBits = bc.skip[ GetCtxSkip(above, left) ];
-    const uint16_t *intraModeUvBits = bc.intraModeUvAV1[mi->mode];
     const int32_t log2w = 3 - depth;
 
     const int32_t txw = tx_size_wide_unit[txSize];
@@ -2144,58 +1996,51 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
     const int32_t distToBottomEdge = (m_par->miRows - bh - miRow) * 8;
     const int32_t distToRightEdge = (m_par->miCols - bw - miCol) * 8;
 
+    bool  is_cfl_allowed = bh <= 4 && bw <= 4;
+    const uint16_t *intraModeUvBits = bc.intraModeUvAV1[is_cfl_allowed][mi->mode];
+
     const int32_t hpx = block_size_high[bsz];
     const int32_t wpx = hpx;
 
-    int32_t bestMode = DC_PRED;
+    PredMode bestMode = DC_PRED;
     int32_t bestDelta = 0;
 
-    const int32_t x = 0;
-    const int32_t y = 0;
+    int32_t x = 0;
+    int32_t y = 0;
     const TxSize txSizeMax = max_txsize_lookup[bsz];
     const int32_t txwMax = tx_size_wide_unit[txSizeMax];
     const int32_t txwpxMax = 4 << txSizeMax;
     const int32_t txhpxMax = txwpxMax;
-    const int32_t haveRight = (miCol + ((x + txwMax) /*>> 1*/)) < miColEnd;
-    const int32_t haveTopRight = HaveTopRight(bszLuma, miRow, miCol, haveTop_, haveRight, txSizeMax, y, x, 1);
+    int32_t haveRight = (miCol + ((x + txwMax) /*>> 1*/)) < miColEnd;
+    int32_t haveTopRight = haveTop_ && haveRight && HaveTopRight(log2w + 1, miRow, miCol, txSizeMax + 1, y, x);
     // Distance between the right edge of this prediction block to the frame right edge
-    const int32_t xr = (distToRightEdge >> 1) + (wpx - (x<<2) - txwpxMax);
+    int32_t xr = (distToRightEdge >> 1) + (wpx - (x<<2) - txwpxMax);
     // Distance between the bottom edge of this prediction block to the frame bottom edge
-    const int32_t yd = (distToBottomEdge >> 1) + (hpx - (y<<2) - txhpxMax);
-    const int32_t haveBottom = yd > 0;
-    const int32_t haveBottomLeft = HaveBottomLeft(bszLuma, miRow, miCol, haveLeft_, haveBottom, txSizeMax, y, x, 1);
-    const int32_t pixTop = haveTop_ ? std::min(txwpxMax, xr + txwpxMax) : 0;
-    const int32_t pixTopRight = haveTopRight ? std::min(txwpxMax, xr) : 0;
-    const int32_t pixLeft = haveLeft_ ? std::min(txhpxMax, yd + txhpxMax) : 0;
-    const int32_t pixBottomLeft = haveBottomLeft ? std::min(txhpxMax, yd) : 0;
+    int32_t yd = (distToBottomEdge >> 1) + (hpx - (y<<2) - txhpxMax);
+    int32_t haveBottom = yd > 0;
+    int32_t haveBottomLeft = haveLeft_ && haveBottom && HaveBottomLeft(log2w + 1, miRow, miCol, txSizeMax + 1, y, x);
+    int32_t pixTop = haveTop_ ? std::min(txwpxMax, xr + txwpxMax) : 0;
+    int32_t pixTopRight = haveTopRight ? std::min(txwpxMax, xr) : 0;
+    int32_t pixLeft = haveLeft_ ? std::min(txhpxMax, yd + txhpxMax) : 0;
+    int32_t pixBottomLeft = haveBottomLeft ? std::min(txhpxMax, yd) : 0;
 
     AV1PP::GetPredPelsAV1<PLANE_TYPE_UV>((ChromaPixType *)recSb, m_pitchRecChroma>>1, predPels.top, predPels.left, widthSb,
                                          haveTop_, haveLeft_, pixTopRight, pixBottomLeft);
     AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll +  0 * size * 2, widthSb * 2, log2w, haveLeft_, haveTop_, DC_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll +  1 * size * 2, widthSb * 2, log2w, 0, 0, V_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll +  2 * size * 2, widthSb * 2, log2w, 0, 0, H_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll +  3 * size * 2, widthSb * 2, log2w, 0, 0, D45_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll +  4 * size * 2, widthSb * 2, log2w, 0, 0, D135_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll +  5 * size * 2, widthSb * 2, log2w, 0, 0, D117_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll +  6 * size * 2, widthSb * 2, log2w, 0, 0, D153_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll +  7 * size * 2, widthSb * 2, log2w, 0, 0, D207_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll +  8 * size * 2, widthSb * 2, log2w, 0, 0, D63_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll +  9 * size * 2, widthSb * 2, log2w, 0, 0, SMOOTH_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll + 10 * size * 2, widthSb * 2, log2w, 0, 0, SMOOTH_V_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll + 11 * size * 2, widthSb * 2, log2w, 0, 0, SMOOTH_H_PRED, 0, 0, 0);
-    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll + 12 * size * 2, widthSb * 2, log2w, 0, 0, PAETH_PRED, 0, 0, 0);
-
     int32_t bestSse = AV1PP::sse_p64_pw(srcSb, m_predIntraAll, log2w + 1, log2w);
     CostType bestCost = bestSse + m_rdLambda * intraModeUvBits[DC_PRED];
-    for (int32_t mode = DC_PRED + 1; mode < AV1_INTRA_MODES; mode++) {
+
+    for (PredMode mode = DC_PRED + 1; mode < AV1_INTRA_MODES; mode++) {
         //if (mode == SMOOTH_H_PRED || mode == SMOOTH_V_PRED)
         //    continue;
+        AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll + mode * size * 2, widthSb * 2, log2w, 0, 0, mode, 0, 0, 0);
         int32_t sse = AV1PP::sse_p64_pw(srcSb, m_predIntraAll + mode * size * 2, log2w + 1, log2w);
+        if (sse > bestCost) continue;
         int32_t bitCost = intraModeUvBits[mode];
 
         if (av1_is_directional_mode(mode)) {
-            int32_t max_angle_delta = MAX_ANGLE_DELTA;
-            int32_t delta = 0;
+            const int32_t max_angle_delta = MAX_ANGLE_DELTA;
+            const int32_t delta = 0;
             bitCost += write_uniform_cost(2 * max_angle_delta + 1, max_angle_delta + delta);
         }
 
@@ -2208,24 +2053,160 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
         }
     }
 
+    PredMode oldBest = bestMode;
+    //predict CFL from best luma prediction
+    alignas(32) PixType predCFL[32 * 32 * 2];
+    if (m_par->cflFlag && bestLuma && is_cfl_allowed) { //CFL allowed
+        alignas(32) uint16_t chromaBuf[32 * 32];
+        alignas(32) int16_t chromaAc[32 * 32];
+        const int width = bw << 2;
+        const int height = bh << 2;
+        const int sz = width * height;
+
+        //subsample luma to chroma
+#if 0
+        cfl_luma_subsampling_420_lbd_c((uint8_t*)bestLuma, lumaStride, chromaBuf, width<<1, height<<1); //luma size
+        //cfl_luma_subsampling_420_lbd_avx2((uint8_t*)bestLuma, lumaStride, chromaBuf, width << 1, height << 1);
+#else
+        if (sizeof(PixType) == 1)
+            AV1PP::cfl_subsample_420_u8_fptr_arr[max_txsize_lookup[bszLuma]]((const uint8_t*)bestLuma, lumaStride, chromaBuf);
+        else
+            AV1PP::cfl_subsample_420_u16_fptr_arr[max_txsize_lookup[bszLuma]]((const uint16_t*)bestLuma, lumaStride, chromaBuf);
+#endif
+#if 0
+        int num_pel_log2 = get_msb(sz);
+        int round_offset = ((sz) >> 1);
+        subtract_average_c(chromaBuf, chromaAc, width, height, round_offset, num_pel_log2);
+        //subtract_average_avx2(chromaBuf, chromaAc, width, height, round_offset, num_pel_log2);
+#else
+        AV1PP::cfl_subtract_average_fptr_arr[txSize](chromaBuf, chromaAc);
+#endif
+
+        int best_alpha_u = 0;
+        int best_alpha_v = 0;
+        int best_sign = 0;
+
+        //find max abs ac value to reduce number of test cases
+        //max width, height = 16 for chroma
+        const int maxPix = (256 << m_par->bitDepthChromaShift) - 1;
+        const CostType modeCost =  m_rdLambda * intraModeUvBits[UV_CFL_PRED];
+
+        CostType bestCostUV[2] = { FLT_MAX, FLT_MAX };
+        int bestAlphaUV[2] = {0,0};
+        int bestSignUV[2] = { CFL_SIGN_ZERO, CFL_SIGN_ZERO };
+
+        //First find best value for alpha = 0
+        int costU, costV;
+        AV1PP::sse_p64_pw_uv(srcSb, m_predIntraAll + bestMode * size * 2, log2w + 1, log2w, costU, costV);
+        bestCostUV[0] = costU + m_rdLambda * bc.cflCost[0][0][0];
+        bestCostUV[1] = costV + m_rdLambda * bc.cflCost[0][1][0];
+
+        for (int alpha = 0; alpha < CFL_ALPHABET_SIZE; alpha++) {
+            for (int sign = CFL_SIGN_NEG; sign < CFL_SIGNS; sign++) {
+
+                int16_t alpha_q3 = (sign == CFL_SIGN_POS) ? alpha + 1 : -alpha - 1;
+
+                AV1PP::cfl_predict_nv12_u8_fptr_arr[txSize](chromaAc, (uint8_t*)predCFL, widthSb<<1, m_predIntraAll[0], m_predIntraAll[1], alpha_q3, m_par->bitDepthChromaShift+8);
+#if 0
+                alignas(32) PixType predCFLT[32 * 32 * 2];
+                int16_t* acPtr = chromaAc;
+                PixType*  cfl = predCFLT;
+
+                //prediction
+                const PixType dcU = m_predIntraAll[0]; //dc the same for all pixels
+                const PixType dcV = m_predIntraAll[1];
+
+                for (int j = 0; j < height; j++) {
+                    for (int i = 0; i < (width << 1); i += 2) {
+                        const int scaled_luma_q6 = alpha_q3 * acPtr[i >> 1];
+                        const int val = scaled_luma_q6 < 0 ? -(((-scaled_luma_q6) + (1 << 5)) >> 6) : (scaled_luma_q6 + (1 << 5)) >> 6;
+                        cfl[i] = PixType(std::min(std::max(val + dcU, 0), maxPix)); //add U DC pred
+                        cfl[i + 1] = PixType(std::min(std::max(val + dcV, 0), maxPix)); //add V DC pred
+                    }
+                    cfl += widthSb << 1;
+                    acPtr += 32;
+                }
+#endif
+
+                int costU, costV;
+                AV1PP::sse_p64_pw_uv(srcSb, predCFL, log2w + 1, log2w, costU, costV);
+                CostType cost[2];
+                int joint_sign_u = sign * CFL_SIGNS + 0 - 1;
+                int joint_sign_v = 0 * CFL_SIGNS + sign - 1;
+
+                cost[0] = costU + m_rdLambda * bc.cflCost[joint_sign_u][0][alpha];
+                cost[1] = costV + m_rdLambda * bc.cflCost[joint_sign_v][1][alpha];
+                for (int i = 0; i < 2; i++) {
+                    if (bestCostUV[i] > cost[i]) {
+                        bestCostUV[i] = cost[i];
+                        bestAlphaUV[i] = 0;
+                        bestSignUV[i] = sign;
+                    }
+                }
+            }
+        }
+        //exclude both sings = 0
+        if (bestSignUV[0] != 0 && bestSignUV[1] != 0) {
+            int joint_sign = bestSignUV[0] * CFL_SIGNS + bestSignUV[1] - 1;
+            CostType cost = bestCostUV[0] + bestCostUV[1] + modeCost +
+                m_rdLambda * (bc.cflCost[joint_sign][0][bestAlphaUV[0]] + bc.cflCost[joint_sign][1][bestAlphaUV[1]]);
+            if (cost < bestCost) {
+                CFL_params* cflp = m_currFrame->m_fenc->m_cfl + (miCol + miRow * (m_par->PicWidthInCtbs << 3));
+                cflp->joint_sign = joint_sign;
+                cflp->alpha_u = bestAlphaUV[0];
+                cflp->alpha_v = bestAlphaUV[1];
+
+                int16_t* acPtr = chromaAc;
+                PixType*  cfl = predCFL;
+
+                //prediction
+                int16_t alpha_q3_u = bestSignUV[0] == CFL_SIGN_ZERO ? 0 : (bestSignUV[0] == CFL_SIGN_POS) ? bestAlphaUV[0] + 1 : -bestAlphaUV[0] - 1;
+                int16_t alpha_q3_v = bestSignUV[1] == CFL_SIGN_ZERO ? 0 : (bestSignUV[1] == CFL_SIGN_POS) ? bestAlphaUV[1] + 1 : -bestAlphaUV[1] - 1;
+
+                const PixType dcU = m_predIntraAll[0]; //dc the same for all pixels
+                const PixType dcV = m_predIntraAll[1];
+
+                for (int j = 0; j < height; j++) {
+                    for (int i = 0; i < (width << 1); i += 2) {
+                        const auto lumaAc = acPtr[i >> 1];
+                        int scaled_luma_q6_u = alpha_q3_u * lumaAc;
+                        const int val_u = scaled_luma_q6_u < 0 ? -(((-scaled_luma_q6_u) + (1 << 5)) >> 6) : (scaled_luma_q6_u + (1 << 5)) >> 6;
+                        cfl[i] = PixType(std::min(std::max(val_u + dcU, 0), maxPix)); //add DC pred
+                        const auto scaled_luma_q6_v = alpha_q3_v * lumaAc;
+                        const int val_v = scaled_luma_q6_v < 0 ? -(((-scaled_luma_q6_v) + (1 << 5)) >> 6) : (scaled_luma_q6_v + (1 << 5)) >> 6;
+                        cfl[i + 1] = PixType(std::min(std::max(val_v + dcV, 0), maxPix)); //add DC pred
+                    }
+                    cfl += widthSb << 1;
+                    acPtr += 32;
+                }
+                int costU, costV;
+                AV1PP::sse_p64_pw_uv(srcSb, predCFL, log2w + 1, log2w, costU, costV);
+
+                bestCost = cost;
+                bestDelta = 0;
+                bestMode = UV_CFL_PRED;
+                bestSse = costU + costV;
+            }
+        }
+    }
+
     // second pass
-    if (av1_is_directional_mode(bestMode)) {
-        int32_t mode = bestMode;
+    if (av1_is_directional_mode(oldBest)) {
+        PredMode mode = oldBest;
         for (int32_t angleDelta = 1; angleDelta <= 3; angleDelta++) {
             for (int32_t i = 0; i < 2; i++) {
                 const int32_t delta = (1 - 2 * i) * angleDelta;
                 AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll, widthSb * 2, log2w, 0, 0, mode, delta, 0, 0);
-                int32_t sse = AV1PP::sse_p64_pw(srcSb, m_predIntraAll, log2w + 1, log2w);
+                const int32_t sse = AV1PP::sse_p64_pw(srcSb, m_predIntraAll, log2w + 1, log2w);
+                if (sse > bestCost) continue;
                 int32_t bitCost = intraModeUvBits[mode];
+                bitCost += write_uniform_cost(2 * MAX_ANGLE_DELTA + 1, MAX_ANGLE_DELTA + delta);
 
-                if (av1_is_directional_mode(mode))
-                    bitCost += write_uniform_cost(2 * MAX_ANGLE_DELTA + 1, MAX_ANGLE_DELTA + delta);
-
-                CostType cost = sse + m_rdLambda * bitCost;
+                const CostType cost = sse + m_rdLambda * bitCost;
                 if (bestCost > cost) {
                     bestCost = cost;
-                    bestMode = mode;
                     bestDelta = delta;
+                    bestMode = oldBest;
                 }
             }
         }
@@ -2243,144 +2224,232 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
     int32_t width = 4<<txSize;
     int32_t step = 1<<txSize;
     int32_t sse = 0;
-    int16_t totalEob = 0;
-    const int16_t *scan = av1_default_scan[txSize];
+    int32_t totalEob = 0;
     uint32_t coefBits = 0;
     int32_t haveTop = haveTop_;
-    int16_t *coefOriginU = vp9scratchpad.coefWork;
-    int16_t *coefOriginV = vp9scratchpad.coefWork + 32 * 32;
+    int16_t *coefOriginU = (int16_t *)vp9scratchpad.varTxCoefs;
+    int16_t *coefOriginV = coefOriginU + 32 * 32;
 
-    for (int32_t y = 0; y < num4x4h; y += step) {
-        PixType *rec = recSb + (y<<2) * m_pitchRecLuma;
-        PixType *src = srcSb + (y<<2) * SRC_PITCH;
-        int32_t haveLeft = haveLeft_;
-        for (int32_t x = 0; x < num4x4w; x += step, rec += width<<1, src += width<<1) {
-            assert(rasterIdx + (y<<1) * 16 + (x<<1) < 256);
-            int32_t blockIdx = h265_scan_r2z4[rasterIdx + (y<<1) * 16 + (x<<1)];
-            int32_t offset = blockIdx<<(LOG2_MIN_TU_SIZE<<1);
-            offset >>= 2; // TODO: 4:2:0 only
-            CoeffsType *residU = m_residualsU + offset;
-            CoeffsType *residV = m_residualsV + offset;
-            CoeffsType *coeffU = m_coeffWorkU + offset;
-            CoeffsType *coeffV = m_coeffWorkV + offset;
+    if (bestMode == UV_CFL_PRED) {
+        PixType *rec = recSb;
+        PixType *src = srcSb;
+        const int height = bh << 2;
 
-            int32_t notOnRight = x + step < num4x4w;
+        int32_t blockIdx = h265_scan_r2z4[rasterIdx];
+        int32_t offset = blockIdx << (LOG2_MIN_TU_SIZE << 1);
+        offset >>= 2; // TODO: 4:2:0 only
+        CoeffsType *residU = vp9scratchpad.diffU + offset;
+        CoeffsType *residV = vp9scratchpad.diffV + offset;
+        CoeffsType *coeffU = m_coeffWorkU + offset;
+        CoeffsType *coeffV = m_coeffWorkV + offset;
 
-            const BlockSize bszLuma = GetSbType(depth, partition);
-            const int32_t haveRight = (miCol + ((x + txw)/* >> 1*/)) < miColEnd;
-            const int32_t haveTopRight = HaveTopRight(bszLuma, miRow, miCol, haveTop, haveRight, txSize, y, x, 1);
-            // Distance between the right edge of this prediction block to the frame right edge
-            const int32_t xr = (distToRightEdge >> 1) + (wpx - (x<<2) - txwpx);
-            // Distance between the bottom edge of this prediction block to the frame bottom edge
-            const int32_t yd = (distToBottomEdge >> 1) + (hpx - (y<<2) - txhpx);
-            const int32_t haveBottom = yd > 0;
-            const int32_t haveBottomLeft = HaveBottomLeft(bszLuma, miRow, miCol, haveLeft, haveBottom, txSize, y, x, 1);
-            const int32_t pixTop = haveTop ? std::min(txwpx, xr + txwpx) : 0;
-            const int32_t pixLeft = haveLeft ? std::min(txhpx, yd + txhpx) : 0;
-            const int32_t pixTopRight = haveTopRight ? std::min(txwpx, xr) : 0;
-            const int32_t pixBottomLeft = haveBottomLeft ? std::min(txhpx, yd) : 0;
-            AV1PP::GetPredPelsAV1<PLANE_TYPE_UV>((ChromaPixType*)rec, m_pitchRecChroma>>1, predPels.top, predPels.left, width, haveTop, haveLeft, pixTopRight, pixBottomLeft);
+        //copy prediction to reconstruct
+        CopyNxM(predCFL, widthSb<<1, rec, m_pitchRecChroma, widthSb<<1, height);
 
-            int32_t upTop = 0;
-            int32_t upLeft = 0;
-            if (m_par->enableIntraEdgeFilter && isDirectionalMode) {
-                const int32_t need_top = angle < 180;
-                const int32_t need_left = angle > 90;
-                const int32_t need_right = angle < 90;
-                const int32_t need_bottom = angle > 180;
-                const int32_t filtType = get_filt_type(above, left, PLANE_TYPE_UV);
-                if (angle != 90 && angle != 180) {
-                    if (need_top && need_left && (txwpx + txhpx >= 24))
-                        av1_filter_intra_edge_corner_nv12(pt, pl);
+        //int32_t sseZero = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
+        AV1PP::diff_nv12(src, SRC_PITCH, predCFL, widthSb<<1, residU, residV, width, width, txSize);
 
-                    if (haveTop) {
-                        const int32_t strength = intra_edge_filter_strength(txwpx, txhpx, angle - 90, filtType);
-                        const int32_t sz = 1 + pixTop + (need_right ? txhpx : 0);
-                        av1_filter_intra_edge_nv12_c(pt - 2, sz, strength);
-                    }
-                    if (haveLeft) {
-                        const int32_t strength = intra_edge_filter_strength(txwpx, txhpx, angle - 180, filtType);
-                        const int32_t sz = 1 + pixLeft + (need_bottom ? txwpx : 0);
-                        av1_filter_intra_edge_nv12_c(pl - 2, sz, strength);
-                    }
-                }
-                upTop = use_intra_edge_upsample(txwpx, txhpx, angle - 90, filtType);
-                if (need_top && upTop) {
-                    const int32_t sz = txwpx + (need_right ? txhpx : 0);
-                    av1_upsample_intra_edge_nv12_c(pt, sz);
-                }
-                upLeft = use_intra_edge_upsample(txwpx, txhpx, angle - 180, filtType);
-                if (need_left && upLeft) {
-                    const int32_t sz = txhpx + (need_bottom ? txwpx : 0);
-                    av1_upsample_intra_edge_nv12_c(pl, sz);
-                }
-            }
-
-            const int32_t delta = mi->angle_delta_uv - MAX_ANGLE_DELTA;
-            AV1PP::predict_intra_nv12_av1(pt, pl, rec, m_pitchRecChroma, txSize, haveLeft, haveTop, bestMode, delta, upTop, upLeft);
-
-            int32_t sseZero = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
-            AV1PP::diff_nv12(src, SRC_PITCH, rec, m_pitchRecChroma, residU, residV, width, width, txSize);
-
-            int32_t txType = GetTxTypeAV1(PLANE_TYPE_UV, txSize, /*mi->modeUV*/bestMode, 0/*fake*/);
+        int32_t txType = GetTxTypeAV1(PLANE_TYPE_UV, txSize, /*mi->modeUV*/bestMode, 0/*fake*/);
 
 #ifdef ADAPTIVE_DEADZONE
-            AV1PP::ftransform_av1(residU, coefOriginU, width, txSize, /*DCT_DCT*/txType);
-            AV1PP::ftransform_av1(residV, coefOriginV, width, txSize, /*DCT_DCT*/txType);
-            int32_t eobU = AV1PP::quant(coefOriginU, coeffU, m_aqparamUv[0], txSize);
-            int32_t eobV = AV1PP::quant(coefOriginV, coeffV, m_aqparamUv[1], txSize);
-            if(eobU) AV1PP::dequant(coeffU, residU, m_aqparamUv[0], txSize);
-            if(eobV) AV1PP::dequant(coeffV, residV, m_aqparamUv[1], txSize);
-            if (eobU) adaptDz(coefOriginU, residU, reinterpret_cast<const int16_t *>(&m_aqparamUv[0]), txSize, &m_roundFAdjUv[0][0], eobU);
-            if (eobV) adaptDz(coefOriginV, residV, reinterpret_cast<const int16_t *>(&m_aqparamUv[1]), txSize, &m_roundFAdjUv[1][0], eobV);
+        AV1PP::ftransform_av1(residU, coefOriginU, width, txSize, /*DCT_DCT*/txType);
+        AV1PP::ftransform_av1(residV, coefOriginV, width, txSize, /*DCT_DCT*/txType);
+        int32_t eobU = AV1PP::quant(coefOriginU, coeffU, m_aqparamUv[0], txSize);
+        int32_t eobV = AV1PP::quant(coefOriginV, coeffV, m_aqparamUv[1], txSize);
+        if (eobU) {
+            AV1PP::dequant(coeffU, residU, m_aqparamUv[0], txSize, sizeof(PixType) == 1 ? 8 : 10);
+            adaptDz(coefOriginU, residU, m_aqparamUv[0], txSize, &m_roundFAdjUv[0][0], eobU);
+        }
+        if (eobV) {
+            AV1PP::dequant(coeffV, residV, m_aqparamUv[1], txSize, sizeof(PixType) == 1 ? 8 : 10);
+            adaptDz(coefOriginV, residV, m_aqparamUv[1], txSize, &m_roundFAdjUv[1][0], eobV);
+        }
 #else
-            AV1PP::ftransform_av1(residU, residU, width, txSize, /*DCT_DCT*/txType);
-            AV1PP::ftransform_av1(residV, residV, width, txSize, /*DCT_DCT*/txType);
-            int32_t eobU = AV1PP::quant_dequant(residU, coeffU, m_aqparamUv[0], txSize);
-            int32_t eobV = AV1PP::quant_dequant(residV, coeffV, m_aqparamUv[1], txSize);
+        AV1PP::ftransform_av1(residU, residU, width, txSize, /*DCT_DCT*/txType);
+        AV1PP::ftransform_av1(residV, residV, width, txSize, /*DCT_DCT*/txType);
+        int32_t eobU = AV1PP::quant_dequant(residU, coeffU, m_aqparamUv[0], txSize);
+        int32_t eobV = AV1PP::quant_dequant(residV, coeffV, m_aqparamUv[1], txSize);
 #endif
 
-            uint8_t *actxU = m_contexts.aboveNonzero[1]+x4+x;
-            uint8_t *actxV = m_contexts.aboveNonzero[2]+x4+x;
-            uint8_t *lctxU = m_contexts.leftNonzero[1]+y4+y;
-            uint8_t *lctxV = m_contexts.leftNonzero[2]+y4+y;
-            const int32_t txbSkipCtxU = GetTxbSkipCtx(bsz, txSize, 1, actxU, lctxU);
-            const int32_t txbSkipCtxV = GetTxbSkipCtx(bsz, txSize, 1, actxV, lctxV);
+        uint8_t *actxU = m_contexts.aboveNonzero[1] + x4 + x;
+        uint8_t *actxV = m_contexts.aboveNonzero[2] + x4 + x;
+        uint8_t *lctxU = m_contexts.leftNonzero[1] + y4 + y;
+        uint8_t *lctxV = m_contexts.leftNonzero[2] + y4 + y;
+        const int32_t txbSkipCtxU = GetTxbSkipCtx(bsz, txSize, 1, actxU, lctxU);
+        const int32_t txbSkipCtxV = GetTxbSkipCtx(bsz, txSize, 1, actxV, lctxV);
 
-            uint32_t txBits = 0;
-            if (eobU) {
-                AV1PP::itransform_av1(residU, residU, width, txSize, txType);
-                int32_t culLevel;
-                txBits += EstimateCoefsAv1(cbc, txbSkipCtxU, eobU, coeffU, &culLevel);
-                SetCulLevel(actxU, lctxU, culLevel, txSize);
-            } else {
-                txBits += cbc.txbSkip[txbSkipCtxU][1];
-                SetCulLevel(actxU, lctxU, 0, txSize);
-            }
-            if (eobV) {
-                AV1PP::itransform_av1(residV, residV, width, txSize, txType);
-                int32_t culLevel;
-                txBits += EstimateCoefsAv1(cbc, txbSkipCtxV, eobV, coeffV, &culLevel);
-                SetCulLevel(actxV, lctxV, culLevel, txSize);
-            } else {
-                txBits += cbc.txbSkip[txbSkipCtxV][1];
-                SetCulLevel(actxV, lctxV, 0, txSize);
-            }
-
-            if (eobU | eobV) {
-                CoeffsType *residU_ = (eobU ? residU : coeffU); // if cbf==0 coeffWork contains zeroes
-                CoeffsType *residV_ = (eobV ? residV : coeffV); // if cbf==0 coeffWork contains zeroes
-                AV1PP::adds_nv12(rec, m_pitchRecChroma, rec, m_pitchRecChroma, residU_, residV_, width, width);
-            }
-            int32_t txSse = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
-
-            totalEob += eobU;
-            totalEob += eobV;
-            coefBits += txBits;
-            sse += txSse;
-            haveLeft = 1;
+        uint32_t txBits = 0;
+        if (eobU) {
+            AV1PP::itransform_av1(residU, residU, width, txSize, txType, sizeof(PixType) == 1 ? 8 : 10);
+            int32_t culLevel;
+            txBits += EstimateCoefsAv1(cbc, txbSkipCtxU, eobU, coeffU, &culLevel);
+            SetCulLevel(actxU, lctxU, (uint8_t)culLevel, txSize);
         }
-        haveTop = 1;
+        else {
+            txBits += cbc.txbSkip[txbSkipCtxU][1];
+            SetCulLevel(actxU, lctxU, 0, txSize);
+        }
+        if (eobV) {
+            AV1PP::itransform_av1(residV, residV, width, txSize, txType, sizeof(PixType) == 1 ? 8 : 10);
+            int32_t culLevel;
+            txBits += EstimateCoefsAv1(cbc, txbSkipCtxV, eobV, coeffV, &culLevel);
+            SetCulLevel(actxV, lctxV, (uint8_t)culLevel, txSize);
+        }
+        else {
+            txBits += cbc.txbSkip[txbSkipCtxV][1];
+            SetCulLevel(actxV, lctxV, 0, txSize);
+        }
+
+        if (eobU | eobV) {
+            CoeffsType *residU_ = (eobU ? residU : coeffU); // if cbf==0 coeffWork contains zeroes
+            CoeffsType *residV_ = (eobV ? residV : coeffV); // if cbf==0 coeffWork contains zeroes
+            AV1PP::adds_nv12(rec, m_pitchRecChroma, rec, m_pitchRecChroma, residU_, residV_, width, width);
+        }
+        int32_t txSse = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
+
+        totalEob += eobU;
+        totalEob += eobV;
+        coefBits += txBits;
+        sse += txSse;
+
+    }
+    else
+    {
+        for (y = 0; y < num4x4h; y += step) {
+            PixType *rec = recSb + (y << 2) * m_pitchRecLuma;
+            PixType *src = srcSb + (y << 2) * SRC_PITCH;
+            int32_t haveLeft = haveLeft_;
+            for (x = 0; x < num4x4w; x += step, rec += width << 1, src += width << 1) {
+                assert(rasterIdx + (y << 1) * 16 + (x << 1) < 256);
+                int32_t blockIdx = h265_scan_r2z4[rasterIdx + (y << 1) * 16 + (x << 1)];
+                int32_t offset = blockIdx << (LOG2_MIN_TU_SIZE << 1);
+                offset >>= 2; // TODO: 4:2:0 only
+                CoeffsType *residU = vp9scratchpad.diffU + offset;
+                CoeffsType *residV = vp9scratchpad.diffV + offset;
+                CoeffsType *coeffU = m_coeffWorkU + offset;
+                CoeffsType *coeffV = m_coeffWorkV + offset;
+
+                haveRight = (miCol + ((x + txw)/* >> 1*/)) < miColEnd;
+                haveTopRight = haveTop && haveRight && HaveTopRight(log2w + 1, miRow, miCol, txSize + 1, y, x);
+                // Distance between the right edge of this prediction block to the frame right edge
+                xr = (distToRightEdge >> 1) + (wpx - (x << 2) - txwpx);
+                // Distance between the bottom edge of this prediction block to the frame bottom edge
+                yd = (distToBottomEdge >> 1) + (hpx - (y << 2) - txhpx);
+                haveBottom = yd > 0;
+                haveBottomLeft = haveLeft && haveBottom && HaveBottomLeft(log2w + 1, miRow, miCol, txSize + 1, y, x);
+                pixTop = haveTop ? std::min(txwpx, xr + txwpx) : 0;
+                pixLeft = haveLeft ? std::min(txhpx, yd + txhpx) : 0;
+                pixTopRight = haveTopRight ? std::min(txwpx, xr) : 0;
+                pixBottomLeft = haveBottomLeft ? std::min(txhpx, yd) : 0;
+                AV1PP::GetPredPelsAV1<PLANE_TYPE_UV>((ChromaPixType*)rec, m_pitchRecChroma >> 1, predPels.top, predPels.left, width, haveTop, haveLeft, pixTopRight, pixBottomLeft);
+
+                int32_t upTop = 0;
+                int32_t upLeft = 0;
+                if (m_par->enableIntraEdgeFilter && isDirectionalMode) {
+                    const int32_t need_top = angle < 180;
+                    const int32_t need_left = angle > 90;
+                    const int32_t need_right = angle < 90;
+                    const int32_t need_bottom = angle > 180;
+                    const int32_t filtType = get_filt_type(above, left, PLANE_TYPE_UV);
+                    if (angle != 90 && angle != 180) {
+                        if (need_top && need_left && (txwpx + txhpx >= 24))
+                            av1_filter_intra_edge_corner_nv12(pt, pl);
+
+                        if (haveTop) {
+                            const int32_t strength = intra_edge_filter_strength(txwpx, txhpx, angle - 90, filtType);
+                            const int32_t sz = 1 + pixTop + (need_right ? txhpx : 0);
+                            av1_filter_intra_edge_nv12_c(pt - 2, sz, strength);
+                        }
+                        if (haveLeft) {
+                            const int32_t strength = intra_edge_filter_strength(txwpx, txhpx, angle - 180, filtType);
+                            const int32_t sz = 1 + pixLeft + (need_bottom ? txwpx : 0);
+                            av1_filter_intra_edge_nv12_c(pl - 2, sz, strength);
+                        }
+                    }
+                    upTop = use_intra_edge_upsample(txwpx, txhpx, angle - 90, filtType);
+                    if (need_top && upTop) {
+                        const int32_t sz = txwpx + (need_right ? txhpx : 0);
+                        av1_upsample_intra_edge_nv12_c(pt, sz);
+                    }
+                    upLeft = use_intra_edge_upsample(txwpx, txhpx, angle - 180, filtType);
+                    if (need_left && upLeft) {
+                        const int32_t sz = txhpx + (need_bottom ? txwpx : 0);
+                        av1_upsample_intra_edge_nv12_c(pl, sz);
+                    }
+                }
+
+                const int32_t delta = mi->angle_delta_uv - MAX_ANGLE_DELTA;
+                AV1PP::predict_intra_nv12_av1(pt, pl, rec, m_pitchRecChroma, txSize, haveLeft, haveTop, bestMode, delta, upTop, upLeft);
+
+                //int32_t sseZero = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
+                AV1PP::diff_nv12(src, SRC_PITCH, rec, m_pitchRecChroma, residU, residV, width, width, txSize);
+
+                int32_t txType = GetTxTypeAV1(PLANE_TYPE_UV, txSize, /*mi->modeUV*/bestMode, 0/*fake*/);
+
+#ifdef ADAPTIVE_DEADZONE
+                AV1PP::ftransform_av1(residU, coefOriginU, width, txSize, /*DCT_DCT*/txType);
+                AV1PP::ftransform_av1(residV, coefOriginV, width, txSize, /*DCT_DCT*/txType);
+                int32_t eobU = AV1PP::quant(coefOriginU, coeffU, m_aqparamUv[0], txSize);
+                int32_t eobV = AV1PP::quant(coefOriginV, coeffV, m_aqparamUv[1], txSize);
+                if (eobU) {
+                    AV1PP::dequant(coeffU, residU, m_aqparamUv[0], txSize, sizeof(PixType) == 1 ? 8 : 10);
+                    adaptDz(coefOriginU, residU, m_aqparamUv[0], txSize, &m_roundFAdjUv[0][0], eobU);
+                }
+                if (eobV) {
+                    AV1PP::dequant(coeffV, residV, m_aqparamUv[1], txSize, sizeof(PixType) == 1 ? 8 : 10);
+                    adaptDz(coefOriginV, residV, m_aqparamUv[1], txSize, &m_roundFAdjUv[1][0], eobV);
+                }
+#else
+                AV1PP::ftransform_av1(residU, residU, width, txSize, /*DCT_DCT*/txType);
+                AV1PP::ftransform_av1(residV, residV, width, txSize, /*DCT_DCT*/txType);
+                int32_t eobU = AV1PP::quant_dequant(residU, coeffU, m_aqparamUv[0], txSize);
+                int32_t eobV = AV1PP::quant_dequant(residV, coeffV, m_aqparamUv[1], txSize);
+#endif
+
+                uint8_t *actxU = m_contexts.aboveNonzero[1] + x4 + x;
+                uint8_t *actxV = m_contexts.aboveNonzero[2] + x4 + x;
+                uint8_t *lctxU = m_contexts.leftNonzero[1] + y4 + y;
+                uint8_t *lctxV = m_contexts.leftNonzero[2] + y4 + y;
+                const int32_t txbSkipCtxU = GetTxbSkipCtx(bsz, txSize, 1, actxU, lctxU);
+                const int32_t txbSkipCtxV = GetTxbSkipCtx(bsz, txSize, 1, actxV, lctxV);
+
+                uint32_t txBits = 0;
+                if (eobU) {
+                    AV1PP::itransform_av1(residU, residU, width, txSize, txType, sizeof(PixType) == 1 ? 8 : 10);
+                    int32_t culLevel;
+                    txBits += EstimateCoefsAv1(cbc, txbSkipCtxU, eobU, coeffU, &culLevel);
+                    SetCulLevel(actxU, lctxU, (uint8_t)culLevel, txSize);
+                }
+                else {
+                    txBits += cbc.txbSkip[txbSkipCtxU][1];
+                    SetCulLevel(actxU, lctxU, 0, txSize);
+                }
+                if (eobV) {
+                    AV1PP::itransform_av1(residV, residV, width, txSize, txType, sizeof(PixType) == 1 ? 8 : 10);
+                    int32_t culLevel;
+                    txBits += EstimateCoefsAv1(cbc, txbSkipCtxV, eobV, coeffV, &culLevel);
+                    SetCulLevel(actxV, lctxV, (uint8_t)culLevel, txSize);
+                }
+                else {
+                    txBits += cbc.txbSkip[txbSkipCtxV][1];
+                    SetCulLevel(actxV, lctxV, 0, txSize);
+                }
+
+                if (eobU | eobV) {
+                    CoeffsType *residU_ = (eobU ? residU : coeffU); // if cbf==0 coeffWork contains zeroes
+                    CoeffsType *residV_ = (eobV ? residV : coeffV); // if cbf==0 coeffWork contains zeroes
+                    AV1PP::adds_nv12(rec, m_pitchRecChroma, rec, m_pitchRecChroma, residU_, residV_, width, width);
+                }
+                int32_t txSse = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
+
+                totalEob += eobU;
+                totalEob += eobV;
+                coefBits += txBits;
+                sse += txSse;
+                haveLeft = 1;
+            }
+            haveTop = 1;
+        }
     }
 
     uint32_t modeBits = intraModeUvBits[bestMode];
@@ -2395,6 +2464,203 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
         ? sse + m_rdLambda * (modeBits + skipBits[1])
         : sse + m_rdLambda * (modeBits + skipBits[0] + coefBits);
 
+#if CHROMA_PALETTE
+    const int32_t allow_screen_content_tool_palette = m_currFrame->m_allowPalette && m_currFrame->m_isRef;
+    PaletteInfo *pi = &m_currFrame->m_fenc->m_Palette8x8[miCol + miRow * m_par->miPitch];
+    pi->palette_size_uv = 0;
+    uint8_t *map_src{ nullptr };
+
+    uint8_t palette[2 * MAX_PALETTE];
+    uint16_t palette_size = 0;
+    uint32_t palette_bits = 0;
+    uint32_t map_bits_est = 0;
+    CostType palette_cost = FLT_MAX;
+    bool     palette_has_dist = false;
+
+    if (mi->sbType >= BLOCK_8X8
+        && block_size_wide[mi->sbType] <= 32
+        && block_size_high[mi->sbType] <= 32
+        && allow_screen_content_tool_palette// && m_currFrame->IsIntra()
+        //&& pi->palette_size_y > 1 && mi->mode == DC_PRED  //use palette only when Luma has palette
+        ) {
+
+        // CHECK Palette Mode
+        int32_t sbx = (x4 << 2) >> m_par->subsamplingX;
+        int32_t sby = (y4 << 2) >> m_par->subsamplingY;
+        const int sbh = bh << 2;
+        const int sbw = bw << 2;
+
+        uint8_t *color_map = &m_paletteMapUV[depth][sby*MAX_CU_SIZE + sbx];
+        map_src = color_map;
+
+        // CHECK Palette Mode
+        palette_size = GetColorCountUV(srcSb, sbw, sbw, palette, m_par->bitDepthChroma, m_rdLambda, pi, color_map, map_bits_est, palette_has_dist);
+
+        if (palette_size > 1 && palette_size <= MAX_PALETTE && !palette_has_dist) {
+            const int32_t width = sbw;
+
+            uint32_t ctxBS = num_pels_log2_lookup[mi->sbType] - num_pels_log2_lookup[BLOCK_8X8];
+
+            uint8_t cache[2 * MAX_PALETTE];
+            uint8_t colors_xmit[MAX_PALETTE];
+            palette_bits += bc.HasPaletteUV[pi->palette_size_y > 0][palette_size > 0];
+            palette_bits += bc.PaletteSizeUV[ctxBS][palette_size - 2];
+
+            //U channel
+            uint32_t cache_size = GetPaletteCache(miRow, false, miCol, cache);
+            uint32_t index_bits = 0;
+            uint32_t colors_xmit_size = GetPaletteCacheIndicesCost(palette, palette_size, cache, cache_size, colors_xmit, index_bits);
+            palette_bits += index_bits * 512; // cache index used unused bits
+            palette_bits += 512 * GetPaletteDeltaCost(colors_xmit, colors_xmit_size, m_par->bitDepthChroma, 1);
+            // V channel palette color cost.
+            int zeroCount = 0, minBits = 0;
+
+            int bits = GetPaletteDeltaBitsV(&palette[MAX_PALETTE], palette_size, m_par->bitDepthChroma, &zeroCount, &minBits);
+            const int bitsDelta = 2 + m_par->bitDepthChroma + (bits + 1) * (palette_size - 1) - zeroCount;
+            const int bitsRaw = m_par->bitDepthChroma * palette_size;
+            palette_bits += (1 + std::min(bitsDelta, bitsRaw)) * 512;
+
+            //uint32_t map_bits = GetPaletteTokensCost(bc, srcSb, width, width, palette, palette_size, color_map);
+            palette_bits += map_bits_est;
+
+            palette_cost = m_rdLambda * (intraModeUvBits[DC_PRED] + palette_bits) + pi->sseUV; // +sse when distortion
+
+            if (cost > 0.75*palette_cost && cost < 1.25*palette_cost) {
+                // get better estimate
+                palette_bits -= map_bits_est;
+                uint32_t map_bits = GetPaletteTokensCostUV(bc, srcSb, width, width, palette, palette_size, map_src);
+                palette_bits += map_bits;
+                palette_cost = m_rdLambda * (intraModeUvBits[DC_PRED] + palette_bits) + pi->sseUV;
+            }
+        }
+    }
+
+    if (cost >= palette_cost && palette_size > 0 && !palette_has_dist) {
+        const int sbh = bh << 2;
+        const int sbw = bw << 2;
+        PixType *rec = recSb;
+        PixType *src = srcSb;
+
+        pi->palette_size_uv = (uint8_t)palette_size;
+        pi->palette_bits += palette_bits;
+        for (int k = 0; k < palette_size; k++) {
+            pi->palette_u[k] = palette[k];
+            pi->palette_v[k] = palette[MAX_PALETTE + k];
+        }
+
+        int32_t blockIdx = h265_scan_r2z4[rasterIdx];
+        int32_t offset = blockIdx << (LOG2_MIN_TU_SIZE << 1);
+        offset >>= 2; // TODO: 4:2:0 only
+        CoeffsType *residU = vp9scratchpad.diffU + offset;
+        CoeffsType *residV = vp9scratchpad.diffV + offset;
+        CoeffsType *coeffU = m_coeffWorkU + offset;
+        CoeffsType *coeffV = m_coeffWorkV + offset;
+
+
+        const int32_t yc = (miRow << 3) >> m_currFrame->m_par->subsamplingY;
+        const int32_t xc = (miCol << 3) >> m_currFrame->m_par->subsamplingX;
+
+        uint8_t *map_dst = &m_currFrame->m_fenc->m_ColorMapUV[yc*m_currFrame->m_fenc->m_ColorMapUVPitch + xc];
+        CopyNxM_unaligned(map_src, MAX_CU_SIZE, map_dst, m_currFrame->m_fenc->m_ColorMapUVPitch, sbw, sbh);
+
+        uint8_t *actxU = m_contexts.aboveNonzero[1] + x4 + x;
+        uint8_t *actxV = m_contexts.aboveNonzero[2] + x4 + x;
+        uint8_t *lctxU = m_contexts.leftNonzero[1] + y4 + y;
+        uint8_t *lctxV = m_contexts.leftNonzero[2] + y4 + y;
+        const int32_t txbSkipCtxU = GetTxbSkipCtx(bsz, txSize, 1, actxU, lctxU);
+        const int32_t txbSkipCtxV = GetTxbSkipCtx(bsz, txSize, 1, actxV, lctxV);
+
+        int32_t eobU = 0, eobV = 0;
+        uint32_t txBits = 0;
+        int32_t txSse = 0;
+
+        if (pi->palette_size_uv == pi->true_colors_uv && !palette_has_dist) {
+
+            CopyNxM_unaligned(src, SRC_PITCH, rec, m_pitchRecChroma, width << 1, width);
+
+            txBits += cbc.txbSkip[txbSkipCtxU][1];
+            SetCulLevel(actxU, lctxU, 0, txSize);
+            txBits += cbc.txbSkip[txbSkipCtxV][1];
+            SetCulLevel(actxV, lctxV, 0, txSize);
+            txSse = 0;
+            ZeroCoeffs(coeffU, 16 << (txSize << 1)); // zero coeffs
+            ZeroCoeffs(coeffV, 16 << (txSize << 1)); // zero coeffs
+        }
+        else {
+            // Palette Prediction
+            for (int32_t i = 0; i < width; i++) {
+                for (int32_t j = 0; j < width; j++) {
+                    int off = i * m_pitchRecChroma + (j << 1);
+                    int idx = map_src[i * 64 + j];
+                    rec[off] = (uint8_t)pi->palette_u[idx];
+                    rec[off + 1] = (uint8_t)pi->palette_v[idx];
+                }
+            }
+
+            AV1PP::diff_nv12(src, SRC_PITCH, rec, m_pitchRecChroma, residU, residV, width, width, txSize);
+
+            int32_t txType = GetTxTypeAV1(PLANE_TYPE_UV, txSize, /*mi->modeUV*/bestMode, 0/*fake*/);
+
+#ifdef ADAPTIVE_DEADZONE
+            AV1PP::ftransform_av1(residU, coefOriginU, width, txSize, /*DCT_DCT*/txType);
+            AV1PP::ftransform_av1(residV, coefOriginV, width, txSize, /*DCT_DCT*/txType);
+            int32_t eobU = AV1PP::quant(coefOriginU, coeffU, m_aqparamUv[0], txSize);
+            int32_t eobV = AV1PP::quant(coefOriginV, coeffV, m_aqparamUv[1], txSize);
+            if (eobU) {
+                AV1PP::dequant(coeffU, residU, m_aqparamUv[0], txSize, sizeof(PixType) == 1 ? 8 : 10);
+                adaptDz(coefOriginU, residU, m_aqparamUv[0], txSize, &m_roundFAdjUv[0][0], eobU);
+            }
+            if (eobV) {
+                AV1PP::dequant(coeffV, residV, m_aqparamUv[1], txSize, sizeof(PixType) == 1 ? 8 : 10);
+                adaptDz(coefOriginV, residV, m_aqparamUv[1], txSize, &m_roundFAdjUv[1][0], eobV);
+            }
+#else
+            AV1PP::ftransform_av1(residU, residU, width, txSize, /*DCT_DCT*/txType);
+            AV1PP::ftransform_av1(residV, residV, width, txSize, /*DCT_DCT*/txType);
+            int32_t eobU = AV1PP::quant_dequant(residU, coeffU, m_aqparamUv[0], txSize);
+            int32_t eobV = AV1PP::quant_dequant(residV, coeffV, m_aqparamUv[1], txSize);
+#endif
+
+            if (eobU) {
+                AV1PP::itransform_av1(residU, residU, width, txSize, txType, sizeof(PixType) == 1 ? 8 : 10);
+                int32_t culLevel;
+                txBits += EstimateCoefsAv1(cbc, txbSkipCtxU, eobU, coeffU, &culLevel);
+                SetCulLevel(actxU, lctxU, (uint8_t)culLevel, txSize);
+            }
+            else {
+                txBits += cbc.txbSkip[txbSkipCtxU][1];
+                SetCulLevel(actxU, lctxU, 0, txSize);
+            }
+            if (eobV) {
+                AV1PP::itransform_av1(residV, residV, width, txSize, txType, sizeof(PixType) == 1 ? 8 : 10);
+                int32_t culLevel;
+                txBits += EstimateCoefsAv1(cbc, txbSkipCtxV, eobV, coeffV, &culLevel);
+                SetCulLevel(actxV, lctxV, (uint8_t)culLevel, txSize);
+            }
+            else {
+                txBits += cbc.txbSkip[txbSkipCtxV][1];
+                SetCulLevel(actxV, lctxV, 0, txSize);
+            }
+
+            if (eobU | eobV) {
+                CoeffsType *residU_ = (eobU ? residU : coeffU); // if cbf==0 coeffWork contains zeroes
+                CoeffsType *residV_ = (eobV ? residV : coeffV); // if cbf==0 coeffWork contains zeroes
+                AV1PP::adds_nv12(rec, m_pitchRecChroma, rec, m_pitchRecChroma, residU_, residV_, width, width);
+            }
+            txSse = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
+        }
+
+        totalEob = eobU;
+        totalEob += eobV;
+        coefBits = txBits;
+        sse = txSse;
+        modeBits = palette_bits;
+
+        bestMode = DC_PRED;
+    }
+#endif
+
+
     fprintf_trace_cost(stderr, "intra chroma: poc=%d ctb=%2d idx=%3d bsz=%d mode=%d "
         "sse=%6d modeBits=%4u eob=%d coefBits=%-6u cost=%.0f\n", m_currFrame->m_frameOrder, m_ctbAddr, absPartIdx, bsz, bestMode,
         sse, modeBits, totalEob, coefBits, cost);
@@ -2402,10 +2668,13 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
     int32_t skip = mi->skip && totalEob==0;
 
     mi->modeUV = bestMode;
-    mi->skip = skip;
+    mi->skip = (uint8_t)skip;
+#if 0
     const int32_t num4x4wLuma = block_size_wide_4x4[mi->sbType];
     const int32_t num4x4hLuma = block_size_high_4x4[mi->sbType];
     PropagateSubPart(mi, m_par->miPitch, num4x4wLuma >> 1, num4x4hLuma >> 1);
+#endif
+    PropagateSubPart(mi, m_par->miPitch, num4x4w, num4x4h);
 
     RdCost rd;
     rd.sse = sse;
@@ -2415,137 +2684,530 @@ RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1(int32_t absPartIdx, int32_t dept
     return rd;
 }
 
+template int32_t AV1CU<uint8_t>::CheckIntra(int32_t absPartIdx, int32_t depth, PartitionType partition, uint32_t &bits);
+template RdCost AV1CU<uint8_t>::CheckIntraChromaNonRdAv1(int32_t, int32_t, uint8_t, const uint8_t*, int);
+template uint64_t AV1CU<uint8_t>::CheckIntra64x64(PredMode *bestIntraMode);
+template uint32_t AV1CU<uint8_t>::GetPaletteCache(uint32_t miRow, bool isLuma, uint32_t miCol, uint8_t *cache);
+
+#if ENABLE_10BIT
+template void AV1CU<uint16_t>::CheckIntra(int32_t absPartIdx, int32_t depth, PartitionType partition);
+template RdCost AV1CU<uint16_t>::CheckIntraChromaNonRdAv1(int32_t, int32_t, uint8_t, const uint16_t*, int);
+template uint64_t AV1CU<uint16_t>::CheckIntra64x64(PredMode *bestIntraMode);
+template uint32_t AV1CU<uint16_t>::GetPaletteCache(uint32_t miRow, bool isLuma, uint32_t miCol, uint16_t *cache);
+#endif
+
 
 template <typename PixType>
-RdCost AV1CU<PixType>::CheckIntraChroma(int32_t absPartIdx, int32_t depth, PartitionType partition)
+RdCost AV1CU<PixType>::CheckIntraChromaNonRdAv1_10bit(int32_t absPartIdx, int32_t depth, PartitionType partition, const uint16_t* bestLuma, int lumaStride)
 {
-    typedef typename ChromaUVPixType<PixType>::type ChromaPixType;
-
-    const BlockSize sbType = m_data[absPartIdx].sbType;
-    const BlockSize bsz = ss_size_lookup[MAX(BLOCK_8X8,sbType)][m_par->subsamplingX][m_par->subsamplingX];
+    const int32_t rasterIdx = av1_scan_z2r4[absPartIdx];
+    const int32_t x4Luma = (rasterIdx & 15);
+    const int32_t y4Luma = (rasterIdx >> 4);
+    ModeInfo *mi = m_data + (x4Luma >> 1) + (y4Luma >> 1) * m_par->miPitch;
+    const BlockSize sbType = mi->sbType;
+    const BlockSize bsz = ss_size_lookup[sbType][m_par->subsamplingX][m_par->subsamplingX];
+    const int32_t widthSb = (MAX_CU_SIZE >> depth) >> 1;
+    const int32_t size = ((MAX_NUM_PARTITIONS << 4) >> (depth << 1)) >> 2;
     const int32_t num4x4w = block_size_wide_4x4[bsz];
     const int32_t num4x4h = block_size_high_4x4[bsz];
     const int32_t num4x4 = num_4x4_blocks_lookup[bsz];
-    const TxSize txSize = GetUvTxSize(sbType, m_data[absPartIdx].txSize, *m_par);
-    const int32_t rasterIdx = av1_scan_z2r4[absPartIdx];
-    const int32_t x4 = (rasterIdx & 15) >> m_par->subsamplingX;
-    const int32_t y4 = (rasterIdx >> 4) >> m_par->subsamplingY;
+    const TxSize txSize = std::min(TxSize(TX_32X32), TxSize(3 - depth));
+    const int32_t x4 = x4Luma >> m_par->subsamplingX;
+    const int32_t y4 = y4Luma >> m_par->subsamplingY;
+    const int32_t sseShift = m_par->bitDepthChromaShift << 1;
 
-    PixType *recSb = m_uvRec + ((x4*2 + y4*m_pitchRecChroma) << LOG2_MIN_TU_SIZE);
-    PixType *srcSb = m_uvSrc + ((x4*2 + y4*SRC_PITCH) << LOG2_MIN_TU_SIZE);
+    uint16_t *recSb = m_uvRec10 + ((x4 * 2 + y4 * m_pitchRecChroma10) << LOG2_MIN_TU_SIZE);
+    uint16_t *srcSb = m_uvSrc10 + ((x4 * 2 + y4 * SRC_PITCH) << LOG2_MIN_TU_SIZE);
 
-    alignas(32) ChromaPixType predPels_[32/sizeof(ChromaPixType) + (4<<TX_32X32) * 3];
-    PixType *predPels = (PixType*)(predPels_ + 32/sizeof(ChromaPixType) - 1);
-    PixType halfRange = 1<<(m_par->bitDepthChroma-1);
-    int32_t shift = 8*sizeof(PixType);
-    ChromaPixType halfRangeM1 = (halfRange-1) + ((halfRange-1)<<shift);
-    ChromaPixType halfRangeP1 = (halfRange+1) + ((halfRange+1)<<shift);
+    typedef typename ChromaUVPixType<uint16_t>::type ChromaPixType;
+    AV1PP::IntraPredPels<ChromaPixType> predPels;
+    uint16_t *pt = (uint16_t *)predPels.top;
+    uint16_t *pl = (uint16_t *)predPels.left;
 
-    CostType bestCost = COST_MAX;
-    RdCost bestRdCost = {INT_MAX, UINT_MAX, UINT_MAX};
-    int32_t bestMode = INTRA_MODES;
-    int32_t bestEob = 4096;
+    const BitCounts &bc = *m_currFrame->bitCount;
+    const TxbBitCounts &cbc = bc.txb[get_q_ctx(m_lumaQp)][txSize][PLANE_TYPE_UV];
+    const int32_t miRow = (m_ctbPelY >> 3) + y4;//(y4 >> 1);
+    const int32_t miCol = (m_ctbPelX >> 3) + x4;//(x4 >> 1);
 
-    const BitCounts &bc = m_currFrame->bitCount;
-    const CoefBitCounts &cbc = bc.coef[PLANE_TYPE_UV][0][txSize];
-    const int32_t miRow = (m_ctbPelY >> 3) + (y4 >> 1);
-    const int32_t miCol = (m_ctbPelX >> 3) + (x4 >> 1);
+
+
     const int32_t haveTop_ = (miRow > m_tileBorders.rowStart);
-    const int32_t haveLeft_  = (miCol > m_tileBorders.colStart);
-    ModeInfo *mi = m_data + (x4 >> 1) + (y4 >> 1) * m_par->miPitch;
+    const int32_t haveLeft_ = (miCol > m_tileBorders.colStart);
+    const int32_t miColEnd = m_tileBorders.colEnd;
     const ModeInfo *above = GetAbove(mi, m_par->miPitch, miRow, m_tileBorders.rowStart);
-    const ModeInfo *left  = GetLeft(mi, miCol, m_tileBorders.colStart);
-    const uint16_t *skipBits = bc.skip[ GetCtxSkip(above, left) ];
-    const uint16_t *intraModeUvBits = bc.intraModeUv[m_data[absPartIdx|3].mode];
+    const ModeInfo *left = GetLeft(mi, miCol, m_tileBorders.colStart);
+    const uint16_t *skipBits = bc.skip[GetCtxSkip(above, left)];
+    const int32_t log2w = 3 - depth;
 
-    alignas(64) PixType bestRec[64*32];
-    alignas(64) CoeffsType bestCoefsU[64*32];
-    alignas(64) CoeffsType bestCoefsV[64*32];
-    Contexts origCtx = m_contexts;
-    Contexts bestCtx;
+    const int32_t txw = tx_size_wide_unit[txSize];
+    const int32_t txwpx = 4 << txSize;
+    const int32_t txhpx = 4 << txSize;
 
-    for (int32_t mode = DC_PRED; mode < INTRA_MODES; mode++) {
-        if (mode == D45_PRED || mode == D207_PRED || mode == D63_PRED) continue;
-        int32_t width = 4<<txSize;
-        int32_t step = 1<<txSize;
-        int32_t sse = 0;
-        int16_t totalEob = 0;
-        const int16_t *scan = vp9_default_scan[txSize];
-        uint32_t coefBits = 0;
-        m_contexts = origCtx;
-        int32_t haveTop = haveTop_;
-        for (int32_t y = 0; y < num4x4h; y += step) {
-            PixType *rec = recSb + (y<<2) * m_pitchRecLuma;
-            PixType *src = srcSb + (y<<2) * SRC_PITCH;
+    const BlockSize bszLuma = GetSbType(depth, partition);
+    const int32_t bh = block_size_high_8x8[bszLuma];
+    const int32_t bw = block_size_wide_8x8[bszLuma];
+    const int32_t distToBottomEdge = (m_par->miRows - bh - miRow) * 8;
+    const int32_t distToRightEdge = (m_par->miCols - bw - miCol) * 8;
+
+    bool  is_cfl_allowed = bh <= 4 && bw <= 4;
+    const uint16_t *intraModeUvBits = bc.intraModeUvAV1[is_cfl_allowed][mi->mode];
+
+    const int32_t hpx = block_size_high[bsz];
+    const int32_t wpx = hpx;
+
+    PredMode bestMode = mi->modeUV;//D207_PRED;
+    int32_t bestDelta = mi->angle_delta_uv - MAX_ANGLE_DELTA;//0;
+
+    int32_t x = 0;
+    int32_t y = 0;
+    const TxSize txSizeMax = max_txsize_lookup[bsz];
+    const int32_t txwMax = tx_size_wide_unit[txSizeMax];
+    const int32_t txwpxMax = 4 << txSizeMax;
+    const int32_t txhpxMax = txwpxMax;
+    int32_t haveRight = (miCol + ((x + txwMax) /*>> 1*/)) < miColEnd;
+    int32_t haveTopRight = haveTop_ && haveRight && HaveTopRight(log2w + 1, miRow, miCol, txSizeMax + 1, y, x);
+    // Distance between the right edge of this prediction block to the frame right edge
+    int32_t xr = (distToRightEdge >> 1) + (wpx - (x << 2) - txwpxMax);
+    // Distance between the bottom edge of this prediction block to the frame bottom edge
+    int32_t yd = (distToBottomEdge >> 1) + (hpx - (y << 2) - txhpxMax);
+    int32_t haveBottom = yd > 0;
+    int32_t haveBottomLeft = haveLeft_ && haveBottom && HaveBottomLeft(log2w + 1, miRow, miCol, txSizeMax + 1, y, x);
+    int32_t pixTop = haveTop_ ? std::min(txwpxMax, xr + txwpxMax) : 0;
+    int32_t pixTopRight = haveTopRight ? std::min(txwpxMax, xr) : 0;
+    int32_t pixLeft = haveLeft_ ? std::min(txhpxMax, yd + txhpxMax) : 0;
+    int32_t pixBottomLeft = haveBottomLeft ? std::min(txhpxMax, yd) : 0;
+
+    AV1PP::GetPredPelsAV1<PLANE_TYPE_UV>((ChromaPixType *)recSb, m_pitchRecChroma >> 1, predPels.top, predPels.left, widthSb, haveTop_, haveLeft_, pixTopRight, pixBottomLeft);
+    AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll10bit + 0 * size * 2, widthSb * 2, log2w, haveLeft_, haveTop_, DC_PRED, 0, 0, 0);
+
+    int32_t bestSse = 0;    // AV1PP::sse_p64_pw(srcSb, m_predIntraAll10bit, log2w + 1, log2w);
+    CostType bestCost = 0;  // bestSse + m_rdLambda * intraModeUvBits[DC_PRED];
+
+#if 0
+    for (PredMode mode = DC_PRED + 1; mode < AV1_INTRA_MODES; mode++)
+    {
+        //if (mode == SMOOTH_H_PRED || mode == SMOOTH_V_PRED)
+        //    continue;
+        AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll10bit + mode * size * 2, widthSb * 2, log2w, 0, 0, mode, 0, 0, 0);
+        int32_t sse = AV1PP::sse_p64_pw(srcSb, m_predIntraAll10bit + mode * size * 2, log2w + 1, log2w);
+        if (sse > bestCost) continue;
+        int32_t bitCost = intraModeUvBits[mode];
+
+        if (av1_is_directional_mode(mode)) {
+            const int32_t max_angle_delta = MAX_ANGLE_DELTA;
+            const int32_t delta = 0;
+            bitCost += write_uniform_cost(2 * max_angle_delta + 1, max_angle_delta + delta);
+        }
+
+        CostType cost = sse + m_rdLambda * bitCost;
+        if (bestCost > cost) {
+            bestCost = cost;
+            bestSse = sse;
+            bestMode = mode;
+            bestDelta = 0;
+        }
+    }
+#endif
+    PredMode oldBest = bestMode;
+#if 0
+    //predict CFL from best luma prediction
+    alignas(32) PixType predCFL[32 * 32 * 2];
+    if (m_par->cflFlag && bestLuma && is_cfl_allowed) { //CFL allowed
+        alignas(32) uint16_t chromaBuf[32 * 32];
+        alignas(32) int16_t chromaAc[32 * 32];
+        const int width = bw << 2;
+        const int height = bh << 2;
+        const int sz = width * height;
+
+        //subsample luma to chroma
+#if 0
+        cfl_luma_subsampling_420_lbd_c((uint8_t*)bestLuma, lumaStride, chromaBuf, width << 1, height << 1); //luma size
+        //cfl_luma_subsampling_420_lbd_avx2((uint8_t*)bestLuma, lumaStride, chromaBuf, width << 1, height << 1);
+#else
+        if (sizeof(PixType) == 1)
+            AV1PP::cfl_subsample_420_u8_fptr_arr[max_txsize_lookup[bszLuma]]((const uint8_t*)bestLuma, lumaStride, chromaBuf);
+        else
+            AV1PP::cfl_subsample_420_u16_fptr_arr[max_txsize_lookup[bszLuma]]((const uint16_t*)bestLuma, lumaStride, chromaBuf);
+#endif
+#if 0
+        int num_pel_log2 = get_msb(sz);
+        int round_offset = ((sz) >> 1);
+        subtract_average_c(chromaBuf, chromaAc, width, height, round_offset, num_pel_log2);
+        //subtract_average_avx2(chromaBuf, chromaAc, width, height, round_offset, num_pel_log2);
+#else
+        AV1PP::cfl_subtract_average_fptr_arr[txSize](chromaBuf, chromaAc);
+#endif
+
+        int best_alpha_u = 0;
+        int best_alpha_v = 0;
+        int best_sign = 0;
+
+        //find max abs ac value to reduce number of test cases
+        //max width, height = 16 for chroma
+        const int maxPix = (256 << m_par->bitDepthChromaShift) - 1;
+        const CostType modeCost = m_rdLambda * intraModeUvBits[UV_CFL_PRED];
+
+        CostType bestCostUV[2] = { FLT_MAX, FLT_MAX };
+        int bestAlphaUV[2] = { 0,0 };
+        int bestSignUV[2] = { CFL_SIGN_ZERO, CFL_SIGN_ZERO };
+
+        //First find best value for alpha = 0
+        int costU, costV;
+        AV1PP::sse_p64_pw_uv(srcSb, m_predIntraAll + bestMode * size * 2, log2w + 1, log2w, costU, costV);
+        bestCostUV[0] = costU + m_rdLambda * bc.cflCost[0][0][0];
+        bestCostUV[1] = costV + m_rdLambda * bc.cflCost[0][1][0];
+
+        for (int alpha = 0; alpha < CFL_ALPHABET_SIZE; alpha++) {
+            for (int sign = CFL_SIGN_NEG; sign < CFL_SIGNS; sign++) {
+
+                int16_t alpha_q3 = (sign == CFL_SIGN_POS) ? alpha + 1 : -alpha - 1;
+
+                AV1PP::cfl_predict_nv12_u8_fptr_arr[txSize](chromaAc, (uint8_t*)predCFL, widthSb << 1, m_predIntraAll[0], m_predIntraAll[1], alpha_q3, m_par->bitDepthChromaShift + 8);
+#if 0
+                alignas(32) PixType predCFLT[32 * 32 * 2];
+                int16_t* acPtr = chromaAc;
+                PixType*  cfl = predCFLT;
+
+                //prediction
+                const PixType dcU = m_predIntraAll[0]; //dc the same for all pixels
+                const PixType dcV = m_predIntraAll[1];
+
+                for (int j = 0; j < height; j++) {
+                    for (int i = 0; i < (width << 1); i += 2) {
+                        const int scaled_luma_q6 = alpha_q3 * acPtr[i >> 1];
+                        const int val = scaled_luma_q6 < 0 ? -(((-scaled_luma_q6) + (1 << 5)) >> 6) : (scaled_luma_q6 + (1 << 5)) >> 6;
+                        cfl[i] = PixType(std::min(std::max(val + dcU, 0), maxPix)); //add U DC pred
+                        cfl[i + 1] = PixType(std::min(std::max(val + dcV, 0), maxPix)); //add V DC pred
+                    }
+                    cfl += widthSb << 1;
+                    acPtr += 32;
+                }
+#endif
+
+                int costU, costV;
+                AV1PP::sse_p64_pw_uv(srcSb, predCFL, log2w + 1, log2w, costU, costV);
+                CostType cost[2];
+                int joint_sign_u = sign * CFL_SIGNS + 0 - 1;
+                int joint_sign_v = 0 * CFL_SIGNS + sign - 1;
+
+                cost[0] = costU + m_rdLambda * bc.cflCost[joint_sign_u][0][alpha];
+                cost[1] = costV + m_rdLambda * bc.cflCost[joint_sign_v][1][alpha];
+                for (int i = 0; i < 2; i++) {
+                    if (bestCostUV[i] > cost[i]) {
+                        bestCostUV[i] = cost[i];
+                        bestAlphaUV[i] = 0;
+                        bestSignUV[i] = sign;
+                    }
+                }
+            }
+        }
+        //exclude both sings = 0
+        if (bestSignUV[0] != 0 && bestSignUV[1] != 0) {
+            int joint_sign = bestSignUV[0] * CFL_SIGNS + bestSignUV[1] - 1;
+            CostType cost = bestCostUV[0] + bestCostUV[1] + modeCost +
+                m_rdLambda * (bc.cflCost[joint_sign][0][bestAlphaUV[0]] + bc.cflCost[joint_sign][1][bestAlphaUV[1]]);
+            if (cost < bestCost) {
+                CFL_params* cflp = m_currFrame->m_fenc->m_cfl + (miCol + miRow * (m_par->PicWidthInCtbs << 3));
+                cflp->joint_sign = joint_sign;
+                cflp->alpha_u = bestAlphaUV[0];
+                cflp->alpha_v = bestAlphaUV[1];
+
+                int16_t* acPtr = chromaAc;
+                PixType*  cfl = predCFL;
+
+                //prediction
+                int16_t alpha_q3_u = bestSignUV[0] == CFL_SIGN_ZERO ? 0 : (bestSignUV[0] == CFL_SIGN_POS) ? bestAlphaUV[0] + 1 : -bestAlphaUV[0] - 1;
+                int16_t alpha_q3_v = bestSignUV[1] == CFL_SIGN_ZERO ? 0 : (bestSignUV[1] == CFL_SIGN_POS) ? bestAlphaUV[1] + 1 : -bestAlphaUV[1] - 1;
+
+                const PixType dcU = m_predIntraAll[0]; //dc the same for all pixels
+                const PixType dcV = m_predIntraAll[1];
+
+                for (int j = 0; j < height; j++) {
+                    for (int i = 0; i < (width << 1); i += 2) {
+                        const auto lumaAc = acPtr[i >> 1];
+                        int scaled_luma_q6_u = alpha_q3_u * lumaAc;
+                        const int val_u = scaled_luma_q6_u < 0 ? -(((-scaled_luma_q6_u) + (1 << 5)) >> 6) : (scaled_luma_q6_u + (1 << 5)) >> 6;
+                        cfl[i] = PixType(std::min(std::max(val_u + dcU, 0), maxPix)); //add DC pred
+                        const auto scaled_luma_q6_v = alpha_q3_v * lumaAc;
+                        const int val_v = scaled_luma_q6_v < 0 ? -(((-scaled_luma_q6_v) + (1 << 5)) >> 6) : (scaled_luma_q6_v + (1 << 5)) >> 6;
+                        cfl[i + 1] = PixType(std::min(std::max(val_v + dcV, 0), maxPix)); //add DC pred
+                    }
+                    cfl += widthSb << 1;
+                    acPtr += 32;
+                }
+                int costU, costV;
+                AV1PP::sse_p64_pw_uv(srcSb, predCFL, log2w + 1, log2w, costU, costV);
+
+                bestCost = cost;
+                bestDelta = 0;
+                bestMode = UV_CFL_PRED;
+                bestSse = costU + costV;
+            }
+        }
+    }
+#endif
+
+
+#if 0
+    // second pass
+    if (av1_is_directional_mode(oldBest)) {
+        PredMode mode = oldBest;
+        for (int32_t angleDelta = 1; angleDelta <= 3; angleDelta++) {
+            for (int32_t i = 0; i < 2; i++) {
+                const int32_t delta = (1 - 2 * i) * angleDelta;
+                AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll10bit, widthSb * 2, log2w, 0, 0, mode, delta, 0, 0);
+                const int32_t sse = AV1PP::sse_p64_pw(srcSb, m_predIntraAll10bit, log2w + 1, log2w);
+                if (sse > bestCost) continue;
+                int32_t bitCost = intraModeUvBits[mode];
+                bitCost += write_uniform_cost(2 * MAX_ANGLE_DELTA + 1, MAX_ANGLE_DELTA + delta);
+
+                const CostType cost = sse + m_rdLambda * bitCost;
+                if (bestCost > cost) {
+                    bestCost = cost;
+                    bestDelta = delta;
+                    bestMode = oldBest;
+                }
+            }
+        }
+    }
+#endif
+
+    // recalc
+    if (bestDelta)
+        AV1PP::predict_intra_nv12_av1(pt, pl, m_predIntraAll10bit, widthSb * 2, log2w, 0, 0, bestMode, bestDelta, 0, 0);
+
+    mi->angle_delta_uv = bestDelta + MAX_ANGLE_DELTA;
+
+    const int32_t isDirectionalMode = av1_is_directional_mode(bestMode);
+    const int32_t angle = mode_to_angle_map[bestMode] + (mi->angle_delta_uv - MAX_ANGLE_DELTA) * ANGLE_STEP;
+
+    int32_t width = 4 << txSize;
+    int32_t step = 1 << txSize;
+    int32_t sse = 0;
+    int32_t totalEob = 0;
+    uint32_t coefBits = 0;
+    int32_t haveTop = haveTop_;
+    int16_t *coefOriginU = (int16_t *)vp9scratchpad.varTxCoefs;
+    int16_t *coefOriginV = coefOriginU + 32 * 32;
+
+#if 0
+    if (bestMode == UV_CFL_PRED) {
+        PixType *rec = recSb;
+        PixType *src = srcSb;
+        const int height = bh << 2;
+
+        int32_t blockIdx = h265_scan_r2z4[rasterIdx];
+        int32_t offset = blockIdx << (LOG2_MIN_TU_SIZE << 1);
+        offset >>= 2; // TODO: 4:2:0 only
+        CoeffsType *residU = vp9scratchpad.diffU + offset;
+        CoeffsType *residV = vp9scratchpad.diffV + offset;
+        CoeffsType *coeffU = m_coeffWorkU + offset;
+        CoeffsType *coeffV = m_coeffWorkV + offset;
+
+        //copy prediction to reconstruct
+        CopyNxM(predCFL, widthSb << 1, rec, m_pitchRecChroma, widthSb << 1, height);
+
+        //int32_t sseZero = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
+        AV1PP::diff_nv12(src, SRC_PITCH, predCFL, widthSb << 1, residU, residV, width, width, txSize);
+
+        int32_t txType = GetTxTypeAV1(PLANE_TYPE_UV, txSize, /*mi->modeUV*/bestMode, 0/*fake*/);
+
+#ifdef ADAPTIVE_DEADZONE
+        AV1PP::ftransform_av1(residU, coefOriginU, width, txSize, /*DCT_DCT*/txType);
+        AV1PP::ftransform_av1(residV, coefOriginV, width, txSize, /*DCT_DCT*/txType);
+        int32_t eobU = AV1PP::quant(coefOriginU, coeffU, m_aqparamUv[0], txSize);
+        int32_t eobV = AV1PP::quant(coefOriginV, coeffV, m_aqparamUv[1], txSize);
+        if (eobU) {
+            AV1PP::dequant(coeffU, residU, m_aqparamUv[0], txSize);
+            adaptDz(coefOriginU, residU, m_aqparamUv[0], txSize, &m_roundFAdjUv[0][0], eobU);
+        }
+        if (eobV) {
+            AV1PP::dequant(coeffV, residV, m_aqparamUv[1], txSize);
+            adaptDz(coefOriginV, residV, m_aqparamUv[1], txSize, &m_roundFAdjUv[1][0], eobV);
+        }
+#else
+        AV1PP::ftransform_av1(residU, residU, width, txSize, /*DCT_DCT*/txType);
+        AV1PP::ftransform_av1(residV, residV, width, txSize, /*DCT_DCT*/txType);
+        int32_t eobU = AV1PP::quant_dequant(residU, coeffU, m_aqparamUv[0], txSize);
+        int32_t eobV = AV1PP::quant_dequant(residV, coeffV, m_aqparamUv[1], txSize);
+#endif
+
+        uint8_t *actxU = m_contexts.aboveNonzero[1] + x4 + x;
+        uint8_t *actxV = m_contexts.aboveNonzero[2] + x4 + x;
+        uint8_t *lctxU = m_contexts.leftNonzero[1] + y4 + y;
+        uint8_t *lctxV = m_contexts.leftNonzero[2] + y4 + y;
+        const int32_t txbSkipCtxU = GetTxbSkipCtx(bsz, txSize, 1, actxU, lctxU);
+        const int32_t txbSkipCtxV = GetTxbSkipCtx(bsz, txSize, 1, actxV, lctxV);
+
+        uint32_t txBits = 0;
+        if (eobU) {
+            AV1PP::itransform_av1(residU, residU, width, txSize, txType);
+            int32_t culLevel;
+            txBits += EstimateCoefsAv1(cbc, txbSkipCtxU, eobU, coeffU, &culLevel);
+            SetCulLevel(actxU, lctxU, (uint8_t)culLevel, txSize);
+        }
+        else {
+            txBits += cbc.txbSkip[txbSkipCtxU][1];
+            SetCulLevel(actxU, lctxU, 0, txSize);
+        }
+        if (eobV) {
+            AV1PP::itransform_av1(residV, residV, width, txSize, txType);
+            int32_t culLevel;
+            txBits += EstimateCoefsAv1(cbc, txbSkipCtxV, eobV, coeffV, &culLevel);
+            SetCulLevel(actxV, lctxV, (uint8_t)culLevel, txSize);
+        }
+        else {
+            txBits += cbc.txbSkip[txbSkipCtxV][1];
+            SetCulLevel(actxV, lctxV, 0, txSize);
+        }
+
+        if (eobU | eobV) {
+            CoeffsType *residU_ = (eobU ? residU : coeffU); // if cbf==0 coeffWork contains zeroes
+            CoeffsType *residV_ = (eobV ? residV : coeffV); // if cbf==0 coeffWork contains zeroes
+            AV1PP::adds_nv12(rec, m_pitchRecChroma, rec, m_pitchRecChroma, residU_, residV_, width, width);
+        }
+        int32_t txSse = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
+
+        totalEob += eobU;
+        totalEob += eobV;
+        coefBits += txBits;
+        sse += txSse;
+
+    }
+    else
+#endif
+    {
+        for (y = 0; y < num4x4h; y += step) {
+            uint16_t *rec = recSb + (y << 2) * m_pitchRecLuma10;
+            uint16_t *src = srcSb + (y << 2) * SRC_PITCH;
             int32_t haveLeft = haveLeft_;
-            for (int32_t x = 0; x < num4x4w; x += step, rec += width<<1, src += width<<1) {
-                assert(rasterIdx + (y<<1) * 16 + (x<<1) < 256);
-                int32_t blockIdx = h265_scan_r2z4[rasterIdx + (y<<1) * 16 + (x<<1)];
-                int32_t offset = blockIdx<<(LOG2_MIN_TU_SIZE<<1);
+            for (x = 0; x < num4x4w; x += step, rec += width << 1, src += width << 1) {
+                assert(rasterIdx + (y << 1) * 16 + (x << 1) < 256);
+                int32_t blockIdx = h265_scan_r2z4[rasterIdx + (y << 1) * 16 + (x << 1)];
+                int32_t offset = blockIdx << (LOG2_MIN_TU_SIZE << 1);
                 offset >>= 2; // TODO: 4:2:0 only
-                CoeffsType *residU = m_residualsU + offset;
-                CoeffsType *residV = m_residualsV + offset;
+                CoeffsType *residU = vp9scratchpad.diffU + offset;
+                CoeffsType *residV = vp9scratchpad.diffV + offset;
                 CoeffsType *coeffU = m_coeffWorkU + offset;
                 CoeffsType *coeffV = m_coeffWorkV + offset;
-                int32_t notOnRight = x + step < num4x4w;
-                AV1PP::GetPredPelsLuma((ChromaPixType*)rec, m_pitchRecChroma>>1, (ChromaPixType*)predPels, width, halfRangeM1, halfRangeP1, haveTop, haveLeft, notOnRight);
-                AV1PP::predict_intra_nv12_vp9(predPels, rec, m_pitchRecChroma, txSize, haveLeft, haveTop, mode);
-                int32_t sseZero = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
-                AV1PP::diff_nv12(src, SRC_PITCH, rec, m_pitchRecChroma, residU, residV, width, width, txSize);
-                AV1PP::ftransform_av1(residU, residU, width, txSize, DCT_DCT);
-                AV1PP::ftransform_av1(residV, residV, width, txSize, DCT_DCT);
+
+                haveRight = (miCol + ((x + txw)/* >> 1*/)) < miColEnd;
+                haveTopRight = haveTop && haveRight && HaveTopRight(log2w + 1, miRow, miCol, txSize + 1, y, x);
+                // Distance between the right edge of this prediction block to the frame right edge
+                xr = (distToRightEdge >> 1) + (wpx - (x << 2) - txwpx);
+                // Distance between the bottom edge of this prediction block to the frame bottom edge
+                yd = (distToBottomEdge >> 1) + (hpx - (y << 2) - txhpx);
+                haveBottom = yd > 0;
+                haveBottomLeft = haveLeft && haveBottom && HaveBottomLeft(log2w + 1, miRow, miCol, txSize + 1, y, x);
+                pixTop = haveTop ? std::min(txwpx, xr + txwpx) : 0;
+                pixLeft = haveLeft ? std::min(txhpx, yd + txhpx) : 0;
+                pixTopRight = haveTopRight ? std::min(txwpx, xr) : 0;
+                pixBottomLeft = haveBottomLeft ? std::min(txhpx, yd) : 0;
+                AV1PP::GetPredPelsAV1<PLANE_TYPE_UV>((ChromaPixType*)rec, m_pitchRecChroma10 >> 1, predPels.top, predPels.left, width, haveTop, haveLeft, pixTopRight, pixBottomLeft);
+
+                int32_t upTop = 0;
+                int32_t upLeft = 0;
+                if (m_par->enableIntraEdgeFilter && isDirectionalMode) {
+                    const int32_t need_top = angle < 180;
+                    const int32_t need_left = angle > 90;
+                    const int32_t need_right = angle < 90;
+                    const int32_t need_bottom = angle > 180;
+                    const int32_t filtType = get_filt_type(above, left, PLANE_TYPE_UV);
+                    if (angle != 90 && angle != 180) {
+                        if (need_top && need_left && (txwpx + txhpx >= 24))
+                            av1_filter_intra_edge_corner_nv12(pt, pl);
+
+                        if (haveTop) {
+                            const int32_t strength = intra_edge_filter_strength(txwpx, txhpx, angle - 90, filtType);
+                            const int32_t sz = 1 + pixTop + (need_right ? txhpx : 0);
+                            av1_filter_intra_edge_nv12_c(pt - 2, sz, strength);
+                        }
+                        if (haveLeft) {
+                            const int32_t strength = intra_edge_filter_strength(txwpx, txhpx, angle - 180, filtType);
+                            const int32_t sz = 1 + pixLeft + (need_bottom ? txwpx : 0);
+                            av1_filter_intra_edge_nv12_c(pl - 2, sz, strength);
+                        }
+                    }
+                    upTop = use_intra_edge_upsample(txwpx, txhpx, angle - 90, filtType);
+                    if (need_top && upTop) {
+                        const int32_t sz = txwpx + (need_right ? txhpx : 0);
+                        av1_upsample_intra_edge_nv12_c(pt, sz);
+                    }
+                    upLeft = use_intra_edge_upsample(txwpx, txhpx, angle - 180, filtType);
+                    if (need_left && upLeft) {
+                        const int32_t sz = txhpx + (need_bottom ? txwpx : 0);
+                        av1_upsample_intra_edge_nv12_c(pl, sz);
+                    }
+                }
+
+                const int32_t delta = mi->angle_delta_uv - MAX_ANGLE_DELTA;
+                AV1PP::predict_intra_nv12_av1(pt, pl, rec, m_pitchRecChroma10, txSize, haveLeft, haveTop, bestMode, delta, upTop, upLeft);
+
+                //int32_t sseZero = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
+                AV1PP::diff_nv12(src, SRC_PITCH, rec, m_pitchRecChroma10, residU, residV, width, width, txSize);
+
+                int32_t txType = GetTxTypeAV1(PLANE_TYPE_UV, txSize, /*mi->modeUV*/bestMode, 0/*fake*/);
+
+#ifdef ADAPTIVE_DEADZONE
+                AV1PP::ftransform_av1(residU, coefOriginU, width, txSize, /*DCT_DCT*/txType);
+                AV1PP::ftransform_av1(residV, coefOriginV, width, txSize, /*DCT_DCT*/txType);
+
+
+                //m_aqparamUv[0] = m_par->qparamUv[m_chromaQp];
+                //m_aqparamUv[1] = m_par->qparamUv[m_chromaQp];
+
+                int32_t eobU = AV1PP::quant(coefOriginU, coeffU, /*m_aqparamUv[0]*/m_par->qparamUv10[m_chromaQp], txSize);
+                int32_t eobV = AV1PP::quant(coefOriginV, coeffV, /*m_aqparamUv[1]*/m_par->qparamUv10[m_chromaQp], txSize);
+                if (eobU) {
+                    AV1PP::dequant(coeffU, residU, /*m_aqparamUv[0]*/m_par->qparamUv10[m_chromaQp], txSize, 10);
+                    adaptDz(coefOriginU, residU, m_aqparamUv[0], txSize, &m_roundFAdjUv[0][0], eobU);
+                }
+                if (eobV) {
+                    AV1PP::dequant(coeffV, residV, /*m_aqparamUv[1]*/m_par->qparamUv10[m_chromaQp], txSize, 10);
+                    adaptDz(coefOriginV, residV, m_aqparamUv[1], txSize, &m_roundFAdjUv[1][0], eobV);
+                }
+#else
+                AV1PP::ftransform_av1(residU, residU, width, txSize, /*DCT_DCT*/txType);
+                AV1PP::ftransform_av1(residV, residV, width, txSize, /*DCT_DCT*/txType);
                 int32_t eobU = AV1PP::quant_dequant(residU, coeffU, m_aqparamUv[0], txSize);
                 int32_t eobV = AV1PP::quant_dequant(residV, coeffV, m_aqparamUv[1], txSize);
+#endif
 
-                int32_t dcCtxU = GetDcCtx(m_contexts.aboveNonzero[1]+x4+x, m_contexts.leftNonzero[1]+y4+y, step);
-                int32_t dcCtxV = GetDcCtx(m_contexts.aboveNonzero[2]+x4+x, m_contexts.leftNonzero[2]+y4+y, step);
-
-                uint32_t bitsZeroU = cbc.moreCoef[0][dcCtxU][0];
-                uint32_t bitsZeroV = cbc.moreCoef[0][dcCtxV][0];
-                uint32_t bitsZero = bitsZeroU + bitsZeroV;
+                uint8_t *actxU = m_contexts.aboveNonzero[1] + x4 + x;
+                uint8_t *actxV = m_contexts.aboveNonzero[2] + x4 + x;
+                uint8_t *lctxU = m_contexts.leftNonzero[1] + y4 + y;
+                uint8_t *lctxV = m_contexts.leftNonzero[2] + y4 + y;
+                const int32_t txbSkipCtxU = GetTxbSkipCtx(bsz, txSize, 1, actxU, lctxU);
+                const int32_t txbSkipCtxV = GetTxbSkipCtx(bsz, txSize, 1, actxV, lctxV);
 
                 uint32_t txBits = 0;
                 if (eobU) {
-                    AV1PP::itransform_av1(residU, residU, width, txSize, DCT_DCT);
-                    txBits += EstimateCoefs(m_par->FastCoeffCost, cbc, coeffU, scan, eobU, dcCtxU, DCT_DCT);
-                    small_memset1(m_contexts.aboveNonzero[1]+x4+x, step);
-                    small_memset1(m_contexts.leftNonzero[1]+y4+y, step);
-                } else {
-                    txBits += bitsZeroU;
-                    small_memset0(m_contexts.aboveNonzero[1]+x4+x, step);
-                    small_memset0(m_contexts.leftNonzero[1]+y4+y, step);
+                    AV1PP::itransform_av1(residU, residU, width, txSize, txType, 10);
+                    int32_t culLevel;
+                    txBits += EstimateCoefsAv1(cbc, txbSkipCtxU, eobU, coeffU, &culLevel);
+                    SetCulLevel(actxU, lctxU, (uint8_t)culLevel, txSize);
+                }
+                else {
+                    txBits += cbc.txbSkip[txbSkipCtxU][1];
+                    SetCulLevel(actxU, lctxU, 0, txSize);
                 }
                 if (eobV) {
-                    AV1PP::itransform_av1(residV, residV, width, txSize, DCT_DCT);
-                    txBits += EstimateCoefs(m_par->FastCoeffCost, cbc, coeffV, scan, eobV, dcCtxV, DCT_DCT);
-                    small_memset1(m_contexts.aboveNonzero[2]+x4+x, step);
-                    small_memset1(m_contexts.leftNonzero[2]+y4+y, step);
-                } else {
-                    txBits += bitsZeroV;
-                    small_memset0(m_contexts.aboveNonzero[2]+x4+x, step);
-                    small_memset0(m_contexts.leftNonzero[2]+y4+y, step);
+                    AV1PP::itransform_av1(residV, residV, width, txSize, txType, 10);
+                    int32_t culLevel;
+                    txBits += EstimateCoefsAv1(cbc, txbSkipCtxV, eobV, coeffV, &culLevel);
+                    SetCulLevel(actxV, lctxV, (uint8_t)culLevel, txSize);
+                }
+                else {
+                    txBits += cbc.txbSkip[txbSkipCtxV][1];
+                    SetCulLevel(actxV, lctxV, 0, txSize);
                 }
 
                 if (eobU | eobV) {
                     CoeffsType *residU_ = (eobU ? residU : coeffU); // if cbf==0 coeffWork contains zeroes
                     CoeffsType *residV_ = (eobV ? residV : coeffV); // if cbf==0 coeffWork contains zeroes
-                    AV1PP::adds_nv12(rec, m_pitchRecChroma, rec, m_pitchRecChroma, residU_, residV_, width, width);
+                    AV1PP::adds_nv12(rec, m_pitchRecChroma10, rec, m_pitchRecChroma10, residU_, residV_, width, width);
                 }
-                int32_t txSse = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
-
-                if ((eobU || eobV) && sseZero + m_rdLambda * bitsZero < txSse + m_rdLambda * txBits) {
-                    eobU = 0;
-                    eobV = 0;
-                    ZeroCoeffs(coeffU, 16 << (txSize << 1)); // zero coeffs
-                    ZeroCoeffs(coeffV, 16 << (txSize << 1)); // zero coeffs
-                    AV1PP::predict_intra_nv12_vp9(predPels, rec, m_pitchRecChroma, txSize, haveLeft, haveTop, mode); // re-predict intra
-                    txSse = sseZero;
-                    txBits = bitsZero;
-                    small_memset0(m_contexts.aboveNonzero[1]+x4+x, step);
-                    small_memset0(m_contexts.aboveNonzero[2]+x4+x, step);
-                    small_memset0(m_contexts.leftNonzero[1]+y4+y, step);
-                    small_memset0(m_contexts.leftNonzero[2]+y4+y, step);
-                }
+                int32_t txSse = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma10, txSize + 1, txSize);
 
                 totalEob += eobU;
                 totalEob += eobV;
@@ -2555,89 +3217,241 @@ RdCost AV1CU<PixType>::CheckIntraChroma(int32_t absPartIdx, int32_t depth, Parti
             }
             haveTop = 1;
         }
+    }
 
-        uint32_t modeBits = intraModeUvBits[mode];
-        CostType cost = (m_data[absPartIdx].skip && totalEob==0)
-            ? sse + m_rdLambda * (modeBits + skipBits[1])
-            : sse + m_rdLambda * (modeBits + skipBits[0] + coefBits);
+    uint32_t modeBits = intraModeUvBits[bestMode];
 
-        fprintf_trace_cost(stderr, "intra chroma: poc=%d ctb=%2d idx=%3d bsz=%d mode=%d "
-            "sse=%6d modeBits=%4u eob=%d coefBits=%-6u cost=%.0f\n", m_currFrame->m_frameOrder, m_ctbAddr, absPartIdx, bsz, mode,
-            sse, modeBits, totalEob, coefBits, cost);
+    if (av1_is_directional_mode(bestMode)) {
+        int32_t delta = mi->angle_delta_uv - MAX_ANGLE_DELTA;
+        int32_t max_angle_delta = MAX_ANGLE_DELTA;
+        modeBits += write_uniform_cost(2 * max_angle_delta + 1, max_angle_delta + delta);
+    }
 
-        if (bestCost > cost) {
-            bestCost = cost;
-            bestRdCost.sse = sse;
-            bestRdCost.coefBits = coefBits;
-            bestRdCost.modeBits = modeBits;
-            bestMode = mode;
-            bestEob = totalEob;
-            if (!(bestMode == INTRA_MODES-1)) { // best is not last checked
-                bestCtx = m_contexts;
-                CopyNxM(recSb, m_pitchRecChroma, bestRec, num4x4w<<3, num4x4h<<2);
-                if (partition == PARTITION_VERT) {
-                    int32_t half = num4x4<<3;
-                    CopyCoeffs(m_coeffWorkU+4*absPartIdx, bestCoefsU, half);
-                    CopyCoeffs(m_coeffWorkV+4*absPartIdx, bestCoefsV, half);
-                    CopyCoeffs(m_coeffWorkU+4*absPartIdx+2*half, bestCoefsU+half, half);
-                    CopyCoeffs(m_coeffWorkV+4*absPartIdx+2*half, bestCoefsV+half, half);
-                } else {
-                    CopyCoeffs(m_coeffWorkU+4*absPartIdx, bestCoefsU, num4x4<<4);
-                    CopyCoeffs(m_coeffWorkV+4*absPartIdx, bestCoefsV, num4x4<<4);
-                }
+    CostType cost = (mi->skip && totalEob == 0)
+        ? sse + m_rdLambda * (modeBits + skipBits[1])
+        : sse + m_rdLambda * (modeBits + skipBits[0] + coefBits);
+
+#if 0 //CHROMA_PALETTE
+    const int32_t allow_screen_content_tool_palette = m_currFrame->m_allowPalette && m_currFrame->m_isRef;
+    PaletteInfo *pi = &m_currFrame->m_fenc->m_Palette8x8[miCol + miRow * m_par->miPitch];
+    pi->palette_size_uv = 0;
+    uint8_t *map_src{ nullptr };
+
+    uint8_t palette[2 * MAX_PALETTE];
+    uint16_t palette_size = 0;
+    uint32_t palette_bits = 0;
+    uint32_t map_bits_est = 0;
+    CostType palette_cost = FLT_MAX;
+    bool     palette_has_dist = false;
+
+    if (mi->sbType >= BLOCK_8X8
+        && block_size_wide[mi->sbType] <= 32
+        && block_size_high[mi->sbType] <= 32
+        && allow_screen_content_tool_palette// && m_currFrame->IsIntra()
+        //&& pi->palette_size_y > 1 && mi->mode == DC_PRED  //use palette only when Luma has palette
+        ) {
+
+        // CHECK Palette Mode
+        int32_t sbx = (x4 << 2) >> m_par->subsamplingX;
+        int32_t sby = (y4 << 2) >> m_par->subsamplingY;
+        const int sbh = bh << 2;
+        const int sbw = bw << 2;
+
+        uint8_t *color_map = &m_paletteMapUV[depth][sby*MAX_CU_SIZE + sbx];
+        map_src = color_map;
+
+        // CHECK Palette Mode
+        palette_size = GetColorCountUV(srcSb, sbw, sbw, palette, m_par->bitDepthChroma, m_rdLambda, pi, color_map, map_bits_est, palette_has_dist);
+
+        if (palette_size > 1 && palette_size <= MAX_PALETTE && !palette_has_dist) {
+            const int32_t width = sbw;
+
+            uint32_t ctxBS = num_pels_log2_lookup[mi->sbType] - num_pels_log2_lookup[BLOCK_8X8];
+
+            uint8_t cache[2 * MAX_PALETTE];
+            uint8_t colors_xmit[MAX_PALETTE];
+            palette_bits += bc.HasPaletteUV[pi->palette_size_y > 0][palette_size > 0];
+            palette_bits += bc.PaletteSizeUV[ctxBS][palette_size - 2];
+
+            //U channel
+            uint32_t cache_size = GetPaletteCache(miRow, false, miCol, cache);
+            uint32_t index_bits = 0;
+            uint32_t colors_xmit_size = GetPaletteCacheIndicesCost(palette, palette_size, cache, cache_size, colors_xmit, index_bits);
+            palette_bits += index_bits * 512; // cache index used unused bits
+            palette_bits += 512 * GetPaletteDeltaCost(colors_xmit, colors_xmit_size, m_par->bitDepthChroma, 1);
+            // V channel palette color cost.
+            int zeroCount = 0, minBits = 0;
+
+            int bits = GetPaletteDeltaBitsV(&palette[MAX_PALETTE], palette_size, m_par->bitDepthChroma, &zeroCount, &minBits);
+            const int bitsDelta = 2 + m_par->bitDepthChroma + (bits + 1) * (palette_size - 1) - zeroCount;
+            const int bitsRaw = m_par->bitDepthChroma * palette_size;
+            palette_bits += (1 + std::min(bitsDelta, bitsRaw)) * 512;
+
+            //uint32_t map_bits = GetPaletteTokensCost(bc, srcSb, width, width, palette, palette_size, color_map);
+            palette_bits += map_bits_est;
+
+            palette_cost = m_rdLambda * (intraModeUvBits[DC_PRED] + palette_bits) + pi->sseUV; // +sse when distortion
+
+            if (cost > 0.75*palette_cost && cost < 1.25*palette_cost) {
+                // get better estimate
+                palette_bits -= map_bits_est;
+                uint32_t map_bits = GetPaletteTokensCostUV(bc, srcSb, width, width, palette, palette_size, map_src);
+                palette_bits += map_bits;
+                palette_cost = m_rdLambda * (intraModeUvBits[DC_PRED] + palette_bits) + pi->sseUV;
             }
         }
     }
 
-    if (!(bestMode == INTRA_MODES-1)) { // best is not last checked
-        m_contexts = bestCtx;
-        CopyNxM(bestRec, num4x4w<<3, recSb, m_pitchRecChroma, num4x4w<<3, num4x4h<<2);
-        if (partition == PARTITION_VERT) {
-            int32_t half = num4x4<<3;
-            CopyCoeffs(bestCoefsU, m_coeffWorkU+4*absPartIdx, half);
-            CopyCoeffs(bestCoefsV, m_coeffWorkV+4*absPartIdx, half);
-            CopyCoeffs(bestCoefsU+half, m_coeffWorkU+4*absPartIdx+2*half, half);
-            CopyCoeffs(bestCoefsV+half, m_coeffWorkV+4*absPartIdx+2*half, half);
-        } else {
-            CopyCoeffs(bestCoefsU, m_coeffWorkU+4*absPartIdx, num4x4<<4);
-            CopyCoeffs(bestCoefsV, m_coeffWorkV+4*absPartIdx, num4x4<<4);
+    if (cost >= palette_cost && palette_size > 0 && !palette_has_dist) {
+        const int sbh = bh << 2;
+        const int sbw = bw << 2;
+        PixType *rec = recSb;
+        PixType *src = srcSb;
+
+        pi->palette_size_uv = (uint8_t)palette_size;
+        pi->palette_bits += palette_bits;
+        for (int k = 0; k < palette_size; k++) {
+            pi->palette_u[k] = palette[k];
+            pi->palette_v[k] = palette[MAX_PALETTE + k];
         }
+
+        int32_t blockIdx = h265_scan_r2z4[rasterIdx];
+        int32_t offset = blockIdx << (LOG2_MIN_TU_SIZE << 1);
+        offset >>= 2; // TODO: 4:2:0 only
+        CoeffsType *residU = vp9scratchpad.diffU + offset;
+        CoeffsType *residV = vp9scratchpad.diffV + offset;
+        CoeffsType *coeffU = m_coeffWorkU + offset;
+        CoeffsType *coeffV = m_coeffWorkV + offset;
+
+
+        const int32_t yc = (miRow << 3) >> m_currFrame->m_par->subsamplingY;
+        const int32_t xc = (miCol << 3) >> m_currFrame->m_par->subsamplingX;
+
+        uint8_t *map_dst = &m_currFrame->m_fenc->m_ColorMapUV[yc*m_currFrame->m_fenc->m_ColorMapUVPitch + xc];
+        CopyNxM_unaligned(map_src, MAX_CU_SIZE, map_dst, m_currFrame->m_fenc->m_ColorMapUVPitch, sbw, sbh);
+
+        uint8_t *actxU = m_contexts.aboveNonzero[1] + x4 + x;
+        uint8_t *actxV = m_contexts.aboveNonzero[2] + x4 + x;
+        uint8_t *lctxU = m_contexts.leftNonzero[1] + y4 + y;
+        uint8_t *lctxV = m_contexts.leftNonzero[2] + y4 + y;
+        const int32_t txbSkipCtxU = GetTxbSkipCtx(bsz, txSize, 1, actxU, lctxU);
+        const int32_t txbSkipCtxV = GetTxbSkipCtx(bsz, txSize, 1, actxV, lctxV);
+
+        int32_t eobU = 0, eobV = 0;
+        uint32_t txBits = 0;
+        int32_t txSse = 0;
+
+        if (pi->palette_size_uv == pi->true_colors_uv && !palette_has_dist) {
+
+            CopyNxM_unaligned(src, SRC_PITCH, rec, m_pitchRecChroma, width << 1, width);
+
+            txBits += cbc.txbSkip[txbSkipCtxU][1];
+            SetCulLevel(actxU, lctxU, 0, txSize);
+            txBits += cbc.txbSkip[txbSkipCtxV][1];
+            SetCulLevel(actxV, lctxV, 0, txSize);
+            txSse = 0;
+            ZeroCoeffs(coeffU, 16 << (txSize << 1)); // zero coeffs
+            ZeroCoeffs(coeffV, 16 << (txSize << 1)); // zero coeffs
+        }
+        else {
+            // Palette Prediction
+            for (int32_t i = 0; i < width; i++) {
+                for (int32_t j = 0; j < width; j++) {
+                    int off = i * m_pitchRecChroma + (j << 1);
+                    int idx = map_src[i * 64 + j];
+                    rec[off] = (uint8_t)pi->palette_u[idx];
+                    rec[off + 1] = (uint8_t)pi->palette_v[idx];
+                }
+            }
+
+            AV1PP::diff_nv12(src, SRC_PITCH, rec, m_pitchRecChroma, residU, residV, width, width, txSize);
+
+            int32_t txType = GetTxTypeAV1(PLANE_TYPE_UV, txSize, /*mi->modeUV*/bestMode, 0/*fake*/);
+
+#ifdef ADAPTIVE_DEADZONE
+            AV1PP::ftransform_av1(residU, coefOriginU, width, txSize, /*DCT_DCT*/txType);
+            AV1PP::ftransform_av1(residV, coefOriginV, width, txSize, /*DCT_DCT*/txType);
+            int32_t eobU = AV1PP::quant(coefOriginU, coeffU, m_aqparamUv[0], txSize);
+            int32_t eobV = AV1PP::quant(coefOriginV, coeffV, m_aqparamUv[1], txSize);
+            if (eobU) {
+                AV1PP::dequant(coeffU, residU, m_aqparamUv[0], txSize);
+                adaptDz(coefOriginU, residU, m_aqparamUv[0], txSize, &m_roundFAdjUv[0][0], eobU);
+            }
+            if (eobV) {
+                AV1PP::dequant(coeffV, residV, m_aqparamUv[1], txSize);
+                adaptDz(coefOriginV, residV, m_aqparamUv[1], txSize, &m_roundFAdjUv[1][0], eobV);
+            }
+#else
+            AV1PP::ftransform_av1(residU, residU, width, txSize, /*DCT_DCT*/txType);
+            AV1PP::ftransform_av1(residV, residV, width, txSize, /*DCT_DCT*/txType);
+            int32_t eobU = AV1PP::quant_dequant(residU, coeffU, m_aqparamUv[0], txSize);
+            int32_t eobV = AV1PP::quant_dequant(residV, coeffV, m_aqparamUv[1], txSize);
+#endif
+
+            if (eobU) {
+                AV1PP::itransform_av1(residU, residU, width, txSize, txType);
+                int32_t culLevel;
+                txBits += EstimateCoefsAv1(cbc, txbSkipCtxU, eobU, coeffU, &culLevel);
+                SetCulLevel(actxU, lctxU, (uint8_t)culLevel, txSize);
+            }
+            else {
+                txBits += cbc.txbSkip[txbSkipCtxU][1];
+                SetCulLevel(actxU, lctxU, 0, txSize);
+            }
+            if (eobV) {
+                AV1PP::itransform_av1(residV, residV, width, txSize, txType);
+                int32_t culLevel;
+                txBits += EstimateCoefsAv1(cbc, txbSkipCtxV, eobV, coeffV, &culLevel);
+                SetCulLevel(actxV, lctxV, (uint8_t)culLevel, txSize);
+            }
+            else {
+                txBits += cbc.txbSkip[txbSkipCtxV][1];
+                SetCulLevel(actxV, lctxV, 0, txSize);
+            }
+
+            if (eobU | eobV) {
+                CoeffsType *residU_ = (eobU ? residU : coeffU); // if cbf==0 coeffWork contains zeroes
+                CoeffsType *residV_ = (eobV ? residV : coeffV); // if cbf==0 coeffWork contains zeroes
+                AV1PP::adds_nv12(rec, m_pitchRecChroma, rec, m_pitchRecChroma, residU_, residV_, width, width);
+            }
+            txSse = AV1PP::sse(src, SRC_PITCH, rec, m_pitchRecChroma, txSize + 1, txSize);
+        }
+
+        totalEob = eobU;
+        totalEob += eobV;
+        coefBits = txBits;
+        sse = txSse;
+        modeBits = palette_bits;
+
+        bestMode = DC_PRED;
     }
+#endif
 
-    int32_t skip = m_data[absPartIdx].skip && bestEob==0;
 
-    m_data[absPartIdx].modeUV = bestMode;
-    m_data[absPartIdx].skip = skip;
+    fprintf_trace_cost(stderr, "intra chroma: poc=%d ctb=%2d idx=%3d bsz=%d mode=%d "
+        "sse=%6d modeBits=%4u eob=%d coefBits=%-6u cost=%.0f\n", m_currFrame->m_frameOrder, m_ctbAddr, absPartIdx, bsz, bestMode,
+        sse, modeBits, totalEob, coefBits, cost);
 
-    if (partition == PARTITION_VERT) {
-        int32_t half = num_4x4_blocks_lookup[MAX(BLOCK_8X8,sbType)]>>1;
-        // cannot use PropagateSubPart because of 4x8, 8x4, 4x4 modes
-        //m_data[absPartIdx+2*half] = m_data[absPartIdx];
-        //PropagateSubPart(m_data+absPartIdx, half);
-        //PropagateSubPart(m_data+absPartIdx+2*half, half);
-        for (int32_t i = 0; i < half; i++) {
-            m_data[absPartIdx+i].skip = skip;
-            m_data[absPartIdx+i].modeUV = bestMode;
-            m_data[absPartIdx+i+2*half].skip = skip;
-            m_data[absPartIdx+i+2*half].modeUV = bestMode;
-        }
-    } else {
-        int32_t num4x4 = num_4x4_blocks_lookup[MAX(BLOCK_8X8,sbType)];
-        // cannot use PropagateSubPart because of 4x8, 8x4, 4x4 modes
-        //PropagateSubPart(m_data+absPartIdx, num4x4);
-        for (int32_t i = 0; i < num4x4; i++) {
-            m_data[absPartIdx+i].skip = skip;
-            m_data[absPartIdx+i].modeUV = bestMode;
-        }
-    }
+    int32_t skip = mi->skip && totalEob == 0;
 
-    return bestRdCost;
+    mi->modeUV = bestMode;
+    mi->skip = (uint8_t)skip;
+#if 0
+    const int32_t num4x4wLuma = block_size_wide_4x4[mi->sbType];
+    const int32_t num4x4hLuma = block_size_high_4x4[mi->sbType];
+    PropagateSubPart(mi, m_par->miPitch, num4x4wLuma >> 1, num4x4hLuma >> 1);
+#endif
+    PropagateSubPart(mi, m_par->miPitch, num4x4w, num4x4h);
+
+    RdCost rd;
+    rd.sse = sse;
+    rd.eob = totalEob;
+    rd.modeBits = modeBits;
+    rd.coefBits = coefBits;
+    return rd;
 }
 
-
-
-template class AV1CU<uint8_t>;
-template class AV1CU<uint16_t>;
+template RdCost AV1CU<uint8_t>::CheckIntraChromaNonRdAv1_10bit(int32_t, int32_t, uint8_t, const uint16_t*, int);
 
 } // namespace
 

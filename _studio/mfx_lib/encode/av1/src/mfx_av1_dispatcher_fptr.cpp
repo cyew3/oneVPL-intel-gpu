@@ -24,25 +24,29 @@
 #include "mfx_av1_dispatcher_fptr.h"
 
 namespace AV1PP {
-    predict_intra_vp9_fptr_t predict_intra_vp9_fptr_arr[4][2][2][10]; // [txSize] [haveLeft] [haveAbove] [mode]
     predict_intra_av1_fptr_t predict_intra_av1_fptr_arr[4][2][2][13]; // [txSize] [haveLeft] [haveAbove] [mode]
-
-    predict_intra_vp9_fptr_t predict_intra_nv12_vp9_fptr_arr[4][2][2][10]; // [txSize] [haveLeft] [haveAbove] [mode]
+    predict_intra_av1_hbd_fptr_t predict_intra_av1_hbd_fptr_arr[4][2][2][13]; // [txSize] [haveLeft] [haveAbove] [mode]
     predict_intra_av1_fptr_t predict_intra_nv12_av1_fptr_arr[4][2][2][13]; // [txSize] [haveLeft] [haveAbove] [mode]
+    predict_intra_av1_hbd_fptr_t predict_intra_nv12_av1_hbd_fptr_arr[4][2][2][13]; // [txSize] [haveLeft] [haveAbove] [mode]
+    predict_intra_palette_fptr_t predict_intra_palette_fptr_arr[4]; // [txSize]
 
     predict_intra_all_fptr_t predict_intra_all_fptr_arr[4][2][2]; // [txSize] [haveLeft] [haveAbove]
     predict_intra_all_fptr_t predict_intra_nv12_all_fptr_arr[4][2][2]; // [txSize] [haveLeft] [haveAbove]
-    pick_intra_nv12_fptr_t pick_intra_nv12_fptr_arr[4][2][2]; // [txSize] [haveLeft] [haveAbove]
 
     ftransform_fptr_t ftransform_vp9_fptr_arr[4][4]; // [txSize] [txType]
-    ftransform_fptr_t ftransform_av1_fptr_arr[4][4]; // [txSize] [txType]
+    ftransform_fptr_t ftransform_av1_fptr_arr[4][10]; // [txSize] [txType]
+    ftransform_hbd_fptr_t ftransform_av1_hbd_fptr_arr[4][10]; // [txSize] [txType]
     ftransform_fptr_t ftransform_fast32x32_fptr;
     itransform_fptr_t itransform_vp9_fptr_arr[4][4]; // [txSize] [txType]
-    itransform_fptr_t itransform_av1_fptr_arr[4][4]; // [txSize] [txType]
+    itransform_fptr_t itransform_av1_fptr_arr[4][10]; // [txSize] [txType]
     itransform_add_fptr_t itransform_add_vp9_fptr_arr[4][4]; // [txSize] [txType]
-    itransform_add_fptr_t itransform_add_av1_fptr_arr[4][4]; // [txSize] [txType]
+    itransform_add_fptr_t itransform_add_av1_fptr_arr[4][10]; // [txSize] [txType]
+    itransform_add_hbd_fptr_t itransform_add_av1_hbd_fptr_arr[4][10]; // [txSize] [txType]
+    itransform_add_hbd_hbd_fptr_t itransform_add_av1_hbd_hbd_fptr_arr[4][10]; // [txSize] [txType]
     quant_fptr_t quant_fptr_arr[4]; // [txSize]
+    quant_hbd_fptr_t quant_hbd_fptr_arr[4]; // [txSize]
     dequant_fptr_t dequant_fptr_arr[4]; // [txSize]
+    dequant_hbd_fptr_t dequant_hbd_fptr_arr[4]; // [txSize]
     quant_dequant_fptr_t quant_dequant_fptr_arr[4]; // [txSize]
     average_fptr_t average_fptr_arr[5]; // [log2(width/4)]
     average_pitch64_fptr_t average_pitch64_fptr_arr[5]; // [log2(width/4)]
@@ -58,11 +62,18 @@ namespace AV1PP {
     interp_av1_first_ref_fptr_t  (*interp_nv12_av1_first_ref_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
     interp_av1_second_ref_fptr_t (*interp_nv12_av1_second_ref_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
     interp_pitch64_av1_single_ref_fptr_t (*interp_pitch64_av1_single_ref_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
+    interp_pitch64_av1_single_ref_hbd_fptr_t(*interp_pitch64_av1_single_ref_hbd_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
     interp_pitch64_av1_first_ref_fptr_t  (*interp_pitch64_av1_first_ref_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
+    interp_pitch64_av1_first_ref_hbd_fptr_t  (*interp_pitch64_av1_first_ref_hbd_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
     interp_pitch64_av1_second_ref_fptr_t (*interp_pitch64_av1_second_ref_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
+    interp_pitch64_av1_second_ref_hbd_fptr_t (*interp_pitch64_av1_second_ref_hbd_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
     interp_pitch64_av1_single_ref_fptr_t (*interp_nv12_pitch64_av1_single_ref_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
+    interp_pitch64_av1_single_ref_hbd_fptr_t(*interp_nv12_pitch64_av1_single_ref_hbd_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
+
     interp_pitch64_av1_first_ref_fptr_t  (*interp_nv12_pitch64_av1_first_ref_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
+    interp_pitch64_av1_first_ref_hbd_fptr_t  (*interp_nv12_pitch64_av1_first_ref_hbd_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
     interp_pitch64_av1_second_ref_fptr_t (*interp_nv12_pitch64_av1_second_ref_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
+    interp_pitch64_av1_second_ref_hbd_fptr_t (*interp_nv12_pitch64_av1_second_ref_hbd_fptr_arr)[2][2]; // [log2(width/4)] [dx!=0] [dy!=0]
     satd_fptr_t satd_4x4_fptr;
     satd_pitch64_fptr_t satd_4x4_pitch64_fptr;
     satd_pitch64_both_fptr_t satd_4x4_pitch64_both_fptr;
@@ -80,48 +91,38 @@ namespace AV1PP {
     satd_fptr_t satd_fptr_arr[5][5];
     satd_pitch64_fptr_t satd_pitch64_fptr_arr[5][5];
     satd_pitch64_both_fptr_t satd_pitch64_both_fptr_arr[5][5];
+    satd_with_const_pitch64_fptr_t satd_with_const_pitch64_fptr_arr[5][5];
     diff_nxn_fptr_t diff_nxn_fptr_arr[5]; // [log2(width/4)]
+    diff_nxn_hbd_fptr_t diff_nxn_hbd_fptr_arr[5]; // [log2(width/4)]
     diff_nxn_p64_p64_pw_fptr_t diff_nxn_p64_p64_pw_fptr_arr[5]; // [log2(width/4)]
+    diff_nxn_p64_p64_pw_hbd_fptr_t diff_nxn_p64_p64_pw_hbd_fptr_arr[5]; // [log2(width/4)]
+
     diff_nxm_fptr_t diff_nxm_fptr_arr[5]; // [log2(width/4)]
     diff_nxm_p64_p64_pw_fptr_t diff_nxm_p64_p64_pw_fptr_arr[5]; // [log2(width/4)]
     diff_nv12_fptr_t diff_nv12_fptr_arr[4]; // [log2(width/4)]
+    diff_nv12_hbd_fptr_t diff_nv12_hbd_fptr_arr[4]; // [log2(width/4)]
     diff_nv12_p64_p64_pw_fptr_t diff_nv12_p64_p64_pw_fptr_arr[4]; // [log2(width/4)]
+    diff_nv12_p64_p64_pw_hbd_fptr_t diff_nv12_p64_p64_pw_hbd_fptr_arr[4]; // [log2(width/4)]
     sse_fptr_t sse_fptr_arr[5][5]; // [log2(width/4)] [log2(height/4)]
+    sse_hbd_fptr_t sse_hbd_fptr_arr[5][5]; // [log2(width/4)] [log2(height/4)]
+
     sse_p64_pw_fptr_t sse_p64_pw_fptr_arr[5][5]; // [log2(width/4)] [log2(height/4)]
+    sse_p64_pw_uv_fptr_t sse_p64_pw_uv_fptr_arr[5][5]; // [log2(width/4)] [log2(height/4)]
     sse_p64_p64_fptr_t sse_p64_p64_fptr_arr[5][5]; // [log2(width/4)] [log2(height/4)]
+    sse_p64_p64_hbd_fptr_t sse_p64_p64_hbd_fptr_arr[5][5]; // [log2(width/4)] [log2(height/4)]
     sse_flexh_fptr_t sse_flexh_fptr_arr[5]; // [log2(width/4)]
     sse_cont_fptr_t sse_cont_fptr/*_arr[5]*/; // [log2(width/4)]
     ssz_cont_fptr_t ssz_cont_fptr/*_arr[5]*/; // [log2(width/4)]
     sad_special_fptr_t sad_special_fptr_arr[5][5]; // [log2(width/4)] [log2(height/4)]
     sad_general_fptr_t sad_general_fptr_arr[5][5]; // [log2(width/4)] [log2(height/4)]
     sad_store8x8_fptr_t sad_store8x8_fptr_arr[5]; // [log2(width/4)], first pointer is null
-    lpf_fptr_t lpf_horizontal_4_fptr;
-    lpf_dual_fptr_t lpf_horizontal_4_dual_fptr;
-    lpf_fptr_t lpf_horizontal_8_fptr;
-    lpf_dual_fptr_t lpf_horizontal_8_dual_fptr;
-    lpf_fptr_t lpf_horizontal_edge_16_fptr;
-    lpf_fptr_t lpf_horizontal_edge_8_fptr;
-    lpf_fptr_t lpf_vertical_16_fptr;
-    lpf_fptr_t lpf_vertical_16_dual_fptr;
-    lpf_fptr_t lpf_vertical_4_fptr;
-    lpf_dual_fptr_t lpf_vertical_4_dual_fptr;
-    lpf_fptr_t lpf_vertical_8_fptr;
-    lpf_dual_fptr_t lpf_vertical_8_dual_fptr;
-    lpf16_fptr_t lpf16_horizontal_4_fptr;
-    lpf16_dual_fptr_t lpf16_horizontal_4_dual_fptr;
-    lpf16_fptr_t lpf16_horizontal_8_fptr;
-    lpf16_dual_fptr_t lpf16_horizontal_8_dual_fptr;
-    lpf16_fptr_t lpf16_horizontal_edge_16_fptr;
-    lpf16_fptr_t lpf16_horizontal_edge_8_fptr;
-    lpf16_fptr_t lpf16_vertical_16_fptr;
-    lpf16_fptr_t lpf16_vertical_16_dual_fptr;
-    lpf16_fptr_t lpf16_vertical_4_fptr;
-    lpf16_dual_fptr_t lpf16_vertical_4_dual_fptr;
-    lpf16_fptr_t lpf16_vertical_8_fptr;
-    lpf16_dual_fptr_t lpf16_vertical_8_dual_fptr;
+
     lpf_fptr_t lpf_fptr_arr[2][4];  // [edge_dir][filter_length_idx]
+    lpf16_fptr_t lpf_hbd_fptr_arr[2][4];  // [edge_dir][filter_length_idx]
     diff_dc_fptr_t diff_dc_fptr;
     adds_nv12_fptr_t adds_nv12_fptr;
+    adds_nv12_hbd_fptr_t adds_nv12_hbd_fptr;
+
     search_best_block8x8_fptr_t search_best_block8x8_fptr;
     compute_rscs_fptr_t compute_rscs_fptr;
     compute_rscs_4x4_fptr_t compute_rscs_4x4_fptr;
@@ -131,10 +132,22 @@ namespace AV1PP {
     cdef_filter_block_u8_fptr_t cdef_filter_block_u8_fptr_arr[2]; // 8x8 luma and 4x4 chroma nv12
     cdef_filter_block_u16_fptr_t cdef_filter_block_u16_fptr_arr[2]; // 8x8 luma and 4x4 chroma nv12
     cdef_estimate_block_fptr_t cdef_estimate_block_fptr_arr[2]; // 8x8 luma and 4x4 chroma nv12
+    cdef_estimate_block_hbd_fptr_t cdef_estimate_block_hbd_fptr_arr[2]; // 8x8 luma and 4x4 chroma nv12
+
     cdef_estimate_block_sec0_fptr_t cdef_estimate_block_sec0_fptr_arr[2]; // 8x8 luma and 4x4 chroma nv12
+    cdef_estimate_block_sec0_hbd_fptr_t cdef_estimate_block_sec0_hbd_fptr_arr[2]; // 8x8 luma and 4x4 chroma nv12
+
     cdef_estimate_block_pri0_fptr_t cdef_estimate_block_pri0_fptr_arr[2]; // 8x8 luma and 4x4 chroma nv12
     cdef_estimate_block_all_sec_fptr_t cdef_estimate_block_all_sec_fptr_arr[2]; // 8x8 luma and 4x4 chroma nv12
+    cdef_estimate_block_all_sec_hbd_fptr_t cdef_estimate_block_all_sec_hbd_fptr_arr[2]; // 8x8 luma and 4x4 chroma nv12
     cdef_estimate_block_2pri_fptr_t cdef_estimate_block_2pri_fptr_arr[2]; // 8x8 luma and 4x4 chroma nv12
+
+    cfl_subsample_u8_fptr_t cfl_subsample_420_u8_fptr_arr[AV1Enc::TX_SIZES_ALL];
+    cfl_subsample_u16_fptr_t cfl_subsample_420_u16_fptr_arr[AV1Enc::TX_SIZES_ALL];
+    cfl_subtract_average_fptr_t cfl_subtract_average_fptr_arr[AV1Enc::TX_SIZES_ALL];
+
+    cfl_predict_nv12_u8_fptr_t cfl_predict_nv12_u8_fptr_arr[AV1Enc::TX_SIZES_ALL];
+    cfl_predict_nv12_u16_fptr_t cfl_predict_nv12_u16_fptr_arr[AV1Enc::TX_SIZES_ALL];
 };
 
 #endif // MFX_ENABLE_AV1_VIDEO_ENCODE

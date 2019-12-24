@@ -53,9 +53,11 @@ class AV1CmCtx {
 
 private:
     /* internal helper functions */
-    void RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, mfxFEIH265InputSurface *picBufInput, mfxFEIH265ReconSurface *picBufRef);
     mfxStatus CopyInputFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *in);
     mfxStatus CopyReconFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *in);
+
+    void LoadPrograms(GPU_PLATFORM hwType);
+    void SetupKernels();
 
     /* Cm elements */
     CmDevice  * device;
@@ -63,18 +65,26 @@ private:
     CmProgram * programPrepareSrc;
     CmProgram * programHmeMe32;
     CmProgram * programMe16Refine32x32;
+#if NEWMVPRED
     CmProgram * programMePu;
+#endif
     CmProgram * programMd;
     CmProgram * programMdPass2;
+
+#if !USE_HWPAK_RESTRICT
     CmProgram * programInterpDecision;
+#else
     CmProgram * programInterpDecisionSingle;
+#endif
+
+#if GPU_VARTX
     CmProgram * programVarTxDecision;
+#endif // GPU_VARTX
     CmProgram * programAv1Intra;
     CmProgram * programRefine64x64;
     CmEvent   * lastEventSaved;
     mfxU32      saveSyncPoint;
 
-    CmBuffer    * curbe;
     CmSurface2D * newMvPred[4];
     CmSurface2D * mePuScratchPad;
 
@@ -83,10 +93,14 @@ private:
     AV1Enc::Kernel kernelPrepareRef;
     //AV1Enc::Kernel kernelMeIntra;
     AV1Enc::Kernel kernelGradient;
-    AV1Enc::Kernel kernelMe;
-    AV1Enc::Kernel kernelMd;
+    AV1Enc::Kernel kernelMe[8];
+    AV1Enc::Kernel kernelMd[8];
+#if GPU_VARTX
     AV1Enc::Kernel kernelVarTx;
+#endif // GPU_VARTX
+#if NEWMVPRED
     AV1Enc::Kernel kernelMePu;
+#endif
     AV1Enc::Kernel kernelBiRefine;
     AV1Enc::Kernel kernelRefine64x64;
     AV1Enc::Kernel kernelRefine32x32sad;
@@ -110,7 +124,11 @@ private:
     mfxU32 targetUsage;
     mfxU32 enableChromaSao;
     mfxU32 enableInterp;
-    mfxU32 isAv1;
+    mfxI32 numSlices;
+    mfxI32 hmeSliceStart[8 + 1];
+    mfxI32 mdSliceStart[8 + 1];
+    mfxI32 md2SliceStart[8 + 1];
+    mfxU32 sliceHeight;
     mfxU32 rectParts;
 
     /* derived from initialization parameters */
@@ -152,27 +170,36 @@ public:
         programPrepareSrc(),
         programHmeMe32(),
         programMe16Refine32x32(),
+#if NEWMVPRED
         programMePu(),
+#endif
         programMd(),
         programMdPass2(),
+
+#if !USE_HWPAK_RESTRICT
         programInterpDecision(),
+#else
         programInterpDecisionSingle(),
+#endif
+
+#if GPU_VARTX
         programVarTxDecision(),
+#endif // GPU_VARTX
         programAv1Intra(),
         programRefine64x64(),
         lastEventSaved(),
         saveSyncPoint(),
 
-        curbe(),
-
         kernelPrepareSrc(),
         kernelPrepareRef(),
         //kernelMeIntra(),
         kernelGradient(),
-        kernelMe(),
-        kernelMd(),
+#if GPU_VARTX
         kernelVarTx(),
+#endif // GPU_VARTX
+#if NEWMVPRED
         kernelMePu(),
+#endif
         kernelBiRefine(),
         kernelRefine64x64(),
         kernelRefine32x32sad(),
@@ -194,6 +221,8 @@ public:
         targetUsage(),
         enableChromaSao(),
         enableInterp(),
+        numSlices(1),
+        sliceHeight(0),
         rectParts(0),
         width32(),
         height32(),
@@ -213,6 +242,11 @@ public:
         vmeMode()
     {
         memset(newMvPred, 0, sizeof(newMvPred));
+        memset(kernelMe, 0, sizeof(kernelMe));
+        memset(kernelMd, 0, sizeof(kernelMd));
+        memset(hmeSliceStart, 0, sizeof(hmeSliceStart));
+        memset(mdSliceStart, 0, sizeof(mdSliceStart));
+        memset(md2SliceStart, 0, sizeof(md2SliceStart));
     }
 
     ~AV1CmCtx() { }

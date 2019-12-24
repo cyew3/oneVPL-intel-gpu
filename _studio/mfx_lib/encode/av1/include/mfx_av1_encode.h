@@ -34,6 +34,10 @@
 #include <condition_variable>
 #include <thread>
 
+#ifdef AMT_HROI_PSY_AQ
+#include "FSapi.h"
+#endif
+
 class CmDevice;
 class MFXCoreInterface1;
 struct AV1ShortTermRefPicSet;
@@ -53,13 +57,20 @@ namespace AV1Enc {
         mfxStatus Init(const mfxVideoParam &par);
         mfxStatus Reset(const mfxVideoParam &par);
 
-        const uint8_t *GetSps(uint16_t &size) const { size = m_spsBufSize; return m_spsBuf; }
+        const uint8_t *GetSps(uint16_t &size) const { size = uint16_t(m_spsBufSize); return m_spsBuf; }
 
         void GetEncodeStat(mfxEncodeStat &stat);
 
         mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, MFX_ENTRY_POINT &entryPoint);
 
         void Close();
+
+        void setFrameOrderOfLastLtr(int32_t frameOrder) { m_frameOrderOfLastLtr = frameOrder; }
+        int32_t getFrameOrderOfLastLtr() { return m_frameOrderOfLastLtr; }
+        int32_t getNumberOfExternalLtrs() { return m_numberOfExternalLtrFrames; }
+        void setFrameOrderOfStartStr(int32_t frameOrder) { m_frameOrderOfStartStr = frameOrder; }
+        int32_t getFrameOrderOfStartStr() { return m_frameOrderOfStartStr; }
+        mfxStatus ResetTemporalLayers(const mfxVideoParam &par);
 
     protected:
         // ------ mfx level
@@ -87,6 +98,7 @@ namespace AV1Enc {
         int32_t m_frameOrder;
         int32_t m_frameOrderOfLastIdr;               // frame order of last IDR frame (in display order)
         int32_t m_frameOrderOfLastIntra;             // frame order of last I-frame (in display order)
+        int32_t m_frameOrderOfLastBaseTemporalLayer; // frame order of last frame with temporalId = 0
         int32_t m_frameOrderOfLastIntraInEncOrder;   // frame order of last I-frame (in encoding order)
         int32_t m_frameOrderOfLastAnchor;            // frame order of last anchor (first in minigop) frame (in display order)
         int32_t m_frameOrderOfLastIdrB;              // (is used for encoded order) frame order of last IDR frame (in display order)
@@ -97,6 +109,11 @@ namespace AV1Enc {
         uint64_t m_lastTimeStamp;
         int32_t m_lastEncOrder;
         int32_t m_sceneOrder;                        // in display order each frame belongs something scene (if sceneCut enabled)
+        int32_t m_frameOrderOfLastLtr;
+        int32_t m_frameOrderOfStartStr;
+        int32_t m_frameOrderOfLastExternalLTR[16];
+        int32_t m_numberOfExternalLtrFrames;
+        int32_t m_frameOrderOfErrorResilienceFrame;
 
         uint8_t m_last_filter_level;
 
@@ -104,8 +121,8 @@ namespace AV1Enc {
 
         // threading
         volatile uint32_t   m_doStage;
-        volatile uint32_t   m_threadCount;
-        volatile uint32_t   m_reencode;     // BRC repack
+        std::atomic<uint32_t>   m_threadCount;
+        std::atomic<uint32_t>   m_reencode;     // BRC repack
         volatile uint32_t   m_taskSubmitCount;
         volatile uint32_t   m_taskEncodeCount;
 
@@ -118,7 +135,7 @@ namespace AV1Enc {
         std::deque<ThreadingTask *> m_pendingTasks;
         std::deque<AV1EncodeTaskInputParams *> m_inputTasks;
         AV1EncodeTaskInputParams *m_inputTaskInProgress;
-        volatile uint32_t m_threadingTaskRunning;
+        std::atomic<uint32_t> m_threadingTaskRunning;
         std::vector<uint32_t> m_ithreadPool;
 
         // frame flow-control queues
@@ -142,6 +159,8 @@ namespace AV1Enc {
         ObjectPool<FrameData>     m_inputFrameDataPool;     // storage for full-sized original pixel data
         ObjectPool<FrameData>     m_input10FrameDataPool;     // storage for full-sized original pixel data for 10 bit
         ObjectPool<FrameData>     m_reconFrameDataPool;     // storage for full-sized reconstructed/reference pixel data
+        ObjectPool<FrameData>     m_recon10FrameDataPool;     // storage for full-sized reconstructed/reference pixel data
+        ObjectPool<FrameData>     m_reconUpscaleFrameDataPool;     // storage for full-sized reconstructed/reference pixel data
         ObjectPool<FrameData>     m_lfFrameDataPool;        // storage for full-sized loop filter pixel data
         ObjectPool<FrameData>     m_frameDataLowresPool;    // storage for lowres original pixel data for lookahead
         ObjectPool<Statistics>    m_statsPool;              // storage for full-sized statistics per frame
@@ -151,21 +170,26 @@ namespace AV1Enc {
         ObjectPool<FeiReconData>  m_feiReconDataPool;       // storage for full-sized reconstructed/reference pixel data
         ObjectPool<FeiOutData>    m_feiInterDataPool[4];    // storage for ME motion vectors and distortions output by fei (8x8, 16x16, 32x32, 64x64)
         ObjectPool<FeiSurfaceUp>  m_feiModeInfoPool;        // storage for mode info shared between CPU and GPU (2 buffer/frame)
+#if GPU_VARTX
+        ObjectPool<FeiBufferUp>   m_feiAdzPool;             // storage for adaptive deadzone context shared between CPU and GPU (2 buffer/frame)
         ObjectPool<FeiBufferUp>   m_feiVarTxInfoPool;       // storage for mode info shared between CPU and GPU (2 buffer/frame)
-        ObjectPool<FeiSurfaceUp>  m_feiRsCs8Pool;           // storage for rscs info shared between CPU and GPU (2 buffer/frame)
-        ObjectPool<FeiSurfaceUp>  m_feiRsCs16Pool;          // storage for rscs info shared between CPU and GPU (2 buffer/frame)
-        ObjectPool<FeiSurfaceUp>  m_feiRsCs32Pool;          // storage for rscs info shared between CPU and GPU (2 buffer/frame)
-        ObjectPool<FeiSurfaceUp>  m_feiRsCs64Pool;          // storage for rscs info shared between CPU and GPU (2 buffer/frame)
+        ObjectPool<FeiBufferUp>   m_feiCoefsPool;           // storage for coefficients
+#endif // GPU_VARTX
+        ObjectPool<FeiSurfaceUp>  m_feiRsCsPool[4];        // storage for rscs info shared between CPU and GPU (2 buffer/frame)
         ObjectPool<ThreadingTask> m_ttHubPool;              // storage for threading tasks of type TT_HUB
 
         uint8_t* m_memBuf;
         void *m_cu;
         // perCU (num_threads_structs)
         ModeInfo *data_temp;
+        BitCounts bitCount;
 
         BrcIface *m_brc;
         std::unique_ptr<Lookahead> m_la;
 
+#ifdef AMT_HROI_PSY_AQ
+        FSP m_faceSkinDet;
+#endif
 
         static uint32_t VM_CALLCONVENTION FeiThreadRoutineStarter(void *p);
         void FeiThreadRoutine();
@@ -185,6 +209,7 @@ namespace AV1Enc {
 
         // ------ _global_ stages of Input Frame Control
         Frame *AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, mfxBitstream *mfxBS, int32_t fieldNum);
+        void ReorderInput(int32_t endOfStream);
 
         // new (incoming) frame
         void InitNewFrame(Frame *out, mfxFrameSurface1 *in);
@@ -209,7 +234,7 @@ namespace AV1Enc {
         static mfxStatus TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
 
         void PrepareToEncodeNewTask(AV1EncodeTaskInputParams *inputParam); // accept frame and find frame for lookahead
-        void PrepareToEncode(AV1EncodeTaskInputParams *inputParam); // build dependency graph for all parallel frames
+        void PrepareToEncode(AV1EncodeTaskInputParams *inputParam, bool target_only=false); // build dependency graph for all parallel frames
         void EnqueueFrameEncoder(AV1EncodeTaskInputParams *inputParam); // build dependency graph for one frames
         mfxStatus SyncOnFrameCompletion(AV1EncodeTaskInputParams *inputParam, Frame *frame);
 

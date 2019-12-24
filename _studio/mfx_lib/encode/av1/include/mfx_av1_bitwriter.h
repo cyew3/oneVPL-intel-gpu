@@ -47,10 +47,12 @@ namespace AV1Enc {
         od_ec_window end_window;
         /*Number of valid bits in end_window.*/
         int32_t nend_bits;
+//#if ENABLE_PRECARRY_BUF
         /*A buffer for output bytes with their associated carry flags.*/
         uint16_t *precarry_buf;
         /*The size of the pre-carry buffer.*/
         uint32_t precarry_storage;
+//#endif
         /*The offset at which the next entropy-coded byte will be written.*/
         uint32_t offs;
         /*The low end of the current range.*/
@@ -61,6 +63,13 @@ namespace AV1Enc {
         int16_t cnt;
         /*Nonzero if an error occurred.*/
         int error;
+
+        // NO PRECARRY BUF APPROACH
+        int numBufferedBytes;
+        int bufferedByte;
+        int bytepos;
+        int offset;
+        uint8_t *outBuf;
     };
 
     struct BoolCoder {
@@ -84,7 +93,8 @@ namespace AV1Enc {
     void od_ec_enc_init(od_ec_enc *enc, uint8_t *buf, uint16_t *precarry_buf, int32_t size);
     unsigned char *od_ec_enc_done(od_ec_enc *enc, uint32_t *nbytes);
     //void od_ec_enc_clear(od_ec_enc *enc);
-    void od_ec_enc_bits(od_ec_enc *enc, uint32_t fl, unsigned ftb);
+    void od_ec_renormalize(od_ec_enc *enc, unsigned &r, od_ec_window &l, int &c, uint32_t &offs, const uint16_t *buf);
+    //void od_ec_enc_bits(od_ec_enc *enc, uint32_t fl, unsigned ftb);
     void od_ec_encode_q15(od_ec_enc *enc, unsigned fl, unsigned fh, int s, int nsyms);
     void od_ec_encode_q15_0(od_ec_enc *enc, unsigned fh);
     void od_ec_encode_bool_q15(od_ec_enc *enc, int val, unsigned fz);
@@ -115,6 +125,7 @@ namespace AV1Enc {
 
     template <EnumCodecType CodecType>
     inline void WriteBool(BoolCoder &bc, int32_t bit, int32_t probability) {
+        trace_bool(bit, probability, bc.ec.rng);
         const int p = (0x7FFFFF - (probability << 15) + probability) >> 8;
         od_ec_encode_bool_q15(&bc.ec, bit, p);
     }
@@ -138,7 +149,9 @@ namespace AV1Enc {
         uint32_t daala_bytes;
         uint8_t *daala_data;
         daala_data = od_ec_enc_done(&bc.ec, &daala_bytes);
+#if ENABLE_PRECARRY_BUF
         memcpy(bc.buffer, daala_data, daala_bytes);
+#endif
         bc.pos = daala_bytes;
         /* Prevent ec bitstream from being detected as a superframe marker.
         Must always be added, so that rawbits knows the exact length of the
@@ -154,7 +167,6 @@ namespace AV1Enc {
     }
 
     static inline int get_msb(unsigned int n) {
-        unsigned long first_set_bit;
         assert(n != 0);
         return BSR(n);
     }
@@ -167,11 +179,15 @@ namespace AV1Enc {
         assert(symb >= 0);
         assert(symb < nsymbs);
         assert(cdf[nsymbs - 1] == AOM_ICDF(32768U));
-        trace_cdf(symb, cdf, nsymbs, bc.ec.rng);
+        trace_cdf_no_update(symb, cdf, nsymbs, bc.ec.rng);
         od_ec_encode_q15(&bc.ec, symb > 0 ? cdf[symb - 1] : AOM_ICDF(0), cdf[symb], symb, nsymbs);
     }
-
-    inline void WriteSymbol4(BoolCoder &bc, int sym, aom_cdf_prob *cdf) {
+#ifdef _MSC_VER
+#if !defined (_M_X64)
+    #define _mm_cvtsi64_si128(a) _mm_set_epi64x(0, a)
+#endif
+#endif
+    inline void WriteSymbol4(BoolCoder &bc, uint16_t sym, aom_cdf_prob *cdf) {
         const int nsyms = 4;
         assert(sym >= 0);
         assert(sym < nsyms);
@@ -225,7 +241,7 @@ namespace AV1Enc {
     template <> struct constexpr_bsr<0> { enum { value = 0 }; };
     template <> struct constexpr_bsr<1> { enum { value = 0 }; };
 
-    template <int32_t nsymbs> inline AV1_FORCEINLINE __m128i load_and_update_cdf(int32_t symb, const aom_cdf_prob *cdf) {
+    template <int32_t nsymbs> inline AV1_FORCEINLINE __m128i load_and_update_cdf(int16_t symb, const aom_cdf_prob *cdf) {
         assert(nsymbs > 2);
         assert(nsymbs < 10);
         assert(symb >= 0);
@@ -235,7 +251,7 @@ namespace AV1Enc {
         assert(cdf[nsymbs] <= 32);
 
         const int32_t rate = 4 + constexpr_bsr<nsymbs>::value + (cdf[nsymbs] >> 5);
-        const int32_t diff = ((CDF_PROB_TOP - (nsymbs << 5)) >> rate) << rate;
+        const int16_t diff = int16_t(((CDF_PROB_TOP - (nsymbs << 5)) >> rate) << rate);
         __m128i cdfs = loadu_si128(cdf);
         __m128i tmp = _mm_cvtsi64_si128(0x0807060504030201);
         __m128i seq1to8 = _mm_unpacklo_epi8(tmp, _mm_setzero_si128()); // 8w: 1 2 3 4 5 6 7 8
@@ -251,7 +267,7 @@ namespace AV1Enc {
         return cdfs;
     }
 
-    inline void WriteSymbol5(BoolCoder &bc, int symb, aom_cdf_prob *cdf) {
+    inline void WriteSymbol5(BoolCoder &bc, int16_t symb, aom_cdf_prob *cdf) {
         const int nsymbs = 5;
         trace_cdf(symb, cdf, nsymbs, bc.ec.rng);
 
@@ -264,7 +280,7 @@ namespace AV1Enc {
         trace_cdf_update(cdf, nsymbs);
     }
 
-    inline void WriteSymbol6(BoolCoder &bc, int symb, aom_cdf_prob *cdf) {
+    inline void WriteSymbol6(BoolCoder &bc, int16_t symb, aom_cdf_prob *cdf) {
         const int nsymbs = 6;
         trace_cdf(symb, cdf, nsymbs, bc.ec.rng);
 
@@ -278,7 +294,7 @@ namespace AV1Enc {
         trace_cdf_update(cdf, nsymbs);
     }
 
-    inline void WriteSymbol9(BoolCoder &bc, int symb, aom_cdf_prob *cdf) {
+    inline void WriteSymbol9(BoolCoder &bc, int16_t symb, aom_cdf_prob *cdf) {
         const int nsymbs = 9;
         trace_cdf(symb, cdf, nsymbs, bc.ec.rng);
 

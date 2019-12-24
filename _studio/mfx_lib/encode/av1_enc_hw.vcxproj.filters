@@ -19,9 +19,6 @@
     <ClCompile Include="av1\src\mfx_av1_deblocking.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="av1\src\mfx_av1_prob_opt.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="av1\src\mfx_av1_trace.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -92,6 +89,63 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="av1\src\mfx_av1_set_hwpak.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_superres.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_interp_scale.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_intrabc.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_hash_table.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\Cleanup.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\Dim.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\FaceDet.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\FaceDetTmpl.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\FrameBuff.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\FSapi.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\Morphology.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\Params.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\SkinDetAlg.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\SkinDetBuff.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\SkinHisto.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\SkinSegm.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\Video.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_scroll_detector.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\src\mfx_av1_recon10bit.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -186,6 +240,12 @@
     <ClInclude Include="av1\include\mfx_av1_lookahead.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_superres.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\include\mfx_av1_scroll_detector.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -194,6 +254,9 @@
     </Filter>
     <Filter Include="include">
       <UniqueIdentifier>{b5a983a5-d67c-4886-ad9b-b42f652bcb15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HROI">
+      <UniqueIdentifier>{e39c32ce-5e9b-4156-bed5-33c33c3e0679}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

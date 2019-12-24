@@ -1029,10 +1029,11 @@ namespace H265Enc {
 #if 1
         // Split MI
         bool split64 = (m_data->sbType == BLOCK_64X64) ? true : false;
-        if (split64) {
+        if (split64 && (m_data->skip /*|| scpp<20*/)) {
             float scpp = 20480.0f; // lcuRs64[0] + lcuCs64[0];
             scpp *= 0.0625f;
             scpp *= 0.0625f;
+
             int32_t mvd = 0;
 #ifdef TRYINTRA_ORIG
             H265MVPair predMv[5] = {};
@@ -1174,8 +1175,11 @@ namespace H265Enc {
         CostType costInitial = m_costCurr;
         Contexts origCtx = m_contexts;
         if (depth == 0) m_split64 = false;
-
+#ifdef FAST_MODE
+        if (allowNonSplit && depth == 0) {
+#else
         if (allowNonSplit && depth == 0 && m_currFrame->m_pyramidLayer<3) {
+#endif
             // Split MI
             bool split64 = false;
             if (m_currFrame->m_sliceQpY >= 40 && m_currFrame->m_sliceQpY <= 225) {
@@ -1215,7 +1219,12 @@ namespace H265Enc {
                 allowNonSplit = 0;
             }
         }
+#ifdef FAST_MODE
+        if (allowNonSplit && depth == 1) {
+        //if (allowNonSplit && depth == 1 && m_currFrame->m_pyramidLayer < 2) {
+#else
         if (allowNonSplit && depth == 1 && m_currFrame->m_pyramidLayer < 2 && m_split64) {
+#endif
             // Split MI
             bool split32 = false;
             if (m_currFrame->m_sliceQpY >= 40 && m_currFrame->m_sliceQpY <= 225) {
@@ -1250,6 +1259,7 @@ namespace H265Enc {
                 sadpp *= 0.03125f;
                 sadpp = IPP_MAX(0.1, sadpp);
 
+#ifndef FAST_MODE
                 int32_t l = m_currFrame->m_pyramidLayer;
                 int32_t Q = m_currFrame->m_sliceQpY - ((l + 1) * 8);
                 int32_t qidx = 0;
@@ -1257,7 +1267,6 @@ namespace H265Enc {
                 else if (Q<123) qidx = 1;
                 else if (Q<163) qidx = 2;
                 else            qidx = 3;
-
                 float svar = 1;
                 const float SVT = 0.5f;
                 float sr = 1;
@@ -1286,9 +1295,12 @@ namespace H265Enc {
                     ssad += sad;
                     svar = (float)sad_min / (float)sad_max;
                     sr = (float)ssad / (float)bsad;
-
                 }
+
                 split32 = (IsBadPred(scpp, sadpp, mvd) && scpp > 20.0f && sadpp > 1.0f && svar <= SVT && sr <= SRT) ? true : false;
+#else
+                split32 = (IsBadPred(scpp, sadpp, mvd) && scpp > 20.0f && sadpp > 1.0f) ? true : false;
+#endif
             }
             if (split32) {
                 allowNonSplit = 0;
@@ -1313,11 +1325,104 @@ namespace H265Enc {
             As16B(m_contextsStored[depth].leftNonzero[0]) = As16B(m_contexts.leftNonzero[0]);
             As16B(m_contextsStored[depth].aboveAndLeftPartition) = As16B(m_contexts.aboveAndLeftPartition);
             m_costStored[depth] = m_costCurr;
-
-            if ((depth == 2 && (mi->skip & 0x1) && (m_currFrame->m_pyramidLayer > 0 || !m_split64)) || (depth == 1 && (mi->skip & 0x1) && m_currFrame->m_pyramidLayer > 1)) {
+#ifdef FAST_MODE
+            //if ((depth == 2 && (mi->skip & 0x1)) || (depth == 1 && (mi->skip & 0x1)) || (depth == 0 && (mi->skip &0x1) && m_currFrame->m_pyramidLayer>0))
+            if ((depth == 2 && (mi->skip & 0x1)) || (depth == 1 && (mi->skip & 0x1) && m_currFrame->m_pyramidLayer > 1))
+#else
+            if ((depth == 2 && (mi->skip & 0x1) && (m_currFrame->m_pyramidLayer > 0 || !m_split64)) || (depth == 1 && (mi->skip & 0x1) && m_currFrame->m_pyramidLayer > 1))
+#endif
+            {
                 PropagateSubPart(mi, m_par->miPitch, 1 << (3 - depth), 1 << (3 - depth));
                 return;
             }
+#ifdef FAST_MODE
+            /*if (depth == 1)
+            {
+                // Leaf MI
+                bool leaf32 = false;
+                if (m_currFrame->m_sliceQpY >= 40) {
+                    float scpp = 10240.0f; // lcuRs64[0] + lcuCs64[0];
+                    scpp *= 0.125f;
+                    scpp *= 0.125f;
+                    int32_t mvd = 0;
+                    const BlockSize bsz = GetSbType(depth, PARTITION_NONE);
+                    (m_currFrame->compoundReferenceAllowed)
+                        ? GetMvRefsAV1TU7B(bsz, miRow, miCol, &m_mvRefs, (m_currFrame->m_picCodeType == MFX_FRAMETYPE_B), 1)
+                        : GetMvRefsAV1TU7P(bsz, miRow, miCol, &m_mvRefs, 1);
+
+                    int8_t bestRefIdxComp;
+                    RefIdx *bestRefIdx;
+                    const int32_t sbx = (miCol & 7) << 3;
+                    const int32_t sby = (miRow & 7) << 3;
+                    const int32_t numBlk = (sby >> 5) * 2 + (sbx >> 5);
+                    bestRefIdx = m_newMvRefIdx32[numBlk];
+                    bestRefIdxComp = (bestRefIdx[1] == NONE_FRAME) ? bestRefIdx[0] : COMP_VAR0;
+
+                    H265MVPair bestRefMv = m_mvRefs.mvs[bestRefIdxComp][NEARESTMV_];
+                    H265MVPair predMv[5] = {};
+                    predMv[0].mv[0].asInt = m_mvRefs.mvs[0][NEARESTMV_][0].asInt;
+                    predMv[1].mv[0].asInt = m_mvRefs.mvs[1][NEARESTMV_][0].asInt;
+                    predMv[2].mv[0].asInt = m_mvRefs.mvs[2][NEARESTMV_][0].asInt;
+                    predMv[3].mv[0].asInt = bestRefMv[0].asInt;
+                    predMv[3].mv[1].asInt = bestRefMv[1].asInt;
+
+                    int32_t bsad = GetCmDistMv(sbx, sby, 3, mvd, predMv);
+                    float sadpp = bsad;
+                    sadpp *= 0.03125f;
+                    sadpp *= 0.03125f;
+                    sadpp = IPP_MAX(0.1, sadpp);
+
+                    leaf32 = (sadpp <= 1.0f || IsGoodPred(scpp, sadpp, mvd)) ? true : false;
+                }
+                if (leaf32) {
+                    PropagateSubPart(mi, m_par->miPitch, 1 << (3 - depth), 1 << (3 - depth));
+                    return;
+                }
+            }*/
+            if (depth == 2)
+            {
+                // Leaf MI
+                bool leaf16 = false;
+                if (m_currFrame->m_sliceQpY >= 40) {
+                    float scpp = 5120.0f; // lcuRs64[0] + lcuCs64[0];
+                    scpp *= 0.25f;
+                    scpp *= 0.25f;
+                    int32_t mvd = 0;
+                    const BlockSize bsz = GetSbType(depth, PARTITION_NONE);
+                    (m_currFrame->compoundReferenceAllowed)
+                        ? GetMvRefsAV1TU7B(bsz, miRow, miCol, &m_mvRefs, (m_currFrame->m_picCodeType == MFX_FRAMETYPE_B), 1)
+                        : GetMvRefsAV1TU7P(bsz, miRow, miCol, &m_mvRefs, 1);
+
+                    int8_t bestRefIdxComp;
+                    RefIdx *bestRefIdx;
+                    const int32_t sbx = (miCol & 7) << 3;
+                    const int32_t sby = (miRow & 7) << 3;
+                    const int32_t numBlk = (sby >> 4) * 4 + (sbx >> 4);
+                    bestRefIdx = m_newMvRefIdx16[numBlk];
+                    bestRefIdxComp = (bestRefIdx[1] == NONE_FRAME) ? bestRefIdx[0] : COMP_VAR0;
+
+                    H265MVPair bestRefMv = m_mvRefs.mvs[bestRefIdxComp][NEARESTMV_];
+                    H265MVPair predMv[5] = {};
+                    predMv[0].mv[0].asInt = m_mvRefs.mvs[0][NEARESTMV_][0].asInt;
+                    predMv[1].mv[0].asInt = m_mvRefs.mvs[1][NEARESTMV_][0].asInt;
+                    predMv[2].mv[0].asInt = m_mvRefs.mvs[2][NEARESTMV_][0].asInt;
+                    predMv[3].mv[0].asInt = bestRefMv[0].asInt;
+                    predMv[3].mv[1].asInt = bestRefMv[1].asInt;
+
+                    int32_t bsad = GetCmDistMv(sbx, sby, 2, mvd, predMv);
+                    float sadpp = bsad;
+                    sadpp *= 0.0625f;
+                    sadpp *= 0.0625f;
+                    sadpp = IPP_MAX(0.1, sadpp);
+
+                    leaf16 = (sadpp<=1.0f || IsGoodPred(scpp, sadpp, mvd)) ? true : false;
+                }
+                if (leaf16) {
+                    PropagateSubPart(mi, m_par->miPitch, 1 << (3 - depth), 1 << (3 - depth));
+                    return;
+                }
+            }
+#endif
 
             if (m_par->cuSplit == 2 && (mi->skip & 0x1) && (mi->mode != AV1_NEWMV) && m_par->BiPyramidLayers > 1 && (m_currFrame->m_pyramidLayer + depth) >= 3)
             {
@@ -2619,7 +2724,11 @@ namespace H265Enc {
         int checkedMv[3][4] = {};
 
         if (sbw <= 16) {
+#ifdef COMPOUND_OPT1
+            if (m_currFrame->compoundReferenceAllowed && bestRefComb== COMP_VAR0) {
+#else
             if (m_currFrame->compoundReferenceAllowed) {
+#endif
                 int maxNumNearMvDrlBits = Saturate(0, 2, m_mvRefs.mvRefsAV1.refMvCount[COMP_VAR0] - 2);
                 for (int m = 0; m < 4; m++) {
                     if (m >= 2 && m >= m_mvRefs.mvRefsAV1.refMvCount[COMP_VAR0])
@@ -2740,7 +2849,12 @@ namespace H265Enc {
         } else {
             const int REFS[3] = { LAST_FRAME, secondRef, COMP_VAR0 };
             const int MODES_IDX[4] = { NEARESTMV_, NEARMV_, NEARMV1_, NEARMV2_ };
-            for (int r = 0; r < (2 + m_currFrame->compoundReferenceAllowed); r++) {
+#ifdef COMPOUND_OPT1
+            int compoundReferenceAllowed = m_currFrame->compoundReferenceAllowed && bestRefComb == COMP_VAR0;
+#else
+            int compoundReferenceAllowed = m_currFrame->compoundReferenceAllowed;
+#endif
+            for (int r = 0; r < (2 + compoundReferenceAllowed); r++) {
                 const int ref = REFS[r];
                 for (int m = 0; m < 4; m++) {
                     const int mode_idx = MODES_IDX[m];
@@ -2962,6 +3076,11 @@ namespace H265Enc {
             const int32_t numBlk = (meInfo->posy >> 5)*2 + (meInfo->posx >> 5);
             const RefIdx *bestRefIdx = m_newMvRefIdx32[numBlk];
             const H265MVPair &bestMv = m_newMvFromGpu32[numBlk];
+#if !MEPU16
+            {
+                // TBD: Do MePu here
+            }
+#endif
             As2B(meInfo->refIdx) = As2B(bestRefIdx);
             meInfo->mv.asInt64 = bestMv.asInt64;
             meInfo->refIdxComb = (bestRefIdx[1] == NONE_FRAME) ? bestRefIdx[0] : COMP_VAR0;
@@ -2981,6 +3100,11 @@ namespace H265Enc {
             const int32_t numBlk = (meInfo->posy >> 6) + (meInfo->posx >> 6);
             const RefIdx *bestRefIdx = m_newMvRefIdx64[numBlk];
             const H265MVPair &bestMv = m_newMvFromGpu64[numBlk];
+#if !MEPU8
+            {
+                // TBD: Do MePu here
+            }
+#endif
             As2B(meInfo->refIdx) = As2B(bestRefIdx);
             meInfo->mv.asInt64 = bestMv.asInt64;
             meInfo->refIdxComb = (bestRefIdx[1] == NONE_FRAME) ? bestRefIdx[0] : COMP_VAR0;
@@ -3144,8 +3268,12 @@ namespace H265Enc {
             int bestMode = 0;
 
             int checkedMv[3][4] = {};
-
-            if (m_currFrame->compoundReferenceAllowed) {
+#ifdef COMPOUND_OPT2
+            if (m_currFrame->compoundReferenceAllowed && mi->refIdxComb == COMP_VAR0)
+#else
+            if (m_currFrame->compoundReferenceAllowed)
+#endif
+            {
                 int maxNumNearMvDrlBits = Saturate(0, 2, m_mvRefs.mvRefsAV1.refMvCount[COMP_VAR0] - 2);
                 for (int m = 0; m < 4; m++) {
                     if (m >= 2 && m >= m_mvRefs.mvRefsAV1.refMvCount[COMP_VAR0])

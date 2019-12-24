@@ -651,8 +651,78 @@ static void iadst16x16_avx2_16s(const short *in_, short *out, int final_shift)
     storea_si256(out + 15 * 16, _mm256_srai_epi16(_mm256_sub_epi16(final_rounding, v[ 1]), final_shift));
 }
 
+static void iidtx4x4_avx2(const int16_t *input, int16_t *output)
+{
+    const int16_t scale_fractional = (NewSqrt2 - (1 << NewSqrt2Bits));
+    const __m256i scale = _mm256_set1_epi16(scale_fractional << (15 - NewSqrt2Bits));
+    const __m256i scale2 = _mm256_set1_epi16(2048);
+
+    __m256i x = loada_si256(input);
+    x = _mm256_adds_epi16(x, _mm256_mulhrs_epi16(x, scale));
+    x = _mm256_adds_epi16(x, _mm256_mulhrs_epi16(x, scale));
+    x = _mm256_mulhrs_epi16(x, scale2);
+    storea_si256(output, x);
+}
+
+static inline void iidtx8x8_avx2(const int16_t *input, int16_t *output)
+{
+    const __m256i four = _mm256_set1_epi16(4);
+    storea_si256(output + 0 * 8, _mm256_srai_epi16(_mm256_add_epi16(loada_si256(input + 0 * 8), four), 3));
+    storea_si256(output + 2 * 8, _mm256_srai_epi16(_mm256_add_epi16(loada_si256(input + 2 * 8), four), 3));
+    storea_si256(output + 4 * 8, _mm256_srai_epi16(_mm256_add_epi16(loada_si256(input + 4 * 8), four), 3));
+    storea_si256(output + 6 * 8, _mm256_srai_epi16(_mm256_add_epi16(loada_si256(input + 6 * 8), four), 3));
+}
+
+static inline void iidtx16x16_avx2(const int16_t *input, int16_t *output)
+{
+    const __m256i one = _mm256_set1_epi16(1);
+    const __m256i offset = _mm256_set1_epi32(8);
+    const __m256i scale_row = _mm256_set1_epi32((2 * 5793) | (1 << 27) | (1 << 29));
+    const __m256i scale_col = _mm256_set1_epi32((2 * 5793) | (1 << 27));
+
+    for (int i = 0; i < 16; ++i, input += 16, output += 16) {
+        const __m256i src = loada_si256(input);
+        __m256i lo = _mm256_unpacklo_epi16(src, one);
+        __m256i hi = _mm256_unpackhi_epi16(src, one);
+        lo = _mm256_madd_epi16(lo, scale_row);
+        hi = _mm256_madd_epi16(hi, scale_row);
+        lo = _mm256_srai_epi32(lo, 14);
+        hi = _mm256_srai_epi32(hi, 14);
+        __m256i x = _mm256_packs_epi32(lo, hi);
+
+        lo = _mm256_unpacklo_epi16(x, one);
+        hi = _mm256_unpackhi_epi16(x, one);
+        lo = _mm256_madd_epi16(lo, scale_col);
+        hi = _mm256_madd_epi16(hi, scale_col);
+        lo = _mm256_srai_epi32(lo, 12);
+        hi = _mm256_srai_epi32(hi, 12);
+        lo = _mm256_add_epi32(lo, offset);
+        hi = _mm256_add_epi32(hi, offset);
+        lo = _mm256_srai_epi32(lo, 4);
+        hi = _mm256_srai_epi32(hi, 4);
+        x = _mm256_packs_epi32(lo, hi);
+        storea_si256(output, x);
+    }
+}
+
+static inline void iidtx32x32_avx2(const int16_t *input, int16_t *output)
+{
+    const __m256i two = _mm256_set1_epi16(2);
+    for (int32_t i = 0; i < 32; ++i) {
+        __m256i x = loada_si256(input + i * 32 + 0);
+        __m256i y = loada_si256(input + i * 32 + 16);
+        x = _mm256_srai_epi16(_mm256_add_epi16(x, two), 2);
+        y = _mm256_srai_epi16(_mm256_add_epi16(y, two), 2);
+        storea_si256(output + i * 32 + 0, x);
+        storea_si256(output + i * 32 + 16, y);
+    }
+}
+
 static void av1_inv_txfm2d_4x4_sse4(const short *coeff, short *output, int tx_type)
 {
+    if (tx_type == IDTX)
+        return iidtx4x4_avx2(coeff, output);
+
     assert((size_t(coeff) & 15) == 0);
     assert((size_t(output) & 15) == 0);
     assert(inv_txfm_shift_ls[TX_4X4][0] == 0);
@@ -683,6 +753,9 @@ static void av1_inv_txfm2d_4x4_sse4(const short *coeff, short *output, int tx_ty
 
 static void av1_inv_txfm2d_8x8_avx2(const short *coeff, short *out, int tx_type)
 {
+    if (tx_type == IDTX)
+        return iidtx8x8_avx2(coeff, out);
+
     const int shift0 = -inv_txfm_shift_ls[TX_8X8][0];
     const int shift1 = -inv_txfm_shift_ls[TX_8X8][1];
 
@@ -705,6 +778,9 @@ static void av1_inv_txfm2d_8x8_avx2(const short *coeff, short *out, int tx_type)
 
 static void av1_inv_txfm2d_16x16_avx2(const int16_t *coeff, short *out, int tx_type)
 {
+    if (tx_type == IDTX)
+        return iidtx16x16_avx2(coeff, out);
+
     const int shift0 = -inv_txfm_shift_ls[TX_16X16][0];
     const int shift1 = -inv_txfm_shift_ls[TX_16X16][1];
 
@@ -1095,8 +1171,9 @@ static void av1_inv_txfm2d_32x32_avx2(const short *coeff, short *out)
 
 namespace AV1PP {
 
-    template <int size, int type> void itransform_av1_avx2(const int16_t *src, int16_t *dst, int pitchDst)
+    template <int size, int type> void itransform_av1_avx2(const int16_t *src, int16_t *dst, int pitchDst, int bd)
     {
+        bd;
         ALIGN_DECL(32) short buf[32 * 32];
         if (size == 0) {
             av1_inv_txfm2d_4x4_sse4(src, buf, type);
@@ -1118,8 +1195,12 @@ namespace AV1PP {
             for (int i = 0; i < 16; i++)
                 storea_si256(dst + i * pitchDst, ((__m256i *)buf)[i]);
 
-        } else { assert(size == 3);
-            av1_inv_txfm2d_32x32_avx2(src, buf);
+        } else {
+            assert(size == 3);
+            if (type == IDTX)
+                iidtx32x32_avx2(src, buf);
+            else
+                av1_inv_txfm2d_32x32_avx2(src, buf);
 
             for (int i = 0; i < 32; i++) {
                 storea_si256(dst + i * pitchDst +  0, ((__m256i *)buf)[2 * i + 0]);
@@ -1128,21 +1209,26 @@ namespace AV1PP {
         }
     }
 
-    template void itransform_av1_avx2<0, 0>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<0, 1>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<0, 2>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<0, 3>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<1, 0>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<1, 1>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<1, 2>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<1, 3>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<2, 0>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<2, 1>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<2, 2>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<2, 3>(const int16_t*,int16_t*,int);
-    template void itransform_av1_avx2<3, 0>(const int16_t*,int16_t*,int);
+    template void itransform_av1_avx2<0, 0>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<0, 1>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<0, 2>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<0, 3>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<0, 9>(const int16_t*, int16_t*, int, int);
+    template void itransform_av1_avx2<1, 0>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<1, 1>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<1, 2>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<1, 3>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<1, 9>(const int16_t*, int16_t*, int, int);
+    template void itransform_av1_avx2<2, 0>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<2, 1>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<2, 2>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<2, 3>(const int16_t*,int16_t*,int, int);
+    template void itransform_av1_avx2<2, 9>(const int16_t*, int16_t*, int, int);
+    template void itransform_av1_avx2<3, 0>(const int16_t*, int16_t*, int, int);
+    template void itransform_av1_avx2<3, 9>(const int16_t*, int16_t*, int, int);
 
-    template <int size, int type> void itransform_add_av1_avx2(const int16_t *src, uint8_t *dst, int pitchDst) {
+    template <int size, int type> void itransform_add_av1_avx2(const int16_t *src, uint8_t *dst, int pitchDst)
+    {
         ALIGN_DECL(32) short buf[32 * 32];
         if (size == 0) {
             av1_inv_txfm2d_4x4_sse4(src, buf, type);
@@ -1153,8 +1239,12 @@ namespace AV1PP {
         } else if (size == 2) {
             av1_inv_txfm2d_16x16_avx2(src, buf, type);
             write_buffer_16x16_16s_8u(buf, dst, pitchDst);
-        } else { assert(size == 3);
-            av1_inv_txfm2d_32x32_avx2(src, buf);
+        } else {
+            assert(size == 3);
+            if (type == IDTX)
+                iidtx32x32_avx2(src, buf);
+            else
+                av1_inv_txfm2d_32x32_avx2(src, buf);
             write_buffer_32x32_16s_8u(buf, dst, pitchDst);
         }
     }
@@ -1163,13 +1253,20 @@ namespace AV1PP {
     template void itransform_add_av1_avx2<0, 1>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_avx2<0, 2>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_avx2<0, 3>(const int16_t*,uint8_t*,int);
+    template void itransform_add_av1_avx2<0, 9>(const int16_t*,uint8_t*,int);
+
     template void itransform_add_av1_avx2<1, 0>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_avx2<1, 1>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_avx2<1, 2>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_avx2<1, 3>(const int16_t*,uint8_t*,int);
+    template void itransform_add_av1_avx2<1, 9>(const int16_t*,uint8_t*,int);
+
     template void itransform_add_av1_avx2<2, 0>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_avx2<2, 1>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_avx2<2, 2>(const int16_t*,uint8_t*,int);
     template void itransform_add_av1_avx2<2, 3>(const int16_t*,uint8_t*,int);
-    template void itransform_add_av1_avx2<3, 0>(const int16_t*,uint8_t*,int);
+    template void itransform_add_av1_avx2<2, 9>(const int16_t*, uint8_t*,int);
+
+    template void itransform_add_av1_avx2<3, 0>(const int16_t*, uint8_t*, int);
+    template void itransform_add_av1_avx2<3, 9>(const int16_t*, uint8_t*, int);
 }; // namespace AV1PP

@@ -32,6 +32,10 @@
 #define PERM4x64(c0, c1, c2, c3) c0+(c1<<2)+(c2<<4)+(c3<<6)
 #define PERM2x128(c0, c1) c0+(c1<<4)
 
+#define permute4x64(r, m0, m1, m2, m3) _mm256_permute4x64_epi64(r, (m0) + ((m1) << 2) + ((m2) << 4) + ((m3) << 6))
+#define permute2x128(r0, r1, m0, m1) _mm256_permute2x128_si256(r0, r1, (m0) + ((m1) << 4))
+#define shuffle32(r, m0, m1, m2, m3) _mm256_shuffle_epi32(r, (m0) + ((m1) << 2) + ((m2) << 4) + ((m3) << 6));
+
 namespace AV1PP {
     inline AV1_FORCEINLINE __m128  ps(__m128i r) { return _mm_castsi128_ps(r); }
     inline AV1_FORCEINLINE __m128d pd(__m128i r) { return _mm_castsi128_pd(r); }

@@ -35,27 +35,60 @@ namespace AV1PP
             }
             return s;
         }
+
+        template <typename PixType>
+        void sse_uv_px(const PixType *p1, int pitch1, const PixType *p2, int pitch2, int width, int height, int& costU, int& costV) {
+            int s[2] = {};
+            int c = 0;
+            for (int j = 0; j < height; j++, p1 += pitch1, p2 += pitch2) {
+                for (int i = 0; i < width; i++) {
+                    int diff = p1[i] - p2[i];
+                    s[c] += (diff * diff);
+                    c ^= 1;
+                }
+                c = 0;
+            }
+            costU = s[0];
+            costV = s[1];
+        }
     }; // namespace details
 
-    template<int w, int h> int sse_px(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2) {
-        return details::sse_px<unsigned char>(p1, pitch1, p2, pitch2, w, h);
+    template<int w, int h, typename PixType> int sse_px(const PixType *p1, int pitch1, const PixType *p2, int pitch2) {
+        return details::sse_px<PixType>(p1, pitch1, p2, pitch2, w, h);
     }
-    template int sse_px< 4, 4>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px< 4, 8>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px< 8, 4>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px< 8, 8>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px< 8,16>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px<16, 4>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px<16, 8>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px<16,16>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px<16,32>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px<32, 8>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px<32,16>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px<32,32>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px<32,64>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px<64,16>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px<64,32>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
-    template int sse_px<64,64>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px< 4, 4, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px< 4, 8, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px< 8, 4, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px< 8, 8, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px< 8,16, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px<16, 4, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px<16, 8, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px<16,16, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px<16,32, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px<32, 8, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px<32,16, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px<32,32, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px<32,64, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px<64,16, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px<64,32, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+    template int sse_px<64,64, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2);
+
+    template int sse_px< 4, 4, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px< 4, 8, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px< 8, 4, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px< 8, 8, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px< 8,16, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px<16, 4, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px<16, 8, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px<16,16, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px<16,32, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px<32, 8, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px<32,16, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px<32,32, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px<32,64, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px<64,16, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px<64,32, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
+    template int sse_px<64,64, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2);
 
     template<int w, int h> int sse_p64_pw_px(const unsigned char *p1, const unsigned char *p2) {
         return details::sse_px<unsigned char>(p1, 64, p2, w, w, h);
@@ -77,34 +110,78 @@ namespace AV1PP
     template int sse_p64_pw_px<64,32>(const unsigned char *p1, const unsigned char *p2);
     template int sse_p64_pw_px<64,64>(const unsigned char *p1, const unsigned char *p2);
 
-    template<int w, int h> int sse_p64_p64_px(const unsigned char *p1, const unsigned char *p2) {
-        return details::sse_px<unsigned char>(p1, 64, p2, 64, w, h);
+    template<int w, int h> void sse_p64_pw_uv_px(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV) {
+        details::sse_uv_px<unsigned char>(p1, 64, p2, w, w, h, costU, costV);
     }
-    template int sse_p64_p64_px< 4, 4>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px< 4, 8>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px< 8, 4>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px< 8, 8>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px< 8,16>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px<16, 4>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px<16, 8>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px<16,16>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px<16,32>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px<32, 8>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px<32,16>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px<32,32>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px<32,64>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px<64,16>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px<64,32>(const unsigned char *p1, const unsigned char *p2);
-    template int sse_p64_p64_px<64,64>(const unsigned char *p1, const unsigned char *p2);
+    template void sse_p64_pw_uv_px< 4, 4>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px< 4, 8>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px< 8, 4>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px< 8, 8>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px< 8, 16>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px<16, 4>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px<16, 8>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px<16, 16>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px<16, 32>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px<32, 8>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px<32, 16>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px<32, 32>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px<32, 64>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px<64, 16>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px<64, 32>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
+    template void sse_p64_pw_uv_px<64, 64>(const unsigned char *p1, const unsigned char *p2, int& costU, int& costV);
 
-    template<int w> int sse_px(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2, int h) {
-        return details::sse_px<unsigned char>(p1, pitch1, p2, pitch2, w, h);
+
+    template<int w, int h, typename PixType> int sse_p64_p64_px(const PixType *p1, const PixType *p2) {
+        return details::sse_px<PixType>(p1, 64, p2, 64, w, h);
     }
-    template int sse_px< 4>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2, int h);
-    template int sse_px< 8>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2, int h);
-    template int sse_px<16>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2, int h);
-    template int sse_px<32>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2, int h);
-    template int sse_px<64>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2, int h);
+    template int sse_p64_p64_px< 4, 4, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px< 4, 8, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px< 8, 4, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px< 8, 8, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px< 8,16, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px<16, 4, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px<16, 8, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px<16,16, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px<16,32, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px<32, 8, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px<32,16, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px<32,32, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px<32,64, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px<64,16, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px<64,32, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+    template int sse_p64_p64_px<64,64, unsigned char>(const unsigned char *p1, const unsigned char *p2);
+
+    template int sse_p64_p64_px< 4, 4,  unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px< 4, 8,  unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px< 8, 4,  unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px< 8, 8,  unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px< 8, 16, unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px<16, 4,  unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px<16, 8,  unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px<16, 16, unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px<16, 32, unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px<32, 8,  unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px<32, 16, unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px<32, 32, unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px<32, 64, unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px<64, 16, unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px<64, 32, unsigned short>(const unsigned short *p1, const unsigned short *p2);
+    template int sse_p64_p64_px<64, 64, unsigned short>(const unsigned short *p1, const unsigned short *p2);
+
+    template<int w, typename PixType> int sse_px(const PixType *p1, int pitch1, const PixType *p2, int pitch2, int h) {
+        return details::sse_px<PixType>(p1, pitch1, p2, pitch2, w, h);
+    }
+    template int sse_px< 4, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2, int h);
+    template int sse_px< 8, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2, int h);
+    template int sse_px<16, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2, int h);
+    template int sse_px<32, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2, int h);
+    template int sse_px<64, unsigned char>(const unsigned char *p1, int pitch1, const unsigned char *p2, int pitch2, int h);
+
+    template int sse_px< 4, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2, int h);
+    template int sse_px< 8, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2, int h);
+    template int sse_px<16, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2, int h);
+    template int sse_px<32, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2, int h);
+    template int sse_px<64, unsigned short>(const unsigned short *p1, int pitch1, const unsigned short *p2, int pitch2, int h);
 
     int64_t sse_cont_px(const int16_t *src1, const int16_t *src2, int len)
     {

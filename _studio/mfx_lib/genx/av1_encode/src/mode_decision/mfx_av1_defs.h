@@ -103,6 +103,15 @@ inline void ippFree(void *ptr) {
 #define H265_Free    ippFree
 #define H265_SafeFree(p) if (p) H265_Free(p); p = NULL
 
+#define FAST_MODE
+#ifdef FAST_MODE
+#define COMPOUND_OPT1
+#define COMPOUND_OPT2
+#endif
+// External MePu
+#define MEPU16 1
+#define MEPU8 1
+
 #define TRYINTRA_ORIG
 #define JOIN_MI_INLOOP
 #define SINGLE_SIDED_COMPOUND
@@ -129,6 +138,7 @@ inline void ippFree(void *ptr) {
 #define MAX_TOTAL_DEPTH (6+4)
 
 #define PROTOTYPE_GPU_MODE_DECISION 1
+#define GPU_VARTX 0
 
 //#define DUMP_COSTS_CU
 //#define DUMP_COSTS_TU

@@ -469,7 +469,7 @@ void MFXStructureRef <mfxExtCodingOptionAV1E>::ConstructValues() const
     SERIALIZE_INT(NumRefLayers);
     SERIALIZE_INT(ConstQpOffset);
     SERIALIZE_INT(SplitThresholdMultiplier);
-    SERIALIZE_INT(EnableCmBiref);
+    SERIALIZE_INT(EnableCmInterp);
     SERIALIZE_INT(RepackForMaxFrameSize);
     SERIALIZE_INT(AutoScaleToCoresUsingTiles);
     SERIALIZE_INT(MaxTaskChainEnc);
@@ -484,11 +484,21 @@ void MFXStructureRef <mfxExtCodingOptionAV1E>::ConstructValues() const
     SERIALIZE_INT(MaxTxDepthIntraRefine);
     SERIALIZE_INT(MaxTxDepthInterRefine);
     SERIALIZE_INT(ChromaRDO);
+    SERIALIZE_INT(InterpFilter);
     SERIALIZE_INT(InterpFilterRefine);
     SERIALIZE_INT(IntraRDO);
     SERIALIZE_INT(InterRDO);
     SERIALIZE_INT(IntraInterRDO);
     SERIALIZE_INT(CodecTypeExt);
+    SERIALIZE_INT(CDEF);
+    SERIALIZE_INT(LRMode);
+    SERIALIZE_INT(SRMode);
+    SERIALIZE_INT(CFLMode);
+    SERIALIZE_INT(ScreenMode);
+    SERIALIZE_INT(DisableFrameEndUpdateCdf);
+    SERIALIZE_INT(NumTileColumnsKeyFrame);
+    SERIALIZE_INT(NumTileColumnsInterFrame);
+    SERIALIZE_INT(NumGpuSlices);
 }
 
 void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const

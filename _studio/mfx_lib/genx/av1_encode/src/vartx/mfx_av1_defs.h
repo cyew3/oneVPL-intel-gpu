@@ -1679,6 +1679,57 @@ namespace H265Enc {
     struct ADzCtx {
         float aqroundFactorY[2];      // [DC/AC]
         float aqroundFactorUv[2][2];  // [U/v][DC/AC]
+        float reserved[2];
+        void Add(float *dy, float duv[][2])
+        {
+            this->aqroundFactorY[0]     += dy[0];
+            this->aqroundFactorY[1]     += dy[1];
+            this->aqroundFactorUv[0][0] += duv[0][0];
+            this->aqroundFactorUv[0][1] += duv[0][1];
+            this->aqroundFactorUv[1][0] += duv[1][0];
+            this->aqroundFactorUv[1][1] += duv[1][1];
+        }
+        void AddWeighted(const float *dy, const float duv[][2], const float *y, const float uv[][2])
+        {
+            const float dw[8] = { 1.0f, 0.984496437f, 0.939413063f, 0.868815056f, 0.778800783f, 0.676633846f, 0.569782825f, 0.465043188f };
+
+            int di = Saturate(0, 7, (int)((this->aqroundFactorY[0] - y[0])*(this->aqroundFactorY[0] - y[0])*8.0f + 0.5f));
+            this->aqroundFactorY[0] += dy[0] * dw[di];
+            di = Saturate(0, 7, (int)((this->aqroundFactorY[1] - y[1])*(this->aqroundFactorY[1] - y[1])*8.0f + 0.5f));
+            this->aqroundFactorY[1] += dy[1] * dw[di];
+            di = Saturate(0, 7, (int)((this->aqroundFactorUv[0][0] - uv[0][0])*(this->aqroundFactorUv[0][0] - uv[0][0])*8.0f + 0.5f));
+            this->aqroundFactorUv[0][0] += duv[0][0] * dw[di];
+            di = Saturate(0, 7, (int)((this->aqroundFactorUv[0][1] - uv[0][1])*(this->aqroundFactorUv[0][1] - uv[0][1])*8.0f + 0.5f));
+            this->aqroundFactorUv[0][1] += duv[0][1] * dw[di];
+            di = Saturate(0, 7, (int)((this->aqroundFactorUv[1][0] - uv[1][0])*(this->aqroundFactorUv[1][0] - uv[1][0])*8.0f + 0.5f));
+            this->aqroundFactorUv[1][0] += duv[1][0] * dw[di];
+            di = Saturate(0, 7, (int)((this->aqroundFactorUv[1][1] - uv[1][1])*(this->aqroundFactorUv[1][1] - uv[1][1])*8.0f + 0.5f));
+            this->aqroundFactorUv[1][1] += duv[1][1] * dw[di];
+        }
+        void SetMin(const float *y, const float uv[][2])
+        {
+            this->aqroundFactorY[0]     = MIN(this->aqroundFactorY[0], y[0]);
+            this->aqroundFactorY[1]     = MIN(this->aqroundFactorY[1], y[1]);
+            this->aqroundFactorUv[0][0] = MIN(this->aqroundFactorUv[0][0], uv[0][0]);
+            this->aqroundFactorUv[0][1] = MIN(this->aqroundFactorUv[0][1], uv[0][1]);
+            this->aqroundFactorUv[1][0] = MIN(this->aqroundFactorUv[1][0], uv[1][0]);
+            this->aqroundFactorUv[1][1] = MIN(this->aqroundFactorUv[1][1], uv[1][1]);
+        }
+        void SetDcAc(float Dz0, float Dz1) {
+            this->aqroundFactorY[0] = Dz0;
+            this->aqroundFactorY[1] = Dz1;
+            this->aqroundFactorUv[0][0] = this->aqroundFactorUv[1][0] = Dz0;
+            this->aqroundFactorUv[0][1] = this->aqroundFactorUv[1][1] = Dz1;
+        }
+        void SaturateAcDc(float Dz0, float Dz1, float varDz)
+        {
+            this->aqroundFactorY[0]     = Saturate((Dz0 - varDz), (Dz0 + varDz), this->aqroundFactorY[0]);
+            this->aqroundFactorUv[0][0] = Saturate((Dz0 - varDz), (Dz0 + varDz), this->aqroundFactorUv[0][0]);
+            this->aqroundFactorUv[1][0] = Saturate((Dz0 - varDz), (Dz0 + varDz), this->aqroundFactorUv[1][0]);
+            this->aqroundFactorY[1]     = Saturate((Dz1 - varDz), (Dz1 + varDz), this->aqroundFactorY[1]);
+            this->aqroundFactorUv[0][1] = Saturate((Dz1 - varDz), (Dz1 + varDz), this->aqroundFactorUv[0][1]);
+            this->aqroundFactorUv[1][1] = Saturate((Dz1 - varDz), (Dz1 + varDz), this->aqroundFactorUv[1][1]);
+        }
     };
 
     struct EntropyContexts {

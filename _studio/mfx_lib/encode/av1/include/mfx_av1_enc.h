@@ -29,6 +29,7 @@
 #include "mfx_av1_defs.h"
 #include "mfx_av1_frame.h"
 #include "mfx_av1_deblocking.h"
+#include "mfx_av1_bitwriter.h"
 
 namespace AV1Enc {
 
@@ -53,37 +54,6 @@ namespace AV1Enc {
         int32_t separateUvDeltaQ;
     };
 
-    struct TileParam {
-        int32_t uniformSpacing;
-        int32_t rows;
-        int32_t cols;
-        int32_t log2Rows;
-        int32_t log2Cols;
-        int32_t minLog2Cols;
-        int32_t minLog2Rows;
-        int32_t maxLog2Cols;
-        int32_t maxLog2Rows;
-        int32_t minLog2Tiles;
-        int32_t maxTileWidthSb;
-        int32_t maxTileHeightSb;
-
-        uint32_t mapSb2TileRow[(CodecLimits::MAX_HEIGHT + 63) / 64];
-        uint32_t mapSb2TileCol[(CodecLimits::MAX_WIDTH + 63) / 64];
-
-        uint16_t colStart    [CodecLimits::AV1_MAX_NUM_TILE_COLS];
-        uint16_t colEnd      [CodecLimits::AV1_MAX_NUM_TILE_COLS];
-        uint16_t colWidth    [CodecLimits::AV1_MAX_NUM_TILE_COLS];
-        uint16_t rowStart    [CodecLimits::AV1_MAX_NUM_TILE_ROWS];
-        uint16_t rowEnd      [CodecLimits::AV1_MAX_NUM_TILE_ROWS];
-        uint16_t rowHeight   [CodecLimits::AV1_MAX_NUM_TILE_ROWS];
-        uint16_t miColStart  [CodecLimits::AV1_MAX_NUM_TILE_COLS];
-        uint16_t miColEnd    [CodecLimits::AV1_MAX_NUM_TILE_COLS];
-        uint16_t miColWidth  [CodecLimits::AV1_MAX_NUM_TILE_COLS];
-        uint16_t miRowStart  [CodecLimits::AV1_MAX_NUM_TILE_ROWS];
-        uint16_t miRowEnd    [CodecLimits::AV1_MAX_NUM_TILE_ROWS];
-        uint16_t miRowHeight [CodecLimits::AV1_MAX_NUM_TILE_ROWS];
-    };
-
     struct AV1VideoParam {
         // preset
         int32_t Log2MaxCUSize;
@@ -93,24 +63,19 @@ namespace AV1Enc {
         int32_t QuadtreeTUMaxDepthIntra;
         int32_t QuadtreeTUMaxDepthInter;
         int32_t QuadtreeTUMaxDepthInterRD;
-        uint8_t  QPI;
-        uint8_t  QPP;
-        uint8_t  QPB;
-        uint8_t  partModes;
-        uint8_t  TMVPFlag;
-        uint8_t  encodedOrder;
+        uint8_t QPI;
+        uint8_t QPP;
+        uint8_t QPB;
+        uint8_t partModes;
+        uint8_t TMVPFlag;
+        uint8_t encodedOrder;
 
-        int32_t NumSlices;
-        int32_t NumTiles;
-        int32_t NumTileCols;
-        int32_t NumTileRows;
-        int32_t RegionIdP1;
-        uint8_t  AnalyseFlags;
+        uint8_t AnalyseFlags;
         int32_t GopPicSize;
         int32_t GopRefDist;
         int32_t IdrInterval;
-        uint8_t  GopClosedFlag;
-        uint8_t  GopStrictFlag;
+        uint8_t GopClosedFlag;
+        uint8_t GopStrictFlag;
 
         int32_t MaxDecPicBuffering;
         int32_t BiPyramidLayers;
@@ -139,7 +104,6 @@ namespace AV1Enc {
         uint8_t  rdoqCGZFlag;  // RDOQ Coeff Group Zero
         uint8_t  SAOFlag;      // Sample Adaptive Offset (Luma only)
         uint8_t  SAOChromaFlag;// Sample Adaptive Offset for Chroma
-        uint8_t  WPPFlag; // Wavefront
         uint8_t  fastSkip;
         uint8_t  fastCbfMode;
         uint8_t  puDecisionSatd;
@@ -150,14 +114,18 @@ namespace AV1Enc {
         uint8_t  enableCmFlag;
         uint8_t  enableCmPostProc;  // both: deblock + sao. limitations: 1) 420@8bit (2) sao only for luma
         uint8_t  enablePostProcFrame;
-        uint8_t  CmBirefineFlag;  // GPU birefinement
+
         uint8_t  CmInterpFlag;    // GPU hpel interpolation for every recon
 
-        uint8_t  DeltaQpMode;      // 0 - disable, 0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ
+        uint8_t  DeltaQpMode;      // 0 - disable, 0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ, 0x8 = Psy, 0xf = HROI
         CostType LambdaCorrection;
         int32_t RateControlDepth; // rate control depth: how many analyzed future frames are required for BRC
+        uint8_t  ZeroDelay;
+        uint8_t QuickStartPFrame;   // Start P Frame without waiting for PreAnalysis to end.
         uint8_t  SceneCut;         // Enable Scene Change Detection
         uint8_t  AdaptiveI;        // Enable Scene Change Detection and insert IDR frame
+        uint8_t  EnableALTR;       // Enable Adaptive LTR
+        uint8_t  LTRConfidenceLevel;
         uint8_t  AnalyzeCmplx;     // analyze frame complexity (for BRC)
         uint8_t  LowresFactor;     // > 0 means lookahead algorithms is applied on downscaled frames
         uint8_t  FullresMetrics;  // 0 use Lowres metrics, 1 means process LA with Lowres but compute final metrics on Fullres
@@ -188,7 +156,6 @@ namespace AV1Enc {
         int32_t numBiRefineIter;
         uint32_t num_threads;
         uint32_t num_thread_structs;
-        uint32_t num_bs_subsets;
         uint8_t IntraChromaRDO;   // 1-turns on syntax cost for chroma in Intra
         uint8_t FastInterp;       // 1-turns on fast filters for ME
         uint8_t cpuFeature;       // 0-auto, 1-px, 2-sse4, 3-sse4atom, 4-ssse3, 5-avx2
@@ -251,6 +218,8 @@ namespace AV1Enc {
         uint32_t  hrdBitrate;
         uint32_t  cpbSize;
         uint32_t  initDelay;
+        uint32_t  MaxFrameSizeInBits;
+        uint16_t  RepackForMaxFrameSize;
         uint16_t  AspectRatioW;
         uint16_t  AspectRatioH;
         uint16_t  Profile;
@@ -267,7 +236,8 @@ namespace AV1Enc {
 
         mfxF64 tcDuration90KHz;
 
-        TileParam tileParam;
+        TileParam tileParamKeyFrame;
+        TileParam tileParamInterFrame;
 
         uint8_t   doDumpRecon;
         uint8_t   doDumpSource;
@@ -281,7 +251,8 @@ namespace AV1Enc {
         int32_t m_lagBehindRefRows; // = Func2 ( m_framesInParallel ). How many ctb rows in ref frames have to be encoded
 
         int32_t randomRepackThreshold;
-
+        // MBQP
+        uint16_t ctrlMBQP;
         // priority ROI
         uint16_t numRoi;
         AV1PriorityRoi roi[256];
@@ -321,6 +292,8 @@ namespace AV1Enc {
 
         QuantParam qparamY[QINDEX_RANGE];
         QuantParam qparamUv[QINDEX_RANGE];
+        QuantParam qparamY10[QINDEX_RANGE];
+        QuantParam qparamUv10[QINDEX_RANGE];
 
         EnumCodecType codecType;
         AV1SequenceHeader seqParams;
@@ -330,6 +303,18 @@ namespace AV1Enc {
 #endif
         uint8_t  cdefFlag; // CDEF
         uint8_t  lrFlag;   // Loop Restoration
+        uint8_t  superResFlag;// super resolution
+        uint8_t  cflFlag;// chroma from luma
+        uint8_t  screenMode; // not binary flag (on/off) but multi-choice
+        uint8_t  disableFrameEndUpdateCdf;
+        uint8_t  ibcModeDecision; // on/off Intra Block Copy during ModeDecision-stage
+
+        int32_t numGpuSlices;
+        int32_t hmeKernelSliceStart[MAX_NUM_GPU_SLICES];
+        int32_t mdKernelSliceStart[MAX_NUM_GPU_SLICES];
+        int32_t md2KernelSliceStart[MAX_NUM_GPU_SLICES];
+
+        uint8_t writeIVFHeaders;
     };
 
     inline int32_t GetTileIndex(const TileParam &tpar, int32_t ctbRow, int32_t ctbCol)
@@ -363,7 +348,7 @@ namespace AV1Enc {
         return borders;
     }
 
-    void SetupTileParamAv1(AV1VideoParam *par, int32_t numTileRows, int32_t numTileCols, int32_t uniform);
+    void SetupTileParamAv1(const AV1VideoParam *par, TileParam *tp, int32_t numTileRows, int32_t numTileCols, int32_t uniform);
 
     class BrcIface;
 
@@ -379,6 +364,7 @@ namespace AV1Enc {
         template <typename PixType> mfxStatus PerformThreadingTask(uint32_t ctb_row, uint32_t ctb_col);
         int32_t GetOutputData(mfxBitstream &mfxBS);
         void PackTile(int32_t tile);
+        void PackRow(const ThreadingTask &task);
 #if USE_CMODEL_PAK
         void PackTile_viaCmodel(int32_t tile);
 #endif
@@ -393,8 +379,6 @@ namespace AV1Enc {
 
         struct CompressedBuf {
             CompressedBuf() : capacity(), size(), buf(), entBuf(), entBufCapacity() {}
-            void Alloc(int32_t capacity, EnumCodecType codecType);
-            void Free();
             int32_t capacity;
             int32_t size;
             uint8_t *buf;
@@ -402,20 +386,48 @@ namespace AV1Enc {
             int32_t entBufCapacity;
         };
 
-        CompressedBuf m_compressedHeader;
-        std::vector<CompressedBuf> m_compressedTiles;
-        int32_t m_numTiles;
+#if ENABLE_BITSTREAM_MEM_REDUCTION
+        void SetBitsreamPtr(mfxBitstream  &mfxBS);
+        struct {
+            void init(uint8_t* data_, size_t size_) { m_size = size_;  m_data = data_; }
+            void resize(size_t size_) { m_workBuffer.resize(size_); m_size = size_;  m_data = m_workBuffer.data(); }
+            size_t size(void) const { return m_size; }
+            uint8_t* data(void) { return m_data; }
+        private:
+            size_t m_size;
+            uint8_t *m_data;
+            std::vector<uint8_t> m_workBuffer;
+        } m_totalBitstreamBuffer;
+#else
+        std::vector<uint8_t> m_totalBitstreamBuffer;
+#endif
 
-        static const int32_t MAX_COMPRESSED_HEADER_SIZE = 0x10000;
+        std::vector<uint8_t*> m_tilePtrs; // pointer to m_totalBitstreamBuffer
+        std::vector<uint32_t> m_tileSizes;
+        std::vector<BoolCoder> m_tileBc; // for PACK_ROW
+        std::vector<TileContexts> m_tileContexts; // used only for bitstream packing
+        std::vector<EntropyContexts> m_entropyContexts; // used only for bitstream packing
 
         CoeffsType *m_coeffWork;
-        union {
-            void     *m_tokens;
-            TokenVP9 *m_tokensVP9;
-            TokenAV1 *m_tokensAV1;
-        };
-        FrameCounts *m_countsSb;
-        int32_t m_numCountsSb;
+        PaletteInfo *m_Palette8x8;
+        uint32_t m_ColorMapYPitch;
+        uint8_t *m_ColorMapY;
+        uint32_t m_ColorMapUVPitch;
+        uint8_t *m_ColorMapUV;
+#if ENABLE_TPLMV
+        TplMvRef *m_tplMvs;
+#endif
+        uint16_t *m_txkTypes4x4;
+        int8_t *m_cdefStrenths;
+        CdefLineBuffers<uint8_t> m_cdefLineBufs;
+        CdefLineBuffers<uint16_t> m_cdefLineBufs10;
+        CFL_params *m_cfl;
+
+        uint16_t            *m_workBufForHash;
+        std::vector<int32_t> m_tmpBufForHashSize;
+        std::vector<uint16_t *> m_tmpBufForHash;
+        std::vector<HashTable> m_hash[2];
+        std::vector<AlignedBlockHash> m_hashIndexes[2];
 
         // local data
         Frame *m_frame;
@@ -423,7 +435,7 @@ namespace AV1Enc {
 
     //void SetAllLambda(AV1VideoParam const & videoParam, H265Slice *slice, int qp, const Frame* currentFrame, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
     CostType h265_calc_split_threshold(int32_t tabIndex, int32_t isNotCu, int32_t isNotI, int32_t log2width, int32_t strength, int32_t QP);
-    void ApplyDeltaQp(Frame* frame, const AV1VideoParam & par, uint8_t useBrc = 0);
+    template <typename T> class ObjectPool;
     void AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool = NULL, bool threaded = false);
     void AddTaskDependencyThreaded(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool = NULL);
 

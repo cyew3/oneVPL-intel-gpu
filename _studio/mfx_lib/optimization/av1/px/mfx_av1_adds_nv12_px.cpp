@@ -38,4 +38,19 @@ namespace AV1PP
             dst   += pitchDst;
         }
     }
+    void adds_nv12_hbd_px(unsigned short *dst, int pitchDst, const unsigned short *src1, int pitch1, const short *src2u, const short *src2v, int pitch2, int size)
+    {
+        //const int MAXVAL = 255 << 2;
+        const int MAXVAL = (1 << 10) - 1;
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                dst[2 * j] = Saturate(0, MAXVAL, src1[2 * j] + src2u[j]);
+                dst[2 * j + 1] = Saturate(0, MAXVAL, src1[2 * j + 1] + src2v[j]);
+            }
+            src1 += pitch1;
+            src2u += pitch2;
+            src2v += pitch2;
+            dst += pitchDst;
+        }
+    }
 }; // namespace AV1PP

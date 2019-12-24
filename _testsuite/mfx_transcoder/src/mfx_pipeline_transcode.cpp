@@ -354,9 +354,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_AV1_OPTION(QuadtreeTUMaxDepthInter, OPT_UINT_16, "1-(Log2MaxCUSize-1)"),
         HANDLE_AV1_OPTION(QuadtreeTUMaxDepthInterRD, OPT_UINT_16, "1-(Log2MaxCUSize-1)"),
         HANDLE_AV1_OPTION(AnalyzeChroma, OPT_TRI_STATE, "on/off chroma intra mode"),
-        HANDLE_AV1_OPTION(SignBitHiding, OPT_TRI_STATE, ""),
         HANDLE_AV1_OPTION(RDOQuant, OPT_TRI_STATE, ""),
-        HANDLE_AV1_OPTION(SAO, OPT_TRI_STATE, ""),
         HANDLE_AV1_OPTION(SplitThresholdStrengthCUIntra, OPT_UINT_16, "0=default; 1=disabled; 2-4"),
         HANDLE_AV1_OPTION(SplitThresholdStrengthTUIntra, OPT_UINT_16, "0=default; 1=disabled; 2-4"),
         HANDLE_AV1_OPTION(SplitThresholdStrengthCUInter, OPT_UINT_16, "0=default; 1=disabled; 2-4"),
@@ -387,9 +385,6 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_AV1_OPTION(TMVP, OPT_TRI_STATE, "on/off temporal MV predictor"),
         HANDLE_AV1_OPTION(Deblocking, OPT_TRI_STATE, "on/off deblocking"),
         HANDLE_AV1_OPTION(RDOQuantChroma, OPT_TRI_STATE, "on/off RDO quantization for chroma"),
-        HANDLE_AV1_OPTION(RDOQuantCGZ, OPT_TRI_STATE, "on/off try zero coeff groups in RDO"),
-        HANDLE_AV1_OPTION(SaoOpt, OPT_UINT_16, "0-default; 1-all modes; 2-fast four modes only"),
-        HANDLE_AV1_OPTION(SaoSubOpt, OPT_UINT_16, "0-default; 1-All; 2-SubOpt, 3-Ref Frames only"),
         HANDLE_AV1_OPTION(IntraNumCand0_2, OPT_UINT_16, "number of candidates for SATD stage after gradient analysis for TU4x4"),
         HANDLE_AV1_OPTION(IntraNumCand0_3, OPT_UINT_16, "number of candidates for SATD stage after gradient analysis for TU8x8"),
         HANDLE_AV1_OPTION(IntraNumCand0_4, OPT_UINT_16, "number of candidates for SATD stage after gradient analysis for TU16x16"),
@@ -433,7 +428,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_AV1_OPTION(NumRefLayers, OPT_UINT_16, "Reference Frames Layers used for B Frames in Pyramid"),
         HANDLE_AV1_OPTION(ConstQpOffset, OPT_UINT_16, "allows setting negative QPs for 10bit: finalQP[IPB] = mfx.QP[IPB] - ConstQpOffset"),
         HANDLE_AV1_OPTION(SplitThresholdMultiplier, OPT_UINT_16, "0-10-default: multipler = SplitThresholdMultiplier / 10.0"),
-        HANDLE_AV1_OPTION(EnableCmBiref, OPT_UINT_16, "default is ON for TU1-5 and OFF for TU6-7"),
+        HANDLE_AV1_OPTION(EnableCmInterp, OPT_TRI_STATE, "default is ON"),
         HANDLE_AV1_OPTION(RepackForMaxFrameSize, OPT_TRI_STATE, "Repack for Max Frame Size violations (default is ON)"),
         HANDLE_AV1_OPTION(AutoScaleToCoresUsingTiles, OPT_TRI_STATE, "Automaticaly Scale to available Cores using Tiles if needed"),
         HANDLE_AV1_OPTION(MaxTaskChainEnc, OPT_UINT_16, "Max Task Chain in LCU for Multi-threading Efficiency"),
@@ -453,6 +448,11 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_AV1_OPTION(InterRDO, OPT_TRI_STATE, "on/off Inter mode decision by RDO"),
         HANDLE_AV1_OPTION(IntraInterRDO, OPT_TRI_STATE, "on/off Intra/Inter mode decision by RDO"),
         HANDLE_AV1_OPTION(CodecTypeExt, OPT_UINT_16, "Codec type: 0-default; 1-VP9; 2-AV1"),
+        HANDLE_AV1_OPTION(CFLMode, OPT_TRI_STATE, "on/off Chroma from Luma Mode"),
+        HANDLE_AV1_OPTION(ScreenMode, OPT_UINT_16, "ScreenContent tools: 0-default, 1-intrabc, 2-palette, 3-both, 4-auto, 5=off"),
+        HANDLE_AV1_OPTION(NumTileColumnsKeyFrame, OPT_UINT_16, "0-default, 1..N-num til columns"),
+        HANDLE_AV1_OPTION(NumTileColumnsInterFrame, OPT_UINT_16, "0-default, 1..N-num til columns"),
+        HANDLE_AV1_OPTION(NumGpuSlices, OPT_UINT_16, "number of slices on GPU"),
         //AV1 params
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         HANDLE_AV1_PARAM(FrameWidth,               OPT_UINT_16,   "0-maxU16"),
@@ -497,6 +497,12 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_AV1_AUX_DATA(OrderHintBits, OPT_UINT_8, "0-8"),
         HANDLE_AV1_AUX_DATA(ContextUpdateTileId, OPT_UINT_8, "0-127"),
         HANDLE_AV1_AUX_DATA(DisplayFormatSwizzle, OPT_TRI_STATE, "on/off"),
+#else
+        HANDLE_AV1_OPTION(InterpFilter, OPT_TRI_STATE, "on/off Interpolation filters during mode decision"),
+        HANDLE_AV1_OPTION(CDEF, OPT_TRI_STATE, "on/off CDEF"),
+        HANDLE_AV1_OPTION(LRMode, OPT_TRI_STATE, "on/off Loop Restoration Mode"),
+        HANDLE_AV1_OPTION(SRMode, OPT_TRI_STATE, "on/off Super Resolution Mode"),
+        HANDLE_AV1_OPTION(DisableFrameEndUpdateCdf, OPT_TRI_STATE, "on/off disable_frame_end_update_cdf"),
 #endif
         //HEVC
         HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "0-maxU16: Number of tile columns (1 - default)"),

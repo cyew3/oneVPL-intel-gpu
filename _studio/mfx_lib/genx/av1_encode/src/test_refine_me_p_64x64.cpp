@@ -19,34 +19,46 @@
 // SOFTWARE.
 
 #include "stdio.h"
-#pragma warning(push)
-#pragma warning(disable : 4100)
-#pragma warning(disable : 4201)
-#include "cm_rt.h"
 #include "vector"
+
+#pragma warning(push)
+#pragma warning(disable : 4101)
+#pragma warning(disable : 4189)
+#pragma warning(disable : 4201)
+#pragma warning(disable : 4463)
+#include "cm_rt.h"
 #pragma warning(pop)
+
 #include "../include/test_common.h"
-#include "../include/genx_hevce_refine_me_p_64x64_bdw_isa.h"
-#include "../include/genx_hevce_refine_me_p_64x64_hsw_isa.h"
-#include "../include/genx_hevce_refine_me_p_64x64_cnl_isa.h"
+#include "../include/genx_av1_refine_me_p_64x64_hsw_isa.h"
+#include "../include/genx_av1_refine_me_p_64x64_bdw_isa.h"
+#include "../include/genx_av1_refine_me_p_64x64_skl_isa.h"
+#include "../include/genx_av1_refine_me_p_64x64_icllp_isa.h"
+//#include "../include/genx_av1_refine_me_p_64x64_tgl_isa.h"
 
 #ifdef CMRT_EMU
 extern "C"
-void RefineMeP64x64(SurfaceIndex DIST, SurfaceIndex MV, SurfaceIndex SRC, SurfaceIndex REF);
+void RefineMeP64x64(SurfaceIndex DIST, SurfaceIndex MV, SurfaceIndex SRC, SurfaceIndex REF, uint4 yoff);
 #endif //CMRT_EMU
 
 namespace {
     int RunGpu(const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvData, mfxI16Pair *outMvData, uint32_t *distData, int32_t width, int32_t height);
     int RunRef(const mfxU8 *srcData, const mfxU8 *refData, const mfxI16Pair *mvData, mfxI16Pair *outMvData, uint32_t *distData, int32_t width, int32_t height);
-    template <class T> int Compare(const T *outGpu, const T *outRef, int32_t width, int32_t height, const char *name);
+    int Compare(const uint32_t *outGpu, const uint32_t *outRef, int32_t width, int32_t height, const char *name);
+    int Compare(const mfxI16Pair *outGpu, const mfxI16Pair *outRef, int32_t width, int32_t height, const char *name);
 }
 
 static const int32_t BLOCKSIZE = 64;
 
-int main()
+int main(int argc, char **argv)
 {
-    int32_t width = 1920;
-    int32_t height = 1080;
+    if (argc < 4)
+        return printf("Usage: app.exe <yuv> <width> <height>\n"), FAILED;
+
+    const char *yuvname = argv[1];
+    int32_t width = atoi(argv[2]);
+    int32_t height = atoi(argv[3]);
+
     mfxI32 width64x = DIVUP(width, BLOCKSIZE);
     mfxI32 height64x = DIVUP(height, BLOCKSIZE);
     std::vector<uint32_t> distGpu(width64x * height64x * 16);
@@ -58,7 +70,7 @@ int main()
     std::vector<mfxI16Pair> mvRef(width64x * height64x);
     mfxI32 res = PASSED;
 
-    FILE *f = fopen(YUV_NAME, "rb");
+    FILE *f = fopen(yuvname, "rb");
     if (!f)
         return printf("FAILED to open yuv file\n"), 1;
     if (fread(src.data(), 1, src.size(), f) != src.size()) // read first frame
@@ -94,12 +106,25 @@ int main()
 bool operator==(const mfxI16Pair &l, const mfxI16Pair &r) { return l.x == r.x && l.y == r.y; }
 
 namespace {
-    template <class T> int Compare(const T *outGpu, const T *outRef, int32_t width, int32_t height, const char *name)
+    int Compare(const uint32_t *outGpu, const uint32_t *outRef, int32_t width, int32_t height, const char *name)
     {
         auto diff = std::mismatch(outGpu, outGpu + width * height, outRef);
         if (diff.first != outGpu + width * height) {
             int32_t pos = int32_t(diff.first - outGpu);
-            printf("FAILED: \"%s\" surfaces differ at x=%d, y=%d tst=%d, ref=%d\n", name, pos%width, pos/width, *diff.first, *diff.second);
+            printf("FAILED: \"%s\" dist differ at x=%d, y=%d tst=%d, ref=%d\n",
+                name, pos%width, pos / width, *diff.first, *diff.second);
+            return FAILED;
+        }
+        return PASSED;
+    }
+
+    int Compare(const mfxI16Pair *outGpu, const mfxI16Pair *outRef, int32_t width, int32_t height, const char *name)
+    {
+        auto diff = std::mismatch(outGpu, outGpu + width * height, outRef);
+        if (diff.first != outGpu + width * height) {
+            int32_t pos = int32_t(diff.first - outGpu);
+            printf("FAILED: \"%s\" MV differ at x=%d, y=%d tst=(%d,%d), ref=(%d,%d)\n",
+                name, pos%width, pos / width, diff.first->x, diff.first->y, diff.second->x, diff.second->y);
             return FAILED;
         }
         return PASSED;
@@ -115,8 +140,19 @@ namespace {
         mfxI32 res = CreateCmDevice(device, version);
         CHECK_CM_ERR(res);
 
+        GPU_PLATFORM hwType;
+        size_t size = sizeof(mfxU32);
+        device->GetCaps(CAP_GPU_PLATFORM, size, &hwType);
+
         CmProgram *program = 0;
-        res = device->LoadProgram((void *)genx_hevce_refine_me_p_64x64_hsw, sizeof(genx_hevce_refine_me_p_64x64_hsw), program);
+        if (hwType == PLATFORM_INTEL_HSW)
+            res = device->LoadProgram((void *)genx_av1_refine_me_p_64x64_hsw, sizeof(genx_av1_refine_me_p_64x64_hsw), program, "nojitter");
+        else if (hwType == PLATFORM_INTEL_BDW)
+            res = device->LoadProgram((void *)genx_av1_refine_me_p_64x64_bdw, sizeof(genx_av1_refine_me_p_64x64_bdw), program, "nojitter");
+        else if (hwType == PLATFORM_INTEL_SKL)
+            res = device->LoadProgram((void *)genx_av1_refine_me_p_64x64_skl, sizeof(genx_av1_refine_me_p_64x64_skl), program, "nojitter");
+        else if (hwType == PLATFORM_INTEL_ICLLP)
+            res = device->LoadProgram((void *)genx_av1_refine_me_p_64x64_icllp, sizeof(genx_av1_refine_me_p_64x64_icllp), program, "nojitter");
         CHECK_CM_ERR(res);
 
         CmKernel *kernel = 0;
@@ -166,6 +202,9 @@ namespace {
         CHECK_CM_ERR(res);
         res = kernel->SetKernelArg(2, sizeof(*idxRef), idxRef);
         CHECK_CM_ERR(res);
+        const uint32_t yoff = 0;
+        res = kernel->SetKernelArg(3, sizeof(yoff), &yoff);
+        CHECK_CM_ERR(res);
 
         res = kernel->SetThreadCount(width64x * height64x);
         CHECK_CM_ERR(res);
@@ -185,7 +224,7 @@ namespace {
         CHECK_CM_ERR(res);
 
         CmQueue *queue = 0;
-        res = device->CreateQueue(queue);
+        res = device->CreateQueueEx(queue/*, CM_VME_QUEUE_CREATE_OPTION*/);
         CHECK_CM_ERR(res);
 
         CmEvent * e = 0;
@@ -354,8 +393,8 @@ namespace {
 
                 mfxI16 originMvx = mvData[yBlk * width64x + xBlk].x;
                 mfxI16 originMvy = mvData[yBlk * width64x + xBlk].y;
-                mfxI16 cx = xBlk * BLOCKSIZE + originMvx / 4;
-                mfxI16 cy = yBlk * BLOCKSIZE + originMvy / 4;
+                mfxI16 cx = mfxI16(xBlk * BLOCKSIZE + originMvx / 4);
+                mfxI16 cy = mfxI16(yBlk * BLOCKSIZE + originMvy / 4);
                 mfxU32 bestSad = mfxU32(-1);
                 for (mfxI16 dy = -1; dy <= 1; dy++) {
                     for (mfxI16 dx = -1; dx <= 1; dx++) {

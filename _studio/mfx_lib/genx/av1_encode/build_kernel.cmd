@@ -58,9 +58,9 @@ if not ERRORLEVEL 0 goto :EMBED_ISA_FAILED
 
 echo === Copy embedded ISA ===
 
-copy /Y %ISA_FILENAME_FINAL%.cpp %CURDIR%\src\%ISA_FILENAME_FINAL%_isa.cpp
+copy /Y %ISA_FILENAME_FINAL%_isa.cpp %CURDIR%\src\%ISA_FILENAME_FINAL%_isa.cpp
 if not ERRORLEVEL 0 goto :COPY_ISA_FAILED
-copy /Y %ISA_FILENAME_FINAL%.h %CURDIR%\include\%ISA_FILENAME_FINAL%_isa.h
+copy /Y %ISA_FILENAME_FINAL%_isa.h %CURDIR%\include\%ISA_FILENAME_FINAL%_isa.h
 if not ERRORLEVEL 0 goto :COPY_ISA_FAILED
 
 cd %CURDIR%

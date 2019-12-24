@@ -21,11 +21,9 @@
 #include "assert.h"
 #include "string.h"
 #include "stdlib.h"
-#include "ipps.h"
+#include "stdint.h"
 
-#include <stdint.h>
-
-#define Saturate(min_val, max_val, val) IPP_MAX((min_val), IPP_MIN((max_val), (val)))
+#include "mfx_av1_opts_common.h"
 
 namespace VP9PP
 {

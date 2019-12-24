@@ -65,10 +65,14 @@ extern "C" void CheckIntra(SurfaceIndex SRC, SurfaceIndex MODE_INFO);
 const char genx_av1_intra_hsw[1] = {};
 const char genx_av1_intra_bdw[1] = {};
 const char genx_av1_intra_skl[1] = {};
+const char genx_av1_intra_cnl[1] = {};
+const char genx_av1_intra_icl[1] = {};
 #else //CMRT_EMU
 #include "../include/genx_av1_intra_hsw_isa.h"
 #include "../include/genx_av1_intra_bdw_isa.h"
 #include "../include/genx_av1_intra_skl_isa.h"
+#include "../include/genx_av1_intra_icllp_isa.h"
+//#include "../include/genx_av1_intra_tgl_isa.h"
 #endif //CMRT_EMU
 
 typedef decltype(&CM_ALIGNED_FREE) cm_aligned_deleter;
@@ -573,22 +577,27 @@ void run_gpu(const params &par, const frame_t &frame, mode_info_t *mode_info, in
     case PLATFORM_INTEL_SKL:
         THROW_CM_ERR(device->LoadProgram((void *)genx_av1_intra_skl, sizeof(genx_av1_intra_skl), program, "nojitter"));
         break;
+    case PLATFORM_INTEL_ICLLP:
+        THROW_CM_ERR(device->LoadProgram((void *)genx_av1_intra_icllp, sizeof(genx_av1_intra_icllp), program, "nojitter"));
+        break;
     default:
         throw cm_error(CM_FAILURE, __FILE__, __LINE__, "Unknown HW type");
     }
     THROW_CM_ERR(device->CreateKernel(program, CM_KERNEL_FUNCTION(CheckIntra), kernel));
     THROW_CM_ERR(device->CreateTask(task));
-    THROW_CM_ERR(device->CreateSurface2D(width, height, CM_SURFACE_FORMAT_P8, src));
-    THROW_CM_ERR(device->CreateSurface2D(sb_cols * 8 * sizeof(mode_info_t), sb_rows * 8, CM_SURFACE_FORMAT_P8, mi));
+    THROW_CM_ERR(device->CreateSurface2D(width, height, CM_SURFACE_FORMAT_A8, src));
+    THROW_CM_ERR(device->CreateSurface2D(sb_cols * 8 * sizeof(mode_info_t), sb_rows * 8, CM_SURFACE_FORMAT_A8, mi));
     THROW_CM_ERR(src->WriteSurfaceStride((const unsigned char *)frame.data, nullptr, frame.pitch));
     THROW_CM_ERR(mi->WriteSurfaceStride((const unsigned char *)mode_info, nullptr, mi_pitch));
 
+    const unsigned int yoff = 0;
     THROW_CM_ERR(kernel->SetKernelArg(0, sizeof(SurfaceIndex), get_index(src)));
     THROW_CM_ERR(kernel->SetKernelArg(1, sizeof(SurfaceIndex), get_index(mi)));
     THROW_CM_ERR(kernel->SetKernelArg(2, sizeof(unsigned int), &par.miCols));
     THROW_CM_ERR(kernel->SetKernelArg(3, sizeof(unsigned int), &par.miRows));
     THROW_CM_ERR(kernel->SetKernelArg(4, sizeof(unsigned int), &lambda));
     THROW_CM_ERR(kernel->SetKernelArg(5, sizeof(unsigned int), &early_exit));
+    THROW_CM_ERR(kernel->SetKernelArg(6, sizeof(unsigned int), &yoff));
     THROW_CM_ERR(task->AddKernel(kernel));
     THROW_CM_ERR(kernel->SetThreadCount(tsw * tsh));
     THROW_CM_ERR(device->CreateThreadSpace(tsw, tsh, ts));

@@ -22,6 +22,7 @@
 #include "assert.h"
 #include "ipps.h"
 #include <emmintrin.h>  // SSE2
+#include  <smmintrin.h>
 #include "memory.h"
 #include "mfx_av1_opts_common.h"
 
@@ -2365,23 +2366,51 @@ void lpf_horizontal_14_8u_av1_sse2(uint8_t *s, int p, const uint8_t *_blimit, co
     __m128i q6p6, q5p5, q4p4, q3p3, q2p2, q1p1, q0p0, p0q0, p1q1;
     __m128i abs_p1p0;
 
-    q4p4 = _mm_loadl_epi64((__m128i *)(s - 5 * p));
-    q4p4 = _mm_castps_si128(
-        _mm_loadh_pi(_mm_castsi128_ps(q4p4), (__m64 *)(s + 4 * p)));
-    q3p3 = _mm_loadl_epi64((__m128i *)(s - 4 * p));
-    q3p3 = _mm_castps_si128(
-        _mm_loadh_pi(_mm_castsi128_ps(q3p3), (__m64 *)(s + 3 * p)));
-    q2p2 = _mm_loadl_epi64((__m128i *)(s - 3 * p));
-    q2p2 = _mm_castps_si128(
-        _mm_loadh_pi(_mm_castsi128_ps(q2p2), (__m64 *)(s + 2 * p)));
-    q1p1 = _mm_loadl_epi64((__m128i *)(s - 2 * p));
-    q1p1 = _mm_castps_si128(
-        _mm_loadh_pi(_mm_castsi128_ps(q1p1), (__m64 *)(s + 1 * p)));
-    p1q1 = _mm_shuffle_epi32(q1p1, 78);
-    q0p0 = _mm_loadl_epi64((__m128i *)(s - 1 * p));
-    q0p0 = _mm_castps_si128(
-        _mm_loadh_pi(_mm_castsi128_ps(q0p0), (__m64 *)(s - 0 * p)));
-    p0q0 = _mm_shuffle_epi32(q0p0, 78);
+    if (p == 8) {
+        q6p6 = _mm_loadl_epi64((__m128i *)(s - 7 * 8));
+        const __m128i q5q4 = _mm_load_si128((__m128i *)(s - 6 * 8));
+        const __m128i q3q2 = _mm_load_si128((__m128i *)(s - 4 * 8));
+        const __m128i q1q0 = _mm_load_si128((__m128i *)(s - 2 * 8));
+        const __m128i p0p1 = _mm_load_si128((__m128i *)(s + 0 * 8));
+        q0p0 = _mm_castpd_si128(_mm_shuffle_pd(_mm_castsi128_pd(q1q0), _mm_castsi128_pd(p0p1), 1));
+        q1p1 = _mm_castpd_si128(_mm_shuffle_pd(_mm_castsi128_pd(q1q0), _mm_castsi128_pd(p0p1), 2));
+        p0q0 = _mm_shuffle_epi32(q0p0, 78);
+        p1q1 = _mm_shuffle_epi32(q1p1, 78);
+
+        const __m128i p2p3 = _mm_load_si128((__m128i *)(s + 2 * 8));
+        q2p2 = _mm_castpd_si128(_mm_shuffle_pd(_mm_castsi128_pd(q3q2), _mm_castsi128_pd(p2p3), 1));
+        q3p3 = _mm_castpd_si128(_mm_shuffle_pd(_mm_castsi128_pd(q3q2), _mm_castsi128_pd(p2p3), 2));
+        const __m128i p4p5 = _mm_load_si128((__m128i *)(s + 4 * 8));
+        q4p4 = _mm_castpd_si128(_mm_shuffle_pd(_mm_castsi128_pd(q5q4), _mm_castsi128_pd(p4p5), 1));
+        q5p5 = _mm_castpd_si128(_mm_shuffle_pd(_mm_castsi128_pd(q5q4), _mm_castsi128_pd(p4p5), 2));
+        q6p6 = _mm_castps_si128(
+            _mm_loadh_pi(_mm_castsi128_ps(q6p6), (__m64 *)(s + 6 * 8)));
+    }
+    else {
+        q6p6 = _mm_loadl_epi64((__m128i *)(s - 7 * p));
+        q5p5 = _mm_loadl_epi64((__m128i *)(s - 6 * p));
+        q4p4 = _mm_loadl_epi64((__m128i *)(s - 5 * p));
+        q3p3 = _mm_loadl_epi64((__m128i *)(s - 4 * p));
+        q2p2 = _mm_loadl_epi64((__m128i *)(s - 3 * p));
+        q1p1 = _mm_loadl_epi64((__m128i *)(s - 2 * p));
+        q0p0 = _mm_loadl_epi64((__m128i *)(s - 1 * p));
+        q0p0 = _mm_castps_si128(
+            _mm_loadh_pi(_mm_castsi128_ps(q0p0), (__m64 *)(s - 0 * p)));
+        p0q0 = _mm_shuffle_epi32(q0p0, 78);
+        q1p1 = _mm_castps_si128(
+            _mm_loadh_pi(_mm_castsi128_ps(q1p1), (__m64 *)(s + 1 * p)));
+        p1q1 = _mm_shuffle_epi32(q1p1, 78);
+        q2p2 = _mm_castps_si128(
+            _mm_loadh_pi(_mm_castsi128_ps(q2p2), (__m64 *)(s + 2 * p)));
+        q3p3 = _mm_castps_si128(
+            _mm_loadh_pi(_mm_castsi128_ps(q3p3), (__m64 *)(s + 3 * p)));
+        q4p4 = _mm_castps_si128(
+            _mm_loadh_pi(_mm_castsi128_ps(q4p4), (__m64 *)(s + 4 * p)));
+        q5p5 = _mm_castps_si128(
+            _mm_loadh_pi(_mm_castsi128_ps(q5p5), (__m64 *)(s + 5 * p)));
+        q6p6 = _mm_castps_si128(
+            _mm_loadh_pi(_mm_castsi128_ps(q6p6), (__m64 *)(s + 6 * p)));
+    }
 
     {
         __m128i abs_p1q1, abs_p0q0, abs_q1q0, fe, ff, work;
@@ -2465,13 +2494,6 @@ void lpf_horizontal_14_8u_av1_sse2(uint8_t *s, int p, const uint8_t *_blimit, co
             flat = _mm_cmpeq_epi8(flat, zero);
             flat = _mm_and_si128(flat, mask);
 
-            q5p5 = _mm_loadl_epi64((__m128i *)(s - 6 * p));
-            q5p5 = _mm_castps_si128(
-                _mm_loadh_pi(_mm_castsi128_ps(q5p5), (__m64 *)(s + 5 * p)));
-
-            q6p6 = _mm_loadl_epi64((__m128i *)(s - 7 * p));
-            q6p6 = _mm_castps_si128(
-                _mm_loadh_pi(_mm_castsi128_ps(q6p6), (__m64 *)(s + 6 * p)));
             flat2 = _mm_max_epu8(abs_diff(q4p4, q0p0), abs_diff(q5p5, q0p0));
             work = abs_diff(q6p6, q0p0);
             flat2 = _mm_max_epu8(work, flat2);

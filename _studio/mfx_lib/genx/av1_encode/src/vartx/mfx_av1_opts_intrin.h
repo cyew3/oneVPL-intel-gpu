@@ -21,7 +21,6 @@
 #pragma once
 
 #include "assert.h"
-#include "ippdefs.h"
 #include "immintrin.h"
 #include "mfx_av1_opts_common.h"
 
@@ -31,6 +30,9 @@
 #define SHUFPD(c0, c1) c0+(c1<<1)
 #define PERM4x64(c0, c1, c2, c3) c0+(c1<<2)+(c2<<4)+(c3<<6)
 #define PERM2x128(c0, c1) c0+(c1<<4)
+
+#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
 
 namespace VP9PP {
     inline H265_FORCEINLINE __m128  ps(__m128i r) { return _mm_castsi128_ps(r); }

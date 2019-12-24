@@ -65,14 +65,29 @@ namespace AV1PP
     template void diff_nxn_px<32>(const unsigned char *src1, int pitchSrc1, const unsigned char *src2, int pitchSrc2, short *dst, int pitchDst);
     template void diff_nxn_px<64>(const unsigned char *src1, int pitchSrc1, const unsigned char *src2, int pitchSrc2, short *dst, int pitchDst);
 
-    template <int w> void diff_nxn_p64_p64_pw_px(const unsigned char *src1, const unsigned char *src2, short *dst) {
+    template <int w> void diff_nxn_hbd_px(const unsigned short *src1, int pitchSrc1, const unsigned short *src2, int pitchSrc2, short *dst, int pitchDst) {
+        details::diff_nxn_px(src1, pitchSrc1, src2, pitchSrc2, dst, pitchDst, w);
+    }
+    template void diff_nxn_hbd_px<4>(const unsigned short *src1, int pitchSrc1, const unsigned short *src2, int pitchSrc2, short *dst, int pitchDst);
+    template void diff_nxn_hbd_px<8>(const unsigned short *src1, int pitchSrc1, const unsigned short *src2, int pitchSrc2, short *dst, int pitchDst);
+    template void diff_nxn_hbd_px<16>(const unsigned short *src1, int pitchSrc1, const unsigned short *src2, int pitchSrc2, short *dst, int pitchDst);
+    template void diff_nxn_hbd_px<32>(const unsigned short *src1, int pitchSrc1, const unsigned short *src2, int pitchSrc2, short *dst, int pitchDst);
+    template void diff_nxn_hbd_px<64>(const unsigned short *src1, int pitchSrc1, const unsigned short *src2, int pitchSrc2, short *dst, int pitchDst);
+
+    template <int w, typename PixType> void diff_nxn_p64_p64_pw_px(const PixType *src1, const PixType *src2, short *dst) {
         details::diff_nxn_px(src1, 64, src2, 64, dst, w, w);
     }
-    template void diff_nxn_p64_p64_pw_px<4>(const unsigned char *src1, const unsigned char *src2, short *dst);
-    template void diff_nxn_p64_p64_pw_px<8>(const unsigned char *src1, const unsigned char *src2, short *dst);
-    template void diff_nxn_p64_p64_pw_px<16>(const unsigned char *src1, const unsigned char *src2, short *dst);
-    template void diff_nxn_p64_p64_pw_px<32>(const unsigned char *src1, const unsigned char *src2, short *dst);
-    template void diff_nxn_p64_p64_pw_px<64>(const unsigned char *src1, const unsigned char *src2, short *dst);
+    template void diff_nxn_p64_p64_pw_px<4, unsigned char>(const unsigned char *src1, const unsigned char *src2, short *dst);
+    template void diff_nxn_p64_p64_pw_px<8, unsigned char>(const unsigned char *src1, const unsigned char *src2, short *dst);
+    template void diff_nxn_p64_p64_pw_px<16, unsigned char>(const unsigned char *src1, const unsigned char *src2, short *dst);
+    template void diff_nxn_p64_p64_pw_px<32, unsigned char>(const unsigned char *src1, const unsigned char *src2, short *dst);
+    template void diff_nxn_p64_p64_pw_px<64, unsigned char>(const unsigned char *src1, const unsigned char *src2, short *dst);
+
+    template void diff_nxn_p64_p64_pw_px<4, unsigned short>(const unsigned short *src1, const unsigned short *src2, short *dst);
+    template void diff_nxn_p64_p64_pw_px<8, unsigned short>(const unsigned short *src1, const unsigned short *src2, short *dst);
+    template void diff_nxn_p64_p64_pw_px<16, unsigned short>(const unsigned short *src1, const unsigned short *src2, short *dst);
+    template void diff_nxn_p64_p64_pw_px<32, unsigned short>(const unsigned short *src1, const unsigned short *src2, short *dst);
+    template void diff_nxn_p64_p64_pw_px<64, unsigned short>(const unsigned short *src1, const unsigned short *src2, short *dst);
 
     template <int w> void diff_nxm_px(const unsigned char *src1, int pitchSrc1, const unsigned char *src2, int pitchSrc2, short *dst, int pitchDst, int h) {
         details::diff_nxm_px(src1, pitchSrc1, src2, pitchSrc2, dst, pitchDst, w, h);
@@ -92,7 +107,7 @@ namespace AV1PP
     template void diff_nxm_p64_p64_pw_px<32>(const unsigned char *src1, const unsigned char *src2, short *dst, int h);
     template void diff_nxm_p64_p64_pw_px<64>(const unsigned char *src1, const unsigned char *src2, short *dst, int h);
 
-    template <int w> void diff_nv12_px(const unsigned char *src1, int pitchSrc1, const unsigned char *src2, int pitchSrc2, short *dstU, short *dstV, int pitchDst, int h) {
+    template <int w, typename PixType> void diff_nv12_px(const PixType *src1, int pitchSrc1, const PixType *src2, int pitchSrc2, short *dstU, short *dstV, int pitchDst, int h) {
         details::diff_nv12_px(src1, pitchSrc1, src2, pitchSrc2, dstU, dstV, pitchDst, w, h);
     }
     template void diff_nv12_px<4>(const unsigned char *src1, int pitchSrc1, const unsigned char *src2, int pitchSrc2, short *dstU, short *dstV, int pitchDst, int h);
@@ -100,13 +115,23 @@ namespace AV1PP
     template void diff_nv12_px<16>(const unsigned char *src1, int pitchSrc1, const unsigned char *src2, int pitchSrc2, short *dstU, short *dstV, int pitchDst, int h);
     template void diff_nv12_px<32>(const unsigned char *src1, int pitchSrc1, const unsigned char *src2, int pitchSrc2, short *dstU, short *dstV, int pitchDst, int h);
 
-    template <int w> void diff_nv12_p64_p64_pw_px(const unsigned char *src1, const unsigned char *src2, short *dstU, short *dstV, int h) {
+    template void diff_nv12_px<4>(const unsigned short *src1, int pitchSrc1, const unsigned short *src2, int pitchSrc2, short *dstU, short *dstV, int pitchDst, int h);
+    template void diff_nv12_px<8>(const unsigned short *src1, int pitchSrc1, const unsigned short *src2, int pitchSrc2, short *dstU, short *dstV, int pitchDst, int h);
+    template void diff_nv12_px<16>(const unsigned short *src1, int pitchSrc1, const unsigned short *src2, int pitchSrc2, short *dstU, short *dstV, int pitchDst, int h);
+    template void diff_nv12_px<32>(const unsigned short *src1, int pitchSrc1, const unsigned short *src2, int pitchSrc2, short *dstU, short *dstV, int pitchDst, int h);
+
+    template <int w, typename PixType> void diff_nv12_p64_p64_pw_px(const PixType *src1, const PixType *src2, short *dstU, short *dstV, int h) {
         details::diff_nv12_px(src1, 64, src2, 64, dstU, dstV, w, w, h);
     }
     template void diff_nv12_p64_p64_pw_px<4>(const unsigned char *src1, const unsigned char *src2, short *dstU, short *dstV, int h);
     template void diff_nv12_p64_p64_pw_px<8>(const unsigned char *src1, const unsigned char *src2, short *dstU, short *dstV, int h);
     template void diff_nv12_p64_p64_pw_px<16>(const unsigned char *src1, const unsigned char *src2, short *dstU, short *dstV, int h);
     template void diff_nv12_p64_p64_pw_px<32>(const unsigned char *src1, const unsigned char *src2, short *dstU, short *dstV, int h);
+
+    template void diff_nv12_p64_p64_pw_px<4>(const unsigned short *src1, const unsigned short *src2, short *dstU, short *dstV, int h);
+    template void diff_nv12_p64_p64_pw_px<8>(const unsigned short *src1, const unsigned short *src2, short *dstU, short *dstV, int h);
+    template void diff_nv12_p64_p64_pw_px<16>(const unsigned short *src1, const unsigned short *src2, short *dstU, short *dstV, int h);
+    template void diff_nv12_p64_p64_pw_px<32>(const unsigned short *src1, const unsigned short *src2, short *dstU, short *dstV, int h);
 
     void diff_histogram_px(unsigned char* pSrc, unsigned char* pRef, int pitch, int width, int height, int histogram[5], long long *pSrcDC, long long *pRefDC)
     {

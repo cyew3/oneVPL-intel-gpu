@@ -35,539 +35,6 @@ using namespace AV1Enc;
 
 namespace AV1Enc {
 
-static void filter_selectively_vert_row2(
-    int subsampling_factor, uint8_t *s, int pitch, unsigned int mask_16x16,
-    unsigned int mask_8x8, unsigned int mask_4x4, unsigned int mask_4x4_int,
-    const LoopFilterThresh *lfthr, const uint8_t *lfl)
-{
-    const int dual_mask_cutoff = subsampling_factor ? 0xff : 0xffff;
-    const int lfl_forward = subsampling_factor ? 4 : 8;
-    const unsigned int dual_one = 1 | (1 << lfl_forward);
-    unsigned int mask;
-    uint8_t *ss[2];
-    ss[0] = s;
-
-    for (mask =
-        (mask_16x16 | mask_8x8 | mask_4x4 | mask_4x4_int) & dual_mask_cutoff;
-        mask; mask = (mask & ~dual_one) >> 1) {
-            if (mask & dual_one) {
-                const LoopFilterThresh *lfis[2];
-                lfis[0] = lfthr + *lfl;
-                lfis[1] = lfthr + *(lfl + lfl_forward);
-                ss[1] = ss[0] + 8 * pitch;
-
-                if (mask_16x16 & dual_one) {
-                    if ((mask_16x16 & dual_one) == dual_one) {
-                        AV1PP::lpf_vertical_16_dual(ss[0], pitch, lfis[0]->mblim, lfis[0]->lim,
-                            lfis[0]->hev_thr);
-                    } else {
-                        const LoopFilterThresh *lfi = lfis[!(mask_16x16 & 1)];
-                        AV1PP::lpf_vertical_16(ss[!(mask_16x16 & 1)], pitch, lfi->mblim,
-                            lfi->lim, lfi->hev_thr);
-                    }
-                }
-
-                if (mask_8x8 & dual_one) {
-                    if ((mask_8x8 & dual_one) == dual_one) {
-                        AV1PP::lpf_vertical_8_dual(ss[0], pitch, lfis[0]->mblim, lfis[0]->lim,
-                            lfis[0]->hev_thr, lfis[1]->mblim,
-                            lfis[1]->lim, lfis[1]->hev_thr);
-                    } else {
-                        const LoopFilterThresh *lfi = lfis[!(mask_8x8 & 1)];
-                        AV1PP::lpf_vertical_8(ss[!(mask_8x8 & 1)], pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr);
-                    }
-                }
-
-                if (mask_4x4 & dual_one) {
-                    if ((mask_4x4 & dual_one) == dual_one) {
-                        AV1PP::lpf_vertical_4_dual(ss[0], pitch, lfis[0]->mblim, lfis[0]->lim,
-                            lfis[0]->hev_thr, lfis[1]->mblim,
-                            lfis[1]->lim, lfis[1]->hev_thr);
-                    } else {
-                        const LoopFilterThresh *lfi = lfis[!(mask_4x4 & 1)];
-                        AV1PP::lpf_vertical_4(ss[!(mask_4x4 & 1)], pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr);
-                    }
-                }
-
-                if (mask_4x4_int & dual_one) {
-                    if ((mask_4x4_int & dual_one) == dual_one) {
-                        AV1PP::lpf_vertical_4_dual(
-                            ss[0] + 4, pitch, lfis[0]->mblim, lfis[0]->lim, lfis[0]->hev_thr,
-                            lfis[1]->mblim, lfis[1]->lim, lfis[1]->hev_thr);
-                    } else {
-                        const LoopFilterThresh *lfi = lfis[!(mask_4x4_int & 1)];
-                        AV1PP::lpf_vertical_4(ss[!(mask_4x4_int & 1)] + 4, pitch, lfi->mblim,
-                            lfi->lim, lfi->hev_thr);
-                    }
-                }
-            }
-
-            ss[0] += 8;
-            lfl += 1;
-            mask_16x16 >>= 1;
-            mask_8x8 >>= 1;
-            mask_4x4 >>= 1;
-            mask_4x4_int >>= 1;
-    }
-}
-
-#if CONFIG_AV1_HIGHBITDEPTH
-static void highbd_filter_selectively_vert_row2(
-    int subsampling_factor, uint16_t *s, int pitch, unsigned int mask_16x16,
-    unsigned int mask_8x8, unsigned int mask_4x4, unsigned int mask_4x4_int,
-    const LoopFilterThresh *lfthr, const uint8_t *lfl, int bd)
-{
-    const int dual_mask_cutoff = subsampling_factor ? 0xff : 0xffff;
-    const int lfl_forward = subsampling_factor ? 4 : 8;
-    const unsigned int dual_one = 1 | (1 << lfl_forward);
-    unsigned int mask;
-    uint16_t *ss[2];
-    ss[0] = s;
-
-    for (mask =
-        (mask_16x16 | mask_8x8 | mask_4x4 | mask_4x4_int) & dual_mask_cutoff;
-        mask; mask = (mask & ~dual_one) >> 1) {
-            if (mask & dual_one) {
-                const LoopFilterThresh *lfis[2];
-                lfis[0] = lfthr + *lfl;
-                lfis[1] = lfthr + *(lfl + lfl_forward);
-                ss[1] = ss[0] + 8 * pitch;
-
-                if (mask_16x16 & dual_one) {
-                    if ((mask_16x16 & dual_one) == dual_one) {
-                        AV1PP::lpf_vertical_16_dual(ss[0], pitch, lfis[0]->mblim,
-                            lfis[0]->lim, lfis[0]->hev_thr, bd);
-                    } else {
-                        const LoopFilterThresh *lfi = lfis[!(mask_16x16 & 1)];
-                        AV1PP::lpf_vertical_16(ss[!(mask_16x16 & 1)], pitch, lfi->mblim,
-                            lfi->lim, lfi->hev_thr, bd);
-                    }
-                }
-
-                if (mask_8x8 & dual_one) {
-                    if ((mask_8x8 & dual_one) == dual_one) {
-                        AV1PP::lpf_vertical_8_dual(
-                            ss[0], pitch, lfis[0]->mblim, lfis[0]->lim, lfis[0]->hev_thr,
-                            lfis[1]->mblim, lfis[1]->lim, lfis[1]->hev_thr, bd);
-                    } else {
-                        const LoopFilterThresh *lfi = lfis[!(mask_8x8 & 1)];
-                        AV1PP::lpf_vertical_8(ss[!(mask_8x8 & 1)], pitch, lfi->mblim,
-                            lfi->lim, lfi->hev_thr, bd);
-                    }
-                }
-
-                if (mask_4x4 & dual_one) {
-                    if ((mask_4x4 & dual_one) == dual_one) {
-                        AV1PP::lpf_vertical_4_dual(
-                            ss[0], pitch, lfis[0]->mblim, lfis[0]->lim, lfis[0]->hev_thr,
-                            lfis[1]->mblim, lfis[1]->lim, lfis[1]->hev_thr, bd);
-                    } else {
-                        const LoopFilterThresh *lfi = lfis[!(mask_4x4 & 1)];
-                        AV1PP::lpf_vertical_4(ss[!(mask_4x4 & 1)], pitch, lfi->mblim,
-                            lfi->lim, lfi->hev_thr, bd);
-                    }
-                }
-
-                if (mask_4x4_int & dual_one) {
-                    if ((mask_4x4_int & dual_one) == dual_one) {
-                        AV1PP::lpf_vertical_4_dual(
-                            ss[0] + 4, pitch, lfis[0]->mblim, lfis[0]->lim, lfis[0]->hev_thr,
-                            lfis[1]->mblim, lfis[1]->lim, lfis[1]->hev_thr, bd);
-                    } else {
-                        const LoopFilterThresh *lfi = lfis[!(mask_4x4_int & 1)];
-                        AV1PP::lpf_vertical_4(ss[!(mask_4x4_int & 1)] + 4, pitch,
-                            lfi->mblim, lfi->lim, lfi->hev_thr, bd);
-                    }
-                }
-            }
-
-            ss[0] += 8;
-            lfl += 1;
-            mask_16x16 >>= 1;
-            mask_8x8 >>= 1;
-            mask_4x4 >>= 1;
-            mask_4x4_int >>= 1;
-    }
-}
-#endif  // CONFIG_AV1_HIGHBITDEPTH
-
-static void filter_selectively_horiz(
-    uint8_t *s, int pitch, unsigned int mask_16x16, unsigned int mask_8x8,
-    unsigned int mask_4x4, unsigned int mask_4x4_int,
-    const LoopFilterThresh *lfthr, const uint8_t *lfl)
-{
-    unsigned int mask;
-    int count;
-
-    for (mask = mask_16x16 | mask_8x8 | mask_4x4 | mask_4x4_int; mask;
-        mask >>= count) {
-            count = 1;
-            if (mask & 1) {
-                const LoopFilterThresh *lfi = lfthr + *lfl;
-
-                if (mask_16x16 & 1) {
-                    if ((mask_16x16 & 3) == 3) {
-                        AV1PP::lpf_horizontal_edge_16(s, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr);
-                        count = 2;
-                    } else {
-                        AV1PP::lpf_horizontal_edge_8(s, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr);
-                    }
-                } else if (mask_8x8 & 1) {
-                    if ((mask_8x8 & 3) == 3) {
-                        // Next block's thresholds.
-                        const LoopFilterThresh *lfin = lfthr + *(lfl + 1);
-
-                        AV1PP::lpf_horizontal_8_dual(s, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr, lfin->mblim, lfin->lim,
-                            lfin->hev_thr);
-
-                        if ((mask_4x4_int & 3) == 3) {
-                            AV1PP::lpf_horizontal_4_dual(s + 4 * pitch, pitch, lfi->mblim,
-                                lfi->lim, lfi->hev_thr, lfin->mblim,
-                                lfin->lim, lfin->hev_thr);
-                        } else {
-                            if (mask_4x4_int & 1)
-                                AV1PP::lpf_horizontal_4(s + 4 * pitch, pitch, lfi->mblim, lfi->lim,
-                                lfi->hev_thr);
-                            else if (mask_4x4_int & 2)
-                                AV1PP::lpf_horizontal_4(s + 8 + 4 * pitch, pitch, lfin->mblim,
-                                lfin->lim, lfin->hev_thr);
-                        }
-                        count = 2;
-                    } else {
-                        AV1PP::lpf_horizontal_8(s, pitch, lfi->mblim, lfi->lim, lfi->hev_thr);
-
-                        if (mask_4x4_int & 1)
-                            AV1PP::lpf_horizontal_4(s + 4 * pitch, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr);
-                    }
-                } else if (mask_4x4 & 1) {
-                    if ((mask_4x4 & 3) == 3) {
-                        // Next block's thresholds.
-                        const LoopFilterThresh *lfin = lfthr + *(lfl + 1);
-
-                        AV1PP::lpf_horizontal_4_dual(s, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr, lfin->mblim, lfin->lim,
-                            lfin->hev_thr);
-                        if ((mask_4x4_int & 3) == 3) {
-                            AV1PP::lpf_horizontal_4_dual(s + 4 * pitch, pitch, lfi->mblim,
-                                lfi->lim, lfi->hev_thr, lfin->mblim,
-                                lfin->lim, lfin->hev_thr);
-                        } else {
-                            if (mask_4x4_int & 1)
-                                AV1PP::lpf_horizontal_4(s + 4 * pitch, pitch, lfi->mblim, lfi->lim,
-                                lfi->hev_thr);
-                            else if (mask_4x4_int & 2)
-                                AV1PP::lpf_horizontal_4(s + 8 + 4 * pitch, pitch, lfin->mblim,
-                                lfin->lim, lfin->hev_thr);
-                        }
-                        count = 2;
-                    } else {
-                        AV1PP::lpf_horizontal_4(s, pitch, lfi->mblim, lfi->lim, lfi->hev_thr);
-
-                        if (mask_4x4_int & 1)
-                            AV1PP::lpf_horizontal_4(s + 4 * pitch, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr);
-                    }
-                } else {
-                    AV1PP::lpf_horizontal_4(s + 4 * pitch, pitch, lfi->mblim, lfi->lim,
-                        lfi->hev_thr);
-                }
-            }
-            s += 8 * count;
-            lfl += count;
-            mask_16x16 >>= count;
-            mask_8x8 >>= count;
-            mask_4x4 >>= count;
-            mask_4x4_int >>= count;
-    }
-}
-
-#if CONFIG_AV1_HIGHBITDEPTH
-static void filter_selectively_horiz(
-    uint16_t *s, int pitch, unsigned int mask_16x16, unsigned int mask_8x8,
-    unsigned int mask_4x4, unsigned int mask_4x4_int,
-    const LoopFilterThresh *lfthr, const uint8_t *lfl, int bd)
-{
-    unsigned int mask;
-    int count;
-
-    for (mask = mask_16x16 | mask_8x8 | mask_4x4 | mask_4x4_int; mask;
-        mask >>= count) {
-            count = 1;
-            if (mask & 1) {
-                const LoopFilterThresh *lfi = lfthr + *lfl;
-
-                if (mask_16x16 & 1) {
-                    if ((mask_16x16 & 3) == 3) {
-                        AV1PP::lpf_horizontal_edge_16(s, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr, bd);
-                        count = 2;
-                    } else {
-                        AV1PP::lpf_horizontal_edge_8(s, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr, bd);
-                    }
-                } else if (mask_8x8 & 1) {
-                    if ((mask_8x8 & 3) == 3) {
-                        // Next block's thresholds.
-                        const LoopFilterThresh *lfin = lfthr + *(lfl + 1);
-
-                        AV1PP::lpf_horizontal_8_dual(s, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr, lfin->mblim, lfin->lim,
-                            lfin->hev_thr, bd);
-
-                        if ((mask_4x4_int & 3) == 3) {
-                            AV1PP::lpf_horizontal_4_dual(
-                                s + 4 * pitch, pitch, lfi->mblim, lfi->lim, lfi->hev_thr,
-                                lfin->mblim, lfin->lim, lfin->hev_thr, bd);
-                        } else {
-                            if (mask_4x4_int & 1) {
-                                AV1PP::lpf_horizontal_4(s + 4 * pitch, pitch, lfi->mblim,
-                                    lfi->lim, lfi->hev_thr, bd);
-                            } else if (mask_4x4_int & 2) {
-                                AV1PP::lpf_horizontal_4(s + 8 + 4 * pitch, pitch, lfin->mblim,
-                                    lfin->lim, lfin->hev_thr, bd);
-                            }
-                        }
-                        count = 2;
-                    } else {
-                        AV1PP::lpf_horizontal_8(s, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr, bd);
-
-                        if (mask_4x4_int & 1) {
-                            AV1PP::lpf_horizontal_4(s + 4 * pitch, pitch, lfi->mblim,
-                                lfi->lim, lfi->hev_thr, bd);
-                        }
-                    }
-                } else if (mask_4x4 & 1) {
-                    if ((mask_4x4 & 3) == 3) {
-                        // Next block's thresholds.
-                        const LoopFilterThresh *lfin = lfthr + *(lfl + 1);
-
-                        AV1PP::lpf_horizontal_4_dual(s, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr, lfin->mblim, lfin->lim,
-                            lfin->hev_thr, bd);
-                        if ((mask_4x4_int & 3) == 3) {
-                            AV1PP::lpf_horizontal_4_dual(
-                                s + 4 * pitch, pitch, lfi->mblim, lfi->lim, lfi->hev_thr,
-                                lfin->mblim, lfin->lim, lfin->hev_thr, bd);
-                        } else {
-                            if (mask_4x4_int & 1) {
-                                AV1PP::lpf_horizontal_4(s + 4 * pitch, pitch, lfi->mblim,
-                                    lfi->lim, lfi->hev_thr, bd);
-                            } else if (mask_4x4_int & 2) {
-                                AV1PP::lpf_horizontal_4(s + 8 + 4 * pitch, pitch, lfin->mblim,
-                                    lfin->lim, lfin->hev_thr, bd);
-                            }
-                        }
-                        count = 2;
-                    } else {
-                        AV1PP::lpf_horizontal_4(s, pitch, lfi->mblim, lfi->lim,
-                            lfi->hev_thr, bd);
-
-                        if (mask_4x4_int & 1) {
-                            AV1PP::lpf_horizontal_4(s + 4 * pitch, pitch, lfi->mblim,
-                                lfi->lim, lfi->hev_thr, bd);
-                        }
-                    }
-                } else {
-                    AV1PP::lpf_horizontal_4(s + 4 * pitch, pitch, lfi->mblim, lfi->lim,
-                        lfi->hev_thr, bd);
-                }
-            }
-            s += 8 * count;
-            lfl += count;
-            mask_16x16 >>= count;
-            mask_8x8 >>= count;
-            mask_4x4 >>= count;
-            mask_4x4_int >>= count;
-    }
-}
-#endif  // CONFIG_AV1_HIGHBITDEPTH
-
-void filter_block_plane_ss00(uint8_t *dst0, int32_t stride, int32_t mi_row, int32_t mi_rows, const LoopFilterThresh *lfthr, LoopFilterMask *lfm)
-{
-    uint8_t *dst = dst0;
-    int32_t r;
-    uint64_t mask_16x16 = lfm->left_y[TX_16X16];
-    uint64_t mask_8x8 = lfm->left_y[TX_8X8];
-    uint64_t mask_4x4 = lfm->left_y[TX_4X4];
-    uint64_t mask_4x4_int = lfm->int_4x4_y;
-    int32_t subsampling_x = 0, subsampling_y = 0;
-
-    //  assert(plane->subsampling_x == 0 && plane->subsampling_y == 0);
-
-    // Vertical pass: do 2 rows at one time
-    for (r = 0; r < 8 && mi_row + r < mi_rows; r += 2) {
-#if CONFIG_AV1_HIGHBITDEPTH
-        if (cm->use_highbitdepth) {
-            // Disable filtering on the leftmost column.
-            highbd_filter_selectively_vert_row2(
-                plane->subsampling_x, CONVERT_TO_SHORTPTR(dst->buf), dst->stride,
-                (unsigned int)mask_16x16, (unsigned int)mask_8x8,
-                (unsigned int)mask_4x4, (unsigned int)mask_4x4_int, lfthr,
-                &lfm->lfl_y[r << 3], (int)cm->bit_depth);
-        } else {
-#endif  // CONFIG_AV1_HIGHBITDEPTH
-            // Disable filtering on the leftmost column.
-            filter_selectively_vert_row2(
-                subsampling_x, dst, stride, (unsigned int)mask_16x16,
-                (unsigned int)mask_8x8, (unsigned int)mask_4x4,
-                (unsigned int)mask_4x4_int, lfthr, &lfm->lfl_y[r << 3]);
-#if CONFIG_AV1_HIGHBITDEPTH
-        }
-#endif  // CONFIG_AV1_HIGHBITDEPTH
-        dst += 16 * stride;
-        mask_16x16 >>= 16;
-        mask_8x8 >>= 16;
-        mask_4x4 >>= 16;
-        mask_4x4_int >>= 16;
-    }
-
-    // Horizontal pass
-    dst = dst0;
-    mask_16x16 = lfm->above_y[TX_16X16];
-    mask_8x8 = lfm->above_y[TX_8X8];
-    mask_4x4 = lfm->above_y[TX_4X4];
-    mask_4x4_int = lfm->int_4x4_y;
-
-    for (r = 0; r < 8 && mi_row + r < mi_rows; r++) {
-        unsigned int mask_16x16_r;
-        unsigned int mask_8x8_r;
-        unsigned int mask_4x4_r;
-
-        if (mi_row + r == 0) {
-            mask_16x16_r = 0;
-            mask_8x8_r = 0;
-            mask_4x4_r = 0;
-        } else {
-            mask_16x16_r = mask_16x16 & 0xff;
-            mask_8x8_r = mask_8x8 & 0xff;
-            mask_4x4_r = mask_4x4 & 0xff;
-        }
-
-#if CONFIG_AV1_HIGHBITDEPTH
-        if (cm->use_highbitdepth) {
-            highbd_filter_selectively_horiz(
-                CONVERT_TO_SHORTPTR(dst->buf), dst->stride, mask_16x16_r, mask_8x8_r,
-                mask_4x4_r, mask_4x4_int & 0xff, lfthr,
-                &lfm->lfl_y[r << 3], (int)cm->bit_depth);
-        } else {
-#endif  // CONFIG_AV1_HIGHBITDEPTH
-            filter_selectively_horiz(dst, stride, mask_16x16_r, mask_8x8_r,
-                mask_4x4_r, mask_4x4_int & 0xff,
-                lfthr, &lfm->lfl_y[r << 3]);
-#if CONFIG_AV1_HIGHBITDEPTH
-        }
-#endif  // CONFIG_AV1_HIGHBITDEPTH
-
-        dst += 8 * stride;
-        mask_16x16 >>= 8;
-        mask_8x8 >>= 8;
-        mask_4x4 >>= 8;
-        mask_4x4_int >>= 8;
-    }
-}
-
-void filter_block_plane_ss11(uint8_t *dst0, int32_t stride, int32_t mi_row, int32_t mi_rows, const LoopFilterThresh *lfthr, LoopFilterMask *lfm)
-{
-    uint8_t *dst = dst0;
-    int32_t r, c;
-    uint8_t lfl_uv[16];
-
-    uint16_t mask_16x16 = lfm->left_uv[TX_16X16];
-    uint16_t mask_8x8 = lfm->left_uv[TX_8X8];
-    uint16_t mask_4x4 = lfm->left_uv[TX_4X4];
-    uint16_t mask_4x4_int = lfm->int_4x4_uv;
-    int32_t subsampling_x = 1, subsampling_y = 1;
-
-    //  assert(plane->subsampling_x == 1 && plane->subsampling_y == 1);
-
-    // Vertical pass: do 2 rows at one time
-    for (r = 0; r < 8 && mi_row + r < mi_rows; r += 4) {
-        for (c = 0; c < (8 >> 1); c++) {
-            lfl_uv[(r << 1) + c] = lfm->lfl_y[(r << 3) + (c << 1)];
-            lfl_uv[((r + 2) << 1) + c] = lfm->lfl_y[((r + 2) << 3) + (c << 1)];
-        }
-
-#if CONFIG_AV1_HIGHBITDEPTH
-        if (cm->use_highbitdepth) {
-            // Disable filtering on the leftmost column.
-            highbd_filter_selectively_vert_row2(
-                plane->subsampling_x, CONVERT_TO_SHORTPTR(dst->buf), dst->stride,
-                (unsigned int)mask_16x16, (unsigned int)mask_8x8,
-                (unsigned int)mask_4x4, (unsigned int)mask_4x4_int, cm->lf_info.lfthr,
-                &lfl_uv[r << 1], (int)cm->bit_depth);
-        } else {
-#endif  // CONFIG_AV1_HIGHBITDEPTH
-            // Disable filtering on the leftmost column.
-            filter_selectively_vert_row2(
-                subsampling_x, dst, stride, (unsigned int)mask_16x16,
-                (unsigned int)mask_8x8, (unsigned int)mask_4x4,
-                (unsigned int)mask_4x4_int, lfthr, &lfl_uv[r << 1]);
-#if CONFIG_AV1_HIGHBITDEPTH
-        }
-#endif  // CONFIG_AV1_HIGHBITDEPTH
-
-        dst += 16 * stride;
-        mask_16x16 >>= 8;
-        mask_8x8 >>= 8;
-        mask_4x4 >>= 8;
-        mask_4x4_int >>= 8;
-    }
-
-    // Horizontal pass
-    dst = dst0;
-    mask_16x16 = lfm->above_uv[TX_16X16];
-    mask_8x8 = lfm->above_uv[TX_8X8];
-    mask_4x4 = lfm->above_uv[TX_4X4];
-    mask_4x4_int = lfm->int_4x4_uv;
-
-    for (r = 0; r < 8 && mi_row + r < mi_rows; r += 2) {
-        const int skip_border_4x4_r = mi_row + r == mi_rows - 1;
-        const unsigned int mask_4x4_int_r =
-            skip_border_4x4_r ? 0 : (mask_4x4_int & 0xf);
-        unsigned int mask_16x16_r;
-        unsigned int mask_8x8_r;
-        unsigned int mask_4x4_r;
-
-        if (mi_row + r == 0) {
-            mask_16x16_r = 0;
-            mask_8x8_r = 0;
-            mask_4x4_r = 0;
-        } else {
-            mask_16x16_r = mask_16x16 & 0xf;
-            mask_8x8_r = mask_8x8 & 0xf;
-            mask_4x4_r = mask_4x4 & 0xf;
-        }
-
-#if CONFIG_AV1_HIGHBITDEPTH
-        if (cm->use_highbitdepth) {
-            highbd_filter_selectively_horiz(
-                CONVERT_TO_SHORTPTR(dst->buf), dst->stride, mask_16x16_r, mask_8x8_r,
-                mask_4x4_r, mask_4x4_int_r, cm->lf_info.lfthr, &lfl_uv[r << 1],
-                (int)cm->bit_depth);
-        } else {
-#endif  // CONFIG_AV1_HIGHBITDEPTH
-            filter_selectively_horiz(dst, stride, mask_16x16_r, mask_8x8_r,
-                mask_4x4_r, mask_4x4_int_r, lfthr,
-                &lfl_uv[r << 1]);
-#if CONFIG_AV1_HIGHBITDEPTH
-        }
-#endif  // CONFIG_AV1_HIGHBITDEPTH
-
-        dst += 8 * stride;
-        mask_16x16 >>= 4;
-        mask_8x8 >>= 4;
-        mask_4x4 >>= 4;
-        mask_4x4_int >>= 4;
-    }
-}
-
 // These are used for masking the left and above borders.
 static const uint64_t left_border = 0x1111111111111111ULL;
 static const uint64_t above_border = 0x000000ff000000ffULL;
@@ -919,7 +386,6 @@ static void build_masks(const ModeInfo *mi,
     uint16_t *const left_uv = &lfm->left_uv[tx_size_uv];
     uint16_t *const above_uv = &lfm->above_uv[tx_size_uv];
     uint16_t *const int_4x4_uv = &lfm->int_4x4_uv;
-    int i;
 
     // These set 1 in the current block size for the block size edges.
     // For instance if the block size is 32x16, we'll set:
@@ -1081,291 +547,6 @@ void LoopFilterAdjustMask(const int32_t mi_row, const int32_t mi_col, int32_t mi
     assert(!(lfm->int_4x4_uv & lfm->above_uv[TX_16X16]));
 }
 
-// This function does the same thing as the one above with the exception that
-// it only affects the y masks. It exists because for blocks < 16x16 in size,
-// we only update u and v masks on the first block.
-static void build_y_mask(const ModeInfo *mi,
-                         const int shift_y,
-                         LoopFilterMask *lfm)
-{
-    const BlockSize block_size = mi->sbType;
-    const TxSize tx_size_y = mi->txSize;
-    uint64_t *left_y = &lfm->left_y[tx_size_y];
-    uint64_t *above_y = &lfm->above_y[tx_size_y];
-    uint64_t *int_4x4_y = &lfm->int_4x4_y;
-    int i;
-
-    *above_y |= above_prediction_mask[block_size] << shift_y;
-    *left_y |= left_prediction_mask[block_size] << shift_y;
-
-    if (mi->skip && mi->refIdx[0] > INTRA_FRAME) return;
-
-    *above_y |= (size_mask[block_size] & above_64x64_txform_mask[tx_size_y])
-        << shift_y;
-
-    *left_y |= (size_mask[block_size] & left_64x64_txform_mask[tx_size_y])
-        << shift_y;
-
-    if (tx_size_y == TX_4X4) *int_4x4_y |= size_mask[block_size] << shift_y;
-}
-
-static void LoopFilterSetupLevel(const int32_t mi_row, const int32_t mi_col,
-                                 int32_t mi_rows, int32_t mi_cols,
-                                 ModeInfo *mi, int32_t miPitch,
-                                 LoopFilterMask *lfm,
-                                 const LoopFilterInfoN *lfi_n,
-                                 const AV1VideoParam &par)
-{
-    int idx_32, idx_16, idx_8;
-    ModeInfo *mip = mi;
-    ModeInfo *mip2 = mi;
-
-    // These are offsets to the next mi in the 64x64 block. It is what gets
-    // added to the mi ptr as we go through each loop. It helps us to avoid
-    // setting up special row and column counters for each index. The last step
-    // brings us out back to the starting position.
-
-    int offset_32[] = { 4, miPitch * 4 - 4, 4, -miPitch * 4 - 4 };
-    int offset_16[] = { 2, miPitch * 2 - 2, 2, -miPitch * 2 - 2 };
-    int offset[]    = { 1, miPitch * 1 - 1, 1, -miPitch * 1 - 1 };
-
-    // Following variables represent shifts to position the current block
-    // mask over the appropriate block. A shift of 36 to the left will move
-    // the bits for the final 32 by 32 block in the 64x64 up 4 rows and left
-    // 4 rows to the appropriate spot.
-    const int shift_32_y[] = { 0, 4, 32, 36 };
-    const int shift_16_y[] = { 0, 2, 16, 18 };
-    const int shift_8_y[] = { 0, 1, 8, 9 };
-    const int shift_32_uv[] = { 0, 2, 8, 10 };
-    const int shift_16_uv[] = { 0, 1, 4, 5 };
-    const int max_rows = (mi_row + MI_BLOCK_SIZE > mi_rows ? mi_rows - mi_row : MI_BLOCK_SIZE);
-    const int max_cols = (mi_col + MI_BLOCK_SIZE > mi_cols ? mi_cols - mi_col : MI_BLOCK_SIZE);
-
-    switch (mip->sbType) {
-    case BLOCK_64X64:
-        fill_levels(lfi_n, mip, 0, 0, lfm, par, 0);
-        break;
-    case BLOCK_64X32:
-        fill_levels(lfi_n, mip, 0, 0, lfm, par, 0);
-        mip2 = mip + 4 * miPitch;
-        if (4 >= max_rows)
-            break;
-        fill_levels(lfi_n, mip2, 32, 8, lfm, par, 0);
-        break;
-    case BLOCK_32X64:
-        fill_levels(lfi_n, mip, 0, 0, lfm, par, 0);
-        mip2 = mip + 4;
-        if (4 >= max_cols)
-            break;
-        fill_levels(lfi_n, mip2, 4, 2, lfm, par, 0);
-        break;
-    default:
-        for (idx_32 = 0; idx_32 < 4; mip += offset_32[idx_32], ++idx_32) {
-            const int shift_y = shift_32_y[idx_32];
-            const int shift_uv = shift_32_uv[idx_32];
-            const int mi_32_col_offset = ((idx_32 & 1) << 2);
-            const int mi_32_row_offset = ((idx_32 >> 1) << 2);
-            if (mi_32_col_offset >= max_cols || mi_32_row_offset >= max_rows)
-                continue;
-            switch (mip->sbType) {
-            case BLOCK_32X32:
-                fill_levels(lfi_n, mip, shift_y, shift_uv, lfm, par, 0);
-                break;
-            case BLOCK_32X16:
-                fill_levels(lfi_n, mip, shift_y, shift_uv, lfm, par, 0);
-                if (mi_32_row_offset + 2 >= max_rows)
-                    continue;
-                mip2 = mip + 2 * miPitch;
-                fill_levels(lfi_n, mip2, shift_y + 16, shift_uv + 4, lfm, par, 0);
-                break;
-            case BLOCK_16X32:
-                fill_levels(lfi_n, mip, shift_y, shift_uv, lfm, par, 0);
-                if (mi_32_col_offset + 2 >= max_cols)
-                    continue;
-                mip2 = mip + 2;
-                fill_levels(lfi_n, mip2, shift_y + 2, shift_uv + 1, lfm, par, 0);
-                break;
-            default:
-                for (idx_16 = 0; idx_16 < 4; mip += offset_16[idx_16], ++idx_16) {
-                    const int shift_y = shift_32_y[idx_32] + shift_16_y[idx_16];
-                    const int shift_uv = shift_32_uv[idx_32] + shift_16_uv[idx_16];
-                    const int mi_16_col_offset = mi_32_col_offset + ((idx_16 & 1) << 1);
-                    const int mi_16_row_offset = mi_32_row_offset + ((idx_16 >> 1) << 1);
-                    if (mi_16_col_offset >= max_cols || mi_16_row_offset >= max_rows)
-                        continue;
-
-                    switch (mip->sbType) {
-                    case BLOCK_16X16:
-                        fill_levels(lfi_n, mip, shift_y, shift_uv, lfm, par, 0);
-                        break;
-                    case BLOCK_16X8:
-                        fill_levels(lfi_n, mip, shift_y, shift_uv, lfm, par, 0);
-                        if (mi_16_row_offset + 1 >= max_rows)
-                            continue;
-                        mip2 = mip + miPitch;
-                        fill_levels(lfi_n, mip2, shift_y + 8, 0, lfm, par, 1);
-                        break;
-                    case BLOCK_8X16:
-                        fill_levels(lfi_n, mip, shift_y, shift_uv, lfm, par, 0);
-                        if (mi_16_col_offset + 1 >= max_cols)
-                            continue;
-                        mip2 = mip + 1;
-                        fill_levels(lfi_n, mip2, shift_y + 1, 0, lfm, par, 1);
-                        break;
-                    default: {
-                        const int shift_y = shift_32_y[idx_32] + shift_16_y[idx_16] + shift_8_y[0];
-                        fill_levels(lfi_n, mip, shift_y, shift_uv, lfm, par, 0);
-                        mip += offset[0];
-                        for (idx_8 = 1; idx_8 < 4; mip += offset[idx_8], ++idx_8) {
-                            const int shift_y = shift_32_y[idx_32] + shift_16_y[idx_16] + shift_8_y[idx_8];
-                            const int mi_8_col_offset = mi_16_col_offset + ((idx_8 & 1));
-                            const int mi_8_row_offset = mi_16_row_offset + ((idx_8 >> 1));
-                            if (mi_8_col_offset >= max_cols || mi_8_row_offset >= max_rows)
-                                continue;
-                            fill_levels(lfi_n, mip, shift_y, 0, lfm, par, 1);
-                        }
-                        break;
-                             }
-                    }
-                }
-                break;
-            }
-        }
-        break;
-    }
-}
-
-void LoopFilterSetupMask(const int32_t mi_row, const int32_t mi_col,
-                         int32_t mi_rows, int32_t mi_cols,
-                         ModeInfo *mi, int32_t miPitch,
-                         LoopFilterMask *lfm,
-                         AV1VideoParam &par)
-{
-    int idx_32, idx_16, idx_8;
-    ModeInfo *mip = mi;
-    ModeInfo *mip2 = mi;
-
-    // These are offsets to the next mi in the 64x64 block. It is what gets
-    // added to the mi ptr as we go through each loop. It helps us to avoid
-    // setting up special row and column counters for each index. The last step
-    // brings us out back to the starting position.
-
-    int offset_32[] = { 4, miPitch * 4 - 4, 4, -miPitch * 4 - 4 };
-    int offset_16[] = { 2, miPitch * 2 - 2, 2, -miPitch * 2 - 2 };
-    int offset[]    = { 1, miPitch * 1 - 1, 1, -miPitch * 1 - 1 };
-
-    // Following variables represent shifts to position the current block
-    // mask over the appropriate block. A shift of 36 to the left will move
-    // the bits for the final 32 by 32 block in the 64x64 up 4 rows and left
-    // 4 rows to the appropriate spot.
-    const int shift_32_y[] = { 0, 4, 32, 36 };
-    const int shift_16_y[] = { 0, 2, 16, 18 };
-    const int shift_8_y[] = { 0, 1, 8, 9 };
-    const int shift_32_uv[] = { 0, 2, 8, 10 };
-    const int shift_16_uv[] = { 0, 1, 4, 5 };
-    const int max_rows =
-        (mi_row + MI_BLOCK_SIZE > mi_rows ? mi_rows - mi_row
-        : MI_BLOCK_SIZE);
-    const int max_cols =
-        (mi_col + MI_BLOCK_SIZE > mi_cols ? mi_cols - mi_col
-        : MI_BLOCK_SIZE);
-
-    Zero(*lfm);
-
-    switch (mip->sbType) {
-    case BLOCK_64X64: build_masks(mip, 0, 0, lfm, par); break;
-    case BLOCK_64X32:
-        build_masks(mip, 0, 0, lfm, par);
-        mip2 = mip + 4 * miPitch;
-        if (4 >= max_rows) break;
-        build_masks(mip2, 32, 8, lfm, par);
-        break;
-    case BLOCK_32X64:
-        build_masks(mip, 0, 0, lfm, par);
-        mip2 = mip + 4;
-        if (4 >= max_cols) break;
-        build_masks(mip2, 4, 2, lfm, par);
-        break;
-    default:
-        for (idx_32 = 0; idx_32 < 4; mip += offset_32[idx_32], ++idx_32) {
-            const int shift_y = shift_32_y[idx_32];
-            const int shift_uv = shift_32_uv[idx_32];
-            const int mi_32_col_offset = ((idx_32 & 1) << 2);
-            const int mi_32_row_offset = ((idx_32 >> 1) << 2);
-            if (mi_32_col_offset >= max_cols || mi_32_row_offset >= max_rows)
-                continue;
-            switch (mip->sbType) {
-            case BLOCK_32X32:
-                build_masks(mip, shift_y, shift_uv, lfm, par);
-                break;
-            case BLOCK_32X16:
-                build_masks(mip, shift_y, shift_uv, lfm, par);
-                if (mi_32_row_offset + 2 >= max_rows) continue;
-                mip2 = mip + 2 * miPitch;
-                build_masks(mip2, shift_y + 16, shift_uv + 4, lfm, par);
-                break;
-            case BLOCK_16X32:
-                build_masks(mip, shift_y, shift_uv, lfm, par);
-                if (mi_32_col_offset + 2 >= max_cols) continue;
-                mip2 = mip + 2;
-                build_masks(mip2, shift_y + 2, shift_uv + 1, lfm, par);
-                break;
-            default:
-                for (idx_16 = 0; idx_16 < 4; mip += offset_16[idx_16], ++idx_16) {
-                    const int shift_y = shift_32_y[idx_32] + shift_16_y[idx_16];
-                    const int shift_uv = shift_32_uv[idx_32] + shift_16_uv[idx_16];
-                    const int mi_16_col_offset =
-                        mi_32_col_offset + ((idx_16 & 1) << 1);
-                    const int mi_16_row_offset =
-                        mi_32_row_offset + ((idx_16 >> 1) << 1);
-
-                    if (mi_16_col_offset >= max_cols || mi_16_row_offset >= max_rows)
-                        continue;
-
-                    switch (mip->sbType) {
-                    case BLOCK_16X16:
-                        build_masks(mip, shift_y, shift_uv, lfm, par);
-                        break;
-                    case BLOCK_16X8:
-                        build_masks(mip, shift_y, shift_uv, lfm, par);
-                        if (mi_16_row_offset + 1 >= max_rows) continue;
-                        mip2 = mip + miPitch;
-                        build_y_mask(mip2, shift_y + 8, lfm);
-                        break;
-                    case BLOCK_8X16:
-                        build_masks(mip, shift_y, shift_uv, lfm, par);
-                        if (mi_16_col_offset + 1 >= max_cols) continue;
-                        mip2 = mip + 1;
-                        build_y_mask(mip2, shift_y + 1, lfm);
-                        break;
-                    default: {
-                        const int shift_y =
-                            shift_32_y[idx_32] + shift_16_y[idx_16] + shift_8_y[0];
-                        build_masks(mip, shift_y, shift_uv, lfm, par);
-                        mip += offset[0];
-                        for (idx_8 = 1; idx_8 < 4; mip += offset[idx_8], ++idx_8) {
-                            const int shift_y = shift_32_y[idx_32] +
-                                shift_16_y[idx_16] + shift_8_y[idx_8];
-                            const int mi_8_col_offset =
-                                mi_16_col_offset + ((idx_8 & 1));
-                            const int mi_8_row_offset =
-                                mi_16_row_offset + ((idx_8 >> 1));
-
-                            if (mi_8_col_offset >= max_cols ||
-                                mi_8_row_offset >= max_rows)
-                                continue;
-                            build_y_mask(mip, shift_y, lfm);
-                        }
-                        break;
-                             }
-                    }
-                }
-                break;
-            }
-        }
-        break;
-    }
-}
 
 static inline int clamp(int value, int low, int high) {
     return value < low ? low : (value > high ? high : value);
@@ -1395,14 +576,14 @@ void LoopFilterInitLevels(int32_t default_filt_lvl, LoopFilterInfoN *lfi, LoopFi
         } else {
             int ref, mode;
             const int intra_lvl = lvl_seg + params->refDeltas[0] * scale;
-            lfi->lvl[seg_id][0][0] = clamp(intra_lvl, 0, MAX_LOOP_FILTER);
+            lfi->lvl[seg_id][0][0] = (uint8_t)clamp(intra_lvl, 0, MAX_LOOP_FILTER);
             lfi->lvl[seg_id][0][1] = 0; // tmp workaround for aom bug
 
             for (ref = 1; ref < MAX_REF_FRAMES; ++ref) {
                 for (mode = 0; mode < MAX_MODE_LF_DELTAS; ++mode) {
                     const int inter_lvl = lvl_seg + params->refDeltas[ref] * scale +
                         params->modeDeltas[mode] * scale;
-                    lfi->lvl[seg_id][ref][mode] = clamp(inter_lvl, 0, MAX_LOOP_FILTER);
+                    lfi->lvl[seg_id][ref][mode] = (uint8_t)clamp(inter_lvl, 0, MAX_LOOP_FILTER);
                 }
             }
         }
@@ -1416,7 +597,6 @@ void LoopFilterSetupLevelFrame(int32_t frame_filter_level, int32_t partial_frame
                                ModeInfo *mi_, const AV1VideoParam &par)
 {
     int start_mi_row, end_mi_row, mi_rows_to_filter;
-    int mi_col, mi_row;
     if (!frame_filter_level) return;
     start_mi_row = 0;
     mi_rows_to_filter = mi_rows;
@@ -1439,35 +619,7 @@ void LoopFilterSetupLevelFrame(int32_t frame_filter_level, int32_t partial_frame
 */
 }
 
-static void LoopFilterRows(int start, int stop, int y_only,
-                             int32_t mi_rows, int32_t mi_cols, int32_t sb64Cols,
-                             ModeInfo *mi_, int32_t miPitch, const LoopFilterThresh *lfthr, LoopFilterMask *lfm_,
-                             LoopFilterInfoN *lfi, const AV1VideoParam &par,
-                             uint8_t *dst[3], int32_t stride[3])
-{
-    const int num_planes = y_only ? 1 : 3;
-    int mi_row, mi_col;
-    alignas(16) LoopFilterMask lfm_work;
-
-    for (mi_row = start; mi_row < stop; mi_row += MI_BLOCK_SIZE) {
-        LoopFilterMask *lfm = get_lfm(lfm_, mi_row, 0, sb64Cols);
-        ModeInfo *mi = mi_ + mi_row * miPitch;
-
-        for (mi_col = 0; mi_col < mi_cols; mi_col += MI_BLOCK_SIZE, ++lfm) {
-            //for debug (single-threaded)
-            small_memcpy(&lfm_work, lfm, sizeof(LoopFilterMask));
-            LoopFilterSetupLevel(mi_row, mi_col, mi_rows, mi_cols, mi + mi_col, miPitch, &lfm_work, lfi, par);
-            LoopFilterAdjustMask(mi_row, mi_col, mi_rows, mi_cols, &lfm_work);
-
-            filter_block_plane_ss00(dst[0] + mi_row * 8 * stride[0] + mi_col * 8, stride[0], mi_row, mi_rows, lfthr, &lfm_work);
-            for (int plane = 1; plane < num_planes; ++plane) {
-                filter_block_plane_ss11(dst[plane] + mi_row * 4 * stride[plane] + mi_col * 4, stride[plane], mi_row, mi_rows, lfthr, &lfm_work);
-            }
-        }
-    }
-}
-
-/*static */int32_t FilterLevelFromQp(int32_t base_qindex, uint8_t isKeyFrame)
+int32_t AV1Enc::FilterLevelFromQp(int32_t base_qindex, uint8_t isKeyFrame)
 {
     const int min_filter_level = 0;
     const int max_filter_level = MAX_LOOP_FILTER;
@@ -1475,262 +627,6 @@ static void LoopFilterRows(int start, int stop, int y_only,
     int filt_guess = ROUND_POWER_OF_TWO(q * 20723 + 1015158, 18);
     if (isKeyFrame) filt_guess -= 4;
     return clamp(filt_guess, min_filter_level, max_filter_level);
-}
-
-static int64_t lf_sse(Frame *frame, const AV1VideoParam *par)
-{
-    int64_t cost = 0;
-    for (int r = 0; r < par->sb64Rows; r++) {
-        for (int c = 0; c < par->sb64Cols; c++) {
-            int32_t pitch = frame->m_lf->pitch_luma_bytes;
-            int32_t offset = (r * pitch + c) << 6;
-            int32_t w = MIN(64, par->Width - (r<<6));
-            int32_t h = MIN(64, par->Height - (c<<6));
-
-            cost += AV1PP::sse_flexh(frame->m_lf->y + offset, pitch, frame->m_origin->y + offset, pitch, h, BSR(w)-2);
-        }
-    }
-    return cost;
-}
-
-int64_t LoopFilterCost(Frame* frame, const AV1VideoParam *par, uint8_t level) {
-    uint8_t *dst = frame->m_lf->y;
-    int32_t stride = frame->m_lf->pitch_luma_bytes;
-    LoopFilterInfoN lfi;
-    int32_t luma_size = frame->m_recon->pitch_luma_bytes * frame->m_recon->height;
-
-    assert(frame->m_recon->pitch_luma_bytes == frame->m_lf->pitch_luma_bytes);
-
-    memcpy(dst, frame->m_recon->y, luma_size);
-
-    if (level > 0) {
-        LoopFilterSetupLevelFrame(level, 0, par->miRows, par->miCols, par->sb64Cols, &lfi, &frame->m_loopFilterParam, frame->m_lfm, frame->m_modeInfo, *par);
-        LoopFilterRows(0, par->miRows, 1, par->miRows, par->miCols, par->sb64Cols, frame->m_modeInfo, par->miPitch, &par->lfts[frame->m_loopFilterParam.sharpness][0], frame->m_lfm, &lfi, *par, &dst, &stride);
-    }
-    return lf_sse(frame, par);
-}
-
-int32_t FilterLevelSearchFull(Frame* frame, const AV1VideoParam *par)
-{
-    uint8_t level;
-    int64_t cost_best = LLONG_MAX;
-    int32_t level_best = 0;
-
-    for (level = 0; level <= MAX_LOOP_FILTER; level++) {
-        int64_t cost = LoopFilterCost(frame, par, level);
-        if (cost_best > cost) {
-            cost_best = cost;
-            level_best = level;
-        }
-    }
-    return level_best;
-}
-
-int32_t FilterLevelSearchSmart(Frame* frame, const AV1VideoParam *par, uint8_t last_level)
-{
-    int32_t dir = 0;
-    int64_t cost_best;
-    int32_t level_best;
-    int64_t costs[MAX_LOOP_FILTER+1];
-    int32_t level_cur = last_level;
-    int32_t level_step = level_cur < 16 ? 4 : level_cur / 4;
-    memset(costs, 0xff, sizeof(costs));
-
-    cost_best = LoopFilterCost(frame, par, level_cur);
-    level_best = level_cur;
-    costs[level_cur] = cost_best;
-
-    while (level_step > 0) {
-        const int32_t level_high = MIN(level_cur + level_step, MAX_LOOP_FILTER);
-        const int32_t level_low = MAX(level_cur - level_step, 0);
-
-        int64_t bias = 0;//(((cost_best >> (15 - (level_cur / 8))) * level_step) >> (1 + (par->bitDepthLumaShift<<1)));
-
-        if (dir <= 0 && level_low != level_cur) {
-            // Get Low filter error score
-            if (costs[level_low] < 0) {
-                costs[level_low] = LoopFilterCost(frame, par, level_low);
-            }
-            // If value is close to the best so far then bias towards a lower loop
-            // filter value.
-            if ((costs[level_low] - bias) < cost_best) {
-                // Was it actually better than the previous best?
-                if (costs[level_low] < cost_best) cost_best = costs[level_low];
-
-                level_best = level_low;
-            }
-        }
-
-        // Now look at filt_high
-        if (dir >= 0 && level_high != level_cur) {
-            if (costs[level_high] < 0) {
-                costs[level_high] = LoopFilterCost(frame, par, level_high);
-            }
-            // Was it better than the previous best?
-            if (costs[level_high] < (cost_best - bias)) {
-                cost_best = costs[level_high];
-                level_best = level_high;
-            }
-        }
-
-        // Half the step distance if the best filter value was the same as last time
-        if (level_best == level_cur) {
-            level_step /= 2;
-            dir = 0;
-        } else {
-            dir = (level_best < level_cur) ? -1 : 1;
-            level_cur = level_best;
-        }
-    }
-    return level_best;
-}
-
-void LoopFilterRow(Frame *frame, int32_t rowSb, const AV1VideoParam *par)
-{
-    LoopFilterInfoN lfi;
-
-    uint8_t *dst[3];
-    int32_t stride[3];
-
-    int32_t chroma_pitch = UMC::align_value<int32_t>(par->Width/2+8, 64);
-    int32_t chroma_size = chroma_pitch * (par->Height/2+8);
-
-    LoopFilterFrameParam *params = &frame->m_loopFilterParam;
-    LoopFilterResetParams(params);
-
-    params->sharpness = par->deblockingSharpness;
-    params->level = FilterLevelFromQp(frame->m_sliceQpY, frame->IsIntra());
-
-    if (!frame->m_isRef && !par->doDumpRecon)
-        return;
-
-    dst[0] = frame->m_recon->y;
-    dst[1] = frame->m_lf->uv;
-    dst[2] = frame->m_lf->uv + chroma_size;
-
-    stride[0] = frame->m_recon->pitch_luma_bytes;
-    stride[1] = chroma_pitch;
-    stride[2] = chroma_pitch;
-
-    if (params->level > 0) {
-        // convert chroma planes of current row of superblocks to YV12 for deblocking
-        __m128i mask = _mm_srli_epi16(_mm_cmpeq_epi8(_mm_setzero_si128(), _mm_setzero_si128()), 8); //_mm_set1_epi16(0xff);
-        const int32_t chromaHeight = frame->m_recon->height >> 1;
-        const int32_t pitchUv = frame->m_recon->pitch_chroma_bytes;
-        const int32_t pitchU = chroma_pitch, pitchV = chroma_pitch;
-        const uint8_t *puv = frame->m_recon->uv + rowSb*32 * pitchUv;
-        uint8_t *pu = dst[1] + rowSb * 32 * pitchU;
-        uint8_t *pv = dst[2] + rowSb * 32 * pitchV;
-        for (int i = rowSb*32; i < std::min((rowSb+1)*32, chromaHeight); i++, puv += pitchUv, pu += pitchU, pv += pitchV) {
-            for (int j = 0; j < frame->m_recon->width/2; j += 16) {
-                __m128i s1 = loada_si128(puv + 2 * j);
-                __m128i s2 = loada_si128(puv + 2 * j + 16);
-                __m128i u1 = _mm_and_si128(s1, mask);
-                __m128i u2 = _mm_and_si128(s2, mask);
-                __m128i v1 = _mm_srli_epi16(s1, 8);
-                __m128i v2 = _mm_srli_epi16(s2, 8);
-                storea_si128(pu + j, _mm_packus_epi16(u1, u2));
-                storea_si128(pv + j, _mm_packus_epi16(v1, v2));
-            }
-        }
-
-        // deblock current row of superblocks (64 luma pixels high)
-        LoopFilterSetupLevelFrame(params->level, 1, par->miRows, par->miCols, par->sb64Cols, &lfi, params, frame->m_lfm, frame->m_modeInfo, *par);
-
-        if (rowSb > 0) {
-            // convert chroma of previosly deblocked row of superblocks to NV12
-            const int32_t startY = (rowSb - 1) * 32;
-            const int32_t endY = rowSb * 32;
-            const uint8_t *pu = dst[1] + startY * pitchU;
-            const uint8_t *pv = dst[2] + startY * pitchV;
-            uint8_t *puv = frame->m_recon->uv + startY * pitchUv;
-            for (int i = startY; i < endY; i++, puv += pitchUv, pu += pitchU, pv += pitchV) {
-                for (int j = 0; j < frame->m_recon->width/2; j += 16) {
-                    __m128i u = loada_si128(pu + j);
-                    __m128i v = loada_si128(pv + j);
-                    storea_si128(puv + 2 * j + 0,  _mm_unpacklo_epi8(u, v));
-                    storea_si128(puv + 2 * j + 16, _mm_unpackhi_epi8(u, v));
-                }
-            }
-        }
-
-        if (rowSb + 1 == par->sb64Rows) {
-            // if we just deblocked last row of superblocks also convert it to NV12
-            const int32_t startY = rowSb * 32;
-            const int32_t endY = chromaHeight;
-            const uint8_t *pu = dst[1] + startY * pitchU;
-            const uint8_t *pv = dst[2] + startY * pitchV;
-            uint8_t *puv = frame->m_recon->uv + startY * pitchUv;
-            for (int i = startY; i < endY; i++, puv += pitchUv, pu += pitchU, pv += pitchV) {
-                for (int j = 0; j < frame->m_recon->width/2; j += 16) {
-                    __m128i u = loada_si128(pu + j);
-                    __m128i v = loada_si128(pv + j);
-                    storea_si128(puv + 2 * j + 0,  _mm_unpacklo_epi8(u, v));
-                    storea_si128(puv + 2 * j + 16, _mm_unpackhi_epi8(u, v));
-                }
-            }
-        }
-    }
-}
-
-void LoopFilterFrame(Frame *frame, const AV1VideoParam *par, uint8_t *last_level)
-{
-    LoopFilterInfoN lfi;
-
-    uint8_t *dst[3];
-    int32_t stride[3];
-
-    int32_t chroma_pitch = UMC::align_value<int32_t>(par->Width/2+8, 64);
-    int32_t chroma_size = chroma_pitch * (par->Height/2+8);
-
-    LoopFilterFrameParam *params = &frame->m_loopFilterParam;
-    LoopFilterResetParams(params);
-
-    params->sharpness = par->deblockingSharpness;
-
-    switch (par->deblockingLevelMethod) {
-    case QPBASED:
-        params->level = FilterLevelFromQp(frame->m_sliceQpY, frame->IsIntra());
-        break;
-    case FULLSEARCH_FULLPIC:
-        params->level = FilterLevelSearchFull(frame, par);
-        break;
-    case SMARTSEARCH_FULLPIC:
-        if (frame->m_pyramidLayer == 0)
-          *last_level = 0;
-        params->level = FilterLevelSearchSmart(frame, par, *last_level);
-        break;
-    default:
-        assert(0);
-    }
-    *last_level = params->level;
-
-    dst[0] = frame->m_recon->y;
-    dst[1] = frame->m_lf->uv;
-    dst[2] = frame->m_lf->uv + chroma_size;
-
-    for (int i = 0; i < frame->m_recon->height/2; i++) {
-        for (int j = 0; j < frame->m_recon->width/2; j++) {
-            dst[1][i*chroma_pitch+j] = frame->m_recon->uv[i * frame->m_recon->pitch_chroma_bytes + 2 * j];
-            dst[2][i*chroma_pitch+j] = frame->m_recon->uv[i * frame->m_recon->pitch_chroma_bytes + 2 * j + 1];
-        }
-    }
-
-    stride[0] = frame->m_recon->pitch_luma_bytes;
-    stride[1] = chroma_pitch;
-    stride[2] = chroma_pitch;
-
-    if (params->level > 0) {
-        LoopFilterSetupLevelFrame(params->level, 0, par->miRows, par->miCols, par->sb64Cols, &lfi, params, frame->m_lfm, frame->m_modeInfo, *par);
-        LoopFilterRows(0, par->miRows, 0, par->miRows, par->miCols, par->sb64Cols, frame->m_modeInfo, par->miPitch, &par->lfts[params->sharpness][0], frame->m_lfm, &lfi, *par, dst, stride);
-    }
-
-    for (int i = 0; i < frame->m_recon->height/2; i++) {
-        for (int j = 0; j < frame->m_recon->width/2; j++) {
-            frame->m_recon->uv[i * frame->m_recon->pitch_chroma_bytes + 2 * j] = dst[1][i*chroma_pitch+j];
-            frame->m_recon->uv[i * frame->m_recon->pitch_chroma_bytes + 2 * j + 1] = dst[2][i*chroma_pitch+j];
-        }
-    }
 }
 
 #define SIMD_WIDTH 16
@@ -2029,8 +925,8 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
         return lfi_n->lvl[0][0][0];
     }
 
-    template <EdgeDir edge_dir, int32_t plane>
-    void set_lpf_parameters_and_filter(uint8_t *dst, int32_t pitchDst, int32_t coord, const ModeInfo *currMi,
+    template <EdgeDir edge_dir, int32_t plane, typename PixType>
+    void set_lpf_parameters_and_filter(PixType *dst, int32_t pitchDst, int32_t coord, const ModeInfo *currMi,
                                        const ModeInfo *prevMi, const LoopFilterThresh &limits)
     {
         if (coord == 0)
@@ -2087,7 +983,8 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
     //       curr     v1    curr
     //                |
     //
-    void av1_loopfilter_luma_last_8x8(uint8_t *dst, int32_t dstride, int32_t mi_row, int32_t mi_col,
+    template <typename PixType>
+    void av1_loopfilter_luma_last_8x8(PixType *dst, int32_t dstride, int32_t mi_row, int32_t mi_col,
                                       const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits)
     {
         assert((mi_row & 1) == 0);
@@ -2097,7 +994,7 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
         const int32_t x = mi_col << 2;
         const ModeInfo *curr = mi8x8 + (mi_row >> 1) * miPitch + (mi_col >> 1);
         const ModeInfo *above = curr - miPitch;
-        uint8_t *dst2 = dst + 4 * dstride;
+        PixType *dst2 = dst + 4 * dstride;
 
         set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst  + 4, dstride, x + 4, curr, curr, limits); // v0
         set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst2 + 4, dstride, x + 4, curr, curr, limits); // v1
@@ -2136,7 +1033,8 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
     //       curr     v2    curr     v3   curr+1
     //                |              |
     //
-    void av1_loopfilter_luma_8x8(uint8_t *dst, int32_t dstride, int32_t mi_row, int32_t mi_col,
+    template <typename PixType>
+    void av1_loopfilter_luma_8x8(PixType *dst, int32_t dstride, int32_t mi_row, int32_t mi_col,
                                  const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits)
     {
         assert((mi_row & 1) == 0);
@@ -2147,7 +1045,7 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
         const ModeInfo *curr = mi8x8 + (mi_row >> 1) * miPitch + (mi_col >> 1);
         const ModeInfo *right = curr + 1;
         const ModeInfo *above = curr - miPitch;
-        uint8_t *dst2 = dst + 4 * dstride;
+        PixType *dst2 = dst + 4 * dstride;
 
         set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst  + 4, dstride, x + 4, curr,  curr, limits); // v0
         set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst  + 8, dstride, x + 8, right, curr, limits); // v1
@@ -2159,7 +1057,11 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
         set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst2 + 0, dstride, y + 4, curr, curr,  limits); // h0
         set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst2 + 4, dstride, y + 4, curr, curr,  limits); // h1
     }
+    template void av1_loopfilter_luma_8x8<uint8_t>(uint8_t *dst, int32_t dstride, int32_t mi_row, int32_t mi_col,
+        const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits);
 
+    template void av1_loopfilter_luma_8x8<uint16_t>(uint16_t *dst, int32_t dstride, int32_t mi_row, int32_t mi_col,
+        const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits);
 
     // ____h0____|| <- right frame border
     //           ||
@@ -2180,7 +1082,8 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
     //       curr     ||
     //                ||
     //
-    void av1_loopfilter_nv12_last_4x4(uint8_t *dst, int32_t dst_stride, int32_t mi_row, int32_t mi_col,
+    template <typename PixType>
+    void av1_loopfilter_nv12_last_4x4(PixType *dst, int32_t dst_stride, int32_t mi_row, int32_t mi_col,
                                       const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits)
     {
         const int32_t y = mi_row << 1;
@@ -2211,7 +1114,8 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
     //                |
     //                |
     //
-    void av1_loopfilter_nv12_4x4(uint8_t *dst, int32_t dst_stride, int32_t mi_row, int32_t mi_col,
+    template <typename PixType>
+    void av1_loopfilter_nv12_4x4(PixType *dst, int32_t dst_stride, int32_t mi_row, int32_t mi_col,
                                  const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits)
     {
         const int32_t y = mi_row << 1;
@@ -2333,18 +1237,55 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
             storea_si128(dst + 32, _mm_unpacklo_epi8(u1, v1));
             storea_si128(dst + 48, _mm_unpackhi_epi8(u1, v1));
         }
+
+        // 10bit reference code
+        void Split(const uint16_t *src, uint16_t *dstu, uint16_t *dstv, int len) {
+            for (int i = 0; i < len; i++) {
+                dstu[i] = src[2 * i + 0];
+                dstv[i] = src[2 * i + 1];
+            }
+        }
+        void Split4(const uint16_t *src, uint16_t *dstu, uint16_t *dstv) {
+            Split(src, dstu, dstv, 4);
+        }
+        void Split8(const uint16_t *src, uint16_t *dstu, uint16_t *dstv) {
+            Split(src, dstu, dstv, 8);
+        }
+        void Split16(const uint16_t *src, uint16_t *dstu, uint16_t *dstv) {
+            Split(src, dstu, dstv, 16);
+        }
+        void Split32(const uint16_t *src, uint16_t *dstu, uint16_t *dstv) {
+            Split(src, dstu, dstv, 32);
+        }
+
+        void Interleave(const uint16_t *srcu, const uint16_t *srcv, uint16_t *dst, int len) {
+            for (int i = 0; i < len; i++) {
+                dst[2 * i + 0] = srcu[i];
+                dst[2 * i + 1] = srcv[i];
+            }
+        }
+        void Interleave4(const uint16_t *srcu, const uint16_t *srcv, uint16_t *dst) {
+            Interleave(srcu, srcv, dst, 4);
+        }
+        void Interleave8(const uint16_t *srcu, const uint16_t *srcv, uint16_t *dst) {
+            Interleave(srcu, srcv, dst, 8);
+        }
+        void Interleave16(const uint16_t *srcu, const uint16_t *srcv, uint16_t *dst) {
+            Interleave(srcu, srcv, dst, 16);
+        }
+        void Interleave32(const uint16_t *srcu, const uint16_t *srcv, uint16_t *dst) {
+            Interleave(srcu, srcv, dst, 32);
+        }
     };
 
+    template <typename PixType>
     void LoopFilterSbAV1(Frame *frame, int32_t sbRow, int32_t sbCol, const AV1VideoParam &par)
     {
         //fprintf(stderr, "start %2d %2d\n", sbRow, sbCol);
         LoopFilterInfoN lfi;
 
         LoopFilterFrameParam *params = &frame->m_loopFilterParam;
-        LoopFilterResetParams(params);
 
-        params->sharpness = par.deblockingSharpness;
-        params->level = FilterLevelFromQp(frame->m_sliceQpY, frame->IsIntra());
         if (params->level == 0)
             return;
         LoopFilterInitLevels(params->level, &lfi, params);
@@ -2417,14 +1358,16 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
         const int32_t LPF_RIGHT_PAD = 2;
         // Ensure 16 byte alignent
         const int32_t LPF_CHROMA_PITCH = LPF_CHROMA_BLOCK_WIDE + LPF_BORDER + LPF_LEFT_PAD + LPF_RIGHT_PAD;
-        alignas(16) uint8_t chromaPlanes[2][LPF_CHROMA_PITCH * (LPF_BORDER + LPF_CHROMA_BLOCK_HIGH)];
+        alignas(16) PixType chromaPlanes[2][LPF_CHROMA_PITCH * (LPF_BORDER + LPF_CHROMA_BLOCK_HIGH)];
 
         // Split chroma planes of current SB for deblocking
+        FrameData* recon = sizeof(PixType) == 1 ? frame->m_recon : frame->m_recon10;
+
         const int32_t blockHeight = ((stopR4x4 - startR4x4) << 1);
-        const int32_t nv12pitch = frame->m_recon->pitch_chroma_bytes;
-        uint8_t *pnv12 = frame->m_recon->uv + sbCol * 64 + (startR4x4 * 2 - LPF_BORDER) * nv12pitch;
-        uint8_t *pu = chromaPlanes[0] + LPF_LEFT_PAD + 4;
-        uint8_t *pv = chromaPlanes[1] + LPF_LEFT_PAD + 4;
+        const int32_t nv12pitch = recon->pitch_chroma_pix;
+        PixType *pnv12 = (PixType *)recon->uv + sbCol * 64 + (startR4x4 * 2 - LPF_BORDER) * nv12pitch;
+        PixType *pu = chromaPlanes[0] + LPF_LEFT_PAD + 4;
+        PixType *pv = chromaPlanes[1] + LPF_LEFT_PAD + 4;
         for (int32_t y = 0; y < LPF_BORDER + blockHeight; y++) {
             details::Split4(pnv12 - 8, pu - 4, pv - 4);
             details::Split32(pnv12, pu, pv);
@@ -2439,15 +1382,16 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
 
             // Filter by 8x8 blocks
             // Filter 2 vertical edges before filtering 1 horizontal edge
-            const int32_t pitch = frame->m_recon->pitch_luma_pix;
-            uint8_t *p = frame->m_recon->y + startR4x4 * frame->m_recon->pitch_luma_pix * 4;
+            const int32_t pitch = recon->pitch_luma_pix;
+            //uint8_t *p = frame->m_recon->y + startR4x4 * frame->m_recon->pitch_luma_pix * 4;
+            PixType *p = (PixType *)recon->y + startR4x4 * recon->pitch_luma_pix * 4;
             for (int32_t r = startR4x4; r < stopR4x4; r += 2, p += 8 * pitch)
                 for (int32_t c = startC4x4; c < stopC4x4; c += 2)
                     av1_loopfilter_luma_8x8(p + (c << 2), pitch, r, c, mi, miPitch, limits);
 
             if (sbCol + 1 == par.sb64Cols) {
                 const int32_t c = stopC4x4;
-                uint8_t *p = frame->m_recon->y + startR4x4 * frame->m_recon->pitch_luma_pix * 4 + (c << 2);
+                p = (PixType*)recon->y + startR4x4 * recon->pitch_luma_pix * 4 + (c << 2);
                 for (int32_t r = startR4x4; r < stopR4x4; r += 2, p += 8 * pitch)
                     av1_loopfilter_luma_last_8x8(p, pitch, r, c, mi, miPitch, limits);
             }
@@ -2459,25 +1403,25 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
             //    |---left and right SB borders---|
             //
             for (int32_t plane = 1; plane < 3; plane++) {
-                const int32_t pitch = LPF_CHROMA_PITCH;
-                uint8_t *pdst = chromaPlanes[plane - 1] + LPF_BORDER * LPF_CHROMA_PITCH + (sbCol == 0 ? 16 : 12);
+                const int32_t pitchCh = LPF_CHROMA_PITCH;
+                PixType *pdst = chromaPlanes[plane - 1] + LPF_BORDER * LPF_CHROMA_PITCH + (sbCol == 0 ? 16 : 12);
                 for (int32_t r = startR4x4; r < stopR4x4; r += 2) {
-                    uint8_t *p = pdst + ((r - startR4x4) << 1) * pitch;
+                    p = pdst + ((r - startR4x4) << 1) * pitchCh;
                     for (int32_t c = startC4x4; c < stopC4x4; c += 2, p += 4)
-                        av1_loopfilter_nv12_4x4(p, pitch, r, c + 0, mi, miPitch, limits);
+                        av1_loopfilter_nv12_4x4(p, pitchCh, r, c + 0, mi, miPitch, limits);
                 }
                 if (sbCol + 1 == par.sb64Cols) {
                     const int32_t c = stopC4x4;
                     for (int32_t r = startR4x4; r < stopR4x4; r += 2) {
-                        uint8_t *p = pdst + ((r - startR4x4) << 1) * pitch + ((c - startC4x4) << 1);
-                        av1_loopfilter_nv12_last_4x4(p + 0, pitch, r, c, mi, miPitch, limits);
+                        p = pdst + ((r - startR4x4) << 1) * pitchCh + ((c - startC4x4) << 1);
+                        av1_loopfilter_nv12_last_4x4(p + 0, pitchCh, r, c, mi, miPitch, limits);
                     }
                 }
             }
         }
 
         // Now interleave deblocked chroma planes back to nv12
-        pnv12 = frame->m_recon->uv + sbCol * 64 + (startR4x4 * 2 - LPF_BORDER) * nv12pitch;
+        pnv12 = (PixType*)recon->uv + sbCol * 64 + (startR4x4 * 2 - LPF_BORDER) * nv12pitch;
         pu = chromaPlanes[0] + LPF_LEFT_PAD + 4;
         pv = chromaPlanes[1] + LPF_LEFT_PAD + 4;
         for (int32_t y = 0; y < LPF_BORDER; y++) {
@@ -2503,6 +1447,7 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
 
     }
 
-
+    template void LoopFilterSbAV1<uint8_t>(Frame *frame, int32_t sbRow, int32_t sbCol, const AV1VideoParam &par);
+    template void LoopFilterSbAV1<uint16_t>(Frame *frame, int32_t sbRow, int32_t sbCol, const AV1VideoParam &par);
 }
 #endif // MFX_ENABLE_AV1_VIDEO_ENCODE
