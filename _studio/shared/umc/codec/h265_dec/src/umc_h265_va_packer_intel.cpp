@@ -562,8 +562,9 @@ namespace UMC_HEVC_DECODER
         H265SliceHeader const* sh = pSlice->GetSliceHeader();
         VM_ASSERT(sh);
 
-        header->ByteOffsetToSliceData = (UINT)(pSlice->m_BitStream.BytesDecoded() + prefix_size);
-        header->slice_segment_address = sh->slice_segment_address;
+        header->NumEmuPrevnBytesInSliceHdr = (USHORT)pSlice->m_NumEmuPrevnBytesInSliceHdr;
+        header->ByteOffsetToSliceData      = (UINT)(pSlice->m_BitStream.BytesDecoded() + prefix_size);
+        header->slice_segment_address      = sh->slice_segment_address;
 
         const H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
         VM_ASSERT(pCurrentFrame);

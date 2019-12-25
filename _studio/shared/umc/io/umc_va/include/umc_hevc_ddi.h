@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2018 Intel Corporation
+// Copyright (c) 2006-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -253,7 +253,7 @@ typedef struct _DXVA_Intel_Slice_HEVC_Long
     UINT    BSNALunitDataLocation;
     UINT    SliceBytesInBuffer;
     USHORT  wBadSliceChopping;
-    USHORT  ReservedBits;
+    USHORT  NumEmuPrevnBytesInSliceHdr;
     UINT    ByteOffsetToSliceData;
     UINT    slice_segment_address;
 
@@ -314,7 +314,7 @@ typedef struct _DXVA_Intel_Slice_HEVC_Ext_Long
     UINT    BSNALunitDataLocation;
     UINT    SliceBytesInBuffer;
     USHORT  wBadSliceChopping;
-    USHORT  ReservedBits;
+    USHORT  NumEmuPrevnBytesInSliceHdr;
     UINT    ByteOffsetToSliceData;
     UINT    slice_segment_address;
 

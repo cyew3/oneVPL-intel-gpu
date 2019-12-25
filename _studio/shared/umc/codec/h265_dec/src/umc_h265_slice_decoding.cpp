@@ -62,6 +62,7 @@ void H265Slice::Reset()
     }
 
     m_pCurrentFrame = 0;
+    m_NumEmuPrevnBytesInSliceHdr = 0;
 
     m_SliceHeader.nuh_temporal_id = 0;
     m_SliceHeader.m_CheckLDC = false;

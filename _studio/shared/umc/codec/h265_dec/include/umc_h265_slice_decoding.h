@@ -173,6 +173,8 @@ protected:
 public:
     H265DecoderFrame *m_pCurrentFrame;        // (H265DecoderFrame *) pointer to destination frame
 
+    int32_t m_NumEmuPrevnBytesInSliceHdr;                        // (int32_t) number of emulation prevention bytes in slice head
+
     int32_t m_iNumber;                                           // (int32_t) current slice number
     int32_t m_iFirstMB;                                          // (int32_t) first MB number in slice
     int32_t m_iMaxMB;                                            // (int32_t) last unavailable  MB number in slice

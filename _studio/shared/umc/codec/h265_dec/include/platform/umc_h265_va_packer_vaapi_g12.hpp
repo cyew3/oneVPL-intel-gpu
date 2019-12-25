@@ -165,8 +165,9 @@ namespace UMC_HEVC_DECODER
                     VASliceParameterBufferHEVC* sp = reinterpret_cast<VASliceParameterBufferHEVC*>(sp_base);
 
                     auto p = GetEntryPoint(slice);
-                    sp->num_entry_point_offsets      = p.second;
-                    sp->entry_offset_to_subset_array = p.first;
+                    sp->num_entry_point_offsets        = p.second;
+                    sp->entry_offset_to_subset_array   = p.first;
+                    sp->slice_data_num_emu_prevn_bytes = slice->m_NumEmuPrevnBytesInSliceHdr;
                 }
 
                 if (last_slice)

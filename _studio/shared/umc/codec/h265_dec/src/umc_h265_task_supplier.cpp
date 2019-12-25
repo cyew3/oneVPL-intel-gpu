@@ -1997,7 +1997,7 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     uint32_t currOffset = sliceHdr->m_HeaderBitstreamOffset;
     uint32_t currOffsetWithEmul = currOffset;
 
-    size_t headersEmuls = 0;
+    uint32_t headersEmuls = 0;
     for (; headersEmuls < removed_offsets.size(); headersEmuls++)
     {
         if (removed_offsets[headersEmuls] < currOffsetWithEmul)
@@ -2005,6 +2005,8 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         else
             break;
     }
+
+    pSlice->m_NumEmuPrevnBytesInSliceHdr = headersEmuls;
 
     // Update entry points
     size_t offsets = removed_offsets.size();
@@ -2036,8 +2038,6 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
                 offsets -= removed_bytes;
                 removed_bytes = 0;
             }
-            else
-                pSlice->m_tileByteLocation[tile] = pSlice->m_tileByteLocation[tile] - removed_bytes;
         }
     }
 
