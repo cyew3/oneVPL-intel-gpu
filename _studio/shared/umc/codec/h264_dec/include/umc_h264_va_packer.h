@@ -139,25 +139,7 @@ protected:
     DXVA_PicParams_H264* m_picParams;
 };
 
-#if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-class PackerDXVA2_Widevine
-    : public PackerDXVA2
-{
-
-public:
-
-    PackerDXVA2_Widevine(VideoAccelerator * va, TaskSupplier * supplier);
-    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice) override;
-
-private:
-
-    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264);
-    void PackAU(H264DecoderFrameInfo * sliceInfo, int32_t firstSlice, int32_t count) override;
-};
-#endif
-
 #endif // UMC_VA_DXVA
-
 
 #ifdef UMC_VA_LINUX
 
@@ -211,10 +193,8 @@ private:
 };
 
 #ifdef MFX_ENABLE_CPLIB
-class PackerVA_CENC
-    : public PackerVA
+class PackerVA_CENC : public PackerVA
 {
-
 public:
 
     PackerVA_CENC(VideoAccelerator * va, TaskSupplier * supplier);
@@ -224,43 +204,7 @@ private:
     void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice) override;
     void PackAU(const H264DecoderFrame*, int32_t isTop) override;
 };
-#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
-class PackerVA_Widevine
-    : public PackerVA
-{
-
-public:
-
-    PackerVA_Widevine(VideoAccelerator * va, TaskSupplier * supplier);
-
-private:
-
-    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice) override;
-    void PackAU(const H264DecoderFrame*, int32_t isTop) override;
-};
 #endif
-
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-class PackerVA_PAVP : public PackerVA
-{
-
-public:
-
-    PackerVA_PAVP(VideoAccelerator * va, TaskSupplier * supplier);
-
-private:
-
-    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
-
-    virtual void CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo);
-
-    virtual int32_t PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_t chopping, int32_t numSlicesOfPrevField);
-
-protected:
-
-    void PackPavpParams();
-};
-#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 #endif // UMC_VA_LINUX
 

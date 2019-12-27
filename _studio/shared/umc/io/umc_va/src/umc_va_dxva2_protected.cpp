@@ -30,7 +30,7 @@ using namespace UMC;
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
 // from pavp
-const GUID DXVA2_Intel_Pavp = 
+const GUID DXVA2_Intel_Pavp =
 { 0x7460004, 0x7533, 0x4e1a, { 0xbd, 0xe3, 0xff, 0x20, 0x6b, 0xf5, 0xce, 0x47 } };
 
 const GUID D3D11_CRYPTO_TYPE_AES128_CTR =
@@ -84,13 +84,13 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
         if (!pavpOpt)
             return UMC_ERR_FAILED;
 
-        m_encryptionType = (pavpOpt->EncryptionType == MFX_PAVP_AES128_CBC) ? PAVP_ENCRYPTION_AES128_CBC : 
+        m_encryptionType = (pavpOpt->EncryptionType == MFX_PAVP_AES128_CBC) ? PAVP_ENCRYPTION_AES128_CBC :
             ((pavpOpt->EncryptionType == MFX_PAVP_AES128_CTR) ? PAVP_ENCRYPTION_AES128_CTR : PAVP_ENCRYPTION_NONE);
 
-        m_counterMode = (pavpOpt->CounterType == MFX_PAVP_CTR_TYPE_B) ? PAVP_COUNTER_TYPE_B : 
+        m_counterMode = (pavpOpt->CounterType == MFX_PAVP_CTR_TYPE_B) ? PAVP_COUNTER_TYPE_B :
             ((pavpOpt->CounterType == MFX_PAVP_CTR_TYPE_C) ? PAVP_COUNTER_TYPE_C : PAVP_COUNTER_TYPE_A);
     }
-    else if (IS_PROTECTION_CENC(m_protected) || IS_PROTECTION_WIDEVINE(m_protected))
+    else if (IS_PROTECTION_CENC(m_protected))
     {
         m_encryptionType = 0;
         m_counterMode = 0;
@@ -142,7 +142,7 @@ const GUID & ProtectedVA::GetEncryptionGUID() const
     if (IS_PROTECTION_PAVP_ANY(m_protected))
         return ::DXVA2_Intel_Pavp;
     else if (MFX_PROTECTION_GPUCP_AES128_CTR == m_protected)
-        /* Guid for DirectX 9 would likely be D3DCRYPTOTYPE_AES128_CTR but drivers up until 15.31 
+        /* Guid for DirectX 9 would likely be D3DCRYPTOTYPE_AES128_CTR but drivers up until 15.31
         are only supports RSAES_OAEP through DX11*/
         return ::D3D11_CRYPTO_TYPE_AES128_CTR;
     else

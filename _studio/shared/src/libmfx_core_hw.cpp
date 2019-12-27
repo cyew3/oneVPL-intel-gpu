@@ -70,14 +70,6 @@ mfxU32 ChooseProfile(mfxVideoParam const* param, eMFXHWType)
             profile |= (profile_idc == MFX_PROFILE_AVC_SCALABLE_HIGH) ? VA_PROFILE_SVC_HIGH : VA_PROFILE_SVC_BASELINE;
         }
 #endif
-
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        if (IS_PROTECTION_WIDEVINE(param->Protected))
-        {
-            profile |= VA_PROFILE_WIDEVINE;
-        }
-#endif
-
         }
         break;
 
@@ -173,13 +165,6 @@ mfxU32 ChooseProfile(mfxVideoParam const* param, eMFXHWType)
                 profile |= VA_PROFILE_REXT;
 #endif
         }
-
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        if (IS_PROTECTION_WIDEVINE(param->Protected))
-        {
-            profile |= VA_PROFILE_WIDEVINE;
-        }
-#endif
         break;
 
     default:

@@ -1491,14 +1491,6 @@ STRUCT(mfxExtPAVPOption,
     FIELD_T(mfxU16                , EncryptionType)
     FIELD_T(mfxU16                , CounterType)
 )
-
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-STRUCT(mfxExtDecryptedParam,
-    FIELD_S(mfxExtBuffer, Header)
-    FIELD_T(mfxU8*      , Data)
-    FIELD_T(mfxU32      , DataLength)
-)
-#endif
 #endif
 
 #if (MFX_VERSION >= 1030)

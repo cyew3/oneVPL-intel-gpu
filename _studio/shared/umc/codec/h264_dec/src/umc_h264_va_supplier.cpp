@@ -136,13 +136,7 @@ Status VATaskSupplier::Init(VideoDecoderParams *pInit)
     m_DPBSizeEx = m_iThreadNum + (initH264 ? initH264->m_bufferedFrames : 0);
 
 #if defined (UMC_VA)
-    if (m_va &&
-        m_va->GetProtectedVA() &&
-        (IS_PROTECTION_CENC(m_va->GetProtectedVA()->GetProtected())
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        || IS_PROTECTION_WIDEVINE(m_va->GetProtectedVA()->GetProtected())
-#endif
-        ))
+    if (m_va && m_va->GetProtectedVA() && IS_PROTECTION_CENC(m_va->GetProtectedVA()->GetProtected()))
     {
         m_DPBSizeEx += 2;
     }
@@ -370,16 +364,16 @@ Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame)
     FrameData frmData;
     frmData.Init(&info, frmMID, m_pFrameAllocator);
 
-    mfx_UMC_FrameAllocator* mfx_alloc = 
+    mfx_UMC_FrameAllocator* mfx_alloc =
         DynamicCast<mfx_UMC_FrameAllocator>(m_pFrameAllocator);
     if (mfx_alloc)
     {
-        mfxFrameSurface1* surface = 
+        mfxFrameSurface1* surface =
             mfx_alloc->GetSurfaceByIndex(frmMID);
         if (!surface)
             throw h264_exception(UMC_ERR_ALLOC);
 
-        mfxExtBuffer* extbuf = 
+        mfxExtBuffer* extbuf =
             GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
         if (extbuf)
             frmData.SetAuxInfo(extbuf, extbuf->BufferSz, extbuf->BufferId);

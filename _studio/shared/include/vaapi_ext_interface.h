@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,6 @@
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
 // encryption parameters for PAVP
-#define  VAEncryptionParameterBufferType   -3
-#define EXTERNAL_ENCRYPTED_SURFACE_FLAG   (1<<16)
 #define VA_CODED_BUF_STATUS_PRIVATE_DATA_HDCP (1<<8)
 #define VA_HDCP_ENABLED (1<<12)
 #endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
@@ -38,36 +36,6 @@
 #define VA_CODED_BUF_STATUS_HW_TEAR_DOWN 0x4000
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
-/*VAEncrytpionParameterBuffer*/
-typedef struct _VAEncryptionParameterBuffer
-{
-    //Not used currently
-    unsigned int encryptionSupport;
-    //Not used currently
-    unsigned int hostEncryptMode;
-    // For IV, Counter input
-    unsigned int pavpAesCounter[2][4];
-    // not used currently
-    unsigned int pavpIndex;
-    // PAVP mode, CTR, CBC, DEDE etc
-    unsigned int pavpCounterMode;
-    unsigned int pavpEncryptionType;
-    // not used currently
-    unsigned int pavpInputSize[2];
-    // not used currently
-    unsigned int pavpBufferSize[2];
-    // not used currently
-    VABufferID   pvap_buf;
-    // set to TRUE if protected media
-    unsigned int pavpHasBeenEnabled;
-    // not used currently
-    unsigned int IntermmediatedBufReq;
-    // not used currently
-    unsigned int uiCounterIncrement;
-    // AppId: PAVP sessin Index from application
-    unsigned int app_id;
-
-} VAEncryptionParameterBuffer;
 
 typedef struct _VAHDCPEncryptionParameterBuffer {
     unsigned int       status;

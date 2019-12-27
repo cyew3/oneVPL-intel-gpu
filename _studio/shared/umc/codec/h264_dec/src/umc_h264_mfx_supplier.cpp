@@ -613,11 +613,7 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
         break;
     }
 
-    if (IS_PROTECTION_CENC(par->Protected)
-#if !defined (MFX_PROTECTED_FEATURE_DISABLE)
-        || IS_PROTECTION_WIDEVINE(par->Protected)
-#endif
-    )
+    if (IS_PROTECTION_CENC(par->Protected))
         name = DXVA_Intel_Decode_Elementary_Stream_AVC;
 
     if (MFX_ERR_NONE != core->IsGuidSupported(name, par) &&

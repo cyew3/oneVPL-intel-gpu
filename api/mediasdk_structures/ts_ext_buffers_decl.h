@@ -153,9 +153,6 @@ EXTBUF(mfxExtBRC, MFX_EXTBUFF_BRC)
 
 #if !defined(OPEN_SOURCE)
 EXTBUF(mfxExtPAVPOption             , MFX_EXTBUFF_PAVP_OPTION               )
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-EXTBUF(mfxExtDecryptedParam         , MFX_EXTBUFF_DECRYPTED_PARAM           )
-#endif
 #endif
 
 #if (MFX_VERSION >= 1030)

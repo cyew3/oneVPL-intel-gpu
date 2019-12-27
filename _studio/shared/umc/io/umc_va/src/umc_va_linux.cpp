@@ -32,8 +32,6 @@
 
 #if defined(MFX_ENABLE_CPLIB)
 #include "mfx_cenc.h"
-#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
-#include "huc_based_drm_common.h"
 #endif
 
 #define UMC_VA_NUM_OF_COMP_BUFFERS       8
@@ -532,19 +530,6 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         if (UMC_OK == umcRes)
         {
             va_attributes[1].value = VA_DEC_SLICE_MODE_NORMAL;
-
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-            if (m_protectedVA && MFX_PROTECTION_PAVP == m_protectedVA->GetProtected())
-            {
-                if (va_attributes[1].value & VA_DEC_SLICE_MODE_BASE)
-                {
-                    m_bH264ShortSlice = true;
-                    va_attributes[1].value = VA_DEC_SLICE_MODE_BASE;
-                }
-                else
-                    umcRes = UMC_ERR_FAILED;
-            }
-#endif
         }
 
         int32_t attribsNumber = 2;
@@ -591,27 +576,6 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
             attribsNumber++;
         }
-#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        if (UMC_OK == umcRes && m_protectedVA && IS_PROTECTION_WIDEVINE(m_protectedVA->GetProtected()))
-        {
-            va_attributes[attribsNumber].type = VAConfigAttribEncryption;
-            if (m_protectedVA->GetProtected() == MFX_PROTECTION_WIDEVINE_CLASSIC)
-            {
-                if (va_attributes[3].value & VA_ENCRYPTION_TYPE_WIDEVINE_CLASSIC)
-                    va_attributes[attribsNumber].value = VA_ENCRYPTION_TYPE_WIDEVINE_CLASSIC;
-            }
-            else if (m_protectedVA->GetProtected() == MFX_PROTECTION_WIDEVINE_GOOGLE_DASH)
-            {
-                if (va_attributes[3].value & VA_ENCRYPTION_TYPE_GOOGLE_DASH)
-                    va_attributes[attribsNumber].value = VA_ENCRYPTION_TYPE_GOOGLE_DASH;
-            }
-            else
-                umcRes = UMC_ERR_FAILED;
-
-            attribsNumber++;
-        }
-#endif
 #endif
 
         if (UMC_OK == umcRes)

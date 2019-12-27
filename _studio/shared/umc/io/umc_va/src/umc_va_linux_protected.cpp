@@ -80,7 +80,7 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
 
         m_counterMode = extPAVP->CounterType;
     }
-    else if (IS_PROTECTION_CENC(m_protected) || IS_PROTECTION_WIDEVINE(m_protected))
+    else if (IS_PROTECTION_CENC(m_protected))
     {
         m_encryptionType = 0;
         m_counterMode = 0;
@@ -117,9 +117,6 @@ void ProtectedVA::SetBitstream(mfxBitstream *bs)
     }
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    if (IS_PROTECTION_WIDEVINE(m_protected))
-        return;
-
     if (!bs->EncryptedData)
         return;
 

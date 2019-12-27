@@ -802,9 +802,7 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
     }
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
-    if (IS_PROTECTION_ANY(param->Protected) &&
-        !IS_PROTECTION_CENC(param->Protected) &&
-        !IS_PROTECTION_WIDEVINE(param->Protected))
+    if (IS_PROTECTION_ANY(param->Protected) && !IS_PROTECTION_CENC(param->Protected))
     {
         VideoAccelerator::ExtensionData ext{};
         ext.output = std::make_pair(&m_DXVA2DecodeHandle, sizeof(m_DXVA2DecodeHandle));

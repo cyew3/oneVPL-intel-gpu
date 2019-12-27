@@ -135,24 +135,12 @@ bool LumaIsNull(const mfxFrameSurface1 * surf)
 
 #ifdef MFX_ENABLE_CPLIB
     #define IS_PROTECTION_CENC(val) (MFX_PROTECTION_CENC_WV_CLASSIC == (val) || MFX_PROTECTION_CENC_WV_GOOGLE_DASH == (val))
-
-    #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        #define IS_PROTECTION_WIDEVINE(val) (false)
-    #endif
 #else
     #define IS_PROTECTION_CENC(val) (false)
-
-    #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        #if (MFX_VERSION >= MFX_VERSION_NEXT)
-            #define IS_PROTECTION_WIDEVINE(val) (MFX_PROTECTION_WIDEVINE_CLASSIC == (val) || MFX_PROTECTION_WIDEVINE_GOOGLE_DASH == (val))
-        #else
-            #define IS_PROTECTION_WIDEVINE(val) (false)
-        #endif
-    #endif
 #endif
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    #define IS_PROTECTION_ANY(val) (IS_PROTECTION_PAVP_ANY(val) || MFX_PROTECTION_GPUCP_AES128_CTR == (val) || IS_PROTECTION_CENC(val) || IS_PROTECTION_WIDEVINE(val))
+    #define IS_PROTECTION_ANY(val) (IS_PROTECTION_PAVP_ANY(val) || MFX_PROTECTION_GPUCP_AES128_CTR == (val) || IS_PROTECTION_CENC(val))
 #else
     #define IS_PROTECTION_ANY(val) IS_PROTECTION_CENC(val)
 #endif

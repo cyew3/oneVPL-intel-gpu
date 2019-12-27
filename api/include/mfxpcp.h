@@ -61,10 +61,6 @@ enum {
     MFX_PROTECTION_CENC_WV_CLASSIC      = 0x0004,
     MFX_PROTECTION_CENC_WV_GOOGLE_DASH  = 0x0005,
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
-    MFX_PROTECTION_WIDEVINE_CLASSIC     = 0x0006,
-    MFX_PROTECTION_WIDEVINE_GOOGLE_DASH = 0x0007,
-#endif
 };
 #endif // #if (MFX_VERSION >= 1030) || !defined(OPEN_SOURCE)
 
@@ -91,9 +87,6 @@ enum
 enum {
 #if !defined(OPEN_SOURCE)
     MFX_EXTBUFF_PAVP_OPTION         = MFX_MAKEFOURCC('P','V','O','P'),
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    MFX_EXTBUFF_DECRYPTED_PARAM     = MFX_MAKEFOURCC('D','C','R','P'),
-#endif
 #endif
 #if (MFX_VERSION >= 1030)
     MFX_EXTBUFF_CENC_PARAM          = MFX_MAKEFOURCC('C','E','N','P')
@@ -133,18 +126,6 @@ typedef struct _mfxExtPAVPOption{
     mfxU32      reserved[8];
 } mfxExtPAVPOption;
 MFX_PACK_END()
-
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-MFX_PACK_BEGIN_STRUCT_W_PTR()
-typedef struct _mfxExtDecryptedParam{
-    mfxExtBuffer Header;
-
-    mfxU8  *Data;
-    mfxU32 DataLength;
-    mfxU32 reserved[11];
-} mfxExtDecryptedParam;
-MFX_PACK_END()
-#endif
 #endif
 
 #if (MFX_VERSION >= 1030)

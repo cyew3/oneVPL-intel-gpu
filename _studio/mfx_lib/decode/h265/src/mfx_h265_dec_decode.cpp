@@ -33,9 +33,6 @@
 
 #if defined(MFX_VA)
 #include "umc_h265_va_supplier.h"
-    #if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        #include "umc_h265_widevine_supplier.h"
-    #endif
     #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
         #include "umc_va_dxva2_protected.h"
         #include "umc_va_linux_protected.h"
@@ -228,12 +225,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 #if defined (MFX_VA)
         bool useBigSurfacePoolWA = MFX_Utility::IsBugSurfacePoolApplicable(type, par);
 
-#if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
-            m_pH265VideoDecoder.reset( new (WidevineTaskSupplier)); // HW, Widevine version
-        else
-#endif
-            m_pH265VideoDecoder.reset(useBigSurfacePoolWA ? new VATaskSupplierBigSurfacePool<VATaskSupplier>() : new VATaskSupplier()); // HW
+        m_pH265VideoDecoder.reset(useBigSurfacePoolWA ? new VATaskSupplierBigSurfacePool<VATaskSupplier>() : new VATaskSupplier()); // HW
 
         m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #else
@@ -422,9 +414,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
         static_cast<VATaskSupplier*>(m_pH265VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE) && defined (MFX_VA_WIN)
-        if (IS_PROTECTION_ANY(m_vFirstPar.Protected) &&
-            !IS_PROTECTION_CENC(m_vFirstPar.Protected) &&
-            !IS_PROTECTION_WIDEVINE(m_vFirstPar.Protected))
+        if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_CENC(m_vFirstPar.Protected))
         {
             if (m_va->GetProtectedVA())
             {
@@ -498,7 +488,7 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     if (videoProcessing != nullptr)
     {
         // hardware resize is enabled
-        bool hardwareUpscale = 
+        bool hardwareUpscale =
             videoProcessing->Out.Width >= par->mfx.FrameInfo.Width ||
             videoProcessing->Out.Height >= par->mfx.FrameInfo.Height;
 
@@ -540,9 +530,7 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(par, m_platform);
 
 #if defined (MFX_VA_WIN) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    if (IS_PROTECTION_ANY(m_vFirstPar.Protected) &&
-        !IS_PROTECTION_CENC(m_vFirstPar.Protected) &&
-        !IS_PROTECTION_WIDEVINE(m_vFirstPar.Protected))
+    if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_CENC(m_vFirstPar.Protected))
     {
         if (m_va->GetProtectedVA())
         {
@@ -1093,10 +1081,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     mfxStatus sts = MFX_ERR_NONE;
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected))
-#endif
-
     if (bs)
     {
        sts = CheckBitstream(bs);
@@ -1169,16 +1153,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
         MFXMediaDataAdapter src(bs);
 
-#if defined(MFX_VA) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        mfxExtBuffer* widevineExtbuf = (bs) ? GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : nullptr;
-        if (widevineExtbuf)
-        {
-            src.SetExtBuffer(widevineExtbuf);
-        }
-#endif
-#endif
-
         for (;;)
         {
             umcRes = m_FrameAllocator->FindFreeSurface() == -1 ?
@@ -1207,11 +1181,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             if (umcRes == UMC::UMC_ERR_INVALID_STREAM)
             {
                 umcAddSourceRes = umcFrameRes = umcRes = UMC::UMC_OK;
-
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-                if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
-                    sts = MFX_ERR_UNDEFINED_BEHAVIOR;
-#endif
             }
 
             if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION)
@@ -1249,12 +1218,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             }
 #endif
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-            if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected) || umcRes != UMC::UMC_NTF_NEW_RESOLUTION)
-#endif
-            {
-                src.Save(bs);
-            }
+            src.Save(bs);
 
             if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
                 MFX_RETURN(sts);

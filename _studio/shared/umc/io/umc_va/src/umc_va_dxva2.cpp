@@ -529,10 +529,6 @@ static const GuidProfile guidProfiles[] =
     { H264_VLD        | VA_PROFILE_MVC_STEREO      | VA_LONG_SLICE_MODE,        sDXVA2_ModeH264_VLD_NoFGT },
     { H264_VLD        | VA_PROFILE_MVC_STEREO_PROG | VA_LONG_SLICE_MODE,        sDXVA2_ModeH264_VLD_NoFGT },
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    { H264_VLD        | VA_PROFILE_WIDEVINE,                                    DXVA_Intel_Decode_Elementary_Stream_AVC },
-#endif
-
     { H265_VLD,                                                                 DXVA_ModeHEVC_VLD_Main }, // MS
     { H265_VLD        | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_MainProfile },
     { H265_VLD        | VA_PROFILE_10,                                          DXVA_ModeHEVC_VLD_Main10  }, // MS
@@ -557,11 +553,6 @@ static const GuidProfile guidProfiles[] =
     { H265_VLD_444_SCC    | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_SCC_Main444_Profile },
     { H265_10_VLD_444_SCC | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_SCC_Main444_10Profile },
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
-
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    { VA_H265 | VA_VLD | VA_PROFILE_WIDEVINE,                                   DXVA_Intel_Decode_Elementary_Stream_HEVC },
-#endif
-
 };
 
 const GuidProfile * GuidProfile::GetGuidProfiles()

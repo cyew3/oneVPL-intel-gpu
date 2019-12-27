@@ -756,9 +756,6 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAES128CipherCounter       ,16   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncryptedData             ,88   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtPAVPOption             ,64   )
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtDecryptedParam         ,64   )
-#endif
 #endif // OPEN_SOURCE
     #elif defined(_WIN32) || defined(LINUX32)
 #if MFX_VERSION >= 1030
@@ -768,9 +765,6 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAES128CipherCounter       ,16   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxEncryptedData             ,72   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtPAVPOption             ,64   )
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtDecryptedParam         ,60   )
-#endif
 #endif // OPEN_SOURCE
     #endif
 #endif //defined (__MFXPCP_H__)
@@ -4726,11 +4720,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,EncryptionType                ,28   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,CounterType                   ,30   )
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtDecryptedParam               ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtDecryptedParam               ,Data                          ,8    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtDecryptedParam               ,DataLength                    ,16   )
-#endif
 #endif // OPEN_SOURCE
     #elif defined(_WIN32) || defined(LINUX32)
 #if (MFX_VERSION >= 1030)
@@ -4755,11 +4744,6 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,EncryptionType                ,28   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtPAVPOption                   ,CounterType                   ,30   )
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtDecryptedParam               ,Header                        ,0    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtDecryptedParam               ,Data                          ,8    )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtDecryptedParam               ,DataLength                    ,12   )
-#endif
 #endif // OPEN_SOURCE
     #endif
 #endif //defined (__MFXPCP_H__)

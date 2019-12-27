@@ -48,9 +48,6 @@
 
 #if defined(MFX_VA)
 #include "umc_h265_va_supplier.h"
-#if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-#include "umc_h265_widevine_supplier.h"
-#endif
 #if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_linux_protected.h"

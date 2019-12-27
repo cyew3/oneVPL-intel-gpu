@@ -50,19 +50,12 @@ if(NOT OPEN_SOURCE)
     ${UMC_CODECS}/h264_dec/src/umc_h264_slice_ex.cpp
     ${UMC_CODECS}/h264_dec/src/umc_h264_task_broker_mt.cpp
     ${UMC_CODECS}/h264_dec/src/umc_h264_vda_supplier.cpp
-    ${UMC_CODECS}/h264_dec/src/umc_h264_widevine_decrypter.cpp
-    ${UMC_CODECS}/h264_dec/src/umc_h264_widevine_supplier.cpp
     )
 
   list(APPEND sources
     ${UMC_CODECS}/h265_dec/src/umc_h265_va_packer_cenc.cpp
-    ${UMC_CODECS}/h265_dec/src/umc_h265_va_packer_dxva_widevine.cpp
     ${UMC_CODECS}/h265_dec/src/umc_h265_va_packer_intel.cpp
     ${UMC_CODECS}/h265_dec/src/umc_h265_va_packer_ms.cpp
-    ${UMC_CODECS}/h265_dec/src/umc_h265_va_packer_widevine.cpp
-    ${UMC_CODECS}/h265_dec/src/umc_h265_widevine_decrypter.cpp
-    ${UMC_CODECS}/h265_dec/src/umc_h265_widevine_slice_decoding.cpp
-    ${UMC_CODECS}/h265_dec/src/umc_h265_widevine_supplier.cpp
     )
 
   list(APPEND sources
