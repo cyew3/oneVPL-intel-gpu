@@ -92,10 +92,9 @@ mfxStatus D3D11VideoCORE::InternalInit()
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
 
 #ifndef STRIP_EMBARGO
-    //Temproary disable CmCopy for Pre-Si platforms or if there is no loaded cm_copy_kernel at the moment
+    // Temporary disable CmCopy for Pre-Si platforms or if there is no loaded cm_copy_kernel at the moment
     if (   m_HWType == MFX_HW_RYF
         || m_HWType == MFX_HW_RKL
-        || m_HWType == MFX_HW_ATS
         || m_HWType == MFX_HW_DG2)
         m_bCmCopyAllowed = false;
 #endif
@@ -1078,7 +1077,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
 
         sts = CoreDoSWFastCopy(pDst, pSrc, COPY_SYS_TO_SYS); // sw copy
         MFX_CHECK_STS(sts);
-       
+
     }
     else if (NULL != srcPtr && NULL != pDst->Data.MemId)
     {

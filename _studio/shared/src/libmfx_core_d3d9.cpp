@@ -153,7 +153,7 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
     mfxU32 cDecoderGuids = 0;
     GUID   *pDecoderGuids = 0;
     HRESULT hr = m_pDirectXVideoService->GetDecoderDeviceGuids(&cDecoderGuids, &pDecoderGuids);
-    
+
     if (FAILED(hr))
         return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -318,29 +318,12 @@ mfxStatus D3D9VideoCORE::InternalInit()
     if (sts == MFX_ERR_NONE)
         platformFromDriver = config.ConfigBitstreamRaw;
 
-#if 0
-    // added temporarily to monitor driver DDI version if needed
-    sts = GetIntelDataPrivateReport(DXVA2_Intel_Encode_HEVC_Main, config);
-    int DriverDDIMain = config.ConfigSpatialResid8;
-    printf("DriverDDIMain = %d\n", DriverDDIMain);
-    sts = GetIntelDataPrivateReport(DXVA2_Intel_Encode_HEVC_Main10, config);
-    int DriverDDIMain10 = config.ConfigSpatialResid8;
-    printf("DriverDDIMain10 = %d\n", DriverDDIMain10);
-    sts = GetIntelDataPrivateReport(DXVA2_Intel_LowpowerEncode_HEVC_Main, config);
-    int DriverDDIMainLP = config.ConfigSpatialResid8;
-    printf("DriverDDIMainLP = %d\n", DriverDDIMainLP);
-    sts = GetIntelDataPrivateReport(DXVA2_Intel_LowpowerEncode_HEVC_Main10, config);
-    int DriverDDIMain10LP = config.ConfigSpatialResid8;
-    printf("DriverDDIMain10LP = %d\n", DriverDDIMain10LP);
-#endif
-
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
 
 #ifndef STRIP_EMBARGO
-    //Temproary disable CmCopy for Pre-Si platforms or if there is no loaded cm_copy_kernel at the moment
+    // Temporary disable CmCopy for Pre-Si platforms or if there is no loaded cm_copy_kernel at the moment
     if (   m_HWType == MFX_HW_RYF
         || m_HWType == MFX_HW_RKL
-        || m_HWType == MFX_HW_ATS
         || m_HWType == MFX_HW_DG2)
         m_bCmCopyAllowed = false;
 #endif
@@ -367,9 +350,6 @@ D3D9VideoCORE::~D3D9VideoCORE()
 void D3D9VideoCORE::Close()
 {
     m_pVA.reset();
-    // Should be enabled after merge from SNB branch
-    //if (m_pFastComposing.get())
-    //    m_pFastComposing.get()->Release();
     SAFE_RELEASE(m_pDirectXVideoService);
     SAFE_RELEASE(m_pDirect3DDevice);
     SAFE_RELEASE(m_pD3D);
@@ -536,7 +516,7 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             else
                 m_bCmCopy = false;
         }
-        
+
         if(m_pCmCopy && !m_bCmCopySwap && (request->Info.FourCC == MFX_FOURCC_BGR4 || request->Info.FourCC == MFX_FOURCC_RGB4 || request->Info.FourCC == MFX_FOURCC_ARGB16|| request->Info.FourCC == MFX_FOURCC_ABGR16 || request->Info.FourCC == MFX_FOURCC_P010))
         {
             sts = m_pCmCopy->InitializeSwapKernels(GetHWType());
