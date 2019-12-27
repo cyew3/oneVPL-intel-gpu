@@ -124,7 +124,7 @@ void Windows::Gen9::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pus
             auto pEnd = std::remove_if(pps.ROI, pps.ROI + roi.NumROI
                 , [](ENCODE_ROI roi)
             {
-                return (roi.Roi.Left >= roi.Roi.Right || roi.Roi.Top >= roi.Roi.Bottom);
+                return (roi.Roi.Left > roi.Roi.Right || roi.Roi.Top > roi.Roi.Bottom);
             });
 
             pps.NumROI = UCHAR(pEnd - pps.ROI);

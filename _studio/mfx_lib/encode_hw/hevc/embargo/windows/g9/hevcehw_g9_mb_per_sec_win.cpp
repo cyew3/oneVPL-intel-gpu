@@ -82,7 +82,7 @@ void MbPerSec::Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push)
 
         ENCODE_QUERY_PROCESSING_RATE_INPUT inPar = {};
 
-        // Some encoding parameters affect MB processibng rate. Pass them to driver
+        // Some encoding parameters affect MB processing rate. Pass them to driver
         inPar.GopPicSize  = par.mfx.GopPicSize;
         inPar.GopRefDist  = mfxU8(par.mfx.GopRefDist);
         inPar.Level       = mfxU8(par.mfx.CodecLevel);
