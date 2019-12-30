@@ -1909,15 +1909,25 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
 
     mfxU32 const originalBDLuma = pSurfaceIn->Info.BitDepthLuma ? pSurfaceIn->Info.BitDepthLuma : 8;
     mfxU32 const originalBDChroma = pSurfaceIn->Info.BitDepthChroma ? pSurfaceIn->Info.BitDepthChroma : 8;
-    mfxU32 const finalBitDepth = params->use10bitOutput ? 10 : IPP_MAX(originalBDLuma, originalBDChroma);
+    mfxU32 finalBitDepth = params->use10bitOutput ? 10 : IPP_MAX(originalBDLuma, originalBDChroma);
+
+    // align luma and chroma bitdepth to 10/12 bit
+    if (finalBitDepth > 8 && finalBitDepth <= 10)
+    {
+        finalBitDepth = 10;
+    }
+    else if (finalBitDepth > 10 && finalBitDepth <= 12)
+    {
+        finalBitDepth = 12;
+    }
 
     mfxU32 const finalBitDepthLuma =
         params->useSameBitDepthForComponents ? finalBitDepth : originalBDLuma;
     mfxU32 const finalBitDepthChroma =
         params->useSameBitDepthForComponents ? finalBitDepth : originalBDChroma;
 
-    mfxI32 const l_shift = params->VpxDec16bFormat ? 0 : (pSurfaceIn->Info.Shift ? (16 - finalBitDepthLuma)   : originalBDLuma   - finalBitDepthLuma);
-    mfxI32 const c_shift = params->VpxDec16bFormat ? 0 : (pSurfaceIn->Info.Shift ? (16 - finalBitDepthChroma) : originalBDChroma - finalBitDepthChroma);
+    mfxI32 const l_shift = params->VpxDec16bFormat ? 0 : (pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDLuma   - finalBitDepthLuma);
+    mfxI32 const c_shift = params->VpxDec16bFormat ? 0 : (pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDChroma - finalBitDepthChroma);
 
     if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YUV420_16)
     {
