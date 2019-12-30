@@ -35,14 +35,22 @@ void Windows::Gen9::WeightPred::SubmitTask(const FeatureBlocks& /*blocks*/, TPus
         auto& esSlice = Task::SSH::Get(s_task);
         auto& par     = Glob::DDI_SubmitParam::Get(global);
         auto  vaType  = Glob::VideoCore::Get(global).GetVAType();
-        auto& ddiPPS = Deref(GetDDICB<ENCODE_SET_PICTURE_PARAMETERS_HEVC>(ENCODE_ENC_PAK_ID, DDIPar_In, vaType, par));
+        auto& ddiPPS  = Deref(GetDDICB<ENCODE_SET_PICTURE_PARAMETERS_HEVC>(ENCODE_ENC_PAK_ID, DDIPar_In, vaType, par));
 
         bool bNeedPWT = (esSlice.type != 2 && (ddiPPS.weighted_bipred_flag || ddiPPS.weighted_pred_flag));
         MFX_CHECK(bNeedPWT, MFX_ERR_NONE);
 
+        const mfxExtCodingOption3& CO3 = ExtBuffer::Get(Glob::VideoParam::Get(global));
+        ddiPPS.bEnableGPUWeightedPrediction = IsOn(CO3.FadeDetection);
+
         auto pDdiSlice = GetDDICB<ENCODE_SET_SLICE_HEADER_HEVC>(ENCODE_ENC_PAK_ID, DDIPar_In, vaType, par);
 
         ThrowAssert(!pDdiSlice, "pDdiSlice is invalid");
+
+        auto& ph    = Glob::PackedHeaders::Get(global);
+        auto  itSSH = ph.SSH.begin();
+
+        ThrowAssert(ph.SSH.size() < ddiPPS.NumSlices, "Num. packed slices is invalid");
                 
         mfxI16 wY = (1 << esSlice.luma_log2_weight_denom);
         mfxI16 wC = (1 << esSlice.chroma_log2_weight_denom);
@@ -53,6 +61,10 @@ void Windows::Gen9::WeightPred::SubmitTask(const FeatureBlocks& /*blocks*/, TPus
 
             cs.luma_log2_weight_denom         = (UCHAR)esSlice.luma_log2_weight_denom;
             cs.delta_chroma_log2_weight_denom = (CHAR)(esSlice.chroma_log2_weight_denom - cs.luma_log2_weight_denom);
+            cs.PredWeightTableBitOffset       = itSSH->PackInfo.at(PACK_PWTOffset);
+            cs.PredWeightTableBitLength       = itSSH->PackInfo.at(PACK_PWTLength);
+
+            ++itSSH;
 
             for (mfxU16 l = 0; l < 2; l++)
             {
