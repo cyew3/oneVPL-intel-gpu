@@ -25,7 +25,7 @@ public:
 
     virtual mfxStatus Init( mfxU32 nBufferSizeMin
                           , mfxU32 nBufferSizeMax);
-
+    
     //allows to change minBuffersize during execution
     virtual mfxStatus SetMinBuffSize(mfxU32 nBufferSizeMin);
     virtual mfxStatus GetMinBuffSize(mfxU32& nBufferSizeMin);
@@ -45,13 +45,13 @@ public:
     static mfxStatus MoveBsExtended(mfxBitstream2 *dest, mfxBitstream2 *src);
     //Just extend Buffer to new size keeping data
     static mfxStatus ExtendBs(mfxU32 nNewLen, mfxBitstream *src);
-
+    
 protected:
 
     bool          m_bDonotUseLinear;
     bool          m_bStartedBuffering;
-    mfxU32        m_nBufferSizeMax;
-    mfxU32        m_nBufferSizeMin;
+    mfxU32        m_nBufferSizeMax; 
+    mfxU32        m_nBufferSizeMin; 
     mfxU32        m_nMinBufferSize;
     bool          m_bEnable;
     mfxBitstream  m_allocatedBuf;
@@ -59,8 +59,8 @@ protected:
     bool          m_bEos;//eos flag set by upstream block
     mfxU32        m_nMinSize;//buffer wilnot lock untill it reached this size
 
-    mfxBitstream2  m_inputBS;//stored last bitstream
-
+    mfxBitstream2  m_inputBS;//stored last bitstream 
+    
     UMC::LinearBuffer m_UMCBuffer;
 };
 

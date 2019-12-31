@@ -19,7 +19,7 @@ File Name: mfxstructures.h
 
 #define mfxBitstream2_ZERO_MEM(bs2) {memset(&(bs2), 0, (size_t)(((mfxU8*)&((bs2).m_enryptedData)) - ((mfxU8*)&(bs2)))); (bs2).m_enryptedData.clear(); (bs2).m_enryptedDataBuffer.clear();}
 
-//extension to mediasdk bitstream, that silently can be casted
+//extension to mediasdk bitstream, that silently can be casted 
 struct mfxBitstream2 : mfxBitstream
 {
     mfxU16 DependencyId;//splitter might want to put source information, analog to FrameId in surface
@@ -27,9 +27,6 @@ struct mfxBitstream2 : mfxBitstream
 
     std::vector<mfxEncryptedData> m_enryptedData;
     std::vector<mfxU8> m_enryptedDataBuffer;
-
-    mfxU32  InputBsLength;  // length of input bitstream
-    mfxU32  ReadLength;     // to indicate the bitstream bytes that have been read
 
    //since it is not a POD, value will be default initialized, we have to create a ctor to use zero initializing
     mfxBitstream2()

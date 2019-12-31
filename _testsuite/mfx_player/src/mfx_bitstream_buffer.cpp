@@ -54,10 +54,10 @@ mfxStatus MFXBistreamBuffer::Init( mfxU32 nBufferSizeMin
         mbParams.m_numberOfFrames       = 1;
         mbParams.m_prefInputBufferSize  = m_nBufferSizeMax;
         mbParams.m_prefOutputBufferSize = m_nBufferSizeMin;
-
+        
         MFX_CHECK_UMC_STS(m_UMCBuffer.Init(&mbParams));
     }
-
+    
     return MFX_ERR_NONE;
 }
 
@@ -92,7 +92,7 @@ mfxStatus MFXBistreamBuffer::Reset()
         }
         m_UMCBuffer.Reset();
     }
-
+    
     return MFX_ERR_NONE;
 }
 
@@ -100,10 +100,10 @@ mfxStatus MFXBistreamBuffer::Close()
 {
     m_UMCBuffer.Close();
     m_bEos = false;
-
+    
     MFX_DELETE_ARRAY(this->Data);
     mfxBitstream2_ZERO_MEM(*(mfxBitstream2*)this);
-
+    
     return MFX_ERR_NONE;
 }
 
@@ -116,7 +116,7 @@ mfxStatus MFXBistreamBuffer::ExtendBs(mfxU32 nNewLen, mfxBitstream *src)
     {
         return MFX_ERR_NONE;
     }
-
+    
     nNewLen = mfx_align(nNewLen , 1024 * 1024);
 
     mfxU8 * p;
@@ -127,14 +127,14 @@ mfxStatus MFXBistreamBuffer::ExtendBs(mfxU32 nNewLen, mfxBitstream *src)
     delete [] src->Data;
     src->Data = p;
     src->DataOffset = 0;
-
+    
     return MFX_ERR_NONE;
 }
 
 mfxStatus MFXBistreamBuffer::MoveBsExtended(mfxBitstream2 *dest, mfxBitstream2 *src)
 {
     MFX_CHECK_STS(CopyBsExtended(dest, src));
-
+    
     if (NULL != src)
     {
         src->DataLength = 0;
@@ -145,25 +145,25 @@ mfxStatus MFXBistreamBuffer::MoveBsExtended(mfxBitstream2 *dest, mfxBitstream2 *
             cur = cur->Next;
         }
     }
-
+    
     return MFX_ERR_NONE;
 }
 
 mfxStatus MFXBistreamBuffer::CopyBsExtended(mfxBitstream2 *dest, mfxBitstream2 *src)
 {
-    if (NULL == dest || NULL == src)
+    if (NULL == dest || NULL == src) 
     {
         return MFX_ERR_NONE;
     }
 
-    if (NULL != dest->EncryptedData)
+    if (NULL != dest->EncryptedData) 
     {
-        // mfxBitstream::EncryptedData do not support mutli frame combinating.
+        // mfxBitstream::EncryptedData do not support mutli frame combinating. 
         // Not sure if it is safe to extend it so just exit with error.
         if (0 != dest->DataLength)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-
+    
     //extending destination if necessary
     MFX_CHECK_STS(ExtendBs(dest->DataLength + src->DataLength, dest));
 
@@ -184,8 +184,8 @@ mfxStatus MFXBistreamBuffer::CopyBsExtended(mfxBitstream2 *dest, mfxBitstream2 *
     }
 
     memcpy(dest->Data + dest->DataLength + dest->DataOffset, src->Data + src->DataOffset, src->DataLength);
-    dest->DataLength += src->DataLength;
-
+    dest->DataLength += src->DataLength; 
+    
     if (NULL != src->EncryptedData)
     {
         mfxU32 size = 0;
@@ -314,10 +314,10 @@ mfxStatus MFXBistreamBuffer::LockOutput(mfxBitstream2 * pBs)
     pBs->Data = (mfxU8*)mData.GetDataPointer();
         //data length is limited only if buffer inited with non zero size
     pBs->DataLength = (mfxU32)IPP_MIN( mData.GetDataSize()
-                                     , m_nBufferSizeMin == 1 ? mData.GetDataSize() : m_nBufferSizeMin);
+                                     , m_nBufferSizeMin == 1 ? mData.GetDataSize() : m_nBufferSizeMin);    
     pBs->DataOffset = 0;
     pBs->MaxLength  = (mfxU32)mData.GetDataSize();
-
+    
     return MFX_ERR_NONE;
 }
 

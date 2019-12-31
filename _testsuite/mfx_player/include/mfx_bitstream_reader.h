@@ -42,7 +42,7 @@ public:
     {
     }
 
-    virtual void Close()
+    virtual void      Close()
     {
     }
 
@@ -58,7 +58,7 @@ public:
         pCorruptionParams->CorruptMode    = m_CorruptLevel;
         pCorruptionParams->pActual        = (UMC::DataReader *)pFileReader;
         pCorruptionParams->pActualParams  = pFileReaderParams;
-
+        
         sts = (mfxStatus)m_CorruptionReader->Init(pCorruptionParams);
         delete pCorruptionParams;
         if ( MFX_ERR_NONE != sts )
@@ -75,14 +75,7 @@ public:
         memmove(bs.Data, bs.Data + bs.DataOffset, bs.DataLength);
         bs.DataOffset = 0;
         bs.TimeStamp = MFX_TIME_STAMP_INVALID;
-        if (bs.InputBsLength - bs.ReadLength > bs.MaxLength - bs.DataLength)
-        {
-            nBytesRead = bs.MaxLength - bs.DataLength;
-        }
-        else
-        {
-            nBytesRead = bs.InputBsLength - bs.ReadLength;
-        }
+        nBytesRead   = bs.MaxLength - bs.DataLength;
         sts = (mfxStatus)m_CorruptionReader->ReadData(bs.Data + bs.DataLength, &nBytesRead);
         if (0 == nBytesRead)
         {
@@ -91,7 +84,6 @@ public:
             bs.DataFlag |= MFX_BITSTREAM_EOS;
         }
         bs.DataLength += nBytesRead;
-        bs.ReadLength += nBytesRead;
         return MFX_ERR_NONE;
     }
 
@@ -101,7 +93,7 @@ public:
         {
             if (NULL == pParams)
                 return MFX_ERR_UNKNOWN;
-
+            
             *pParams = m_sInfo;
             return MFX_ERR_NONE;
         }
@@ -147,7 +139,7 @@ public:
         return (mfxStatus)m_CorruptionReader->SetPosition((Ipp64f)nFileOffset);
     }
 
-    virtual bool isFrameModeEnabled()
+    virtual bool isFrameModeEnabled() 
     {
         return false;
     }
