@@ -1403,7 +1403,7 @@ mfxStatus GetPipelineList(
         {
             pipelineList.push_back(MFX_EXTBUFF_VPP_ITC);
         }
-        else if (0 != deinterlacingMode)
+        else if (0 != deinterlacingMode) // no need to create filter if both picstructs are progressive.
         {
             /* Put DI filter in pipeline only if filter configured via Ext buffer */
             pipelineList.push_back(MFX_EXTBUFF_VPP_DEINTERLACING);
@@ -1653,6 +1653,7 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform
     switch (info->FourCC)
     {
         case MFX_FOURCC_NV12:
+        case MFX_FOURCC_YV12:
 #if defined (MFX_ENABLE_FOURCC_RGB565)
         case MFX_FOURCC_RGB565:
 #endif // MFX_ENABLE_FOURCC_RGB565
@@ -1682,7 +1683,6 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform
             break;
 #endif
         case MFX_FOURCC_IMC3:
-        case MFX_FOURCC_YV12:
         case MFX_FOURCC_YUV400:
         case MFX_FOURCC_YUV411:
         case MFX_FOURCC_YUV422H:

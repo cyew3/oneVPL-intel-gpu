@@ -248,7 +248,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         },
         {}
     },
-    {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM,
+    {/*20*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_YV12},
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV420},
@@ -322,12 +322,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         },
         {},
     },
-    {/*28*/
-#if !defined(_WIN32)
-        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
-#else
-        MFX_ERR_INVALID_VIDEO_PARAM,
-#endif
+    {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM,
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_UYVY},
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV422},
@@ -527,6 +522,24 @@ bool TestSuite::isTcToSkip(const tc_struct& tc, tsExtBufType<mfxVideoParam>& par
         }
     }
 
+    if (MFX_OS_FAMILY_WINDOWS == g_tsOSFamily &&
+        ((MFX_FOURCC_YV12 == m_par.vpp.In.FourCC &&
+        g_tsImpl & MFX_IMPL_VIA_D3D11) ||
+        MFX_FOURCC_YV12 == m_par.vpp.Out.FourCC))
+    {
+        for (auto &sp : tc.set_par)
+        {
+            if (!sp.f)
+                break;
+            if  (sp.f->name.find("mfxExtVPPDeinterlacing") != std::string::npos 
+                && par.vpp.In.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
+            {
+                g_tsLog << "Software Filter incompatible with YV12 with progressive input for DI - skip test case\n";
+                return true;
+            }
+        }
+    }
+
     if (   tc.sts == MFX_ERR_NONE
         || !CompareParams<const tc_struct&, decltype(RESET), decltype(par)>(tc, par, RESET, LOG_NOTHING))
         return false;
@@ -553,6 +566,27 @@ int TestSuite::RunTest(unsigned int id)
     SetFrameAllocator();
     SetHandle();
 
+    mfxStatus expected = MFX_ERR_NONE;
+
+    // UYVY input is only supported on linux
+    if ((MFX_FOURCC_UYVY == m_par.vpp.In.FourCC &&
+        MFX_OS_FAMILY_WINDOWS == g_tsOSFamily) ||
+        MFX_FOURCC_UYVY == m_par.vpp.Out.FourCC)
+    {
+        expected = MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    // YV12 I/O is not supported on DX11 and YV12 output is not on DX9
+    if (MFX_OS_FAMILY_WINDOWS == g_tsOSFamily &&
+        ((MFX_FOURCC_YV12 == m_par.vpp.In.FourCC &&
+        g_tsImpl & MFX_IMPL_VIA_D3D11) ||
+        MFX_FOURCC_YV12 == m_par.vpp.Out.FourCC))
+    {
+        expected = MFX_WRN_PARTIAL_ACCELERATION;
+    }
+
+    g_tsStatus.expect(expected);
+
     mfxExtOpaqueSurfaceAlloc* pOSA = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
 
     if (m_par.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY || m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
@@ -568,89 +602,92 @@ int TestSuite::RunTest(unsigned int id)
     if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
         m_pSurfPoolOut->AllocOpaque(m_request[1], *pOSA);
 
-    g_tsStatus.expect(MFX_ERR_NONE);
+    g_tsStatus.expect(expected);
     Init(m_session, &m_par);
 
-    tsExtBufType<mfxVideoParam> par_init (def);
-    CreateEmptyBuffers(*&par_init, *&m_par);
-
-    g_tsStatus.expect(MFX_ERR_NONE);
-    GetVideoParam(m_session, &par_init);
-
-    tsExtBufType<mfxVideoParam> par_reset (def);
-    SETPARS(&par_reset, RESET);
-    SetParamsDoNotUse(*&par_reset, tc.dnu_struct);
-
-    //adjust expected status for
-    mfxStatus expected = tc.sts;
-    if (tc.platform != MFX_HW_UNKNOWN && g_tsHWtype < tc.platform)
-        expected = MFX_ERR_INVALID_VIDEO_PARAM;
-
-    g_tsStatus.expect(expected);
-    Reset(m_session, &par_reset);
-
-    if (MFX_ERR_NONE == expected) // GetVideoParam checks are valid only in case of succesfull reset
+    if (expected == MFX_ERR_NONE)
     {
-        EXPECT_EQ(m_par, par_init) << "ERROR: Init parameters and parameters from GetVideoParams are not equal\n";
-
-        tsExtBufType<mfxVideoParam> par_after_reset (def);
-        CreateEmptyBuffers(*&par_after_reset, *&par_init);
-        CreateEmptyBuffers(*&par_after_reset, *&par_reset);
+        tsExtBufType<mfxVideoParam> par_init (def);
+        CreateEmptyBuffers(*&par_init, *&m_par);
 
         g_tsStatus.expect(MFX_ERR_NONE);
-        GetVideoParam(m_session, &par_after_reset);
+        GetVideoParam(m_session, &par_init);
 
-        mfxExtVPPDoNotUse* dnu = (mfxExtVPPDoNotUse*)par_reset.GetExtBuffer(MFX_EXTBUFF_VPP_DONOTUSE);
+        tsExtBufType<mfxVideoParam> par_reset (def);
+        SETPARS(&par_reset, RESET);
+        SetParamsDoNotUse(*&par_reset, tc.dnu_struct);
 
-        for (mfxU32 i = 0; i< par_init.NumExtParam; i++)
+        //adjust expected status for
+        expected = tc.sts;
+        if (tc.platform != MFX_HW_UNKNOWN && g_tsHWtype < tc.platform)
+            expected = MFX_ERR_INVALID_VIDEO_PARAM;
+
+        g_tsStatus.expect(expected);
+        Reset(m_session, &par_reset);
+
+        if (MFX_ERR_NONE == expected) // GetVideoParam checks are valid only in case of succesfull reset
         {
-            mfxExtBuffer* reset = 0;
-            mfxExtBuffer* after_reset = 0;
+            EXPECT_EQ(m_par, par_init) << "ERROR: Init parameters and parameters from GetVideoParams are not equal\n";
 
-            reset       = par_reset.GetExtBuffer(      par_init.ExtParam[i]->BufferId);
-            after_reset = par_after_reset.GetExtBuffer(par_init.ExtParam[i]->BufferId);
+            tsExtBufType<mfxVideoParam> par_after_reset (def);
+            CreateEmptyBuffers(*&par_after_reset, *&par_init);
+            CreateEmptyBuffers(*&par_after_reset, *&par_reset);
 
-            // Creating empty buffer
-            def.AddExtBuffer(par_init.ExtParam[i]->BufferId, par_init.ExtParam[i]->BufferSz);
-            mfxExtBuffer* empty = def.GetExtBuffer(par_init.ExtParam[i]->BufferId);
+            g_tsStatus.expect(MFX_ERR_NONE);
+            GetVideoParam(m_session, &par_after_reset);
 
-            bool in_dnu = false;
-            if (dnu != 0)
+            mfxExtVPPDoNotUse* dnu = (mfxExtVPPDoNotUse*)par_reset.GetExtBuffer(MFX_EXTBUFF_VPP_DONOTUSE);
+
+            for (mfxU32 i = 0; i< par_init.NumExtParam; i++)
             {
-                for (mfxU32 j = 0; j < dnu->NumAlg; j++)
+                mfxExtBuffer* reset = 0;
+                mfxExtBuffer* after_reset = 0;
+
+                reset       = par_reset.GetExtBuffer(      par_init.ExtParam[i]->BufferId);
+                after_reset = par_after_reset.GetExtBuffer(par_init.ExtParam[i]->BufferId);
+
+                // Creating empty buffer
+                def.AddExtBuffer(par_init.ExtParam[i]->BufferId, par_init.ExtParam[i]->BufferSz);
+                mfxExtBuffer* empty = def.GetExtBuffer(par_init.ExtParam[i]->BufferId);
+
+                bool in_dnu = false;
+                if (dnu != 0)
                 {
-                    if (par_init.ExtParam[i]->BufferId == dnu->AlgList[j])
+                    for (mfxU32 j = 0; j < dnu->NumAlg; j++)
                     {
-                        in_dnu = true;
-                        break;
+                        if (par_init.ExtParam[i]->BufferId == dnu->AlgList[j])
+                        {
+                            in_dnu = true;
+                            break;
+                        }
                     }
                 }
+
+                EXPECT_FALSE(in_dnu && (0 != memcmp(empty, after_reset, std::max(empty->BufferSz, after_reset->BufferSz))))
+                    << "ERROR: Filter from Init was disabled in Reset but exists after Reset \n";
+
+                EXPECT_FALSE(reset != 0 && (0 != memcmp(reset, after_reset, std::max(reset->BufferSz, after_reset->BufferSz))) )
+                    << "ERROR: Filter from Init was changed in Reset but parameters from Reset and after Reset are not equal \n";
+
+                EXPECT_FALSE(!in_dnu && reset == 0 && (0 != memcmp(par_init.ExtParam[i], after_reset, std::max(par_init.ExtParam[i]->BufferSz, after_reset->BufferSz))))
+                    << "ERROR: Filter's parameters from Init and after Reset are not equal \n";
             }
 
-            EXPECT_FALSE(in_dnu && (0 != memcmp(empty, after_reset, std::max(empty->BufferSz, after_reset->BufferSz))))
-                << "ERROR: Filter from Init was disabled in Reset but exists after Reset \n";
+            for (mfxU32 i = 0; i< par_reset.NumExtParam; i++)
+            {
+                if (par_reset.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DONOTUSE) continue; // VPP should not configure mfxExtVPPDoNotUse buffer!
 
-            EXPECT_FALSE(reset != 0 && (0 != memcmp(reset, after_reset, std::max(reset->BufferSz, after_reset->BufferSz))) )
-                << "ERROR: Filter from Init was changed in Reset but parameters from Reset and after Reset are not equal \n";
+                mfxExtBuffer* after_reset = 0;
+                after_reset = par_after_reset.GetExtBuffer(par_reset.ExtParam[i]->BufferId);
 
-            EXPECT_FALSE(!in_dnu && reset == 0 && (0 != memcmp(par_init.ExtParam[i], after_reset, std::max(par_init.ExtParam[i]->BufferSz, after_reset->BufferSz))))
-                << "ERROR: Filter's parameters from Init and after Reset are not equal \n";
+                EXPECT_FALSE (after_reset == 0) << "ERROR: Filter specified in Reset does not exists after Reset \n";
+
+                EXPECT_FALSE(0 != memcmp(par_reset.ExtParam[i], after_reset, std::max(par_reset.ExtParam[i]->BufferSz, after_reset->BufferSz)))
+                    << "ERROR: Filter's parameters from Reset and after Reset are not equal \n";
+            }
+
+            if (dnu && dnu->AlgList) delete[] dnu->AlgList;
         }
-
-        for (mfxU32 i = 0; i< par_reset.NumExtParam; i++)
-        {
-            if (par_reset.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DONOTUSE) continue; // VPP should not configure mfxExtVPPDoNotUse buffer!
-
-            mfxExtBuffer* after_reset = 0;
-            after_reset = par_after_reset.GetExtBuffer(par_reset.ExtParam[i]->BufferId);
-
-            EXPECT_FALSE (after_reset == 0) << "ERROR: Filter specified in Reset does not exists after Reset \n";
-
-            EXPECT_FALSE(0 != memcmp(par_reset.ExtParam[i], after_reset, std::max(par_reset.ExtParam[i]->BufferSz, after_reset->BufferSz)))
-                << "ERROR: Filter's parameters from Reset and after Reset are not equal \n";
-        }
-
-        if (dnu && dnu->AlgList) delete[] dnu->AlgList;
     }
 
     TS_END;
@@ -673,7 +710,7 @@ namespace vpp_8b_420_yv12_reset
             m_par.vpp.In.Shift = 0;
             m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
-            m_par.vpp.Out.FourCC = MFX_FOURCC_NV12;
+            m_par.vpp.Out.FourCC = MFX_FOURCC_YV12;
             m_par.vpp.Out.BitDepthLuma = 8;
             m_par.vpp.Out.BitDepthChroma = 8;
             m_par.vpp.Out.Shift = 0;

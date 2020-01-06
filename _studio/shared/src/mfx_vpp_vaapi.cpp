@@ -502,6 +502,7 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
         switch(fourcc)
         {
         case MFX_FOURCC_NV12:
+        case MFX_FOURCC_YV12:
         case MFX_FOURCC_YUY2:
         case MFX_FOURCC_RGB4:
         case MFX_FOURCC_A2RGB10:
