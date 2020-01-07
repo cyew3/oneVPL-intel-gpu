@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -706,8 +706,41 @@ const tsVPPInfo::TCCSupport tsVPPInfo::CCSupportTable[3] =
 #if defined(LINUX)
     {//gen11
     //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
+    /*   NV12*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   YV12*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   UYVY*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   YUY2*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   AYUV*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   RGB4*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   P010*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   Y210*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   Y410*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*A2RGB10*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*P016/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*Y216/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*Y416/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    },
+    {//gen12
+    //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
+    /*   NV12*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   YV12*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   UYVY*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   YUY2*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   AYUV*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   RGB4*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   P010*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   Y210*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   Y410*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*A2RGB10*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*P016/12*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*Y216/12*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*Y416/12*/{  HW,   HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    },
+#else
+    {//gen11
+    //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
     /*   NV12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-    /*   YV12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      NO,    NO,     NO,     NO },
+    /*   YV12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
     /*   UYVY*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
     /*   YUY2*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
     /*   AYUV*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
@@ -720,33 +753,15 @@ const tsVPPInfo::TCCSupport tsVPPInfo::CCSupportTable[3] =
     /*Y216/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
     /*Y416/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
     },
-#else
-    {//gen11
-    //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
-    /*   NV12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-    /*   YV12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      NO,    NO,     NO,     NO },
-    /*   UYVY*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-    /*   YUY2*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-    /*   AYUV*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-    /*   RGB4*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-    /*   P010*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-    /*   Y210*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-    /*   Y410*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-    /*A2RGB10*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-    /*P016/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-    /*Y216/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-    /*Y416/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-    },
-#endif
     {//gen12
     //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
-    /*   NV12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      NO,    HW,     HW,     HW },
-    /*   YV12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      NO,    HW,     HW,     HW },
+    /*   NV12*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   YV12*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
     /*   UYVY*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-    /*   YUY2*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      NO,    HW,     HW,     HW },
-    /*   AYUV*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      NO,    HW,     HW,     HW },
-    /*   RGB4*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      NO,    HW,     HW,     HW },
-    /*   P010*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   YUY2*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   AYUV*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   RGB4*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   P010*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
     /*   Y210*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
     /*   Y410*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
     /*A2RGB10*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
@@ -754,4 +769,6 @@ const tsVPPInfo::TCCSupport tsVPPInfo::CCSupportTable[3] =
     /*Y216/12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
     /*Y416/12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
     },
+#endif
+    
 };

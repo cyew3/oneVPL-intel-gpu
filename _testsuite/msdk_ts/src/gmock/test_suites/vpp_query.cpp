@@ -407,7 +407,8 @@ namespace vpp_query
         {
             g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
 
-            if (m_par.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
+            if (m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV ||
+                m_par.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
                 m_par.vpp.Out.FourCC == MFX_FOURCC_Y410 ||
                 m_par.vpp.Out.FourCC == MFX_FOURCC_P016 ||
                 m_par.vpp.Out.FourCC == MFX_FOURCC_Y216 ||
