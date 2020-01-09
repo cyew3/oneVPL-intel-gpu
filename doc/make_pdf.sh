@@ -49,5 +49,9 @@ Name="mediasdkhevcfei-man"
 Title="SDK Developer Reference for HEVC FEI"
 convert
 
+Name="MFE-Overview"
+Title="SDK Developer Reference for Multi-Frame Encode"
+convert
+
 
 echo Converting Done
