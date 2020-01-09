@@ -36,7 +36,7 @@ Algorithm:
 #include <fstream>
 #include <cstdio>
 
-#define DUMP_BS(bs, name); { std::fstream fout(std::string("")+name, std::fstream::binary | std::fstream::out);fout.write((char*)bs.Data, bs.DataLength); fout.close(); }
+//#define DUMP_BS(bs, name); { std::fstream fout(std::string("")+name, std::fstream::binary | std::fstream::out);fout.write((char*)bs.Data, bs.DataLength); fout.close(); }
 /*! \brief Main test name space */
 namespace hevce_qp_report
 {
@@ -470,11 +470,11 @@ namespace hevce_qp_report
             check_bs_cqp(f);
             return;
         }
-        mfxExtCodingOption2* co2 = m_par;
-        bool MBBRC = co2->MBBRC == MFX_CODINGOPTION_ON;
+        mfxExtCodingOption2& CO2 = m_par;
         // CBR / VBR
-        if ((m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
-            m_par.mfx.RateControlMethod == MFX_RATECONTROL_VBR) && !MBBRC)
+        if ((m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+             || m_par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+            && CO2.MBBRC != MFX_CODINGOPTION_ON)
         {
             check_bs_cbr_vbr(f);
             return;
@@ -491,7 +491,6 @@ namespace hevce_qp_report
         m_par.mfx.RateControlMethod = 3;
         m_par.mfx.QPI = m_par.mfx.QPP = m_par.mfx.QPB = 1;
         m_par.mfx.BufferSizeInKB = 0;
-        mfxExtCodingOption2& CO2 = m_par;
         mfxExtCodingOption3& CO3 = m_par;
         CO2.MBBRC = MFX_CODINGOPTION_OFF;
         CO3.EnableMBQP = MFX_CODINGOPTION_OFF;
@@ -714,7 +713,6 @@ namespace hevce_qp_report
         auto& tc = test_case[id];
         m_id = id;
         m_tc = tc;
-        m_impl = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11;
         initParams();
         SETPARS(&m_par, MFX_PAR);
         SETPARS(&m_par, CDO2_PAR);
