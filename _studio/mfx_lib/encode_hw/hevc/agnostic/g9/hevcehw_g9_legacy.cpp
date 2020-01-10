@@ -3963,7 +3963,11 @@ mfxStatus Legacy::CheckSlices(
 
     std::vector<SliceInfo> slices;
 
-    changed += CheckOrZero(par.mfx.NumSlice, defPar.base.GetSlices(defPar, slices), 0);
+    if (par.mfx.NumSlice)
+    {
+        auto supportedNslices = defPar.base.GetSlices(defPar, slices);
+        changed += CheckRangeOrSetDefault(par.mfx.NumSlice, supportedNslices, supportedNslices, supportedNslices);
+    }
 
     if (bCheckNMB)
     {

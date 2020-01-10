@@ -419,7 +419,7 @@ namespace hevce_encode_frame_async
             }
             catch (std::out_of_range)
             {
-                g_tsLog << "Error: Undefiened NumSlice for codec level " << m_pPar->mfx.CodecLevel << "!\n";
+                g_tsLog << "Error: Undefined NumSlice for codec level " << m_pPar->mfx.CodecLevel << "!\n";
                 g_tsStatus.check(MFX_ERR_ABORTED);
             }
             g_tsStatus.disable_next_check();
