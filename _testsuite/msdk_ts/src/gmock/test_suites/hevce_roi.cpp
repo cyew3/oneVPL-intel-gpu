@@ -697,8 +697,6 @@ namespace hevce_roi
                 m_filler = reader;
 
                 int encoded = 0;
-                if (USE_REFACTORED_HEVCE)
-                    g_tsStatus.expect(tc.sts);
 
                 while (encoded < 1)
                 {
