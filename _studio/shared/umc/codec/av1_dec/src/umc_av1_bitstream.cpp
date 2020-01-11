@@ -1619,8 +1619,8 @@ namespace UMC_AV1_DECODER
         // Identify forward and backward reference frames.
         // Forward  reference: ref order_hint < fh.order_hint
         // Backward reference: ref order_hint >= fh.order_hint
-        uint32_t fwdStartIdx = 0;
-        uint32_t fwdEndIdx = NUM_REF_FRAMES - 1;
+        int fwdStartIdx = 0;
+        int fwdEndIdx = NUM_REF_FRAMES - 1;
 
         for (uint32_t i = 0; i < NUM_REF_FRAMES; i++)
         {
@@ -1661,7 +1661,7 @@ namespace UMC_AV1_DECODER
 
         // === Forward Reference Frames ===
 
-        for (uint32_t i = fwdStartIdx; i <= fwdEndIdx; ++i)
+        for (int i = fwdStartIdx; i <= fwdEndIdx; ++i)
         {
             // == LAST_FRAME ==
             if (refFrameInfo[i].mapIdx == last_frame_idx)
@@ -1716,6 +1716,7 @@ namespace UMC_AV1_DECODER
         for (; refIdx < (INTER_REFS - 2); refIdx++)
         {
             const MV_REFERENCE_FRAME refFrame = ref_frame_list[refIdx];
+			if (refFlagList[refFrame - LAST_FRAME] == 1) continue;
             fh.ref_frame_idx[refFrame - LAST_FRAME] = refFrameInfo[fwdStartIdx].mapIdx;
             refFlagList[refFrame - LAST_FRAME] = 1;
         }
