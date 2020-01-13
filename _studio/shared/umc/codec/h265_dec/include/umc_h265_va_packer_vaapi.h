@@ -65,11 +65,11 @@ namespace UMC_HEVC_DECODER
         void PackAU(H265DecoderFrame const*, TaskSupplier_H265*) override;
 
         bool PackSliceParams(H265Slice const* slice, size_t, bool last_slice) override
-        { return PackSliceParams(slice, last_slice); }
+        { return PackSliceParams(slice, last_slice) ? true : false; }
 
     protected:
 
-        virtual bool PackSliceParams(H265Slice const*, bool last_slice) = 0;
+        virtual VASliceParameterBufferBase* PackSliceParams(H265Slice const*, bool last_slice) = 0;
         virtual void CreateSliceParamBuffer(size_t count) = 0;
         virtual void PackSliceParams(VASliceParameterBufferBase* sp_base, H265Slice const* slice, bool last_slice) = 0;
 

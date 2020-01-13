@@ -135,22 +135,26 @@ namespace UMC_HEVC_DECODER
                 }
             }
 
-            bool PackSliceParams(H265Slice const* slice, bool last_slice) override
+            VASliceParameterBufferBase* PackSliceParams(H265Slice const* slice, bool last_slice) override
             {
+                VASliceParameterBufferBase* sp_base = nullptr;
                 if (!(m_va->m_Profile & UMC::VA_PROFILE_SCC) ||
                     ! m_va->IsLongSliceControl())
-                    return G11::PackerVAAPI::PackSliceParams(slice, last_slice);
+                    sp_base = G11::PackerVAAPI::PackSliceParams(slice, last_slice);
+                else
+                {
+                    VAPictureParameterBufferHEVC* pp = nullptr;
+                    GetParamsBuffer(m_va, &pp);
 
-                VAPictureParameterBufferHEVC* pp = nullptr;
-                GetParamsBuffer(m_va, &pp);
+                    VASliceParameterBufferHEVCExtension* sp = nullptr;
+                    PeekParamsBuffer(m_va, &sp, last_slice ? 128 : 0);
 
-                VASliceParameterBufferHEVCExtension* sp = nullptr;
-                PeekParamsBuffer(m_va, &sp, last_slice ? 128 : 0);
+                    G9::PackerVAAPI::PackSliceParams(reinterpret_cast<VASliceParameterBufferBase*>(sp), slice, last_slice);
 
-                G9::PackerVAAPI::PackSliceParams(reinterpret_cast<VASliceParameterBufferBase*>(sp), slice, last_slice);
-
-                //for SCC we need to pack [VASliceParameterBufferHEVCRext]
-                G11::PackSliceHeader(m_va, slice, pp, &sp->rext, last_slice);
+                    //for SCC we need to pack [VASliceParameterBufferHEVCRext]
+                    G11::PackSliceHeader(m_va, slice, pp, &sp->rext, last_slice);
+                    sp_base = reinterpret_cast<VASliceParameterBufferBase*>(sp);
+                }
 
 #if defined(MFX_ENABLE_HEVCD_SUBSET)
                 auto pps = slice->GetPicParam();
@@ -158,8 +162,7 @@ namespace UMC_HEVC_DECODER
 
                 if (pps->tiles_enabled_flag)
                 {
-                    VASliceParameterBufferHEVC* sp = nullptr;
-                    GetParamsBuffer(m_va, &sp);
+                    VASliceParameterBufferHEVC* sp = reinterpret_cast<VASliceParameterBufferHEVC*>(sp_base);
 
                     auto p = GetEntryPoint(slice);
                     sp->num_entry_point_offsets      = p.second;
@@ -169,7 +172,7 @@ namespace UMC_HEVC_DECODER
                 if (last_slice)
                     PackSubsets(slice->GetCurrentFrame());
 #endif //MFX_ENABLE_HEVCD_SUBSET
-                return true;
+                return sp_base;
             }
 
 #if defined(MFX_ENABLE_HEVCD_SUBSET)

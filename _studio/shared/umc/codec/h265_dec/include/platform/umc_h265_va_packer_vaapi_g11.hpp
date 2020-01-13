@@ -167,7 +167,7 @@ namespace UMC_HEVC_DECODER
                 }
             }
 
-            bool PackSliceParams(H265Slice const* slice, bool last_slice) override
+            VASliceParameterBufferBase* PackSliceParams(H265Slice const* slice, bool last_slice) override
             {
                 if (!(m_va->m_Profile & UMC::VA_PROFILE_REXT) ||
                     ! m_va->IsLongSliceControl())
@@ -181,7 +181,7 @@ namespace UMC_HEVC_DECODER
 
                 G9::PackerVAAPI::PackSliceParams(reinterpret_cast<VASliceParameterBufferBase*>(sp), slice, last_slice);
                 PackSliceHeader(m_va, slice, pp, &sp->rext, last_slice);
-                return true;
+                return reinterpret_cast<VASliceParameterBufferBase*>(sp);
             }
         };
     } //G11

@@ -438,7 +438,7 @@ namespace UMC_HEVC_DECODER
                 PackPicHeader(m_va, frame, dpb, pp);
             }
 
-            bool PackSliceParams(H265Slice const* slice, bool last_slice) override
+            VASliceParameterBufferBase* PackSliceParams(H265Slice const* slice, bool last_slice) override
             {
                 assert(slice);
                 VASliceParameterBufferBase* sp_base = nullptr;
@@ -453,7 +453,7 @@ namespace UMC_HEVC_DECODER
 
                 PackSliceParams(sp_base, slice, last_slice);
 
-                return true;
+                return sp_base;
             }
 
             void PackSliceParams(VASliceParameterBufferBase* sp_base, H265Slice const* slice, bool last_slice) override
