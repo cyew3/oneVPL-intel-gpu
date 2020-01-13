@@ -110,7 +110,6 @@ _studio/mfx_lib/encode_hw/hevc/agnostic/hevcehw_base.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/hevcehw_block_queues.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/hevcehw_ddi.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/hevcehw_decl_blocks.h
-_studio/mfx_lib/encode_hw/hevc/agnostic/hevcehw_extbuf.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/hevcehw_utils.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_alloc.cpp
 _studio/mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_alloc.h
@@ -251,6 +250,7 @@ _studio/mfx_lib/shared/include/feature_blocks/mfx_feature_blocks_base.h
 _studio/mfx_lib/shared/include/feature_blocks/mfx_feature_blocks_decl_blocks.h
 _studio/mfx_lib/shared/include/feature_blocks/mfx_feature_blocks_init_macros.h
 _studio/mfx_lib/shared/include/feature_blocks/mfx_feature_blocks_utils.h
+_studio/mfx_lib/shared/include/mfx_utils_extbuf.h
 _studio/mfx_lib/shared/src/libmfxsw.cpp
 _studio/mfx_lib/shared/src/libmfxsw_async.cpp
 _studio/mfx_lib/shared/src/libmfxsw_decode.cpp

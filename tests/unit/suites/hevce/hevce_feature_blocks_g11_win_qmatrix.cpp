@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@
 #include "mfxvideo++.h"
 #include "mfx_session.h"
 
-#include "hevcehw_extbuf.h"
 #include "g9/hevcehw_g9_legacy.h"
 #include "g9/hevcehw_g9_qmatrix_win.h"
 
