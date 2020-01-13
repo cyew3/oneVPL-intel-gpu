@@ -19,6 +19,13 @@ mfxExtCodingOption3::DeblockingBetaOffset = -12..12
 namespace hevce_co2_disable_deblocking
 {
 
+// can't use std::clamp due to C++17 support isn't enabled
+template<class T>
+constexpr const T& clamp(const T& v, const T& lo, const T& hi)
+{
+    return (v < lo) ? lo : (hi < v) ? hi : v;
+}
+
 enum
 {
     FEATURE_DEBLOCKING_DISABLED = 16,
@@ -46,8 +53,8 @@ public:
     ~TestSuite()
     {
         for (mfxU32 i = 0; i < 100; i++) {
-            delete[] buffers[i][0];
-            delete[] buffers[i][1];
+            delete buffers[i][0];
+            delete buffers[i][1];
         }
     }
 
@@ -162,6 +169,10 @@ private:
 #else
             s.Data.TimeStamp = CO2->DisableDeblockingIdc ? FEATURE_ENABLED : 0;
 #endif
+            if (mode & INVALID_PARAMS)
+            {
+                s.Data.TimeStamp = 0;
+            }
         }
         else if (m_par.NumExtParam)
         {
@@ -428,6 +439,12 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
 #endif
     }
 
+    if (tc.mode == (INVALID_PARAMS | RUNTIME_ONLY))
+    {
+        bs.setDeblockingParameters(0, clamp(mfxI32(INVALID_VALUE_ALPHA), -12, 12),
+                                      clamp(mfxI32(INVALID_VALUE_BETA),  -12, 12));
+    }
+
     SETPARS(m_pPar, MFX_PAR);
 
     if (fourcc_id == MFX_FOURCC_NV12)
@@ -517,15 +534,8 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         m_max = 1;
         m_cur = 0;
-        Init();
 
-        AllocSurfaces();
-        AllocBitstream();
-        m_pSurf = GetSurface();
-
-        g_tsStatus.expect(tc.e_sts);
-        g_tsStatus.disable_next_check();
-        g_tsStatus.check(EncodeFrameAsync());
+        EncodeFrames(1);
     }
 
     if ((!unsupported_resolution || !USE_REFACTORED_HEVCE) && tc.i_sts == MFX_ERR_NONE && !(mode & INVALID_PARAMS))

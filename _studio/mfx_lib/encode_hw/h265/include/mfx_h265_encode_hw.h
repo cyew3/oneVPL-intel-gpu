@@ -179,16 +179,6 @@ protected:
     {
         (void)ctrl;
 
-#if MFX_VERSION >= MFX_VERSION_NEXT
-        if (ctrl)
-        {
-            mfxExtCodingOption3* pCO3 = ExtBuffer::Get(*ctrl);
-            if (pCO3) {
-                MFX_CHECK(pCO3->DeblockingAlphaTcOffset >= -12 && pCO3->DeblockingAlphaTcOffset <= 12, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-                MFX_CHECK(pCO3->DeblockingBetaOffset >= -12 && pCO3->DeblockingBetaOffset <= 12, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-            }
-        }
-#endif
         return MFX_ERR_NONE;
     }
 

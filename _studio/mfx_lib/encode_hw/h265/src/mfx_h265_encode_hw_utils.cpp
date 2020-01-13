@@ -2067,8 +2067,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 #if MFX_VERSION >= MFX_VERSION_NEXT
     if (!m_pps.deblocking_filter_disabled_flag)
     {
-        m_pps.beta_offset_div2 = mfxI8(m_ext.CO3.DeblockingBetaOffset * 0.5);
-        m_pps.tc_offset_div2 = mfxI8(m_ext.CO3.DeblockingAlphaTcOffset * 0.5);
+        m_pps.beta_offset_div2 = mfxI8(clamp(mfxI32(m_ext.CO3.DeblockingBetaOffset),    -12, 12) * 0.5);
+        m_pps.tc_offset_div2   = mfxI8(clamp(mfxI32(m_ext.CO3.DeblockingAlphaTcOffset), -12, 12) * 0.5);
     }
 #endif
 
@@ -2558,8 +2558,8 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
      if (ext3 && (ext3->DeblockingAlphaTcOffset != m_ext.CO3.DeblockingAlphaTcOffset || ext3->DeblockingBetaOffset != m_ext.CO3.DeblockingBetaOffset)
               && m_pps.deblocking_filter_override_enabled_flag && !s.deblocking_filter_disabled_flag)
      {
-         s.beta_offset_div2 = mfxI8(ext3->DeblockingBetaOffset * 0.5);
-         s.tc_offset_div2 = mfxI8(ext3->DeblockingAlphaTcOffset * 0.5);
+         s.beta_offset_div2 = mfxI8(clamp(mfxI32(ext3->DeblockingBetaOffset),    -12, 12) * 0.5);
+         s.tc_offset_div2   = mfxI8(clamp(mfxI32(ext3->DeblockingAlphaTcOffset), -12, 12) * 0.5);
      }
 #endif
     s.deblocking_filter_override_flag = s.deblocking_filter_disabled_flag || s.beta_offset_div2 || s.tc_offset_div2;

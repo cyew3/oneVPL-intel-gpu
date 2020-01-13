@@ -4856,8 +4856,8 @@ mfxStatus Legacy::GetSliceHeader(
 
     SetDefault(pCO3, &CO3);
 
-    s.beta_offset_div2 = mfxI8(pCO3->DeblockingBetaOffset * 0.5 * !s.deblocking_filter_disabled_flag);
-    s.tc_offset_div2   = mfxI8(pCO3->DeblockingAlphaTcOffset * 0.5 * !s.deblocking_filter_disabled_flag);
+    s.beta_offset_div2 = mfxI8(mfx::clamp(mfxI32(pCO3->DeblockingBetaOffset),    -12, 12) * 0.5 * !s.deblocking_filter_disabled_flag);
+    s.tc_offset_div2   = mfxI8(mfx::clamp(mfxI32(pCO3->DeblockingAlphaTcOffset), -12, 12) * 0.5 * !s.deblocking_filter_disabled_flag);
 
     s.deblocking_filter_override_flag |=
         !s.deblocking_filter_disabled_flag
