@@ -911,6 +911,9 @@ void CmContext::Setup(
         m_programHist = ReadProgram(m_device, genx_icllp_histogram, SizeOf(genx_icllp_histogram));
         break;
     case MFX_HW_TGL_LP:
+#ifndef STRIP_EMBARGO
+    case MFX_HW_DG1:
+#endif
         m_program = ReadProgram(m_device, genx_tgllp_simple_me, SizeOf(genx_tgllp_simple_me));
         m_programHist = ReadProgram(m_device, genx_tgllp_histogram, SizeOf(genx_tgllp_histogram));
         break;

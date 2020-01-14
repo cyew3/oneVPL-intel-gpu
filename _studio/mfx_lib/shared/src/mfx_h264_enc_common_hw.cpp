@@ -2680,8 +2680,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     bool laEnabled = true;
     if (platform > MFX_HW_ICL_LP
-#ifndef STRIP_EMBARGO
         && platform != MFX_HW_TGL_LP
+#ifndef STRIP_EMBARGO
+        && platform != MFX_HW_DG1
 #endif
         )
     {
