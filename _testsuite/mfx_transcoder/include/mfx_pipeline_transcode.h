@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -86,8 +86,10 @@ protected:
     MFXExtBufferPtr<mfxExtCodingOptionHEVC>  m_extCodingOptionsHEVC;
     MFXExtBufferPtr<mfxExtCodingOptionAV1E>  m_extCodingOptionsAV1E;
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-    MFXExtBufferPtr<mfxExtAV1Param>    m_extAV1Param;
-    MFXExtBufferPtr<mfxExtAV1AuxData>  m_extAV1AuxData;
+    MFXExtBufferPtr<mfxExtAV1Param>         m_extAV1Param;
+    MFXExtBufferPtr<mfxExtAV1AuxData>       m_extAV1AuxData;
+    MFXExtBufferPtr<mfxExtAV1Segmentation>  m_extAV1Segmentation;
+    std::vector<std::unique_ptr<mfxU8>>     m_segMaps;
 #endif
     MFXExtBufferPtr<mfxExtHEVCTiles> m_extHEVCTiles;
     MFXExtBufferPtr<mfxExtHEVCParam> m_extHEVCParam;
@@ -125,6 +127,9 @@ protected:
     std::auto_ptr<MFXExtBufferVector> m_ExtBuffers;
     std::auto_ptr<MFXExtBufferVector> m_ExtBuffersOld;
 
+    // those vectors are used to store ext buffers for per_frame_start/per_frame_end.
+    std::auto_ptr<MFXExtBufferVector> m_ExtBuffersPerFrame;
+
     // note: this list actually owns the objects it has pointers to
     std::list<MFXExtBufferVector *> m_ExtBufferVectorsContainer;
 
@@ -145,6 +150,10 @@ protected:
     mfxI32                          m_OldPicStruct;
     bool                            m_bUseResizing;//use vpp resize rather that changing settings in yuv reader
 
+    //////////////////////////////////////////////////////////////////////////
+    // support of per frame encoder parameters
+    bool                            m_bPerFrameParamsStart;
+    mfxU32                          m_nFrame;
     //////////////////////////////////////////////////////////////////////////
     bool                            m_bCreateDecode;
     //////////////////////////////////////////////////////////////////////////

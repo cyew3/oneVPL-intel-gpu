@@ -146,6 +146,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     , m_extAV1Param(new mfxExtAV1Param())
     , m_extAV1AuxData(new mfxExtAV1AuxData())
+    , m_extAV1Segmentation(new mfxExtAV1Segmentation())
 #endif
     , m_extHEVCTiles(new mfxExtHEVCTiles())
     , m_extHEVCParam(new mfxExtHEVCParam())
@@ -703,10 +704,61 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 
 MFXTranscodingPipeline::~MFXTranscodingPipeline()
 {
-    delete[] m_extVP9Segmentation->SegmentId;
+    if (m_extVP9Segmentation->SegmentId)
+    {
+        delete[] m_extVP9Segmentation->SegmentId;
+        m_extVP9Segmentation->SegmentId = nullptr;
+    }
+
     std::for_each(m_ExtBufferVectorsContainer.begin(), m_ExtBufferVectorsContainer.end(),
         deleter<MFXExtBufferVector *>());
     m_ExtBufferVectorsContainer.clear();
+}
+
+template<typename T>
+mfxStatus ParseSegmentMap(
+    const vm_char* fname
+    , const mfxFrameInfo frameInfo
+    , T& pSeg)
+{
+    vm_file* parFile = vm_file_fopen(fname, VM_STRING("r"));
+    MFX_CHECK(parFile != 0);
+
+    mfxU16 defaultSize;
+    if (std::is_same<T, MFXExtBufferPtr<mfxExtAV1Segmentation>>::value)
+        defaultSize = MFX_AV1_SEGMENT_ID_BLOCK_SIZE_16x16;
+    else
+        defaultSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_16x16;
+
+    mfxU16 blockSize = pSeg->SegmentIdBlockSize > 0 ? pSeg->SegmentIdBlockSize : defaultSize;
+    mfxU16 mapWidth = (frameInfo.Width + (blockSize - 1)) / blockSize;
+    mfxU16 mapHeight = (frameInfo.Height + (blockSize - 1)) / blockSize;
+    pSeg->NumSegmentIdAlloc = (mfxU32)(mapWidth * mapHeight);
+    pSeg->SegmentId = new mfxU8[pSeg->NumSegmentIdAlloc];
+
+    for (mfxU16 i = 0; i < mapHeight; ++i)
+    {
+        vm_char sbuf[256], *pStr;
+
+        pStr = vm_file_fgets(sbuf, sizeof(sbuf), parFile);
+        if (!pStr)
+            break;
+
+        for (mfxU16 j = 0; j < mapWidth; ++j)
+        {
+            pSeg->SegmentId[i * mapWidth + j] = pStr[j] - '0';
+            //Remove SegmentId check for AV1 to break option setting order restriction, and SegmentId will be checked in lib
+            if (std::is_same<T, MFXExtBufferPtr<mfxExtAV1Segmentation>>::value)
+                continue;
+
+            if (pSeg->SegmentId[i * mapWidth + j] >= pSeg->NumSegments)
+                return MFX_ERR_UNKNOWN;
+        }
+    }
+
+    vm_file_close(parFile);
+
+    return MFX_ERR_NONE;
 }
 
 template <class T>
@@ -1475,6 +1527,40 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             m_bResetParamsStart   = false;
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-per_frame_start"), VM_STRING("encoder will send ext buffers to frame frame_number, parameters for ext buffers are listed next to frame_number and ended up with -per_frame_end"),OPT_SPECIAL, VM_STRING("frame_number")))
+        {
+            MFX_CHECK(1 + argv < argvEnd);
+            MFX_CHECK(!m_bPerFrameParamsStart);
+            MFX_PARSE_INT(m_nFrame, argv[1]);
+
+            m_bPerFrameParamsStart = true;
+
+            m_ExtBuffersPerFrame.reset(new MFXExtBufferVector());
+
+            argv++;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-per_frame_end"), VM_STRING("specifies end of per-frame options")))
+        {
+            //has 1 arg time
+            MFX_CHECK_SET_ERR(m_bPerFrameParamsStart, PE_OPTION, MFX_ERR_UNSUPPORTED);
+
+            if (!m_ExtBuffersPerFrame->empty())
+            {
+                mfxExtBuffer** ppExt = m_ExtBuffersPerFrame->data();
+                const mfxU16 numExtParam = m_ExtBuffersPerFrame->size();
+
+                // move ext buffers to the container
+                m_ExtBufferVectorsContainer.push_back(m_ExtBuffersPerFrame.release());
+
+                m_pFactories.push_back(new constnumFactory(1
+                    , new FrameBasedCommandActivator(new addExtBufferCommand(this), this)
+                    , new baseCmdsInitializer(m_nFrame, 0., 0., 0, m_pRandom, 0, 0, (mfxExtBuffer*)ppExt, 0, numExtParam)));
+
+                m_inParams.bCreatePerFrameExtBuf = true;
+            }
+
+            m_bPerFrameParamsStart = false;
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-ref_list"), VM_STRING("reference list selection for givven frames interval"), OPT_SPECIAL
             , VM_STRING("start_frame end_frame NumRefFrameL0 NumRefFrameL1 ApplyLongTermIdx <preferredArray Lenght> <rejectedArray Lenght> <longTermdArray Lenght> [array:PreferredRefList:{FrameOrder}] [array:RejectedRefList:{FrameOrder}] [array:LongTermRefList:{<FrameOrder>[ <space> <LongTermIdx>} ]]")))
         {
@@ -1753,31 +1839,91 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         else if (m_OptProc.Check(argv[0], VM_STRING("-vp9SegmentationMap"), VM_STRING("File with segmentation map containing byte-aligned segment IDs [0..7] for each segment provided in raster order"), OPT_FILENAME, VM_STRING("filename")))
         {
             MFX_CHECK(++argv != argvEnd);
-            vm_file* par_file = vm_file_fopen(argv[0], VM_STRING("r"));
-            MFX_CHECK(par_file != 0);
 
-            mfxU16 map_width = (m_inParams.FrameInfo.Width + (m_extVP9Segmentation->SegmentIdBlockSize - 1)) / m_extVP9Segmentation->SegmentIdBlockSize;
-            mfxU16 map_height = (m_inParams.FrameInfo.Height + (m_extVP9Segmentation->SegmentIdBlockSize - 1)) / m_extVP9Segmentation->SegmentIdBlockSize;
-            m_extVP9Segmentation->NumSegmentIdAlloc = (mfxU32)(map_width * map_height);
+            MFX_CHECK_STS(ParseSegmentMap(argv[0], m_inParams.FrameInfo, m_extVP9Segmentation));
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-av1NumSegments"), VM_STRING("Number of segments, valid value [0..8] "), OPT_SPECIAL, VM_STRING("integer")))
+        {
+            const mfxU16 AV1E_MAX_SUPPORTED_SEGMENTS = 8;
 
-            m_extVP9Segmentation->SegmentId = new mfxU8[m_extVP9Segmentation->NumSegmentIdAlloc];
+            MFX_CHECK(++argv != argvEnd);
 
-            for (mfxU16 i = 0; i < map_height; ++i)
+            mfxExtAV1Segmentation *pExt = m_bPerFrameParamsStart ?
+                RetrieveExtBuffer<mfxExtAV1Segmentation>(*m_ExtBuffersPerFrame.get()) :
+                m_extAV1Segmentation.get();
+
+            MFX_PARSE_INT(pExt->NumSegments, argv[0]);
+
+            //-av1SegmentationAltQIndex may already be set when -av1NumSegments is set, need to make sure no invalid values
+            for (mfxU16 i = pExt->NumSegments; i < AV1E_MAX_SUPPORTED_SEGMENTS; i++)
             {
-                vm_char sbuf[256], *pStr;
+                MFX_CHECK(pExt->Segment[i].AltQIndex == 0);
+                pExt->Segment[i].FeatureEnabled &= (~MFX_AV1_SEGMENT_FEATURE_ALT_QINDEX);
+            }
 
-                pStr = vm_file_fgets(sbuf, sizeof(sbuf), par_file);
-                if (!pStr)
-                    break;
+            if (m_bPerFrameParamsStart)
+                m_ExtBuffersPerFrame.get()->push_back(pExt);
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-av1SegmentationBlockSize"), VM_STRING("Set size of block (NxN) for segmentation map: 16, 32, 64, 8"), OPT_SPECIAL, VM_STRING("integer")))
+        {
+            MFX_CHECK(++argv != argvEnd);
 
-                for (mfxU16 j = 0; j < map_width; ++j)
+            mfxExtAV1Segmentation *pExt = m_bPerFrameParamsStart ?
+                RetrieveExtBuffer<mfxExtAV1Segmentation>(*m_ExtBuffersPerFrame.get()) :
+                m_extAV1Segmentation.get();
+
+            MFX_PARSE_INT(pExt->SegmentIdBlockSize, argv[0]);
+
+            if (m_bPerFrameParamsStart)
+                m_ExtBuffersPerFrame.get()->push_back(pExt);
+
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-av1SegmentationAltQIndex"), VM_STRING("Array of 8 digits containing quantization index deltas for 8 possible segments, each value [-255..255]"), OPT_SPECIAL, VM_STRING("")))
+        {
+            const mfxU16 AV1E_MAX_SUPPORTED_SEGMENTS = 8;
+            MFX_CHECK(AV1E_MAX_SUPPORTED_SEGMENTS + argv < argvEnd);
+
+            mfxExtAV1Segmentation *pExt = m_bPerFrameParamsStart ?
+                RetrieveExtBuffer<mfxExtAV1Segmentation>(*m_ExtBuffersPerFrame.get()) :
+                m_extAV1Segmentation.get();
+
+            mfxI16 altQIndex = 0;
+            //Always set AV1E_MAX_SUPPORTED_SEGMENTS entries for -av1SegmentationAltQIndex to keep consistency
+            //Segmentation will not work without -av1NumSegments be set
+            for (mfxU16 i = 0; i < AV1E_MAX_SUPPORTED_SEGMENTS; i++)
+            {
+                argv++;
+                MFX_PARSE_INT(altQIndex, argv[0]);
+
+                if (pExt->NumSegments > 0 && i >= pExt->NumSegments)
                 {
-                    m_extVP9Segmentation->SegmentId[i * map_width + j] = pStr[j] - '0';
-                    if (m_extVP9Segmentation->SegmentId[i * map_width + j] >= m_extVP9Segmentation->NumSegments)
-                        return MFX_ERR_UNKNOWN;
+                    //0 expected for placeholder value
+                    MFX_CHECK(altQIndex == 0);
+                }
+                else
+                {
+                    pExt->Segment[i].AltQIndex = altQIndex;
+                    pExt->Segment[i].FeatureEnabled |= MFX_AV1_SEGMENT_FEATURE_ALT_QINDEX;
                 }
             }
 
+            if (m_bPerFrameParamsStart)
+                m_ExtBuffersPerFrame.get()->push_back(pExt);
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-av1SegmentationMap"), VM_STRING("File with segmentation map containing byte-aligned segment IDs [0..7] for each segment provided in raster order"), OPT_FILENAME, VM_STRING("filename")))
+        {
+            MFX_CHECK(++argv != argvEnd);
+
+            mfxExtAV1Segmentation *pExt = m_bPerFrameParamsStart ?
+                RetrieveExtBuffer<mfxExtAV1Segmentation>(*m_ExtBuffersPerFrame.get()) :
+                m_extAV1Segmentation.get();
+
+            MFX_CHECK_STS(ParseSegmentMap(argv[0], m_inParams.FrameInfo, pExt));
+
+            m_segMaps.emplace_back(pExt->SegmentId);
+
+            if (m_bPerFrameParamsStart)
+                m_ExtBuffersPerFrame.get()->push_back(pExt);
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-dirty_rect"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
@@ -1943,35 +2089,121 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         }
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         //AV1 VDEnc tiling parameters with array type
+        else if (m_bPerFrameParamsStart && m_OptProc.Check(argv[0], VM_STRING("-NumTileRows"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get());
+
+            pExt->NumTileRows = val;
+            m_ExtBuffersPerFrame.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bPerFrameParamsStart && m_OptProc.Check(argv[0], VM_STRING("-NumTileColumns"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get());
+
+            pExt->NumTileColumns = val;
+            m_ExtBuffersPerFrame.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bPerFrameParamsStart && m_OptProc.Check(argv[0], VM_STRING("-NumTileGroups"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get());
+
+            pExt->NumTileGroups = val;
+            m_ExtBuffersPerFrame.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bPerFrameParamsStart && m_OptProc.Check(argv[0], VM_STRING("-UniformTileSpacing"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get());
+
+            pExt->UniformTileSpacing = val;
+            m_ExtBuffersPerFrame.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bPerFrameParamsStart && m_OptProc.Check(argv[0], VM_STRING("-ContextUpdateTileIdPlus1"), VM_STRING("")))
+        {
+            mfxU32 val;
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtAV1Param *pExt = RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get());
+
+            pExt->ContextUpdateTileIdPlus1 = val;
+            m_ExtBuffersPerFrame.get()->push_back(pExt);
+
+            argv++;
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-NumTilesPerTileGroup"), VM_STRING(""), OPT_SPECIAL, VM_STRING("uint[1..256]")))
         {
             MFX_CHECK(1 + argv != argvEnd);
 
+            mfxExtAV1Param *pExt = m_bPerFrameParamsStart ?
+                RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get()) :
+                m_extAV1Param.get();
+
             for (mfxU8 i = 0; i < 256 && argv + 1 < argvEnd && argv[1][0] != VM_STRING('-'); i++)
             {
                 argv++;
-                MFX_PARSE_INT(m_extAV1Param->NumTilesPerTileGroup[i], argv[0]);
+                MFX_PARSE_INT(pExt->NumTilesPerTileGroup[i], argv[0]);
             }
+
+            if (m_bPerFrameParamsStart)
+                m_ExtBuffersPerFrame.get()->push_back(pExt);
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-TileWidthInSB"), VM_STRING(""), OPT_SPECIAL, VM_STRING("uint[1..128]")))
         {
             MFX_CHECK(1 + argv != argvEnd);
 
+            mfxExtAV1Param *pExt = m_bPerFrameParamsStart ?
+                RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get()) :
+                m_extAV1Param.get();
+
             for (mfxU8 i = 0; i < 128 && argv + 1 < argvEnd && argv[1][0] != VM_STRING('-'); i++)
             {
                 argv++;
-                MFX_PARSE_INT(m_extAV1Param->TileWidthInSB[i], argv[0]);
+                MFX_PARSE_INT(pExt->TileWidthInSB[i], argv[0]);
             }
+
+            if (m_bPerFrameParamsStart)
+                m_ExtBuffersPerFrame.get()->push_back(pExt);
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-TileHeightInSB"), VM_STRING(""), OPT_SPECIAL, VM_STRING("uint[1..128]")))
         {
             MFX_CHECK(1 + argv != argvEnd);
 
+            mfxExtAV1Param *pExt = m_bPerFrameParamsStart ?
+                RetrieveExtBuffer<mfxExtAV1Param>(*m_ExtBuffersPerFrame.get()) :
+                m_extAV1Param.get();
+
             for (mfxU8 i = 0; i < 128 && argv + 1 < argvEnd && argv[1][0] != VM_STRING('-'); i++)
             {
                 argv++;
-                MFX_PARSE_INT(m_extAV1Param->TileHeightInSB[i], argv[0]);
+                MFX_PARSE_INT(pExt->TileHeightInSB[i], argv[0]);
             }
+
+            if (m_bPerFrameParamsStart)
+                m_ExtBuffersPerFrame.get()->push_back(pExt);
         }
         //AV1 VDEnc Aux Data
         else if (m_OptProc.Check(argv[0], VM_STRING("-CdefYStrengths"), VM_STRING("0-63"), OPT_SPECIAL, VM_STRING("uint[1..8]")))
@@ -2398,6 +2630,8 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
         m_components[eREN].m_extParams.push_back(m_extAV1Param);
     if (!m_extAV1AuxData.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
         m_components[eREN].m_extParams.push_back(m_extAV1AuxData);
+    if (!m_extAV1Segmentation.IsZero() && pMFXParams->mfx.CodecId == MFX_CODEC_AV1)
+        m_components[eREN].m_extParams.push_back(m_extAV1Segmentation);
 #endif
     if (!m_extVP9Segmentation.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVP9Segmentation);
