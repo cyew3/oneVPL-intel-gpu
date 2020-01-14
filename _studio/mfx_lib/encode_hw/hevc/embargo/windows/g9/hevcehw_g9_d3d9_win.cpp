@@ -68,7 +68,10 @@ void DDI_D3D9::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 
         if (bCreateDevice)
         {
-            sts = CreateAuxilliaryDevice(core, guid, par.mfx.FrameInfo.Width, par.mfx.FrameInfo.Height, true);
+            EncodeCapsHevc fakeCaps;
+            Defaults::Param dpar(par, fakeCaps, core.GetHWType(), Glob::Defaults::Get(strg));
+
+            sts = CreateAuxilliaryDevice(core, guid, dpar.base.GetCodedPicWidth(dpar), dpar.base.GetCodedPicHeight(dpar), true);
             MFX_CHECK_STS(sts);
 
             sts = QueryEncodeCaps(caps);
@@ -92,7 +95,9 @@ void DDI_D3D9::InitExternal(const FeatureBlocks& /*blocks*/, TPushIE Push)
         if (IsInitialized() && m_guid == guid)
             return MFX_ERR_NONE;
 
-        return CreateAuxilliaryDevice(core, guid, par.mfx.FrameInfo.Width, par.mfx.FrameInfo.Height, false);
+        EncodeCapsHevc fakeCaps;
+        Defaults::Param dpar(par, fakeCaps, core.GetHWType(), Glob::Defaults::Get(strg));
+        return CreateAuxilliaryDevice(core, guid, dpar.base.GetCodedPicWidth(dpar), dpar.base.GetCodedPicHeight(dpar), false);
     });
 }
 

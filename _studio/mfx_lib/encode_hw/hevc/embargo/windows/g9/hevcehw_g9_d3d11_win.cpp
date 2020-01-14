@@ -295,6 +295,9 @@ mfxStatus DDI_D3D11::CreateAuxilliaryDevice(
     m_width     = in.desc.SampleWidth;
     m_height    = in.desc.SampleHeight;
 
+    SetDefault(in.desc.SampleWidth,  1920);
+    SetDefault(in.desc.SampleHeight, 1088);
+
     // [4] Query the encoding device capabilities
     sts = Execute(ENCODE_QUERY_ACCEL_CAPS_ID, (void*)0, m_caps);
     MFX_CHECK_STS(sts);
