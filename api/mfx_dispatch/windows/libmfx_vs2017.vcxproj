@@ -79,8 +79,8 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup>
-    <OutDir>..\..\..\..\lib\$(Platform)\</OutDir>
-    <IntDir>..\..\..\..\_objs\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>..\..\..\..\build\win_$(Platform)\lib\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <IncludePath>$(MINIDDK_ROOT)\Include\um;$(MINIDDK_ROOT)\Include\shared;$(IncludePath)</IncludePath>
     <LibraryPath>$(MINIDDK_ROOT)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
