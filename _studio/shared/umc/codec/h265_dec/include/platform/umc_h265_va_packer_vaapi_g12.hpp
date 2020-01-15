@@ -181,7 +181,7 @@ namespace UMC_HEVC_DECODER
                 assert(frame);
 
                 size_t const count = 22 * 20; //MaxTileRows * MaxTileCols (see ITU-T H.265 Annex A for details)
-                auto p = PeekBuffer(m_va, VASubsetsParameterBufferType, count);
+                auto p = PeekBuffer(m_va, VASubsetsParameterBufferType, count * sizeof(uint32_t));
                 auto begin = reinterpret_cast<uint32_t*>(p.first);
                 FillSubsets(frame->GetAU(), begin,  begin+ count);
             }
