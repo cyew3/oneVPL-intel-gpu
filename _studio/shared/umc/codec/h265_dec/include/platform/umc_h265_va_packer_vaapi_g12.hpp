@@ -147,7 +147,7 @@ namespace UMC_HEVC_DECODER
                     GetParamsBuffer(m_va, &pp);
 
                     VASliceParameterBufferHEVCExtension* sp = nullptr;
-                    PeekParamsBuffer(m_va, &sp, last_slice ? 128 : 0);
+                    PeekParamsBuffer(m_va, &sp);
 
                     G9::PackerVAAPI::PackSliceParams(reinterpret_cast<VASliceParameterBufferBase*>(sp), slice, last_slice);
 
