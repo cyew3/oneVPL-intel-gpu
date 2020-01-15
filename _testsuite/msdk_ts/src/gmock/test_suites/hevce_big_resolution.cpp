@@ -217,14 +217,6 @@ namespace hevce_big_resolution
                 g_tsLog << "\n\nWARNING: 4:4:4 formats are only supported on VDENC!\n\n\n";
                 throw tsSKIP;
             }
-            if ((g_tsHWtype < MFX_HW_CNL || (g_tsHWtype == MFX_HW_CNL && g_tsConfig.lowpower != MFX_CODINGOPTION_ON)) && (width > HEVCE_4K_SIZE || height > HEVCE_2K_SIZE))
-            {
-                isResolutionSupported = false;
-            }
-            else if (g_tsHWtype <= MFX_HW_ICL && (width > HEVCE_8K_SIZE || height > HEVCE_8K_SIZE))
-            {
-                isResolutionSupported = false;
-            }
         }
     }
 
@@ -261,6 +253,7 @@ namespace hevce_big_resolution
         }
         else if (fourcc_id == GMOCK_FOURCC_P012)
         {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P016;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             m_par.mfx.FrameInfo.Shift = 1;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
@@ -277,6 +270,7 @@ namespace hevce_big_resolution
         }
         else if (fourcc_id == GMOCK_FOURCC_Y412)
         {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y416;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             m_par.mfx.FrameInfo.Shift = 1;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
@@ -293,6 +287,7 @@ namespace hevce_big_resolution
         }
         else if (fourcc_id == GMOCK_FOURCC_Y212)
         {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y216;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
             m_par.mfx.FrameInfo.Shift = 1;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
@@ -307,6 +302,18 @@ namespace hevce_big_resolution
         Load();
 
         checkSupport(tc);
+
+        ENCODE_CAPS_HEVC caps = {};
+        mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
+
+        mfxStatus caps_sts = GetCaps(&caps, &capSize);
+        if (caps_sts != MFX_ERR_UNSUPPORTED)
+            g_tsStatus.check(caps_sts);
+
+        if (caps.MaxPicHeight < m_par.mfx.FrameInfo.Height || caps.MaxPicWidth < m_par.mfx.FrameInfo.Width)
+        {
+            isResolutionSupported = false;
+        }
 
         if (tc.type & QUERY)
         {
