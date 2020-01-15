@@ -390,7 +390,8 @@ typedef struct {
     { 0x0201, MFX_HW_ATS, MFX_GT4 },
     /* ADL */
     { 0x4680, MFX_HW_ADL_S,  MFX_GT1 },//ADL-S
-    { 0x46A0, MFX_HW_ADL_UH, MFX_GT2 } //ADL-UH
+    { 0x46A0, MFX_HW_ADL_UH, MFX_GT2 },//ADL-UH
+    { 0x0BD0, MFX_HW_PVC, MFX_GT4 }
 #endif
 
 };

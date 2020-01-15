@@ -327,7 +327,9 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 
          //PicStruct support differs, need to check per-platform
 #ifndef STRIP_EMBARGO
-        if (m_core->GetHWType() != MFX_HW_ATS && m_core->GetHWType() != MFX_HW_DG2)
+        if (m_core->GetHWType() != MFX_HW_ATS
+            && m_core->GetHWType() != MFX_HW_DG2
+            && m_core->GetHWType() != MFX_HW_ATS)
         {
              MFX_CHECK(m_vPar.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE, MFX_ERR_UNSUPPORTED);
         }
