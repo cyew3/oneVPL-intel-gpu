@@ -251,7 +251,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_YV12},
         },
     },
-    {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+    {/*24*/ MFX_WRN_PARTIAL_ACCELERATION, STANDARD,
         {
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_RGB4},
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_YV12},
