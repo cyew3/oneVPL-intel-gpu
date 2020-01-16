@@ -920,7 +920,7 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
 #endif
                          platform->CodeName = MFX_PLATFORM_PONTE_VECCHIO; break;
     case MFX_HW_ADL_S  : platform->CodeName = MFX_PLATFORM_ALDERLAKE_S;   break;
-    case MFX_HW_ADL_UH : platform->CodeName = MFX_PLATFORM_ALDERLAKE_UH;  break;
+    case MFX_HW_ADL_P  : platform->CodeName = MFX_PLATFORM_ALDERLAKE_P;   break;
 #endif //STRIP_EMBARGO
     default:
 #if (MFX_VERSION >= 1031)

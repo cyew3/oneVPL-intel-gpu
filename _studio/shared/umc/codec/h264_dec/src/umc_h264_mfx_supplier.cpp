@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2019 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -585,7 +585,7 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
 #ifndef STRIP_EMBARGO
     case MFX_HW_LKF:
     case MFX_HW_ADL_S:
-    case MFX_HW_ADL_UH:
+    case MFX_HW_ADL_P:
 #endif
         name = sDXVA2_ModeH264_VLD_NoFGT;
 #ifndef OPEN_SOURCE

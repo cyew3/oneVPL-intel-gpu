@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2019 Intel Corporation
+// Copyright (c) 2007-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -85,12 +85,12 @@ enum eMFXHWType
     MFX_HW_RYF       = MFX_HW_TGL_LP + 1,
     MFX_HW_RKL       = MFX_HW_TGL_LP + 2,
     MFX_HW_DG1       = MFX_HW_TGL_LP + 3,
-    MFX_HW_TGL_HP    = MFX_HW_TGL_LP + 4,
+    MFX_HW_ADL_S     = MFX_HW_TGL_LP + 4,
+    MFX_HW_ADL_P     = MFX_HW_TGL_LP + 5,
+    MFX_HW_TGL_HP    = MFX_HW_TGL_LP + 6,
     MFX_HW_ATS       = MFX_HW_TGL_HP,
     MFX_HW_DG2       = MFX_HW_ATS + 1,
-    MFX_HW_ADL_S     = MFX_HW_ATS + 2,
-    MFX_HW_ADL_UH    = MFX_HW_ATS + 3,
-    MFX_HW_PVC       = MFX_HW_ATS + 4
+    MFX_HW_PVC       = MFX_HW_ATS + 2
 #endif
 };
 

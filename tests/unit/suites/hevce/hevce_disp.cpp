@@ -228,6 +228,8 @@ TEST(Disp, Gen12)
         , MFX_HW_RYF
         , MFX_HW_RKL
         , MFX_HW_DG1
+        , MFX_HW_ADL_S
+        , MFX_HW_ADL_P
     };
 
     for (auto hw : hwSet)
@@ -266,8 +268,6 @@ TEST(Disp, Gen12DG2)
     mfxStatus sts = MFX_ERR_NONE;
     eMFXHWType hwSet[] = {
         MFX_HW_DG2
-        , MFX_HW_ADL_S
-        , MFX_HW_ADL_UH
         , MFX_HW_PVC
         , eMFXHWType(0xfffffff)
     };

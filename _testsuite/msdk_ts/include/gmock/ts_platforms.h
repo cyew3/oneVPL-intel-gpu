@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -48,7 +48,7 @@ enum HWType
     MFX_HW_ATS       = MFX_HW_DG1 + 1,
     MFX_HW_DG2       = MFX_HW_ATS + 1,
     MFX_HW_ADL_S     = MFX_HW_ATS + 2,
-    MFX_HW_ADL_UH    = MFX_HW_ATS + 3,
+    MFX_HW_ADL_P     = MFX_HW_ATS + 3,
     MFX_HW_PVC       = MFX_HW_ATS + 4
 };
 
