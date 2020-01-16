@@ -109,7 +109,7 @@ VAEntrypoint umc_to_va_entrypoint(uint32_t umc_entrypoint)
     case UMC::VA_VLD | UMC::VA_PROFILE_SCC:
     case UMC::VA_VLD | UMC::VA_PROFILE_SCC  | UMC::VA_PROFILE_10:
     case UMC::VA_VLD | UMC::VA_PROFILE_SCC  | UMC::VA_PROFILE_444:
-    case UMC::VA_VLD | UMC::VA_PROFILE_SCC  | UMC::VA_PROFILE_422:
+    case UMC::VA_VLD | UMC::VA_PROFILE_SCC  | UMC::VA_PROFILE_444 | UMC::VA_PROFILE_10:
 #endif
 #endif
         va_entrypoint = VAEntrypointVLD;
@@ -245,8 +245,8 @@ VAProfile get_next_va_profile(uint32_t umc_codec, uint32_t profile)
     case UMC::VA_H265 | UMC::VA_PROFILE_SCC | UMC::VA_PROFILE_10:
         if (profile < 1) va_profile = VAProfileHEVCSccMain10;
         break;
-    case UMC::VA_H265 | UMC::VA_PROFILE_SCC | UMC::VA_PROFILE_422:
     case UMC::VA_H265 | UMC::VA_PROFILE_SCC | UMC::VA_PROFILE_444:
+    case UMC::VA_H265 | UMC::VA_PROFILE_SCC | UMC::VA_PROFILE_444 | UMC::VA_PROFILE_10:
         if (profile < 1) va_profile = VAProfileHEVCSccMain444;
         break;
 #endif
