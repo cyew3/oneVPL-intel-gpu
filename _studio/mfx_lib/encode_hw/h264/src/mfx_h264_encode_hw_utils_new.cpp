@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -909,9 +909,9 @@ void MfxHwH264Encode::ModifyRefPicLists(
                     std::rotate(++begin, ltr, ltr + 1);
             }
 
-            // as driver have fixed arbitrary reference field polarity limitation on PV4 on BDW and SCL, so no need
+            // as driver have fixed arbitrary reference field polarity support starting BDW, so no need
             // to WA to adjust the reflist order
-            bool isHwSupportArbiRef = ((task.m_hwType == MFX_HW_SCL) || (task.m_hwType == MFX_HW_BDW));
+            bool isHwSupportArbiRef = (task.m_hwType >= MFX_HW_BDW);
 
             if (isField && (isIPFieldPair == false) && (isHwSupportArbiRef == false))
             {
