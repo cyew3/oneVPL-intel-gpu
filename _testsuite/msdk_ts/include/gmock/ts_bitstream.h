@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -31,8 +31,8 @@ class tsBitstreamProcessor
 public:
     virtual ~tsBitstreamProcessor() { }
 
-    mfxBitstream* ProcessBitstream(mfxBitstream& bs);
-    virtual mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames){ return MFX_ERR_NONE; };
+    mfxBitstream* ProcessBitstream(mfxBitstream& /*bs*/);
+    virtual mfxStatus ProcessBitstream(mfxBitstream& /*bs*/, mfxU32 /*nFrames*/){ return MFX_ERR_NONE; };
 };
 
 class tsBitstreamErazer : public tsBitstreamProcessor
@@ -40,7 +40,7 @@ class tsBitstreamErazer : public tsBitstreamProcessor
 public:
     tsBitstreamErazer() {};
     virtual ~tsBitstreamErazer() {};
-    mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames){ bs.DataLength = 0; return MFX_ERR_NONE; }
+    mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 /*nFrames*/){ bs.DataLength = 0; return MFX_ERR_NONE; }
 };
 
 class tsBitstreamWriter : public tsBitstreamProcessor

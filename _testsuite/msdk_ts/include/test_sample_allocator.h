@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -152,13 +152,15 @@ public:
     virtual ~CVAAPIDevice(){}
 
     virtual mfxStatus Init(
-        mfxHDL hWindow,
-        mfxU16 nViews,
-        mfxU32 nAdapterNum) { return MFX_ERR_UNSUPPORTED; }
+        mfxHDL /*hWindow*/,
+        mfxU16 /*nViews*/,
+        mfxU32 /*nAdapterNum*/) { return MFX_ERR_UNSUPPORTED; }
     virtual mfxStatus Reset() { return MFX_ERR_UNSUPPORTED; }
-    virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl)
+    virtual mfxStatus GetHandle(mfxHandleType /*type*/, mfxHDL* pHdl)
     {
-#if defined(LIBVA_SUPPORT)
+#if !defined(LIBVA_SUPPORT)
+        (void)pHdl;
+#else
         if(pHdl)
         {
             *pHdl = m_libva.GetVADisplay();
@@ -168,9 +170,9 @@ public:
         return MFX_ERR_UNSUPPORTED;
     }
 
-    virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL hdl) { return MFX_ERR_UNSUPPORTED; }
-    virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc) { return MFX_ERR_UNSUPPORTED; }
-    virtual void      UpdateTitle(double fps) {}
+    virtual mfxStatus SetHandle(mfxHandleType /*type*/, mfxHDL /*hdl*/) { return MFX_ERR_UNSUPPORTED; }
+    virtual mfxStatus RenderFrame(mfxFrameSurface1* /*pSurface*/, mfxFrameAllocator* /*pmfxAlloc*/) { return MFX_ERR_UNSUPPORTED; }
+    virtual void      UpdateTitle(double /*fps*/) {}
     virtual void SetMondelloInput(bool /*isMondelloInputEnabled*/) { }
     virtual void Close(){}
 

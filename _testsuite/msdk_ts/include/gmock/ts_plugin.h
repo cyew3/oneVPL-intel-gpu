@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 //
 */
 #pragma once
@@ -106,16 +106,16 @@ public:
         return MFX_ERR_NONE;
     }
 
-    mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in,
-            mfxFrameAllocRequest *out) {
+    mfxStatus QueryIOSurf(mfxVideoParam* /*par*/, mfxFrameAllocRequest* /*in*/,
+            mfxFrameAllocRequest* /*out*/) {
         m_calls.push_back(APIfuncs::QueryIOSurf);
         return MFX_ERR_NONE;
     }
-    mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) {
+    mfxStatus Query(mfxVideoParam* /*in*/, mfxVideoParam* /*out*/) {
         m_calls.push_back(APIfuncs::Query);
         return MFX_ERR_NONE;
     }
-    mfxStatus Reset(mfxVideoParam *par) {
+    mfxStatus Reset(mfxVideoParam* /*par*/) {
         m_calls.push_back(APIfuncs::Reset);
         return MFX_ERR_NONE;
     }
@@ -123,7 +123,7 @@ public:
         m_calls.push_back(APIfuncs::Close);
         return MFX_ERR_NONE;
     }
-    mfxStatus PluginInit(mfxCoreInterface *core) {
+    mfxStatus PluginInit(mfxCoreInterface* /*core*/) {
         m_calls.push_back(APIfuncs::PluginInit);
         return MFX_ERR_NONE;
     }
@@ -131,19 +131,19 @@ public:
         m_calls.push_back(APIfuncs::PluginClose);
         return MFX_ERR_NONE;
     }
-    mfxStatus GetVideoParam(mfxVideoParam *par) {
+    mfxStatus GetVideoParam(mfxVideoParam* /*par*/) {
         m_calls.push_back(APIfuncs::GetVideoParam);
         return MFX_ERR_NONE;
     }
-    mfxStatus GetPluginParam(mfxPluginParam *par) {
+    mfxStatus GetPluginParam(mfxPluginParam* /*par*/) {
         m_calls.push_back(APIfuncs::GetPluginParam);
         return MFX_ERR_NONE;
     }
-    mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a) {
+    mfxStatus Execute(mfxThreadTask /*task*/, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/) {
         m_calls.push_back(APIfuncs::Execute);
         return MFX_ERR_NONE;
     }
-    mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts) {
+    mfxStatus FreeResources(mfxThreadTask /*task*/, mfxStatus /*sts*/) {
         m_calls.push_back(APIfuncs::FreeResources);
         return MFX_ERR_NONE;
     }
@@ -157,15 +157,15 @@ public:
     }
 
     //VPP
-    mfxStatus VPPFrameSubmit(mfxFrameSurface1 *surface_in,
-            mfxFrameSurface1 *surface_out, mfxExtVppAuxData *aux,
-            mfxThreadTask *task) {
+    mfxStatus VPPFrameSubmit(mfxFrameSurface1* /*surface_in*/,
+            mfxFrameSurface1* /*surface_out*/, mfxExtVppAuxData* /*aux*/,
+            mfxThreadTask* /*task*/) {
         m_calls.push_back(APIfuncs::VPPFrameSubmit);
         return MFX_ERR_NONE;
     }
-    mfxStatus VPPFrameSubmitEx(mfxFrameSurface1 *in,
-            mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out,
-            mfxThreadTask *task) {
+    mfxStatus VPPFrameSubmitEx(mfxFrameSurface1* /*in*/,
+            mfxFrameSurface1* /*surface_work*/, mfxFrameSurface1** /*surface_out*/,
+            mfxThreadTask* /*task*/) {
         m_calls.push_back(APIfuncs::VPPFrameSubmitEx);
         return MFX_ERR_NONE;
     }
@@ -185,16 +185,16 @@ public:
         m_calls.push_back(APIfuncs::Init);
         return MFX_ERR_NONE;
     }
-    mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in,
-            mfxFrameAllocRequest *out) {
+    mfxStatus QueryIOSurf(mfxVideoParam* /*par*/, mfxFrameAllocRequest* /*in*/,
+            mfxFrameAllocRequest* /*out*/) {
         m_calls.push_back(APIfuncs::QueryIOSurf);
         return MFX_ERR_NONE;
     }
-    mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) {
+    mfxStatus Query(mfxVideoParam* /*in*/, mfxVideoParam* /*out*/) {
         m_calls.push_back(APIfuncs::Query);
         return MFX_ERR_NONE;
     }
-    mfxStatus Reset(mfxVideoParam *par) {
+    mfxStatus Reset(mfxVideoParam* /*par*/) {
         m_calls.push_back(APIfuncs::Reset);
         return MFX_ERR_NONE;
     }
@@ -202,7 +202,7 @@ public:
         m_calls.push_back(APIfuncs::Close);
         return MFX_ERR_NONE;
     }
-    mfxStatus PluginInit(mfxCoreInterface *core) {
+    mfxStatus PluginInit(mfxCoreInterface* /*core*/) {
         m_calls.push_back(APIfuncs::PluginInit);
         return MFX_ERR_NONE;
     }
@@ -210,19 +210,19 @@ public:
         m_calls.push_back(APIfuncs::PluginClose);
         return MFX_ERR_NONE;
     }
-    mfxStatus GetVideoParam(mfxVideoParam *par) {
+    mfxStatus GetVideoParam(mfxVideoParam* /*par*/) {
         m_calls.push_back(APIfuncs::GetVideoParam);
         return MFX_ERR_NONE;
     }
-    mfxStatus GetPluginParam(mfxPluginParam *par) {
+    mfxStatus GetPluginParam(mfxPluginParam* /*par*/) {
         m_calls.push_back(APIfuncs::GetPluginParam);
         return MFX_ERR_NONE;
     }
-    mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a) {
+    mfxStatus Execute(mfxThreadTask /*task*/, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/) {
         m_calls.push_back(APIfuncs::Execute);
         return MFX_ERR_NONE;
     }
-    mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts) {
+    mfxStatus FreeResources(mfxThreadTask /*task*/, mfxStatus /*sts*/) {
         m_calls.push_back(APIfuncs::FreeResources);
         return MFX_ERR_NONE;
     }
@@ -236,8 +236,8 @@ public:
     }
 
     //Encoder
-    mfxStatus EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface,
-            mfxBitstream *bs, mfxThreadTask *task) {
+    mfxStatus EncodeFrameSubmit(mfxEncodeCtrl* /*ctrl*/, mfxFrameSurface1* /*surface*/,
+            mfxBitstream* /*bs*/, mfxThreadTask* /*task*/) {
         m_calls.push_back(APIfuncs::EncodeFrameSubmit);
         return MFX_ERR_NONE;
     }
@@ -257,16 +257,16 @@ public:
         m_calls.push_back(APIfuncs::Init);
         return MFX_ERR_NONE;
     }
-    mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in,
-            mfxFrameAllocRequest *out) {
+    mfxStatus QueryIOSurf(mfxVideoParam* /*par*/, mfxFrameAllocRequest* /*in*/,
+            mfxFrameAllocRequest* /*out*/) {
         m_calls.push_back(APIfuncs::QueryIOSurf);
         return MFX_ERR_NONE;
     }
-    mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) {
+    mfxStatus Query(mfxVideoParam* /*in*/, mfxVideoParam* /*out*/) {
         m_calls.push_back(APIfuncs::Query);
         return MFX_ERR_NONE;
     }
-    mfxStatus Reset(mfxVideoParam *par) {
+    mfxStatus Reset(mfxVideoParam* /*par*/) {
         m_calls.push_back(APIfuncs::Reset);
         return MFX_ERR_NONE;
     }
@@ -274,7 +274,7 @@ public:
         m_calls.push_back(APIfuncs::Close);
         return MFX_ERR_NONE;
     }
-    mfxStatus PluginInit(mfxCoreInterface *core) {
+    mfxStatus PluginInit(mfxCoreInterface* /*core*/) {
         m_calls.push_back(APIfuncs::PluginInit);
         return MFX_ERR_NONE;
     }
@@ -282,19 +282,19 @@ public:
         m_calls.push_back(APIfuncs::PluginClose);
         return MFX_ERR_NONE;
     }
-    mfxStatus GetVideoParam(mfxVideoParam *par) {
+    mfxStatus GetVideoParam(mfxVideoParam* /*par*/) {
         m_calls.push_back(APIfuncs::GetVideoParam);
         return MFX_ERR_NONE;
     }
-    mfxStatus GetPluginParam(mfxPluginParam *par) {
+    mfxStatus GetPluginParam(mfxPluginParam* /*par*/) {
         m_calls.push_back(APIfuncs::GetPluginParam);
         return MFX_ERR_NONE;
     }
-    mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a) {
+    mfxStatus Execute(mfxThreadTask /*task*/, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/) {
         m_calls.push_back(APIfuncs::Execute);
         return MFX_ERR_NONE;
     }
-    mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts) {
+    mfxStatus FreeResources(mfxThreadTask /*task*/, mfxStatus /*sts*/) {
         m_calls.push_back(APIfuncs::FreeResources);
         return MFX_ERR_NONE;
     }
@@ -308,7 +308,7 @@ public:
     }
 
     //Enc
-    mfxStatus EncFrameSubmit(mfxENCInput *in, mfxENCOutput *out, mfxThreadTask *task)
+    mfxStatus EncFrameSubmit(mfxENCInput* /*in*/, mfxENCOutput* /*out*/, mfxThreadTask* /*task*/)
     {
         m_calls.push_back(APIfuncs::EncFrameSubmit);
         return MFX_ERR_NONE;
@@ -330,16 +330,16 @@ public:
         m_calls.push_back(APIfuncs::Init);
         return MFX_ERR_NONE;
     }
-    mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in,
-            mfxFrameAllocRequest *out) {
+    mfxStatus QueryIOSurf(mfxVideoParam* /*par*/, mfxFrameAllocRequest* /*in*/,
+            mfxFrameAllocRequest* /*out*/) {
         m_calls.push_back(APIfuncs::QueryIOSurf);
         return MFX_ERR_NONE;
     }
-    mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) {
+    mfxStatus Query(mfxVideoParam* /*in*/, mfxVideoParam* /*out*/) {
         m_calls.push_back(APIfuncs::Query);
         return MFX_ERR_NONE;
     }
-    mfxStatus Reset(mfxVideoParam *par) {
+    mfxStatus Reset(mfxVideoParam* /*par*/) {
         m_calls.push_back(APIfuncs::Reset);
         return MFX_ERR_NONE;
     }
@@ -347,7 +347,7 @@ public:
         m_calls.push_back(APIfuncs::Close);
         return MFX_ERR_NONE;
     }
-    mfxStatus PluginInit(mfxCoreInterface *core) {
+    mfxStatus PluginInit(mfxCoreInterface* /*core*/) {
         m_calls.push_back(APIfuncs::PluginInit);
         return MFX_ERR_NONE;
     }
@@ -355,19 +355,19 @@ public:
         m_calls.push_back(APIfuncs::PluginClose);
         return MFX_ERR_NONE;
     }
-    mfxStatus GetVideoParam(mfxVideoParam *par) {
+    mfxStatus GetVideoParam(mfxVideoParam* /*par*/) {
         m_calls.push_back(APIfuncs::GetVideoParam);
         return MFX_ERR_NONE;
     }
-    mfxStatus GetPluginParam(mfxPluginParam *par) {
+    mfxStatus GetPluginParam(mfxPluginParam* /*par*/) {
         m_calls.push_back(APIfuncs::GetPluginParam);
         return MFX_ERR_NONE;
     }
-    mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a) {
+    mfxStatus Execute(mfxThreadTask /*task*/, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/) {
         m_calls.push_back(APIfuncs::Execute);
         return MFX_ERR_NONE;
     }
-    mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts) {
+    mfxStatus FreeResources(mfxThreadTask /*task*/, mfxStatus /*sts*/) {
         m_calls.push_back(APIfuncs::FreeResources);
         return MFX_ERR_NONE;
     }
@@ -381,17 +381,17 @@ public:
     }
 
     //Decoder
-    mfxStatus DecodeHeader(mfxBitstream *bs, mfxVideoParam *par) {
+    mfxStatus DecodeHeader(mfxBitstream* /*bs*/, mfxVideoParam* /*par*/) {
         m_calls.push_back(APIfuncs:: DecodeHeader);
         return MFX_ERR_NONE;
     }
-    mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) {
+    mfxStatus GetPayload(mfxU64* /*ts*/, mfxPayload* /*payload*/) {
         m_calls.push_back(APIfuncs:: GetPayload);
         return MFX_ERR_NONE;
     }
-    mfxStatus DecodeFrameSubmit(mfxBitstream *bs,
-            mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out,
-            mfxThreadTask *task) {
+    mfxStatus DecodeFrameSubmit(mfxBitstream* /*bs*/,
+            mfxFrameSurface1* /*surface_work*/, mfxFrameSurface1** /*surface_out*/,
+            mfxThreadTask* /*task*/) {
         m_calls.push_back(APIfuncs:: DecodeFrameSubmit);
         return MFX_ERR_NONE;
     }

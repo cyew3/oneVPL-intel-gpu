@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -524,7 +524,7 @@ public:
     virtual mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa);
     virtual mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa, mfxU64 display_order);
     virtual mfxStatus ProcessSurface(mfxFrameSurface1&) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return MFX_ERR_UNDEFINED_BEHAVIOR; };
-    virtual mfxStatus ProcessSurface(mfxFrameSurface1&, mfxU64 display_order) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return MFX_ERR_UNDEFINED_BEHAVIOR; };
+    virtual mfxStatus ProcessSurface(mfxFrameSurface1&, mfxU64 /*display_order*/) { g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return MFX_ERR_UNDEFINED_BEHAVIOR; };
 };
 
 
@@ -581,7 +581,7 @@ public:
     tsAutoFlushFiller(mfxU32 n_frames = 0xFFFFFFFF) : tsSurfaceProcessor(n_frames) {};
     ~tsAutoFlushFiller() {};
 
-    mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa)
+    mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* /*pfa*/)
     {
         if (m_eos)
             return 0;
