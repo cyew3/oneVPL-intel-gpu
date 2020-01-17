@@ -22,6 +22,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined(MFX_VA_LINUX)
 
 #include "hevcehw_g9_protected_win.h"
+#include "hevcehw_g9_ddi_packer_win.h"
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Gen9;
@@ -40,6 +41,7 @@ void Protected::SetSupported(ParamSupport& blocks)
         dst.CipherCounter.IV    = src.CipherCounter.IV;
         dst.CounterIncrement    = src.CounterIncrement;
         dst.CounterType         = src.CounterType;
+        dst.EncryptionType      = src.EncryptionType;
     });
 
     blocks.m_ebCopySupported[MFX_EXTBUFF_ENCODER_WIDI_USAGE].emplace_back(
@@ -216,7 +218,6 @@ void Protected::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
             pDdiInit->push_front(execPar);
 
-
             m_dx11.AES  = { PAVP.CipherCounter.IV, PAVP.CipherCounter.Count };
             m_dx11.Mode = { PAVP.EncryptionType,   PAVP.CounterType };
             m_dx11.Set  = { PAVP.CounterIncrement, &m_dx11.AES, &m_dx11.Mode };
@@ -230,6 +231,20 @@ void Protected::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         }
 
         local.Insert(Tmp::DDI_InitParam::Key, std::move(pDdiInit));
+
+        auto& cc = DDIPacker::CC::Get(global);
+
+        cc.UpdatePPS.Push([this](
+            DDIPacker::CallChains::TUpdatePPS::TExt prev
+            , const StorageR& global
+            , const StorageR& s_task
+            , const ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& sps
+            , ENCODE_SET_PICTURE_PARAMETERS_HEVC& pps)
+        {
+            prev(global, s_task, sps, pps);
+            bool bWiDi = !!(const mfxExtAVCEncoderWiDiUsage*)ExtBuffer::Get(Task::Common::Get(s_task).ctrl);
+            pps.InputType = ENCODE_INPUT_TYPE(eType_DRM_SECURE * bWiDi);
+        });
 
         return MFX_ERR_NONE;
     });
@@ -313,7 +328,7 @@ void Protected::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
         auto& ddiFB = Glob::DDI_Feedback::Get(global);
         auto  pFB   = (const ENCODE_QUERY_STATUS_PARAMS*)ddiFB.Get(id);
 
-        MFX_CHECK(ddiFB.bNotReady || (pFB && pFB->bStatus == ENCODE_NOTREADY), MFX_ERR_NONE);
+        MFX_CHECK(!ddiFB.bNotReady && pFB && pFB->bStatus != ENCODE_NOTREADY, MFX_ERR_NONE);
 
         auto& cntr = m_task[&s_task];
         cntr.Count = pFB->aes_counter.Counter;

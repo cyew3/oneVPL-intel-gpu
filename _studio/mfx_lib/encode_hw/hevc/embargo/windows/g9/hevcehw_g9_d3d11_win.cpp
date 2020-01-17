@@ -265,6 +265,13 @@ mfxStatus DDI_D3D11::CreateAuxilliaryDevice(const DDIExecParam& ep)
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
 
+    m_vdevice   = out.vdevice;
+    m_vcontext  = out.vcontext;
+    m_vdecoder  = out.vdecoder;
+    m_guid      = in.desc.Guid;
+    m_width     = in.desc.SampleWidth;
+    m_height    = in.desc.SampleHeight;
+
     return MFX_ERR_NONE;
 }
 
@@ -285,18 +292,11 @@ mfxStatus DDI_D3D11::CreateAuxilliaryDevice(
     in.config.ConfigDecoderSpecific         = m_configDecoderSpecific;
     in.config.guidConfigBitstreamEncryption = m_guidConfigBitstreamEncryption;
 
-    auto sts = Execute(AUXDEV_CREATE_ACCEL_SERVICE, in, out);
-    MFX_CHECK_STS(sts);
-
-    m_vdevice   = out.vdevice;
-    m_vcontext  = out.vcontext;
-    m_vdecoder  = out.vdecoder;
-    m_guid      = in.desc.Guid;
-    m_width     = in.desc.SampleWidth;
-    m_height    = in.desc.SampleHeight;
-
     SetDefault(in.desc.SampleWidth,  1920);
     SetDefault(in.desc.SampleHeight, 1088);
+
+    auto sts = Execute(AUXDEV_CREATE_ACCEL_SERVICE, in, out);
+    MFX_CHECK_STS(sts);
 
     // [4] Query the encoding device capabilities
     sts = Execute(ENCODE_QUERY_ACCEL_CAPS_ID, (void*)0, m_caps);
