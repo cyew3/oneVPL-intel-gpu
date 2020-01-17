@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_composition.cpp
 \* ****************************************************************************** */
@@ -252,9 +252,9 @@ namespace vpp_composition
         if (   g_tsHWtype < MFX_HW_CNL
             && (   (MFX_FOURCC_UYVY == m_par.vpp.In.FourCC || MFX_FOURCC_UYVY == m_par.vpp.Out.FourCC)
                 || (MFX_FOURCC_AYUV == m_par.vpp.In.FourCC || MFX_FOURCC_AYUV == m_par.vpp.Out.FourCC)
-                || (MFX_FOURCC_P010 == m_par.vpp.In.FourCC || MFX_FOURCC_P010 == m_par.vpp.Out.FourCC)
                 || (MFX_FOURCC_Y210 == m_par.vpp.In.FourCC || MFX_FOURCC_Y210 == m_par.vpp.Out.FourCC)
-                || (MFX_FOURCC_Y410 == m_par.vpp.In.FourCC || MFX_FOURCC_Y410 == m_par.vpp.Out.FourCC)))
+                || (MFX_FOURCC_Y410 == m_par.vpp.In.FourCC || MFX_FOURCC_Y410 == m_par.vpp.Out.FourCC)
+                || (                                          MFX_FOURCC_P010 == m_par.vpp.Out.FourCC)))
         {
             if ((m_par.vpp.In.FourCC == MFX_FOURCC_AYUV || m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV)
                 && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && g_tsImpl & MFX_IMPL_VIA_D3D11)
@@ -267,6 +267,12 @@ namespace vpp_composition
                 sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
             }
         }
+        else if (g_tsHWtype <= MFX_HW_BDW && MFX_FOURCC_P010 == m_par.vpp.In.FourCC)
+        {
+            sts_query = MFX_ERR_UNSUPPORTED;
+            sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+
         if ((MFX_PAR_type == MFX_EXTBUFF_VPP_COMPOSITE) && (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS) && ((g_tsImpl & 0x0F00) != MFX_IMPL_VIA_D3D11))
         {
             mfxExtVPPComposite* ext_composite = (mfxExtVPPComposite*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_COMPOSITE);
