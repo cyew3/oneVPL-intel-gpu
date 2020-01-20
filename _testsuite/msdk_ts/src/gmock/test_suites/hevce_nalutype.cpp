@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright (c) 2017-2018 Intel Corporation. All Rights Reserved.
+Copyright (c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -957,8 +957,10 @@ namespace hevce_nalutype
 
         mfxExtCodingOption3& co3 = m_par;
         co3.PRefType = tc.PRefType;
-        co3.GPB = 0x20;
+        co3.GPB = MFX_CODINGOPTION_OFF;
 #if (MFX_VERSION >= 1025)
+        if (g_tsHWtype > MFX_HW_ICL)
+            co3.GPB = MFX_CODINGOPTION_ON;
         m_nalTypeCtrl = tc.NaluTypeCtrl;
         if (tc.NaluTypeCtrl == DEFAULT)
             co3.EnableNalUnitType = MFX_CODINGOPTION_OFF;
