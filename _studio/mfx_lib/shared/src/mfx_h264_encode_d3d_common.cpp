@@ -39,7 +39,6 @@ D3DXCommonEncoder::D3DXCommonEncoder()
     ,m_bSingleThreadMode(false)
     ,m_timeoutSync(0)
     ,m_timeoutForTDR(0)
-    ,m_bIsBlockingTaskSyncEnabled(false)
 {
 }
 
@@ -67,15 +66,11 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *core)
 
     m_timeoutSync = (platform >= MFX_HW_LKF) ? DEFAULT_TIMEOUT_AVCE_HW_SIM : DEFAULT_TIMEOUT_AVCE_HW;
 
-    // WA for the sync issue on ICL
-    m_bIsBlockingTaskSyncEnabled = (platform >= MFX_HW_ICL) ? false : true;
-
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    if (m_bIsBlockingTaskSyncEnabled) {
-        m_EventCache.reset(new EventCache());
-        m_EventCache->SetGlobalHwEvent(pSheduler->GetHwEvent());
-    }
+    m_EventCache.reset(new EventCache());
+    m_EventCache->SetGlobalHwEvent(pSheduler->GetHwEvent());
 #endif
+
     return MFX_ERR_NONE;
 }
 
@@ -147,51 +142,43 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
     // use GPUTaskSync call to wait task completion.
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
     // If the task was submitted to the driver
-    if (m_bIsBlockingTaskSyncEnabled) {
-        if (task.m_GpuEvent[fieldId].gpuSyncEvent != INVALID_HANDLE_VALUE)
-        {
-            mfxU32 timeOutMs = m_timeoutSync;
-
-            if (m_bSingleThreadMode)
-            {
-                sts = pSheduler->GetTimeout(timeOutMs);
-                MFX_CHECK_STS(sts);
-            }
-
-            sts = WaitTaskSync(task, fieldId, timeOutMs);
-
-            // for single thread mode the timeOutMs can be too small, need to use an extra check
-            mfxU32 curTime = vm_time_get_current_time();
-            if (sts == MFX_WRN_DEVICE_BUSY)
-            {
-                if (task.CheckForTDRHang(curTime, m_timeoutForTDR) || !m_bSingleThreadMode)
-                    return MFX_ERR_GPU_HANG;
-                else
-                    return MFX_WRN_DEVICE_BUSY;
-            }
-            else if (sts != MFX_ERR_NONE)
-                return MFX_ERR_DEVICE_FAILED;
-
-            // Return event to the EventCache
-            m_EventCache->ReturnEvent(task.m_GpuEvent[fieldId].gpuSyncEvent);
-            task.m_GpuEvent[fieldId].gpuSyncEvent = INVALID_HANDLE_VALUE;
-        }
-        // If the task was skipped or blocking sync call is succeded try to get the current task status
-        sts = QueryStatusAsync(task, fieldId);
-
-        if (sts == MFX_WRN_DEVICE_BUSY)
-            sts = MFX_ERR_GPU_HANG;
-    }
-    else
-#endif
+    if (task.m_GpuEvent[fieldId].gpuSyncEvent != INVALID_HANDLE_VALUE)
     {
-#if defined(MFX_ENABLE_MFE)
-        sts = MFX_WRN_DEVICE_BUSY;
-        while (sts == MFX_WRN_DEVICE_BUSY)//WA while blocking sync is absent
-#endif
-            sts = QueryStatusAsync(task, fieldId);
+        mfxU32 timeOutMs = m_timeoutSync;
+
+        if (m_bSingleThreadMode)
+        {
+            sts = pSheduler->GetTimeout(timeOutMs);
+            MFX_CHECK_STS(sts);
+        }
+
+        sts = WaitTaskSync(task, fieldId, timeOutMs);
+
+        // for single thread mode the timeOutMs can be too small, need to use an extra check
+        mfxU32 curTime = vm_time_get_current_time();
+        if (sts == MFX_WRN_DEVICE_BUSY)
+        {
+            if (task.CheckForTDRHang(curTime, m_timeoutForTDR) || !m_bSingleThreadMode)
+                return MFX_ERR_GPU_HANG;
+            else
+                return MFX_WRN_DEVICE_BUSY;
+        }
+        else if (sts != MFX_ERR_NONE)
+            return MFX_ERR_DEVICE_FAILED;
+
+        // Return event to the EventCache
+        m_EventCache->ReturnEvent(task.m_GpuEvent[fieldId].gpuSyncEvent);
+        task.m_GpuEvent[fieldId].gpuSyncEvent = INVALID_HANDLE_VALUE;
     }
-    return sts;
+    // If the task was skipped or blocking sync call is succeded try to get the current task status
+    sts = QueryStatusAsync(task, fieldId);
+    if (sts == MFX_WRN_DEVICE_BUSY)
+        sts = MFX_ERR_GPU_HANG;
+
+#else
+    sts = QueryStatusAsync(task, fieldId);
+#endif
+return sts;
 }
 
 #endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)

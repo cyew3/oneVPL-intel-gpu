@@ -67,7 +67,6 @@ namespace MfxHwH264Encode
         bool m_bSingleThreadMode;
         mfxU32 m_timeoutSync;
         mfxU32 m_timeoutForTDR;
-        bool m_bIsBlockingTaskSyncEnabled;
 
     private:
         D3DXCommonEncoder(D3DXCommonEncoder const &); // no implementation

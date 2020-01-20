@@ -37,8 +37,10 @@ mfxStatus EventCache::Init(size_t nPreallocEvents)
         // should be removed after enablin event based synchronization for all components
         if (m_pGlobalHwEvent != nullptr && ev == *m_pGlobalHwEvent)
         {
+            EVENT_TYPE ev1 = CreateEvent(NULL, FALSE, FALSE, NULL);
+
             CloseHandle(ev);
-            ev = CreateEvent(NULL, FALSE, FALSE, NULL);
+            ev = ev1;
         }
         m_Free.push_back(ev);
     }

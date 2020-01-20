@@ -461,8 +461,7 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
     }
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    if (m_bIsBlockingTaskSyncEnabled)
-        m_EventCache->Init(response.NumFrameActual);
+    m_EventCache->Init(response.NumFrameActual);
 #endif
 
     return MFX_ERR_NONE;
@@ -502,6 +501,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         SkipFlag = 0; // encode current frame as normal
         m_numSkipFrames += (mfxU8)task.m_ctrl.SkipFrame;
     }
+
 
     // Execute()
 
@@ -796,7 +796,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
 #if defined(MFX_ENABLE_MFE)
-        if (!m_bIsBlockingTaskSyncEnabled || m_pMFEAdapter != nullptr)
+        if (m_pMFEAdapter != nullptr)
         {
             // For now blocking synchronization does not work for MFE cases
             // due to limitation on driver side (the same for MFE HEVC).
