@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2751,48 +2751,49 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
         }
         else if (!IsOn(CO2.ExtBRC)) // if ExtBRC is off - need to do additional checks
         {
-            if (par.mfx.FrameInfo.FrameRateExtN != 0 && par.mfx.FrameInfo.FrameRateExtD != 0)
+            // check WinBRCSize
+            if (CO3.WinBRCSize > 0)
             {
-                mfxU16 iframerate = (mfxU16)ceil((mfxF64)par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
-                if (CO3.WinBRCSize != iframerate) //WinBRCSize must be equal to iframerate
+                if (par.mfx.FrameInfo.FrameRateExtN != 0 && par.mfx.FrameInfo.FrameRateExtD != 0)
                 {
-                    CO3.WinBRCSize = iframerate;
-                    changed++;
-                }
-            }
-            else
-            {
-                //if FrameRateExtN and FrameRateExtD are not set - need to calculate them
-                CalculateMFXFramerate((mfxF64)CO3.WinBRCSize, &par.mfx.FrameInfo.FrameRateExtN, &par.mfx.FrameInfo.FrameRateExtD);
-            }
-            if (par.MaxKbps)
-            {
-                if (CO3.WinBRCMaxAvgKbps != par.MaxKbps) // WinBRCMaxAvgKbps must be equal MaxKbps
-                {
-                    CO3.WinBRCMaxAvgKbps = (mfxU16)par.MaxKbps;
-                    changed++;
-                }
-            }
-            else if (CO3.WinBRCMaxAvgKbps)
-            {
-                if (par.TargetKbps && CO3.WinBRCMaxAvgKbps < par.TargetKbps) // WinBRCMaxAvgKbps must not be less than TargetKbps
-                {
-                    CO3.WinBRCMaxAvgKbps = 0;
-                    CO3.WinBRCSize = 0;
-                    invalid++;
+                    mfxU16 iframerate = (mfxU16)ceil((mfxF64)par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
+                    changed += CheckOption(CO3.WinBRCSize, iframerate);
                 }
                 else
                 {
-                    par.MaxKbps = CO3.WinBRCMaxAvgKbps;
-                    changed++;
+                    //if FrameRateExtN and FrameRateExtD are not set - need to calculate them
+                    CalculateMFXFramerate((mfxF64)CO3.WinBRCSize, &par.mfx.FrameInfo.FrameRateExtN, &par.mfx.FrameInfo.FrameRateExtD);
                 }
             }
-            else
+
+            // check WinBRCMaxAvgKbps
+            if (CO3.WinBRCMaxAvgKbps)
+            {
+                if (par.MaxKbps)
+                {
+                    changed += CheckOption(CO3.WinBRCMaxAvgKbps, par.MaxKbps);
+                }
+                else
+                {
+                    if (par.TargetKbps && CO3.WinBRCMaxAvgKbps < par.TargetKbps) // WinBRCMaxAvgKbps must not be less than TargetKbps
+                    {
+                        CO3.WinBRCMaxAvgKbps = 0;
+                        CO3.WinBRCSize = 0;
+                        invalid++;
+                    }
+                    else
+                    {
+                        par.MaxKbps = CO3.WinBRCMaxAvgKbps;
+                        changed++;
+                    }
+                }
+            }
+            else if (!par.MaxKbps)
             {
                 changed++;
             }
         }
-        else if (par.TargetKbps && CO3.WinBRCMaxAvgKbps && CO3.WinBRCMaxAvgKbps < par.TargetKbps)
+        else if (par.TargetKbps && CO3.WinBRCMaxAvgKbps && CO3.WinBRCMaxAvgKbps < par.TargetKbps) // ExtBRC is on
         {
             CO3.WinBRCMaxAvgKbps = 0;
             CO3.WinBRCSize = 0;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,53 +27,6 @@
 using namespace HEVCEHW;
 using namespace HEVCEHW::Gen9;
 using namespace HEVCEHW::Windows::Gen9;
-
-void BRCSlidingWindow::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
-{
-    Push(BLK_SetDefaultsCallChain
-        , [this](const mfxVideoParam& /*in*/, mfxVideoParam& /*par*/, StorageW& strg) -> mfxStatus
-    {
-        auto& defaults = Glob::Defaults::Get(strg);
-        auto& bSet = defaults.SetForFeature[GetID()];
-        MFX_CHECK(!bSet, MFX_ERR_NONE);
-
-        defaults.CheckWinBRC.Push(
-            [](Defaults::TCheckAndFix::TExt /*prev*/
-            , const Defaults::Param& dpar
-            , mfxVideoParam& par)
-        {
-            mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
-            MFX_CHECK(pCO3 && (pCO3->WinBRCSize || pCO3->WinBRCMaxAvgKbps), MFX_ERR_NONE);
-
-            mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par);
-            bool   bExtBRC      = pCO2 && IsOn(pCO2->ExtBRC);
-            bool   bVBR         = (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR);
-            bool   bUnsupported = bVBR && bExtBRC && pCO3->WinBRCMaxAvgKbps && (pCO3->WinBRCMaxAvgKbps < TargetKbps(par.mfx));
-            mfxU32 changed      = !bVBR || bUnsupported;
-
-            pCO3->WinBRCSize       *= !changed;
-            pCO3->WinBRCMaxAvgKbps *= !changed;
-
-            MFX_CHECK(!bUnsupported, MFX_ERR_UNSUPPORTED);
-            MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-            MFX_CHECK(bVBR && !bExtBRC, MFX_ERR_NONE);
-
-            auto   fr      = dpar.base.GetFrameRate(dpar);
-            mfxU16 fps     = mfxU16(CeilDiv(std::get<0>(fr), std::get<1>(fr)));
-            auto   maxKbps = dpar.base.GetMaxKbps(dpar);
-
-            changed += pCO3->WinBRCSize && SetIf(pCO3->WinBRCSize, pCO3->WinBRCSize != fps, fps);
-            changed += pCO3->WinBRCMaxAvgKbps && SetIf(pCO3->WinBRCMaxAvgKbps, pCO3->WinBRCMaxAvgKbps != maxKbps, maxKbps);
-
-            MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-            return MFX_ERR_NONE;
-        });
-
-        bSet = true;
-
-        return MFX_ERR_NONE;
-    });
-}
 
 void BRCSlidingWindow::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 {
