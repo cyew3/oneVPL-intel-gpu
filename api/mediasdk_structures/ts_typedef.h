@@ -4,19 +4,15 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #pragma once
 
-#if defined(_WIN32) || defined(_WIN64) || __cplusplus >= 201103L
-#define TYPEDEF_MEMBER(base, member, name) typedef std::remove_reference<decltype(((base*)0)->member)>::type name;
-#else
-#if defined(__GNUC__)
-#define TYPEDEF_MEMBER(base, member, name) typedef typeof(((base*)0)->member) name;
-#endif
-#endif
+#define TYPEDEF_MEMBER(base, member, name) \
+    struct name : std::decay<decltype(base::member)>::type {};
+
 TYPEDEF_MEMBER(mfxExtOpaqueSurfaceAlloc,  In,                  mfxExtOpaqueSurfaceAlloc_InOut)
 TYPEDEF_MEMBER(mfxExtAVCRefListCtrl,      PreferredRefList[0], mfxExtAVCRefListCtrl_Entry)
 TYPEDEF_MEMBER(mfxExtPictureTimingSEI,    TimeStamp[0],        mfxExtPictureTimingSEI_TimeStamp)
