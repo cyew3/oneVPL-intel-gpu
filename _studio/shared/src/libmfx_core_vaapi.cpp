@@ -391,6 +391,7 @@ typedef struct {
     /* ADL */
     { 0x4680, MFX_HW_ADL_S,  MFX_GT1 },//ADL-S
     { 0x46A0, MFX_HW_ADL_UH, MFX_GT2 },//ADL-UH
+    /* PVC */
     { 0x0BD0, MFX_HW_PVC, MFX_GT4 }
 #endif
 

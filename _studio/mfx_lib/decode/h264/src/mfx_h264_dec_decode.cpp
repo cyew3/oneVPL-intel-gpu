@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2019 Intel Corporation
+// Copyright (c) 2004-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -329,7 +329,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 #ifndef STRIP_EMBARGO
         if (m_core->GetHWType() != MFX_HW_ATS
             && m_core->GetHWType() != MFX_HW_DG2
-            && m_core->GetHWType() != MFX_HW_ATS)
+            && m_core->GetHWType() != MFX_HW_PVC)
         {
              MFX_CHECK(m_vPar.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE, MFX_ERR_UNSUPPORTED);
         }

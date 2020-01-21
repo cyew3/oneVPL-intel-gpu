@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2725,6 +2725,7 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
 #endif
 #ifndef STRIP_EMBARGO
     case MFX_HW_TGL_HP:
+    case MFX_HW_PVC:
         cmSts = m_pCmDevice->LoadProgram((void*)tgl_copy_kernel_genx,sizeof(tgl_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
 #endif

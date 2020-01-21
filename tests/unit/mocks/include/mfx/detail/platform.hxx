@@ -67,6 +67,7 @@ namespace mocks { namespace mfx
             IGFX_DG1 = 1210,
             IGFX_TIGERLAKE_HP = 1250,
             IGFX_DG2 = 1270,
+            IGFX_PVC = 1271,
 
             IGFX_GENNEXT               = 0x7ffffffe,
 

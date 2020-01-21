@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -103,6 +103,7 @@ enum PRODUCT_FAMILY
     IGFX_DG1 = 1210,
     IGFX_TIGERLAKE_HP = 1250,
     IGFX_DG2 = 1270,
+    IGFX_PVC = 1271,
 
     IGFX_SOFIA_LTE1 = 1001,
     IGFX_SOFIA_LTE2 = 1002,
@@ -173,6 +174,8 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_ADL_S;
     case IGFX_ALDERLAKE_UH:
         return MFX_HW_ADL_UH;
+    case IGFX_PVC:
+        return MFX_HW_PVC;
     default:
         break;
     }
