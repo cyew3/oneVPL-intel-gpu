@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1522,7 +1522,7 @@ public:
         {
             nSlice = std::min<mfxU32>(nSlice, nRow);
             mfxU32 nRowsPerSlice = CeilDiv(nRow, nSlice);
-            bool   bAddSlice     = (SliceStructure != Pow2Rows) && (nRowsPerSlice * nSlice) > nRow;
+            bool   bAddSlice     = (SliceStructure != Pow2Rows) && (nRowsPerSlice * (nSlice - 1)) >= nRow;
 
             nSlice        += bAddSlice;
             nRowsPerSlice -= bAddSlice;
