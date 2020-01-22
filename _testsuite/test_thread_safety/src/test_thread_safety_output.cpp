@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: test_thread_safety_output.cpp
 
@@ -68,7 +68,7 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
     }
     if (m_syncOpt == SYNC_OPT_PER_WRITE)
     {
-        m_allOut.Wait();
+        m_allOut.Wait(); // wait until all threads encode previous frame
 
         bool last = false;
 
@@ -83,7 +83,9 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
             m_data[m_numCommit].ptr = ptr;
             m_data[m_numCommit].len = len;
             m_numCommit++;
-            last = (m_numCommit >= m_numWriter);
+            // If thread was unregistered (e.g. due to gpu hang) there is no need to wait this thread
+            // So, need to wait only alive threads (which is equal to m_numWriter - m_numUnregistered)
+            last = (m_numCommit >= (m_numWriter - m_numUnregistered));
         }
 
         if (last)
@@ -92,11 +94,11 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
                 m_compareStatus = Compare();
             memset(&m_data[0], 0, m_numWriter * sizeof(m_data[0]));
             m_allOut.Reset();
-            m_allIn.Set();
+            m_allIn.Set(); // all threads encode current frame
         }
         else
         {
-            m_allIn.Wait();
+            m_allIn.Wait(); // wait until all threads encode current frame
         }
 
         {
@@ -108,7 +110,7 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
         if (last)
         {
             m_allIn.Reset();
-            m_allOut.Set();
+            m_allOut.Set(); // allow to encode next frame for all threads
         }
     }
 
@@ -127,6 +129,7 @@ mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
             }
 
             m_numUnregistered++;
+            vm_file_fprintf(vm_stderr, VM_STRING("TEST: handle %p unregistered.\n"), handle);
             if (m_numUnregistered == m_numWriter)
             {
                 // last writer unregistered, restore initial state
