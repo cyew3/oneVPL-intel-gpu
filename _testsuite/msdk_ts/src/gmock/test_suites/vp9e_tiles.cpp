@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -129,7 +129,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         CHECK_ASYNC3 = 0x200000,
         CHECK_MULTIREF = 0x400000,
         CHECK_WITH_SEGMENTATION = 0x800000,
-        SWITCH_OFF = 0x0100000
+        SWITCH_OFF = 0x01000000
     };
 
     const std::vector<TestSubtype> executeTests =
