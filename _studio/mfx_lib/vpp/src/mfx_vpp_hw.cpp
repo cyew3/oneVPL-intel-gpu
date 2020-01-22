@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -4907,22 +4907,22 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
         {
             mfxExtVPPMirroring* extMir = (mfxExtVPPMirroring*)data;
             // SW mirroring supports only horizontal mode
-            mfxU32 maxMirrorSupportMode = 1;
+            bool isOnlyHorizontalMirroringSupported = true;
 
             if (core->GetHWType() >= MFX_HW_TGL_LP && core->GetVAType() != MFX_HW_D3D9)
                 // Starting with TGL, mirroring performs through driver
                 // Driver supports horizontal and vertical modes
-                maxMirrorSupportMode = 2;
+                isOnlyHorizontalMirroringSupported = false;
 
             // Only SW mirroring has these limitations, HW mirroring supports all SFC formats
-            if (maxMirrorSupportMode == 1 && (par->vpp.In.FourCC != MFX_FOURCC_NV12 || par->vpp.Out.FourCC != MFX_FOURCC_NV12))
+            if (isOnlyHorizontalMirroringSupported && (par->vpp.In.FourCC != MFX_FOURCC_NV12 || par->vpp.Out.FourCC != MFX_FOURCC_NV12))
                 sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
 
             // SW mirroring does not support crop X and Y
-            if (maxMirrorSupportMode == 1 && (par->vpp.In.CropX || par->vpp.In.CropY || par->vpp.Out.CropX || par->vpp.Out.CropY))
+            if (isOnlyHorizontalMirroringSupported && (par->vpp.In.CropX || par->vpp.In.CropY || par->vpp.Out.CropX || par->vpp.Out.CropY))
                 sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
 
-            if (extMir->Type < 0 || extMir->Type > maxMirrorSupportMode)
+            if (extMir->Type < 0 || (extMir->Type==MFX_MIRRORING_VERTICAL && isOnlyHorizontalMirroringSupported))
                 sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
 
             switch (par->IOPattern)
@@ -4933,11 +4933,11 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
             case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
             {
                 // SW d3d->d3d mirroring does not support resize
-                if ((maxMirrorSupportMode == 1) && (par->vpp.In.Width != par->vpp.Out.Width || par->vpp.In.Height != par->vpp.Out.Height))
+                if (isOnlyHorizontalMirroringSupported && (par->vpp.In.Width != par->vpp.Out.Width || par->vpp.In.Height != par->vpp.Out.Height))
                     sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
 
                 // If pipeline contains resize, SW mirroring and other, VPP skips other filters
-                if (maxMirrorSupportMode == 1 && pLen > 2)
+                if (isOnlyHorizontalMirroringSupported && pLen > 2)
                     sts = GetWorstSts(sts, MFX_WRN_FILTER_SKIPPED);
 
                 break;
