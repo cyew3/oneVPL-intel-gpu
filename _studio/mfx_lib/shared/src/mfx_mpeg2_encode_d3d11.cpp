@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -93,13 +93,13 @@ D3D11Encoder::~D3D11Encoder()
 } // D3D11Encoder::~D3D11Encoder()
 
 
-mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS & caps)
+mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS & caps, mfxU16)
 {
-    MFX_CHECK_NULL_PTR1(m_core);    
+    MFX_CHECK_NULL_PTR1(m_core);
 
     if(!m_pDecoder)
     {
-        D3D11Interface* pD3d11     = QueryCoreInterface<D3D11Interface>(m_core);                         
+        D3D11Interface* pD3d11     = QueryCoreInterface<D3D11Interface>(m_core);
         ID3D11VideoDevice* pDevice = pD3d11->GetD3D11VideoDevice(true);
         HRESULT hRes;
 
@@ -107,7 +107,7 @@ mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS & caps)
         UINT profileCount = pDevice->GetVideoDecoderProfileCount();
         assert( profileCount > 0 );
 
-        bool isProfileFound = false;    
+        bool isProfileFound = false;
         GUID profileGuid;
         for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
         {

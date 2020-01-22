@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -71,12 +71,12 @@ D3D9Encoder::~D3D9Encoder()
     {
         m_core->FreeFrames(&m_allocResponseBS);
         memset(&m_allocResponseBS,0,sizeof(mfxFrameAllocResponse));
-    }        
+    }
 
 } // D3D9Encoder::~D3D9Encoder()
 
 
-mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS & caps)
+mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS & caps, mfxU16)
 {
     MFX_CHECK_NULL_PTR1(m_core);
 

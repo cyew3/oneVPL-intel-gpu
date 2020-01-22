@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -54,7 +54,7 @@ namespace MfxHwMpeg2Encode
 
         virtual ~D3D11Encoder();
 
-        virtual mfxStatus QueryEncodeCaps(ENCODE_CAPS & caps);
+        virtual mfxStatus QueryEncodeCaps(ENCODE_CAPS & caps, mfxU16 codecProfileType);
 
         virtual mfxStatus Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId);
 
