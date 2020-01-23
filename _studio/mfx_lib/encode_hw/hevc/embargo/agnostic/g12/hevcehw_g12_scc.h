@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ class SCC
 {
 public:
 #define DECL_BLOCK_LIST\
+    DECL_BLOCK(SetCallChains)\
     DECL_BLOCK(SetLowPowerDefault)\
     DECL_BLOCK(SetGUID)\
     DECL_BLOCK(CheckProfile)\
@@ -92,7 +93,6 @@ public:
 
 protected:
     virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
-    virtual void Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
     virtual void InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push) override;
     virtual void PostReorderTask(const FeatureBlocks& /*blocks*/, TPushPostRT Push) override;
 
@@ -108,6 +108,7 @@ protected:
     static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444;
     static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444_10;
     bool m_bPatchNextDDITask = false;
+    bool m_bPatchDDISlices   = false;
 };
 
 } //Gen12

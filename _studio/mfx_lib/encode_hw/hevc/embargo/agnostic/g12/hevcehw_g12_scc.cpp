@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -135,6 +135,64 @@ bool SCC::PackPpsExt(StorageRW& strg, const Gen9::PPS&, mfxU8 id, Gen9::IBsWrite
 
 void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
+    Push(BLK_SetCallChains
+        , [this](const mfxVideoParam& par, mfxVideoParam&, StorageRW& strg) -> mfxStatus
+    {
+        MFX_CHECK(par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
+        MFX_CHECK(IsOn(par.mfx.LowPower), MFX_ERR_NONE);
+
+        auto& defaults = Glob::Defaults::GetOrConstruct(strg);
+        auto& bSet = defaults.SetForFeature[GetID()];
+        MFX_CHECK(!bSet, MFX_ERR_NONE);
+
+        defaults.CheckProfile.Push(
+            [](Gen9::Defaults::TCheckAndFix::TExt prev
+                , const Gen9::Defaults::Param& dpar
+                , mfxVideoParam& par)
+        {
+            OnExit reveretProfile([&](){ SetIf(par.mfx.CodecProfile, !!par.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC); });
+            par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+
+            return prev(dpar, par);
+        });
+        defaults.GetSPS.Push(
+            [](Defaults::TGetSPS::TExt prev
+                , const Defaults::Param& defPar
+                , const Gen9::VPS& vps
+                , Gen9::SPS& sps)
+        {
+            auto sts = prev(defPar, vps, sps);
+            MFX_CHECK_STS(sts);
+
+            sps.extension_flag = 1;
+            sps.ExtensionFlags |= (0x80 >> SCC_EXT_ID);
+
+            return sts;
+        });
+        defaults.GetPPS.Push(
+            [](Defaults::TGetPPS::TExt prev
+                , const Defaults::Param& defPar
+                , const Gen9::SPS& sps
+                , Gen9::PPS& pps)
+        {
+            auto sts = prev(defPar, sps, pps);
+            MFX_CHECK_STS(sts);
+
+            pps.extension_flag = 1;
+            pps.ExtensionFlags |= (0x80 >> SCC_EXT_ID);
+
+            // Disable ref-list modification
+            pps.lists_modification_present_flag = 0;
+
+            return sts;
+        });
+
+        bSet = true;
+
+        return MFX_ERR_NONE;
+
+    });
+
     Push(BLK_SetLowPowerDefault
         , [this](const mfxVideoParam&, mfxVideoParam& par, StorageW& strg) -> mfxStatus
     {
@@ -215,30 +273,13 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     });
 }
 
-void SCC::Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push)
-{
-    Push(BLK_CheckProfile
-        , [&blocks, this](const mfxVideoParam& in, mfxVideoParam& par, StorageRW& strg) -> mfxStatus
-    {
-        MFX_CHECK(par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
-        MFX_CHECK(Glob::VideoCore::Get(strg).GetHWType() >= MFX_HW_TGL_LP, MFX_ERR_UNSUPPORTED);
-
-        par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
-        OnExit reveretProfile([&] { SetIf(par.mfx.CodecProfile, !!par.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC);});
-
-        auto& qwc = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
-        const FeatureBlocks::ID legacyCheck = { Gen9::FEATURE_LEGACY, Gen9::Legacy::BLK_CheckProfile };
-
-        return FeatureBlocks::Get(qwc, legacyCheck)->Call(in, par, strg);
-    });
-}
-
 void SCC::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 {
     Push(BLK_Init
         , [this](StorageRW& strg, StorageRW&) -> mfxStatus
     {
         m_bPatchNextDDITask = (Glob::VideoParam::Get(strg).mfx.CodecProfile == MFX_PROFILE_HEVC_SCC);
+        m_bPatchDDISlices = m_bPatchNextDDITask;
         return MFX_ERR_NONE;
     });
 
@@ -247,7 +288,6 @@ void SCC::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     {
         MFX_CHECK(Glob::VideoParam::Get(strg).mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
 
-        auto& sps = Glob::SPS::Get(strg);
         auto& spsExt = SpsExt::GetOrConstruct(strg, SccSpsExt{});
 
         spsExt = {};
@@ -257,9 +297,6 @@ void SCC::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         spsExt.delta_palette_max_predictor_size = 32;
         spsExt.scc_extension_flag = 1;
 
-        sps.extension_flag = 1;
-        sps.ExtensionFlags |= (0x80 >> SCC_EXT_ID);
-
         return MFX_ERR_NONE;
     });
 
@@ -268,18 +305,11 @@ void SCC::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     {
         MFX_CHECK(Glob::VideoParam::Get(strg).mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
 
-        auto& pps = Glob::PPS::Get(strg);
         auto& ppsExt = PpsExt::GetOrConstruct(strg, SccPpsExt{});
 
         ppsExt = {};
         ppsExt.curr_pic_ref_enabled_flag = 1;
         ppsExt.scc_extension_flag = 1;
-
-        pps.extension_flag = 1;
-        pps.ExtensionFlags |= (0x80 >> SCC_EXT_ID);
-
-        // Disable ref-list modification
-        pps.lists_modification_present_flag = 0;
 
         return MFX_ERR_NONE;
     });

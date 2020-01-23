@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,19 +48,31 @@ namespace Gen12
             Push(BLK_PatchDDITask
                 , [this](StorageW& global, StorageW& /*s_task*/) -> mfxStatus
             {
-                MFX_CHECK(m_bPatchNextDDITask, MFX_ERR_NONE);
-                m_bPatchNextDDITask = false;
-
-                auto& par    = Glob::DDI_SubmitParam::Get(global);
+                MFX_CHECK(m_bPatchNextDDITask || m_bPatchDDISlices, MFX_ERR_NONE);
+                auto& par = Glob::DDI_SubmitParam::Get(global);
                 auto  vaType = Glob::VideoCore::Get(global).GetVAType();
-
-                auto& ddiSPS = Deref(Gen9::GetDDICB<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC>(
-                    ENCODE_ENC_PAK_ID, Gen9::DDIPar_In, vaType, par));
                 auto& ddiPPS = Deref(Gen9::GetDDICB<ENCODE_SET_PICTURE_PARAMETERS_HEVC>(
                     ENCODE_ENC_PAK_ID, Gen9::DDIPar_In, vaType, par));
+                auto  pDdiSlice = Gen9::GetDDICB<ENCODE_SET_SLICE_HEADER_HEVC>(
+                    ENCODE_ENC_PAK_ID, Gen9::DDIPar_In, vaType, par);
 
-                ddiSPS.palette_mode_enabled_flag     = SpsExt::Get(global).palette_mode_enabled_flag;
-                ddiPPS.pps_curr_pic_ref_enabled_flag = PpsExt::Get(global).curr_pic_ref_enabled_flag;
+                auto UpdateSlice = [&](ENCODE_SET_SLICE_HEADER_HEVC& s)
+                {
+                    s.num_ref_idx_l0_active_minus1 -= (ddiPPS.pps_curr_pic_ref_enabled_flag && s.num_ref_idx_l0_active_minus1);
+                };
+
+                std::for_each(pDdiSlice, pDdiSlice + ddiPPS.NumSlices, UpdateSlice);
+
+                if (m_bPatchNextDDITask)
+                {
+                    m_bPatchNextDDITask = false;
+
+                    auto& ddiSPS = Deref(Gen9::GetDDICB<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC>(
+                        ENCODE_ENC_PAK_ID, Gen9::DDIPar_In, vaType, par));
+
+                    ddiSPS.palette_mode_enabled_flag = SpsExt::Get(global).palette_mode_enabled_flag;
+                    ddiPPS.pps_curr_pic_ref_enabled_flag = PpsExt::Get(global).curr_pic_ref_enabled_flag;
+                }
 
                 return MFX_ERR_NONE;
             });
