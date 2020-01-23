@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -94,12 +94,12 @@ mfxStatus mfxCOREMapOpaqueSurface(mfxHDL pthis, mfxU32  num, mfxU32  type, mfxFr
     CommonCORE *pCore = (CommonCORE *)session->m_pCORE->QueryCoreInterface(MFXIVideoCORE_GUID);
     if (!pCore)
         return MFX_ERR_INVALID_HANDLE;
-    
+
     try
     {
         if (!op_surf)
             return MFX_ERR_MEMORY_ALLOC;
-        
+
         if (!*op_surf)
             return MFX_ERR_MEMORY_ALLOC;
 
@@ -230,7 +230,7 @@ mfxStatus mfxCOREGetOpaqueSurface(mfxHDL pthis, mfxFrameSurface1 *surf, mfxFrame
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
-    
+
     try
     {
         *op_surf = session->m_pCORE->GetOpaqSurface(surf->Data.MemId);
@@ -270,7 +270,7 @@ mfxStatus mfxCORECreateAccelerationDevice(mfxHDL pthis, mfxHandleType type, mfxH
             if (type == MFX_HANDLE_D3D9_DEVICE_MANAGER)
             {
                 D3D9Interface *pID3D = QueryCoreInterface<D3D9Interface>(session->m_pCORE.get(), MFXICORED3D_GUID);
-                if(pID3D == 0) 
+                if(pID3D == 0)
                     mfxRes = MFX_ERR_UNSUPPORTED;
                 else
                 {
@@ -283,7 +283,7 @@ mfxStatus mfxCORECreateAccelerationDevice(mfxHDL pthis, mfxHandleType type, mfxH
             else if (type == MFX_HANDLE_D3D11_DEVICE)
             {
                 D3D11Interface* pID3D = QueryCoreInterface<D3D11Interface>(session->m_pCORE.get());
-                if(pID3D == 0) 
+                if(pID3D == 0)
                     mfxRes = MFX_ERR_UNSUPPORTED;
                 else
                 {
@@ -410,10 +410,10 @@ mfxStatus mfxDefLockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 
     if (pCore->IsExternalFrameAllocator())
     {
-        return pCore->LockExternalFrame(mid,ptr); 
+        return pCore->LockExternalFrame(mid,ptr);
     }
 
-    return pCore->LockFrame(mid,ptr); 
+    return pCore->LockFrame(mid,ptr);
 
 
 } // mfxStatus mfxDefLockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
@@ -432,13 +432,13 @@ mfxStatus mfxDefUnlockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0)
 {
     MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
-    
+
     if (pCore->IsExternalFrameAllocator())
     {
         return pCore->UnlockExternalFrame(mid, ptr);
     }
-    
-    return pCore->UnlockFrame(mid, ptr); 
+
+    return pCore->UnlockFrame(mid, ptr);
 
 } // mfxStatus mfxDefUnlockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr=0)
 mfxStatus mfxDefFreeFrames(mfxHDL pthis, mfxFrameAllocResponse *response)
@@ -446,7 +446,7 @@ mfxStatus mfxDefFreeFrames(mfxHDL pthis, mfxFrameAllocResponse *response)
     MFX_CHECK_NULL_PTR1(pthis);
     VideoCORE *pCore = (VideoCORE*)pthis;
     mfxFrameAllocator* pExtAlloc = (mfxFrameAllocator*)pCore->QueryCoreInterface(MFXIEXTERNALLOC_GUID);
-    return pExtAlloc?pExtAlloc->Free(pExtAlloc->pthis,response):pCore->FreeFrames(response); 
+    return pExtAlloc?pExtAlloc->Free(pExtAlloc->pthis,response):pCore->FreeFrames(response);
 
 } // mfxStatus mfxDefFreeFrames(mfxHDL pthis, mfxFrameAllocResponse *response)
 
@@ -650,10 +650,10 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
         m_implInterface = MFX_IMPL_VIA_VAAPI;
         break;
 #else
-#if defined(MFX_VA_WIN)        
+#if defined(MFX_VA_WIN)
         // D3D9 is only one supported interface
     case MFX_IMPL_VIA_ANY:
-#endif    
+#endif
     case MFX_IMPL_VIA_D3D9:
         m_implInterface = MFX_IMPL_VIA_D3D9;
         break;
@@ -692,16 +692,16 @@ mfxStatus _mfxSession::Init(mfxIMPL implInterface, mfxVersion *ver)
         }
         else
             m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_D3D9, m_adapterNum, maxNumThreads, this));
-        
+
     }
 #elif defined(MFX_VA_LINUX)
     else
     {
         m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_VAAPI, m_adapterNum, maxNumThreads, this));
     }
-    
+
 #elif defined(MFX_VA_OSX)
-    
+
     else
     {
         m_pCORE.reset(FactoryCORE::CreateCORE(MFX_HW_VDAAPI, m_adapterNum, maxNumThreads, this));
@@ -765,13 +765,13 @@ mfxStatus _mfxSession::ReleaseScheduler(void)
 {
     if(m_pScheduler)
         m_pScheduler->Release();
-    
+
     if(m_pSchedulerAllocated)
         m_pSchedulerAllocated->Release();
 
     m_pScheduler = nullptr;
     m_pSchedulerAllocated = nullptr;
-    
+
     return MFX_ERR_NONE;
 
 } // mfxStatus _mfxSession::RestoreScheduler(void)
@@ -882,10 +882,10 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
         m_implInterface = MFX_IMPL_VIA_VAAPI;
         break;
 #else
-#if defined(MFX_VA_WIN)        
+#if defined(MFX_VA_WIN)
         // D3D9 is only one supported interface
     case MFX_IMPL_VIA_ANY:
-#endif    
+#endif
     case MFX_IMPL_VIA_D3D9:
         m_implInterface = MFX_IMPL_VIA_D3D9;
         break;
@@ -1022,9 +1022,13 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
         return MFX_ERR_UNSUPPORTED;
     }
 
-    // Linux: By default CM Copy disabled on HW cores so only need to handle explicit ON value
     // Windows: By default CM Copy enabled on HW cores, so only need to handle explicit OFF value
-    const bool disableGpuCopy = (m_pCORE->GetVAType() == MFX_HW_VAAPI)
+    // Linux: By default CM Copy disabled on HW cores so only need to handle explicit ON value
+    const bool disableGpuCopy = (m_pCORE->GetVAType() == MFX_HW_VAAPI )
+#ifndef STRIP_EMBARGO
+    // Linux: but relax this for DG1
+                            && (m_pCORE->GetHWType() != MFX_HW_DG1)
+#endif
         ? (MFX_GPUCOPY_ON != par.GPUCopy)
         : (MFX_GPUCOPY_OFF == par.GPUCopy);
 
