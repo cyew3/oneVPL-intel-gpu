@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,8 +51,6 @@ protected:
         caps.NoInterlacedField          = 1;
         caps.ParallelBRC                = 1;
         caps.MaxEncodedBitDepth         = 2;
-        caps.MaxPicWidth                = 16384;
-        caps.MaxPicHeight               = 16384;
         caps.MaxNumOfROI                = 16;
         caps.ROIDeltaQPSupport          = 1;
         caps.BlockSize                  = 1;
