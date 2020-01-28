@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016-2018 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2020 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -349,6 +349,12 @@ int TestSuite::RunTest(unsigned int id)
     mfxExtCodingOption3& cod3 = m_par;
     SETPARS(&cod3, EXT_COD3);
     cod3.EnableMBQP = MFX_CODINGOPTION_OFF;
+
+    if (cod3.GPB == MFX_CODINGOPTION_OFF && g_tsHWtype > MFX_HW_ICL)
+    {
+        g_tsLog << "\n\nWARNING: P-Slices feature is supported only on Linux ICL or less and with VME!\n\n\n";
+        throw tsSKIP;
+    }
 
     mfxU32 nf = frameNumber;
     g_tsStatus.expect(tc.sts);

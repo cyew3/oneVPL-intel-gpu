@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -1090,10 +1090,17 @@ namespace hevce_default_ref_lists
         m_max = tc.nFrames;
         m_par.AsyncDepth = 1;
 
+        MFXInit();
+        Load();
+
+        if (((g_tsHWtype > MFX_HW_ICL && g_tsConfig.lowpower != MFX_CODINGOPTION_OFF) || (g_tsOSFamily != MFX_OS_FAMILY_LINUX))  && co3.GPB == MFX_CODINGOPTION_OFF)
+        {
+            g_tsLog << "\n\nWARNING: P-Slices feature is supported only on Linux ICL or less and with VME!\n\n\n";
+            throw tsSKIP;
+        }
+
         if (g_tsHWtype <= MFX_HW_CNL && g_tsConfig.lowpower != MFX_CODINGOPTION_ON && (tc.type & HUGE_SIZE_8K))
         {
-            MFXInit();
-            Load();
             g_tsLog << "\n\nWARNING: 8k resolution is not supported on platform less ICL without VDENC!\n\n\n";
             g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
             Query();
