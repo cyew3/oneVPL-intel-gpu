@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -461,7 +461,7 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
 
     //cmd line params should be modified for par file
     mfxInfoVPP &rInfo = m_components[eVPP].m_params.vpp;
-    m_inParams.nPicStruct = Convert_MFXPS_to_CmdPS( m_inParams.bUseVPP ? rInfo.Out.PicStruct : m_components[eDEC].m_params.mfx.FrameInfo.PicStruct
+    m_inParams.nPicStruct = Convert_MFXPS_to_CmdPS( m_inParams.bUseVPP ? rInfo.Out.PicStruct:m_components[eDEC].m_params.mfx.FrameInfo.PicStruct
         , m_inParams.bUseVPP ? m_components[eVPP].m_extCO : m_components[eDEC].m_extCO );
 
 
@@ -1865,10 +1865,6 @@ mfxStatus MFXDecPipeline::DecodeHeader()
     if ( NOT_ASSIGNED_VALUE != m_inParams.InputPicstruct )
     {
         m_components[eDEC].m_params.mfx.FrameInfo.PicStruct = m_inParams.InputPicstruct;
-    }
-    else
-    {
-        m_components[eDEC].m_params.mfx.FrameInfo.PicStruct = m_inParams.FrameInfo.PicStruct;
     }
 
     if( m_inParams.bAdaptivePlayback )
