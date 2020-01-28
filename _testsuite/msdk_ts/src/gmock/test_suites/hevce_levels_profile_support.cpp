@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2017-2019 Intel Corporation.  All rights reserved.
+Copyright (C) 2017-2020 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -72,6 +72,8 @@ struct LevelConstraints
     mfxU32 MaxLumaSr;     // max luma sample rate (samples per second)
 };
 
+#define MSDK_ALIGN64(value) (((value + 63) >> 6) << 6)
+#define MSDK_ALIGN32(value) (((value + 31) >> 5) << 5)
 // The following values are given according to the Table A.6 from the HEVC International Standard
 constexpr LevelConstraints TableA6[13] =
 {
@@ -138,7 +140,6 @@ private:
     void SetParsPositiveTC(const LevelConstraints& LevelParam, bool iWidthChecking)
     {
         const mfxU16 MaxFrameRate = 300;  // the maximum frame rate supported by HEVC is 300 frames per second
-        const mfxU16 MaxNumSlice  = 200;  // due to driver issue, NumSlice is limited to 200
 
         ENCODE_CAPS_HEVC caps = {};
         mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
@@ -157,14 +158,37 @@ private:
         // ...
         // where MaxLumaPs is specified in Table A.6.
 
+        double LCUSize = 16;
+        if (caps.LCUSizeSupported & 4)
+            LCUSize = 64;
+        else if (caps.LCUSizeSupported & 2)
+            LCUSize = 32;
+
         // lets calculate Max Width
-        double dTempWidth = sqrt(LevelParam.MaxLumaPs *8) - 16;
-        mfxU16 iTempWidth = MSDK_ALIGN16(static_cast<mfxU16>(dTempWidth));
+        double dTempWidth = sqrt(LevelParam.MaxLumaPs *8) - LCUSize;
+        mfxU16 iTempWidth;
+        if (caps.LCUSizeSupported & 4)
+            iTempWidth = MSDK_ALIGN64(static_cast<mfxU16>(dTempWidth));
+        else if (caps.LCUSizeSupported & 2)
+            iTempWidth = MSDK_ALIGN32(static_cast<mfxU16>(dTempWidth));
+        else
+            iTempWidth = MSDK_ALIGN16(static_cast<mfxU16>(dTempWidth));
         m_par.mfx.FrameInfo.Width  = std::min(iTempWidth, MaxWidth);
         // lets calculate Max Height based on  calculated Width
-        double dTempHeight = LevelParam.MaxLumaPs/iTempWidth - 16;
-        mfxU16 iTempHeight = MSDK_ALIGN16(static_cast<mfxU16>(dTempHeight));
+        double dTempHeight = LevelParam.MaxLumaPs/iTempWidth - LCUSize + 1;
+        mfxU16 iTempHeight;
+        if (caps.LCUSizeSupported & 4)
+            iTempHeight = MSDK_ALIGN64(static_cast<mfxU16>(dTempHeight));
+        else if (caps.LCUSizeSupported & 2)
+            iTempHeight = MSDK_ALIGN32(static_cast<mfxU16>(dTempHeight));
+        else
+            iTempHeight = MSDK_ALIGN16(static_cast<mfxU16>(dTempHeight));
         m_par.mfx.FrameInfo.Height = std::min(iTempHeight, MaxHeight);
+
+        m_par.mfx.NumSlice = (mfxU16)LevelParam.MaxSSPP;
+
+        if (LevelParam.Level == 10 && caps.LCUSizeSupported & 4) //frame resolution is not enough to fit in all slices. That hasn't been of an issue till ICL as LCUSize was 32. ICL + has it 64.
+            m_par.mfx.NumSlice = 8; //MaxSSPP level is unreachable for codec level 1.0 with LCUSize 64x64
 
         if (!iWidthChecking)
             std::swap(m_par.mfx.FrameInfo.Width, m_par.mfx.FrameInfo.Height);
@@ -180,10 +204,6 @@ private:
 
         CodecLevel_exp = LevelParam.Level;
         CodecProfile_exp = MFX_PROFILE_HEVC_MAIN;
-
-        // Due to driver issue, NumSlice is limited to MaxNumSlice (see definition above).
-        // Otherwise MFXVideoENCODE_Init will fail with MFX_WRN_INCOMPATIBLE_VIDEO_PARAM status.
-        m_par.mfx.NumSlice = std::min((mfxU16)LevelParam.MaxSSPP, MaxNumSlice);
 
     }
 
