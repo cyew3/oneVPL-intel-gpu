@@ -4526,7 +4526,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     mfxU32  dataLength = task.m_bs->DataLength;
 
 #if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
-    if (task.m_bsDataLength[fid] == 0) {
+    if (m_isPOut && task.m_bsDataLength[fid] == 0) {
         mfxU8 *alignedEndPtr = (bitstream.Y + bsSizeAvail);
 
         MFX_CHECK((!(task.m_procBO[fid] && *(uint32_t*)bitstream.Y != PO_EMPTY_MARK)), MFX_ERR_DEVICE_FAILED);
