@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -26,7 +26,7 @@
 #ifdef _WIN32
     static HWType platforms_with_refactored_hevce[] = { MFX_HW_SKL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_APL,
                                                                     MFX_HW_ICL, MFX_HW_LKF, MFX_HW_JSL,
-                                                                    MFX_HW_TGL, MFX_HW_DG1, MFX_HW_ATS }; // Platforms where refactored HEVCe used on Windows
+                                                                    MFX_HW_TGL, MFX_HW_DG1, MFX_HW_ATS, MFX_HW_DG2}; // Platforms where refactored HEVCe used on Windows
 #else
     static HWType platforms_with_refactored_hevce[] = { MFX_HW_SKL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_APL,
                                                                     MFX_HW_ICL, MFX_HW_LKF, MFX_HW_JSL}; // Platforms where refactored HEVCe used on Linux
