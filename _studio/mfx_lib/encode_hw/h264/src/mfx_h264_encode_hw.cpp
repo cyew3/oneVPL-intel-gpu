@@ -1037,8 +1037,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
             return MFX_WRN_PARTIAL_ACCELERATION;
     }
 
-
-
     if (IsOn(extOpt2.EnableMAD))
     {
         ENCODE_ENC_CTRL_CAPS c_caps = {};
@@ -1171,13 +1169,11 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     MFX_CHECK_STS(sts);
 
     m_recFrameOrder.resize(request.NumFrameMin, 0xffffffff);
-
     m_recNonRef[0] = m_recNonRef[1] = 0xffffffff;
 
 #if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
     if (mfxExtPartialBitstreamParam const * bo = GetExtBuffer(*par)) //need to check original par, because m_video always contains all buffers
     {
-
         //check for bitstream patching
         bool needIntermediateBitstreamBuffer =
             m_video.calcParam.numTemporalLayer > 0 || (m_video.mfx.NumRefFrame & 1);
@@ -1214,11 +1210,11 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
         MFX_CHECK((bo->Granularity >= MFX_PARTIAL_BITSTREAM_NONE && bo->Granularity <= MFX_PARTIAL_BITSTREAM_ANY), MFX_ERR_INVALID_VIDEO_PARAM);
 
-        if(m_modePOut == MFX_PARTIAL_BITSTREAM_NONE ||
+        if (m_modePOut == MFX_PARTIAL_BITSTREAM_NONE ||
             (m_modePOut == MFX_PARTIAL_BITSTREAM_SLICE && par->mfx.NumSlice < 2)) { //No sense to use PO for 1 slice
             m_isPOut = false;
         }
-        else if(m_modePOut == MFX_PARTIAL_BITSTREAM_BLOCK) {
+        else if (m_modePOut == MFX_PARTIAL_BITSTREAM_BLOCK) {
             MFX_CHECK((bo->BlockSize != 0), MFX_ERR_INVALID_VIDEO_PARAM);
             m_blockPOut = bo->BlockSize;
         }
@@ -4821,7 +4817,6 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     if (task.m_fieldPicFlag)
         task.m_bs->FrameType = mfxU16(task.m_bs->FrameType | ((task.m_type[!task.GetFirstField()]& ~MFX_FRAMETYPE_KEYPIC) << 8));
 
-
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (m_video.Protected != 0 && !task.m_notProtected)
     {
@@ -4839,7 +4834,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     if(!m_isPOut) {
 #endif
         m_hrd.RemoveAccessUnit(
-            task.m_bs->DataLength - initialDataLength,
+            dataLength - initialDataLength,
             task.m_fieldPicFlag,
             (task.m_type[fid] & MFX_FRAMETYPE_IDR) != 0);
 #if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)

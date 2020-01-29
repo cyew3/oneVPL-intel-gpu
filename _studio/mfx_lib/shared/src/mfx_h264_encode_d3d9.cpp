@@ -294,14 +294,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     pps.transform_8x8_mode_flag                 = extPps->transform8x8ModeFlag;
     pps.pic_scaling_matrix_present_flag         = extPps->picScalingMatrixPresentFlag;
     pps.pic_scaling_list_present_flag           = extPps->picScalingMatrixPresentFlag;
-#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
-    mfxExtPartialBitstreamParam const * extPBP  = GetExtBuffer(par);
-    // Override the BRC precision to 1 (two pass BRC in case of IPCM) when PartialOuput is enabled
-    // Assuming the bitrate / QP will be selected so IPCM's will be not required, this result in single-pass BRC
-    pps.BRCPrecision                            = (extPBP->Granularity == MFX_PARTIAL_BITSTREAM_NONE) ? extDdi->BRCPrecision : 1;
-#else
     pps.BRCPrecision                            = extDdi->BRCPrecision;
-#endif
     pps.BRCMaxQp                                = 0;
     pps.BRCMinQp                                = 0;
     pps.SliceSizeInBytes                        = extOpt2.MaxSliceSize;

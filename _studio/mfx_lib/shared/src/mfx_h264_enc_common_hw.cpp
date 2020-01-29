@@ -6276,6 +6276,13 @@ void MfxHwH264Encode::SetDefaults(
     if (extDdi->StrengthN == 0)
         extDdi->StrengthN = 220;
 
+#if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
+    mfxExtPartialBitstreamParam const * extPBP = GetExtBuffer(par);
+    // Override the BRC precision to 1 (two pass BRC in case of IPCM) when PartialOuput is requested
+    if (extPBP->Granularity != MFX_PARTIAL_BITSTREAM_NONE)
+        extDdi->BRCPrecision = 1;
+#endif
+
     if (par.mfx.NumRefFrame == 0)
     {
         mfxU16 const nrfMin             = (par.mfx.GopRefDist > 1 ? 2 : 1);
