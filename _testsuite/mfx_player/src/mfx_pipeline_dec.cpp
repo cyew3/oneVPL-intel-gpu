@@ -461,7 +461,7 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
 
     //cmd line params should be modified for par file
     mfxInfoVPP &rInfo = m_components[eVPP].m_params.vpp;
-    m_inParams.nPicStruct = Convert_MFXPS_to_CmdPS( m_inParams.bUseVPP ? rInfo.Out.PicStruct:m_components[eDEC].m_params.mfx.FrameInfo.PicStruct
+    m_inParams.nPicStruct = Convert_MFXPS_to_CmdPS( m_inParams.bUseVPP ? rInfo.Out.PicStruct : m_components[eDEC].m_params.mfx.FrameInfo.PicStruct
         , m_inParams.bUseVPP ? m_components[eVPP].m_extCO : m_components[eDEC].m_extCO );
 
 
@@ -1863,7 +1863,13 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = dec_info.ChromaFormat;
     }
 
-    if ( NOT_ASSIGNED_VALUE != m_inParams.InputPicstruct )
+    //set value for PicStruct from -dec:picstruct option
+    if (m_components[eDEC].m_bOverPS)
+    {
+        m_components[eDEC].m_params.mfx.FrameInfo.PicStruct = m_components[eDEC].m_nOverPS;
+    }
+    //set value for PicStruct from -i:picstruct option
+    else if ( NOT_ASSIGNED_VALUE != m_inParams.InputPicstruct)
     {
         m_components[eDEC].m_params.mfx.FrameInfo.PicStruct = m_inParams.InputPicstruct;
     }
