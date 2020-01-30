@@ -1221,7 +1221,9 @@ mfxStatus CDecodingPipeline::AllocFrames()
         nSurfNum = Request.NumFrameSuggested + VppRequest[0].NumFrameSuggested - m_mfxVideoParams.AsyncDepth + 1;
 
         // The number of surfaces for vpp output
-        nVppSurfNum = VppRequest[1].NumFrameSuggested;
+        // Need to add one more surface in render mode if AsyncDepth == 1
+        nVppSurfNum = VppRequest[1].NumFrameSuggested +
+                      (m_eWorkMode == MODE_RENDERING ? m_mfxVideoParams.AsyncDepth == 1 : 0);
 
         // prepare allocation request
         Request.NumFrameSuggested = Request.NumFrameMin = nSurfNum;
