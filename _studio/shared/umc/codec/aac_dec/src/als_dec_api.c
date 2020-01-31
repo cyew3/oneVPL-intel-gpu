@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2018 Intel Corporation
+// Copyright (c) 2007-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -874,7 +874,7 @@ AACStatus alsdecGetFrame(Ipp8u    *inPointer,
       } else {
         for (i = 0; i < num; i++) {
           Ipp32s tmp = *srcPrt;
-          *tmpPtr = (Ipp16s)((tmp << 8) || ((tmp >> 8) & 0xff));
+          *tmpPtr = (Ipp16s)((tmp << 8) | ((tmp >> 8) & 0xff));
           tmpPtr += state->numChannels;
           srcPrt++;
         }

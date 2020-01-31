@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -472,8 +472,8 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (!(out->vpp.In.FrameRateExtN * out->vpp.In.FrameRateExtD) &&
-            (out->vpp.In.FrameRateExtN + out->vpp.In.FrameRateExtD))
+        if ((out->vpp.In.FrameRateExtN * out->vpp.In.FrameRateExtD == 0) &&
+            (out->vpp.In.FrameRateExtN + out->vpp.In.FrameRateExtD != 0))
         {
             out->vpp.In.FrameRateExtN = 0;
             out->vpp.In.FrameRateExtD = 0;
@@ -546,8 +546,8 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (!(out->vpp.Out.FrameRateExtN * out->vpp.Out.FrameRateExtD) &&
-            (out->vpp.Out.FrameRateExtN + out->vpp.Out.FrameRateExtD))
+        if ((out->vpp.Out.FrameRateExtN * out->vpp.Out.FrameRateExtD == 0) &&
+            (out->vpp.Out.FrameRateExtN + out->vpp.Out.FrameRateExtD != 0))
         {
             out->vpp.Out.FrameRateExtN = 0;
             out->vpp.Out.FrameRateExtD = 0;
