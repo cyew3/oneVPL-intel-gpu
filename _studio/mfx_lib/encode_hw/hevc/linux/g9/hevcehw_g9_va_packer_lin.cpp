@@ -49,7 +49,7 @@ void VAPacker::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             + (64 >> 4) * (!bGen9);
 
         caps.BRCReset                   = 1; // no bitrate resolution control
-        caps.BlockSize                  = 2;
+        caps.BlockSize                  = (platform >= MFX_HW_TGL_LP) ? 1 : 2;
         caps.UserMaxFrameSizeSupport    = 1;
         caps.MbQpDataSupport            = 1;
         caps.TUSupport                  = 73;
@@ -350,15 +350,16 @@ void AddVaMiscQualityParams(
     quality_param.PanicModeDisable = IsOff(CO3.BRCPanicMode);
 }
 
-void CUQPMap::Init (mfxU32 picWidthInLumaSamples, mfxU32 picHeightInLumaSamples)
+void CUQPMap::Init (mfxU32 picWidthInLumaSamples, mfxU32 picHeightInLumaSamples, mfxU32 blockSize)
 {
-    //16x32 only: driver limitation
-    m_width        = (picWidthInLumaSamples  + 31) / 32;
-    m_height       = (picHeightInLumaSamples + 31) / 32;
+    //16 or 32 : driver limitation
+    mfxU32 blkSz   = 8 << blockSize;
+    m_width        = (picWidthInLumaSamples  + blkSz - 1) / blkSz;
+    m_height       = (picHeightInLumaSamples + blkSz - 1) / blkSz;
     m_pitch        = mfx::align2_value(m_width, 64);
     m_h_aligned    = mfx::align2_value(m_height, 4);
-    m_block_width  = 32;
-    m_block_height = 32;
+    m_block_width  = blkSz;
+    m_block_height = blkSz;
     m_buffer.resize(m_pitch * m_h_aligned);
     std::fill(m_buffer.begin(), m_buffer.end(), mfxI8(0));
 }
@@ -374,7 +375,9 @@ static bool FillCUQPDataVA(
         cuqpMap.m_width
         && cuqpMap.m_height
         && cuqpMap.m_block_width
-        && cuqpMap.m_block_height;
+        && cuqpMap.m_block_height
+        && cuqpMap.m_pitch
+        && cuqpMap.m_h_aligned;
 
     if (!bInitialized)
         return false;
@@ -382,8 +385,8 @@ static bool FillCUQPDataVA(
     const mfxExtHEVCParam & HEVCParam = ExtBuffer::Get(par);
 
     mfxU32 drBlkW = cuqpMap.m_block_width;  // block size of driver
-    mfxU32 drBlkH = cuqpMap.m_block_height;  // block size of driver
-    mfxU16 inBlkSize = 16;                    //mbqp->BlockSize ? mbqp->BlockSize : 16;  //input block size
+    mfxU32 drBlkH = cuqpMap.m_block_height; // block size of driver
+    mfxU16 inBlkSize = 16; //mbqp->BlockSize ? mbqp->BlockSize : 16;  //input block size
 
     mfxU32 inputW = CeilDiv(HEVCParam.PicWidthInLumaSamples, inBlkSize);
     mfxU32 inputH = CeilDiv(HEVCParam.PicHeightInLumaSamples, inBlkSize);
@@ -392,15 +395,13 @@ static bool FillCUQPDataVA(
     if (bInvalid)
         return false;
 
-    for (mfxU32 i = 0; i < cuqpMap.m_height; i++)
+    // Fill all LCU blocks: HW hevc averages QP
+    for (mfxU32 i = 0; i < cuqpMap.m_h_aligned; i++)
     {
-        for (mfxU32 j = 0; j < cuqpMap.m_width; j++)
+        for (mfxU32 j = 0; j < cuqpMap.m_pitch; j++)
         {
-            mfxU32 y = i * drBlkH / inBlkSize;
-            mfxU32 x = j * drBlkW / inBlkSize;
-
-            y = (y < inputH) ? y : inputH;
-            x = (x < inputW) ? x : inputW;
+            mfxU32 y = std::min(i * drBlkH/inBlkSize, inputH - 1);
+            mfxU32 x = std::min(j * drBlkW/inBlkSize, inputW - 1);
 
             cuqpMap.m_buffer[i * cuqpMap.m_pitch + j] = mbqp->QP[y * inputW + x];
         }
@@ -450,7 +451,8 @@ void VAPacker::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         if (IsOn(CO3.EnableMBQP))
         {
             const mfxExtHEVCParam& HEVCPar = ExtBuffer::Get(par);
-            m_qpMap.Init(HEVCPar.PicWidthInLumaSamples, HEVCPar.PicHeightInLumaSamples);
+            const auto& caps = Glob::EncodeCaps::Get(strg);
+            m_qpMap.Init(HEVCPar.PicWidthInLumaSamples, HEVCPar.PicHeightInLumaSamples, caps.BlockSize);
         }
 
         auto MidToVA = [&core](mfxMemId mid)

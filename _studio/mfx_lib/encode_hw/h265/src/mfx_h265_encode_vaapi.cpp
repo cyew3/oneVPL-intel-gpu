@@ -1459,7 +1459,8 @@ bool FillCUQPDataVA(Task const & task, MfxVideoParam &par, CUQPMap& cuqpMap)
 #endif
 
     if (cuqpMap.m_width == 0 || cuqpMap.m_height == 0 ||
-        cuqpMap.m_block_width == 0 || cuqpMap.m_block_height == 0)
+        cuqpMap.m_block_width == 0 || cuqpMap.m_block_height == 0 ||
+        cuqpMap.m_pitch == 0 || cuqpMap.m_h_aligned == 0)
     return false;
 
     mfxU32 drBlkW = cuqpMap.m_block_width;  // block size of driver
@@ -1475,7 +1476,7 @@ bool FillCUQPDataVA(Task const & task, MfxVideoParam &par, CUQPMap& cuqpMap)
         {
             return  false;
         }
-        // Fill complete buffer, because of LCU based averaging
+        // Fill all LCU blocks: HW hevc averages QP
         for (mfxU32 i = 0; i < cuqpMap.m_h_aligned; i++)
         {
             for (mfxU32 j = 0; j < cuqpMap.m_pitch; j++)
