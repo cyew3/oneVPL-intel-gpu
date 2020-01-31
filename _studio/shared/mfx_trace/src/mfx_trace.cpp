@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2019 Intel Corporation
+// Copyright (c) 2010-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -79,7 +79,8 @@ typedef mfxTraceU32 (*MFXTrace_BeginTaskFn)(mfxTraceStaticHandle *static_handle,
                                        const char *file_name, mfxTraceU32 line_num,
                                        const char *function_name,
                                        mfxTraceChar* category, mfxTraceLevel level,
-                                       const char *task_name, mfxTraceTaskHandle *task_handle,
+                                       const char *task_name, const mfxTraceTaskType task_type,
+                                       mfxTraceTaskHandle *task_handle,
                                        const void *task_params);
 
 typedef mfxTraceU32 (*MFXTrace_EndTaskFn)(mfxTraceStaticHandle *static_handle,
@@ -503,7 +504,8 @@ mfxTraceU32 MFXTrace_BeginTask(mfxTraceStaticHandle *static_handle,
                           const char *file_name, mfxTraceU32 line_num,
                           const char *function_name,
                           mfxTraceChar* category, mfxTraceLevel level,
-                          const char *task_name, mfxTraceTaskHandle *task_handle,
+                          const char *task_name, const mfxTraceTaskType task_type,
+                          mfxTraceTaskHandle *task_handle,
                           const void *task_params)
 {
     // store category and level to check for MFXTrace_IsPrintableCategoryAndLevel in MFXTrace_EndTask
@@ -526,7 +528,8 @@ mfxTraceU32 MFXTrace_BeginTask(mfxTraceStaticHandle *static_handle,
                                                      file_name, line_num,
                                                      function_name,
                                                      category, level,
-                                                     task_name, task_handle, task_params);
+                                                     task_name, task_type,
+                                                     task_handle, task_params);
             if (!sts && res) sts = res;
         }
     }
@@ -588,6 +591,7 @@ MFXTraceTask::MFXTraceTask(mfxTraceStaticHandle *static_handle,
                  const char *function_name,
                  mfxTraceChar* category, mfxTraceLevel level,
                  const char *task_name,
+                 const mfxTraceTaskType task_type,
                  const bool bCreateID)
 {
     mfxTraceU32 sts;
@@ -598,7 +602,7 @@ MFXTraceTask::MFXTraceTask(mfxTraceStaticHandle *static_handle,
                        file_name, line_num,
                        function_name,
                        category, level,
-                       task_name,
+                       task_name, task_type,
                        &m_TraceTaskHandle,
                        (bCreateID) ? &m_TaskID : 0);
     m_bStarted = (sts == 0);

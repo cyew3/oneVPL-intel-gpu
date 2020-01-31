@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2019 Intel Corporation
+// Copyright (c) 2010-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -83,6 +83,37 @@ extern "C"
 {
 #endif
 
+// this is driven by ETW
+enum mfxTraceTaskType
+{
+    MFX_TRACE_DEFAULT_TASK = 0,
+    MFX_TRACE_API_DECODE_QUERY_TASK,
+    MFX_TRACE_API_DECODE_QUERY_IOSURF_TASK,
+    MFX_TRACE_API_DECODE_HEADER_TASK,
+    MFX_TRACE_API_DECODE_INIT_TASK,
+    MFX_TRACE_API_DECODE_CLOSE_TASK,
+    MFX_TRACE_API_DECODE_FRAME_ASYNC_TASK,
+    MFX_TRACE_API_ENCODE_QUERY_TASK,
+    MFX_TRACE_API_ENCODE_QUERY_IOSURF_TASK,
+    MFX_TRACE_API_ENCODE_INIT_TASK,
+    MFX_TRACE_API_ENCODE_CLOSE_TASK,
+    MFX_TRACE_API_ENCODE_FRAME_ASYNC_TASK,
+    MFX_TRACE_API_VPP_QUERY_TASK,
+    MFX_TRACE_API_VPP_QUERY_IOSURF_TASK,
+    MFX_TRACE_API_VPP_INIT_TASK,
+    MFX_TRACE_API_VPP_CLOSE_TASK,
+    MFX_TRACE_API_VPP_LEGACY_ROUTINE_TASK,
+    MFX_TRACE_API_VPP_RUN_FRAME_VPP_ASYNC_TASK,
+    MFX_TRACE_API_VPP_RUN_FRAME_VPP_ASYNC_EX_TASK,
+    MFX_TRACE_API_MFX_INIT_EX_TASK,
+    MFX_TRACE_API_MFX_CLOSE_TASK,
+    MFX_TRACE_API_DO_WORK_TASK,
+    MFX_TRACE_API_SYNC_OPERATION_TASK,
+    MFX_TRACE_HOTSPOT_SCHED_WAIT_GLOBAL_EVENT_TASK,
+    MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK,
+    MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK,
+};
+
 // list of output modes
 enum
 {
@@ -125,7 +156,6 @@ typedef enum
 
 
 // TODO delete the following levels completely
-#define MFX_TRACE_LEVEL_INTERNAL_VTUNE  MFX_TRACE_LEVEL_2
 #define MFX_TRACE_LEVEL_SCHED       MFX_TRACE_LEVEL_10
 #define MFX_TRACE_LEVEL_PRIVATE     MFX_TRACE_LEVEL_16
 
@@ -140,12 +170,12 @@ typedef enum
 /** HOTSPOTS level
  * - Known Media SDK library internal hotspots (functions taking > ~50us on selected platforms/contents)
  */
-#define MFX_TRACE_LEVEL_HOTSPOTS    MFX_TRACE_LEVEL_INTERNAL_VTUNE  // TODO should be MFX_TRACE_LEVEL_2
+#define MFX_TRACE_LEVEL_HOTSPOTS    MFX_TRACE_LEVEL_2
 
 /** EXTCALL level
  * - Calls to external libaries (DXVA, LibVA, MDF/CM, etc.)
  */
-#define MFX_TRACE_LEVEL_EXTCALL     MFX_TRACE_LEVEL_INTERNAL_VTUNE  // TODO should be MFX_TRACE_LEVEL_3
+#define MFX_TRACE_LEVEL_EXTCALL     MFX_TRACE_LEVEL_2 // TODO should be MFX_TRACE_LEVEL_3
 
 /** SCHEDULER level
  * - Media SDK internal scheduler functions calls
@@ -224,12 +254,12 @@ typedef struct
     // reserved for ETW:
     mfxTraceHandle etw1;
     mfxTraceHandle etw2;
+    mfxTraceHandle etw3;
     // reserved for itt
     mfxTraceHandle itt1;
 } mfxTraceTaskHandle;
 
 /*------------------------------------------------------------------------------*/
-
 
 // basic trace functions (macroses are recommended to use instead)
 
@@ -258,13 +288,15 @@ mfxTraceU32 MFXTrace_BeginTask(mfxTraceStaticHandle *static_handle,
                           const char *file_name, mfxTraceU32 line_num,
                           const char *function_name,
                           mfxTraceChar* category, mfxTraceLevel level,
-                          const char *task_name, mfxTraceTaskHandle *task_handle,
+                          const char *task_name, const mfxTraceTaskType task_type,
+                          mfxTraceTaskHandle *task_handle,
                           const void *task_params);
 
 mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
                              mfxTraceTaskHandle *task_handle);
 
 /*------------------------------------------------------------------------------*/
+
 // basic macroses
 
 #define MFX_TRACE_PARAMS \
@@ -430,6 +462,7 @@ public:
                  const char *function_name,
                  mfxTraceChar* category, mfxTraceLevel level,
                  const char *task_name,
+                 const mfxTraceTaskType task_type,
                  const bool bCreateID = false);
     mfxTraceU32 GetID();
     void        Stop();
@@ -447,38 +480,103 @@ private:
 // auto tracing of the functions
 
 #ifdef MFX_TRACE_ENABLE
-    #define _MFX_AUTO_LTRACE_(_level, _task_name, _bCreateID)       \
+    #define _MFX_AUTO_LTRACE_(_level, _task_name, _task_type, _bCreateID)       \
         DISABLE_WARN_HIDE_PREV_LOCAL_DECLARATION                    \
         static mfxTraceStaticHandle _trace_static_handle;           \
-        MFXTraceTask                _mfx_trace_task(MFX_TRACE_PARAMS, _level, _task_name, _bCreateID); \
+        MFXTraceTask                _mfx_trace_task(MFX_TRACE_PARAMS, _level, _task_name, _task_type, _bCreateID); \
         ROLLBACK_WARN_HIDE_PREV_LOCAL_DECLARATION
 
     #define MFX_AUTO_TRACE_STOP()   _mfx_trace_task.Stop()
     #define MFX_AUTO_TRACE_GETID()  _mfx_trace_task.GetID()
 #else
-    #define _MFX_AUTO_LTRACE_(_level, _task_name, _bCreateID)
+    #define _MFX_AUTO_LTRACE_(_level, _task_name, _task_type, _bCreateID)
     #define MFX_AUTO_TRACE_STOP()
     #define MFX_AUTO_TRACE_GETID()  0
 #endif
 
 #define MFX_AUTO_LTRACE(_level, _task_name)     \
-    _MFX_AUTO_LTRACE_(_level, _task_name, false)
+    _MFX_AUTO_LTRACE_(_level, _task_name, MFX_TRACE_DEFAULT_TASK, false)
 
 #define MFX_AUTO_TRACE(_task_name) \
-    _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, _task_name, false)
+    _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, _task_name, MFX_TRACE_DEFAULT_TASK, false)
 
 #define MFX_AUTO_TRACE_FUNC() \
-    _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, __FUNCTION__, false)
+    _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, __FUNCTION__, MFX_TRACE_DEFAULT_TASK, false)
 
 #define MFX_AUTO_LTRACE_FUNC(_level) \
-    _MFX_AUTO_LTRACE_(_level, __FUNCTION__, false)
+    _MFX_AUTO_LTRACE_(_level, __FUNCTION__, MFX_TRACE_DEFAULT_TASK, false)
 
 #define MFX_AUTO_LTRACE_WITHID(_level, _task_name)     \
-    _MFX_AUTO_LTRACE_(_level, _task_name, true)
+    _MFX_AUTO_LTRACE_(_level, _task_name, MFX_TRACE_DEFAULT_TASK, true)
 
 #define MFX_AUTO_TRACE_WITHID(_task_name) \
-    _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, _task_name, true)
+    _MFX_AUTO_LTRACE_(MFX_TRACE_LEVEL, _task_name, MFX_TRACE_DEFAULT_TASK, true)
+
+#define MFX_AUTO_TRACE_FUNCTYPE(_task_type) \
+    _MFX_AUTO_LTRACE_(TraceTaskType2TraceLevel<_task_type>::value, __FUNCTION__, _task_type, false)
+
+#define MFX_AUTO_TRACE_TYPE(_task_name, _task_type) \
+    _MFX_AUTO_LTRACE_(TraceTaskType2TraceLevel<_task_type>::value, _task_name, _task_type, false)
+
+#define MFX_AUTO_TRACE_FUNCTYPE_WITHID(_task_type) \
+    _MFX_AUTO_LTRACE_(TraceTaskType2TraceLevel<_task_type>::value, __FUNCTION__, _task_type, true)
 
 #endif // ifdef __cplusplus
+
+template <int TYPE>
+struct TraceTaskType2TraceLevel;
+
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_DEFAULT_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_DECODE_QUERY_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_DECODE_QUERY_IOSURF_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_DECODE_HEADER_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_DECODE_INIT_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_DECODE_CLOSE_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_DECODE_FRAME_ASYNC_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_ENCODE_QUERY_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_ENCODE_QUERY_IOSURF_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_ENCODE_INIT_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_ENCODE_CLOSE_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_ENCODE_FRAME_ASYNC_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_VPP_QUERY_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_VPP_QUERY_IOSURF_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_VPP_INIT_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_VPP_CLOSE_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_VPP_LEGACY_ROUTINE_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_VPP_RUN_FRAME_VPP_ASYNC_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_VPP_RUN_FRAME_VPP_ASYNC_EX_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_MFX_INIT_EX_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_MFX_CLOSE_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_DO_WORK_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_API_SYNC_OPERATION_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_API> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_SCHED_WAIT_GLOBAL_EVENT_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_HOTSPOTS> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_HOTSPOTS> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_HOTSPOTS> {};
 
 #endif // #ifndef __MFX_TRACE_H__

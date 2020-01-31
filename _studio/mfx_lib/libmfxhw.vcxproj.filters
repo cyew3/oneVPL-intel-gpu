@@ -309,5 +309,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="libmfxhw.rc" />
+    <ResourceCompile Include="$(MfxRootOutDir)lib\media_sdk_etw.rc" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -182,7 +182,7 @@ mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     }
 #endif
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_DECODE_QUERY_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
 
     mfxStatus mfxRes;
@@ -275,7 +275,7 @@ mfxStatus MFXVideoDECODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
     MFX_CHECK(request, MFX_ERR_NULL_PTR);
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_DECODE_QUERY_IOSURF_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
     mfxStatus mfxRes;
@@ -367,7 +367,7 @@ mfxStatus MFXVideoDECODE_DecodeHeader(mfxSession session, mfxBitstream *bs, mfxV
     MFX_CHECK(bs, MFX_ERR_NULL_PTR);
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_DECODE_FRAME_ASYNC_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, bs);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
@@ -453,7 +453,7 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
 {
     mfxStatus mfxRes;
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_DECODE_INIT_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
@@ -487,7 +487,7 @@ mfxStatus MFXVideoDECODE_Close(mfxSession session)
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_DECODE_CLOSE_TASK);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
@@ -524,11 +524,9 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
 {
     mfxStatus mfxRes;
 
-#ifdef MFX_TRACE_ENABLE
-    MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_API, "MFX_DecodeFrameAsync");
+    MFX_AUTO_TRACE_FUNCTYPE_WITHID(MFX_TRACE_API_DECODE_FRAME_ASYNC_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, bs);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, surface_work);
-#endif
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);

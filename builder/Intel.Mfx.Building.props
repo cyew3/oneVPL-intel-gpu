@@ -53,6 +53,7 @@
   <ItemDefinitionGroup>
     <PreBuildEvent>
       <Command Condition="'$(MfxPreBuildEvent)'!=''">$(MfxPreBuildEvent)</Command>
+      <Message Condition="'$(MfxPreBuildEventMessage)'!=''">$(MfxPreBuildEventMessage)</Message>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command Condition="'$(MfxPostBuildEvent)'!=''">$(MfxPostBuildEvent)</Command>

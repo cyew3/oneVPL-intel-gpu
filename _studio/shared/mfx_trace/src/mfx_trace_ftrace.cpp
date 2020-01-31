@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 Intel Corporation
+// Copyright (c) 2015-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -156,9 +156,6 @@ mfxTraceU32 MFXTraceFtrace_vDebugMessage(mfxTraceStaticHandle* //static_handle
     (void)function_name;
 
     if (trace_handle == -1) return 1;
-    
-    if (MFX_TRACE_LEVEL_INTERNAL_VTUNE != level)
-        return 0;
 
     size_t len = MFX_TRACE_MAX_LINE_LENGTH;
     char str[MFX_TRACE_MAX_LINE_LENGTH] = {0}, *p_str = str;
@@ -218,26 +215,18 @@ mfxTraceU32 MFXTraceFtrace_vDebugMessage(mfxTraceStaticHandle* //static_handle
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceFtrace_BeginTask(mfxTraceStaticHandle *static_handle
+mfxTraceU32 MFXTraceFtrace_BeginTask(mfxTraceStaticHandle *//static_handle
     , const char * //file_name
     , mfxTraceU32 //line_num
     , const char * //function_name
     , mfxTraceChar* //category
-    , mfxTraceLevel level
-    , const char * task_name
-    , mfxTraceTaskHandle *handle
+    , mfxTraceLevel //level
+    , const char * //task_name
+    , const mfxTraceTaskType //task_type
+    , mfxTraceTaskHandle *//handle
     , const void * /*task_params*/)
 {
-    (void)static_handle;
-    (void)task_name;
-    (void)handle;
-
     if (trace_handle == -1) return 1;
-
-    if (MFX_TRACE_LEVEL_INTERNAL_VTUNE == level)
-    {
-        // TODO: ...
-    }
 
     return 0;
 }

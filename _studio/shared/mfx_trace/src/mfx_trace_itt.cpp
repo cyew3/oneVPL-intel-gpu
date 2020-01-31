@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -114,13 +114,15 @@ mfxTraceU32 MFXTraceITT_BeginTask(mfxTraceStaticHandle *static_handle
                                 ,mfxTraceChar* //category
                                 ,mfxTraceLevel level
                                 ,const char * task_name
+                                ,const mfxTraceTaskType //task_type
                                 ,mfxTraceTaskHandle *handle
                                 ,const void * /*task_params*/)
 {
     if (!static_handle || !handle) return 1;
 
     if (MFX_TRACE_LEVEL_API == level ||
-        MFX_TRACE_LEVEL_INTERNAL_VTUNE == level)
+        MFX_TRACE_LEVEL_HOTSPOTS == level ||
+        MFX_TRACE_LEVEL_EXTCALL == level)
     {
         // cache string handle across task instances
         if (NULL == static_handle->itt1.ptr)

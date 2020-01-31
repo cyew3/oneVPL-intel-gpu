@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -175,7 +175,10 @@ void mfxSchedulerCore::WakeupThreadProc()
     {
         vm_status vmRes;
 
-        vmRes = vm_event_timed_wait(&m_hwTaskDone, m_timer_hw_event);
+        {
+            MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_HOTSPOT_SCHED_WAIT_GLOBAL_EVENT_TASK);
+            vmRes = vm_event_timed_wait(&m_hwTaskDone, m_timer_hw_event);
+        }
 
         // HW event is signaled. Reset all HW waiting tasks.
         if (VM_OK == vmRes||

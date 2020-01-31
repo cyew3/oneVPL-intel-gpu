@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,68 +44,100 @@ mfxTraceU32 MFXTraceETW_SetLevel(mfxTraceChar*, mfxTraceLevel)
     return 0;
 }
 
-mfxTraceU32 MFXTraceETW_DebugMessage(mfxTraceStaticHandle* ,
-                                 const char *, mfxTraceU32 ,
-                                 const char *,
-                                 mfxTraceChar* , mfxTraceLevel ,
-                                 const char *, const char *, ...)
+mfxTraceU32 MFXTraceETW_DebugMessage(mfxTraceStaticHandle*,
+    const char *, mfxTraceU32,
+    const char *,
+    mfxTraceChar*, mfxTraceLevel,
+    const char *, const char *, ...)
 {
     return 0;
 }
 
 mfxTraceU32 MFXTraceETW_vDebugMessage(mfxTraceStaticHandle* /*handle*/,
-                                 const char* /*file_name*/, mfxTraceU32 ,
-                                 const char* /*function_name*/,
-                                 mfxTraceChar* /*category*/, mfxTraceLevel,
-                                 const char*,
-                                 const char*, va_list)
-{
-    return 0;
-}
-
-mfxTraceU32 MFXTraceETW_SendNamedEvent(mfxTraceStaticHandle *,
-                                  mfxTraceTaskHandle *,
-                                  UCHAR,
-                                  const mfxTraceU32 *)
+    const char* /*file_name*/, mfxTraceU32,
+    const char* /*function_name*/,
+    mfxTraceChar* /*category*/, mfxTraceLevel,
+    const char*,
+    const char*, va_list)
 {
     return 0;
 }
 
 mfxTraceU32 MFXTraceETW_BeginTask(mfxTraceStaticHandle *,
-                             const char * /*file_name*/, mfxTraceU32,
-                             const char *,
-                             mfxTraceChar* /*category*/, mfxTraceLevel /*level*/,
-                             const char *, mfxTraceTaskHandle*,
-                             const void *)
+    const char * /*file_name*/, mfxTraceU32,
+    const char *,
+    mfxTraceChar* /*category*/, mfxTraceLevel /*level*/,
+    const char *, const mfxTraceTaskType /*task_type*/,
+    mfxTraceTaskHandle*, const void *)
 {
     return 0;
 }
 
 mfxTraceU32 MFXTraceETW_EndTask(mfxTraceStaticHandle *,
-                           mfxTraceTaskHandle*)
+    mfxTraceTaskHandle*)
 {
     return 0;
 }
 
 #else
 
+#include <stdio.h>
+#include <math.h>
+#include <evntprov.h>
+#include <evntrace.h>
+
+// This header is an on fly generated file
+// Windows Message Compiler generates it from manifest file during mfx_trace build
+#include "media_sdk_etw.h"
 #include "mfx_trace_utils.h"
 #include "mfx_trace_etw.h"
 
-#include <stdio.h>
-#include <math.h>
-
-//#include "mfx_evntprov.h"
-#include <evntprov.h>
-
 /*------------------------------------------------------------------------------*/
-
+// {2D6B112A-D21C-4A40-9BF2-A3EDF212F624}
 static const GUID MFX_TRACE_ETW_GUID =
-    {0x2D6B112A, 0xD21C, 0x4a40, 0x9B, 0xF2, 0xA3, 0xED, 0xF2, 0x12, 0xF6, 0x24};
+    {0x2d6b112a, 0xd21C, 0x4a40, { 0x9b, 0xf2, 0xa3, 0xed, 0xf2, 0x12, 0xf6, 0x24 } };
 
 /*------------------------------------------------------------------------------*/
 
-static REGHANDLE g_EventRegistered = 0;
+#define MFX_2_ETW_TASK(MFXTASK) MFXTASK##_ETW
+
+#define ERROR_MSG "MFX trace task declared in agnostric mfx_trace.h doesn't match ETW task from an auto-generated header file compile from the manifest file!"
+
+#define CHECK_TYPE_MATCH(MFXTASK) \
+    static_assert(MFXTASK == MFX_2_ETW_TASK(MFXTASK), ERROR_MSG);
+
+static_assert(MFX_TRACE_DEFAULT_TASK == 0, ERROR_MSG);
+CHECK_TYPE_MATCH(MFX_TRACE_API_DECODE_QUERY_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_DECODE_QUERY_IOSURF_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_DECODE_HEADER_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_DECODE_INIT_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_DECODE_CLOSE_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_DECODE_FRAME_ASYNC_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_ENCODE_QUERY_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_ENCODE_QUERY_IOSURF_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_ENCODE_INIT_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_ENCODE_CLOSE_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_ENCODE_FRAME_ASYNC_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_VPP_QUERY_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_VPP_QUERY_IOSURF_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_VPP_INIT_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_VPP_CLOSE_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_VPP_LEGACY_ROUTINE_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_VPP_RUN_FRAME_VPP_ASYNC_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_VPP_RUN_FRAME_VPP_ASYNC_EX_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_MFX_INIT_EX_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_MFX_CLOSE_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_DO_WORK_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_API_SYNC_OPERATION_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_HOTSPOT_SCHED_WAIT_GLOBAL_EVENT_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK);
+CHECK_TYPE_MATCH(MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK);
+
+#undef MFX_2_ETW_TASK
+#undef ERROR_MSG
+#undef CHECK_TYPE
+
+/*------------------------------------------------------------------------------*/
 
 class mfxETWGlobalHandle
 {
@@ -117,35 +149,24 @@ public:
 
     void Close(void)
     {
-        if (g_EventRegistered)
-        {
-            EventUnregister(g_EventRegistered);
-            g_EventRegistered = 0;
-        }
+        EventUnregisterIntel_MediaSDK();
     };
 };
 
 static mfxETWGlobalHandle g_ETWGlobalHandle;
 
 /*------------------------------------------------------------------------------*/
-
 enum
 {
-    MPA_ETW_OPCODE_START         = 0x01, // Task start
-    MPA_ETW_OPCODE_STOP          = 0x02, // Task end
-    MPA_ETW_OPCODE_MESSAGE       = 0x03, // String message
-    MPA_ETW_OPCODE_RELATIONS     = 0x04, // Relations between tasks
-    MPA_ETW_OPCODE_SET_ID        = 0x05, // Set new id for further usage instead of string name
+    MPA_ETW_OPCODE_MESSAGE = 0x03, // String message
     MPA_ETW_OPCODE_PARAM_INTEGER = 0x10, // Param: int
-    MPA_ETW_OPCODE_PARAM_DOUBLE  = 0x11, // Param: double
+    MPA_ETW_OPCODE_PARAM_DOUBLE = 0x11, // Param: double
     MPA_ETW_OPCODE_PARAM_POINTER = 0x12, // Param: void*
-    MPA_ETW_OPCODE_PARAM_STRING  = 0x13, // Param: char*
-    MPA_ETW_OPCODE_BUFFER        = 0x14, // Param: buffer
-    MPA_ETW_OPCODE_NAMEID        = 0x80, // Bitmask with other opcodes. Name passed as ID instead of string.
+    MPA_ETW_OPCODE_PARAM_STRING = 0x13, // Param: char*
+    MPA_ETW_OPCODE_BUFFER = 0x14, // Param: buffer
 };
 
 /*------------------------------------------------------------------------------*/
-
 UINT32 MFXTraceETW_GetRegistryParams(void)
 {
     return 0;
@@ -155,11 +176,9 @@ UINT32 MFXTraceETW_GetRegistryParams(void)
 
 mfxTraceU32 MFXTraceETW_Init()
 {
+    if (IntelMediaSDK_Context.RegistrationHandle) return 0;
+
     TCHAR reg_filename[MAX_PATH];
-    mfxTraceU32 sts = 0;
-
-    if (g_EventRegistered) return 0; // initilized already
-
     reg_filename[0] = 0;
     mfx_trace_get_reg_string(HKEY_CURRENT_USER, MFX_TRACE_REG_PARAMS_PATH, _T("ETW"), reg_filename, sizeof(reg_filename));
     if (!reg_filename[0])
@@ -171,20 +190,7 @@ mfxTraceU32 MFXTraceETW_Init()
         return 1;
     }
 
-    //sts = MFXTraceETW_Close();
-
-    //if (!sts)
-    //{
-    //    sts = MFXTraceETW_GetRegistryParams();
-    //}
-    if (!sts)
-    {
-        if (ERROR_SUCCESS != EventRegister(&MFX_TRACE_ETW_GUID, NULL, NULL, &g_EventRegistered))
-        {
-            return 1;
-        }
-    }
-    return sts;
+    return ERROR_SUCCESS != EventRegisterIntel_MediaSDK() ? 1 : 0;
 }
 
 /*------------------------------------------------------------------------------*/
@@ -226,32 +232,32 @@ mfxTraceU32 MFXTraceETW_DebugMessage(mfxTraceStaticHandle* handle,
 /*------------------------------------------------------------------------------*/
 
 mfxTraceU32 MFXTraceETW_vDebugMessage(mfxTraceStaticHandle* /*handle*/,
-                                 const char* /*file_name*/, mfxTraceU32 line_num,
+                                 const char* /*file_name*/, mfxTraceU32 /*line_num*/,
                                  const char* /*function_name*/,
                                  mfxTraceChar* /*category*/, mfxTraceLevel level,
                                  const char* message,
                                  const char* format, va_list args)
 {
-    EVENT_DESCRIPTOR descriptor;
+    EVENT_DESCRIPTOR descriptor = {};
     EVENT_DATA_DESCRIPTOR data_descriptor[4];
     char format_UNK[MFX_TRACE_MAX_LINE_LENGTH] = {0};
     ULONG count = 0;
 
     if (!message) return 1;
 
-    memset(&descriptor, 0, sizeof(EVENT_DESCRIPTOR));
     descriptor.Level = (UCHAR)level;
-    descriptor.Task = (USHORT)line_num;
-    if (!EventEnabled(g_EventRegistered, &descriptor))
+    descriptor.Keyword = MFX_ETW_KEYWORD_NON_TYPED_EVENT;
+    if (!EventEnabled(Intel_MediaSDKHandle, &descriptor))
     {
-        // no ETW consumer
-        return 1;
+        return 0; // no ETW consumer for given GUID, Level, Keyword
     }
 
-    //memset(data_descriptor, 0, sizeof(data_descriptor));
+    // Purpose of this is to keep legacy code below (which actually doesn't match manifest based scheme) working
+    descriptor.Keyword = 0;
+
     EventDataDescCreate(&data_descriptor[count++], message, (ULONG)strlen(message) + 1);
 
-    if (format == NULL)
+    if (format == nullptr)
     {
         descriptor.Opcode = MPA_ETW_OPCODE_MESSAGE;
     } else if (message[0] == '^')
@@ -269,7 +275,8 @@ mfxTraceU32 MFXTraceETW_vDebugMessage(mfxTraceStaticHandle* /*handle*/,
             }
         }
     }
-    if (!descriptor.Opcode && format != NULL && format[0] == '%')
+
+    if (!descriptor.Opcode && format != nullptr && format[0] == '%')
     {
         if (format[2] == 0)
         {
@@ -314,9 +321,8 @@ mfxTraceU32 MFXTraceETW_vDebugMessage(mfxTraceStaticHandle* /*handle*/,
         EventDataDescCreate(&data_descriptor[count++], format_UNK, (ULONG)strlen(format_UNK) + 1);
     }
 
-    // send ETW event
     if (!count ||
-        (ERROR_SUCCESS != EventWrite(g_EventRegistered, &descriptor, count, data_descriptor)))
+        (ERROR_SUCCESS != EventWrite(Intel_MediaSDKHandle, &descriptor, count, data_descriptor)))
     {
         return 1;
     }
@@ -326,66 +332,58 @@ mfxTraceU32 MFXTraceETW_vDebugMessage(mfxTraceStaticHandle* /*handle*/,
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceETW_SendNamedEvent(mfxTraceStaticHandle *static_handle,
-                                  mfxTraceTaskHandle *handle,
-                                  UCHAR opcode,
-                                  const mfxTraceU32 *task_params = NULL)
+inline mfxTraceU32 MFXTraceETW_SendBeginEndEvent(USHORT task, UCHAR opcode, UCHAR level, const char * message)
 {
-    EVENT_DESCRIPTOR descriptor;
-    EVENT_DATA_DESCRIPTOR data_descriptor;
-    char* task_name = NULL;
-
-    if (!handle) return 1;
-
-    task_name = handle->etw1.str;
-    if (!task_name) return 1;
-
-    memset(&descriptor, 0, sizeof(EVENT_DESCRIPTOR));
-    memset(&data_descriptor, 0, sizeof(EVENT_DATA_DESCRIPTOR));
-
+    EVENT_DESCRIPTOR descriptor = {};
     descriptor.Opcode = opcode;
-    descriptor.Level = (static_handle) ? (UCHAR)static_handle->level : 0;
-    descriptor.Task = (USHORT)handle->etw2.uint32;
-    if (task_params)
-    {
-        descriptor.Id = 1;
-        descriptor.Keyword = *task_params;
-    }
+    descriptor.Level = level;
+    descriptor.Task = task;
+    descriptor.Keyword = task ? MFX_ETW_KEYWORD_TYPED_EVENT : MFX_ETW_KEYWORD_NON_TYPED_EVENT;
+    // VERY IMPORTANT !!!
+    // MANIFEST FILE SHALL FOLLOW THE SAME RULE DEFINING ID FOR EVENTS:
+    descriptor.Id = (descriptor.Task << 2) + descriptor.Opcode; // Since ONLY Info/Start/Stop opcodes are used
+                                                                // we reserve 2 lowest bits for opcode and the rest for task Id.
 
-    EventDataDescCreate(&data_descriptor, task_name, (ULONG)(strlen(task_name) + 1));
+    EVENT_DATA_DESCRIPTOR EventData[1];
+    EventDataDescCreate(&EventData[0],
+        (message != nullptr) ? message : "NULL",
+        (message != nullptr) ? (ULONG)((strlen(message) + 1) * sizeof(CHAR)) : (ULONG)sizeof("NULL"));
 
-    if (ERROR_SUCCESS != EventWrite(g_EventRegistered, &descriptor, 1, &data_descriptor))
-    {
-        return 1;
-    }
+    EventWrite(Intel_MediaSDKHandle, &descriptor, 1, EventData);
     return 0;
 }
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceETW_BeginTask(mfxTraceStaticHandle *static_handle,
-                             const char * /*file_name*/, mfxTraceU32 line_num,
-                             const char *function_name,
-                             mfxTraceChar* /*category*/, mfxTraceLevel /*level*/,
-                             const char *task_name, mfxTraceTaskHandle* task_handle,
-                             const void *task_params)
+mfxTraceU32 MFXTraceETW_BeginTask(mfxTraceStaticHandle * /*static_handle*/,
+                             const char * /*file_name*/, mfxTraceU32 /*line_num*/,
+                             const char * function_name,
+                             mfxTraceChar* /*category*/, mfxTraceLevel level,
+                             const char * task_name, const mfxTraceTaskType task_type,
+                             mfxTraceTaskHandle* task_handle, const void * /*task_params*/)
 {
     if (!task_handle) return 1;
+    auto function_or_task_name = ((task_name) ? task_name : function_name);
 
-    task_handle->etw1.str    = (char*)((task_name) ? task_name : function_name);
-    task_handle->etw2.uint32 = line_num;
-
-    return MFXTraceETW_SendNamedEvent(static_handle, task_handle, MPA_ETW_OPCODE_START, (const UINT32*)task_params);
+    task_handle->etw1.uint32 = task_type;
+    task_handle->etw2.uint32 = level;
+    task_handle->etw3.str = (char*)function_or_task_name;
+    return MFXTraceETW_SendBeginEndEvent((USHORT)task_handle->etw1.uint32,
+                                      EVENT_TRACE_TYPE_START,
+                                      (UCHAR)level,
+                                      function_or_task_name);
 }
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceETW_EndTask(mfxTraceStaticHandle *static_handle,
+mfxTraceU32 MFXTraceETW_EndTask(mfxTraceStaticHandle * /*static_handle*/,
                            mfxTraceTaskHandle* task_handle)
 {
-    if (!task_handle) return 1;
-
-    return MFXTraceETW_SendNamedEvent(static_handle, task_handle, MPA_ETW_OPCODE_STOP);
+    return task_handle ? MFXTraceETW_SendBeginEndEvent((USHORT)task_handle->etw1.uint32,
+                                                    EVENT_TRACE_TYPE_STOP,
+                                                    (UCHAR)task_handle->etw2.uint32,
+                                                    task_handle->etw3.str)
+                        : 1;
 }
 
 #endif

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -632,7 +632,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 #endif
 
     mfxStatus mfxRes;
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_ENCODE_QUERY_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
 
     bool bIsHWENCSupport = false;
@@ -732,7 +732,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
     MFX_CHECK(request, MFX_ERR_NULL_PTR);
 
     mfxStatus mfxRes;
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_ENCODE_QUERY_IOSURF_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
     bool bIsHWENCSupport = false;
@@ -804,7 +804,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
 {
     mfxStatus mfxRes;
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_ENCODE_INIT_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
@@ -867,7 +867,7 @@ mfxStatus MFXVideoENCODE_Close(mfxSession session)
 {
     mfxStatus mfxRes = MFX_ERR_NONE;
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_ENCODE_CLOSE_TASK);
 
     MFX_CHECK(session,               MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
@@ -939,7 +939,7 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
 {
     mfxStatus mfxRes;
 
-    MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_API, "MFX_EncodeFrameAsync");
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_ENCODE_FRAME_ASYNC_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, ctrl);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, surface);
 

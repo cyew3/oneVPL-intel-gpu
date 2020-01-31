@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ VideoVPP* _mfxSession::Create<VideoVPP>(mfxVideoParam& /*par*/)
 
 mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_VPP_QUERY_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, in);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
@@ -109,7 +109,7 @@ mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 
 mfxStatus MFXVideoVPP_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_VPP_QUERY_IOSURF_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, par);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
@@ -153,7 +153,7 @@ mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
 {
     mfxStatus mfxRes = MFX_ERR_UNSUPPORTED;
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_VPP_INIT_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, par);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
@@ -205,7 +205,7 @@ mfxStatus MFXVideoVPP_Close(mfxSession session)
 {
     mfxStatus mfxRes;
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_VPP_CLOSE_TASK);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
@@ -244,7 +244,7 @@ mfxStatus MFXVideoVPPLegacyRoutine(void *pState, void *pParam,
 {
     (void)callNumber;
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_VPP_LEGACY_ROUTINE_TASK);
     VideoVPP *pVPP = (VideoVPP *) pState;
     MFX_THREAD_TASK_PARAMETERS *pTaskParam = (MFX_THREAD_TASK_PARAMETERS *) pParam;
     mfxStatus mfxRes;
@@ -275,7 +275,7 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
 {
     mfxStatus mfxRes;
 
-    MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_API, "MFX_RunFrameVPPAsync");
+    MFX_AUTO_TRACE_FUNCTYPE_WITHID(MFX_TRACE_API_VPP_RUN_FRAME_VPP_ASYNC_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, aux);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, in);    
 
@@ -483,7 +483,7 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
 
     mfxStatus mfxRes;
 
-    MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_API, "MFX_RunFrameVPPAsyncEx");
+    MFX_AUTO_TRACE_FUNCTYPE_WITHID(MFX_TRACE_API_VPP_RUN_FRAME_VPP_ASYNC_EX_TASK);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, in);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);

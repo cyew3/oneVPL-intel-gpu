@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 Intel Corporation
+// Copyright (c) 2015-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -49,8 +49,8 @@ mfxTraceU32 MFXTraceFtrace_BeginTask(mfxTraceStaticHandle *static_handle,
     const char *file_name, mfxTraceU32 line_num,
     const char *function_name,
     mfxTraceChar* category, mfxTraceLevel level,
-    const char *task_name, mfxTraceTaskHandle *task_handle,
-    const void *task_params);
+    const char *task_name, const mfxTraceTaskType task_type,
+    mfxTraceTaskHandle *task_handle,     const void *task_params);
 
 mfxTraceU32 MFXTraceFtrace_EndTask(mfxTraceStaticHandle *static_handle,
     mfxTraceTaskHandle *task_handle);

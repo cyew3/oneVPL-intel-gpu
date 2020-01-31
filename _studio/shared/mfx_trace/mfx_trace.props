@@ -11,11 +11,14 @@
     $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
     $(MSDK_STUDIO_ROOT)\shared\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MfxRootOutDir)lib;
     </MfxIncludes>
     <MfxDefinitions>MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxDefinitions Condition="'$(MfxSoftwareOnly)'!='true'">MFX_VA;$(MfxDefinitions)</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>
+    <MfxPreBuildEvent>mc -h $(MfxRootOutDir)lib -r $(MfxRootOutDir)lib -z media_sdk_etw -um media_sdk_etw.man</MfxPreBuildEvent>
+    <MfxPreBuildEventMessage>Running $(MfxPreBuildEvent) to compile MediaSDK ETW manifest</MfxPreBuildEventMessage>
   </PropertyGroup>
 <!-- End of mfx_trace.vcxproj specific settings -->
 </Project>

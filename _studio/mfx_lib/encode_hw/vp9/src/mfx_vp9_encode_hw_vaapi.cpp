@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1207,7 +1207,7 @@ mfxStatus VAAPIEncoder::Execute(
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "vaEndPicture");//??
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "vaEndPicture");//??
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
 
         MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|ENCODE|VP9|PACKET_END|", "%d|%d", m_vaContextEncode, task.m_taskIdForDriver);

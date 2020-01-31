@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
 
 mfxStatus MFXVideoCORE_SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFX_SyncOperation");
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_SYNC_OPERATION_TASK);
     mfxStatus mfxRes;
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);

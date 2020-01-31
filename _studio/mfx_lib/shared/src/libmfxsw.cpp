@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2019 Intel Corporation
+// Copyright (c) 2007-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -82,7 +82,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "ThreadName=MSDK app");
     }
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXInit");
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_MFX_INIT_EX_TASK);
     MFX_LTRACE_1(MFX_TRACE_LEVEL_API, "^ModuleHandle^libmfx=", "%p", g_hModule);
 
     // check the library version
@@ -201,7 +201,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
 mfxStatus MFXDoWork(mfxSession session)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXDoWork");
+    MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_DO_WORK_TASK);
 
     // check error(s)
     if (0 == session)
@@ -240,7 +240,7 @@ mfxStatus MFXClose(mfxSession session)
         // used after it. special care should be taken with MFX_AUTO_TRACE macro
         // since it inserts class variable on stack which calls to trace library in the
         // destructor.
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXClose");
+        MFX_AUTO_TRACE_FUNCTYPE(MFX_TRACE_API_MFX_CLOSE_TASK);
 
         // parent session can't be closed,
         // because there is no way to let children know about parent's death.

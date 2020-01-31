@@ -80,6 +80,7 @@
     <ClInclude Include="$(MSDK_API_ROOT)\include\mfxstructures.h" />
     <ClInclude Include="$(MSDK_API_ROOT)\include\mfxvideo++.h" />
     <ClInclude Include="$(MSDK_API_ROOT)\include\mfxvideo.h" />
+    <ClInclude Include="..\..\..\build\win_x64\lib\media_sdk_etw.h" />
     <ClInclude Include="encode_hw\h265\include\hevce_ddi_main.h" />
     <ClInclude Include="..\shared\include\auxiliary_device.h" />
     <ClInclude Include="..\shared\include\cm_mem_copy.h" />
@@ -127,6 +128,7 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="libmfxhw.rc" />
+    <ResourceCompile Include="$(MfxRootOutDir)lib\media_sdk_etw.rc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\shared\asc\ascLib.vcxproj">

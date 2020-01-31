@@ -44,6 +44,17 @@
     <ClInclude Include="include\sys\mfx_trace_utils_linux.h" />
     <ClInclude Include="include\sys\mfx_trace_utils_windows.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="media_sdk_etw.man">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'!=''">
+    <PreBuildEvent>
+      <Command>$(MfxPreBuildEvent)</Command>
+      <Message>$(MfxPreBuildEventMessage)</Message>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props" />

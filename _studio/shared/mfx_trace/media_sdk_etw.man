@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<instrumentationManifest xsi:schemaLocation="http://schemas.microsoft.com/win/2004/08/events eventman.xsd" xmlns="http://schemas.microsoft.com/win/2004/08/events" xmlns:win="http://manifests.microsoft.com/win/2004/08/windows/events" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:trace="http://schemas.microsoft.com/win/2004/08/events/trace">
+	<instrumentation>
+		<events>
+			<provider name="Intel-MediaSDK" guid="{2D6B112A-D21C-4A40-9BF2-A3EDF212F624}" symbol="IntelMediaSDK" resourceFileName="to_be_set_manually" messageFileName="to_be_set_manually">
+				<events>
+					<event symbol="DecodeQueryEntry" value="5" version="0" task="DecodeQuery" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="DecodeQueryExit" value="6" version="0" task="DecodeQuery" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="DecodeQueryIOSurfEntry" value="9" version="0" task="DecodeQueryIOSurf" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="DecodeQueryIOSurfExit" value="10" version="0" task="DecodeQueryIOSurf" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="DecodeHeaderEntry" value="13" version="0" task="DecodeHeader" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="DecodeHeaderExit" value="14" version="0" task="DecodeHeader" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="DecodeIniEntry" value="17" version="0" task="DecodeInit" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="DecodeInitExit" value="18" version="0" task="DecodeInit" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="DecodeCloseEntry" value="21" version="0" task="DecodeClose" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="DecodeCloseExit" value="22" version="0" task="DecodeClose" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="DecodeFrameAsyncEntry" value="25" version="0" task="DecodeFrameAsync" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="DecodeFrameAsyncExit" value="26" version="0" task="DecodeFrameAsync" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="EncodeQueryEntry" value="29" version="0" task="EncodeQuery" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="EncodeQueryExit" value="30" version="0" task="EncodeQuery" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="EncodeQueryIOSurfEntry" value="33" version="0" task="EncodeQueryIOSurf" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="EncodeQueryIOSurfExit" value="34" version="0" task="EncodeQueryIOSurf" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="EncodeIniEntry" value="37" version="0" task="EncodeInit" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="EncodeInitExit" value="38" version="0" task="EncodeInit" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="EncodeCloseEntry" value="41" version="0" task="EncodeClose" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="EncodeCloseExit" value="42" version="0" task="EncodeClose" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="EncodeFrameAsyncEntry" value="45" version="0" task="EncodeFrameAsync" opcode="win:Start" template="Entry" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="EncodeFrameAsyncExit" value="46" version="0" task="EncodeFrameAsync" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="VppQueryEntry" value="49" version="0" task="VppQuery" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="VppQueryExit" value="50" version="0" task="VppQuery" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="VppQueryIOSurfEntry" value="53" version="0" task="VppQueryIOSurf" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="VppQueryIOSurfExit" value="54" version="0" task="VppQueryIOSurf" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="VppIniEntry" value="57" version="0" task="VppInit" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="VppInitExit" value="58" version="0" task="VppInit" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="VppCloseEntry" value="61" version="0" task="VppClose" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="VppCloseExit" value="62" version="0" task="VppClose" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="VppLegacyRoutineEntry" value="65" version="0" task="VppLegacyRoutine" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="VppLegacyRoutineExit" value="66" version="0" task="VppLegacyRoutine" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="VppRunFrameVppAsyncEntry" value="69" version="0" task="VppRunFrameVppAsync" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="VppRunFrameVppAsyncExit" value="70" version="0" task="VppRunFrameVppAsync" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="VppRunFrameVppAsyncExEntry" value="73" version="0" task="VppRunFrameVppAsyncEx" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="VppRunFrameVppAsyncExExit" value="74" version="0" task="VppRunFrameVppAsyncEx" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="MFXInitExEntry" value="77" version="0" task="MFXInitEx" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="MFXInitExExit" value="78" version="0" task="MFXInitEx" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="MFXCloseEntry" value="81" version="0" task="MFXClose" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="MFXCloseExit" value="82" version="0" task="MFXClose" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="DoWorkEntry" value="85" version="0" task="DoWork" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="DoWorkExit" value="86" version="0" task="DoWork" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="SyncOperationEntry" value="89" version="0" task="SyncOperation" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="SyncOperationExit" value="90" version="0" task="SyncOperation" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="WaitForGlobalEvenEntry" value="93" version="0" task="WaitForGlobalEvent" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="WaitForGlobalEventExit" value="94" version="0" task="WaitForGlobalEvent" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="DDIExecuteD3dxEntry" value="97" version="0" task="DDIExecuteD3DX" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="DDIExecuteD3dxXExit" value="98" version="0" task="DDIExecuteD3DX" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="DDIQueryD3dxEntry" value="101" version="0" task="DDIQueryD3DX" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="DDIQueryD3dxExit" value="102" version="0" task="DDIQueryD3DX" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+				</events>
+				<tasks>
+					<task name="DecodeQuery" symbol="MFX_TRACE_API_DECODE_QUERY_TASK_ETW" value="1" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="DecodeQueryIOSurf" symbol="MFX_TRACE_API_DECODE_QUERY_IOSURF_TASK_ETW" value="2" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="DecodeHeader" symbol="MFX_TRACE_API_DECODE_HEADER_TASK_ETW" value="3" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="DecodeInit" symbol="MFX_TRACE_API_DECODE_INIT_TASK_ETW" value="4" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="DecodeClose" symbol="MFX_TRACE_API_DECODE_CLOSE_TASK_ETW" value="5" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="DecodeFrameAsync" symbol="MFX_TRACE_API_DECODE_FRAME_ASYNC_TASK_ETW" value="6" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="EncodeQuery" symbol="MFX_TRACE_API_ENCODE_QUERY_TASK_ETW" value="7" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="EncodeQueryIOSurf" symbol="MFX_TRACE_API_ENCODE_QUERY_IOSURF_TASK_ETW" value="8" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="EncodeInit" symbol="MFX_TRACE_API_ENCODE_INIT_TASK_ETW" value="9" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="EncodeClose" symbol="MFX_TRACE_API_ENCODE_CLOSE_TASK_ETW" value="10" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="EncodeFrameAsync" symbol="MFX_TRACE_API_ENCODE_FRAME_ASYNC_TASK_ETW" value="11" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="VppQuery" symbol="MFX_TRACE_API_VPP_QUERY_TASK_ETW" value="12" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="VppQueryIOSurf" symbol="MFX_TRACE_API_VPP_QUERY_IOSURF_TASK_ETW" value="13" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="VppInit" symbol="MFX_TRACE_API_VPP_INIT_TASK_ETW" value="14" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="VppClose" symbol="MFX_TRACE_API_VPP_CLOSE_TASK_ETW" value="15" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="VppLegacyRoutine" symbol="MFX_TRACE_API_VPP_LEGACY_ROUTINE_TASK_ETW" value="16" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="VppRunFrameVppAsync" symbol="MFX_TRACE_API_VPP_RUN_FRAME_VPP_ASYNC_TASK_ETW" value="17" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="VppRunFrameVppAsyncEx" symbol="MFX_TRACE_API_VPP_RUN_FRAME_VPP_ASYNC_EX_TASK_ETW" value="18" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="MFXInitEx" symbol="MFX_TRACE_API_MFX_INIT_EX_TASK_ETW" value="19" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="MFXClose" symbol="MFX_TRACE_API_MFX_CLOSE_TASK_ETW" value="20" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="DoWork" symbol="MFX_TRACE_API_DO_WORK_TASK_ETW" value="21" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="SyncOperation" symbol="MFX_TRACE_API_SYNC_OPERATION_TASK_ETW" value="22" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="WaitForGlobalEvent" symbol="MFX_TRACE_HOTSPOT_SCHED_WAIT_GLOBAL_EVENT_TASK_ETW" value="23" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="DDIExecuteD3DX" symbol="MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK_ETW" value="24" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="DDIQueryD3DX" symbol="MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK_ETW" value="25" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+				</tasks>
+				<opcodes>
+				</opcodes>
+				<keywords>
+					<keyword name="TypedEvent" symbol="MFX_ETW_KEYWORD_TYPED_EVENT" mask="0x2">
+					</keyword>
+					<keyword name="NonTypedEvent" symbol="MFX_ETW_KEYWORD_NON_TYPED_EVENT" mask="0x1">
+					</keyword>
+				</keywords>
+				<templates>
+					<template tid="Entry">
+						<data name="message" inType="win:AnsiString" outType="xs:string">
+						</data>
+					</template>
+				</templates>
+			</provider>
+		</events>
+	</instrumentation>
+	<localization>
+		<resources culture="en-US">
+			<stringTable>
+				<string id="opcode.Stop" value="Stop">
+				</string>
+				<string id="opcode.Start" value="Start">
+				</string>
+				<string id="Intel-MediaSDK.event.2.message" value="Exit">
+				</string>
+				<string id="Intel-MediaSDK.event.1.message" value="Entry">
+				</string>
+			</stringTable>
+		</resources>
+	</localization>
+</instrumentationManifest>
