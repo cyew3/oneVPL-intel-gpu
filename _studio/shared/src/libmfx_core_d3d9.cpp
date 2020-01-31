@@ -441,34 +441,6 @@ mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
 }// mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL handle)
 
 
-mfxStatus D3D9VideoCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
-{
-    MFX_CHECK_NULL_PTR1(handle);
-    UMC::AutomaticUMCMutex guard(m_guard);
-    try
-    {
-        // Since 1.30 version program will check right HandleType
-        bool isRequeredHandleTypeCheck = (m_session->m_version.Major > 1 ||
-            (m_session->m_version.Major == 1 && m_session->m_version.Minor >= 30));
-
-        if (isRequeredHandleTypeCheck && (type == MFX_HANDLE_D3D11_DEVICE))
-        {
-            return MFX_ERR_INVALID_HANDLE;
-        }
-        else
-        {
-            mfxStatus sts = CommonCORE::GetHandle(type, handle);
-            MFX_CHECK_STS(sts);
-            return MFX_ERR_NONE;
-        }
-    }
-    catch (...)
-    {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-}
-
-
 mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
                                    mfxFrameAllocResponse *response, bool isNeedCopy)
 {

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2019 Intel Corporation
+// Copyright (c) 2007-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -149,7 +149,6 @@ public:
     mfxStatus GetIntelDataPrivateReport(const GUID guid, mfxVideoParam *par, D3D11_VIDEO_DECODER_CONFIG & config);
 
     virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
-    virtual mfxStatus     GetHandle(mfxHandleType type, mfxHDL *handle);
     void ReleaseHandle();
 
     virtual mfxU16 GetAutoAsyncDepth() {return MFX_AUTO_ASYNC_DEPTH_VALUE;}; //it can be platform based

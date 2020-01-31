@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2019 Intel Corporation
+// Copyright (c) 2007-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -195,7 +195,6 @@ public:
     virtual ~D3D9VideoCORE();
 
     virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
-    virtual mfxStatus     GetHandle(mfxHandleType type, mfxHDL *handle);
     virtual mfxStatus     AllocFrames(mfxFrameAllocRequest *request, 
                                       mfxFrameAllocResponse *response, bool isNeedCopy = true);
 
