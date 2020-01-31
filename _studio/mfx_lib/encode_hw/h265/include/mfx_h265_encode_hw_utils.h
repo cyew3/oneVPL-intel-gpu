@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -498,7 +498,9 @@ namespace ExtBuffer
          MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME,
          MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO,
 #endif
+#ifdef MFX_VA_WIN
          MFX_EXTBUFF_ENCODER_CAPABILITY,
+#endif
          MFX_EXTBUFF_ENCODED_FRAME_INFO
     };
 
