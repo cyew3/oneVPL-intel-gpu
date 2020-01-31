@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 
 #if defined (MFX_VA_WIN)
 
+#include <initguid.h>
 #include "auxiliary_device.h"
 #include "mfx_utils.h"
 #include <vector>
