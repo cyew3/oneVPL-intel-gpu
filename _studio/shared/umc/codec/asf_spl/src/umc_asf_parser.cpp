@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -741,7 +741,7 @@ Status ASFSplitter::ReadHeaderExtData(Ipp32u dataSize)
 
   Ipp64u extDataStartPos = m_pDataReader->GetPosition();
 
-  memset(pHeadExtData->ppExtStreamPropObject, 0, ASF_MAX_NUM_OF_STREAMS);
+  memset(pHeadExtData->ppExtStreamPropObject, 0, sizeof(asf_ExtStreamPropObject*) * ASF_MAX_NUM_OF_STREAMS);
   memset(&curObj, 0, sizeof(curObj));
   while (curObj.endPos < extDataStartPos + dataSize) {
     umcRes = ReadNextObject(&curObj);
