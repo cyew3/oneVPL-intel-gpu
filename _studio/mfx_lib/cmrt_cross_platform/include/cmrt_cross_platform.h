@@ -1,4 +1,4 @@
-// Copyright (c) 1985-2019 Intel Corporation
+// Copyright (c) 1985-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -748,7 +748,8 @@ typedef enum _GPU_PLATFORM {
     PLATFORM_INTEL_CFL = 17,  //CofeeLake
 #ifndef STRIP_EMBARGO
     PLATFORM_INTEL_ADL_S = 18, //Alderlake-S
-    PLATFORM_INTEL_ADL_UH = 19 //Alderlake-UH
+    PLATFORM_INTEL_ADL_UH = 19, //Alderlake-UH
+    PLATFORM_INTEL_DG1 = 20 //DG1
 #endif
 } GPU_PLATFORM;
 

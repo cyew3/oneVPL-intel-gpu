@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -767,6 +767,9 @@ mfxStatus CMC::MCTF_SET_ENV(
         break;
 #endif
     case PLATFORM_INTEL_TGLLP:
+#ifndef STRIP_EMBARGO
+    case PLATFORM_INTEL_DG1:
+#endif
         res = device->LoadProgram((void *)mctf_me_gen12lp_isa, sizeof(mctf_me_gen12lp_isa), programMe, "nojitter");
         break;
     case PLATFORM_INTEL_SKL:
@@ -818,6 +821,9 @@ mfxStatus CMC::MCTF_SET_ENV(
         break;
 #endif
     case PLATFORM_INTEL_TGLLP:
+#ifndef STRIP_EMBARGO
+    case PLATFORM_INTEL_DG1:
+#endif
         res = device->LoadProgram((void *)mctf_mc_gen12lp_isa, sizeof(mctf_mc_gen12lp_isa), programMc, "nojitter");
         break;
     case PLATFORM_INTEL_SKL:
@@ -852,6 +858,9 @@ mfxStatus CMC::MCTF_SET_ENV(
         break;
 #endif
     case PLATFORM_INTEL_TGLLP:
+#ifndef STRIP_EMBARGO
+    case PLATFORM_INTEL_DG1:
+#endif
         res = device->LoadProgram((void *)mctf_sd_gen12lp_isa, sizeof(mctf_sd_gen12lp_isa), programDe, "nojitter");
         break;
     case PLATFORM_INTEL_SKL:
