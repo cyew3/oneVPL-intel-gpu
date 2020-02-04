@@ -37,6 +37,7 @@ endforeach()
 foreach( dir ${hevcdir} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/${dir} )
 endforeach()
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/shared )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/include)
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/include )
@@ -57,7 +58,10 @@ foreach( dir ${hevcdir} )
   file( GLOB_RECURSE srcs "${dir}/*.cpp" )
   list( APPEND sources.plus ${srcs})
 endforeach()
-list( APPEND sources.plus "hevc/hevcehw_disp.cpp")
+list( APPEND sources.plus
+    hevc/hevcehw_disp.cpp
+    shared/ehw_resources_pool.cpp
+    )
 
 foreach( dir ${vdirs} )
   file( GLOB_RECURSE srcs "${dir}/src/*.c" "${dir}/src/*.cpp" )

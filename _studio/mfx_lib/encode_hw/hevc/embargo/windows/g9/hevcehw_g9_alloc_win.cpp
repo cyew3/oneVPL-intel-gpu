@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "hevcehw_g9_alloc_win.h"
+#include "ehw_resources_pool_dx11.h"
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Windows::Gen9;
@@ -31,93 +32,18 @@ void Allocator::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
     Push(BLK_Init
         , [](StorageRW&, StorageRW& local) -> mfxStatus
     {
-        using MakeAlloc = HEVCEHW::Gen9::Tmp::MakeAlloc;
         auto CreateAllocator = [](VideoCORE& core) -> HEVCEHW::Gen9::IAllocation*
         {
-            return new MfxFrameAllocResponse(core);
+            if (core.GetVAType() == MFX_HW_D3D11)
+                return MakeAlloc(std::unique_ptr<MfxEncodeHW::ResPool>(new MfxEncodeHW::ResPoolDX11(core)));
+            return MakeAlloc(std::unique_ptr<MfxEncodeHW::ResPool>(new MfxEncodeHW::ResPool(core)));
         };
 
-        local.Insert(MakeAlloc::Key, new MakeAlloc::TRef(CreateAllocator));
+        using Tmp = HEVCEHW::Gen9::Tmp;
+        local.Insert(Tmp::MakeAlloc::Key, new Tmp::MakeAlloc::TRef(CreateAllocator));
 
         return MFX_ERR_NONE;
     });
-}
-
-mfxStatus MfxFrameAllocResponse::Alloc(
-    mfxFrameAllocRequest & req,
-    bool                   isCopyRequired)
-{
-    if (m_core.GetVAType() != MFX_HW_D3D11)
-    {
-        return HEVCEHW::Gen9::MfxFrameAllocResponse::Alloc(req, isCopyRequired);
-    }
-
-    req.NumFrameSuggested = req.NumFrameMin;
-
-    mfxFrameAllocRequest tmp = req;
-    tmp.NumFrameMin = tmp.NumFrameSuggested = 1;
-
-    m_responseQueue.resize(req.NumFrameMin);
-    m_mids.resize(req.NumFrameMin);
-
-    // WA for RExt formats to fix CreateTexture2D failure
-    bool bNoEncTarget =
-        tmp.Info.FourCC == MFX_FOURCC_YUY2
-        || tmp.Info.FourCC == MFX_FOURCC_P210
-        || tmp.Info.FourCC == MFX_FOURCC_AYUV
-        || tmp.Info.FourCC == MFX_FOURCC_Y210
-        || tmp.Info.FourCC == MFX_FOURCC_Y410;
-
-    tmp.Type &= ~(MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET * bNoEncTarget);
-
-    mfxStatus sts = Catch(MFX_ERR_NONE,
-        [&]()
-    {
-        std::transform(m_responseQueue.begin(), m_responseQueue.end(), m_mids.begin()
-            , [&](mfxFrameAllocResponse& rsp)
-        {
-            mfxStatus asts = m_core.AllocFrames(&tmp, &rsp, isCopyRequired);
-            ThrowIf(!!asts, asts);
-            return rsp.mids[0];
-        });
-    });
-    MFX_CHECK_STS(sts);
-
-    mids = &m_mids[0];
-    NumFrameActual = req.NumFrameMin;
-
-    MFX_CHECK(NumFrameActual >= req.NumFrameMin, MFX_ERR_MEMORY_ALLOC);
-
-    m_locked.resize(req.NumFrameMin, 0);
-    std::fill(m_locked.begin(), m_locked.end(), 0);
-
-    m_flag.resize(req.NumFrameMin, 0);
-    std::fill(m_flag.begin(), m_flag.end(), 0);
-
-    m_numFrameActualReturnedByAllocFrames = NumFrameActual;
-    NumFrameActual = req.NumFrameMin;
-    m_info = req.Info;
-    m_isExternal = false;
-    m_isOpaque = false;
-
-    return MFX_ERR_NONE;
-}
-
-void MfxFrameAllocResponse::Free()
-{
-    bool bRspQueue = m_core.GetVAType() == MFX_HW_D3D11 && !m_isOpaque;
-
-    if (!bRspQueue)
-    {
-        HEVCEHW::Gen9::MfxFrameAllocResponse::Free();
-        return;
-    }
-
-    std::for_each(m_responseQueue.begin(), m_responseQueue.end()
-        , [&](mfxFrameAllocResponse& rsp) { m_core.FreeFrames(&rsp); });
-    m_responseQueue.clear();
-
-    mids = nullptr;
 }
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

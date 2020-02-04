@@ -52,6 +52,8 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12ats;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12dg2;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\lpla;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared\embargo;
     </MfxIncludes>
     <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>

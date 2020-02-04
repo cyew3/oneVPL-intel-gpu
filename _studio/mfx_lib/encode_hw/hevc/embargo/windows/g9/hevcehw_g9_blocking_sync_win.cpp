@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,7 @@ void BlockingSync::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         auto& core = Glob::VideoCore::Get(global);
 
         m_EventCache.reset(new EventCache());
-        m_EventCache->Init(Glob::AllocBS::Get(global).Response().NumFrameActual);
+        m_EventCache->Init(Glob::AllocBS::Get(global).GetResponse().NumFrameActual);
 
         {
             DDIExecParam submit;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ void Windows::Gen9::ROI::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Pus
 
         if (bFillQpSurf)
         {
-            auto& qpMapInfo = Glob::AllocMBQP::Get(global).Info();
+            auto qpMapInfo = Glob::AllocMBQP::Get(global).GetInfo();
 
             FrameLocker qpMap(core, task.CUQP.Mid);
             MFX_CHECK(qpMap.Y, MFX_ERR_LOCK_MEMORY);

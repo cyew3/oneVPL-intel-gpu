@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -103,9 +103,9 @@ void DDIPacker::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
             ThrowAssert(size < sizeof(ENCODE_QUERY_STATUS_PARAMS), "Invalid feedback");
 
-            auto&       bsInfo = Glob::AllocBS::Get(global).Info();
-            auto        pFeedback = (const ENCODE_QUERY_STATUS_PARAMS*)pFB;
-            bool        bFeedbackValid =
+            auto bsInfo = Glob::AllocBS::Get(global).GetInfo();
+            auto pFeedback = (const ENCODE_QUERY_STATUS_PARAMS*)pFB;
+            bool bFeedbackValid =
                 ((pFeedback->bStatus == ENCODE_OK) || (pFeedback->bStatus == ENCODE_OK_WITH_MISMATCH))
                 && (mfxU32(bsInfo.Width * bsInfo.Height) >= pFeedback->bitstreamSize)
                 && (pFeedback->bitstreamSize > 0);
@@ -183,17 +183,17 @@ void DDIPacker::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         mfxU32 maxSlices = CeilDiv(hpar.PicHeightInLumaSamples, hpar.LCUSize) * CeilDiv(hpar.PicWidthInLumaSamples, hpar.LCUSize);
         maxSlices = std::min<mfxU32>(maxSlices, MAX_SLICES);
 
-        cc.InitFeedback(strg, Glob::AllocBS::Get(strg).Response().NumFrameActual, fbType, maxSlices);
+        cc.InitFeedback(strg, Glob::AllocBS::Get(strg).GetResponse().NumFrameActual, fbType, maxSlices);
 
-        mfxStatus sts = Register(core, Glob::AllocRec::Get(strg).Response(), MFX_FOURCC_NV12);
+        mfxStatus sts = Register(core, Glob::AllocRec::Get(strg).GetResponse(), MFX_FOURCC_NV12);
         MFX_CHECK_STS(sts);
 
-        sts = Register(core, Glob::AllocBS::Get(strg).Response(), ID_BITSTREAMDATA);
+        sts = Register(core, Glob::AllocBS::Get(strg).GetResponse(), ID_BITSTREAMDATA);
         MFX_CHECK_STS(sts);
 
         if (strg.Contains(Glob::AllocMBQP::Key))
         {
-            sts = Register(core, Glob::AllocMBQP::Get(strg).Response(), ID_MBQPDATA);
+            sts = Register(core, Glob::AllocMBQP::Get(strg).GetResponse(), ID_MBQPDATA);
             MFX_CHECK_STS(sts);
         }
 

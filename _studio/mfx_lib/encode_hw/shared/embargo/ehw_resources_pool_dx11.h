@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,35 +19,36 @@
 // SOFTWARE.
 
 #pragma once
+#include "ehw_resources_pool.h"
+#include <set>
 
-#include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
-
-#include "hevcehw_g9_alloc.h"
-#include "mfxstructures.h"
-#include <vector>
-
-namespace HEVCEHW
+namespace MfxEncodeHW
 {
-namespace Windows
-{
-namespace Gen9
-{
-
-class Allocator
-    : public HEVCEHW::Gen9::Allocator
+class ResPoolDX11
+    : public ResPool
 {
 public:
-    Allocator(mfxU32 FeatureId)
-        : HEVCEHW::Gen9::Allocator(FeatureId)
+    ResPoolDX11(VideoCORE& core)
+        : ResPool(core)
     {}
 
-protected:
-    virtual void InitAlloc(const FeatureBlocks& blocks, TPushIA Push) override; 
+    ~ResPoolDX11()
+    {
+        Free();
+    }
+
+    virtual mfxStatus Alloc(
+        const mfxFrameAllocRequest & req
+        , bool bCopyRequired) override;
+
+    void Free() override;
+
+    std::set<mfxU32> m_noEncTargetWA = std::set<mfxU32>({
+        MFX_FOURCC_YUY2
+        , MFX_FOURCC_P210
+        , MFX_FOURCC_AYUV
+        , MFX_FOURCC_Y210
+        , MFX_FOURCC_Y410 });
 };
 
-} //Gen9
-} //namespace Windows
-} //namespace HEVCEHW
-
-#endif
+} // namespace MfxEncodeHW

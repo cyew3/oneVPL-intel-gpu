@@ -90,6 +90,12 @@
     <Filter Include="hevc\embargo\linux\g12dg2">
       <UniqueIdentifier>{1fda0ec1-22c5-4f3b-9012-59a8cd145670}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shared">
+      <UniqueIdentifier>{1b73d340-0f91-49f2-bd2c-96f9b003f879}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shared\embargo">
+      <UniqueIdentifier>{e584824e-ddf3-4035-9b73-e8d250a5edf6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="h264\src\mfx_h264_encode_hw.cpp">
@@ -400,6 +406,12 @@
     </ClCompile>
     <ClCompile Include="hevc\embargo\linux\g12dg2\hevcehw_g12dg2_lin.cpp">
       <Filter>hevc\embargo\linux\g12dg2</Filter>
+    </ClCompile>
+    <ClCompile Include="shared\ehw_resources_pool.cpp">
+      <Filter>shared</Filter>
+    </ClCompile>
+    <ClCompile Include="shared\embargo\ehw_resources_pool_dx11.cpp">
+      <Filter>shared\embargo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -753,6 +765,12 @@
     </ClInclude>
     <ClInclude Include="hevc\embargo\linux\g12dg2\hevcehw_g12dg2_lin.h">
       <Filter>hevc\embargo\linux\g12dg2</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\ehw_resources_pool.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\embargo\ehw_resources_pool_dx11.h">
+      <Filter>shared\embargo</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

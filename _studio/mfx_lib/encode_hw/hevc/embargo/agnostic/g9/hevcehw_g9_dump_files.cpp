@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -70,7 +70,7 @@ void DumpFiles::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 mfxStatus WriteFrameData(
     vm_file *            file,
     mfxFrameData const & fdata,
-    mfxFrameInfo const & info)
+    mfxFrameInfo const   info)
 {
     MFX_CHECK_NULL_PTR1(file);
 
@@ -203,7 +203,7 @@ void DumpFiles::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
         auto& task = Task::Common::Get(s_task);
         FrameLocker data(core, task.Rec.Mid);
 
-        return WriteFrameData(m_dumpRec, data, Glob::AllocRec::Get(global).Info());
+        return WriteFrameData(m_dumpRec, data, Glob::AllocRec::Get(global).GetInfo());
     });
 }
 

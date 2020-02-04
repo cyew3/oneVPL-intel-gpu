@@ -85,7 +85,8 @@ MFX_LOCAL_SRC_FILES_HW := \
     mfx_lib/encode_hw/hevc/embargo/linux/g12/hevcehw_g12_embargo_lin.cpp \
     mfx_lib/encode_hw/hevc/embargo/linux/g12ats/hevcehw_g12ats_lin.cpp \
     mfx_lib/encode_hw/hevc/embargo/linux/g12ats/hevcehw_g12ats_mfe_lin.cpp \
-    mfx_lib/encode_hw/hevc/embargo/linux/g12dg2/hevcehw_g12dg2_lin.cpp
+    mfx_lib/encode_hw/hevc/embargo/linux/g12dg2/hevcehw_g12dg2_lin.cpp \
+    mfx_lib/encode_hw/shared/ehw_resources_pool.cpp
 
 MFX_LOCAL_INCLUDES := \
     $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include))
@@ -117,7 +118,8 @@ MFX_LOCAL_INCLUDES_HW := \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/linux/g11lkf \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/linux/g12 \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/linux/g12ats \
-    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/linux/g12dg2
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/linux/g12dg2 \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/shared
 
 MFX_LOCAL_STATIC_LIBRARIES_HW := \
     libmfx_lib_merged_hw \
