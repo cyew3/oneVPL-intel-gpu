@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2018 Intel Corporation.  All rights reserved.
+Copyright (C) 2018-2020 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -42,8 +42,8 @@ B-frames for 5 layers of the b-pyramid. It means support from layer with index 0
 
 */
 
-#define DEF_SKL_L0_ACT_REF 3
-#define DEF_SKL_L1_ACT_REF 1
+#define DEF_L0_ACT_REF g_tsHWtype==MFX_HW_SKL ? 3 : 4
+#define DEF_L1_ACT_REF g_tsHWtype==MFX_HW_SKL ? 1 : 2
 
 using namespace BS_HEVC2;
 
@@ -68,8 +68,8 @@ namespace hevce_num_active_references
 
             m_pPar->mfx.IdrInterval = 0; // Only first I frame is IDR
 
-            m_pPar->mfx.NumRefFrame = 7; // It is a minimum number of reference frames,
-                                         // which test needs to have for case with 5 layers of b-pyramid and 3 L0 reference
+            m_pPar->mfx.NumRefFrame = 15; // It is a minimum number of reference frames,
+                                         // which test needs to have for case with 5 layers of b-pyramid and 4 L0 reference
             m_pPar->mfx.TargetUsage = MFX_TARGETUSAGE_BEST_QUALITY; // Need to set param for correct check
                                                                     // number of references. Better quality -> wider range of references
             m_reader.reset(new tsRawReader(g_tsStreamPool.Get("/forBehaviorTest/foreman_cif.nv12"),
@@ -136,6 +136,20 @@ namespace hevce_num_active_references
                 << "Found NumRefActiveL1 value for layer #"
                 << layer << " which is greater then expected\n"
                 << "POC #" << slice.POC << "\n";
+        }
+
+        void SetExpectedL1ActRef(const Slice & slice, mfxU32 & L1ActRef)
+        {
+            mfxU16 tempRefDist = m_pPar->mfx.GopRefDist;
+            while (tempRefDist)
+            {
+                if ((slice.POC % m_pPar->mfx.GopRefDist) == (m_pPar->mfx.GopRefDist - tempRefDist))
+                {
+                    L1ActRef--;
+                    break;
+                }
+                tempRefDist /= 2;
+            }
         }
 
         void SetLayerForBFrame(const Slice & slice, mfxU32 & currLayer, bool isBpyrTop)
@@ -214,23 +228,25 @@ namespace hevce_num_active_references
                         SetLayerForBFrame(*pNALU->slice, currLayer, m_IsBpyrTop);
                         m_IsBpyrTop = false;
 
-                        if (m_EncodedOrderIdx >= m_NumSkipFramesBCases) //Skip first 8 frames in the encoded order
-                            // It is a minimum number of frames, which test needs to skip for accumulation of 3 L0 reference
+                        if (m_EncodedOrderIdx >= m_NumSkipFramesBCases) //Skip first 16 frames in the encoded order
+                            // It is a minimum number of frames, which test needs to skip for accumulation of 4 L0 reference
                             // in case with 5 layers of b-pyramid
                         {
-                            CheckActiveL0(*pNALU->slice, currLayer, m_active_BL0[currLayer] ? m_active_BL0[currLayer] : DEF_SKL_L0_ACT_REF);
-                            CheckActiveL1(*pNALU->slice, currLayer, m_active_BL1[currLayer] ? m_active_BL1[currLayer] : DEF_SKL_L1_ACT_REF);
+                            CheckActiveL0(*pNALU->slice, currLayer, m_active_BL0[currLayer] ? m_active_BL0[currLayer] : DEF_L0_ACT_REF);
+                            mfxU32 L1ActRef = m_active_BL1[currLayer] ? m_active_BL1[currLayer] : DEF_L1_ACT_REF;
+                            if (L1ActRef > 1) SetExpectedL1ActRef(*pNALU->slice, L1ActRef); // L1 - 2 is unreachable for some frames, it depends on layers of the b-pyramid
+                            CheckActiveL1(*pNALU->slice, currLayer, L1ActRef);
                         }
                     }
 
                     // P-frames checking
                     else if (pNALU->slice->type == SLICE_TYPE::P && m_slice_type == SLICE_TYPE::P)
                     {
-                        if (m_EncodedOrderIdx >= m_NumSkipFramesPCases) // Skip first 5 frames in the encoded order
-                            // It is a minimum number of frames, which test needs to skip for accumulation of 3 L0 reference
+                        if (m_EncodedOrderIdx >= m_NumSkipFramesPCases) // Skip first 8 frames in the encoded order
+                            // It is a minimum number of frames, which test needs to skip for accumulation of 4 L0 reference
                             // in case for p-frames and with 1 (no b-pyramid) and 2 layers of b-pyramid
                         {
-                            CheckActiveL0(*pNALU->slice, 0, m_active_P[0] ? m_active_P[0] : DEF_SKL_L0_ACT_REF);
+                            CheckActiveL0(*pNALU->slice, 0, m_active_P[0] ? m_active_P[0] : DEF_L0_ACT_REF);
                         }
                     }
                 }
@@ -311,8 +327,8 @@ namespace hevce_num_active_references
 
         // Skip boundary conditions
         mfxU32       m_EncodedOrderIdx = 0;
-        const mfxU32 m_NumSkipFramesPCases = 5;
-        const mfxU32 m_NumSkipFramesBCases = 8;
+        const mfxU32 m_NumSkipFramesPCases = 8;
+        const mfxU32 m_NumSkipFramesBCases = 16;
     };
 
     const TestSuite::tc_struct TestSuite::test_case[] =
@@ -330,32 +346,38 @@ namespace hevce_num_active_references
         {/*07*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 2, 1, 3 },// 3 b-layers
         {/*08*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 2, 1, 4 },// 4 b-layers
         {/*09*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 2, 1, 5 },// 5 b-layers
-        //Next 5 cases should work with default active values for reference (L0 - 3, L1 - 1)
-        {/*10*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 0, 0, 1 },// 1 b-layer
-        {/*11*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 0, 0, 2 },// 2 b-layers
-        {/*12*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 0, 0, 3 },// 3 b-layers
-        {/*13*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 0, 0, 4 },// 4 b-layers
-        {/*14*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 0, 0, 5 },// 5 b-layers
+        //Next 5 cases should work with L0 - 3, L1 - 1 active references
+        {/*10*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 3, 1, 1 },// 1 b-layer
+        {/*11*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 3, 1, 2 },// 2 b-layers
+        {/*12*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 3, 1, 3 },// 3 b-layers
+        {/*13*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 3, 1, 4 },// 4 b-layers
+        {/*14*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 3, 1, 5 },// 5 b-layers
+        //Next 5 cases should work with default active values for reference (L0 - 3, L1 - 1 for SKL and L0 - 4, L1 - 2 for other platforms)
+        {/*15*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 0, 0, 1 },// 1 b-layer
+        {/*16*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 0, 0, 2 },// 2 b-layers
+        {/*17*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 0, 0, 3 },// 3 b-layers
+        {/*18*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 0, 0, 4 },// 4 b-layers
+        {/*19*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 0, 0, 0, 5 },// 5 b-layers
         //Next case should work with with L0 - 2, L1 - 1 active references and asymmetric b-pyramid
-        {/*15*/ SLICE_TYPE::B, ASYMMETRIC, CONSTANT, 0, 2, 1, 5 },// 5 b-layers
+        {/*20*/ SLICE_TYPE::B, ASYMMETRIC, CONSTANT, 0, 2, 1, 5 },// 5 b-layers
         //Next case should work with with L0 - 3, L1 - 1 active references and symmetric b-pyramid
         // but with different active references per layer
-        {/*16*/ SLICE_TYPE::B, SYMMETRIC, NONCONSTANT, 3, 3, 1, 5 },// 5 b-layers
+        {/*21*/ SLICE_TYPE::B, SYMMETRIC, NONCONSTANT, 3, 3, 1, 5 },// 5 b-layers
         //Next case chacks that number of active references for p-frames won't affect b-frames control
-        {/*17*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 1, 3, 1, 5 },   // 5 b-layers
+        {/*22*/ SLICE_TYPE::B, SYMMETRIC, CONSTANT, 1, 3, 1, 5 },   // 5 b-layers
         // P-frames
-        {/*18*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 1, 0, 0, 0 },   // no b-frames
-        {/*19*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 2, 0, 0, 0 },   // no b-frames
-        {/*20*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 3, 0, 0, 0 },   // no b-frames
-        {/*21*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 0, 0, 0, 0 },   // no b-frames
-        {/*22*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 1, 0, 0, 1 },   // 1 b-layer
-        {/*23*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 2, 0, 0, 1 },   // 1 b-layer
-        {/*24*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 3, 0, 0, 1 },   // 1 b-layer
-        {/*25*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 0, 0, 0, 1 },   // 1 b-layer
-        {/*26*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 1, 0, 0, 2 },   // 2 b-layers
-        {/*27*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 2, 0, 0, 2 },   // 2 b-layers
-        {/*28*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 3, 0, 0, 2 },   // 2 b-layers
-        {/*29*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 0, 0, 0, 2 }    // 2 b-layers
+        {/*23*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 1, 0, 0, 0 },   // no b-frames
+        {/*24*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 2, 0, 0, 0 },   // no b-frames
+        {/*25*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 3, 0, 0, 0 },   // no b-frames
+        {/*26*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 0, 0, 0, 0 },   // no b-frames
+        {/*27*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 1, 0, 0, 1 },   // 1 b-layer
+        {/*28*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 2, 0, 0, 1 },   // 1 b-layer
+        {/*29*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 3, 0, 0, 1 },   // 1 b-layer
+        {/*30*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 0, 0, 0, 1 },   // 1 b-layer
+        {/*31*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 1, 0, 0, 2 },   // 2 b-layers
+        {/*32*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 2, 0, 0, 2 },   // 2 b-layers
+        {/*33*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 3, 0, 0, 2 },   // 2 b-layers
+        {/*34*/ SLICE_TYPE::P, SYMMETRIC, CONSTANT, 0, 0, 0, 2 }    // 2 b-layers
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
