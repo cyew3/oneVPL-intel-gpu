@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,8 +36,8 @@ void Linux::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1
     {
         using HEVCEHW::Gen9::Glob;
         using TCall             = Glob::DDI_Execute::TRef::TExt;
-        using TCreateContextPar = decltype(TupleArgs(vaCreateContext));
-        using TEndPicturePar    = decltype(TupleArgs(vaEndPicture));
+        using TCreateContextPar = TupleArgs<decltype(vaCreateContext)>::type;
+        using TEndPicturePar    = TupleArgs<decltype(vaEndPicture)>::type;
 
         const mfxExtMultiFrameParam* pMfePar = ExtBuffer::Get(in);
 
