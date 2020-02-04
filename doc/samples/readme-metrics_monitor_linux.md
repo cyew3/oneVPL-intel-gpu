@@ -1,12 +1,16 @@
 
 
-# Metrics Monitor (v1.1.2) Reference Manual
+# Metrics Monitor (v2.0.0) Reference Manual
 
 ## Overview
 
 Metrics Monitor is a user space shared library for Linux which provides applications access to a number of metrics from the GPU kernel mode driver to aid in understanding the state of the Intel GPU for Media workloads.
 
 ## What’s New
+
+### Version 2.0.0:
+* Extended CTTMetrics_Init with optional gfx device.
+* Enabled PMU events subscription according to device handle
 
 ### Version 1.1.2:
 * Support i915 PMU API to query metrics.
@@ -31,16 +35,16 @@ can be reported either if:
 
 To provide CAP_SYS_ADMIN capability to metrics_monitor (or any other application which uses libctt.so library), do the following:
 1. Install `libcttmetrics.so` to system path (for security reasons `LD_LIBRARY_PATH` will not work for applications which have capabilities), for example with:
-	```
-	$ sudo ln -s <metrics_lib_path>/libcttmetrics.so /usr/lib64
-	```
-	where `<metric_lib_path>` is where the `libcttmetrics.so` library is installed.
+    ```
+    $ sudo ln -s <metrics_lib_path>/libcttmetrics.so /usr/lib64
+    ```
+    where `<metric_lib_path>` is where the `libcttmetrics.so` library is installed.
 
 2. Execute the following command:
-	```
-	$ sudo setcap cap_sys_admin+ep ./metrics_monitor
-	```
-	Be aware that the use of any GUI (e.g. X Server) will add additional usage beyond the media workloads to the Blitter and Render engines.
+    ```
+    $ sudo setcap cap_sys_admin+ep ./metrics_monitor
+    ```
+    Be aware that the use of any GUI (e.g. X Server) will add additional usage beyond the media workloads to the Blitter and Render engines.
 
 ## Building the software
 
@@ -53,13 +57,21 @@ Also make sure, that libpciaccess-devel have the latest version.
 
 ## Running the software
 
-To run the Metrics Monitor sample application change to root, set the path to the `cttmetrics.so` library thru `$LD_LOAD_LIBRARY` environment variable and run the application:
+To run the Metrics Monitor sample application change to root, set the path to the `cttmetrics.so` library through `$LD_LOAD_LIBRARY` environment variable and run the application:
 ```
 $ sudo su
 $ export LD_LIBRARY_PATH=<metrics_lib_path>:$LD_LIBRARY_PATH
 $ ./metrics_monitor
 ```
-To run the Metrics Monitor test application change to root, set the path to the `cttmetrics.so` library thru `$LD_LOAD_LIBRARY` environment variable and run the application:
+metrics_monitor provides a few optional command line arguments:
+| Option | Description |
+|--|--|
+| -h | Show this help text |
+| -s | Number of metric samples to collect during sampling period(valid range 1..1000, default 100). |
+| -p | Sampling period in milliseconds(valid range 10..1000, default 500) |
+| -d | Path to gfx device (like /dev/dri/card* or /dev/dri/renderD*). If device is not set, the tool uses i915 render node device with smallest number." |
+
+To run the Metrics Monitor test application change to root, set the path to the `cttmetrics.so` library through `$LD_LOAD_LIBRARY` environment variable and run the application:
 ```
 $ sudo su
 $ export LD_LIBRARY_PATH=<metrics_lib_path>:$LD_LIBRARY_PATH
@@ -98,7 +110,7 @@ The table below provides description of metrics supported by the Metrics Monitor
 | CTT_USAGE_VIDEO | Multi-Format Codec Engine (also known as “MFX” or “VDBOX”) | Video Encode (PAK) and Decode |
 | CTT_USAGE_VIDEO2 | 2<sup>nd</sup> instance of the Multi Format Codec Engine, if available (Examples of supported processor include 5<sup>th</sup> generation of Intel® Core™ processors with Intel® HD Graphics 6000, Intel® Iris® Graphics 6100, Intel® Iris® Pro Graphics 6200, Intel® Iris® Pro Graphics P6300) | Video Encode (PAK) and Decode |
 | CTT_USAGE_VIDEO_ENHANCEMENT | Video Quality Engine (also known as “VEBOX” or Video Quality enhancement pipeline) | Deinterlace, Denoise |
-| CTT_USAGE_BLITTER	| 2D graphics blitter engine. | 2D and 3D Blt (no media use) |
+| CTT_USAGE_BLITTER | 2D graphics blitter engine. | 2D and 3D Blt (no media use) |
 | CTT_AVG_GT_FREQ | Intel GPU | Any task running on any of the GPU Engines listed above |
 
 Below is the example of mapping metrics to the 4<sup>th</sup> generation of Intel® Core™ processor architecture.
@@ -161,110 +173,113 @@ This section describes the Metrics Monitor API.
 
 * **CTTMetrics_Init**
 
-	**Syntax**<br>
-	`cttStatus CTTMetrics_Init();`
+    **Syntax**<br>
+    `cttStatus CTTMetrics_Init(const char *device);`
 
-	**Description**<br>
-	This function initializes media metrics library.
+    **Parameters**<br>
+    `device` - If not NULL, the function uses provided gfx device for initialization. If NULL, the function uses render node device with smaller number.
 
-	**Return Status**<br>
-	`MFX_ERR_NONE` - Metrics Monitor library succesfully initialized.
+    **Description**<br>
+    This function initializes media metrics library.
+
+    **Return Status**<br>
+    `MFX_ERR_NONE` - Metrics Monitor library succesfully initialized.
 
 * **CTTMetrics_GetMetricCount**
 
-	**Syntax**<br>
-	`cttStatus CTTMetrics_GetMetricCount(unsigned int* out_count);`
-	
-	**Parameters**<br>
-	`out_count` - Number of metrics available.
-	
-	**Description**<br>
-	This functions returns the number of available metrics. Must be called after `CTTMetrics_Init()`.
-	
-	**Return Status**<br>
-	`MFX_ERR_NONE` - Number of available metrics returned successfully.
+    **Syntax**<br>
+    `cttStatus CTTMetrics_GetMetricCount(unsigned int* out_count);`
+
+    **Parameters**<br>
+    `out_count` - Number of metrics available.
+
+    **Description**<br>
+    This functions returns the number of available metrics. Must be called after `CTTMetrics_Init()`.
+
+    **Return Status**<br>
+    `MFX_ERR_NONE` - Number of available metrics returned successfully.
 
 * **CTTMetrics_GetMetricInfo**
-	
-	**Syntax**<br>
-	`cttStatus CTTMetrics_GetMetricInfo(unsigned int count, cttMetric* out_metric_ids);`
-	
-	**Parameters**<br>
-	`count` - Number of elements in the out_metric_ids.<br>
-	`out_metric_ids` - Output array of available metric IDs. Must be allocated and de-allocated by app.
-	
-	**Description**<br>
-	This function returns IDs of available metrics. Must be called after `CTTMetrics_Init()`.
-	
-	**Return Status**<br>
-	`MFX_ERR_NONE` - Metrics IDs returned succesfully.
+
+    **Syntax**<br>
+    `cttStatus CTTMetrics_GetMetricInfo(unsigned int count, cttMetric* out_metric_ids);`
+
+    **Parameters**<br>
+    `count` - Number of elements in the out_metric_ids.<br>
+    `out_metric_ids` - Output array of available metric IDs. Must be allocated and de-allocated by app.
+
+    **Description**<br>
+    This function returns IDs of available metrics. Must be called after `CTTMetrics_Init()`.
+
+    **Return Status**<br>
+    `MFX_ERR_NONE` - Metrics IDs returned succesfully.
 
 * **CTTMetrics_Subscribe**
 
-	**Syntax**<br>
-	`cttStatus CTTMetrics_Subscribe(unsigned int count, cttMetric* in_metric_ids);`
+    **Syntax**<br>
+    `cttStatus CTTMetrics_Subscribe(unsigned int count, cttMetric* in_metric_ids);`
 
-	**Parameters**<br>
-	`count` - Number of metrics to collect.<br>
-	`in_metric_ids` - Input array of metric IDs.
+    **Parameters**<br>
+    `count` - Number of metrics to collect.<br>
+    `in_metric_ids` - Input array of metric IDs.
 
-	**Description**<br>
-	This function specifies metrics being collected. Must be called after `CTTMetrics_Init()`.
+    **Description**<br>
+    This function specifies metrics being collected. Must be called after `CTTMetrics_Init()`.
 
-	**Return Status**<br>
-	`MFX_ERR_NONE` - Metrics subscription completed succesfully.
+    **Return Status**<br>
+    `MFX_ERR_NONE` - Metrics subscription completed succesfully.
 
 * **CTTMetrics_SetSampleCount**
 
-	**Syntax**<br>	
-	`cttStatus CTTMetrics_SetSampleCount(unsigned int in_num);`
+    **Syntax**<br>
+    `cttStatus CTTMetrics_SetSampleCount(unsigned int in_num);`
 
-	**Parameters**<br>
-	`in_num` - Number of metric samples to collect during sampling period.
+    **Parameters**<br>
+    `in_num` - Number of metric samples to collect during sampling period.
 
-	**Description**<br>
-	Sets the number of metric samples to collect during sampling period. Default = 100. Valid range 1..1000. Must be called after `CTTMetrics_Init()`.
+    **Description**<br>
+    Sets the number of metric samples to collect during sampling period. Default = 100. Valid range 1..1000. Must be called after `CTTMetrics_Init()`.
 
-	**Return Status**<br>
-	`MFX_ERR_NONE` - Number of samples set successfully.
+    **Return Status**<br>
+    `MFX_ERR_NONE` - Number of samples set successfully.
 
 * **CTTMetrics_SetSamplePeriod**
-	
-	**Syntax**<br>
-	`cttStatus CTTMetrics_SetSamplePeriod(unsigned int in_period);`
-	
-	**Parameters**<br>
-	`in_period` - Sampling period in milliseconds.
-	
-	**Description**<br>
-	Sets the sampling period in milliseconds to collect metric samples. Default = 500. Valid range 10..1000. Must be called after `CTTMetrics_Init()`.
-	
-	**Return Status**<br>
-	`MFX_ERR_NONE` - Sampling period set successfully.
+
+    **Syntax**<br>
+    `cttStatus CTTMetrics_SetSamplePeriod(unsigned int in_period);`
+
+    **Parameters**<br>
+    `in_period` - Sampling period in milliseconds.
+
+    **Description**<br>
+    Sets the sampling period in milliseconds to collect metric samples. Default = 500. Valid range 10..1000. Must be called after `CTTMetrics_Init()`.
+
+    **Return Status**<br>
+    `MFX_ERR_NONE` - Sampling period set successfully.
 
 * **CTTMetrics_Close**
 
-	**Syntax**<br>
-	`void CTTMetrics_Close();`
+    **Syntax**<br>
+    `void CTTMetrics_Close();`
 
-	**Description**<br>
-	Close media metrics library and stops metrics collection.
+    **Description**<br>
+    Close media metrics library and stops metrics collection.
 
 * **CTTMetrics_GetValue**
-	
-	**Syntax**<br>
-	`cttStatus CTTMetrics_GetValue(unsigned int count, float* out_metric_values);`
-	
-	**Parameters**<br>	
-	`count` - Number of metric values to receive.<br>
-	`out_metric_values` - Output array of metric values (floats). Must be allocated and de-allocated by app. `out_metric_values[i]` corresponds to `in_metric_ids[i]` in `CTTMetrics_Subscribe()`.
-	
-	**Description**<br>
-	This function returns metric values. Number of values equals to `count` - number of
-	metric ids in `CTTMetrics_Subscribe()`.
-	
-	**Return Status**<br>	
-	`CTT_ERR_NONE` - Metric values received succesfully.
+
+    **Syntax**<br>
+    `cttStatus CTTMetrics_GetValue(unsigned int count, float* out_metric_values);`
+
+    **Parameters**<br>
+    `count` - Number of metric values to receive.<br>
+    `out_metric_values` - Output array of metric values (floats). Must be allocated and de-allocated by app. `out_metric_values[i]` corresponds to `in_metric_ids[i]` in `CTTMetrics_Subscribe()`.
+
+    **Description**<br>
+    This function returns metric values. Number of values equals to `count` - number of
+    metric ids in `CTTMetrics_Subscribe()`.
+
+    **Return Status**<br>
+    `CTT_ERR_NONE` - Metric values received succesfully.
 
 ## Appendix – A (version 1.1.1 notes)
 
@@ -322,12 +337,12 @@ This section describes limitations of the Metrics Monitor version 1.1.1 data col
 
 The following table provides the overhead data for 100 millisecond sampling period.
 
-|	| CPU usage, % | Processing time, sec | Processing speed, fps | Overhead, %	|
+|   | CPU usage, % | Processing time, sec | Processing speed, fps | Overhead, % |
 |--|--|--|--|--|
-| No Metrics Monitor | 0 | 69.6	| 30.7 | 0 |
+| No Metrics Monitor | 0 | 69.6 | 30.7 | 0 |
 | 20 samples | 1 | 70.2 | 30.5 | 0.7 |
-| 100 samples | 3 | 71.5 | 29.9	| 3.0 |
-| 500 samples | 8 | 72.7 | 29.4	| 4.4 |
+| 100 samples | 3 | 71.5 | 29.9 | 3.0 |
+| 500 samples | 8 | 72.7 | 29.4 | 4.4 |
 | 1000 samples | 13 | 74.4 | 28.7 | 6.8 |
 
 The sampling overhead measurements were done using sample_multi_transcode application, which run in the N to N transcoding mode. It performs 10 joined transcoding sessions converting Full HD H264 streams to H264 Full HD streams. One stream containing 2136 frames was used as input stream for all transcoding sessions.
@@ -340,7 +355,7 @@ The measurements were done on the CentOS 7 system with Intel® Core™ i7-4770K 
 
 The following table provides comparison of metrics monitor CPU Usage overhead between Versions 1.1.1 and 1.1.2 on 100ms sampling period.
 
-|	| Version 1.1.1<br>CPU Usage, % | Version 1.1.2<br>CPU Usage, % |
+|   | Version 1.1.1<br>CPU Usage, % | Version 1.1.2<br>CPU Usage, % |
 |--|--|--|
 | No Metrics Monitor | 0 | 0 |
 | 20 samples | 1 | 0.4 |
