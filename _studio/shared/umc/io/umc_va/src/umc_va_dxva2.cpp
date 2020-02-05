@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2019 Intel Corporation
+// Copyright (c) 2006-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -545,14 +545,11 @@ static const GuidProfile guidProfiles[] =
     { H265_12_VLD_420     | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_Main12Profile },
     { H265_12_VLD_422     | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_Main422_12Profile },
     { H265_12_VLD_444     | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_Main444_12Profile },
-#endif
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     { H265_VLD_SCC        | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_SCC_Main_Profile },
     { H265_10_VLD_SCC     | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_SCC_Main_10Profile },
     { H265_VLD_444_SCC    | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_SCC_Main444_Profile },
     { H265_10_VLD_444_SCC | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_SCC_Main444_10Profile },
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
 };
 
 const GuidProfile * GuidProfile::GetGuidProfiles()
@@ -607,7 +604,7 @@ bool GuidProfile::IsIntelCustomGUID(const GUID & guid)
         || guid == DXVA_Intel_ModeHEVC_VLD_Main12Profile
         || guid == DXVA_Intel_ModeHEVC_VLD_Main422_12Profile
         || guid == DXVA_Intel_ModeHEVC_VLD_Main444_12Profile
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         || guid == DXVA_Intel_ModeHEVC_VLD_SCC_Main_Profile
         || guid == DXVA_Intel_ModeHEVC_VLD_SCC_Main_10Profile
         || guid == DXVA_Intel_ModeHEVC_VLD_SCC_Main444_Profile

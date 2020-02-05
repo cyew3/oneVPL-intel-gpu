@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -156,7 +156,7 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
         case MFX_PROFILE_HEVC_REXT:
         case MFX_PROFILE_HEVC_MAINSP:
         case MFX_PROFILE_HEVC_MAIN10:
-#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_PROFILE_HEVC_SCC:
 #endif
             return true;
@@ -233,7 +233,7 @@ mfxU16 QueryMaxProfile(eMFXHWType type)
     else if (type < MFX_HW_TGL_LP)
         return MFX_PROFILE_HEVC_REXT;
     else
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         return MFX_PROFILE_HEVC_SCC;
 #else
         return MFX_PROFILE_HEVC_REXT;
@@ -245,7 +245,7 @@ inline
 bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
 {
     VM_ASSERT(profile != MFX_PROFILE_UNKNOWN);
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     VM_ASSERT(
         !(profile >  MFX_PROFILE_HEVC_REXT) ||
         profile == MFX_PROFILE_HEVC_SCC
@@ -273,7 +273,7 @@ bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
         { MFX_PROFILE_HEVC_REXT,   {                      -1, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV444 } },
 #endif
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         { MFX_PROFILE_HEVC_SCC,    {                      -1, MFX_CHROMAFORMAT_YUV420,                      -1, MFX_CHROMAFORMAT_YUV444 } },
 #endif
     };
@@ -293,7 +293,7 @@ inline
 bool CheckBitDepth(mfxU16 profile, mfxU16 bit_depth)
 {
     VM_ASSERT(profile != MFX_PROFILE_UNKNOWN);
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     VM_ASSERT(
         !(profile >  MFX_PROFILE_HEVC_REXT) ||
         profile == MFX_PROFILE_HEVC_SCC
@@ -312,7 +312,7 @@ bool CheckBitDepth(mfxU16 profile, mfxU16 bit_depth)
         { MFX_PROFILE_HEVC_MAIN10, 8, 10 },
         { MFX_PROFILE_HEVC_MAINSP, 8,  8 },
         { MFX_PROFILE_HEVC_REXT,   8, 12 }, //(12b max for Gen12)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         { MFX_PROFILE_HEVC_SCC,    8, 10 }, //(10b max for Gen12)
 #endif
     };
@@ -1239,7 +1239,7 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
         in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN10 &&
         in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAINSP &&
         in->mfx.CodecProfile != MFX_PROFILE_HEVC_REXT
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         && in->mfx.CodecProfile != MFX_PROFILE_HEVC_SCC
 #endif
         )

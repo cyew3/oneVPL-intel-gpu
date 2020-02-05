@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 #ifndef UMC_VA_H265_PACKER_G12_COMMON
 #define UMC_VA_H265_PACKER_G12_COMMON
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 namespace UMC_HEVC_DECODER
 {
@@ -147,5 +147,5 @@ namespace UMC_HEVC_DECODER
     } //G12
 }
 
-#endif //PRE_SI_TARGET_PLATFORM_GEN12_COMMON
+#endif //MFX_VERSION >= MFX_VERSION_NEXT
 #endif //UMC_VA_H265_PACKER_G12

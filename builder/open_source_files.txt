@@ -467,6 +467,8 @@ _studio/shared/umc/codec/h265_dec/include/umc_h265_yuv.h
 _studio/shared/umc/codec/h265_dec/include/umc_h265_mfx_utils.h
 _studio/shared/umc/codec/h265_dec/include/platform/umc_h265_va_packer_vaapi_g9.hpp
 _studio/shared/umc/codec/h265_dec/include/platform/umc_h265_va_packer_vaapi_g11.hpp
+_studio/shared/umc/codec/h265_dec/include/platform/umc_h265_va_packer_vaapi_g12.hpp
+_studio/shared/umc/codec/h265_dec/include/platform/umc_h265_va_packer_common_g12.hpp
 _studio/shared/umc/codec/h265_dec/src/umc_h265_au_splitter.cpp
 _studio/shared/umc/codec/h265_dec/src/umc_h265_bitstream_headers.cpp
 _studio/shared/umc/codec/h265_dec/src/umc_h265_debug.cpp

@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2019 Intel Corporation
+// Copyright (c) 2013-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -163,7 +163,7 @@ namespace UMC_HEVC_DECODER
 
 }; // namespace UMC_HEVC_DECODER
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     #include "platform/umc_h265_va_packer_vaapi_g12.hpp"
 #else
     #include "platform/umc_h265_va_packer_vaapi_g11.hpp"

@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2019 Intel Corporation
+// Copyright (c) 2006-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -154,7 +154,7 @@ enum VideoAccelerationProfile
     VA_PROFILE_REXT             = 0x20000,
 #if (MFX_VERSION >= 1031)
     VA_PROFILE_12               = 0x40000,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     VA_PROFILE_SCC              = 0x80000,
 #endif
 #endif
@@ -205,7 +205,7 @@ enum VideoAccelerationProfile
     H265_12_VLD_444             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12 | VA_PROFILE_444,
 #endif
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     H265_VLD_SCC                = VA_H265 | VA_VLD | VA_PROFILE_SCC,
     H265_VLD_444_SCC            = VA_H265 | VA_VLD | VA_PROFILE_SCC  | VA_PROFILE_444,
     H265_10_VLD_SCC             = VA_H265 | VA_VLD | VA_PROFILE_SCC  | VA_PROFILE_10,

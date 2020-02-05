@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2019 Intel Corporation
+// Copyright (c) 2006-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -129,7 +129,7 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_12Profile,
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_12Profile,
     0x5b08e35d, 0xc66, 0x4c51, 0xa6, 0xf1, 0x89, 0xd0, 0xc, 0xb2, 0xc1, 0x97);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 // {0E4BC693-5D2C-4936-B125-AEFE32B16D8A}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main_Profile,
     0xe4bc693, 0x5d2c, 0x4936, 0xb1, 0x25, 0xae, 0xfe, 0x32, 0xb1, 0x6d, 0x8a);
@@ -148,11 +148,11 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main444_10Profile,
 #endif
 
 // {A7F759DD-5F54-4d7f-8291-42E883C546FE}
-DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_YUV420_12bit_VLD, 
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_YUV420_12bit_VLD,
     0xa7f759dd, 0x5f54, 0x4d7f, 0x82, 0x91, 0x42, 0xe8, 0x83, 0xc5, 0x46, 0xfe);
 
 // {F34FA92F-DC79-474c-B0DB-B7BD4522DF77}
-DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_12bit_VLD, 
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_12bit_VLD,
     0xf34fa92f, 0xdc79, 0x474c, 0xb0, 0xdb, 0xb7, 0xbd, 0x45, 0x22, 0xdf, 0x77);
 
 struct GuidProfile
@@ -306,7 +306,7 @@ protected:
 template <typename T>
 bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * protectedVA)
 {
-    int32_t const profile = 
+    int32_t const profile =
         (profile_flags & (VA_ENTRY_POINT | VA_CODEC));
 
     if (protectedVA)
@@ -383,15 +383,13 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case H265_12_VLD_420:
     case H265_12_VLD_422:
     case H265_12_VLD_444:
-#endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     case H265_VLD_SCC:
     case H265_10_VLD_SCC:
     case H265_VLD_444_SCC:
     case H265_10_VLD_444_SCC:
-#endif //PRE_SI_TARGET_PLATFORM_GEN12
+#endif
         if (   (profile_flags & VA_PROFILE_REXT)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             || (profile_flags & VA_PROFILE_SCC)
 #endif
             )

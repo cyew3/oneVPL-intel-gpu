@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2019 Intel Corporation
+// Copyright (c) 2013-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,10 +34,8 @@
     #error "Gen11 should be compiled with DDI_VERSION >= 0.943"
 #endif
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    #if DDI_VERSION < 945
-        #error "Gen12 should be compiled with DDI_VERSION >= 0.945"
-    #endif
+#if DDI_VERSION < 945
+    #error "Gen12 should be compiled with DDI_VERSION >= 0.945"
 #endif
 
 using namespace UMC;
@@ -502,7 +500,7 @@ namespace UMC_HEVC_DECODER
         if (!pSliceInfo)
             throw h265_exception(UMC_ERR_FAILED);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         if (m_va->m_Profile & VA_PROFILE_SCC)
         {
             DXVA_Intel_PicParams_HEVC_SCC* pp = 0;
@@ -794,7 +792,7 @@ namespace UMC_HEVC_DECODER
             DXVA_Intel_PicParams_HEVC const* pp = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
 
             if (   (m_va->m_Profile & VA_PROFILE_REXT)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
                 || (m_va->m_Profile & VA_PROFILE_SCC)
 #endif
                 )

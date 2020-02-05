@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -185,13 +185,13 @@ namespace UMC_HEVC_DECODER
         if (va->m_HWPlatform < MFX_HW_ICL)
             return new G9::PackerVAAPI(va);
         else
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN12)
-            return new G11::PackerVAAPI(va);
-#else
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         if (va->m_HWPlatform < MFX_HW_TGL_LP)
             return new G11::PackerVAAPI(va);
         else
             return new G12::PackerVAAPI(va);
+#else
+            return new G11::PackerVAAPI(va);
 #endif
     }
 }
