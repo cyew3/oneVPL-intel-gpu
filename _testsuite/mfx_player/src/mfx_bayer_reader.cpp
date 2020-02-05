@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2014-2017 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014-2020 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -69,11 +69,7 @@ mfxStatus BayerVideoReader::ReadNextFrame(mfxBitstream2 &bs)
     bs.DataOffset = 0;
     bs.TimeStamp = MFX_TIME_STAMP_INVALID;
 
-    vm_char fname[MAX_PATH];
-
-    int filenameIndx = m_FileNum; 
-
-    const vm_char *pExt;
+    const vm_char* pExt;
 
     switch (m_BayerType) {
     case MFX_CAM_BAYER_GRBG:
@@ -91,8 +87,18 @@ mfxStatus BayerVideoReader::ReadNextFrame(mfxBitstream2 &bs)
         break;
     }
 
-    vm_string_sprintf(fname, VM_STRING("%s%08d.%s"), m_FileNameBase, filenameIndx, pExt);
-    
+    /*
+     * The following file name structure used: <base_name><fileNameIndex>.<extension> ("%s%08d.%s")
+     * <base_name> length is up to the size of m_FileNameBase (MAX_PATH).
+     * <fileNameIndex> length is from 8 to 11 characters.
+     * <extension> length is 4 characters.
+     * Hence, the max length of the file name, including the terminating null-character, is (MAX_PATH + 16).
+     */
+    const int fileNameIndex = m_FileNum;
+    vm_char fname[sizeof(m_FileNameBase) + 16];
+
+    vm_string_snprintf(fname, sizeof(fname) - 1, VM_STRING("%s%08d.%s"), m_FileNameBase, fileNameIndex, pExt);
+
     Ipp64u file_size;
     Ipp32u file_attr;
     vm_file_getinfo(fname, &file_size, &file_attr);
