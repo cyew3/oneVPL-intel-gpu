@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -190,7 +190,7 @@ static ImplBase* CreateSpecific(
     , eFeatureMode mode)
 {
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
-    if (HW == MFX_HW_DG2)
+    if (HW >= MFX_HW_DG2)
         return new HEVCEHWDisp::DG2::MFXVideoENCODEH265_HW(core, status, mode);
     if (HW >= MFX_HW_ATS)
         return new HEVCEHWDisp::ATS::MFXVideoENCODEH265_HW(core, status, mode);

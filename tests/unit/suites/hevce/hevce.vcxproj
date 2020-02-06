@@ -49,6 +49,15 @@
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\libmfxhw.vcxproj">
       <Project>{38e352c7-c5f5-459e-9338-a7dd164e6ca4}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\shared\mfx_common.vcxproj">
+      <Project>{5b832ea0-e58c-46b9-aff6-2416cf805c09}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\shared\mfx_common_hw.vcxproj">
+      <Project>{dd53ac38-3804-4438-a3ca-a9e390cdf9f9}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\umc\base_classes.vcxproj">
+      <Project>{c22074b5-4f12-464e-b7be-6c169718e0e8}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm\vm.vcxproj">
       <Project>{e48418e7-2dca-4642-80d5-09a8799c2549}</Project>
     </ProjectReference>
@@ -58,9 +67,13 @@
     <ProjectReference Include="..\..\..\..\_studio\shared\mfx_trace\mfx_trace_hw.vcxproj">
       <Project>{252BA91C-A180-41D8-8B2F-84904DD53000}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\umc\io\umc_io\umc_io.vcxproj">
+      <Project>{8dc35b89-b4b7-4b48-b462-e589d4fdfede}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Condition="'$(Platform)'=='x64'" Include="..\..\..\..\_studio\shared\src\auxiliary_device.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\auxiliary_device.cpp" />
+    <ClCompile Include="hevce_disp.cpp" />
     <ClCompile Include="hevce_feature_blocks_dx11_ddi.cpp" />
     <ClCompile Include="hevce_feature_blocks_g11_interlace.cpp" />
     <ClCompile Include="hevce_feature_blocks_g11_win_qmatrix.cpp" />
