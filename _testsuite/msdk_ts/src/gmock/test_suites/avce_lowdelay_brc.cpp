@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -159,13 +159,20 @@ namespace TEST_NAME
             }
         }
         
-        if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_VCM || m_par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+        if (g_tsOSFamily == MFX_OS_FAMILY_LINUX)
         {
-            if (g_tsOSFamily == MFX_OS_FAMILY_LINUX && g_tsHWtype < MFX_HW_KBL)
+            if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
             {
-                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                if (g_tsHWtype < MFX_HW_KBL)
+                {
+                    g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                    throw tsSKIP;
+                }
+            }
+            else if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+            {
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
-                return 0;
+                throw tsSKIP;
             }
         }
 
