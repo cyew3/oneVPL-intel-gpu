@@ -119,6 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include;$(MSDK_API_ROOT)/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

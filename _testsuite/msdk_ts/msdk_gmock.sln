@@ -1,14 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.779
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "msdk_gmock", "msdk_gmock.vcxproj", "{1CA8E138-0B04-4E5C-8F48-C060D7AE8B82}"
 	ProjectSection(ProjectDependencies) = postProject
 		{667D0DEC-A5E6-4D12-82FC-C3823EF96FD3} = {667D0DEC-A5E6-4D12-82FC-C3823EF96FD3}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bs_parser", "..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj", "{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bs_parser", "..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj", "{D08D664E-7245-40F7-9B55-3440EF95F2F7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmock_vs2015", "..\..\..\mdp_msdk-contrib\gmock\msvc\2015\gmock.vcxproj", "{014D73AF-8FC7-4282-B25F-AA452C04B9B2}"
 EndProject
@@ -40,18 +40,18 @@ Global
 		{1CA8E138-0B04-4E5C-8F48-C060D7AE8B82}.Release|Win32.Build.0 = Release|Win32
 		{1CA8E138-0B04-4E5C-8F48-C060D7AE8B82}.Release|x64.ActiveCfg = Release|x64
 		{1CA8E138-0B04-4E5C-8F48-C060D7AE8B82}.Release|x64.Build.0 = Release|x64
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Debug_WithDebugAPI|Win32.ActiveCfg = Debug_static|Win32
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Debug_WithDebugAPI|Win32.Build.0 = Debug_static|Win32
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Debug_WithDebugAPI|x64.ActiveCfg = Debug_static|x64
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Debug_WithDebugAPI|x64.Build.0 = Debug_static|x64
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Debug|Win32.ActiveCfg = Debug_static_trace|Win32
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Debug|Win32.Build.0 = Debug_static_trace|Win32
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Debug|x64.ActiveCfg = Debug_static_trace|x64
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Debug|x64.Build.0 = Debug_static_trace|x64
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Release|Win32.ActiveCfg = Release_static_trace|Win32
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Release|Win32.Build.0 = Release_static_trace|Win32
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Release|x64.ActiveCfg = Release_static_trace|x64
-		{79EFE2FA-CCEF-4E01-8693-2E6129F2A471}.Release|x64.Build.0 = Release_static_trace|x64
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Debug_WithDebugAPI|Win32.ActiveCfg = Debug_static|Win32
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Debug_WithDebugAPI|Win32.Build.0 = Debug_static|Win32
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Debug_WithDebugAPI|x64.ActiveCfg = Debug_static|x64
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Debug_WithDebugAPI|x64.Build.0 = Debug_static|x64
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Debug|Win32.ActiveCfg = Debug_static_trace|Win32
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Debug|Win32.Build.0 = Debug_static_trace|Win32
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Debug|x64.ActiveCfg = Debug_static_trace|x64
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Debug|x64.Build.0 = Debug_static_trace|x64
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Release|Win32.ActiveCfg = Release_static_trace|Win32
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Release|Win32.Build.0 = Release_static_trace|Win32
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Release|x64.ActiveCfg = Release_static_trace|x64
+		{D08D664E-7245-40F7-9B55-3440EF95F2F7}.Release|x64.Build.0 = Release_static_trace|x64
 		{014D73AF-8FC7-4282-B25F-AA452C04B9B2}.Debug_WithDebugAPI|Win32.ActiveCfg = Debug|Win32
 		{014D73AF-8FC7-4282-B25F-AA452C04B9B2}.Debug_WithDebugAPI|Win32.Build.0 = Debug|Win32
 		{014D73AF-8FC7-4282-B25F-AA452C04B9B2}.Debug_WithDebugAPI|x64.ActiveCfg = Debug|x64
@@ -103,5 +103,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D2951C7E-30B8-498C-A86B-3ECD559AB8F5}
 	EndGlobalSection
 EndGlobal

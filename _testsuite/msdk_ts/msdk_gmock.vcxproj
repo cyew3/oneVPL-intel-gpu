@@ -143,6 +143,8 @@
       <AdditionalIncludeDirectories>$(MSDK_API_ROOT)/mediasdk_structures;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;../../samples/sample_common/include/vm;../../samples/sample_common/include;../../../mdp_msdk-contrib/igfx_s3dcontrol/include;../../../mdp_msdk-val-tools/bs_parser/include;../../../mdp_msdk-contrib/gmock/gtest/include;../../../mdp_msdk-contrib/gmock/include;$(MSDK_API_ROOT)/include;./include/gmock;./include;../mfx_serializer/include;../../../mdp_msdk-contrib/yaml-cpp/include;../../igfx_s3dcontrol/include/API;../../_studio/shared/include;../../_studio/shared/umc/core/vm/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
