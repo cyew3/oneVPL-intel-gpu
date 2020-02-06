@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -197,8 +197,7 @@ namespace hevce_maxframesize
         if (tc.mode & ENCODE)
         {
             SetExpectations(tc);
-            if (!USE_REFACTORED_HEVCE)
-                g_tsStatus.expect(MFX_ERR_NONE);
+            g_tsStatus.expect(MFX_ERR_NONE);
             EncodeFrames(1);
         }
 
