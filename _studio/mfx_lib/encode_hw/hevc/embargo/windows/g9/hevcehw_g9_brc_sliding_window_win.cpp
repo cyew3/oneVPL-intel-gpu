@@ -47,7 +47,9 @@ void BRCSlidingWindow::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
         auto& ddiSPS = Deref(GetDDICB<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC>(
             ENCODE_ENC_PAK_ID, DDIPar_In, vaType, Glob::DDI_SubmitParam::Get(global)));
 
-        ddiSPS.FrameSizeTolerance = eFrameSizeTolerance_Low;
+        ddiSPS.FrameSizeTolerance = eFrameSizeTolerance_Low; //sliding window
+        ddiSPS.SlidingWindowSize = CO3.WinBRCSize;
+        ddiSPS.MaxBitRatePerSlidingWindow = CO3.WinBRCMaxAvgKbps;
 
         return MFX_ERR_NONE;
     });
