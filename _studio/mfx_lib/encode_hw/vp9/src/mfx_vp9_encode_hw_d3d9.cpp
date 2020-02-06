@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Intel Corporation
+// Copyright (c) 2016-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -210,7 +210,7 @@ mfxU16 MapSegmentRefControlToDDI(mfxU16 refAndSkipCtrl)
 }
 
 void FillPpsBuffer(
-    VP9MfxVideoParam const & par,
+    VP9MfxVideoParam const & /*par*/,
     Task const & task,
     ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps,
     BitOffsets const &offsets)
@@ -286,7 +286,6 @@ void FillPpsBuffer(
 
     pps.PicFlags.fields.segmentation_enabled = framePar.segmentation != NO_SEGMENTATION;
 
-    mfxExtCodingOption2 opt2 = GetExtBufferRef(par);
     if (framePar.segmentation == APP_SEGMENTATION)
     {
         // segment map is provided by application
@@ -579,8 +578,6 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
     m_auxDevice = std::move(auxDevice);
 
-    MFX_CHECK_STS(sts);
-
     return MFX_ERR_NONE;
 } // mfxStatus D3D9Encoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, VP9MfxVideoParam const & par)
 
@@ -769,7 +766,6 @@ mfxStatus D3D9Encoder::Execute(
     compBufferDesc[bufCnt].pCompBuffer = &bitstream;
     bufCnt++;
 
-    mfxExtCodingOption2 opt2 = GetExtBufferRef(curMfxPar);
     if (task.m_frameParam.segmentation == APP_SEGMENTATION)
     {
         mfxStatus sts = FillSegmentMap(task, m_pmfxCore);
