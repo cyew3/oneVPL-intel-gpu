@@ -116,6 +116,20 @@ About mode 2.
     1. Copy all app. specified parameters excepting 'ignored' into internal parameters buffer
     2. Check parameters in this internal\intermediate buffer
 
+## External Threads
+External threads mode changes MSDK behavior: instead of creating worker threads internally, MSDK relies on threads created by customer applications. These threads should call `session.DoWork()` function that will perform MSDK routines. Note that DoWork() function occupies thread and execution will not return from that function until session is closed. That's why DoWork() should not be called from main customer application thread.
+
+External threads code can be enabled by enabling `MFX_EXTERNAL_THREADING` macro.
+During execution of DoWork() functions, following steps are executed:
+
+1. New `MFX_SCHEDULER_THREAD_CONTEXT` object is created, session's scheduler is assigned to it.
+2. Context object is added to ThreadPool, thread number is filled into context.
+3. mfxSchedulerCore::ThreadProc is executued inside this thread and using newly created thread context.
+4. Thread stays occupied by ThreadProc until session is closed.
+After that, tasks are processed inside ThreadProc function as in internal threading mode.
+
+**Found problems:** According to instruction, external threads mode should be enabled by mfxInitParam::ExternalThreads parameter passed to InitEx function. Currently, this parameter is ignored and external threads mode can be enabled or disabled by `MFX_EXTERNAL_THREADING` macro only.
+
 # Encoder
 
 ## HRD Conformance

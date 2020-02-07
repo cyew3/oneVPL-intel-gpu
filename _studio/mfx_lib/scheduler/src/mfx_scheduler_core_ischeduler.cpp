@@ -162,9 +162,6 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 // prepare context
                 pContext->pSchedulerCore = this;
                 pContext->threadNum = AddThreadToPool(pContext); // m_param.numberOfThreads modified here
-
-                // spawn a thread
-                m_pThreadCtx[i].threadHandle = std::thread([this, i]() { ThreadProc(&m_pThreadCtx[i]); });
             }
 
         }
@@ -1031,7 +1028,7 @@ mfxStatus mfxSchedulerCore::DoWork()
 #if defined(MFX_EXTERNAL_THREADING)
 mfxU32 mfxSchedulerCore::AddThreadToPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext)
 {
-    UMC::AutomaticMutex guard(m_guard);
+    std::lock_guard<std::mutex>  guard(m_guard);
 
     size_t thNumber = m_ppThreadCtx.size();
     m_ppThreadCtx.push_back(pContext);
@@ -1045,7 +1042,7 @@ mfxU32 mfxSchedulerCore::AddThreadToPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext
 
 void mfxSchedulerCore::RemoveThreadFromPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext)
 {
-    UMC::AutomaticMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
 
     if (!pContext)
     {
