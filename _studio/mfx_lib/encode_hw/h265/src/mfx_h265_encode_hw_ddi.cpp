@@ -202,6 +202,7 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
         caps.ddi_caps.Color420Only = 0;  // = 1 now
         caps.ddi_caps.YUV422ReconSupport = 1; // = 0 now
         caps.ddi_caps.SliceIPBOnly = 1;  // = 0 now (SliceIP is also 0)cz
+        caps.ddi_caps.SliceIPOnly = IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7);
         caps.ddi_caps.NoWeightedPred = 0; // = 1 now
         caps.ddi_caps.NoMinorMVs = 1;  // = 0 now
         caps.ddi_caps.RawReconRefToggle = 1;  // = 0 now
@@ -222,6 +223,10 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
         caps.ddi_caps.MaxNum_WeightedPredL1 = 2; // = 0 now
         caps.ddi_caps.TileSupport = 1;
         caps.ddi_caps.IntraRefreshBlockUnitSize = 2;
+    }
+    else
+    {
+        caps.ddi_caps.SliceIPOnly = IsOn(par.mfx.LowPower);
     }
 #endif
 
