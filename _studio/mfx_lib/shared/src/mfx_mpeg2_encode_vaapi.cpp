@@ -897,13 +897,11 @@ mfxStatus VAAPIEncoder::FillSlices(ExecuteBuffers* pExecuteBuffers)
     MFX_CHECK_WITH_ASSERT(height_in_mbs == pExecuteBuffers->m_pps.NumSlice, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     mfxStatus sts;
-#if 1                   //multiple slice
     for (int i = 0; i < height_in_mbs; i++) {
         ENCODE_SET_SLICE_HEADER_MPEG2&  ddiSlice = pExecuteBuffers->m_pSlice[i];
         assert(ddiSlice.NumMbsForSlice == width_in_mbs);
         sliceParam = &m_sliceParam[i];
-        //sliceParam->macroblock_address = i * width_in_mbs;
-        sliceParam->macroblock_address = i;
+        sliceParam->macroblock_address = i * width_in_mbs;
         sliceParam->num_macroblocks      = ddiSlice.NumMbsForSlice;
         sliceParam->is_intra_slice       = ddiSlice.IntraSlice;
         // prevent GPU hang due to different scale_code in different slices
@@ -921,26 +919,6 @@ mfxStatus VAAPIEncoder::FillSlices(ExecuteBuffers* pExecuteBuffers)
         m_sliceParam,
         m_sliceParamBufferId);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
-#else       // single slice
-    sliceParam = &m_sliceParam[0];
-    sliceParam->macroblock_address = 0;
-    sliceParam->num_macroblocks = width_in_mbs * height_in_mbs;
-    sliceParam->is_intra_slice = (m_vaPpsBuf.picture_type == VAEncPictureTypeIntra);
-    sliceParam->quantiser_scale_code = /*ctx->qp*/ 8 / 2; // TODO: where find QP value ?
-
-    sts = CheckAndDestroyVAbuffer(m_vaDisplay, m_sliceParamBufferId);
-    MFX_CHECK_STS(sts);
-
-    vaSts = vaCreateBuffer(m_vaDisplay,
-        m_vaContextEncode,
-        VAEncSliceParameterBufferType,
-        sizeof(*sliceParam),
-        height_in_mbs,
-        m_sliceParam,
-        m_sliceParamBufferId);
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-#endif
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::FillSlices(ExecuteBuffers* pExecuteBuffers)
