@@ -1563,8 +1563,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
     // for game streaming scenario, if option enable lowpower lookahead, check encoder's capability
-    if (extOpt3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && m_video.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-        &&extOpt2.LookAheadDepth > 0 && !bIntRateControlLA(m_video.mfx.RateControlMethod))
+    if(IsLpLookaheadSupported(extOpt3.ScenarioInfo, extOpt2.LookAheadDepth, m_video.mfx.RateControlMethod))
     {
         //create and initialize lowpower lookahead module
         m_lpLookAhead.reset(new MfxLpLookAhead(m_core));
@@ -2495,6 +2494,30 @@ void ImplementationAvc::OnLookaheadQueried()
             task.m_cmRaw = NULL;
         }
     }
+
+#ifdef MFX_ENABLE_LP_LOOKAHEAD
+    if (m_lpLookAhead)
+    {
+        mfxStatus sts = m_lpLookAhead->Query(&task.m_cqmHint);
+
+        // refresh the scaling list based on cqmHint
+        if (sts == MFX_ERR_NONE && task.m_cqmHint == CQM_HINT_USE_CUST_MATRIX)
+        {
+            const mfxExtSpsHeader &extSps = GetExtBufferRef(m_video);
+            const mfxExtPpsHeader &extCqmPps = m_video.GetCqmPps();
+
+            if (extSps.seqScalingMatrixPresentFlag || extCqmPps.picScalingMatrixPresentFlag)
+            {
+                FillTaskScalingList(extSps, extCqmPps, task);
+            }
+        }
+        else
+        {
+            task.m_cqmHint = CQM_HINT_USE_FLAT_MATRIX;
+        }
+
+    }
+#endif
 
     m_histRun.splice(m_histRun.end(), m_lookaheadStarted, m_lookaheadStarted.begin());
 }
@@ -3556,7 +3579,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         if (
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
-            bIntRateControlLA(m_video.mfx.RateControlMethod) &&
+            (m_video.mfx.RateControlMethod != MFX_RATECONTROL_CBR && m_video.mfx.RateControlMethod != MFX_RATECONTROL_VBR) &&
 #endif
             extDdi.LookAheadDependency > 0 && m_lookaheadFinished.size() >= extDdi.LookAheadDependency)
         {

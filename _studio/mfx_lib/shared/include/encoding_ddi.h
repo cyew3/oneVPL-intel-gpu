@@ -261,13 +261,24 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
     ENCODE_AES128_CIPHER_COUNTER aes_counter;
 
     UINT    StreamId;
-    UINT    Reserved2;
+    UCHAR   CqmHint;
+    UCHAR   reserved8b;
+    USHORT  reserved16b;
     UINT    Reserved3;
     UINT    Reserved4;
 
 #endif // NEW_STATUS_REPORTING_DDI_0915
 
 } ENCODE_QUERY_STATUS_PARAMS, *PENCODE_QUERY_STATUS_PARAMS;
+
+#ifdef MFX_ENABLE_LP_LOOKAHEAD
+enum
+{
+    CQM_HINT_USE_FLAT_MATRIX = 0,    //use flat matrix
+    CQM_HINT_USE_CUST_MATRIX = 1,    //use customized matrix
+    CQM_HINT_INVALID         = 0xFF  //invalid hint
+};
+#endif
 
 // new encode query status interface for slice level report (starting from DDI 0.935)
 typedef struct tagENCODE_QUERY_STATUS_SLICE_PARAMS

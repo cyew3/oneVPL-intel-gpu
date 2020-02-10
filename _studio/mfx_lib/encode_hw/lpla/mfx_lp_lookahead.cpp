@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -105,23 +105,47 @@ mfxStatus MfxLpLookAhead::Submit(mfxFrameSurface1 * surface)
 
     mfxFrameSurface1 *reordered_surface = nullptr;
     mfxEncodeInternalParams internal_params;
-    MFX_ENTRY_POINT entryPoints[1];
+    MFX_ENTRY_POINT entryPoint = {};
 
-    memset(&entryPoints, 0, sizeof(entryPoints));
     mfxRes = m_pEnc->EncodeFrameCheck(
         nullptr,
         surface,
         &m_bitstream,
         &reordered_surface,
         &internal_params,
-        entryPoints);
+        &entryPoint);
     MFX_CHECK_STS(mfxRes);
 
-    mfxRes = entryPoints->pRoutine(entryPoints->pState, entryPoints->pParam, 0, 0);
-    if (mfxRes == MFX_TASK_BUSY)
-        mfxRes = MFX_ERR_NONE; //ignore the query status for LA pass
+    mfxRes = entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0);
+    if (mfxRes == MFX_ERR_NONE)
+    {
+        MfxHwH265Encode::Task * task = (MfxHwH265Encode::Task*)entryPoint.pParam;
+        if (task->m_cqmHint != CQM_HINT_INVALID)
+            m_cqmHint.push_back(task->m_cqmHint);
+    }
+    //else return to h264 encoder pipeline and leverage external scheduler for task scheduling
 
     return mfxRes;
+}
+
+mfxStatus MfxLpLookAhead::Query(mfxU8 *cqmHint)
+{
+    MFX_CHECK_NULL_PTR1(cqmHint);
+
+    if (!m_bInitialized)
+    {
+        return MFX_ERR_NOT_INITIALIZED;
+    }
+
+    if (m_cqmHint.empty())
+    {
+        return MFX_ERR_NOT_FOUND;
+    }
+
+    *cqmHint = m_cqmHint.front();
+    m_cqmHint.pop_front();
+
+    return MFX_ERR_NONE;
 }
 
 #endif

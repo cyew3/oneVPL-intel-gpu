@@ -530,7 +530,11 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         size_t slice_size_old = m_slice.size();
         FillVaringPartOfSpsBuffer(m_sps, task, fieldId);
 
-        FillVaringPartOfPpsBuffer(task, fieldId, m_pps, m_dirtyRects, m_movingRects);
+        FillVaringPartOfPpsBuffer(task, fieldId, m_pps, m_dirtyRects, m_movingRects
+#ifdef MFX_ENABLE_LP_LOOKAHEAD
+            , m_headerPacker.GetPackedCqmPpsNum()
+#endif
+        );
 
         if (task.m_SliceInfo.size())
             FillVaringPartOfSliceBufferSizeLimited(m_caps, task, fieldId, m_sps, m_pps, m_slice);
@@ -728,6 +732,18 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
         m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = RemoveConst(&packedPps[!!task.m_viewIdx]);
         m_encodeExecuteParams.NumCompBuffers++;
+
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        mfxU32 extCqmNum = m_headerPacker.GetPackedCqmPpsNum();
+        if (extCqmNum > 0)
+        {
+            std::vector<ENCODE_PACKEDHEADER_DATA> const & packedCqmPps = m_headerPacker.GetPps(true);
+            m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
+            m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
+            m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer = RemoveConst(&packedCqmPps[0]);
+            m_encodeExecuteParams.NumCompBuffers++;
+        }
+#endif
     }
 
     if (sei.Size() > 0)

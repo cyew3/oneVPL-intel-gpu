@@ -123,7 +123,11 @@ namespace MfxHwH264Encode
         mfxU32                               fieldId,
         ENCODE_SET_PICTURE_PARAMETERS_H264 & pps,
         std::vector<ENCODE_RECT> &           dirtyRects,
-        std::vector<MOVE_RECT> &             movingRects);
+        std::vector<MOVE_RECT> &             movingRects
+#ifdef MFX_ENABLE_LP_LOOKAHEAD
+        , mfxU32                             extPpsNum = 0
+#endif
+    );
 
     void FillConstPartOfSliceBuffer(
         MfxVideoParam const &                       par,

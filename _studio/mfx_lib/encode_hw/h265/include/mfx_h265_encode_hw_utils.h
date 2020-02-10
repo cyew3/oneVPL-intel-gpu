@@ -379,6 +379,7 @@ struct Task : DpbFrame
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
     mfxU32            m_idxLpla                       = 0;
     mfxMemId          m_midLpla                       = nullptr;
+    mfxU8             m_cqmHint                       = CQM_HINT_INVALID;
 #endif
 
     bool              m_resetBRC                      = false;

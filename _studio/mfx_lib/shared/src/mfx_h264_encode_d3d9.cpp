@@ -307,7 +307,11 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     mfxU32                               fieldId,
     ENCODE_SET_PICTURE_PARAMETERS_H264 & pps,
     std::vector<ENCODE_RECT> &           dirtyRects,
-    std::vector<MOVE_RECT> &             movingRects)
+    std::vector<MOVE_RECT> &             movingRects
+#ifdef MFX_ENABLE_LP_LOOKAHEAD
+    , mfxU32                             extPpsNum
+#endif
+)
 {
 
     pps.NumSlice                                = mfxU8(task.m_numSlice[fieldId]);
@@ -445,6 +449,26 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     pps.SourceMarkerValue   = task.m_gpuSync.MarkerValue;
     pps.SourceMarkerStartX  = task.m_gpuSync.MarkerOffsetX;
     pps.SourceMarkerStartY  = task.m_gpuSync.MarkerOffsetY;
+#endif
+
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    // refresh pic_parameter_set_id for adaptive CQM
+    if (task.m_cqmHint == CQM_HINT_USE_FLAT_MATRIX)
+    {
+        pps.pic_parameter_set_id = 0;
+        pps.pic_scaling_matrix_present_flag = false;
+        pps.pic_scaling_list_present_flag   = false;
+    }
+    else if (task.m_cqmHint == CQM_HINT_USE_CUST_MATRIX)
+    {
+        if (extPpsNum > 0)
+        {
+            // only extended CQM pps is supported now
+            pps.pic_parameter_set_id = 1;
+            pps.pic_scaling_matrix_present_flag = true;
+            pps.pic_scaling_list_present_flag = true;
+        }
+    }
 #endif
 }
 

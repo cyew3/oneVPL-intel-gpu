@@ -51,6 +51,8 @@
 #undef MFX_DEBUG_TOOLS
 #define MFX_DEBUG_TOOLS
 
+#define MFX_ENABLE_LP_LOOKAHEAD
+
 #if defined(DEBUG) || defined(_DEBUG)
 #undef  MFX_DEBUG_TOOLS // to avoid redefinition
 #define MFX_DEBUG_TOOLS

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,11 +46,14 @@ public:
 
     virtual mfxStatus Submit(mfxFrameSurface1 * surface);
 
+    virtual mfxStatus Query(mfxU8 *cqmHint);
+
 protected:
     bool                   m_bInitialized = false;
     VideoCORE*             m_core         = nullptr;
     MFXVideoENCODEH265_HW* m_pEnc         = nullptr;
     mfxBitstream           m_bitstream    = {};
+    std::list<mfxU8>       m_cqmHint;
 };
 
 #endif
