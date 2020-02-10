@@ -45,7 +45,47 @@ MFX_LOCAL_SRC_FILES_IMPL := \
 
 MFX_LOCAL_SRC_FILES_HW := \
     $(MFX_LOCAL_SRC_FILES_IMPL) \
-    $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/src/*.cpp)))
+    $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/src/*.cpp))) \
+    mfx_lib/encode_hw/hevc/hevcehw_disp.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/hevcehw_base.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_alloc.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_constraints.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_dirty_rect.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_dpb_report.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_encoded_frame_info.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_ext_brc.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_hdr_sei.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_hrd.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_interlace.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_legacy.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_legacy_defaults.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_max_frame_size.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_packer.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_parser.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_roi.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_task.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g9/hevcehw_g9_weighted_prediction.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g12/hevcehw_g12_caps.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/g12/hevcehw_g12_rext.cpp \
+    mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_interlace_lin.cpp \
+    mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_fei_lin.cpp \
+    mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_lin.cpp \
+    mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_roi_lin.cpp \
+    mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_va_lin.cpp \
+    mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_va_packer_lin.cpp \
+    mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_weighted_prediction_lin.cpp \
+    mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_lin.cpp \
+    mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_rext_lin.cpp \
+    mfx_lib/encode_hw/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf.cpp \
+    mfx_lib/encode_hw/hevc/embargo/agnostic/g11lkf/hevcehw_g11lkf_caps.cpp \
+    mfx_lib/encode_hw/hevc/embargo/agnostic/g12/hevcehw_g12_scc.cpp \
+    mfx_lib/encode_hw/hevc/embargo/agnostic/g12ats/hevcehw_g12ats_mfe.cpp \
+    mfx_lib/encode_hw/hevc/embargo/agnostic/g12dg2/hevcehw_g12dg2_caps.cpp \
+    mfx_lib/encode_hw/hevc/embargo/linux/g12/hevcehw_g12_embargo_lin.cpp \
+    mfx_lib/encode_hw/hevc/embargo/linux/g12ats/hevcehw_g12ats_lin.cpp \
+    mfx_lib/encode_hw/hevc/embargo/linux/g12ats/hevcehw_g12ats_mfe_lin.cpp \
+    mfx_lib/encode_hw/hevc/embargo/linux/g12dg2/hevcehw_g12dg2_lin.cpp
 
 MFX_LOCAL_INCLUDES := \
     $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include))
@@ -62,7 +102,22 @@ MFX_LOCAL_INCLUDES_HW := \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/copy_kernels/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/mctf/isa \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/mctf/include \
-    $(MFX_HOME)/mdp_msdk-lib/_studio/shared/asc/include
+    $(MFX_HOME)/mdp_msdk-lib/_studio/shared/asc/include \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/agnostic \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/agnostic/g9 \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/agnostic/g12 \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/linux \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/linux/g9 \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/linux/g12 \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/agnostic/g11lkf \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/agnostic/g12 \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/agnostic/g12ats \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/agnostic/g12dg2 \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/linux/g11lkf \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/linux/g12 \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/linux/g12ats \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/encode_hw/hevc/embargo/linux/g12dg2
 
 MFX_LOCAL_STATIC_LIBRARIES_HW := \
     libmfx_lib_merged_hw \

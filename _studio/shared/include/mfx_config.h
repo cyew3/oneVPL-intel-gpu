@@ -503,9 +503,7 @@
     #endif
 #endif
 
-#if !defined(ANDROID)
 #define MFX_ENABLE_HEVCEHW_REFACTORING
-#endif //!defined(ANDROID)
 
 #define CMAPIUPDATE
 

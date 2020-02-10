@@ -30,8 +30,10 @@ namespace HEVCEHW
 {
     namespace LegacyFallback
     {
+#if !defined(ANDROID)
 #pragma warning(push)
 #pragma warning(disable:4250) //inherits via dominance
+#endif
 
 #if defined(MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
         class FEI
@@ -109,7 +111,9 @@ namespace HEVCEHW
             }
         };
     };
+#if !defined(ANDROID)
 #pragma warning(pop)
+#endif
 };
 
 #if defined(MFX_VA_LINUX)

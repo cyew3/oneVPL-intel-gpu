@@ -194,7 +194,7 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     });
 
     Push(BLK_SetLowPowerDefault
-        , [this](const mfxVideoParam&, mfxVideoParam& par, StorageW& strg) -> mfxStatus
+        , [](const mfxVideoParam&, mfxVideoParam& par, StorageW& strg) -> mfxStatus
     {
         bool bLowPower =
             Glob::VideoCore::Get(strg).GetHWType() >= MFX_HW_TGL_LP
@@ -207,7 +207,7 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 
 
     Push(BLK_LoadSPSPPS
-        , [this](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
+        , [](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
     {
         Glob::NeedRextConstraints::GetOrConstruct(strg) = [](const Gen9::PTL& ptl)
         {
@@ -284,7 +284,7 @@ void SCC::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     });
 
     Push(BLK_SetSPSExt
-        , [this](StorageRW& strg, StorageRW&) -> mfxStatus
+        , [](StorageRW& strg, StorageRW&) -> mfxStatus
     {
         MFX_CHECK(Glob::VideoParam::Get(strg).mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
 
@@ -301,7 +301,7 @@ void SCC::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     });
 
     Push(BLK_SetPPSExt
-        , [this](StorageRW& strg, StorageRW&) -> mfxStatus
+        , [](StorageRW& strg, StorageRW&) -> mfxStatus
     {
         MFX_CHECK(Glob::VideoParam::Get(strg).mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
 
@@ -318,7 +318,7 @@ void SCC::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 void SCC::PostReorderTask(const FeatureBlocks& /*blocks*/, TPushPostRT Push)
 {
     Push(BLK_PatchSliceHeader
-        , [this](
+        , [](
             StorageW& global
             , StorageW& s_task) -> mfxStatus
     {
