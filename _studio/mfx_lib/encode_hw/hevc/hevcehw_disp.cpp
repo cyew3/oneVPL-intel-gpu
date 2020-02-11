@@ -112,73 +112,78 @@ namespace HEVCEHW
 #pragma warning(pop)
 };
 
-#if defined(MFX_ENABLE_HEVCEHW_REFACTORING_WIN_SKL) && !defined(MFX_VA_LINUX)
-    #include "hevcehw_g9_win.h"
-    namespace HEVCEHWDisp { namespace SKL { using namespace HEVCEHW::Windows::Gen9; }; };
-#elif defined(MFX_ENABLE_HEVCEHW_REFACTORING_LIN_SKL) && defined(MFX_VA_LINUX)
+#if defined(MFX_VA_LINUX)
     #include "hevcehw_g9_lin.h"
-    namespace HEVCEHWDisp { namespace SKL { using namespace HEVCEHW::Linux::Gen9; }; };
+    namespace HEVCEHWDisp
+    {
+        namespace SKL { using namespace HEVCEHW::Linux::Gen9; };
+        namespace ICL { using namespace HEVCEHW::Linux::Gen9; };
+    };
 #else
-    namespace HEVCEHWDisp { namespace SKL { using namespace HEVCEHW::LegacyFallback; }; };
+    #include "hevcehw_g9_win.h"
+    namespace HEVCEHWDisp
+    {
+        namespace SKL { using namespace HEVCEHW::Windows::Gen9; };
+        namespace ICL { using namespace HEVCEHW::Windows::Gen9; };
+    };
 #endif
 
-#if defined(MFX_ENABLE_HEVCEHW_REFACTORING_WIN_ICL) && !defined(MFX_VA_LINUX)
-    #include "hevcehw_g9_win.h"
-    namespace HEVCEHWDisp { namespace ICL { using namespace HEVCEHW::Windows::Gen9; }; };
-#elif defined(MFX_ENABLE_HEVCEHW_REFACTORING_LIN_ICL) && defined(MFX_VA_LINUX)
-    #include "hevcehw_g9_lin.h"
-    namespace HEVCEHWDisp { namespace ICL { using namespace HEVCEHW::Linux::Gen9; }; };
+#ifndef OPEN_SOURCE
+#if defined(MFX_VA_LINUX)
+    #include "hevcehw_g11lkf_lin.h"
+    namespace HEVCEHWDisp
+    {
+        namespace LKF { using namespace HEVCEHW::Linux::Gen11LKF; };
+    };
 #else
-    namespace HEVCEHWDisp { namespace ICL { using namespace HEVCEHW::LegacyFallback; }; };
+    #include "hevcehw_g11lkf_win.h"
+    namespace HEVCEHWDisp
+    {
+        namespace LKF { using namespace HEVCEHW::Windows::Gen11LKF; };
+    };
 #endif
+#endif
+
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    #if defined(MFX_ENABLE_HEVCEHW_REFACTORING_WIN_LKF) && !defined(MFX_VA_LINUX)
-        #include "hevcehw_g11lkf_win.h"
-        namespace HEVCEHWDisp { namespace LKF { using namespace HEVCEHW::Windows::Gen11LKF; }; };
-    #elif defined(MFX_ENABLE_HEVCEHW_REFACTORING_LIN_LKF) && defined(MFX_VA_LINUX)
-        #include "hevcehw_g11lkf_lin.h"
-        namespace HEVCEHWDisp { namespace LKF { using namespace HEVCEHW::Linux::Gen11LKF; }; };
-    #else
-        namespace HEVCEHWDisp { namespace LKF { using namespace HEVCEHW::LegacyFallback; }; };
-    #endif
-
-    #if defined(MFX_ENABLE_HEVCEHW_REFACTORING_WIN_TGL) && !defined(MFX_VA_LINUX)
-        #include "hevcehw_g12_win.h"
-        namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::Windows::Gen12; }; };
-    #elif defined(MFX_ENABLE_HEVCEHW_REFACTORING_LIN_TGL) && defined(MFX_VA_LINUX)
+#if defined(MFX_VA_LINUX)
     #if defined(OPEN_SOURCE)
         #include "hevcehw_g12_lin.h"
         namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::Linux::Gen12; }; };
     #else
         #include "hevcehw_g12_embargo_lin.h"
         namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::Linux::Gen12_Embargo; }; };
+        namespace HEVCEHWDisp { namespace DG1 { using namespace HEVCEHW::LegacyFallback; }; };
     #endif //defined(OPEN_SOURCE)
-    #else
-        namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::LegacyFallback; }; };
-    #endif
+#else
+    #include "hevcehw_g12_win.h"
+    namespace HEVCEHWDisp
+    {
+        namespace TGL { using namespace HEVCEHW::Windows::Gen12; };
+        namespace DG1 { using namespace HEVCEHW::Windows::Gen12; };
+    };
+#endif
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
-    #if defined(MFX_ENABLE_HEVCEHW_REFACTORING_WIN_ATS) && !defined(MFX_VA_LINUX)
-        #include "hevcehw_g12ats_win.h"
-        namespace HEVCEHWDisp { namespace ATS { using namespace HEVCEHW::Windows::Gen12ATS; }; };
-    #elif defined(MFX_ENABLE_HEVCEHW_REFACTORING_LIN_ATS) && defined(MFX_VA_LINUX)
-        #include "hevcehw_g12ats_lin.h"
-        namespace HEVCEHWDisp { namespace ATS { using namespace HEVCEHW::Linux::Gen12ATS; }; };
-    #else
-        namespace HEVCEHWDisp { namespace ATS { using namespace HEVCEHW::LegacyFallback; }; };
-    #endif
 
-    #if defined(MFX_ENABLE_HEVCEHW_REFACTORING_WIN_DG2) && !defined(MFX_VA_LINUX)
-        #include "hevcehw_g12dg2_win.h"
-        namespace HEVCEHWDisp { namespace DG2 { using namespace HEVCEHW::Windows::Gen12DG2; }; };
-    #elif defined(MFX_ENABLE_HEVCEHW_REFACTORING_LIN_DG2) && defined(MFX_VA_LINUX)
-        #include "hevcehw_g12dg2_lin.h"
-        namespace HEVCEHWDisp { namespace DG2 { using namespace HEVCEHW::Linux::Gen12DG2; }; };
-    #else
-        namespace HEVCEHWDisp { namespace DG2 { using namespace HEVCEHW::LegacyFallback; }; };
-    #endif
+#if defined(MFX_VA_LINUX)
+    #include "hevcehw_g12ats_lin.h"
+    #include "hevcehw_g12dg2_lin.h"
+    namespace HEVCEHWDisp
+    {
+        namespace ATS { using namespace HEVCEHW::Linux::Gen12ATS; };
+        namespace DG2 { using namespace HEVCEHW::Linux::Gen12DG2; };
+    };
+#else
+    #include "hevcehw_g12ats_win.h"
+    #include "hevcehw_g12dg2_win.h"
+    namespace HEVCEHWDisp
+    {
+        namespace ATS { using namespace HEVCEHW::Windows::Gen12ATS; };
+        namespace DG2 { using namespace HEVCEHW::Windows::Gen12DG2; };
+    };
+#endif
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
 namespace HEVCEHW
 {
@@ -196,11 +201,17 @@ static ImplBase* CreateSpecific(
         return new HEVCEHWDisp::ATS::MFXVideoENCODEH265_HW(core, status, mode);
 #endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#ifndef OPEN_SOURCE
+    if (HW == MFX_HW_DG1)
+        return new HEVCEHWDisp::DG1::MFXVideoENCODEH265_HW(core, status, mode);
+#endif //OPEN_SOURCE
     if (HW >= MFX_HW_TGL_LP)
         return new HEVCEHWDisp::TGL::MFXVideoENCODEH265_HW(core, status, mode);
+#endif
+#ifndef OPEN_SOURCE
     if (HW == MFX_HW_LKF || HW == MFX_HW_JSL)
         return new HEVCEHWDisp::LKF::MFXVideoENCODEH265_HW(core, status, mode);
-#endif
+#endif //OPEN_SOURCE
     if (HW >= MFX_HW_ICL)
         return new HEVCEHWDisp::ICL::MFXVideoENCODEH265_HW(core, status, mode);
     return new HEVCEHWDisp::SKL::MFXVideoENCODEH265_HW(core, status, mode);
