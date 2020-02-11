@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2019 Intel Corporation
+// Copyright (c) 2007-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -323,8 +323,7 @@ mfxStatus D3D9VideoCORE::InternalInit()
 #ifndef STRIP_EMBARGO
     // Temporary disable CmCopy for Pre-Si platforms or if there is no loaded cm_copy_kernel at the moment
     if (   m_HWType == MFX_HW_RYF
-        || m_HWType == MFX_HW_RKL
-        || m_HWType == MFX_HW_DG2)
+        || m_HWType == MFX_HW_RKL)
         m_bCmCopyAllowed = false;
 #endif
 

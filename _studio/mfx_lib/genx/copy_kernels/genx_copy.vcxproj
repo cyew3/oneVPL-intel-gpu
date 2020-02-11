@@ -154,6 +154,8 @@ cmc -c -Qxcm_jit_target=gen11lp .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qx
 cmc -c -Qxcm_jit_target=gen11 .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o icl_copy_kernel_genx.isa -mCM_no_debug
 cmc -c -Qxcm_jit_target=gen12lp .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o tgllp_copy_kernel_genx.isa -mCM_no_debug
 cmc -c -Qxcm_jit_target=gen12 .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o tgl_copy_kernel_genx.isa -mCM_no_debug
+cmc -c -Qxcm_jit_target=gen12_6 .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o dg2_copy_kernel_genx.isa -mCM_no_debug
+cmc -c -Qxcm_jit_target=gen12_7 .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o pvc_copy_kernel_genx.isa -mCM_no_debug
 
 cl .\src\embed_isa.c
 embed_isa cht_copy_kernel_genx.isa
@@ -163,6 +165,8 @@ embed_isa icllp_copy_kernel_genx.isa
 embed_isa icl_copy_kernel_genx.isa
 embed_isa tgllp_copy_kernel_genx.isa
 embed_isa tgl_copy_kernel_genx.isa
+embed_isa dg2_copy_kernel_genx.isa
+embed_isa pvc_copy_kernel_genx.isa
 move cht_copy_kernel_genx.cpp .\src\genx_cht_copy_isa.cpp
 move cht_copy_kernel_genx.h .\include\cht_copy_kernel_genx_isa.h
 move skl_copy_kernel_genx.cpp .\src\genx_skl_copy_isa.cpp
@@ -177,6 +181,10 @@ move tgllp_copy_kernel_genx.cpp .\src\genx_tgllp_copy_isa.cpp
 move tgllp_copy_kernel_genx.h .\include\tgllp_copy_kernel_genx_isa.h
 move tgl_copy_kernel_genx.cpp .\src\genx_tgl_copy_isa.cpp
 move tgl_copy_kernel_genx.h .\include\tgl_copy_kernel_genx_isa.h
+move dg2_copy_kernel_genx.cpp .\src\genx_dg2_copy_isa.cpp
+move dg2_copy_kernel_genx.h .\include\dg2_copy_kernel_genx_isa.h
+move pvc_copy_kernel_genx.cpp .\src\genx_pvc_copy_isa.cpp
+move pvc_copy_kernel_genx.h .\include\pvc_copy_kernel_genx_isa.h
 </Command>
     </PreBuildEvent>
     <CustomBuildStep>

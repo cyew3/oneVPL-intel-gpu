@@ -246,6 +246,8 @@ if(NOT OPEN_SOURCE)
       ${prefix}/genx_icllp_copy_isa.cpp
       ${prefix}/genx_tgllp_copy_isa.cpp
       ${prefix}/genx_tgl_copy_isa.cpp
+      ${prefix}/genx_dg2_copy_isa.cpp
+      ${prefix}/genx_pvc_copy_isa.cpp
     )
   endforeach()
 

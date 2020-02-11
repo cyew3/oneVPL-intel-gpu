@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,8 @@
 #include "icllp_copy_kernel_genx_isa.h"
 #ifndef STRIP_EMBARGO
 #include "tgl_copy_kernel_genx_isa.h"
+#include "dg2_copy_kernel_genx_isa.h"
+#include "pvc_copy_kernel_genx_isa.h"
 #endif
 #include "tgllp_copy_kernel_genx_isa.h"
 #if !(defined(AS_VPP_PLUGIN) || defined(UNIFIED_PLUGIN) || defined(AS_H265FEI_PLUGIN) || defined(AS_H264LA_PLUGIN))

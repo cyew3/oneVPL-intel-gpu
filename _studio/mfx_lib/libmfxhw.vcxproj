@@ -49,6 +49,8 @@
     <ClCompile Include="genx\copy_kernels\src\genx_skl_copy_isa.cpp" />
     <ClCompile Include="genx\copy_kernels\src\genx_tgllp_copy_isa.cpp" />
     <ClCompile Include="genx\copy_kernels\src\genx_tgl_copy_isa.cpp" />
+    <ClCompile Include="genx\copy_kernels\src\genx_dg2_copy_isa.cpp" />
+    <ClCompile Include="genx\copy_kernels\src\genx_pvc_copy_isa.cpp" />
     <ClCompile Include="shared\src\libmfxsw.cpp" />
     <ClCompile Include="shared\src\libmfxsw_async.cpp" />
     <ClCompile Include="shared\src\libmfxsw_decode.cpp" />

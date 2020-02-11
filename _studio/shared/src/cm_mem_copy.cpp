@@ -2725,8 +2725,13 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
 #endif
 #ifndef STRIP_EMBARGO
     case MFX_HW_TGL_HP:
-    case MFX_HW_PVC:
         cmSts = m_pCmDevice->LoadProgram((void*)tgl_copy_kernel_genx,sizeof(tgl_copy_kernel_genx),m_pCmProgram,"nojitter");
+        break;
+    case MFX_HW_DG2:
+        cmSts = m_pCmDevice->LoadProgram((void*)dg2_copy_kernel_genx,sizeof(dg2_copy_kernel_genx),m_pCmProgram,"nojitter");
+        break;
+    case MFX_HW_PVC:
+        cmSts = m_pCmDevice->LoadProgram((void*)pvc_copy_kernel_genx,sizeof(pvc_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
 #endif
 #ifndef STRIP_EMBARGO
