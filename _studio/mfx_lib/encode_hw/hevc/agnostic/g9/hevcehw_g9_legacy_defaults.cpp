@@ -1267,6 +1267,13 @@ public:
         L0.resize(l0);
         L1.resize(l1);
 
+        bool bAvoidL0Reorder = par.mvp.mfx.RateControlMethod == MFX_RATECONTROL_CQP && IsOff(CO3.EnableQPOffset);
+        if (bAvoidL0Reorder)
+        {
+            auto POCLess = [](const DpbFrame* a, const DpbFrame* b) { return a->POC > b->POC; };
+            L0.sort(POCLess);
+        }
+
         auto POCGreater = [](const DpbFrame* a, const DpbFrame* b) { return a->POC > b->POC; };
         L1.sort(POCGreater);
 
