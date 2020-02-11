@@ -400,14 +400,21 @@ mfxStatus SetRateControl(
         misc_param->type = VAEncMiscParameterTypeRateControl;
         rate_param = (VAEncMiscParameterRateControl *)misc_param->data;
 
-        if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+        if (IsBitrateBasedBRC(par.mfx.RateControlMethod))
         {
-            rate_param->bits_per_second = TL_attached ? extTL.Layer[tl].TargetKbps * 1000 : par.mfx.MaxKbps * 1000;
+            if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+            {
+                rate_param->bits_per_second = TL_attached ? extTL.Layer[tl].TargetKbps * 1000 : par.mfx.MaxKbps * 1000;
+            }
+            else
+            {
+                rate_param->bits_per_second = par.mfx.MaxKbps * 1000;
 
-            if (rate_param->bits_per_second)
-                rate_param->target_percentage = TL_attached ?
-                (unsigned int)(100.0 * (mfxF64)extTL.Layer[tl].TargetKbps / (mfxF64)extTL.Layer[tl].TargetKbps) :
-                (unsigned int)(100.0 * (mfxF64)par.mfx.TargetKbps / (mfxF64)par.mfx.MaxKbps);
+                if (rate_param->bits_per_second)
+                    rate_param->target_percentage = TL_attached ?
+                    (unsigned int)(100.0 * (mfxF64)extTL.Layer[tl].TargetKbps / (mfxF64)par.mfx.MaxKbps) :
+                    (unsigned int)(100.0 * (mfxF64)par.mfx.TargetKbps / (mfxF64)par.mfx.MaxKbps);
+            }
 
             rate_param->rc_flags.bits.reset = isBrcResetRequired;
             rate_param->rc_flags.bits.temporal_id = tl;
