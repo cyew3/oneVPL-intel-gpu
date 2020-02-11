@@ -755,19 +755,7 @@ mfxStatus CommonCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
 
 #if defined(_WIN32) || defined(_WIN64)
     // check error(s)
-    if (MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == type ||
-        MFX_HANDLE_D3D11_DEVICE == type)
-    {
-        if (m_hdl)
-        {
-            *handle = m_hdl;
-            return MFX_ERR_NONE;
-        }
-        // not exist handle yet
-        else
-            return MFX_ERR_NOT_FOUND;
-    }
-    else if (MFX_HANDLE_DECODER_DRIVER_HANDLE == type)
+    if (MFX_HANDLE_DECODER_DRIVER_HANDLE == type)
     {
         if (m_DXVA2DecodeHandle)
         {
@@ -778,7 +766,7 @@ mfxStatus CommonCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
         else
             return MFX_ERR_NOT_FOUND;
     }
-    else if (MFX_HANDLE_VIDEO_DECODER == type )
+    else if (MFX_HANDLE_VIDEO_DECODER == type)
     {
         if (m_D3DDecodeHandle)
         {
@@ -788,20 +776,26 @@ mfxStatus CommonCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
         // not exist handle yet
         else
             return MFX_ERR_NOT_FOUND;
-
     }
 #if defined (MFX_ENABLE_GET_CM_DEVICE)
     else if (MFX_HANDLE_CM_DEVICE == type)
     {
-        *handle = ::QueryCoreInterface<void>(this, MFXICORECM_GUID);
-        if (*handle)
-            return MFX_ERR_NONE;
-        return MFX_ERR_NOT_FOUND;
+        try
+        {
+            *handle = ::QueryCoreInterface<void>(this, MFXICORECM_GUID);
+            if (*handle)
+                return MFX_ERR_NONE;
+            return MFX_ERR_NOT_FOUND;
+        }
+        catch (...)
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
     }
 #endif //defined (MFX_ENABLE_GET_CM_DEVICE)
 #endif // #if defined(_WIN32) || defined(_WIN64)
 #if defined(LINUX32) || defined(LINUX64) || defined(MFX_VA_LINUX)
-    if (MFX_HANDLE_VA_DISPLAY == type )
+    if (MFX_HANDLE_VA_DISPLAY == type)
     {
         if (m_hdl)
         {
@@ -813,9 +807,8 @@ mfxStatus CommonCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
             return MFX_ERR_NOT_FOUND;
     }
 #endif
-    // if wrong type
-    return MFX_ERR_UNDEFINED_BEHAVIOR;
-
+    // if an unknown type
+    return MFX_ERR_NOT_FOUND;
 } // mfxStatus CommonCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
 
 mfxStatus CommonCORE::SetHandle(mfxHandleType type, mfxHDL hdl)

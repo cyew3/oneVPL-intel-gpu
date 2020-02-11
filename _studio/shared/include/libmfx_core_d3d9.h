@@ -195,6 +195,7 @@ public:
     virtual ~D3D9VideoCORE();
 
     virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
+    virtual mfxStatus     GetHandle(mfxHandleType type, mfxHDL *handle);
     virtual mfxStatus     AllocFrames(mfxFrameAllocRequest *request, 
                                       mfxFrameAllocResponse *response, bool isNeedCopy = true);
 

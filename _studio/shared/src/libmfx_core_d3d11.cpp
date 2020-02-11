@@ -1237,6 +1237,28 @@ mfxStatus D3D11VideoCORE::SetHandle(mfxHandleType type, mfxHDL handle)
 
 }
 
+mfxStatus D3D11VideoCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
+{
+    MFX_CHECK_NULL_PTR1(handle);
+    if (type == MFX_HANDLE_D3D11_DEVICE)
+    {
+        UMC::AutomaticUMCMutex guard(m_guard);
+        if (m_hdl)
+        {
+            *handle = m_hdl;
+            return MFX_ERR_NONE;
+        }
+        // not exist handle yet
+        else
+            return MFX_ERR_NOT_FOUND;
+    }
+    else
+    {
+        mfxStatus sts = CommonCORE::GetHandle(type, handle);
+        MFX_CHECK_STS(sts);
+        return MFX_ERR_NONE;
+    }
+}
 
 void D3D11VideoCORE::ReleaseHandle()
 {
