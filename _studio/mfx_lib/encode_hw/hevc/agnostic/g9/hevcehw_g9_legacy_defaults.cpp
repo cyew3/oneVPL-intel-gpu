@@ -1267,6 +1267,9 @@ public:
         L0.resize(l0);
         L1.resize(l1);
 
+        auto POCGreater = [](const DpbFrame* a, const DpbFrame* b) { return a->POC > b->POC; };
+        L1.sort(POCGreater);
+
         std::transform(L0.begin(), L0.end(), RPL[0]
             , [&](const DpbFrame* x) { return mfxU8(x - dpbBegin); });
 
