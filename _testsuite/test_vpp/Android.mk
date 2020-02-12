@@ -34,7 +34,8 @@ LOCAL_STATIC_LIBRARIES := \
     libshared_utils \
     libumc_core_merged \
     libippdc_l \
-    libippcore_l
+    libippcore_l \
+    libippcc_l
 
 LOCAL_SHARED_LIBRARIES := libdl libva libva-android
 

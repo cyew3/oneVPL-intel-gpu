@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2019 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2020 Intel Corporation. All Rights Reserved.
 //
 
 #include <string>
@@ -2472,16 +2472,10 @@ IppStatus cc_NV12_to_YV12(
         outData->Pitch >> 1,
         outData->Pitch >> 1};
 
-    //disable at the moment
-    /*sts = ippiYCbCr420_8u_P2P3R(pSrc[0], pSrcStep[0],
+    sts = ippiYCbCr420_8u_P2P3R(pSrc[0], pSrcStep[0],
     pSrc[1], pSrcStep[1],
     pDst,    pDstStep,
-    roiSize);*/
-    pSrc;
-    pSrcStep;
-    pDst;
-    pDstStep;
-    roiSize;
+    roiSize);
 
     return sts;
 
