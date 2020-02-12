@@ -111,6 +111,12 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
     auto sts = TBaseImpl::Init(par);
     MFX_CHECK_STS(sts);
 
+    auto& st = BQ<BQ_SubmitTask>::Get(*this);
+    Reorder(
+        st
+        , { HEVCEHW::Gen9::FEATURE_DDI, HEVCEHW::Gen9::IDDI::BLK_SubmitTask }
+        , { FEATURE_SCC, SCC::BLK_PatchDDITask });
+
     return MFX_ERR_NONE;
 }
 

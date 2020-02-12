@@ -59,7 +59,7 @@ static const std::unordered_map<GUID, VAParameters, GUIDhash> GUID2VAParam = {
     { DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main,       VAParameters(VAProfileHEVCSccMain,    VAEntrypointEncSliceLP)},
     { DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main10,     VAParameters(VAProfileHEVCSccMain10,  VAEntrypointEncSliceLP)},
     { DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444,    VAParameters(VAProfileHEVCSccMain444, VAEntrypointEncSliceLP)},
-    { DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444_10, VAParameters(VAProfileNone,           VAEntrypointEncSliceLP)} // Unsupported by VA
+    { DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444_10, VAParameters(VAProfileHEVCSccMain444_10, VAEntrypointEncSliceLP)}
 #endif
 };
 
@@ -732,6 +732,9 @@ void FillConstPartOfPps(
     pps.pic_fields.bits.screen_content_flag                        = 0;
     pps.pic_fields.bits.enable_gpu_weighted_prediction             = 0;
     pps.pic_fields.bits.no_output_of_prior_pics_flag               = 0;
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    pps.scc_fields.bits.pps_curr_pic_ref_enabled_flag              = par.m_pps.curr_pic_ref_enabled_flag;
+#endif
 }
 
 void UpdatePPS(
@@ -804,10 +807,10 @@ void UpdateSlice(
         slice.slice_pic_parameter_set_id = pps.slice_pic_parameter_set_id;
         if (slice.slice_type != 2)
         {
-            slice.num_ref_idx_l0_active_minus1 = task.m_numRefActive[0] - 1;
+            slice.num_ref_idx_l0_active_minus1 = task.m_numRefActive[0] == 0 ? 0 : task.m_numRefActive[0] - 1;
 
             if (slice.slice_type == 0)
-                slice.num_ref_idx_l1_active_minus1 = task.m_numRefActive[1] - 1;
+                slice.num_ref_idx_l1_active_minus1 = task.m_numRefActive[1] == 0 ? 0 : task.m_numRefActive[1] - 1;
             else
                 slice.num_ref_idx_l1_active_minus1 = 0;
 
@@ -994,6 +997,10 @@ void VAAPIEncoder::FillSps(
     sps.min_spatial_segmentation_idc = par.m_sps.vui.min_spatial_segmentation_idc;
     sps.max_bytes_per_pic_denom      = par.m_sps.vui.max_bytes_per_pic_denom;
     sps.max_bits_per_min_cu_denom    = par.m_sps.vui.max_bits_per_min_cu_denom;
+
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    sps.scc_fields.bits.palette_mode_enabled_flag = par.m_sps.palette_mode_enabled_flag;
+#endif
 }
 
 static VAConfigAttrib createVAConfigAttrib(VAConfigAttribType type, unsigned int value)

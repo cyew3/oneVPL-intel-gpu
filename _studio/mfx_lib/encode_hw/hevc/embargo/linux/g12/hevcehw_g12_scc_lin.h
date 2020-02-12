@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,9 +25,10 @@
 
 #include "hevcehw_g12_scc.h"
 #include "va/va.h"
+#include "hevcehw_g9_va_packer_lin.h"
 
 namespace HEVCEHW
-{  
+{
 namespace Linux
 {
 namespace Gen12
@@ -46,8 +47,35 @@ protected:
         g2va[DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main]       = { VAProfileHEVCSccMain,    VAEntrypointEncSliceLP };
         g2va[DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main10]     = { VAProfileHEVCSccMain10,  VAEntrypointEncSliceLP };
         g2va[DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444]    = { VAProfileHEVCSccMain444, VAEntrypointEncSliceLP };
-        g2va[DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444_10] = { mfxU32(VAProfileNone),   VAEntrypointEncSliceLP }; //no VA support
+        g2va[DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444_10] = { VAProfileHEVCSccMain444_10, VAEntrypointEncSliceLP };
     };
+
+    void SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push) override
+    {
+        Push(BLK_PatchDDITask
+            , [this](StorageW& global, StorageW& /*s_task*/) -> mfxStatus
+        {
+            MFX_CHECK(m_bPatchNextDDITask || m_bPatchDDISlices, MFX_ERR_NONE);
+            auto& ddiPar = HEVCEHW::Gen12::Glob::DDI_SubmitParam::Get(global);
+            auto  itPPS  = std::find_if(std::begin(ddiPar), std::end(ddiPar)
+                , [](HEVCEHW::Gen9::DDIExecParam& ep) { return (ep.Function == VAEncPictureParameterBufferType); });
+            MFX_CHECK(itPPS != std::end(ddiPar) && itPPS->In.pData, MFX_ERR_UNKNOWN);
+            auto& ddiPPS    = *(VAEncPictureParameterBufferHEVC*)itPPS->In.pData;
+
+            if(m_bPatchNextDDITask)
+            {
+                m_bPatchNextDDITask = false;
+                auto  itSPS   = std::find_if(std::begin(ddiPar), std::end(ddiPar)
+                    , [](HEVCEHW::Gen9::DDIExecParam& ep) { return (ep.Function == VAEncSequenceParameterBufferType); });
+                MFX_CHECK(itSPS != std::end(ddiPar) && itSPS->In.pData, MFX_ERR_UNKNOWN);
+                auto& ddiSPS    = *(VAEncSequenceParameterBufferHEVC*)itSPS->In.pData;
+
+                ddiSPS.scc_fields.bits.palette_mode_enabled_flag = SpsExt::Get(global).palette_mode_enabled_flag;
+                ddiPPS.scc_fields.bits.pps_curr_pic_ref_enabled_flag = PpsExt::Get(global).curr_pic_ref_enabled_flag;
+            }
+            return MFX_ERR_NONE;
+        });
+    }
 };
 } //Gen12
 } //Linux
