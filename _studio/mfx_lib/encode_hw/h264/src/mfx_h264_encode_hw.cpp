@@ -4851,7 +4851,19 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         addPartialOutputOffset(task, dataLength, true);
     else
 #endif
-        task.m_bs->DataLength = dataLength;
+    {
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+        if (m_video.Protected != 0 && !task.m_notProtected)
+        {
+            mfxU32 fieldNumInStreamOrder = (task.GetFirstField() != fid);
+            mfxEncryptedData * edata = GetEncryptedData(*task.m_bs, fieldNumInStreamOrder);
+            edata->DataLength = dataLength;
+        }
+        else
+#endif
+            task.m_bs->DataLength = dataLength;
+    }
+
 
     return MFX_ERR_NONE;
 }
