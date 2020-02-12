@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -709,6 +709,25 @@ MFXTranscodingPipeline::~MFXTranscodingPipeline()
     m_ExtBufferVectorsContainer.clear();
 }
 
+template <class T>
+static T* RetrieveExtBuffer(MFXExtBufferVector const & extBuffers)
+{
+    T* pExt = nullptr;
+
+    const MFXExtBufferPtrBase *ppExt = extBuffers.get_by_id(BufferIdOf<T>::id);
+
+    if (!ppExt)
+    {
+        pExt = &mfx_init_ext_buffer(*new T());
+    }
+    else
+    {
+        pExt = reinterpret_cast<T*>(ppExt->get());
+    }
+
+    return pExt;
+}
+
 mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, bool bReportError)
 {
     MFX_CHECK_SET_ERR(NULL != argv, PE_OPTION, MFX_ERR_NULL_PTR);
@@ -1011,21 +1030,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             mfxExtCodingOption *pExt = NULL;
             if (1 == on || 0 == on)
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION);
-
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption *>(ppExt->get());
-                }
-            }
+                pExt = RetrieveExtBuffer<mfxExtCodingOption>(*m_ExtBuffers.get());
             else
                 return MFX_ERR_UNKNOWN;
 
@@ -1039,18 +1044,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             mfxU16 value = MFX_CODINGOPTION_UNKNOWN;
             MFX_PARSE_STR_ON_OFF(value, argv[1]);
-            mfxExtCodingOption3 *pExt = NULL;
-            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
-            if (!ppExt)
-            {
-                pExt = new mfxExtCodingOption3();
-                pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
-                pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
-            }
-            else
-            {
-                pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
-            }
+            mfxExtCodingOption3 *pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
             pExt->RepartitionCheckEnable = value;
             m_ExtBuffers.get()->push_back(pExt);
             argv++;
@@ -1065,20 +1059,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             mfxExtCodingOption *pExt = NULL;
 
             if (1 == on || 0 == on)
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption *>(ppExt->get());
-                }
-            }
+                pExt = RetrieveExtBuffer<mfxExtCodingOption>(*m_ExtBuffers.get());
             else
                 return MFX_ERR_UNKNOWN;
 
@@ -1097,20 +1078,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             mfxExtCodingOption *pExt = NULL;
 
             if (1 == on || 0 == on)
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption *>(ppExt->get());
-                }
-            }
+                pExt = RetrieveExtBuffer<mfxExtCodingOption>(*m_ExtBuffers.get());
             else
                 return MFX_ERR_UNKNOWN;
 
@@ -1129,20 +1097,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             mfxExtCodingOption2 *pExt = NULL;
 
             if (0 != val)
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION2);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption2();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption2);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption2 *>(ppExt->get());
-                }
-            }
+                pExt = RetrieveExtBuffer<mfxExtCodingOption2>(*m_ExtBuffers.get());
             else
                 return MFX_ERR_UNKNOWN;
 
@@ -1161,20 +1116,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             mfxExtCodingOption3 *pExt = NULL;
 
             if (0 != val)
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption3();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
-                }
-            }
+                pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
             else
                 return MFX_ERR_UNKNOWN;
 
@@ -1193,20 +1135,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             mfxExtCodingOption3 *pExt = NULL;
 
             if (0 != val)
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption3();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
-                }
-            }
+                pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
             else
                 return MFX_ERR_UNKNOWN;
 
@@ -1224,21 +1153,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             mfxExtCodingOption3 *pExt = NULL;
             if (1 == on || 0 == on)
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
-
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption3();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
-                }
-            }
+                pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
             else
                 return MFX_ERR_UNKNOWN;
 
@@ -1252,20 +1167,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 
             mfxU16 value = MFX_CODINGOPTION_UNKNOWN;
             MFX_PARSE_STR_ON_OFF(value, argv[1]);
-            mfxExtCodingOption3 *pExt = NULL;
-            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
-
-            if (!ppExt)
-            {
-                pExt = new mfxExtCodingOption3();
-
-                pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
-                pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
-            }
-            else
-            {
-                pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
-            }
+            mfxExtCodingOption3 *pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
 
             pExt->AdaptiveMaxFrameSize = value;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1281,20 +1183,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             mfxExtCodingOption2 *pExt = NULL;
 
             if (0 != val)
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION2);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption2();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption2);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption2 *>(ppExt->get());
-                }
-            }
+                pExt = RetrieveExtBuffer<mfxExtCodingOption2>(*m_ExtBuffers.get());
             else
                 return MFX_ERR_UNKNOWN;
 
@@ -1309,19 +1198,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtCodingOption3 *pExt = NULL;
-            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
-            if (!ppExt)
-            {
-                pExt = new mfxExtCodingOption3();
-
-                pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
-                pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
-            }
-            else
-            {
-                pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
-            }
+            mfxExtCodingOption3 *pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
 
             pExt->IntRefCycleDist = val;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1334,20 +1211,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtCodingOption2 *pExt = NULL;
-
-            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION2);
-            if (!ppExt)
-            {
-                pExt = new mfxExtCodingOption2();
-
-                pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
-                pExt->Header.BufferSz = sizeof(mfxExtCodingOption2);
-            }
-            else
-            {
-                pExt = reinterpret_cast<mfxExtCodingOption2 *>(ppExt->get());
-            }
+            mfxExtCodingOption2 *pExt = RetrieveExtBuffer<mfxExtCodingOption2>(*m_ExtBuffers.get());
 
             pExt->IntRefCycleSize = val;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1360,22 +1224,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtCodingOption2 *pExt = NULL;
-
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION2);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption2();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption2);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption2 *>(ppExt->get());
-                }
-            }
+            mfxExtCodingOption2 *pExt = RetrieveExtBuffer<mfxExtCodingOption2>(*m_ExtBuffers.get());
 
             pExt->IntRefType = val;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1388,22 +1237,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtCodingOption3 *pExt = NULL;
-
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption3();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
-                }
-            }
+            mfxExtCodingOption3 *pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
 
             pExt->NumSliceI = val;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1416,22 +1250,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtCodingOption3 *pExt = NULL;
-
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption3();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
-                }
-            }
+            mfxExtCodingOption3 *pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
 
             pExt->NumSliceP = val;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1444,22 +1263,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtCodingOption3 *pExt = NULL;
-
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtCodingOption3();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
-                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
-                }
-            }
+            mfxExtCodingOption3 *pExt = RetrieveExtBuffer<mfxExtCodingOption3>(*m_ExtBuffers.get());
 
             pExt->NumSliceB = val;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1484,20 +1288,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 MFX_CHECK_SET_ERR(!VM_STRING("Wrong OPT_TRI_STATE"), PE_CHECK_PARAMS, MFX_ERR_UNKNOWN);
             }
 
-            mfxExtCodingOption *pExt = NULL;
-            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION);
-
-            if (!ppExt)
-            {
-                pExt = new mfxExtCodingOption();
-
-                pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
-                pExt->Header.BufferSz = sizeof(mfxExtCodingOption);
-            }
-            else
-            {
-                pExt = reinterpret_cast<mfxExtCodingOption *>(ppExt->get());
-            }
+            mfxExtCodingOption *pExt = RetrieveExtBuffer<mfxExtCodingOption>(*m_ExtBuffers.get());
 
             pExt->RecoveryPointSEI = value;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1522,20 +1313,9 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 MFX_CHECK_SET_ERR(!VM_STRING("Wrong OPT_TRI_STATE"), PE_CHECK_PARAMS, MFX_ERR_UNKNOWN);
             }
 
-            mfxExtEncoderResetOption *pExt = NULL;
+            mfxExtEncoderResetOption *pExt = RetrieveExtBuffer<mfxExtEncoderResetOption>(*m_ExtBuffers.get());
 
-            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_ENCODER_RESET_OPTION);
-            if (!ppExt)
-            {
-                pExt = &mfx_init_ext_buffer(*new mfxExtEncoderResetOption());
-            }
-            else
-            {
-                pExt = reinterpret_cast<mfxExtEncoderResetOption *>(ppExt->get());
-            }
-            if (pExt)
-                pExt->StartNewSequence = on;
-
+            pExt->StartNewSequence = on;
 
             m_ExtBuffers.get()->push_back(pExt);
 
@@ -1547,22 +1327,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtVP9Param *pExt = NULL;
-
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_VP9_PARAM);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtVP9Param();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_VP9_PARAM;
-                    pExt->Header.BufferSz = sizeof(mfxExtVP9Param);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtVP9Param *>(ppExt->get());
-                }
-            }
+            mfxExtVP9Param *pExt = RetrieveExtBuffer<mfxExtVP9Param>(*m_ExtBuffers.get());
 
             pExt->FrameWidth = val;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1575,22 +1340,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
-            mfxExtVP9Param *pExt = NULL;
-
-            {
-                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_VP9_PARAM);
-                if (!ppExt)
-                {
-                    pExt = new mfxExtVP9Param();
-
-                    pExt->Header.BufferId = MFX_EXTBUFF_VP9_PARAM;
-                    pExt->Header.BufferSz = sizeof(mfxExtVP9Param);
-                }
-                else
-                {
-                    pExt = reinterpret_cast<mfxExtVP9Param *>(ppExt->get());
-                }
-            }
+            mfxExtVP9Param *pExt = RetrieveExtBuffer<mfxExtVP9Param>(*m_ExtBuffers.get());
 
             pExt->FrameHeight = val;
             m_ExtBuffers.get()->push_back(pExt);
@@ -1606,22 +1356,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 #if (MFX_VERSION >= 1029)
             if (m_EncParams.mfx.CodecId == MFX_CODEC_VP9)
             {
-                mfxExtVP9Param *pExt = NULL;
-
-                {
-                    MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_VP9_PARAM);
-                    if (!ppExt)
-                    {
-                        pExt = new mfxExtVP9Param();
-
-                        pExt->Header.BufferId = MFX_EXTBUFF_VP9_PARAM;
-                        pExt->Header.BufferSz = sizeof(mfxExtVP9Param);
-                    }
-                    else
-                    {
-                        pExt = reinterpret_cast<mfxExtVP9Param *>(ppExt->get());
-                    }
-                }
+                mfxExtVP9Param *pExt = RetrieveExtBuffer<mfxExtVP9Param>(*m_ExtBuffers.get());
 
                 pExt->NumTileRows = val;
                 m_ExtBuffers.get()->push_back(pExt);
@@ -1629,22 +1364,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             else
 #endif
             {
-                mfxExtHEVCTiles *pExt = NULL;
-
-                {
-                    MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_HEVC_TILES);
-                    if (!ppExt)
-                    {
-                        pExt = new mfxExtHEVCTiles();
-
-                        pExt->Header.BufferId = MFX_EXTBUFF_HEVC_TILES;
-                        pExt->Header.BufferSz = sizeof(mfxExtHEVCTiles);
-                    }
-                    else
-                    {
-                        pExt = reinterpret_cast<mfxExtHEVCTiles *>(ppExt->get());
-                    }
-                }
+                mfxExtHEVCTiles *pExt = RetrieveExtBuffer<mfxExtHEVCTiles>(*m_ExtBuffers.get());
 
                 pExt->NumTileRows = val;
                 m_ExtBuffers.get()->push_back(pExt);
@@ -1661,22 +1381,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
 #if (MFX_VERSION >= 1029)
             if (m_EncParams.mfx.CodecId == MFX_CODEC_VP9)
             {
-                mfxExtVP9Param *pExt = NULL;
-
-                {
-                    MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_VP9_PARAM);
-                    if (!ppExt)
-                    {
-                        pExt = new mfxExtVP9Param();
-
-                        pExt->Header.BufferId = MFX_EXTBUFF_VP9_PARAM;
-                        pExt->Header.BufferSz = sizeof(mfxExtVP9Param);
-                    }
-                    else
-                    {
-                        pExt = reinterpret_cast<mfxExtVP9Param *>(ppExt->get());
-                    }
-                }
+                mfxExtVP9Param *pExt = RetrieveExtBuffer<mfxExtVP9Param>(*m_ExtBuffers.get());
 
                 pExt->NumTileColumns = val;
                 m_ExtBuffers.get()->push_back(pExt);
@@ -1684,22 +1389,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             else
 #endif
             {
-                mfxExtHEVCTiles *pExt = NULL;
-
-                {
-                    MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_HEVC_TILES);
-                    if (!ppExt)
-                    {
-                        pExt = new mfxExtHEVCTiles();
-
-                        pExt->Header.BufferId = MFX_EXTBUFF_HEVC_TILES;
-                        pExt->Header.BufferSz = sizeof(mfxExtHEVCTiles);
-                    }
-                    else
-                    {
-                        pExt = reinterpret_cast<mfxExtHEVCTiles *>(ppExt->get());
-                    }
-                }
+                mfxExtHEVCTiles *pExt = RetrieveExtBuffer<mfxExtHEVCTiles>(*m_ExtBuffers.get());
 
                 pExt->NumTileColumns = val;
                 m_ExtBuffers.get()->push_back(pExt);
@@ -1877,23 +1567,11 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 MFX_CHECK(DeSerialize(*m_extAvcTemporalLayers.get(), ++argv, argvEnd));
                 continue;
             }
-            mfxExtAvcTemporalLayers *pExt = NULL;
-
-            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_AVC_TEMPORAL_LAYERS);
-            if (!ppExt)
-            {
-                pExt = &mfx_init_ext_buffer(*new mfxExtAvcTemporalLayers());
-            }
-            else
-            {
-                pExt = reinterpret_cast<mfxExtAvcTemporalLayers *>(ppExt->get());
-            }
+            mfxExtAvcTemporalLayers *pExt = RetrieveExtBuffer<mfxExtAvcTemporalLayers>(*m_ExtBuffers.get());
 
             MFX_CHECK(DeSerialize(*pExt, ++argv, argvEnd));
 
-            if (!ppExt) {
-                m_ExtBuffers.get()->push_back(pExt);
-            }
+            m_ExtBuffers.get()->push_back(pExt);
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-vp9temporallayers"), VM_STRING("add mfxExtVP9TemporalLayers buffer to mfxVideoParam"), OPT_SPECIAL, VM_STRING("")))
         {
@@ -1901,23 +1579,11 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 MFX_CHECK(DeSerialize(*m_extVP9TemporalLayers.get(), ++argv, argvEnd));
                 continue;
             }
-            mfxExtVP9TemporalLayers *pExt = NULL;
-
-            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_VP9_TEMPORAL_LAYERS);
-            if (!ppExt)
-            {
-                pExt = &mfx_init_ext_buffer(*new mfxExtVP9TemporalLayers());
-            }
-            else
-            {
-                pExt = reinterpret_cast<mfxExtVP9TemporalLayers *>(ppExt->get());
-            }
+            mfxExtVP9TemporalLayers *pExt = RetrieveExtBuffer<mfxExtVP9TemporalLayers>(*m_ExtBuffers.get());
 
             MFX_CHECK(DeSerialize(*pExt, ++argv, argvEnd));
 
-            if (!ppExt) {
-                m_ExtBuffers.get()->push_back(pExt);
-            }
+            m_ExtBuffers.get()->push_back(pExt);
         }
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         else if (m_OptProc.Check(argv[0], VM_STRING("-temporallayers"), VM_STRING("add mfxExtTemporalLayers buffer to mfxVideoParam"), OPT_SPECIAL, VM_STRING("")))
@@ -1926,23 +1592,11 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 MFX_CHECK(DeSerialize(*m_extTemporalLayers.get(), ++argv, argvEnd));
                 continue;
             }
-            mfxExtTemporalLayers *pExt = NULL;
-
-            MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_TEMPORAL_LAYERS);
-            if (!ppExt)
-            {
-                pExt = &mfx_init_ext_buffer(*new mfxExtTemporalLayers());
-            }
-            else
-            {
-                pExt = reinterpret_cast<mfxExtTemporalLayers *>(ppExt->get());
-            }
+            mfxExtTemporalLayers *pExt = RetrieveExtBuffer<mfxExtTemporalLayers>(*m_ExtBuffers.get());
 
             MFX_CHECK(DeSerialize(*pExt, ++argv, argvEnd));
 
-            if (!ppExt) {
-                m_ExtBuffers.get()->push_back(pExt);
-            }
+            m_ExtBuffers.get()->push_back(pExt);
         }
 #endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
         else if (m_OptProc.Check(argv[0], VM_STRING("-LoopFilterLevel"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
