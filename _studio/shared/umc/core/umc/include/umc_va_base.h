@@ -154,7 +154,7 @@ enum VideoAccelerationProfile
     VA_PROFILE_REXT             = 0x20000,
 #if (MFX_VERSION >= 1031)
     VA_PROFILE_12               = 0x40000,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1032)
     VA_PROFILE_SCC              = 0x80000,
 #endif
 #endif

@@ -35,7 +35,7 @@
 
 using namespace UMC;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1032)
 #define PACKER_VAAPI G12::PackerVAAPI
 #else
 #define PACKER_VAAPI G11::PackerVAAPI

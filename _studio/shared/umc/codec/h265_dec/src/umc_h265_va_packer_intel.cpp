@@ -500,7 +500,7 @@ namespace UMC_HEVC_DECODER
         if (!pSliceInfo)
             throw h265_exception(UMC_ERR_FAILED);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1032)
         if (m_va->m_Profile & VA_PROFILE_SCC)
         {
             DXVA_Intel_PicParams_HEVC_SCC* pp = 0;
@@ -635,7 +635,6 @@ namespace UMC_HEVC_DECODER
 
         header->five_minus_max_num_merge_cand = (UCHAR)(5 - sh->max_num_merge_cand);
 
-#if defined(MFX_ENABLE_HEVCD_SUBSET)
         if (!pp->PicShortFormatFlags.fields.tiles_enabled_flag)
             return;
 
@@ -670,7 +669,6 @@ namespace UMC_HEVC_DECODER
         header->EntryOffsetToSubsetArray = static_cast<USHORT>(offset);
         header->num_entry_point_offsets =
             static_cast<USHORT>(sh->num_entry_point_offsets / GetEntryPointOffsetStep(pSlice));
-#endif
     }
 
     inline
@@ -792,7 +790,7 @@ namespace UMC_HEVC_DECODER
             DXVA_Intel_PicParams_HEVC const* pp = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
 
             if (   (m_va->m_Profile & VA_PROFILE_REXT)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1032)
                 || (m_va->m_Profile & VA_PROFILE_SCC)
 #endif
                 )
@@ -820,7 +818,6 @@ namespace UMC_HEVC_DECODER
 
     void PackerDXVA2intel::PackSubsets(H265DecoderFrame const* frame)
     {
-#if defined(MFX_ENABLE_HEVCD_SUBSET)
         if (m_va->m_HWPlatform < MFX_HW_TGL_LP)
             return;
 
@@ -872,7 +869,6 @@ namespace UMC_HEVC_DECODER
                 position  = entry;
             }
         }
-#endif //MFX_ENABLE_HEVCD_SUBSET
     }
 }
 

@@ -24,7 +24,7 @@
 #ifndef UMC_VA_H265_PACKER_G12_COMMON
 #define UMC_VA_H265_PACKER_G12_COMMON
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1032)
 
 namespace UMC_HEVC_DECODER
 {
@@ -44,7 +44,6 @@ namespace UMC_HEVC_DECODER
             }
         }
 
-#if defined(MFX_ENABLE_HEVCD_SUBSET)
         inline
         uint32_t GetEntryPointOffsetStep(H265Slice const* slice)
         {
@@ -143,7 +142,6 @@ namespace UMC_HEVC_DECODER
                 }
             }
         }
-#endif
     } //G12
 }
 

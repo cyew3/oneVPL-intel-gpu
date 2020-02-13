@@ -338,10 +338,6 @@
 
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-    #define MFX_ENABLE_HEVCD_SUBSET
-#endif
-
 #if !defined(PRE_SI_TARGET_PLATFORM_GEN12)
     #undef MFX_ENABLE_AV1_VIDEO_DECODE
 #endif

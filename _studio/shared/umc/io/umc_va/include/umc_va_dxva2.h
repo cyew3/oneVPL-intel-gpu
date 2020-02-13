@@ -129,7 +129,7 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_12Profile,
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_12Profile,
     0x5b08e35d, 0xc66, 0x4c51, 0xa6, 0xf1, 0x89, 0xd0, 0xc, 0xb2, 0xc1, 0x97);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1032)
 // {0E4BC693-5D2C-4936-B125-AEFE32B16D8A}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main_Profile,
     0xe4bc693, 0x5d2c, 0x4936, 0xb1, 0x25, 0xae, 0xfe, 0x32, 0xb1, 0x6d, 0x8a);
@@ -379,7 +379,7 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case H265_VLD_444:
     case H265_10_VLD_422:
     case H265_10_VLD_444:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1032)
     case H265_12_VLD_420:
     case H265_12_VLD_422:
     case H265_12_VLD_444:
@@ -389,7 +389,7 @@ bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * prote
     case H265_10_VLD_444_SCC:
 #endif
         if (   (profile_flags & VA_PROFILE_REXT)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1032)
             || (profile_flags & VA_PROFILE_SCC)
 #endif
             )

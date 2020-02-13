@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <mfxdefs.h>
 #include "mocks/include/guid.h"
 
 #include <windows.h>
@@ -64,7 +65,7 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_12Profile,
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_12Profile,
     0x5b08e35d, 0xc66, 0x4c51, 0xa6, 0xf1, 0x89, 0xd0, 0xc, 0xb2, 0xc1, 0x97);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1032)
 // {0E4BC693-5D2C-4936-B125-AEFE32B16D8A}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_SCC_Main_Profile,
     0xe4bc693, 0x5d2c, 0x4936, 0xb1, 0x25, 0xae, 0xfe, 0x32, 0xb1, 0x6d, 0x8a);
@@ -103,7 +104,7 @@ namespace mocks { namespace dxva
         , std::is_same<guid<Id>, guid<&DXVA_ModeHEVC_VLD_Main10> >
         , std::is_same<guid<Id>, guid<&DXVA_Intel_ModeHEVC_VLD_Main422_10Profile> >
         , std::is_same<guid<Id>, guid<&DXVA_Intel_ModeHEVC_VLD_Main444_10Profile> >
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1032)
         , std::is_same<guid<Id>, guid<&DXVA_Intel_ModeHEVC_VLD_Main12Profile> >
         , std::is_same<guid<Id>, guid<&DXVA_Intel_ModeHEVC_VLD_Main422_12Profile> >
         , std::is_same<guid<Id>, guid<&DXVA_Intel_ModeHEVC_VLD_Main444_12Profile> >
