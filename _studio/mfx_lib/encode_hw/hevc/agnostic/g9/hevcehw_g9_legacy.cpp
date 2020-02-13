@@ -4200,16 +4200,12 @@ mfxStatus Legacy::CheckBRC(
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
-        changed += CheckMinOrClip<mfxU16>(par.mfx.QPI, minQP);
-        changed += CheckMaxOrClip<mfxU16>(par.mfx.QPI, maxQP);
-        changed += CheckMinOrClip<mfxU16>(par.mfx.QPP, minQP);
-        changed += CheckMaxOrClip<mfxU16>(par.mfx.QPP, maxQP);
-        changed += CheckMinOrClip<mfxU16>(par.mfx.QPB, minQP);
-        changed += CheckMaxOrClip<mfxU16>(par.mfx.QPB, maxQP);
-
-        changed += !par.mfx.QPI && (par.mfx.QPP || par.mfx.QPB);
-        par.mfx.QPP *= !!par.mfx.QPI;
-        par.mfx.QPB *= !!par.mfx.QPI;
+        changed += par.mfx.QPI && CheckMinOrClip<mfxU16>(par.mfx.QPI, minQP);
+        changed += par.mfx.QPI && CheckMaxOrClip<mfxU16>(par.mfx.QPI, maxQP);
+        changed += par.mfx.QPP && CheckMinOrClip<mfxU16>(par.mfx.QPP, minQP);
+        changed += par.mfx.QPP && CheckMaxOrClip<mfxU16>(par.mfx.QPP, maxQP);
+        changed += par.mfx.QPB && CheckMinOrClip<mfxU16>(par.mfx.QPB, minQP);
+        changed += par.mfx.QPB && CheckMaxOrClip<mfxU16>(par.mfx.QPB, maxQP);
     }
 
     changed += par.mfx.BufferSizeInKB && CheckBufferSizeInKB(par, defPar, bd);
