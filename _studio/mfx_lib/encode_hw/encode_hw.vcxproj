@@ -94,6 +94,7 @@
     <ClCompile Include="hevc\linux\g12\hevcehw_g12_rext_lin.cpp" />
     <ClCompile Include="shared\ehw_resources_pool.cpp" />
     <ClCompile Include="shared\embargo\ehw_resources_pool_dx11.cpp" />
+    <ClCompile Include="shared\ehw_task_manager.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw_d3d11.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw_d3d9.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="hevc\linux\g12\hevcehw_g12_rext_lin.h" />
     <ClInclude Include="shared\ehw_resources_pool.h" />
     <ClInclude Include="shared\embargo\ehw_resources_pool_dx11.h" />
+    <ClInclude Include="shared\ehw_task_manager.h" />
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw.h" />
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw_d3d11.h" />
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw_d3d9.h" />

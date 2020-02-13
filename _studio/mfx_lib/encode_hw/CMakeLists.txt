@@ -61,6 +61,7 @@ endforeach()
 list( APPEND sources.plus
     hevc/hevcehw_disp.cpp
     shared/ehw_resources_pool.cpp
+    shared/ehw_task_manager.cpp
     )
 
 foreach( dir ${vdirs} )
