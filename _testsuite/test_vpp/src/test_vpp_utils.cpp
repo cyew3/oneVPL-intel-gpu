@@ -2472,10 +2472,16 @@ IppStatus cc_NV12_to_YV12(
         outData->Pitch >> 1,
         outData->Pitch >> 1};
 
-    sts = ippiYCbCr420_8u_P2P3R(pSrc[0], pSrcStep[0],
+    //disable at the moment
+    /*sts = ippiYCbCr420_8u_P2P3R(pSrc[0], pSrcStep[0],
     pSrc[1], pSrcStep[1],
     pDst,    pDstStep,
-    roiSize);
+    roiSize);*/
+    pSrc;
+    pSrcStep;
+    pDst;
+    pDstStep;
+    roiSize;
 
     return sts;
 
