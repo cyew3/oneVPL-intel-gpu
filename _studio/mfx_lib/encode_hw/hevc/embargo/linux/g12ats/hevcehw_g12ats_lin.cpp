@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     TFeatureList newFeatures;
 
 #if defined(MFX_ENABLE_MFE)
-    m_features.emplace_back(new MFE(FEATURE_MFE));
+    newFeatures.emplace_back(new MFE(FEATURE_MFE));
 #endif //defined(MFX_ENABLE_MFE)
     
     for (auto& pFeature : newFeatures)
@@ -58,17 +58,6 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
 {
     auto sts = TBaseImpl::Init(par);
     MFX_CHECK_STS(sts);
-
-#if defined(MFX_ENABLE_MFE)
-    auto& st = BQ<BQ_SubmitTask>::Get(*this);
-    if (m_core.GetVAType() == MFX_HW_D3D11)
-    {
-        Reorder(
-            st
-            , { HEVCEHW::Gen9::FEATURE_DDI, HEVCEHW::Gen9::IDDI::BLK_SubmitTask }
-            , { FEATURE_MFE, MFE::BLK_UpdateDDITask });
-    }
-#endif //defined(MFX_ENABLE_MFE)
 
     return MFX_ERR_NONE;
 }

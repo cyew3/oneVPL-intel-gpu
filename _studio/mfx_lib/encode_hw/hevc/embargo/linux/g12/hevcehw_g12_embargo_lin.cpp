@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -106,12 +106,6 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
 {
     auto sts = TBaseImpl::Init(par);
     MFX_CHECK_STS(sts);
-
-    auto& st = BQ<BQ_SubmitTask>::Get(*this);
-    Reorder(
-        st
-        , { HEVCEHW::Gen9::FEATURE_DDI, HEVCEHW::Gen9::IDDI::BLK_SubmitTask }
-        , { FEATURE_SCC, SCC::BLK_PatchDDITask });
 
     return MFX_ERR_NONE;
 }
