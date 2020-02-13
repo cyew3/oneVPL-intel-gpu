@@ -155,7 +155,7 @@ mfxU32 ChooseProfile(mfxVideoParam const* param, eMFXHWType)
 
         {
             mfxU32 const profile_idc = ExtractProfile(param->mfx.CodecProfile);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1032)
             if (profile_idc == MFX_PROFILE_HEVC_SCC)
                 profile |= VA_PROFILE_SCC;
 #endif
