@@ -6357,10 +6357,8 @@ void MfxHwH264Encode::SetDefaults(
     SetDefaultOff(extOpt3->LowDelayBRC);
 
 #ifdef MFX_ENABLE_H264_REPARTITION_CHECK
-#ifdef MFX_VA_WIN
     if (extOpt3->RepartitionCheckEnable == MFX_CODINGOPTION_UNKNOWN)
         extOpt3->RepartitionCheckEnable = MFX_CODINGOPTION_ADAPTIVE;
-#endif // MFX_VA_WIN
 #endif // MFX_ENABLE_H264_REPARTITION_CHECK
 
 #if (MFX_VERSION >= 1026)
