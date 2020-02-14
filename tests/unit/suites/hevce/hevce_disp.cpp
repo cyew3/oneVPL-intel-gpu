@@ -79,7 +79,8 @@ inline bool IsGen<TGen12ATS>(VideoENCODE* p)
 template<>
 inline bool IsGen<TGen12DG2>(VideoENCODE* p)
 {
-    return dynamic_cast<TGen12DG2*>(p);
+    return dynamic_cast<TGen12DG2*>(p)
+        && !dynamic_cast<TGen12ATS*>(p);
 }
 
 class Core

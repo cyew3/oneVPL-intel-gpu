@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 #include "hevcehw_g12dg2_win.h"
 #include "hevcehw_g12dg2_caps.h"
 #include "hevcehw_g9_legacy.h"
+#include "hevcehw_g9_blocking_sync_win.h"
 
 namespace HEVCEHW
 {
@@ -40,6 +41,10 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     , eFeatureMode mode)
     : TBaseImpl(core, status, mode)
 {
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+    GetFeature<Gen9::BlockingSync>(HEVCEHW::Gen9::FEATURE_BLOCKING_SYNC).SetTimeout(3600000);// 1 hour
+#endif
+
     TFeatureList newFeatures;
 
     newFeatures.emplace_back(new Caps(FEATURE_CAPS));
