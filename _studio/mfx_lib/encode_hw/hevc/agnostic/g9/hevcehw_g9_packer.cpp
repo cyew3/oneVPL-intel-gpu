@@ -1132,6 +1132,7 @@ bool Packer::PackSSHPWT(
     mfxI16   wC           = (1 << slice.chroma_log2_weight_denom);
     mfxI16   l2WDc        = slice.chroma_log2_weight_denom;
     auto     startOffset  = bs.GetOffset();
+
     auto     PutPwtLX     = [&](const mfxI16(&pwtLX)[16][3][2], mfxU32 sz)
     {
         mfxU32 szY      = sz * bNeedY;
@@ -1145,7 +1146,7 @@ bool Packer::PackSSHPWT(
             bool bPutC = !!(chromaw & wfmap);
 
             nSE += bPutY && PutSE(bs, pwt[Y][W] - wY);
-            nSE += bPutY && PutSE(bs, pwt[Y][0]);
+            nSE += bPutY && PutSE(bs, pwt[Y][O]);
 
             nSE += bPutC && PutSE(bs, pwt[Cb][W] - wC);
             nSE += bPutC && PutSE(bs, mfx::clamp(((WpOffC * pwt[Cb][W]) >> l2WDc) + pwt[Cb][O] - WpOffC, -4 * WpOffC, 4 * WpOffC - 1));
@@ -1172,7 +1173,7 @@ bool Packer::PackSSHPWT(
     nSE += bNeedC && PutSE(bs, mfxI32(slice.chroma_log2_weight_denom) - slice.luma_log2_weight_denom);
 
     PutPwtLX(slice.pwt[0], slice.num_ref_idx_l0_active_minus1 + 1);
-    PutPwtLX(slice.pwt[1], (slice.num_ref_idx_l0_active_minus1 + 1) * (slice.type == B));
+    PutPwtLX(slice.pwt[1], (slice.num_ref_idx_l1_active_minus1 + 1) * (slice.type == B));
 
     bs.AddInfo(PACK_PWTLength, bs.GetOffset() - startOffset);
 
