@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -348,7 +348,7 @@ namespace UMC_AV1_DECODER
         picParam.dwModeControlFlags.fields.log2_delta_lf_res     = CeilLog2(info.delta_lf_res);
         picParam.dwModeControlFlags.fields.delta_lf_multi        = info.delta_lf_multi;
         picParam.dwModeControlFlags.fields.tx_mode               = info.TxMode;
-        picParam.dwModeControlFlags.fields.reference_mode        = info.reference_mode;
+        picParam.dwModeControlFlags.fields.reference_mode        = (info.reference_mode == SINGLE_REFERENCE)?0:1;
         picParam.dwModeControlFlags.fields.reduced_tx_set_used   = info.reduced_tx_set;
         picParam.dwModeControlFlags.fields.skip_mode_present     = info.skip_mode_present;
         picParam.dwModeControlFlags.fields.ReservedField         = 0;
