@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -125,7 +125,7 @@ void UnitsInfo::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             MFX_CHECK_STS(sts);
 
             auto& task = Task::Common::Get(s_task);
-            ThrowAssert(task.pBsOut, "task.pBsOut is NULL");
+            ThrowAssert(!task.pBsOut, "task.pBsOut is NULL");
 
             mfxExtEncodedUnitsInfo* pUnitsInfo = ExtBuffer::Get(*task.pBsOut);
             MFX_CHECK(pUnitsInfo, sts);
