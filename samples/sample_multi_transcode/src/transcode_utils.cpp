@@ -232,6 +232,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -l numSlices  Number of slices for encoder; default value 0 \n"));
     msdk_printf(MSDK_STRING("  -mss maxSliceSize \n"));
     msdk_printf(MSDK_STRING("                Maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -l option.\n"));
+    msdk_printf(MSDK_STRING("  -BitrateLimit:<on,off>\n"));
+    msdk_printf(MSDK_STRING("                Turn this flag ON to set bitrate limitations imposed by the SDK encoder. Off by default.\n"));
     msdk_printf(MSDK_STRING("  -la           Use the look ahead bitrate control algorithm (LA BRC) for H.264 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("  -lad depth    Depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [0,100] (0 - default: auto-select by mediasdk library).\n"));
     msdk_printf(MSDK_STRING("                May be 1 in the case when -mss option is specified \n"));
@@ -1056,10 +1058,51 @@ void ParseMCTFParams(msdk_char* strInput[], mfxU32 nArgNum, mfxU32& curArg, sInp
 }
 #endif
 
+// return values:
+//   0 if argv[i] is processed successfully (MFX_ERR_NONE)
+// < 1 if argv[i] is processed and generates an error OR argv[i] is not processed (no match)
+mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 /*argc*/, mfxU32& i, TranscodingSample::sInputParams& InputParams)
+{
+    if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lowpower:on")))
+    {
+        InputParams.enableQSVFF = true;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lowpower:off")))
+    {
+        InputParams.enableQSVFF = false;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-BitrateLimit:on")))
+    {
+        InputParams.BitrateLimit = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-BitrateLimit:off")))
+    {
+        InputParams.BitrateLimit = MFX_CODINGOPTION_OFF;
+    }
+#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-iGfx")))
+    {
+        InputParams.bPrefferiGfx = true;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-dGfx")))
+    {
+        InputParams.bPrefferdGfx = true;
+    }
+#endif
+    else
+    {
+        // no matching argument was found
+        return MFX_ERR_NOT_FOUND;
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxStatus stsExtBuf = MFX_ERR_NONE;
+    mfxStatus stsAddlParams = MFX_ERR_NONE;
     mfxU32 skipped = 0;
 
     // save original cmd line for debug purpose
@@ -1233,16 +1276,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 
             VAL_CHECK(i+1 == argc, i, argv[i]);
             InputParams.strDevicePath = argv[++i];
-        }
-#endif
-#if (defined(_WIN32) || defined(_WIN64)) && (MFX_VERSION >= 1031)
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-iGfx")))
-        {
-            InputParams.bPrefferiGfx = true;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-dGfx")))
-        {
-            InputParams.bPrefferdGfx = true;
         }
 #endif
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-sys")))
@@ -2033,14 +2066,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.enableQSVFF=true;
         }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lowpower:on")))
-        {
-            InputParams.enableQSVFF=true;
-        }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lowpower:off")))
-        {
-            InputParams.enableQSVFF=false;
-        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-single_texture_d3d11")))
         {
             InputParams.bSingleTexture = true;
@@ -2170,8 +2195,21 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 #endif
         else
         {
-            PrintError(MSDK_STRING("Invalid input argument number %d %s"), i, argv[i]);
-            return MFX_ERR_UNSUPPORTED;
+            // WA for compiler error C1061 (too many chained else-if clauses)
+            // ParseAdditionalParams returns:
+            //    0  if argv[i] is processed successfully by this function
+            //  < 1  if argv[i] is processed and generates an error
+            //          OR
+            //       if argv[i] was not processed (did not match any switches)
+            stsAddlParams = ParseAdditionalParams(argv, argc, i, InputParams);
+
+            // either unrecognized parameter, or parse error with recognized parameter
+            if (stsAddlParams)
+            {
+                if (stsAddlParams == MFX_ERR_NOT_FOUND)
+                    PrintError(MSDK_STRING("Invalid input argument number %d %s"), i, argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
     }
 
@@ -2359,6 +2397,11 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
     {
         PrintError(MSDK_STRING("MaxSliceSize option is supported only with H.264 encoder!"));
         return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (InputParams.BitrateLimit == MFX_CODINGOPTION_UNKNOWN)
+    {
+        InputParams.BitrateLimit = MFX_CODINGOPTION_OFF;
     }
 
     if(InputParams.enableQSVFF && InputParams.eMode == Sink)

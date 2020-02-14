@@ -178,6 +178,8 @@ struct sInputParams
     mfxU16 GopOptFlag;
     mfxU32 nMaxFrameSize;
 
+    mfxU16 BitrateLimit;
+
     mfxU16 WinBRCSize;
     mfxU16 WinBRCMaxAvgKbps;
 

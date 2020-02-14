@@ -630,12 +630,14 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     // configure the depth of the look ahead BRC if specified in command line
     if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nMaxFrameSize || pInParams->nBRefType ||
         (pInParams->nExtBRC && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC)) ||
-        pInParams->IntRefType || pInParams->IntRefCycleSize || pInParams->IntRefQPDelta )
+        pInParams->IntRefType || pInParams->IntRefCycleSize || pInParams->IntRefQPDelta ||
+        pInParams->BitrateLimit)
     {
         m_CodingOption2.LookAheadDepth = pInParams->nLADepth;
         m_CodingOption2.MaxSliceSize   = pInParams->nMaxSliceSize;
         m_CodingOption2.MaxFrameSize = pInParams->nMaxFrameSize;
         m_CodingOption2.BRefType = pInParams->nBRefType;
+        m_CodingOption2.BitrateLimit = pInParams->BitrateLimit;
 
         if (pInParams->nExtBRC != EXTBRC_DEFAULT && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC))
         {
@@ -918,9 +920,16 @@ mfxStatus CEncodingPipeline::AllocFrames()
     MSDK_ZERO_MEMORY(VppRequest[0]);
     MSDK_ZERO_MEMORY(VppRequest[1]);
 
+    mfxU16 initialTargetKbps = m_mfxEncParams.mfx.TargetKbps;
+
     // Querying encoder
     sts = GetFirstEncoder()->Query(&m_mfxEncParams, &m_mfxEncParams);
     MSDK_CHECK_STATUS(sts, "Query (for encoder) failed");
+
+    if (m_CodingOption2.BitrateLimit != MFX_CODINGOPTION_OFF && initialTargetKbps != m_mfxEncParams.mfx.TargetKbps)
+    {
+        msdk_printf(MSDK_STRING("WARNING: -BitrateLimit:on, target bitrate was changed from %d kbps to %d kbps.\n"), initialTargetKbps, m_mfxEncParams.mfx.TargetKbps);
+    }
 
     // Calculate the number of surfaces for components.
     // QueryIOSurf functions tell how many surfaces are required to produce at least 1 output.

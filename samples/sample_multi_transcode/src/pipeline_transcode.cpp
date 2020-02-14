@@ -525,6 +525,7 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
 
             // Querying parameters
             mfxU16 ioPattern = m_mfxEncParams.IOPattern;
+            mfxU16 initialTargetKbps = m_mfxEncParams.mfx.TargetKbps;
 
             msdk_stringstream str1, str2;
             CParametersDumper().SerializeVideoParamStruct(str1, MSDK_STRING(""), m_mfxEncParams);
@@ -537,6 +538,11 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
 
             if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
             {
+                if (m_CodingOption2.BitrateLimit != MFX_CODINGOPTION_OFF && initialTargetKbps != m_mfxEncParams.mfx.TargetKbps)
+                {
+                    msdk_printf(MSDK_STRING("[WARNING] -BitrateLimit:on, target bitrate was changed\n"));
+                }
+
                 msdk_printf(MSDK_STRING("[WARNING] Configuration changed on the Query() call\n"));
 
                 CParametersDumper().ShowConfigurationDiff(str1, str2);
@@ -2571,7 +2577,7 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     }
 
     // configure and attach external parameters
-    if (pInParams->bLABRC || pInParams->nMaxSliceSize || pInParams->nBRefType
+    if (pInParams->bLABRC || pInParams->nMaxSliceSize || pInParams->nBRefType || pInParams->BitrateLimit
         || (pInParams->nExtBRC && (pInParams->EncodeId == MFX_CODEC_HEVC || pInParams->EncodeId == MFX_CODEC_AVC)) ||
         pInParams->IntRefType || pInParams->IntRefCycleSize || pInParams->IntRefQPDelta || pInParams->nMaxFrameSize)
     {
@@ -2579,6 +2585,7 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_CodingOption2.MaxSliceSize = pInParams->nMaxSliceSize;
         m_CodingOption2.MaxFrameSize = pInParams->nMaxFrameSize;
         m_CodingOption2.BRefType = pInParams->nBRefType;
+        m_CodingOption2.BitrateLimit = pInParams->BitrateLimit;
 
         m_CodingOption2.IntRefType = pInParams->IntRefType;
         m_CodingOption2.IntRefCycleSize = pInParams->IntRefCycleSize;
