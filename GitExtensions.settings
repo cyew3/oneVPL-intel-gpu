@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<dictionary>
+  <item>
+    <key>
+      <string>RevisionLinkDefs</string>
+    </key>
+    <value>
+      <string>&lt;?xml version="1.0" encoding="utf-16"?&gt;
+&lt;ArrayOfGitExtLinkDef&gt;
+  &lt;GitExtLinkDef&gt;
+    &lt;Enabled&gt;true&lt;/Enabled&gt;
+    &lt;LinkFormats&gt;
+      &lt;GitExtLinkFormat&gt;
+        &lt;Caption&gt;Gerrit&lt;/Caption&gt;
+        &lt;Format&gt;https://git-ccr-1.devtools.intel.com/gerrit/#/q/{0}&lt;/Format&gt;
+      &lt;/GitExtLinkFormat&gt;
+    &lt;/LinkFormats&gt;
+    &lt;Name&gt;Gerrit Review&lt;/Name&gt;
+    &lt;RemoteSearchInParts&gt;
+      &lt;RemotePart&gt;URL&lt;/RemotePart&gt;
+    &lt;/RemoteSearchInParts&gt;
+    &lt;RemoteSearchPattern /&gt;
+    &lt;SearchInParts&gt;
+      &lt;RevisionPart&gt;Message&lt;/RevisionPart&gt;
+    &lt;/SearchInParts&gt;
+    &lt;SearchPattern&gt;Change\-Id\:\s(.+)&lt;/SearchPattern&gt;
+    &lt;UseRemotesPattern&gt;origin&lt;/UseRemotesPattern&gt;
+    &lt;UseOnlyFirstRemote&gt;true&lt;/UseOnlyFirstRemote&gt;
+  &lt;/GitExtLinkDef&gt;
+  &lt;GitExtLinkDef&gt;
+    &lt;Enabled&gt;true&lt;/Enabled&gt;
+    &lt;LinkFormats&gt;
+      &lt;GitExtLinkFormat&gt;
+        &lt;Caption&gt;code:{0}&lt;/Caption&gt;
+        &lt;Format&gt;https://github.com/Intel-Media-SDK/MediaSDK/commit/{0}&lt;/Format&gt;
+      &lt;/GitExtLinkFormat&gt;
+    &lt;/LinkFormats&gt;
+    &lt;Name&gt;GitHub - Code&lt;/Name&gt;
+    &lt;RemoteSearchInParts /&gt;
+    &lt;SearchInParts&gt;
+      &lt;RevisionPart&gt;Message&lt;/RevisionPart&gt;
+    &lt;/SearchInParts&gt;
+    &lt;SearchPattern&gt;\#(.+)&lt;/SearchPattern&gt;
+    &lt;UseOnlyFirstRemote&gt;false&lt;/UseOnlyFirstRemote&gt;
+  &lt;/GitExtLinkDef&gt;
+  &lt;GitExtLinkDef&gt;
+    &lt;Enabled&gt;true&lt;/Enabled&gt;
+    &lt;LinkFormats&gt;
+      &lt;GitExtLinkFormat&gt;
+        &lt;Caption&gt;#{0}&lt;/Caption&gt;
+        &lt;Format&gt;https://github.com/Intel-Media-SDK/MediaSDK/issues/{0}&lt;/Format&gt;
+      &lt;/GitExtLinkFormat&gt;
+    &lt;/LinkFormats&gt;
+    &lt;Name&gt;Github PR/issue&lt;/Name&gt;
+    &lt;NestedSearchPattern /&gt;
+    &lt;RemoteSearchInParts&gt;
+      &lt;RemotePart&gt;URL&lt;/RemotePart&gt;
+    &lt;/RemoteSearchInParts&gt;
+    &lt;SearchInParts&gt;
+      &lt;RevisionPart&gt;Message&lt;/RevisionPart&gt;
+    &lt;/SearchInParts&gt;
+    &lt;SearchPattern&gt;\#(\d+)&lt;/SearchPattern&gt;
+    &lt;UseRemotesPattern&gt;github|origin&lt;/UseRemotesPattern&gt;
+    &lt;UseOnlyFirstRemote&gt;true&lt;/UseOnlyFirstRemote&gt;
+  &lt;/GitExtLinkDef&gt;
+&lt;/ArrayOfGitExtLinkDef&gt;</string>
+    </value>
+  </item>
+</dictionary>

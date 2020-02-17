@@ -48,3 +48,4 @@ __cmake
 *.opendb
 *.db
 *.aps
+/GitExtensions.settings.backup
