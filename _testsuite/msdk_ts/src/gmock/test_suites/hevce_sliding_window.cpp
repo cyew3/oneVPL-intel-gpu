@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018 - 2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018 - 2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -111,7 +111,7 @@ namespace hevce_sliding_window
     } },
 
     // MaxKbps is not set. Error expected
-    {/*04*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
+    {/*04*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 5000 },
@@ -197,7 +197,7 @@ namespace hevce_sliding_window
     } },
 
     // MaxKbps is not set. Error expected
-    {/*11*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
+    {/*11*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 5000 },
