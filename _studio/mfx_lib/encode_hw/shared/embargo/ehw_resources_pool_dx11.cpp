@@ -67,11 +67,16 @@ mfxStatus ResPoolDX11::Alloc(
 
 void ResPoolDX11::Free()
 {
+    if (m_bOpaque)
+    {
+        ResPool::Free();
+    }
+
     std::for_each(m_responseQueue.begin(), m_responseQueue.end()
         , [&](mfxFrameAllocResponse& rsp) { m_core.FreeFrames(&rsp); });
     m_responseQueue.clear();
 
-    m_response.mids = nullptr;
+    m_response = {};
 }
 
 

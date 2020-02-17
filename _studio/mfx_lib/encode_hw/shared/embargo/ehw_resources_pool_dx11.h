@@ -41,7 +41,7 @@ public:
         const mfxFrameAllocRequest & req
         , bool bCopyRequired) override;
 
-    void Free() override;
+    virtual void Free() override;
 
     std::set<mfxU32> m_noEncTargetWA = std::set<mfxU32>({
         MFX_FOURCC_YUY2
