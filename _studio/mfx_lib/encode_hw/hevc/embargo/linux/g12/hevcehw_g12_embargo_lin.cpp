@@ -50,9 +50,9 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 {
     TFeatureList newFeatures;
 
-    newFeatures.emplace_back(new RExt(FEATURE_REXT));
-    newFeatures.emplace_back(new SCC(FEATURE_SCC));
-    newFeatures.emplace_back(new Caps(FEATURE_CAPS));
+    newFeatures.emplace_back(new Linux::Gen12::RExt(FEATURE_REXT));
+    newFeatures.emplace_back(new Linux::Gen12::SCC(FEATURE_SCC));
+    newFeatures.emplace_back(new Linux::Gen12::Caps(FEATURE_CAPS));
     newFeatures.emplace_back(new SAO(FEATURE_SAO));
     
     for (auto& pFeature : newFeatures)
