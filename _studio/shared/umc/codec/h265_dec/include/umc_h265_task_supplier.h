@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -436,6 +436,7 @@ protected:
     bool        m_use_external_framerate;
     bool        m_decodedOrder;
     bool        m_checkCRAInsideResetProcess;
+    bool        m_bFirstSliceInSequence;
 
     H265Slice * m_pLastSlice;
 

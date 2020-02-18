@@ -135,6 +135,8 @@ public:
 
     bool IsError() const {return m_bError;}
 
+    bool GetRapPicFlag() const;
+
 public:
 
     MemoryPiece m_source;                                 // (MemoryPiece *) pointer to owning memory piece
