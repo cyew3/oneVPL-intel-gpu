@@ -92,10 +92,9 @@ D3D11Encoder::~D3D11Encoder()
     memset (&m_allocResponseBS,0,sizeof(mfxFrameAllocResponse));
 } // D3D11Encoder::~D3D11Encoder()
 
-
-mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS & caps, mfxU16)
+mfxStatus D3D11Encoder::CreateAuxilliaryDevice(mfxU16)
 {
-    MFX_CHECK_NULL_PTR1(m_core);
+        MFX_CHECK_NULL_PTR1(m_core);
 
     if(!m_pDecoder)
     {
@@ -172,14 +171,16 @@ mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS & caps, mfxU16)
         decoderExtParam.ppResourceList = 0;
 
         hRes = DecoderExtension(pD3d11->GetD3D11VideoContext(true), pDecoder, decoderExtParam);
-        CHECK_HRES(hRes);        
+        CHECK_HRES(hRes);
     }
 
-    caps = m_caps;
-
     return MFX_ERR_NONE;
+}
 
-} // mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS & caps)
+void D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS & caps)
+{
+    caps = m_caps;
+}
 
 
 mfxStatus D3D11Encoder::Init_MPEG2_ENC(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames)

@@ -54,7 +54,7 @@ namespace MfxHwMpeg2Encode
 
         virtual ~D3D11Encoder();
 
-        virtual mfxStatus QueryEncodeCaps(ENCODE_CAPS & caps, mfxU16 codecProfileType);
+        virtual void QueryEncodeCaps(ENCODE_CAPS & caps);
 
         virtual mfxStatus Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId);
 
@@ -72,6 +72,9 @@ namespace MfxHwMpeg2Encode
         virtual mfxStatus SetFrames (ExecuteBuffers* pExecuteBuffers);
 
         virtual mfxStatus QueryStatusAsync(mfxU32 nFeedback, mfxU32 &bitstreamSize);
+
+        virtual mfxStatus CreateAuxilliaryDevice(mfxU16 codecProfile);
+
 
     private:
         // Declare private copy constructor to avoid accidental assignment

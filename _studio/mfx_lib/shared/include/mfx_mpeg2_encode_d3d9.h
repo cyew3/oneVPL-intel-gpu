@@ -50,7 +50,7 @@ namespace MfxHwMpeg2Encode
         explicit D3D9Encoder(VideoCORE* core);
 
         virtual ~D3D9Encoder();
-        virtual mfxStatus QueryEncodeCaps(ENCODE_CAPS & caps, mfxU16 codecProfileType);
+        virtual void QueryEncodeCaps(ENCODE_CAPS & caps);
 
         virtual mfxStatus Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId);
 
@@ -69,6 +69,8 @@ namespace MfxHwMpeg2Encode
         virtual mfxStatus SetFrames (ExecuteBuffers* pExecuteBuffers);
 
         virtual mfxStatus QueryStatusAsync(mfxU32 nFeedback, mfxU32 &bitstreamSizemfxU32);
+
+        virtual mfxStatus CreateAuxilliaryDevice(mfxU16 codecProfile);
 
     private:
 
@@ -110,6 +112,7 @@ namespace MfxHwMpeg2Encode
         mfxRecFrames                        m_recFrames;
         mfxRawFrames                        m_rawFrames;
         bool                                m_bENC_PAK;
+        ENCODE_CAPS                         m_caps;
 
 #ifdef MPEG2_ENC_HW_PERF
         vm_time lock_MB_data_time[3];

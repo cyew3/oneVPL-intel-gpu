@@ -45,7 +45,7 @@ D3D9Encoder::D3D9Encoder(VideoCORE* core)
     : m_core(core)
     , m_pDevice()
     , m_layout()
-    , m_feedback()  
+    , m_feedback()
     , m_allocResponseMB()
     , m_allocResponseBS()
     , m_recFrames()
@@ -54,6 +54,7 @@ D3D9Encoder::D3D9Encoder(VideoCORE* core)
 {
 #ifdef MPEG2_ENC_HW_PERF
     memset (lock_MB_data_time, 0, sizeof(lock_MB_data_time));
+    memset (&m_caps, 0, sizeof(ENCODE_CAPS));
     memset (copy_MB_data_time, 0, sizeof(copy_MB_data_time));
 #endif
 } // D3D9Encoder::D3D9Encoder(VideoCORE* core) : m_core(core)
@@ -75,8 +76,7 @@ D3D9Encoder::~D3D9Encoder()
 
 } // D3D9Encoder::~D3D9Encoder()
 
-
-mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS & caps, mfxU16)
+mfxStatus D3D9Encoder::CreateAuxilliaryDevice(mfxU16)
 {
     MFX_CHECK_NULL_PTR1(m_core);
 
@@ -95,18 +95,22 @@ mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS & caps, mfxU16)
     sts = auxDevice.IsAccelerationServiceExist(DXVA2_Intel_Encode_MPEG2);
     MFX_CHECK_STS(sts);
 
-    mfxU32 sizeofCaps = sizeof caps;
-    sts = auxDevice.QueryAccelCaps(&DXVA2_Intel_Encode_MPEG2, &caps, &sizeofCaps);
+    mfxU32 sizeofCaps = sizeof m_caps;
+    sts = auxDevice.QueryAccelCaps(&DXVA2_Intel_Encode_MPEG2, &m_caps, &sizeofCaps);
     MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
+}
 
-} // mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS & caps)
+void D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS & caps)
+{
+    caps = m_caps;
+}
 
 
 mfxStatus D3D9Encoder::Init_MPEG2_ENC(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames)
 {
-    mfxStatus   sts    = MFX_ERR_NONE; 
+    mfxStatus   sts    = MFX_ERR_NONE;
 
     sts = Init(DXVA2_Intel_Encode_MPEG2,ENCODE_ENC,pExecuteBuffers);
     MFX_CHECK_STS(sts);

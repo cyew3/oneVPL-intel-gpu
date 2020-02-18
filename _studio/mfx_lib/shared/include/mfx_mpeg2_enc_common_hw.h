@@ -191,7 +191,7 @@ namespace MfxHwMpeg2Encode
 
     mfxStatus QueryHwCaps(VideoCORE* core,
         ENCODE_CAPS & hwCaps,
-        mfxU16 codecProfileType);
+        mfxU16 codecProfile);
 
 }; // namespace MfxHwMpeg2Encode
 
