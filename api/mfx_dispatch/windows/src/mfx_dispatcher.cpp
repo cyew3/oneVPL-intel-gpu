@@ -514,7 +514,7 @@ mfxStatus MFXQueryAdaptersDecode(mfxBitstream* bitstream, mfxU32 codec_id, mfxAd
 
         if (sts != MFX_ERR_NONE)
         {
-            continue;
+            return sts; // we have to return sts here as DecodeHeader may return MORE_DATA and this status should be propagated to caller function
         }
 
         sts = MFXVideoDECODE_Query(dummy_session.operator mfxSession(), &stream_params, &out);
