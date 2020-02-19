@@ -556,7 +556,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION2(MaxQPP,                 OPT_UINT_8,     "max QP for P-frames, 0 = default"),
         HANDLE_EXT_OPTION2(MinQPB,                 OPT_UINT_8,     "min QP for B-frames, 0 = default"),
         HANDLE_EXT_OPTION2(MaxQPB,                 OPT_UINT_8,     "max QP for B-frames, 0 = default"),
-        HANDLE_EXT_OPTION2(FixedFrameRate,         OPT_UINT_16,    "max QP for B-frames, 0 = default"),
+        HANDLE_EXT_OPTION2(FixedFrameRate,         OPT_UINT_16,    ""),
         HANDLE_EXT_OPTION2(DisableDeblockingIdc,   OPT_UINT_16,    ""),
         HANDLE_EXT_OPTION2(DisableVUI,             OPT_UINT_16,    ""),
         HANDLE_EXT_OPTION2(BufferingPeriodSEI,     OPT_UINT_16,    ""),
