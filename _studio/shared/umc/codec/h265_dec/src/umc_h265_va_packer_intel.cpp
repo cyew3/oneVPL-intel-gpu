@@ -532,7 +532,7 @@ namespace UMC_HEVC_DECODER
     }
 
     inline
-    uint32_t GetEntryPointOffsetStep(H265Slice const* slice)
+    uint32_t GetEntryPointOffsetStep(H265Slice const* slice, uint32_t tileYIdx)
     {
         H265PicParamSet const* pps = slice->GetPicParam();
         VM_ASSERT(pps);
@@ -540,19 +540,40 @@ namespace UMC_HEVC_DECODER
         if (!pps->tiles_enabled_flag || !pps->entropy_coding_sync_enabled_flag)
             return 1;
 
-        H265SliceHeader const* sh = slice->GetSliceHeader();
-        VM_ASSERT(sh);
-
-        //[m_TileIdx] has size of WidthInLCU * HeightInLCU + 1
-        //value of [SliceHeader :: slice_segment_address] is checked during bitstream parsing
-        VM_ASSERT(sh->slice_segment_address < pps->m_TileIdx.size());
-        uint32_t const tile = pps->m_TileIdx[sh->slice_segment_address];
-
-        uint32_t const row = tile / pps->num_tile_columns;
-        if (!(row < pps->row_height.size()))
+        if (!(tileYIdx < pps->row_height.size()))
             throw h265_exception(UMC_ERR_FAILED);
 
-        return pps->row_height[row];
+        return slice->getTileRowHeight(tileYIdx);
+    }
+
+    inline
+        uint32_t GetEntryPointOffsetNum(H265Slice const* slice)
+    {
+        H265PicParamSet const* pps = slice->GetPicParam();
+        VM_ASSERT(pps);
+        //H265SliceHeader const* sh = slice->GetSliceHeader();
+        //VM_ASSERT(sh);
+
+        uint32_t count = 0;
+        uint32_t tileXIdx = slice->getTileXIdx();
+        uint32_t tileYIdx = slice->getTileYIdx();
+        uint32_t step = 0;
+
+        step = GetEntryPointOffsetStep(slice, tileYIdx);
+        for (uint32_t idx = 1; idx < slice->getTileLocationCount(); idx++)
+        {
+            if (0 == --step)
+            {
+                count++;
+                if (++tileXIdx > (pps->num_tile_columns - 1))
+                {
+                    tileXIdx = 0;
+                    tileYIdx++;
+                }
+                step = GetEntryPointOffsetStep(slice, tileYIdx);
+            }
+        }
+        return count;
     }
 
     template <typename T>
@@ -654,7 +675,7 @@ namespace UMC_HEVC_DECODER
         if (!fi)
             throw h265_exception(UMC_ERR_FAILED);
 
-        uint32_t offset = 0;
+        uint32_t num_offset = 0;
         uint32_t const count = fi->GetSliceCount();
         for (uint32_t i = 0; i < count; ++i)
         {
@@ -664,16 +685,11 @@ namespace UMC_HEVC_DECODER
             if (slice == pSlice)
                 break;
 
-            H265SliceHeader const* h = slice->GetSliceHeader();
-            VM_ASSERT(h);
-
-            uint32_t const step = GetEntryPointOffsetStep(slice);
-            offset += h->num_entry_point_offsets / step;
+            num_offset += GetEntryPointOffsetNum(slice);
         }
 
-        header->EntryOffsetToSubsetArray = static_cast<USHORT>(offset);
-        header->num_entry_point_offsets =
-            static_cast<USHORT>(sh->num_entry_point_offsets / GetEntryPointOffsetStep(pSlice));
+        header->EntryOffsetToSubsetArray = static_cast<USHORT>(num_offset);
+        header->num_entry_point_offsets  = static_cast<USHORT>(GetEntryPointOffsetNum(pSlice));
     }
 
     inline
@@ -859,19 +875,33 @@ namespace UMC_HEVC_DECODER
             VM_ASSERT(sh->num_entry_point_offsets + 1 == slice->getTileLocationCount());
 #endif
 
-#if DDI_VERSION < 954
-            uint32_t const step = 1;
-#else
-            uint32_t const step = GetEntryPointOffsetStep(slice);
-#endif
             //'m_tileByteLocation' contains absolute offsets, but we have to pass relative ones just as they are in a bitstream
             //NOTE: send only entry points for tiles
+            uint32_t tileXIdx = slice->getTileXIdx();
+            uint32_t tileYIdx = slice->getTileYIdx();
+
+#if DDI_VERSION < 954
+            uint32_t step = 1;
+#else
+            uint32_t step = GetEntryPointOffsetStep(slice, tileYIdx);
+#endif
+
             auto position = slice->m_tileByteLocation[0];
             for (uint32_t j = step; j < slice->getTileLocationCount(); j += step)
             {
                 uint32_t const entry = slice->m_tileByteLocation[j];
-                *offset++ = entry - (position  + 1);
-                position  = entry;
+                *offset++ = entry - (position + 1);
+                position = entry;
+
+                if (++tileXIdx > pp->num_tile_columns_minus1)
+                {
+                    tileXIdx = 0;
+                    tileYIdx++;
+                }
+
+#if DDI_VERSION >= 954
+                step = GetEntryPointOffsetStep(slice, tileYIdx);
+#endif
             }
         }
     }

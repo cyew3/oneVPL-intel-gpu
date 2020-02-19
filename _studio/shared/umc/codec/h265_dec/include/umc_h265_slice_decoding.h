@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -212,6 +212,12 @@ public:
 
     // For dependent slice copy data from another slice
     void CopyFromBaseSlice(const H265Slice * slice);
+
+    uint32_t getTileColumnWidth(uint32_t col) const;
+    uint32_t getTileRowHeight(uint32_t row) const;
+
+    uint32_t getTileXIdx() const;
+    uint32_t getTileYIdx() const;
 };
 
 // Check whether two slices are from the same picture. HEVC spec 7.4.2.4.5
