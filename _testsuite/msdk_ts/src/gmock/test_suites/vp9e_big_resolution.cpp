@@ -369,6 +369,31 @@ namespace vp9e_big_resolution
         return pSurf;
     }
 
+    bool CheckResolution(const mfxU32 type, const unsigned int fourcc)
+    {
+        bool isSupported = true;
+        if (g_tsHWtype <= MFX_HW_PVC && (type & CHECK_16Kx4K || type & CHECK_16Kx256 || type & CHECK_16Kx16K))
+        {
+            // platform <= PVC - 16K stream is unsupported on Gen12 platforms now
+            isSupported = false;
+        }
+        else if (g_tsHWtype < MFX_HW_ICL && type & CHECK_8Kx8K)
+        {
+            // platform < ICL - 8K stream is unsupported on current platform
+            isSupported = false;
+        }
+
+        // WA for P010/Y410 because of DirectX 11 limitation
+        if (g_tsImpl & MFX_IMPL_VIA_D3D11 &&
+            (   fourcc == MFX_FOURCC_P010 && (type & CHECK_16Kx16K || type & CHECK_16Kx4K || type & CHECK_16Kx256)
+             || fourcc == MFX_FOURCC_Y410 && (type & CHECK_16Kx16K)))
+        {
+            isSupported = false;
+        }
+
+        return isSupported;
+    }
+
     template<mfxU32 fourcc>
     int TestSuite::RunTest_Subtype(const unsigned int id)
     {
@@ -494,27 +519,7 @@ namespace vp9e_big_resolution
 
         // QUERY SECTION
         {
-            bool isResolutionSupported = true;
-            if (g_tsHWtype < MFX_HW_TGL && (tc.type & CHECK_16Kx16K || tc.type & CHECK_16Kx4K || tc.type & CHECK_16Kx256))
-            {
-                // platform < TGL - 16K stream is unsupported on current platform
-                isResolutionSupported = false;
-            }
-            else if (g_tsHWtype < MFX_HW_ICL && tc.type & CHECK_8Kx8K)
-            {
-                // platform < ICL - 8K stream is unsupported on current platform
-                isResolutionSupported = false;
-            }
-
-            // WA for P010/Y410 because of DirectX 11 limitation
-            if (g_tsHWtype >= MFX_HW_TGL && g_tsImpl & MFX_IMPL_VIA_D3D11)
-            {
-                if (fourcc_id == MFX_FOURCC_P010 && (tc.type & CHECK_16Kx16K || tc.type & CHECK_16Kx4K || tc.type & CHECK_16Kx256)
-                    || fourcc_id == MFX_FOURCC_Y410 && (tc.type & CHECK_16Kx16K))
-                {
-                    isResolutionSupported = false;
-                }
-            }
+            bool isResolutionSupported = CheckResolution(tc.type, fourcc_id);
 
             mfxStatus query_expect_status = isResolutionSupported ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED;
             g_tsStatus.expect(query_expect_status);
