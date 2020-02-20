@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,9 +56,9 @@ void Windows::Gen12::QpModulation::InitInternal(const FeatureBlocks& /*blocks*/,
                 , Glob::EncodeCaps::Get(glob)
                 , hwType
                 , Glob::Defaults::Get(glob));
-            bool bTL = dflts.base.GetNumTemporalLayers(dflts) > 1;
+            mfxU16 numTL = dflts.base.GetNumTemporalLayers(dflts);
 
-            sps.HierarchicalFlag = (CO2.BRefType == MFX_B_REF_PYRAMID) || bTL;
+            sps.HierarchicalFlag = (CO2.BRefType == MFX_B_REF_PYRAMID) || (numTL > 1 && numTL < 4);
         });
         ddiCC.UpdatePPS.Push([this](
             TCC::TUpdatePPS::TExt prev

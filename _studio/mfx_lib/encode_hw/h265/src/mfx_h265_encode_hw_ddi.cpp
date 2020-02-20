@@ -994,7 +994,8 @@ void FillSpsBuffer(
         }
         else
         {
-            if (par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID || par.isTL())
+            if (par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID ||
+                (par.isTL() && par.NumTL() < 4))
                 sps.HierarchicalFlag = 1;
         }
     }
