@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_dirty_rect.cpp
 
@@ -106,13 +106,13 @@ namespace hevce_dirty_rect {
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   BlkSize, BlkSize, BlkSize * 2, BlkSize * 2)
         } },
 
-        {/*02*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        {/*02*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 0, BlkSize), // Right == Left
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 0, BlkSize)
         } },
 
-        {/*03*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        {/*03*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   1920, 0, 0, BlkSize), // Left == Width
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   1920, 0, 0, BlkSize)
@@ -124,13 +124,13 @@ namespace hevce_dirty_rect {
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 1920, BlkSize)
         } },
 
-        {/*05*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        {/*05*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, BlkSize, BlkSize * 2, BlkSize), // Top == Bottom
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, BlkSize, BlkSize * 2, BlkSize)
         } },
 
-        {/*06*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        {/*06*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, 1088, BlkSize, 0), // Top == Height
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 1088, BlkSize, 0)
@@ -142,13 +142,13 @@ namespace hevce_dirty_rect {
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, BlkSize, 1088)
         } },
 
-        {/*08*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        {/*08*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
         QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   BlkSize * 2, 0, BlkSize, BlkSize), // Left > Rigth
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   BlkSize * 2, 0, BlkSize, BlkSize)
         } },
 
-        {/*09*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        {/*09*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
         QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, BlkSize * 2, BlkSize, BlkSize), // Top > Bottom
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, BlkSize * 2, BlkSize, BlkSize)
@@ -378,7 +378,7 @@ namespace hevce_dirty_rect {
             if (sts == MFX_ERR_MORE_DATA)
                 sts = MFX_ERR_NONE;
 
-            SETPARS(&extDirtyRect_expectation, DIRTYRECT_EXPECTED_QUERY);
+            SETPARS(&extDirtyRect_expectation, DIRTYRECT);
             if (num_rect <= 64)
                 for (int i = 0; i < num_rect; i++) {
                     CHECK_PARS(extDirtyRect_expectation.Rect[i], ((mfxExtDirtyRect*)extDirtyRect)->Rect[i]);
