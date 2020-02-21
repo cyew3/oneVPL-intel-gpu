@@ -153,7 +153,6 @@ namespace UMC_HEVC_DECODER
                     sp_base = reinterpret_cast<VASliceParameterBufferBase*>(sp);
                 }
 
-#if defined(MFX_ENABLE_HEVCD_SUBSET)
                 auto pps = slice->GetPicParam();
                 assert(pps);
 
@@ -169,11 +168,9 @@ namespace UMC_HEVC_DECODER
 
                 if (last_slice)
                     PackSubsets(slice->GetCurrentFrame());
-#endif //MFX_ENABLE_HEVCD_SUBSET
                 return sp_base;
             }
 
-#if defined(MFX_ENABLE_HEVCD_SUBSET)
             void PackSubsets(H265DecoderFrame const* frame)
             {
                 assert(frame);
@@ -183,7 +180,6 @@ namespace UMC_HEVC_DECODER
                 auto begin = reinterpret_cast<uint32_t*>(p.first);
                 FillSubsets(frame->GetAU(), begin,  begin+ count);
             }
-#endif //MFX_ENABLE_HEVCD_SUBSET
         };
     } //G12
 
