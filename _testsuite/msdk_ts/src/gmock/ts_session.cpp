@@ -32,8 +32,12 @@ tsSession::~tsSession()
     {
         MFXClose();
     }
-
-    delete m_pVAHandle;
+#if (defined(LINUX32) || defined(LINUX64))
+    if (m_pVAHandle)
+    {
+        delete m_pVAHandle;
+    }
+#endif
 }
 
 mfxStatus tsSession::MFXInit()
