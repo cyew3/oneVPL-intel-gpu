@@ -3402,8 +3402,32 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckTriStateOption(extOpt2->RepeatPPS))               changed = true;
     if (!CheckTriStateOption(extOpt2->UseRawRef))               changed = true;
 
+    if (!CheckTriStateOption(extOpt3->EnableQPOffset))              changed = true;
     if (!CheckTriStateOption(extOpt3->DirectBiasAdjustment))        changed = true;
     if (!CheckTriStateOption(extOpt3->GlobalMotionBiasAdjustment))  changed = true;
+
+    if (   IsOn(extOpt3->EnableQPOffset)
+        && (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
+            || (par.mfx.GopRefDist > 1 && extOpt2->BRefType == MFX_B_REF_OFF)
+            || (par.mfx.GopRefDist == 1 && extOpt3->PRefType == MFX_P_REF_SIMPLE)))
+    {
+        extOpt3->EnableQPOffset = MFX_CODINGOPTION_OFF;
+        changed = true;
+    }
+
+    if (IsOn(extOpt3->EnableQPOffset))
+    {
+        mfxU16 minQP = 1;
+        mfxU16 maxQP = 51;
+        mfxI16 QPX = (par.mfx.GopRefDist == 1) ? par.mfx.QPP : par.mfx.QPB;
+
+        if (QPX)
+        {
+            for (mfxI16 i = 0; i < 8; i++)
+                if (!CheckRange(extOpt3->QPOffset[i], minQP - QPX, maxQP - QPX))
+                    changed = true;
+        }
+    }
 
     if ((isENCPAK || vaType != MFX_HW_VAAPI)
         && (IsOn(extOpt3->DirectBiasAdjustment) || IsOn(extOpt3->GlobalMotionBiasAdjustment)))
@@ -4024,7 +4048,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
 
 #if !defined(MFX_EXT_BRC_DISABLE)
-    if (IsOn(extOpt2->ExtBRC) && par.mfx.RateControlMethod != 0 && par.mfx.RateControlMethod !=MFX_RATECONTROL_CBR && par.mfx.RateControlMethod !=MFX_RATECONTROL_VBR)
+    if (IsOn(extOpt2->ExtBRC) && par.mfx.RateControlMethod != 0 && par.mfx.RateControlMethod != MFX_RATECONTROL_CBR && par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)
     {
         extOpt2->ExtBRC = MFX_CODINGOPTION_OFF;
         changed = true;
@@ -4396,7 +4420,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 
-    if (IsOn(extOpt3->ExtBrcAdaptiveLTR) && par.mfx.RateControlMethod != 0 && par.mfx.RateControlMethod != MFX_RATECONTROL_CBR && par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)
+    if (IsOn(extOpt3->ExtBrcAdaptiveLTR) && par.mfx.RateControlMethod != 0 && par.mfx.RateControlMethod !=MFX_RATECONTROL_CBR && par.mfx.RateControlMethod !=MFX_RATECONTROL_VBR)
     {
         extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;
         changed = true;
@@ -5690,6 +5714,7 @@ void MfxHwH264Encode::InheritDefaultValues(
     }
     InheritOption(extOpt2Init.DisableVUI,      extOpt2Reset->DisableVUI);
     InheritOption(extOpt2Init.SkipFrame,       extOpt2Reset->SkipFrame);
+    InheritOption(extOpt3Init.PRefType,        extOpt3Reset->PRefType);
 
 #if !defined(MFX_EXT_BRC_DISABLE)
      InheritOption(extOpt2Init.ExtBRC,  extOpt2Reset->ExtBRC);
@@ -6254,6 +6279,36 @@ void MfxHwH264Encode::SetDefaults(
     if (extOpt2->RepeatPPS == MFX_CODINGOPTION_UNKNOWN)
         extOpt2->RepeatPPS = MFX_CODINGOPTION_ON;
 
+    mfxExtBRC const & extBRC = GetExtBufferRef(par);
+
+    if (extOpt3->PRefType == MFX_P_REF_DEFAULT)
+    {
+        if (par.mfx.GopRefDist == 1 && ((par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) || (IsExtBrcSceneChangeSupported(par) && !extBRC.pthis)))
+            extOpt3->PRefType = MFX_P_REF_PYRAMID;
+        else if (par.mfx.GopRefDist == 1)
+            extOpt3->PRefType = MFX_P_REF_SIMPLE;
+    }
+
+    if (!extOpt3->EnableQPOffset)
+    {
+        mfxU16 minQP = 1;
+        mfxU16 maxQP = 51;
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
+            && (extOpt2->BRefType == MFX_B_REF_PYRAMID || extOpt3->PRefType == MFX_P_REF_PYRAMID))
+        {
+            extOpt3->EnableQPOffset = MFX_CODINGOPTION_ON;
+            mfxI16 QPX = (par.mfx.GopRefDist == 1) ? par.mfx.QPP : par.mfx.QPB;
+
+            for (mfxI16 i = 0; i < 8; i++)
+                extOpt3->QPOffset[i] = mfx::clamp<mfxI16>(i + (par.mfx.GopRefDist > 1), (mfxI16)minQP - QPX, (mfxI16)maxQP - QPX);
+        }
+        else
+            extOpt3->EnableQPOffset = MFX_CODINGOPTION_OFF;
+    }
+
+    if (IsOff(extOpt3->EnableQPOffset))
+        Zero(extOpt3->QPOffset);
+
     if (extOpt2->MinQPI || extOpt2->MinQPP || extOpt2->MinQPB ||
         extOpt2->MaxQPI || extOpt2->MaxQPP || extOpt2->MaxQPB)
     {
@@ -6297,6 +6352,8 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.NumRefFrame = nrfMinForTemporal;
         else if (extOpt2->BRefType != MFX_B_REF_OFF)
             par.mfx.NumRefFrame = nrfMinForPyramid;
+        else if (extOpt3->PRefType == MFX_P_REF_PYRAMID)
+            par.mfx.NumRefFrame = std::max<mfxU16>((mfxU16)par.calcParam.PPyrInterval, extDdi->NumActiveRefP);
         else if (extOpt2->IntRefType)
             par.mfx.NumRefFrame = 1;
         else if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0)
@@ -6310,6 +6367,7 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.NumRefFrame = std::min<mfxU16>(hwCaps.ddi_caps.MaxNum_Reference, par.mfx.NumRefFrame);
         }
 #endif
+        par.calcParam.PPyrInterval = std::min<mfxU32>(par.calcParam.PPyrInterval, par.mfx.NumRefFrame);
     }
 
     if (extOpt->IntraPredBlockSize == MFX_BLOCKSIZE_UNKNOWN)
@@ -6366,7 +6424,6 @@ void MfxHwH264Encode::SetDefaults(
     {
         extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;
         #ifndef MFX_AUTOLTR_FEATURE_DISABLE
-        mfxExtBRC const & extBRC = GetExtBufferRef(par);
         // remove check when sample extbrc is same as implicit extbrc
         // currently added for no behaviour change in sample extbrc
         if (IsExtBrcSceneChangeSupported(par) && !extBRC.pthis)
@@ -6378,7 +6435,6 @@ void MfxHwH264Encode::SetDefaults(
         #endif
     }
 
-    mfxExtBRC const & extBRC = GetExtBufferRef(par);
     if (extOpt2->AdaptiveI == MFX_CODINGOPTION_UNKNOWN)
     {
         if (IsExtBrcSceneChangeSupported(par) && !extBRC.pthis)
@@ -6393,14 +6449,6 @@ void MfxHwH264Encode::SetDefaults(
             extOpt2->AdaptiveB = MFX_CODINGOPTION_ON;
         else
             extOpt2->AdaptiveB = MFX_CODINGOPTION_OFF;
-    }
-
-    if (extOpt3->PRefType == MFX_P_REF_DEFAULT)
-    {
-        if (par.mfx.GopRefDist == 1 && IsExtBrcSceneChangeSupported(par) && !extBRC.pthis)
-            extOpt3->PRefType = MFX_P_REF_PYRAMID;
-        else if (par.mfx.GopRefDist == 1)
-            extOpt3->PRefType = MFX_P_REF_SIMPLE;
     }
 #endif //(MFX_VERSION >= 1026)
 
@@ -8386,6 +8434,8 @@ MfxVideoParam& MfxVideoParam::operator=(mfxVideoParam const & par)
 void MfxVideoParam::SyncVideoToCalculableParam()
 {
     mfxU32 multiplier = std::max<mfxU16>(mfx.BRCParamMultiplier, 1);
+
+    calcParam.PPyrInterval = (mfx.NumRefFrame > 0) ? std::min<mfxU32>(DEFAULT_PPYR_INTERVAL, mfx.NumRefFrame) : DEFAULT_PPYR_INTERVAL;
 
     calcParam.bufferSizeInKB   = mfx.BufferSizeInKB   * multiplier;
     if (IsOn(m_extOpt.VuiNalHrdParameters)

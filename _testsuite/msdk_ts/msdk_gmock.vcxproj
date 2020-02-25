@@ -261,6 +261,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_extbrcadaptiveltr.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mbbrc.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_nalu_size.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_qp_offset.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_reset_cbr_hrd_conf_vui.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_partial_output.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_sps_frame_crop_offset.cpp" />
