@@ -338,6 +338,7 @@ samples:
   paths:
   - samples
   reviewers:
+  - maria.pushkina@intel.com
   - georgy.krivoruchko@intel.com
   - ilya.sergeev@intel.com
   - oleg.nabiullin@intel.com
@@ -371,7 +372,6 @@ build:
   - builder
   reviewers:
   - oleg.nabiullin@intel.com
-  - andrew.k.wrobel@intel.com
   - vladimir.shalimov@intel.com
 
 pavp:
