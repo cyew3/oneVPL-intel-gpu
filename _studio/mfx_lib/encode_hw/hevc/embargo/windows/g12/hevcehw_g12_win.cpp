@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +63,11 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     // because it is supposed to be used for any render target that will get protected output at some point in time
     if (core.GetHWType() == MFX_HW_TGL_LP)
     {
-        GetFeature<Gen9::Protected>(Gen9::FEATURE_PROTECTED).SetRecFlag(MFX_MEMTYPE_PROTECTED);
+        GetFeature<Gen9::Protected>(Gen9::FEATURE_PROTECTED).SetRecFlag(
+            MFX_MEMTYPE_FROM_ENCODE
+            | MFX_MEMTYPE_DXVA2_DECODER_TARGET
+            | MFX_MEMTYPE_INTERNAL_FRAME
+            | MFX_MEMTYPE_PROTECTED);
     }
 
     TFeatureList newFeatures;
