@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@
 #include "hevcehw_g11lkf_win.h"
 #endif
 #include "hevcehw_g9_data.h"
+#include "hevcehw_g9_legacy.h"
 #include "hevcehw_g11lkf_caps.h"
 
 using namespace HEVCEHW;
@@ -63,6 +64,16 @@ MFXVideoENCODEH265_HW<TBaseGen>::MFXVideoENCODEH265_HW(
         pFeature->Init(mode, *this);
 
     TBaseGen::m_features.splice(TBaseGen::m_features.end(), newFeatures);
+
+    if (mode & (QUERY1 | QUERY_IO_SURF | INIT))
+    {
+        auto& qnc = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(*this);
+
+        FeatureBlocks::Reorder(
+            qnc
+            , { HEVCEHW::Gen9::FEATURE_LEGACY, HEVCEHW::Gen9::Legacy::BLK_SetLowPowerDefault }
+            , { HEVCEHW::Gen11LKF::FEATURE_CAPS, HEVCEHW::Gen11LKF::Caps::BLK_SetDefaultsCallChain });
+    }
 
     status = MFX_ERR_NONE;
 }
