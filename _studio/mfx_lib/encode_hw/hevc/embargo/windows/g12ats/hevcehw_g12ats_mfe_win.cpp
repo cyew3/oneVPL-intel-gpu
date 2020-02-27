@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -80,7 +80,7 @@ void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPush
             auto pCaps = (ENCODE_CAPS_HEVC*)(m_pMfeAdapter->GetCaps(CODEC_HEVC));
             MFX_CHECK(pCaps, MFX_ERR_UNSUPPORTED);
 
-            Deref<ENCODE_CAPS_HEVC>(ep.Out) = *pCaps;
+            ep.Out.Cast<ENCODE_CAPS_HEVC>() = *pCaps;
 
             return MFX_ERR_NONE;
         };
@@ -94,7 +94,7 @@ void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPush
         };
         auto Submit = [&](TCall prev, const Gen9::DDIExecParam& ep)
         {
-            auto& cbi = Deref<ENCODE_EXECUTE_PARAMS>(ep.In);
+            auto& cbi = ep.In.Cast<ENCODE_EXECUTE_PARAMS>();
             m_cbd.resize(cbi.NumCompBuffers + 1 + m_bSendEvent);
 
             auto& siCBD = m_cbd.front();
@@ -126,14 +126,14 @@ void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPush
         };
         auto QueryStatus = [&](TCall prev, const Gen9::DDIExecParam& ep)
         {
-            Deref<ENCODE_QUERY_STATUS_PARAMS_DESCR>(ep.In).StreamID = m_streamInfo.StreamId;
+            ep.In.Cast<ENCODE_QUERY_STATUS_PARAMS_DESCR>().StreamID = m_streamInfo.StreamId;
             return prev(ep);
         };
         auto InitMFE = [&](TCall prev, const Gen9::DDIExecParam& ep)
         {
             auto& core = Glob::VideoCore::Get(strg);
-            auto& in   = Deref<TIn>(ep.In);
-            auto& out  = Deref<TOut>(ep.Out);
+            auto& in   = ep.In.Cast<TIn>();
+            auto& out  = ep.Out.Cast<TOut>();
             auto* pVideoEncoder
                 = QueryCoreInterface<ComPtrCore<MFEDXVAEncoder>>(&core, MFXMFEHEVCENCODER_SEARCH_GUID);
 
@@ -166,7 +166,7 @@ void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPush
         ddiExec.Push(
             [&](TCall prev, const Gen9::DDIExecParam& ep)
         {
-            bool bInitMfe     = ep.Function == AUXDEV_CREATE_ACCEL_SERVICE && Deref<TIn>(ep.In).desc.Guid == DXVA2_Intel_MFE;
+            bool bInitMfe     = ep.Function == AUXDEV_CREATE_ACCEL_SERVICE && ep.In.Cast<TIn>().desc.Guid == DXVA2_Intel_MFE;
             bool bGetCaps     = m_pMfeAdapter && ep.Function == ENCODE_QUERY_ACCEL_CAPS_ID;
             bool bQueryInfo   = m_pMfeAdapter && (ep.Function == ENCODE_FORMAT_COUNT_ID || ep.Function == ENCODE_FORMATS_ID);
             bool bSubmit      = m_pMfeAdapter && ep.Function == ENCODE_ENC_PAK_ID;

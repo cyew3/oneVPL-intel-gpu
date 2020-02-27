@@ -183,6 +183,11 @@ _studio/mfx_lib/encode_hw/shared/ehw_resources_pool.cpp
 _studio/mfx_lib/encode_hw/shared/ehw_resources_pool.h
 _studio/mfx_lib/encode_hw/shared/ehw_task_manager.cpp
 _studio/mfx_lib/encode_hw/shared/ehw_task_manager.h
+_studio/mfx_lib/encode_hw/shared/ehw_device.h
+_studio/mfx_lib/encode_hw/shared/ehw_device_vaapi.cpp
+_studio/mfx_lib/encode_hw/shared/ehw_device_vaapi.h
+_studio/mfx_lib/encode_hw/shared/ehw_utils_vaapi.cpp
+_studio/mfx_lib/encode_hw/shared/ehw_utils_vaapi.h
 _studio/mfx_lib/fei/CMakeLists.txt
 _studio/mfx_lib/fei/h264_common/fei_common.cpp
 _studio/mfx_lib/fei/h264_common/fei_common.h

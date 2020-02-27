@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined(MFX_VA_LINUX)
 
 #include "hevcehw_g9_d3d9_win.h"
-#include <d3d11.h>
-#include <atlbase.h>
+#include "ehw_device_dx11.h"
 
 namespace HEVCEHW
 {
@@ -34,85 +33,20 @@ namespace Windows
 namespace Gen9
 {
 
-#pragma warning(push)
-#pragma warning(disable:4250) //inherits via dominance
 class DDI_D3D11
-    : public virtual FeatureBase
-    , protected virtual DDITracer
-    , protected DDI_D3D9
+    : public DDI_D3D9
 {
 public:
-    DDI_D3D11(mfxU32 FeatureId)
-        : FeatureBase(FeatureId)
-        , DDITracer(MFX_HW_D3D11)
-        , DDI_D3D9(FeatureId)
-    {
-        SetTraceName("G9_DDI_D3D11");
-    }
+    DDI_D3D11(mfxU32 FeatureId);
 
-    struct CreateDeviceIn
-    {
-        bool                        bTemporal   = false;
-        D3D11_VIDEO_DECODER_DESC    desc        = {};
-        D3D11_VIDEO_DECODER_CONFIG  config      = {};
-    };
-
-    struct CreateDeviceOut
-    {
-        CComPtr<ID3D11VideoDecoder>   vdecoder;
-        CComQIPtr<ID3D11VideoDevice>  vdevice;
-        CComQIPtr<ID3D11VideoContext> vcontext;
-    };
+    using CreateDeviceIn = MfxEncodeHW::DeviceDX11::CreateDeviceIn;
+    using CreateDeviceOut = MfxEncodeHW::DeviceDX11::CreateDeviceOut;
 
 protected:
-    CComPtr<ID3D11DeviceContext>  m_context;
-    CComPtr<ID3D11VideoDecoder>   m_vdecoder;
-    CComQIPtr<ID3D11VideoDevice>  m_vdevice;
-    CComQIPtr<ID3D11VideoContext> m_vcontext;
-    USHORT m_configDecoderSpecific         = ENCODE_ENC_PAK;
-    GUID   m_guidConfigBitstreamEncryption = DXVA_NoEncrypt;
-
-    virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override
-    {
-        DDI_D3D9::Query1NoCaps(blocks, Push);
-    };
-    virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override
-    {
-        DDI_D3D9::Query1WithCaps(blocks, Push);
-    };
-    virtual void InitExternal(const FeatureBlocks& blocks, TPushIE Push) override
-    {
-        DDI_D3D9::InitExternal(blocks, Push);
-    };
-    virtual void InitAlloc(const FeatureBlocks& blocks, TPushIA Push) override;
-    virtual void SubmitTask(const FeatureBlocks& blocks, TPushST Push) override;
-    virtual void QueryTask(const FeatureBlocks& blocks, TPushQT Push) override;
-    virtual void ResetState(const FeatureBlocks& /*blocks*/, TPushRS /*Push*/) override {};
-
-    virtual bool IsInitialized() override { return !!m_vcontext; }
-
-    virtual mfxStatus CreateAuxilliaryDevice(
-        VideoCORE&  core
-        , GUID        guid
-        , mfxU32      width
-        , mfxU32      height
-        , bool        isTemporal = false) override;
-
-    mfxStatus CreateAuxilliaryDevice(const DDIExecParam& ep);
-
-    virtual mfxStatus CreateAccelerationService(StorageRW& local) override;
-    virtual mfxStatus QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameInfo& info) override;
-
-    HRESULT DecoderExtension(D3D11_VIDEO_DECODER_EXTENSION const & ext);
-
-    mfxStatus BeginFrame();
-    mfxStatus EndFrame();
 
     virtual mfxStatus DefaultExecute(const DDIExecParam& par) override;
-
-    using DDI_D3D9::Execute;
+    virtual mfxStatus Register(StorageRW&) override { return MFX_ERR_NONE; };
 };
-#pragma warning(pop)
 
 } //Gen9
 } //Windows

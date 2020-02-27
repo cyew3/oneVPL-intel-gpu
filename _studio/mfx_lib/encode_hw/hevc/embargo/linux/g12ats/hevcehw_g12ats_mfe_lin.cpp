@@ -54,7 +54,7 @@ void Linux::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1
 
             if (ep.Function == Gen9::DDI_VA::VAFID_CreateContext)
             {
-                auto& vaPar     = Deref<TCreateContextPar>(ep.In);
+                auto& vaPar     = ep.In.Cast<TCreateContextPar>();
                 auto& par       = Glob::VideoParam::Get(strg);
                 bool  bFields   = (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE);
                 auto& fi        = par.mfx.FrameInfo;
@@ -81,7 +81,7 @@ void Linux::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1
 
             if (ep.Function == Gen9::DDI_VA::VAFID_EndPicture)
             {
-                auto& vaPar = Deref<TEndPicturePar>(ep.In);
+                auto& vaPar = ep.In.Cast<TEndPicturePar>();
 
                 //TODO: implement correct timeout handling from user.
                 //TODO: call somewhere else for skip-frames

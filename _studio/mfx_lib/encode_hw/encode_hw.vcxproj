@@ -95,6 +95,11 @@
     <ClCompile Include="shared\ehw_resources_pool.cpp" />
     <ClCompile Include="shared\embargo\ehw_resources_pool_dx11.cpp" />
     <ClCompile Include="shared\ehw_task_manager.cpp" />
+    <ClCompile Include="shared\ehw_device_vaapi.cpp" />
+    <ClCompile Include="shared\ehw_utils_vaapi.cpp" />
+    <ClCompile Include="shared\embargo\ehw_device_dx11.cpp" />
+    <ClCompile Include="shared\embargo\ehw_device_dx9.cpp" />
+    <ClCompile Include="shared\embargo\ehw_utils_ddi.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw_d3d11.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw_d3d9.cpp" />
@@ -218,6 +223,12 @@
     <ClInclude Include="shared\ehw_resources_pool.h" />
     <ClInclude Include="shared\embargo\ehw_resources_pool_dx11.h" />
     <ClInclude Include="shared\ehw_task_manager.h" />
+    <ClInclude Include="shared\ehw_device.h" />
+    <ClInclude Include="shared\ehw_device_vaapi.h" />
+    <ClInclude Include="shared\ehw_utils_vaapi.h" />
+    <ClInclude Include="shared\embargo\ehw_device_dx11.h" />
+    <ClInclude Include="shared\embargo\ehw_device_dx9.h" />
+    <ClInclude Include="shared\embargo\ehw_utils_ddi.h" />
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw.h" />
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw_d3d11.h" />
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw_d3d9.h" />

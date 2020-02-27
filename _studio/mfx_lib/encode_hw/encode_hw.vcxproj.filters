@@ -416,6 +416,21 @@
     <ClCompile Include="shared\ehw_task_manager.cpp">
       <Filter>shared</Filter>
     </ClCompile>
+    <ClCompile Include="shared\embargo\ehw_device_dx9.cpp">
+      <Filter>shared\embargo</Filter>
+    </ClCompile>
+    <ClCompile Include="shared\embargo\ehw_device_dx11.cpp">
+      <Filter>shared\embargo</Filter>
+    </ClCompile>
+    <ClCompile Include="shared\ehw_device_vaapi.cpp">
+      <Filter>shared</Filter>
+    </ClCompile>
+    <ClCompile Include="shared\embargo\ehw_utils_ddi.cpp">
+      <Filter>shared\embargo</Filter>
+    </ClCompile>
+    <ClCompile Include="shared\ehw_utils_vaapi.cpp">
+      <Filter>shared</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h264\include\mfx_h264_encode_hw.h">
@@ -773,6 +788,24 @@
       <Filter>shared\embargo</Filter>
     </ClInclude>
     <ClInclude Include="shared\ehw_task_manager.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\ehw_device.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\embargo\ehw_device_dx9.h">
+      <Filter>shared\embargo</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\embargo\ehw_device_dx11.h">
+      <Filter>shared\embargo</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\ehw_device_vaapi.h">
+      <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\embargo\ehw_utils_ddi.h">
+      <Filter>shared\embargo</Filter>
+    </ClInclude>
+    <ClInclude Include="shared\ehw_utils_vaapi.h">
       <Filter>shared</Filter>
     </ClInclude>
   </ItemGroup>

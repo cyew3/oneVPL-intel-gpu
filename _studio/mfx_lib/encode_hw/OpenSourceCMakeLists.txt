@@ -62,6 +62,8 @@ list( APPEND sources.plus
     hevc/hevcehw_disp.cpp
     shared/ehw_resources_pool.cpp
     shared/ehw_task_manager.cpp
+    shared/ehw_device_vaapi.cpp
+    shared/ehw_utils_vaapi.cpp
     )
 foreach( dir ${Encoders} )
   file( GLOB_RECURSE srcs "${dir}/src/*.c" "${dir}/src/*.cpp" )

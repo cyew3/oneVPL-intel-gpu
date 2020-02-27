@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,82 @@ using namespace HEVCEHW::Gen9;
 using namespace HEVCEHW::Windows;
 using namespace HEVCEHW::Windows::Gen9;
 
+class DDIDeviceDX9
+    : public MfxEncodeHW::DeviceDX9
+    , protected DDITracer
+{
+public:
+    DDIDeviceDX9(std::function<mfxStatus(const DDIExecParam&)>& execute)
+        : DDITracer(MFX_HW_D3D9)
+        , m_execute(execute)
+    {}
+    virtual void Trace(const DDIExecParam& ep, bool bAfterExec, mfxU32 res) override
+    {
+        if (bAfterExec)
+        {
+            DDITracer::Trace("==HRESULT", res);
+            TraceFunc(true, ep.Function, ep.Out.pData, ep.Out.Size);
+        }
+        else
+        {
+            TraceFunc(false, ep.Function, ep.In.pData, ep.In.Size);
+        }
+    }
+    virtual mfxStatus Execute(const DDIExecParam& par) override
+    {
+        if (m_execute)
+        {
+            return m_execute(par);
+        }
+        return MfxEncodeHW::DeviceDX9::Execute(par);
+    }
+    mfxStatus DefaultExecute(const DDIExecParam& par)
+    {
+        return MfxEncodeHW::DeviceDX9::Execute(par);
+    }
+protected:
+    std::function<mfxStatus(const DDIExecParam&)>& m_execute;
+};
+
+DDI_D3D9::DDI_D3D9(mfxU32 FeatureId)
+    : HEVCEHW::Gen9::IDDI(FeatureId)
+{
+    SetTraceName("G9_DDI_D3D9");
+    m_pDevice.reset(new DDIDeviceDX9(m_execute));
+}
+
+mfxStatus DDI_D3D9::DefaultExecute(const DDIExecParam& par)
+{
+    return dynamic_cast<DDIDeviceDX9&>(*m_pDevice).DefaultExecute(par);
+}
+
+mfxStatus DDI_D3D9::Register(StorageRW& strg)
+{
+    auto& resources = Glob::DDI_Resources::Get(strg);
+
+    for (auto& res : resources)
+    {
+        EmulSurfaceRegister surfaceReg = {};
+        surfaceReg.type = (D3DFORMAT)res.Function;
+        surfaceReg.num_surf = res.Resource.Size;
+
+        auto GetSurfD3D9 = [](mfxHDLPair hdl) { return (IDirect3DSurface9*)hdl.first; };
+
+        mfxHDLPair* pHP = (mfxHDLPair*)res.Resource.pData;
+        std::transform(pHP, pHP + res.Resource.Size, surfaceReg.surface, GetSurfD3D9);
+
+        mfxHDLPair hpair = { surfaceReg.surface[0], &surfaceReg };
+
+        auto sts = m_pDevice->BeginPicture(&hpair);
+        MFX_CHECK_STS(sts);
+
+        sts = m_pDevice->EndPicture();
+        MFX_CHECK_STS(sts);
+    }
+
+    return MFX_ERR_NONE;
+}
+
 void DDI_D3D9::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_SetCallChains
@@ -36,12 +112,10 @@ void DDI_D3D9::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     {
         auto& ddiExecute = Glob::DDI_Execute::GetOrConstruct(strg);
 
-        m_pCurrStorage = &strg;
-
         MFX_CHECK(!ddiExecute, MFX_ERR_NONE);
 
         ddiExecute.Push(
-            [&](Glob::DDI_Execute::TRef::TExt, const DDIExecParam& ep)
+            [this](Glob::DDI_Execute::TRef::TExt, const DDIExecParam& ep)
         {
             return DefaultExecute(ep);
         });
@@ -62,21 +136,27 @@ void DDI_D3D9::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         const GUID& guid = Glob::GUID::Get(strg);
         auto& caps = Glob::EncodeCaps::GetOrConstruct(strg);
 
-        bool bCreateDevice =
-            m_guid != guid
-            || MFX_ERR_NONE != QueryEncodeCaps(caps);
+        SetStorage(strg);
+
+        auto& hwCaps = dynamic_cast<ENCODE_CAPS_HEVC&>(caps);
+
+        bool bCreateDevice = m_guid != guid
+            || MFX_ERR_NONE != m_pDevice->QueryCaps(&hwCaps, sizeof(hwCaps));
 
         if (bCreateDevice)
         {
             EncodeCapsHevc fakeCaps;
             Defaults::Param dpar(par, fakeCaps, core.GetHWType(), Glob::Defaults::Get(strg));
-
-            sts = CreateAuxilliaryDevice(core, guid, dpar.base.GetCodedPicWidth(dpar), dpar.base.GetCodedPicHeight(dpar), true);
+            sts = m_pDevice->Create(core, guid, dpar.base.GetCodedPicWidth(dpar), dpar.base.GetCodedPicHeight(dpar), true);
             MFX_CHECK_STS(sts);
 
-            sts = QueryEncodeCaps(caps);
+            sts = m_pDevice->QueryCaps(&hwCaps, sizeof(hwCaps));
             MFX_CHECK_STS(sts);
+
+            m_guid = guid;
         }
+
+        m_bMbQpDataSupport = caps.MbQpDataSupport;
 
         return MFX_ERR_NONE;
     });
@@ -90,14 +170,16 @@ void DDI_D3D9::InitExternal(const FeatureBlocks& /*blocks*/, TPushIE Push)
         auto& core = Glob::VideoCore::Get(strg);
         auto& guid = Glob::GUID::Get(strg);
 
-        m_pCurrStorage = &strg;
+        SetStorage(strg);
 
-        if (IsInitialized() && m_guid == guid)
-            return MFX_ERR_NONE;
+        MFX_CHECK(!m_pDevice->IsValid() || m_guid != guid, MFX_ERR_NONE);
 
         EncodeCapsHevc fakeCaps;
         Defaults::Param dpar(par, fakeCaps, core.GetHWType(), Glob::Defaults::Get(strg));
-        return CreateAuxilliaryDevice(core, guid, dpar.base.GetCodedPicWidth(dpar), dpar.base.GetCodedPicHeight(dpar), false);
+
+        m_guid = guid;
+
+        return m_pDevice->Create(core, guid, dpar.base.GetCodedPicWidth(dpar), dpar.base.GetCodedPicHeight(dpar), false);
     });
 }
 
@@ -106,25 +188,30 @@ void DDI_D3D9::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
     Push(BLK_CreateService
         , [this](StorageRW& strg, StorageRW& local) -> mfxStatus
     {
-        m_pCurrStorage = &strg;
+        SetStorage(strg);
 
-        mfxStatus sts = CreateAccelerationService(local);
+        Tmp::DDI_InitParam::TRef* pPar = nullptr;
+
+        if (local.Contains(Tmp::DDI_InitParam::Key))
+            pPar = &Tmp::DDI_InitParam::Get(local);
+
+        mfxStatus sts = m_pDevice->Init(pPar);
         MFX_CHECK_STS(sts);
 
         {
             auto pInfo = make_storable<mfxFrameAllocRequest>(mfxFrameAllocRequest{});
 
-            sts = QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_BITSTREAMDATA, pInfo->Info);
+            sts = m_pDevice->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_BITSTREAMDATA, pInfo->Info);
             MFX_CHECK_STS(sts);
 
             local.Insert(Tmp::BSAllocInfo::Key, std::move(pInfo));
         }
 
-        if (m_caps.MbQpDataSupport)
+        if (m_bMbQpDataSupport)
         {
             auto pInfo = make_storable<mfxFrameAllocRequest>(mfxFrameAllocRequest{});
 
-            sts = QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBQPDATA, pInfo->Info);
+            sts = m_pDevice->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBQPDATA, pInfo->Info);
             MFX_CHECK_STS(sts);
 
             local.Insert(Tmp::MBQPAllocInfo::Key, std::move(pInfo));
@@ -136,51 +223,8 @@ void DDI_D3D9::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
     Push(BLK_Register
         , [this](StorageRW& strg, StorageRW&) -> mfxStatus
     {
-        MFX_CHECK(IsInitialized(), MFX_ERR_NOT_INITIALIZED);
-        auto& resources = Glob::DDI_Resources::Get(strg);
-
-        for (auto& res : resources)
-        {
-            EmulSurfaceRegister surfaceReg = {};
-            surfaceReg.type = (D3DFORMAT)res.Function;
-            surfaceReg.num_surf = res.Resource.Size;
-
-            mfxHDLPair* pHP = (mfxHDLPair*)res.Resource.pData;
-            for (mfxU32 i = 0; i < res.Resource.Size; i++)
-                surfaceReg.surface[i] = (IDirect3DSurface9*)pHP[i].first;
-
-            HRESULT hr = m_auxDevice->BeginFrame(surfaceReg.surface[0], &surfaceReg);
-            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-            hr = m_auxDevice->EndFrame(nullptr);
-            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-        }
-
-        return MFX_ERR_NONE;
+        return Register(strg);
     });
-}
-
-mfxStatus DDI_D3D9::DefaultExecute(const DDIExecParam& ep)
-{
-    TraceFunc(false, ep.Function, ep.In.pData, ep.In.Size);
-    try
-    {
-        m_lastRes = m_auxDevice->Execute(
-            ep.Function
-            , ep.In.pData
-            , ep.In.Size
-            , ep.Out.pData
-            , ep.Out.Size);
-        Trace("==HRESULT", m_lastRes);
-        MFX_CHECK(SUCCEEDED(m_lastRes), MFX_ERR_DEVICE_FAILED);
-    }
-    catch (...)
-    {
-        return MFX_ERR_DEVICE_FAILED;
-    }
-    TraceFunc(true, ep.Function, ep.Out.pData, ep.Out.Size);
-
-    return MFX_ERR_NONE;
 }
 
 void DDI_D3D9::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
@@ -195,53 +239,20 @@ void DDI_D3D9::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 
         auto& par = Glob::DDI_SubmitParam::Get(global);
 
-        m_pCurrStorage = &global;
+        SetStorage(global);
 
-        try
+        mfxStatus sts;
+        sts = m_pDevice->BeginPicture(&task.HDLRaw);
+        MFX_CHECK_STS(sts);
+
+        for (auto& ep : par)
         {
-            HANDLE handle;
-            HRESULT hr;
-            mfxStatus sts;
-            {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "BeginFrame");
-                hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)task.HDLRaw.first, 0);
-            }
-            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-            for (auto& ep : par)
-            {
-                if (ep.Function == ENCODE_ENC_PAK_ID)
-                {
-                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ENCODE_ENC_PAK_ID");
-                    sts = Execute(
-                        ep.Function
-                        , ep.In.pData
-                        , ep.In.Size
-                        , ep.Out.pData
-                        , ep.Out.Size);
-                }
-                else
-                {
-                    sts = Execute(
-                        ep.Function
-                        , ep.In.pData
-                        , ep.In.Size
-                        , ep.Out.pData
-                        , ep.Out.Size);
-
-                }
-                MFX_CHECK_STS(sts);
-            }
-
-            {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "EndFrame");
-                m_auxDevice->EndFrame(&handle);
-            }
+            sts = m_pDevice->Execute(ep);
+            MFX_CHECK_STS(sts);
         }
-        catch (...)
-        {
-            return MFX_ERR_DEVICE_FAILED;
-        }
+
+        sts = m_pDevice->EndPicture();
+        MFX_CHECK_STS(sts);
 
         return MFX_ERR_NONE;
     });
@@ -257,170 +268,10 @@ void DDI_D3D9::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
         if (!(task.SkipCMD & SKIPCMD_NeedDriverCall))
             return MFX_ERR_NONE;
 
-        auto& ddiFB = Glob::DDI_Feedback::Get(global);
-        auto pFB = (const ENCODE_QUERY_STATUS_PARAMS*)ddiFB.Get(task.StatusReportId);
+        SetStorage(global);
 
-        if (pFB && pFB->bStatus == ENCODE_OK)
-            return MFX_ERR_NONE;
-
-        m_pCurrStorage = &global;
-
-        mfxStatus sts;
-        try
-        {
-            sts = Execute(
-                ddiFB.Function
-                , (ENCODE_QUERY_STATUS_PARAMS_DESCR*)ddiFB.In.pData
-                , ddiFB.In.Size
-                , (ENCODE_QUERY_STATUS_PARAMS*)ddiFB.Out.pData
-                , ddiFB.Out.Size);
-        }
-        catch (...)
-        {
-            return MFX_ERR_DEVICE_FAILED;
-        }
-
-        ddiFB.bNotReady = (m_lastRes == D3DERR_WASSTILLDRAWING);
-        MFX_CHECK(!ddiFB.bNotReady, MFX_ERR_NONE);
-        MFX_CHECK_STS(sts);
-
-        return ddiFB.Update(task.StatusReportId);
+        return m_pDevice->QueryStatus(Glob::DDI_Feedback::Get(global), task.StatusReportId);
     });
-}
-
-mfxStatus DDI_D3D9::CreateAuxilliaryDevice(
-    VideoCORE&  core
-    , GUID        guid
-    , mfxU32      width
-    , mfxU32      height
-    , bool        isTemporal)
-{
-    m_pCore = &core;
-
-    D3D9Interface *pID3D = QueryCoreInterface<D3D9Interface>(m_pCore, MFXICORED3D_GUID);
-    MFX_CHECK(pID3D, MFX_ERR_DEVICE_FAILED);
-
-    IDirectXVideoDecoderService *service = 0;
-    mfxStatus sts = pID3D->GetD3DService(mfxU16(width), mfxU16(height), &service, isTemporal);
-    MFX_CHECK_STS(sts);
-    MFX_CHECK(service, MFX_ERR_DEVICE_FAILED);
-
-    std::unique_ptr<AuxiliaryDevice> auxDevice(new AuxiliaryDevice());
-    sts = auxDevice->Initialize(0, service);
-    MFX_CHECK_STS(sts);
-
-    sts = auxDevice->IsAccelerationServiceExist(guid);
-    MFX_CHECK_STS(sts);
-
-    m_guid      = guid;
-    m_width     = width;
-    m_height    = height;
-    m_auxDevice = std::move(auxDevice);
-
-    sts = Execute(AUXDEV_QUERY_ACCEL_CAPS, &guid, sizeof(guid), &m_caps, sizeof(m_caps));
-    MFX_CHECK_STS(sts);
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus DDI_D3D9::QueryEncodeCaps(
-    ENCODE_CAPS_HEVC & caps)
-{
-    MFX_CHECK(IsInitialized(), MFX_ERR_DEVICE_FAILED);
-
-    caps = m_caps;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus DDI_D3D9::CreateAccelerationService(StorageRW& local)
-{
-    MFX_CHECK(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
-    
-    Tmp::DDI_InitParam::TRef* pPar = nullptr;
-
-    if (local.Contains(Tmp::DDI_InitParam::Key))
-        pPar = &Tmp::DDI_InitParam::Get(local);
-
-    bool bUseDefault = !pPar
-        || (std::none_of(pPar->begin(), pPar->end(), [](DDIExecParam par)
-    {
-        return par.Function == AUXDEV_CREATE_ACCEL_SERVICE;
-    }));
-
-    mfxStatus sts;
-
-    if (bUseDefault)
-    {
-        DXVADDI_VIDEODESC desc = {};
-        desc.SampleWidth = m_width;
-        desc.SampleHeight = m_height;
-        desc.Format = D3DDDIFMT_NV12;
-
-        ENCODE_CREATEDEVICE encodeCreateDevice = {};
-        encodeCreateDevice.pVideoDesc = &desc;
-        encodeCreateDevice.CodingFunction = ENCODE_ENC_PAK;
-        encodeCreateDevice.EncryptionMode = DXVA_NoEncrypt;
-
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "AUXDEV_CREATE_ACCEL_SERVICE");
-            sts = Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);
-        }
-        MFX_CHECK_STS(sts);
-    }
-
-    MFX_CHECK(pPar, MFX_ERR_NONE);
-
-    for (auto& par : *pPar)
-    {
-        sts = Execute(par.Function, par.In.pData, par.In.Size, par.Out.pData, par.Out.Size);
-        MFX_CHECK_STS(sts);
-    }
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus DDI_D3D9::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameInfo& info)
-{
-    MFX_CHECK(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
-
-    if (m_compBufInfo.empty())
-    {
-        ENCODE_FORMAT_COUNT encodeFormatCount;
-        encodeFormatCount.CompressedBufferInfoCount = 0;
-        encodeFormatCount.UncompressedFormatCount = 0;
-
-        GUID guid = m_auxDevice->GetCurrentGuid();
-        mfxStatus sts = Execute(ENCODE_FORMAT_COUNT_ID, guid, encodeFormatCount);
-        MFX_CHECK_STS(sts);
-
-        m_compBufInfo.resize(encodeFormatCount.CompressedBufferInfoCount);
-        m_uncompBufInfo.resize(encodeFormatCount.UncompressedFormatCount);
-
-        ENCODE_FORMATS encodeFormats;
-        encodeFormats.CompressedBufferInfoSize  = encodeFormatCount.CompressedBufferInfoCount * sizeof(ENCODE_COMP_BUFFER_INFO);
-        encodeFormats.UncompressedFormatSize    = encodeFormatCount.UncompressedFormatCount * sizeof(D3DDDIFORMAT);
-        encodeFormats.pCompressedBufferInfo     = &m_compBufInfo[0];
-        encodeFormats.pUncompressedFormats      = &m_uncompBufInfo[0];
-
-        sts = Execute(ENCODE_FORMATS_ID, (void*)0, encodeFormats);
-        MFX_CHECK_STS(sts);
-        MFX_CHECK(encodeFormats.CompressedBufferInfoSize > 0, MFX_ERR_DEVICE_FAILED);
-        MFX_CHECK(encodeFormats.UncompressedFormatSize > 0, MFX_ERR_DEVICE_FAILED);
-    }
-
-    for (auto& cbinf : m_compBufInfo)
-    {
-        if (cbinf.Type == type)
-        {
-            info.Width  = cbinf.CreationWidth;
-            info.Height = cbinf.CreationHeight;
-            info.FourCC = cbinf.CompressedFormats;
-            return MFX_ERR_NONE;
-        }
-    }
-
-    return MFX_ERR_DEVICE_FAILED;
 }
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

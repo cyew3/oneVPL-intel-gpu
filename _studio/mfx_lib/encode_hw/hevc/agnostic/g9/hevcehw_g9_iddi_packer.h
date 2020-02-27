@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@ namespace Gen9
 {
 
 class IDDIPacker
-    : public virtual FeatureBase
+    : public FeatureBase
 {
 public:
 #define DECL_BLOCK_LIST\
@@ -45,7 +45,9 @@ public:
 #define DECL_FEATURE_NAME "G9_IDDIPacker"
 #include "hevcehw_decl_blocks.h"
 
-    IDDIPacker(mfxU32 /*FeatureId*/) {}
+    IDDIPacker(mfxU32 FeatureId)
+        : FeatureBase(FeatureId)
+    {}
 
 protected:
     virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override = 0;
