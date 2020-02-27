@@ -6,20 +6,14 @@ mfx_include_dirs()
 
 set( HEVC_Encoder_HW_GUID "6fadc791a0c2eb479ab6dcd5ea9da347" )
 
-# Plugin version info
-if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
-  set( hevc_version 0.0.000.0000 )
-else()
-  set( hevc_version $ENV{MFX_HEVC_VERSION} )
-endif()
-
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
   set( plugin_name mfx_hevce_hw64 )
 else()
   set( plugin_name mfx_hevce_hw32 )
 endif()
 
-set_file_and_product_version( ${hevc_version} version_defs )
+# Plugin version info
+set_file_and_product_version( ${MEDIA_VERSION_STR} version_defs )
 
 set( sources "" )
 set( sources.plus "" )

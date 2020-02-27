@@ -14,18 +14,13 @@ if(NOT OPEN_SOURCE)
     message( STATUS "Building HEVC with software libraries: SW Decoder & Encoder, GACC." )
 
     # HEVC Common Part
-    if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
-      set( hevc_version 0.0.000.0000 )
-    else( )
-      set( hevc_version $ENV{MFX_HEVC_VERSION} )
-    endif( )
 
     set (HEVC_PRODUCT_NAME "Intel(R) Media SDK")
     set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK - HEVC Software Decode Plug-in")
     set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK - HEVC Software Encode Plug-in")
     set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK - HEVC GPU Accelerated Encode Plug-in")
 
-    set_file_and_product_version( ${hevc_version} hevc_version_defs )
+    set_file_and_product_version( ${MEDIA_VERSION_STR} hevc_version_defs )
 
     set( sources "" )
     set( sources.plus "" )
@@ -362,13 +357,7 @@ if(NOT OPEN_SOURCE)
     set (H265FEI_PRODUCT_NAME "Intel(R) Media SDK")
     set (hw_H265FEI_ENCODER_DESCRIPTION "Intel(R) Media SDK - HEVC GPU Assist APIs Plug-in")
 
-    if( NOT DEFINED ENV{MFX_H265FEI_VERSION} )
-      set( h265fei_version 0.0.000.0000 )
-    else( )
-      set( h265fei_version $ENV{MFX_H265FEI_VERSION} )
-    endif( )
-
-    set_file_and_product_version( ${h265fei_version} h265fei_version_defs )
+    set_file_and_product_version( ${MEDIA_VERSION_STR} h265fei_version_defs )
 
     set( sources "" )
     set( sources.plus "" )

@@ -6,11 +6,7 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 set(VP9_Encoder_HW_GUID "ce44ef6f1a6d2246b412bb38d6e45182")
 
 # Plugin version info
-if( NOT DEFINED ENV{MFX_VP9_VERSION} )
-  set( vp9_version 0.0.000.0000 )
-else( )
-  set( vp9_version $ENV{MFX_VP9_VERSION} )
-endif( )
+set( vp9_version ${MEDIA_VERSION_STR} )
 
 # =============================================================================
 

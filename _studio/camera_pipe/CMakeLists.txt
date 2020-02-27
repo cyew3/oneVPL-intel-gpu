@@ -1,25 +1,7 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 # Plugin version info
-  if( NOT DEFINED ENV{MFX_CAMERA_VERSION} )
-    set( camera_version 0.0.000.0000 )
-  else( )
-    set( camera_version $ENV{MFX_CAMERA_VERSION} )
-  endif( )
-
-  if( Linux OR Darwin )
-    execute_process(
-      COMMAND echo
-      COMMAND cut -f 1 -d.
-      COMMAND date "+.%-y.%-m.%-d"
-      OUTPUT_VARIABLE cur_date
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    string( SUBSTRING ${camera_version} 0 1 ver )
-
-    set(camera_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${camera_version}\"\\\"")
-  endif( )
-
+set(camera_version_defs  "-DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${MEDIA_VERSION_STR}\"\\\"")
 
 # =============================================================================
 

@@ -8,12 +8,7 @@ mfx_include_dirs( )
 set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2019 - SDK VP8 Pack")
 set (hw_VP8_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2019 - SDK VP8 Hardware Encode Plug-in")
 
-if( NOT DEFINED ENV{MFX_VP8_VERSION} )
-  set( vp8_version 0.0.000.0000 )
-else( )
-  set( vp8_version $ENV{MFX_VP8_VERSION} )
-endif( )
-
+set( vp8_version ${MEDIA_VERSION_STR} )
 
 set( sources "" )
 set( sources.plus "" )

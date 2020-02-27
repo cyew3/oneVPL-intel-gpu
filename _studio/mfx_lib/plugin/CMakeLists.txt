@@ -126,7 +126,6 @@ set( prefix ${MSDK_LIB_ROOT}/scheduler/src )
 
 if( DEFINED H264LA_ENCODER_GUID )
   ## cleanup
-  set( version_defs "" )
   set( defs "" )
   set( sources "" )
   set( sources.plus "" )
@@ -136,19 +135,13 @@ if( DEFINED H264LA_ENCODER_GUID )
   set (H264LA_PRODUCT_NAME "Intel(R) Media SDK")
   set( hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media SDK Advanced AVCe Plug-in" )
 
-  if( NOT DEFINED ENV{MFX_H264LA_VERSION} )
-    set( h264la_version 0.0.000.0000 )
-  else( )
-    set( h264la_version $ENV{MFX_H264LA_VERSION} )
-  endif( )
-
   if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( plugin_name mfx_h264la_hw64 )
   else()
     set( plugin_name mfx_h264la_hw32 )
   endif()
 
-  set_file_and_product_version( ${h264la_version} version_defs )
+  set_file_and_product_version( ${MEDIA_VERSION_STR} version_defs )
 
   ## include, source and libs
   list( APPEND sources ${plugin_common_sources} )
@@ -221,7 +214,6 @@ endif()
 ## HEVC Decoder                                                              ##
 ###############################################################################
 if( DEFINED HEVC_DECODER_HW_GUID )
-  set( version_defs "" )
   set( defs "" )
   set( sources "" )
   set( sources.plus "" )
@@ -230,20 +222,14 @@ if( DEFINED HEVC_DECODER_HW_GUID )
   ## plugin info: name, description and version
   set( HEVC_PRODUCT_NAME "Intel(R) Media SDK" )
   set( hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK HEVC Hardware Decode Plug-in - Compatibility Stub" )
-
-  if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
-    set( hevc_version 0.0.000.0000 )
-  else()
-    set( hevc_version $ENV{MFX_HEVC_VERSION} )
-  endif()
-
+  
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set( plugin_name mfx_hevcd_hw64 )
   else()
     set( plugin_name mfx_hevcd_hw32 )
   endif()
 
-  set_file_and_product_version( ${hevc_version} version_defs )
+  set_file_and_product_version( ${MEDIA_VERSION_STR} version_defs )
 
   list( APPEND sources
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_hevc_dec_plugin.cpp
@@ -282,7 +268,6 @@ endif()
 # =============================================================================
 if( DEFINED VP8_DECODER_HW_GUID )
   ## cleanup
-  set( version_defs "" )
   set( defs "" )
   set( sources "" )
   set( sources.plus "" )
@@ -292,19 +277,13 @@ if( DEFINED VP8_DECODER_HW_GUID )
   set (VP8_PRODUCT_NAME "Intel(R) Media SDK")
   set( hw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK VP8 Hardware Decode Plug-in - Compatibility Stub" )
 
-  if( NOT DEFINED ENV{MFX_VP8_VERSION} )
-    set( vp8_version 0.0.000.0000 )
-  else( )
-    set( vp8_version $ENV{MFX_VP8_VERSION} )
-  endif( )
-
   if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( plugin_name mfx_vp8d_hw64 )
   else()
     set( plugin_name mfx_vp8d_hw32 )
   endif()
 
-  set_file_and_product_version( ${vp8_version} version_defs )
+  set_file_and_product_version( ${MEDIA_VERSION_STR} version_defs )
 
   ## include, source and libs
   list( APPEND sources
@@ -330,7 +309,6 @@ endif()
 # =============================================================================
 if( DEFINED VP9_DECODER_HW_GUID )
   ## cleanup
-  set( version_defs "" )
   set( defs "" )
   set( sources "" )
   set( sources.plus "" )
@@ -340,19 +318,13 @@ if( DEFINED VP9_DECODER_HW_GUID )
   set (VP9_PRODUCT_NAME "Intel(R) Media SDK")
   set( hw_VP9_DECODER_DESCRIPTION "Intel(R) Media SDK VP9 Hardware Decode Plug-in - Compatibility Stub" )
 
-  if( NOT DEFINED ENV{MFX_VP9_VERSION} )
-    set( vp9_version 0.0.000.0000 )
-  else( )
-    set( vp9_version $ENV{MFX_VP9_VERSION} )
-  endif( )
-
   if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( plugin_name mfx_vp9d_hw64 )
   else()
     set( plugin_name mfx_vp9d_hw32 )
   endif()
 
-  set_file_and_product_version( ${vp8_version} version_defs )
+  set_file_and_product_version( ${MEDIA_VERSION_STR} version_defs )
 
   ## include, source and libs
   list( APPEND sources

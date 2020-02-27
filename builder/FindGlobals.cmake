@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012-2019 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2020 Intel Corporation. All Rights Reserved.
 ##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -66,14 +66,6 @@ if( Linux OR Darwin )
     endif()
   endif()
 
-  # Potential source of confusion here. Environment $MFX_VERSION translates to product name (strings libmfxhw64.so | grep mediasdk),
-  # but macro definition MFX_VERSION should contain API version i.e. 1025 for API 1.25
-  if( NOT DEFINED ENV{MFX_VERSION} )
-    set( version 0.0.000.0000 )
-  else()
-    set( version $ENV{MFX_VERSION} )
-  endif()
-
   if( Linux OR Darwin )
     execute_process(
       COMMAND echo
@@ -82,7 +74,7 @@ if( Linux OR Darwin )
       OUTPUT_VARIABLE cur_date
       OUTPUT_STRIP_TRAILING_WHITESPACE
       )
-    string( SUBSTRING ${version} 0 1 ver )
+    string( SUBSTRING ${MEDIA_VERSION_STR} 0 1 ver )
 
     set( common_flags "${common_flags} -DMSDK_BUILD=\\\"$ENV{BUILD_NUMBER}\\\"" )
   endif()
@@ -247,6 +239,7 @@ git_describe( git_commit )
 set( version_flags "${version_flags} -DMFX_BUILD_INFO=\"\\\"${BUILD_INFO}\"\\\"" )
 set( version_flags "${version_flags} -DMFX_API_VERSION=\\\"${API_VER_MODIF}\\\"" )
 set( version_flags "${version_flags} -DMFX_GIT_COMMIT=\\\"${git_commit}\\\"" )
+set( version_flags "${version_flags} -DMEDIA_VERSION_STR=\\\"${MEDIA_VERSION_STR}\\\"" )
 
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${version_flags}" )
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${version_flags}" )

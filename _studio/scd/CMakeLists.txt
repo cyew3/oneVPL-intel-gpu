@@ -4,24 +4,7 @@ set(VPP_SCD_GUID "4f4e2f8290079c47bf7aff37dd5fcd4f")
 set(ENC_SCD_GUID "dfc215b3e3d3904d7fa504127ef564d5")
 
 # Plugin version info
-if( NOT DEFINED ENV{MFX_SCD_VERSION} )
-  set( scd_version 0.0.000.0000 )
-else( )
-  set( scd_version $ENV{MFX_SCD_VERSION} )
-endif( )
-
-if( Linux OR Darwin )
-  execute_process(
-    COMMAND echo
-    COMMAND cut -f 1 -d.
-    COMMAND date "+.%-y.%-m.%-d"
-    OUTPUT_VARIABLE cur_date
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-  string( SUBSTRING ${scd_version} 0 1 ver )
-
-  set(SCD_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${scd_version}\"\\\"")
-endif( )
+set(SCD_version_defs  "-DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${MEDIA_VERSION_STR}\"\\\"")
 
 # =============================================================================
 
@@ -73,7 +56,7 @@ list( APPEND LIBS
 
 gen_plugins_cfg("VPP_SCD" ${VPP_SCD_GUID} "mfx_vpp_scd64" "03" "")
 
-set( defs " -DAS_VPP_SCD_PLUGIN ${defs} ${WARNING_FLAGS}" )
+set( defs " -DAS_VPP_SCD_PLUGIN ${defs} ${SCD_version_defs} ${WARNING_FLAGS}" )
 make_library( mfx_vpp_scd64 hw shared )
 msdk_install( mfx_vpp_scd64 ${MFX_PLUGINS_DIR} )
 set( defs "" )
@@ -91,7 +74,7 @@ list( APPEND sources
 
 gen_plugins_cfg("ENC_SCD" ${ENC_SCD_GUID} "mfx_enc_scd64" "04" "")
 
-set( defs " -DAS_ENC_SCD_PLUGIN ${defs} ${WARNING_FLAGS}" )
+set( defs " -DAS_ENC_SCD_PLUGIN ${defs} ${SCD_version_defs} ${WARNING_FLAGS}" )
 make_library( mfx_enc_scd64 hw shared )
 msdk_install( mfx_enc_scd64 ${MFX_PLUGINS_DIR} )
 set( defs "" )

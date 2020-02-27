@@ -74,8 +74,8 @@ if( NOT MFX_LIBRARY MATCHES NOTFOUND )
   link_directories( ${MFX_LIBRARY_PATH} )
 endif()
 
-# Potential source of confusion here. Environment $MFX_VERSION translates to product name (strings libmfxhw64.so | grep mediasdk),
-# but macro definition MFX_VERSION should contain API version i.e. 1025 for API 1.25
+# Potential source of confusion here. MFX_VERSION should contain API version i.e. 1025 for API 1.25, 
+# Product version stored in MEDIA_VERSION_STR
 if( NOT DEFINED API OR API STREQUAL "master")
   set( API_FLAGS "")
   set( API_USE_LATEST FALSE )
