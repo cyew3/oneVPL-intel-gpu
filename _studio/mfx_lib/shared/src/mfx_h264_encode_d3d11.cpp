@@ -402,7 +402,7 @@ mfxStatus D3D11Encoder::SetEncCtrlCaps(ENCODE_ENC_CTRL_CAPS const & caps)
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11Encoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
+mfxStatus D3D11Encoder::QueryStatus(DdiTask & task, mfxU32 fieldId, bool useEvent)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatus");
     mfxStatus sts = MFX_ERR_NONE;
@@ -420,7 +420,7 @@ mfxStatus D3D11Encoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
     else
 #endif
     {
-        sts = D3DXCommonEncoder::QueryStatus(task, fieldId);
+        sts = D3DXCommonEncoder::QueryStatus(task, fieldId, useEvent);
     }
 
     return sts;

@@ -113,7 +113,8 @@ namespace MfxHwH264Encode
         virtual
         mfxStatus QueryStatus(
             DdiTask & task,
-            mfxU32    fieldId);
+            mfxU32    fieldId,
+            bool useEvent = true);
 
     protected:
         // async call
