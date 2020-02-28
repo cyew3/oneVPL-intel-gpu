@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -106,6 +106,49 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_width  = width;
     m_height = height;
 
+    // set caps
+    memset(&m_caps, 0, sizeof(m_caps));
+    m_caps.Baseline         = 1;
+    m_caps.Sequential       = 1;
+    m_caps.Huffman          = 1;
+
+    m_caps.NonInterleaved   = 0;
+    m_caps.Interleaved      = 1;
+
+    m_caps.SampleBitDepth   = 8;
+
+    VAConfigAttrib attrib;
+
+    attrib.type = VAConfigAttribEncJPEG;
+    vaSts = vaGetConfigAttributes(m_vaDisplay,
+                          VAProfileJPEGBaseline,
+                          VAEntrypointEncPicture,
+                          &attrib, 1);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    VAConfigAttribValEncJPEG encAttribVal;
+    encAttribVal.value = attrib.value;
+    m_caps.MaxNumComponent = encAttribVal.bits.max_num_components;
+    m_caps.MaxNumScan = encAttribVal.bits.max_num_scans;
+    m_caps.MaxNumHuffTable = encAttribVal.bits.max_num_huffman_tables;
+    m_caps.MaxNumQuantTable = encAttribVal.bits.max_num_quantization_tables;
+
+    attrib.type = VAConfigAttribMaxPictureWidth;
+    vaSts = vaGetConfigAttributes(m_vaDisplay,
+                          VAProfileJPEGBaseline,
+                          VAEntrypointEncPicture,
+                          &attrib, 1);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    m_caps.MaxPicWidth      = attrib.value;
+
+    attrib.type = VAConfigAttribMaxPictureHeight;
+    vaSts = vaGetConfigAttributes(m_vaDisplay,
+                          VAProfileJPEGBaseline,
+                          VAEntrypointEncPicture,
+                          &attrib, 1);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    m_caps.MaxPicHeight     = attrib.value;
+
+
     return MFX_ERR_NONE;
 }
 
@@ -195,47 +238,8 @@ mfxStatus VAAPIEncoder::QueryBitstreamBufferInfo(mfxFrameAllocRequest& request)
 mfxStatus VAAPIEncoder::QueryEncodeCaps(JpegEncCaps & caps)
 {
     MFX_CHECK_NULL_PTR1(m_core);
-    VAAPIVideoCORE * hwcore = dynamic_cast<VAAPIVideoCORE *>(m_core);
-    MFX_CHECK_WITH_ASSERT(hwcore != 0, MFX_ERR_DEVICE_FAILED);
 
-    if (hwcore)
-    {
-        mfxStatus mfxSts = hwcore->GetVAService(&m_vaDisplay);
-        MFX_CHECK_STS(mfxSts);
-    }
-
-    memset(&caps, 0, sizeof(caps));
-    caps.Baseline         = 1;
-    caps.Sequential       = 1;
-    caps.Huffman          = 1;
-
-    caps.NonInterleaved   = 0;
-    caps.Interleaved      = 1;
-
-    caps.SampleBitDepth   = 8;
-    caps.MaxNumComponent  = 3;
-    caps.MaxNumScan       = 1;
-    caps.MaxNumHuffTable  = 2;
-    caps.MaxNumQuantTable = 2;
-
-    VAStatus vaSts;
-
-    // Configuration
-    VAConfigAttrib attrib;
-
-    attrib.type = VAConfigAttribMaxPictureWidth;
-    vaSts = vaGetConfigAttributes(m_vaDisplay,
-                          VAProfileJPEGBaseline,
-                          VAEntrypointEncPicture,
-                          &attrib, 1);
-    caps.MaxPicWidth      = attrib.value;
-
-    attrib.type = VAConfigAttribMaxPictureHeight;
-    vaSts = vaGetConfigAttributes(m_vaDisplay,
-                          VAProfileJPEGBaseline,
-                          VAEntrypointEncPicture,
-                          &attrib, 1);
-    caps.MaxPicHeight     = attrib.value;
+    caps = m_caps;
 
     return MFX_ERR_NONE;
 }
