@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2019-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -471,9 +471,9 @@ namespace hevce_explicit_weight_pred
         max_wp_l0 = caps.MaxNum_WeightedPredL0 ? caps.MaxNum_WeightedPredL0 : 1;
         max_wp_l1 = caps.MaxNum_WeightedPredL1 ? caps.MaxNum_WeightedPredL1 : 1;
 
-        if (cod3.GPB == MFX_CODINGOPTION_OFF && (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS || m_par.mfx.LowPower == MFX_CODINGOPTION_ON))
+        if (cod3.GPB == MFX_CODINGOPTION_OFF && (g_tsHWtype > MFX_HW_ICL || m_par.mfx.LowPower == MFX_CODINGOPTION_ON))
         {
-            g_tsLog << "\n\nWARNING: HEVCe does not support P-slices on VDEnc and on Windows!\n\n\n";
+            g_tsLog << "\n\nWARNING: HEVCe does not support P-slices on VDEnc and after ICL!\n\n\n";
             throw tsSKIP;
         }
 
