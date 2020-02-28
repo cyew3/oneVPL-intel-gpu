@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Intel Corporation
+// Copyright (c) 2016-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,7 @@ namespace MfxHwVP9Encode
         // depend on define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
         virtual
             mfxStatus QueryStatus(
-                Task & task);
+                Task & task) override;
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
         // Init
@@ -83,9 +83,9 @@ namespace MfxHwVP9Encode
 
         std::unique_ptr<EventCache> m_EventCache;
 #endif
-    private:
-        D3DXCommonEncoder(D3DXCommonEncoder const &); // no implementation
-        D3DXCommonEncoder & operator =(D3DXCommonEncoder const &); // no implementation
+
+        D3DXCommonEncoder(D3DXCommonEncoder const &) = delete;
+        D3DXCommonEncoder & operator =(D3DXCommonEncoder const &) = delete;
 
     };
 }; // namespace

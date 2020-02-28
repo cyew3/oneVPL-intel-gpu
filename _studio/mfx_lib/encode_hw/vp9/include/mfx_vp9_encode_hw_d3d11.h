@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Intel Corporation
+// Copyright (c) 2016-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,26 +42,26 @@ public:
     mfxStatus CreateAuxilliaryDevice(
         VideoCORE* core,
         GUID       guid,
-        VP9MfxVideoParam const & par);
+        VP9MfxVideoParam const & par) override;
 
     virtual
     mfxStatus CreateAccelerationService(
-        VP9MfxVideoParam const & par);
+        VP9MfxVideoParam const & par) override;
 
     virtual
     mfxStatus Reset(
-        VP9MfxVideoParam const & par);
+        VP9MfxVideoParam const & par) override;
 
     virtual
     mfxStatus Register(
         mfxFrameAllocResponse& response,
-        D3DDDIFORMAT type);
+        D3DDDIFORMAT type) override;
 
     // (mfxExecuteBuffers& data)
     virtual
     mfxStatus Execute(
         Task const &task,
-        mfxHDLPair pair);
+        mfxHDLPair pair) override;
 
     // recomendation from HW
     virtual
@@ -69,30 +69,26 @@ public:
         D3DDDIFORMAT type,
         mfxFrameAllocRequest& request,
         mfxU32 frameWidth,
-        mfxU32 frameHeight);
+        mfxU32 frameHeight) override;
 
     virtual
     mfxStatus QueryEncodeCaps(
-        ENCODE_CAPS_VP9& caps);
-
-    virtual
-    mfxStatus QueryPlatform(
-        mfxPlatform& platform);
+        ENCODE_CAPS_VP9& caps) override;
 
     virtual
     mfxStatus QueryStatusAsync(
-        Task & task);
+        Task & task) override;
 
     virtual
-        mfxU32 GetReconSurfFourCC();
+        mfxU32 GetReconSurfFourCC() override;
 
     virtual
-    mfxStatus Destroy();
+    mfxStatus Destroy() override;
+
+    D3D11Encoder(const D3D11Encoder&) = delete;
+    D3D11Encoder& operator=(const D3D11Encoder&) = delete;
 
 private:
-    D3D11Encoder(const D3D11Encoder&);
-    D3D11Encoder& operator=(const D3D11Encoder&);
-
     GUID m_guid;
 
     CComPtr<ID3D11VideoDecoder>                 m_pVDecoder;

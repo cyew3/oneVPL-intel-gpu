@@ -39,42 +39,42 @@ namespace MfxHwH264Encode
             GUID        guid,
             mfxU32      width,
             mfxU32      height,
-            bool        isTemporal = false);
+            bool        isTemporal = false) override;
 
         virtual mfxStatus CreateAccelerationService(
-            MfxVideoParam const & par);
+            MfxVideoParam const & par) override;
 
         virtual mfxStatus Reset(
-            MfxVideoParam const & par);
+            MfxVideoParam const & par) override;
 
         virtual mfxStatus Register(
             mfxFrameAllocResponse & response,
-            D3DDDIFORMAT            type);
+            D3DDDIFORMAT            type) override;
 
         virtual mfxStatus Execute(
             mfxHDLPair                 pair,
             DdiTask const &            task,
             mfxU32                     fieldId,
-            PreAllocatedVector const & sei);
+            PreAllocatedVector const & sei) override;
 
         virtual mfxStatus QueryCompBufferInfo(
             D3DDDIFORMAT           type,
-            mfxFrameAllocRequest & request);
+            mfxFrameAllocRequest & request) override;
 
         virtual mfxStatus QueryEncodeCaps(
-            MFX_ENCODE_CAPS & caps);
+            MFX_ENCODE_CAPS & caps) override;
 
         virtual
         mfxStatus QueryMbPerSec(
             mfxVideoParam const & par,
-            mfxU32              (&mbPerSec)[16]);
+            mfxU32              (&mbPerSec)[16]) override;
 
         virtual mfxStatus QueryStatus(
             DdiTask & task,
             mfxU32    fieldId,
-            bool      useEvent = true);
+            bool      useEvent = true) override;
 
-        virtual mfxStatus Destroy();
+        virtual mfxStatus Destroy() override;
 
         void ForceCodingFunction (mfxU16 codingFunction)
         {
@@ -85,7 +85,7 @@ namespace MfxHwH264Encode
         mfxStatus QueryHWGUID(
             VideoCORE * core,
             GUID        guid,
-            bool        isTemporal)
+            bool        isTemporal)  override
         {
             core; guid; isTemporal;
             return MFX_ERR_UNSUPPORTED;

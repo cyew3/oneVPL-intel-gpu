@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2019 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2020 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MPEG2_ENCODE_D3D_COMMON_H
@@ -37,6 +37,9 @@ namespace MfxHwMpeg2Encode
         virtual mfxStatus FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt, GPU_SYNC_EVENT_HANDLE *pEvent);
         virtual mfxStatus FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt) = 0;
 
+        D3DXCommonEncoder(D3DXCommonEncoder const &) = delete;
+        D3DXCommonEncoder & operator =(D3DXCommonEncoder const &) = delete;
+
     protected:
         // async call
         virtual mfxStatus QueryStatusAsync(mfxU32 nFeedback, mfxU32 &bitstreamSize) = 0;
@@ -46,10 +49,6 @@ namespace MfxHwMpeg2Encode
 
         std::unique_ptr<EventCache> m_EventCache;
         bool m_bIsBlockingTaskSyncEnabled;
-
-    private:
-        D3DXCommonEncoder(D3DXCommonEncoder const &); // no implementation
-        D3DXCommonEncoder & operator =(D3DXCommonEncoder const &); // no implementation
 
     };
 }; // namespace

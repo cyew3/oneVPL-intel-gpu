@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -903,15 +903,6 @@ mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
 
 } // mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 
-
-mfxStatus VAAPIEncoder::Register(mfxMemId memId, D3DDDIFORMAT type)
-{
-    memId;
-    type;
-
-    return MFX_ERR_UNSUPPORTED;
-
-} // mfxStatus VAAPIEncoder::Register(mfxMemId memId, D3DDDIFORMAT type)
 
 mfxStatus VAAPIEncoder::Execute(
     TaskHybridDDI const & task,

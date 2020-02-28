@@ -66,33 +66,27 @@ namespace MfxHwVP9Encode
         mfxStatus CreateAuxilliaryDevice(
             VideoCORE* core,
             GUID       guid,
-            VP9MfxVideoParam const & par);
+            VP9MfxVideoParam const & par) override;
 
         virtual
         mfxStatus CreateAccelerationService(
-            VP9MfxVideoParam const & par);
+            VP9MfxVideoParam const & par) override;
 
         virtual
         mfxStatus Reset(
-            VP9MfxVideoParam const & par);
-
-        // empty  for Lin
-        virtual
-        mfxStatus Register(
-            mfxMemId memId,
-            D3DDDIFORMAT type);
+            VP9MfxVideoParam const & par) override;
 
         // 2 -> 1
         virtual
         mfxStatus Register(
             mfxFrameAllocResponse& response,
-            D3DDDIFORMAT type);
+            D3DDDIFORMAT type) override;
 
         // (mfxExecuteBuffers& data)
         virtual
         mfxStatus Execute(
             Task const &task,
-            mfxHDLPair pair);
+            mfxHDLPair pair) override;
 
         // recomendation from HW
         virtual
@@ -100,11 +94,11 @@ namespace MfxHwVP9Encode
             D3DDDIFORMAT type,
             mfxFrameAllocRequest& request,
             mfxU32 frameWidth,
-            mfxU32 frameHeight);
+            mfxU32 frameHeight) override;
 
         virtual
         mfxStatus QueryEncodeCaps(
-            ENCODE_CAPS_VP9& caps);
+            ENCODE_CAPS_VP9& caps) override;
 
         virtual
         mfxStatus QueryPlatform(
@@ -112,18 +106,18 @@ namespace MfxHwVP9Encode
 
         virtual
         mfxStatus QueryStatus(
-            Task & task);
+            Task & task) override;
 
         virtual
-            mfxU32 GetReconSurfFourCC();
+            mfxU32 GetReconSurfFourCC() override;
 
         virtual
-        mfxStatus Destroy();
+        mfxStatus Destroy() override;
+
+        VAAPIEncoder(const VAAPIEncoder&) = delete;
+        VAAPIEncoder& operator=(const VAAPIEncoder&) = delete;
 
     private:
-        VAAPIEncoder(const VAAPIEncoder&); // no implementation
-        VAAPIEncoder& operator=(const VAAPIEncoder&); // no implementation
-
         VideoCORE*  m_pmfxCore;
         VP9MfxVideoParam    m_video;
 

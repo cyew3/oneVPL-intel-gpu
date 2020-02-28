@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,9 +41,12 @@ namespace MfxHwMJpegEncode
         mfxStatus InitCommonEnc(VideoCORE *pCore);
 #endif
 
-        virtual mfxStatus QueryStatus(DdiTask & task);
+        virtual mfxStatus QueryStatus(DdiTask & task) override;
 
-        virtual mfxStatus Execute(DdiTask &task, mfxHDL surface);
+        virtual mfxStatus Execute(DdiTask &task, mfxHDL surface) override;
+
+        D3DXCommonEncoder(D3DXCommonEncoder const &) = delete;
+        D3DXCommonEncoder & operator =(D3DXCommonEncoder const &) = delete;
 
     protected:
         // async call
@@ -53,10 +56,6 @@ namespace MfxHwMJpegEncode
         virtual mfxStatus WaitTaskSync(DdiTask & task, mfxU32 timeOutMs);
 
         virtual mfxStatus ExecuteImpl(DdiTask &task, mfxHDL surface) = 0;
-
-    private:
-        D3DXCommonEncoder(D3DXCommonEncoder const &); // no implementation
-        D3DXCommonEncoder & operator =(D3DXCommonEncoder const &); // no implementation
 
     };
 }; // namespace

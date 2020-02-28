@@ -41,10 +41,10 @@ namespace MfxHwH264Encode
         ~D3DXCommonEncoder();
 
         virtual
-            mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId, bool useEvent = true);
+            mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId, bool useEvent = true) override;
 
         virtual
-            mfxStatus Execute(mfxHDLPair pair, DdiTask const & task, mfxU32 fieldId, PreAllocatedVector const & sei);
+            mfxStatus Execute(mfxHDLPair pair, DdiTask const & task, mfxU32 fieldId, PreAllocatedVector const & sei) override;
 
         // Init
         virtual
@@ -52,7 +52,10 @@ namespace MfxHwH264Encode
 
         // Destroy
         virtual
-            mfxStatus Destroy();
+            mfxStatus Destroy() override;
+
+        D3DXCommonEncoder(D3DXCommonEncoder const &) = delete;
+        D3DXCommonEncoder & operator =(D3DXCommonEncoder const &) = delete;
 
     protected:
         // async call
@@ -67,11 +70,6 @@ namespace MfxHwH264Encode
         bool m_bSingleThreadMode;
         mfxU32 m_timeoutSync;
         mfxU32 m_timeoutForTDR;
-
-    private:
-        D3DXCommonEncoder(D3DXCommonEncoder const &); // no implementation
-        D3DXCommonEncoder & operator =(D3DXCommonEncoder const &); // no implementation
-
     };
 }; // namespace
 

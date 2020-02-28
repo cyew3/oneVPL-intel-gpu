@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,45 +56,45 @@ namespace MfxHwMJpegEncode
             VideoCORE * core,
             mfxU32      width,
             mfxU32      height,
-            bool        isTemporal = false);
+            bool        isTemporal = false) override;
 
         virtual
         mfxStatus CreateAccelerationService(
-            mfxVideoParam const & par);
+            mfxVideoParam const & par) override;
 
         virtual
         mfxStatus RegisterBitstreamBuffer(
-            mfxFrameAllocResponse & response);
+            mfxFrameAllocResponse & response) override;
 
         virtual
-        mfxStatus ExecuteImpl(DdiTask &task, mfxHDL surface);
+        mfxStatus ExecuteImpl(DdiTask &task, mfxHDL surface) override;
 
         virtual
         mfxStatus QueryBitstreamBufferInfo(
-            mfxFrameAllocRequest & request);
+            mfxFrameAllocRequest & request) override;
 
         virtual
         mfxStatus QueryEncodeCaps(
-            JpegEncCaps & caps);
+            JpegEncCaps & caps) override;
 
         virtual
         mfxStatus UpdateBitstream(
             mfxMemId    MemId,
-            DdiTask   & task);
+            DdiTask   & task) override;
 
         virtual
-        mfxStatus Destroy();
+        mfxStatus Destroy() override;
+
+        D3D11Encoder(D3D11Encoder const &) = delete;
+        D3D11Encoder & operator =(D3D11Encoder const &) = delete;
 
     protected:
         // async call
         virtual
         mfxStatus QueryStatusAsync(
-            DdiTask & task);
+            DdiTask & task) override;
 
     private:
-        D3D11Encoder(D3D11Encoder const &);              // no implementation
-        D3D11Encoder & operator =(D3D11Encoder const &); // no implementation
-
         mfxStatus Init(
             GUID guid,
             ID3D11VideoDevice *pVideoDevice,

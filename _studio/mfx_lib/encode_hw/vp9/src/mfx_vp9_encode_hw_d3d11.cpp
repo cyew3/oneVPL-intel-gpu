@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Intel Corporation
+// Copyright (c) 2016-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -360,13 +360,6 @@ mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS_VP9& caps)
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D11Encoder::QueryEncodeCaps(ENCODE_CAPS& caps)
-
-mfxStatus D3D11Encoder::QueryPlatform(mfxPlatform& platform)
-{
-    platform = m_platform;
-
-    return MFX_ERR_NONE;
-} // mfxStatus D3D11Encoder::QueryPlatform(mfxPlatform& platform)
 
 mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {

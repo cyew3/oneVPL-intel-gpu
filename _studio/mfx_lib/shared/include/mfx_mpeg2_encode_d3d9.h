@@ -50,35 +50,32 @@ namespace MfxHwMpeg2Encode
         explicit D3D9Encoder(VideoCORE* core);
 
         virtual ~D3D9Encoder();
-        virtual void QueryEncodeCaps(ENCODE_CAPS & caps);
+        virtual void QueryEncodeCaps(ENCODE_CAPS & caps) override;
 
-        virtual mfxStatus Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId);
+        virtual mfxStatus Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId) override;
 
-        virtual mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU8* pUserData = 0, mfxU32 userDataLen = 0);
+        virtual mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU8* pUserData = 0, mfxU32 userDataLen = 0) override;
 
-        virtual mfxStatus Close();
+        virtual mfxStatus Close() override;
 
-        virtual bool      IsFullEncode() const { return m_bENC_PAK; }
+        virtual bool      IsFullEncode() const override { return m_bENC_PAK; }
 
-        virtual mfxStatus RegisterRefFrames(const mfxFrameAllocResponse* pResponse);
+        virtual mfxStatus RegisterRefFrames(const mfxFrameAllocResponse* pResponse) override;
 
-        virtual mfxStatus FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers);
+        virtual mfxStatus FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers) override;
 
-        virtual mfxStatus FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt);
+        virtual mfxStatus FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt) override;
 
-        virtual mfxStatus SetFrames (ExecuteBuffers* pExecuteBuffers);
+        virtual mfxStatus SetFrames (ExecuteBuffers* pExecuteBuffers) override;
 
-        virtual mfxStatus QueryStatusAsync(mfxU32 nFeedback, mfxU32 &bitstreamSizemfxU32);
+        virtual mfxStatus QueryStatusAsync(mfxU32 nFeedback, mfxU32 &bitstreamSizemfxU32) override;
 
-        virtual mfxStatus CreateAuxilliaryDevice(mfxU16 codecProfile);
+        virtual mfxStatus CreateAuxilliaryDevice(mfxU16 codecProfile) override;
+
+        D3D9Encoder(const D3D9Encoder &) = delete;
+        D3D9Encoder & operator = (const D3D9Encoder &) = delete;
 
     private:
-
-        // Declare private copy constructor to avoid accidental assignment
-        // and klocwork complaining.
-        D3D9Encoder(const D3D9Encoder &);
-        D3D9Encoder & operator = (const D3D9Encoder &);
-
         mfxStatus Init_MPEG2_ENC(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames);
         mfxStatus Init_MPEG2_ENCODE (ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames);
 

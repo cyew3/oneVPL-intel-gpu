@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -195,33 +195,27 @@ do {                                               \
             mfxCoreInterface* core,
             GUID       guid,
             mfxU32     width,
-            mfxU32     height);
+            mfxU32     height) override;
 
         virtual
         mfxStatus CreateAccelerationService(
-            mfxVideoParam const & par);
+            mfxVideoParam const & par) override;
 
         virtual
         mfxStatus Reset(
-            mfxVideoParam const & par);
-
-        // empty  for Lin
-        virtual
-        mfxStatus Register(
-            mfxMemId memId,
-            D3DDDIFORMAT type);
+            mfxVideoParam const & par) override;
 
         // 2 -> 1
         virtual
         mfxStatus Register(
             mfxFrameAllocResponse& response,
-            D3DDDIFORMAT type);
+            D3DDDIFORMAT type) override;
 
         // (mfxExecuteBuffers& data)
         virtual
         mfxStatus Execute(
             TaskHybridDDI const &task, 
-            mfxHDL surface);
+            mfxHDL surface) override;
 
         // recomendation from HW
         virtual
@@ -229,30 +223,30 @@ do {                                               \
             D3DDDIFORMAT type,
             mfxFrameAllocRequest& request,
             mfxU32 frameWidth,
-            mfxU32 frameHeight);
+            mfxU32 frameHeight) override;
 
         virtual
         mfxStatus QueryEncodeCaps(
-            ENCODE_CAPS_VP8& caps);
+            ENCODE_CAPS_VP8& caps) override;
 
         virtual
         mfxStatus QueryMBLayout(
-            MBDATA_LAYOUT &layout);
+            MBDATA_LAYOUT &layout) override;
 
         virtual
         mfxStatus QueryStatus(
-            Task & task);
+            Task & task) override;
 
         virtual
-            mfxU32 GetReconSurfFourCC();
+            mfxU32 GetReconSurfFourCC() override;
 
         virtual
-        mfxStatus Destroy();
+        mfxStatus Destroy() override;
+
+        VAAPIEncoder(const VAAPIEncoder&) = delete;
+        VAAPIEncoder& operator=(const VAAPIEncoder&) = delete;
 
     private:
-        VAAPIEncoder(const VAAPIEncoder&); // no implementation
-        VAAPIEncoder& operator=(const VAAPIEncoder&); // no implementation
-
         mfxCoreInterface * m_pmfxCore;
         VP8MfxParam   m_video;
         MBDATA_LAYOUT m_layout;

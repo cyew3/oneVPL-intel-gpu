@@ -469,13 +469,6 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
 } // mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 
 
-mfxStatus D3D11Encoder::Register( mfxMemId     /*memId*/, D3DDDIFORMAT /*type*/)
-{
-    return MFX_ERR_NONE;
-
-} // mfxStatus D3D11Encoder::Register(...)
-
-
 mfxStatus D3D11Encoder::ExecuteImpl(
     mfxHDLPair                 pair,
     DdiTask const &            task,
@@ -1525,15 +1518,6 @@ mfxStatus D3D11SvcEncoder::Reset(
 {
     par;
     return MFX_ERR_NONE;
-}
-
-mfxStatus D3D11SvcEncoder::Register(
-    mfxMemId     memId,
-    D3DDDIFORMAT type)
-{
-    memId, type;
-    assert(0);
-    return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus D3D11SvcEncoder::Register(

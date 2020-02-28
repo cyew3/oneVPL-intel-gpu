@@ -60,51 +60,46 @@ namespace MfxHwH264Encode
             GUID        guid,
             mfxU32      width,
             mfxU32      height,
-            bool        isTemporal = false);
+            bool        isTemporal = false) override;
 
         virtual
         mfxStatus CreateAccelerationService(
-            MfxVideoParam const & par);
+            MfxVideoParam const & par) override;
 
         virtual
         mfxStatus Reset(
-            MfxVideoParam const & par);
-
-        virtual
-        mfxStatus Register(
-            mfxMemId     memId,
-            D3DDDIFORMAT type);
+            MfxVideoParam const & par) override;
 
         virtual
         mfxStatus Register(
             mfxFrameAllocResponse & response,
-            D3DDDIFORMAT            type);
+            D3DDDIFORMAT            type) override;
 
         virtual
         mfxStatus QueryCompBufferInfo(
             D3DDDIFORMAT           type,
-            mfxFrameAllocRequest & request);
+            mfxFrameAllocRequest & request) override;
 
         virtual
         mfxStatus QueryEncodeCaps(
-            MFX_ENCODE_CAPS & caps);
+            MFX_ENCODE_CAPS & caps) override;
 
         virtual
         mfxStatus QueryMbPerSec(
             mfxVideoParam const & par,
-            mfxU32              (&mbPerSec)[16]);
+            mfxU32              (&mbPerSec)[16]) override;
 
         virtual
         mfxStatus QueryEncCtrlCaps(
-            ENCODE_ENC_CTRL_CAPS & caps);
+            ENCODE_ENC_CTRL_CAPS & caps) override;
 
         virtual
         mfxStatus GetEncCtrlCaps(
-            ENCODE_ENC_CTRL_CAPS & caps);
+            ENCODE_ENC_CTRL_CAPS & caps) override;
 
         virtual
         mfxStatus SetEncCtrlCaps(
-            ENCODE_ENC_CTRL_CAPS const & caps);
+            ENCODE_ENC_CTRL_CAPS const & caps) override;
 
         //mfxStatus QueryMbDataLayout(
         //    ENCODE_SET_SEQUENCE_PARAMETERS_H264 & sps,
@@ -114,24 +109,24 @@ namespace MfxHwH264Encode
         mfxStatus QueryStatus(
             DdiTask & task,
             mfxU32    fieldId,
-            bool useEvent = true);
+            bool useEvent = true) override;
 
     protected:
         // async call
         virtual
         mfxStatus QueryStatusAsync(
             DdiTask & task,
-            mfxU32    fieldId);
+            mfxU32    fieldId) override;
 
         virtual
         mfxStatus ExecuteImpl(
             mfxHDLPair pair,
             DdiTask const & task,
             mfxU32 fieldId,
-            PreAllocatedVector const & sei);
+            PreAllocatedVector const & sei) override;
 
         virtual
-        mfxStatus Destroy();
+        mfxStatus Destroy() override;
 
         void ForceCodingFunction (mfxU16 codingFunction)
         {
@@ -142,12 +137,12 @@ namespace MfxHwH264Encode
         mfxStatus QueryHWGUID(
             VideoCORE * core,
             GUID        guid,
-            bool        isTemporal);
+            bool        isTemporal) override;
+
+        D3D11Encoder(D3D11Encoder const &) = delete;
+        D3D11Encoder & operator =(D3D11Encoder const &) = delete;
 
     private:
-        D3D11Encoder(D3D11Encoder const &); // no implementation
-        D3D11Encoder & operator =(D3D11Encoder const &); // no implementation
-
         mfxStatus Init(
             GUID guid,
             ID3D11VideoDevice *pVideoDevice,
@@ -227,55 +222,50 @@ namespace MfxHwH264Encode
             GUID        guid,
             mfxU32      width,
             mfxU32      height,
-            bool        isTemporal = false);
+            bool        isTemporal = false) override;
 
         virtual
         mfxStatus CreateAccelerationService(
-            MfxVideoParam const & par);
+            MfxVideoParam const & par) override;
 
         virtual
         mfxStatus Reset(
-            MfxVideoParam const & par);
-
-        virtual
-        mfxStatus Register(
-            mfxMemId     memId,
-            D3DDDIFORMAT type);
+            MfxVideoParam const & par) override;
 
         virtual
         mfxStatus Register(
             mfxFrameAllocResponse & response,
-            D3DDDIFORMAT            type);
+            D3DDDIFORMAT            type) override;
 
         virtual
         mfxStatus Execute(
             mfxHDLPair                 pair,
             DdiTask const &            task,
             mfxU32                     fieldId,
-            PreAllocatedVector const & sei);
+            PreAllocatedVector const & sei) override;
 
         virtual
         mfxStatus QueryCompBufferInfo(
             D3DDDIFORMAT           type,
-            mfxFrameAllocRequest & request);
+            mfxFrameAllocRequest & request) override;
 
         virtual
         mfxStatus QueryEncodeCaps(
-            MFX_ENCODE_CAPS & caps);
+            MFX_ENCODE_CAPS & caps) override;
 
         virtual
         mfxStatus QueryMbPerSec(
             mfxVideoParam const & par,
-            mfxU32              (&mbPerSec)[16]);
+            mfxU32              (&mbPerSec)[16]) override;
 
         virtual
         mfxStatus QueryStatus(
             DdiTask & task,
             mfxU32    fieldId,
-            bool      useEvent = true);
+            bool      useEvent = true) override;
 
         virtual
-        mfxStatus Destroy();
+        mfxStatus Destroy() override;
 
         void ForceCodingFunction (mfxU16 codingFunction)
         {
@@ -286,12 +276,12 @@ namespace MfxHwH264Encode
         mfxStatus QueryHWGUID(
             VideoCORE * core,
             GUID        guid,
-            bool        isTemporal);
+            bool        isTemporal) override;
+
+        D3D11SvcEncoder(D3D11SvcEncoder const &) = delete;
+        D3D11SvcEncoder & operator =(D3D11SvcEncoder const &) = delete;
 
     private:
-        D3D11SvcEncoder(D3D11SvcEncoder const &); // no implementation
-        D3D11SvcEncoder & operator =(D3D11SvcEncoder const &); // no implementation
-
         mfxStatus Init(
             GUID                 guid,
             ID3D11VideoDevice *  pVideoDevice,
