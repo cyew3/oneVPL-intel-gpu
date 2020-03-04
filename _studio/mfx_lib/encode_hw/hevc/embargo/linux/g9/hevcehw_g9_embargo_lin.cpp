@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,40 +18,49 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
 
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
+
+#include "hevcehw_g9_data.h"
+#include "hevcehw_g9_legacy.h"
+#include "hevcehw_g9_extddi.h"
 #include "hevcehw_g9_embargo_lin.h"
-#include "hevcehw_g12_data.h"
+
+using namespace HEVCEHW::Gen9;
 
 namespace HEVCEHW
 {
 namespace Linux
 {
-namespace Gen12_Embargo
+namespace Gen9_Embargo
 {
-    enum eFeatureId
-    {
-        FEATURE_SCC = HEVCEHW::Gen12::eFeatureId::NUM_FEATURES
-        , NUM_FEATURES
-    };
 
-    class MFXVideoENCODEH265_HW
-        : public Linux::Gen9_Embargo::MFXVideoENCODEH265_HW
-    {
-    public:
-        using TBaseImpl = Linux::Gen9_Embargo::MFXVideoENCODEH265_HW;
+MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
+    VideoCORE& core
+    , mfxStatus& status
+    , eFeatureMode mode)
+    : TBaseImpl(core, status, mode)
+{
+    TFeatureList newFeatures;
 
-        MFXVideoENCODEH265_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
+    newFeatures.emplace_back(new ExtDDI(FEATURE_EXTDDI));
 
-        virtual mfxStatus Init(mfxVideoParam *par) override;
-    };
-} //Gen12_Embargo
-} //Linux
-}// namespace HEVCEHW
+    for (auto& pFeature : newFeatures)
+        pFeature->Init(mode, *this);
 
-#endif
+    TBaseImpl::m_features.splice(TBaseImpl::m_features.end(), newFeatures);
+
+}
+
+mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
+{
+    auto sts = TBaseImpl::Init(par);
+    MFX_CHECK_STS(sts);
+
+    return MFX_ERR_NONE;
+}
+
+}}} //namespace HEVCEHW::Linux::Gen9_Embrago
+
+#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)

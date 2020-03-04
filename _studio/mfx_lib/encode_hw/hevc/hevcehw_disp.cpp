@@ -117,12 +117,21 @@ namespace HEVCEHW
 };
 
 #if defined(MFX_VA_LINUX)
+    #if defined(OPEN_SOURCE)
     #include "hevcehw_g9_lin.h"
     namespace HEVCEHWDisp
     {
         namespace SKL { using namespace HEVCEHW::Linux::Gen9; };
         namespace ICL { using namespace HEVCEHW::Linux::Gen9; };
     };
+    #else
+    #include "hevcehw_g9_embargo_lin.h"
+    namespace HEVCEHWDisp
+    {
+        namespace SKL { using namespace HEVCEHW::Linux::Gen9_Embargo; };
+        namespace ICL { using namespace HEVCEHW::Linux::Gen9_Embargo; };
+    };
+    #endif //defined(OPEN_SOURCE)
 #else
     #include "hevcehw_g9_win.h"
     namespace HEVCEHWDisp
