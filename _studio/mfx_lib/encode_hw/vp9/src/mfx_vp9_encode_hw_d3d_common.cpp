@@ -1,4 +1,4 @@
-// Copyright(c) 2016 - 2019 Intel Corporation
+// Copyright(c) 2016 - 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -82,7 +82,11 @@ namespace MfxHwVP9Encode
         }
 
         eMFXHWType platform = pCore->GetHWType();
-        if (platform >= MFX_HW_JSL)
+#ifndef STRIP_EMBARGO
+        if (platform > MFX_HW_DG1)
+#else
+        if (platform > MFX_HW_TGL_LP)
+#endif
             m_TaskSyncTimeOutMs = DEFAULT_TIMEOUT_VP9_HW_SIM;
 
         return MFX_ERR_NONE;
