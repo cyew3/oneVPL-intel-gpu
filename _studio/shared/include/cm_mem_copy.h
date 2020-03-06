@@ -31,8 +31,9 @@
 #include "icllp_copy_kernel_genx_isa.h"
 #ifndef STRIP_EMBARGO
 #include "tgl_copy_kernel_genx_isa.h"
+#if defined(_WIN32) || defined(_WIN64)
 #include "dg2_copy_kernel_genx_isa.h"
-#include "pvc_copy_kernel_genx_isa.h"
+#endif
 #endif
 #include "tgllp_copy_kernel_genx_isa.h"
 #if !(defined(AS_VPP_PLUGIN) || defined(UNIFIED_PLUGIN) || defined(AS_H265FEI_PLUGIN) || defined(AS_H264LA_PLUGIN))

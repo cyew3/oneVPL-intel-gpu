@@ -52,8 +52,6 @@ if(MFX_ENABLE_KERNELS)
     ${prefix}/genx_cnl_copy_isa.cpp
     ${prefix}/genx_tgl_copy_isa.cpp
     ${prefix}/genx_tgllp_copy_isa.cpp
-    ${prefix}/genx_dg2_copy_isa.cpp
-    ${prefix}/genx_pvc_copy_isa.cpp
   )
 
   set( prefix ${MSDK_GENX_ROOT}/field_copy/src )

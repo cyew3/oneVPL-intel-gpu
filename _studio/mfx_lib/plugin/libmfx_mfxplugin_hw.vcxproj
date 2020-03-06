@@ -54,7 +54,6 @@
     <ClCompile Include="..\genx\copy_kernels\src\genx_tgllp_copy_isa.cpp" />
     <ClCompile Include="..\genx\copy_kernels\src\genx_tgl_copy_isa.cpp" />
     <ClCompile Include="..\genx\copy_kernels\src\genx_dg2_copy_isa.cpp" />
-    <ClCompile Include="..\genx\copy_kernels\src\genx_pvc_copy_isa.cpp" />
     <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen10_isa.cpp" />
     <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen11_isa.cpp" />
     <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen11lp_isa.cpp" />
