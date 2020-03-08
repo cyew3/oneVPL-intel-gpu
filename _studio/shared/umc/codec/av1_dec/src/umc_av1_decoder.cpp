@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,10 @@ namespace UMC_AV1_DECODER
         : allocator(nullptr)
         , sequence_header(nullptr)
         , counter(0)
+        , Poutput(new AV1DecoderFrame{})
+        , Curr(new AV1DecoderFrame{})
+        , Curr_temp(new AV1DecoderFrame{})
+        , Repeat_show(0)
     {
     }
 
@@ -216,18 +220,37 @@ namespace UMC_AV1_DECODER
         return true;
     }
 
-    AV1DecoderFrame* AV1Decoder::StartFrame(FrameHeader const& fh, DPBType const& frameDPB)
+    AV1DecoderFrame* AV1Decoder::StartFrame(FrameHeader const& fh, DPBType & frameDPB, AV1DecoderFrame* pPrevFrame)
     {
         AV1DecoderFrame* pFrame = nullptr;
 
         if (fh.show_existing_frame)
         {
             pFrame = frameDPB[fh.frame_to_show_map_idx];
+            pFrame->IncrementReference();
             VM_ASSERT(pFrame);
             FrameHeader const& refFH = pFrame->GetFrameHeader();
 
             if (!refFH.showable_frame)
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+            FrameHeader const& Repeat_H = pFrame->GetFrameHeader();
+            if (Repeat_H.frame_type == KEY_FRAME)
+            {
+                for (uint8_t i = 0; i < NUM_REF_FRAMES; i++)
+                {
+                    if ((Repeat_H.refresh_frame_flags >> i) & 1)
+                    {
+                        if (!frameDPB.empty() && frameDPB[i])
+                           frameDPB[i]->DecrementReference();
+
+                        frameDPB[i] = const_cast<AV1DecoderFrame*>(pFrame);
+                        pFrame->IncrementReference();
+                    }
+                }
+            }
+            DPBType & prevFrameDPB = pPrevFrame->frame_dpb;
+            prevFrameDPB = frameDPB;
 
             return pFrame;
         }
@@ -325,14 +348,35 @@ namespace UMC_AV1_DECODER
 
         FrameHeader fh = {};
 
-        AV1DecoderFrame const* pPrevFrame = FindFrameByUID(counter - 1);
+        AV1DecoderFrame* pPrevFrame = FindFrameByUID(counter - 1);
         AV1DecoderFrame* pFrameInProgress = FindFrameInProgress();
         DPBType updated_refs;
         FrameHeader const* prev_fh = 0;
-        if (pPrevFrame && !pFrameInProgress)
+        UMC::MediaData tmper = *in;
+
+        if ((tmper.GetDataSize() >= MINIMAL_DATA_SIZE) && pPrevFrame && !pFrameInProgress)
         {
-            updated_refs = DPBUpdate(pPrevFrame);
+            if (!Repeat_show)
+            {
+                if (Curr_temp != Curr)
+                {
+                    updated_refs = DPBUpdate(pPrevFrame);
+                    refs_temp = updated_refs;
+                }
+                else
+                {
+                    updated_refs = refs_temp;
+                }
+
+            }
+            else
+            {
+                DPBType const& prevFrameDPB = pPrevFrame->frame_dpb;
+                updated_refs = prevFrameDPB;
+                Repeat_show = 0;
+            }
             prev_fh = &(pPrevFrame->GetFrameHeader());
+            Curr_temp = Curr;
         }
 
         bool gotFullFrame = false;
@@ -435,7 +479,9 @@ namespace UMC_AV1_DECODER
                 return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 
             pCurrFrame = pFrameInProgress ?
-                pFrameInProgress : StartFrame(fh, updated_refs);
+                pFrameInProgress : StartFrame(fh, updated_refs, pPrevFrame);
+
+            CompleteDecodedFrames(fh, pCurrFrame, pPrevFrame);
 
             if (!pCurrFrame)
                 return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
@@ -576,18 +622,49 @@ namespace UMC_AV1_DECODER
             [] { return new AV1DecoderFrame{}; }
         );
     }
-
-    void AV1Decoder::CompleteDecodedFrames()
+    void AV1Decoder::SetRefSize(uint32_t size)
     {
-        std::unique_lock<std::mutex> l(guard);
+        VM_ASSERT(size > 0);
+        VM_ASSERT(size < 128);
 
-        std::for_each(dpb.begin(), dpb.end(),
-            [](AV1DecoderFrame* frame)
-            {
-            if (frame->Outputted() && frame->Displayed() && !frame->Decoded())
-                frame->OnDecodingCompleted();
-            }
+        refs_temp.resize(size);
+        std::generate(std::begin(refs_temp), std::end(refs_temp),
+           [] { return new AV1DecoderFrame{}; }
         );
+    }
+
+    void AV1Decoder::CompleteDecodedFrames(FrameHeader const& fh, AV1DecoderFrame* pCurrFrame, AV1DecoderFrame* pPrevFrame)
+    {
+        if (pPrevFrame && Curr)
+        {
+            FrameHeader const& FH_OutTemp = Curr->GetFrameHeader();
+            if (Poutput->UID == -1)
+            {
+               Poutput = pPrevFrame;
+            }
+            else
+            {
+                if (Repeat_show || FH_OutTemp.show_frame)
+                {
+                    Poutput ->DecrementReference();
+                    Poutput = Curr;
+                }
+                else
+                {
+                    Curr->DecrementReference();
+                }
+            }
+        }
+
+        Curr = pCurrFrame;
+        if (fh.show_existing_frame)
+        {
+            Repeat_show = 1;
+        }
+        else
+        {
+            Repeat_show = 0;
+        }
     }
 
     AV1DecoderFrame* AV1Decoder::GetFreeFrame()
@@ -610,10 +687,11 @@ namespace UMC_AV1_DECODER
 
     AV1DecoderFrame* AV1Decoder::GetFrameBuffer(FrameHeader const& fh)
     {
-        CompleteDecodedFrames();
         AV1DecoderFrame* frame = GetFreeFrame();
         if (!frame)
-            return nullptr;
+        {
+           return nullptr;
+        }
 
         frame->Reset(&fh);
 

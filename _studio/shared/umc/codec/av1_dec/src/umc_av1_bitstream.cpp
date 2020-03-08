@@ -1851,7 +1851,7 @@ namespace UMC_AV1_DECODER
 #if UMC_AV1_DECODER_REV >= 8500
                 av1_read_timing_point_info(*this, sh, fh);
 #endif
-                FrameHeader const& refHdr = frameDpb[fh.frame_to_show_map_idx]->GetFrameHeader();
+                FrameHeader & refHdr = frameDpb[fh.frame_to_show_map_idx]->GetFrameHeader();
 
                 if (sh.frame_id_numbers_present_flag)
                 {
@@ -1866,6 +1866,11 @@ namespace UMC_AV1_DECODER
                     }
 
                     fh.current_frame_id = fh.display_frame_id;
+                }
+
+                if (refHdr.frame_type == KEY_FRAME)
+                {
+                    refHdr.refresh_frame_flags = 255;
                 }
 
                 // get frame resolution

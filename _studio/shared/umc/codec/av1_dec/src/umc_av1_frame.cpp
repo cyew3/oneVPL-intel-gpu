@@ -219,15 +219,11 @@ namespace UMC_AV1_DECODER
         if (std::find(references.begin(), references.end(), frm) != references.end())
             return;
 
-        frm->IncrementReference();
         references.push_back(frm);
     }
 
     void AV1DecoderFrame::FreeReferenceFrames()
     {
-        for (DPBType::iterator i = references.begin(); i != references.end(); i++)
-            (*i)->DecrementReference();
-
         references.clear();
     }
 

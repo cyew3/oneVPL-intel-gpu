@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -59,7 +59,7 @@ namespace UMC_AV1_DECODER
         uint32_t const dpb_size =
             params.async_depth + TOTAL_REFS;
         SetDPBSize(dpb_size);
-
+        SetRefSize(TOTAL_REFS);
         return UMC::UMC_OK;
     }
 

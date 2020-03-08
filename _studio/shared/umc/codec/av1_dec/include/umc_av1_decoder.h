@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -132,19 +132,20 @@ namespace UMC_AV1_DECODER
         static UMC::Status FillVideoParam(SequenceHeader const&, UMC_AV1_DECODER::AV1DecoderParams&);
 
         virtual void SetDPBSize(uint32_t);
+        virtual void SetRefSize(uint32_t);
         virtual AV1DecoderFrame* GetFreeFrame();
         virtual AV1DecoderFrame* GetFrameBuffer(FrameHeader const&);
         virtual void AddFrameData(AV1DecoderFrame&);
 
         virtual void AllocateFrameData(UMC::VideoDataInfo const&, UMC::FrameMemID, AV1DecoderFrame&) = 0;
-        virtual void CompleteDecodedFrames();
+        virtual void CompleteDecodedFrames(FrameHeader const&, AV1DecoderFrame*, AV1DecoderFrame*);
         virtual UMC::Status SubmitTiles(AV1DecoderFrame&, bool) = 0;
 
     private:
 
         template <typename F>
         AV1DecoderFrame* FindFrame(F pred);
-        AV1DecoderFrame* StartFrame(FrameHeader const&, DPBType const&);
+        AV1DecoderFrame* StartFrame(FrameHeader const&, DPBType &, AV1DecoderFrame*);
 
     protected:
 
@@ -157,6 +158,11 @@ namespace UMC_AV1_DECODER
 
         uint32_t                        counter;
         AV1DecoderParams                params;
+        AV1DecoderFrame*                Poutput; // store frame need to be output
+        AV1DecoderFrame*                Curr; // store current frame for Poutput
+        AV1DecoderFrame*                Curr_temp; // store current frame insist double updateDPB
+        uint32_t                        Repeat_show; // show if current frame is repeated frame
+        DPBType                         refs_temp; // previous updated frameDPB
     };
 }
 
