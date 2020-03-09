@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -138,6 +138,38 @@ SystemStreamType Splitter::GetStreamType(DataReader* dr)
     if (long_code == MAKEFOURCC_INVERT('D','K','I','F'))
     {
         return IVF_STREAM;
+    }
+
+    if (long_code == 0x1a45dfa3) // EBML file ID
+    {
+        uint8_t len_mask = 0x80, Element_size;
+        size_t size = 1;
+        uint16_t ElementID;
+        uint32_t DocType;
+
+        umcSts = dr->Check8u(&Element_size, 4);
+        if (UMC_OK != umcSts)
+            return UNDEF_STREAM;
+        while (size <= 8 && !(Element_size & len_mask))
+        {
+            size++;
+            len_mask >>= 1;
+        }
+        if (size <= 8)
+        {
+            // per 4 byte for EBML file ID, Version, ReadVersion, MaxIDLength, MaxSizeLength
+            umcSts = dr->Check16u(&ElementID, 20 + size);
+            if (UMC_OK != umcSts)
+                return UNDEF_STREAM;
+            if (ElementID == 0x4282) // DocType Element ID
+            {
+                umcSts = dr->Check32u(&DocType, 23 + size);
+                if (UMC_OK != umcSts)
+                    return UNDEF_STREAM;
+                if (DocType == MAKEFOURCC_INVERT('w', 'e', 'b', 'm')) // 0x7765626d
+                    return WEBM_STREAM;
+            }
+        }
     }
 
     umcSts = dr->Check32u(&long_code, 4);

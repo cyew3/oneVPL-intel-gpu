@@ -2020,6 +2020,17 @@ mfxStatus MFXDecPipeline::CreateSplitter()
 
     mfxStatus sts = m_pSpl->Init(m_inParams.strSrcFile);
 
+    if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
+    {
+        auto spl = dynamic_cast<UMCSplWrapper*>(m_pSpl);
+        if (spl && spl->m_isWebm)
+        {
+            m_inParams.m_container = MFX_CONTAINER_MKV;
+            m_pSpl = new MKVReader();
+            sts = m_pSpl->Init(m_inParams.strSrcFile);
+        }
+    }
+
     if (MFX_ERR_NONE != sts)
     {
         if (MFX_ERR_NONE > sts)

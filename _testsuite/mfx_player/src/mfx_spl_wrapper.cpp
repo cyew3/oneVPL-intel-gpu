@@ -61,6 +61,7 @@ UMCSplWrapper::UMCSplWrapper(mfxU32 nCorruptionLevel)
     , m_bInited()
     , m_bDecSpecInfo()
     , m_nCorruptionLevel(nCorruptionLevel)
+    , m_isWebm(false)
 {
 }
 
@@ -78,6 +79,7 @@ void UMCSplWrapper::Close()
     MFX_DELETE(m_pConstructor);
     m_isVC1 = false;
     m_bDecSpecInfo = false;
+    m_isWebm = false;
 }
 
 
@@ -87,7 +89,7 @@ mfxStatus Status2MfxStatus(UMC::Status val)
     {
         case UMC_ERR_NOT_ENOUGH_DATA: return MFX_ERR_MORE_DATA;
     }
-    
+
     return MFX_ERR_UNKNOWN;
 }
 
@@ -158,7 +160,11 @@ mfxStatus UMCSplWrapper::Init(const vm_char *strFileName)
         MFX_CHECK_WITH_ERR(m_pInitParams = new SplitterParams(), MFX_ERR_MEMORY_ALLOC);
         MFX_CHECK_WITH_ERR(m_pConstructor   = new MFXFrameConstructor(), MFX_ERR_MEMORY_ALLOC);
         break;
-        
+    case WEBM_STREAM:
+        m_isWebm = true;
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+        break;
+
     default:
         UMC_CALL(UMC_ERR_UNSUPPORTED);
         break;

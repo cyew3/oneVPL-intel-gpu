@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -43,7 +43,7 @@ class UMCSplWrapper : public IBitstreamReader
     bool                    m_isVC1;
     //bool                    m_bTraceFrameType;
     bool                    m_bInited;
-    //indicates whether inputdata consist of decspec info it is used to 
+    //indicates whether inputdata consist of decspec info it is used to
     //attach correct time stamp to it
     bool                    m_bDecSpecInfo;
     mfxU32                  m_nCorruptionLevel;
@@ -61,6 +61,9 @@ public:
     virtual bool isFrameModeEnabled() {
         return true;
     }
+
+    bool m_isWebm;
+
 protected:
     virtual mfxStatus GetCurrentTimeFromSpl();
     virtual mfxStatus SelectDataReader(const vm_char *strFileName);
