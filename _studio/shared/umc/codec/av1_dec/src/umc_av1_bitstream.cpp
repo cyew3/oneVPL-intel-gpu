@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1481,7 +1481,15 @@ namespace UMC_AV1_DECODER
         sh.max_frame_width = GetBits(sh.frame_width_bits) + 1;
         sh.max_frame_height = GetBits(sh.frame_height_bits) + 1;
 
-        sh.frame_id_numbers_present_flag = GetBit();
+        if (sh.reduced_still_picture_header)
+        {
+            sh.frame_id_numbers_present_flag = 0;
+        }
+        else
+        {
+            sh.frame_id_numbers_present_flag = GetBit();
+        }
+
         if (sh.frame_id_numbers_present_flag) {
             sh.delta_frame_id_length = GetBits(4) + 2;
             sh.idLen = GetBits(3) + sh.delta_frame_id_length + 1;
@@ -1497,6 +1505,7 @@ namespace UMC_AV1_DECODER
         {
             sh.seq_force_screen_content_tools = SELECT_SCREEN_CONTENT_TOOLS;
             sh.seq_force_integer_mv = SELECT_INTEGER_MV;
+            sh.order_hint_bits_minus1 = -1;
         }
         else
         {
