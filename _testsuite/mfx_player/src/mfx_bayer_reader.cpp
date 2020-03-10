@@ -16,6 +16,8 @@ BayerVideoReader::BayerVideoReader(sStreamInfo *pParams)
 {
     m_bInited  = false;
     m_bInfoSet = false;
+    m_sInfo = {};
+    m_BayerType = (mfxCamBayerFormat)0;
 
     if (NULL != pParams)
     {

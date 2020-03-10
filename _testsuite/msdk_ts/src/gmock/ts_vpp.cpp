@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -31,6 +31,7 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
     , m_pSurfPoolOut(&m_spool_out)
     , m_surf_in_processor(0)
     , m_surf_out_processor(0)
+    , m_uid(NULL)
 {
     memset(m_request, 0, sizeof(m_request));
 

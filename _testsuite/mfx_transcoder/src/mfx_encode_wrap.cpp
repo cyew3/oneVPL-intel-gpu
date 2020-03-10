@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -33,6 +33,7 @@ MFXEncodeWRAPPER::MFXEncodeWRAPPER(ComponentParams & refParams, mfxStatus *statu
     if (!refParams.m_pSession && status)
     {
         *status = MFX_ERR_NULL_PTR;
+        m_InSession = NULL;
     }else
     {
         m_InSession = refParams.m_pSession->GetMFXSession();
