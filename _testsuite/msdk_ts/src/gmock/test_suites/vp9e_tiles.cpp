@@ -829,35 +829,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     void SetAdditionalParams(mfxVideoParam& par, const mfxExtVP9Param& extPar, mfxU32 fourcc, mfxU32 testType)
     {
         mfxFrameInfo& fi = par.mfx.FrameInfo;
-        if (fourcc == MFX_FOURCC_NV12)
-        {
-            fi.FourCC = MFX_FOURCC_NV12;
-            fi.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        }
-        else if (fourcc == MFX_FOURCC_P010)
-        {
-            fi.FourCC = MFX_FOURCC_P010;
-            fi.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            fi.BitDepthLuma = fi.BitDepthChroma = 10;
-            fi.Shift = 1;
-        }
-        else if (fourcc == MFX_FOURCC_AYUV)
-        {
-            fi.FourCC = MFX_FOURCC_AYUV;
-            fi.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            fi.BitDepthLuma = fi.BitDepthChroma = 8;
-        }
-        else if (fourcc == MFX_FOURCC_Y410)
-        {
-            fi.FourCC = MFX_FOURCC_Y410;
-            fi.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            fi.BitDepthLuma = fi.BitDepthChroma = 10;
-        }
-        else
-        {
-            ADD_FAILURE() << "ERROR: Invalid fourcc in the test: " << fourcc;
-            throw tsFAIL;
-        }
+
+        SetFrameInfo(fi, fourcc);
 
         fi.CropX = fi.CropY = 0;
         fi.CropW = fi.Width;

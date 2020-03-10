@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -12,6 +12,7 @@ Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 #include "ts_struct.h"
 #include <memory>
+#include "gmock/test_suites/vp9e_utils.h"
 
 #define VP9E_CQP_DEFAULT_QPI (169)
 #define VP9E_CQP_DEFAULT_QPP (173)
@@ -347,31 +348,22 @@ namespace vp9e_cqp
         m_par.AsyncDepth = 1;
 
         SETPARS(m_pPar, MFX_PAR);
+        SetFrameInfo(m_par.mfx.FrameInfo, fourcc_id);
 
         if (fourcc_id == MFX_FOURCC_NV12)
         {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             stream = const_cast<char *>(g_tsStreamPool.Get("YUV/salesman_176x144_449.yuv"));
         }
         else if (fourcc_id == MFX_FOURCC_P010)
         {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             stream = const_cast<char *>(g_tsStreamPool.Get("YUV10bit420/Kimono1_176x144_24_p010.yuv"));
         }
         else if (fourcc_id == MFX_FOURCC_AYUV)
         {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
             stream = const_cast<char *>(g_tsStreamPool.Get("YUV8bit444/Kimono1_176x144_24_ayuv.yuv"));
         }
         else if (fourcc_id == MFX_FOURCC_Y410)
         {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
             stream = const_cast<char *>(g_tsStreamPool.Get("YUV10bit444/Kimono1_176x144_24_y410.yuv"));
         }
         else

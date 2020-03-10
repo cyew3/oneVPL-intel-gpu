@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -13,6 +13,7 @@ Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
 #include "ts_decoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
+#include "gmock/test_suites/vp9e_utils.h"
 
 namespace vp9e_big_resolution
 {
@@ -394,12 +395,11 @@ namespace vp9e_big_resolution
 
         char* stream = nullptr;
 
+        SetFrameInfo(m_par.mfx.FrameInfo, fourcc_id);
+
         if (fourcc_id == MFX_FOURCC_NV12)
         {
             case_description += "[NV12]";
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
             if (tc.type & CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_nv12.yuv"));
             else if (tc.type & CHECK_8Kx8K)
@@ -412,10 +412,6 @@ namespace vp9e_big_resolution
         else if (fourcc_id == MFX_FOURCC_P010)
         {
             case_description += "[P010]";
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_par.mfx.FrameInfo.Shift = 1;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
             if (tc.type & CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_p010_shifted.yuv"));
             else if (tc.type & CHECK_8Kx8K)
@@ -428,9 +424,6 @@ namespace vp9e_big_resolution
         else if (fourcc_id == MFX_FOURCC_AYUV)
         {
             case_description += "[AYUV]";
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
             if (tc.type & CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_ayuv.yuv"));
             else if (tc.type & CHECK_8Kx8K)
@@ -443,9 +436,6 @@ namespace vp9e_big_resolution
         else if (fourcc_id == MFX_FOURCC_Y410)
         {
             case_description += "[Y410]";
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
             if (tc.type & CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_y410.yuv"));
             else if (tc.type & CHECK_8Kx8K)

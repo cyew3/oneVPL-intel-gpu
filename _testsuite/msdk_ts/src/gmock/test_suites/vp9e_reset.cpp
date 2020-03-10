@@ -4,12 +4,13 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #include "ts_encoder.h"
 #include "ts_parser.h"
+#include "gmock/test_suites/vp9e_utils.h"
 
 namespace vp9e_reset
 {
@@ -263,36 +264,7 @@ namespace vp9e_reset
         BitstreamChecker bs_checker(m_par);
         m_bs_processor = &bs_checker;
 
-        if (fourcc_id == MFX_FOURCC_NV12)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-        }
-        else if (fourcc_id == MFX_FOURCC_P010)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_par.mfx.FrameInfo.Shift = 1;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-        }
-        else if (fourcc_id == MFX_FOURCC_AYUV)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-        }
-        else if (fourcc_id == MFX_FOURCC_Y410)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-        }
-        else
-        {
-            g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
-            return 0;
-        }
+        SetFrameInfo(m_par.mfx.FrameInfo, fourcc_id);
 
         if (tc.pre_init.set_par)
         {
@@ -378,31 +350,24 @@ namespace vp9e_reset
         {
             //change source format for Reset() to check error status is returned
             m_resetPar.pPar->mfx.CodecProfile = 0;
-            if (fourcc_id == MFX_FOURCC_NV12)
-            {
-                m_resetPar.pPar->mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
-                m_resetPar.pPar->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-                m_resetPar.pPar->mfx.FrameInfo.Shift = 1;
-                m_resetPar.pPar->mfx.FrameInfo.BitDepthLuma = m_resetPar.pPar->mfx.FrameInfo.BitDepthChroma = 10;
+
+            unsigned int resetFourCC = 0;
+            switch (fourcc_id) {
+            case MFX_FOURCC_NV12:
+                resetFourCC = MFX_FOURCC_P010;
+                break;
+            case MFX_FOURCC_P010:
+                resetFourCC = MFX_FOURCC_AYUV;
+                break;
+            case MFX_FOURCC_AYUV:
+                resetFourCC = MFX_FOURCC_Y410;
+                break;
+            case MFX_FOURCC_Y410:
+                resetFourCC = MFX_FOURCC_NV12;
+                break;
             }
-            else if (fourcc_id == MFX_FOURCC_P010)
-            {
-                m_resetPar.pPar->mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
-                m_resetPar.pPar->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-                m_resetPar.pPar->mfx.FrameInfo.BitDepthLuma = m_resetPar.pPar->mfx.FrameInfo.BitDepthChroma = 8;
-            }
-            else if (fourcc_id == MFX_FOURCC_AYUV)
-            {
-                m_resetPar.pPar->mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
-                m_resetPar.pPar->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-                m_resetPar.pPar->mfx.FrameInfo.BitDepthLuma = m_resetPar.pPar->mfx.FrameInfo.BitDepthChroma = 10;
-            }
-            else if (fourcc_id == MFX_FOURCC_Y410)
-            {
-                m_resetPar.pPar->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-                m_resetPar.pPar->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-                m_resetPar.pPar->mfx.FrameInfo.BitDepthLuma = m_resetPar.pPar->mfx.FrameInfo.BitDepthChroma = 8;
-            }
+
+            SetFrameInfo(m_resetPar.pPar->mfx.FrameInfo, resetFourCC);
         }
 
         TRACE_FUNC2(MFXVideoENCODE_Reset, m_resetPar.session, m_resetPar.pPar);

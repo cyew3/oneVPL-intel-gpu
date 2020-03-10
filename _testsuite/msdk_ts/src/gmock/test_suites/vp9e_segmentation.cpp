@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -1397,12 +1397,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         std::map<mfxU32, mfxFrameSurface1*> inputSurfaces;
         char* stream = nullptr;
 
+        SetFrameInfo(m_par.mfx.FrameInfo, fourcc_id);
+
         if (fourcc_id == MFX_FOURCC_NV12)
         {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-
             stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12"));
 
             m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;
@@ -1410,11 +1408,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         }
         else if (fourcc_id == MFX_FOURCC_P010)
         {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_par.mfx.FrameInfo.Shift = 1;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-
             stream = const_cast<char *>(g_tsStreamPool.Get("YUV10bit420_ms/Kimono1_352x288_24_p010_shifted.yuv"));
 
             m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;
@@ -1422,10 +1415,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         }
         else if (fourcc_id == MFX_FOURCC_AYUV)
         {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-
             stream = const_cast<char *>(g_tsStreamPool.Get("YUV8bit444/Kimono1_352x288_24_ayuv.yuv"));
 
             m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;
@@ -1433,10 +1422,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         }
         else if (fourcc_id == MFX_FOURCC_Y410)
         {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-
             stream = const_cast<char *>(g_tsStreamPool.Get("YUV10bit444/Kimono1_352x288_24_y410.yuv"));
 
             m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;

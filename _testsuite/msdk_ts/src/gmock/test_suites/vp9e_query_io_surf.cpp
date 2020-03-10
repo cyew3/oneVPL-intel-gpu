@@ -4,13 +4,14 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
+#include "gmock/test_suites/vp9e_utils.h"
 
 namespace vp9e_query_io_surf
 {
@@ -154,37 +155,7 @@ namespace vp9e_query_io_surf
 
         Load();
 
-        if (fourcc_id == MFX_FOURCC_NV12)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-        }
-        else if (fourcc_id == MFX_FOURCC_P010)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_par.mfx.FrameInfo.Shift = 1;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-        }
-        else if (fourcc_id == MFX_FOURCC_AYUV)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-        }
-        else if (fourcc_id == MFX_FOURCC_Y410)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-        }
-        else
-        {
-            g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
-            return 0;
-        }
-
+        SetFrameInfo(m_par.mfx.FrameInfo, fourcc_id);
         SETPARS(m_pPar, MFX_PAR);
         g_tsStatus.expect(tc.sts);
 
