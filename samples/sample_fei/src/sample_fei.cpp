@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -1316,7 +1316,6 @@ int main(int argc, char *argv[])
 {
     mfxStatus sts = MFX_ERR_NONE; // return value check
     msdk_char parFileName[MSDK_MAX_FILENAME_LEN];
-    msdk_char *parBuf = NULL;
     FILE *parFile = NULL;
     if (1 == argc)
     {
@@ -1356,8 +1355,8 @@ int main(int argc, char *argv[])
         fseek(parFile, 0, SEEK_SET);
 
         // allocate buffer for parsing
-        parBuf = new msdk_char[fileSize];
-        sts = ParseParFile(parFile, Configs, parBuf, fileSize);
+        std::vector <msdk_char> parBuf(fileSize);
+        sts = ParseParFile(parFile, Configs, parBuf.data(), fileSize);
         if(sts != MFX_ERR_NONE)
         {
             msdk_printf(MSDK_STRING("ERROR: ParFile reading failed: %s\n"), parFileName);
@@ -1453,7 +1452,6 @@ int main(int argc, char *argv[])
     if(parFile)
     {
         fclose(parFile);
-        delete [] parBuf;
     }
     Configs.clear();
     return 0;
