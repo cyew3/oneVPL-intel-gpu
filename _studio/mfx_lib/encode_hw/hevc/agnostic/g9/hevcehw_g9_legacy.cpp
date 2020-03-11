@@ -2649,9 +2649,7 @@ bool Legacy::GetRecInfo(
                 mfxU16(1 + MFX_CHROMAFORMAT_YUV420)
                 , [](mfxFrameInfo& rec, eMFXHWType)
                 {
-                    // rec.FourCC = MFX_FOURCC_P010; // Incorrect for MMC (TGL-B0)
-                    rec.FourCC = MFX_FOURCC_NV12;
-                    rec.Width = mfx::align2_value(rec.Width, 32) * 2;
+                    rec.FourCC = MFX_FOURCC_P010;
                 }
             }
         }
