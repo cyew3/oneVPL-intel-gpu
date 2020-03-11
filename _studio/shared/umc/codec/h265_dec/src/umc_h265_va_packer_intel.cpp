@@ -190,7 +190,7 @@ namespace UMC_HEVC_DECODER
         //
         //
         pPicParam->CurrPic.Index7bits = pCurrentFrame->m_index;
-        pPicParam->CurrPicOrderCntVal = sliceHeader->slice_pic_order_cnt_lsb;
+        pPicParam->CurrPicOrderCntVal = sliceHeader->m_poc;
 
         int count = 0;
         int cntRefPicSetStCurrBefore = 0,
@@ -382,7 +382,7 @@ namespace UMC_HEVC_DECODER
         pPicParam->pps_beta_offset_div2 = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
         pPicParam->pps_tc_offset_div2 = (CHAR)(pPicParamSet->pps_tc_offset >> 1);
         pPicParam->log2_parallel_merge_level_minus2 = (UCHAR)pPicParamSet->log2_parallel_merge_level - 2;
-        pPicParam->CurrPicOrderCntVal = sliceHeader->slice_pic_order_cnt_lsb;
+        pPicParam->CurrPicOrderCntVal = sliceHeader->m_poc;
 
 
         //

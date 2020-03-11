@@ -210,6 +210,8 @@ public:
         m_tileByteLocation = new uint32_t[val];
     }
 
+    void setRefPOCListSliceHeader();
+
     // For dependent slice copy data from another slice
     void CopyFromBaseSlice(const H265Slice * slice);
 
@@ -236,7 +238,7 @@ bool IsPictureTheSame(H265Slice *pSliceOne, H265Slice *pSliceTwo)
     if (pOne->slice_pic_parameter_set_id != pTwo->slice_pic_parameter_set_id)
         return false;
 
-    if (pOne->slice_pic_order_cnt_lsb != pTwo->slice_pic_order_cnt_lsb)
+    if (pOne->m_poc != pTwo->m_poc)
         return false;
 
     return true;
