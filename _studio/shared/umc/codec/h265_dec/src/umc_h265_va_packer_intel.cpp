@@ -768,7 +768,7 @@ namespace UMC_HEVC_DECODER
     bool PackerDXVA2intel::PackSliceParams(H265Slice const* pSlice, size_t, bool isLastSlice)
     {
         uint8_t const start_code_prefix[] = { 0, 0, 1 };
-        size_t const prefix_size = 0;//sizeof(start_code_prefix);
+        size_t const prefix_size = sizeof(start_code_prefix);
 
         H265HeadersBitstream const* pBitstream = pSlice->GetBitStream();
         VM_ASSERT(pBitstream);
