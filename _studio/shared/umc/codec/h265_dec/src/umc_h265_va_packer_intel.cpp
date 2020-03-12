@@ -475,17 +475,22 @@ namespace UMC_HEVC_DECODER
         uint8_t const numComps = pSeqParamSet->chroma_format_idc ? 3 : 1;
         if (pPicParamSet->pps_palette_predictor_initializer_present_flag)
         {
-            VM_ASSERT(!pPicParamSet->m_paletteInitializers.empty());
-            VM_ASSERT(pPicParamSet->pps_num_palette_predictor_initializer == pPicParamSet->m_paletteInitializers.size());
+            VM_ASSERT(pPicParamSet->pps_num_palette_predictor_initializer * numComps == pPicParamSet->m_paletteInitializers.size());
 
-            FillPaletteEntries(pPicParam, numComps, &pPicParamSet->m_paletteInitializers[0], pPicParamSet->pps_num_palette_predictor_initializer);
+            if (!pPicParamSet->m_paletteInitializers.empty())
+            {
+                FillPaletteEntries(pPicParam, numComps, &pPicParamSet->m_paletteInitializers[0], pPicParamSet->pps_num_palette_predictor_initializer);
+
+            }
         }
         else if (pSeqParamSet->sps_palette_predictor_initializer_present_flag)
         {
-            VM_ASSERT(!pSeqParamSet->m_paletteInitializers.empty());
-            VM_ASSERT(pSeqParamSet->sps_num_palette_predictor_initializer == pSeqParamSet->m_paletteInitializers.size());
+            VM_ASSERT(pSeqParamSet->sps_num_palette_predictor_initializer * numComps == pSeqParamSet->m_paletteInitializers.size());
 
-            FillPaletteEntries(pPicParam, numComps, &pSeqParamSet->m_paletteInitializers[0], pSeqParamSet->sps_num_palette_predictor_initializer);
+            if (!pSeqParamSet->m_paletteInitializers.empty())
+            {
+                FillPaletteEntries(pPicParam, numComps, &pSeqParamSet->m_paletteInitializers[0], pSeqParamSet->sps_num_palette_predictor_initializer);
+            }
         }
     }
 #endif
