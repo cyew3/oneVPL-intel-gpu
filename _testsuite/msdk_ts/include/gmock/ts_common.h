@@ -234,7 +234,7 @@ template <typename T>
 void SetParam(tsExtBufType<T> *base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value)
 {
     assert(0 != base);
-    if(base)    return SetParam(*base, name, offset, size, value);
+    if(base)    SetParam(*base, name, offset, size, value);
 }
 template <typename T>
 void SetParam(tsExtBufType<T>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
