@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -490,7 +490,7 @@ start:
         vm_char sbuf[256], *pStr;
 
         pStr = vm_file_fgets(sbuf, 256, m_par_file);
-        m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %i"), &m_nextFrame, &m_nextType));
+        m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %u"), &m_nextFrame, &m_nextType));
 
 
         if (m_eof)
@@ -500,7 +500,7 @@ start:
             vm_file_fseek(m_par_file, 0, VM_FILE_SEEK_SET);
 
             pStr = vm_file_fgets(sbuf, 256, m_par_file);
-            m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %i"), &m_nextFrame, &m_nextType));
+            m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %u"), &m_nextFrame, &m_nextType));
         }
 
         m_nextFrame += m_nFrames;

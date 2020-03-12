@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2020 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_usage_models_cmdline.h"
@@ -47,7 +47,7 @@ void CommandLine::PrintUsage(const msdk_char* app)
         MSDK_STRING("[-n     frames]    - number of frames to trancode process\n\n")
 
         MSDK_STRING("[-iopattern mem]   - memory type of used surfaces: (sys|d3d) or\n")
-        MSDK_STRING("                   - (sys_to_sys|sys_to_d3d|d3d_to_sys|d3d_to_d3d) if VPP required\n\n\n")          
+        MSDK_STRING("                   - (sys_to_sys|sys_to_d3d|d3d_to_sys|d3d_to_d3d) if VPP required\n\n\n")
         );
         /*"     [-dec::mem]   - memory type of dec surfaces: (sys|d3d) \n"
           "     [-vpp::mem]   - memory type of vpp surfaces: (sys_to_sys|sys_to_d3d|d3d_to_sys|d3d_to_d3d)\n"
@@ -57,7 +57,7 @@ void CommandLine::PrintUsage(const msdk_char* app)
         MSDK_STRING("See detail in file \n")
         MSDK_STRING("{MSDK_ROOT}\\_testsuite\\test_usage_models\\UsageModelList.pdf \n")
         );
-    
+
 } // void CommandLine::PrintUsage(const msdk_char* app)
 
 CommandLine::CommandLine(int argc, const msdk_char *argv[])
@@ -94,23 +94,23 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
     {
         //VM_ASSERT(!"too few parameters");
         return;
-    }    
+    }
 
     for (int i = 1; i < argc; i++)
     {
         int readVal;
 
-        if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-sfmt")) )    
+        if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-sfmt")) )
         {
             if (++i < argc)
-            {                
+            {
                 m_srcVideoFormat = String2VideoFormat(argv[i]);
             }
-        } 
+        }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-dfmt")) )
         {
             if (++i < argc)
-            {                
+            {
                 m_dstVideoFormat = String2VideoFormat(argv[i]);
             }
         }
@@ -134,7 +134,7 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
         {
             if (++i < argc)
             {
-                msdk_sscanf(argv[i], MSDK_STRING("%i"), &m_bitRate);
+                msdk_sscanf(argv[i], MSDK_STRING("%u"), &m_bitRate);
             }
         }
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-f")) )
@@ -155,11 +155,11 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
         else if ( 0 == msdk_strcmp(argv[i], MSDK_STRING("-async")) )
         {
             if (++i < argc)
-            {           
+            {
                 msdk_sscanf(argv[i], MSDK_STRING("%i"), &readVal);
                 m_asyncDepth = (mfxU16)readVal;
                 // async depth correction
-                if (0 == m_asyncDepth) 
+                if (0 == m_asyncDepth)
                 {
                     m_asyncDepth = 1;
                 }
@@ -177,7 +177,7 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
         {
             if (++i < argc)
             {
-                msdk_sscanf(argv[i], MSDK_STRING("%i"), &m_framesCount);
+                msdk_sscanf(argv[i], MSDK_STRING("%u"), &m_framesCount);
             }
         }
 
@@ -186,7 +186,7 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
         {
             if (++i < argc)
             {
-                // save output file name                
+                // save output file name
                 m_pDstFileName = argv[i];
             }
         }
@@ -194,7 +194,7 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
         {
             if (++i < argc)
             {
-                // save output file name                
+                // save output file name
                 m_pSrcFileName = argv[i];
             }
         }
@@ -256,7 +256,7 @@ CommandLine::CommandLine(int argc, const msdk_char *argv[])
                 m_NumSlice = (mfxU16)readVal;
             }
         }
-    }    
+    }
 
     // validate parameters
     m_valid = true;
@@ -298,13 +298,13 @@ void CommandLine::GetParam( AppParam& param )
 {
     if( m_valid )
     {
-        param.srcVideoFormat = m_srcVideoFormat;    
-        param.dstVideoFormat = m_dstVideoFormat;    
-        param.width          = m_width; 
+        param.srcVideoFormat = m_srcVideoFormat;
+        param.dstVideoFormat = m_dstVideoFormat;
+        param.width          = m_width;
         param.height         = m_height;
         param.bitRate        = m_bitRate;
         param.frameRate      = m_frameRate;
-        param.targetUsage    = m_targetUsage;    
+        param.targetUsage    = m_targetUsage;
         param.asyncDepth     = m_asyncDepth;
         param.usageModel     = m_usageModel;
         param.framesCount    = m_framesCount;
@@ -320,7 +320,7 @@ void CommandLine::GetParam( AppParam& param )
 
 void CommandLine::PrintInfo( void )
 {
-    if ( !m_valid ) 
+    if ( !m_valid )
     {
         return;
     }
@@ -340,9 +340,9 @@ void CommandLine::PrintInfo( void )
     msdk_printf(MSDK_STRING("Target Usage\t%s\n"),    TargetUsageToStr(m_targetUsage) );
     msdk_printf(MSDK_STRING("Async Depth\t%d\n"),     m_asyncDepth);
     msdk_printf(MSDK_STRING("MFX Usage Model\t%d\n"), m_usageModel);
-    
+
     //if( m_usageModel < USAGE_MODEL_6  )
-    //{        
+    //{
     //    msdk_printf(MSDK_STRING("MFX implement:\t%s\n"), ImpLibrary2String( m_impLib[MSDK_STRING("general")] ));
     //}
     //else
@@ -359,7 +359,7 @@ void CommandLine::PrintInfo( void )
     msdk_printf(MSDK_STRING("IOPattern\t%s\n"), IOPattern2String(m_IOPattern) );
 
     PrintDllInfo();
-  
+
 } // void CommandLine::PrintInfo( void )
 
 
@@ -367,18 +367,18 @@ mfxU32 String2VideoFormat( const msdk_char* arg )
 {
     mfxU32 format = MFX_FOURCC_NV12;//default
 
-    if ( 0 == msdk_strcmp(arg, MSDK_STRING("h264")) ) 
+    if ( 0 == msdk_strcmp(arg, MSDK_STRING("h264")) )
     {
         format = MFX_CODEC_AVC;
-    } 
-    else if ( 0 == msdk_strcmp(arg, MSDK_STRING("mpeg2")) ) 
+    }
+    else if ( 0 == msdk_strcmp(arg, MSDK_STRING("mpeg2")) )
     {
         format = MFX_CODEC_MPEG2;
-    } 
-    else if ( 0 == msdk_strcmp(arg, MSDK_STRING("vc1")) ) 
+    }
+    else if ( 0 == msdk_strcmp(arg, MSDK_STRING("vc1")) )
     {
         format = MFX_CODEC_VC1;
-    }    
+    }
 
     return format;
 
@@ -402,7 +402,7 @@ const msdk_char* VideoFormat2String( mfxU32 FourCC )
   case MFX_CODEC_VC1:
     strFourCC = MSDK_STRING("vc1");
     break;
-   
+
   default:
       strFourCC = MSDK_STRING("NV12");
       break;
@@ -487,22 +487,22 @@ mfxU16 String2IOPattern( const msdk_char* strInput )
 {
     mfxU16 IOPattern = 0;
 
-    if ( 0 == msdk_strcmp(strInput, MSDK_STRING("d3d_to_d3d")) ) 
+    if ( 0 == msdk_strcmp(strInput, MSDK_STRING("d3d_to_d3d")) )
     {
         IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
-    } 
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("d3d_to_sys")) ) 
+    }
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("d3d_to_sys")) )
     {
         IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-    } 
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("sys_to_d3d")) ) 
+    }
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("sys_to_d3d")) )
     {
         IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
-    } 
+    }
     else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("sys_to_sys")) )
     {
         IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-    } 
+    }
     else if( 0 == msdk_strcmp(strInput, MSDK_STRING("d3d")) )
     {
         IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
@@ -536,7 +536,7 @@ const msdk_char* IOPattern2String(mfxU16 IOPattern)
         case (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY):
         {
             return MSDK_STRING("system");
-        }           
+        }
         default:
         {
             return MSDK_STRING("unknown");
@@ -546,7 +546,7 @@ const msdk_char* IOPattern2String(mfxU16 IOPattern)
 
 
 // rules:
-// (1) function replaces IN<->OUT. 
+// (1) function replaces IN<->OUT.
 // (2) Type of memory (sys/d3d) isn't modified.
 // (3) mixed Pattern (ex IN_SYSTEM_MEMORY|OUT_VIDEO_MEMORY) not supported
 mfxU16 InvertIOPattern( mfxU16 inPattern )

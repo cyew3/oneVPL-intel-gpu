@@ -343,7 +343,7 @@ void MFXVideoTest::SetUp()
             g_tsImpl |= MFX_IMPL_VIA_D3D11;
         }
     }
-    sscanf(trace.c_str(), "%d", &g_tsTrace);
+    sscanf(trace.c_str(), "%u", &g_tsTrace);
 
     g_tsPlugin.Init(plugins, platform);
 
