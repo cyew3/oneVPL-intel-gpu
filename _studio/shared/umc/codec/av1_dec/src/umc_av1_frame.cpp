@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -204,6 +204,10 @@ namespace UMC_AV1_DECODER
     UMC::FrameMemID AV1DecoderFrame::GetMemID(int idx) const
     {
         VM_ASSERT(data[idx]);
+        if (!data[idx].get())
+        {
+            return -1;
+        }
         return data[idx]->GetFrameMID();
     }
 
