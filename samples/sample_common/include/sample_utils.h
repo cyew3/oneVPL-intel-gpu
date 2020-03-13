@@ -347,6 +347,7 @@ class CIVFFrameReader : public CSmplBitstreamReader
 {
 public:
     CIVFFrameReader();
+    virtual void      Reset();
     virtual mfxStatus Init(const msdk_char *strFileName);
     virtual mfxStatus ReadNextFrame(mfxBitstream *pBS);
 
@@ -376,6 +377,7 @@ protected:
         mfxU32 num_frames;
         mfxU32 unused;
     }m_hdr;
+    mfxStatus ReadHeader();
 };
 
 // writes bitstream to duplicate-file & supports joining
