@@ -384,9 +384,15 @@ namespace UMC_AV1_DECODER
 
     void PackerVA::PackTileControlParams(VASliceParameterBufferAV1& tileControlParam, TileLocation const& loc)
     {
+#if VA_CHECK_VERSION(1,7,0)
+        tileControlParam.slice_data_offset = (uint32_t)loc.offset;
+        tileControlParam.slice_data_size = (uint32_t)loc.size;
+        tileControlParam.slice_data_flag = 0;
+#else
         tileControlParam.Slice_data_offset = (uint32_t)loc.offset;
         tileControlParam.Slice_data_size = (uint32_t)loc.size;
         tileControlParam.Slice_data_flag = 0;
+#endif
         tileControlParam.tile_row = (uint16_t)loc.row;
         tileControlParam.tile_column = (uint16_t)loc.col;
         tileControlParam.tg_start = (uint16_t)loc.startIdx;
