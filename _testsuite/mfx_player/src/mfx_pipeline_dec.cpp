@@ -1061,7 +1061,10 @@ mfxStatus MFXDecPipeline::LightReset()
     //double reset will goes to long almost infinite run
     MFX_CHECK_STS(ReleaseMFXPart());
     //fourcc could change after reset
-    m_inParams.outFrameInfo.FourCC = MFX_FOURCC_UNKNOWN;
+    if (!m_inParams.isForceDecodeDump)
+    {
+        m_inParams.outFrameInfo.FourCC = MFX_FOURCC_UNKNOWN;
+    }
     MFX_CHECK_STS(BuildMFXPart());
 
     return MFX_ERR_NONE;
@@ -2165,6 +2168,21 @@ mfxStatus MFXDecPipeline::CreateRender()
     if(NULL != m_pRender)
     {
         // Update output fourcc in case it was changed after light reset
+
+        // For HEVC/VP9 decode bit-depth change case, writer render surface is always created as high bit-depth,
+        // in order to align with reference decoder output yuv format
+        if(m_inParams.isForceDecodeDump)
+        {
+            if (m_inParams.outFrameInfo.FourCC == MFX_FOURCC_YUV420_16 || m_inParams.outFrameInfo.FourCC == MFX_FOURCC_YUV422_16 || m_inParams.outFrameInfo.FourCC == MFX_FOURCC_YUV444_16)
+            {
+                PrintInfo(VM_STRING("Info: dump YUV file with format '-ForceDecodeDump -o:xxx' for bit-depth change decode case "), VM_STRING("%s")
+                        , GetMFXFourccString(m_inParams.outFrameInfo.FourCC).c_str());
+            }
+            else
+            {
+                MFX_TRACE_AND_EXIT(MFX_ERR_UNSUPPORTED, (VM_STRING("ERROR: Dump file format is not supported when set '-ForceDecodeDump'\n")));
+            }
+        }
         m_pRender->SetOutputFourcc(m_inParams.outFrameInfo.FourCC);
         return MFX_ERR_NONE;
     }
@@ -2176,6 +2194,7 @@ mfxStatus MFXDecPipeline::CreateRender()
     renderParams.useHMstyle = m_inParams.isHMTest;
     renderParams.VpxDec16bFormat = m_inParams.VpxDec16bFormat;
     renderParams.alwaysWriteChroma = m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_HEVC ? false : true;
+    renderParams.useForceDecodeDumpFmt = m_inParams.isForceDecodeDump;
 
     switch (m_RenderType)
     {
@@ -5414,6 +5433,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
           else if (m_OptProc.Check(argv[0], VM_STRING("-VpxDec16bFormat"), VM_STRING("Use 10bit (packed to 16bit) format used in vpxdec with option --output-bit-depth=16. Samples are shifted (located in MSBs); 6 LSBs equal to 31 (01 1111). Option works only when output format is YUV420_16, i.e. input is 10b and output FOURCC is not specified (-o out.yuv) ")))
           {
                 m_inParams.VpxDec16bFormat = true;
+          }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-ForceDecodeDump"), VM_STRING("Force to set mfx_player decode dump file format setting by '-o:xxx', only used for HEVC/VP9 decode: i010/i210/i410/i012/i212/i412")))
+          {
+                m_inParams.isForceDecodeDump = true;
           }
           else if (m_OptProc.Check(argv[0], VM_STRING("-i:picstruct"), VM_STRING("Set picstruct for decoded frames"), OPT_INT_32))
           {

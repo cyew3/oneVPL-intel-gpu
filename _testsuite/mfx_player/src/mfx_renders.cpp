@@ -1773,6 +1773,7 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
     
     mfxU32 pitchIn = pSurfaceIn->Data.PitchLow + ((mfxU32)pSurfaceIn->Data.PitchHigh << 16);
     mfxU32 pitchOut = pSurfaceOut->Data.PitchLow + ((mfxU32)pSurfaceOut->Data.PitchHigh << 16);
+    bool useSameBitDepthForComponent = params->useSameBitDepthForComponents || params->useForceDecodeDumpFmt;
 
     if (pSurfaceIn->Info.FourCC == MFX_FOURCC_P010)
     {
@@ -1924,10 +1925,16 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         finalBitDepth = 12;
     }
 
+    //set dumpFileFmt
+    if(params->useForceDecodeDumpFmt)
+    {
+        finalBitDepth = params->info.BitDepthLuma;
+    }
+
     mfxU32 const finalBitDepthLuma =
-        params->useSameBitDepthForComponents ? finalBitDepth : originalBDLuma;
+        useSameBitDepthForComponent ? finalBitDepth : originalBDLuma;
     mfxU32 const finalBitDepthChroma =
-        params->useSameBitDepthForComponents ? finalBitDepth : originalBDChroma;
+        useSameBitDepthForComponent ? finalBitDepth : originalBDChroma;
 
     mfxI32 const l_shift = params->VpxDec16bFormat ? 0 : (pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDLuma   - finalBitDepthLuma);
     mfxI32 const c_shift = params->VpxDec16bFormat ? 0 : (pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDChroma - finalBitDepthChroma);
@@ -1986,6 +1993,38 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
                 }
             }
         }
+        else if(pSurfaceIn->Info.FourCC == MFX_FOURCC_YUY2)
+        {
+            #pragma pack(push, 1)
+                struct YUY2Pixel
+                {
+                    mfxU8 y0, u, y1, v;
+                };
+            #pragma pack(pop)
+
+            mfxU16* pDstY = pSurfaceOut->Data.Y16;
+            mfxU16* pDstU = pSurfaceOut->Data.U16;
+            mfxU16* pDstV = pSurfaceOut->Data.V16;
+
+            pitchOut /= sizeof(mfxU16);
+
+            for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
+            {
+                YUY2Pixel const* pSrc
+                    = reinterpret_cast<YUY2Pixel const*>(pSurfaceIn->Data.Y + pitchIn * i);
+
+                for (size_t j = 0; j < pSurfaceIn->Info.Width; j += 2)
+                {
+                    pDstY[i * pitchOut + j + 0] = pSrc->y0 << (finalBitDepth - 8);
+                    pDstY[i * pitchOut + j + 1] = pSrc->y1 << (finalBitDepth - 8);
+
+                    pDstU[i * pitchOut / 2 + j / 2] = pSrc->u << (finalBitDepth - 8);
+                    pDstV[i * pitchOut / 2 + j / 2] = pSrc->v << (finalBitDepth - 8);
+
+                    ++pSrc;
+                }
+            }
+        }
         else
 #endif // #if (MFX_VERSION >= 1027)
         {
@@ -2014,9 +2053,30 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
             {
                 for (size_t j = 0; j < pSurfaceIn->Info.Width; j++)
                 {
-                    pDstY[i*pitchOut + j] = pSrc[i*pitchIn + j].Y;
-                    pDstU[i*pitchOut + j] = pSrc[i*pitchIn + j].U;
-                    pDstV[i*pitchOut + j] = pSrc[i*pitchIn + j].V;
+                    pDstY[i*pitchOut + j] = pSrc[i*pitchIn + j].Y << (finalBitDepth - 10);
+                    pDstU[i*pitchOut + j] = pSrc[i*pitchIn + j].U << (finalBitDepth - 10);
+                    pDstV[i*pitchOut + j] = pSrc[i*pitchIn + j].V << (finalBitDepth - 10);
+                }
+            }
+        }else if(pSurfaceIn->Info.FourCC == MFX_FOURCC_AYUV)
+        {
+            mfxI32 l_shift_AYUV = finalBitDepth - 8;
+            mfxI32 c_shift_AYUV = finalBitDepth - 8;
+
+            //full unpack AYUV to YUV444_10b not using alpha
+            mfxU16* pDstY = pSurfaceOut->Data.Y16;
+            mfxU16* pDstU = pSurfaceOut->Data.U16;
+            mfxU16* pDstV = pSurfaceOut->Data.V16;
+
+            pitchOut /= sizeof(mfxU16);
+
+            for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
+            {
+                for (size_t j = 0; j < pSurfaceIn->Info.Width; j++)
+                {
+                    pDstY[i*pitchOut + j] = pSurfaceIn->Data.Y[i * pitchIn + 4 * j] << l_shift_AYUV;
+                    pDstU[i*pitchOut + j] = pSurfaceIn->Data.U[i * pitchIn + 4 * j] << l_shift_AYUV;
+                    pDstV[i*pitchOut + j] = pSurfaceIn->Data.V[i * pitchIn + 4 * j] << l_shift_AYUV;
                 }
             }
         }

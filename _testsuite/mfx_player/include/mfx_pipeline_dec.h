@@ -237,6 +237,7 @@ struct sCommandlineParams
   bool isHMTest;
   bool VpxDec16bFormat;
   bool isPreferNV12;
+  bool isForceDecodeDump;
 
   bool           useEncOrderParFile;
   vm_char        encOrderParFile[MAX_FILE_PATH];
@@ -304,6 +305,7 @@ struct sCommandlineParams
       isHMTest = true;
       VpxDec16bFormat = false;
       isPreferNV12 = false;
+      isForceDecodeDump = false;
 
       useEncOrderParFile = false;
 

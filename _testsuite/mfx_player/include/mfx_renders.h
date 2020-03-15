@@ -45,6 +45,7 @@ struct FileWriterRenderInputParams
         use10bitOutput = false;
         useHMstyle = false;
         VpxDec16bFormat = false;
+        useForceDecodeDumpFmt = false;
     }
 
     mfxFrameInfo info;
@@ -52,6 +53,7 @@ struct FileWriterRenderInputParams
     bool use10bitOutput;
     bool useHMstyle;
     bool VpxDec16bFormat;
+    bool useForceDecodeDumpFmt;
     bool alwaysWriteChroma;
 };
 

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -935,8 +935,8 @@ mfxF64 ConvertMFXTime2mfxF64(mfxU64 nTime)
 
 mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &info)
 {
-    //                                       1       2     3       4      5     6       7  8     9    10   11      12  13     14   15   16   17   18   19   20   21   22   23   24
-    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|y210|y216|i444|yv16|p016|y416|bgr32";
+    //                                       1       2     3       4      5     6       7  8     9    10   11      12  13     14   15   16   17   18   19   20   21   22   23   24   25   26   27   28   29   30
+    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|y210|y216|i444|yv16|p016|y416|bgr32|i010|i210|i410|i012|i212|i412";
 
     //if external pattern changed parsing need to be updated
     int const check = std::string(MFX_FOURCC_PATTERN()).compare(valid_pattern);
@@ -1101,6 +1101,60 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
         {
             info.FourCC = MFX_FOURCC_BGR4;
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            break;
+        }
+        case 25://i010
+        {
+            info.FourCC = MFX_FOURCC_YUV420_16;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            info.BitDepthLuma = 10;
+            info.BitDepthChroma = 10;
+            info.Shift=0;
+            break;
+        }
+        case 26://i210
+        {
+            info.FourCC = MFX_FOURCC_YUV422_16;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            info.BitDepthLuma = 10;
+            info.BitDepthChroma = 10;
+            info.Shift=0;
+            break;
+        }
+        case 27://i410
+        {
+            info.FourCC = MFX_FOURCC_YUV444_16;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            info.BitDepthLuma = 10;
+            info.BitDepthChroma = 10;
+            info.Shift=0;
+            break;
+        }
+        case 28://i012
+        {
+            info.FourCC = MFX_FOURCC_YUV420_16;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            info.BitDepthLuma = 12;
+            info.BitDepthChroma = 12;
+            info.Shift=0;
+            break;
+        }
+        case 29://i212
+        {
+            info.FourCC = MFX_FOURCC_YUV422_16;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            info.BitDepthLuma = 12;
+            info.BitDepthChroma = 12;
+            info.Shift=0;
+            break;
+        }
+        case 30://i412
+        {
+            info.FourCC = MFX_FOURCC_YUV444_16;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            info.BitDepthLuma = 12;
+            info.BitDepthChroma = 12;
+            info.Shift=0;
             break;
         }
         default:
