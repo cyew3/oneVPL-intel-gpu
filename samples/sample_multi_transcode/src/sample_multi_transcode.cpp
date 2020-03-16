@@ -313,12 +313,11 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         sts = pAllocator->Init(m_pAllocParam.get());
         MSDK_CHECK_STATUS(sts, "pAllocator->Init failed");
 
-        m_pAllocArray.push_back(pAllocator.get());
-        pAllocator.release();
+        m_pAllocArray.push_back(std::move(pAllocator));
 
         std::unique_ptr<ThreadTranscodeContext> pThreadPipeline(new ThreadTranscodeContext);
         // extend BS processing init
-        m_pExtBSProcArray.push_back(new FileBitstreamProcessor);
+        m_pExtBSProcArray.push_back(std::unique_ptr<FileBitstreamProcessor> (new FileBitstreamProcessor));
 
         pThreadPipeline->pPipeline.reset(CreatePipeline());
 
@@ -327,7 +326,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         pThreadPipeline->pPipeline->SetPrefferdGfx(m_InputParamsArray[i].bPrefferdGfx);
 #endif
 
-        pThreadPipeline->pBSProcessor = m_pExtBSProcArray.back();
+        pThreadPipeline->pBSProcessor = m_pExtBSProcArray.back().get();
 
         std::unique_ptr<CSmplBitstreamReader> reader;
         std::unique_ptr<CSmplYUVReader> yuvreader;
@@ -376,12 +375,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             {
                 // Taking buffers from tail because they are stored in m_pBufferArray in reverse order
                 // So, by doing this we'll fill buffers properly according to order from par file
-                pBuffer = m_pBufferArray[m_pBufferArray.size()-1-BufCounter];
+                pBuffer = m_pBufferArray[m_pBufferArray.size()-1-BufCounter].get();
                 BufCounter++;
             }
             else /* 1_to_N mode*/
             {
-                pBuffer = m_pBufferArray[m_pBufferArray.size() - 1];
+                pBuffer = m_pBufferArray[m_pBufferArray.size() - 1].get();
             }
             pSinkPipeline = pThreadPipeline->pPipeline.get();
         }
@@ -391,11 +390,11 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             if ((VppComp == m_InputParamsArray[i].eModeExt) ||
                 (VppCompOnly == m_InputParamsArray[i].eModeExt))
             {
-                pBuffer = m_pBufferArray[m_pBufferArray.size() - 1];
+                pBuffer = m_pBufferArray[m_pBufferArray.size() - 1].get();
             }
             else /* 1_to_N mode*/
             {
-                pBuffer = m_pBufferArray[BufCounter];
+                pBuffer = m_pBufferArray[BufCounter].get();
                 BufCounter++;
             }
         }
@@ -420,11 +419,11 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             ForceImplForSession(i);
 #endif
             sts = pThreadPipeline->pPipeline->Init(&m_InputParamsArray[i],
-                                                   m_pAllocArray[i],
+                                                   m_pAllocArray[i].get(),
                                                    hdl,
                                                    pSinkPipeline,
                                                    pBuffer,
-                                                   m_pExtBSProcArray.back());
+                                                   m_pExtBSProcArray.back().get());
         }
         else
         {
@@ -435,11 +434,11 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             ForceImplForSession(i);
 #endif
             sts =  pThreadPipeline->pPipeline->Init(&m_InputParamsArray[i],
-                                                    m_pAllocArray[i],
+                                                    m_pAllocArray[i].get(),
                                                     hdl,
                                                     pParentPipeline,
                                                     pBuffer,
-                                                    m_pExtBSProcArray.back());
+                                                    m_pExtBSProcArray.back().get());
         }
 
         MSDK_CHECK_STATUS(sts, "pThreadPipeline->pPipeline->Init failed");
@@ -451,7 +450,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         pThreadPipeline->startStatus = MFX_WRN_DEVICE_BUSY;
         // set other session's parameters
         pThreadPipeline->implType = m_InputParamsArray[i].libType;
-        m_pThreadContextArray.push_back(pThreadPipeline.release());
+        m_pThreadContextArray.push_back(std::move(pThreadPipeline));
 
         mfxVersion ver = {{0, 0}};
         sts = m_pThreadContextArray[i]->pPipeline->QueryMFXVersion(&ver);
@@ -510,10 +509,10 @@ void Launcher::DoTranscoding()
     };
 
     bool isOverlayUsed = false;
-    for (auto context : m_pThreadContextArray)
+    for (const auto& context : m_pThreadContextArray)
     {
         MSDK_CHECK_POINTER_NO_RET(context);
-        RunTranscodeRoutine(context);
+        RunTranscodeRoutine(context.get());
 
         MSDK_CHECK_POINTER_NO_RET(context->pPipeline);
         isOverlayUsed = isOverlayUsed || context->pPipeline->IsOverlayUsed();
@@ -557,7 +556,7 @@ void Launcher::DoTranscoding()
                            << std::endl << std::endl;
                         msdk_printf(MSDK_STRING("%s"), ss.str().c_str());
 
-                        for (auto context : m_pThreadContextArray)
+                        for (const auto& context : m_pThreadContextArray)
                         {
                             context->pPipeline->StopSession();
                         }
@@ -586,7 +585,7 @@ void Launcher::DoTranscoding()
         if (!aliveNonOverlaySessions && isOverlayUsed)
         {
             // Sending stop message
-            for (auto context : m_pThreadContextArray)
+            for (const auto& context : m_pThreadContextArray)
             {
                 if (context->pPipeline->IsOverlayUsed())
                 {
@@ -595,7 +594,7 @@ void Launcher::DoTranscoding()
             }
 
             // Waiting for them to be stopped
-            for (auto context : m_pThreadContextArray)
+            for (const auto& context : m_pThreadContextArray)
             {
                 if (!context->handle.valid())
                     continue;
@@ -1086,7 +1085,6 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
 mfxStatus Launcher::CreateSafetyBuffers()
 {
     SafetySurfaceBuffer* pBuffer     = NULL;
-    SafetySurfaceBuffer* pPrevBuffer = NULL;
 
     for (mfxU32 i = 0; i < m_InputParamsArray.size(); i++)
     {
@@ -1094,9 +1092,8 @@ mfxStatus Launcher::CreateSafetyBuffers()
         if ((Source == m_InputParamsArray[i].eMode) &&
             (Native == m_InputParamsArray[0].eModeExt))
         {
-            pBuffer = new SafetySurfaceBuffer(pPrevBuffer);
-            pPrevBuffer = pBuffer;
-            m_pBufferArray.push_back(pBuffer);
+            pBuffer = new SafetySurfaceBuffer(pBuffer);
+            m_pBufferArray.push_back(std::unique_ptr<SafetySurfaceBuffer> (pBuffer));
         }
 
         /* And N_to_1 case: composition should be enabled!
@@ -1105,9 +1102,8 @@ mfxStatus Launcher::CreateSafetyBuffers()
              ( (VppComp     == m_InputParamsArray[0].eModeExt) ||
                (VppCompOnly == m_InputParamsArray[0].eModeExt) ) )
         {
-            pBuffer = new SafetySurfaceBuffer(pPrevBuffer);
-            pPrevBuffer = pBuffer;
-            m_pBufferArray.push_back(pBuffer);
+            pBuffer = new SafetySurfaceBuffer(pBuffer);
+            m_pBufferArray.push_back(std::unique_ptr<SafetySurfaceBuffer> (pBuffer));
         }
     }
     return MFX_ERR_NONE;
@@ -1116,33 +1112,10 @@ mfxStatus Launcher::CreateSafetyBuffers()
 
 void Launcher::Close()
 {
-    while(m_pThreadContextArray.size())
-    {
-        delete m_pThreadContextArray[m_pThreadContextArray.size()-1];
-        m_pThreadContextArray[m_pThreadContextArray.size() - 1] = nullptr;
-        m_pThreadContextArray.pop_back();
-    }
-
-    while(m_pAllocArray.size())
-    {
-        delete m_pAllocArray[m_pAllocArray.size()-1];
-        m_pAllocArray[m_pAllocArray.size() - 1] = nullptr;
-        m_pAllocArray.pop_back();
-    }
-
-    while(m_pBufferArray.size())
-    {
-        delete m_pBufferArray[m_pBufferArray.size()-1];
-        m_pBufferArray[m_pBufferArray.size() - 1] = nullptr;
-        m_pBufferArray.pop_back();
-    }
-
-    while(m_pExtBSProcArray.size())
-    {
-        delete m_pExtBSProcArray[m_pExtBSProcArray.size() - 1];
-        m_pExtBSProcArray[m_pExtBSProcArray.size() - 1] = nullptr;
-        m_pExtBSProcArray.pop_back();
-    }
+    m_pThreadContextArray.clear();
+    m_pAllocArray.clear();
+    m_pBufferArray.clear();
+    m_pExtBSProcArray.clear();
 } // void Launcher::Close()
 
 #if defined(_WIN32) || defined(_WIN64)
