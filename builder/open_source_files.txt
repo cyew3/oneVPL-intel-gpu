@@ -155,6 +155,8 @@ _studio/mfx_lib/encode_hw/hevc/agnostic/g12/hevcehw_g12_data.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/g12/hevcehw_g12_rext.cpp
 _studio/mfx_lib/encode_hw/hevc/agnostic/g12/hevcehw_g12_rext.h
 _studio/mfx_lib/encode_hw/hevc/agnostic/g12/hevcehw_g12_sao.h
+_studio/mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_dirty_rect_lin.cpp
+_studio/mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_dirty_rect_lin.h
 _studio/mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_encoded_frame_info_lin.h
 _studio/mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_fei_lin.cpp
 _studio/mfx_lib/encode_hw/hevc/linux/g9/hevcehw_g9_fei_lin.h
