@@ -1131,6 +1131,8 @@ namespace vp9e_temporal_scalability
             {
                 m_LayerToCheck = 1;
             }
+
+            delete []section_template;
         }
 
         return MFX_ERR_NONE;

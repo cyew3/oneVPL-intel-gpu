@@ -1145,10 +1145,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
             mfxStatus encode_status = EncodeFrameAsync();
 
-            mfxU8 *ptr = new mfxU8[m_SourceWidth*m_SourceHeight];
+            std::vector <mfxU8> buf(m_SourceWidth*m_SourceHeight);
             for (mfxU32 i = 0; i < m_SourceHeight; i++)
             {
-                memcpy(ptr + i*m_SourceWidth, m_pSurf->Data.Y + i*m_pSurf->Data.Pitch, m_SourceWidth);
+                memcpy(buf.data() + i*m_SourceWidth, m_pSurf->Data.Y + i*m_pSurf->Data.Pitch, m_SourceWidth);
             }
 
             submitted++;

@@ -110,6 +110,7 @@ FEI_EncodeInterface::~FEI_EncodeInterface()
         }
     }
     MSDK_SAFE_DELETE_ARRAY(pSlices);
+    MSDK_SAFE_DELETE_ARRAY(m_pSliceHeader);
     m_InitExtParams.clear();
 
     WipeMfxBitstream(&m_mfxBS);
@@ -298,26 +299,26 @@ mfxStatus FEI_EncodeInterface::FillParameters()
     {
         mfxU16 numFields = (m_videoParams.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
 
-        mfxExtFeiSliceHeader* pSliceHeader = new mfxExtFeiSliceHeader[numFields];
-        MSDK_ZERO_ARRAY(pSliceHeader, numFields);
+        m_pSliceHeader = new mfxExtFeiSliceHeader[numFields];
+        MSDK_ZERO_ARRAY(m_pSliceHeader, numFields);
 
         for (mfxU16 fieldId = 0; fieldId < numFields; ++fieldId)
         {
-            pSliceHeader[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_SLICE;
-            pSliceHeader[fieldId].Header.BufferSz = sizeof(mfxExtFeiSliceHeader);
+            m_pSliceHeader[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_SLICE;
+            m_pSliceHeader[fieldId].Header.BufferSz = sizeof(mfxExtFeiSliceHeader);
 
-            pSliceHeader[fieldId].NumSlice = m_videoParams.mfx.NumSlice;
+            m_pSliceHeader[fieldId].NumSlice = m_videoParams.mfx.NumSlice;
 
-            pSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice[pSliceHeader[fieldId].NumSlice];
-            MSDK_ZERO_ARRAY(pSliceHeader[fieldId].Slice, pSliceHeader[fieldId].NumSlice);
+            m_pSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice[m_pSliceHeader[fieldId].NumSlice];
+            MSDK_ZERO_ARRAY(m_pSliceHeader[fieldId].Slice, m_pSliceHeader[fieldId].NumSlice);
 
-            for (mfxU16 sliceNum = 0; sliceNum < pSliceHeader[fieldId].NumSlice; ++sliceNum)
+            for (mfxU16 sliceNum = 0; sliceNum < m_pSliceHeader[fieldId].NumSlice; ++sliceNum)
             {
-                pSliceHeader[fieldId].Slice[sliceNum].DisableDeblockingFilterIdc = m_pAppConfig->DisableDeblockingIdc;
-                pSliceHeader[fieldId].Slice[sliceNum].SliceAlphaC0OffsetDiv2     = m_pAppConfig->SliceAlphaC0OffsetDiv2;
-                pSliceHeader[fieldId].Slice[sliceNum].SliceBetaOffsetDiv2        = m_pAppConfig->SliceBetaOffsetDiv2;
+                m_pSliceHeader[fieldId].Slice[sliceNum].DisableDeblockingFilterIdc = m_pAppConfig->DisableDeblockingIdc;
+                m_pSliceHeader[fieldId].Slice[sliceNum].SliceAlphaC0OffsetDiv2     = m_pAppConfig->SliceAlphaC0OffsetDiv2;
+                m_pSliceHeader[fieldId].Slice[sliceNum].SliceBetaOffsetDiv2        = m_pAppConfig->SliceBetaOffsetDiv2;
             }
-            m_InitExtParams.push_back(reinterpret_cast<mfxExtBuffer *>(&pSliceHeader[fieldId]));
+            m_InitExtParams.push_back(reinterpret_cast<mfxExtBuffer *>(&m_pSliceHeader[fieldId]));
         }
     }
 #if (MFX_VERSION >= 1025)
