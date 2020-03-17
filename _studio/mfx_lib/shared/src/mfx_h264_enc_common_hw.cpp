@@ -6351,12 +6351,12 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.NumRefFrame = nrfMinForTemporal;
         else if (extOpt2->BRefType != MFX_B_REF_OFF)
             par.mfx.NumRefFrame = nrfMinForPyramid;
-        else if (extOpt3->PRefType == MFX_P_REF_PYRAMID)
-            par.mfx.NumRefFrame = std::max<mfxU16>((mfxU16)par.calcParam.PPyrInterval, extDdi->NumActiveRefP);
         else if (extOpt2->IntRefType)
             par.mfx.NumRefFrame = 1;
         else if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0)
             par.mfx.NumRefFrame = std::min({std::max(nrfDefault, nrfMinForInterlace), nrfMaxByLevel, nrfMaxByCaps});
+        else if (extOpt3->PRefType == MFX_P_REF_PYRAMID)
+            par.mfx.NumRefFrame = std::max<mfxU16>((mfxU16)par.calcParam.PPyrInterval, extDdi->NumActiveRefP);
         else
             par.mfx.NumRefFrame = std::min({nrfDefault, nrfMaxByLevel, nrfMaxByCaps});
 
