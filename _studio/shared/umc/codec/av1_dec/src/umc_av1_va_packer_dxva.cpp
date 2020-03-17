@@ -252,33 +252,21 @@ namespace UMC_AV1_DECODER
             }
         }
 
-        if (KEY_FRAME == info.frame_type)
-        {
-            for (int i = 0; i < NUM_REF_FRAMES; i++)
+        for (uint8_t ref = 0; ref < NUM_REF_FRAMES; ++ref)
 #if AV1D_DDI_VERSION >= 31
-                picParam.ref_frame_map[i].bPicEntry = UCHAR_MAX;
+            picParam.ref_frame_map[ref].bPicEntry = (UCHAR)frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
 #else
-                picParam.ref_frame_map[i].wPicEntry = USHRT_MAX;
-#endif
-        }
-        else
-        {
-            for (uint8_t ref = 0; ref < NUM_REF_FRAMES; ++ref)
-#if AV1D_DDI_VERSION >= 31
-                picParam.ref_frame_map[ref].bPicEntry = (UCHAR)frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
-#else
-                picParam.ref_frame_map[ref].wPicEntry = (USHORT)frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
+            picParam.ref_frame_map[ref].wPicEntry = (USHORT)frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
 #endif
 
-            for (uint8_t ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
-            {
-                uint8_t idxInDPB = (uint8_t)info.ref_frame_idx[ref_idx];
+        for (uint8_t ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
+        {
+            uint8_t idxInDPB = (uint8_t)info.ref_frame_idx[ref_idx];
 
-                picParam.ref_frame_idx[ref_idx] = idxInDPB;
+            picParam.ref_frame_idx[ref_idx] = idxInDPB;
 #if AV1D_DDI_VERSION < 26
-                picParam.ref_order_hint[ref_idx] = (UCHAR)frame.frame_dpb[idxInDPB]->GetFrameHeader().order_hint;
+            picParam.ref_order_hint[ref_idx] = (UCHAR)frame.frame_dpb[idxInDPB]->GetFrameHeader().order_hint;
 #endif
-            }
         }
 
 #if AV1D_DDI_VERSION >= 31
