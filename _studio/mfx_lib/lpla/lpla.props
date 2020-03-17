@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-<!-- h264_encode_hw.vcxproj specific settings -->
-  <PropertyGroup Label="h264_encode_hw settings">
-    <MfxUsingSettings>h264_encode_hw;$(MfxUsedSettings)</MfxUsingSettings>
+<!-- lpla.vcxproj specific settings -->
+  <PropertyGroup Label="lpla settings">
+    <MfxUsingSettings>lpla;$(MfxUsedSettings)</MfxUsingSettings>
     <MfxIncludes>
     $(MfxIppIncludeDir);
     $(MSDK_API_ROOT)\include;
-    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+	$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;
@@ -16,21 +16,11 @@
     $(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;
     $(MSDK_STUDIO_ROOT)\shared\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
-    $(MSDK_STUDIO_ROOT)\shared\asc\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h264\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h265\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\mjpeg\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\mpeg2\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\svc\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\pak\mpeg2\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\enc_hw\mpeg2\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\genx\h264_encode\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\lpla
+	$(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h265\include;
     </MfxIncludes>
     <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>
   </PropertyGroup>
-<!-- End of h264_encode_hw.vcxproj specific settings -->
+<!-- End of lpla.vcxproj specific settings -->
 </Project>
