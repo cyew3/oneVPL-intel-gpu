@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,11 +37,11 @@ void Windows::Gen9::WeightPred::SubmitTask(const FeatureBlocks& /*blocks*/, TPus
         auto  vaType  = Glob::VideoCore::Get(global).GetVAType();
         auto& ddiPPS  = Deref(GetDDICB<ENCODE_SET_PICTURE_PARAMETERS_HEVC>(ENCODE_ENC_PAK_ID, DDIPar_In, vaType, par));
 
+        const mfxExtCodingOption3& CO3 = ExtBuffer::Get(Glob::VideoParam::Get(global));
+        ddiPPS.bEnableGPUWeightedPrediction = IsOn(CO3.FadeDetection); // should be set for I as well
+
         bool bNeedPWT = (esSlice.type != 2 && (ddiPPS.weighted_bipred_flag || ddiPPS.weighted_pred_flag));
         MFX_CHECK(bNeedPWT, MFX_ERR_NONE);
-
-        const mfxExtCodingOption3& CO3 = ExtBuffer::Get(Glob::VideoParam::Get(global));
-        ddiPPS.bEnableGPUWeightedPrediction = IsOn(CO3.FadeDetection);
 
         auto pDdiSlice = GetDDICB<ENCODE_SET_SLICE_HEADER_HEVC>(ENCODE_ENC_PAK_ID, DDIPar_In, vaType, par);
 
