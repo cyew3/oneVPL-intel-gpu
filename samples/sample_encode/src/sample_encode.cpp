@@ -455,12 +455,39 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-la")))
         {
-            pParams->nRateControlMethod = MFX_RATECONTROL_LA;
+            if (!pParams->nRateControlMethod)
+            {
+                pParams->nRateControlMethod = MFX_RATECONTROL_LA;
+            }
+            else if (pParams->nRateControlMethod == MFX_RATECONTROL_ICQ)
+            {
+                pParams->nRateControlMethod = MFX_RATECONTROL_LA_ICQ;
+            }
+            else if (pParams->nRateControlMethod != MFX_RATECONTROL_LA &&
+                    pParams->nRateControlMethod != MFX_RATECONTROL_LA_ICQ)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("More than one BRC modes assigned, and another BRC mode isn't compatible with LA."));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-lad")))
         {
-            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
-            pParams->nRateControlMethod = MFX_RATECONTROL_LA;
+            VAL_CHECK(i + 1 >= nArgNum, i, strInput[i]);
+            if (!pParams->nRateControlMethod)
+            {
+                pParams->nRateControlMethod = MFX_RATECONTROL_LA;
+            }
+            else if (pParams->nRateControlMethod == MFX_RATECONTROL_ICQ)
+            {
+                pParams->nRateControlMethod = MFX_RATECONTROL_LA_ICQ;
+            }
+            else if (pParams->nRateControlMethod != MFX_RATECONTROL_LA &&
+                    pParams->nRateControlMethod != MFX_RATECONTROL_LA_ICQ)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("More than one BRC modes assigned, and another BRC mode isn't compatible with LA."));
+                return MFX_ERR_UNSUPPORTED;
+            }
+
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nLADepth))
             {
                 PrintHelp(strInput[0], MSDK_STRING("Look Ahead Depth is invalid"));

@@ -2335,6 +2335,8 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
         if (pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_ICQ &&
             pMFXParams->mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)
             pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_ICQ;
+        if (m_extCodingOptions2->LookAheadDepth)
+            pMFXParams->mfx.RateControlMethod = MFX_RATECONTROL_LA_ICQ;
         pMFXParams->mfx.ICQQuality = m_ICQQuality;
     }
 
