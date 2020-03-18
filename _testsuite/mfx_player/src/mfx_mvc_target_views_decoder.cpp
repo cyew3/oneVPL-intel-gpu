@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -132,6 +132,7 @@ mfxStatus TargetViewsDecoder::DecodeHeaderTarget(mfxBitstream *bs, mfxVideoParam
         {
             //correcting map : first argument will be an viewid not viewid order
             MFXExtBufferPtr<mfxExtMVCSeqDesc> seqDescription(m_TargetExtParams);
+            MFX_CHECK_POINTER(seqDescription.get());
             MFXExtBufferPtrRef<mfxExtMVCSeqDesc> seqDescriptionRef(*seqDescription);
 
             for(size_t i = 0; i < m_ViewOrder_ViewIdMap.size(); i++)
@@ -164,6 +165,7 @@ mfxStatus TargetViewsDecoder::Init(mfxVideoParam *par)
         m_TargetExtParams.push_back(new mfxExtMVCTargetViews());
 
         MFXExtBufferPtr<mfxExtMVCTargetViews> viewTargets2(m_TargetExtParams);
+        MFX_CHECK_POINTER(viewTargets2.get());
         
         viewTargets2->NumView = (mfxU32)m_ViewOrder_ViewIdMap.size();
         
@@ -196,6 +198,7 @@ mfxStatus TargetViewsDecoder::Init(mfxVideoParam *par)
         }
 
         MFXExtBufferPtr<mfxExtOpaqueSurfaceAlloc> extOpaq(m_TargetExtParams);
+        MFX_CHECK_POINTER(extOpaq.get());
         
         extOpaq->Out = popaq->Out;
     }
@@ -257,6 +260,7 @@ mfxStatus TargetViewsDecoder::ResetDependencies()
         return MFX_ERR_NONE;
 
     MFXExtBufferPtr<mfxExtMVCSeqDesc> seqDescription(m_TargetExtParams);
+    MFX_CHECK_POINTER(seqDescription.get());
     MFXExtBufferPtrRef<mfxExtMVCSeqDesc> seqDescriptionRef(*seqDescription);
 
     {
@@ -270,6 +274,7 @@ mfxStatus TargetViewsDecoder::ResetDependencies()
 
     //copying of original structure
     MFXExtBufferPtr<mfxExtMVCSeqDesc> seqDescriptionNew(m_ModifiedExtParams);
+    MFX_CHECK_POINTER(seqDescriptionNew.get());
     MFXExtBufferPtrRef<mfxExtMVCSeqDesc> seqDescriptionNewRef(*seqDescriptionNew);
 
     for (size_t i = 0; i < m_ViewOrder_ViewIdMap.size(); i++)

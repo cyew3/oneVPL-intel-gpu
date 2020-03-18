@@ -732,6 +732,7 @@ mfxStatus MFXDecPipeline::BuildPipeline()
             m_components[eDEC].m_extParams.push_back(new mfxExtAV1LargeScaleTileParam());
         }
         MFXExtBufferPtr<mfxExtAV1LargeScaleTileParam> pLstBuffer(m_components[eDEC].m_extParams);
+        MFX_CHECK_POINTER(pLstBuffer.get());
         pLstBuffer->AnchorFramesSource = m_inParams.AV1LargeScaleTileMode;
         pLstBuffer->AnchorFramesNum = m_inParams.AV1AnchorFramesNum;
         m_components[eDEC].m_params.NumExtParam = (mfxU16)m_components[eDEC].m_extParams.size();
@@ -3212,6 +3213,7 @@ mfxStatus MFXDecPipeline::CreateAllocator()
             }
 
             MFXExtBufferPtr<mfxExtAV1LargeScaleTileParam> pLstBuffer(m_components[eDEC].m_extParams);
+            MFX_CHECK_POINTER(pLstBuffer.get());
             pLstBuffer->AnchorFramesSource = m_inParams.AV1LargeScaleTileMode;
             pLstBuffer->AnchorFramesNum = m_inParams.AV1AnchorFramesNum;
             m_components[eDEC].m_params.NumExtParam = (mfxU16)m_components[eDEC].m_extParams.size();

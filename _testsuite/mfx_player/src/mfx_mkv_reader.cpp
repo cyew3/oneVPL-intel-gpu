@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2014-2017 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014-2020 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -313,6 +313,9 @@ void MKVReader::ReadValue(mfxU32 size, DataType type, void *value){
     mfxU8 *buffer;
 
     buffer = (mfxU8 *)malloc(size);
+    if (!buffer) {
+        return;
+    }
     switch(type){
         case DATATYPE_BYTE:
             if (!vm_file_fread(buffer, 1, 1, m_fSource))

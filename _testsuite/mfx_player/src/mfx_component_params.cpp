@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -158,6 +158,10 @@ void ComponentParams::AttachOpaqBuffer( bool bAtOutput , mfxU16 Type , std::vect
     }
     //TODO: again limitation of mfxextbufferptr
     MFXExtBufferPtr<mfxExtOpaqueSurfaceAlloc> extOpaq(m_extParams);
+    if (NULL == extOpaq.get())
+    {
+        return;
+    }
 
     if (bAtOutput)
     {
