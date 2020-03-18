@@ -171,9 +171,6 @@ namespace hevce_big_resolution
     };
 
     void TestSuite::checkSupport(tc_struct) {
-        isResolutionSupported = true;
-        int width = m_par.mfx.FrameInfo.Width;
-        int height = m_par.mfx.FrameInfo.Height;
         int fourcc_id = m_par.mfx.FrameInfo.FourCC;
         if ((0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))))
         {
@@ -232,7 +229,6 @@ namespace hevce_big_resolution
     int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START;
-        SETPARS(m_par, MFX_PAR);
 
         m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width;
         m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
@@ -310,27 +306,35 @@ namespace hevce_big_resolution
         if (caps_sts != MFX_ERR_UNSUPPORTED)
             g_tsStatus.check(caps_sts);
 
+        SETPARS(m_par, MFX_PAR);
+        m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width;
+        m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
         if (caps.MaxPicHeight < m_par.mfx.FrameInfo.Height || caps.MaxPicWidth < m_par.mfx.FrameInfo.Width)
         {
             isResolutionSupported = false;
         }
 
+        mfxStatus sts = MFX_ERR_NONE;
         if (tc.type & QUERY)
         {
-            if (!isResolutionSupported)
-                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-            Query();
+            sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
+            if (!isResolutionSupported && (sts == MFX_ERR_DEVICE_FAILED || sts == MFX_ERR_UNSUPPORTED))
+                g_tsStatus.expect(sts);
+            g_tsStatus.check(sts);
         }
 
         if (tc.type & INIT)
         {
-            if (!isResolutionSupported)
-                g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
-            Init();
+            sts = MFXVideoENCODE_Init(m_session, m_pPar);
+            if (!isResolutionSupported && (sts == MFX_ERR_DEVICE_FAILED || sts == MFX_ERR_INVALID_VIDEO_PARAM))
+                g_tsStatus.expect(sts);
+            g_tsStatus.check(sts);
             if (!isResolutionSupported)
             {
                 throw tsOK;
             }
+
+            m_initialized = true;
         }
 
         if (tc.type & ENCODE && !g_tsConfig.sim) {
