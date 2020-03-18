@@ -204,7 +204,6 @@ namespace UMC_AV1_DECODER
 
     UMC::FrameMemID AV1DecoderFrame::GetMemID(int idx) const
     {
-        VM_ASSERT(data[idx]);
         if (!data[idx].get())
         {
             return -1;
