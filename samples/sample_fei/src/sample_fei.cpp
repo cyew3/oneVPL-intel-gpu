@@ -1342,7 +1342,7 @@ int main(int argc, char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-        parFile = fopen(parFileName, MSDK_STRING("r"));
+        std::unique_ptr<FILE, int(*)(FILE*)> parFile(fopen(parFileName, MSDK_STRING("r")), fclose);
         if (NULL == parFile)
         {
             msdk_printf(MSDK_STRING("ERROR: ParFile \"%s\" not found\n"), parFileName);
@@ -1350,13 +1350,13 @@ int main(int argc, char *argv[])
         }
 
         // calculate file size
-        fseek(parFile, 0, SEEK_END);
-        mfxU32 fileSize = ftell(parFile) + 1;
-        fseek(parFile, 0, SEEK_SET);
+        fseek(parFile.get(), 0, SEEK_END);
+        mfxU32 fileSize = ftell(parFile.get()) + 1;
+        fseek(parFile.get(), 0, SEEK_SET);
 
         // allocate buffer for parsing
         std::vector <msdk_char> parBuf(fileSize);
-        sts = ParseParFile(parFile, Configs, parBuf.data(), fileSize);
+        sts = ParseParFile(parFile.get(), Configs, parBuf.data(), fileSize);
         if(sts != MFX_ERR_NONE)
         {
             msdk_printf(MSDK_STRING("ERROR: ParFile reading failed: %s\n"), parFileName);

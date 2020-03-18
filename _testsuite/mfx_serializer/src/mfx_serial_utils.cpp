@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2010-2018 Intel Corporation.  All rights reserved.
+Copyright (C) 2010-2020 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -522,9 +522,10 @@ std::string UploadSerialiedStructures(std::string file_name)
     fsize = ftell(pFILE);
     fseek(pFILE, 0, SEEK_SET);
     output.reserve(fsize);
-    if (fread((void*)output.c_str(), sizeof(char), fsize, pFILE) != fsize)
-        return std::string();
+    bool fail = fread((void*)output.c_str(), sizeof(char), fsize, pFILE) != fsize;
     fclose(pFILE);
+    if (fail)
+        return std::string();
 
     return output;
 }

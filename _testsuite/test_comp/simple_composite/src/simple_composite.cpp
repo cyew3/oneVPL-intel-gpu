@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2019 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2020 Intel Corporation. All Rights Reserved.
 //
 
 #define ENABLE_OUTPUT    // Disabling this flag removes all YUV file writing
@@ -1351,9 +1351,8 @@ int main(int argc, char *argv[])
     Composition composition(&pa);
 
     // Create output NV12 file
-    FILE* fSink;
-    fopen_s(&fSink, pa.output.c_str(), "wb");
-    MSDK_CHECK_POINTER(fSink, MFX_ERR_NULL_PTR);
+    std::unique_ptr<FILE, int(*)(FILE*)> fSink(fopen(pa.output.c_str(), "wb"), fclose);
+    MSDK_CHECK_POINTER(fSink.get(), MFX_ERR_NULL_PTR);
 
     // Initialize Media SDK session
     // - MFX_IMPL_AUTO_ANY selects HW accelaration if available (on any adapter)
@@ -1400,14 +1399,15 @@ int main(int argc, char *argv[])
                 }
             }
 
+            close(m_card_fd);
+            m_card_fd = -1;
+
             if (MFX_ERR_NONE == sts)
             {
                 va_res = m_libva->vaInitialize(m_va_display, &major_version, &minor_version);
                 sts = va_to_mfx_status(va_res);
                 if (MFX_ERR_NONE != sts)
                 {
-                    close(m_card_fd);
-                    m_card_fd = -1;
                     sts = MFX_ERR_NOT_INITIALIZED;
                     return sts;
                 }
@@ -1514,7 +1514,7 @@ int main(int argc, char *argv[])
 
         ++nFrame;
 
-        sts = WriteRawFrame(pVPPSurfacesOut[nSurfIdxOut], fSink);
+        sts = WriteRawFrame(pVPPSurfacesOut[nSurfIdxOut], fSink.get());
         MSDK_BREAK_ON_ERROR(sts);
 
         printf("Frame number: %d\r", nFrame);
@@ -1548,7 +1548,7 @@ int main(int argc, char *argv[])
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         ++nFrame;
-        sts = WriteRawFrame(pVPPSurfacesOut[nSurfIdxOut], fSink);
+        sts = WriteRawFrame(pVPPSurfacesOut[nSurfIdxOut], fSink.get());
         MSDK_BREAK_ON_ERROR(sts);
 
         printf("Frame number: %d\r", nFrame);
@@ -1633,7 +1633,7 @@ int main(int argc, char *argv[])
 
             ++nFrame;
 
-            sts = WriteRawFrame(pVPPSurfacesOut[nSurfIdxOut], fSink);
+            sts = WriteRawFrame(pVPPSurfacesOut[nSurfIdxOut], fSink.get());
             MSDK_BREAK_ON_ERROR(sts);
 
             printf("Frame number: %d\r", nFrame);
@@ -1666,7 +1666,7 @@ int main(int argc, char *argv[])
 
             ++nFrame;
 
-            sts = WriteRawFrame(pVPPSurfacesOut[nSurfIdxOut], fSink);
+            sts = WriteRawFrame(pVPPSurfacesOut[nSurfIdxOut], fSink.get());
             MSDK_BREAK_ON_ERROR(sts);
 
             printf("Frame number: %d\r", nFrame);
@@ -1692,7 +1692,6 @@ int main(int argc, char *argv[])
     // If CM enabled application have to close Media SDK session before vaTerminate() call
     // Else you will have crash at CM's destructor
     mfxSession.Close();
-    fclose(fSink);
 
 #if !(defined(_WIN32) || defined(_WIN64))
     if(!isActivatedSW)
@@ -1700,10 +1699,6 @@ int main(int argc, char *argv[])
         if (m_va_display)
         {
             m_libva->vaTerminate(m_va_display);
-        }
-        if (m_card_fd >= 0)
-        {
-            close(m_card_fd);
         }
     }
 #endif
