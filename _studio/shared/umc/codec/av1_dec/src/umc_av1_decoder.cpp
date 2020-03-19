@@ -249,8 +249,11 @@ namespace UMC_AV1_DECODER
                     }
                 }
             }
-            DPBType & prevFrameDPB = pPrevFrame->frame_dpb;
-            prevFrameDPB = frameDPB;
+            if (pPrevFrame)
+            {
+                DPBType & prevFrameDPB = pPrevFrame->frame_dpb;
+                prevFrameDPB = frameDPB;
+            }
 
             return pFrame;
         }
@@ -376,6 +379,11 @@ namespace UMC_AV1_DECODER
                 Repeat_show = 0;
             }
             prev_fh = &(pPrevFrame->GetFrameHeader());
+            Curr_temp = Curr;
+        }
+        if (!pPrevFrame)
+        {
+            updated_refs = refs_temp;
             Curr_temp = Curr;
         }
 

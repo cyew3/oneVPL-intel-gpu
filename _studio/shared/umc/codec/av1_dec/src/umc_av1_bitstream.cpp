@@ -1915,9 +1915,6 @@ namespace UMC_AV1_DECODER
 
         if (fh.frame_type != KEY_FRAME)
         {
-            // TODO: [Global] Add handling of case when decoding starts from non key frame and thus prev_frame == 0 and frameDpb is empty
-            if (!prev_fh)
-                throw av1_exception(UMC::UMC_ERR_NULL_PTR);
             VM_ASSERT(frameDpb.size() == NUM_REF_FRAMES);
         }
 
