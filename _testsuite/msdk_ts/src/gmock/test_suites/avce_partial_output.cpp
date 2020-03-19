@@ -72,7 +72,7 @@ namespace avce_partial_output{
     class TestSuite:tsVideoEncoder{
     public:
         //! \brief A constructor (AVC encoder)
-        TestSuite() : tsVideoEncoder(MFX_CODEC_AVC) { }
+        TestSuite() : tsVideoEncoder(MFX_CODEC_AVC), n_frames(0) { }
         //! \brief A destructor
         ~TestSuite() { }
         //! \brief Main method. Runs test case

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -16,7 +16,7 @@ namespace
 class TestSuite : tsVideoEncoder
 {
 public:
-    TestSuite() : tsVideoEncoder(MFX_CODEC_VP8) {}
+    TestSuite() : tsVideoEncoder(MFX_CODEC_VP8), m_GVPpar() {}
     ~TestSuite() {}
     int RunTest(unsigned int id);
     static const unsigned int n_cases;

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -18,7 +18,7 @@ namespace mpeg2e_aspectratio_reset
 class TestSuite : tsVideoEncoder
 {
 public:
-    TestSuite() : tsVideoEncoder(MFX_CODEC_MPEG2) {}
+    TestSuite() : tsVideoEncoder(MFX_CODEC_MPEG2), m_session() {}
     ~TestSuite() {}
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
@@ -194,7 +194,7 @@ class Verifier : public tsBitstreamProcessor, public tsParserMPEG2AU
     mfxU16 width;
     mfxU16 height;
 public:
-    Verifier() : m_aspectratioW(0),m_aspectratioH(0) {}
+    Verifier() : m_aspectratioW(0), m_aspectratioH(0), width(0), height(0) {}
     mfxStatus Init(mfxU16 ar_w, mfxU16 ar_h, mfxU16 w, mfxU16 h)
     {
         m_aspectratioW = ar_w;

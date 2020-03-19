@@ -918,6 +918,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         mfxU32 firstFrame)
         : m_firstFrame(firstFrame)
         , m_numFramesToEncode(iterPar.num_frames_in_iteration)
+        , m_extResetOpt()
+        , m_extDDI()
     {
         // prepare parameters to "set" encoder configuration
         // e.g. pass it to Query, Init or Reset

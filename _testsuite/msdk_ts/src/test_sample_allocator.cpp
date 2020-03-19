@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -44,8 +44,10 @@ frame_allocator::frame_allocator(AllocatorType _allocator_type, AllocMode _alloc
     , p_device       (NULL)
     , p_allocator_par(NULL)
     , hdl            (NULL)
+    , hdl_t          ()
     , surf_cnt       (0)
     , is_valid       (false)
+    , int_request    ()
 {
     mfxFrameAllocator::pthis  = this;
     mfxFrameAllocator::Alloc  = &AllocFrame;

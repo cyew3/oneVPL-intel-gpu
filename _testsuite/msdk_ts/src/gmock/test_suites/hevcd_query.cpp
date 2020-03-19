@@ -35,7 +35,7 @@ protected:
     };
 
 public:
-    TestSuite() : tsVideoDecoder(MFX_CODEC_HEVC){}
+    TestSuite() : tsVideoDecoder(MFX_CODEC_HEVC), m_session() {}
     ~TestSuite() { }
 
     int RunTest(tc_struct const&);

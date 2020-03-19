@@ -102,7 +102,7 @@ private:
     bool    m_interpret_ext_buf;
     mfxU32  m_flags;
 public:
-    tsTrace(std::streambuf* sb) : tsAutoTrace(sb), m_interpret_ext_buf(true) {}
+    tsTrace(std::streambuf* sb) : tsAutoTrace(sb), m_interpret_ext_buf(true), m_flags(0) {}
 
     tsTrace& operator << (const mfxExtBuffer& p);
     tsTrace& operator << (const mfxVideoParam& p);

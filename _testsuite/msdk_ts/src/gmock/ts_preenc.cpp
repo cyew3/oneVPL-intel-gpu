@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -19,7 +19,8 @@ tsVideoPreENC::tsVideoPreENC(bool useDefaults)
     , m_pPar(&m_par)
     , m_pParOut(&m_par)
     , m_pRequest(&m_request)
-    , m_pSurf(0)
+    , m_pSurf(nullptr)
+    , m_pSyncPoint(nullptr)
     , m_filler(0)
     , m_frames_buffered(0)
     , m_uid(0)

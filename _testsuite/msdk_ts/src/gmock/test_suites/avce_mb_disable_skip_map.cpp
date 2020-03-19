@@ -150,8 +150,8 @@ public:
         : tsVideoEncoder(MFX_CODEC_AVC)
         , BS_AVC2_parser(BS_AVC2::INIT_MODE_PARSE_SD)
         , m_non_skip_map(skip_map)
-        , m_reader(nullptr)
         , m_unexpected_skipped_MB(0)
+        , m_reader(nullptr)
     {
         m_curr_in_frame = 0;
         m_curr_out_frame = 0;

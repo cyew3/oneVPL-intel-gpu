@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2019-2020 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_qp_report.cpp
 \* ****************************************************************************** */
@@ -70,7 +70,7 @@ namespace hevce_qp_report
     {
     public:
         //! \brief A constructor (HEVC encoder)
-        TestSuite(): tsVideoEncoder(MFX_CODEC_HEVC), num_ref_frame(2) {}
+        TestSuite(): tsVideoEncoder(MFX_CODEC_HEVC), num_ref_frame(2), m_tc(), m_id(0)  {}
         //! \brief A destructor
         ~TestSuite() {}
         //! \brief Main method. Runs test case

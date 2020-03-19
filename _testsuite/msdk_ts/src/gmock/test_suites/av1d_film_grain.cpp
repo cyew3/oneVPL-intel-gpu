@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -21,7 +21,7 @@ namespace av1d_film_grain
 
     public:
 
-        TestSuite() : tsVideoDecoder(MFX_CODEC_AV1) { }
+        TestSuite() : tsVideoDecoder(MFX_CODEC_AV1), m_cur_tc() { }
         ~TestSuite() {}
 
         template <unsigned fourcc>

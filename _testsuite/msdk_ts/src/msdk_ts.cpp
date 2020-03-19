@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -28,7 +28,8 @@ struct par_facet : std::ctype<char> {
 
 ts::ts(std::istream& in) :
 m_level(0),
-m_in(in.rdbuf())
+m_in(in.rdbuf()),
+m_tmp_flag(false)
 {
     #define msdk_ts_DECLARE_BLOCK(block) m_block[key(#block)] = &ts::block;
     #include "msdk_ts_blocks.h"

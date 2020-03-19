@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -22,7 +22,7 @@ class TestSuite
 
 public:
 
-    TestSuite() : tsVideoDecoder(MFX_CODEC_HEVC){}
+    TestSuite() : tsVideoDecoder(MFX_CODEC_HEVC), tc() {}
     ~TestSuite() { }
 
     int RunTest(unsigned int id, char const* sname, unsigned crc0, unsigned crc1);

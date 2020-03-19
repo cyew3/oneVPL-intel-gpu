@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2018 Intel Corporation.  All rights reserved.
+Copyright (C) 2018-2020 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -84,6 +84,7 @@ public:
         m_par.mfx.GopRefDist = 1;
 
         // Set parameters for m_filler
+        m_rawReaderFrameInfo = {};
         m_rawReaderFrameInfo.Width = m_rawReaderFrameInfo.CropW = m_par.mfx.FrameInfo.Width;
         m_rawReaderFrameInfo.Height = m_rawReaderFrameInfo.CropH = m_par.mfx.FrameInfo.Height;
         m_rawReaderFrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 File Name: avce_max_frame_size.cpp
 \* ****************************************************************************** */
@@ -78,7 +78,7 @@ namespace avce_max_frame_size{
     class TestSuite:tsVideoEncoder{
     public:
         //! \brief A constructor (AVC encoder)
-        TestSuite() : tsVideoEncoder(MFX_CODEC_AVC) { }
+        TestSuite() : tsVideoEncoder(MFX_CODEC_AVC), avg_fs(0) { }
         //! \brief A destructor
         ~TestSuite() { }
         //! \brief Main method. Runs test case

@@ -21,7 +21,7 @@ namespace vp9e_reset
     class TestSuite : tsVideoEncoder
     {
     public:
-        TestSuite() : tsVideoEncoder(MFX_CODEC_VP9) {}
+        TestSuite() : tsVideoEncoder(MFX_CODEC_VP9), m_resetPar() {}
         ~TestSuite() {}
 
         struct tc_par;

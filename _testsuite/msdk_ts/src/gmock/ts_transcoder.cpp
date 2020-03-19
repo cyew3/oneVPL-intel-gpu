@@ -19,6 +19,7 @@ tsTranscoder::tsTranscoder(mfxU32 codecDec, mfxU32 codecEnc)
     , m_parENC(tsVideoEncoder::m_par)
     , m_bsProcIn(tsVideoDecoder::m_bs_processor)
     , m_bsProcOut(tsVideoEncoder::m_bs_processor)
+    , m_cId(0)
 {
 }
 

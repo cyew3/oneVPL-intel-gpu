@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -20,7 +20,7 @@ typedef void (*callback)(tsExtBufType<mfxVideoParam>&, mfxU32, mfxU32);
 class TestSuite : tsVideoEncoder
 {
 public:
-    TestSuite() : tsVideoEncoder(MFX_CODEC_AVC) {}
+    TestSuite() : tsVideoEncoder(MFX_CODEC_AVC), m_session(), m_repeat(0) {}
     ~TestSuite() { }
     int RunTest(unsigned int id);
     static const unsigned int n_cases;

@@ -1,3 +1,12 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2013-2020 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
 #pragma once
 #include "msdk_ts.h"
 #include "mfxvideo.h"
@@ -27,7 +36,7 @@ typedef std::vector<mfxFrameSurface1> FrameSurfPool;
 
 class VMFileHolder{
 public:
-    VMFileHolder() : f(0){};
+    VMFileHolder() : f(0), file_attr(0), file_size(0){};
     ~VMFileHolder(){ close(); };
     void close() { if(f) {vm_file_close(f); f = NULL;}};
     bool open(const char* name, const vm_char* mode){

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -352,8 +352,9 @@ namespace hevce_fei_default_ref_lists
         }
 
     public:
-        EncodeEmulator() :
-            m_lastIdr(0)
+        EncodeEmulator()
+            : m_nMaxFrames(0)
+            , m_lastIdr(0)
             , m_anchorPOC(-1)
             {
                 m_lastFrame.IPoc = -1;

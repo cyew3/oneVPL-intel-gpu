@@ -224,6 +224,7 @@ public:
     BitstreamChecker(const TestSuite::tc_struct & tc, mfxVideoParam& par, bool mbqp_on)
         : tsParserHEVCAU()
         , m_i(0)
+        , m_pic_struct(0)
         , m_par(par)
         , m_tc(tc)
         , m_IdrCnt(0)

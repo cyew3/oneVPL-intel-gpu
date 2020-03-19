@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -192,6 +192,7 @@ namespace hevce_pts_dts
 
         {
             frame_number = 0;
+            delay = 0;
             frD = par.mfx.FrameInfo.FrameRateExtD;
             frN = par.mfx.FrameInfo.FrameRateExtN;
             frame_duration = frD * 90000 / frN;

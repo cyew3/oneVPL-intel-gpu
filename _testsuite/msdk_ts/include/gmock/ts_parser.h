@@ -219,9 +219,9 @@ public:
 
     tsParserMPEG2AU(mfxU32 mode = 0)
         : BS_MPEG2_parser(mode)
+        , pBs(NULL)
         , m_sts(BS_ERR_NONE)
         , last_offset(0)
-        , pBs(NULL)
     {
         if(!g_tsTrace)
             set_trace_level(0);

@@ -321,6 +321,8 @@ tsVideoENCPAK::tsVideoENCPAK(mfxFeiFunction funcEnc, mfxFeiFunction funcPak, mfx
     , m_ENCOutput(&ENCOutput)
     , m_PAKInput(&PAKInput)
     , m_PAKOutput(&PAKOutput)
+    , m_BaseAllocID()
+    , m_EncPakReconAllocID()
 {
     memset(&ENCInput, 0, sizeof(ENCInput));
     memset(&ENCOutput, 0, sizeof(ENCOutput));

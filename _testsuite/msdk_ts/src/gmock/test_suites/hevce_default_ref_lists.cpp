@@ -360,8 +360,9 @@ namespace hevce_default_ref_lists
         }
 
     public:
-        EncodeEmulator() :
-            m_lastIdr(0)
+        EncodeEmulator()
+            : m_nMaxFrames(0)
+            , m_lastIdr(0)
             , m_anchorPOC(-1)
             {
                 m_lastFrame.IPoc = -1;

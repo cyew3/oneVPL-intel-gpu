@@ -18,7 +18,11 @@ namespace hevce_maxframesize
     class TestSuite : tsVideoEncoder
     {
     public:
-        TestSuite() : tsVideoEncoder(MFX_CODEC_HEVC) {}
+        TestSuite()
+        : tsVideoEncoder(MFX_CODEC_HEVC)
+        , expectedMaxFrameSize(0)
+        , actualMaxFrameSize(0)
+        {}
         ~TestSuite() { }
         int RunTest(unsigned int id);
         static const unsigned int n_cases;
