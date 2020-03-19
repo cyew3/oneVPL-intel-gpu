@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2018-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -157,8 +157,48 @@ public:
         m_prevSlicePOC = 0;
         m_prevPOC.Lsb  = 0;
         m_prevPOC.Msb  = 0;
-        m_cSlice       = 0;
+        m_cSlice       = nullptr;
         m_bRPLDecoded = false;
+        NoRaslOutputFlag = false;
+        NoBackwardPredFlag = false;
+        NewPicture = false;
+        TwoVersionsOfCurrDecPicFlag = false;
+        MaxPicOrderCntLsb = 0;
+        MinCbLog2SizeY = 0;
+        CtbLog2SizeY = 0;
+        CtbSizeY = 0;
+        PicWidthInCtbsY = 0;
+        PicHeightInCtbsY = 0;
+        MinCbSizeY = 0;
+        PicWidthInMinCbsY = 0;
+        PicHeightInMinCbsY = 0;
+        PicSizeInMinCbsY = 0;
+        PicSizeInCtbsY = 0;
+        PicSizeInSamplesY = 0;
+        PicWidthInSamplesC = 0;
+        PicHeightInSamplesC = 0;
+        MinTbLog2SizeY = 0;
+        MaxTbLog2SizeY = 0;
+        Log2MinIpcmCbSizeY = 0;
+        Log2MaxIpcmCbSizeY = 0;
+        Log2MinCuQpDeltaSize = 0;
+        Log2ParMrgLevel = 0;
+        SliceQpY = 0;
+        BitDepthY = 0;
+        BitDepthC = 0;
+        ChromaArrayType = 0;
+        Log2MinCuChromaQpOffsetSize = 0;
+        SubWidthC = 0;
+        SubHeightC = 0;
+        CtbWidthC = 0;
+        CtbHeightC = 0;
+        RawCtuBits = 0;
+        QpBdOffsetY = 0;
+        QpBdOffsetC = 0;
+        PaletteMaxPredictorSize = 0;
+        m_MinTbAddrZsPitch = 0;
+        NumColSlices = 0;
+        ColPicSlices = nullptr;
     }
 
     void decodeSSH  (NALU& nalu, bool bNewSequence);
@@ -303,6 +343,15 @@ public:
 
     CABAC(BsReader2::Reader& r)
         : ADE(r)
+        , m_g1I(0)
+        , m_rI(0)
+        , ctxSet(0)
+        , lastGreater1Ctx(0)
+        , lastGreater1Flag(false)
+        , cLastAbsLevel(0)
+        , cLastRiceParam(0)
+        , m_paletteIdxCnt(0)
+        , BinCount(0)
     {}
 
     void InitCtx();

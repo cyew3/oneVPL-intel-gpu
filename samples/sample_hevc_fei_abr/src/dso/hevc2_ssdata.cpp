@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 Intel Corporation
+// Copyright (c) 2018-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,12 @@ using namespace BsReader2;
 
 SDParser::SDParser(bool report_TC)
     : Reader()
+    , IntraSplitFlag()
+    , MaxTrafoDepth()
+    , CuQpDeltaVal()
+    , qPY_PREV()
+    , IsCuQpDeltaCoded()
+    , IsCuChromaQpOffsetCoded()
     , CABAC((Reader&)*this)
     , report_TCLevels(report_TC)
     , m_pAllocator(nullptr)
@@ -1751,7 +1757,12 @@ protected:
     }
 
 public:
-    ArrayWrap() { offset = 0; n = 0; }
+    ArrayWrap()
+    {
+        pBase = nullptr;
+        offset = 0;
+        n = 0;
+    }
 
     template<class T, Bs32u N>
     inline ArrayWrap& operator=(T(&_pBase)[N])

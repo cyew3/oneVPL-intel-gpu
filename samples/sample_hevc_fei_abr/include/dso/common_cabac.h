@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2018-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,19 @@ namespace COMMON_CABAC
 #endif
 
     public:
-        ADE(BsReader2::Reader& r) : m_bs(r), m_pcm(false) {}
+        ADE(BsReader2::Reader& r)
+        : m_bs(r)
+        , m_bpos(0)
+        , m_pcm(false)
+#if (BS_AVC2_ADE_MODE == 1)
+        , m_val(0)
+        , m_range(0)
+        , m_bits(0)
+#else
+        , m_codIRange(0)
+        , m_codIOffset(0)
+#endif
+        {}
         ~ADE() {}
 
         inline void Init()

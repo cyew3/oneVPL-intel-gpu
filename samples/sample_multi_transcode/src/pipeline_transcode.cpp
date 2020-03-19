@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -4558,7 +4558,8 @@ void DecreaseReference(mfxFrameData *ptr)
 
 SafetySurfaceBuffer::SafetySurfaceBuffer(SafetySurfaceBuffer *pNext)
     :m_pNext(pNext),
-     m_IsBufferingAllowed(true)
+     m_IsBufferingAllowed(true),
+     pInsEvent(nullptr)
 {
     mfxStatus sts=MFX_ERR_NONE;
     pRelEvent = new MSDKEvent(sts,false,false);

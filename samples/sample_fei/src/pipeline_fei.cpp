@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -64,6 +64,7 @@ CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     , m_insertIDR(false)
     , m_bVPPneeded(pAppConfig->bVPP)
     , m_bSeparatePreENCSession(pAppConfig->bPREENC && (pAppConfig->bENCPAK || pAppConfig->bOnlyENC || (pAppConfig->preencDSstrength && m_bVPPneeded)))
+    , m_mfxSessionParent()
     , m_pPreencSession(m_bSeparatePreENCSession ? &m_preenc_mfxSession : &m_mfxSession)
 
     , m_pFEI_PreENC(NULL)

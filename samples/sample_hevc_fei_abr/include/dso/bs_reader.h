@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Intel Corporation
+// Copyright (c) 2018-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -157,6 +157,7 @@ public:
         next_ignored_byte = NULL;
         trace_flag = true;
         trace_level = 0xFFFFFFFF;
+        tmp_buf = 0;
     }
 
     virtual ~BS_Reader(){
