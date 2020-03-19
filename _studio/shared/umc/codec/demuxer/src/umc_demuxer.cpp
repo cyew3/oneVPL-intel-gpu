@@ -1,4 +1,4 @@
-// Copyright (c) 2005-2018 Intel Corporation
+// Copyright (c) 2005-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,8 +46,26 @@ Splitter *CreateMPEG2SplitterNT(void) { return (new Demuxer()); }
 
 Demuxer::Demuxer()
 {
+    m_pMemoryAllocator = NULL;
     m_pParser = NULL;
+    m_uiTracksReady = 0;
+    m_uiTracks = 0;
+    m_iCurTrack = 0;
+    m_iRefTrack = 0;
+    m_bPSIWasChanged = false;
+    m_bEncryptedData = false;
+    m_bInnerMemAllocator = false;
+    m_bBufFilled = false;
+    m_bEndOfStream = false;
+    m_dRate = 0;
+    m_dDuration = 0.0f;
+    m_uiSourceSize = 0;
+    m_dAudToBuf = 0.0f;
+    m_dBytesPerSec = 0.0f;
+    m_uiNOfFrames = 0;
     m_uiTotalSize = 0;
+    m_uiAdaptiveFactor = 0;
+    m_dPrevTimeGap = 0;
 }
 
 Demuxer::~Demuxer()

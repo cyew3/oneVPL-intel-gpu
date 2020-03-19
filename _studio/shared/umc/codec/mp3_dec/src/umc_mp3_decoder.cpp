@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,13 @@ using namespace UMC;
 
 MP3Decoder::MP3Decoder(void)
 {
-    state         = NULL;
-    stateMemId    = 0;
-    m_initialized = 0;
+    state               = NULL;
+    params              = {};
+    m_pts_prev          = 0;
+    stateMemId          = 0;
+    m_mc_lfe_filter_off = 0;
+    m_syncro_mode       = 0;
+    m_initialized       = 0;
 }
 
 MP3Decoder::~MP3Decoder(void)

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,8 +42,12 @@ struct asf_CodecEntry
 {
     asf_CodecEntry()
     {
+        type = 0;
+        codecNameLen = 0;
         pCodecName = NULL;
+        codecDescrLen = 0;
         pCodecDescription = NULL;
+        codecInfoLen = 0;
         pCodecInfo = NULL;
     }
     Ipp16u    type;
@@ -59,6 +63,10 @@ struct asf_CodecListObject
 {
     asf_CodecListObject()
     {
+        objectID = {};
+        objectSize = 0;
+        reserved = {};
+        codecEntriesCount = 0;
         pCodecEntries = NULL;
     }
     asf_GUID  objectID;
@@ -142,6 +150,10 @@ struct asf_BitrateMutualExclObject
 {
     asf_BitrateMutualExclObject()
     {
+        objectID = {};
+        objectSize = 0;
+        exclusionType = {};
+        streamNumbersCount = 0;
         pStreamNumbers = NULL;
     }
     asf_GUID  objectID;
@@ -155,6 +167,10 @@ struct asf_ErrCorrectObject
 {
     asf_ErrCorrectObject()
     {
+        objectID = {};
+        objectSize = 0;
+        errCorrectType = {};
+        errCorrectDataLen = 0;
         pErrCorrectData = NULL;
     }
     asf_GUID  objectID;
@@ -224,6 +240,9 @@ struct asf_StreamBitratePropObject
 {
     asf_StreamBitratePropObject()
     {
+        objectID = {};
+        objectSize = 0;
+        bitrateRecordsCount = 0;
         pBitrateRecords = NULL;
     }
     asf_GUID  objectID;
@@ -582,6 +601,13 @@ struct asf_AudioMediaInfo
 {
     asf_AudioMediaInfo()
     {
+        formatTag = 0;
+        numChannels = 0;
+        sampleRate = 0;
+        avgBytesPerSec = 0;
+        blockAlign = 0;
+        bitsPerSample = 0;
+        codecSpecDataSize = 0;
         pCodecSpecData = NULL;
     }
     Ipp16u    formatTag;
@@ -631,6 +657,10 @@ struct asf_SpreadAudioData
 {
     asf_SpreadAudioData()
     {
+        span = 0;
+        virtPackLen = 0;
+        virtChunkLen = 0;
+        silenceDataLen = 0;
         pSilenceData = NULL;
     }
     Ipp8u     span;
@@ -644,6 +674,15 @@ struct asf_StreamPropObject
 {
     asf_StreamPropObject()
     {
+        objectID = {};
+        objectSize = 0;
+        streamType = {};
+        errCorrectType = {};
+        timeOffset = 0;
+        typeSpecDataLen = 0;
+        errCorrectDataLen = 0;
+        flags = 0;
+        reserved = 0;
         typeSpecData.pAnyData = NULL;
         pErrCorrectData = NULL;
     }
@@ -669,6 +708,23 @@ struct asf_ExtStreamPropObject
 {
     asf_ExtStreamPropObject()
     {
+        objectID = {};
+        objectSize = 0;
+        startTime = 0;
+        endTime = 0;
+        dataBitrate = 0;
+        bufSize = 0;
+        initialBufFullness = 0;
+        altDataBitrate = 0;
+        altBufSize = 0;
+        altInitialBufFullness = 0;
+        maxObjSize = 0;
+        flags = 0;
+        streamNum = 0;
+        streamLangIDIndex = 0;
+        avgTimePerFrame = 0;
+        streamNameCount = 0;
+        payldExtSysCount = 0;
         pStreamNames = NULL;
         pPayldExtSystems = NULL;
         pStreamPropObj = NULL;
@@ -721,6 +777,7 @@ struct asf_HeaderExtData
     pAdvMutualExclObject = NULL;
     pGroupMutualExclObject = NULL;
     pStreamPrioritObject = NULL;
+    pBandwidthSharingObject = NULL;
     pAdvMutualExclObject = NULL;
     pLangListObject = NULL;
     pMetadataObject = NULL;
@@ -752,6 +809,11 @@ struct asf_HeaderExtObject
 {
     asf_HeaderExtObject()
     {
+        objectID = {};
+        objectSize = 0;
+        reserved1 = {};
+        reserved2 = 0;
+        headerExtDataSize = 0;
         pHeaderExtData = NULL;
     }
     asf_GUID            objectID;
@@ -768,6 +830,7 @@ struct asf_HeaderObject
   {
     objectID = ASF_Header_Object;
     objectSize = 0;
+    nObjects = 0;
     reserved1 = 0x01;
     reserved2 = 0x02;
     pFPropObject = NULL;
@@ -839,7 +902,13 @@ struct asf_Payload
 {
     asf_Payload()
     {
+        streamNumber = 0;
+        keyFrame = 0;
+        mediaObjNum = 0;
+        offIntoMediaObj = 0;
+        replDataLen = 0;
         pReplData = NULL;
+        pldLen = 0;
         pPldData = NULL;
     }
     Ipp32u    streamNumber;

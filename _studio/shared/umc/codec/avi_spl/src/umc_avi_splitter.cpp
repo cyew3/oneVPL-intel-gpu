@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2019 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ namespace UMC
 
 AVISplitter::AVISplitter()
 {
+    m_uiFlags = 0;
     m_pTrack = NULL;
     m_pDuration = NULL;
     ippsZero_8u((Ipp8u *)&m_AviHdr, sizeof(MainAviHeader));

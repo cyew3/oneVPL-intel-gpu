@@ -1,4 +1,4 @@
-// Copyright (c) 2002-2018 Intel Corporation
+// Copyright (c) 2002-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -78,9 +78,14 @@ namespace UMC
 AACDecoder::AACDecoder()
 {
     state = NULL;
+    params = {};
     pObjMem = NULL;
     stateMemId = 0;
     objMemId = 0;
+    m_pts_prev = 0.0f;
+    initSubtype = 0;
+    adts_sw = 0;
+    m_info = {};
 }
 
 /********************************************************************/

@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,8 @@ AVIChunk::AVIChunk()
 {
     m_uiPos = 0;
     m_ulStackPos = 0;
+    m_pReader = NULL;
+    m_pReaderMutex = NULL;
     m_ChnkStack[0].m_chnkName = AVI_FOURCC_FILE;
 }
 

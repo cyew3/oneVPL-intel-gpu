@@ -1,4 +1,4 @@
-// Copyright (c) 2005-2019 Intel Corporation
+// Copyright (c) 2005-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,14 @@ Ipp32u VM_CALLCONVENTION ThreadRoutineStarter(void* u)
 
 ThreadedDemuxer::ThreadedDemuxer()
 {
+    m_pOnPSIChangeEvent = NULL;
     m_pDemuxer = NULL;
+    m_iBlockingPID = 0;
+    m_uiFlags = 0;
+    m_bStop = false;
+    m_bEndOfStream = false;
+    m_bAutoEnable = false;
+    m_pRulesState = NULL;
 }
 
 ThreadedDemuxer::~ThreadedDemuxer()

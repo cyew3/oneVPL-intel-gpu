@@ -1,4 +1,4 @@
-// Copyright (c) 2005-2018 Intel Corporation
+// Copyright (c) 2005-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,12 @@ StreamParserParams::~StreamParserParams()
 
 StreamParser::StreamParser()
 {
+    m_ParserState = HEADER;
+    m_uiSourceSize = 0;
     m_pDataReader = NULL;
+    m_SystemType = UNDEF_STREAM;
+    m_dDuration = 0.0f;
+    m_uiTracks = 0;
     m_pPacket = NULL;
 }
 

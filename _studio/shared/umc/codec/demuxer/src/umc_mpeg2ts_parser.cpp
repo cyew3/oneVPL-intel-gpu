@@ -1,4 +1,4 @@
-// Copyright (c) 2005-2018 Intel Corporation
+// Copyright (c) 2005-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,12 @@ using namespace UMC;
 Mpeg2TsParser::Mpeg2TsParser()
 {
     m_bPatWasChanged = false;
+    m_bPmtWasChanged = false;
+    m_bDetectPSIChanges = false;
+    m_bPcrPresent = false;
+    m_iPacketSize = 0;
+    m_iSysTimePid = 0;
+    m_iOrig = 0;
 }
 
 Status Mpeg2TsParser::Init(StreamParserParams &init)

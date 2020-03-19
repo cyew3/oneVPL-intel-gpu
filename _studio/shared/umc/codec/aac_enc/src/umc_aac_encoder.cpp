@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,11 @@ AACEncoder::AACEncoder()
     m_outputFormat = UMC_AAC_ADTS;
     m_pts_prev = 0.0;
     m_sampling_frequency = 0;
+    m_bitrate = 0;
+    m_adtsProfile = 0;
+    m_adtsID = 0;
+    m_audioObjectType = AOT_UNDEF;
+    m_auxAudioObjectType = AOT_UNDEF;
 }
 
 AACEncoder::~AACEncoder()

@@ -97,6 +97,7 @@ namespace UMC_AV1_DECODER
         decoded   = false;
         decoding_started = false;
         decoding_completed = false;
+        show_as_existing = false;
         data[SURFACE_DISPLAY].reset();
         data[SURFACE_RECON].reset();
         tile_sets.resize(0);

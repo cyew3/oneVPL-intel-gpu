@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2019 Intel Corporation
+// Copyright (c) 2004-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,9 @@ MP4Splitter::MP4Splitter():
     IndexSplitter(),
     m_pInitMoofThread(),
     m_nFragPosEnd(0),
+    m_nMoovAtomEnd(0),
+    m_eVideoStreamType(UNDEF_VIDEO),
+    m_nH264FrameIntraSize(0),
     m_pFirstSegmentDuration(NULL),
     m_pLastPTS(NULL),
     m_bFlagStopInitMoof(false)

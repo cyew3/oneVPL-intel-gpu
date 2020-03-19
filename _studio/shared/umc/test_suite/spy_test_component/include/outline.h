@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -74,6 +74,7 @@ public:
     OutlineParams()
         : m_isPrettyPrint(false)
         , m_searchMethod(FIND_MODE_ID)
+        , m_ignoreList(0)
     {
     }
 
