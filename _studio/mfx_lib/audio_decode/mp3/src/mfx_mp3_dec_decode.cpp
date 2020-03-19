@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2004-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,10 @@ public:
 
 AudioDECODEMP3::AudioDECODEMP3(AudioCORE *core, mfxStatus * sts)
 : AudioDECODE()
+, m_frame()
+, m_vPar()
 , m_core(core)
+, m_CommonCore(NULL)
 , m_platform(MFX_PLATFORM_SOFTWARE)
 , m_isInit(false)
 , m_nUncompFrameSize()

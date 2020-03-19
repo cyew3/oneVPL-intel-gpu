@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,11 +39,14 @@ public:
 
 AudioENCODEAAC::AudioENCODEAAC(CommonCORE *core, mfxStatus * sts)
 : AudioENCODE()
+, m_inputFormat(0)
+, m_vPar()
 , m_core()
 , m_CommonCore(core)
 , m_platform(MFX_PLATFORM_SOFTWARE)
 , m_isInit(false)
 , m_dTimestampShift(0)
+, m_FrameSize(0)
 {
     if (sts)
     {
