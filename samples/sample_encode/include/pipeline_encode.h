@@ -37,6 +37,13 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxplugin.h"
 #include "mfxplugin++.h"
 
+//#define MULTI_GPU_ENCODING
+
+#ifdef MULTI_GPU_ENCODING
+#include "multi_gpu_encoding.h"
+#include "multi_gpu_encoding++.h"
+#endif
+
 #include <vector>
 #include <memory>
 

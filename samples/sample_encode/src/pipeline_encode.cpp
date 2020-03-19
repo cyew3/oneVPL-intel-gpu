@@ -1683,7 +1683,11 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     }
 
     // create encoder
+#ifdef MULTI_GPU_ENCODING
+    m_pmfxENC = new MFXVideoMultiGpuENCODE(m_mfxSession);
+#else
     m_pmfxENC = new MFXVideoENCODE(m_mfxSession);
+#endif
     MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_MEMORY_ALLOC);
 
     bool bVpp = false;
