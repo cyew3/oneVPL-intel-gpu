@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2019-2020 Intel Corporation. All Rights Reserved.
 
 File Name: avce_mb_disable_skip_map.cpp
 
@@ -98,6 +98,7 @@ public:
             mfxExtMBDisableSkipMap frm_map;
             frm_map.Header.BufferId = MFX_EXTBUFF_MB_DISABLE_SKIP_MAP;
             frm_map.Header.BufferSz = sizeof(mfxExtMBDisableSkipMap);
+            memset(frm_map.reserved, 0, sizeof(frm_map.reserved));
 
             // TODO: check for alignment
             frm_map.MapSize = m_par.mfx.FrameInfo.Width / 16 * m_par.mfx.FrameInfo.Height / 16;

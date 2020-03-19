@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -1570,7 +1570,7 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
         
         for(size_t i = 0; i < m_pComparators.size() && res == MFX_ERR_NONE; i++)
         {
-            double metricVal[3];
+            double metricVal[3] = {0.};
 
             res = m_pComparators[i].first->Compare(surface, &tmpSurface);
 

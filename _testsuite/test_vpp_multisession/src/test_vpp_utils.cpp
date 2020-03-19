@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2020 Intel Corporation. All Rights Reserved.
 //
 
 #include <string>
@@ -1568,6 +1568,7 @@ mfxStatus  CRawVideoReader::PreAllocateFrameChunk(mfxVideoParam* pVideoParam,
         surface.Data.Locked = 0;
         surface.Data.MemId = response.mids[m_SurfacesList.size()];
         surface.Info = pVideoParam->vpp.In;
+        memset(surface.reserved, 0, sizeof(surface.reserved));
         sts = pAllocator->Lock(pAllocator->pthis, surface.Data.MemId, &surface.Data);
         MFX_CHECK_STS(sts);
         sts = LoadNextFrame(&surface.Data, &pVideoParam->vpp.In);

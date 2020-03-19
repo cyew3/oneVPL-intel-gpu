@@ -129,6 +129,7 @@ namespace hevce_explicit_weight_pred
         mfxExtHEVCRefLists::mfxRefPic def_ref;
         def_ref.FrameOrder = MFX_FRAMEORDER_UNKNOWN;
         def_ref.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+        memset(def_ref.reserved, 0, sizeof(def_ref.reserved));
         std::fill_n(rl.RefPicList0, 32, def_ref);
         std::fill_n(rl.RefPicList1, 32, def_ref);
 
