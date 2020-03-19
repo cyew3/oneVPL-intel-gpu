@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -31,6 +31,9 @@ File Name: .h
 seekSourceCommand::seekSourceCommand(IPipelineControl *pHolder)
     : commandBase(pHolder)
     , m_seekType()
+    , m_fSeekTime()
+    , m_fSeekPercent()
+    , m_uiFramesOffset()
 {
 }
 
@@ -181,6 +184,7 @@ mfxStatus skipCommand::Execute()
 //////////////////////////////////////////////////////////////////////////
 resetEncCommand::resetEncCommand(IPipelineControl *pHolder)
 : commandBase(pHolder)
+, m_bUseResizing()
 {
 }
 

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -80,7 +80,9 @@ unsigned int ConvertVP8FourccToMfxFourcc(mfxU32 fourcc)
 vaapiFrameAllocator::vaapiFrameAllocator()
     : m_dpy(0),
     m_libva(new MfxLoader::VA_Proxy),
-    m_bAdaptivePlayback(false)
+    m_bAdaptivePlayback(false),
+    m_Width(0),
+    m_Height(0)
 {
 }
 

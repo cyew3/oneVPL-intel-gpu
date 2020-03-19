@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "mfx_pipeline_defs.h"
@@ -22,8 +22,10 @@ EncodeDecodeQuality::EncodeDecodeQuality( ComponentParams &refParams
                                         , std::unique_ptr<IVideoEncode> &&pEncode)
     : MFXEncodeWRAPPER(refParams, status, std::move(pEncode))
     , m_ppMfxSurface()
+    , m_cNumberSurfaces()
     , m_pAllocator()
     , m_bInitialized()
+    , m_lastDecStatus(MFX_ERR_NONE)
 {
     ZERO_MEMORY(m_mfxDec);
     ZERO_MEMORY(m_inBits);

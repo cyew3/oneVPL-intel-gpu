@@ -27,7 +27,10 @@ BayerVideoReader::BayerVideoReader(sStreamInfo *pParams)
     }
     m_FileNum = 0;
     m_fSrc     = 0;
-    m_pRawData = NULL;
+    m_pRawData = nullptr;
+    m_FileFrameHeight = 0;
+    m_FileFramePitchBytes = 0;
+    m_RawWidthU32 = 0;
 }
 
 

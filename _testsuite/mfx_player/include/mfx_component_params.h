@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -61,11 +61,13 @@ public:
         , m_nSelectAlgo(USE_FIRST)
         , m_pRandom()
         , m_bOverPS()
+        , m_nOverPS()
         , m_extCO()
         , m_bCalcLatency()
         , m_nDropCyle()
         , m_nDropCount()
         , m_bForceMVCDetection()
+        , m_OutFourcc()
         , m_VP9_Smooth_DRC(false)
       {
           PipelineObjectDescBase dsc(VIDEO_SESSION_NATIVE);

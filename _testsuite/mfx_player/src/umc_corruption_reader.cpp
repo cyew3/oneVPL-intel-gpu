@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2020 Intel Corporation. All Rights Reserved.
 //
 */
 #include "umc_defs.h"
@@ -14,7 +14,7 @@
 #if defined (UMC_ENABLE_FILE_CORRUPT_DATA_READER)
 
 #include <math.h>
-#include "umc_corruption_reader.h" 
+#include "umc_corruption_reader.h"
 #include "assert.h"
 #include <stdlib.h>
 #include <time.h>
@@ -27,9 +27,10 @@ CorruptionReader::CorruptionReader()
     LostPackNum       = 0;
     LostDataSize      = 0;
     CurPackNum        = 0;
+    PrevPackNum       = 0;
     ReadDataSize      = 0;
-    ExchangePackLeft  = 0;        
-    ExchangePackRight = 0;  
+    ExchangePackLeft  = 0;
+    ExchangePackRight = 0;
 }
 
 Status CorruptionReader::Init(DataReaderParams *pInitParams)

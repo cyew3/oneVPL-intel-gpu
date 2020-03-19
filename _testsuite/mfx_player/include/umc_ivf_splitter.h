@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -25,7 +25,7 @@ File Name: .h
 //splitter in UMC interface since it can be included in umc structure
 namespace UMC
 {
-    class IVFSplitter 
+    class IVFSplitter
         : public Splitter
     {
         DYNAMIC_CAST_DECL(IVFSplitter, Splitter);
@@ -34,6 +34,8 @@ namespace UMC
             : m_pRdr()
             , m_bParsed()
             , m_bLastFrameCached()
+            , m_nPts(0)
+            , m_hdr()
         {
         }
         virtual ~IVFSplitter()

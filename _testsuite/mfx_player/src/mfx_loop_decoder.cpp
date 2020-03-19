@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -25,9 +25,10 @@ MFXLoopDecoder::MFXLoopDecoder( mfxI32 nNumFramesInLoop, std::unique_ptr<IYUVSou
     : base(std::move(target))
     , m_CurrSurfaceIndex()
     , m_syncPoint((mfxSyncPoint)0x101) //some random constant to distinguish from zero
+    , m_session(nullptr)
 {
     m_Surfaces.reserve(nNumFramesInLoop);
-    
+
 #if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
     SetThreadPriority(GetCurrentThread(), 4 /*THREAD_PRIORITY_HIGHEST*/);
 #endif

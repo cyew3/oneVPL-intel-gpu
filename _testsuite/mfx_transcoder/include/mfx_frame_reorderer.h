@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -39,6 +39,7 @@ public:
         Frame()
             : m_surface(0)
             , m_frameOrder(0)
+            , m_frameOrderIdr(0)
             , m_frameType(0)
             , m_noL1Ref(0)
         {
@@ -58,8 +59,10 @@ protected:
     {
         DataPerView()
             : m_frameOrder(0)
+            , m_frameOrderIdr(0)
             , m_numFrameInDpb(0)
             , m_numFrameBuffered(0)
+            , m_gopOptFlag(0)
             , m_bufferedFrames()
             , m_dpb()
         {

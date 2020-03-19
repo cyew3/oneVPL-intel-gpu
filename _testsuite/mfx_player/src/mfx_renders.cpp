@@ -449,6 +449,7 @@ MFXFileWriteRender::MFXFileWriteRender(const FileWriterRenderInputParams &params
     , m_pOpenMode(VM_STRING("wb"))
     , m_auxSurface()
     , m_copier(0)
+    , m_Current()
 {
 #if defined(_WIN32) || defined(_WIN64)
     if (m_nFourCC == DXGI_FORMAT_AYUV)
@@ -1153,6 +1154,8 @@ MFXMetricComparatorRender::MFXMetricComparatorRender(const FileWriterRenderInput
     , m_nNewFileOffset(0)
     , m_nOldFileOffset()
     , m_pRefArray(0)
+    , m_nRefArray()
+    , m_uiDeltaVal()
     , m_metricType(0)
     , m_bFileSourceMode()
     , m_bVerbose()

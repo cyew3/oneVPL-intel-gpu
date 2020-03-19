@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -14,7 +14,7 @@ File Name: .h
 #include "mfx_spl_wrapper.h"
 #define UMC_ENABLE_FILE_READER
 
-//preventing from vm_assert redefinition 
+//preventing from vm_assert redefinition
 #undef assert
 
 #include "umc_splitter.h"
@@ -49,7 +49,12 @@ UMCSplWrapper::UMCSplWrapper(mfxU32 nCorruptionLevel)
     : m_pSplitter()
     , m_pReader()
     , m_pInputData()
+    , m_SplitterInfo(nullptr)
     , m_pVideoInfo()
+    , m_iVideoPid()
+    , m_nFrames()
+    , m_fLastTime()
+    , m_fFirstTime()
     , m_pInitParams()
     , m_pConstructor()
     , m_isVC1()
@@ -554,11 +559,11 @@ mfxStatus UMCSplWrapper::SelectDataReader(const vm_char * strFileName)
             break;
         }
     }
-    
+
     // Data Reader
 
     MFX_CHECK_LASTERR(UMC_OK == pReader->Init(pParams.get()));
-     
+
     m_pReader = pReader.release();
     pParams.reset();
 

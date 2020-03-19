@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -34,9 +34,9 @@ static inline mfxU32 GetValue32(mfxU8* pBuf)
 }
 
 static inline mfxU32 GetLength(mfxU32 nBytesCount, mfxU8* pBuf)
-{   
+{
     MFX_CHECK_WITH_ERR(pBuf , 0);
-    
+
     mfxU32 nLenght = 0;
 
     switch (nBytesCount)
@@ -90,7 +90,7 @@ mfxStatus MFXFrameConstructor::ConstructFrame(mfxBitstream *pBSIn, mfxBitstream 
     {
         return MFX_ERR_MORE_DATA;
     }
-    
+
     //checking whether we can survive in current array
     if (pBSOut->DataLength + pBSIn->DataLength> pBSOut->MaxLength)
         return MFX_WRN_IN_EXECUTION; /* Buffer reallocation done on the upper level */
@@ -111,8 +111,10 @@ mfxStatus MFXFrameConstructor::ConstructFrame(mfxBitstream *pBSIn, mfxBitstream 
 
 //////////////////////////////////////////////////////////////////////////
 
-MFXVC1FrameConstructor::MFXVC1FrameConstructor() 
+MFXVC1FrameConstructor::MFXVC1FrameConstructor()
 : MFXFrameConstructor()
+, m_VideoParam()
+, m_isSeqHeaderConstructed()
 {
 }
 
@@ -184,7 +186,7 @@ mfxStatus MFXVC1FrameConstructor::ConstructFrame( mfxBitstream* pBSIn
                     SetValue32(0x0D010000, &tempBuffer[0]);
                 }
             }
-            
+
             tempBuffer.insert(tempBuffer.end()
                 , pBSIn->Data + pBSIn->DataOffset
                 , pBSIn->Data + pBSIn->DataOffset + pBSIn->DataLength);
@@ -204,7 +206,7 @@ mfxStatus MFXVC1FrameConstructor::ConstructFrame( mfxBitstream* pBSIn
                 pBSOut->TimeStamp  = pBSIn->TimeStamp;
             }
         }
-    }    
+    }
 
     return sts;
 }
@@ -249,7 +251,7 @@ mfxStatus MFXVC1FrameConstructor::ConstructSequenceHeaderSM( mfxBitstream* pBSIn
 
     pBSIn->DataLength = 0;
     pBSIn->DataOffset = 0;
-    
+
     tempBuffer.resize(tempBuffer.size() + 12);
 
     // set resolution 
@@ -263,7 +265,7 @@ mfxStatus MFXVC1FrameConstructor::ConstructSequenceHeaderSM( mfxBitstream* pBSIn
     mfxBitstream bs;
     bs.Data = &tempBuffer.front();
     bs.DataOffset = 0;
-    bs.MaxLength = 
+    bs.MaxLength =
         bs.DataLength = (mfxU32)tempBuffer.size();
 
     MFX_CHECK_STS(MFXFrameConstructor::ConstructFrame(&bs, pBSOut));
@@ -295,14 +297,16 @@ bool MFXVC1FrameConstructor::IsStartCodeExist(mfxU8* pStart)
         return true;
     default:
         // start code not found
-        return false; 
+        return false;
     }
 }
 
 //////////////////////////////////////////////////////////////////////////
 
 StartCodeIteratorMP4::StartCodeIteratorMP4()
-: m_pSource(0)
+: m_nFullSize(0)
+, m_nByteLen(0)
+, m_pSource(0)
 , m_nSourceSize(0)
 , m_pSourceBase(0)
 , m_nSourceBaseSize(0)
@@ -351,7 +355,7 @@ mfxU32 StartCodeIteratorMP4::GetNext()
 
 //////////////////////////////////////////////////////////////////////////
 
-MFXAVCFrameConstructor::MFXAVCFrameConstructor() 
+MFXAVCFrameConstructor::MFXAVCFrameConstructor()
 : m_bHeaderReaded(false)
 {
     memset(&m_StartCodeBS, 0, sizeof(mfxBitstream));
@@ -360,7 +364,7 @@ MFXAVCFrameConstructor::MFXAVCFrameConstructor()
     m_StartCodeBS.DataLength =
         m_StartCodeBS.MaxLength = 4;
 
-    SetValue32(0x01000000, m_StartCodeBS.Data);   
+    SetValue32(0x01000000, m_StartCodeBS.Data);
 }
 
 MFXAVCFrameConstructor::~MFXAVCFrameConstructor()
@@ -430,7 +434,7 @@ mfxStatus MFXAVCFrameConstructor::ConstructFrame(mfxBitstream* pBSIn, mfxBitstre
         bs.DataOffset = 0;
         bs.MaxLength = 
             bs.DataLength = (mfxU32)tempBuffer.size();
-        
+
         MFX_CHECK_STS(MFXFrameConstructor::ConstructFrame(&bs, pBSOut));
 
         pBSOut->FrameType  = pBSIn->FrameType;
@@ -475,7 +479,7 @@ mfxStatus MFXAVCFrameConstructor::ReadHeader(mfxBitstream* pBSIn, mfxBitstream *
 
     std::vector<mfxU8> tempBuffer;
 
-    for (int i = 0; i < m_avcRecord.numOfSequenceParameterSets; i++)    
+    for (int i = 0; i < m_avcRecord.numOfSequenceParameterSets; i++)
     {
         tempBuffer.insert(tempBuffer.end(), m_StartCodeBS.Data, m_StartCodeBS.Data + 4);
 
@@ -554,7 +558,7 @@ mfxStatus MFXHEVCFrameConstructor::ConstructFrame(mfxBitstream* pBSIn, mfxBitstr
     while (pBSIn->DataLength > 4)
     {
         mfxU32 nDataLength = GetLength(4, pBSIn->Data + pBSIn->DataOffset);
-        
+
         if (nDataLength > (pBSIn->DataLength - 4)) break; // not enough data in the buffer
 
         pBSIn->DataOffset += 4;
@@ -572,7 +576,7 @@ mfxStatus MFXHEVCFrameConstructor::ConstructFrame(mfxBitstream* pBSIn, mfxBitstr
         bs.Data = &tempBuffer.front();
         bs.DataOffset = 0;
         bs.MaxLength = bs.DataLength = (mfxU32)tempBuffer.size();
-        
+
         MFX_CHECK_STS(MFXFrameConstructor::ConstructFrame(&bs, pBSOut));
 
         pBSOut->FrameType  = pBSIn->FrameType;

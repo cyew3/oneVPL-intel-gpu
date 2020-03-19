@@ -29,6 +29,7 @@ MFXEncodeWRAPPER::MFXEncodeWRAPPER(ComponentParams & refParams, mfxStatus *statu
     m_nSyncPoints       = 0;
     m_pCacheBuffer      = NULL;
     m_pRefFile          = NULL;
+    m_nCacheBufferSize  = 0;
 
     if (!refParams.m_pSession && status)
     {

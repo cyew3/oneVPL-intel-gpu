@@ -4,9 +4,9 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2020 Intel Corporation. All Rights Reserved.
 
-File Name: 
+File Name: mfx_pipeline_types.h
 
 *******************************************************************************/
 
@@ -211,7 +211,13 @@ public:
 class auto_ext_buffer_base
 {
 public:
-    auto_ext_buffer_base() : m_bPushed()
+    auto_ext_buffer_base()
+        : m_pOldExtBuf()
+        , m_nOldExtBuf()
+        , m_bPushed()
+        , m_numExParamsRef()
+        , m_ppExtParamsRef()
+
     {
     }
     virtual ~auto_ext_buffer_base()
@@ -221,7 +227,7 @@ public:
 
     void insert(mfxExtBuffer* bufToInsert) {
         if (!m_bPushed ) return;
-     
+
         IntergityMaintainer maintain(*this);
         //copying inserted buffers
         m_final_buffer.push_back(bufToInsert);
@@ -646,6 +652,7 @@ public:
                     mfxU16  PicStruct = 0,
                     mfxU16  ChromaFormat = 0)
     {
+         m_Info = {};
          m_Info.FrameId.DependencyId = DependencyId;
          m_Info.FrameId.PriorityId = PriorityId;
          m_Info.FrameId.QualityId = QualityId;

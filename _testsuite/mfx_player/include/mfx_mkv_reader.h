@@ -129,7 +129,7 @@ public:
         m_bInited  = false;
         m_bInfoSet = false;
         m_fSource  = 0;
-        m_codec    = 0;        
+        m_codec    = 0;
         m_codec_private_size = 0;
         m_track_number       = 1;
 
@@ -138,6 +138,7 @@ public:
             m_bInfoSet = true;
             m_sInfo = *pParams;
         }
+        m_codec_private = nullptr;
     }
 
     virtual ~MKVReader(){ Close(); }

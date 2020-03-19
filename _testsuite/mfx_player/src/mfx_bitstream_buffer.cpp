@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -20,8 +20,13 @@ MFXBistreamBuffer::MFXBistreamBuffer()
     : mfxBitstream2()
     , m_bDonotUseLinear()
     , m_bStartedBuffering()
+    , m_nBufferSizeMax()
+    , m_nBufferSizeMin()
+    , m_nMinBufferSize()
     , m_bEnable()
+    , m_bLocked()
     , m_bEos()
+    , m_nMinSize()
 {
 }
 

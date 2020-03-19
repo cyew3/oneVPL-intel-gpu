@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -192,19 +192,20 @@ protected:
     MsdkSoModule         m_PluginModule;
     mfx_intrusive_ptr<T> m_plugin;
     MFXPluginAdapter<T>  m_adapter;
-    
+
     /* Variables related to the GUID-based load mechanism */
     mfxU32       m_plugin_version;
     mfxPluginUID m_uid;
 
-    MfxPluginLoadType plugin_load_type;         
+    MfxPluginLoadType plugin_load_type;
 
     mfxSession m_session;
     typedef PluginCreateTrait<T> Plugin;
-    
+
 public:
     PluginLoader(mfxSession session, const tstring & pluginName)
         : m_PluginModule(pluginName)
+        , m_plugin_version()
         , m_session()
     {
 
@@ -285,7 +286,7 @@ public:
         if (m_session) 
         {
             mfxStatus sts;
-        
+
             if ( MFX_PLUGINLOAD_TYPE_GUID == plugin_load_type ) 
             {
                 sts = MFXVideoUSER_UnLoad(m_session, &m_uid);
@@ -302,7 +303,7 @@ public:
                     MFX_TRACE_ERR(VM_STRING("MFXVideoUSER_Unregister(session=0x") << std::hex << m_session<< VM_STRING(", type=") << Plugin::type << VM_STRING(", sts=") << sts);
                 }
             }
-            
+
             m_session = 0;
         }
     }
@@ -311,5 +312,5 @@ public:
         return m_session != 0;
     }
 
-   
+
 };
