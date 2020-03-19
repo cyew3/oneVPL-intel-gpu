@@ -9,6 +9,7 @@
       $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
       $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
       $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;
       $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h265\include;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\agnostic;
@@ -28,6 +29,8 @@
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12dg2;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared\embargo;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\genx\copy_kernels\include;
       $(MSDK_STUDIO_ROOT)\mfx_lib\lpla;
       $(MSDK_STUDIO_ROOT)\..\tests\unit;
       $(MSDK_STUDIO_ROOT)\..\contrib\detours\include;
@@ -41,13 +44,14 @@
     <MfxDefinitions Condition="'$(Platform)'=='x64'">MFX_ENABLE_UNIT_TEST_HEVCE_DX11_DDI;$(MfxDefinitions);</MfxDefinitions>
     <MfxLibraryDir>$(MfxIppLibraryDir)</MfxLibraryDir>
     <!-- System DX API libraries -->
-    <MfxLibraries>uuid.lib;dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib</MfxLibraries>
+    <MfxLibraries>uuid.lib;dxva2.lib;d3d9.lib;d3d11.lib;dxgi.lib; cfgmgr32.lib</MfxLibraries>
     <!-- IPP libraries -->
-    <MfxLibraries Condition="'$(Platform)'=='Win32'">ippcoremt.lib;ippi_s_p8.lib;$(MfxLibraries)</MfxLibraries>
-    <MfxLibraries Condition="'$(Platform)'=='x64'">ippcoremt.lib;ippi_s_y8.lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraries Condition="'$(Platform)'=='Win32'">ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraries Condition="'$(Platform)'=='x64'">ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;$(MfxLibraries)</MfxLibraries>
     <!-- Detours library -->
     <MfxLibraries Condition="'$(Platform)'=='Win32'">$(MSDK_STUDIO_ROOT)\..\contrib\detours\lib.X86\detours.lib;$(MfxLibraries)</MfxLibraries>
     <MfxLibraries Condition="'$(Platform)'=='x64'">$(MSDK_STUDIO_ROOT)\..\contrib\detours\lib.X64\detours.lib;$(MfxLibraries)</MfxLibraries>
+  <MfxLibraries>version.lib;$(MfxLibraries)</MfxLibraries>
   </PropertyGroup>
 <!-- End of compare_struct.vcxproj specific settings -->
 </Project>

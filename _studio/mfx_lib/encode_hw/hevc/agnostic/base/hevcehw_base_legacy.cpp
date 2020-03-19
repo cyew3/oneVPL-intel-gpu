@@ -1755,6 +1755,10 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
                 && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
             || task.bSkip;
 
+        mfxFrameSurface1* surface = task.pSurfReal;
+        MFX_CHECK(!(surface && surface->Data.MemType & MFX_MEMTYPE_INTERNAL_FRAME),
+            core.GetFrameHDL(task.pSurfReal->Data.MemId, &task.HDLRaw.first));
+
         MFX_CHECK(!bInternalFrame, core.GetFrameHDL(task.Raw.Mid, &task.HDLRaw.first));
 
         MFX_CHECK(par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY

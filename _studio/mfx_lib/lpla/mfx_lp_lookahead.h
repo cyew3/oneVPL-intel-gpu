@@ -17,8 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-
 #include "mfx_common.h"
+#include "mfx_task.h"
 
 #ifndef _MFX_LOWPOWER_LOOKAHEAD_H_
 #define _MFX_LOWPOWER_LOOKAHEAD_H_
@@ -31,6 +31,8 @@ struct mfxLplastatus
 };
 
 #if defined (MFX_ENABLE_LP_LOOKAHEAD)
+
+class VideoVPPMain;
 
 class MfxLpLookAhead
 {
@@ -50,11 +52,32 @@ public:
     virtual mfxStatus Query(mfxLplastatus* laStatus);
 
 protected:
+    bool NeedDownScaling(const mfxVideoParam& par);
+    mfxStatus CreateVpp(const mfxVideoParam& par);
+    void DestroyVpp();
+
+protected:
     bool                   m_bInitialized = false;
+    bool                   m_taskSubmitted= false;
     VideoCORE*             m_core         = nullptr;
     VideoENCODE*           m_pEnc         = nullptr;
     mfxBitstream           m_bitstream    = {};
     std::list<mfxLplastatus> m_lplastatus;
+
+    mfxExtBuffer*          m_extBuffer = nullptr;
+    mfxExtVPPScaling       m_scalingConfig = {};
+
+    MFX_ENTRY_POINT        m_entryPoint      = {};
+    bool                   m_bNeedDownscale  = false;
+    VideoVPPMain*          m_pVpp            = nullptr;
+    mfxFrameAllocResponse  m_dsResponse      = {};
+    mfxFrameSurface1       m_dsSurface       = {};
+
+    const mfxU16           m_dsRatio     = 4;
+    const mfxU16           m_minDsWidth  = 1280; // if resolution smaller than min, no downscaling required
+    const mfxU16           m_minDsHeight = 720;
+    mfxU16                 m_dstWidth    = 480; // target down scaled size
+    mfxU16                 m_dstHeight   = 270;
 };
 
 #endif

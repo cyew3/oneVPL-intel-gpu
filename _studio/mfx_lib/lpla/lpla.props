@@ -22,6 +22,7 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\agnostic;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\agnostic\base;
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include\feature_blocks;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\vpp\include;
     </MfxIncludes>
     <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>

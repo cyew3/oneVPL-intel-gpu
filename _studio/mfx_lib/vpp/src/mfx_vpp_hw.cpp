@@ -3315,7 +3315,8 @@ mfxStatus VideoVPPHW::PreWorkOutSurface(ExtSurface & output)
 
     if (D3D_TO_D3D == m_ioMode || SYS_TO_D3D == m_ioMode)
     {
-        if ((m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) || output.bForcedInternalAlloc)
+        if ((m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) || output.bForcedInternalAlloc
+            || output.pSurf->Data.MemType & MFX_MEMTYPE_INTERNAL_FRAME)
         {
             MFX_SAFE_CALL(m_pCore->GetFrameHDL( output.pSurf->Data.MemId, (mfxHDL *)&hdl) );
             m_executeParams.targetSurface.memId = output.pSurf->Data.MemId;

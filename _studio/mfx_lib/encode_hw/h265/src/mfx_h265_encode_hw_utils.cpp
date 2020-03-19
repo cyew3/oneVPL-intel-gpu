@@ -607,7 +607,12 @@ mfxStatus GetNativeHandleToRawSurface(
         || toSkip)
         sts = core.GetFrameHDL(task.m_midRaw, nativeHandle);
     else if (video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
-        sts = core.GetExternalFrameHDL(surface->Data.MemId, nativeHandle);
+    {
+        if (surface->Data.MemType & MFX_MEMTYPE_INTERNAL_FRAME)
+            sts = core.GetFrameHDL(surface->Data.MemId, nativeHandle);
+        else
+            sts = core.GetExternalFrameHDL(surface->Data.MemId, nativeHandle);
+    }
     else if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) // opaq with internal video memory
         sts = core.GetFrameHDL(surface->Data.MemId, nativeHandle);
     else

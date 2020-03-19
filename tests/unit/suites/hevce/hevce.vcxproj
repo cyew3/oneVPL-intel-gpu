@@ -29,6 +29,11 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">
+      </IgnoreSpecificDefaultLibraries>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\contrib\build\detours\detours.vcxproj">
@@ -43,8 +48,14 @@
     <ProjectReference Include="..\..\..\..\contrib\build\googletest\gtest_main.vcxproj">
       <Project>{c2b706a6-968d-355a-ae3d-c834291c9dfd}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\cmrt_cross_platform\cmrt_cross_platform.vcxproj">
+      <Project>{a3d890f5-7362-404d-95bf-b6c8aaba786b}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\encode_hw\encode_hw.vcxproj">
       <Project>{6e291a7c-090c-4922-bf63-cc83f06fb8b0}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\genx\genx.vcxproj">
+      <Project>{990e2264-0865-44b2-a1f2-d721720f1857}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\lpla\lpla.vcxproj">
       <Project>{0C068137-F078-4DDB-83BC-673AD739894E}</Project>
@@ -52,11 +63,23 @@
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\libmfxhw.vcxproj">
       <Project>{38e352c7-c5f5-459e-9338-a7dd164e6ca4}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\mctf_package\mctf\genx_mctf.vcxproj">
+      <Project>{10e3378b-9166-4fa2-968e-11f6c85239b5}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\shared\mfx_common.vcxproj">
       <Project>{5b832ea0-e58c-46b9-aff6-2416cf805c09}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\shared\mfx_common_hw.vcxproj">
       <Project>{dd53ac38-3804-4438-a3ca-a9e390cdf9f9}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\vpp\vpp_hw.vcxproj">
+      <Project>{55e35fca-3efb-4e12-899c-af56aa2a009d}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\asc\ascLib.vcxproj">
+      <Project>{0f61230f-80e3-48ed-9fa7-96d13b4e5bb7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\umc\codec\scene_analyzer\scene_analyzer.vcxproj">
+      <Project>{28070952-7e32-4e91-bd27-65f638388720}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\umc\base_classes.vcxproj">
       <Project>{c22074b5-4f12-464e-b7be-6c169718e0e8}</Project>
@@ -73,9 +96,26 @@
     <ProjectReference Include="..\..\..\..\_studio\shared\umc\io\umc_io\umc_io.vcxproj">
       <Project>{8dc35b89-b4b7-4b48-b462-e589d4fdfede}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\umc\io\umc_va\umc_va_elk.vcxproj">
+      <Project>{8b6c2462-3a4d-4070-a44f-9a75e813ef27}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\_studio\shared\src\auxiliary_device.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\d3d11_video_processor.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\libmfx_allocator.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\libmfx_allocator_d3d9.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\libmfx_allocator_d3d11.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\fast_compositing_ddi.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\shared\src\cm_mem_copy.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\genx\copy_kernels\src\genx_cht_copy_isa.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\genx\copy_kernels\src\genx_cnl_copy_isa.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\genx\copy_kernels\src\genx_icllp_copy_isa.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\genx\copy_kernels\src\genx_icl_copy_isa.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\genx\copy_kernels\src\genx_skl_copy_isa.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\genx\copy_kernels\src\genx_tgllp_copy_isa.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\genx\copy_kernels\src\genx_tgl_copy_isa.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\genx\copy_kernels\src\genx_dg2_copy_isa.cpp" />
     <ClCompile Include="hevce_disp.cpp" />
     <ClCompile Include="hevce_feature_blocks_dx11_ddi.cpp" />
     <ClCompile Include="hevce_feature_blocks_g11_interlace.cpp" />
