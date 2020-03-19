@@ -124,7 +124,9 @@ inline bool exctract_device_id(const tstring descr_string, mfxU32& device_id)
 {
     using namespace std;
 
-    basic_regex<TCHAR> rgx(_T(".*DEV_([0-9A-F]+).*$"));
+    DISPATCHER_LOG_INFO(("extract_device_id, descr_string = %S\n", descr_string.c_str()));
+
+    basic_regex<TCHAR> rgx(_T(".*DEV_([0-9A-F]+).*$"), regex_constants::ECMAScript | regex_constants::icase);
     match_results<tstring::const_iterator> match;
 
     if (!regex_match(descr_string.cbegin(), descr_string.cend(), match, rgx))
