@@ -348,7 +348,7 @@ namespace avce_nummbperslice{
         tc_struct temp_tc = test_case[id];
 
         if(g_tsImpl == MFX_IMPL_SOFTWARE || g_tsHWtype < MFX_HW_HSW) {
-            if(id > (sizeof(test_case_sw)/sizeof(test_case_sw[0]))) {
+            if(id >= (sizeof(test_case_sw)/sizeof(test_case_sw[0]))) {
                 return 0;
             } else{
                 temp_tc = test_case_sw[id];

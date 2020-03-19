@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -1130,10 +1130,9 @@ int TestSuite::RunTest(unsigned int id)
     g_tsStreamPool.Reg();
 
     // setup output stream
-    char tmp_out[10];
-#pragma warning(disable:4996)
-    sprintf(tmp_out, "%04d.h264", id+1);
-#pragma warning(default:4996)
+    const mfxU32 tmp_out_size = 10;
+    char tmp_out[tmp_out_size + 1] = {0};
+    snprintf(tmp_out, tmp_out_size, "%04d.h264", id+1);
     std::string out_name = ENV("TS_OUTPUT_NAME", tmp_out);
     BsDump b(out_name.c_str());
     if (m_par.mfx.GopRefDist != 1)

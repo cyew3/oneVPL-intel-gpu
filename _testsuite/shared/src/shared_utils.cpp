@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2019 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2020 Intel Corporation. All Rights Reserved.
 //
 #include <math.h>
 #include <memory.h>
@@ -749,7 +749,7 @@ mfxStatus InitMFXBuffer(mfxU8*** pBuf,mfxU32 size,mfxU32 nData)
     for (i = 0; i<nData; i++)
     {
         p[i] = new mfxU8 [size];
-        CHECK_POINTER_SAFE(p[i], MFX_ERR_MEMORY_ALLOC, WipeMFXBuffer(p, (mfxU8)nData));
+        CHECK_POINTER_SAFE(p[i], MFX_ERR_MEMORY_ALLOC, WipeMFXBuffer(p, nData));
         memset(p[i], 0, size);
     }
     *pBuf = p;
@@ -1089,7 +1089,7 @@ void WipeMFXSurfaceDec( mfxFrameSurface1* pSurface )
     SAFE_DELETE_ARRAY(pSurface->Data.V);
 }
 
-void WipeMFXBuffer(mfxU8** pData,mfxU8 n)
+void WipeMFXBuffer(mfxU8** pData,mfxU32 n)
 {
     mfxU32 i;
     CHECK_POINTER_NO_RET(pData);

@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 - 2019 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2020 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_vpp_utils.h"
@@ -388,9 +388,9 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
 
-                vm_char* dstFile = new vm_char[MAX_FILELEN];
-                memset(dstFile, 0, sizeof(vm_char) * MAX_FILELEN);
-                vm_string_strcpy(dstFile, strInput[i]);
+                vm_char* dstFile = new vm_char[MAX_FILELEN + 1];
+                memset(dstFile, 0, sizeof(vm_char) * (MAX_FILELEN + 1));
+                vm_string_strncpy(dstFile, strInput[i], sizeof(vm_char) * MAX_FILELEN);
 
                 pParams->strDstFiles.push_back(dstFile);
                 pParams->isOutput = true;
@@ -1258,7 +1258,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 vm_char* dstFile = new vm_char[MAX_FILELEN];
                 memset(dstFile, 0, sizeof(vm_char) * MAX_FILELEN);
-                vm_string_strcpy(dstFile, strInput[i]);
+                vm_string_strncpy(dstFile, strInput[i], sizeof(vm_char) * MAX_FILELEN);
 
                 pParams->strDstFiles.push_back(dstFile);
                 pParams->isOutput = true;

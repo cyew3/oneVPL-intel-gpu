@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2008-2019 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2020 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -189,7 +189,7 @@ void WipeMFXBitstream(mfxBitstream *pBitstream);
 void WipeMFXSurface(mfxFrameSurface1* pSurface);
 void WipeMFXSurface(mfxFrameSurface*  pSurface);
 void WipeMFXSurfaceDec(mfxFrameSurface1* pSurface );
-void WipeMFXBuffer(mfxU8** pData, mfxU8 n);
+void WipeMFXBuffer(mfxU8** pData, mfxU32 n);
 void WipeMFXFrameData(mfxFrameData** pData, mfxU8 FrameNum);
 void WipeMFXDataPlanes(sMFXPlanes* pPlanes);
 void WipeMFXEncode(sFrameEncoder* pEncoder);

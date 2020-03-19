@@ -1211,10 +1211,11 @@ MFXMetricComparatorRender::~MFXMetricComparatorRender()
     Close();
 
     vm_char  planes[] = VM_STRING("YUV");    
-    vm_char  pMetricNumber[4] = VM_STRING("");
+    mfxU32 const nMetricNumberSize = 4;
+    vm_char  pMetricNumber[nMetricNumberSize + 1] = VM_STRING("");
     if (m_bIsViewRender)
     {
-          vm_string_sprintf(pMetricNumber, VM_STRING("_%d"), m_nViewId);
+          vm_string_snprintf(pMetricNumber, nMetricNumberSize, VM_STRING("_%d"), m_nViewId);
     }
 
     for (size_t i = 0; i < m_pComparators.size(); i++)
@@ -1658,10 +1659,11 @@ mfxStatus MFXMetricComparatorRender::AddMetric(MetricType type, mfxF64 fVal)
 
 void MFXMetricComparatorRender::ReportDifference(const vm_char * metricName)
 {
-    vm_char  pMetricNumber[4] = VM_STRING("");
+    mfxU32 const nMetricNumberSize = 4;
+    vm_char  pMetricNumber[nMetricNumberSize + 1] = VM_STRING("");
     if (m_bIsViewRender)
     {
-        vm_string_sprintf(pMetricNumber, VM_STRING("_%d"), m_nViewId);
+        vm_string_snprintf(pMetricNumber, nMetricNumberSize, VM_STRING("_%d"), m_nViewId);
     }
 
     vm_string_printf(VM_STRING("\nFAILED: %s%s comparison at\n"), metricName, pMetricNumber);
