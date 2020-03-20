@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2019 Intel Corporation
+// Copyright (c) 2004-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -682,7 +682,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
     // It can be useful to run threads right after first frame receive
     MFX_SAFE_CALL(DecodeFrameCheck(bs, surface_work, surface_out));
 
-    UMC::FrameData *dst;
+    UMC::FrameData *dst = NULL;
     MFX_SAFE_CALL(decoder->AllocateFrameData(dst));
 
     {

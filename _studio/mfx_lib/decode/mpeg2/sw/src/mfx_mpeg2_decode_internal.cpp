@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -602,7 +602,7 @@ mfxStatus VideoDECODEMPEG2::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts, mfxU1
 {
     MFX_CHECK_NULL_PTR3(ud, sz, ts);
 
-    mfxF64 fts;
+    mfxF64 fts = 0.;
     UMC::Status umcSts = internalImpl->m_implUmc->GetCCData(ud, sz, fts, bufsize);
 
     if (UMC::UMC_OK == umcSts)

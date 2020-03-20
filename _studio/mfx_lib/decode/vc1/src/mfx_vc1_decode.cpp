@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2019 Intel Corporation
+// Copyright (c) 2004-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -74,7 +74,7 @@ void MFXVideoDECODEVC1::SetFrameOrder(mfx_UMC_FrameAllocator* pFrameAlloc, mfxVi
     mfxFrameSurface1 surface = { };
     mfxFrameSurface1 *pSurface;
 
-    uint32_t frameOrder;
+    uint32_t frameOrder = 0;
     UMC::FrameMemID idx = m_pVC1VideoDecoder->GetFrameOrder(isLast, isSamePolar, frameOrder);
 
     pSurface = pFrameAlloc->GetSurface(idx, &surface, par);
@@ -1224,7 +1224,7 @@ mfxStatus MFXVideoDECODEVC1::ReturnLastFrame(mfxFrameSurface1 *surface_work, mfx
 
     if (memID > -1)
     {
-        mfxU16 Corrupted;
+        mfxU16 Corrupted = 0;
         mfxStatus MFXSts = GetOutputSurface(surface_disp, surface_work, memID);
         MFX_CHECK_STS(MFXSts);
 
@@ -1245,7 +1245,7 @@ mfxStatus MFXVideoDECODEVC1::ReturnLastFrame(mfxFrameSurface1 *surface_work, mfx
         default:
             // only one frame in stream | reset + decodeframeasync + drain with zero bitstream
             // memID may be arbitrary in case of external allocator
-            mfxU16 Corrupted;
+            mfxU16 Corrupted = 0;
             mfxStatus MFXSts;
 
             m_qSyncMemID.pop_back();
@@ -1332,7 +1332,7 @@ mfxStatus MFXVideoDECODEVC1::PostProcessFrame(mfxFrameSurface1 *surface_work, mf
     FrameMemID memIDdisp = -1;
     bool isSkip = false;
     mfxFrameSurface1 *surface_out;
-    mfxU16 Corrupted;
+    mfxU16 Corrupted = 0;
 
     // m_DisplayList - nned for buffering in HW mode only
     surface_out = surface_disp;
