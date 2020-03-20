@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -149,8 +149,10 @@ mfxStatus tsVideoENC::Init(mfxSession session, mfxVideoParam *par)
     m_initialized = (g_tsStatus.get() >= 0);
 
     if (par)
+    {
         EXPECT_EQ(0, memcmp(&orig_par, par, sizeof(mfxVideoParam)))
             << "ERROR: Input parameters must not be changed in Init()";
+    }
 
     return g_tsStatus.get();
 }
