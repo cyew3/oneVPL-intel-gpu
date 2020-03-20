@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2249,6 +2249,9 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
             H265LongTermRefPicSet *pLtRps = &currFrame->m_longRefPicSet[0];
 
             // set LTR bit writing
+            assert(currFrame->m_pLtrFrame);
+            if (!currFrame->m_pLtrFrame)
+                return;
             Ipp32s pocLsbMax = 1 << m_sps.log2_max_pic_order_cnt_lsb;
             Ipp32s pocLtr = currFrame->m_pLtrFrame->m_poc;
             Ipp32s pocLsbLtr = computeLSB(pocLtr, pocLsbMax);;

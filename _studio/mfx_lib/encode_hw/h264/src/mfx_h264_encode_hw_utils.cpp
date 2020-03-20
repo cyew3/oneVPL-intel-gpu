@@ -5985,6 +5985,9 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
 
             if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
+            assert(extPt);
+            if (!extPt)
+                return;
             PutSeiMessage(writer, *extPt, msgPicTiming);
             if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutTrailingBits();
@@ -6256,6 +6259,9 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
 
         if (IsOff(extOpt.SingleSeiNalUnit))
             writerAVC.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
+        assert(extPt);
+        if (!extPt)
+            return;
         PutSeiMessage(writerAVC, *extPt, msgPicTiming);
         if (IsOff(extOpt.SingleSeiNalUnit))
             writerAVC.PutTrailingBits();

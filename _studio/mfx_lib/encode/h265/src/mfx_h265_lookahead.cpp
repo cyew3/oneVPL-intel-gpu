@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2421,11 +2421,13 @@ Ipp32s H265Enc::BuildQpMap(FrameIter begin, FrameIter end, Ipp32s frameOrderCent
                 if (frameType == MFX_FRAMETYPE_I) 
                     DetermineQpMap_IFrame(curr, itNextRefPlus1, videoParam);
                 else if (frameType == MFX_FRAMETYPE_P) {
+                    MFX_CHECK_NULL_PTR1(prevP);
                     FrameIter itPrevRef  = std::find_if(begin, end, isEqual(prevP->m_frameOrder));
                     DetermineQpMap_PFrame(itPrevRef, curr, itNextRefPlus1, videoParam);
                 }
             }
             if ((videoParam.DeltaQpMode & AMT_DQP_CAL) && (frameType == MFX_FRAMETYPE_P)) {
+                MFX_CHECK_NULL_PTR1(prevP);
                 FrameIter itPrevRef = std::find_if(begin, end, isEqual(prevP->m_frameOrder));
                 BackPropagateAvgTsc(itPrevRef, curr);
             }

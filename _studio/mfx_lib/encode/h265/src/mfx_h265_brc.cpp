@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 Intel Corporation
+// Copyright (c) 2013-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ namespace {
 
     Ipp8u QStep2QpFloor(Ipp64f qstep, Ipp8u qpoffset = 0) // QSTEP[qp] <= qstep, return 0<=qp<=51+mQuantOffset
     {
-        Ipp8u qp = Ipp8u(std::upper_bound(QSTEP, QSTEP + 52 + qpoffset, qstep) - QSTEP);
+        Ipp8u qp = Ipp8u(std::upper_bound(QSTEP, QSTEP + std::min(52 + qpoffset, 88), qstep) - QSTEP);
         return qp > 0 ? qp - 1 : 0;
     }
 

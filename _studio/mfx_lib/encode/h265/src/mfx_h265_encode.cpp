@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -3003,7 +3003,7 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
                     // TT_COMPLETE shouldn't have dependent tasks
                     assert(task->numDownstreamDependencies == 0);
                     th->m_prepCritSect.lock();
-
+                    MFX_CHECK_NULL_PTR1(th->m_inputTaskInProgress);
                     H265EncodeTaskInputParams *taskInProgress = th->m_inputTaskInProgress;
                     if (taskInProgress->bs) {
                         for (Ipp32s f = 0; f < (th->m_videoParam.picStruct == PROGR ? 1 : 2); f++) {
