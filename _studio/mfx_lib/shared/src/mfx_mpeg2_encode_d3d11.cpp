@@ -712,7 +712,7 @@ mfxStatus D3D11Encoder::Register(
     //}
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    if (m_bIsBlockingTaskSyncEnabled)
+    if (type == D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA && m_bIsBlockingTaskSyncEnabled)
     {
         m_EventCache->Init(256); // allocate a cache for 256 elements as _NUM_STORED_FEEDBACKS
     }

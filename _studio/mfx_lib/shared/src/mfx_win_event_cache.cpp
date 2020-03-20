@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ MFX_ERR_NOT_INITIALIZED if already initialized
 
 mfxStatus EventCache::Init(size_t nPreallocEvents)
 {
-    for (size_t i = 0; i < nPreallocEvents; i++)
+    for (size_t i = m_Free.size(); i < nPreallocEvents; i++)
     {
         EVENT_TYPE ev= CreateEvent(NULL, FALSE, FALSE, NULL);
         // WA for avoid cases whan global HW (BB completion) event is equal created event
@@ -44,7 +44,11 @@ mfxStatus EventCache::Init(size_t nPreallocEvents)
         }
         m_Free.push_back(ev);
     }
-    m_nInitNumberOfEvents = (mfxU16)nPreallocEvents;
+
+    if (nPreallocEvents > m_nInitNumberOfEvents)
+    {
+        m_nInitNumberOfEvents = (mfxU16)nPreallocEvents;
+    }
 
     return MFX_ERR_NONE;
 }
@@ -59,14 +63,21 @@ mfxStatus EventCache::Close()
 {
     m_pGlobalHwEvent = nullptr;
 
-    if (m_Free.size() != m_nInitNumberOfEvents)
-        return MFX_ERR_NOT_FOUND;
+    size_t freeEventCount = m_Free.size();
 
     while (m_Free.empty() == false)
     {
         CloseHandle(m_Free.back());
         m_Free.pop_back();
     }
+
+    if (freeEventCount != m_nInitNumberOfEvents)
+    {
+        m_nInitNumberOfEvents = 0;
+        return MFX_WRN_IN_EXECUTION;
+    }
+
+    m_nInitNumberOfEvents = 0;
     return MFX_ERR_NONE;
 }
 

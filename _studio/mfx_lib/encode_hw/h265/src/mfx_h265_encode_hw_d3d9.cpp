@@ -334,14 +334,14 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespon
         // Reserve space for feedback reports.
         ENCODE_QUERY_STATUS_PARAM_TYPE fbType = m_pps.bEnableSliceLevelReport ? QUERY_STATUS_PARAM_SLICE : QUERY_STATUS_PARAM_FRAME;
         m_feedbackPool.Reset(response.NumFrameActual, fbType, m_maxSlices);
-    }
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    if (m_bIsBlockingTaskSyncEnabled)
-    {
-        m_EventCache->Init(response.NumFrameActual);
-    }
+        if (m_bIsBlockingTaskSyncEnabled)
+        {
+            m_EventCache->Init(response.NumFrameActual);
+        }
 #endif
+    }
 
     return MFX_ERR_NONE;
 }

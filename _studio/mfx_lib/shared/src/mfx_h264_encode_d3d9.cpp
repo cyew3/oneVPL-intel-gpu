@@ -1485,11 +1485,11 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
         // Reserve space for feedback reports.
         m_feedbackUpdate.resize(response.NumFrameActual);
         m_feedbackCached.Reset(response.NumFrameActual);
-    }
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    m_EventCache->Init(response.NumFrameActual);
+        m_EventCache->Init(response.NumFrameActual);
 #endif
+    }
 
     return MFX_ERR_NONE;
 }

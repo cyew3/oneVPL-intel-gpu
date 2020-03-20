@@ -358,7 +358,7 @@ mfxStatus D3D9Encoder::Register(const mfxFrameAllocResponse* pResponse, D3DDDIFO
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    if (m_bIsBlockingTaskSyncEnabled)
+    if (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA && m_bIsBlockingTaskSyncEnabled)
     {
         m_EventCache->Init(256); // allocate a cache for 256 elements as _NUM_STORED_FEEDBACKS
     }
