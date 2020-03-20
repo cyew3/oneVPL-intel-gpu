@@ -4557,12 +4557,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
     }
 
-    if (extOpt2->IntRefType == MFX_REFRESH_VERTICAL && !extOpt2->DisableDeblockingIdc)
-    {
-        extOpt2->IntRefType = 0;
-        unsupported = true;
-    }
-
     if (extOpt2->IntRefType && par.mfx.GopRefDist > 1)
     {
         extOpt2->IntRefType = 0;
