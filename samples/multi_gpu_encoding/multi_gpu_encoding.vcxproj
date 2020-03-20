@@ -25,13 +25,13 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -76,19 +76,27 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(ProjectDir)..\_build\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)obj\$(ProjectName)\</IntDir>
+    <TargetName>multi_gpu_encoding</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)..\_build\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)obj\$(ProjectName)\</IntDir>
+    <TargetName>multi_gpu_encoding</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)..\_build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)obj\$(ProjectName)\</IntDir>
+    <TargetName>multi_gpu_encoding</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>
+      </SDLCheck>
       <PreprocessorDefinitions>$(MfxDefinitions);_WIN64;WIN64;_DEBUG;_LIB;_ITERATOR_DEBUG_LEVEL=0;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)\include;$(INTELMEDIASDKROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -110,10 +118,21 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>
+      </SDLCheck>
+      <PreprocessorDefinitions>$(MfxDefinitions);WIN32;_WIN32;_DEBUG;_LIB;_ITERATOR_DEBUG_LEVEL=0;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(INTELMEDIASDKROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <Optimization>Disabled</Optimization>
+      <OmitFramePointers>false</OmitFramePointers>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader />
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -122,12 +141,19 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>
+      </FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <SDLCheck>
+      </SDLCheck>
+      <PreprocessorDefinitions>$(MfxDefinitions);WIN32;_WIN32;NDEBUG;_LIB;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>false</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(INTELMEDIASDKROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader />
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -150,6 +176,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <ExceptionHandling>Async</ExceptionHandling>
       <PrecompiledHeader />
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
