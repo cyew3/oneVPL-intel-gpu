@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2963,8 +2963,9 @@ void InitDPB(
     Task const &  prevTask,
     mfxExtAVCRefListCtrl * pLCtrl)
 {
-    if (   task.m_poc > task.m_lastRAP
-        && prevTask.m_poc <= prevTask.m_lastRAP) // 1st TRAIL
+    if ((task.m_poc > task.m_lastRAP && prevTask.m_poc <= prevTask.m_lastRAP) // 1st TRAIL
+        || (task.m_IRState.refrType && !task.m_IRState.firstFrameInCycle) // IntRefCycle
+        || (!task.m_IRState.refrType && prevTask.m_IRState.refrType)) // First frame after IntRefCycle
     {
          std::fill(std::begin(task.m_dpb[TASK_DPB_ACTIVE]), std::end(task.m_dpb[TASK_DPB_ACTIVE]), DpbFrame());
 
@@ -2973,7 +2974,13 @@ void InitDPB(
         {
             const DpbFrame& ref = prevTask.m_dpb[TASK_DPB_AFTER][i];
 
-            if (ref.m_poc == task.m_lastRAP || ref.m_ltr)
+            if (task.m_IRState.refrType
+                || (!task.m_IRState.refrType && prevTask.m_IRState.refrType)) // disable multiref within IntraRefCycle and next frame
+            {
+                if (ref.m_poc > task.m_dpb[TASK_DPB_ACTIVE][0].m_poc) // initial m_poc = -1
+                    task.m_dpb[TASK_DPB_ACTIVE][0] = ref;
+            }
+            else if (ref.m_poc == task.m_lastRAP || ref.m_ltr)
                 task.m_dpb[TASK_DPB_ACTIVE][j++] = ref;
         }
     }
