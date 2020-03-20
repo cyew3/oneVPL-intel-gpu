@@ -47,8 +47,6 @@ namespace hevce_dirty_rect {
         ENCODE = 0x4
     };
 
-    mfxU32 BlkSize = 32; //for MFX_HW_CNL
-
     struct tc_struct {
         struct status {
             mfxStatus query;
@@ -70,30 +68,11 @@ namespace hevce_dirty_rect {
         template<mfxU32 fourcc>
         int RunTest_Subtype(const unsigned int id);
         int RunTest(tc_struct tc, unsigned int fourcc_id);
-        static const unsigned int n_cases;
+        static const unsigned int n_cases = 17;
         void initParams();
-        static const tc_struct test_case[];
-    };
-
-    void TestSuite::initParams() {
-        m_par.mfx.CodecId = MFX_CODEC_HEVC;
-        m_par.mfx.TargetKbps = 9000;
-        m_par.mfx.MaxKbps = 12000;
-        m_par.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
-        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-        m_par.mfx.FrameInfo.FrameRateExtN = 30;
-        m_par.mfx.FrameInfo.FrameRateExtD = 1;
-        m_par.mfx.FrameInfo.ChromaFormat = 1;
-        m_par.mfx.FrameInfo.PicStruct = 1;
-        m_par.IOPattern = 2;
-        m_par.mfx.FrameInfo.Width = 1920;
-        m_par.mfx.FrameInfo.Height = 1088;
-        m_par.mfx.FrameInfo.CropW = 1920;
-        m_par.mfx.FrameInfo.CropH = 1088;
-    }
-
-    const tc_struct TestSuite::test_case[] =
-    {
+        mfxU32 BlkSize = (g_tsHWtype >= MFX_HW_TGL && g_tsOSFamily == MFX_OS_FAMILY_LINUX) ? 16 : 32;
+        tc_struct test_case[n_cases] =
+        {
         {/*00*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
             QUERY | INIT | ENCODE,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 0, 0),
@@ -200,8 +179,25 @@ namespace hevce_dirty_rect {
             RECT_PARS(DIRTYRECT,                0, 1,   0, 0, BlkSize * 2, BlkSize * 2),
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, BlkSize * 2, BlkSize * 2)
         } },
+        };
     };
-    const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
+
+    void TestSuite::initParams() {
+        m_par.mfx.CodecId = MFX_CODEC_HEVC;
+        m_par.mfx.TargetKbps = 9000;
+        m_par.mfx.MaxKbps = 12000;
+        m_par.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+        m_par.mfx.FrameInfo.FrameRateExtN = 30;
+        m_par.mfx.FrameInfo.FrameRateExtD = 1;
+        m_par.mfx.FrameInfo.ChromaFormat = 1;
+        m_par.mfx.FrameInfo.PicStruct = 1;
+        m_par.IOPattern = 2;
+        m_par.mfx.FrameInfo.Width = 1920;
+        m_par.mfx.FrameInfo.Height = 1088;
+        m_par.mfx.FrameInfo.CropW = 1920;
+        m_par.mfx.FrameInfo.CropH = 1088;
+    }
 
     template<mfxU32 fourcc>
     int TestSuite::RunTest_Subtype(const unsigned int id)
@@ -213,11 +209,6 @@ namespace hevce_dirty_rect {
     int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START;
-
-        if (g_tsOSFamily != MFX_OS_FAMILY_WINDOWS) {
-            g_tsLog << "[ SKIPPED ] This test is only for windows platform\n";
-            return 0;
-        }
 
         if (g_tsImpl & MFX_IMPL_HARDWARE) {
             if (g_tsHWtype < MFX_HW_CNL || m_par.mfx.LowPower != MFX_CODINGOPTION_ON) { //this test is for VDEnc only
@@ -258,8 +249,6 @@ namespace hevce_dirty_rect {
 
         out_par = m_par;
         m_pParOut = &out_par;
-
-        Load();
 
         if (fourcc_id == MFX_FOURCC_NV12)
         {
