@@ -166,7 +166,7 @@ namespace HEVCEHW
     #else
         #include "hevcehw_g12_embargo_lin.h"
         namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::Linux::Gen12_Embargo; }; };
-        namespace HEVCEHWDisp { namespace DG1 { using namespace HEVCEHW::LegacyFallback; }; };
+        namespace HEVCEHWDisp { namespace DG1 { using namespace HEVCEHW::Linux::Gen12_Embargo; }; };
     #endif //defined(OPEN_SOURCE)
 #else
     #include "hevcehw_g12_win.h"
