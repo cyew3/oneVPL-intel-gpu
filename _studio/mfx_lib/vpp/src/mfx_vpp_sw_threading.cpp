@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -75,6 +75,7 @@ mfxStatus VideoVPP_SW::PreWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
 
     sts = PreProcessOfOutputSurface(out, pOutSurf);
     MFX_CHECK_STS(sts);
+    MFX_CHECK_NULL_PTR1(pOutSurf);
 
 
     /* VPP ignores crop info at init stage. so, current frame gives this information.

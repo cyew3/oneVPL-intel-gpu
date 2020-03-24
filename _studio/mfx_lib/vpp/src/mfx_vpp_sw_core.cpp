@@ -1970,6 +1970,7 @@ mfxStatus VideoVPP_SW::RunFrameVPP(mfxFrameSurface1* in, mfxFrameSurface1* out, 
     bLockedOutput = false;
     sts = PreProcessOfOutputSurface(out, &pOutSurf);
     MFX_CHECK_STS( sts );
+    MFX_CHECK_NULL_PTR1(pOutSurf);
 
 
     /* VPP ignores crop info during init stage. so, current frame gives this information.
