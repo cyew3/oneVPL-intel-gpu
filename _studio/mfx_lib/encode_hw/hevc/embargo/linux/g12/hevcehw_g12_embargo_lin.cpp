@@ -86,6 +86,10 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             qwc
             , { HEVCEHW::Gen9::FEATURE_DDI_PACKER, HEVCEHW::Gen9::IDDIPacker::BLK_HardcodeCaps }
             , { FEATURE_CAPS, Caps::BLK_HardcodeCaps });
+        FeatureBlocks::Reorder(
+            qwc
+            , { FEATURE_REXT, RExt::BLK_HardcodeCaps }
+            , { HEVCEHW::Gen9::FEATURE_DDI_PACKER, HEVCEHW::Gen9::IDDIPacker::BLK_HardcodeCaps });
     }
 
     if (mode & INIT)
