@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -23,8 +23,8 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
 {
     if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
     {
-        if (   par.mfx.GopRefDist > 1
-            || (par.mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_BFF|MFX_PICSTRUCT_FIELD_TFF)))
+        if (!(par.mfx.CodecId == MFX_CODEC_HEVC && g_tsHWtype >= HWType::MFX_HW_TGL) && (par.mfx.GopRefDist > 1
+            || (par.mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_BFF|MFX_PICSTRUCT_FIELD_TFF))))
         {
             g_tsStatus.disable();
             throw tsSKIP;
