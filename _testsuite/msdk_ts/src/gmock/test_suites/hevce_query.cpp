@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2020 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_query.cpp
 
@@ -73,10 +73,16 @@ namespace hevce_query
 
         static const tc_struct test_case[];
 
-        mfxU64 AlignValue(mfxU64 value)
+        mfxU32 AlignResolutionByPlatform(mfxU16 value)
         {
-            mfxU32 alignment = 16;
+            mfxU32 alignment = g_tsHWtype >= MFX_HW_TGL ? 8 : 16;
             return (value + (alignment - 1)) & ~(alignment - 1);
+        }
+
+        mfxU32 AlignSurfaceSize(mfxU16 value)
+        {
+            mfxU32 surfAlignemnet = 16;
+            return (value + (surfAlignemnet - 1)) & ~(surfAlignemnet - 1);
         }
 
         bool IsHevcHwPlugin()
@@ -131,10 +137,19 @@ namespace hevce_query
                 case ALIGNMENT_HW:
                     if (IsHevcHwPlugin())
                     {
+                        mfxExtBuffer* hp;
+                        GetBuffer(MFX_EXTBUFF_HEVC_PARAM, m_pPar, &hp);
+                        EXPECT_NE_THROW(nullptr, hp, "ERROR: failed to get resulted stream resolution");
+
+                        mfxExtBuffer* hpOut;
+                        GetBuffer(MFX_EXTBUFF_HEVC_PARAM, m_pParOut, &hpOut);
+                        EXPECT_NE_THROW(nullptr, hpOut, "ERROR: failed to get resulted stream resolution");
                         //check width
-                        tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.Width, AlignValue(m_pPar->mfx.FrameInfo.Width));
+                        EXPECT_EQ(AlignResolutionByPlatform(((mfxExtHEVCParam*)hp)->PicWidthInLumaSamples), ((mfxExtHEVCParam*)hpOut)->PicWidthInLumaSamples);
+                        tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.Width, AlignSurfaceSize(m_pPar->mfx.FrameInfo.Width));
                         //check height
-                        tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.Height, AlignValue(m_pPar->mfx.FrameInfo.Height));
+                        EXPECT_EQ(AlignResolutionByPlatform(((mfxExtHEVCParam*)hp)->PicHeightInLumaSamples), ((mfxExtHEVCParam*)hpOut)->PicHeightInLumaSamples);
+                        tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.Height, AlignSurfaceSize(m_pPar->mfx.FrameInfo.Height));
                         //check crops
                         tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, m_pPar->mfx.FrameInfo.CropW);
                         tsStruct::check_eq(m_pParOut, tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, m_pPar->mfx.FrameInfo.CropH);
@@ -144,10 +159,27 @@ namespace hevce_query
             }
         }
 
+        void GetBuffer(mfxU32 buff_id, const mfxVideoParam* par, mfxExtBuffer** buff)
+        {
+            *buff = nullptr;
+            for (int i = 0; i < sizeof(par->ExtParam) / sizeof(mfxExtBuffer*); i++)
+                if (par->ExtParam[i]->BufferId == buff_id)
+                    *buff = par->ExtParam[i];
+        }
+
         void CreateBuffer(mfxU32 buff_id, mfxExtBuffer** buff, mfxExtBuffer** buff_out)
         {
                 switch (buff_id)
                 {
+                case MFX_EXTBUFF_HEVC_PARAM:
+                {
+                        (*buff) = (mfxExtBuffer*)(new mfxExtHEVCParam());
+                        (*buff_out) = (mfxExtBuffer*)(new mfxExtHEVCParam());
+                        memset((*buff), 0, sizeof(mfxExtHEVCParam));
+                        (*buff)->BufferId = MFX_EXTBUFF_HEVC_PARAM;
+                        (*buff)->BufferSz = sizeof(mfxExtHEVCParam);
+                        break;
+                }
                 case MFX_EXTBUFF_CODING_OPTION_SPSPPS:
                 {
                         (*buff) = (mfxExtBuffer*)(new mfxExtCodingOptionSPSPPS());
@@ -714,6 +746,19 @@ namespace hevce_query
             && tc.type != IN_PAR_NULL) // in this case MFX_ERR_NONE returns all the time, m_par isn't used
             sts = MFX_ERR_UNSUPPORTED;
 
+        if (tc.type == ALIGNMENT_HW)
+        {
+            CreateBuffer(MFX_EXTBUFF_HEVC_PARAM, &buff_in, &buff_out);
+            if (buff_in && buff_out)
+                *buff_out = *buff_in;
+            ((mfxExtHEVCParam*)buff_in)->PicWidthInLumaSamples = m_par.mfx.FrameInfo.Width;
+            ((mfxExtHEVCParam*)buff_in)->PicHeightInLumaSamples = m_par.mfx.FrameInfo.Height;
+            m_pPar->NumExtParam = 1;
+            m_pParOut->NumExtParam = 1;
+            m_pPar->ExtParam = &buff_in;
+            m_pParOut->ExtParam = &buff_out;
+        }
+
         g_tsStatus.expect(sts);
         //call tested function
         TRACE_FUNC3(MFXVideoENCODE_Query, m_session, m_pPar, m_pParOut);
@@ -721,15 +766,14 @@ namespace hevce_query
             sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
         else
             sts = MFXVideoENCODE_Query(NULL, m_pPar, m_pParOut);
-
         TS_TRACE(m_pParOut);
+
+        CheckOutPar(tc);
         if (buff_in)
             delete buff_in;
         if (buff_out)
             delete buff_out;
-
         g_tsStatus.check(sts);
-        CheckOutPar(tc);
 
         if ((tc.type == SET_ALLOCK) && (tc.sub_type == AFTER))
         {
