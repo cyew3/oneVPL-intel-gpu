@@ -332,7 +332,7 @@ struct sCommandlineParams
       OverlayTextSize = 0;
 
       bFadeBackground = false;
-      bVP9_DRC = true; // VP9 DRC decode is enabled by default
+      bVP9_DRC = false;
       bAdaptivePlayback = false;
       nInputBitdepth = 8;
 
