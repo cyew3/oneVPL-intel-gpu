@@ -490,7 +490,7 @@ start:
         vm_char sbuf[256], *pStr;
 
         pStr = vm_file_fgets(sbuf, 256, m_par_file);
-        m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %u"), &m_nextFrame, &m_nextType));
+        m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %x"), &m_nextFrame, &m_nextType));
 
 
         if (m_eof)
@@ -500,7 +500,7 @@ start:
             vm_file_fseek(m_par_file, 0, VM_FILE_SEEK_SET);
 
             pStr = vm_file_fgets(sbuf, 256, m_par_file);
-            m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %u"), &m_nextFrame, &m_nextType));
+            m_eof = !pStr || (2 != vm_string_sscanf(pStr, VM_STRING("%i %x"), &m_nextFrame, &m_nextType));
         }
 
         m_nextFrame += m_nFrames;
