@@ -581,7 +581,7 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
     VideoCORE* core = m_pCORE.get();
     mfxU32 CodecId = par.mfx.CodecId;
 
-    bool feiStatusAvailable, fei;
+    bool feiStatusAvailable = false, fei = false;
     std::tie(feiStatusAvailable, fei) = check_fei(core);
     if (!feiStatusAvailable)
     {
@@ -650,7 +650,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
         else
         {
             // required to check FEI plugin registration
-            bool feiStatusAvailable, fei;
+            bool feiStatusAvailable = false, fei = false;
             std::tie(feiStatusAvailable, fei) = check_fei(session->m_pCORE.get());
             MFX_CHECK(feiStatusAvailable, MFX_ERR_NULL_PTR);
 
@@ -750,7 +750,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         else
         {
             // required to check FEI plugin registration
-            bool feiStatusAvailable, fei;
+            bool feiStatusAvailable = false, fei = false;
             std::tie(feiStatusAvailable, fei) = check_fei(session->m_pCORE.get());
             MFX_CHECK(feiStatusAvailable, MFX_ERR_NULL_PTR);
 
