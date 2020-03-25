@@ -822,7 +822,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             if (!skipChroma)
             {
                 m_Current.m_comp = VM_STRING('U');
-                for (i = 0; i < (mfxU16) (pInfo->CropH / 2); i++)
+                for (i = 0; i < (mfxU16) ((pInfo->CropH + 1) / 2); i++)
                 {
                     m_Current.m_pixY = i;
                     WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW);
@@ -852,7 +852,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 m_Current.m_comp = VM_STRING('U');
 
                 crop_y >>= 1;
-                for (i = 0; i < (mfxU16) (pInfo->CropH / 2); i++)
+                for (i = 0; i < (mfxU16) ((pInfo->CropH + 1) / 2); i++)
                 {
                     m_Current.m_pixY = i;
                     WRITE(pData->UV + (crop_y*pitch + crop_x) + i * pitch, pInfo->CropW * 2);
