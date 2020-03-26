@@ -4300,7 +4300,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bD3D11SingeTexture, true));
         }
     }
-    else if (m_OptProc.Check(argv[0], VM_STRING("-d3d9_feat"), VM_STRING("SW Mediasdk library will use d3d11 device with DX9 feature levels")))
+    else if (m_OptProc.Check(argv[0], VM_STRING("-d3d9_feat"), VM_STRING("Mediasdk library will use d3d11 device with DX9 feature levels")))
     {
         std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bD39Feat, true));
     }
