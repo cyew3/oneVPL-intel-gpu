@@ -3184,6 +3184,7 @@ mfxStatus VideoVPPHW::VppFrameCheck(
             }
         }
 
+        MFX_CHECK_NULL_PTR1(pWorkOutSurf);
         // AssignTask will also clear bForcedInternalAlloc
         sts = m_taskMngr.AssignTask(input,pWorkOutSurf, output, aux, pTask, intSts);
 
@@ -3242,7 +3243,10 @@ mfxStatus VideoVPPHW::VppFrameCheck(
         }
     }
     else
+    {
+        MFX_CHECK_NULL_PTR1(output);
         sts = m_taskMngr.AssignTask(input, output, output, aux, pTask, intSts);
+    }
 #else
     sts = m_taskMngr.AssignTask(input, output, aux, pTask, intSts);
 #endif
