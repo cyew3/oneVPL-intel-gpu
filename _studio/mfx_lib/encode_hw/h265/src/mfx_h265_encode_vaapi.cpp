@@ -134,6 +134,48 @@ static mfxStatus SetROI(
     return MFX_ERR_NONE;
 }
 
+static mfxStatus SetRollingIntraRefresh(
+    IntraRefreshState const & rirState,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & rirBuf_id)
+{
+    VAStatus vaSts;
+    VAEncMiscParameterBuffer *misc_param;
+    VAEncMiscParameterRIR    *rir_param;
+
+    mfxStatus sts = CheckAndDestroyVAbuffer(vaDisplay, rirBuf_id);
+    MFX_CHECK_STS(sts);
+
+    vaSts = vaCreateBuffer(vaDisplay,
+        vaContextEncode,
+        VAEncMiscParameterBufferType,
+        sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterRIR),
+        1,
+        NULL,
+        &rirBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(vaDisplay, rirBuf_id, (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = VAEncMiscParameterTypeRIR;
+    rir_param = (VAEncMiscParameterRIR *)misc_param->data;
+
+    rir_param->rir_flags.value = rirState.refrType;
+    rir_param->intra_insertion_location = rirState.IntraLocation;
+    rir_param->intra_insert_size = rirState.IntraSize;
+    rir_param->qp_delta_for_inserted_intra = mfxU8(rirState.IntRefQPDelta);
+
+    {
+        //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
+        vaSts = vaUnmapBuffer(vaDisplay, rirBuf_id);
+    }
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+}
+
 void VABuffersHandler::_CheckPool(mfxU32 pool)
 {
     if (!m_poolMap.count(pool))
@@ -1888,6 +1930,13 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDLPair pair)
         VABufferID &m_roiBufferId = VABufferNew(VABID_ROI, 0);
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetROI(task, m_arrayVAEncROI, m_vaDisplay, m_vaContextEncode, m_roiBufferId),
                               MFX_ERR_DEVICE_FAILED);
+    }
+
+    if (task.m_IRState.refrType)
+    {
+        VABufferID &m_rirId = VABufferNew(VABID_RIR, 0);
+        MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRollingIntraRefresh(task.m_IRState, m_vaDisplay,
+            m_vaContextEncode, m_rirId), MFX_ERR_DEVICE_FAILED);
     }
 
     mfxU32 storedSize = 0;

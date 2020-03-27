@@ -80,6 +80,7 @@ public:
         , VABID_PACKED_SkipBuffer
 
         , VABID_ROI
+        , VABID_RIR
         , VABID_MaxSliceSize
 
         , VABID_END_OF_LIST // Remain this item last in the list
