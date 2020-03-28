@@ -134,6 +134,12 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
     global.Insert(Glob::VideoCore::Key, new StorableRef<VideoCORE>(m_core));
     global.Insert(Glob::RTErr::Key, new StorableRef<mfxStatus>(m_runtimeErr));
 
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+    auto& lpla = Glob::LpLookAhead::GetOrConstruct(global);
+    const mfxExtLplaParam* lplaParam = ExtBuffer::Get(*par);
+    lpla.bAnalysis = (lplaParam && lplaParam->LookAheadDepth > 0);
+#endif
+
     wrn = RunBlocks(CheckGE<mfxStatus, MFX_ERR_NONE>, BQ<BQ_InitExternal>::Get(*this), *par, global, local);
     MFX_CHECK(wrn >= MFX_ERR_NONE, wrn);
 
@@ -239,6 +245,17 @@ mfxStatus MFXVideoENCODEH265_HW::FreeResources(mfxThreadTask /*task*/, mfxStatus
 mfxStatus MFXVideoENCODEH265_HW::Close(void)
 {
     MFX_CHECK(!m_storage.Empty(), MFX_ERR_NOT_INITIALIZED);
+
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+    if (m_storage.Contains(Glob::LpLookAhead::Key))
+    {
+        auto& lpla = Glob::LpLookAhead::Get(m_storage);
+        if (lpla.pLpLookAhead && !lpla.bAnalysis)
+        {
+            lpla.pLpLookAhead->Close();
+        }
+    }
+#endif
 
     auto sts = RunBlocks(IgnoreSts, BQ<BQ_Close>::Get(*this), m_storage);
 

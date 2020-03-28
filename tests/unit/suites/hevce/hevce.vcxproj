@@ -46,6 +46,9 @@
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\encode_hw\encode_hw.vcxproj">
       <Project>{6e291a7c-090c-4922-bf63-cc83f06fb8b0}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\lpla\lpla.vcxproj">
+      <Project>{0C068137-F078-4DDB-83BC-673AD739894E}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\_studio\mfx_lib\libmfxhw.vcxproj">
       <Project>{38e352c7-c5f5-459e-9338-a7dd164e6ca4}</Project>
     </ProjectReference>

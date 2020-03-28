@@ -139,7 +139,7 @@ void DDIPacker::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 
         const auto& par = Glob::VideoParam::Get(strg);
         const auto& cc  = CC::Get(strg);
-        
+
         cc.InitSPS(strg, m_sps);
         cc.InitPPS(strg, m_pps);
         cc.UpdateSPS(strg, m_sps);
@@ -295,6 +295,12 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         nCBD += (task.InsertHeaders & INSERT_PPS)
             && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.PPS, true));
 
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        auto& lpla = Glob::LpLookAhead::Get(global);
+        nCBD += ((task.InsertHeaders & INSERT_PPS) && !lpla.bAnalysis && lpla.bIsLpLookaheadEnabled)
+            && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.CqmPPS, true));
+#endif
+
         nCBD += (((task.InsertHeaders & INSERT_SEI) || (task.ctrl.NumPayload > 0)) && ph.PrefixSEI.BitLen)
             && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.PrefixSEI, true));
 
@@ -418,13 +424,14 @@ void DDIPacker::FillSpsBuffer(
     sps.FrameRate.Denominator      = fi.FrameRateExtD;
     sps.InitVBVBufferFullnessInBit = 8000 * InitialDelayInKB(par.mfx);
     sps.VBVBufferSizeInBit         = 8000 * BufferSizeInKB(par.mfx);
+    sps.LookaheadDepth             = (UCHAR) CO2.LookAheadDepth;
 
     sps.bResetBRC        = 0;
     sps.GlobalSearch     = 0;
     sps.LocalSearch      = 0;
     sps.EarlySkip        = 0;
-    // it should be zero by default (MBBRC == UNKNOWN), but to save previous behavior MBBRC is on by default 
-    sps.MBBRC            = 2 - !IsOff(CO2.MBBRC); 
+    // it should be zero by default (MBBRC == UNKNOWN), but to save previous behavior MBBRC is on by default
+    sps.MBBRC            = 2 - !IsOff(CO2.MBBRC);
 
     //WA:  Parallel BRC is switched on in sync & async mode (quality drop in noParallelBRC in driver)
     sps.ParallelBRC = (sps.GopRefDist > 1) && (sps.GopRefDist <= 8) && isBPyramid && !IsOn(par.mfx.LowPower);
@@ -712,6 +719,10 @@ void DDIPacker::FillPpsBuffer(
 
     pps.StatusReportFeedbackNumber  = task.StatusReportId;
     pps.nal_unit_type               = task.SliceNUT;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    if (task.LplaStatus.TargetFrameSize > 0)
+        pps.TargetFrameSize = task.LplaStatus.TargetFrameSize;
+#endif
 }
 
 #endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)

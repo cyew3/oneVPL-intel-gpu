@@ -147,6 +147,7 @@ namespace Base
             const VPS& vps
             , const SPS& sps
             , const PPS& pps
+            , const PPS& cqmpps
             , const std::vector<SliceInfo>& si
             , PackedHeaders& ph);
 

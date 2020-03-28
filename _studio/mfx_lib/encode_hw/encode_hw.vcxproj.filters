@@ -304,6 +304,9 @@
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_weighted_prediction_win.cpp">
       <Filter>hevc\embargo\windows\base</Filter>
     </ClCompile>
+    <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_lpla_enc.cpp">
+      <Filter>hevc\embargo\windows\base</Filter>
+    </ClCompile>
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_win.cpp">
       <Filter>hevc\embargo\windows\base</Filter>
     </ClCompile>
@@ -681,6 +684,9 @@
       <Filter>hevc\embargo\windows\base</Filter>
     </ClInclude>
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_interlace_win.h">
+      <Filter>hevc\embargo\windows\base</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_lpla_enc.h">
       <Filter>hevc\embargo\windows\base</Filter>
     </ClInclude>
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_max_frame_size_win.h">

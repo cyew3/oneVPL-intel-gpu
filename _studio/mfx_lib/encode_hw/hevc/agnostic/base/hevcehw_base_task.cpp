@@ -28,12 +28,12 @@ using namespace HEVCEHW::Base;
 
 mfxU32 TaskManager::GetNumTask() const
 {
-    return m_pPar->AsyncDepth + m_pReorder->BufferSize + (m_pPar->AsyncDepth > 1);
+    return m_pPar->AsyncDepth + m_pReorder->BufferSize + (m_pPar->AsyncDepth > 1) + m_LookAheadDepth;
 }
 
 mfxU16 TaskManager::GetBufferSize() const
 {
-    return !m_pPar->mfx.EncodedOrder * (m_pReorder->BufferSize + (m_pPar->AsyncDepth > 1));
+    return !m_pPar->mfx.EncodedOrder * (m_pReorder->BufferSize + (m_pPar->AsyncDepth > 1) + m_LookAheadDepth);
 }
 
 mfxU16 TaskManager::GetMaxParallelSubmits() const
@@ -192,6 +192,14 @@ void TaskManager::InitAlloc(const FeatureBlocks& blocks, TPushIA Push)
         m_pPar      = &Glob::VideoParam::Get(strg);
         m_pReorder  = &Glob::Reorder::Get(strg);
 
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+        const mfxExtLplaParam* la = ExtBuffer::Get(*m_pPar);
+        const mfxExtCodingOption2* pCO2 = ExtBuffer::Get(*m_pPar);
+        m_LookAheadDepth = (la && la->LookAheadDepth) ? 0 : pCO2->LookAheadDepth;
+
+        S_LA_SUBMIT = AddStage(S_PREPARE);
+        S_LA_QUERY = AddStage(S_LA_SUBMIT);
+#endif
         return ManagerInit();
     });
 }
@@ -221,6 +229,74 @@ void TaskManager::AsyncRoutine(const FeatureBlocks& /*blocks*/, TPushAR Push)
     {
         return TaskPrepare(task);
     });
+
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+    Push(BLK_LASubmit
+        , [this](
+            StorageW& global
+            , StorageW& /*task*/) -> mfxStatus
+    {
+        std::unique_lock<std::mutex> closeGuard(m_closeMtx);
+        auto& lpla = Glob::LpLookAhead::Get(global);
+        // If In LookAhead Pass, it should be moved to the next stage
+        if (lpla.bAnalysis)
+        {
+            StorageW* pTask = GetTask(Stage(S_LA_SUBMIT));
+            MoveTaskForward(Stage(S_LA_SUBMIT), FixedTask(*pTask));
+            return MFX_ERR_NONE;
+        }
+
+        while (StorageW* pTask = GetTask(Stage(S_LA_SUBMIT)))
+        {
+            if (lpla.bIsLpLookaheadEnabled)
+            {
+                auto& rtask = Task::Common::Get(*pTask);
+                lpla.pLpLookAhead->Submit(rtask.pSurfIn);
+            }
+            MoveTaskForward(Stage(S_LA_SUBMIT), FixedTask(*pTask));
+        }
+        return MFX_ERR_NONE;
+    });
+
+    Push(BLK_LAQuery
+        , [this](
+            StorageW& global
+            , StorageW& s_task) -> mfxStatus
+    {
+        std::unique_lock<std::mutex> closeGuard(m_closeMtx);
+        auto& lpla = Glob::LpLookAhead::Get(global);
+        // If In LookAhead Pass, it should be moved to the next stage
+        if (lpla.bAnalysis)
+        {
+            StorageW* pTask = GetTask(Stage(S_LA_QUERY));
+            MoveTaskForward(Stage(S_LA_QUERY), FixedTask(*pTask));
+            return MFX_ERR_NONE;
+        }
+
+        // Delay For LookAhead Depth
+        if (!bEncRun)
+        {
+            bEncRun = m_stages.at(Stage(S_LA_QUERY)).size() > m_LookAheadDepth;
+        }
+        if (bEncRun)
+        {
+            StorageW* pTask = GetTask(Stage(S_LA_QUERY));
+            if (lpla.bIsLpLookaheadEnabled)
+            {
+                auto& task = Task::Common::Get(s_task);
+                mfxLplastatus laStatus;
+                mfxStatus sts = lpla.pLpLookAhead->Query(&laStatus);
+                if (sts == MFX_ERR_NONE)
+                {
+                    task.LplaStatus = laStatus;
+                }
+            }
+            MoveTaskForward(Stage(S_LA_QUERY), FixedTask(*pTask));
+        }
+
+        return MFX_ERR_NONE;
+    });
+#endif
 
     Push(BLK_ReorderTask
         , [this](

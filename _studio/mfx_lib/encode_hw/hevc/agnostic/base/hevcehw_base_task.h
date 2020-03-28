@@ -42,6 +42,8 @@ namespace Base
     DECL_BLOCK(Reset) \
     DECL_BLOCK(NewTask) \
     DECL_BLOCK(PrepareTask) \
+    DECL_BLOCK(LASubmit) \
+    DECL_BLOCK(LAQuery) \
     DECL_BLOCK(ReorderTask) \
     DECL_BLOCK(SubmitTask) \
     DECL_BLOCK(QueryTask) \
@@ -60,6 +62,11 @@ namespace Base
         NotNull<const FeatureBlocks*> m_pBlocks;
         NotNull<StorageW*> m_pGlob;
         NotNull<StorageRW*> m_pFrameCheckLocal;
+
+        mfxU16        S_LA_SUBMIT = mfxU16(-1);
+        mfxU16        S_LA_QUERY = mfxU16(-1);
+        mfxU16        m_LookAheadDepth = 0;
+        bool          bEncRun = false;
 
         virtual void InitAlloc(const FeatureBlocks& blocks, TPushIA Push) override;
         virtual void ResetState(const FeatureBlocks& blocks, TPushRS Push) override;

@@ -50,7 +50,7 @@ mfxStatus TaskManager::TaskNew(
     MFX_CHECK(pSurf || m_nPicBuffered, MFX_ERR_MORE_DATA);
 
     auto pBs = &bs;
-    auto pTask = MoveTask(Stage(S_NEW), Stage(S_PREPARE));
+    auto pTask = MoveTaskForward(Stage(S_NEW));
     MFX_CHECK(pTask, MFX_WRN_DEVICE_BUSY);
 
     SetActiveTask(*pTask);
@@ -82,7 +82,7 @@ mfxStatus TaskManager::TaskPrepare(StorageW& task)
     auto sts = RunQueueTaskPreReorder(task);
     MFX_CHECK_STS(sts);
 
-    auto pTask = MoveTask(Stage(S_PREPARE), Stage(S_REORDER), FixedTask(task));
+    auto pTask = MoveTaskForward(Stage(S_PREPARE), FixedTask(task));
 
     MFX_CHECK(&(StorageW&)*pTask == &task, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -93,7 +93,7 @@ mfxStatus TaskManager::TaskReorder(StorageW& task)
 {
     std::unique_lock<std::mutex> closeGuard(m_closeMtx);
     bool bNeedTask = !m_nRecodeTasks
-        && (m_stages.at(Stage(S_SUBMIT)).size() + m_nTasksInExecution) < m_maxParallelSubmits;
+        && (m_stages.at(NextStage(S_REORDER)).size() + m_nTasksInExecution) < m_maxParallelSubmits;
     MFX_CHECK(bNeedTask, MFX_ERR_NONE);
 
     auto       IsInputTask = [this](StorageR& rTask) { return this->IsInputTask(rTask); };
@@ -106,7 +106,7 @@ mfxStatus TaskManager::TaskReorder(StorageW& task)
         GetNextTask = FirstTask;
     }
 
-    pTask = MoveTask(Stage(S_REORDER), Stage(S_SUBMIT), GetNextTask);
+    pTask = MoveTaskForward(Stage(S_REORDER), GetNextTask);
     MFX_CHECK(pTask, MFX_ERR_NONE);
 
     return RunQueueTaskPostReorder(*pTask);
@@ -120,13 +120,13 @@ mfxStatus TaskManager::TaskSubmit(StorageW& /*task*/)
     {
         bool bSync =
             (m_maxParallelSubmits <= m_nTasksInExecution)
-            || (IsForceSync(*pTask) && GetTask(Stage(S_QUERY)));
+            || (IsForceSync(*pTask) && GetTask(NextStage(S_SUBMIT)));
         MFX_CHECK(!bSync, MFX_ERR_NONE);
 
         auto sts = RunQueueTaskSubmit(*pTask);
         MFX_CHECK_STS(sts);
 
-        MoveTask(Stage(S_SUBMIT), Stage(S_QUERY), FixedTask(*pTask));
+        MoveTaskForward(Stage(S_SUBMIT), FixedTask(*pTask));
         ++m_nTasksInExecution;
         m_nRecodeTasks -= !!m_nRecodeTasks;
     }

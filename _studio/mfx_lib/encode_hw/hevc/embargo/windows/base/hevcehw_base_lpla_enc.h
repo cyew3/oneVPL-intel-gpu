@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX) && defined (MFX_ENABLE_HEVC_CUSTOM_QMATRIX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_ENABLE_LP_LOOKAHEAD)
 
 #include "hevcehw_base.h"
 #include "hevcehw_base_data.h"
@@ -32,28 +32,28 @@ namespace Windows
 {
 namespace Base
 {
-    class QMatrix
-        : public FeatureBase
-    {
-    public:
+class LpLookAheadEnc
+    : public FeatureBase
+{
+public:
 #define DECL_BLOCK_LIST\
-    DECL_BLOCK(UpdateSPS)\
-    DECL_BLOCK(UpdatePPS)\
-    DECL_BLOCK(PatchDDITask)
-#define DECL_FEATURE_NAME "Base_QMatrix"
+    DECL_BLOCK(Init)
+#define DECL_FEATURE_NAME "Base_LpLookAheadEnc"
 #include "hevcehw_decl_blocks.h"
 
-        QMatrix(mfxU32 FeatureId)
-            : FeatureBase(FeatureId)
-        {}
+    LpLookAheadEnc(mfxU32 FeatureId)
+        : FeatureBase(FeatureId)
+    {}
+protected:
+    virtual void InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push) override;
 
-    protected:
-        virtual void InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push) override;
-        virtual void SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push) override;
-    };
-
+private:
+    mfxExtBuffer*            extBuffers[1];
+    mfxVideoParam            lplaParam;
+    mfxExtLplaParam          extBufLPLA = {};
+    bool                     bInitialized = false;
+};
 } //Base
 } //Windows
 } //namespace HEVCEHW
-
-#endif //defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#endif
