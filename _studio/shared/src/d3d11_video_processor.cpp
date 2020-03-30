@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1105,7 +1105,6 @@ HRESULT D3D11VideoProcessor::SetOutputExtension(const GUID* pExtensionGuid, UINT
 //        printf("bEnablePreProcMode     = %i\n", pParams->bEnablePreProcMode) ;fflush(stderr);
 //        printf("iTargetInterlacingMode = %i\n", pParams->iTargetInterlacingMode) ;fflush(stderr);
 //        printf("bTargetInSysMemory     = %i\n", pParams->bTargetInSysMemory);fflush(stderr);
-//        printf("bSceneDetectionEnable  = %i\n", pParams->bSceneDetectionEnable);fflush(stderr);
 //        printf("bVarianceQuery         = %i\n", pParams->bVarianceQuery);fflush(stderr);
 //        printf("bFieldWeaving          = %i\n", pParams->bFieldWeaving);fflush(stderr);
 //        //printf("Reserved               : 26;
@@ -2443,7 +2442,6 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         // [7] Set VPE Preproc Params
         SET_PREPROC_PARAMS setParams;
         setParams.bEnablePreProcMode     = true;
-        setParams.bSceneDetectionEnable  = 0;
         setParams.iTargetInterlacingMode = pParams->iTargetInterlacingMode;
         setParams.bTargetInSysMemory     = 0;
         setParams.bVarianceQuery         = pParams->bVarianceEnable;

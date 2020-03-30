@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -98,7 +98,6 @@ static const FASTCOMP_BLT_PARAMS FastCompBlt_Default =
     ProcAmpValues_Default,              // ProcAmpValues
     FALSE,                              // bDenoiseAutoAdjust
     FALSE,                              // bFMDEnable
-    FALSE,                              // bSceneDetectionEnable
     0,                                  // iDeinterlacingAlgorithm
     0,                                  // Reserved3
     0,                                  // wDenoiseFactor
@@ -878,7 +877,6 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
 
     pBltParams->wDetailFactor            = pExecuteParams->detailFactor;
     pBltParams->bFMDEnable               = pExecuteParams->bFMDEnable;
-//    pBltParams->bSceneDetectionEnable    = pExecuteParams->bSceneDetectionEnable;
 
     pBltParams->iTargetInterlacingMode   = pExecuteParams->iTargetInterlacingMode;
 

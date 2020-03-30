@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -410,7 +410,6 @@ namespace MfxHwVideoProcessing
                ,Contrast(0)
                ,Hue(0)
                ,Saturation(0)
-               ,bSceneDetectionEnable(false)
                ,bVarianceEnable(false)
                ,bImgStabilizationEnable(false)
                ,istabMode(0)
@@ -508,7 +507,6 @@ namespace MfxHwVideoProcessing
                     detailFactor != 0 ||
                     iTargetInterlacingMode != 0 ||
                     bEnableProcAmp != false ||
-                    bSceneDetectionEnable != false ||
                     bVarianceEnable != false ||
                     bImgStabilizationEnable != false ||
                     bFRCEnable != false ||
@@ -573,8 +571,6 @@ namespace MfxHwVideoProcessing
         mfxF64         Contrast;
         mfxF64         Hue;
         mfxF64         Saturation;
-
-        bool           bSceneDetectionEnable;
 
         bool           bVarianceEnable;
         bool           bImgStabilizationEnable;

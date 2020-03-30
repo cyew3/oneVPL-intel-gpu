@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -131,7 +131,6 @@ typedef struct _SET_PREPROC_PARAMS
     UINT bEnablePreProcMode     : 1;
     UINT iTargetInterlacingMode : 1;
     UINT bTargetInSysMemory     : 1;
-    UINT bSceneDetectionEnable  : 1;
     UINT bVarianceQuery         : 1;
     UINT bFieldWeaving          : 1;
     UINT bFieldWeavingExt       : 1;

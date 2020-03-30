@@ -84,7 +84,7 @@ mfxStatus SetRoundingOffset(
 namespace MfxHwH264Encode
 {
     // map feedbackNumber <-> VASurface
-    typedef struct
+    struct ExtVASurface
     {
         VASurfaceID surface = VA_INVALID_SURFACE;
         mfxU32 number       = 0;
@@ -95,7 +95,7 @@ namespace MfxHwH264Encode
         VASurfaceID mbstat  = VA_INVALID_ID;
         VASurfaceID mbcode  = VA_INVALID_ID;
 #endif
-    } ExtVASurface;
+    };
 
     void UpdatePPS(
         DdiTask const & task,
