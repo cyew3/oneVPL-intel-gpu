@@ -1399,15 +1399,14 @@ int main(int argc, char *argv[])
                 }
             }
 
-            close(m_card_fd);
-            m_card_fd = -1;
-
             if (MFX_ERR_NONE == sts)
             {
                 va_res = m_libva->vaInitialize(m_va_display, &major_version, &minor_version);
                 sts = va_to_mfx_status(va_res);
                 if (MFX_ERR_NONE != sts)
                 {
+                    close(m_card_fd);
+                    m_card_fd = -1;
                     sts = MFX_ERR_NOT_INITIALIZED;
                     return sts;
                 }
@@ -1699,6 +1698,10 @@ int main(int argc, char *argv[])
         if (m_va_display)
         {
             m_libva->vaTerminate(m_va_display);
+        }
+        if (m_card_fd >= 0)
+        {
+            close(m_card_fd);
         }
     }
 #endif
