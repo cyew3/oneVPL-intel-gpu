@@ -297,15 +297,13 @@ namespace UMC_AV1_DECODER
         // fill global motion params
         for (uint8_t i = 0; i < INTER_REFS; i++)
         {
-            if (!info.global_motion_params[i + 1].invalid)
+            picParam.wm[i].invalid = info.global_motion_params[i + 1].invalid;
+            picParam.wm[i].wmtype = static_cast<VAAV1TransformationType>(info.global_motion_params[i + 1].wmtype);
+            for (uint8_t j = 0; j < 8; j++)
             {
-                picParam.wm[i].wmtype = static_cast<VAAV1TransformationType>(info.global_motion_params[i + 1].wmtype);
+                picParam.wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
                 for (uint8_t j = 0; j < 8; j++)
-                {
                     picParam.wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
-                    for (uint8_t j = 0; j < 8; j++)
-                        picParam.wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
-                }
             }
         }
 
