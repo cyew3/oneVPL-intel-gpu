@@ -228,12 +228,31 @@ typedef struct tagENCODE_AES128_CIPHER_COUNTER
     UINT64 Counter;
 } ENCODE_AES128_CIPHER_COUNTER;
 
+typedef struct _LOOKAHEAD_INFO
+{
+    UINT StatusReportFeedbackNumber;
+    union
+    {
+        struct
+        {
+            UINT ValidInfo : 1;
+            UINT CqmHint   : 8;    // Custom quantization matrix hint. 0x00 - flat matrix; 0x01 - CQM; 0xFF - invalid hint; other values are reserved.
+            UINT IntraHint : 1;
+            UINT Reserved2 : 22;
+        };
+        UINT EncodeHints;
+    };
+    UINT TargetFrameSize;
+    UINT TargetBufferFulness;
+    UINT Reserved[12];
+} LOOKAHEAD_INFO;
+
 // new encode query status interface (starting from DDI 0.915)
 typedef struct tagENCODE_QUERY_STATUS_PARAMS
 {
     UINT    StatusReportFeedbackNumber;
-    ENCODE_PICENTRY CurrOriginalPic; 
-    UCHAR   field_pic_flag; 
+    ENCODE_PICENTRY CurrOriginalPic;
+    UCHAR   field_pic_flag;
     UCHAR   bStatus;
     UCHAR   reserved0;
     UINT    Func;
@@ -266,11 +285,8 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
     ENCODE_AES128_CIPHER_COUNTER aes_counter;
 
     UINT    StreamId;
-    UCHAR   CqmHint;
-    UCHAR   reserved8b;
-    USHORT  reserved16b;
-    UINT    Reserved3;
-    UINT    Reserved4;
+    LOOKAHEAD_INFO lookaheadInfo;
+    UINT reserved3[8];
 
 #endif // NEW_STATUS_REPORTING_DDI_0915
 
@@ -283,6 +299,14 @@ enum
     CQM_HINT_USE_CUST_MATRIX = 1,    //use customized matrix
     CQM_HINT_INVALID         = 0xFF  //invalid hint
 };
+
+struct mfxLplastatus
+{
+    mfxU8             ValidInfo = 0;
+    mfxU8             CqmHint = CQM_HINT_INVALID;
+    mfxU32            TargetFrameSize = 0;
+};
+
 #endif
 
 // new encode query status interface for slice level report (starting from DDI 0.935)

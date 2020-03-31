@@ -465,21 +465,23 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
 
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
     // refresh pic_parameter_set_id for adaptive CQM
-    if (task.m_cqmHint == CQM_HINT_USE_FLAT_MATRIX)
+    if (task.m_lplastatus.CqmHint == CQM_HINT_USE_CUST_MATRIX && extPpsNum > 0)
     {
+        // only extended CQM pps is supported now and CqmHint is CQM_HINT_USE_CUST_MATRIX
+        pps.pic_parameter_set_id = 1;
+        pps.pic_scaling_matrix_present_flag = true;
+        pps.pic_scaling_list_present_flag = true;
+    }
+    else
+    {   //CqmHint is CQM_HINT_USE_FLAT_MATRIX or CQM_HINT_INVALID, or no available extended CQM pps
         pps.pic_parameter_set_id = 0;
         pps.pic_scaling_matrix_present_flag = false;
-        pps.pic_scaling_list_present_flag   = false;
+        pps.pic_scaling_list_present_flag = false;
     }
-    else if (task.m_cqmHint == CQM_HINT_USE_CUST_MATRIX)
+
+    if (task.m_lplastatus.TargetFrameSize > 0)
     {
-        if (extPpsNum > 0)
-        {
-            // only extended CQM pps is supported now
-            pps.pic_parameter_set_id = 1;
-            pps.pic_scaling_matrix_present_flag = true;
-            pps.pic_scaling_list_present_flag = true;
-        }
+        pps.TargetFrameSize = task.m_lplastatus.TargetFrameSize;
     }
 #endif
 }

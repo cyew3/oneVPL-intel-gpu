@@ -1007,7 +1007,18 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & tas
         }
 
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
-        task.m_cqmHint = feedback->CqmHint;
+        if (feedback->lookaheadInfo.ValidInfo)
+        {
+            task.m_lplastatus.ValidInfo = feedback->lookaheadInfo.ValidInfo;
+            task.m_lplastatus.CqmHint = feedback->lookaheadInfo.CqmHint;
+            task.m_lplastatus.TargetFrameSize = feedback->lookaheadInfo.TargetFrameSize;
+        }
+        else
+        {
+            task.m_lplastatus.ValidInfo = 0;
+            task.m_lplastatus.CqmHint = CQM_HINT_INVALID;
+            task.m_lplastatus.TargetFrameSize = 0;
+        }
 #endif
         m_feedbackPool.Remove(task.m_statusReportNumber);
         return MFX_ERR_NONE;

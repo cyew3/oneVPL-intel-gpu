@@ -10420,7 +10420,7 @@ mfxU32 HeaderPacker::WriteSlice(
     mfxExtSpsHeader const & sps = task.m_viewIdx ? m_sps[task.m_viewIdx] : m_sps[m_spsIdx[task.m_did][task.m_qid]];
     mfxExtPpsHeader const & pps =
 #ifdef MFX_ENABLE_LP_LOOKAHEAD
-        task.m_cqmHint == CQM_HINT_USE_CUST_MATRIX ? m_cqmPps[0] :
+        task.m_lplastatus.CqmHint == CQM_HINT_USE_CUST_MATRIX ? m_cqmPps[0] :
 #endif
         task.m_viewIdx ? m_pps[task.m_viewIdx] : m_pps[m_ppsIdx[task.m_did][task.m_qid]];
 
@@ -10654,7 +10654,7 @@ mfxU32 HeaderPacker::WriteSlice(
     mfxExtSpsHeader const & sps = task.m_viewIdx ? m_sps[task.m_viewIdx] : m_sps[m_spsIdx[task.m_did][task.m_qid]];
     mfxExtPpsHeader const & pps =
 #ifdef MFX_ENABLE_LP_LOOKAHEAD
-        task.m_cqmHint == CQM_HINT_USE_CUST_MATRIX ? m_cqmPps[0] :
+        task.m_lplastatus.CqmHint == CQM_HINT_USE_CUST_MATRIX ? m_cqmPps[0] :
 #endif
         task.m_viewIdx ? m_pps[task.m_viewIdx] : m_pps[m_ppsIdx[task.m_did][task.m_qid]];
 
@@ -10968,7 +10968,7 @@ ENCODE_PACKEDHEADER_DATA const & HeaderPacker::PackSkippedSlice(
     mfxExtSpsHeader const & sps = task.m_viewIdx ? m_sps[task.m_viewIdx] : m_sps[m_spsIdx[task.m_did][task.m_qid]];
     mfxExtPpsHeader const & pps =
 #ifdef MFX_ENABLE_LP_LOOKAHEAD
-        task.m_cqmHint == CQM_HINT_USE_CUST_MATRIX ? m_cqmPps[0] :
+        task.m_lplastatus.CqmHint == CQM_HINT_USE_CUST_MATRIX ? m_cqmPps[0] :
 #endif
         task.m_viewIdx ? m_pps[task.m_viewIdx] : m_pps[m_ppsIdx[task.m_did][task.m_qid]];
 

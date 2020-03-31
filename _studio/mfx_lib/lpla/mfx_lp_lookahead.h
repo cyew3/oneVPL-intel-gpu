@@ -25,6 +25,8 @@
 
 #if defined (MFX_ENABLE_LP_LOOKAHEAD)
 
+#include "encoding_ddi.h"
+
 namespace MfxHwH265Encode
 {
     class MFXVideoENCODEH265_HW;
@@ -46,14 +48,14 @@ public:
 
     virtual mfxStatus Submit(mfxFrameSurface1 * surface);
 
-    virtual mfxStatus Query(mfxU8 *cqmHint);
+    virtual mfxStatus Query(mfxLplastatus* laStatus);
 
 protected:
     bool                   m_bInitialized = false;
     VideoCORE*             m_core         = nullptr;
     MFXVideoENCODEH265_HW* m_pEnc         = nullptr;
     mfxBitstream           m_bitstream    = {};
-    std::list<mfxU8>       m_cqmHint;
+    std::list<mfxLplastatus> m_lplastatus;
 };
 
 #endif

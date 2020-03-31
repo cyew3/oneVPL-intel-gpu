@@ -2499,24 +2499,29 @@ void ImplementationAvc::OnLookaheadQueried()
 #ifdef MFX_ENABLE_LP_LOOKAHEAD
     if (m_lpLookAhead)
     {
-        mfxStatus sts = m_lpLookAhead->Query(&task.m_cqmHint);
+        mfxLplastatus laStatus;
+        task.m_lplastatus = {};
+        mfxStatus sts = m_lpLookAhead->Query(&laStatus);
 
-        // refresh the scaling list based on cqmHint
-        if (sts == MFX_ERR_NONE && task.m_cqmHint == CQM_HINT_USE_CUST_MATRIX)
+        if (sts == MFX_ERR_NONE)
         {
-            const mfxExtSpsHeader &extSps = GetExtBufferRef(m_video);
-            const mfxExtPpsHeader &extCqmPps = m_video.GetCqmPps();
-
-            if (extSps.seqScalingMatrixPresentFlag || extCqmPps.picScalingMatrixPresentFlag)
+            task.m_lplastatus = laStatus;
+            // refresh the scaling list based on CqmHint
+            if (task.m_lplastatus.CqmHint == CQM_HINT_USE_CUST_MATRIX)
             {
-                FillTaskScalingList(extSps, extCqmPps, task);
+                const mfxExtSpsHeader& extSps = GetExtBufferRef(m_video);
+                const mfxExtPpsHeader& extCqmPps = m_video.GetCqmPps();
+
+                if (extSps.seqScalingMatrixPresentFlag || extCqmPps.picScalingMatrixPresentFlag)
+                {
+                    FillTaskScalingList(extSps, extCqmPps, task);
+                }
+            }
+            else
+            {
+                task.m_lplastatus.CqmHint = CQM_HINT_USE_FLAT_MATRIX;
             }
         }
-        else
-        {
-            task.m_cqmHint = CQM_HINT_USE_FLAT_MATRIX;
-        }
-
     }
 #endif
 

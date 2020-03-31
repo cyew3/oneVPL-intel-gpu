@@ -120,30 +120,34 @@ mfxStatus MfxLpLookAhead::Submit(mfxFrameSurface1 * surface)
     if (mfxRes == MFX_ERR_NONE)
     {
         MfxHwH265Encode::Task * task = (MfxHwH265Encode::Task*)entryPoint.pParam;
-        if (task->m_cqmHint != CQM_HINT_INVALID)
-            m_cqmHint.push_back(task->m_cqmHint);
+        if (task->m_lplastatus.ValidInfo)
+        {
+            m_lplastatus.push_back((task->m_lplastatus));
+        }
     }
     //else return to h264 encoder pipeline and leverage external scheduler for task scheduling
 
     return mfxRes;
 }
 
-mfxStatus MfxLpLookAhead::Query(mfxU8 *cqmHint)
+mfxStatus MfxLpLookAhead::Query(mfxLplastatus *laStatus)
 {
-    MFX_CHECK_NULL_PTR1(cqmHint);
+    MFX_CHECK_NULL_PTR1(laStatus);
 
     if (!m_bInitialized)
     {
         return MFX_ERR_NOT_INITIALIZED;
     }
 
-    if (m_cqmHint.empty())
+    if (m_lplastatus.empty())
     {
         return MFX_ERR_NOT_FOUND;
     }
 
-    *cqmHint = m_cqmHint.front();
-    m_cqmHint.pop_front();
+    laStatus->ValidInfo = m_lplastatus.front().ValidInfo;
+    laStatus->CqmHint = m_lplastatus.front().CqmHint;
+    laStatus->TargetFrameSize = m_lplastatus.front().TargetFrameSize;
+    m_lplastatus.pop_front();
 
     return MFX_ERR_NONE;
 }

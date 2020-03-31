@@ -1074,7 +1074,6 @@ namespace MfxHwH264Encode
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
             , m_idxLpla(0)
             , m_midLpla(MID_INVALID)
-            , m_cqmHint(CQM_HINT_INVALID)
 #endif
             , m_cmRawForHist(0)
             , m_cmHist(0)
@@ -1349,7 +1348,7 @@ namespace MfxHwH264Encode
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
         mfxU32   m_idxLpla;
         mfxMemId m_midLpla;
-        mfxU8    m_cqmHint;
+        mfxLplastatus m_lplastatus;
 #endif
         CmSurface2D *         m_cmRawForHist;
         CmBufferUP *          m_cmHist;     // Histogram data, kernel output

@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@
 #define AVC_DDI_VERSION_0960
 #define AVC_DDI_VERSION_0964
 #define AVC_DDI_VERSION_0965
+#define AVC_DDI_VERSION_0969
 
 #include "mfx_ext_ddi.h"
 
@@ -623,7 +624,8 @@ typedef struct tagENCODE_CAPS
             UINT    PollingModeSupport           : 1;
             UINT    LookaheadBRCSupport          : 1;
             UINT    QpAdjustmentSupport          : 1;
-            UINT                                 : 4;
+            UINT    LookaheadAnalysisSupport     : 1;
+            UINT                                 : 3;
         };
         UINT      CodingLimits2;
     };
@@ -1018,7 +1020,8 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
             UINT    GlobalSearch                    : 2;
             UINT    LocalSearch                     : 4;
             UINT    EarlySkip                       : 2;
-            UINT    Reserved0                       : 2;
+            UINT    TCBRCEnable                     : 1;
+            UINT    Reserved0                       : 1;
             UINT    MBBRC                           : 4;
             UINT    Trellis                         : 4;
             UINT    bTemporalScalability            : 1;
@@ -1046,8 +1049,12 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
     UINT    MaxBitRatePerSlidingWindow;
     UINT    MinBitRatePerSlidingWindow;
 #endif
-#ifdef AVC_DDI_VERSION_0965
-    UCHAR   LookaheadDepth;
+#ifdef AVC_DDI_VERSION_0969
+    union {
+        UCHAR   LookaheadDepth;
+        UCHAR   TargetFrameSizeConfidence;
+    };
+
     UCHAR   reserved8b[3];
 #endif
 } ENCODE_SET_SEQUENCE_PARAMETERS_H264;
