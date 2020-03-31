@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -247,20 +247,17 @@ mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay
 
         m_cachedReadyTaskIndex.clear();
 
-        VAEntrypoint* va_entrypoints = NULL;
         VAStatus vaSts;
         int va_max_num_entrypoints   = vaMaxNumEntrypoints(m_vaDisplay);
-        if(va_max_num_entrypoints)
-            va_entrypoints = new VAEntrypoint[va_max_num_entrypoints];
-        else
+        if(!va_max_num_entrypoints)
             return MFX_ERR_DEVICE_FAILED;
 
         mfxI32 entrypointsCount = 0, entrypointsIndx = 0;
-
+        std::vector<VAEntrypoint> va_entrypoints(va_max_num_entrypoints);
         vaSts = vaQueryConfigEntrypoints(m_vaDisplay,
-                                            VAProfileNone,
-                                            va_entrypoints,
-                                            &entrypointsCount);
+                                         VAProfileNone,
+                                         va_entrypoints.data(),
+                                         &entrypointsCount);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
         for( entrypointsIndx = 0; entrypointsIndx < entrypointsCount; entrypointsIndx++ )
@@ -271,7 +268,6 @@ mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay
                 break;
             }
         }
-        delete[] va_entrypoints;
 
         if( !m_bRunning )
         {
