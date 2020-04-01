@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifdef UMC_ENABLE_AV1_VIDEO_DECODER
+#ifdef MFX_ENABLE_AV1_VIDEO_DECODE
 
 #ifndef __UMC_AV1_BITSTREAM_UTILS_H_
 #define __UMC_AV1_BITSTREAM_UTILS_H_
@@ -275,4 +275,4 @@ namespace UMC_AV1_DECODER
 
 #endif // __UMC_AV1_BITSTREAM_H_
 
-#endif // UMC_ENABLE_AV1_VIDEO_DECODER
+#endif // MFX_ENABLE_AV1_VIDEO_DECODE

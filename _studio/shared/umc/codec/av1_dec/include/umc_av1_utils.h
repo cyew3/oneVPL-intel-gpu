@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
 #pragma once
 
 #include "umc_defs.h"
-#ifdef UMC_ENABLE_AV1_VIDEO_DECODER
+#ifdef MFX_ENABLE_AV1_VIDEO_DECODE
 
 #ifndef __UMC_AV1_UTILS_H_
 #define __UMC_AV1_UTILS_H_
@@ -172,4 +172,4 @@ namespace UMC_AV1_DECODER
 }
 
 #endif //__UMC_AV1_UTILS_H_
-#endif //UMC_ENABLE_AV1_VIDEO_DECODER
+#endif //MFX_ENABLE_AV1_VIDEO_DECODE

@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#ifdef UMC_ENABLE_AV1_VIDEO_DECODER
+#ifdef MFX_ENABLE_AV1_VIDEO_DECODE
 
 #ifndef __UMC_AV1_VA_PACKER_H
 #define __UMC_AV1_VA_PACKER_H
@@ -65,4 +65,4 @@ protected:
 } // namespace UMC_AV1_DECODER
 
 #endif /* __UMC_AV1_VA_PACKER_H */
-#endif // UMC_ENABLE_AV1_VIDEO_DECODER
+#endif // MFX_ENABLE_AV1_VIDEO_DECODE

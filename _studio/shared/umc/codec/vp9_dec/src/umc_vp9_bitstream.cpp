@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "umc_defs.h"
-#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(UMC_ENABLE_AV1_VIDEO_DECODER)
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_AV1_VIDEO_DECODE)
 
 #include "vm_debug.h"
 

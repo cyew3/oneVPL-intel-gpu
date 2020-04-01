@@ -41,7 +41,6 @@
     // video decoders
     //#define UMC_ENABLE_VP8_VIDEO_DECODER
     #define MFX_ENABLE_VP9_VIDEO_DECODE
-    #define UMC_ENABLE_AV1_VIDEO_DECODER
 
     // video encoders
     #define UMC_ENABLE_MVC_VIDEO_ENCODER
@@ -68,10 +67,6 @@
     // video decoders
     //#define UMC_ENABLE_VP8_VIDEO_DECODER
     #define MFX_ENABLE_VP9_VIDEO_DECODE
-#if defined(LINUX_TARGET_PLATFORM_ATS)
-    #define UMC_ENABLE_AV1_VIDEO_DECODER
-#endif
-
 
     // video encoders
     #define UMC_ENABLE_MVC_VIDEO_ENCODER

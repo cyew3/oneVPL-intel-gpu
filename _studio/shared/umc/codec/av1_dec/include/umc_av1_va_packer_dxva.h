@@ -21,7 +21,7 @@
 
 
 #include "umc_defs.h"
-#ifdef UMC_ENABLE_AV1_VIDEO_DECODER
+#ifdef MFX_ENABLE_AV1_VIDEO_DECODE
 
 #ifndef __UMC_AV1_VA_PACKER_H
 
@@ -101,5 +101,5 @@ namespace UMC_AV1_DECODER
 #endif // UMC_VA_DXVA
 
 #endif /* __UMC_AV1_VA_PACKER_H */
-#endif // UMC_ENABLE_AV1_VIDEO_DECODER
+#endif // MFX_ENABLE_AV1_VIDEO_DECODE
 
