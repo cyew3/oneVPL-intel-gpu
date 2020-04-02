@@ -58,7 +58,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(par);
     mfxExtCodingOption3 const &   extOpt3 = GetExtBufferRef(par);
     mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(par);
-    mfxExtVideoSignalInfo const * extVsi  = GetExtBuffer(par);
+    mfxExtVideoSignalInfo const & extVsi  = GetExtBufferRef(par);
 
     Zero(sps);
 
@@ -122,23 +122,34 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.UserMaxPBFrameSize                      = extOpt3.MaxFrameSizeP;
     sps.bAutoMaxPBFrameSizeForSceneChange       = IsOn(extOpt3.AdaptiveMaxFrameSize) ? 1 : 0;
 
-    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
-        switch (extVsi->MatrixCoefficients)
-        {
+    if (extVsi.ColourDescriptionPresent)
+    {
+        if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
+            switch (extVsi.MatrixCoefficients)
+            {
             case MFX_TRANSFERMATRIX_BT601:
             {
-                    sps.ARGBInputColor = eColorSpace_P601;
-                    break;
+                sps.ARGBInputColor = eColorSpace_P601;
+                break;
             }
             case MFX_TRANSFERMATRIX_BT709:
             {
-                    sps.ARGBInputColor = eColorSpace_P709;
-                    break;
+                sps.ARGBInputColor = eColorSpace_P709;
+                break;
             }
             default:
                 break;
-            //need define in API value for eColorSpace_P2020
-        }
+                //need define in API value for eColorSpace_P2020
+            }
+    }
+    else if (sps.FrameWidth * sps.FrameHeight >= 1920 * 1080) // From BT.709-6
+    {
+        sps.ARGBInputColor = eColorSpace_P709;
+    }
+    else
+    {
+        sps.ARGBInputColor = eColorSpace_P601;
+    }
     //Removed AVBR support for this
     //sps.AVBRAccuracy                            = par.mfx.Accuracy;
     //sps.AVBRConvergence                         = par.mfx.Convergence * 100;
