@@ -185,7 +185,7 @@ VAProfile g_VP910BitsProfiles[] =
 #if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
 VAProfile g_AV1Profiles[] =
 {
-    VAProfileAV1
+    VAProfileAV1Profile0
 };
 #endif
 
