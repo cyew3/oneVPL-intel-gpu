@@ -662,7 +662,7 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
         sts = m_pmfxDEC->DecodeFrameAsync(m_pmfxBS, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
 
         if ( (MFX_WRN_DEVICE_BUSY == sts) &&
-             (DevBusyTimer.GetTime() > MSDK_DEVICE_FREE_WAIT_INTERVAL/1000) )
+             (DevBusyTimer.GetTime() > MSDK_WAIT_INTERVAL/1000) )
         {
             msdk_printf(MSDK_STRING("ERROR: Decoder device busy (during long period)\n"));
             return MFX_ERR_DEVICE_FAILED;
@@ -720,7 +720,7 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
         sts = m_pmfxDEC->DecodeFrameAsync(NULL, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
 
         if ( (MFX_WRN_DEVICE_BUSY == sts) &&
-             (DevBusyTimer.GetTime() > MSDK_DEVICE_FREE_WAIT_INTERVAL/1000) )
+             (DevBusyTimer.GetTime() > MSDK_WAIT_INTERVAL/1000) )
         {
             msdk_printf(MSDK_STRING("ERROR: Decoder device busy (during long period)\n"));
             return MFX_ERR_DEVICE_FAILED;
