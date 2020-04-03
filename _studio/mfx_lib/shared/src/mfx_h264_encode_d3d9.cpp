@@ -54,10 +54,10 @@ void MfxHwH264Encode::FillSpsBuffer(
     MfxVideoParam const &                 par,
     ENCODE_SET_SEQUENCE_PARAMETERS_H264 & sps)
 {
-    mfxExtSpsHeader const *       extSps  = GetExtBuffer(par);
-    mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(par);
-    mfxExtCodingOption3 const &   extOpt3 = GetExtBufferRef(par);
-    mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(par);
+    mfxExtSpsHeader       const & extSps  = GetExtBufferRef(par);
+    mfxExtCodingOption2   const & extOpt2 = GetExtBufferRef(par);
+    mfxExtCodingOption3   const & extOpt3 = GetExtBufferRef(par);
+    mfxExtCodingOptionDDI const & extDdi  = GetExtBufferRef(par);
     mfxExtVideoSignalInfo const & extVsi  = GetExtBufferRef(par);
 
     Zero(sps);
@@ -81,44 +81,44 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.FramesPer100Sec                         = mfxU16(mfxU64(100) * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
     sps.InitVBVBufferFullnessInBit              = par.calcParam.initialDelayInKB * 8000;
     sps.VBVBufferSizeInBit                      = par.calcParam.bufferSizeInKB * 8000;
-    sps.NumRefFrames                            = mfxU8((extSps->maxNumRefFrames + 1) / 2);//reverted to make IVB encoded stream decodable, need to make decision based on HW type.
-    sps.seq_parameter_set_id                    = extSps->seqParameterSetId;
-    sps.chroma_format_idc                       = extSps->chromaFormatIdc;
-    sps.bit_depth_luma_minus8                   = extSps->bitDepthLumaMinus8;
-    sps.bit_depth_chroma_minus8                 = extSps->bitDepthChromaMinus8;
-    sps.log2_max_frame_num_minus4               = extSps->log2MaxFrameNumMinus4;
-    sps.pic_order_cnt_type                      = extSps->picOrderCntType;
-    sps.log2_max_pic_order_cnt_lsb_minus4       = extSps->log2MaxPicOrderCntLsbMinus4;
-    sps.num_ref_frames_in_pic_order_cnt_cycle   = extSps->numRefFramesInPicOrderCntCycle;
-    sps.offset_for_non_ref_pic                  = extSps->offsetForNonRefPic;
-    sps.offset_for_top_to_bottom_field          = extSps->offsetForTopToBottomField;
+    sps.NumRefFrames                            = mfxU8((extSps.maxNumRefFrames + 1) / 2);//reverted to make IVB encoded stream decodable, need to make decision based on HW type.
+    sps.seq_parameter_set_id                    = extSps.seqParameterSetId;
+    sps.chroma_format_idc                       = extSps.chromaFormatIdc;
+    sps.bit_depth_luma_minus8                   = extSps.bitDepthLumaMinus8;
+    sps.bit_depth_chroma_minus8                 = extSps.bitDepthChromaMinus8;
+    sps.log2_max_frame_num_minus4               = extSps.log2MaxFrameNumMinus4;
+    sps.pic_order_cnt_type                      = extSps.picOrderCntType;
+    sps.log2_max_pic_order_cnt_lsb_minus4       = extSps.log2MaxPicOrderCntLsbMinus4;
+    sps.num_ref_frames_in_pic_order_cnt_cycle   = extSps.numRefFramesInPicOrderCntCycle;
+    sps.offset_for_non_ref_pic                  = extSps.offsetForNonRefPic;
+    sps.offset_for_top_to_bottom_field          = extSps.offsetForTopToBottomField;
     sps.FrameSizeTolerance = ConvertLowDelayBRCMfx2Ddi(extOpt3.LowDelayBRC, par.calcParam.TCBRCTargetFrameSize);
 
     if ((par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR) && extOpt3.WinBRCSize)
         sps.FrameSizeTolerance = eFrameSizeTolerance_Low;
 
 
-    Copy(sps.offset_for_ref_frame,                extSps->offsetForRefFrame);
+    Copy(sps.offset_for_ref_frame,                extSps.offsetForRefFrame);
 
-    sps.frame_crop_left_offset                  = mfxU16(extSps->frameCropLeftOffset);
-    sps.frame_crop_right_offset                 = mfxU16(extSps->frameCropRightOffset);
-    sps.frame_crop_top_offset                   = mfxU16(extSps->frameCropTopOffset);
-    sps.frame_crop_bottom_offset                = mfxU16(extSps->frameCropBottomOffset);
-    sps.seq_scaling_matrix_present_flag         = extSps->seqScalingMatrixPresentFlag;
-    sps.seq_scaling_list_present_flag           = extSps->seqScalingMatrixPresentFlag;
-    sps.delta_pic_order_always_zero_flag        = extSps->deltaPicOrderAlwaysZeroFlag;
-    sps.frame_mbs_only_flag                     = extSps->frameMbsOnlyFlag;
-    sps.direct_8x8_inference_flag               = extSps->direct8x8InferenceFlag;
-    sps.vui_parameters_present_flag             = extSps->vuiParametersPresentFlag;
-    sps.frame_cropping_flag                     = extSps->frameCroppingFlag;
+    sps.frame_crop_left_offset                  = mfxU16(extSps.frameCropLeftOffset);
+    sps.frame_crop_right_offset                 = mfxU16(extSps.frameCropRightOffset);
+    sps.frame_crop_top_offset                   = mfxU16(extSps.frameCropTopOffset);
+    sps.frame_crop_bottom_offset                = mfxU16(extSps.frameCropBottomOffset);
+    sps.seq_scaling_matrix_present_flag         = extSps.seqScalingMatrixPresentFlag;
+    sps.seq_scaling_list_present_flag           = extSps.seqScalingMatrixPresentFlag;
+    sps.delta_pic_order_always_zero_flag        = extSps.deltaPicOrderAlwaysZeroFlag;
+    sps.frame_mbs_only_flag                     = extSps.frameMbsOnlyFlag;
+    sps.direct_8x8_inference_flag               = extSps.direct8x8InferenceFlag;
+    sps.vui_parameters_present_flag             = extSps.vuiParametersPresentFlag;
+    sps.frame_cropping_flag                     = extSps.frameCroppingFlag;
     sps.bResetBRC                               = 0;
-    sps.GlobalSearch                            = extDdi->GlobalSearch;
-    sps.LocalSearch                             = extDdi->LocalSearch;
-    sps.EarlySkip                               = extDdi->EarlySkip;
-    sps.Trellis                                 = extOpt2->Trellis;
-    sps.MBBRC                                   = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
-    sps.EnableSliceLevelRateCtrl                = (extOpt2->MaxSliceSize)?1:0;
-    sps.UserMaxIFrameSize                       = extOpt3.MaxFrameSizeI ? extOpt3.MaxFrameSizeI : extOpt2->MaxFrameSize;
+    sps.GlobalSearch                            = extDdi.GlobalSearch;
+    sps.LocalSearch                             = extDdi.LocalSearch;
+    sps.EarlySkip                               = extDdi.EarlySkip;
+    sps.Trellis                                 = extOpt2.Trellis;
+    sps.MBBRC                                   = IsOn(extOpt2.MBBRC) ? 1 : IsOff(extOpt2.MBBRC) ? 2 : 0;
+    sps.EnableSliceLevelRateCtrl                = (extOpt2.MaxSliceSize)?1:0;
+    sps.UserMaxIFrameSize                       = extOpt3.MaxFrameSizeI ? extOpt3.MaxFrameSizeI : extOpt2.MaxFrameSize;
     sps.UserMaxPBFrameSize                      = extOpt3.MaxFrameSizeP;
     sps.bAutoMaxPBFrameSizeForSceneChange       = IsOn(extOpt3.AdaptiveMaxFrameSize) ? 1 : 0;
 
@@ -174,7 +174,7 @@ void MfxHwH264Encode::FillSpsBuffer(
         sps.ScenarioInfo = eScenario_RemoteGaming;
     }
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    sps.LookaheadDepth = (UCHAR)extOpt2->LookAheadDepth;
+    sps.LookaheadDepth = (UCHAR)extOpt2.LookAheadDepth;
 #endif
 }
 
