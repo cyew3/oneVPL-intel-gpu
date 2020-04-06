@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -201,6 +201,7 @@ public:
         , IDDIPacker(FeatureId)
     {
         SetTraceName("G9_DDIPacker");
+        m_cur = m_buf.end();
     }
 
     struct CallChains
@@ -251,12 +252,12 @@ protected:
     std::vector<ENCODE_PACKEDHEADER_DATA>::iterator m_cur;
     std::vector<ENCODE_COMPBUFFERDESC>              m_cbd;
     std::array<mfxU32, NUM_RES>                     m_resId;
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC             m_sps;
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC              m_pps;
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC             m_sps       = {};
+    ENCODE_SET_PICTURE_PARAMETERS_HEVC              m_pps       = {};
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC>       m_slices;
-    ENCODE_INPUT_DESC                               m_inputDesc;
-    ENCODE_EXECUTE_PARAMS                           m_execPar;
-    ENCODE_QUERY_STATUS_PARAMS_DESCR                m_query;
+    ENCODE_INPUT_DESC                               m_inputDesc = {};
+    ENCODE_EXECUTE_PARAMS                           m_execPar   = {};
+    ENCODE_QUERY_STATUS_PARAMS_DESCR                m_query     = {};
     std::map<mfxU32, std::vector<mfxHDLPair>>       m_resources;
     std::vector<mfxHDL>                             m_taskRes;
 
@@ -274,7 +275,7 @@ protected:
     mfxU32          m_sizeSkipFrames    = 0;
     eMFXVAType      m_vaType            = MFX_HW_NO;
     eMFXHWType      m_hwType            = MFX_HW_UNKNOWN;
-    FeedbackStorage m_feedback;
+    FeedbackStorage m_feedback          = FeedbackStorage();
 
     virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
     virtual void InitInternal(const FeatureBlocks& blocks, TPushII Push) override;
