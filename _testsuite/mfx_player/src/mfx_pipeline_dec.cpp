@@ -4268,9 +4268,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, (int)MFX_BUF_SW));
     }
 #ifdef D3D_SURFACES_SUPPORT
-    else if (m_OptProc.Check(argv[0], VM_STRING("-d3d|-hwfrbuf"), VM_STRING("video frames in D3D surfaces")))
+    else if (m_OptProc.Check(argv[0], VM_STRING("-d3d|-d3d9|-hwfrbuf"), VM_STRING("video frames in D3D9 surfaces. SW Mediasdk library will use external memory as d3d9. HW library additionally will uses d3d9 interfaces internally")))
     {
         std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));
+        std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_VIA_D3D9));
     }
 #endif
 #ifdef LIBVA_SUPPORT
@@ -4283,7 +4284,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bufType, MFX_BUF_HW));
     }
 #endif
-    else if (m_OptProc.Check(argv[0], VM_STRING("-d3d11"), VM_STRING("SW Mediasdk library will use external memory as d3d11. HW library additionaly will uses d3d11 interfaces internally")))
+    else if (m_OptProc.Check(argv[0], VM_STRING("-d3d11"), VM_STRING("SW Mediasdk library will use external memory as d3d11. HW library additionally will uses d3d11 interfaces internally")))
     {
         std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_libType, (int)MFX_IMPL_VIA_D3D11));
     }
