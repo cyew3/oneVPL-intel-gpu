@@ -122,6 +122,7 @@ struct sCommandlineParams
   bool           bMediaSDKSplitter;
   bool           bAdaptivePlayback;
   bool           bVP9_DRC;
+  bool           isRawSurfaceLinear;
   vm_char        extractedAudioFile[MAX_FILE_PATH];
   mfxU16         nAdvanceFRCAlgorithm;//if non zero then directly specifies advanced FRC algorithm
   mfxU16         nImageStab;//image stabilization mode
@@ -453,6 +454,8 @@ struct sCommandlineParams
 //IDirect3DDeviceManager9 *CreateDXVASpy(IDirect3DDeviceManager9*);
 //#endif
 
+class tsRegistryEditor;
+
 class MFXDecPipeline
     : public IMFXPipeline, public IPipelineControl, public ITime
 {
@@ -502,6 +505,12 @@ protected:
     //Resolution of original input YUV
     mfxU32                   m_YUV_Width;
     mfxU32                   m_YUV_Height;
+
+#if defined(_WIN32) || defined(_WIN64)
+    virtual mfxStatus        RegKeySet();
+
+    std::unique_ptr<tsRegistryEditor> m_reg;
+#endif
 
     //Pipeline parameters
     sCommandlineParams       m_inParams = {};

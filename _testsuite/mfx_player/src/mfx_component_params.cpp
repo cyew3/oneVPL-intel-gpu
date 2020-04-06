@@ -222,11 +222,12 @@ mfxStatus ComponentParams::DestroySurfaces()
 mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
                                       , IHWDevice *hwDevice
                                       , mfxFrameAllocRequest  * pRequest
+                                      , bool bIsRawSurfaceLinear
                                       , bool bCreateEncCtl)
 {
     // pointer to allocator parameters structure needed for allocator init
     std::auto_ptr<mfxAllocatorParams> pAllocatorParams;
-    
+
     SurfacesAllocated &refSurfaces = RegisterAlloc(*pRequest);
 
     // Create allocator
@@ -323,8 +324,9 @@ mfxStatus ComponentParams::AllocFrames( RWAllocatorFactory::root* pFactory
             ID3D11Device *pDevice;
             MFX_CHECK_STS(hwDevice->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&pDevice));
 
-            pd3d11AllocParams->pDevice        = pDevice;
-            pAllocatorParams.reset(pd3d11AllocParams);           
+            pd3d11AllocParams->pDevice          = pDevice;
+            pd3d11AllocParams->bIsRawSurfLinear = bIsRawSurfaceLinear;
+            pAllocatorParams.reset(pd3d11AllocParams);
             break;
         }
 #endif

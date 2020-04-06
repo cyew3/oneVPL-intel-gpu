@@ -246,6 +246,7 @@
     <ClInclude Include="include\mfx_metric_calc.h" />
     <ClInclude Include="include\mfx_msu_adapter.h" />
     <ClInclude Include="include\mfx_pcp.h" />
+    <ClInclude Include="include\mfx_set_reg_key.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />

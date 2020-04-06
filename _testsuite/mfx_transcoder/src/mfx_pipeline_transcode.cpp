@@ -997,6 +997,10 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             if(!m_extCodingOptions2->SkipFrame)
             m_extCodingOptions2->SkipFrame = 1;
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-linear_input"), VM_STRING("create raw input surface as linear format")))
+        {
+            m_inParams.isRawSurfaceLinear = true;
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-cabac"), VM_STRING("Turn on CABAC mode")))
         {
             m_extCodingOptions->CAVLC = MFX_CODINGOPTION_OFF;

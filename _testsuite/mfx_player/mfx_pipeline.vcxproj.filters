@@ -301,6 +301,9 @@
     <ClInclude Include="include\mfx_pipeline_dec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\mfx_set_reg_key.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\mfx_pipeline_defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 - 2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011 - 2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -599,7 +599,22 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
         ID3D11Texture2D* pTexture2D;
 
-        for(size_t i = 0; i < request->NumFrameSuggested / desc.ArraySize; i++)
+        if (m_initParams.bIsRawSurfLinear)
+        {
+            if (desc.Format == DXGI_FORMAT_NV12 || desc.Format == DXGI_FORMAT_P010)
+            {
+                desc.BindFlags = D3D11_BIND_DECODER;
+            }
+            else if (desc.Format == DXGI_FORMAT_Y410 ||
+                desc.Format == DXGI_FORMAT_Y210 ||
+                desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM ||
+                desc.Format == DXGI_FORMAT_R10G10B10A2_UNORM)
+            {
+                desc.BindFlags = 0;
+            }
+        }
+
+        for (size_t i = 0; i < request->NumFrameSuggested / desc.ArraySize; i++)
         {
             hRes = m_initParams.pDevice->CreateTexture2D(&desc, NULL, &pTexture2D);
 

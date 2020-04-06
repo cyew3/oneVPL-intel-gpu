@@ -103,6 +103,7 @@ public:
       virtual mfxStatus AllocFrames( RWAllocatorFactory::root* pFactory
                                    , IHWDevice *hwDevice
                                    , mfxFrameAllocRequest  * pRequest
+                                   , bool bIsRawSurfaceLinear
                                    , bool bCreateEncCtl);
 
       virtual mfxStatus ReallocSurface(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut);

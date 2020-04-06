@@ -10,6 +10,10 @@ Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 #include <stdio.h>
 
+#if defined(_WIN64) || defined(_WIN32)
+#include "mfx_set_reg_key.h"
+#endif
+
 #include "mfx_pipeline_defs.h"
 #include "mfx_pipeline_dec.h"
 #include "mfx_spl_wrapper.h"
@@ -127,6 +131,9 @@ using namespace std;
 MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     : m_YUV_Width(0)
     , m_YUV_Height(0)
+#if defined(_WIN64) || defined(_WIN32)
+    , m_reg(new tsRegistryEditor)
+#endif
     //, m_d3dDeviceManagerSpy()
     , m_RenderType(MFX_SCREEN_RENDER)
     , m_pSpl()
@@ -3064,6 +3071,11 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
             {
                 return MFX_ERR_UNSUPPORTED;
             }
+
+#if defined(_WIN32) || defined(_WIN64)
+            RegKeySet();
+#endif
+
             MFX_CHECK_STS(m_pHWDevice->Init(cparams.GetAdapter(), NULL, !m_inParams.bFullscreen, format, 1, m_inParams.dxva2DllName, cparams.m_bD39Feat));
         }
         MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL *)&pDevice));
@@ -3184,7 +3196,7 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         );
 
         m_components[eDEC].m_bAdaptivePlayback = m_inParams.bAdaptivePlayback;
-        MFX_CHECK_STS(m_components[eDEC].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, false));
+        MFX_CHECK_STS(m_components[eDEC].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, m_inParams.isRawSurfaceLinear, false));
 
         if (m_components[eDEC].m_bufType == MFX_BUF_OPAQ)
         {
@@ -3237,7 +3249,7 @@ mfxStatus MFXDecPipeline::CreateAllocator()
             , IPP_MAX(m_components[eVPP].m_nMaxAsync, 1) - 1);
 
         //setting-up allocator and alloc frames in here
-        MFX_CHECK_STS(m_components[eDEC].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, false));
+        MFX_CHECK_STS(m_components[eDEC].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, m_inParams.isRawSurfaceLinear, false));
 
         //attaching buffer with opaq memory info to decoder and vpp extparams
         if (m_components[eDEC].m_bufType == MFX_BUF_OPAQ)
@@ -3283,7 +3295,7 @@ mfxStatus MFXDecPipeline::CreateAllocator()
             m_components[eVPP].m_pAllocator = m_components[eDEC].m_pAllocator;
         }
 
-        MFX_CHECK_STS(m_components[eVPP].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, true));
+        MFX_CHECK_STS(m_components[eVPP].AllocFrames(m_pAllocFactory.get(), m_pHWDevice, request, m_inParams.isRawSurfaceLinear, true));
 
         //attaching buffer with opaq memory info to vpp and encode extparams
         if (m_components[eREN].m_bufType == MFX_BUF_OPAQ)
@@ -4518,7 +4530,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
     }
     else if (m_OptProc.Check(argv[0], VM_STRING("-created3d"), VM_STRING("force to create D3D device manager in application and pass to MediaSDK")))
     {
-        m_inParams.bCreateD3D = true;
+    m_inParams.bCreateD3D = true;
     }
     else if (m_OptProc.Check(argv[0], VM_STRING("-dec:noExtPicstruct"), VM_STRING("prevents decoder from generating extended picstruct codes")))
     {
@@ -6021,6 +6033,21 @@ mfxU32 MFXDecPipeline::GetNumDecodedFrames(void)
     return m_nDecFrames;
 }
 
+#if defined(_WIN32) || defined(_WIN64)
+mfxStatus MFXDecPipeline::RegKeySet()
+{
+    if (m_inParams.isRawSurfaceLinear)
+    {
+
+        const HKEY rootKey = HKEY_LOCAL_MACHINE;
+        m_reg->SetRegKey(rootKey, TEXT("Software\\Intel\\IGFX\\D3D10\\"), TEXT("ForceVDEncSurfToLinear"), 1);
+        m_reg->SetRegKey(rootKey, TEXT("Software\\Wow6432Node\\Intel\\IGFX\\D3D10\\"), TEXT("ForceVDEncSurfToLinear"), 1);
+
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif
 
 AllocatorAdapterRW::AllocatorAdapterRW(MFXFrameAllocatorRW * allocator)
     : m_allocator(allocator)
