@@ -6955,10 +6955,7 @@ void MfxHwH264Encode::SetDefaults(
         //We use CQM in case of
         //MFX_SCENARIO_GAME_STREAMING AVC VDEnc/VME on Gen11+ or
         //MFX_SCENARIO_REMOTE_GAMING  AVC VDEnc     on Gen9+
-        if (
-#ifndef MFX_ENABLE_LP_LOOKAHEAD
-            (extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && platform >= MFX_HW_ICL) ||
-#endif
+        if ((extOpt3->ScenarioInfo == MFX_SCENARIO_GAME_STREAMING && platform >= MFX_HW_ICL && extOpt2->LookAheadDepth == 0) ||
             (extOpt3->ScenarioInfo == MFX_SCENARIO_REMOTE_GAMING  && platform >= MFX_HW_SCL && IsOn(par.mfx.LowPower)))
         {
             FillCustomScalingLists(&(extSps->scalingList4x4[0][0]), extOpt3->ScenarioInfo);
