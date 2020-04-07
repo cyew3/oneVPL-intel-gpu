@@ -1558,6 +1558,104 @@ STRUCT(mfxExtAV1FilmGrainParam,
     FIELD_T(mfxU8, CrLumaMult)
     FIELD_T(mfxU16, CrOffset)
 )
+#endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
+STRUCT(mfxExtAV1Param,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, FrameWidth)
+    FIELD_T(mfxU16, FrameHeight)
+    FIELD_T(mfxU8, WriteIVFHeaders)
+    FIELD_T(mfxU8, UseAnnexB)
+    FIELD_T(mfxU8, PackOBUFrame)
+    FIELD_T(mfxU8, InsertTemporalDelimiter)
+    FIELD_T(mfxU16, NumTileRows)
+    FIELD_T(mfxU16, NumTileColumns)
+    FIELD_T(mfxU16, NumTileGroups)
+    FIELD_T(mfxU16*, NumTilesPerTileGroup)
+    FIELD_T(mfxU16*, TileWidthInSB)
+    FIELD_T(mfxU16*, TileHeightInSB)
+    FIELD_T(mfxU8, EnableCdef)
+    FIELD_T(mfxU8, EnableRestoration)
+    FIELD_T(mfxI8, LoopFilterSharpness)
+    FIELD_T(mfxU8, InterpFilter)
+    FIELD_T(mfxU8, SegmentationMode)
+    FIELD_T(mfxU8, DisableCdfUpdate)
+    FIELD_T(mfxU8, DisableFrameEndUpdateCdf)
+    FIELD_T(mfxU8, EnableSuperres)
+    FIELD_T(mfxU8, SuperresScaleDenominator)
+    FIELD_T(mfxU8, StillPictureMode)
+    FIELD_T(mfxU16, SwitchInterval)
+)
+
+STRUCT(mfxExtAV1AuxData_Cdef,
+    FIELD_T(mfxU8, CdefDampingMinus3)
+    FIELD_T(mfxU8, CdefBits)
+    FIELD_T(mfxU8*, CdefYStrengths)
+    FIELD_T(mfxU8*, CdefUVStrengths)
+)
+
+STRUCT(mfxExtAV1AuxData_LoopFilter,
+    FIELD_T(mfxU8, LFLevelYVert)
+    FIELD_T(mfxU8, LFLevelYHorz)
+    FIELD_T(mfxU8, LFLevelU)
+    FIELD_T(mfxU8, LFLevelV)
+    FIELD_T(mfxU8, ModeRefDeltaEnabled)
+    FIELD_T(mfxU8, ModeRefDeltaUpdate)
+)
+
+STRUCT(mfxExtAV1AuxData_QP,
+    FIELD_T(mfxI8, YDcDeltaQ)
+    FIELD_T(mfxI8, UDcDeltaQ)
+    FIELD_T(mfxI8, VDcDeltaQ)
+    FIELD_T(mfxI8, UAcDeltaQ)
+    FIELD_T(mfxI8, VAcDeltaQ)
+    FIELD_T(mfxU8, MinBaseQIndex)
+    FIELD_T(mfxU8, MaxBaseQIndex)
+)
+
+STRUCT(mfxExtAV1AuxData,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_S(mfxExtAV1AuxData_Cdef, Cdef)
+    FIELD_S(mfxExtAV1AuxData_LoopFilter, LoopFilter)
+    FIELD_S(mfxExtAV1AuxData_QP, QP)
+    FIELD_T(mfxU8, UniformTileSpacing)
+    FIELD_T(mfxU8, ErrorResilientMode)
+    FIELD_T(mfxU8, EnableOrderHint)
+    FIELD_T(mfxU8, OrderHintBits)
+    FIELD_T(mfxU8, ContextUpdateTileIdPlus1)
+    FIELD_T(mfxU8, DisplayFormatSwizzle)
+)
+
+STRUCT(mfxAV1SegmentParam,
+    FIELD_T(mfxU16, FeatureEnabled)
+    FIELD_T(mfxU16, AltQIndex)
+    FIELD_T(mfxU16, AltLFLevelYVert)
+    FIELD_T(mfxU16, AltLFLevelYHorz)
+    FIELD_T(mfxU16, AltLFLevelU)
+    FIELD_T(mfxU16, AltLFLevelV)
+    FIELD_T(mfxU16, ReferenceFrame)
+)
+
+STRUCT(mfxExtAV1Segmentation,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, NumSegments)
+    FIELD_S(mfxAV1SegmentParam, Segment)
+    FIELD_T(mfxU16, SegmentIdBlockSize)
+    FIELD_T(mfxU32, NumSegmentIdAlloc)
+    FIELD_T(mfxU8*, SegmentId)
+    FIELD_T(mfxU16, TemporalUpdate)
+)
+
+STRUCT(mfxAV1TemporalLayer,
+    FIELD_T(mfxU16, FrameRateScale)
+    FIELD_T(mfxU16, TargetKbps)
+)
+
+STRUCT(mfxExtAV1TemporalLayers,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_S(mfxAV1TemporalLayer, Layer)
+)
 
 #endif
 

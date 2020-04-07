@@ -219,6 +219,9 @@ Notice revision #20110804
   * [mfxExtVP9Param](#mfxExtVP9Param)
   * [mfxExtVP9Segmentation](#mfxExtVP9Segmentation)
   * [mfxExtVP9TemporalLayers](#mfxExtVP9TemporalLayers)
+  * [mfxExtAV1Param](#mfxExtAV1Param)
+  * [mfxExtAV1Segmentation](#mfxExtAV1Segmentation)
+  * [mfxExtAV1TemporalLayers](#mfxExtAV1TemporalLayers)
   * [mfxExtBRC](#mfxExtBRC)
     + [Init](#BRCInit)
     + [Reset](#BRCReset)
@@ -283,6 +286,11 @@ Notice revision #20110804
   * [VP9ReferenceFrame](#VP9ReferenceFrame)
   * [SegmentIdBlockSize](#SegmentIdBlockSize)
   * [SegmentFeature](#SegmentFeature)
+  * [AV1InterpolationMode](#AV1InterpolationMode)
+  * [AV1SegmentationMode](#AV1SegmentationMode)
+  * [AV1SegmentIdBlockSize](#AV1SegmentIdBlockSize)
+  * [AV1ReferenceFrame](#AV1ReferenceFrame)
+  * [AV1SegmentFeature](#AV1SegmentFeature)
   * [InsertHDRPayload](#InsertHDRPayload)
   * [SampleAdaptiveOffset](#SampleAdaptiveOffset)
   * [BRCStatus](#BRCStatus)
@@ -7375,6 +7383,192 @@ Temporal layer structure is reset (re-started) after key-frames.
 
 This structure is available since SDK API 1.26
 
+## <a id='mfxExtAV1Param'>mfxExtAV1Param</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16  FrameWidth;
+    mfxU16  FrameHeight;
+
+    mfxU16  WriteIVFHeaders;          /* tri-state option */
+    mfxU8   UseAnnexB;                /* tri-state option */
+    mfxU8   PackOBUFrame;             /* tri-state option */
+    mfxU8   InsertTemporalDelimiter;  /* tri-state option */
+
+    mfxU16  NumTileRows;
+    mfxU16  NumTileColumns;
+    mfxU16  NumTileGroups;
+    mfxU16  NumTilesPerTileGroup[256];
+    mfxU16  TileWidthInSB[128];
+    mfxU16  TileHeightInSB[128];
+
+    mfxU8   EnableCdef;               /* tri-state option */
+    mfxU8   EnableRestoration;        /* tri-state option */
+    mfxU8   LoopFilterSharpness;
+
+    mfxU8   InterpFilter;
+
+    mfxU8   SegmentationMode;
+
+    mfxU8   DisableCdfUpdate;         /* tri-state option */
+    mfxU8   DisableFrameEndUpdateCdf; /* tri-state option */
+
+    mfxU8   EnableSuperres;           /* tri-state option */
+    mfxU8   SuperresScaleDenominator;
+
+    mfxU8   StillPictureMode;         /* tri-state option */
+    mfxU16  SwitchInterval;
+
+    mfxU8   reserved[66];
+} mfxExtAV1Param;
+```
+
+**Description**
+
+Attached to the [mfxVideoParam](#mfxVideoParam) structure extends it with AV1-specific encoder parameters.
+
+Also the buffer can be attached to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure during [runtime](#MFXVideoENCODE_EncodeFrameAsync) (dynamic configuration). Dynamic configuration is applied to current frame only (after encoding of current frame SDK Encoder will switch to next dynamic configuration, or to static configuration if dynamic is not provided for next frame).
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId`          | Must be [MFX_EXTBUFF_AV1_PARAM](#ExtendedBufferID).
+`FrameWidth`               | Width of the coded frame in pixels.
+`FrameHeight`              | Height of the coded frame in pixels.
+`WriteIVFHeaders`          | Turn this option ON to make encoder insert IVF container headers to output stream. NumFrame field of IVF sequence header will be zero, it’s responsibility of application to update it with correct value.<br>See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`UseAnnexB`                | Turn this option ON to make encoder use OBU format described in Annex B of AV1 specification. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`PackOBUFrame`             | Pack frame_header_obu() and tile_group_obu() within single frame_obu (only valid when NumTileGroups parameter is set to 1 or not specified). See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`InsertTemporalDelimiter`  | Set this flag to insert the OBU_TEMPORAL_DELIMITER before each frame. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`NumTileRows`              | Number of tile rows.
+`NumTileColumns`           | Number of tile columns.
+`NumTileGroups`            | Number of tile groups per frame.
+`NumTilesPerTileGroup`     | Number of tiles within each tile group.
+`TileWidthInSB`            | Width of each tile in superblocks.
+`TileHeightInSB`           | Height of each tile in superblocks.
+`EnableCdef`               | Enable/disable in-loop Constrained Directional Enhancement Filter. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`EnableRestoration`        | Enable/disable Loop Restoration Filter. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`LoopFilterSharpness`      | Sharpness for Loop Filter.
+`InterpFilter`             | Type of interpolation filter for Inter block prediction. See the [AV1InterpolationMode](#AV1InterpolationMode) enumerator for values for this option.
+`SegmentationMode`         | Type of segmentation. See the [AV1SegmentationMode](#AV1SegmentationMode) enumerator for values for this option
+`DisableCdfUpdate`         | Enable/disable CDF update during tile coding. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`DisableFrameEndUpdateCdf` | Enable/disable CDF update between frames. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`EnableSuperres`           | Enable/disable in-loop Superres Filter. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`SuperresScaleDenominator` | Denominator for Superres Filter. Valid range is 9..16.
+`StillPictureMode`         | Enable/disable Still Picture Mode. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`SwitchInterval`           | Cadence of Switch Frames. Zero value means no switch frames.
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
+## <a id='mfxExtAV1Segmentation'>mfxExtAV1Segmentation</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxU16  FeatureEnabled;
+    mfxI16  AltQIndex;
+    mfxI16  AltLFLevelYVert;
+    mfxI16  AltLFLevelYHorz;
+    mfxI16  AltLFLevelU;
+    mfxI16  AltLFLevelV;
+    mfxU16  ReferenceFrame;
+    mfxU16  reserved[16];
+} mfxAV1SegmentParam;
+
+typedef struct {
+    mfxExtBuffer        Header;
+    mfxU16              NumSegments;
+    mfxAV1SegmentParam  Segment[8];
+    mfxU16              SegmentIdBlockSize;
+    mfxU32              NumSegmentIdAlloc;
+    union {
+        mfxU8           *SegmentId;
+        mfxU64          reserved1;
+    };
+    mfxU16              TemporalUpdate;
+    mfxU16              reserved[34];
+} mfxExtAV1Segmentation;
+```
+
+**Description**
+
+In AV1 encoder it’s possible to divide a frame to up to 8 segments and apply particular features (like delta for quantization index or for loop filter level) on segment basis. “Uncompressed header” of every frame indicates if segmentation is enabled for current frame, and (if segmentation enabled) contains full information about features applied to every segment. Every mode_info() block of coded frame has segment_id in the range \[0, 7\].
+
+To enable segmentation parameter [mfxExtAV1Param](#mfxExtAV1Param)::SegmentationMode should be set and `mfxExtAV1Segmentation` structure with correct settings should be passed to the encoder. It can be attached to the [mfxVideoParam](#mfxVideoParam) structure during [initialization](#MFXVideoENCODE_Init) or [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset) call (static configuration).
+
+Also the buffer can be attached to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure during [runtime](#MFXVideoENCODE_EncodeFrameAsync) (dynamic configuration). Dynamic configuration is applied to current frame only (after encoding of current frame SDK Encoder will switch to next dynamic configuration, or to static configuration if dynamic isn’t provided for next frame).
+
+
+**Members**
+
+| | |
+--- | ---
+`FeatureEnabled`        | Indicates which features are enabled for the segment. See [AV1SegmentFeature](#AV1SegmentFeature) enumerator for values for this option. Values from the enumerator can be bit-OR’ed. Support of particular feature depends on underlying HW platform. Application can check which features are supported by calling of [Query](#MFXVideoENCODE_Query).
+`AltQIndex`             | Quantization index delta for the segment. Ignored if `MFX_AV1_SEGMENT_FEATURE_ALT_QINDEX` isn’t set in `FeatureEnabled`. Valid range for this parameter is \[-255, 255\]. If `AltQIndex` is out of this range, it will be ignored. If `AltQIndex` is within valid range, but sum of base quantization index and `AltQIndex` is out of \[0, 255\], `AltQIndex` will be clamped.
+`AltLFLevelYVert`       | Loop filter level delta for the segment for Y component vertical direction. Ignored if `MFX_AV1_SEGMENT_FEATURE_ALT_LF_Y_VERT` isn’t set in `FeatureEnabled`. Valid range for this parameter is \[-63, 63\]. If AltLFLevelYVert is out of this range, it will be ignored. If `AltLFLevelYVert` is within valid range, but sum of base loop filter level and AltLFLevelYVert is out of \[0, 63\], AltLFLevelYVert will be clamped.
+`AltLFLevelYHorz`       | Loop filter level delta for the segment for Y component horizontal direction. Ignored if `MFX_AV1_SEGMENT_FEATURE_ALT_LF_Y_HORZ` isn’t set in `FeatureEnabled`. Valid range for this parameter is \[-63, 63\]. If AltLFLevelYHorz is out of this range, it will be ignored. If `AltLFLevelYHorz` is within valid range, but sum of base loop filter level and AltLFLevelYVert is out of \[0, 63\], AltLFLevelYHorz will be clamped.
+`AltLFLevelU`           | Loop filter level delta for the segment for U component. Ignored if `MFX_AV1_SEGMENT_FEATURE_ALT_LF_U` isn’t set in `FeatureEnabled`. Valid range for this parameter is \[-63, 63\]. If AltLFLevelU is out of this range, it will be ignored. If `AltLFLevelU` is within valid range, but sum of base loop filter level and AltLFLevelU is out of \[0, 63\], AltLFLevelU will be clamped.
+`AltLFLevelV`           | Loop filter level delta for the segment for V component. Ignored if `MFX_AV1_SEGMENT_FEATURE_ALT_LF_V` isn’t set in `FeatureEnabled`. Valid range for this parameter is \[-63, 63\]. If AltLFLevelV is out of this range, it will be ignored. If `AltLFLevelV` is within valid range, but sum of base loop filter level and AltLFLevelV is out of \[0, 63\], AltLFLevelV will be clamped.
+`ReferenceFrame`        | Reference frame for the segment. See [AV1ReferenceFrame](#AV1ReferenceFrame) enumerator for values for this option. Ignored if `MFX_AV1_SEGMENT_FEATURE_REFERENCE` isn’t set in `FeatureEnabled`.
+`Header.BufferId`       | Must be [MFX_EXTBUFF_AV1_SEGMENTATION](#ExtendedBufferID).
+`NumSegments`           | Number of segments for frame. Value 0 means that segmentation is disabled. Sending of 0 for particular frame will disable segmentation for this frame only.
+`Segment`               | Array of structures `mfxAV1SegmentParam` containing features and parameters for every segment. Should not have non-zero entries with indexes bigger than `NumSegments-1`. See the [mfxAV1SegmentParam](#mfxAV1SegmentParam) structure for definitions of segment features and their parameters.
+`SegmentIdBlockSize`,<br>`NumSegmentIdAlloc`,<br>`SegmentId` | These three parameters represent segmentation map. Here, segmentation map is array of segment_ids (one byte per segment_id) for blocks of size NxN in raster scan order. Size NxN is specified by application and is constant for whole frame. If `mfxExtAV1Segmentation` is attached during initialization and/or during runtime, all three parameters should be set to proper values not conflicting with each other and with `NumSegments`. If any of them not set, or any conflict/error in these parameters detected by SDK, segmentation map discarded.
+`SegmentIdBlockSize`    | Size of block (NxN) for segmentation map. See [AV1SegmentIdBlockSize](#AV1SegmentIdBlockSize) enumerator for values for this option. Encoded block which is bigger than `SegmentIdBlockSize` uses segment_id taken from it’s top-left sub-block from segmentation map. Application can check if particular block size is supported by calling of [Query](#MFXVideoENCODE_Query).
+`NumSegmentIdAlloc`     | Size of buffer allocated for segmentation map (in bytes). Application must assure that `NumSegmentIdAlloc` is enough to cover frame resolution with blocks of size `SegmentIdBlockSize`. Otherwise segmentation map will be discarded.
+`SegmentId`             | Pointer to segmentation map buffer which holds array of segment_ids in raster scan order. Application is responsible for allocation and release of this memory. Buffer pointed by SegmentId provided during initialization or [Reset](#MFXVideoENCODE_Reset) call should be considered in use until another SegmentId is provided via [Reset](#MFXVideoENCODE_Reset) call (if any), or until call of [MFXVideoENCODE_Close](#MFXVideoENCODE_Close). Buffer pointed by SegmentId provided with [mfxEncodeCtrl](#mfxEncodeCtrl) should be considered in use while input surface is locked by SDK. Every segment_id in the map should be in the range of \[0, `NumSegments-1`\]. If some segment_id is out of valid range, segmentation map cannot be applied. If buffer `mfxExtAV1Segmentation` is attached to [mfxEncodeCtrl](#mfxEncodeCtrl) in runtime, `SegmentId` can be zero. In this case segmentation map from static configuration will be used.
+
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
+## <a id='mfxExtAV1TemporalLayers'>mfxExtAV1TemporalLayers</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxU16 FrameRateScale;
+    mfxU16 TargetKbps
+    mfxU16 reserved[14];
+} mfxAV1TemporalLayer;
+
+typedef struct {
+    mfxExtBuffer        Header;
+    mfxAV1TemporalLayer Layer[8];
+    mfxU16              reserved[16];
+} mfxExtAV1TemporalLayers;
+```
+
+**Description**
+
+The SDK allows to encode AV1 bitstream that contains several subset bitstreams that differ in frame rates also called “temporal layers”. On decoder side each temporal layer can be extracted from coded stream and decoded separately.
+The `mfxExtAV1TemporalLayers` structure configures the temporal layers for SDK AV1 encoder. It can be attached to the [mfxVideoParam](#mfxVideoParam) structure during [initialization](#MFXVideoENCODE_Init) or [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset) call. If `mfxExtAV1TemporalLayers` buffer isn’t attached during initialization, temporal scalability is disabled. If the buffer isn’t attached for [Reset](#MFXVideoENCODE_Reset) call, encoder continues to use temporal scalability configuration which was actual before this [Reset](#MFXVideoENCODE_Reset) call.
+In SDK API temporal layers are ordered by their frame rates in ascending order. Temporal layer 0 (having lowest frame rate) is called base layer. Each next temporal layer includes all previous layers.
+Temporal scalability feature has requirements for minimum number of allocated reference frames (controlled by SDK API parameter [NumRefFrame](#mfxInfoMFX)). If [NumRefFrame](#mfxInfoMFX) set by application isn’t enough to build reference structure for requested number of temporal layers, the SDK corrects [NumRefFrame](#mfxInfoMFX).
+Temporal layer structure is reset (re-started) after key-frames.
+
+**Members**
+
+| | |
+--- | ---
+`FrameRateScale`  | The ratio between the frame rates of the current temporal layer and the base layer. The SDK treats particular temporal layer as “defined” if it has `FrameRateScale > 0`. If base layer defined, it must have `FrameRateScale` equal to 1. `FrameRateScale` of each next layer (if defined) must be multiple of and greater than `FrameRateScale` of previous layer.
+`TargetKbps`      | Target bitrate for current temporal layer (ignored if [RateControlMethod](#mfxInfoMFX) is CQP). If [RateControlMethod](#mfxInfoMFX) is not CQP, application must provide `TargetKbps` for every defined temporal layer. `TargetKbps` of each next layer (if defined) must be greater than TargetKbps of previous layer.
+`Header.BufferId` | Must be [MFX_EXTBUFF_AV1_TEMPORAL_LAYERS](#ExtendedBufferID).
+`Layer`           | The array of temporal layers. `Layer[0]` specifies base layer. The SDK reads layers from the array while they are defined (have `FrameRateScale>0`). All layers starting from first layer with `FrameRateScale=0` are ignored. Last layer which is not ignored is “highest layer”. Highest layer has frame rate specified in [mfxVideoParam](#mfxVideoParam). Frame rates of lower layers are calculated using their FrameRateScale. TargetKbps of highest layer should be equal to [TargetKbps](#mfxInfoMFX) specified in [mfxVideoParam](#mfxVideoParam). If it’s not true, `TargetKbps` of highest temporal layers has priority. If there are no defined layers in `Layer` array, temporal scalability feature is disabled. E.g. to disable temporal scalability in runtime, application should pass to [Reset](#MFXVideoENCODE_Reset) call `mfxExtAV1TemporalLayers` buffer with all `FrameRateScale` set to 0.
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
 ## <a id='mfxExtBRC'>mfxExtBRC</a>
 
 **Definition**
@@ -9337,6 +9531,110 @@ The `SegmentFeature` enumerator indicates features enabled for the segment. Thes
 
 This enumerator is available since SDK API 1.26.
 
+## <a id='AV1InterpolationMode'>AV1InterpolationMode</a>
+
+**Description**
+
+The `AV1InterpolationMode` enumerator itemizes interpolation filter types specified by [mfxExtAV1Param](#mfxExtAV1Param)**::InterpFilter** parameter.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_AV1_INTERP_DEFAULT`         | Unspecified
+`MFX_AV1_INTERP_EIGHTTAP`        | Regular Eighttap
+`MFX_AV1_INTERP_EIGHTTAP_SMOOTH` | Smooth Eighttap
+`MFX_AV1_INTERP_EIGHTTAP_SHARP`  | Sharp Eighttap
+`MFX_AV1_INTERP_BILINEAR`        | Bilinear
+`MFX_AV1_INTERP_SWITCHABLE`      | Switchable - chosen on block level
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
+
+## <a id='AV1SegmentationMode'>AV1SegmentationMode</a>
+
+**Description**
+
+The `AV1SegmentationMode` enumerator itemizes AV1 segmentation modes specified by [mfxExtAV1Param](#mfxExtAV1Param)**::SegmentationMode** parameter.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_AV1_SEGMENT_DISABLED` | No segmentation in coded stream
+`MFX_AV1_SEGMENT_AUTO`     | Segmentation map and segment features/values are set by the SDK based on analysis of a frame
+`MFX_AV1_SEGMENT_MANUAL`   | Segmentation map and segment features/values are provided by application using [mfxExtAV1Segmentation](#mfxExtAV1Segmentation) structure;
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
+
+## <a id='AV1SegmentIdBlockSize'>AV1SegmentIdBlockSize</a>
+
+**Description**
+
+The `AV1SegmentIdBlockSize` enumerator indicates the block size represented by each segment_id in segmentation map for AV1 encoder. These values are used with the [mfxExtAV1Segmentation](#mfxExtAV1Segmentation)**::SegmentIdBlockSize** parameter.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_AV1_SEGMENT_ID_BLOCK_SIZE_UNKNOWN` | Unspecified block size
+`MFX_AV1_SEGMENT_ID_BLOCK_SIZE_8x8`     | 8x8 block size
+`MFX_AV1_SEGMENT_ID_BLOCK_SIZE_16x16`   | 16x16 block size
+`MFX_AV1_SEGMENT_ID_BLOCK_SIZE_32x32`   | 32x32 block size
+`MFX_AV1_SEGMENT_ID_BLOCK_SIZE_64x64`   | 64x64 block size
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
+
+## <a id='AV1SegmentFeature'>AV1SegmentFeature</a>
+
+**Description**
+
+The `AV1SegmentFeature` enumerator indicates features enabled for the segment for AV1 encoder. These values are used with the [mfxAV1SegmentParam](#mfxAV1SegmentParam)**::FeatureEnabled** parameter.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_AV1_SEGMENT_FEATURE_ALT_QINDEX`      | Quantization index delta
+`MFX_AV1_SEGMENT_FEATURE_ALT_LF_Y_VERT`   | Loop filter level delta for Y component vertical direction
+`MFX_AV1_SEGMENT_FEATURE_ALT_LF_Y_HORZ`   | Loop filter level delta for Y component horizontal direction
+`MFX_AV1_SEGMENT_FEATURE_ALT_LF_U`        | Loop filter level delta for U component
+`MFX_AV1_SEGMENT_FEATURE_ALT_LF_V`        | Loop filter level delta for V component
+`MFX_AV1_SEGMENT_FEATURE_REFERENCE`       | Reference frame
+`MFX_AV1_SEGMENT_FEATURE_SKIP`            | Skip
+`MFX_AV1_SEGMENT_FEATURE_GLOBALMV`        | Global Motion
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
+
+## <a id='AV1ReferenceFrame'>AV1ReferenceFrame</a>
+
+**Description**
+
+The `AV1ReferenceFrame` enumerator itemizes reference frame type specified by [mfxAV1SegmentParam](#mfxAV1SegmentParam)**::ReferenceFrame** parameter.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_AV1_REF_INTRA`   | Intra
+`MFX_AV1_REF_LAST`    | Last
+`MFX_AV1_REF_LAST2`   | Last 2
+`MFX_AV1_REF_LAST3`   | Last 3
+`MFX_AV1_REF_GOLDEN`  | Gold
+`MFX_AV1_BWDREF`      | Backward
+`MFX_AV1_REF_ALTREF`  | Alternative
+`MFX_AV1_REF_ALTREF2` | Alternative 2
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
 
 ## <a id='InsertHDRPayload'>InsertHDRPayload</a>
 

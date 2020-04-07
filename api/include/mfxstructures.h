@@ -2384,7 +2384,7 @@ MFX_PACK_END()
 #endif // MFX_VERSION >= MFX_VERSION_NEXT
 
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
 MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     mfxU16 FrameRateScale;  /* Layer[n].FrameRateScale = Layer[n - 1].FrameRateScale * (uint)m */
@@ -2437,12 +2437,12 @@ typedef struct {
         mfxU8  reserved[25];
     } QP;
 
-    mfxU8  UniformTileSpacing;      /* tri-state option */
-    mfxU8  ErrorResilientMode;      /* tri-state option */
-    mfxU8  EnableOrderHint;         /* tri-state option */
-    mfxU8  OrderHintBits;           /* 0..8, 0 = default */
-    mfxU8  ContextUpdateTileId;     /* 0 = default */
-    mfxU8  DisplayFormatSwizzle;    /* 0, 1 */
+    mfxU8  UniformTileSpacing;          /* tri-state option */
+    mfxU8  ErrorResilientMode;          /* tri-state option */
+    mfxU8  EnableOrderHint;             /* tri-state option */
+    mfxU8  OrderHintBits;               /* 0..8, 0 = default */
+    mfxU8  ContextUpdateTileIdPlus1;    /* Minus 1 specifies context_update_tile_id */
+    mfxU8  DisplayFormatSwizzle;        /* 0, 1 */
 
     mfxU8  reserved[58];
 } mfxExtAV1AuxData;

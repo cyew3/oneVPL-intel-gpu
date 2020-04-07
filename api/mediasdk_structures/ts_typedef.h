@@ -38,6 +38,36 @@ typedef mfxExtFeiPreEncMVPredictors::mfxExtFeiPreEncMVPredictorsMB mfxExtFeiPreE
 typedef mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB mfxExtFeiPreEncMV_MB;
 typedef mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB mfxExtFeiPreEncMBStat_MB;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
+typedef struct {
+    mfxU8  CdefDampingMinus3;
+    mfxU8  CdefBits;
+    mfxU8  CdefYStrengths[8];
+    mfxU8  CdefUVStrengths[8];
+} mfxExtAV1AuxData_Cdef;
+
+typedef struct {
+    mfxU8  LFLevelYVert;
+    mfxU8  LFLevelYHorz;
+    mfxU8  LFLevelU;
+    mfxU8  LFLevelV;
+    mfxU8  ModeRefDeltaEnabled;
+    mfxU8  ModeRefDeltaUpdate;
+    mfxI8  RefDeltas[8];
+    mfxI8  ModeDeltas[2];
+} mfxExtAV1AuxData_LoopFilter;
+
+typedef struct {
+    mfxI8  YDcDeltaQ;
+    mfxI8  UDcDeltaQ;
+    mfxI8  VDcDeltaQ;
+    mfxI8  UAcDeltaQ;
+    mfxI8  VAcDeltaQ;
+    mfxU8  MinBaseQIndex;
+    mfxU8  MaxBaseQIndex;
+} mfxExtAV1AuxData_QP;
+# endif
+
 #if MFX_VERSION >= 1023
 typedef mfxExtFeiPPS::mfxExtFeiPpsDPB mfxExtFeiPPS_mfxExtFeiPpsDPB;
 #endif // MFX_VERSION >= 1023

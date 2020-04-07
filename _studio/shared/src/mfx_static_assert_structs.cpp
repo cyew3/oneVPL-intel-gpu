@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -415,7 +415,7 @@
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1FilmGrainPoint         ,2    )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1FilmGrainParam      ,256  )
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1Param               ,1124 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtAV1AuxData             ,168  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxAV1SegmentParam           ,46   )
@@ -1802,7 +1802,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1FilmGrainParam            ,CrLumaMult                    ,167  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1FilmGrainParam            ,CrOffset                      ,168  )
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,FrameWidth                    ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,FrameHeight                   ,10   )
@@ -1852,7 +1852,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,ErrorResilientMode            ,105  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,EnableOrderHint               ,106  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,OrderHintBits                 ,107  )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,ContextUpdateTileId           ,108  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,ContextUpdateTileIdPlus1      ,108  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,DisplayFormatSwizzle          ,109  )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1SegmentParam                 ,FeatureEnabled                ,0    )
@@ -2651,7 +2651,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1FilmGrainParam            ,CrLumaMult                    ,167  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1FilmGrainParam            ,CrOffset                      ,168  )
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,FrameWidth                    ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,FrameHeight                   ,10   )
@@ -2701,7 +2701,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,ErrorResilientMode            ,105  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,EnableOrderHint               ,106  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,OrderHintBits                 ,107  )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,ContextUpdateTileId           ,108  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,ContextUpdateTileIdPlus1      ,108  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,DisplayFormatSwizzle          ,109  )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1SegmentParam                 ,FeatureEnabled                ,0    )
@@ -3500,7 +3500,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1FilmGrainParam            ,CrLumaMult                    ,167  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1FilmGrainParam            ,CrOffset                      ,168  )
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,FrameWidth                    ,8    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,FrameHeight                   ,10   )
@@ -3550,7 +3550,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,ErrorResilientMode            ,105  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,EnableOrderHint               ,106  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,OrderHintBits                 ,107  )
-        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,ContextUpdateTileId           ,108  )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,ContextUpdateTileIdPlus1      ,108  )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,DisplayFormatSwizzle          ,109  )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxAV1SegmentParam                 ,FeatureEnabled                ,0    )
