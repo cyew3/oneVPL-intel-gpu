@@ -132,7 +132,7 @@ enum VideoAccelerationProfile
     VA_VP8          = 0x0006,
     VA_H265         = 0x0007,
     VA_VP9          = 0x0008,
-#if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
+#if defined(MFX_ENABLE_AV1_VIDEO_DECODE) || defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
     VA_AV1          = 0x0009,
 #endif
 

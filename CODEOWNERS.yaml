@@ -266,6 +266,17 @@ av1d:
   - dmitry.gurulev@intel.com
   - dmitry.ermilov@intel.com
 
+av1e:
+  paths:
+  - _studio/mfx_lib/encode_hw/av1
+  - _studio/mfx_lib/shared/include/feature_blocks
+  reviewers:
+  - stanislav.efremov@intel.com
+  - maxim.xue@intel.com
+  - lightny.gong@intel.com
+  - rachel.cheng@intel.com
+  - jianhong.zhang@intel.com
+
 vpp:
   paths:
   - _studio/mfx_lib/vpp

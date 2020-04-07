@@ -554,6 +554,8 @@ void MFXStructureRef <mfxExtAV1Param>::ConstructValues() const
     SERIALIZE_INT(UseAnnexB);
     SERIALIZE_INT(PackOBUFrame);
     SERIALIZE_INT(InsertTemporalDelimiter);
+    SERIALIZE_INT(UniformTileSpacing);
+    SERIALIZE_INT(ContextUpdateTileIdPlus1);
     SERIALIZE_INT(NumTileRows);
     SERIALIZE_INT(NumTileColumns);
     SERIALIZE_INT(NumTileGroups);
@@ -593,11 +595,9 @@ void MFXStructureRef <mfxExtAV1AuxData>::ConstructValues() const
     SerializeWithInserter(VM_STRING("VAcDeltaQ"), m_pStruct->QP.VAcDeltaQ);
     SerializeWithInserter(VM_STRING("MinBaseQIndex"), m_pStruct->QP.MinBaseQIndex);
     SerializeWithInserter(VM_STRING("MaxBaseQIndex"), m_pStruct->QP.MaxBaseQIndex);
-    SERIALIZE_INT(UniformTileSpacing);
     SERIALIZE_INT(ErrorResilientMode);
     SERIALIZE_INT(EnableOrderHint);
     SERIALIZE_INT(OrderHintBits);
-    SERIALIZE_INT(ContextUpdateTileIdPlus1);
     SERIALIZE_INT(DisplayFormatSwizzle);
 }
 void MFXStructureRef <mfxExtAV1LargeScaleTileParam>::ConstructValues() const

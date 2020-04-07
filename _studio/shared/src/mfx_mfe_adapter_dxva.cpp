@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -108,15 +108,6 @@ MFEDXVAEncoder::CAPS MFEDXVAEncoder::GetCaps(MFE_CODEC codec)
         capsPtr = m_hevcCAPS.get();
         capsSize = sizeof(ENCODE_CAPS_HEVC);
         break;
-#ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
-    case CODEC_AV1:
-        if (m_av1CAPS)
-            return m_av1CAPS.get();
-        m_av1CAPS.reset(new ENCODE_CAPS_AV1);
-        capsPtr = m_av1CAPS.get();
-        capsSize = sizeof(ENCODE_CAPS_AV1);
-        break;
-#endif
     default:
         break;
     };
@@ -341,9 +332,6 @@ mfxStatus MFEDXVAEncoder::Destroy()
     m_MFE_CAPS.reset();
     m_avcCAPS.reset();
     m_hevcCAPS.reset();
-#ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
-    m_av1CAPS.reset();
-#endif
     return MFX_ERR_NONE;
 }
 

@@ -155,6 +155,9 @@
 
     #if defined(MFX_VA)
         #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
+        #if (MFX_VERSION >= MFX_VERSION_NEXT) && defined(MFX_VA_WIN)
+            #define MFX_ENABLE_AV1_VIDEO_ENCODE
+        #endif
         #if (MFX_VERSION >= MFX_VERSION_NEXT) && (defined(LINUX_TARGET_PLATFORM_ATS) || defined(MFX_VA_WIN))
             #define MFX_ENABLE_AV1_VIDEO_DECODE
         #endif

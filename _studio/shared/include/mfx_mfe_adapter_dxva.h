@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -144,9 +144,6 @@ private:
     std::unique_ptr<ENCODE_CAPS> m_avcCAPS;
     std::unique_ptr<ENCODE_CAPS_HEVC> m_hevcCAPS;
 
-#ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
-    std::unique_ptr<ENCODE_CAPS_AV1> m_av1CAPS;
-#endif
     // store iterators to particular items
     std::vector<StreamsIter_t> m_streams;
     // store iterators to particular items
