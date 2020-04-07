@@ -40,9 +40,6 @@ void __attribute__ ((constructor)) dll_init(void)
         tracer_init();
 
         Log::WriteLog("mfx_tracer: dll_init() +");
-#ifdef ANDROID // temporary hardcode for Android
-        g_mfxlib = "/system/lib/libmfxhw32.so";
-#else
         static std::string mfxlib = Config::GetParam("core", "lib");
         if (mfxlib.empty()) {
             Log::WriteLog("mfx_tracer: No path to real MediaSDK library is specified in the config file");
@@ -51,7 +48,6 @@ void __attribute__ ((constructor)) dll_init(void)
         else {
             g_mfxlib = mfxlib.c_str();
         }
-#endif
         Log::WriteLog("mfx_tracer: lib=" + string(g_mfxlib));
         Log::WriteLog("mfx_tracer: dll_init() - \n\n");
     }
@@ -81,11 +77,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
             return MFX_ERR_MEMORY_ALLOC;
         }
         if (g_mfxlib) {
-#ifdef ANDROID
-            loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL);
-#else
             loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL|RTLD_DEEPBIND);
-#endif
         }
         if (!loader->dlhandle){
             Log::WriteLog(context.dump("ver", ver));
@@ -192,11 +184,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
             return MFX_ERR_MEMORY_ALLOC;
         }
         if (g_mfxlib) {
-#ifdef ANDROID
-            loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL);
-#else
             loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL|RTLD_DEEPBIND);
-#endif
         }
         if (!loader->dlhandle){
             Log::WriteLog(context.dump("par", par));
