@@ -58,6 +58,7 @@ namespace Gen12
     DECL_BLOCK(CheckOrderHintBits   )\
     DECL_BLOCK(CheckCDEF            )\
     DECL_BLOCK(CheckGopRefDist      )\
+    DECL_BLOCK(CheckGPB             )\
     DECL_BLOCK(CheckNumRefFrame     )\
     DECL_BLOCK(CheckIOPattern       )\
     DECL_BLOCK(CheckBRC             )\
@@ -157,6 +158,7 @@ namespace Gen12
         mfxStatus CheckOrderHintBits(mfxVideoParam& par);
         mfxStatus CheckCDEF(mfxVideoParam& par, const ENCODE_CAPS_AV1& caps);
         mfxStatus CheckGopRefDist(mfxVideoParam & par, const ENCODE_CAPS_AV1& caps);
+        mfxStatus CheckGPB(mfxVideoParam & par);
         mfxStatus CheckIOPattern(mfxVideoParam & par);
         mfxStatus CheckBRC(
             mfxVideoParam & par

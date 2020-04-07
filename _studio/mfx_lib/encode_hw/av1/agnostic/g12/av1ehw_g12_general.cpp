@@ -153,6 +153,8 @@ void General::SetSupported(ParamSupport& blocks)
         const auto& buf_src = *(const mfxExtCodingOption3*)pSrc;
         auto& buf_dst = *(mfxExtCodingOption3*)pDst;
 
+        MFX_COPY_FIELD(GPB);
+
         for (mfxU32 i = 0; i < 8; i++)
         {
             MFX_COPY_FIELD(NumRefActiveP[i]);
@@ -355,6 +357,8 @@ void General::SetInherited(ParamInheritance& par)
     {
         INIT_EB(mfxExtCodingOption3);
 
+        INHERIT_OPT(GPB);
+
         for (mfxU32 i = 0; i < 8; i++)
         {
             INHERIT_OPT(NumRefActiveP[i]);
@@ -544,6 +548,12 @@ void General::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
     {
         return CheckGopRefDist(out, m_pQWCDefaults->caps);
+    });
+
+    Push(BLK_CheckGPB
+        , [this](const mfxVideoParam&, mfxVideoParam& out, StorageW&) -> mfxStatus
+    {
+        return CheckGPB(out);
     });
 
     Push(BLK_CheckNumRefFrame
@@ -1530,8 +1540,7 @@ namespace RefListRules
 }
 
 #define APPLY_HW_REF_LIST_RESTRICTIONS
-
-static void FillFwdPart(const DpbIndexes& fwd, mfxU8 maxFwdRefs, RefListType& refList)
+static void FillFwdPart(const DpbIndexes& fwd, mfxU8 maxFwdRefs, RefListType& refList, bool isLdbFrame= false)
 {
     // logic below is same as in original GetRefList implementation (for compatibility reasons)
     // TODO: consider improvement of this logic
@@ -1539,12 +1548,24 @@ static void FillFwdPart(const DpbIndexes& fwd, mfxU8 maxFwdRefs, RefListType& re
 
     using Iter = DpbIndexes::const_reverse_iterator;
     const RefListRules::SafeIncrement<Iter> closestRef{ fwd.crbegin() , fwd.crend() };
+    RefListRules::Rules<Iter> constructionRules = {};
 
 #ifdef APPLY_HW_REF_LIST_RESTRICTIONS
-    RefListRules::Rules<Iter> constructionRules = {
-        {LAST_FRAME,   closestRef()},
-        {GOLDEN_FRAME, closestRef + 1}
-    };
+    if (isLdbFrame)
+    {
+        constructionRules = {
+            {LAST_FRAME,   closestRef()},
+            {LAST2_FRAME,  closestRef + 1},
+        };
+    }
+    else
+    {
+        constructionRules = {
+            {LAST_FRAME,   closestRef()},
+            {GOLDEN_FRAME, closestRef + 1}
+        };
+    }
+
 #else
     RefListRules::Rules<Iter> constructionRules = {
         {LAST_FRAME,   closestRef()},
@@ -1572,7 +1593,7 @@ static void FillBwdPart(const DpbIndexes& bwd, mfxU8 maxBwdrefs, RefListType& re
 
 #ifdef APPLY_HW_REF_LIST_RESTRICTIONS
     RefListRules::Rules<Iter> constructionRules = {
-        {ALTREF_FRAME,  bwd.cbegin()}
+        {BWDREF_FRAME,  bwd.cbegin()}
     };
 #else
     // for ALTREF_FRAME, BWDREF_FRAME and ALTREF2_FRAME
@@ -1606,9 +1627,16 @@ static void FillRefListRAB(
     FillBwdPart(bwd, maxBwdRefs, refList);
 }
 
-static void FillRefListLDB(const DpbIndexes& /*fwd*/, mfxU8 /*maxFwdRefs*/, RefListType& /*refList*/)
+static void FillRefListLDB(const DpbIndexes& fwd, mfxU8 maxFwdRefs, RefListType& refList)
 {
-    assert(false && "No support for LDB");
+    assert(!fwd.empty());
+
+    FillFwdPart(fwd, maxFwdRefs, refList, true);
+
+#ifdef APPLY_HW_REF_LIST_RESTRICTIONS
+    refList.at(BWDREF_FRAME - LAST_FRAME) = refList.at(LAST_FRAME - LAST_FRAME);
+    refList.at(ALTREF2_FRAME - LAST_FRAME) = refList.at(LAST2_FRAME - LAST_FRAME);
+#endif
 }
 
 inline std::tuple<mfxU8, mfxU8> GetMaxRefs(
@@ -2771,6 +2799,24 @@ mfxStatus General::CheckGopRefDist(mfxVideoParam & par, const ENCODE_CAPS_AV1& /
     return MFX_ERR_NONE;
 }
 
+mfxStatus General::CheckGPB(mfxVideoParam & par)
+{
+    mfxU32 changed = 0;
+    mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
+
+    if (pCO3)
+    {
+        changed += CheckOrZero<mfxU16>(
+            pCO3->GPB
+            , mfxU16(MFX_CODINGOPTION_ON)
+            , mfxU16(MFX_CODINGOPTION_OFF)
+            , mfxU16(MFX_CODINGOPTION_UNKNOWN));
+    }
+
+    MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+    return MFX_ERR_NONE;
+}
+
 mfxStatus General::CheckTU(mfxVideoParam & par, const ENCODE_CAPS_AV1& /* caps */)
 {
     auto& tu = par.mfx.TargetUsage;
@@ -3213,18 +3259,95 @@ inline mfxU32 GetReferenceMode(const TaskCommonPar& task)
     return IsB(task.FrameType) || task.isLDB ? 1 : 0;
 }
 
-inline void SetSkipModeParams(const SH& sh, FH& fh, const bool frameIsIntra)
+inline int av1_get_relative_dist(const SH& sh, const uint32_t a, const uint32_t b)
 {
+    // the logic is from AV1 spec 5.9.3
+
+    if (!sh.enable_order_hint)
+        return 0;
+
+    const uint32_t OrderHintBits = sh.order_hint_bits_minus1 + 1;
+
+    int32_t diff = a - b;
+    uint32_t m = 1 << (OrderHintBits - 1);
+    diff = (diff & (m - 1)) - (diff & m);
+    return diff;
+}
+
+inline void GetFwdBwdIdx( const DpbType& dpb, const SH& sh, const FH& fh, const int orderHint, int& forwardIdx, int& forwardHint, int& backwardIdx)
+{
+    int i = 0;
+    int refHint = 0;
+    int backwardHint = -1;
+    for (i = 0; i < REFS_PER_FRAME; i++)
+    {
+        auto& refFrm = dpb.at(fh.ref_frame_idx[i]);
+        refHint = refFrm->DisplayOrder;
+        if (av1_get_relative_dist(sh, refHint, orderHint) < 0)
+        {
+            if (forwardIdx < 0 ||
+                av1_get_relative_dist(sh, refHint, forwardHint) > 0)
+            {
+                forwardIdx = i;
+                forwardHint = refHint;
+            }
+        }
+        else if (av1_get_relative_dist(sh, refHint, orderHint) > 0)
+        {
+            if (backwardIdx < 0 ||
+                av1_get_relative_dist(sh, refHint, backwardHint) < 0)
+            {
+                backwardIdx = i;
+                backwardHint = refHint;
+            }
+        }
+    }
+}
+
+inline void SetSkipModeAllowed(const SH& sh, FH& fh, const DpbType& dpb)
+{
+    int forwardIdx = -1;
+    int forwardHint = -1;
+    int backwardIdx = -1;
+    GetFwdBwdIdx(dpb, sh, fh, fh.order_hint, forwardIdx, forwardHint, backwardIdx);
+    if (forwardIdx < 0)
+    {
+        fh.skipModeAllowed = 0;
+    }
+    else if (backwardIdx >= 0)
+    {
+        fh.skipModeAllowed = 1;
+    }
+    else
+    {
+        int secondForwardHint = -1;
+        int secondForwardIdx = -1;
+        GetFwdBwdIdx(dpb, sh, fh, forwardHint, secondForwardIdx, secondForwardHint, backwardIdx);
+        if (secondForwardIdx < 0)
+        {
+            fh.skipModeAllowed = 0;
+        }
+        else
+        {
+            fh.skipModeAllowed = 1;
+        }
+    }
+}
+
+inline void SetSkipModeParams(const SH& sh, FH& fh, const bool frameIsIntra, const DpbType& dpb)
+{
+    // the logic is from AV1 spec 5.9.22
+
     fh.skipModeAllowed = 1;
 
     if (frameIsIntra || !fh.reference_select || !sh.enable_order_hint)
         fh.skipModeAllowed = 0;
+    else
+    {
+        SetSkipModeAllowed(sh, fh, dpb);
+    }
 
-    // TODO: implement full logic for calculation of "skipModeAllowed" and "skipModeFrame"
-    //       based on reference order hints
-
-    if (fh.skipModeAllowed)
-        fh.skip_mode_present = 0; // TODO: check with driver/HW part is skip mode supported by HW
+    fh.skip_mode_present = fh.skipModeAllowed;
 }
 
 mfxStatus General::GetCurrentFrameHeader(
@@ -3238,7 +3361,14 @@ mfxStatus General::GetCurrentFrameHeader(
 
     currFH.frame_type     = MapMfxFrameTypeToSpec(task.FrameType);
     currFH.show_frame     = IsHidden(task) ? 0 : 1;
-    currFH.showable_frame = 1;
+    if (currFH.show_frame)
+    {
+        currFH.showable_frame = currFH.frame_type != KEY_FRAME;
+    }
+    else
+    {
+         currFH.showable_frame = 1; // for now, all hiden frame will be show in later.
+    }
 
     if (currFH.frame_type == SWITCH_FRAME ||
         currFH.frame_type == KEY_FRAME && currFH.show_frame)
@@ -3260,7 +3390,7 @@ mfxStatus General::GetCurrentFrameHeader(
 
     currFH.reference_select = GetReferenceMode(task);
 
-    SetSkipModeParams(sh, currFH, frameIsIntra);
+    SetSkipModeParams(sh, currFH, frameIsIntra, task.DPB);
 
     return MFX_ERR_NONE;
 }

@@ -484,11 +484,8 @@ inline void PackShowFrame(BitstreamWriter& bs, FH const& fh)
 {
     bs.PutBit(fh.show_frame); //show_frame
 
-    mfxU8 showable_frame = 0;
-    if (fh.show_frame)
-        showable_frame = (fh.frame_type != KEY_FRAME);
-    else
-        bs.PutBit(0); //showable_frame
+    if (!fh.show_frame)
+        bs.PutBit(fh.showable_frame); //showable_frame
 }
 
 inline void PackErrorResilientMode(BitstreamWriter& bs, FH const& fh, mfxU8 error_resilient_mode)
@@ -762,7 +759,7 @@ inline void PackFrameReferenceMode(BitstreamWriter& bs, FH const& fh, bool const
 inline void PackSkipModeParams(BitstreamWriter& bs, FH const& fh)
 {
     if (fh.skipModeAllowed)
-        bs.PutBit(fh.skip_mode_present); //reference_select
+        bs.PutBit(fh.skip_mode_present); //skip_mode_present
 }
 
 inline void PackWrappedMotion(BitstreamWriter& bs, SH const& sh, bool const frameIsIntra)
