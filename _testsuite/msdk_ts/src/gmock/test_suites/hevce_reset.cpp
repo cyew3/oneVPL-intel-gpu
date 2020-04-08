@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2020 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_reset.cpp
 
@@ -243,24 +243,12 @@ namespace hevce_reset
             }
         },
         //Protected
-        {/* 31*/ MFX_ERR_INVALID_VIDEO_PARAM,
-#if (defined(LINUX32) || defined(LINUX64))
-                                      MFX_ERR_INVALID_VIDEO_PARAM
-#else
-                                      MFX_ERR_NONE
-#endif
-                                                         , PROTECTED, NONE, 1,
+        {/* 31*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, PROTECTED, NONE, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP }
             }
         },
-        {/* 32*/ MFX_ERR_INVALID_VIDEO_PARAM,
-#if (defined(LINUX32) || defined(LINUX64))
-                                      MFX_ERR_INVALID_VIDEO_PARAM
-#else
-                                      MFX_ERR_NONE
-#endif
-                                                         , PROTECTED, NONE, 1,
+        {/* 32*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, PROTECTED, NONE, 1,
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP }
             }
@@ -663,7 +651,12 @@ namespace hevce_reset
         {
             m_par.AddExtBuffer(tc.sub_type, GetBufSzById(tc.sub_type));
         }
-
+        if(tc.type == PROTECTED && g_tsOSFamily == MFX_OS_FAMILY_LINUX)
+        {
+            g_tsLog << "\n\nWARNING: Protected feature isn't enabled on Linux!\n\n\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
         for (mfxU32 i = 0; i < tc.repeat; i++)
         {
             g_tsStatus.expect(sts);
