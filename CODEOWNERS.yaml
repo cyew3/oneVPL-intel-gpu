@@ -143,11 +143,19 @@ hevcd:
   - dmitry.gurulev@intel.com
   - dmitry.ermilov@intel.com
 
+encode_hw-shared:
+  paths:
+  - _studio/mfx_lib/encode_hw/shared
+  reviewers:
+  - sergey.a.osipov@intel.com
+  - stanislav.efremov@intel.com
+
 hevce:
   paths:
   - _studio/hevce_hw
   - _studio/mfx_lib/encode_hw/h265
   - _testsuite/msdk_ts/src/gmock/test_suites/hevce
+  - _studio/mfx_lib/encode_hw/hevc
   reviewers:
   - sergey.a.osipov@intel.com
   - leonid.a.kulakov@intel.com
@@ -156,18 +164,6 @@ hevce:
   - yuri.skuridin@intel.com
   - timofei.a.kulakov@intel.com
   - olga.golikova@intel.com
-
-hevce-refactoring:
-  paths:
-  - _studio/mfx_lib/encode_hw/hevc
-  - _studio/mfx_lib/shared/include/feature_blocks
-  reviewers:
-  - evgeniy.starov@intel.com
-  - miroslav.goncharenko@intel.com
-  - andrey.larionov@intel.com
-  - sergey.a.osipov@intel.com
-  - leonid.a.kulakov@intel.com
-  - vitaliy.ilichev@intel.com
 
 hevce-gacc:
   paths:
