@@ -1,12 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- Basic compiler properties -->
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.BasicCompiler.props') and '$(MfxBasicCompilerIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.BasicCompiler.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.BasicCompiler.props') and '$(MfxBasicCompilerIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.BasicCompiler.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\builder\Intel.Mfx.BasicCompiler.props') and '$(MfxBasicCompilerIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\builder\Intel.Mfx.BasicCompiler.props" />
+
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <PreSiliconGen>0</PreSiliconGen>
   </PropertyGroup>
   <PropertyGroup>
     <MfxBuildDir>$(MSBuildThisFileDirectory)..\..\build\</MfxBuildDir>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(ProjectName)'!='libmfx_uwp' and ('$(Configuration)'=='Debug' or '$(Configuration)'=='debug' or '$(Configuration)'=='Debug_Intel' or '$(Configuration)'=='Debug_MD' or '$(Configuration)'=='Debug_THM')">
     <TargetName>$(ProjectName)-$(PlatformTarget)_d</TargetName>
