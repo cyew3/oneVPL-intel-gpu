@@ -503,6 +503,7 @@ void DDIPacker::FillSpsBuffer(
 {
     auto& CO2        = (const mfxExtCodingOption2&)ExtBuffer::Get(par);
     auto& CO3        = (const mfxExtCodingOption3&)ExtBuffer::Get(par);
+    auto& extVsi     = (const mfxExtVideoSignalInfo&)ExtBuffer::Get(par);
     auto& fi         = par.mfx.FrameInfo;
     bool  isSWBRC    = IsOn(CO2.ExtBRC) || (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT);
     bool  isBPyramid = (CO2.BRefType == MFX_B_REF_PYRAMID);
@@ -648,6 +649,36 @@ void DDIPacker::FillSpsBuffer(
     bool bMinGen11 = (m_hwType >= MFX_HW_ICL);
     sps.LowDelayMode     = bMinGen11 && (par.mfx.GopRefDist == 1);
     sps.HierarchicalFlag = bMinGen11 && isBPyramid && ((par.mfx.GopRefDist == 4) || (par.mfx.GopRefDist == 8));
+
+    if (extVsi.ColourDescriptionPresent)
+    {
+    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
+        switch (extVsi.MatrixCoefficients)
+        {
+        case MFX_TRANSFERMATRIX_BT601:
+        {
+            sps.InputColorSpace = eColorSpace_P601;
+            break;
+        }
+        case MFX_TRANSFERMATRIX_BT709:
+        {
+            sps.InputColorSpace = eColorSpace_P709;
+            break;
+        }
+        default:
+            break;
+            //need define in API value for eColorSpace_P2020
+        }
+    }
+
+    else if (fi.Width * fi.Height >= 1920 * 1080) // From BT.709-6
+    {
+        sps.InputColorSpace = eColorSpace_P709;
+    }
+    else
+    {
+        sps.InputColorSpace = eColorSpace_P601;
+    }
 }
 
 void DDIPacker::FillPpsBuffer(
