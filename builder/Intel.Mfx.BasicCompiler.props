@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+<!-- Guard for one inclusion -->
+    <MfxBasicCompilerIncluded>true</MfxBasicCompilerIncluded>
+<!-- Basic compiler properties -->
+    <MfxWindowsTargetPlatformVersion>10.0.18362.0</MfxWindowsTargetPlatformVersion>
+    <MfxPlatformToolset>v141</MfxPlatformToolset>
+    <MfxIntelPlatformToolset>Intel C++ Compiler 18.0</MfxIntelPlatformToolset>
+    <MfxIntelPath>$(ICInstallDir)</MfxIntelPath>
+    <MfxIntelPath Condition="'$(MfxIntelPath)'==''">$(ICInstallDir)</MfxIntelPath>
+    <MfxIntelPath Condition="'$(MfxIntelPath)'==''">$(ICPP_COMPILER18)</MfxIntelPath>
+    <MfxIntelPath Condition="'$(MfxIntelPath)'==''">C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\</MfxIntelPath>
+  </PropertyGroup>
+</Project>

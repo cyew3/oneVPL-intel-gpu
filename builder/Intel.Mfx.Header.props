@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Basic compiler properties -->
+  <Import Condition="Exists('.\Intel.Mfx.BasicCompiler.props') And '$(MfxBasicCompilerIncluded)'==''" Project=".\Intel.Mfx.BasicCompiler.props" />
+
   <!-- Here is default settings, please if you need exclude something - do it after -->
   <PropertyGroup>
     <MfxBuildDir>$(MSBuildThisFileDirectory)..\..\build\</MfxBuildDir>
@@ -16,16 +19,6 @@
     <MSDK_API_ROOT>$([MSBuild]::MakeRelative('Z:\', $(MSDK_API_ROOT)))</MSDK_API_ROOT>
     <MSDK_MFX_BUILD_DIR>$([MSBuild]::MakeRelative('Z:\', $(MSDK_MFX_BUILD_DIR)))</MSDK_MFX_BUILD_DIR>
 <!-- End of Making human-readable absolute path -->
-    
-<!-- COMPILER SETTINGS --> 
-    <MfxWindowsTargetPlatformVersion>10.0.18362.0</MfxWindowsTargetPlatformVersion>
-    <MfxPlatformToolset>v141</MfxPlatformToolset>
-    <MfxIntelPlatformToolset>Intel C++ Compiler 18.0</MfxIntelPlatformToolset>
-    <MfxIntelPath>$(ICInstallDir)</MfxIntelPath>
-    <MfxIntelPath Condition="'$(MfxIntelPath)'==''">$(ICInstallDir)</MfxIntelPath>
-    <MfxIntelPath Condition="'$(MfxIntelPath)'==''">$(ICPP_COMPILER18)</MfxIntelPath>
-    <MfxIntelPath Condition="'$(MfxIntelPath)'==''">C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\</MfxIntelPath>
-<!-- End of COMPILER SETTINGS -->
 
     <MfxWholeProgramOptimization>true</MfxWholeProgramOptimization>
     <MfxGenerateManifest>false</MfxGenerateManifest>
