@@ -8,7 +8,7 @@
     <SharedPropsImported>true</SharedPropsImported>
   </PropertyGroup>
   <PropertyGroup>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(PreSiliconGen)' != 0">
     <ClCompile>
