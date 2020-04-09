@@ -18,6 +18,7 @@
     $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
     $(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;
     $(MSDK_STUDIO_ROOT)\shared\include;
     $(MSDK_STUDIO_ROOT)\shared\mfx_trace\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
