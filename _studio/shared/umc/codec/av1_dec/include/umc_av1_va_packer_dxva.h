@@ -26,8 +26,11 @@
 #ifndef __UMC_AV1_VA_PACKER_H
 
 #include "umc_av1_va_packer.h"
+
+#ifdef UMC_VA_DXVA
 #include "umc_av1_ddi.h"
 #include "umc_av1_msft_ddi.h"
+#endif
 
 #define __UMC_AV1_VA_PACKER_H
 
