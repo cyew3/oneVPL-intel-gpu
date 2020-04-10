@@ -1256,8 +1256,8 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
 
-                vm_char* dstFile = new vm_char[MAX_FILELEN];
-                memset(dstFile, 0, sizeof(vm_char) * MAX_FILELEN);
+                vm_char* dstFile = new vm_char[MAX_FILELEN + 1];
+                memset(dstFile, 0, sizeof(vm_char) * (MAX_FILELEN + 1));
                 vm_string_strncpy(dstFile, strInput[i], sizeof(vm_char) * MAX_FILELEN);
 
                 pParams->strDstFiles.push_back(dstFile);
