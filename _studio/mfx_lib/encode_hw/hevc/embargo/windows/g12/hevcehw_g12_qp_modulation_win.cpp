@@ -59,7 +59,9 @@ void Windows::Gen12::QpModulation::InitInternal(const FeatureBlocks& /*blocks*/,
             mfxU16 numTL = dflts.base.GetNumTemporalLayers(dflts);
 
             sps.HierarchicalFlag = (CO2.BRefType == MFX_B_REF_PYRAMID) || (numTL > 1 && numTL < 4);
+            sps.GopRefDist = UCHAR(sps.LowDelayMode * sps.HierarchicalFlag * (1 << (numTL - 1))); // distance between anchor frames for driver
         });
+
         ddiCC.UpdatePPS.Push([this](
             TCC::TUpdatePPS::TExt prev
             , const StorageR& global

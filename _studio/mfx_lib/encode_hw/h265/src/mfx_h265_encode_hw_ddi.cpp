@@ -997,6 +997,9 @@ void FillSpsBuffer(
             if (par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID ||
                 (par.isTL() && par.NumTL() < 4))
                 sps.HierarchicalFlag = 1;
+
+            if (sps.LowDelayMode && sps.HierarchicalFlag)
+                sps.GopRefDist = 1 << (par.NumTL() - 1); // distance between anchor frames for driver
         }
     }
 }
