@@ -13,6 +13,8 @@ File Name: .h
 #ifndef __MFX_PIPELINE_DEC_H
 #define __MFX_PIPELINE_DEC_H
 
+#include <stdio.h>
+
 #include "mfx_pipeline_defs.h"
 
 #if defined(_WIN64) || defined(_WIN32)

@@ -799,6 +799,9 @@ mfxStatus MFXDecPipeline::ReleasePipeline()
         m_statTimer.Stop();
         overallTime = m_statTimer.OverallTiming();
 
+        //Flush all opened buffers to avoid conflict between printing
+        (void)fflush(stdout);
+
         mfxU32 frameCount  = m_nDecFrames;
 
 
