@@ -190,6 +190,7 @@ struct sCommandlineParams
   //vpp specific
   bool           bUseVPP;
   bool           bUseVPP_ifdi;
+  mfxU16         nVppDeinterlacingMode;
   bool           bSceneAnalyzer;
   mfxU16         nDenoiseFactorPlus1;
   mfxU16         nDetailFactorPlus1;
@@ -435,6 +436,7 @@ struct sCommandlineParams
       nLimitChunkSize = 0;
       nDecoderSurfs = 0;
       bUseVPP_ifdi = false;
+      nVppDeinterlacingMode = 0;
       nBurstDecodeFrames = 0;
       bFullscreen = false;
       bUseCameraPipePadding = false;

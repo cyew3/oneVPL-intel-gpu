@@ -1389,6 +1389,13 @@ mfxStatus MFXDecPipeline::CreateVPP()
         pScaling->ScalingMode = m_inParams.uVppScalingMode;
     }
 
+    if(m_inParams.bUseVPP_ifdi && m_inParams.nVppDeinterlacingMode)
+    {
+        m_components[eVPP].m_extParams.push_back(new mfxExtVPPDeinterlacing());
+        MFXExtBufferPtr<mfxExtVPPDeinterlacing> pDeinterlacing(m_components[eVPP].m_extParams);
+        pDeinterlacing->Mode = m_inParams.nVppDeinterlacingMode;
+    }
+
     if (m_inParams.bVppChromaSiting)
     {
         m_components[eVPP].m_extParams.push_back(new mfxExtColorConversion());
@@ -5348,6 +5355,13 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_CHECK(1 + argv != argvEnd);
                 m_inParams.bVppScaling = true;
                 MFX_PARSE_INT(m_inParams.uVppScalingMode,  argv[1]);
+                argv+=1;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-di_mode"), VM_STRING("specify DI mode for VPP deinterlacing: 1 - BOB; 2 - Advanced; 11 - Advanced noRef; 12 - Advanced with Scene Change Detection (SCD)"), OPT_INT_32))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                m_inParams.bUseVPP_ifdi = true;
+                MFX_PARSE_INT(m_inParams.nVppDeinterlacingMode,  argv[1]);
                 argv+=1;
             }
             else if (m_OptProc.Check(argv[0], VM_STRING("-vpp_chroma_siting"), VM_STRING("specify chroma siting mode for VPP color conversion, allowwed values: vtop|vcen|vbot hleft|hcen"), OPT_INT_32))
