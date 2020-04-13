@@ -56,6 +56,8 @@ public:
         , m_zoomy()
         , m_rotate(0)
         , m_mirroring(0)
+        , m_InNominalRange()
+        , m_OutNominalRange()
         , m_pAllocator()
         , m_nStartSearch()
         , m_nSelectAlgo(USE_FIRST)
@@ -151,6 +153,8 @@ public:
     mfxF64                         m_zoomy;
     mfxU16                         m_rotate;
     mfxU16                         m_mirroring;
+    mfxU16                         m_InNominalRange;
+    mfxU16                         m_OutNominalRange;
     MFXExtBufferVector             m_extParams;
 
 
