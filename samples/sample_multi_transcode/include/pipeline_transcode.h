@@ -291,6 +291,9 @@ namespace TranscodingSample
         mfxU16 nQPP;
         mfxU16 nQPB;
         bool bDisableQPOffset;
+        mfxU16 nPicTimingSEI;
+        mfxU16 nNalHrdConformance;
+        mfxU16 nVuiNalHrdParameters;
 
         bool bOpenCL;
         mfxU16 reserved[4];
@@ -833,6 +836,9 @@ namespace TranscodingSample
 #endif //MFX_VERSION >= 1022
 
         mfxExtLAControl          m_ExtLAControl;
+
+        mfxExtCodingOption       m_CodingOption;
+
         // for setting MaxSliceSize
         mfxExtCodingOption2      m_CodingOption2;
 

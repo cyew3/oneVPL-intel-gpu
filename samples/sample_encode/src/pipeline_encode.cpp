@@ -623,6 +623,14 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_CodingOption.ViewOutput = MFX_CODINGOPTION_ON;
         bCodingOption = true;
     }
+
+    if (pInParams->nPicTimingSEI || pInParams->nNalHrdConformance || pInParams->nVuiNalHrdParameters)
+    {
+        m_CodingOption.PicTimingSEI        = pInParams->nPicTimingSEI;
+        m_CodingOption.NalHrdConformance   = pInParams->nNalHrdConformance;
+        m_CodingOption.VuiNalHrdParameters = pInParams->nVuiNalHrdParameters;
+    }
+
     if (bCodingOption)
     {
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption);

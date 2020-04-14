@@ -278,6 +278,10 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -roi_qpmap    Use QP map to emulate ROI for CQP mode\n"));
     msdk_printf(MSDK_STRING("  -extmbqp      Use external MBQP map\n"));
 #endif //MFX_VERSION >= 1022
+    msdk_printf(MSDK_STRING("  -PicTimingSEI:<on,off>                    Enables or disables picture timing SEI\n"));
+    msdk_printf(MSDK_STRING("  -NalHrdConformance:<on,off>               Enables or disables picture HRD conformance\n"));
+    msdk_printf(MSDK_STRING("  -VuiNalHrdParameters:<on,off>             Enables or disables NAL HRD parameters in VUI header\n"));
+
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (vpp options):\n"));
     msdk_printf(MSDK_STRING("  -deinterlace             Forces VPP to deinterlace input stream\n"));
@@ -1070,6 +1074,30 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 /*argc*/, mfxU32& i, T
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lowpower:off")))
     {
         InputParams.enableQSVFF = false;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-PicTimingSEI:on")))
+    {
+        InputParams.nPicTimingSEI = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-PicTimingSEI:off")))
+    {
+        InputParams.nPicTimingSEI = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-NalHrdConformance:on")))
+    {
+        InputParams.nNalHrdConformance = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-NalHrdConformance:off")))
+    {
+        InputParams.nNalHrdConformance = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-VuiNalHrdParameters:on")))
+    {
+        InputParams.nVuiNalHrdParameters = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-VuiNalHrdParameters:off")))
+    {
+        InputParams.nVuiNalHrdParameters = MFX_CODINGOPTION_OFF;
     }
     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-BitrateLimit:on")))
     {

@@ -149,6 +149,9 @@ struct sInputParams
     mfxU16 nQPI;
     mfxU16 nQPP;
     mfxU16 nQPB;
+    mfxU16 nPicTimingSEI;
+    mfxU16 nNalHrdConformance;
+    mfxU16 nVuiNalHrdParameters;
 
     mfxU16 nGPB;
     ExtBRCType nExtBRC;
