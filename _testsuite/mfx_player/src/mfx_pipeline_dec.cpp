@@ -8,6 +8,8 @@ Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
+#include <stdio.h>
+
 #include "mfx_pipeline_defs.h"
 #include "mfx_pipeline_dec.h"
 #include "mfx_spl_wrapper.h"
@@ -801,6 +803,7 @@ mfxStatus MFXDecPipeline::ReleasePipeline()
 
         //Flush all opened buffers to avoid conflict between printing
         (void)fflush(stdout);
+        (void)fflush(stderr);
 
         mfxU32 frameCount  = m_nDecFrames;
 
