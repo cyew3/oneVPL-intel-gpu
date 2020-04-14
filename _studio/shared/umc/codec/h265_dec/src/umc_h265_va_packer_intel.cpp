@@ -813,7 +813,7 @@ namespace UMC_HEVC_DECODER
             throw h265_exception(UMC_ERR_FAILED);
 
         auto offset = &subset->entry_point_offset_minus1[0];
-        G12::FillSubsets(fi, offset, offset + compBuf->GetDataSize() / sizeof(offset));
+        G12::FillSubsets(fi, offset, offset + compBuf->GetDataSize() / sizeof(*offset));
 #endif
     }
 }
