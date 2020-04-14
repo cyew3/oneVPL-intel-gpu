@@ -390,7 +390,7 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
 
                 vm_char* dstFile = new vm_char[MAX_FILELEN + 1];
                 memset(dstFile, 0, sizeof(vm_char) * (MAX_FILELEN + 1));
-                vm_string_strncpy(dstFile, strInput[i], sizeof(vm_char) * MAX_FILELEN);
+                vm_string_strncpy(dstFile, strInput[i], MAX_FILELEN);
 
                 pParams->strDstFiles.push_back(dstFile);
                 pParams->isOutput = true;
@@ -1258,7 +1258,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 vm_char* dstFile = new vm_char[MAX_FILELEN + 1];
                 memset(dstFile, 0, sizeof(vm_char) * (MAX_FILELEN + 1));
-                vm_string_strncpy(dstFile, strInput[i], sizeof(vm_char) * MAX_FILELEN);
+                vm_string_strncpy(dstFile, strInput[i], MAX_FILELEN);
 
                 pParams->strDstFiles.push_back(dstFile);
                 pParams->isOutput = true;
