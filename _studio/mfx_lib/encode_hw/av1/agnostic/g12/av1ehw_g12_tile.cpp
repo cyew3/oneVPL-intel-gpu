@@ -30,10 +30,13 @@ using namespace AV1EHW::Gen12;
 
 namespace AV1EHW
 {
+using TileSizeType = decltype(mfxExtAV1Param::TileWidthInSB[0]);
+using TileSizeArrayType = decltype(mfxExtAV1Param::TileWidthInSB);
+
 inline void SetUniformTileSize(
     const mfxU16 sbNum
     , const mfxU16 tileNum
-    , mfxU16 (&tileSizeInSB)[128])
+    , TileSizeArrayType& tileSizeInSB)
 {
     if (tileNum == 0 || tileSizeInSB[0] != 0)
         return;
@@ -60,7 +63,7 @@ inline void SetTileLimits(
     , mfxU32 sbRows
     , mfxU32 numTileColumns
     , mfxU32 numTileRows
-    , const mfxU16 (&tileWidthInSB)[128]
+    , const TileSizeArrayType &tileWidthInSB
     , TileLimits& tileLimits)
 {
     assert(tileWidthInSB[0] > 0);
@@ -99,8 +102,8 @@ inline void SetTileLimits(
 inline mfxU32 CheckTileLimits(
     mfxU32 numTileColumns
     , mfxU32 numTileRows
-    , const mfxU16 (&tileWidthInSB)[128]
-    , const mfxU16 (&tileHeightInSB)[128]
+    , const TileSizeArrayType &tileWidthInSB
+    , const TileSizeArrayType &tileHeightInSB
     , const TileLimits& tileLimits)
 {
     mfxU32 invalid = 0;
@@ -126,6 +129,19 @@ inline void CleanTileBuffer(mfxExtAV1Param& av1Par)
     av1Par.NumTileGroups = 0;
 }
 
+inline bool InferTileNumber(mfxU16& tileNum, const TileSizeArrayType &tileSizeInSB)
+{
+    if (tileNum > 0 || tileSizeInSB[0] == 0)
+        return false;
+
+    mfxU16 i = 0;
+    while (i < sizeof(TileSizeArrayType) / sizeof(TileSizeType) && tileSizeInSB[i] > 0)
+        i++;
+
+    tileNum = i;
+    return true;
+}
+
 mfxStatus CheckAndFixTileBuffer(
     mfxU16 sbCols
     , mfxU16 sbRows
@@ -136,8 +152,17 @@ mfxStatus CheckAndFixTileBuffer(
     // Non-uniform tile spacing isn't supported yet
     invalid += IsOff(av1Par.UniformTileSpacing);
 
+    mfxU16 numTileColumns = av1Par.NumTileColumns;
+    mfxU16 numTileRows = av1Par.NumTileRows;
+
+    InferTileNumber(numTileColumns, av1Par.TileWidthInSB);
+    InferTileNumber(numTileRows, av1Par.TileHeightInSB);
+
     // NumTileColumns and NumTileRows should be set together
-    invalid += (av1Par.NumTileColumns > 0 || av1Par.NumTileRows > 0) && av1Par.NumTileColumns * av1Par.NumTileRows == 0;
+    invalid += (numTileColumns > 0 || numTileRows > 0) && numTileColumns * numTileRows == 0;
+    invalid += (numTileColumns > MAX_TILE_COLS);
+    invalid += (numTileRows > MAX_TILE_ROWS);
+
     if (invalid)
     {
         av1Par.NumTileColumns = 0;
@@ -146,39 +171,37 @@ mfxStatus CheckAndFixTileBuffer(
     }
 
     // Tile heights/widths should be equal to image heights/widths in SB block
-    mfxU16 tileWidthInSB[128] = { 0 };
-    mfxU16 tileHeightInSB[128] = { 0 };
+    TileSizeArrayType tileWidthInSB = { 0 };
+    TileSizeArrayType tileHeightInSB = { 0 };
 
-    std::copy_n(av1Par.TileWidthInSB, av1Par.NumTileColumns, tileWidthInSB);
-    std::copy_n(av1Par.TileHeightInSB, av1Par.NumTileRows, tileHeightInSB);
-    if (av1Par.NumTileColumns)
+    std::copy_n(av1Par.TileWidthInSB, numTileColumns, tileWidthInSB);
+    std::copy_n(av1Par.TileHeightInSB, numTileRows, tileHeightInSB);
+    if (numTileColumns)
     {
         // Need to calculate tile size if not set for checking if Tile numbers are available
-        SetUniformTileSize(sbCols, av1Par.NumTileColumns, tileWidthInSB);
-        SetUniformTileSize(sbRows, av1Par.NumTileRows, tileHeightInSB);
+        SetUniformTileSize(sbCols, numTileColumns, tileWidthInSB);
+        SetUniformTileSize(sbRows, numTileRows, tileHeightInSB);
 
-        auto widthsSum = std::accumulate(tileWidthInSB, tileWidthInSB + av1Par.NumTileColumns, 0);
+        auto widthsSum = std::accumulate(tileWidthInSB, tileWidthInSB + numTileColumns, 0);
         invalid += widthsSum != sbCols;
 
-        auto heightsSum = std::accumulate(tileHeightInSB, tileHeightInSB + av1Par.NumTileRows, 0);
+        auto heightsSum = std::accumulate(tileHeightInSB, tileHeightInSB + numTileRows, 0);
         invalid += heightsSum != sbRows;
     }
 
     // Check against tile size limitations defined in AV1 spec when Tile number greater than 1
-    if (av1Par.NumTileColumns * av1Par.NumTileRows > 1)
+    if (numTileColumns * numTileRows > 1)
     {
         TileLimits tileLimits{};
-        SetTileLimits(sbCols, sbRows, av1Par.NumTileColumns, av1Par.NumTileRows,
-            tileWidthInSB, tileLimits);
+        SetTileLimits(sbCols, sbRows, numTileColumns, numTileRows, tileWidthInSB, tileLimits);
 
-        invalid += CheckTileLimits(av1Par.NumTileColumns, av1Par.NumTileRows,
-            tileWidthInSB, tileHeightInSB, tileLimits);
+        invalid += CheckTileLimits(numTileColumns, numTileRows, tileWidthInSB, tileHeightInSB, tileLimits);
     }
 
     if (invalid)
     {
-        std::fill_n(av1Par.TileWidthInSB, av1Par.NumTileColumns, mfxU16(0));
-        std::fill_n(av1Par.TileHeightInSB, av1Par.NumTileRows, mfxU16(0));
+        std::fill_n(av1Par.TileWidthInSB, numTileColumns, mfxU16(0));
+        std::fill_n(av1Par.TileHeightInSB, numTileRows, mfxU16(0));
         av1Par.NumTileColumns = 0;
         av1Par.NumTileRows = 0;
         return MFX_ERR_UNSUPPORTED;
@@ -187,7 +210,7 @@ mfxStatus CheckAndFixTileBuffer(
     /*Issue: cant have default values for missing buffer in current implementation and Check*** are never called
     again after last invocation of SetDefaults.
     */
-    mfxU8 numTiles = static_cast<mfxU8>(av1Par.NumTileColumns * av1Par.NumTileRows);
+    mfxU8 numTiles = static_cast<mfxU8>(numTileColumns * numTileRows);
     changed += CheckMaxOrClip(av1Par.ContextUpdateTileIdPlus1, numTiles);
     MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
@@ -208,17 +231,20 @@ void Tile::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(NumTileColumns);
         MFX_COPY_FIELD(NumTileGroups);
 
-        for (mfxU32 i = 0; i < buf_src.NumTileGroups; i++)
+        for (mfxU32 i = 0; i < sizeof(buf_src.NumTilesPerTileGroup) / sizeof(mfxU16)
+            && buf_src.NumTilesPerTileGroup[i] != 0; i++)
         {
             MFX_COPY_FIELD(NumTilesPerTileGroup[i]);
         }
 
-        for (mfxU32 i = 0; i < buf_src.NumTileRows; i++)
+        for (mfxU32 i = 0; i < sizeof(buf_src.TileHeightInSB) / sizeof(mfxU16)
+            && buf_src.TileHeightInSB[i] != 0; i++)
         {
             MFX_COPY_FIELD(TileHeightInSB[i]);
         }
 
-        for (mfxU32 i = 0; i < buf_src.NumTileColumns; i++)
+        for (mfxU32 i = 0; i < sizeof(buf_src.TileWidthInSB) / sizeof(mfxU16)
+            && buf_src.TileWidthInSB[i] != 0; i++)
         {
             MFX_COPY_FIELD(TileWidthInSB[i]);
         }
@@ -247,17 +273,20 @@ void Tile::SetInherited(ParamInheritance& par)
         INHERIT_OPT(NumTileColumns);
         INHERIT_OPT(NumTileGroups);
 
-        for (mfxU32 i = 0; i < ebInit.NumTileGroups; i++)
+        for (mfxU32 i = 0; i < sizeof(ebInit.NumTilesPerTileGroup) / sizeof(mfxU16)
+            && ebInit.NumTilesPerTileGroup[i] != 0; i++)
         {
             INHERIT_OPT(NumTilesPerTileGroup[i]);
         }
 
-        for (mfxU32 i = 0; i < ebInit.NumTileRows; i++)
+        for (mfxU32 i = 0; i < sizeof(ebInit.TileHeightInSB) / sizeof(mfxU16)
+            && ebInit.TileHeightInSB[i] != 0; i++)
         {
             INHERIT_OPT(TileHeightInSB[i]);
         }
 
-        for (mfxU32 i = 0; i < ebInit.NumTileColumns; i++)
+        for (mfxU32 i = 0; i < sizeof(ebInit.TileWidthInSB) / sizeof(mfxU16)
+            && ebInit.TileWidthInSB[i] != 0; i++)
         {
             INHERIT_OPT(TileWidthInSB[i]);
         }
@@ -281,7 +310,7 @@ void Tile::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     });
 }
 
-inline void SetDefaultTileSize(const mfxU16 numSB, mfxU16& numTile, mfxU16 (&tileSizeInSB)[128])
+inline void SetDefaultTileSize(const mfxU16 numSB, mfxU16& numTile, TileSizeArrayType &tileSizeInSB)
 {
     if (numTile == 0)
     {
@@ -298,6 +327,9 @@ inline void SetDefaultTileParams(
     , mfxExtAV1Param& av1Par)
 {
     SetDefault(av1Par.UniformTileSpacing, MFX_CODINGOPTION_ON);
+
+    InferTileNumber(av1Par.NumTileColumns, av1Par.TileWidthInSB);
+    InferTileNumber(av1Par.NumTileRows, av1Par.TileHeightInSB);
 
     SetDefaultTileSize(sbCols, av1Par.NumTileColumns, av1Par.TileWidthInSB);
     SetDefaultTileSize(sbRows, av1Par.NumTileRows, av1Par.TileHeightInSB);
@@ -438,7 +470,8 @@ void Tile::AllocTask(const FeatureBlocks& blocks, TPushAT Push)
 
 inline bool IsTileUpdated(mfxExtAV1Param *pFrameAv1Par)
 {
-    return pFrameAv1Par && (pFrameAv1Par->NumTileColumns > 0 || pFrameAv1Par->NumTileRows > 0);
+    return pFrameAv1Par && (pFrameAv1Par->NumTileColumns > 0 || pFrameAv1Par->NumTileRows > 0
+        || pFrameAv1Par->TileWidthInSB[0] > 0 || pFrameAv1Par->TileHeightInSB[0] > 0);
 }
 
 void Tile::InitTask(const FeatureBlocks& blocks, TPushIT Push)
