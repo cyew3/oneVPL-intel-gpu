@@ -781,6 +781,7 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 , m_isPOut(false)
 , m_modePOut(MFX_PARTIAL_BITSTREAM_NONE)
 , m_blockPOut(0)
+, m_offsetMutex()
 #endif
 
 #if USE_AGOP
