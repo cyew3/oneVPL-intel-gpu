@@ -2177,13 +2177,21 @@ mfxStatus MFXDecPipeline::CreateRender()
     }
 
     if (   MFX_FOURCC_P010    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_P016    == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_P210    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_Y210    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_Y216    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_Y410    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_Y416    == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_NV16    == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_NV12    == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_YUY2    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_AYUV    == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_RGB4    == m_inParams.outFrameInfo.FourCC
         || MFX_FOURCC_A2RGB10 == m_inParams.outFrameInfo.FourCC
         ) {
             m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_inParams.outFrameInfo.FourCC;
+            m_components[eREN].m_params.mfx.FrameInfo.Shift = m_inParams.outFrameInfo.Shift;
     }
 
     if ( NOT_ASSIGNED_VALUE != m_inParams.OutputPicstruct )
@@ -5451,9 +5459,19 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 component = std::find_if(m_components.begin(), m_components.end(),
                     std::bind2nd(mem_var_isequal<ComponentParams, tstring>(&ComponentParams::m_ShortName), tstring(argv[0]).substr(1, 3)));
 
-                argv++;
-                MFX_CHECK(argv < argvEnd);
-                MFX_PARSE_INT(component->m_params.mfx.FrameInfo.Shift, argv[0]);
+                if (m_OptProc.Check(argv[0], VM_STRING("-enc:shift"), VM_STRING("Desired data shift in frame data")))
+                {
+                    argv++;
+                    MFX_CHECK(argv < argvEnd);
+                    MFX_PARSE_INT(component->m_params.mfx.FrameInfo.Shift, argv[0]);
+                    MFX_PARSE_INT(m_inParams.outFrameInfo.Shift, argv[0]);
+                }
+                else
+                {
+                    argv++;
+                    MFX_CHECK(argv < argvEnd);
+                    MFX_PARSE_INT(component->m_params.mfx.FrameInfo.Shift, argv[0]);
+                }
           }
           else if (m_OptProc.Check(argv[0], VM_STRING("-allegro"), VM_STRING("allegro")))
           {
