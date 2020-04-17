@@ -26,9 +26,6 @@
 #if defined(_WIN32) || defined(_WIN64)
     #define LOG_TYPES "console, file, etw"
     #define HOME string(getenv("HOMEPATH"))
-#elif defined(ANDROID)
-    #define LOG_TYPES "logcat, file"
-    #define HOME string(getenv("HOME"))
 #else
     #define LOG_TYPES "console, file, syslog"
     #define HOME string(getenv("HOME"))
@@ -56,7 +53,6 @@ int main(int argc, char *argv[])
             "    type      log type (you can use: " LOG_TYPES ")\n"
             "    log       log file to dump trace (if applicable)\n"
             "    level     log level (you can use: " LOG_LEVELS ")\n"
-            "    lib       path to original mfx lib\n"
             "\n"
             "Examples:\n"
             "  mfx-tracer config --default                                # generate default config file\n"
@@ -76,11 +72,7 @@ int main(int argc, char *argv[])
             if (string(argv[i]) == string("--default")) {
                 map<string, string> default_params;
                 default_params.insert(pair<string, string>(string("edit"), string("1")));
-#if defined(ANDROID)
-                default_params.insert(pair<string, string>(string("type"), string("adb")));
-#else
                 default_params.insert(pair<string, string>(string("type"), string("console")));
-#endif
                 default_params.insert(pair<string, string>(string("level"), string("default")));
                 default_params.insert(pair<string, string>(string("log"), string("trace.log")));
                 config.insert(pair<string, map<string, string> >(string("core"), default_params));
