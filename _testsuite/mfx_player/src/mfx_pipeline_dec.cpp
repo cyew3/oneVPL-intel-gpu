@@ -2939,7 +2939,27 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
         }
     }
 #endif
-    if (m_components[eDEC].m_bufType == MFX_BUF_HW || m_components[eREN].m_bufType == MFX_BUF_HW  || m_inParams.bCreateD3D)
+    mfxIMPL implDec, implRen, implDecVia, implRenVia;
+    MFX_CHECK_POINTER(m_components[eDEC].m_pSession);
+    MFX_CHECK_STS(m_components[eDEC].m_pSession->QueryIMPL(&implDec));
+    MFX_CHECK_POINTER(m_components[eREN].m_pSession);
+    MFX_CHECK_STS(m_components[eREN].m_pSession->QueryIMPL(&implRen));
+
+    implDecVia = implDec & (-MFX_IMPL_VIA_ANY);
+    implRenVia = implRen & (-MFX_IMPL_VIA_ANY);
+
+    //in case of d3d11 impl we have to force surfaces to be d3d11 if they are HW
+    if (implDecVia == MFX_IMPL_VIA_D3D11 && m_components[eDEC].m_bufType == MFX_BUF_HW)
+    {
+        m_components[eDEC].m_bufType = MFX_BUF_HW_DX11;
+    }
+    if (implRenVia == MFX_IMPL_VIA_D3D11 && m_components[eREN].m_bufType == MFX_BUF_HW)
+    {
+        m_components[eREN].m_bufType = MFX_BUF_HW_DX11;
+    }
+
+
+    if (m_components[eDEC].m_bufType == MFX_BUF_HW || m_components[eREN].m_bufType == MFX_BUF_HW || m_inParams.bCreateD3D)
     {
 #ifdef D3D_SURFACES_SUPPORT
 
@@ -3008,7 +3028,8 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
         }
 #endif
     }
-    else if (m_components[eDEC].m_bufType == MFX_BUF_HW_DX11 || m_components[eREN].m_bufType == MFX_BUF_HW_DX11 )
+    else if (m_components[eDEC].m_bufType == MFX_BUF_HW_DX11 || m_components[eREN].m_bufType == MFX_BUF_HW_DX11
+          || (m_inParams.bCreateD3D && (implDecVia == MFX_IMPL_VIA_D3D11 || implRenVia == MFX_IMPL_VIA_D3D11)))
     {
 #if MFX_D3D11_SUPPORT
         //mfxHDL hdl = NULL;
