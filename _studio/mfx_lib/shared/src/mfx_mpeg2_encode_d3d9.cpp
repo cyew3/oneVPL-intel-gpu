@@ -51,6 +51,7 @@ D3D9Encoder::D3D9Encoder(VideoCORE* core)
     , m_recFrames()
     , m_rawFrames()
     , m_bENC_PAK()
+    , m_caps()
 {
 #ifdef MPEG2_ENC_HW_PERF
     memset (lock_MB_data_time, 0, sizeof(lock_MB_data_time));
