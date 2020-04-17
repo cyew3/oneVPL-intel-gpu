@@ -44,6 +44,9 @@ mfxStatus DeviceDX11::Create(
     in.config.ConfigDecoderSpecific         = m_configDecoderSpecific;
     in.config.guidConfigBitstreamEncryption = m_guidConfigBitstreamEncryption;
 
+    mfx::options::SetDefault(in.desc.SampleWidth, 1920);
+    mfx::options::SetDefault(in.desc.SampleHeight, 1088);
+
     DDIExecParam xpar;
     xpar.Function  = AUXDEV_CREATE_ACCEL_SERVICE;
     xpar.In.pData  = &in;
