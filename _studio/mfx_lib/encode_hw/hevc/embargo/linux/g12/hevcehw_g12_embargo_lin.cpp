@@ -51,7 +51,9 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     TFeatureList newFeatures;
 
     newFeatures.emplace_back(new Linux::Gen12::RExt(FEATURE_REXT));
+#ifdef MFX_ENABLE_HEVCE_SCC
     newFeatures.emplace_back(new Linux::Gen12::SCC(FEATURE_SCC));
+#endif
     newFeatures.emplace_back(new Linux::Gen12::Caps(FEATURE_CAPS));
     newFeatures.emplace_back(new SAO(FEATURE_SAO));
     
@@ -68,6 +70,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             qnc
             , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
+#ifdef MFX_ENABLE_HEVCE_SCC
         Reorder(
             qnc
             , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetLowPowerDefault }
@@ -76,7 +79,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             qnc
             , { HEVCEHW::Base::FEATURE_PARSER, HEVCEHW::Base::Parser::BLK_LoadSPSPPS }
             , { FEATURE_SCC, SCC::BLK_LoadSPSPPS });
-
+#endif
         auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
         Reorder(
             qwc
@@ -92,6 +95,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             , { HEVCEHW::Base::FEATURE_DDI_PACKER, HEVCEHW::Base::IDDIPacker::BLK_HardcodeCaps });
     }
 
+#ifdef MFX_ENABLE_HEVCE_SCC
     if (mode & INIT)
     {
         auto& iint = BQ<BQ_InitInternal>::Get(*this);
@@ -104,19 +108,20 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetPPS }
             , { FEATURE_SCC, SCC::BLK_SetPPSExt });
     }
+#endif
 }
 
 mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
 {
     auto sts = TBaseImpl::Init(par);
     MFX_CHECK_STS(sts);
-
+#ifdef MFX_ENABLE_HEVCE_SCC
     auto& st = BQ<BQ_SubmitTask>::Get(*this);
     Reorder(
         st
         , { HEVCEHW::Base::FEATURE_DDI, HEVCEHW::Base::IDDI::BLK_SubmitTask }
         , { FEATURE_SCC, SCC::BLK_PatchDDITask });
-
+#endif
     return MFX_ERR_NONE;
 }
 

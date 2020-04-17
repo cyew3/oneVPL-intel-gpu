@@ -348,9 +348,7 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
         break;
 #endif
     case PLATFORM_INTEL_TGLLP:
-#ifndef STRIP_EMBARGO
     case PLATFORM_INTEL_DG1:
-#endif
         res = m_device->LoadProgram((void *)asc_gen12lp_isa, sizeof(asc_gen12lp_isa), m_program, "nojitter");
         break;
 #ifndef STRIP_EMBARGO

@@ -2717,9 +2717,7 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
         break;
 #if (MFX_VERSION >= 1031)
     case MFX_HW_TGL_LP:
-#ifndef STRIP_EMBARGO
     case MFX_HW_DG1:
-#endif
         cmSts = m_pCmDevice->LoadProgram((void*)tgllp_copy_kernel_genx,sizeof(tgllp_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
 #endif

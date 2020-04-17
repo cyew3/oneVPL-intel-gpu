@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,12 +41,12 @@ namespace mocks { namespace mfx
             case HW_GLK:     return detail::IGFX_GEMINILAKE;
             case HW_CNL:     return detail::IGFX_CANNONLAKE;
             case HW_ICL:     return detail::IGFX_ICELAKE;
-#ifndef CLOSED_PLATFORMS_DISABLE
-            case HW_LKF:     return detail::IGFX_LAKEFIELD;
             case HW_JSL:     return detail::IGFX_JASPERLAKE;
             case HW_TGL:     return detail::IGFX_TIGERLAKE_LP;
             case HW_DG1:     return detail::IGFX_DG1;
             case HW_ATS:     return detail::IGFX_TIGERLAKE_HP;
+#ifndef STRIP_EMBARGO
+            case HW_LKF:     return detail::IGFX_LAKEFIELD;
             case HW_DG2:     return detail::IGFX_DG2;
             case HW_ADL_S:   return detail::IGFX_ALDERLAKE_S;
             case HW_ADL_UH:  return detail::IGFX_ALDERLAKE_UH;

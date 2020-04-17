@@ -82,11 +82,7 @@ namespace MfxHwVP9Encode
         }
 
         eMFXHWType platform = pCore->GetHWType();
-#ifndef STRIP_EMBARGO
         if (platform > MFX_HW_DG1)
-#else
-        if (platform > MFX_HW_TGL_LP)
-#endif
             m_TaskSyncTimeOutMs = DEFAULT_TIMEOUT_VP9_HW_SIM;
 
         return MFX_ERR_NONE;

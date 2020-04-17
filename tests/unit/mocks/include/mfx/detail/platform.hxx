@@ -104,12 +104,13 @@ namespace mocks { namespace mfx
         HW_CNL       = 0xc00000,
 
         HW_ICL       = 0xd00000,
-#ifndef CLOSED_PLATFORMS_DISABLE
-        HW_LKF       = HW_ICL + 10,
-        HW_JSL       = HW_LKF + 1,
+        HW_JSL       = HW_ICL + 11,
 
         HW_TGL       = 0xe00000,
         HW_DG1       = HW_TGL + 1,
+
+#ifndef STRIP_EMBARGO
+        HW_LKF       = HW_ICL + 10,
         HW_ATS       = HW_DG1 + 1,
         HW_DG2       = HW_ATS + 1,
         HW_ADL_S     = HW_ATS + 2,

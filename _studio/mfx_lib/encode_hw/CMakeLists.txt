@@ -14,7 +14,7 @@ list( APPEND hevcdir
   hevc/linux/base
   hevc/linux/g12
   )
-if( NOT OPEN_SOURCE )
+if( NOT STRIP_EMABRGO )
     list( APPEND hevcdir
         hevc/embargo/agnostic
         hevc/embargo/agnostic/base

@@ -1025,10 +1025,8 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
     // Windows: By default CM Copy enabled on HW cores, so only need to handle explicit OFF value
     // Linux: By default CM Copy disabled on HW cores so only need to handle explicit ON value
     const bool disableGpuCopy = (m_pCORE->GetVAType() == MFX_HW_VAAPI )
-#ifndef STRIP_EMBARGO
     // Linux: but relax this for DG1
                             && (m_pCORE->GetHWType() != MFX_HW_DG1)
-#endif
         ? (MFX_GPUCOPY_ON != par.GPUCopy)
         : (MFX_GPUCOPY_OFF == par.GPUCopy);
 

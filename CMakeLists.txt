@@ -34,6 +34,8 @@ project(mfx1
 include(CMakeDependentOption)
 
 set(OPEN_SOURCE ON)
+set(STRIP_EMBARGO OFF)
+
 add_definitions(-DOPEN_SOURCE)
 add_definitions(-DMFX_PROTECTED_FEATURE_DISABLE)
 add_definitions(-DSYNCHRONIZATION_BY_VA_SYNC_SURFACE)

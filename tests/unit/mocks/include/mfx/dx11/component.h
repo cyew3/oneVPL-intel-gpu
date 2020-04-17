@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -96,11 +96,11 @@ namespace mocks { namespace mfx { namespace dx11
             case HW_GLK:     return make_component(adapter, ctx, std::integral_constant<int, HW_GLK>{},     std::forward<Args>(args)...);
             case HW_CNL:     return make_component(adapter, ctx, std::integral_constant<int, HW_CNL>{},     std::forward<Args>(args)...);
             case HW_ICL:     return make_component(adapter, ctx, std::integral_constant<int, HW_ICL>{},     std::forward<Args>(args)...);
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
-            case HW_LKF:     return make_component(adapter, ctx, std::integral_constant<int, HW_LKF>{},     std::forward<Args>(args)...);
             case HW_JSL:     return make_component(adapter, ctx, std::integral_constant<int, HW_JSL>{},     std::forward<Args>(args)...);
             case HW_TGL:     return make_component(adapter, ctx, std::integral_constant<int, HW_TGL>{},     std::forward<Args>(args)...);
             case HW_DG1:     return make_component(adapter, ctx, std::integral_constant<int, HW_DG1>{},     std::forward<Args>(args)...);
+#ifndef STRIP_EMBARGO
+            case HW_LKF:     return make_component(adapter, ctx, std::integral_constant<int, HW_LKF>{},     std::forward<Args>(args)...);
             case HW_ATS:     return make_component(adapter, ctx, std::integral_constant<int, HW_ATS>{},     std::forward<Args>(args)...);
             case HW_DG2:     return make_component(adapter, ctx, std::integral_constant<int, HW_DG2>{},     std::forward<Args>(args)...);
 #endif

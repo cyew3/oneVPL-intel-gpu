@@ -81,10 +81,11 @@ enum eMFXHWType
     MFX_HW_EHL       = 0x1500002,
 
     MFX_HW_TGL_LP    = 0x1600000,
+    MFX_HW_DG1       = 0x1600003,
+
 #ifndef STRIP_EMBARGO
     MFX_HW_RYF       = MFX_HW_TGL_LP + 1,
     MFX_HW_RKL       = MFX_HW_TGL_LP + 2,
-    MFX_HW_DG1       = MFX_HW_TGL_LP + 3,
     MFX_HW_ADL_S     = MFX_HW_TGL_LP + 4,
     MFX_HW_ADL_P     = MFX_HW_TGL_LP + 5,
     MFX_HW_TGL_HP    = MFX_HW_TGL_LP + 6,

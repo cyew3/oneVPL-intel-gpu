@@ -117,7 +117,7 @@ namespace HEVCEHW
 };
 
 #if defined(MFX_VA_LINUX)
-    #if defined(OPEN_SOURCE)
+    #if defined(STRIP_EMBARGO)
     #include "hevcehw_base_lin.h"
     namespace HEVCEHWDisp
     {
@@ -131,7 +131,7 @@ namespace HEVCEHW
         namespace SKL { using namespace HEVCEHW::Linux::Base_Embargo; };
         namespace ICL { using namespace HEVCEHW::Linux::Base_Embargo; };
     };
-    #endif //defined(OPEN_SOURCE)
+    #endif //defined(STRIP_EMBARGO)
 #else
     #include "hevcehw_base_win.h"
     namespace HEVCEHWDisp
@@ -141,7 +141,7 @@ namespace HEVCEHW
     };
 #endif
 
-#ifndef OPEN_SOURCE
+#ifndef STRIP_EMBARGO
 #if defined(MFX_VA_LINUX)
     #include "hevcehw_g11lkf_lin.h"
     namespace HEVCEHWDisp
@@ -157,17 +157,16 @@ namespace HEVCEHW
 #endif
 #endif
 
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
 #if defined(MFX_VA_LINUX)
-    #if defined(OPEN_SOURCE)
+    #if defined(STRIP_EMBARGO)
         #include "hevcehw_g12_lin.h"
         namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::Linux::Gen12; }; };
+        namespace HEVCEHWDisp { namespace DG1 { using namespace HEVCEHW::Linux::Gen12; }; };
     #else
         #include "hevcehw_g12_embargo_lin.h"
         namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::Linux::Gen12_Embargo; }; };
         namespace HEVCEHWDisp { namespace DG1 { using namespace HEVCEHW::Linux::Gen12_Embargo; }; };
-    #endif //defined(OPEN_SOURCE)
+    #endif //defined(STRIP_EMBARGO)
 #else
     #include "hevcehw_g12_win.h"
     namespace HEVCEHWDisp
@@ -176,10 +175,8 @@ namespace HEVCEHW
         namespace DG1 { using namespace HEVCEHW::Windows::Gen12; };
     };
 #endif
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
-
+#ifndef STRIP_EMBARGO
 #if defined(MFX_VA_LINUX)
     #include "hevcehw_g12ats_lin.h"
     #include "hevcehw_g12dg2_lin.h"
@@ -197,7 +194,8 @@ namespace HEVCEHW
         namespace DG2 { using namespace HEVCEHW::Windows::Gen12DG2; };
     };
 #endif
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#endif // !(STRIP_EMBARGO)
+
 namespace HEVCEHW
 {
 
@@ -207,24 +205,20 @@ static ImplBase* CreateSpecific(
     , mfxStatus& status
     , eFeatureMode mode)
 {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#ifndef STRIP_EMBARGO
     if (HW >= MFX_HW_DG2)
         return new HEVCEHWDisp::DG2::MFXVideoENCODEH265_HW(core, status, mode);
     if (HW >= MFX_HW_ATS)
         return new HEVCEHWDisp::ATS::MFXVideoENCODEH265_HW(core, status, mode);
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-#ifndef OPEN_SOURCE
     if (HW == MFX_HW_DG1)
         return new HEVCEHWDisp::DG1::MFXVideoENCODEH265_HW(core, status, mode);
-#endif //OPEN_SOURCE
     if (HW >= MFX_HW_TGL_LP)
         return new HEVCEHWDisp::TGL::MFXVideoENCODEH265_HW(core, status, mode);
-#endif
-#ifndef OPEN_SOURCE
+#ifndef STRIP_EMBARGO
     if (HW == MFX_HW_LKF || HW == MFX_HW_JSL)
         return new HEVCEHWDisp::LKF::MFXVideoENCODEH265_HW(core, status, mode);
-#endif //OPEN_SOURCE
+#endif //STRIP_EMBARGO
     if (HW >= MFX_HW_ICL)
         return new HEVCEHWDisp::ICL::MFXVideoENCODEH265_HW(core, status, mode);
     return new HEVCEHWDisp::SKL::MFXVideoENCODEH265_HW(core, status, mode);

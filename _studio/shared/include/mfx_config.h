@@ -448,7 +448,7 @@
                 #define MFX_ENABLE_HEVC_CUSTOM_QMATRIX
             #endif
         #endif
-        #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        #ifndef SKIP_EMBARGO
             #define MFX_ENABLE_HEVCE_SCC
         #endif
     #endif

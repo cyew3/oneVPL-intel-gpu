@@ -2386,9 +2386,7 @@ mfxStatus  VideoVPPHW::Init(
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen11lp,sizeof(genx_fcopy_gen11lp),m_pCmProgram,"nojitter");
                 break;
             case MFX_HW_TGL_LP:
-        #ifndef STRIP_EMBARGO
             case MFX_HW_DG1:
-        #endif
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12lp,sizeof(genx_fcopy_gen12lp),m_pCmProgram,"nojitter");
                 break;
         #ifndef STRIP_EMBARGO
