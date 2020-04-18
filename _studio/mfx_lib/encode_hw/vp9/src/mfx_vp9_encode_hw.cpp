@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Intel Corporation
+// Copyright (c) 2016-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -312,6 +312,9 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
     (void)platform;
     request.Info.FourCC = MFX_FOURCC_NV12;
 #endif
+
+    //For MMCD encoder bind flag is required
+    request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET;
 
     sts = m_reconFrames.Init(m_pCore, &request, false);
     MFX_CHECK_STS(sts);
