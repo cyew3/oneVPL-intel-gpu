@@ -314,7 +314,10 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
 #endif
 
     //For MMCD encoder bind flag is required
-    request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET;
+    if (request.Info.FourCC == MFX_FOURCC_NV12)
+    {
+        request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET;
+    }
 
     sts = m_reconFrames.Init(m_pCore, &request, false);
     MFX_CHECK_STS(sts);
