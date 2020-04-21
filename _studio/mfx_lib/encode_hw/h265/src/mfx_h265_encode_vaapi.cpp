@@ -1132,6 +1132,11 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.ddi_caps.YUV444ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value &
         VA_RT_FORMAT_YUV444 ? 1 : 0;
 
+#if VA_CHECK_VERSION(1,7,0)
+    m_caps.ddi_caps.RGBEncodingSupport = attrs[idx_map[VAConfigAttribRTFormat]].value &
+        (VA_RT_FORMAT_RGB32 | VA_RT_FORMAT_RGB32_10) ? 1 : 0; // argb4 or a2rgb10
+#endif
+
     MFX_CHECK(attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value != VA_ATTRIB_NOT_SUPPORTED, MFX_ERR_UNSUPPORTED);
     MFX_CHECK(attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value != VA_ATTRIB_NOT_SUPPORTED, MFX_ERR_UNSUPPORTED);
     MFX_CHECK_COND(attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value && attrs[ idx_map[VAConfigAttribMaxPictureHeight] ].value);

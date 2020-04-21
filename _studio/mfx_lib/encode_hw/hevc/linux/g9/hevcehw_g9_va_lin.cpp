@@ -372,6 +372,7 @@ mfxStatus DDI_VA::QueryCaps()
     m_caps.BitDepth8Only = !(AV(VAConfigAttribRTFormat) & (VA_RT_FORMAT_YUV420_10 | VA_RT_FORMAT_YUV420_12));
     m_caps.YUV422ReconSupport = !!(AV(VAConfigAttribRTFormat) & VA_RT_FORMAT_YUV422);
     m_caps.YUV444ReconSupport = !!(AV(VAConfigAttribRTFormat) & VA_RT_FORMAT_YUV444);
+    m_caps.RGBEncodingSupport = !!(AV(VAConfigAttribRTFormat) & (VA_RT_FORMAT_RGB32 | VA_RT_FORMAT_RGB32_10)); // argb4 or a2rgb10
 
     MFX_CHECK(AV(VAConfigAttribMaxPictureWidth) != VA_ATTRIB_NOT_SUPPORTED, MFX_ERR_UNSUPPORTED);
     MFX_CHECK(AV(VAConfigAttribMaxPictureHeight) != VA_ATTRIB_NOT_SUPPORTED, MFX_ERR_UNSUPPORTED);
