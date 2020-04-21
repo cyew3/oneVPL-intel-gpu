@@ -42,6 +42,7 @@ mfx_player:
   reviewers:
   - roman.kopytin@intel.com
   - anton.grishin@intel.com
+  - sofya.balandina@intel.com
 
 mfx_transcoder:
   paths:
@@ -56,6 +57,7 @@ mfx_transcoder:
   reviewers:
   - roman.kopytin@intel.com
   - anton.grishin@intel.com
+  - sofya.balandina@intel.com
 
 h264d:
   paths:
