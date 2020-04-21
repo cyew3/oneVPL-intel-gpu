@@ -10188,12 +10188,15 @@ void HeaderPacker::Init(
 
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
     // pack extended pps for adaptive CQM
-    bufDesc = Begin(m_packedCqmPps);
-    for (size_t i = 0; i < m_cqmPps.size(); i++)
+    if (!m_packedCqmPps.empty())
     {
-        numBits = WritePpsHeader(obs, m_cqmPps[i]);
-        *bufDesc++ = MakePackedByteBuffer(bufBegin, numBits / 8, m_emulPrev ? 0 : 4);
-        bufBegin += numBits / 8;
+        bufDesc = Begin(m_packedCqmPps);
+        for (size_t i = 0; i < m_cqmPps.size(); i++)
+        {
+            numBits = WritePpsHeader(obs, m_cqmPps[i]);
+            *bufDesc++ = MakePackedByteBuffer(bufBegin, numBits / 8, m_emulPrev ? 0 : 4);
+            bufBegin += numBits / 8;
+        }
     }
 #endif
 
