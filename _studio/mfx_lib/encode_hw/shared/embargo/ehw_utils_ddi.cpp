@@ -148,7 +148,8 @@ ENCODE_INPUT_DESC* DDIParPacker::SetTaskResources(
     m_resId[RES_BS]   = idxBS;
     m_resId[RES_CUQP] = idxCUQP;
 
-    MFX_CHECK(m_vaType == MFX_HW_D3D11, nullptr);
+    if (m_vaType != MFX_HW_D3D11)
+        return nullptr;
 
     bool   bCUQPMap = m_resources.count(RES_CUQP) && m_resources.at(RES_CUQP).size() > idxCUQP;
     auto&  ref      = m_resources.at(RES_REF);
