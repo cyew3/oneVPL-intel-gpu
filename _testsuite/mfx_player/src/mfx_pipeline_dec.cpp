@@ -1285,6 +1285,8 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_components[eVPP].m_mirroring)
     ENABLE_VPP(m_components[eVPP].m_InNominalRange)
     ENABLE_VPP(m_components[eVPP].m_OutNominalRange)
+    ENABLE_VPP(m_components[eVPP].m_InTransferMatrix)
+    ENABLE_VPP(m_components[eVPP].m_OutTransferMatrix)
     ENABLE_VPP(dec_info.FourCC != enc_info.FourCC);
     ENABLE_VPP(m_components[eDEC].m_bufType != m_components[eREN].m_bufType)
     ENABLE_VPP(m_components[eDEC].m_params.mfx.FrameInfo.Shift != m_components[eREN].m_params.mfx.FrameInfo.Shift);
@@ -1374,12 +1376,14 @@ mfxStatus MFXDecPipeline::CreateVPP()
         pMirroring->Type = m_components[eVPP].m_mirroring;
     }
 
-    if (m_components[eVPP].m_InNominalRange != 0 || m_components[eVPP].m_OutNominalRange != 0)
+    if (m_components[eVPP].m_InNominalRange != 0 || m_components[eVPP].m_OutNominalRange != 0 || m_components[eVPP].m_InTransferMatrix != 0 || m_components[eVPP].m_OutTransferMatrix != 0)
     {
         m_components[eVPP].m_extParams.push_back(new mfxExtVPPVideoSignalInfo());
-        MFXExtBufferPtr<mfxExtVPPVideoSignalInfo> pNominalRange(m_components[eVPP].m_extParams);
-        pNominalRange->In.NominalRange = m_components[eVPP].m_InNominalRange;
-        pNominalRange->Out.NominalRange = m_components[eVPP].m_OutNominalRange;
+        MFXExtBufferPtr<mfxExtVPPVideoSignalInfo> pVideoSignalInfo(m_components[eVPP].m_extParams);
+        pVideoSignalInfo->In.NominalRange = m_components[eVPP].m_InNominalRange;
+        pVideoSignalInfo->Out.NominalRange = m_components[eVPP].m_OutNominalRange;
+        pVideoSignalInfo->In.TransferMatrix = m_components[eVPP].m_InTransferMatrix;
+        pVideoSignalInfo->Out.TransferMatrix = m_components[eVPP].m_OutTransferMatrix;
     }
 
     if(m_inParams.bVppScaling)
@@ -5135,8 +5139,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_INT_OPTION(m_inParams.nRotation, VM_STRING("-rotation"), VM_STRING("rotate picture clockwise. only for jpeg decoder"))
             else HANDLE_INT_OPTION(m_components[eVPP].m_rotate, VM_STRING("-rotate"), VM_STRING("insert vpp into pipeline only if rotation required"))
             else HANDLE_INT_OPTION(m_components[eVPP].m_mirroring, VM_STRING("-mirror"), VM_STRING("insert vpp mirroring with specified mode into pipeline"))
-            else HANDLE_INT_OPTION(m_components[eVPP].m_InNominalRange, VM_STRING("-ssinr"), VM_STRING("specify YUV nominal range for input surface"))
-            else HANDLE_INT_OPTION(m_components[eVPP].m_OutNominalRange, VM_STRING("-dsinr"), VM_STRING("specify YUV nominal range for output surface"))
+            else HANDLE_INT_OPTION(m_components[eVPP].m_InNominalRange, VM_STRING("-ssinr"), VM_STRING("specify YUV nominal range for input surface: 0 - unknown; 1 - [0...255]; 2 - [16...235]"))
+            else HANDLE_INT_OPTION(m_components[eVPP].m_OutNominalRange, VM_STRING("-dsinr"), VM_STRING("specify YUV nominal range for output surface: 0 - unknown; 1 - [0...255]; 2 - [16...235]"))
+            else HANDLE_INT_OPTION(m_components[eVPP].m_InTransferMatrix, VM_STRING("-ssitm"), VM_STRING("specify YUV<->RGB transfer matrix for input surface: 0 - unknown; 1 - BT709; 2 - BT601"))
+            else HANDLE_INT_OPTION(m_components[eVPP].m_OutTransferMatrix, VM_STRING("-dsitm"), VM_STRING("specify YUV<->RGB transfer matrix for output surface: 0 - unknown; 1 - BT709; 2 - BT601"))
             else if (m_OptProc.Check(argv[0], VM_STRING("-camera"), VM_STRING("use camera pipe"), OPT_BOOL))
             {
                 m_inParams.bUseCameraPipe = true;

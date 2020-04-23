@@ -58,6 +58,8 @@ public:
         , m_mirroring(0)
         , m_InNominalRange()
         , m_OutNominalRange()
+        , m_InTransferMatrix()
+        , m_OutTransferMatrix()
         , m_pAllocator()
         , m_nStartSearch()
         , m_nSelectAlgo(USE_FIRST)
@@ -155,6 +157,8 @@ public:
     mfxU16                         m_mirroring;
     mfxU16                         m_InNominalRange;
     mfxU16                         m_OutNominalRange;
+    mfxU16                         m_InTransferMatrix;
+    mfxU16                         m_OutTransferMatrix;
     MFXExtBufferVector             m_extParams;
 
 
