@@ -24,6 +24,16 @@
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 
 #include "mfxvideo.h"
+#include "mfxla.h"
+#include "mfxbrc.h"
+#include "mfx_ext_buffers.h"
+
+#if !defined(MFX_VA_LINUX)
+#include "mfxpcp.h"
+#include "mfxwidi.h"
+#endif //!defined(MFX_VA_LINUX)
+#include "mfxvideo++int.h"
+
 #include "mfx_utils_extbuf.h"
 
 #include "feature_blocks/mfx_feature_blocks_init_macros.h"
