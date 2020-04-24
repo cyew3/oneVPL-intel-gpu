@@ -187,6 +187,10 @@ VAProfile g_AV1Profiles[] =
 {
     VAProfileAV1Profile0
 };
+VAProfile g_AV110BitsPProfiles[] =
+{
+    VAProfileAV1Profile1
+};
 #endif
 
 VAProfile g_JPEGProfiles[] =
@@ -272,8 +276,10 @@ VAProfile get_next_va_profile(uint32_t umc_codec, uint32_t profile)
         break;
 #if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
     case UMC::VA_AV1:
-    case UMC::VA_AV1 | UMC::VA_PROFILE_10:
         if (profile < UMC_ARRAY_SIZE(g_AV1Profiles)) va_profile = g_AV1Profiles[profile];
+        break;
+    case UMC::VA_AV1 | UMC::VA_PROFILE_10:
+        if (profile < UMC_ARRAY_SIZE(g_AV110BitsPProfiles)) va_profile = g_AV110BitsPProfiles[profile];
         break;
 #endif
 #endif
