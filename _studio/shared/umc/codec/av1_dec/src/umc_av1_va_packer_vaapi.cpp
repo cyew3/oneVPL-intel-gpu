@@ -207,23 +207,13 @@ namespace UMC_AV1_DECODER
             }
         }
 
-        if (KEY_FRAME == info.frame_type)
-        {
-            for (int i = 0; i < NUM_REF_FRAMES; i++)
-            {
-                picParam.ref_frame_map[i] = VA_INVALID_SURFACE;
-            }
-        }
-        else
-        {
-            for (uint8_t ref = 0; ref < NUM_REF_FRAMES; ++ref)
-                picParam.ref_frame_map[ref] = (VASurfaceID)m_va->GetSurfaceID(frame.frame_dpb[ref]->GetMemID(SURFACE_RECON));
+        for (uint8_t ref = 0; ref < NUM_REF_FRAMES; ++ref)
+            picParam.ref_frame_map[ref] = frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
 
-            for (uint8_t ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
-            {
-                const uint8_t idxInDPB = (uint8_t)info.ref_frame_idx[ref_idx];
-                picParam.ref_frame_idx[ref_idx] = idxInDPB;
-            }
+        for (uint8_t ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
+        {
+            const uint8_t idxInDPB = (uint8_t)info.ref_frame_idx[ref_idx];
+            picParam.ref_frame_idx[ref_idx] = idxInDPB;
         }
 
         picParam.primary_ref_frame = (uint8_t)info.primary_ref_frame;
