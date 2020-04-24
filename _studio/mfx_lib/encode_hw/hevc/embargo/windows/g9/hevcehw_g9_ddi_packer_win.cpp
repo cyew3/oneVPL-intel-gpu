@@ -124,6 +124,7 @@ void DDIPacker::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
             ID_MBQPDATA         = (D3DFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
             ID_PACKEDHEADERDATA = (D3DFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
             ID_PACKEDSLICEDATA  = (D3DFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA;
+            ID_QUANTDATA        = (D3DFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_QUANTDATA;
         }
 
         const auto& par = Glob::VideoParam::Get(strg);
@@ -264,6 +265,9 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
 
         nCBD += PackCBD(ID_SLICEDATA, m_slices);
         nCBD += PackCBD(ID_BITSTREAMDATA, GetResId(RES_BS));
+
+        nCBD += m_sps.scaling_list_enable_flag
+            && PackCBD(ID_QUANTDATA, m_qMatrix);
 
         nCBD += task.bCUQPMap
             && PackCBD(ID_MBQPDATA, GetResId(RES_CUQP));

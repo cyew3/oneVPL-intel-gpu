@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@ namespace Gen9
     public:
 #define DECL_BLOCK_LIST\
     DECL_BLOCK(UpdateSPS)\
-    DECL_BLOCK(UpdateDDISubmit)
+    DECL_BLOCK(PatchDDITask)
 #define DECL_FEATURE_NAME "G9_QMatrix"
 #include "hevcehw_decl_blocks.h"
 
@@ -48,9 +48,7 @@ namespace Gen9
 
     protected:
         virtual void InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push) override;
-        virtual void InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push) override;
-
-        DXVA_Qmatrix_HEVC m_qMatrix = {};
+        virtual void SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push) override;
     };
 
 } //Gen9

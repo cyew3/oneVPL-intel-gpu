@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -140,18 +140,6 @@ Windows::Gen9::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             , { FEATURE_MB_PER_SEC, MbPerSec::BLK_QueryDDI }
             , PLACE_AFTER);
     }
-
-#if defined (MFX_ENABLE_HEVC_CUSTOM_QMATRIX)
-    if (mode & INIT)
-    {
-        auto& qIA = BQ<BQ_InitAlloc>::Get(*this);
-        Reorder(qIA
-            , { FEATURE_DDI_PACKER, IDDIPacker::BLK_Init }
-            , { FEATURE_QMATRIX, QMatrix::BLK_UpdateDDISubmit }
-            , PLACE_AFTER);
-
-    }
-#endif
 }
 
 mfxStatus Windows::Gen9::MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
@@ -171,6 +159,11 @@ mfxStatus Windows::Gen9::MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
         Reorder(queue
             , { FEATURE_DDI, IDDI::BLK_SubmitTask }
             , { FEATURE_BRC_SLIDING_WINDOW, BRCSlidingWindow::BLK_PatchDDITask });
+#if defined (MFX_ENABLE_HEVC_CUSTOM_QMATRIX)
+        Reorder(queue
+            , { FEATURE_DDI, IDDI::BLK_SubmitTask }
+            , { FEATURE_QMATRIX, QMatrix::BLK_PatchDDITask });
+#endif //defined(MFX_ENABLE_HEVC_CUSTOM_QMATRIX)
         Reorder(queue
             , { FEATURE_DDI, IDDI::BLK_SubmitTask }
             , { FEATURE_DIRTY_RECT, DirtyRect::BLK_PatchDDITask });

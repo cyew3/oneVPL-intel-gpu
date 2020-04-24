@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -504,11 +504,12 @@ typedef struct tagENCODE_SET_SLICE_HEADER_HEVC_REXT : ENCODE_SET_SLICE_HEADER_HE
 
 typedef struct tagENCODE_SET_QMATRIX_HEVC
 {
-    UCHAR   bScalingLists4x4[3][2][16]; // 2 inter/intra 3: YUV
-    UCHAR   bScalingLists8x8[3][2][64];
-    UCHAR   bScalingLists16x16[3][2][64];
-    UCHAR   bScalingLists32x32[2][64];
-    UCHAR   bScalingListDC[2][3][2];
+    UCHAR ucScalingLists0[6][16];
+    UCHAR ucScalingLists1[6][64];
+    UCHAR ucScalingLists2[6][64];
+    UCHAR ucScalingLists3[2][64];
+    UCHAR ucScalingListDCCoefSizeID2[6];
+    UCHAR ucScalingListDCCoefSizeID3[2];
 } ENCODE_SET_QMATRIX_HEVC;
 
 #define D3DDDIFMT_HEVC_BUFFER_CUDATA (D3DFORMAT)183

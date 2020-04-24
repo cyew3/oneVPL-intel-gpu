@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -160,42 +160,35 @@ void QMatrix::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     });
 }
 
-void QMatrix::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
+void QMatrix::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 {
-    Push(BLK_UpdateDDISubmit
-        , [this](StorageRW& global, StorageRW&) -> mfxStatus
+    Push(BLK_PatchDDITask
+        , [this](StorageW& global, StorageW&) -> mfxStatus
     {
         auto& sps = Glob::SPS::Get(global);
 
         MFX_CHECK(sps.scaling_list_data_present_flag && sps.scaling_list_enabled_flag, MFX_ERR_NONE);
 
-        for (mfxU8 i = 0; i < 6; ++i)
-        {
-            MakeUpRight(sps.scl.scalingLists0[i], 4, m_qMatrix.ucScalingLists0[i]);
-            MakeUpRight(sps.scl.scalingLists1[i], 8, m_qMatrix.ucScalingLists1[i]);
-            MakeUpRight(sps.scl.scalingLists2[i], 8, m_qMatrix.ucScalingLists2[i]);
-            m_qMatrix.ucScalingListDCCoefSizeID2[i] = sps.scl.scalingListDCCoefSizeID2[i];
-        }
-
-        MakeUpRight(sps.scl.scalingLists3[0], 8, m_qMatrix.ucScalingLists3[0]);
-        m_qMatrix.ucScalingListDCCoefSizeID3[0] = sps.scl.scalingListDCCoefSizeID3[0];
-
-        MakeUpRight(sps.scl.scalingLists3[1], 8, m_qMatrix.ucScalingLists3[1]);
-        m_qMatrix.ucScalingListDCCoefSizeID3[1] = sps.scl.scalingListDCCoefSizeID3[1];
-
         auto         vaType = Glob::VideoCore::Get(global).GetVAType();
         auto&        par    = Glob::DDI_SubmitParam::Get(global);
+
         auto&        pps    = Deref(GetDDICB<ENCODE_SET_PICTURE_PARAMETERS_HEVC>(ENCODE_ENC_PAK_ID, DDIPar_In, vaType, par));
-        DDIExecParam ddiQM;
-
-        ddiQM.In.pData = &m_qMatrix;
-        ddiQM.In.Size  = sizeof(m_qMatrix);
-
-        SetIf(ddiQM.Function, vaType == MFX_HW_D3D11, mfxU32(D3D11_DDI_VIDEO_ENCODER_BUFFER_QUANTDATA));
-        SetIf(ddiQM.Function, vaType == MFX_HW_D3D9, mfxU32(D3DDDIFMT_INTELENCODE_QUANTDATA));
-        par.emplace_back(std::move(ddiQM));
-
         pps.scaling_list_data_present_flag = (sps.scaling_list_enabled_flag && sps.scaling_list_data_present_flag);
+
+        auto&        qMatrix = Deref(GetDDICB<ENCODE_SET_QMATRIX_HEVC>(ENCODE_ENC_PAK_ID, DDIPar_In, vaType, par));
+        for (mfxU8 i = 0; i < 6; ++i)
+        {
+            MakeUpRight(sps.scl.scalingLists0[i], 4, qMatrix.ucScalingLists0[i]);
+            MakeUpRight(sps.scl.scalingLists1[i], 8, qMatrix.ucScalingLists1[i]);
+            MakeUpRight(sps.scl.scalingLists2[i], 8, qMatrix.ucScalingLists2[i]);
+            qMatrix.ucScalingListDCCoefSizeID2[i] = sps.scl.scalingListDCCoefSizeID2[i];
+        }
+
+        MakeUpRight(sps.scl.scalingLists3[0], 8, qMatrix.ucScalingLists3[0]);
+        qMatrix.ucScalingListDCCoefSizeID3[0] = sps.scl.scalingListDCCoefSizeID3[0];
+
+        MakeUpRight(sps.scl.scalingLists3[1], 8, qMatrix.ucScalingLists3[1]);
+        qMatrix.ucScalingListDCCoefSizeID3[1] = sps.scl.scalingListDCCoefSizeID3[1];
 
         return MFX_ERR_NONE;
     });

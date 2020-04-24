@@ -90,7 +90,7 @@ namespace hevce { namespace tests
             auto s = static_cast<_mfxSession*>(session);
             storage.Insert(Gen9::Glob::VideoCore::Key, new StorableRef<VideoCORE>(*(s->m_pCORE.get())));
 
-            qmatrix.Init(HEVCEHW::INIT, blocks);
+            qmatrix.Init(HEVCEHW::INIT | HEVCEHW::RUNTIME, blocks);
 
             Gen9::Glob::VideoParam::GetOrConstruct(storage)
                 .NewEB(MFX_EXTBUFF_CODING_OPTION3);
@@ -224,43 +224,17 @@ namespace hevce { namespace tests
         );
     }
 
-    TEST_F(FeatureBlocksQMatrixICL, UpdateDDISubmitNotEnabled)
+    TEST_F(FeatureBlocksQMatrixICL, PatchDDIQSPSNotApplicable)
     {
-        auto& queueSubmit = FeatureBlocks::BQ<FeatureBlocks::BQ_InitAlloc>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueSubmit, { Gen9::FEATURE_QMATRIX, Windows::Gen9::QMatrix::BLK_UpdateDDISubmit });
-
-        auto& sps = Gen9::Glob::SPS::Get(storage);
-        ASSERT_EQ(
-            sps.scaling_list_enabled_flag, 0
-        );
-        ASSERT_EQ(
-            sps.scaling_list_data_present_flag, 0
-        );
-
-        EXPECT_EQ(
-            block->Call(storage, storage),
-            MFX_ERR_NONE
-        );
-
-        auto& sp = Gen9::Glob::DDI_SubmitParam::Get(storage);
-        EXPECT_TRUE(
-            sp.empty()
-        );
-    }
-
-    TEST_F(FeatureBlocksQMatrixICL, UpdateDDISubmit)
-    {
-        auto& queueSubmit = FeatureBlocks::BQ<FeatureBlocks::BQ_InitAlloc>::Get(blocks);
-        auto block = FeatureBlocks::Get(queueSubmit, { Gen9::FEATURE_QMATRIX, Windows::Gen9::QMatrix::BLK_UpdateDDISubmit });
-
-        auto& sps = Gen9::Glob::SPS::Get(storage);
-        sps.scaling_list_enabled_flag = sps.scaling_list_data_present_flag = 1;
+        auto& queueSubmit = FeatureBlocks::BQ<FeatureBlocks::BQ_SubmitTask>::Get(blocks);
+        auto block = FeatureBlocks::Get(queueSubmit, { Gen9::FEATURE_QMATRIX, Windows::Gen9::QMatrix::BLK_PatchDDITask });
 
         ENCODE_SET_PICTURE_PARAMETERS_HEVC pps{};
-        ENCODE_COMPBUFFERDESC cb{
+        ENCODE_COMPBUFFERDESC cb {
             &pps, static_cast<D3DFORMAT>(D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA),
             0, sizeof(pps)
         };
+
         ENCODE_EXECUTE_PARAMS eep{ 1, &cb };
 
         auto& sp = Gen9::Glob::DDI_SubmitParam::Get(storage);
@@ -269,27 +243,66 @@ namespace hevce { namespace tests
         );
 
         EXPECT_EQ(
+            pps.scaling_list_data_present_flag, UINT(0)
+        );
+
+        EXPECT_EQ(
+            block->Call(storage, storage),
+            MFX_ERR_NONE //block returns OK, just doesn't update PPS
+        );
+
+        EXPECT_EQ(
+            pps.scaling_list_data_present_flag, UINT(0)
+        );
+    }
+
+    TEST_F(FeatureBlocksQMatrixICL, PatchDDI)
+    {
+        auto& queueSubmit = FeatureBlocks::BQ<FeatureBlocks::BQ_SubmitTask>::Get(blocks);
+        auto block = FeatureBlocks::Get(queueSubmit, { Gen9::FEATURE_QMATRIX, Windows::Gen9::QMatrix::BLK_PatchDDITask });
+
+        auto& sps = Gen9::Glob::SPS::Get(storage);
+        sps.scaling_list_enabled_flag = sps.scaling_list_data_present_flag = 1;
+        sps.scl.scalingLists0[0][0] = 16;
+
+        ENCODE_SET_PICTURE_PARAMETERS_HEVC pps{};
+        ENCODE_SET_QMATRIX_HEVC        qMatrix{};
+        ENCODE_COMPBUFFERDESC cb[2]
+        {
+            {
+                &pps, static_cast<D3DFORMAT>(D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA),
+                0, sizeof(pps)
+            },
+            {
+                &qMatrix, static_cast<D3DFORMAT>(D3D11_DDI_VIDEO_ENCODER_BUFFER_QUANTDATA),
+                0, sizeof(qMatrix)
+            }
+        };
+
+        ENCODE_EXECUTE_PARAMS eep{ 2, cb };
+
+        auto& sp = Gen9::Glob::DDI_SubmitParam::Get(storage);
+        sp.push_back(
+            Gen9::DDIExecParam{ ENCODE_ENC_PAK_ID, { &eep, sizeof(eep) } }
+        );
+
+        EXPECT_EQ(
+            pps.scaling_list_data_present_flag, UINT(0)
+        );
+        EXPECT_EQ(
+            qMatrix.ucScalingLists0[0][0], 0
+        );
+
+        EXPECT_EQ(
             block->Call(storage, storage),
             MFX_ERR_NONE
         );
 
         EXPECT_EQ(
-            sp.size(), 2 //we expect that [UpdateDDISubmit] will add yet another [DDIExecParam]
-        );
-
-        auto const& ep = sp.back();
-        EXPECT_EQ(
-            ep.Function, mfxU32(D3D11_DDI_VIDEO_ENCODER_BUFFER_QUANTDATA)
-        );
-        EXPECT_NE(
-            ep.In.pData, nullptr
-        );
-        EXPECT_EQ(
-            ep.In.Size, sizeof(DXVA_Qmatrix_HEVC)
-        );
-
-        EXPECT_EQ(
             pps.scaling_list_data_present_flag, UINT(1)
+        );
+        EXPECT_EQ(
+            qMatrix.ucScalingLists0[0][0], 16
         );
     }
 

@@ -47,6 +47,11 @@ namespace MfxEncodeHW
         static constexpr D3DFORMAT Type[] =
         { D3DDDIFMT_INTELENCODE_SLICEDATA, (D3DFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA };
     };
+    template<> struct DDICbInfo <ENCODE_SET_QMATRIX_HEVC>
+    {
+        static constexpr D3DFORMAT Type[] =
+        { D3DDDIFMT_INTELENCODE_QUANTDATA, (D3DFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_QUANTDATA };
+    };
 }
 
 namespace HEVCEHW
@@ -107,6 +112,7 @@ public:
 protected:
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC             m_sps       = {};
     ENCODE_SET_PICTURE_PARAMETERS_HEVC              m_pps       = {};
+    ENCODE_SET_QMATRIX_HEVC                         m_qMatrix   = {};
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC>       m_slices;
 
     D3DFORMAT
@@ -117,6 +123,7 @@ protected:
         , ID_MBQPDATA         = D3DDDIFMT_INTELENCODE_MBQPDATA
         , ID_PACKEDHEADERDATA = D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA
         , ID_PACKEDSLICEDATA  = D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA
+        , ID_QUANTDATA        = D3DDDIFMT_INTELENCODE_QUANTDATA
         ;
     bool            m_bResetBRC         = false;
     mfxU32          m_numSkipFrames     = 0;

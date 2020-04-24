@@ -773,8 +773,14 @@ mfxU32 Packer::PackSLD(BitstreamWriter& bs, ScalingList const & scl)
 {
     mfxU32 nSE = 0;
     const mfxU32 matrixIds[] = { 0, 1, 2, 3, 4, 5 };
-    auto PackDeltaCoef = [&](mfxU32 sizeId, mfxU32 nextCoef, const mfxU8* scalingList)
+    auto PackDeltaCoef = [&](mfxU32 sizeId, mfxU32 nextCoef, const mfxU8* scalingList, mfxI32 dcCoeff = 0)
     {
+        mfxU8 scaling_list_pred_mode_flag = 1; // no implementation for reference scaling list(scaling_list_pred_mode_flag = 0).
+        nSE += PutBit(bs, scaling_list_pred_mode_flag);
+
+        bool bNeedDC = (sizeId > 1); // 16x16 or 32x32
+        nSE += bNeedDC && PutSE(bs, dcCoeff);
+
         mfxU32 coefNum = std::min(64, (1 << (4 + (sizeId << 1))));
         nSE += PutSE(bs, int8_t(scalingList[0] - nextCoef));
 
@@ -786,27 +792,21 @@ mfxU32 Packer::PackSLD(BitstreamWriter& bs, ScalingList const & scl)
     };
     auto Pack4x4 = [&](mfxU32 matrixId)
     {
-        nSE += PutBit(bs, 0); //scaling_list_pred_mode_flag
         PackDeltaCoef(0, 8, &scl.scalingLists0[matrixId][0]);
     };
     auto Pack8x8 = [&](mfxU32 matrixId)
     {
-        nSE += PutBit(bs, 0); //scaling_list_pred_mode_flag
         PackDeltaCoef(1, 8, &scl.scalingLists1[matrixId][0]);
     };
     auto Pack16x16 = [&](mfxU32 matrixId)
     {
-        nSE += PutBit(bs, 0); //scaling_list_pred_mode_flag
         auto next = scl.scalingLists2[matrixId][0];
-        nSE += PutSE(bs, next - 8);
-        PackDeltaCoef(2, next, &scl.scalingLists2[matrixId][0]);
+        PackDeltaCoef(2, next, &scl.scalingLists2[matrixId][0], next - 8);
     };
     auto Pack32x32 = [&](mfxU32 matrixId)
     {
-        nSE += PutBit(bs, 0); //scaling_list_pred_mode_flag
         auto next = scl.scalingLists3[!!matrixId][0];
-        nSE += PutSE(bs, next - 8);
-        PackDeltaCoef(3, next, &scl.scalingLists3[!!matrixId][0]);
+        PackDeltaCoef(3, next, &scl.scalingLists3[!!matrixId][0], next - 8);
     };
 
     std::for_each(std::begin(matrixIds), std::end(matrixIds), Pack4x4);
@@ -816,10 +816,11 @@ mfxU32 Packer::PackSLD(BitstreamWriter& bs, ScalingList const & scl)
     Pack32x32(3);
 
     assert(nSE ==
-          (1 + sizeof(scl.scalingLists0)
-        + (1 + sizeof(scl.scalingLists1))
-        + (2 + sizeof(scl.scalingLists2))
-        + (2 + sizeof(scl.scalingLists3))));
+        (6 * (1 + 16) // 4x4
+       + 6 * (1 + 64) // 8x8
+       + 6 * (2 + 64) // 16x16
+       + 2 * (2 + 64))); // 32x32
+
 
     return nSE;
 }
@@ -867,7 +868,11 @@ void Packer::PackSPS(BitstreamWriter& bs, SPS const & sps)
     nSE += PutUE(bs, sps.max_transform_hierarchy_depth_intra);
     nSE += PutBit(bs, sps.scaling_list_enabled_flag);
 
-    nSE += sps.scaling_list_enabled_flag && PackSLD(bs, sps.scl);
+    if (sps.scaling_list_enabled_flag)
+    {
+        nSE += PutBit(bs, sps.scaling_list_data_present_flag);
+        nSE += sps.scaling_list_data_present_flag && PackSLD(bs, sps.scl);
+    }
 
     nSE += PutBit(bs, sps.amp_enabled_flag);
     nSE += PutBit(bs, sps.sample_adaptive_offset_enabled_flag);
