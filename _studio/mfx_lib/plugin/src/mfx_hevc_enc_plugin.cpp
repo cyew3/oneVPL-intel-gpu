@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2019 Intel Corporation
+// Copyright (c) 2013-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -96,6 +96,18 @@ mfxStatus MFXHEVCEncoderPlugin::PluginInit(mfxCoreInterface *core)
     m_mfxCore = *core;
 
     mfxStatus sts;
+    mfxPlatform platform;
+
+    sts = m_mfxCore.m_core.QueryPlatform(m_mfxCore.m_core.pthis, &platform);
+    if (MFX_ERR_NONE != sts || MFX_PLATFORM_UNKNOWN == platform.CodeName)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    if (platform.CodeName >= MFX_PLATFORM_TIGERLAKE)
+    {
+        return MFX_ERR_UNSUPPORTED; //GACC is deprecated for TGL and all upcoming platforms
+    }
+
     m_encoder = new MFXVideoENCODEH265(&m_mfxCore, &sts);
 
     return MFX_ERR_NONE;
