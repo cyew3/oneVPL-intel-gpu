@@ -353,7 +353,7 @@ public:
             return mfx.TargetKbps * std::max<const mfxU32>(1, mfx.BRCParamMultiplier);
         }
 
-        mfxU32 frN, frD, maxBR = 0xffffffff;
+        mfxU32 frN = 0, frD = 0, maxBR = 0xffffffff;
 
         SetIf(maxBR, !!mfx.CodecLevel, [&]() { return GetMaxKbpsByLevel(par.mvp); });
 
@@ -547,24 +547,6 @@ public:
         SetIf(guid, bSupported, [&]() { return GUIDSupported.at(BitDepth).at(ChromaFormat); });
 
         return bSupported;
-    }
-
-    static mfxU16 MBBRC(
-        Defaults::TChain<mfxU16>::TExt
-        , const Defaults::Param& par)
-    {
-        const mfxExtCodingOption2* pCO2 = ExtBuffer::Get(par.mvp);
-        bool bPassThrough = pCO2 && pCO2->MBBRC;
-        mfxU16 rc =  par.base.GetRateControlMethod(par);
-
-        bool bOFF = !bPassThrough
-            && (   rc == MFX_RATECONTROL_CQP
-                || IsOn(par.mvp.mfx.LowPower));
-
-        return
-            bPassThrough * pCO2->MBBRC
-            + bOFF * MFX_CODINGOPTION_OFF
-            + !bOFF * MFX_CODINGOPTION_UNKNOWN;
     }
 
     static mfxU16 AsyncDepth(
@@ -844,7 +826,6 @@ public:
         PUSH_DEFAULT(QPMFX);
         PUSH_DEFAULT(Profile);
         PUSH_DEFAULT(GUID);
-        PUSH_DEFAULT(MBBRC);
         PUSH_DEFAULT(AsyncDepth);
         PUSH_DEFAULT(PicTimingSEI);
         PUSH_DEFAULT(FrameType);
@@ -907,11 +888,11 @@ public:
         , mfxVideoParam& par)
     {
         // TODO: level is hardcoded as 0 in legacy path
-        bool bInalid = CheckOrZero<mfxU16
+        bool bInvalid = CheckOrZero<mfxU16
             , 0>
             (par.mfx.CodecLevel);
 
-        MFX_CHECK(!bInalid, MFX_ERR_UNSUPPORTED);
+        MFX_CHECK(!bInvalid, MFX_ERR_UNSUPPORTED);
         return MFX_ERR_NONE;
     }
 

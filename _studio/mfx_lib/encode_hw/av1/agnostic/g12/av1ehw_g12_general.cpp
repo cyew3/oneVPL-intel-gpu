@@ -147,14 +147,6 @@ void General::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(Out.NumSurface);
     });
 
-    blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
-        [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
-    {
-        const auto& buf_src = *(const mfxExtCodingOption2*)pSrc;
-        auto& buf_dst = *(mfxExtCodingOption2*)pDst;
-        MFX_COPY_FIELD(MBBRC);
-    });
-
     blocks.m_ebCopySupported[MFX_EXTBUFF_CODING_OPTION3].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
     {
@@ -353,16 +345,6 @@ void General::SetInherited(ParamInheritance& par)
         INHERIT_OPT(OrderHintBits);
         INHERIT_OPT(ErrorResilientMode);
         INHERIT_OPT(DisplayFormatSwizzle);
-    });
-
-    par.m_ebInheritDefault[MFX_EXTBUFF_CODING_OPTION2].emplace_back(
-        [](const mfxVideoParam& /*parInit*/
-            , const mfxExtBuffer* pSrc
-            , const mfxVideoParam& /*parReset*/
-            , mfxExtBuffer* pDst)
-    {
-        INIT_EB(mfxExtCodingOption2);
-        INHERIT_OPT(MBBRC);
     });
 
     par.m_ebInheritDefault[MFX_EXTBUFF_CODING_OPTION3].emplace_back(
@@ -898,7 +880,7 @@ void General::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
             | MFX_MEMTYPE_DXVA2_DECODER_TARGET
             | MFX_MEMTYPE_INTERNAL_FRAME));
 
-        mfxU32 minBS = GetMinBsSize(par, ExtBuffer::Get(par), ExtBuffer::Get(par), ExtBuffer::Get(par));
+        mfxU32 minBS = GetMinBsSize(par, ExtBuffer::Get(par), ExtBuffer::Get(par));
 
         if (mfxU32(req.Info.Width * req.Info.Height) < minBS)
         {
@@ -2148,7 +2130,6 @@ TTaskIt General::ReorderWrap(
 mfxU32 General::GetMinBsSize(
     const mfxVideoParam & par
     , const mfxExtAV1Param& AV1Param
-    , const mfxExtCodingOption2& /*CO2*/
     , const mfxExtCodingOption3& CO3)
 {
     // TODO: it's more correct to use sizes aligned to Mi block size
@@ -2720,8 +2701,6 @@ mfxStatus General::CheckBRC(
 
     if (pCO2)
     {
-        changed += CheckTriStateOrZero(pCO2->MBBRC);
-
         changed += CheckOrZero<mfxU8>(pCO2->MinQPI, 0, minQP);
         changed += CheckOrZero<mfxU8>(pCO2->MaxQPI, 0, maxQP);
         changed += CheckOrZero<mfxU8>(pCO2->MinQPP, 0, minQP);

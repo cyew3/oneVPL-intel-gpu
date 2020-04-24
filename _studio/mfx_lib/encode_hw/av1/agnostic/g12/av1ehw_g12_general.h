@@ -222,7 +222,6 @@ namespace Gen12
         mfxU32 GetMinBsSize(
             const mfxVideoParam & par
             , const mfxExtAV1Param& AV1Param
-            , const mfxExtCodingOption2& CO2
             , const mfxExtCodingOption3& CO3);
 
         Defaults::Param GetRTDefaults(StorageR& strg)

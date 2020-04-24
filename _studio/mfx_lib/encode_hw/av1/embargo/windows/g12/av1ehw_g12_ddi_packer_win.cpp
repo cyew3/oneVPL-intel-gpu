@@ -159,13 +159,13 @@ static void FillSegmentationMap(
     const ExtBuffer::Param<mfxVideoParam>& par
     , std::vector<UCHAR>& segment_map)
 {
-    const mfxExtAV1Param* const pAV1 = ExtBuffer::Get(par);
-    if (pAV1->SegmentationMode != MFX_AV1_SEGMENT_MANUAL)
+    const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
+    if (av1Par.SegmentationMode != MFX_AV1_SEGMENT_MANUAL)
         return;
 
-    const mfxExtAV1Segmentation* pSeg = ExtBuffer::Get(par);
-    segment_map.resize(pSeg->NumSegmentIdAlloc);
-    std::copy_n(pSeg->SegmentId, pSeg->NumSegmentIdAlloc, segment_map.begin());
+    const mfxExtAV1Segmentation& seg = ExtBuffer::Get(par);
+    segment_map.resize(seg.NumSegmentIdAlloc);
+    std::copy_n(seg.SegmentId, seg.NumSegmentIdAlloc, segment_map.begin());
 }
 
 static void FillSegmentationMap(
