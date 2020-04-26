@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2019 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -162,7 +162,7 @@ public:
 
 
     // Decode sequence parameter set
-    Status GetSequenceParamSet(UMC_H264_DECODER::H264SeqParamSet *sps);
+    Status GetSequenceParamSet(UMC_H264_DECODER::H264SeqParamSet *sps, bool ignoreLevelConstrain=false);
     Status GetSequenceParamSetSvcExt(UMC_H264_DECODER::H264SeqParamSetSVCExtension *pSPSSvcExt);
     Status GetSequenceParamSetSvcVuiExt(UMC_H264_DECODER::H264SeqParamSetSVCExtension *pSPSSvcExt);
 

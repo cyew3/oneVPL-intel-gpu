@@ -715,6 +715,8 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     }
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
+    m_components[eDEC].m_params.mfx.IgnoreLevelConstrain = m_inParams.bIgnoreLevelConstrain;
+
     if (m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FIRST_NUM_FROM_MAIN_STREAM || m_inParams.AV1LargeScaleTileMode == MFX_LST_ANCHOR_FRAMES_FROM_MFX_SURFACES)
     {
         MFXExtBufferPtr<mfxExtAV1LargeScaleTileParam> extLstTest(m_components[eDEC].m_extParams);
@@ -5643,6 +5645,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
               MFX_CHECK(1 + argv != argvEnd);
               MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.strAV1AnchorFilePath, MFX_ARRAY_SIZE(m_inParams.strAV1AnchorFilePath), argv[1]));
               argv++;
+          }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-ignore_level_constrain"), VM_STRING("ignore level constrain"), OPT_BOOL))
+          {
+              m_inParams.bIgnoreLevelConstrain = true;
           }
 #endif
           else

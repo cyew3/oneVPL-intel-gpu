@@ -89,6 +89,9 @@ struct sCommandlineParams
   mfxU64         nLimitInputBs;
   mfxI32         nSeed;
   mfxU16         nInputBitdepth;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+  bool           bIgnoreLevelConstrain;
+#endif
   bool           bNoVpp;    // don't enable VPP component (ERROR is returned if VPP is necessary)
   bool           bVppScaling;
   mfxU16         uVppScalingMode;
@@ -345,6 +348,9 @@ struct sCommandlineParams
       InputPicstruct  = NOT_ASSIGNED_VALUE;
       OutputPicstruct = NOT_ASSIGNED_VALUE;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+      bIgnoreLevelConstrain = false;
+#endif
       bNoVpp = false;
       bVppScaling = false;
       uVppScalingMode = MFX_SCALING_MODE_DEFAULT;
