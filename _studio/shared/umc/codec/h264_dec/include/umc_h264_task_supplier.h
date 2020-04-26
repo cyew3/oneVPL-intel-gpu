@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2020 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -730,8 +730,8 @@ inline int32_t CalculateDPBSize(uint8_t & level_idc, int32_t width, int32_t heig
             break;
 #endif
         default:
-            // Relax resolution constraints up to 4K when
-            // level_idc reaches 5.1+.  That is,
+            // We don't support level greater than 5.2 but
+            // relax resolution constrains up to 4K, hence
             // use value 696320 which is from level 6+ for
             // the calculation of the DPB size when level_idc
             // reaches 5.1+ but dpbSize is still less

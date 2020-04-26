@@ -431,6 +431,7 @@ std::string DumpContext::dump(const std::string structName, const mfxInfoMFX &mf
     str += structName + ".EnableReallocRequest=" + ToString(mfx.EnableReallocRequest) + "\n";
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     str += structName + ".FilmGrain=" + ToString(mfx.FilmGrain) + "\n";
+    str += structName + ".IgnoreLevelConstrain=" + ToString(mfx.IgnoreLevelConstrain) + "\n";
 #endif
     str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(mfx.reserved2) + "\n";
     str += structName + ".JPEGChromaFormat=" + ToString(mfx.JPEGChromaFormat) + "\n";
