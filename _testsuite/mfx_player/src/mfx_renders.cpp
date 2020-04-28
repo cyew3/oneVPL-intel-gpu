@@ -1499,11 +1499,17 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
             break;
         case MFX_FOURCC_P010 :
         case MFX_FOURCC_YUV420_16 :
-            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 3;
-            if (skipChroma)
-                nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
+            // Y size
+            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
+            if (!skipChroma)
+            {
+                // nFrameSize = Y size + U size + V size
+                // U size = V size = (W+1)/2 * (H+1)/2
+                mfxU64 ChromaWidth = (surface->Info.CropW + 1) / 2;
+                mfxU64 ChromaHeight = (surface->Info.CropH + 1) / 2;
+                nFrameSize += (mfxU64)(ChromaWidth * ChromaHeight * 2) * 2;
+            }
             break;
-
         case MFX_FOURCC_P210 :
         case MFX_FOURCC_YUV422_16 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4;
