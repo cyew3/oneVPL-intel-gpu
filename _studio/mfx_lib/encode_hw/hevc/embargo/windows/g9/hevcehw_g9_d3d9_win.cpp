@@ -198,6 +198,11 @@ void DDI_D3D9::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         mfxStatus sts = m_pDevice->Init(pPar);
         MFX_CHECK_STS(sts);
 
+        auto& caps = Glob::EncodeCaps::GetOrConstruct(strg);
+        auto& hwCaps = dynamic_cast<ENCODE_CAPS_HEVC&>(caps);
+        sts = m_pDevice->QueryCaps(&hwCaps, sizeof(hwCaps));
+        MFX_CHECK_STS(sts);
+
         {
             auto pInfo = make_storable<mfxFrameAllocRequest>(mfxFrameAllocRequest{});
 

@@ -254,6 +254,8 @@ void DeviceDX11::SetDevice(const DDIExecParam& ep)
     m_height                        = in.desc.SampleHeight;
     m_configDecoderSpecific         = in.config.ConfigDecoderSpecific;
     m_guidConfigBitstreamEncryption = in.config.guidConfigBitstreamEncryption;
+
+    m_caps.clear();
 }
 
 mfxStatus DeviceDX11::Execute(const DDIExecParam& ep)
