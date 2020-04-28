@@ -46,7 +46,6 @@ Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 #include "mfxvp9.h"
 
-#include "umc_profile_level.h"
 #include "mfx_multi_decoder.h"
 #include "mfx_multi_reader.h"
 #include "mfx_jpeg_encode_wrap.h"
@@ -130,22 +129,6 @@ inline bool IsInteger(const vm_char *c)
     return !s.empty() && s.find_first_not_of("0123456789") == std::string::npos;
 #endif
 }
-
-inline mfxU8 MapUMCtoMFXCodecProfileMPEG2(uint8_t profile)
-{
-    switch (profile)
-    {
-    case UMC::MPEG2_PROFILE_SIMPLE:
-        return MFX_PROFILE_MPEG2_SIMPLE;
-    case UMC::MPEG2_PROFILE_MAIN:
-        return MFX_PROFILE_MPEG2_MAIN;
-    case UMC::MPEG2_PROFILE_HIGH:
-        return MFX_PROFILE_MPEG2_HIGH;
-    default:
-        return profile;
-    }
-}
-
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -2464,8 +2447,6 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
     case MFX_CODEC_JPEG :
         MFX_CHECK_STS(ApplyJpegParams());
         break;
-    case MFX_CODEC_MPEG2:
-        pMFXParams->mfx.CodecProfile = MapUMCtoMFXCodecProfileMPEG2(pMFXParams->mfx.CodecProfile);
     default:
         MFX_CHECK_STS(ApplyBitrateParams());
         break;
