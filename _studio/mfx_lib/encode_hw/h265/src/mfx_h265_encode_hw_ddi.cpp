@@ -994,9 +994,7 @@ void FillSpsBuffer(
         }
         else
         {
-            if (((par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID) &&
-                ((par.mfx.GopRefDist == 2) || (par.mfx.GopRefDist == 4) || (par.mfx.GopRefDist == 8))) ||
-                (par.isTL() && par.NumTL() < 4))
+            if ((par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID) || (par.isTL() && par.NumTL() < 4))
                 sps.HierarchicalFlag = 1;
 
             if (IsOn(par.mfx.LowPower) && sps.LowDelayMode && sps.HierarchicalFlag)
