@@ -193,14 +193,14 @@ protected:
     std::vector<ENCODE_PACKEDHEADER_DATA>::iterator m_cur;
     std::vector<ENCODE_COMPBUFFERDESC>              m_cbd;
     std::array<mfxU32, NUM_RES>                     m_resId;
-    ENCODE_SET_SEQUENCE_PARAMETERS_AV1              m_sps;
-    ENCODE_SET_PICTURE_PARAMETERS_AV1               m_pps;
+    ENCODE_SET_SEQUENCE_PARAMETERS_AV1              m_sps = {};
+    ENCODE_SET_PICTURE_PARAMETERS_AV1               m_pps = {};
     std::vector<ENCODE_SET_TILE_GROUP_HEADER_AV1>   m_tile_groups_global;
     std::vector<ENCODE_SET_TILE_GROUP_HEADER_AV1>   m_tile_groups_task;
     std::vector<UCHAR>                              m_segment_map;
-    ENCODE_INPUT_DESC                               m_inputDesc;
-    ENCODE_EXECUTE_PARAMS                           m_execPar;
-    ENCODE_QUERY_STATUS_PARAMS_DESCR                m_query;
+    ENCODE_INPUT_DESC                               m_inputDesc = {};
+    ENCODE_EXECUTE_PARAMS                           m_execPar   = {};
+    ENCODE_QUERY_STATUS_PARAMS_DESCR                m_query     = {};
     std::map<mfxU32, std::vector<mfxHDLPair>>       m_resources;
     std::vector<mfxHDL>                             m_taskRes;
 

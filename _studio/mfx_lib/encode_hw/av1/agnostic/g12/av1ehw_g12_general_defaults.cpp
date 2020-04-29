@@ -353,7 +353,7 @@ public:
             return mfx.TargetKbps * std::max<const mfxU32>(1, mfx.BRCParamMultiplier);
         }
 
-        mfxU32 frN = 0, frD = 0, maxBR = 0xffffffff;
+        mfxU32 frN = 30, frD = 1, maxBR = 0xffffffff;
 
         SetIf(maxBR, !!mfx.CodecLevel, [&]() { return GetMaxKbpsByLevel(par.mvp); });
 
