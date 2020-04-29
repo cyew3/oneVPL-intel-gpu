@@ -377,7 +377,7 @@ inline void SetTileInfo(
     tileInfo.uniform_tile_spacing_flag = CO2Flag(av1Par.UniformTileSpacing);
     tileInfo.context_update_tile_id = av1Par.ContextUpdateTileIdPlus1 - 1;
 
-    tileInfo.TileSizeBytes = caps.tile_size_bytes_minus_1 + 1;
+    tileInfo.TileSizeBytes = caps.TileSizeBytesMinus1 + 1;
 }
 
 inline void SetTileGroupsInfo(

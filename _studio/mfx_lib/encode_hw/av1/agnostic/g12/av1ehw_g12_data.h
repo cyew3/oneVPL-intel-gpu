@@ -678,6 +678,11 @@ namespace Gen12
     using RefListType = std::array<mfxU8, REFS_PER_FRAME>;
     using DpbRefreshType = std::array<mfxU8, NUM_REF_FRAMES>;
 
+    inline bool IsValidRefFrame(const RefListType refList, mfxU8 refFrame)
+    {
+        return IsValid(refList[refFrame - LAST_FRAME]);
+    }
+
     struct RepeatedFrameInfo
     {
         mfxU8  FrameToShowMapIdx = 0;

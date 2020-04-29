@@ -470,14 +470,46 @@ void DDIPacker::FillPpsBuffer(
     pps.temporal_id = 0;
 }
 
+inline void FillSearchIdx(
+    RefFrameCtrl& refFrameCtrl, mfxU8 idx, mfxU8 refFrame)
+{
+    switch (idx)
+    {
+    case 0:
+        refFrameCtrl.fields.search_idx0 = refFrame;
+        break;
+    case 1:
+        refFrameCtrl.fields.search_idx1 = refFrame;
+        break;
+    case 2:
+        refFrameCtrl.fields.search_idx2 = refFrame;
+        break;
+    case 3:
+        refFrameCtrl.fields.search_idx3 = refFrame;
+        break;
+    case 4:
+        refFrameCtrl.fields.search_idx4 = refFrame;
+        break;
+    case 5:
+        refFrameCtrl.fields.search_idx5 = refFrame;
+        break;
+    case 6:
+        refFrameCtrl.fields.search_idx6 = refFrame;
+        break;
+    default:
+        assert(!"Invalid index");
+    }
+}
+
 inline void FillRefCtrlL0(
     const TaskCommonPar& task
     , ENCODE_SET_PICTURE_PARAMETERS_AV1& pps)
 {
-    for (mfxU8 i = 0; i < BWDREF_FRAME - LAST_FRAME; i++)
+    mfxU8 idx = 0;
+    for (mfxU8 refFrame = LAST_FRAME; refFrame < BWDREF_FRAME; refFrame++)
     {
-        if (IsValid(task.RefList[i]))
-            pps.ref_frame_ctrl_l0 |= 1 << i;
+        if (IsValidRefFrame(task.RefList, refFrame)) // Assume search order is same as ref_list order. Todo: to align the search order with HW capability.
+            FillSearchIdx(pps.ref_frame_ctrl_l0, idx++, refFrame);
     }
 }
 
@@ -488,10 +520,11 @@ inline void FillRefCtrlL1(
     if (!IsB(task.FrameType))
         return;
 
-    for (mfxU8 i = BWDREF_FRAME - LAST_FRAME; i < REFS_PER_FRAME; i++)
+    mfxU8 idx = 0;
+    for (mfxU8 refFrame = BWDREF_FRAME; refFrame < MAX_REF_FRAMES; refFrame++)
     {
-        if (IsValid(task.RefList[i]))
-            pps.ref_frame_ctrl_l1 |= 1 << i;
+        if (IsValidRefFrame(task.RefList, refFrame)) // Assume search order is same as ref_list order. Todo: to align the search order with HW capability.
+            FillSearchIdx(pps.ref_frame_ctrl_l1, idx++, refFrame);
     }
 }
 
@@ -571,8 +604,8 @@ void DDIPacker::FillPpsBuffer(
 
     //DPB and refs management
     pps.primary_ref_frame = static_cast<UCHAR>(bs_fh.primary_ref_frame);
-    pps.ref_frame_ctrl_l0 = 0;
-    pps.ref_frame_ctrl_l1 = 0;
+    pps.ref_frame_ctrl_l0.value = 0;
+    pps.ref_frame_ctrl_l1.value = 0;
     FillRefParams(task, bs_fh, pps);
 
     //loop filter

@@ -33,20 +33,18 @@ typedef struct tagENCODE_CAPS_AV1
         struct
         {
             UINT   CodingLimitSet            : 1;
-            UINT   reserved1b                : 1;
             UINT   ForcedSegmentationSupport : 1;
             UINT   AutoSegmentationSupport   : 1;
             UINT   BRCReset                  : 1;
             UINT   TemporalLayerRateCtrl     : 3;
             UINT   DynamicScaling            : 1;
             UINT   NumScalablePipesMinus1    : 4;
-            UINT   reserved                  : 4;
             UINT   UserMaxFrameSizeSupport   : 1;
             UINT   DirtyRectSupport          : 1;
             UINT   MoveRectSupport           : 1;
-            UINT   tile_size_bytes_minus_1   : 2;
+            UINT   TileSizeBytesMinus1       : 2;
             UINT   FrameOBUSupport           : 1;
-            UINT                             : 9;
+            UINT                             : 14;
         };
         UINT       CodingLimits;
     };
@@ -55,10 +53,10 @@ typedef struct tagENCODE_CAPS_AV1
     {
         struct
         {
-            UCHAR   EncodeFunc    : 1;
-            UCHAR   HybridPakFunc : 1;
-            UCHAR   EncFunc       : 1;
-            UCHAR                 : 5;
+            UCHAR   EncodeFunc    : 1; // Enc+Pak
+            UCHAR   HybridPakFunc : 1; // Hybrid Pak function
+            UCHAR   EncFunc       : 1; // Enc only function
+            UCHAR   reserved      : 5; // 0
         };
         UCHAR       CodingFunction;
     };
@@ -77,10 +75,17 @@ typedef struct tagENCODE_CAPS_AV1
         UCHAR SegmentFeatureSupport;
     };
 
-    UINT            MaxPicWidth;
-    UINT            MaxPicHeight;
-    USHORT          MaxNumOfDirtyRect;
-    USHORT          MaxNumOfMoveRect;
+    USHORT reserved16b;
+    UINT   MaxPicWidth;
+    UINT   MaxPicHeight;
+
+    UCHAR  MaxNum_ReferenceL0_P;  // [1..7]
+    UCHAR  MaxNum_ReferenceL0_B;  // [1..7]
+    UCHAR  MaxNum_ReferenceL1_B;  // [1..7]
+    UCHAR  reserved8b;
+
+    USHORT MaxNumOfDirtyRect;
+    USHORT MaxNumOfMoveRect;
 
     union {
         struct {
@@ -122,12 +127,45 @@ typedef struct tagENCODE_CAPS_AV1
             UCHAR   eight_bits  : 1;  // support 8 bits
             UCHAR   ten_bits    : 1;  // support 10 bits
             UCHAR   twelve_bits : 1;  // support 12 bits
-            UCHAR   reserved    : 7;  // [0]
+            UCHAR   reserved    : 5;  // [0]
         } fields;
         UINT value;
     } BitDepthSupportFlags;
 
-    UINT            reserved32b[8];
+    union {
+        struct {
+            UCHAR  EIGHTTAP        : 1;
+            UCHAR  EIGHTTAP_SMOOTH : 1;
+            UCHAR  EIGHTTAP_SHARP  : 1;
+            UCHAR  BILINEAR        : 1;
+            UCHAR  SWITCHABLE      : 1;
+            UCHAR  reserved        : 3;  // [0]
+        } fields;
+        UCHAR value;
+    } SupportedInterpolationFilters;
+
+    UCHAR  MinSegIdBlockSizeAccepted;
+
+    union {
+        struct {
+            UINT  CQP           : 1;
+            UINT  CBR           : 1;
+            UINT  VBR           : 1;
+            UINT  AVBR          : 1;
+            UINT  ICQ           : 1;
+            UINT  VCM           : 1;
+            UINT  QVBR          : 1;
+            UINT  CQL           : 1;
+            UINT  reserved1     : 8; // [0]
+            UINT  SlidingWindow : 1;
+            UINT  LowDelay      : 1;
+            UINT  reserved2     : 14; // [0]
+        } fields;
+        UINT value;
+    } SupportedRateControlMethods;
+
+    UINT   reserved32b[16];
+
 } ENCODE_CAPS_AV1;
 
 #if !defined(MFX_VA_LINUX)
@@ -163,9 +201,13 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_AV1
 {
     UCHAR  seq_profile; // [0]
     UCHAR  seq_level_idx; // [0..23, 31]
+
     USHORT GopPicSize;
+
     UCHAR  TargetUsage;
     UCHAR  RateControlMethod;
+    USHORT reserved16b;
+
     UINT   TargetBitRate[8]; // One per temporal layer
     UINT   MaxBitRate;
     UINT   MinBitRate;
@@ -182,9 +224,8 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_AV1
             UINT bResetBRC            : 1;
             UINT bStillPicture        : 1;
             UINT bUseRawReconRef      : 1;
-            UINT reserved1b           : 1;
             UINT DisplayFormatSwizzle : 1; // [0]
-            UINT bReserved            : 27;
+            UINT bReserved            : 28;
         } fields;
         UINT value;
     } SeqFlags;
@@ -220,10 +261,11 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_AV1
     } CodingToolFlags;
 
     UCHAR order_hint_bits_minus_1; // [0..7]
+
     UCHAR reserved8b1;
     UCHAR reserved8b2;
     UCHAR reserved8b3;
-    UINT  reserved32b[8];
+    UINT  reserved32b[16];
 } ENCODE_SET_SEQUENCE_PARAMETERS_AV1;
 
 typedef struct _DXVA_Intel_Seg_AV1
@@ -267,37 +309,42 @@ typedef struct {
     int8_t invalid;
 } DXVA_Warped_Motion_Params_AV1;
 
+typedef union{
+    struct
+    {
+        UINT search_idx0 : 3;
+        UINT search_idx1 : 3;
+        UINT search_idx2 : 3;
+        UINT search_idx3 : 3;
+        UINT search_idx4 : 3;
+        UINT search_idx5 : 3;
+        UINT search_idx6 : 3;
+        UINT ReservedField : 11; //[0]
+    } fields;
+    UINT value;
+} RefFrameCtrl;
+
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
 {
     USHORT frame_width_minus1;   // [15..2^16-1]
     USHORT frame_height_minus1;  // [15..2^16-1]
     UCHAR  NumTileGroupsMinus1;  // [0..255]
     UCHAR  reserved8b;           // [0]
+
     UCHAR  CurrOriginalPic;      // [0..127]
     UCHAR  CurrReconstructedPic; // [0..11]
     UCHAR  RefFrameList[8];      // [0..11, 0xFF]
     UCHAR  ref_frame_idx[7];     // [0..7]
+    UCHAR  Reserved8b2;
 
-    union
-    {
-        struct
-        {
-            UCHAR LAST_FRAME    : 1;
-            UCHAR LAST2_FRAME   : 1;
-            UCHAR LAST3_FRAME   : 1;
-            UCHAR GOLDEN_FRAME  : 1;
-            UCHAR BWDREF_FRAME  : 1;
-            UCHAR ALTREF_FRAME  : 1;
-            UCHAR ALTREF2_FRAME : 1;
-            UCHAR ReservedField : 1;
-        } fields;
-        UCHAR value;
-    } RefFrameBiasFlags;
+    UCHAR  primary_ref_frame;    // [0..7]
+    UCHAR  reserved8b3;
+    UCHAR  reserved8b4;
 
-    UCHAR primary_ref_frame; // [0..7]
-    UCHAR ref_frame_ctrl_l0; // [0..0x7F]
-    UCHAR ref_frame_ctrl_l1; // [0..0x7F]
-    UCHAR order_hint;
+    UCHAR  order_hint;
+
+    RefFrameCtrl  ref_frame_ctrl_l0;
+    RefFrameCtrl  ref_frame_ctrl_l1;
 
     union
     {
@@ -315,7 +362,8 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
             UINT SegIdBlockSize               : 2; // [0..3]
             UINT EnableFrameOBU               : 1;
             UINT DisableFrameRecon            : 1;
-            UINT ReservedField                : 18;
+            UINT LongTermReference            : 1;
+            UINT ReservedField                : 17;
         } fields;
         UINT value;
     } PicFlags;
@@ -344,22 +392,23 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
     CHAR ref_deltas[8];  // [-63..63]
     CHAR mode_deltas[2]; // [-63..63]
 
-                         // quantization
+    // quantization
     USHORT base_qindex;  // [0..255]
-    CHAR   y_dc_delta_q; // [-63..63]
+    CHAR   y_dc_delta_q; // [-15..15]
     CHAR   u_dc_delta_q; // [-63..63]
     CHAR   u_ac_delta_q; // [-63..63]
     CHAR   v_dc_delta_q; // [-63..63]
     CHAR   v_ac_delta_q; // [-63..63]
-    UCHAR MinBaseQIndex; // [1..255]
-    UCHAR MaxBaseQIndex; // [1..255]
-    UCHAR reserved8b2;   // [0]
 
-                         // quantization_matrix
+    UCHAR  MinBaseQIndex; // [1..255]
+    UCHAR  MaxBaseQIndex; // [1..255]
+    UCHAR  reserved8b2;   // [0]
+
+    // quantization_matrix
     union {
         struct {
             USHORT using_qmatrix : 1; // not supported for now
-                                      // valid only when using_qmatrix is 1.
+            // valid only when using_qmatrix is 1.
             USHORT qm_y          : 4; // [0..15]
             USHORT qm_u          : 4; // [0..15]
             USHORT qm_v          : 4; // [0..15]
@@ -384,7 +433,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
             UINT delta_lf_multi        : 1; // [0..1]
 
             // read_tx_mode
-            UINT tx_mode               : 2; // [0..3]
+            UINT tx_mode               : 2; // [2], Only tx_mode = 2 is allowed for VDEnc encoder
 
             // read_frame_reference_mode
             UINT reference_mode        : 2; // [0..3]
@@ -430,11 +479,17 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
     // global motion
     DXVA_Warped_Motion_Params_AV1 wm[7];
 
-    UINT QIndexBitOffset;
-    UINT SegmentationBitOffset;
-    UINT LoopFilterParamsBitOffset;
-    UINT CDEFParamsBitOffset;
+    UINT  QIndexBitOffset;
+    UINT  SegmentationBitOffset;
+    UINT  LoopFilterParamsBitOffset;
+    UINT  CDEFParamsBitOffset;
     UCHAR CDEFParamsSizeInBits;
+    UCHAR reserved8bits0;
+    UCHAR reserved8bits1;
+    UCHAR reserved8bits2;
+    UINT  FrameHdrOBUSizeByteOffset;
+
+    UINT  StatusReportFeedbackNumber;
 
     // Tile Group OBU header
     union
@@ -450,15 +505,10 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_AV1
         UCHAR value;
     } TileGroupOBUHdrInfo;
 
-    UCHAR reserved8bits1;
-    UCHAR reserved8bits2;
-
-    UINT FrameHdrOBUSizeByteOffset;
-
-    UINT StatusReportFeedbackNumber;
+    UCHAR reserved8bs1; // [0]
+    UCHAR reserved8bs2; // [0]
 
     // Skip Frames
-    UCHAR reserved8bs; // [0]
     UCHAR NumSkipFrames;
     UINT  SkipFramesSizeInBytess;
 
@@ -478,7 +528,6 @@ typedef struct tagENCODE_SET_TILE_GROUP_HEADER_AV1
     UCHAR tg_start; // [0..127]
     UCHAR tg_end; // [0..127]
     USHORT reserved16b;
-
     UINT reserved32b[9];
 } ENCODE_SET_TILE_GROUP_HEADER_AV1;
 

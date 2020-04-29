@@ -113,7 +113,7 @@ DECL_START(ENCODE_CAPS_AV1)
     TRACE_AUTO(UserMaxFrameSizeSupport   );
     TRACE_AUTO(DirtyRectSupport          );
     TRACE_AUTO(MoveRectSupport           );
-    TRACE_AUTO(tile_size_bytes_minus_1   );
+    TRACE_AUTO(TileSizeBytesMinus1);
     TRACE_AUTO(FrameOBUSupport           );
 
     TRACE_AUTO(EncodeFunc                );
@@ -131,8 +131,12 @@ DECL_START(ENCODE_CAPS_AV1)
 
     TRACE_AUTO(MaxPicWidth               );
     TRACE_AUTO(MaxPicHeight              );
+    TRACE_AUTO(MaxNum_ReferenceL0_P      );
+    TRACE_AUTO(MaxNum_ReferenceL0_B      );
+    TRACE_AUTO(MaxNum_ReferenceL1_B      );
     TRACE_AUTO(MaxNumOfDirtyRect         );
     TRACE_AUTO(MaxNumOfMoveRect          );
+    TRACE_AUTO(MinSegIdBlockSizeAccepted );
 
     TRACE_AUTO(AV1ToolSupportFlags.fields.still_picture             );
     TRACE_AUTO(AV1ToolSupportFlags.fields.use_128x128_superblock    );
@@ -158,6 +162,23 @@ DECL_START(ENCODE_CAPS_AV1)
     TRACE_AUTO(BitDepthSupportFlags.fields.eight_bits               );
     TRACE_AUTO(BitDepthSupportFlags.fields.ten_bits                 );
     TRACE_AUTO(BitDepthSupportFlags.fields.twelve_bits              );
+
+    TRACE_AUTO(SupportedInterpolationFilters.fields.EIGHTTAP        );
+    TRACE_AUTO(SupportedInterpolationFilters.fields.EIGHTTAP_SMOOTH );
+    TRACE_AUTO(SupportedInterpolationFilters.fields.EIGHTTAP_SHARP  );
+    TRACE_AUTO(SupportedInterpolationFilters.fields.BILINEAR        );
+    TRACE_AUTO(SupportedInterpolationFilters.fields.SWITCHABLE      );
+
+    TRACE_AUTO(SupportedRateControlMethods.fields.CQP               );
+    TRACE_AUTO(SupportedRateControlMethods.fields.CBR               );
+    TRACE_AUTO(SupportedRateControlMethods.fields.VBR               );
+    TRACE_AUTO(SupportedRateControlMethods.fields.AVBR              );
+    TRACE_AUTO(SupportedRateControlMethods.fields.ICQ               );
+    TRACE_AUTO(SupportedRateControlMethods.fields.VCM               );
+    TRACE_AUTO(SupportedRateControlMethods.fields.QVBR              );
+    TRACE_AUTO(SupportedRateControlMethods.fields.CQL               );
+    TRACE_AUTO(SupportedRateControlMethods.fields.SlidingWindow     );
+    TRACE_AUTO(SupportedRateControlMethods.fields.LowDelay);
 DECL_END
 #undef FIELD_FORMAT
 
@@ -306,18 +327,23 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_AV1)
     TRACE_ARRAY_ROW("%d", RefFrameList, 8            );
     TRACE_ARRAY_ROW("%d", ref_frame_idx, 7           );
 
-    TRACE_AUTO(RefFrameBiasFlags.fields.LAST_FRAME   );
-    TRACE_AUTO(RefFrameBiasFlags.fields.LAST2_FRAME  );
-    TRACE_AUTO(RefFrameBiasFlags.fields.LAST3_FRAME  );
-    TRACE_AUTO(RefFrameBiasFlags.fields.GOLDEN_FRAME );
-    TRACE_AUTO(RefFrameBiasFlags.fields.BWDREF_FRAME );
-    TRACE_AUTO(RefFrameBiasFlags.fields.ALTREF_FRAME );
-    TRACE_AUTO(RefFrameBiasFlags.fields.ALTREF2_FRAME);
-
     TRACE_AUTO(primary_ref_frame                     );
-    TRACE_AUTO(ref_frame_ctrl_l0                     );
-    TRACE_AUTO(ref_frame_ctrl_l1                     );
     TRACE_AUTO(order_hint                            );
+    TRACE_AUTO(ref_frame_ctrl_l0.fields.search_idx0  );
+    TRACE_AUTO(ref_frame_ctrl_l0.fields.search_idx1  );
+    TRACE_AUTO(ref_frame_ctrl_l0.fields.search_idx2  );
+    TRACE_AUTO(ref_frame_ctrl_l0.fields.search_idx3  );
+    TRACE_AUTO(ref_frame_ctrl_l0.fields.search_idx4  );
+    TRACE_AUTO(ref_frame_ctrl_l0.fields.search_idx5  );
+    TRACE_AUTO(ref_frame_ctrl_l0.fields.search_idx6  );
+
+    TRACE_AUTO(ref_frame_ctrl_l1.fields.search_idx0  );
+    TRACE_AUTO(ref_frame_ctrl_l1.fields.search_idx1  );
+    TRACE_AUTO(ref_frame_ctrl_l1.fields.search_idx2  );
+    TRACE_AUTO(ref_frame_ctrl_l1.fields.search_idx3  );
+    TRACE_AUTO(ref_frame_ctrl_l1.fields.search_idx4  );
+    TRACE_AUTO(ref_frame_ctrl_l1.fields.search_idx5  );
+    TRACE_AUTO(ref_frame_ctrl_l1.fields.search_idx6  );
 
     TRACE_AUTO(PicFlags.fields.frame_type                  );
     TRACE_AUTO(PicFlags.fields.error_resilient_mode        );
@@ -331,6 +357,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_AV1)
     TRACE_AUTO(PicFlags.fields.SegIdBlockSize              );
     TRACE_AUTO(PicFlags.fields.EnableFrameOBU              );
     TRACE_AUTO(PicFlags.fields.DisableFrameRecon           );
+    TRACE_AUTO(PicFlags.fields.LongTermReference           );
 
     TRACE_ARRAY_ROW("%d", filter_level, 2                  );
     TRACE_AUTO(filter_level_u                              );
