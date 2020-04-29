@@ -1469,15 +1469,15 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
     {
         case MFX_FOURCC_NV12 :
         case MFX_FOURCC_YV12 :
-            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) + ((surface->Info.CropH + 1) >> 1)*((surface->Info.CropW + 1) >> 1) * 2; // * 3 / 2;
-            if (skipChroma)
-                nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH);
+            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH);
+            if (!skipChroma)
+                nFrameSize += (mfxU64)(((surface->Info.CropW + 1) >> 1) * ((surface->Info.CropH + 1) >> 1)) * 2;
             break;
         case MFX_FOURCC_NV16 :
         case MFX_FOURCC_YV16 :
-            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
-            if (skipChroma)
-                nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH);
+            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH);
+            if (!skipChroma)
+                nFrameSize += (mfxU64)(((surface->Info.CropW + 1) >> 1) * surface->Info.CropH) * 2;
             break;
         case MFX_FOURCC_RGB3 :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 3 ;
@@ -1499,34 +1499,26 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
             break;
         case MFX_FOURCC_P010 :
         case MFX_FOURCC_YUV420_16 :
-            // Y size
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
             if (!skipChroma)
-            {
-                // nFrameSize = Y size + U size + V size
-                // U size = V size = (W+1)/2 * (H+1)/2
-                mfxU64 ChromaWidth = (surface->Info.CropW + 1) / 2;
-                mfxU64 ChromaHeight = (surface->Info.CropH + 1) / 2;
-                nFrameSize += (mfxU64)(ChromaWidth * ChromaHeight * 2) * 2;
-            }
+                nFrameSize += (mfxU64)(((surface->Info.CropW + 1) >> 1) * ((surface->Info.CropH + 1) >> 1)) * 4;
             break;
         case MFX_FOURCC_P210 :
         case MFX_FOURCC_YUV422_16 :
-            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4;
-            if (skipChroma)
-                nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
+            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
+            if (!skipChroma)
+                nFrameSize += (mfxU64)(((surface->Info.CropW + 1) >> 1) * surface->Info.CropH) * 4;
             break;
-
         case MFX_FOURCC_YUV444_16 :
-            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 6;
-            if (skipChroma)
-                nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
+            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
+            if (!skipChroma)
+                nFrameSize += (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4;
             break;
         default:
             vm_char ar[] = {*(0 + (char*)&surface->Info.FourCC),
                           *(1 + (char*)&surface->Info.FourCC),
                           *(2 + (char*)&surface->Info.FourCC),
-                          *(3 + (char*)&surface->Info.FourCC), 
+                          *(3 + (char*)&surface->Info.FourCC),
                           0};
 
             MFX_TRACE_AND_EXIT(MFX_ERR_UNSUPPORTED, (VM_STRING("ERROR: unsupported surface->Info.FourCC = %s\n"), ar));
