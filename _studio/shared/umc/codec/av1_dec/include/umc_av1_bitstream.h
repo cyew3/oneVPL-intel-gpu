@@ -44,7 +44,7 @@ namespace UMC_AV1_DECODER
         void ReadByteAlignment();
         uint64_t GetLE(uint32_t);
         void ReadSequenceHeader(SequenceHeader&);
-        void ReadUncompressedHeader(FrameHeader&, SequenceHeader const&, FrameHeader const*, DPBType const&, OBUHeader const&);
+        void ReadUncompressedHeader(FrameHeader&, SequenceHeader const&, DPBType const&, OBUHeader const&, uint32_t&);
 
         using UMC_VP9_DECODER::VP9Bitstream::VP9Bitstream;
 

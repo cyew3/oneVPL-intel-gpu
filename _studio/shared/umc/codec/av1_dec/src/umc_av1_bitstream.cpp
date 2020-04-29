@@ -1823,7 +1823,7 @@ namespace UMC_AV1_DECODER
         AV1D_LOG("[-]: %d", (uint32_t)bs.BitsDecoded());
     }
 
-    void AV1Bitstream::ReadUncompressedHeader(FrameHeader& fh, SequenceHeader const& sh, FrameHeader const* prev_fh, DPBType const& frameDpb, OBUHeader const& obuHeader)
+    void AV1Bitstream::ReadUncompressedHeader(FrameHeader& fh, SequenceHeader const& sh, DPBType const& frameDpb, OBUHeader const& obuHeader, uint32_t& PreFrame_id)
     {
         using UMC_VP9_DECODER::REF_FRAMES_LOG2;
 
@@ -1947,12 +1947,11 @@ namespace UMC_AV1_DECODER
             {
                 // check current_frame_id as described in AV1 spec 6.8.2
                 const uint32_t idLen = sh.idLen;
-                const uint32_t prevFrameId = prev_fh->current_frame_id;
-                const int32_t diffFrameId = fh.current_frame_id > prevFrameId ?
-                    fh.current_frame_id - prevFrameId :
-                    (1 << idLen) + fh.current_frame_id - prevFrameId;
+                const int32_t diffFrameId = fh.current_frame_id > PreFrame_id ?
+                    fh.current_frame_id - PreFrame_id :
+                    (1 << idLen) + fh.current_frame_id - PreFrame_id;
 
-                if (fh.current_frame_id == prevFrameId ||
+                if (fh.current_frame_id == PreFrame_id ||
                     diffFrameId >= (1 << (idLen - 1)))
                 {
                     VM_ASSERT("current_frame_id is incompliant to AV1 spec!");
@@ -1962,6 +1961,7 @@ namespace UMC_AV1_DECODER
                 //  check and mark ref frames as not valid as described in "Reference frame marking process" AV1 spec 5.9.4
                 av1_mark_ref_frames(sh, fh, frameDpb);
             }
+            PreFrame_id = fh.current_frame_id;
         }
 
 #if UMC_AV1_DECODER_REV >= 8500

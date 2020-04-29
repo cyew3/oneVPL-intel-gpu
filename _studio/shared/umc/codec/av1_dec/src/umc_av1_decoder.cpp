@@ -41,6 +41,7 @@ namespace UMC_AV1_DECODER
         , Curr(new AV1DecoderFrame{})
         , Curr_temp(new AV1DecoderFrame{})
         , Repeat_show(0)
+        , PreFrame_id(0)
     {
     }
 
@@ -249,6 +250,7 @@ namespace UMC_AV1_DECODER
                     }
                 }
             }
+            refs_temp = frameDPB;
             if (pPrevFrame)
             {
                 DPBType & prevFrameDPB = pPrevFrame->frame_dpb;
@@ -354,7 +356,6 @@ namespace UMC_AV1_DECODER
         AV1DecoderFrame* pPrevFrame = FindFrameByUID(counter - 1);
         AV1DecoderFrame* pFrameInProgress = FindFrameInProgress();
         DPBType updated_refs;
-        FrameHeader const* prev_fh = 0;
         UMC::MediaData tmper = *in;
 
         if ((tmper.GetDataSize() >= MINIMAL_DATA_SIZE) && pPrevFrame && !pFrameInProgress)
@@ -378,7 +379,6 @@ namespace UMC_AV1_DECODER
                 updated_refs = prevFrameDPB;
                 Repeat_show = 0;
             }
-            prev_fh = &(pPrevFrame->GetFrameHeader());
             Curr_temp = Curr;
         }
         if (!pPrevFrame)
@@ -450,7 +450,7 @@ namespace UMC_AV1_DECODER
                         // we read only first entry of uncompressed header in the frame
                         // each subsequent copy of uncompressed header (i.e. OBU_REDUNDANT_FRAME_HEADER) must be exact copy of first entry by AV1 spec
                         // TODO: [robust] maybe need to add check that OBU_REDUNDANT_FRAME_HEADER contains copy of OBU_FRAME_HEADER
-                        bs.ReadUncompressedHeader(fh, *sequence_header, prev_fh, updated_refs, obuInfo.header);
+                        bs.ReadUncompressedHeader(fh, *sequence_header, updated_refs, obuInfo.header, PreFrame_id);
                         gotFrameHeader = true;
                     }
                     if (obuType != OBU_FRAME)

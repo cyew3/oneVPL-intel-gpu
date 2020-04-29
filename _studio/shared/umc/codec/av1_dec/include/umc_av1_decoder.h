@@ -162,6 +162,7 @@ namespace UMC_AV1_DECODER
         AV1DecoderFrame*                Curr; // store current frame for Poutput
         AV1DecoderFrame*                Curr_temp; // store current frame insist double updateDPB
         uint32_t                        Repeat_show; // show if current frame is repeated frame
+        uint32_t                        PreFrame_id;//id of previous frame
         DPBType                         refs_temp; // previous updated frameDPB
     };
 }
