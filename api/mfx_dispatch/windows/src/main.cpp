@@ -546,6 +546,40 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
     // everything is OK. Save pointers to the output variable
     *candidate = 0; // keep this one safe from guard destructor
+
+
+    //===================================
+
+    // MFXVideoCORE_QueryPlatform call creates d3d device handle, so we have handle right after MFXInit and can't accept external handle
+    // This is a temporary workaround which calls close-init to remove that handle
+
+    mfxFunctionPointer *actualTable = (pHandle->impl & MFX_IMPL_AUDIO) ? pHandle->callAudioTable : pHandle->callTable;
+    mfxFunctionPointer pFunc;
+
+    pFunc = actualTable[eMFXClose];
+    mfxRes = (*(mfxStatus(MFX_CDECL *) (mfxSession)) pFunc) (pHandle->session);
+    if (mfxRes != MFX_ERR_NONE)
+        return mfxRes;
+
+    pHandle->session = 0;
+    bool callOldInit = (pHandle->impl & MFX_IMPL_AUDIO) || !actualTable[eMFXInitEx];
+    int initIndex = (callOldInit) ? eMFXInit : eMFXInitEx;
+    pFunc = actualTable[initIndex];
+
+    if (callOldInit)
+    {
+        pHandle->loadStatus = (*(mfxStatus(MFX_CDECL *) (mfxIMPL, mfxVersion *, mfxSession *)) pFunc) (pHandle->impl | pHandle->implInterface, &pHandle->actualApiVersion, &pHandle->session);
+    }
+    else
+    {
+        mfxInitParam initPar = par;
+        initPar.Implementation = pHandle->impl | pHandle->implInterface;
+        initPar.Version = pHandle->actualApiVersion;
+        pHandle->loadStatus = (*(mfxStatus(MFX_CDECL *) (mfxInitParam, mfxSession *)) pFunc) (initPar, &pHandle->session);
+    }
+
+    //===================================
+
     *((MFX_DISP_HANDLE_EX **) session) = pHandle;
 
     return pHandle->loadStatus;
