@@ -310,6 +310,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     pps.BRCMinQp                                = 0;
     pps.SliceSizeInBytes                        = extOpt2.MaxSliceSize;
     pps.bEnableQpAdjustment                     = (IsOn(extOpt2.MBBRC) && par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) ? 1 : 0;
+    pps.DisplayFormatSwizzle                    = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_A2RGB10) || (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4);
 }
 
 
