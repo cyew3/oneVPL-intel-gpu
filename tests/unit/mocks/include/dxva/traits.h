@@ -37,6 +37,16 @@
 
 DEFINE_GUID(DXVA2_Intel_Encode_AVC,
     0x97688186, 0x56a8, 0x4094, 0xb5, 0x43, 0xfc, 0x9d, 0xaa, 0xa4, 0x9f, 0x4b);
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
+DEFINE_GUID(DXVA2_Intel_LowpowerEncode_AV1_420_8b,
+    0x8090a09c, 0x6fc5, 0x48ef, 0x9f, 0x40, 0x65, 0xbf, 0x37, 0xf7, 0xac, 0xc4);
+
+DEFINE_GUID(DXVA2_Intel_LowpowerEncode_AV1_420_10b,
+    0xeea5b11, 0x88c0, 0x4a9f, 0x81, 0xac, 0xb1, 0xf, 0xd6, 0x6b, 0x22, 0xea);
+
+#endif
+
 #endif // !__ENCODING_DDI_H__
 
 DEFINE_GUID(DXVA2_Intel_Encode_HEVC_Main,
@@ -135,10 +145,21 @@ namespace mocks { namespace dxva
 #endif
     >;
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
+    template <GUID const* Id>
+    using is_av1_encoder = std::disjunction<
+          std::is_same<guid<Id>, guid<&DXVA2_Intel_LowpowerEncode_AV1_420_8b> >
+        , std::is_same<guid<Id>, guid<&DXVA2_Intel_LowpowerEncode_AV1_420_10b> >
+    >;
+#endif
+
     template <GUID const* Id>
     using is_encoder = std::disjunction<
-        is_h264_encoder<Id>,
-        is_h265_encoder<Id>
+          is_h264_encoder<Id>
+        , is_h265_encoder<Id>
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
+        , is_av1_encoder<Id>
+#endif
     >;
 
     template <GUID const* Id>
@@ -152,5 +173,10 @@ namespace mocks { namespace dxva
         is_h265_decoder<Id>,
         is_h265_encoder<Id>
     >;
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
+    template <GUID const* Id>
+    using is_av1_codec = is_av1_encoder<Id>;
+#endif
 
 } }

@@ -270,6 +270,7 @@ av1e:
   paths:
   - _studio/mfx_lib/encode_hw/av1
   - _studio/mfx_lib/shared/include/feature_blocks
+  - tests\unit\suites\av1e
   reviewers:
   - stanislav.efremov@intel.com
   - maxim.xue@intel.com

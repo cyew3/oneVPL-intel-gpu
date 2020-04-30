@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,13 @@ namespace mocks { namespace mfx
     struct codecof<id, typename std::enable_if<dxva::is_h265_codec<id>::value>::type>
         : std::integral_constant<unsigned, MFX_CODEC_HEVC>
     {};
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(STRIP_EMBARGO)
+    template <GUID const* id>
+    struct codecof<id, typename std::enable_if<dxva::is_av1_codec<id>::value>::type>
+        : std::integral_constant<unsigned, MFX_CODEC_AV1>
+    {};
+#endif
 
     template <GUID const* id>
     inline
