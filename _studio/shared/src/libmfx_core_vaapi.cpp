@@ -388,6 +388,18 @@ typedef struct {
     { 0x4907, MFX_HW_DG1, MFX_GT2 },
     /* ATS */
     { 0x0201, MFX_HW_ATS, MFX_GT4 },
+    { 0x0202, MFX_HW_ATS, MFX_GT4 },
+    { 0x0203, MFX_HW_ATS, MFX_GT4 },
+    { 0x0204, MFX_HW_ATS, MFX_GT4 },
+    { 0x0205, MFX_HW_ATS, MFX_GT4 },
+    { 0x0206, MFX_HW_ATS, MFX_GT4 },
+    { 0x0207, MFX_HW_ATS, MFX_GT4 },
+    { 0x0208, MFX_HW_ATS, MFX_GT4 },
+    { 0x0209, MFX_HW_ATS, MFX_GT4 },
+    { 0x020A, MFX_HW_ATS, MFX_GT4 },
+    { 0x020B, MFX_HW_ATS, MFX_GT4 },
+    { 0x020C, MFX_HW_ATS, MFX_GT4 },
+    { 0x020D, MFX_HW_ATS, MFX_GT4 },
     /* ADL */
     { 0x4680, MFX_HW_ADL_S,  MFX_GT1 },//ADL-S
     { 0x46A0, MFX_HW_ADL_P,  MFX_GT2 },//ADL-P
