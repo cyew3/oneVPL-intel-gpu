@@ -522,54 +522,33 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             return CommonCORE::AllocFrames(request, response);
         else
         {
-            // external allocator
-            if (m_bSetExtFrameAlloc)
+            // make 'fake' Alloc call to retrieve memId's of surfaces already allocated by app
+            bool isExtAllocatorCallAllowed = (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME) && (request->Type & MFX_MEMTYPE_FROM_DECODE);
+                // external allocator
+            if (m_bSetExtFrameAlloc && isExtAllocatorCallAllowed)
             {
                 sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis, &temp_request, response);
+                MFX_CHECK_STS(sts);
 
-                // if external allocator cannot allocate d3d frames - use default memory allocator
-                if (MFX_ERR_UNSUPPORTED == sts || MFX_ERR_MEMORY_ALLOC == sts)
-                {
-                    // Default Allocator is used for internal memory allocation only
-                    if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME)
-                        return sts;
-                    m_bUseExtAllocForHWFrames = false;
-                    sts = DefaultAllocFrames(request, response);
-                    MFX_CHECK_STS(sts);
-
-                    return sts;
-                }
                 // let's create video accelerator
-                else if (MFX_ERR_NONE == sts)
-                {
-                    // Checking for unsupported mode - external allocator exist but Device handle doesn't set
-                    if (!m_pDirect3DDeviceManager)
-                        return MFX_ERR_UNSUPPORTED;
+                // Checking for unsupported mode - external allocator exist but Device handle doesn't set
+                if (!m_pDirect3DDeviceManager)
+                    return MFX_ERR_UNSUPPORTED;
 
-                    m_bUseExtAllocForHWFrames = true;
-                    sts = ProcessRenderTargets(request, response, &m_FrameAllocator);
-                    if (response->NumFrameActual < request->NumFrameMin)
-                    {
-                        (*m_FrameAllocator.frameAllocator.Free)(m_FrameAllocator.frameAllocator.pthis, response);
-                        return MFX_ERR_MEMORY_ALLOC;
-                    }
-                    MFX_CHECK_STS(sts);
-
-                    return sts;
-                }
-                // error situation
-                else
+                m_bUseExtAllocForHWFrames = true;
+                sts = ProcessRenderTargets(request, response, &m_FrameAllocator);
+                if (response->NumFrameActual < request->NumFrameMin)
                 {
-                    m_bUseExtAllocForHWFrames = false;
-                    return sts;
+                    (*m_FrameAllocator.frameAllocator.Free)(m_FrameAllocator.frameAllocator.pthis, response);
+                    return MFX_ERR_MEMORY_ALLOC;
                 }
+                MFX_CHECK_STS(sts);
+
+                return sts;
             }
             else
             {
                 // Default Allocator is used for internal memory allocation only
-                if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME)
-                    return MFX_ERR_MEMORY_ALLOC;
-
                 m_bUseExtAllocForHWFrames = false;
                 sts = DefaultAllocFrames(request, response);
                 MFX_CHECK_STS(sts);

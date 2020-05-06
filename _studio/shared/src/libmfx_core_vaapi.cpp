@@ -644,12 +644,12 @@ VAAPIVideoCORE::AllocFrames(
             return TraceFrames(request, response, sts);
         } else
         {
+            bool isExtAllocatorCallAllowed = ((request->Type & MFX_MEMTYPE_EXTERNAL_FRAME) &&
+                (request->Type & MFX_MEMTYPE_FROM_DECODE)) || // 'fake' Alloc call to retrieve memId's of surfaces already allocated by app
+                (request->Type & (MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_FROM_PAK)); // 'fake' Alloc call for FEI ENC/PAC cases to get reconstructed surfaces
             // external allocator
-            if (m_bSetExtFrameAlloc &&
-                request->Info.FourCC != MFX_FOURCC_P8 &&
-                (request->Type & (MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_FROM_PAK)))
+            if (m_bSetExtFrameAlloc && isExtAllocatorCallAllowed)
             {
-                // make 'fake' Alloc call to retrieve memId's of surfaces already allocated by app.
                 sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis, &temp_request, response);
 
                 m_bUseExtAllocForHWFrames = false;

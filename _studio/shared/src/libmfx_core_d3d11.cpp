@@ -422,55 +422,27 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             return CommonCORE::AllocFrames(request, response);
         else
         {
+            // make 'fake' Alloc call to retrieve memId's of surfaces already allocated by app
+            bool isExtAllocatorCallAllowed = (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME) && (request->Type & MFX_MEMTYPE_FROM_DECODE);
             // external allocator
-            eMFXHWType platform = GetHWType();
-            bool useEncodeBindFlag = (request->Type & MFX_MEMTYPE_INTERNAL_FRAME)&&(request->Type & MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) && platform>=MFX_HW_SCL;
-
-            //Temporal solution for SKL only to allocate frames with encoder bind flag using internal allocator
-            if (m_bSetExtFrameAlloc && ! IsBayerFormat(request->Info.FourCC) && !useEncodeBindFlag && !(request->Type & MFX_MEMTYPE_INTERNAL_FRAME))
+            if (m_bSetExtFrameAlloc && isExtAllocatorCallAllowed)
             {
-
                 sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis,request, response);
+                MFX_CHECK_STS(sts);
 
-                // if external allocator cannot allocate d3d frames - use default memory allocator
-                if (MFX_ERR_UNSUPPORTED == sts || MFX_ERR_MEMORY_ALLOC == sts)
-                {
-                    // Default Allocator is used for internal memory allocation only
-                    if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME)
-                        return sts;
-                    m_bUseExtAllocForHWFrames = false;
-                    sts = DefaultAllocFrames(request, response);
-                    MFX_CHECK_STS(sts);
-
-                    return sts;
-                }
                 // let's create video accelerator
-                else if (MFX_ERR_NONE == sts)
+                m_bUseExtAllocForHWFrames = true;
+                RegisterMids(response, request->Type, false);
+                if (response->NumFrameActual < request->NumFrameMin)
                 {
-                    m_bUseExtAllocForHWFrames = true;
-                    //sts = ProcessRenderTargets(request, response, &m_FrameAllocator);
-                    //MFX_CHECK_STS(sts);
-                    RegisterMids(response, request->Type, false);
-                    if (response->NumFrameActual < request->NumFrameMin)
-                    {
-                        (*m_FrameAllocator.frameAllocator.Free)(m_FrameAllocator.frameAllocator.pthis, response);
-                        return MFX_ERR_MEMORY_ALLOC;
-                    }
-                    return sts;
+                    (*m_FrameAllocator.frameAllocator.Free)(m_FrameAllocator.frameAllocator.pthis, response);
+                    return MFX_ERR_MEMORY_ALLOC;
                 }
-                // error situation
-                else
-                {
-                    m_bUseExtAllocForHWFrames = false;
-                    return sts;
-                }
+                return sts;
             }
             else
             {
                 // Default Allocator is used for internal memory allocation only
-                if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME)
-                    return MFX_ERR_MEMORY_ALLOC;
-
                 m_bUseExtAllocForHWFrames = false;
                 sts = DefaultAllocFrames(request, response);
                 MFX_CHECK_STS(sts);
