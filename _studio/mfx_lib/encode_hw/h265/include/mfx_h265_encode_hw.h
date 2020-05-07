@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -202,9 +202,6 @@ protected:
     MfxFrameAllocResponse           m_rec;
     MfxFrameAllocResponse           m_bs;
     MfxFrameAllocResponse           m_CuQp; // for DDI only (not used in VA)
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    mfxFrameAllocResponse          *m_lplaBuffer = nullptr;
-#endif
 
     TaskManager                     m_task;
     Task                            m_lastTask;

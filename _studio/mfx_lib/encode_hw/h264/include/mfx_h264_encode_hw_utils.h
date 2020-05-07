@@ -1072,10 +1072,6 @@ namespace MfxHwH264Encode
             , m_isMBControl(false)
             , m_midMBControl(MID_INVALID)
             , m_idxMBControl(NO_INDEX)
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-            , m_idxLpla(0)
-            , m_midLpla(MID_INVALID)
-#endif
             , m_cmRawForHist(0)
             , m_cmHist(0)
             , m_cmHistSys(0)
@@ -1347,8 +1343,6 @@ namespace MfxHwH264Encode
         mfxMemId m_midMBControl;
         mfxU32   m_idxMBControl;
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
-        mfxU32   m_idxLpla;
-        mfxMemId m_midLpla;
         mfxLplastatus m_lplastatus;
 #endif
         CmSurface2D *         m_cmRawForHist;
@@ -2472,9 +2466,6 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse   m_bit;
         MfxFrameAllocResponse   m_opaqResponse;     // Response for opaq
         MfxFrameAllocResponse   m_histogram;
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-        MfxFrameAllocResponse   m_lplaBuffer;
-#endif
         MFX_ENCODE_CAPS         m_caps;
         mfxStatus               m_failedStatus;
         mfxU32                  m_inputFrameType;

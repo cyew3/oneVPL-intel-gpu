@@ -77,10 +77,6 @@ D3D11Encoder::D3D11Encoder()
 , m_reconQueue()
 , m_bsQueue()
 , m_mbqpQueue()
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-, m_idLpla(0)
-, m_lplaQueue()
-#endif
 , m_forcedCodingFunction(0)
 , m_numSkipFrames(0)
 , m_sizeSkipFrames(0)
@@ -433,9 +429,6 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
     std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_NV12) ?
         m_reconQueue: (type == D3DDDIFMT_INTELENCODE_MBQPDATA) ?
         m_mbqpQueue :
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-        (type == D3DDDIFMT_INTELENCODE_LOOKAHEADDATA) ? m_lplaQueue:
-#endif
         m_bsQueue;
 
     queue.resize(response.NumFrameActual);
@@ -557,12 +550,6 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     m_idMBQP = RES_ID_REFERENCE + (mfxU32)m_reconQueue.size();
     m_resourceCount = mfxU32(RES_ID_REFERENCE + m_reconQueue.size() + task.m_isMBQP);
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    mfxU32 *RES_ID_LPLA = &m_idLpla;
-    m_idLpla = task.m_isMBQP ? m_idMBQP + 1 : m_idMBQP;
-    m_resourceCount += mfxU32(task.m_midLpla != MID_INVALID);
-#endif
-
     if(m_resourceCount > m_resourceList.size())
         m_resourceList.resize(m_resourceCount);
 
@@ -576,11 +563,6 @@ mfxStatus D3D11Encoder::ExecuteImpl(
     {
         m_resourceList[RES_ID_REFERENCE + i] = static_cast<ID3D11Resource *>(m_reconQueue[i].first);
     }
-
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    if (task.m_midLpla != MID_INVALID)
-        m_resourceList[m_idLpla] = static_cast<ID3D11Resource *>(m_lplaQueue[0].first);
-#endif
 
     // [1]. buffers in system memory (configuration buffers)
     //const mfxU32 NUM_COMP_BUFFER = 10;
@@ -683,16 +665,6 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = RES_ID_MBQP;
         m_encodeExecuteParams.NumCompBuffers++;
     }
-
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    if (task.m_midLpla != MID_INVALID)
-    {
-        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_LOOKAHEADDATA;
-        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize = mfxU32(sizeof(mfxU32*));
-        m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer = RES_ID_LPLA;
-        m_encodeExecuteParams.NumCompBuffers++;
-    }
-#endif
 
     if (task.m_isMBControl)
     {
@@ -1344,10 +1316,6 @@ mfxU8 convertDX9TypeToDX11Type(mfxU8 type)
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
     case D3DDDIFMT_INTELENCODE_MBCONTROL:
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBCONTROL;
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    case D3DDDIFMT_INTELENCODE_LOOKAHEADDATA:
-        return D3D11_DDI_VIDEO_ENCODER_BUFFER_LOOKAHEADDATA;
-#endif
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     case D3DDDIFMT_INTELENCODE_SYNCOBJECT:
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_SYNCOBJECT;

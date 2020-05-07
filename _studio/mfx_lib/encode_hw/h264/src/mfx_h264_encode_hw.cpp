@@ -1569,21 +1569,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         //create and initialize lowpower lookahead module
         m_lpLookAhead.reset(new MfxLpLookAhead(m_core));
 
-        //query lookahead data buffer info
-        sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_LOOKAHEADDATA, request);
-        MFX_CHECK_STS(sts);
-
-        request.Type = MFX_MEMTYPE_D3D_INT;
-        request.NumFrameMin = 1;
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxFrameAllocResponse Alloc");
-            sts = m_lplaBuffer.Alloc(m_core, request, false);
-        }
-        MFX_CHECK_STS(sts);
-
-        sts = m_ddi->Register(m_lplaBuffer, D3DDDIFMT_INTELENCODE_LOOKAHEADDATA);
-        MFX_CHECK_STS(sts);
-
         // create ext buffer to set the lookahead data buffer
         mfxVideoParam lplaParam = m_video;
         mfxExtLplaParam extBufLPLA = {};
@@ -1593,7 +1578,6 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         extBufLPLA.InitialDelayInKB = m_video.mfx.InitialDelayInKB;
         extBufLPLA.BufferSizeInKB   = m_video.mfx.BufferSizeInKB;
         extBufLPLA.TargetKbps       = m_video.mfx.TargetKbps;
-        extBufLPLA.response         = &m_lplaBuffer;
 
         mfxExtBuffer *extBuffers[1];
         extBuffers[0] = (mfxExtBuffer*)&extBufLPLA;
@@ -3508,7 +3492,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         //lowpower lookahead submit
         if (m_lpLookAhead)
         {
-            task->m_midLpla = m_lplaBuffer.mids[0];
             sts = m_lpLookAhead->Submit(task->m_yuv);
             MFX_CHECK_STS(sts);
         }

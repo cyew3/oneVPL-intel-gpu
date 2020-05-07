@@ -185,10 +185,6 @@ namespace MfxHwH264Encode
         std::vector<mfxHDLPair>                     m_reconQueue;
         std::vector<mfxHDLPair>                     m_bsQueue;
         std::vector<mfxHDLPair>                     m_mbqpQueue;
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-        mfxU32                                      m_idLpla;
-        std::vector<mfxHDLPair>                     m_lplaQueue;
-#endif
 
         mfxU16                                      m_forcedCodingFunction;
         mfxU8                                       m_numSkipFrames;

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -369,18 +369,6 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
     MFX_CHECK_STS(sts);
-
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    mfxExtLplaParam* pLowpowerLA = ExtBuffer::Get(*par);
-    if (pLowpowerLA)
-    {
-        m_lplaBuffer = pLowpowerLA->response;
-        MFX_CHECK_NULL_PTR1(m_lplaBuffer);
-
-        sts = m_ddi->Register(*m_lplaBuffer, D3DDDIFMT_INTELENCODE_LOOKAHEADDATA);
-        MFX_CHECK_STS(sts);
-    }
-#endif
 
     qsts = CheckVideoParam(m_vpar, m_caps, true);
     MFX_CHECK(qsts >= MFX_ERR_NONE, qsts);
@@ -1297,12 +1285,7 @@ mfxStatus MFXVideoENCODEH265_HW::PrepareTask(Task& input_task)
         m_lastTask = *task;
         m_task.Submit(task);
     }
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    if (m_lplaBuffer)
-    {
-        task->m_midLpla = m_lplaBuffer->mids[0];
-    }
-#endif
+
     return sts;
 }
 template <class T> void SetUsedRefList(T list, Task* taskForQuery, mfxU32 dir, bool bInterlace)

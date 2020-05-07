@@ -423,7 +423,6 @@ typedef struct {
     mfxU16       InitialDelayInKB;
     mfxU16       BufferSizeInKB;
     mfxU16       TargetKbps;
-    mfxFrameAllocResponse  *response;
 } mfxExtLplaParam;
 
 #endif

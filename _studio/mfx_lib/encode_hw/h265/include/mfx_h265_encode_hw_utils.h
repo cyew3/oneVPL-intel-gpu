@@ -378,8 +378,6 @@ struct Task : DpbFrame
     mfxMemId          m_midBs                         = nullptr;
     mfxMemId          m_midCUQp                       = nullptr;
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    mfxU32            m_idxLpla                       = 0;
-    mfxMemId          m_midLpla                       = nullptr;
     mfxLplastatus     m_lplastatus;
 #endif
 

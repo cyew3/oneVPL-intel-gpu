@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -132,11 +132,6 @@ private:
     std::vector<mfxHDLPair>                     m_reconQueue;
     std::vector<mfxHDLPair>                     m_bsQueue;
     std::vector<mfxHDLPair>                     m_mbqpQueue;
-
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    std::vector<mfxHDLPair>                     m_lplaQueue;
-    mfxU32                                      RES_ID_LPLA;
-#endif
     FeedbackStorage                             m_feedbackPool;
 
     std::vector<ENCODE_RECT>                    m_dirtyRects;

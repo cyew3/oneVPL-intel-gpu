@@ -1718,15 +1718,6 @@ mfxStatus D3D9Encoder::ExecuteImpl(
         m_compBufDesc[bufCnt].pCompBuffer = mbsurf.Y;
         bufCnt++;
     }
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    if (task.m_midLpla != MID_INVALID)
-    {
-        m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_LOOKAHEADDATA;
-        m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(task.m_idxLpla));
-        m_compBufDesc[bufCnt].pCompBuffer = &task.m_idxLpla;
-        bufCnt++;
-    }
-#endif
 
     if (m_caps.ddi_caps.HeaderInsertion == 1 && SkipFlag == 0)
     {
