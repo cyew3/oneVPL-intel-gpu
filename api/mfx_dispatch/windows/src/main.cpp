@@ -563,18 +563,18 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
     pHandle->session = 0;
     bool callOldInit = (pHandle->impl & MFX_IMPL_AUDIO) || !actualTable[eMFXInitEx];
-    int initIndex = (callOldInit) ? eMFXInit : eMFXInitEx;
-    pFunc = actualTable[initIndex];
+    pFunc = actualTable[(callOldInit) ? eMFXInit : eMFXInitEx];
 
+    mfxVersion version(pHandle->apiVersion);
     if (callOldInit)
     {
-        pHandle->loadStatus = (*(mfxStatus(MFX_CDECL *) (mfxIMPL, mfxVersion *, mfxSession *)) pFunc) (pHandle->impl | pHandle->implInterface, &pHandle->actualApiVersion, &pHandle->session);
+        pHandle->loadStatus = (*(mfxStatus(MFX_CDECL *) (mfxIMPL, mfxVersion *, mfxSession *)) pFunc) (pHandle->impl | pHandle->implInterface, &version, &pHandle->session);
     }
     else
     {
         mfxInitParam initPar = par;
         initPar.Implementation = pHandle->impl | pHandle->implInterface;
-        initPar.Version = pHandle->actualApiVersion;
+        initPar.Version = version;
         pHandle->loadStatus = (*(mfxStatus(MFX_CDECL *) (mfxInitParam, mfxSession *)) pFunc) (initPar, &pHandle->session);
     }
 
