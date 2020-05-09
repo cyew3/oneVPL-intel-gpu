@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2019 Intel Corporation
+// Copyright (c) 2007-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -71,6 +71,8 @@ static inline unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_ARGB;
     case MFX_FOURCC_BGR4:
         return VA_FOURCC_ABGR;
+    case MFX_FOURCC_A2RGB10:
+        return VA_FOURCC_ARGB;  // rt format will be VA_RT_FORMAT_RGB32_10BPP
 #ifdef MFX_ENABLE_RGBP
     case MFX_FOURCC_RGBP:
         return VA_FOURCC_RGBP;

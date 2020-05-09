@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -32,6 +32,8 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_ARGB;
     case MFX_FOURCC_BGR4:
         return VA_FOURCC_ABGR;
+    case MFX_FOURCC_A2RGB10:
+        return VA_FOURCC_ARGB;  // rt format will be VA_RT_FORMAT_RGB32_10BPP
     case MFX_FOURCC_P8:
         return VA_FOURCC_P208;
     case MFX_FOURCC_AYUV:
@@ -129,13 +131,31 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     {
         if( VA_FOURCC_P208 != va_fourcc )
         {
+            unsigned int format;
             attrib.type = VASurfaceAttribPixelFormat;
             attrib.value.type = VAGenericValueTypeInteger;
+            if (VA_FOURCC_UYVY == va_fourcc)
+            {
+                format = VA_RT_FORMAT_YUV422;
+            }
+            else if (VA_FOURCC_NV12 == va_fourcc)
+            {
+                format = VA_RT_FORMAT_YUV420;
+            }
+            else if (MFX_FOURCC_A2RGB10 == fourcc)
+            {
+               // when create A2RGB10 surface via libva, we need to set the format as VA_RT_FORMAT_RGB32_10BPP, and the attrib.value.value.i as VA_FOURCC_ARGB
+               // the format in vaapi_mid->m_image.format.fourcc from vaDeriveImage is VA_FOURCC_A2R10G10B10
+                format = VA_RT_FORMAT_RGB32_10BPP;
+            }
+            else
+                format = va_fourcc;
+
             attrib.value.value.i = va_fourcc;
             attrib.flags = VA_SURFACE_ATTRIB_SETTABLE;
 
             va_res = m_libva.vaCreateSurfaces(m_dpy,
-                                   ( VA_FOURCC_UYVY == va_fourcc ) ? VA_RT_FORMAT_YUV422 : VA_RT_FORMAT_YUV420,
+                                    format,
                                     request->Info.Width, request->Info.Height,
                                     surfaces,
                                     surfaces_num,
@@ -333,6 +353,16 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->A = ptr->R + 3;
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
+                break;
+            case VA_FOURCC_A2R10G10B10:
+                if (vaapi_mid->m_fourcc == MFX_FOURCC_A2RGB10)
+                {
+                    ptr->B = pBuffer + vaapi_mid->m_image.offsets[0];
+                    ptr->G = ptr->B;
+                    ptr->R = ptr->B;
+                    ptr->A = ptr->B;
+                }
+                else return MFX_ERR_LOCK_MEMORY;
                 break;
             case VA_FOURCC_AYUV:
                 if (vaapi_mid->m_fourcc == MFX_FOURCC_AYUV)

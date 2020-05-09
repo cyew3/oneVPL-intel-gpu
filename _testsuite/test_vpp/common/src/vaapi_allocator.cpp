@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -36,10 +36,8 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
 #endif
     case MFX_FOURCC_BGR4:
         return VA_FOURCC_ABGR;
-
     case MFX_FOURCC_A2RGB10:
         return VA_FOURCC_ARGB;  // rt format will be VA_RT_FORMAT_RGB32_10BPP
-
     case MFX_FOURCC_P8:
         return VA_FOURCC_P208;
     case MFX_FOURCC_P010:
@@ -157,6 +155,8 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             }
             else if (fourcc == MFX_FOURCC_A2RGB10)
             {
+                // when create A2RGB10 surface via libva, we need to set the format as VA_RT_FORMAT_RGB32_10BPP, and the attrib.value.value.i as VA_FOURCC_ARGB
+                // the format in vaapi_mid->m_image.format.fourcc from vaDeriveImage is VA_FOURCC_A2R10G10B10
                 format = VA_RT_FORMAT_RGB32_10BPP;
             }
 #if (MFX_VERSION >= 1028)
@@ -349,7 +349,10 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->R = ptr->B + 2;
                     ptr->A = ptr->B + 3;
                 }
-                else if (mfx_fourcc == MFX_FOURCC_A2RGB10)
+                else return MFX_ERR_LOCK_MEMORY;
+                break;
+            case VA_FOURCC_A2R10G10B10:
+                if (mfx_fourcc == MFX_FOURCC_A2RGB10)
                 {
                     ptr->B = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->G = ptr->B;

@@ -33,6 +33,8 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_YV12;
     case MFX_FOURCC_RGB4:
         return VA_FOURCC_ARGB;
+    case MFX_FOURCC_A2RGB10:
+        return VA_FOURCC_ARGB;  // rt format will be VA_RT_FORMAT_RGB32_10BPP
     case MFX_FOURCC_BGR4:
         return VA_FOURCC_ABGR;
     case MFX_FOURCC_P8:
@@ -200,6 +202,12 @@ mfxStatus vaapiFrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *inf
     {
         format = VA_RT_FORMAT_YUV420;
     }
+    else if(fourcc == MFX_FOURCC_A2RGB10)
+    {
+        // when create A2RGB10 surface via libva, we need to set the format as VA_RT_FORMAT_RGB32_10BPP, and the attrib.value.value.i as VA_FOURCC_ARGB
+        // the format in vaapi_mid->m_image.format.fourcc from vaDeriveImage is VA_FOURCC_A2R10G10B10
+        format = VA_RT_FORMAT_RGB32_10BPP;
+    }
 
     va_res = m_libva->vaCreateSurfaces(m_dpy,
         format,
@@ -324,6 +332,10 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             else if (va_fourcc == VA_FOURCC_NV12)
             {
                 format = VA_RT_FORMAT_YUV420;
+            }
+            else if (fourcc == MFX_FOURCC_A2RGB10)
+            {
+                format = VA_RT_FORMAT_RGB32_10BPP;
             }
 #if VA_CHECK_VERSION(1,2,0)
             else if (va_fourcc == VA_FOURCC_P010)
