@@ -1104,10 +1104,10 @@ mfxStatus MFXDecPipeline::HeavyReset()
 mfxStatus MFXDecPipeline::InitInputBs(bool &bExtended)
 {
     mfxU64 bs_size = m_components[eDEC].m_params.mfx.FrameInfo.Width  *
-        m_components[eDEC].m_params.mfx.FrameInfo.Height * 4;
+        m_components[eDEC].m_params.mfx.FrameInfo.Height * 8;
 
     if (!bs_size) //taking params from cmdline
-        bs_size = m_inParams.FrameInfo.Width * m_inParams.FrameInfo.Height * 4;
+        bs_size = m_inParams.FrameInfo.Width * m_inParams.FrameInfo.Height * 8;
 
     if (!bs_size) //if we still dont know a resolution lets start from 320x240
         bs_size = 320 * 240 * 3;

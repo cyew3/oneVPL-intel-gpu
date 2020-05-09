@@ -453,7 +453,7 @@ mfxStatus InitMfxBitstream(mfxBitstream *pBitstream, mfxVideoParam* pParams)
     CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
     //prepare buffer
-    maxSz = pParams->mfx.FrameInfo.Height * pParams->mfx.FrameInfo.Width * 4;
+    maxSz = pParams->mfx.FrameInfo.Height * pParams->mfx.FrameInfo.Width * 8;
     if (maxSz < pParams->mfx.BufferSizeInKB*1024)
       maxSz = pParams->mfx.BufferSizeInKB*1024;
     pBitstream->Data = new mfxU8[maxSz];
