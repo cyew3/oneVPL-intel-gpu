@@ -74,8 +74,8 @@ namespace UMC_AV1_DECODER
 
     const uint32_t MAX_TILE_WIDTH = 4096;        // Max Tile width in pixels
     const uint32_t MAX_TILE_AREA  = 4096 * 2304;  // Maximum tile area in pixels
-    const uint32_t MAX_TILE_ROWS  = 1024;
-    const uint32_t MAX_TILE_COLS  = 1024;
+    const uint32_t MAX_TILE_ROWS  = 64;
+    const uint32_t MAX_TILE_COLS  = 64;
 
     const uint8_t FRAME_CONTEXTS_LOG2           = 3;
     const uint8_t MAX_MODE_LF_DELTAS            = 2;
