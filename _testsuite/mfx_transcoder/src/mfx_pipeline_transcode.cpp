@@ -216,7 +216,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_MFX_INFO("-r|",          GopRefDist,               "Distance between I- or P- (or GPB)-key frames. If it is zero, the GOP structure is unspecified. Note: If GopRefDist=1, there are no regular B-frames used (only P or GPB)"),
         HANDLE_MFX_INFO("",             GopOptFlag,               "1=GOP_CLOSED, 2=GOP_STRICT"),
         HANDLE_MFX_INFO("",             IdrInterval,              "IDR frame interval (0 means every I-frame is an IDR frame"),
-        HANDLE_MFX_INFO("",             RateControlMethod,        "1=CBR, 2=VBR, 3=ConstantQP, 4=AVBR, 8=Lookahead, 13==Lookahead with HRD support, 14=QVBR"),
+        HANDLE_MFX_INFO("",             RateControlMethod,        "1=CBR, 2=VBR, 3=ConstantQP, 4=AVBR, 8=Lookahead, 9=ICQ, 10=VCM, 11=LA_ICQ, 13=Lookahead with HRD support, 14=QVBR"),
         HANDLE_MFX_INFO("-id|",         InitialDelayInKB,         "For bitrate control"),
         HANDLE_MFX_INFO("-bs|",         BufferSizeInKB,           "For bitrate control"),
         HANDLE_MFX_INFO("-l|",          NumSlice,                 "Number of slices in each video frame"),

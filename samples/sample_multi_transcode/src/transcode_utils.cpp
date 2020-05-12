@@ -240,6 +240,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -la_ext       Use external LA plugin (compatible with h264 & hevc encoders)\n"));
     msdk_printf(MSDK_STRING("  -vbr          Variable bitrate control\n"));
     msdk_printf(MSDK_STRING("  -cbr          Constant bitrate control\n"));
+    msdk_printf(MSDK_STRING("  -vcm          Video Conferencing Mode (VCM) bitrate control\n"));
     msdk_printf(MSDK_STRING("  -hrd <KBytes> Maximum possible size of any compressed frames \n"));
     msdk_printf(MSDK_STRING("  -wb <Kbits per second>\n"));
     msdk_printf(MSDK_STRING("                Maximum bitrate for sliding window\n"));
@@ -1976,7 +1977,10 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.bEnableBPyramid = true;
         }
-
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vcm")))
+        {
+            InputParams.nRateControlMethod = MFX_RATECONTROL_VCM;
+        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-lad")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
