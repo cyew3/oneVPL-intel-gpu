@@ -561,6 +561,8 @@ static bool LoadMSDKLibary(adapter_vector& a_v, mfxIMPL impl)
     mfxI32 preffered_adapter_number = -1;
     switch (impl & 0xf)
     {
+    case MFX_IMPL_HARDWARE:
+        preffered_adapter_number = 0;
     case MFX_IMPL_HARDWARE2:
         preffered_adapter_number = 1;
         break;
@@ -643,7 +645,6 @@ extern "C" mfxStatus MFX_CDECL MFXInitEx(mfxInitParam par, mfxSession *session)
         switch (par.Implementation & 0xf)
         {
         case MFX_IMPL_AUTO:
-        case MFX_IMPL_HARDWARE:
         case MFX_IMPL_AUTO_ANY:
         case MFX_IMPL_HARDWARE_ANY:
             par.Implementation &= ~(0xf);
