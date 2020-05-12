@@ -32,6 +32,7 @@
 #include "av1ehw_g12_tile.h"
 #include "av1ehw_g12_dirty_rect_win.h"
 #include "av1ehw_g12_segmentation_win.h"
+#include "av1ehw_g12_blocking_sync_win.h"
 
 
 using namespace AV1EHW;
@@ -61,6 +62,9 @@ Windows::Gen12::MFXVideoENCODEAV1_HW::MFXVideoENCODEAV1_HW(
     m_features.emplace_back(new General(FEATURE_GENERAL));
     m_features.emplace_back(new TaskManager(FEATURE_TASK_MANAGER));
     m_features.emplace_back(new Packer(FEATURE_PACKER));
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+    m_features.emplace_back(new BlockingSync(FEATURE_BLOCKING_SYNC));
+#endif
     m_features.emplace_back(new Tile(FEATURE_TILE));
     m_features.emplace_back(new DirtyRect(FEATURE_DIRTY_RECT));
     m_features.emplace_back(new Segmentation(FEATURE_SEGMENTATION));
@@ -90,6 +94,18 @@ mfxStatus Windows::Gen12::MFXVideoENCODEAV1_HW::Init(mfxVideoParam *par)
             , { FEATURE_GENERAL, General::BLK_ConfigureTask }
             , { FEATURE_SEGMENTATION, Segmentation::BLK_ConfigureTask }
             , PLACE_AFTER);
+    }
+
+    {
+        auto& queue = BQ<BQ_QueryTask>::Get(*this);
+#if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
+        Reorder(queue
+            , { FEATURE_DDI, IDDI::BLK_QueryTask}
+            , {FEATURE_BLOCKING_SYNC, BlockingSync::BLK_WaitTask});
+        Reorder(queue
+            , {FEATURE_DDI_PACKER, IDDIPacker::BLK_QueryTask}
+            , {FEATURE_BLOCKING_SYNC, BlockingSync::BLK_ReportHang});
+#endif //defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
     }
 
     return sts;

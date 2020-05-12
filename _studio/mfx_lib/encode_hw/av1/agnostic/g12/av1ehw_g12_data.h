@@ -602,6 +602,12 @@ namespace Gen12
 
     using TileGroupInfos = std::vector<TileGroupInfo>;
 
+    struct EventDescr
+    {
+        GPU_SYNC_EVENT_HANDLE Handle   = { GPU_COMPONENT_ENCODE, INVALID_HANDLE_VALUE };
+        mfxU32                ReportID = mfxU32(-1);
+    };
+
     struct SegmentInfo
     {
         UCHAR segment_id;
@@ -1179,6 +1185,7 @@ namespace Gen12
         using FH         = StorageVar<__LINE__ - _KD, Gen12::FH>;
         using Segment    = StorageVar<__LINE__ - _KD, mfxExtAV1Segmentation>;
         using TileGroups = StorageVar<__LINE__ - _KD, TileGroupInfos>;
+        using TaskEvent  = StorageVar<__LINE__ - _KD, EventDescr>;
         static const StorageR::TKey NUM_KEYS = __LINE__ - _KD;
     };
 
