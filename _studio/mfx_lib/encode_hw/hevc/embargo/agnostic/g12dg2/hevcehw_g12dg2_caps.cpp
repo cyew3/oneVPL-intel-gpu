@@ -61,11 +61,11 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             const mfxU16 nRef[2][2][7] =
             {
                 {   // DG2 VDENC P
-                    { 2, 2, 2, 2, 2, 1, 1 },
-                    { 2, 2, 2, 2, 2, 1, 1 }
+                    { 3, 3, 2, 2, 2, 1, 1 },
+                    { 3, 3, 2, 2, 2, 1, 1 }
                 },
                 {   // DG2 VDENC RA B
-                    { 1, 1, 1, 1, 1, 1, 1 },
+                    { 2, 2, 1, 1, 1, 1, 1 },
                     { 1, 1, 1, 1, 1, 1, 1 }
                 }
             };
