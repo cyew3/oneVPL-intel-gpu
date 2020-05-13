@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,19 +23,19 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "hevcehw_g9_data.h"
+#include "hevcehw_base_data.h"
 
 namespace HEVCEHW
 {
 namespace Gen12
 {
-    using Gen9::Defaults;
-    using Gen9::FrameBaseInfo;
-    using Gen9::Task;
+    using Base::Defaults;
+    using Base::FrameBaseInfo;
+    using Base::Task;
 
     enum eFeatureId
     {
-        FEATURE_REXT = Gen9::eFeatureId::NUM_FEATURES
+        FEATURE_REXT = Base::eFeatureId::NUM_FEATURES
         , FEATURE_CAPS
         , FEATURE_SAO
         , FEATURE_QP_MODULATION
@@ -43,9 +43,9 @@ namespace Gen12
     };
 
     struct Glob
-        : Gen9::Glob
+        : Base::Glob
     {
-        static const StorageR::TKey _KD = __LINE__ + 1 - Gen9::Glob::NUM_KEYS;
+        static const StorageR::TKey _KD = __LINE__ + 1 - Base::Glob::NUM_KEYS;
         static const StorageR::TKey ReservedKey12_0 = __LINE__ - _KD;
         static const StorageR::TKey ReservedKey12_1 = __LINE__ - _KD;
         static const StorageR::TKey NUM_KEYS = __LINE__ - _KD;

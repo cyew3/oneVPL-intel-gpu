@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,8 @@
 #include "gmock/gmock.h"
 
 #include "hevcehw_base.h"
-#include "g9/hevcehw_g9_legacy.h"
-#include "g9/hevcehw_g9_interlace.h"
+#include "base/hevcehw_base_legacy.h"
+#include "base/hevcehw_base_interlace.h"
 
 namespace hevce { namespace tests
 {
@@ -31,14 +31,14 @@ namespace hevce { namespace tests
         : testing::Test
     {
         HEVCEHW::FeatureBlocks    blocks{};
-        HEVCEHW::Gen9::Interlace interlace;
-        HEVCEHW::Gen9::Legacy    legacy;
+        HEVCEHW::Base::Interlace interlace;
+        HEVCEHW::Base::Legacy    legacy;
         HEVCEHW::StorageRW        storage;
         mfxFrameAllocRequest      request{};
 
         FeatureBlocksInterlace()
-            : legacy(HEVCEHW::Gen9::FEATURE_LEGACY)
-            , interlace(HEVCEHW::Gen9::FEATURE_INTERLACE)
+            : legacy(HEVCEHW::Base::FEATURE_LEGACY)
+            , interlace(HEVCEHW::Base::FEATURE_INTERLACE)
         {}
 
         void SetUp() override
@@ -46,14 +46,14 @@ namespace hevce { namespace tests
             legacy.Init(HEVCEHW::QUERY_IO_SURF, blocks);
             interlace.Init(HEVCEHW::QUERY_IO_SURF, blocks);
 
-            auto& vp = HEVCEHW::Gen9::Glob::VideoParam::GetOrConstruct(storage);
+            auto& vp = HEVCEHW::Base::Glob::VideoParam::GetOrConstruct(storage);
             vp.AsyncDepth = 3;
             vp.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
             vp.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
             vp.mfx.GopRefDist = 16;
 
             auto& queueQIS = HEVCEHW::FeatureBlocks::BQ<HEVCEHW::FeatureBlocks::BQ_QueryIOSurf>::Get(blocks);
-            auto block = HEVCEHW::FeatureBlocks::Get(queueQIS, { HEVCEHW::Gen9::FEATURE_LEGACY, HEVCEHW::Gen9::Legacy::BLK_SetFrameAllocRequest });
+            auto block = HEVCEHW::FeatureBlocks::Get(queueQIS, { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetFrameAllocRequest });
 
             ASSERT_EQ(
                 block->Call(vp, request, storage),
@@ -65,7 +65,7 @@ namespace hevce { namespace tests
     TEST_F(FeatureBlocksInterlace, QueryIOSurfNoInterlace)
     {
         auto& queueQIS = HEVCEHW::FeatureBlocks::BQ<HEVCEHW::FeatureBlocks::BQ_QueryIOSurf>::Get(blocks);
-        auto block = HEVCEHW::FeatureBlocks::Get(queueQIS, { HEVCEHW::Gen9::FEATURE_INTERLACE, HEVCEHW::Gen9::Interlace::BLK_QueryIOSurf });
+        auto block = HEVCEHW::FeatureBlocks::Get(queueQIS, { HEVCEHW::Base::FEATURE_INTERLACE, HEVCEHW::Base::Interlace::BLK_QueryIOSurf });
 
         mfxFrameAllocRequest result{};
         result.NumFrameMin = request.NumFrameMin;
@@ -84,12 +84,12 @@ namespace hevce { namespace tests
     TEST_F(FeatureBlocksInterlace, QueryIOSurf)
     {
         auto& queueQIS = HEVCEHW::FeatureBlocks::BQ<HEVCEHW::FeatureBlocks::BQ_QueryIOSurf>::Get(blocks);
-        auto block = HEVCEHW::FeatureBlocks::Get(queueQIS, { HEVCEHW::Gen9::FEATURE_INTERLACE, HEVCEHW::Gen9::Interlace::BLK_QueryIOSurf });
+        auto block = HEVCEHW::FeatureBlocks::Get(queueQIS, { HEVCEHW::Base::FEATURE_INTERLACE, HEVCEHW::Base::Interlace::BLK_QueryIOSurf });
 
         mfxFrameAllocRequest result{};
         result.NumFrameMin = request.NumFrameMin;
 
-        auto& vp = HEVCEHW::Gen9::Glob::VideoParam::Get(storage);
+        auto& vp = HEVCEHW::Base::Glob::VideoParam::Get(storage);
         vp.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
 
         ASSERT_EQ(

@@ -118,26 +118,26 @@ namespace HEVCEHW
 
 #if defined(MFX_VA_LINUX)
     #if defined(OPEN_SOURCE)
-    #include "hevcehw_g9_lin.h"
+    #include "hevcehw_base_lin.h"
     namespace HEVCEHWDisp
     {
-        namespace SKL { using namespace HEVCEHW::Linux::Gen9; };
-        namespace ICL { using namespace HEVCEHW::Linux::Gen9; };
+        namespace SKL { using namespace HEVCEHW::Linux::Base; };
+        namespace ICL { using namespace HEVCEHW::Linux::Base; };
     };
     #else
-    #include "hevcehw_g9_embargo_lin.h"
+    #include "hevcehw_base_embargo_lin.h"
     namespace HEVCEHWDisp
     {
-        namespace SKL { using namespace HEVCEHW::Linux::Gen9_Embargo; };
-        namespace ICL { using namespace HEVCEHW::Linux::Gen9_Embargo; };
+        namespace SKL { using namespace HEVCEHW::Linux::Base_Embargo; };
+        namespace ICL { using namespace HEVCEHW::Linux::Base_Embargo; };
     };
     #endif //defined(OPEN_SOURCE)
 #else
-    #include "hevcehw_g9_win.h"
+    #include "hevcehw_base_win.h"
     namespace HEVCEHWDisp
     {
-        namespace SKL { using namespace HEVCEHW::Windows::Gen9; };
-        namespace ICL { using namespace HEVCEHW::Windows::Gen9; };
+        namespace SKL { using namespace HEVCEHW::Windows::Base; };
+        namespace ICL { using namespace HEVCEHW::Windows::Base; };
     };
 #endif
 

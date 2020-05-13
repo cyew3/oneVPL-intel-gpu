@@ -25,7 +25,7 @@
 
 #include "hevcehw_g12_scc.h"
 #include "va/va.h"
-#include "hevcehw_g9_va_packer_lin.h"
+#include "hevcehw_base_va_packer_lin.h"
 
 namespace HEVCEHW
 {
@@ -58,7 +58,7 @@ protected:
             MFX_CHECK(m_bPatchNextDDITask || m_bPatchDDISlices, MFX_ERR_NONE);
             auto& ddiPar = HEVCEHW::Gen12::Glob::DDI_SubmitParam::Get(global);
             auto  itPPS  = std::find_if(std::begin(ddiPar), std::end(ddiPar)
-                , [](HEVCEHW::Gen9::DDIExecParam& ep) { return (ep.Function == VAEncPictureParameterBufferType); });
+                , [](HEVCEHW::Base::DDIExecParam& ep) { return (ep.Function == VAEncPictureParameterBufferType); });
             MFX_CHECK(itPPS != std::end(ddiPar) && itPPS->In.pData, MFX_ERR_UNKNOWN);
             auto& ddiPPS    = *(VAEncPictureParameterBufferHEVC*)itPPS->In.pData;
 
@@ -66,7 +66,7 @@ protected:
             {
                 m_bPatchNextDDITask = false;
                 auto  itSPS   = std::find_if(std::begin(ddiPar), std::end(ddiPar)
-                    , [](HEVCEHW::Gen9::DDIExecParam& ep) { return (ep.Function == VAEncSequenceParameterBufferType); });
+                    , [](HEVCEHW::Base::DDIExecParam& ep) { return (ep.Function == VAEncSequenceParameterBufferType); });
                 MFX_CHECK(itSPS != std::end(ddiPar) && itSPS->In.pData, MFX_ERR_UNKNOWN);
                 auto& ddiSPS    = *(VAEncSequenceParameterBufferHEVC*)itSPS->In.pData;
 

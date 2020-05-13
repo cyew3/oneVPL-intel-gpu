@@ -24,7 +24,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
 #include "hevcehw_g12_scc.h"
-#include "hevcehw_g9_ddi_packer_win.h"
+#include "hevcehw_base_ddi_packer_win.h"
 
 namespace HEVCEHW
 {
@@ -51,10 +51,10 @@ namespace Gen12
                 MFX_CHECK(m_bPatchNextDDITask || m_bPatchDDISlices, MFX_ERR_NONE);
                 auto& par = Glob::DDI_SubmitParam::Get(global);
                 auto  vaType = Glob::VideoCore::Get(global).GetVAType();
-                auto& ddiPPS = Deref(Gen9::GetDDICB<ENCODE_SET_PICTURE_PARAMETERS_HEVC>(
-                    ENCODE_ENC_PAK_ID, Gen9::DDIPar_In, vaType, par));
-                auto  pDdiSlice = Gen9::GetDDICB<ENCODE_SET_SLICE_HEADER_HEVC>(
-                    ENCODE_ENC_PAK_ID, Gen9::DDIPar_In, vaType, par);
+                auto& ddiPPS = Deref(Base::GetDDICB<ENCODE_SET_PICTURE_PARAMETERS_HEVC>(
+                    ENCODE_ENC_PAK_ID, Base::DDIPar_In, vaType, par));
+                auto  pDdiSlice = Base::GetDDICB<ENCODE_SET_SLICE_HEADER_HEVC>(
+                    ENCODE_ENC_PAK_ID, Base::DDIPar_In, vaType, par);
 
                 auto UpdateSlice = [&](ENCODE_SET_SLICE_HEADER_HEVC& s)
                 {
@@ -67,8 +67,8 @@ namespace Gen12
                 {
                     m_bPatchNextDDITask = false;
 
-                    auto& ddiSPS = Deref(Gen9::GetDDICB<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC>(
-                        ENCODE_ENC_PAK_ID, Gen9::DDIPar_In, vaType, par));
+                    auto& ddiSPS = Deref(Base::GetDDICB<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC>(
+                        ENCODE_ENC_PAK_ID, Base::DDIPar_In, vaType, par));
 
                     ddiSPS.palette_mode_enabled_flag = SpsExt::Get(global).palette_mode_enabled_flag;
                     ddiPPS.pps_curr_pic_ref_enabled_flag = PpsExt::Get(global).curr_pic_ref_enabled_flag;

@@ -28,8 +28,8 @@
 #else
 #include "hevcehw_g11lkf_win.h"
 #endif
-#include "hevcehw_g9_data.h"
-#include "hevcehw_g9_legacy.h"
+#include "hevcehw_base_data.h"
+#include "hevcehw_base_legacy.h"
 #include "hevcehw_g11lkf_caps.h"
 
 using namespace HEVCEHW;
@@ -41,7 +41,7 @@ namespace HEVCEHW
     {
         enum eFeatureId
         {
-            FEATURE_CAPS = Gen9::eFeatureId::NUM_FEATURES
+            FEATURE_CAPS = Base::eFeatureId::NUM_FEATURES
             , NUM_FEATURES
         };
     }
@@ -71,7 +71,7 @@ MFXVideoENCODEH265_HW<TBaseGen>::MFXVideoENCODEH265_HW(
 
         FeatureBlocks::Reorder(
             qnc
-            , { HEVCEHW::Gen9::FEATURE_LEGACY, HEVCEHW::Gen9::Legacy::BLK_SetLowPowerDefault }
+            , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetLowPowerDefault }
             , { HEVCEHW::Gen11LKF::FEATURE_CAPS, HEVCEHW::Gen11LKF::Caps::BLK_SetDefaultsCallChain });
     }
 

@@ -23,7 +23,7 @@
 
 #include "feature_blocks/mfx_feature_blocks_utils.h"
 #include "../hevcehw_disp.h"
-#include "hevcehw_g9_win.h"
+#include "hevcehw_base_win.h"
 #include "hevcehw_g11lkf.h"
 #include "hevcehw_g11lkf_win.h"
 #include "hevcehw_g12_win.h"
@@ -33,7 +33,7 @@
 namespace hevce { namespace tests
 {
 
-using TGen9     = HEVCEHW::Windows::Gen9::MFXVideoENCODEH265_HW;
+using TBase     = HEVCEHW::Windows::Base::MFXVideoENCODEH265_HW;
 using TGen11LKF = HEVCEHW::Windows::Gen11LKF::MFXVideoENCODEH265_HW;
 using TGen12    = HEVCEHW::Windows::Gen12::MFXVideoENCODEH265_HW;
 using TGen12ATS = HEVCEHW::Windows::Gen12ATS::MFXVideoENCODEH265_HW;
@@ -43,9 +43,9 @@ template<typename T>
 inline bool IsGen(VideoENCODE*) { return false; }
 
 template<>
-inline bool IsGen<TGen9>(VideoENCODE* p)
+inline bool IsGen<TBase>(VideoENCODE* p)
 {
-    return dynamic_cast<TGen9*>(p)
+    return dynamic_cast<TBase*>(p)
         && !dynamic_cast<TGen11LKF*>(p)
         && !dynamic_cast<TGen12*>(p)
         && !dynamic_cast<TGen12ATS*>(p)
@@ -171,7 +171,7 @@ TEST(Disp, Unsupported)
     }
 }
 
-TEST(Disp, Gen9)
+TEST(Disp, Base)
 {
     Core vcore;
     mfxStatus sts = MFX_ERR_NONE;
@@ -195,7 +195,7 @@ TEST(Disp, Gen9)
         std::unique_ptr<VideoENCODE> pHEVC(HEVCEHW::Create((VideoCORE&)vcore, sts));
         EXPECT_NE(pHEVC.get(), (VideoENCODE*)nullptr);
         EXPECT_EQ(sts, MFX_ERR_NONE);
-        EXPECT_TRUE(IsGen<TGen9>(pHEVC.get()));
+        EXPECT_TRUE(IsGen<TBase>(pHEVC.get()));
     }
 }
 

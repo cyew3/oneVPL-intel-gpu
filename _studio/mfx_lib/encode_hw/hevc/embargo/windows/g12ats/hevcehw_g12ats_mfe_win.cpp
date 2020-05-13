@@ -24,8 +24,8 @@
 #include "hevcehw_g12ats_mfe_win.h"
 #include "hevcehw_g12_data.h"
 #include "libmfx_core_interface.h"
-#include "hevcehw_g9_d3d11_win.h"
-#include "hevcehw_g9_blocking_sync_win.h"
+#include "hevcehw_base_d3d11_win.h"
+#include "hevcehw_base_blocking_sync_win.h"
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Gen12;
@@ -67,15 +67,15 @@ void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPush
     Push(BLK_SetCallChains,
         [this](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
     {
-        using TIn   = Gen9::DDI_D3D11::CreateDeviceIn;
-        using TOut  = Gen9::DDI_D3D11::CreateDeviceOut;
+        using TIn   = Base::DDI_D3D11::CreateDeviceIn;
+        using TOut  = Base::DDI_D3D11::CreateDeviceOut;
         using TCall = Glob::DDI_Execute::TRef::TExt;
 
         MFX_CHECK(!m_bDDIExecSet, MFX_ERR_NONE);
 
         auto& ddiExec = Glob::DDI_Execute::Get(strg);
 
-        auto GetCaps = [&](TCall /*prev*/, const Gen9::DDIExecParam& ep)
+        auto GetCaps = [&](TCall /*prev*/, const Base::DDIExecParam& ep)
         {
             auto pCaps = (ENCODE_CAPS_HEVC*)(m_pMfeAdapter->GetCaps(CODEC_HEVC));
             MFX_CHECK(pCaps, MFX_ERR_UNSUPPORTED);
@@ -84,7 +84,7 @@ void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPush
 
             return MFX_ERR_NONE;
         };
-        auto QueryInfo = [&](TCall prev, const Gen9::DDIExecParam& ep)
+        auto QueryInfo = [&](TCall prev, const Base::DDIExecParam& ep)
         {
             auto epCopy = ep;
             epCopy.In.pData = &m_codec;
@@ -92,7 +92,7 @@ void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPush
 
             return prev(ep);
         };
-        auto Submit = [&](TCall prev, const Gen9::DDIExecParam& ep)
+        auto Submit = [&](TCall prev, const Base::DDIExecParam& ep)
         {
             auto& cbi = ep.In.Cast<ENCODE_EXECUTE_PARAMS>();
             m_cbd.resize(cbi.NumCompBuffers + 1 + m_bSendEvent);
@@ -124,12 +124,12 @@ void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPush
 
             return m_pMfeAdapter->Submit(m_streamInfo.StreamId, m_timeout, false);
         };
-        auto QueryStatus = [&](TCall prev, const Gen9::DDIExecParam& ep)
+        auto QueryStatus = [&](TCall prev, const Base::DDIExecParam& ep)
         {
             ep.In.Cast<ENCODE_QUERY_STATUS_PARAMS_DESCR>().StreamID = m_streamInfo.StreamId;
             return prev(ep);
         };
-        auto InitMFE = [&](TCall prev, const Gen9::DDIExecParam& ep)
+        auto InitMFE = [&](TCall prev, const Base::DDIExecParam& ep)
         {
             auto& core = Glob::VideoCore::Get(strg);
             auto& in   = ep.In.Cast<TIn>();
@@ -164,7 +164,7 @@ void Windows::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPush
         };
 
         ddiExec.Push(
-            [&](TCall prev, const Gen9::DDIExecParam& ep)
+            [&](TCall prev, const Base::DDIExecParam& ep)
         {
             bool bInitMfe     = ep.Function == AUXDEV_CREATE_ACCEL_SERVICE && ep.In.Cast<TIn>().desc.Guid == DXVA2_Intel_MFE;
             bool bGetCaps     = m_pMfeAdapter && ep.Function == ENCODE_QUERY_ACCEL_CAPS_ID;
@@ -215,13 +215,13 @@ void Windows::Gen12ATS::MFE::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST
             , StorageW& s_task) -> mfxStatus
     {
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
-        using TaskEvent = Gen9::BlockingSync::TaskEvent;
+        using TaskEvent = Base::BlockingSync::TaskEvent;
 
         m_bSendEvent = false;
 
         MFX_CHECK(m_pMfeAdapter, MFX_ERR_NONE);
 
-        auto  IsEvent   = [](const Gen9::DDIExecParam& par) { return par.Function == DXVA2_SET_GPU_TASK_EVENT_HANDLE; };
+        auto  IsEvent   = [](const Base::DDIExecParam& par) { return par.Function == DXVA2_SET_GPU_TASK_EVENT_HANDLE; };
         auto& submit    = Glob::DDI_SubmitParam::Get(global);
         auto  itEvent   = std::find_if(submit.begin(), submit.end(), IsEvent);
 

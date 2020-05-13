@@ -26,8 +26,8 @@
 #if defined(MFX_ENABLE_MFE)
 #include "hevcehw_g12ats_mfe_lin.h"
 #endif //defined(MFX_ENABLE_MFE)
-#include "hevcehw_g9_data.h"
-#include "hevcehw_g9_iddi.h"
+#include "hevcehw_base_data.h"
+#include "hevcehw_base_iddi.h"
 
 namespace HEVCEHW
 {

@@ -28,8 +28,8 @@ using namespace HEVCEHW::Gen12DG2;
 
 void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
-    using Gen9::Glob;
-    using Gen9::Defaults;
+    using Base::Glob;
+    using Base::Defaults;
 
     Push(BLK_CheckLowPower,
         [](const mfxVideoParam& par, mfxVideoParam&, StorageRW& /*strg*/) -> mfxStatus
@@ -55,8 +55,8 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         });
 
         defaults.GetMaxNumRef.Push([](
-            Gen9::Defaults::TChain<std::tuple<mfxU16, mfxU16>>::TExt
-            , const Gen9::Defaults::Param& dpar)
+            Base::Defaults::TChain<std::tuple<mfxU16, mfxU16>>::TExt
+            , const Base::Defaults::Param& dpar)
         {
             const mfxU16 nRef[2][2][7] =
             {

@@ -41,7 +41,7 @@ public:
     {}
 
 protected:
-    virtual void SetSpecificCaps(HEVCEHW::Gen9::EncodeCapsHevc& caps) override
+    virtual void SetSpecificCaps(HEVCEHW::Base::EncodeCapsHevc& caps) override
     {
         caps.CodingLimitSet             = 1;
         caps.Color420Only               = 0;

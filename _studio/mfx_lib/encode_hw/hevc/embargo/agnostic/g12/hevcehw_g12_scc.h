@@ -98,10 +98,10 @@ protected:
 
     virtual void SetExtraGUIDs(StorageRW& /*strg*/) {};
 
-    static bool ReadSpsExt(StorageRW& strg, const Gen9::SPS&, mfxU8 id, Gen9::IBsReader& bs);
-    static bool ReadPpsExt(StorageRW& strg, const Gen9::PPS&, mfxU8 id, Gen9::IBsReader& bs);
-    static bool PackSpsExt(StorageRW& strg, const Gen9::SPS&, mfxU8 id, Gen9::IBsWriter& bs);
-    static bool PackPpsExt(StorageRW& strg, const Gen9::PPS&, mfxU8 id, Gen9::IBsWriter& bs);
+    static bool ReadSpsExt(StorageRW& strg, const Base::SPS&, mfxU8 id, Base::IBsReader& bs);
+    static bool ReadPpsExt(StorageRW& strg, const Base::PPS&, mfxU8 id, Base::IBsReader& bs);
+    static bool PackSpsExt(StorageRW& strg, const Base::SPS&, mfxU8 id, Base::IBsWriter& bs);
+    static bool PackPpsExt(StorageRW& strg, const Base::PPS&, mfxU8 id, Base::IBsWriter& bs);
 
     static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main;
     static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main10;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "hevcehw_g11lkf_caps.h"
-#include "hevcehw_g9_data.h"
+#include "hevcehw_base_data.h"
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Gen11LKF;
@@ -32,14 +32,14 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     Push(BLK_SetDefaultsCallChain,
         [this](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
     {
-        using namespace Gen9;
+        using namespace Base;
         auto& defaults = Glob::Defaults::GetOrConstruct(strg);
         auto& bSet = defaults.SetForFeature[GetID()];
         MFX_CHECK(!bSet, MFX_ERR_NONE);
 
         defaults.GetMaxNumRef.Push([](
             Defaults::TChain<std::tuple<mfxU16, mfxU16>>::TExt
-            , const Gen9::Defaults::Param& dpar)
+            , const Base::Defaults::Param& dpar)
         {
             //limited VDEnc support without HME and StreamIn 3rd reference
             static const mfxU16 nRefs[7] = { 2, 2, 2, 2, 2, 1, 1 };

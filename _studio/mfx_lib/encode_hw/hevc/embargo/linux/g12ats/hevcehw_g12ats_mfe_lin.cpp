@@ -24,7 +24,7 @@
 #include "hevcehw_g12ats_mfe_lin.h"
 #include "hevcehw_g12_data.h"
 #include "libmfx_core_interface.h"
-#include "hevcehw_g9_va_lin.h"
+#include "hevcehw_base_va_lin.h"
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Gen12ATS;
@@ -34,7 +34,7 @@ void Linux::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1
     Push(BLK_SetCallChains,
         [this](const mfxVideoParam& in, mfxVideoParam&, StorageRW& strg) -> mfxStatus
     {
-        using HEVCEHW::Gen9::Glob;
+        using HEVCEHW::Base::Glob;
         using TCall             = Glob::DDI_Execute::TRef::TExt;
         using TCreateContextPar = TupleArgs<decltype(vaCreateContext)>::type;
         using TEndPicturePar    = TupleArgs<decltype(vaEndPicture)>::type;
@@ -47,12 +47,12 @@ void Linux::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1
         auto& ddiExec = Glob::DDI_Execute::Get(strg);
 
         ddiExec.Push(
-            [&](TCall prev, const Gen9::DDIExecParam& ep)
+            [&](TCall prev, const Base::DDIExecParam& ep)
         {
             auto sts = prev(ep);
             MFX_CHECK_STS(sts);
 
-            if (ep.Function == Gen9::DDI_VA::VAFID_CreateContext)
+            if (ep.Function == Base::DDI_VA::VAFID_CreateContext)
             {
                 auto& vaPar     = ep.In.Cast<TCreateContextPar>();
                 auto& par       = Glob::VideoParam::Get(strg);
@@ -79,7 +79,7 @@ void Linux::Gen12ATS::MFE::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1
                 MFX_CHECK_STS(sts);
             }
 
-            if (ep.Function == Gen9::DDI_VA::VAFID_EndPicture)
+            if (ep.Function == Base::DDI_VA::VAFID_EndPicture)
             {
                 auto& vaPar = ep.In.Cast<TEndPicturePar>();
 

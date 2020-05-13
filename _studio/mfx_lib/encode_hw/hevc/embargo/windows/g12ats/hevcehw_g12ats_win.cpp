@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,12 +23,12 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
 #include "hevcehw_g12ats_win.h"
-#include "hevcehw_g9_blocking_sync_win.h"
+#include "hevcehw_base_blocking_sync_win.h"
 #if defined(MFX_ENABLE_MFE)
 #include "hevcehw_g12ats_mfe_win.h"
 #endif //defined(MFX_ENABLE_MFE)
-#include "hevcehw_g9_data.h"
-#include "hevcehw_g9_iddi.h"
+#include "hevcehw_base_data.h"
+#include "hevcehw_base_iddi.h"
 
 namespace HEVCEHW
 {
@@ -45,7 +45,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 {
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
     const mfxU32 DEFAULT_H265_TIMEOUT_MS_SIM = 3600000; // 1 hour
-    GetFeature<Gen9::BlockingSync>(HEVCEHW::Gen9::FEATURE_BLOCKING_SYNC).SetTimeout(DEFAULT_H265_TIMEOUT_MS_SIM);
+    GetFeature<Base::BlockingSync>(HEVCEHW::Base::FEATURE_BLOCKING_SYNC).SetTimeout(DEFAULT_H265_TIMEOUT_MS_SIM);
 #endif
 
     TFeatureList newFeatures;
@@ -74,7 +74,7 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
     {
         Reorder(
             st
-            , { HEVCEHW::Gen9::FEATURE_DDI, HEVCEHW::Gen9::IDDI::BLK_SubmitTask }
+            , { HEVCEHW::Base::FEATURE_DDI, HEVCEHW::Base::IDDI::BLK_SubmitTask }
             , { FEATURE_MFE, MFE::BLK_UpdateDDITask });
     }
 #endif //defined(MFX_ENABLE_MFE)

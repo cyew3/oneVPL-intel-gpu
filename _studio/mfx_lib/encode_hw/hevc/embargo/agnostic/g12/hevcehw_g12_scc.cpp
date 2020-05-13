@@ -22,7 +22,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "hevcehw_g12_scc.h"
-#include "hevcehw_g9_legacy.h"
+#include "hevcehw_base_legacy.h"
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Gen12;
@@ -38,7 +38,7 @@ const GUID SCC::DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444_10 =
 
 constexpr mfxU8 SCC_EXT_ID = 3;
 
-bool SCC::ReadSpsExt(StorageRW& strg, const Gen9::SPS&, mfxU8 id, Gen9::IBsReader& bs)
+bool SCC::ReadSpsExt(StorageRW& strg, const Base::SPS&, mfxU8 id, Base::IBsReader& bs)
 {
     if (id != SCC_EXT_ID)
         return false;
@@ -67,7 +67,7 @@ bool SCC::ReadSpsExt(StorageRW& strg, const Gen9::SPS&, mfxU8 id, Gen9::IBsReade
     return true;
 }
 
-bool SCC::ReadPpsExt(StorageRW& strg, const Gen9::PPS&, mfxU8 id, Gen9::IBsReader& bs)
+bool SCC::ReadPpsExt(StorageRW& strg, const Base::PPS&, mfxU8 id, Base::IBsReader& bs)
 {
     if (id != SCC_EXT_ID)
         return false;
@@ -96,7 +96,7 @@ bool SCC::ReadPpsExt(StorageRW& strg, const Gen9::PPS&, mfxU8 id, Gen9::IBsReade
     return true;
 }
 
-bool SCC::PackSpsExt(StorageRW& strg, const Gen9::SPS&, mfxU8 id, Gen9::IBsWriter& bs)
+bool SCC::PackSpsExt(StorageRW& strg, const Base::SPS&, mfxU8 id, Base::IBsWriter& bs)
 {
     if (id != SCC_EXT_ID)
         return false;
@@ -119,7 +119,7 @@ bool SCC::PackSpsExt(StorageRW& strg, const Gen9::SPS&, mfxU8 id, Gen9::IBsWrite
     return true;
 }
 
-bool SCC::PackPpsExt(StorageRW& strg, const Gen9::PPS&, mfxU8 id, Gen9::IBsWriter& bs)
+bool SCC::PackPpsExt(StorageRW& strg, const Base::PPS&, mfxU8 id, Base::IBsWriter& bs)
 {
     if (id != SCC_EXT_ID)
         return false;
@@ -146,8 +146,8 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         MFX_CHECK(!bSet, MFX_ERR_NONE);
 
         defaults.CheckProfile.Push(
-            [](Gen9::Defaults::TCheckAndFix::TExt prev
-                , const Gen9::Defaults::Param& dpar
+            [](Base::Defaults::TCheckAndFix::TExt prev
+                , const Base::Defaults::Param& dpar
                 , mfxVideoParam& par)
         {
             OnExit reveretProfile([&](){ SetIf(par.mfx.CodecProfile, !!par.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC); });
@@ -158,8 +158,8 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         defaults.GetSPS.Push(
             [](Defaults::TGetSPS::TExt prev
                 , const Defaults::Param& defPar
-                , const Gen9::VPS& vps
-                , Gen9::SPS& sps)
+                , const Base::VPS& vps
+                , Base::SPS& sps)
         {
             auto sts = prev(defPar, vps, sps);
             MFX_CHECK_STS(sts);
@@ -172,8 +172,8 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         defaults.GetPPS.Push(
             [](Defaults::TGetPPS::TExt prev
                 , const Defaults::Param& defPar
-                , const Gen9::SPS& sps
-                , Gen9::PPS& pps)
+                , const Base::SPS& sps
+                , Base::PPS& pps)
         {
             auto sts = prev(defPar, sps, pps);
             MFX_CHECK_STS(sts);
@@ -209,7 +209,7 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     Push(BLK_LoadSPSPPS
         , [](const mfxVideoParam&, mfxVideoParam&, StorageRW& strg) -> mfxStatus
     {
-        Glob::NeedRextConstraints::GetOrConstruct(strg) = [](const Gen9::PTL& ptl)
+        Glob::NeedRextConstraints::GetOrConstruct(strg) = [](const Base::PTL& ptl)
         {
             return ((ptl.profile_idc == 9) || (ptl.profile_compatibility_flags & (0x1 << 9)));
         };
@@ -323,7 +323,7 @@ void SCC::PostReorderTask(const FeatureBlocks& /*blocks*/, TPushPostRT Push)
             , StorageW& s_task) -> mfxStatus
     {
         MFX_CHECK(Glob::VideoParam::Get(global).mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
-        auto& ssh = Gen9::Task::SSH::Get(s_task);
+        auto& ssh = Base::Task::SSH::Get(s_task);
 
         ssh.num_ref_idx_active_override_flag = 1;
 

@@ -26,10 +26,10 @@ mfx_include_dirs()
 list( APPEND Encoders vp9 h265 h264 mjpeg mpeg2 hevc)
 list( APPEND hevcdir
   hevc/agnostic
-  hevc/agnostic/g9
+  hevc/agnostic/base
   hevc/agnostic/g12
   hevc/linux
-  hevc/linux/g9
+  hevc/linux/base
   hevc/linux/g12
   )
 foreach( dir ${Encoders} )

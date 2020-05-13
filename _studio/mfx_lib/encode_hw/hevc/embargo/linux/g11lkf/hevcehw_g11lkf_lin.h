@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +24,13 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
 #include "hevcehw_g11lkf.h"
-#include "hevcehw_g9_lin.h"
+#include "hevcehw_base_lin.h"
 
 namespace HEVCEHW
 {
 namespace Gen11LKF
 {
-    using TPrevGenImpl = Linux::Gen9::MFXVideoENCODEH265_HW;
+    using TPrevGenImpl = Linux::Base::MFXVideoENCODEH265_HW;
 }; //Gen11LKF
 namespace Linux
 {

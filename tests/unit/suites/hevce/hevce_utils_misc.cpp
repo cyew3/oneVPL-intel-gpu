@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "g9/hevcehw_g9_data.h"
+#include "base/hevcehw_base_data.h"
 
 namespace hevce { namespace tests
 {
@@ -49,8 +49,8 @@ namespace hevce { namespace tests
         {
             for (size_t rIdx = 0; rIdx < nGUIDS; ++rIdx)
             {
-                EXPECT_EQ(HEVCEHW::Gen9::LessGUID()(GuidsAsc[lIdx], GuidsAsc[rIdx]), lIdx < rIdx);
-                EXPECT_EQ(HEVCEHW::Gen9::LessGUID()(GuidsAsc[rIdx], GuidsAsc[lIdx]), rIdx < lIdx);
+                EXPECT_EQ(HEVCEHW::Base::LessGUID()(GuidsAsc[lIdx], GuidsAsc[rIdx]), lIdx < rIdx);
+                EXPECT_EQ(HEVCEHW::Base::LessGUID()(GuidsAsc[rIdx], GuidsAsc[lIdx]), rIdx < lIdx);
             }
         }
     }

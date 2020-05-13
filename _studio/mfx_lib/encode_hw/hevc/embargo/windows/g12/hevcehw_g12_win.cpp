@@ -27,15 +27,15 @@
 #include "hevcehw_g12_scc_win.h"
 #include "hevcehw_g12_caps.h"
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
-#include "hevcehw_g9_blocking_sync_win.h"
+#include "hevcehw_base_blocking_sync_win.h"
 #endif
-#include "hevcehw_g9_iddi.h"
+#include "hevcehw_base_iddi.h"
 #include "hevcehw_g12_sao.h"
 #include "hevcehw_g12_qp_modulation_win.h"
-#include "hevcehw_g9_protected_win.h"
-#include "hevcehw_g9_data.h"
-#include "hevcehw_g9_legacy.h"
-#include "hevcehw_g9_parser.h"
+#include "hevcehw_base_protected_win.h"
+#include "hevcehw_base_data.h"
+#include "hevcehw_base_legacy.h"
+#include "hevcehw_base_parser.h"
 
 using namespace HEVCEHW::Gen12;
 
@@ -63,7 +63,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     // because it is supposed to be used for any render target that will get protected output at some point in time
     if (core.GetHWType() == MFX_HW_TGL_LP)
     {
-        GetFeature<Gen9::Protected>(Gen9::FEATURE_PROTECTED).SetRecFlag(
+        GetFeature<Base::Protected>(Base::FEATURE_PROTECTED).SetRecFlag(
             MFX_MEMTYPE_FROM_ENCODE
             | MFX_MEMTYPE_DXVA2_DECODER_TARGET
             | MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET
@@ -90,25 +90,25 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 
         Reorder(
             qnc
-            , { Gen9::FEATURE_LEGACY, Gen9::Legacy::BLK_SetLowPowerDefault }
+            , { Base::FEATURE_LEGACY, Base::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
         Reorder(
             qnc
-            , { Gen9::FEATURE_LEGACY, Gen9::Legacy::BLK_SetLowPowerDefault }
+            , { Base::FEATURE_LEGACY, Base::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_SCC, SCC::BLK_SetLowPowerDefault });
         Reorder(
             qnc
-            , { Gen9::FEATURE_PARSER, Gen9::Parser::BLK_LoadSPSPPS }
+            , { Base::FEATURE_PARSER, Base::Parser::BLK_LoadSPSPPS }
             , { FEATURE_SCC, SCC::BLK_LoadSPSPPS });
 
         auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
         Reorder(
             qwc
-            , { Gen9::FEATURE_DDI_PACKER, Gen9::IDDIPacker::BLK_HardcodeCaps }
+            , { Base::FEATURE_DDI_PACKER, Base::IDDIPacker::BLK_HardcodeCaps }
             , { FEATURE_REXT, RExt::BLK_HardcodeCaps });
         Reorder(
             qwc
-            , { Gen9::FEATURE_DDI_PACKER, Gen9::IDDIPacker::BLK_HardcodeCaps }
+            , { Base::FEATURE_DDI_PACKER, Base::IDDIPacker::BLK_HardcodeCaps }
             , { FEATURE_CAPS, Caps::BLK_HardcodeCaps }
             , PLACE_AFTER);
     }
@@ -118,11 +118,11 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
         auto& iint = BQ<BQ_InitInternal>::Get(*this);
         Reorder(
             iint
-            , { Gen9::FEATURE_LEGACY, Gen9::Legacy::BLK_SetSPS }
+            , { Base::FEATURE_LEGACY, Base::Legacy::BLK_SetSPS }
             , { FEATURE_SCC, SCC::BLK_SetSPSExt });
         Reorder(
             iint
-            , { Gen9::FEATURE_LEGACY, Gen9::Legacy::BLK_SetPPS }
+            , { Base::FEATURE_LEGACY, Base::Legacy::BLK_SetPPS }
             , { FEATURE_SCC, SCC::BLK_SetPPSExt });
     }
 }
@@ -135,7 +135,7 @@ mfxStatus MFXVideoENCODEH265_HW::Init(mfxVideoParam *par)
     auto& st = BQ<BQ_SubmitTask>::Get(*this);
     Reorder(
         st
-        , { Gen9::FEATURE_DDI, Gen9::IDDI::BLK_SubmitTask }
+        , { Base::FEATURE_DDI, Base::IDDI::BLK_SubmitTask }
         , { FEATURE_SCC, SCC::BLK_PatchDDITask });
 
     return MFX_ERR_NONE;

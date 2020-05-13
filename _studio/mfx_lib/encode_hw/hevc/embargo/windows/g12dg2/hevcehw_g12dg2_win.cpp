@@ -24,8 +24,8 @@
 
 #include "hevcehw_g12dg2_win.h"
 #include "hevcehw_g12dg2_caps.h"
-#include "hevcehw_g9_legacy.h"
-#include "hevcehw_g9_blocking_sync_win.h"
+#include "hevcehw_base_legacy.h"
+#include "hevcehw_base_blocking_sync_win.h"
 
 namespace HEVCEHW
 {
@@ -42,7 +42,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     : TBaseImpl(core, status, mode)
 {
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
-    GetFeature<Gen9::BlockingSync>(HEVCEHW::Gen9::FEATURE_BLOCKING_SYNC).SetTimeout(3600000);// 1 hour
+    GetFeature<Base::BlockingSync>(HEVCEHW::Base::FEATURE_BLOCKING_SYNC).SetTimeout(3600000);// 1 hour
 #endif
 
     TFeatureList newFeatures;
@@ -62,7 +62,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 
         Reorder(
             qnc
-            , { HEVCEHW::Gen9::FEATURE_LEGACY, HEVCEHW::Gen9::Legacy::BLK_SetLowPowerDefault }
+            , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
     }
 }

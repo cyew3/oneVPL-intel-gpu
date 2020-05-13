@@ -8,22 +8,22 @@ list( APPEND cdirs
   )
 list( APPEND hevcdir
   hevc/agnostic
-  hevc/agnostic/g9
+  hevc/agnostic/base
   hevc/agnostic/g12
   hevc/linux
-  hevc/linux/g9
+  hevc/linux/base
   hevc/linux/g12
   )
 if( NOT OPEN_SOURCE )
     list( APPEND hevcdir
         hevc/embargo/agnostic
-        hevc/embargo/agnostic/g9
+        hevc/embargo/agnostic/base
         hevc/embargo/agnostic/g11lkf
         hevc/embargo/agnostic/g12
         hevc/embargo/agnostic/g12ats
         hevc/embargo/agnostic/g12dg2
         hevc/embargo/linux
-        hevc/embargo/linux/g9
+        hevc/embargo/linux/base
         hevc/embargo/linux/g11lkf
         hevc/embargo/linux/g12
         hevc/embargo/linux/g12ats
