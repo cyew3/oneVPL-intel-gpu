@@ -139,7 +139,7 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         , [this](const mfxVideoParam& par, mfxVideoParam&, StorageRW& strg) -> mfxStatus
     {
         MFX_CHECK(par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
-        MFX_CHECK(IsOn(par.mfx.LowPower), MFX_ERR_NONE);
+        MFX_CHECK(!IsOff(par.mfx.LowPower), MFX_ERR_NONE);
 
         auto& defaults = Glob::Defaults::GetOrConstruct(strg);
         auto& bSet = defaults.SetForFeature[GetID()];
