@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -234,7 +234,7 @@ private:
     bool                                 m_bHEVCFEIEnabled;
 #ifdef MFX_ENABLE_MFE
     ComPtrCore<MFEVAAPIEncoder>          m_mfeAvc;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#ifndef STRIP_EMBARGO
     ComPtrCore<MFEVAAPIEncoder>          m_mfeHevc;
 #endif
 #endif

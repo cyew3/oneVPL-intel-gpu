@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -101,7 +101,7 @@ MFX_GUID MFXMFEAVCENCODER_GUID =
 static const MFX_GUID MFXMFEAVCENCODER_SEARCH_GUID =
 { 0xaaa16189, 0x4e5a, 0x4da9, { 0xbb, 0x97, 0x4c, 0xd1, 0xb0, 0xba, 0xac, 0x73 } };
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#ifndef STRIP_EMBARGO
 // {221CB6EA-72B7-47C9-87A2-1F8586BCC4E7}
 static const
 MFX_GUID MFXMFEHEVCENCODER_GUID =

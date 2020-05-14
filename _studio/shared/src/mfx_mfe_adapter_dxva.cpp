@@ -20,7 +20,7 @@
 
 #include "mfx_common.h"
 
-#if defined(MFX_VA_WIN) && defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_VA_WIN) && defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
 
 #include "hevce_ddi_main.h"
 #include "mfx_mfe_adapter_dxva.h"

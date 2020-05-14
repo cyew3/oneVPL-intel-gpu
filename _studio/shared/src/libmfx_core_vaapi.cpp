@@ -482,7 +482,7 @@ VAAPIVideoCORE::VAAPIVideoCORE(
           , m_bHEVCFEIEnabled(false)
 #if defined(MFX_ENABLE_MFE)
           , m_mfeAvc()
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+#ifndef STRIP_EMBARGO
           , m_mfeHevc()
 #endif
 #endif
@@ -1479,7 +1479,7 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return (void*)&m_mfeAvc;
     }
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+#ifndef STRIP_EMBARGO
     else if (MFXMFEHEVCENCODER_SEARCH_GUID == guid)
     {
         if (!m_mfeHevc.get())

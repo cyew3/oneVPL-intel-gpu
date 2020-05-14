@@ -58,7 +58,7 @@ D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsA
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     ,   m_bIsBlockingTaskSyncEnabled(false)
 #endif
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
     ,   m_mfeAvc()
     ,   m_mfeHevc()
 #endif
@@ -642,7 +642,7 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return (void*)&m_comptr;
     }
-#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
     else if (MFXMFEAVCENCODER_SEARCH_GUID == guid)
     {
         if (!m_mfeAvc.get())

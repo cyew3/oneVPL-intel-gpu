@@ -21,7 +21,7 @@
 #ifndef _MFX_MFE_ADAPTER_DXVA_
 #define _MFX_MFE_ADAPTER_DXVA_
 
-#if defined(MFX_VA_WIN) && defined(MFX_ENABLE_MFE) && !defined(AS_MFX_LA_PLUGIN) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_VA_WIN) && defined(MFX_ENABLE_MFE) && !defined(AS_MFX_LA_PLUGIN) && !defined(STRIP_EMBARGO)
 #include <vector>
 #include <list>
 #include <condition_variable>

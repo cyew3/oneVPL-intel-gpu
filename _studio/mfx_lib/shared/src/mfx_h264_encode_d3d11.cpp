@@ -898,7 +898,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         m_sizeSkipFrames += feedback.bitstreamSize;
     }
 
-#if defined(MFX_ENABLE_MFE) && defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(MFX_ENABLE_MFE) && !defined(STRIP_EMBARGO)
     if (m_pMFEAdapter != nullptr)
     {
         mfxU32 timeout = task.m_mfeTimeToWait >> task.m_fieldPicFlag;
