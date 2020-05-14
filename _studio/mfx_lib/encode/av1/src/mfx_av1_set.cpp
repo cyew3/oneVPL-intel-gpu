@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -229,8 +229,8 @@ namespace {
     }
 
     void WriteFrameSize(uint8_t *buf, int32_t &off, const AV1VideoParam &par) {
-        PutBits(buf, off, par.Width - 1, 16);
-        PutBits(buf, off, par.Height - 1, 16);
+        PutBits(buf, off, par.sourceWidth - 1, 16);
+        PutBits(buf, off, par.sourceHeight - 1, 16);
     }
 
     void WriteRenderSize(uint8_t *buf, int32_t &off) {
@@ -735,7 +735,7 @@ namespace {
         return 0;
     }
 
-    void WriteFrameSizeAv1(uint8_t *buf, int32_t &off, int32_t enable_superres/*seq*/, int32_t use_superres/*frame*/, int32_t superres_denom)
+    void WriteFrameSizeAv1(uint8_t *buf, int32_t &off, int32_t enable_superres/*seq*/, int32_t use_superres/*frame*/, int32_t superres_denom, const AV1VideoParam &par)
     {
         const int32_t frame_size_override_flag = 0;
         const int32_t render_and_frame_size_different = 0;
@@ -757,6 +757,8 @@ namespace {
         PutBit(buf, off, render_and_frame_size_different);
         if (render_and_frame_size_different) {
             assert(0);
+            PutBits(buf, off, par.Width - par.CropRight - 1, 16);
+            PutBits(buf, off, par.Height - par.CropBottom - 1, 16);
         }
     }
 
@@ -818,14 +820,14 @@ namespace {
                 //PutBits(buf, off, 0, 1);   // decoder_rate_model_present_flag[i]
             }
 
-            const int32_t width = par.superResFlag ? par.sourceWidth : par.Width;
+            const int32_t width = par.sourceWidth; // par.superResFlag ? par.sourceWidth : par.Width;
             const int32_t num_bits_width  = get_msb(width - 1) + 1;
-            const int32_t num_bits_height = get_msb(par.Height - 1) + 1;
+            const int32_t num_bits_height = get_msb(par.sourceHeight - 1) + 1;
 
             PutBits(buf, off, num_bits_width - 1, 4);
             PutBits(buf, off, num_bits_height - 1, 4);
             PutBits(buf, off, width - 1, num_bits_width);
-            PutBits(buf, off, par.Height - 1, num_bits_height);
+            PutBits(buf, off, par.sourceHeight - 1, num_bits_height);
 
             if (!reduced_still_picture_hdr) {
                 PutBit(buf, off, par.seqParams.frameIdNumbersPresentFlag);
@@ -967,14 +969,14 @@ namespace {
         if (frame_type == KEY_FRAME) {
             if (!showFrame)
                 PutBits(buf, off, frame.refreshFrameFlags, 8);
-            WriteFrameSizeAv1(buf, off, enable_superres, superres.use, superres.denom);
+            WriteFrameSizeAv1(buf, off, enable_superres, superres.use, superres.denom, par);
             if (allow_screen_content_tools && av1_superres_unscaled)
                 PutBit(buf, off, allow_intrabc);
 
         } else {
             if (frame.intraOnly) {
                 PutBits(buf, off, frame.refreshFrameFlags, 8);
-                WriteFrameSizeAv1(buf, off, enable_superres, superres.use, superres.denom);
+                WriteFrameSizeAv1(buf, off, enable_superres, superres.use, superres.denom, par);
                 if (allow_screen_content_tools && av1_superres_unscaled)
                     PutBit(buf, off, allow_intrabc);
 
@@ -1003,7 +1005,7 @@ namespace {
                 if (par.errorResilientMode == 0 && frame_size_override_flag) {
                     assert(0);
                 } else {
-                    WriteFrameSizeAv1(buf, off, enable_superres, superres.use, superres.denom);
+                    WriteFrameSizeAv1(buf, off, enable_superres, superres.use, superres.denom, par);
                 }
 
                 if (!force_integer_mv)
@@ -3921,8 +3923,8 @@ void AV1Enc::WriteIvfHeader(uint8_t *buf, int32_t &bitoff, const AV1VideoParam &
     Put8(buf+9, 'V');
     Put8(buf+10, '0');
     Put8(buf+11, '1');
-    Put16LE(buf+12, par.Width);     // width
-    Put16LE(buf+14, par.Height);    // height
+    Put16LE(buf+12, par.sourceWidth);     // width
+    Put16LE(buf+14, par.sourceHeight);    // height
     Put32LE(buf+16, 1000);          // rate
     Put32LE(buf+20, 1);             // scale
     Put32LE(buf+24, 0);             // frame count (unknown at this point)

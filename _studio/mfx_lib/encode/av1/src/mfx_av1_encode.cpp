@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -668,24 +668,28 @@ static void TaskLogDump()
         intParam.MaxTrSize = 1 << intParam.QuadtreeTULog2MaxSize;
         intParam.MaxCUSize = maxCUSize;
 
+        // Computed sizes
+        int ReMiW = ((fi.CropW + 7) >> 3) * 8;
+        int ReMiH = ((fi.CropH + 7) >> 3) * 8;
         intParam.sourceWidth = fi.CropW;
         intParam.sourceHeight = fi.CropH;
-        intParam.Width = fi.CropW;
+        intParam.Width = ReMiW;
         // simple SuperResolution support: encoder works with (W/2 x H), but SequenceHeader writes (W x H)
         if (optHevc.SRMode == ON) {
             int denom = SUPERRES_SCALE_DENOMINATOR_DEFAULT;
             intParam.Width = (intParam.Width * SCALE_NUMERATOR + denom / 2) / denom;
         }
-        intParam.CropLeft = 0;
-        intParam.CropRight = 0;
-        if (fi.PicStruct == TFF || fi.PicStruct == BFF) {
-            intParam.Height = (fi.CropH / 2 + 7) & ~7;
-            intParam.CropTop = 0;
-            intParam.CropBottom = 0;
-        } else {
-            intParam.Height = fi.CropH;
-            intParam.CropTop = 0;
-            intParam.CropBottom = 0;
+        intParam.CropLeft = fi.CropX;
+        intParam.CropRight = intParam.Width - fi.CropW - fi.CropX;
+        //if (fi.PicStruct == TFF || fi.PicStruct == BFF) {
+        //    intParam.Height = (fi.CropH / 2 + 7) & ~7;
+        //    intParam.CropTop = 0;
+        //    intParam.CropBottom = 0;
+        //} else 
+        {
+            intParam.Height = ReMiH;
+            intParam.CropTop = fi.CropY;
+            intParam.CropBottom = intParam.Height - fi.CropH - fi.CropY;
         }
 
         intParam.enableCmFlag = (optHevc.EnableCm == ON);
@@ -3808,17 +3812,17 @@ mfxStatus AV1Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumbe
                     if (th->m_videoParam.superResFlag && (task->frame->m_isRef || th->m_videoParam.doDumpRecon)) {
                         if (task->row + 1 == th->m_videoParam.sb64Rows && task->col + 1 == th->m_videoParam.sb64Cols) {
                             av1_upscale_normative_and_extend_frame(th->m_videoParam, task->frame->m_recon, task->frame->m_reconUpscale);
-                            PadRectLumaAndChroma(*task->frame->m_reconUpscale, th->m_videoParam.fourcc, 0, 0, th->m_videoParam.sourceWidth, th->m_videoParam.Height);
+                            PadRectLumaAndChroma(*task->frame->m_reconUpscale, th->m_videoParam.fourcc, 0, 0, th->m_videoParam.sourceWidth, th->m_videoParam.sourceHeight);
                         }
                     }
 
                     if (!task->frame->IsNotRef()) {
                         if (task->row + 1 == th->m_videoParam.sb64Rows && task->col + 1 == th->m_videoParam.sb64Cols) {
-                            PadRectLumaAndChroma(*task->frame->m_recon, th->m_videoParam.fourcc, 0, 0, th->m_videoParam.Width, th->m_videoParam.Height);
+                            PadRectLumaAndChroma(*task->frame->m_recon, th->m_videoParam.fourcc, 0, 0, th->m_videoParam.sourceWidth, th->m_videoParam.sourceHeight);
                         }
                         if (th->m_videoParam.src10Enable) {
                             if (task->row + 1 == th->m_videoParam.sb64Rows && task->col + 1 == th->m_videoParam.sb64Cols) {
-                                PadRectLumaAndChroma(*task->frame->m_recon10, /*th->m_videoParam.fourcc*/MFX_FOURCC_P010, 0, 0, th->m_videoParam.Width, th->m_videoParam.Height);
+                                PadRectLumaAndChroma(*task->frame->m_recon10, /*th->m_videoParam.fourcc*/MFX_FOURCC_P010, 0, 0, th->m_videoParam.sourceWidth, th->m_videoParam.sourceHeight);
                             }
                         }
                     }

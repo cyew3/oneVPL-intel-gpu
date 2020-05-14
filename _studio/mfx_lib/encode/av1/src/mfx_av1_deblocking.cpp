@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -985,7 +985,7 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
     //
     template <typename PixType>
     void av1_loopfilter_luma_last_8x8(PixType *dst, int32_t dstride, int32_t mi_row, int32_t mi_col,
-                                      const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits)
+                                      const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits, bool offScreen4w, bool offScreen4h)
     {
         assert((mi_row & 1) == 0);
         assert((mi_col & 1) == 0);
@@ -995,14 +995,45 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
         const ModeInfo *curr = mi8x8 + (mi_row >> 1) * miPitch + (mi_col >> 1);
         const ModeInfo *above = curr - miPitch;
         PixType *dst2 = dst + 4 * dstride;
+        // ... ....
+        //    |
+        // ........
+        //
+        if (!offScreen4w) {
+            set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst + 4, dstride, x + 4, curr, curr, limits); // v0
+        }
+        // ........
+        //
+        // ... ....
+        //    |
+        if (!offScreen4h && !offScreen4w) {
+            set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst2 + 4, dstride, x + 4, curr, curr, limits); // v1
+        }
 
-        set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst  + 4, dstride, x + 4, curr, curr, limits); // v0
-        set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst2 + 4, dstride, x + 4, curr, curr, limits); // v1
-
+        // ____....
+        //
+        // ........
+        //
         set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst  + 0, dstride, y + 0, curr, above, limits); // h0
-        set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst  + 4, dstride, y + 0, curr, above, limits); // h1
-        set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst2 + 0, dstride, y + 4, curr, curr,  limits); // h2
-        set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst2 + 4, dstride, y + 4, curr, curr,  limits); // h3
+        // ....____
+        // ........
+        if (!offScreen4w) {
+            set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst + 4, dstride, y + 0, curr, above, limits); // h1
+        }
+        // ........
+        //
+        // ____....
+        //
+        if (!offScreen4h) {
+            set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst2 + 0, dstride, y + 4, curr, curr, limits); // h2
+        }
+        // ........
+        //
+        // ....____
+        //
+        if(!offScreen4h && !offScreen4w) {
+            set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst2 + 4, dstride, y + 4, curr, curr, limits); // h3
+        }
     }
 
 
@@ -1035,7 +1066,7 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
     //
     template <typename PixType>
     void av1_loopfilter_luma_8x8(PixType *dst, int32_t dstride, int32_t mi_row, int32_t mi_col,
-                                 const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits)
+                                 const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits, bool offScreen4w, bool offScreen4h)
     {
         assert((mi_row & 1) == 0);
         assert((mi_col & 1) == 0);
@@ -1047,21 +1078,64 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
         const ModeInfo *above = curr - miPitch;
         PixType *dst2 = dst + 4 * dstride;
 
+        // ... ....
+        //    |
+        // ........
+        //
         set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst  + 4, dstride, x + 4, curr,  curr, limits); // v0
-        set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst  + 8, dstride, x + 8, right, curr, limits); // v1
-        set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst2 + 4, dstride, x + 4, curr,  curr, limits); // v2
-        set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst2 + 8, dstride, x + 8, right, curr, limits); // v3
-
+        // ....... 
+        //        |
+        // ........
+        //
+        if (!offScreen4w) {
+            set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst + 8, dstride, x + 8, right, curr, limits); // v1
+        }
+        // ........
+        //
+        // ... ....
+        //    |
+        if (!offScreen4h) {
+            set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst2 + 4, dstride, x + 4, curr, curr, limits); // v2
+        }
+        // ........
+        //
+        // ....... 
+        //        |
+        if (!offScreen4h && !offScreen4w) {
+            set_lpf_parameters_and_filter<VERT_EDGE, 0>(dst2 + 8, dstride, x + 8, right, curr, limits); // v3
+        }
+        // ____....
+        //
+        // ........
+        //
         set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst  + 0, dstride, y + 0, curr, above, limits); // h0
-        set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst  + 4, dstride, y + 0, curr, above, limits); // h1
-        set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst2 + 0, dstride, y + 4, curr, curr,  limits); // h0
-        set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst2 + 4, dstride, y + 4, curr, curr,  limits); // h1
+        // ....____
+        //
+        // ........
+        //
+        if (!offScreen4w) {
+            set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst + 4, dstride, y + 0, curr, above, limits); // h1
+        }
+        // ........
+        //
+        // ____....
+        //
+        if (!offScreen4h) {
+            set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst2 + 0, dstride, y + 4, curr, curr, limits); // h0
+        }
+        // ........
+        //
+        // ....____
+        //
+        if(!offScreen4h && !offScreen4w) {
+            set_lpf_parameters_and_filter<HORZ_EDGE, 0>(dst2 + 4, dstride, y + 4, curr, curr, limits); // h1
+        }
     }
     template void av1_loopfilter_luma_8x8<uint8_t>(uint8_t *dst, int32_t dstride, int32_t mi_row, int32_t mi_col,
-        const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits);
+        const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits, bool offScreen4w, bool offScreen4h);
 
     template void av1_loopfilter_luma_8x8<uint16_t>(uint16_t *dst, int32_t dstride, int32_t mi_row, int32_t mi_col,
-        const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits);
+        const ModeInfo *mi8x8, int32_t miPitch, const LoopFilterThresh &limits, bool offScreen4w, bool offScreen4h);
 
     // ____h0____|| <- right frame border
     //           ||
@@ -1386,14 +1460,15 @@ void LoopFilterResetParams(LoopFilterFrameParam *par)
             //uint8_t *p = frame->m_recon->y + startR4x4 * frame->m_recon->pitch_luma_pix * 4;
             PixType *p = (PixType *)recon->y + startR4x4 * recon->pitch_luma_pix * 4;
             for (int32_t r = startR4x4; r < stopR4x4; r += 2, p += 8 * pitch)
-                for (int32_t c = startC4x4; c < stopC4x4; c += 2)
-                    av1_loopfilter_luma_8x8(p + (c << 2), pitch, r, c, mi, miPitch, limits);
+                for (int32_t c = startC4x4; c < stopC4x4; c += 2) {
+                    av1_loopfilter_luma_8x8(p + (c << 2), pitch, r, c, mi, miPitch, limits, ((int32_t)par.sourceWidth <= c * 4 + 4), ((int32_t)par.sourceHeight <= r * 4 + 4));
+                }
 
             if (sbCol + 1 == par.sb64Cols) {
                 const int32_t c = stopC4x4;
                 p = (PixType*)recon->y + startR4x4 * recon->pitch_luma_pix * 4 + (c << 2);
                 for (int32_t r = startR4x4; r < stopR4x4; r += 2, p += 8 * pitch)
-                    av1_loopfilter_luma_last_8x8(p, pitch, r, c, mi, miPitch, limits);
+                    av1_loopfilter_luma_last_8x8(p, pitch, r, c, mi, miPitch, limits, ((int32_t)par.sourceWidth <= c * 4 + 4), ((int32_t)par.sourceHeight <= r * 4 + 4));
             }
 
             // Chroma processed as 8 rows by 8 4x4 blocks, shifted to the left by 1 4x4 block

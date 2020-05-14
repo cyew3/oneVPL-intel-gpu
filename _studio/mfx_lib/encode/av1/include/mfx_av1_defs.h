@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -581,11 +581,14 @@ namespace AV1Enc {
         const int32_t MAX_TARGET_USAGE       = 7;
         const int32_t MAX_WIDTH              = 8192;
         const int32_t MAX_HEIGHT             = 4320;
+        const int32_t MIN_WIDTH_IMPL         = 128; // implementation specific constraints
+        const int32_t MIN_HEIGHT_IMPL        = 64;  // implementation specific constraints
         const int32_t VP9_MAX_NUM_TILE_COLS  = 20;
         const int32_t VP9_MAX_NUM_TILE_ROWS  = 22;
         const int32_t AV1_MAX_NUM_TILE_COLS  = 64;
         const int32_t AV1_MAX_NUM_TILE_ROWS  = 64;
         const int32_t MIN_TILE_WIDTH         = 256;
+        const int32_t MIN_TILE_WIDTH_IMPL    = 256; // implementation specific constraints
         const int32_t MIN_TILE_HEIGHT        = 64;
         const int32_t MAX_NUM_SLICE          = (MAX_HEIGHT + 63) >> 6;
         const int32_t SUP_GOP_OPT_FLAG[]     = { MFX_GOP_CLOSED, MFX_GOP_STRICT, MFX_GOP_CLOSED|MFX_GOP_STRICT };

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -478,7 +478,8 @@ namespace AV1Enc {
         recty = Saturate(0, height - 1, recty);
         rectw = Saturate(1, width - rectx, rectw);
         recth = Saturate(1, height - recty, recth);
-
+        height = recth;
+        width = rectw;
         if (rectx == 0) {
             rectx -= padL;
             rectw += padL;

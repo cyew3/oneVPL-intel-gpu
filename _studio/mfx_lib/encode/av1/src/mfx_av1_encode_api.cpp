@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -775,8 +775,12 @@ namespace {
         errUnsupported = !CheckSet(fi.ChromaFormat, CodecLimits::SUP_CHROMA_FORMAT);
         errUnsupported = !CheckMax(fi.Width, CodecLimits::MAX_WIDTH);
         errUnsupported = !CheckMax(fi.Height, CodecLimits::MAX_HEIGHT);
-
+        errUnsupported = !CheckMin(fi.Width, CodecLimits::MIN_WIDTH_IMPL);
+        errUnsupported = !CheckMin(fi.Height, CodecLimits::MIN_HEIGHT_IMPL);
         errInvalidParam = !CheckSet(fi.PicStruct, CodecLimits::SUP_PIC_STRUCT);
+        if(fi.PicStruct == TFF || fi.PicStruct == BFF)
+            fi.PicStruct = PROGR, wrnIncompatible = true;
+
         errInvalidParam = !CheckSet(mfx.RateControlMethod, CodecLimits::SUP_RC_METHOD);
         errInvalidParam = !CheckSet(fi.FourCC, CodecLimits::SUP_FOURCC);
         errInvalidParam = !CheckMax(mfx.NumSlice, CodecLimits::MAX_NUM_SLICE);
@@ -1414,13 +1418,13 @@ namespace {
         if (optHevc.NumTileColumnsKeyFrame == 0) {
             //optHevc.NumTileColumnsKeyFrame = 1 << BSR(std::max((int32_t)1, fi.Width / CodecLimits::MIN_TILE_WIDTH));
             //optHevc.NumTileColumnsKeyFrame = std::min((uint16_t)2, optHevc.NumTileColumnsKeyFrame);    // dont need many tiles with wpp execution of mode decision
-            optHevc.NumTileColumnsKeyFrame = (par.AsyncDepth == 1) ? 2 : 1;
+            optHevc.NumTileColumnsKeyFrame = (par.AsyncDepth == 1 && fi.CropW >= CodecLimits::MIN_TILE_WIDTH_IMPL) ? 2 : 1;
         }
         if (optHevc.NumTileColumnsInterFrame == 0) {
             int32_t size = defaultOptHevc.Log2MaxCUSize;
             float wppEff = MIN((mfx.FrameInfo.Height + (1 << size) - 1) >> size,
                                 (mfx.FrameInfo.Width + (1 << size) - 1) >> (size + 1)) / 2.75f;
-            optHevc.NumTileColumnsInterFrame = (par.AsyncDepth == 1 && mfx.GopRefDist == 1 && wppEff < mfx.NumThread) ? 2 : 1;
+            optHevc.NumTileColumnsInterFrame = (par.AsyncDepth == 1 && mfx.GopRefDist == 1 && wppEff < mfx.NumThread  && fi.CropW >= CodecLimits::MIN_TILE_WIDTH_IMPL) ? 2 : 1;
         }
 
 
@@ -1956,7 +1960,8 @@ mfxStatus MFXVideoENCODEAV1::Query(MFXCoreInterface1 *core, mfxVideoParam *in, m
         mfxExtEncoderCapability *outCaps = GetExtBuffer(*out);
         if (outCaps == nullptr)
             return MFX_ERR_UNSUPPORTED;
-        outCaps->MBPerSec = 33 * (1920 * 1088 >> 12);
+        //outCaps->MBPerSec = 33 * (1920 * 1088 >> 12); // LCU based
+        outCaps->MBPerSec = 38 * (1920 * 1088 >> 8); // 16x16 based (expected > 300k)
         return MFX_ERR_NONE;
     }
 
