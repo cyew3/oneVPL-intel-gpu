@@ -202,7 +202,7 @@ mfxStatus HardcodeCaps(MFX_ENCODE_CAPS_HEVC& caps, VideoCORE* core, MfxVideoPara
         caps.ddi_caps.Color420Only = 0;  // = 1 now
         caps.ddi_caps.YUV422ReconSupport = 1; // = 0 now
         caps.ddi_caps.SliceIPBOnly = 1;  // = 0 now (SliceIP is also 0)cz
-        caps.ddi_caps.SliceIPOnly = IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7);
+        caps.ddi_caps.SliceIPOnly = IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7 || par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC);
         caps.ddi_caps.NoWeightedPred = 0; // = 1 now
         caps.ddi_caps.NoMinorMVs = 1;  // = 0 now
         caps.ddi_caps.RawReconRefToggle = 1;  // = 0 now
