@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Intel Corporation
+// Copyright (c) 2016-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -75,6 +75,9 @@ namespace MfxHwVP9Encode
 #define MAX_TILE_WIDTH 4096
 #define MAX_NUM_TILE_ROWS_VP9 4
 #define MAX_NUM_TILES 16
+
+#define CODEC_MIN_PIC_WIDTH 128
+#define CODEC_MIN_PIC_HEIGHT 96
 
 const mfxU16 segmentSkipMask = 0xf0;
 const mfxU16 segmentRefMask = 0x0f;

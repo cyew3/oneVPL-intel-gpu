@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 Intel Corporation
+// Copyright (c) 2016-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1023,13 +1023,13 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
-    if (fi.Width > caps.MaxPicWidth)
+    if (fi.Width > caps.MaxPicWidth || fi.Width < caps.MinPicWidth)
     {
         fi.Width = 0;
         unsupported = true;
     }
 
-    if (fi.Height > caps.MaxPicHeight)
+    if (fi.Height > caps.MaxPicHeight || fi.Height < caps.MinPicHeight)
     {
         fi.Height = 0;
         unsupported = true;

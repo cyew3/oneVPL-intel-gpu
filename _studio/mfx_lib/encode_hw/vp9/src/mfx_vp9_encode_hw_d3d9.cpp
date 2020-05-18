@@ -937,6 +937,8 @@ void PrintDdiToLog(ENCODE_CAPS_VP9 const &caps)
     MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** EncFunc=", "%d", caps.EncFunc);
     MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxPicWidth=", "%d", caps.MaxPicWidth);
     MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxPicHeight=", "%d", caps.MaxPicHeight);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MinPicWidth=", "%d", caps.MinPicWidth);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MinPicHeight=", "%d", caps.MinPicHeight);
     MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxNumOfDirtyRect=", "%d", caps.MaxNumOfDirtyRect);
     MFX_LTRACE_1(MFX_TRACE_LEVEL_DEFAULT, "*** MaxNumOfMoveRect=", "%d", caps.MaxNumOfMoveRect);
 }
