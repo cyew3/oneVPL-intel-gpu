@@ -91,6 +91,7 @@ void Caps::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     {
         auto& caps = HEVCEHW::Gen12::Glob::EncodeCaps::Get(strg);
         caps.SliceIPOnly = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC);
+        caps.msdk.PSliceSupport = true;
 
         return MFX_ERR_NONE;
     });
