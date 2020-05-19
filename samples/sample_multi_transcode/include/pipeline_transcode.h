@@ -362,6 +362,8 @@ namespace TranscodingSample
 
         EPresetModes PresetMode;
         bool shouldPrintPresets;
+
+        bool rawInput;
     };
 
     struct sInputParams: public __sInputParams
@@ -727,6 +729,7 @@ namespace TranscodingSample
         mfxStatus InitPluginMfxParams(sInputParams *pInParams);
         mfxStatus InitPreEncMfxParams(sInputParams *pInParams);
 
+        virtual mfxU32 FileFourCC2EncFourCC(mfxU32 fcc);
         void FillFrameInfoForEncoding(mfxFrameInfo& info, sInputParams *pInParams);
 
         mfxStatus AllocAndInitVppDoNotUse(sInputParams *pInParams);
@@ -868,6 +871,8 @@ namespace TranscodingSample
         bool isHEVCSW;
 
         bool m_bInsertIDR;
+
+        bool m_rawInput;
 
         std::unique_ptr<ExtendedBSStore>        m_pBSStore;
 
