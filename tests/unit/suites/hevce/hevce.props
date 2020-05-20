@@ -28,6 +28,7 @@
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12dg2;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared\embargo;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\lpla;
       $(MSDK_STUDIO_ROOT)\..\tests\unit;
       $(MSDK_STUDIO_ROOT)\..\contrib\detours\include;
       $(MSDK_STUDIO_ROOT)\..\contrib\googletest\googletest\include;

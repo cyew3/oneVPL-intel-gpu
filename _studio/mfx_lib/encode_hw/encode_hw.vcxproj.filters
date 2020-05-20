@@ -531,6 +531,8 @@
     </ClCompile>
     <ClCompile Include="av1\agnostic\base\av1ehw_base_impl.cpp">
       <Filter>av1\open\agnostic\base</Filter>
+    <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_lpla_analysis.cpp">
+      <Filter>hevc\embargo\windows\base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -995,6 +997,8 @@
     </ClInclude>
     <ClInclude Include="av1\embargo\windows\g13\av1ehw_g13_win.h">
       <Filter>av1\embargo\windows\g13</Filter>
+    <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_lpla_analysis.h">
+      <Filter>hevc\embargo\windows\base</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

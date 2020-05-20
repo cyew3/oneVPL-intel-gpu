@@ -23,6 +23,7 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\fei\h264_la;
     $(MSDK_STUDIO_ROOT)\mfx_lib\genx\copy_kernels\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h264\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\lpla;
     </MfxIncludes>
     <MfxDefinitions>MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;LIBMFXHW_EXPORTS;AS_H264LA_PLUGIN;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>

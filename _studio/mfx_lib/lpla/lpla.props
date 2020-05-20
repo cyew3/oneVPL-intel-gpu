@@ -16,7 +16,12 @@
     $(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;
     $(MSDK_STUDIO_ROOT)\shared\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
-	$(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h265\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h265\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\agnostic;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\agnostic\base;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include\feature_blocks;
     </MfxIncludes>
     <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>

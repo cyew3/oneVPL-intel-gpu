@@ -92,6 +92,16 @@ public:
             , ENCODE_SET_PICTURE_PARAMETERS_HEVC&>;
         TUpdatePPS UpdatePPS;
 
+        using TUpdateSPS = CallChain<void
+            , const StorageR& //global
+            , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC&>;
+        TUpdateSPS UpdateSPS;
+
+        using TUpdateCqmHint = CallChain<void
+            , TaskCommonPar&
+            , const LOOKAHEAD_INFO&>;
+        TUpdateCqmHint UpdateCqmHint;
+
         using TInitFeedback = CallChain<void
             , const StorageR&
             , mfxU16 //cacheSize

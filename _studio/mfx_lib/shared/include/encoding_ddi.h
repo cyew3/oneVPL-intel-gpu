@@ -351,14 +351,6 @@ enum
     CQM_HINT_USE_CUST_MATRIX = 1,    //use customized matrix
     CQM_HINT_INVALID         = 0xFF  //invalid hint
 };
-
-struct mfxLplastatus
-{
-    mfxU8             ValidInfo = 0;
-    mfxU8             CqmHint = CQM_HINT_INVALID;
-    mfxU32            TargetFrameSize = 0;
-};
-
 #endif
 
 // new encode query status interface for slice level report (starting from DDI 0.935)

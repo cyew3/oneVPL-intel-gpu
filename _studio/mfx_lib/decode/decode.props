@@ -24,6 +24,7 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\decode\vc1\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\decode\vp9\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\decode\mpeg2\sw\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\lpla;
     </MfxIncludes>
     <MfxDefinitions>MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>

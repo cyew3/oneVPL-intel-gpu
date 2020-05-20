@@ -31,6 +31,9 @@
 #include "mfxla.h"
 #include "mfxpcp.h"
 #include "mfxwidi.h"
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+#include "mfx_lp_lookahead.h"
+#endif
 
 #include "umc_mutex.h"
 #include "umc_defs.h"

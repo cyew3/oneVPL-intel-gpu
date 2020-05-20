@@ -19,7 +19,10 @@
 // SOFTWARE.
 
 #include "mfx_lp_lookahead.h"
-#include "mfx_h265_encode_hw.h"
+#include "mfx_feature_blocks_base.h"
+#include "hevcehw_base_data.h"
+#include "hevcehw_disp.h"
+#include "mfx_task.h"
 
 #if defined (MFX_ENABLE_LP_LOOKAHEAD)
 
@@ -31,7 +34,7 @@ mfxStatus MfxLpLookAhead::Init(mfxVideoParam* param)
     if (m_bInitialized)
         return MFX_ERR_NONE;
 
-    m_pEnc = new MFXVideoENCODEH265_HW(m_core, &mfxRes);
+    m_pEnc = HEVCEHW::Create(*m_core, mfxRes);
     MFX_CHECK_NULL_PTR1(m_pEnc);
 
     // following configuration comes from HW recommendation
@@ -55,7 +58,7 @@ mfxStatus MfxLpLookAhead::Init(mfxVideoParam* param)
     m_bitstream.Data = new mfxU8[bufferSize];
     m_bitstream.MaxLength = bufferSize;
 
-    mfxRes = m_pEnc->InitInternal(&par);
+    mfxRes = m_pEnc->Init(&par);
     m_bInitialized = true;
 
     return mfxRes;
@@ -119,10 +122,12 @@ mfxStatus MfxLpLookAhead::Submit(mfxFrameSurface1 * surface)
     mfxRes = entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0);
     if (mfxRes == MFX_ERR_NONE)
     {
-        MfxHwH265Encode::Task * task = (MfxHwH265Encode::Task*)entryPoint.pParam;
-        if (task->m_lplastatus.ValidInfo)
+        auto& s_task = *(MfxFeatureBlocks::StorageRW*)entryPoint.pParam;
+        auto& task = HEVCEHW::Base::Task::Common::Get(s_task);
+
+        if (task.LplaStatus.ValidInfo)
         {
-            m_lplastatus.push_back((task->m_lplastatus));
+            m_lplastatus.push_back(task.LplaStatus);
         }
     }
     //else return to h264 encoder pipeline and leverage external scheduler for task scheduling

@@ -28,6 +28,9 @@
 #include "ehw_resources_pool.h"
 #include "ehw_device.h"
 #include <vector>
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+#include "mfx_lp_lookahead.h"
+#endif
 
 namespace HEVCEHW
 {
@@ -769,6 +772,9 @@ namespace Base
         Resource            CUQP;
         mfxHDLPair          HDLRaw              = {};
         bool                bCUQPMap            = false;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        mfxLplastatus       LplaStatus          = {};
+#endif
         bool                bForceSync          = false;
         bool                bSkip               = false;
         bool                bResetBRC           = false;
@@ -1319,6 +1325,7 @@ namespace Base
         , FEATURE_QMATRIX
         , FEATURE_UNITS_INFO
         , FEATURE_FEI
+        , FEATURE_LPLA_ANALYSIS
         , NUM_FEATURES
     };
 

@@ -17,7 +17,8 @@
       $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
       $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h264\include;
-      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h265\include
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h265\include;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\lpla;
     </MfxIncludes>
     <MfxDefinitions>MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>

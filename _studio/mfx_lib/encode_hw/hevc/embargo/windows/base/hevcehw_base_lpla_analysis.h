@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2020 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,45 +18,42 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma once
+
 #include "mfx_common.h"
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#ifndef _MFX_LOWPOWER_LOOKAHEAD_H_
-#define _MFX_LOWPOWER_LOOKAHEAD_H_
+#include "hevcehw_base.h"
+#include "mfx_lp_lookahead.h"
 
-struct mfxLplastatus
+namespace HEVCEHW
 {
-    mfxU8 ValidInfo = 0;
-    mfxU8 CqmHint = 0xFF;
-    mfxU32 TargetFrameSize = 0;
-};
-
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)
-
-class MfxLpLookAhead
+namespace Windows
+{
+namespace Base
+{
+class LpLookAheadAnalysis
+    : public FeatureBase
 {
 public:
-    MfxLpLookAhead(VideoCORE *core) : m_core(core) {}
+#define DECL_BLOCK_LIST\
+    DECL_BLOCK(SetDefaults)\
+    DECL_BLOCK(SetCallChains)
+#define DECL_FEATURE_NAME "Base_LpLookAheadAnalysis"
+#include "hevcehw_decl_blocks.h"
 
-    virtual ~MfxLpLookAhead() { Close(); }
-
-    virtual mfxStatus Init(mfxVideoParam* param);
-
-    virtual mfxStatus Reset(mfxVideoParam* param);
-
-    virtual mfxStatus Close();
-
-    virtual mfxStatus Submit(mfxFrameSurface1 * surface);
-
-    virtual mfxStatus Query(mfxLplastatus* laStatus);
-
+    LpLookAheadAnalysis(mfxU32 FeatureId)
+        : FeatureBase(FeatureId)
+    {}
 protected:
-    bool                   m_bInitialized = false;
-    VideoCORE*             m_core         = nullptr;
-    VideoENCODE*           m_pEnc         = nullptr;
-    mfxBitstream           m_bitstream    = {};
-    std::list<mfxLplastatus> m_lplastatus;
+    virtual void InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push) override;
+    virtual void SetDefaults(const FeatureBlocks& blocks, TPushSD Push) override;
+    virtual void SetSupported(ParamSupport& par) override;
+    virtual void SetInherited(ParamInheritance& par) override;
+    bool m_lplaEnabled = false;
 };
+} //Base
+} //Windows
+} //namespace HEVCEHW
 
 #endif
-
-#endif // !_MFX_LOWPOWER_LOOKAHEAD_H_

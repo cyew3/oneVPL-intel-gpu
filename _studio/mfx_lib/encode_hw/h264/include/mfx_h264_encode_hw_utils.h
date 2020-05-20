@@ -43,6 +43,7 @@
 #include "asc.h"
 
 #if defined(MFX_ENABLE_LP_LOOKAHEAD)
+#include "mfx_lp_lookahead.h"
 class MfxLpLookAhead;
 #endif
 

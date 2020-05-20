@@ -59,6 +59,9 @@
 #if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
 #include "hevcehw_base_units_info_win.h"
 #endif
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+#include "hevcehw_base_lpla_analysis.h"
+#endif
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;
@@ -124,6 +127,9 @@ Windows::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 #endif
 #if defined (MFX_ENABLE_HEVCE_UNITS_INFO)
     m_features.emplace_back(new UnitsInfo(FEATURE_UNITS_INFO));
+#endif
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+    m_features.emplace_back(new LpLookAheadAnalysis(FEATURE_LPLA_ANALYSIS));
 #endif
 
     InternalInitFeatures(status, mode);

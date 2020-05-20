@@ -101,6 +101,16 @@ void DDIPacker::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         {
             return ReadFeedback(pFB, size, Task::Common::Get(s_task).BsDataLength);
         });
+        cc.UpdateSPS.Push([this](
+            CallChains::TUpdateSPS::TExt
+            , const StorageR& /*global*/
+            , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& /*sps*/)
+        {});
+        cc.UpdateCqmHint.Push([this](
+            CallChains::TUpdateCqmHint::TExt
+            , TaskCommonPar& /*task*/
+            , const LOOKAHEAD_INFO& /*pLPLA*/)
+        {});
 
         return MFX_ERR_NONE;
     });
@@ -132,6 +142,7 @@ void DDIPacker::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         
         cc.InitSPS(strg, m_sps);
         cc.InitPPS(strg, m_pps);
+        cc.UpdateSPS(strg, m_sps);
         FillSliceBuffer(Glob::SliceInfo::Get(strg), m_slices);
 
         // Reserve space for feedback reports.
@@ -338,6 +349,9 @@ void DDIPacker::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
         {
             Glob::RTErr::Get(global) = sts;
         }
+
+        auto& cc = CC::Get(global);
+        cc.UpdateCqmHint(task, ((ENCODE_QUERY_STATUS_PARAMS_HEVC *)pFeedback)->lookaheadInfo);
 
         fb.Remove(task.StatusReportId);
 
