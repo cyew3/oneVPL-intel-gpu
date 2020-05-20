@@ -113,7 +113,9 @@ typedef struct tagENCODE_CAPS_HEVC
             USHORT    PFrameSupport            : 1;
             USHORT    LookaheadAnalysisSupport : 1;
             USHORT    LookaheadBRCSupport      : 1;
-            USHORT    reservedbits             : 13;
+            USHORT    TileReplaySupport        : 1;
+            USHORT    TCBRCSupport             : 1;
+            USHORT    reservedbits             : 11;
         };
         USHORT    CodingLimits3;
     };
@@ -210,7 +212,8 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
             UINT    LowDelayMode                        : 1;
             UINT    DisableHRDConformance               : 1;
             UINT    HierarchicalFlag                    : 1;
-            UINT    ReservedBits                        : 3;
+            UINT    TCBRCEnable                         : 1;
+            UINT    ReservedBits                        : 2;
         };
         UINT    EncodeFlags;
     };
@@ -267,8 +270,17 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     UINT    MaxBitRatePerSlidingWindow;
     UINT    MinBitRatePerSlidingWindow;
 
-    UCHAR   LookaheadDepth;               // [0..127]
-    UCHAR   reserved8b[3];
+    union
+    {
+        UCHAR   LookaheadDepth;               // [0..100]
+        UCHAR   TargetFrameSizeConfidence;    //[0..100]
+    };
+
+    UCHAR       minAdaptiveGopPicSize;
+    USHORT      maxAdaptiveGopPicSize;
+
+    UINT        reserved32b[16];
+
 } ENCODE_SET_SEQUENCE_PARAMETERS_HEVC;
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
@@ -316,7 +328,9 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
             UINT    pps_deblocking_filter_disabled_flag     : 1;
             UINT    bEnableCTULevelReport                   : 1;    // [0..1]
             UINT    bEnablePartialFrameUpdate               : 1;
-            UINT                                            : 3;
+            UINT    bLookAheadPhase                         : 1;
+            UINT    bTileReplayEnable                       : 1;
+            UINT                                            : 1;
         };
         UINT    PicFlags;
     };
@@ -400,7 +414,11 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
 
     UINT    TileOffsetBufferSizeInByte;
     UINT    *pTileOffset;
-//    USHORT  LcuMaxBitsizeAllowedHigh16b;
+    USHORT  LcuMaxBitsizeAllowedHigh16b;
+
+    USHORT  reserved16b;
+    UINT    TargetFrameSize;
+    UINT    reserved32b[16];
 
 } ENCODE_SET_PICTURE_PARAMETERS_HEVC;
 
