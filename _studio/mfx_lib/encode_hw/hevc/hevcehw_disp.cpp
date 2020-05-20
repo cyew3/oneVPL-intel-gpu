@@ -158,15 +158,12 @@ namespace HEVCEHW
 #endif
 
 #if defined(MFX_VA_LINUX)
-    #if defined(STRIP_EMBARGO)
-        #include "hevcehw_g12_lin.h"
-        namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::Linux::Gen12; }; };
-        namespace HEVCEHWDisp { namespace DG1 { using namespace HEVCEHW::Linux::Gen12; }; };
-    #else
-        #include "hevcehw_g12_embargo_lin.h"
-        namespace HEVCEHWDisp { namespace TGL { using namespace HEVCEHW::Linux::Gen12_Embargo; }; };
-        namespace HEVCEHWDisp { namespace DG1 { using namespace HEVCEHW::Linux::Gen12_Embargo; }; };
-    #endif //defined(STRIP_EMBARGO)
+    #include "hevcehw_g12_lin.h"
+    namespace HEVCEHWDisp
+    {
+        namespace TGL { using namespace HEVCEHW::Linux::Gen12; };
+        namespace DG1 { using namespace HEVCEHW::Linux::Gen12; };
+    };
 #else
     #include "hevcehw_g12_win.h"
     namespace HEVCEHWDisp

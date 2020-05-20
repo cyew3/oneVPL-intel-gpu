@@ -52,7 +52,7 @@ public:
     SCC(mfxU32 FeatureId)
         : FeatureBase(FeatureId)
     {}
-    
+
     struct SccSpsExt
     {
         mfxU8 scc_extension_flag                         : 1;
@@ -87,7 +87,7 @@ public:
         mfxU32 chroma_bit_depth_entry_minus8;
         mfxU32 palette_predictor_initializers[3][128];
     };
-    
+
     using SpsExt = StorageVar<Glob::ReservedKey12_0, SccSpsExt>;
     using PpsExt = StorageVar<Glob::ReservedKey12_1, SccPpsExt>;
 

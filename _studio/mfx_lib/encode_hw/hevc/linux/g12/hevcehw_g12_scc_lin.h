@@ -21,7 +21,7 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_HEVCE_SCC) && defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
 #include "hevcehw_g12_scc.h"
 #include "va/va.h"
@@ -59,7 +59,7 @@ protected:
             auto& ddiPar = HEVCEHW::Gen12::Glob::DDI_SubmitParam::Get(global);
             auto  itPPS  = std::find_if(std::begin(ddiPar), std::end(ddiPar)
                 , [](HEVCEHW::Base::DDIExecParam& ep) { return (ep.Function == VAEncPictureParameterBufferType); });
-            MFX_CHECK(itPPS != std::end(ddiPar) && itPPS->In.pData, MFX_ERR_UNKNOWN);
+            MFX_CHECK(itPPS != std::end(ddiPar) && itPPS->In.pData, MFX_ERR_NOT_FOUND);
             auto& ddiPPS    = *(VAEncPictureParameterBufferHEVC*)itPPS->In.pData;
 
             if(m_bPatchNextDDITask)
@@ -67,7 +67,7 @@ protected:
                 m_bPatchNextDDITask = false;
                 auto  itSPS   = std::find_if(std::begin(ddiPar), std::end(ddiPar)
                     , [](HEVCEHW::Base::DDIExecParam& ep) { return (ep.Function == VAEncSequenceParameterBufferType); });
-                MFX_CHECK(itSPS != std::end(ddiPar) && itSPS->In.pData, MFX_ERR_UNKNOWN);
+                MFX_CHECK(itSPS != std::end(ddiPar) && itSPS->In.pData, MFX_ERR_NOT_FOUND);
                 auto& ddiSPS    = *(VAEncSequenceParameterBufferHEVC*)itSPS->In.pData;
 
                 ddiSPS.scc_fields.bits.palette_mode_enabled_flag = SpsExt::Get(global).palette_mode_enabled_flag;

@@ -65,6 +65,7 @@
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_weighted_prediction.cpp" />
     <ClCompile Include="hevc\agnostic\g12\hevcehw_g12_caps.cpp" />
     <ClCompile Include="hevc\agnostic\g12\hevcehw_g12_rext.cpp" />
+    <ClCompile Include="hevc\agnostic\g12\hevcehw_g12_scc.cpp" />
     <ClCompile Include="hevc\agnostic\hevcehw_base.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g11lkf\hevcehw_g11lkf.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g11lkf\hevcehw_g11lkf_caps.cpp" />
@@ -72,12 +73,10 @@
     <ClCompile Include="hevc\embargo\agnostic\base\hevcehw_base_extddi.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g12ats\hevcehw_g12ats_mfe.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g12dg2\hevcehw_g12dg2_caps.cpp" />
-    <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12_scc.cpp" />
     <ClCompile Include="hevc\embargo\linux\base\hevcehw_base_gpu_hang_lin.cpp" />
     <ClCompile Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_lin.cpp" />
     <ClCompile Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_mfe_lin.cpp" />
     <ClCompile Include="hevc\embargo\linux\g12dg2\hevcehw_g12dg2_lin.cpp" />
-    <ClCompile Include="hevc\embargo\linux\g12\hevcehw_g12_embargo_lin.cpp" />
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_alloc_win.cpp" />
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_blocking_sync_win.cpp" />
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_brc_sliding_window_win.cpp" />
@@ -207,6 +206,7 @@
     <ClInclude Include="hevc\agnostic\g12\hevcehw_g12_data.h" />
     <ClInclude Include="hevc\agnostic\g12\hevcehw_g12_rext.h" />
     <ClInclude Include="hevc\agnostic\g12\hevcehw_g12_sao.h" />
+    <ClInclude Include="hevc\agnostic\g12\hevcehw_g12_scc.h" />
     <ClInclude Include="hevc\agnostic\hevcehw_base.h" />
     <ClInclude Include="hevc\agnostic\hevcehw_block_queues.h" />
     <ClInclude Include="hevc\agnostic\hevcehw_ddi.h" />
@@ -219,15 +219,12 @@
     <ClInclude Include="hevc\embargo\agnostic\base\hevcehw_base_extddi.h" />
     <ClInclude Include="hevc\embargo\agnostic\g12ats\hevcehw_g12ats_mfe.h" />
     <ClInclude Include="hevc\embargo\agnostic\g12dg2\hevcehw_g12dg2_caps.h" />
-    <ClInclude Include="hevc\embargo\agnostic\g12\hevcehw_g12_scc.h" />
     <ClInclude Include="hevc\embargo\linux\g11lkf\hevcehw_g11lkf_lin.h" />
     <ClInclude Include="hevc\embargo\linux\base\hevcehw_base_gpu_hang_lin.h" />
     <ClInclude Include="hevc\embargo\linux\base\hevcehw_base_max_frame_size_lin.h" />
     <ClInclude Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_lin.h" />
     <ClInclude Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_mfe_lin.h" />
     <ClInclude Include="hevc\embargo\linux\g12dg2\hevcehw_g12dg2_lin.h" />
-    <ClInclude Include="hevc\embargo\linux\g12\hevcehw_g12_embargo_lin.h" />
-    <ClInclude Include="hevc\embargo\linux\g12\hevcehw_g12_scc_lin.h" />
     <ClInclude Include="hevc\embargo\windows\g11lkf\hevcehw_g11lkf_win.h" />
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_alloc_win.h" />
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_blocking_sync_win.h" />
@@ -266,6 +263,7 @@
     <ClInclude Include="hevc\linux\g12\hevcehw_g12_caps_lin.h" />
     <ClInclude Include="hevc\linux\g12\hevcehw_g12_lin.h" />
     <ClInclude Include="hevc\linux\g12\hevcehw_g12_rext_lin.h" />
+    <ClInclude Include="hevc\linux\g12\hevcehw_g12_scc_lin.h" />
     <ClInclude Include="shared\ehw_resources_pool.h" />
     <ClInclude Include="shared\embargo\ehw_resources_pool_dx11.h" />
     <ClInclude Include="shared\ehw_task_manager.h" />
