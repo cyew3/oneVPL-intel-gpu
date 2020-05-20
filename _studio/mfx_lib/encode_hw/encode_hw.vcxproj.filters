@@ -292,9 +292,6 @@
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_qmatrix_win.cpp">
       <Filter>hevc\embargo\windows\base</Filter>
     </ClCompile>
-    <ClCompile Include="hevc\embargo\linux\base\hevcehw_base_max_frame_size_lin.cpp">
-      <Filter>hevc\embargo\linux\base</Filter>
-    </ClCompile>
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_units_info_win.cpp">
       <Filter>hevc\embargo\windows\base</Filter>
     </ClCompile>
@@ -363,6 +360,9 @@
     </ClCompile>
     <ClCompile Include="hevc\linux\base\hevcehw_base_lin.cpp">
       <Filter>hevc\open\linux\base</Filter>
+    </ClCompile>
+    <ClCompile Include="hevc\linux\base\hevcehw_base_max_frame_size_lin.cpp">
+      <Filter>hevc\embargo\linux\base</Filter>
     </ClCompile>
     <ClCompile Include="hevc\linux\base\hevcehw_base_va_lin.cpp">
       <Filter>hevc\open\linux\base</Filter>
@@ -690,9 +690,6 @@
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_qmatrix_win.h">
       <Filter>hevc\embargo\windows\base</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\embargo\linux\base\hevcehw_base_max_frame_size_lin.h">
-      <Filter>hevc\embargo\linux\base</Filter>
-    </ClInclude>
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_units_info_win.h">
       <Filter>hevc\embargo\windows\base</Filter>
     </ClInclude>
@@ -786,6 +783,9 @@
     <ClInclude Include="hevc\linux\base\hevcehw_base_lin.h">
       <Filter>hevc\open\linux\base</Filter>
     </ClInclude>
+    <ClCompile Include="hevc\linux\base\hevcehw_base_max_frame_size_lin.h">
+      <Filter>hevc\embargo\linux\base</Filter>
+    </ClCompile>
     <ClInclude Include="hevc\linux\base\hevcehw_base_va_lin.h">
       <Filter>hevc\open\linux\base</Filter>
     </ClInclude>

@@ -1338,7 +1338,10 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
 #ifdef MAX_HEVC_FRAME_SIZE_SUPPORT
     if (par.m_ext.CO2.MaxFrameSize)
-        MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(par.m_ext.CO2.MaxFrameSize, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_MaxFrameSize, 1)), MFX_ERR_DEVICE_FAILED);
+    {
+        mfxStatus sts = SetMaxFrameSize(par.m_ext.CO2.MaxFrameSize, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_MaxFrameSize, 1));
+        MFX_CHECK_WITH_ASSERT(sts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
+    }
 #endif
     if(par.m_ext.CO2.MaxSliceSize != 0)
     {

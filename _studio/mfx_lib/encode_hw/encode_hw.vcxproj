@@ -73,7 +73,6 @@
     <ClCompile Include="hevc\embargo\agnostic\g12dg2\hevcehw_g12dg2_caps.cpp" />
     <ClCompile Include="hevc\embargo\agnostic\g12\hevcehw_g12_scc.cpp" />
     <ClCompile Include="hevc\embargo\linux\base\hevcehw_base_gpu_hang_lin.cpp" />
-    <ClCompile Include="hevc\embargo\linux\base\hevcehw_base_max_frame_size_lin.cpp" />
     <ClCompile Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_lin.cpp" />
     <ClCompile Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_mfe_lin.cpp" />
     <ClCompile Include="hevc\embargo\linux\g12dg2\hevcehw_g12dg2_lin.cpp" />
@@ -105,6 +104,7 @@
     <ClCompile Include="hevc\linux\base\hevcehw_base_fei_lin.cpp" />
     <ClCompile Include="hevc\linux\base\hevcehw_base_interlace_lin.cpp" />
     <ClCompile Include="hevc\linux\base\hevcehw_base_lin.cpp" />
+    <ClCompile Include="hevc\linux\base\hevcehw_base_max_frame_size_lin.cpp" />
     <ClCompile Include="hevc\linux\base\hevcehw_base_roi_lin.cpp" />
     <ClCompile Include="hevc\linux\base\hevcehw_base_va_lin.cpp" />
     <ClCompile Include="hevc\linux\base\hevcehw_base_va_packer_lin.cpp" />

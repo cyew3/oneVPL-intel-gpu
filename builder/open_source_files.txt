@@ -164,6 +164,8 @@ _studio/mfx_lib/encode_hw/hevc/linux/base/hevcehw_base_interlace_lin.cpp
 _studio/mfx_lib/encode_hw/hevc/linux/base/hevcehw_base_interlace_lin.h
 _studio/mfx_lib/encode_hw/hevc/linux/base/hevcehw_base_lin.cpp
 _studio/mfx_lib/encode_hw/hevc/linux/base/hevcehw_base_lin.h
+_studio/mfx_lib/encode_hw/hevc/linux/base/hevcehw_base_max_frame_size_lin.cpp
+_studio/mfx_lib/encode_hw/hevc/linux/base/hevcehw_base_max_frame_size_lin.h
 _studio/mfx_lib/encode_hw/hevc/linux/base/hevcehw_base_va_lin.cpp
 _studio/mfx_lib/encode_hw/hevc/linux/base/hevcehw_base_va_lin.h
 _studio/mfx_lib/encode_hw/hevc/linux/base/hevcehw_base_va_packer_lin.cpp
