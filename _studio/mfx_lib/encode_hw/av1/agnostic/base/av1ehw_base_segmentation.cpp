@@ -571,6 +571,10 @@ mfxStatus Segmentation::UpdateFrameHeader(
         seg.FeatureData[i][SEG_LVL_ALT_LF_U]   = currPar.Segment[i].AltLFLevelU;
         seg.FeatureData[i][SEG_LVL_ALT_LF_V]   = currPar.Segment[i].AltLFLevelV;
         seg.FeatureData[i][SEG_LVL_REF_FRAME]  = currPar.Segment[i].ReferenceFrame;
+        if (IsFeatureEnabled(currPar.Segment[i].FeatureEnabled, SEG_LVL_SKIP))
+            seg.FeatureData[i][SEG_LVL_SKIP] = 1;
+        if (IsFeatureEnabled(currPar.Segment[i].FeatureEnabled, SEG_LVL_GLOBALMV))
+            seg.FeatureData[i][SEG_LVL_GLOBALMV] = 1;
     }
 
     return MFX_ERR_NONE;
