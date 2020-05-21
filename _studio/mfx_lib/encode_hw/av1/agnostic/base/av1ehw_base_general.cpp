@@ -2439,24 +2439,6 @@ void SetDefaultBRC(
     SetDefault(par.mfx.BRCParamMultiplier, 1);
 }
 
-inline void SetDefaultFrameInfo(
-    mfxExtAV1Param* par
-    , mfxFrameInfo& fi)
-{
-    if (!par)
-        return;
-
-    if (par->FrameWidth)
-        SetDefault(fi.CropW, std::min(fi.Width, par->FrameWidth));
-    else
-        SetDefault(par->FrameWidth, fi.CropW);
-
-    if (par->FrameHeight)
-        SetDefault(fi.CropH, std::min(fi.Height, par->FrameHeight));
-    else
-        SetDefault(par->FrameHeight, fi.CropH);
-}
-
 inline void SetDefaultOrderHint(mfxExtAV1AuxData* par)
 {
     if (!par)
@@ -2495,7 +2477,11 @@ void General::SetDefaults(
     SetDefault(fi.CropH, fi.Height);
 
     mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
-    SetDefaultFrameInfo(pAV1Par, fi);
+    if (pAV1Par != nullptr)
+    {
+        SetDefaultFrameInfo(pAV1Par->FrameWidth, pAV1Par->FrameHeight, fi);
+    }
+
 
     SetDefault(fi.AspectRatioW, mfxU16(1));
     SetDefault(fi.AspectRatioH, mfxU16(1));

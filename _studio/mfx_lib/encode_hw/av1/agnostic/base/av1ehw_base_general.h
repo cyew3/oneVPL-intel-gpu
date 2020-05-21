@@ -235,7 +235,25 @@ namespace Base
                 , Glob::Defaults::Get(strg));
         }
     };
+    inline void SetDefaultFrameInfo(mfxU16& frameWidth, mfxU16& frameHeight, mfxFrameInfo& fi)
+    {
+        if (frameWidth)
+            SetDefault(fi.CropW, std::min(fi.Width, frameWidth));
+        else
+        {
+            SetDefault(fi.CropW, fi.Width);
+            SetDefault(frameWidth, fi.CropW);
+        }
 
+        if (frameHeight)
+            SetDefault(fi.CropH, std::min(fi.Height, frameHeight));
+        else
+        {
+            SetDefault(fi.CropH, fi.Height);
+            SetDefault(frameHeight, fi.CropH);
+        }
+
+    }
 } //Base
 } //namespace AV1EHW
 

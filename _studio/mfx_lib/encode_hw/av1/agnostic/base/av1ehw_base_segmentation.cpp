@@ -21,6 +21,7 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 
+#include "av1ehw_base_general.h"
 #include "av1ehw_base_segmentation.h"
 
 using namespace AV1EHW;
@@ -143,8 +144,13 @@ static mfxU32 CheckSegmentMap(
 {
     mfxU32 invalid = 0;
 
-    const mfxU32 frameWidth = av1Par.FrameWidth ? av1Par.FrameWidth : par.mfx.FrameInfo.Width;
-    const mfxU32 frameHeight = av1Par.FrameHeight ? av1Par.FrameHeight : par.mfx.FrameInfo.Height;
+    mfxFrameInfo   fiTemp  = par.mfx.FrameInfo;
+    mfxU16 frameWidthTemp  = av1Par.FrameWidth;
+    mfxU16 frameHeightTemp = av1Par.FrameWidth;
+    SetDefaultFrameInfo(frameWidthTemp, frameHeightTemp, fiTemp);
+
+    const mfxU32 frameWidth  = frameWidthTemp ? frameWidthTemp : fiTemp.Width;
+    const mfxU32 frameHeight = frameHeightTemp ? frameHeightTemp : fiTemp.Height;
 
     const mfxU32 blockSize = seg.SegmentIdBlockSize > 0 ? seg.SegmentIdBlockSize : MFX_AV1_SEGMENT_ID_BLOCK_SIZE_32x32;
     const mfxU32 widthInBlocks = CeilDiv(frameWidth, blockSize);
