@@ -923,14 +923,7 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.ResetOpt);
 #endif
 
-    if (ExtBuffer::Set(par, m_ext.DDI))
-    {
-#ifndef OPEN_SOURCE
-        mfxExtCodingOptionDDI * pDDI = ExtBuffer::Get(par);
-        if (pDDI)
-            pDDI->LCUSize = (mfxU16)LCUSize;
-#endif
-    }
+    ExtBuffer::Set(par, m_ext.DDI);
     ExtBuffer::Set(par, m_ext.AVCTL);
     ExtBuffer::Set(par, m_ext.ROI);
 #ifdef MFX_UNDOCUMENTED_DUMP_FILES

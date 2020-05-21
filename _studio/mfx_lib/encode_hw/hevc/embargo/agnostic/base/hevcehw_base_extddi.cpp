@@ -35,7 +35,6 @@ void ExtDDI::SetSupported(ParamSupport& blocks)
         auto& buf_dst = *(mfxExtCodingOptionDDI*)pDst;
 
         MFX_COPY_FIELD(LongStartCodes);
-        MFX_COPY_FIELD(LCUSize);
         MFX_COPY_FIELD(NumActiveRefP);
         MFX_COPY_FIELD(NumActiveRefBL0);
         MFX_COPY_FIELD(NumActiveRefBL1);
@@ -56,7 +55,6 @@ void ExtDDI::SetInherited(ParamInheritance& par)
         auto& dst = *(mfxExtCodingOptionDDI*)pDst;
 
         InheritOption(src.LongStartCodes,   dst.LongStartCodes);
-        InheritOption(src.LCUSize,          dst.LCUSize);
         InheritOption(src.NumActiveRefP,    dst.NumActiveRefP);
         InheritOption(src.NumActiveRefBL0,  dst.NumActiveRefBL0);
         InheritOption(src.NumActiveRefBL1,  dst.NumActiveRefBL1);
@@ -107,7 +105,6 @@ void ExtDDI::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         auto& coddi = *pCODDI;
         bool changed = false;
         auto& caps = Glob::EncodeCaps::Get(global);
-        mfxU16 LCUs = mfxU16(caps.LCUSizeSupported << 4);
 
         changed |= CheckTriStateOrZero(coddi.LongStartCodes);
 
@@ -115,14 +112,6 @@ void ExtDDI::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             changed |= CheckTriStateOrZero(coddi.QpAdjust);
         else
             changed |= CheckOrZero<mfxU16, 0, MFX_CODINGOPTION_OFF>(coddi.QpAdjust);
-
-        changed |= CheckOrZero(
-            coddi.LCUSize
-            , mfxU16(0)
-            , mfxU16(LCUs & 16)
-            , mfxU16(LCUs & 32)
-            , mfxU16(LCUs & 64)
-        );
 
         changed |= CheckMaxOrClip(coddi.NumActiveRefP, caps.MaxNum_Reference0);
         changed |= CheckMaxOrClip(coddi.NumActiveRefBL0, caps.MaxNum_Reference0);
@@ -149,16 +138,9 @@ void ExtDDI::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
             return;
 
         auto& coddi = *pCODDI;
-        mfxExtHEVCParam* pHEVC = ExtBuffer::Get(par);
         mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
 
         SetDefault<mfxU16>(coddi.LongStartCodes, MFX_CODINGOPTION_OFF);
-
-        if (pHEVC)
-        {
-            SetDefault(coddi.LCUSize, pHEVC->LCUSize);
-            pHEVC->LCUSize = coddi.LCUSize;
-        }
 
         if (pCO3)
         {
