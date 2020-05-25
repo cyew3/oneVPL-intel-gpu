@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,9 @@
 #include "vm_file.h"
 #include <ipps.h>
 
+int vm_string_strncpy_s(vm_char *dest, size_t destsz,
+   const vm_char *src, size_t count);
+size_t vm_string_strnlen_s(const vm_char *str, size_t strsz);
 
 /* obtain file info. return 0 if file is not accessible,
    file_size or file_attr can be NULL if either is not interested */
