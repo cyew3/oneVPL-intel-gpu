@@ -736,7 +736,8 @@ mfxStatus ParseSegmentMap(
     pSeg->NumSegmentIdAlloc = (mfxU32)(mapWidth * mapHeight);
     pSeg->SegmentId = new mfxU8[pSeg->NumSegmentIdAlloc];
 
-    for (mfxU16 i = 0; i < mapHeight; ++i)
+    bool isInvalid = false;
+    for (mfxU16 i = 0; !isInvalid && i < mapHeight; ++i)
     {
         vm_char sbuf[256], *pStr;
 
@@ -752,13 +753,19 @@ mfxStatus ParseSegmentMap(
                 continue;
 
             if (pSeg->SegmentId[i * mapWidth + j] >= pSeg->NumSegments)
-                return MFX_ERR_UNKNOWN;
+            {
+                isInvalid = true;
+                break;
+            }
         }
     }
 
     vm_file_close(parFile);
 
-    return MFX_ERR_NONE;
+    if (isInvalid)
+      return MFX_ERR_UNKNOWN;
+    else
+      return MFX_ERR_NONE;
 }
 
 template <class T>
