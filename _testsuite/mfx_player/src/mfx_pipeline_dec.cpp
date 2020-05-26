@@ -2202,7 +2202,8 @@ mfxStatus MFXDecPipeline::CreateRender()
         || MFX_FOURCC_A2RGB10 == m_inParams.outFrameInfo.FourCC
         ) {
             m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_inParams.outFrameInfo.FourCC;
-            m_components[eREN].m_params.mfx.FrameInfo.Shift = m_inParams.outFrameInfo.Shift;
+            if(m_inParams.bUseExplicitEncShift)
+                m_components[eREN].m_params.mfx.FrameInfo.Shift = m_inParams.outFrameInfo.Shift;
     }
 
     if ( NOT_ASSIGNED_VALUE != m_inParams.OutputPicstruct )
@@ -5497,6 +5498,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                     MFX_CHECK(argv < argvEnd);
                     MFX_PARSE_INT(component->m_params.mfx.FrameInfo.Shift, argv[0]);
                     MFX_PARSE_INT(m_inParams.outFrameInfo.Shift, argv[0]);
+                    m_inParams.bUseExplicitEncShift = true;
                 }
                 else
                 {

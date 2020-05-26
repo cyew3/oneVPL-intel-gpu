@@ -63,6 +63,7 @@ struct sCommandlineParams
   bool           bUpdateWindowTitle; // Show progress in window title
 
   bool           bExtVppApi;   // Being set to true forces using RunFrameVPPAsyncEx
+  bool           bUseExplicitEncShift; // true if shift specified from cmd
 
   mfxU32         InputCodecType;
   mfxFrameInfo   FrameInfo; //decode input frame info
