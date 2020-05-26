@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2019 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2020 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -824,6 +824,31 @@ protected:
         return (mfxU8*)surface->Data.A2RGB10 + info.CropX * m_sample_size + info.CropY * pitch;
     }
 };
+
+#if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
+class DECL_CONVERTER(MFX_FOURCC_RGB565, MFX_FOURCC_RGB565)
+    : public BSConverterPacketedCopy
+{
+    IMPLEMENT_CLONE(DECL_CONVERTER(MFX_FOURCC_RGB565, MFX_FOURCC_RGB565));
+public:
+    DECL_CONVERTER(MFX_FOURCC_RGB565, MFX_FOURCC_RGB565)()
+        : BSConverterPacketedCopy(MFX_FOURCC_RGB565, MFX_FOURCC_RGB565)
+    {
+        m_sample_size = 2;
+    }
+
+protected:
+    mfxU8* start_pointer(mfxFrameSurface1 * surface) override
+    {
+        mfxFrameData& data = surface->Data;
+        mfxFrameInfo& info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return (mfxU8*)surface->Data.B + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+};
+#endif // #if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
 
 class DECL_CONVERTER(MFX_FOURCC_AYUV, MFX_FOURCC_AYUV)
     : public BSConverterPacketedCopy

@@ -57,7 +57,10 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
 #endif
     case MFX_FOURCC_AYUV:
         return VA_FOURCC_AYUV;
-
+#if (MFX_VERSION >= 1028)
+    case MFX_FOURCC_RGB565:
+        return VA_FOURCC_RGB565;
+#endif
     default:
         assert(!"unsupported fourcc");
         return 0;
@@ -144,6 +147,9 @@ mfxStatus vaapiFrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *inf
         (VA_FOURCC_P208 != va_fourcc) &&
         (VA_FOURCC_P010 != va_fourcc) &&
         (VA_FOURCC_YUY2 != va_fourcc) &&
+#if (MFX_VERSION >= 1028)
+        (VA_FOURCC_RGB565 != va_fourcc) &&
+#endif
 #if (MFX_VERSION >= 1027)
         (VA_FOURCC_Y210 != va_fourcc) &&
         (VA_FOURCC_Y410 != va_fourcc) &&
@@ -254,6 +260,9 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 #if (MFX_VERSION >= 1027)
                        (VA_FOURCC_Y210 != va_fourcc) &&
                        (VA_FOURCC_Y410 != va_fourcc) &&
+#endif
+#if (MFX_VERSION >= 1028)
+                       (VA_FOURCC_RGB565 != va_fourcc) &&
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
                        (VA_FOURCC_P016 != va_fourcc) &&
@@ -654,6 +663,17 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else return MFX_ERR_LOCK_MEMORY;
                 break;
+#if (MFX_VERSION >= 1028)
+            case VA_FOURCC_RGB565:
+                if (mfx_fourcc == MFX_FOURCC_RGB565)
+                {
+                    ptr->B = pBuffer + vaapi_mid->m_image.offsets[0];
+                    ptr->G = ptr->B;
+                    ptr->R = ptr->B;
+                }
+                else return MFX_ERR_LOCK_MEMORY;
+                break;
+#endif
             case VA_FOURCC_P208:
                 if (mfx_fourcc == MFX_FOURCC_NV12)
                 {

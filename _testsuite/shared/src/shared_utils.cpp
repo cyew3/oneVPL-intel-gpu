@@ -516,6 +516,11 @@ mfxStatus InitMfxFrameSurface(mfxFrameSurface1* pSurface, const mfxFrameInfo* pF
     case MFX_FOURCC_YV16:
         nBitsPerPixel                 = 16;
         break;
+#if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
+    case MFX_FOURCC_RGB565:
+        nBitsPerPixel                 = 16;
+        break;
+#endif
     case MFX_FOURCC_RGB3:
         nBitsPerPixel                 = 24;
         break;
