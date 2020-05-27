@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -493,7 +493,9 @@ _GENX_ /*inline*/ void InterpolateRegularH16(uint2 x)
         g_ver_input_16 = g_hor_input_16.select<23,1,16,1>(0,3);
     } else {
         matrix<int2,2,16> acc;
+#if !defined(target_gen12lp) && !defined(target_gen11lp)
         #pragma unroll
+#endif
         for (int i = 0; i < 22; i += 2) {
             #pragma unroll
             for (int j = 0; j < 2; j++) {
@@ -524,7 +526,9 @@ _GENX_ /*inline*/ void InterpolateSmoothH16(uint2 x)
         g_ver_input_16 = g_hor_input_16.select<23,1,16,1>(0,3);
     } else {
         matrix<int2,2,16> acc;
+#if !defined(target_gen12lp) && !defined(target_gen11lp)
         #pragma unroll
+#endif
         for (int i = 0; i < 22; i += 2) {
             #pragma unroll
             for (int j = 0; j < 2; j++) {
@@ -594,7 +598,9 @@ _GENX_ /*inline*/ void InterpolateRegularV16(uint2 y)
         g_pred_16 = g_ver_input_16.select<16,1,16,1>(3,0);
     } else {
         matrix<int2,2,16> acc;
+#if !defined(target_gen12lp) && !defined(target_gen11lp)
         #pragma unroll
+#endif
         for (int i = 0; i < 16; i += 2) {
             #pragma unroll
             for (int j = 0; j < 2; j++) {
@@ -618,7 +624,9 @@ _GENX_ /*inline*/ void InterpolateSmoothV16(uint2 y)
         g_pred_16 = g_ver_input_16.select<16,1,16,1>(3,0);
     } else {
         matrix<int2,2,16> acc;
+#if !defined(target_gen12lp) && !defined(target_gen11lp)
         #pragma unroll
+#endif
         for (int i = 0; i < 16; i += 2) {
             #pragma unroll
             for (int j = 0; j < 2; j++) {
@@ -723,7 +731,9 @@ _GENX_ /*inline*/ void Interpolate16x16Precise(uint2 x, uint2 y, uint2 round)
     if (fx(3) == 64) {
         hor_output = g_hor_input_16.select<23,1,16,1>(0,3) * 16;
     } else {
+#if !defined(target_gen12lp) && !defined(target_gen11lp)
         #pragma unroll
+#endif
         for (int i = 0; i < 23; i++) {
             hor_output.row(i)  = cm_mul<int2>(g_hor_input_16.row(i).select<16,1>(0), fx(0));
             hor_output.row(i) += cm_mul<int2>(g_hor_input_16.row(i).select<16,1>(1), fx(1));
@@ -1075,11 +1085,48 @@ _GENX_ uint2 DecisionBy16x16(SurfaceIndex SRC, SurfaceIndex REF_0, SurfaceIndex 
 
                     InterpolateSmoothH16(g_dmv(REF1,X) + 8);
                     InterpolateSmoothV16(g_dmv(REF1,Y) + 8);
+#if !defined(target_gen12lp) && !defined(target_gen11lp)
                     g_pred_interp1_16 = cm_avg<uint1>(g_pred_16, g_pred_interp1_16);
-
+#else
+                    g_pred_interp1_16.row(0) = (g_pred_16.row(0) + g_pred_interp1_16.row(0) + 1) >> 1;
+                    g_pred_interp1_16.row(1) = (g_pred_16.row(1) + g_pred_interp1_16.row(1) + 1) >> 1;
+                    g_pred_interp1_16.row(2) = (g_pred_16.row(2) + g_pred_interp1_16.row(2) + 1) >> 1;
+                    g_pred_interp1_16.row(3) = (g_pred_16.row(3) + g_pred_interp1_16.row(3) + 1) >> 1;
+                    g_pred_interp1_16.row(4) = (g_pred_16.row(4) + g_pred_interp1_16.row(4) + 1) >> 1;
+                    g_pred_interp1_16.row(5) = (g_pred_16.row(5) + g_pred_interp1_16.row(5) + 1) >> 1;
+                    g_pred_interp1_16.row(6) = (g_pred_16.row(6) + g_pred_interp1_16.row(6) + 1) >> 1;
+                    g_pred_interp1_16.row(7) = (g_pred_16.row(7) + g_pred_interp1_16.row(7) + 1) >> 1;
+                    g_pred_interp1_16.row(8) = (g_pred_16.row(8) + g_pred_interp1_16.row(8) + 1) >> 1;
+                    g_pred_interp1_16.row(9) = (g_pred_16.row(9) + g_pred_interp1_16.row(9) + 1) >> 1;
+                    g_pred_interp1_16.row(10) = (g_pred_16.row(10) + g_pred_interp1_16.row(10) + 1) >> 1;
+                    g_pred_interp1_16.row(11) = (g_pred_16.row(11) + g_pred_interp1_16.row(11) + 1) >> 1;
+                    g_pred_interp1_16.row(12) = (g_pred_16.row(12) + g_pred_interp1_16.row(12) + 1) >> 1;
+                    g_pred_interp1_16.row(13) = (g_pred_16.row(13) + g_pred_interp1_16.row(13) + 1) >> 1;
+                    g_pred_interp1_16.row(14) = (g_pred_16.row(14) + g_pred_interp1_16.row(14) + 1) >> 1;
+                    g_pred_interp1_16.row(15) = (g_pred_16.row(15) + g_pred_interp1_16.row(15) + 1) >> 1;
+#endif
                     InterpolateCommonH16(g_dmv(REF1,X) + 16);
                     InterpolateCommonV16(g_dmv(REF1,Y) + 16);
+#if !defined(target_gen12lp) && !defined(target_gen11lp)
                     g_pred_interp2_16 = cm_avg<uint1>(g_pred_16, g_pred_interp2_16);
+#else
+                    g_pred_interp2_16.row(0) = (g_pred_16.row(0) + g_pred_interp2_16.row(0) + 1) >> 1;
+                    g_pred_interp2_16.row(1) = (g_pred_16.row(1) + g_pred_interp2_16.row(1) + 1) >> 1;
+                    g_pred_interp2_16.row(2) = (g_pred_16.row(2) + g_pred_interp2_16.row(2) + 1) >> 1;
+                    g_pred_interp2_16.row(3) = (g_pred_16.row(3) + g_pred_interp2_16.row(3) + 1) >> 1;
+                    g_pred_interp2_16.row(4) = (g_pred_16.row(4) + g_pred_interp2_16.row(4) + 1) >> 1;
+                    g_pred_interp2_16.row(5) = (g_pred_16.row(5) + g_pred_interp2_16.row(5) + 1) >> 1;
+                    g_pred_interp2_16.row(6) = (g_pred_16.row(6) + g_pred_interp2_16.row(6) + 1) >> 1;
+                    g_pred_interp2_16.row(7) = (g_pred_16.row(7) + g_pred_interp2_16.row(7) + 1) >> 1;
+                    g_pred_interp2_16.row(8) = (g_pred_16.row(8) + g_pred_interp2_16.row(8) + 1) >> 1;
+                    g_pred_interp2_16.row(9) = (g_pred_16.row(9) + g_pred_interp2_16.row(9) + 1) >> 1;
+                    g_pred_interp2_16.row(10) = (g_pred_16.row(10) + g_pred_interp2_16.row(10) + 1) >> 1;
+                    g_pred_interp2_16.row(11) = (g_pred_16.row(11) + g_pred_interp2_16.row(11) + 1) >> 1;
+                    g_pred_interp2_16.row(12) = (g_pred_16.row(12) + g_pred_interp2_16.row(12) + 1) >> 1;
+                    g_pred_interp2_16.row(13) = (g_pred_16.row(13) + g_pred_interp2_16.row(13) + 1) >> 1;
+                    g_pred_interp2_16.row(14) = (g_pred_16.row(14) + g_pred_interp2_16.row(14) + 1) >> 1;
+                    g_pred_interp2_16.row(15) = (g_pred_16.row(15) + g_pred_interp2_16.row(15) + 1) >> 1;
+#endif
                 }
 
                 if (g_skip) {

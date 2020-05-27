@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,5 +20,5 @@
 //
 #ifndef __genx_av1_interpolate_decision_single_tgllp__
 #define __genx_av1_interpolate_decision_single_tgllp__
-extern const unsigned char genx_av1_interpolate_decision_single_tgllp[249108];
+extern const unsigned char genx_av1_interpolate_decision_single_tgllp[195758];
 #endif

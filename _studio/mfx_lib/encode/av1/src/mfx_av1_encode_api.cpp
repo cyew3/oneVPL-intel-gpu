@@ -1120,17 +1120,17 @@ namespace {
         //if (mfx.NumSlice > 1 && tiles && (tiles->NumTileColumns > 1 || tiles->NumTileRows > 1)) // multi-slice or multi-tile
         //    mfx.NumSlice = 1, wrnIncompatible = true;
 
-        if (mfx.NumSlice > 1 && (fi.PicStruct == TFF || fi.PicStruct == BFF)) // multi-slice is unsupported for interlace
-            mfx.NumSlice = 1, wrnIncompatible = true;
+        //if (mfx.NumSlice > 1 && (fi.PicStruct == TFF || fi.PicStruct == BFF)) // multi-slice is unsupported for interlace
+        //    mfx.NumSlice = 1, wrnIncompatible = true;
 
-        if (picHeight && mfx.NumSlice) // NumSlice < CTB lines for min possible CTBSize
-            wrnIncompatible = !CheckMaxSat(mfx.NumSlice, (picHeight + 63) >> 6);
+        //if (picHeight && mfx.NumSlice) // NumSlice < CTB lines for min possible CTBSize
+        //    wrnIncompatible = !CheckMaxSat(mfx.NumSlice, (picHeight + 63) >> 6);
 
-        if (picHeight && mfx.NumSlice && optHevc && optHevc->Log2MaxCUSize) // NumSlice < CTB lines for given CTBSize
-            wrnIncompatible = !CheckMaxSat(mfx.NumSlice, (picHeight + (1 << optHevc->Log2MaxCUSize) - 1) >> optHevc->Log2MaxCUSize);
+        //if (picHeight && mfx.NumSlice && optHevc && optHevc->Log2MaxCUSize) // NumSlice < CTB lines for given CTBSize
+        //    wrnIncompatible = !CheckMaxSat(mfx.NumSlice, (picHeight + (1 << optHevc->Log2MaxCUSize) - 1) >> optHevc->Log2MaxCUSize);
 
-        if (mfx.NumSlice && mfx.CodecLevel) // NumSlice <= MaxNumSlice[level]
-            wrnIncompatible = !CheckMinLevel(mfx.CodecLevel, GetMinLevelForNumSlice(mfx.NumSlice));
+        //if (mfx.NumSlice && mfx.CodecLevel) // NumSlice <= MaxNumSlice[level]
+        //    wrnIncompatible = !CheckMinLevel(mfx.CodecLevel, GetMinLevelForNumSlice(mfx.NumSlice));
 
         //if (tiles && (tiles->NumTileColumns > 1 || tiles->NumTileRows > 1) && (fi.PicStruct == TFF || fi.PicStruct == BFF)) // multi-tile is unsupported for interlace
         //    tiles->NumTileColumns = tiles->NumTileRows = 1, wrnIncompatible = true;
@@ -1241,8 +1241,8 @@ namespace {
         if (optHevc && optHevc->FramesInParallel == 1 && (fi.PicStruct == TFF || fi.PicStruct == BFF)) // framesInParallel must be at least 2 for Interlace
             optHevc->FramesInParallel = 2, wrnIncompatible = true;
 
-        if (mfx.NumSlice > 1 && optHevc && optHevc->FramesInParallel > 1) // either multi-slice or frame-threading
-            optHevc->FramesInParallel = 1, wrnIncompatible = true;
+        //if (mfx.NumSlice > 1 && optHevc && optHevc->FramesInParallel > 1) // either multi-slice or frame-threading
+        //    optHevc->FramesInParallel = 1, wrnIncompatible = true;
 
         //if (tiles && (tiles->NumTileRows > 1 || tiles->NumTileColumns > 1) && optHevc && optHevc->FramesInParallel > 1) // either multi-tile or frame-threading
         //    optHevc->FramesInParallel = 1, wrnIncompatible = true;
@@ -1250,8 +1250,8 @@ namespace {
         if (optHevc && optHevc->EnableCm == ON && optHevc->FramesInParallel > 8) // no more than 8 parallel frames in gacc
             optHevc->FramesInParallel = 8, wrnIncompatible = true;
 
-        if (mfx.NumSlice && region && region->RegionEncoding == MFX_HEVC_REGION_ENCODING_ON && region->RegionType == MFX_HEVC_REGION_SLICE && region->RegionId >= mfx.NumSlice) // RegionId < NumSlice
-            region->RegionId = 0, errInvalidParam = true;
+        //if (mfx.NumSlice && region && region->RegionEncoding == MFX_HEVC_REGION_ENCODING_ON && region->RegionType == MFX_HEVC_REGION_SLICE && region->RegionId >= mfx.NumSlice) // RegionId < NumSlice
+        //    region->RegionId = 0, errInvalidParam = true;
 
         if (optHevc && optHevc->Log2MaxCUSize && optHevc->MaxCUDepth > optHevc->Log2MaxCUSize - 2) // MaxCUDepth <= Log2MaxCUSize - 2
             optHevc->MaxCUDepth = optHevc->Log2MaxCUSize - 2, wrnIncompatible = true;
@@ -1597,8 +1597,8 @@ namespace {
 
         if (optHevc.Log2MaxCUSize == 0) {
             optHevc.Log2MaxCUSize = defaultOptHevc.Log2MaxCUSize;
-            if (optHevc.Log2MaxCUSize == 6 && ((hevcParam.PicHeightInLumaSamples + 63) >> 6) < mfx.NumSlice)
-                optHevc.Log2MaxCUSize = 5;
+            //if (optHevc.Log2MaxCUSize == 6 && ((hevcParam.PicHeightInLumaSamples + 63) >> 6) < mfx.NumSlice)
+            //    optHevc.Log2MaxCUSize = 5;
         }
         if (optHevc.MaxCUDepth == 0)
             optHevc.MaxCUDepth = defaultOptHevc.MaxCUDepth;
