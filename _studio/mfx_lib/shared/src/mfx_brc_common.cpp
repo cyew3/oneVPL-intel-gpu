@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1233,6 +1233,11 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
 
         //printf("------------------ %d (%d)) Total deviation %f, old scene %d, bNeedUpdateQP %d, m_ctx.Quant %d, type %d, m_ctx.fAbLong %f m_par.inputBitsPerFrame %f\n", frame_par->EncodedOrder, frame_par->DisplayOrder,m_ctx.totalDeviation, oldScene , bNeedUpdateQP, m_ctx.Quant,picType, m_ctx.fAbLong, m_par.inputBitsPerFrame);
 
+        if (m_par.HRDConformance != MFX_BRC_NO_HRD)
+        {
+            m_hrdSpec->Update(bitsEncoded, frame_par->EncodedOrder, bIdr);
+        }
+
         if (!m_ctx.bPanic&& (!oldScene) && bNeedUpdateQP)
         {
             mfxI32 quant_new = qpY;
@@ -1304,10 +1309,6 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             }
         }
         m_ctx.bToRecode = 0;
-        if (m_par.HRDConformance != MFX_BRC_NO_HRD)
-        {
-            m_hrdSpec->Update(bitsEncoded, frame_par->EncodedOrder, bIdr);
-        }
     }
     return sts;
 
