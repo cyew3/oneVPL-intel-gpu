@@ -2698,20 +2698,13 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
 
 #ifdef MFX_ENABLE_MCTF
     eMFXHWType  hwType = core->GetHWType();
-    if (hwType < MFX_HW_BDW ||
+    caps.uMCTF = 0;
+    if (hwType >= MFX_HW_BDW
 #ifndef STRIP_EMBARGO
-        hwType > MFX_HW_TGL_HP)
-#else
-        hwType > MFX_HW_CNL)
+        && hwType <= MFX_HW_ATS
 #endif
-        caps.uMCTF = 0;
-    else
-    {
-        if (!CpuFeature_SSE41())
-            caps.uMCTF = 0;
-        else
-            caps.uMCTF = 1;
-    }
+        )
+        caps.uMCTF = 1;
 #endif
 
     return sts;
