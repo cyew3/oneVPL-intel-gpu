@@ -601,7 +601,9 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
     mfxU32 numPics = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
 
     SliceDivider divider = MakeSliceDivider(
-        (hwCaps.ddi_caps.SliceLevelRateCtrl)?4:hwCaps.ddi_caps.SliceStructure,//temporal WA for KBL multislice as it reports 3 instead of 4
+        (hwCaps.ddi_caps.SliceLevelRateCtrl)?
+        SliceDividerType::ARBITRARY_MB_SLICE //temporal WA for KBL multislice as it reports 3 instead of 4
+        : SliceDividerType(hwCaps.ddi_caps.SliceStructure),
         task.m_numMbPerSlice,
         pps.NumSlice,
         sps.FrameWidth  / 16,
@@ -1036,7 +1038,7 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
                         IsOff(extSvc.DependencyLayer[did].ResidualPred) ? 1 : 0;
 
     SliceDivider divider = MakeSliceDivider(
-        hwCaps.ddi_caps.SliceStructure,
+        SliceDividerType(hwCaps.ddi_caps.SliceStructure),
         task.m_numMbPerSlice,
         pps.NumSlice,
         sps.FrameWidth  / 16,
