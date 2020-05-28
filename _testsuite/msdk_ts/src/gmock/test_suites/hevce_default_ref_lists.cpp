@@ -1094,9 +1094,9 @@ namespace hevce_default_ref_lists
         MFXInit();
         Load();
 
-        if (((g_tsHWtype > MFX_HW_ICL && g_tsConfig.lowpower != MFX_CODINGOPTION_OFF) || (g_tsOSFamily != MFX_OS_FAMILY_LINUX))  && co3.GPB == MFX_CODINGOPTION_OFF)
+        if ((g_tsHWtype > MFX_HW_ICL || g_tsConfig.lowpower != MFX_CODINGOPTION_OFF)  && co3.GPB == MFX_CODINGOPTION_OFF)
         {
-            g_tsLog << "\n\nWARNING: P-Slices feature is supported only on Linux ICL or less and with VME!\n\n\n";
+            g_tsLog << "\n\nWARNING: P-Slices feature is supported only on ICL or less and with VME!\n\n\n";
             throw tsSKIP;
         }
 

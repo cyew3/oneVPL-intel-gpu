@@ -3,7 +3,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2018-2020 Intel Corporation. All Rights Reserved.
 //
 
 //
@@ -253,6 +253,12 @@ namespace hevce_8b_420_nv12_qp_range
 
         mfxExtCodingOption3& co3 = m_par;
         SETPARS(&co3, EXT_COD3);
+
+        if ((g_tsHWtype > MFX_HW_ICL || g_tsConfig.lowpower != MFX_CODINGOPTION_OFF)  && co3.GPB == MFX_CODINGOPTION_OFF)
+        {
+            g_tsLog << "\n\nWARNING: P-Slices feature is supported only ICL or less and with VME!\n\n\n";
+            throw tsSKIP;
+        }
 
         Init();
         EncodeFrames(m_framesToEncode);
