@@ -237,7 +237,8 @@ typedef struct _DXVA_PicParams_AV1_MSFT {
                 USHORT grain_scale_shift : 2;
                 USHORT overlap_flag : 1;
                 USHORT clip_to_restricted_range : 1;
-                USHORT Reserved : 4;
+                USHORT matrix_coeff_is_identity : 1;
+                USHORT Reserved : 3;
             };
             USHORT wControlFlags;
         };

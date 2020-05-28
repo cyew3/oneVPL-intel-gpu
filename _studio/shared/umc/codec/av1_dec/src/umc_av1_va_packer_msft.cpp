@@ -318,7 +318,7 @@ namespace UMC_AV1_DECODER
         }
 
         //film grain
-
+        picParam.film_grain.matrix_coeff_is_identity = (sh.color_config.matrix_coefficients == AOM_CICP_MC_IDENTITY) ? 1 : 0;
         picParam.film_grain.apply_grain = info.film_grain_params.apply_grain;
         picParam.film_grain.scaling_shift_minus8 = info.film_grain_params.grain_scaling - 8;
         picParam.film_grain.chroma_scaling_from_luma = info.film_grain_params.chroma_scaling_from_luma;
@@ -327,7 +327,6 @@ namespace UMC_AV1_DECODER
         picParam.film_grain.grain_scale_shift = info.film_grain_params.grain_scale_shift;
         picParam.film_grain.overlap_flag = info.film_grain_params.overlap_flag;
         picParam.film_grain.clip_to_restricted_range = info.film_grain_params.clip_to_restricted_range;
-
         picParam.film_grain.grain_seed = (USHORT)info.film_grain_params.grain_seed;
 
         for (uint8_t i = 0; i < MAX_POINTS_IN_SCALING_FUNCTION_LUMA; i++)

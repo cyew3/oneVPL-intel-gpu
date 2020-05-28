@@ -1155,7 +1155,7 @@ namespace UMC_AV1_DECODER
         AV1D_LOG("[-]: %d", (uint32_t)bs.BitsDecoded());
     }
 
-    static void av1_read_film_grain_params(AV1Bitstream& bs, FilmGrainParams& params, SequenceHeader const& sh, FrameHeader const& fh)
+    static void av1_read_film_grain_params(AV1Bitstream& bs, FilmGrainParams& params, SequenceHeader const& sh, FrameHeader const& fh, DPBType const& frameDpb)
     {
         AV1D_LOG("[+]: %d", (uint32_t)bs.BitsDecoded());
 
@@ -1176,7 +1176,12 @@ namespace UMC_AV1_DECODER
         if (!params.update_grain)
         {
             // inherit parameters from a previous reference frame
-            // TODO: [Rev0.5] implement proper film grain param inheritance
+            int film_grain_params_ref_idx = bs.GetBits(3);
+            FrameHeader const* refFH = nullptr;
+            refFH = &frameDpb[film_grain_params_ref_idx]->GetFrameHeader();
+            uint32_t random_seed = params.grain_seed;
+            params = refFH->film_grain_params;
+            params.grain_seed = random_seed;
             AV1D_LOG("[-]: %d", (uint32_t)bs.BitsDecoded());
             return;
         }
@@ -1281,14 +1286,14 @@ namespace UMC_AV1_DECODER
         AV1D_LOG("[-]: %d", (uint32_t)bs.BitsDecoded());
     }
 
-    static void av1_read_film_grain(AV1Bitstream& bs, SequenceHeader const& sh, FrameHeader& fh)
+    static void av1_read_film_grain(AV1Bitstream& bs, SequenceHeader const& sh, FrameHeader& fh, DPBType const& frameDpb)
     {
         AV1D_LOG("[+]: %d", (uint32_t)bs.BitsDecoded());
 
         if (fh.show_frame || fh.showable_frame)
         {
             if (sh.film_grain_param_present)
-                av1_read_film_grain_params(bs, fh.film_grain_params, sh, fh);
+                av1_read_film_grain_params(bs, fh.film_grain_params, sh, fh, frameDpb);
             else
                 fh.film_grain_params = FilmGrainParams{};
 
@@ -2225,7 +2230,7 @@ namespace UMC_AV1_DECODER
         fh.showable_frame = fh.show_frame ? 0 : GetBit();
 #endif
 
-        av1_read_film_grain(*this, sh, fh);
+        av1_read_film_grain(*this, sh, fh, frameDpb);
 
 #if UMC_AV1_DECODER_REV == 5000
         av1_read_tile_info(*this, fh.tile_info, fh, sh.sbSize);
