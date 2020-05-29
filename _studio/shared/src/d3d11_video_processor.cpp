@@ -2285,16 +2285,26 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         switch(pParams->scalingMode)
         {
         case MFX_SCALING_MODE_LOWPOWER:
-            param.FastMode = false;
+            param.FastMode = VPE_SCALING_MODE_DEFAULT;
+#if (MFX_VERSION >= 1033)
+            // Low power mode supports AVS, Nearest and Bilinear
+            param.InterpolationMethod = pParams->interpolationMethod;
+            sts = (pParams->interpolationMethod > MFX_INTERPOLATION_ADVANCED) ? MFX_ERR_UNSUPPORTED : MFX_ERR_NONE;
+#endif
             break;
 
         case MFX_SCALING_MODE_QUALITY:
         case MFX_SCALING_MODE_DEFAULT:
         default:
             // False for HW mirroring, true otherwise
-            param.FastMode = !pParams->mirroringExt;
+            param.FastMode = (!pParams->mirroringExt) ? VPE_SCALING_MODE_ADV : VPE_SCALING_MODE_DEFAULT;
+#if (MFX_VERSION >= 1033)
+            sts = ((pParams->interpolationMethod == MFX_INTERPOLATION_DEFAULT) || (pParams->interpolationMethod == MFX_INTERPOLATION_ADVANCED)) ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED;
+            param.InterpolationMethod = pParams->interpolationMethod;
+#endif
             break;
         }
+        MFX_CHECK_STS(sts);
         sts = SetStreamScalingMode(0, param);
         MFX_CHECK_STS(sts);
     }

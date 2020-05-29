@@ -451,6 +451,9 @@ namespace MfxHwVideoProcessing
 #endif
                ,rotation(0)
                ,scalingMode(MFX_SCALING_MODE_DEFAULT)
+#if (MFX_VERSION >= 1033)
+               ,interpolationMethod(MFX_INTERPOLATION_DEFAULT)
+#endif
 #if (MFX_VERSION >= 1025)
                ,chromaSiting(MFX_CHROMA_SITING_UNKNOWN)
 #endif
@@ -624,7 +627,9 @@ namespace MfxHwVideoProcessing
         int         rotation;
 
         mfxU16      scalingMode;
-
+#if (MFX_VERSION >= 1033)
+        mfxU16      interpolationMethod;
+#endif
         mfxU16      chromaSiting;
 
         bool        bEOS;

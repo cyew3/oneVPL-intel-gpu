@@ -153,6 +153,9 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
 #endif
     pMfxExecuteParams->rotation = 0;
     pMfxExecuteParams->scalingMode = MFX_SCALING_MODE_DEFAULT;
+#if (MFX_VERSION >= 1033)
+    pMfxExecuteParams->interpolationMethod = MFX_INTERPOLATION_DEFAULT;
+#endif
 #if (MFX_VERSION >= 1025)
     pMfxExecuteParams->chromaSiting = MFX_CHROMA_SITING_UNKNOWN;
 #endif
@@ -2118,6 +2121,9 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
             mfxExtVPPScaling *bufSc = reinterpret_cast<mfxExtVPPScaling *>(par->ExtParam[i]);
             MFX_CHECK_NULL_PTR1(bufSc);
             bufSc->ScalingMode = m_executeParams.scalingMode;
+#if (MFX_VERSION >= 1033)
+            bufSc->InterpolationMethod = m_executeParams.interpolationMethod;
+#endif
         }
 #if (MFX_VERSION >= 1025)
         else if (MFX_EXTBUFF_VPP_COLOR_CONVERSION == bufferId)
@@ -5797,6 +5803,9 @@ mfxStatus ConfigureExecuteParams(
                         {
                             mfxExtVPPScaling *extScaling = (mfxExtVPPScaling*) videoParam.ExtParam[i];
                             executeParams.scalingMode = extScaling->ScalingMode;
+#if (MFX_VERSION >= 1033)
+                            executeParams.interpolationMethod = extScaling->InterpolationMethod;
+#endif
                         }
                     }
                 }

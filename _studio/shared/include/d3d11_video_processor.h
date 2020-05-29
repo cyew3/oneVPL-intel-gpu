@@ -477,10 +477,40 @@ typedef enum
     DXVA_ADVANCEDSCALING  = 1  // Quality mode, i.e. AVS scaling
 } SCALING_MODE;
 
-typedef struct _VPE_VPREP_SCALING_MODE_PARAM 
+typedef struct _VPE_VPREP_SCALING_MODE_PARAM
 {
-    BOOL               FastMode;   // [in]
+    UINT                        FastMode;                                  // [in], FastMode is one of VPE_SCALING_MODE, only take effect on primary layer
+    USHORT                      InterpolationMethod;                       // [in], Interpolation method is one of VPE_INTERPOLATION_METHOD
+    USHORT                      Reserved[3];
 } VPE_VPREP_SCALING_MODE_PARAM;
+
+typedef enum _VPE_SCALING_MODE
+{
+    // Default Mode: Driver choose path with power consumption consideration. SFC on Gen9+ is prioritized to be used. Fall-back mechanism as below
+    //      If scaling ratio in[1 / 8, 8], then SFC;
+    //      If scaling ratio in[1 / 16, 1 / 8) or larger than 8, then AVS in Render;
+    //      If scaling ratio smaller than 1 / 16, then Bilinear in Render
+    VPE_SCALING_MODE_DEFAULT = 0,
+    // Advanced Scaling Mode : Driver choose fastest path based on VP feature usages.
+    //      If VEBOX features are required, SFC AVS is preferred.Fall - back mechanism as below
+    //      If scaling ratio in[1 / 8, 8], then SFC;
+    //      If scaling ratio in[1 / 16, 1 / 8) or larger than 8, then AVS in Render;
+    //      If scaling ratio smaller than 1 / 16, then Bilinear in Render
+    //      If VEBOX features are not required, render AVS is preferred.Fall - back mechanism as below
+    //      If scaling ratio in[1 / 16, 1 / 8) or larger than 8, then AVS in Render;
+    //      If scaling ratio smaller than 1 / 16, then Bilinear in Render
+    VPE_SCALING_MODE_ADV = 1,
+    // Super Resolution mode : Driver choose to Super Resolution path. Features only support for Gen9 +.
+    VPE_SCALING_MODE_SUPERRESOLUTION = 2
+} VPE_SCALING_MODE;
+
+typedef enum _VPE_INTERPOLATION_METHOD
+{
+    VPE_INTERPOLATION_DEFAULT                      = 0,         // Default is AVS interpolation
+    VPE_INTERPOLATION_NEAREST_NEIGHBOR             = 1,         // Nearest Neighbor interpolation
+    VPE_INTERPOLATION_BILINEAR                     = 2,         // Bilinear interpolation
+    VPE_INTERPOLATION_ADVANCED                     = 3          // Advanced interpolation(AVS interpolation and by default)
+} VPE_INTERPOLATION_METHOD;
 
 typedef struct _VPE_VPREP_CHROMASITING_PARAM
 {

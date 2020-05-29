@@ -6963,6 +6963,8 @@ The `mfxExtVPPRotation` structure configures the **VPP** Rotation filter algorit
 
 This structure is available since SDK API 1.17.
 
+The SDK API 1.33 adds InterpolationMethod fields.
+
 ## <a id='mfxExtVPPScaling'>mfxExtVPPScaling</a>
 
 **Definition**
@@ -6975,11 +6977,20 @@ enum {
     MFX_SCALING_MODE_QUALITY    = 2
 };
 
+/* Interpolation Method */
+enum {
+    MFX_INTERPOLATION_DEFAULT                = 0,
+    MFX_INTERPOLATION_NEAREST_NEIGHBOR       = 1,
+    MFX_INTERPOLATION_BILINEAR               = 2,
+    MFX_INTERPOLATION_ADVANCED               = 3
+};
+
 typedef struct {
     mfxExtBuffer Header;
 
     mfxU16 ScalingMode;
-    mfxU16 reserved[11];
+    mfxU16 InterpolationMethod;
+    mfxU16 reserved[10];
 } mfxExtVPPScaling;
 ```
 
@@ -6987,12 +6998,18 @@ typedef struct {
 
 The `mfxExtVPPScaling` structure configures the **VPP** Scaling filter algorithm.
 
+The interpolation method supports `MFX_INTERPOLATION_NEAREST_NEIGHBOR`, `MFX_INTERPOLATION_BILINEAR`,  `MFX_INTERPOLATION_DEFAULT` and `MFX_INTERPOLATION_ADVANCED`.
+`MFX_INTERPOLATION_NEAREST_NEIGHBOR` and `MFX_INTERPOLATION_BILINEAR` are well known algorithm, `MFX_INTERPOLATION_ADVANCED` is a proprietary implementation.
+
+Not all combinations of `ScalingMode` and `InterpolationMethod` are supported in the SDK. The application has to use query function to determine if a combination is supported.
+
 **Members**
 
 | | |
 --- | ---
 `Header.BufferId` | Must be [MFX_EXTBUFF_VPP_SCALING](#ExtendedBufferID)
 `ScalingMode` | Scaling mode
+`InterpolationMethod` | Interpolation Method
 
 **Change History**
 
