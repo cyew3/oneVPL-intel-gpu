@@ -23,21 +23,21 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
-#include "av1ehw_g12.h"
+#include "av1ehw_g13.h"
 #include "av1ehw_base_win.h"
 
 namespace AV1EHW
 {
-namespace Gen12
+namespace Gen13
 {
     using TPrevGenImpl = AV1EHW::Windows::Base::MFXVideoENCODEAV1_HW;
-}; //Gen12
+}; //Gen13
 namespace Windows
 {
-namespace Gen12
+namespace Gen13
 {
-    using MFXVideoENCODEAV1_HW = AV1EHW::Gen12::MFXVideoENCODEAV1_HW<AV1EHW::Gen12::TPrevGenImpl>;
-} //Gen12
+    using MFXVideoENCODEAV1_HW = AV1EHW::Gen13::MFXVideoENCODEAV1_HW<AV1EHW::Gen13::TPrevGenImpl>;
+} //Gen13
 } //Windows
 }// namespace AV1EHW
 

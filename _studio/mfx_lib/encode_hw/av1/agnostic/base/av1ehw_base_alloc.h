@@ -21,24 +21,37 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 
-#include "av1ehw_g12.h"
-#include "av1ehw_base_win.h"
+#include "av1ehw_base.h"
+#include "av1ehw_base_data.h"
+#include "ehw_resources_pool.h"
 
 namespace AV1EHW
 {
-namespace Gen12
+namespace Base
 {
-    using TPrevGenImpl = AV1EHW::Windows::Base::MFXVideoENCODEAV1_HW;
-}; //Gen12
-namespace Windows
+
+class Allocator
+    : public FeatureBase
 {
-namespace Gen12
-{
-    using MFXVideoENCODEAV1_HW = AV1EHW::Gen12::MFXVideoENCODEAV1_HW<AV1EHW::Gen12::TPrevGenImpl>;
-} //Gen12
-} //Windows
-}// namespace AV1EHW
+public:
+#define DECL_BLOCK_LIST\
+    DECL_BLOCK(Init)
+#define DECL_FEATURE_NAME "G12_Allocator"
+#include "av1ehw_decl_blocks.h"
+
+    Allocator(mfxU32 FeatureId)
+        : FeatureBase(FeatureId)
+    {}
+
+protected:
+    virtual void InitAlloc(const FeatureBlocks& blocks, TPushIA Push) override;
+
+    static IAllocation* MakeAlloc(std::unique_ptr<MfxEncodeHW::ResPool>&&);
+};
+
+} //Base
+} //namespace AV1EHW
 
 #endif

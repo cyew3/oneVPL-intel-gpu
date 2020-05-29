@@ -123,6 +123,26 @@ protected:
     virtual void SetTraceName(std::string&& /*name*/) {}
 };
 
+class ImplBase
+    : virtual public VideoENCODE
+{
+public:
+    virtual mfxStatus InternalQuery(
+        VideoCORE& core
+        , mfxVideoParam *in
+        , mfxVideoParam& out) = 0;
+
+    virtual mfxStatus InternalQueryIOSurf(
+        VideoCORE& core
+        , mfxVideoParam& par
+        , mfxFrameAllocRequest& request) = 0;
+
+    virtual ImplBase* ApplyMode(mfxU32 /*mode*/)
+    {
+        return this;
+    }
+};
+
 }; //namespace AV1EHW
 
 #endif

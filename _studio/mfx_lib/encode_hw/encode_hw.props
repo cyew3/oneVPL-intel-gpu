@@ -52,9 +52,17 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12ats;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\hevc\embargo\windows\g12dg2;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\agnostic;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\agnostic\base;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\agnostic\g12;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\agnostic\g13;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\agnostic;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\agnostic\base;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\agnostic\g12;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\agnostic\g13;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\windows;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\windows\base;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\windows\g12;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\windows\g13;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\lpla;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared\embargo;

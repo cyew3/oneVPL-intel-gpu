@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,27 +18,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
-#include "av1ehw_g12.h"
-#include "av1ehw_base_win.h"
+#include "av1ehw_base_alloc_win.h"
+#include "ehw_resources_pool_dx11.h"
 
-namespace AV1EHW
-{
-namespace Gen12
-{
-    using TPrevGenImpl = AV1EHW::Windows::Base::MFXVideoENCODEAV1_HW;
-}; //Gen12
-namespace Windows
-{
-namespace Gen12
-{
-    using MFXVideoENCODEAV1_HW = AV1EHW::Gen12::MFXVideoENCODEAV1_HW<AV1EHW::Gen12::TPrevGenImpl>;
-} //Gen12
-} //Windows
-}// namespace AV1EHW
+using namespace AV1EHW;
+using namespace AV1EHW::Windows::Base;
 
-#endif
+void Allocator::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
+{
+    Push(BLK_Init
+        , [](StorageRW&, StorageRW& local) -> mfxStatus
+    {
+        auto CreateAllocator = [](VideoCORE& core) -> AV1EHW::Base::IAllocation*
+        {
+            if (core.GetVAType() == MFX_HW_D3D11)
+                return MakeAlloc(std::unique_ptr<MfxEncodeHW::ResPool>(new MfxEncodeHW::ResPoolDX11(core)));
+            return MakeAlloc(std::unique_ptr<MfxEncodeHW::ResPool>(new MfxEncodeHW::ResPool(core)));
+        };
+
+        using Tmp = AV1EHW::Base::Tmp;
+        local.Insert(Tmp::MakeAlloc::Key, new Tmp::MakeAlloc::TRef(CreateAllocator));
+
+        return MFX_ERR_NONE;
+    });
+}
+
+#endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)

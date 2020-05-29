@@ -21,24 +21,42 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 
-#include "av1ehw_g12.h"
-#include "av1ehw_base_win.h"
+#include "av1ehw_base.h"
 
 namespace AV1EHW
 {
-namespace Gen12
+namespace Base
 {
-    using TPrevGenImpl = AV1EHW::Windows::Base::MFXVideoENCODEAV1_HW;
-}; //Gen12
-namespace Windows
+
+class IDDI
+    : public virtual FeatureBase
 {
-namespace Gen12
-{
-    using MFXVideoENCODEAV1_HW = AV1EHW::Gen12::MFXVideoENCODEAV1_HW<AV1EHW::Gen12::TPrevGenImpl>;
-} //Gen12
-} //Windows
-}// namespace AV1EHW
+public:
+#define DECL_BLOCK_LIST\
+    DECL_BLOCK(QueryCaps)     \
+    DECL_BLOCK(CreateDevice)  \
+    DECL_BLOCK(CreateService) \
+    DECL_BLOCK(Register)      \
+    DECL_BLOCK(Reset)      \
+    DECL_BLOCK(SubmitTask)    \
+    DECL_BLOCK(QueryTask)
+#define DECL_FEATURE_NAME "G12_IDDI"
+#include "av1ehw_decl_blocks.h"
+
+    IDDI(mfxU32 /*FeatureId*/) {}
+
+protected:
+    virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override = 0;
+    virtual void InitExternal(const FeatureBlocks& blocks, TPushIE Push) override = 0;
+    virtual void InitAlloc(const FeatureBlocks& blocks, TPushIA Push) override = 0;
+    virtual void SubmitTask(const FeatureBlocks& blocks, TPushST Push) override = 0;
+    virtual void QueryTask(const FeatureBlocks& blocks, TPushQT Push) override = 0;
+    virtual void ResetState(const FeatureBlocks& blocks, TPushRS Push) override = 0;
+};
+
+} //Base
+} //namespace AV1EHW
 
 #endif

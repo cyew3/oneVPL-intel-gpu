@@ -21,24 +21,30 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
-
-#include "av1ehw_g12.h"
-#include "av1ehw_base_win.h"
+#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 
 namespace AV1EHW
 {
-namespace Gen12
+namespace Base
 {
-    using TPrevGenImpl = AV1EHW::Windows::Base::MFXVideoENCODEAV1_HW;
-}; //Gen12
-namespace Windows
-{
-namespace Gen12
-{
-    using MFXVideoENCODEAV1_HW = AV1EHW::Gen12::MFXVideoENCODEAV1_HW<AV1EHW::Gen12::TPrevGenImpl>;
-} //Gen12
-} //Windows
-}// namespace AV1EHW
+    mfxU16 GetMaxDpbSizeByLevel(mfxVideoParam const & par, mfxU32 PicSizeInSamplesY);
+    mfxU32 GetMaxKbpsByLevel(mfxVideoParam const & par);
+    mfxF64 GetMaxFrByLevel(mfxVideoParam const & par, mfxU32 PicSizeInSamplesY);
+    mfxU32 GetMaxCpbInKBByLevel(mfxVideoParam const & par);
+
+    mfxU16 GetMinLevel(
+        mfxU32 frN
+        , mfxU32 frD
+        , mfxU16 PicWidthInLumaSamples
+        , mfxU16 PicHeightInLumaSamples
+        , mfxU16 MinRef
+        , mfxU16 NumTileColumns
+        , mfxU16 NumTileRows
+        , mfxU32 NumSlice
+        , mfxU32 BufferSizeInKB
+        , mfxU32 MaxKbps);
+
+} //Base
+} //namespace AV1EHW
 
 #endif

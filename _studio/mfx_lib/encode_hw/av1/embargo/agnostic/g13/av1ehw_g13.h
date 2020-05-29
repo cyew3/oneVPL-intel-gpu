@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 Intel Corporation
+// Copyright (c) 2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,24 +21,19 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 
 #include "av1ehw_g12.h"
-#include "av1ehw_base_win.h"
+#include "av1ehw_base_impl.h"
 
 namespace AV1EHW
 {
-namespace Gen12
+namespace Gen13
 {
-    using TPrevGenImpl = AV1EHW::Windows::Base::MFXVideoENCODEAV1_HW;
-}; //Gen12
-namespace Windows
-{
-namespace Gen12
-{
-    using MFXVideoENCODEAV1_HW = AV1EHW::Gen12::MFXVideoENCODEAV1_HW<AV1EHW::Gen12::TPrevGenImpl>;
-} //Gen12
-} //Windows
+    template<class TBaseGen>
+    using MFXVideoENCODEAV1_HW = AV1EHW::Gen12::MFXVideoENCODEAV1_HW<TBaseGen>;
+
+} //Gen13
 }// namespace AV1EHW
 
 #endif

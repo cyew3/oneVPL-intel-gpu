@@ -23,21 +23,49 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
-#include "av1ehw_g12.h"
-#include "av1ehw_base_win.h"
+#include "av1ehw_base_impl.h"
 
 namespace AV1EHW
 {
-namespace Gen12
-{
-    using TPrevGenImpl = AV1EHW::Windows::Base::MFXVideoENCODEAV1_HW;
-}; //Gen12
 namespace Windows
 {
-namespace Gen12
+namespace Base
 {
-    using MFXVideoENCODEAV1_HW = AV1EHW::Gen12::MFXVideoENCODEAV1_HW<AV1EHW::Gen12::TPrevGenImpl>;
-} //Gen12
+    class MFXVideoENCODEAV1_HW
+        : public AV1EHW::Base::MFXVideoENCODEAV1_HW
+    {
+    public:
+        MFXVideoENCODEAV1_HW(
+            VideoCORE& core
+            , mfxStatus& status
+            , eFeatureMode mode = eFeatureMode::INIT);
+
+        virtual mfxStatus Init(mfxVideoParam *par) override;
+
+        static mfxStatus Query(
+            VideoCORE& core
+            , mfxVideoParam *in
+            , mfxVideoParam& out)
+        {
+            mfxStatus sts = MFX_ERR_NONE;
+            MFXVideoENCODEAV1_HW self(core, sts, in ? eFeatureMode::QUERY1 : eFeatureMode::QUERY0);
+            MFX_CHECK_STS(sts);
+            return self.InternalQuery(core, in, out);
+        }
+
+        static mfxStatus QueryIOSurf(
+            VideoCORE& core
+            , mfxVideoParam& par
+            , mfxFrameAllocRequest& request)
+        {
+            mfxStatus sts = MFX_ERR_NONE;
+            MFXVideoENCODEAV1_HW self(core, sts, eFeatureMode::QUERY_IO_SURF);
+            MFX_CHECK_STS(sts);
+            return self.InternalQueryIOSurf(core, par, request);
+        }
+    };
+
+} //Base
 } //Windows
 }// namespace AV1EHW
 

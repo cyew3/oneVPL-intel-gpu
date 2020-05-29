@@ -101,14 +101,8 @@
     <Filter Include="av1\embargo\windows">
       <UniqueIdentifier>{eae554ae-c4f0-4150-bdba-c86a2f6b75e1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="av1\embargo\windows\g12">
-      <UniqueIdentifier>{6596bf60-2032-44ab-b59a-ac25b8bc0487}</UniqueIdentifier>
-    </Filter>
     <Filter Include="av1\open\agnostic">
       <UniqueIdentifier>{5f9a48b6-3e89-4cee-9629-0d5ebc847b0c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="av1\open\agnostic\g12">
-      <UniqueIdentifier>{7f48792b-3c4f-4893-9c6d-8f70d127fad6}</UniqueIdentifier>
     </Filter>
     <Filter Include="shared">
       <UniqueIdentifier>{1b73d340-0f91-49f2-bd2c-96f9b003f879}</UniqueIdentifier>
@@ -118,6 +112,36 @@
     </Filter>
     <Filter Include="shared">
       <UniqueIdentifier>{fa3faf6f-77f9-4c4e-9527-75d710e42bd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\embargo\windows\base">
+      <UniqueIdentifier>{7b1ec817-6552-4c87-b466-1b426712e93f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\open\agnostic\base">
+      <UniqueIdentifier>{7f48792b-3c4f-4893-9c6d-8f70d127fad6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\open\agnostic\gen12">
+      <UniqueIdentifier>{6abd8560-6586-4db8-9101-203e9a646d3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\open\agnostic\gen13">
+      <UniqueIdentifier>{90493dab-c887-434a-9bba-ce2430d1bbe8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\embargo\agnostic">
+      <UniqueIdentifier>{deb7026e-85ea-4a8a-aa71-4719c77df1bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\embargo\agnostic\base">
+      <UniqueIdentifier>{f77f66d6-f359-49c4-9451-e21d32a21d9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\embargo\windows\g12">
+      <UniqueIdentifier>{265905a3-4e20-4e89-b6c7-51a2780163e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\embargo\windows\g13">
+      <UniqueIdentifier>{6943b82a-488a-439b-93ba-396485abe9d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\embargo\agnostic\g12">
+      <UniqueIdentifier>{4e72b406-5b54-43ad-9add-ce114e7d3400}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="av1\embargo\agnostic\g13">
+      <UniqueIdentifier>{97c3bd05-2483-4e05-8505-3a082b87a7bb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -427,59 +451,8 @@
     <ClCompile Include="av1\av1ehw_disp.cpp">
       <Filter>av1</Filter>
     </ClCompile>
-    <ClCompile Include="av1\agnostic\g12\av1ehw_g12.cpp">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\agnostic\g12\av1ehw_g12_alloc.cpp">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\agnostic\g12\av1ehw_g12_constraints.cpp">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\agnostic\g12\av1ehw_g12_dirty_rect.cpp">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\agnostic\g12\av1ehw_g12_general.cpp">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\agnostic\g12\av1ehw_g12_general_defaults.cpp">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\agnostic\g12\av1ehw_g12_packer.cpp">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\agnostic\g12\av1ehw_g12_segmentation.cpp">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\agnostic\g12\av1ehw_g12_task.cpp">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\agnostic\g12\av1ehw_g12_tile.cpp">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClCompile>
     <ClCompile Include="av1\embargo\windows\av1ehw_ddi_trace.cpp">
       <Filter>av1\embargo\windows</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\embargo\windows\g12\av1ehw_g12_alloc_win.cpp">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\embargo\windows\g12\av1ehw_g12_d3d11_win.cpp">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\embargo\windows\g12\av1ehw_g12_ddi_packer_win.cpp">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\embargo\windows\g12\av1ehw_g12_dirty_rect_win.cpp">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\embargo\windows\g12\av1ehw_g12_segmentation_win.cpp">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\embargo\windows\g12\av1ehw_g12_win.cpp">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClCompile>
-    <ClCompile Include="av1\embargo\windows\g12\av1ehw_g12_blocking_sync_win.cpp">
-      <Filter>av1\embargo\windows\g12</Filter>
     </ClCompile>
     <ClCompile Include="av1\agnostic\av1ehw_base.cpp">
       <Filter>av1\open\agnostic</Filter>
@@ -507,6 +480,57 @@
     </ClCompile>
     <ClCompile Include="shared\ehw_utils_vaapi.cpp">
       <Filter>shared</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\agnostic\base\av1ehw_base_alloc.cpp">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\agnostic\base\av1ehw_base_constraints.cpp">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\agnostic\base\av1ehw_base_dirty_rect.cpp">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\agnostic\base\av1ehw_base_general.cpp">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\agnostic\base\av1ehw_base_general_defaults.cpp">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\agnostic\base\av1ehw_base_packer.cpp">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\agnostic\base\av1ehw_base_segmentation.cpp">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\agnostic\base\av1ehw_base_task.cpp">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\agnostic\base\av1ehw_base_tile.cpp">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\embargo\windows\base\av1ehw_base_alloc_win.cpp">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\embargo\windows\base\av1ehw_base_blocking_sync_win.cpp">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\embargo\windows\base\av1ehw_base_d3d11_win.cpp">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\embargo\windows\base\av1ehw_base_ddi_packer_win.cpp">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\embargo\windows\base\av1ehw_base_dirty_rect_win.cpp">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\embargo\windows\base\av1ehw_base_segmentation_win.cpp">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\embargo\windows\base\av1ehw_base_win.cpp">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClCompile>
+    <ClCompile Include="av1\agnostic\base\av1ehw_base_impl.cpp">
+      <Filter>av1\open\agnostic\base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -708,9 +732,6 @@
     <ClInclude Include="hevc\agnostic\hevcehw_utils.h">
       <Filter>hevc\open\agnostic</Filter>
     </ClInclude>
-    <ClInclude Include="hevc\agnostic\base\hevcehw_base_impl.h">
-      <Filter>hevc\open\agnostic\base</Filter>
-    </ClInclude>
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_alloc.h">
       <Filter>hevc\open\agnostic\base</Filter>
     </ClInclude>
@@ -777,9 +798,6 @@
     <ClInclude Include="hevc\linux\base\hevcehw_base_lin.h">
       <Filter>hevc\open\linux\base</Filter>
     </ClInclude>
-    <ClCompile Include="hevc\linux\base\hevcehw_base_max_frame_size_lin.h">
-      <Filter>hevc\embargo\linux\base</Filter>
-    </ClCompile>
     <ClInclude Include="hevc\linux\base\hevcehw_base_va_lin.h">
       <Filter>hevc\open\linux\base</Filter>
     </ClInclude>
@@ -873,65 +891,8 @@
     <ClInclude Include="av1\agnostic\av1ehw_utils.h">
       <Filter>av1\open\agnostic</Filter>
     </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12_alloc.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12_constraints.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12_data.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12_dirty_rect.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12_general.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12_iddi.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12_iddi_packer.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12_packer.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12_segmentation.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12_task.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\agnostic\g12\av1ehw_g12_tile.h">
-      <Filter>av1\open\agnostic\g12</Filter>
-    </ClInclude>
     <ClInclude Include="av1\embargo\windows\av1ehw_ddi_trace.h">
       <Filter>av1\embargo\windows</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\embargo\windows\g12\av1ehw_g12_alloc_win.h">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\embargo\windows\g12\av1ehw_g12_d3d11_win.h">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\embargo\windows\g12\av1ehw_g12_ddi_packer_win.h">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\embargo\windows\g12\av1ehw_g12_dirty_rect_win.h">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\embargo\windows\g12\av1ehw_g12_segmentation_win.h">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\embargo\windows\g12\av1ehw_g12_win.h">
-      <Filter>av1\embargo\windows\g12</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\embargo\windows\g12\av1ehw_g12_blocking_sync_win.h">
-      <Filter>av1\embargo\windows\g12</Filter>
     </ClInclude>
     <ClInclude Include="shared\ehw_resources_pool.h">
       <Filter>shared</Filter>
@@ -959,6 +920,81 @@
     </ClInclude>
     <ClInclude Include="shared\ehw_utils_vaapi.h">
       <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\agnostic\base\hevcehw_base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\embargo\linux\base\hevcehw_base_max_frame_size_lin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_alloc.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_constraints.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_data.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_dirty_rect.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_general.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_iddi.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_iddi_packer.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_packer.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_segmentation.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_task.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_tile.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\windows\base\av1ehw_base_alloc_win.h">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\windows\base\av1ehw_base_blocking_sync_win.h">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\windows\base\av1ehw_base_d3d11_win.h">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\windows\base\av1ehw_base_ddi_packer_win.h">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\windows\base\av1ehw_base_dirty_rect_win.h">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\windows\base\av1ehw_base_segmentation_win.h">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\windows\base\av1ehw_base_win.h">
+      <Filter>av1\embargo\windows\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\agnostic\base\av1ehw_base_impl.h">
+      <Filter>av1\open\agnostic\base</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\agnostic\g12\av1ehw_g12.h">
+      <Filter>av1\embargo\agnostic\g12</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\agnostic\g13\av1ehw_g13.h">
+      <Filter>av1\embargo\agnostic\g13</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\windows\g12\av1ehw_g12_win.h">
+      <Filter>av1\embargo\windows\g12</Filter>
+    </ClInclude>
+    <ClInclude Include="av1\embargo\windows\g13\av1ehw_g13_win.h">
+      <Filter>av1\embargo\windows\g13</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

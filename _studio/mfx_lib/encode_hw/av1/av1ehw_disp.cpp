@@ -22,33 +22,52 @@
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 
 #include "av1ehw_disp.h"
+#include "av1ehw_base.h"
 
 #if !defined(MFX_VA_LINUX)
-    #define GEN_FUNC(GEN, FUNC, ...) Windows::GEN::FUNC(__VA_ARGS__)
-    #include "av1ehw_g12_win.h"
+    #include "av1ehw_base_win.h"
+#endif
 
-    #define GEN_SPECIFIC(HW, OP, FUNC, ...)\
-        (\
-            OP GEN_FUNC(Gen12,    FUNC, __VA_ARGS__)\
-        )
+#ifndef STRIP_EMBARGO
+#if !defined(MFX_VA_LINUX)
+    #include "av1ehw_g12_win.h"
+    #include "av1ehw_g13_win.h"
+    namespace AV1EHWDisp
+    {
+        namespace DG2 { using namespace AV1EHW::Windows::Gen12; };
+        namespace MTL { using namespace AV1EHW::Windows::Gen13; };
+    };
+#endif
 #endif
 
 namespace AV1EHW
 {
+static ImplBase* CreateSpecific(
+    VideoCORE& core
+    , mfxStatus& status
+    , eFeatureMode mode)
+{
+    ImplBase* impl = nullptr;
+
+    auto hw = core.GetHWType();
+    if (hw < MFX_HW_SCL)
+        status = MFX_ERR_UNSUPPORTED;
+
+#ifndef STRIP_EMBARGO
+    if (hw == MFX_HW_DG2)
+        impl = new AV1EHWDisp::DG2::MFXVideoENCODEAV1_HW(core, status, mode);
+    else if (hw > MFX_HW_DG2)
+        impl = new AV1EHWDisp::MTL::MFXVideoENCODEAV1_HW(core, status, mode);
+#endif
+
+    return impl;
+}
 
 VideoENCODE* Create(
     VideoCORE& core
     , mfxStatus& status)
 {
-    auto hw = core.GetHWType();
-
-    if (hw < MFX_HW_SCL)
-    {
-        status = MFX_ERR_UNSUPPORTED;
-        return nullptr;
-    }
-
-    return GEN_SPECIFIC(hw, (VideoENCODE*)new, MFXVideoENCODEAV1_HW, core, status);
+    return CreateSpecific(core, status, eFeatureMode::INIT);
 }
 
 mfxStatus QueryIOSurf(
@@ -58,12 +77,13 @@ mfxStatus QueryIOSurf(
 {
     MFX_CHECK_NULL_PTR3(core, par, request);
 
-    auto hw = core->GetHWType();
+    mfxStatus sts = MFX_ERR_NONE;
+    std::unique_ptr<ImplBase> impl(CreateSpecific(*core, sts, eFeatureMode::QUERY_IO_SURF));
 
-    if (hw < MFX_HW_SCL)
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK_STS(sts);
+    MFX_CHECK(impl, MFX_ERR_UNKNOWN);
 
-    return GEN_SPECIFIC(hw, , MFXVideoENCODEAV1_HW::QueryIOSurf, *core, *par, *request);
+    return impl->InternalQueryIOSurf(*core, *par, *request);
 }
 
 mfxStatus Query(
@@ -73,12 +93,14 @@ mfxStatus Query(
 {
     MFX_CHECK_NULL_PTR2(core, out);
 
-    auto hw = core->GetHWType();
+    mfxStatus sts = MFX_ERR_NONE;
+    eFeatureMode mode = in ? eFeatureMode::QUERY1 : eFeatureMode::QUERY0;
+    std::unique_ptr<ImplBase> impl(CreateSpecific(*core, sts, mode));
 
-    if (hw < MFX_HW_SCL)
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK_STS(sts);
+    MFX_CHECK(impl, MFX_ERR_UNKNOWN);
 
-    return GEN_SPECIFIC(hw, , MFXVideoENCODEAV1_HW::Query, *core, in, *out);
+    return impl->InternalQuery(*core, in, *out);
 }
 
 } //namespace AV1EHW
