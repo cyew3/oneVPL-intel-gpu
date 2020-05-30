@@ -3282,7 +3282,7 @@ inline void GetFwdBwdIdx( const DpbType& dpb, const SH& sh, const FH& fh, const 
     for (i = 0; i < REFS_PER_FRAME; i++)
     {
         auto& refFrm = dpb.at(fh.ref_frame_idx[i]);
-        refHint = refFrm->DisplayOrder;
+        refHint = refFrm->DisplayOrderInGOP;
         if (av1_get_relative_dist(sh, refHint, orderHint) < 0)
         {
             if (forwardIdx < 0 ||
