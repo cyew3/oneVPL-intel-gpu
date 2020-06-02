@@ -1,4 +1,4 @@
-// Copyright (c) 2005-2019 Intel Corporation
+// Copyright (c) 2005-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2826,8 +2826,8 @@ bool H264ParsingCore::IsFieldOfOneFrame(const H264ParsingCore::Slice& prev, cons
     if (prev.field_pic_flag != last.field_pic_flag)
         return false;
 
-//    if (pSlice1->GetSliceHeader()->frame_num != pSlice2->GetSliceHeader()->frame_num)
-  //      return false;
+    if (prev.frame_num != last.frame_num)
+        return false;
 
     if (prev.bottom_field_flag == last.bottom_field_flag)
         return false;
