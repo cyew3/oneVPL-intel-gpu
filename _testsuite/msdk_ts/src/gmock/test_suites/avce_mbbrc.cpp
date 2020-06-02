@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 File Name: avce_mbbrc.cpp
 \* ****************************************************************************** */
@@ -101,7 +101,10 @@ namespace avce_mbbrc
     void VideoEncoder::InitParams()
     {
         m_par.mfx.CodecId                 = MFX_CODEC_AVC;
-        m_par.mfx.MaxKbps                 = 0;
+        if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+        {
+            m_par.mfx.MaxKbps = 0;
+        }
         m_par.mfx.FrameInfo.FourCC        = MFX_FOURCC_NV12;
         m_par.mfx.FrameInfo.FrameRateExtN = 30;
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
