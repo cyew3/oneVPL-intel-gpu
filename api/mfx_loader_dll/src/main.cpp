@@ -563,6 +563,7 @@ static bool LoadMSDKLibary(adapter_vector& a_v, mfxIMPL impl)
     {
     case MFX_IMPL_HARDWARE:
         preffered_adapter_number = 0;
+        break;
     case MFX_IMPL_HARDWARE2:
         preffered_adapter_number = 1;
         break;
