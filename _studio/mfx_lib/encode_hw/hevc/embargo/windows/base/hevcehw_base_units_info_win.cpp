@@ -130,7 +130,7 @@ void UnitsInfo::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
             mfxExtEncodedUnitsInfo* pUnitsInfo = ExtBuffer::Get(*task.pBsOut);
             MFX_CHECK(pUnitsInfo, sts);
 
-            auto& fb        = *(ENCODE_QUERY_STATUS_SLICE_PARAMS*)pFB;
+            auto& fb        = *(ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC*)pFB;
             auto  pBegin    = pUnitsInfo->UnitInfo + std::min(pUnitsInfo->NumUnitsEncoded, pUnitsInfo->NumUnitsAlloc);
 
             pUnitsInfo->NumUnitsEncoded += fb.FrameLevelStatus.NumberSlices;

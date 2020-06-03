@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,8 +56,9 @@ public:
     void Trace(ENCODE_SET_SLICE_HEADER_HEVC const & b, mfxU32 idx);
     void Trace(ENCODE_PACKEDHEADER_DATA const & b, mfxU32 idx);
     void Trace(ENCODE_EXECUTE_PARAMS const & b, mfxU32 idx);
-    void Trace(ENCODE_QUERY_STATUS_PARAMS const & b, mfxU32 idx);
-    void Trace(ENCODE_QUERY_STATUS_SLICE_PARAMS const & b, mfxU32 idx);
+    void Trace(ENCODE_QUERY_STATUS_PARAMS_HEVC const & b, mfxU32 idx);
+    void Trace(ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC const & b, mfxU32 idx);
+    void Trace(LOOKAHEAD_INFO const & b, mfxU32 idx);
 
     void Trace(D3D11_VIDEO_DECODER_EXTENSION const & b, mfxU32 idx);
 

@@ -47,7 +47,7 @@ namespace Base
             , mfxExtAVCEncodedFrameInfo& info) override
         {
             MFX_CHECK(pDdiFeedback, MFX_ERR_UNDEFINED_BEHAVIOR);
-            auto& fb = *(const ENCODE_QUERY_STATUS_PARAMS*)pDdiFeedback;
+            auto& fb = *(const ENCODE_QUERY_STATUS_PARAMS_HEVC*)pDdiFeedback;
 
             info.QP = fb.AverageQP;
 

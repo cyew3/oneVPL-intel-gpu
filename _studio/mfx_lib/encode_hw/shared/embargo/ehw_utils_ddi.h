@@ -92,7 +92,7 @@ inline ENCODE_COMPBUFFERDESC* GetDDICB(
 class FeedbackStorage
 {
 public:
-    typedef ENCODE_QUERY_STATUS_PARAMS Feedback;
+    typedef ENCODE_QUERY_STATUS_PARAMS_HEVC Feedback;
 
     FeedbackStorage()
         : m_pool_size(0)
@@ -101,9 +101,9 @@ public:
     {
     }
 
-    inline ENCODE_QUERY_STATUS_PARAMS& operator[] (size_t i) const
+    inline ENCODE_QUERY_STATUS_PARAMS_HEVC& operator[] (size_t i) const
     {
-        return *(ENCODE_QUERY_STATUS_PARAMS*)&m_buf[i * m_fb_size];
+        return *(ENCODE_QUERY_STATUS_PARAMS_HEVC*)&m_buf[i * m_fb_size];
     }
 
     inline size_t size() const

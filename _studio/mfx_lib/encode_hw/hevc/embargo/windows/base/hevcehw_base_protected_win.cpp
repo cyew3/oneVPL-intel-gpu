@@ -326,7 +326,7 @@ void Protected::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
 
         auto  id    = Task::Common::Get(s_task).StatusReportId;
         auto& ddiFB = Glob::DDI_Feedback::Get(global);
-        auto  pFB   = (const ENCODE_QUERY_STATUS_PARAMS*)ddiFB.Get(id);
+        auto  pFB   = (const ENCODE_QUERY_STATUS_PARAMS_HEVC*)ddiFB.Get(id);
 
         MFX_CHECK(!ddiFB.bNotReady && pFB && pFB->bStatus != ENCODE_NOTREADY, MFX_ERR_NONE);
 

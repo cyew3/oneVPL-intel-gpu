@@ -698,7 +698,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
             {
                 // copy packed sliced into bitstream
 
-                //ENCODE_QUERY_STATUS_PARAMS feedback = { task.m_statusReportNumber, 0, };
+                //ENCODE_QUERY_STATUS_PARAMS_HEVC feedback = { task.m_statusReportNumber, 0, };
                 mfxFrameData bs = { 0 };
 
                 FrameLocker lock(m_core, task.m_midBs);
@@ -750,7 +750,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
     {
 #ifdef HEADER_PACKING_TEST
         surface;
-        ENCODE_QUERY_STATUS_PARAMS fb = {task.m_statusReportNumber,};
+        ENCODE_QUERY_STATUS_PARAMS_HEVC fb = {task.m_statusReportNumber,};
         FrameLocker bs(m_core, task.m_midBs);
 
         for (mfxU32 i = 0; i < executeParams.NumCompBuffers; i ++)
@@ -910,7 +910,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & tas
     if (!skipMode.NeedDriverCall())
         return MFX_ERR_NONE;
 #endif
-    const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackPool.Get(task.m_statusReportNumber);
+    const ENCODE_QUERY_STATUS_PARAMS_HEVC* feedback = m_feedbackPool.Get(task.m_statusReportNumber);
 
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
@@ -918,7 +918,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & tas
         ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr = {};
 
         feedbackDescr.StatusParamType = m_pps.bEnableSliceLevelReport ? QUERY_STATUS_PARAM_SLICE : QUERY_STATUS_PARAM_FRAME;
-        feedbackDescr.SizeOfStatusParamStruct = (feedbackDescr.StatusParamType == QUERY_STATUS_PARAM_SLICE) ? sizeof(ENCODE_QUERY_STATUS_SLICE_PARAMS) : sizeof(ENCODE_QUERY_STATUS_PARAMS);
+        feedbackDescr.SizeOfStatusParamStruct = (feedbackDescr.StatusParamType == QUERY_STATUS_PARAM_SLICE) ? sizeof(ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC) : sizeof(ENCODE_QUERY_STATUS_PARAMS_HEVC);
 #if defined(MFX_ENABLE_MFE)
         if(m_pMfeAdapter != nullptr)
             feedbackDescr.StreamID = m_StreamInfo.StreamId;
@@ -953,7 +953,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & tas
             //if (hr == E_INVALIDARG && feedbackDescr.StatusParamType == QUERY_STATUS_PARAM_SLICE)
             //{
             //    feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
-            //    feedbackDescr.SizeOfStatusParamStruct = sizeof(ENCODE_QUERY_STATUS_PARAMS);
+            //    feedbackDescr.SizeOfStatusParamStruct = sizeof(ENCODE_QUERY_STATUS_PARAMS_HEVC);
             //    continue;
             //}
 
@@ -995,7 +995,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & tas
             mfxExtEncodedUnitsInfo* pUnitsInfo = ExtBuffer::Get(*task.m_bs);
             if (pUnitsInfo)
             {
-                mfxU16 *pSize = ((ENCODE_QUERY_STATUS_SLICE_PARAMS*)feedback)->pSliceSizes;
+                mfxU16 *pSize = ((ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC*)feedback)->pSliceSizes;
                 mfxU16 i = pUnitsInfo->NumUnitsEncoded, j = 0;
 
                 while (i < (pUnitsInfo->NumUnitsAlloc) && (j < feedback->NumberSlices))

@@ -584,7 +584,7 @@ void FeedbackStorage::Reset(mfxU16 cacheSize, ENCODE_QUERY_STATUS_PARAM_TYPE fbT
 
     m_type = fbType;
     m_pool_size = cacheSize;
-    m_fb_size = (m_type == QUERY_STATUS_PARAM_SLICE) ? sizeof(ENCODE_QUERY_STATUS_SLICE_PARAMS) : sizeof(ENCODE_QUERY_STATUS_PARAMS);
+    m_fb_size = (m_type == QUERY_STATUS_PARAM_SLICE) ? sizeof(ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC) : sizeof(ENCODE_QUERY_STATUS_PARAMS_HEVC);
     m_buf.resize(m_fb_size * m_pool_size);
     m_buf_cache.resize(m_fb_size * m_pool_size);
 
@@ -597,8 +597,8 @@ void FeedbackStorage::Reset(mfxU16 cacheSize, ENCODE_QUERY_STATUS_PARAM_TYPE fbT
         m_ssizes.resize(maxSlices * m_pool_size);
         m_ssizes_cache.resize(maxSlices * m_pool_size);
         for (size_t i = 0; i < m_pool_size; i++) {
-            ENCODE_QUERY_STATUS_SLICE_PARAMS *pSliceInfo = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)&m_buf[i * m_fb_size];
-            ENCODE_QUERY_STATUS_SLICE_PARAMS *pSliceInfoCache = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)&m_buf_cache[i * m_fb_size];
+            ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC *pSliceInfo = (ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC *)&m_buf[i * m_fb_size];
+            ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC *pSliceInfoCache = (ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC *)&m_buf_cache[i * m_fb_size];
             pSliceInfo->SizeOfSliceSizesBuffer = maxSlices;
             pSliceInfoCache->SizeOfSliceSizesBuffer = maxSlices;
             pSliceInfo->pSliceSizes = &m_ssizes[i * maxSlices];
@@ -645,8 +645,8 @@ inline void FeedbackStorage::CacheFeedback(Feedback *fb_dst, Feedback *fb_src)
 {
     *fb_dst = *fb_src;
     if (m_type == QUERY_STATUS_PARAM_SLICE) {
-        ENCODE_QUERY_STATUS_SLICE_PARAMS *pdst = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)fb_dst;
-        ENCODE_QUERY_STATUS_SLICE_PARAMS *psrc = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)fb_src;
+        ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC *pdst = (ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC *)fb_dst;
+        ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC *psrc = (ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC *)fb_src;
         std::copy(psrc->pSliceSizes, psrc->pSliceSizes + psrc->FrameLevelStatus.NumberSlices, pdst->pSliceSizes);
     }
 }

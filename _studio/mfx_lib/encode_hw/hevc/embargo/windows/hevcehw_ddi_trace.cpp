@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Intel Corporation
+// Copyright (c) 2019-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -174,7 +174,7 @@ void DDITracer::TraceFunc(bool bOut, mfxU32 func, const void* buf, mfxU32 n)
     bool bENCODE_CREATEDEVICE               = bHEX && bOut && (bDX9 && func == AUXDEV_CREATE_ACCEL_SERVICE);
     bool bENCODE_CAPS_HEVC                  = bHEX && bOut && (func == AUXDEV_QUERY_ACCEL_CAPS || func == ENCODE_QUERY_ACCEL_CAPS_ID);
     bool bENCODE_QUERY_STATUS_PARAMS_DESCR  = bHEX && !bOut && func == ENCODE_QUERY_STATUS_ID;
-    bool bENCODE_QUERY_STATUS_PARAMS        = bHEX && bOut && func == ENCODE_QUERY_STATUS_ID;
+    bool bENCODE_QUERY_STATUS_PARAMS_HEVC   = bHEX && bOut && func == ENCODE_QUERY_STATUS_ID;
     bool bENCODE_ENCRYPTION_SET             = bHEX && !bOut && !bDX9 && func == ENCODE_ENCRYPTION_SET_ID;
     struct { const void *In, *Out; } b = { buf, buf };
     
@@ -195,7 +195,7 @@ void DDITracer::TraceFunc(bool bOut, mfxU32 func, const void* buf, mfxU32 n)
     TRACE_FARG(ENCODE_CREATEDEVICE);
     TRACE_FARG(ENCODE_CAPS_HEVC);
     TRACE_FARG(ENCODE_QUERY_STATUS_PARAMS_DESCR);
-    TRACE_FARG(ENCODE_QUERY_STATUS_PARAMS);
+    TRACE_FARG(ENCODE_QUERY_STATUS_PARAMS_HEVC);
     TRACE_FARG(ENCODE_ENCRYPTION_SET);
 #undef TRACE_FARG
     
@@ -323,6 +323,13 @@ DECL_START(D3D11_VIDEO_DECODER_EXTENSION)
     if (b.Function == ENCODE_ENC_PAK_ID)
     {
         Trace(*((ENCODE_EXECUTE_PARAMS*)b.pPrivateInputData), 0);
+    } else
+    if (b.Function == ENCODE_QUERY_STATUS_ID)
+    {
+        if (b.PrivateOutputDataSize == sizeof(ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC))
+            Trace(*((ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC*)b.pPrivateOutputData), 0);
+        else
+            Trace(*((ENCODE_QUERY_STATUS_PARAMS_HEVC*)b.pPrivateOutputData), 0);
     }
 DECL_END
 #undef FIELD_FORMAT
@@ -460,6 +467,7 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", SlidingWindowSize);
     TRACE("%d", MaxBitRatePerSlidingWindow);
     TRACE("%d", MinBitRatePerSlidingWindow);
+    TRACE("%d", LookaheadDepth);
 
 DECL_END
 #undef FIELD_FORMAT
@@ -470,7 +478,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
     TRACE("%d", CurrOriginalPic.AssociatedFlag);
     TRACE("%d", CurrReconstructedPic.Index7Bits);
     TRACE("%d", CurrReconstructedPic.AssociatedFlag);
-    
+
     TRACE("%d", CollocatedRefPicIndex);
 
     for (mfxU32 i = 0; i < 15; i ++)
@@ -544,7 +552,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
         TRACE("%d", ROI[i].Roi.Right);
         TRACE("%d", ROI[i].PriorityLevelOrDQp);
     }
-    
+
     TRACE("%d", MaxDeltaQp);
     TRACE("%d", MinDeltaQp);
 
@@ -559,7 +567,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
     TRACE("%d", SkipFrameFlag);
     TRACE("%d", NumSkipFrames);
     TRACE("%d", SizeSkipFrames);
-    
+
     TRACE("%d", BRCMaxQp);
     TRACE("%d", BRCMinQp);
 
@@ -595,7 +603,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
             TRACE("%d", pDirtyRect[i].Right);
         }
     }
-    
+
     TRACE("%d", NumMoveRects);
     if (b.NumMoveRects)
     {
@@ -754,10 +762,21 @@ DECL_END
 #undef FIELD_FORMAT
 
 #define FIELD_FORMAT "%-28s"
-DECL_START(ENCODE_QUERY_STATUS_PARAMS)
+DECL_START(LOOKAHEAD_INFO)
     TRACE("%d", StatusReportFeedbackNumber);
-    TRACE("%d", CurrOriginalPic.bPicEntry); 
-    TRACE("%d", field_pic_flag); 
+    TRACE("%d", ValidInfo);
+    TRACE("%d", CqmHint);
+    TRACE("%d", IntraHint);
+    TRACE("%d", TargetFrameSize);
+    TRACE("%d", TargetBufferFulness);
+DECL_END
+#undef FIELD_FORMAT
+
+#define FIELD_FORMAT "%-28s"
+DECL_START(ENCODE_QUERY_STATUS_PARAMS_HEVC)
+    TRACE("%d", StatusReportFeedbackNumber);
+    TRACE("%d", CurrOriginalPic.bPicEntry);
+    TRACE("%d", field_pic_flag);
     TRACE("%d", bStatus);
     TRACE("%d", Func);
     TRACE("%d", bitstreamSize);
@@ -770,16 +789,22 @@ DECL_START(ENCODE_QUERY_STATUS_PARAMS)
     TRACE("%d", NumSlicesNonCompliant);
     TRACE("%d", LongTermReference);
     TRACE("%d", FrameSkipped);
+    TRACE("%d", SceneChangeDetected);
     TRACE("%d", MAD);
     TRACE("%d", NumberSlices);
+    TRACE_ARRAY_ROW("%d", PSNRx100, 3);
+    TRACE("%d", NextFrameWidthMinus1);
+    TRACE("%d", NextFrameHeightMinus1);
     TRACE("%llx", aes_counter.IV);
     TRACE("%llx", aes_counter.Counter);
+    TRACE("%d", StreamId);
+    Trace(b.lookaheadInfo, 0);
 DECL_END
 #undef FIELD_FORMAT
 
 #define FIELD_FORMAT "%-34s"
-DECL_START(ENCODE_QUERY_STATUS_SLICE_PARAMS)
-    Trace(*((ENCODE_QUERY_STATUS_PARAMS*)&b), 0);
+DECL_START(ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC)
+    Trace(*((ENCODE_QUERY_STATUS_PARAMS_HEVC*)&b), 0);
     TRACE("%d", SizeOfSliceSizesBuffer);
     TRACE_PTR(pSliceSizes);
     if (b.pSliceSizes) {

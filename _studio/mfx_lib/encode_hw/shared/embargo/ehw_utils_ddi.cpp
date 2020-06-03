@@ -31,7 +31,7 @@ void FeedbackStorage::Reset(mfxU16 cacheSize, ENCODE_QUERY_STATUS_PARAM_TYPE fbT
     m_fb_size   =
           (m_type == QUERY_STATUS_PARAM_SLICE)
         ? sizeof(ENCODE_QUERY_STATUS_SLICE_PARAMS)
-        : sizeof(ENCODE_QUERY_STATUS_PARAMS);
+        : sizeof(ENCODE_QUERY_STATUS_PARAMS_HEVC);
 
     m_buf.resize(m_fb_size * m_pool_size);
     m_bufBegin = mfx::MakeStepIter(m_buf.data(), m_fb_size);
@@ -202,10 +202,10 @@ mfxStatus DDIParPacker::ReadFeedback(const void* pFB, mfxU32 fbSize, mfxU32& bsS
 {
     MFX_CHECK(pFB, MFX_ERR_DEVICE_FAILED);
 
-    if (fbSize < sizeof(ENCODE_QUERY_STATUS_PARAMS))
+    if (fbSize < sizeof(ENCODE_QUERY_STATUS_PARAMS_HEVC))
         throw std::logic_error("Invalid feedback");
 
-    auto pFeedback = (const ENCODE_QUERY_STATUS_PARAMS*)pFB;
+    auto pFeedback = (const ENCODE_QUERY_STATUS_PARAMS_HEVC*)pFB;
     bool bFeedbackValid =
         ((pFeedback->bStatus == ENCODE_OK) || (pFeedback->bStatus == ENCODE_OK_WITH_MISMATCH))
         && (m_maxBsSize >= pFeedback->bitstreamSize)
@@ -246,7 +246,7 @@ void DDIParPacker::GetFeedbackInterface(DDIFeedback& fb)
 
 mfxStatus DDIParPacker::QueryStatus(Device& dev, DDIFeedback& ddiFB, mfxU32 id)
 {
-    auto pFB = (const ENCODE_QUERY_STATUS_PARAMS*)ddiFB.Get(id);
+    auto pFB = (const ENCODE_QUERY_STATUS_PARAMS_HEVC*)ddiFB.Get(id);
 
     if (pFB && pFB->bStatus == ENCODE_OK)
         return MFX_ERR_NONE;
