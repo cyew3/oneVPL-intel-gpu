@@ -1400,6 +1400,8 @@ mfxStatus MFXDecPipeline::CreateVPP()
         m_components[eVPP].m_extParams.push_back(new mfxExtVPPScaling());
         MFXExtBufferPtr<mfxExtVPPScaling> pScaling(m_components[eVPP].m_extParams);
         pScaling->ScalingMode = m_inParams.uVppScalingMode;
+        if (pScaling->ScalingMode == MFX_SCALING_MODE_LOWPOWER)
+            pScaling->InterpolationMethod = m_inParams.uVppInterpolationMethod;
     }
 
     if(m_inParams.bUseVPP_ifdi && m_inParams.nVppDeinterlacingMode)
@@ -5421,6 +5423,13 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 m_inParams.bVppScaling = true;
                 MFX_PARSE_INT(m_inParams.uVppScalingMode,  argv[1]);
                 argv+=1;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-vpp_interpolation_method"), VM_STRING("specify scaling algorithm in the lowpower scaling case"), OPT_INT_32))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                m_inParams.bVppScaling = true;
+                MFX_PARSE_INT(m_inParams.uVppInterpolationMethod, argv[1]);
+                argv += 1;
             }
             else if (m_OptProc.Check(argv[0], VM_STRING("-di_mode"), VM_STRING("specify DI mode for VPP deinterlacing: 1 - BOB; 2 - Advanced; 11 - Advanced noRef; 12 - Advanced with Scene Change Detection (SCD)"), OPT_INT_32))
             {

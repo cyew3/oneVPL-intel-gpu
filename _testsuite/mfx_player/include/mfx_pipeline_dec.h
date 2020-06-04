@@ -92,6 +92,7 @@ struct sCommandlineParams
   bool           bNoVpp;    // don't enable VPP component (ERROR is returned if VPP is necessary)
   bool           bVppScaling;
   mfxU16         uVppScalingMode;
+  mfxU16         uVppInterpolationMethod;
   bool           bVppChromaSiting;
   mfxU16         uVppChromaSiting;
   bool           isDefaultFC;
