@@ -21,31 +21,47 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX) && (MFX_VERSION >= 1031)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "hevcehw_g12_rext.h"
+#include "hevcehw_base.h"
+#include "hevcehw_base_data.h"
 
 namespace HEVCEHW
 {
-namespace Linux
+namespace Base
 {
-namespace Gen12
-{
-class RExt
-    : public HEVCEHW::Gen12::RExt
-{
-public:
+    class ReconInfo
+        : public FeatureBase
+    {
+    public:
+#define DECL_BLOCK_LIST\
+    DECL_BLOCK(SetRecInfo) \
+    DECL_BLOCK(AllocRec)
+#define DECL_FEATURE_NAME "Base_ReconInfo"
+#include "hevcehw_decl_blocks.h"
 
-    RExt(mfxU32 FeatureId)
-        : HEVCEHW::Gen12::RExt(FeatureId)
-    { }
+        ReconInfo(mfxU32 FeatureId)
+            : FeatureBase(FeatureId)
+        {
+            
+        }
 
-protected:
-    virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
-};
+    protected:
+        typedef std::function<void(mfxFrameInfo&, eMFXHWType)> RecUpd;
+        std::map<mfxU16, RecUpd> ModRec[2];
 
-} //Linux
-} //Gen12
-} //HEVCEHW
+        virtual void InitInternal(const FeatureBlocks& blocks, TPushII Push);
+        virtual void InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push);
+
+        mfxU16 GetMaxRec(mfxVideoParam const & par);
+        bool GetRecInfo(
+            const mfxVideoParam& par
+            , const mfxExtCodingOption3& CO3
+            , eMFXHWType hw
+            , mfxFrameInfo& rec);
+    };
+
+} //Base
+} //namespace HEVCEHW
 
 #endif

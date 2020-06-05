@@ -60,6 +60,7 @@
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_max_frame_size.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_packer.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_parser.cpp" />
+    <ClCompile Include="hevc\agnostic\base\hevcehw_base_recon_info.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_roi.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_task.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_weighted_prediction.cpp" />
@@ -204,6 +205,7 @@
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_max_frame_size.h" />
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_packer.h" />
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_parser.h" />
+    <ClInclude Include="hevc\agnostic\base\hevcehw_base_recon_info.h" />
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_roi.h" />
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_task.h" />
     <ClInclude Include="hevc\agnostic\base\hevcehw_base_weighted_prediction.h" />
@@ -231,6 +233,7 @@
     <ClInclude Include="hevc\embargo\linux\g12ats\hevcehw_g12ats_mfe_lin.h" />
     <ClInclude Include="hevc\embargo\linux\g12dg2\hevcehw_g12dg2_lin.h" />
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_lpla_analysis.h" />
+    <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_recon_info_win.h" />
     <ClInclude Include="hevc\embargo\windows\g11lkf\hevcehw_g11lkf_win.h" />
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_alloc_win.h" />
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_blocking_sync_win.h" />
@@ -254,6 +257,7 @@
     <ClInclude Include="hevc\embargo\windows\g12ats\hevcehw_g12ats_win.h" />
     <ClInclude Include="hevc\embargo\windows\g12dg2\hevcehw_g12dg2_win.h" />
     <ClInclude Include="hevc\embargo\windows\g12\hevcehw_g12_qp_modulation_win.h" />
+    <ClInclude Include="hevc\embargo\windows\g12\hevcehw_g12_rext_win.h" />
     <ClInclude Include="hevc\embargo\windows\g12\hevcehw_g12_scc_win.h" />
     <ClInclude Include="hevc\embargo\windows\g12\hevcehw_g12_win.h" />
     <ClInclude Include="hevc\embargo\windows\hevcehw_ddi_trace.h" />
@@ -262,6 +266,7 @@
     <ClInclude Include="hevc\linux\base\hevcehw_base_fei_lin.h" />
     <ClInclude Include="hevc\linux\base\hevcehw_base_interlace_lin.h" />
     <ClInclude Include="hevc\linux\base\hevcehw_base_lin.h" />
+    <ClInclude Include="hevc\linux\base\hevcehw_base_recon_info_lin.h" />
     <ClInclude Include="hevc\linux\base\hevcehw_base_roi_lin.h" />
     <ClInclude Include="hevc\linux\base\hevcehw_base_va_lin.h" />
     <ClInclude Include="hevc\linux\base\hevcehw_base_va_packer_lin.h" />

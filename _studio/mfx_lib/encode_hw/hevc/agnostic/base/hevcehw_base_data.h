@@ -1326,6 +1326,7 @@ namespace Base
         , FEATURE_UNITS_INFO
         , FEATURE_FEI
         , FEATURE_LPLA_ANALYSIS
+        , FEATURE_RECON_INFO
         , NUM_FEATURES
     };
 

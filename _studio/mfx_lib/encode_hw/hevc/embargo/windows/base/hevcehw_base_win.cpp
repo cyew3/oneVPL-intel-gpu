@@ -25,6 +25,7 @@
 #include "hevcehw_base_data.h"
 #include "hevcehw_base_legacy.h"
 #include "hevcehw_base_parser.h"
+#include "hevcehw_base_recon_info_win.h"
 #include "hevcehw_base_packer.h"
 #include "hevcehw_base_hrd.h"
 #include "hevcehw_base_alloc_win.h"
@@ -94,6 +95,7 @@ Windows::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
 
     m_features.emplace_back(new DDIPacker(FEATURE_DDI_PACKER));
     m_features.emplace_back(new Legacy(FEATURE_LEGACY));
+    m_features.emplace_back(new ReconInfo(FEATURE_RECON_INFO));
     m_features.emplace_back(new HRD(FEATURE_HRD));
     m_features.emplace_back(new TaskManager(FEATURE_TASK_MANAGER));
     m_features.emplace_back(new Packer(FEATURE_PACKER));
@@ -145,6 +147,19 @@ Windows::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             , { FEATURE_DDI, IDDI::BLK_QueryCaps }
             , { FEATURE_MB_PER_SEC, MbPerSec::BLK_QueryDDI }
             , PLACE_AFTER);
+    }
+
+    if (mode & INIT)
+    {
+        auto& qIA = BQ<BQ_InitAlloc>::Get(*this);
+        Reorder(qIA
+            , { FEATURE_LEGACY, Legacy::BLK_AllocRaw }
+            , { FEATURE_RECON_INFO, ReconInfo::BLK_AllocRec }
+        , PLACE_AFTER);
+        Reorder(qIA
+            , { FEATURE_RECON_INFO, ReconInfo::BLK_AllocRec }
+            , { FEATURE_DDI, IDDI::BLK_CreateService }
+        , PLACE_AFTER);
     }
 }
 

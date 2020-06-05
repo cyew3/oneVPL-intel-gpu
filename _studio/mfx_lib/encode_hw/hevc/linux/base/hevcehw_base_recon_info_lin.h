@@ -21,31 +21,32 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX) && (MFX_VERSION >= 1031)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA_LINUX)
 
-#include "hevcehw_g12_rext.h"
+#include "hevcehw_base.h"
+#include "hevcehw_base_data.h"
+#include "hevcehw_base_recon_info.h"
 
 namespace HEVCEHW
 {
 namespace Linux
 {
-namespace Gen12
+namespace Base
 {
-class RExt
-    : public HEVCEHW::Gen12::RExt
-{
-public:
+    class ReconInfo
+        : public HEVCEHW::Base::ReconInfo
+    {
+    public:
+        ReconInfo(mfxU32 FeatureId)
+            : HEVCEHW::Base::ReconInfo(FeatureId)
+        {
+            ModRec[0] = {};
+            ModRec[1] = {};
+        }
+    };
 
-    RExt(mfxU32 FeatureId)
-        : HEVCEHW::Gen12::RExt(FeatureId)
-    { }
-
-protected:
-    virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
-};
-
+} //Base
 } //Linux
-} //Gen12
-} //HEVCEHW
+} //namespace HEVCEHW
 
 #endif
