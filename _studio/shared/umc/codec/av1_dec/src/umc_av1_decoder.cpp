@@ -158,7 +158,7 @@ namespace UMC_AV1_DECODER
         {
             if ((fh.refresh_frame_flags >> i) & 1)
             {
-                if (!prevFrameDPB.empty() && prevFrameDPB[i])
+                if (!prevFrameDPB.empty() && prevFrameDPB[i] && prevFrameDPB[i]->UID != -1)
                     prevFrameDPB[i]->DecrementReference();
 
                 updatedFrameDPB[i] = const_cast<AV1DecoderFrame*>(prevFrame);
