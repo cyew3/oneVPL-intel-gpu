@@ -24,12 +24,12 @@
 
 #include "bs_parser++.h"
 
-#include "av1ehw_g12.h"
-#include "av1ehw_g12_packer.h"
-#include "av1ehw_g12_tile.h"
+#include "av1ehw_base.h"
+#include "av1ehw_base_packer.h"
+#include "av1ehw_base_tile.h"
 
 using namespace AV1EHW;
-using namespace AV1EHW::Gen12;
+using namespace AV1EHW::Base;
 
 namespace av1e {
     namespace tests

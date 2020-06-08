@@ -58,6 +58,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\_studio\shared\src\auxiliary_device.cpp" />
+    <ClCompile Include="av1e_feature_blocks_base_ddi_d3d11.cpp" />
+    <ClCompile Include="av1e_feature_blocks_base_general.cpp" />
+    <ClCompile Include="av1e_feature_blocks_base_task.cpp" />
+    <ClCompile Include="av1e_feature_blocks_base_tile.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(MSBuildThisFileDirectory)..\run_suite.props" />

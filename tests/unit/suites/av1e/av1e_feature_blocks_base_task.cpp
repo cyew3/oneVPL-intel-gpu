@@ -24,13 +24,13 @@
 #include "mfxvideo++.h"
 #include "mfx_session.h"
 
-#include "av1ehw_g12_alloc.h"
-#include "av1ehw_g12_general.h"
-#include "av1ehw_g12_task.h"
+#include "av1ehw_base_alloc.h"
+#include "av1ehw_base_general.h"
+#include "av1ehw_base_task.h"
 
 namespace AV1EHW
 {
-namespace Gen12
+namespace Base
 {
     struct FeatureBlocksTask
         : testing::Test
@@ -602,5 +602,5 @@ namespace Gen12
         );
     }*/
 
-} //Gen12
+} //Base
 } //AV1EHW

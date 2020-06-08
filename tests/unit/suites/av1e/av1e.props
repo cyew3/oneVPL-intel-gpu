@@ -11,9 +11,11 @@
       $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
       $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\agnostic;
-      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\agnostic\g12;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\agnostic\base;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\agnostic;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\agnostic\base;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\windows;
-      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\windows\g12;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\av1\embargo\windows\base;
       $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\shared;
       $(MSDK_STUDIO_ROOT)\..\tests\unit;
       $(MSDK_STUDIO_ROOT)\..\contrib\detours\include;

@@ -23,11 +23,11 @@
 
 #include "mfxvideo++.h"
 #include "mfx_session.h"
-#include "av1ehw_g12_alloc.h"
-#include "av1ehw_g12_general.h"
+#include "av1ehw_base_alloc.h"
+#include "av1ehw_base_general.h"
 
 using namespace AV1EHW;
-using namespace AV1EHW::Gen12;
+using namespace AV1EHW::Base;
 
 namespace av1e {
     namespace tests

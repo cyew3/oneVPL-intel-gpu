@@ -26,8 +26,8 @@
 #include "mfxvideo++.h"
 #include "mfx_session.h"
 
-#include "av1ehw_g12_general.h"
-#include "av1ehw_g12_d3d11_win.h"
+#include "av1ehw_base_general.h"
+#include "av1ehw_base_d3d11_win.h"
 
 #include "mocks/include/guid.h"
 
@@ -55,7 +55,7 @@ namespace AV1EHW
 {
 namespace Windows
 {
-namespace Gen12
+namespace Base
 {
     int constexpr INTEL_VENDOR_ID = 0x8086;
 
@@ -370,7 +370,7 @@ namespace Gen12
         );
     }
 
-} //Gen12
+} //Base
 } //Windows
 } //AV1EHW
 
