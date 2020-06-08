@@ -1235,6 +1235,8 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
 
     if (in)
     {
+        out->mfx.MaxDecFrameBuffering = in->mfx.MaxDecFrameBuffering;
+
         if (in->mfx.CodecId == MFX_CODEC_AVC)
             out->mfx.CodecId = in->mfx.CodecId;
 
