@@ -3239,7 +3239,7 @@ void Legacy::SetSTRPS(
 
         if (!bNext)
         {
-            bool bAfterRAP = (RAPPOC >= 0) * (cur->POC > RAPPOC); // if true - need to remove refs <RAPPOC
+            bool bAfterRAP = (RAPPOC >= 0) && (cur->POC > RAPPOC); // if true - need to remove refs <RAPPOC
 
             RemoveIf(dpb, dpb + Size(dpb) * (bTL | bAfterRAP)
                 , [&](DpbFrame& ref)
@@ -3256,8 +3256,8 @@ void Legacy::SetSTRPS(
             bool bP   = IsP(cur->FrameType);
             bool bRef = IsRef(cur->FrameType);
 
-            SetIf(RAPPOC, bAfterRAP, -1);          // clear after use
-            SetIf(RAPPOC, bI * bIisRAP, cur->POC); // enable at I if conrol allows
+            SetIf(RAPPOC, bAfterRAP, -1);           // clear after use
+            SetIf(RAPPOC, bI && bIisRAP, cur->POC); // enable at I if conrol allows
 
             if (!bIDR)
             {
