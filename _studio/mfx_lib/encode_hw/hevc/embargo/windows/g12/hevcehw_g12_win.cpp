@@ -36,6 +36,7 @@
 #include "hevcehw_base_data.h"
 #include "hevcehw_base_legacy.h"
 #include "hevcehw_base_parser.h"
+#include "hevcehw_base_recon_info_win.h"
 
 using namespace HEVCEHW::Gen12;
 
@@ -124,6 +125,11 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             iint
             , { Base::FEATURE_LEGACY, Base::Legacy::BLK_SetPPS }
             , { FEATURE_SCC, SCC::BLK_SetPPSExt });
+        Reorder(
+            iint
+            , { Base::FEATURE_RECON_INFO, Base::ReconInfo::BLK_SetRecInfo }
+            , { FEATURE_REXT, RExt::BLK_SetRecInfo }
+            , PLACE_AFTER);
     }
 }
 

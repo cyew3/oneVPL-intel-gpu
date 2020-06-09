@@ -33,6 +33,7 @@
 #include "hevcehw_base_iddi_packer.h"
 #include "hevcehw_base_iddi.h"
 #include "hevcehw_base_parser.h"
+#include "hevcehw_base_recon_info_lin.h"
 
 namespace HEVCEHW
 {
@@ -118,6 +119,11 @@ void MFXVideoENCODEH265_HW::InternalInitFeatures(
             iint
             , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetPPS }
             , { FEATURE_SCC, SCC::BLK_SetPPSExt });
+        Reorder(
+            iint
+            , { HEVCEHW::Base::FEATURE_RECON_INFO, HEVCEHW::Base::ReconInfo::BLK_SetRecInfo }
+            , { FEATURE_REXT, RExt::BLK_SetRecInfo }
+            , PLACE_AFTER);
     }
 
     status = MFX_ERR_NONE;
