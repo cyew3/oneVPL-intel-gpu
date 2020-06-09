@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -320,11 +320,6 @@ namespace hevce_scc
         TS_START;
         auto& tc = test_case[id];
         mfxStatus sts = MFX_ERR_NONE;
-
-        if (g_tsOSFamily != MFX_OS_FAMILY_WINDOWS) {
-            g_tsLog << "[ SKIPPED ] This test is only for windows platform\n";
-            throw tsSKIP;
-        }
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))
             && g_tsHWtype < MFX_HW_TGL)
