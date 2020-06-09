@@ -629,6 +629,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_CodingOption.PicTimingSEI        = pInParams->nPicTimingSEI;
         m_CodingOption.NalHrdConformance   = pInParams->nNalHrdConformance;
         m_CodingOption.VuiNalHrdParameters = pInParams->nVuiNalHrdParameters;
+        bCodingOption = true;
     }
 
     if (bCodingOption)
