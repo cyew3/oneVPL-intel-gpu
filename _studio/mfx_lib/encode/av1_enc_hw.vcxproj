@@ -423,6 +423,7 @@
       <MultiProcessorCompilation Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">false</MultiProcessorCompilation>
       <SDLCheck Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</SDLCheck>
       <MultiProcessorCompilation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</MultiProcessorCompilation>
+      <SDLCheck Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</SDLCheck>
     </ClCompile>
     <ClCompile Include="..\fs_det\src\SkinDetBuff.cpp" />
     <ClCompile Include="..\fs_det\src\SkinHisto.cpp">
@@ -448,6 +449,7 @@
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="av1\src\mfx_av1_gpu_mode_decision.cpp" />
     <ClCompile Include="av1\src\mfx_av1_intrabc.cpp">
@@ -464,6 +466,7 @@
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="av1\src\mfx_av1_defaults.cpp" />
     <ClCompile Include="av1\src\mfx_av1_enc.cpp">
@@ -479,6 +482,7 @@
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="av1\src\mfx_av1_encode_api.cpp">
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">false</TreatWarningAsError>
@@ -486,6 +490,7 @@
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="av1\src\mfx_av1_frame.cpp" />
     <ClCompile Include="av1\src\mfx_av1_interp_scale.cpp" />
@@ -496,6 +501,7 @@
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="av1\src\mfx_av1_lookahead.cpp">
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">false</TreatWarningAsError>
@@ -503,6 +509,7 @@
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="av1\src\mfx_av1_quant.cpp" />
     <ClCompile Include="av1\src\mfx_av1_recon10bit.cpp" />
@@ -513,6 +520,7 @@
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">false</TreatWarningAsError>
       <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</TreatWarningAsError>
     </ClCompile>
     <ClCompile Include="av1\src\mfx_av1_superres.cpp" />
     <ClCompile Include="av1\src\mfx_av1_tables.cpp" />
