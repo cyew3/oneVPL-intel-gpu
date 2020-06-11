@@ -11,6 +11,7 @@ Copyright(c) 2015-2020 Intel Corporation. All Rights Reserved.
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+#include "ts_utils.h"
 
 namespace mpeg2e_aspectratio_reset
 {
@@ -46,9 +47,6 @@ private:
     static const tc_struct test_case[];
 };
 
-#if !defined(MSDK_ALIGN16)
-#define MSDK_ALIGN16(value) (((value + 15) >> 4) << 4)
-#endif
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {

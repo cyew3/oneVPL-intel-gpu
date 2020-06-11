@@ -4,23 +4,17 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+#include "ts_utils.h"
 #include <vector>
 
 //#define DEBUG_STREAM "avce_inter_mbs.264"
-
-#if !defined(MSDK_ALIGN16)
-#define MSDK_ALIGN16(value) (((value + 15) >> 4) << 4)
-#endif
-#if !defined(MSDK_ALIGN32)
-#define MSDK_ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
-#endif
 
 namespace avce_inter_mbs
 {

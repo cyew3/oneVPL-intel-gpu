@@ -11,6 +11,7 @@ Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+#include "ts_utils.h"
 
 namespace avce_aspectratio_reset
 {
@@ -153,13 +154,6 @@ public:
         return MFX_ERR_NONE;
     }
 };
-
-#if !defined(MSDK_ALIGN16)
-#define MSDK_ALIGN16(value) (((value + 15) >> 4) << 4)
-#endif
-#if !defined(MSDK_ALIGN32)
-#define MSDK_ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
-#endif
 
 int TestSuite::RunTest(unsigned int id)
 {

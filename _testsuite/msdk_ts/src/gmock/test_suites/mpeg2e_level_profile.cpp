@@ -4,13 +4,14 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
+#include "ts_utils.h"
 
 /*
  * Encode stream with pre-defined parameters (including profile/level/GOP configs/etc) and check if
@@ -40,9 +41,6 @@ Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
 
 namespace mpeg2e_level_profile
 {
-#if !defined(MSDK_ALIGN16)
-#define MSDK_ALIGN16(value)                      (((value + 15) >> 4) << 4) // round up to a multiple of 16
-#endif
 
 class TestSuite : public tsVideoEncoder, public tsParserMPEG2AU, public tsBitstreamProcessor
 {
