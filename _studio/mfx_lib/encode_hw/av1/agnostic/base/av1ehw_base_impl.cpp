@@ -53,6 +53,11 @@ void MFXVideoENCODEAV1_HW::InternalInitFeatures(
     if (mode & INIT)
     {
         Reorder(
+            BQ<BQ_SetDefaults>::Get(*this)
+            , { FEATURE_GENERAL, General::BLK_SetDefaults }
+            , { FEATURE_DDI, IDDI::BLK_QueryCaps });
+
+        Reorder(
             BQ<BQ_InitExternal>::Get(*this)
             , { FEATURE_DDI, IDDI::BLK_CreateDevice }
             , { FEATURE_GENERAL, General::BLK_SetGUID });

@@ -599,37 +599,66 @@ void General::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     });
 }
 
+static mfxStatus RunQuery1NoCapsQueue(const FeatureBlocks& blocks, const mfxVideoParam& in, StorageRW& strg)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    auto pPar = make_storable<ExtBuffer::Param<mfxVideoParam>>(in);
+    auto& par = *pPar;
+    const auto& query = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(blocks);
+
+    sts = RunBlocks(CheckGE<mfxStatus, MFX_ERR_NONE>, query, in, par, strg);
+    MFX_CHECK(sts != MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+
+    strg.Insert(Glob::VideoParam::Key, std::move(pPar));
+
+    return MFX_ERR_NONE;
+}
+
+static mfxStatus RunSetDefaultsQueue(const FeatureBlocks& blocks, StorageRW& strg, StorageRW& local)
+{
+    auto& par = Glob::VideoParam::Get(strg);
+    Glob::EncodeCaps::GetOrConstruct(strg);
+    auto& qSD = FeatureBlocks::BQ<FeatureBlocks::BQ_SetDefaults>::Get(blocks);
+
+    return RunBlocks(IgnoreSts, qSD, par, strg, local);
+};
+
+static mfxStatus RunQuery1WithCapsQueue(const FeatureBlocks& blocks, const mfxVideoParam& in, StorageRW& strg)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    auto& par = Glob::VideoParam::Get(strg);
+    auto& queryWC = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
+
+    sts = RunBlocks(CheckGE<mfxStatus, MFX_ERR_NONE>, queryWC, in, par, strg);
+    MFX_CHECK(sts != MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
+
+    return MFX_ERR_NONE;
+};
+
 void General::QueryIOSurf(const FeatureBlocks& blocks, TPushQIS Push)
 {
-    Push(BLK_CheckVideoParam
-        , [this, &blocks](const mfxVideoParam& par, mfxFrameAllocRequest&, StorageRW& strg) -> mfxStatus
+    Push(BLK_Query1NoCaps
+        , [this, &blocks](const mfxVideoParam& in, mfxFrameAllocRequest&, StorageRW& strg) -> mfxStatus
     {
-        mfxStatus sts = MFX_ERR_NONE;
-        auto pTmpPar = make_storable<ExtBuffer::Param<mfxVideoParam>>(par);
-
-        auto& queryNC = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(blocks);
-        sts = RunBlocks(CheckGE<mfxStatus, MFX_ERR_NONE>, queryNC, par, *pTmpPar, strg);
-        MFX_CHECK(sts != MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM);
-        MFX_CHECK(sts >= MFX_ERR_NONE, sts);
-
-        auto& queryWC = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
-        sts = RunBlocks(CheckGE<mfxStatus, MFX_ERR_NONE>, queryWC, par, *pTmpPar, strg);
-        MFX_CHECK(sts != MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM);
-        MFX_CHECK(sts >= MFX_ERR_NONE, sts);
-
-        strg.Insert(Glob::VideoParam::Key, std::move(pTmpPar));
-
-        return MFX_ERR_NONE;
+        return RunQuery1NoCapsQueue(blocks, in, strg);
     });
 
     Push(BLK_SetDefaults
         , [this, &blocks](const mfxVideoParam&, mfxFrameAllocRequest&, StorageRW& strg) -> mfxStatus
     {
-        ExtBuffer::Param<mfxVideoParam>& par = Glob::VideoParam::Get(strg);
         StorageRW local;
 
-        auto& qSD = FeatureBlocks::BQ<FeatureBlocks::BQ_SetDefaults>::Get(blocks);
-        return RunBlocks(IgnoreSts, qSD, par, strg, local);
+        return RunSetDefaultsQueue(blocks, strg, local);
+    });
+
+    Push(BLK_Query1WithCaps
+        , [this, &blocks](const mfxVideoParam& in, mfxFrameAllocRequest&, StorageRW& strg) -> mfxStatus
+    {
+        return RunQuery1WithCapsQueue(blocks, in, strg);
     });
 
     Push(BLK_SetFrameAllocRequest
@@ -672,46 +701,32 @@ void General::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
 
 void General::InitExternal(const FeatureBlocks& blocks, TPushIE Push)
 {
-    Push(BLK_SetGUID
+    Push(BLK_Query1NoCaps
         , [this, &blocks](const mfxVideoParam& in, StorageRW& strg, StorageRW&) -> mfxStatus
     {
-        const auto& query = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1NoCaps>::Get(blocks);
-        mfxStatus wrn = MFX_ERR_NONE, sts = MFX_ERR_NONE;
-        auto pPar = make_storable<ExtBuffer::Param<mfxVideoParam>>(in);
-        ExtBuffer::Param<mfxVideoParam>& par = *pPar;
-
-        sts = RunBlocks(CheckGE<mfxStatus, MFX_ERR_NONE>, query, in, par, strg);
-        MFX_CHECK(sts != MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM);
-        MFX_CHECK(sts >= MFX_ERR_NONE, sts);
-
-        strg.Insert(Glob::VideoParam::Key, std::move(pPar));
-
-        return wrn;
+        return RunQuery1NoCapsQueue(blocks, in, strg);
     });
 
-    Push(BLK_CheckVideoParam
-        , [this, &blocks](const mfxVideoParam& in, StorageRW& strg, StorageRW&) -> mfxStatus
+    Push(BLK_AttachMissingBuffers
+        , [this, &blocks](const mfxVideoParam&, StorageRW& strg, StorageRW&) -> mfxStatus
     {
-        const auto& query = FeatureBlocks::BQ<FeatureBlocks::BQ_Query1WithCaps>::Get(blocks);
-        mfxStatus sts = MFX_ERR_NONE;
-        ExtBuffer::Param<mfxVideoParam>& par = Glob::VideoParam::Get(strg);
+        auto& par = Glob::VideoParam::Get(strg);
+        for (auto& eb : blocks.m_ebCopySupported)
+            par.NewEB(eb.first, false);
 
-        sts = RunBlocks(CheckGE<mfxStatus, MFX_ERR_NONE>, query, in, par, strg);
-        MFX_CHECK(sts != MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM);
-
-        return sts;
+        return MFX_ERR_NONE;
     });
 
     Push(BLK_SetDefaults
         , [this, &blocks](const mfxVideoParam&, StorageRW& strg, StorageRW& local) -> mfxStatus
     {
-        auto& par = Glob::VideoParam::Get(strg);
+        return RunSetDefaultsQueue(blocks, strg, local);
+    });
 
-        for (auto& eb : blocks.m_ebCopySupported)
-            par.NewEB(eb.first, false);
-
-        auto& qSD = FeatureBlocks::BQ<FeatureBlocks::BQ_SetDefaults>::Get(blocks);
-        return RunBlocks(IgnoreSts, qSD, par, strg, local);
+    Push(BLK_Query1WithCaps
+        , [this, &blocks](const mfxVideoParam& in, StorageRW& strg, StorageRW&) -> mfxStatus
+    {
+        return RunQuery1WithCapsQueue(blocks, in, strg);
     });
 }
 

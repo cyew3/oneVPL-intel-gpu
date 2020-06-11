@@ -72,6 +72,7 @@ protected:
     GUID                                 m_guidConfigBitstreamEncryption = DXVA_NoEncrypt;
 
     virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
+    virtual void SetDefaults(const FeatureBlocks& blocks, TPushSD Push) override;
     virtual void InitExternal(const FeatureBlocks& blocks, TPushIE Push) override;
     virtual void InitAlloc(const FeatureBlocks& blocks, TPushIA Push) override;
     virtual void SubmitTask(const FeatureBlocks& blocks, TPushST Push) override;
@@ -87,8 +88,8 @@ protected:
         , mfxU32      height
         , bool        isTemporal = false);
 
-    virtual mfxStatus QueryEncodeCaps(
-        ENCODE_CAPS_AV1& caps);
+    virtual mfxStatus QueryEncodeCaps(ENCODE_CAPS_AV1& caps);
+    virtual mfxStatus QueryEncodeCaps(mfxVideoParam& par, StorageW& strg, EncodeCapsAv1& caps);
 
     virtual mfxStatus CreateAccelerationService(StorageRW& local);
     virtual mfxStatus QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameInfo& info);

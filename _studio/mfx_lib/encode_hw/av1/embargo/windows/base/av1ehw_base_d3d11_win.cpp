@@ -29,41 +29,47 @@ using namespace AV1EHW::Base;
 using namespace AV1EHW::Windows;
 using namespace AV1EHW::Windows::Base;
 
+mfxStatus DDI_D3D11::QueryEncodeCaps(mfxVideoParam& par, StorageW& strg, EncodeCapsAv1& caps)
+{
+    MFX_CHECK(strg.Contains(Glob::GUID::Key), MFX_ERR_UNSUPPORTED);
+
+    mfxStatus sts = MFX_ERR_NONE;
+    auto& core = Glob::VideoCore::Get(strg);
+    const GUID& guid = Glob::GUID::Get(strg);
+
+    const bool bCreateDevice =
+        m_guid != guid
+        || MFX_ERR_NONE != QueryEncodeCaps(caps);
+
+    if (bCreateDevice)
+    {
+        sts = CreateAuxilliaryDevice(core, guid, par.mfx.FrameInfo.Width, par.mfx.FrameInfo.Height, true);
+        MFX_CHECK_STS(sts);
+
+        sts = QueryEncodeCaps(caps);
+        MFX_CHECK_STS(sts);
+    }
+
+    return sts;
+};
+
 void DDI_D3D11::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 {
     Push(BLK_QueryCaps
         , [this](const mfxVideoParam&, mfxVideoParam& par, StorageRW& strg) -> mfxStatus
     {
-        MFX_CHECK(strg.Contains(Glob::GUID::Key), MFX_ERR_UNSUPPORTED);
-
-        mfxStatus sts;
-        auto& core = Glob::VideoCore::Get(strg);
-        const GUID& guid = Glob::GUID::Get(strg);
         auto& caps = Glob::EncodeCaps::GetOrConstruct(strg);
+        return QueryEncodeCaps(par, strg, caps);
+    });
+}
 
-        bool bCreateDevice =
-            m_guid != guid
-            || MFX_ERR_NONE != QueryEncodeCaps(caps);
-
-        if (bCreateDevice)
-        {
-            sts = CreateAuxilliaryDevice(core, guid, par.mfx.FrameInfo.Width, par.mfx.FrameInfo.Height, true);
-            MFX_CHECK_STS(sts);
-
-            sts = QueryEncodeCaps(caps);
-            MFX_CHECK_STS(sts);
-        }
-
-        auto ddiExecute = Glob::DDI_Execute::GetOrConstruct(strg);
-        MFX_CHECK(!ddiExecute, MFX_ERR_NONE);
-
-        ddiExecute.Push(
-            [&](Glob::DDI_Execute::TRef::TExt, const DDIExecParam& ep)
-        {
-            return Execute(ep);
-        });
-
-        return MFX_ERR_NONE;
+void DDI_D3D11::SetDefaults(const FeatureBlocks& /*blocks*/, TPushSD Push)
+{
+    Push(BLK_QueryCaps
+        , [this](mfxVideoParam& par, StorageW& strg, StorageRW&)
+    {
+        auto& caps = Glob::EncodeCaps::Get(strg);
+        QueryEncodeCaps(par, strg, caps);
     });
 }
 
@@ -72,6 +78,17 @@ void DDI_D3D11::InitExternal(const FeatureBlocks& /*blocks*/, TPushIE Push)
     Push(BLK_CreateDevice
         , [this](const mfxVideoParam& par, StorageRW& strg, StorageRW&) -> mfxStatus
     {
+        auto ddiExecute = Glob::DDI_Execute::GetOrConstruct(strg);
+        if (!ddiExecute)
+        {
+            ddiExecute.Push(
+            [&](Glob::DDI_Execute::TRef::TExt, const DDIExecParam& ep)
+            {
+                return Execute(ep);
+            });
+
+        }
+
         auto& core = Glob::VideoCore::Get(strg);
         auto& guid = Glob::GUID::Get(strg);
 

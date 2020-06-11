@@ -66,8 +66,10 @@ namespace Base
     DECL_BLOCK(CheckShift           )\
     DECL_BLOCK(CheckFrameRate       )\
     DECL_BLOCK(CheckProfile         )\
-    DECL_BLOCK(CheckVideoParam      )\
+    DECL_BLOCK(Query1NoCaps         )\
+    DECL_BLOCK(Query1WithCaps       )\
     DECL_BLOCK(SetDefaults          )\
+    DECL_BLOCK(AttachMissingBuffers )\
     DECL_BLOCK(SetFrameAllocRequest )\
     DECL_BLOCK(SetSH                )\
     DECL_BLOCK(SetFH                )\
