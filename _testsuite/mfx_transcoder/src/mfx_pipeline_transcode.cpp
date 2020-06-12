@@ -718,7 +718,8 @@ MFXTranscodingPipeline::~MFXTranscodingPipeline()
 template<typename T>
 mfxStatus ParseSegmentMap(
     const vm_char* fname
-    , const mfxFrameInfo frameInfo
+    , mfxU16 frameWidth
+    , mfxU16 frameHeight
     , T& pSeg)
 {
     vm_file* parFile = vm_file_fopen(fname, VM_STRING("r"));
@@ -731,8 +732,8 @@ mfxStatus ParseSegmentMap(
         defaultSize = MFX_VP9_SEGMENT_ID_BLOCK_SIZE_16x16;
 
     mfxU16 blockSize = pSeg->SegmentIdBlockSize > 0 ? pSeg->SegmentIdBlockSize : defaultSize;
-    mfxU16 mapWidth = (frameInfo.Width + (blockSize - 1)) / blockSize;
-    mfxU16 mapHeight = (frameInfo.Height + (blockSize - 1)) / blockSize;
+    mfxU16 mapWidth = (frameWidth + (blockSize - 1)) / blockSize;
+    mfxU16 mapHeight = (frameHeight + (blockSize - 1)) / blockSize;
     pSeg->NumSegmentIdAlloc = (mfxU32)(mapWidth * mapHeight);
     pSeg->SegmentId = new mfxU8[pSeg->NumSegmentIdAlloc];
 
@@ -1847,7 +1848,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         {
             MFX_CHECK(++argv != argvEnd);
 
-            MFX_CHECK_STS(ParseSegmentMap(argv[0], m_inParams.FrameInfo, m_extVP9Segmentation));
+            MFX_CHECK_STS(ParseSegmentMap(argv[0], m_inParams.FrameInfo.Width, m_inParams.FrameInfo.Height, m_extVP9Segmentation));
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-av1NumSegments"), VM_STRING("Number of segments, valid value [0..8] "), OPT_SPECIAL, VM_STRING("integer")))
         {
@@ -1921,11 +1922,21 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         {
             MFX_CHECK(++argv != argvEnd);
 
+            mfxU16 frameWidth = m_inParams.FrameInfo.CropW > 0 ? m_inParams.FrameInfo.CropW : m_inParams.FrameInfo.Width;
+            mfxU16 frameHeight = m_inParams.FrameInfo.CropH > 0 ? m_inParams.FrameInfo.CropH : m_inParams.FrameInfo.Height;
+
+            mfxExtAV1Param *pAV1 = m_extAV1Param.get();
+            frameWidth = pAV1->FrameWidth > 0 ? pAV1->FrameWidth : frameWidth;
+            frameHeight = pAV1->FrameHeight > 0 ? pAV1->FrameHeight : frameHeight;
+
+            if (frameWidth == 0 || frameHeight == 0)
+                return MFX_ERR_UNKNOWN;
+
             mfxExtAV1Segmentation *pExt = m_bPerFrameParamsStart ?
                 RetrieveExtBuffer<mfxExtAV1Segmentation>(*m_ExtBuffersPerFrame.get()) :
                 m_extAV1Segmentation.get();
 
-            MFX_CHECK_STS(ParseSegmentMap(argv[0], m_inParams.FrameInfo, pExt));
+            MFX_CHECK_STS(ParseSegmentMap(argv[0], frameWidth, frameHeight, pExt));
 
             m_segMaps.emplace_back(pExt->SegmentId);
 
