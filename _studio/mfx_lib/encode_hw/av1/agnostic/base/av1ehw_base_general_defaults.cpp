@@ -216,8 +216,9 @@ public:
         , mfxU16(*pBL1)[8])
     {
         bool bExternal = false;
-        const mfxU16 defaultFwd = 2; // TODO: change later based on TU settings
-        const mfxU16 defaultBwd = 1; // TODO: change later based on TU settings
+        const mfxU16 defaultFwdP = par.caps.MaxNum_ReferenceL0_P;
+        const mfxU16 defaultFwdB = par.caps.MaxNum_ReferenceL0_B;
+        const mfxU16 defaultBwd = par.caps.MaxNum_ReferenceL1_B;
 
         auto SetDefaultNRef =
             [](const mfxU16(*extRef)[8], mfxU16 defaultRef, mfxU16(*NumRefActive)[8])
@@ -253,8 +254,8 @@ public:
             extRefBL1 = &pCO3->NumRefActiveBL1;
         }
 
-        bExternal |= SetDefaultNRef(extRefP, defaultFwd, pP);
-        bExternal |= SetDefaultNRef(extRefBL0, defaultFwd, pBL0);
+        bExternal |= SetDefaultNRef(extRefP, defaultFwdP, pP);
+        bExternal |= SetDefaultNRef(extRefBL0, defaultFwdB, pBL0);
         bExternal |= SetDefaultNRef(extRefBL1, defaultBwd, pBL1);
 
         return bExternal;

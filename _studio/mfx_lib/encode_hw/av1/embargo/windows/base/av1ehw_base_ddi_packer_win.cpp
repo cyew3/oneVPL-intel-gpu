@@ -511,6 +511,13 @@ inline void FillRefCtrlL0(
         if (IsValidRefFrame(task.RefList, refFrame)) // Assume search order is same as ref_list order. Todo: to align the search order with HW capability.
             FillSearchIdx(pps.ref_frame_ctrl_l0, idx++, refFrame);
     }
+
+    if (IsP(task.FrameType) && !task.isLDB)  // not RAB frame
+    {
+        mfxU8 refFrame = ALTREF_FRAME;
+        if (IsValidRefFrame(task.RefList, refFrame))
+            FillSearchIdx(pps.ref_frame_ctrl_l0, idx, refFrame);
+     }
 }
 
 inline void FillRefCtrlL1(

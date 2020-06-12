@@ -1556,13 +1556,15 @@ static void FillFwdPart(const DpbIndexes& fwd, mfxU8 maxFwdRefs, RefListType& re
         constructionRules = {
             {LAST_FRAME,   closestRef()},
             {LAST2_FRAME,  closestRef + 1},
+            {LAST3_FRAME,  closestRef + 2},
         };
     }
     else
     {
         constructionRules = {
             {LAST_FRAME,   closestRef()},
-            {GOLDEN_FRAME, closestRef + 1}
+            {GOLDEN_FRAME, closestRef + 1},
+            {ALTREF_FRAME, closestRef + 2}
         };
     }
 
@@ -1636,6 +1638,7 @@ static void FillRefListLDB(const DpbIndexes& fwd, mfxU8 maxFwdRefs, RefListType&
 #ifdef APPLY_HW_REF_LIST_RESTRICTIONS
     refList.at(BWDREF_FRAME - LAST_FRAME) = refList.at(LAST_FRAME - LAST_FRAME);
     refList.at(ALTREF2_FRAME - LAST_FRAME) = refList.at(LAST2_FRAME - LAST_FRAME);
+    refList.at(ALTREF_FRAME - LAST_FRAME) = refList.at(LAST3_FRAME - LAST_FRAME);
 #endif
 }
 
@@ -3233,7 +3236,7 @@ inline void SetRefFrameIndex(
 
     std::transform(refList.begin(), bwdStartIt, fh.ref_frame_idx, SetRef);
 
-    auto validBwd = std::find_if(bwdStartIt, refList.end(), IsValid);
+    auto validBwd = IsP(task.FrameType) ? refList.end() : std::find_if(bwdStartIt, refList.end(), IsValid);
     if (validBwd != refList.end())
         defaultRef = *validBwd;
 
