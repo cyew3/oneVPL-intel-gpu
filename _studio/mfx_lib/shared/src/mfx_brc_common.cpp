@@ -442,10 +442,10 @@ mfxI32 GetOffsetAPQ(mfxI32 level, mfxU16 isRef, mfxU16 clsAPQ)
         case 3:
             qp += 2;
         case 2:
-            qp += 1;
+            qp += 0;
         case 1:
         default:
-            qp += 2;
+            qp += 3;
             break;
         }
     }
