@@ -308,7 +308,7 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         mfxTaskHandle previousTaskHandle = {};
 
         mfxStatus task_sts = MFX_ERR_NONE;
-        mfxU64 start = GetHighPerformanceCounter();
+        mfxU64 start = vm_time_get_tick();
         mfxU64 frequency = vm_time_get_frequency();
 #if defined(WIN32) || defined(WIN64)
 
@@ -338,8 +338,9 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
 
             MarkTaskCompleted(&call, 0);
 
-
-            if ((mfxU32)((GetHighPerformanceCounter() - start)/frequency) > timeToWait)
+            // safe version of (vm_time_get_tick() - start) / (frequency / 1000)) >= timeToWait
+            // 1000 needed to convert seconds (frequency) to ms (timeTowait)
+            if (((mfxU64)vm_time_get_tick() * 1000) >= (start * 1000 + timeToWait * frequency))
                 break;
 
 #if defined(MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
@@ -347,7 +348,6 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
             if (MFX_TASK_BUSY == call.res &&
                 (call.pTask->threadingPolicy & MFX_TASK_POLLING)) continue; //respin task by skipping wait
 #endif
-
             if (MFX_TASK_DONE!= call.res)
             {
                 vm_status vmRes;
