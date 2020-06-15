@@ -146,7 +146,7 @@ static mfxU32 CheckSegmentMap(
 
     mfxFrameInfo   fiTemp  = par.mfx.FrameInfo;
     mfxU16 frameWidthTemp  = av1Par.FrameWidth;
-    mfxU16 frameHeightTemp = av1Par.FrameWidth;
+    mfxU16 frameHeightTemp = av1Par.FrameHeight;
     SetDefaultFrameInfo(frameWidthTemp, frameHeightTemp, fiTemp);
 
     const mfxU32 frameWidth  = frameWidthTemp ? frameWidthTemp : fiTemp.Width;
