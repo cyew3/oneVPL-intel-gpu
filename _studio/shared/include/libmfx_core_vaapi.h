@@ -82,7 +82,7 @@ struct VaGuidMapper
         static_assert( sizeof(*guid.Data4) == sizeof(*m_Data4),
             "Error! Can't store guid.Data4 in m_Data4.");
 
-        std::copy(guid.Data4, guid.Data4 + 7, m_Data4);
+        std::copy(std::begin(guid.Data4), std::end(guid.Data4), std::begin(m_Data4));
     }
 
     operator GUID() const
