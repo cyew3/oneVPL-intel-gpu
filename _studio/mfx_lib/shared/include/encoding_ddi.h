@@ -331,6 +331,7 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS_HEVC
     ENCODE_AES128_CIPHER_COUNTER aes_counter;
 
     UINT    StreamId;
+    UINT    Reserved;
     LOOKAHEAD_INFO lookaheadInfo;
     UINT reserved3[8];
 
