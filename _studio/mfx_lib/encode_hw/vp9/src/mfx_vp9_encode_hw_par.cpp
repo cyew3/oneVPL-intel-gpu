@@ -1023,13 +1023,13 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
-    if (fi.Width > caps.MaxPicWidth || fi.Width < caps.MinPicWidth)
+    if (fi.Width > caps.MaxPicWidth)
     {
         fi.Width = 0;
         unsupported = true;
     }
 
-    if (fi.Height > caps.MaxPicHeight || fi.Height < caps.MinPicHeight)
+    if (fi.Height > caps.MaxPicHeight)
     {
         fi.Height = 0;
         unsupported = true;

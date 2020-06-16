@@ -657,9 +657,6 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, eMFXHWType platform)
 
     caps.EncodeFunc = 1;
     caps.HybridPakFunc = 1;
-
-    caps.MinPicWidth = CODEC_MIN_PIC_WIDTH;
-    caps.MinPicHeight = CODEC_MIN_PIC_HEIGHT;
 }
 
 mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
@@ -797,6 +794,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     }
 
     MFX_CHECK(m_vaDisplay, MFX_ERR_DEVICE_FAILED);
+    VAStatus vaSts;
 
     VAProfile va_profile = ConvertGuidToVAAPIProfile(GetGuid(par));
     mfxI32 entrypointsIndx = 0;
@@ -805,7 +803,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 
     std::vector<VAEntrypoint> pEntrypoints(numEntrypoints);
 
-    VAStatus vaSts = vaQueryConfigEntrypoints(
+    vaSts = vaQueryConfigEntrypoints(
                 m_vaDisplay,
                 va_profile,
                 pEntrypoints.data(),

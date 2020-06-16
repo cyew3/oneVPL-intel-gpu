@@ -101,8 +101,6 @@ typedef struct tagENCODE_CAPS_VP9
     USHORT          MaxNumOfDirtyRect;
     USHORT          MaxNumOfMoveRect;
 
-    UINT            MinPicWidth;
-    UINT            MinPicHeight;
 
 } ENCODE_CAPS_VP9;
 
@@ -238,5 +236,4 @@ typedef struct tagENCODE_CAPS_VP9
                               Task const& task,
                               VP9SeqLevelParam const &seqPar,
                               BitOffsets &offsets);
-
 } // MfxHwVP9Encode
