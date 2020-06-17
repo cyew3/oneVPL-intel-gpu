@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2020 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_init.cpp
 
@@ -251,7 +251,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_YV12},
         },
     },
-    {/*24*/ MFX_WRN_PARTIAL_ACCELERATION, STANDARD,
+    {/*24*/
+        // YV12 is supported on Linux
+        #if defined LINUX
+            MFX_ERR_NONE,
+        #else
+            MFX_WRN_PARTIAL_ACCELERATION,
+        #endif
+            STANDARD,
         {
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_RGB4},
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_YV12},
