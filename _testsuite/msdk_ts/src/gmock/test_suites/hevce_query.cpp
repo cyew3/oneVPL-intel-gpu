@@ -75,7 +75,7 @@ namespace hevce_query
 
         mfxU32 AlignResolutionByPlatform(mfxU16 value)
         {
-            mfxU32 alignment = g_tsHWtype >= MFX_HW_TGL ? 8 : 16;
+            mfxU32 alignment = g_tsHWtype >= MFX_HW_ICL ? 8 : 16;
             return (value + (alignment - 1)) & ~(alignment - 1);
         }
 
