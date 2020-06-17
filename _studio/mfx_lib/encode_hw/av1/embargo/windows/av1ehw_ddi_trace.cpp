@@ -184,6 +184,66 @@ DECL_END
 
 #if !defined(MFX_VA_LINUX)
 
+#define FIELD_FORMAT "%s"
+void DDITracer::TraceFunc(bool bOut, mfxU32 func, const void* buf, mfxU32 n)
+{
+    bool bDX9 = false;
+    bool bHEX = buf && n;
+    bool bGUID= bHEX && !bOut && (bDX9
+        && (func == ENCODE_FORMAT_COUNT_ID
+            || func == AUXDEV_QUERY_ACCEL_CAPS
+            || func == AUXDEV_CREATE_ACCEL_SERVICE));
+    bool bENCODE_EXECUTE_PARAMS             = bHEX && !bOut && func == ENCODE_ENC_PAK_ID;
+    bool bENCODE_FORMAT_COUNT               = bHEX && bOut && (func == ENCODE_FORMAT_COUNT_ID);
+    bool bENCODE_FORMATS                    = bHEX && bOut && (func == ENCODE_FORMATS_ID);
+    bool bENCODE_CREATEDEVICE               = bHEX && bOut && (bDX9 && func == AUXDEV_CREATE_ACCEL_SERVICE);
+    bool bENCODE_CAPS_AV1                   = bHEX && bOut && (func == AUXDEV_QUERY_ACCEL_CAPS || func == ENCODE_QUERY_ACCEL_CAPS_ID);
+    bool bENCODE_QUERY_STATUS_PARAMS_DESCR  = bHEX && !bOut && func == ENCODE_QUERY_STATUS_ID;
+    bool bENCODE_QUERY_STATUS_PARAMS_AV1    = bHEX && bOut && func == ENCODE_QUERY_STATUS_ID;
+    bool bENCODE_ENCRYPTION_SET             = bHEX && !bOut && !bDX9 && func == ENCODE_ENCRYPTION_SET_ID;
+    struct { const void *In, *Out; } b = { buf, buf };
+
+    if (!bOut)
+        Trace(">>Function", func);
+
+#define TRACE_FARG(TYPE)\
+    if (b##TYPE)                                     \
+    {                                                \
+        TraceArray((const TYPE*)buf, n / sizeof(TYPE));\
+        bHEX = false;                                \
+    }
+
+    TRACE_FARG(GUID);
+    TRACE_FARG(ENCODE_EXECUTE_PARAMS);
+    TRACE_FARG(ENCODE_FORMAT_COUNT);
+    TRACE_FARG(ENCODE_FORMATS);
+    TRACE_FARG(ENCODE_CREATEDEVICE);
+    TRACE_FARG(ENCODE_CAPS_AV1);
+    TRACE_FARG(ENCODE_QUERY_STATUS_PARAMS_DESCR);
+    TRACE_FARG(ENCODE_QUERY_STATUS_PARAMS_AV1);
+    TRACE_FARG(ENCODE_ENCRYPTION_SET);
+#undef TRACE_FARG
+
+    bool bHEXIn  = bHEX && !bOut;
+    bool bHEXOut = bHEX && bOut;
+
+    if (bHEXIn)
+    {
+        TRACE_HEX_ROW(In, n);
+    }
+
+    if (bHEXOut)
+    {
+        TRACE_HEX_ROW(Out, n);
+    }
+
+    if (bOut)
+    {
+        Trace("<<Function", func);
+    }
+}
+#undef FIELD_FORMAT
+
 #define FIELD_FORMAT "%-24s"
 DECL_START(D3D11_VIDEO_DECODER_EXTENSION)
     TRACE("%d", Function);

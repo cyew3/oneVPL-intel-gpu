@@ -66,7 +66,7 @@ using namespace MfxEncodeHW;
 
 class DDIPacker
     : public IDDIPacker
-    , protected DDIParPacker
+    , protected DDIParPacker<ENCODE_QUERY_STATUS_PARAMS_HEVC>
 {
 public:
     DDIPacker(mfxU32 FeatureId)

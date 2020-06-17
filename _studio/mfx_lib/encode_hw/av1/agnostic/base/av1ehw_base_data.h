@@ -25,6 +25,7 @@
 
 #include "av1ehw_base.h"
 #include "av1ehw_ddi.h"
+#include "ehw_device.h"
 #include <vector>
 
 namespace AV1EHW
@@ -798,12 +799,7 @@ namespace Base
         mfxU32        m_status;
     };
 
-    struct PackedData
-    {
-        mfxU8* pData;
-        mfxU32 BitLen;
-        bool   bLongSC;
-    };
+    using PackedData = MfxEncodeHW::PackedData;
 
     struct PackedHeaders
     {
@@ -812,24 +808,8 @@ namespace Base
         PackedData PPS;
     };
 
-    struct DDIExecParam
-    {
-        mfxU32 Function = 0;
-        struct Param
-        {
-            void*  pData = nullptr;
-            mfxU32 Size = 0;
-            mfxU32 Num  = 0;
-        } In, Out, Resource;
-    };
-
-    struct DDIFeedbackParam
-        : DDIExecParam
-    {
-        bool bNotReady;
-        std::function<const void*(mfxU32)> Get;
-        std::function<mfxStatus(mfxU32)> Update;
-    };
+    using DDIExecParam     = MfxEncodeHW::DDIExecParam;
+    using DDIFeedbackParam = MfxEncodeHW::DDIFeedback;
 
     struct BsDataInfo
     {

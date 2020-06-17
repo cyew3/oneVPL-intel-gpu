@@ -31,10 +31,11 @@ namespace Base
 {
 
 class IDDI
-    : public virtual FeatureBase
+    : public FeatureBase
 {
 public:
 #define DECL_BLOCK_LIST\
+    DECL_BLOCK(SetCallChains) \
     DECL_BLOCK(QueryCaps)     \
     DECL_BLOCK(CreateDevice)  \
     DECL_BLOCK(CreateService) \
@@ -45,7 +46,9 @@ public:
 #define DECL_FEATURE_NAME "G12_IDDI"
 #include "av1ehw_decl_blocks.h"
 
-    IDDI(mfxU32 /*FeatureId*/) {}
+    IDDI(mfxU32 FeatureId)
+        : FeatureBase(FeatureId)
+    {}
 
 protected:
     virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override = 0;

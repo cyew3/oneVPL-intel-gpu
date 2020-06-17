@@ -47,24 +47,6 @@ void DDIPacker::Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
     });
 }
 
-mfxStatus DDIPacker::Register(
-    VideoCORE& core
-    , const mfxFrameAllocResponse& response
-    , mfxU32 type)
-{
-    auto& res = m_resources[type];
-
-    res.resize(response.NumFrameActual, {});
-
-    for (mfxU32 i = 0; i < response.NumFrameActual; i++)
-    {
-        mfxStatus sts = core.GetFrameHDL(response.mids[i], (mfxHDL*)&res[i]);
-        MFX_CHECK_STS(sts);
-    }
-
-    return MFX_ERR_NONE;
-}
-
 void DDIPacker::InitAlloc(const FeatureBlocks&, TPushIA Push)
 {
     Push(BLK_Init
@@ -72,7 +54,7 @@ void DDIPacker::InitAlloc(const FeatureBlocks&, TPushIA Push)
     {
         auto& core = Glob::VideoCore::Get(strg);
 
-        m_vaType = core.GetVAType();
+        SetVaType(core.GetVAType());
 
         if (m_vaType == MFX_HW_D3D11)
         {
@@ -93,65 +75,51 @@ void DDIPacker::InitAlloc(const FeatureBlocks&, TPushIA Push)
         FillSpsBuffer(par, bs_sh, m_sps);
         FillPpsBuffer(par, bs_fh, m_pps);
 
-        ResetPackHeaderBuffer();
-        m_cbd.resize(MAX_DDI_BUFFERS + m_buf.size());
+        auto& bsInfo = Glob::AllocBS::Get(strg);
+        SetMaxBs(bsInfo.GetInfo().Width * bsInfo.GetInfo().Height);
+        InitFeedback(bsInfo.GetResponse().NumFrameActual, QUERY_STATUS_PARAM_FRAME, 0);
 
-        for (mfxU32 i = 0; i < m_resId.size(); i++)
-            m_resId[i] = i;
-
-        // Reserve space for feedback reports.
-        ENCODE_QUERY_STATUS_PARAM_TYPE fbType = QUERY_STATUS_PARAM_FRAME;
-        m_feedback.Reset(Glob::AllocBS::Get(strg).GetResponse().NumFrameActual, fbType);
-
-        mfxStatus sts = Register(core, Glob::AllocRec::Get(strg).GetResponse(), MFX_FOURCC_NV12);
+        mfxStatus sts = Register(core, Glob::AllocRec::Get(strg).GetResponse(), RES_REF);
         MFX_CHECK_STS(sts);
 
-        sts = Register(core, Glob::AllocBS::Get(strg).GetResponse(), ID_BITSTREAMDATA);
+        sts = Register(core, bsInfo.GetResponse(), RES_BS);
         MFX_CHECK_STS(sts);
 
-        m_taskRes.resize(m_resources.at(MFX_FOURCC_NV12).size() + NUM_RES);
+        if (strg.Contains(Glob::AllocMBQP::Key))
+        {
+            sts = Register(core, Glob::AllocMBQP::Get(strg).GetResponse(), RES_CUQP);
+            MFX_CHECK_STS(sts);
+        }
 
-        if (!strg.Contains(Glob::DDI_Resources::Key))
-            strg.Insert(Glob::DDI_Resources::Key, new Glob::DDI_Resources::TRef);
-
-        auto& resources = Glob::DDI_Resources::Get(strg);
+        const std::map<mfxU32, mfxU32> mapResId =
+        {
+              { mfxU32(RES_REF),  mfxU32(MFX_FOURCC_NV12) }
+            , { mfxU32(RES_BS),   mfxU32(ID_BITSTREAMDATA) }
+        };
+        auto& resources = Glob::DDI_Resources::GetOrConstruct(strg);
 
         for (auto& res : m_resources)
         {
             DDIExecParam rpar = {};
-            rpar.Function = res.first;
+            rpar.Function       = mapResId.at(res.first);
             rpar.Resource.pData = res.second.data();
-            rpar.Resource.Size = (mfxU32)res.second.size();
+            rpar.Resource.Size  = (mfxU32)res.second.size();
 
             resources.emplace_back(std::move(rpar));
         }
 
-        auto pFB = make_storable<DDIFeedbackParam>(DDIFeedbackParam{});
+        GetFeedbackInterface(Glob::DDI_Feedback::GetOrConstruct(strg));
+
         DDIExecParam submit;
 
         submit.Function = ENCODE_ENC_PAK_ID;
-        submit.In.pData = &m_execPar;
-        submit.In.Size = sizeof(m_execPar);
+        submit.In.pData = EndPicture();
+        submit.In.Size  = sizeof(ENCODE_EXECUTE_PARAMS);
 
-        m_query = {};
-        m_query.StatusParamType = fbType;
-        m_query.SizeOfStatusParamStruct = m_feedback.feedback_size();
-        pFB->Function = ENCODE_QUERY_STATUS_ID;
-        pFB->In.pData = &m_query;
-        pFB->In.Size = sizeof(m_query);
-        pFB->Out.pData = &m_feedback[0];
-        pFB->Out.Size = (mfxU32)m_feedback.size() * m_feedback.feedback_size();
-        pFB->Get = [this](mfxU32 id) { return m_feedback.Get(id); };
-        pFB->Update = [this](mfxU32) { return m_feedback.Update(); };
-
-        strg.Insert(Glob::DDI_Feedback::Key, std::move(pFB));
-
-        if (!strg.Contains(Glob::DDI_SubmitParam::Key))
-            strg.Insert(Glob::DDI_SubmitParam::Key, new Glob::DDI_SubmitParam::TRef);
-
-        Glob::DDI_SubmitParam::Get(strg).emplace_back(std::move(submit));
+        Glob::DDI_SubmitParam::GetOrConstruct(strg).emplace_back(std::move(submit));
 
         return MFX_ERR_NONE;
+
     });
 }
 
@@ -192,74 +160,10 @@ void DDIPacker::ResetState(const FeatureBlocks& /*blocks*/, TPushRS Push)
         FillPpsBuffer(par, bs_fh, m_pps);
         FillSegmentationMap(par, m_segment_map);
 
-        ResetPackHeaderBuffer();
-        m_cbd.resize(MAX_DDI_BUFFERS + m_buf.size());
-
         return MFX_ERR_NONE;
     });
 }
 
-template<class T>
-bool PackCBD(ENCODE_COMPBUFFERDESC& dst, D3DFORMAT id, std::vector<T>& src)
-{
-    dst = {};
-    dst.CompressedBufferType = (id);
-    dst.DataSize = UINT(sizeof(T) * src.size());
-    dst.pCompBuffer = src.data();
-    return true;
-}
-
-template<class T>
-bool PackCBD(ENCODE_COMPBUFFERDESC& dst, D3DFORMAT id, T& src)
-{
-    dst = {};
-    dst.CompressedBufferType = (id);
-    dst.DataSize = (UINT)sizeof(T);
-    dst.pCompBuffer = &src;
-    return true;
-}
-
-mfxStatus DDIPacker::SetTaskResources(
-    Task::Common::TRef& task
-    , Glob::DDI_SubmitParam::TRef& submit)
-{
-    m_resId[RES_BS]   = task.BS.Idx;
-
-    MFX_CHECK(m_vaType == MFX_HW_D3D11, MFX_ERR_NONE);
-
-    auto& ppsCBD   = m_execPar.pCompressedBuffers[m_execPar.NumCompBuffers - 1];
-    auto  IsEncPak = [](DDIExecParam& p) { return p.Function == ENCODE_ENC_PAK_ID; };
-    auto  itExec   = std::find_if(submit.begin(), submit.end(), IsEncPak);
-
-    ThrowAssert(itExec == submit.end()
-        , "ENCODE_ENC_PAK_ID parameters not found");
-
-    ThrowAssert(!m_execPar.NumCompBuffers || ppsCBD.CompressedBufferType != ID_PPSDATA
-        , "prev. CBD must be PPSDATA");
-
-    m_taskRes[m_resId[RES_BS]  = 0] = m_resources.at(ID_BITSTREAMDATA).at(task.BS.Idx).first;
-    m_taskRes[m_resId[RES_RAW] = 1] = task.HDLRaw.first;
-
-    mfxU32 resId = (m_resId[RES_REF] = 2);
-    auto&  ref   = m_resources.at(MFX_FOURCC_NV12);
-
-    std::transform(ref.begin(), ref.end(), &m_taskRes[resId], [](mfxHDLPair pair) { return pair.first; });
-
-    resId += mfxU32(ref.size());
-
-    itExec->Resource.pData = m_taskRes.data();
-    itExec->Resource.Size  = resId;
-
-    m_inputDesc                   = {};
-    m_inputDesc.IndexOriginal     = m_resId[RES_RAW];
-    m_inputDesc.ArraSliceOriginal = (UINT)(UINT_PTR)(task.HDLRaw.second);
-    m_inputDesc.IndexRecon        = m_resId[RES_REF] + task.Rec.Idx;
-    m_inputDesc.ArraySliceRecon   = (UINT)(UINT_PTR)(ref.at(task.Rec.Idx).second);
-
-    ppsCBD.pReserved = &m_inputDesc;
-
-    return MFX_ERR_NONE;
-}
 
 void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
 {
@@ -283,37 +187,45 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         const auto& seg = Task::Segment::Get(s_task);
         FillSegmentationMap(seg, m_segment_map);
 
-        m_execPar = {};
-        m_execPar.pCompressedBuffers = m_cbd.data();
+        mfxU32 nCBD = 0;
+        BeginPicture();
 
-        auto& nCBD    = m_execPar.NumCompBuffers;
-        auto  CbdBack = [&]() -> ENCODE_COMPBUFFERDESC& { return m_cbd.at(nCBD); };
+        nCBD += PackCBD(ID_SPSDATA, m_sps);
+        nCBD += PackCBD(ID_PPSDATA, m_pps);
 
-        nCBD += PackCBD(CbdBack(), ID_SPSDATA, m_sps);
-        nCBD += PackCBD(CbdBack(), ID_PPSDATA, m_pps);
+        auto& submitPar = Glob::DDI_SubmitParam::Get(global);
 
-        auto sts = SetTaskResources(task, Glob::DDI_SubmitParam::Get(global));
-        MFX_CHECK_STS(sts);
+        auto itEncPak = std::find_if(submitPar.begin(), submitPar.end(), DDIExecParam::IsFunction<ENCODE_ENC_PAK_ID>);
+        ThrowAssert(itEncPak == submitPar.end(), "ENCODE_ENC_PAK_ID parameters not found");
+
+        auto  itPPS = std::find_if(m_cbd.begin(), m_cbd.end()
+            , [&](ENCODE_COMPBUFFERDESC& cbd) { return cbd.CompressedBufferType == ID_PPSDATA; });
+        ThrowAssert(itPPS == m_cbd.end(), "PPSDATA not found");
+
+        itPPS->pReserved = SetTaskResources(itEncPak->Resource, task.HDLRaw, task.BS.Idx, task.Rec.Idx, task.CUQP.Idx);
 
         if (!m_tile_groups_task.empty())
-            nCBD += PackCBD(CbdBack(), ID_TILEGROUPDATA, m_tile_groups_task);
+            nCBD += PackCBD(ID_TILEGROUPDATA, m_tile_groups_task);
         else if (!m_tile_groups_global.empty())
-            nCBD += PackCBD(CbdBack(), ID_TILEGROUPDATA, m_tile_groups_global);
+            nCBD += PackCBD(ID_TILEGROUPDATA, m_tile_groups_global);
 
         if (!m_segment_map.empty())
-            nCBD += PackCBD(CbdBack(), ID_SEGMENTMAP, m_segment_map);
+            nCBD += PackCBD(ID_SEGMENTMAP, m_segment_map);
 
-        nCBD += PackCBD(CbdBack(), ID_BITSTREAMDATA, m_resId[RES_BS]);
+        nCBD += PackCBD(ID_BITSTREAMDATA, m_resId[RES_BS]);
 
         const bool insertIVF = (task.InsertHeaders & INSERT_IVF_SEQ) || (task.InsertHeaders & INSERT_IVF_FRM);
         nCBD += (insertIVF)
-            && PackCBD(CbdBack(), ID_PACKEDHEADERDATA, PackHeader(ph.IVF));
+            && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.IVF, true));
 
         nCBD += (task.InsertHeaders & INSERT_SPS)
-            && PackCBD(CbdBack(), ID_PACKEDHEADERDATA, PackHeader(ph.SPS));
+            && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.SPS, true));
 
         nCBD += (task.InsertHeaders & INSERT_PPS)
-            && PackCBD(CbdBack(), ID_PACKEDHEADERDATA, PackHeader(ph.PPS));
+            && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.PPS, true));
+
+        itEncPak->In.pData = EndPicture();
+        itEncPak->In.Size  = sizeof(ENCODE_EXECUTE_PARAMS);
 
         return MFX_ERR_NONE;
     });
@@ -324,22 +236,21 @@ void DDIPacker::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
     Push(BLK_QueryTask
         , [this](StorageW& global, StorageW& s_task) -> mfxStatus
     {
-        MFX_CHECK(!Glob::DDI_Feedback::Get(global).bNotReady, MFX_TASK_BUSY);
+        auto& fb = Glob::DDI_Feedback::Get(global);
+        MFX_CHECK(!fb.bNotReady, MFX_TASK_BUSY);
 
         auto& task = Task::Common::Get(s_task);
 
-        mfxStatus   sts      = MFX_ERR_NONE;
-        auto        bsInfo   = Glob::AllocBS::Get(global).GetInfo();
-        auto        pFeedback = m_feedback.Get(task.StatusReportId);
+        MFX_CHECK((task.SkipCMD & SKIPCMD_NeedDriverCall), MFX_ERR_NONE);
 
-        MFX_CHECK(pFeedback != 0, MFX_ERR_DEVICE_FAILED);
+        auto pFeedback = static_cast<const ENCODE_QUERY_STATUS_PARAMS_AV1*>(fb.Get(task.StatusReportId));
+        auto sts = ReadFeedback(pFeedback, m_feedback.GetFeedBackSize(), task.BsDataLength);
 
-        bool bFeedbackValid =
-            (pFeedback->bStatus == ENCODE_OK)
-            && (mfxU32(bsInfo.Width * bsInfo.Height) >= pFeedback->bitstreamSize)
-            && (pFeedback->bitstreamSize > 0);
+        if (sts < MFX_ERR_NONE)
+        {
+            Glob::RTErr::Get(global) = sts;
+        }
 
-        MFX_CHECK(pFeedback->bStatus != ENCODE_NOTREADY, MFX_TASK_BUSY);
         switch (pFeedback->bStatus)
         {
         case ENCODE_OK:
@@ -353,47 +264,10 @@ void DDIPacker::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
             AV1E_LOG("**FATAL** task[%d]: STATUS: BAD STATUS %d (See QUERY_STATUS_PARAM_FRAME request)\n", task.StatusReportId, pFeedback->bStatus);
         }
 
-        task.BsDataLength = pFeedback->bitstreamSize;
-
-        sts = mfxStatus(!bFeedbackValid * MFX_ERR_DEVICE_FAILED);
-
-        if (sts < MFX_ERR_NONE)
-        {
-            Glob::RTErr::Get(global) = sts;
-        }
-
-        m_feedback.Remove(task.StatusReportId);
+        fb.Remove(task.StatusReportId);
 
         return sts;
     });
-}
-
-void DDIPacker::NewHeader()
-{
-    assert(m_buf.size());
-
-    if (++m_cur == m_buf.end())
-        m_cur = m_buf.begin();
-
-    *m_cur = {};
-}
-
-void DDIPacker::ResetPackHeaderBuffer()
-{
-    m_buf.resize(MAX_HEADER_BUFFERS);
-    m_cur = m_buf.begin();
-}
-
-ENCODE_PACKEDHEADER_DATA& DDIPacker::PackHeader(const PackedData& d)
-{
-    NewHeader();
-
-    m_cur->pData = d.pData;
-    m_cur->DataLength = CeilDiv(d.BitLen, 8u);
-    m_cur->BufferSize = m_cur->DataLength;
-    m_cur->SkipEmulationByteCount = 3 + d.bLongSC;
-
-    return *m_cur;
 }
 
 inline mfxU8 MapRateControlMethodToDDI(mfxU16 brcMethod)
@@ -686,92 +560,6 @@ void DDIPacker::FillTileGroupBuffer(
         tg.tg_start = static_cast<UCHAR>(infos[i].TgStart);
         tg.tg_end = static_cast<UCHAR>(infos[i].TgEnd);
     }
-}
-
-void FeedbackStorage::Reset(mfxU16 cacheSize, ENCODE_QUERY_STATUS_PARAM_TYPE fbType)
-{
-    if (fbType != QUERY_STATUS_PARAM_FRAME) {
-        assert(!"unknown query function");
-        fbType = QUERY_STATUS_PARAM_FRAME;
-    }
-
-    m_type = fbType;
-    m_pool_size = cacheSize;
-
-    m_buf.resize(m_fb_size * m_pool_size);
-    m_buf_cache.resize(m_fb_size * m_pool_size);
-
-    for (size_t i = 0; i < m_pool_size; i++)
-    {
-        Feedback *c = (Feedback *)&m_buf_cache[i * m_fb_size];
-        c->bStatus = ENCODE_NOTAVAILABLE;
-    }
-}
-
-const FeedbackStorage::Feedback* FeedbackStorage::Get(mfxU32 feedbackNumber) const
-{
-    for (size_t i = 0; i < m_pool_size; i++)
-    {
-        Feedback *pFb = (Feedback *)&m_buf_cache[i * m_fb_size];
-
-        if (pFb->StatusReportFeedbackNumber == feedbackNumber)
-            return pFb;
-    }
-    return 0;
-}
-
-mfxStatus FeedbackStorage::Update()
-{
-    for (size_t i = 0; i < m_pool_size; i++)
-    {
-        Feedback *u = (Feedback *)&m_buf[i * m_fb_size];
-
-        if (u->bStatus != ENCODE_NOTAVAILABLE)
-        {
-            Feedback *hit = 0;
-
-            for (size_t j = 0; j < m_pool_size; j++)
-            {
-                Feedback *c = (Feedback *)&m_buf_cache[j * m_fb_size];
-
-                if (c->StatusReportFeedbackNumber == u->StatusReportFeedbackNumber)
-                {
-                    hit = c;  // hit
-                    break;
-                }
-                else if (hit == 0 && c->bStatus == ENCODE_NOTAVAILABLE)
-                {
-                    hit = c;  // first free
-                }
-            }
-
-            MFX_CHECK(hit != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
-            CacheFeedback(hit, u);
-        }
-    }
-    return MFX_ERR_NONE;
-}
-
-// copy fb into cache
-inline void FeedbackStorage::CacheFeedback(Feedback *fb_dst, Feedback *fb_src)
-{
-    *fb_dst = *fb_src;
-}
-
-mfxStatus FeedbackStorage::Remove(mfxU32 feedbackNumber)
-{
-    for (size_t i = 0; i < m_pool_size; i++)
-    {
-        Feedback *c = (Feedback *)&m_buf_cache[i * m_fb_size];
-
-        if (c->StatusReportFeedbackNumber == feedbackNumber)
-        {
-            c->bStatus = ENCODE_NOTAVAILABLE;
-            return MFX_ERR_NONE;
-        }
-    }
-
-    return MFX_ERR_UNDEFINED_BEHAVIOR;
 }
 
 #endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)

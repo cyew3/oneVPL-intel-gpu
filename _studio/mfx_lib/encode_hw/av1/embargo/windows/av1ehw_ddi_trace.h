@@ -56,6 +56,7 @@ public:
     inline void TraceArray(void const *, mfxU32) {};
 
 #if !defined(MFX_VA_LINUX)
+    void TraceFunc(bool bOut, mfxU32 func, const void* b, mfxU32 n);
     void Trace(ENCODE_COMPBUFFERDESC const & b, mfxU32 idx);
     void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_AV1 const & b, mfxU32 idx);
     void Trace(ENCODE_SET_PICTURE_PARAMETERS_AV1 const & b, mfxU32 idx);
@@ -92,6 +93,7 @@ public:
     template<class T> inline void TraceArray(T const *, mfxU32) {};
     static void TraceGUID(GUID const &, FILE*) {};
     void Trace(ENCODE_CAPS_AV1 const &, mfxU32) {};
+    void TraceFunc(bool, mfxU32, const void*, mfxU32) {}
 };
 #endif
 

@@ -29,8 +29,8 @@
 #include "av1ehw_ddi.h"
 #include "av1ehw_ddi_trace.h"
 #include "av1ehw_base_data.h"
-#include "auxiliary_device.h"
 #include "av1ehw_base_iddi.h"
+#include "ehw_device_dx11.h"
 
 namespace AV1EHW
 {
@@ -40,103 +40,40 @@ namespace Base
 {
 using namespace AV1EHW::Base;
 
-#pragma warning(push)
-#pragma warning(disable:4250) //inherits via dominance
 class DDI_D3D11
-    : public virtual FeatureBase
-    , protected DDITracer
-    , protected AV1EHW::Base::IDDI
+    : public AV1EHW::Base::IDDI
 {
 public:
-    DDI_D3D11(mfxU32 FeatureId)
-        : FeatureBase(FeatureId)
-        , AV1EHW::Base::IDDI(FeatureId)
-    {
-        SetTraceName("G12_DDI_D3D11");
-    }
+    DDI_D3D11(mfxU32 FeatureId);
+
+    using CreateDeviceIn = MfxEncodeHW::DeviceDX11::CreateDeviceIn;
+    using CreateDeviceOut = MfxEncodeHW::DeviceDX11::CreateDeviceOut;
 
 protected:
-    VideoCORE*                           m_pCore                         = nullptr;
-    std::unique_ptr<AuxiliaryDevice>     m_auxDevice;
-    CComPtr<ID3D11DeviceContext>         m_context;
-    CComPtr<ID3D11VideoDecoder>          m_vdecoder;
-    CComQIPtr<ID3D11VideoDevice>         m_vdevice;
-    CComQIPtr<ID3D11VideoContext>        m_vcontext;
-    GUID                                 m_guid                          = {};
-    mfxU32                               m_width                         = 0;
-    mfxU32                               m_height                        = 0;
-    ENCODE_CAPS_AV1                      m_caps                          = {};
-    std::vector<ENCODE_COMP_BUFFER_INFO> m_compBufInfo;
-    std::vector<D3DDDIFORMAT>            m_uncompBufInfo;
-    USHORT                               m_configDecoderSpecific         = ENCODE_ENC_PAK;
-    GUID                                 m_guidConfigBitstreamEncryption = DXVA_NoEncrypt;
+    std::unique_ptr<MfxEncodeHW::Device> m_pDevice;
+    GUID m_guid = {};
+    std::function<mfxStatus(const DDIExecParam&)> m_execute;
 
-    virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
+    virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
     virtual void SetDefaults(const FeatureBlocks& blocks, TPushSD Push) override;
+    virtual void Query1WithCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
     virtual void InitExternal(const FeatureBlocks& blocks, TPushIE Push) override;
     virtual void InitAlloc(const FeatureBlocks& blocks, TPushIA Push) override;
     virtual void SubmitTask(const FeatureBlocks& blocks, TPushST Push) override;
     virtual void QueryTask(const FeatureBlocks& blocks, TPushQT Push) override;
     virtual void ResetState(const FeatureBlocks& /*blocks*/, TPushRS /*Push*/) override {};
 
-    virtual bool IsInitialized() { return !!m_vcontext; }
-
-    virtual mfxStatus CreateAuxilliaryDevice(
-        VideoCORE&    core
-        , GUID        guid
-        , mfxU32      width
-        , mfxU32      height
-        , bool        isTemporal = false);
-
-    virtual mfxStatus QueryEncodeCaps(ENCODE_CAPS_AV1& caps);
-    virtual mfxStatus QueryEncodeCaps(mfxVideoParam& par, StorageW& strg, EncodeCapsAv1& caps);
-
-    virtual mfxStatus CreateAccelerationService(StorageRW& local);
-    virtual mfxStatus QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameInfo& info);
-
-    HRESULT DecoderExtension(D3D11_VIDEO_DECODER_EXTENSION const & ext);
-
-    mfxStatus BeginFrame();
-    mfxStatus EndFrame();
-
-    mfxStatus Execute(const DDIExecParam& par);
-
-    template <typename T, typename U>
-    HRESULT Execute(
-        mfxU32 func
-        , T* in
-        , mfxU32 inSizeInBytes
-        , U* out
-        , mfxU32 outSizeInBytes)
+    void SetStorage(const StorageR& s)
     {
-        D3D11_VIDEO_DECODER_EXTENSION ext = {};
-        ext.Function                = func;
-        ext.pPrivateInputData       = in;
-        ext.PrivateInputDataSize    = inSizeInBytes;
-        ext.pPrivateOutputData      = out;
-        ext.PrivateOutputDataSize   = outSizeInBytes;
-        return DecoderExtension(ext);
+        m_execute = Glob::DDI_Execute::Get(s);
     }
 
-    template <typename T, typename U>
-    HRESULT Execute(mfxU32 func, T& in, U& out)
-    {
-        return Execute(func, &in, sizeof(in), &out, sizeof(out));
-    }
+    virtual mfxStatus DefaultExecute(const DDIExecParam& par);
+    virtual mfxStatus Register(StorageRW&) { return MFX_ERR_NONE; };
 
-    template <typename T>
-    HRESULT Execute(mfxU32 func, T& in, void*)
-    {
-        return Execute(func, &in, sizeof(in), (void*)0, 0);
-    }
+    mfxStatus QueryEncodeCaps(mfxVideoParam& par, StorageW& strg, EncodeCapsAv1& caps);
 
-    template <typename U>
-    HRESULT Execute(mfxU32 func, void*, U& out)
-    {
-        return Execute(func, (void*)0, 0, &out, sizeof(out));
-    }
 };
-#pragma warning(pop)
 
 } //Base
 } //Windows

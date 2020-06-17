@@ -1349,10 +1349,6 @@ void General::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
     {
         auto& task = Task::Common::Get(s_task);
 
-        MFX_CHECK(task.BsDataLength, MFX_ERR_NONE);
-
-        mfxStatus sts = MFX_ERR_NONE;
-
         if (!task.pBsData)
         {
             auto& bs              = *task.pBsOut;
@@ -1360,6 +1356,10 @@ void General::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
             task.pBsDataLength    = &bs.DataLength;
             task.BsBytesAvailable = bs.MaxLength - bs.DataOffset - bs.DataLength;
         }
+
+        MFX_CHECK(task.BsDataLength, MFX_ERR_NONE);
+
+        mfxStatus sts = MFX_ERR_NONE;
 
         MFX_CHECK(task.BsBytesAvailable >= task.BsDataLength, MFX_ERR_NOT_ENOUGH_BUFFER);
 

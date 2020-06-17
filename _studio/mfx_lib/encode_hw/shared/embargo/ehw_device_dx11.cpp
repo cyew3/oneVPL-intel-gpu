@@ -315,7 +315,7 @@ mfxStatus DeviceDX11::EndPicture()
 
 mfxStatus DeviceDX11::QueryStatus(DDIFeedback& fb, mfxU32 id)
 {
-    return DDIParPacker::QueryStatus(*this, fb, id);
+    return MfxEncodeHW::QueryFeedbackStatus(*this, fb, id);
 }
 
 } //namespace MfxEncodeHW

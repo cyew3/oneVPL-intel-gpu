@@ -343,7 +343,7 @@ void DDIPacker::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
         MFX_CHECK((task.SkipCMD & SKIPCMD_NeedDriverCall), MFX_ERR_NONE);
 
         auto pFeedback = fb.Get(task.StatusReportId);
-        auto sts       = CC::Get(global).ReadFeedback(global, s_task, pFeedback, m_feedback.feedback_size());
+        auto sts       = CC::Get(global).ReadFeedback(global, s_task, pFeedback, m_feedback.GetFeedBackSize());
 
         if (sts < MFX_ERR_NONE)
         {
