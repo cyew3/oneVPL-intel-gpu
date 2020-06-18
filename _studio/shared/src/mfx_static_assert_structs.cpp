@@ -733,12 +733,12 @@
 
 //mfxbrc.h
 #if defined (__MFXBRC_H__)
-    #if defined(LINUX64)
+    #if defined(_WIN64) || defined(LINUX64)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxBRCFrameParam             ,128  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxBRCFrameCtrl              ,64   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxBRCFrameStatus            ,64   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtBRC                    ,192  )
-    #elif defined(LINUX32)
+    #elif defined(_WIN32) || defined(LINUX32)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxBRCFrameParam             ,124  )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxBRCFrameCtrl              ,60   )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxBRCFrameStatus            ,60   )
@@ -4619,7 +4619,7 @@
 
 //mfxbrc.h
 #if defined (__MFXBRC_H__)
-    #if defined(LINUX64)
+    #if defined(_WIN64) || defined(LINUX64)
 #if (MFX_VERSION >= 1026)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBRCFrameParam                   ,SceneChange                   ,92   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBRCFrameParam                   ,LongTerm                      ,94   )
@@ -4656,7 +4656,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtBRC                          ,GetFrameCtrl                  ,96   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtBRC                          ,Update                        ,104  )
 
-    #elif defined(LINUX32)
+    #elif defined(_WIN32) || defined(LINUX32)
 #if (MFX_VERSION >= 1026)
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBRCFrameParam                   ,SceneChange                   ,92   )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxBRCFrameParam                   ,LongTerm                      ,94   )
