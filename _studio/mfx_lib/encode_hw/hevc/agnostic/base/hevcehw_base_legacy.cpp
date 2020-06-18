@@ -3504,7 +3504,7 @@ void Legacy::SetDefaults(
     };
     auto GetDefaultLevel = [&]()
     {
-        mfxU16 nCol, nRow;
+        mfxU16 nCol = 0, nRow = 0;
         std::tie(nCol, nRow) = defPar.base.GetNumTiles(defPar);
 
         return GetMinLevel(
@@ -4043,7 +4043,7 @@ bool CheckBufferSizeInKB(
     }
     else if (!bCqpOrIcq)
     {
-        mfxU32 frN, frD;
+        mfxU32 frN = 0, frD = 0;
 
         std::tie(frN, frD) = defPar.base.GetFrameRate(defPar);
         mfxU32 avgFS = mfxU32(std::ceil((mfxF64)TargetKbps(par.mfx) * frD / frN / 8));

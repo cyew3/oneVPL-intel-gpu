@@ -311,7 +311,7 @@ public:
         , mfxU16(*pBL1)[8])
     {
         bool bExternal = false;
-        mfxU16 maxFwd, maxBwd;
+        mfxU16 maxFwd = 0, maxBwd = 0;
         std::tie(maxFwd, maxBwd) = par.base.GetMaxNumRef(par);
 
         auto SetDefaultNRef =
@@ -564,7 +564,7 @@ public:
             return mfx.TargetKbps * std::max<const mfxU32>(1, mfx.BRCParamMultiplier);
         }
 
-        mfxU32 frN, frD, maxBR = 0xffffffff;
+        mfxU32 frN = 0, frD = 0, maxBR = 0xffffffff;
 
         SetIf(maxBR, !!mfx.CodecLevel, [&]() { return GetMaxKbpsByLevel(par.mvp); });
 
