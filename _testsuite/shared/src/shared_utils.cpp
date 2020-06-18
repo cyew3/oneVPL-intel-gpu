@@ -520,6 +520,7 @@ mfxStatus InitMfxFrameSurface(mfxFrameSurface1* pSurface, const mfxFrameInfo* pF
     case MFX_FOURCC_RGB565:
         nBitsPerPixel                 = 16;
         break;
+    case MFX_FOURCC_RGBP:
 #endif
     case MFX_FOURCC_RGB3:
         nBitsPerPixel                 = 24;

@@ -298,6 +298,7 @@ static CodeStringTable StringsOfFourcc[] =
     { MFX_FOURCC_P210,               VM_STRING("P210")  },
 #if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
     { MFX_FOURCC_RGB565,             VM_STRING("RGB565")  },
+    { MFX_FOURCC_RGBP,               VM_STRING("RGBP")  },
 #endif
 #if (MFX_VERSION >= 1027)
     { MFX_FOURCC_Y210,               VM_STRING("Y210")  },
@@ -940,7 +941,7 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
 {
 #if defined(LINUX32) || defined(LINUX64)
     //                                       1       2     3       4      5     6       7  8     9    10   11      12  13     14   15   16   17   18   19   20   21   22   23   24   25   26   27   28   29   30  31
-    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|y210|y216|i444|yv16|p016|y416|bgr32|i010|i210|i410|i012|i212|i412|rgb565";
+    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|y210|y216|i444|yv16|p016|y416|bgr32|i010|i210|i410|i012|i212|i412|rgb565|rgbp";
 #else
     //                                       1       2     3       4      5     6       7  8     9    10   11      12  13     14   15   16   17   18   19   20   21   22   23   24   25   26   27   28   29   30
     static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|y210|y216|i444|yv16|p016|y416|bgr32|i010|i210|i410|i012|i212|i412";
@@ -1159,6 +1160,12 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
         case 31://rgb565
         {
             info.FourCC = MFX_FOURCC_RGB565;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            break;
+        }
+        case 32://rgbp
+        {
+            info.FourCC = MFX_FOURCC_RGBP;
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             break;
         }

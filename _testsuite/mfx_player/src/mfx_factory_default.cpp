@@ -168,6 +168,7 @@ std::unique_ptr<IBitstreamConverterFactory> MFXPipelineFactory::CreateBitstreamC
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_A2RGB10, MFX_FOURCC_A2RGB10)));
 #if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_RGB565, MFX_FOURCC_RGB565)));
+    fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_RGBP, MFX_FOURCC_RGBP)));
 #endif
 #if (MFX_VERSION >= 1027)
     fac->Register(std::unique_ptr<IBitstreamConverter>(new DECL_CONVERTER(MFX_FOURCC_Y210, MFX_FOURCC_Y210)));

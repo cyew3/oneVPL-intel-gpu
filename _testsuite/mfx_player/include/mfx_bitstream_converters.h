@@ -848,6 +848,29 @@ protected:
         return (mfxU8*)surface->Data.B + info.CropX * m_sample_size + info.CropY * pitch;
     }
 };
+
+class DECL_CONVERTER(MFX_FOURCC_RGBP, MFX_FOURCC_RGBP)
+    : public BSConverterPacketedCopy
+{
+    IMPLEMENT_CLONE(DECL_CONVERTER(MFX_FOURCC_RGBP, MFX_FOURCC_RGBP));
+public:
+    DECL_CONVERTER(MFX_FOURCC_RGBP, MFX_FOURCC_RGBP)()
+        : BSConverterPacketedCopy(MFX_FOURCC_RGBP, MFX_FOURCC_RGBP)
+    {
+        m_sample_size = 3;
+    }
+
+protected:
+    mfxU8* start_pointer(mfxFrameSurface1 * surface) override
+    {
+        mfxFrameData& data = surface->Data;
+        mfxFrameInfo& info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return (mfxU8*)surface->Data.R + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+};
 #endif // #if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
 
 class DECL_CONVERTER(MFX_FOURCC_AYUV, MFX_FOURCC_AYUV)

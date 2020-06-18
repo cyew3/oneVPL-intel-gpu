@@ -87,7 +87,7 @@ mfxU32           GetMinPlaneSize(mfxFrameInfo & info);
 
 //possible extension to the end of this enum
 #if defined(LINUX32) || defined(LINUX64)
-#define MFX_FOURCC_PATTERN() "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|y210|y216|i444|yv16|p016|y416|bgr32|i010|i210|i410|i012|i212|i412|rgb565"
+#define MFX_FOURCC_PATTERN() "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|y210|y216|i444|yv16|p016|y416|bgr32|i010|i210|i410|i012|i212|i412|rgb565|rgbp"
 #else
 #define MFX_FOURCC_PATTERN() "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|y210|y216|i444|yv16|p016|y416|bgr32|i010|i210|i410|i012|i212|i412"
 #endif

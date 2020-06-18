@@ -2211,6 +2211,7 @@ mfxStatus MFXDecPipeline::CreateRender()
         || MFX_FOURCC_A2RGB10 == m_inParams.outFrameInfo.FourCC
 #if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
         || MFX_FOURCC_RGB565  == m_inParams.outFrameInfo.FourCC
+        || MFX_FOURCC_RGBP    == m_inParams.outFrameInfo.FourCC
 #endif
         ) {
             m_components[eREN].m_params.mfx.FrameInfo.FourCC = m_inParams.outFrameInfo.FourCC;
