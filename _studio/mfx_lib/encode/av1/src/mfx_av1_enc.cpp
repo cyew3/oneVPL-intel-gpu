@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -580,6 +580,7 @@ void AV1Encoder::ConfigureInputFrame(Frame* frame, bool bEncOrder, bool bEncCtrl
         frame->m_RPSIndex = (m_videoParam.GopRefDist > 1)
             ? (frame->m_frameOrder - frame->m_frameOrderOfLastAnchor) % m_videoParam.GopRefDist
             : (frame->m_frameOrder - frame->m_frameOrderOfLastIntra) % m_videoParam.PGopPicSize;
+        if (frame->m_picCodeType & MFX_FRAMETYPE_I) frame->m_RPSIndex = 0;
         frame->m_miniGopCount = m_miniGopCount + !(frame->m_picCodeType == MFX_FRAMETYPE_B);
 
         if (m_videoParam.PGopPicSize > 1) {

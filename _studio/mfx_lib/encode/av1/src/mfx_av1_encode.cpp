@@ -595,6 +595,11 @@ static void TaskLogDump()
         intParam.SceneCut = (mfx.EncodedOrder || mfx.GopPicSize==1) ? 0 : 1;
         intParam.AdaptiveI = (!intParam.SceneCut) ? 0 : (opt2.AdaptiveI == ON);
         intParam.EnableALTR = intParam.SceneCut ? (opt3.ExtBrcAdaptiveLTR == ON) : 0;
+        if (intParam.EnableALTR) {
+            if (intParam.NumRefLayers == 1 && numRefFrame < 2) intParam.EnableALTR = 0;
+            if (intParam.NumRefLayers == 2 && numRefFrame < 3) intParam.EnableALTR = 0;
+            if (intParam.NumRefLayers == 3 && numRefFrame < 4) intParam.EnableALTR = 0;
+        }
         intParam.LTRConfidenceLevel = opt3.ScenarioInfo == MFX_SCENARIO_VIDEO_CONFERENCE ? 3 : 1;
 
         intParam.AnalyzeCmplx = /*mfx.EncodedOrder ? 0 : */(uint8_t)(optHevc.AnalyzeCmplx - 1);
@@ -2805,8 +2810,9 @@ Frame *AV1Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, m
                 }
             }
 
-            if (ctrl->QP > 0 && ctrl->QP <= 255)
+            if (ctrl->QP > 0 && ctrl->QP <= 255) {
                 inputFrame->m_sliceQpY = (uint8_t)ctrl->QP;
+            }
 
             if (m_videoParam.ctrlMBQP) {
                 const mfxExtMBQP *mbqpctrl = (mfxExtMBQP *)GetExtBufferById(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_MBQP);
