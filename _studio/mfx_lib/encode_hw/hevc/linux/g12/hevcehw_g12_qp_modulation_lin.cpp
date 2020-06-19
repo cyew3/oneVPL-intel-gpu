@@ -19,35 +19,29 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined (MFX_VA_LINUX)
 
-#include "hevcehw_g12_qp_modulation_win.h"
+#include "hevcehw_g12_qp_modulation_lin.h"
 #include "hevcehw_g12_data.h"
-#include "hevcehw_base_ddi_packer_win.h"
+#include "hevcehw_base_va_packer_lin.h"
 
 using namespace HEVCEHW;
 using namespace HEVCEHW::Gen12;
 
-void Windows::Gen12::QpModulation::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
+void Linux::Gen12::QpModulation::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 {
     Push(BLK_SetCallChains,
         [](StorageRW& strg, StorageRW&) -> mfxStatus
     {
-        auto& ddiCC = Base::DDIPacker::CC::Get(strg);
-        using TCC = Base::DDIPacker::CallChains;
+        auto& cc = Base::VAPacker::CC::GetOrConstruct(strg);
         auto hwType = Glob::VideoCore::Get(strg).GetHWType();
 
-        ddiCC.InitSPS.Push([hwType](
-            TCC::TInitSPS::TExt prev
+        cc.InitSPS.Push([hwType](
+            Base::VAPacker::CallChains::TInitSPS::TExt prev
             , const StorageR& glob
-            , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& sps)
+            , VAEncSequenceParameterBufferHEVC& sps)
         {
             prev(glob, sps);
-            
-            // NumOfBInGop is deprecated from Gen12
-            sps.NumOfBInGop[0] = 0;
-            sps.NumOfBInGop[1] = 0;
-            sps.NumOfBInGop[2] = 0;
 
             const mfxVideoParam& par = Glob::VideoParam::Get(glob);
             const mfxExtCodingOption2& CO2 = ExtBuffer::Get(par);
@@ -58,39 +52,39 @@ void Windows::Gen12::QpModulation::InitInternal(const FeatureBlocks& /*blocks*/,
                 , Glob::Defaults::Get(glob));
             mfxU16 numTL = dflts.base.GetNumTemporalLayers(dflts);
 
-            sps.HierarchicalFlag = (CO2.BRefType == MFX_B_REF_PYRAMID) || (numTL > 1 && numTL < 4);
-            sps.GopRefDist = (IsOn(par.mfx.LowPower) && sps.LowDelayMode && sps.HierarchicalFlag) ? (1 << (numTL - 1)) : sps.GopRefDist; // distance between anchor frames for driver
+            sps.seq_fields.bits.hierachical_flag = (CO2.BRefType == MFX_B_REF_PYRAMID) || (numTL > 1 && numTL < 4);
+            sps.ip_period = (IsOn(par.mfx.LowPower) && sps.seq_fields.bits.low_delay_seq && sps.seq_fields.bits.hierachical_flag) ? (1 << (numTL - 1)) : sps.ip_period; // distance between anchor frames for driver
         });
 
-        ddiCC.UpdatePPS.Push([](
-            TCC::TUpdatePPS::TExt prev
+        cc.UpdatePPS.Push([](
+            Base::VAPacker::CallChains::TUpdatePPS::TExt prev
             , const StorageR& global
             , const StorageR& s_task
-            , const ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& sps
-            , ENCODE_SET_PICTURE_PARAMETERS_HEVC& pps)
+            , const VAEncSequenceParameterBufferHEVC& sps
+            , VAEncPictureParameterBufferHEVC& pps)
         {
             prev(global, s_task, sps, pps);
 
-            auto& task           = Task::Common::Get(s_task);
-            auto& bsSPS          = Glob::SPS::Get(global);
-            bool bHLByCodingType = !sps.LowDelayMode && sps.HierarchicalFlag;
-            bool bHLByTemporalID = sps.LowDelayMode && bsSPS.max_sub_layers_minus1;
-            bool bHLByPyrLevel   = sps.LowDelayMode && !bHLByTemporalID;
+            auto& task = Task::Common::Get(s_task);
+            auto& bsSPS = Glob::SPS::Get(global);
+            bool bHLByCodingType = !sps.seq_fields.bits.low_delay_seq && sps.seq_fields.bits.hierachical_flag;
+            bool bHLByTemporalID = sps.seq_fields.bits.low_delay_seq && bsSPS.max_sub_layers_minus1;
+            bool bHLByPyrLevel = sps.seq_fields.bits.low_delay_seq && !bHLByTemporalID;
 
             // QP modulation in LDB mode
-            SetIf(pps.HierarchLevelPlus1, bHLByTemporalID, task.TemporalID + 1);
-            SetIf(pps.HierarchLevelPlus1, bHLByPyrLevel, task.PyramidLevel + 1);
+            SetIf(pps.hierarchical_level_plus1, bHLByTemporalID, task.TemporalID + 1);
+            SetIf(pps.hierarchical_level_plus1, bHLByPyrLevel, task.PyramidLevel + 1);
 
             // QP modulation in RAB mode
             if (bHLByCodingType)
             {
                 ThrowAssert(Check<mfxU8, 1, 2, 3, 4, 5>(task.CodingType), "invalid coding type");
 
-                pps.HierarchLevelPlus1  = (task.CodingType - 1) * (task.CodingType > 3);
-                pps.HierarchLevelPlus1 += 2 * (task.CodingType == 3 && !task.isLDB);
-                pps.HierarchLevelPlus1 += !pps.HierarchLevelPlus1;
+                pps.hierarchical_level_plus1 = (task.CodingType - 1) * (task.CodingType > 3);
+                pps.hierarchical_level_plus1 += 2 * (task.CodingType == 3 && !task.isLDB);
+                pps.hierarchical_level_plus1 += !pps.hierarchical_level_plus1;
 
-                pps.CodingType = std::min(task.CodingType, mfxU8(3));
+                pps.pic_fields.bits.coding_type = std::min(task.CodingType, mfxU8(3));
             }
         });
 

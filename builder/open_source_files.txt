@@ -205,6 +205,8 @@ _studio/mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_lin.cpp
 _studio/mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_lin.h
 _studio/mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_rext_lin.cpp
 _studio/mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_rext_lin.h
+_studio/mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_qp_modulation_lin.cpp
+_studio/mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_qp_modulation_lin.h
 _studio/mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_scc_lin.h
 _studio/mfx_lib/encode_hw/hevc/hevcehw_disp.h
 _studio/mfx_lib/encode_hw/hevc/hevcehw_disp.cpp

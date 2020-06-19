@@ -518,10 +518,8 @@ void DDIPacker::FillSpsBuffer(
         (CO3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING) * eScenario_GameStreaming
         + (CO3.ScenarioInfo == MFX_SCENARIO_REMOTE_GAMING) * eScenario_RemoteGaming);
 
-    // QpModulation support
-    bool bMinGen11 = (m_hwType >= MFX_HW_ICL);
-    sps.LowDelayMode     = bMinGen11 && (par.mfx.GopRefDist == 1);
-    sps.HierarchicalFlag = bMinGen11 && isBPyramid && ((par.mfx.GopRefDist == 4) || (par.mfx.GopRefDist == 8));
+    sps.LowDelayMode     = bs_sps.low_delay_mode;
+    sps.HierarchicalFlag = bs_sps.hierarchical_flag;
 
     if (extVsi.ColourDescriptionPresent)
     {

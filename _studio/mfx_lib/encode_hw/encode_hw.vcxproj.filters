@@ -322,6 +322,9 @@
     <ClCompile Include="hevc\embargo\windows\g12\hevcehw_g12_qp_modulation_win.cpp">
       <Filter>hevc\embargo\windows\g12</Filter>
     </ClCompile>
+    <ClCompile Include="hevc\linux\g12\hevcehw_g12_qp_modulation_lin.cpp">
+      <Filter>hevc\linux\g12</Filter>
+    </ClCompile>
     <ClCompile Include="hevc\agnostic\hevcehw_base.cpp">
       <Filter>hevc\open\agnostic</Filter>
     </ClCompile>
@@ -725,6 +728,9 @@
     </ClInclude>
     <ClInclude Include="hevc\embargo\windows\g12\hevcehw_g12_qp_modulation_win.h">
       <Filter>hevc\embargo\windows\g12</Filter>
+    </ClInclude>
+    <ClInclude Include="hevc\linux\g12\hevcehw_g12_qp_modulation_lin.h">
+      <Filter>hevc\linux\g12</Filter>
     </ClInclude>
     <ClInclude Include="hevc\agnostic\hevcehw_base.h">
       <Filter>hevc\open\agnostic</Filter>

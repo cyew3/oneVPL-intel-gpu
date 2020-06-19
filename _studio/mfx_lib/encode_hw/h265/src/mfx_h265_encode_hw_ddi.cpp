@@ -980,27 +980,9 @@ void FillSpsBuffer(
     }
 
     // QpModulation support
-
-    if (par.m_platform >= MFX_HW_ICL)
-    {
-        if (par.mfx.GopRefDist == 1)   // Maggie: need to change after MSDK having LDB Pyramid support
-            sps.LowDelayMode = 1;
-
-        if (par.m_platform < MFX_HW_TGL_LP)
-        {
-            if ((par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID) &&
-                ((par.mfx.GopRefDist == 4) || (par.mfx.GopRefDist == 8)))
-                sps.HierarchicalFlag = 1;
-        }
-        else
-        {
-            if ((par.m_ext.CO2.BRefType == MFX_B_REF_PYRAMID) || (par.isTL() && par.NumTL() < 4))
-                sps.HierarchicalFlag = 1;
-
-            if (IsOn(par.mfx.LowPower) && sps.LowDelayMode && sps.HierarchicalFlag)
-                sps.GopRefDist = 1 << (par.NumTL() - 1); // distance between anchor frames for driver
-        }
-    }
+    sps.LowDelayMode     = par.m_sps.low_delay_mode;
+    sps.HierarchicalFlag = par.m_sps.hierarchical_flag;
+    sps.GopRefDist       = par.m_sps.gop_ref_dist;
 }
 
 void FillPpsBuffer(
