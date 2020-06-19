@@ -392,6 +392,8 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         }
     }
 
+    MFX_CHECK_STATUS(m_pYUVSource->Query(&m_components[eDEC].m_params, &m_components[eDEC].m_params));
+
     if (NULL != m_pRender)
     {
         mfxVideoParam params = m_components[eREN].m_params;
