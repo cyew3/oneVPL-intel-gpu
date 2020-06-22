@@ -415,7 +415,7 @@ typedef struct {
 } mfxExtIntGPUHang;
 #endif
 
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+#if defined (MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
 #define MFX_EXTBUFF_LP_LOOKAHEAD MFX_MAKEFOURCC('L','P','L','A')
 typedef struct {
     mfxExtBuffer Header;
@@ -425,6 +425,21 @@ typedef struct {
     mfxU16       TargetKbps;
 } mfxExtLplaParam;
 
+#endif
+
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
+#define MFX_EXTBUFF_LPLA_STATUS MFX_MAKEFOURCC('L', 'P', 'L', 'S')
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU32          StatusReportFeedbackNumber;
+    mfxU8           CqmHint; // Custom quantization matrix hint. 0x00 - flat matrix; 0x01 - CQM; 0xFF - invalid hint; other values are reserved.
+    mfxU8           IntraHint;
+    mfxU8           MiniGopSize;
+    mfxU8           QpModulationStrength;
+    mfxU32          TargetFrameSize;
+    mfxU32          TargetBufferFullnessInBit;
+    mfxU16          reserved[19];
+} mfxExtLpLaStatus;
 #endif
 
 #endif // __MFX_EXT_BUFFERS_H__

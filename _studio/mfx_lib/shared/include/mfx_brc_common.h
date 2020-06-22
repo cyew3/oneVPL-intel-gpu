@@ -22,7 +22,11 @@
 #define __MFX_BRC_COMMON_H__
 
 #include "mfx_common.h"
+#ifdef MFX_ENABLE_ENCTOOLS
+#include "mfxenctools.h"
+#else
 #include "mfxbrc.h"
+#endif
 #include <vector>
 #include <memory>
 #include <algorithm>
@@ -170,12 +174,14 @@ NalHrdConformance | VuiNalHrdParameters   |  Result
     on (or default)      on (or default)    => MFX_BRC_HRD_STRONG
 --------------------------------------------------------------
 */
+#if !defined(MFX_ENABLE_ENCTOOLS)
 enum : mfxU16
 {
     MFX_BRC_NO_HRD = 0,
     MFX_BRC_HRD_WEAK,  // IF HRD CALCULATION IS REQUIRED, BUT NOT WRITTEN TO THE STREAM
     MFX_BRC_HRD_STRONG
 };
+#endif
 
 namespace MfxHwH265EncodeBRC
 {
@@ -316,7 +322,7 @@ public:
     mfxI32    GetMaxQuant() const { return m_overflowQuant - 1; }
     mfxI32    GetMinQuant() const { return m_underflowQuant + 1; }
     void      SetOverflowQuant(mfxI32 qp) { m_overflowQuant = qp; }
-    void      SetUndeflowQuant(mfxI32 qp) { m_underflowQuant = qp; }
+    void      SetUnderflowQuant(mfxI32 qp) { m_underflowQuant = qp; }
     void      ResetQuant() { m_overflowQuant = 999;  m_underflowQuant = 0;}
 
 public:

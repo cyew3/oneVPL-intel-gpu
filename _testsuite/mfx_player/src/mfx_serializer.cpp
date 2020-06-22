@@ -183,6 +183,20 @@ void MFXStructureRef <mfxExtCodingOption2>::ConstructValues () const
     SERIALIZE_INT(BufferingPeriodSEI);
     SERIALIZE_INT(UseRawRef);
 }
+void MFXStructureRef <mfxExtEncToolsConfig>::ConstructValues() const
+{
+    SERIALIZE_INT(AdaptiveI);
+    SERIALIZE_INT(AdaptiveB);
+    SERIALIZE_INT(AdaptiveRefP);
+    SERIALIZE_INT(AdaptiveRefB);
+    SERIALIZE_INT(SceneChange);
+    SERIALIZE_INT(AdaptiveLTR);
+    SERIALIZE_INT(AdaptivePyramidQuantP);
+    SERIALIZE_INT(AdaptivePyramidQuantB);
+    SERIALIZE_INT(AdaptiveQuantMatrices);
+    SERIALIZE_INT(BRCBufferHints);
+    SERIALIZE_INT(BRC);
+}
 void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
 {
     SERIALIZE_INT(NumSliceI);
@@ -1234,6 +1248,11 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
             SerializeStruct(VM_STRING("DDI."), *(mfxExtCodingOptionDDI*)m_pStruct);
             break;
         }
+        case  MFX_EXTBUFF_ENCTOOLS_CONFIG:
+            SerializeStruct(VM_STRING("ET."), *(mfxExtEncToolsConfig*)m_pStruct);
+            break;
+
+
         case MFX_EXTBUFF_MULTI_FRAME_PARAM: {
             SerializeStruct(VM_STRING("MFE."), *(mfxExtMultiFrameParam*)m_pStruct);
             break;

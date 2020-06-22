@@ -24,6 +24,7 @@ Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 #include "mfxla.h"
 #include "mfxsc.h"
 #include "mfxbrc.h"
+#include "mfxenctools.h"
 
 #include "bs_parser.h"
 #include <iostream>
@@ -124,6 +125,8 @@ public:
     tsTrace& operator << (mfxStatus& p);
     tsTrace& operator << (BSErr& p);
     tsTrace& operator << (const mfxExtPartialBitstreamParam& p);
+    tsTrace& operator << (const mfxExtEncToolsConfig& p);
+
     tsTrace& operator << (const mfxStatus& p){
         return operator<<(const_cast<mfxStatus&>(p));
     }

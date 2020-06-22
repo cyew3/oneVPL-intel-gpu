@@ -79,6 +79,9 @@ Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 #define HANDLE_EXT_OPTION3(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptions3, member, OPT_TYPE, description, 0)
 #define HANDLE_DDI_OPTION(member, OPT_TYPE, description)\
     {VM_STRING("-") VM_STRING(#member), OPT_TYPE, {&m_extCodingOptionsDDI->member}, VM_STRING("[INTERNAL DDI]: ") VM_STRING(description), NULL, 0}
+#define HANDLE_ET_OPTION(member, OPT_TYPE, description)\
+    {VM_STRING("-") VM_STRING(#member), OPT_TYPE, {&m_extEncToolsConfig->member}, VM_STRING("EncTools: ") VM_STRING(description), NULL, 0}
+
 #define HANDLE_VSIG_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extVideoSignalInfo, member, OPT_TYPE, description, 0)
 #define HANDLE_CAP_OPTION(member, OPT_TYPE, description)      HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderCapability, member, OPT_TYPE, description, 0)
 #define HANDLE_HEVC_OPTION(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extCodingOptionsHEVC, member, OPT_TYPE, description, MFX_CODEC_HEVC)
@@ -138,6 +141,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_extCodingOptions2(new mfxExtCodingOption2())
     , m_extCodingOptions3(new mfxExtCodingOption3())
     , m_extCodingOptionsDDI(new mfxExtCodingOptionDDI())
+    , m_extEncToolsConfig(new mfxExtEncToolsConfig())
     , m_extCodingOptionsQuantMatrix(new mfxExtCodingOptionQuantMatrix())
     , m_extDumpFiles(new mfxExtDumpFiles())
     , m_extVideoSignalInfo(new mfxExtVideoSignalInfo())
@@ -646,6 +650,19 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(SuperFrameForTS,         OPT_TRI_STATE,  ""),
         HANDLE_DDI_OPTION(TMVP,                    OPT_TRI_STATE,  "on/off temporal MV predictor"),
 
+        // EncTools
+        //et_AdaptiveI
+        //et_AdaptiveB
+        HANDLE_ET_OPTION(AdaptiveRefP, OPT_TRI_STATE, "on/off"),
+        HANDLE_ET_OPTION(AdaptiveRefB, OPT_TRI_STATE, "on/off"),
+        HANDLE_ET_OPTION(SceneChange, OPT_TRI_STATE, "on/off"),
+        HANDLE_ET_OPTION(AdaptiveLTR, OPT_TRI_STATE, "on/off"),
+        HANDLE_ET_OPTION(AdaptivePyramidQuantP, OPT_TRI_STATE, "on/off"),
+        HANDLE_ET_OPTION(AdaptivePyramidQuantB, OPT_TRI_STATE, "on/off"),
+        HANDLE_ET_OPTION(AdaptiveQuantMatrices, OPT_TRI_STATE, "on/off"),
+        HANDLE_ET_OPTION(BRCBufferHints, OPT_TRI_STATE, "on/off"),
+        HANDLE_ET_OPTION(BRC, OPT_TRI_STATE, "on/off"),
+
         //mfxExtEncoderCapability
         HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,       "Query Encoder for Max MB Per Second"),
 
@@ -874,6 +891,25 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         {
             m_extCodingOptionsDDI->RefRaw = MFX_CODINGOPTION_ON;
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-et_AdaptiveI"), VM_STRING("adaptiveI via encTools")))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+            mfxU16 value = MFX_CODINGOPTION_UNKNOWN;
+            MFX_PARSE_STR_ON_OFF(value, argv[1]);
+            argv++;
+            m_extEncToolsConfig->AdaptiveI = value;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-et_AdaptiveB"), VM_STRING("adaptiveB via encTools")))
+        {
+            MFX_CHECK(argv + 1 != argvEnd);
+
+            mfxU16 value = MFX_CODINGOPTION_UNKNOWN;
+            MFX_PARSE_STR_ON_OFF(value, argv[1]);
+            argv++;
+            m_extEncToolsConfig->AdaptiveB = value;
+        }
+
+
         else if (m_OptProc.Check(argv[0], VM_STRING("-RefRec"), VM_STRING("motion estimation on reconstructed frames")))
         {
             m_extCodingOptionsDDI->RefRaw = MFX_CODINGOPTION_OFF;
@@ -2623,6 +2659,9 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extCodingOptionsDDI.IsZero())
         m_components[eREN].m_extParams.push_back(m_extCodingOptionsDDI);
+
+    if (!m_extEncToolsConfig.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extEncToolsConfig);
 
     if (!m_extDumpFiles.IsZero())
         m_components[eREN].m_extParams.push_back(m_extDumpFiles);

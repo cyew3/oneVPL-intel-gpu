@@ -513,6 +513,25 @@ protected:
 };
 
 template<>
+class MFXStructureRef <mfxExtEncToolsConfig>
+    : public MFXStructureBase<mfxExtEncToolsConfig>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtEncToolsConfig>((mfxExtEncToolsConfig &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtEncToolsConfig & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtEncToolsConfig>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues() const;
+};
+
+template<>
 class MFXStructureRef <mfxExtMultiFrameParam>
     : public MFXStructureBase<mfxExtMultiFrameParam>
 {

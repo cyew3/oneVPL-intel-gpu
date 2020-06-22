@@ -14,5 +14,5 @@ file( GLOB_RECURSE sources "[^.]*.c" "[^.]*.cpp" "${CMAKE_HOME_DIRECTORY}/${SAMP
 
 list( APPEND LIBS_VARIANT sample_common )
 
-set(DEPENDENCIES libmfx dl pthread)
+set(DEPENDENCIES libva libmfx dl pthread)
 make_executable( shortname universal "nosafestring")

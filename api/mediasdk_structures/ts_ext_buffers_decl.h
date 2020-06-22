@@ -179,11 +179,14 @@ EXTBUF(mfxExtLAFrameStatistics           , MFX_EXTBUFF_LOOKAHEAD_STAT           
 #endif //__MFXLA_H__
 
 #if defined(__MFX_EXT_BUFFERS_H__)
-EXTBUF(mfxExtCodingOptionDDI, MFX_EXTBUFF_DDI)
+EXTBUF(mfxExtCodingOptionDDI, MFX_EXTBUFF_DDI   )
 #if defined(MFX_UNDOCUMENTED_DUMP_FILES)
 EXTBUF(mfxExtDumpFiles, MFX_EXTBUFF_DUMP)
 #endif //MFX_UNDOCUMENTED_DUMP_FILES
-#if defined MFX_EXTBUFF_LP_LOOKAHEAD
+#if defined (MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
 EXTBUF(mfxExtLplaParam, MFX_EXTBUFF_LP_LOOKAHEAD)
+#endif
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
+EXTBUF(mfxExtLpLaStatus, MFX_EXTBUFF_LPLA_STATUS)
 #endif
 #endif // defined(__MFX_EXT_BUFFERS_H__)

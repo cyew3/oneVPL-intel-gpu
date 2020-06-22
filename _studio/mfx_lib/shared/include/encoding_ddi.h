@@ -284,15 +284,20 @@ typedef struct _LOOKAHEAD_INFO
         struct
         {
             UINT ValidInfo : 1;
-            UINT CqmHint : 8;    // Custom quantization matrix hint. 0x00 - flat matrix; 0x01 - CQM; 0xFF - invalid hint; other values are reserved.
+            UINT CqmHint   : 8;        // Custom quantization matrix hint. 0x00 - flat matrix; 0x01 - CQM; 0xFF - invalid hint; other values are reserved.
             UINT IntraHint : 1;
-            UINT Reserved2 : 22;
+            UINT reserved  : 22;
         };
         UINT EncodeHints;
     };
     UINT TargetFrameSize;
     UINT TargetBufferFulness;
-    UINT Reserved[12];
+
+    UCHAR QpModulationStrength;       // [0..maxQP(bit depth)]
+    UCHAR MiniGopSize;                // [0, 1, 2, 4, 8,16]
+
+    USHORT reserved16b;
+    UINT   eserved32b[11];
 } LOOKAHEAD_INFO;
 
 typedef struct tagENCODE_QUERY_STATUS_PARAMS_HEVC
@@ -345,7 +350,7 @@ typedef struct tagENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC
     USHORT  *pSliceSizes;
 } ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC;
 
-#ifdef MFX_ENABLE_LP_LOOKAHEAD
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
 enum
 {
     CQM_HINT_USE_FLAT_MATRIX = 0,    //use flat matrix

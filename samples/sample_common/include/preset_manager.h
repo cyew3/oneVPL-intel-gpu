@@ -46,6 +46,7 @@ struct CPresetParameters
     mfxU16 ExtBRCUsage;
     mfxU16 AsyncDepth;
     mfxU16 BRefType;
+    mfxU16 EncTools;
     mfxU16 AdaptiveMaxFrameSize;
     mfxU16 LowDelayBRC;
 

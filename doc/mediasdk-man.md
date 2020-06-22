@@ -3429,6 +3429,22 @@ This function is available since SDK API 1.0.
 
 In the following structure references, all reserved fields must be zero.
 
+## <a id='mfxStructVersion'>mfxStructVersion</a>
+
+**Definition**
+
+    typedef union _mfxStructVersion {
+        struct {
+            mfxU8    Minor;
+            mfxU8    Major;
+            };
+        mfxU16    Version;
+    } mfxStructVersion;
+The rule of  handling Minor and Major parts is the following:
+- If after modification size of the structure is increased (adding new fields to the end of the structure) Major is increased by one
+- If only reserved fields are impacted (no size changes) - Minor version is increased
+The general recommendation is to avoid Major version increment when it's possible and operate with Minor version
+
 ## <a id='mfxBitstream'>mfxBitstream</a>
 
 **Definition**
@@ -7585,6 +7601,72 @@ Temporal layer structure is reset (re-started) after key-frames.
 **Change History**
 
 This structure is available since SDK API **TBD**.
+
+## <a id='mfxExtEncToolsConfig'>mfxExtEncToolsConfig</a>
+
+**Definition**
+
+```C
+
+typedef struct
+{
+    mfxExtBuffer       Header;
+    mfxStructVersion   Version;
+    mfxU16             SceneChange;
+    mfxU16             AdaptiveI;
+    mfxU16             AdaptiveB; 
+    mfxU16             AdaptiveRefP;
+    mfxU16             AdaptiveRefB;
+    mfxU16             AdaptiveLTR;
+    mfxU16             AdaptivePyramidQuantP;
+    mfxU16             AdaptivePyramidQuantB;
+    mfxU16             AdaptiveQuantMatrices;
+    mfxU16             BRCBufferHints;
+    mfxU16             BRC;
+    mfxU16             reserved[20];
+} mfxExtEncToolsConfig; 
+
+```
+
+**Description**
+
+The SDK allows using EncTools for effective encoding. This is an additional functionality for the calculation of adaptive GOP, optimal reference frame list, suitable QP modulation for pyramids. Also EncTools provides its own BRC functionality.
+The `mfxExtEncToolsConfig` structure configures EncTools
+for SDK encoders. It can be attached to the [mfxVideoParam](#mfxVideoParam) structure during [initialization](#MFXVideoENCODE_Init) or [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset) call. If mfxExtEncToolsConfig buffer isn’t attached during initialization, EncTools is disabled. If the buffer isn’t attached for [Reset](#MFXVideoENCODE_Reset) call, encoder continues to use 
+mfxExtEncToolsConfig which was actual before this [Reset](#MFXVideoENCODE_Reset) call. 
+
+If the EncTools are unsupported in encoder, MFX_ERR_UNSUPPORTED is returned from [MFXVideoENCODE_Query](#MFXVideoENCODE_Query), MFX_ERR_INVALID_VIDEO_PARAM is returned from [MFXVideoENCODE_Init](#MFXVideoENCODE_Init). If any EncTools feature is on and not compatible with other video parameters, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM is returned from Init and Query functions.
+
+Some features can require delay before encoding can start. Parameter  [mfxExtCodingOption2](#mfxExtCodingOption2)::LookaheadDepth can be used to limit the delay. EncTools features requiring longer delay will be disabled. 
+
+If a field in `mfxExtEncToolsConfig` is set to MFX_CODINGOPTION_UNKNOWN, the corresponding feature will be enabled if it is compatible with other video parameters .
+
+Actual EncTools configuration can be obtained using [MFXVideoENCODE_GetVideoParam](#MFXVideoENCODE_GetVideoParam) function with attached `mfxExtEncToolsConfig` buffer.
+
+
+
+**Members**
+
+| `Header.BufferId`         | must be MFX_EXTBUFF_ENCTOOLS_CONFIG                          |                                                              |      |      |
+| ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ---- | ---- |
+| `SceneChange`             | Flag for enabling/disabling “Scene change analysis” feature.        | MFX_CODINGOPTION_ON     MFX_CODINGOPTION_OFF  MFX_CODINGOPTION_UNKNOWN (default) – user doesn’t care, EncTools decides whether it should be ON or OFF |      |      |
+| `AdaptiveI`               | Flag for configuring “Frame type calculation” feature. Distance between Intra frames depends on the content. | MFX_CODINGOPTION_ON     MFX_CODINGOPTION_OFF  MFX_CODINGOPTION_UNKNOWN (default) – user doesn’t care, EncTools decides whether it should be ON or OFF |      |      |
+| `AdaptiveB`               | Flag for configuring “Frame type calculation” feature. Distance between nearest P (or I) frames depends on the content. | MFX_CODINGOPTION_ON     MFX_CODINGOPTION_OFF  MFX_CODINGOPTION_UNKNOWN (default) – user doesn’t care, EncTools decides whether it should be ON or OFF |      |      |
+| `AdaptiveRefP`            | Flag for configuring “Reference frame list calculation” feature. The most useful reference frames are calculated for P frames. |                                                              |      |      |
+| `AdaptiveRefB`            | Flag for configuring “Reference frame list calculation” feature. The most useful reference frames are calculated for B frames. | MFX_CODINGOPTION_ON     MFX_CODINGOPTION_OFF  MFX_CODINGOPTION_UNKNOWN (default) – user doesn’t care, EncTools decides whether it should be ON or OFF |      |      |
+| `AdaptiveLTR`             | Flag for configuring “Reference frame list calculation” feature. The most useful reference frames are calculated as LTR. | MFX_CODINGOPTION_ON     MFX_CODINGOPTION_OFF  MFX_CODINGOPTION_UNKNOWN (default) – user doesn’t care, EncTools decides whether it should be ON or OFF |      |      |
+| `AdaptivePyramidQuantP`   | Flag for configuring “Delta QP hints” feature. Delta QP is calculated for P frames. | MFX_CODINGOPTION_ON     MFX_CODINGOPTION_OFF  MFX_CODINGOPTION_UNKNOWN (default) – user doesn’t care, EncTools decides whether it should be ON or OFF |      |      |
+| `AdaptivePyramidQuantB`   | Flag for configuring “Delta QP hints” feature. Delta QP is calculated for B frames. | MFX_CODINGOPTION_ON     MFX_CODINGOPTION_OFF  MFX_CODINGOPTION_UNKNOWN (default) – user doesn’t care, EncTools decides whether it should be ON or OFF |      |      |
+| `AdaptiveQuantMatrices`   | Flag for configuring “Adaptive quantization matrix” feature. | MFX_CODINGOPTION_ON     MFX_CODINGOPTION_OFF  MFX_CODINGOPTION_UNKNOWN (default) – user doesn’t care, EncTools decides whether it should be ON or OFF |      |      |
+| `BRCBufferHints`          | Flag for enabling/disabling “BRC buffer hints” feature: calculation of optimal frame size, HRD buffer fullness, etc. | MFX_CODINGOPTION_ON     MFX_CODINGOPTION_OFF  MFX_CODINGOPTION_UNKNOWN (default) – user doesn’t care, EncTools decides whether it should be ON or OFF |      |      |
+| `BRC`                     | Flag for enabling/disabling “BRC” functionality: QP calculation for frame encoding, encoding status calculation after frame encoding | MFX_CODINGOPTION_ON     MFX_CODINGOPTION_OFF  MFX_CODINGOPTION_UNKNOWN (default) – user doesn’t care, EncTools decides whether it should be ON or OFF |      |      |
+|                           |                                                              |                                                              |      |      |
+|                           |                                                              |                                                              |      |      |
+|                           |                                                              |                                                              |      |      |
+
+**Change History**
+
+This structure is available since SDK API 1.34
 
 ## <a id='mfxExtBRC'>mfxExtBRC</a>
 

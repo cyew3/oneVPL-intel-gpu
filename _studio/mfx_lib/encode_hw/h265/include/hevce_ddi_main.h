@@ -67,7 +67,7 @@ typedef struct tagENCODE_CAPS_HEVC
 
     union {
         struct {
-            UCHAR    MaxNumOfROI                : 5; // [0..16]    
+            UCHAR    MaxNumOfROI                : 5; // [0..16]
             UCHAR    ROIBRCPriorityLevelSupport : 1;
             UCHAR    BlockSize                  : 2;
         };

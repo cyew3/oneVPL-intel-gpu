@@ -28,6 +28,10 @@ struct mfxLplastatus
     mfxU8 ValidInfo = 0;
     mfxU8 CqmHint = 0xFF;
     mfxU32 TargetFrameSize = 0;
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
+    mfxU8 MiniGopSize = 0;
+    mfxU8 QpModulation = 0;
+#endif
 };
 
 #if defined (MFX_ENABLE_LP_LOOKAHEAD)

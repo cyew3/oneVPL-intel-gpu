@@ -568,3 +568,25 @@ tsTrace& tsTrace::operator<<(const mfxExtPartialBitstreamParam& p)
     )
         return *this;
 }
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+tsTrace& tsTrace::operator<<(const mfxExtEncToolsConfig& p)
+{
+    STRUCT_BODY(mfxExtEncToolsConfig,
+        FIELD_S(mfxExtBuffer, Header)
+        FIELD_T(mfxU16, AdaptiveI)
+        FIELD_T(mfxU16, AdaptiveB)
+        FIELD_T(mfxU16, AdaptiveRefP)
+        FIELD_T(mfxU16, AdaptiveRefB)
+        FIELD_T(mfxU16, SceneChange)
+        FIELD_T(mfxU16, AdaptiveLTR)
+        FIELD_T(mfxU16, AdaptivePyramidQuantP)
+        FIELD_T(mfxU16, AdaptivePyramidQuantB)
+        FIELD_T(mfxU16, AdaptiveQuantMatrices)
+        FIELD_T(mfxU16, BRCBufferHints)
+        FIELD_T(mfxU16, BRC)
+        FIELD_T(mfxU16, reserved) /* Fixed size array */
+    )
+        return *this;
+}
+#endif

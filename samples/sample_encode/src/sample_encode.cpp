@@ -191,6 +191,23 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 #if (MFX_VERSION >= 1024)
     msdk_printf(MSDK_STRING("   [-extbrc:<on,off,implicit>] - External BRC for AVC and HEVC encoders\n"));
 #endif
+    msdk_printf(MSDK_STRING("   [-encTools]     - enables enctools for AVC encoder\n"));
+    msdk_printf(MSDK_STRING("   [-et:adaptiveI:<on,off>] - flag for configuring “Frame type calculation” feature.\n"));
+    msdk_printf(MSDK_STRING("                      Distance between Intra frames depends on the content.\n"));
+    msdk_printf(MSDK_STRING("   [-et:adaptiveB:<on,off>] - flag for configuring “Frame type calculation” feature.\n"));
+    msdk_printf(MSDK_STRING("                      Distance between nearest P (or I) frames depends on the content.\n"));
+    msdk_printf(MSDK_STRING("   [-et:arefP:<on,off>]     - flag for configuring “Reference frame list calculation” feature. \n"));
+    msdk_printf(MSDK_STRING("                      The most useful reference frames are calculated for P frames.\n"));
+    msdk_printf(MSDK_STRING("   [-et:arefB:<on,off>]     - flag for configuring “Reference frame list calculation” feature. \n"));
+    msdk_printf(MSDK_STRING("                      The most useful reference frames are calculated for B frames.\n"));
+    msdk_printf(MSDK_STRING("   [-et:sc:<on,off>]        - flag for enabling “Scene change analysis” feature\n"));
+    msdk_printf(MSDK_STRING("   [-et:aLTR:<on,off>]      - flag for configuring “Reference frame list calculation” feature.\n"));
+    msdk_printf(MSDK_STRING("                      The most useful reference frames are calculated as LTR.\n"));
+    msdk_printf(MSDK_STRING("   [-et:apyrQP:<on,off>]    - flag for configuring “Delta QP hints” feature. Delta QP is calculated for P frames.\n"));
+    msdk_printf(MSDK_STRING("   [-et:apyrQB:<on,off>]    - flag for configuring “Delta QP hints” feature. Delta QP is calculated for B frames.\n"));
+    msdk_printf(MSDK_STRING("   [-et:brchints:<on,off>]  - flag for enabling “BRC buffer hints” feature: calculation of optimal frame size, HRD buffer fullness, etc.\n"));
+    msdk_printf(MSDK_STRING("   [-et:brc:<on,off>]       - flag for enabling functionality: QP calculation for frame encoding, encoding status calculation after frame encoding\n"));
+    msdk_printf(MSDK_STRING("   [-ScenarioInfo n] - Sets scenario info. 0=unknown, 7=MFX_SCENARIO_GAME_STREAMING, 8=MFX_SCENARIO_REMOTE_GAMING \n"));
 #if (MFX_VERSION >= 1026)
     msdk_printf(MSDK_STRING("   [-ExtBrcAdaptiveLTR:<on,off>] - Set AdaptiveLTR for implicit extbrc\n"));
 #endif
@@ -231,7 +248,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("\n"));
 }
 
-mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 /*nArgNum*/, mfxU8& i, sInputParams* pParams)
+mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, sInputParams* pParams)
 {
     if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-PicTimingSEI:on")))
     {
@@ -256,6 +273,99 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 /*nArgNum*/, mfxU8&
     else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-VuiNalHrdParameters:off")))
     {
         pParams->nVuiNalHrdParameters = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encTools")))
+    {
+        pParams->bEncTools = true;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:adaptiveI:on")))
+    {
+        pParams->etAdaptiveI = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:adaptiveB:on")))
+    {
+        pParams->etAdaptiveB = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:arefP:on")))
+    {
+        pParams->etArefP = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:arefB:on")))
+    {
+        pParams->etArefB = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:sc:on")))
+    {
+        pParams->etSceneChange = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:aLTR:on")))
+    {
+        pParams->etALTR = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:apyrQP:on")))
+    {
+        pParams->etApyrQP = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:apyrQB:on")))
+    {
+        pParams->etApyrQB = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:brchints:on")))
+    {
+        pParams->etBRCHints = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:brc:on")))
+    {
+        pParams->etBRC = MFX_CODINGOPTION_ON;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:adaptiveI:off")))
+    {
+        pParams->etAdaptiveI = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:adaptiveB:off")))
+    {
+        pParams->etAdaptiveB = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:arefP:off")))
+    {
+        pParams->etArefP = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:arefB:off")))
+    {
+        pParams->etArefB = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:sc:off")))
+    {
+        pParams->etSceneChange = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:aLTR:off")))
+    {
+        pParams->etALTR = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:apyrQP:off")))
+    {
+        pParams->etApyrQP = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:apyrQB:off")))
+    {
+        pParams->etApyrQB = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:brchints:off")))
+    {
+        pParams->etBRCHints = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-et:brc:off")))
+    {
+        pParams->etBRC = MFX_CODINGOPTION_OFF;
+    }
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ScenarioInfo")))
+    {
+        VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+        if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->ScenarioInfo))
+        {
+            PrintHelp(strInput[0], MSDK_STRING("Scenario info is invalid"));
+            return MFX_ERR_UNSUPPORTED;
+        }
     }
     else
     {
@@ -1261,6 +1371,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
+        if (pParams->etAdaptiveI   || pParams->etAdaptiveB ||
+            pParams->etArefP       || pParams->etArefB     ||
+            pParams->etSceneChange || pParams->etALTR      ||
+            pParams->etApyrQB      || pParams->etApyrQP    ||
+            pParams->etBRCHints    || pParams->etBRC)
+        {
+            pParams->bEncTools = true;
+        }
+
 #if defined (ENABLE_V4L2_SUPPORT)
     if (pParams->isV4L2InputEnabled)
     {
@@ -1530,6 +1649,7 @@ void ModifyParamsUsingPresets(sInputParams& params)
     MODIFY_AND_PRINT_PARAM(params.nAdaptiveMaxFrameSize, AdaptiveMaxFrameSize,params.shouldPrintPresets);
     MODIFY_AND_PRINT_PARAM(params.nAsyncDepth, AsyncDepth, params.shouldPrintPresets);
     MODIFY_AND_PRINT_PARAM(params.nBRefType, BRefType, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.bEncTools, EncTools, params.shouldPrintPresets);
 //    MODIFY_AND_PRINT_PARAM(params., EnableBPyramid);
 //    MODIFY_AND_PRINT_PARAM(params., EnablePPyramid);
     MODIFY_AND_PRINT_PARAM(params.nGopPicSize, GopPicSize, params.shouldPrintPresets);

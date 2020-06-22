@@ -102,13 +102,17 @@ namespace MfxHwH264Encode
         {
             mfxExtCodingOption2 *       extOpt2 = GetExtBuffer(par);
             mfxExtCodingOption3 *       extOpt3 = GetExtBuffer(par);
+            mfxU32  adaptGopDelay = 0;
+#if defined(MFX_ENABLE_ENCTOOLS)
+            adaptGopDelay = H264EncTools::GetPreEncDelay(par);
+#endif
             if (par.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
             {
-                numFrameMin = par.mfx.GopRefDist + par.AsyncDepth - 1;
+                numFrameMin = (mfxU16)(par.mfx.GopRefDist + adaptGopDelay + par.AsyncDepth - 1);
             }
             else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
             {
-                numFrameMin = (mfxU16)AsyncRoutineEmulator(par).GetTotalGreediness() + par.AsyncDepth - 1;
+                numFrameMin = (mfxU16)AsyncRoutineEmulator(par, adaptGopDelay).GetTotalGreediness() + par.AsyncDepth - 1;
 
                 mfxExtCodingOptionDDI & extDdi = GetExtBufferRef(par);
                 numFrameMin += IsOn(extDdi.RefRaw)
@@ -350,22 +354,25 @@ namespace MfxHwH264Encode
                 switch (frameType & MFX_FRAMETYPE_IPB)
                 {
                 case MFX_FRAMETYPE_I:
-                    return mfxU8(par.mfx.QPI);
+                    return mfxU8(par.mfx.QPI + task.m_QPdelta);
                 case MFX_FRAMETYPE_P:
                     QP = mfxU8(par.mfx.QPP);
-                    if (par.calcParam.numTemporalLayer > 1)
+                    if (task.m_bQPDelta)
+                    {
+                        QP = (mfxU8)mfx::clamp<mfxI32>(task.m_QPdelta + QP, minQP, maxQP);
+                    }
+                    else if (par.calcParam.numTemporalLayer > 1)
                     {
                         QP = (mfxU8)mfx::clamp<mfxI32>(CO3.QPOffset[task.m_tid] + QP, minQP, maxQP);
-                    }
-                    else if (bUseQPOffset)
-                    {
-                        QP = (mfxU8)mfx::clamp<mfxI32>(
-                            CO3.QPOffset[PLayer(par, task.m_encOrder - task.m_encOrderI)] + QP, minQP, maxQP);
                     }
                     return QP;
                 case MFX_FRAMETYPE_B:
                     QP = mfxU8(par.mfx.QPB);
-                    if (bUseQPOffset)
+                    if (task.m_bQPDelta)
+                    {
+                        QP = (mfxU8)mfx::clamp<mfxI32>(task.m_QPdelta + QP, minQP, maxQP);
+                    }
+                    else if (bUseQPOffset && (task.m_currGopRefDist == 0 || task.m_currGopRefDist > 2))
                     {
                         QP = (mfxU8)mfx::clamp<mfxI32>(
                             CO3.QPOffset[mfx::clamp<mfxI32>(task.m_loc.level - 1, 0, 7)] + QP, minQP, maxQP);
@@ -373,6 +380,7 @@ namespace MfxHwH264Encode
                     return QP;
                 default: assert(!"bad frame type (GetQpValue)"); return 0xff;
                 }
+
             }
         }
 
@@ -1326,6 +1334,38 @@ namespace HwUtils
         std::vector<Reconstruct> const & m_recons;
     };
 
+    struct OrderByFrameNumWrapKeyRef
+    {
+        OrderByFrameNumWrapKeyRef(
+            std::vector<Reconstruct> const & recons)
+            : m_recons(recons)
+        {
+        }
+
+        bool operator ()(DpbFrame const & lhs, DpbFrame const & rhs) const
+        {
+            if (!lhs.m_longterm && !rhs.m_longterm)
+            {
+                if (lhs.m_refBase == rhs.m_refBase)
+                {
+                    if (lhs.m_keyRef != rhs.m_keyRef)
+                        return (lhs.m_keyRef < rhs.m_keyRef);
+                    else
+                        return (m_recons[lhs.m_frameIdx].m_frameNumWrap < m_recons[rhs.m_frameIdx].m_frameNumWrap);
+                }
+                else
+                    return lhs.m_refBase > rhs.m_refBase;
+            }
+            else if (!lhs.m_longterm && rhs.m_longterm)
+                return true;
+            else if (lhs.m_longterm && !rhs.m_longterm)
+                return false;
+            else // both long term
+                return m_recons[lhs.m_frameIdx].m_longTermPicNum[0] < m_recons[rhs.m_frameIdx].m_longTermPicNum[0];
+        }
+
+        std::vector<Reconstruct> const & m_recons;
+    };
     struct OrderByDisplayOrder
     {
         OrderByDisplayOrder(
@@ -1336,6 +1376,24 @@ namespace HwUtils
 
         bool operator ()(DpbFrame const & lhs, DpbFrame const & rhs) const
         {
+            return m_recons[lhs.m_frameIdx].m_frameOrder < m_recons[rhs.m_frameIdx].m_frameOrder;
+        }
+
+        std::vector<Reconstruct> const & m_recons;
+    };
+
+    struct OrderByDisplayOrderKeyRef
+    {
+        OrderByDisplayOrderKeyRef(
+            std::vector<Reconstruct> const & recons)
+            : m_recons(recons)
+        {
+        }
+
+        bool operator ()(DpbFrame const & lhs, DpbFrame const & rhs) const
+        {
+            if (lhs.m_keyRef != rhs.m_keyRef)
+                return (lhs.m_keyRef < rhs.m_keyRef);
             return m_recons[lhs.m_frameIdx].m_frameOrder < m_recons[rhs.m_frameIdx].m_frameOrder;
         }
 
@@ -1402,6 +1460,7 @@ void TaskManager::UpdateDpb(
         newDpbFrame.m_poc      = task.GetPoc();
         newDpbFrame.m_viewIdx  = mfxU16(task.m_viewIdx);
         newDpbFrame.m_longterm = currFrameIsLongTerm;
+        newDpbFrame.m_keyRef = task.m_keyReference;
         currDpb.PushBack(newDpbFrame);
         if (task.m_storeRefBasePicFlag)
         {
@@ -1569,6 +1628,7 @@ void TaskManager::UpdateDpb(
                     newDpbFrame.m_poc      = task.GetPoc();
                     newDpbFrame.m_viewIdx  = mfxU16(task.m_viewIdx);
                     newDpbFrame.m_longterm = true;
+                    newDpbFrame.m_keyRef = task.m_keyReference;
                     currDpb.PushBack(newDpbFrame);
                     assert(currDpb.Size() <= m_video.mfx.NumRefFrame);
 
@@ -1620,6 +1680,7 @@ void TaskManager::UpdateDpb(
                 newDpbFrame.m_viewIdx  = mfxU16(task.m_viewIdx);
                 newDpbFrame.m_longterm = 0;
                 newDpbFrame.m_refBase  = (mfxU8)refBase;
+                newDpbFrame.m_keyRef = task.m_keyReference;
                 currDpb.PushBack(newDpbFrame);
                 assert(currDpb.Size() <= m_video.mfx.NumRefFrame);
             }
@@ -1693,6 +1754,9 @@ namespace
         std::vector<Reconstruct> const & recons,
         DdiTask &                        task)
     {
+        if (video.calcParam.numTemporalLayer == 0)
+            return;
+
         task.m_internalListCtrlPresent = false;
         task.m_internalListCtrlHasPriority = true;
         task.m_internalListCtrlRefModLTR = false;

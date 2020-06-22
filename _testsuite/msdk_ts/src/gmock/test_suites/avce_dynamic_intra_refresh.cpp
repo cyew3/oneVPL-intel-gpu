@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -326,6 +326,8 @@ int TestSuite::RunTest(unsigned int id)
     CO2.IntRefCycleSize = tc.Init.IntRefCycleSize;
     CO2.IntRefQPDelta   = tc.Init.IntRefQPDelta;
     CO3.IntRefCycleDist = tc.Init.IntRefCycleDist;
+    // because of GopRefDist = 1
+    CO3.PRefType = MFX_P_REF_SIMPLE;
 
     m_irOrder = tc.Init.IntRefCycleDist == 0 ? -1 : 0;
 

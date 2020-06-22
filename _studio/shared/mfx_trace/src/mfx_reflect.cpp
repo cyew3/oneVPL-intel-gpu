@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 #include <cstddef>
 
 #include "mfxstructures.h"
+#include "mfxenctools.h"
 #include "mfxvp8.h"
 #include "mfxvp9.h"
 #include "mfxplugin.h"

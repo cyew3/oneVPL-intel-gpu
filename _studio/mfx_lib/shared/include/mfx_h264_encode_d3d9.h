@@ -124,7 +124,7 @@ namespace MfxHwH264Encode
         ENCODE_SET_PICTURE_PARAMETERS_H264 & pps,
         std::vector<ENCODE_RECT> &           dirtyRects,
         std::vector<MOVE_RECT> &             movingRects
-#ifdef MFX_ENABLE_LP_LOOKAHEAD
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         , mfxU32                             extPpsNum = 0
 #endif
     );

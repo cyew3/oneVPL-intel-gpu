@@ -1643,7 +1643,7 @@ mfxU32 Packer::GetPrefixSEI(
 
     if (bPackError)
         return 0;
-    
+
     bool bNeedOwnPT = (task.InsertHeaders & INSERT_PTSEI)
         && !std::any_of(prefixPL.begin(), prefixPL.end(), PLTypeEq<1>);
     if (bNeedOwnPT)

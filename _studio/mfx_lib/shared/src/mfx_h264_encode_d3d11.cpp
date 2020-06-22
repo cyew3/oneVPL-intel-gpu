@@ -524,7 +524,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         FillVaringPartOfSpsBuffer(m_sps, task, fieldId);
 
         FillVaringPartOfPpsBuffer(task, fieldId, m_pps, m_dirtyRects, m_movingRects
-#ifdef MFX_ENABLE_LP_LOOKAHEAD
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
             , m_headerPacker.GetPackedCqmPpsNum()
 #endif
         );
@@ -656,10 +656,17 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         FrameLocker lock(m_core, qpsurf, task.m_midMBQP);
 
         MFX_CHECK_WITH_ASSERT(qpsurf.Y, MFX_ERR_LOCK_MEMORY);
-
-        for (mfxU32 i = 0; i < hMB; i++)
-            MFX_INTERNAL_CPY(&qpsurf.Y[i * qpsurf.Pitch], &mbqp->QP[fieldOffset + i * wMB], wMB);
-
+        if (mbqp && mbqp->QP && mbqp->NumQPAlloc >= wMB * hMB) {
+            for (mfxU32 i = 0; i < hMB; i++)
+                MFX_INTERNAL_CPY(&qpsurf.Y[i * qpsurf.Pitch], &mbqp->QP[fieldOffset + i * wMB], wMB);
+        }
+#ifdef ENABLE_APQ_LQ
+        else if(task.m_ALQOffset) {
+            for (mfxU32 i = 0; i < hMB; i++)
+                for (mfxU32 j = 0; j < wMB; j++)
+                    qpsurf.Y[i * qpsurf.Pitch + j] = (mfxU8)mfx::clamp(task.m_ALQOffset + task.m_cqpValue[0], 1, 51);
+        }
+#endif
         m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
         m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].DataSize             = mfxU32(sizeof(m_idMBQP));
         m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = RES_ID_MBQP;
@@ -705,7 +712,7 @@ mfxStatus D3D11Encoder::ExecuteImpl(
         m_compBufDesc[m_encodeExecuteParams.NumCompBuffers].pCompBuffer          = RemoveConst(&packedPps[!!task.m_viewIdx]);
         m_encodeExecuteParams.NumCompBuffers++;
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         mfxU32 extCqmNum = m_headerPacker.GetPackedCqmPpsNum();
         if (extCqmNum > 0)
         {
@@ -1009,7 +1016,7 @@ mfxStatus D3D11Encoder::QueryHWGUID(
 
     D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(core);
     MFX_CHECK_NULL_PTR1(pD3d11);
-    
+
     ID3D11VideoDevice *pVideoDevice = pD3d11->GetD3D11VideoDevice(isTemporal);
     MFX_CHECK_NULL_PTR1(pVideoDevice);
 
@@ -1020,7 +1027,7 @@ mfxStatus D3D11Encoder::QueryHWGUID(
     bool EncodeGUIDFound = false;
     bool PrivateIntelGUIDFound = false;
 
- 
+
     GUID profileGuid;
     for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
     {
@@ -1040,7 +1047,7 @@ mfxStatus D3D11Encoder::QueryHWGUID(
         video_desc.OutputFormat = DXGI_FORMAT_NV12;
         video_desc.SampleWidth = 640;
         video_desc.SampleHeight = 480;
-        
+
         mfxU32  count = 0;
         HRESULT hr = pVideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
         CHECK_HRES(hr);
@@ -1080,7 +1087,7 @@ mfxStatus D3D11Encoder::Destroy()
 
 mfxStatus D3D11Encoder::Init(
     GUID guid,
-    ID3D11VideoDevice *pVideoDevice, 
+    ID3D11VideoDevice *pVideoDevice,
     ID3D11VideoContext *pVideoContext,
     mfxU32      width,
     mfxU32      height,
@@ -1110,7 +1117,7 @@ mfxStatus D3D11Encoder::Init(
     // Also newly created encoding device for MVC dependent view shouldn't be stored inside Core.
     bool bUseDecoderInCore = (guid != MSDK_Private_Guid_Encode_MVC_Dependent_View) && (guid != DXVA2_Intel_MFE);
 
-    ComPtrCore<ID3D11VideoDecoder>* pVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_core, MFXID3D11DECODER_GUID); 
+    ComPtrCore<ID3D11VideoDecoder>* pVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_core, MFXID3D11DECODER_GUID);
     MFX_CHECK(pVideoDecoder, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     D3D11_VIDEO_DECODER_DESC video_desc = {};
@@ -1269,12 +1276,12 @@ mfxU16 ownConvertD3DFMT_TO_MFX(DXGI_FORMAT format)
     switch( format )
     {
     case  DXGI_FORMAT_P8:
-        return MFX_FOURCC_P8;           
+        return MFX_FOURCC_P8;
 
     default:
         //return (mfxU16)MFX_FOURCC_NV12;
         return 0;
-    }    
+    }
 
 } // mfxU16 ownConvertD3DFMT_TO_MFX(DXGI_FORMAT format)
 
@@ -1382,8 +1389,8 @@ mfxStatus D3D11SvcEncoder::CreateAuxilliaryDevice(
 
     mfxStatus sts = Init(
         guid,
-        pD3d11->GetD3D11VideoDevice(isTemporal), 
-        pD3d11->GetD3D11VideoContext(isTemporal), 
+        pD3d11->GetD3D11VideoDevice(isTemporal),
+        pD3d11->GetD3D11VideoContext(isTemporal),
         width,
         height);
 
@@ -1509,9 +1516,9 @@ mfxStatus D3D11SvcEncoder::Register(
     D3DDDIFORMAT            type)
 {
     std::vector<mfxHDLPair> * queue = (type == D3DDDIFMT_NV12)
-        ? m_reconQueue 
+        ? m_reconQueue
         : m_bsQueue;
-    
+
     mfxU32 did = 0;
     for (; did < 8; did++)
         if (queue[did].empty())
@@ -1520,12 +1527,12 @@ mfxStatus D3D11SvcEncoder::Register(
     queue[did].resize(response.NumFrameActual);
 
     for (mfxU32 i = 0; i < response.NumFrameActual; i++)
-    {   
+    {
         mfxHDLPair handlePair;
 
         mfxStatus sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL *)&handlePair);
         MFX_CHECK_STS(sts);
-                        
+
         queue[did][i] = handlePair;
     }
 
@@ -1588,12 +1595,12 @@ mfxStatus D3D11SvcEncoder::Execute(
     D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC outputDesc;
     outputDesc.DecodeProfile = m_guid;
     outputDesc.ViewDimension = D3D11_VDOV_DIMENSION_TEXTURE2D;
-    outputDesc.Texture2D.ArraySlice = UINT(size_t(pair.second)); 
+    outputDesc.Texture2D.ArraySlice = UINT(size_t(pair.second));
     SAFE_RELEASE(m_pVDOView);
     hr = m_pVideoDevice->CreateVideoDecoderOutputView(pInputD3D11Res, &outputDesc, &m_pVDOView);
     CHECK_HRES(hr);
     hr = m_pVideoContext->DecoderBeginFrame(m_pDecoder, m_pVDOView, 0, 0);
-    CHECK_HRES(hr);    
+    CHECK_HRES(hr);
 
     mfxU32 ppsid = task.m_did * m_numql * m_numtl + task.m_qid * m_numtl + task.m_tid;
     ::FillVaringPartOfPpsBuffer(task, fieldId, m_pps[ppsid]);
@@ -1621,23 +1628,23 @@ mfxStatus D3D11SvcEncoder::Execute(
 
         sliceBufferBegin += m_packedSlice[i].BufferSize;
     }
-        
+
     // prepare resource list
     // it contains resources in video memory that needed for the encoding operation
     mfxU32       RES_ID_BITSTREAM   = 0;          // bitstream surface takes first place in resourceList
-    mfxU32       RES_ID_ORIGINAL    = 1;    
-    mfxU32       RES_ID_REFERENCE   = 2;          // then goes all reference frames from dpb    
-    mfxU32       RES_ID_RECONSTRUCT = RES_ID_REFERENCE + task.m_idxRecon;    
+    mfxU32       RES_ID_ORIGINAL    = 1;
+    mfxU32       RES_ID_REFERENCE   = 2;          // then goes all reference frames from dpb
+    mfxU32       RES_ID_RECONSTRUCT = RES_ID_REFERENCE + task.m_idxRecon;
 
-    mfxU32 resourceCount = mfxU32(RES_ID_REFERENCE + m_reconQueue[task.m_did].size());    
+    mfxU32 resourceCount = mfxU32(RES_ID_REFERENCE + m_reconQueue[task.m_did].size());
     std::vector<ID3D11Resource*> resourceList;
     resourceList.resize(resourceCount);
 
     resourceList[RES_ID_BITSTREAM]   = static_cast<ID3D11Resource*>(m_bsQueue[task.m_did][task.m_idxBs[fieldId]].first);
-    resourceList[RES_ID_ORIGINAL]    = pInputD3D11Res;    
-    
+    resourceList[RES_ID_ORIGINAL]    = pInputD3D11Res;
+
     for (mfxU32 i = 0; i < m_reconQueue[task.m_did].size(); i++)
-    {        
+    {
         resourceList[RES_ID_REFERENCE + i] = static_cast<ID3D11Resource*>(m_reconQueue[task.m_did][i].first);
     }
 
@@ -1653,7 +1660,7 @@ mfxStatus D3D11SvcEncoder::Execute(
     // [1]. buffers in system memory (configuration buffers)
     //const mfxU32 NUM_COMP_BUFFER = 10;
     //ENCODE_COMPBUFFERDESC encodeCompBufferDesc[NUM_COMP_BUFFER];
-    mfxU32 compBufferCount = mfxU32(10 + m_packedSlice.size());    
+    mfxU32 compBufferCount = mfxU32(10 + m_packedSlice.size());
     std::vector<ENCODE_COMPBUFFERDESC>  encodeCompBufferDesc;
     encodeCompBufferDesc.resize(compBufferCount);
     Zero(encodeCompBufferDesc);
@@ -1718,7 +1725,7 @@ mfxStatus D3D11SvcEncoder::Execute(
     decoderExtParams.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
     decoderExtParams.pPrivateOutputData    = 0;
     decoderExtParams.PrivateOutputDataSize = 0;
-    decoderExtParams.ResourceCount         = resourceCount; 
+    decoderExtParams.ResourceCount         = resourceCount;
     decoderExtParams.ppResourceList        = &resourceList[0];
 
     hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
@@ -1814,7 +1821,7 @@ mfxStatus D3D11SvcEncoder::QueryStatus(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11SvcEncoder::QueryStatus");
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
-    // As we won't get all bitstreams we need to cache all other statuses. 
+    // As we won't get all bitstreams we need to cache all other statuses.
 
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber[fieldId]);
@@ -1914,7 +1921,7 @@ mfxStatus D3D11SvcEncoder::Init(
     UINT profileCount = m_pVideoDevice->GetVideoDecoderProfileCount( );
     assert( profileCount > 0 );
 
-    bool isFound = false;    
+    bool isFound = false;
     GUID profileGuid;
     for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
     {
@@ -1946,13 +1953,13 @@ mfxStatus D3D11SvcEncoder::Init(
     CHECK_HRES(hRes);
 
     //for (int i = 0; i < count; i++)
-    //{               
+    //{
     //    hRes = m_pVideoDevice->GetVideoDecoderConfig(&video_desc, i, &video_config);
     //    CHECK_HRES(hRes);
 
         // mfxSts = CheckDXVAConfig(video_desc->Guid, pConfig));
         // MFX_CHECK_STS( mfxSts );
-    //}    
+    //}
 
     // [2] Calling other D3D11 Video Decoder API (as for normal proc)
 
@@ -1961,7 +1968,7 @@ mfxStatus D3D11SvcEncoder::Init(
     video_desc.SampleWidth  = width;
     video_desc.SampleHeight = height;
     video_desc.OutputFormat = DXGI_FORMAT_NV12;
-    video_desc.Guid = DXVA2_Intel_Encode_AVC; 
+    video_desc.Guid = DXVA2_Intel_Encode_AVC;
 
     // D3D11_VIDEO_DECODER_CONFIG video_config;
     video_config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;//encrypto will be added late
@@ -1994,7 +2001,7 @@ mfxStatus D3D11SvcEncoder::QueryHWGUID(
 
     D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(core);
     MFX_CHECK_NULL_PTR1(pD3d11);
-    
+
     ID3D11VideoDevice *pVideoDevice = pD3d11->GetD3D11VideoDevice(isTemporal);
     MFX_CHECK_NULL_PTR1(pVideoDevice);
 
@@ -2002,7 +2009,7 @@ mfxStatus D3D11SvcEncoder::QueryHWGUID(
     UINT profileCount = pVideoDevice->GetVideoDecoderProfileCount( );
     assert( profileCount > 0 );
 
- 
+
     GUID profileGuid;
     for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
     {
@@ -2022,7 +2029,7 @@ void D3D11SvcEncoder::PackSlice(
     DdiTask const &   task,
     mfxU32            fieldId,
     mfxU32            sliceId) const
-{   
+{
     obs, task, fieldId, sliceId;
 
 } // void D3D11SvcEncoder::PackSlice(...)

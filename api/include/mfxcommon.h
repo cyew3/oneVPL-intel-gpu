@@ -50,6 +50,20 @@ typedef struct {
 } mfxExtBuffer;
 MFX_PACK_END()
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef union {
+    struct {
+        mfxU8    Minor;
+        mfxU8    Major;
+    };
+    mfxU16    Version;
+} mfxStructVersion;
+MFX_PACK_END()
+
+#define MFX_STRUCT_VERSION(MAJOR, MINOR) (256*(MAJOR) + (MINOR))
+#endif
+
 /* Library initialization and deinitialization */
 typedef mfxI32 mfxIMPL;
 #define MFX_IMPL_BASETYPE(x) (0x00ff & (x))

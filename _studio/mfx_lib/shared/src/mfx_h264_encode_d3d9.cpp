@@ -173,7 +173,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     {
         sps.ScenarioInfo = eScenario_RemoteGaming;
     }
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
     sps.LookaheadDepth = (UCHAR)extOpt2.LookAheadDepth;
 #endif
 }
@@ -320,7 +320,7 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     ENCODE_SET_PICTURE_PARAMETERS_H264 & pps,
     std::vector<ENCODE_RECT> &           dirtyRects,
     std::vector<MOVE_RECT> &             movingRects
-#ifdef MFX_ENABLE_LP_LOOKAHEAD
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
     , mfxU32                             extPpsNum
 #endif
 )
@@ -454,6 +454,7 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
 
     pps.TargetFrameSize = task.m_TCBRCTargetFrameSize;
 
+
 #ifdef MFX_ENABLE_GPU_BASED_SYNC
     pps.bEnablePollingMode  = task.m_gpuSync.EnableSync;
     pps.bRepeatFrame        = task.m_gpuSync.RepeatFrame;
@@ -463,7 +464,7 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     pps.SourceMarkerStartY  = task.m_gpuSync.MarkerOffsetY;
 #endif
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
     // refresh pic_parameter_set_id for adaptive CQM
     if (task.m_lplastatus.CqmHint == CQM_HINT_USE_CUST_MATRIX && extPpsNum > 0)
     {
@@ -482,6 +483,9 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     if (task.m_lplastatus.TargetFrameSize > 0)
     {
         pps.TargetFrameSize = task.m_lplastatus.TargetFrameSize;
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
+        pps.QpModulationStrength = task.m_lplastatus.QpModulation;
+#endif
     }
 #endif
 }
@@ -1695,10 +1699,17 @@ mfxStatus D3D9Encoder::ExecuteImpl(
         FrameLocker lock(m_core, qpsurf, task.m_midMBQP);
 
         MFX_CHECK_WITH_ASSERT(qpsurf.Y, MFX_ERR_LOCK_MEMORY);
-
-        for (mfxU32 i = 0; i < hMB; i++)
-            MFX_INTERNAL_CPY(&qpsurf.Y[i * qpsurf.Pitch], &mbqp->QP[fieldOffset + i * wMB], wMB);
-
+        if (mbqp && mbqp->QP && mbqp->NumQPAlloc >= wMB * hMB) {
+            for (mfxU32 i = 0; i < hMB; i++)
+                MFX_INTERNAL_CPY(&qpsurf.Y[i * qpsurf.Pitch], &mbqp->QP[fieldOffset + i * wMB], wMB);
+        }
+#ifdef ENABLE_APQ_LQ
+        else if (task.m_ALQOffset) {
+            for (mfxU32 i = 0; i < hMB; i++)
+                for (mfxU32 j = 0; j < wMB; j++)
+                    qpsurf.Y[i * qpsurf.Pitch + j] = (mfxU8)mfx::clamp(task.m_ALQOffset + task.m_cqpValue[0], 1, 51);
+        }
+#endif
         m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_MBQPDATA;
         m_compBufDesc[bufCnt].DataSize             = mfxU32(sizeof(mbqpIdx));
         m_compBufDesc[bufCnt].pCompBuffer          = &mbqpIdx;

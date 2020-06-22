@@ -91,7 +91,7 @@ typedef struct
 //from "Intel_VP8_Encoding_DDI_v0.2"
 #define D3DDDIFMT_INTELENCODE_SEGMENTMAP        (D3DDDIFORMAT)178
 #define D3DDDIFMT_INTELENCODE_COEFFPROB         (D3DDDIFORMAT)179
-#define D3DDDIFMT_INTELENCODE_DISTORTIONDATA    (D3DDDIFORMAT)180 
+#define D3DDDIFMT_INTELENCODE_DISTORTIONDATA    (D3DDDIFORMAT)180
 
 // From "Intel_JPEG_Encoding_DDI_Rev0.103"
 #define D3DDDIFMT_INTEL_JPEGENCODE_PPSDATA    (D3DDDIFORMAT)161 // D3DDDIFMT_DXVA_RESERVED11
@@ -714,32 +714,32 @@ typedef struct tagENCODE_CAPS_JPEG
 ////////////////////////////////////////////////////////////////////////////////
 // this structure is used to define the caps for VP8.
 ///////////////////////////////////////////////////////////////////////////////
-typedef struct tagENCODE_CAPS_VP8 
-{ 
-    union { 
-        struct { 
-            UINT CodingLimitSet      : 1; 
-            UINT Color420Only        : 1; 
-            UINT SegmentationAllowed : 1; 
-            UINT CoeffPartitionLimit : 2; 
-            UINT FrameLevelRateCtrl  : 1; 
-            UINT BRCReset            : 1; 
-            UINT                     : 25; 
-        }; 
+typedef struct tagENCODE_CAPS_VP8
+{
+    union {
+        struct {
+            UINT CodingLimitSet      : 1;
+            UINT Color420Only        : 1;
+            UINT SegmentationAllowed : 1;
+            UINT CoeffPartitionLimit : 2;
+            UINT FrameLevelRateCtrl  : 1;
+            UINT BRCReset            : 1;
+            UINT                     : 25;
+        };
         UINT CodingLimits;
-    }; 
-        
-    union { 
-        struct { 
-            BYTE EncodeFunc    : 1; 
-            BYTE HybridPakFunc : 1; // Hybrid Pak function for BDW 
-            BYTE               : 6; 
-        }; 
-        BYTE CodingFunction; 
-    }; 
-        
-    UINT MaxPicWidth; 
-    UINT MaxPicHeight; 
+    };
+
+    union {
+        struct {
+            BYTE EncodeFunc    : 1;
+            BYTE HybridPakFunc : 1; // Hybrid Pak function for BDW
+            BYTE               : 6;
+        };
+        BYTE CodingFunction;
+    };
+
+    UINT MaxPicWidth;
+    UINT MaxPicHeight;
 } ENCODE_CAPS_VP8;
 
 // this enumeration is used to define the block size for intra prediction. they
@@ -1275,7 +1275,12 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     USHORT      SourceMarkerStartY;
     UCHAR*      SourceMarkerValue;
     UINT        SourceMarkerSize;
-    UINT        reserved32b[8];
+
+    UCHAR       HierarchLevelPlus1;
+    UCHAR       QpModulationStrength;
+    UCHAR       reserved8b[2];
+
+    UINT        reserved32b[7];
 #endif
 } ENCODE_SET_PICTURE_PARAMETERS_H264;
 
@@ -1413,9 +1418,9 @@ typedef struct tagENCODE_SET_SLICE_HEADER_H264
     CHAR                slice_alpha_c0_offset_div2;
     CHAR                slice_beta_offset_div2;
     UINT                slice_id;
-	
-	UINT	luma_weight_flag[2];		// for l0/l1
-	UINT	chroma_weight_flag[2];	// for l0/l1
+
+    UINT                luma_weight_flag[2]; // for l0/l1
+    UINT                chroma_weight_flag[2]; // for l0/l1
 
 } ENCODE_SET_SLICE_HEADER_H264;
 
@@ -1648,7 +1653,7 @@ typedef struct tagENCODE_SET_PICTURE_QUANT
         DXVA_Qmatrix_H264 QmatrixAVC;
         DXVA_QmatrixData QmatrixMPEG2;
     };
-}ENCODE_SET_PICTURE_QUANT; 
+}ENCODE_SET_PICTURE_QUANT;
 
 ////////////////////////////////////////////////////////////////////////////////
 // this enumeration is used to define the input picture structure. VME can only
@@ -1814,7 +1819,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_SVC
 
     UCHAR           disable_inter_layer_deblocking_filter_idc   : 3;
     UCHAR           next_layer_resolution_change_flag           : 1;
-    UCHAR           Reserved2                                   : 4; 
+    UCHAR           Reserved2                                   : 4;
 
     CHAR            inter_layer_slice_alpha_c0_offset_div2;
     CHAR            inter_layer_slice_beta_offset_div2;
@@ -1868,90 +1873,90 @@ typedef struct tagENCODE_SET_SLICE_HEADER_SVC
 } ENCODE_SET_SLICE_HEADER_SVC;
 
 
-typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_VP8 
-{ 
-    USHORT wFrameWidth        :   14; 
-    USHORT wFrameWidthScale :    2; 
+typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_VP8
+{
+    USHORT wFrameWidth        :   14;
+    USHORT wFrameWidthScale :    2;
     USHORT wFrameHeight        :   14;
     USHORT wFrameHeightScale:    2;
 
-    USHORT GopPicSize; 
-   
-    UCHAR TargetUsage; 
-    UCHAR RateControlMethod; 
-    UINT  TargetBitRate[256]; 
-    UINT  MaxBitRate; 
-    UINT  MinBitRate; 
-    ULONG InitVBVBufferFullnessInBit; 
-    ULONG VBVBufferSizeInBit; 
-    
-    union 
-    { 
-        struct 
-        { 
-            BOOL bResetBRC               : 1; 
-            BOOL bNoFrameHeaderInsertion : 1; 
+    USHORT GopPicSize;
+
+    UCHAR TargetUsage;
+    UCHAR RateControlMethod;
+    UINT  TargetBitRate[256];
+    UINT  MaxBitRate;
+    UINT  MinBitRate;
+    ULONG InitVBVBufferFullnessInBit;
+    ULONG VBVBufferSizeInBit;
+
+    union
+    {
+        struct
+        {
+            BOOL bResetBRC               : 1;
+            BOOL bNoFrameHeaderInsertion : 1;
             BOOL bUseRawReconRef         : 1;
             BOOL MBBRC                   : 4;
-            BOOL bReserved               : 25; 
-        }; 
-        BOOL sFlags; 
-    }; 
-    
-    UINT   UserMaxFrameSize; 
-    USHORT AVBRAccuracy; 
+            BOOL bReserved               : 25;
+        };
+        BOOL sFlags;
+    };
+
+    UINT   UserMaxFrameSize;
+    USHORT AVBRAccuracy;
     USHORT AVBRConvergence;
     USHORT FramesPer100Sec[256];
 } ENCODE_SET_SEQUENCE_PARAMETERS_VP8;
 
 
-typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP8 
-{ 
-    ENCODE_PICENTRY CurrOriginalPic; 
-    ENCODE_PICENTRY CurrReconstructedPic; 
-    ENCODE_PICENTRY LastRefPic; 
-    ENCODE_PICENTRY GoldenRefPic; 
-    ENCODE_PICENTRY AltRefPic; 
-    
-    union 
-    { 
-        UINT uPicFlags; 
+typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP8
+{
+    ENCODE_PICENTRY CurrOriginalPic;
+    ENCODE_PICENTRY CurrReconstructedPic;
+    ENCODE_PICENTRY LastRefPic;
+    ENCODE_PICENTRY GoldenRefPic;
+    ENCODE_PICENTRY AltRefPic;
 
-        struct 
-        { 
-            UINT frame_type               : 1; 
+    union
+    {
+        UINT uPicFlags;
+
+        struct
+        {
+            UINT frame_type               : 1;
             UINT version                  : 3;
             UINT show_frame               : 1;
             UINT color_space              : 1;
             UINT clamping_type            : 1;
 
-            UINT segmentation_enabled       : 1; 
-            UINT update_mb_segmentation_map : 1; 
-            UINT update_segment_feature_data: 1;             
-            UINT filter_type                : 1; 
+            UINT segmentation_enabled       : 1;
+            UINT update_mb_segmentation_map : 1;
+            UINT update_segment_feature_data: 1;
+            UINT filter_type                : 1;
 
-            UINT loop_filter_adj_enable   : 1; 
+            UINT loop_filter_adj_enable   : 1;
             UINT CodedCoeffTokenPartition : 2;
-            UINT refresh_golden_frame     : 1; 
-            UINT refresh_alternate_frame  : 1; 
-            UINT copy_buffer_to_golden    : 2;            
+            UINT refresh_golden_frame     : 1;
+            UINT refresh_alternate_frame  : 1;
+            UINT copy_buffer_to_golden    : 2;
             UINT copy_buffer_to_alternate : 2;
 
-            UINT sign_bias_golden         : 1; 
-            UINT sign_bias_alternate      : 1; 
-            UINT refresh_entropy_probs    : 1; 
-            UINT refresh_last             : 1; 
+            UINT sign_bias_golden         : 1;
+            UINT sign_bias_alternate      : 1;
+            UINT refresh_entropy_probs    : 1;
+            UINT refresh_last             : 1;
 
-            UINT mb_no_coeff_skip         : 1; 
+            UINT mb_no_coeff_skip         : 1;
             UINT forced_lf_adjustment     : 1;
             UINT ref_frame_ctrl           : 3;
-            UINT                          : 3; 
-        }; 
-    }; 
+            UINT                          : 3;
+        };
+    };
 
-    CHAR    loop_filter_level[4]; 
-    CHAR    ref_lf_delta[4]; 
-    CHAR    mode_lf_delta[4]; 
+    CHAR    loop_filter_level[4];
+    CHAR    ref_lf_delta[4];
+    CHAR    mode_lf_delta[4];
     UCHAR   sharpness_level;
     USHORT  RefFrameCost[4];
     UINT    StatusReportFeedbackNumber;

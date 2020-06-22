@@ -129,6 +129,7 @@ foreach( variant ${VARIANTS} )
       h264_la
       genx
       mfx_common_${variant}
+      enctools_hw           ## open-source-cut-line
       asc
       mctf_hw
       vpp_${variant}
@@ -154,7 +155,7 @@ foreach( variant ${VARIANTS} )
       genx
       decode_${variant}
       decode_ext_${variant}
-      encode_hw
+      encode_hw             ## open-source-cut-line
       enc_hw
       h264_la
       genx
@@ -172,6 +173,7 @@ foreach( variant ${VARIANTS} )
       h264_sse3
       pak
       mfx_common_${variant}
+      enctools_hw
       asc
       mctf_hw
       vpp_${variant}

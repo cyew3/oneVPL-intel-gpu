@@ -379,6 +379,9 @@
     <ProjectReference Include="vpp\vpp_hw.vcxproj">
       <Project>{55E35FCA-3EFB-4E12-899C-AF56AA2A009D}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\enctools\enctools_lib.vcxproj">
+      <Project>{A4BED5C9-AF18-4BC6-A881-4B32031D8ADD}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />

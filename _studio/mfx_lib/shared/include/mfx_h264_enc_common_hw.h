@@ -35,8 +35,11 @@
 #include "mfx_ext_buffers.h"
 #include "mfxwidi.h"
 #include "mfxfei.h"
+#ifdef MFX_ENABLE_ENCTOOLS
+#include "mfxenctools.h"
+#else
 #include "mfxbrc.h"
-
+#endif
 #if defined(MFX_VA_WIN)
 #include "encoding_ddi.h"
 #include "auxiliary_device.h"
@@ -55,6 +58,8 @@
 
 #include "umc_defs.h"
 #include "ipps.h"
+
+#define ENABLE_APQ_LQ
 
 #define LOWPOWERENCODE_AVC
 
@@ -271,9 +276,25 @@ namespace MfxHwH264Encode
 #if defined (MFX_ENABLE_GPU_BASED_SYNC)
     BIND_EXTBUF_TYPE_TO_ID(mfxExtGameStreaming,          MFX_EXTBUFF_GAME_STREAMING          );
 #endif
-
 #if defined (MFX_ENABLE_PARTIAL_BITSTREAM_OUTPUT)
     BIND_EXTBUF_TYPE_TO_ID(mfxExtPartialBitstreamParam,  MFX_EXTBUFF_PARTIAL_BITSTREAM_PARAM );
+#endif
+#if defined (MFX_ENABLE_ENCTOOLS)
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncTools, MFX_EXTBUFF_ENCTOOLS);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsBRCFrameParams, MFX_EXTBUFF_ENCTOOLS_BRC_FRAME_PARAM);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsBRCQuantControl, MFX_EXTBUFF_ENCTOOLS_BRC_QUANT_CONTROL);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsBRCHRDPos, MFX_EXTBUFF_ENCTOOLS_BRC_HRD_POS);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsBRCEncodeResult, MFX_EXTBUFF_ENCTOOLS_BRC_ENCODE_RESULT);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsBRCStatus, MFX_EXTBUFF_ENCTOOLS_BRC_STATUS);
+    BIND_EXTBUF_TYPE_TO_ID(mfxExtEncToolsConfig, MFX_EXTBUFF_ENCTOOLS_CONFIG);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsCtrlExtDevice, MFX_EXTBUFF_ENCTOOLS_DEVICE);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsCtrlExtAllocator, MFX_EXTBUFF_ENCTOOLS_ALLOCATOR);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsFrameToAnalyze, MFX_EXTBUFF_ENCTOOLS_FRAME_TO_ANALYZE);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsHintPreEncodeSceneChange, MFX_EXTBUFF_ENCTOOLS_HINT_SCENE_CHANGE);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsHintPreEncodeGOP, MFX_EXTBUFF_ENCTOOLS_HINT_GOP);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsHintPreEncodeARefFrames, MFX_EXTBUFF_ENCTOOLS_HINT_AREF);
+    BIND_EXTBUF_TYPE_TO_ID(mfxEncToolsBRCBufferHint, MFX_EXTBUFF_ENCTOOLS_BRC_BUFFER_HINT);
+
 #endif
 
 #undef BIND_EXTBUF_TYPE_TO_ID
@@ -313,7 +334,26 @@ namespace MfxHwH264Encode
         for (mfxU32 i = 0; i < 16; i++)
             extBuf.LongTermRefList[i].FrameOrder = mfxU32(MFX_FRAMEORDER_UNKNOWN);
     }
+#if defined(MFX_ENABLE_ENCTOOLS)
+    template <> inline void InitExtBufHeader<mfxExtEncToolsConfig>(mfxExtEncToolsConfig & extBuf)
+    {
+        Zero(extBuf);
+        extBuf.Header.BufferId = ExtBufTypeToId<mfxExtEncToolsConfig>::id;
+        extBuf.Header.BufferSz = sizeof(mfxExtEncToolsConfig);
 
+        extBuf.AdaptiveI =
+            extBuf.AdaptiveB =
+            extBuf.AdaptiveRefP =
+            extBuf.AdaptiveRefB =
+            extBuf.SceneChange =
+            extBuf.AdaptiveLTR =
+            extBuf.AdaptivePyramidQuantP =
+            extBuf.AdaptivePyramidQuantB =
+            extBuf.AdaptiveQuantMatrices =
+            extBuf.BRCBufferHints =
+            extBuf.BRC = MFX_CODINGOPTION_OFF;
+    }
+#endif
     template <class T> struct GetPointedType {};
     template <class T> struct GetPointedType<T *> { typedef T Type; };
     template <class T> struct GetPointedType<T const *> { typedef T Type; };
@@ -606,7 +646,7 @@ namespace MfxHwH264Encode
 
         void ApplyDefaultsToMvcSeqDesc();
 
-#ifdef MFX_ENABLE_LP_LOOKAHEAD
+#if defined (MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         mfxExtPpsHeader& GetCqmPps()
         {
             return m_extCqmPps;
@@ -624,7 +664,11 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
+#if defined(MFX_ENABLE_ENCTOOLS)
+        mfxExtBuffer *              m_extParam[40];
+#else
         mfxExtBuffer *              m_extParam[35];
+#endif
         // external, documented
         mfxExtCodingOption          m_extOpt;
         mfxExtCodingOption2         m_extOpt2;
@@ -667,6 +711,12 @@ namespace MfxHwH264Encode
 #if defined(__MFXBRC_H__)
         mfxExtBRC                   m_extBRC;
 #endif
+#if defined(MFX_ENABLE_ENCTOOLS)
+        mfxEncTools                     m_encTools;
+        mfxExtEncToolsConfig            m_encToolsConfig;
+        mfxEncToolsCtrlExtDevice        m_extDevice;
+        mfxEncToolsCtrlExtAllocator     m_extAllocator;
+#endif
 
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)
         mfxExtAVCScalingMatrix      m_extQM;
@@ -674,8 +724,10 @@ namespace MfxHwH264Encode
 #if defined(MFX_ENABLE_GPU_BASED_SYNC)
         mfxExtGameStreaming         m_extGameStreaming;
 #endif
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         mfxExtLplaParam            m_extLowpowerLA;
+#endif
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         mfxExtPpsHeader            m_extCqmPps;
 #endif
 
@@ -738,6 +790,7 @@ namespace MfxHwH264Encode
     };
 
     bool   isSWBRC (MfxVideoParam const & par);
+    bool   isAdaptiveQP(MfxVideoParam const & par);
     mfxU16 GetMaxNumSlices(MfxVideoParam const & par);
 
     mfxU16 GetNumSurfInput(MfxVideoParam const & video);
@@ -768,6 +821,11 @@ namespace MfxHwH264Encode
     bool IsLookAheadSupported(
         MfxVideoParam const & video,
         eMFXHWType            platform);
+
+   mfxU32 GetPPyrSize(
+        MfxVideoParam const & video,
+        mfxU32 miniGopSize,
+        bool   bEncToolsLA);
 
     bool  IsExtBrcSceneChangeSupported(
         MfxVideoParam const & video);
@@ -954,7 +1012,7 @@ namespace MfxHwH264Encode
         mfxU32          id,
         mfxU32          offset = 0);
 
-#ifdef MFX_ENABLE_LP_LOOKAHEAD
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA)
     bool IsLpLookaheadSupported(
         mfxU16 scenario,
         mfxU16 lookaheadDepth,
@@ -1553,7 +1611,7 @@ namespace MfxHwH264Encode
 
         std::vector<ENCODE_PACKEDHEADER_DATA> const & GetPps(bool cqmPps = false ) const {
             (void)cqmPps;
-#ifdef MFX_ENABLE_LP_LOOKAHEAD
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
             if (cqmPps)
                 return m_packedCqmPps;
 #endif
@@ -1571,7 +1629,7 @@ namespace MfxHwH264Encode
         void GetHeadersInfo(std::vector<mfxEncodedUnitInfo> &HeadersMap, DdiTask const& task, mfxU32 fid);
 #endif
 
-#ifdef MFX_ENABLE_LP_LOOKAHEAD
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         mfxU32 GetPackedCqmPpsNum() { return (mfxU32)m_packedCqmPps.size(); }
 #endif
 
@@ -1623,7 +1681,7 @@ namespace MfxHwH264Encode
         static const mfxU32 SPSPPS_BUFFER_SIZE = 1024;
         static const mfxU32 SLICE_BUFFER_SIZE  = 2048;
 
-#ifdef MFX_ENABLE_LP_LOOKAHEAD
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)  || defined(MFX_ENABLE_ENCTOOLS_LPLA)
         std::vector<mfxExtPpsHeader>            m_cqmPps;
         std::vector<ENCODE_PACKEDHEADER_DATA>   m_packedCqmPps;
         static const mfxU32 CQM_PPS_NUM = 1;

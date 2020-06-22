@@ -180,6 +180,19 @@ struct sInputParams
 
     bool isV4L2InputEnabled;
 
+    // enctools config
+    bool   bEncTools;
+    mfxU16 etAdaptiveI;
+    mfxU16 etAdaptiveB;
+    mfxU16 etArefP;
+    mfxU16 etArefB;
+    mfxU16 etSceneChange;
+    mfxU16 etALTR;
+    mfxU16 etApyrQP;
+    mfxU16 etApyrQB;
+    mfxU16 etBRCHints;
+    mfxU16 etBRC;
+
     mfxU16 CodecLevel;
     mfxU16 CodecProfile;
     mfxU16 MaxKbps;
@@ -201,6 +214,7 @@ struct sInputParams
     mfxU16 ExtBrcAdaptiveLTR;
     mfxU16 PartialOutputMode;
     mfxU16 PartialOutputBlockSize;
+    mfxU16 ScenarioInfo;
 
     mfxU16 IntRefType;
     mfxU16 IntRefCycleSize;
@@ -358,6 +372,7 @@ protected:
     std::string m_strDevicePath; //path to device for processing
 #endif
 
+    mfxExtEncToolsConfig m_et_config;
     std::vector<mfxPayload*> m_UserDataUnregSEI;
 
     CHWDevice *m_hwdev;

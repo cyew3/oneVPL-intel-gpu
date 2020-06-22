@@ -80,6 +80,7 @@ protected:
     MFXExtBufferPtr<mfxExtCodingOption2> m_extCodingOptions2;
     MFXExtBufferPtr<mfxExtCodingOption3> m_extCodingOptions3;
     MFXExtBufferPtr<mfxExtCodingOptionDDI> m_extCodingOptionsDDI;
+    MFXExtBufferPtr<mfxExtEncToolsConfig> m_extEncToolsConfig;
     MFXExtBufferPtr<mfxExtCodingOptionQuantMatrix> m_extCodingOptionsQuantMatrix;
     MFXExtBufferPtr<mfxExtDumpFiles>   m_extDumpFiles;
     MFXExtBufferPtr<mfxExtVideoSignalInfo> m_extVideoSignalInfo;

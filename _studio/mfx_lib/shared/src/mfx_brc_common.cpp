@@ -417,7 +417,7 @@ mfxI32 GetNewQP(mfxF64 totalFrameBits, mfxF64 targetFrameSizeInBits, mfxI32 minQ
     return mfx::clamp(qp_new, minQP, maxQP);
 }
 
-// Get QP Offset for given frame and Adaptive Pyramid QP class 
+// Get QP Offset for given frame and Adaptive Pyramid QP class
 // level = Pyramid level or Layer for 8GOP Pyramid, value [1-3]
 // isRef = zero for non-reference frame
 // clsAPQ = Adaptive Pyramid QP class, value [0-1]
@@ -883,12 +883,12 @@ inline  mfxU16 CheckHrdAndUpdateQP(HRDCodecSpec &hrd, mfxU32 frameSizeInBits, mf
 {
     if (frameSizeInBits > hrd.GetMaxFrameSizeInBits(eo, bIdr))
     {
-        hrd.SetUndeflowQuant(currQP);
+        hrd.SetUnderflowQuant(currQP);
         return MFX_BRC_BIG_FRAME;
     }
     else if (frameSizeInBits < hrd.GetMinFrameSizeInBits(eo, bIdr))
     {
-        hrd.SetUndeflowQuant(currQP);
+        hrd.SetOverflowQuant(currQP);
         return MFX_BRC_SMALL_FRAME;
     }
     return MFX_BRC_OK;
@@ -1055,7 +1055,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         UpdateMinQForMaxFrameSize(&m_par, bitsEncoded, qpY, &m_ctx, picType, bSHStart, brcSts);
 
     if (frame_par->NumRecode < 2)
-    // Check other condions for recoding (update qp is it is needed)
+    // Check other condions for recoding (update qp if it is needed)
     {
         mfxF64 targetFrameSize = std::max<mfxF64>(m_par.inputBitsPerFrame, fAbLong);
         mfxF64 dqf = (m_par.bFieldMode) ? 1.0 : DQF(picType, m_par.iDQp, ((picType == MFX_FRAMETYPE_IDR) ? m_par.mIntraBoost : false), (ParSceneChange || m_ctx.encOrder == 0));

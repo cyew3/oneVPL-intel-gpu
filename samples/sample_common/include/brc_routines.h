@@ -53,12 +53,14 @@ NalHrdConformance | VuiNalHrdParameters   |  Result
     on (or default)      on (or default)    => MFX_BRC_HRD_STRONG
 --------------------------------------------------------------
 */
+#ifndef __MFXENCTOOLS_H__
 enum : mfxU16
 {
     MFX_BRC_NO_HRD = 0,
     MFX_BRC_HRD_WEAK,  // IF HRD CALCULATION IS REQUIRED, BUT NOT WRITTEN TO THE STREAM
     MFX_BRC_HRD_STRONG
 };
+#endif
 
 class cBRCParams
 {

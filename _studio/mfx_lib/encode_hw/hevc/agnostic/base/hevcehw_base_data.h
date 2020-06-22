@@ -28,7 +28,7 @@
 #include "ehw_resources_pool.h"
 #include "ehw_device.h"
 #include <vector>
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined (MFX_ENABLE_ENCTOOLS_LPLA)
 #include "mfx_lp_lookahead.h"
 #endif
 
@@ -324,7 +324,7 @@ namespace Base
         mfxU8  chroma_loc_info_present_flag        : 1;
         mfxU8  chroma_sample_loc_type_top_field    : 3;
         mfxU8  chroma_sample_loc_type_bottom_field : 3;
-    
+
         mfxU8  neutral_chroma_indication_flag : 1;
         mfxU8  field_seq_flag                 : 1;
         mfxU8  frame_field_info_present_flag  : 1;
@@ -400,7 +400,7 @@ namespace Base
 
         mfxU8  scaling_list_enabled_flag      : 1;
         mfxU8  scaling_list_data_present_flag : 1;
-    
+
         mfxU8  amp_enabled_flag                    : 1;
         mfxU8  sample_adaptive_offset_enabled_flag : 1;
 
@@ -683,7 +683,7 @@ namespace Base
     constexpr mfxU8 CODING_TYPE_B2 = 5; //B2, references include B1
 
     // Min frame params required for Reorder, RPL/DPB management
-    struct FrameBaseInfo 
+    struct FrameBaseInfo
         : Storable
     {
         mfxI32   POC            = -1;
@@ -805,7 +805,7 @@ namespace Base
 
         struct DPBs
         {
-            DpbArray 
+            DpbArray
                 Active   // available during task execution (modified dpb[BEFORE] )
                 , After  // after task execution (ACTIVE + curTask if ref)
                 , Before // after previous task execution (prevTask dpb[AFTER])
@@ -1147,7 +1147,7 @@ namespace Base
             , const Defaults::Param&
             , mfxU16(*)[8] //P
             , mfxU16(*)[8] //BL0
-            , mfxU16(*)[8]>; //BL1 
+            , mfxU16(*)[8]>; //BL1
         TGetNumRefActive GetNumRefActive;
 
         using TGetQPOffset = CallChain<
@@ -1339,6 +1339,7 @@ namespace Base
         , FEATURE_LPLA_ANALYSIS
         , FEATURE_LPLA_ENCODE
         , FEATURE_RECON_INFO
+        , FEATURE_LPLA_STATUS
         , NUM_FEATURES
     };
 

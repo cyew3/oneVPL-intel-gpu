@@ -1142,6 +1142,14 @@
     <ClCompile Include="src\gmock\test_suites\avce_qp_offset.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_et_mds_query_init.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_et_gs_query_init.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_et_mds_encode.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
     <ClCompile Include="src\gmock\test_suites\hevce_load.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
     </ClCompile>

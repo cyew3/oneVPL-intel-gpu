@@ -27,6 +27,13 @@ STRUCT(mfxVersion,
     FIELD_T(mfxU32, Version)
 )
 
+STRUCT(mfxStructVersion,
+    FIELD_T(mfxU8, Minor)
+    FIELD_T(mfxU8, Major)
+    FIELD_T(mfxU16, Version)
+)
+
+
 STRUCT(mfxBitstream,
     FIELD_T(mfxEncryptedData*, EncryptedData  )
     FIELD_T(mfxExtBuffer **  , ExtParam       )
@@ -1685,5 +1692,24 @@ STRUCT(mfxExtAV1LargeScaleTileParam,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16, AnchorFramesSource)
     FIELD_T(mfxU16, AnchorFramesNum)
+)
+#endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+STRUCT(mfxExtEncToolsConfig,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_S(mfxStructVersion,  Version)
+    FIELD_T(mfxU16, AdaptiveI)
+    FIELD_T(mfxU16, AdaptiveB)
+    FIELD_T(mfxU16, AdaptiveRefP)
+    FIELD_T(mfxU16, AdaptiveRefB)
+    FIELD_T(mfxU16, SceneChange)
+    FIELD_T(mfxU16, AdaptiveLTR)
+    FIELD_T(mfxU16, AdaptivePyramidQuantP)
+    FIELD_T(mfxU16, AdaptivePyramidQuantB)
+    FIELD_T(mfxU16, AdaptiveQuantMatrices)
+    FIELD_T(mfxU16, BRCBufferHints)
+    FIELD_T(mfxU16, BRC)
+    FIELD_T(mfxU16, reserved) /* Fixed size array */
 )
 #endif

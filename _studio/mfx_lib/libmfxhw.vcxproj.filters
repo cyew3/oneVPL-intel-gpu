@@ -158,6 +158,9 @@
     <ClCompile Include="genx\copy_kernels\src\genx_tgllp_copy_isa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="genx\copy_kernels\src\genx_dg2_copy_isa.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\shared\include\auxiliary_device.h">
@@ -299,6 +302,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="encode_hw\h265\include\hevce_ddi_main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\build\win_x64\lib\media_sdk_etw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

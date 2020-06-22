@@ -39,6 +39,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxfei.h"
 #include "mfxfeihevc.h"
 #include "mfxmvc.h"
+#include "mfxenctools.h"
 
 #include "vm/strings_defs.h"
 #include "vm/file_defs.h"
@@ -326,6 +327,9 @@ template<>struct mfx_ext_buffer_id<mfxExtHEVCRegion> {
 };
 template<>struct mfx_ext_buffer_id<mfxExtAVCRoundingOffset> {
     enum {id = MFX_EXTBUFF_AVC_ROUNDING_OFFSET};
+};
+template<>struct mfx_ext_buffer_id<mfxExtEncToolsConfig> {
+    enum { id = MFX_EXTBUFF_ENCTOOLS_CONFIG };
 };
 
 constexpr uint16_t max_num_ext_buffers = 24 * 2; // '*2' is for max estimation if all extBuffer were 'paired'

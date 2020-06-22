@@ -1099,6 +1099,9 @@ int RunTest(unsigned int id)
                 tsStruct::set(enc.m_pPar, *ctrl.field, ctrl.value);
 
         ((mfxExtCodingOption2&)enc.m_par).BRefType = tc.BRef;
+        if (enc.m_par.mfx.GopRefDist == 1) {
+            ((mfxExtCodingOption3&)enc.m_par).PRefType = MFX_P_REF_SIMPLE;
+        }
         std::string inputName;
         if (g_tsConfig.sim)
         {

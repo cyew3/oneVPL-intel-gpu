@@ -638,6 +638,21 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         codingOption->VuiNalHrdParameters = pInParams->nVuiNalHrdParameters;
     }
 
+    if (pInParams->bEncTools)
+    {
+        auto et_config = m_mfxEncParams.AddExtBuffer<mfxExtEncToolsConfig>();
+        et_config->AdaptiveI             = pInParams->etAdaptiveI;
+        et_config->AdaptiveB             = pInParams->etAdaptiveB;
+        et_config->AdaptiveRefP          = pInParams->etArefP;
+        et_config->AdaptiveRefB          = pInParams->etArefB;
+        et_config->SceneChange           = pInParams->etSceneChange;
+        et_config->AdaptiveLTR           = pInParams->etALTR;
+        et_config->AdaptivePyramidQuantB = pInParams->etApyrQB;
+        et_config->AdaptivePyramidQuantP = pInParams->etApyrQP;
+        et_config->BRCBufferHints        = pInParams->etBRCHints;
+        et_config->BRC                   = pInParams->etBRC;
+    }
+
     // configure the depth of the look ahead BRC if specified in command line
     if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nMaxFrameSize || pInParams->nBRefType ||
         (pInParams->BitrateLimit && pInParams->CodecId == MFX_CODEC_AVC) ||
@@ -683,7 +698,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         || pInParams->DeblockingAlphaTcOffset || pInParams->DeblockingBetaOffset
 #endif
-        || pInParams->WinBRCMaxAvgKbps)
+        || pInParams->WinBRCMaxAvgKbps || pInParams->ScenarioInfo)
     {
         auto codingOption3 = m_mfxEncParams.AddExtBuffer<mfxExtCodingOption3>();
         if (pInParams->CodecId == MFX_CODEC_HEVC)
@@ -708,6 +723,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 #endif
         codingOption3->WinBRCSize = pInParams->WinBRCSize;
         codingOption3->WinBRCMaxAvgKbps = pInParams->WinBRCMaxAvgKbps;
+        codingOption3->ScenarioInfo = pInParams->ScenarioInfo;
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
         if (pInParams->DeblockingAlphaTcOffset || pInParams->DeblockingBetaOffset)

@@ -87,6 +87,24 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
                 task.LplaStatus.CqmHint = CQM_HINT_INVALID;
                 task.LplaStatus.TargetFrameSize = 0;
             }
+
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
+            mfxExtLpLaStatus* pLpLa = ExtBuffer::Get(*task.pBsOut);
+            if (pLpLa)
+            {
+                if (pLPLA.ValidInfo)
+                {
+                    pLpLa->StatusReportFeedbackNumber = pLPLA.StatusReportFeedbackNumber;
+                    pLpLa->CqmHint = pLPLA.CqmHint;
+                    pLpLa->IntraHint = pLPLA.IntraHint;
+                    pLpLa->MiniGopSize = pLPLA.MiniGopSize;
+                    pLpLa->QpModulationStrength = pLPLA.QpModulationStrength;
+                    pLpLa->TargetFrameSize = pLPLA.TargetFrameSize;
+                    pLpLa->TargetBufferFullnessInBit = pLPLA.TargetBufferFulness;
+                }
+                else pLpLa->CqmHint = CQM_HINT_INVALID;
+            }
+#endif
         });
 
         return MFX_ERR_NONE;

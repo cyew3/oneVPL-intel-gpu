@@ -259,9 +259,12 @@
     <ClCompile Include="src\gmock\test_suites\av1d_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\av1d_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_dirty_rect.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_et_gs_query_init.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_et_mds_encode.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_extbrcadaptiveltr.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mbbrc.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_init.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_et_mds_query_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_nalu_size.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_qp_offset.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_reset_cbr_hrd_conf_vui.cpp" />

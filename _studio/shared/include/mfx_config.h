@@ -47,10 +47,17 @@
 #define MFX_ENABLE_VPP_SVC
 #endif // #ifndef OPEN_SOURCE
 
+//#if (MFX_VERSION >= MFX_VERSION_NEXT)
+//#define MFX_ENABLE_ENCTOOLS
+//#endif
+
 #if defined(_WIN32) || defined(_WIN64)
 #undef MFX_DEBUG_TOOLS
 #define MFX_DEBUG_TOOLS
 
+#ifdef MFX_ENABLE_ENCTOOLS
+#define MFX_ENABLE_ENCTOOLS_LPLA
+#endif
 #define MFX_ENABLE_LP_LOOKAHEAD
 
 #if defined(DEBUG) || defined(_DEBUG)
