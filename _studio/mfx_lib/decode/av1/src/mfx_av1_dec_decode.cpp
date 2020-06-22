@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 Intel Corporation
+// Copyright (c) 2017-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -201,6 +201,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     MFX_CHECK(m_platform != MFX_PLATFORM_SOFTWARE, MFX_ERR_UNSUPPORTED);
 #if !defined (MFX_VA)
     MFX_RETURN(MFX_ERR_UNSUPPORTED);
+
 #else
     m_decoder.reset(new UMC_AV1_DECODER::AV1DecoderVA());
     m_allocator.reset(new mfx_UMC_FrameAllocator_D3D());
@@ -254,8 +255,10 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     }
 
     MFX_CHECK_STS(sts);
-
-    m_allocator->SetExternalFramesResponse(&m_response);
+    if (!internal || m_opaque)
+    {
+        m_allocator->SetExternalFramesResponse(&m_response);
+    }
 
     UMC::Status umcSts = m_allocator->InitMfx(0, m_core, par, &m_request, &m_response, !internal, m_platform == MFX_PLATFORM_SOFTWARE);
     MFX_CHECK(umcSts == UMC::UMC_OK, MFX_ERR_MEMORY_ALLOC);
