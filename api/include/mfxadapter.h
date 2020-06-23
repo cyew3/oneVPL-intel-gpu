@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2007-2019 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2020 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -38,9 +38,9 @@ File Name: mfxadapter.h
 extern "C"
 {
 #endif
-mfxStatus MFXQueryAdapters(mfxComponentInfo* input_info, mfxAdaptersInfo* adapters);
-mfxStatus MFXQueryAdaptersDecode(mfxBitstream* bitstream, mfxU32 codec_id, mfxAdaptersInfo* adapters);
-mfxStatus MFXQueryAdaptersNumber(mfxU32* num_adapters);
+mfxStatus MFX_CDECL MFXQueryAdapters(mfxComponentInfo* input_info, mfxAdaptersInfo* adapters);
+mfxStatus MFX_CDECL MFXQueryAdaptersDecode(mfxBitstream* bitstream, mfxU32 codec_id, mfxAdaptersInfo* adapters);
+mfxStatus MFX_CDECL MFXQueryAdaptersNumber(mfxU32* num_adapters);
 #ifdef __cplusplus
 } // extern "C"
 #endif
