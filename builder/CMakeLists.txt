@@ -69,7 +69,6 @@ add_subdirectory( mdp_msdk-lib/api/mfx_dispatch/linux)
 include( mdp_msdk-lib/builder/ConfTargets.cmake )
 
 foreach( dir
-  ${API_DIR}/mediasdk_tracer_v2 ## open-source-cut-line
   mdp_msdk-contrib
   mdp_msdk-lib/_studio
   mdp_msdk-lib/_testsuite         ## open-source-cut-start
