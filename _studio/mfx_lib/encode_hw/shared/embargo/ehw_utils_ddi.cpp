@@ -30,7 +30,7 @@ void FeedbackStorage::Reset(mfxU16 cacheSize, ENCODE_QUERY_STATUS_PARAM_TYPE fbT
     m_pool_size = cacheSize;
     m_fb_size   =
           (m_type == QUERY_STATUS_PARAM_SLICE)
-        ? sizeof(ENCODE_QUERY_STATUS_SLICE_PARAMS)
+        ? sizeof(ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC)
         : sizeof(ENCODE_QUERY_STATUS_PARAMS_HEVC);
 
     m_buf.resize(m_fb_size * m_pool_size);
@@ -49,7 +49,7 @@ void FeedbackStorage::Reset(mfxU16 cacheSize, ENCODE_QUERY_STATUS_PARAM_TYPE fbT
         mfxU16* pSSize = nullptr;
         auto SetSSize = [&](Feedback& r)
         {
-            auto& fb = *(ENCODE_QUERY_STATUS_SLICE_PARAMS*)&r;
+            auto& fb = *(ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC*)&r;
             fb.SizeOfSliceSizesBuffer   = maxSlices;
             fb.pSliceSizes              = pSSize;
             pSSize += maxSlices;
@@ -103,8 +103,8 @@ inline void FeedbackStorage::CacheFeedback(Feedback *fb_dst, Feedback *fb_src)
 
     if (m_type == QUERY_STATUS_PARAM_SLICE)
     {
-        auto pdst = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)fb_dst;
-        auto psrc = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)fb_src;
+        auto pdst = (ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC *)fb_dst;
+        auto psrc = (ENCODE_QUERY_STATUS_SLICE_PARAMS_HEVC *)fb_src;
         std::copy_n(psrc->pSliceSizes, psrc->FrameLevelStatus.NumberSlices, pdst->pSliceSizes);
     }
 }
