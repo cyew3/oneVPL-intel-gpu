@@ -88,7 +88,6 @@
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_extddi_win.cpp" />
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_interlace_win.cpp" />
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_lpla_analysis.cpp" />
-    <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_lpla_enc.cpp" />
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_max_frame_size_win.cpp" />
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_mb_per_sec_win.cpp" />
     <ClCompile Include="hevc\embargo\windows\base\hevcehw_base_protected_win.cpp" />
@@ -237,7 +236,6 @@
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_recon_info_win.h" />
     <ClInclude Include="hevc\embargo\windows\g11lkf\hevcehw_g11lkf_win.h" />
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_alloc_win.h" />
-    <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_lpla_enc.h" />
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_blocking_sync_win.h" />
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_brc_sliding_window_win.h" />
     <ClInclude Include="hevc\embargo\windows\base\hevcehw_base_d3d11_win.h" />

@@ -38,7 +38,6 @@ namespace Base
     public:
 #define DECL_BLOCK_LIST\
     DECL_BLOCK(UpdateSPS)\
-    DECL_BLOCK(UpdatePPS)\
     DECL_BLOCK(PatchDDITask)
 #define DECL_FEATURE_NAME "Base_QMatrix"
 #include "hevcehw_decl_blocks.h"

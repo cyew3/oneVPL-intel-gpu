@@ -158,65 +158,6 @@ void QMatrix::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
         return MFX_ERR_NONE;
     });
-
-    Push(BLK_UpdatePPS
-        , [this](StorageRW& global, StorageRW&)->mfxStatus
-    {
-        auto& par = Glob::VideoParam::Get(global);
-        auto& CO2 = (const mfxExtCodingOption2&)ExtBuffer::Get(par);
-        auto& CO3 = (const mfxExtCodingOption3&)ExtBuffer::Get(par);
-        auto& core = Glob::VideoCore::Get(global);
-        bool bNeedQM =
-            core.GetHWType() >= MFX_HW_ICL
-            && CO2.LookAheadDepth > 0
-            && (CO3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING
-                || (CO3.ScenarioInfo == MFX_SCENARIO_REMOTE_GAMING && IsOn(par.mfx.LowPower)));
-
-        MFX_CHECK(bNeedQM, MFX_ERR_NONE);
-
-        auto& pps = Glob::PPS::Get(global);
-        auto& cqmpps = Glob::CqmPPS::GetOrConstruct(global);
-        cqmpps = pps;
-
-        cqmpps.pic_parameter_set_id = 1;
-        cqmpps.scaling_list_data_present_flag = 1;
-
-        UpRightToPlane(scalingList0, 4, cqmpps.sld.scalingLists0[0]);
-        UpRightToPlane(scalingList_intra, 8, cqmpps.sld.scalingLists1[0]);
-        UpRightToPlane(scalingList_intra, 8, cqmpps.sld.scalingLists2[0]);
-        UpRightToPlane(scalingList_intra, 8, cqmpps.sld.scalingLists3[0]);
-        cqmpps.sld.scalingListDCCoefSizeID3[0] = cqmpps.sld.scalingLists3[0][0];
-        cqmpps.sld.scalingListDCCoefSizeID2[0] = cqmpps.sld.scalingLists2[0][0];
-
-        UpRightToPlane(scalingList0, 4, cqmpps.sld.scalingLists0[1]);
-        UpRightToPlane(scalingList_intra, 8, cqmpps.sld.scalingLists1[1]);
-        UpRightToPlane(scalingList_intra, 8, cqmpps.sld.scalingLists2[1]);
-        UpRightToPlane(scalingList_inter, 8, cqmpps.sld.scalingLists3[1]);
-        cqmpps.sld.scalingListDCCoefSizeID3[1] = cqmpps.sld.scalingLists3[1][0];
-        cqmpps.sld.scalingListDCCoefSizeID2[1] = cqmpps.sld.scalingLists2[1][0];
-
-        UpRightToPlane(scalingList0, 4, cqmpps.sld.scalingLists0[2]);
-        UpRightToPlane(scalingList_intra, 8, cqmpps.sld.scalingLists1[2]);
-        UpRightToPlane(scalingList_intra, 8, cqmpps.sld.scalingLists2[2]);
-        pps.sld.scalingListDCCoefSizeID2[2] = cqmpps.sld.scalingLists2[2][0];
-
-        UpRightToPlane(scalingList0, 4, cqmpps.sld.scalingLists0[3]);
-        UpRightToPlane(scalingList_inter, 8, cqmpps.sld.scalingLists1[3]);
-        UpRightToPlane(scalingList_inter, 8, cqmpps.sld.scalingLists2[3]);
-        cqmpps.sld.scalingListDCCoefSizeID2[3] = cqmpps.sld.scalingLists2[3][0];
-
-        UpRightToPlane(scalingList0, 4, cqmpps.sld.scalingLists0[4]);
-        UpRightToPlane(scalingList_inter, 8, cqmpps.sld.scalingLists1[4]);
-        UpRightToPlane(scalingList_inter, 8, cqmpps.sld.scalingLists2[4]);
-        cqmpps.sld.scalingListDCCoefSizeID2[4] = cqmpps.sld.scalingLists2[4][0];
-
-        UpRightToPlane(scalingList0, 4, cqmpps.sld.scalingLists0[5]);
-        UpRightToPlane(scalingList_inter, 8, cqmpps.sld.scalingLists1[5]);
-        UpRightToPlane(scalingList_inter, 8, cqmpps.sld.scalingLists2[5]);
-        cqmpps.sld.scalingListDCCoefSizeID2[5] = cqmpps.sld.scalingLists2[5][0];
-
-        return MFX_ERR_NONE;
-    });
 }
 
 void QMatrix::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)

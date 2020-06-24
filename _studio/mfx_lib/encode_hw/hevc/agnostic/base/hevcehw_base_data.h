@@ -490,7 +490,7 @@ namespace Base
         mfxI8  beta_offset_div2 : 4;
         mfxI8  tc_offset_div2   : 4;
 
-        ScalingList sld;
+        //ScalingListData* sld;
 
         mfxU16 log2_parallel_merge_level_minus2;
 
@@ -903,7 +903,6 @@ namespace Base
         PackedData VPS;
         PackedData SPS;
         PackedData PPS;
-        PackedData CqmPPS;
         PackedData AUD[3];
         PackedData PrefixSEI;
         PackedData SuffixSEI;
@@ -945,16 +944,6 @@ namespace Base
     {
         mfxU32 Flags;
     };
-
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)
-    struct LpLookAhead
-    {
-        mfxU32                          bAnalysis; // Hint for LookAhead Pass
-        std::unique_ptr<MfxLpLookAhead> pLpLookAhead;
-        bool                            bIsLpLookaheadEnabled = false;
-        bool                            bIsLpLookaheadSupported = false;
-    };
-#endif
 
     struct VAGUID
     {
@@ -1337,7 +1326,6 @@ namespace Base
         , FEATURE_UNITS_INFO
         , FEATURE_FEI
         , FEATURE_LPLA_ANALYSIS
-        , FEATURE_LPLA_ENCODE
         , FEATURE_RECON_INFO
         , NUM_FEATURES
     };
@@ -1363,7 +1351,6 @@ namespace Base
         using VPS                 = StorageVar<__LINE__ - _KD, Base::VPS>;
         using SPS                 = StorageVar<__LINE__ - _KD, Base::SPS>;
         using PPS                 = StorageVar<__LINE__ - _KD, Base::PPS>;
-        using CqmPPS              = StorageVar<__LINE__ - _KD, Base::PPS>;
         using SliceInfo           = StorageVar<__LINE__ - _KD, std::vector<Base::SliceInfo>>;
         using AllocRaw            = StorageVar<__LINE__ - _KD, IAllocation>;
         using AllocOpq            = StorageVar<__LINE__ - _KD, IAllocation>;
@@ -1377,9 +1364,6 @@ namespace Base
         using DDI_Execute         = StorageVar<__LINE__ - _KD, CallChain<mfxStatus, const DDIExecParam&>>;
         using RealState           = StorageVar<__LINE__ - _KD, StorageW>;//available during Reset
         using ResetHint           = StorageVar<__LINE__ - _KD, Base::ResetHint>; //available during Reset
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)
-        using LpLookAhead         = StorageVar<__LINE__ - _KD, Base::LpLookAhead>;
-#endif
         using Reorder             = StorageVar<__LINE__ - _KD, Reorderer>;
         using NeedRextConstraints = StorageVar<__LINE__ - _KD, std::function<bool(const Base::PTL&)>>;
         using ReadSpsExt          = StorageVar<__LINE__ - _KD, std::function<bool(const Base::SPS&, mfxU8, IBsReader&)>>;

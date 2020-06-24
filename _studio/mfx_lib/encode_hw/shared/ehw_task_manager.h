@@ -22,7 +22,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <vector>
-#include <algorithm>
 #include "feature_blocks/mfx_feature_blocks_utils.h"
 
 namespace MfxEncodeHW
@@ -97,7 +96,7 @@ namespace MfxEncodeHW
             , {S_SUBMIT,    S_SUBMIT}
             , {S_QUERY,     S_QUERY}
         };
-        std::vector<TTaskList>  m_stages             = std::vector<TTaskList>(7);
+        std::vector<TTaskList>  m_stages             = std::vector<TTaskList>(5);
         mfxU16                  m_nPicBuffered       = 0;
         mfxU16                  m_bufferSize         = 0;
         mfxU16                  m_maxParallelSubmits = 0;
@@ -105,19 +104,6 @@ namespace MfxEncodeHW
         mfxU16                  m_nRecodeTasks       = 0;
         std::mutex              m_mtx, m_closeMtx;
         std::condition_variable m_cv;
-
-        mfxU16 AddStage(mfxU16 stageBefore)
-        {
-            mfxU16 stageNew = mfxU16(m_stageID.size());
-            mfxU16 idx = m_stageID.at(stageBefore);
-            auto UpdateStage = [idx](std::map<mfxU16, mfxU16>::reference pair)
-            {
-                pair.second += (pair.second > idx);
-            };
-            std::for_each(m_stageID.begin(), m_stageID.end(), UpdateStage);
-            m_stageID[stageNew] = idx + 1;
-            return stageNew;
-        }
 
         static TTaskIt    FirstTask     (TTaskIt begin, TTaskIt) { return begin; }
         static TTaskIt    EndTask       (TTaskIt, TTaskIt end) { return end; }
@@ -132,7 +118,6 @@ namespace MfxEncodeHW
             return SimpleCheck([pTask](StorageR& b) { return &b == pTask; });
         }
         mfxU16 Stage(mfxU16 s) { return m_stageID.at(s); }
-        mfxU16 NextStage(mfxU16 s) { return Stage(s) + 1; }
 
         //blocking
         mfxStatus ManagerReset(mfxU32 numTask);
@@ -142,13 +127,6 @@ namespace MfxEncodeHW
             , mfxU16 to
             , TFnGetTask which = FirstTask
             , TFnGetTask where = EndTask);
-        StorageRW* MoveTaskForward(
-            mfxU16 from
-            , TFnGetTask which = FirstTask
-            , TFnGetTask where = EndTask)
-        {
-            return MoveTask(from, from + 1, which, where);
-        }
         StorageRW* GetTask(mfxU16 stage, TFnGetTask which = FirstTask);
     };
 }
