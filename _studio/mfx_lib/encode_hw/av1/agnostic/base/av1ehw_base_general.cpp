@@ -2919,19 +2919,54 @@ mfxStatus General::CheckOrderHintBits(mfxVideoParam& par)
     return MFX_ERR_NONE;
 }
 
+inline void CheckCDEFStrength(mfxExtAV1AuxData& auxPar, mfxU32& invalid, mfxU32& changed, const mfxU32 CDEFChannelStrengthSupport)
+{
+    for (mfxU8 i = 0; i < CDEF_MAX_STRENGTHS; i++)
+    {
+        changed += CheckMaxOrClip(auxPar.Cdef.CdefYStrengths[i], 63);
+        changed += CheckMaxOrClip(auxPar.Cdef.CdefUVStrengths[i], 63);
+    }
+
+    if (CDEFChannelStrengthSupport)
+        return;
+
+    for (mfxU8 i = 0; i < CDEF_MAX_STRENGTHS; i++)
+    {
+        if (auxPar.Cdef.CdefUVStrengths[i] != auxPar.Cdef.CdefYStrengths[i])
+        {
+            auxPar.Cdef.CdefUVStrengths[i] = auxPar.Cdef.CdefYStrengths[i] = 0;
+            invalid += 1;
+        }
+    }
+}
+
 mfxStatus General::CheckCDEF(mfxVideoParam& par,  const ENCODE_CAPS_AV1& caps)
 {
-    mfxExtAV1Param* pAV1Par = ExtBuffer::Get(par);
-    MFX_CHECK(pAV1Par, MFX_ERR_NONE);
     mfxU32 invalid = 0;
+    mfxExtAV1Param* const pAV1Par = ExtBuffer::Get(par);
 
-    if (IsOn(pAV1Par->EnableCdef) && caps.AV1ToolSupportFlags.fields.enable_cdef == false)
+    if (pAV1Par && IsOn(pAV1Par->EnableCdef) && !caps.AV1ToolSupportFlags.fields.enable_cdef)
     {
         pAV1Par->EnableCdef = MFX_CODINGOPTION_OFF;
-        invalid = 1;
+        invalid += 1;
     }
 
     MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
+
+    mfxU32 changed = 0;
+    mfxExtAV1AuxData* const pAuxPar = ExtBuffer::Get(par);
+
+    if (pAuxPar)
+    {
+        changed += CheckMaxOrClip(pAuxPar->Cdef.CdefDampingMinus3, 3);
+        changed += CheckMaxOrClip(pAuxPar->Cdef.CdefBits, 3);
+
+        CheckCDEFStrength(*pAuxPar, invalid, changed, caps.CDEFChannelStrengthSupport);
+    }
+
+    MFX_CHECK(!invalid, MFX_ERR_UNSUPPORTED);
+
+    MFX_CHECK(!changed, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
     return MFX_ERR_NONE;
 }
