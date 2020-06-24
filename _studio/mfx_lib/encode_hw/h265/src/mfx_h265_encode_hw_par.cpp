@@ -980,23 +980,10 @@ mfxU16 GetMaxNumRef(MfxVideoParam &par, bool bForward)
 
     // VDENC
     if (par.mfx.GopRefDist <= 1) { // LowDelay B (P)
-#ifndef STRIP_EMBARGO
-        if (par.m_platform == MFX_HW_DG2) {
-            mfxU16 maxNumRefsL0L1[7] = { 3, 3, 2, 2, 2, 1, 1 };
-            return  maxNumRefsL0L1[par.mfx.TargetUsage - 1];
-        }
-#endif
         mfxU16 maxNumRefsL0L1[7] = { 3, 3, 2, 2, 2, 1, 1 };
         return maxNumRefsL0L1[par.mfx.TargetUsage - 1];
     }
     else { // RA B (neither ICL nor CNL here)
-#ifndef STRIP_EMBARGO
-        if (par.m_platform == MFX_HW_DG2) {
-            mfxU16 maxNumRefsL0[7] = { 2, 2, 1, 1, 1, 1, 1 };
-            mfxU16 maxNumRefsL1[7] = { 1, 1, 1, 1, 1, 1, 1 };
-            return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
-        }
-#endif
         mfxU16 maxNumRefsL0[7] = { 2, 2, 1, 1, 1, 1, 1 };
         mfxU16 maxNumRefsL1[7] = { 1, 1, 1, 1, 1, 1, 1 };
         return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
