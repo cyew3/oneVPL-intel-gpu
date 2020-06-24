@@ -25,10 +25,6 @@
 
 #ifdef UMC_VA_DXVA
 
-typedef struct _DXVA_PicEntry_AV1_Short_MSFT {
-    UCHAR Index;
-} DXVA_PicEntry_AV1_Short_MSFT, *LPDXVA_PicEntry_AV1_Short;
-
 typedef struct _DXVA_PicEntry_AV1_MSFT {
 
     UINT width;
@@ -57,7 +53,7 @@ typedef struct _DXVA_PicParams_AV1_MSFT {
     UINT max_width;
     UINT max_height;
 
-    DXVA_PicEntry_AV1_Short_MSFT CurrPic;
+    UCHAR CurrPicTextureIndex;
     UCHAR superres_denom;
     UCHAR BitDepth;
     UCHAR profile;
@@ -120,12 +116,12 @@ typedef struct _DXVA_PicParams_AV1_MSFT {
     } format;
 
     // References
-    DXVA_PicEntry_AV1_Short_MSFT primary_ref_frame;
+    UCHAR primary_ref_frame;
     UCHAR order_hint;
     UCHAR order_hint_bits;
 
     DXVA_PicEntry_AV1_MSFT frame_refs[7];
-    DXVA_PicEntry_AV1_Short_MSFT ref_frame_map[8];
+    UCHAR ref_frame_map_texture_index[8];
 
     // Loop filter parameters
     struct {
@@ -148,7 +144,7 @@ typedef struct _DXVA_PicParams_AV1_MSFT {
         CHAR mode_deltas[2];
         UCHAR delta_lf_res;
         UCHAR frame_restoration_type[3];
-        USHORT restoration_unit_size[3];
+        USHORT log2_restoration_unit_size[3];
         USHORT Reserved16Bits;
     } loop_filter;
 
@@ -221,7 +217,21 @@ typedef struct _DXVA_PicParams_AV1_MSFT {
         };
         UCHAR  Reserved24Bits[3];
 
-        UCHAR feature_mask[8];
+        union
+        {
+            struct
+            {
+                UCHAR alt_q : 1;
+                UCHAR alt_lf_y_v : 1;
+                UCHAR alt_lf_y_h : 1;
+                UCHAR alt_lf_u : 1;
+                UCHAR alt_lf_v : 1;
+                UCHAR ref_frame : 1;
+                UCHAR skip : 1;
+                UCHAR globalmv : 1;
+            };
+            UCHAR mask;
+        } feature_mask[8];
         SHORT feature_data[8][8];
 
     } segmentation;
@@ -272,7 +282,7 @@ typedef struct _DXVA_Tile_AV1 {
     USHORT row;
     USHORT column;
     USHORT Reserved16Bits;
-    DXVA_PicEntry_AV1_Short_MSFT anchor_frame;
+    UCHAR anchor_frame;
     UCHAR Reserved8Bits;
 } DXVA_Tile_AV1, *LPDXVA_Tile_AV1;
 

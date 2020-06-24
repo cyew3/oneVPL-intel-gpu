@@ -108,14 +108,13 @@ namespace UMC_AV1_DECODER
         FrameHeader const& info =
             frame.GetFrameHeader();
 
-        picParam.width = (USHORT)frame.GetUpscaledWidth() - 1;
-        picParam.height = (USHORT)frame.GetHeight() - 1;
-        picParam.max_width = (USHORT)frame.GetUpscaledWidth() - 1;
-        picParam.max_height = (USHORT)frame.GetHeight() - 1;
-        picParam.CurrPic.Index = (UCHAR)frame.GetMemID(SURFACE_RECON);
+        picParam.width = (USHORT)frame.GetUpscaledWidth();
+        picParam.height = (USHORT)frame.GetHeight();
+        picParam.max_width = (USHORT)frame.GetUpscaledWidth();
+        picParam.max_height = (USHORT)frame.GetHeight();
+        picParam.CurrPicTextureIndex = (UCHAR)frame.GetMemID(SURFACE_RECON);
         picParam.superres_denom = (UCHAR)info.SuperresDenom;
-        picParam.BitDepth = (sh.color_config.BitDepth == 10) ? 1 :
-            (sh.color_config.BitDepth == 12) ? 2 : 0;
+        picParam.BitDepth = (UCHAR)sh.color_config.BitDepth;
         picParam.profile = (UCHAR)sh.seq_profile;
 
         // Tiles:
@@ -125,13 +124,13 @@ namespace UMC_AV1_DECODER
         for (uint32_t i = 0; i < picParam.tiles.cols; i++)
         {
             picParam.tiles.widths[i] =
-                (USHORT)(info.tile_info.SbColStarts[i + 1] - info.tile_info.SbColStarts[i] - 1);
+                (USHORT)(info.tile_info.SbColStarts[i + 1] - info.tile_info.SbColStarts[i]);
         }
 
         for (int i = 0; i < picParam.tiles.rows; i++)
         {
             picParam.tiles.heights[i] =
-                (USHORT)(info.tile_info.SbRowStarts[i + 1] - info.tile_info.SbRowStarts[i] - 1);
+                (USHORT)(info.tile_info.SbRowStarts[i + 1] - info.tile_info.SbRowStarts[i]);
         }
 
         picParam.tiles.context_update_id = (USHORT)info.tile_info.context_update_tile_id;
@@ -176,14 +175,14 @@ namespace UMC_AV1_DECODER
         picParam.format.mono_chrome = sh.color_config.mono_chrome;
 
         // References
-        picParam.primary_ref_frame.Index = (UCHAR)info.primary_ref_frame;
+        picParam.primary_ref_frame = (UCHAR)info.primary_ref_frame;
         picParam.order_hint = (UCHAR)info.order_hint;
         picParam.order_hint_bits = (UCHAR)sh.order_hint_bits_minus1 + 1;
 
 
         for (uint8_t ref = 0; ref < NUM_REF_FRAMES; ++ref)
         {
-            picParam.ref_frame_map[ref].Index = (UCHAR)frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
+            picParam.ref_frame_map_texture_index[ref] = (UCHAR)frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
 
         }
         for (uint8_t ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
@@ -230,7 +229,7 @@ namespace UMC_AV1_DECODER
         //picParam.loop_filter.delta_lf_res = CeilLog2(info.delta_lf_res);
         picParam.loop_filter.delta_lf_res = (UCHAR)info.delta_lf_res;
 
-        picParam.loop_filter.restoration_unit_size[0] = 256 >> (2 - info.lr_params.lr_unit_shift);
+        picParam.loop_filter.log2_restoration_unit_size[0] = 256 >> (2 - info.lr_params.lr_unit_shift);
         uint32_t uv_shift;
         uv_shift = info.lr_params.lr_uv_shift;
         if (sh.color_config.subsampling_x && sh.color_config.subsampling_y)
@@ -239,8 +238,8 @@ namespace UMC_AV1_DECODER
         else {
             uv_shift = 0;
         }
-        picParam.loop_filter.restoration_unit_size[1] = picParam.loop_filter.restoration_unit_size[0] >> info.lr_params.lr_uv_shift;
-        picParam.loop_filter.restoration_unit_size[2] = picParam.loop_filter.restoration_unit_size[0] >> info.lr_params.lr_uv_shift;
+        picParam.loop_filter.log2_restoration_unit_size[1] = picParam.loop_filter.log2_restoration_unit_size[0] >> info.lr_params.lr_uv_shift;
+        picParam.loop_filter.log2_restoration_unit_size[2] = picParam.loop_filter.log2_restoration_unit_size[0] >> info.lr_params.lr_uv_shift;
 
         picParam.loop_filter.frame_restoration_type[0] = (UCHAR)info.lr_params.lr_type[0];
         picParam.loop_filter.frame_restoration_type[1] = (UCHAR)info.lr_params.lr_type[1];
@@ -311,7 +310,7 @@ namespace UMC_AV1_DECODER
         {
             for (uint8_t i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
             {
-                picParam.segmentation.feature_mask[i] = (UCHAR)info.segmentation_params.FeatureMask[i];
+                picParam.segmentation.feature_mask[i].mask = (UCHAR)info.segmentation_params.FeatureMask[i];
                 for (uint8_t j = 0; j < SEG_LVL_MAX; j++)
                     picParam.segmentation.feature_data[i][j] = (SHORT)info.segmentation_params.FeatureData[i][j];
             }
@@ -380,7 +379,7 @@ namespace UMC_AV1_DECODER
         //tileControlParam.StartTileIdx = (USHORT)loc.startIdx;
         //tileControlParam.EndTileIdx = (USHORT)loc.endIdx;
 #if AV1D_DDI_VERSION >= 31
-        tileControlParam.anchor_frame.Index = 0;
+        tileControlParam.anchor_frame = 0;
 #else
         tileControlParam.anchor_frame_idx.wPicEntry = 0;
 #endif
