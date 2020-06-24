@@ -1671,6 +1671,8 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform
         case MFX_FOURCC_P210:
         case MFX_FOURCC_NV16:
         case MFX_FOURCC_YUY2:
+        // A2RGB10 supported as input in case of passthru copy
+        case MFX_FOURCC_A2RGB10:
             break;
         case MFX_FOURCC_AYUV:
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -1707,8 +1709,6 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform
 #ifdef MFX_ENABLE_RGBP
         case MFX_FOURCC_RGBP:
 #endif
-        case MFX_FOURCC_A2RGB10:
-            // 10bit RGB supported as output format only
             if (VPP_IN == request)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
 
