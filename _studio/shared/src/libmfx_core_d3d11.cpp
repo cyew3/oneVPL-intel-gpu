@@ -95,7 +95,8 @@ mfxStatus D3D11VideoCORE::InternalInit()
     // Temporary disable CmCopy for Pre-Si platforms or if there is no loaded cm_copy_kernel at the moment
     if (   m_HWType == MFX_HW_RYF
         || m_HWType == MFX_HW_RKL
-        || m_HWType == MFX_HW_DG2)
+        || m_HWType == MFX_HW_DG2
+        || m_HWType == MFX_HW_MTL)
         m_bCmCopyAllowed = false;
 #endif
 

@@ -49,7 +49,9 @@ enum HWType
     MFX_HW_DG2       = MFX_HW_ATS + 1,
     MFX_HW_ADL_S     = MFX_HW_ATS + 2,
     MFX_HW_ADL_P     = MFX_HW_ATS + 3,
-    MFX_HW_PVC       = MFX_HW_ATS + 4
+    MFX_HW_PVC       = MFX_HW_ATS + 4,
+
+    MFX_HW_MTL       = 0xf00000
 };
 
 enum OSFamily

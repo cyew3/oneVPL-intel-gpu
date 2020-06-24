@@ -68,6 +68,7 @@ namespace mocks { namespace mfx
             IGFX_TIGERLAKE_HP = 1250,
             IGFX_DG2 = 1270,
             IGFX_PVC = 1271,
+            IGFX_METEORLAKE = 1272,
 
             IGFX_GENNEXT               = 0x7ffffffe,
 
@@ -114,7 +115,9 @@ namespace mocks { namespace mfx
         HW_ATS       = HW_DG1 + 1,
         HW_DG2       = HW_ATS + 1,
         HW_ADL_S     = HW_ATS + 2,
-        HW_ADL_UH    = HW_ATS + 3
+        HW_ADL_UH    = HW_ATS + 3,
+
+        HW_MTL       = 0xf00000
 #endif
     };
 

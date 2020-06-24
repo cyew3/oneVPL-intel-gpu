@@ -332,6 +332,8 @@ void MFXVideoTest::SetUp()
                 g_tsHWtype = MFX_HW_ADL_P;
             else if (platform.find("pvc") != std::string::npos)
                 g_tsHWtype = MFX_HW_PVC;
+            else if (platform.find("mtl") != std::string::npos)
+                g_tsHWtype = MFX_HW_MTL;
             else
                 g_tsHWtype = MFX_HW_UNKNOWN;
 

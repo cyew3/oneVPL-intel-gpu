@@ -230,6 +230,7 @@ mfxStatus SetLowpowerDefault(MfxVideoParam& par)
 #if !defined(STRIP_EMBARGO) && (MFX_VERSION >= MFX_VERSION_NEXT)
         || par.m_platform == MFX_HW_LKF
         || par.m_platform == MFX_HW_DG2
+        || par.m_platform == MFX_HW_MTL
 #endif
         )
         && par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)

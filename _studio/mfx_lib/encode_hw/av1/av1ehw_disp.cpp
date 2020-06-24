@@ -56,7 +56,7 @@ static ImplBase* CreateSpecific(
 #ifndef STRIP_EMBARGO
     if (hw == MFX_HW_DG2)
         impl = new AV1EHWDisp::DG2::MFXVideoENCODEAV1_HW(core, status, mode);
-    else if (hw > MFX_HW_DG2)
+    else if (hw >= MFX_HW_MTL)
         impl = new AV1EHWDisp::MTL::MFXVideoENCODEAV1_HW(core, status, mode);
 #endif
 
