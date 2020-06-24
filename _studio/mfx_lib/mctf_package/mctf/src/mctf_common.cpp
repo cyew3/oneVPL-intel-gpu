@@ -55,25 +55,25 @@ using std::min;
 using  std::max;
 using namespace ns_asc;
 
-const mfxU16 CMC::AUTO_FILTER_STRENGTH = 0;
-const mfxU16 CMC::DEFAULT_FILTER_STRENGTH = 8;
-const mfxU32 CMC::DEFAULT_BPP             = 0; //Automode
-const mfxU16 CMC::DEFAULT_DEBLOCKING = MFX_CODINGOPTION_OFF;
-const mfxU16 CMC::DEFAULT_OVERLAP = MFX_CODINGOPTION_OFF;
-const mfxU16 CMC::DEFAULT_ME = MFX_MVPRECISION_INTEGER >> 1;
-const mfxU16 CMC::DEFAULT_REFS = MCTF_TEMPORAL_MODE_2REF;
+const mfxU16 CMC::AUTO_FILTER_STRENGTH      = 0;
+const mfxU16 CMC::DEFAULT_FILTER_STRENGTH   = 5;
+const mfxU32 CMC::DEFAULT_BPP               = 0; //Automode
+const mfxU16 CMC::DEFAULT_DEBLOCKING        = MFX_CODINGOPTION_OFF;
+const mfxU16 CMC::DEFAULT_OVERLAP           = MFX_CODINGOPTION_OFF;
+const mfxU16 CMC::DEFAULT_ME                = MFX_MVPRECISION_INTEGER >> 1;
+const mfxU16 CMC::DEFAULT_REFS              = MCTF_TEMPORAL_MODE_2REF;
 
 void CMC::QueryDefaultParams(
     IntMctfParams * pBuffer
 )
 {
     if (!pBuffer) return;
-    pBuffer->Deblocking = DEFAULT_DEBLOCKING;
-    pBuffer->Overlap = DEFAULT_OVERLAP;
-    pBuffer->subPelPrecision = DEFAULT_ME;
-    pBuffer->TemporalMode = DEFAULT_REFS;
-    pBuffer->FilterStrength = AUTO_FILTER_STRENGTH; // [0...20]
-    pBuffer->BitsPerPixelx100k= DEFAULT_BPP;
+    pBuffer->Deblocking         = DEFAULT_DEBLOCKING;
+    pBuffer->Overlap            = DEFAULT_OVERLAP;
+    pBuffer->subPelPrecision    = DEFAULT_ME;
+    pBuffer->TemporalMode       = DEFAULT_REFS;
+    pBuffer->FilterStrength     = DEFAULT_FILTER_STRENGTH; // [0...20]
+    pBuffer->BitsPerPixelx100k  = DEFAULT_BPP;
 };
 
 void CMC::QueryDefaultParams(
