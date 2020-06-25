@@ -1878,6 +1878,7 @@ namespace {
 MFXVideoENCODEAV1::MFXVideoENCODEAV1(MFXCoreInterface1 *core, mfxStatus *sts)
     : m_core(core)
 {
+    Zero(m_mfxParam);
     if (sts)
         *sts = MFX_ERR_NONE;
 }

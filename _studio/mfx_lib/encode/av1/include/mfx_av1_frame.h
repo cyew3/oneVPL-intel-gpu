@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -208,7 +208,20 @@ namespace AV1Enc {
         int32_t pitch_chroma_pix;
         int32_t pitch_chroma_bytes;
 
-        FrameData() : y(), uv(), m_handle(), mem(), m_fei() {}
+        FrameData() 
+            : mem()
+            , m_fei()
+            , y()
+            , uv()
+            , m_handle()
+            , width()
+            , height()
+            , padding()
+            , pitch_luma_pix()
+            , pitch_luma_bytes()
+            , pitch_chroma_pix()
+            , pitch_chroma_bytes()
+            {}
         ~FrameData() { Destroy(); }
 
         struct AllocInfo {
@@ -564,7 +577,33 @@ namespace AV1Enc {
 
         Frame()
             : bitCount(nullptr)
+            , m_recon10Upscale(nullptr)
+            , m_widthLowRes4x(0)
+            , m_heightLowRes4x(0)
+            , m_bitDepthLuma(0)
+            , m_bdLumaFlag(0)
+            , m_bitDepthChroma(0)
+            , m_bdChromaFlag(0)
+            , m_chromaFormatIdc(0)
+            , m_frameOrderOfStartSTR(MFX_FRAMEORDER_UNKNOWN)
+            , m_frameType(0)
+            , m_detectScrollRegionWidth(0)
+            , m_numDetectScrollRegions(0)
+            , m_numThreadingTasks(0)
+            , interpolationFilter(0)
+            , curFrameOffset(0)
+            , m_lambda()
+            , m_lambdaSatd()
+            , m_lambdaSatdInt(0)
+            , hasTextContent(0)
+            , hasPalettizedContent(0)
+            , m_allowIntraBc(0)
+            , m_allowPalette(0)
+            , m_globalMvy(0)
+            , isAV1(0)
         {
+            Zero(m_tileParam);
+            Zero(m_cdefParam);
             ResetMemInfo();
             ResetEncInfo();
         }
