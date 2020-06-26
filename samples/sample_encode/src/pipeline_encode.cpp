@@ -2245,11 +2245,6 @@ mfxStatus CEncodingPipeline::Run()
                                                   &m_pEncSurfaces[nEncSurfIdx],
                     NULL, &VppSyncPoint);
 
-                if (m_nPerfOpt)
-                {
-                   // increment buffer index
-                   nVppSurfIdx++;
-                }
                 if (MFX_ERR_NONE < sts && !VppSyncPoint) // repeat the call if warning and no output
                 {
                     if (MFX_WRN_DEVICE_BUSY == sts)
@@ -2258,10 +2253,14 @@ mfxStatus CEncodingPipeline::Run()
                 else if (MFX_ERR_NONE < sts && VppSyncPoint)
                 {
                     sts = MFX_ERR_NONE; // ignore warnings if output is available
+                    if (m_nPerfOpt) nVppSurfIdx++;
                     break;
                 }
                 else
+                {
+                    if (m_nPerfOpt) nVppSurfIdx++;
                     break; // not a warning
+                }
             }
 
             skipLoadingNextFrame = false;
@@ -2301,11 +2300,6 @@ mfxStatus CEncodingPipeline::Run()
             m_TaskPool.firstOut_start = m_TaskPool.lastOut_start = time_get_tick();
             sts = m_pmfxENC->EncodeFrameAsync(&pCurrentTask->encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
 
-            if (m_nPerfOpt)
-            {
-                // increment buffer index
-                nEncSurfIdx++;
-            }
             if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
             {
                 if (MFX_WRN_DEVICE_BUSY == sts)
@@ -2314,6 +2308,7 @@ mfxStatus CEncodingPipeline::Run()
             else if (MFX_ERR_NONE < sts && pCurrentTask->EncSyncP)
             {
                 sts = MFX_ERR_NONE; // ignore warnings if output is available
+                if (m_nPerfOpt) nEncSurfIdx++;
                 break;
             }
             else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
@@ -2325,6 +2320,7 @@ mfxStatus CEncodingPipeline::Run()
             {
                 // get next surface and new task for 2nd bitstream in ViewOutput mode
                 MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_BITSTREAM);
+                if (m_nPerfOpt) nEncSurfIdx++;
                 break;
             }
         }
