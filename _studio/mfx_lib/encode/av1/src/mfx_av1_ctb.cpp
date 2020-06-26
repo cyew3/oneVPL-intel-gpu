@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@
 namespace AV1Enc {
     namespace {
         int32_t MvCost(int16_t mvd) { // TODO(npshosta): remove all usage of this one
-            uint8_t ZF;
+            uint8_t ZF = 0;
             int32_t index = BSR(mvd*mvd, ZF);
             return ((-int32_t(ZF)) & (index + 1)) + 1;  // mvd ? 2*index+3 : 1;
         }
