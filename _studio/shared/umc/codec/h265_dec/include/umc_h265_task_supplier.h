@@ -437,6 +437,7 @@ protected:
     bool        m_decodedOrder;
     bool        m_checkCRAInsideResetProcess;
     bool        m_bFirstSliceInSequence;
+    bool        m_bFirstSliceInBitstream;
 
     H265Slice * m_pLastSlice;
 

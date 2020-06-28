@@ -631,6 +631,7 @@ TaskSupplier_H265::TaskSupplier_H265()
     , m_decodedOrder(false)
     , m_checkCRAInsideResetProcess(false)
     , m_bFirstSliceInSequence(true)
+    , m_bFirstSliceInBitstream(true)
     , m_pLastSlice(0)
     , m_pLastDisplayed(0)
     , m_pMemoryAllocator(0)
@@ -821,7 +822,7 @@ void TaskSupplier_H265::Close()
 
     m_RA_POC = 0;
     m_IRAPType = NAL_UT_INVALID;
-    NoRaslOutputFlag = 1;
+    NoRaslOutputFlag = 0;
 
     m_pLastDisplayed = 0;
 
@@ -884,7 +885,7 @@ void TaskSupplier_H265::Reset()
 
     m_RA_POC = 0;
     m_IRAPType = NAL_UT_INVALID;
-    NoRaslOutputFlag = 1;
+    NoRaslOutputFlag = 0;
 
     m_pLastDisplayed = 0;
 
@@ -917,7 +918,7 @@ void TaskSupplier_H265::AfterErrorRestore()
     m_WaitForIDR        = true;
     m_prevSliceBroken   = false;
     m_maxUIDWhenWasDisplayed = 0;
-    NoRaslOutputFlag = 1;
+    NoRaslOutputFlag = 0;
 
     m_pLastDisplayed = 0;
 
@@ -1868,7 +1869,8 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
                 m_RA_POC = 0;
                 m_IRAPType = NAL_UT_INVALID;
                 GetView()->pDPB->IncreaseRefPicListResetCount(0); // for flushing DPB
-                NoRaslOutputFlag = 1;
+                NoRaslOutputFlag = 0;
+                m_bFirstSliceInSequence = true;
                 return UMC::UMC_OK;
                 break;
 
@@ -2150,7 +2152,7 @@ void TaskSupplier_H265::CheckCRAOrBLA(const H265Slice *pSlice)
         }
 
         //the inference for NoOutputPriorPicsFlag
-        if (!m_bFirstSliceInSequence && NoRaslOutputFlag)
+        if (!m_bFirstSliceInBitstream && NoRaslOutputFlag)
         {
             if (pSlice->GetSliceHeader()->nal_unit_type == NAL_UT_CODED_SLICE_CRA)
             {
@@ -2166,6 +2168,7 @@ void TaskSupplier_H265::CheckCRAOrBLA(const H265Slice *pSlice)
     }
 
     m_bFirstSliceInSequence = false;
+    m_bFirstSliceInBitstream = false;
 
     //Check NoOutputPriorPics
     if (pSlice->GetRapPicFlag() && no_output_of_prior_pics_flag)
