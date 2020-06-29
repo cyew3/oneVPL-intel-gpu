@@ -251,6 +251,15 @@ namespace
             ;
     }
 
+    bool hasSupportVME(eMFXHWType platform)
+    {
+        return platform <= MFX_HW_DG1
+#ifndef STRIP_EMBARGO
+            && platform != MFX_HW_LKF
+#endif
+        ;
+    }
+
     inline mfxU16 GetMaxSupportedLevel()
     {
         return MFX_LEVEL_AVC_52;
@@ -2682,10 +2691,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     bool laEnabled = true;
-    if (platform > MFX_HW_ICL_LP
-        && platform != MFX_HW_TGL_LP
-        && platform != MFX_HW_DG1
-        )
+    // LA and FD supports only with VME
+    if (!hasSupportVME(platform))
     {
         laEnabled = false;
         if (bRateControlLA(par.mfx.RateControlMethod))
