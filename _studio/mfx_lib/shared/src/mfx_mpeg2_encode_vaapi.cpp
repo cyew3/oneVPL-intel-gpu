@@ -1036,25 +1036,16 @@ mfxStatus VAAPIEncoder::FillVideoSignalInfoBuffer(ExecuteBuffers* pExecuteBuffer
     void * data = m_pMiscParamsSeqInfo->data;
     VAEncMiscParameterExtensionDataSeqDisplayMPEG2& miscSeqInfo = *((VAEncMiscParameterExtensionDataSeqDisplayMPEG2*)data);
 
-    const mfxExtVideoSignalInfo & signalInfo = pExecuteBuffers->m_VideoSignalInfo;
+    const ENCODE_SET_VUI_PARAMETER_MPEG2 & seqDisplayExt = pExecuteBuffers->m_vui;
     // VideoFullRange; - unused
     miscSeqInfo.extension_start_code_identifier = 0x02; // from spec
-    miscSeqInfo.video_format = signalInfo.VideoFormat;
-    miscSeqInfo.colour_description = signalInfo.ColourDescriptionPresent;
-    if (signalInfo.ColourDescriptionPresent)
-    {
-        miscSeqInfo.colour_primaries = signalInfo.ColourPrimaries;
-        miscSeqInfo.transfer_characteristics = signalInfo.TransferCharacteristics;
-        miscSeqInfo.matrix_coefficients = signalInfo.MatrixCoefficients;
-    }
-    else
-    {
-        miscSeqInfo.colour_primaries = 0;
-        miscSeqInfo.transfer_characteristics = 0;
-        miscSeqInfo.matrix_coefficients = 0;
-    }
-    miscSeqInfo.display_horizontal_size = pExecuteBuffers->m_sps.FrameWidth;
-    miscSeqInfo.display_vertical_size = pExecuteBuffers->m_sps.FrameHeight;
+    miscSeqInfo.video_format = seqDisplayExt.video_format;
+    miscSeqInfo.colour_description = seqDisplayExt.colour_description;
+    miscSeqInfo.colour_primaries = seqDisplayExt.colour_primaries;
+    miscSeqInfo.transfer_characteristics = seqDisplayExt.transfer_characteristics;
+    miscSeqInfo.matrix_coefficients = seqDisplayExt.matrix_coefficients;
+    miscSeqInfo.display_horizontal_size = seqDisplayExt.display_horizontal_size;
+    miscSeqInfo.display_vertical_size = seqDisplayExt.display_vertical_size;
 
     mfxStatus sts = CheckAndDestroyVAbuffer(m_vaDisplay, m_miscParamSeqInfoId);
     MFX_CHECK_STS(sts);

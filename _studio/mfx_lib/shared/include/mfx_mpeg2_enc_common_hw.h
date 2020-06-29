@@ -129,6 +129,21 @@ namespace MfxHwMpeg2Encode
 
 #endif
 
+    typedef struct tagENCODE_SET_VUI_PARAMETER_MPEG2
+    {
+        UINT    video_format : 3;
+        UINT : 4;
+        UINT    colour_description : 1;
+        UINT    colour_primaries : 8;
+        UINT    transfer_characteristics : 8;
+        UINT    matrix_coefficients : 8;
+
+        UINT    display_horizontal_size : 14;
+        UINT : 2;
+        UINT    display_vertical_size : 14;
+        UINT : 2;
+    } ENCODE_SET_VUI_PARAMETER_MPEG2;
+
 #if defined(MFX_VA_WIN)
 #define _NUM_STORED_FEEDBACKS 256
    class mfxFeedback

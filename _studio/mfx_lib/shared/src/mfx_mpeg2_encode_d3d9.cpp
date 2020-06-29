@@ -521,7 +521,7 @@ mfxStatus D3D9Encoder::CreateBSBuffer(mfxU32 numRefFrames)
 
 mfxStatus D3D9Encoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, mfxU8 *pUserData, mfxU32 userDataLen)
 {
-    const mfxU32    NumCompBuffer = 10;
+    const mfxU32    NumCompBuffer = 11;
 
     ENCODE_COMPBUFFERDESC   encodeCompBufferDesc[NumCompBuffer] = {0};
     ENCODE_PACKEDHEADER_DATA payload = {0};
@@ -545,6 +545,14 @@ mfxStatus D3D9Encoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, m
         encodeCompBufferDesc[bufCnt].pCompBuffer = &pExecuteBuffers->m_sps;
         bufCnt++;
         pExecuteBuffers->m_bAddSPS = 0;
+
+        if (pExecuteBuffers->m_bAddDisplayExt)
+        {
+            encodeCompBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_VUIDATA;
+            encodeCompBufferDesc[bufCnt].DataSize = sizeof(pExecuteBuffers->m_vui);
+            encodeCompBufferDesc[bufCnt].pCompBuffer = &pExecuteBuffers->m_vui;
+            bufCnt++;
+        }
 
         if (funcId == ENCODE_ENC_PAK_ID && m_bENC_PAK &&
             (pExecuteBuffers->m_quantMatrix.QmatrixMPEG2.bNewQmatrix[0] ||

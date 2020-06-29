@@ -909,7 +909,7 @@ mfxStatus D3D11Encoder::Execute(
 
 
     // [4]. buffers in system memory (configuration buffers)    
-    mfxU32 compBufferCount = 10;//mfxU32(10 + m_packedSlice.size());
+    mfxU32 compBufferCount = 11;//mfxU32(11 + m_packedSlice.size());
     std::vector<ENCODE_COMPBUFFERDESC>  encodeCompBufferDesc;
     encodeCompBufferDesc.resize(compBufferCount);
     Zero(encodeCompBufferDesc);
@@ -935,7 +935,15 @@ mfxStatus D3D11Encoder::Execute(
         bufCnt++;
         pExecuteBuffers->m_bAddSPS = 0;
 
-        if (m_bENC_PAK && 
+        if (pExecuteBuffers->m_bAddDisplayExt)
+        {
+            encodeCompBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_VUIDATA;
+            encodeCompBufferDesc[bufCnt].DataSize = sizeof(pExecuteBuffers->m_vui);
+            encodeCompBufferDesc[bufCnt].pCompBuffer = &pExecuteBuffers->m_vui;
+            bufCnt++;
+        }
+
+        if (m_bENC_PAK &&
             (pExecuteBuffers->m_quantMatrix.QmatrixMPEG2.bNewQmatrix[0] || 
              pExecuteBuffers->m_quantMatrix.QmatrixMPEG2.bNewQmatrix[1] || 
              pExecuteBuffers->m_quantMatrix.QmatrixMPEG2.bNewQmatrix[2] || 

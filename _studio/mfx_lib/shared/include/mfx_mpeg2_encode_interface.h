@@ -122,11 +122,11 @@ namespace MfxHwMpeg2Encode
         ExecuteBuffers()
             : m_caps()
             , m_sps()
+            , m_vui()
             , m_pps()
             , m_pSlice()
             , m_pMBs()
             , m_mbqp_data()
-            , m_VideoSignalInfo()
             , m_SkipFrame()
             , m_quantMatrix()
             , m_pSurface()
@@ -177,11 +177,11 @@ namespace MfxHwMpeg2Encode
         ENCODE_ENC_CTRL_CAPS                    m_caps;
 
         ENCODE_SET_SEQUENCE_PARAMETERS_MPEG2    m_sps;
+        ENCODE_SET_VUI_PARAMETER_MPEG2          m_vui;
         ENCODE_SET_PICTURE_PARAMETERS_MPEG2     m_pps;
         ENCODE_SET_SLICE_HEADER_MPEG2*          m_pSlice;
         ENCODE_ENC_MB_DATA_MPEG2*               m_pMBs;
         mfxU8*                                  m_mbqp_data;
-        mfxExtVideoSignalInfo                   m_VideoSignalInfo;
         mfxU8                                   m_SkipFrame;
 
 #if defined (MFX_VA_WIN)

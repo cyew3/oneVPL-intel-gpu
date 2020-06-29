@@ -244,10 +244,6 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
     m_bAddSPS = 1;
 
     m_bAddDisplayExt = par->bAddDisplayExt;
-    if (m_bAddDisplayExt)
-    {
-        m_VideoSignalInfo = par->videoSignalInfo;
-    }
 
     if (funcId == ENCODE_ENC_ID)
     {
@@ -323,6 +319,27 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
         m_sps.InitVBVBufferFullnessInBit = par->mfxVideoParams.mfx.InitialDelayInKB * 8000 * multiplier;
         m_sps.AVBRAccuracy = par->mfxVideoParams.mfx.Accuracy;
         m_sps.AVBRConvergence = par->mfxVideoParams.mfx.Convergence;
+    }
+
+    if (m_bAddDisplayExt)
+    {
+        m_vui.video_format = par->videoSignalInfo.VideoFormat;
+        m_vui.colour_description = par->videoSignalInfo.ColourDescriptionPresent;
+        if (par->videoSignalInfo.ColourDescriptionPresent)
+        {
+            m_vui.colour_primaries = par->videoSignalInfo.ColourPrimaries;
+            m_vui.transfer_characteristics = par->videoSignalInfo.TransferCharacteristics;
+            m_vui.matrix_coefficients = par->videoSignalInfo.MatrixCoefficients;
+        }
+        else
+        {
+            m_vui.colour_primaries = 0;
+            m_vui.transfer_characteristics = 0;
+            m_vui.matrix_coefficients = 0;
+        }
+
+        m_vui.display_horizontal_size = m_sps.FrameWidth;
+        m_vui.display_vertical_size = m_sps.FrameHeight;
     }
 
     if (par->bMbqpMode)
