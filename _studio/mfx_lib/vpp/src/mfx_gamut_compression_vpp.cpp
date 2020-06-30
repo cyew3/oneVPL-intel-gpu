@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2019 Intel Corporation
+// Copyright (c) 2010-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -508,7 +508,7 @@ mfxStatus ConvertYUV2LCH_NV12_32f( Surface1_32f* pSrc,   Surface1_32f* pDst )
             mfxF32 srcV = pSrcUV[2*x+1];
             mfxF32 dstC, dstH;
 
-            dstC = sqrt(srcU*srcU + srcV*srcV);
+            dstC = (mfxF32)(sqrt(srcU*srcU + srcV*srcV));
 
             dstH = static_cast <float> (atan2(srcV, srcU) * 180/GAMUT_PI);
             if( dstH < 0 )
