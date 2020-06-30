@@ -145,11 +145,20 @@ namespace AV1Enc {
             m_metric = 0;
         }
 
-        struct AllocInfo { AllocInfo() : width(0), height(0) {} int32_t width, height, analyzeCmplx, deltaQpMode; };
+        struct AllocInfo 
+        {
+            AllocInfo() : width(0), height(0), analyzeCmplx(0), deltaQpMode(0) {}
+            int32_t width;
+            int32_t height;
+            int32_t analyzeCmplx;
+            int32_t deltaQpMode;
+        };
         Statistics() {
-            m_colorCount16x16 = nullptr;
             Zero(m_rs);
             Zero(m_cs);
+            m_pitchColorCount16x16 = 0;
+            m_colorCount16x16 = nullptr;
+            m_avgDPAQ = 0.0f;
 #ifdef AMT_HROI_PSY_AQ
             m_RoiPitch = 0;
             ctbStats = NULL;
@@ -159,6 +168,20 @@ namespace AV1Enc {
                 roi_pic.cmplx[i] = 0.0;
             }
 #endif
+            m_frameRs = 0.0f;
+            m_frameCs = 0.0f;
+            SC = 0.0f;
+            nSC = 0.0f;
+            TSC = 0.0f;
+            avgsqrSCpp = 0.0f;
+            avgTSC = 0.0f;
+            m_avgBestSatd = 0.0f;
+            m_avgIntraSatd = 0.0f;
+            m_avgInterSatd = 0.0f;
+            m_intraRatio = 0.0f;
+            m_sceneChange = 0;
+            m_sceneCut = 0;
+            m_metric = 0;
         };
         void Create(const AllocInfo &allocInfo);
         ~Statistics() { Destroy(); }

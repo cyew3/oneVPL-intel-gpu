@@ -378,6 +378,7 @@ namespace AV1Enc {
             numUpstreamDependencies = 0;
             numDownstreamDependencies = 0;
             finished = 0;
+            poc = 0;
         }
 
         ThreadingTaskSpecifier action = TT_COUNT;

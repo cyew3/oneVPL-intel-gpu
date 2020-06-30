@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -212,7 +212,7 @@ static ConvolveParams get_conv_params_no_round(
     int dst_stride,
     int is_compound, int bd)
 {
-    ConvolveParams conv_params;
+    ConvolveParams conv_params = {};
     conv_params.ref = ref;
     conv_params.do_average = do_average;
     //assert(IMPLIES(do_average, is_compound));
