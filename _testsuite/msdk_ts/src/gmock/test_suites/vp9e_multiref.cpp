@@ -180,7 +180,8 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1 },
         }
         },
-        {/*11*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        // MaxNum_Reference is 1 for TU7 (value is changed by driver). Therefore, expected_inter_only_frames_qnt = 0
+        {/*11*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, 20, 2, 0,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -190,7 +191,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2 },
         }
         },
-        {/*12*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, 20, 2, 8,
+        {/*12*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, 20, 2, 0,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -279,7 +280,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1 },
         }
         },
-        {/*20*/ MFX_ERR_NONE, NONE, 20, 2, 8,
+        {/*20*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, 20, 2, 0,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -290,7 +291,7 @@ namespace vp9e_multiref
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2 },
         }
         },
-        {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, 20, 2, 8,
+        {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, 20, 2, 0,
         {
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10 },
@@ -727,13 +728,8 @@ namespace vp9e_multiref
         GetVideoParam(m_session, &new_par);
 
         mfxU16 tu_actual = (m_par.mfx.TargetUsage == 0 ? 4 : m_par.mfx.TargetUsage);
-        mfxU16 NumRefFrame_maximum_expected = (tu_actual > 2 ? 2 : 3);
-        if (tu_actual > 2 && m_pPar->mfx.NumRefFrame > 2)
-        {
-            EXPECT_EQ(new_par.mfx.NumRefFrame, NumRefFrame_maximum_expected) << "ERROR: NumRefFrame for "
-                << m_pPar->mfx.NumRefFrame << " is inited to " << new_par.mfx.NumRefFrame << ", expected " << NumRefFrame_maximum_expected;
-        }
-        else if (m_pPar->mfx.NumRefFrame > VP9E_MULTIREF_MAX_NUMREFFRAME)
+        mfxU16 NumRefFrame_maximum_expected = (tu_actual == MFX_TARGETUSAGE_BEST_SPEED ? 1 : (tu_actual == MFX_TARGETUSAGE_BALANCED ? 2 : VP9E_MULTIREF_MAX_NUMREFFRAME));
+        if (NumRefFrame_maximum_expected < m_pPar->mfx.NumRefFrame)
         {
             EXPECT_EQ(new_par.mfx.NumRefFrame, NumRefFrame_maximum_expected) << "ERROR: NumRefFrame for "
                 << m_pPar->mfx.NumRefFrame << " is inited to " << new_par.mfx.NumRefFrame << ", expected " << NumRefFrame_maximum_expected;

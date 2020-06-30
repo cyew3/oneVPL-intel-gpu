@@ -1338,13 +1338,18 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
             changed = true;
         }
 
-        // TargetUsage 4 and 7 don't support 3 reference frames
+        // For targetUsage 4: MaxNum_Reference is 2
+        // For targetUsage 7: MaxNum_Reference is 1
         if (par.mfx.TargetUsage)
         {
-            if (par.mfx.TargetUsage != MFX_TARGETUSAGE_BEST_QUALITY &&
-                par.mfx.NumRefFrame > 2)
+            if (par.mfx.TargetUsage == MFX_TARGETUSAGE_BALANCED && par.mfx.NumRefFrame > 2)
             {
                 par.mfx.NumRefFrame = 2;
+                changed = true;
+            }
+            else if (par.mfx.TargetUsage == MFX_TARGETUSAGE_BEST_SPEED && par.mfx.NumRefFrame > 1)
+            {
+                par.mfx.NumRefFrame = 1;
                 changed = true;
             }
         }
