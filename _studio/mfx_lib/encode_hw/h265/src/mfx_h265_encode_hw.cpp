@@ -1312,7 +1312,7 @@ void SetEncFrameInfo(MfxVideoParam &m_vpar,
     if (encFrameInfo && taskForQuery)
     {
         encFrameInfo->QP = taskForQuery->m_avgQP;
-        encFrameInfo->FrameOrder = taskForQuery->m_fo;
+        encFrameInfo->FrameOrder = (taskForQuery->m_surf->Data.FrameOrder == mfxU32(-1)) ? taskForQuery->m_fo : taskForQuery->m_surf->Data.FrameOrder;
         encFrameInfo->PicStruct = taskForQuery->m_surf->Info.PicStruct;
         if (IsOn(m_vpar.m_ext.CO2.EnableMAD))
             encFrameInfo->MAD = taskForQuery->m_MAD;
