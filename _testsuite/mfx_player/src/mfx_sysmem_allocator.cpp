@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -205,6 +205,14 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->PitchLow  = (mfxU16)((8 * (mfxU32)Width2) % (1 << 16));
         break;
 #endif
+#if (MFX_VERSION >= 1028)
+    case MFX_FOURCC_RGBP:
+        ptr->G = ptr->B + Width2 * Height2;
+        ptr->R = ptr->G + Width2 * Height2;
+        ptr->PitchHigh = 0;
+        ptr->PitchLow  = Width2;
+        break;
+#endif // #if (MFX_VERSION >= 1028)
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -300,6 +308,9 @@ static mfxU32 GetSurfaceSize(mfxU32 FourCC, mfxU32 Width2, mfxU32 Height2)
     case MFX_FOURCC_Y410:
         nbytes = 4 * Width2*Height2;
         break;
+#endif
+#if (MFX_VERSION >= 1028)
+    case MFX_FOURCC_RGBP:
 #endif
     case MFX_FOURCC_RGB3:
         nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2;

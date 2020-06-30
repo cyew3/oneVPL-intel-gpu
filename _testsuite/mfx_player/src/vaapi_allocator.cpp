@@ -185,7 +185,7 @@ mfxStatus vaapiFrameAllocator::ReallocImpl(mfxMemId mid, const mfxFrameInfo *inf
     attrib[attrCnt].type = VASurfaceAttribPixelFormat;
     attrib[attrCnt].flags = VA_SURFACE_ATTRIB_SETTABLE;
     attrib[attrCnt].value.type = VAGenericValueTypeInteger;
-    attrib[attrCnt++].value.value.i = va_fourcc;
+    attrib[attrCnt++].value.value.i = (va_fourcc == VA_RT_FORMAT_RGBP ? VA_FOURCC_RGBP : va_fourcc);
     format = va_fourcc;
 
     if ((fourcc == MFX_FOURCC_VP8_NV12) ||
@@ -320,7 +320,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             attrib[attrCnt].type = VASurfaceAttribPixelFormat;
             attrib[attrCnt].flags = VA_SURFACE_ATTRIB_SETTABLE;
             attrib[attrCnt].value.type = VAGenericValueTypeInteger;
-            attrib[attrCnt++].value.value.i = va_fourcc;
+            attrib[attrCnt++].value.value.i = (va_fourcc == VA_RT_FORMAT_RGBP ? VA_FOURCC_RGBP : va_fourcc);
             format = va_fourcc;
 
             if ((fourcc == MFX_FOURCC_VP8_NV12) ||
@@ -504,7 +504,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             attrib[attrCnt].type          = VASurfaceAttribPixelFormat;
             attrib[attrCnt].flags         = VA_SURFACE_ATTRIB_SETTABLE;
             attrib[attrCnt].value.type    = VAGenericValueTypeInteger;
-            attrib[attrCnt++].value.value.i = vaapi_mid->m_fourcc;
+            attrib[attrCnt++].value.value.i = (vaapi_mid->m_fourcc == VA_RT_FORMAT_RGBP ? VA_FOURCC_RGBP : vaapi_mid->m_fourcc);
             format               = vaapi_mid->m_fourcc;
 
             if (mfx_fourcc == MFX_FOURCC_VP8_NV12)

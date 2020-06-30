@@ -1015,6 +1015,37 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             break;
         }
 #endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
+        case MFX_FOURCC_RGBP:
+        {
+            m_Current.m_comp = VM_STRING('R');
+            m_Current.m_pixX = 0;
+            mfxU8* plane = pData->R + pInfo->CropX;
+            for (i = 0; i <pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                MFX_CHECK_STS(PutData(plane, pInfo->CropW));
+                plane += pitch;
+            }
+            m_Current.m_comp = VM_STRING('G');
+            plane = pData->G + pInfo->CropX;
+            for (i = 0; i <pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                MFX_CHECK_STS(PutData(plane, pInfo->CropW));
+                plane += pitch;
+            }
+            m_Current.m_comp = VM_STRING('B');
+            plane = pData->B + pInfo->CropX;
+            for (i = 0; i <pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                MFX_CHECK_STS(PutData(plane, pInfo->CropW));
+                plane += pitch;
+            }
+            break;
+        }
+#endif
         default:
         {
             MFX_TRACE_AND_EXIT(MFX_ERR_UNSUPPORTED, (VM_STRING("[MFXFileWriteRender] file writing in %s colorformat not supported\n"), 
