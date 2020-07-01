@@ -1,5 +1,9 @@
 /******************************************************************************\
+<<<<<<< HEAD
 Copyright (c) 2005-2018, Intel Corporation
+=======
+Copyright (c) 2005-2020, Intel Corporation
+>>>>>>> b76c44afe3... Use CL/cl2.hpp for rotate_opencl_plugin
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -647,10 +651,10 @@ void OpenCLRotator180Context::CreateBuffers(const cl::size_t<3> &Y_size,
 
 void OpenCLRotator180Context::SetKernelArgs()
 {
-    m_kernelY .setArg(0, m_InY());
-    m_kernelY .setArg(1, m_OutY());
-    m_kernelUV.setArg(0, m_InUV());
-    m_kernelUV.setArg(1, m_OutUV());
+    m_kernelY .setArg(0, m_InY);
+    m_kernelY .setArg(1, m_OutY);
+    m_kernelUV.setArg(0, m_InUV);
+    m_kernelUV.setArg(1, m_OutUV);
 }
 
 void OpenCLRotator180Context::Rotate(size_t width, size_t height,
