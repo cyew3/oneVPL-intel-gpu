@@ -229,7 +229,7 @@ namespace UMC_AV1_DECODER
         //picParam.loop_filter.delta_lf_res = CeilLog2(info.delta_lf_res);
         picParam.loop_filter.delta_lf_res = (UCHAR)info.delta_lf_res;
 
-        picParam.loop_filter.log2_restoration_unit_size[0] = 256 >> (2 - info.lr_params.lr_unit_shift);
+        picParam.loop_filter.log2_restoration_unit_size[0] = (USHORT)(log(256) / log(2) - 2 + info.lr_params.lr_unit_shift);
         uint32_t uv_shift;
         uv_shift = info.lr_params.lr_uv_shift;
         if (sh.color_config.subsampling_x && sh.color_config.subsampling_y)
@@ -238,8 +238,8 @@ namespace UMC_AV1_DECODER
         else {
             uv_shift = 0;
         }
-        picParam.loop_filter.log2_restoration_unit_size[1] = picParam.loop_filter.log2_restoration_unit_size[0] >> info.lr_params.lr_uv_shift;
-        picParam.loop_filter.log2_restoration_unit_size[2] = picParam.loop_filter.log2_restoration_unit_size[0] >> info.lr_params.lr_uv_shift;
+        picParam.loop_filter.log2_restoration_unit_size[1] = (USHORT)(picParam.loop_filter.log2_restoration_unit_size[0] - info.lr_params.lr_uv_shift);
+        picParam.loop_filter.log2_restoration_unit_size[2] = (USHORT)(picParam.loop_filter.log2_restoration_unit_size[0] - info.lr_params.lr_uv_shift);
 
         picParam.loop_filter.frame_restoration_type[0] = (UCHAR)info.lr_params.lr_type[0];
         picParam.loop_filter.frame_restoration_type[1] = (UCHAR)info.lr_params.lr_type[1];
