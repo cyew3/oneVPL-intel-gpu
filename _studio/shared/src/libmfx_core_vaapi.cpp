@@ -409,9 +409,18 @@ typedef struct {
     { 0x4F81, MFX_HW_DG2, MFX_GT4 }, // DG2-256 / IDG2_4x4x16_SKU_DEVICE_F0_ID
     { 0x4F82, MFX_HW_DG2, MFX_GT4 }, // DG2-128 / IDG2_2x4x16_SKU_DEVICE_F0_ID
 
+    /* RKL */
+    { 0x4C80, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+    { 0x4C8A, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+    { 0x4C81, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+    { 0x4C8B, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+    { 0x4C90, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+    { 0x4C9A, MFX_HW_RKL, MFX_GT1 }, // RKL-S
+
     /* ADL */
-    { 0x4680, MFX_HW_ADL_S,  MFX_GT1 },//ADL-S
-    { 0x46A0, MFX_HW_ADL_P,  MFX_GT2 },//ADL-P
+    { 0x4680, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
+    { 0x46A0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
+
     /* PVC */
     { 0x0BD0, MFX_HW_PVC, MFX_GT4 }
 #endif

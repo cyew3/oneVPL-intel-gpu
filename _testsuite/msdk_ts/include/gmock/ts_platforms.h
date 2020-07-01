@@ -44,12 +44,14 @@ enum HWType
     MFX_HW_JSL       = MFX_HW_LKF + 1,
 
     MFX_HW_TGL       = 0xe00000,
-    MFX_HW_DG1       = MFX_HW_TGL + 1,
-    MFX_HW_ATS       = MFX_HW_DG1 + 1,
+
+    MFX_HW_RKL       = MFX_HW_TGL + 2,
+    MFX_HW_DG1       = MFX_HW_TGL + 3,
+    MFX_HW_ADL_S     = MFX_HW_TGL + 4,
+    MFX_HW_ADL_P     = MFX_HW_TGL + 5,
+    MFX_HW_ATS       = MFX_HW_TGL + 6,
     MFX_HW_DG2       = MFX_HW_ATS + 1,
-    MFX_HW_ADL_S     = MFX_HW_ATS + 2,
-    MFX_HW_ADL_P     = MFX_HW_ATS + 3,
-    MFX_HW_PVC       = MFX_HW_ATS + 4,
+    MFX_HW_PVC       = MFX_HW_ATS + 2,
 
     MFX_HW_MTL       = 0xf00000
 };
