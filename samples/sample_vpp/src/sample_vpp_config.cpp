@@ -175,6 +175,9 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
         pResources->scalingConfig.Header.BufferId = MFX_EXTBUFF_VPP_SCALING;
         pResources->scalingConfig.Header.BufferSz = sizeof(mfxExtVPPScaling);
         pResources->scalingConfig.ScalingMode     = pParams->scalingMode;
+#if MFX_VERSION >= 1033
+        pResources->scalingConfig.InterpolationMethod = pParams->interpolationMethod;
+#endif
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->scalingConfig);
     }
