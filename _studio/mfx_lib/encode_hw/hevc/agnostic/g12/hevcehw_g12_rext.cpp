@@ -60,9 +60,8 @@ void RExt::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
         rec = par.mfx.FrameInfo;
 
-        if(!mUpdateRecInfo.empty())
-            mUpdateRecInfo.at(CO3.TargetChromaFormatPlus1)(rec, pRI->Type, IsOn(par.mfx.LowPower));
-        
+        mUpdateRecInfo.at(CO3.TargetChromaFormatPlus1)(rec, pRI->Type, IsOn(par.mfx.LowPower));
+
         rec.ChromaFormat   = CO3.TargetChromaFormatPlus1 - 1;
         rec.BitDepthLuma   = CO3.TargetBitDepthLuma;
         rec.BitDepthChroma = CO3.TargetBitDepthChroma;

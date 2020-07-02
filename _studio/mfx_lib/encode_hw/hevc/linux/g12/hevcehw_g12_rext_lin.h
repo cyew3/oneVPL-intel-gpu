@@ -38,7 +38,18 @@ public:
 
     RExt(mfxU32 FeatureId)
         : HEVCEHW::Gen12::RExt(FeatureId)
-    { }
+    {
+        mUpdateRecInfo =
+        {
+            {
+                mfxU16(1 + MFX_CHROMAFORMAT_YUV420)
+                , [](mfxFrameInfo& rec, mfxU16& type, bool /*bVDEnc*/)
+                {
+                    rec.FourCC = MFX_FOURCC_P010;
+                }
+            }
+        };
+    }
 
 protected:
     virtual void Query1NoCaps(const FeatureBlocks& blocks, TPushQ1 Push) override;
