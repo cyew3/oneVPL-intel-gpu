@@ -40,8 +40,7 @@ namespace Base
         DECL_BLOCK(AllocTask)\
         DECL_BLOCK(InitTask)\
         DECL_BLOCK(PatchSegmentParam)\
-        DECL_BLOCK(ConfigureTask)\
-        DECL_BLOCK(PatchDDITask)
+        DECL_BLOCK(ConfigureTask)
 #define DECL_FEATURE_NAME "G12_Segmentation"
 #include "av1ehw_decl_blocks.h"
 

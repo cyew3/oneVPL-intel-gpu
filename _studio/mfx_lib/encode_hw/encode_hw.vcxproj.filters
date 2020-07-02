@@ -532,9 +532,6 @@
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_dirty_rect_win.cpp">
       <Filter>av1\embargo\windows\base</Filter>
     </ClCompile>
-    <ClCompile Include="av1\embargo\windows\base\av1ehw_base_segmentation_win.cpp">
-      <Filter>av1\embargo\windows\base</Filter>
-    </ClCompile>
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_win.cpp">
       <Filter>av1\embargo\windows\base</Filter>
     </ClCompile>
@@ -1003,9 +1000,6 @@
       <Filter>av1\embargo\windows\base</Filter>
     </ClInclude>
     <ClInclude Include="av1\embargo\windows\base\av1ehw_base_dirty_rect_win.h">
-      <Filter>av1\embargo\windows\base</Filter>
-    </ClInclude>
-    <ClInclude Include="av1\embargo\windows\base\av1ehw_base_segmentation_win.h">
       <Filter>av1\embargo\windows\base</Filter>
     </ClInclude>
     <ClInclude Include="av1\embargo\windows\base\av1ehw_base_win.h">

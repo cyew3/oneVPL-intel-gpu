@@ -31,7 +31,7 @@
 #include "av1ehw_base_ddi_packer_win.h"
 #include "av1ehw_base_tile.h"
 #include "av1ehw_base_dirty_rect_win.h"
-#include "av1ehw_base_segmentation_win.h"
+#include "av1ehw_base_segmentation.h"
 #include "av1ehw_base_blocking_sync_win.h"
 
 
@@ -82,10 +82,6 @@ mfxStatus Windows::Base::MFXVideoENCODEAV1_HW::Init(mfxVideoParam *par)
         Reorder(queue
             , { FEATURE_DDI, IDDI::BLK_SubmitTask }
             , { FEATURE_DIRTY_RECT, DirtyRect::BLK_PatchDDITask });
-
-        Reorder(queue
-            , { FEATURE_DDI, IDDI::BLK_SubmitTask }
-            , { FEATURE_SEGMENTATION, Segmentation::BLK_PatchDDITask });
     }
 
     {

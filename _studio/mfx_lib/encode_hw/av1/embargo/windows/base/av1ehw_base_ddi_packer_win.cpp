@@ -123,6 +123,56 @@ void DDIPacker::InitAlloc(const FeatureBlocks&, TPushIA Push)
     });
 }
 
+static mfxU32 MapSegIdBlockSizeToDDI(mfxU16 size)
+{
+    switch (size)
+    {
+    case MFX_AV1_SEGMENT_ID_BLOCK_SIZE_8x8:
+        return BLOCK_8x8;
+    case MFX_AV1_SEGMENT_ID_BLOCK_SIZE_32x32:
+        return BLOCK_32x32;
+    case MFX_AV1_SEGMENT_ID_BLOCK_SIZE_64x64:
+        return BLOCK_64x64;
+    case MFX_AV1_SEGMENT_ID_BLOCK_SIZE_16x16:
+    default:
+        return BLOCK_16x16;
+    }
+}
+
+static void FillSegmentationParam(
+    const mfxExtAV1Segmentation& seg
+    , const FH& bs_fh
+    , ENCODE_SET_PICTURE_PARAMETERS_AV1& pps)
+{
+    pps.stAV1Segments = DXVA_Intel_Seg_AV1{};
+
+    if (!bs_fh.segmentation_params.segmentation_enabled)
+        return;
+
+    auto& segFlags = pps.stAV1Segments.SegmentFlags.fields;
+    segFlags.segmentation_enabled = bs_fh.segmentation_params.segmentation_enabled;
+
+    segFlags.SegmentNumber = seg.NumSegments;
+    pps.PicFlags.fields.SegIdBlockSize = MapSegIdBlockSizeToDDI(seg.SegmentIdBlockSize);
+
+    segFlags.update_map = bs_fh.segmentation_params.segmentation_update_map;
+    segFlags.temporal_update = bs_fh.segmentation_params.segmentation_temporal_update;
+
+    std::transform(bs_fh.segmentation_params.FeatureMask, bs_fh.segmentation_params.FeatureMask + AV1_MAX_NUM_OF_SEGMENTS,
+        pps.stAV1Segments.feature_mask,
+        [](uint32_t x) -> UCHAR {
+        return static_cast<UCHAR>(x);
+    });
+
+    for (mfxU8 i = 0; i < AV1_MAX_NUM_OF_SEGMENTS; ++i) {
+        std::transform(bs_fh.segmentation_params.FeatureData[i], bs_fh.segmentation_params.FeatureData[i] + SEG_LVL_MAX,
+            pps.stAV1Segments.feature_data[i],
+            [](uint32_t x) -> SHORT {
+            return static_cast<SHORT>(x);
+        });
+    }
+}
+
 static void FillSegmentationMap(
     const ExtBuffer::Param<mfxVideoParam>& par
     , std::vector<UCHAR>& segment_map)
@@ -185,6 +235,7 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
 
         FillPpsBuffer(task, bs_sh, bs_fh, m_pps);
         const auto& seg = Task::Segment::Get(s_task);
+        FillSegmentationParam(seg, bs_fh, m_pps);
         FillSegmentationMap(seg, m_segment_map);
 
         mfxU32 nCBD = 0;

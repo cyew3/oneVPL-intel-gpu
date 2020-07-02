@@ -43,7 +43,6 @@
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_d3d11_win.cpp" />
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_ddi_packer_win.cpp" />
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_dirty_rect_win.cpp" />
-    <ClCompile Include="av1\embargo\windows\base\av1ehw_base_segmentation_win.cpp" />
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_win.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_impl.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_alloc.cpp" />
@@ -186,7 +185,6 @@
     <ClInclude Include="av1\embargo\windows\base\av1ehw_base_d3d11_win.h" />
     <ClInclude Include="av1\embargo\windows\base\av1ehw_base_ddi_packer_win.h" />
     <ClInclude Include="av1\embargo\windows\base\av1ehw_base_dirty_rect_win.h" />
-    <ClInclude Include="av1\embargo\windows\base\av1ehw_base_segmentation_win.h" />
     <ClInclude Include="av1\embargo\windows\base\av1ehw_base_win.h" />
     <ClInclude Include="av1\embargo\windows\g12\av1ehw_g12_win.h" />
     <ClInclude Include="av1\embargo\windows\g13\av1ehw_g13_win.h" />
