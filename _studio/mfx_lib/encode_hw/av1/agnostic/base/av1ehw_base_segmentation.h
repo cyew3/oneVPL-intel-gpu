@@ -28,6 +28,55 @@
 
 namespace AV1EHW
 {
+
+inline bool IsSegmentationEnabled(const mfxExtAV1Param* pAV1)
+{
+    return pAV1 && pAV1->SegmentationMode != MFX_AV1_SEGMENT_DISABLED;
+}
+
+inline bool IsAutoSegmentationEnabled(const mfxExtAV1Param* pAV1)
+{
+    return pAV1 && pAV1->SegmentationMode == MFX_AV1_SEGMENT_AUTO;
+}
+
+inline bool IsForceSegmentationEnabled(const mfxExtAV1Param* pAV1)
+{
+    return pAV1 && pAV1->SegmentationMode == MFX_AV1_SEGMENT_MANUAL;
+}
+
+inline bool IsSegmentationSwitchedOff(const mfxExtAV1Segmentation* pPar)
+{
+    return pPar && pPar->NumSegments == 0;
+}
+
+inline bool IsFeatureSupported(
+    const ENCODE_CAPS_AV1& caps
+    , Base::SEG_LVL_FEATURES feature)
+{
+    return (caps.SegmentFeatureSupport & (1 << feature)) != 0;
+}
+
+inline bool IsFeatureEnabled(
+    mfxU16 featureEnabled
+    , Base::SEG_LVL_FEATURES feature)
+{
+    return (featureEnabled & (1 << feature)) != 0;
+}
+
+inline void DisableFeature(
+    mfxU16& featureEnabled
+    , Base::SEG_LVL_FEATURES feature)
+{
+    featureEnabled &= ~(1 << feature);
+}
+
+inline void EnableFeature(
+    mfxU16& featureEnabled
+    , Base::SEG_LVL_FEATURES feature)
+{
+    featureEnabled |= (1 << feature);
+}
+
 namespace Base
 {
     class Segmentation
@@ -39,7 +88,6 @@ namespace Base
         DECL_BLOCK(SetDefaults)\
         DECL_BLOCK(AllocTask)\
         DECL_BLOCK(InitTask)\
-        DECL_BLOCK(PatchSegmentParam)\
         DECL_BLOCK(ConfigureTask)
 #define DECL_FEATURE_NAME "G12_Segmentation"
 #include "av1ehw_decl_blocks.h"

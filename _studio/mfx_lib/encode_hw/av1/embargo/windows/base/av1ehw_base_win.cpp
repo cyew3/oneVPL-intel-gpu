@@ -31,7 +31,6 @@
 #include "av1ehw_base_ddi_packer_win.h"
 #include "av1ehw_base_tile.h"
 #include "av1ehw_base_dirty_rect_win.h"
-#include "av1ehw_base_segmentation.h"
 #include "av1ehw_base_blocking_sync_win.h"
 
 
@@ -67,7 +66,6 @@ Windows::Base::MFXVideoENCODEAV1_HW::MFXVideoENCODEAV1_HW(
 #endif
     m_features.emplace_back(new Tile(FEATURE_TILE));
     m_features.emplace_back(new DirtyRect(FEATURE_DIRTY_RECT));
-    m_features.emplace_back(new Segmentation(FEATURE_SEGMENTATION));
 
     InternalInitFeatures(status, mode);
 }
@@ -82,14 +80,6 @@ mfxStatus Windows::Base::MFXVideoENCODEAV1_HW::Init(mfxVideoParam *par)
         Reorder(queue
             , { FEATURE_DDI, IDDI::BLK_SubmitTask }
             , { FEATURE_DIRTY_RECT, DirtyRect::BLK_PatchDDITask });
-    }
-
-    {
-        auto& queue = BQ<BQ_PostReorderTask>::Get(*this);
-        Reorder(queue
-            , { FEATURE_GENERAL, General::BLK_ConfigureTask }
-            , { FEATURE_SEGMENTATION, Segmentation::BLK_ConfigureTask }
-            , PLACE_AFTER);
     }
 
     {

@@ -37,6 +37,7 @@
     <ClCompile Include="av1\agnostic\base\av1ehw_base_task.cpp" />
     <ClCompile Include="av1\agnostic\base\av1ehw_base_tile.cpp" />
     <ClCompile Include="av1\av1ehw_disp.cpp" />
+    <ClCompile Include="av1\embargo\agnostic\g12\av1ehw_g12_segmentation.cpp" />
     <ClCompile Include="av1\embargo\windows\av1ehw_ddi_trace.cpp" />
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_alloc_win.cpp" />
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_blocking_sync_win.cpp" />
@@ -44,6 +45,8 @@
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_ddi_packer_win.cpp" />
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_dirty_rect_win.cpp" />
     <ClCompile Include="av1\embargo\windows\base\av1ehw_base_win.cpp" />
+    <ClCompile Include="av1\embargo\windows\g12\av1ehw_g12_win.cpp" />
+    <ClCompile Include="av1\embargo\windows\g13\av1ehw_g13_win.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_impl.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_alloc.cpp" />
     <ClCompile Include="hevc\agnostic\base\hevcehw_base_constraints.cpp" />
@@ -178,6 +181,7 @@
     <ClInclude Include="av1\agnostic\base\av1ehw_base_tile.h" />
     <ClInclude Include="av1\av1ehw_disp.h" />
     <ClInclude Include="av1\embargo\agnostic\g12\av1ehw_g12.h" />
+    <ClInclude Include="av1\embargo\agnostic\g12\av1ehw_g12_segmentation.h" />
     <ClInclude Include="av1\embargo\agnostic\g13\av1ehw_g13.h" />
     <ClInclude Include="av1\embargo\windows\av1ehw_ddi_trace.h" />
     <ClInclude Include="av1\embargo\windows\base\av1ehw_base_alloc_win.h" />

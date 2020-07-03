@@ -21,33 +21,32 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
+#if defined(MFX_ENABLE_AV1_VIDEO_ENCODE)
 
-#include "av1ehw_g12.h"
-#include "av1ehw_base_win.h"
+#include "av1ehw_base_segmentation.h"
 
 namespace AV1EHW
 {
-
-namespace Windows
-{
-
 namespace Gen12
 {
-    class MFXVideoENCODEAV1_HW
-        : public Windows::Base::MFXVideoENCODEAV1_HW
+    class Segmentation
+        : public Base::Segmentation
     {
     public:
-        using TBaseImpl = Windows::Base::MFXVideoENCODEAV1_HW;
+#define DECL_BLOCK_LIST\
+        DECL_BLOCK(PatchSegmentParam)
+#define DECL_FEATURE_NAME "G12_Segmentation"
+#include "av1ehw_decl_blocks.h"
 
-        MFXVideoENCODEAV1_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
+        Segmentation(mfxU32 FeatureId)
+            : Base::Segmentation(FeatureId)
+        {}
+
+    protected:
+        virtual void InitTask(const FeatureBlocks& blocks, TPushIT Push) override;
     };
 
 } //Gen12
-} //Windows
-}// namespace AV1EHW
+} //namespace AV1EHW
 
-#endif
+#endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)

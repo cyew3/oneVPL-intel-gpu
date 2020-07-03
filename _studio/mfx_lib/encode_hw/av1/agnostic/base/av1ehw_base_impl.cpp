@@ -29,6 +29,7 @@
 #include "av1ehw_base_task.h"
 #include "av1ehw_base_iddi.h"
 #include "av1ehw_base_iddi_packer.h"
+#include "av1ehw_base_segmentation.h"
 
 #include <algorithm>
 
@@ -150,6 +151,19 @@ mfxStatus MFXVideoENCODEAV1_HW::Init(mfxVideoParam *par)
         auto& queue = BQ<BQ_SubmitTask>::Get(*this);
         queue.splice(queue.end(), queue, Get(queue, { FEATURE_DDI_PACKER, IDDIPacker::BLK_SubmitTask }));
         queue.splice(queue.end(), queue, Get(queue, { FEATURE_DDI, IDDI::BLK_SubmitTask }));
+    }
+
+    {
+        auto& queue = BQ<BQ_PostReorderTask>::Get(*this);
+        auto it = Find(queue, { FEATURE_SEGMENTATION, Segmentation::BLK_ConfigureTask });
+
+        if (it != queue.end())
+        {
+            Reorder(queue
+                , { FEATURE_GENERAL, General::BLK_ConfigureTask }
+                , { FEATURE_SEGMENTATION, Segmentation::BLK_ConfigureTask }
+            , PLACE_AFTER);
+        }
     }
 
     return wrn;

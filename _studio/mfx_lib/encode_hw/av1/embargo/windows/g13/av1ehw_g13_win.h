@@ -28,15 +28,24 @@
 
 namespace AV1EHW
 {
-namespace Gen13
-{
-    using TPrevGenImpl = AV1EHW::Windows::Base::MFXVideoENCODEAV1_HW;
-}; //Gen13
+
 namespace Windows
 {
+
 namespace Gen13
 {
-    using MFXVideoENCODEAV1_HW = AV1EHW::Gen13::MFXVideoENCODEAV1_HW<AV1EHW::Gen13::TPrevGenImpl>;
+    class MFXVideoENCODEAV1_HW
+        : public Windows::Base::MFXVideoENCODEAV1_HW
+    {
+    public:
+        using TBaseImpl = Windows::Base::MFXVideoENCODEAV1_HW;
+
+        MFXVideoENCODEAV1_HW(
+            VideoCORE& core
+            , mfxStatus& status
+            , eFeatureMode mode = eFeatureMode::INIT);
+    };
+
 } //Gen13
 } //Windows
 }// namespace AV1EHW

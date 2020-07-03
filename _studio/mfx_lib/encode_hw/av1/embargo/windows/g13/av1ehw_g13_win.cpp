@@ -18,36 +18,31 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_AV1_VIDEO_ENCODE) && !defined (MFX_VA_LINUX)
 
-#include "av1ehw_g12.h"
-#include "av1ehw_base_win.h"
+#include "av1ehw_g13_win.h"
+#include "av1ehw_base_data.h"
+#include "av1ehw_base_general.h"
+#include "av1ehw_base_segmentation.h"
 
-namespace AV1EHW
+using namespace AV1EHW;
+
+Windows::Gen13::MFXVideoENCODEAV1_HW::MFXVideoENCODEAV1_HW(
+    VideoCORE& core
+    , mfxStatus& status
+    , eFeatureMode mode)
+    : TBaseImpl(core, status, mode)
 {
 
-namespace Windows
-{
+    TFeatureList newFeatures;
 
-namespace Gen12
-{
-    class MFXVideoENCODEAV1_HW
-        : public Windows::Base::MFXVideoENCODEAV1_HW
-    {
-    public:
-        using TBaseImpl = Windows::Base::MFXVideoENCODEAV1_HW;
+    newFeatures.emplace_back(new AV1EHW::Base::Segmentation(AV1EHW::Base::FEATURE_SEGMENTATION));
 
-        MFXVideoENCODEAV1_HW(
-            VideoCORE& core
-            , mfxStatus& status
-            , eFeatureMode mode = eFeatureMode::INIT);
-    };
+    for (auto& pFeature : newFeatures)
+        pFeature->Init(mode, *this);
 
-} //Gen12
-} //Windows
-}// namespace AV1EHW
+    TBaseImpl::m_features.splice(TBaseImpl::m_features.end(), newFeatures);
+}
 
-#endif
+#endif //defined(MFX_ENABLE_AV1_VIDEO_ENCODE)

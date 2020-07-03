@@ -29,48 +29,6 @@ using namespace AV1EHW::Base;
 
 namespace AV1EHW
 {
-inline bool IsSegmentationEnabled(const mfxExtAV1Param* pAV1)
-{
-    return pAV1 && pAV1->SegmentationMode != MFX_AV1_SEGMENT_DISABLED;
-}
-
-inline bool IsAutoSegmentationEnabled(const mfxExtAV1Param* pAV1)
-{
-    return pAV1 && pAV1->SegmentationMode == MFX_AV1_SEGMENT_AUTO;
-}
-
-inline bool IsForceSegmentationEnabled(const mfxExtAV1Param* pAV1)
-{
-    return pAV1 && pAV1->SegmentationMode == MFX_AV1_SEGMENT_MANUAL;
-}
-
-inline bool IsFeatureSupported(
-    const ENCODE_CAPS_AV1& caps,
-    SEG_LVL_FEATURES feature)
-{
-    return (caps.SegmentFeatureSupport & (1 << feature)) != 0;
-}
-
-inline bool IsFeatureEnabled(
-    mfxU16 featureEnabled
-    , SEG_LVL_FEATURES feature)
-{
-    return (featureEnabled & (1 << feature)) != 0;
-}
-
-inline void DisableFeature(
-    mfxU16& featureEnabled
-    , SEG_LVL_FEATURES feature)
-{
-    featureEnabled &= ~(1 << feature);
-}
-
-inline void EnableFeature(
-    mfxU16& featureEnabled
-    , SEG_LVL_FEATURES feature)
-{
-    featureEnabled |= (1 << feature);
-}
 
 template<typename T>
 inline bool CheckAndFixFeature(
@@ -303,11 +261,6 @@ void Segmentation::AllocTask(const FeatureBlocks& blocks, TPushAT Push)
         });
 }
 
-inline bool IsSegmentationSwitchedOff(const mfxExtAV1Segmentation* pPar)
-{
-    return pPar && pPar->NumSegments == 0;
-}
-
 static void MergeSegParam(
     const mfxExtAV1Segmentation& initSeg
     , const mfxExtAV1Segmentation& frameSeg
@@ -385,21 +338,6 @@ static mfxStatus SetFinalSegParam(
     return MFX_ERR_NONE;
 }
 
-static mfxU8 FindUnusedSegmentId(const mfxExtAV1Segmentation& par)
-{
-    assert(par.SegmentId);
-    assert(par.NumSegmentIdAlloc);
-
-    std::array<bool, AV1_MAX_NUM_OF_SEGMENTS> usedIDs = {};
-
-    for (mfxU32 i = 0; i < par.NumSegmentIdAlloc; i++)
-        usedIDs.at(par.SegmentId[i]) = true;
-
-    auto unusedId = std::find(usedIDs.begin(), usedIDs.end(), false);
-
-    return static_cast<mfxU8>(std::distance(usedIDs.begin(), unusedId));
-}
-
 void Segmentation::InitTask(const FeatureBlocks& blocks, TPushIT Push)
 {
     Push(BLK_InitTask
@@ -439,55 +377,6 @@ void Segmentation::InitTask(const FeatureBlocks& blocks, TPushIT Push)
             const mfxStatus mergeSts = SetFinalSegParam(par, caps, initSeg, pFrameSeg, finalSeg);
 
             return checkSts == MFX_ERR_NONE ? mergeSts : checkSts;
-        });
-
-    Push(BLK_PatchSegmentParam
-        , [this, &blocks](
-            mfxEncodeCtrl* /*pCtrl*/
-            , mfxFrameSurface1* /*pSurf*/
-            , mfxBitstream* /*pBs*/
-            , StorageW& global
-            , StorageW& task) -> mfxStatus
-        {
-
-            const auto& par = Glob::VideoParam::Get(global);
-            const mfxExtAV1Param& av1Par = ExtBuffer::Get(par);
-
-            if (!IsForceSegmentationEnabled(&av1Par))
-                return MFX_ERR_NONE;
-
-            /* "PatchSegmentParam" does 2 workarounds
-                1) Sets SEG_LVL_SKIP feature for one of segments to force "SegIdPreSkip" to 1.
-                   SegIdPreSkip" should be set to 1 to WA HW issue.
-                   So far this WA is always applied. The condition could be revised/narrowed in the future.
-                2) Disables temporal_update (HW limitation). */
-
-            mfxExtAV1Segmentation& seg = Task::Segment::Get(task);
-
-            if (IsSegmentationSwitchedOff(&seg))
-                return MFX_ERR_NONE;
-
-            const mfxU8 id = FindUnusedSegmentId(seg);
-
-            if (id == AV1_MAX_NUM_OF_SEGMENTS)
-            {
-                // All segment_ids 0-7 are present in segmentation map
-                // WA cannot be applied
-                // Don't apply segmentation for current frame and return warning
-                seg = mfxExtAV1Segmentation{};
-
-                AV1E_LOG("  *DEBUG* STATUS: Can't apply SegIdPreSkip WA - no unused surfaces in seg map!\n");
-
-                return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-            }
-
-            EnableFeature(seg.Segment[id].FeatureEnabled, SEG_LVL_SKIP);
-            if (seg.NumSegments < id + 1)
-                seg.NumSegments = id + 1;
-
-            seg.TemporalUpdate = MFX_CODINGOPTION_OFF;
-
-            return MFX_ERR_NONE;
         });
 }
 
