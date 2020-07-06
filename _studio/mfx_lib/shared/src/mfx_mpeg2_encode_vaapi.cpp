@@ -508,19 +508,16 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
     VAProfile mpegProfile = ConvertProfileTypeMFX2VAAPI(pExecuteBuffers->m_sps.Profile);
     // should be moved to core->IsGuidSupported()
     {
-        VAEntrypoint* pEntrypoints = NULL;
         mfxI32 entrypointsCount = 0, entrypointsIndx = 0;
         mfxI32 maxNumEntrypoints   = vaMaxNumEntrypoints(m_vaDisplay);
+        MFX_CHECK(maxNumEntrypoints, MFX_ERR_DEVICE_FAILED);
 
-        if(maxNumEntrypoints)
-            pEntrypoints = new VAEntrypoint[maxNumEntrypoints];
-        else
-            return MFX_ERR_DEVICE_FAILED;
+        std::unique_ptr<VAEntrypoint[]> pEntrypoints(new VAEntrypoint[maxNumEntrypoints]);
 
         vaSts = vaQueryConfigEntrypoints(
             m_vaDisplay,
             mpegProfile,
-            pEntrypoints,
+            pEntrypoints.get(),
             &entrypointsCount);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
@@ -533,7 +530,6 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
                 break;
             }
         }
-        delete[] pEntrypoints;
         if( !bEncodeEnable )
         {
             return MFX_ERR_DEVICE_FAILED;// unsupport?
