@@ -403,6 +403,12 @@ typedef struct {
     { 0x020B, MFX_HW_ATS, MFX_GT4 },
     { 0x020C, MFX_HW_ATS, MFX_GT4 },
     { 0x020D, MFX_HW_ATS, MFX_GT4 },
+
+    /* DG2 */
+    { 0x4F80, MFX_HW_DG2, MFX_GT4 }, // DG2-512 / IDG2_8x4x16_SKU_DEVICE_F0_ID
+    { 0x4F81, MFX_HW_DG2, MFX_GT4 }, // DG2-256 / IDG2_4x4x16_SKU_DEVICE_F0_ID
+    { 0x4F82, MFX_HW_DG2, MFX_GT4 }, // DG2-128 / IDG2_2x4x16_SKU_DEVICE_F0_ID
+
     /* ADL */
     { 0x4680, MFX_HW_ADL_S,  MFX_GT1 },//ADL-S
     { 0x46A0, MFX_HW_ADL_P,  MFX_GT2 },//ADL-P
