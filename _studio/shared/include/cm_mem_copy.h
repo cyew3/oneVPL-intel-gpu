@@ -157,6 +157,7 @@ public:
     mfxStatus IsCmCopySupported(mfxFrameSurface1 *pSurface, IppiSize roi);
 
     static bool CanUseCmCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
+    static bool CheckSurfaceContinuouslyAllocated(const mfxFrameSurface1 &surf);
     static bool isSinglePlainFormat(mfxU32 format);
     static bool isNeedSwapping(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
     static bool isNeedShift(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
