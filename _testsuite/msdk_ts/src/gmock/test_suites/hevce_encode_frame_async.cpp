@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2020 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_encode_frame_async.cpp
 
@@ -43,6 +43,60 @@ namespace hevce_encode_frame_async
             } set_par[MAX_NPARS];
         };
 
+        mfxU32 getRawBytes(const mfxU16& target_chroma)
+        {
+            mfxU64 s = 0;
+            s = m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height;
+            switch (target_chroma)
+            {
+            case MFX_CHROMAFORMAT_YUV420:
+                s = s * 3 / 2;
+                break;
+            case MFX_CHROMAFORMAT_YUV422:
+                s *= 2;
+                break;
+            case MFX_CHROMAFORMAT_YUV444:
+                s *= 3;
+                break;
+            default: break;
+            }
+            s = (s * m_par.mfx.FrameInfo.BitDepthLuma + 7) / 8;
+            return s;
+        }
+
+        mfxU32 getBufferSizeInKb(const mfxU16& target_chroma)
+        {
+            mfxU32 expectedBufferSizeInKB = 0;
+            bool bUseMaxKbps =
+                m_par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
+                || m_par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR
+                || m_par.mfx.RateControlMethod == MFX_RATECONTROL_VCM
+                || m_par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT;
+
+            if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || bUseMaxKbps)
+            {
+                if (m_par.mfx.BRCParamMultiplier == 0) m_par.mfx.BRCParamMultiplier = 1;
+                mfxU32 maxKbps = 0;
+                if (m_par.mfx.MaxKbps && m_par.mfx.RateControlMethod != MFX_RATECONTROL_CBR)
+                    maxKbps = m_par.mfx.MaxKbps * m_par.mfx.BRCParamMultiplier;
+                else if (m_par.mfx.TargetKbps == 0)
+                    //150 is an average compression ratio of the encoded stream to the origin in HEVC
+                    //It is based on the theoretical effectiveness of HEVC
+                    maxKbps = getRawBytes(target_chroma) * 8 * m_par.mfx.FrameInfo.FrameRateExtN / m_par.mfx.FrameInfo.FrameRateExtD / 150000;
+                else
+                    maxKbps = m_par.mfx.TargetKbps * m_par.mfx.BRCParamMultiplier;
+
+                expectedBufferSizeInKB = maxKbps / 4; //2 sec: the same as H264
+            }
+            else
+            {
+                expectedBufferSizeInKB = getRawBytes(target_chroma) / 1000;
+            }
+            if (m_par.mfx.InitialDelayInKB && (bUseMaxKbps || m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR))
+                expectedBufferSizeInKB = std::max<mfxU32>(expectedBufferSizeInKB, m_par.mfx.InitialDelayInKB * m_par.mfx.BRCParamMultiplier);
+            return expectedBufferSizeInKB;
+        }
+
         TestSuite() : tsVideoEncoder(MFX_CODEC_HEVC) {}
         ~TestSuite() {}
 
@@ -69,6 +123,10 @@ namespace hevce_encode_frame_async
             NSLICE_LT_MAX,
             DELTA,
             PROFILE,
+            BUFFER_SIZE,
+            EQ_MAXLENGTH,
+            L_MAXLENGTH,
+            G_MAXLENGTH,
             NONE
         };
 
@@ -124,6 +182,60 @@ namespace hevce_encode_frame_async
         },
         {/*16*/ MFX_ERR_NONE, PROFILE, NONE,    // profile and level are set explicitely
         },
+        {/*17*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },}
+        },
+        {/*18*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },}
+        },
+        {/*19*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },}
+        },
+        {/*20*/ MFX_ERR_NONE, BUFFER_SIZE, L_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },}
+        },
+        {/*21*/ MFX_ERR_NONE, BUFFER_SIZE, L_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },}
+        },
+        {/*22*/ MFX_ERR_NONE, BUFFER_SIZE, L_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },}
+        },
+        {/*23*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },}
+        },
+        {/*24*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },}
+        },
+        {/*25*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },}
+        },
+        {/*26*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+        },
+        {/*27*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+        },
+        {/*28*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+        },
+        {/*29*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+        },
+        {/*30*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+        },
+        {/*31*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 9 },}
+        },
+        {/*32*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0 },}
+        },
+        {/*33*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0 },}
+        },
+        {/*34*/ MFX_ERR_NONE, BUFFER_SIZE, EQ_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0 },}
+        },
+        {/*35*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0 },}
+        },
+        {/*36*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0 },}
+        },
+        {/*37*/ MFX_ERR_NOT_ENOUGH_BUFFER, BUFFER_SIZE, G_MAXLENGTH, {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+                                                            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 0 },}
+        }
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -476,8 +588,26 @@ namespace hevce_encode_frame_async
             }
 
             //set test param
+
+            mfxU32 expectedBufferSizeInKB = 0;
+            if (tc.type == BUFFER_SIZE)
+            {
+                expectedBufferSizeInKB = getBufferSizeInKb(m_par.mfx.FrameInfo.ChromaFormat);
+                m_par.mfx.BufferSizeInKB = 0;
+                m_par.mfx.InitialDelayInKB = 0;
+                SETPARS(m_pPar, MFX_PAR);
+            }
             AllocBitstream(); TS_CHECK_MFX;
             SETPARS(m_pBitstream, MFX_BS);
+            if (tc.type == BUFFER_SIZE)
+            {
+                if (tc.sub_type == EQ_MAXLENGTH)
+                    m_bitstream.MaxLength = m_bitstream.DataOffset + m_bitstream.DataLength + expectedBufferSizeInKB * 1000;
+                else if (tc.sub_type == L_MAXLENGTH)
+                    m_bitstream.MaxLength = m_bitstream.DataOffset + m_bitstream.DataLength + expectedBufferSizeInKB * 1000 + 1;
+                else if (tc.sub_type == G_MAXLENGTH)
+                    m_bitstream.MaxLength = m_bitstream.DataOffset + m_bitstream.DataLength + expectedBufferSizeInKB * 1000 - 1;
+            }
             AllocSurfaces(); TS_CHECK_MFX;
             m_pSurf = GetSurface(); TS_CHECK_MFX;
             if (m_filler)
