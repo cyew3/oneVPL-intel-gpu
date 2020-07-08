@@ -171,7 +171,7 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_av1e_gacc_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_av1e_gacc</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">mfxplugin64_av1e_gacc_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">mfxplugin32_av1e_gacc</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">mfxplugin32_av1e_gacc_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mfxplugin64_av1e_gacc</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">mfxplugin32_av1e_gacc</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">mfxplugin64_av1e_gacc</TargetName>
@@ -230,12 +230,17 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <GenerateManifest>true</GenerateManifest>
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\343d689665ba4548829942a32a386569\</OutDir>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(MfxIntelLibraryDir);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|x64'">
     <GenerateManifest>true</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_VTUNE|Win32'">
     <GenerateManifest>true</GenerateManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(MfxIntelLibraryDir);$(LibraryPath)</LibraryPath>
+    <OutDir>$(MfxBuildDir)win_$(Platform)\bin\343d689665ba4548829942a32a386569\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -325,6 +330,7 @@
       <SubSystem>Console</SubSystem>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <AdditionalOptions>/PDB:$(TargetDir)$(TargetName).pdb %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)343d689665ba4548829942a32a386569\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
@@ -346,7 +352,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;libircmt.lib;libm.lib;libmmt.lib;svml_dispmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%ICPP_COMPILER19%\compiler\lib\ia32_win;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(MfxIntelLibraryDir);$(MfxIppLibraryDir);%ICPP_COMPILER19%\compiler\lib\ia32_win;</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
@@ -354,6 +360,7 @@
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
+      <AdditionalOptions>/PDB:$(TargetDir)$(TargetName).pdb %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)343d689665ba4548829942a32a386569\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
@@ -457,6 +464,7 @@
       <TargetMachine>MachineX64</TargetMachine>
       <Profile>false</Profile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <AdditionalOptions>/PDB:$(TargetDir)$(TargetName).pdb %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)343d689665ba4548829942a32a386569\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
@@ -483,7 +491,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;%(AdditionalDependencies);</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);%ICPP_COMPILER19%\compiler\lib\ia32_win;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(MfxIntelLibraryDir);$(MfxIppLibraryDir);%ICPP_COMPILER19%\compiler\lib\ia32_win</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries);libmmt.lib</IgnoreSpecificDefaultLibraries>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
@@ -495,6 +503,7 @@
       <ImportLibrary>$(OutDir)..\lib\$(TargetName).lib</ImportLibrary>
       <Profile>false</Profile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <AdditionalOptions>/PDB:$(TargetDir)$(TargetName).pdb %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)343d689665ba4548829942a32a386569\plugin.cfg" "$(OutDir)plugin.cfg" /y</Command>
