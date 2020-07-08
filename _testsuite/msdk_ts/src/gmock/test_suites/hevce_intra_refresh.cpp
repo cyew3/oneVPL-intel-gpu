@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_intra_refresh.cpp
 \* ****************************************************************************** */
@@ -378,11 +378,6 @@ tsExtBufType<mfxVideoParam> TestSuite::initParams() {
     int TestSuite::RunTest(unsigned int id){
         TS_START;
         auto& tc = test_case[id];
-        if (g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)
-        {
-            g_tsLog << "SKIPPED! Unsupported on Linux platforms!\n";
-            throw tsSKIP;
-        }
         m_par = initParams();
 
         SETPARS(&m_par, CDO2_PAR);
