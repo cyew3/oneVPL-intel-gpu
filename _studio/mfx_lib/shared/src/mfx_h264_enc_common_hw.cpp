@@ -931,9 +931,7 @@ namespace
     {
         std::ignore = targetUsage;//no specific check for TU now, can be added later
         if (!config) config = MFX_GT4;//WA while windows doesn't support GTT config report
-        if (platform <= MFX_HW_BDW)//no MFE support prior to SKL.
-            return 1;
-        else if (platform == MFX_HW_SCL && config >= MFX_GT3)
+        if (platform == MFX_HW_SCL && config >= MFX_GT3)
         {
             if ((info.CropH > 1088 && info.CropW > 1920) || slices > 1)
             {
@@ -980,12 +978,7 @@ namespace
             }
         }
         else
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
-        if (platform >= MFX_HW_TGL_LP)
-            return 4;
-        else
-#endif
-            return 1;//to be adjusted based on performance measurements on other platforms
+            return 1; // to be adjusted based on performance measurements on other platforms
     }
 
     mfxU32 calculateMfeTimeout(const mfxFrameInfo& info)

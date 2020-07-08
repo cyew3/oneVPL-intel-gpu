@@ -3203,22 +3203,6 @@ mfxStatus VAAPIEncoder::Execute(
 #ifdef MFX_ENABLE_MFE
     if (m_mfe){
         mfxU32 timeout = task.m_mfeTimeToWait>>task.m_fieldPicFlag;
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
-        if (m_core->GetHWType() >= MFX_HW_ATS)
-            timeout = 360000000;//one hour for pre-si, ToDo:remove for silicon
-#endif
-        /*if(!task.m_userTimeout)
-        {
-            mfxU32 passed = (task.m_beginTime - vm_time_get_tick());
-            if (passed < task.m_mfeTimeToWait)
-            {
-                timeout = timeout - passed;//-time for encode;//need to add a table with encoding times to
-            }
-            else
-            {
-                timeout = 0;
-            }
-        }*/
         mfxStatus sts = m_mfe->Submit(m_vaContextEncode, (task.m_flushMfe? 0 : timeout), skipFlag == NORMAL_MODE);
         if (sts != MFX_ERR_NONE)
             return sts;
