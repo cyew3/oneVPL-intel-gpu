@@ -96,13 +96,21 @@
 					</event>
 					<event symbol="WaitForGlobalEventExit" value="94" version="0" task="WaitForGlobalEvent" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
 					</event>
-					<event symbol="DDIExecuteD3dxEntry" value="97" version="0" task="DDIExecuteD3DX" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					<event symbol="DDIExecuteD3dxEntry" value="97" version="0" task="DDIExecuteD3DX" opcode="win:Start" template="Entry" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
 					</event>
-					<event symbol="DDIExecuteD3dxXExit" value="98" version="0" task="DDIExecuteD3DX" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					<event symbol="DDIExecuteD3dxXExit" value="98" version="0" task="DDIExecuteD3DX" opcode="win:Stop" template="Entry" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
 					</event>
-					<event symbol="DDIQueryD3dxEntry" value="101" version="0" task="DDIQueryD3DX" opcode="win:Start" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					<event symbol="DDIQueryD3dxEntry" value="101" version="0" task="DDIQueryD3DX" opcode="win:Start" template="Entry" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
 					</event>
-					<event symbol="DDIQueryD3dxExit" value="102" version="0" task="DDIQueryD3DX" opcode="win:Stop" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					<event symbol="DDIQueryD3dxExit" value="102" version="0" task="DDIQueryD3DX" opcode="win:Stop" template="Entry" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="CmCopyVideoToSysEntry" value="105" version="0" task="CmCopyVideoToSys" opcode="win:Start" template="Entry" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="CmCopyVideoToSysExit" value="106" version="0" task="CmCopyVideoToSys" opcode="win:Stop" template="Entry" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
+					</event>
+					<event symbol="CmCopySysToVideoEntry" value="109" version="0" task="CmCopySysToVideo" opcode="win:Start" template="Entry" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.1.message)">
+					</event>
+					<event symbol="CmCopySysToVideoExit" value="110" version="0" task="CmCopySysToVideo" opcode="win:Stop" template="Entry" keywords="TypedEvent " message="$(string.Intel-MediaSDK.event.2.message)">
 					</event>
 				</events>
 				<tasks>
@@ -155,6 +163,10 @@
 					<task name="DDIExecuteD3DX" symbol="MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK_ETW" value="24" eventGUID="{00000000-0000-0000-0000-000000000000}">
 					</task>
 					<task name="DDIQueryD3DX" symbol="MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK_ETW" value="25" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="CmCopyVideoToSys" symbol="MFX_TRACE_HOTSPOT_CM_COPY_VIDEO_TO_SYS_TASK_ETW" value="26" eventGUID="{00000000-0000-0000-0000-000000000000}">
+					</task>
+					<task name="CmCopySysToVideo" symbol="MFX_TRACE_HOTSPOT_CM_COPY_SYS_TO_VIDEO_TASK_ETW" value="27" eventGUID="{00000000-0000-0000-0000-000000000000}">
 					</task>
 				</tasks>
 				<opcodes>

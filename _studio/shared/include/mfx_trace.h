@@ -112,6 +112,8 @@ enum mfxTraceTaskType
     MFX_TRACE_HOTSPOT_SCHED_WAIT_GLOBAL_EVENT_TASK,
     MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK,
     MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK,
+    MFX_TRACE_HOTSPOT_CM_COPY_VIDEO_TO_SYS_TASK,
+    MFX_TRACE_HOTSPOT_CM_COPY_SYS_TO_VIDEO_TASK,
 };
 
 // list of output modes
@@ -578,5 +580,9 @@ template <>
 struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_HOTSPOTS> {};
 template <>
 struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_DDI_QUERY_D3DX_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_HOTSPOTS> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_CM_COPY_VIDEO_TO_SYS_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_HOTSPOTS> {};
+template <>
+struct TraceTaskType2TraceLevel<MFX_TRACE_HOTSPOT_CM_COPY_SYS_TO_VIDEO_TASK> : std::integral_constant<mfxTraceLevel, MFX_TRACE_LEVEL_HOTSPOTS> {};
 
 #endif // #ifndef __MFX_TRACE_H__

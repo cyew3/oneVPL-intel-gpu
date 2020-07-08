@@ -3309,6 +3309,8 @@ mfxStatus CmCopyWrapper::CopyVideoToVideo(mfxFrameSurface1 *pDst, mfxFrameSurfac
 
 mfxStatus CmCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 {
+    MFX_AUTO_TRACE_TYPE("CopyVideoToSys", MFX_TRACE_HOTSPOT_CM_COPY_VIDEO_TO_SYS_TASK);
+
     IppiSize roi = {std::min(pSrc->Info.Width, pDst->Info.Width), std::min(pSrc->Info.Height, pDst->Info.Height)};
 
     // check that region of interest is valid
@@ -3365,6 +3367,8 @@ mfxStatus CmCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1
 
 mfxStatus CmCopyWrapper::CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
 {
+    MFX_AUTO_TRACE_TYPE("CopySysToVideo", MFX_TRACE_HOTSPOT_CM_COPY_SYS_TO_VIDEO_TASK);
+
     IppiSize roi = {std::min(pSrc->Info.Width, pDst->Info.Width), std::min(pSrc->Info.Height, pDst->Info.Height)};
 
     mfxU8* srcPtr = GetFramePointer(pSrc->Info.FourCC, pSrc->Data);

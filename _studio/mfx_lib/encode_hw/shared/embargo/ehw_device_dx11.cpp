@@ -260,6 +260,7 @@ void DeviceDX11::SetDevice(const DDIExecParam& ep)
 
 mfxStatus DeviceDX11::Execute(const DDIExecParam& ep)
 {
+    MFX_AUTO_TRACE_TYPE("H265 ExecuteD3DX", MFX_TRACE_HOTSPOT_DDI_EXECUTE_D3DX_TASK);
     try
     {
         if (ep.Function == AUXDEV_CREATE_ACCEL_SERVICE)
