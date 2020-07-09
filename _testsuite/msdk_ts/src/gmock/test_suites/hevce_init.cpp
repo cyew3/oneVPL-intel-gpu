@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2020 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_init.cpp
 
@@ -788,20 +788,27 @@ namespace hevce_init
 
 
                 // encoder aligns PicWidthInLumaSamples and PicHeightInLumaSamples to next multiple of 16 (if necessary),
-                //   but libva returns VA_STATUS_ERROR_RESOLUTION_NOT_SUPPORTED for resolutions < 32x32
-                //   so on Linux we expect MFX_ERR_UNSUPPORTED
+                // but libva returns VA_STATUS_ERROR_RESOLUTION_NOT_SUPPORTED for resolutions < 32x32 for VME
+                // and for VDENC starting from Gen11 for resolutions < 128x128 on Linux. So MFX_ERR_UNSUPPORTED is expected
                 if (g_tsOSFamily == MFX_OS_FAMILY_LINUX
                     && tc.sub_type == MFX_EXTBUFF_HEVC_PARAM
                     && chroma_support == MFX_ERR_NONE)
                 {
                     mfxU16 W = ((mfxExtHEVCParam *)(m_pPar->ExtParam[0]))->PicWidthInLumaSamples;
                     mfxU16 H = ((mfxExtHEVCParam *)(m_pPar->ExtParam[0]))->PicHeightInLumaSamples;
-                    if ((W > 0 && W <= 16)
-                        || (H > 0 && H <= 16))
+                    if ((IsOn(g_tsConfig.lowpower) && g_tsHWtype >= MFX_HW_ICL &&((W > 0 && W < 128) || (H > 0 && H < 128))) ||
+                        (!IsOn(g_tsConfig.lowpower) && ((W > 0 && W < 32) || (H > 0 && H < 32))))
                     {
                         sts = MFX_ERR_UNSUPPORTED;
                     }
                 }
+            }
+
+            if (tc.type == BUFFER_SIZE && IsOn(g_tsConfig.lowpower) && g_tsOSFamily == MFX_OS_FAMILY_LINUX &&
+                m_pPar->mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
+            {
+                // ICQ is not supported on VDENC Linux
+                sts = MFX_ERR_INVALID_VIDEO_PARAM;
             }
 
             if (tc.type == RATE_CONTROL || tc.type == BUFFER_SIZE)
