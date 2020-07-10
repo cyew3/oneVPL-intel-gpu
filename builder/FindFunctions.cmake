@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012-2019 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2020 Intel Corporation. All Rights Reserved.
 ##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -201,32 +201,32 @@ function( make_library name variant type )
     add_library( ${target} SHARED ${include} ${sources} )
 
     if( Linux )
-      target_link_libraries( ${target} "-Xlinker --start-group" )
+      target_link_libraries( ${target} PRIVATE "-Xlinker --start-group" )
     endif()
 
     foreach( lib ${LIBS_VARIANT} )
       if(ARGV1 MATCHES none OR ARGV1 MATCHES universal)
         add_dependencies( ${target} ${lib} )
-        target_link_libraries( ${target} ${lib} )
+        target_link_libraries( ${target} PRIVATE ${lib} )
       else()
         add_dependencies( ${target} ${lib}_${ARGV1} )
-        target_link_libraries( ${target} ${lib}_${ARGV1} )
+        target_link_libraries( ${target}  PRIVATE ${lib}_${ARGV1} )
       endif()
     endforeach()
 
     foreach( lib ${LIBS_NOVARIANT} )
       add_dependencies( ${target} ${lib} )
-      target_link_libraries( ${target} ${lib} )
+      target_link_libraries( ${target} PRIVATE ${lib} )
     endforeach()
 
     append_property(${target} COMPILE_FLAGS "${CFLAGS} ${SCOPE_CFLAGS}")
     append_property(${target} LINK_FLAGS "${LDFLAGS} ${SCOPE_LINKFLAGS}")
     foreach(lib ${LIBS} ${SCOPE_LIBS})
-      target_link_libraries( ${target} ${lib} )
+      target_link_libraries( ${target} PRIVATE ${lib} )
     endforeach()
 
     if( Linux )
-      target_link_libraries( ${target} "-Xlinker --end-group" )
+      target_link_libraries( ${target} PRIVATE "-Xlinker --end-group" )
     endif()
 
 #    set_target_properties( ${target} PROPERTIES LINK_INTERFACE_LIBRARIES "" )
@@ -235,7 +235,7 @@ function( make_library name variant type )
   configure_build_variant( ${target} ${ARGV1} )
 
   if( NOT MFX_DISABLE_SW_FALLBACK AND NOT nosafestring )
-    target_link_libraries( ${target} SafeString )
+    target_link_libraries( ${target} PRIVATE SafeString )
   endif()
 
   if( defs )
@@ -246,7 +246,7 @@ function( make_library name variant type )
   set_target_properties( ${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE} FOLDER ${folder} )
 
   if( Linux )
-    target_link_libraries( ${target} "-lgcc" )
+    target_link_libraries( ${target} PRIVATE "-lgcc" )
   endif()
 
   set( target ${target} PARENT_SCOPE )
@@ -292,31 +292,31 @@ function( make_executable name variant )
   set_target_properties( ${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BIN_DIR}/${CMAKE_BUILD_TYPE} FOLDER ${folder} )
 
   if( Linux )
-    target_link_libraries( ${target} "-Xlinker --start-group" )
+    target_link_libraries( ${target} PRIVATE "-Xlinker --start-group" )
   endif()
 
   foreach( lib ${LIBS_VARIANT} )
     if(ARGV1 MATCHES none OR ARGV1 MATCHES universal)
       add_dependencies( ${target} ${lib} )
-      target_link_libraries( ${target} ${lib} )
+      target_link_libraries( ${target} PRIVATE ${lib} )
     else()
       add_dependencies( ${target} ${lib}_${ARGV1} )
-      target_link_libraries( ${target} ${lib}_${ARGV1} )
+      target_link_libraries( ${target} PRIVATE ${lib}_${ARGV1} )
     endif()
   endforeach()
 
   foreach( lib ${LIBS_NOVARIANT} )
     add_dependencies( ${target} ${lib} )
-    target_link_libraries( ${target} ${lib} )
+    target_link_libraries( ${target} PRIVATE ${lib} )
   endforeach()
 
   if( ${NEED_DISPATCHER} )
-    target_link_libraries( ${target} debug mfx_d )
-    target_link_libraries( ${target} optimized mfx )
+    target_link_libraries( ${target} PRIVATE debug mfx_d )
+    target_link_libraries( ${target} PRIVATE optimized mfx )
   endif()
 
   foreach( lib ${LIBS} ${SCOPE_LIBS} )
-    target_link_libraries( ${target} ${lib} )
+    target_link_libraries( ${target} PRIVATE ${lib} )
   endforeach()
 
   append_property(${target} COMPILE_FLAGS "${CFLAGS} ${SCOPE_CFLAGS}")
@@ -325,15 +325,15 @@ function( make_executable name variant )
   configure_build_variant( ${target} ${ARGV1} )
 
   foreach( lib ${LIBS_SUFFIX} )
-    target_link_libraries( ${target} ${lib} )
+    target_link_libraries( ${target} PRIVATE ${lib} )
   endforeach()
 
   if( NOT nosafestring )
-    target_link_libraries( ${target} SafeString )
+    target_link_libraries( ${target} PRIVATE SafeString )
   endif()
 
   if( Linux )
-    target_link_libraries( ${target} "-Xlinker --end-group -lgcc" )
+    target_link_libraries( ${target} PRIVATE "-Xlinker --end-group -lgcc" )
   endif()
 
   set( target ${target} PARENT_SCOPE )

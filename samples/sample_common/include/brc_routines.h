@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2020, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -16,6 +16,10 @@ This sample was distributed or derived from the Intel's Media Samples package.
 The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
+
+#ifndef __PIPELINE_ENCODE_BRC_H__
+#define __PIPELINE_ENCODE_BRC_H__
+
 #include "sample_defs.h"
 
 #ifndef MFX_VERSION
@@ -25,8 +29,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #if (MFX_VERSION >= 1024)
 #include "mfxbrc.h"
 
-#ifndef __PIPELINE_ENCODE_BRC_H__
-#define __PIPELINE_ENCODE_BRC_H__
 
 #include <algorithm>
 
@@ -53,13 +55,14 @@ NalHrdConformance | VuiNalHrdParameters   |  Result
     on (or default)      on (or default)    => MFX_BRC_HRD_STRONG
 --------------------------------------------------------------
 */
-
+#if !defined(__MFXENCTOOLS_INT_H__) || (MFX_VERSION < MFX_VERSION_NEXT)
 enum : mfxU16
 {
     MFX_BRC_NO_HRD = 0,
     MFX_BRC_HRD_WEAK,  // IF HRD CALCULATION IS REQUIRED, BUT NOT WRITTEN TO THE STREAM
     MFX_BRC_HRD_STRONG
 };
+#endif
 
 class cBRCParams
 {

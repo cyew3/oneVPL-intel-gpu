@@ -22,6 +22,8 @@
 #define __AENC_H__
 #include "mfxstructures.h"
 
+#define ENABLE_ADAPTIVE_ENCODE
+
 #ifdef __cplusplus
 extern "C" {
 #endif

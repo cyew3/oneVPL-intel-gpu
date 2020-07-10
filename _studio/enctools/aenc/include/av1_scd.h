@@ -21,10 +21,10 @@
 #ifndef __AV1SCD_H
 #define __AV1SCD_H
 
-#define ENABLE_ADAPTIVE_ENCODE
+#include "aenc.h"
+
 #if defined(ENABLE_ADAPTIVE_ENCODE)
 
-#include "mfxdefs.h"
 #include <list>
 #include <map>
 #include <functional>

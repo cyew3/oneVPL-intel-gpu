@@ -93,6 +93,8 @@ else()
   set ( MFX_1_34_OPTIONS_ALLOWED OFF )
 endif()
 
+option( MFX_ENABLE_AENC "Enabled AENC extension?" ON)
+
 option( MFX_ENABLE_USER_DECODE "Enabled user decode plugins?" ON)
 option( MFX_ENABLE_USER_ENCODE "Enabled user encode plugins?" ON)
 option( MFX_ENABLE_USER_ENC "Enabled user ENC plugins?" ON)

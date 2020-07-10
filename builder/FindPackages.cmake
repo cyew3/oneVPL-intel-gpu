@@ -101,7 +101,7 @@ function( configure_build_variant_linux target variant )
     endforeach()
     #append_property( ${ARGV0} LINK_FLAGS "${PKG_LIBVA_LDFLAGS_OTHER}" )
 
-    target_link_libraries( ${ARGV0} va ${MDF_LIBS} )
+    target_link_libraries( ${ARGV0} PRIVATE va ${MDF_LIBS} )
 
   elseif( ARGV1 MATCHES universal )
     if(ENABLE_X11)
@@ -119,7 +119,7 @@ function( configure_build_variant_linux target variant )
     endforeach()
     #append_property( ${ARGV0} LINK_FLAGS "${PKG_LIBDRM_LDFLAGS_OTHER} ${PKG_LIBVA_LDFLAGS_OTHER} ${PKG_LIBVA_DRM_LDFLAGS_OTHER}" )
 
-    target_link_libraries( ${ARGV0} va drm va-drm )
+    target_link_libraries( ${ARGV0} PRIVATE va drm va-drm )
 
   elseif( ARGV1 MATCHES x11 )
     append_property( ${ARGV0} COMPILE_FLAGS "-DLIBVA_SUPPORT -DLIBVA_X11_SUPPORT" )
@@ -129,7 +129,7 @@ function( configure_build_variant_linux target variant )
     endforeach()
     #append_property( ${ARGV0} LINK_FLAGS "${PKG_LIBVA_LDFLAGS_OTHER} ${PKG_LIBVA_X11_LDFLAGS_OTHER} ${PKG_X11_LDFLAGS_OTHER}" )
 
-    target_link_libraries( ${ARGV0} va-x11 va X11 )
+    target_link_libraries( ${ARGV0} PRIVATE va-x11 va X11 )
 
   elseif( ARGV1 MATCHES none OR ARGV1 MATCHES sw)
     # Multiple 'none' and 'sw' variants include cm_rt_linux.h. And

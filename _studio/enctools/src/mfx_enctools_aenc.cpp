@@ -24,6 +24,14 @@
 #include "mfx_enctools_aenc.h"
 #include "limits.h"
 
+#if !defined(ENABLE_ADAPTIVE_ENCODE)
+
+mfxStatus AEncInit(mfxHDL*, AEncParam) { return MFX_ERR_UNSUPPORTED; }
+mfxStatus AEncProcessFrame(mfxHDL, mfxU32, mfxU8*, mfxI32, AEncFrame*) { return MFX_ERR_UNSUPPORTED; }
+void AEncUpdatePFrameBits(mfxHDL, mfxU32, mfxU32, mfxU32, mfxU32) {}
+void AEncClose(mfxHDL) {}
+
+#endif
 mfxStatus AEnc_EncTool::Init(mfxEncToolsCtrl const & ctrl, mfxExtEncToolsConfig const & pConfig)
 {
     mfxFrameInfo const *frameInfo = &ctrl.FrameInfo;
