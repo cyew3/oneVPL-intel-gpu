@@ -147,6 +147,9 @@ namespace Base
             const VPS& vps
             , const SPS& sps
             , const PPS& pps
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+            , const PPS& cqmpps
+#endif
             , const std::vector<SliceInfo>& si
             , PackedHeaders& ph);
 

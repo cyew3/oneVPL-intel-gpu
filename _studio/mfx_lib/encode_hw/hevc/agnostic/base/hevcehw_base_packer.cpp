@@ -993,7 +993,7 @@ void Packer::PackPPS(BitstreamWriter& bs, PPS const &  pps)
     nSE += bNeedDblkOffsets && PutSE(bs, pps.tc_offset_div2);
 
     nSE += PutBit(bs, pps.scaling_list_data_present_flag);
-    assert(0 == pps.scaling_list_data_present_flag);
+    nSE += pps.scaling_list_data_present_flag && PackSLD(bs, pps.sld);
 
     nSE += PutBit(bs, pps.lists_modification_present_flag);
     nSE += PutUE(bs, pps.log2_parallel_merge_level_minus2);
@@ -1857,6 +1857,9 @@ void Packer::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
             Glob::VPS::Get(global)
             , Glob::SPS::Get(global)
             , Glob::PPS::Get(global)
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+            , Glob::CqmPPS::GetOrConstruct(global)
+#endif
             , Glob::SliceInfo::Get(global)
             , *ph);
         MFX_CHECK_STS(sts);
@@ -1888,14 +1891,19 @@ void Packer::ResetState(const FeatureBlocks& /*blocks*/, TPushRS Push)
         auto& initState = Glob::RealState::Get(global);
         auto& ph = Glob::PackedHeaders::Get(initState);
 
+        m_pGlob = &global;
+
         mfxStatus sts = Reset(
             Glob::VPS::Get(global)
             , Glob::SPS::Get(global)
             , Glob::PPS::Get(global)
+#if defined (MFX_ENABLE_LP_LOOKAHEAD)
+            , Glob::CqmPPS::GetOrConstruct(global)
+#endif
             , Glob::SliceInfo::Get(global)
             , ph);
         MFX_CHECK_STS(sts);
-        
+
         auto&                     vpar   = Glob::VideoParam::Get(global);
         mfxExtCodingOptionVPS&    vps    = ExtBuffer::Get(vpar);
         mfxExtCodingOptionSPSPPS& spspps = ExtBuffer::Get(vpar);
@@ -1934,6 +1942,9 @@ mfxStatus Packer::Reset(
     const VPS& vps
     , const SPS& sps
     , const PPS& pps
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    , const PPS& cqmpps
+#endif
     , const std::vector<SliceInfo>& si
     , PackedHeaders& ph)
 {
@@ -1973,6 +1984,20 @@ mfxStatus Packer::Reset(
     MFX_CHECK_STS(sts);
     pESBegin += ph.PPS.BitLen / 8;
 
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    if (m_pGlob->Contains(Glob::LpLookAhead::Key))
+    {
+        auto& lpla = Glob::LpLookAhead::Get(*m_pGlob);
+        if (!lpla.bAnalysis && lpla.bIsLpLookaheadEnabled)
+        {
+            PackPPS(rbsp, cqmpps);
+            sts = PackHeader(rbsp, pESBegin, pESEnd, ph.CqmPPS);
+            MFX_CHECK_STS(sts);
+            pESBegin += ph.CqmPPS.BitLen / 8;
+        }
+    }
+#endif
+
     ph.SSH.resize(si.size());
 
     m_pRTBufBegin = pESBegin;
@@ -2000,6 +2025,12 @@ mfxU32 Packer::GetPSEIAndSSH(
     bool            bNeedSEI = (task.InsertHeaders & INSERT_SEI)
                                 || std::any_of(task.ctrl.Payload, task.ctrl.Payload + task.ctrl.NumPayload,
                                     [](const mfxPayload* pPL) { return pPL && !(pPL->CtrlFlags & MFX_PAYLOAD_CTRL_SUFFIX); });
+
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+    if (task.LplaStatus.CqmHint == CQM_HINT_USE_CUST_MATRIX)
+        sh.pic_parameter_set_id = 1;
+#endif
+
     auto            PutSSH   = [&](PackedData& d, NALU& nalu)
     {
         rbsp.Reset(pBegin, mfxU32(pEnd - pBegin));
