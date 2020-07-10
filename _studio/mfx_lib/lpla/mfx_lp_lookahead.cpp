@@ -211,6 +211,12 @@ mfxStatus MfxLpLookAhead::Query(mfxLplastatus *laStatus)
     return MFX_ERR_NONE;
 }
 
+mfxStatus MfxLpLookAhead::SetStatus(mfxLplastatus *laStatus)
+{
+    MFX_CHECK_NULL_PTR1(laStatus);
+    m_lplastatus.insert(m_lplastatus.begin(), *laStatus);
+    return MFX_ERR_NONE;
+}
 
 bool MfxLpLookAhead::NeedDownScaling(const mfxVideoParam& par)
 {

@@ -220,6 +220,49 @@ void TaskManager::FrameSubmit(const FeatureBlocks& /*blocks*/, TPushFS Push)
     });
 }
 
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+void TaskManager::UpdateTask(StorageW& srcTask, StorageW* dstTask)
+{
+    auto& src_task = Task::Common::Get(srcTask);
+
+    if (m_pGlob->Contains(Glob::LpLookAhead::Key))
+    {
+        auto& lpla = Glob::LpLookAhead::Get(*m_pGlob);
+        if (dstTask)
+        {
+            auto& dst_task = Task::Common::Get(*dstTask);
+            dst_task.LplaStatus = src_task.LplaStatus;
+        }
+        else if (!lpla.bAnalysis && src_task.LplaStatus.TargetFrameSize > 0)
+        {
+            lpla.pLpLookAhead->SetStatus(&src_task.LplaStatus);
+        }
+    }
+}
+
+mfxStatus TaskManager::TaskSubmit(StorageW& task)
+{
+    std::unique_lock<std::mutex> closeGuard(m_closeMtx);
+    UpdateTask(task, GetTask(Stage(S_SUBMIT)));
+    while (StorageW* pTask = GetTask(Stage(S_SUBMIT)))
+    {
+        bool bSync =
+            (m_maxParallelSubmits <= m_nTasksInExecution)
+            || (IsForceSync(*pTask) && GetTask(NextStage(S_SUBMIT)));
+        MFX_CHECK(!bSync, MFX_ERR_NONE);
+
+        auto sts = RunQueueTaskSubmit(*pTask);
+        MFX_CHECK_STS(sts);
+
+        MoveTaskForward(Stage(S_SUBMIT), FixedTask(*pTask));
+        ++m_nTasksInExecution;
+        m_nRecodeTasks -= !!m_nRecodeTasks;
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif
+
 void TaskManager::AsyncRoutine(const FeatureBlocks& /*blocks*/, TPushAR Push)
 {
     Push(BLK_PrepareTask

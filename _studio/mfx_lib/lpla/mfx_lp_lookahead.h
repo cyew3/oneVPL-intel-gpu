@@ -55,6 +55,8 @@ public:
 
     virtual mfxStatus Query(mfxLplastatus* laStatus);
 
+    virtual mfxStatus SetStatus(mfxLplastatus *laStatus);
+
 protected:
     bool NeedDownScaling(const mfxVideoParam& par);
     mfxStatus CreateVpp(const mfxVideoParam& par);

@@ -92,6 +92,10 @@ namespace Base
         virtual void SetBsDataLength(StorageW& task, mfxU32 len) const override;
         virtual void AddNumRecode(StorageW& task, mfxU16 n) const override;
         virtual mfxStatus RunQueueTaskAlloc(StorageRW& task) override;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD)
+        virtual mfxStatus TaskSubmit(StorageW& task) override;
+        void UpdateTask(StorageW& srcTask, StorageW* dstTask);
+#endif
 
         virtual mfxStatus RunQueueTaskInit(
             mfxEncodeCtrl* pCtrl
