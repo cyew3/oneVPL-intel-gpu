@@ -57,10 +57,12 @@ void RExt::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
 
         auto pRI = make_storable<mfxFrameAllocRequest>(mfxFrameAllocRequest{});
         auto& rec = pRI->Info;
-
         rec = par.mfx.FrameInfo;
+        auto itUpdateRecInfo = mUpdateRecInfo.find(CO3.TargetChromaFormatPlus1);
+        bool bUndef = (itUpdateRecInfo == mUpdateRecInfo.end());
 
-        mUpdateRecInfo.at(CO3.TargetChromaFormatPlus1)(rec, pRI->Type, IsOn(par.mfx.LowPower));
+        if (!bUndef)
+            mUpdateRecInfo.at(CO3.TargetChromaFormatPlus1)(rec, pRI->Type, IsOn(par.mfx.LowPower));
 
         rec.ChromaFormat   = CO3.TargetChromaFormatPlus1 - 1;
         rec.BitDepthLuma   = CO3.TargetBitDepthLuma;
