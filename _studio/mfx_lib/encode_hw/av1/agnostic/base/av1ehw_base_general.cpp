@@ -1592,7 +1592,7 @@ static void FillFwdPart(const DpbIndexes& fwd, mfxU8 maxFwdRefs, RefListType& re
     };
 #endif
 
-    const mfxU8 maxRefs = std::max(maxFwdRefs, static_cast<mfxU8>(fwd.size()));
+    const mfxU8 maxRefs = std::min(maxFwdRefs, static_cast<mfxU8>(fwd.size()));
     RefListRules::CleanRules(constructionRules, fwd.crend(), maxRefs);
     RefListRules::ApplyRules(constructionRules, refList);
 }
