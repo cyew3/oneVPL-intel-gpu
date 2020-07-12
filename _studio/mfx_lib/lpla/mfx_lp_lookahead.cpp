@@ -62,6 +62,7 @@ mfxStatus MfxLpLookAhead::Init(mfxVideoParam* param)
     par.mfx.QPP               = 32;
     par.mfx.QPB               = 32;
     par.mfx.NumSlice          = 1;
+    par.mfx.GopRefDist        = 1;
 
     if (m_bNeedDownscale)
     {

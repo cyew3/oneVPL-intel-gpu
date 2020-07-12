@@ -281,7 +281,7 @@ void TaskManager::AsyncRoutine(const FeatureBlocks& /*blocks*/, TPushAR Push)
             // Delay For LookAhead Depth
             if (!bEncRun)
             {
-                bEncRun = m_stages.at(Stage(S_LA_QUERY)).size() > m_LookAheadDepth;
+                bEncRun = m_stages.at(Stage(S_LA_QUERY)).size() >= m_LookAheadDepth;
             }
             if (bEncRun)
             {
