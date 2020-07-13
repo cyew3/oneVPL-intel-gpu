@@ -2033,6 +2033,8 @@ namespace MfxHwH264Encode
 
 #if defined(MFX_ENABLE_ENCTOOLS)
 
+constexpr mfxU32 ENCTOOLS_QUERY_TIMEOUT = 5000;
+
 inline bool IsNotDefined(mfxU16 param)
 {
     return (param == MFX_CODINGOPTION_UNKNOWN);
@@ -2415,9 +2417,8 @@ public:
         par.ExtParam = &extParams[0];
         par.NumExtParam = (mfxU16)extParams.size();
 
-
         mfxStatus sts = MFX_ERR_NONE;
-        sts = m_pEncTools->Query(m_pEncTools->Context, &par, 5000);
+        sts = m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
         return sts;
     }
 
@@ -2441,7 +2442,7 @@ public:
         par.NumExtParam = (mfxU16)extParams.size();
 
         mfxStatus sts = MFX_ERR_NONE;
-        sts = m_pEncTools->Query(m_pEncTools->Context, &par, 5000);
+        sts = m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
         return sts;
     }
 
@@ -2474,9 +2475,8 @@ public:
         par.ExtParam = &extParams[0];
         par.NumExtParam = (mfxU16)extParams.size();
 
-
         mfxStatus sts = MFX_ERR_NONE;
-        sts = m_pEncTools->Query(m_pEncTools->Context, &par, 5000);
+        sts = m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
         return sts;
     }
 #endif
@@ -2499,7 +2499,6 @@ public:
 
         par.ExtParam = &extParams[0];
         par.NumExtParam = (mfxU16)extParams.size();
-
 
         mfxStatus sts = MFX_ERR_NONE;
         sts = m_pEncTools->Query(m_pEncTools->Context, &par);
@@ -2568,7 +2567,7 @@ public:
         par.NumExtParam = (mfxU16)extParams.size();
 
         mfxStatus sts;
-        sts = m_pEncTools->Query(m_pEncTools->Context, &par, 5000);
+        sts = m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
         MFX_CHECK_STS(sts);
 
         frame_ctrl->QpY = extFrameQP.QpY;
@@ -2619,7 +2618,7 @@ public:
         par.NumExtParam = (mfxU16)extParams.size();
 
         mfxStatus sts;
-        sts = m_pEncTools->Query(m_pEncTools->Context, &par, 5000);
+        sts = m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
 
         *frame_status = extSts.FrameStatus;
         return sts;
