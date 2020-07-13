@@ -516,6 +516,10 @@ protected:
     //Resolution of original input YUV
     mfxU32                   m_YUV_Width;
     mfxU32                   m_YUV_Height;
+    mfxU32                   m_YUV_CropX;
+    mfxU32                   m_YUV_CropY;
+    mfxU32                   m_YUV_CropW;
+    mfxU32                   m_YUV_CropH;
 
 #if defined(_WIN32) || defined(_WIN64)
     virtual mfxStatus        RegKeySet();

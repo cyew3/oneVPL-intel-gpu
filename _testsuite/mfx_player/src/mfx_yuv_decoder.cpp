@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -45,8 +45,8 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
     // mynikols, bug VCSD100004627 fixed:
     //info.CropX         = 0;
     //info.CropY         = 0;
-    info.CropW         = infoIn.Width;
-    info.CropH         = infoIn.Height;
+    info.CropW = infoIn.CropW ? infoIn.CropW : info.Width;
+    info.CropH = infoIn.CropH ? infoIn.CropH : info.Height;
 
     info.Shift         = infoIn.Shift;
 
@@ -104,14 +104,19 @@ mfxStatus MFXYUVDecoder::DecodeFrame(mfxBitstream * bs, mfxFrameSurface1 *surfac
 
     mfxBitstream * internalBs = &m_internalBS;
 
+    mfxFrameInfo frameInfo(m_vParam.mfx.FrameInfo);
+
+    frameInfo.Width = m_yuvWidth;
+    frameInfo.Height = m_yuvHeight;
+
     //yuv decoder work with complete frames only
-    if (internalBs->DataLength || bs->DataLength < GetMinPlaneSize(m_vParam.mfx.FrameInfo))
+    if (internalBs->DataLength || bs->DataLength < GetMinPlaneSize(frameInfo))
     {
         //will move bs data to internal
         MFX_CHECK_STS_SKIP(ConstructFrame(bs, internalBs), MFX_ERR_MORE_DATA);
 
         //yuv decoder work with complete frames only
-        if (internalBs->DataLength < GetMinPlaneSize(m_vParam.mfx.FrameInfo))
+        if (internalBs->DataLength < GetMinPlaneSize(frameInfo))
         {
             return MFX_ERR_MORE_DATA;
         }
@@ -141,6 +146,7 @@ mfxStatus MFXYUVDecoder::DecodeFrame(mfxBitstream * bs, mfxFrameSurface1 *surfac
     mfxBitstream bsTmp = *internalBs;
 
     MFX_CHECK_POINTER(m_pConverter.get());
+    m_pConverter->SetInputFrameSize(m_yuvWidth, m_yuvHeight);
     MFX_CHECK_STS_SKIP(sts = m_pConverter->Transform(internalBs, surface), MFX_ERR_MORE_DATA);
 
     if (MFX_ERR_MORE_DATA == sts )
@@ -279,7 +285,12 @@ mfxStatus MFXYUVDecoder::ConstructFrame(mfxBitstream *in, mfxBitstream *out)
 
     int bytes2copy = (std::min)(in->DataLength, out->MaxLength - out->DataLength);
 
-    mfxU32 planeSize = GetMinPlaneSize(m_vParam.mfx.FrameInfo);
+    mfxFrameInfo frameInfo(m_vParam.mfx.FrameInfo);
+
+    frameInfo.Width = m_yuvWidth;
+    frameInfo.Height = m_yuvHeight;
+
+    mfxU32 planeSize = GetMinPlaneSize(frameInfo);
     if (out->DataLength + bytes2copy > planeSize) // it is better to copy no more yuv size
         bytes2copy = planeSize - out->DataLength;
 

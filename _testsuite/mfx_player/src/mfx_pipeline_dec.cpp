@@ -2692,6 +2692,10 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
     yuvDecParam.mfx.FrameInfo = m_inParams.FrameInfo;
     yuvDecParam.mfx.FrameInfo.Width = m_YUV_Width;
     yuvDecParam.mfx.FrameInfo.Height = m_YUV_Height;
+    yuvDecParam.mfx.FrameInfo.CropW = m_YUV_CropW ? m_YUV_CropW : m_YUV_Width;
+    yuvDecParam.mfx.FrameInfo.CropH = m_YUV_CropH ? m_YUV_CropH : m_YUV_Height;
+    yuvDecParam.mfx.FrameInfo.CropX = m_YUV_CropX;
+    yuvDecParam.mfx.FrameInfo.CropY = m_YUV_CropY;
     //TODO: prety uslees to have to very interconnected structures
     yuvDecParam.mfx.FrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
     yuvDecParam.mfx.FrameInfo.ChromaFormat = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
@@ -4710,10 +4714,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
         {
             m_inParams.FrameInfo.FourCC = MFX_FOURCC_YV12;
         }
-        else HANDLE_INT_OPTION(m_inParams.FrameInfo.CropX, VM_STRING("-cropx"), VM_STRING("X coordinate of crop rectangle"))
-        else HANDLE_INT_OPTION(m_inParams.FrameInfo.CropY,VM_STRING("-cropy"), VM_STRING("Y coordinate of crop rectangle"))
-        else HANDLE_INT_OPTION(nForDeprecatedParams,VM_STRING("-cropw"), VM_STRING("[DEPRECATED] width of crop rectangle"))
-        else HANDLE_INT_OPTION(nForDeprecatedParams,VM_STRING("-croph"), VM_STRING("[DEPRECATED] height of crop rectangle"))
+        else HANDLE_INT_OPTION(m_YUV_CropX, VM_STRING("-cropx"), VM_STRING("X coordinate of crop rectangle"))
+        else HANDLE_INT_OPTION(m_YUV_CropY,VM_STRING("-cropy"), VM_STRING("Y coordinate of crop rectangle"))
+        else HANDLE_INT_OPTION(m_YUV_CropW,VM_STRING("-cropw"), VM_STRING("Width of crop rectangle"))
+        else HANDLE_INT_OPTION(m_YUV_CropH,VM_STRING("-croph"), VM_STRING("Height of crop rectangle"))
         else if (m_OptProc.Check(argv[0], VM_STRING("-extalloc"), VM_STRING("use external memory allocator (turned on automatically if D3D surfaces)")))
         {
             std::for_each(m_components.begin(), m_components.end(), mem_var_set(&ComponentParams::m_bExternalAlloc, true));

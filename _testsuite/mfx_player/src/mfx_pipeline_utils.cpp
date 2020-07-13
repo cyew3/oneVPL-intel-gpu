@@ -1231,7 +1231,7 @@ mfxU32 GetMinPlaneSize(mfxFrameInfo & info)
         }
     }
 
-    return (bpp_m2 * info.CropW * info.CropH) >> 1;
+    return (bpp_m2 * info.Width * info.Height) >> 1;
 }
 
 void GetLoadedModulesList(std::list<tstring>&refModulesList)

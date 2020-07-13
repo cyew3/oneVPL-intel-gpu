@@ -73,19 +73,19 @@ public:
         h = info.CropH;
 
         pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-        ptr   = data.Y + info.CropX + info.CropY*pitch;
+        ptr = data.Y + info.CropX + info.CropY*pitch;
 
-        if(pitch == w) 
+        if (pitch == w)
         {
             //we can read whole plane directly to surface
             planeSize = w * h;
             MFX_CHECK_WITH_ERR(planeSize == BSUtil::MoveNBytes(ptr, bs, planeSize), MFX_ERR_MORE_DATA);
-        } 
-        else 
+        }
+        else
         {
-            for(i=0; i<h; i++) 
+            for (i = 0; i < h; i++)
             {
-                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(ptr + i*pitch, bs, w), MFX_ERR_MORE_DATA);
+                MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(ptr + i * pitch, bs, w), MFX_ERR_MORE_DATA);
             }
         }
         return MFX_ERR_NONE;
@@ -144,28 +144,33 @@ public:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
-        if (bs->DataLength < GetMinPlaneSize(info))
+        mfxFrameInfo frameInfo(info);
+
+        frameInfo.Width = m_inWidth;
+        frameInfo.Height = m_inHeight;
+
+        if (bs->DataLength < GetMinPlaneSize(frameInfo))
         {
             return MFX_ERR_MORE_DATA;
         }
-        
+
 #if defined(LINUX32) || defined (LINUX64)
         // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
         BSConverterUtil::ZeroedOutsideCropsNV12(surface);
 #endif
 
-        IppiSize roi = { info.CropW, info.CropH };
+        IppiSize roi = { m_inWidth, m_inHeight };
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-        mfxU8  *ptr = data.Y + info.CropX + info.CropY*pitch;
+        mfxU8  *ptr = data.Y;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, info.CropW, roi, COPY_SYS_TO_SYS);
+        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
-        ptr = data.UV + info.CropX + (info.CropY >> 1) * pitch;
+        ptr = data.UV;
 
         roi.height >>= 1;
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, info.CropW, roi, COPY_SYS_TO_SYS);
+        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
@@ -187,7 +192,12 @@ public:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
-        if (bs->DataLength < GetMinPlaneSize(info))
+        mfxFrameInfo frameInfo(info);
+
+        frameInfo.Width = m_inWidth;
+        frameInfo.Height = m_inHeight;
+
+        if (bs->DataLength < GetMinPlaneSize(frameInfo))
         {
             return MFX_ERR_MORE_DATA;
         }
@@ -197,17 +207,17 @@ public:
         memset(data.Y, 0, info.Width * info.Height);
         memset(data.UV, 0, info.Width * info.Height / 2);
 #endif
-        IppiSize roi = { info.CropW, info.CropH };
+        IppiSize roi = { m_inWidth, m_inHeight };
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-        mfxU8  *ptr = data.Y + info.CropX + info.CropY*pitch;
+        mfxU8  *ptr = data.Y;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, info.CropW, roi, COPY_SYS_TO_SYS);
+        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
-        ptr = data.UV + info.CropX + info.CropY * pitch;
+        ptr = data.UV;
 
-        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, info.CropW, roi, COPY_SYS_TO_SYS);
+        FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
         return MFX_ERR_NONE;
@@ -225,24 +235,16 @@ public:
 
     mfxStatus Transform(mfxBitstream * bs, mfxFrameSurface1 *surface) override
     {
-        mfxFrameData &data      = surface->Data;
-        mfxFrameInfo &info      = surface->Info;
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
 #if defined(LINUX32) || defined (LINUX64)  
         memset(data.Y, 0, info.Width * info.Height * 2);
-        memset(data.UV, 0, info.Width * info.Height );
+        memset(data.UV, 0, info.Width * info.Height);
 #endif
         mfxU32 w, h, i, pitch;
         mfxU16 *ptr = data.Y16;
-        if (info.CropH > 0 && info.CropW > 0)
-        {
-            w = info.CropW;
-            h = info.CropH;
-        }
-        else
-        {
-            w = info.Width;
-            h = info.Height;
-        }
+        w = m_inWidth;
+        h = m_inHeight;
         pitch = data.Pitch;
         for (i = 0; i < h; i++)
         {
@@ -267,7 +269,12 @@ public:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
-        if (bs->DataLength < GetMinPlaneSize(info))
+        mfxFrameInfo frameInfo(info);
+
+        frameInfo.Width = m_inWidth;
+        frameInfo.Height = m_inHeight;
+
+        if (bs->DataLength < GetMinPlaneSize(frameInfo))
         {
             return MFX_ERR_MORE_DATA;
         }
@@ -275,18 +282,18 @@ public:
 #if defined(LINUX32) || defined (LINUX64)
         // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
         memset(data.Y, 0, info.Width * info.Height * 2);
-        memset(data.UV, 0, info.Width * info.Height );
+        memset(data.UV, 0, info.Width * info.Height);
 #endif
 
-        IppiSize roi = { info.CropW*2, info.CropH };
+        IppiSize roi = { m_inWidth * 2, m_inHeight };
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-        mfxU8  *ptr = data.Y + (info.CropX * 2) + info.CropY * pitch;
+        mfxU8  *ptr = data.Y;
 
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
-        ptr = data.UV + (info.CropX * 2) + (info.CropY >> 1) * pitch;
+        ptr = data.UV;
 
         roi.height >>= 1;
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
@@ -310,7 +317,12 @@ public:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
-        if (bs->DataLength < GetMinPlaneSize(info))
+        mfxFrameInfo frameInfo(info);
+
+        frameInfo.Width = m_inWidth;
+        frameInfo.Height = m_inHeight;
+
+        if (bs->DataLength < GetMinPlaneSize(frameInfo))
         {
             return MFX_ERR_MORE_DATA;
         }
@@ -318,18 +330,18 @@ public:
 #if defined(LINUX32) || defined (LINUX64)  
         // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
         memset(data.Y, 0, info.Width * info.Height * 2);
-        memset(data.UV, 0, info.Width * info.Height );
+        memset(data.UV, 0, info.Width * info.Height);
 #endif
 
-        IppiSize roi = { info.CropW * 2, info.CropH };
+        IppiSize roi = { m_inWidth * 2, m_inHeight };
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-        mfxU8  *ptr = data.Y + (info.CropX * 2) + info.CropY * pitch;
+        mfxU8  *ptr = data.Y;
 
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
-        ptr = data.UV + (info.CropX * 2) + info.CropY * pitch;
+        ptr = data.UV;
 
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
@@ -352,7 +364,12 @@ public:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
-        mfxU32 planeSize = GetMinPlaneSize(info);
+        mfxFrameInfo frameInfo(info);
+
+        frameInfo.Width = m_inWidth;
+        frameInfo.Height = m_inHeight;
+
+        mfxU32 planeSize = GetMinPlaneSize(frameInfo);
         if (bs->DataLength < planeSize)
         {
             return MFX_ERR_MORE_DATA;
@@ -365,9 +382,9 @@ public:
         memset(data.U, 0, info.Width * info.Height / 4);
 #endif
 
-        IppiSize roi = { info.CropW, info.CropH };
+        IppiSize roi = { m_inWidth, m_inHeight };
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-        mfxU8  *ptr = data.Y + info.CropX + info.CropY*pitch;
+        mfxU8  *ptr = data.Y;
 
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
@@ -377,12 +394,12 @@ public:
         roi.width >>= 1;
 
         pitch >>= 1;
-        ptr = data.V + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
+        ptr = data.V;
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
-        ptr = data.U + (info.CropX >> 1) + (info.CropY >> 1) * pitch;
+        ptr = data.U;
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
@@ -405,7 +422,12 @@ public:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
-        mfxU32 planeSize = GetMinPlaneSize(info);
+        mfxFrameInfo frameInfo(info);
+
+        frameInfo.Width = m_inWidth;
+        frameInfo.Height = m_inHeight;
+
+        mfxU32 planeSize = GetMinPlaneSize(frameInfo);
         if (bs->DataLength < planeSize)
         {
             return MFX_ERR_MORE_DATA;
@@ -415,22 +437,23 @@ public:
         // on Windows surfaces comes zero-initialized, on Linux have to clear non-aligned stream boundaries
         BSConverterUtil::ZeroedOutsideCropsNV12(surface);
 #endif
+        IppiSize roi = { m_inWidth, m_inHeight };
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-        mfxU8  *ptr = data.Y + info.CropX + info.CropY*pitch;
-        mfxU8  *ptrUV = data.UV + info.CropX + (info.CropY >> 1)*pitch;
+        mfxU8  *ptr = data.Y;
+        mfxU8  *ptrUV = data.UV;
 
-        if (info.CropW % 2 != 0 || info.CropH % 2 != 0)
+        if (roi.width % 2 != 0 || roi.height % 2 != 0)
         {
             const mfxU8 *(pYVU[3]);
             pYVU[0] = bs->Data + bs->DataOffset;
-            pYVU[1] = pYVU[0] + info.CropW * info.CropH;
-            pYVU[2] = pYVU[1] + (info.CropW + 1) / 2 * (info.CropH + 1) / 2;
+            pYVU[1] = pYVU[0] + roi.width * roi.height;
+            pYVU[2] = pYVU[1] + (roi.width + 1) / 2 * (roi.height + 1) / 2;
 
             bs->DataOffset += planeSize;
             bs->DataLength -= planeSize;
 
-            mfxU16 height = info.CropH;
-            mfxU16 width  = info.CropW;
+            mfxU16 height = roi.height;
+            mfxU16 width = roi.width;
             // copy luma, width * height
             for (mfxU16 i = 0; i < height; ++i)
             {
@@ -440,15 +463,15 @@ public:
                 pYVU[0] += width;
             }
 
-            height = (info.CropH + 1) / 2;
-            width  = (info.CropW + 1) / 2;
+            height = (roi.height + 1) / 2;
+            width = (roi.width + 1) / 2;
             // copy cb and cr, (width + 1) / 2 * (height + 1) / 2
             for (mfxU16 i = 0; i < height; ++i)
             {
                 for (mfxU16 j = 0; j < width; ++j)
                 {
-                    ptrUV[2*j]     = pYVU[1][j];
-                    ptrUV[2*j + 1] = pYVU[2][j];
+                    ptrUV[2 * j] = pYVU[1][j];
+                    ptrUV[2 * j + 1] = pYVU[2][j];
                 }
 
                 ptrUV += pitch;
@@ -458,12 +481,11 @@ public:
         }
         else
         {
-            IppiSize roi = { info.CropW, info.CropH };
-            Ipp32s pYVUStep[3] = { info.CropW, info.CropW / 2, info.CropW / 2 };
+            Ipp32s pYVUStep[3] = { roi.width, roi.width / 2, roi.width / 2 };
             const Ipp8u *(pYVU[3]);
             pYVU[0] = bs->Data + bs->DataOffset;
             pYVU[1] = pYVU[0] + roi.width * roi.height;
-            pYVU[2] = pYVU[1] + roi.width * roi.height/4;
+            pYVU[2] = pYVU[1] + roi.width * roi.height / 4;
 
             bs->DataOffset += planeSize;
             bs->DataLength -= planeSize;
@@ -494,10 +516,10 @@ public:
         mfxU32 w, h, i, j, pitch;
         mfxU8  *ptr;
 
-        w = info.CropW;
-        h = info.CropH;
+        w = m_inWidth;
+        h = m_inHeight;
         pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-        ptr = data.V + info.CropX + (info.CropY)*pitch;
+        ptr = data.V;
 
         m_line.resize(w);
 
@@ -508,7 +530,7 @@ public:
                 MFX_CHECK_WITH_ERR(w == BSUtil::MoveNBytes(&m_line.front(), bs, w), MFX_ERR_MORE_DATA);
 
                 const mfxU8* p_src = &m_line.front();
-                mfxU8* p_dst = ptr + i*pitch;
+                mfxU8* p_dst = ptr + i * pitch;
 
                 for (j = 0; j < w; j++, p_dst += 4)
                     p_dst[c] = p_src[j];
@@ -539,22 +561,22 @@ public:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
-        w = info.CropW;
-        h = info.CropH;
+        w = m_inWidth;
+        h = m_inHeight;
 
         pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
 
-        ptr = data.B + info.CropX * 4 + info.CropY * pitch;
-        
+        ptr = data.B;
+
         for (i = 0; i < h; i++, ptr += pitch)
         {
             ptr2 = ptr;
-            for (j =0; j < w; j++)
+            for (j = 0; j < w; j++)
             {
                 MFX_CHECK_WITH_ERR(3 == BSUtil::MoveNBytes(ptr2, bs, 3), MFX_ERR_MORE_DATA);
                 //zero for alpha channel
                 ptr2[3] = 0;
-                ptr2   += 4;
+                ptr2 += 4;
             }
         }
         return MFX_ERR_NONE;
@@ -580,8 +602,8 @@ public:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
-        w = info.CropW;
-        h = info.CropH;
+        w = m_inWidth;
+        h = m_inHeight;
 
         pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
         ptr = start_pointer(surface);
@@ -622,11 +644,8 @@ protected:
     virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
     {
         mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return data.R + info.CropX * m_sample_size + info.CropY * pitch;
+        return data.R;
     }
 
     mfxU8 m_sample_size;
@@ -659,11 +678,8 @@ protected:
     mfxU8* start_pointer(mfxFrameSurface1 *surface) override
     {
         mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return data.B + info.CropX * m_sample_size + info.CropY * pitch;
+        return data.B;
     }
 };
 
@@ -685,8 +701,8 @@ public:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
-        w = info.CropW;
-        h = info.CropH;
+        w = m_inWidth;
+        h = m_inHeight;
 
         pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
 
@@ -713,11 +729,8 @@ protected:
     virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
     {
         mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return data.B + info.CropX * m_sample_size + info.CropY * pitch;
+        return data.B;
     }
 
     mfxU8 m_sample_size;
@@ -750,11 +763,8 @@ protected:
     mfxU8* start_pointer(mfxFrameSurface1 *surface) override
     {
         mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return data.R + info.CropX * m_sample_size + info.CropY * pitch;
+        return data.R;
     }
 };
 
@@ -785,11 +795,8 @@ protected:
     mfxU8* start_pointer(mfxFrameSurface1 *surface) override
     {
         mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return data.Y + info.CropX * m_sample_size + info.CropY * pitch;
+        return data.Y;
     }
 };
 
@@ -809,11 +816,8 @@ protected:
     mfxU8* start_pointer(mfxFrameSurface1 *surface) override
     {
         mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return data.Y + info.CropX * m_sample_size + info.CropY * pitch;
+        return data.Y;
     }
 };
 
@@ -832,11 +836,8 @@ protected:
     mfxU8* start_pointer(mfxFrameSurface1 *surface) override
     {
         mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return (mfxU8*)surface->Data.Y410 + info.CropX * m_sample_size + info.CropY * pitch;
+        return (mfxU8*)surface->Data.Y410;
     }
 };
 #endif // #if (MFX_VERSION >= 1027)
@@ -856,11 +857,8 @@ protected:
     mfxU8* start_pointer(mfxFrameSurface1 *surface) override
     {
         mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return (mfxU8*)surface->Data.A2RGB10 + info.CropX * m_sample_size + info.CropY * pitch;
+        return (mfxU8*)surface->Data.A2RGB10;
     }
 };
 
@@ -880,11 +878,8 @@ protected:
     mfxU8* start_pointer(mfxFrameSurface1 * surface) override
     {
         mfxFrameData& data = surface->Data;
-        mfxFrameInfo& info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return (mfxU8*)surface->Data.B + info.CropX * m_sample_size + info.CropY * pitch;
+        return (mfxU8*)surface->Data.B;
     }
 };
 
@@ -903,11 +898,8 @@ protected:
     mfxU8* start_pointer(mfxFrameSurface1 * surface) override
     {
         mfxFrameData& data = surface->Data;
-        mfxFrameInfo& info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return (mfxU8*)surface->Data.R + info.CropX * m_sample_size + info.CropY * pitch;
+        return (mfxU8*)surface->Data.R;
     }
 };
 #endif // #if (defined(LINUX32) || defined(LINUX64)) && (MFX_VERSION >= 1028)
@@ -927,11 +919,8 @@ protected:
     mfxU8* start_pointer(mfxFrameSurface1 *surface) override
     {
         mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return surface->Data.V + info.CropX * m_sample_size + info.CropY * pitch;
+        return surface->Data.V;
     }
 };
 
@@ -950,7 +939,12 @@ public:
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
 
-        if (bs->DataLength < GetMinPlaneSize(info))
+        mfxFrameInfo frameInfo(info);
+
+        frameInfo.Width = m_inWidth;
+        frameInfo.Height = m_inHeight;
+
+        if (bs->DataLength < GetMinPlaneSize(frameInfo))
         {
             return MFX_ERR_MORE_DATA;
         }
@@ -961,15 +955,15 @@ public:
         memset(data.UV, 0, info.Width * info.Height);
 #endif
 
-        IppiSize roi = { info.CropW * 2, info.CropH };
+        IppiSize roi = { m_inWidth * 2, m_inHeight };
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-        mfxU8  *ptr = data.Y + (info.CropX * 2) + info.CropY * pitch;
+        mfxU8  *ptr = data.Y;
 
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
         bs->DataOffset += roi.width * roi.height;
         bs->DataLength -= roi.width * roi.height;
 
-        ptr = data.UV + (info.CropX * 2) + (info.CropY >> 1) * pitch;
+        ptr = data.UV;
 
         roi.height >>= 1;
         FastCopy::Copy(ptr, pitch, bs->Data + bs->DataOffset, roi.width, roi, COPY_SYS_TO_SYS);
@@ -994,11 +988,8 @@ protected:
     mfxU8* start_pointer(mfxFrameSurface1 *surface) override
     {
         mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return data.Y + info.CropX * m_sample_size + info.CropY * pitch;
+        return data.Y;
     }
 };
 
@@ -1017,11 +1008,8 @@ protected:
     mfxU8* start_pointer(mfxFrameSurface1 *surface) override
     {
         mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
 
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return (mfxU8*)surface->Data.Y410 + info.CropX * m_sample_size + info.CropY * pitch;
+        return (mfxU8*)surface->Data.Y410;
     }
 };
 #endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
