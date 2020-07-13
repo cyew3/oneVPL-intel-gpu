@@ -1338,20 +1338,26 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
             changed = true;
         }
 
+        // For targetUsage 1: MaxNum_Reference is 3
         // For targetUsage 4: MaxNum_Reference is 2
         // For targetUsage 7: MaxNum_Reference is 1
+        mfxU16 RefActiveP = 3;
         if (par.mfx.TargetUsage)
         {
-            if (par.mfx.TargetUsage == MFX_TARGETUSAGE_BALANCED && par.mfx.NumRefFrame > 2)
+            if (par.mfx.TargetUsage == MFX_TARGETUSAGE_BALANCED)
             {
-                par.mfx.NumRefFrame = 2;
-                changed = true;
+                RefActiveP = 2;
             }
-            else if (par.mfx.TargetUsage == MFX_TARGETUSAGE_BEST_SPEED && par.mfx.NumRefFrame > 1)
+            else if (par.mfx.TargetUsage == MFX_TARGETUSAGE_BEST_SPEED)
             {
-                par.mfx.NumRefFrame = 1;
-                changed = true;
+                RefActiveP = 1;
             }
+        }
+
+        if (par.mfx.NumRefFrame > RefActiveP)
+        {
+            par.mfx.NumRefFrame = RefActiveP;
+            changed = true;
         }
     }
     else
