@@ -110,6 +110,7 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
         // mark all reference pictures as unused
         for (H265DecoderFrame *pCurr = view.pDPB->head(); pCurr; pCurr = pCurr->future())
         {
+            pCurr->GetAU()->m_frameBeforeIDR = 1;
             if (pCurr->isShortTermRef() || pCurr->isLongTermRef())
             {
                 pCurr->SetisShortTermRef(false);
@@ -2169,11 +2170,25 @@ void TaskSupplier_H265::CheckCRAOrBLA(const H265Slice *pSlice)
     //Check NoOutputPriorPics
     if (pSlice->GetRapPicFlag() && no_output_of_prior_pics_flag)
     {
-
         for (H265DecoderFrame *pCurr = GetView()->pDPB->head(); pCurr; pCurr = pCurr->future())
         {
-            pCurr->m_pic_output = false;
-            pCurr->SetisDisplayable(false);
+            if (pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL ||
+                pSlice->m_SliceHeader.nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP)
+            {
+                if(!pCurr->wasOutputted())
+                {
+                    pCurr->m_pic_output = false;
+                    pCurr->SetisDisplayable(false);
+                }
+            }
+            else
+            {
+                if (!pCurr->GetAU()->m_frameBeforeIDR && !pCurr->wasOutputted())
+                {
+                    pCurr->m_pic_output = false;
+                    pCurr->SetisDisplayable(false);
+                }
+            }
         }
     }
 }

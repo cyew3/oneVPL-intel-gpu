@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 Intel Corporation
+// Copyright (c) 2012-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -88,6 +88,7 @@ public:
 
         m_isIntraAU = m_isIntraAU && (sliceHeader.slice_type == I_SLICE);
         m_IsIDR     = sliceHeader.IdrPicFlag != 0;
+        m_frameBeforeIDR = 0;
         m_hasDependentSliceSegments = m_hasDependentSliceSegments || sliceHeader.dependent_slice_segment_flag;
         m_isNeedDeblocking = m_isNeedDeblocking || (!sliceHeader.slice_deblocking_filter_disabled_flag);
         m_isNeedSAO = m_isNeedSAO || (sliceHeader.slice_sao_luma_flag || sliceHeader.slice_sao_chroma_flag);
@@ -214,6 +215,7 @@ public:
     H265DecoderFrame * m_pFrame;
     int32_t m_prepared;
     bool m_IsIDR;
+    uint32_t m_frameBeforeIDR;
 
 private:
 
