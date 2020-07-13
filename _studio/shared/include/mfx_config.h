@@ -55,9 +55,9 @@
 #undef MFX_DEBUG_TOOLS
 #define MFX_DEBUG_TOOLS
 
-//#ifdef MFX_ENABLE_ENCTOOLS
-//#define MFX_ENABLE_ENCTOOLS_LPLA
-//#endif
+#ifdef MFX_ENABLE_ENCTOOLS
+#define MFX_ENABLE_ENCTOOLS_LPLA
+#endif
 #define MFX_ENABLE_LP_LOOKAHEAD
 
 #if defined(DEBUG) || defined(_DEBUG)
