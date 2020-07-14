@@ -3515,6 +3515,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
+    if (extOpt3->WinBRCSize && !hwCaps.ddi_caps.FrameSizeTolerance)
+    {
+        unsupported = true;
+        extOpt3->WinBRCSize = 0;
+    }
+
     if (extOpt2->BRefType > 2)
     {
         changed = true;

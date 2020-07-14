@@ -225,13 +225,12 @@ mfxStatus SetRateControl(
         rate_param->target_percentage = par.mfx.Accuracy;
     }
 
-#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_CFL)
+    rate_param->rc_flags.bits.frame_tolerance_mode = ConvertLowDelayBRCMfx2Ddi(extOpt3.LowDelayBRC, par.calcParam.TCBRCTargetFrameSize);
     // Activate frame tolerance sliding window mode
-    mfxExtCodingOption3 const & extOpt3 = GetExtBufferRef(par);
-    if (extOpt3.WinBRCSize) {
-        rate_param->rc_flags.bits.frame_tolerance_mode = 1;
+    if (extOpt3.WinBRCSize)
+    {
+        rate_param->rc_flags.bits.frame_tolerance_mode = eFrameSizeTolerance_Low;
     }
-#endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_CFL)
 
     //  MBBRC control
     // Control VA_RC_MB 0: default, 1: enable, 2: disable, other: reserved
@@ -1513,18 +1512,21 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 {
     m_core = core;
 
+    m_caps = {};
+
     VAAPIVideoCORE * hwcore = dynamic_cast<VAAPIVideoCORE *>(m_core);
     MFX_CHECK_WITH_ASSERT(hwcore != 0, MFX_ERR_DEVICE_FAILED);
     if(hwcore)
     {
         mfxStatus mfxSts = hwcore->GetVAService(&m_vaDisplay);
         MFX_CHECK_STS(mfxSts);
+        eMFXHWType platform = hwcore->GetHWType();
+        if (MFX_HW_APL == platform || MFX_HW_CFL == platform)
+            m_caps.ddi_caps.FrameSizeTolerance = 1;
     }
 
     m_width  = width;
     m_height = height;
-
-    m_caps = {};
 
     m_caps.ddi_caps.BRCReset        = 1; // no bitrate resolution control
     m_caps.ddi_caps.HeaderInsertion = 0; // we will provide headers (SPS, PPS) in binary format to the driver
