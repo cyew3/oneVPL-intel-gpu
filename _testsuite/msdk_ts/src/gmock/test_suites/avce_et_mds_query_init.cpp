@@ -1706,6 +1706,7 @@ namespace avce_et_mds_query_init
         encoder.initParams();
 
         enc_tools_config = reinterpret_cast<mfxExtEncToolsConfig*>(encoder.m_par.GetExtBuffer(MFX_EXTBUFF_ENCTOOLS_CONFIG));
+        EXPECT_NE(enc_tools_config, nullptr) << "ERROR: Extension buffer wasn't found\n";
         SETPARS(enc_tools_config, ETC_PAR);
 
         isGSCrossMode = IsGSCrossMode(enc_tools_config);
@@ -1713,6 +1714,7 @@ namespace avce_et_mds_query_init
         //ExtBRC block filling
         encoder.m_par.AddExtBuffer(MFX_EXTBUFF_CODING_OPTION2, sizeof(mfxExtCodingOption2));
         coding_option2 = reinterpret_cast<mfxExtCodingOption2*>(encoder.m_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2));
+        EXPECT_NE(coding_option2, nullptr) << "ERROR: Extension buffer wasn't found\n";
         SETPARS(coding_option2, CDO2_PAR);
         if (coding_option2->ExtBRC != MFX_CODINGOPTION_ON)
         {
