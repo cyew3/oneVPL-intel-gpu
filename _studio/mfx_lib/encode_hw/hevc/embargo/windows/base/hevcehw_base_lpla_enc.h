@@ -49,7 +49,7 @@ protected:
 
 private:
     mfxExtBuffer*            extBuffers[1];
-    mfxVideoParam            lplaParam;
+    mfxVideoParam            lplaParam = {};
     mfxExtLplaParam          extBufLPLA = {};
     bool                     bInitialized = false;
 };
