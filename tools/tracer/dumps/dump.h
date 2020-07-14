@@ -73,18 +73,19 @@ bool _IsBadReadPtr(void *ptr, size_t size);
     #define TimeToString( x ) (std::ostringstream() << std::left << std::setw(4) << std::dec << x <<" msec").str()
     #define ToHexFormatString( x ) (std::ostringstream() << std::hex << pVoidToHexString((void*)x)).str()
 #else
-    #define ToString( x )  dynamic_cast< std::ostringstream & >( \
+    #define ToString( x )  static_cast< std::ostringstream const & >( \
         ( std::ostringstream() << std::dec << x ) ).str()
 
-    #define TimeToString( x ) dynamic_cast< std::ostringstream & >( \
+    #define TimeToString( x ) static_cast< std::ostringstream const & >( \
             ( std::ostringstream() << std::left << std::setw(4) << std::dec << x <<" msec") ).str()
 
     /*
-    #define ToHexFormatString( x ) dynamic_cast< std::ostringstream & >( \
+    #define ToHexFormatString( x ) static_cast< std::ostringstream const & >( \
             ( std::ostringstream() << std::hex << x ) ).str()
     */
 
-    #define ToHexFormatString( x ) (dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::hex << pVoidToHexString((void*)x) ) ).str() )
+    #define ToHexFormatString( x ) (static_cast< std::ostringstream const & >( \
+            ( std::ostringstream() << std::hex << pVoidToHexString((void*)x) ) ).str() )
 #endif
 
 /*
@@ -128,7 +129,7 @@ public:
     inline std::string toString( T x, eDumpFormat format = DUMP_DEC){
         return
 #if !defined(ANDROID)
-            dynamic_cast< std::ostringstream & >
+            static_cast< std::ostringstream const & >
 #endif
                 (( std::ostringstream() << ((format == DUMP_DEC) ? std::dec : std::hex) << x )).str();
     }
