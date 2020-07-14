@@ -2245,6 +2245,7 @@ public:
             IsOn(m_EncToolConfig.BRC));
     }
 
+    //GetPreEncDelay returns 0 if any error in EncTools configuration.
     static mfxU32 GetPreEncDelay(const MfxVideoParam &par)
     {
         MfxVideoParam video = par;
@@ -2258,8 +2259,13 @@ public:
         mfxExtEncToolsConfig requiredConfig = {};
         mfxEncToolsCtrl ctrl = {};
 
-        MFX_CHECK_STS(CreateEncTools(video, encTools, bCreated));
-        MFX_CHECK_STS(InitCtrl(video, &ctrl));
+        mfxStatus sts = CreateEncTools(video, encTools, bCreated);
+        if (MFX_FAILED(sts))
+            return 0;
+
+        sts = InitCtrl(video, &ctrl);
+        if (MFX_FAILED(sts))
+            return 0;
 
         encTools->GetSupportedConfig(encTools->Context, &supportedConfig,&ctrl);
 
@@ -2278,8 +2284,6 @@ public:
 
     static mfxStatus Query(MfxVideoParam &video)
     {
-        mfxStatus sts = MFX_ERR_NONE;
-
         mfxExtEncToolsConfig supportedConfig = {};
         mfxExtEncToolsConfig requiredConfig = {};
         mfxEncToolsCtrl ctrl = {};
@@ -2287,8 +2291,10 @@ public:
         mfxEncTools *encTools = 0;
         bool bCreated = false;
 
-        MFX_CHECK_STS(CreateEncTools(video, encTools, bCreated));
-        MFX_CHECK_STS(InitCtrl(video, &ctrl));
+        mfxStatus sts = CreateEncTools(video, encTools, bCreated);
+        MFX_CHECK_STS(sts);
+        sts = InitCtrl(video, &ctrl);
+        MFX_CHECK_STS(sts);
 
         encTools->GetSupportedConfig(encTools->Context, &supportedConfig,&ctrl);
 
@@ -2310,9 +2316,11 @@ public:
         m_EncToolCtrl.ExtParam = m_ExtParam;
         m_EncToolCtrl.NumExtParam = 2;
 
-        MFX_CHECK_STS(InitCtrl(video, &m_EncToolCtrl));
+        mfxStatus sts = InitCtrl(video, &m_EncToolCtrl);
+        MFX_CHECK_STS(sts);
 
-        MFX_CHECK_STS(CreateEncTools(video, m_pEncTools, m_bEncToolsCreated));
+        sts = CreateEncTools(video, m_pEncTools, m_bEncToolsCreated);
+        MFX_CHECK_STS(sts);
 
         m_pEncTools->GetSupportedConfig(m_pEncTools->Context, &supportedConf, &m_EncToolCtrl);
 
@@ -2321,9 +2329,11 @@ public:
 
         GetRequiredFunc(video, requiredConf);
 
-        MFX_CHECK_STS (m_pEncTools->Init(m_pEncTools->Context, &requiredConf, &m_EncToolCtrl));
+        sts = m_pEncTools->Init(m_pEncTools->Context, &requiredConf, &m_EncToolCtrl);
+        MFX_CHECK_STS(sts);
 
-        MFX_CHECK_STS (m_pEncTools->GetActiveConfig(m_pEncTools->Context, &m_EncToolConfig));
+        sts = m_pEncTools->GetActiveConfig(m_pEncTools->Context, &m_EncToolConfig);
+        MFX_CHECK_STS(sts);
 
         mfxExtEncToolsConfig *pConfig = (mfxExtEncToolsConfig *)GetExtBuffer(video.ExtParam, video.NumExtParam, MFX_EXTBUFF_ENCTOOLS_CONFIG);
         if (pConfig)
@@ -2332,7 +2342,6 @@ public:
             *pConfig = m_EncToolConfig;
             pConfig->Header = header;
         }
-
 
         return MFX_ERR_NONE;
     }
@@ -2353,9 +2362,12 @@ public:
         MFX_CHECK(m_pEncTools != 0, MFX_ERR_NOT_INITIALIZED);
 
         mfxEncToolsCtrl newCtrl = {};
-        MFX_CHECK_STS(InitCtrl(video, &newCtrl));
+        mfxStatus sts = InitCtrl(video, &newCtrl);
+        MFX_CHECK_STS(sts);
 
-        MFX_CHECK_STS(m_pEncTools->Reset(m_pEncTools->Context, &m_EncToolConfig, &newCtrl));
+        sts = m_pEncTools->Reset(m_pEncTools->Context, &m_EncToolConfig, &newCtrl);
+        MFX_CHECK_STS(sts);
+
         m_EncToolCtrl = newCtrl;
 
         return MFX_ERR_NONE;
@@ -2417,9 +2429,7 @@ public:
         par.ExtParam = &extParams[0];
         par.NumExtParam = (mfxU16)extParams.size();
 
-        mfxStatus sts = MFX_ERR_NONE;
-        sts = m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
-        return sts;
+        return m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
     }
 
     mfxStatus QueryPreEncARef(mfxU32 displayOrder, mfxEncToolsHintPreEncodeARefFrames &preEncodeARef)
@@ -2441,9 +2451,7 @@ public:
         par.ExtParam = extParams.data();
         par.NumExtParam = (mfxU16)extParams.size();
 
-        mfxStatus sts = MFX_ERR_NONE;
-        sts = m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
-        return sts;
+        return m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
     }
 
 #if defined (MFX_ENABLE_ENCTOOLS_LPLA)
@@ -2475,9 +2483,7 @@ public:
         par.ExtParam = &extParams[0];
         par.NumExtParam = (mfxU16)extParams.size();
 
-        mfxStatus sts = MFX_ERR_NONE;
-        sts = m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
-        return sts;
+        return m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
     }
 #endif
 
@@ -2500,9 +2506,7 @@ public:
         par.ExtParam = &extParams[0];
         par.NumExtParam = (mfxU16)extParams.size();
 
-        mfxStatus sts = MFX_ERR_NONE;
-        sts = m_pEncTools->Query(m_pEncTools->Context, &par);
-        return sts;
+        return m_pEncTools->Query(m_pEncTools->Context, &par);
     }
 #endif
 
@@ -2546,9 +2550,7 @@ public:
         par.ExtParam = &extParams[0];
         par.NumExtParam = (mfxU16)extParams.size();
 
-        mfxStatus sts = MFX_ERR_NONE;
-        sts = m_pEncTools->Submit(m_pEncTools->Context, &par);
-        return sts;
+        return m_pEncTools->Submit(m_pEncTools->Context, &par);
     }
 
     mfxStatus GetFrameCtrl(mfxBRCFrameCtrl *frame_ctrl, mfxU32 dispOrder)
@@ -2596,10 +2598,7 @@ public:
         par.ExtParam = &extParams[0];
         par.NumExtParam = (mfxU16)extParams.size();
 
-        mfxStatus sts;
-        sts = m_pEncTools->Submit(m_pEncTools->Context, &par);
-        MFX_CHECK_STS(sts);
-        return sts;
+        return m_pEncTools->Submit(m_pEncTools->Context, &par);
     }
 
     mfxStatus GetEncodeStatus(mfxBRCFrameStatus *frame_status, mfxU32 dispOrder)
@@ -2617,8 +2616,7 @@ public:
         par.ExtParam = &extParams[0];
         par.NumExtParam = (mfxU16)extParams.size();
 
-        mfxStatus sts;
-        sts = m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
+        mfxStatus sts = m_pEncTools->Query(m_pEncTools->Context, &par, ENCTOOLS_QUERY_TIMEOUT);
 
         *frame_status = extSts.FrameStatus;
         return sts;
