@@ -1656,7 +1656,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
 #if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
     mfxExtMultiFrameParam* mfeParam = &par.m_ext.mfeParam;
     mfxExtMultiFrameControl* mfeControl = &par.m_ext.mfeControl;
-#endif // MFX_ENABLE_HEVCE_DIRTY_RECT
+#endif // MFX_ENABLE_MFE && PRE_SI_TARGET_PLATFORM_GEN12
     changed += CheckTriStateOption(par.mfx.LowPower);
 
 #if (MFX_VERSION >= 1025)
