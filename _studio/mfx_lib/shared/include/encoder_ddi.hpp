@@ -652,6 +652,8 @@ struct MFX_ENCODE_CAPS
     bool CBRSupport;
     bool VBRSupport;
     bool AVBRSupport;
+
+    bool AdaptiveMaxFrameSizeSupport;
 };
 
 // DDI v0.947

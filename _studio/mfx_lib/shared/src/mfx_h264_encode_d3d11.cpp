@@ -1159,6 +1159,7 @@ mfxStatus D3D11Encoder::Init(
         m_caps.CBRSupport = 1;
         m_caps.VBRSupport = 1;
         m_caps.AVBRSupport = 1;
+        m_caps.AdaptiveMaxFrameSizeSupport = 1;
     }
 #endif
     if (!m_pDecoder)
@@ -1256,6 +1257,7 @@ mfxStatus D3D11Encoder::Init(
         m_caps.CBRSupport = 1;
         m_caps.VBRSupport = 1;
         m_caps.AVBRSupport = 1;
+        m_caps.AdaptiveMaxFrameSizeSupport = 1;
 
         CHECK_HRES(hRes);
     }

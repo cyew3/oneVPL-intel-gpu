@@ -412,6 +412,7 @@ static void InitHWCaps(MFX_ENCODE_CAPS &hwCaps)
     hwCaps.VBRSupport=1;
     hwCaps.CBRSupport=1;
     hwCaps.AVBRSupport=1;
+    hwCaps.AdaptiveMaxFrameSizeSupport = 1;
 
 }
 

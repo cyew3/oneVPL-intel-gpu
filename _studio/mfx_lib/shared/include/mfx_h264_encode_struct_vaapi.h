@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 Intel Corporation
+// Copyright (c) 2011-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -343,6 +343,8 @@ struct MFX_ENCODE_CAPS
     bool CBRSupport;
     bool VBRSupport;
     bool AVBRSupport;
+
+    bool AdaptiveMaxFrameSizeSupport;
 };
 
 // this enumeration is used to define the block size for intra prediction. they
