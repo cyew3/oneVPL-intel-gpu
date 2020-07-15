@@ -2121,9 +2121,10 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
         pParams->reset = false;
     }
 
-    pRect.top = pRect.left = 0;
-    pRect.bottom = pOutInfo.Height;
-    pRect.right  = pOutInfo.Width;
+    pRect.top    = pOutInfo.CropY;
+    pRect.left   = pOutInfo.CropX;
+    pRect.bottom = pOutInfo.CropY + pOutInfo.CropH;
+    pRect.right  = pOutInfo.CropX + pOutInfo.CropW;
     SetOutputTargetRect(TRUE, &pRect);
 
     mfxHDL inputSurface;
@@ -2262,21 +2263,23 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     int numRef = (pParams->execIdx == NO_INDEX) ? pParams->refCount : 1;
     mfxU32 startIdx = (pParams->execIdx == NO_INDEX) ? 0 : pParams->execIdx;
 
-    // [1] target rectangle
-    RECT pRect;
-    pRect.top  = 0;
-    pRect.left = 0;
-    pRect.bottom = outInfo->Height;
-    pRect.right  = outInfo->Width;
-    SetOutputTargetRect(TRUE, &pRect);
-
-    // [2] destination cropping
+    // Regarding rectangle, there are 3 rects.
+    // [1] Source rectangle of the input surface: ID3D11VideoContext::VideoProcessorSetStreamSourceRect method
+    // [2] Destination rectangle of the input surface: ID3D11VideoContext::VideoProcessorSetStreamDestRect method
+    // [3] Target rectangle of the output surface: ID3D11VideoContext::VideoProcessorSetOutputTargetRect method
+    // In the current API v1.33, no defition for destination rectangle of the input surface, hence, we use outInfo(CropX, CropY, CropH, CropW) to indicate it.
+    // [1] Set output target rectangle
+    RECT pRect = {0, 0, 0, 0};
     pRect.top  = outInfo->CropY;
     pRect.left = outInfo->CropX;
-    pRect.bottom = outInfo->CropH;
-    pRect.right  = outInfo->CropW;
-    pRect.bottom += outInfo->CropY;
-    pRect.right  += outInfo->CropX;
+    pRect.bottom = outInfo->CropY + outInfo->CropH;
+    pRect.right  = outInfo->CropX + outInfo->CropW;
+    SetOutputTargetRect(TRUE, &pRect);
+    // [2] Set source destination cropping
+    pRect.top  = outInfo->CropY;
+    pRect.left = outInfo->CropX;
+    pRect.bottom = outInfo->CropY + outInfo->CropH;
+    pRect.right  = outInfo->CropX + outInfo->CropW;
     SetStreamDestRect(0, TRUE, &pRect);
 
     if (m_vpreCaps.bScalingMode)
