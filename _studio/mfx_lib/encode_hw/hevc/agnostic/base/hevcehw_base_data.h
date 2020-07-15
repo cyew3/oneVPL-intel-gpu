@@ -1133,7 +1133,7 @@ namespace Base
         TChain<mfxU32> GetMaxKbps;
         TChain<mfxU32> GetBufferSizeInKB;
         TChain<std::tuple<mfxU16, mfxU16>> GetNumTiles; // (NumTileColumns, NumTileRows)
-        TChain<std::tuple<mfxU16, mfxU16>> GetMaxNumRef;
+        TChain<std::tuple<mfxU16, mfxU16, mfxU16>> GetMaxNumRef;
         TChain<std::tuple<mfxU32, mfxU32>> GetFrameRate;
         TChain<std::tuple<mfxU16, mfxU16, mfxU16>> GetQPMFX; //I,P,B
         TChain<mfxU8> GetMinQPMFX;

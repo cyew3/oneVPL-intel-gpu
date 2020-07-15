@@ -38,7 +38,7 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         MFX_CHECK(!bSet, MFX_ERR_NONE);
 
         defaults.GetMaxNumRef.Push([](
-            Defaults::TChain<std::tuple<mfxU16, mfxU16>>::TExt
+            Defaults::TChain<std::tuple<mfxU16, mfxU16, mfxU16>>::TExt
             , const Base::Defaults::Param& dpar)
         {
             //limited VDEnc support without HME and StreamIn 3rd reference
@@ -50,6 +50,7 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 
             return std::make_tuple(
                 std::min<mfxU16>(nRefs[tu], dpar.caps.MaxNum_Reference0)
+                , std::min<mfxU16>(nRefs[tu], dpar.caps.MaxNum_Reference0)
                 , std::min<mfxU16>(nRefs[tu], dpar.caps.MaxNum_Reference1));
         });
 

@@ -959,7 +959,13 @@ bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU16& LCUSize)
     return false;
 }
 
-mfxU16 GetMaxNumRef(MfxVideoParam &par, bool bForward)
+enum FType { // Frame type for GetMaxNumRef( , type)
+    P = 0,
+    BL0 = 1,
+    BL1 = 2
+};
+
+mfxU16 GetMaxNumRef(MfxVideoParam &par, FType type)
 {
     if (par.mfx.TargetUsage < 1 || par.mfx.TargetUsage > 7)
         return 0;
@@ -975,20 +981,19 @@ mfxU16 GetMaxNumRef(MfxVideoParam &par, bool bForward)
     {   // VME
         mfxU16 maxNumRefsL0[7] = { 4, 4, 3, 3, 3, 1, 1 };
         mfxU16 maxNumRefsL1[7] = { 2, 2, 1, 1, 1, 1, 1 };
-        return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
+        return (type != BL1) ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
     }
 
     // VDENC
-    if (par.mfx.GopRefDist <= 1) { // LowDelay B (P)
+    if (type == P) { // LowDelay B (P)
         mfxU16 maxNumRefsL0L1[7] = { 3, 3, 2, 2, 2, 1, 1 };
         return maxNumRefsL0L1[par.mfx.TargetUsage - 1];
     }
     else { // RA B (neither ICL nor CNL here)
         mfxU16 maxNumRefsL0[7] = { 2, 2, 1, 1, 1, 1, 1 };
         mfxU16 maxNumRefsL1[7] = { 1, 1, 1, 1, 1, 1, 1 };
-        return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
+        return  (type == BL0) ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
     }
-
 }
 
 #endif // (MFX_VERSION >= 1025)
@@ -1333,9 +1338,9 @@ void InheritDefaultValues(
 #if (MFX_VERSION >= 1025)
         if (parInit.mfx.TargetUsage != parReset.mfx.TargetUsage)
         {  // NumActiveRefs depends on TU
-            extOpt3Reset->NumRefActiveP[i]   = std::min<mfxU16>(extOpt3Init->NumRefActiveP[i],   GetMaxNumRef(parReset, true));
-            extOpt3Reset->NumRefActiveBL0[i] = std::min<mfxU16>(extOpt3Init->NumRefActiveBL0[i], GetMaxNumRef(parReset, true));
-            extOpt3Reset->NumRefActiveBL1[i] = std::min<mfxU16>(extOpt3Init->NumRefActiveBL1[i], GetMaxNumRef(parReset, false));
+            extOpt3Reset->NumRefActiveP[i]   = std::min<mfxU16>(extOpt3Init->NumRefActiveP[i],   GetMaxNumRef(parReset, P));
+            extOpt3Reset->NumRefActiveBL0[i] = std::min<mfxU16>(extOpt3Init->NumRefActiveBL0[i], GetMaxNumRef(parReset, BL0));
+            extOpt3Reset->NumRefActiveBL1[i] = std::min<mfxU16>(extOpt3Init->NumRefActiveBL1[i], GetMaxNumRef(parReset, BL1));
         }  else
 #endif
         {
@@ -1360,9 +1365,9 @@ void InheritDefaultValues(
 #if (MFX_VERSION >= 1025)
     if (parInit.mfx.TargetUsage != parReset.mfx.TargetUsage)
     {   // NumActiveRefs depends on TU
-        extOptDDIReset->NumActiveRefP   = std::min<mfxU16>(extOptDDIInit->NumActiveRefP,   GetMaxNumRef(parReset, true));
-        extOptDDIReset->NumActiveRefBL0 = std::min<mfxU16>(extOptDDIInit->NumActiveRefBL0, GetMaxNumRef(parReset, true));
-        extOptDDIReset->NumActiveRefBL1 = std::min<mfxU16>(extOptDDIInit->NumActiveRefBL1, GetMaxNumRef(parReset, false));
+        extOptDDIReset->NumActiveRefP   = std::min<mfxU16>(extOptDDIInit->NumActiveRefP,   GetMaxNumRef(parReset, P));
+        extOptDDIReset->NumActiveRefBL0 = std::min<mfxU16>(extOptDDIInit->NumActiveRefBL0, GetMaxNumRef(parReset, BL0));
+        extOptDDIReset->NumActiveRefBL1 = std::min<mfxU16>(extOptDDIInit->NumActiveRefBL1, GetMaxNumRef(parReset, BL1));
     }  else
 #endif
     {
@@ -2611,24 +2616,26 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, MFX_ENCODE_CAPS_HEVC const & caps,
     //check Active Reference
 
     {
-        mfxU16 maxForward  = std::min<mfxU16>(caps.ddi_caps.MaxNum_Reference0, maxDPB - 1);
-        mfxU16 maxBackward = std::min<mfxU16>(caps.ddi_caps.MaxNum_Reference1, maxDPB - 1);
+        mfxU16 maxP  = std::min<mfxU16>(caps.ddi_caps.MaxNum_Reference0, maxDPB - 1);
+        mfxU16 maxB0 = maxP;
+        mfxU16 maxB1 = std::min<mfxU16>(caps.ddi_caps.MaxNum_Reference1, maxDPB - 1);
 
 #if (MFX_VERSION >= 1025)
         if (par.m_platform >= MFX_HW_CNL)
         {
-            maxForward  = std::min<mfxU16>(maxForward,  GetMaxNumRef(par, true));
-            maxBackward = std::min<mfxU16>(maxBackward, GetMaxNumRef(par, false));
+            maxP  = std::min<mfxU16>(maxP,  GetMaxNumRef(par, P));
+            maxB0 = std::min<mfxU16>(maxB0, GetMaxNumRef(par, BL0));
+            maxB1 = std::min<mfxU16>(maxB1, GetMaxNumRef(par, BL1));
         }
 #endif
 
-        changed += CheckMax(par.m_ext.DDI.NumActiveRefP,   maxForward);
-        changed += CheckMax(par.m_ext.DDI.NumActiveRefBL0, maxForward);
-        changed += CheckMax(par.m_ext.DDI.NumActiveRefBL1, maxBackward);
+        changed += CheckMax(par.m_ext.DDI.NumActiveRefP,   maxP);
+        changed += CheckMax(par.m_ext.DDI.NumActiveRefBL0, maxB0);
+        changed += CheckMax(par.m_ext.DDI.NumActiveRefBL1, maxB1);
 
-        mfxU16 maxP = par.m_ext.DDI.NumActiveRefP ? par.m_ext.DDI.NumActiveRefP : maxForward;
-        mfxU16 maxB0 = par.m_ext.DDI.NumActiveRefBL0 ? par.m_ext.DDI.NumActiveRefBL0 : maxForward;
-        mfxU16 maxB1 = par.m_ext.DDI.NumActiveRefBL1 ? par.m_ext.DDI.NumActiveRefBL1 : maxBackward;
+        maxP  = par.m_ext.DDI.NumActiveRefP   ? par.m_ext.DDI.NumActiveRefP   : maxP;
+        maxB0 = par.m_ext.DDI.NumActiveRefBL0 ? par.m_ext.DDI.NumActiveRefBL0 : maxB0;
+        maxB1 = par.m_ext.DDI.NumActiveRefBL1 ? par.m_ext.DDI.NumActiveRefBL1 : maxB1;
 
         for (mfxU16 i = 0; i < 8; i++)
         {
@@ -3196,9 +3203,9 @@ void SetDefaults(
 #if (MFX_VERSION >= 1025)
         if (par.m_platform >= MFX_HW_CNL)
         {
-            RefActiveP   = std::min(RefActiveP,   GetMaxNumRef(par, true));
-            RefActiveBL0 = std::min(RefActiveBL0, GetMaxNumRef(par, true));
-            RefActiveBL1 = std::min(RefActiveBL1, GetMaxNumRef(par, false));
+            RefActiveP   = std::min(RefActiveP,   GetMaxNumRef(par, P));
+            RefActiveBL0 = std::min(RefActiveBL0, GetMaxNumRef(par, BL0));
+            RefActiveBL1 = std::min(RefActiveBL1, GetMaxNumRef(par, BL1));
         }
 #endif
 

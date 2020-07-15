@@ -55,22 +55,16 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         });
 
         defaults.GetMaxNumRef.Push([](
-            Base::Defaults::TChain<std::tuple<mfxU16, mfxU16>>::TExt
+            Base::Defaults::TChain<std::tuple<mfxU16, mfxU16, mfxU16>>::TExt
             , const Base::Defaults::Param& dpar)
         {
-            const mfxU16 nRef[2][2][7] =
-            {
-                {   // DG2 VDENC P
-                    { 3, 3, 2, 2, 2, 1, 1 },
-                    { 3, 3, 2, 2, 2, 1, 1 }
-                },
-                {   // DG2 VDENC RA B
-                    { 2, 2, 1, 1, 1, 1, 1 },
-                    { 1, 1, 1, 1, 1, 1, 1 }
-                }
+            const mfxU16 nRef[3][7] =
+            {   // DG2 VDENC
+                { 3, 3, 2, 2, 2, 1, 1 },
+                { 2, 2, 1, 1, 1, 1, 1 },
+                { 1, 1, 1, 1, 1, 1, 1 }
             };
-            bool    bBFrames = (dpar.mvp.mfx.GopRefDist > 1);
-            mfxU16  tu       = dpar.mvp.mfx.TargetUsage;;
+            mfxU16 tu = dpar.mvp.mfx.TargetUsage;
 
             CheckRangeOrSetDefault<mfxU16>(tu, 1, 7, 4);
             --tu;
@@ -79,8 +73,9 @@ void Caps::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
             mfxU16 numRefFrame = dpar.mvp.mfx.NumRefFrame + !dpar.mvp.mfx.NumRefFrame * 16;
 
             return std::make_tuple(
-                std::min<mfxU16>(nRef[bBFrames][0][tu], std::min<mfxU16>(dpar.caps.MaxNum_Reference0, numRefFrame))
-                , std::min<mfxU16>(nRef[bBFrames][1][tu], std::min<mfxU16>(dpar.caps.MaxNum_Reference1, numRefFrame)));
+                std::min<mfxU16>(nRef[0][tu], std::min<mfxU16>(dpar.caps.MaxNum_Reference0, numRefFrame))
+                , std::min<mfxU16>(nRef[1][tu], std::min<mfxU16>(dpar.caps.MaxNum_Reference0, numRefFrame))
+                , std::min<mfxU16>(nRef[2][tu], std::min<mfxU16>(dpar.caps.MaxNum_Reference1, numRefFrame)));
         });
 
         bSet = true;
