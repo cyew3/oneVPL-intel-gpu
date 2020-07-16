@@ -392,7 +392,10 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         }
     }
 
-    MFX_CHECK_STATUS(m_pYUVSource->Query(&m_components[eDEC].m_params, &m_components[eDEC].m_params));
+    mfxVideoParam paramsSource = m_components[eDEC].m_params;
+    MFX_CHECK_STS_CUSTOM_HANDLER(m_pYUVSource->Query(&paramsSource, &m_components[eDEC].m_params), {
+            PipelineTrace((VM_STRING("%s"), MFXStructuresPair<mfxVideoParam>(paramsSource, m_components[eDEC].m_params).Serialize().c_str()));
+        });
 
     if (NULL != m_pRender)
     {
