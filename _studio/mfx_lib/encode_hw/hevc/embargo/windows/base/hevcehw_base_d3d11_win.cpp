@@ -29,6 +29,12 @@ using namespace HEVCEHW::Base;
 using namespace HEVCEHW::Windows;
 using namespace HEVCEHW::Windows::Base;
 
+namespace HEVCEHW
+{
+namespace Windows
+{
+namespace Base
+{
 class DDIDeviceDX11
     : public MfxEncodeHW::DeviceDX11
     , protected DDITracer
@@ -76,6 +82,9 @@ public:
 protected:
     std::function<mfxStatus(const DDIExecParam&)>& m_execute;
 };
+} //namespace Base
+} //namespace Windows
+} //namespace HEVCEHW
 
 DDI_D3D11::DDI_D3D11(mfxU32 FeatureId)
     : DDI_D3D9(FeatureId)

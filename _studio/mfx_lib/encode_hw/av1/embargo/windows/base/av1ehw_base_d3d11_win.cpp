@@ -29,6 +29,12 @@ using namespace AV1EHW::Base;
 using namespace AV1EHW::Windows;
 using namespace AV1EHW::Windows::Base;
 
+namespace AV1EHW
+{
+namespace Windows
+{
+namespace Base
+{
 class DDIDeviceDX11
     : public MfxEncodeHW::DeviceDX11
     , protected DDITracer
@@ -81,6 +87,9 @@ public:
 protected:
     std::function<mfxStatus(const DDIExecParam&)>& m_execute;
 };
+} //namespace Base
+} //namespace Windows
+} //namespace AV1EHW
 
 DDI_D3D11::DDI_D3D11(mfxU32 FeatureId)
     : AV1EHW::Base::IDDI(FeatureId)
