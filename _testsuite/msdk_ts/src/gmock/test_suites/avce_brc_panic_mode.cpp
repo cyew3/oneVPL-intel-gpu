@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017-20198 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 File Name: avce_brc_panic_mode.cpp
 
@@ -83,12 +83,14 @@ namespace avce_brc_panic_mode
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ },
                 { MFX_PAR, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_ON }} },
 
-        {/*10*/ MFX_ERR_UNSUPPORTED, /* VCM is unsupported in AVCe on Linux */
+        {/*10*/ MFX_ERR_NONE,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM },
-                { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_OFF }} },
-        {/*11*/ MFX_ERR_UNSUPPORTED, /* VCM is unsupported in AVCe on Linux */
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+                    { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_OFF }} },
+        {/*11*/ MFX_ERR_NONE,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VCM },
-                { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_ON }} },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
+                    { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_ON }} },
 
         {/*12*/ MFX_ERR_UNSUPPORTED,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA },
