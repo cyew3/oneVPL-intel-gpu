@@ -7431,11 +7431,13 @@ typedef struct {
     mfxU16  FrameWidth;
     mfxU16  FrameHeight;
 
-    mfxU16  WriteIVFHeaders;          /* tri-state option */
+    mfxU8   WriteIVFHeaders;          /* tri-state option */
     mfxU8   UseAnnexB;                /* tri-state option */
     mfxU8   PackOBUFrame;             /* tri-state option */
     mfxU8   InsertTemporalDelimiter;  /* tri-state option */
 
+    mfxU8   UniformTileSpacing;       /* tri-state option */
+    mfxU8   ContextUpdateTileIdPlus1; /* Minus 1 specifies context_update_tile_id */
     mfxU16  NumTileRows;
     mfxU16  NumTileColumns;
     mfxU16  NumTileGroups;
@@ -7445,22 +7447,24 @@ typedef struct {
 
     mfxU8   EnableCdef;               /* tri-state option */
     mfxU8   EnableRestoration;        /* tri-state option */
-    mfxU8   LoopFilterSharpness;
+    mfxU8   LoopFilterSharpness;      /* 0..8, 0 = default, map to bitstream: [1..8] => [0..7] */
 
-    mfxU8   InterpFilter;
+    mfxU8   InterpFilter;             /* see enum AV1InterpolationMode */
 
-    mfxU8   SegmentationMode;
+    mfxU8   SegmentationMode;         /* see enum AV1SegmentMode*/
 
     mfxU8   DisableCdfUpdate;         /* tri-state option */
     mfxU8   DisableFrameEndUpdateCdf; /* tri-state option */
 
     mfxU8   EnableSuperres;           /* tri-state option */
-    mfxU8   SuperresScaleDenominator;
+    mfxU8   SuperresScaleDenominator; /* 9..16, 0 = default */
 
     mfxU8   StillPictureMode;         /* tri-state option */
-    mfxU16  SwitchInterval;
+    mfxU16  SwitchInterval;           /* interval, 0 - disabled */
 
-    mfxU8   reserved[66];
+    mfxU8   EnableLoopFilter;         /* tri-state option */
+
+    mfxU8   reserved[63];
 } mfxExtAV1Param;
 ```
 
@@ -7481,6 +7485,8 @@ Also the buffer can be attached to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure
 `UseAnnexB`                | Turn this option ON to make encoder use OBU format described in Annex B of AV1 specification. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
 `PackOBUFrame`             | Pack frame_header_obu() and tile_group_obu() within single frame_obu (only valid when NumTileGroups parameter is set to 1 or not specified). See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
 `InsertTemporalDelimiter`  | Set this flag to insert the OBU_TEMPORAL_DELIMITER before each frame. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`UniformTileSpacing`       | Enable/disable uniform Tile spacing. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`ContextUpdateTileIdPlus1` | Minus 1 specifies context_update_tile_id.
 `NumTileRows`              | Number of tile rows.
 `NumTileColumns`           | Number of tile columns.
 `NumTileGroups`            | Number of tile groups per frame.
@@ -7498,6 +7504,7 @@ Also the buffer can be attached to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure
 `SuperresScaleDenominator` | Denominator for Superres Filter. Valid range is 9..16.
 `StillPictureMode`         | Enable/disable Still Picture Mode. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
 `SwitchInterval`           | Cadence of Switch Frames. Zero value means no switch frames.
+`EnableLoopFilter`         | Enable/disable Loop Filter. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
 
 **Change History**
 

@@ -811,8 +811,8 @@ public:
         }
     }
 
-    static void LoopFilters(
-        Defaults::TGetLoopFilters::TExt
+    static void LoopFilterLevels(
+        Defaults::TGetLoopFilterLevels::TExt
         , const Defaults::Param& par
         , FH& bs_fh)
     {
@@ -927,7 +927,7 @@ public:
         PUSH_DEFAULT(PreReorderInfo);
         PUSH_DEFAULT(NumReorderFrames);
         PUSH_DEFAULT(NonStdReordering);
-        PUSH_DEFAULT(LoopFilters);
+        PUSH_DEFAULT(LoopFilterLevels);
         PUSH_DEFAULT(CDEF);
 
 #undef PUSH_DEFAULT

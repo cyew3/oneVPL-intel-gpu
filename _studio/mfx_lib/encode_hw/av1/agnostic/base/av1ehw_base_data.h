@@ -1055,11 +1055,11 @@ namespace Base
             , mfxExtAV1Param&>;
         TGetTiles GetTiles;
 
-        using TGetLoopFilters = CallChain<
+        using TGetLoopFilterLevels = CallChain<
             void
             , const Defaults::Param&
             , FH&>;
-        TGetLoopFilters GetLoopFilters;
+        TGetLoopFilterLevels GetLoopFilterLevels;
 
         using TGetCDEF = CallChain<
             void

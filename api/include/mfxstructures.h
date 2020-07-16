@@ -2517,8 +2517,8 @@ typedef struct {
     mfxU8   PackOBUFrame;             /* tri-state option */
     mfxU8   InsertTemporalDelimiter;  /* tri-state option */
 
-    mfxU8   UniformTileSpacing;          /* tri-state option */
-    mfxU8   ContextUpdateTileIdPlus1;    /* Minus 1 specifies context_update_tile_id */
+    mfxU8   UniformTileSpacing;       /* tri-state option */
+    mfxU8   ContextUpdateTileIdPlus1; /* Minus 1 specifies context_update_tile_id */
     mfxU16  NumTileRows;
     mfxU16  NumTileColumns;
     mfxU16  NumTileGroups;
@@ -2543,7 +2543,9 @@ typedef struct {
     mfxU8   StillPictureMode;         /* tri-state option */
     mfxU16  SwitchInterval;           /* interval, 0 - disabled */
 
-    mfxU8   reserved[64];
+    mfxU8   EnableLoopFilter;         /* tri-state option */
+
+    mfxU8   reserved[63];
 } mfxExtAV1Param;
 MFX_PACK_END()
 

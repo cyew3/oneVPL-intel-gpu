@@ -482,6 +482,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_AV1_PARAM(SuperresScaleDenominator, OPT_UINT_8,    "9-16: 0 - app default"),
         HANDLE_AV1_PARAM(StillPictureMode,         OPT_TRI_STATE, "on/off"),
         HANDLE_AV1_PARAM(SwitchInterval,           OPT_UINT_16,   "0-maxU16: Interval (0 - disabled)"),
+        HANDLE_AV1_PARAM(EnableLoopFilter,         OPT_TRI_STATE, "on/off: Loop Filter"),
 
         HANDLE_AV1_AUX_DATA(Cdef.CdefDampingMinus3, OPT_UINT_8, "0-3"),
         HANDLE_AV1_AUX_DATA(Cdef.CdefBits, OPT_UINT_8, "0-3"),

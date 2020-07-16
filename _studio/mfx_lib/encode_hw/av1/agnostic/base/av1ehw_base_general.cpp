@@ -93,6 +93,7 @@ void General::SetSupported(ParamSupport& blocks)
         MFX_COPY_FIELD(InsertTemporalDelimiter);
 
         MFX_COPY_FIELD(EnableCdef);
+        MFX_COPY_FIELD(EnableLoopFilter);
         MFX_COPY_FIELD(EnableRestoration);
         MFX_COPY_FIELD(LoopFilterSharpness);
         MFX_COPY_FIELD(InterpFilter);
@@ -335,6 +336,7 @@ void General::SetInherited(ParamInheritance& par)
         INHERIT_OPT(InsertTemporalDelimiter);
 
         INHERIT_OPT(EnableCdef);
+        INHERIT_OPT(EnableLoopFilter);
         INHERIT_OPT(EnableRestoration);
         INHERIT_OPT(LoopFilterSharpness);
         INHERIT_OPT(InterpFilter);
@@ -2583,22 +2585,16 @@ void General::SetFH(
     fh.quantization_params.DeltaQVDc = pAuxPar->QP.VDcDeltaQ;
     fh.quantization_params.DeltaQVAc = pAuxPar->QP.VAcDeltaQ;
 
-    //TODO: programming default loop filter levels
-    fh.loop_filter_params.loop_filter_level[0]      = pAuxPar->LoopFilter.LFLevelYVert;
-    fh.loop_filter_params.loop_filter_level[1]      = pAuxPar->LoopFilter.LFLevelYHorz;
-    fh.loop_filter_params.loop_filter_level[2]      = pAuxPar->LoopFilter.LFLevelU;
-    fh.loop_filter_params.loop_filter_level[3]      = pAuxPar->LoopFilter.LFLevelV;
-    fh.loop_filter_params.loop_filter_sharpness     = pAV1Par->LoopFilterSharpness;
-    fh.loop_filter_params.loop_filter_delta_enabled = pAuxPar->LoopFilter.ModeRefDeltaEnabled;
-    fh.loop_filter_params.loop_filter_delta_update  = pAuxPar->LoopFilter.ModeRefDeltaUpdate;
+    // Loop Filter params
+    if (IsOn(pAV1Par->EnableLoopFilter))
+    {
+        fh.loop_filter_params.loop_filter_sharpness     = pAV1Par->LoopFilterSharpness;
+        fh.loop_filter_params.loop_filter_delta_enabled = pAuxPar->LoopFilter.ModeRefDeltaEnabled;
+        fh.loop_filter_params.loop_filter_delta_update  = pAuxPar->LoopFilter.ModeRefDeltaUpdate;
 
-    std::copy_n(pAuxPar->LoopFilter.RefDeltas,
-        TOTAL_REFS_PER_FRAME,
-        fh.loop_filter_params.loop_filter_ref_deltas);
-
-    std::copy_n(pAuxPar->LoopFilter.ModeDeltas,
-        2,
-        fh.loop_filter_params.loop_filter_mode_deltas);
+        std::copy_n(pAuxPar->LoopFilter.RefDeltas, TOTAL_REFS_PER_FRAME, fh.loop_filter_params.loop_filter_ref_deltas);
+        std::copy_n(pAuxPar->LoopFilter.ModeDeltas, MAX_MODE_LF_DELTAS, fh.loop_filter_params.loop_filter_mode_deltas);
+    }
 
     if (sh.enable_restoration)
     {
@@ -2761,6 +2757,7 @@ void General::SetDefaults(
         SetDefault(pAV1Par->DisableCdfUpdate, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->DisableFrameEndUpdateCdf, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->EnableCdef, MFX_CODINGOPTION_OFF);
+        SetDefault(pAV1Par->EnableLoopFilter, MFX_CODINGOPTION_ON);
         SetDefault(pAV1Par->EnableRestoration, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->EnableSuperres, MFX_CODINGOPTION_OFF);
         SetDefault(pAV1Par->StillPictureMode, MFX_CODINGOPTION_OFF);
@@ -3531,6 +3528,49 @@ inline void SetCDEF(
     }
 }
 
+inline bool IsLoopFilterLevelsEmpty(const mfxExtAV1AuxData& auxPar)
+{
+    bool empty = true;
+
+    empty &= auxPar.LoopFilter.LFLevelYVert == 0;
+    empty &= auxPar.LoopFilter.LFLevelYHorz == 0;
+    empty &= auxPar.LoopFilter.LFLevelU == 0;
+    empty &= auxPar.LoopFilter.LFLevelV == 0;
+
+    return empty;
+}
+
+inline void SetLoopFilterLevelsByAuxData(
+    const mfxExtAV1AuxData& auxPar
+    , FH& bs_fh)
+{
+    bs_fh.loop_filter_params.loop_filter_level[0] = auxPar.LoopFilter.LFLevelYVert;
+    bs_fh.loop_filter_params.loop_filter_level[1] = auxPar.LoopFilter.LFLevelYHorz;
+    bs_fh.loop_filter_params.loop_filter_level[2] = auxPar.LoopFilter.LFLevelU;
+    bs_fh.loop_filter_params.loop_filter_level[3] = auxPar.LoopFilter.LFLevelV;
+}
+
+inline void SetLoopFilterLevels(
+    const Defaults::Param& dflts
+    , FH& fh)
+{
+    const mfxExtAV1Param& av1Par = ExtBuffer::Get(dflts.mvp);
+    if (!IsOn(av1Par.EnableLoopFilter))
+        return;
+
+    const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(dflts.mvp);
+    if (IsLoopFilterLevelsEmpty(auxPar))
+    {
+        //Get default LoopFilter settings
+        dflts.base.GetLoopFilterLevels(dflts, fh);
+    }
+    else
+    {
+        //Set LoopFilter through command option
+        SetLoopFilterLevelsByAuxData(auxPar, fh);
+    }
+}
+
 inline void SetRefFrameFlags(
     const TaskCommonPar& task
     , FH& fh
@@ -3706,9 +3746,8 @@ mfxStatus General::GetCurrentFrameHeader(
 
     currFH.quantization_params.base_q_idx = task.QpY;
 
-    dflts.base.GetLoopFilters(dflts, currFH);
-
     SetCDEF(dflts, sh, currFH);
+    SetLoopFilterLevels(dflts, currFH);
 
     currFH.reference_select = GetReferenceMode(task);
 

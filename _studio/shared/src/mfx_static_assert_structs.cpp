@@ -1890,6 +1890,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,SuperresScaleDenominator      ,1056 )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,StillPictureMode              ,1057 )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,SwitchInterval                ,1058 )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,EnableLoopFilter              ,1060 )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,Cdef.CdefDampingMinus3        ,8    )
@@ -2742,6 +2743,7 @@
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,SuperresScaleDenominator      ,1056 )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,StillPictureMode              ,1057 )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,SwitchInterval                ,1058 )
+        MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1Param                     ,EnableLoopFilter              ,1060 )
 
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,Header                        ,0    )
         MSDK_STATIC_ASSERT_STRUCT_OFFSET(mfxExtAV1AuxData                   ,Cdef.CdefDampingMinus3        ,8    )
