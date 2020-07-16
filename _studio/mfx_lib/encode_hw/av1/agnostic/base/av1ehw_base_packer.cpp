@@ -738,14 +738,43 @@ void PackCdefParams(BitstreamWriter& bs, SH const& sh, FH const& fh)
     }
 }
 
-inline void PackLRParams(BitstreamWriter& bs, SH const& sh)
+inline void PackLRParams(BitstreamWriter& bs, SH const& sh, FH const& fh)
 {
-    if (!sh.enable_restoration)
+    if (fh.AllLossless || fh.allow_intrabc || !sh.enable_restoration)
         return;
 
-    bs.PutBits(2, 0); //lr_type[0]
-    bs.PutBits(2, 0); //lr_type[1]
-    bs.PutBits(2, 0); //lr_type[2]
+    bool usesLR = false;
+    bool usesChromaLR = false;
+
+    auto const lr = fh.lr_params;
+    for (auto i = 0; i < MAX_MB_PLANE; i++)
+    {
+        bs.PutBits(2, lr.lr_type[i]);
+        if (lr.lr_type[i] != RESTORE_NONE)
+        {
+            usesLR = true;
+            if (i > 0)
+            {
+                usesChromaLR = true;
+            }
+        }
+    }
+
+    if (usesLR)
+    {
+        bs.PutBits(1, lr.lr_unit_shift);
+
+        if (sh.sbSize != 1 && lr.lr_unit_shift) // sbSize == 1 means PAK supports 128x128 size superblock
+        {
+            bs.PutBits(1, lr.lr_unit_extra_shift);
+        }
+
+        if (sh.color_config.subsampling_x && sh.color_config.subsampling_y && usesChromaLR)
+        {
+           bs.PutBits(1, lr.lr_uv_shift);
+        }
+    }
+
 }
 
 inline void PackFrameReferenceMode(BitstreamWriter& bs, FH const& fh, bool const frameIsIntra)
@@ -842,7 +871,7 @@ inline void PackFrameHeader(
     PackCdefParams(bs, sh, fh);
     offsets.CDEFParamsSizeInBits = bs.GetOffset() - offsets.CDEFParamsBitOffset;
 
-    PackLRParams(bs, sh);
+    PackLRParams(bs, sh, fh);
 
     const mfxU8 tx_mode_select = fh.TxMode ? 1 : 0;
     bs.PutBit(tx_mode_select); //tx_mode_select

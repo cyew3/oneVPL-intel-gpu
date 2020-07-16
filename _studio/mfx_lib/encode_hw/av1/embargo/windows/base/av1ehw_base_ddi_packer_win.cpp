@@ -567,6 +567,13 @@ void DDIPacker::FillPpsBuffer(
     FillTile(bs_fh, pps);
     FillCDEF(bs_sh, bs_fh, pps);
 
+    //loop restoration
+    pps.LoopRestorationFlags.fields.yframe_restoration_type  = bs_fh.lr_params.lr_type[0];
+    pps.LoopRestorationFlags.fields.cbframe_restoration_type = bs_fh.lr_params.lr_type[1];
+    pps.LoopRestorationFlags.fields.crframe_restoration_type = bs_fh.lr_params.lr_type[2];
+    pps.LoopRestorationFlags.fields.lr_unit_shift            = bs_fh.lr_params.lr_unit_shift;
+    pps.LoopRestorationFlags.fields.lr_uv_shift              = bs_fh.lr_params.lr_uv_shift;
+
     //context
     pps.PicFlags.fields.disable_cdf_update = bs_fh.disable_cdf_update;
     pps.PicFlags.fields.disable_frame_end_update_cdf = bs_fh.disable_frame_end_update_cdf;

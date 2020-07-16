@@ -339,10 +339,9 @@ namespace Base
     enum RestorationType
     {
         RESTORE_NONE,
+        RESTORE_SWITCHABLE,
         RESTORE_WIENER,
         RESTORE_SGRPROJ,
-        RESTORE_SWITCHABLE,
-        RESTORE_SWITCHABLE_TYPES = RESTORE_SWITCHABLE,
         RESTORE_TYPES = 4,
     };
 
@@ -351,6 +350,7 @@ namespace Base
         RestorationType lr_type[MAX_MB_PLANE];
         uint32_t lr_unit_shift;
         uint32_t lr_uv_shift;
+        uint32_t lr_unit_extra_shift;
     };
 
     enum TX_MODE{

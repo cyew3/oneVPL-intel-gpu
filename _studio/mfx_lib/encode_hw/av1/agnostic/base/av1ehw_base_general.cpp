@@ -2309,6 +2309,8 @@ void General::SetSH(
     sh.color_config.BitDepth            = pCO3->TargetBitDepthLuma;
     sh.color_config.color_range         = 1; // full swing representation
     sh.color_config.separate_uv_delta_q = 1; // NB: currently driver not work if it's '0'
+    sh.color_config.subsampling_x       = 1; // YUV 4:2:0
+    sh.color_config.subsampling_y       = 1; // YUV 4:2:0
 }
 
 inline INTERP_FILTER MapMfxInterpFilter(mfxU16 filter)
@@ -2382,7 +2384,20 @@ void General::SetFH(
 
     if (sh.enable_restoration)
     {
-        // TODO: copy loop restoration params here
+        for (UINT8 i = 0; i < MAX_MB_PLANE; i++)
+        {
+            fh.lr_params.lr_type[i] = RESTORE_WIENER;
+        }
+        fh.lr_params.lr_unit_shift = 0;
+        fh.lr_params.lr_unit_extra_shift = 0;
+        if (sh.color_config.subsampling_x && sh.color_config.subsampling_y)
+        {
+            fh.lr_params.lr_uv_shift = 1;
+        }
+        else
+        {
+            fh.lr_params.lr_uv_shift = 0;
+        }
     }
 
     fh.TxMode = TX_MODE_SELECT;
