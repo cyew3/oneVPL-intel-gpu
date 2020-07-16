@@ -22,7 +22,7 @@
 #define __MFX_ENCTOOLS_H__
 
 #include "mfxcommon.h"
-#include "mfxenctools.h"
+#include "mfxenctools-int.h"
 #include "mfx_enctools_defs.h"
 #include "mfx_enctools_brc.h"
 #include "mfx_enctools_aenc.h"

@@ -36,7 +36,7 @@
 #include "mfxwidi.h"
 #include "mfxfei.h"
 #ifdef MFX_ENABLE_ENCTOOLS
-#include "mfxenctools.h"
+#include "mfxenctools-int.h"
 #else
 #include "mfxbrc.h"
 #endif

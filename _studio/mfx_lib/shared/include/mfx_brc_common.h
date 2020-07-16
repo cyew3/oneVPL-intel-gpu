@@ -23,7 +23,7 @@
 
 #include "mfx_common.h"
 #ifdef MFX_ENABLE_ENCTOOLS
-#include "mfxenctools.h"
+#include "mfxenctools-int.h"
 #else
 #include "mfxbrc.h"
 #endif

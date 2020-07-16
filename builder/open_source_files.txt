@@ -364,6 +364,7 @@ _studio/shared/include/libmfx_core_interface.h
 _studio/shared/include/libmfx_core_operation.h
 _studio/shared/include/libmfx_core_vaapi.h
 _studio/shared/include/mfxaudio++int.h
+_studio/shared/include/mfxenctools-int.h
 _studio/shared/include/mfxstructures-int.h
 _studio/shared/include/mfxstructurespro.h
 _studio/shared/include/mfxvideo++int.h

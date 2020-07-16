@@ -20,7 +20,7 @@
 
 // enctools.cpp : Defines the exported functions for the DLL application.
 
-#include "mfxenctools.h"
+#include "mfxenctools-int.h"
 #include "mfx_enctools.h"
 #include "mfx_enctools_brc.h"
 

@@ -38,7 +38,7 @@
 #include "mfxscd.h"
 #include "mfxcamera.h"
 #include "mfxadapter.h"
-#include "mfxenctools.h"
+#include "mfxenctools-int.h"
 
 
 #ifndef OPEN_SOURCE
