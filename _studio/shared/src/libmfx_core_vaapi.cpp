@@ -424,6 +424,7 @@ typedef struct {
     { 0x4C9A, MFX_HW_RKL, MFX_GT1 }, // RKL-S
 
     /* ADL */
+    { 0x4600, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
     { 0x4680, MFX_HW_ADL_S, MFX_GT1 },//ADL-S
     { 0x46A0, MFX_HW_ADL_P, MFX_GT2 },//ADL-P
 
