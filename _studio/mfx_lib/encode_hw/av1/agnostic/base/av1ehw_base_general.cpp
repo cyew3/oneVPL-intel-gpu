@@ -3456,37 +3456,36 @@ inline FRAME_TYPE MapMfxFrameTypeToSpec(mfxU16 ft)
     }
 }
 
-inline void SetCDEFByAuxData(
-    const mfxExtAV1AuxData* const pAuxPar
-    , FH& bs_fh)
+inline bool IsCDEFEmpty(const mfxExtAV1AuxData& auxPar)
 {
-    if (!pAuxPar)
-        return;
+    bool empty = true;
 
-    auto& cdef = bs_fh.cdef_params;
-    if (pAuxPar->Cdef.CdefDampingMinus3)
-    {
-        cdef.cdef_damping = pAuxPar->Cdef.CdefDampingMinus3 + 3;
-    }
-
-    if (pAuxPar->Cdef.CdefBits)
-    {
-        cdef.cdef_bits = pAuxPar->Cdef.CdefBits;
-    }
+    empty &= auxPar.Cdef.CdefDampingMinus3 == 0;
+    empty &= auxPar.Cdef.CdefBits == 0;
 
     for (mfxU8 i = 0; i < CDEF_MAX_STRENGTHS; i++)
     {
-        if (pAuxPar->Cdef.CdefYStrengths[i])
-        {
-            cdef.cdef_y_pri_strength[i] = pAuxPar->Cdef.CdefYStrengths[i] / CDEF_STRENGTH_DIVISOR;
-            cdef.cdef_y_sec_strength[i] = pAuxPar->Cdef.CdefYStrengths[i] % CDEF_STRENGTH_DIVISOR;
-        }
+        empty &= auxPar.Cdef.CdefYStrengths[i] == 0;
+        empty &= auxPar.Cdef.CdefUVStrengths[i] == 0;
+    }
 
-        if (pAuxPar->Cdef.CdefUVStrengths[i])
-        {
-            cdef.cdef_uv_pri_strength[i] = pAuxPar->Cdef.CdefUVStrengths[i] / CDEF_STRENGTH_DIVISOR;
-            cdef.cdef_uv_sec_strength[i] = pAuxPar->Cdef.CdefUVStrengths[i] % CDEF_STRENGTH_DIVISOR;
-        }
+    return empty;
+}
+
+inline void SetCDEFByAuxData(
+    const mfxExtAV1AuxData& auxPar
+    , FH& bs_fh)
+{
+    auto& cdef = bs_fh.cdef_params;
+    cdef.cdef_damping = auxPar.Cdef.CdefDampingMinus3 + 3;
+    cdef.cdef_bits    = auxPar.Cdef.CdefBits;
+
+    for (mfxU8 i = 0; i < CDEF_MAX_STRENGTHS; i++)
+    {
+        cdef.cdef_y_pri_strength[i]  = auxPar.Cdef.CdefYStrengths[i] / CDEF_STRENGTH_DIVISOR;
+        cdef.cdef_y_sec_strength[i]  = auxPar.Cdef.CdefYStrengths[i] % CDEF_STRENGTH_DIVISOR;
+        cdef.cdef_uv_pri_strength[i] = auxPar.Cdef.CdefUVStrengths[i] / CDEF_STRENGTH_DIVISOR;
+        cdef.cdef_uv_sec_strength[i] = auxPar.Cdef.CdefUVStrengths[i] % CDEF_STRENGTH_DIVISOR;
     }
 }
 
@@ -3503,12 +3502,17 @@ inline void SetCDEF(
     if (!sh.enable_cdef)
         return;
 
-    //Get default CDEF settings
-    dflts.base.GetCDEF(fh);
-
-    //Set CDEF through command option
-    const mfxExtAV1AuxData* pAuxPar = ExtBuffer::Get(dflts.mvp);
-    SetCDEFByAuxData(pAuxPar, fh);
+    const mfxExtAV1AuxData& auxPar = ExtBuffer::Get(dflts.mvp);
+    if (IsCDEFEmpty(auxPar))
+    {
+        //Get default CDEF settings
+        dflts.base.GetCDEF(fh);
+    }
+    else
+    {
+        //Set CDEF through command option
+        SetCDEFByAuxData(auxPar, fh);
+    }
 }
 
 inline void SetRefFrameFlags(
