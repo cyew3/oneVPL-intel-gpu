@@ -149,6 +149,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>../../_studio/mfx_lib/libmfx.def</ModuleDefinitionFile>
       <AdditionalDependencies>cfgmgr32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_full.pdb</ProgramDatabaseFile>
+      <StripPrivateSymbols>$(OutDir)$(TargetName).pdb</StripPrivateSymbols>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -170,6 +172,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>../../_studio/mfx_lib/libmfx.def</ModuleDefinitionFile>
       <AdditionalDependencies>cfgmgr32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_full.pdb</ProgramDatabaseFile>
+      <StripPrivateSymbols>$(OutDir)$(TargetName).pdb</StripPrivateSymbols>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

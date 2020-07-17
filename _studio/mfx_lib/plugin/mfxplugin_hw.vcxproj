@@ -21,6 +21,10 @@
   <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\builder\Intel.Mfx.Building.props" />
+  <PropertyGroup Condition="'$(Configuration)'=='Release' OR '$(Configuration)'=='Release_THM' OR '$(Configuration)'=='Release_Intel'">
+    <MfxProgramDatabaseFile>$(MfxOutDir)$(MfxTargetName)_full.pdb</MfxProgramDatabaseFile>
+    <MfxStripPrivateSymbols>$(MfxOutDir)$(MfxTargetName).pdb</MfxStripPrivateSymbols>
+  </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="include\mfx_hevc_dec_plugin.h" />
     <ClInclude Include="include\mfx_hevc_enc_plugin.h" />

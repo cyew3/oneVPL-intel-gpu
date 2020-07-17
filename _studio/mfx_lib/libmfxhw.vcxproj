@@ -24,6 +24,10 @@
   <ImportGroup Condition="'$(Configuration)'=='Release'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release' OR '$(Configuration)'=='Release_THM' OR '$(Configuration)'=='Release_Intel'">
+    <MfxProgramDatabaseFile>$(MfxOutDir)$(MfxTargetName)_full.pdb</MfxProgramDatabaseFile>
+    <MfxStripPrivateSymbols>$(MfxOutDir)$(MfxTargetName).pdb</MfxStripPrivateSymbols>
+  </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="..\shared\src\auxiliary_device.cpp" />
     <ClCompile Include="..\shared\src\cm_mem_copy.cpp" />

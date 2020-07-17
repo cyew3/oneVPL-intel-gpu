@@ -142,6 +142,8 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
       <AdditionalDependencies>WindowsApp.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
       <AdditionalOptions>/APPCONTAINER %(AdditionalOptions)</AdditionalOptions>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_full.pdb</ProgramDatabaseFile>
+      <StripPrivateSymbols>$(OutDir)$(TargetName).pdb</StripPrivateSymbols>
     </Link>
     <PostBuildEvent>
       <Command>$(MfxAppxPacking)</Command>
@@ -179,6 +181,8 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
       <AdditionalDependencies>WindowsApp.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
       <AdditionalOptions>/APPCONTAINER %(AdditionalOptions)</AdditionalOptions>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_full.pdb</ProgramDatabaseFile>
+      <StripPrivateSymbols>$(OutDir)$(TargetName).pdb</StripPrivateSymbols>
     </Link>
     <PostBuildEvent>
       <Command>$(MfxAppxPacking)</Command>
