@@ -98,6 +98,57 @@ void Segmentation::InitTask(const FeatureBlocks& blocks, TPushIT Push)
         });
 }
 
+inline bool IsSegBlockSmallerThanSB(mfxU32 segBlock, mfxU32 sb)
+{
+    return sb == 128 ||
+        (sb == 64 && segBlock < MFX_AV1_SEGMENT_ID_BLOCK_SIZE_64x64);
+}
+
+void Segmentation::PostReorderTask(const FeatureBlocks& blocks, TPushPostRT Push)
+{
+    Base::Segmentation::PostReorderTask(blocks, Push);
+
+    Push(BLK_PatchTask
+        , [this](
+            StorageW& global
+            , StorageW& s_task) -> mfxStatus
+    {
+
+        Base::FH& fh = Base::Task::FH::Get(s_task);
+        mfxExtAV1Segmentation& seg = Base::Task::Segment::Get(s_task);
+
+        if (IsSegmentationSwitchedOff(&seg))
+            return MFX_ERR_NONE;
+
+        if (!fh.segmentation_params.segmentation_update_map)
+        {
+            // in DG2 "segmentation_update_map = 0" mode is implemented by forcing segmentation through VDEnc Stream in
+            // there are following related restrictions/requirements:
+            // 1) segmentation map should be always sent to the driver explicitly (even if there is no map update)
+            // 2) "segmentation_update_map = 0" cannot be safely applied for SegmentIdBlockSize smaller than SB size
+
+            const Base::SH& sh = Base::Glob::SH::Get(global);
+
+            assert(!dpb.empty());
+
+            const mfxU8 primaryRefFrameDpbIdx = static_cast<mfxU8>(fh.ref_frame_idx[fh.primary_ref_frame]);
+            const mfxExtAV1Segmentation* pRefPar = dpb.at(primaryRefFrameDpbIdx).get();
+            assert(pRefPar);
+
+            seg.SegmentId = pRefPar->SegmentId;
+            seg.NumSegmentIdAlloc = pRefPar->NumSegmentIdAlloc;
+
+            if (IsSegBlockSmallerThanSB(seg.SegmentIdBlockSize, sh.sbSize))
+            {
+                // force map update if SegmentIdBlockSize is smaller than SB size
+                fh.segmentation_params.segmentation_update_map = 1;
+            }
+        }
+
+        return MFX_ERR_NONE;
+    });
+}
+
 } //namespace Gen12
 } //namespace AV1EHW
 

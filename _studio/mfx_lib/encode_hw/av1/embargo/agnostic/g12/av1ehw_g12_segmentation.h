@@ -34,7 +34,8 @@ namespace Gen12
     {
     public:
 #define DECL_BLOCK_LIST\
-        DECL_BLOCK(PatchSegmentParam)
+        DECL_BLOCK(PatchSegmentParam)\
+        DECL_BLOCK(PatchTask)
 #define DECL_FEATURE_NAME "G12_Segmentation"
 #include "av1ehw_decl_blocks.h"
 
@@ -44,6 +45,7 @@ namespace Gen12
 
     protected:
         virtual void InitTask(const FeatureBlocks& blocks, TPushIT Push) override;
+        virtual void PostReorderTask(const FeatureBlocks& blocks, TPushPostRT Push) override;
     };
 
 } //Gen12

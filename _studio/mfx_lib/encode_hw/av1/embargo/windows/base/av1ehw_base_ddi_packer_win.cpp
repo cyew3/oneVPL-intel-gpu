@@ -183,7 +183,8 @@ static void FillSegmentationMap(
 
     const mfxExtAV1Segmentation& seg = ExtBuffer::Get(par);
     segment_map.resize(seg.NumSegmentIdAlloc);
-    std::copy_n(seg.SegmentId, seg.NumSegmentIdAlloc, segment_map.begin());
+    if (seg.SegmentId)
+        std::copy_n(seg.SegmentId, seg.NumSegmentIdAlloc, segment_map.begin());
 }
 
 static void FillSegmentationMap(
@@ -191,7 +192,8 @@ static void FillSegmentationMap(
     , std::vector<UCHAR>& segment_map)
 {
     segment_map.resize(seg.NumSegmentIdAlloc);
-    std::copy_n(seg.SegmentId, seg.NumSegmentIdAlloc, segment_map.begin());
+    if (seg.SegmentId)
+        std::copy_n(seg.SegmentId, seg.NumSegmentIdAlloc, segment_map.begin());
 }
 
 void DDIPacker::ResetState(const FeatureBlocks& /*blocks*/, TPushRS Push)

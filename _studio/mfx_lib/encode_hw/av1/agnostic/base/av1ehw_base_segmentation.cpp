@@ -516,6 +516,13 @@ void Segmentation::PostReorderTask(const FeatureBlocks& /*blocks*/, TPushPostRT 
             PutSegParamToDPB(seg, numRefFrame, refreshFrameFlags, dpb);
         }
 
+        if (!fh.segmentation_params.segmentation_update_map)
+        {
+            seg.SegmentId = nullptr;
+            seg.NumSegmentIdAlloc = 0;
+        }
+
+
         return MFX_ERR_NONE;
     });
 }
