@@ -392,11 +392,6 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
         }
     }
 
-    mfxVideoParam paramsSource = m_components[eDEC].m_params;
-    MFX_CHECK_STS_CUSTOM_HANDLER(m_pYUVSource->Query(&paramsSource, &m_components[eDEC].m_params), {
-            PipelineTrace((VM_STRING("%s"), MFXStructuresPair<mfxVideoParam>(paramsSource, m_components[eDEC].m_params).Serialize().c_str()));
-        });
-
     if (NULL != m_pRender)
     {
         mfxVideoParam params = m_components[eREN].m_params;
