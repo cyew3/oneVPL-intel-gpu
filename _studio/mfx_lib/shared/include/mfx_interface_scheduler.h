@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2009-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -98,7 +98,7 @@ public:
 
     // Wait until task(s) of specified owner become complete or unattended
     virtual
-    mfxStatus WaitForTaskCompletion(const void *pOwner) = 0;
+    mfxStatus WaitForAllTasksCompletion(const void *pOwner) = 0;
 
     // Reset 'waiting' status for tasks of specified owner
     virtual

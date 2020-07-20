@@ -500,7 +500,7 @@ mfxStatus MFXVideoDECODE_Close(mfxSession session)
         }
 
         // wait until all tasks are processed
-        session->m_pScheduler->WaitForTaskCompletion(session->m_pDECODE.get());
+        session->m_pScheduler->WaitForAllTasksCompletion(session->m_pDECODE.get());
 
         mfxRes = session->m_pDECODE->Close();
         // delete the codec's instance if not plugin

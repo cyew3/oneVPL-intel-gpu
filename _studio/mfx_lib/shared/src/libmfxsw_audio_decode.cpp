@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -296,7 +296,7 @@ mfxStatus MFXAudioDECODE_Close(mfxSession session)
         else
         {
             // wait until all tasks are processed
-            session->m_pScheduler->WaitForTaskCompletion(session->m_pDECODE.get());
+            session->m_pScheduler->WaitForAllTasksCompletion(session->m_pDECODE.get());
 
             mfxRes = session->m_pAudioDECODE->Close();
             // delete the codec's instance

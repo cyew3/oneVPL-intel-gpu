@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 Intel Corporation
+// Copyright (c) 2008-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -298,7 +298,7 @@ mfxStatus MFXVideo##component##_##func_name formal_param_list \
     MFX_CHECK(session->m_p##component.get(), MFX_ERR_NOT_INITIALIZED); \
     try { \
         /* wait until all tasks are processed */ \
-        session->m_pScheduler->WaitForTaskCompletion(session->m_p##component.get()); \
+        session->m_pScheduler->WaitForAllTasksCompletion(session->m_p##component.get()); \
         /* call the codec's method */ \
         return session->m_p##component->func_name actual_param_list; \
     } catch(...) { \
@@ -314,7 +314,7 @@ mfxStatus MFXVideo##component##_##func_name formal_param_list \
     MFX_CHECK(session->m_pAudio##component.get(), MFX_ERR_NOT_INITIALIZED); \
     try { \
         /* wait until all tasks are processed */ \
-        session->m_pScheduler->WaitForTaskCompletion(session->m_pAudio##component.get()); \
+        session->m_pScheduler->WaitForAllTasksCompletion(session->m_pAudio##component.get()); \
         /* call the codec's method */ \
         return session->m_pAudio##component->func_name actual_param_list; \
     } catch(...) { \

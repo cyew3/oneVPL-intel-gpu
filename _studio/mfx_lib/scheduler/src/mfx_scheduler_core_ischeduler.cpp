@@ -540,7 +540,7 @@ mfxStatus mfxSchedulerCore::WaitForDependencyResolved(const void *pDependency)
 
 } // mfxStatus mfxSchedulerCore::WaitForDependencyResolved(const void *pDependency)
 
-mfxStatus mfxSchedulerCore::WaitForTaskCompletion(const void *pOwner)
+mfxStatus mfxSchedulerCore::WaitForAllTasksCompletion(const void *pOwner)
 {
     mfxTaskHandle waitHandle;
 
@@ -617,7 +617,7 @@ mfxStatus mfxSchedulerCore::WaitForTaskCompletion(const void *pOwner)
 
     return MFX_ERR_NONE;
 
-} // mfxStatus mfxSchedulerCore::WaitForTaskCompletion(const void *pOwner)
+} // mfxStatus mfxSchedulerCore::WaitForAllTasksCompletion(const void *pOwner)
 
 mfxStatus mfxSchedulerCore::ResetWaitingStatus(const void *pOwner)
 {
