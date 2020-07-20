@@ -39,7 +39,7 @@
     <ClCompile Include="..\..\shared\src\libmfx_core.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_iunknown.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core_iunknown.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\shared\src\libmfx_core_factory.cpp">
@@ -51,19 +51,19 @@
     <ClCompile Include="..\..\shared\src\libmfx_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_ischeduler.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core_ischeduler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_thread.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core_thread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core_task.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task_management.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core_task_management.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\shared\src\libmfx_core_d3d9.cpp">

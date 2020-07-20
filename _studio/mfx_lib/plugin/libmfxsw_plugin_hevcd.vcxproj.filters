@@ -38,22 +38,22 @@
     <ClCompile Include="..\shared\src\mfx_common_int.cpp">
       <Filter>libmfx_services</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core.cpp">
       <Filter>libmfx_scheduler</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_ischeduler.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core_ischeduler.cpp">
       <Filter>libmfx_scheduler</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_iunknown.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core_iunknown.cpp">
       <Filter>libmfx_scheduler</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core_task.cpp">
       <Filter>libmfx_scheduler</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_task_management.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core_task_management.cpp">
       <Filter>libmfx_scheduler</Filter>
     </ClCompile>
-    <ClCompile Include="..\scheduler\src\mfx_scheduler_core_thread.cpp">
+    <ClCompile Include="..\scheduler\windows\src\mfx_scheduler_core_thread.cpp">
       <Filter>libmfx_scheduler</Filter>
     </ClCompile>
     <ClCompile Include="..\shared\src\mfx_user_plugin.cpp">
@@ -98,19 +98,19 @@
     <ClInclude Include="..\shared\include\mfx_common_int.h">
       <Filter>libmfx_services</Filter>
     </ClInclude>
-    <ClInclude Include="..\scheduler\include\mfx_dependency_item.h">
+    <ClInclude Include="..\scheduler\windows\include\mfx_dependency_item.h">
       <Filter>libmfx_services</Filter>
     </ClInclude>
-    <ClInclude Include="..\scheduler\include\mfx_scheduler_core.h">
+    <ClInclude Include="..\scheduler\windows\include\mfx_scheduler_core.h">
       <Filter>libmfx_scheduler</Filter>
     </ClInclude>
-    <ClInclude Include="..\scheduler\include\mfx_scheduler_core_handle.h">
+    <ClInclude Include="..\scheduler\windows\include\mfx_scheduler_core_handle.h">
       <Filter>libmfx_scheduler</Filter>
     </ClInclude>
-    <ClInclude Include="..\scheduler\include\mfx_scheduler_core_task.h">
+    <ClInclude Include="..\scheduler\windows\include\mfx_scheduler_core_task.h">
       <Filter>libmfx_scheduler</Filter>
     </ClInclude>
-    <ClInclude Include="..\scheduler\include\mfx_scheduler_core_thread.h">
+    <ClInclude Include="..\scheduler\windows\include\mfx_scheduler_core_thread.h">
       <Filter>libmfx_scheduler</Filter>
     </ClInclude>
     <ClInclude Include="..\shared\include\mfx_task.h">

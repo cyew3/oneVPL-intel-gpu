@@ -12,7 +12,7 @@ mfx_include_dirs( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
-include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
+include_directories( ${MSDK_LIB_ROOT}/scheduler/linux/include )
 
 include_directories( ${MSDK_LIB_ROOT}/decode/h265/include )
 include_directories( ${MSDK_LIB_ROOT}/encode/h265/include )
@@ -110,7 +110,7 @@ list( APPEND plugin_common_sources
   ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 )
 
-set( prefix ${MSDK_LIB_ROOT}/scheduler/src )
+set( prefix ${MSDK_LIB_ROOT}/scheduler/linux/src )
   list( APPEND plugin_common_sources
     ${prefix}/mfx_scheduler_core.cpp
     ${prefix}/mfx_scheduler_core_iunknown.cpp

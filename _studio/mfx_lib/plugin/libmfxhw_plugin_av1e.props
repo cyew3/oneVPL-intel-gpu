@@ -17,7 +17,7 @@
     $(MSDK_STUDIO_ROOT)\shared\asc\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\plugin\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\fei\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\genx\copy_kernels\include;

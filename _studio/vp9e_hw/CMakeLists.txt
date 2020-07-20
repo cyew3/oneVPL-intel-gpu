@@ -18,7 +18,7 @@ set(MFX_ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 include_directories( ${MFX_ROOTDIR}/vp9e_hw/include )
 include_directories( ${MFX_ROOTDIR}/shared/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/shared/include )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/scheduler/include )
+include_directories( ${MFX_ROOTDIR}/mfx_lib/scheduler/linux/include )
 
 # =============================================================================
 

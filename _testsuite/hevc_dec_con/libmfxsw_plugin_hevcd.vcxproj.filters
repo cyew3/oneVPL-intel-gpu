@@ -19,12 +19,12 @@
     <ClCompile Include="..\..\..\_studio\mfx_lib\..\shared\src\mfx_timing.cpp" />
     <ClCompile Include="..\..\..\_studio\mfx_lib\..\shared\src\mfx_umc_alloc_wrapper.cpp" />
     <ClCompile Include="..\..\..\_studio\mfx_lib\shared\src\mfx_user_plugin.cpp" />
-    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core.cpp" />
-    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
-    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
-    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_task.cpp" />
-    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_task_management.cpp" />
-    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_thread.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\windows\src\mfx_scheduler_core.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\windows\src\mfx_scheduler_core_ischeduler.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\windows\src\mfx_scheduler_core_iunknown.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\windows\src\mfx_scheduler_core_task.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\windows\src\mfx_scheduler_core_task_management.cpp" />
+    <ClCompile Include="..\..\..\_studio\mfx_lib\scheduler\windows\src\mfx_scheduler_core_thread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\fast_copy.h" />
@@ -34,7 +34,7 @@
     <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\libmfx_core_operation.h" />
     <ClInclude Include="..\..\..\_studio\mfx_lib\..\shared\include\mfx_common.h" />
     <ClInclude Include="..\..\..\_studio\mfx_lib\decode\h265\include\mfx_h265_dec_decode.h" />
-    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\include\mfx_dependency_item.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\windows\include\mfx_dependency_item.h" />
     <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_common_decode_int.h" />
     <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_common_int.h" />
     <ClInclude Include="..\..\..\_studio\mfx_lib\shared\include\mfx_interface.h" />
@@ -58,10 +58,10 @@
     <ClInclude Include="..\..\..\_studio\mfx_lib\..\..\include\mfxstructures.h" />
     <ClInclude Include="..\..\..\_studio\mfx_lib\..\..\include\mfxvideo++.h" />
     <ClInclude Include="..\..\..\_studio\mfx_lib\..\..\include\mfxvideo.h" />
-    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\include\mfx_scheduler_core.h" />
-    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\include\mfx_scheduler_core_handle.h" />
-    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\include\mfx_scheduler_core_task.h" />
-    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\include\mfx_scheduler_core_thread.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\windows\include\mfx_scheduler_core.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\windows\include\mfx_scheduler_core_handle.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\windows\include\mfx_scheduler_core_task.h" />
+    <ClInclude Include="..\..\..\_studio\mfx_lib\scheduler\windows\include\mfx_scheduler_core_thread.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="libmfx_services">

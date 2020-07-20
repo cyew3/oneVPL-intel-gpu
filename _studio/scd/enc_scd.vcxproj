@@ -118,7 +118,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;WIN32;_DEBUG;_WINDOWS;_USRDLL;MFX_VA;MFX_VA_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -149,7 +149,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;MFX_VA;MFX_VA_WIN;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -178,7 +178,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -209,7 +209,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>

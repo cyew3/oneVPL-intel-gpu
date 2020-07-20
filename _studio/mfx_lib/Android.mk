@@ -12,7 +12,7 @@ MFX_LOCAL_DIRS := \
     $(addprefix enc/, $(MFX_LOCAL_ENCODERS)) \
     $(addprefix encode/, $(MFX_LOCAL_ENCODERS)) \
     $(addprefix pak/, $(MFX_LOCAL_ENCODERS)) \
-    scheduler \
+    scheduler/linux \
     fei
 
 MFX_OPTIMIZATION_DIRS := \

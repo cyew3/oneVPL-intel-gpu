@@ -116,7 +116,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_D3D11_ENABLED;WIN32;_DEBUG;_WINDOWS;_USRDLL;MFX_VA;MFX_VA_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -147,7 +147,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -176,7 +176,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -207,7 +207,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\h265\include;..\mfx_lib\cmrt_cross_platform\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MSDK_API_ROOT)\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;MFX_D3D11_ENABLED;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>

@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2019 Intel Corporation
+// Copyright (c) 2018-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,30 +26,17 @@
 
 #include <vm_time.h>
 #include <vm_sys_info.h>
-
 #include <algorithm>
 
-#if defined(_MSC_VER)
-#include <intrin.h>
-#endif // defined(_MSC_VER)
-
-#if defined(MFX_SCHEDULER_LOG)
-#include <stdio.h>
-#endif // defined(MFX_SCHEDULER_LOG)
 
 mfxSchedulerCore::mfxSchedulerCore(void)
-    : m_currentTimeStamp(0)
-#if defined(_WIN32) || defined(_WIN64)
-#if defined(_MSC_VER)
-    , m_timeWaitPeriod(1000000)
-#else // !defined(_MSC_VER)
-    , m_timeWaitPeriod(vm_time_get_frequency() / 1000)
-#endif // defined(_MSC_VER)
-#else
+    :  m_currentTimeStamp(0)
+    // since on Linux we have blocking synchronization which means an absence of polling,
+    // there is no need to use 'waiting' time period.
     , m_timeWaitPeriod(0)
-#endif
     , m_hwWakeUpThread()
-    , m_occupancyTable()
+    , m_DedicatedThreadsToWakeUp(0)
+    , m_RegularThreadsToWakeUp(0)
 {
     memset(&m_param, 0, sizeof(m_param));
     m_refCounter = 1;
@@ -59,9 +46,7 @@ mfxSchedulerCore::mfxSchedulerCore(void)
 
     m_bQuit = false;
 
-#if !defined(MFX_EXTERNAL_THREADING)
     m_pThreadCtx = NULL;
-#endif
     m_vmtick_msec_frequency = vm_time_get_frequency()/1000;
     vm_event_set_invalid(&m_hwTaskDone);
 
@@ -69,8 +54,6 @@ mfxSchedulerCore::mfxSchedulerCore(void)
     memset(m_pTasks, 0, sizeof(m_pTasks));
     memset(m_numAssignedTasks, 0, sizeof(m_numAssignedTasks));
     m_pFailedTasks = NULL;
-    m_numHwTasks = 0;
-    m_numSwTasks = 0;
 
     m_pFreeTasks = NULL;
 
@@ -88,15 +71,7 @@ mfxSchedulerCore::mfxSchedulerCore(void)
 
     m_timer_hw_event = MFX_THREAD_TIME_TO_WAIT;
 
-#if defined  (MFX_VA)
-#if defined  (MFX_D3D11_ENABLED)
-    m_pdx11event = 0;
-#endif
-#endif
 
-#if defined(MFX_SCHEDULER_LOG)
-    m_hLog = 0;
-#endif // defined(MFX_SCHEDULER_LOG)
 
 } // mfxSchedulerCore::mfxSchedulerCore(void)
 
@@ -109,117 +84,26 @@ mfxSchedulerCore::~mfxSchedulerCore(void)
 bool mfxSchedulerCore::SetScheduling(std::thread& handle)
 {
     (void)handle;
-#if !defined(_WIN32) && !defined(_WIN64)
     if (m_param.params.SchedulingType || m_param.params.Priority) {
         if (handle.joinable()) {
-            struct sched_param param {};
+            struct sched_param param{};
 
             param.sched_priority = m_param.params.Priority;
             return !pthread_setschedparam(handle.native_handle(), m_param.params.SchedulingType, &param);
         }
     }
-#endif
     return true;
 }
 
 void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
 {
-    // The code below works correctly on Linux, but doesn't affect performance,
-    // because Linux scheduler ensures socket affinity by itself
-#if defined(_WIN32_WCE)
-    return;
-#elif (defined(WIN32) || defined(WIN64))/* && !defined(MFX_VA)*/
-
-    mfxU64 cpuMasks[16], mask;
-    mfxU32 numNodeCpus[16];
-    GROUP_AFFINITY group_affinity;
-    ULONG numNodes = 0;
-    BOOL ret = GetNumaHighestNodeNumber(&numNodes);
-
-    if (!ret)
-        return;
-    else
-        numNodes++;
-
-    if (numNodes <= 1) return;
-    if (numNodes > 16) numNodes = 16;
-
-    mfxU32 n;
-
-    for (UCHAR i = 0; i < numNodes; i++) {
-        memset(&group_affinity, 0, sizeof(GROUP_AFFINITY));
-        GetNumaNodeProcessorMaskEx(i, &group_affinity);
-        cpuMasks[i] = (mfxU64)group_affinity.Mask;
-        numNodeCpus[i] = 0;
-        for (n = 0; n < 64; n++) {
-            if (cpuMasks[i] & (1LL << n))
-                numNodeCpus[i]++;
-        }
-    }
-
-    mfxU32 curNode = 0, curThread = 0;
-    PROCESSOR_NUMBER proc_number;
-    for (mfxU32 i = 0; i < m_param.numberOfThreads; i += 1)
-    {
-        mask = cpuMasks[curNode];
-        if (++curThread >= numNodeCpus[curNode]) {
-            if (++curNode >= numNodes) curNode = 0;
-            curThread = 0;
-        }
-#if defined(MFX_EXTERNAL_THREADING)
-        if (m_ppThreadCtx[i])
-        {
-            memset(&proc_number, 0, sizeof(PROCESSOR_NUMBER));
-            memset(&group_affinity, 0, sizeof(GROUP_AFFINITY));
-            GetCurrentProcessorNumberEx(&proc_number);
-            group_affinity.Group = proc_number.Group;
-            group_affinity.Mask = (KAFFINITY)mask;
-            SetThreadGroupAffinity(m_ppThreadCtx[i]->threadHandle.native_handle(), &group_affinity, NULL);
-        }
-#else
-        memset(&proc_number, 0, sizeof(PROCESSOR_NUMBER));
-        memset(&group_affinity, 0, sizeof(GROUP_AFFINITY));
-        GetCurrentProcessorNumberEx(&proc_number);
-        group_affinity.Group = proc_number.Group;
-        group_affinity.Mask = (KAFFINITY)mask;
-        SetThreadGroupAffinity(m_pThreadCtx[i].threadHandle.native_handle(), &group_affinity, NULL);
-#endif
-    }
-#endif
-    return;
-} // void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
+}
 
 void mfxSchedulerCore::Close(void)
 {
-    int priority;
-
     StopWakeUpThread();
-    
+
     // stop threads
-#if defined(MFX_EXTERNAL_THREADING)    
-    // set the 'quit' flag for threads
-    m_bQuit = true;
-
-    // set the events to wake up sleeping threads
-    WakeUpThreads();
-
-    const mfxU32 numThreads = m_param.numberOfThreads;
-    for (mfxU32 i = 0; i < numThreads; i += 1)
-    {
-        MFX_SCHEDULER_THREAD_CONTEXT * pContext = m_ppThreadCtx[i];
-        if (pContext)
-        {
-            // wait for particular thread
-            if (pContext->threadHandle.joinable())
-                pContext->threadHandle.join();
-            // delete associated resources (context and event)
-            RemoveThreadFromPool(pContext); // m_param.numberOfThreads modified here
-        }
-    }
-
-    m_ppThreadCtx.clear();
-    m_ppThreadCtx.shrink_to_fit();
-#else  // !MFX_EXTERNAL_THREADING
     if (m_pThreadCtx)
     {
         mfxU32 i;
@@ -227,8 +111,11 @@ void mfxSchedulerCore::Close(void)
         // set the 'quit' flag for threads
         m_bQuit = true;
 
-        // set the events to wake up sleeping threads
-        WakeUpThreads();
+        {
+            // set the events to wake up sleeping threads
+            std::lock_guard<std::mutex> guard(m_guard);
+            WakeUpThreads();
+        }
 
         for (i = 0; i < m_param.numberOfThreads; i += 1)
         {
@@ -239,26 +126,17 @@ void mfxSchedulerCore::Close(void)
 
         delete[] m_pThreadCtx;
     }
-#endif // MFX_EXTERNAL_THREADING
 
     // run over the task lists and abort the existing tasks
-    for (priority = MFX_PRIORITY_HIGH;
-         priority >= MFX_PRIORITY_LOW;
-         priority -= 1)
-    {
-        int type;
-
-        for (type = MFX_TYPE_HARDWARE; type <= MFX_TYPE_SOFTWARE; type += 1)
+    ForEachTask(
+        [](MFX_SCHEDULER_TASK* task)
         {
-            MFX_SCHEDULER_TASK *pTask = m_pTasks[priority][type];
-            while (pTask) {
-                if (MFX_TASK_WORKING == pTask->curStatus) {
-                    pTask->CompleteTask(MFX_ERR_ABORTED);
-                }
-                pTask = pTask->pNext;
+            if (MFX_TASK_WORKING == task->curStatus)
+            {
+                task->CompleteTask(MFX_ERR_ABORTED);
             }
         }
-    }
+    );
 
     // delete task objects
     for (auto & it : m_ppTaskLookUpTable)
@@ -267,10 +145,6 @@ void mfxSchedulerCore::Close(void)
         it = nullptr;
     }
 
-#if defined(MFX_SCHEDULER_LOG)
-    mfxLogClose(m_hLog);
-    m_hLog = 0;
-#endif // defined(MFX_SCHEDULER_LOG)
 
     memset(&m_param, 0, sizeof(m_param));
 
@@ -279,9 +153,7 @@ void mfxSchedulerCore::Close(void)
 
     // reset variables
     m_bQuit = false;
-#if !defined(MFX_EXTERNAL_THREADING)
     m_pThreadCtx = NULL;
-#endif
     // reset task variables
     memset(m_pTasks, 0, sizeof(m_pTasks));
     memset(m_numAssignedTasks, 0, sizeof(m_numAssignedTasks));
@@ -300,81 +172,42 @@ void mfxSchedulerCore::Close(void)
     m_jobCounter = 0;
 }
 
-void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
-                                     const eWakeUpReason reason)
+void mfxSchedulerCore::WakeUpThreads(mfxU32 num_dedicated_threads, mfxU32 num_regular_threads)
 {
-    MFX_SCHEDULER_THREAD_CONTEXT* thctx;
-
     if (m_param.flags == MFX_SINGLE_THREAD)
         return;
 
-    // it is a common working situation, wake up only threads, which
-    // have something to do
-    if (false == m_bQuit)
-    {
-        mfxU32 i;
+    MFX_SCHEDULER_THREAD_CONTEXT* thctx;
 
-        // wake up the dedicated thread
-        if ((curThreadNum) && (m_numHwTasks | m_numSwTasks))
-        {
-            if (NULL != (thctx = GetThreadCtx(0))) thctx->taskAdded.Set();
-        }
-
-        // wake up other threads
-        if ((MFX_SCHEDULER_NEW_TASK == reason) && (m_numSwTasks))
-        {
-            for (i = 1; i < m_param.numberOfThreads; i += 1)
-            {
-                if ((i != curThreadNum) && (NULL != (thctx = GetThreadCtx(i)))) {
-                    thctx->taskAdded.Set();
-                }
-            }
+    if (num_dedicated_threads) {
+        // we have single dedicated thread, thus no loop here
+        thctx = GetThreadCtx(0);
+        if (thctx->state == MFX_SCHEDULER_THREAD_CONTEXT::Waiting) {
+            thctx->taskAdded.notify_one();
         }
     }
-    // the scheduler is going to be deleted, wake up all threads
-    else
-    {
-        mfxU32 i;
-
-        for (i = 0; i < m_param.numberOfThreads; i += 1)
-        {
-            if (NULL != (thctx = GetThreadCtx(i))) thctx->taskAdded.Set();
+    // if we have woken up dedicated thread, we exclude it from the loop below
+    for (mfxU32 i = (num_dedicated_threads)? 1: 0; (i < m_param.numberOfThreads) && num_regular_threads; ++i) {
+        thctx = GetThreadCtx(i);
+        if (thctx->state == MFX_SCHEDULER_THREAD_CONTEXT::Waiting) {
+            thctx->taskAdded.notify_one();
+            --num_regular_threads;
         }
     }
 }
 
-void mfxSchedulerCore::WakeUpNumThreads(mfxU32 /*numThreadsToWakeUp*/,
-                                        const mfxU32 curThreadNum)
-{
-    WakeUpThreads(curThreadNum);
-}
-
-void mfxSchedulerCore::Wait(const mfxU32 curThreadNum)
+void mfxSchedulerCore::Wait(const mfxU32 curThreadNum, std::unique_lock<std::mutex>& mutex)
 {
     MFX_SCHEDULER_THREAD_CONTEXT* thctx = GetThreadCtx(curThreadNum);
 
     if (thctx) {
-#if defined(_WIN32) || defined(_WIN64)
-        mfxU32 timeout = (curThreadNum) ? MFX_THREAD_TIME_TO_WAIT : 1;
-        // Dedicated thread will poll driver for GPU tasks completion, but
-        // if HW thread exists we can relax this polling
-        if ((0 == curThreadNum) && m_hwTaskDone.handle) {
-            timeout = 15;
-        }
-        thctx->taskAdded.Wait(timeout);
-#else
-        thctx->taskAdded.Wait();
-#endif
+        thctx->taskAdded.wait(mutex);
     }
 }
 
 mfxU64 mfxSchedulerCore::GetHighPerformanceCounter(void)
 {
-#if defined(_MSC_VER)
-    return (mfxU64) __rdtsc();
-#else // !defined(_MSC_VER)
     return (mfxU64) vm_time_get_tick();
-#endif // defined(_MSC_VER)
 
 } // mfxU64 mfxSchedulerCore::GetHighPerformanceCounter(void)
 
@@ -397,11 +230,6 @@ mfxStatus mfxSchedulerCore::AllocateEmptyTask(void)
     if (nullptr == m_pFreeTasks)
     {
 
-#if defined(MFX_SCHEDULER_LOG)
-
-        mfxLogWriteA(m_hLog, "[    ] CAN'T find a free task\n");
-
-#endif // defined(MFX_SCHEDULER_LOG)
 
         // the maximum allowed number of tasks is reached
         if (MFX_MAX_NUMBER_TASK <= m_taskCounter)
@@ -502,7 +330,7 @@ mfxStatus mfxSchedulerCore::GetOccupancyTableIndex(mfxU32 &idx,
     }
 
     // update the number of allocated objects
-    m_numOccupancies = UMC::get_max(m_numOccupancies, i + 1);
+    m_numOccupancies = std::max(mfxU32(m_numOccupancies), i + 1);
 
     // save the index to return
     idx = i;
@@ -592,9 +420,9 @@ void mfxSchedulerCore::RegisterTaskDependencies(MFX_SCHEDULER_TASK  *pTask)
     if (m_pDependencyTable.size() > m_numDependencies)
     {
         auto it = std::find_if(m_pDependencyTable.rend() - m_numDependencies, m_pDependencyTable.rend(),
-            [](const MFX_DEPENDENCY_ITEM & item) { return item.p != nullptr; });
+                               [](const MFX_DEPENDENCY_ITEM & item){ return item.p != nullptr; });
 
-        m_numDependencies = (mfxU32)(m_pDependencyTable.rend() - it);
+        m_numDependencies = m_pDependencyTable.rend() - it;
     }
 
     // get the number of source dependencies
@@ -703,65 +531,13 @@ void mfxSchedulerCore::RegisterTaskDependencies(MFX_SCHEDULER_TASK  *pTask)
 
 //#define ENABLE_TASK_DEBUG
 
-#if defined(ENABLE_TASK_DEBUG)
-#include <stdio.h>
-#include <string.h>
-#include <windows.h>
-
-#define sizeLeft (sizeof(cStr) - (pStr - cStr))
-#endif // defined(ENABLE_TASK_DEBUG)
 
 void mfxSchedulerCore::PrintTaskInfo(void)
 {
-#if defined(ENABLE_TASK_DEBUG)
-    std::lock_guard<std::mutex> guard(m_guard);
-
-    PrintTaskInfoUnsafe();
-#endif // defined(ENABLE_TASK_DEBUG)
 
 } // void mfxSchedulerCore::PrintTaskInfo(void)
 
 void mfxSchedulerCore::PrintTaskInfoUnsafe(void)
 {
-#if defined(ENABLE_TASK_DEBUG)
-    mfxU32 priority;
-    char cStr[4096];
-    char *pStr = cStr;
-    int written;
-    mfxU32 numTasks = 0;
-
-    written = sprintf_s(pStr, sizeLeft, "[% 4u] TASK DEBUG. Current time %u:\n", GetCurrentThreadId(), (mfxU32) m_currentTimeStamp);
-    if (0 < written) pStr += written;
-
-    // run over priority queues
-    for (priority = 0; priority < MFX_PRIORITY_NUMBER; priority += 1)
-    {
-        MFX_SCHEDULER_TASK *pTask = m_pTasks[priority];
-
-        while (pTask)
-        {
-            if (MFX_TASK_WORKING == pTask->curStatus)
-            {
-                written = sprintf_s(pStr, sizeLeft, "    task - % 2u, job - % 4u, %s, occupancy %u, last enter %u (%u us ago)\n",
-                                    pTask->taskID, pTask->jobID,
-                                    pTask->param.bWaiting ? ("waiting") : ("non-waiting"),
-                                    pTask->param.occupancy,
-                                    (mfxU32) pTask->param.timing.timeLastEnter,
-                                    (mfxU32) ((m_currentTimeStamp - pTask->param.timing.timeLastEnter) * 1000000 / m_timeFrequency));
-                if (0 < written) pStr += written;
-
-                // increment the number of available tasks
-                numTasks += 1;
-            }
-
-            // advance the task pointer
-            pTask = pTask->pNext;
-        }
-    }
-
-    written = sprintf_s(pStr, sizeLeft, "    %u task total\n", numTasks);
-    if (0 < written) pStr += written;
-    OutputDebugStringA(cStr);
-#endif // defined(ENABLE_TASK_DEBUG)
 
 } // void mfxSchedulerCore::PrintTaskInfoUnsafe(void)

@@ -13,7 +13,7 @@
     $(MSDK_STUDIO_ROOT)\shared\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\plugin\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\fei\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\decode\h265\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\optimization\h265\include;

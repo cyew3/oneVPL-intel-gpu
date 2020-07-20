@@ -22,12 +22,12 @@
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\builder\Intel.Mfx.Building.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ItemGroup>
-    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core.cpp" />
-    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
-    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
-    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core_task.cpp" />
-    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core_task_management.cpp" />
-    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\src\mfx_scheduler_core_thread.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\src\mfx_scheduler_core.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\src\mfx_scheduler_core_ischeduler.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\src\mfx_scheduler_core_iunknown.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\src\mfx_scheduler_core_task.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\src\mfx_scheduler_core_task_management.cpp" />
+    <ClCompile Include="$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\src\mfx_scheduler_core_thread.cpp" />
     <ClCompile Include="$(MSDK_STUDIO_ROOT)\shared\src\d3d11_video_processor.cpp" />
     <ClCompile Include="$(MSDK_STUDIO_ROOT)\shared\src\libmfx_allocator.cpp" />
     <ClCompile Include="$(MSDK_STUDIO_ROOT)\shared\src\libmfx_allocator_d3d11.cpp" />

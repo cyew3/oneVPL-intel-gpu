@@ -45,7 +45,7 @@
   <!-- Common item definitions -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MfxIppIncludeDir);..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\copy_kernels\include;..\mfx_lib\plugin\include;..\mfx_lib\scheduler\include;..\mfx_lib\shared\include;..\shared\umc\core\vm_plus\include;..\shared\umc\core\vm\include;..\shared\umc\core\umc\include;..\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSDK_API_ROOT)\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;$(MfxIppIncludeDir);..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\copy_kernels\include;..\mfx_lib\plugin\include;..\mfx_lib\scheduler\windows\include;..\mfx_lib\shared\include;..\shared\umc\core\vm_plus\include;..\shared\umc\core\vm\include;..\shared\umc\core\umc\include;..\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USRDLL;LIBMFXSW_EXPORTS;_WINDOWS;AS_VPP_PLUGIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>

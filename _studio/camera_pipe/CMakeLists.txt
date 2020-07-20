@@ -62,7 +62,7 @@ list( APPEND sources
   ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 )
 
-foreach( prefix ${MSDK_LIB_ROOT}/scheduler/src )
+foreach( prefix ${MSDK_LIB_ROOT}/scheduler/linux/src )
   list( APPEND sources
     ${prefix}/mfx_scheduler_core.cpp
     ${prefix}/mfx_scheduler_core_iunknown.cpp
@@ -75,7 +75,7 @@ endforeach()
 
 include_directories( ${MSDK_LIB_ROOT}/genx/field_copy/include )
 include_directories( ${MSDK_LIB_ROOT}/vpp/include )
-include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
+include_directories( ${MSDK_LIB_ROOT}/scheduler/linux/include )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/color_space_converter/include )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/scene_analyzer/include/ )
 #=======MCTF

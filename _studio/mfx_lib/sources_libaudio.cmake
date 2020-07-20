@@ -1,11 +1,11 @@
 if(NOT OPEN_SOURCE)
   set(sources
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_ischeduler.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_iunknown.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_task.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_task_management.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_thread.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_ischeduler.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_iunknown.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_task.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_task_management.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_thread.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_async.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_audio_decode.cpp

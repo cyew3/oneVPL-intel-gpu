@@ -21,7 +21,7 @@
     <!-- MediaSDK Common -->$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
     <!-- MDF API -->$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
     <!-- Copy Kernels -->$(MSDK_STUDIO_ROOT)\mfx_lib\genx\copy_kernels\include;
-    <!-- MediaSDK Scheduler -->$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\include;
+    <!-- MediaSDK Scheduler -->$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\include;
     <!-- FEI -->$(MSDK_STUDIO_ROOT)\mfx_lib\fei\include;
     <!-- VPP -->$(MSDK_STUDIO_ROOT)\mfx_lib\vpp\include;
     <!-- ASC -->$(MSDK_STUDIO_ROOT)\shared\asc\include;

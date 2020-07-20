@@ -15,7 +15,7 @@ set( sources.plus "" )
 
 list( APPEND sources ${plugin_common_sources} )
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/scheduler/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/scheduler/linux/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/vp8e_plugin/include )
 

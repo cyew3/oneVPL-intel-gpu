@@ -11,7 +11,7 @@
       $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
       $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
       $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
-      $(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\include;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\windows\include;
       $(MSDK_STUDIO_ROOT)\..\contrib\googletest\googletest\include;
       $(MSDK_STUDIO_ROOT)\..\contrib\googletest\googlemock\include;
       $(MfxIppIncludeDir)

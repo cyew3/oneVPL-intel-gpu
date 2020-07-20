@@ -13,12 +13,12 @@ if(NOT OPEN_SOURCE)
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_session.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_user_plugin.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/mfx_check_hardware_support.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_ischeduler.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_iunknown.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_task.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_task_management.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_thread.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_ischeduler.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_iunknown.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_task.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_task_management.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_thread.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/vpp/src/mfx_vpp_factory.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/auxiliary_device.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/cm_mem_copy.cpp

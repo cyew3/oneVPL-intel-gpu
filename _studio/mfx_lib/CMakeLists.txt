@@ -5,7 +5,7 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 mfx_include_dirs( )
 
 list( APPEND mdirs
-  scheduler vpp encode_hw/mjpeg
+  scheduler/linux vpp encode_hw/mjpeg
   decode/h264 decode/h265 decode/vp8 decode/vp9 decode/av1 decode/mpeg2/hw decode/mpeg2/sw decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/h265 encode_hw/mpeg2 encode_hw/vp9
   decode/vc1 encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg
   audio_decode/aac audio_decode/mp3 audio_encode/aac genx/copy_kernels
@@ -35,12 +35,12 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../hevc_fei/h265_fei/include )
 # =============================================================================
 
 set(sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_ischeduler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_iunknown.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_task.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_task_management.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/src/mfx_scheduler_core_thread.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_ischeduler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_iunknown.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_task.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_task_management.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scheduler/linux/src/mfx_scheduler_core_thread.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_async.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/src/libmfxsw_decode.cpp

@@ -20,7 +20,7 @@ include_directories( ${MFX_ROOTDIR}/shared/asc/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/genx/asc/isa )
 include_directories( ${MFX_ROOTDIR}/shared/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/plugin/include )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/scheduler/include )
+include_directories( ${MFX_ROOTDIR}/mfx_lib/scheduler/linux/include )
 
 # =============================================================================
 
