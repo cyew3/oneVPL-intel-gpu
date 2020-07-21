@@ -1520,7 +1520,6 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
 
         break;
 
-#ifndef OPEN_SOURCE
 #if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
 #if (MFX_VERSION >= 1031)
@@ -1589,7 +1588,6 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
 
         MFX_CHECK_STS(sts);
         break;
-#endif
 #endif
 
 #if defined (MFX_ENABLE_FOURCC_RGB565)
