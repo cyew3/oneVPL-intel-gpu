@@ -3109,26 +3109,13 @@ mfxStatus General::CopyConfigurable(const ParamSupport& sprt, const mfxVideoPara
 
 mfxStatus General::CheckCodedPicSize(
     mfxVideoParam& par
-    , const Defaults::Param& defPar)
+    , const Defaults::Param& /*defPar*/)
 {
     mfxExtAV1Param* pAV1 = ExtBuffer::Get(par);
     MFX_CHECK(pAV1, MFX_ERR_NONE);
 
-    auto alignment = defPar.base.GetCodedPicAlignment(defPar);
-    auto& W = pAV1->FrameWidth;
-    auto& H = pAV1->FrameHeight;
-    auto AW = mfx::align2_value(W, alignment);
-    auto AH = mfx::align2_value(H, alignment);
-
-    MFX_CHECK(!CheckMaxOrZero(W, par.mfx.FrameInfo.Width), MFX_ERR_UNSUPPORTED);
-    MFX_CHECK(!CheckMaxOrZero(H, par.mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
-
-    if ((W != AW) || (H != AH))
-    {
-        W = AW;
-        H = AH;
-        return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
+    MFX_CHECK(!CheckMaxOrZero(pAV1->FrameWidth, par.mfx.FrameInfo.Width), MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(!CheckMaxOrZero(pAV1->FrameHeight, par.mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
 
     return MFX_ERR_NONE;
 }
