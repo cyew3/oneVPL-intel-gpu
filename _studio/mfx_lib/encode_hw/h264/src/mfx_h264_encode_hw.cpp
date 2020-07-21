@@ -3375,7 +3375,7 @@ mfxStatus ImplementationAvc::CheckBRCStatus(DdiTask &task, bool &bToRecode, mfxU
             else
 #endif
             {
-                task.m_minFrameSize = m_brc.GetMinFrameSize() / 8;
+                task.m_minFrameSize =(mfxU32)( (m_brc.GetMinFrameSize() + 7) >> 3 );
                 task.m_brcFrameParams.CodedFrameSize = task.m_minFrameSize;
                 m_brc.Report(task.m_brcFrameParams, 0, m_hrd.GetMaxFrameSize((task.m_type[task.m_fid[0]] & MFX_FRAMETYPE_IDR)), task.m_brcFrameCtrl);
             }
