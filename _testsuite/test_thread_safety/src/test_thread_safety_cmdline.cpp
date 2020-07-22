@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: test_thread_safety_cmdline.cpp
 
@@ -24,6 +24,7 @@ const vm_char CommandLine::CodecHevc[] = VM_STRING("-h265");
 const vm_char CommandLine::CodecH263[] = VM_STRING("-h263");
 const vm_char CommandLine::CodecVP8[] = VM_STRING("-vp8");
 const vm_char CommandLine::CodecVP9[] = VM_STRING("-vp9");
+const vm_char CommandLine::CodecAV1[] = VM_STRING("-av1");
 const mfxU32 MAX_NUM_THREAD = 100;
 
 #define MAKE_PAIR(name)\
@@ -56,7 +57,8 @@ mfxU32 String2TestType(const vm_char* s)
         MAKE_PAIR(VC1ENCODE),
         MAKE_PAIR(VP8ENCODE),
         MAKE_PAIR(H263ENCODE),
-        MAKE_PAIR(VP9ENCODE)
+        MAKE_PAIR(VP9ENCODE),
+        MAKE_PAIR(AV1ENCODE)
     };
 
     mfxU32 i;
@@ -97,7 +99,8 @@ void CommandLine::PrintUsage(const vm_char* app)
         VM_STRING("  H263DECODE\n")
         VM_STRING("  H263ENCODE\n")
         VM_STRING("  VP9DECODE\n")
-        VM_STRING("  VP9ENCODE\n"));
+        VM_STRING("  VP9ENCODE\n")
+        VM_STRING("  AV1ENCODE\n"));
     vm_string_printf(
         VM_STRING("numThread:\n")
         VM_STRING("  n - number of components working in parallel\n")
@@ -222,6 +225,9 @@ CommandLine::CommandLine(mfxI32 argc, vm_char** argv)
             break;
         case TEST_VP9ENCODE:
             m_argv[m_argc++] = const_cast<vm_char *>(CommandLine::CodecVP9);
+            break;
+        case TEST_AV1ENCODE:
+            m_argv[m_argc++] = const_cast<vm_char *>(CommandLine::CodecAV1);
             break;
         case TEST_JPEGDECODE:
         case TEST_H264DECODE:

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2020 Intel Corporation. All Rights Reserved.
 
 File Name: test_thread_safety.h
 
@@ -43,8 +43,8 @@ enum { TEST_JPEGDECODE
      , TEST_VP8DECODE
      , TEST_VP9DECODE
      , TEST_H263DECODE
-     
-     , TEST_JPEGENCODE  
+
+     , TEST_JPEGENCODE
      , TEST_H264ENCODE
      , TEST_MPEG2ENCODE
      , TEST_MVCENCODE
@@ -53,8 +53,9 @@ enum { TEST_JPEGDECODE
      , TEST_VP8ENCODE
      , TEST_H263ENCODE
      , TEST_VP9ENCODE
+     , TEST_AV1ENCODE
 
-     , TEST_UNDEF 
+     , TEST_UNDEF
 };
 
 inline int printf_GlobalFunc(const char*, ...) { return 0; }
