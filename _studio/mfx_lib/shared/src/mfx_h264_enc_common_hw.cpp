@@ -8832,6 +8832,11 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     if (type * opts = GetExtBuffer(par, field))           \
     name[field] = *opts;                                  \
     m_extParam[NumExtParam++] = &name[field].Header;
+#define CONSTRUCT_EXT_BUFFER_DEF(type, name, defValue) \
+    InitExtBufHeader(name, defValue);                     \
+    if (type * opts = GetExtBuffer(par))        \
+    {    name = *opts; }              \
+    m_extParam[NumExtParam++] = &name.Header;
 
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOption,         m_extOpt);
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionSPSPPS,   m_extOptSpsPps);
@@ -8879,10 +8884,19 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtBRC,                  m_extBRC);
 #endif
 #if defined(MFX_ENABLE_ENCTOOLS)
-    CONSTRUCT_EXT_BUFFER(mfxEncTools,                m_encTools);
-    CONSTRUCT_EXT_BUFFER(mfxExtEncToolsConfig,          m_encToolsConfig);
-    CONSTRUCT_EXT_BUFFER(mfxEncToolsCtrlExtDevice,               m_extDevice);
-    CONSTRUCT_EXT_BUFFER(mfxEncToolsCtrlExtAllocator,            m_extAllocator);
+    mfxU16 et_default = MFX_CODINGOPTION_OFF;
+#if defined(MFX_ENABLE_ENCTOOLS_LPLA)
+    mfxExtEncToolsConfig *pConf = GetExtBuffer(par);
+    if (!pConf  && IsLpLookaheadSupported(m_extOpt3.ScenarioInfo, m_extOpt2.LookAheadDepth, mfx.RateControlMethod))
+    {
+        et_default = MFX_CODINGOPTION_UNKNOWN;
+    }
+#endif
+    CONSTRUCT_EXT_BUFFER(mfxEncTools, m_encTools);
+    CONSTRUCT_EXT_BUFFER_DEF(mfxExtEncToolsConfig, m_encToolsConfig, et_default);
+    CONSTRUCT_EXT_BUFFER(mfxEncToolsCtrlExtDevice, m_extDevice);
+    CONSTRUCT_EXT_BUFFER(mfxEncToolsCtrlExtAllocator, m_extAllocator);
+
 #endif
 
 #if defined(MFX_ENABLE_AVC_CUSTOM_QMATRIX)

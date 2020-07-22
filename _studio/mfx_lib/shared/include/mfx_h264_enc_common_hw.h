@@ -335,7 +335,7 @@ namespace MfxHwH264Encode
             extBuf.LongTermRefList[i].FrameOrder = mfxU32(MFX_FRAMEORDER_UNKNOWN);
     }
 #if defined(MFX_ENABLE_ENCTOOLS)
-    template <> inline void InitExtBufHeader<mfxExtEncToolsConfig>(mfxExtEncToolsConfig & extBuf)
+    inline void InitExtBufHeader(mfxExtEncToolsConfig & extBuf, mfxU16 defaultValue)
     {
         Zero(extBuf);
         extBuf.Header.BufferId = ExtBufTypeToId<mfxExtEncToolsConfig>::id;
@@ -351,7 +351,7 @@ namespace MfxHwH264Encode
             extBuf.AdaptivePyramidQuantB =
             extBuf.AdaptiveQuantMatrices =
             extBuf.BRCBufferHints =
-            extBuf.BRC = MFX_CODINGOPTION_OFF;
+            extBuf.BRC = defaultValue;
     }
 #endif
     template <class T> struct GetPointedType {};

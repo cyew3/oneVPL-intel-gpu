@@ -30,14 +30,57 @@ File Name: mfxenctools-int.h
 #ifndef __MFXENCTOOLS_INT_H__
 #define __MFXENCTOOLS_INT_H__
 
+#include "mfx_config.h"
+#include "mfxvideo++.h"
+#include "mfxbrc.h"
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 #include "mfxenctools.h"
+#else
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+
+/* Extended Buffer Ids */
+enum {
+    MFX_EXTBUFF_ENCTOOLS_CONFIG = MFX_MAKEFOURCC('E', 'T', 'C', 'F'),
+};
+
+MFX_PACK_BEGIN_USUAL_STRUCT()
+    typedef struct
+{
+    mfxExtBuffer      Header;
+    mfxStructVersion  Version;
+    mfxU16            AdaptiveI;
+    mfxU16            AdaptiveB;
+    mfxU16            AdaptiveRefP;
+    mfxU16            AdaptiveRefB;
+    mfxU16            SceneChange;
+    mfxU16            AdaptiveLTR;
+    mfxU16            AdaptivePyramidQuantP;
+    mfxU16            AdaptivePyramidQuantB;
+    mfxU16            AdaptiveQuantMatrices;
+    mfxU16            BRCBufferHints;
+    mfxU16            BRC;
+    mfxU16            reserved[20];
+} mfxExtEncToolsConfig;
+MFX_PACK_END()
+
+#define MFX_ENCTOOLS_CONFIG_VERSION MFX_STRUCT_VERSION(1, 0)
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */
+#endif /*(MFX_VERSION >= MFX_VERSION_NEXT)*/
+
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif /* __cplusplus */
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 
 /* Extended Buffer Ids */
 enum {
@@ -366,11 +409,11 @@ MFX_PACK_END()
 mfxEncTools*  MFX_CDECL MFXVideoENCODE_CreateEncTools();
 void  MFX_CDECL MFXVideoENCODE_DestroyEncTools(mfxEncTools *et);
 
-#endif /* (MFX_VERSION >= MFX_VERSION_NEXT) */
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
-
 #endif
+
+
+
 
