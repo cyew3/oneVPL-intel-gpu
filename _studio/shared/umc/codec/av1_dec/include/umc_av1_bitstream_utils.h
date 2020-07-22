@@ -30,7 +30,8 @@
 
 namespace UMC_AV1_DECODER
 {
-    inline int read_inv_signed_literal(AV1Bitstream& bs, int bits) {
+    inline int read_inv_signed_literal(AV1Bitstream& bs, int bits)
+    {
         const unsigned sign = bs.GetBit();
         const unsigned literal = bs.GetBits(bits);
         if (sign == 0)
@@ -63,7 +64,8 @@ namespace UMC_AV1_DECODER
         return base + value;
     }
 
-    inline uint16_t inv_recenter_non_neg(uint16_t r, uint16_t v) {
+    inline uint16_t inv_recenter_non_neg(uint16_t r, uint16_t v)
+    {
         if (v >(r << 1))
             return v;
         else if ((v & 1) == 0)
@@ -81,7 +83,7 @@ namespace UMC_AV1_DECODER
         }
     }
 
-    inline uint8_t GetMSB(uint32_t n)
+    inline uint8_t get_msb(uint32_t n)
     {
         if (n == 0)
             throw av1_exception(UMC::UMC_ERR_FAILED);
@@ -99,7 +101,7 @@ namespace UMC_AV1_DECODER
     inline uint16_t read_primitive_quniform(AV1Bitstream& bs, uint16_t n)
     {
         if (n <= 1) return 0;
-        uint8_t l = GetMSB(n - 1) + 1;
+        uint8_t l = get_msb(n - 1) + 1;
         const int m = (1 << l) - n;
         const int v = bs.GetBits(l - 1);
         const int result = v < m ? v : (v << 1) - m + bs.GetBit();
@@ -191,16 +193,16 @@ namespace UMC_AV1_DECODER
     };
 
     /* Shift down with rounding for use when n >= 0, value >= 0 */
-    inline uint64_t RoundPowerOfTwo(uint64_t value, uint16_t n)
+    inline uint64_t round_power_of_two(uint64_t value, uint16_t n)
     {
         return (value + ((static_cast<uint64_t>(1) << n) >> 1)) >> n;
     }
 
     /* Shift down with rounding for signed integers, for use when n >= 0 */
-    inline int64_t RoundPowerOfTwoSigned(int64_t value, uint16_t n)
+    inline int64_t round_power_of_two_signed(int64_t value, uint16_t n)
     {
-        return (value < 0) ? -(static_cast<int64_t>(RoundPowerOfTwo(-value, n)))
-            : RoundPowerOfTwo(value, n);
+        return (value < 0) ? -(static_cast<int64_t>(round_power_of_two(-value, n)))
+            : round_power_of_two(value, n);
     }
 
     // Decomposes a divisor D such that 1/D = y/2^shift, where y is returned
@@ -208,12 +210,12 @@ namespace UMC_AV1_DECODER
     inline int16_t resolve_divisor_32(uint32_t D, uint16_t& shift)
     {
         int32_t f;
-        shift = GetMSB(D);
+        shift = get_msb(D);
         // e is obtained from D after resetting the most significant 1 bit.
         const int32_t e = D - (static_cast < uint32_t>(1) << shift);
         // Get the most significant DIV_LUT_BITS (8) bits of e into f
         if (shift > DIV_LUT_BITS)
-            f = static_cast<uint32_t>(RoundPowerOfTwo(e, shift - DIV_LUT_BITS));
+            f = static_cast<uint32_t>(round_power_of_two(e, shift - DIV_LUT_BITS));
         else
             f = e << (DIV_LUT_BITS - shift);
         VM_ASSERT(f <= DIV_LUT_NUM);
@@ -251,19 +253,19 @@ namespace UMC_AV1_DECODER
         int16_t y = resolve_divisor_32(abs(params.wmmat[2]), shift) * (params.wmmat[2] < 0 ? -1 : 1);
         int64_t v = ((int64_t)params.wmmat[4] * (1 << WARPEDMODEL_PREC_BITS)) * y;
         params.gamma =
-            static_cast<int16_t>(mfx::clamp((int)RoundPowerOfTwoSigned(v, shift), int16Min, int16Max));
+            static_cast<int16_t>(mfx::clamp((int)round_power_of_two_signed(v, shift), int16Min, int16Max));
         v = ((int64_t)params.wmmat[3] * params.wmmat[4]) * y;
-        params.delta = static_cast<int16_t>(mfx::clamp(params.wmmat[5] - (int)RoundPowerOfTwoSigned(v, shift) -
+        params.delta = static_cast<int16_t>(mfx::clamp(params.wmmat[5] - (int)round_power_of_two_signed(v, shift) -
             (1 << WARPEDMODEL_PREC_BITS),
             int16Min, int16Max));
 
-        params.alpha = static_cast<int16_t>(RoundPowerOfTwoSigned(params.alpha, WARP_PARAM_REDUCE_BITS) *
+        params.alpha = static_cast<int16_t>(round_power_of_two_signed(params.alpha, WARP_PARAM_REDUCE_BITS) *
             (1 << WARP_PARAM_REDUCE_BITS));
-        params.beta = static_cast<int16_t>(RoundPowerOfTwoSigned(params.beta, WARP_PARAM_REDUCE_BITS) *
+        params.beta = static_cast<int16_t>(round_power_of_two_signed(params.beta, WARP_PARAM_REDUCE_BITS) *
             (1 << WARP_PARAM_REDUCE_BITS));
-        params.gamma = static_cast<int16_t>(RoundPowerOfTwoSigned(params.gamma, WARP_PARAM_REDUCE_BITS) *
+        params.gamma = static_cast<int16_t>(round_power_of_two_signed(params.gamma, WARP_PARAM_REDUCE_BITS) *
             (1 << WARP_PARAM_REDUCE_BITS));
-        params.delta = static_cast<int16_t>(RoundPowerOfTwoSigned(params.delta, WARP_PARAM_REDUCE_BITS) *
+        params.delta = static_cast<int16_t>(round_power_of_two_signed(params.delta, WARP_PARAM_REDUCE_BITS) *
             (1 << WARP_PARAM_REDUCE_BITS));
 
         if (!is_affine_shear_allowed(params.alpha, params.beta, params.gamma, params.delta))

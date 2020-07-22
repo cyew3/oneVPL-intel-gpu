@@ -46,7 +46,7 @@ namespace UMC_AV1_DECODER
         SetDefaultLFParams(info.loop_filter_params);
     }
 
-    inline uint32_t av1_get_qindex(FrameHeader const& fh, uint8_t segmentId)
+    inline uint32_t Av1GetQindex(FrameHeader const& fh, uint8_t segmentId)
     {
         if (IsSegFeatureActive(fh.segmentation_params, segmentId, SEG_LVL_ALT_Q))
         {
@@ -64,7 +64,7 @@ namespace UMC_AV1_DECODER
 
         for (uint8_t i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; ++i)
         {
-            const uint32_t qindex = av1_get_qindex(fh, i);
+            const uint32_t qindex = Av1GetQindex(fh, i);
 
             if (qindex || fh.quantization_params.DeltaQYDc ||
                 fh.quantization_params.DeltaQUAc || fh.quantization_params.DeltaQUDc ||
@@ -77,26 +77,6 @@ namespace UMC_AV1_DECODER
 
         return CodedLossless;
     }
-
-#if UMC_AV1_DECODER_REV == 5000
-    void InheritFromPrevFrame(FrameHeader& fh, FrameHeader const& prev_fh)
-    {
-        for (uint32_t i = 0; i < TOTAL_REFS; i++)
-            fh.loop_filter_params.loop_filter_ref_deltas[i] = prev_fh.loop_filter_params.loop_filter_ref_deltas[i];
-
-        for (uint32_t i = 0; i < MAX_MODE_LF_DELTAS; i++)
-            fh.loop_filter_params.loop_filter_mode_deltas[i] = prev_fh.loop_filter_params.loop_filter_mode_deltas[i];
-
-        fh.cdef_params.cdef_damping = prev_fh.cdef_params.cdef_damping;
-        for (uint32_t i = 0; i < CDEF_MAX_STRENGTHS; i++)
-        {
-            fh.cdef_params.cdef_y_strength[i] = prev_fh.cdef_params.cdef_y_strength[i];
-            fh.cdef_params.cdef_uv_strength[i] = prev_fh.cdef_params.cdef_uv_strength[i];
-        }
-
-        fh.segmentation_params = prev_fh.segmentation_params;
-    }
-#endif
 }
 
 #endif //MFX_ENABLE_AV1_VIDEO_DECODE

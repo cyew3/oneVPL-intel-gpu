@@ -76,7 +76,6 @@ namespace UMC_AV1_DECODER
             return UMC::UMC_ERR_NULL_PTR;
 
         SequenceHeader sh = {};
-        FrameHeader fh = {};
 
         while (in->GetDataSize() >= MINIMAL_DATA_SIZE)
         {
@@ -714,10 +713,7 @@ namespace UMC_AV1_DECODER
         FrameHeader const& fh = frame.GetFrameHeader();
 
         if (fh.show_existing_frame)
-        {
-            // TODO: [Rev0.85] Implement proper processing of reordering
             throw av1_exception(UMC::UMC_ERR_NOT_IMPLEMENTED);
-        }
 
         if (!allocator)
             throw av1_exception(UMC::UMC_ERR_NOT_INITIALIZED);

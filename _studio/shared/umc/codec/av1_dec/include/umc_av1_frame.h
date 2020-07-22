@@ -211,8 +211,6 @@ namespace UMC_AV1_DECODER
         }
 
     private:
-
-        uint16_t                          locked;
         bool                              outputted; // set in [application thread] when frame is mapped to respective output mfxFrameSurface
         bool                              displayed; // set in [scheduler thread] when frame decoding is finished and
                                                      // respective mfxFrameSurface prepared for output to application

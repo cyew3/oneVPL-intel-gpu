@@ -60,7 +60,7 @@ namespace MFX_VPX_Utility
             return 8192;
 #if defined(MFX_ENABLE_AV1_VIDEO_DECODE)
         case MFX_CODEC_AV1:
-            return GetMaxWidth(codecId, hwType);
+            return 16384;
 #endif
         default: return 0;
         }

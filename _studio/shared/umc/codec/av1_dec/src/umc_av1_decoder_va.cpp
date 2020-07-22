@@ -112,6 +112,7 @@ namespace UMC_AV1_DECODER
         return frame.DecodingStarted() && !frame.DecodingCompleted();
     }
 
+#ifndef UMC_VA_LINUX
     inline void SetError(AV1DecoderFrame& frame, uint8_t status)
     {
         switch (status)
@@ -129,6 +130,7 @@ namespace UMC_AV1_DECODER
     }
 
     const uint32_t NUMBER_OF_STATUS = 32;
+#endif
 
     bool AV1DecoderVA::QueryFrames()
     {

@@ -52,8 +52,6 @@ namespace UMC_AV1_DECODER
         {
             return static_cast<uint8_t>(UMC_VP9_DECODER::VP9Bitstream::GetBit());
         }
-
-    protected:
     };
 }
 

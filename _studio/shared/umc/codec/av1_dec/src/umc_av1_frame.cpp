@@ -77,8 +77,7 @@ namespace UMC_AV1_DECODER
     }
 
     AV1DecoderFrame::AV1DecoderFrame()
-        : locked(0)
-        , seq_header(new SequenceHeader{})
+        : seq_header(new SequenceHeader{})
         , header(new FrameHeader{})
     {
         Reset();

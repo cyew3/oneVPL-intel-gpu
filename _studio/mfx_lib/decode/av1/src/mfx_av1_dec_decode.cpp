@@ -57,9 +57,8 @@
 namespace MFX_VPX_Utility
 {
     inline
-    mfxU16 MatchProfile(mfxU32 fourcc)
+    mfxU16 MatchProfile(mfxU32)
     {
-        fourcc;
         return MFX_PROFILE_AV1_MAIN;
     }
 
@@ -112,7 +111,7 @@ namespace MFX_VPX_Utility
                 return false;
         }
 #else
-        core; type; par;
+        (void)core;
         return false;
 #endif
     }
@@ -181,7 +180,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 {
     MFX_CHECK_NULL_PTR1(par);
 
-    UMC::AutomaticUMCMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
 
     MFX_CHECK(!m_decoder, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -207,8 +206,8 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     m_allocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #endif
 
-    memset(&m_request, 0, sizeof(m_request));
-    memset(&m_response, 0, sizeof(m_response));
+    m_request = {};
+    m_response = {};
 
     mfxStatus sts = MFX_VPX_Utility::QueryIOSurfInternal(par, &m_request);
     MFX_CHECK_STS(sts);
@@ -303,10 +302,8 @@ bool VideoDECODEAV1::IsNeedChangeVideoParam(mfxVideoParam * newPar, mfxVideoPara
         return false;
     }
 
-    mfxFrameAllocRequest requestOld;
-    memset(&requestOld, 0, sizeof(requestOld));
-    mfxFrameAllocRequest requestNew;
-    memset(&requestNew, 0, sizeof(requestNew));
+    mfxFrameAllocRequest requestOld{};
+    mfxFrameAllocRequest requestNew{};
 
     mfxStatus mfxSts = MFX_VPX_Utility::QueryIOSurfInternal(oldPar, &requestOld);
 
@@ -354,34 +351,32 @@ bool VideoDECODEAV1::IsNeedChangeVideoParam(mfxVideoParam * newPar, mfxVideoPara
         mfxExtOpaqueSurfaceAlloc * opaqueNew = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(newPar->ExtParam, newPar->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         mfxExtOpaqueSurfaceAlloc * opaqueOld = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(oldPar->ExtParam, oldPar->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
 
-        if (opaqueNew && opaqueOld)
-        {
-            if (opaqueNew->In.Type != opaqueOld->In.Type)
-                return false;
-
-            if (opaqueNew->In.NumSurface != opaqueOld->In.NumSurface)
-                return false;
-
-            for (uint32_t i = 0; i < opaqueNew->In.NumSurface; i++)
-            {
-                if (opaqueNew->In.Surfaces[i] != opaqueOld->In.Surfaces[i])
-                    return false;
-            }
-
-            if (opaqueNew->Out.Type != opaqueOld->Out.Type)
-                return false;
-
-            if (opaqueNew->Out.NumSurface != opaqueOld->Out.NumSurface)
-                return false;
-
-            for (uint32_t i = 0; i < opaqueNew->Out.NumSurface; i++)
-            {
-                if (opaqueNew->Out.Surfaces[i] != opaqueOld->Out.Surfaces[i])
-                    return false;
-            }
-        }
-        else
+        if (!opaqueNew || !opaqueOld)
             return false;
+            
+        if (opaqueNew->In.Type != opaqueOld->In.Type)
+            return false;
+
+        if (opaqueNew->In.NumSurface != opaqueOld->In.NumSurface)
+            return false;
+
+        for (uint32_t i = 0; i < opaqueNew->In.NumSurface; i++)
+        {
+            if (opaqueNew->In.Surfaces[i] != opaqueOld->In.Surfaces[i])
+                return false;
+        }
+
+        if (opaqueNew->Out.Type != opaqueOld->Out.Type)
+            return false;
+
+        if (opaqueNew->Out.NumSurface != opaqueOld->Out.NumSurface)
+            return false;
+
+        for (uint32_t i = 0; i < opaqueNew->Out.NumSurface; i++)
+        {
+            if (opaqueNew->Out.Surfaces[i] != opaqueOld->Out.Surfaces[i])
+                return false;
+        }
     }
 
     return true;
@@ -390,7 +385,7 @@ bool VideoDECODEAV1::IsNeedChangeVideoParam(mfxVideoParam * newPar, mfxVideoPara
 
 mfxStatus VideoDECODEAV1::Reset(mfxVideoParam* par)
 {
-    UMC::AutomaticUMCMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
 
     MFX_CHECK_NULL_PTR1(par);
 
@@ -416,7 +411,7 @@ mfxStatus VideoDECODEAV1::Reset(mfxVideoParam* par)
 
 mfxStatus VideoDECODEAV1::Close()
 {
-    UMC::AutomaticUMCMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
 
     MFX_CHECK(m_is_init, MFX_ERR_NOT_INITIALIZED);
 
@@ -427,8 +422,8 @@ mfxStatus VideoDECODEAV1::Close()
         m_core->FreeFrames(&m_response);
     }
 
-    memset(&m_request, 0, sizeof(m_request));
-    memset(&m_response, 0, sizeof(m_response));
+    m_request = {};
+    m_response = {};
     m_is_init = false;
 
     return MFX_ERR_NONE;
@@ -524,7 +519,7 @@ UMC::Status FillParam(VideoCORE *core, mfxVideoParam *par)
 #if (MFX_VERSION >= 1027)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1330)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
@@ -573,7 +568,7 @@ mfxStatus VideoDECODEAV1::GetVideoParam(mfxVideoParam *par)
     MFX_CHECK_NULL_PTR1(par);
     MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
 
-    UMC::AutomaticUMCMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
 
     mfxStatus sts = MFX_ERR_NONE;
     UMC_AV1_DECODER::AV1DecoderParams vp;
@@ -611,7 +606,7 @@ mfxStatus VideoDECODEAV1::GetVideoParam(mfxVideoParam *par)
 #if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1330)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
@@ -636,7 +631,7 @@ mfxStatus VideoDECODEAV1::DecodeFrameCheck(mfxBitstream* bs, mfxFrameSurface1* s
 {
     MFX_CHECK_NULL_PTR1(entry_point);
 
-    UMC::AutomaticUMCMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
 
     MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
@@ -771,7 +766,7 @@ static mfxStatus CheckFrameInfo(mfxFrameInfo const &currInfo, mfxFrameInfo &info
     case MFX_FOURCC_Y410:
 #endif
         break;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1330)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y416:
 #endif
@@ -795,10 +790,6 @@ static mfxStatus CheckFrameInfo(mfxFrameInfo const &currInfo, mfxFrameInfo &info
     }
 
     MFX_CHECK(currInfo.FourCC == info.FourCC, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-    MFX_CHECK(info.Width <= currInfo.Width && info.Height <= currInfo.Height, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-    MFX_CHECK((info.CropW && info.Width >= info.CropW) || (info.CropH && info.Height >= info.CropH), MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
     return MFX_ERR_NONE;
 }
@@ -1075,7 +1066,7 @@ mfxStatus VideoDECODEAV1::FillVideoParam(VideoCORE* core, UMC_AV1_DECODER::AV1De
 #if (MFX_VERSION >= 1027)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1330)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416

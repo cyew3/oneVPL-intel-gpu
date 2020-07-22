@@ -91,8 +91,7 @@ namespace UMC_AV1_DECODER
 
     int IsCodedLossless(FrameHeader const&);
 
-#if UMC_AV1_DECODER_REV >= 8500
-    inline void av1_load_previous(FrameHeader& fh, DPBType const& frameDpb)
+    inline void Av1LoadPrevious(FrameHeader& fh, DPBType const& frameDpb)
     {
         const int prevFrame = fh.ref_frame_idx[fh.primary_ref_frame];
         FrameHeader const& prevFH = frameDpb[prevFrame]->GetFrameHeader();
@@ -110,30 +109,11 @@ namespace UMC_AV1_DECODER
                 fh.segmentation_params.FeatureData[i][j] = prevFH.segmentation_params.FeatureData[i][j];
         }
     }
-#else
-    void InheritFromPrevFrame(FrameHeader&, FrameHeader const&);
-#endif
 
     inline bool FrameMightUsePrevFrameMVs(FrameHeader const& fh, SequenceHeader const& sh)
     {
-#if UMC_AV1_DECODER_REV >= 8500
         return !FrameIsResilient(fh) && sh.enable_order_hint && sh.enable_ref_frame_mvs;
-#else
-        const bool large_scale_tile = 0; // this parameter isn't taken from the bitstream. Looks like decoder gets it from outside (e.g. container or some environment).
-        return !FrameIsResilient(fh) && sh.enable_order_hint && !large_scale_tile;
-#endif
     }
-
-#if UMC_AV1_DECODER_REV == 5000
-    inline bool FrameCanUsePrevFrameMVs(FrameHeader const& fh, SequenceHeader const& sh, FrameHeader const* prev_fh = 0)
-    {
-        return (FrameMightUsePrevFrameMVs(fh, sh) &&
-            prev_fh &&
-            !FrameIsIntraOnly(*prev_fh) &&
-            fh.FrameWidth == prev_fh->FrameWidth &&
-            fh.FrameHeight == prev_fh->FrameHeight);
-    }
-#endif
 
     inline void SetDefaultLFParams(LoopFilterParams& par)
     {

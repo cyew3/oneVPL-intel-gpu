@@ -620,9 +620,7 @@ namespace UMC_AV1_DECODER
     struct OBUHeader
     {
         AV1_OBU_TYPE obu_type;
-#if UMC_AV1_DECODER_REV >= 8500
         uint32_t obu_has_size_field;
-#endif
         uint32_t temporal_id;
         uint32_t spatial_id;
     };

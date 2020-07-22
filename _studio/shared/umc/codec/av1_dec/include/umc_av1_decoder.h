@@ -76,12 +76,12 @@ namespace UMC_AV1_DECODER
         {
         }
 
-        bool operator == (const ReportItem & item)
+        bool operator == (const ReportItem & item) const
         {
             return (item.m_index == m_index);
         }
 
-        bool operator != (const ReportItem & item)
+        bool operator != (const ReportItem & item) const
         {
             return (item.m_index != m_index);
         }
@@ -104,18 +104,18 @@ namespace UMC_AV1_DECODER
         UMC::Status Init(UMC::BaseCodecParams*) override;
         UMC::Status GetFrame(UMC::MediaData* in, UMC::MediaData* out) override;
 
-        UMC::Status Reset()
+        virtual UMC::Status Reset() override
         { return UMC::UMC_ERR_NOT_IMPLEMENTED; }
         UMC::Status GetInfo(UMC::BaseCodecParams*) override;
 
     public:
 
         /* UMC::VideoDecoder interface */
-        UMC::Status ResetSkipCount()
+        virtual UMC::Status ResetSkipCount() override
         { return UMC::UMC_ERR_NOT_IMPLEMENTED; }
-        UMC::Status SkipVideoFrame(int32_t)
+        virtual UMC::Status SkipVideoFrame(int32_t) override
         { return UMC::UMC_ERR_NOT_IMPLEMENTED; }
-        uint32_t GetNumOfSkippedFrames()
+        virtual uint32_t GetNumOfSkippedFrames() override
         { return 0; }
 
     public:
@@ -169,3 +169,4 @@ namespace UMC_AV1_DECODER
 
 #endif // __UMC_AV1_DECODER_H
 #endif // MFX_ENABLE_AV1_VIDEO_DECODE
+

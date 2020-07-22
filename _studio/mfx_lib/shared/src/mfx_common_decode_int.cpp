@@ -1,5 +1,5 @@
-// Copyright (c) 2009-2019 Intel Corporation
-//
+// Copyright (c) 2017-2020 Intel Corporation
+// 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -153,6 +153,7 @@ void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoStreamInfo *umcVi
         case MFX_CODEC_VC1:   umcVideoParams->stream_type = UMC::VC1_VIDEO;   break;
         case MFX_CODEC_VP9:   umcVideoParams->stream_type = UMC::VP9_VIDEO;   break;
         case MFX_CODEC_AV1:   umcVideoParams->stream_type = UMC::AV1_VIDEO;   break;
+        default:              umcVideoParams->stream_type = UMC::UNDEF_VIDEO; break;
     }
     umcVideoParams->stream_subtype = UMC::UNDEF_VIDEO_SUBTYPE;
 

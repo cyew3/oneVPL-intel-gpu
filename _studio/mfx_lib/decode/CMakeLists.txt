@@ -149,7 +149,7 @@ list(APPEND sources
 
 set( sources.plus "" )
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS} -DUMC_AV1_DECODER_REV=8500" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
 if(NOT OPEN_SOURCE)
   make_library( decode sw static )
 endif()

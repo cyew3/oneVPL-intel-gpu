@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 Intel Corporation
+// Copyright (c) 2014-2020 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 #include "mfx_common_int.h"
 
 #include "umc_defs.h"
+#include <mutex>
 
 #ifndef _MFX_AV1_DEC_DECODE_H_
 #define _MFX_AV1_DEC_DECODE_H_
@@ -62,16 +63,16 @@ public:
     static mfxStatus QueryIOSurf(VideoCORE*, mfxVideoParam*, mfxFrameAllocRequest*);
     static mfxStatus DecodeHeader(VideoCORE*, mfxBitstream*, mfxVideoParam*);
 
-    mfxStatus Init(mfxVideoParam*);
-    mfxStatus Reset(mfxVideoParam*);
-    mfxStatus Close();
-    mfxTaskThreadingPolicy GetThreadingPolicy();
+    virtual mfxStatus Init(mfxVideoParam*) override;
+    virtual mfxStatus Reset(mfxVideoParam*) override;
+    virtual mfxStatus Close() override;
+    virtual mfxTaskThreadingPolicy GetThreadingPolicy() override;
 
-    mfxStatus GetVideoParam(mfxVideoParam*);
-    mfxStatus GetDecodeStat(mfxDecodeStat*);
-    mfxStatus DecodeFrameCheck(mfxBitstream*, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, MFX_ENTRY_POINT*);
-    mfxStatus SetSkipMode(mfxSkipMode);
-    mfxStatus GetPayload(mfxU64* time_stamp, mfxPayload*);
+    virtual mfxStatus GetVideoParam(mfxVideoParam*) override;
+    virtual mfxStatus GetDecodeStat(mfxDecodeStat*) override;
+    virtual mfxStatus DecodeFrameCheck(mfxBitstream*, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, MFX_ENTRY_POINT*) override;
+    virtual mfxStatus SetSkipMode(mfxSkipMode) override;
+    virtual mfxStatus GetPayload(mfxU64* time_stamp, mfxPayload*) override;
 
     mfxStatus QueryFrame(mfxThreadTask);
 
@@ -101,7 +102,7 @@ private:
     VideoCORE*                                   m_core;
     eMFXPlatform                                 m_platform;
 
-    UMC::Mutex                                   m_guard;
+    std::mutex                                   m_guard;
     std::unique_ptr<mfx_UMC_FrameAllocator>      m_allocator;
     std::unique_ptr<UMC_AV1_DECODER::AV1Decoder> m_decoder;
 
