@@ -37,8 +37,13 @@ class LpLookAheadEnc
 {
 public:
 #define DECL_BLOCK_LIST\
+    DECL_BLOCK(CheckLPLA)\
     DECL_BLOCK(Init)\
-    DECL_BLOCK(UpdateLAInfo)
+    DECL_BLOCK(SetCallChains)\
+    DECL_BLOCK(AddTask)\
+    DECL_BLOCK(UpdateTask)\
+    DECL_BLOCK(Close)
+
 #define DECL_FEATURE_NAME "Base_LpLookAheadEnc"
 #include "hevcehw_decl_blocks.h"
 
@@ -47,12 +52,22 @@ public:
     {}
 protected:
     virtual void InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push) override;
+    virtual void Query1WithCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push) override;
+    virtual void Close(const FeatureBlocks& /*blocks*/, TPushCLS Push) override;
 
 private:
-    mfxExtBuffer*            extBuffers[1];
-    mfxVideoParam            lplaParam = {};
-    mfxExtLplaParam          extBufLPLA = {};
-    bool                     bInitialized = false;
+    mfxExtBuffer*                    extBuffers[1];
+    mfxVideoParam                    lplaParam               = {};
+    mfxExtLplaParam                  extBufLPLA              = {};
+    bool                             bInitialized            = false;
+    bool                             bEncRun                 = false;
+    bool                             bIsLpLookAheadSupported = false;
+    bool                             bAnalysis               = false; // Hint for LookAhead Pass
+    bool                             bIsLpLookaheadEnabled   = false; // Whether LPLA is enabled
+    mfxU16                           LADepth                 = 0;
+    mfxU16                           S_LA_SUBMIT             = 0;
+    mfxU16                           S_LA_QUERY              = 0;
+    std::unique_ptr<MfxLpLookAhead>  pLpLookAhead;
 };
 } //Base
 } //Windows

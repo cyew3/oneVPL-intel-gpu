@@ -38,8 +38,8 @@ void LpLookAheadAnalysis::InitInternal(const FeatureBlocks& /*blocks*/, TPushII 
         auto& ddiCC = Base::DDIPacker::CC::Get(global);
         using TCC = Base::DDIPacker::CallChains;
 
-        ddiCC.UpdateSPS.Push([this](
-            TCC::TUpdateSPS::TExt
+        ddiCC.UpdateLPLAAnalysisSPS.Push([this](
+            TCC::TUpdateLPLAAnalysisSPS::TExt
             , const StorageR& global
             , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& sps)
         {

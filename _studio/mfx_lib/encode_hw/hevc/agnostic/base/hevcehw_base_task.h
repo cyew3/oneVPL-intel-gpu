@@ -38,6 +38,7 @@ namespace Base
     {
     public:
 #define DECL_BLOCK_LIST\
+    DECL_BLOCK(SetTMInterface) \
     DECL_BLOCK(Init) \
     DECL_BLOCK(Reset) \
     DECL_BLOCK(NewTask) \
@@ -56,6 +57,31 @@ namespace Base
         {
         }
 
+        // Task Manager Interface for extra stages and logic
+        class ExtTMInterface
+            : public Storable
+        {
+        public:
+            ExtTMInterface(MfxEncodeHW::TaskManager& mgr)
+                : Manager(mgr)
+            {}
+
+            using TAsyncStage = CallChain<mfxStatus
+                , StorageW& /*glob*/
+                , StorageW& /*task*/>;
+
+            MfxEncodeHW::TaskManager& Manager;
+            std::map<mfxU16, TAsyncStage> AsyncStages;
+            mfxU16 ResourceExtra = 0;
+
+            using TUpdateTask = CallChain<mfxStatus
+                , StorageW& /*srcTask*/
+                , StorageW* /*dstTask*/>;
+            TUpdateTask UpdateTask;
+        };
+
+        using TMInterface = StorageVar<Base::Glob::TaskManagerKey, ExtTMInterface>;
+
     protected:
         NotNull<const Glob::VideoParam::TRef*> m_pPar;
         NotNull<Glob::Reorder::TRef*> m_pReorder;
@@ -63,11 +89,7 @@ namespace Base
         NotNull<StorageW*> m_pGlob;
         NotNull<StorageRW*> m_pFrameCheckLocal;
 
-        mfxU16        S_LA_SUBMIT = mfxU16(-1);
-        mfxU16        S_LA_QUERY = mfxU16(-1);
-        mfxU16        m_LookAheadDepth = 0;
-        bool          bEncRun = false;
-
+        virtual void InitInternal(const FeatureBlocks& blocks, TPushII Push) override;
         virtual void InitAlloc(const FeatureBlocks& blocks, TPushIA Push) override;
         virtual void ResetState(const FeatureBlocks& blocks, TPushRS Push) override;
         virtual void FrameSubmit(const FeatureBlocks& blocks, TPushFS Push) override;
@@ -92,10 +114,6 @@ namespace Base
         virtual void SetBsDataLength(StorageW& task, mfxU32 len) const override;
         virtual void AddNumRecode(StorageW& task, mfxU16 n) const override;
         virtual mfxStatus RunQueueTaskAlloc(StorageRW& task) override;
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-        virtual mfxStatus TaskSubmit(StorageW& task) override;
-        void UpdateTask(StorageW& srcTask, StorageW* dstTask);
-#endif
 
         virtual mfxStatus RunQueueTaskInit(
             mfxEncodeCtrl* pCtrl
@@ -109,6 +127,13 @@ namespace Base
             StorageW& task
             , std::function<bool(const mfxStatus&)> stopAt) override;
         virtual mfxStatus RunQueueTaskFree(StorageW& task) override;
+
+        virtual mfxStatus TaskPrepare(StorageW& /*task*/) override;
+        virtual mfxStatus TaskReorder(StorageW& /*task*/) override;
+        virtual mfxStatus TaskSubmit(StorageW& /*task*/) override;
+        virtual mfxStatus TaskQuery(StorageW& /*task*/) override;
+
+        mfxStatus RunExtraStages(mfxU16 beginStageID, mfxU16 endStageID, StorageW& task);
     };
 
 } //Base

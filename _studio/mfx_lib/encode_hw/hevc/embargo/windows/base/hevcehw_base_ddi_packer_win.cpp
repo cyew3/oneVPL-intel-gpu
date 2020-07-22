@@ -101,16 +101,6 @@ void DDIPacker::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         {
             return ReadFeedback(pFB, size, Task::Common::Get(s_task).BsDataLength);
         });
-        cc.UpdateSPS.Push([this](
-            CallChains::TUpdateSPS::TExt
-            , const StorageR& /*global*/
-            , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC& /*sps*/)
-        {});
-        cc.UpdateCqmHint.Push([this](
-            CallChains::TUpdateCqmHint::TExt
-            , TaskCommonPar& /*task*/
-            , const LOOKAHEAD_INFO& /*pLPLA*/)
-        {});
 
         return MFX_ERR_NONE;
     });
@@ -142,7 +132,8 @@ void DDIPacker::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
 
         cc.InitSPS(strg, m_sps);
         cc.InitPPS(strg, m_pps);
-        cc.UpdateSPS(strg, m_sps);
+        cc.UpdateLPLAAnalysisSPS(strg, m_sps);
+        cc.UpdateLPLAEncSPS(strg, m_sps);
         FillSliceBuffer(Glob::SliceInfo::Get(strg), m_slices);
 
         // Reserve space for feedback reports.
@@ -249,7 +240,7 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         m_bResetBRC     = false;
 
         cc.UpdatePPS(global, s_task, m_sps, m_pps);
-        cc.UpdateEncParam(global, s_task, m_pps);
+        cc.UpdateLPLAEncPPS(global, s_task, m_pps);
         FillSliceBuffer(sh, task.RefPicList, m_slices);
 
         m_pps.SkipFrameFlag  = bSkipCurr * 2 + (!bSkipCurr && !!m_numSkipFrames);
@@ -296,14 +287,8 @@ void DDIPacker::SubmitTask(const FeatureBlocks& blocks, TPushST Push)
         nCBD += (task.InsertHeaders & INSERT_PPS)
             && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.PPS, true));
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-        if (global.Contains(Glob::LpLookAhead::Key))
-        {
-            auto& lpla = Glob::LpLookAhead::Get(global);
-            nCBD += ((task.InsertHeaders & INSERT_PPS) && !lpla.bAnalysis && lpla.bIsLpLookaheadEnabled)
-                && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.CqmPPS, true));
-        }
-#endif
+        nCBD += cc.PackCqmPPS(global, s_task)
+            && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.CqmPPS, true));
 
         nCBD += (((task.InsertHeaders & INSERT_SEI) || (task.ctrl.NumPayload > 0)) && ph.PrefixSEI.BitLen)
             && PackCBD(ID_PACKEDHEADERDATA, PackHeader(ph.PrefixSEI, true));
@@ -428,7 +413,6 @@ void DDIPacker::FillSpsBuffer(
     sps.FrameRate.Denominator      = fi.FrameRateExtD;
     sps.InitVBVBufferFullnessInBit = 8000 * InitialDelayInKB(par.mfx);
     sps.VBVBufferSizeInBit         = 8000 * BufferSizeInKB(par.mfx);
-    sps.LookaheadDepth             = (UCHAR) CO2.LookAheadDepth;
 
     sps.bResetBRC        = 0;
     sps.GlobalSearch     = 0;

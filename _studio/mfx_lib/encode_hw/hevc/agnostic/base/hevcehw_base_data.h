@@ -949,16 +949,6 @@ namespace Base
         mfxU32 Flags;
     };
 
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)
-    struct LpLookAhead
-    {
-        mfxU32                          bAnalysis; // Hint for LookAhead Pass
-        std::unique_ptr<MfxLpLookAhead> pLpLookAhead;
-        bool                            bIsLpLookaheadEnabled = false;
-        bool                            bIsLpLookaheadSupported = false;
-    };
-#endif
-
     struct VAGUID
     {
         mfxU32 Profile;
@@ -1367,6 +1357,7 @@ namespace Base
         using VPS                 = StorageVar<__LINE__ - _KD, Base::VPS>;
         using SPS                 = StorageVar<__LINE__ - _KD, Base::SPS>;
         using PPS                 = StorageVar<__LINE__ - _KD, Base::PPS>;
+        using CqmPPS              = StorageVar<__LINE__ - _KD, Base::PPS>;
         using SliceInfo           = StorageVar<__LINE__ - _KD, std::vector<Base::SliceInfo>>;
         using AllocRaw            = StorageVar<__LINE__ - _KD, IAllocation>;
         using AllocOpq            = StorageVar<__LINE__ - _KD, IAllocation>;
@@ -1380,10 +1371,6 @@ namespace Base
         using DDI_Execute         = StorageVar<__LINE__ - _KD, CallChain<mfxStatus, const DDIExecParam&>>;
         using RealState           = StorageVar<__LINE__ - _KD, StorageW>;//available during Reset
         using ResetHint           = StorageVar<__LINE__ - _KD, Base::ResetHint>; //available during Reset
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)
-        using LpLookAhead         = StorageVar<__LINE__ - _KD, Base::LpLookAhead>;
-        using CqmPPS              = StorageVar<__LINE__ - _KD, Base::PPS>;
-#endif
         using Reorder             = StorageVar<__LINE__ - _KD, Reorderer>;
         using NeedRextConstraints = StorageVar<__LINE__ - _KD, std::function<bool(const Base::PTL&)>>;
         using ReadSpsExt          = StorageVar<__LINE__ - _KD, std::function<bool(const Base::SPS&, mfxU8, IBsReader&)>>;
@@ -1393,6 +1380,8 @@ namespace Base
         using GuidToVa            = StorageVar<__LINE__ - _KD, std::map<::GUID, VAGUID, LessGUID>>;
         using Defaults            = StorageVar<__LINE__ - _KD, Base::Defaults>;
         static const StorageR::TKey ReservedKey0 = __LINE__ - _KD;
+        static const StorageR::TKey BasePackerKey = __LINE__ - _KD;
+        static const StorageR::TKey TaskManagerKey = __LINE__ - _KD;
         static const StorageR::TKey NUM_KEYS = __LINE__ - _KD;
     };
 

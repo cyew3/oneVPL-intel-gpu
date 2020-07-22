@@ -1858,9 +1858,7 @@ void Packer::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
             Glob::VPS::Get(global)
             , Glob::SPS::Get(global)
             , Glob::PPS::Get(global)
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)
             , Glob::CqmPPS::GetOrConstruct(global)
-#endif
             , Glob::SliceInfo::Get(global)
             , *ph);
         MFX_CHECK_STS(sts);
@@ -1898,9 +1896,7 @@ void Packer::ResetState(const FeatureBlocks& /*blocks*/, TPushRS Push)
             Glob::VPS::Get(global)
             , Glob::SPS::Get(global)
             , Glob::PPS::Get(global)
-#if defined (MFX_ENABLE_LP_LOOKAHEAD)
             , Glob::CqmPPS::GetOrConstruct(global)
-#endif
             , Glob::SliceInfo::Get(global)
             , ph);
         MFX_CHECK_STS(sts);
@@ -1943,9 +1939,7 @@ mfxStatus Packer::Reset(
     const VPS& vps
     , const SPS& sps
     , const PPS& pps
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
     , const PPS& cqmpps
-#endif
     , const std::vector<SliceInfo>& si
     , PackedHeaders& ph)
 {
@@ -1985,19 +1979,14 @@ mfxStatus Packer::Reset(
     MFX_CHECK_STS(sts);
     pESBegin += ph.PPS.BitLen / 8;
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    if (m_pGlob->Contains(Glob::LpLookAhead::Key))
+    // Pack cqm PPS header for adaptive cqm.
+    if (m_pGlob->Contains(CC::Key) && CC::Get(*m_pGlob).PackCqmHeader(m_pGlob))
     {
-        auto& lpla = Glob::LpLookAhead::Get(*m_pGlob);
-        if (!lpla.bAnalysis && lpla.bIsLpLookaheadEnabled)
-        {
-            PackPPS(rbsp, cqmpps);
-            sts = PackHeader(rbsp, pESBegin, pESEnd, ph.CqmPPS);
-            MFX_CHECK_STS(sts);
-            pESBegin += ph.CqmPPS.BitLen / 8;
-        }
+        PackPPS(rbsp, cqmpps);
+        sts = PackHeader(rbsp, pESBegin, pESEnd, ph.CqmPPS);
+        MFX_CHECK_STS(sts);
+        pESBegin += ph.CqmPPS.BitLen / 8;
     }
-#endif
 
     ph.SSH.resize(si.size());
 
@@ -2027,10 +2016,6 @@ mfxU32 Packer::GetPSEIAndSSH(
                                 || std::any_of(task.ctrl.Payload, task.ctrl.Payload + task.ctrl.NumPayload,
                                     [](const mfxPayload* pPL) { return pPL && !(pPL->CtrlFlags & MFX_PAYLOAD_CTRL_SUFFIX); });
 
-#if defined(MFX_ENABLE_LP_LOOKAHEAD)
-    if (task.LplaStatus.CqmHint == CQM_HINT_USE_CUST_MATRIX)
-        sh.pic_parameter_set_id = 1;
-#endif
 
     auto            PutSSH   = [&](PackedData& d, NALU& nalu)
     {
@@ -2132,6 +2117,9 @@ void Packer::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
                 m_pRTBufBegin = ph.PPS.pData + ph.PPS.BitLen / 8;
             }
 
+            // Update Slice header for adaptive cqm.
+            if (global.Contains(CC::Key)) CC::Get(global).UpdateSH(s_task);
+
             mfxU32 sz = GetPSEIAndSSH(
                 Glob::VideoParam::Get(global)
                 , task
@@ -2175,6 +2163,9 @@ void Packer::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
                 || ((task.InsertHeaders & INSERT_SPS) && Res2Bool(sts, BSInsert(ph.SPS)))
                 || ((task.InsertHeaders & INSERT_PPS) && Res2Bool(sts, BSInsert(ph.PPS)));
             MFX_CHECK(!bErr, sts);
+
+            // Update Slice header for adaptive cqm.
+            if (global.Contains(CC::Key)) CC::Get(global).UpdateSH(s_task);
 
             mfxU32 sz = GetPSEIAndSSH(
                 Glob::VideoParam::Get(global)

@@ -92,21 +92,31 @@ public:
             , ENCODE_SET_PICTURE_PARAMETERS_HEVC&>;
         TUpdatePPS UpdatePPS;
 
-        using TUpdateSPS = CallChain<void
+        using TUpdateLPLAAnalysisSPS = CallChain<void
             , const StorageR& //global
             , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC&>;
-        TUpdateSPS UpdateSPS;
+        TUpdateLPLAAnalysisSPS UpdateLPLAAnalysisSPS;
 
         using TUpdateCqmHint = CallChain<void
             , TaskCommonPar&
             , const LOOKAHEAD_INFO&>;
         TUpdateCqmHint UpdateCqmHint;
 
-        using TUpdateEncParam = CallChain<void
+        using TUpdateLPLAEncPPS = CallChain<void
             , const StorageR& //global
             , const StorageR& //task
             , ENCODE_SET_PICTURE_PARAMETERS_HEVC&>;
-        TUpdateEncParam UpdateEncParam;
+        TUpdateLPLAEncPPS UpdateLPLAEncPPS;
+
+        using TUpdateLPLAEncSPS = CallChain<void
+            , const StorageR& //global
+            , ENCODE_SET_SEQUENCE_PARAMETERS_HEVC&>;
+        TUpdateLPLAEncSPS UpdateLPLAEncSPS;
+
+        using TPackCqmPPS = CallChain<bool
+            , const StorageR&   //global
+            , const StorageR&>; //task
+        TPackCqmPPS PackCqmPPS;
 
         using TInitFeedback = CallChain<void
             , const StorageR&

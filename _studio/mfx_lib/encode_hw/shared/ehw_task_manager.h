@@ -81,8 +81,6 @@ namespace MfxEncodeHW
         virtual mfxStatus TaskQuery(StorageW& /*task*/);
         virtual void CancelTasks();
 
-    protected:
-
         static constexpr mfxU16 S_NEW      = 0;
         static constexpr mfxU16 S_PREPARE  = 1;
         static constexpr mfxU16 S_REORDER  = 2;
