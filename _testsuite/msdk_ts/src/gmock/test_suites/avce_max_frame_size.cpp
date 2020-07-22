@@ -33,7 +33,6 @@ Algorithm:
 */
 #include "ts_encoder.h"
 #include "ts_struct.h"
-#include "ts_parser.h"
 
 /*! \brief Main test name space */
 namespace avce_max_frame_size{

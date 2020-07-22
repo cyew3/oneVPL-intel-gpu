@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 File Name: avce_look_ahead.cpp
 \* ****************************************************************************** */
@@ -23,17 +23,16 @@ Algorithm:
 - Set expected Query status
 - Call Query() function
 - Check Query() return status
-- If returned status isn't MFX_ERR_NONE check LookAheadDepth and LookAheadDS chenges
+- If returned status isn't MFX_ERR_NONE check LookAheadDepth and LookAheadDS changes
 - Set expected Init status
 - Call Init() function
 - Check Init() return status
-- if returned status is MFX_WRN_INCOMATIBLE_VIDEO_PARAM call GetVideoParam and Check it chages
+- if returned status is MFX_WRN_INCOMATIBLE_VIDEO_PARAM call GetVideoParam and Check it changes
 - if returned status is MFX_ERR_NONE encode frames and check encoding status
 
 */
 #include "ts_encoder.h"
 #include "ts_struct.h"
-#include "ts_parser.h"
 
 /*! \brief Main test name space */
 namespace avce_look_ahead{

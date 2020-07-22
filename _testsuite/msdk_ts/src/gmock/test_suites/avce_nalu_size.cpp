@@ -4,12 +4,11 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2020 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #include "ts_encoder.h"
-#include "ts_parser.h"
 #include "ts_struct.h"
 
 #include <fstream>
@@ -256,7 +255,7 @@ namespace avce_nalu_size
                     fout.write((char*)m_bitstream.Data, m_bitstream.DataLength);
                 if (tc.attachFrameInfo && avcFrameInfo->FrameOrder == mfxU32(~0) && avcFrameInfo->SecondFieldOffset == mfxU32(~0))
                 {
-                    g_tsLog << "ERROR >> FrameInfo buffer data haven't changed\n";
+                    g_tsLog << "ERROR >> FrameInfo buffer data haven't been changed\n";
                     throw tsFAIL;
                 }
                 /* Help data */

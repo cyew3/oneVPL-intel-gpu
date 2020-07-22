@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2019 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2020 Intel Corporation. All Rights Reserved.
 
 File Name: avce_mb_per_sec.cpp
 \* ****************************************************************************** */
@@ -22,13 +22,12 @@ Algorithm:
 - Set case params
 - Set expected status (depends on D3D9, D3D11 implementation on Windows, rate control method on Linux and HW on all)
 - Call Query() function
-- Check MBPerSec value (if Query returns MFX_ERR_NONE MBPerSec should changed to non zero and non 0xFFFFFFFF value,
+- Check MBPerSec value (if Query returns MFX_ERR_NONE MBPerSec should be changed to non zero and non 0xFFFFFFFF value,
 else should be zeroed)
 
 */
 #include "ts_encoder.h"
 #include "ts_struct.h"
-#include "ts_parser.h"
 
 /*! \brief Main test name space */
 namespace avce_mb_per_sec{

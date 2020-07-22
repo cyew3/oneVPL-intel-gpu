@@ -34,7 +34,6 @@ Algorithm:
 */
 #include "ts_encoder.h"
 #include "ts_struct.h"
-#include "ts_parser.h"
 
 //! \brief Test suite namespace
 namespace avce_repeat_pps
