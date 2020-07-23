@@ -1522,7 +1522,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         MFX_CHECK_STS(mfxSts);
         eMFXHWType platform = hwcore->GetHWType();
         if (MFX_HW_APL == platform || MFX_HW_CFL == platform)
-            m_caps.ddi_caps.FrameSizeTolerance = 1;
+            m_caps.ddi_caps.FrameSizeToleranceSupport = 1;
     }
 
     m_width  = width;

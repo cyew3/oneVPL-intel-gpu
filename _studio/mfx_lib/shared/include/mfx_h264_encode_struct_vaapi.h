@@ -312,14 +312,14 @@ typedef struct tagENCODE_CAPS
             UINT    HMEOffsetSupport        : 1;
             UINT    DirtyRectSupport        : 1;
             UINT    MoveRectSupport         : 1;
-            UINT    FrameSizeTolerance      : 1;
-            UINT    HWCounterAutoIncrement  : 2;
-            UINT    MBControlSupport        : 1;
+            UINT    FrameSizeToleranceSupport    : 1; // eFrameSizeTolerance_Low (Sliding window) supported
+            UINT    HWCounterAutoIncrement       : 2;
+            UINT    MBControlSupport             : 1;
             UINT    ForceRepartitionCheckSupport : 1;
-            UINT    CustomRoundingControl   : 1;
+            UINT    CustomRoundingControl        : 1;
             UINT    LLCStreamingBufferSupport    : 1;
             UINT    DDRStreamingBufferSupport    : 1;
-            UINT    LowDelayBRCSupport           : 1;
+            UINT    LowDelayBRCSupport           : 1; // eFrameSizeTolerance_ExtremelyLow (Low delay) supported
             UINT    MaxNumDeltaQPMinus1          : 4;
             UINT    TCBRCSupport                 : 1;
             UINT    HRDConformanceSupport        : 1;
