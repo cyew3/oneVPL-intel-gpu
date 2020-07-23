@@ -279,6 +279,8 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     // threading options
     SERIALIZE_INT(EarlySkip);
     SERIALIZE_INT(LaScaleFactor);
+    SERIALIZE_INT(IBC);
+    SERIALIZE_INT(Palette);
     SERIALIZE_INT(LookAheadDependency);
     SERIALIZE_INT(Hme);
     SERIALIZE_INT(NumActiveRefP);

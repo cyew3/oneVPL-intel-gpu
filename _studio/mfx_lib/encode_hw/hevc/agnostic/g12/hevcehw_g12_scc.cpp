@@ -142,6 +142,7 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         MFX_CHECK(!IsOff(par.mfx.LowPower), MFX_ERR_NONE);
 
         auto& defaults = Glob::Defaults::GetOrConstruct(strg);
+        auto& sccflags = Glob::SCCFlags::GetOrConstruct(strg);
         auto& bSet = defaults.SetForFeature[GetID()];
         MFX_CHECK(!bSet, MFX_ERR_NONE);
 
@@ -169,6 +170,10 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 
             return sts;
         });
+
+        bSet = true;
+        MFX_CHECK(sccflags.IBCEnable, MFX_ERR_NONE);
+
         defaults.GetPPS.Push(
             [](Defaults::TGetPPS::TExt prev
                 , const Defaults::Param& defPar
@@ -186,8 +191,6 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
 
             return sts;
         });
-
-        bSet = true;
 
         return MFX_ERR_NONE;
 
@@ -213,12 +216,16 @@ void SCC::Query1NoCaps(const FeatureBlocks& /*blocks*/, TPushQ1 Push)
         {
             return ((ptl.profile_idc == 9) || (ptl.profile_compatibility_flags & (0x1 << 9)));
         };
+        auto& sccflags = Glob::SCCFlags::GetOrConstruct(strg);
 
         using namespace std::placeholders;
         Glob::ReadSpsExt::GetOrConstruct(strg) = std::bind(ReadSpsExt, std::ref(strg), _1, _2, _3);
-        Glob::ReadPpsExt::GetOrConstruct(strg) = std::bind(ReadPpsExt, std::ref(strg), _1, _2, _3);
         Glob::PackSpsExt::GetOrConstruct(strg) = std::bind(PackSpsExt, std::ref(strg), _1, _2, _3);
-        Glob::PackPpsExt::GetOrConstruct(strg) = std::bind(PackPpsExt, std::ref(strg), _1, _2, _3);
+        if (sccflags.IBCEnable)
+        {
+            Glob::ReadPpsExt::GetOrConstruct(strg) = std::bind(ReadPpsExt, std::ref(strg), _1, _2, _3);
+            Glob::PackPpsExt::GetOrConstruct(strg) = std::bind(PackPpsExt, std::ref(strg), _1, _2, _3);
+        }
 
         return MFX_ERR_NONE;
     });
@@ -288,13 +295,21 @@ void SCC::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     {
         MFX_CHECK(Glob::VideoParam::Get(strg).mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
 
+        auto& sccflags = Glob::SCCFlags::Get(strg);
+        MFX_CHECK(sccflags.IBCEnable || sccflags.PaletteEnable, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         auto& spsExt = SpsExt::GetOrConstruct(strg, SccSpsExt{});
 
         spsExt = {};
-        spsExt.curr_pic_ref_enabled_flag = 1;
-        spsExt.palette_mode_enabled_flag = 1;
-        spsExt.palette_max_size = 64;
-        spsExt.delta_palette_max_predictor_size = 32;
+        if (sccflags.IBCEnable)
+        {
+            spsExt.curr_pic_ref_enabled_flag = 1;
+        }
+        if (sccflags.PaletteEnable)
+        {
+            spsExt.palette_mode_enabled_flag = 1;
+            spsExt.palette_max_size = 64;
+            spsExt.delta_palette_max_predictor_size = 32;
+        }
         spsExt.scc_extension_flag = 1;
 
         return MFX_ERR_NONE;
@@ -305,6 +320,8 @@ void SCC::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
     {
         MFX_CHECK(Glob::VideoParam::Get(strg).mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
 
+        auto& sccflags = Glob::SCCFlags::Get(strg);
+        MFX_CHECK(sccflags.IBCEnable, MFX_ERR_NONE);
         auto& ppsExt = PpsExt::GetOrConstruct(strg, SccPpsExt{});
 
         ppsExt = {};
@@ -323,6 +340,9 @@ void SCC::PostReorderTask(const FeatureBlocks& /*blocks*/, TPushPostRT Push)
             , StorageW& s_task) -> mfxStatus
     {
         MFX_CHECK(Glob::VideoParam::Get(global).mfx.CodecProfile == MFX_PROFILE_HEVC_SCC, MFX_ERR_NONE);
+        auto& sccflags = Glob::SCCFlags::Get(global);
+        MFX_CHECK(sccflags.IBCEnable, MFX_ERR_NONE);
+
         auto& ssh = Base::Task::SSH::Get(s_task);
 
         ssh.num_ref_idx_active_override_flag = 1;

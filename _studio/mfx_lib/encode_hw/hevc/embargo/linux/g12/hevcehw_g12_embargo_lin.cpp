@@ -31,6 +31,9 @@
 #include "hevcehw_base_legacy.h"
 #include "hevcehw_base_parser.h"
 #include "hevcehw_base_iddi_packer.h"
+#include "hevcehw_g12_scc_mode.h"
+#include "hevcehw_g12_scc.h"
+#include "hevcehw_g12_lin.h"
 
 using namespace HEVCEHW::Gen12;
 
@@ -52,6 +55,7 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     newFeatures.emplace_back(new Linux::Gen12::RExt(FEATURE_REXT));
     newFeatures.emplace_back(new Linux::Gen12::Caps(FEATURE_CAPS));
     newFeatures.emplace_back(new SAO(FEATURE_SAO));
+    newFeatures.emplace_back(new SCCMode(FEATURE_SCCMODE));
 
     for (auto& pFeature : newFeatures)
         pFeature->Init(mode, *this);
@@ -66,6 +70,11 @@ MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
             qnc
             , { HEVCEHW::Base::FEATURE_LEGACY, HEVCEHW::Base::Legacy::BLK_SetLowPowerDefault }
             , { FEATURE_CAPS, Caps::BLK_SetDefaultsCallChain });
+        Reorder(
+            qnc
+            , { HEVCEHW::Linux::Gen12::FEATURE_SCC, SCC::BLK_LoadSPSPPS }
+            , { FEATURE_SCCMODE, SCCMode::BLK_CheckAndFix });
+
         auto& qwc = BQ<BQ_Query1WithCaps>::Get(*this);
         Reorder(
             qwc
