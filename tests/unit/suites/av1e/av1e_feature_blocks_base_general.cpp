@@ -160,5 +160,44 @@ namespace av1e {
             const mfxU16 default_QPI = 128;
             ASSERT_EQ(vp_after.mfx.QPI, default_QPI);
         }
+
+        TEST_F(FeatureBlocksGeneral, SetFH)
+        {
+            auto& vp   = Glob::VideoParam::Get(storage);
+            auto& caps = Glob::EncodeCaps::Get(storage);
+            auto p_sh  = MfxFeatureBlocks::make_storable<SH>();
+            auto p_fh  = MfxFeatureBlocks::make_storable<FH>();
+
+            vp.NewEB(MFX_EXTBUFF_AV1_PARAM, false);
+            vp.NewEB(MFX_EXTBUFF_AV1_AUXDATA, false);
+            vp.NewEB(MFX_EXTBUFF_CODING_OPTION3, false);
+            mfxExtAV1Param& av1Par      = ExtBuffer::Get(vp);
+            mfxExtAV1AuxData& av1AuxPar = ExtBuffer::Get(vp);
+            mfxExtCodingOption3& pCO3   = ExtBuffer::Get(vp);
+
+            av1Par.StillPictureMode         = MFX_CODINGOPTION_OFF;
+            av1Par.EnableSuperres           = MFX_CODINGOPTION_OFF;
+            av1Par.EnableCdef               = MFX_CODINGOPTION_OFF;
+            av1Par.EnableRestoration        = MFX_CODINGOPTION_ON;
+            av1Par.InterpFilter             = MFX_AV1_INTERP_EIGHTTAP;
+            av1Par.DisableCdfUpdate         = MFX_CODINGOPTION_OFF;
+            av1Par.DisableFrameEndUpdateCdf = MFX_CODINGOPTION_OFF;
+            av1AuxPar.EnableOrderHint       = MFX_CODINGOPTION_OFF;
+            av1AuxPar.ErrorResilientMode    = MFX_CODINGOPTION_OFF;
+
+            general.SetSH(vp, MFX_HW_DG2, caps, *p_sh);
+            storage.Insert(Glob::SH::Key, std::move(p_sh));
+            auto& sh = Glob::SH::Get(storage);
+            general.SetFH(vp, MFX_HW_DG2, sh, *p_fh);
+
+            // check loop restoration parameters in frame header
+            for (auto i = 0; i < MAX_MB_PLANE; i++)
+            {
+                ASSERT_EQ(p_fh->lr_params.lr_type[i], RESTORE_WIENER);
+            }
+            ASSERT_EQ(p_fh->lr_params.lr_unit_shift, 0);
+            ASSERT_EQ(p_fh->lr_params.lr_unit_extra_shift, 0);
+            ASSERT_EQ(p_fh->lr_params.lr_uv_shift, 1);
+        }
     }
 }
